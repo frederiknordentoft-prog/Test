@@ -1,5 +1,5 @@
 // ============================================================
-// Elpriser DK2 — Apple-inspired dashboard
+// Elprisen DK2 — app.js
 // Data: elprisenligenu.dk (no key)
 // ============================================================
 
@@ -21,14 +21,15 @@ const state = {
 const pad = (n) => String(n).padStart(2, "0");
 const fmt = (n) => (Math.round(n * 100) / 100).toFixed(2).replace(".", ",");
 const hourLabel = (iso) => pad(new Date(iso).getHours()) + ":00";
+const hourNum = (iso) => pad(new Date(iso).getHours());
 
 function withVat(kr) { return state.vat ? kr * (1 + VAT_RATE) : kr; }
 
-const LEVEL_META = {
-  good: { label: "Billig", color: "#34c759" },
-  ok:   { label: "Normal", color: "#ffcc00" },
-  warn: { label: "Høj",    color: "#ff9500" },
-  bad:  { label: "Dyr",    color: "#ff3b30" },
+const LEVEL = {
+  good: { label: "Billig", color: "#30d158" },
+  ok:   { label: "Normal", color: "#ffd60a" },
+  warn: { label: "Høj",    color: "#ff9f0a" },
+  bad:  { label: "Dyr",    color: "#ff453a" },
 };
 
 function levelOf(price, stats) {
@@ -37,7 +38,7 @@ function levelOf(price, stats) {
   const rel = (price - min) / range;
   if (rel < 0.25) return "good";
   if (rel < 0.55) return "ok";
-  if (rel < 0.8) return "warn";
+  if (rel < 0.8)  return "warn";
   return "bad";
 }
 
@@ -47,11 +48,7 @@ function statsOf(prices) {
   const min = Math.min(...vals);
   const max = Math.max(...vals);
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-  return {
-    min, max, avg,
-    minIdx: vals.indexOf(min),
-    maxIdx: vals.indexOf(max),
-  };
+  return { min, max, avg, minIdx: vals.indexOf(min), maxIdx: vals.indexOf(max) };
 }
 
 function currentHourIndex(prices) {
@@ -69,10 +66,7 @@ async function fetchDay(date) {
     const res = await fetch(API(date));
     if (!res.ok) return [];
     return await res.json();
-  } catch (e) {
-    console.warn("Fetch failed", date, e);
-    return [];
-  }
+  } catch (e) { return []; }
 }
 
 async function loadData() {
@@ -88,7 +82,6 @@ async function loadData() {
 
   const tomorrowTab = document.getElementById("tabTomorrow");
   tomorrowTab.disabled = tm.length === 0;
-  tomorrowTab.title = tm.length === 0 ? "Ikke offentliggjort endnu" : "";
 }
 
 // ------------- hero -------------
@@ -101,37 +94,17 @@ function renderHero() {
   const cur = idx >= 0 ? withVat(prices[idx].DKK_per_kWh) : stats.avg;
 
   document.getElementById("priceNow").textContent = fmt(cur);
-  document.getElementById("statMin").textContent = fmt(stats.min) + " kr";
-  document.getElementById("statMax").textContent = fmt(stats.max) + " kr";
-  document.getElementById("statAvg").textContent = fmt(stats.avg) + " kr";
+  document.getElementById("statMin").textContent = fmt(stats.min);
+  document.getElementById("statMax").textContent = fmt(stats.max);
+  document.getElementById("statAvg").textContent = fmt(stats.avg);
+  document.getElementById("statMinHint").textContent = "kl. " + hourLabel(prices[stats.minIdx].time_start);
+  document.getElementById("statMaxHint").textContent = "kl. " + hourLabel(prices[stats.maxIdx].time_start);
 
-  document.getElementById("statMinHint").textContent =
-    "kl. " + hourLabel(prices[stats.minIdx].time_start);
-  document.getElementById("statMaxHint").textContent =
-    "kl. " + hourLabel(prices[stats.maxIdx].time_start);
+  const lvl = levelOf(cur, stats);
+  document.getElementById("priceLevel").textContent =
+    `${LEVEL[lvl].label} pris pr. kWh`;
 
-  const level = levelOf(cur, stats);
-  const meta = LEVEL_META[level];
-  const badge = document.getElementById("priceLevel");
-  badge.textContent = meta.label;
-  badge.className = "pill " + level;
-  const dot = document.getElementById("nowDot");
-  dot.style.background = meta.color;
-  dot.style.color = meta.color;
-
-  // Trend
-  if (idx > 0) {
-    const prev = withVat(prices[idx - 1].DKK_per_kWh);
-    const diff = cur - prev;
-    const pct = Math.abs((diff / prev) * 100);
-    const trend = document.getElementById("priceTrend");
-    trend.className = "pill subtle";
-    if (Math.abs(diff) < 0.01) trend.textContent = "→ stabil";
-    else if (diff > 0) trend.textContent = `▲ ${pct.toFixed(0)}%`;
-    else trend.textContent = `▼ ${pct.toFixed(0)}%`;
-  }
-
-  // Next cheap hour
+  // Next cheap hour tip
   const forward = [];
   if (idx >= 0) prices.slice(idx + 1).forEach(p => forward.push(p));
   state.tomorrow.forEach(p => forward.push(p));
@@ -140,12 +113,11 @@ function renderHero() {
     const cheapest = forward.reduce((a, b) => (a.DKK_per_kWh < b.DKK_per_kWh ? a : b));
     const t = new Date(cheapest.time_start);
     const now = new Date();
-    const hoursAway = Math.round((t - now) / 3600000);
+    const hoursAway = Math.max(1, Math.round((t - now) / 3600000));
     const dayTxt = t.getDate() === now.getDate() ? "i dag" : "i morgen";
-    const whenTxt = hoursAway <= 1 ? "om kort tid" : `om ${hoursAway} t.`;
     const price = withVat(cheapest.DKK_per_kWh);
     document.getElementById("nextCheap").innerHTML =
-      `💡 Billigste kommende time: <strong>${pad(t.getHours())}:00 ${dayTxt}</strong> til <strong>${fmt(price)} kr/kWh</strong> · ${whenTxt}`;
+      `Billigste kommende time er <strong>${pad(t.getHours())}:00 ${dayTxt}</strong> til ${fmt(price)} kr/kWh — om ${hoursAway} timer.`;
   }
 }
 
@@ -181,13 +153,13 @@ function renderTable() {
   body.innerHTML = prices.map((p, i) => {
     const price = withVat(p.DKK_per_kWh);
     const lvl = levelOf(price, stats);
-    const meta = LEVEL_META[lvl];
+    const meta = LEVEL[lvl];
     const widthPct = Math.max(6, ((price - stats.min) / (stats.max - stats.min || 1)) * 100);
     const isNow = i === nowIdx;
     return `<tr class="${isNow ? "now" : ""}">
       <td>${hourLabel(p.time_start)}</td>
       <td class="val">${fmt(price)} kr</td>
-      <td><span class="level-chip level-${lvl}">${meta.label}</span></td>
+      <td><span class="lvl lvl-${lvl}">${meta.label}</span></td>
       <td><div class="bar" style="width:${widthPct}%; background:${meta.color}"></div></td>
     </tr>`;
   }).join("");
@@ -209,20 +181,16 @@ function renderChart() {
   canvas.style.display = "block";
 
   const stats = statsOf(prices);
-  const labels = prices.map(p => hourLabel(p.time_start));
+  const labels = prices.map(p => hourNum(p.time_start));
   const values = prices.map(p => withVat(p.DKK_per_kWh));
-  const colors = values.map(v => LEVEL_META[levelOf(v, stats)].color);
+  const colors = values.map(v => LEVEL[levelOf(v, stats)].color);
   const nowIdx = state.view === "today" ? currentHourIndex(prices) : -1;
-
-  const borders = values.map((_, i) =>
-    i === nowIdx ? "#ffffff" : "rgba(255,255,255,0.05)"
-  );
-  const borderWidths = values.map((_, i) => (i === nowIdx ? 3 : 0));
+  const borders = values.map((_, i) => i === nowIdx ? "#ffffff" : "transparent");
+  const borderWidths = values.map((_, i) => i === nowIdx ? 2 : 0);
 
   if (state.chart) state.chart.destroy();
 
-  // Dark-section chart
-  const tickColor = "rgba(255, 255, 255, 0.55)";
+  const tickColor = "rgba(235, 235, 245, 0.45)";
   const gridColor = "rgba(255, 255, 255, 0.06)";
 
   state.chart = new Chart(canvas, {
@@ -230,19 +198,18 @@ function renderChart() {
     data: {
       labels,
       datasets: [{
-        label: "kr/kWh",
         data: values,
         backgroundColor: colors,
         borderColor: borders,
         borderWidth: borderWidths,
-        borderRadius: 8,
+        borderRadius: 6,
         borderSkipped: false,
       }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 800, easing: "easeOutQuart" },
+      animation: { duration: 900, easing: "easeOutQuart" },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -251,14 +218,14 @@ function renderChart() {
           borderWidth: 1,
           padding: 14,
           cornerRadius: 12,
-          titleFont: { size: 13, weight: "600", family: "-apple-system, BlinkMacSystemFont, sans-serif" },
-          bodyFont: { size: 13, family: "-apple-system, BlinkMacSystemFont, sans-serif" },
+          titleFont: { size: 13, weight: "600", family: "-apple-system, sans-serif" },
+          bodyFont: { size: 13, family: "-apple-system, sans-serif" },
           displayColors: false,
           callbacks: {
-            title: (items) => items[0].label,
+            title: (items) => `Kl. ${items[0].label}:00`,
             label: (ctx) => {
               const kr = ctx.parsed.y;
-              const lvl = LEVEL_META[levelOf(kr, stats)].label;
+              const lvl = LEVEL[levelOf(kr, stats)].label;
               return `${fmt(kr)} kr/kWh · ${lvl}`;
             },
             afterLabel: (ctx) => {
@@ -275,7 +242,7 @@ function renderChart() {
           border: { display: false },
           ticks: {
             color: tickColor,
-            font: { size: 11, family: "-apple-system, BlinkMacSystemFont, sans-serif" },
+            font: { size: 11, family: "-apple-system, sans-serif" },
             maxRotation: 0,
             autoSkip: true,
             autoSkipPadding: 12,
@@ -287,9 +254,9 @@ function renderChart() {
           border: { display: false },
           ticks: {
             color: tickColor,
-            font: { size: 11, family: "-apple-system, BlinkMacSystemFont, sans-serif" },
-            callback: (v) => fmt(v) + " kr",
-            padding: 8,
+            font: { size: 11, family: "-apple-system, sans-serif" },
+            callback: (v) => fmt(v),
+            padding: 10,
           },
         },
       },
@@ -317,8 +284,7 @@ function renderCalculator() {
   const { kwh, hours } = state.appliance;
   const pool = [...state.today, ...state.tomorrow];
   const out = document.getElementById("calcOutput");
-
-  if (!pool.length) { out.textContent = "Venter på data..."; return; }
+  if (!pool.length) { out.textContent = "Venter på data…"; return; }
 
   const best = computeWindow(pool, hours, "min");
   const worst = computeWindow(pool, hours, "max");
@@ -327,7 +293,7 @@ function renderCalculator() {
   const runCost = kwh * (best.sum / hours);
   const worstCost = kwh * (worst.sum / hours);
   const savings = worstCost - runCost;
-  const savePct = ((savings / worstCost) * 100).toFixed(0);
+  const savePct = Math.round((savings / worstCost) * 100);
 
   const start = new Date(best.window[0].time_start);
   const end = new Date(best.window[best.window.length - 1].time_end);
@@ -336,10 +302,9 @@ function renderCalculator() {
   const dayTxt = sameDay ? "i dag" : "i morgen";
 
   out.innerHTML = `
-    <div class="calc-when">Start <strong>${dayTxt} kl. ${pad(start.getHours())}:00</strong><br/>
-    slut ca. kl. ${pad(end.getHours())}:00</div>
-    <div class="calc-cost">Estimeret pris: <strong>${fmt(runCost)} kr</strong> · ${kwh} kWh over ${hours} t.</div>
-    <div class="savings-badge">💰 Spar ${fmt(savings)} kr (${savePct}%) ift. værste start</div>
+    <div class="when">Start <strong>${dayTxt} kl. ${pad(start.getHours())}:00</strong>, slut ${pad(end.getHours())}:00.</div>
+    <div class="cost">Estimeret pris <strong>${fmt(runCost)} kr</strong> for ${kwh} kWh over ${hours} t.</div>
+    <div class="savings">Du sparer ${fmt(savings)} kr (${savePct}%) ift. værste start.</div>
   `;
 }
 
@@ -359,9 +324,9 @@ function initTabs() {
 }
 
 function initAppliances() {
-  document.querySelectorAll(".chip-btn").forEach(btn => {
+  document.querySelectorAll(".chip").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".chip-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       state.appliance = {
         key: btn.dataset.appliance,
@@ -385,13 +350,13 @@ function initTheme() {
   const stored = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", stored);
   const btn = document.getElementById("themeBtn");
-  btn.textContent = stored === "dark" ? "☀️" : "🌙";
+  btn.textContent = stored === "dark" ? "◑" : "◐";
   btn.addEventListener("click", () => {
     const cur = document.documentElement.getAttribute("data-theme");
     const next = cur === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem("theme", next);
-    btn.textContent = next === "dark" ? "☀️" : "🌙";
+    btn.textContent = next === "dark" ? "◑" : "◐";
   });
 }
 
@@ -417,7 +382,7 @@ function initReveals() {
         io.unobserve(e.target);
       }
     });
-  }, { threshold: 0.1, rootMargin: "0px 0px -60px 0px" });
+  }, { threshold: 0.12, rootMargin: "0px 0px -80px 0px" });
   document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 }
 
@@ -438,7 +403,6 @@ function toast(msg) {
   setTimeout(() => (t.hidden = true), 4000);
 }
 
-// ------------- boot -------------
 async function boot() {
   initTheme();
   initClock();

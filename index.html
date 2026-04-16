@@ -13,162 +13,142 @@
 
 <nav class="nav">
   <div class="nav-inner">
-    <a class="nav-brand" href="#top">
-      <span class="bolt">⚡</span>
-      <span>Elprisen</span>
-    </a>
+    <a class="nav-brand" href="#top">Elprisen</a>
     <div class="nav-links">
-      <a href="#now">Nu</a>
       <a href="#chart">Timepriser</a>
       <a href="#plan">Planlæg</a>
-      <a href="#all">Alle timer</a>
+      <a href="#all">Detaljer</a>
     </div>
-    <button id="themeBtn" class="nav-theme" aria-label="Skift tema">🌙</button>
+    <button id="themeBtn" class="nav-theme" aria-label="Skift tema">◐</button>
   </div>
 </nav>
 
 <a id="top"></a>
 
-<!-- ============== HERO ============== -->
-<section class="hero" id="now">
-  <div class="hero-eyebrow reveal">Østdanmark · DK2</div>
-  <h1 class="hero-title reveal">
-    Elprisen.<br/>
-    <span class="gradient-text">Klart overblik.</span>
-  </h1>
-  <p class="hero-sub reveal">Realtidspriser pr. time. Smukt præsenteret. Nemt at handle på.</p>
-
-  <div class="hero-price reveal">
-    <div class="price-big">
-      <span id="priceNow">--</span>
-      <span class="price-unit">kr/kWh</span>
+<!-- ============ HERO ============ -->
+<section class="section hero">
+  <div class="container">
+    <p class="eyebrow reveal">Østdanmark · DK2</p>
+    <h1 class="headline reveal">Strømmen koster.</h1>
+    <div class="hero-price reveal">
+      <span id="priceNow">–</span><span class="hero-price-unit">kr</span>
     </div>
-    <div class="price-meta">
-      <span id="priceLevel" class="pill">Indlæser</span>
-      <span id="priceTrend" class="pill subtle">—</span>
-      <span class="pill subtle">
-        <span id="nowDot" class="pdot"></span>
-        <span id="clock">--:--</span>
-      </span>
+    <p class="hero-price-caption reveal">
+      <span id="priceLevel">pr. kWh lige nu</span><span class="sep">·</span><span id="clock">--:--</span>
+    </p>
+    <p class="sub reveal">Spotprisen time for time. Klart og uden støj.</p>
+    <div class="cta-row reveal">
+      <a href="#plan" class="btn-pill">Find billigste time</a>
+      <a href="#chart" class="btn-link">Se hele dagen <span class="chev">›</span></a>
     </div>
-    <div class="hero-cta reveal">
-      <a href="#plan" class="btn-primary">Find billigste time →</a>
-      <label class="vat-toggle">
-        <input type="checkbox" id="vatToggle" checked />
-        <span>Inkl. 25% moms</span>
-      </label>
-    </div>
-  </div>
-
-  <div class="hero-tip reveal" id="nextCheap">Leder efter billigste time...</div>
-</section>
-
-<!-- ============== STATS STRIP ============== -->
-<section class="stats-strip">
-  <div class="stat-card reveal">
-    <div class="stat-label">Laveste i dag</div>
-    <div class="stat-value low" id="statMin">--</div>
-    <div class="stat-hint" id="statMinHint">kl. --</div>
-  </div>
-  <div class="stat-card reveal">
-    <div class="stat-label">Gennemsnit</div>
-    <div class="stat-value" id="statAvg">--</div>
-    <div class="stat-hint">på tværs af 24 timer</div>
-  </div>
-  <div class="stat-card reveal">
-    <div class="stat-label">Højeste i dag</div>
-    <div class="stat-value high" id="statMax">--</div>
-    <div class="stat-hint" id="statMaxHint">kl. --</div>
   </div>
 </section>
 
-<!-- ============== CHART ============== -->
-<section class="feature dark" id="chart">
-  <div class="feature-inner">
-    <div class="feature-eyebrow reveal">Timepriser</div>
-    <h2 class="feature-title reveal">Alle 24 timer.<br/><span class="muted-text">På ét blik.</span></h2>
+<!-- ============ STATS ============ -->
+<section class="section stats-section">
+  <div class="container">
+    <p class="eyebrow reveal">I dag</p>
+    <h2 class="headline-md reveal">Tre tal, der tæller.</h2>
+    <div class="stats-row">
+      <div class="stat reveal">
+        <div class="stat-num low" id="statMin">–</div>
+        <div class="stat-cap">Laveste pris <span id="statMinHint">–</span></div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-num" id="statAvg">–</div>
+        <div class="stat-cap">Gennemsnit over døgnet</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-num high" id="statMax">–</div>
+        <div class="stat-cap">Højeste pris <span id="statMaxHint">–</span></div>
+      </div>
+    </div>
+    <p class="tip reveal" id="nextCheap">Leder efter billigste time…</p>
+  </div>
+</section>
 
+<!-- ============ CHART (dark) ============ -->
+<section class="section dark" id="chart">
+  <div class="container">
+    <p class="eyebrow reveal">Timepriser</p>
+    <h2 class="headline-md light reveal">24 timer. Et blik.</h2>
     <div class="tabs reveal" role="tablist">
       <button class="tab active" data-day="today">I dag</button>
       <button class="tab" data-day="tomorrow" id="tabTomorrow">I morgen</button>
     </div>
-
     <div class="chart-card reveal">
       <div class="chart-wrap">
         <canvas id="priceChart"></canvas>
         <div id="chartEmpty" class="chart-empty" hidden>
-          Morgendagens priser udgives typisk omkring kl. 13.
+          Morgendagens priser udgives omkring kl. 13.
         </div>
       </div>
-      <div class="legend">
-        <span><i class="sw green"></i>Billig</span>
-        <span><i class="sw yellow"></i>Normal</span>
-        <span><i class="sw orange"></i>Høj</span>
-        <span><i class="sw red"></i>Dyr</span>
-      </div>
+    </div>
+    <div class="legend reveal">
+      <span><i class="sw green"></i>Billig</span>
+      <span><i class="sw yellow"></i>Normal</span>
+      <span><i class="sw orange"></i>Høj</span>
+      <span><i class="sw red"></i>Dyr</span>
     </div>
   </div>
 </section>
 
-<!-- ============== BEST / WORST ============== -->
-<section class="feature">
-  <div class="feature-inner narrow">
-    <div class="feature-eyebrow reveal">Top &amp; bund</div>
-    <h2 class="feature-title reveal">Bedste timer.<br/><span class="gradient-text">Dyreste timer.</span></h2>
-
-    <div class="split-grid">
-      <div class="split-card good reveal">
-        <div class="split-head">
-          <span class="split-icon">✓</span>
-          <h3>De 3 billigste</h3>
-        </div>
+<!-- ============ BEST / WORST ============ -->
+<section class="section">
+  <div class="container">
+    <p class="eyebrow reveal">Top &amp; bund</p>
+    <h2 class="headline-md reveal">Rigtige tidspunkter.<br/><span class="muted">Og dem du undgår.</span></h2>
+    <div class="split">
+      <div class="reveal">
+        <p class="split-label good">De 3 billigste timer</p>
         <ul class="ranklist" id="cheapList"></ul>
       </div>
-      <div class="split-card bad reveal">
-        <div class="split-head">
-          <span class="split-icon">⚠</span>
-          <h3>De 3 dyreste</h3>
-        </div>
+      <div class="reveal">
+        <p class="split-label bad">De 3 dyreste timer</p>
         <ul class="ranklist" id="expList"></ul>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============== PLANNER ============== -->
-<section class="feature gradient-bg" id="plan">
-  <div class="feature-inner narrow">
-    <div class="feature-eyebrow reveal">Planlægning</div>
-    <h2 class="feature-title reveal">Hvornår skal jeg<br/><span class="gradient-text">køre det?</span></h2>
-    <p class="feature-lead reveal">Vælg apparat — vi finder det billigste vindue for dig.</p>
+<!-- ============ PLANNER ============ -->
+<section class="section" id="plan">
+  <div class="container">
+    <p class="eyebrow reveal">Planlæg</p>
+    <h2 class="headline-md reveal">Hvornår skal den køre?</h2>
+    <p class="sub reveal">Vælg et apparat. Vi finder vinduet for dig.</p>
 
     <div class="appliance-picker reveal">
-      <button class="chip-btn active" data-appliance="washer" data-kwh="1.0" data-hours="2">🧺 Vaskemaskine</button>
-      <button class="chip-btn" data-appliance="dishwasher" data-kwh="1.2" data-hours="2">🍽️ Opvasker</button>
-      <button class="chip-btn" data-appliance="dryer" data-kwh="2.5" data-hours="1">👕 Tørretumbler</button>
-      <button class="chip-btn" data-appliance="ev" data-kwh="11" data-hours="4">🔌 Elbil 11 kW</button>
-      <button class="chip-btn" data-appliance="oven" data-kwh="2.0" data-hours="1">🔥 Ovn</button>
-      <button class="chip-btn" data-appliance="heatpump" data-kwh="3.0" data-hours="6">🌡️ Varmepumpe</button>
+      <button class="chip active" data-appliance="washer" data-kwh="1.0" data-hours="2">Vaskemaskine</button>
+      <button class="chip" data-appliance="dishwasher" data-kwh="1.2" data-hours="2">Opvasker</button>
+      <button class="chip" data-appliance="dryer" data-kwh="2.5" data-hours="1">Tørretumbler</button>
+      <button class="chip" data-appliance="ev" data-kwh="11" data-hours="4">Elbil 11 kW</button>
+      <button class="chip" data-appliance="oven" data-kwh="2.0" data-hours="1">Ovn</button>
+      <button class="chip" data-appliance="heatpump" data-kwh="3.0" data-hours="6">Varmepumpe</button>
     </div>
 
-    <div class="calc-card reveal" id="calcOutput">Beregner anbefaling...</div>
+    <div class="answer reveal" id="calcOutput">Beregner…</div>
   </div>
 </section>
 
-<!-- ============== ALL HOURS ============== -->
-<section class="feature" id="all">
-  <div class="feature-inner narrow">
-    <div class="feature-eyebrow reveal">Detaljer</div>
-    <h2 class="feature-title reveal">Alle timer.<br/><span class="muted-text">Præcist.</span></h2>
+<!-- ============ ALL HOURS ============ -->
+<section class="section soft" id="all">
+  <div class="container narrow">
+    <p class="eyebrow reveal">Detaljer</p>
+    <h2 class="headline-md reveal">Hver time. Hele dagen.</h2>
 
-    <div class="hours-wrap reveal">
+    <div class="hours-card reveal">
       <div class="hours-head">
-        <span id="tableChip" class="pill subtle">I dag</span>
+        <span id="tableChip" class="chip-label">I dag</span>
+        <label class="vat-inline">
+          <input type="checkbox" id="vatToggle" checked />
+          <span>Inkl. 25% moms</span>
+        </label>
       </div>
       <div class="table-scroll">
         <table class="hours-table">
           <thead>
-            <tr><th>Time</th><th>Pris</th><th>Niveau</th><th class="bar-col">Visuelt</th></tr>
+            <tr><th>Time</th><th>Pris</th><th>Niveau</th><th class="bar-col"></th></tr>
           </thead>
           <tbody id="hoursBody"></tbody>
         </table>
@@ -178,9 +158,9 @@
 </section>
 
 <footer>
-  <div class="footer-inner">
-    <div>Data: <a href="https://www.elprisenligenu.dk" target="_blank" rel="noopener">elprisenligenu.dk</a> · Region DK2</div>
-    <div class="foot-muted">Opdateret <span id="lastUpdate">–</span> · Spotpris ekskl. transport &amp; afgifter</div>
+  <div class="container">
+    <p>Data · <a href="https://www.elprisenligenu.dk" target="_blank" rel="noopener">elprisenligenu.dk</a></p>
+    <p class="foot-muted">Spotpris for DK2. Ekskl. transport og afgifter. Opdateret <span id="lastUpdate">–</span>.</p>
   </div>
 </footer>
 
