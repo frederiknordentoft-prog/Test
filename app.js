@@ -1,17 +1,37 @@
 // ============================================================
 // Elprisen DK2 — app.js
-// Data: elprisenligenu.dk (no key)
+// Data: elprisenligenu.dk + Energinet/Radius/Skat tariffs (2026)
 // ============================================================
 
 const REGION = "DK2";
 const API = (date) =>
   `https://www.elprisenligenu.dk/api/v1/prices/${date.getFullYear()}/${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${REGION}.json`;
+
+// Tariffs in kr/kWh (ex. moms). 2026 rates.
+const TARIFFS = {
+  elafgift: 0.008,              // 0.8 øre — midlertidig nedsat 2026-2027
+  energinetTransmission: 0.043, // 4.3 øre
+  energinetSystem: 0.072,       // 7.2 øre
+};
+const GASEL_MARKUP = 0.06;      // 6 øre
 const VAT_RATE = 0.25;
+
+// Radius Elnet C-customer time-of-use tariffs (kr/kWh, ex. moms). 2026.
+// Hours: Lav 00-06, Spids 17-21, Høj = alt andet
+function radiusTariff(hour, month) {
+  // Summer: Apr 1 – Sep 30 (months 3-8, 0-indexed)
+  const isSummer = month >= 3 && month <= 8;
+  if (hour >= 0 && hour < 6) return 0.1327;                    // Lav (året rundt)
+  if (hour >= 17 && hour < 21) return isSummer ? 0.5176 : 1.1945; // Spids
+  return isSummer ? 0.1991 : 0.3982;                           // Høj
+}
 
 const state = {
   today: [],
   tomorrow: [],
   view: "today",
+  tariffs: true,
+  gasel: false,
   vat: true,
   appliance: { key: "washer", kwh: 1.0, hours: 2 },
   chart: null,
@@ -23,7 +43,18 @@ const fmt = (n) => (Math.round(n * 100) / 100).toFixed(2).replace(".", ",");
 const hourLabel = (iso) => pad(new Date(iso).getHours()) + ":00";
 const hourNum = (iso) => pad(new Date(iso).getHours());
 
-function withVat(kr) { return state.vat ? kr * (1 + VAT_RATE) : kr; }
+// Compute final consumer price for one hour's spot price
+function fullPrice(spotKr, timeStartIso) {
+  let p = spotKr;
+  if (state.gasel) p += GASEL_MARKUP;
+  if (state.tariffs) {
+    p += TARIFFS.elafgift + TARIFFS.energinetTransmission + TARIFFS.energinetSystem;
+    const d = new Date(timeStartIso);
+    p += radiusTariff(d.getHours(), d.getMonth());
+  }
+  if (state.vat) p *= 1 + VAT_RATE;
+  return p;
+}
 
 const LEVEL = {
   good: { label: "Billig", color: "#30d158" },
@@ -44,7 +75,7 @@ function levelOf(price, stats) {
 
 function statsOf(prices) {
   if (!prices.length) return { min: 0, max: 0, avg: 0, minIdx: 0, maxIdx: 0 };
-  const vals = prices.map(p => withVat(p.DKK_per_kWh));
+  const vals = prices.map(p => fullPrice(p.DKK_per_kWh, p.time_start));
   const min = Math.min(...vals);
   const max = Math.max(...vals);
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
@@ -73,13 +104,10 @@ async function loadData() {
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-
   const [td, tm] = await Promise.all([fetchDay(today), fetchDay(tomorrow)]);
   state.today = td;
   state.tomorrow = tm;
-
   if (!td.length) toast("Kunne ikke hente dagens priser.");
-
   const tomorrowTab = document.getElementById("tabTomorrow");
   tomorrowTab.disabled = tm.length === 0;
 }
@@ -91,7 +119,7 @@ function renderHero() {
 
   const stats = statsOf(prices);
   const idx = currentHourIndex(prices);
-  const cur = idx >= 0 ? withVat(prices[idx].DKK_per_kWh) : stats.avg;
+  const cur = idx >= 0 ? fullPrice(prices[idx].DKK_per_kWh, prices[idx].time_start) : stats.avg;
 
   document.getElementById("priceNow").textContent = fmt(cur);
   document.getElementById("statMin").textContent = fmt(stats.min);
@@ -104,18 +132,29 @@ function renderHero() {
   document.getElementById("priceLevel").textContent =
     `${LEVEL[lvl].label} pris pr. kWh`;
 
-  // Next cheap hour tip
+  // Caption echoing pricing mode
+  const parts = ["Spot"];
+  if (state.tariffs) parts.push("afgifter");
+  if (state.gasel) parts.push("Gasel");
+  if (state.vat) parts.push("moms");
+  const modeTxt = parts.join(" + ");
+  const echo = document.getElementById("modeEcho");
+  if (echo) echo.textContent = modeTxt;
+
+  // Next cheap hour tip (based on spot, since tariffs may re-rank — but tip uses full price)
   const forward = [];
   if (idx >= 0) prices.slice(idx + 1).forEach(p => forward.push(p));
   state.tomorrow.forEach(p => forward.push(p));
 
   if (forward.length) {
-    const cheapest = forward.reduce((a, b) => (a.DKK_per_kWh < b.DKK_per_kWh ? a : b));
+    const cheapest = forward.reduce((a, b) =>
+      fullPrice(a.DKK_per_kWh, a.time_start) < fullPrice(b.DKK_per_kWh, b.time_start) ? a : b
+    );
     const t = new Date(cheapest.time_start);
     const now = new Date();
     const hoursAway = Math.max(1, Math.round((t - now) / 3600000));
     const dayTxt = t.getDate() === now.getDate() ? "i dag" : "i morgen";
-    const price = withVat(cheapest.DKK_per_kWh);
+    const price = fullPrice(cheapest.DKK_per_kWh, cheapest.time_start);
     document.getElementById("nextCheap").innerHTML =
       `Billigste kommende time er <strong>${pad(t.getHours())}:00 ${dayTxt}</strong> til ${fmt(price)} kr/kWh — om ${hoursAway} timer.`;
   }
@@ -126,14 +165,13 @@ function renderLists() {
   const prices = state.view === "today" ? state.today : state.tomorrow;
   if (!prices.length) return;
 
-  const sorted = [...prices].sort((a, b) => a.DKK_per_kWh - b.DKK_per_kWh);
-  const cheap = sorted.slice(0, 3);
-  const exp = sorted.slice(-3).reverse();
+  const withFinal = prices.map(p => ({ p, final: fullPrice(p.DKK_per_kWh, p.time_start) }));
+  withFinal.sort((a, b) => a.final - b.final);
+  const cheap = withFinal.slice(0, 3);
+  const exp = withFinal.slice(-3).reverse();
 
-  const mkLi = (p) => {
-    const price = withVat(p.DKK_per_kWh);
-    return `<li><span class="hour">${hourLabel(p.time_start)}</span><span class="val">${fmt(price)} kr</span></li>`;
-  };
+  const mkLi = ({ p, final }) =>
+    `<li><span class="hour">${hourLabel(p.time_start)}</span><span class="val">${fmt(final)} kr</span></li>`;
   document.getElementById("cheapList").innerHTML = cheap.map(mkLi).join("");
   document.getElementById("expList").innerHTML = exp.map(mkLi).join("");
 
@@ -151,7 +189,7 @@ function renderTable() {
   const nowIdx = state.view === "today" ? currentHourIndex(prices) : -1;
 
   body.innerHTML = prices.map((p, i) => {
-    const price = withVat(p.DKK_per_kWh);
+    const price = fullPrice(p.DKK_per_kWh, p.time_start);
     const lvl = levelOf(price, stats);
     const meta = LEVEL[lvl];
     const widthPct = Math.max(6, ((price - stats.min) / (stats.max - stats.min || 1)) * 100);
@@ -182,7 +220,7 @@ function renderChart() {
 
   const stats = statsOf(prices);
   const labels = prices.map(p => hourNum(p.time_start));
-  const values = prices.map(p => withVat(p.DKK_per_kWh));
+  const values = prices.map(p => fullPrice(p.DKK_per_kWh, p.time_start));
   const colors = values.map(v => LEVEL[levelOf(v, stats)].color);
   const nowIdx = state.view === "today" ? currentHourIndex(prices) : -1;
   const borders = values.map((_, i) => i === nowIdx ? "#ffffff" : "transparent");
@@ -272,7 +310,7 @@ function computeWindow(prices, hours, mode) {
   let best = null;
   for (let i = 0; i <= pool.length - hours; i++) {
     const win = pool.slice(i, i + hours);
-    const sum = win.reduce((s, p) => s + withVat(p.DKK_per_kWh), 0);
+    const sum = win.reduce((s, p) => s + fullPrice(p.DKK_per_kWh, p.time_start), 0);
     if (!best) best = { sum, window: win };
     else if (mode === "min" && sum < best.sum) best = { sum, window: win };
     else if (mode === "max" && sum > best.sum) best = { sum, window: win };
@@ -316,9 +354,7 @@ function initTabs() {
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
       btn.classList.add("active");
       state.view = btn.dataset.day;
-      renderChart();
-      renderLists();
-      renderTable();
+      renderChart(); renderLists(); renderTable();
     });
   });
 }
@@ -338,11 +374,32 @@ function initAppliances() {
   });
 }
 
-function initVat() {
-  const toggle = document.getElementById("vatToggle");
-  toggle.addEventListener("change", () => {
-    state.vat = toggle.checked;
-    renderAll();
+function initModes() {
+  // Restore persisted modes
+  const saved = JSON.parse(localStorage.getItem("modes") || "null");
+  if (saved) {
+    state.tariffs = !!saved.tariffs;
+    state.gasel = !!saved.gasel;
+    state.vat = !!saved.vat;
+  }
+  syncModeChips();
+
+  document.querySelectorAll(".mode-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const m = chip.dataset.mode;
+      state[m] = !state[m];
+      chip.classList.toggle("active", state[m]);
+      localStorage.setItem("modes", JSON.stringify({
+        tariffs: state.tariffs, gasel: state.gasel, vat: state.vat,
+      }));
+      renderAll();
+    });
+  });
+}
+
+function syncModeChips() {
+  document.querySelectorAll(".mode-chip").forEach(chip => {
+    chip.classList.toggle("active", !!state[chip.dataset.mode]);
   });
 }
 
@@ -386,6 +443,15 @@ function initReveals() {
   document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 }
 
+function initScrollTop() {
+  // Ensure first load starts at top, regardless of browser restore or hash
+  window.addEventListener("load", () => {
+    if (!location.hash || location.hash === "#top") {
+      window.scrollTo(0, 0);
+    }
+  });
+}
+
 function renderAll() {
   renderHero();
   renderChart();
@@ -404,11 +470,12 @@ function toast(msg) {
 }
 
 async function boot() {
+  initScrollTop();
   initTheme();
   initClock();
   initTabs();
   initAppliances();
-  initVat();
+  initModes();
   initReveals();
 
   await loadData();

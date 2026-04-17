@@ -6,6 +6,10 @@
 <title>Elprisen · Østdanmark</title>
 <meta name="theme-color" content="#fbfbfd" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
+<script>
+  // Scroll to top on load — prevent browser restoration / sticky-nav offset
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="styles.css" />
 </head>
@@ -18,6 +22,7 @@
       <a href="#chart">Timepriser</a>
       <a href="#plan">Planlæg</a>
       <a href="#all">Detaljer</a>
+      <a href="#story">Historie</a>
     </div>
     <button id="themeBtn" class="nav-theme" aria-label="Skift tema">◐</button>
   </div>
@@ -37,6 +42,14 @@
       <span id="priceLevel">pr. kWh lige nu</span><span class="sep">·</span><span id="clock">--:--</span>
     </p>
     <p class="sub reveal">Spotprisen time for time. Klart og uden støj.</p>
+
+    <div class="mode-row reveal" role="group" aria-label="Vis priser med">
+      <span class="mode-label">Vis med</span>
+      <button class="mode-chip active" id="modeTariffs" data-mode="tariffs">Afgifter</button>
+      <button class="mode-chip" id="modeGasel" data-mode="gasel">Gasel +6 øre</button>
+      <button class="mode-chip active" id="modeVat" data-mode="vat">Moms</button>
+    </div>
+
     <div class="cta-row reveal">
       <a href="#plan" class="btn-pill">Find billigste time</a>
       <a href="#chart" class="btn-link">Se hele dagen <span class="chev">›</span></a>
@@ -140,10 +153,7 @@
     <div class="hours-card reveal">
       <div class="hours-head">
         <span id="tableChip" class="chip-label">I dag</span>
-        <label class="vat-inline">
-          <input type="checkbox" id="vatToggle" checked />
-          <span>Inkl. 25% moms</span>
-        </label>
+        <span class="chip-label" id="modeEcho">Spot + afgifter + moms</span>
       </div>
       <div class="table-scroll">
         <table class="hours-table">
@@ -157,10 +167,52 @@
   </div>
 </section>
 
+<!-- ============ STORY (dark, cinematic) ============ -->
+<section class="section story" id="story">
+  <div class="container narrow">
+    <p class="eyebrow light reveal">Strømmens historie</p>
+    <h2 class="story-title reveal">Usynlig.<br/>Uundværlig.</h2>
+
+    <div class="story-paragraph reveal">
+      <p>For 140 år siden var elektriciteten et mirakel. En glødetråd bag glas. En pæreblomst, der ikke visnede.</p>
+    </div>
+
+    <div class="story-paragraph reveal">
+      <p>I dag er den forsvundet ind i væggene. Usynlig. Men trækker vi stikket, står alt stille.</p>
+    </div>
+
+    <h3 class="story-subtitle reveal">Og så gjorde vi den grøn.</h3>
+    <div class="story-paragraph reveal">
+      <p>Vinden i Nordsøen. Solen over markerne. Biomassen i Avedøre. Danmark fører en revolution — stille, præcist, time efter time.</p>
+    </div>
+
+    <div class="story-stat reveal">
+      <div class="story-stat-num">80%</div>
+      <p class="story-stat-cap">af dansk strøm kommer fra vedvarende kilder. I 2030 er det 100%.</p>
+    </div>
+
+    <h3 class="story-subtitle reveal">Men hver time har en pris.</h3>
+    <div class="story-paragraph reveal">
+      <p>Når vinden tager fat, falder prisen. Når den stilner, stiger den. Markedet puster med vejret.</p>
+    </div>
+
+    <div class="story-paragraph reveal">
+      <p>Din aftensmad koster ikke bare kroner. Den koster kilowatt-timer. Og kilowatt-timer er valg.</p>
+    </div>
+
+    <h3 class="story-subtitle reveal">Synliggør. Så kan du vælge.</h3>
+    <div class="story-paragraph reveal">
+      <p>Denne side er bygget til én ting: at vise dig, hvornår strømmen er billig, og hvornår den er dyr. Så du kan starte vasken, lade bilen, tænde ovnen — på vindens vilkår, ikke markedets.</p>
+    </div>
+
+    <p class="story-outro reveal">Elprisen. Synliggjort.</p>
+  </div>
+</section>
+
 <footer>
   <div class="container">
-    <p>Data · <a href="https://www.elprisenligenu.dk" target="_blank" rel="noopener">elprisenligenu.dk</a></p>
-    <p class="foot-muted">Spotpris for DK2. Ekskl. transport og afgifter. Opdateret <span id="lastUpdate">–</span>.</p>
+    <p>Data · <a href="https://www.elprisenligenu.dk" target="_blank" rel="noopener">elprisenligenu.dk</a> · Tariffer fra Energinet &amp; Radius · Afgifter fra Skat.dk</p>
+    <p class="foot-muted">Spotpris for DK2. Radius-nettarif time-differentieret. Opdateret <span id="lastUpdate">–</span>.</p>
   </div>
 </footer>
 
