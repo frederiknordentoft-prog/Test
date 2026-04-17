@@ -92,6 +92,7 @@
     <div class="chart-card reveal">
       <div class="chart-wrap">
         <canvas id="priceChart"></canvas>
+        <div id="nowBadge" class="now-badge" hidden>NU</div>
         <div id="chartEmpty" class="chart-empty" hidden>
           Morgendagens priser udgives omkring kl. 13.
         </div>
@@ -156,12 +157,7 @@
         <span class="chip-label" id="modeEcho">Spot + afgifter + moms</span>
       </div>
       <div class="table-scroll">
-        <table class="hours-table">
-          <thead>
-            <tr><th>Time</th><th>Pris</th><th>Niveau</th><th class="bar-col"></th></tr>
-          </thead>
-          <tbody id="hoursBody"></tbody>
-        </table>
+        <div class="hours-grid" id="hoursGrid"></div>
       </div>
     </div>
   </div>

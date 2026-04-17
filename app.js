@@ -183,36 +183,85 @@ function renderLists() {
 // ------------- table -------------
 function renderTable() {
   const prices = state.view === "today" ? state.today : state.tomorrow;
-  const body = document.getElementById("hoursBody");
-  if (!prices.length) { body.innerHTML = ""; return; }
+  const grid = document.getElementById("hoursGrid");
+  if (!prices.length) { grid.innerHTML = ""; return; }
 
   const stats = statsOf(prices);
   const nowIdx = state.view === "today" ? currentHourIndex(prices) : -1;
 
-  body.innerHTML = prices.map((p, i) => {
+  grid.innerHTML = prices.map((p, i) => {
     const price = fullPrice(p.DKK_per_kWh, p.time_start);
     const lvl = levelOf(price, stats);
     const meta = LEVEL[lvl];
     const widthPct = Math.max(6, ((price - stats.min) / (stats.max - stats.min || 1)) * 100);
     const isNow = i === nowIdx;
-    return `<tr class="${isNow ? "now" : ""}">
-      <td>${hourLabel(p.time_start)}</td>
-      <td class="val">${fmt(price)} kr</td>
-      <td><span class="lvl lvl-${lvl}">${meta.label}</span></td>
-      <td><div class="bar" style="width:${widthPct}%; background:${meta.color}"></div></td>
-    </tr>`;
+    return `<div class="hour-row ${isNow ? "now" : ""}" data-hour="${i}">
+      <span class="hour-time">${hourLabel(p.time_start)}</span>
+      <span class="hour-val">${fmt(price)} kr</span>
+      <span class="hour-lvl lvl-${lvl}">${meta.label}</span>
+      <span class="hour-bar" style="width:${widthPct}%; background:${meta.color}"></span>
+    </div>`;
   }).join("");
 }
 
 // ------------- chart -------------
+function hexWithAlpha(hex, alpha) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// Plugin: dashed average line + "avg" label
+const avgLinePlugin = {
+  id: "avgLine",
+  afterDatasetsDraw(chart, _args, opts) {
+    const y = opts && opts.avg;
+    if (!y) return;
+    const { ctx, chartArea: { left, right }, scales } = chart;
+    const yPix = scales.y.getPixelForValue(y);
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(left, yPix);
+    ctx.lineTo(right, yPix);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(235, 235, 245, 0.6)";
+    ctx.font = "500 10.5px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(`gns. ${fmt(y)}`, right - 6, yPix - 5);
+    ctx.restore();
+  },
+};
+
+function positionNowBadge(chart, nowIdx) {
+  const badge = document.getElementById("nowBadge");
+  if (!badge) return;
+  if (nowIdx < 0) { badge.hidden = true; return; }
+  const meta = chart.getDatasetMeta(0);
+  const bar = meta.data[nowIdx];
+  if (!bar) { badge.hidden = true; return; }
+  const wrap = badge.parentElement.getBoundingClientRect();
+  const canvas = chart.canvas.getBoundingClientRect();
+  const offsetX = canvas.left - wrap.left + bar.x;
+  const offsetY = canvas.top - wrap.top + bar.y;
+  badge.style.left = offsetX + "px";
+  badge.style.top = offsetY + "px";
+  badge.hidden = false;
+}
+
 function renderChart() {
   const prices = state.view === "today" ? state.today : state.tomorrow;
   const empty = document.getElementById("chartEmpty");
   const canvas = document.getElementById("priceChart");
+  const badge = document.getElementById("nowBadge");
 
   if (!prices.length) {
     empty.hidden = false;
     canvas.style.display = "none";
+    if (badge) badge.hidden = true;
     if (state.chart) { state.chart.destroy(); state.chart = null; }
     return;
   }
@@ -224,8 +273,21 @@ function renderChart() {
   const values = prices.map(p => fullPrice(p.DKK_per_kWh, p.time_start));
   const colors = values.map(v => LEVEL[levelOf(v, stats)].color);
   const nowIdx = state.view === "today" ? currentHourIndex(prices) : -1;
+
+  // Subtle vertical gradient per bar — top: color, bottom: color at 55%
+  const bgColors = (context) => {
+    const { chart, dataIndex } = context;
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return colors[dataIndex];
+    const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    g.addColorStop(0, colors[dataIndex]);
+    g.addColorStop(1, hexWithAlpha(colors[dataIndex], 0.55));
+    return g;
+  };
+
   const borders = values.map((_, i) => i === nowIdx ? "#ffffff" : "transparent");
   const borderWidths = values.map((_, i) => i === nowIdx ? 2 : 0);
+  const baseHoverBg = values.map((_, i) => hexWithAlpha(colors[i], 1));
 
   if (state.chart) state.chart.destroy();
 
@@ -238,19 +300,35 @@ function renderChart() {
       labels,
       datasets: [{
         data: values,
-        backgroundColor: colors,
+        backgroundColor: bgColors,
+        hoverBackgroundColor: baseHoverBg,
         borderColor: borders,
         borderWidth: borderWidths,
-        borderRadius: 6,
+        borderRadius: 8,
         borderSkipped: false,
+        barPercentage: 0.9,
+        categoryPercentage: 0.9,
       }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 900, easing: "easeOutQuart" },
+      animation: {
+        duration: 900,
+        easing: "easeOutQuart",
+        onComplete: () => positionNowBadge(state.chart, nowIdx),
+      },
+      onHover: (e, els) => {
+        e.native.target.style.cursor = els.length ? "pointer" : "default";
+      },
+      onClick: (_e, els) => {
+        if (!els.length) return;
+        const i = els[0].index;
+        jumpToHour(i);
+      },
       plugins: {
         legend: { display: false },
+        avgLine: { avg: stats.avg },
         tooltip: {
           backgroundColor: "rgba(28, 28, 30, 0.98)",
           borderColor: "rgba(255, 255, 255, 0.1)",
@@ -270,7 +348,7 @@ function renderChart() {
             afterLabel: (ctx) => {
               const diff = ctx.parsed.y - stats.avg;
               const sign = diff >= 0 ? "+" : "";
-              return `${sign}${fmt(diff)} kr vs. gns.`;
+              return [`${sign}${fmt(diff)} kr vs. gns.`, "", "Klik for at se i tabel"];
             },
           },
         },
@@ -300,7 +378,22 @@ function renderChart() {
         },
       },
     },
+    plugins: [avgLinePlugin],
   });
+
+  // Re-position badge on layout/resize
+  if (state._badgeRO) state._badgeRO.disconnect();
+  state._badgeRO = new ResizeObserver(() => positionNowBadge(state.chart, nowIdx));
+  state._badgeRO.observe(canvas.parentElement);
+}
+
+function jumpToHour(idx) {
+  const row = document.querySelector(`.hour-row[data-hour="${idx}"]`);
+  if (!row) return;
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  row.classList.remove("flash");
+  void row.offsetWidth;
+  row.classList.add("flash");
 }
 
 // ------------- calculator -------------
