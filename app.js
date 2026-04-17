@@ -7,22 +7,23 @@ const REGION = "DK2";
 const API = (date) =>
   `https://www.elprisenligenu.dk/api/v1/prices/${date.getFullYear()}/${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${REGION}.json`;
 
-// Tariffs in kr/kWh (ex. moms). 2026 rates.
+// Tariffs in kr/kWh (ex. moms). 2026 rates, kalibreret mod faktisk Gasel-regning.
 const TARIFFS = {
   elafgift: 0.008,              // 0.8 øre — midlertidig nedsat 2026-2027
-  energinetTransmission: 0.043, // 4.3 øre
+  energinetTransmission: 0.047, // 4.7 øre
   energinetSystem: 0.072,       // 7.2 øre
 };
 const GASEL_MARKUP = 0.06;      // 6 øre
 const VAT_RATE = 0.25;
 
 // Radius Elnet C-customer time-of-use tariffs (kr/kWh, ex. moms). 2026.
+// Kalibreret mod faktisk Gasel-regning — summer spids er lavere end stromligning.dk angiver.
 // Hours: Lav 00-06, Spids 17-21, Høj = alt andet
 function radiusTariff(hour, month) {
   // Summer: Apr 1 – Sep 30 (months 3-8, 0-indexed)
   const isSummer = month >= 3 && month <= 8;
   if (hour >= 0 && hour < 6) return 0.1327;                    // Lav (året rundt)
-  if (hour >= 17 && hour < 21) return isSummer ? 0.5176 : 1.1945; // Spids
+  if (hour >= 17 && hour < 21) return isSummer ? 0.4565 : 1.1945; // Spids
   return isSummer ? 0.1991 : 0.3982;                           // Høj
 }
 
