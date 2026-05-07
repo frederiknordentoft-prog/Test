@@ -1,4 +1,5 @@
 import { Vec2 } from './vec2.js';
+import { polygonPolygon, circlePolygon } from './sat.js';
 
 export class Engine {
   constructor({
@@ -81,27 +82,46 @@ export class Engine {
   #resolvePair(a, b) {
     if (a.static && b.static) return;
 
-    const delta = b.position.sub(a.position);
-    const distSq = delta.lengthSq();
-    const minDist = a.radius + b.radius;
-    if (distSq >= minDist * minDist || distSq < 1e-12) return;
+    // Broad-phase: bounding circles
+    const dx = b.position.x - a.position.x;
+    const dy = b.position.y - a.position.y;
+    const r = a.boundingRadius + b.boundingRadius;
+    if (dx * dx + dy * dy > r * r) return;
 
-    const dist = Math.sqrt(distSq);
-    const normal = delta.scale(1 / dist);
-    const overlap = minDist - dist;
+    let bodyA = a;
+    let bodyB = b;
+    if (a.shape === 'polygon' && b.shape === 'circle') {
+      bodyA = b;
+      bodyB = a;
+    }
 
+    let result = null;
+    if (bodyA.shape === 'circle' && bodyB.shape === 'circle') {
+      result = circleCircle(bodyA, bodyB);
+    } else if (bodyA.shape === 'circle' && bodyB.shape === 'polygon') {
+      result = circlePolygon(bodyA.position, bodyA.radius, bodyB.worldVertices(), bodyB.position);
+    } else if (bodyA.shape === 'polygon' && bodyB.shape === 'polygon') {
+      result = polygonPolygon(bodyA.worldVertices(), bodyA.position, bodyB.worldVertices(), bodyB.position);
+    }
+
+    if (result) {
+      this.#applyContactImpulse(bodyA, bodyB, result.contact, result.normal, result.depth);
+    }
+  }
+
+  #applyContactImpulse(a, b, contact, normal, depth) {
     const invSum = a.invMass + b.invMass;
     if (invSum === 0) return;
 
-    const corrA = normal.scale(overlap * a.invMass / invSum);
-    const corrB = normal.scale(overlap * b.invMass / invSum);
+    const corrA = normal.scale(depth * a.invMass / invSum);
+    const corrB = normal.scale(depth * b.invMass / invSum);
     a.position = a.position.sub(corrA);
     a.previous = a.previous.sub(corrA);
     b.position = b.position.add(corrB);
     b.previous = b.previous.add(corrB);
 
-    const rA = normal.scale(a.radius);
-    const rB = normal.scale(-b.radius);
+    const rA = contact.sub(a.position);
+    const rB = contact.sub(b.position);
 
     const dispA = a.position.sub(a.previous);
     const dispB = b.position.sub(b.previous);
@@ -148,39 +168,72 @@ export class Engine {
 
   #applyBounds() {
     if (!this.bounds) return;
-    const { minX, minY, maxX, maxY } = this.bounds;
     for (const body of this.bodies) {
       if (body.static) continue;
-      const r = body.radius;
+      if (body.shape === 'polygon') this.#polygonBounds(body);
+      else this.#circleBounds(body);
+    }
+  }
 
-      if (body.position.x - r < minX) {
-        const o = minX - (body.position.x - r);
-        body.position.x += o;
-        body.previous.x += o;
-        this.#wallImpulse(body, new Vec2(1, 0));
-      } else if (body.position.x + r > maxX) {
-        const o = (body.position.x + r) - maxX;
-        body.position.x -= o;
-        body.previous.x -= o;
-        this.#wallImpulse(body, new Vec2(-1, 0));
+  #circleBounds(body) {
+    const { minX, minY, maxX, maxY } = this.bounds;
+    const r = body.radius;
+
+    if (body.position.x - r < minX) {
+      const o = minX - (body.position.x - r);
+      body.position.x += o;
+      body.previous.x += o;
+      this.#staticContactImpulse(body, new Vec2(-r, 0), new Vec2(1, 0));
+    } else if (body.position.x + r > maxX) {
+      const o = (body.position.x + r) - maxX;
+      body.position.x -= o;
+      body.previous.x -= o;
+      this.#staticContactImpulse(body, new Vec2(r, 0), new Vec2(-1, 0));
+    }
+
+    if (body.position.y - r < minY) {
+      const o = minY - (body.position.y - r);
+      body.position.y += o;
+      body.previous.y += o;
+      this.#staticContactImpulse(body, new Vec2(0, -r), new Vec2(0, 1));
+    } else if (body.position.y + r > maxY) {
+      const o = (body.position.y + r) - maxY;
+      body.position.y -= o;
+      body.previous.y -= o;
+      this.#staticContactImpulse(body, new Vec2(0, r), new Vec2(0, -1));
+    }
+  }
+
+  #polygonBounds(body) {
+    const { minX, minY, maxX, maxY } = this.bounds;
+    const verts = body.worldVertices();
+    const walls = [
+      { n: new Vec2(1, 0), depth: (v) => minX - v.x },
+      { n: new Vec2(-1, 0), depth: (v) => v.x - maxX },
+      { n: new Vec2(0, 1), depth: (v) => minY - v.y },
+      { n: new Vec2(0, -1), depth: (v) => v.y - maxY },
+    ];
+
+    for (const wall of walls) {
+      let deepest = null;
+      let maxDepth = 0;
+      for (const v of verts) {
+        const d = wall.depth(v);
+        if (d > maxDepth) {
+          maxDepth = d;
+          deepest = v;
+        }
       }
-
-      if (body.position.y - r < minY) {
-        const o = minY - (body.position.y - r);
-        body.position.y += o;
-        body.previous.y += o;
-        this.#wallImpulse(body, new Vec2(0, 1));
-      } else if (body.position.y + r > maxY) {
-        const o = (body.position.y + r) - maxY;
-        body.position.y -= o;
-        body.previous.y -= o;
-        this.#wallImpulse(body, new Vec2(0, -1));
+      if (deepest && maxDepth > 0) {
+        const r = deepest.sub(body.position);
+        body.position = body.position.add(wall.n.scale(maxDepth));
+        body.previous = body.previous.add(wall.n.scale(maxDepth));
+        this.#staticContactImpulse(body, r, wall.n);
       }
     }
   }
 
-  #wallImpulse(body, n) {
-    const r = n.scale(-body.radius);
+  #staticContactImpulse(body, r, n) {
     const disp = body.position.sub(body.previous);
     const angDisp = body.angle - body.previousAngle;
     const dispAt = new Vec2(disp.x - r.y * angDisp, disp.y + r.x * angDisp);
@@ -208,4 +261,18 @@ export class Engine {
     const crossImp = r.x * impulse.y - r.y * impulse.x;
     body.previousAngle -= crossImp * body.invInertia;
   }
+}
+
+function circleCircle(a, b) {
+  const delta = b.position.sub(a.position);
+  const distSq = delta.lengthSq();
+  const minDist = a.radius + b.radius;
+  if (distSq >= minDist * minDist || distSq < 1e-12) return null;
+  const dist = Math.sqrt(distSq);
+  const normal = delta.scale(1 / dist);
+  return {
+    normal,
+    depth: minDist - dist,
+    contact: a.position.add(normal.scale(a.radius)),
+  };
 }

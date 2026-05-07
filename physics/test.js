@@ -151,5 +151,72 @@ test('rolling ball converges toward v = ω·r', () => {
   if (slip > 0.5) throw new Error(`slip too large: v=${v.toFixed(2)}, ω·r=${(omega * ball.radius).toFixed(2)}`);
 });
 
+console.log('polygon bounds:');
+test('box settles on floor', () => {
+  const eng = new Engine({
+    airDensity: 0,
+    gravity: new Vec2(0, 9.82),
+    bounds: { minX: -100, minY: -100, maxX: 100, maxY: 0 },
+  });
+  const box = eng.add(Body.box(1, 1, {
+    position: new Vec2(0, -5),
+    restitution: 0.1,
+    friction: 0.5,
+    dragCoefficient: 0,
+  }));
+  const dt = 1 / 240;
+  for (let t = 0; t < 6; t += dt) eng.step(dt);
+  near(box.position.y, -0.5, 0.05, 'resting y');
+});
+
+console.log('circle vs box:');
+test('falling ball lands on top of static box', () => {
+  const eng = new Engine({
+    airDensity: 0,
+    gravity: new Vec2(0, 9.82),
+    bounds: { minX: -100, minY: -100, maxX: 100, maxY: 100 },
+  });
+  const platform = eng.add(Body.box(4, 0.5, {
+    position: new Vec2(0, 0),
+    isStatic: true,
+    friction: 0.5,
+  }));
+  const ball = eng.add(new Body({
+    position: new Vec2(0, -5),
+    radius: 0.3,
+    restitution: 0.0,
+    friction: 0.5,
+    dragCoefficient: 0,
+  }));
+  const dt = 1 / 240;
+  for (let t = 0; t < 4; t += dt) eng.step(dt);
+  near(ball.position.y, -0.55, 0.1, 'ball resting on top of box');
+  near(ball.position.x, 0, 0.5, 'ball centered');
+});
+
+console.log('box vs box:');
+test('two boxes separate after overlap', () => {
+  const eng = new Engine({
+    airDensity: 0,
+    gravity: new Vec2(0, 0),
+  });
+  const a = eng.add(Body.box(1, 1, {
+    position: new Vec2(-0.4, 0),
+    restitution: 1,
+    friction: 0,
+    dragCoefficient: 0,
+  }));
+  const b = eng.add(Body.box(1, 1, {
+    position: new Vec2(0.4, 0),
+    restitution: 1,
+    friction: 0,
+    dragCoefficient: 0,
+  }));
+  const dt = 1 / 240;
+  for (let t = 0; t < 1; t += dt) eng.step(dt);
+  const dist = b.position.sub(a.position).length();
+  if (dist < 0.95) throw new Error(`boxes still overlap: distance ${dist.toFixed(3)}`);
+});
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);
