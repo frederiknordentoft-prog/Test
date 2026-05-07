@@ -147,6 +147,7 @@
   <div class="controls">
     <button id="reset">Nulstil</button>
     <button id="drop">Slip 20 bolde</button>
+    <button id="dropBoxes">Slip 6 kasser</button>
     <label class="toggle"><input type="checkbox" id="drag" checked> Luftmodstand</label>
     <label class="slider">g <input type="range" id="gravity" min="0" max="25" value="9.82" step="0.01"><span class="val" id="gravityVal">9.82</span></label>
     <label class="slider">e <input type="range" id="rest" min="0" max="1" value="0.6" step="0.01"><span class="val" id="restVal">0.60</span></label>
@@ -176,6 +177,7 @@
       drag: document.getElementById('drag'),
       reset: document.getElementById('reset'),
       drop: document.getElementById('drop'),
+      dropBoxes: document.getElementById('dropBoxes'),
       stats: document.getElementById('stats'),
     };
 
@@ -199,6 +201,20 @@
       return body;
     }
 
+    function spawnBox(x, y, vx = 0, vy = 0, w = 0.4 + Math.random() * 0.3, h = 0.4 + Math.random() * 0.3) {
+      const body = engine.add(Body.box(w, h, {
+        position: new Vec2(x, y),
+        angle: (Math.random() - 0.5) * 0.8,
+        mass: w * h * 8,
+        restitution,
+        friction: 0.3,
+        dragCoefficient: 1.05,
+      }));
+      if (vx || vy) body.setVelocity(new Vec2(vx, vy), SUB_DT);
+      colorOf.set(body, palette[(Math.random() * palette.length) | 0]);
+      return body;
+    }
+
     function resize() {
       dpr = window.devicePixelRatio || 1;
       const rect = cv.getBoundingClientRect();
@@ -216,10 +232,24 @@
         airDensity: ui.drag.checked ? 1.225 : 0,
         bounds: { minX: 0, minY: 0, maxX: W, maxY: H },
         subSteps: SUB_STEPS,
+        iterations: 6,
       });
-      const count = Math.max(6, Math.min(16, Math.round(W * 1.2)));
+
+      const ramp = engine.add(Body.box(Math.min(W * 0.5, 4), 0.2, {
+        position: new Vec2(W * 0.55, H - 1.6),
+        angle: -0.35,
+        isStatic: true,
+        friction: 0.4,
+        restitution: 0.3,
+      }));
+      colorOf.set(ramp, '#444');
+
+      const count = Math.max(6, Math.min(14, Math.round(W * 1.0)));
       for (let i = 0; i < count; i++) {
         spawn(W / 2 + (Math.random() - 0.5) * Math.min(W * 0.7, 6), 1 + Math.random() * 1.5);
+      }
+      for (let i = 0; i < 3; i++) {
+        spawnBox(W / 2 + (Math.random() - 0.5) * Math.min(W * 0.5, 4), 0.5 + Math.random() * 1);
       }
     }
 
@@ -227,6 +257,11 @@
     ui.drop.addEventListener('click', () => {
       for (let i = 0; i < 20; i++) {
         spawn(0.5 + Math.random() * Math.max(0.1, W - 1), 0.5 + Math.random() * 0.5);
+      }
+    });
+    ui.dropBoxes.addEventListener('click', () => {
+      for (let i = 0; i < 6; i++) {
+        spawnBox(0.5 + Math.random() * Math.max(0.1, W - 1), 0.5 + Math.random() * 0.5);
       }
     });
     ui.gravity.addEventListener('input', () => {
@@ -312,9 +347,29 @@
       for (const body of engine.bodies) {
         const c = colorOf.get(body) ?? '#5ad';
         ctx.fillStyle = c;
-        ctx.beginPath();
-        ctx.arc(body.position.x * SCALE, body.position.y * SCALE, body.radius * SCALE, 0, Math.PI * 2);
-        ctx.fill();
+        if (body.shape === 'polygon') {
+          const verts = body.worldVertices();
+          ctx.beginPath();
+          ctx.moveTo(verts[0].x * SCALE, verts[0].y * SCALE);
+          for (let i = 1; i < verts.length; i++) {
+            ctx.lineTo(verts[i].x * SCALE, verts[i].y * SCALE);
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          const px = body.position.x * SCALE;
+          const py = body.position.y * SCALE;
+          const rPx = body.radius * SCALE;
+          ctx.beginPath();
+          ctx.arc(px, py, rPx, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(px + Math.cos(body.angle) * rPx, py + Math.sin(body.angle) * rPx);
+          ctx.stroke();
+        }
       }
 
       if (dragStart && dragNow) {
@@ -351,7 +406,12 @@
         fpsFrames = 0;
         fpsAccum = 0;
       }
-      ui.stats.textContent = `${engine.bodies.length} bolde · ${fps.toFixed(0)} fps`;
+      let circles = 0, polys = 0;
+      for (const b of engine.bodies) {
+        if (b.shape === 'polygon') polys++;
+        else circles++;
+      }
+      ui.stats.textContent = `${circles} bolde · ${polys} kasser · ${fps.toFixed(0)} fps`;
 
       requestAnimationFrame(frame);
     }
