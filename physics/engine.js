@@ -6,11 +6,13 @@ export class Engine {
     airDensity = 1.225,
     bounds = null,
     subSteps = 4,
+    iterations = 4,
   } = {}) {
     this.gravity = gravity;
     this.airDensity = airDensity;
     this.bounds = bounds;
     this.subSteps = Math.max(1, subSteps);
+    this.iterations = Math.max(1, iterations);
     this.bodies = [];
   }
 
@@ -29,8 +31,10 @@ export class Engine {
     for (let i = 0; i < this.subSteps; i++) {
       this.#accumulateForces(h);
       this.#integrate(h);
-      this.#resolveCollisions();
-      this.#applyBounds();
+      for (let k = 0; k < this.iterations; k++) {
+        this.#resolveCollisions();
+        this.#applyBounds();
+      }
     }
   }
 
