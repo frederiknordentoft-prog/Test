@@ -42,6 +42,7 @@ export class Engine {
     for (const body of this.bodies) {
       if (body.static) continue;
       body.acceleration = this.gravity.clone();
+      body.angularAcceleration = 0;
 
       const v = body.velocity(dt);
       const speed = v.length();
@@ -57,10 +58,14 @@ export class Engine {
     const dt2 = dt * dt;
     for (const body of this.bodies) {
       if (body.static) continue;
+
       const current = body.position.clone();
-      const next = body.position.scale(2).sub(body.previous).add(body.acceleration.scale(dt2));
+      body.position = body.position.scale(2).sub(body.previous).add(body.acceleration.scale(dt2));
       body.previous = current;
-      body.position = next;
+
+      const currentAngle = body.angle;
+      body.angle = 2 * body.angle - body.previousAngle + body.angularAcceleration * dt2;
+      body.previousAngle = currentAngle;
     }
   }
 
@@ -85,37 +90,60 @@ export class Engine {
     const normal = delta.scale(1 / dist);
     const overlap = minDist - dist;
 
-    const invA = a.static ? 0 : 1 / a.mass;
-    const invB = b.static ? 0 : 1 / b.mass;
-    const invSum = invA + invB;
+    const invSum = a.invMass + b.invMass;
+    if (invSum === 0) return;
 
-    // Shift both position and previous so the implicit velocity is preserved.
-    const corrA = normal.scale(overlap * invA / invSum);
-    const corrB = normal.scale(overlap * invB / invSum);
+    const corrA = normal.scale(overlap * a.invMass / invSum);
+    const corrB = normal.scale(overlap * b.invMass / invSum);
     a.position = a.position.sub(corrA);
     a.previous = a.previous.sub(corrA);
     b.position = b.position.add(corrB);
     b.previous = b.previous.add(corrB);
 
+    const rA = normal.scale(a.radius);
+    const rB = normal.scale(-b.radius);
+
     const dispA = a.position.sub(a.previous);
     const dispB = b.position.sub(b.previous);
-    const relV = dispB.sub(dispA);
+    const angDispA = a.angle - a.previousAngle;
+    const angDispB = b.angle - b.previousAngle;
 
-    const vn = relV.dot(normal);
+    const dispAtA = new Vec2(dispA.x - rA.y * angDispA, dispA.y + rA.x * angDispA);
+    const dispAtB = new Vec2(dispB.x - rB.y * angDispB, dispB.y + rB.x * angDispB);
+    const relDisp = dispAtB.sub(dispAtA);
+
+    const vn = relDisp.dot(normal);
     if (vn >= 0) return;
 
     const tangent = new Vec2(-normal.y, normal.x);
-    const vt = relV.dot(tangent);
+    const vt = relDisp.dot(tangent);
+
+    const rACrossN = rA.x * normal.y - rA.y * normal.x;
+    const rBCrossN = rB.x * normal.y - rB.y * normal.x;
+    const rACrossT = rA.x * tangent.y - rA.y * tangent.x;
+    const rBCrossT = rB.x * tangent.y - rB.y * tangent.x;
+
+    const kn = invSum + rACrossN * rACrossN * a.invInertia + rBCrossN * rBCrossN * b.invInertia;
+    const kt = invSum + rACrossT * rACrossT * a.invInertia + rBCrossT * rBCrossT * b.invInertia;
 
     const e = Math.min(a.restitution, b.restitution);
     const f = (a.friction + b.friction) * 0.5;
 
-    const jn = -(1 + e) * vn / invSum;
-    const jt = -vt * f / invSum;
+    const jn = -(1 + e) * vn / kn;
+    let jt = -vt * f / kt;
+    const maxJt = Math.abs(jn) * f;
+    if (jt > maxJt) jt = maxJt;
+    else if (jt < -maxJt) jt = -maxJt;
+
     const impulse = normal.scale(jn).add(tangent.scale(jt));
 
-    a.previous = a.previous.add(impulse.scale(invA));
-    b.previous = b.previous.sub(impulse.scale(invB));
+    a.previous = a.previous.add(impulse.scale(a.invMass));
+    b.previous = b.previous.sub(impulse.scale(b.invMass));
+
+    const crossAImp = rA.x * impulse.y - rA.y * impulse.x;
+    const crossBImp = rB.x * impulse.y - rB.y * impulse.x;
+    a.previousAngle += crossAImp * a.invInertia;
+    b.previousAngle -= crossBImp * b.invInertia;
   }
 
   #applyBounds() {
@@ -124,27 +152,60 @@ export class Engine {
     for (const body of this.bodies) {
       if (body.static) continue;
       const r = body.radius;
-      const v = body.position.sub(body.previous);
 
       if (body.position.x - r < minX) {
-        body.position.x = minX + r;
-        body.previous.x = body.position.x + v.x * body.restitution;
-        body.previous.y = body.position.y - v.y * (1 - body.friction);
+        const o = minX - (body.position.x - r);
+        body.position.x += o;
+        body.previous.x += o;
+        this.#wallImpulse(body, new Vec2(1, 0));
       } else if (body.position.x + r > maxX) {
-        body.position.x = maxX - r;
-        body.previous.x = body.position.x + v.x * body.restitution;
-        body.previous.y = body.position.y - v.y * (1 - body.friction);
+        const o = (body.position.x + r) - maxX;
+        body.position.x -= o;
+        body.previous.x -= o;
+        this.#wallImpulse(body, new Vec2(-1, 0));
       }
 
       if (body.position.y - r < minY) {
-        body.position.y = minY + r;
-        body.previous.y = body.position.y + v.y * body.restitution;
-        body.previous.x = body.position.x - v.x * (1 - body.friction);
+        const o = minY - (body.position.y - r);
+        body.position.y += o;
+        body.previous.y += o;
+        this.#wallImpulse(body, new Vec2(0, 1));
       } else if (body.position.y + r > maxY) {
-        body.position.y = maxY - r;
-        body.previous.y = body.position.y + v.y * body.restitution;
-        body.previous.x = body.position.x - v.x * (1 - body.friction);
+        const o = (body.position.y + r) - maxY;
+        body.position.y -= o;
+        body.previous.y -= o;
+        this.#wallImpulse(body, new Vec2(0, -1));
       }
     }
+  }
+
+  #wallImpulse(body, n) {
+    const r = n.scale(-body.radius);
+    const disp = body.position.sub(body.previous);
+    const angDisp = body.angle - body.previousAngle;
+    const dispAt = new Vec2(disp.x - r.y * angDisp, disp.y + r.x * angDisp);
+
+    const vn = -dispAt.dot(n);
+    if (vn <= 0) return;
+
+    const t = new Vec2(-n.y, n.x);
+    const vt = dispAt.dot(t);
+
+    const rCrossN = r.x * n.y - r.y * n.x;
+    const rCrossT = r.x * t.y - r.y * t.x;
+
+    const kn = body.invMass + rCrossN * rCrossN * body.invInertia;
+    const kt = body.invMass + rCrossT * rCrossT * body.invInertia;
+
+    const jn = (1 + body.restitution) * vn / kn;
+    let jt = -vt * body.friction / kt;
+    const maxJt = Math.abs(jn) * body.friction;
+    if (jt > maxJt) jt = maxJt;
+    else if (jt < -maxJt) jt = -maxJt;
+
+    const impulse = n.scale(jn).add(t.scale(jt));
+    body.previous = body.previous.sub(impulse.scale(body.invMass));
+    const crossImp = r.x * impulse.y - r.y * impulse.x;
+    body.previousAngle -= crossImp * body.invInertia;
   }
 }

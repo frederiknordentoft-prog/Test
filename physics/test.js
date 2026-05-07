@@ -105,5 +105,51 @@ test('ping-pong ball reaches expected terminal velocity', () => {
   near(v.y, vTerminal, vTerminal * 0.05, `terminal (~${vTerminal.toFixed(2)} m/s)`);
 });
 
+console.log('rotation from friction:');
+test('sliding ball gains spin from floor friction', () => {
+  const eng = new Engine({
+    airDensity: 0,
+    gravity: new Vec2(0, 9.82),
+    bounds: { minX: -100, minY: -100, maxX: 100, maxY: 0 },
+  });
+  const ball = eng.add(new Body({
+    position: new Vec2(0, -0.5),
+    radius: 0.5,
+    restitution: 0,
+    friction: 0.5,
+    dragCoefficient: 0,
+  }));
+  const dt = 1 / 240;
+  const h = dt / eng.subSteps;
+  ball.setVelocity(new Vec2(5, 0), h);
+  for (let t = 0; t < 1; t += dt) eng.step(dt);
+  const omega = ball.angularVelocity(h);
+  if (omega <= 0.5) throw new Error(`expected ω > 0.5 (clockwise spin), got ${omega.toFixed(3)}`);
+});
+
+console.log('rolling without slipping:');
+test('rolling ball converges toward v = ω·r', () => {
+  const eng = new Engine({
+    airDensity: 0,
+    gravity: new Vec2(0, 9.82),
+    bounds: { minX: -100, minY: -100, maxX: 100, maxY: 0 },
+  });
+  const ball = eng.add(new Body({
+    position: new Vec2(0, -0.5),
+    radius: 0.5,
+    restitution: 0,
+    friction: 0.8,
+    dragCoefficient: 0,
+  }));
+  const dt = 1 / 240;
+  const h = dt / eng.subSteps;
+  ball.setVelocity(new Vec2(8, 0), h);
+  for (let t = 0; t < 3; t += dt) eng.step(dt);
+  const v = ball.velocity(h).x;
+  const omega = ball.angularVelocity(h);
+  const slip = Math.abs(v - omega * ball.radius);
+  if (slip > 0.5) throw new Error(`slip too large: v=${v.toFixed(2)}, ω·r=${(omega * ball.radius).toFixed(2)}`);
+});
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);
