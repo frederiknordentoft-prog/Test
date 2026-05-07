@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Bounce mål</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 12px;
+      padding-top: max(14px, env(safe-area-inset-top));
+      padding-bottom: max(14px, env(safe-area-inset-bottom));
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+    h1 {
+      font-size: 14px;
+      font-weight: 500;
+      margin: 0 0 8px;
+      color: #aaa;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      color: #bbb;
+    }
+    .hud .name { color: #5ad; font-weight: 500; }
+    .hud .status.win { color: #6e6; font-weight: 600; }
+    .stage {
+      position: relative;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      width: 100%;
+      max-width: 800px;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 8 / 5;
+      cursor: crosshair;
+      touch-action: none;
+      background: #1a1a1a;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+      width: 100%;
+      max-width: 800px;
+    }
+    .levels {
+      display: flex;
+      gap: 8px;
+    }
+    .level-btn {
+      flex: 1;
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: 1px solid #3a3a3a;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      min-height: 48px;
+    }
+    .level-btn.active {
+      background: #5ad;
+      color: #0a0a0a;
+      border-color: #5ad;
+      font-weight: 600;
+    }
+    .level-btn:active { background: #3a3a3a; }
+    .level-btn.active:active { background: #4ac; }
+    button.full {
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: 1px solid #3a3a3a;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      min-height: 44px;
+      width: 100%;
+    }
+    button.full:active { background: #3a3a3a; }
+    .hint {
+      font-size: 12px;
+      color: #666;
+      margin: 12px 0 0;
+      text-align: center;
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Bounce mål · ram målet ved at skyde og bounce</h1>
+
+  <div class="hud">
+    <span><span class="name" id="levelName">—</span> · Bane <span id="levelNum">1</span>/3</span>
+    <span>Skud: <span id="shots">0</span></span>
+    <span class="status" id="status"></span>
+  </div>
+
+  <div class="stage">
+    <canvas id="cv"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="levels">
+      <button class="level-btn" data-level="0">1</button>
+      <button class="level-btn" data-level="1">2</button>
+      <button class="level-btn" data-level="2">3</button>
+    </div>
+    <button class="full" id="reset">Nulstil bane</button>
+  </div>
+
+  <p class="hint">Træk i retningen du vil skyde · jo længere træk, jo hårdere</p>
+
+  <script type="module">
+    import { Engine, Body, Vec2 } from './index.js';
+
+    const W = 16;
+    const H = 10;
+    const FIXED_DT = 1 / 120;
+    const SUB_STEPS = 6;
+    const SUB_DT = FIXED_DT / SUB_STEPS;
+
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    let scale = 50;
+    let dpr = 1;
+
+    const ui = {
+      levelName: document.getElementById('levelName'),
+      levelNum: document.getElementById('levelNum'),
+      shots: document.getElementById('shots'),
+      status: document.getElementById('status'),
+      reset: document.getElementById('reset'),
+      levels: Array.from(document.querySelectorAll('.level-btn')),
+    };
+
+    const levels = [
+      {
+        name: 'Over muren',
+        cannon: new Vec2(1.5, 7.5),
+        target: new Vec2(14, 9.3),
+        targetRadius: 0.55,
+        build(eng) {
+          eng.add(Body.box(0.5, 4.5, {
+            position: new Vec2(8, 7.5),
+            isStatic: true,
+            friction: 0.4,
+            restitution: 0.4,
+          }));
+        },
+      },
+      {
+        name: 'Skråvæg',
+        cannon: new Vec2(1.5, 8.7),
+        target: new Vec2(13.5, 9.3),
+        targetRadius: 0.45,
+        build(eng) {
+          eng.add(Body.box(5, 0.35, {
+            position: new Vec2(7.5, 7),
+            angle: -Math.PI / 4,
+            isStatic: true,
+            friction: 0.3,
+            restitution: 0.6,
+          }));
+          eng.add(Body.box(0.4, 2.2, {
+            position: new Vec2(11, 8.9),
+            isStatic: true,
+            friction: 0.4,
+            restitution: 0.4,
+          }));
+        },
+      },
+      {
+        name: 'Lommen',
+        cannon: new Vec2(1.5, 7),
+        target: new Vec2(14, 8.7),
+        targetRadius: 0.4,
+        build(eng) {
+          eng.add(Body.box(0.4, 3.6, {
+            position: new Vec2(11, 8.2),
+            isStatic: true,
+            friction: 0.3,
+            restitution: 0.5,
+          }));
+          eng.add(Body.box(2.6, 0.35, {
+            position: new Vec2(12.6, 7.5),
+            isStatic: true,
+            friction: 0.3,
+            restitution: 0.5,
+          }));
+          eng.add(new Body({
+            position: new Vec2(7, 6),
+            radius: 0.5,
+            isStatic: true,
+            restitution: 0.9,
+            friction: 0.1,
+          }));
+        },
+      },
+    ];
+
+    let engine;
+    let level;
+    let levelIndex = 0;
+    let shots = 0;
+    let won = false;
+    let activeBall = null;
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      const rect = cv.getBoundingClientRect();
+      cv.width = Math.round(rect.width * dpr);
+      cv.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      scale = rect.width / W;
+    }
+
+    function loadLevel(n) {
+      levelIndex = n;
+      level = levels[n];
+      shots = 0;
+      won = false;
+      activeBall = null;
+
+      engine = new Engine({
+        gravity: new Vec2(0, 9.82),
+        airDensity: 1.225,
+        bounds: { minX: 0, minY: 0, maxX: W, maxY: H },
+        subSteps: SUB_STEPS,
+        iterations: 6,
+      });
+
+      level.build(engine);
+      updateHUD();
+      ui.levels.forEach((b, i) => b.classList.toggle('active', i === n));
+    }
+
+    function updateHUD() {
+      ui.levelName.textContent = level.name;
+      ui.levelNum.textContent = String(levelIndex + 1);
+      ui.shots.textContent = String(shots);
+      if (won) {
+        ui.status.textContent = `🎯 Ramt på ${shots}!`;
+        ui.status.classList.add('win');
+      } else {
+        ui.status.textContent = '';
+        ui.status.classList.remove('win');
+      }
+    }
+
+    function shoot(vx, vy) {
+      if (activeBall) engine.remove(activeBall);
+      const ball = engine.add(new Body({
+        position: level.cannon.clone(),
+        radius: 0.25,
+        mass: 0.5,
+        restitution: 0.65,
+        friction: 0.15,
+        dragCoefficient: 0.47,
+      }));
+      ball.setVelocity(new Vec2(vx, vy), SUB_DT);
+      activeBall = ball;
+      if (!won) shots++;
+      updateHUD();
+    }
+
+    function checkHit() {
+      if (won || !activeBall) return;
+      const d = activeBall.position.sub(level.target).length();
+      if (d < activeBall.radius + level.targetRadius) {
+        won = true;
+        updateHUD();
+      }
+    }
+
+    function previewTrajectory(v) {
+      const points = [];
+      let p = level.cannon.clone();
+      let vel = v.clone();
+      const dt = 0.04;
+      const g = engine.gravity;
+      const rho = engine.airDensity;
+      const Cd = 0.47;
+      const radius = 0.25;
+      const mass = 0.5;
+      const A = Math.PI * radius * radius;
+      for (let i = 0; i < 60; i++) {
+        points.push(p.clone());
+        let acc = g.clone();
+        const speed = vel.length();
+        if (rho > 0 && speed > 1e-6) {
+          const dragMag = 0.5 * rho * Cd * A * speed * speed;
+          acc = acc.add(vel.normalize().scale(-dragMag / mass));
+        }
+        vel = vel.add(acc.scale(dt));
+        p = p.add(vel.scale(dt));
+        if (p.x < 0 || p.x > W || p.y > H) break;
+      }
+      return points;
+    }
+
+    let aimStart = null;
+    let aimNow = null;
+
+    function localPoint(e) {
+      const rect = cv.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) / scale,
+        y: (e.clientY - rect.top) / scale,
+      };
+    }
+
+    cv.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      cv.setPointerCapture(e.pointerId);
+      aimStart = localPoint(e);
+      aimNow = aimStart;
+    });
+    cv.addEventListener('pointermove', (e) => {
+      if (aimStart) {
+        e.preventDefault();
+        aimNow = localPoint(e);
+      }
+    });
+    cv.addEventListener('pointerup', (e) => {
+      if (!aimStart) return;
+      e.preventDefault();
+      const end = localPoint(e);
+      const dx = end.x - aimStart.x;
+      const dy = end.y - aimStart.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.4) {
+        const power = Math.min(dist * 4, 28);
+        const angle = Math.atan2(dy, dx);
+        shoot(Math.cos(angle) * power, Math.sin(angle) * power);
+      }
+      aimStart = null;
+      aimNow = null;
+    });
+    cv.addEventListener('pointercancel', () => {
+      aimStart = null;
+      aimNow = null;
+    });
+
+    ui.levels.forEach(btn => {
+      btn.addEventListener('click', () => loadLevel(parseInt(btn.dataset.level, 10)));
+    });
+    ui.reset.addEventListener('click', () => loadLevel(levelIndex));
+
+    function drawCannon() {
+      const px = level.cannon.x * scale;
+      const py = level.cannon.y * scale;
+      ctx.fillStyle = '#888';
+      ctx.beginPath();
+      ctx.arc(px, py, 0.35 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#aaa';
+      ctx.beginPath();
+      ctx.arc(px, py, 0.18 * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawTarget() {
+      const px = level.target.x * scale;
+      const py = level.target.y * scale;
+      const r = level.targetRadius * scale;
+      ctx.fillStyle = won ? '#6e6' : '#e54';
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.arc(px, py, r * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = won ? '#6e6' : '#e54';
+      ctx.beginPath();
+      ctx.arc(px, py, r * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBody(body) {
+      ctx.fillStyle = body.static ? '#4a4a4a' : '#5ad';
+      if (body.shape === 'polygon') {
+        const verts = body.worldVertices();
+        ctx.beginPath();
+        ctx.moveTo(verts[0].x * scale, verts[0].y * scale);
+        for (let i = 1; i < verts.length; i++) {
+          ctx.lineTo(verts[i].x * scale, verts[i].y * scale);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        const px = body.position.x * scale;
+        const py = body.position.y * scale;
+        const rPx = body.radius * scale;
+        ctx.beginPath();
+        ctx.arc(px, py, rPx, 0, Math.PI * 2);
+        ctx.fill();
+        if (!body.static) {
+          ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(px + Math.cos(body.angle) * rPx, py + Math.sin(body.angle) * rPx);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawAim() {
+      if (!aimStart || !aimNow) return;
+      const dx = aimNow.x - aimStart.x;
+      const dy = aimNow.y - aimStart.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.1) return;
+      const power = Math.min(dist * 4, 28);
+      const angle = Math.atan2(dy, dx);
+      const v = new Vec2(Math.cos(angle) * power, Math.sin(angle) * power);
+      const points = previewTrajectory(v);
+
+      ctx.strokeStyle = 'rgba(170,170,170,0.6)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath();
+      ctx.moveTo(points[0].x * scale, points[0].y * scale);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x * scale, points[i].y * scale);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const cx = level.cannon.x * scale;
+      const cy = level.cannon.y * scale;
+      ctx.strokeStyle = `rgba(90,170,221,${0.3 + (power / 28) * 0.6})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(angle) * power * scale * 0.08, cy + Math.sin(angle) * power * scale * 0.08);
+      ctx.stroke();
+    }
+
+    function render() {
+      const cssW = cv.width / dpr;
+      const cssH = cv.height / dpr;
+
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, cssW, cssH);
+
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= W; x += 1) {
+        ctx.beginPath();
+        ctx.moveTo(x * scale + 0.5, 0);
+        ctx.lineTo(x * scale + 0.5, cssH);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= H; y += 1) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * scale + 0.5);
+        ctx.lineTo(cssW, y * scale + 0.5);
+        ctx.stroke();
+      }
+
+      for (const body of engine.bodies) {
+        if (body === activeBall) continue;
+        drawBody(body);
+      }
+      drawTarget();
+      drawCannon();
+      if (activeBall) drawBody(activeBall);
+      drawAim();
+    }
+
+    let acc = 0;
+    let lastTime = performance.now();
+
+    function frame(now) {
+      const elapsed = Math.min(0.1, (now - lastTime) / 1000);
+      lastTime = now;
+      acc += elapsed;
+      let steps = 0;
+      while (acc >= FIXED_DT && steps < 8) {
+        engine.step(FIXED_DT);
+        acc -= FIXED_DT;
+        steps++;
+      }
+
+      checkHit();
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+    resize();
+    loadLevel(0);
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
