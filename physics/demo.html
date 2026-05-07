@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Physics demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 16px;
+      font-weight: 500;
+      margin: 0 0 16px;
+      color: #aaa;
+    }
+    .stage {
+      position: relative;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    canvas { display: block; cursor: crosshair; touch-action: none; }
+    .stats {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      font-size: 11px;
+      color: #777;
+      pointer-events: none;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+      align-items: center;
+      font-size: 13px;
+    }
+    button {
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: 1px solid #3a3a3a;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:hover { background: #3a3a3a; }
+    label { display: flex; align-items: center; gap: 8px; color: #bbb; }
+    input[type="range"] { width: 120px; }
+    .val { color: #888; min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+    .hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Verlet · gravitation · luftmodstand · kollisioner</h1>
+
+  <div class="stage">
+    <canvas id="cv" width="800" height="500"></canvas>
+    <div class="stats" id="stats">—</div>
+  </div>
+
+  <div class="controls">
+    <button id="reset">Nulstil</button>
+    <button id="drop">Slip 20 bolde</button>
+    <label><input type="checkbox" id="drag" checked> Luftmodstand</label>
+    <label>g <input type="range" id="gravity" min="0" max="25" value="9.82" step="0.01"><span class="val" id="gravityVal">9.82</span></label>
+    <label>e <input type="range" id="rest" min="0" max="1" value="0.6" step="0.01"><span class="val" id="restVal">0.60</span></label>
+  </div>
+
+  <p class="hint">Klik for at slippe en bold · træk for at kaste</p>
+
+  <script type="module">
+    import { Engine, Body, Vec2 } from './index.js';
+
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    const SCALE = 50;
+    const W = cv.width / SCALE;
+    const H = cv.height / SCALE;
+    const FIXED_DT = 1 / 120;
+    const SUB_STEPS = 6;
+    const SUB_DT = FIXED_DT / SUB_STEPS;
+
+    const ui = {
+      gravity: document.getElementById('gravity'),
+      gravityVal: document.getElementById('gravityVal'),
+      rest: document.getElementById('rest'),
+      restVal: document.getElementById('restVal'),
+      drag: document.getElementById('drag'),
+      reset: document.getElementById('reset'),
+      drop: document.getElementById('drop'),
+      stats: document.getElementById('stats'),
+    };
+
+    let engine;
+    let restitution = parseFloat(ui.rest.value);
+
+    const palette = ['#5ad', '#7c6', '#fa6', '#e7a', '#9af', '#ec5'];
+    const colorOf = new WeakMap();
+
+    function spawn(x, y, vx = 0, vy = 0, radius = 0.2 + Math.random() * 0.2) {
+      const body = engine.add(new Body({
+        position: new Vec2(x, y),
+        radius,
+        mass: radius * radius * 10,
+        restitution,
+        friction: 0.15,
+        dragCoefficient: 0.47,
+      }));
+      if (vx || vy) body.setVelocity(new Vec2(vx, vy), SUB_DT);
+      colorOf.set(body, palette[(Math.random() * palette.length) | 0]);
+      return body;
+    }
+
+    function reset() {
+      engine = new Engine({
+        gravity: new Vec2(0, parseFloat(ui.gravity.value)),
+        airDensity: ui.drag.checked ? 1.225 : 0,
+        bounds: { minX: 0, minY: 0, maxX: W, maxY: H },
+        subSteps: SUB_STEPS,
+      });
+      for (let i = 0; i < 12; i++) {
+        spawn(W / 2 + (Math.random() - 0.5) * 6, 1 + Math.random() * 1.5);
+      }
+    }
+
+    ui.reset.addEventListener('click', reset);
+    ui.drop.addEventListener('click', () => {
+      for (let i = 0; i < 20; i++) {
+        spawn(0.5 + Math.random() * (W - 1), 0.5 + Math.random() * 0.5);
+      }
+    });
+    ui.gravity.addEventListener('input', () => {
+      const g = parseFloat(ui.gravity.value);
+      ui.gravityVal.textContent = g.toFixed(2);
+      engine.gravity = new Vec2(0, g);
+    });
+    ui.rest.addEventListener('input', () => {
+      restitution = parseFloat(ui.rest.value);
+      ui.restVal.textContent = restitution.toFixed(2);
+      for (const b of engine.bodies) b.restitution = restitution;
+    });
+    ui.drag.addEventListener('change', () => {
+      engine.airDensity = ui.drag.checked ? 1.225 : 0;
+    });
+
+    let dragStart = null;
+    let dragNow = null;
+
+    function localPoint(e) {
+      const rect = cv.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) / SCALE,
+        y: (e.clientY - rect.top) / SCALE,
+      };
+    }
+
+    cv.addEventListener('pointerdown', (e) => {
+      cv.setPointerCapture(e.pointerId);
+      dragStart = localPoint(e);
+      dragNow = { ...dragStart };
+    });
+    cv.addEventListener('pointermove', (e) => {
+      if (dragStart) dragNow = localPoint(e);
+    });
+    cv.addEventListener('pointerup', (e) => {
+      if (!dragStart) return;
+      const end = localPoint(e);
+      const vx = (end.x - dragStart.x) * 6;
+      const vy = (end.y - dragStart.y) * 6;
+      spawn(dragStart.x, dragStart.y, vx, vy, 0.25);
+      dragStart = null;
+      dragNow = null;
+    });
+
+    let acc = 0;
+    let lastTime = performance.now();
+    let fpsFrames = 0;
+    let fpsAccum = 0;
+    let fps = 0;
+
+    function render() {
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+
+      ctx.strokeStyle = '#252525';
+      ctx.lineWidth = 1;
+      const grid = 1;
+      for (let x = 0; x <= W; x += grid) {
+        ctx.beginPath();
+        ctx.moveTo(x * SCALE + 0.5, 0);
+        ctx.lineTo(x * SCALE + 0.5, cv.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= H; y += grid) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * SCALE + 0.5);
+        ctx.lineTo(cv.width, y * SCALE + 0.5);
+        ctx.stroke();
+      }
+
+      for (const body of engine.bodies) {
+        const c = colorOf.get(body) ?? '#5ad';
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        ctx.arc(body.position.x * SCALE, body.position.y * SCALE, body.radius * SCALE, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (dragStart && dragNow) {
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(dragStart.x * SCALE, dragStart.y * SCALE);
+        ctx.lineTo(dragNow.x * SCALE, dragNow.y * SCALE);
+        ctx.stroke();
+        ctx.fillStyle = '#aaa';
+        ctx.beginPath();
+        ctx.arc(dragStart.x * SCALE, dragStart.y * SCALE, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function frame(now) {
+      const elapsed = Math.min(0.1, (now - lastTime) / 1000);
+      lastTime = now;
+      acc += elapsed;
+      let steps = 0;
+      while (acc >= FIXED_DT && steps < 8) {
+        engine.step(FIXED_DT);
+        acc -= FIXED_DT;
+        steps++;
+      }
+
+      render();
+
+      fpsFrames++;
+      fpsAccum += elapsed;
+      if (fpsAccum >= 0.5) {
+        fps = fpsFrames / fpsAccum;
+        fpsFrames = 0;
+        fpsAccum = 0;
+      }
+      ui.stats.textContent = `${engine.bodies.length} bolde · ${fps.toFixed(0)} fps`;
+
+      requestAnimationFrame(frame);
+    }
+
+    reset();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
