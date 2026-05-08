@@ -103,9 +103,22 @@
       font-family: inherit;
       cursor: pointer;
       min-height: 44px;
-      width: 100%;
+      flex: 1;
     }
     button.full:active { background: #3a3a3a; }
+    .row { display: flex; gap: 8px; }
+    .icon-btn {
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: 1px solid #3a3a3a;
+      border-radius: 10px;
+      width: 48px;
+      min-height: 44px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .icon-btn:active { background: #3a3a3a; }
+    .icon-btn.muted { color: #666; }
     .hint {
       font-size: 12px;
       color: #666;
@@ -136,13 +149,16 @@
       <button class="level-btn" data-level="1">2</button>
       <button class="level-btn" data-level="2">3</button>
     </div>
-    <button class="full" id="reset">Nulstil bane</button>
+    <div class="row">
+      <button class="full" id="reset">Nulstil bane</button>
+      <button class="icon-btn" id="mute" aria-label="Mute">🔊</button>
+    </div>
   </div>
 
   <p class="hint">Træk i retningen du vil skyde · jo længere træk, jo hårdere</p>
 
   <script type="module">
-    import { Engine, Body, Vec2 } from './index.js';
+    import { Engine, Body, Vec2, Audio, Particles, Tweens, easings } from './index.js';
 
     const W = 16;
     const H = 10;
@@ -161,8 +177,13 @@
       shots: document.getElementById('shots'),
       status: document.getElementById('status'),
       reset: document.getElementById('reset'),
+      mute: document.getElementById('mute'),
       levels: Array.from(document.querySelectorAll('.level-btn')),
     };
+
+    const audio = new Audio({ volume: 0.5 });
+    const particles = new Particles();
+    const tweens = new Tweens();
 
     const levels = [
       {
@@ -235,6 +256,8 @@
     let shots = 0;
     let won = false;
     let activeBall = null;
+    let targetScale = 1;
+    let targetPulseTween = null;
 
     function resize() {
       dpr = window.devicePixelRatio || 1;
@@ -251,6 +274,9 @@
       shots = 0;
       won = false;
       activeBall = null;
+      targetScale = 1;
+      tweens.cancelAll();
+      particles.clear();
 
       engine = new Engine({
         gravity: new Vec2(0, 9.82),
@@ -259,10 +285,65 @@
         subSteps: SUB_STEPS,
         iterations: 6,
       });
+      engine.onCollision = handleCollision;
 
       level.build(engine);
+      startTargetPulse();
       updateHUD();
       ui.levels.forEach((b, i) => b.classList.toggle('active', i === n));
+    }
+
+    function handleCollision({ a, b, contact, speed }) {
+      if (a !== activeBall && b !== activeBall) return;
+      if (speed < 1) return;
+      if (speed > 9) audio.thud(speed);
+      else audio.ping(speed);
+      const intensity = Math.min(1, speed / 12);
+      particles.burst(contact, {
+        count: Math.round(4 + intensity * 14),
+        speedMin: 0.5,
+        speedMax: 1 + speed * 0.25,
+        lifetime: 0.4,
+        lifetimeVariance: 0.4,
+        color: '#bdbdbd',
+        radius: 0.04,
+        radiusVariance: 0.6,
+        drag: 2,
+      });
+    }
+
+    function startTargetPulse() {
+      const pulse = () => {
+        targetPulseTween = tweens.to(1, 1.12, 0.9, (s) => { if (!won) targetScale = s; }, {
+          easing: easings.inOutQuad,
+          onComplete: () => {
+            targetPulseTween = tweens.to(1.12, 1, 0.9, (s) => { if (!won) targetScale = s; }, {
+              easing: easings.inOutQuad,
+              onComplete: pulse,
+            });
+          },
+        });
+      };
+      pulse();
+    }
+
+    function celebrateHit() {
+      audio.jingle();
+      particles.burst(level.target, {
+        count: 36,
+        speedMin: 2,
+        speedMax: 9,
+        lifetime: 0.9,
+        lifetimeVariance: 0.5,
+        color: '#7e7',
+        radius: 0.08,
+        radiusVariance: 0.6,
+        drag: 1.2,
+      });
+      tweens.cancel(targetPulseTween);
+      tweens.to(1, 1.6, 0.45, (s) => targetScale = s, {
+        easing: easings.outElastic,
+      });
     }
 
     function updateHUD() {
@@ -299,6 +380,7 @@
       const d = activeBall.position.sub(level.target).length();
       if (d < activeBall.radius + level.targetRadius) {
         won = true;
+        celebrateHit();
         updateHUD();
       }
     }
@@ -344,6 +426,7 @@
 
     cv.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      audio.resume();
       cv.setPointerCapture(e.pointerId);
       aimStart = localPoint(e);
       aimNow = aimStart;
@@ -375,9 +458,23 @@
     });
 
     ui.levels.forEach(btn => {
-      btn.addEventListener('click', () => loadLevel(parseInt(btn.dataset.level, 10)));
+      btn.addEventListener('click', () => {
+        audio.resume();
+        audio.click();
+        loadLevel(parseInt(btn.dataset.level, 10));
+      });
     });
-    ui.reset.addEventListener('click', () => loadLevel(levelIndex));
+    ui.reset.addEventListener('click', () => {
+      audio.resume();
+      audio.click();
+      loadLevel(levelIndex);
+    });
+    ui.mute.addEventListener('click', () => {
+      audio.resume();
+      audio.setMuted(!audio.muted);
+      ui.mute.textContent = audio.muted ? '🔇' : '🔊';
+      ui.mute.classList.toggle('muted', audio.muted);
+    });
 
     function drawCannon() {
       const px = level.cannon.x * scale;
@@ -395,7 +492,7 @@
     function drawTarget() {
       const px = level.target.x * scale;
       const py = level.target.y * scale;
-      const r = level.targetRadius * scale;
+      const r = level.targetRadius * scale * targetScale;
       ctx.fillStyle = won ? '#6e6' : '#e54';
       ctx.beginPath();
       ctx.arc(px, py, r, 0, Math.PI * 2);
@@ -500,6 +597,7 @@
       drawTarget();
       drawCannon();
       if (activeBall) drawBody(activeBall);
+      particles.render(ctx, scale);
       drawAim();
     }
 
@@ -517,6 +615,8 @@
         steps++;
       }
 
+      tweens.step(elapsed);
+      particles.step(elapsed);
       checkHit();
       render();
       requestAnimationFrame(frame);
