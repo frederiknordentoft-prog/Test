@@ -305,25 +305,27 @@
 
     function previewTrajectory(v) {
       const points = [];
+      const dt = 1 / 120;
       let p = level.cannon.clone();
-      let vel = v.clone();
-      const dt = 0.04;
+      let prev = p.sub(v.scale(dt));
       const g = engine.gravity;
       const rho = engine.airDensity;
       const Cd = 0.47;
       const radius = 0.25;
       const mass = 0.5;
       const A = Math.PI * radius * radius;
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 200; i++) {
         points.push(p.clone());
         let acc = g.clone();
-        const speed = vel.length();
+        const vCurr = p.sub(prev).scale(1 / dt);
+        const speed = vCurr.length();
         if (rho > 0 && speed > 1e-6) {
           const dragMag = 0.5 * rho * Cd * A * speed * speed;
-          acc = acc.add(vel.normalize().scale(-dragMag / mass));
+          acc = acc.add(vCurr.normalize().scale(-dragMag / mass));
         }
-        vel = vel.add(acc.scale(dt));
-        p = p.add(vel.scale(dt));
+        const next = p.scale(2).sub(prev).add(acc.scale(dt * dt));
+        prev = p;
+        p = next;
         if (p.x < 0 || p.x > W || p.y > H) break;
       }
       return points;
@@ -360,7 +362,7 @@
       const dy = end.y - aimStart.y;
       const dist = Math.hypot(dx, dy);
       if (dist > 0.4) {
-        const power = Math.min(dist * 4, 28);
+        const power = Math.min(dist * 5, 40);
         const angle = Math.atan2(dy, dx);
         shoot(Math.cos(angle) * power, Math.sin(angle) * power);
       }
@@ -443,7 +445,7 @@
       const dy = aimNow.y - aimStart.y;
       const dist = Math.hypot(dx, dy);
       if (dist < 0.1) return;
-      const power = Math.min(dist * 4, 28);
+      const power = Math.min(dist * 5, 40);
       const angle = Math.atan2(dy, dx);
       const v = new Vec2(Math.cos(angle) * power, Math.sin(angle) * power);
       const points = previewTrajectory(v);
@@ -461,11 +463,11 @@
 
       const cx = level.cannon.x * scale;
       const cy = level.cannon.y * scale;
-      ctx.strokeStyle = `rgba(90,170,221,${0.3 + (power / 28) * 0.6})`;
+      ctx.strokeStyle = `rgba(90,170,221,${0.3 + (power / 40) * 0.6})`;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(angle) * power * scale * 0.08, cy + Math.sin(angle) * power * scale * 0.08);
+      ctx.lineTo(cx + Math.cos(angle) * power * scale * 0.06, cy + Math.sin(angle) * power * scale * 0.06);
       ctx.stroke();
     }
 
