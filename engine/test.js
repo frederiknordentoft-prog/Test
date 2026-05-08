@@ -1,4 +1,4 @@
-import { Engine, Body, Vec2 } from './index.js';
+import { Engine, Body, Vec2, Tweens, Particles, easings } from './index.js';
 
 let pass = 0, fail = 0;
 
@@ -216,6 +216,49 @@ test('two boxes separate after overlap', () => {
   for (let t = 0; t < 1; t += dt) eng.step(dt);
   const dist = b.position.sub(a.position).length();
   if (dist < 0.95) throw new Error(`boxes still overlap: distance ${dist.toFixed(3)}`);
+});
+
+console.log('tween basics:');
+test('linear tween reaches target', () => {
+  const tw = new Tweens();
+  let v = 0;
+  tw.to(0, 100, 1, x => v = x, { easing: easings.linear });
+  for (let i = 0; i < 10; i++) tw.step(0.1);
+  near(v, 100, 0.01);
+});
+
+console.log('tween delay:');
+test('tween waits for delay before running', () => {
+  const tw = new Tweens();
+  let v = 0;
+  tw.to(0, 100, 1, x => v = x, { easing: easings.linear, delay: 0.5 });
+  tw.step(0.4);
+  if (v !== 0) throw new Error(`expected 0 during delay, got ${v}`);
+  tw.step(0.5);
+  if (v <= 0) throw new Error(`expected progress after delay, got ${v}`);
+});
+
+console.log('tween repeat + yoyo:');
+test('yoyo returns to start, repeat runs the right number of times', () => {
+  const tw = new Tweens();
+  const samples = [];
+  tw.to(0, 1, 0.5, x => samples.push(x), {
+    easing: easings.linear,
+    repeat: 1,
+    yoyo: true,
+  });
+  for (let i = 0; i < 12; i++) tw.step(0.1);
+  near(samples[samples.length - 1], 0, 0.05, 'final');
+});
+
+console.log('particles emitter:');
+test('emitter produces ~rate*duration particles', () => {
+  const p = new Particles();
+  p.emit(new Vec2(0, 0), { rate: 60, duration: 0.5, particle: { count: 1, lifetime: 10 } });
+  for (let i = 0; i < 50; i++) p.step(0.01);
+  if (p.list.length < 25 || p.list.length > 35) {
+    throw new Error(`expected ~30 particles, got ${p.list.length}`);
+  }
 });
 
 console.log(`\n${pass} passed, ${fail} failed`);

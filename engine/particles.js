@@ -3,6 +3,7 @@ import { Vec2 } from './vec2.js';
 export class Particles {
   constructor() {
     this.list = [];
+    this.emitters = [];
   }
 
   burst(position, options = {}) {
@@ -37,7 +38,19 @@ export class Particles {
     }
   }
 
+  // Continuous emission. positionOrFn can be a Vec2 or () => Vec2 for moving emitters.
+  emit(positionOrFn, options = {}) {
+    const e = new Emitter(this, positionOrFn, options);
+    this.emitters.push(e);
+    return e;
+  }
+
   step(dt) {
+    for (let i = this.emitters.length - 1; i >= 0; i--) {
+      const em = this.emitters[i];
+      em.step(dt);
+      if (!em.alive) this.emitters.splice(i, 1);
+    }
     for (let i = this.list.length - 1; i >= 0; i--) {
       const p = this.list[i];
       p.age += dt;
@@ -56,8 +69,7 @@ export class Particles {
     const prevAlpha = ctx.globalAlpha;
     for (const p of this.list) {
       const t = p.age / p.lifetime;
-      const fade = (1 - t) * (1 - t);
-      ctx.globalAlpha = fade;
+      ctx.globalAlpha = (1 - t) * (1 - t);
       ctx.fillStyle = p.color;
       ctx.beginPath();
       ctx.arc(p.position.x * scale, p.position.y * scale, p.radius * scale, 0, Math.PI * 2);
@@ -68,5 +80,42 @@ export class Particles {
 
   clear() {
     this.list.length = 0;
+    for (const e of this.emitters) e.alive = false;
+    this.emitters.length = 0;
+  }
+}
+
+export class Emitter {
+  constructor(particles, positionOrFn, options = {}) {
+    this.particles = particles;
+    this.getPosition = typeof positionOrFn === 'function'
+      ? positionOrFn
+      : () => positionOrFn;
+    this.rate = options.rate ?? 30;
+    this.duration = options.duration ?? Infinity;
+    this.particle = options.particle ?? {};
+    this.onComplete = options.onComplete ?? null;
+    this.elapsed = 0;
+    this.accumulator = 0;
+    this.alive = true;
+  }
+
+  step(dt) {
+    if (!this.alive) return;
+    this.elapsed += dt;
+    if (this.elapsed >= this.duration) {
+      this.alive = false;
+      if (this.onComplete) this.onComplete();
+      return;
+    }
+    this.accumulator += dt * this.rate;
+    while (this.accumulator >= 1) {
+      this.particles.burst(this.getPosition(), { ...this.particle, count: 1 });
+      this.accumulator -= 1;
+    }
+  }
+
+  stop() {
+    this.alive = false;
   }
 }

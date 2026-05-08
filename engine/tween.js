@@ -29,11 +29,18 @@ export class Tweens {
 
   add(duration, onUpdate, options = {}) {
     const tween = {
-      duration,
+      duration: Math.max(1e-6, duration),
       elapsed: 0,
       easing: options.easing ?? easings.outQuad,
       onUpdate,
       onComplete: options.onComplete ?? null,
+      delay: Math.max(0, options.delay ?? 0),
+      delayElapsed: 0,
+      started: false,
+      repeat: options.repeat ?? 0,
+      repeatsDone: 0,
+      yoyo: !!options.yoyo,
+      direction: 1,
       done: false,
     };
     this.list.push(tween);
@@ -54,6 +61,26 @@ export class Tweens {
     }, options);
   }
 
+  // Run a list of tween-configs serially. Returns a handle with .cancel().
+  sequence(configs) {
+    const handle = { cancelled: false, current: null };
+    const runNext = (i) => {
+      if (handle.cancelled || i >= configs.length) return;
+      const cfg = configs[i];
+      const opts = { ...(cfg.options ?? {}), onComplete: () => {
+        cfg.options?.onComplete?.();
+        runNext(i + 1);
+      }};
+      handle.current = this.add(cfg.duration, cfg.onUpdate, opts);
+    };
+    runNext(0);
+    handle.cancel = () => {
+      handle.cancelled = true;
+      if (handle.current) handle.current.done = true;
+    };
+    return handle;
+  }
+
   step(dt) {
     for (let i = this.list.length - 1; i >= 0; i--) {
       const t = this.list[i];
@@ -61,12 +88,33 @@ export class Tweens {
         this.list.splice(i, 1);
         continue;
       }
-      t.elapsed += dt;
+
+      let remaining = dt;
+      if (!t.started) {
+        const need = t.delay - t.delayElapsed;
+        if (remaining < need) {
+          t.delayElapsed += remaining;
+          continue;
+        }
+        remaining -= need;
+        t.delayElapsed = t.delay;
+        t.started = true;
+      }
+
+      t.elapsed += remaining;
       const u = Math.min(1, t.elapsed / t.duration);
-      t.onUpdate(t.easing(u));
+      const eased = t.direction === 1 ? u : 1 - u;
+      t.onUpdate(t.easing(eased));
+
       if (u >= 1) {
-        t.done = true;
-        if (t.onComplete) t.onComplete();
+        if (t.repeatsDone < t.repeat) {
+          t.repeatsDone++;
+          t.elapsed = 0;
+          if (t.yoyo) t.direction *= -1;
+        } else {
+          t.done = true;
+          if (t.onComplete) t.onComplete();
+        }
       }
     }
   }
