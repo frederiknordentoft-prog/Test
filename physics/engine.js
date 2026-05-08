@@ -15,6 +15,8 @@ export class Engine {
     this.subSteps = Math.max(1, subSteps);
     this.iterations = Math.max(1, iterations);
     this.bodies = [];
+    this.onCollision = null;
+    this._h = 0;
   }
 
   add(body) {
@@ -29,6 +31,7 @@ export class Engine {
 
   step(dt) {
     const h = dt / this.subSteps;
+    this._h = h;
     for (let i = 0; i < this.subSteps; i++) {
       this.#accumulateForces(h);
       this.#integrate(h);
@@ -164,6 +167,10 @@ export class Engine {
     const crossBImp = rB.x * impulse.y - rB.y * impulse.x;
     a.previousAngle += crossAImp * a.invInertia;
     b.previousAngle -= crossBImp * b.invInertia;
+
+    if (this.onCollision) {
+      this.onCollision({ a, b, contact, normal, speed: -vn / this._h });
+    }
   }
 
   #applyBounds() {
@@ -260,6 +267,10 @@ export class Engine {
     body.previous = body.previous.sub(impulse.scale(body.invMass));
     const crossImp = r.x * impulse.y - r.y * impulse.x;
     body.previousAngle -= crossImp * body.invInertia;
+
+    if (this.onCollision) {
+      this.onCollision({ a: body, b: null, contact: body.position.add(r), normal: n, speed: vn / this._h });
+    }
   }
 }
 
