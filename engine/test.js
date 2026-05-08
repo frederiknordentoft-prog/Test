@@ -218,6 +218,91 @@ test('two boxes separate after overlap', () => {
   if (dist < 0.95) throw new Error(`boxes still overlap: distance ${dist.toFixed(3)}`);
 });
 
+console.log('stacking — 4 boxes stable column:');
+test('boxes settle at expected heights with low jitter', () => {
+  const eng = new Engine({
+    airDensity: 0,
+    gravity: new Vec2(0, 9.82),
+    bounds: { minX: -10, minY: -100, maxX: 10, maxY: 0 },
+  });
+  const boxes = [];
+  for (let i = 0; i < 4; i++) {
+    boxes.push(eng.add(Body.box(1, 1, {
+      position: new Vec2(0, -2 - i * 1.2),
+      restitution: 0.1,
+      friction: 0.6,
+      dragCoefficient: 0,
+    })));
+  }
+  const dt = 1 / 120;
+  for (let t = 0; t < 5; t += dt) eng.step(dt);
+
+  const h = dt / eng.subSteps;
+  boxes.forEach((box, i) => {
+    const expectedY = -0.5 - i;
+    near(box.position.y, expectedY, 0.1, `box ${i} resting y`);
+    const vy = Math.abs(box.velocity(h).y);
+    if (vy > 0.05) throw new Error(`box ${i} still jittering: |vy|=${vy.toFixed(4)}`);
+    if (Math.abs(box.angle) > 0.1) throw new Error(`box ${i} tipped: angle=${box.angle.toFixed(3)}`);
+  });
+});
+
+console.log('stacking — bodies sleep when settled:');
+test('settled stack puts bodies to sleep', () => {
+  const eng = new Engine({
+    airDensity: 0,
+    gravity: new Vec2(0, 9.82),
+    bounds: { minX: -10, minY: -100, maxX: 10, maxY: 0 },
+    sleepFrames: 20,
+  });
+  const boxes = [];
+  for (let i = 0; i < 3; i++) {
+    boxes.push(eng.add(Body.box(1, 1, {
+      position: new Vec2(0, -2 - i * 1.2),
+      restitution: 0.1,
+      friction: 0.6,
+      dragCoefficient: 0,
+    })));
+  }
+  const dt = 1 / 120;
+  for (let t = 0; t < 5; t += dt) eng.step(dt);
+  const sleeping = boxes.filter(b => b.sleeping).length;
+  if (sleeping < 3) throw new Error(`expected 3 sleeping, got ${sleeping}`);
+});
+
+console.log('stacking — wake on impact:');
+test('falling ball wakes top of stack', () => {
+  const eng = new Engine({
+    airDensity: 0,
+    gravity: new Vec2(0, 9.82),
+    bounds: { minX: -10, minY: -100, maxX: 10, maxY: 0 },
+  });
+  const top = eng.add(Body.box(1, 1, {
+    position: new Vec2(0, -2),
+    restitution: 0.1,
+    friction: 0.6,
+    dragCoefficient: 0,
+  }));
+  const dt = 1 / 120;
+  for (let t = 0; t < 3; t += dt) eng.step(dt);
+  if (!top.sleeping) throw new Error('expected top box to be sleeping before impact');
+
+  eng.add(new Body({
+    position: new Vec2(0, -3),
+    radius: 0.3,
+    restitution: 0.2,
+    friction: 0.4,
+    dragCoefficient: 0,
+  }));
+  let woke = false;
+  for (let t = 0; t < 1.5; t += dt) {
+    const wasSleeping = top.sleeping;
+    eng.step(dt);
+    if (wasSleeping && !top.sleeping) woke = true;
+  }
+  if (!woke) throw new Error('top box never woke after impact');
+});
+
 console.log('tween basics:');
 test('linear tween reaches target', () => {
   const tw = new Tweens();

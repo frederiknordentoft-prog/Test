@@ -48,17 +48,30 @@ export function polygonPolygon(vertsA, centerA, vertsB, centerB) {
     normal = normal.scale(-1);
   }
 
-  let contact = vertsB[0];
+  // Find the deepest vertex of B along normal, plus any second vertex at near-equal depth
+  // (face-face contact). Use centroid for face-face to avoid corner-only impulses that
+  // inject spurious rotation into resting stacks.
+  let deepest = vertsB[0];
   let minProj = vertsB[0].dot(normal);
   for (let i = 1; i < vertsB.length; i++) {
     const p = vertsB[i].dot(normal);
     if (p < minProj) {
       minProj = p;
-      contact = vertsB[i];
+      deepest = vertsB[i];
     }
   }
+  const tol = 1e-3;
+  let sumX = 0, sumY = 0, count = 0;
+  for (const v of vertsB) {
+    if (v.dot(normal) - minProj < tol) {
+      sumX += v.x; sumY += v.y; count++;
+    }
+  }
+  const contact = count > 1
+    ? new Vec2(sumX / count, sumY / count)
+    : deepest.clone();
 
-  return { normal, depth: minOverlap, contact: contact.clone() };
+  return { normal, depth: minOverlap, contact };
 }
 
 export function circlePolygon(circleCenter, radius, polyVerts, polyCenter) {

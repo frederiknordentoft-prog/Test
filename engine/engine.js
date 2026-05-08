@@ -7,13 +7,27 @@ export class Engine {
     airDensity = 1.225,
     bounds = null,
     subSteps = 4,
-    iterations = 4,
+    iterations = 8,
+    restitutionThreshold = 1.0,
+    penetrationSlop = 0.005,
+    penetrationPercent = 0.8,
+    sleeping = true,
+    sleepLinearVelocity = 0.05,
+    sleepAngularVelocity = 0.1,
+    sleepFrames = 30,
   } = {}) {
     this.gravity = gravity;
     this.airDensity = airDensity;
     this.bounds = bounds;
     this.subSteps = Math.max(1, subSteps);
     this.iterations = Math.max(1, iterations);
+    this.restitutionThreshold = restitutionThreshold;
+    this.penetrationSlop = penetrationSlop;
+    this.penetrationPercent = penetrationPercent;
+    this.sleeping = sleeping;
+    this.sleepLinearVelocity = sleepLinearVelocity;
+    this.sleepAngularVelocity = sleepAngularVelocity;
+    this.sleepFrames = sleepFrames;
     this.bodies = [];
     this.onCollision = null;
     this._h = 0;
@@ -40,11 +54,12 @@ export class Engine {
         this.#applyBounds();
       }
     }
+    if (this.sleeping) this.#updateSleep(h);
   }
 
   #accumulateForces(dt) {
     for (const body of this.bodies) {
-      if (body.static) continue;
+      if (body.static || body.sleeping) continue;
       body.acceleration = this.gravity.clone();
       body.angularAcceleration = 0;
 
@@ -61,7 +76,7 @@ export class Engine {
   #integrate(dt) {
     const dt2 = dt * dt;
     for (const body of this.bodies) {
-      if (body.static) continue;
+      if (body.static || body.sleeping) continue;
 
       const current = body.position.clone();
       body.position = body.position.scale(2).sub(body.previous).add(body.acceleration.scale(dt2));
@@ -70,6 +85,27 @@ export class Engine {
       const currentAngle = body.angle;
       body.angle = 2 * body.angle - body.previousAngle + body.angularAcceleration * dt2;
       body.previousAngle = currentAngle;
+    }
+  }
+
+  #updateSleep(h) {
+    const linSqLimit = (this.sleepLinearVelocity * h) ** 2;
+    const angLimit = this.sleepAngularVelocity * h;
+    for (const body of this.bodies) {
+      if (body.static) continue;
+      if (body.sleeping) continue;
+      const dispSq = body.position.sub(body.previous).lengthSq();
+      const angDisp = Math.abs(body.angle - body.previousAngle);
+      if (dispSq < linSqLimit && angDisp < angLimit) {
+        body._idleFrames++;
+        if (body._idleFrames >= this.sleepFrames) {
+          body.sleeping = true;
+          body.previous = body.position.clone();
+          body.previousAngle = body.angle;
+        }
+      } else {
+        body._idleFrames = 0;
+      }
     }
   }
 
@@ -84,6 +120,7 @@ export class Engine {
 
   #resolvePair(a, b) {
     if (a.static && b.static) return;
+    if (a.sleeping && b.sleeping) return;
 
     // Broad-phase: bounding circles
     const dx = b.position.x - a.position.x;
@@ -116,12 +153,15 @@ export class Engine {
     const invSum = a.invMass + b.invMass;
     if (invSum === 0) return;
 
-    const corrA = normal.scale(depth * a.invMass / invSum);
-    const corrB = normal.scale(depth * b.invMass / invSum);
-    a.position = a.position.sub(corrA);
-    a.previous = a.previous.sub(corrA);
-    b.position = b.position.add(corrB);
-    b.previous = b.previous.add(corrB);
+    const corrDepth = Math.max(depth - this.penetrationSlop, 0) * this.penetrationPercent;
+    if (corrDepth > 0) {
+      const corrA = normal.scale(corrDepth * a.invMass / invSum);
+      const corrB = normal.scale(corrDepth * b.invMass / invSum);
+      a.position = a.position.sub(corrA);
+      a.previous = a.previous.sub(corrA);
+      b.position = b.position.add(corrB);
+      b.previous = b.previous.add(corrB);
+    }
 
     const rA = contact.sub(a.position);
     const rB = contact.sub(b.position);
@@ -152,7 +192,10 @@ export class Engine {
     const e = Math.min(a.restitution, b.restitution);
     const f = (a.friction + b.friction) * 0.5;
 
-    const jn = -(1 + e) * vn / kn;
+    const restitutionThresh = this.restitutionThreshold * this._h;
+    const useE = -vn < restitutionThresh ? 0 : e;
+
+    const jn = -(1 + useE) * vn / kn;
     let jt = -vt * f / kt;
     const maxJt = Math.abs(jn) * f;
     if (jt > maxJt) jt = maxJt;
@@ -167,6 +210,9 @@ export class Engine {
     const crossBImp = rB.x * impulse.y - rB.y * impulse.x;
     a.previousAngle += crossAImp * a.invInertia;
     b.previousAngle -= crossBImp * b.invInertia;
+
+    a.wake();
+    b.wake();
 
     if (this.onCollision) {
       this.onCollision({ a, b, contact, normal, speed: -vn / this._h });
@@ -186,25 +232,29 @@ export class Engine {
     const { minX, minY, maxX, maxY } = this.bounds;
     const r = body.radius;
 
+    const slop = this.penetrationSlop;
+    const pct = this.penetrationPercent;
+    const correct = (depth) => Math.max(depth - slop, 0) * pct;
+
     if (body.position.x - r < minX) {
-      const o = minX - (body.position.x - r);
+      const o = correct(minX - (body.position.x - r));
       body.position.x += o;
       body.previous.x += o;
       this.#staticContactImpulse(body, new Vec2(-r, 0), new Vec2(1, 0));
     } else if (body.position.x + r > maxX) {
-      const o = (body.position.x + r) - maxX;
+      const o = correct((body.position.x + r) - maxX);
       body.position.x -= o;
       body.previous.x -= o;
       this.#staticContactImpulse(body, new Vec2(r, 0), new Vec2(-1, 0));
     }
 
     if (body.position.y - r < minY) {
-      const o = minY - (body.position.y - r);
+      const o = correct(minY - (body.position.y - r));
       body.position.y += o;
       body.previous.y += o;
       this.#staticContactImpulse(body, new Vec2(0, -r), new Vec2(0, 1));
     } else if (body.position.y + r > maxY) {
-      const o = (body.position.y + r) - maxY;
+      const o = correct((body.position.y + r) - maxY);
       body.position.y -= o;
       body.previous.y -= o;
       this.#staticContactImpulse(body, new Vec2(0, r), new Vec2(0, -1));
@@ -213,7 +263,6 @@ export class Engine {
 
   #polygonBounds(body) {
     const { minX, minY, maxX, maxY } = this.bounds;
-    const verts = body.worldVertices();
     const walls = [
       { n: new Vec2(1, 0), depth: (v) => minX - v.x },
       { n: new Vec2(-1, 0), depth: (v) => v.x - maxX },
@@ -222,21 +271,27 @@ export class Engine {
     ];
 
     for (const wall of walls) {
-      let deepest = null;
+      const verts = body.worldVertices();
       let maxDepth = 0;
+      let sumX = 0, sumY = 0, count = 0;
       for (const v of verts) {
         const d = wall.depth(v);
-        if (d > maxDepth) {
-          maxDepth = d;
-          deepest = v;
+        if (d > 0) {
+          if (d > maxDepth) maxDepth = d;
+          sumX += v.x; sumY += v.y; count++;
         }
       }
-      if (deepest && maxDepth > 0) {
-        const r = deepest.sub(body.position);
-        body.position = body.position.add(wall.n.scale(maxDepth));
-        body.previous = body.previous.add(wall.n.scale(maxDepth));
-        this.#staticContactImpulse(body, r, wall.n);
+      if (count === 0) continue;
+
+      // Centroid of penetrating vertices: stable face-flat contact (no spurious rotation).
+      const contact = new Vec2(sumX / count, sumY / count);
+      const origPos = body.position;
+      const corr = Math.max(maxDepth - this.penetrationSlop, 0) * this.penetrationPercent;
+      if (corr > 0) {
+        body.position = body.position.add(wall.n.scale(corr));
+        body.previous = body.previous.add(wall.n.scale(corr));
       }
+      this.#staticContactImpulse(body, contact.sub(origPos), wall.n);
     }
   }
 
@@ -257,7 +312,8 @@ export class Engine {
     const kn = body.invMass + rCrossN * rCrossN * body.invInertia;
     const kt = body.invMass + rCrossT * rCrossT * body.invInertia;
 
-    const jn = (1 + body.restitution) * vn / kn;
+    const useE = vn < this.restitutionThreshold * this._h ? 0 : body.restitution;
+    const jn = (1 + useE) * vn / kn;
     let jt = -vt * body.friction / kt;
     const maxJt = Math.abs(jn) * body.friction;
     if (jt > maxJt) jt = maxJt;

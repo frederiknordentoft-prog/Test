@@ -47,6 +47,9 @@ export class Body {
 
     this.invMass = isStatic ? 0 : 1 / mass;
     this.invInertia = isStatic ? 0 : 1 / this.inertia;
+
+    this.sleeping = false;
+    this._idleFrames = 0;
   }
 
   velocity(dt) {
@@ -59,20 +62,31 @@ export class Body {
 
   setVelocity(v, dt) {
     this.previous = this.position.sub(v.scale(dt));
+    this.wake();
   }
 
   setAngularVelocity(omega, dt) {
     this.previousAngle = this.angle - omega * dt;
+    this.wake();
   }
 
   applyForce(f) {
     if (this.static) return;
     this.acceleration = this.acceleration.add(f.scale(this.invMass));
+    this.wake();
   }
 
   applyTorque(tau) {
     if (this.static) return;
     this.angularAcceleration += tau * this.invInertia;
+    this.wake();
+  }
+
+  wake() {
+    if (this.sleeping) {
+      this.sleeping = false;
+      this._idleFrames = 0;
+    }
   }
 
   worldVertices() {
