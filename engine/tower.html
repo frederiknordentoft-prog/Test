@@ -248,8 +248,8 @@
     let displayedPieces = 0;
     let lastMilestone = 0;
 
-    let cameraY = -3;
-    let cameraTarget = -3;
+    let cameraY = -4;
+    let cameraTarget = -4;
     const shake = { x: 0, y: 0 };
 
     let gameState = 'playing';
@@ -417,63 +417,112 @@
     }
 
     function drawGround() {
-      const tl = worldToScreen(-3.5, 0);
-      const tr = worldToScreen(3.5, 0);
-      const bl = worldToScreen(-3.5, 1.5);
+      // Trapezoidal plate: top wider than bottom so the corners read as
+      // visible edges rather than just a flat strip. Pieces collide with the
+      // physics body (a rectangle x = ±3.5), so the trapezoid is purely
+      // visual — but it makes the danger corners obvious.
+      const PLATE_TOP_X = 3.5;
+      const PLATE_BOT_X = 2.7;
+      const tl = worldToScreen(-PLATE_TOP_X, 0);
+      const tr = worldToScreen(PLATE_TOP_X, 0);
+      const bl = worldToScreen(-PLATE_BOT_X, 1.5);
+      const br = worldToScreen(PLATE_BOT_X, 1.5);
 
-      // Cast a soft shadow on the void below to give the plate a sense of
-      // floating in nothing.
+      // Soft shadow under the plate to sell "floating in the void".
       const shadow = ctx.createRadialGradient(
-        (tl.x + tr.x) / 2, bl.y + 12, 6,
-        (tl.x + tr.x) / 2, bl.y + 12, (tr.x - tl.x) * 0.55,
+        (tl.x + tr.x) / 2, br.y + 14, 6,
+        (tl.x + tr.x) / 2, br.y + 14, (tr.x - tl.x) * 0.6,
       );
-      shadow.addColorStop(0, 'rgba(0,0,0,0.5)');
+      shadow.addColorStop(0, 'rgba(0,0,0,0.55)');
       shadow.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = shadow;
-      ctx.fillRect(0, bl.y, W, 60);
+      ctx.fillRect(0, br.y, W, 70);
 
-      // Plate body — vertical gradient, brightest at top so the surface
-      // visually pops as the landing zone.
-      const bodyGrad = ctx.createLinearGradient(0, tl.y, 0, bl.y);
-      bodyGrad.addColorStop(0, '#506a8a');
-      bodyGrad.addColorStop(0.15, '#2e3e58');
+      // Plate body
+      const bodyGrad = ctx.createLinearGradient(0, tl.y, 0, br.y);
+      bodyGrad.addColorStop(0, '#5a7090');
+      bodyGrad.addColorStop(0.15, '#324258');
       bodyGrad.addColorStop(1, '#0e1424');
       ctx.fillStyle = bodyGrad;
-      ctx.fillRect(tl.x, tl.y, tr.x - tl.x, bl.y - tl.y);
+      ctx.beginPath();
+      ctx.moveTo(tl.x, tl.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.lineTo(bl.x, bl.y);
+      ctx.closePath();
+      ctx.fill();
 
-      // Stone seams
+      // Side-wall darkening on the sloped sides — gives 3D feel.
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+      ctx.beginPath();
+      ctx.moveTo(tl.x, tl.y);
+      ctx.lineTo(worldToScreen(-PLATE_TOP_X + 0.5, 0).x, tl.y);
+      ctx.lineTo(bl.x, bl.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(tr.x, tr.y);
+      ctx.lineTo(worldToScreen(PLATE_TOP_X - 0.5, 0).x, tr.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Stone seams across the top
       ctx.strokeStyle = 'rgba(0,0,0,0.4)';
       ctx.lineWidth = 1.5;
       for (let i = -2; i <= 2; i++) {
-        const sx = worldToScreen(i, 0);
+        const top = worldToScreen(i, 0);
+        const bot = worldToScreen(i * (PLATE_BOT_X / PLATE_TOP_X), 1.5);
         ctx.beginPath();
-        ctx.moveTo(sx.x, tl.y + 6);
-        ctx.lineTo(sx.x, bl.y - 4);
+        ctx.moveTo(top.x, top.y + 6);
+        ctx.lineTo(bot.x, bot.y - 4);
         ctx.stroke();
       }
 
-      // Bright top edge — the landing surface.
-      ctx.strokeStyle = '#a8b8d0';
-      ctx.lineWidth = 2.5;
+      // Bright top edge across the full plate — the landing surface.
+      ctx.strokeStyle = '#b8c8e0';
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(tl.x, tl.y);
       ctx.lineTo(tr.x, tr.y);
       ctx.stroke();
 
-      // Red edge warning bars at the very ends of the landing surface.
-      const drawEdgeBar = (xWorld, dir) => {
-        const a = worldToScreen(xWorld, 0);
-        const b = worldToScreen(xWorld + dir * 0.25, -0.06);
+      // Strong red corner warnings — the edges where pieces fall off.
+      const drawCornerWarning = (xWorld, dir) => {
+        // 1. Solid red strip on the very last 0.4 m of the top surface
+        const a = worldToScreen(xWorld, -0.04);
+        const b = worldToScreen(xWorld + dir * 0.5, 0.05);
         const grad = ctx.createLinearGradient(a.x, 0, b.x, 0);
-        grad.addColorStop(0, 'rgba(255, 90, 70, 0.85)');
-        grad.addColorStop(1, 'rgba(255, 90, 70, 0)');
+        grad.addColorStop(0, 'rgba(255, 80, 70, 0.95)');
+        grad.addColorStop(1, 'rgba(255, 80, 70, 0)');
         ctx.fillStyle = grad;
         const x0 = Math.min(a.x, b.x);
-        const x1 = Math.max(a.x, b.x);
-        ctx.fillRect(x0, b.y, x1 - x0, a.y - b.y + 3);
+        ctx.fillRect(x0, a.y, Math.abs(b.x - a.x), b.y - a.y);
+
+        // 2. Bright vertical line right on the edge corner — this is THE edge
+        const cornerTop = worldToScreen(xWorld, -0.05);
+        const cornerBot = worldToScreen(xWorld + dir * 0.25, 0.6);
+        ctx.strokeStyle = 'rgba(255, 100, 80, 0.85)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cornerTop.x, cornerTop.y);
+        ctx.lineTo(cornerBot.x, cornerBot.y);
+        ctx.stroke();
+
+        // 3. Small red triangle just below the corner pointing into the void
+        const tipTop = worldToScreen(xWorld + dir * 0.05, 1.55);
+        const tipL = worldToScreen(xWorld - dir * 0.15, 1.55);
+        const tipB = worldToScreen(xWorld + dir * 0.05, 1.95);
+        ctx.fillStyle = 'rgba(255, 90, 70, 0.75)';
+        ctx.beginPath();
+        ctx.moveTo(tipTop.x, tipTop.y);
+        ctx.lineTo(tipL.x, tipL.y);
+        ctx.lineTo(tipB.x, tipB.y);
+        ctx.closePath();
+        ctx.fill();
       };
-      drawEdgeBar(-3.5, 1);
-      drawEdgeBar(3.5, -1);
+      drawCornerWarning(-3.5, 1);
+      drawCornerWarning(3.5, -1);
     }
 
     function lookTarget(body) {
@@ -698,8 +747,15 @@
     }
 
     function drawWindForecast() {
+      // Below ~500 px the forecast bar collides with the side panels no matter
+      // how small we make it; the trajectory dots show wind effect in real
+      // time, so just skip the bar in that case.
+      if (W < 500) return;
       const slots = [wind.current, ...wind.forecast.slice(0, 2)];
-      const slotW = 96, slotH = 42, gap = 6;
+      const narrow = W < 700;
+      const slotW = narrow ? 76 : 96;
+      const slotH = narrow ? 38 : 42;
+      const gap = narrow ? 5 : 6;
       const totalW = slotW * 3 + gap * 2;
       const x0 = W / 2 - totalW / 2;
       const y0 = 14;
@@ -736,9 +792,9 @@
     }
 
     function drawHUD() {
-      // Score panel (right) — pieces is primary, height secondary
+      // Score panel (right) — pieces is primary, height secondary, best at bottom
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      roundRect(W - 178, 14, 162, 92, 10);
+      roundRect(W - 178, 14, 162, 110, 10);
       ctx.fill();
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
@@ -756,11 +812,11 @@
       ctx.fillStyle = 'rgba(224,231,255,0.85)';
       ctx.font = '600 13px system-ui';
       ctx.fillText(`${displayedHeight.toFixed(1)} m`, W - 110, 75);
-      // Best
-      ctx.fillStyle = 'rgba(255,210,140,0.85)';
+      // Best — inside panel
+      ctx.fillStyle = 'rgba(255,210,140,0.8)';
       ctx.font = '600 10px system-ui';
       ctx.textAlign = 'right';
-      ctx.fillText(`bedst: ${bestPieces} stk · ${bestHeight.toFixed(1)} m`, W - 22, 114);
+      ctx.fillText(`bedst: ${bestPieces} stk · ${bestHeight.toFixed(1)} m`, W - 22, 102);
 
       // Next preview (left)
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
@@ -837,7 +893,7 @@
 
       const towerTop = computeTowerTop();
       pendulum.anchorY = Math.min(-8, towerTop - 4);
-      cameraTarget = Math.min(-3, towerTop + 1);
+      cameraTarget = Math.min(-4, towerTop);
       cameraY += (cameraTarget - cameraY) * Math.min(1, dt * 3);
 
       // Shake (random per frame during quake)
