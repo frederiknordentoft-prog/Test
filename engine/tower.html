@@ -46,7 +46,7 @@
 </head>
 <body>
   <canvas id="c"></canvas>
-  <div class="hint" id="hint">Klik eller mellemrum for at slippe</div>
+  <div class="hint" id="hint">Land brikkerne på pladen — undgå kanten</div>
   <script type="module">
     import {
       Engine, Body, Vec2, Audio, Particles, Tweens, Input, easings
@@ -396,9 +396,11 @@
     function drawSky() {
       const grad = ctx.createLinearGradient(0, 0, 0, H);
       grad.addColorStop(0, '#0a1228');
-      grad.addColorStop(0.45, '#1e2a48');
-      grad.addColorStop(0.85, '#3d4a68');
-      grad.addColorStop(1, '#5a6680');
+      grad.addColorStop(0.35, '#1e2a48');
+      // Plate sits roughly at H/2; below that fades into void to communicate
+      // "fall off here = dead".
+      grad.addColorStop(0.55, '#262d40');
+      grad.addColorStop(1, '#06080f');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
     }
@@ -415,22 +417,63 @@
     }
 
     function drawGround() {
-      const left = worldToScreen(-3.5, 0);
-      const right = worldToScreen(3.5, 1.5);
-      ctx.fillStyle = '#1a2638';
-      ctx.fillRect(left.x, left.y, right.x - left.x, right.y - left.y);
-      ctx.strokeStyle = '#0d1626';
+      const tl = worldToScreen(-3.5, 0);
+      const tr = worldToScreen(3.5, 0);
+      const bl = worldToScreen(-3.5, 1.5);
+
+      // Cast a soft shadow on the void below to give the plate a sense of
+      // floating in nothing.
+      const shadow = ctx.createRadialGradient(
+        (tl.x + tr.x) / 2, bl.y + 12, 6,
+        (tl.x + tr.x) / 2, bl.y + 12, (tr.x - tl.x) * 0.55,
+      );
+      shadow.addColorStop(0, 'rgba(0,0,0,0.5)');
+      shadow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = shadow;
+      ctx.fillRect(0, bl.y, W, 60);
+
+      // Plate body — vertical gradient, brightest at top so the surface
+      // visually pops as the landing zone.
+      const bodyGrad = ctx.createLinearGradient(0, tl.y, 0, bl.y);
+      bodyGrad.addColorStop(0, '#506a8a');
+      bodyGrad.addColorStop(0.15, '#2e3e58');
+      bodyGrad.addColorStop(1, '#0e1424');
+      ctx.fillStyle = bodyGrad;
+      ctx.fillRect(tl.x, tl.y, tr.x - tl.x, bl.y - tl.y);
+
+      // Stone seams
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
       ctx.lineWidth = 1.5;
       for (let i = -2; i <= 2; i++) {
         const sx = worldToScreen(i, 0);
         ctx.beginPath();
-        ctx.moveTo(sx.x, left.y + 4);
-        ctx.lineTo(sx.x, right.y - 4);
+        ctx.moveTo(sx.x, tl.y + 6);
+        ctx.lineTo(sx.x, bl.y - 4);
         ctx.stroke();
       }
-      // Earth fill below
-      ctx.fillStyle = '#0d1322';
-      ctx.fillRect(0, right.y, W, H - right.y);
+
+      // Bright top edge — the landing surface.
+      ctx.strokeStyle = '#a8b8d0';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(tl.x, tl.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.stroke();
+
+      // Red edge warning bars at the very ends of the landing surface.
+      const drawEdgeBar = (xWorld, dir) => {
+        const a = worldToScreen(xWorld, 0);
+        const b = worldToScreen(xWorld + dir * 0.25, -0.06);
+        const grad = ctx.createLinearGradient(a.x, 0, b.x, 0);
+        grad.addColorStop(0, 'rgba(255, 90, 70, 0.85)');
+        grad.addColorStop(1, 'rgba(255, 90, 70, 0)');
+        ctx.fillStyle = grad;
+        const x0 = Math.min(a.x, b.x);
+        const x1 = Math.max(a.x, b.x);
+        ctx.fillRect(x0, b.y, x1 - x0, a.y - b.y + 3);
+      };
+      drawEdgeBar(-3.5, 1);
+      drawEdgeBar(3.5, -1);
     }
 
     function lookTarget(body) {
@@ -536,6 +579,57 @@
         ctx.arc(0, 0, t.size[0] * sc, 0, Math.PI * 2);
         ctx.fill(); ctx.stroke();
       }
+    }
+
+    function drawDropProjection() {
+      if (!pendulum.held || gameState !== 'playing') return;
+      const p = pendulumPos();
+      const startY = p.y + 0.4;
+      // Use the towerTop or plate top as landing target — whichever is closer.
+      const towerTop = computeTowerTop();
+      const targetY = Math.min(0, towerTop);
+      const dy = targetY - startY;
+      if (dy <= 0) return;
+      const g = BASE_GRAVITY;
+      const wAcc = windAccel() + quakeAccel();
+      const tEnd = Math.sqrt(2 * dy / g);
+
+      // Parabolic dotted trail
+      const N = 14;
+      for (let i = 1; i <= N; i++) {
+        const t = (i / N) * tEnd;
+        const x = p.x + p.vx * t + 0.5 * wAcc * t * t;
+        const y = startY + 0.5 * g * t * t;
+        const sp = worldToScreen(x, y);
+        const a = 0.08 + (i / N) * 0.32;
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Landing marker
+      const landX = p.x + p.vx * tEnd + 0.5 * wAcc * tEnd * tEnd;
+      const land = worldToScreen(landX, targetY);
+      const onPlate = Math.abs(landX) < 3.4;
+      const fill = onPlate ? 'rgba(120, 220, 140, 0.32)' : 'rgba(255, 100, 80, 0.32)';
+      const stroke = onPlate ? '#7adc8a' : '#ff6450';
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      ctx.arc(land.x, land.y, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(land.x, land.y, 14, 0, Math.PI * 2);
+      ctx.stroke();
+      // Crosshair
+      ctx.beginPath();
+      ctx.moveTo(land.x - 6, land.y);
+      ctx.lineTo(land.x + 6, land.y);
+      ctx.moveTo(land.x, land.y - 6);
+      ctx.lineTo(land.x, land.y + 6);
+      ctx.stroke();
     }
 
     function drawPendulum() {
@@ -801,6 +895,7 @@
       particles.render(ctx, SCALE);
       ctx.restore();
       for (const b of pieces) drawBody(b);
+      drawDropProjection();
       drawPendulum();
       drawWindForecast();
       drawHUD();
