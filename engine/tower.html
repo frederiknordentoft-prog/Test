@@ -140,7 +140,7 @@
     }
 
     const pendulum = {
-      anchorY: -9,
+      anchorY: -8,
       amplitude: 3.2,
       period: 4.0,
       time: 0,
@@ -318,13 +318,13 @@
       pieceCount = pieces.filter(p => p.position.y < 0.3 && Math.abs(p.position.x) < 6).length;
       displayedHeight += (height - displayedHeight) * 0.18;
       displayedPieces += (pieceCount - displayedPieces) * 0.22;
-      const milestone = Math.floor(height / 5);
+      const milestone = Math.floor(pieceCount / 10);
       if (milestone > lastMilestone) {
         lastMilestone = milestone;
-        flashBanner(`${milestone * 5} m!`);
+        flashBanner(`${milestone * 10} STYKKER!`);
         audio.melody([523, 659, 784, 1047], { gap: 0.08, duration: 0.2, gain: 0.25 });
-        for (let i = 0; i < 20; i++) {
-          particles.burst(new Vec2((Math.random() - 0.5) * 4, top + 0.5), {
+        for (let i = 0; i < 24; i++) {
+          particles.burst(new Vec2((Math.random() - 0.5) * 5, top + 0.5), {
             count: 1,
             speedMin: 2, speedMax: 5,
             lifetime: 1.0, lifetimeVariance: 0.4,
@@ -642,24 +642,31 @@
     }
 
     function drawHUD() {
-      // Score panel (right)
+      // Score panel (right) — pieces is primary, height secondary
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      roundRect(W - 178, 14, 162, 78, 10);
+      roundRect(W - 178, 14, 162, 92, 10);
       ctx.fill();
-      ctx.font = '600 10px system-ui';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
+      // Pieces: large
+      ctx.font = '600 10px system-ui';
       ctx.fillStyle = 'rgba(224,231,255,0.55)';
-      ctx.fillText('HØJDE', W - 168, 22);
-      ctx.fillText('STYKKER', W - 168, 56);
+      ctx.fillText('STYKKER', W - 168, 22);
       ctx.fillStyle = '#e0e7ff';
-      ctx.font = '700 22px system-ui';
-      ctx.fillText(`${displayedHeight.toFixed(1)} m`, W - 168, 35);
-      ctx.fillText(`${Math.round(displayedPieces)}`, W - 168, 69);
+      ctx.font = '900 32px system-ui';
+      ctx.fillText(`${Math.round(displayedPieces)}`, W - 168, 34);
+      // Height: small bonus
+      ctx.font = '600 10px system-ui';
+      ctx.fillStyle = 'rgba(224,231,255,0.45)';
+      ctx.fillText('HØJDE', W - 168, 76);
+      ctx.fillStyle = 'rgba(224,231,255,0.85)';
+      ctx.font = '600 13px system-ui';
+      ctx.fillText(`${displayedHeight.toFixed(1)} m`, W - 110, 75);
+      // Best
       ctx.fillStyle = 'rgba(255,210,140,0.85)';
       ctx.font = '600 10px system-ui';
       ctx.textAlign = 'right';
-      ctx.fillText(`bedst: ${bestHeight.toFixed(1)} m / ${bestPieces} stk`, W - 22, 100);
+      ctx.fillText(`bedst: ${bestPieces} stk · ${bestHeight.toFixed(1)} m`, W - 22, 114);
 
       // Next preview (left)
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
@@ -703,20 +710,28 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = '900 44px system-ui';
-      ctx.fillText('TÅRNET FALDT', W / 2, H / 2 - 60);
-      ctx.font = '500 18px system-ui';
-      ctx.fillStyle = 'rgba(224,231,255,0.85)';
-      ctx.fillText(`Højde ${height.toFixed(1)} m  ·  ${pieceCount} stykker`, W / 2, H / 2 - 12);
-      const newRecord = height === bestHeight && height > 0;
+      ctx.fillText('TÅRNET FALDT', W / 2, H / 2 - 80);
+      // Big piece count
+      ctx.fillStyle = '#ffd966';
+      ctx.font = '900 72px system-ui';
+      ctx.fillText(`${pieceCount}`, W / 2, H / 2 - 14);
+      ctx.fillStyle = 'rgba(224,231,255,0.7)';
+      ctx.font = '600 14px system-ui';
+      ctx.fillText('STYKKER', W / 2, H / 2 + 28);
+      // Height secondary
+      ctx.font = '500 14px system-ui';
+      ctx.fillStyle = 'rgba(224,231,255,0.6)';
+      ctx.fillText(`højde ${height.toFixed(1)} m`, W / 2, H / 2 + 52);
+      const newRecord = pieceCount === bestPieces && pieceCount > 0;
       if (newRecord) {
         ctx.fillStyle = '#ffd966';
         ctx.font = '700 16px system-ui';
-        ctx.fillText('★ NY REKORD ★', W / 2, H / 2 + 18);
+        ctx.fillText('★ NY REKORD ★', W / 2, H / 2 + 80);
       }
       if (overTime > 0.8) {
         ctx.font = '500 14px system-ui';
         ctx.fillStyle = 'rgba(224,231,255,0.6)';
-        ctx.fillText('Klik eller R for at prøve igen', W / 2, H / 2 + 56);
+        ctx.fillText('Klik eller R for at prøve igen', W / 2, H / 2 + 116);
       }
     }
 
@@ -727,8 +742,8 @@
       lastTime = now;
 
       const towerTop = computeTowerTop();
-      pendulum.anchorY = Math.min(-9, towerTop - 4);
-      cameraTarget = Math.min(-2.5, towerTop + 2);
+      pendulum.anchorY = Math.min(-8, towerTop - 4);
+      cameraTarget = Math.min(-3, towerTop + 1);
       cameraY += (cameraTarget - cameraY) * Math.min(1, dt * 3);
 
       // Shake (random per frame during quake)
