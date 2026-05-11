@@ -259,7 +259,7 @@
     function dropPiece() {
       if (gameState !== 'playing' || !pendulum.held) return;
       const p = pendulumPos();
-      const piece = makeBody(pendulum.held, new Vec2(p.x, p.y + 0.4), new Vec2(p.vx, 0));
+      const piece = makeBody(pendulum.held, new Vec2(p.x, p.y + 0.4), new Vec2(p.vx * 0.5, 0));
       engine.add(piece);
       pieces.push(piece);
       audio.click();
