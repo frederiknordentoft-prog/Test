@@ -196,7 +196,9 @@ export class Engine {
     const useE = -vn < restitutionThresh ? 0 : e;
 
     const jn = -(1 + useE) * vn / kn;
-    let jt = -vt * f / kt;
+    // Coulomb friction: fully cancel tangential motion (jt = -vt / kt) when
+    // possible, otherwise clamp to ±μ|jn| (kinetic friction).
+    let jt = -vt / kt;
     const maxJt = Math.abs(jn) * f;
     if (jt > maxJt) jt = maxJt;
     else if (jt < -maxJt) jt = -maxJt;
@@ -314,7 +316,7 @@ export class Engine {
 
     const useE = vn < this.restitutionThreshold * this._h ? 0 : body.restitution;
     const jn = (1 + useE) * vn / kn;
-    let jt = -vt * body.friction / kt;
+    let jt = -vt / kt;
     const maxJt = Math.abs(jn) * body.friction;
     if (jt > maxJt) jt = maxJt;
     else if (jt < -maxJt) jt = -maxJt;
