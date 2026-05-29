@@ -5,6 +5,7 @@
 // ============================================================
 
 import { Deal, GameState, Move } from '../engine/types';
+import { randomSeed } from '../engine/rng';
 import type { WorkerRequest, WorkerResponse } from './solver.worker';
 
 type Pending = (res: WorkerResponse) => void;
@@ -98,9 +99,14 @@ export class DealPool {
     this.onChange?.(this.pool.length);
     void this.fill(); // top up in the background
     if (d) return d;
-    // Pool empty: generate one now (may take a moment, but only on cold start).
-    const fresh = await solverClient.generate(this.solvableOnly(), this.nodeBudget());
-    return fresh ?? (await solverClient.generate(false, this.nodeBudget()))!;
+    // Pool drained (cold start). In solvable-only mode we must verify; in mix
+    // mode hand out an instant unclassified deal (the game store classifies it
+    // in the background) so gameplay never blocks.
+    if (this.solvableOnly()) {
+      const fresh = await solverClient.generate(true, this.nodeBudget());
+      if (fresh) return fresh;
+    }
+    return solverClient.dealSeed(randomSeed());
   }
 
   /** Keep generating until the pool reaches its target size. */

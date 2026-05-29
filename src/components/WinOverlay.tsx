@@ -1,5 +1,5 @@
 import { useGame } from '../store/gameStore';
-import { useConfig } from '../store/configStore';
+import { useConfig, activePaytable } from '../store/configStore';
 import { payoutMultiplier } from '../economy/paytable';
 
 function fmt(n: number): string {
@@ -11,12 +11,15 @@ export function WinOverlay() {
   const status = useGame((s) => s.status);
   const clearResult = useGame((s) => s.clearResult);
   const newGame = useGame((s) => s.newGame);
-  const paytable = useConfig((s) => s.paytable);
+  const cfg = useConfig();
 
   if (!result || status === 'idle' || status === 'playing') return null;
 
   const solved = result.solved;
-  const mult = payoutMultiplier(paytable, solved, result.rounds);
+  const mult = solved
+    ? payoutMultiplier(activePaytable(cfg), true, result.rounds)
+    : result.payout / cfg.stake; // progress multiplier
+  const foundationPct = Math.round(result.foundationFraction * 100);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -31,19 +34,32 @@ export function WinOverlay() {
             {result.minRounds != null && (
               <>
                 {' '}
-                Optimalt var <b>{result.minRounds}</b>.
+                Optimalt var <b>{result.minRounds}</b>
+                {result.minRoundsProven === false && <span className="text-white/50"> (ikke bevist)</span>}.
               </>
             )}
           </p>
         ) : (
-          <p className="mt-2 text-white/70">Indsatsen er tabt. Prøv igen!</p>
+          <p className="mt-2 text-white/70">
+            {result.payout > 0 ? (
+              <>
+                Du nåede <b>{foundationPct}%</b> til fundamentet og fik en delvis udbetaling.
+              </>
+            ) : (
+              <>
+                Du nåede <b>{foundationPct}%</b> til fundamentet — under tærsklen, så ingen udbetaling.
+              </>
+            )}
+          </p>
         )}
 
         <div className="my-5 rounded-xl bg-black/30 p-4">
-          <div className="text-xs uppercase tracking-wide text-white/50">Gevinst</div>
+          <div className="text-xs uppercase tracking-wide text-white/50">
+            {solved ? 'Gevinst' : 'Progress-udbetaling'}
+          </div>
           <div className="font-display text-4xl font-bold text-white">
             {fmt(result.payout)}{' '}
-            <span className="text-lg text-white/50">× {mult}</span>
+            <span className="text-lg text-white/50">× {mult.toFixed(2)}</span>
           </div>
         </div>
 

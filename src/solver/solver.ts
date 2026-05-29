@@ -1,15 +1,20 @@
 // ============================================================
 // Klondike draw-1 solver.
 //
-// DFS with a transposition table (hashState) and a node budget.
-// Used for: (a) verifying solvability of generated deals,
-// (b) hints, (c) an optimal-ish round benchmark.
+// Iterative (explicit-stack) DFS — never recursive, so the deep
+// search paths Klondike produces can't overflow the call stack.
 //
-// "Good enough" for a prototype: draw-1 is far more tractable
-// than draw-3. The minRounds it reports is the round count of
-// the first solution it finds under a move ordering that avoids
-// recycling, so it is a near-optimal benchmark rather than a
-// proven minimum.
+// It MINIMISES the number of talon rounds (recycles) via
+// branch-and-bound: it keeps the best (fewest-round) solution
+// found and prunes any branch that can't beat it, plus a
+// dominance transposition table (a board reached with fewer
+// rounds dominates the same board reached with more). When the
+// search completes without hitting the node budget, the reported
+// `minRounds` is a PROVEN minimum within the round cap; otherwise
+// `minRoundsProven` is false and minRounds is only an upper bound.
+//
+// Used for: (a) classifying generated deals (solvable / unsolvable
+// / unknown), (b) hints, (c) the optimal round benchmark.
 // ============================================================
 
 import {
@@ -25,8 +30,8 @@ import {
   legalMoves,
 } from '../engine/klondike';
 
-const DEFAULT_NODE_BUDGET = 200_000;
-const SOLVER_MAX_ROUNDS = 6; // cap talon passes during search
+const DEFAULT_NODE_BUDGET = 600_000;
+const SOLVER_MAX_ROUNDS = 8; // hard cap on talon passes considered during search
 
 /** Heuristic priority: higher is tried first. */
 function moveScore(s: GameState, m: Move): number {
@@ -65,17 +70,30 @@ interface Frame {
   idx: number;
 }
 
-// Iterative DFS with an explicit stack (avoids call-stack overflow on the
-// deep search paths Klondike can produce) + transposition table + node budget.
-export function solve(state: GameState, nodeBudget: number = DEFAULT_NODE_BUDGET): SolveResult {
-  if (isWin(state)) return { status: 'solvable', solution: [], minRounds: 1, nodes: 0 };
+/**
+ * Solve a deal, minimising talon rounds. `maxRoundCap` bounds how many talon
+ * passes the search will consider (used by tests to prove minimality).
+ */
+export function solve(
+  state: GameState,
+  nodeBudget: number = DEFAULT_NODE_BUDGET,
+  maxRoundCap: number = SOLVER_MAX_ROUNDS,
+): SolveResult {
+  if (isWin(state)) {
+    return { status: 'solvable', solution: [], minRounds: 1, minRoundsProven: true, nodesVisited: 0 };
+  }
 
-  const visited = new Set<string>([hashState(state)]);
+  // Dominance table: fewest rounds seen to reach a given board hash.
+  const bestRoundsAt = new Map<string, number>();
+  bestRoundsAt.set(hashState(state), state.rounds);
+
   let nodes = 0;
   let budgetExceeded = false;
+  let best = maxRoundCap + 1; // accept only solutions with rounds <= maxRoundCap
+  let bestSolution: Move[] | null = null;
 
   const stack: Frame[] = [
-    { state, moves: orderedMoves(state, state.rounds < SOLVER_MAX_ROUNDS), idx: 0 },
+    { state, moves: orderedMoves(state, state.rounds + 1 < best), idx: 0 },
   ];
   const path: Move[] = []; // moves from root to the top frame's state
 
@@ -94,24 +112,46 @@ export function solve(state: GameState, nodeBudget: number = DEFAULT_NODE_BUDGET
       break;
     }
 
-    const key = hashState(next);
-    if (visited.has(key)) continue;
-    visited.add(key);
+    // Branch-and-bound: a solution from here has rounds >= next.rounds, so it
+    // can't beat the best found if next.rounds is already >= best.
+    if (next.rounds >= best) continue;
 
     if (isWin(next)) {
-      const solution = [...path, m];
-      return { status: 'solvable', solution, minRounds: roundsForSolution(state, solution), nodes };
+      best = next.rounds;
+      bestSolution = [...path, m];
+      continue; // keep searching for a fewer-round solution
     }
+
+    // Dominance: skip if this board was already reached with <= rounds.
+    const key = hashState(next);
+    const seen = bestRoundsAt.get(key);
+    if (seen !== undefined && seen <= next.rounds) continue;
+    bestRoundsAt.set(key, next.rounds);
 
     path.push(m);
     stack.push({
       state: next,
-      moves: orderedMoves(next, next.rounds < SOLVER_MAX_ROUNDS),
+      moves: orderedMoves(next, next.rounds + 1 < best),
       idx: 0,
     });
   }
 
-  return { status: budgetExceeded ? 'unknown' : 'unsolvable', nodes };
+  if (bestSolution) {
+    return {
+      status: 'solvable',
+      solution: bestSolution,
+      minRounds: best,
+      // Proven only if the whole search completed (no branch left unexplored
+      // due to the budget). A budget cut means a fewer-round solution might exist.
+      minRoundsProven: !budgetExceeded,
+      nodesVisited: nodes,
+    };
+  }
+  return {
+    status: budgetExceeded ? 'unknown' : 'unsolvable',
+    minRoundsProven: false,
+    nodesVisited: nodes,
+  };
 }
 
 /** Replay a solution to count how many talon rounds it consumes. */

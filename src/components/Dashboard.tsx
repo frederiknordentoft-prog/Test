@@ -2,6 +2,8 @@ import { useGame } from '../store/gameStore';
 import { useConfig } from '../store/configStore';
 import {
   rtp,
+  roundRtp,
+  progressRtp,
   hitFrequency,
   avgActualRounds,
   avgOptimalRounds,
@@ -34,11 +36,17 @@ export function Dashboard() {
   const cfg = useConfig();
 
   const sessionRtp = rtp(stats);
+  const rRtp = roundRtp(stats);
+  const pRtp = progressRtp(stats);
   const hitFreq = hitFrequency(stats);
   const aActual = avgActualRounds(stats);
   const aOptimal = avgOptimalRounds(stats);
 
   const maxDist = Math.max(1, ...BUCKETS.map((b) => stats.roundDist[b] ?? 0));
+
+  // Deal classification shares of played deals.
+  const cc = stats.classCounts;
+  const classTotal = cc.solvable + cc.unsolvable + cc.unknown || 1;
 
   // Jackpot RTP breakdown, as % of total staked across the session.
   const staked = stats.totalStaked || 1;
@@ -51,10 +59,22 @@ export function Dashboard() {
       <div className="grid grid-cols-2 gap-2">
         <Metric label="Session-RTP" value={`${fmt(sessionRtp, 1)}%`} accent />
         <Metric label="Hit frequency" value={`${fmt(hitFreq, 1)}%`} />
+        <Metric label="Runde-RTP" value={`${fmt(rRtp, 1)}%`} />
+        <Metric label="Progress-RTP" value={`${fmt(pRtp, 1)}%`} />
         <Metric label="Spil" value={`${stats.games}`} />
         <Metric label="Vundne" value={`${stats.wins}`} />
         <Metric label="Største gevinst" value={fmt(stats.biggestWin)} />
         <Metric label="Indsat i alt" value={fmt(stats.totalStaked)} />
+      </div>
+
+      {/* Deal classification */}
+      <div className="border-t border-white/10 pt-3">
+        <h3 className="mb-2 font-display text-sm font-semibold text-brand-gold">Deal-klassifikation</h3>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <Metric label="Løsbare" value={`${fmt((cc.solvable / classTotal) * 100, 0)}%`} />
+          <Metric label="Umulige" value={`${fmt((cc.unsolvable / classTotal) * 100, 0)}%`} />
+          <Metric label="Ukendt" value={`${fmt((cc.unknown / classTotal) * 100, 0)}%`} />
+        </div>
       </div>
 
       {/* Round distribution */}
@@ -81,11 +101,19 @@ export function Dashboard() {
       <div className="border-t border-white/10 pt-3">
         <h3 className="mb-2 font-display text-sm font-semibold text-brand-gold">Skill-gab</h3>
         {stats.benchmarkedGames > 0 ? (
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <Metric label="Din ø. runder" value={fmt(aActual, 2)} />
-            <Metric label="Optimal ø." value={fmt(aOptimal, 2)} accent />
-            <Metric label="Gab" value={`+${fmt(aActual - aOptimal, 2)}`} />
-          </div>
+          <>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <Metric label="Din ø. runder" value={fmt(aActual, 2)} />
+              <Metric label="Optimal ø." value={fmt(aOptimal, 2)} accent />
+              <Metric label="Gab" value={`+${fmt(aActual - aOptimal, 2)}`} />
+            </div>
+            {stats.unprovenBenchmarks > 0 && (
+              <p className="mt-2 text-xs text-amber-300/80">
+                ⚠ Benchmark ikke bevist optimalt for {stats.unprovenBenchmarks}{' '}
+                {stats.unprovenBenchmarks === 1 ? 'deal' : 'deals'} (node-budget opbrugt) — hæv solver-budgettet.
+              </p>
+            )}
+          </>
         ) : (
           <p className="text-xs text-white/40">Spil et par løsbare deals for at se gabet mod solverens optimum.</p>
         )}

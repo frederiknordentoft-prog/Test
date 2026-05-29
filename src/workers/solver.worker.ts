@@ -15,7 +15,14 @@ export type WorkerRequest =
 
 export type WorkerResponse =
   | { id: number; kind: 'generate'; deal: ReturnType<typeof dealFromSeed> | undefined }
-  | { id: number; kind: 'solve'; status: string; minRounds?: number; nodes: number }
+  | {
+      id: number;
+      kind: 'solve';
+      status: 'solvable' | 'unsolvable' | 'unknown';
+      minRounds?: number;
+      minRoundsProven: boolean;
+      nodesVisited: number;
+    }
   | { id: number; kind: 'hint'; move?: Move }
   | { id: number; kind: 'dealSeed'; deal: ReturnType<typeof dealFromSeed> };
 
@@ -37,7 +44,8 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
         kind: 'solve',
         status: r.status,
         minRounds: r.minRounds,
-        nodes: r.nodes,
+        minRoundsProven: r.minRoundsProven,
+        nodesVisited: r.nodesVisited,
       };
       (self as unknown as Worker).postMessage(res);
       break;

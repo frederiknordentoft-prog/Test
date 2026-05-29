@@ -10,7 +10,9 @@ export interface SessionStats {
   wins: number;
   paidGames: number; // games that paid > 0 (incl. base game payout)
   totalStaked: number;
-  totalPaid: number; // base-game payouts only (excl. jackpot)
+  totalPaid: number; // base-game payouts only (excl. jackpot) = round + progress
+  totalPaidRound: number; // payouts from solved games (round paytable)
+  totalPaidProgress: number; // payouts from unsolved games (progress payout)
   biggestWin: number;
   // round distribution among solved games, keyed by bucket label
   roundDist: Record<string, number>;
@@ -18,6 +20,9 @@ export interface SessionStats {
   actualRoundsSum: number;
   optimalRoundsSum: number;
   benchmarkedGames: number;
+  unprovenBenchmarks: number; // benchmarked games whose minRounds wasn't proven optimal
+  // deal classification counts of played deals
+  classCounts: { solvable: number; unsolvable: number; unknown: number };
 }
 
 export function emptyStats(): SessionStats {
@@ -27,11 +32,15 @@ export function emptyStats(): SessionStats {
     paidGames: 0,
     totalStaked: 0,
     totalPaid: 0,
+    totalPaidRound: 0,
+    totalPaidProgress: 0,
     biggestWin: 0,
     roundDist: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6plus': 0 },
     actualRoundsSum: 0,
     optimalRoundsSum: 0,
     benchmarkedGames: 0,
+    unprovenBenchmarks: 0,
+    classCounts: { solvable: 0, unsolvable: 0, unknown: 0 },
   };
 }
 
@@ -39,21 +48,30 @@ export interface GameResult {
   stake: number;
   solved: boolean;
   rounds: number;
-  payout: number; // base-game payout (excl. jackpot)
+  payout: number; // total base-game payout (excl. jackpot)
+  roundPayout: number; // payout from the round paytable (solved games)
+  progressPayout: number; // payout from progress (unsolved games)
   minRounds?: number; // solver benchmark
+  minRoundsProven?: boolean;
+  dealStatus?: 'solvable' | 'unsolvable' | 'unknown';
 }
 
 export function recordGame(stats: SessionStats, r: GameResult): SessionStats {
   const next: SessionStats = {
     ...stats,
     roundDist: { ...stats.roundDist },
+    classCounts: { ...stats.classCounts },
     games: stats.games + 1,
     wins: stats.wins + (r.solved ? 1 : 0),
     paidGames: stats.paidGames + (r.payout > 0 ? 1 : 0),
     totalStaked: stats.totalStaked + r.stake,
     totalPaid: stats.totalPaid + r.payout,
+    totalPaidRound: stats.totalPaidRound + r.roundPayout,
+    totalPaidProgress: stats.totalPaidProgress + r.progressPayout,
     biggestWin: Math.max(stats.biggestWin, r.payout),
   };
+  const cls = r.dealStatus ?? 'unknown';
+  next.classCounts[cls] += 1;
   if (r.solved) {
     const bucket = String(roundBucket(r.rounds));
     next.roundDist[bucket] = (next.roundDist[bucket] ?? 0) + 1;
@@ -61,6 +79,7 @@ export function recordGame(stats: SessionStats, r: GameResult): SessionStats {
       next.actualRoundsSum += r.rounds;
       next.optimalRoundsSum += r.minRounds;
       next.benchmarkedGames += 1;
+      if (r.minRoundsProven === false) next.unprovenBenchmarks += 1;
     }
   }
   return next;
@@ -69,6 +88,18 @@ export function recordGame(stats: SessionStats, r: GameResult): SessionStats {
 export function rtp(stats: SessionStats): number {
   if (stats.totalStaked === 0) return 0;
   return (stats.totalPaid / stats.totalStaked) * 100;
+}
+
+/** RTP from solved games only (round paytable). */
+export function roundRtp(stats: SessionStats): number {
+  if (stats.totalStaked === 0) return 0;
+  return (stats.totalPaidRound / stats.totalStaked) * 100;
+}
+
+/** RTP from unsolved games' progress payouts. */
+export function progressRtp(stats: SessionStats): number {
+  if (stats.totalStaked === 0) return 0;
+  return (stats.totalPaidProgress / stats.totalStaked) * 100;
 }
 
 export function hitFrequency(stats: SessionStats): number {

@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { Deal, GameState, Move, suitOf, rankOf } from '../engine/types';
 import { applyMove, isWin, legalMoves, foundationCount } from '../engine/klondike';
 import { computePayout } from '../economy/paytable';
+import { progressPayout } from '../economy/progress';
 import {
   JackpotState,
   loadJackpot,
@@ -20,7 +21,7 @@ import {
   recordGame,
 } from '../economy/stats';
 import { DealPool, solverClient } from '../workers/solverClient';
-import { useConfig } from './configStore';
+import { useConfig, activePaytable } from './configStore';
 
 export type Source =
   | { kind: 'waste' }
@@ -35,7 +36,11 @@ export interface LastResult {
   solved: boolean;
   rounds: number;
   minRounds?: number;
+  minRoundsProven?: boolean;
   payout: number;
+  roundPayout: number;
+  progressPayout: number;
+  foundationFraction: number;
   jackpotWon: number;
   jackpotHit: boolean;
 }
@@ -143,8 +148,14 @@ export const useGame = create<GameStore>((set, get) => {
 
   const finalize = (solved: boolean, finalState: GameState) => {
     const cfg = useConfig.getState();
+    const deal = get().deal;
     const rounds = finalState.rounds;
-    const payout = computePayout(cfg.paytable, cfg.stake, solved, rounds);
+    const foundationFraction = foundationCount(finalState) / 52;
+
+    // Solved -> round paytable. Unsolved -> threshold progress payout.
+    const roundPayout = solved ? computePayout(activePaytable(cfg), cfg.stake, true, rounds) : 0;
+    const progressPay = solved ? 0 : progressPayout(foundationFraction, cfg.stake, cfg);
+    const payout = roundPayout + progressPay;
 
     // Jackpot: every finished game is a "paid game" (stake already deducted).
     const jp = processJackpot(get().jackpot, cfg.jackpot, cfg.stake, solved, Math.random());
@@ -153,8 +164,12 @@ export const useGame = create<GameStore>((set, get) => {
     const result: LastResult = {
       solved,
       rounds,
-      minRounds: get().deal?.minRounds,
+      minRounds: deal?.minRounds,
+      minRoundsProven: deal?.minRoundsProven,
       payout,
+      roundPayout,
+      progressPayout: progressPay,
+      foundationFraction,
       jackpotWon: jp.amountWon,
       jackpotHit: jp.hit,
     };
@@ -164,7 +179,11 @@ export const useGame = create<GameStore>((set, get) => {
       solved,
       rounds,
       payout,
-      minRounds: get().deal?.minRounds,
+      roundPayout,
+      progressPayout: progressPay,
+      minRounds: deal?.minRounds,
+      minRoundsProven: deal?.minRoundsProven,
+      dealStatus: deal?.status,
     });
 
     const balance = get().balance + payout + jp.amountWon;
@@ -216,11 +235,20 @@ export const useGame = create<GameStore>((set, get) => {
         generating: false,
         balance,
       });
-      // If the deal lacks a benchmark (e.g. not solvable-only), compute one lazily.
-      if (deal.minRounds == null && cfg.solvableOnly) {
+      // If the deal isn't classified / benchmarked yet (e.g. an instant
+      // cold-start deal), classify + benchmark it in the background so the
+      // skill-gap and classification stats can be shown.
+      if (deal.status == null || deal.minRounds == null) {
         void solverClient.solve(deal.state, cfg.benchNodeBudget).then((r) => {
-          if (r.status === 'solvable' && r.minRounds != null && get().deal === deal) {
-            set({ deal: { ...deal, minRounds: r.minRounds } });
+          if (get().deal === deal) {
+            set({
+              deal: {
+                ...deal,
+                status: r.status,
+                minRounds: r.status === 'solvable' ? r.minRounds : undefined,
+                minRoundsProven: r.minRoundsProven,
+              },
+            });
           }
         });
       }

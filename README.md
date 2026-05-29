@@ -19,19 +19,24 @@ Andre scripts:
 ```bash
 npm run build      # typecheck + produktionsbuild
 npm run typecheck  # kun TypeScript-tjek
-npm run sanity     # korrekthedstest af motor + solver (deals, løsninger, runde-tælling)
+npm run sanity     # korrekthedstest af motor + solver (inkl. bevist minRounds)
+npm run simulate -- [antal] [målRTP%] [nodeBudget] [tuneTo]   # økonomi-analyse på mix
 ```
 
 Ingen backend. Saldo, indstillinger og jackpotpulje persisteres i `localStorage`.
 
 ## Sådan spiller du
 
-- **Nyt spil** trækker en (som standard verificeret løsbar) deal og hæver indsatsen.
+- **Nyt spil** trækker en deal (som standard fra **naturligt mix**: ~80% løsbare,
+  ~20% umulige) og hæver indsatsen. Løsbar-kun kan slås til i kontrolpanelet.
 - Flyt kort med **klik-for-at-flytte** (klik kort → klik destination) eller **træk-og-slip**.
 - **Dobbeltklik** sender det øverste kort direkte til sit fundament.
 - **Træk fra talon** (klik på talonbunken) trækker ét kort. Når talonen er tom,
   genbruges den — det tæller en **runde** op.
 - Løs hele kabalen for en gevinst der afhænger af **antal runder**.
+- Hvis du **ikke** løser (giv op / for mange runder) får du en **tærskel-baseret
+  progress payout**: 0 under tærsklen (default 70% af kortene på fundamentet),
+  stigende mod et maks nær 100%.
 - **Hint** fremhæver solverens næste fornuftige træk, **Fortryd** og **Giv op** virker.
 
 ## Arkitektur
@@ -39,7 +44,8 @@ Ingen backend. Saldo, indstillinger og jackpotpulje persisteres i `localStorage`
 ```
 src/
   engine/      # Klondike-regler: deal, lovlige træk, anvend træk, hash, runde-tælling
-  solver/      # DFS + transpositionstabel + node-budget; løsbarhed, hints, benchmark
+  solver/      # iterativ DFS + branch-and-bound (minimerer runder) + node-budget
+               #   -> løsbarhed, hints, BEVIST minimum-runde-benchmark; player.ts (heuristik)
   economy/     # gevinsttabel, progressiv jackpot, session-statistik
   store/        # Zustand: configStore (tunbare parametre) + gameStore (spiltilstand)
   workers/     # solver-web-worker + klient + baggrundspulje af verificerede deals
@@ -54,8 +60,9 @@ forgenereres i en lille baggrundspulje, så et nyt spil ikke blokerer.
 | Parameter | Beskrivelse |
 |-----------|-------------|
 | Indsats (stake) | Pris pr. spil (default 10) |
-| Gevinsttabel | Multiplikator pr. antal runder (1, 2, 3, 4, 5, 6+, tab) |
-| Kun løsbare deals | Til/fra — kun solver-verificerede deals deles |
+| Gevinsttabel | Multiplikator pr. antal runder (1, 2, 3, 4, 5, 6+, tab). Egen tabel pr. mode |
+| Kun løsbare deals | Til/fra — fra = naturligt mix (default), til = kun verificerede |
+| Progress payout | Tærskel (0.70), maks (0.5× indsats), eksponent (1.0) for ikke-løste spil |
 | Max runder | 0 = ubegrænset; ellers bust ved overskridelse |
 | Fortryd-straf | Fortryd koster en ekstra runde (test RTP-effekt) |
 | Jackpot-model | **A** (ren tilfældig på ethvert betalt spil) eller **B** (kræver løst spil) |

@@ -71,11 +71,20 @@ npm run simulate -- [antal] [målRTP%] [nodeBudget] [tuneTo]   # økonomi-analys
 - Standard Klondike, **draw-1**, ubegrænset (eller konfigurerbart max) genbrug af talonen.
 - **"Runde"** = ét gennemløb af talonen. Starter på 1, tæller +1 hver gang talonen
   genbruges (waste → stock). Dette er **scoringsmetrikken**: gevinst = `stake × paytable[min(runder, 6+)]`.
-- Ikke løst (giv op / overskredet max-runder) → udbetaling 0 (tab af indsats).
-- **Løsbar-kun** (default til): kun deals solveren har verificeret løsbare deles, så
-  skill udtrykkes i *effektivitet* frem for held om kabalen kan løses. Kan slås fra.
-- Solveren leverer **minRounds** = (nær-)optimalt benchmark, vist som "du løste på X,
-  optimalt var Y", og brugt til skill-gab i dashboardet.
+- **Deal-mode (NY default = naturligt mix):** `solvableOnly = false`. Almindelige
+  tilfældige deals deles (~80% løsbare / ~20% umulige), umulige inkl. Toggle slår
+  løsbar-kun til. **Hver mode har sin egen gevinsttabel** (mix-tabellen er mere
+  generøs, da de umulige deals holder optimal-RTP nede).
+- **Udbetaling ved spil-slut:**
+  - **Løst:** `stake × paytable[min(runder, 6+)]` (runde-paytable for den aktive mode).
+  - **Ikke løst (giv op / max-runder):** TÆRSKEL-baseret **progress payout** ud fra
+    `foundationFraction = kortPåFundament / 52`. 0 under `progressThreshold` (default
+    0.70), stiger til `progressMax × stake` (default 0.5) nær 100%, kurveform via
+    `progressExponent` (default 1.0). Tærsklen forhindrer et grind-exploit (nå ~50%
+    og giv op). Erstatter den gamle binære `fail = 0`.
+- Solveren leverer **minRounds** = **bevist minimum inden for søgebudget** (se solver
+  nedenfor), vist som "du løste på X, optimalt var Y" + skill-gab i dashboardet.
+  `minRoundsProven = false` markeres som advarsel når budgettet blev opbrugt.
 
 ## Gameplay-UI (færdigt)
 
@@ -87,17 +96,20 @@ npm run simulate -- [antal] [målRTP%] [nodeBudget] [tuneTo]   # økonomi-analys
 
 ## Kontrolpanel — alt er live-tunbart
 
-indsats, gevinsttabel pr. runde (1/2/3/4/5/6+/tab), løsbar-kun til/fra, max runder,
-fortryd-straf, jackpot-model (A/B), bidragssats, jackpot-seed, jackpot-odds,
-solver node-budgets, pulje-mål, "nulstil indstillinger".
+indsats, gevinsttabel pr. runde (1/2/3/4/5/6+/tab — egen pr. mode), løsbar-kun/mix-toggle,
+**progress payout (tærskel/maks/eksponent)**, max runder, fortryd-straf, jackpot-model
+(A/B), bidragssats, jackpot-seed, jackpot-odds, solver node-budgets (deals/benchmark/hint),
+pulje-mål, "nulstil indstillinger".
 
 ## Dashboard
 
-saldo, session-RTP%, hit frequency, antal spil/vundne, største gevinst, indsat i alt,
-runde-fordeling (bar-graf), skill-gab (din ø. runder vs. optimal), jackpot-regnskab
-(pulje, hits, spil-siden-hit, udbetalt) + **jackpot-RTP-opdeling: bidrag/seed/udbetalt
-som andel af samlet indsats** (jackpot-RTP ≈ bidrag + seed). Knapper: nulstil session,
-nulstil jackpot, +1000 spillepenge.
+saldo, session-RTP% + **opdeling i runde-RTP vs. progress-RTP**, hit frequency,
+**deal-klassifikation (løsbare/umulige/ukendt-andele)**, antal spil/vundne, største
+gevinst, indsat i alt, runde-fordeling (bar-graf), skill-gab (din ø. runder vs. optimal)
++ **advarsel når benchmark ikke er bevist optimalt** (node-budget opbrugt for N deals),
+jackpot-regnskab (pulje, hits, spil-siden-hit, udbetalt) + **jackpot-RTP-opdeling:
+bidrag/seed/udbetalt som andel af samlet indsats** (jackpot-RTP ≈ bidrag + seed).
+Knapper: nulstil session, nulstil jackpot, +1000 spillepenge.
 
 ## Progressiv jackpot
 
@@ -109,6 +121,10 @@ nulstil jackpot, +1000 spillepenge.
 - Persisteres i localStorage; vokser på tværs af sessioner.
 
 ## ⭐ Vigtigste økonomi-fund (fra `npm run simulate`)
+
+> Bemærk: punkt 2–3 nedenfor beskrev det *oprindelige* binære design. Det er nu
+> adresseret strukturelt med **naturligt mix + progress payout** (se ovenfor) — men
+> den endelige RTP-balance afventer stadig rigtige spil-data / evt. fladere tabel.
 
 **Solveren = optimal spiller. Runde-fordeling ved optimalt spil (på løsbare deals):**
 ca. 7 % løst på 1 runde, **~53 % på 2**, ~27 % på 3, ~10 % på 4, ~3 % på 5, ~0 % på 6+.
@@ -130,21 +146,42 @@ ca. 7 % løst på 1 runde, **~53 % på 2**, ~27 % på 3, ~10 % på 4, ~3 % på 5
    løser *færre* end "casual" i simuleringen viser, at fejlrate-knappen ikke er et rent
    dygtigheds-mål. Stol på *strukturen* (høj opgiv-rate → RTP-konflikt), ikke de absolutte tal.
 
-### Foreslåede løsningsretninger (ikke implementeret — afventer beslutning)
-- **A) Delvis udbetaling** for ufuldendte spil (fx efter antal kort på fundamentet),
-  så opgivne spil ikke altid er 0 → løfter human-RTP uden at overbetale eksperten.
-- **B) Fladere gevinsttabel** → mindre skill-følsomhed (mindre gab optimal↔menneske).
-- **C) Stærkere spillermodel** (shallow lookahead) → troværdige tal før rigtige data.
+### Status på de tidligere løsningsretninger
+- **A) Delvis udbetaling — IMPLEMENTERET** som tærskel-baseret progress payout (se mekanik).
+- **Naturligt mix — IMPLEMENTERET** som ny default (de ~20% umulige deals holder
+  optimal-RTP nede, så mix-tabellen kan være mere generøs).
+- **B) Fladere gevinsttabel** — stadig en mulighed; tabellerne er fuldt live-tunbare.
+- **C) Stærkere spillermodel** — ikke gjort; heuristikken er stadig en grov proxy.
 - Endelig tuning bør ske mod **rigtige spil-data** (placeholder-karakter er bevidst).
 
-## Teknisk note (bug rettet undervejs)
+## Solver-kontrakt (opdateret)
 
-Solveren var oprindeligt rekursiv DFS og løb **kaldestakken over** på dybe søgestier
-(browseren maskerede det pga. større stak). Omskrevet til **iterativ DFS med eksplicit
-stak** — samme resultater, ingen stak-grænse. Solverens `minRounds` er et *nær-optimalt*
-benchmark (første løsning under recycle-undgående move-ordering), ikke et bevist minimum.
-~57 % af tilfældige deals er løsbare inden for 200k node-budget; resten ("unknown")
-smides væk af puljen, hvilket let skævvrider fordelingen mod *lettere* deals.
+`solve(state, nodeBudget?, maxRoundCap?)` returnerer nu:
+```ts
+{ status: 'solvable'|'unsolvable'|'unknown';
+  solution?: Move[];
+  minRounds?: number;        // BEVIST minimum inden for budget (kun ved 'solvable')
+  minRoundsProven: boolean;  // false hvis node-budgettet blev opbrugt -> kun øvre grænse
+  nodesVisited: number; }
+```
+- **Iterativ (eksplicit stak), ingen rekursion** — den oprindelige rekursive DFS løb
+  kaldestakken over på dybe søgestier (browseren maskerede det). Må ikke vende tilbage.
+- **Minimerer runder** via branch-and-bound (behold bedste løsning, beskær grene der
+  ikke kan slå den) + dominans-transpositionstabel (et bræt nået med færre runder
+  dominerer samme bræt nået med flere). Når søgningen afsluttes uden at ramme budgettet,
+  er `minRounds` et **bevist minimum** (`minRoundsProven = true`).
+- At bevise minimalitet kræver at udtømme rum med færre runder → ofte kun bevist for
+  små minRounds (typisk 2) inden for budget; default-budgetter hævet (deals 400k,
+  benchmark 800k, hint 150k) og er tunbare. Resten markeres `minRoundsProven = false`.
+- Verificeret i `npm run sanity`: løsninger når 52/52, runde-tælling matcher, og for
+  beviste benchmarks giver `solve(..., minRounds-1)` ingen løsning (minRounds er minimal).
+
+## Note om klassifikation/budget
+
+Med moderat budget (fx 400k) klassificerer solveren mange deals som **"unknown"** frem
+for at bevise (u)løselighed — så dashboard-andelene viser en del "ukendt". Hæv solver-
+budgettet for skarpere klassifikation. `npm run simulate` kører nu på det naturlige mix
+og rapporterer andelen `minRoundsProven` + RTP inkl. progress payout.
 
 ## Git / status
 

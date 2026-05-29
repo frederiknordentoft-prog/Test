@@ -1,4 +1,4 @@
-import { useConfig } from '../store/configStore';
+import { useConfig, activePaytable } from '../store/configStore';
 import { useGame } from '../store/gameStore';
 import { Paytable } from '../economy/paytable';
 
@@ -75,6 +75,7 @@ export function ControlPanel() {
   const cfg = useConfig();
   const resetPool = useGame((s) => s.resetPool);
   const buckets: (keyof Paytable)[] = [1, 2, 3, 4, 5, '6plus', 'fail'];
+  const activePt = activePaytable(cfg);
 
   return (
     <div className="space-y-4">
@@ -87,29 +88,63 @@ export function ControlPanel() {
           onChange={(v) => cfg.set('maxRounds', v)}
         />
         <Toggle
-          label="Kun løsbare deals"
+          label="Kun løsbare deals (ellers naturligt mix)"
           checked={cfg.solvableOnly}
           onChange={(v) => {
             cfg.set('solvableOnly', v);
             resetPool();
           }}
         />
+        <p className="text-xs text-white/40">
+          {cfg.solvableOnly
+            ? 'Kun solver-verificerede deals deles.'
+            : 'Naturligt mix: ~80% løsbare, ~20% umulige deles som de er.'}
+        </p>
         <Toggle label="Fortryd koster en runde" checked={cfg.undoPenalty} onChange={(v) => cfg.set('undoPenalty', v)} />
       </Section>
 
-      <Section title="Gevinsttabel (× indsats)">
+      <Section title={`Gevinsttabel · ${cfg.solvableOnly ? 'løsbar-kun' : 'mix'} (× indsats)`}>
+        <p className="text-xs text-white/40">Hver mode har sin egen tabel — du redigerer den aktive.</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
           {buckets.map((b) => (
             <NumberField
               key={String(b)}
               label={b === 'fail' ? 'Tab' : b === '6plus' ? '6+ runder' : `${b} runde${b === 1 ? '' : 'r'}`}
-              value={cfg.paytable[b]}
+              value={activePt[b]}
               step={0.1}
               min={0}
               onChange={(v) => cfg.setPaytable(b, v)}
             />
           ))}
         </div>
+      </Section>
+
+      <Section title="Progress payout (ikke-løste spil)">
+        <p className="text-xs text-white/40">
+          Delvis udbetaling efter kort på fundamentet. 0 under tærsklen; stiger mod maks nær 100%.
+        </p>
+        <NumberField
+          label="Tærskel"
+          value={cfg.progressThreshold}
+          step={0.05}
+          min={0}
+          suffix={`${Math.round(cfg.progressThreshold * 100)}%`}
+          onChange={(v) => cfg.set('progressThreshold', v)}
+        />
+        <NumberField
+          label="Maks (× indsats nær 100%)"
+          value={cfg.progressMax}
+          step={0.05}
+          min={0}
+          onChange={(v) => cfg.set('progressMax', v)}
+        />
+        <NumberField
+          label="Eksponent (kurveform)"
+          value={cfg.progressExponent}
+          step={0.1}
+          min={0.1}
+          onChange={(v) => cfg.set('progressExponent', v)}
+        />
       </Section>
 
       <Section title="Progressiv jackpot">
@@ -148,7 +183,8 @@ export function ControlPanel() {
       </Section>
 
       <Section title="Solver (avanceret)">
-        <NumberField label="Node-budget (deals)" value={cfg.genNodeBudget} step={10000} min={10000} onChange={(v) => cfg.set('genNodeBudget', v)} />
+        <NumberField label="Node-budget (deals)" value={cfg.genNodeBudget} step={50000} min={10000} onChange={(v) => cfg.set('genNodeBudget', v)} />
+        <NumberField label="Node-budget (benchmark)" value={cfg.benchNodeBudget} step={50000} min={10000} onChange={(v) => cfg.set('benchNodeBudget', v)} />
         <NumberField label="Node-budget (hint)" value={cfg.hintNodeBudget} step={10000} min={10000} onChange={(v) => cfg.set('hintNodeBudget', v)} />
         <NumberField label="Pulje-mål (antal deals)" value={cfg.poolTarget} min={1} onChange={(v) => cfg.set('poolTarget', v)} />
       </Section>

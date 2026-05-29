@@ -15,11 +15,12 @@ export interface Paytable {
   fail: number;
 }
 
-// Tuned from `npm run simulate` (solver as optimal player over 600 solvable
-// deals): optimal-play RTP ≈ 96.5%, i.e. < 100% so the game can't be beaten by
-// perfect play. Real human RTP lands lower (players use more rounds) — re-tune
-// against real play data. Fully editable live in the control panel.
-export const DEFAULT_PAYTABLE: Paytable = {
+// Two mode-specific default tables (the active one is chosen by `solvableOnly`).
+// Both are placeholders — re-tune against real play data. Editable live.
+
+// SOLVABLE-ONLY mode: every dealt deal is winnable, so optimal play wins 100%.
+// Tuned so optimal-play RTP ≈ 96% (< 100%, i.e. can't be beaten by perfect play).
+export const DEFAULT_PAYTABLE_SOLVABLE: Paytable = {
   1: 2.7,
   2: 1.1,
   3: 0.55,
@@ -28,6 +29,21 @@ export const DEFAULT_PAYTABLE: Paytable = {
   '6plus': 0.11,
   fail: 0,
 };
+
+// NATURAL-MIX mode: ~20% of deals are impossible (guaranteed losses for any
+// player), which holds optimal-RTP down, so this table is more generous.
+export const DEFAULT_PAYTABLE_MIX: Paytable = {
+  1: 2.56,
+  2: 1.18,
+  3: 0.87,
+  4: 0.56,
+  5: 0.41,
+  '6plus': 0.31,
+  fail: 0,
+};
+
+/** Back-compat alias (solvable-only default). */
+export const DEFAULT_PAYTABLE = DEFAULT_PAYTABLE_SOLVABLE;
 
 /** Multiplier for a given outcome. `solved=false` => loss (fail). */
 export function payoutMultiplier(pt: Paytable, solved: boolean, rounds: number): number {

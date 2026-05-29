@@ -5,37 +5,57 @@
 // ============================================================
 
 import { create } from 'zustand';
-import { DEFAULT_PAYTABLE, Paytable } from '../economy/paytable';
+import { DEFAULT_PAYTABLE_SOLVABLE, DEFAULT_PAYTABLE_MIX, Paytable } from '../economy/paytable';
+import { DEFAULT_PROGRESS } from '../economy/progress';
 import { DEFAULT_JACKPOT_CONFIG, JackpotConfig, JackpotModel } from '../economy/jackpot';
 
 export interface Config {
   stake: number;
-  paytable: Paytable;
+  // Each mode keeps its own table; the active one is chosen by `solvableOnly`.
+  paytableSolvable: Paytable;
+  paytableMix: Paytable;
   solvableOnly: boolean;
   maxRounds: number; // 0 = unlimited
   undoPenalty: boolean; // undo costs a round
+  // progress payout (unsolved games)
+  progressThreshold: number;
+  progressMax: number;
+  progressExponent: number;
   jackpot: JackpotConfig;
   // solver budgets (nodes)
-  genNodeBudget: number; // deal verification
+  genNodeBudget: number; // deal classification / verification
   hintNodeBudget: number;
-  benchNodeBudget: number; // optimal benchmark
+  benchNodeBudget: number; // optimal benchmark (proven minRounds)
   poolTarget: number;
 }
 
 export const DEFAULT_CONFIG: Config = {
   stake: 10,
-  paytable: { ...DEFAULT_PAYTABLE },
-  solvableOnly: true,
+  paytableSolvable: { ...DEFAULT_PAYTABLE_SOLVABLE },
+  paytableMix: { ...DEFAULT_PAYTABLE_MIX },
+  solvableOnly: false, // default: natural mix
   maxRounds: 0,
   undoPenalty: false,
+  progressThreshold: DEFAULT_PROGRESS.progressThreshold,
+  progressMax: DEFAULT_PROGRESS.progressMax,
+  progressExponent: DEFAULT_PROGRESS.progressExponent,
   jackpot: { ...DEFAULT_JACKPOT_CONFIG },
-  genNodeBudget: 150_000,
-  hintNodeBudget: 60_000,
-  benchNodeBudget: 300_000,
-  poolTarget: 24,
+  genNodeBudget: 400_000,
+  hintNodeBudget: 150_000,
+  benchNodeBudget: 800_000,
+  poolTarget: 16,
 };
 
-const STORAGE_KEY = 'kabale.config.v1';
+/** The paytable currently in effect, based on the active mode. */
+export function activePaytable(c: {
+  solvableOnly: boolean;
+  paytableSolvable: Paytable;
+  paytableMix: Paytable;
+}): Paytable {
+  return c.solvableOnly ? c.paytableSolvable : c.paytableMix;
+}
+
+const STORAGE_KEY = 'kabale.config.v2';
 
 function load(): Config {
   try {
@@ -45,7 +65,8 @@ function load(): Config {
       return {
         ...DEFAULT_CONFIG,
         ...parsed,
-        paytable: { ...DEFAULT_CONFIG.paytable, ...parsed.paytable },
+        paytableSolvable: { ...DEFAULT_CONFIG.paytableSolvable, ...parsed.paytableSolvable },
+        paytableMix: { ...DEFAULT_CONFIG.paytableMix, ...parsed.paytableMix },
         jackpot: { ...DEFAULT_CONFIG.jackpot, ...parsed.jackpot },
       };
     }
@@ -85,7 +106,13 @@ export const useConfig = create<ConfigStore>((set, get) => {
       persist();
     },
     setPaytable(bucket, value) {
-      set({ paytable: { ...get().paytable, [bucket]: value } });
+      // Edit the table for the currently active mode.
+      const c = get();
+      if (c.solvableOnly) {
+        set({ paytableSolvable: { ...c.paytableSolvable, [bucket]: value } });
+      } else {
+        set({ paytableMix: { ...c.paytableMix, [bucket]: value } });
+      }
       persist();
     },
     setJackpot(key, value) {

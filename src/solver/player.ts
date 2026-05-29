@@ -10,7 +10,7 @@
 // ============================================================
 
 import { GameState, Move, isRed, rankOf, suitOf } from '../engine/types';
-import { applyMove, legalMoves, hashState, isWin } from '../engine/klondike';
+import { applyMove, legalMoves, hashState, isWin, foundationCount } from '../engine/klondike';
 import { mulberry32 } from '../engine/rng';
 
 export interface PlayerOpts {
@@ -24,6 +24,7 @@ export interface PlayResult {
   solved: boolean;
   rounds: number;
   moves: number;
+  foundationFraction: number; // cards on foundations / 52 at game end
 }
 
 const WORTH_THRESHOLD = 20;
@@ -74,10 +75,16 @@ export function playHeuristic(initial: GameState, opts: PlayerOpts): PlayResult 
   let moves = 0;
   let producedThisPass = false;
   const seen = new Set<string>();
+  const finish = (solved: boolean): PlayResult => ({
+    solved,
+    rounds: s.rounds,
+    moves,
+    foundationFraction: foundationCount(s) / 52,
+  });
 
   while (true) {
-    if (isWin(s)) return { solved: true, rounds: s.rounds, moves };
-    if (++moves > MAX_MOVES) return { solved: false, rounds: s.rounds, moves };
+    if (isWin(s)) return finish(true);
+    if (++moves > MAX_MOVES) return finish(false);
 
     seen.add(hashState(s));
 
@@ -111,13 +118,12 @@ export function playHeuristic(initial: GameState, opts: PlayerOpts): PlayResult 
     if (s.stock.length > 0) {
       s = applyMove(s, { type: 'draw' });
     } else if (s.waste.length > 0) {
-      if (!producedThisPass) return { solved: false, rounds: s.rounds, moves }; // stuck
-      if (opts.maxRounds > 0 && s.rounds + 1 > opts.maxRounds)
-        return { solved: false, rounds: s.rounds, moves };
+      if (!producedThisPass) return finish(false); // stuck: a whole pass with no progress
+      if (opts.maxRounds > 0 && s.rounds + 1 > opts.maxRounds) return finish(false);
       s = applyMove(s, { type: 'recycle' });
       producedThisPass = false;
     } else {
-      return { solved: false, rounds: s.rounds, moves }; // no stock, no waste, no move
+      return finish(false); // no stock, no waste, no move
     }
   }
 }

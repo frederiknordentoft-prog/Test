@@ -24,16 +24,32 @@ export function generateSolvableDeal(nodeBudget: number, maxAttempts = 40): Deal
     const state = deal(seed);
     const res = solve(state, nodeBudget);
     if (res.status === 'solvable') {
-      return { seed, state, minRounds: res.minRounds };
+      return {
+        seed,
+        state,
+        status: 'solvable',
+        minRounds: res.minRounds,
+        minRoundsProven: res.minRoundsProven,
+      };
     }
   }
   return undefined;
 }
 
-/** Generate a random deal regardless of solvability, but record the benchmark if cheaply known. */
+/**
+ * Generate a random deal regardless of solvability (natural mix). The solver
+ * classifies it (solvable / unsolvable / unknown) and records the round
+ * benchmark when solvable. All deals are kept and dealt as real games.
+ */
 export function generateAnyDeal(nodeBudget: number): Deal {
   const seed = randomSeed();
   const state = deal(seed);
   const res = solve(state, nodeBudget);
-  return { seed, state, minRounds: res.status === 'solvable' ? res.minRounds : undefined };
+  return {
+    seed,
+    state,
+    status: res.status,
+    minRounds: res.status === 'solvable' ? res.minRounds : undefined,
+    minRoundsProven: res.minRoundsProven,
+  };
 }

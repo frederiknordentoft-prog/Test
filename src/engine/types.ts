@@ -73,12 +73,16 @@ export interface Deal {
   seed: number;
   /** initial face-down + the deal layout, fully reconstructable from seed */
   state: GameState;
-  minRounds?: number; // solver benchmark, if known
+  /** solver classification of the deal (undefined until classified) */
+  status?: 'solvable' | 'unsolvable' | 'unknown';
+  minRounds?: number; // solver benchmark (proven minimum within budget), if known
+  minRoundsProven?: boolean; // true if minRounds is a proven minimum (search not budget-capped)
 }
 
 export interface SolveResult {
   status: 'solvable' | 'unsolvable' | 'unknown';
   solution?: Move[];
-  minRounds?: number;
-  nodes: number;
+  minRounds?: number; // proven minimum within budget (only when 'solvable')
+  minRoundsProven: boolean; // true if found without exhausting the node budget
+  nodesVisited: number;
 }
