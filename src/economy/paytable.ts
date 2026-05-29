@@ -15,13 +15,17 @@ export interface Paytable {
   fail: number;
 }
 
+// Tuned from `npm run simulate` (solver as optimal player over 600 solvable
+// deals): optimal-play RTP ≈ 96.5%, i.e. < 100% so the game can't be beaten by
+// perfect play. Real human RTP lands lower (players use more rounds) — re-tune
+// against real play data. Fully editable live in the control panel.
 export const DEFAULT_PAYTABLE: Paytable = {
-  1: 5,
-  2: 2,
-  3: 1,
-  4: 0.5,
-  5: 0.2,
-  '6plus': 0.2,
+  1: 2.7,
+  2: 1.1,
+  3: 0.55,
+  4: 0.27,
+  5: 0.11,
+  '6plus': 0.11,
   fail: 0,
 };
 

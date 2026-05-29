@@ -59,40 +59,58 @@ function orderedMoves(s: GameState, allowRecycle: boolean): Move[] {
   return moves.sort((a, b) => moveScore(s, b) - moveScore(s, a));
 }
 
+interface Frame {
+  state: GameState;
+  moves: Move[];
+  idx: number;
+}
+
+// Iterative DFS with an explicit stack (avoids call-stack overflow on the
+// deep search paths Klondike can produce) + transposition table + node budget.
 export function solve(state: GameState, nodeBudget: number = DEFAULT_NODE_BUDGET): SolveResult {
-  const visited = new Set<string>();
+  if (isWin(state)) return { status: 'solvable', solution: [], minRounds: 1, nodes: 0 };
+
+  const visited = new Set<string>([hashState(state)]);
   let nodes = 0;
   let budgetExceeded = false;
-  const path: Move[] = [];
 
-  function dfs(s: GameState): boolean {
-    if (isWin(s)) return true;
-    if (nodes >= nodeBudget) {
-      budgetExceeded = true;
-      return false;
+  const stack: Frame[] = [
+    { state, moves: orderedMoves(state, state.rounds < SOLVER_MAX_ROUNDS), idx: 0 },
+  ];
+  const path: Move[] = []; // moves from root to the top frame's state
+
+  while (stack.length > 0) {
+    const frame = stack[stack.length - 1];
+    if (frame.idx >= frame.moves.length) {
+      stack.pop();
+      path.pop();
+      continue;
     }
-    nodes++;
+    const m = frame.moves[frame.idx++];
+    const next = applyMove(frame.state, m);
 
-    const key = hashState(s);
-    if (visited.has(key)) return false;
+    if (++nodes >= nodeBudget) {
+      budgetExceeded = true;
+      break;
+    }
+
+    const key = hashState(next);
+    if (visited.has(key)) continue;
     visited.add(key);
 
-    const allowRecycle = s.rounds < SOLVER_MAX_ROUNDS;
-    for (const m of orderedMoves(s, allowRecycle)) {
-      const next = applyMove(s, m);
-      path.push(m);
-      if (dfs(next)) return true;
-      path.pop();
-      if (budgetExceeded) return false;
+    if (isWin(next)) {
+      const solution = [...path, m];
+      return { status: 'solvable', solution, minRounds: roundsForSolution(state, solution), nodes };
     }
-    return false;
+
+    path.push(m);
+    stack.push({
+      state: next,
+      moves: orderedMoves(next, next.rounds < SOLVER_MAX_ROUNDS),
+      idx: 0,
+    });
   }
 
-  const solved = dfs(state);
-  if (solved) {
-    const solution = path.slice();
-    return { status: 'solvable', solution, minRounds: roundsForSolution(state, solution), nodes };
-  }
   return { status: budgetExceeded ? 'unknown' : 'unsolvable', nodes };
 }
 
