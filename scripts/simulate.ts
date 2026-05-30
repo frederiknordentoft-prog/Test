@@ -1,276 +1,240 @@
 // ============================================================
 // Economy simulation & RTP-ceiling validity report.
 //
-// Runs on the NATURAL MIX (solvable + impossible deals, kept
-// as-is). Measurement only — it does NOT change any game logic,
-// paytable, or progress parameters; it reads the current
-// defaults and reports.
+// Runs on the NATURAL MIX. Measurement only — it does NOT change
+// any game logic, paytable, or progress parameters; it reads the
+// current defaults and reports. Work is parallelised across CPU
+// cores (child processes) so large runs are feasible.
 //
 // Run:  npm run simulate -- [games] [sensSample] [mainBudget]
-//   games       deals to classify in the main pass (default 200)
+//   games       deals in the main pass (default 200)
 //   sensSample  deals for the budget-sensitivity table (default min(games,400))
 //   mainBudget  solver node budget for the main pass (default = config benchmark budget)
 //
-// Writes a compact text report to stdout and the full numbers to
-// sim-report.json.
+// Writes a compact text report to stdout and full numbers to sim-report.json.
 // ============================================================
 
 import { writeFileSync } from 'node:fs';
-import { deal } from '../src/engine/klondike';
-import { solve } from '../src/solver/solver';
-import { playHeuristic, PlayerOpts } from '../src/solver/player';
-import { DEFAULT_PAYTABLE_MIX, Paytable, payoutMultiplier, roundBucket } from '../src/economy/paytable';
-import { DEFAULT_PROGRESS, progressMultiplier } from '../src/economy/progress';
+import { spawn } from 'node:child_process';
+import { cpus } from 'node:os';
+import {
+  PT,
+  PROG,
+  PLAYERS,
+  emptyHist,
+  MainPartial,
+  SensPartial,
+  mergeMain,
+  mergeSens,
+  runMainChunk,
+  runSensChunk,
+} from './simCore';
+import { Paytable, roundBucket } from '../src/economy/paytable';
 import { DEFAULT_CONFIG } from '../src/store/configStore';
+
+void roundBucket;
+void emptyHist;
 
 const argv = process.argv.slice(2);
 const GAMES = Number(argv[0] ?? 200);
 const SENS_SAMPLE = Number(argv[1] ?? Math.min(GAMES, 400));
 const MAIN_BUDGET = Number(argv[2] ?? DEFAULT_CONFIG.benchNodeBudget);
 const SENS_BUDGETS = [400_000, 800_000, 1_500_000];
+const WORKERS = Math.max(1, Math.min(cpus().length, 4));
 
-const PT: Paytable = DEFAULT_PAYTABLE_MIX;
-const PROG = DEFAULT_PROGRESS;
 const BUCKETS: (keyof Paytable)[] = [1, 2, 3, 4, 5, '6plus'];
-const bucketKey = (n: number) => String(roundBucket(n));
-
-const PLAYERS: Record<string, Omit<PlayerOpts, 'seed'>> = {
-  expert: { errorRate: 0.03, foundationGreed: 0.05, maxRounds: 0 },
-  good: { errorRate: 0.12, foundationGreed: 0.2, maxRounds: 0 },
-  casual: { errorRate: 0.3, foundationGreed: 0.45, maxRounds: 0 },
-};
-
 const pct = (n: number, d = 1) => n.toFixed(d);
-const emptyHist = (): Record<string, number> => ({ '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6plus': 0 });
 
-console.log(
-  `Kabale Combo — økonomi/loft-rapport\n` +
-    `  games=${GAMES}  sensSample=${SENS_SAMPLE}  mainBudget=${MAIN_BUDGET.toLocaleString()} noder\n` +
-    `  mix-tabel + default progress (tærskel ${PROG.progressThreshold}, maks ${PROG.progressMax}, eksp ${PROG.progressExponent})\n`,
-);
+// ---------- parallel runner ----------
 
-// =====================================================================
-// MAIN PASS — classify GAMES deals + run player models
-// =====================================================================
-
-const cls = { solvable: 0, unsolvable: 0, unknown: 0 };
-const provenHist = emptyHist();
-const unprovenHist = emptyHist();
-let provenSolvable = 0;
-let unprovenSolvable = 0;
-
-// ceiling accumulators (multiplier units, stake = 1)
-let ceilProvenPayoutSum = 0; // over proven-solvable deals, optimal plays minRounds
-let ceilNaivePayoutSum = 0; // over ALL solvable deals, trusting their minRounds
-let allSolvable = 0;
-
-interface PlayerTally {
-  solved: number;
-  gaveUp: number;
-  roundPayoutSum: number;
-  progressPayoutSum: number;
-}
-const playerTallies: Record<string, PlayerTally> = {};
-for (const k of Object.keys(PLAYERS)) playerTallies[k] = { solved: 0, gaveUp: 0, roundPayoutSum: 0, progressPayoutSum: 0 };
-
-const t0 = Date.now();
-for (let seed = 1; seed <= GAMES; seed++) {
-  const g = deal(seed);
-  const res = solve(g, MAIN_BUDGET);
-  cls[res.status]++;
-
-  if (res.status === 'solvable' && res.minRounds != null) {
-    allSolvable++;
-    ceilNaivePayoutSum += payoutMultiplier(PT, true, res.minRounds);
-    if (res.minRoundsProven) {
-      provenSolvable++;
-      provenHist[bucketKey(res.minRounds)]++;
-      ceilProvenPayoutSum += payoutMultiplier(PT, true, res.minRounds);
-    } else {
-      unprovenSolvable++;
-      unprovenHist[bucketKey(res.minRounds)]++;
-    }
-  }
-
-  // Heuristic players (cheap, no solver). Solved -> round paytable; else -> progress.
-  for (const [name, opts] of Object.entries(PLAYERS)) {
-    const r = playHeuristic(g, { ...opts, seed });
-    const t = playerTallies[name];
-    if (r.solved) {
-      t.solved++;
-      t.roundPayoutSum += payoutMultiplier(PT, true, r.rounds);
-    } else {
-      t.gaveUp++;
-      t.progressPayoutSum += progressMultiplier(r.foundationFraction, PROG);
-    }
-  }
-
-  if (seed % 100 === 0) {
-    process.stdout.write(`  main: ${seed}/${GAMES} (${((Date.now() - t0) / 1000).toFixed(0)}s)\r`);
-  }
-}
-const mainElapsed = (Date.now() - t0) / 1000;
-console.log(`\n  main pass færdig på ${mainElapsed.toFixed(1)}s\n`);
-
-// =====================================================================
-// BUDGET-SENSITIVITY PASS — classify SENS_SAMPLE deals at 3 budgets
-// =====================================================================
-
-interface SensRow {
-  budget: number;
-  solvable: number;
-  unsolvable: number;
-  unknown: number;
-  proven: number; // among solvable
-  avgNodes: number;
-  seconds: number;
-}
-const sensRows: SensRow[] = [];
-for (const budget of SENS_BUDGETS) {
-  const c = { solvable: 0, unsolvable: 0, unknown: 0 };
-  let proven = 0;
-  let nodesSum = 0;
-  const ts = Date.now();
-  for (let seed = 1; seed <= SENS_SAMPLE; seed++) {
-    const res = solve(deal(seed), budget);
-    c[res.status]++;
-    nodesSum += res.nodesVisited;
-    if (res.status === 'solvable' && res.minRoundsProven) proven++;
-    if (seed % 100 === 0) {
-      process.stdout.write(
-        `  sens ${(budget / 1000).toFixed(0)}k: ${seed}/${SENS_SAMPLE} (${((Date.now() - ts) / 1000).toFixed(0)}s)\r`,
-      );
-    }
-  }
-  sensRows.push({
-    budget,
-    solvable: c.solvable,
-    unsolvable: c.unsolvable,
-    unknown: c.unknown,
-    proven,
-    avgNodes: nodesSum / SENS_SAMPLE,
-    seconds: (Date.now() - ts) / 1000,
+function spawnChunk<T>(mode: 'main' | 'sens', start: number, count: number, budget: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('npx', ['tsx', 'scripts/simChunk.ts', mode, String(start), String(count), String(budget)], {
+      cwd: process.cwd(),
+    });
+    let out = '';
+    let err = '';
+    child.stdout.on('data', (d) => (out += d));
+    child.stderr.on('data', (d) => (err += d));
+    child.on('close', (code) => {
+      if (code !== 0) return reject(new Error(`chunk exit ${code}: ${err.slice(-500)}`));
+      const line = out.trim().split('\n').filter(Boolean).pop();
+      if (!line) return reject(new Error(`no output from chunk: ${err.slice(-500)}`));
+      try {
+        resolve(JSON.parse(line) as T);
+      } catch (e) {
+        reject(new Error(`bad JSON from chunk: ${(e as Error).message}\n${line.slice(0, 200)}`));
+      }
+    });
   });
-  console.log(`  sens ${(budget / 1000).toFixed(0)}k færdig på ${((Date.now() - ts) / 1000).toFixed(1)}s        `);
 }
-console.log('');
 
-// =====================================================================
-// REPORT
-// =====================================================================
-
-const provenCeilingShareOfAll = (provenSolvable / GAMES) * 100;
-const ceilProvenRoundRtp = provenSolvable ? (ceilProvenPayoutSum / provenSolvable) * 100 : 0;
-const ceilNaiveRoundRtp = allSolvable ? (ceilNaivePayoutSum / allSolvable) * 100 : 0;
-
-function printHist(h: Record<string, number>) {
-  const tot = Object.values(h).reduce((a, b) => a + b, 0) || 1;
-  for (const b of BUCKETS) {
-    const label = b === '6plus' ? '6+' : String(b);
-    console.log(`    ${label.padStart(3)} │ ${String(h[String(b)]).padStart(5)} │ ${pct((h[String(b)] / tot) * 100).padStart(5)}%`);
+/** Split [base, base+total) into `WORKERS` ranges and run them in parallel. */
+async function runParallel<T>(mode: 'main' | 'sens', base: number, total: number, budget: number): Promise<T[]> {
+  // Tiny jobs (or single core): run inline to avoid spawn overhead.
+  if (WORKERS === 1 || total <= 8) {
+    const r = mode === 'sens' ? runSensChunk(base, total, budget) : runMainChunk(base, total, budget);
+    return [r as unknown as T];
   }
+  const chunk = Math.ceil(total / WORKERS);
+  const jobs: Promise<T>[] = [];
+  for (let i = 0; i < WORKERS; i++) {
+    const start = base + i * chunk;
+    const count = Math.min(chunk, base + total - start);
+    if (count <= 0) break;
+    jobs.push(spawnChunk<T>(mode, start, count, budget));
+  }
+  return Promise.all(jobs);
 }
 
-console.log('━━━ 1. DEAL-KLASSIFIKATION (alle ' + GAMES + ' deals @ ' + (MAIN_BUDGET / 1000).toFixed(0) + 'k) ━━━');
-console.log(`  solvable:   ${cls.solvable}  (${pct((cls.solvable / GAMES) * 100)}%)`);
-console.log(`  unsolvable: ${cls.unsolvable}  (${pct((cls.unsolvable / GAMES) * 100)}%)`);
-console.log(`  unknown:    ${cls.unknown}  (${pct((cls.unknown / GAMES) * 100)}%)`);
-console.log(`  blandt solvable: proven=${provenSolvable} (${pct(allSolvable ? (provenSolvable / allSolvable) * 100 : 0)}%), ` +
-  `unproven=${unprovenSolvable} (${pct(allSolvable ? (unprovenSolvable / allSolvable) * 100 : 0)}%)`);
-console.log(`\n  ►► NØGLETAL — andel af ALLE deals med BEVIST loft (solvable & proven): ` +
-  `${provenSolvable}/${GAMES} = ${pct(provenCeilingShareOfAll, 2)}%\n`);
+// ---------- run ----------
 
-console.log('━━━ 2. minRounds-FORDELING ━━━');
-console.log('  Beviste (minRoundsProven=true):');
-console.log('    rnd │ antal │ andel');
-printHist(provenHist);
-console.log('  Ubeviste (øvre grænse, minRoundsProven=false):');
-console.log('    rnd │ antal │ andel');
-printHist(unprovenHist);
-
-console.log('\n━━━ 3. RTP VED OPTIMALT SPIL (loft) ━━━');
-console.log(`  Bevist loft (kun ${provenSolvable} beviste deals, solver spiller minRounds):`);
-console.log(`    runde-RTP=${pct(ceilProvenRoundRtp, 2)}%  progress-RTP=0.00%  total=${pct(ceilProvenRoundRtp, 2)}%`);
-console.log(`  Antaget loft (alle ${allSolvable} solvable, stoler naivt på minRounds inkl. ubeviste):`);
-console.log(`    runde-RTP=${pct(ceilNaiveRoundRtp, 2)}%  progress-RTP=0.00%  total=${pct(ceilNaiveRoundRtp, 2)}%`);
-console.log(`  Forskel (antaget − bevist): ${pct(ceilNaiveRoundRtp - ceilProvenRoundRtp, 2)} pp`);
-console.log('  (optimal spiller løser altid solvable deals → progress-RTP = 0)');
-
-console.log('\n━━━ 4. RTP FOR SPILLERMODELLER (over alle ' + GAMES + ' deals) ━━━');
-console.log('  niveau │ solve% │ opgiv% │ runde-RTP │ progr-RTP │ total-RTP');
-console.log('  ───────┼────────┼────────┼───────────┼───────────┼──────────');
-const playerReport: Record<string, any> = {};
-for (const name of Object.keys(PLAYERS)) {
-  const t = playerTallies[name];
-  const solvePct = (t.solved / GAMES) * 100;
-  const gaveUpPct = (t.gaveUp / GAMES) * 100;
-  const roundRtp = (t.roundPayoutSum / GAMES) * 100;
-  const progRtp = (t.progressPayoutSum / GAMES) * 100;
-  const totalRtp = roundRtp + progRtp;
-  playerReport[name] = { solvePct, gaveUpPct, roundRtp, progressRtp: progRtp, totalRtp };
+async function main() {
   console.log(
-    `  ${name.padEnd(6)} │ ${pct(solvePct).padStart(5)}% │ ${pct(gaveUpPct).padStart(5)}% │ ` +
-      `${pct(roundRtp, 2).padStart(8)}% │ ${pct(progRtp, 2).padStart(8)}% │ ${pct(totalRtp, 2).padStart(7)}%`,
+    `Kabale Combo — økonomi/loft-rapport (parallel: ${WORKERS} kerner)\n` +
+      `  games=${GAMES}  sensSample=${SENS_SAMPLE}  mainBudget=${MAIN_BUDGET.toLocaleString()} noder\n` +
+      `  mix-tabel + default progress (tærskel ${PROG.progressThreshold}, maks ${PROG.progressMax}, eksp ${PROG.progressExponent})\n`,
   );
-}
 
-console.log('\n━━━ 5. BUDGET-FØLSOMHED (' + SENS_SAMPLE + ' deals pr. budget) ━━━');
-console.log('   budget │ %solv │ %unsolv │ %unkn │ %proven │ gns.noder │ tid');
-console.log('  ────────┼───────┼─────────┼───────┼─────────┼───────────┼──────');
-for (const r of sensRows) {
-  const provenPctAll = (r.proven / SENS_SAMPLE) * 100;
+  // MAIN PASS
+  let t = Date.now();
+  const mainParts = await runParallel<MainPartial>('main', 1, GAMES, MAIN_BUDGET);
+  const M = mergeMain(mainParts);
+  const mainElapsed = (Date.now() - t) / 1000;
+  console.log(`  main pass færdig på ${mainElapsed.toFixed(1)}s`);
+
+  // BUDGET SENSITIVITY
+  const sensRows: { budget: number; s: SensPartial; seconds: number }[] = [];
+  for (const budget of SENS_BUDGETS) {
+    t = Date.now();
+    const parts = await runParallel<SensPartial>('sens', 1, SENS_SAMPLE, budget);
+    const s = mergeSens(parts);
+    const seconds = (Date.now() - t) / 1000;
+    sensRows.push({ budget, s, seconds });
+    console.log(`  sens ${(budget / 1000).toFixed(0)}k færdig på ${seconds.toFixed(1)}s`);
+  }
+  console.log('');
+
+  // ---------- derived numbers ----------
+  const provenCeilingShareOfAll = (M.provenSolvable / GAMES) * 100;
+  const ceilProvenRoundRtp = M.provenSolvable ? (M.ceilProvenPayoutSum / M.provenSolvable) * 100 : 0;
+  const ceilNaiveRoundRtp = M.allSolvable ? (M.ceilNaivePayoutSum / M.allSolvable) * 100 : 0;
+
+  const printHist = (h: Record<string, number>) => {
+    const tot = Object.values(h).reduce((a, b) => a + b, 0) || 1;
+    for (const b of BUCKETS) {
+      const label = b === '6plus' ? '6+' : String(b);
+      console.log(`    ${label.padStart(3)} │ ${String(h[String(b)]).padStart(6)} │ ${pct((h[String(b)] / tot) * 100).padStart(5)}%`);
+    }
+  };
+
+  console.log(`━━━ 1. DEAL-KLASSIFIKATION (alle ${GAMES} deals @ ${(MAIN_BUDGET / 1000).toFixed(0)}k) ━━━`);
+  console.log(`  solvable:   ${M.cls.solvable}  (${pct((M.cls.solvable / GAMES) * 100)}%)`);
+  console.log(`  unsolvable: ${M.cls.unsolvable}  (${pct((M.cls.unsolvable / GAMES) * 100)}%)`);
+  console.log(`  unknown:    ${M.cls.unknown}  (${pct((M.cls.unknown / GAMES) * 100)}%)`);
   console.log(
-    `  ${(r.budget / 1000).toFixed(0).padStart(5)}k │ ${pct((r.solvable / SENS_SAMPLE) * 100).padStart(5)} │ ` +
-      `${pct((r.unsolvable / SENS_SAMPLE) * 100).padStart(7)} │ ${pct((r.unknown / SENS_SAMPLE) * 100).padStart(5)} │ ` +
-      `${pct(provenPctAll).padStart(7)} │ ${Math.round(r.avgNodes).toLocaleString().padStart(9)} │ ${r.seconds.toFixed(0)}s`,
+    `  blandt solvable: proven=${M.provenSolvable} (${pct(M.allSolvable ? (M.provenSolvable / M.allSolvable) * 100 : 0)}%), ` +
+      `unproven=${M.unprovenSolvable} (${pct(M.allSolvable ? (M.unprovenSolvable / M.allSolvable) * 100 : 0)}%)`,
   );
+  console.log(
+    `\n  ►► NØGLETAL — andel af ALLE deals med BEVIST loft (solvable & proven): ` +
+      `${M.provenSolvable}/${GAMES} = ${pct(provenCeilingShareOfAll, 2)}%\n`,
+  );
+
+  console.log('━━━ 2. minRounds-FORDELING ━━━');
+  console.log('  Beviste (minRoundsProven=true):');
+  console.log('    rnd │  antal │ andel');
+  printHist(M.provenHist);
+  console.log('  Ubeviste (øvre grænse, minRoundsProven=false):');
+  console.log('    rnd │  antal │ andel');
+  printHist(M.unprovenHist);
+
+  console.log('\n━━━ 3. RTP VED OPTIMALT SPIL (loft) ━━━');
+  console.log(`  Bevist loft (kun ${M.provenSolvable} beviste deals, solver spiller minRounds):`);
+  console.log(`    runde-RTP=${pct(ceilProvenRoundRtp, 2)}%  progress-RTP=0.00%  total=${pct(ceilProvenRoundRtp, 2)}%`);
+  console.log(`  Antaget loft (alle ${M.allSolvable} solvable, stoler naivt på minRounds inkl. ubeviste):`);
+  console.log(`    runde-RTP=${pct(ceilNaiveRoundRtp, 2)}%  progress-RTP=0.00%  total=${pct(ceilNaiveRoundRtp, 2)}%`);
+  console.log(`  Forskel (antaget − bevist): ${pct(ceilNaiveRoundRtp - ceilProvenRoundRtp, 2)} pp`);
+  console.log('  (optimal spiller løser altid solvable deals → progress-RTP = 0)');
+
+  console.log(`\n━━━ 4. RTP FOR SPILLERMODELLER (over alle ${GAMES} deals) ━━━`);
+  console.log('  niveau │ solve% │ opgiv% │ runde-RTP │ progr-RTP │ total-RTP');
+  console.log('  ───────┼────────┼────────┼───────────┼───────────┼──────────');
+  const playerReport: Record<string, Record<string, number>> = {};
+  for (const name of Object.keys(PLAYERS)) {
+    const p = M.players[name];
+    const solvePct = (p.solved / GAMES) * 100;
+    const gaveUpPct = (p.gaveUp / GAMES) * 100;
+    const roundRtp = (p.roundPayoutSum / GAMES) * 100;
+    const progRtp = (p.progressPayoutSum / GAMES) * 100;
+    const totalRtp = roundRtp + progRtp;
+    playerReport[name] = { solvePct, gaveUpPct, roundRtp, progressRtp: progRtp, totalRtp };
+    console.log(
+      `  ${name.padEnd(6)} │ ${pct(solvePct).padStart(5)}% │ ${pct(gaveUpPct).padStart(5)}% │ ` +
+        `${pct(roundRtp, 2).padStart(8)}% │ ${pct(progRtp, 2).padStart(8)}% │ ${pct(totalRtp, 2).padStart(7)}%`,
+    );
+  }
+
+  console.log(`\n━━━ 5. BUDGET-FØLSOMHED (${SENS_SAMPLE} deals pr. budget) ━━━`);
+  console.log('   budget │ %solv │ %unsolv │ %unkn │ %proven │ gns.noder │ tid');
+  console.log('  ────────┼───────┼─────────┼───────┼─────────┼───────────┼──────');
+  for (const r of sensRows) {
+    const n = SENS_SAMPLE;
+    console.log(
+      `  ${(r.budget / 1000).toFixed(0).padStart(5)}k │ ${pct((r.s.solvable / n) * 100).padStart(5)} │ ` +
+        `${pct((r.s.unsolvable / n) * 100).padStart(7)} │ ${pct((r.s.unknown / n) * 100).padStart(5)} │ ` +
+        `${pct((r.s.proven / n) * 100).padStart(7)} │ ${Math.round(r.s.nodesSum / n).toLocaleString().padStart(9)} │ ${r.seconds.toFixed(0)}s`,
+    );
+  }
+  console.log('  (%proven = andel af ALLE deals i sample med bevist loft ved det budget)');
+
+  // ---------- JSON ----------
+  const report = {
+    meta: {
+      games: GAMES,
+      sensSample: SENS_SAMPLE,
+      mainBudget: MAIN_BUDGET,
+      sensBudgets: SENS_BUDGETS,
+      workers: WORKERS,
+      paytable: PT,
+      progress: PROG,
+      mainElapsedSeconds: mainElapsed,
+      generatedAt: new Date().toISOString(),
+    },
+    classification: {
+      solvable: M.cls.solvable,
+      unsolvable: M.cls.unsolvable,
+      unknown: M.cls.unknown,
+      solvableShare: M.cls.solvable / GAMES,
+      provenSolvable: M.provenSolvable,
+      unprovenSolvable: M.unprovenSolvable,
+      provenShareOfSolvable: M.allSolvable ? M.provenSolvable / M.allSolvable : 0,
+      provenCeilingShareOfAll: M.provenSolvable / GAMES,
+    },
+    minRoundsHistograms: { proven: M.provenHist, unproven: M.unprovenHist },
+    ceiling: {
+      provenRoundRtp: ceilProvenRoundRtp,
+      provenTotalRtp: ceilProvenRoundRtp,
+      naiveRoundRtp: ceilNaiveRoundRtp,
+      naiveTotalRtp: ceilNaiveRoundRtp,
+      assumedMinusProvenPp: ceilNaiveRoundRtp - ceilProvenRoundRtp,
+    },
+    players: playerReport,
+    budgetSensitivity: sensRows.map((r) => ({
+      budget: r.budget,
+      solvablePct: (r.s.solvable / SENS_SAMPLE) * 100,
+      unsolvablePct: (r.s.unsolvable / SENS_SAMPLE) * 100,
+      unknownPct: (r.s.unknown / SENS_SAMPLE) * 100,
+      provenPctOfAll: (r.s.proven / SENS_SAMPLE) * 100,
+      avgNodesVisited: r.s.nodesSum / SENS_SAMPLE,
+      seconds: r.seconds,
+    })),
+  };
+  writeFileSync('sim-report.json', JSON.stringify(report, null, 2));
+  console.log('\n✓ Skrev sim-report.json');
 }
-console.log('  (%proven = andel af ALLE deals i sample med bevist loft ved det budget)');
 
-// =====================================================================
-// JSON
-// =====================================================================
-
-const report = {
-  meta: {
-    games: GAMES,
-    sensSample: SENS_SAMPLE,
-    mainBudget: MAIN_BUDGET,
-    sensBudgets: SENS_BUDGETS,
-    paytable: PT,
-    progress: PROG,
-    mainElapsedSeconds: mainElapsed,
-    generatedAt: new Date().toISOString(),
-  },
-  classification: {
-    ...cls,
-    solvableShare: cls.solvable / GAMES,
-    provenSolvable,
-    unprovenSolvable,
-    provenShareOfSolvable: allSolvable ? provenSolvable / allSolvable : 0,
-    provenCeilingShareOfAll: provenSolvable / GAMES,
-  },
-  minRoundsHistograms: { proven: provenHist, unproven: unprovenHist },
-  ceiling: {
-    provenRoundRtp: ceilProvenRoundRtp,
-    provenProgressRtp: 0,
-    provenTotalRtp: ceilProvenRoundRtp,
-    naiveRoundRtp: ceilNaiveRoundRtp,
-    naiveProgressRtp: 0,
-    naiveTotalRtp: ceilNaiveRoundRtp,
-    assumedMinusProvenPp: ceilNaiveRoundRtp - ceilProvenRoundRtp,
-  },
-  players: playerReport,
-  budgetSensitivity: sensRows.map((r) => ({
-    budget: r.budget,
-    solvablePct: (r.solvable / SENS_SAMPLE) * 100,
-    unsolvablePct: (r.unsolvable / SENS_SAMPLE) * 100,
-    unknownPct: (r.unknown / SENS_SAMPLE) * 100,
-    provenPctOfAll: (r.proven / SENS_SAMPLE) * 100,
-    avgNodesVisited: r.avgNodes,
-    seconds: r.seconds,
-  })),
-};
-
-writeFileSync('sim-report.json', JSON.stringify(report, null, 2));
-console.log('\n✓ Skrev sim-report.json');
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
