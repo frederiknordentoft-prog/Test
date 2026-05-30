@@ -71,10 +71,19 @@ npm run simulate -- [antal] [målRTP%] [nodeBudget] [tuneTo]   # økonomi-analys
 - Standard Klondike, **draw-1**, ubegrænset (eller konfigurerbart max) genbrug af talonen.
 - **"Runde"** = ét gennemløb af talonen. Starter på 1, tæller +1 hver gang talonen
   genbruges (waste → stock). Dette er **scoringsmetrikken**: gevinst = `stake × paytable[min(runder, 6+)]`.
-- **Deal-mode (NY default = naturligt mix):** `solvableOnly = false`. Almindelige
-  tilfældige deals deles (~80% løsbare / ~20% umulige), umulige inkl. Toggle slår
-  løsbar-kun til. **Hver mode har sin egen gevinsttabel** (mix-tabellen er mere
-  generøs, da de umulige deals holder optimal-RTP nede).
+- **HÅRD RUNDE-CAP (NY, default `maxRounds = 3`, live-tunbar):** Man kan ikke
+  påbegynde runde `maxRounds + 1`. I `engine/klondike.ts` er `legalMoves(s, maxRounds)`
+  cap-bevidst: recycle er ikke et lovligt træk når talonen er brugt `maxRounds` gange.
+  Når talonen er opbrugt på sidste tilladte runde og spillet ikke er løst, er det
+  terminal → tabt (progress payout). UI: "Runde X af N"; talonen viser "sidste runde".
+  `maxRounds = 0` = ubegrænset.
+- **Deal-mode (default = naturligt mix):** `solvableOnly = false`. Almindelige
+  tilfældige deals deles, umulige inkl. Toggle slår løsbar-kun til. **Hver mode har
+  sin egen gevinsttabel** (mix-tabellen er mere generøs).
+- **Ændret betydning af "unsolvable":** med cap betyder solverens `unsolvable` nu
+  "ingen løsning **inden for `maxRounds` runder**" — ikke nødvendigvis umulig i
+  uendelig-runde-forstand. (I praksis er `unsolvable`-andelen lille; det meste
+  uafgjorte ender som `unknown`, se nedenfor.)
 - **Udbetaling ved spil-slut:**
   - **Løst:** `stake × paytable[min(runder, 6+)]` (runde-paytable for den aktive mode).
   - **Ikke løst (giv op / max-runder):** TÆRSKEL-baseret **progress payout** ud fra
@@ -166,22 +175,44 @@ ca. 7 % løst på 1 runde, **~53 % på 2**, ~27 % på 3, ~10 % på 4, ~3 % på 5
 ```
 - **Iterativ (eksplicit stak), ingen rekursion** — den oprindelige rekursive DFS løb
   kaldestakken over på dybe søgestier (browseren maskerede det). Må ikke vende tilbage.
-- **Minimerer runder** via branch-and-bound (behold bedste løsning, beskær grene der
-  ikke kan slå den) + dominans-transpositionstabel (et bræt nået med færre runder
-  dominerer samme bræt nået med flere). Når søgningen afsluttes uden at ramme budgettet,
-  er `minRounds` et **bevist minimum** (`minRoundsProven = true`).
-- At bevise minimalitet kræver at udtømme rum med færre runder → ofte kun bevist for
-  små minRounds (typisk 2) inden for budget; default-budgetter hævet (deals 400k,
-  benchmark 800k, hint 150k) og er tunbare. Resten markeres `minRoundsProven = false`.
-- Verificeret i `npm run sanity`: løsninger når 52/52, runde-tælling matcher, og for
-  beviste benchmarks giver `solve(..., minRounds-1)` ingen løsning (minRounds er minimal).
+- **Minimerer runder** via branch-and-bound + dominans-transpositionstabel. Når søgningen
+  afsluttes uden at ramme budgettet, er `minRounds` et **bevist minimum** (`minRoundsProven = true`).
+- **`maxRoundCap` (0 = ubegrænset → fallback 8)** er den hårde runde-cap; søgningen
+  betragter kun løsninger med ≤ cap runder, og `unsolvable` = "ingen løsning inden for cap".
+- Verificeret i `npm run sanity` (cap 3): løsninger når 52/52, bruger ≤ cap runder,
+  runde-tælling matcher, og for beviste benchmarks giver `solve(..., minRounds-1)` ingen løsning.
 
-## Note om klassifikation/budget
+## ⚠️ Loft-validitet: runde-cap LØSER IKKE beviseligheden (måling, 5000 deals @ cap 3)
 
-Med moderat budget (fx 400k) klassificerer solveren mange deals som **"unknown"** frem
-for at bevise (u)løselighed — så dashboard-andelene viser en del "ukendt". Hæv solver-
-budgettet for skarpere klassifikation. `npm run simulate` kører nu på det naturlige mix
-og rapporterer andelen `minRoundsProven` + RTP inkl. progress payout.
+Eksperimentet (prompt: "hård cap → beviseligt loft") gav et **negativt, men vigtigt resultat**:
+
+| | uncapped (cap 8) | **cap 3** |
+|---|---|---|
+| solvable / unsolvable / unknown | 55,6 / 0,4 / 44,0 % | 54,6 / 0,7 / 44,7 % |
+| **andel ALLE deals med bevist loft** | 8,92 % | **9,04 %** |
+| bevist loft-RTP (på de beviste, lette deals) | 213 % | 213 % |
+| antaget loft-RTP (alle solvable, øvre-grænse-minRounds) | 122 % | 126 % |
+
+- **Cappet ændrer stort set intet ved beviseligheden** (9,0 % vs 8,9 %), og ~45 % forbliver
+  `unknown` selv ved 800k. Budget-følsomhed under cap (proven-andel): 6,8 → 7,2 → 8,5 → 11,0 %
+  ved 100k → 200k → 400k → 800k. Probe op til 5M noder: stadig kun ~21 % proven.
+- **Årsag:** omkostningen domineres af **tableau-forgrening pr. talongennemløb** (træk- og
+  flytte-kombinatorik i ét gennemløb), ikke af antallet af genbrug. At begrænse dybden
+  (∞ → 3 runder) trimmer kun en tynd skive; bredden er uændret.
+- **Cappet er værdifuldt som SPILREGEL** (afgrænser spil-længde, gør udfald terminale, og
+  ubeviste øvre-grænse-minRounds er nu alle ≤ 3 — synligt i histogrammet), **men ikke som
+  provability-fix**. Begge loft-estimater er stadig > 100 % på den løsbare delmængde
+  (mix-tabellen overbetaler optimalt spil dér), mens ~45 % unknown + umulige trækker
+  populations-RTP ned.
+- Spillermodeller under cap: solve 28–35 %, opgiv 65–72 %, total-RTP 31–41 %; progress-RTP ≈ 0
+  (tærskel 0,70 rammes næsten aldrig der hvor spilleren går i stå).
+
+**Realistisk vej til et validerbart loft** (ikke implementeret): (a) en stærkere solver
+(IDA*/bedre transposition/Solvitaire-agtige teknikker) til at afgøre `unknown`-massen; eller
+(b) et **statistisk loft** (konfidensinterval fra sample) frem for udtømmende bevis; eller
+(c) accepter at det eksakte loft er uafgørligt for draw-1 og tun konservativt mod den
+øvre-grænse-baserede fordeling. `npm run simulate -- 5000` kører på mix med cap og skriver
+`sim-report.json` (alle 5 sektioner + budget-følsomhed).
 
 ## Git / status
 
