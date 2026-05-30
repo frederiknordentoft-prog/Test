@@ -6,3 +6,6 @@ dist-ssr
 .DS_Store
 *.log
 *.tsbuildinfo
+
+# generated simulation report
+sim-report.json
