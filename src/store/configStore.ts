@@ -34,7 +34,7 @@ export const DEFAULT_CONFIG: Config = {
   paytableSolvable: { ...DEFAULT_PAYTABLE_SOLVABLE },
   paytableMix: { ...DEFAULT_PAYTABLE_MIX },
   solvableOnly: false, // default: natural mix
-  maxRounds: 0,
+  maxRounds: 3, // hard round cap (talon passes); 0 = unlimited
   undoPenalty: false,
   progressThreshold: DEFAULT_PROGRESS.progressThreshold,
   progressMax: DEFAULT_PROGRESS.progressMax,

@@ -8,14 +8,17 @@ import { solve } from '../src/solver/solver';
 import { playHeuristic, PlayerOpts } from '../src/solver/player';
 import { DEFAULT_PAYTABLE_MIX, Paytable, payoutMultiplier, roundBucket } from '../src/economy/paytable';
 import { DEFAULT_PROGRESS, progressMultiplier } from '../src/economy/progress';
+import { DEFAULT_CONFIG } from '../src/store/configStore';
 
 export const PT: Paytable = DEFAULT_PAYTABLE_MIX;
 export const PROG = DEFAULT_PROGRESS;
+// Hard round cap used for both the solver and the players (matches game default).
+export const CAP = DEFAULT_CONFIG.maxRounds;
 
 export const PLAYERS: Record<string, Omit<PlayerOpts, 'seed'>> = {
-  expert: { errorRate: 0.03, foundationGreed: 0.05, maxRounds: 0 },
-  good: { errorRate: 0.12, foundationGreed: 0.2, maxRounds: 0 },
-  casual: { errorRate: 0.3, foundationGreed: 0.45, maxRounds: 0 },
+  expert: { errorRate: 0.03, foundationGreed: 0.05, maxRounds: CAP },
+  good: { errorRate: 0.12, foundationGreed: 0.2, maxRounds: CAP },
+  casual: { errorRate: 0.3, foundationGreed: 0.45, maxRounds: CAP },
 };
 
 const bucketKey = (n: number) => String(roundBucket(n));
@@ -58,7 +61,7 @@ export function runMainChunk(startSeed: number, count: number, budget: number): 
 
   for (let seed = startSeed; seed < startSeed + count; seed++) {
     const g = deal(seed);
-    const res = solve(g, budget);
+    const res = solve(g, budget, CAP);
     p.cls[res.status]++;
 
     if (res.status === 'solvable' && res.minRounds != null) {
@@ -101,7 +104,7 @@ export interface SensPartial {
 export function runSensChunk(startSeed: number, count: number, budget: number): SensPartial {
   const p: SensPartial = { count, solvable: 0, unsolvable: 0, unknown: 0, proven: 0, nodesSum: 0 };
   for (let seed = startSeed; seed < startSeed + count; seed++) {
-    const res = solve(deal(seed), budget);
+    const res = solve(deal(seed), budget, CAP);
     p[res.status]++;
     p.nodesSum += res.nodesVisited;
     if (res.status === 'solvable' && res.minRoundsProven) p.proven++;

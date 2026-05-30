@@ -39,28 +39,31 @@ class SolverClient {
     });
   }
 
-  async generate(solvableOnly: boolean, nodeBudget: number): Promise<Deal | undefined> {
+  async generate(solvableOnly: boolean, nodeBudget: number, maxRounds: number): Promise<Deal | undefined> {
     const r = await this.send<Extract<WorkerResponse, { kind: 'generate' }>>({
       kind: 'generate',
       solvableOnly,
       nodeBudget,
+      maxRounds,
     });
     return r.deal;
   }
 
-  async solve(state: GameState, nodeBudget: number) {
+  async solve(state: GameState, nodeBudget: number, maxRounds: number) {
     return this.send<Extract<WorkerResponse, { kind: 'solve' }>>({
       kind: 'solve',
       state,
       nodeBudget,
+      maxRounds,
     });
   }
 
-  async hint(state: GameState, nodeBudget: number): Promise<Move | undefined> {
+  async hint(state: GameState, nodeBudget: number, maxRounds: number): Promise<Move | undefined> {
     const r = await this.send<Extract<WorkerResponse, { kind: 'hint' }>>({
       kind: 'hint',
       state,
       nodeBudget,
+      maxRounds,
     });
     return r.move;
   }
@@ -86,6 +89,7 @@ export class DealPool {
     private target: () => number,
     private solvableOnly: () => boolean,
     private nodeBudget: () => number,
+    private maxRounds: () => number,
     private onChange?: (size: number) => void,
   ) {}
 
@@ -103,7 +107,7 @@ export class DealPool {
     // mode hand out an instant unclassified deal (the game store classifies it
     // in the background) so gameplay never blocks.
     if (this.solvableOnly()) {
-      const fresh = await solverClient.generate(true, this.nodeBudget());
+      const fresh = await solverClient.generate(true, this.nodeBudget(), this.maxRounds());
       if (fresh) return fresh;
     }
     return solverClient.dealSeed(randomSeed());
@@ -115,7 +119,7 @@ export class DealPool {
     this.filling = true;
     try {
       while (this.pool.length < this.target()) {
-        const d = await solverClient.generate(this.solvableOnly(), this.nodeBudget());
+        const d = await solverClient.generate(this.solvableOnly(), this.nodeBudget(), this.maxRounds());
         if (d) {
           this.pool.push(d);
           this.onChange?.(this.pool.length);

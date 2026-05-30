@@ -132,6 +132,7 @@ export const useGame = create<GameStore>((set, get) => {
         () => useConfig.getState().poolTarget as number,
         () => useConfig.getState().solvableOnly,
         () => useConfig.getState().genNodeBudget,
+        () => useConfig.getState().maxRounds,
         (size) => set({ poolSize: size }),
       );
       void pool.fill();
@@ -239,7 +240,7 @@ export const useGame = create<GameStore>((set, get) => {
       // cold-start deal), classify + benchmark it in the background so the
       // skill-gap and classification stats can be shown.
       if (deal.status == null || deal.minRounds == null) {
-        void solverClient.solve(deal.state, cfg.benchNodeBudget).then((r) => {
+        void solverClient.solve(deal.state, cfg.benchNodeBudget, cfg.maxRounds).then((r) => {
           if (get().deal === deal) {
             set({
               deal: {
@@ -260,13 +261,15 @@ export const useGame = create<GameStore>((set, get) => {
       const cfg = useConfig.getState();
       if (s.stock.length > 0) {
         commit(applyMove(s, { type: 'draw' }));
-      } else if (s.waste.length > 0) {
-        // Recycling consumes a round; enforce max-rounds as a bust.
-        if (cfg.maxRounds > 0 && s.rounds + 1 > cfg.maxRounds) {
-          finalize(false, s);
-          return;
-        }
+        return;
+      }
+      // Stock empty: recycle only if the hard round cap allows it (engine rule).
+      const canRecycle = legalMoves(s, cfg.maxRounds).some((m) => m.type === 'recycle');
+      if (canRecycle) {
         commit(applyMove(s, { type: 'recycle' }));
+      } else if (s.waste.length > 0) {
+        // Round cap reached and talon exhausted -> terminal: lost (progress payout).
+        finalize(false, s);
       }
     },
 
@@ -338,7 +341,7 @@ export const useGame = create<GameStore>((set, get) => {
       const s = get().state;
       if (!s || get().status !== 'playing') return;
       const cfg = useConfig.getState();
-      const move = await solverClient.hint(s, cfg.hintNodeBudget);
+      const move = await solverClient.hint(s, cfg.hintNodeBudget, cfg.maxRounds);
       if (move && get().status === 'playing') set({ hintMove: move });
     },
 

@@ -1,4 +1,5 @@
 import { useGame, Source, Target } from '../store/gameStore';
+import { useConfig } from '../store/configStore';
 import { Card, CARD_W, CARD_H } from './Card';
 import { CardId, Move, SUIT_SYMBOL, SUITS } from '../engine/types';
 import { setDragSource, getDragSource } from './dnd';
@@ -29,6 +30,7 @@ export function Board() {
   const clickSource = useGame((s) => s.clickSource);
   const clickTarget = useGame((s) => s.clickTarget);
   const autoFoundation = useGame((s) => s.autoFoundation);
+  const maxRounds = useConfig((s) => s.maxRounds);
 
   if (!state) {
     return (
@@ -40,6 +42,9 @@ export function Board() {
 
   const isSelected = (src: Source): boolean =>
     !!selected && JSON.stringify(selected) === JSON.stringify(src);
+
+  // Hard round cap: can the talon still be recycled?
+  const canRecycle = maxRounds <= 0 || state.rounds < maxRounds;
 
   const onDrop = (tgt: Target) => (e: React.DragEvent) => {
     e.preventDefault();
@@ -63,7 +68,13 @@ export function Board() {
             className="relative cursor-pointer rounded-lg border-2 border-dashed border-white/25"
             style={{ width: CARD_W, height: CARD_H }}
             onClick={draw}
-            title="Træk fra talon"
+            title={
+              state.stock.length > 0
+                ? 'Træk fra talon'
+                : canRecycle
+                  ? 'Genbrug talon (ny runde)'
+                  : 'Sidste runde brugt — afslutter spillet'
+            }
           >
             {state.stock.length > 0 ? (
               <Card
@@ -71,8 +82,13 @@ export function Board() {
                 faceUp={false}
                 hint={hintMatchesStock(hintMove)}
               />
-            ) : (
+            ) : canRecycle ? (
               <div className="flex h-full items-center justify-center text-2xl text-white/40">↻</div>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center text-white/40">
+                <span className="text-xl">⊘</span>
+                <span className="text-[9px]">sidste runde</span>
+              </div>
             )}
             <span className="absolute -bottom-5 left-0 w-full text-center text-xs text-white/60">
               {state.stock.length}

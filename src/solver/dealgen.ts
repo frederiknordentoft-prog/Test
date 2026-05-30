@@ -18,11 +18,11 @@ export function dealFromSeed(seed: number): Deal {
  * solves within the node budget. Returns undefined if none found in
  * `maxAttempts` (caller can retry later).
  */
-export function generateSolvableDeal(nodeBudget: number, maxAttempts = 40): Deal | undefined {
+export function generateSolvableDeal(nodeBudget: number, maxRounds = 0, maxAttempts = 40): Deal | undefined {
   for (let i = 0; i < maxAttempts; i++) {
     const seed = randomSeed();
     const state = deal(seed);
-    const res = solve(state, nodeBudget);
+    const res = solve(state, nodeBudget, maxRounds);
     if (res.status === 'solvable') {
       return {
         seed,
@@ -41,10 +41,10 @@ export function generateSolvableDeal(nodeBudget: number, maxAttempts = 40): Deal
  * classifies it (solvable / unsolvable / unknown) and records the round
  * benchmark when solvable. All deals are kept and dealt as real games.
  */
-export function generateAnyDeal(nodeBudget: number): Deal {
+export function generateAnyDeal(nodeBudget: number, maxRounds = 0): Deal {
   const seed = randomSeed();
   const state = deal(seed);
-  const res = solve(state, nodeBudget);
+  const res = solve(state, nodeBudget, maxRounds);
   return {
     seed,
     state,

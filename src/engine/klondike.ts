@@ -91,13 +91,18 @@ function isValidRun(up: CardId[], startIdx: number): boolean {
 
 // ---------- legal move generation ----------
 
-export function legalMoves(s: GameState): Move[] {
+/**
+ * Legal moves. `maxRounds` (0 = unlimited) is the hard round cap: once the
+ * talon has been used `maxRounds` times, recycling (which would start round
+ * `maxRounds + 1`) is no longer a legal move.
+ */
+export function legalMoves(s: GameState, maxRounds = 0): Move[] {
   const moves: Move[] = [];
 
   // Draw / recycle from the talon.
   if (s.stock.length > 0) {
     moves.push({ type: 'draw' });
-  } else if (s.waste.length > 0) {
+  } else if (s.waste.length > 0 && (maxRounds <= 0 || s.rounds < maxRounds)) {
     moves.push({ type: 'recycle' });
   }
 

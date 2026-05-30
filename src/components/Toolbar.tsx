@@ -51,7 +51,7 @@ export function Toolbar() {
       </button>
 
       <div className="ml-auto flex items-center gap-4 text-sm">
-        <Stat label="Runde" value={maxRounds > 0 ? `${rounds} / ${maxRounds}` : String(rounds)} highlight />
+        <Stat label="Runde" value={maxRounds > 0 ? `${rounds} af ${maxRounds}` : String(rounds)} highlight />
         <Stat label="På fundament" value={`${found} / 52`} />
         <Stat label="Saldo" value={fmt(balance)} />
         <Stat label="Jackpot" value={fmt(Math.round(jackpotPool))} gold />

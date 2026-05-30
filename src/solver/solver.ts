@@ -71,14 +71,17 @@ interface Frame {
 }
 
 /**
- * Solve a deal, minimising talon rounds. `maxRoundCap` bounds how many talon
- * passes the search will consider (used by tests to prove minimality).
+ * Solve a deal, minimising talon rounds. `maxRoundCap` is the hard round cap
+ * (0 = unlimited, falls back to SOLVER_MAX_ROUNDS): the search only considers
+ * solutions using <= cap talon passes, and "unsolvable" means "no solution
+ * within the cap". A small cap makes minimality cheap to prove.
  */
 export function solve(
   state: GameState,
   nodeBudget: number = DEFAULT_NODE_BUDGET,
   maxRoundCap: number = SOLVER_MAX_ROUNDS,
 ): SolveResult {
+  const cap = maxRoundCap > 0 ? maxRoundCap : SOLVER_MAX_ROUNDS;
   if (isWin(state)) {
     return { status: 'solvable', solution: [], minRounds: 1, minRoundsProven: true, nodesVisited: 0 };
   }
@@ -89,7 +92,7 @@ export function solve(
 
   let nodes = 0;
   let budgetExceeded = false;
-  let best = maxRoundCap + 1; // accept only solutions with rounds <= maxRoundCap
+  let best = cap + 1; // accept only solutions with rounds <= cap
   let bestSolution: Move[] | null = null;
 
   const stack: Frame[] = [
@@ -163,8 +166,8 @@ export function roundsForSolution(state: GameState, solution: Move[]): number {
 }
 
 /** A single suggested next move for the hint feature (or undefined if none/unknown). */
-export function hint(state: GameState, nodeBudget: number = 60_000): Move | undefined {
-  const res = solve(state, nodeBudget);
+export function hint(state: GameState, nodeBudget: number = 60_000, maxRounds = 0): Move | undefined {
+  const res = solve(state, nodeBudget, maxRounds);
   if (res.status === 'solvable' && res.solution && res.solution.length > 0) {
     return res.solution[0];
   }

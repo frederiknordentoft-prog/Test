@@ -8,9 +8,9 @@ import { solve, hint } from '../solver/solver';
 import { generateSolvableDeal, generateAnyDeal, dealFromSeed } from '../solver/dealgen';
 
 export type WorkerRequest =
-  | { id: number; kind: 'generate'; solvableOnly: boolean; nodeBudget: number }
-  | { id: number; kind: 'solve'; state: GameState; nodeBudget: number }
-  | { id: number; kind: 'hint'; state: GameState; nodeBudget: number }
+  | { id: number; kind: 'generate'; solvableOnly: boolean; nodeBudget: number; maxRounds: number }
+  | { id: number; kind: 'solve'; state: GameState; nodeBudget: number; maxRounds: number }
+  | { id: number; kind: 'hint'; state: GameState; nodeBudget: number; maxRounds: number }
   | { id: number; kind: 'dealSeed'; seed: number };
 
 export type WorkerResponse =
@@ -31,14 +31,14 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   switch (msg.kind) {
     case 'generate': {
       const d = msg.solvableOnly
-        ? generateSolvableDeal(msg.nodeBudget)
-        : generateAnyDeal(msg.nodeBudget);
+        ? generateSolvableDeal(msg.nodeBudget, msg.maxRounds)
+        : generateAnyDeal(msg.nodeBudget, msg.maxRounds);
       const res: WorkerResponse = { id: msg.id, kind: 'generate', deal: d };
       (self as unknown as Worker).postMessage(res);
       break;
     }
     case 'solve': {
-      const r = solve(msg.state, msg.nodeBudget);
+      const r = solve(msg.state, msg.nodeBudget, msg.maxRounds);
       const res: WorkerResponse = {
         id: msg.id,
         kind: 'solve',
@@ -51,7 +51,7 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
       break;
     }
     case 'hint': {
-      const m = hint(msg.state, msg.nodeBudget);
+      const m = hint(msg.state, msg.nodeBudget, msg.maxRounds);
       const res: WorkerResponse = { id: msg.id, kind: 'hint', move: m };
       (self as unknown as Worker).postMessage(res);
       break;

@@ -20,6 +20,7 @@ import { cpus } from 'node:os';
 import {
   PT,
   PROG,
+  CAP,
   PLAYERS,
   emptyHist,
   MainPartial,
@@ -39,7 +40,8 @@ const argv = process.argv.slice(2);
 const GAMES = Number(argv[0] ?? 200);
 const SENS_SAMPLE = Number(argv[1] ?? Math.min(GAMES, 400));
 const MAIN_BUDGET = Number(argv[2] ?? DEFAULT_CONFIG.benchNodeBudget);
-const SENS_BUDGETS = [400_000, 800_000, 1_500_000];
+// With a hard round cap, proving (un)solvability is cheap — probe lower budgets.
+const SENS_BUDGETS = [100_000, 200_000, 400_000, 800_000];
 const WORKERS = Math.max(1, Math.min(cpus().length, 4));
 
 const BUCKETS: (keyof Paytable)[] = [1, 2, 3, 4, 5, '6plus'];
@@ -92,7 +94,8 @@ async function runParallel<T>(mode: 'main' | 'sens', base: number, total: number
 async function main() {
   console.log(
     `Kabale Combo — økonomi/loft-rapport (parallel: ${WORKERS} kerner)\n` +
-      `  games=${GAMES}  sensSample=${SENS_SAMPLE}  mainBudget=${MAIN_BUDGET.toLocaleString()} noder\n` +
+      `  games=${GAMES}  sensSample=${SENS_SAMPLE}  mainBudget=${MAIN_BUDGET.toLocaleString()} noder  hård runde-cap=${CAP}\n` +
+      `  ("unsolvable" = ingen løsning inden for ${CAP} runder)\n` +
       `  mix-tabel + default progress (tærskel ${PROG.progressThreshold}, maks ${PROG.progressMax}, eksp ${PROG.progressExponent})\n`,
   );
 
@@ -195,6 +198,7 @@ async function main() {
       sensSample: SENS_SAMPLE,
       mainBudget: MAIN_BUDGET,
       sensBudgets: SENS_BUDGETS,
+      maxRoundsCap: CAP,
       workers: WORKERS,
       paytable: PT,
       progress: PROG,
