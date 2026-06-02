@@ -2,218 +2,646 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Elprisen · Østdanmark</title>
-<meta name="theme-color" content="#fbfbfd" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
-<script>
-  // Scroll to top on load — prevent browser restoration / sticky-nav offset
-  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="styles.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Territorieduel</title>
+<meta name="theme-color" content="#0d0d14" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230d0d14'/%3E%3Crect x='10' y='10' width='35' height='80' fill='%2300e5ff'/%3E%3Crect x='55' y='10' width='35' height='80' fill='%23ff3d7f'/%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#0d0d14;
+    --p:#00e5ff;      /* spiller */
+    --a:#ff3d7f;      /* AI */
+    --ink:#e8ecff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    user-select:none;-webkit-user-select:none;
+    background:radial-gradient(ellipse at 50% 40%, #15151f 0%, #0d0d14 70%);
+  }
+  #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;}
+  canvas{
+    display:block;
+    touch-action:none;
+    border-radius:10px;
+    box-shadow:0 0 60px rgba(0,229,255,0.07), 0 0 60px rgba(255,61,127,0.07);
+  }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:absolute;top:0;left:0;right:0;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:10px 14px;pointer-events:none;
+    text-shadow:0 1px 6px rgba(0,0,0,.7);
+  }
+  #bars{
+    width:min(680px,94vw);display:flex;align-items:center;gap:12px;
+  }
+  .barwrap{flex:1;display:flex;flex-direction:column;gap:3px;}
+  .barwrap .lbl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;letter-spacing:.04em;}
+  .bartrack{height:10px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;position:relative;}
+  .barfill{height:100%;width:0%;border-radius:6px;transition:width .12s linear;}
+  .barwrap.p .lbl{color:var(--p);} .barwrap.p .barfill{background:var(--p);box-shadow:0 0 10px var(--p);}
+  .barwrap.a .lbl{color:var(--a);} .barwrap.a .barfill{background:var(--a);box-shadow:0 0 10px var(--a);}
+  /* 60% mål-markør */
+  .goal{position:absolute;top:-2px;bottom:-2px;width:2px;background:rgba(255,255,255,.55);}
+  .barwrap.p .goal{right:40%;} .barwrap.a .goal{left:40%;}
+  #timer{
+    font-variant-numeric:tabular-nums;font-weight:800;font-size:22px;
+    min-width:64px;text-align:center;letter-spacing:.02em;
+  }
+  #reminder{font-size:11px;opacity:.6;letter-spacing:.03em;text-align:center;}
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:18px;text-align:center;
+    background:rgba(8,8,14,.82);backdrop-filter:blur(6px);
+    padding:24px;z-index:10;
+  }
+  .overlay.hidden{display:none;}
+  h1{
+    font-size:clamp(34px,9vw,68px);font-weight:900;letter-spacing:.02em;line-height:1;
+    background:linear-gradient(90deg,var(--p),#fff 50%,var(--a));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 18px rgba(0,229,255,.25));
+  }
+  .tag{font-size:clamp(14px,3.4vw,18px);opacity:.85;max-width:540px;}
+  .hint{font-size:13px;opacity:.6;max-width:520px;line-height:1.6;}
+  .hint b{color:var(--p);font-weight:700;}
+  .hint i{color:var(--a);font-style:normal;font-weight:700;}
+  button{
+    font:inherit;font-weight:800;font-size:18px;letter-spacing:.04em;cursor:pointer;
+    color:#06121a;background:var(--p);border:none;border-radius:999px;
+    padding:14px 42px;margin-top:6px;
+    box-shadow:0 0 24px rgba(0,229,255,.45);transition:transform .08s ease, box-shadow .2s;
+  }
+  button:hover{transform:translateY(-2px);box-shadow:0 0 36px rgba(0,229,255,.7);}
+  button:active{transform:translateY(0);}
+  #endTitle{font-size:clamp(30px,8vw,58px);}
+  #endTitle.win{color:var(--p);-webkit-text-fill-color:var(--p);filter:drop-shadow(0 0 16px var(--p));}
+  #endTitle.lose{color:var(--a);-webkit-text-fill-color:var(--a);filter:drop-shadow(0 0 16px var(--a));}
+  #endSplit{font-size:16px;opacity:.9;}
+  #endSplit .ps{color:var(--p);font-weight:800;} #endSplit .as{color:var(--a);font-weight:800;}
+  .credit{position:absolute;bottom:10px;font-size:11px;opacity:.35;}
+</style>
 </head>
 <body>
+<div id="stage">
+  <canvas id="game"></canvas>
 
-<nav class="nav">
-  <div class="nav-inner">
-    <a class="nav-brand" href="#top">Elprisen</a>
-    <div class="nav-links">
-      <a href="#chart">Timepriser</a>
-      <a href="#plan">Planlæg</a>
-      <a href="#all">Detaljer</a>
-      <a href="#story">Historie</a>
-    </div>
-    <button id="themeBtn" class="nav-theme" aria-label="Skift tema">◐</button>
-  </div>
-</nav>
-
-<a id="top"></a>
-
-<!-- ============ HERO ============ -->
-<section class="section hero">
-  <div class="container">
-    <p class="eyebrow reveal">Østdanmark · DK2</p>
-    <h1 class="headline reveal">Strømmen koster.</h1>
-    <div class="hero-price reveal">
-      <span id="priceNow">–</span><span class="hero-price-unit">kr</span>
-    </div>
-    <p class="hero-price-caption reveal">
-      <span id="priceLevel">pr. kWh lige nu</span><span class="sep">·</span><span id="clock">--:--</span>
-    </p>
-    <p class="sub reveal">Spotprisen time for time. Klart og uden støj.</p>
-
-    <div class="mode-row reveal" role="group" aria-label="Vis priser med">
-      <span class="mode-label">Vis med</span>
-      <button class="mode-chip active" id="modeTariffs" data-mode="tariffs">Afgifter</button>
-      <button class="mode-chip" id="modeGasel" data-mode="gasel">Gasel +6 øre</button>
-      <button class="mode-chip active" id="modeVat" data-mode="vat">Moms</button>
-    </div>
-
-    <div class="cta-row reveal">
-      <a href="#plan" class="btn-pill">Find billigste time</a>
-      <a href="#chart" class="btn-link">Se hele dagen <span class="chev">›</span></a>
-    </div>
-  </div>
-</section>
-
-<!-- ============ STATS ============ -->
-<section class="section stats-section">
-  <div class="container">
-    <p class="eyebrow reveal">I dag</p>
-    <h2 class="headline-md reveal">Tre tal, der tæller.</h2>
-    <div class="stats-row">
-      <div class="stat reveal">
-        <div class="stat-num low" id="statMin">–</div>
-        <div class="stat-cap">Laveste pris <span id="statMinHint">–</span></div>
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="bars">
+      <div class="barwrap p">
+        <div class="lbl"><span>DU</span><span id="pPct">0%</span></div>
+        <div class="bartrack"><div class="barfill" id="pBar"></div><div class="goal"></div></div>
       </div>
-      <div class="stat reveal">
-        <div class="stat-num" id="statAvg">–</div>
-        <div class="stat-cap">Gennemsnit over døgnet</div>
-      </div>
-      <div class="stat reveal">
-        <div class="stat-num high" id="statMax">–</div>
-        <div class="stat-cap">Højeste pris <span id="statMaxHint">–</span></div>
+      <div id="timer">2:00</div>
+      <div class="barwrap a">
+        <div class="lbl"><span id="aPct">0%</span><span>AI</span></div>
+        <div class="bartrack"><div class="barfill" id="aBar"></div><div class="goal"></div></div>
       </div>
     </div>
-    <p class="tip reveal" id="nextCheap">Leder efter billigste time…</p>
+    <div id="reminder">Først til 60 % vinder · Bliver din streg krydset, dør du</div>
   </div>
-</section>
 
-<!-- ============ CHART (dark) ============ -->
-<section class="section dark" id="chart">
-  <div class="container">
-    <p class="eyebrow reveal">Timepriser</p>
-    <h2 class="headline-md light reveal">24 timer. Et blik.</h2>
-    <div class="tabs reveal" role="tablist">
-      <button class="tab active" data-day="today">I dag</button>
-      <button class="tab" data-day="tomorrow" id="tabTomorrow">I morgen</button>
-    </div>
-    <div class="chart-card reveal">
-      <div class="chart-wrap">
-        <canvas id="priceChart"></canvas>
-        <div id="nowBadge" class="now-badge" hidden>NU</div>
-        <div id="chartEmpty" class="chart-empty" hidden>
-          Morgendagens priser udgives omkring kl. 13.
-        </div>
-      </div>
-    </div>
-    <div class="legend reveal">
-      <span><i class="sw green"></i>Billig</span>
-      <span><i class="sw yellow"></i>Normal</span>
-      <span><i class="sw orange"></i>Høj</span>
-      <span><i class="sw red"></i>Dyr</span>
+  <!-- Startskærm -->
+  <div id="start" class="overlay">
+    <h1>TERRITORIEDUEL</h1>
+    <div class="tag">Tegn løkker, erobr land, kryds modstanderens streg.</div>
+    <button id="startBtn">Start</button>
+    <div class="hint">
+      <b>Desktop:</b> Styr med musen (hovedet følger markøren) eller WASD / piletaster.<br>
+      <i>Mobil:</i> Træk fingeren i den retning du vil dreje.<br>
+      Du er <b>cyan</b>, AI'en er <i>magenta</i>. Først til 60 % – ellers vinder flest felter når tiden er gået.
     </div>
   </div>
-</section>
 
-<!-- ============ BEST / WORST ============ -->
-<section class="section">
-  <div class="container">
-    <p class="eyebrow reveal">Top &amp; bund</p>
-    <h2 class="headline-md reveal">Rigtige tidspunkter.<br/><span class="muted">Og dem du undgår.</span></h2>
-    <div class="split">
-      <div class="reveal">
-        <p class="split-label good">De 3 billigste timer</p>
-        <ul class="ranklist" id="cheapList"></ul>
-      </div>
-      <div class="reveal">
-        <p class="split-label bad">De 3 dyreste timer</p>
-        <ul class="ranklist" id="expList"></ul>
-      </div>
-    </div>
+  <!-- Slutskærm -->
+  <div id="end" class="overlay hidden">
+    <h1 id="endTitle">—</h1>
+    <div id="endSplit"></div>
+    <button id="againBtn">Spil igen</button>
   </div>
-</section>
 
-<!-- ============ PLANNER ============ -->
-<section class="section" id="plan">
-  <div class="container">
-    <p class="eyebrow reveal">Planlæg</p>
-    <h2 class="headline-md reveal">Hvornår skal den køre?</h2>
-    <p class="sub reveal">Vælg et apparat. Vi finder vinduet for dig.</p>
+  <div class="credit">Territorieduel</div>
+</div>
 
-    <div class="appliance-picker reveal">
-      <button class="chip active" data-appliance="washer" data-kwh="1.0" data-hours="2">Vaskemaskine</button>
-      <button class="chip" data-appliance="dishwasher" data-kwh="1.2" data-hours="2">Opvasker</button>
-      <button class="chip" data-appliance="dryer" data-kwh="2.5" data-hours="1">Tørretumbler</button>
-      <button class="chip" data-appliance="ev" data-kwh="44" data-hours="4">Elbil 11 kW</button>
-      <button class="chip" data-appliance="oven" data-kwh="2.0" data-hours="1">Ovn</button>
-      <button class="chip" data-appliance="heatpump" data-kwh="3.0" data-hours="6">Varmepumpe</button>
-    </div>
+<script>
+"use strict";
+//============================ Konstanter ============================
+const W = 64, H = 40, TOTAL = W * H;
+const WIN_RATIO = 0.60;
+const GAME_TIME = 120;          // sekunder
+const STEP_SPEED = 10;          // celler pr. sekund
+const DIRS = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+const P_COL = '#00e5ff', A_COL = '#ff3d7f';
+const OWNER_COL = {1:P_COL, 2:A_COL};
 
-    <div class="answer reveal" id="calcOutput">Beregner…</div>
-  </div>
-</section>
+//============================ Spil-state ============================
+const owner   = new Int8Array(TOTAL);   // 0 tom, 1 spiller, 2 AI
+const trail   = new Int8Array(TOTAL);   // 0 ingen, 1 spiller-hale, 2 AI-hale
+const fillAge = new Float32Array(TOTAL);// tidspunkt celle blev erobret (til animation)
+const reach   = new Uint8Array(TOTAL);  // genbrugt til flood-fill
 
-<!-- ============ ALL HOURS ============ -->
-<section class="section soft" id="all">
-  <div class="container narrow">
-    <p class="eyebrow reveal">Detaljer</p>
-    <h2 class="headline-md reveal">Hver time. Hele dagen.</h2>
+let entities = [];
+let state = 'start';            // 'start' | 'play' | 'end'
+let timeLeft = GAME_TIME;
+let acc = 0;                    // skridt-akkumulator
+let playerCount = 0, aiCount = 0;
+let particles = [];
+let shakeMag = 0;
+let now = 0;
 
-    <div class="hours-card reveal">
-      <div class="hours-head">
-        <span id="tableChip" class="chip-label">I dag</span>
-        <span class="chip-label" id="modeEcho">Spot + afgifter + moms</span>
-      </div>
-      <div class="table-scroll">
-        <div class="hours-grid" id="hoursGrid"></div>
-      </div>
-    </div>
-  </div>
-</section>
+const idx = (x,y) => x + y * W;
+const inB = (x,y) => x>=0 && y>=0 && x<W && y<H;
 
-<!-- ============ STORY (dark, cinematic) ============ -->
-<section class="section story" id="story">
-  <div class="container narrow">
-    <p class="eyebrow light reveal">Strømmens historie</p>
-    <h2 class="story-title reveal">Usynlig.<br/>Uundværlig.</h2>
+//============================ Canvas ============================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let CELL = 14, dpr = 1;
 
-    <div class="story-paragraph reveal">
-      <p>For 140 år siden var elektriciteten et mirakel. En glødetråd bag glas. En pæreblomst, der ikke visnede.</p>
-    </div>
+function resize(){
+  const pad = 24;
+  const availW = window.innerWidth - pad;
+  const availH = window.innerHeight - pad;
+  CELL = Math.max(4, Math.floor(Math.min(availW / W, availH / H)));
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.style.width  = (W * CELL) + 'px';
+  canvas.style.height = (H * CELL) + 'px';
+  canvas.width  = Math.floor(W * CELL * dpr);
+  canvas.height = Math.floor(H * CELL * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', resize);
 
-    <div class="story-paragraph reveal">
-      <p>I dag er den forsvundet ind i væggene. Usynlig. Men trækker vi stikket, står alt stille.</p>
-    </div>
+//============================ Entities ============================
+function makeEntity(val, baseX, baseY, dir, ai){
+  return {
+    val, ai,
+    color: OWNER_COL[val],
+    cx: baseX, cy: baseY, prevX: baseX, prevY: baseY,
+    dir: {...dir}, nx: baseX, ny: baseY, wallDie:false,
+    base: {x: baseX, y: baseY},
+    alive: true,
+    trailCells: [],
+    pendingDir: {...dir},
+    // AI
+    aiTargetX: 0, aiTargetY: 0, hasTarget:false, phase:'out'
+  };
+}
 
-    <h3 class="story-subtitle reveal">Og så gjorde vi den grøn.</h3>
-    <div class="story-paragraph reveal">
-      <p>Vinden i Nordsøen. Solen over markerne. Biomassen i Avedøre. Danmark fører en revolution — stille, præcist, time efter time.</p>
-    </div>
+function paintBase(cx, cy, val){
+  for(let y=cy-1; y<=cy+2; y++)
+    for(let x=cx-1; x<=cx+2; x++)
+      if(inB(x,y)){ owner[idx(x,y)] = val; fillAge[idx(x,y)] = -99999; }
+}
 
-    <div class="story-stat reveal">
-      <div class="story-stat-num">80%</div>
-      <p class="story-stat-cap">af dansk strøm kommer fra vedvarende kilder. I 2030 er det 100%.</p>
-    </div>
+function resetGame(){
+  owner.fill(0); trail.fill(0); fillAge.fill(-99999);
+  particles = []; shakeMag = 0;
+  timeLeft = GAME_TIME; acc = 0;
 
-    <h3 class="story-subtitle reveal">Men hver time har en pris.</h3>
-    <div class="story-paragraph reveal">
-      <p>Når vinden tager fat, falder prisen. Når den stilner, stiger den. Markedet puster med vejret.</p>
-    </div>
+  const pBase = {x:4, y:Math.floor(H/2)};
+  const aBase = {x:W-5, y:Math.floor(H/2)};
+  paintBase(pBase.x, pBase.y, 1);
+  paintBase(aBase.x, aBase.y, 2);
 
-    <div class="story-paragraph reveal">
-      <p>Din aftensmad koster ikke bare kroner. Den koster kilowatt-timer. Og kilowatt-timer er valg.</p>
-    </div>
+  const player = makeEntity(1, pBase.x, pBase.y, {x:1,y:0}, false);
+  const ai     = makeEntity(2, aBase.x, aBase.y, {x:-1,y:0}, true);
+  entities = [player, ai];
+  recount();
+  updateHUD();
+}
 
-    <h3 class="story-subtitle reveal">Synliggør. Så kan du vælge.</h3>
-    <div class="story-paragraph reveal">
-      <p>Denne side er bygget til én ting: at vise dig, hvornår strømmen er billig, og hvornår den er dyr. Så du kan starte vasken, lade bilen, tænde ovnen — på vindens vilkår, ikke markedets.</p>
-    </div>
+function recount(){
+  let p=0, a=0;
+  for(let i=0;i<TOTAL;i++){ const o=owner[i]; if(o===1)p++; else if(o===2)a++; }
+  playerCount=p; aiCount=a;
+}
 
-    <p class="story-outro reveal">Elprisen. Synliggjort.</p>
-  </div>
-</section>
+//============================ Input ============================
+let inputMode = 'pointer';
+const pointer = {active:false, cx:0, cy:0};
 
-<footer>
-  <div class="container">
-    <p>Data · <a href="https://www.elprisenligenu.dk" target="_blank" rel="noopener">elprisenligenu.dk</a> · Tariffer fra Energinet &amp; Radius · Afgifter fra Skat.dk</p>
-    <p class="foot-muted">Spotpris for DK2. Radius-nettarif time-differentieret. Opdateret <span id="lastUpdate">–</span>.</p>
-  </div>
-</footer>
+function setPointerFromEvent(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width  * W;
+  const y = (e.clientY - rect.top)  / rect.height * H;
+  pointer.cx = x; pointer.cy = y; pointer.active = true;
+  inputMode = 'pointer';
+}
+canvas.addEventListener('pointermove', e=>{ setPointerFromEvent(e); e.preventDefault(); }, {passive:false});
+canvas.addEventListener('pointerdown', e=>{ setPointerFromEvent(e); e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchmove', e=>{ e.preventDefault(); }, {passive:false});
 
-<div id="toast" class="toast" hidden></div>
+const KEYMAP = {
+  ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
+  w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0},
+  W:{x:0,y:-1}, S:{x:0,y:1}, A:{x:-1,y:0}, D:{x:1,y:0}
+};
+window.addEventListener('keydown', e=>{
+  const d = KEYMAP[e.key];
+  if(d && entities[0]){ entities[0].pendingDir = {...d}; inputMode='key'; e.preventDefault(); }
+});
 
-<script src="app.js"></script>
+//============================ Bevægelseslogik ============================
+function inboundTurn(e, d){
+  const perps = d.x!==0 ? [{x:0,y:1},{x:0,y:-1}] : [{x:1,y:0},{x:-1,y:0}];
+  for(const p of perps){ if(inB(e.cx+p.x, e.cy+p.y)) return p; }
+  return d;
+}
+
+function playerDir(e){
+  if(inputMode==='pointer' && pointer.active){
+    const dx = pointer.cx - (e.cx + 0.5);
+    const dy = pointer.cy - (e.cy + 0.5);
+    if(Math.abs(dx) >= Math.abs(dy))
+      return {x: (Math.sign(dx) || e.dir.x), y:0};
+    else
+      return {x:0, y:(Math.sign(dy) || e.dir.y)};
+  }
+  return e.pendingDir || e.dir;
+}
+
+function simulate(){
+  const alive = entities.filter(e=>e.alive);
+  for(const e of alive){ e.prevX = e.cx; e.prevY = e.cy; }
+
+  // 1) vælg retning + næste celle (+ væg-håndtering)
+  for(const e of alive){
+    let d = e.ai ? aiDecide(e) : playerDir(e);
+    if(d.x === -e.dir.x && d.y === -e.dir.y) d = e.dir;     // ingen 180°
+    let nx = e.cx + d.x, ny = e.cy + d.y;
+    e.wallDie = false;
+    if(!inB(nx,ny)){
+      if(owner[idx(e.cx,e.cy)] === e.val){                  // på eget land: drej langs væg
+        d = inboundTurn(e, d);
+        nx = e.cx + d.x; ny = e.cy + d.y;
+        if(!inB(nx,ny)){ nx=e.cx; ny=e.cy; }
+      } else {
+        e.wallDie = true;                                   // ind i væg uden for eget land = død
+      }
+    }
+    e.dir = d; e.nx = nx; e.ny = ny;
+  }
+
+  const toKill = new Set();
+  for(const e of alive) if(e.wallDie) toKill.add(e);
+
+  // 2) hoved-mod-hoved
+  for(let i=0;i<alive.length;i++) for(let j=i+1;j<alive.length;j++){
+    const a=alive[i], b=alive[j];
+    if(a.nx===b.nx && a.ny===b.ny){ toKill.add(a); toKill.add(b); }
+    if(a.nx===b.cx && a.ny===b.cy && b.nx===a.cx && b.ny===a.cy){ toKill.add(a); toKill.add(b); }
+  }
+
+  // 3) hale-kryds
+  for(const e of alive){
+    if(e.wallDie) continue;
+    const t = trail[idx(e.nx, e.ny)];
+    if(t === e.val) toKill.add(e);                          // egen hale = død
+    else if(t !== 0) toKill.add(entities[t-1]);             // krydser fjendens hale -> fjenden dør
+  }
+
+  // 4) udfør dødsfald
+  for(const e of toKill) killEntity(e);
+
+  // 5) flyt overlevende
+  for(const e of alive){
+    if(toKill.has(e)) continue;
+    e.cx = e.nx; e.cy = e.ny;
+    const ni = idx(e.cx, e.cy);
+    if(owner[ni] === e.val){
+      if(e.trailCells.length > 0) capture(e);
+    } else {
+      trail[ni] = e.val;
+      e.trailCells.push(ni);
+    }
+  }
+
+  checkWin();
+}
+
+function killEntity(e){
+  for(const c of e.trailCells){ if(trail[c] === e.val) trail[c] = 0; }
+  e.trailCells.length = 0;
+  spawnBurst((e.cx+0.5)*CELL, (e.cy+0.5)*CELL, e.color);
+  if(!e.ai) shakeMag = Math.max(shakeMag, 12);
+  // respawn på base
+  e.cx = e.prevX = e.base.x;
+  e.cy = e.prevY = e.base.y;
+  e.dir = e.val===1 ? {x:1,y:0} : {x:-1,y:0};
+  e.pendingDir = {...e.dir};
+  e.hasTarget = false; e.phase = 'out';
+  e.alive = true;
+}
+
+//============================ Erobring (flood-fill) ============================
+function capture(e){
+  const me = e.val;
+  for(const c of e.trailCells){ owner[c] = me; trail[c] = 0; fillAge[c] = now; }
+
+  reach.fill(0);
+  const stack = [];
+  const pushFree = (x,y)=>{ const i=idx(x,y); if(owner[i]!==me && !reach[i]){ reach[i]=1; stack.push(i);} };
+  for(let x=0;x<W;x++){ pushFree(x,0); pushFree(x,H-1); }
+  for(let y=0;y<H;y++){ pushFree(0,y); pushFree(W-1,y); }
+  while(stack.length){
+    const i = stack.pop();
+    const x = i % W, y = (i / W) | 0;
+    if(x>0)   pushFree(x-1,y);
+    if(x<W-1) pushFree(x+1,y);
+    if(y>0)   pushFree(x,y-1);
+    if(y<H-1) pushFree(x,y+1);
+  }
+
+  let captured = 0, sx=0, sy=0;
+  for(let i=0;i<TOTAL;i++){
+    if(owner[i] !== me && !reach[i]){
+      owner[i] = me; fillAge[i] = now;
+      if(trail[i]){                                  // ryd evt. fjende-hale fanget inde
+        const otherTrail = trail[i];
+        trail[i] = 0;
+        const other = entities[otherTrail-1];
+        const k = other.trailCells.indexOf(i);
+        if(k>=0) other.trailCells.splice(k,1);
+      }
+      captured++; sx += i % W; sy += (i / W) | 0;
+    }
+  }
+  recount();
+  if(captured > 0){
+    spawnRipple((sx/captured + 0.5)*CELL, (sy/captured + 0.5)*CELL, e.color);
+  }
+}
+
+//============================ AI ============================
+function onOwn(e){ return owner[idx(e.cx,e.cy)] === e.val; }
+
+function nearestOwn(e){
+  let best=null, bd=Infinity;
+  for(let i=0;i<TOTAL;i++){
+    if(owner[i] !== e.val) continue;
+    const x=i%W, y=(i/W)|0;
+    const d=Math.abs(x-e.cx)+Math.abs(y-e.cy);
+    if(d<bd){ bd=d; best={x,y}; }
+  }
+  return best || {x:e.base.x, y:e.base.y};
+}
+
+function pickExpand(e){
+  // sigt mod et åbent felt et stykke ude fra eget land for at tegne en løkke
+  for(let tries=0; tries<24; tries++){
+    const dist = 5 + Math.floor(Math.random()*8);
+    const ang = Math.random()*Math.PI*2;
+    let tx = Math.round(e.cx + Math.cos(ang)*dist);
+    let ty = Math.round(e.cy + Math.sin(ang)*dist);
+    tx = Math.max(1, Math.min(W-2, tx));
+    ty = Math.max(1, Math.min(H-2, ty));
+    if(owner[idx(tx,ty)] !== e.val){ e.aiTargetX=tx; e.aiTargetY=ty; e.hasTarget=true; e.phase='out'; return; }
+  }
+  e.aiTargetX = Math.max(1,Math.min(W-2, e.cx + (e.val===1?6:-6)));
+  e.aiTargetY = Math.max(1,Math.min(H-2, e.cy + (Math.random()<.5?5:-5)));
+  e.hasTarget = true; e.phase='out';
+}
+
+function goHome(e){
+  const t = nearestOwn(e);
+  e.aiTargetX=t.x; e.aiTargetY=t.y; e.hasTarget=true; e.phase='home';
+}
+
+function nearestPlayerTrail(e, opp){
+  let best=null, bd=Infinity;
+  for(const c of opp.trailCells){
+    const x=c%W, y=(c/W)|0;
+    const d=Math.abs(x-e.cx)+Math.abs(y-e.cy);
+    if(d<bd){ bd=d; best={x,y,d}; }
+  }
+  return best;
+}
+
+function greedyDir(e, tx, ty){
+  let best=null, bestScore=Infinity;
+  for(const d of DIRS){
+    if(d.x===-e.dir.x && d.y===-e.dir.y) continue;       // ingen 180°
+    const nx=e.cx+d.x, ny=e.cy+d.y;
+    if(!inB(nx,ny)) continue;
+    const ni=idx(nx,ny);
+    if(trail[ni]===e.val) continue;                       // undgå egen hale
+    const score = Math.abs(nx-tx) + Math.abs(ny-ty) + Math.random()*0.4;
+    if(score<bestScore){ bestScore=score; best=d; }
+  }
+  return best || e.dir;
+}
+
+function aiDecide(e){
+  const opp = entities[0];
+
+  // selvbevarelse: hale for lang -> hjem
+  if(e.trailCells.length > 26 && e.phase!=='home') goHome(e);
+
+  // aggression: gå efter spillerens hale hvis den er eksponeret og tæt på
+  if(opp.alive && opp.trailCells.length > 5 && e.trailCells.length < 10){
+    const tc = nearestPlayerTrail(e, opp);
+    if(tc && tc.d < 13){ e.aiTargetX=tc.x; e.aiTargetY=tc.y; e.hasTarget=true; e.phase='attack'; }
+  }
+
+  if(!e.hasTarget){
+    if(onOwn(e)) pickExpand(e);
+    else goHome(e);
+  }
+
+  const reached = (e.cx===e.aiTargetX && e.cy===e.aiTargetY);
+  if(reached){
+    if(e.phase==='out' || e.phase==='attack') goHome(e);
+    else e.hasTarget=false;                                // hjemme -> vælg nyt mål næste tick
+  }
+  if(e.phase==='home' && onOwn(e) && e.trailCells.length===0) e.hasTarget=false;
+
+  if(!e.hasTarget){ if(onOwn(e)) pickExpand(e); else goHome(e); }
+  return greedyDir(e, e.aiTargetX, e.aiTargetY);
+}
+
+//============================ Partikler ============================
+function spawnBurst(x,y,color){
+  for(let i=0;i<26;i++){
+    const a=Math.random()*Math.PI*2, sp=40+Math.random()*160;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:0,max:.5+Math.random()*.4,color,size:2+Math.random()*3});
+  }
+}
+function spawnRipple(x,y,color){
+  for(let i=0;i<18;i++){
+    const a=(i/18)*Math.PI*2, sp=60+Math.random()*40;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:0,max:.45,color,size:3});
+  }
+}
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.life+=dt; if(p.life>=p.max){ particles.splice(i,1); continue; }
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=0.92; p.vy*=0.92;
+  }
+}
+
+//============================ Sejr / nederlag ============================
+let won = false;
+function checkWin(){
+  if(playerCount/TOTAL >= WIN_RATIO) return endGame(true);
+  if(aiCount/TOTAL    >= WIN_RATIO) return endGame(false);
+}
+function endGame(playerWon){
+  if(state!=='play') return;
+  won = playerWon; state='end';
+  const title = document.getElementById('endTitle');
+  title.textContent = playerWon ? 'Du vandt!' : 'Du tabte!';
+  title.className = playerWon ? 'win' : 'lose';
+  const pp = Math.round(playerCount/TOTAL*100);
+  const ap = Math.round(aiCount/TOTAL*100);
+  document.getElementById('endSplit').innerHTML =
+    `Endeligt territorie — <span class="ps">DU ${pp}%</span> &nbsp;·&nbsp; <span class="as">AI ${ap}%</span>`;
+  document.getElementById('end').classList.remove('hidden');
+  document.getElementById('hud').classList.add('hidden');
+}
+
+//============================ HUD ============================
+function fmtTime(s){
+  s=Math.max(0,Math.ceil(s));
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+function updateHUD(){
+  const pp = playerCount/TOTAL*100, ap = aiCount/TOTAL*100;
+  document.getElementById('pBar').style.width = pp.toFixed(1)+'%';
+  document.getElementById('aBar').style.width = ap.toFixed(1)+'%';
+  document.getElementById('pPct').textContent = Math.round(pp)+'%';
+  document.getElementById('aPct').textContent = Math.round(ap)+'%';
+  document.getElementById('timer').textContent = fmtTime(timeLeft);
+}
+
+//============================ Rendering ============================
+function render(frac){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  ctx.save();
+  if(shakeMag>0.3){
+    ctx.translate((Math.random()*2-1)*shakeMag, (Math.random()*2-1)*shakeMag);
+  }
+
+  // baggrund
+  ctx.fillStyle = '#0d0d14';
+  ctx.fillRect(-20,-20, W*CELL+40, H*CELL+40);
+
+  // grid-glød (svage linjer)
+  ctx.strokeStyle = 'rgba(120,140,200,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for(let x=0;x<=W;x++){ ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,H*CELL); }
+  for(let y=0;y<=H;y++){ ctx.moveTo(0,y*CELL); ctx.lineTo(W*CELL,y*CELL); }
+  ctx.stroke();
+
+  // ejet land
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const i=idx(x,y), o=owner[i];
+    if(!o) continue;
+    const age = now - fillAge[i];
+    let grow=1;
+    if(age>=0 && age<300){ grow = 0.5 + 0.5*(age/300); }
+    ctx.globalAlpha = 0.78;
+    ctx.fillStyle = OWNER_COL[o];
+    const pad = (1-grow)*CELL*0.5;
+    ctx.fillRect(x*CELL+pad, y*CELL+pad, CELL-2*pad, CELL-2*pad);
+    if(age>=0 && age<260){                       // erobrings-blink
+      ctx.globalAlpha = 0.5*(1-age/260);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // haler (lysende)
+  ctx.shadowBlur = CELL*0.9;
+  for(const e of entities){
+    ctx.shadowColor = e.color;
+    ctx.fillStyle = e.color;
+    for(const c of e.trailCells){
+      const x=c%W, y=(c/W)|0;
+      ctx.fillRect(x*CELL+1, y*CELL+1, CELL-2, CELL-2);
+    }
+  }
+  ctx.shadowBlur = 0;
+
+  // hoveder (interpoleret)
+  for(const e of entities){
+    const hx = (e.prevX + (e.cx-e.prevX)*frac + 0.5)*CELL;
+    const hy = (e.prevY + (e.cy-e.prevY)*frac + 0.5)*CELL;
+    const r = CELL*0.62;
+    ctx.shadowBlur = CELL*1.4; ctx.shadowColor = e.color;
+    ctx.fillStyle = e.color;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(hx-r/2, hy-r/2, r, r, r*0.3);
+    else ctx.rect(hx-r/2, hy-r/2, r, r);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(hx,hy,r*0.18,0,Math.PI*2); ctx.fill();
+  }
+
+  // partikler
+  for(const p of particles){
+    ctx.globalAlpha = Math.max(0, 1 - p.life/p.max);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+//============================ Hovedløkke ============================
+let last = performance.now();
+function frame(t){
+  now = t;
+  const dt = Math.min(50, t-last)/1000; last = t;
+
+  if(state==='play'){
+    timeLeft -= dt;
+    if(timeLeft<=0){ endGame(playerCount >= aiCount); }
+    else {
+      acc += dt*STEP_SPEED;
+      let steps=0;
+      while(acc>=1 && steps<6 && state==='play'){ acc-=1; simulate(); steps++; }
+    }
+    updateParticles(dt);
+    if(shakeMag>0) shakeMag = Math.max(0, shakeMag - dt*40);
+    updateHUD();
+  } else {
+    updateParticles(dt);
+    if(shakeMag>0) shakeMag = Math.max(0, shakeMag - dt*40);
+  }
+
+  render(state==='play' ? acc : 0);
+  requestAnimationFrame(frame);
+}
+
+//============================ Skærm-styring ============================
+function startGame(){
+  resetGame();
+  state='play'; last=performance.now(); acc=0;
+  document.getElementById('start').classList.add('hidden');
+  document.getElementById('end').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('againBtn').addEventListener('click', startGame);
+
+//============================ Init ============================
+resize();
+resetGame();
+requestAnimationFrame(frame);
+</script>
 </body>
 </html>
