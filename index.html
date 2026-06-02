@@ -19,7 +19,7 @@
     user-select:none;-webkit-user-select:none;
     background:radial-gradient(ellipse at 50% 40%, #21212d 0%, #15151e 70%);
   }
-  #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;}
+  #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding-top:78px;box-sizing:border-box;}
   canvas{display:block;touch-action:none;border-radius:10px;
     box-shadow:0 0 60px rgba(0,229,255,.06),0 0 60px rgba(255,61,127,.06);}
 
@@ -101,6 +101,10 @@
   #callout .sub{font-size:clamp(13px,3.6vw,18px);font-weight:800;margin-top:8px;letter-spacing:.04em;}
   #callout .sub2{font-size:12px;opacity:.65;margin-top:4px;}
   @keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0;}to{transform:translate(-50%,-50%) scale(1);opacity:1;}}
+  .spd.act{background:var(--p1);color:#06121a;box-shadow:0 0 14px rgba(0,229,255,.4);}
+  #musicCtl{position:fixed;left:8px;bottom:8px;z-index:20;display:flex;align-items:center;gap:6px;
+    background:rgba(6,6,12,.55);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;opacity:.85;}
+  #musicCtl input[type=range]{width:96px;height:18px;}
 </style>
 </head>
 <body>
@@ -115,6 +119,9 @@
 
   <!-- Centreret kasse: nedtælling / sejr -->
   <div id="callout" class="hidden"></div>
+
+  <!-- Altid-tilgængelig musik-lydstyrke -->
+  <div id="musicCtl"><span>🎵</span><input type="range" id="musicSlider" min="0" max="100" value="4" /></div>
 
   <!-- Baggrundsmusik (Suno) -->
   <audio id="music" loop preload="auto" src="https://cdn1.suno.ai/d94b96dd-952e-48eb-9510-61059bc3d866.mp3"></audio>
@@ -146,9 +153,11 @@
         <div class="toggle on" id="tgSound"><div class="sw"></div><span>🔊 Lyd</span></div>
         <div class="toggle" id="tgHard"><div class="sw"></div><span>🔥 Svær AI</span></div>
       </div>
-      <div class="row" style="gap:10px;font-size:12px;opacity:.8">
-        <span>Musik-lydstyrke</span>
-        <input type="range" id="musicSlider" min="0" max="100" value="4" />
+      <div class="row" style="gap:8px;font-size:12px;margin-top:2px">
+        <span style="opacity:.7">Tempo:</span>
+        <button class="sm sec spd" data-spd="slow">Langsom</button>
+        <button class="sm sec spd act" data-spd="normal">Normal</button>
+        <button class="sm sec spd" data-spd="fast">Hurtig</button>
       </div>
     </div>
     <div class="card" id="lbCard" style="padding:12px 16px;gap:8px">
@@ -240,7 +249,8 @@
 "use strict";
 //================= Konstanter =================
 const W=58,H=36,TOTAL=W*H;
-const WIN_RATIO=0.50, ROUND_TIME=90, STEP_SPEED=7.2;
+const WIN_RATIO=0.50, ROUND_TIME=90;
+const SPEEDS={slow:5, normal:6.5, fast:8};
 const DIRS=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
 const COLORS=['#00e5ff','#ff3d7f','#4dff7c','#ffb020'];
 const NAMES =['Cyan','Magenta','Grøn','Gul'];
@@ -269,6 +279,7 @@ const G={
   myId:1,                // hvilket id denne enhed styrer (online + lokal primær)
   aiPickTimer:0,
   difficulty:'normal',   // 'normal' | 'hard'
+  speed:6.5,             // celler/sek (langsom 5 / normal 6.5 / hurtig 8)
   cd:0,                  // nedtælling før runde-start (sek)
 };
 
@@ -285,7 +296,7 @@ const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 let CELL=14,dpr=1;
 function resize(){
-  const availW=window.innerWidth-20, availH=window.innerHeight-20;
+  const availW=window.innerWidth-20, availH=window.innerHeight-78-16;  // plads til HUD i toppen
   CELL=Math.max(4,Math.floor(Math.min(availW/W,availH/H)));
   dpr=Math.min(window.devicePixelRatio||1,2);
   canvas.style.width=(W*CELL)+'px'; canvas.style.height=(H*CELL)+'px';
@@ -471,6 +482,9 @@ function aiGreedy(p,tx,ty){
   return best||p.dir;
 }
 function aiDecide(p){
+  // anti-stuck: kør ikke rundt i sig selv – tving en udadgående løkke hvis for længe på eget land
+  if(onOwn(p)) p.homeSteps=(p.homeSteps||0)+1; else p.homeSteps=0;
+  if(p.homeSteps>18){ p.homeSteps=0; p.frontier=null; aiBuildLoop(p); return aiGreedy(p,p.path[0].x,p.path[0].y); }
   if(aiThreatened(p)){ p.phase='retreat'; p.path=null; }
   if(p.phase==='retreat'){
     if(onOwn(p)){ p.phase='out'; p.frontier=null; }
@@ -619,7 +633,7 @@ function aiAutoPick(p){
 }
 function startPlay(){
   for(const p of G.players){ p.cx=p.prevX=p.base.x; p.cy=p.prevY=p.base.y;
-    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; p.path=null; p.frontier=null; p.phase='out'; }
+    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; p.path=null; p.frontier=null; p.phase='out'; p.homeSteps=0; }
   recount(); G.phase='play'; timeLeft=ROUND_TIME; acc=0; G.aiPickTimer=0; G.cd=3; G._cdl=0;
   showHUD(); flashBanner(''); netBroadcast(true);
 }
@@ -684,6 +698,12 @@ const SCHEMES={
   tfgh:{t:{x:0,y:-1},g:{x:0,y:1},f:{x:-1,y:0},h:{x:1,y:0}},
 };
 window.addEventListener('keydown',e=>{
+  // Space / Enter: gå videre (kun den der styrer spillet)
+  if((e.key===' '||e.key==='Enter'||e.key==='Spacebar') && (G.isHost||G.mode==='local')){
+    if(G.phase==='roundwin'){ finishWin(); e.preventDefault(); return; }
+    if(G.phase==='roundend'){ nextRound(); e.preventDefault(); return; }
+    if(G.phase==='matchend'){ teardownNet(); showOnly('lobby'); e.preventDefault(); return; }
+  }
   const k=e.key.length===1?e.key.toLowerCase():e.key;
   for(const p of G.players){
     if(p.kind!=='local'||!p.scheme) continue;
@@ -767,7 +787,7 @@ function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
   const ps=G.players.map(p=>({id:p.id,kind:p.kind,alive:p.alive,el:p.eliminated,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
     dx:p.dir.x,dy:p.dir.y,rw:p.roundWins,base:p.base,tlen:p.trailCells.length}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
-    tl:timeLeft,cd:G.cd,wi:G.winnerId,wr:G.winReason,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
+    tl:timeLeft,cd:G.cd,sp:G.speed,wi:G.winnerId,wr:G.winReason,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
   for(const p of G.players) if(p.conn&&p.conn.open){ msg.my=p.id; p.conn.send(msg); }
 }
 let clientSnapAt=0;
@@ -781,7 +801,7 @@ function clientOnData(d){
   G.phase=d.ph; G.roundIndex=d.ri; G.totalRounds=d.tr_; G.picker=d.pk; G.pickOrder=d.po||[]; G.pickPos=d.pp;
   G.winnerId=d.wi; G.winReason=d.wr;
   if(oldPhase!=='roundwin' && G.phase==='roundwin'){ const w=playerById(G.winnerId)||(d.ps.find(s=>s.id===G.winnerId)); if(w&&w.color) celebrate(w); else if(G.winnerId) celebrate({color:COLORS[G.winnerId-1]}); }
-  timeLeft=d.tl; G.cd=d.cd||0; counts=d.cnt; G.mode='online'; G.isHost=false;
+  timeLeft=d.tl; G.cd=d.cd||0; if(d.sp)G.speed=d.sp; counts=d.cnt; G.mode='online'; G.isHost=false;
   owner.set(d.ow); trail.set(d.tg);
   // spillere
   G.players=d.ps.map(s=>{ let p=playerById(s.id)||makePlayer(s.id,s.kind);
@@ -929,6 +949,9 @@ bindTap(document.getElementById('tgMusic'),()=>{ musicOn=!musicOn;
   if(musicOn){ ensureAudio(); startMusic(); } else if(m&&m.pause){ m.pause(); } });
 (function(){ const sl=document.getElementById('musicSlider'); if(sl) sl.addEventListener('input',()=>{
   musicVol=(+sl.value)/100; applyMusicVol(); if(musicVol>0&&musicOn){ ensureAudio(); startMusic(); } }); })();
+// Tempo-valg
+document.querySelectorAll('.spd').forEach(b=>bindTap(b,()=>{ G.speed=SPEEDS[b.dataset.spd]||6.5;
+  document.querySelectorAll('.spd').forEach(x=>x.classList.toggle('act',x===b)); }));
 bindTap(document.getElementById('tgSound'),()=>{ soundOn=!soundOn;
   document.getElementById('tgSound').classList.toggle('on',soundOn); if(soundOn){ensureAudio();tone(660,0,0.1,'sine',0.25);} });
 bindTap(document.getElementById('tgHard'),()=>{ const on=!document.getElementById('tgHard').classList.contains('on');
@@ -1023,7 +1046,7 @@ function frame(t){
         const c=Math.ceil(G.cd); if(c!==G._cdl){ G._cdl=c; if(c>0)tone(440,0,0.09,'sine',0.22); else tone(740,0,0.16,'sine',0.26); }
       } else {
         timeLeft-=dt; if(timeLeft<=0){ endRound(null,'tid'); }
-        else { acc+=dt*STEP_SPEED; let s=0; while(acc>=1&&s<6&&G.phase==='play'){acc-=1;simulate();s++;} }
+        else { acc+=dt*G.speed; let s=0; while(acc>=1&&s<6&&G.phase==='play'){acc-=1;simulate();s++;} }
       }
       broadcastAcc+=dt; if(G.mode==='online'&&broadcastAcc>=1/12){ broadcastAcc=0; netBroadcast(); }
     } else if(G.phase==='roundwin'){
@@ -1048,7 +1071,7 @@ function frame(t){
   updateCallout();
   document.getElementById('pctTable').classList.toggle('hidden', !showStuff);
   let frac=0;
-  if(G.phase==='play'){ frac = authoritative? acc : Math.min(1,(now-clientSnapAt)/(1000/STEP_SPEED)); }
+  if(G.phase==='play'){ frac = authoritative? acc : Math.min(1,(now-clientSnapAt)/(1000/G.speed)); }
   render(frac);
   requestAnimationFrame(frame);
 }
