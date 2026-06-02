@@ -512,7 +512,7 @@ function sfxTick(i){ tone(680+i*150,0,0.09,'square',0.26); }                  //
 
 // lyd-vagt: udløser lyd ud fra observeret state (virker for host, lokal og klient)
 function sfxOppDeath(){ tone(240,80,0.2,'sawtooth',0.15); noiseBurst(0.18,0.1); }  // modstander dr (dmpet)
-function sfxStep(n){ tone(186+(n&1?14:0),0,0.03,'sine',0.06); }                    // meget subtil streg-tik
+function sfxStep(n){ tone(122+(n&1?10:0),70,0.055,'triangle',0.12); }                // hul, mrk streg-tik
 let sndCount=0, sndTrail=0, sndTick=99, sndPhase='', sndAliveMap={};
 function soundWatch(){
   if(G.phase!=='play'){ sndPhase=G.phase; return; }
@@ -832,7 +832,7 @@ function showMatchEnd(rank,clientView){
 //================= Lobby / setup wiring =================
 let musicOn=true;
 function startMusic(){ if(!musicOn) return; const m=document.getElementById('music');
-  if(m && m.play){ m.volume=0.12; if(m.paused){ const p=m.play(); if(p&&p.catch)p.catch(()=>{}); } } }
+  if(m && m.play){ m.volume=0.05; if(m.paused){ const p=m.play(); if(p&&p.catch)p.catch(()=>{}); } } }
 function bindTap(el,fn){ el.addEventListener('click',e=>{e.preventDefault();ensureAudio();startMusic();fn();});
   el.addEventListener('touchend',e=>{e.preventDefault();ensureAudio();startMusic();fn();},{passive:false}); }
 
@@ -932,6 +932,12 @@ function render(frac){
       ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(hx,hy,r*.18,0,6.283); ctx.fill(); }
   }
   for(const p of particles){ ctx.globalAlpha=Math.max(0,1-p.life/p.max); ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.283); ctx.fill(); }
+  ctx.globalAlpha=1;
+  // lys ramme om det yderste af banen (vggen)
+  ctx.shadowBlur=CELL*0.9; ctx.shadowColor='rgba(190,210,255,0.7)';
+  ctx.strokeStyle='rgba(205,220,255,0.9)'; ctx.lineWidth=Math.max(2,CELL*0.18);
+  ctx.strokeRect(ctx.lineWidth/2, ctx.lineWidth/2, W*CELL-ctx.lineWidth, H*CELL-ctx.lineWidth);
+  ctx.shadowBlur=0;
   ctx.globalAlpha=1; ctx.restore();
 }
 
