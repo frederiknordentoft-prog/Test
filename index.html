@@ -564,8 +564,8 @@ function startPlay(){
   showHUD(); flashBanner(''); netBroadcast(true);
 }
 function checkRoundEnd(){
-  for(const p of G.players){ if(counts[p.id]/TOTAL>=WIN_RATIO){ endRound(p.id); return; } } // 50% = vundet banen
-  if(G.players.every(p=>!p.alive)){ endRound(null); }                                       // alle døde
+  for(const p of G.players){ if(counts[p.id]/TOTAL>=WIN_RATIO){ endRound(p.id); return; } }   // 50% = vundet banen
+  if(G.players.length>1 && G.players.filter(p=>p.alive).length<=1) endRound(null);             // sidste tilbage / alle døde -> flest % vinder
 }
 function endRound(winnerId){
   if(G.phase!=='play') return;
