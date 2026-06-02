@@ -91,6 +91,16 @@
   #quitBtn{position:absolute;top:8px;right:8px;z-index:7;padding:7px 14px;font-size:13px;
     background:rgba(255,255,255,.1);color:var(--ink);box-shadow:none;}
   #quitBtn.hidden{display:none;}
+  input[type=range]{accent-color:var(--p1);width:160px;height:22px;cursor:pointer;}
+  #callout{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:8;pointer-events:none;
+    text-align:center;padding:18px 32px;border-radius:20px;background:rgba(10,10,18,.72);
+    border:1px solid rgba(255,255,255,.18);box-shadow:0 0 50px rgba(0,0,0,.55), inset 0 0 30px rgba(255,255,255,.04);
+    backdrop-filter:blur(5px);animation:pop .25s ease;}
+  #callout.hidden{display:none;}
+  #callout .big{font-size:clamp(40px,12vw,88px);font-weight:900;line-height:1;letter-spacing:.02em;}
+  #callout .sub{font-size:clamp(13px,3.6vw,18px);font-weight:800;margin-top:8px;letter-spacing:.04em;}
+  #callout .sub2{font-size:12px;opacity:.65;margin-top:4px;}
+  @keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0;}to{transform:translate(-50%,-50%) scale(1);opacity:1;}}
 </style>
 </head>
 <body>
@@ -102,6 +112,9 @@
 
   <!-- Forlad-knap under spil -->
   <button id="quitBtn" class="hidden">⏏︎ Menu</button>
+
+  <!-- Centreret kasse: nedtælling / sejr -->
+  <div id="callout" class="hidden"></div>
 
   <!-- Baggrundsmusik (Suno) -->
   <audio id="music" loop preload="auto" src="https://cdn1.suno.ai/d94b96dd-952e-48eb-9510-61059bc3d866.mp3"></audio>
@@ -132,6 +145,10 @@
         <div class="toggle on" id="tgMusic"><div class="sw"></div><span>🎵 Musik</span></div>
         <div class="toggle on" id="tgSound"><div class="sw"></div><span>🔊 Lyd</span></div>
         <div class="toggle" id="tgHard"><div class="sw"></div><span>🔥 Svær AI</span></div>
+      </div>
+      <div class="row" style="gap:10px;font-size:12px;opacity:.8">
+        <span>Musik-lydstyrke</span>
+        <input type="range" id="musicSlider" min="0" max="100" value="4" />
       </div>
     </div>
     <div class="card" id="lbCard" style="padding:12px 16px;gap:8px">
@@ -222,8 +239,8 @@
 <script>
 "use strict";
 //================= Konstanter =================
-const W=64,H=40,TOTAL=W*H;
-const WIN_RATIO=0.50, ROUND_TIME=90, STEP_SPEED=8;
+const W=58,H=36,TOTAL=W*H;
+const WIN_RATIO=0.50, ROUND_TIME=90, STEP_SPEED=7.2;
 const DIRS=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
 const COLORS=['#00e5ff','#ff3d7f','#4dff7c','#ffb020'];
 const NAMES =['Cyan','Magenta','Grøn','Gul'];
@@ -357,8 +374,12 @@ function killPlayer(p){
   // ÉT LIV: død = elimineret. Stregen ryddes, men erobret land bliver frosset og tæller stadig.
   for(const c of p.trailCells) if(trail[c]===p.id) trail[c]=0;
   p.trailCells.length=0;
-  spawnBurst((p.cx+0.5)*CELL,(p.cy+0.5)*CELL,p.color);
-  if(p.id===G.myId){ shakeMag=Math.max(shakeMag,14); if(navigator.vibrate) try{navigator.vibrate(140);}catch(e){} }
+  const dx=(p.cx+0.5)*CELL, dy=(p.cy+0.5)*CELL;
+  spawnBurst(dx,dy,p.color); spawnRipple(dx,dy,p.color); spawnFirework(dx,dy,p.color);
+  const mine=(p.id===G.myId);
+  shakeMag=Math.max(shakeMag, mine?17:8);
+  triggerFlash(p.color, mine?0.45:0.18);
+  if(mine && navigator.vibrate){ try{navigator.vibrate(160);}catch(e){} }
   p.alive=false; p.eliminated=true; p.netDir=null;
 }
 function outwardDir(x,y){
@@ -376,7 +397,7 @@ function capture(p){
     if(x>0)pf(x-1,y); if(x<W-1)pf(x+1,y); if(y>0)pf(x,y-1); if(y<H-1)pf(x,y+1); }
   let cap=0,sx=0,sy=0;
   for(let i=0;i<TOTAL;i++){
-    if(owner[i]===0 && !reach[i]){                 // indrammet tomt felt -> mit (stjæler ikke andres land)
+    if(owner[i]!==me && !reach[i]){               // indrammet felt (tomt ELLER modstanders) -> mit
       owner[i]=me; fillAge[i]=now;
       if(trail[i]){ const o=playerById(trail[i]); if(o){const k=o.trailCells.indexOf(i); if(k>=0)o.trailCells.splice(k,1);} trail[i]=0; }
       cap++; sx+=i%W; sy+=(i/W)|0;
@@ -480,6 +501,16 @@ function spawnBurst(x,y,c){ for(let i=0;i<24;i++){const a=Math.random()*6.283,s=
   particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0,max:.5+Math.random()*.4,c,r:2+Math.random()*3});} }
 function spawnRipple(x,y,c){ for(let i=0;i<16;i++){const a=i/16*6.283,s=60+Math.random()*40;
   particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0,max:.45,c,r:3});} }
+function spawnFirework(x,y,c){ for(let i=0;i<34;i++){ const a=Math.random()*6.283,s=70+Math.random()*240;
+  particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0,max:.7+Math.random()*.6,c:(Math.random()<.3?'#ffffff':c),r:2+Math.random()*3}); } }
+let flashA=0, flashC='#ffffff';
+function triggerFlash(c,a){ flashC=c; flashA=Math.max(flashA,a); }
+function celebrate(winner){
+  triggerFlash(winner.color,0.5);
+  const cx=(W*CELL)/2, cy=(H*CELL)/2;
+  spawnFirework(cx,cy,winner.color);
+  for(let i=0;i<5;i++) spawnFirework((0.2+Math.random()*0.6)*W*CELL,(0.2+Math.random()*0.6)*H*CELL,winner.color);
+}
 function updateParticles(dt){ for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life+=dt;
   if(p.life>=p.max){particles.splice(i,1);continue;} p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.92;p.vy*=.92;} }
 
@@ -512,7 +543,7 @@ function sfxTick(i){ tone(680+i*150,0,0.09,'square',0.26); }                  //
 
 // lyd-vagt: udløser lyd ud fra observeret state (virker for host, lokal og klient)
 function sfxOppDeath(){ tone(240,80,0.2,'sawtooth',0.15); noiseBurst(0.18,0.1); }  // modstander dr (dmpet)
-function sfxStep(n){ tone(122+(n&1?10:0),70,0.055,'triangle',0.12); }                // hul, mrk streg-tik
+function sfxStep(n){ tone(122+(n&1?10:0),68,0.06,'triangle',0.2); }                  // hul, mrk streg-tik (hjere)
 let sndCount=0, sndTrail=0, sndTick=99, sndPhase='', sndAliveMap={};
 function soundWatch(){
   if(G.phase!=='play'){ sndPhase=G.phase; return; }
@@ -593,17 +624,28 @@ function startPlay(){
   showHUD(); flashBanner(''); netBroadcast(true);
 }
 function checkRoundEnd(){
-  for(const p of G.players){ if(counts[p.id]/TOTAL>=WIN_RATIO){ endRound(p.id); return; } }   // 50% = vundet banen
-  if(G.players.length>1 && G.players.filter(p=>p.alive).length<=1) endRound(null);             // sidste tilbage / alle døde -> flest % vinder
+  for(const p of G.players){ if(counts[p.id]/TOTAL>=WIN_RATIO){ endRound(p.id,'femti'); return; } }  // 50% = vundet banen
+  const al=G.players.filter(p=>p.alive).length;
+  if(G.players.length>1 && al<=1) endRound(null, al===1?'sidste':'alledode');                        // sidste tilbage / alle dde
 }
-function endRound(winnerId){
+function endRound(winnerId, via){
   if(G.phase!=='play') return;
-  G.phase='roundend';
   const rank=[...G.players].sort((a,b)=>counts[b.id]-counts[a.id]);
   const wId = winnerId || rank[0].id;
   playerById(wId).roundWins++;
-  showRoundEnd(wId,rank);
+  G.winnerId=wId;
+  G.winReason = winnerId ? 'nåede 50 % af banen'
+    : via==='tid'    ? 'flest felter da tiden udløb'
+    : via==='sidste' ? 'sidste spiller tilbage med flest felter'
+    : 'flest felter';
+  G.phase='roundwin'; G.winTimer=2.4; G._fw=0;
+  celebrate(playerById(wId));
   netBroadcast(true);
+}
+function finishWin(){
+  const rank=[...G.players].sort((a,b)=>counts[b.id]-counts[a.id]);
+  if(G.roundIndex+1>=G.totalRounds){ endMatch(); }
+  else { G.phase='roundend'; showRoundEnd(G.winnerId,rank); netBroadcast(true); }
 }
 function nextRound(){
   if(G.roundIndex+1>=G.totalRounds){ endMatch(); }
@@ -725,7 +767,7 @@ function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
   const ps=G.players.map(p=>({id:p.id,kind:p.kind,alive:p.alive,el:p.eliminated,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
     dx:p.dir.x,dy:p.dir.y,rw:p.roundWins,base:p.base,tlen:p.trailCells.length}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
-    tl:timeLeft,cd:G.cd,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
+    tl:timeLeft,cd:G.cd,wi:G.winnerId,wr:G.winReason,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
   for(const p of G.players) if(p.conn&&p.conn.open){ msg.my=p.id; p.conn.send(msg); }
 }
 let clientSnapAt=0;
@@ -735,7 +777,10 @@ function clientOnData(d){
   if(d.t!=='state') return;
   // spejl host-state
   if(d.my) G.myId=d.my;
+  const oldPhase=G.phase;
   G.phase=d.ph; G.roundIndex=d.ri; G.totalRounds=d.tr_; G.picker=d.pk; G.pickOrder=d.po||[]; G.pickPos=d.pp;
+  G.winnerId=d.wi; G.winReason=d.wr;
+  if(oldPhase!=='roundwin' && G.phase==='roundwin'){ const w=playerById(G.winnerId)||(d.ps.find(s=>s.id===G.winnerId)); if(w&&w.color) celebrate(w); else if(G.winnerId) celebrate({color:COLORS[G.winnerId-1]}); }
   timeLeft=d.tl; G.cd=d.cd||0; counts=d.cnt; G.mode='online'; G.isHost=false;
   owner.set(d.ow); trail.set(d.tg);
   // spillere
@@ -749,6 +794,7 @@ function clientOnData(d){
 function clientSyncUI(){
   if(G.phase==='select'){ showHUD(); updateSelectUI(); }
   else if(G.phase==='play'){ showHUD(); flashBanner(''); }
+  else if(G.phase==='roundwin'){ showHUD(); flashBanner(''); }
   else if(G.phase==='roundend'){ const rank=[...G.players].sort((a,b)=>counts[b.id]-counts[a.id]); showRoundEnd(rank[0].id,rank,true); }
   else if(G.phase==='matchend'){ const rank=[...G.players].sort((a,b)=>b.roundWins-a.roundWins||counts[b.id]-counts[a.id]); showMatchEnd(rank,true); }
 }
@@ -791,7 +837,7 @@ function updateHUDLive(){
   }
   const s=Math.max(0,Math.ceil(timeLeft));
   document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-  if(G.phase==='play') flashBanner(G.cd>0 ? ('Klar… '+Math.ceil(G.cd)) : '');
+  if(G.phase==='play') flashBanner('');
 }
 function updateSelectUI(){
   const picker=playerById(G.picker);
@@ -806,7 +852,7 @@ function showRoundEnd(winnerId,rank,clientView){
   document.getElementById('quitBtn').classList.add('hidden');
   document.getElementById('pctTable').classList.add('hidden');
   const w=playerById(winnerId);
-  document.getElementById('reTitle').innerHTML=`Runde ${G.roundIndex+1} slut — <span style="color:${w.color}">${w.name}</span> vandt`;
+  document.getElementById('reTitle').innerHTML=`Runde ${G.roundIndex+1} slut — <span style="color:${w.color}">${w.name}</span> vandt<br><span style="font-size:13px;opacity:.7;font-weight:600">${G.winReason||''}</span>`;
   document.getElementById('reStand').innerHTML=rank.map((p,i)=>
     `<div class="sr"><span class="dot" style="background:${p.color}"></span><span class="nm">${i+1}. ${p.name}</span><span>${Math.round(counts[p.id]/TOTAL*100)}%</span><span style="opacity:.6">· ${p.roundWins} sejre</span></div>`).join('');
   const btn=document.getElementById('reNext');
@@ -830,9 +876,10 @@ function showMatchEnd(rank,clientView){
 }
 
 //================= Lobby / setup wiring =================
-let musicOn=true;
+let musicOn=true, musicVol=0.04;
+function applyMusicVol(){ const m=document.getElementById('music'); if(m) m.volume=musicVol; }
 function startMusic(){ if(!musicOn) return; const m=document.getElementById('music');
-  if(m && m.play){ m.volume=0.05; if(m.paused){ const p=m.play(); if(p&&p.catch)p.catch(()=>{}); } } }
+  if(m && m.play){ m.volume=musicVol; if(m.paused){ const p=m.play(); if(p&&p.catch)p.catch(()=>{}); } } }
 function bindTap(el,fn){ el.addEventListener('click',e=>{e.preventDefault();ensureAudio();startMusic();fn();});
   el.addEventListener('touchend',e=>{e.preventDefault();ensureAudio();startMusic();fn();},{passive:false}); }
 
@@ -879,7 +926,9 @@ bindTap(document.getElementById('meAgain'),()=>{ teardownNet(); showOnly('lobby'
 bindTap(document.getElementById('tgMusic'),()=>{ musicOn=!musicOn;
   document.getElementById('tgMusic').classList.toggle('on',musicOn);
   const m=document.getElementById('music');
-  if(musicOn){ startMusic(); } else if(m&&m.pause){ m.pause(); } });
+  if(musicOn){ ensureAudio(); startMusic(); } else if(m&&m.pause){ m.pause(); } });
+(function(){ const sl=document.getElementById('musicSlider'); if(sl) sl.addEventListener('input',()=>{
+  musicVol=(+sl.value)/100; applyMusicVol(); if(musicVol>0&&musicOn){ ensureAudio(); startMusic(); } }); })();
 bindTap(document.getElementById('tgSound'),()=>{ soundOn=!soundOn;
   document.getElementById('tgSound').classList.toggle('on',soundOn); if(soundOn){ensureAudio();tone(660,0,0.1,'sine',0.25);} });
 bindTap(document.getElementById('tgHard'),()=>{ const on=!document.getElementById('tgHard').classList.contains('on');
@@ -924,7 +973,7 @@ function render(frac){
   if(G.phase==='select'){ for(const p of G.players){ if(p.base){
     ctx.strokeStyle=p.color; ctx.lineWidth=2; ctx.strokeRect((p.base.x-2)*CELL,(p.base.y-2)*CELL,5*CELL,5*CELL); } } }
   // hoveder
-  if(G.phase==='play'||G.phase==='roundend'){
+  if(G.phase==='play'||G.phase==='roundend'||G.phase==='roundwin'){
     for(const p of G.players){ if(!p.alive)continue;
       const hx=(p.prevX+(p.cx-p.prevX)*frac+.5)*CELL, hy=(p.prevY+(p.cy-p.prevY)*frac+.5)*CELL, r=CELL*.62;
       ctx.shadowBlur=CELL*1.4; ctx.shadowColor=p.color; ctx.fillStyle=p.color; ctx.beginPath();
@@ -939,10 +988,28 @@ function render(frac){
   ctx.strokeRect(ctx.lineWidth/2, ctx.lineWidth/2, W*CELL-ctx.lineWidth, H*CELL-ctx.lineWidth);
   ctx.shadowBlur=0;
   ctx.globalAlpha=1; ctx.restore();
+  // skrm-flash (start / dd / sejr)
+  if(flashA>0.01){ ctx.save(); ctx.globalAlpha=Math.min(0.65,flashA); ctx.fillStyle=flashC;
+    ctx.fillRect(0,0,W*CELL,H*CELL); ctx.restore(); }
 }
 
 //================= Loop =================
-let last=performance.now(), broadcastAcc=0;
+let last=performance.now(), broadcastAcc=0, prevCd=0, goTimer=0;
+function updateCallout(){
+  const el=document.getElementById('callout'); if(!el) return;
+  if(G.phase==='play' && G.cd>0){
+    el.className=''; el.innerHTML='<div class="big" style="color:#fff">'+Math.ceil(G.cd)+'</div><div class="sub">Gør klar…</div>';
+  } else if(G.phase==='play' && goTimer>0){
+    el.className=''; el.innerHTML='<div class="big" style="color:#fff">KØR!</div>';
+  } else if(G.phase==='roundwin'){
+    const w=playerById(G.winnerId);
+    if(w){ el.className='';
+      el.innerHTML='<div class="big" style="color:'+w.color+';text-shadow:0 0 26px '+w.color+'">'+w.name+' vandt!</div>'+
+        '<div class="sub" style="color:'+w.color+'">Runde '+(G.roundIndex+1)+' / '+G.totalRounds+'</div>'+
+        '<div class="sub2">'+(G.winReason||'')+' · '+Math.round((counts[G.winnerId]||0)/TOTAL*100)+'%</div>'; }
+    else el.className='hidden';
+  } else el.className='hidden';
+}
 function frame(t){
   now=t; const dt=Math.min(50,t-last)/1000; last=t;
   const authoritative=(G.mode==='local'||G.isHost);
@@ -955,18 +1022,31 @@ function frame(t){
         G.cd-=dt; if(G.cd<0)G.cd=0;
         const c=Math.ceil(G.cd); if(c!==G._cdl){ G._cdl=c; if(c>0)tone(440,0,0.09,'sine',0.22); else tone(740,0,0.16,'sine',0.26); }
       } else {
-        timeLeft-=dt; if(timeLeft<=0){ endRound(null); }
+        timeLeft-=dt; if(timeLeft<=0){ endRound(null,'tid'); }
         else { acc+=dt*STEP_SPEED; let s=0; while(acc>=1&&s<6&&G.phase==='play'){acc-=1;simulate();s++;} }
       }
       broadcastAcc+=dt; if(G.mode==='online'&&broadcastAcc>=1/12){ broadcastAcc=0; netBroadcast(); }
+    } else if(G.phase==='roundwin'){
+      G.winTimer-=dt; G._fw=(G._fw||0)+dt;
+      if(G._fw>0.45){ G._fw=0; const w=playerById(G.winnerId); if(w) spawnFirework(Math.random()*W*CELL,Math.random()*H*CELL,w.color); }
+      if(G.winTimer<=0) finishWin();
+      broadcastAcc+=dt; if(G.mode==='online'&&broadcastAcc>=1/10){ broadcastAcc=0; netBroadcast(); }
     }
   } else {
     clientPointerToHost();
   }
+  // "KØR!"-blink når nedtællingen slutter (host + klient)
+  if(prevCd>0 && G.cd<=0 && G.phase==='play'){ goTimer=0.7; triggerFlash('#ffffff',0.32);
+    for(const pl of G.players){ if(pl.base) spawnRipple((pl.base.x+0.5)*CELL,(pl.base.y+0.5)*CELL,pl.color); } }
+  prevCd=G.cd;
+  if(goTimer>0) goTimer=Math.max(0,goTimer-dt);
+  if(flashA>0) flashA=Math.max(0,flashA-dt*1.8);
   updateParticles(dt); if(shakeMag>0)shakeMag=Math.max(0,shakeMag-dt*40);
   soundWatch();
-  if(G.phase==='play'||G.phase==='select') updateHUDLive();
-  document.getElementById('pctTable').classList.toggle('hidden', !(G.phase==='play'||G.phase==='select'));
+  const showStuff=(G.phase==='play'||G.phase==='select'||G.phase==='roundwin');
+  if(showStuff) updateHUDLive();
+  updateCallout();
+  document.getElementById('pctTable').classList.toggle('hidden', !showStuff);
   let frac=0;
   if(G.phase==='play'){ frac = authoritative? acc : Math.min(1,(now-clientSnapAt)/(1000/STEP_SPEED)); }
   render(frac);
@@ -981,7 +1061,7 @@ showOnly('lobby');
 requestAnimationFrame(frame);
 
 // til test i Node
-if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,nextRound,endMatch,soundWatch,owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,
+if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,finishWin,nextRound,endMatch,soundWatch,owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,
   setLocalPlayers:(n,ai)=>{ G.mode='local';G.isHost=true;G.players=[];let id=1;const sc=['arrows','wasd','ijkl','tfgh'];
     for(let i=0;i<n;i++){const p=makePlayer(id,'local');p.scheme=sc[i];G.players.push(p);id++;}
     for(let i=0;i<ai;i++)G.players.push(makePlayer(id++,'ai')); G.myId=1; },
