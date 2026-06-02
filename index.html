@@ -78,11 +78,24 @@
   .standings .sr .nm{flex:1;text-align:left;font-weight:700;}
   .err{color:var(--p2);font-size:13px;min-height:16px;}
   .credit{position:absolute;bottom:8px;font-size:11px;opacity:.3;}
+  /* lille %-tabel pr. farve */
+  #pctTable{position:absolute;top:8px;left:8px;z-index:6;pointer-events:none;
+    background:rgba(6,6,12,.55);border:1px solid rgba(255,255,255,.1);border-radius:9px;
+    padding:7px 9px;display:flex;flex-direction:column;gap:4px;font-size:12px;backdrop-filter:blur(3px);}
+  #pctTable .ttl{font-size:10px;letter-spacing:.08em;opacity:.5;text-transform:uppercase;margin-bottom:1px;}
+  #pctTable .r{display:flex;align-items:center;gap:7px;}
+  #pctTable .sw{width:11px;height:11px;border-radius:3px;flex:none;}
+  #pctTable .nm{min-width:58px;font-weight:600;}
+  #pctTable .pc{font-variant-numeric:tabular-nums;font-weight:800;min-width:40px;text-align:right;}
+  #pctTable.hidden{display:none;}
 </style>
 </head>
 <body>
 <div id="stage">
   <canvas id="game"></canvas>
+
+  <!-- Lille %-tabel pr. farve -->
+  <div id="pctTable" class="hidden"></div>
 
   <!-- HUD -->
   <div id="hud" class="hidden">
@@ -190,7 +203,7 @@
 "use strict";
 //================= Konstanter =================
 const W=64,H=40,TOTAL=W*H;
-const WIN_RATIO=0.50, ROUND_TIME=120, STEP_SPEED=8;
+const WIN_RATIO=0.50, ROUND_TIME=90, STEP_SPEED=8;
 const DIRS=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
 const COLORS=['#00e5ff','#ff3d7f','#4dff7c','#ffb020'];
 const NAMES =['Cyan','Magenta','Grøn','Gul'];
@@ -345,6 +358,7 @@ function capture(p){
       cap++; sx+=i%W; sy+=(i/W)|0;
     }
   }
+  p.trailCells.length=0;        // luk løkken: stregen er nu blevet til land
   recount();
   if(cap>0) spawnRipple((sx/cap+0.5)*CELL,(sy/cap+0.5)*CELL,p.color);
 }
@@ -355,14 +369,37 @@ function nearestOwn(p){ let b=null,bd=1e9;
   for(let i=0;i<TOTAL;i++){ if(owner[i]!==p.id)continue; const x=i%W,y=(i/W)|0,d=Math.abs(x-p.cx)+Math.abs(y-p.cy); if(d<bd){bd=d;b={x,y};} }
   return b||{x:p.base.x,y:p.base.y};
 }
-function aiPickExpand(p){
-  for(let t=0;t<26;t++){ const dist=7+(Math.random()*11|0),a=Math.random()*6.283;   // større, mere risikable løkker
-    let tx=Math.round(p.cx+Math.cos(a)*dist),ty=Math.round(p.cy+Math.sin(a)*dist);
-    tx=Math.max(1,Math.min(W-2,tx)); ty=Math.max(1,Math.min(H-2,ty));
-    if(owner[idx(tx,ty)]===0){ p.tx=tx;p.ty=ty;p.phase='out';return; } }
-  p.tx=Math.max(1,Math.min(W-2,p.cx+(Math.random()<.5?7:-7))); p.ty=Math.max(1,Math.min(H-2,p.cy+(Math.random()<.5?6:-6))); p.phase='out';
+function probeEmpty(p,sx,sy,dx,dy,len){ let sc=0;
+  for(let s=1;s<=len;s++){ const x=sx+dx*s,y=sy+dy*s; if(!inB(x,y)){sc-=5;break;}
+    const o=owner[idx(x,y)]; if(o===0)sc++; else if(o!==p.id)sc-=3; else sc-=1; } return sc; }
+function aiBuildLoop(p){
+  let d=DIRS[0],bs=-1e9;
+  for(const dd of DIRS){ const sc=probeEmpty(p,p.cx,p.cy,dd.x,dd.y,10); if(sc>bs){bs=sc;d=dd;} }
+  const depth=6+(Math.random()*6|0);
+  const perps=d.x!==0?[{x:0,y:1},{x:0,y:-1}]:[{x:1,y:0},{x:-1,y:0}];
+  let perp=perps[0],ps=-1e9;
+  for(const pp of perps){ const sc=probeEmpty(p,p.cx+d.x*depth,p.cy+d.y*depth,pp.x,pp.y,8); if(sc>ps){ps=sc;perp=pp;} }
+  const width=6+(Math.random()*6|0);
+  const cl=(x,y)=>({x:Math.max(2,Math.min(W-3,x)),y:Math.max(2,Math.min(H-3,y))});
+  const w1=cl(p.cx+d.x*depth, p.cy+d.y*depth);
+  const w2=cl(w1.x+perp.x*width, w1.y+perp.y*width);
+  const w3=cl(w2.x-d.x*(depth+1), w2.y-d.y*(depth+1));
+  p.path=[w1,w2,w3]; p.phase='expand';
 }
-function aiHome(p){ const t=nearestOwn(p); p.tx=t.x;p.ty=t.y;p.phase='home'; }
+function aiThreatened(p){
+  if(p.trailCells.length===0) return false;
+  for(const o of G.players){ if(o.id===p.id||!o.alive) continue;
+    for(const c of p.trailCells){ const x=c%W,y=(c/W)|0;
+      if(Math.abs(o.cx-x)+Math.abs(o.cy-y)<=3) return true; } }
+  return p.trailCells.length>58;
+}
+function aiHunt(p){
+  // jag nærmeste eksponerede fjende-streg (dødeligt – især med ét liv)
+  let best=null,bd=1e9;
+  for(const o of G.players){ if(o.id===p.id||!o.alive||!o.trailCells.length) continue;
+    for(const c of o.trailCells){ const x=c%W,y=(c/W)|0,dd=Math.abs(x-p.cx)+Math.abs(y-p.cy); if(dd<bd){bd=dd;best={x,y};} } }
+  return (best&&bd<16)?best:null;
+}
 function aiGreedy(p,tx,ty){
   let best=null,bs=1e9;
   for(const d of DIRS){ if(d.x===-p.dir.x&&d.y===-p.dir.y)continue;
@@ -373,18 +410,26 @@ function aiGreedy(p,tx,ty){
   return best||p.dir;
 }
 function aiDecide(p){
-  if(p.tx===undefined){ p.tx=p.cx;p.ty=p.cy;p.phase='out'; }
-  if(p.trailCells.length>38 && p.phase!=='home') aiHome(p);     // venter længere før hjem = mere risiko
-  // aggression: jagter modstanderes eksponerede streg mere ihærdigt og på længere afstand
-  if(p.trailCells.length<16){
-    let best=null,bd=1e9;
-    for(const o of G.players){ if(o.id===p.id||!o.alive)continue;
-      for(const c of o.trailCells){ const x=c%W,y=(c/W)|0,d=Math.abs(x-p.cx)+Math.abs(y-p.cy); if(d<bd){bd=d;best={x,y};} } }
-    if(best&&bd<18){ p.tx=best.x;p.ty=best.y;p.phase='attack'; }
+  // 1) trussel: en fjende er tæt på min åbne streg -> hjem nu
+  if(aiThreatened(p)) p.phase='retreat';
+  // 2) jæger: gå efter eksponerede fjende-streger (dødeligt med ét liv)
+  if(p.phase!=='retreat' && p.trailCells.length<14){
+    const tgt=aiHunt(p); if(tgt) return aiGreedy(p,tgt.x,tgt.y);
   }
-  if(p.cx===p.tx&&p.cy===p.ty){ if(p.phase==='out'||p.phase==='attack')aiHome(p); else p.phase='pick'; }
-  if(p.phase==='pick'||(p.phase==='home'&&onOwn(p)&&p.trailCells.length===0)){ if(onOwn(p))aiPickExpand(p); else aiHome(p); }
-  return aiGreedy(p,p.tx,p.ty);
+  // 3) retræte / hjem
+  if(p.phase==='retreat'){
+    if(onOwn(p)){ p.path=null; p.phase='out'; }
+    else { const t=nearestOwn(p); return aiGreedy(p,t.x,t.y); }
+  }
+  // 4) på eget land uden plan -> byg en løkke
+  if(onOwn(p) && (!p.path||p.path.length===0)) aiBuildLoop(p);
+  // 5) følg løkke-ruten
+  if(p.path && p.path.length){
+    let w=p.path[0];
+    if(p.cx===w.x && p.cy===w.y){ p.path.shift(); if(!p.path.length){ const t=nearestOwn(p); return aiGreedy(p,t.x,t.y); } w=p.path[0]; }
+    return aiGreedy(p,w.x,w.y);
+  }
+  const t=nearestOwn(p); return aiGreedy(p,t.x,t.y);
 }
 
 //================= Partikler / juice =================
@@ -395,6 +440,49 @@ function spawnRipple(x,y,c){ for(let i=0;i<16;i++){const a=i/16*6.283,s=60+Math.
 function updateParticles(dt){ for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life+=dt;
   if(p.life>=p.max){particles.splice(i,1);continue;} p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.92;p.vy*=.92;} }
 
+//================= Lyd (Web Audio – syntetiseret) =================
+let actx=null, master=null, soundOn=true;
+function ensureAudio(){
+  if(actx){ if(actx.state==='suspended') actx.resume(); return; }
+  try{ const AC=window.AudioContext||window.webkitAudioContext; actx=new AC();
+    master=actx.createGain(); master.gain.value=0.5; master.connect(actx.destination); }catch(e){ actx=null; }
+}
+function tone(f0,f1,dur,type,vol){
+  if(!actx||!soundOn) return; const t=actx.currentTime;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f0,t);
+  if(f1&&f1!==f0) o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol||0.3,t+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.03);
+}
+function noiseBurst(dur,vol){
+  if(!actx||!soundOn) return; const t=actx.currentTime, n=Math.floor(actx.sampleRate*dur);
+  const buf=actx.createBuffer(1,n,actx.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+  const src=actx.createBufferSource(); src.buffer=buf;
+  const g=actx.createGain(); g.gain.value=vol||0.25; src.connect(g); g.connect(master); src.start(t);
+}
+function sfxCapture(){ tone(520,920,0.13,'triangle',0.22); }                 // lys stigende blip
+function sfxDeath(){ tone(320,55,0.5,'sawtooth',0.32); noiseBurst(0.35,0.22); } // faldende + støj
+function sfxTick(i){ tone(680+i*150,0,0.09,'square',0.26); }                  // stress-bip, stiger mod 0
+
+// lyd-vagt: udløser lyd ud fra observeret state (virker for host, lokal og klient)
+let sndCount=0, sndAlive=true, sndTick=99, sndPhase='';
+function soundWatch(){
+  if(G.phase!=='play'){ sndPhase=G.phase; return; }
+  if(sndPhase!=='play'){ sndPhase='play'; sndCount=counts[G.myId]||0; sndAlive=true; sndTick=99; }
+  const me=playerById(G.myId);
+  if(me){
+    if((counts[G.myId]||0) > sndCount) sfxCapture();
+    if(sndAlive && !me.alive) sfxDeath();
+    sndAlive=me.alive;
+  }
+  sndCount=counts[G.myId]||0;
+  const s=Math.ceil(timeLeft);
+  if(s<=5 && s>=1 && s!==sndTick){ sndTick=s; sfxTick(5-s); }
+}
+
 //================= Runde / kamp-flow (host/lokal) =================
 function startMatch(){
   for(const p of G.players) p.roundWins=0;
@@ -404,7 +492,7 @@ function startMatch(){
 }
 function beginRound(){
   clearBoard();
-  for(const p of G.players){ p.base=null; p.alive=false; p.trailCells=[]; p.tx=undefined; }
+  for(const p of G.players){ p.base=null; p.alive=false; p.trailCells=[]; p.path=null; p.phase='out'; }
   const n=G.players.length;
   G.pickOrder=[]; for(let i=0;i<n;i++) G.pickOrder.push(G.players[(G.roundIndex+i)%n].id);
   G.pickPos=0; G.picker=G.pickOrder[0]; G.phase='select'; G.aiPickTimer=0;
@@ -438,7 +526,7 @@ function aiAutoPick(p){
 }
 function startPlay(){
   for(const p of G.players){ p.cx=p.prevX=p.base.x; p.cy=p.prevY=p.base.y;
-    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; }
+    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; p.path=null; p.phase='out'; }
   recount(); G.phase='play'; timeLeft=ROUND_TIME; acc=0; G.aiPickTimer=0;
   showHUD(); flashBanner(''); netBroadcast(true);
 }
@@ -473,6 +561,7 @@ function evCell(e){ const r=canvas.getBoundingClientRect();
   return { x:(e.clientX-r.left)/r.width*W, y:(e.clientY-r.top)/r.height*H }; }
 canvas.addEventListener('pointermove',e=>{ const c=evCell(e); pointer.cx=c.x;pointer.cy=c.y;pointer.active=true;inputMode='pointer'; e.preventDefault(); },{passive:false});
 canvas.addEventListener('pointerdown',e=>{
+  ensureAudio();
   const c=evCell(e); pointer.cx=c.x;pointer.cy=c.y;pointer.active=true;inputMode='pointer';
   if(G.phase==='select'){ // tap for at vælge startfelt
     const x=Math.floor(c.x), y=Math.floor(c.y);
@@ -618,6 +707,13 @@ function buildScores(){
       <div style="font-size:10px;opacity:.6">Runder: <span id="rw${p.id}">${p.roundWins}</span></div>`;
     el.appendChild(d);
   }
+  buildPctTable();
+}
+function buildPctTable(){
+  const el=document.getElementById('pctTable'); el.innerHTML='<div class="ttl">Erobret</div>';
+  for(const p of G.players){ const r=document.createElement('div'); r.className='r';
+    r.innerHTML=`<span class="sw" style="background:${p.color}"></span><span class="nm" style="color:${p.color}">${p.name}</span><span class="pc" id="pt${p.id}">0%</span>`;
+    el.appendChild(r); }
 }
 function updateHUDLive(){
   for(const p of G.players){
@@ -625,6 +721,7 @@ function updateHUDLive(){
     const f=document.getElementById('pf'+p.id), c=document.getElementById('pc'+p.id), r=document.getElementById('rw'+p.id);
     if(f){ f.style.width=pct.toFixed(1)+'%'; f.style.opacity=p.eliminated?0.45:1; }
     if(c)c.textContent=(p.eliminated?'💀 ':'')+Math.round(pct)+'%'; if(r)r.textContent=p.roundWins;
+    const pt=document.getElementById('pt'+p.id); if(pt)pt.textContent=Math.round(pct)+'%'+(p.eliminated?' 💀':'');
   }
   const s=Math.max(0,Math.ceil(timeLeft));
   document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
@@ -660,8 +757,8 @@ function showMatchEnd(rank,clientView){
 }
 
 //================= Lobby / setup wiring =================
-function bindTap(el,fn){ el.addEventListener('click',e=>{e.preventDefault();fn();});
-  el.addEventListener('touchend',e=>{e.preventDefault();fn();},{passive:false}); }
+function bindTap(el,fn){ el.addEventListener('click',e=>{e.preventDefault();ensureAudio();fn();});
+  el.addEventListener('touchend',e=>{e.preventDefault();ensureAudio();fn();},{passive:false}); }
 
 let humN=1,aiN=1,totN=2,hAiN=0;
 function clampLocal(){ humN=Math.max(1,Math.min(4,humN)); aiN=Math.max(0,Math.min(4-humN,aiN));
@@ -769,7 +866,9 @@ function frame(t){
     clientPointerToHost();
   }
   updateParticles(dt); if(shakeMag>0)shakeMag=Math.max(0,shakeMag-dt*40);
+  soundWatch();
   if(G.phase==='play'||G.phase==='select') updateHUDLive();
+  document.getElementById('pctTable').classList.toggle('hidden', !(G.phase==='play'||G.phase==='select'));
   let frac=0;
   if(G.phase==='play'){ frac = authoritative? acc : Math.min(1,(now-clientSnapAt)/(1000/STEP_SPEED)); }
   render(frac);
