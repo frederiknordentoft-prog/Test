@@ -103,6 +103,9 @@
   <!-- Forlad-knap under spil -->
   <button id="quitBtn" class="hidden">⏏︎ Menu</button>
 
+  <!-- Baggrundsmusik (Suno) -->
+  <audio id="music" loop preload="auto" src="https://cdn1.suno.ai/d94b96dd-952e-48eb-9510-61059bc3d866.mp3"></audio>
+
   <!-- HUD -->
   <div id="hud" class="hidden">
     <div id="scores"></div>
@@ -125,7 +128,8 @@
         <b>Lokalt:</b> spil på denne enhed (flere kan dele tastatur på computer; på mobil dig + evt. AI).<br>
         <b>Online:</b> spil fra hver sin enhed via en delt rum-kode.
       </div>
-      <div class="row" style="gap:20px;margin-top:2px">
+      <div class="row" style="gap:16px;margin-top:2px">
+        <div class="toggle on" id="tgMusic"><div class="sw"></div><span>🎵 Musik</span></div>
         <div class="toggle on" id="tgSound"><div class="sw"></div><span>🔊 Lyd</span></div>
         <div class="toggle" id="tgHard"><div class="sw"></div><span>🔥 Svær AI</span></div>
       </div>
@@ -603,7 +607,7 @@ function evCell(e){ const r=canvas.getBoundingClientRect();
   return { x:(e.clientX-r.left)/r.width*W, y:(e.clientY-r.top)/r.height*H }; }
 canvas.addEventListener('pointermove',e=>{ const c=evCell(e); pointer.cx=c.x;pointer.cy=c.y;pointer.active=true;inputMode='pointer'; e.preventDefault(); },{passive:false});
 canvas.addEventListener('pointerdown',e=>{
-  ensureAudio();
+  ensureAudio(); startMusic();
   const c=evCell(e); pointer.cx=c.x;pointer.cy=c.y;pointer.active=true;inputMode='pointer';
   if(G.phase==='select'){ // tap for at vælge startfelt
     const x=Math.floor(c.x), y=Math.floor(c.y);
@@ -807,8 +811,11 @@ function showMatchEnd(rank,clientView){
 }
 
 //================= Lobby / setup wiring =================
-function bindTap(el,fn){ el.addEventListener('click',e=>{e.preventDefault();ensureAudio();fn();});
-  el.addEventListener('touchend',e=>{e.preventDefault();ensureAudio();fn();},{passive:false}); }
+let musicOn=true;
+function startMusic(){ if(!musicOn) return; const m=document.getElementById('music');
+  if(m && m.play){ m.volume=0.4; if(m.paused){ const p=m.play(); if(p&&p.catch)p.catch(()=>{}); } } }
+function bindTap(el,fn){ el.addEventListener('click',e=>{e.preventDefault();ensureAudio();startMusic();fn();});
+  el.addEventListener('touchend',e=>{e.preventDefault();ensureAudio();startMusic();fn();},{passive:false}); }
 
 let humN=1,aiN=1,totN=2,hAiN=0;
 function clampLocal(){ humN=Math.max(1,Math.min(4,humN)); aiN=Math.max(0,Math.min(4-humN,aiN));
@@ -849,7 +856,11 @@ bindTap(document.getElementById('joinConnect'),()=>{ const c=document.getElement
   if(c.length===4) joinRoom(c); else document.getElementById('joinErr').textContent='Koden er 4 tegn.'; });
 bindTap(document.getElementById('reNext'),()=>{ if(G.isHost||G.mode==='local') nextRound(); });
 bindTap(document.getElementById('meAgain'),()=>{ teardownNet(); showOnly('lobby'); });
-// Indstillinger: lyd + sværhedsgrad
+// Indstillinger: musik + lyd + sværhedsgrad
+bindTap(document.getElementById('tgMusic'),()=>{ musicOn=!musicOn;
+  document.getElementById('tgMusic').classList.toggle('on',musicOn);
+  const m=document.getElementById('music');
+  if(musicOn){ startMusic(); } else if(m&&m.pause){ m.pause(); } });
 bindTap(document.getElementById('tgSound'),()=>{ soundOn=!soundOn;
   document.getElementById('tgSound').classList.toggle('on',soundOn); if(soundOn){ensureAudio();tone(660,0,0.1,'sine',0.25);} });
 bindTap(document.getElementById('tgHard'),()=>{ const on=!document.getElementById('tgHard').classList.contains('on');
