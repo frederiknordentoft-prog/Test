@@ -501,19 +501,28 @@ function sfxDeath(){ tone(320,55,0.5,'sawtooth',0.32); noiseBurst(0.35,0.22); } 
 function sfxTick(i){ tone(680+i*150,0,0.09,'square',0.26); }                  // stress-bip, stiger mod 0
 
 // lyd-vagt: udløser lyd ud fra observeret state (virker for host, lokal og klient)
-let sndCount=0, sndAlive=true, sndTick=99, sndPhase='';
+function sfxOppDeath(){ tone(240,80,0.2,'sawtooth',0.15); noiseBurst(0.18,0.1); }  // modstander dr (dmpet)
+function sfxStep(n){ tone(186+(n&1?14:0),0,0.03,'sine',0.06); }                    // meget subtil streg-tik
+let sndCount=0, sndTrail=0, sndTick=99, sndPhase='', sndAliveMap={};
 function soundWatch(){
   if(G.phase!=='play'){ sndPhase=G.phase; return; }
-  if(sndPhase!=='play'){ sndPhase='play'; sndCount=counts[G.myId]||0; sndAlive=true; sndTick=99; }
+  if(sndPhase!=='play'){ sndPhase='play'; sndCount=counts[G.myId]||0; sndTrail=0; sndTick=99;
+    sndAliveMap={}; for(const p of G.players) sndAliveMap[p.id]=true; }
+  // ddsfald: dig hjt, modstandere dmpet
+  for(const p of G.players){
+    const was=sndAliveMap[p.id]!==false;
+    if(was && !p.alive){ if(p.id===G.myId) sfxDeath(); else sfxOppDeath(); }
+    sndAliveMap[p.id]=p.alive;
+  }
   const me=playerById(G.myId);
   if(me){
     if((counts[G.myId]||0) > sndCount) sfxCapture();
-    if(sndAlive && !me.alive) sfxDeath();
-    sndAlive=me.alive;
+    const tl=me.trailCells.length;
+    if(tl>sndTrail && tl>0 && G.cd<=0) sfxStep(tl);   // tik for hver firkant stregen rykker sig
+    sndTrail=tl;
   }
   sndCount=counts[G.myId]||0;
-  const s=Math.ceil(timeLeft);
-  if(s<=5 && s>=1 && s!==sndTick){ sndTick=s; sfxTick(5-s); }
+  if(G.cd<=0){ const s=Math.ceil(timeLeft); if(s<=5 && s>=1 && s!==sndTick){ sndTick=s; sfxTick(5-s); } }
 }
 
 //================= Runde / kamp-flow (host/lokal) =================
@@ -936,7 +945,7 @@ showOnly('lobby');
 requestAnimationFrame(frame);
 
 // til test i Node
-if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,nextRound,endMatch,owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,
+if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,nextRound,endMatch,soundWatch,owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,
   setLocalPlayers:(n,ai)=>{ G.mode='local';G.isHost=true;G.players=[];let id=1;const sc=['arrows','wasd','ijkl','tfgh'];
     for(let i=0;i<n;i++){const p=makePlayer(id,'local');p.scheme=sc[i];G.players.push(p);id++;}
     for(let i=0;i<ai;i++)G.players.push(makePlayer(id++,'ai')); G.myId=1; },
