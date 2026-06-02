@@ -4,12 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Territorieduel</title>
-<meta name="theme-color" content="#0d0d14" />
+<meta name="theme-color" content="#15151e" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230d0d14'/%3E%3Crect x='8' y='8' width='38' height='38' fill='%2300e5ff'/%3E%3Crect x='54' y='8' width='38' height='38' fill='%23ff3d7f'/%3E%3Crect x='8' y='54' width='38' height='38' fill='%234dff7c'/%3E%3Crect x='54' y='54' width='38' height='38' fill='%23ffb020'/%3E%3C/svg%3E" />
 <!-- PeerJS til online-spil (WebRTC). Spillet virker også lokalt uden internet. -->
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-  :root{ --bg:#0d0d14; --ink:#e8ecff;
+  :root{ --bg:#15151e; --ink:#e8ecff;
     --p1:#00e5ff; --p2:#ff3d7f; --p3:#4dff7c; --p4:#ffb020; }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);}
@@ -17,7 +17,7 @@
     font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
     color:var(--ink);display:flex;align-items:center;justify-content:center;
     user-select:none;-webkit-user-select:none;
-    background:radial-gradient(ellipse at 50% 40%, #15151f 0%, #0d0d14 70%);
+    background:radial-gradient(ellipse at 50% 40%, #21212d 0%, #15151e 70%);
   }
   #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;}
   canvas{display:block;touch-action:none;border-radius:10px;
@@ -117,7 +117,7 @@
   <!-- LOBBY -->
   <div id="lobby" class="overlay">
     <h1>TERRITORIEDUEL</h1>
-    <div class="tag">Tegn løkker, erobr land. Først til 60 % – eller flest felter når tiden er gået.</div>
+    <div class="tag">Tegn løkker, erobr land. Først til 50 % – eller flest felter når tiden er gået.</div>
     <div class="card">
       <div class="row">
         <button id="modeLocal">Lokalt spil</button>
@@ -133,6 +133,10 @@
         <div class="toggle on" id="tgSound"><div class="sw"></div><span>🔊 Lyd</span></div>
         <div class="toggle" id="tgHard"><div class="sw"></div><span>🔥 Svær AI</span></div>
       </div>
+    </div>
+    <div class="card" id="lbCard" style="padding:12px 16px;gap:8px">
+      <div style="font-size:11px;letter-spacing:.1em;opacity:.55;text-transform:uppercase">🏆 Leaderboard · sejre</div>
+      <div class="standings" id="lobbyLeader" style="width:min(360px,90vw)"></div>
     </div>
     <div class="credit">Territorieduel</div>
   </div>
@@ -209,6 +213,8 @@
   <div id="matchEnd" class="overlay hidden">
     <h1 id="meTitle">—</h1>
     <div class="standings" id="meStand"></div>
+    <div style="font-size:11px;letter-spacing:.1em;opacity:.55;text-transform:uppercase;margin-top:2px">🏆 Sejre i alt</div>
+    <div class="standings" id="meLeader"></div>
     <button id="meAgain">Til menu</button>
   </div>
 </div>
@@ -533,8 +539,18 @@ function soundWatch(){
 function startMatch(){
   for(const p of G.players) p.roundWins=0;
   G.totalRounds=G.players.length;
-  G.roundIndex=0;
+  G.roundIndex=0; G.recorded=false;
   beginRound();
+}
+// ---- Leaderboard (gemmes på enheden) ----
+function loadLB(){ try{ return JSON.parse(localStorage.getItem('td_lb')||'{}'); }catch(e){ return {}; } }
+function saveLB(o){ try{ localStorage.setItem('td_lb',JSON.stringify(o)); }catch(e){} }
+function recordWin(name){ const lb=loadLB(); lb[name]=(lb[name]||0)+1; saveLB(lb); }
+function leaderboardHTML(){
+  const lb=loadLB();
+  const rows=NAMES.map((nm,i)=>({nm,color:COLORS[i],w:lb[nm]||0})).sort((a,b)=>b.w-a.w);
+  if(rows.every(r=>r.w===0)) return '<div style="opacity:.5;font-size:13px;text-align:center">Ingen kampe vundet endnu</div>';
+  return rows.map((r,i)=>`<div class="sr"><span class="dot" style="background:${r.color}"></span><span class="nm">${i+1}. ${r.nm}</span><span>${r.w} ${r.w===1?'sejr':'sejre'}</span></div>`).join('');
 }
 function beginRound(){
   clearBoard();
@@ -742,7 +758,8 @@ const OV=['lobby','setupLocal','setupHost','setupJoin','roundEnd','matchEnd'];
 function showOnly(id){ for(const o of OV){ document.getElementById(o).classList.toggle('hidden',o!==id); }
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('quitBtn').classList.add('hidden');
-  document.getElementById('pctTable').classList.add('hidden'); }
+  document.getElementById('pctTable').classList.add('hidden');
+  if(id==='lobby'){ const el=document.getElementById('lobbyLeader'); if(el) el.innerHTML=leaderboardHTML(); } }
 function showHUD(){ for(const o of OV) document.getElementById(o).classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('quitBtn').classList.remove('hidden'); buildScores(); }
@@ -803,17 +820,19 @@ function showMatchEnd(rank,clientView){
   document.getElementById('quitBtn').classList.add('hidden');
   document.getElementById('pctTable').classList.add('hidden');
   const champ=rank[0];
+  if(!G.recorded){ recordWin(champ.name); G.recorded=true; }   // tæl kamp-sejr på leaderboardet
   const meTitle=document.getElementById('meTitle');
   meTitle.textContent=(champ.id===G.myId?'Du vandt kampen! 🏆':champ.name+' vandt kampen');
   meTitle.style.webkitTextFillColor=champ.color; meTitle.style.filter='drop-shadow(0 0 16px '+champ.color+')';
   document.getElementById('meStand').innerHTML=rank.map((p,i)=>
     `<div class="sr"><span class="dot" style="background:${p.color}"></span><span class="nm">${i+1}. ${p.name}</span><span>${p.roundWins} runde-sejre</span></div>`).join('');
+  document.getElementById('meLeader').innerHTML=leaderboardHTML();
 }
 
 //================= Lobby / setup wiring =================
 let musicOn=true;
 function startMusic(){ if(!musicOn) return; const m=document.getElementById('music');
-  if(m && m.play){ m.volume=0.4; if(m.paused){ const p=m.play(); if(p&&p.catch)p.catch(()=>{}); } } }
+  if(m && m.play){ m.volume=0.12; if(m.paused){ const p=m.play(); if(p&&p.catch)p.catch(()=>{}); } } }
 function bindTap(el,fn){ el.addEventListener('click',e=>{e.preventDefault();ensureAudio();startMusic();fn();});
   el.addEventListener('touchend',e=>{e.preventDefault();ensureAudio();startMusic();fn();},{passive:false}); }
 
@@ -885,7 +904,7 @@ function render(frac){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.save();
   if(shakeMag>.3) ctx.translate((Math.random()*2-1)*shakeMag,(Math.random()*2-1)*shakeMag);
-  ctx.fillStyle='#0d0d14'; ctx.fillRect(-20,-20,W*CELL+40,H*CELL+40);
+  ctx.fillStyle='#15151e'; ctx.fillRect(-20,-20,W*CELL+40,H*CELL+40);
   ctx.strokeStyle='rgba(120,140,200,.06)'; ctx.lineWidth=1; ctx.beginPath();
   for(let x=0;x<=W;x++){ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,H*CELL);}
   for(let y=0;y<=H;y++){ctx.moveTo(0,y*CELL);ctx.lineTo(W*CELL,y*CELL);} ctx.stroke();
