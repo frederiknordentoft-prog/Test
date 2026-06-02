@@ -137,7 +137,7 @@
 const W = 64, H = 40, TOTAL = W * H;
 const WIN_RATIO = 0.60;
 const GAME_TIME = 120;          // sekunder
-const STEP_SPEED = 10;          // celler pr. sekund
+const STEP_SPEED = 8;           // celler pr. sekund
 const DIRS = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
 const P_COL = '#00e5ff', A_COL = '#ff3d7f';
 const OWNER_COL = {1:P_COL, 2:A_COL};
@@ -196,8 +196,8 @@ function makeEntity(val, baseX, baseY, dir, ai){
 }
 
 function paintBase(cx, cy, val){
-  for(let y=cy-1; y<=cy+2; y++)
-    for(let x=cx-1; x<=cx+2; x++)
+  for(let y=cy-2; y<=cy+3; y++)
+    for(let x=cx-2; x<=cx+3; x++)
       if(inB(x,y)){ owner[idx(x,y)] = val; fillAge[idx(x,y)] = -99999; }
 }
 
@@ -206,8 +206,8 @@ function resetGame(){
   particles = []; shakeMag = 0;
   timeLeft = GAME_TIME; acc = 0;
 
-  const pBase = {x:4, y:Math.floor(H/2)};
-  const aBase = {x:W-5, y:Math.floor(H/2)};
+  const pBase = {x:5, y:Math.floor(H/2)};
+  const aBase = {x:W-6, y:Math.floor(H/2)};
   paintBase(pBase.x, pBase.y, 1);
   paintBase(aBase.x, aBase.y, 2);
 
@@ -257,15 +257,19 @@ function inboundTurn(e, d){
 }
 
 function playerDir(e){
+  let d;
   if(inputMode==='pointer' && pointer.active){
     const dx = pointer.cx - (e.cx + 0.5);
     const dy = pointer.cy - (e.cy + 0.5);
-    if(Math.abs(dx) >= Math.abs(dy))
-      return {x: (Math.sign(dx) || e.dir.x), y:0};
-    else
-      return {x:0, y:(Math.sign(dy) || e.dir.y)};
+    if(Math.abs(dx) >= Math.abs(dy)) d = {x: (Math.sign(dx) || e.dir.x), y:0};
+    else                            d = {x:0, y:(Math.sign(dy) || e.dir.y)};
+  } else {
+    d = e.pendingDir || e.dir;
   }
-  return e.pendingDir || e.dir;
+  // tilgivende styring: drej ikke direkte ind i din egen hale ved et uheld
+  const nx = e.cx + d.x, ny = e.cy + d.y;
+  if(inB(nx,ny) && trail[idx(nx,ny)] === e.val) return e.dir;
+  return d;
 }
 
 function simulate(){
