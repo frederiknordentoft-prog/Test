@@ -88,6 +88,9 @@
   #pctTable .nm{min-width:58px;font-weight:600;}
   #pctTable .pc{font-variant-numeric:tabular-nums;font-weight:800;min-width:40px;text-align:right;}
   #pctTable.hidden{display:none;}
+  #quitBtn{position:absolute;top:8px;right:8px;z-index:7;padding:7px 14px;font-size:13px;
+    background:rgba(255,255,255,.1);color:var(--ink);box-shadow:none;}
+  #quitBtn.hidden{display:none;}
 </style>
 </head>
 <body>
@@ -96,6 +99,9 @@
 
   <!-- Lille %-tabel pr. farve -->
   <div id="pctTable" class="hidden"></div>
+
+  <!-- Forlad-knap under spil -->
+  <button id="quitBtn" class="hidden">⏏︎ Menu</button>
 
   <!-- HUD -->
   <div id="hud" class="hidden">
@@ -118,6 +124,10 @@
       <div class="hint">
         <b>Lokalt:</b> spil på denne enhed (flere kan dele tastatur på computer; på mobil dig + evt. AI).<br>
         <b>Online:</b> spil fra hver sin enhed via en delt rum-kode.
+      </div>
+      <div class="row" style="gap:20px;margin-top:2px">
+        <div class="toggle on" id="tgSound"><div class="sw"></div><span>🔊 Lyd</span></div>
+        <div class="toggle" id="tgHard"><div class="sw"></div><span>🔥 Svær AI</span></div>
       </div>
     </div>
     <div class="credit">Territorieduel</div>
@@ -207,6 +217,8 @@ const WIN_RATIO=0.50, ROUND_TIME=90, STEP_SPEED=8;
 const DIRS=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
 const COLORS=['#00e5ff','#ff3d7f','#4dff7c','#ffb020'];
 const NAMES =['Cyan','Magenta','Grøn','Gul'];
+const DIFF={ normal:{hunt:16,threat:3,maxTrail:56,loopMin:6,loopRand:6,attackTrail:13},
+             hard:  {hunt:24,threat:2,maxTrail:72,loopMin:8,loopRand:7,attackTrail:20} };
 const idx=(x,y)=>x+y*W;
 const inB=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
 
@@ -229,6 +241,8 @@ const G={
   pickOrder:[], pickPos:0, picker:0,
   myId:1,                // hvilket id denne enhed styrer (online + lokal primær)
   aiPickTimer:0,
+  difficulty:'normal',   // 'normal' | 'hard'
+  cd:0,                  // nedtælling før runde-start (sek)
 };
 
 function makePlayer(id,kind){
@@ -334,7 +348,7 @@ function killPlayer(p){
   for(const c of p.trailCells) if(trail[c]===p.id) trail[c]=0;
   p.trailCells.length=0;
   spawnBurst((p.cx+0.5)*CELL,(p.cy+0.5)*CELL,p.color);
-  if(p.id===G.myId) shakeMag=Math.max(shakeMag,14);
+  if(p.id===G.myId){ shakeMag=Math.max(shakeMag,14); if(navigator.vibrate) try{navigator.vibrate(140);}catch(e){} }
   p.alive=false; p.eliminated=true; p.netDir=null;
 }
 function outwardDir(x,y){
@@ -369,17 +383,32 @@ function nearestOwn(p){ let b=null,bd=1e9;
   for(let i=0;i<TOTAL;i++){ if(owner[i]!==p.id)continue; const x=i%W,y=(i/W)|0,d=Math.abs(x-p.cx)+Math.abs(y-p.cy); if(d<bd){bd=d;b={x,y};} }
   return b||{x:p.base.x,y:p.base.y};
 }
+function dp(){ return DIFF[G.difficulty]||DIFF.normal; }
 function probeEmpty(p,sx,sy,dx,dy,len){ let sc=0;
   for(let s=1;s<=len;s++){ const x=sx+dx*s,y=sy+dy*s; if(!inB(x,y)){sc-=5;break;}
     const o=owner[idx(x,y)]; if(o===0)sc++; else if(o!==p.id)sc-=3; else sc-=1; } return sc; }
+function atFrontier(p){ const x=p.cx,y=p.cy;
+  return (x>0&&owner[idx(x-1,y)]===0)||(x<W-1&&owner[idx(x+1,y)]===0)||(y>0&&owner[idx(x,y-1)]===0)||(y<H-1&&owner[idx(x,y+1)]===0); }
+function aiNearestFrontier(p){
+  let best=null,bs=-1e9;
+  for(let i=0;i<TOTAL;i++){ if(owner[i]!==p.id) continue;
+    const x=i%W,y=(i/W)|0; let d=null;
+    if(x>0&&owner[i-1]===0)d={x:-1,y:0}; else if(x<W-1&&owner[i+1]===0)d={x:1,y:0};
+    else if(y>0&&owner[i-W]===0)d={x:0,y:-1}; else if(y<H-1&&owner[i+W]===0)d={x:0,y:1};
+    if(!d) continue;
+    const open=probeEmpty(p,x,y,d.x,d.y,8), dist=Math.abs(x-p.cx)+Math.abs(y-p.cy);
+    const sc=open*2 - dist*0.5 + Math.random()*1.0;
+    if(sc>bs){bs=sc;best={x,y};} }
+  return best;
+}
 function aiBuildLoop(p){
   let d=DIRS[0],bs=-1e9;
   for(const dd of DIRS){ const sc=probeEmpty(p,p.cx,p.cy,dd.x,dd.y,10); if(sc>bs){bs=sc;d=dd;} }
-  const depth=6+(Math.random()*6|0);
+  const C=dp(), depth=C.loopMin+(Math.random()*C.loopRand|0);
   const perps=d.x!==0?[{x:0,y:1},{x:0,y:-1}]:[{x:1,y:0},{x:-1,y:0}];
   let perp=perps[0],ps=-1e9;
   for(const pp of perps){ const sc=probeEmpty(p,p.cx+d.x*depth,p.cy+d.y*depth,pp.x,pp.y,8); if(sc>ps){ps=sc;perp=pp;} }
-  const width=6+(Math.random()*6|0);
+  const width=C.loopMin+(Math.random()*C.loopRand|0);
   const cl=(x,y)=>({x:Math.max(2,Math.min(W-3,x)),y:Math.max(2,Math.min(H-3,y))});
   const w1=cl(p.cx+d.x*depth, p.cy+d.y*depth);
   const w2=cl(w1.x+perp.x*width, w1.y+perp.y*width);
@@ -388,46 +417,50 @@ function aiBuildLoop(p){
 }
 function aiThreatened(p){
   if(p.trailCells.length===0) return false;
+  const C=dp();
   for(const o of G.players){ if(o.id===p.id||!o.alive) continue;
     for(const c of p.trailCells){ const x=c%W,y=(c/W)|0;
-      if(Math.abs(o.cx-x)+Math.abs(o.cy-y)<=3) return true; } }
-  return p.trailCells.length>58;
+      if(Math.abs(o.cx-x)+Math.abs(o.cy-y)<=C.threat) return true; } }
+  return p.trailCells.length>C.maxTrail;
 }
 function aiHunt(p){
   // jag nærmeste eksponerede fjende-streg (dødeligt – især med ét liv)
   let best=null,bd=1e9;
   for(const o of G.players){ if(o.id===p.id||!o.alive||!o.trailCells.length) continue;
     for(const c of o.trailCells){ const x=c%W,y=(c/W)|0,dd=Math.abs(x-p.cx)+Math.abs(y-p.cy); if(dd<bd){bd=dd;best={x,y};} } }
-  return (best&&bd<16)?best:null;
+  const C=dp(); return (best&&bd<C.hunt)?best:null;
 }
 function aiGreedy(p,tx,ty){
   let best=null,bs=1e9;
   for(const d of DIRS){ if(d.x===-p.dir.x&&d.y===-p.dir.y)continue;
     const nx=p.cx+d.x,ny=p.cy+d.y; if(!inB(nx,ny))continue; const ni=idx(nx,ny);
     if(owner[ni]!==0 && owner[ni]!==p.id) continue;     // undgå dødelig modstander-jord
-    const s=Math.abs(nx-tx)+Math.abs(ny-ty)+Math.random()*0.4;
+    const s=Math.abs(nx-tx)+Math.abs(ny-ty)+Math.random()*0.25;
     if(s<bs){bs=s;best=d;} }
   return best||p.dir;
 }
 function aiDecide(p){
-  // 1) trussel: en fjende er tæt på min åbne streg -> hjem nu
-  if(aiThreatened(p)) p.phase='retreat';
-  // 2) jæger: gå efter eksponerede fjende-streger (dødeligt med ét liv)
-  if(p.phase!=='retreat' && p.trailCells.length<14){
-    const tgt=aiHunt(p); if(tgt) return aiGreedy(p,tgt.x,tgt.y);
-  }
-  // 3) retræte / hjem
+  if(aiThreatened(p)){ p.phase='retreat'; p.path=null; }
   if(p.phase==='retreat'){
-    if(onOwn(p)){ p.path=null; p.phase='out'; }
+    if(onOwn(p)){ p.phase='out'; p.frontier=null; }
     else { const t=nearestOwn(p); return aiGreedy(p,t.x,t.y); }
   }
-  // 4) på eget land uden plan -> byg en løkke
-  if(onOwn(p) && (!p.path||p.path.length===0)) aiBuildLoop(p);
-  // 5) følg løkke-ruten
+  // jæger: gå efter eksponerede fjende-streger (dødeligt med ét liv)
+  if(p.phase!=='retreat' && p.trailCells.length<dp().attackTrail){
+    const tgt=aiHunt(p); if(tgt){ p.path=null; return aiGreedy(p,tgt.x,tgt.y); }
+  }
+  // følg aktiv løkke-rute
   if(p.path && p.path.length){
     let w=p.path[0];
-    if(p.cx===w.x && p.cy===w.y){ p.path.shift(); if(!p.path.length){ const t=nearestOwn(p); return aiGreedy(p,t.x,t.y); } w=p.path[0]; }
+    if(p.cx===w.x && p.cy===w.y){ p.path.shift(); if(!p.path.length){ p.phase='out'; const t=nearestOwn(p); return aiGreedy(p,t.x,t.y); } w=p.path[0]; }
     return aiGreedy(p,w.x,w.y);
+  }
+  // på eget land: arbejd ved frontlinjen, ikke rundt inde i midten
+  if(onOwn(p)){
+    if(atFrontier(p)){ p.frontier=null; aiBuildLoop(p); return aiGreedy(p,p.path[0].x,p.path[0].y); }
+    if(!p.frontier || owner[idx(p.frontier.x,p.frontier.y)]!==p.id) p.frontier=aiNearestFrontier(p);
+    if(p.frontier) return aiGreedy(p,p.frontier.x,p.frontier.y);
+    aiBuildLoop(p); return aiGreedy(p,p.path[0].x,p.path[0].y);
   }
   const t=nearestOwn(p); return aiGreedy(p,t.x,t.y);
 }
@@ -492,7 +525,7 @@ function startMatch(){
 }
 function beginRound(){
   clearBoard();
-  for(const p of G.players){ p.base=null; p.alive=false; p.trailCells=[]; p.path=null; p.phase='out'; }
+  for(const p of G.players){ p.base=null; p.alive=false; p.trailCells=[]; p.path=null; p.frontier=null; p.phase='out'; }
   const n=G.players.length;
   G.pickOrder=[]; for(let i=0;i<n;i++) G.pickOrder.push(G.players[(G.roundIndex+i)%n].id);
   G.pickPos=0; G.picker=G.pickOrder[0]; G.phase='select'; G.aiPickTimer=0;
@@ -526,8 +559,8 @@ function aiAutoPick(p){
 }
 function startPlay(){
   for(const p of G.players){ p.cx=p.prevX=p.base.x; p.cy=p.prevY=p.base.y;
-    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; p.path=null; p.phase='out'; }
-  recount(); G.phase='play'; timeLeft=ROUND_TIME; acc=0; G.aiPickTimer=0;
+    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; p.path=null; p.frontier=null; p.phase='out'; }
+  recount(); G.phase='play'; timeLeft=ROUND_TIME; acc=0; G.aiPickTimer=0; G.cd=3; G._cdl=0;
   showHUD(); flashBanner(''); netBroadcast(true);
 }
 function checkRoundEnd(){
@@ -663,7 +696,7 @@ function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
   const ps=G.players.map(p=>({id:p.id,kind:p.kind,alive:p.alive,el:p.eliminated,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
     dx:p.dir.x,dy:p.dir.y,rw:p.roundWins,base:p.base,tlen:p.trailCells.length}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
-    tl:timeLeft,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
+    tl:timeLeft,cd:G.cd,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
   for(const p of G.players) if(p.conn&&p.conn.open){ msg.my=p.id; p.conn.send(msg); }
 }
 let clientSnapAt=0;
@@ -674,7 +707,7 @@ function clientOnData(d){
   // spejl host-state
   if(d.my) G.myId=d.my;
   G.phase=d.ph; G.roundIndex=d.ri; G.totalRounds=d.tr_; G.picker=d.pk; G.pickOrder=d.po||[]; G.pickPos=d.pp;
-  timeLeft=d.tl; counts=d.cnt; G.mode='online'; G.isHost=false;
+  timeLeft=d.tl; G.cd=d.cd||0; counts=d.cnt; G.mode='online'; G.isHost=false;
   owner.set(d.ow); trail.set(d.tg);
   // spillere
   G.players=d.ps.map(s=>{ let p=playerById(s.id)||makePlayer(s.id,s.kind);
@@ -694,9 +727,12 @@ function clientSyncUI(){
 //================= UI helpers =================
 const OV=['lobby','setupLocal','setupHost','setupJoin','roundEnd','matchEnd'];
 function showOnly(id){ for(const o of OV){ document.getElementById(o).classList.toggle('hidden',o!==id); }
-  document.getElementById('hud').classList.add('hidden'); }
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('quitBtn').classList.add('hidden');
+  document.getElementById('pctTable').classList.add('hidden'); }
 function showHUD(){ for(const o of OV) document.getElementById(o).classList.add('hidden');
-  document.getElementById('hud').classList.remove('hidden'); buildScores(); }
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('quitBtn').classList.remove('hidden'); buildScores(); }
 function flashBanner(t){ document.getElementById('banner').textContent=t; }
 function buildScores(){
   const el=document.getElementById('scores'); el.innerHTML='';
@@ -725,6 +761,7 @@ function updateHUDLive(){
   }
   const s=Math.max(0,Math.ceil(timeLeft));
   document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+  if(G.phase==='play') flashBanner(G.cd>0 ? ('Klar… '+Math.ceil(G.cd)) : '');
 }
 function updateSelectUI(){
   const picker=playerById(G.picker);
@@ -736,6 +773,8 @@ function updateSelectUI(){
 function showRoundEnd(winnerId,rank,clientView){
   for(const o of OV) document.getElementById(o).classList.toggle('hidden',o!=='roundEnd');
   document.getElementById('hud').classList.add('hidden');
+  document.getElementById('quitBtn').classList.add('hidden');
+  document.getElementById('pctTable').classList.add('hidden');
   const w=playerById(winnerId);
   document.getElementById('reTitle').innerHTML=`Runde ${G.roundIndex+1} slut — <span style="color:${w.color}">${w.name}</span> vandt`;
   document.getElementById('reStand').innerHTML=rank.map((p,i)=>
@@ -748,6 +787,8 @@ function showRoundEnd(winnerId,rank,clientView){
 function showMatchEnd(rank,clientView){
   for(const o of OV) document.getElementById(o).classList.toggle('hidden',o!=='matchEnd');
   document.getElementById('hud').classList.add('hidden');
+  document.getElementById('quitBtn').classList.add('hidden');
+  document.getElementById('pctTable').classList.add('hidden');
   const champ=rank[0];
   const meTitle=document.getElementById('meTitle');
   meTitle.textContent=(champ.id===G.myId?'Du vandt kampen! 🏆':champ.name+' vandt kampen');
@@ -799,6 +840,13 @@ bindTap(document.getElementById('joinConnect'),()=>{ const c=document.getElement
   if(c.length===4) joinRoom(c); else document.getElementById('joinErr').textContent='Koden er 4 tegn.'; });
 bindTap(document.getElementById('reNext'),()=>{ if(G.isHost||G.mode==='local') nextRound(); });
 bindTap(document.getElementById('meAgain'),()=>{ teardownNet(); showOnly('lobby'); });
+// Indstillinger: lyd + sværhedsgrad
+bindTap(document.getElementById('tgSound'),()=>{ soundOn=!soundOn;
+  document.getElementById('tgSound').classList.toggle('on',soundOn); if(soundOn){ensureAudio();tone(660,0,0.1,'sine',0.25);} });
+bindTap(document.getElementById('tgHard'),()=>{ const on=!document.getElementById('tgHard').classList.contains('on');
+  document.getElementById('tgHard').classList.toggle('on',on); G.difficulty=on?'hard':'normal'; });
+// Forlad spil -> menu
+bindTap(document.getElementById('quitBtn'),()=>{ teardownNet(); G.mode='local'; G.phase='lobby'; showOnly('lobby'); });
 
 function showHostWait(){ document.getElementById('hostConfig').classList.add('hidden'); document.getElementById('hostWait').classList.remove('hidden'); updateHostWait(); }
 function updateHostWait(){
@@ -858,8 +906,13 @@ function frame(t){
       const picker=playerById(G.picker);
       if(picker&&picker.kind==='ai'){ G.aiPickTimer+=dt; if(G.aiPickTimer>0.6) aiAutoPick(picker); }
     } else if(G.phase==='play'){
-      timeLeft-=dt; if(timeLeft<=0){ endRound(null); }
-      else { acc+=dt*STEP_SPEED; let s=0; while(acc>=1&&s<6&&G.phase==='play'){acc-=1;simulate();s++;} }
+      if(G.cd>0){                                   // nedtælling før kør
+        G.cd-=dt; if(G.cd<0)G.cd=0;
+        const c=Math.ceil(G.cd); if(c!==G._cdl){ G._cdl=c; if(c>0)tone(440,0,0.09,'sine',0.22); else tone(740,0,0.16,'sine',0.26); }
+      } else {
+        timeLeft-=dt; if(timeLeft<=0){ endRound(null); }
+        else { acc+=dt*STEP_SPEED; let s=0; while(acc>=1&&s<6&&G.phase==='play'){acc-=1;simulate();s++;} }
+      }
       broadcastAcc+=dt; if(G.mode==='online'&&broadcastAcc>=1/12){ broadcastAcc=0; netBroadcast(); }
     }
   } else {
