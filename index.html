@@ -635,8 +635,23 @@ function startGame(){
   document.getElementById('end').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
 }
-document.getElementById('startBtn').addEventListener('click', startGame);
-document.getElementById('againBtn').addEventListener('click', startGame);
+// Robust knap-binding: lyt på både click (desktop) og touchend (mobil),
+// da mange mobilbrowsere "sluger" det første click på en knap med :hover.
+let lastStart = 0;
+function doStart(ev){
+  if(ev){ ev.preventDefault(); }
+  const t = Date.now();
+  if(t - lastStart < 400) return;   // undgå dobbelt-udløsning (touchend + ghost-click)
+  lastStart = t;
+  startGame();
+}
+function bindButton(id){
+  const el = document.getElementById(id);
+  el.addEventListener('click', doStart);
+  el.addEventListener('touchend', doStart, {passive:false});
+}
+bindButton('startBtn');
+bindButton('againBtn');
 
 //============================ Init ============================
 resize();
