@@ -1,0 +1,262 @@
+company,source,date,to_grade,from_grade,action,price_target,prior_target,price_ticker,origin,signal,fwd_return,actual_up,is_directional,correct
+Novo Nordisk,Jefferies,2012-11-06 16:43:00,Hold,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.11172862588035581,True,False,
+Novo Nordisk,Natixis,2013-02-11 13:24:29,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.2800035139305579,True,False,
+Novo Nordisk,Kepler Cheuvreux,2013-02-11 13:26:31,Hold,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.2800035139305579,True,False,
+Novo Nordisk,Nomura,2013-02-12 13:14:05,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.2850398867018511,True,True,1.0
+Novo Nordisk,JP Morgan,2013-03-18 13:12:55,Underweight,Neutral,down,0.0,0.0,NOVO-B.CO,yahoo,-1,0.3176342574118105,True,True,0.0
+Novo Nordisk,Swedbank,2013-04-16 12:48:07,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.25651181851667015,True,True,1.0
+Novo Nordisk,Natixis,2013-05-24 11:54:00,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.2292224486206509,True,True,1.0
+Novo Nordisk,Handelsbanken,2013-06-11 12:01:51,Buy,Accumulate,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.3381715075531717,True,True,1.0
+Novo Nordisk,B of A Securities,2013-06-17 11:43:34,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.4319487488657614,True,False,
+Novo Nordisk,Exane BNP Paribas,2013-06-19 11:24:38,Underperform,Neutral,down,0.0,0.0,NOVO-B.CO,yahoo,-1,0.45193413747368916,True,True,0.0
+Novo Nordisk,Baader Helvea,2013-06-24 13:04:50,Buy,Accumulate,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.49783836572791773,True,True,1.0
+Novo Nordisk,Swedbank,2013-09-06 11:39:03,Buy,Strong Buy,down,0.0,0.0,NOVO-B.CO,yahoo,1,0.42198065946632357,True,True,1.0
+Novo Nordisk,Barclays,2013-09-16 11:43:25,Overweight,Underweight,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.4734223656672576,True,True,1.0
+Novo Nordisk,Swedbank,2013-11-01 11:17:30,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.4924261731157278,True,False,
+Novo Nordisk,Swedbank,2014-01-31 13:00:00,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.37447856776064503,True,True,1.0
+Novo Nordisk,JP Morgan,2014-02-24 13:00:00,Overweight,Underweight,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.28506519411602316,True,True,1.0
+Novo Nordisk,B of A Securities,2014-02-25 13:00:00,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.2141985730907039,True,True,1.0
+Novo Nordisk,Commerzbank,2015-01-28 17:35:27,Hold,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.2658307474207606,True,False,
+Novonesis,Jefferies,2015-08-07 15:00:00,Hold,,main,44.45,45.5,NSIS-B.CO,yahoo,0,0.04835796832084416,True,False,
+Novo Nordisk,Leerink Swann,2015-08-28 10:24:50,Market Perform,,init,0.0,0.0,NOVO-B.CO,yahoo,0,-0.13560250280983954,False,False,
+Novo Nordisk,Jyske Bank,2015-10-19 09:21:28,Strong Buy,Buy,up,0.0,0.0,NOVO-B.CO,yahoo,1,-0.23536980407375263,False,True,0.0
+Novo Nordisk,Oddo Securities,2016-01-26 13:56:42,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,-0.3413449396567785,False,True,0.0
+Novo Nordisk,UBS,2016-02-08 10:39:32,Sell,Neutral,down,0.0,0.0,NOVO-B.CO,yahoo,-1,-0.23507418173232886,False,True,1.0
+Novo Nordisk,Goldman Sachs,2016-02-15 13:02:36,Buy,,main,0.0,0.0,NOVO-B.CO,yahoo,1,-0.26773583128854395,False,True,0.0
+Novo Nordisk,B of A Securities,2016-08-08 11:18:01,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,-0.15175858221733884,False,False,
+Novo Nordisk,HSBC,2016-08-31 10:31:19,Hold,Reduce,up,0.0,0.0,NOVO-B.CO,yahoo,0,-0.017826219922026376,False,False,
+Novo Nordisk,JP Morgan,2016-09-09 10:25:55,Neutral,Outperform,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.033408196702752635,True,False,
+Novo Nordisk,Deutsche Bank,2016-09-12 10:01:07,Buy,Hold,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.042025208446504925,True,True,1.0
+Novo Nordisk,Exane BNP Paribas,2016-09-14 08:54:27,Outperform,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.02150885110140388,True,True,1.0
+Novo Nordisk,Piper Sandler,2016-09-23 10:46:04,Neutral,,init,0.0,0.0,NOVO-B.CO,yahoo,0,0.061875737849313994,True,False,
+Novo Nordisk,B of A Securities,2016-10-28 04:00:00,Underperform,Neutral,down,0.0,0.0,NOVO-B.CO,yahoo,-1,0.3812524013036629,True,True,0.0
+Novo Nordisk,Citigroup,2016-10-31 04:00:00,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.351204912996403,True,False,
+Novo Nordisk,UBS,2016-12-06 16:42:12,Buy,Sell,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.4121134028803253,True,True,1.0
+Novo Nordisk,B of A Securities,2017-09-06 10:47:15,Neutral,Underperform,up,0.0,0.0,NOVO-B.CO,yahoo,0,0.05329205491373057,True,False,
+Novo Nordisk,Morgan Stanley,2017-12-01 11:15:06,Overweight,Equal-Weight,up,0.0,0.0,NOVO-B.CO,yahoo,1,-0.03691522157996141,False,True,0.0
+Novo Nordisk,B of A Securities,2017-12-06 14:50:05,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,-0.07575796249534339,False,True,0.0
+Novo Nordisk,JP Morgan,2017-12-29 11:38:36,Neutral,Underweight,up,0.0,0.0,NOVO-B.CO,yahoo,0,-0.08595354924139298,False,False,
+Novo Nordisk,B of A Securities,2018-10-08 10:57:36,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.28949437502930087,True,False,
+Novo Nordisk,JP Morgan,2018-11-19 11:25:33,Overweight,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.33416141990187165,True,True,1.0
+Novo Nordisk,Morgan Stanley,2018-12-14 14:58:16,Equal-Weight,,init,0.0,0.0,NOVO-B.CO,yahoo,0,0.2652951957355938,True,False,
+Novo Nordisk,Exane BNP Paribas,2019-01-29 15:03:19,Outperform,,init,0.0,0.0,NOVO-B.CO,yahoo,1,0.3990748840990863,True,True,1.0
+Novo Nordisk,Credit Suisse,2019-04-29 12:56:38,Outperform,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.38074956418388184,True,True,1.0
+Novo Nordisk,Barclays,2019-06-11 10:45:27,Equal-Weight,Underweight,up,0.0,0.0,NOVO-B.CO,yahoo,0,0.31184873121756085,True,False,
+Novo Nordisk,Deutsche Bank,2019-06-20 10:46:35,Hold,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.34958823426487484,True,False,
+Genmab,Morgan Stanley,2019-08-12 10:32:26,Overweight,,init,0.0,0.0,GMAB.CO,yahoo,1,0.8181105448843591,True,True,1.0
+Genmab,Guggenheim,2019-08-12 11:25:00,Buy,,init,0.0,0.0,GMAB.CO,yahoo,1,0.8181105448843591,True,True,1.0
+Genmab,RBC Capital,2019-08-12 11:25:23,Outperform,,init,23.0,0.0,GMAB.CO,yahoo,1,0.8181105448843591,True,True,1.0
+Novo Nordisk,Jefferies,2019-08-30 10:32:59,Underperform,Hold,down,0.0,0.0,NOVO-B.CO,yahoo,-1,0.1992561174681644,True,True,0.0
+Genmab,JP Morgan,2019-09-12 11:51:03,Overweight,Neutral,up,0.0,23.0,GMAB.CO,yahoo,1,0.6399999999999999,True,True,1.0
+Novo Nordisk,B of A Securities,2019-09-13 12:01:33,Neutral,,reit,400.0,355.0,NOVO-B.CO,yahoo,0,0.2695783135676195,True,False,
+Novo Nordisk,Citigroup,2019-09-17 10:37:26,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.27728657734811013,True,True,1.0
+Genmab,HC Wainwright & Co.,2019-10-16 11:43:26,Buy,,main,25.0,24.0,GMAB.CO,yahoo,1,0.672296083363277,True,True,1.0
+Novo Nordisk,Barclays,2019-11-18 11:10:38,Overweight,Equal-Weight,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.12227500570452454,True,True,1.0
+Novo Nordisk,UBS,2019-11-18 15:40:50,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.12227500570452454,True,False,
+Novo Nordisk,Guggenheim,2020-01-03 11:40:31,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.13789002976925113,True,False,
+Genmab,SunTrust Robinson Humphrey,2020-01-13 13:50:24,Buy,,init,28.0,0.0,GMAB.CO,yahoo,1,0.6618037135278514,True,True,1.0
+Novo Nordisk,B of A Securities,2020-01-17 13:44:39,Neutral,,reit,440.0,420.0,NOVO-B.CO,yahoo,0,0.0939226556918098,True,False,
+Genmab,Morgan Stanley,2020-02-20 13:08:11,Overweight,,main,31.0,30.0,GMAB.CO,yahoo,1,0.4487632508833923,True,True,1.0
+Genmab,HC Wainwright & Co.,2020-02-24 12:11:37,Buy,,main,29.0,25.0,GMAB.CO,yahoo,1,0.3399941228327945,True,True,1.0
+Carlsberg,Goldman Sachs,2020-02-26 10:00:17,Sell,,init,0.0,0.0,CARL-B.CO,yahoo,-1,0.08865595591867836,True,True,0.0
+Genmab,HC Wainwright & Co.,2020-04-15 11:14:46,Buy,,reit,28.0,29.0,GMAB.CO,yahoo,1,0.4619803987833728,True,True,1.0
+Genmab,Morgan Stanley,2020-04-15 13:52:01,Overweight,,main,30.0,31.0,GMAB.CO,yahoo,1,0.4619803987833728,True,True,1.0
+Genmab,HC Wainwright & Co.,2020-05-07 12:56:01,Buy,,main,29.0,28.0,GMAB.CO,yahoo,1,0.26098901098901095,True,True,1.0
+Genmab,SunTrust Robinson Humphrey,2020-05-07 16:00:53,Buy,,main,30.0,28.0,GMAB.CO,yahoo,1,0.26098901098901095,True,True,1.0
+Genmab,HC Wainwright & Co.,2020-06-01 10:52:35,Buy,,main,34.0,29.0,GMAB.CO,yahoo,1,0.18883495145631057,True,True,1.0
+Genmab,HC Wainwright & Co.,2020-06-11 10:05:06,Buy,,main,40.0,34.0,GMAB.CO,yahoo,1,0.3591585428424833,True,True,1.0
+Genmab,SunTrust Robinson Humphrey,2020-06-11 12:31:23,Buy,,main,39.0,36.0,GMAB.CO,yahoo,1,0.3591585428424833,True,True,1.0
+Genmab,RBC Capital,2020-06-19 11:29:10,Outperform,,main,35.0,27.0,GMAB.CO,yahoo,1,0.2974261201143946,True,True,1.0
+Genmab,Morgan Stanley,2020-08-13 12:14:49,Overweight,,main,32.0,30.0,GMAB.CO,yahoo,1,0.23379339188624004,True,True,1.0
+Genmab,HC Wainwright & Co.,2020-08-21 10:42:32,Buy,,main,41.0,40.0,GMAB.CO,yahoo,1,0.26875000000000004,True,True,1.0
+Genmab,Truist Securities,2020-08-24 14:33:44,Buy,Buy,main,41.0,39.0,GMAB.CO,yahoo,1,0.26799322607959364,True,True,1.0
+Genmab,SVB Leerink,2020-09-08 11:01:41,Market Perform,,init,35.0,0.0,GMAB.CO,yahoo,0,0.3126134301270418,True,False,
+Genmab,Bryan Garnier,2020-09-23 09:45:07,Sell,Neutral,down,0.0,0.0,GMAB.CO,yahoo,-1,0.23503713411970284,True,True,0.0
+Genmab,HC Wainwright & Co.,2020-09-23 11:04:04,Buy,,main,42.0,41.0,GMAB.CO,yahoo,1,0.23503713411970284,True,True,1.0
+Maersk,Goldman Sachs,2020-09-29 09:29:42,Buy,Neutral,up,0.0,0.0,MAERSK-B.CO,yahoo,1,0.886869145146622,True,True,1.0
+Genmab,Morgan Stanley,2020-10-13 13:29:04,Overweight,,main,35.0,32.0,GMAB.CO,yahoo,1,0.16590626296142674,True,True,1.0
+Genmab,HC Wainwright & Co.,2020-11-05 11:12:08,Buy,,main,45.0,42.0,GMAB.CO,yahoo,1,0.2062600321027288,True,True,1.0
+Genmab,Morgan Stanley,2020-11-05 13:12:05,Overweight,,main,37.0,35.0,GMAB.CO,yahoo,1,0.2062600321027288,True,True,1.0
+Genmab,HC Wainwright & Co.,2020-11-25 11:12:07,Buy,,main,44.0,45.0,GMAB.CO,yahoo,1,0.15763765541740682,True,True,1.0
+Genmab,SVB Leerink,2020-12-09 09:53:04,Market Perform,,main,34.0,36.0,GMAB.CO,yahoo,0,0.12192013593882756,True,False,
+Genmab,Morgan Stanley,2020-12-16 17:41:44,Overweight,,main,41.0,37.0,GMAB.CO,yahoo,1,0.03240548400498544,True,True,1.0
+Novo Nordisk,Deutsche Bank,2021-01-15 12:37:14,Buy,,init,0.0,0.0,NOVO-B.CO,yahoo,1,0.4387295323748779,True,True,1.0
+Genmab,HC Wainwright & Co.,2021-01-15 14:24:02,Buy,,main,49.0,44.0,GMAB.CO,yahoo,1,-0.1470040937848902,False,True,0.0
+Genmab,Morgan Stanley,2021-01-19 12:00:47,Equal-Weight,Overweight,down,41.0,0.0,GMAB.CO,yahoo,0,-0.15387453874538748,False,False,
+Genmab,SVB Leerink,2021-01-26 14:09:32,Market Perform,,main,38.0,34.0,GMAB.CO,yahoo,0,-0.15346153846153843,False,False,
+Genmab,SVB Leerink,2021-02-24 10:26:18,Market Perform,,main,36.0,38.0,GMAB.CO,yahoo,0,-0.022325581395348792,False,False,
+Vestas,UBS,2021-02-25 10:53:43,Buy,Neutral,up,0.0,0.0,VWS.CO,yahoo,1,-0.19631748895569145,False,True,0.0
+Genmab,Truist Securities,2021-02-25 15:27:58,Buy,Buy,main,47.0,42.0,GMAB.CO,yahoo,1,0.039674952198852864,True,True,1.0
+Vestas,Bernstein,2021-03-25 10:10:42,Outperform,,init,0.0,0.0,VWS.CO,yahoo,1,-0.15769799985827093,False,True,0.0
+Genmab,Morgan Stanley,2021-04-19 14:36:50,Equal-Weight,,main,37.0,41.0,GMAB.CO,yahoo,0,0.19328493647912892,True,False,
+Genmab,SVB Leerink,2021-08-12 08:41:29,Market Perform,,main,42.0,37.0,GMAB.CO,yahoo,0,-0.10217983651226159,False,False,
+Genmab,Truist Securities,2021-08-12 13:39:55,Buy,Buy,main,50.0,47.0,GMAB.CO,yahoo,1,-0.10217983651226159,False,True,0.0
+Genmab,HC Wainwright & Co.,2021-08-24 11:07:47,Neutral,Buy,down,0.0,0.0,GMAB.CO,yahoo,0,-0.09015025041736224,False,False,
+Genmab,Morgan Stanley,2021-09-07 10:08:51,Underweight,Equal-Weight,down,37.0,0.0,GMAB.CO,yahoo,-1,-0.09817813765182182,False,True,1.0
+Genmab,Jefferies,2021-09-16 12:10:27,Hold,Buy,down,0.0,0.0,GMAB.CO,yahoo,0,0.007513148009015813,True,False,
+Genmab,Berenberg,2021-12-01 11:14:29,Sell,,init,0.0,0.0,GMAB.CO,yahoo,-1,0.2886194759483771,True,True,0.0
+Novo Nordisk,JP Morgan,2021-12-20 13:40:27,Neutral,Overweight,down,0.0,0.0,NOVO-B.CO,yahoo,0,0.3905074719134709,True,False,
+Genmab,Guggenheim,2022-01-03 15:04:17,Neutral,Buy,down,0.0,0.0,GMAB.CO,yahoo,0,0.17307692307692313,True,False,
+Novo Nordisk,Liberum,2022-01-25 13:28:56,Sell,Hold,down,0.0,0.0,NOVO-B.CO,yahoo,-1,0.5390519213192035,True,True,0.0
+Genmab,HC Wainwright & Co.,2022-01-31 11:48:45,Buy,Neutral,up,47.0,0.0,GMAB.CO,yahoo,1,0.1976692066337966,True,True,1.0
+Genmab,SVB Leerink,2022-02-17 09:51:19,Market Perform,,main,39.0,42.0,GMAB.CO,yahoo,0,0.2777005099675476,True,False,
+Novo Nordisk,Deutsche Bank,2022-03-16 10:19:28,Buy,Hold,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.3898875833579871,True,True,1.0
+Genmab,Morgan Stanley,2022-04-12 13:45:17,Underweight,,main,30.0,33.0,GMAB.CO,yahoo,-1,0.05063291139240511,True,True,0.0
+Genmab,Cowen & Co.,2022-05-02 12:40:14,Market Perform,,init,38.0,0.0,GMAB.CO,yahoo,0,0.13167549938850387,True,False,
+Genmab,SVB Leerink,2022-05-12 08:41:01,Market Perform,,main,30.0,39.0,GMAB.CO,yahoo,0,0.4112149532710281,True,False,
+Genmab,Morgan Stanley,2022-05-17 11:52:37,Underweight,,main,29.0,30.0,GMAB.CO,yahoo,-1,0.3438095238095238,True,True,0.0
+Novo Nordisk,Guggenheim,2022-05-31 12:08:40,Buy,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.47341098038717044,True,True,1.0
+Novo Nordisk,JP Morgan,2022-06-07 09:00:28,Overweight,Neutral,up,0.0,0.0,NOVO-B.CO,yahoo,1,0.38050652952714836,True,True,1.0
+Genmab,BMO Capital,2022-06-24 09:05:26,Market Perform,,init,34.73,0.0,GMAB.CO,yahoo,0,0.17293906810035842,True,False,
+Novo Nordisk,UBS,2022-06-28 10:13:49,Sell,Neutral,down,0.0,0.0,NOVO-B.CO,yahoo,-1,0.3943831014828245,True,True,0.0
+Genmab,HC Wainwright & Co.,2022-07-20 10:12:27,Buy,,main,49.0,47.0,GMAB.CO,yahoo,1,0.07827102803738328,True,True,1.0
+Genmab,SVB Leerink,2022-08-11 09:25:33,Market Perform,,main,31.0,30.0,GMAB.CO,yahoo,0,-0.06355620867009548,False,False,
+Genmab,Morgan Stanley,2022-08-15 12:14:49,Underweight,,main,31.0,29.0,GMAB.CO,yahoo,-1,-0.059435364041604766,False,True,1.0
+Genmab,HC Wainwright & Co.,2022-08-22 10:17:21,Buy,,main,51.0,49.0,GMAB.CO,yahoo,1,-0.04078549848942603,False,True,0.0
+Genmab,SVB Leerink,2022-11-10 08:49:55,Market Perform,,main,33.0,31.0,GMAB.CO,yahoo,0,-0.3108194622279129,False,False,
+Genmab,Morgan Stanley,2022-11-14 13:41:27,Underweight,,main,34.0,31.0,GMAB.CO,yahoo,-1,-0.26756401838476696,False,True,1.0
+Genmab,William Blair,2022-11-14 14:52:58,Market Perform,,init,0.0,0.0,GMAB.CO,yahoo,0,-0.26756401838476696,False,False,
+Novo Nordisk,TD Cowen,2022-12-12 15:39:08,Outperform,,main,145.0,130.0,NOVO-B.CO,yahoo,1,0.46669124278926355,True,True,1.0
+Genmab,Morgan Stanley,2023-01-24 13:51:24,Underweight,,main,35.0,34.0,GMAB.CO,yahoo,-1,-0.2960820895522388,False,True,1.0
+Genmab,SVB Leerink,2023-02-06 09:02:10,Market Perform,,main,36.0,33.0,GMAB.CO,yahoo,0,-0.280614132445431,False,False,
+Genmab,Morgan Stanley,2023-02-23 13:26:38,Underweight,,main,34.0,35.0,GMAB.CO,yahoo,-1,-0.2406639004149378,False,True,1.0
+Genmab,Morgan Stanley,2023-03-01 13:13:26,Underweight,,main,33.0,34.0,GMAB.CO,yahoo,-1,-0.26420129622569577,False,True,1.0
+Genmab,HC Wainwright & Co.,2023-03-02 11:12:05,Buy,,main,46.0,51.0,GMAB.CO,yahoo,1,-0.21210937500000004,False,True,0.0
+Novo Nordisk,BTIG,2023-03-28 14:37:16,Buy,,main,31.0,20.0,NOVO-B.CO,yahoo,1,0.6757850584824847,True,True,1.0
+Genmab,HC Wainwright & Co.,2023-04-20 12:39:15,Buy,,reit,46.0,0.0,GMAB.CO,yahoo,1,-0.2784172661870503,False,True,0.0
+Genmab,HC Wainwright & Co.,2023-05-16 10:35:17,Buy,Buy,main,47.0,46.0,GMAB.CO,yahoo,1,-0.2733990147783252,False,True,0.0
+Genmab,HC Wainwright & Co.,2023-05-22 10:11:55,Buy,Buy,main,51.0,47.0,GMAB.CO,yahoo,1,-0.3125,False,True,0.0
+Genmab,HC Wainwright & Co.,2023-06-06 10:22:29,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.29365658038643816,False,True,0.0
+Genmab,Morgan Stanley,2023-06-12 13:56:39,Underweight,,reit,33.0,0.0,GMAB.CO,yahoo,-1,-0.2985185185185185,False,True,1.0
+Genmab,HC Wainwright & Co.,2023-06-14 10:19:47,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.31557223264540335,False,True,0.0
+Genmab,Morgan Stanley,2023-06-20 13:04:43,Underweight,,reit,33.0,0.0,GMAB.CO,yahoo,-1,-0.32707774798927614,False,True,1.0
+Genmab,HC Wainwright & Co.,2023-06-26 10:18:45,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.30781069642170067,False,True,0.0
+Genmab,Morgan Stanley,2023-06-26 13:24:59,Underweight,Underweight,reit,33.0,33.0,GMAB.CO,yahoo,-1,-0.30781069642170067,False,True,1.0
+Genmab,HC Wainwright & Co.,2023-06-28 10:10:02,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.29731331489529833,False,True,0.0
+Genmab,Truist Securities,2023-07-11 12:12:02,Buy,Buy,reit,54.0,0.0,GMAB.CO,yahoo,1,-0.31027745212973823,False,True,0.0
+Genmab,Morgan Stanley,2023-07-17 13:48:29,Underweight,Underweight,reit,33.0,33.0,GMAB.CO,yahoo,-1,-0.31943410275502604,False,True,1.0
+Genmab,Morgan Stanley,2023-07-24 13:17:28,Underweight,Underweight,reit,33.0,33.0,GMAB.CO,yahoo,-1,-0.29101707498144025,False,True,1.0
+Genmab,HC Wainwright & Co.,2023-07-31 10:14:00,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.3015787585217079,False,True,0.0
+Genmab,Morgan Stanley,2023-07-31 13:27:24,Underweight,Underweight,reit,33.0,33.0,GMAB.CO,yahoo,-1,-0.3015787585217079,False,True,1.0
+Genmab,Morgan Stanley,2023-08-01 15:22:04,Underweight,Underweight,reit,33.0,33.0,GMAB.CO,yahoo,-1,-0.28414500183083125,False,True,1.0
+Genmab,HC Wainwright & Co.,2023-08-04 11:05:39,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.24278941129988152,False,True,0.0
+Genmab,Morgan Stanley,2023-08-04 17:00:04,Underweight,Underweight,reit,33.0,33.0,GMAB.CO,yahoo,-1,-0.24278941129988152,False,True,1.0
+Genmab,HC Wainwright & Co.,2023-08-15 10:53:08,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.28159557661927326,False,True,0.0
+Genmab,BTIG,2023-08-24 10:32:33,Buy,,init,44.0,0.0,GMAB.CO,yahoo,1,-0.29524361948955913,False,True,0.0
+Genmab,HC Wainwright & Co.,2023-09-05 10:13:18,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.29830827067669174,False,True,0.0
+Genmab,Truist Securities,2023-09-06 16:08:23,Buy,Buy,reit,54.0,0.0,GMAB.CO,yahoo,1,-0.2829680891964629,False,True,0.0
+Genmab,Truist Securities,2023-09-26 16:11:00,Buy,Buy,reit,54.0,0.0,GMAB.CO,yahoo,1,-0.375,False,True,0.0
+Novo Nordisk,Argus Research,2023-10-02 14:28:04,Buy,,init,110.0,0.0,NOVO-B.CO,yahoo,1,0.26736856476965665,True,True,1.0
+Genmab,BTIG,2023-10-13 15:43:15,Buy,Buy,main,46.0,44.0,GMAB.CO,yahoo,1,-0.2915194346289752,False,True,0.0
+Genmab,HC Wainwright & Co.,2023-10-18 10:57:48,Buy,Buy,reit,51.0,0.0,GMAB.CO,yahoo,1,-0.24205967276227136,False,True,0.0
+Genmab,HC Wainwright & Co.,2023-11-08 13:16:06,Buy,Buy,main,49.0,51.0,GMAB.CO,yahoo,1,-0.2702020202020202,False,True,0.0
+Genmab,Morgan Stanley,2023-11-09 14:07:18,Underweight,Underweight,main,32.0,33.0,GMAB.CO,yahoo,-1,-0.27471526195899776,False,True,1.0
+Genmab,HC Wainwright & Co.,2023-11-20 16:40:46,Buy,Buy,reit,49.0,0.0,GMAB.CO,yahoo,1,-0.34864864864864864,False,True,0.0
+Genmab,HC Wainwright & Co.,2023-11-28 12:05:31,Buy,Buy,reit,49.0,0.0,GMAB.CO,yahoo,1,-0.2780203784570596,False,True,0.0
+Novo Nordisk,Argus Research,2023-12-01 11:40:47,Buy,Buy,main,115.0,110.0,NOVO-B.CO,yahoo,1,0.09590119599945668,True,True,1.0
+Novo Nordisk,Cantor Fitzgerald,2023-12-01 13:47:51,Overweight,,init,120.0,0.0,NOVO-B.CO,yahoo,1,0.09590119599945668,True,True,1.0
+Novo Nordisk,TD Cowen,2023-12-04 17:25:18,Outperform,Outperform,main,115.0,105.0,NOVO-B.CO,yahoo,1,0.14270958399677003,True,True,1.0
+Novo Nordisk,Morgan Stanley,2024-01-23 10:36:58,Overweight,,init,120.0,0.0,NOVO-B.CO,yahoo,1,-0.18450172572670076,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-01-29 11:39:01,Buy,Buy,main,50.0,49.0,GMAB.CO,yahoo,1,-0.2898776997137653,False,True,0.0
+Novo Nordisk,Argus Research,2024-02-01 11:27:45,Buy,Buy,main,125.0,115.0,NOVO-B.CO,yahoo,1,-0.21917461394784588,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-02-01 17:04:12,Overweight,Overweight,main,140.0,120.0,NOVO-B.CO,yahoo,1,-0.21917461394784588,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-02-14 16:32:38,Overweight,Overweight,reit,140.0,0.0,NOVO-B.CO,yahoo,1,-0.32426179934712995,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-02-15 14:18:22,Overweight,Overweight,reit,140.0,0.0,NOVO-B.CO,yahoo,1,-0.3356648389816972,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-02-20 12:20:21,Buy,Buy,reit,50.0,0.0,GMAB.CO,yahoo,1,-0.21939546599496218,False,True,0.0
+Genmab,Truist Securities,2024-02-20 14:25:52,Buy,Buy,reit,50.0,54.0,GMAB.CO,yahoo,1,-0.21939546599496218,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-02-20 17:42:11,Overweight,Overweight,reit,140.0,0.0,NOVO-B.CO,yahoo,1,-0.283609207732457,False,True,0.0
+Genmab,BMO Capital,2024-02-23 10:55:43,Outperform,Market Perform,up,48.0,46.0,GMAB.CO,yahoo,1,-0.21361152508693493,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-03-06 13:02:56,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.17392398691165367,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-03-08 17:35:54,Overweight,Overweight,main,160.0,140.0,NOVO-B.CO,yahoo,1,-0.33233887218876557,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-03-20 12:54:04,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.3898649830689195,False,True,0.0
+Genmab,Truist Securities,2024-03-26 13:26:52,Buy,Buy,main,50.0,50.0,GMAB.CO,yahoo,1,-0.36218250235183447,False,True,0.0
+Genmab,Morgan Stanley,2024-03-26 15:03:00,Underweight,Underweight,main,32.0,32.0,GMAB.CO,yahoo,-1,-0.36218250235183447,False,True,1.0
+Genmab,HC Wainwright & Co.,2024-03-27 10:28:35,Buy,Buy,main,50.0,50.0,GMAB.CO,yahoo,1,-0.3286948176583493,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-04-01 12:38:28,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.4452676468009885,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-04-04 15:24:23,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.39947216890595005,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-04-05 13:31:33,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.49173988498908905,False,True,0.0
+Novo Nordisk,BMO Capital,2024-04-12 09:13:39,Outperform,,init,163.0,0.0,NOVO-B.CO,yahoo,1,-0.5125293793057668,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-04-18 13:58:46,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.5016300709645211,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-04-30 10:20:27,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.2895476616406849,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-05-03 19:57:45,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.31028626880155263,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-05-20 10:25:16,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.3439490445859873,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-06-03 10:32:46,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.28180189403634504,False,True,0.0
+Genmab,Truist Securities,2024-06-04 12:53:01,Buy,Buy,main,53.0,50.0,GMAB.CO,yahoo,1,-0.2575483870967742,False,True,0.0
+Novo Nordisk,Argus Research,2024-06-10 12:43:14,Buy,Buy,main,160.0,125.0,NOVO-B.CO,yahoo,1,-0.4632460337903287,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-06-17 17:24:23,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.4920230835898095,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-06-20 10:40:56,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.23372287145242066,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-06-20 17:01:29,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.5113508227995918,False,True,0.0
+Novo Nordisk,BMO Capital,2024-06-25 16:40:25,Outperform,Outperform,main,163.0,163.0,NOVO-B.CO,yahoo,1,-0.5678670424234538,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-06-27 10:29:38,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.26370536969356195,False,True,0.0
+Genmab,BTIG,2024-06-27 11:59:50,Buy,Buy,main,47.0,46.0,GMAB.CO,yahoo,1,-0.26370536969356195,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-07-01 15:15:27,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.5546519012726031,False,True,0.0
+Genmab,RBC Capital,2024-07-15 10:02:43,Outperform,Sector Perform,up,0.0,0.0,GMAB.CO,yahoo,1,-0.24765063571033719,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-07-18 12:31:19,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.23332433162300836,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-08-01 10:05:53,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.29486527707168275,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-08-05 18:03:28,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.6321277930934723,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-08-06 11:28:19,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.23436196830692246,False,True,0.0
+Novo Nordisk,BMO Capital,2024-08-08 15:52:08,Outperform,Outperform,main,160.0,170.0,NOVO-B.CO,yahoo,1,-0.6183830350705914,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-08-09 21:22:54,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.23434903047091415,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-08-19 16:25:40,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.60869608889848,False,True,0.0
+Genmab,JP Morgan,2024-08-20 10:35:52,Neutral,Overweight,down,0.0,0.0,GMAB.CO,yahoo,0,-0.15215600109859928,False,False,
+Genmab,HC Wainwright & Co.,2024-08-20 11:05:42,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.15215600109859928,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-08-27 10:21:38,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.14769065520945224,False,True,0.0
+Genmab,Truist Securities,2024-09-09 13:55:55,Buy,Buy,main,50.0,53.0,GMAB.CO,yahoo,1,-0.051496360204907,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-09-09 15:49:14,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.6072304490458424,False,True,0.0
+Genmab,Morgan Stanley,2024-09-11 15:33:33,Equal-Weight,Equal-Weight,main,31.0,31.0,GMAB.CO,yahoo,0,0.006909894969596486,True,False,
+Genmab,HC Wainwright & Co.,2024-09-13 10:58:54,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,0.0,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-09-16 11:33:16,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,-0.0011258091753447719,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-09-16 16:21:43,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.5994252265169999,False,True,0.0
+Genmab,HC Wainwright & Co.,2024-09-20 10:40:46,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,0.05393586005830908,True,True,1.0
+Novo Nordisk,Cantor Fitzgerald,2024-09-20 14:01:44,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.5297486099255275,False,True,0.0
+Novo Nordisk,Jefferies,2024-10-10 13:36:24,Buy,,init,15.0,0.0,NOVO-B.CO,yahoo,1,-0.5168467189342667,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-10-10 15:17:07,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.5168467189342667,False,True,0.0
+Novo Nordisk,BMO Capital,2024-10-14 16:54:31,Market Perform,Market Perform,main,10.0,9.0,NOVO-B.CO,yahoo,0,-0.5477147932784567,False,False,
+Genmab,HC Wainwright & Co.,2024-10-16 11:09:54,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,0.3736723527518506,True,True,1.0
+Novo Nordisk,Barclays,2024-10-16 20:04:36,Overweight,Overweight,main,10.0,12.0,NOVO-B.CO,yahoo,1,-0.5312907353011691,False,True,0.0
+Novo Nordisk,BMO Capital,2024-10-17 13:56:38,Outperform,Outperform,main,156.0,160.0,NOVO-B.CO,yahoo,1,-0.5683939216678868,False,True,0.0
+Novo Nordisk,Citigroup,2024-10-22 17:09:23,Buy,Buy,main,10.0,12.0,NOVO-B.CO,yahoo,1,-0.5589607855665095,False,True,0.0
+Novo Nordisk,Cantor Fitzgerald,2024-11-06 14:51:24,Overweight,Overweight,reit,160.0,160.0,NOVO-B.CO,yahoo,1,-0.5787477484433097,False,True,0.0
+Genmab,BMO Capital,2024-11-08 15:29:50,Outperform,Outperform,reit,48.0,46.0,GMAB.CO,yahoo,1,0.16048994974874375,True,True,1.0
+Novo Nordisk,BMO Capital,2024-12-23 12:57:15,Outperform,Outperform,main,105.0,156.0,NOVO-B.CO,yahoo,1,-0.45224531159702996,False,True,0.0
+Genmab,HC Wainwright & Co.,2025-01-08 14:10:55,Buy,Buy,main,50.0,50.0,GMAB.CO,yahoo,1,0.34417005314160676,True,True,1.0
+Novo Nordisk,UBS,2025-01-08 14:21:11,Buy,Sell,up,0.0,0.0,NOVO-B.CO,yahoo,1,-0.38508194208679436,False,True,0.0
+Genmab,HC Wainwright & Co.,2025-01-22 12:07:12,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,0.40264900662251657,True,True,1.0
+Genmab,HC Wainwright & Co.,2025-01-23 12:07:12,Buy,Buy,reit,50.0,50.0,GMAB.CO,yahoo,1,0.40873015873015883,True,True,1.0
+Genmab,Leerink Partners,2025-02-13 12:20:21,Outperform,Market Perform,up,27.0,0.0,GMAB.CO,yahoo,1,0.2781879194630872,True,True,1.0
+Genmab,William Blair,2025-03-11 15:20:54,Outperform,Market Perform,up,0.0,0.0,GMAB.CO,yahoo,1,0.27098408104196814,True,True,1.0
+Genmab,Truist Securities,2025-03-11 16:35:38,Buy,Buy,main,45.0,50.0,GMAB.CO,yahoo,1,0.27098408104196814,True,True,1.0
+Genmab,HC Wainwright & Co.,2025-04-09 11:43:55,Buy,Buy,reit,37.0,50.0,GMAB.CO,yahoo,1,0.5425759520753102,True,True,1.0
+Novo Nordisk,BMO Capital,2025-04-17 10:59:51,Market Perform,Outperform,down,64.0,105.0,NOVO-B.CO,yahoo,0,-0.353042855744517,False,False,
+Genmab,HC Wainwright & Co.,2025-05-13 15:37:29,Buy,Buy,main,35.0,37.0,GMAB.CO,yahoo,1,0.3259842519685039,True,True,1.0
+Novo Nordisk,TD Cowen,2025-06-18 22:06:53,Buy,Buy,reit,105.0,105.0,NOVO-B.CO,yahoo,1,,False,True,
+Genmab,Truist Securities,2025-07-08 15:57:39,Buy,Buy,main,46.0,45.0,GMAB.CO,yahoo,1,,False,True,
+Novo Nordisk,Barclays,2025-07-30 11:18:03,Equal-Weight,Overweight,down,0.0,0.0,NOVO-B.CO,yahoo,0,,False,False,
+Novo Nordisk,HSBC,2025-07-31 17:30:15,Hold,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,,False,False,
+Novo Nordisk,UBS,2025-08-05 11:12:14,Neutral,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,,False,False,
+Genmab,HC Wainwright & Co.,2025-08-15 11:42:44,Buy,Buy,main,36.0,35.0,GMAB.CO,yahoo,1,,False,True,
+Novo Nordisk,TD Cowen,2025-08-19 14:03:25,Buy,Buy,main,70.0,105.0,NOVO-B.CO,yahoo,1,,False,True,
+Novo Nordisk,Berenberg,2025-09-17 17:18:26,Buy,Hold,up,0.0,0.0,NOVO-B.CO,yahoo,1,,False,True,
+Genmab,Guggenheim,2025-09-23 12:40:10,Buy,Neutral,up,43.0,0.0,GMAB.CO,yahoo,1,,False,True,
+Genmab,Guggenheim,2025-09-24 13:07:45,Buy,Neutral,up,43.0,0.0,GMAB.CO,yahoo,1,,False,True,
+Novo Nordisk,Morgan Stanley,2025-09-29 11:35:46,Underweight,Equal-Weight,down,47.0,59.0,NOVO-B.CO,yahoo,-1,,False,True,
+Genmab,HC Wainwright & Co.,2025-10-02 13:38:31,Buy,Buy,main,40.0,36.0,GMAB.CO,yahoo,1,,False,True,
+Novo Nordisk,HSBC,2025-10-02 13:52:45,Buy,Hold,up,70.0,0.0,NOVO-B.CO,yahoo,1,,False,True,
+Novo Nordisk,BMO Capital,2025-10-14 18:01:34,Market Perform,Market Perform,main,55.0,50.0,NOVO-B.CO,yahoo,0,,False,False,
+Genmab,HC Wainwright & Co.,2025-10-15 10:28:14,Buy,Buy,reit,40.0,40.0,GMAB.CO,yahoo,1,,False,True,
+Genmab,Truist Securities,2025-11-07 16:07:37,Buy,Buy,reit,48.0,49.0,GMAB.CO,yahoo,1,,False,True,
+Genmab,HC Wainwright & Co.,2025-11-10 11:47:46,Buy,Buy,main,41.0,40.0,GMAB.CO,yahoo,1,,False,True,
+Novo Nordisk,HSBC,2025-11-24 15:52:36,Hold,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,,False,False,
+Novo Nordisk,BMO Capital,2025-11-25 13:21:01,Market Perform,Market Perform,main,46.0,50.0,NOVO-B.CO,yahoo,0,,False,False,
+Novo Nordisk,Goldman Sachs,2025-11-28 13:32:27,Buy,Buy,main,54.0,60.0,NOVO-B.CO,yahoo,1,,False,True,
+Novo Nordisk,Argus Research,2025-12-08 13:20:13,Hold,Buy,down,0.0,0.0,NOVO-B.CO,yahoo,0,,False,False,
+Novo Nordisk,CICC,2026-01-09 12:41:38,Outperform,,init,73.5,0.0,NOVO-B.CO,yahoo,1,,False,True,
+Genmab,HC Wainwright & Co.,2026-01-20 11:40:01,Buy,Buy,main,39.0,41.0,GMAB.CO,yahoo,1,,False,True,
+Genmab,HC Wainwright & Co.,2026-01-28 13:42:32,Buy,Buy,reit,39.0,39.0,GMAB.CO,yahoo,1,,False,True,
+Genmab,HC Wainwright & Co.,2026-02-18 12:03:29,Buy,Buy,main,40.0,39.0,GMAB.CO,yahoo,1,,False,True,
+Genmab,Guggenheim,2026-02-23 16:58:39,Buy,Buy,main,40.0,45.0,GMAB.CO,yahoo,1,,False,True,
+Novo Nordisk,JP Morgan,2026-02-24 11:41:15,Neutral,Overweight,down,0.0,0.0,NOVO-B.CO,yahoo,0,,False,False,
+Novo Nordisk,Goldman Sachs,2026-03-02 12:00:56,Neutral,Buy,down,41.0,63.0,NOVO-B.CO,yahoo,0,,False,False,
+Genmab,Wells Fargo,2026-03-02 14:14:29,Overweight,,init,40.0,0.0,GMAB.CO,yahoo,1,,False,True,
+Genmab,Wolfe Research,2026-03-27 11:56:47,Outperform,,init,32.0,0.0,GMAB.CO,yahoo,1,,False,True,
+Genmab,HC Wainwright & Co.,2026-04-30 10:21:07,Buy,Buy,main,38.0,40.0,GMAB.CO,yahoo,1,,False,True,
