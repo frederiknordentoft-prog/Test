@@ -89,7 +89,7 @@
     <div id="scores"></div>
     <div id="timer">1:30</div>
     <div id="banner"></div>
-    <div id="reminder">Egen farve er sikker · Kør på modstanderens farve = død · Bliver din åbne streg krydset, dør du</div>
+    <div id="reminder">ÉT LIV · Egen farve er sikker · Kør på modstanderens farve = død · Krydses din åbne streg, dør du · Først til 50 % vinder</div>
   </div>
 
   <!-- LOBBY -->
@@ -190,7 +190,7 @@
 "use strict";
 //================= Konstanter =================
 const W=64,H=40,TOTAL=W*H;
-const WIN_RATIO=0.60, ROUND_TIME=90, STEP_SPEED=8;
+const WIN_RATIO=0.50, ROUND_TIME=120, STEP_SPEED=8;
 const DIRS=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
 const COLORS=['#00e5ff','#ff3d7f','#4dff7c','#ffb020'];
 const NAMES =['Cyan','Magenta','Grøn','Gul'];
@@ -313,18 +313,16 @@ function simulate(){
     if(owner[ni]===p.id){ if(p.trailCells.length>0) capture(p); }
     else if(owner[ni]===0 && trail[ni]!==p.id){ trail[ni]=p.id; p.trailCells.push(ni); }
   }
-  checkRoundWin();
+  checkRoundEnd();
 }
 function killPlayer(p){
+  if(!p.alive) return;
+  // ÉT LIV: død = elimineret. Stregen ryddes, men erobret land bliver frosset og tæller stadig.
   for(const c of p.trailCells) if(trail[c]===p.id) trail[c]=0;
   p.trailCells.length=0;
   spawnBurst((p.cx+0.5)*CELL,(p.cy+0.5)*CELL,p.color);
-  if(p.id===G.myId) shakeMag=Math.max(shakeMag,12);
-  if(p.base){ p.cx=p.prevX=p.base.x; p.cy=p.prevY=p.base.y; }
-  // sikr en base hvis den skulle mangle
-  if(owner[idx(p.cx,p.cy)]!==p.id) paintBase(p.cx,p.cy,p.id,2);
-  p.dir={...outwardDir(p.cx,p.cy)}; p.pendingDir={...p.dir}; p.netDir=null;
-  p.alive=true;
+  if(p.id===G.myId) shakeMag=Math.max(shakeMag,14);
+  p.alive=false; p.eliminated=true; p.netDir=null;
 }
 function outwardDir(x,y){
   const dx=(W/2)-x, dy=(H/2)-y;
@@ -358,7 +356,7 @@ function nearestOwn(p){ let b=null,bd=1e9;
   return b||{x:p.base.x,y:p.base.y};
 }
 function aiPickExpand(p){
-  for(let t=0;t<26;t++){ const dist=5+(Math.random()*8|0),a=Math.random()*6.283;
+  for(let t=0;t<26;t++){ const dist=7+(Math.random()*11|0),a=Math.random()*6.283;   // større, mere risikable løkker
     let tx=Math.round(p.cx+Math.cos(a)*dist),ty=Math.round(p.cy+Math.sin(a)*dist);
     tx=Math.max(1,Math.min(W-2,tx)); ty=Math.max(1,Math.min(H-2,ty));
     if(owner[idx(tx,ty)]===0){ p.tx=tx;p.ty=ty;p.phase='out';return; } }
@@ -376,13 +374,13 @@ function aiGreedy(p,tx,ty){
 }
 function aiDecide(p){
   if(p.tx===undefined){ p.tx=p.cx;p.ty=p.cy;p.phase='out'; }
-  if(p.trailCells.length>24 && p.phase!=='home') aiHome(p);
-  // aggression mod nærmeste eksponerede streg
-  if(p.trailCells.length<10){
+  if(p.trailCells.length>38 && p.phase!=='home') aiHome(p);     // venter længere før hjem = mere risiko
+  // aggression: jagter modstanderes eksponerede streg mere ihærdigt og på længere afstand
+  if(p.trailCells.length<16){
     let best=null,bd=1e9;
     for(const o of G.players){ if(o.id===p.id||!o.alive)continue;
       for(const c of o.trailCells){ const x=c%W,y=(c/W)|0,d=Math.abs(x-p.cx)+Math.abs(y-p.cy); if(d<bd){bd=d;best={x,y};} } }
-    if(best&&bd<12){ p.tx=best.x;p.ty=best.y;p.phase='attack'; }
+    if(best&&bd<18){ p.tx=best.x;p.ty=best.y;p.phase='attack'; }
   }
   if(p.cx===p.tx&&p.cy===p.ty){ if(p.phase==='out'||p.phase==='attack')aiHome(p); else p.phase='pick'; }
   if(p.phase==='pick'||(p.phase==='home'&&onOwn(p)&&p.trailCells.length===0)){ if(onOwn(p))aiPickExpand(p); else aiHome(p); }
@@ -440,12 +438,13 @@ function aiAutoPick(p){
 }
 function startPlay(){
   for(const p of G.players){ p.cx=p.prevX=p.base.x; p.cy=p.prevY=p.base.y;
-    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.netDir=null; }
+    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; }
   recount(); G.phase='play'; timeLeft=ROUND_TIME; acc=0; G.aiPickTimer=0;
   showHUD(); flashBanner(''); netBroadcast(true);
 }
-function checkRoundWin(){
-  for(const p of G.players){ if(counts[p.id]/TOTAL>=WIN_RATIO){ endRound(p.id); return; } }
+function checkRoundEnd(){
+  for(const p of G.players){ if(counts[p.id]/TOTAL>=WIN_RATIO){ endRound(p.id); return; } } // 50% = vundet banen
+  if(G.players.every(p=>!p.alive)){ endRound(null); }                                       // alle døde
 }
 function endRound(winnerId){
   if(G.phase!=='play') return;
@@ -572,7 +571,7 @@ function joinRoom(code){
 }
 function netSend(obj){ if(G.hostConn&&G.hostConn.open) G.hostConn.send(obj); }
 function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
-  const ps=G.players.map(p=>({id:p.id,kind:p.kind,alive:p.alive,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
+  const ps=G.players.map(p=>({id:p.id,kind:p.kind,alive:p.alive,el:p.eliminated,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
     dx:p.dir.x,dy:p.dir.y,rw:p.roundWins,base:p.base,tlen:p.trailCells.length}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
     tl:timeLeft,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
@@ -590,7 +589,7 @@ function clientOnData(d){
   owner.set(d.ow); trail.set(d.tg);
   // spillere
   G.players=d.ps.map(s=>{ let p=playerById(s.id)||makePlayer(s.id,s.kind);
-    p.prevX=s.px;p.prevY=s.py;p.cx=s.cx;p.cy=s.cy;p.dir={x:s.dx,y:s.dy};p.alive=s.alive;p.roundWins=s.rw;p.base=s.base;p.kind=s.kind;
+    p.prevX=s.px;p.prevY=s.py;p.cx=s.cx;p.cy=s.cy;p.dir={x:s.dx,y:s.dy};p.alive=s.alive;p.eliminated=s.el;p.roundWins=s.rw;p.base=s.base;p.kind=s.kind;
     p.trailCells.length=Math.max(0,s.tlen); return p; });
   clientSnapAt=performance.now();
   // UI-skift afhængig af fase
@@ -624,7 +623,8 @@ function updateHUDLive(){
   for(const p of G.players){
     const pct=counts[p.id]/TOTAL*100;
     const f=document.getElementById('pf'+p.id), c=document.getElementById('pc'+p.id), r=document.getElementById('rw'+p.id);
-    if(f)f.style.width=pct.toFixed(1)+'%'; if(c)c.textContent=Math.round(pct)+'%'; if(r)r.textContent=p.roundWins;
+    if(f){ f.style.width=pct.toFixed(1)+'%'; f.style.opacity=p.eliminated?0.45:1; }
+    if(c)c.textContent=(p.eliminated?'💀 ':'')+Math.round(pct)+'%'; if(r)r.textContent=p.roundWins;
   }
   const s=Math.max(0,Math.ceil(timeLeft));
   document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
