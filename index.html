@@ -26,12 +26,12 @@
   /* HUD */
   #hud{position:absolute;top:34px;left:0;right:0;display:flex;flex-direction:column;align-items:center;
     gap:6px;padding:8px 12px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.7);}
-  #scores{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;align-items:center;
-    width:min(760px,96vw);}
-  .pscore{display:flex;flex-direction:column;gap:2px;min-width:84px;flex:1;}
-  .pscore .lbl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;letter-spacing:.03em;}
-  .pscore .trk{height:8px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden;}
-  .pscore .fil{height:100%;width:0%;border-radius:5px;transition:width .12s linear;}
+  #scores{display:flex;flex-direction:column;align-items:center;gap:6px;width:min(680px,94vw);}
+  #segbar{display:flex;width:100%;height:13px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.08);}
+  #segbar .seg{height:100%;width:0%;transition:width .15s linear;}
+  #legend{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:12px;font-weight:700;}
+  #legend .lgc{display:flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;}
+  #legend .dot{width:9px;height:9px;border-radius:3px;}
   #timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:20px;letter-spacing:.02em;}
   #banner{font-size:14px;font-weight:700;text-align:center;min-height:18px;}
   #reminder{font-size:12.5px;opacity:.7;text-align:center;max-width:94vw;line-height:1.5;padding:2px 4px;}
@@ -60,6 +60,33 @@
   button:hover{transform:translateY(-2px);}
   button:active{transform:translateY(0);}
   button.sec{background:rgba(255,255,255,.12);color:var(--ink);box-shadow:none;}
+  /* ---- Apple-agtig menu ---- */
+  .menu{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(440px,94vw);padding:34px 0 24px;}
+  .modecard{display:flex;flex-direction:column;gap:10px;width:100%;}
+  .moderow{display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--ink);
+    border-radius:18px;padding:14px 16px;box-shadow:none;transition:transform .08s,background .2s,border-color .2s;}
+  .moderow:hover{transform:translateY(-1px);background:rgba(255,255,255,.1);border-color:rgba(0,229,255,.4);}
+  .moderow .mi{font-size:25px;width:34px;text-align:center;}
+  .moderow .mtxt{flex:1;display:flex;flex-direction:column;gap:2px;}
+  .moderow .mtxt b{font-size:17px;font-weight:800;}
+  .moderow .mtxt small{font-size:12.5px;opacity:.6;font-weight:500;}
+  .moderow .mch{font-size:24px;opacity:.4;}
+  .settoggle{display:flex;justify-content:space-between;align-items:center;width:100%;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--ink);
+    border-radius:14px;padding:11px 16px;font-size:14px;font-weight:700;box-shadow:none;}
+  .settoggle:hover{transform:none;background:rgba(255,255,255,.08);}
+  .settings{width:100%;display:flex;flex-direction:column;gap:9px;background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:13px 15px;}
+  .settings.hidden{display:none;}
+  .setrow{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:30px;}
+  .setlbl{font-size:14px;font-weight:600;}
+  .segctl{display:inline-flex;background:rgba(0,0,0,.32);border-radius:999px;padding:3px;gap:2px;}
+  .segctl button{background:transparent;color:var(--ink);box-shadow:none;border-radius:999px;padding:6px 13px;font-size:13px;font-weight:700;}
+  .segctl button:hover{transform:none;}
+  .segctl button.act{background:var(--p1);color:#06121a;}
+  .lbcard{width:100%;}
+  .cardhdr{font-size:11px;letter-spacing:.12em;opacity:.55;text-transform:uppercase;font-weight:700;}
   button.sm{padding:8px 16px;font-size:15px;}
   button.round{width:42px;height:42px;padding:0;border-radius:50%;font-size:22px;background:rgba(255,255,255,.12);color:var(--ink);box-shadow:none;}
   button[disabled]{opacity:.4;cursor:not-allowed;transform:none;}
@@ -140,46 +167,43 @@
 
   <!-- LOBBY -->
   <div id="lobby" class="overlay">
+   <div class="menu">
     <h1>TERRITORIEDUEL</h1>
-    <div class="tag">Tegn løkker, erobr land. Først til 50 % – eller flest felter når tiden er gået.</div>
-    <div class="card">
-      <div class="row">
-        <button id="modeLocal">Lokalt spil</button>
-        <button id="modeHost" class="sec">Online: Opret</button>
-        <button id="modeJoin" class="sec">Online: Deltag</button>
-      </div>
-      <div class="hint">
-        <b>Lokalt:</b> spil på denne enhed (flere kan dele tastatur på computer; på mobil dig + evt. AI).<br>
-        <b>Online:</b> spil fra hver sin enhed via en delt rum-kode.
-      </div>
-      <div class="row" style="gap:16px;margin-top:2px">
-        <div class="toggle on" id="tgMusic"><div class="sw"></div><span>🎵 Musik</span></div>
-        <div class="toggle on" id="tgSound"><div class="sw"></div><span>🔊 Lyd</span></div>
-        <div class="toggle" id="tgHard"><div class="sw"></div><span>🔥 Svær AI</span></div>
-      </div>
-      <div class="row" style="gap:8px;font-size:12px;margin-top:2px">
-        <span style="opacity:.7">Tempo:</span>
-        <button class="sm sec spd" data-spd="slow">Langsom</button>
-        <button class="sm sec spd act" data-spd="normal">Normal</button>
-        <button class="sm sec spd" data-spd="fast">Hurtig</button>
-      </div>
-      <div class="row" style="gap:16px;margin-top:2px">
-        <div class="toggle" id="tgPowerups"><div class="sw"></div><span>💥 Power-ups</span></div>
-        <div class="toggle on" id="tgStorm"><div class="sw"></div><span>🌀 Storm</span></div>
-      </div>
-      <div id="fxInfo" class="hint" style="text-align:left;font-size:12px;line-height:1.5"></div>
-      <div class="row" style="gap:8px;font-size:12px">
-        <span style="opacity:.7">Tema:</span>
-        <button class="sm sec thm act" data-thm="standard">Standard</button>
-        <button class="sm sec thm" data-thm="cb">Farveblind</button>
-      </div>
+    <div class="tag">Tegn løkker · erobr land · kryds modstanderens streg</div>
+
+    <div class="modecard">
+      <button class="moderow" id="modeLocal"><span class="mi">🎮</span><span class="mtxt"><b>Lokalt spil</b><small>På denne enhed · 2–8 spillere</small></span><span class="mch">›</span></button>
+      <button class="moderow" id="modeHost"><span class="mi">🌐</span><span class="mtxt"><b>Opret online-spil</b><small>Få en kode · spil fra hver sin enhed</small></span><span class="mch">›</span></button>
+      <button class="moderow" id="modeJoin"><span class="mi">🔗</span><span class="mtxt"><b>Deltag online</b><small>Indtast en delt rum-kode</small></span><span class="mch">›</span></button>
     </div>
-    <div class="card" id="lbCard" style="padding:12px 16px;gap:8px">
-      <div style="font-size:11px;letter-spacing:.1em;opacity:.55;text-transform:uppercase">🏆 Leaderboard · sejre</div>
-      <div class="standings" id="lobbyLeader" style="width:min(360px,90vw)"></div>
-      <div id="lobbyStats" style="font-size:12px;opacity:.7;text-align:center"></div>
+
+    <button class="settoggle" id="setBtn"><span>⚙︎ Indstillinger</span><span id="setChevron">▾</span></button>
+    <div id="settingsBody" class="settings hidden">
+      <div class="setrow"><span class="setlbl">Tempo</span>
+        <div class="segctl">
+          <button class="spd" data-spd="slow">Langsom</button>
+          <button class="spd act" data-spd="normal">Normal</button>
+          <button class="spd" data-spd="fast">Hurtig</button>
+        </div></div>
+      <div class="setrow"><span class="setlbl">Tema</span>
+        <div class="segctl">
+          <button class="thm act" data-thm="standard">Standard</button>
+          <button class="thm" data-thm="cb">Farveblind</button>
+        </div></div>
+      <div class="setrow"><span class="setlbl">🔥 Svær AI</span><div class="toggle" id="tgHard"><div class="sw"></div></div></div>
+      <div class="setrow"><span class="setlbl">💥 Power-ups</span><div class="toggle" id="tgPowerups"><div class="sw"></div></div></div>
+      <div class="setrow"><span class="setlbl">🌀 Storm</span><div class="toggle on" id="tgStorm"><div class="sw"></div></div></div>
+      <div class="setrow"><span class="setlbl">🔊 Lydeffekter</span><div class="toggle on" id="tgSound"><div class="sw"></div></div></div>
+      <div class="setrow"><span class="setlbl">🎵 Musik</span><div class="toggle on" id="tgMusic"><div class="sw"></div></div></div>
+      <div id="fxInfo" class="hint" style="text-align:left;font-size:12px;line-height:1.5;margin-top:2px"></div>
     </div>
-    <div class="credit">Territorieduel</div>
+
+    <div class="card lbcard">
+      <div class="cardhdr">🏆 Leaderboard</div>
+      <div class="standings" id="lobbyLeader"></div>
+      <div id="lobbyStats" style="font-size:12px;opacity:.7;text-align:center;margin-top:2px"></div>
+    </div>
+   </div>
   </div>
 
   <!-- LOCAL SETUP -->
@@ -267,11 +291,12 @@ const W=58,H=36,TOTAL=W*H;
 const WIN_RATIO=0.50, ROUND_TIME=90, STORM_T=20;
 const SPEEDS={slow:5, normal:6.5, fast:8};
 const DIRS=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
-const PALETTES={ standard:['#00e5ff','#ff3d7f','#4dff7c','#ffb020'], cb:['#3aa0ff','#ff9e1a','#ffe24a','#bd7bff'] };
+const PALETTES={ standard:['#00e5ff','#ff3d7f','#4dff7c','#ffb020','#9b6bff','#ff6a3d','#19e6c3','#f5f53a'],
+                 cb:['#56b4e9','#e69f00','#009e73','#f0e442','#0072b2','#d55e00','#cc79a7','#bdbdbd'] };
 let COLORS=PALETTES.standard.slice();
 const PU_TYPES=['shield','freeze','ghost'];
 const PU_ICON={shield:'🛡️',freeze:'❄️',ghost:'👻'};
-const NAMES =['Cyan','Magenta','Grøn','Gul'];
+const NAMES =['Cyan','Pink','Grøn','Amber','Violet','Orange','Teal','Gul'];
 const DIFF={ normal:{hunt:16,threat:3,maxTrail:56,loopMin:6,loopRand:6,attackTrail:13},
              hard:  {hunt:24,threat:2,maxTrail:72,loopMin:8,loopRand:7,attackTrail:20} };
 const idx=(x,y)=>x+y*W;
@@ -282,7 +307,7 @@ const owner=new Int8Array(TOTAL);   // 0 tom, 1..4 ejer
 const trail=new Int8Array(TOTAL);   // 0 ingen, 1..4 hale-ejer
 const fillAge=new Float32Array(TOTAL);
 const reach=new Uint8Array(TOTAL);
-let counts=[0,0,0,0,0];             // index by id (0 ubrugt)
+let counts=new Array(9).fill(0);    // index by id (0 ubrugt), op til 8 spillere
 let now=0, acc=0, timeLeft=ROUND_TIME, shakeMag=0;
 let particles=[], floatTexts=[], powerups=[], powerSpawnT=0;
 let flashA=0, flashC='#ffffff';
@@ -335,7 +360,7 @@ function paintBase(cx,cy,id,r){
     if(inB(x,y)){ owner[idx(x,y)]=id; trail[idx(x,y)]=0; fillAge[idx(x,y)]=-99999; }
 }
 function recount(){
-  counts=[0,0,0,0,0];
+  counts=new Array(9).fill(0);
   for(let i=0;i<TOTAL;i++) counts[owner[i]]++;
 }
 function playerById(id){ for(const p of G.players) if(p.id===id) return p; return null; }
@@ -681,7 +706,8 @@ function beginRound(){
 }
 function validPick(x,y){
   if(x<3||y<3||x>W-4||y>H-4) return false;
-  for(const p of G.players){ if(p.base){ if(Math.abs(p.base.x-x)<10 && Math.abs(p.base.y-y)<10) return false; } }
+  const minD=G.players.length>4?8:10;
+  for(const p of G.players){ if(p.base){ if(Math.abs(p.base.x-x)<minD && Math.abs(p.base.y-y)<minD) return false; } }
   return true;
 }
 function doPick(id,x,y){
@@ -918,15 +944,14 @@ function showHUD(){ for(const o of OV) document.getElementById(o).classList.add(
   document.getElementById('quitBtn').classList.remove('hidden'); buildScores(); }
 function flashBanner(t){ document.getElementById('banner').textContent=t; }
 function buildScores(){
-  const el=document.getElementById('scores'); el.innerHTML='';
-  for(const p of G.players){
-    const d=document.createElement('div'); d.className='pscore';
-    d.innerHTML=`<div class="lbl" style="color:${p.color}"><span>${p.name}${p.kind==='ai'?' 🤖':''}</span><span id="pc${p.id}">0%</span></div>
-      <div class="trk"><div class="fil" id="pf${p.id}" style="background:${p.color};box-shadow:0 0 8px ${p.color}"></div></div>
-      <div style="font-size:10px;opacity:.6">Runder: <span id="rw${p.id}">${p.roundWins}</span></div>`;
-    el.appendChild(d);
-  }
-  buildPctTable();
+  const el=document.getElementById('scores');
+  el.innerHTML='<div id="segbar"></div><div id="legend"></div>';
+  const seg=document.getElementById('segbar');
+  for(const p of G.players){ const d=document.createElement('div'); d.className='seg'; d.id='seg'+p.id;
+    d.style.background=p.color; d.style.boxShadow='0 0 8px '+p.color; seg.appendChild(d); }
+  const lg=document.getElementById('legend');
+  for(const p of G.players){ const d=document.createElement('div'); d.className='lgc';
+    d.innerHTML='<span class="dot" style="background:'+p.color+'"></span><span id="lg'+p.id+'" style="color:'+p.color+'">0%</span>'; lg.appendChild(d); }
 }
 function buildPctTable(){
   const el=document.getElementById('pctTable'); el.innerHTML='<div class="ttl">Erobret</div>';
@@ -937,10 +962,8 @@ function buildPctTable(){
 function updateHUDLive(){
   for(const p of G.players){
     const pct=counts[p.id]/TOTAL*100;
-    const f=document.getElementById('pf'+p.id), c=document.getElementById('pc'+p.id), r=document.getElementById('rw'+p.id);
-    if(f){ f.style.width=pct.toFixed(1)+'%'; f.style.opacity=p.eliminated?0.45:1; }
-    if(c)c.textContent=(p.eliminated?'💀 ':'')+Math.round(pct)+'%'; if(r)r.textContent=p.roundWins;
-    const pt=document.getElementById('pt'+p.id); if(pt)pt.textContent=Math.round(pct)+'%'+(p.eliminated?' 💀':'');
+    const sg=document.getElementById('seg'+p.id); if(sg){ sg.style.width=pct.toFixed(2)+'%'; sg.style.opacity=p.eliminated?0.4:1; }
+    const lg=document.getElementById('lg'+p.id); if(lg) lg.textContent=(p.eliminated?'💀':Math.round(pct)+'%');
   }
   const s=Math.max(0,Math.ceil(timeLeft));
   document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
@@ -991,18 +1014,21 @@ function bindTap(el,fn){ el.addEventListener('click',e=>{e.preventDefault();ensu
   el.addEventListener('touchend',e=>{e.preventDefault();ensureAudio();startMusic();fn();},{passive:false}); }
 
 let humN=1,aiN=1,totN=2,hAiN=0;
-function clampLocal(){ humN=Math.max(1,Math.min(4,humN)); aiN=Math.max(0,Math.min(4-humN,aiN));
+function clampLocal(){ humN=Math.max(1,Math.min(4,humN)); aiN=Math.max(0,Math.min(8-humN,aiN));
   if(humN+aiN<2) aiN=2-humN;
   document.getElementById('humN').textContent=humN; document.getElementById('aiN').textContent=aiN;
   const schemes=['Pil-taster / mus','WASD','IJKL','TFGH'];
   document.getElementById('localHint').innerHTML='I alt '+(humN+aiN)+' spillere · '+(G.totalRounds=humN+aiN)+' runder.<br>'+
     (humN>1?'Tastatur pr. spiller: '+schemes.slice(0,humN).join(', ')+'. (Flere mennesker på samme skærm kræver tastatur.)':'Styr med mus/finger.');
 }
-function clampHost(){ totN=Math.max(2,Math.min(4,totN)); hAiN=Math.max(0,Math.min(totN-1,hAiN));
+function clampHost(){ totN=Math.max(2,Math.min(8,totN)); hAiN=Math.max(0,Math.min(totN-1,hAiN));
   document.getElementById('totN').textContent=totN; document.getElementById('hAiN').textContent=hAiN;
   document.getElementById('hostHint').textContent='Du + '+(totN-1-hAiN)+' online-spiller(e) + '+hAiN+' AI. '+totN+' runder.'; }
 
 document.querySelectorAll('[data-back]').forEach(b=>bindTap(b,()=>{ toLobby(); }));
+bindTap(document.getElementById('setBtn'),()=>{ const b=document.getElementById('settingsBody');
+  const open=b.classList.contains('hidden'); if(open)b.classList.remove('hidden'); else b.classList.add('hidden');
+  document.getElementById('setChevron').textContent=open?'▴':'▾'; });
 bindTap(document.getElementById('modeLocal'),()=>{ showOnly('setupLocal'); clampLocal(); });
 bindTap(document.getElementById('modeHost'),()=>{ showOnly('setupHost');
   document.getElementById('hostConfig').classList.remove('hidden'); document.getElementById('hostWait').classList.add('hidden'); clampHost(); });
@@ -1085,7 +1111,7 @@ function render(frac){
     if(age<260){ ctx.globalAlpha=.5*(1-age/260); ctx.fillStyle='#fff'; ctx.fillRect(x*CELL,y*CELL,CELL,CELL); } }
   ctx.globalAlpha=1;
   // haler — pulserende rødt når stregen er lang/eksponeret (fare)
-  const trLen=[0,0,0,0,0]; for(const p of G.players) trLen[p.id]=p.trailCells.length;
+  const trLen=new Array(9).fill(0); for(const p of G.players) trLen[p.id]=p.trailCells.length;
   const pulse=0.55+0.45*Math.sin(now/90);
   ctx.shadowBlur=CELL*.9;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const t=trail[idx(x,y)]; if(!t)continue;
