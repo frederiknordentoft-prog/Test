@@ -19,7 +19,7 @@
     user-select:none;-webkit-user-select:none;
     background:radial-gradient(ellipse at 50% 40%, #21212d 0%, #15151e 70%);
   }
-  #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding-top:98px;box-sizing:border-box;}
+  #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding-top:124px;box-sizing:border-box;}
   canvas{display:block;touch-action:none;border-radius:10px;
     box-shadow:0 0 60px rgba(0,229,255,.06),0 0 60px rgba(255,61,127,.06);}
 
@@ -34,7 +34,7 @@
   .pscore .fil{height:100%;width:0%;border-radius:5px;transition:width .12s linear;}
   #timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:20px;letter-spacing:.02em;}
   #banner{font-size:14px;font-weight:700;text-align:center;min-height:18px;}
-  #reminder{font-size:11px;opacity:.55;text-align:center;}
+  #reminder{font-size:12.5px;opacity:.7;text-align:center;max-width:94vw;line-height:1.5;padding:2px 4px;}
 
   /* Overlays */
   .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -121,7 +121,7 @@
   <!-- Topbar: forlad-knap + altid-tilgængelig musik-slider (øverst, uden for banen) -->
   <div id="topbar">
     <div class="tbside"><button id="quitBtn" class="hidden">⏏︎ Menu</button></div>
-    <div id="musicCtl"><span>🎵</span><input type="range" id="musicSlider" min="0" max="50" value="4" /></div>
+    <div id="musicCtl"><span>🎵</span><input type="range" id="musicSlider" min="0" max="25" value="4" /></div>
   </div>
 
   <!-- Centreret kasse: nedtælling / sejr -->
@@ -135,7 +135,7 @@
     <div id="scores"></div>
     <div id="timer">1:30</div>
     <div id="banner"></div>
-    <div id="reminder">ÉT LIV · Egen farve er sikker · Kør på modstanderens farve = død · Krydses din åbne streg, dør du · Først til 50 % vinder</div>
+    <div id="reminder">ÉT LIV · Egen farve er sikker · Kør på modstanderens farve = død · Krydses din åbne streg, dør du · Først til 50 % — ellers vinder den sidste i live der når flest %</div>
   </div>
 
   <!-- LOBBY -->
@@ -317,7 +317,7 @@ const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 let CELL=14,dpr=1;
 function resize(){
-  const availW=window.innerWidth-20, availH=window.innerHeight-98-14;  // plads til topbar + HUD i toppen
+  const availW=window.innerWidth-20, availH=window.innerHeight-124-12;  // plads til topbar + HUD + regler i toppen
   CELL=Math.max(4,Math.floor(Math.min(availW/W,availH/H)));
   dpr=Math.min(window.devicePixelRatio||1,2);
   canvas.style.width=(W*CELL)+'px'; canvas.style.height=(H*CELL)+'px';
@@ -710,8 +710,15 @@ function startPlay(){
 }
 function checkRoundEnd(){
   for(const p of G.players){ if(counts[p.id]/TOTAL>=WIN_RATIO){ endRound(p.id,'femti'); return; } }  // 50% = vundet banen
-  const al=G.players.filter(p=>p.alive).length;
-  if(G.players.length>1 && al<=1) endRound(null, al===1?'sidste':'alledode');                        // sidste tilbage / alle dde
+  if(G.players.length<2) return;
+  const aliveArr=G.players.filter(p=>p.alive);
+  if(aliveArr.length===0){ endRound(null,'alledode'); return; }                                       // alle døde -> flest %
+  if(aliveArr.length===1){
+    // Sidste i live: runden slutter KUN hvis han har flest % (ellers spiller han videre for at indhente)
+    const last=aliveArr[0];
+    let maxOther=-1; for(const p of G.players) if(p.id!==last.id) maxOther=Math.max(maxOther,counts[p.id]);
+    if(counts[last.id] >= maxOther) endRound(last.id,'sidste');
+  }
 }
 function endRound(winnerId, via){
   if(G.phase!=='play') return;
@@ -1189,7 +1196,6 @@ function frame(t){
   const showStuff=(G.phase==='play'||G.phase==='select'||G.phase==='roundwin');
   if(showStuff && !G.demo) updateHUDLive();
   updateCallout();
-  document.getElementById('pctTable').classList.toggle('hidden', !showStuff || G.demo);
   let frac=0;
   if(G.phase==='play'){ frac = authoritative? acc : Math.min(1,(now-clientSnapAt)/(1000/G.speed)); }
   render(frac);
