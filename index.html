@@ -167,6 +167,7 @@
         <div class="toggle" id="tgPowerups"><div class="sw"></div><span>💥 Power-ups</span></div>
         <div class="toggle on" id="tgStorm"><div class="sw"></div><span>🌀 Storm</span></div>
       </div>
+      <div id="fxInfo" class="hint" style="text-align:left;font-size:12px;line-height:1.5"></div>
       <div class="row" style="gap:8px;font-size:12px">
         <span style="opacity:.7">Tema:</span>
         <button class="sm sec thm act" data-thm="standard">Standard</button>
@@ -611,6 +612,7 @@ function sfxTick(i){ tone(680+i*150,0,0.09,'square',0.26); }                  //
 // lyd-vagt: udløser lyd ud fra observeret state (virker for host, lokal og klient)
 function sfxOppDeath(){ tone(240,80,0.2,'sawtooth',0.15); noiseBurst(0.18,0.1); }  // modstander dr (dmpet)
 function sfxStep(n){ tone(122+(n&1?10:0),68,0.06,'triangle',0.2); }                  // hul, mrk streg-tik (hjere)
+function sfxPick(){ tone(440,660,0.12,'sine',0.22); }                                 // blip når en spiller vælger startfelt
 let sndCount=0, sndTrail=0, sndTick=99, sndPhase='', sndAliveMap={};
 function soundWatch(){
   if(G.demo) return;
@@ -687,6 +689,7 @@ function doPick(id,x,y){
   if(!validPick(x,y)) { flashBanner('Vælg et felt længere væk fra de andre'); return; }
   const p=playerById(id); p.base={x,y}; paintBase(x,y,id,2); recount();
   spawnRipple((x+0.5)*CELL,(y+0.5)*CELL,p.color);
+  if(!G.demo) sfxPick();
   G.pickPos++;
   if(G.pickPos>=G.pickOrder.length){ startPlay(); }
   else { G.picker=G.pickOrder[G.pickPos]; G.aiPickTimer=0; updateSelectUI(); netBroadcast(true); }
@@ -909,7 +912,7 @@ function showOnly(id){ for(const o of OV){ document.getElementById(o).classList.
   document.getElementById('quitBtn').classList.add('hidden');
   document.getElementById('pctTable').classList.add('hidden');
   if(id==='lobby'){ const el=document.getElementById('lobbyLeader'); if(el) el.innerHTML=leaderboardHTML();
-    const st=document.getElementById('lobbyStats'); if(st) st.innerHTML=statsHTML(); } }
+    const st=document.getElementById('lobbyStats'); if(st) st.innerHTML=statsHTML(); updateFxInfo(); } }
 function showHUD(){ for(const o of OV) document.getElementById(o).classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('quitBtn').classList.remove('hidden'); buildScores(); }
@@ -1037,8 +1040,12 @@ bindTap(document.getElementById('tgMusic'),()=>{ musicOn=!musicOn;
 document.querySelectorAll('.spd').forEach(b=>bindTap(b,()=>{ G.speed=SPEEDS[b.dataset.spd]||6.5;
   document.querySelectorAll('.spd').forEach(x=>x.classList.toggle('act',x===b)); }));
 // Power-ups / Storm / Tema
-bindTap(document.getElementById('tgPowerups'),()=>{ G.powerupsOn=!G.powerupsOn; document.getElementById('tgPowerups').classList.toggle('on',G.powerupsOn); });
-bindTap(document.getElementById('tgStorm'),()=>{ G.stormOn=!G.stormOn; document.getElementById('tgStorm').classList.toggle('on',G.stormOn); });
+function updateFxInfo(){ const el=document.getElementById('fxInfo'); if(!el) return; const s=[];
+  if(G.powerupsOn) s.push('💥 <b>Power-ups</b> dukker op på banen: 🛡️ <b>Skjold</b> = overlev ét dødsfald · ❄️ <b>Frys</b> = modstandere fryser kort · 👻 <b>Spøgelse</b> = kør gennem modstanderes farve uden at dø');
+  if(G.stormOn) s.push('🌀 <b>Storm</b>: banens kanter lukker dødeligt ind de sidste 20 sekunder — kom væk fra kanten!');
+  el.innerHTML=s.join('<br>'); el.style.display=s.length?'':'none'; }
+bindTap(document.getElementById('tgPowerups'),()=>{ G.powerupsOn=!G.powerupsOn; document.getElementById('tgPowerups').classList.toggle('on',G.powerupsOn); updateFxInfo(); });
+bindTap(document.getElementById('tgStorm'),()=>{ G.stormOn=!G.stormOn; document.getElementById('tgStorm').classList.toggle('on',G.stormOn); updateFxInfo(); });
 document.querySelectorAll('.thm').forEach(b=>bindTap(b,()=>{ setTheme(b.dataset.thm);
   document.querySelectorAll('.thm').forEach(x=>x.classList.toggle('act',x===b)); }));
 bindTap(document.getElementById('tgSound'),()=>{ soundOn=!soundOn;
