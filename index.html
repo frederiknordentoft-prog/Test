@@ -19,12 +19,12 @@
     user-select:none;-webkit-user-select:none;
     background:radial-gradient(ellipse at 50% 40%, #21212d 0%, #15151e 70%);
   }
-  #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding-top:78px;box-sizing:border-box;}
+  #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding-top:98px;box-sizing:border-box;}
   canvas{display:block;touch-action:none;border-radius:10px;
     box-shadow:0 0 60px rgba(0,229,255,.06),0 0 60px rgba(255,61,127,.06);}
 
   /* HUD */
-  #hud{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;
+  #hud{position:absolute;top:34px;left:0;right:0;display:flex;flex-direction:column;align-items:center;
     gap:6px;padding:8px 12px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.7);}
   #scores{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;align-items:center;
     width:min(760px,96vw);}
@@ -79,7 +79,7 @@
   .err{color:var(--p2);font-size:13px;min-height:16px;}
   .credit{position:absolute;bottom:8px;font-size:11px;opacity:.3;}
   /* lille %-tabel pr. farve */
-  #pctTable{position:absolute;top:8px;left:8px;z-index:6;pointer-events:none;
+  #pctTable{position:absolute;bottom:8px;left:8px;z-index:6;pointer-events:none;
     background:rgba(6,6,12,.55);border:1px solid rgba(255,255,255,.1);border-radius:9px;
     padding:7px 9px;display:flex;flex-direction:column;gap:4px;font-size:12px;backdrop-filter:blur(3px);}
   #pctTable .ttl{font-size:10px;letter-spacing:.08em;opacity:.5;text-transform:uppercase;margin-bottom:1px;}
@@ -88,8 +88,11 @@
   #pctTable .nm{min-width:58px;font-weight:600;}
   #pctTable .pc{font-variant-numeric:tabular-nums;font-weight:800;min-width:40px;text-align:right;}
   #pctTable.hidden{display:none;}
-  #quitBtn{position:absolute;top:8px;right:8px;z-index:7;padding:7px 14px;font-size:13px;
-    background:rgba(255,255,255,.1);color:var(--ink);box-shadow:none;}
+  #topbar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
+    gap:8px;padding:5px 8px;pointer-events:none;}
+  #topbar>*{pointer-events:auto;}
+  .tbside{min-width:90px;display:flex;align-items:center;}
+  #quitBtn{padding:6px 12px;font-size:13px;background:rgba(255,255,255,.1);color:var(--ink);box-shadow:none;}
   #quitBtn.hidden{display:none;}
   input[type=range]{accent-color:var(--p1);width:160px;height:22px;cursor:pointer;}
   #callout{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:8;pointer-events:none;
@@ -102,9 +105,9 @@
   #callout .sub2{font-size:12px;opacity:.65;margin-top:4px;}
   @keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0;}to{transform:translate(-50%,-50%) scale(1);opacity:1;}}
   .spd.act{background:var(--p1);color:#06121a;box-shadow:0 0 14px rgba(0,229,255,.4);}
-  #musicCtl{position:fixed;left:8px;bottom:8px;z-index:20;display:flex;align-items:center;gap:6px;
-    background:rgba(6,6,12,.55);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;opacity:.85;}
-  #musicCtl input[type=range]{width:96px;height:18px;}
+  #musicCtl{display:flex;align-items:center;gap:6px;
+    background:rgba(6,6,12,.55);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;opacity:.9;}
+  #musicCtl input[type=range]{width:104px;height:18px;}
 </style>
 </head>
 <body>
@@ -114,14 +117,14 @@
   <!-- Lille %-tabel pr. farve -->
   <div id="pctTable" class="hidden"></div>
 
-  <!-- Forlad-knap under spil -->
-  <button id="quitBtn" class="hidden">⏏︎ Menu</button>
+  <!-- Topbar: forlad-knap + altid-tilgængelig musik-slider (øverst, uden for banen) -->
+  <div id="topbar">
+    <div class="tbside"><button id="quitBtn" class="hidden">⏏︎ Menu</button></div>
+    <div id="musicCtl"><span>🎵</span><input type="range" id="musicSlider" min="0" max="50" value="4" /></div>
+  </div>
 
   <!-- Centreret kasse: nedtælling / sejr -->
   <div id="callout" class="hidden"></div>
-
-  <!-- Altid-tilgængelig musik-lydstyrke -->
-  <div id="musicCtl"><span>🎵</span><input type="range" id="musicSlider" min="0" max="100" value="4" /></div>
 
   <!-- Baggrundsmusik (Suno) -->
   <audio id="music" loop preload="auto" src="https://cdn1.suno.ai/d94b96dd-952e-48eb-9510-61059bc3d866.mp3"></audio>
@@ -296,7 +299,7 @@ const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 let CELL=14,dpr=1;
 function resize(){
-  const availW=window.innerWidth-20, availH=window.innerHeight-78-16;  // plads til HUD i toppen
+  const availW=window.innerWidth-20, availH=window.innerHeight-98-14;  // plads til topbar + HUD i toppen
   CELL=Math.max(4,Math.floor(Math.min(availW/W,availH/H)));
   dpr=Math.min(window.devicePixelRatio||1,2);
   canvas.style.width=(W*CELL)+'px'; canvas.style.height=(H*CELL)+'px';
