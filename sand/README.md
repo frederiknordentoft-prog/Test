@@ -12,11 +12,11 @@ nearest-neighbor-opskalering.**
 Åbn `index.html` i en browser — intet build, ingen dependencies.
 
 ## Styring
-- **Finger/mus**: tegn med valgt element (hold for at hælde)
-- **Palette nederst**: Sand, Vand, Olie, Ild, Lava, Syre, Træ, Plante, Mur, Slet
+- **Finger/mus**: tegn med valgt element (hold for at hælde); en ring viser penslen
+- **Palette nederst**: Sand, Vand, Olie, Ild, Lava, Krudt, Syre, Is, Træ, Plante, Mur, Slet
 - **Slider**: penselstørrelse (desktop: scrollhjul eller `[` / `]`)
-- **⏸** pause · **☂** regn (drypper valgt element fra toppen) · **✕** ryd alt
-- Desktop: `1–9`/`0` vælger element, `mellemrum` pause, `C` ryd, `R` regn
+- **🔊** lyd til/fra · **⏸** pause · **☂** regn (drypper valgt element) · **✕** ryd alt
+- Desktop: `1–9`/`0` vælger element, `mellemrum` pause, `C` ryd, `R` regn, `M` mute
 
 ## Fysikken
 - **Densitets-swaps**: tungere celler synker gennem lettere væsker/gasser — det
@@ -24,12 +24,20 @@ nearest-neighbor-opskalering.**
 - **Scanretning** skifter hver frame (venstre↔højre) så materiale ikke driver skævt.
 - **Aktive chunks** (16×16): stillestående områder springes over; alt der ændrer
   sig vækker sin chunk og naboerne.
+- **Tyngdekraft med acceleration**: pulver og væsker accelererer i frit fald op til
+  5 celler/frame (hastigheden gemmes pr. celle), så fald og stråler føles fysiske.
 - Reaktioner: vand slukker ild (→damp), ild antænder olie/træ/plante, lava+vand→sten,
-  damp kondenserer under lofter, syre opløser sten/mur/træ/sand, planter gror i vand.
+  damp kondenserer under lofter, syre opløser sten/mur/træ/sand/is, planter gror i vand,
+  **krudt detonerer** med trykbølge og kædereaktioner, **is** fryser vand langsomt og
+  smelter ved ild/lava.
 - Glød: et separat emissivt lag (ild/lava/syre) blurres og screen-blendes ovenpå.
+- **Lyd**: proceduralt WebAudio (ingen lydfiler) — bas-tryk ved eksplosioner,
+  knitren ved antændelse, syden når vand møder ild/lava. Mute med 🔊-knappen.
 
 ## Status
 Alle faser fra spec'en er implementeret (kerne-loop, væsker, reaktioner,
-chunks + glød). Verificeret med headless-tests: sand bunker, vand finder niveau
-og bevares, olie stiger op gennem vand, lava+vand→sten+damp, ild æder olie,
-syre æder sten. Simulation: ~0,25 ms/step på et 130×281-grid.
+chunks + glød) plus krudt/eksplosioner, is/frost, accelereret tyngdekraft og
+procedural lyd. Verificeret med 20 headless-tests: sand bunker og accelererer,
+vand finder niveau og bevares, olie stiger op gennem vand, lava+vand→sten+damp,
+krudt detonerer i kædereaktion, is smelter/fryser, ild æder olie, syre æder sten.
+Simulation: ~0,3 ms/step på et 130×281-grid.

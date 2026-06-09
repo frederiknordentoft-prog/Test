@@ -54,6 +54,11 @@
   #title h1 { color:#eef1ff; font-size:clamp(28px, 7vw, 54px); letter-spacing:.35em;
     font-weight:200; text-shadow:0 0 30px rgba(90,209,255,.8), 0 0 60px rgba(255,94,31,.5); }
   #title p { color:#8b93b8; font-size:13px; margin-top:14px; letter-spacing:.12em; }
+
+  #cursor { position:fixed; display:none; pointer-events:none; z-index:4;
+    border:1.5px solid rgba(255,255,255,.6); border-radius:50%;
+    transform:translate(-50%,-50%); box-shadow:0 0 10px rgba(255,255,255,.25),
+    inset 0 0 10px rgba(255,255,255,.12); }
 </style>
 </head>
 <body>
@@ -62,6 +67,7 @@
 <div id="vignette"></div>
 <div id="stats"></div>
 <div id="topbar">
+  <div class="btn" id="bMute" title="Lyd (M)">🔊</div>
   <div class="btn" id="bPause" title="Pause (mellemrum)">⏸</div>
   <div class="btn" id="bRain" title="Regn (R)">☂</div>
   <div class="btn" id="bClear" title="Ryd alt (C)">✕</div>
@@ -74,6 +80,7 @@
   </div>
   <div id="palette"></div>
 </div>
+<div id="cursor"></div>
 <div id="title"><h1>FALLING SAND</h1><p>TEGN MED FINGEREN · VÆLG ELEMENT NEDERST</p></div>
 
 <script>
@@ -88,7 +95,8 @@
 
 // ---------- Elementer ----------
 const EMPTY=0, WALL=1, SAND=2, WATER=3, OIL=4, FIRE=5, WOOD=6,
-      SMOKE=7, STEAM=8, ACID=9, LAVA=10, STONE=11, PLANT=12, NTYPES=13;
+      SMOKE=7, STEAM=8, ACID=9, LAVA=10, STONE=11, PLANT=12,
+      GUNPOWDER=13, ICE=14, NTYPES=15;
 
 const CAT_STATIC=0, CAT_POWDER=1, CAT_LIQ=2, CAT_GAS=3;
 const CAT  = new Uint8Array(NTYPES);
@@ -97,6 +105,7 @@ const DISP = new Uint8Array(NTYPES);    // vandret spredning for væsker
 const FLAM = new Float32Array(NTYPES);  // antændelses-sandsynlighed pr. tick
 
 CAT[SAND]=CAT_POWDER;                          DENS[SAND]=4;
+CAT[GUNPOWDER]=CAT_POWDER;                     DENS[GUNPOWDER]=3.5;
 CAT[WATER]=CAT_LIQ;  DENS[WATER]=2.0; DISP[WATER]=5;
 CAT[OIL]=CAT_LIQ;    DENS[OIL]=1.0;   DISP[OIL]=3;   FLAM[OIL]=0.45;
 CAT[ACID]=CAT_LIQ;   DENS[ACID]=1.8;  DISP[ACID]=4;
@@ -108,6 +117,7 @@ FLAM[WOOD]=0.06; FLAM[PLANT]=0.18;
 
 const DISSOLVABLE = new Uint8Array(NTYPES);
 DISSOLVABLE[WALL]=DISSOLVABLE[STONE]=DISSOLVABLE[WOOD]=DISSOLVABLE[SAND]=DISSOLVABLE[PLANT]=1;
+DISSOLVABLE[GUNPOWDER]=DISSOLVABLE[ICE]=1;
 
 // ---------- Grid-tilstand ----------
 let W, H, cells, life, jit, stamp, frame=0;
@@ -177,14 +187,22 @@ function canRise(dens, target) {       // gasser: op gennem tomt/væsker/tungere
 }
 
 function powder(i,x,y,t) {
-  const d=DENS[t];
-  if (y+1<H) {
-    const j=i+W, tj=cells[j];
-    if (canSink(d,tj)) {
-      if (tj!==EMPTY && Math.random()<0.45) { touch(x,y); return; } // synker langsomt i væske
-      swap(i,x,y,j,x,y+1); return;
+  // life genbruges som faldhastighed: accelererer op til 5 celler/frame i frit fald
+  const d=DENS[t], v=life[i], maxStep=Math.min(5, 1+(v>>2));
+  let cur=i, cy2=y, moved=0;
+  while (moved<maxStep && cy2+1<H) {
+    const j=cur+W, tj=cells[j];
+    if (!canSink(d,tj)) break;
+    if (tj!==EMPTY) {                          // bremses ved nedslag i væske
+      if (Math.random()<0.45) { touch(x,cy2); break; }
+      swap(cur,x,cy2,j,x,cy2+1); cur=j; cy2++; moved++; break;
     }
-    const s = Math.random()<0.5?1:-1;
+    swap(cur,x,cy2,j,x,cy2+1); cur=j; cy2++; moved++;
+  }
+  if (moved>0) { life[cur]=Math.min(24, v+1); return; }
+  life[i]=0;
+  if (y+1<H) {
+    const j=i+W, s=Math.random()<0.5?1:-1;
     for (let k=0;k<2;k++) {
       const dx = k===0?s:-s, nx2=x+dx;
       if (nx2>=0 && nx2<W && canSink(d,cells[j+dx])) { swap(i,x,y,j+dx,nx2,y+1); return; }
@@ -195,10 +213,19 @@ function powder(i,x,y,t) {
 function liquid(i,x,y,t) {
   const d=DENS[t];
   if (t===LAVA && Math.random()<0.55) { touch(x,y); return; } // tyktflydende
+  // accelererende fald (lava forbliver træg)
+  const v=life[i], maxStep = t===LAVA ? 1 : Math.min(5, 1+(v>>2));
+  let cur=i, cy2=y, moved=0;
+  while (moved<maxStep && cy2+1<H) {
+    const j=cur+W, tj=cells[j];
+    if (!canSink(d,tj)) break;
+    swap(cur,x,cy2,j,x,cy2+1); cur=j; cy2++; moved++;
+    if (tj!==EMPTY) break;                     // fortrængning af lettere væske: ét trin
+  }
+  if (moved>0) { if (t!==LAVA) life[cur]=Math.min(24, v+1); return; }
+  if (t!==LAVA) life[i]=0;
   if (y+1<H) {
-    const j=i+W;
-    if (canSink(d,cells[j])) { swap(i,x,y,j,x,y+1); return; }
-    const s = Math.random()<0.5?1:-1;
+    const j=i+W, s=Math.random()<0.5?1:-1;
     for (let k=0;k<2;k++) {
       const dx = k===0?s:-s, nx2=x+dx;
       if (nx2>=0 && nx2<W && canSink(d,cells[j+dx])) { swap(i,x,y,j+dx,nx2,y+1); return; }
@@ -243,6 +270,27 @@ function gasMove(i,x,y,t) {
 
 const NB8=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[-1,1],[1,-1],[-1,-1]];
 
+function explode(cx,cy,r) {
+  boom(r);
+  const r2=r*r;
+  for (let dy=-r;dy<=r;dy++) {
+    const yy=cy+dy; if (yy<0||yy>=H) continue;
+    for (let dx=-r;dx<=r;dx++) {
+      const xx=cx+dx; if (xx<0||xx>=W) continue;
+      const d2=dx*dx+dy*dy; if (d2>r2) continue;
+      const tj=cells[yy*W+xx];
+      if (tj===WALL) continue;
+      if (tj===GUNPOWDER) { set(xx,yy,FIRE, 8+(Math.random()*10|0)); continue; } // kædereaktion
+      if (Math.random() < 0.3+0.7*(1-d2/r2)) {
+        const rr=Math.random();
+        if (rr<0.5)       set(xx,yy,FIRE, 14+(Math.random()*26|0));
+        else if (rr<0.68) set(xx,yy,SMOKE, 50+(Math.random()*70|0));
+        else              set(xx,yy,EMPTY);
+      }
+    }
+  }
+}
+
 function update(i,x,y) {
   if (stamp[i]===frame) return;
   const t=cells[i];
@@ -278,10 +326,14 @@ function update(i,x,y) {
         if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
         const j=ny2*W+nx2, tj=cells[j];
         if (tj===WATER) {                 // lava + vand -> sten + damp
-          set(nx2,ny2,STEAM); set(x,y,STONE); return;
+          set(nx2,ny2,STEAM); set(x,y,STONE); sizzle(); return;
         }
-        if (FLAM[tj]>0 && Math.random()<FLAM[tj])
+        if (tj===GUNPOWDER) { explode(nx2,ny2, 5+(Math.random()*4|0)); return; }
+        if (tj===ICE) { if (Math.random()<0.1) { set(nx2,ny2,WATER); sizzle(); } continue; }
+        if (FLAM[tj]>0 && Math.random()<FLAM[tj]) {
           set(nx2,ny2,FIRE, tj===WOOD?120+(Math.random()*80|0):undefined);
+          crackle();
+        }
       }
       if (y>1 && cells[i-W]===EMPTY && Math.random()<0.02)
         set(x,y-1,FIRE, 10+(Math.random()*14|0)); // gnister
@@ -296,10 +348,14 @@ function update(i,x,y) {
         if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
         const j=ny2*W+nx2, tj=cells[j];
         if (tj===WATER) {                 // vand slukker ild -> damp
-          set(nx2,ny2,STEAM); set(x,y, Math.random()<0.5?SMOKE:EMPTY); return;
+          set(nx2,ny2,STEAM); set(x,y, Math.random()<0.5?SMOKE:EMPTY); sizzle(); return;
         }
-        if (FLAM[tj]>0 && Math.random()<FLAM[tj])
+        if (tj===GUNPOWDER) { explode(nx2,ny2, 5+(Math.random()*4|0)); return; }
+        if (tj===ICE) { if (Math.random()<0.06) set(nx2,ny2,WATER); continue; }
+        if (FLAM[tj]>0 && Math.random()<FLAM[tj]) {
           set(nx2,ny2,FIRE, tj===WOOD?120+(Math.random()*80|0):undefined);
+          crackle();
+        }
       }
       if (Math.random()<0.18 && y>0 && cells[i-W]===EMPTY && life[i]>15)
         set(x,y-1,SMOKE, 40+(Math.random()*60|0));
@@ -318,6 +374,18 @@ function update(i,x,y) {
       if (y>0) { const above=cells[i-W];
         if ((above===WALL||above===STONE||above===WOOD) && Math.random()<0.012) { set(x,y,WATER); return; } }
       touch(x,y); gasMove(i,x,y,t); return;
+    }
+
+    case GUNPOWDER: powder(i,x,y,t); return;
+
+    case ICE: {
+      // frost breder sig langsomt ind i tilstødende vand
+      for (let n=0;n<4;n++) {
+        const nx2=x+NB8[n][0], ny2=y+NB8[n][1];
+        if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
+        if (cells[ny2*W+nx2]===WATER && Math.random()<0.002) { set(nx2,ny2,ICE); break; }
+      }
+      return;
     }
 
     case PLANT: {
@@ -396,6 +464,8 @@ PAL[PLANT]= shades([46,204,84],  .7,1.15);
 PAL[ACID] = ramp([[40,255,90],[120,255,140],[60,230,80],[160,255,120],[40,255,90]]);
 PAL[LAVA] = ramp([[214,48,16],[255,110,20],[255,170,40],[255,110,20],[214,48,16]]);
 PAL[FIRE] = ramp([[120,16,8],[226,47,31],[255,94,31],[255,158,44],[255,210,62],[255,247,174]]);
+PAL[GUNPOWDER]= shades([74,74,86], .7, 1.9);   // mørkt grus med lyse korn
+PAL[ICE]  = ramp([[140,200,245],[185,232,255],[155,212,250],[205,242,255],[140,200,245]]);
 PAL[SMOKE]= (()=>{ const o=new Uint32Array(32);
   for (let i=0;i<32;i++) o[i]=mix(BG,[96,96,110], Math.min(1,i/22)); return o; })();
 PAL[STEAM]= (()=>{ const o=new Uint32Array(32);
@@ -435,11 +505,41 @@ function render() {
   gctx.putImageData(gimg,0,0);
 }
 
+// ---------- Lyd (proceduralt WebAudio — ingen lydfiler) ----------
+let AC=null, muted=false, lastCrk=0, lastSiz=0, lastBoom=0;
+function audioInit() {
+  if (typeof AudioContext==='undefined' && typeof webkitAudioContext==='undefined') return;
+  if (!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+  if (AC.state==='suspended') AC.resume();
+}
+function noiseBurst(dur,f0,f1,vol,type) {
+  if (!AC||muted) return;
+  const t=AC.currentTime, n=(AC.sampleRate*dur)|0;
+  const buf=AC.createBuffer(1,n,AC.sampleRate), ch=buf.getChannelData(0);
+  for (let i=0;i<n;i++){ const e=1-i/n; ch[i]=(Math.random()*2-1)*e*e; }
+  const src=AC.createBufferSource(); src.buffer=buf;
+  const fl=AC.createBiquadFilter(); fl.type=type;
+  fl.frequency.setValueAtTime(f0,t); fl.frequency.exponentialRampToValueAtTime(f1,t+dur);
+  const g=AC.createGain(); g.gain.value=vol;
+  src.connect(fl); fl.connect(g); g.connect(AC.destination); src.start(t);
+}
+function boom(r) {
+  if (!AC||muted) return;
+  const n=performance.now(); if (n-lastBoom<80) return; lastBoom=n;
+  noiseBurst(0.35+r*0.03, 900, 110, 0.5, 'lowpass');
+  const t=AC.currentTime, o=AC.createOscillator(), g=AC.createGain();
+  o.frequency.setValueAtTime(95,t); o.frequency.exponentialRampToValueAtTime(34,t+0.28);
+  g.gain.setValueAtTime(0.7,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.33);
+  o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.35);
+}
+function crackle(){ const n=performance.now(); if(n-lastCrk<90) return; lastCrk=n; noiseBurst(0.05,2400,900,0.09,'bandpass'); }
+function sizzle(){ const n=performance.now(); if(n-lastSiz<140) return; lastSiz=n; noiseBurst(0.16,5200,2400,0.06,'highpass'); }
+
 // ---------- Maleværktøj / input ----------
 let tool=SAND, brushR=5, painting=false, lastPX=-1, lastPY=-1;
 
 function paintDisk(px,py) {
-  const r=brushR, solid=(tool===WALL||tool===WOOD||tool===PLANT||tool===STONE||tool===EMPTY);
+  const r=brushR, solid=(tool===WALL||tool===WOOD||tool===PLANT||tool===STONE||tool===ICE||tool===EMPTY);
   for (let dy=-r;dy<=r;dy++) for (let dx=-r;dx<=r;dx++) {
     if (dx*dx+dy*dy>r*r) continue;
     const x=px+dx, y=py+dy;
@@ -461,15 +561,28 @@ function toSim(e) {
 }
 addEventListener('pointerdown', e=>{
   if (e.target.closest('#bottom')||e.target.closest('#topbar')) return;
-  painting=true; hideTitle();
+  painting=true; hideTitle(); audioInit();
   const [x,y]=toSim(e); paintDisk(x,y); lastPX=x; lastPY=y;
+  showCursor(e.clientX,e.clientY);
 });
 addEventListener('pointermove', e=>{
+  if (e.pointerType==='mouse'||painting) showCursor(e.clientX,e.clientY);
   if (!painting) return;
   const [x,y]=toSim(e); paintLine(lastPX,lastPY,x,y); lastPX=x; lastPY=y;
 });
-addEventListener('pointerup',   ()=>painting=false);
-addEventListener('pointercancel',()=>painting=false);
+addEventListener('pointerup',   e=>{ painting=false; if (e.pointerType!=='mouse') hideCursor(); });
+addEventListener('pointercancel',()=>{ painting=false; hideCursor(); });
+
+// pensel-ring der viser position og størrelse
+const cursorEl=document.getElementById('cursor');
+let cursorTimer;
+function showCursor(cx,cy) {
+  const r=view.getBoundingClientRect(), s=brushR*2*r.width/W;
+  cursorEl.style.display='block';
+  cursorEl.style.width=s+'px'; cursorEl.style.height=s+'px';
+  cursorEl.style.left=cx+'px'; cursorEl.style.top=cy+'px';
+}
+function hideCursor(){ cursorEl.style.display='none'; }
 document.addEventListener('touchmove', e=>{
   // stop scroll/rubber-banding, men lad slider og knapper virke
   if (!e.target.closest('#bottom') && !e.target.closest('#topbar')) e.preventDefault();
@@ -481,9 +594,9 @@ addEventListener('wheel', e=>{ setBrush(brushR + (e.deltaY<0?1:-1)); });
 // ---------- UI ----------
 const TOOLS=[
   [SAND,'Sand','#e8c35a'],[WATER,'Vand','#2f8af0'],[OIL,'Olie','#a8843c'],
-  [FIRE,'Ild','#ff7a2c'],[LAVA,'Lava','#ff6e14'],[ACID,'Syre','#39ff6a'],
-  [WOOD,'Træ','#8a4f24'],[PLANT,'Plante','#2ecc54'],[WALL,'Mur','#7e8699'],
-  [EMPTY,'Slet','#cfd6f5'],
+  [FIRE,'Ild','#ff7a2c'],[LAVA,'Lava','#ff6e14'],[GUNPOWDER,'Krudt','#aab0c0'],
+  [ACID,'Syre','#39ff6a'],[ICE,'Is','#9adcff'],[WOOD,'Træ','#8a4f24'],
+  [PLANT,'Plante','#2ecc54'],[WALL,'Mur','#7e8699'],[EMPTY,'Slet','#cfd6f5'],
 ];
 const paletteEl=document.getElementById('palette');
 TOOLS.forEach(([id,name,col],k)=>{
@@ -496,7 +609,11 @@ TOOLS.forEach(([id,name,col],k)=>{
 });
 function selectTool(id) {
   tool=id;
-  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel', +c.dataset.tool===id));
+  document.querySelectorAll('.chip').forEach(c=>{
+    const on=+c.dataset.tool===id;
+    c.classList.toggle('sel', on);
+    if (on) c.scrollIntoView?.({behavior:'smooth', inline:'center', block:'nearest'});
+  });
 }
 selectTool(SAND);
 
@@ -505,6 +622,10 @@ function setBrush(v) {
   brushR=Math.max(1,Math.min(20,v|0));
   brushEl.value=brushR;
   document.getElementById('brushval').textContent=brushR;
+  if (!painting) {  // flash penselstørrelsen midt på skærmen
+    showCursor(innerWidth/2, innerHeight*0.45);
+    clearTimeout(cursorTimer); cursorTimer=setTimeout(hideCursor, 500);
+  }
 }
 brushEl.addEventListener('input', ()=>setBrush(+brushEl.value));
 
@@ -513,6 +634,8 @@ bPause.onclick=()=>{ paused=!paused; bPause.textContent=paused?'▶':'⏸'; bPau
 document.getElementById('bClear').onclick=()=>{ cells.fill(EMPTY); act.fill(1); nxt.fill(1); };
 const bRain=document.getElementById('bRain');
 bRain.onclick=()=>{ rain=!rain; bRain.classList.toggle('on',rain); };
+const bMute=document.getElementById('bMute');
+bMute.onclick=()=>{ muted=!muted; bMute.textContent=muted?'🔇':'🔊'; if(!muted)audioInit(); };
 
 addEventListener('keydown', e=>{
   const k=e.key;
@@ -521,6 +644,7 @@ addEventListener('keydown', e=>{
   if (k===' ') bPause.onclick();
   if (k==='c'||k==='C') document.getElementById('bClear').onclick();
   if (k==='r'||k==='R') bRain.onclick();
+  if (k==='m'||k==='M') bMute.onclick();
   if (k==='[') setBrush(brushR-1);
   if (k===']') setBrush(brushR+1);
 });
@@ -556,6 +680,11 @@ function demoScene() {
   fillRect(X(.70),py-3,X(.74),py-1,PLANT);
   fillRect(X(.78),py-4,X(.83),py-1,PLANT);
   fillRect(X(.87),py-3,X(.91),py-1,PLANT);
+  // krudtspor hen over platformen + tønde for enden — lavaen antænder det
+  fillRect(X(.68),py-1,X(.92),py-1,GUNPOWDER);
+  fillRect(X(.89),py-4,X(.92),py-2,GUNPOWDER);
+  // lille is-hylde over bassinet
+  fillRect(X(.06),Y(.42),X(.14),Y(.44),ICE);
   // lava-skål øverst th. med hul i bunden -> drypper ned på platformen
   const lx=X(.80), ly=Y(.14);
   fillRect(lx-7,ly,lx-6,ly+6,WALL); fillRect(lx+6,ly,lx+7,ly+6,WALL);
