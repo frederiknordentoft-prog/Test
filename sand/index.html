@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#07070d">
+<title>Falling Sand</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; background:#07070d; touch-action:none;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  canvas { position:fixed; inset:0; width:100vw; height:100vh;
+    image-rendering:-webkit-optimize-contrast; image-rendering:pixelated; }
+  #glow { pointer-events:none; filter:blur(9px) saturate(1.6) brightness(1.25);
+    mix-blend-mode:screen; opacity:.95; }
+  #vignette { position:fixed; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.45) 100%); }
+
+  #stats { position:fixed; top:calc(env(safe-area-inset-top) + 8px); left:10px;
+    color:#8b93b8; font-size:11px; font-family:ui-monospace, Menlo, monospace;
+    opacity:.85; pointer-events:none; text-shadow:0 1px 2px #000; }
+
+  #topbar { position:fixed; top:calc(env(safe-area-inset-top) + 6px); right:8px;
+    display:flex; gap:8px; }
+  .btn { width:42px; height:42px; border-radius:12px; border:1px solid rgba(255,255,255,.12);
+    background:rgba(20,22,34,.72); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+    color:#cfd6f5; font-size:19px; display:flex; align-items:center; justify-content:center;
+    user-select:none; -webkit-user-select:none; cursor:pointer; }
+  .btn.on { border-color:#5ad1ff; color:#5ad1ff; box-shadow:0 0 12px rgba(90,209,255,.45); }
+
+  #bottom { position:fixed; left:0; right:0; bottom:0; display:flex; flex-direction:column;
+    gap:8px; padding:10px 10px calc(env(safe-area-inset-bottom) + 10px);
+    background:linear-gradient(to top, rgba(7,7,13,.92) 60%, transparent);
+    pointer-events:none; }
+  #brushrow { display:flex; align-items:center; gap:10px; pointer-events:auto;
+    color:#8b93b8; font-size:12px; padding:0 4px; }
+  #brushrow input { flex:1; accent-color:#5ad1ff; height:28px; }
+  #palette { display:flex; gap:8px; overflow-x:auto; padding:4px 2px 6px;
+    pointer-events:auto; scrollbar-width:none; }
+  #palette::-webkit-scrollbar { display:none; }
+  .chip { flex:0 0 auto; display:flex; align-items:center; gap:7px; padding:9px 13px;
+    border-radius:999px; border:1px solid rgba(255,255,255,.12);
+    background:rgba(20,22,34,.72); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+    color:#dfe4ff; font-size:13px; font-weight:600; user-select:none; -webkit-user-select:none;
+    cursor:pointer; white-space:nowrap; }
+  .chip .dot { width:13px; height:13px; border-radius:50%; box-shadow:0 0 8px currentColor; }
+  .chip.sel { border-color:var(--c); box-shadow:0 0 14px var(--c), inset 0 0 8px rgba(255,255,255,.06); }
+
+  #title { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; pointer-events:none; transition:opacity 1.2s; z-index:5; }
+  #title h1 { color:#eef1ff; font-size:clamp(28px, 7vw, 54px); letter-spacing:.35em;
+    font-weight:200; text-shadow:0 0 30px rgba(90,209,255,.8), 0 0 60px rgba(255,94,31,.5); }
+  #title p { color:#8b93b8; font-size:13px; margin-top:14px; letter-spacing:.12em; }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<canvas id="glow"></canvas>
+<div id="vignette"></div>
+<div id="stats"></div>
+<div id="topbar">
+  <div class="btn" id="bPause" title="Pause (mellemrum)">⏸</div>
+  <div class="btn" id="bRain" title="Regn (R)">☂</div>
+  <div class="btn" id="bClear" title="Ryd alt (C)">✕</div>
+</div>
+<div id="bottom">
+  <div id="brushrow">
+    <span>Pensel</span>
+    <input id="brush" type="range" min="1" max="20" value="5">
+    <span id="brushval">5</span>
+  </div>
+  <div id="palette"></div>
+</div>
+<div id="title"><h1>FALLING SAND</h1><p>TEGN MED FINGEREN · VÆLG ELEMENT NEDERST</p></div>
+
+<script>
+'use strict';
+/* ============================================================
+   Falling sand-simulation.
+   Arkitektur: fladt Uint8-grid (y*W+x) -> ImageData-pixelbuffer
+   -> canvas i sim-opløsning, opskaleret med nearest-neighbor.
+   Densitets-swaps giver flyde/synke/boble-adfærd generelt;
+   aktive 16x16-chunks gør at stillestående områder springes over.
+   ============================================================ */
+
+// ---------- Elementer ----------
+const EMPTY=0, WALL=1, SAND=2, WATER=3, OIL=4, FIRE=5, WOOD=6,
+      SMOKE=7, STEAM=8, ACID=9, LAVA=10, STONE=11, PLANT=12, NTYPES=13;
+
+const CAT_STATIC=0, CAT_POWDER=1, CAT_LIQ=2, CAT_GAS=3;
+const CAT  = new Uint8Array(NTYPES);
+const DENS = new Float32Array(NTYPES);  // kun relevant for powder/liq/gas
+const DISP = new Uint8Array(NTYPES);    // vandret spredning for væsker
+const FLAM = new Float32Array(NTYPES);  // antændelses-sandsynlighed pr. tick
+
+CAT[SAND]=CAT_POWDER;                          DENS[SAND]=4;
+CAT[WATER]=CAT_LIQ;  DENS[WATER]=2.0; DISP[WATER]=5;
+CAT[OIL]=CAT_LIQ;    DENS[OIL]=1.0;   DISP[OIL]=3;   FLAM[OIL]=0.45;
+CAT[ACID]=CAT_LIQ;   DENS[ACID]=1.8;  DISP[ACID]=4;
+CAT[LAVA]=CAT_LIQ;   DENS[LAVA]=3.0;  DISP[LAVA]=1;
+CAT[SMOKE]=CAT_GAS;  DENS[SMOKE]=0.15;
+CAT[STEAM]=CAT_GAS;  DENS[STEAM]=0.30;
+CAT[FIRE]=CAT_GAS;   DENS[FIRE]=0.10;
+FLAM[WOOD]=0.06; FLAM[PLANT]=0.18;
+
+const DISSOLVABLE = new Uint8Array(NTYPES);
+DISSOLVABLE[WALL]=DISSOLVABLE[STONE]=DISSOLVABLE[WOOD]=DISSOLVABLE[SAND]=DISSOLVABLE[PLANT]=1;
+
+// ---------- Grid-tilstand ----------
+let W, H, cells, life, jit, stamp, frame=0;
+let CW, CHH, act, nxt;                 // chunk-grids (16x16)
+const CHB=4, CH=16, CHM=15;
+let liveCount=0, paused=false, rain=false;
+
+function alloc() {
+  const cssW = innerWidth, cssH = innerHeight;
+  // cellestørrelse så det samlede antal celler holder sig ~<=140k
+  const cell = Math.max(3, Math.ceil(Math.sqrt(cssW*cssH/140000)));
+  W = Math.max(80, Math.floor(cssW/cell));
+  H = Math.max(80, Math.floor(cssH/cell));
+  cells = new Uint8Array(W*H);
+  life  = new Uint8Array(W*H);
+  jit   = new Uint8Array(W*H);
+  stamp = new Uint32Array(W*H);
+  CW = Math.ceil(W/CH); CHH = Math.ceil(H/CH);
+  act = new Uint8Array(CW*CHH); nxt = new Uint8Array(CW*CHH);
+  act.fill(1); nxt.fill(1);
+  for (let i=0;i<jit.length;i++) jit[i]=(Math.random()*256)|0;
+  setupCanvases();
+}
+
+function touch(x,y) {
+  const cx=x>>CHB, cy=y>>CHB;
+  nxt[cy*CW+cx]=1;
+  if ((x&CHM)===0   && cx>0)     nxt[cy*CW+cx-1]=1;
+  if ((x&CHM)===CHM && cx<CW-1)  nxt[cy*CW+cx+1]=1;
+  if ((y&CHM)===0   && cy>0)     nxt[(cy-1)*CW+cx]=1;
+  if ((y&CHM)===CHM && cy<CHH-1) nxt[(cy+1)*CW+cx]=1;
+}
+
+function initLife(t) {
+  if (t===FIRE)  return 40+(Math.random()*50|0);
+  if (t===SMOKE) return 70+(Math.random()*90|0);
+  if (t===STEAM) return 120+(Math.random()*120|0);
+  return 0;
+}
+
+function set(x,y,t,lf) {
+  const i=y*W+x;
+  cells[i]=t; jit[i]=(Math.random()*256)|0;
+  life[i] = lf!==undefined ? lf : initLife(t);
+  touch(x,y);
+}
+
+function swap(i,x,y,j,nx2,ny2) {
+  const t=cells[i]; cells[i]=cells[j]; cells[j]=t;
+  const l=life[i];  life[i]=life[j];  life[j]=l;
+  const g=jit[i];   jit[i]=jit[j];    jit[j]=g;
+  stamp[i]=frame; stamp[j]=frame;
+  touch(x,y); touch(nx2,ny2);
+}
+
+// ---------- Bevægelsesregler ----------
+function canSink(dens, target) {       // faldende: fortræng tomt/lettere væske/gas
+  if (target===EMPTY) return true;
+  const c=CAT[target];
+  return (c===CAT_LIQ||c===CAT_GAS) && DENS[target]<dens;
+}
+function canRise(dens, target) {       // gasser: op gennem tomt/væsker/tungere gas
+  if (target===EMPTY) return true;
+  const c=CAT[target];
+  if (c===CAT_LIQ) return true;        // bobler op gennem væske
+  return c===CAT_GAS && DENS[target]>dens;
+}
+
+function powder(i,x,y,t) {
+  const d=DENS[t];
+  if (y+1<H) {
+    const j=i+W, tj=cells[j];
+    if (canSink(d,tj)) {
+      if (tj!==EMPTY && Math.random()<0.45) { touch(x,y); return; } // synker langsomt i væske
+      swap(i,x,y,j,x,y+1); return;
+    }
+    const s = Math.random()<0.5?1:-1;
+    for (let k=0;k<2;k++) {
+      const dx = k===0?s:-s, nx2=x+dx;
+      if (nx2>=0 && nx2<W && canSink(d,cells[j+dx])) { swap(i,x,y,j+dx,nx2,y+1); return; }
+    }
+  }
+}
+
+function liquid(i,x,y,t) {
+  const d=DENS[t];
+  if (t===LAVA && Math.random()<0.55) { touch(x,y); return; } // tyktflydende
+  if (y+1<H) {
+    const j=i+W;
+    if (canSink(d,cells[j])) { swap(i,x,y,j,x,y+1); return; }
+    const s = Math.random()<0.5?1:-1;
+    for (let k=0;k<2;k++) {
+      const dx = k===0?s:-s, nx2=x+dx;
+      if (nx2>=0 && nx2<W && canSink(d,cells[j+dx])) { swap(i,x,y,j+dx,nx2,y+1); return; }
+    }
+  }
+  // vandret spredning: glid op til DISP celler, stop hvor der kan faldes
+  if (Math.random()<0.85) {
+    const disp=DISP[t], s=Math.random()<0.5?1:-1;
+    for (let k=0;k<2;k++) {
+      const dx = k===0?s:-s;
+      let best=-1, bx=x;
+      for (let m=1;m<=disp;m++) {
+        const nx2=x+dx*m;
+        if (nx2<0||nx2>=W) break;
+        const j=y*W+nx2;
+        if (cells[j]!==EMPTY) break;
+        best=j; bx=nx2;
+        if (y+1<H && canSink(d,cells[j+W])) break; // kan falde herfra
+      }
+      if (best>=0) { swap(i,x,y,best,bx,y); return; }
+    }
+  }
+}
+
+function gasMove(i,x,y,t) {
+  const d=DENS[t];
+  if (y>0) {
+    const j=i-W;
+    if (Math.random()<0.8 && canRise(d,cells[j])) { swap(i,x,y,j,x,y-1); return; }
+    const s=Math.random()<0.5?1:-1;
+    for (let k=0;k<2;k++) {
+      const dx=k===0?s:-s, nx2=x+dx;
+      if (nx2>=0 && nx2<W && canRise(d,cells[j+dx])) { swap(i,x,y,j+dx,nx2,y-1); return; }
+    }
+  }
+  // sidelæns drift
+  if (Math.random()<0.3) {
+    const dx=Math.random()<0.5?1:-1, nx2=x+dx;
+    if (nx2>=0 && nx2<W && cells[i+dx]===EMPTY) swap(i,x,y,i+dx,nx2,y);
+  }
+}
+
+const NB8=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[-1,1],[1,-1],[-1,-1]];
+
+function update(i,x,y) {
+  if (stamp[i]===frame) return;
+  const t=cells[i];
+  if (t===EMPTY||t===WALL||t===STONE||t===WOOD) return;
+
+  switch (t) {
+    case SAND: powder(i,x,y,t); return;
+
+    case WATER: liquid(i,x,y,t); return;
+
+    case OIL: liquid(i,x,y,t); return;
+
+    case ACID: {
+      // opløs naboer (sten/mur/træ/sand/plante); syren forbruges
+      for (let n=0;n<4;n++) {
+        const nx2=x+NB8[n][0], ny2=y+NB8[n][1];
+        if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
+        const j=ny2*W+nx2;
+        if (DISSOLVABLE[cells[j]] && Math.random()<0.045) {
+          if (Math.random()<0.3) set(nx2,ny2,SMOKE, 20+(Math.random()*20|0));
+          else set(nx2,ny2,EMPTY);
+          if (Math.random()<0.4) { set(x,y,EMPTY); return; }
+          touch(x,y);
+          break;
+        }
+      }
+      liquid(i,x,y,t); return;
+    }
+
+    case LAVA: {
+      for (let n=0;n<4;n++) {
+        const nx2=x+NB8[n][0], ny2=y+NB8[n][1];
+        if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
+        const j=ny2*W+nx2, tj=cells[j];
+        if (tj===WATER) {                 // lava + vand -> sten + damp
+          set(nx2,ny2,STEAM); set(x,y,STONE); return;
+        }
+        if (FLAM[tj]>0 && Math.random()<FLAM[tj])
+          set(nx2,ny2,FIRE, tj===WOOD?120+(Math.random()*80|0):undefined);
+      }
+      if (y>1 && cells[i-W]===EMPTY && Math.random()<0.02)
+        set(x,y-1,FIRE, 10+(Math.random()*14|0)); // gnister
+      liquid(i,x,y,t); return;
+    }
+
+    case FIRE: {
+      if (--life[i]===0) { set(x,y, Math.random()<0.4?SMOKE:EMPTY); return; }
+      touch(x,y);
+      for (let n=0;n<8;n++) {
+        const nx2=x+NB8[n][0], ny2=y+NB8[n][1];
+        if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
+        const j=ny2*W+nx2, tj=cells[j];
+        if (tj===WATER) {                 // vand slukker ild -> damp
+          set(nx2,ny2,STEAM); set(x,y, Math.random()<0.5?SMOKE:EMPTY); return;
+        }
+        if (FLAM[tj]>0 && Math.random()<FLAM[tj])
+          set(nx2,ny2,FIRE, tj===WOOD?120+(Math.random()*80|0):undefined);
+      }
+      if (Math.random()<0.18 && y>0 && cells[i-W]===EMPTY && life[i]>15)
+        set(x,y-1,SMOKE, 40+(Math.random()*60|0));
+      if (Math.random()<0.4) gasMove(i,x,y,t);
+      return;
+    }
+
+    case SMOKE: {
+      if (--life[i]===0) { set(x,y,EMPTY); return; }
+      touch(x,y); gasMove(i,x,y,t); return;
+    }
+
+    case STEAM: {
+      if (--life[i]===0) { set(x,y, Math.random()<0.35?WATER:EMPTY); return; }
+      // kondenserer under lofter
+      if (y>0) { const above=cells[i-W];
+        if ((above===WALL||above===STONE||above===WOOD) && Math.random()<0.012) { set(x,y,WATER); return; } }
+      touch(x,y); gasMove(i,x,y,t); return;
+    }
+
+    case PLANT: {
+      // gror ind i tilstødende vand
+      for (let n=0;n<4;n++) {
+        const nx2=x+NB8[n][0], ny2=y+NB8[n][1];
+        if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
+        if (cells[ny2*W+nx2]===WATER && Math.random()<0.02) { set(nx2,ny2,PLANT); break; }
+      }
+      return;
+    }
+  }
+}
+
+function step() {
+  frame++;
+  const tmp=act; act=nxt; nxt=tmp; nxt.fill(0);
+  // væk tilfældige chunks så fx plantevækst og kondens ikke "sover" for evigt
+  for (let k=0;k<6;k++) act[(Math.random()*act.length)|0]=1;
+
+  const ltr = (frame&1)===0;     // skift x-retning hver frame mod side-bias
+  for (let y=H-1; y>=0; y--) {
+    const row=y*W, cy=(y>>CHB)*CW;
+    if (ltr) {
+      for (let cx=0; cx<CW; cx++) {
+        if (!act[cy+cx]) continue;
+        const x1=Math.min(W,(cx+1)<<CHB);
+        for (let x=cx<<CHB; x<x1; x++) update(row+x,x,y);
+      }
+    } else {
+      for (let cx=CW-1; cx>=0; cx--) {
+        if (!act[cy+cx]) continue;
+        const x0=cx<<CHB;
+        for (let x=Math.min(W,(cx+1)<<CHB)-1; x>=x0; x--) update(row+x,x,y);
+      }
+    }
+  }
+  if (rain) {
+    for (let k=0;k<4;k++) {
+      const x=(Math.random()*W)|0, y=1+(Math.random()*3|0);
+      if (cells[y*W+x]===EMPTY && tool!==EMPTY) set(x,y,tool);
+    }
+  }
+}
+
+// ---------- Farver / rendering ----------
+const ABGR=(r,g,b)=>((255<<24)|(b<<16)|(g<<8)|r)>>>0;
+const BG=[7,7,13];
+const lerp=(a,b,t)=>a+(b-a)*t;
+function mix(c1,c2,t){ return ABGR(lerp(c1[0],c2[0],t)|0, lerp(c1[1],c2[1],t)|0, lerp(c1[2],c2[2],t)|0); }
+function shades(rgb, lo, hi) {  // 32 jitter-varianter af en grundfarve
+  const out=new Uint32Array(32);
+  for (let i=0;i<32;i++) {
+    const f=lo+(hi-lo)*(i/31), v=0.92+Math.random()*0.16;
+    out[i]=ABGR(Math.min(255,rgb[0]*f*v)|0, Math.min(255,rgb[1]*f*v)|0, Math.min(255,rgb[2]*f*v)|0);
+  }
+  return out;
+}
+function ramp(stops) {          // 32-trins gradient gennem rgb-stop
+  const out=new Uint32Array(32);
+  for (let i=0;i<32;i++) {
+    const p=i/31*(stops.length-1), s=Math.min(stops.length-2, p|0), t=p-s;
+    out[i]=mix(stops[s],stops[s+1],t);
+  }
+  return out;
+}
+
+const PAL=[];
+PAL[WALL] = shades([58,63,77],   .8,1.15);
+PAL[SAND] = shades([232,195,90], .82,1.12);
+PAL[WATER]= ramp([[26,100,220],[47,138,240],[80,170,255],[47,138,240],[26,100,220]]);
+PAL[OIL]  = shades([110,84,28],  .75,1.1);
+PAL[WOOD] = shades([138,79,36],  .78,1.12);
+PAL[STONE]= shades([120,120,136],.8,1.15);
+PAL[PLANT]= shades([46,204,84],  .7,1.15);
+PAL[ACID] = ramp([[40,255,90],[120,255,140],[60,230,80],[160,255,120],[40,255,90]]);
+PAL[LAVA] = ramp([[214,48,16],[255,110,20],[255,170,40],[255,110,20],[214,48,16]]);
+PAL[FIRE] = ramp([[120,16,8],[226,47,31],[255,94,31],[255,158,44],[255,210,62],[255,247,174]]);
+PAL[SMOKE]= (()=>{ const o=new Uint32Array(32);
+  for (let i=0;i<32;i++) o[i]=mix(BG,[96,96,110], Math.min(1,i/22)); return o; })();
+PAL[STEAM]= (()=>{ const o=new Uint32Array(32);
+  for (let i=0;i<32;i++) o[i]=mix(BG,[168,205,232], Math.min(1,i/24)); return o; })();
+const BGC=ABGR(BG[0],BG[1],BG[2]);
+
+let view, glow, vctx, gctx, vimg, gimg, vbuf, gbuf;
+function setupCanvases() {
+  view=document.getElementById('view'); glow=document.getElementById('glow');
+  view.width=W; view.height=H; glow.width=W; glow.height=H;
+  vctx=view.getContext('2d'); gctx=glow.getContext('2d');
+  vimg=vctx.createImageData(W,H); gimg=gctx.createImageData(W,H);
+  vbuf=new Uint32Array(vimg.data.buffer); gbuf=new Uint32Array(gimg.data.buffer);
+}
+
+function render() {
+  const n=W*H, f=frame;
+  for (let i=0;i<n;i++) {
+    const t=cells[i];
+    if (t===EMPTY) { vbuf[i]=BGC; gbuf[i]=0; continue; }
+    let c;
+    switch (t) {
+      case FIRE: {
+        const idx=Math.min(31, (life[i]>>3)+((jit[i]+f*5)&7));
+        c=PAL[FIRE][idx]; gbuf[i]=c; break;
+      }
+      case LAVA:  c=PAL[LAVA][(jit[i]+f)&31];      gbuf[i]=c; break;
+      case ACID:  c=PAL[ACID][(jit[i]+(f<<1))&31]; gbuf[i]=c; break;
+      case WATER: c=PAL[WATER][(jit[i]+(f>>1))&31]; gbuf[i]=0; break;
+      case SMOKE: c=PAL[SMOKE][Math.min(31,life[i]>>2)]; gbuf[i]=0; break;
+      case STEAM: c=PAL[STEAM][Math.min(31,life[i]>>3)]; gbuf[i]=0; break;
+      default:    c=PAL[t][jit[i]>>3]; gbuf[i]=0;
+    }
+    vbuf[i]=c;
+  }
+  vctx.putImageData(vimg,0,0);
+  gctx.putImageData(gimg,0,0);
+}
+
+// ---------- Maleværktøj / input ----------
+let tool=SAND, brushR=5, painting=false, lastPX=-1, lastPY=-1;
+
+function paintDisk(px,py) {
+  const r=brushR, solid=(tool===WALL||tool===WOOD||tool===PLANT||tool===STONE||tool===EMPTY);
+  for (let dy=-r;dy<=r;dy++) for (let dx=-r;dx<=r;dx++) {
+    if (dx*dx+dy*dy>r*r) continue;
+    const x=px+dx, y=py+dy;
+    if (x<0||x>=W||y<0||y>=H) continue;
+    const i=y*W+x;
+    if (tool===EMPTY) { if (cells[i]!==EMPTY) set(x,y,EMPTY); continue; }
+    if (solid) { set(x,y,tool); continue; }
+    if (cells[i]===EMPTY && Math.random()<0.55) set(x,y,tool);
+  }
+}
+function paintLine(x0,y0,x1,y1) {
+  const d=Math.max(Math.abs(x1-x0),Math.abs(y1-y0)), steps=Math.max(1,d);
+  for (let s=0;s<=steps;s++)
+    paintDisk(Math.round(lerp(x0,x1,s/steps)), Math.round(lerp(y0,y1,s/steps)));
+}
+function toSim(e) {
+  const r=view.getBoundingClientRect();
+  return [ (e.clientX-r.left)/r.width*W |0, (e.clientY-r.top)/r.height*H |0 ];
+}
+addEventListener('pointerdown', e=>{
+  if (e.target.closest('#bottom')||e.target.closest('#topbar')) return;
+  painting=true; hideTitle();
+  const [x,y]=toSim(e); paintDisk(x,y); lastPX=x; lastPY=y;
+});
+addEventListener('pointermove', e=>{
+  if (!painting) return;
+  const [x,y]=toSim(e); paintLine(lastPX,lastPY,x,y); lastPX=x; lastPY=y;
+});
+addEventListener('pointerup',   ()=>painting=false);
+addEventListener('pointercancel',()=>painting=false);
+document.addEventListener('touchmove', e=>{
+  // stop scroll/rubber-banding, men lad slider og knapper virke
+  if (!e.target.closest('#bottom') && !e.target.closest('#topbar')) e.preventDefault();
+}, {passive:false});
+document.addEventListener('gesturestart', e=>e.preventDefault());
+addEventListener('contextmenu', e=>e.preventDefault());
+addEventListener('wheel', e=>{ setBrush(brushR + (e.deltaY<0?1:-1)); });
+
+// ---------- UI ----------
+const TOOLS=[
+  [SAND,'Sand','#e8c35a'],[WATER,'Vand','#2f8af0'],[OIL,'Olie','#a8843c'],
+  [FIRE,'Ild','#ff7a2c'],[LAVA,'Lava','#ff6e14'],[ACID,'Syre','#39ff6a'],
+  [WOOD,'Træ','#8a4f24'],[PLANT,'Plante','#2ecc54'],[WALL,'Mur','#7e8699'],
+  [EMPTY,'Slet','#cfd6f5'],
+];
+const paletteEl=document.getElementById('palette');
+TOOLS.forEach(([id,name,col],k)=>{
+  const el=document.createElement('div');
+  el.className='chip'; el.style.setProperty('--c',col);
+  el.innerHTML=`<span class="dot" style="background:${col};color:${col}"></span>${name}`;
+  el.onclick=()=>selectTool(id);
+  el.dataset.tool=id;
+  paletteEl.appendChild(el);
+});
+function selectTool(id) {
+  tool=id;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel', +c.dataset.tool===id));
+}
+selectTool(SAND);
+
+const brushEl=document.getElementById('brush');
+function setBrush(v) {
+  brushR=Math.max(1,Math.min(20,v|0));
+  brushEl.value=brushR;
+  document.getElementById('brushval').textContent=brushR;
+}
+brushEl.addEventListener('input', ()=>setBrush(+brushEl.value));
+
+const bPause=document.getElementById('bPause');
+bPause.onclick=()=>{ paused=!paused; bPause.textContent=paused?'▶':'⏸'; bPause.classList.toggle('on',paused); };
+document.getElementById('bClear').onclick=()=>{ cells.fill(EMPTY); act.fill(1); nxt.fill(1); };
+const bRain=document.getElementById('bRain');
+bRain.onclick=()=>{ rain=!rain; bRain.classList.toggle('on',rain); };
+
+addEventListener('keydown', e=>{
+  const k=e.key;
+  if (k>='1'&&k<='9') { const t=TOOLS[+k-1]; if (t) selectTool(t[0]); }
+  if (k==='0') selectTool(EMPTY);
+  if (k===' ') bPause.onclick();
+  if (k==='c'||k==='C') document.getElementById('bClear').onclick();
+  if (k==='r'||k==='R') bRain.onclick();
+  if (k==='[') setBrush(brushR-1);
+  if (k===']') setBrush(brushR+1);
+});
+
+let titleHidden=false;
+function hideTitle() {
+  if (titleHidden) return; titleHidden=true;
+  document.getElementById('title').style.opacity='0';
+}
+setTimeout(hideTitle, 5000);
+
+// ---------- Demo-scene ----------
+function fillRect(x0,y0,x1,y1,t,p) {
+  for (let y=Math.max(0,y0);y<=Math.min(H-1,y1);y++)
+    for (let x=Math.max(0,x0);x<=Math.min(W-1,x1);x++)
+      if (p===undefined||Math.random()<p) set(x,y,t);
+}
+function demoScene() {
+  const w=W,h=H, X=f=>Math.floor(w*f), Y=f=>Math.floor(h*f);
+  // bassin til venstre med vand + olielag ovenpå
+  const bx0=X(.04), bx1=X(.40), bb=h-3, bt=Y(.60);
+  fillRect(bx0,bt,bx0+1,bb,WALL); fillRect(bx1-1,bt,bx1,bb,WALL);
+  fillRect(bx0,bb-1,bx1,bb,WALL);
+  fillRect(bx0+2,Y(.80),bx1-2,bb-2,WATER);
+  fillRect(bx0+2,Y(.74),bx1-2,Y(.80)-1,OIL);
+  // sandklit i midten
+  const cx=X(.52), rad=Math.max(8,X(.085));
+  for (let k=0;k<rad;k++) fillRect(cx-(rad-k),h-2-k,cx+(rad-k),h-2-k,SAND,.95);
+  // træplatform til højre med planter
+  const px0=X(.66), px1=X(.95), py=Y(.55);
+  fillRect(px0,py,px1,py+1,WOOD);
+  fillRect(px0,py,px0+1,h-2,WOOD); fillRect(px1-1,py,px1,h-2,WOOD);
+  fillRect(X(.70),py-3,X(.74),py-1,PLANT);
+  fillRect(X(.78),py-4,X(.83),py-1,PLANT);
+  fillRect(X(.87),py-3,X(.91),py-1,PLANT);
+  // lava-skål øverst th. med hul i bunden -> drypper ned på platformen
+  const lx=X(.80), ly=Y(.14);
+  fillRect(lx-7,ly,lx-6,ly+6,WALL); fillRect(lx+6,ly,lx+7,ly+6,WALL);
+  fillRect(lx-7,ly+6,lx-3,ly+7,WALL); fillRect(lx+3,ly+6,lx+7,ly+7,WALL);
+  fillRect(lx-5,ly+1,lx+5,ly+5,LAVA);
+  // syreklat på en stenhylde mellem klit og bassin
+  const sx=X(.47), sy=Y(.42);
+  fillRect(sx-5,sy,sx+5,sy+1,STONE);
+  fillRect(sx-3,sy-4,sx+3,sy-1,ACID,.9);
+}
+
+// ---------- Hovedløkke ----------
+const statsEl=document.getElementById('stats');
+let fpsFrames=0, fpsTime=performance.now(), fps=60, lastSim=performance.now();
+const SIM_DT=1000/60;
+
+function loop(now) {
+  // fast timestep: sim kører 60 Hz uanset skærmens refresh rate
+  let n=0;
+  while (now-lastSim>=SIM_DT && n<3) { if (!paused) step(); lastSim+=SIM_DT; n++; }
+  if (now-lastSim>=SIM_DT) lastSim=now;  // tab frames frem for at spiralere
+  if (painting && lastPX>=0) paintDisk(lastPX,lastPY); // hold fingeren = bliv ved at male
+  render();
+  fpsFrames++;
+  if (now-fpsTime>500) {
+    fps=Math.round(fpsFrames*1000/(now-fpsTime)); fpsFrames=0; fpsTime=now;
+    liveCount=0; for (let i=0;i<cells.length;i++) if (cells[i]!==EMPTY) liveCount++;
+    statsEl.textContent=`${fps} FPS · ${(liveCount/1000).toFixed(1)}k px · ${W}×${H}`;
+  }
+  requestAnimationFrame(loop);
+}
+
+let resizeTimer;
+addEventListener('resize', ()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{ alloc(); demoScene(); }, 250);
+});
+
+alloc();
+demoScene();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
