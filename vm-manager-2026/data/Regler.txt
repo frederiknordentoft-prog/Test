@@ -1,0 +1,136 @@
+Regler
+Med et imaginært budget på kr. 50.000.000 skal du købe et fodboldhold bestående af spillere fra den virkelige verden. Spillerne du kan købe er navngivet efter de spillere du kender fra virkelighedens hold, og præstationerne fra virkelighedens kampe veksles således til spillervækst på dit hold. Holdet med størst værdi til slut vinder spillet. Du kan se hvad der gives vækst for i pointsystemet.
+
+Pointsystem
+Mål og Assist
+Scoring af angriber	125.000
+Scoring af midtbanespiller	150.000
+Scoring af forsvarsspiller	175.000
+Scoring af målvogter	250.000
+Selvmål	-50.000
+Assist 1	60.000
+Skud på mål 2	10.000
+Afgørende scoring
+Scoring til sejr 3	40.000
+Scoring til uafgjort 3	20.000
+Kampens spiller
+Kampens spiller 9	33.000
+Fairplay
+Gult kort	-20.000
+Andet gule kort	-20.000
+Direkte rødt kort	-50.000
+Holdpræstation
+Vundet	25.000
+Uafgjort	5.000
+Tabt	-8.000
+Hold scorer 4	10.000
+Modstanderhold scorer 4	-8.000
+Straffesparkskonkurrence
+Vundet 11	25.000
+Special
+På banen 5	7.000
+Ikke på banen 5	-5.000
+Rent mål forsvar 6	50.000
+Rent mål målvogter 6	75.000
+Redning af målvogter 7	5.000
+Reddet straffe 8	100.000
+Brændt straffe 8	-30.000
+Hattrick 10	100.000
+Finans
+Kaptajnbonus = Vækst * 1	-
+Bankrente = 1%	-
+Pointregler
+Assist gives til den medspiller som har den målgivende aflevering.
+
+Bemærk at der ikke gives assist til alle mål. Dette gælder f.eks. ved selvmål, straffespark, riposter eller hvis bolden tydeligt rammer/rører en modspiller inden den målscorende afslutning.
+
+Skud på mål gives ved skud inden for målrammen, som ikke resulterer i mål. Der gives ikke vækst for 'skud på mål' ved scoringer, straffespark, ved skud på stolpe/overligger, blokeringer eller skud forbi mål.
+
+'Skud på mål' leveres 100 % af vores datapartner og er ikke til diskussion.
+
+Afgørende scoring skal ses i forhold til kampens slutresultat, og gives til målscoreren som ændrer kampens udfald fra nederlag til uafgjort, eller fra uafgjort til sejr. Eksempler på afgørende scoring:
+
+0-1: Kampens enlige mål (medfører sejr)
+
+2-0: Kampens første mål (medfører sejr)
+
+1-3: Udeholdets mål nr. 2 (medfører sejr)
+
+2-2: Kampens sidste mål (medfører uafgjort)
+
+Der kan kun være én afgørende scoring pr. kamp. Afgørende scoring bortfalder, hvis den udslagsgivende scoring er et selvmål.
+
+Gives udelukkende til de spillere som er på banen når målet scores. Spillere som ikke er på banen på scoringstidspunktet, tildeles ikke denne værdiændring.
+
+Gives til spillere som figurerer i startopstillingen, eller bliver indskiftet i løbet af kampen. En spiller der ikke kommer på banen i løbet af kampen får -5.000 uanset hvordan holdet klarer sig, da spilleren ikke har haft aktiv indflydelse på kampens resultat. En spiller der ikke kommer på banen, kan desuden godt få minus for eventuelle gule/røde kort.
+
+Vækst for rent mål forudsætter følgende:
+
+1. Holdet har ikke indkasseret mål igennem hele kampen. Dvs. 0 mål scoret imod holdet.
+2. Spilleren har været på banen i minimum 60 minutter af den ordinære spilletid + evt. forlænget spilletid (altså er det kampens 90 + 30 minutter der regnes med uden tillægstid).
+
+Bemærk at de angivne minutter i vores kampreferater vil være gældende, og vi indlader os ikke på diskussioner angående antal spillede minutter.
+
+Redning af målvogter gives ved skud inden for målrammen, hvor målvogteren forhindrer en scoring.
+
+'Redning af målvogter' leveres 100 % af vores datapartner og er ikke til diskussion.
+
+Ved straffespark bliver der enten scoret eller reddet/brændt. Vækst/minus for reddet/brændt straffe gives uanset årsagen til at der ikke blev scoret (f.eks. stolpeskud, skud forbi mål, regulær redning osv.). Ved redning kan målvogteren få vækst for både 'reddet straffe' og 'redning af målvogter', hvis der der er tale om en regulær redning (og ikke f.eks. stolpeskud, skud forbi mål osv.).
+
+Gives efter kampens afslutning til den officielt kårede kampens spiller.
+
+I tilfælde af dobbelt hattrick (6 mål af samme spiller i samme kamp) får spilleren også 2 x hattrick.
+
+Der gives vækst for ordinær spilletid, tillægstid og eventuel forlænget spilletid. Der gives altså ikke vækst for mål og redninger i en eventuel straffesparkskonkurrence. I tilfælde af straffesparkskonkurrence er det således også resultatet efter den forlængede spilletid, der er gældende i spillet. Gule og røde kort gives stadig, ligesom der også kan gives gule/røde kort efter kampen og til spillere som ikke har været på banen.
+
+Spillere der har været på banen for det hold der vinder straffesparkskonkurrencen vil modtage "Vundet" straffesparkskonkurrence.
+
+Du skal vælge en kaptajn blandt dine 11 spillere. Din kaptajn stiger og falder i værdi på almindelig vis, og derudover indtjener han en "Kaptajnbonus" som svarer til det han er steget i værdi i runden.
+
+Din eventuelle kaptajnbonus vises ikke ud for spilleren. Beløbet kommer derimod direkte i banken, og vises kun i "Kaptajnbonus-feltet" på din holdside. Dette skyldes at bonusen ikke er en generel vækst til spilleren, men udelukkende en bonus til dit hold (der kan jo være mange andre deltagere som har samme spiller, uden han er valgt til kaptajn).
+
+Fodbold
+Henholdsvis forsvaret, midtbanen og angrebet udgør en kæde på dit hold. Når du køber spillere, kan du vælge mellem flere forskellige formationer. Din formation kan altid ændres i forbindelse med spillerhandel.
+
+De penge du ikke bruger på at købe spillere, bliver stående i din virtuelle bank, og kan bruges ved fremtidige spillerhandler.
+
+Frem til kvartfinalerne kan der maksimalt vælges 4 spillere fra det samme hold. Når kvartfinalerne starter, frafalder denne begrænsning.
+
+Spillere fra de hold som bliver slået ud af turneringen bliver deaktiveret ved afslutningen af runden, hvor holdet bliver slået ud.
+
+Deaktiverede spillere markeres ved at de er "krydset over" (i tekstvisning er de "streget over"). De kan sælges (men ikke købes), og de ændrer ikke længere værdi.
+
+Generelt
+Spillet er inddelt i runder. En runde starter i det øjeblik der åbnes for spillerhandel, og forløber indtil alle rundens kampe er blevet afviklet, og der igen åbnes for spillerhandel til den efterfølgende runde.
+
+Hvert managerhold tildeles spillervækst for de spillere som udgør holdopstillingen i den pågældende runde - og underforstået for de kampe som udgør runden. Dette er især vigtigt at notere sig, hvis det skulle ske at kampe bliver udsat/flyttet.
+
+Ud over transfergebyret koster det en 'kontrakt' for hver spiller der udskiftes. Dvs. for hver spillerhandel der gennemføres, hvor man sælger en spiller for at købe en ny, bruger man en kontrakt. Dette gælder dog ikke inden kampene i runde 1, hvor der frit kan udskiftes spillere uden brug af kontrakter. Det koster ikke kontrakter, når der skiftes kaptajn.
+
+Basishold har 3 kontrakter til hele spillet, mens Guldhold ikke er begrænset af kontrakter. Basishold kan under hele spillet opgraderes til Guldhold, og kan dermed få fjernet kontrakt-begrænsningen.
+
+Bemærk at deltagelse om præmier i konkurrencerne "Præmiepuljen" er betinget af, at købet af eller opgraderingen til "Guldhold+ Konkurrencer" er foretaget inden det annoncerede tidspunkt for kampstart i runde 1. Efter kampstart i runde 1 vil det ikke længere være muligt at tilkøbe deltagelse om præmier!
+
+Hver deltager kan maks. oprette 20 Guld+ hold. Dette er ud fra en sportslig betragtning om at svække muligheden for at 'helgardere' sig til topplaceringer.
+
+Det er kun tilladt at oprette ét Basishold pr. deltager/person. Ønsker man flere hold kan der købes Guld+ hold for kr. 99,- pr. hold. Guld+ deltager om præmierne i Præmiepuljen og kan derfor kun oprettes frem til det annoncerede tidspunkt for kampstart i runde 1. Præmiedeltagelse kan ikke tilkøbes senere i spillet!
+
+Bemærk: Oprettelse af og opgradering til Guldhold efter kampstart i runde 1 koster kr. 119,- Disse hold har dog ikke mulighed for at deltage om præmier.
+
+Der er mulighed for at udskifte spillere til hver runde. Når der foretages en spillerhandel koster det 1 % af de købte spilleres aktuelle værdi. Spillerne er derfor reelt lidt dyrere end deres pris antyder. Dette gælder dog ikke inden kampene i runde 1, hvor alle handler er fritaget for transfergebyr. Du kan altid følge med i transfergebyrets størrelse på siden hvor du handler spillere.
+
+Handel lukker på det annoncerede tidspunkt for første kamp i runden. For alle tilfældes skyld anbefaler vi dog at holdoprettelser, spillerhandel og kaptajnskifte er afsluttet ca. 5 minutter inden!
+
+Guldhold og Guld+ har mulighed for at fortryde handler der er foretaget i runden (frem til det annoncerede tidspunkt for rundens første kamp).
+
+Deltagere med Guldhold og Guld+ kan se information om skader og karantæner. Informationen er vejledende og markeres med små ikoner ud for spilleren. Deltagere med Basishold kan ikke se denne information. Læs evt. mere om skader/karantæner i vores FAQ.
+
+Kampene i spillet bliver opdateret live. Du kan derfor følge med i dine spilleres individuelle vækst mens kampene afvikles.
+
+Live-opdateringer er vejledende og skal verificeres før de tæller endeligt med i spillet. Kampene bliver verificeret inden for et par timer efter de er afsluttet.
+
+Handel åbner kl. 9.00 dagen efter den sidste kamp i runden er spillet.
+
+Når spillerne bliver låst op efter validering af resultaterne, er det som udgangspunkt de resultater som systemet er opdateret med, der er gældende. Hvis der efterfølgende laves ændringer i virkeligheden (f.eks. ændring af assist eller kreditering af scoring), bliver spillet normalt ikke korrigeret tilsvarende, med mindre ændringen kommer inden kampstart i den efterfølgende runde. Vi forbeholder os dog ret til at vurdere ændringerne enkeltvis og det er alene Swush.com som afgør om der foretages ændringer.
+
+Spillet slutter efter den sidste runde / finalen er færdigspillet, opdateret og endeligt verificeret.

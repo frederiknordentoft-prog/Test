@@ -1,0 +1,73 @@
+round,group,home,away
+R1,A,Mexico,Sydafrika
+R1,A,Sydkorea,Tjekkiet
+R1,B,Canada,Bosnien-Hercegovina
+R1,B,Qatar,Schweiz
+R1,C,Brasilien,Marokko
+R1,C,Haiti,Skotland
+R1,D,USA,Paraguay
+R1,D,Australien,Tyrkiet
+R1,E,Tyskland,Curaçao
+R1,E,Elfenbenskysten,Ecuador
+R1,F,Holland,Japan
+R1,F,Sverige,Tunesien
+R1,G,Belgien,Egypten
+R1,G,Iran,New Zealand
+R1,H,Spanien,Kap Verde
+R1,H,Saudi-Arabien,Uruguay
+R1,I,Frankrig,Senegal
+R1,I,Irak,Norge
+R1,J,Argentina,Algeriet
+R1,J,Østrig,Jordan
+R1,K,Portugal,Congo DR
+R1,K,Usbekistan,Colombia
+R1,L,England,Kroatien
+R1,L,Ghana,Panama
+R2,A,Tjekkiet,Sydafrika
+R2,A,Mexico,Sydkorea
+R2,B,Schweiz,Bosnien-Hercegovina
+R2,B,Canada,Qatar
+R2,C,Skotland,Marokko
+R2,C,Brasilien,Haiti
+R2,D,USA,Australien
+R2,D,Tyrkiet,Paraguay
+R2,E,Tyskland,Elfenbenskysten
+R2,E,Ecuador,Curaçao
+R2,F,Holland,Sverige
+R2,F,Tunesien,Japan
+R2,G,Belgien,Iran
+R2,G,New Zealand,Egypten
+R2,H,Spanien,Saudi-Arabien
+R2,H,Uruguay,Kap Verde
+R2,I,Frankrig,Irak
+R2,I,Norge,Senegal
+R2,J,Argentina,Østrig
+R2,J,Jordan,Algeriet
+R2,K,Portugal,Usbekistan
+R2,K,Colombia,Congo DR
+R2,L,England,Ghana
+R2,L,Panama,Kroatien
+R3,A,Tjekkiet,Mexico
+R3,A,Sydafrika,Sydkorea
+R3,B,Schweiz,Canada
+R3,B,Bosnien-Hercegovina,Qatar
+R3,C,Skotland,Brasilien
+R3,C,Marokko,Haiti
+R3,D,Tyrkiet,USA
+R3,D,Paraguay,Australien
+R3,E,Ecuador,Tyskland
+R3,E,Curaçao,Elfenbenskysten
+R3,F,Japan,Sverige
+R3,F,Tunesien,Holland
+R3,G,Egypten,Iran
+R3,G,New Zealand,Belgien
+R3,H,Kap Verde,Saudi-Arabien
+R3,H,Uruguay,Spanien
+R3,I,Norge,Frankrig
+R3,I,Senegal,Irak
+R3,J,Algeriet,Østrig
+R3,J,Jordan,Argentina
+R3,K,Colombia,Portugal
+R3,K,Congo DR,Usbekistan
+R3,L,Panama,England
+R3,L,Kroatien,Ghana
