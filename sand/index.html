@@ -96,7 +96,7 @@
 // ---------- Elementer ----------
 const EMPTY=0, WALL=1, SAND=2, WATER=3, OIL=4, FIRE=5, WOOD=6,
       SMOKE=7, STEAM=8, ACID=9, LAVA=10, STONE=11, PLANT=12,
-      GUNPOWDER=13, ICE=14, NTYPES=15;
+      GUNPOWDER=13, ICE=14, GLASS=15, SPARK=16, VIRUS=17, FIREWORK=18, NTYPES=19;
 
 const CAT_STATIC=0, CAT_POWDER=1, CAT_LIQ=2, CAT_GAS=3;
 const CAT  = new Uint8Array(NTYPES);
@@ -113,7 +113,7 @@ CAT[LAVA]=CAT_LIQ;   DENS[LAVA]=3.0;  DISP[LAVA]=1;
 CAT[SMOKE]=CAT_GAS;  DENS[SMOKE]=0.15;
 CAT[STEAM]=CAT_GAS;  DENS[STEAM]=0.30;
 CAT[FIRE]=CAT_GAS;   DENS[FIRE]=0.10;
-FLAM[WOOD]=0.06; FLAM[PLANT]=0.18;
+FLAM[WOOD]=0.06; FLAM[PLANT]=0.18; FLAM[VIRUS]=0.25;
 
 const DISSOLVABLE = new Uint8Array(NTYPES);
 DISSOLVABLE[WALL]=DISSOLVABLE[STONE]=DISSOLVABLE[WOOD]=DISSOLVABLE[SAND]=DISSOLVABLE[PLANT]=1;
@@ -126,6 +126,7 @@ const CHB=4, CH=16, CHM=15;
 let liveCount=0, paused=false, rain=false;
 
 function alloc() {
+  const old = cells ? {W, H, cells, life, jit} : null;
   // banen slutter over bundpaletten, så gulvet altid er synligt
   const bottomEl=document.getElementById('bottom');
   const barH=(bottomEl&&bottomEl.offsetHeight)||0;
@@ -138,6 +139,15 @@ function alloc() {
   life  = new Uint8Array(W*H);
   jit   = new Uint8Array(W*H);
   stamp = new Uint32Array(W*H);
+  if (old) {  // bevar scenen ved rotation/resize, justeret mod bunden (tyngdekraft)
+    const ow=Math.min(W,old.W), oh=Math.min(H,old.H);
+    for (let y=0;y<oh;y++) {
+      const si=(old.H-1-y)*old.W, di=(H-1-y)*W;
+      for (let x=0;x<ow;x++) {
+        cells[di+x]=old.cells[si+x]; life[di+x]=old.life[si+x]; jit[di+x]=old.jit[si+x];
+      }
+    }
+  }
   CW = Math.ceil(W/CH); CHH = Math.ceil(H/CH);
   act = new Uint8Array(CW*CHH); nxt = new Uint8Array(CW*CHH);
   act.fill(1); nxt.fill(1);
@@ -160,6 +170,9 @@ function initLife(t) {
   if (t===FIRE)  return 40+(Math.random()*50|0);
   if (t===SMOKE) return 70+(Math.random()*90|0);
   if (t===STEAM) return 120+(Math.random()*120|0);
+  if (t===SPARK) return 50+(Math.random()*70|0);
+  if (t===VIRUS) return 140+(Math.random()*100|0);
+  if (t===FIREWORK) return 40+(Math.random()*40|0);
   return 0;
 }
 
@@ -277,6 +290,17 @@ function liquid(i,x,y,t) {
       if (best>=0) { swap(cur,x,cy2,best,bx,cy2); return; }
     }
   }
+  // byt vandret med en LETTERE væske — ellers kan vand stå som "bakke"
+  // under et olietæppe over en skæv bund uden nogensinde at flade ud
+  const s2=Math.random()<0.5?1:-1;
+  for (let k=0;k<2;k++) {
+    const dx=k===0?s2:-s2, nx2=x+dx;
+    if (nx2<0||nx2>=W) continue;
+    const j2=cy2*W+nx2, tj2=cells[j2];
+    if (CAT[tj2]===CAT_LIQ && DENS[tj2]<d && Math.random()<0.5) {
+      swap(cur,x,cy2,j2,nx2,cy2); return;
+    }
+  }
 }
 
 function gasMove(i,x,y,t) {
@@ -299,8 +323,30 @@ function gasMove(i,x,y,t) {
 
 const NB8=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[-1,1],[1,-1],[-1,-1]];
 
+let shakeT=0;
+function shake(n){ shakeT=Math.min(14, shakeT+n); }
+
+// fyrværkeri-brag: ring af gnister i én tilfældig farve pr. raket
+function fwBurst(cx,cy) {
+  boom(3); shake(3);
+  const r=7+(Math.random()*5|0), r2=r*r, hue=(Math.random()*256)|0;
+  for (let dy=-r;dy<=r;dy++) {
+    const yy=cy+dy; if (yy<0||yy>=H) continue;
+    for (let dx=-r;dx<=r;dx++) {
+      const xx=cx+dx; if (xx<0||xx>=W) continue;
+      const d2=dx*dx+dy*dy; if (d2>r2) continue;
+      const i2=yy*W+xx;
+      if (cells[i2]!==EMPTY) continue;
+      if (Math.random() < 0.12+0.5*(d2/r2)) {   // tættest ved randen -> ring
+        set(xx,yy,SPARK);
+        jit[i2]=(hue+((Math.random()*36)|0))&255;
+      }
+    }
+  }
+}
+
 function explode(cx,cy,r) {
-  boom(r);
+  boom(r); shake(Math.min(10,r));
   const r2=r*r;
   for (let dy=-r;dy<=r;dy++) {
     const yy=cy+dy; if (yy<0||yy>=H) continue;
@@ -310,6 +356,7 @@ function explode(cx,cy,r) {
       const tj=cells[yy*W+xx];
       if (tj===WALL) continue;
       if (tj===GUNPOWDER) { set(xx,yy,FIRE, 8+(Math.random()*10|0)); continue; } // kædereaktion
+      if (tj===SAND && Math.random()<0.45) { set(xx,yy,GLASS); continue; }       // forglasning
       if (Math.random() < 0.3+0.7*(1-d2/r2)) {
         const rr=Math.random();
         if (rr<0.5)       set(xx,yy,FIRE, 14+(Math.random()*26|0));
@@ -323,7 +370,7 @@ function explode(cx,cy,r) {
 function update(i,x,y) {
   if (stamp[i]===frame) return;
   const t=cells[i];
-  if (t===EMPTY||t===WALL||t===STONE||t===WOOD) return;
+  if (t===EMPTY||t===WALL||t===STONE||t===WOOD||t===GLASS) return;
 
   switch (t) {
     case SAND: powder(i,x,y,t); return;
@@ -350,7 +397,8 @@ function update(i,x,y) {
     }
 
     case LAVA: {
-      for (let n=0;n<4;n++) {
+      // 8 naboer — ellers overlever vand i diagonale lommer i skorpen
+      for (let n=0;n<8;n++) {
         const nx2=x+NB8[n][0], ny2=y+NB8[n][1];
         if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
         const j=ny2*W+nx2, tj=cells[j];
@@ -359,6 +407,7 @@ function update(i,x,y) {
         }
         if (tj===GUNPOWDER) { explode(nx2,ny2, 5+(Math.random()*4|0)); return; }
         if (tj===ICE) { if (Math.random()<0.1) { set(nx2,ny2,WATER); sizzle(); } continue; }
+        if (tj===SAND && Math.random()<0.02) { set(nx2,ny2,GLASS); continue; } // forglasning
         if (FLAM[tj]>0 && Math.random()<FLAM[tj]) {
           set(nx2,ny2,FIRE, tj===WOOD?120+(Math.random()*80|0):undefined);
           crackle();
@@ -406,6 +455,54 @@ function update(i,x,y) {
     }
 
     case GUNPOWDER: powder(i,x,y,t); return;
+
+    case SPARK: {
+      if (--life[i]===0) { set(x,y,EMPTY); return; }
+      touch(x,y);
+      if (Math.random()<0.45 && y+1<H) {        // daler langsomt
+        const j=i+W;
+        if (cells[j]===EMPTY) { swap(i,x,y,j,x,y+1); return; }
+        const s=Math.random()<0.5?1:-1, nx2=x+s;
+        if (nx2>=0 && nx2<W && cells[j+s]===EMPTY) { swap(i,x,y,j+s,nx2,y+1); return; }
+      }
+      if (Math.random()<0.08) {                  // antænder af og til
+        const n=(Math.random()*4)|0, nx2=x+NB8[n][0], ny2=y+NB8[n][1];
+        if (nx2>=0&&nx2<W&&ny2>=0&&ny2<H) {
+          const tj=cells[ny2*W+nx2];
+          if (tj===GUNPOWDER) { explode(nx2,ny2, 5+(Math.random()*3|0)); return; }
+          if (FLAM[tj]>0) set(nx2,ny2,FIRE);
+        }
+      }
+      return;
+    }
+
+    case FIREWORK: {
+      if (--life[i]===0) { fwBurst(x,y); set(x,y,SPARK); return; }
+      touch(x,y);
+      let cur=i, cy2=y;                          // stiger 2 celler/frame med gnisthale
+      for (let k=0;k<2;k++) {
+        if (cy2===0 || cells[cur-W]!==EMPTY) { fwBurst(x,cy2); set(x,cy2,SPARK); return; }
+        swap(cur,x,cy2,cur-W,x,cy2-1);
+        if (Math.random()<0.6) set(x,cy2,SPARK, 14+(Math.random()*16|0));
+        cur-=W; cy2--;
+      }
+      return;
+    }
+
+    case VIRUS: {
+      if (--life[i]===0) { set(x,y, Math.random()<0.25?SMOKE:EMPTY); return; }
+      touch(x,y);
+      for (let n=0;n<4;n++) {                    // æder sig ind i alt undtagen mur
+        const nx2=x+NB8[n][0], ny2=y+NB8[n][1];
+        if (nx2<0||nx2>=W||ny2<0||ny2>=H) continue;
+        const tj=cells[ny2*W+nx2];
+        if (tj!==EMPTY && tj!==VIRUS && tj!==WALL && Math.random()<0.045) {
+          set(nx2,ny2,VIRUS); break;
+        }
+      }
+      if (Math.random()<0.25 && y+1<H && cells[i+W]===EMPTY) swap(i,x,y,i+W,x,y+1);
+      return;
+    }
 
     case ICE: {
       // frost breder sig langsomt ind i tilstødende vand
@@ -495,6 +592,11 @@ PAL[LAVA] = ramp([[214,48,16],[255,110,20],[255,170,40],[255,110,20],[214,48,16]
 PAL[FIRE] = ramp([[120,16,8],[226,47,31],[255,94,31],[255,158,44],[255,210,62],[255,247,174]]);
 PAL[GUNPOWDER]= shades([74,74,86], .7, 1.9);   // mørkt grus med lyse korn
 PAL[ICE]  = ramp([[140,200,245],[185,232,255],[155,212,250],[205,242,255],[140,200,245]]);
+PAL[GLASS]= (()=>{ const o=new Uint32Array(32);  // mørkt, gennemskinneligt
+  for (let i=0;i<32;i++) o[i]=mix(BG,[168,212,232], 0.16+(i/31)*0.22); return o; })();
+PAL[SPARK]= ramp([[255,84,84],[255,200,66],[120,255,96],[84,200,255],[190,120,255],[255,84,190],[255,84,84]]);
+PAL[VIRUS]= ramp([[255,46,205],[170,16,150],[255,96,235],[130,8,115],[255,46,205]]);
+PAL[FIREWORK]= shades([255,236,180], .9, 1.25);
 PAL[SMOKE]= (()=>{ const o=new Uint32Array(32);
   for (let i=0;i<32;i++) o[i]=mix(BG,[96,96,110], Math.min(1,i/22)); return o; })();
 PAL[STEAM]= (()=>{ const o=new Uint32Array(32);
@@ -523,6 +625,9 @@ function render() {
       }
       case LAVA:  c=PAL[LAVA][(jit[i]+f)&31];      gbuf[i]=c; break;
       case ACID:  c=PAL[ACID][(jit[i]+(f<<1))&31]; gbuf[i]=c; break;
+      case SPARK: c=PAL[SPARK][(jit[i]>>3)&31];    gbuf[i]=c; break;
+      case VIRUS: c=PAL[VIRUS][(jit[i]+f)&31];     gbuf[i]=c; break;
+      case FIREWORK: c=PAL[FIREWORK][(jit[i]+f*3)&31]; gbuf[i]=c; break;
       case WATER: c=PAL[WATER][(jit[i]+(f>>1))&31]; gbuf[i]=0; break;
       case SMOKE: c=PAL[SMOKE][Math.min(31,life[i]>>2)]; gbuf[i]=0; break;
       case STEAM: c=PAL[STEAM][Math.min(31,life[i]>>3)]; gbuf[i]=0; break;
@@ -578,6 +683,9 @@ function paintDisk(px,py) {
     if (tool===FIRE && (FLAM[cells[i]]>0 || cells[i]===GUNPOWDER)) { // antænd direkte
       set(x,y,FIRE, cells[i]===WOOD?120+(Math.random()*80|0):undefined); continue;
     }
+    if (tool===FIREWORK) {  // få raketter ad gangen, ellers bliver det kaos
+      if (cells[i]===EMPTY && Math.random()<0.06) set(x,y,FIREWORK); continue;
+    }
     if (solid) { set(x,y,tool); continue; }
     if (cells[i]===EMPTY && Math.random()<0.55) set(x,y,tool);
   }
@@ -629,8 +737,9 @@ addEventListener('wheel', e=>{ setBrush(brushR + (e.deltaY<0?1:-1)); });
 const TOOLS=[
   [SAND,'Sand','#e8c35a'],[WATER,'Vand','#2f8af0'],[OIL,'Olie','#a8843c'],
   [FIRE,'Ild','#ff7a2c'],[LAVA,'Lava','#ff6e14'],[GUNPOWDER,'Krudt','#aab0c0'],
-  [ACID,'Syre','#39ff6a'],[ICE,'Is','#9adcff'],[WOOD,'Træ','#8a4f24'],
-  [PLANT,'Plante','#2ecc54'],[WALL,'Mur','#7e8699'],[EMPTY,'Slet','#cfd6f5'],
+  [FIREWORK,'Fyrværkeri','#ffd24a'],[ACID,'Syre','#39ff6a'],[ICE,'Is','#9adcff'],
+  [VIRUS,'Virus','#ff3bd4'],[WOOD,'Træ','#8a4f24'],[PLANT,'Plante','#2ecc54'],
+  [WALL,'Mur','#7e8699'],[EMPTY,'Slet','#cfd6f5'],
 ];
 const paletteEl=document.getElementById('palette');
 TOOLS.forEach(([id,name,col],k)=>{
@@ -719,6 +828,9 @@ function demoScene() {
   fillRect(X(.89),py-4,X(.92),py-2,GUNPOWDER);
   // lille is-hylde over bassinet
   fillRect(X(.06),Y(.42),X(.14),Y(.44),ICE);
+  // to fyrværkeri-raketter over sandklitten som åbningssalut
+  set(X(.50),Y(.52),FIREWORK, 55);
+  set(X(.56),Y(.50),FIREWORK, 75);
   // lava-skål øverst th. med hul i bunden -> drypper ned på platformen
   const lx=X(.80), ly=Y(.14);
   fillRect(lx-7,ly,lx-6,ly+6,WALL); fillRect(lx+6,ly,lx+7,ly+6,WALL);
@@ -742,6 +854,12 @@ function loop(now) {
   if (now-lastSim>=SIM_DT) lastSim=now;  // tab frames frem for at spiralere
   if (painting && lastPX>=0) paintDisk(lastPX,lastPY); // hold fingeren = bliv ved at male
   render();
+  if (shakeT>0) {                                      // screen shake ved eksplosioner
+    shakeT--;
+    const a=shakeT*0.55;
+    const tr=`translate(${((Math.random()*2-1)*a).toFixed(1)}px,${((Math.random()*2-1)*a).toFixed(1)}px)`;
+    view.style.transform=tr; glow.style.transform=tr;
+  } else if (view.style.transform) { view.style.transform=''; glow.style.transform=''; }
   fpsFrames++;
   if (now-fpsTime>500) {
     fps=Math.round(fpsFrames*1000/(now-fpsTime)); fpsFrames=0; fpsTime=now;
@@ -754,7 +872,7 @@ function loop(now) {
 let resizeTimer;
 addEventListener('resize', ()=>{
   clearTimeout(resizeTimer);
-  resizeTimer=setTimeout(()=>{ alloc(); demoScene(); }, 250);
+  resizeTimer=setTimeout(()=>alloc(), 250);   // scenen bevares i alloc()
 });
 
 alloc();

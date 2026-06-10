@@ -13,7 +13,8 @@ nearest-neighbor-opskalering.**
 
 ## Styring
 - **Finger/mus**: tegn med valgt element (hold for at hælde); en ring viser penslen
-- **Palette nederst**: Sand, Vand, Olie, Ild, Lava, Krudt, Syre, Is, Træ, Plante, Mur, Slet
+- **Palette nederst**: Sand, Vand, Olie, Ild, Lava, Krudt, Fyrværkeri, Syre, Is,
+  Virus, Træ, Plante, Mur, Slet
 - **Slider**: penselstørrelse (desktop: scrollhjul eller `[` / `]`)
 - **🔊** lyd til/fra · **⏸** pause · **☂** regn (drypper valgt element) · **✕** ryd alt
 - Desktop: `1–9`/`0` vælger element, `mellemrum` pause, `C` ryd, `R` regn, `M` mute
@@ -26,10 +27,16 @@ nearest-neighbor-opskalering.**
   sig vækker sin chunk og naboerne.
 - **Tyngdekraft med acceleration**: pulver og væsker accelererer i frit fald op til
   5 celler/frame (hastigheden gemmes pr. celle), så fald og stråler føles fysiske.
-- Reaktioner: vand slukker ild (→damp), ild antænder olie/træ/plante, lava+vand→sten,
-  damp kondenserer under lofter, syre opløser sten/mur/træ/sand/is, planter gror i vand,
-  **krudt detonerer** med trykbølge og kædereaktioner, **is** fryser vand langsomt og
-  smelter ved ild/lava.
+- Reaktioner: vand slukker ild (→damp), ild antænder olie/træ/plante, lava+vand→sten
+  (8-nabo-tjek, så skorpen bliver tæt), damp kondenserer under lofter, syre opløser
+  sten/mur/træ/sand/is, planter gror i vand, **krudt detonerer** med trykbølge og
+  kædereaktioner, **is** fryser vand langsomt og smelter ved ild/lava,
+  **lava/eksplosioner forglasser sand** til glas, **virus** æder alt undtagen mur
+  (men kan brændes væk) og dør ud af sig selv, **fyrværkeri** stiger med gnisthale
+  og brager i en ring af farvede gnister.
+- Skæve vandspejl udlignes: væsker kan bytte vandret med en lettere væske, så vand
+  under et olietæppe altid finder niveau. Screen shake ved eksplosioner; scenen
+  bevares ved rotation/resize.
 - Glød: et separat emissivt lag (ild/lava/syre) blurres og screen-blendes ovenpå.
 - **Lyd**: proceduralt WebAudio (ingen lydfiler) — bas-tryk ved eksplosioner,
   knitren ved antændelse, syden når vand møder ild/lava. Mute med 🔊-knappen.
