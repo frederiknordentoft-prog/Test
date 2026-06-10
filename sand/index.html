@@ -126,11 +126,14 @@ const CHB=4, CH=16, CHM=15;
 let liveCount=0, paused=false, rain=false;
 
 function alloc() {
-  const cssW = innerWidth, cssH = innerHeight;
+  // banen slutter over bundpaletten, så gulvet altid er synligt
+  const bottomEl=document.getElementById('bottom');
+  const barH=(bottomEl&&bottomEl.offsetHeight)||0;
+  const cssW=innerWidth, cssH=Math.max(160, innerHeight-barH);
   // cellestørrelse så det samlede antal celler holder sig ~<=140k
   const cell = Math.max(3, Math.ceil(Math.sqrt(cssW*cssH/140000)));
   W = Math.max(80, Math.floor(cssW/cell));
-  H = Math.max(80, Math.floor(cssH/cell));
+  H = Math.max(60, Math.floor(cssH/cell));
   cells = new Uint8Array(W*H);
   life  = new Uint8Array(W*H);
   jit   = new Uint8Array(W*H);
@@ -140,6 +143,8 @@ function alloc() {
   act.fill(1); nxt.fill(1);
   for (let i=0;i<jit.length;i++) jit[i]=(Math.random()*256)|0;
   setupCanvases();
+  view.style.width=cssW+'px'; view.style.height=cssH+'px';
+  glow.style.width=cssW+'px'; glow.style.height=cssH+'px';
 }
 
 function touch(x,y) {
@@ -186,26 +191,48 @@ function canRise(dens, target) {       // gasser: op gennem tomt/væsker/tungere
   return c===CAT_GAS && DENS[target]>dens;
 }
 
+// synkende celle fortrænger væsken under sig: prøv at skubbe væsken SIDELÆNS
+// (plask) i stedet for at løfte den op, og nulstil al faldhastighed —
+// ellers arver vandet pulverets fart og "teleporterer" op gennem søjlen
+function displaceDown(cur,x,cy2) {
+  const j=cur+W, s=Math.random()<0.5?1:-1;
+  for (const dx of [s,-s,2*s,-2*s]) {
+    const nx2=x+dx;
+    if (nx2<0||nx2>=W||cells[j+dx]!==EMPTY) continue;
+    cells[j+dx]=cells[j]; jit[j+dx]=jit[j]; life[j+dx]=0; stamp[j+dx]=frame;
+    cells[j]=cells[cur]; jit[j]=jit[cur]; life[j]=0; stamp[j]=frame;
+    cells[cur]=EMPTY; life[cur]=0; stamp[cur]=frame;
+    touch(nx2,cy2+1); touch(x,cy2+1); touch(x,cy2);
+    return;
+  }
+  // ingen plads til siden: byt kun op af og til, ellers vent — det forhindrer
+  // at væske "ratchetes" op gennem en tæt søjle af faldende pulver
+  if (Math.random()<0.3) { swap(cur,x,cy2,j,x,cy2+1); life[cur]=0; life[j]=0; }
+  else touch(x,cy2);
+}
+
 function powder(i,x,y,t) {
   // life genbruges som faldhastighed: accelererer op til 5 celler/frame i frit fald
   const d=DENS[t], v=life[i], maxStep=Math.min(5, 1+(v>>2));
-  let cur=i, cy2=y, moved=0;
+  let cur=i, cy2=y, moved=0, blocked=false;
   while (moved<maxStep && cy2+1<H) {
     const j=cur+W, tj=cells[j];
-    if (!canSink(d,tj)) break;
+    if (!canSink(d,tj)) { blocked=true; break; }
     if (tj!==EMPTY) {                          // bremses ved nedslag i væske
-      if (Math.random()<0.45) { touch(x,cy2); break; }
-      swap(cur,x,cy2,j,x,cy2+1); cur=j; cy2++; moved++; break;
+      if (Math.random()<0.45) { touch(x,cy2); return; }
+      displaceDown(cur,x,cy2); return;
     }
     swap(cur,x,cy2,j,x,cy2+1); cur=j; cy2++; moved++;
   }
-  if (moved>0) { life[cur]=Math.min(24, v+1); return; }
-  life[i]=0;
-  if (y+1<H) {
-    const j=i+W, s=Math.random()<0.5?1:-1;
+  if (cy2+1>=H) blocked=true;
+  if (!blocked) { life[cur]=Math.min(24, v+1); return; } // stadig i frit fald
+  life[cur]=0;                                 // nedslag: fart nulstilles
+  // diagonal glidning STRAKS ved landing — ellers vokser smalle spir
+  if (cy2+1<H) {
+    const j=cur+W, s=Math.random()<0.5?1:-1;
     for (let k=0;k<2;k++) {
       const dx = k===0?s:-s, nx2=x+dx;
-      if (nx2>=0 && nx2<W && canSink(d,cells[j+dx])) { swap(i,x,y,j+dx,nx2,y+1); return; }
+      if (nx2>=0 && nx2<W && canSink(d,cells[j+dx])) { swap(cur,x,cy2,j+dx,nx2,cy2+1); return; }
     }
   }
 }
@@ -215,20 +242,22 @@ function liquid(i,x,y,t) {
   if (t===LAVA && Math.random()<0.55) { touch(x,y); return; } // tyktflydende
   // accelererende fald (lava forbliver træg)
   const v=life[i], maxStep = t===LAVA ? 1 : Math.min(5, 1+(v>>2));
-  let cur=i, cy2=y, moved=0;
+  let cur=i, cy2=y, moved=0, blocked=false;
   while (moved<maxStep && cy2+1<H) {
     const j=cur+W, tj=cells[j];
-    if (!canSink(d,tj)) break;
+    if (!canSink(d,tj)) { blocked=true; break; }
+    if (tj!==EMPTY) { displaceDown(cur,x,cy2); return; } // fortræng lettere væske uden fart
     swap(cur,x,cy2,j,x,cy2+1); cur=j; cy2++; moved++;
-    if (tj!==EMPTY) break;                     // fortrængning af lettere væske: ét trin
   }
-  if (moved>0) { if (t!==LAVA) life[cur]=Math.min(24, v+1); return; }
-  if (t!==LAVA) life[i]=0;
-  if (y+1<H) {
-    const j=i+W, s=Math.random()<0.5?1:-1;
+  if (cy2+1>=H) blocked=true;
+  if (!blocked) { if (t!==LAVA) life[cur]=Math.min(24, v+1); return; } // frit fald
+  if (t!==LAVA) life[cur]=0;
+  // diagonal + vandret spredning STRAKS ved landing (fra slutpositionen)
+  if (cy2+1<H) {
+    const j=cur+W, s=Math.random()<0.5?1:-1;
     for (let k=0;k<2;k++) {
       const dx = k===0?s:-s, nx2=x+dx;
-      if (nx2>=0 && nx2<W && canSink(d,cells[j+dx])) { swap(i,x,y,j+dx,nx2,y+1); return; }
+      if (nx2>=0 && nx2<W && canSink(d,cells[j+dx])) { swap(cur,x,cy2,j+dx,nx2,cy2+1); return; }
     }
   }
   // vandret spredning: glid op til DISP celler, stop hvor der kan faldes
@@ -240,12 +269,12 @@ function liquid(i,x,y,t) {
       for (let m=1;m<=disp;m++) {
         const nx2=x+dx*m;
         if (nx2<0||nx2>=W) break;
-        const j=y*W+nx2;
+        const j=cy2*W+nx2;
         if (cells[j]!==EMPTY) break;
         best=j; bx=nx2;
-        if (y+1<H && canSink(d,cells[j+W])) break; // kan falde herfra
+        if (cy2+1<H && canSink(d,cells[j+W])) break; // kan falde herfra
       }
-      if (best>=0) { swap(i,x,y,best,bx,y); return; }
+      if (best>=0) { swap(cur,x,cy2,best,bx,cy2); return; }
     }
   }
 }
@@ -546,6 +575,9 @@ function paintDisk(px,py) {
     if (x<0||x>=W||y<0||y>=H) continue;
     const i=y*W+x;
     if (tool===EMPTY) { if (cells[i]!==EMPTY) set(x,y,EMPTY); continue; }
+    if (tool===FIRE && (FLAM[cells[i]]>0 || cells[i]===GUNPOWDER)) { // antænd direkte
+      set(x,y,FIRE, cells[i]===WOOD?120+(Math.random()*80|0):undefined); continue;
+    }
     if (solid) { set(x,y,tool); continue; }
     if (cells[i]===EMPTY && Math.random()<0.55) set(x,y,tool);
   }
@@ -560,12 +592,14 @@ function toSim(e) {
   return [ (e.clientX-r.left)/r.width*W |0, (e.clientY-r.top)/r.height*H |0 ];
 }
 addEventListener('pointerdown', e=>{
+  if (!e.isPrimary) return;   // ekstra fingre må ikke trække falske streger
   if (e.target.closest('#bottom')||e.target.closest('#topbar')) return;
   painting=true; hideTitle(); audioInit();
   const [x,y]=toSim(e); paintDisk(x,y); lastPX=x; lastPY=y;
   showCursor(e.clientX,e.clientY);
 });
 addEventListener('pointermove', e=>{
+  if (!e.isPrimary) return;
   if (e.pointerType==='mouse'||painting) showCursor(e.clientX,e.clientY);
   if (!painting) return;
   const [x,y]=toSim(e); paintLine(lastPX,lastPY,x,y); lastPX=x; lastPY=y;
