@@ -48,6 +48,12 @@ Knockout-bracketen (R32-skabelon med 3'er-allokering, R16→finale) ligger i
   loft pr. spiller modvirker longshot-bias i halen.
 - **Korreleret sim**: alle spillere på samme hold deler scoreline pr. iteration
   (korrekt stack-varians og kaptajn-robusthed).
+- **Kaptajnbonus er asymmetrisk**: kun værdiSTIGNING udbetales (Regler.txt),
+  så kaptajnværdi = EV + E[max(vækst, 0)] — volatile kaptajner belønnes korrekt.
+- **Holdmål/indkasserede** gives kun for mål scoret mens spilleren er på banen
+  → binomial-udtynding med minutfaktor.
+- **Formationer**: kun holdet.dk's lovlige (3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1,
+  5-3-2, 5-4-1), dvs. MID 3-5 — 5-2-3 o.l. afvises.
 - **R3 nedvægtes (0.8)** pga. rotation/stakes; R4+ er vejledende og
   genoptimeres når bracketen kendes.
 - p_start er heuristisk (pris- og popularitetsrang + GB-floor + håndoverrides)

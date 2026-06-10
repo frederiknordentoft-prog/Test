@@ -11,7 +11,11 @@ BUDGET_R = {"R1": 50.0, "R2": 51.1, "R3": 52.2, "R4": 53.3,
 NATION_CAP_ROUNDS = ["R1", "R2", "R3", "R4", "R5"]  # frem til QF
 
 
-def solve_plan(players, cand_idx, mean, rounds, contracts=None, time_limit=240):
+def solve_plan(players, cand_idx, mean, rounds, pos_mean=None, contracts=None,
+               time_limit=240):
+    """pos_mean = E[max(vækst,0)]: kaptajnbonussen er kun stigningen (asymmetrisk)."""
+    if pos_mean is None:
+        pos_mean = mean
     N = len(cand_idx)
     price = [players[i]["price"] for i in cand_idx]
     fee = [pr * 10_000 for pr in price]
@@ -28,7 +32,7 @@ def solve_plan(players, cand_idx, mean, rounds, contracts=None, time_limit=240):
         w = ROUND_WEIGHTS[r]
         for k in range(N):
             obj.append(w * mean[r][k] * x[(r, k)])
-            obj.append(w * mean[r][k] * (CAPTAIN_MULT - 1) * c[(r, k)])
+            obj.append(w * pos_mean[r][k] * (CAPTAIN_MULT - 1) * c[(r, k)])
     for r in rounds[1:]:
         for k in range(N):
             obj.append(-fee[k] * buy[(r, k)])

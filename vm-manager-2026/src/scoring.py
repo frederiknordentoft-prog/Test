@@ -40,6 +40,7 @@ BANK_RATE     = 0.01   # 1% pr. runde af uforbrugt budget (rapporteres, driver i
 TRANSFER_RATE = 0.01   # 1% af KØBT spillers pris; R1-opbygning gratis
 BUDGET        = 50.0   # mio.
 
-# Formationer på holdet.dk fodbold: 1 GK, DEF 3-5, MID 2-5, ATT 1-3 (jf. spec §6)
-FORMATION = {"GK": (1, 1), "DEF": (3, 5), "MID": (2, 5), "ATT": (1, 3)}
+# Holdet.dk fodbold-formationer: 3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-3-2, 5-4-1
+# => GK=1, DEF 3-5, MID 3-5, ATT 1-3 (5-2-3 o.l. er IKKE tilladt)
+FORMATION = {"GK": (1, 1), "DEF": (3, 5), "MID": (3, 5), "ATT": (1, 3)}
 MAX_PER_NATION_GROUP = 4   # frem til kvartfinalerne; derefter fri

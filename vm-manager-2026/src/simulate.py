@@ -57,7 +57,12 @@ def simulate_player_round(p, tix, rounds, rname, rng):
             g += (rng.random(n) < CARD_P[pos] * mf) * SCORING["yellow"]
             res = np.where(win, SCORING["result"]["W"],
                            np.where(draw, SCORING["result"]["D"], SCORING["result"]["L"]))
-            g += np.where(on_pitch, res + tg * SCORING["team_goal"] + tc * SCORING["conceded"], 0)
+            # holdmål/indkasserede gives kun for mål scoret MENS spilleren er på
+            # banen (Regler.txt) -> binomial-udtynding med minutfaktor
+            tg_on = rng.binomial(tg.astype(np.int64), np.clip(mf, 0, 1))
+            tc_on = rng.binomial(tc.astype(np.int64), np.clip(mf, 0, 1))
+            g += np.where(on_pitch, res + tg_on * SCORING["team_goal"]
+                          + tc_on * SCORING["conceded"], 0)
             g += np.where(on_pitch, SCORING["appear"], 0)
             g += np.where(played_team & ~on_pitch, SCORING["no_appear"], 0)
             if pos in ("GK", "DEF"):
@@ -73,13 +78,19 @@ def simulate_player_round(p, tix, rounds, rname, rng):
 
 
 def ev_table(players, cand_idx, tix, rounds, rnames, seed=11):
-    """mean/std pr. (runde, spiller) for kandidatpuljen."""
+    """mean/std/posmean pr. (runde, spiller).
+
+    posmean = E[max(vækst, 0)] — kaptajnbonus er asymmetrisk (kun stigning
+    udbetales, jf. Regler.txt), så kaptajnværdi = mean + posmean.
+    """
     rng = np.random.default_rng(seed)
     mean = {r: np.zeros(len(cand_idx)) for r in rnames}
     std = {r: np.zeros(len(cand_idx)) for r in rnames}
+    posmean = {r: np.zeros(len(cand_idx)) for r in rnames}
     for k, i in enumerate(cand_idx):
         for r in rnames:
             g = simulate_player_round(players[i], tix, rounds, r, rng)
             mean[r][k] = g.mean()
             std[r][k] = g.std()
-    return mean, std
+            posmean[r][k] = np.maximum(g, 0.0).mean()
+    return mean, std, posmean

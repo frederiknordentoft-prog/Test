@@ -82,7 +82,7 @@ def main():
 
     emit("\n[3/5] Simulerer spillervækst pr. runde (korreleret, eksakt pointsystem) ...")
     cand_idx = [i for i, p in enumerate(players) if not p["out"] and p["p_start"] >= 0.45]
-    mean, std = ev_table(players, cand_idx, tix, tour.rounds, PLAN_ROUNDS)
+    mean, std, posmean = ev_table(players, cand_idx, tix, tour.rounds, PLAN_ROUNDS)
 
     # ILP-pulje: bedste EV + bedste EV/pris pr. runde
     w_ev = np.zeros(len(cand_idx))
@@ -95,11 +95,12 @@ def main():
     keep = sorted(keep)
     pool = [cand_idx[k_] for k_ in keep]
     mean_pool = {r: mean[r][keep] for r in PLAN_ROUNDS}
+    posmean_pool = {r: posmean[r][keep] for r in PLAN_ROUNDS}
     emit(f"      Kandidater: {len(cand_idx)} -> ILP-pulje: {len(pool)}")
 
     emit(f"\n[4/5] Flerrunde-ILP (R1-R7, {'basis: max 3 kontrakter' if basis else 'guld: frie transfers'}) ...")
     plan, status = solve_plan(players, pool, mean_pool, PLAN_ROUNDS,
-                              contracts=3 if basis else None)
+                              pos_mean=posmean_pool, contracts=3 if basis else None)
     emit(f"      Status: {status}")
 
     emit("\n[5/5] Rapport\n")
@@ -118,7 +119,7 @@ def main():
         spend = sum(players[i]["price"] for i in idxs)
         gross = sum(mean[r][cand_idx.index(i)] for i in idxs)
         if cap_i is not None:
-            gross += mean[r][cand_idx.index(cap_i)] * (CAPTAIN_MULT - 1)
+            gross += posmean[r][cand_idx.index(cap_i)] * (CAPTAIN_MULT - 1)
         net = gross - fee
         total_net += net
         counts = {pp: sum(1 for i in idxs if players[i]["pos"] == pp) for pp in order}
@@ -149,7 +150,7 @@ def main():
     tot = np.zeros(N_SIM)
     for i in r1_idxs:
         g = simulate_player_round(players[i], tix, tour.rounds, "R1", rng)
-        tot += g * (2.0 if i == r1_cap else 1.0)
+        tot += g + (np.maximum(g, 0.0) if i == r1_cap else 0.0)
     q = np.percentile(tot, [10, 25, 50, 75, 90])
     emit(f"\nR1-holdets fordeling (korreleret): middel {k(tot.mean())}, "
          f"P10 {k(q[0])}, P25 {k(q[1])}, median {k(q[2])}, P75 {k(q[3])}, P90 {k(q[4])}")
