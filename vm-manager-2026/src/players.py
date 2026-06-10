@@ -42,6 +42,7 @@ P_START_OVERRIDE = {
     ("Lautaro Martinez", "Argentina"): 0.70, ("Ferran Torres", "Spanien"): 0.45,
     ("Nico Williams", "Spanien"): 0.80, ("Mikel Merino", "Spanien"): 0.75,
     ("Marcus Thuram", "Frankrig"): 0.55, ("Bradley Barcola", "Frankrig"): 0.40,
+    ("Alex Sandro", "Brasilien"): 0.35,  # 34 år — næppe starter under Ancelotti
     ("Desire Doue", "Frankrig"): 0.65, ("Rayan Cherki", "Frankrig"): 0.45,
     ("Ousmane Dembele", "Frankrig"): 0.85, ("Michael Olise", "Frankrig"): 0.90,
     ("Eberechi Eze", "England"): 0.65, ("Morgan Rogers", "England"): 0.60,
@@ -117,7 +118,10 @@ def assign_shares(players, matched_scorer, team_tour_goals, team_exp_matches):
     B_REL = 1.0
     SIGMA_CAP = 0.45
     q_top = max(qs.values())
-    G_TOP, G_TAIL, Q_TAIL = 4.8, 0.70, 1e-3
+    # Hale-anker sænket 0.70 -> 0.50 og loft-multiplikator 1.2 -> 1.0:
+    # favorit-longshot-bias gør +15000/+25000-odds systematisk for korte,
+    # så små holds enere (Tamari-typen) ellers overvurderes.
+    G_TOP, G_TAIL, Q_TAIL = 4.8, 0.50, 1e-3
     b_abs = np.log(G_TOP / G_TAIL) / np.log(q_top / Q_TAIL)
     a_abs = G_TOP / q_top ** b_abs
 
@@ -137,7 +141,7 @@ def assign_shares(players, matched_scorer, team_tour_goals, team_exp_matches):
             sig = (1.0 - u_t) * w_named / w_named.sum()
             for k in named:  # absolut loft: forventede mål fra global q->G-mapping
                 g_abs = a_abs * qs[idxs[k]] ** b_abs
-                sig[k] = min(sig[k], 1.2 * g_abs / Tt, SIGMA_CAP)
+                sig[k] = min(sig[k], g_abs / Tt, SIGMA_CAP)
         resid = max(1.0 - sig.sum(), 0.10)
         w = np.zeros(len(idxs))
         for k, i in enumerate(idxs):

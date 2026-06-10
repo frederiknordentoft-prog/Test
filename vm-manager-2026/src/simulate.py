@@ -16,19 +16,25 @@ ROUND_SLOTS = {"R1": ["R1"], "R2": ["R2"], "R3": ["R3"], "R4": ["R4"],
 def simulate_player_round(p, tix, rounds, rname, rng):
     """Returnér growth-array [n sims] for spilleren i runden (0 hvis holdet er ude)."""
     t = tix[p["team"]]
+    # Runde 3-rotation: er holdet allerede sikkert videre (2 sejre), hviles
+    # stjernerne ofte (jf. Frankrig 2022: 9 skift i kamp 3). rot3 = P(2 sejre).
+    p_start = p["p_start"]
+    if rname == "R3" and p.get("rot3"):
+        coef = 0.35 if p["price"] >= 6.0 else 0.20
+        p_start = p_start * (1.0 - coef * p["rot3"])
     total = None
     for slot in ROUND_SLOTS[rname]:
         d = rounds[slot]
         played_team = d["played"][:, t]
         n = played_team.shape[0]
         g = np.zeros(n)
-        if played_team.any() and p["p_start"] > 0:
+        if played_team.any() and p_start > 0:
             tg = d["tg"][:, t].astype(np.float64)
             tc = d["tc"][:, t].astype(np.float64)
             win = d["win"][:, t]; draw = d["draw"][:, t]
             lam_f = d["lam_f"][:, t]; lam_a = d["lam_a"][:, t]
 
-            starts = rng.random(n) < p["p_start"]
+            starts = rng.random(n) < p_start
             minutes = np.where(
                 starts, np.clip(rng.normal(p["exp_min"], 7, n), 45, 90),
                 np.where(rng.random(n) < SUB_PROB, rng.uniform(5, 2 * SUB_MIN, n), 0.0))
@@ -68,7 +74,7 @@ def simulate_player_round(p, tix, rounds, rname, rng):
             if pos in ("GK", "DEF"):
                 g += ((tc == 0) & p60) * SCORING["clean_sheet"][pos]
             if pos == "GK":
-                saves = rng.poisson(np.clip((0.85 + 1.05 * lam_a) * mf, 0, 8))
+                saves = rng.poisson(np.clip((0.60 + 1.55 * lam_a) * mf, 0, 8))
                 g += saves * SCORING["gk_save"]
             g += (pg >= 3) * SCORING["hattrick"]
             g += np.where(d["so_win"][:, t] & on_pitch, SCORING["shootout_win"], 0)

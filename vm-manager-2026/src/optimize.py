@@ -4,8 +4,11 @@ import pulp
 import numpy as np
 from .scoring import FORMATION, CAPTAIN_MULT, MAX_PER_NATION_GROUP
 
-ROUND_WEIGHTS = {"R1": 1.0, "R2": 1.0, "R3": 0.80,
-                 "R4": 0.85, "R5": 0.75, "R6": 0.65, "R7": 0.60}
+# R3 hævet til 0.9: rotationsrisikoen prises nu eksplicit i EV (rot3-haircut),
+# så vægten skal kun afspejle info-usikkerhed. R4-R7 hævet: eliminerings-
+# sandsynlighed ligger allerede i EV'erne — vægtene må ikke dobbelt-diskontere.
+ROUND_WEIGHTS = {"R1": 1.0, "R2": 1.0, "R3": 0.90,
+                 "R4": 0.90, "R5": 0.80, "R6": 0.75, "R7": 0.70}
 BUDGET_R = {"R1": 50.0, "R2": 51.1, "R3": 52.2, "R4": 53.3,
             "R5": 54.5, "R6": 55.7, "R7": 56.9}
 NATION_CAP_ROUNDS = ["R1", "R2", "R3", "R4", "R5"]  # frem til QF

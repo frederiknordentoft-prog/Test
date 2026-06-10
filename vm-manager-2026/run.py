@@ -75,6 +75,12 @@ def main():
          + (f" — umatchede: {unmatched}" if unmatched else ""))
     players = assign_shares(players, matched, team_goals, team_matches)
 
+    # R3-rotationsrisiko: P(holdet har vundet begge de første kampe)
+    for p in players:
+        i = tix[p["team"]]
+        p["rot3"] = float((tour.rounds["R1"]["win"][:, i]
+                           & tour.rounds["R2"]["win"][:, i]).mean())
+
     emit("\n  Forventede turneringsmål (modellens top 12):")
     eg = [(p["name"], p["team"], p["sigma_g"] * team_goals[p["team"]]) for p in players if not p["out"]]
     for n_, t_, g_ in sorted(eg, key=lambda x: -x[2])[:12]:
