@@ -63,7 +63,10 @@ P_START_OVERRIDE = {
     ("Torbjørn Heggem", "Norge"): 0.86, ("Julian Ryerson", "Norge"): 0.88,
     ("Oscar Bobb", "Norge"): 0.25,
     # Belgien: forsvar omskifteligt; Ngoy starter, Mechele på vippen; Lukaku ikke klar.
-    ("Kevin De Bruyne", "Belgien"): 0.85, ("Nathan Ngoy", "Belgien"): 0.85,
+    ("Kevin De Bruyne", "Belgien"): 0.85,
+    # Ngoy: Bold (9/6) har ham grøn, men Goal/FFT-XI (10/6) har Mechele+Theate
+    # — reelt kontesteret plads, nedjusteret:
+    ("Nathan Ngoy", "Belgien"): 0.55, ("Arthur Theate", "Belgien"): 0.65,
     ("Brandon Mechele", "Belgien"): 0.30, ("Leandro Trossard", "Belgien"): 0.85,
     ("Charles De Ketelaere", "Belgien"): 0.85, ("Jeremy Doku", "Belgien"): 0.85,
     ("Romelu Lukaku", "Belgien"): 0.60, ("Igor Thiago", "Brasilien"): 0.45,
@@ -115,7 +118,7 @@ P_START_OVERRIDE = {
 
 # Kampspecifikt fravær (Bold-noter, 9. juni): spiller -> {runde: p_start}
 PS_ROUND = {
-    ("Lamine Yamal", "Spanien"): {"R1": 0.15},      # kun indhop i kamp 1
+    ("Lamine Yamal", "Spanien"): {"R1": 0.30},      # ESPN 10/6: måske klar — fortsat næppe start
     ("Romelu Lukaku", "Belgien"): {"R1": 0.10, "R2": 0.35},  # ikke klar
     ("Alphonso Davies", "Canada"): {"R1": 0.05},    # misser minimum åbningskampen
     ("Rafael Leão", "Portugal"): {"R1": 0.10},      # karantæne
