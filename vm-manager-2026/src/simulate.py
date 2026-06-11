@@ -18,7 +18,7 @@ def simulate_player_round(p, tix, rounds, rname, rng):
     t = tix[p["team"]]
     # Runde 3-rotation: er holdet allerede sikkert videre (2 sejre), hviles
     # stjernerne ofte (jf. Frankrig 2022: 9 skift i kamp 3). rot3 = P(2 sejre).
-    p_start = p["p_start"]
+    p_start = p.get("ps_round", {}).get(rname, p["p_start"])
     if rname == "R3" and p.get("rot3"):
         coef = 0.35 if p["price"] >= 6.0 else 0.20
         p_start = p_start * (1.0 - coef * p["rot3"])

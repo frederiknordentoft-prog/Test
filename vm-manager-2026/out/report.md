@@ -37,7 +37,7 @@ VM MANAGER 2026 — MARKEDSDREVET MODEL (odds -> Dixon-Coles-agtig sim -> ILP)
     Raphinha               Brasilien  1.75 mål
 
 [3/5] Simulerer spillervækst pr. runde (korreleret, eksakt pointsystem) ...
-      Kandidater: 608 -> ILP-pulje: 237
+      Kandidater: 599 -> ILP-pulje: 239
 
 [4/5] Flerrunde-ILP (R1-R7, guld: frie transfers) ...
       Status: Optimal
@@ -47,169 +47,167 @@ VM MANAGER 2026 — MARKEDSDREVET MODEL (odds -> Dixon-Coles-agtig sim -> ILP)
 ==============================================================================
 Runde 1 (gruppekamp 1)  |  4-3-3  |  forbrug 50.0m / 50.0m
 ------------------------------------------------------------------------------
-  GK  David Raya              Spanien      5.0m  EV    +88k
-  DEF Nathaniel Brown         Tyskland     2.5m  EV    +77k
-  DEF Antonee Robinson        USA          2.0m  EV    +37k
-  DEF Nathan Ngoy             Belgien      2.0m  EV    +36k
-  DEF Luc De Fougerolles      Canada       2.0m  EV    +32k
-  MID Mikel Merino            Spanien      4.5m  EV    +97k
-  MID Jhon Arias              Colombia     3.0m  EV    +59k
+  GK  Unai Simon              Spanien      5.0m  EV    +88k
+  DEF Nathaniel Brown         Tyskland     2.5m  EV    +79k
+  DEF Bremer                  Brasilien    3.0m  EV    +41k
+  DEF Nathan Ngoy             Belgien      2.0m  EV    +40k
+  DEF Luc De Fougerolles      Canada       2.0m  EV    +33k
+  MID Jhon Arias              Colombia     3.0m  EV    +60k
   MID Moises Caicedo          Ecuador      3.0m  EV    +40k
+  MID Aurelien Tchouameni     Frankrig     3.5m  EV    +39k
   ATT Erling Haaland          Norge        8.5m  EV   +202k  (C)
-  ATT Mikel Oyarzabal         Spanien      7.5m  EV   +165k
+  ATT Mikel Oyarzabal         Spanien      7.5m  EV   +166k
   ATT Kylian Mbappe           Frankrig    10.0m  EV   +141k
-  Kaptajn: Erling Haaland  |  netto-EV (u. vægt): +1.18m
+  Kaptajn: Erling Haaland  |  netto-EV (u. vægt): +1.13m
 ==============================================================================
 Runde 2 (gruppekamp 2)  |  4-3-3  |  forbrug 51.0m / 51.1m
 ------------------------------------------------------------------------------
-  GK  David Raya              Spanien      5.0m  EV    +82k
-  DEF Luc De Fougerolles      Canada       2.0m  EV    +48k
-  DEF Nathaniel Brown         Tyskland     2.5m  EV    +44k
-  DEF Antonee Robinson        USA          2.0m  EV    +42k
-  DEF Nathan Ngoy             Belgien      2.0m  EV    +37k
-  MID Mikel Merino            Spanien      4.5m  EV    +88k
-  MID Moises Caicedo          Ecuador      3.0m  EV    +80k
-  MID Jhon Arias              Colombia     3.0m  EV    +68k
-  ATT Kylian Mbappe           Frankrig    10.0m  EV   +238k  (C)
+  GK  Unai Simon              Spanien      5.0m  EV    +82k
+  DEF Bremer                  Brasilien    3.0m  EV    +72k
+  DEF Luc De Fougerolles      Canada       2.0m  EV    +49k
+  DEF Nathaniel Brown         Tyskland     2.5m  EV    +45k
+  DEF Nathan Ngoy             Belgien      2.0m  EV    +41k
+  MID Moises Caicedo          Ecuador      3.0m  EV    +81k
+  MID Aurelien Tchouameni     Frankrig     3.5m  EV    +71k
+  MID Jhon Arias              Colombia     3.0m  EV    +69k
+  ATT Kylian Mbappe           Frankrig    10.0m  EV   +239k  (C)
   ATT Harry Kane              England      9.5m  EV   +186k
-  ATT Mikel Oyarzabal         Spanien      7.5m  EV   +150k
+  ATT Mikel Oyarzabal         Spanien      7.5m  EV   +151k
   IND : Harry Kane
   UD  : Erling Haaland
   Gebyr: +95k  (1 køb)
-  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +1.21m
+  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +1.23m
 ==============================================================================
 Runde 3 (gruppekamp 3)  |  4-3-3  |  forbrug 52.0m / 52.2m
 ------------------------------------------------------------------------------
-  GK  David Raya              Spanien      5.0m  EV    +59k
+  GK  Unai Simon              Spanien      5.0m  EV    +59k
   DEF Kalidou Koulibaly       Senegal      2.5m  EV    +63k
-  DEF Nathan Ngoy             Belgien      2.0m  EV    +43k
+  DEF Bremer                  Brasilien    3.0m  EV    +49k
+  DEF Nathan Ngoy             Belgien      2.0m  EV    +48k
   DEF Nathaniel Brown         Tyskland     2.5m  EV    +39k
-  DEF Antonee Robinson        USA          2.0m  EV    +29k
-  MID Ismaila Sarr            Senegal      3.5m  EV    +89k
-  MID Mikel Merino            Spanien      4.5m  EV    +58k
-  MID Eberechi Eze            England      3.0m  EV    +58k
+  MID Ismaila Sarr            Senegal      3.5m  EV    +92k
+  MID Azzedine Ounahi         Marokko      3.0m  EV    +82k
+  MID Aurelien Tchouameni     Frankrig     3.5m  EV    +38k
   ATT Harry Kane              England      9.5m  EV   +202k  (C)
   ATT Kylian Mbappe           Frankrig    10.0m  EV   +129k
-  ATT Mikel Oyarzabal         Spanien      7.5m  EV    +92k
-  IND : Ismaila Sarr, Eberechi Eze, Kalidou Koulibaly
+  ATT Mikel Oyarzabal         Spanien      7.5m  EV    +93k
+  IND : Ismaila Sarr, Azzedine Ounahi, Kalidou Koulibaly
   UD  : Jhon Arias, Moises Caicedo, Luc De Fougerolles
   Gebyr: +90k  (3 køb)
-  Kaptajn: Harry Kane  |  netto-EV (u. vægt): +973k
+  Kaptajn: Harry Kane  |  netto-EV (u. vægt): +1.01m
 ==============================================================================
 Runde 4 (1/16-finaler)  |  4-3-3  |  forbrug 53.0m / 53.3m
 ------------------------------------------------------------------------------
-  GK  David Raya              Spanien      5.0m  EV    +67k
+  GK  Unai Simon              Spanien      5.0m  EV    +66k
   DEF Jules Kounde            Frankrig     3.5m  EV    +54k
-  DEF Nathaniel Brown         Tyskland     2.5m  EV    +40k
-  DEF Nathan Ngoy             Belgien      2.0m  EV    +30k
-  DEF Antonee Robinson        USA          2.0m  EV    +28k
-  MID Mikel Merino            Spanien      4.5m  EV    +69k
+  DEF Bremer                  Brasilien    3.0m  EV    +42k
+  DEF Nathaniel Brown         Tyskland     2.5m  EV    +41k
+  DEF Nathan Ngoy             Belgien      2.0m  EV    +33k
   MID Ismaila Sarr            Senegal      3.5m  EV    +55k
-  MID Eberechi Eze            England      3.0m  EV    +45k
+  MID Aurelien Tchouameni     Frankrig     3.5m  EV    +51k
+  MID Azzedine Ounahi         Marokko      3.0m  EV    +40k
   ATT Kylian Mbappe           Frankrig    10.0m  EV   +174k  (C)
-  ATT Harry Kane              England      9.5m  EV   +169k
-  ATT Mikel Oyarzabal         Spanien      7.5m  EV   +118k
+  ATT Harry Kane              England      9.5m  EV   +170k
+  ATT Mikel Oyarzabal         Spanien      7.5m  EV   +120k
   IND : Jules Kounde
   UD  : Kalidou Koulibaly
   Gebyr: +35k  (1 køb)
-  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +989k
+  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +988k
 ==============================================================================
-Runde 5 (1/8-finaler)  |  3-4-3  |  forbrug 54.5m / 54.5m
+Runde 5 (1/8-finaler)  |  4-3-3  |  forbrug 53.0m / 54.5m
 ------------------------------------------------------------------------------
-  GK  David Raya              Spanien      5.0m  EV    +45k
-  DEF Jules Kounde            Frankrig     3.5m  EV    +34k
-  DEF Nathaniel Brown         Tyskland     2.5m  EV    +20k
-  DEF Nathan Ngoy             Belgien      2.0m  EV    +15k
-  MID Mikel Merino            Spanien      4.5m  EV    +48k
-  MID Aurelien Tchouameni     Frankrig     3.5m  EV    +32k
-  MID Eberechi Eze            England      3.0m  EV    +29k
-  MID Ismaila Sarr            Senegal      3.5m  EV    +28k
+  GK  Unai Simon              Spanien      5.0m  EV    +45k
+  DEF Jules Kounde            Frankrig     3.5m  EV    +35k
+  DEF Bremer                  Brasilien    3.0m  EV    +27k
+  DEF Nathaniel Brown         Tyskland     2.5m  EV    +21k
+  DEF Nathan Ngoy             Belgien      2.0m  EV    +17k
+  MID Aurelien Tchouameni     Frankrig     3.5m  EV    +33k
+  MID Ismaila Sarr            Senegal      3.5m  EV    +29k
+  MID Azzedine Ounahi         Marokko      3.0m  EV    +22k
   ATT Kylian Mbappe           Frankrig    10.0m  EV   +114k  (C)
   ATT Harry Kane              England      9.5m  EV   +108k
-  ATT Mikel Oyarzabal         Spanien      7.5m  EV    +81k
-  IND : Aurelien Tchouameni
-  UD  : Antonee Robinson
-  Gebyr: +35k  (1 køb)
-  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +635k
+  ATT Mikel Oyarzabal         Spanien      7.5m  EV    +82k
+  IND : —
+  UD  : —
+  Gebyr: +0k  (0 køb)
+  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +648k
 ==============================================================================
-Runde 6 (kvartfinaler)  |  3-4-3  |  forbrug 54.5m / 55.7m
+Runde 6 (kvartfinaler)  |  4-3-3  |  forbrug 53.0m / 55.7m
 ------------------------------------------------------------------------------
-  GK  David Raya              Spanien      5.0m  EV    +33k
-  DEF Jules Kounde            Frankrig     3.5m  EV    +23k
+  GK  Unai Simon              Spanien      5.0m  EV    +33k
+  DEF Jules Kounde            Frankrig     3.5m  EV    +24k
+  DEF Bremer                  Brasilien    3.0m  EV    +16k
   DEF Nathaniel Brown         Tyskland     2.5m  EV    +12k
-  DEF Nathan Ngoy             Belgien      2.0m  EV     +6k
-  MID Mikel Merino            Spanien      4.5m  EV    +34k
+  DEF Nathan Ngoy             Belgien      2.0m  EV     +7k
   MID Aurelien Tchouameni     Frankrig     3.5m  EV    +22k
-  MID Eberechi Eze            England      3.0m  EV    +18k
-  MID Ismaila Sarr            Senegal      3.5m  EV    +15k
+  MID Ismaila Sarr            Senegal      3.5m  EV    +14k
+  MID Azzedine Ounahi         Marokko      3.0m  EV    +10k
   ATT Kylian Mbappe           Frankrig    10.0m  EV    +79k  (C)
   ATT Harry Kane              England      9.5m  EV    +66k
   ATT Mikel Oyarzabal         Spanien      7.5m  EV    +59k
   IND : —
   UD  : —
   Gebyr: +0k  (0 køb)
-  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +446k
+  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +422k
 ==============================================================================
-Runde 7 (semi + bronze + finale)  |  3-4-3  |  forbrug 54.5m / 56.9m
+Runde 7 (semi + bronze + finale)  |  4-3-3  |  forbrug 53.0m / 56.9m
 ------------------------------------------------------------------------------
-  GK  David Raya              Spanien      5.0m  EV    +42k
-  DEF Jules Kounde            Frankrig     3.5m  EV    +29k
-  DEF Nathaniel Brown         Tyskland     2.5m  EV    +12k
-  DEF Nathan Ngoy             Belgien      2.0m  EV     +5k
-  MID Mikel Merino            Spanien      4.5m  EV    +44k
-  MID Aurelien Tchouameni     Frankrig     3.5m  EV    +27k
-  MID Eberechi Eze            England      3.0m  EV    +21k
-  MID Ismaila Sarr            Senegal      3.5m  EV    +14k
-  ATT Kylian Mbappe           Frankrig    10.0m  EV    +99k  (C)
+  GK  Unai Simon              Spanien      5.0m  EV    +42k
+  DEF Jules Kounde            Frankrig     3.5m  EV    +30k
+  DEF Bremer                  Brasilien    3.0m  EV    +19k
+  DEF Nathaniel Brown         Tyskland     2.5m  EV    +13k
+  DEF Nathan Ngoy             Belgien      2.0m  EV     +6k
+  MID Aurelien Tchouameni     Frankrig     3.5m  EV    +29k
+  MID Ismaila Sarr            Senegal      3.5m  EV    +15k
+  MID Azzedine Ounahi         Marokko      3.0m  EV     +9k
+  ATT Kylian Mbappe           Frankrig    10.0m  EV   +100k  (C)
   ATT Harry Kane              England      9.5m  EV    +81k
   ATT Mikel Oyarzabal         Spanien      7.5m  EV    +76k
   IND : —
   UD  : —
   Gebyr: +0k  (0 køb)
-  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +551k
+  Kaptajn: Kylian Mbappe  |  netto-EV (u. vægt): +518k
 
 ==============================================================================
-SAMLET forventet nettovækst over alle runder: +5.98m
+SAMLET forventet nettovækst over alle runder: +5.94m
 ==============================================================================
 
-R1-holdets fordeling (korreleret): middel +1.18m, P10 +620k, P25 +839k, median +1.13m, P75 +1.46m, P90 +1.81m
+R1-holdets fordeling (korreleret): middel +1.13m, P10 +591k, P25 +802k, median +1.08m, P75 +1.41m, P90 +1.76m
 
 HOLDBARHED (P(holdet stadig med) pr. runde) for R1-holdet:
   Spiller                 Hold           R32   R16    QF    SF  Finale
   Kylian Mbappe           Frankrig       94%   71%   48%   33%     21%
   Erling Haaland          Norge          78%   46%   23%   11%      5%
   Mikel Oyarzabal         Spanien        98%   71%   49%   36%     23%
-  David Raya              Spanien        98%   71%   49%   36%     23%
-  Mikel Merino            Spanien        98%   71%   49%   36%     23%
+  Unai Simon              Spanien        98%   71%   49%   36%     23%
+  Aurelien Tchouameni     Frankrig       94%   71%   48%   33%     21%
+  Bremer                  Brasilien      95%   62%   40%   24%     14%
   Jhon Arias              Colombia       83%   44%   22%   11%      5%
   Moises Caicedo          Ecuador        83%   39%   15%    6%      2%
   Nathaniel Brown         Tyskland       95%   60%   33%   19%     10%
-  Antonee Robinson        USA            79%   44%   22%    9%      4%
   Nathan Ngoy             Belgien        87%   52%   28%   12%      5%
   Luc De Fougerolles      Canada         76%   37%   15%    5%      2%
 
 VALUE-TABEL R1 (vækst pr. mio., top 15 i kandidatpuljen):
-  DEF Nathaniel Brown         Tyskland     2.5m  EV    +77k  (31k/mio., p_start 0.85)
+  DEF Nathaniel Brown         Tyskland     2.5m  EV    +79k  (31k/mio., p_start 0.88)
   ATT Marko Arnautovic        Østrig       4.5m  EV   +131k  (29k/mio., p_start 0.85)
   ATT Lawrence Shankland      Skotland     2.5m  EV    +72k  (29k/mio., p_start 0.68)
-  ATT Che Adams               Skotland     3.0m  EV    +79k  (26k/mio., p_start 0.85)
-  ATT Kai Havertz             Tyskland     5.5m  EV   +138k  (25k/mio., p_start 0.60)
-  ATT Santiago Gimenez        Mexico       3.5m  EV    +85k  (24k/mio., p_start 0.75)
-  ATT Michael Gregoritsch     Østrig       3.5m  EV    +84k  (24k/mio., p_start 0.68)
+  ATT Kai Havertz             Tyskland     5.5m  EV   +155k  (28k/mio., p_start 0.90)
+  ATT Che Adams               Skotland     3.0m  EV    +78k  (26k/mio., p_start 0.85)
+  ATT Mehdi Taremi            Iran         3.5m  EV    +86k  (25k/mio., p_start 0.90)
+  DEF Torbjørn Heggem         Norge        2.5m  EV    +60k  (24k/mio., p_start 0.86)
+  ATT Santiago Gimenez        Mexico       3.5m  EV    +84k  (24k/mio., p_start 0.75)
   ATT Erling Haaland          Norge        8.5m  EV   +202k  (24k/mio., p_start 0.96)
-  ATT Mehdi Taremi            Iran         3.5m  EV    +83k  (24k/mio., p_start 0.85)
+  ATT Michael Gregoritsch     Østrig       3.5m  EV    +83k  (24k/mio., p_start 0.68)
+  ATT Haji Wright             USA          2.5m  EV    +57k  (23k/mio., p_start 0.75)
   ATT Antoine Semenyo         Ghana        4.0m  EV    +90k  (23k/mio., p_start 0.85)
-  ATT Haji Wright             USA          2.5m  EV    +56k  (22k/mio., p_start 0.75)
-  ATT Ricardo Pepi            USA          2.5m  EV    +55k  (22k/mio., p_start 0.75)
-  MID Noah Okafor             Schweiz      3.0m  EV    +66k  (22k/mio., p_start 0.62)
-  ATT Mikel Oyarzabal         Spanien      7.5m  EV   +165k  (22k/mio., p_start 0.88)
+  ATT Ricardo Pepi            USA          2.5m  EV    +56k  (22k/mio., p_start 0.75)
+  ATT Mikel Oyarzabal         Spanien      7.5m  EV   +166k  (22k/mio., p_start 0.90)
   ATT Iñaki Williams          Ghana        3.0m  EV    +66k  (22k/mio., p_start 0.62)
 
 DEADLINE-TJEKLISTE (verificér før kampstart):
-  Startrisiko på R1-holdet (tjek bekræftede opstillinger):
-    - Mikel Merino (Spanien), p_start 0.75
-    - Nathan Ngoy (Belgien), p_start 0.74
+  Ingen spillere med p_start < 0.80 på R1-holdet.
   Husk: odds/opstillinger flytter sig — genkør pipeline før hver deadline.
   R4+ er vejledende (modstandere kendes først efter gruppespillet).
 
-Kørselstid: 67s
+Kørselstid: 55s
