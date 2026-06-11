@@ -1,0 +1,44 @@
+{
+  "env_warehouse": {
+    "id": "empty_warehouse_01",
+    "type": "hdri",
+    "path": "/assets/hdri/empty_warehouse_01_2k.hdr"
+  },
+  "floor_concrete": {
+    "id": "painted_concrete",
+    "type": "texture",
+    "maps": {
+      "diffuse": "/assets/textures/painted_concrete/diffuse.jpg",
+      "normal": "/assets/textures/painted_concrete/normal.jpg",
+      "rough": "/assets/textures/painted_concrete/rough.jpg",
+      "ao": "/assets/textures/painted_concrete/ao.jpg",
+      "arm": "/assets/textures/painted_concrete/arm.jpg",
+      "displacement": "/assets/textures/painted_concrete/displacement.jpg"
+    }
+  },
+  "wall_metal": {
+    "id": "blue_metal_plate",
+    "type": "texture",
+    "maps": {
+      "diffuse": "/assets/textures/blue_metal_plate/diffuse.jpg",
+      "normal": "/assets/textures/blue_metal_plate/normal.jpg",
+      "rough": "/assets/textures/blue_metal_plate/rough.jpg",
+      "ao": "/assets/textures/blue_metal_plate/ao.jpg",
+      "arm": "/assets/textures/blue_metal_plate/arm.jpg",
+      "displacement": "/assets/textures/blue_metal_plate/displacement.jpg"
+    }
+  },
+  "prop_box": {
+    "id": "cardboard_box_01",
+    "type": "model",
+    "path": "/assets/models/cardboard_box_01/cardboard_box_01_1k.gltf"
+  },
+  "proto_textures": {
+    "type": "kenney",
+    "dir": "/assets/kenney/prototype-textures"
+  },
+  "weapon_kit": {
+    "type": "kenney",
+    "dir": "/assets/kenney/blaster-kit"
+  }
+}
