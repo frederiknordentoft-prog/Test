@@ -12,8 +12,8 @@ DARK, GOLD = "#13233a", "#f5c542"
 XI = [  # (navn, land, pris, x, y, kaptajn)
     ("Simon", "Spanien", 5.0, 0.50, 0.08, False),
     ("N. Brown", "Tyskland", 2.5, 0.14, 0.30, False),
-    ("Bremer", "Brasilien", 3.0, 0.38, 0.28, False),
-    ("Robinson", "USA", 2.0, 0.62, 0.28, False),
+    ("Heggem", "Norge", 2.5, 0.38, 0.28, False),
+    ("Danilo", "Brasilien", 2.5, 0.62, 0.28, False),
     ("De Fougerolles", "Canada", 2.0, 0.86, 0.30, False),
     ("Caicedo", "Ecuador", 3.0, 0.26, 0.52, False),
     ("Tchouameni", "Frankrig", 3.5, 0.50, 0.55, False),
@@ -28,7 +28,7 @@ PLAN = [
     ("R2 · 18. jun", "UD: Haaland   →   IND: Kane (9,5m)", "Mbappe (mod Irak)"),
     ("R3 · 24. jun", "UD: Arias, Caicedo, De Fougerolles  →  IND: Sarr (3,5m), Ounahi (3,0m), Koulibaly (2,5m)", "Kane (mod Panama)"),
     ("R4 · 1/16", "UD: Koulibaly   →   IND: Kounde (3,5m)", "Mbappe"),
-    ("R5 · 1/8", "UD: Robinson   →   IND: Reece James (3,5m)", "Mbappe"),
+    ("R5 · 1/8", "UD: Heggem   →   IND: Jules Kounde-niveau (Frankrig-blok)", "Mbappe"),
     ("R6-R7 · KF-finale", "Ingen skift — kernen Spanien/Frankrig/England står til finalen", "Mbappe"),
 ]
 
@@ -86,7 +86,7 @@ for rund, skift, cap in PLAN:
     y -= 0.150
 ax2.text(0.0, y + 0.02,
          "Guldhold · forventet nettovækst +5,93 mio. · Basishold (3 kontrakter): "
-         "R2 Haaland→Kane, R3 Arias→Sarr, R4 De Fougerolles→Kounde.",
+         "R2 Haaland→Kane, R3 Arias→Sarr, R4 Heggem→Kounde.",
          fontsize=9.5, color="#5a6b7e", style="italic")
 
 plt.savefig("out/holdtegning.png", dpi=160, bbox_inches="tight")

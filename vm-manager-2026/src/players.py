@@ -106,6 +106,13 @@ P_START_OVERRIDE = {
     ("Alexander Isak", "Sverige"): 0.85, ("Scott McTominay", "Skotland"): 0.95,
     ("Mehdi Taremi", "Iran"): 0.90, ("Breel Embolo", "Schweiz"): 0.88,
     ("Donyell Malen", "Holland"): 0.55, ("Brian Brobbey", "Holland"): 0.35,
+    # Brasilien (4-2-3-1): Alisson; Danilo-Marquinhos-Gabriel-Santos; Casemiro-Bruno;
+    # Raphinha-Paqueta-Vinicius; Cunha. Bremer er 3. CB (reserve), Militao ude.
+    ("Marquinhos", "Brasilien"): 0.88, ("Gabriel Magalhaes", "Brasilien"): 0.88,
+    ("Bremer", "Brasilien"): 0.20, ("Danilo Luiz da Silva", "Brasilien"): 0.70,
+    ("Douglas Santos", "Brasilien"): 0.70, ("Casemiro", "Brasilien"): 0.85,
+    ("Raphinha", "Brasilien"): 0.90, ("Vinicius Junior", "Brasilien"): 0.88,
+    ("Matheus Cunha", "Brasilien"): 0.80, ("Lucas Paqueta", "Brasilien"): 0.80,
     # Schweiz (3-4-3): Manzambi-Embolo-Ndoye foran — Okafor udenfor XI.
     ("Noah Okafor", "Schweiz"): 0.35, ("Dan Ndoye", "Schweiz"): 0.85,
     # Marokko (4-2-3-1): Ounahi bekræftet; Saibari spids, El Kaabi udenfor XI.

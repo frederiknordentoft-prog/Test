@@ -30,8 +30,8 @@ NATION_COL = {"Spanien": "#c60b1e", "Tyskland": "#1a1a1a", "Brasilien": "#ffdf00
 XI = [
     ("Unai Simon", "Spanien", "5.000.000", 0.50, 0.875, False),
     ("N. Brown", "Tyskland", "2.500.000", 0.13, 0.66, False),
-    ("Bremer", "Brasilien", "3.000.000", 0.38, 0.62, False),
-    ("A. Robinson", "USA", "2.000.000", 0.62, 0.62, False),
+    ("T. Heggem", "Norge", "2.500.000", 0.38, 0.62, False),
+    ("Danilo", "Brasilien", "2.500.000", 0.62, 0.62, False),
     ("L. De Fougerolles", "Canada", "2.000.000", 0.87, 0.66, False),
     ("M. Caicedo", "Ecuador", "3.000.000", 0.22, 0.40, False),
     ("A. Tchouameni", "Frankrig", "3.500.000", 0.50, 0.36, False),
@@ -46,8 +46,8 @@ FIXTURES = {
     "Unai Simon":        ("Spanien",  [("R1", "Kap Verde", "15/6", "g"), ("R2", "Saudi-Arabien", "21/6", "g"), ("R3", "Uruguay", "26/6", "y")]),
     "M. Oyarzabal":      ("Spanien",  [("R1", "Kap Verde", "15/6", "g"), ("R2", "Saudi-Arabien", "21/6", "g"), ("R3", "Uruguay", "26/6", "y")]),
     "N. Brown":          ("Tyskland", [("R1", "Curaçao", "14/6", "g"), ("R2", "Elfenbenskysten", "20/6", "y"), ("R3", "Ecuador", "25/6", "y")]),
-    "Bremer":            ("Brasilien",[("R1", "Marokko", "13/6", "y"), ("R2", "Haiti", "19/6", "g"), ("R3", "Skotland", "24/6", "g")]),
-    "A. Robinson":       ("USA",      [("R1", "Paraguay", "12/6", "y"), ("R2", "Australien", "19/6", "y"), ("R3", "Tyrkiet", "25/6", "r")]),
+    "T. Heggem":         ("Norge",    [("R1", "Irak", "16/6", "g"), ("R2", "Senegal", "22/6", "y"), ("R3", "Frankrig", "26/6", "r")]),
+    "Danilo":            ("Brasilien",[("R1", "Marokko", "13/6", "y"), ("R2", "Haiti", "19/6", "g"), ("R3", "Skotland", "24/6", "g")]),
     "L. De Fougerolles": ("Canada",   [("R1", "Bosnien-Herc.", "12/6", "y"), ("R2", "Qatar", "18/6", "g"), ("R3", "Schweiz", "24/6", "r")]),
     "M. Caicedo":        ("Ecuador",  [("R1", "Elfenbenskysten", "14/6", "y"), ("R2", "Curaçao", "20/6", "g"), ("R3", "Tyskland", "25/6", "r")]),
     "A. Tchouameni":     ("Frankrig", [("R1", "Senegal", "16/6", "y"), ("R2", "Irak", "22/6", "g"), ("R3", "Norge", "26/6", "y")]),
@@ -64,8 +64,8 @@ PLAN = [
      "Kane (mod Panama)", "Senegal-Irak og Marokko-Haiti er rundens favoritkampe. England er sjældent 'safe' før kamp 3 — Kane spiller."),
     ("RUNDE 4", "1/16-finaler", "UD: Koulibaly → IND: Kounde (3,5m, Frankrig)",
      "Mbappe", "Konsolidering mod Frankrig-blokken. Genoptimér når bracketen kendes!"),
-    ("RUNDE 5", "1/8-finaler", "UD: Robinson → IND: Reece James (3,5m, England)",
-     "Mbappe", "USA's forventede exit — England-blokken udvides."),
+    ("RUNDE 5", "1/8-finaler", "UD: Heggem → IND: forsvarer fra finalistkandidat",
+     "Mbappe", "Norge ude efter gruppespillet — defensiven flyttes mod en finalist."),
     ("RUNDE 6-7", "KF → Finale", "Ingen skift",
      "Mbappe", "Kernen Spanien/Frankrig/England (23/21/18% finalesandsynlighed) står hele vejen."),
 ]
@@ -74,8 +74,8 @@ APPENDIX = [
     ("MÅL & FORSVAR", [
         ("Unai Simon", "Spanien", "Bekræftet førstevalg af De la Fuente i sidste testkamp. Spanien har turneringens bedste holdbarhed (98% R32, 23% finale) og clean sheet-favorit i R1-R2 — købes én gang, skiftes aldrig."),
         ("Nathaniel Brown", "Tyskland", "Bekræftet venstre back hos R1's største favorit (mu 2,9 mod Curaçao). Spillets bedste value (31k/mio.) og offensivt potentiale. Også Bold-ekspertens topvalg."),
-        ("Bremer", "Brasilien", "Fast CB efter Militãos korsbåndsskade (ESPN 10/6). Brasilien møder Haiti og Skotland i R2-R3 — høj clean sheet-frekvens og holdbarhed til 1/8-finalen (62% R16)."),
-        ("Antonee Robinson", "USA", "Bekræftet wingback (klassificeret FORSVAR i spillet = clean sheet-bonus trods offensiv rolle). Værtsnation, og Paraguay mangler deres profil Enciso i R1. OBS: Antonee — ikke Miles!"),
+        ("Torbjørn Heggem", "Norge", "Bekræftet i Norges midterforsvar (Bold 9/6). Følger Haaland i R1 mod Irak — Norge er stor favorit, høj clean sheet-chance. Sælges sammen med Haaland efter R1 (dødens gruppe venter)."),
+        ("Danilo", "Brasilien", "Bekræftet HØJRE BACK i Brasiliens XI (Bold: Danilo-Marquinhos-Gabriel-Santos) — IKKE reserven Bremer. Billig starter (2,5m) med Haiti+Skotland i R2-R3 og holdbarhed til 1/8-finalen (62% R16)."),
         ("Luc De Fougerolles", "Canada", "Starter i midterforsvaret pga. Bombito-skade (Bold 9/6). Canada er hjemmefavorit mod Bosnien og storfavorit mod Qatar i R2 — til spillets billigste pris."),
     ]),
     ("MIDTBANE", [
@@ -114,7 +114,7 @@ with PdfPages(out) as pdf:
     axh.add_patch(mp.FancyBboxPatch((0.70, 0.30), 0.25, 0.42, boxstyle="round,pad=0.01,rounding_size=0.02",
                                     fc=PURPLE2, ec=YELLOW, lw=1.2))
     axh.text(0.825, 0.585, "Forventet vækst R1", color="#b9a8d8", fontsize=8.5, ha="center")
-    axh.text(0.825, 0.395, "+1,13 mio.", color=YELLOW, fontsize=15, fontweight="bold", ha="center")
+    axh.text(0.825, 0.395, "+1,15 mio.", color=YELLOW, fontsize=15, fontweight="bold", ha="center")
 
     # bane
     ax = fig.add_axes([0.05, 0.05, 0.90, 0.80]); ax.axis("off")
