@@ -1,71 +1,78 @@
-# World Cup 2026 ⚽
+# Web apps
 
-A simple, fast, Google-style web app (installable on iPhone) for the 2026 FIFA
-World Cup — group standings, the full match schedule with results and
-goalscorers, and the knockout bracket. Team flags throughout, English/Danish,
-light/dark mode, works offline.
+This branch hosts two independent web apps behind one landing page, so both can
+be live on the same GitHub Pages site at once:
 
-**Hosts:** Canada · Mexico · USA — **Final:** July 19, 2026, MetLife Stadium.
+| Path | App |
+|------|-----|
+| `/` | Landing page linking to both |
+| `/vm/` | **World Cup 2026** — groups, fixtures, results, scorers, bracket |
+| `/elpriser/` | **Elpriser** — hourly electricity spot prices (Østdanmark) |
 
-## Open it
+## Open it locally
 
-- **Live (GitHub Pages):** enabled via the workflow below.
-- **Locally:** serve the folder and open `index.html`, e.g.
-  ```bash
-  python3 -m http.server 8000   # then visit http://localhost:8000
-  ```
-  (Opening the file directly with `file://` works too, but the live-refresh
-  fetch only runs over `http(s)://`.)
+Serve the folder root and open it (root shows the landing page):
+
+```bash
+python3 -m http.server 8000   # then visit http://localhost:8000
+```
+
+(`file://` works too, but the World Cup app's live-refresh fetch only runs over
+`http(s)://`.)
 
 ### Add to iPhone home screen
-Open the page in Safari → Share → **Add to Home Screen**. It launches
-full-screen like a native app (PWA) and keeps working offline.
+Open an app in Safari → Share → **Add to Home Screen**. The World Cup app
+launches full-screen like a native app (PWA) and works offline.
 
-## What's inside
+---
 
-- **Groups** — all 12 groups (A–L), 48 teams with flags. Standings are computed
+## World Cup 2026 (`/vm/`)
+
+- **Groups** — all 12 groups (A–L), 48 teams with flags. Standings computed
   automatically from played matches (top 2 green, 3rd place amber).
 - **Matches** — the full 72-match group schedule with results, kick-off times
   and venues, plus a day filter. Tap a match for goalscorers and details.
 - **Bracket** — the official Round of 32 pairings and the path to the final.
 - **Language** — English / Danish toggle (top-right), remembered between visits.
 
-## How the data works (hybrid)
-
-- **`data.js`** is the bundled snapshot — it renders instantly and is what makes
-  the app work offline. Edit this (or `data.json` below) to change scores.
-- **`data.json`** is the same data served as a file. On load (and every ~90s,
+### Data (hybrid)
+- **`vm/data.js`** is the bundled snapshot — renders instantly and works offline.
+- **`vm/data.json`** is the same data served as a file. On load (and every ~90s,
   and the **LIVE** button) the app re-fetches it so a redeploy updates scores
-  without anyone reloading. The service worker is network-first on this file.
-- **Optional real-time API:** point `CONFIG.liveUrl` in `app.js` at any endpoint
-  that returns the same JSON shape (e.g. a small proxy in front of a football
-  data API). Must be same-origin or CORS-enabled.
+  without a reload. The service worker is network-first on this file.
+- **Optional real-time API:** point `CONFIG.liveUrl` in `vm/app.js` at any
+  endpoint returning the same JSON shape (same-origin or CORS-enabled).
 
-### Updating results
-Edit a match in **`data.json`** (set `hs`/`as`, optionally add `goals`), then
-regenerate the bundled copy and redeploy:
+To update results, edit a match in **`vm/data.json`** (set `hs`/`as`, optionally
+add `goals`), then regenerate the bundled copy and push:
 
 ```bash
-{ printf 'window.WC2026 = '; cat data.json; printf ';\n'; } > data.js
+cd vm && { printf 'window.WC2026 = '; cat data.json; printf ';\n'; } > data.js && cd ..
 git commit -am "Update results" && git push
 ```
 
-Standings are recalculated automatically — you never edit a table by hand.
+Standings recalculate automatically — you never edit a table by hand.
+
+World Cup data compiled and cross-checked against Wikipedia's
+[2026 FIFA World Cup](https://en.wikipedia.org/wiki/2026_FIFA_World_Cup) group
+pages and FIFA. Snapshot taken June 15, 2026 (group stage in progress).
+
+## Elpriser (`/elpriser/`)
+
+Hourly electricity spot prices for Østdanmark (DK2), pulled live from
+[elprisenligenu.dk](https://www.elprisenligenu.dk). Unchanged from its original
+branch — just moved into a subfolder so it can be served alongside the World
+Cup app.
+
+---
 
 ## Publish on GitHub Pages
 
-These are plain static files at the repo root, so no build step is needed.
-In **Settings → Pages → Build and deployment**:
+Plain static files, no build step. In **Settings → Pages → Build and
+deployment**:
 
 1. **Source:** Deploy from a branch.
 2. **Branch:** this branch, folder **/ (root)** → **Save**.
 
-The site goes live at `https://<user>.github.io/<repo>/` within a minute and
-re-publishes whenever you push.
-
-## Sources
-
-Group draw, fixtures, results and goalscorers compiled and cross-checked against
-Wikipedia's [2026 FIFA World Cup](https://en.wikipedia.org/wiki/2026_FIFA_World_Cup)
-group pages and FIFA. Data snapshot taken June 15, 2026 (group stage in
-progress; 13 matches played).
+Within a minute both apps are live: `…github.io/<repo>/vm/` and
+`…github.io/<repo>/elpriser/`, with the landing page at the root.

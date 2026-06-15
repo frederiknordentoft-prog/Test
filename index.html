@@ -1,102 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="da">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>World Cup 2026</title>
-<meta name="description" content="2026 FIFA World Cup — groups, fixtures, live results and the knockout bracket. Canada · Mexico · USA." />
+<title>Mine projekter</title>
+<meta name="description" content="Forside med links til mine web-apps." />
 <meta name="theme-color" content="#0b5cff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#0a0a0b" media="(prefers-color-scheme: dark)" />
-<link rel="manifest" href="manifest.webmanifest" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="WC 2026" />
-<link rel="apple-touch-icon" href="icon.svg" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E" />
-<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%B1%3C/text%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #f3f4f8; --surface: #fff; --ink: #16181d; --ink-2: #5b606b; --line: #e7e9f0;
+    --shadow: 0 1px 2px rgba(16,24,40,.06), 0 8px 30px rgba(16,24,40,.08);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0a0a0b; --surface: #16171a; --ink: #f2f3f5; --ink-2: #a8adb8; --line: #26282d;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 30px rgba(0,0,0,.45); }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg); color: var(--ink); min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 32px 20px calc(40px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; max-width: 460px; }
+  .eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+  h1 { font-size: 34px; font-weight: 900; letter-spacing: -.03em; margin: 6px 0 4px; }
+  .lead { color: var(--ink-2); font-size: 15px; margin-bottom: 28px; }
+  .cards { display: grid; gap: 14px; }
+  .card {
+    display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+    padding: 20px; box-shadow: var(--shadow);
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .card:active { transform: scale(.98); }
+  .card:hover { border-color: color-mix(in srgb, #0b5cff 35%, var(--line)); }
+  .emoji {
+    width: 56px; height: 56px; flex: 0 0 auto; border-radius: 16px; display: grid; place-items: center;
+    font-size: 30px; background: var(--bg);
+  }
+  .vm .emoji { background: linear-gradient(135deg, #0a3aa8, #4b86ff); }
+  .el .emoji { background: linear-gradient(135deg, #f4a000, #ffd34d); }
+  .card-body { flex: 1; }
+  .card-title { font-size: 18px; font-weight: 800; }
+  .card-sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .chev { color: var(--ink-2); font-size: 22px; }
+  footer { margin-top: 26px; font-size: 12px; color: var(--ink-2); text-align: center; }
+</style>
 </head>
 <body>
+  <div class="wrap">
+    <p class="eyebrow">Mine projekter</p>
+    <h1>Vælg en app</h1>
+    <p class="lead">To web-apps, hver på sin egen side.</p>
 
-<!-- ============ HEADER ============ -->
-<header class="appbar">
-  <div class="appbar-inner">
-    <div class="brand">
-      <span class="brand-ball" aria-hidden="true">⚽</span>
-      <div class="brand-text">
-        <span class="brand-title">World Cup 2026</span>
-        <span class="brand-sub">Canada · Mexico · USA</span>
-      </div>
+    <div class="cards">
+      <a class="card vm" href="./vm/">
+        <span class="emoji">⚽</span>
+        <span class="card-body">
+          <span class="card-title">VM 2026</span>
+          <span class="card-sub">Puljer, kampe, resultater og slutspil</span>
+        </span>
+        <span class="chev">›</span>
+      </a>
+
+      <a class="card el" href="./elpriser/">
+        <span class="emoji">⚡</span>
+        <span class="card-body">
+          <span class="card-title">Elpriser</span>
+          <span class="card-sub">Spotpriser time for time · Østdanmark</span>
+        </span>
+        <span class="chev">›</span>
+      </a>
     </div>
-    <div class="appbar-actions">
-      <button id="langBtn" class="lang-btn" type="button" title="Skift sprog / change language">
-        <span id="langLabel">DA</span>
-      </button>
-      <button id="liveBadge" class="live-badge" type="button" title="Refresh results">
-        <span class="live-dot"></span><span id="liveLabel">LIVE</span>
-      </button>
-    </div>
+
+    <footer>Tip: åbn en app i Safari → Del → Føj til hjemmeskærm.</footer>
   </div>
-</header>
-
-<!-- ============ VIEWS ============ -->
-<main id="main">
-
-  <!-- GROUPS -->
-  <section class="view" id="view-groups" data-view="groups">
-    <div class="container" id="groupsGrid"></div>
-  </section>
-
-  <!-- MATCHES -->
-  <section class="view" id="view-matches" data-view="matches" hidden>
-    <div class="container">
-      <div class="filter-row" id="dayFilter"></div>
-      <div id="matchesList"></div>
-    </div>
-  </section>
-
-  <!-- KNOCKOUT -->
-  <section class="view" id="view-knockout" data-view="knockout" hidden>
-    <div class="container">
-      <div class="bracket-intro">
-        <h2 id="koTitle"></h2>
-        <p id="koDesc"></p>
-      </div>
-      <div class="seg" id="koSeg" role="tablist">
-        <button class="seg-btn active" data-ko="r32"></button>
-        <button class="seg-btn" data-ko="path"></button>
-      </div>
-      <div id="r32List"></div>
-      <div class="bracket" id="bracket" hidden></div>
-      <div class="final-card" id="finalCard" hidden></div>
-    </div>
-  </section>
-
-</main>
-
-<!-- ============ BOTTOM NAV ============ -->
-<nav class="tabbar" role="tablist">
-  <button class="tab active" data-go="groups" role="tab">
-    <span class="tab-ico">🏆</span><span class="tab-lbl">Groups</span>
-  </button>
-  <button class="tab" data-go="matches" role="tab">
-    <span class="tab-ico">📅</span><span class="tab-lbl">Matches</span>
-  </button>
-  <button class="tab" data-go="knockout" role="tab">
-    <span class="tab-ico">🗺️</span><span class="tab-lbl">Bracket</span>
-  </button>
-</nav>
-
-<!-- match detail sheet -->
-<div id="sheetOverlay" class="sheet-overlay" hidden>
-  <div class="sheet" id="sheet" role="dialog" aria-modal="true">
-    <button class="sheet-close" id="sheetClose" aria-label="Close">×</button>
-    <div id="sheetBody"></div>
-  </div>
-</div>
-
-<div id="toast" class="toast" hidden></div>
-
-<script src="data.js"></script>
-<script src="app.js"></script>
 </body>
 </html>
