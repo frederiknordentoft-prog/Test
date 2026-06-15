@@ -1,8 +1,9 @@
 # World Cup 2026 ⚽
 
 A simple, fast, Google-style web app (installable on iPhone) for the 2026 FIFA
-World Cup — group standings, the full match schedule with results, and the
-knockout bracket. Team flags throughout, light/dark mode, works offline.
+World Cup — group standings, the full match schedule with results and
+goalscorers, and the knockout bracket. Team flags throughout, English/Danish,
+light/dark mode, works offline.
 
 **Hosts:** Canada · Mexico · USA — **Final:** July 19, 2026, MetLife Stadium.
 
@@ -20,30 +21,36 @@ knockout bracket. Team flags throughout, light/dark mode, works offline.
 Open the page in Safari → Share → **Add to Home Screen**. It launches
 full-screen like a native app (PWA) and keeps working offline.
 
+## What's inside
+
+- **Groups** — all 12 groups (A–L), 48 teams with flags. Standings are computed
+  automatically from played matches (top 2 green, 3rd place amber).
+- **Matches** — the full 72-match group schedule with results, kick-off times
+  and venues, plus a day filter. Tap a match for goalscorers and details.
+- **Bracket** — the official Round of 32 pairings and the path to the final.
+- **Language** — English / Danish toggle (top-right), remembered between visits.
+
 ## How the data works (hybrid)
 
 - **`data.js`** is the bundled snapshot — it renders instantly and is what makes
-  the app work offline. This is the file to edit when you want to change scores
-  or fixtures.
+  the app work offline. Edit this (or `data.json` below) to change scores.
 - **`data.json`** is the same data served as a file. On load (and every ~90s,
   and the **LIVE** button) the app re-fetches it so a redeploy updates scores
   without anyone reloading. The service worker is network-first on this file.
 - **Optional real-time API:** point `CONFIG.liveUrl` in `app.js` at any endpoint
   that returns the same JSON shape (e.g. a small proxy in front of a football
-  data API). Must be same-origin or CORS-enabled. Leave it on `data.json` to run
-  purely on the bundled data.
+  data API). Must be same-origin or CORS-enabled.
 
 ### Updating results
-Edit a match in **`data.json`**, set its `hs` (home score) and `as` (away score),
-then regenerate the bundled copy and redeploy:
+Edit a match in **`data.json`** (set `hs`/`as`, optionally add `goals`), then
+regenerate the bundled copy and redeploy:
 
 ```bash
 { printf 'window.WC2026 = '; cat data.json; printf ';\n'; } > data.js
 git commit -am "Update results" && git push
 ```
 
-Standings (points, goal difference, ranking) are computed automatically from the
-played matches — you never edit a table by hand.
+Standings are recalculated automatically — you never edit a table by hand.
 
 ## Enable GitHub Pages (one-time)
 
@@ -56,6 +63,7 @@ branch. To turn it on:
 
 ## Sources
 
-Group draw, fixtures and results compiled from Wikipedia's
-[2026 FIFA World Cup](https://en.wikipedia.org/wiki/2026_FIFA_World_Cup) group
-pages and FIFA. Data snapshot taken June 15, 2026 (group stage in progress).
+Group draw, fixtures, results and goalscorers compiled and cross-checked against
+Wikipedia's [2026 FIFA World Cup](https://en.wikipedia.org/wiki/2026_FIFA_World_Cup)
+group pages and FIFA. Data snapshot taken June 15, 2026 (group stage in
+progress; 13 matches played).
