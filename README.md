@@ -52,14 +52,16 @@ git commit -am "Update results" && git push
 
 Standings are recalculated automatically — you never edit a table by hand.
 
-## Enable GitHub Pages (one-time)
+## Publish on GitHub Pages
 
-The workflow at `.github/workflows/pages.yml` deploys on every push to this
-branch. To turn it on:
+These are plain static files at the repo root, so no build step is needed.
+In **Settings → Pages → Build and deployment**:
 
-1. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. Push to the branch (or run the workflow manually). The deploy URL appears in
-   the Actions run summary.
+1. **Source:** Deploy from a branch.
+2. **Branch:** this branch, folder **/ (root)** → **Save**.
+
+The site goes live at `https://<user>.github.io/<repo>/` within a minute and
+re-publishes whenever you push.
 
 ## Sources
 
