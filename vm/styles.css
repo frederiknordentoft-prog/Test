@@ -42,6 +42,12 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
+/* The hidden attribute must always win over class-level display rules.
+   Otherwise e.g. the full-screen .sheet-overlay (display:flex) keeps the
+   same specificity as [hidden]{display:none}, stays in the layout with
+   opacity:0, and silently swallows every tap across the whole app. */
+[hidden] { display: none !important; }
+
 html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
