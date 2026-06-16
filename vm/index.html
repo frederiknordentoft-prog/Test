@@ -54,6 +54,16 @@
     </div>
   </section>
 
+  <!-- STATS -->
+  <section class="view" id="view-stats" data-view="stats" hidden>
+    <div class="container">
+      <div class="stats-block"><h3 id="lblScorers"></h3><div id="statScorers"></div></div>
+      <div class="stats-block"><h3 id="lblAssists"></h3><div id="statAssists"></div></div>
+      <div class="stats-block"><h3 id="lblNumbers"></h3><div id="statNumbers"></div></div>
+      <div class="stats-block"><h3 id="lblTeams"></h3><div id="statTeams"></div></div>
+    </div>
+  </section>
+
   <!-- KNOCKOUT -->
   <section class="view" id="view-knockout" data-view="knockout" hidden>
     <div class="container">
@@ -80,6 +90,9 @@
   </button>
   <button class="tab" data-go="matches" role="tab">
     <span class="tab-ico">📅</span><span class="tab-lbl">Matches</span>
+  </button>
+  <button class="tab" data-go="stats" role="tab">
+    <span class="tab-ico">📊</span><span class="tab-lbl">Stats</span>
   </button>
   <button class="tab" data-go="knockout" role="tab">
     <span class="tab-ico">🗺️</span><span class="tab-lbl">Bracket</span>

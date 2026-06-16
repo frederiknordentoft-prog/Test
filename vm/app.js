@@ -10,6 +10,8 @@
 const CONFIG = {
   // ESPN public scoreboard — no API key, returns CORS headers, ~9s fresh.
   espnUrl: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
+  // Per-match summary (carries assists); fetched lazily for the Stats tab.
+  summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary',
   refreshMs: 60 * 1000,
 };
 
@@ -20,7 +22,12 @@ const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
 // ---------- i18n ----------
 const I18N = {
   en: {
-    groups: 'Groups', matches: 'Matches', bracket: 'Bracket',
+    groups: 'Groups', matches: 'Matches', bracket: 'Bracket', stats: 'Stats',
+    topScorers: 'Top scorers', topAssists: 'Top assists', tournament: 'Tournament', topTeamsLbl: 'Most goals · teams',
+    goalsShort: 'goals', assistsShort: 'assists',
+    nGoals: 'Goals', nMatches: 'Matches', nAvg: 'Goals / match', nBiggest: 'Biggest win',
+    loadingAssists: 'Loading assists…', noAssists: 'No assists recorded yet.', noData: 'No matches played yet.',
+    assistBy: 'assist',
     inProgress: 'Matchday in progress', notStarted: 'Yet to kick off',
     colP: 'P', colGD: 'GD', colPts: 'Pts',
     all: 'All', today: 'Today',
@@ -38,7 +45,12 @@ const I18N = {
     rounds: { 'Round of 32': 'Round of 32', 'Round of 16': 'Round of 16', 'Quarter-finals': 'Quarter-finals', 'Semi-finals': 'Semi-finals', 'Third place': 'Third place play-off', 'Final': 'Final' },
   },
   da: {
-    groups: 'Grupper', matches: 'Kampe', bracket: 'Slutspil',
+    groups: 'Grupper', matches: 'Kampe', bracket: 'Slutspil', stats: 'Statistik',
+    topScorers: 'Topscorere', topAssists: 'Flest assists', tournament: 'Turneringen', topTeamsLbl: 'Flest mål · hold',
+    goalsShort: 'mål', assistsShort: 'assists',
+    nGoals: 'Mål', nMatches: 'Kampe', nAvg: 'Mål / kamp', nBiggest: 'Største sejr',
+    loadingAssists: 'Henter assists…', noAssists: 'Ingen assists registreret endnu.', noData: 'Ingen kampe spillet endnu.',
+    assistBy: 'oplæg',
     inProgress: 'Kampe i gang', notStarted: 'Ikke startet endnu',
     colP: 'K', colGD: 'MF', colPts: 'P',
     all: 'Alle', today: 'I dag',
@@ -186,16 +198,17 @@ function goalLine(g, m) {
   const tm = team(g.t);
   const tags = [g.pen ? `(${t('pen')})` : '', g.og ? `(${t('og')})` : ''].filter(Boolean).join(' ');
   const side = g.t === m.h ? 'left' : 'right';
+  const assist = g.a ? `<span class="goal-assist">${t('assistBy')}: ${g.a}</span>` : '';
   return `<div class="goal ${side}">
     <span class="goal-min">${g.m}'</span>
     <span class="goal-flag">${tm.flag}</span>
-    <span class="goal-player">${g.p} ${tags ? `<em>${tags}</em>` : ''}</span>
+    <span class="goal-player">${g.p} ${tags ? `<em>${tags}</em>` : ''}${assist}</span>
   </div>`;
 }
 
-function openSheet(i) {
-  const m = DATA.matches[i];
-  if (!m) return;
+let sheetMi = -1;
+
+function fillSheet(m) {
   const H = team(m.h), A = team(m.a), played = isPlayed(m), live = isLive(m);
   const status = live ? `${t('live')}${m.min ? ` · ${m.min}` : ''}` : (played ? t('fullTime') : t('notPlayed'));
   const head = `<div class="sheet-head">
@@ -221,12 +234,22 @@ function openSheet(i) {
   </div>`;
 
   $('#sheetBody').innerHTML = head + goalsHtml + info;
+}
+
+function openSheet(i) {
+  const m = DATA.matches[i];
+  if (!m) return;
+  sheetMi = i;
+  fillSheet(m);
   const ov = $('#sheetOverlay');
   ov.hidden = false;
   requestAnimationFrame(() => ov.classList.add('open'));
+  // pull in assists for this match, then refresh the open sheet
+  if (isPlayed(m) && m.eid) ensureSummaries([m]).then(() => { if (sheetMi === i && !ov.hidden) fillSheet(m); });
 }
 
 function closeSheet() {
+  sheetMi = -1;
   const ov = $('#sheetOverlay');
   ov.classList.remove('open');
   setTimeout(() => (ov.hidden = true), 220);
@@ -283,6 +306,114 @@ function applyKoTab() {
   $$('#koSeg .seg-btn').forEach((b) => b.classList.toggle('active', b.dataset.ko === koTab));
 }
 
+// ---------- render: stats ----------
+function leaderRows(map, unit, limit = 15) {
+  const rows = Object.values(map).sort((a, b) => b.n - a.n || a.p.localeCompare(b.p)).slice(0, limit);
+  if (!rows.length) return '';
+  return rows.map((r, i) => `<div class="statrow">
+    <span class="rk">${i + 1}</span>
+    <span class="fl">${team(r.t).flag}</span>
+    <span class="nm">${r.p}</span>
+    <span class="vl">${r.n}<small>${unit}</small></span>
+  </div>`).join('');
+}
+
+function renderStats() {
+  $('#lblScorers').textContent = t('topScorers');
+  $('#lblAssists').textContent = t('topAssists');
+  $('#lblNumbers').textContent = t('tournament');
+  $('#lblTeams').textContent = t('topTeamsLbl');
+
+  const played = DATA.matches.filter(isPlayed);
+  if (!played.length) {
+    $('#statScorers').innerHTML = `<p class="muted-note">${t('noData')}</p>`;
+    $('#statAssists').innerHTML = ''; $('#statNumbers').innerHTML = ''; $('#statTeams').innerHTML = '';
+    return;
+  }
+
+  // top scorers (own goals excluded)
+  const sc = {};
+  played.forEach((m) => (m.goals || []).forEach((g) => {
+    if (g.og || !g.p) return;
+    const k = g.t + '|' + g.p;
+    (sc[k] = sc[k] || { p: g.p, t: g.t, n: 0 }).n++;
+  }));
+  $('#statScorers').innerHTML = leaderRows(sc, t('goalsShort'));
+
+  // top assists (enriched lazily from the summary endpoint)
+  const as = {};
+  played.forEach((m) => (m.goals || []).forEach((g) => {
+    if (!g.a) return;
+    const k = g.t + '|' + g.a;
+    (as[k] = as[k] || { p: g.a, t: g.t, n: 0 }).n++;
+  }));
+  const assistHtml = leaderRows(as, t('assistsShort'));
+  $('#statAssists').innerHTML = assistHtml || `<p class="muted-note">${assistsPending ? t('loadingAssists') : t('noAssists')}</p>`;
+
+  // tournament numbers
+  const totalGoals = played.reduce((s, m) => s + m.hs + m.as, 0);
+  const avg = (totalGoals / played.length).toFixed(2);
+  let big = null;
+  played.forEach((m) => {
+    const diff = Math.abs(m.hs - m.as), tot = m.hs + m.as;
+    if (!big || diff > big.diff || (diff === big.diff && tot > big.tot)) big = { m, diff, tot };
+  });
+  const bigStr = big ? `${team(big.m.h).flag} ${big.m.hs}–${big.m.as} ${team(big.m.a).flag}` : '—';
+  $('#statNumbers').innerHTML = `<div class="numgrid">
+    <div class="numcard"><div class="big">${totalGoals}</div><div class="cap">${t('nGoals')}</div></div>
+    <div class="numcard"><div class="big">${played.length}</div><div class="cap">${t('nMatches')}</div></div>
+    <div class="numcard"><div class="big">${avg}</div><div class="cap">${t('nAvg')}</div></div>
+    <div class="numcard"><div class="big small">${bigStr}</div><div class="cap">${t('nBiggest')}</div></div>
+  </div>`;
+
+  // most goals scored, by team
+  const tg = {};
+  played.forEach((m) => { tg[m.h] = (tg[m.h] || 0) + m.hs; tg[m.a] = (tg[m.a] || 0) + m.as; });
+  const teamMap = {};
+  Object.entries(tg).forEach(([code, n]) => { if (n > 0) teamMap[code] = { p: team(code).name, t: code, n }; });
+  $('#statTeams').innerHTML = leaderRows(teamMap, t('goalsShort'), 8);
+}
+
+// ---------- assists enrichment (lazy, cached) ----------
+const summaryCache = {}; // `${eid}:${hs}-${as}` -> true once fetched
+let assistsPending = false;
+
+async function ensureSummaries(list) {
+  const todo = (list || DATA.matches.filter(isPlayed))
+    .filter((m) => isPlayed(m) && m.eid && !summaryCache[`${m.eid}:${m.hs}-${m.as}`]);
+  if (!todo.length) { assistsPending = false; return false; }
+  assistsPending = true;
+  let any = false;
+  for (let i = 0; i < todo.length; i += 5) {
+    await Promise.all(todo.slice(i, i + 5).map(async (m) => {
+      try {
+        const res = await fetch(`${CONFIG.summaryUrl}?event=${m.eid}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const d = await res.json();
+        const byMin = {};
+        for (const k of d.keyEvents || []) {
+          if (!k.scoringPlay) continue;
+          const min = String((k.clock && k.clock.displayValue) || '').replace(/'/g, '');
+          const ps = k.participants || [];
+          if (ps.length > 1 && ps[1].athlete) byMin[min] = ps[1].athlete.shortName || ps[1].athlete.displayName;
+        }
+        (m.goals || []).forEach((g) => { if (byMin[g.m]) g.a = byMin[g.m]; });
+        summaryCache[`${m.eid}:${m.hs}-${m.as}`] = true;
+        any = true;
+      } catch (e) { /* ignore */ }
+    }));
+  }
+  assistsPending = false;
+  return any;
+}
+
+function openStats() {
+  const hasUncached = DATA.matches.some((m) => isPlayed(m) && m.eid && !summaryCache[`${m.eid}:${m.hs}-${m.as}`]);
+  if (hasUncached) assistsPending = true; // show "loading assists…" right away
+  renderStats(); // scorers + numbers instantly
+  ensureSummaries().then(() => renderStats()); // assists fill in
+}
+
 // ---------- navigation ----------
 function go(view) {
   $$('.view').forEach((v) => (v.hidden = v.dataset.view !== view));
@@ -294,7 +425,7 @@ function go(view) {
 function applyLangChrome() {
   document.documentElement.lang = lang;
   $('#langLabel').textContent = lang === 'en' ? 'DA' : 'EN';
-  const tabKey = { groups: 'groups', matches: 'matches', knockout: 'bracket' };
+  const tabKey = { groups: 'groups', matches: 'matches', stats: 'stats', knockout: 'bracket' };
   $$('.tab').forEach((tb) => { $('.tab-lbl', tb).textContent = t(tabKey[tb.dataset.go]); });
 }
 function setLang(next) {
@@ -305,7 +436,7 @@ function setLang(next) {
 }
 
 // ---------- render all ----------
-function renderAll() { renderGroups(); renderMatches(); renderKnockout(); }
+function renderAll() { renderGroups(); renderMatches(); renderStats(); renderKnockout(); }
 
 // ---------- toast ----------
 let toastTimer;
@@ -360,6 +491,7 @@ function mergeEspn(events) {
     const m = byPair[pairKey(cs[0].team.abbreviation, cs[1].team.abbreviation)];
     if (!m) continue;
     if (ev.date) m.utc = ev.date; // keep kick-off time fresh for all states
+    if (ev.id) m.eid = ev.id;     // event id → used to fetch assists
     const state = ev.status && ev.status.type && ev.status.type.state;
     if (state !== 'in' && state !== 'post') continue;
     const scoreOf = (code) => { const c = cs.find((x) => x.team.abbreviation === code); return c ? parseInt(c.score, 10) : NaN; };
@@ -386,6 +518,7 @@ async function refresh(manual = false, full = false) {
     if (!events.length) throw new Error('no events');
     const changed = mergeEspn(events);
     renderAll();
+    if (!$('#view-stats').hidden) ensureSummaries().then((got) => { if (got) renderStats(); });
     if (manual) toast(changed ? t('updated') : t('upToDate'));
   } catch (err) {
     if (manual) toast(t('offline'));
@@ -403,7 +536,7 @@ function boot() {
   applyLangChrome();
   renderAll();
 
-  $$('.tab').forEach((tb) => tb.addEventListener('click', () => go(tb.dataset.go)));
+  $$('.tab').forEach((tb) => tb.addEventListener('click', () => { go(tb.dataset.go); if (tb.dataset.go === 'stats') openStats(); }));
   $('#langBtn').addEventListener('click', () => setLang(lang === 'en' ? 'da' : 'en'));
   $('#liveBadge').addEventListener('click', () => refresh(true, true));
   $$('#koSeg .seg-btn').forEach((b) => b.addEventListener('click', () => { koTab = b.dataset.ko; applyKoTab(); }));
