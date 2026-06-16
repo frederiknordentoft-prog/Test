@@ -42,6 +42,18 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
+/* ---------- holdet.dk squad markers ---------- */
+.mine { color: var(--amber); font-weight: 900; margin: 0 3px; font-size: .92em; }
+.mine-row { background: color-mix(in srgb, var(--amber) 9%, transparent) !important; }
+.match.mine { box-shadow: inset 3px 0 0 var(--amber), var(--shadow); }
+.mine-li { font-weight: 800; color: var(--ink); }
+.legend-mine {
+  grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: var(--ink-2);
+  background: color-mix(in srgb, var(--amber) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line));
+  border-radius: 12px; padding: 9px 14px;
+}
+
 /* The hidden attribute must always win over class-level display rules.
    Otherwise e.g. the full-screen .sheet-overlay (display:flex) keeps the
    same specificity as [hidden]{display:none}, stays in the layout with
