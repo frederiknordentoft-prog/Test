@@ -1,7 +1,7 @@
 // World Cup 2026 — service worker
 // App shell is cache-first; data.json is network-first so live scores win
 // when online but the last good copy still shows offline.
-const VERSION = 'wc2026-v4';
+const VERSION = 'wc2026-v5';
 const SHELL = [
   './',
   './index.html',

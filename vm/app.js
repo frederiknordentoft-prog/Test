@@ -28,7 +28,7 @@ const I18N = {
     koTitle: 'Knockout stage',
     koDesc: 'The bracket fills in once the group stage ends on June 27. The 12 group winners, 12 runners-up and the 8 best third-placed teams advance to the Round of 32.',
     segR32: 'Round of 32', segPath: 'Path to the final',
-    matchN: 'Match', kickoff: 'Kick-off', venue: 'Venue', goalsLbl: 'Goals',
+    matchN: 'Match', kickoff: 'Kick-off', venue: 'Venue', goalsLbl: 'Goals', tzNote: '(Danish time)',
     noGoals: 'No goals yet.', notPlayed: 'Not played yet', groupStage: 'Group stage',
     og: 'o.g.', pen: 'pen.',
     winner: 'Winner', runner: 'Runner-up', third: '3rd place',
@@ -46,7 +46,7 @@ const I18N = {
     koTitle: 'Slutspil',
     koDesc: 'Lodtrækningen falder på plads, når gruppespillet slutter 27. juni. De 12 gruppevindere, 12 toere og de 8 bedste treere går videre til 1/16-finalerne.',
     segR32: '1/16-finaler', segPath: 'Vejen til finalen',
-    matchN: 'Kamp', kickoff: 'Kampstart', venue: 'Stadion', goalsLbl: 'Mål',
+    matchN: 'Kamp', kickoff: 'Kampstart', venue: 'Stadion', goalsLbl: 'Mål', tzNote: '(dansk tid)',
     noGoals: 'Ingen mål endnu.', notPlayed: 'Ikke spillet endnu', groupStage: 'Gruppespil',
     og: 'selvmål', pen: 'straffe',
     winner: 'Vinder', runner: 'Toer', third: '3.-plads',
@@ -71,6 +71,15 @@ function fmtDate(iso) {
 function fmtDateShort(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString(t('locale'), { month: 'short', day: 'numeric' });
 }
+
+// ---------- Danish-time helpers ----------
+// Kick-off instants are stored in UTC; everything is shown in Copenhagen time.
+const TZ = 'Europe/Copenhagen';
+const _dkDate = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+const _dkTime = new Intl.DateTimeFormat('da-DK', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+const dkDateIso = (m) => (m.utc ? _dkDate.format(new Date(m.utc)) : m.date);
+const dkTime = (m) => (m.utc ? _dkTime.format(new Date(m.utc)) : (m.time || ''));
+const dkToday = () => _dkDate.format(new Date());
 function localizeRange(str) {
   if (lang !== 'da') return str;
   return str.replace(/Jun/g, 'jun.').replace(/Jul/g, 'jul.');
@@ -136,7 +145,7 @@ function matchRow(m) {
   } else if (played) {
     center = `<div class="m-score">${m.hs}<span class="x">–</span>${m.as}</div><div class="m-ft">${t('fullTime')}</div>`;
   } else {
-    center = `<div class="m-time">${m.time || ''}</div><div class="m-meta">${m.city || ''}</div>`;
+    center = `<div class="m-time">${dkTime(m)}</div><div class="m-meta">${m.city || ''}</div>`;
   }
   return `<button class="match" data-mi="${m._i}">
     <div class="m-side home ${awayWin ? 'lose' : ''}"><span class="m-name">${H.name}</span><span class="m-flag">${H.flag}</span></div>
@@ -146,8 +155,8 @@ function matchRow(m) {
 }
 
 function renderMatches() {
-  const dates = [...new Set(DATA.matches.map((m) => m.date))].sort();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const dates = [...new Set(DATA.matches.map(dkDateIso))].sort();
+  const todayIso = dkToday();
   if (activeDay === 'all' && !renderMatches._init) {
     if (dates.includes(todayIso)) activeDay = todayIso;
     else { const next = dates.find((d) => d >= todayIso); if (next) activeDay = next; }
@@ -159,8 +168,8 @@ function renderMatches() {
 
   const shown = activeDay === 'all' ? dates : [activeDay];
   $('#matchesList').innerHTML = shown.map((d) => {
-    const list = DATA.matches.filter((m) => m.date === d)
-      .sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(matchRow).join('');
+    const list = DATA.matches.filter((m) => dkDateIso(m) === d)
+      .sort((a, b) => (a.utc || a.time || '').localeCompare(b.utc || b.time || '')).map(matchRow).join('');
     const label = d === todayIso ? `${t('today')} · ${fmtDate(d)}` : fmtDate(d);
     return `<div class="day-group"><div class="day-label">${label}</div>${list}</div>`;
   }).join('');
@@ -207,7 +216,7 @@ function openSheet(i) {
 
   const info = `<div class="sheet-info">
     <div class="info-row"><span>🏷️</span><span>${t('group')} ${m.g} · ${t('groupStage')}</span></div>
-    <div class="info-row"><span>📅</span><span>${fmtDate(m.date)}${m.time ? ` · ${t('kickoff')} ${m.time}` : ''}</span></div>
+    <div class="info-row"><span>📅</span><span>${fmtDate(dkDateIso(m))} · ${t('kickoff')} ${dkTime(m)} <em class="tznote">${t('tzNote')}</em></span></div>
     <div class="info-row"><span>📍</span><span>${m.venue}, ${m.city}</span></div>
   </div>`;
 
@@ -345,12 +354,14 @@ function mergeEspn(events) {
   let changed = 0;
   for (const ev of events) {
     const comp = ev.competitions && ev.competitions[0];
-    const state = ev.status && ev.status.type && ev.status.type.state;
-    if (!comp || (state !== 'in' && state !== 'post')) continue;
+    if (!comp) continue;
     const cs = comp.competitors || [];
     if (cs.length < 2) continue;
     const m = byPair[pairKey(cs[0].team.abbreviation, cs[1].team.abbreviation)];
     if (!m) continue;
+    if (ev.date) m.utc = ev.date; // keep kick-off time fresh for all states
+    const state = ev.status && ev.status.type && ev.status.type.state;
+    if (state !== 'in' && state !== 'post') continue;
     const scoreOf = (code) => { const c = cs.find((x) => x.team.abbreviation === code); return c ? parseInt(c.score, 10) : NaN; };
     const nhs = scoreOf(m.h), nas = scoreOf(m.a);
     if (!Number.isInteger(nhs) || !Number.isInteger(nas)) continue;
