@@ -225,6 +225,37 @@ body {
 .numcard .big { font-size: 28px; font-weight: 900; letter-spacing: -.03em; line-height: 1.1; }
 .numcard .big.small { font-size: 19px; }
 .numcard .cap { font-size: 12px; color: var(--ink-2); margin-top: 3px; font-weight: 600; }
+
+/* ---------- Match detail: timeline ---------- */
+.timeline { display: flex; flex-direction: column; gap: 7px; }
+.tl { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.tl.right { flex-direction: row-reverse; text-align: right; }
+.tl-min { font-weight: 800; color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 30px; }
+.tl.right .tl-min { text-align: right; }
+.tl-ic { font-size: 14px; }
+.tl-flag { font-size: 16px; }
+.tl-txt { flex: 1; font-weight: 600; }
+.tl-txt b { font-weight: 700; }
+.tl-sub { color: var(--ink-3); font-weight: 600; font-size: 11px; margin: 0 5px; }
+.tl-break { text-align: center; font-size: 11px; font-weight: 800; letter-spacing: .05em; color: var(--ink-3); text-transform: uppercase; padding: 3px 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); }
+
+/* ---------- Match detail: stat comparison ---------- */
+.cmp { margin-bottom: 12px; }
+.cmp-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 4px; }
+.cmp-v { font-weight: 800; font-variant-numeric: tabular-nums; }
+.cmp-lbl { color: var(--ink-2); font-size: 12px; font-weight: 600; }
+.cbar { display: flex; height: 6px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+.cbar-l { background: var(--blue); }
+.cbar-r { background: color-mix(in srgb, var(--ink-3) 55%, transparent); }
+
+/* ---------- Match detail: line-ups ---------- */
+.lineups { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.lu-head { font-size: 12px; font-weight: 800; margin-bottom: 8px; }
+.lu-form { color: var(--blue); font-weight: 800; margin-left: 2px; }
+.lu-xi { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.lu-xi li { font-size: 12px; font-weight: 600; }
+.lu-subs { font-size: 11px; color: var(--ink-3); margin-top: 8px; line-height: 1.4; }
+.lu-subs b { color: var(--ink-2); }
 .m-gtag {
   font-size: 9px; font-weight: 800; color: var(--blue);
   background: color-mix(in srgb, var(--blue) 10%, transparent);

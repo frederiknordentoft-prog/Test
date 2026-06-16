@@ -27,7 +27,14 @@ const I18N = {
     goalsShort: 'goals', assistsShort: 'assists',
     nGoals: 'Goals', nMatches: 'Matches', nAvg: 'Goals / match', nBiggest: 'Biggest win',
     loadingAssists: 'Loading assists…', noAssists: 'No assists recorded yet.', noData: 'No matches played yet.',
-    assistBy: 'assist',
+    assistBy: 'assist', loadingData: 'Loading…',
+    cleanSheets: 'Clean sheets · teams', cardsLbl: 'Discipline · teams', shotsLbl: 'Most shots · teams',
+    csUnit: 'clean', cardsUnit: 'cards', shotsUnit: 'shots',
+    lblMatchStats: 'Match stats', lblTimeline: 'Timeline', lblLineups: 'Line-ups',
+    formation: 'Formation', subsLbl: 'Substitutes', attendanceLbl: 'Attendance', refereeLbl: 'Referee',
+    stPossession: 'Possession', stShots: 'Shots', stOnTarget: 'On target', stCorners: 'Corners', stFouls: 'Fouls',
+    stYellow: 'Yellow cards', stRed: 'Red cards', stPass: 'Pass accuracy', stOffsides: 'Offsides', stSaves: 'Saves',
+    evGoal: 'Goal', evOG: 'Own goal', evYC: 'Yellow card', evRC: 'Red card', evSub: 'Substitution', evHT: 'Half-time', evFT: 'Full-time',
     inProgress: 'Matchday in progress', notStarted: 'Yet to kick off',
     colP: 'P', colGD: 'GD', colPts: 'Pts',
     all: 'All', today: 'Today',
@@ -50,7 +57,14 @@ const I18N = {
     goalsShort: 'mål', assistsShort: 'assists',
     nGoals: 'Mål', nMatches: 'Kampe', nAvg: 'Mål / kamp', nBiggest: 'Største sejr',
     loadingAssists: 'Henter assists…', noAssists: 'Ingen assists registreret endnu.', noData: 'Ingen kampe spillet endnu.',
-    assistBy: 'oplæg',
+    assistBy: 'oplæg', loadingData: 'Henter…',
+    cleanSheets: 'Clean sheets · hold', cardsLbl: 'Disciplin · hold', shotsLbl: 'Flest skud · hold',
+    csUnit: 'clean', cardsUnit: 'kort', shotsUnit: 'skud',
+    lblMatchStats: 'Kampstatistik', lblTimeline: 'Forløb', lblLineups: 'Opstillinger',
+    formation: 'Formation', subsLbl: 'Indskiftere', attendanceLbl: 'Tilskuere', refereeLbl: 'Dommer',
+    stPossession: 'Boldbesiddelse', stShots: 'Skud', stOnTarget: 'På mål', stCorners: 'Hjørnespark', stFouls: 'Fouls',
+    stYellow: 'Gule kort', stRed: 'Røde kort', stPass: 'Afl.præcision', stOffsides: 'Offsides', stSaves: 'Redninger',
+    evGoal: 'Mål', evOG: 'Selvmål', evYC: 'Gult kort', evRC: 'Rødt kort', evSub: 'Udskiftning', evHT: 'Pause', evFT: 'Fuldtid',
     inProgress: 'Kampe i gang', notStarted: 'Ikke startet endnu',
     colP: 'K', colGD: 'MF', colPts: 'P',
     all: 'Alle', today: 'I dag',
@@ -208,32 +222,89 @@ function goalLine(g, m) {
 
 let sheetMi = -1;
 
+function goalsFallbackHtml(m, played) {
+  if (!played) return '';
+  if (!(m.goals && m.goals.length)) return `<div class="sheet-section"><p class="sheet-empty">${t('noGoals')}</p></div>`;
+  const sorted = [...m.goals].sort((a, b) => minVal(a.m) - minVal(b.m));
+  return `<div class="sheet-section"><div class="sheet-label">${t('goalsLbl')}</div><div class="goals">${sorted.map((g) => goalLine(g, m)).join('')}</div></div>`;
+}
+
+function timelineHtml(m) {
+  if (!(m.events && m.events.length)) return goalsFallbackHtml(m, isPlayed(m));
+  const icon = { goal: '⚽', og: '⚽', yc: '🟨', rc: '🟥', sub: '🔁', ht: '⏸️', ft: '🏁' };
+  const rows = m.events.map((e) => {
+    if (e.kind === 'ht' || e.kind === 'ft') return `<div class="tl-break">${icon[e.kind]} ${e.kind === 'ht' ? t('evHT') : t('evFT')}</div>`;
+    const side = e.code === m.h ? 'left' : 'right';
+    let txt = '';
+    if (e.kind === 'goal' || e.kind === 'og') {
+      const g = (m.goals || []).find((x) => x.m === e.min && x.t === e.code);
+      const extra = [e.kind === 'og' ? `(${t('og')})` : '', g && g.pen ? `(${t('pen')})` : ''].filter(Boolean).join(' ');
+      const assist = g && g.a ? `<span class="tl-sub">${t('assistBy')}: ${g.a}</span>` : '';
+      txt = `<b>${e.players[0] || (g && g.p) || ''}</b> ${extra}${assist}`;
+    } else if (e.kind === 'sub') {
+      txt = `${e.players[0] || ''}<span class="tl-sub">↔ ${e.players[1] || ''}</span>`;
+    } else {
+      txt = e.players[0] || '';
+    }
+    return `<div class="tl ${side}"><span class="tl-min">${e.min}'</span><span class="tl-ic">${icon[e.kind]}</span><span class="tl-flag">${e.code ? team(e.code).flag : ''}</span><span class="tl-txt">${txt}</span></div>`;
+  }).join('');
+  return `<div class="sheet-section"><div class="sheet-label">${t('lblTimeline')}</div><div class="timeline">${rows}</div></div>`;
+}
+
+function statVal(raw, key) {
+  let v = parseFloat(raw); if (isNaN(v)) v = 0;
+  if (key === 'passPct') return { n: v, d: Math.round(v * 100) + '%' };
+  if (key === 'possessionPct') return { n: v, d: Math.round(v) + '%' };
+  return { n: v, d: String(v) };
+}
+
+function statsCompareHtml(m) {
+  if (!m.stats) return '';
+  const h = m.stats[m.h] || {}, a = m.stats[m.a] || {};
+  const rows = [
+    ['possessionPct', t('stPossession')], ['totalShots', t('stShots')], ['shotsOnTarget', t('stOnTarget')],
+    ['wonCorners', t('stCorners')], ['foulsCommitted', t('stFouls')], ['yellowCards', t('stYellow')], ['passPct', t('stPass')],
+  ].map(([key, label]) => {
+    if (h[key] == null && a[key] == null) return '';
+    const H = statVal(h[key], key), A = statVal(a[key], key);
+    const tot = H.n + A.n || 1, lp = Math.round((H.n / tot) * 100);
+    return `<div class="cmp"><div class="cmp-top"><span class="cmp-v">${H.d}</span><span class="cmp-lbl">${label}</span><span class="cmp-v">${A.d}</span></div>
+      <div class="cbar"><div class="cbar-l" style="width:${lp}%"></div><div class="cbar-r" style="width:${100 - lp}%"></div></div></div>`;
+  }).join('');
+  return rows.trim() ? `<div class="sheet-section"><div class="sheet-label">${t('lblMatchStats')}</div>${rows}</div>` : '';
+}
+
+function lineupHtml(m) {
+  if (!m.lineup) return '';
+  const col = (code) => {
+    const l = m.lineup[code]; if (!l) return '';
+    return `<div class="lu-team"><div class="lu-head">${team(code).flag} ${team(code).name} <span class="lu-form">${l.formation}</span></div>
+      <ol class="lu-xi">${l.xi.map((n) => `<li>${n}</li>`).join('')}</ol>
+      ${l.subs && l.subs.length ? `<div class="lu-subs"><b>${t('subsLbl')}:</b> ${l.subs.join(', ')}</div>` : ''}</div>`;
+  };
+  const h = col(m.h), a = col(m.a);
+  if (!h && !a) return '';
+  return `<div class="sheet-section"><div class="sheet-label">${t('lblLineups')}</div><div class="lineups">${h}${a}</div></div>`;
+}
+
 function fillSheet(m) {
   const H = team(m.h), A = team(m.a), played = isPlayed(m), live = isLive(m);
   const status = live ? `${t('live')}${m.min ? ` · ${m.min}` : ''}` : (played ? t('fullTime') : t('notPlayed'));
   const head = `<div class="sheet-head">
     <div class="sheet-team"><span class="sheet-flag">${H.flag}</span><span class="sheet-tname">${H.name}</span></div>
-    <div class="sheet-score">${played ? `${m.hs}<span class="x">–</span>${m.as}` : (m.time || '')}<div class="sheet-status ${live ? 'livetxt' : ''}">${status}</div></div>
+    <div class="sheet-score">${played ? `${m.hs}<span class="x">–</span>${m.as}` : (dkTime(m) || '')}<div class="sheet-status ${live ? 'livetxt' : ''}">${status}</div></div>
     <div class="sheet-team"><span class="sheet-flag">${A.flag}</span><span class="sheet-tname">${A.name}</span></div>
   </div>`;
-
-  let goalsHtml = '';
-  if (played) {
-    if (m.goals && m.goals.length) {
-      const sorted = [...m.goals].sort((a, b) => minVal(a.m) - minVal(b.m));
-      goalsHtml = `<div class="sheet-section"><div class="sheet-label">${t('goalsLbl')}</div><div class="goals">${sorted.map((g) => goalLine(g, m)).join('')}</div></div>`;
-    } else {
-      goalsHtml = `<div class="sheet-section"><p class="sheet-empty">${t('noGoals')}</p></div>`;
-    }
-  }
 
   const info = `<div class="sheet-info">
     <div class="info-row"><span>🏷️</span><span>${t('group')} ${m.g} · ${t('groupStage')}</span></div>
     <div class="info-row"><span>📅</span><span>${fmtDate(dkDateIso(m))} · ${t('kickoff')} ${dkTime(m)} <em class="tznote">${t('tzNote')}</em></span></div>
     <div class="info-row"><span>📍</span><span>${m.venue}, ${m.city}</span></div>
+    ${m.att ? `<div class="info-row"><span>👥</span><span>${Number(m.att).toLocaleString(t('locale'))}</span></div>` : ''}
+    ${m.ref ? `<div class="info-row"><span>🧑‍⚖️</span><span>${t('refereeLbl')}: ${m.ref}</span></div>` : ''}
   </div>`;
 
-  $('#sheetBody').innerHTML = head + goalsHtml + info;
+  $('#sheetBody').innerHTML = head + timelineHtml(m) + statsCompareHtml(m) + lineupHtml(m) + info;
 }
 
 function openSheet(i) {
@@ -244,8 +315,8 @@ function openSheet(i) {
   const ov = $('#sheetOverlay');
   ov.hidden = false;
   requestAnimationFrame(() => ov.classList.add('open'));
-  // pull in assists for this match, then refresh the open sheet
-  if (isPlayed(m) && m.eid) ensureSummaries([m]).then(() => { if (sheetMi === i && !ov.hidden) fillSheet(m); });
+  // pull richer detail (stats, line-ups, timeline) for this match, then refresh
+  if (m.eid) ensureSummaries([m]).then(() => { if (sheetMi === i && !ov.hidden) fillSheet(m); });
 }
 
 function closeSheet() {
@@ -323,6 +394,9 @@ function renderStats() {
   $('#lblAssists').textContent = t('topAssists');
   $('#lblNumbers').textContent = t('tournament');
   $('#lblTeams').textContent = t('topTeamsLbl');
+  $('#lblClean').textContent = t('cleanSheets');
+  $('#lblCards').textContent = t('cardsLbl');
+  $('#lblShots').textContent = t('shotsLbl');
 
   const played = DATA.matches.filter(isPlayed);
   if (!played.length) {
@@ -372,6 +446,90 @@ function renderStats() {
   const teamMap = {};
   Object.entries(tg).forEach(([code, n]) => { if (n > 0) teamMap[code] = { p: team(code).name, t: code, n }; });
   $('#statTeams').innerHTML = leaderRows(teamMap, t('goalsShort'), 8);
+
+  // clean sheets — derived from scores alone
+  const cs = {};
+  played.forEach((m) => { if (m.as === 0) cs[m.h] = (cs[m.h] || 0) + 1; if (m.hs === 0) cs[m.a] = (cs[m.a] || 0) + 1; });
+  const csMap = {};
+  Object.entries(cs).forEach(([code, n]) => (csMap[code] = { p: team(code).name, t: code, n }));
+  $('#statClean').innerHTML = Object.keys(csMap).length ? leaderRows(csMap, t('csUnit'), 8) : `<p class="muted-note">${t('noData')}</p>`;
+
+  // discipline (cards) and shots — from per-team match stats (summaries)
+  const cd = {}, sh = {};
+  played.forEach((m) => {
+    if (!m.stats) return;
+    [m.h, m.a].forEach((code) => {
+      const s = m.stats[code]; if (!s) return;
+      const cards = (parseInt(s.yellowCards, 10) || 0) + (parseInt(s.redCards, 10) || 0);
+      const shots = parseInt(s.totalShots, 10) || 0;
+      if (cards > 0) cd[code] = (cd[code] || 0) + cards;
+      if (shots > 0) sh[code] = (sh[code] || 0) + shots;
+    });
+  });
+  const mapOf = (obj) => { const o = {}; Object.entries(obj).forEach(([c, n]) => (o[c] = { p: team(c).name, t: c, n })); return o; };
+  const pendNote = `<p class="muted-note">${assistsPending ? t('loadingData') : t('noData')}</p>`;
+  $('#statCards').innerHTML = Object.keys(cd).length ? leaderRows(mapOf(cd), t('cardsUnit'), 8) : pendNote;
+  $('#statShots').innerHTML = Object.keys(sh).length ? leaderRows(mapOf(sh), t('shotsUnit'), 8) : pendNote;
+}
+
+// ---------- summary parsing (assists, stats, line-ups, events) ----------
+function parseSummary(d, m) {
+  const idToCode = {};
+  ((d.boxscore && d.boxscore.teams) || []).forEach((tm) => (idToCode[tm.team.id] = tm.team.abbreviation));
+  const nm = (p) => p && p.athlete && (p.athlete.shortName || p.athlete.displayName);
+
+  // assists onto existing goals, matched by minute
+  const byMin = {};
+  for (const k of d.keyEvents || []) {
+    if (!k.scoringPlay) continue;
+    const min = String((k.clock && k.clock.displayValue) || '').replace(/'/g, '');
+    const ps = k.participants || [];
+    if (ps.length > 1 && ps[1].athlete) byMin[min] = nm(ps[1]);
+  }
+  (m.goals || []).forEach((g) => { if (byMin[g.m]) g.a = byMin[g.m]; });
+
+  // per-team match statistics
+  const stats = {};
+  ((d.boxscore && d.boxscore.teams) || []).forEach((tm) => {
+    const o = {}; (tm.statistics || []).forEach((s) => (o[s.name] = s.displayValue));
+    if (Object.keys(o).length) stats[tm.team.abbreviation] = o;
+  });
+  if (Object.keys(stats).length) m.stats = stats;
+
+  // game info
+  const gi = d.gameInfo || {};
+  if (gi.attendance != null) m.att = gi.attendance;
+  const ref = (gi.officials || []).find((o) => /referee/i.test((o.position && o.position.displayName) || '')) || (gi.officials || [])[0];
+  if (ref) m.ref = ref.displayName;
+
+  // line-ups
+  const lineup = {};
+  (d.rosters || []).forEach((r) => {
+    const code = r.team && r.team.abbreviation;
+    if (!code) return;
+    const roster = r.roster || [];
+    const xi = roster.filter((p) => p.starter).map(nm).filter(Boolean);
+    const subs = roster.filter((p) => !p.starter && p.subbedIn).map(nm).filter(Boolean);
+    if (xi.length) lineup[code] = { formation: r.formation || '', xi, subs };
+  });
+  if (Object.keys(lineup).length) m.lineup = lineup;
+
+  // event timeline
+  const kinds = { 'Yellow Card': 'yc', 'Red Card': 'rc', 'VAR - (Red) Card Upgrade': 'rc', Substitution: 'sub', Halftime: 'ht', 'End Regular Time': 'ft' };
+  const events = [];
+  for (const k of d.keyEvents || []) {
+    const tx = (k.type && k.type.text) || '';
+    let kind = null;
+    if (k.scoringPlay || /goal/i.test(tx)) kind = /own goal/i.test(tx) ? 'og' : 'goal';
+    else if (kinds[tx]) kind = kinds[tx];
+    if (!kind) continue;
+    events.push({
+      min: String((k.clock && k.clock.displayValue) || '').replace(/'/g, ''),
+      kind, code: idToCode[k.team && k.team.id],
+      players: (k.participants || []).map(nm).filter(Boolean),
+    });
+  }
+  if (events.length) m.events = events;
 }
 
 // ---------- assists enrichment (lazy, cached) ----------
@@ -389,15 +547,7 @@ async function ensureSummaries(list) {
       try {
         const res = await fetch(`${CONFIG.summaryUrl}?event=${m.eid}`, { cache: 'no-store' });
         if (!res.ok) return;
-        const d = await res.json();
-        const byMin = {};
-        for (const k of d.keyEvents || []) {
-          if (!k.scoringPlay) continue;
-          const min = String((k.clock && k.clock.displayValue) || '').replace(/'/g, '');
-          const ps = k.participants || [];
-          if (ps.length > 1 && ps[1].athlete) byMin[min] = ps[1].athlete.shortName || ps[1].athlete.displayName;
-        }
-        (m.goals || []).forEach((g) => { if (byMin[g.m]) g.a = byMin[g.m]; });
+        parseSummary(await res.json(), m);
         summaryCache[`${m.eid}:${m.hs}-${m.as}`] = true;
         any = true;
       } catch (e) { /* ignore */ }
