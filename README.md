@@ -35,23 +35,29 @@ launches full-screen like a native app (PWA) and works offline.
 - **Bracket** — the official Round of 32 pairings and the path to the final.
 - **Language** — English / Danish toggle (top-right), remembered between visits.
 
-### Data (hybrid)
-- **`vm/data.js`** is the bundled snapshot — renders instantly and works offline.
-- **`vm/data.json`** is the same data served as a file. On load (and every ~90s,
-  and the **LIVE** button) the app re-fetches it so a redeploy updates scores
-  without a reload. The service worker is network-first on this file.
-- **Optional real-time API:** point `CONFIG.liveUrl` in `vm/app.js` at any
-  endpoint returning the same JSON shape (same-origin or CORS-enabled).
+### Data — updates itself automatically
+Scores and goalscorers update on their own. No editing, no redeploy.
 
-To update results, edit a match in **`vm/data.json`** (set `hs`/`as`, optionally
-add `goals`), then regenerate the bundled copy and push:
+- **`vm/data.js`** is a bundled snapshot (fixtures, teams, last-known results) so
+  the app renders instantly and works offline.
+- On load, every 60 seconds, on the **LIVE** button, and whenever the app regains
+  focus, it fetches **ESPN's public World Cup feed**
+  (`site.api.espn.com/.../soccer/fifa.world/scoreboard`) directly in the browser
+  and merges live scores, match state (LIVE / full-time) and goalscorers on top.
+  ESPN needs no API key and allows cross-origin requests, so no backend is needed.
+- Standings recalculate automatically from the merged results — no table is ever
+  edited by hand.
+
+This covers the group stage live. Knockout fixtures fill in once those teams are
+known. If ESPN is unreachable, the app simply shows the last bundled snapshot.
+
+To change the bundled fallback by hand, edit a match in **`vm/data.json`**
+(`hs`/`as`, optional `goals`) and regenerate the bundle:
 
 ```bash
 cd vm && { printf 'window.WC2026 = '; cat data.json; printf ';\n'; } > data.js && cd ..
-git commit -am "Update results" && git push
+git commit -am "Update snapshot" && git push
 ```
-
-Standings recalculate automatically — you never edit a table by hand.
 
 World Cup data compiled and cross-checked against Wikipedia's
 [2026 FIFA World Cup](https://en.wikipedia.org/wiki/2026_FIFA_World_Cup) group

@@ -194,6 +194,9 @@ body {
 .m-time { font-size: 14px; font-weight: 800; color: var(--ink); }
 .m-meta { font-size: 10px; color: var(--ink-3); font-weight: 600; margin-top: 2px; white-space: nowrap; }
 .m-ft { font-size: 9px; font-weight: 800; letter-spacing: .08em; color: var(--green); margin-top: 2px; }
+.m-livetag { font-size: 9px; font-weight: 800; letter-spacing: .06em; color: var(--red); margin-top: 2px; }
+.livedot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--red); margin-right: 5px; vertical-align: middle; animation: pulse 1.4s ease-in-out infinite; }
+.sheet-status.livetxt { color: var(--red); }
 .m-gtag {
   font-size: 9px; font-weight: 800; color: var(--blue);
   background: color-mix(in srgb, var(--blue) 10%, transparent);

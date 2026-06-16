@@ -1,18 +1,16 @@
 // ============================================================
 //  World Cup 2026 — app logic
-//  Hybrid data: bundled snapshot (data.js) renders instantly,
-//  then an optional live source can refresh it on top.
+//  Bundled snapshot (data.js) renders instantly and works offline.
+//  A live overlay then pulls real scores + goalscorers straight from
+//  ESPN's public World Cup feed (no key, CORS-open) and merges them in.
 //  Bilingual UI (English / Danish).
 // ============================================================
 'use strict';
 
 const CONFIG = {
-  // Optional live source. Leave empty to run purely on the bundled snapshot.
-  // Any URL returning the same JSON shape as data.json works (e.g. a redeployed
-  // data.json, or a small proxy in front of a football API). Same-origin or
-  // CORS-enabled only.
-  liveUrl: 'data.json',
-  refreshMs: 90 * 1000,
+  // ESPN public scoreboard — no API key, returns CORS headers, ~9s fresh.
+  espnUrl: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
+  refreshMs: 60 * 1000,
 };
 
 let DATA = window.WC2026; // bundled snapshot — always present
@@ -26,16 +24,16 @@ const I18N = {
     inProgress: 'Matchday in progress', notStarted: 'Yet to kick off',
     colP: 'P', colGD: 'GD', colPts: 'Pts',
     all: 'All', today: 'Today',
-    fullTime: 'FULL-TIME', group: 'Group',
+    fullTime: 'FULL-TIME', live: 'LIVE', group: 'Group',
     koTitle: 'Knockout stage',
     koDesc: 'The bracket fills in once the group stage ends on June 27. The 12 group winners, 12 runners-up and the 8 best third-placed teams advance to the Round of 32.',
     segR32: 'Round of 32', segPath: 'Path to the final',
     matchN: 'Match', kickoff: 'Kick-off', venue: 'Venue', goalsLbl: 'Goals',
-    noGoals: 'No goals — it finished 0–0.', notPlayed: 'Not played yet', groupStage: 'Group stage',
+    noGoals: 'No goals yet.', notPlayed: 'Not played yet', groupStage: 'Group stage',
     og: 'o.g.', pen: 'pen.',
     winner: 'Winner', runner: 'Runner-up', third: '3rd place',
     finalEyebrow: 'THE FINAL', finalDate: 'July 19, 2026', finalQ: 'Who lifts the trophy?',
-    upToDate: 'Up to date', updated: 'Results updated', offline: 'Showing saved results (offline)', noLive: 'Live source not configured',
+    upToDate: 'Up to date', updated: 'Scores updated', offline: 'Showing saved results (offline)',
     locale: 'en-US',
     rounds: { 'Round of 32': 'Round of 32', 'Round of 16': 'Round of 16', 'Quarter-finals': 'Quarter-finals', 'Semi-finals': 'Semi-finals', 'Third place': 'Third place play-off', 'Final': 'Final' },
   },
@@ -44,16 +42,16 @@ const I18N = {
     inProgress: 'Kampe i gang', notStarted: 'Ikke startet endnu',
     colP: 'K', colGD: 'MF', colPts: 'P',
     all: 'Alle', today: 'I dag',
-    fullTime: 'FULDTID', group: 'Pulje',
+    fullTime: 'FULDTID', live: 'LIVE', group: 'Pulje',
     koTitle: 'Slutspil',
     koDesc: 'Lodtrækningen falder på plads, når gruppespillet slutter 27. juni. De 12 gruppevindere, 12 toere og de 8 bedste treere går videre til 1/16-finalerne.',
     segR32: '1/16-finaler', segPath: 'Vejen til finalen',
     matchN: 'Kamp', kickoff: 'Kampstart', venue: 'Stadion', goalsLbl: 'Mål',
-    noGoals: 'Ingen mål — kampen endte 0–0.', notPlayed: 'Ikke spillet endnu', groupStage: 'Gruppespil',
+    noGoals: 'Ingen mål endnu.', notPlayed: 'Ikke spillet endnu', groupStage: 'Gruppespil',
     og: 'selvmål', pen: 'straffe',
     winner: 'Vinder', runner: 'Toer', third: '3.-plads',
     finalEyebrow: 'FINALEN', finalDate: '19. juli 2026', finalQ: 'Hvem løfter pokalen?',
-    upToDate: 'Opdateret', updated: 'Resultater opdateret', offline: 'Viser gemte resultater (offline)', noLive: 'Live-kilde ikke konfigureret',
+    upToDate: 'Opdateret', updated: 'Resultater opdateret', offline: 'Viser gemte resultater (offline)',
     locale: 'da-DK',
     rounds: { 'Round of 32': '1/16-finaler', 'Round of 16': 'Ottendedelsfinaler', 'Quarter-finals': 'Kvartfinaler', 'Semi-finals': 'Semifinaler', 'Third place': 'Bronzekamp', 'Final': 'Finale' },
   },
@@ -65,6 +63,7 @@ const t = (k) => I18N[lang][k];
 // ---------- helpers ----------
 const team = (code) => DATA.teams[code] || { name: code, flag: '🏳️' };
 const isPlayed = (m) => Number.isInteger(m.hs) && Number.isInteger(m.as);
+const isLive = (m) => m.st === 'in';
 
 function fmtDate(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString(t('locale'), { weekday: 'short', month: 'short', day: 'numeric' });
@@ -128,12 +127,17 @@ let activeDay = 'all';
 
 function matchRow(m) {
   const H = team(m.h), A = team(m.a);
-  const played = isPlayed(m);
-  const homeWin = played && m.hs > m.as;
-  const awayWin = played && m.as > m.hs;
-  const center = played
-    ? `<div class="m-score">${m.hs}<span class="x">–</span>${m.as}</div><div class="m-ft">${t('fullTime')}</div>`
-    : `<div class="m-time">${m.time || ''}</div><div class="m-meta">${m.city || ''}</div>`;
+  const played = isPlayed(m), live = isLive(m);
+  const homeWin = played && !live && m.hs > m.as;
+  const awayWin = played && !live && m.as > m.hs;
+  let center;
+  if (live) {
+    center = `<div class="m-score"><span class="livedot"></span>${m.hs}<span class="x">–</span>${m.as}</div><div class="m-livetag">${t('live')}${m.min ? ` · ${m.min}` : ''}</div>`;
+  } else if (played) {
+    center = `<div class="m-score">${m.hs}<span class="x">–</span>${m.as}</div><div class="m-ft">${t('fullTime')}</div>`;
+  } else {
+    center = `<div class="m-time">${m.time || ''}</div><div class="m-meta">${m.city || ''}</div>`;
+  }
   return `<button class="match" data-mi="${m._i}">
     <div class="m-side home ${awayWin ? 'lose' : ''}"><span class="m-name">${H.name}</span><span class="m-flag">${H.flag}</span></div>
     <div class="m-center">${center}<div class="m-gtag">${t('group')} ${m.g}</div></div>
@@ -143,21 +147,21 @@ function matchRow(m) {
 
 function renderMatches() {
   const dates = [...new Set(DATA.matches.map((m) => m.date))].sort();
+  const todayIso = new Date().toISOString().slice(0, 10);
   if (activeDay === 'all' && !renderMatches._init) {
-    const today = DATA.meta.asOf;
-    if (dates.includes(today)) activeDay = today;
-    else { const next = dates.find((d) => d >= today); if (next) activeDay = next; }
+    if (dates.includes(todayIso)) activeDay = todayIso;
+    else { const next = dates.find((d) => d >= todayIso); if (next) activeDay = next; }
     renderMatches._init = true;
   }
   const chips = [`<button class="chip ${activeDay === 'all' ? 'active' : ''}" data-day="all">${t('all')}</button>`]
-    .concat(dates.map((d) => `<button class="chip ${activeDay === d ? 'active' : ''}" data-day="${d}">${d === DATA.meta.asOf ? t('today') : fmtDateShort(d)}</button>`)).join('');
+    .concat(dates.map((d) => `<button class="chip ${activeDay === d ? 'active' : ''}" data-day="${d}">${d === todayIso ? t('today') : fmtDateShort(d)}</button>`)).join('');
   $('#dayFilter').innerHTML = chips;
 
   const shown = activeDay === 'all' ? dates : [activeDay];
   $('#matchesList').innerHTML = shown.map((d) => {
     const list = DATA.matches.filter((m) => m.date === d)
       .sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(matchRow).join('');
-    const label = d === DATA.meta.asOf ? `${t('today')} · ${fmtDate(d)}` : fmtDate(d);
+    const label = d === todayIso ? `${t('today')} · ${fmtDate(d)}` : fmtDate(d);
     return `<div class="day-group"><div class="day-label">${label}</div>${list}</div>`;
   }).join('');
 
@@ -183,10 +187,11 @@ function goalLine(g, m) {
 function openSheet(i) {
   const m = DATA.matches[i];
   if (!m) return;
-  const H = team(m.h), A = team(m.a), played = isPlayed(m);
+  const H = team(m.h), A = team(m.a), played = isPlayed(m), live = isLive(m);
+  const status = live ? `${t('live')}${m.min ? ` · ${m.min}` : ''}` : (played ? t('fullTime') : t('notPlayed'));
   const head = `<div class="sheet-head">
     <div class="sheet-team"><span class="sheet-flag">${H.flag}</span><span class="sheet-tname">${H.name}</span></div>
-    <div class="sheet-score">${played ? `${m.hs}<span class="x">–</span>${m.as}` : (m.time || '')}<div class="sheet-status">${played ? t('fullTime') : t('notPlayed')}</div></div>
+    <div class="sheet-score">${played ? `${m.hs}<span class="x">–</span>${m.as}` : (m.time || '')}<div class="sheet-status ${live ? 'livetxt' : ''}">${status}</div></div>
     <div class="sheet-team"><span class="sheet-flag">${A.flag}</span><span class="sheet-tname">${A.name}</span></div>
   </div>`;
 
@@ -233,7 +238,6 @@ function renderKnockout() {
   $$('#koSeg .seg-btn')[0].textContent = t('segR32');
   $$('#koSeg .seg-btn')[1].textContent = t('segPath');
 
-  // Round of 32 ties, grouped by date
   const dates = [...new Set(DATA.r32.map((x) => x.date))].sort();
   $('#r32List').innerHTML = dates.map((d) => {
     const ties = DATA.r32.filter((x) => x.date === d).map((x) => `
@@ -247,7 +251,6 @@ function renderKnockout() {
     return `<div class="day-group"><div class="day-label">${fmtDate(d)}</div>${ties}</div>`;
   }).join('');
 
-  // Path to the final
   const icons = ['🎟️', '⚔️', '🥊', '🔥', '🥉', '🏆'];
   $('#bracket').innerHTML = DATA.knockout.map((r, i) => `
     <div class="ko-round">
@@ -282,7 +285,8 @@ function go(view) {
 function applyLangChrome() {
   document.documentElement.lang = lang;
   $('#langLabel').textContent = lang === 'en' ? 'DA' : 'EN';
-  $$('.tab').forEach((tb) => { $('.tab-lbl', tb).textContent = t(tb.dataset.go); });
+  const tabKey = { groups: 'groups', matches: 'matches', knockout: 'bracket' };
+  $$('.tab').forEach((tb) => { $('.tab-lbl', tb).textContent = t(tabKey[tb.dataset.go]); });
 }
 function setLang(next) {
   lang = next;
@@ -303,19 +307,74 @@ function toast(msg) {
   toastTimer = setTimeout(() => (el.hidden = true), 2400);
 }
 
-// ---------- hybrid live refresh ----------
-async function refresh(manual = false) {
-  if (!CONFIG.liveUrl) { if (manual) toast(t('noLive')); return; }
+// ---------- live overlay (ESPN) ----------
+const pairKey = (a, b) => [a, b].sort().join('|');
+const ymd = (d) => `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+
+function datesToFetch(full) {
+  if (full) {
+    const today = new Date().toISOString().slice(0, 10);
+    return [...new Set(DATA.matches.map((m) => m.date))].filter((d) => d <= today).map((d) => d.replace(/-/g, ''));
+  }
+  const now = new Date(), out = [];
+  for (let off = -1; off <= 1; off++) { const d = new Date(now); d.setUTCDate(d.getUTCDate() + off); out.push(ymd(d)); }
+  return [...new Set(out)];
+}
+
+function parseGoals(comp) {
+  const tlaById = {};
+  comp.competitors.forEach((c) => (tlaById[c.team.id] = c.team.abbreviation));
+  const goals = [];
+  for (const det of comp.details || []) {
+    if (!det.scoringPlay || det.shootout) continue;
+    const code = tlaById[det.team && det.team.id];
+    if (!code) continue;
+    const ath = det.athletesInvolved && det.athletesInvolved[0];
+    goals.push({
+      p: (ath && (ath.shortName || ath.displayName)) || '',
+      m: String((det.clock && det.clock.displayValue) || '').replace(/'/g, ''),
+      t: code, pen: !!det.penaltyKick, og: !!det.ownGoal,
+    });
+  }
+  return goals;
+}
+
+function mergeEspn(events) {
+  const byPair = {};
+  DATA.matches.forEach((m) => (byPair[pairKey(m.h, m.a)] = m));
+  let changed = 0;
+  for (const ev of events) {
+    const comp = ev.competitions && ev.competitions[0];
+    const state = ev.status && ev.status.type && ev.status.type.state;
+    if (!comp || (state !== 'in' && state !== 'post')) continue;
+    const cs = comp.competitors || [];
+    if (cs.length < 2) continue;
+    const m = byPair[pairKey(cs[0].team.abbreviation, cs[1].team.abbreviation)];
+    if (!m) continue;
+    const scoreOf = (code) => { const c = cs.find((x) => x.team.abbreviation === code); return c ? parseInt(c.score, 10) : NaN; };
+    const nhs = scoreOf(m.h), nas = scoreOf(m.a);
+    if (!Number.isInteger(nhs) || !Number.isInteger(nas)) continue;
+    const min = state === 'in' ? ((ev.status.type.shortDetail) || ev.status.displayClock || '') : null;
+    if (m.hs !== nhs || m.as !== nas || m.st !== state) changed++;
+    m.hs = nhs; m.as = nas; m.st = state;
+    if (min) m.min = min; else delete m.min;
+    const goals = parseGoals(comp);
+    if (goals.length) m.goals = goals;
+  }
+  return changed;
+}
+
+async function refresh(manual = false, full = false) {
   const badge = $('#liveBadge');
   badge.classList.add('refreshing');
   try {
-    const res = await fetch(CONFIG.liveUrl + '?t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const fresh = await res.json();
-    if (!fresh || !fresh.matches) throw new Error('bad payload');
-    const changed = JSON.stringify(fresh.matches) !== JSON.stringify(DATA.matches);
-    DATA = fresh; window.WC2026 = fresh;
-    indexMatches(); renderAll();
+    const dates = datesToFetch(full);
+    const results = await Promise.all(dates.map((d) =>
+      fetch(`${CONFIG.espnUrl}?dates=${d}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)));
+    const events = results.filter(Boolean).flatMap((r) => r.events || []);
+    if (!events.length) throw new Error('no events');
+    const changed = mergeEspn(events);
+    renderAll();
     if (manual) toast(changed ? t('updated') : t('upToDate'));
   } catch (err) {
     if (manual) toast(t('offline'));
@@ -335,15 +394,15 @@ function boot() {
 
   $$('.tab').forEach((tb) => tb.addEventListener('click', () => go(tb.dataset.go)));
   $('#langBtn').addEventListener('click', () => setLang(lang === 'en' ? 'da' : 'en'));
-  $('#liveBadge').addEventListener('click', () => refresh(true));
+  $('#liveBadge').addEventListener('click', () => refresh(true, true));
   $$('#koSeg .seg-btn').forEach((b) => b.addEventListener('click', () => { koTab = b.dataset.ko; applyKoTab(); }));
   $('#sheetClose').addEventListener('click', closeSheet);
   $('#sheetOverlay').addEventListener('click', (e) => { if (e.target === $('#sheetOverlay')) closeSheet(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
 
-  setTimeout(() => refresh(false), 800);
-  setInterval(() => refresh(false), CONFIG.refreshMs);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(false); });
+  setTimeout(() => refresh(false, true), 600);                // full backfill on load
+  setInterval(() => refresh(false, false), CONFIG.refreshMs); // live window thereafter
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(false, false); });
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 }
