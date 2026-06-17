@@ -24,5 +24,11 @@
 - "Mangler check-in"-chips på KR-kort + påmindelsesbanner i trævisningen med direkte genvej.
 - **Verificeret:** build grøn.
 
+## ✅ Fase 4 — Alignment + auto-rollup
+- AlignModal: kobl et KR op mod et eller flere overordnede KR'er (mange-til-mange) med vægt; tilføj/fjern.
+- Rekursiv vægtet auto-rollup (lib/okr) genberegnes ved hver mutation → team-KR-ændring forplanter sig op til company-niveau.
+- Visuel markering i træ/kort: stribet fremdriftsbjælke + "Auto-rollup · N"-chip med bidragyder-antal.
+- **Verificeret:** build grøn.
+
 ## ⏳ Næste
-- Fase 4 — Alignment + auto-rollup (rollup-logik er på plads; tilføj kobling-UI + visuel markering).
+- Fase 5 — Ledelses-dashboard.

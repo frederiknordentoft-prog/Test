@@ -18,6 +18,7 @@ export default function KrCard({ krId, compact }: Props) {
   const kr = useStore((s) => s.krsById.get(krId));
   const computed = useStore((s) => s.computedByKr.get(krId));
   const checkIns = useStore((s) => s.checkInsByKr.get(krId) ?? []);
+  const contributorCount = useStore((s) => s.linksByParent.get(krId)?.length ?? 0);
   const openCheckIn = useUi((s) => s.openCheckIn);
 
   if (!kr || !computed) return null;
@@ -30,8 +31,8 @@ export default function KrCard({ krId, compact }: Props) {
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
             <KrTypePill type={kr.type} />
             {computed.hasContributors && (
-              <span className="chip bg-violet-50 text-violet-700" title="Fremdrift rulles op fra bidragende team-KR'er">
-                <GitMerge size={12} /> Auto-rollup
+              <span className="chip bg-violet-50 text-violet-700" title="Fremdrift rulles op fra bidragende KR'er">
+                <GitMerge size={12} /> Auto-rollup · {contributorCount}
               </span>
             )}
             {computed.needsCheckIn && (
