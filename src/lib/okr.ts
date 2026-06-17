@@ -67,7 +67,7 @@ export const HEALTH_LABEL: Record<HealthColor, string> = {
 export const HEALTH_HEX: Record<HealthColor, string> = {
   red: '#e5484d',
   yellow: '#ffcb05',
-  green: '#00a651',
+  green: '#009444',
   none: '#94a3b8',
 };
 

@@ -9,20 +9,21 @@ export default {
           soft: '#33433c',
           muted: '#6b7d75',
         },
-        canvas: '#eaf1ec',
+        canvas: '#e4ede7',
         surface: '#ffffff',
-        // Danske Spil-grøn (#00A651) som primærfarve
+        // Danske Spil-grøn, dybere tone
         brand: {
-          50: '#e6f7ee',
-          100: '#c2ebd3',
-          200: '#8fdcb0',
-          300: '#54c98a',
-          400: '#1fb567',
-          500: '#00a651',
-          600: '#008f45',
-          700: '#007538',
-          800: '#055e30',
-          900: '#084b28',
+          50: '#e7f6ed',
+          100: '#c3e9d2',
+          200: '#8fd6ac',
+          300: '#54c084',
+          400: '#1ba75f',
+          500: '#009444',
+          600: '#007a37',
+          700: '#00632d',
+          800: '#054f26',
+          900: '#06371c',
+          950: '#042713',
         },
         // Danske Spil-gul/guld (#FFCB05)
         accent: {
@@ -40,7 +41,7 @@ export default {
         health: {
           red: '#e5484d',
           yellow: '#ffcb05',
-          green: '#00a651',
+          green: '#009444',
         },
       },
       fontFamily: {

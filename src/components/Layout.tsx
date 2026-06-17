@@ -131,7 +131,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={onImport} />
 
       {/* ===== Sidebar (desktop) ===== */}
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col gap-5 overflow-y-auto bg-gradient-to-b from-brand-700 to-brand-900 px-4 py-5 text-white lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col gap-5 overflow-y-auto bg-gradient-to-b from-brand-800 to-brand-950 px-4 py-5 text-white lg:flex">
         <div className="flex items-center gap-3 px-1">
           <div className="grid h-10 w-10 place-items-center rounded-2xl bg-accent-400 text-brand-800 shadow-sm">
             <Target size={21} />

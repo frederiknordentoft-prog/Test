@@ -27,16 +27,38 @@ export const HEALTH_SOFT: Record<HealthColor, string> = {
   none: 'bg-slate-100 text-slate-500',
 };
 
+// Niveau-hierarki i brandets palet: grøn (top) → guld (midt) → grå-grøn (bund).
 export const LEVEL_ACCENT: Record<Level, string> = {
-  company: 'bg-brand-500',
-  tribe: 'bg-violet-500',
-  team: 'bg-teal-500',
+  company: 'bg-brand-600',
+  tribe: 'bg-accent-500',
+  team: 'bg-slate-400',
 };
 
 export const LEVEL_SOFT: Record<Level, string> = {
   company: 'bg-brand-50 text-brand-700 ring-1 ring-brand-200',
-  tribe: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
-  team: 'bg-teal-50 text-teal-700 ring-1 ring-teal-200',
+  tribe: 'bg-accent-50 text-accent-800 ring-1 ring-accent-300',
+  team: 'bg-slate-100 text-ink-soft ring-1 ring-slate-300',
+};
+
+// Svag flade-tone til niveau-headere (instant genkendelse).
+export const LEVEL_TINT: Record<Level, string> = {
+  company: 'bg-brand-50/60',
+  tribe: 'bg-accent-50/60',
+  team: 'bg-slate-50',
+};
+
+// Ikon-flise pr. niveau.
+export const LEVEL_ICONBG: Record<Level, string> = {
+  company: 'bg-brand-100 text-brand-700',
+  tribe: 'bg-accent-100 text-accent-800',
+  team: 'bg-slate-200 text-ink-soft',
+};
+
+// Forbindelseslinje (connector) farvet efter forælderens niveau.
+export const LEVEL_BORDER: Record<Level, string> = {
+  company: 'border-brand-300',
+  tribe: 'border-accent-300',
+  team: 'border-slate-300',
 };
 
 export const INITIATIVE_STYLE: Record<InitiativeStatus, { dot: string; soft: string }> = {
