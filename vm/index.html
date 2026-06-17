@@ -41,8 +41,13 @@
 <!-- ============ VIEWS ============ -->
 <main id="main">
 
+  <!-- HOME -->
+  <section class="view" id="view-home" data-view="home">
+    <div class="container" id="homeView"></div>
+  </section>
+
   <!-- GROUPS -->
-  <section class="view" id="view-groups" data-view="groups">
+  <section class="view" id="view-groups" data-view="groups" hidden>
     <div class="container" id="groupsGrid"></div>
   </section>
 
@@ -88,7 +93,10 @@
 
 <!-- ============ BOTTOM NAV ============ -->
 <nav class="tabbar" role="tablist">
-  <button class="tab active" data-go="groups" role="tab">
+  <button class="tab active" data-go="home" role="tab">
+    <span class="tab-ico">🏠</span><span class="tab-lbl">Home</span>
+  </button>
+  <button class="tab" data-go="groups" role="tab">
     <span class="tab-ico">🏆</span><span class="tab-lbl">Groups</span>
   </button>
   <button class="tab" data-go="matches" role="tab">

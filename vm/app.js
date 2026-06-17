@@ -28,6 +28,9 @@ const I18N = {
     nGoals: 'Goals', nMatches: 'Matches', nAvg: 'Goals / match', nBiggest: 'Biggest win',
     loadingAssists: 'Loading assists…', noAssists: 'No assists recorded yet.', noData: 'No matches played yet.',
     assistBy: 'assist', loadingData: 'Loading…', myLegend: '★ Your holdet.dk team',
+    home: 'Home', hLiveNow: 'Live now', hNext: 'Your teams · next match', hSquad: 'My squad', hMyTeams: 'My teams',
+    hToday: "Today's matches", hLatest: 'Latest results', hNoToday: 'No matches today.', hNothingLive: '',
+    cIn: 'in', cDay: 'd', cHour: 'h', cMin: 'm', gAb: 'G', aAb: 'A', posOf: 'in', greeting: 'World Cup 2026',
     cleanSheets: 'Clean sheets · teams', cardsLbl: 'Discipline · teams', shotsLbl: 'Most shots · teams',
     csUnit: 'clean', cardsUnit: 'cards', shotsUnit: 'shots',
     lblMatchStats: 'Match stats', lblTimeline: 'Timeline', lblLineups: 'Line-ups',
@@ -58,6 +61,9 @@ const I18N = {
     nGoals: 'Mål', nMatches: 'Kampe', nAvg: 'Mål / kamp', nBiggest: 'Største sejr',
     loadingAssists: 'Henter assists…', noAssists: 'Ingen assists registreret endnu.', noData: 'Ingen kampe spillet endnu.',
     assistBy: 'oplæg', loadingData: 'Henter…', myLegend: '★ Dit holdet.dk-hold',
+    home: 'Hjem', hLiveNow: 'Live nu', hNext: 'Dine hold · næste kamp', hSquad: 'Mit hold', hMyTeams: 'Mine hold',
+    hToday: 'Dagens kampe', hLatest: 'Seneste resultater', hNoToday: 'Ingen kampe i dag.', hNothingLive: '',
+    cIn: 'om', cDay: 'd', cHour: 't', cMin: 'm', gAb: 'M', aAb: 'A', posOf: 'i', greeting: 'VM 2026',
     cleanSheets: 'Clean sheets · hold', cardsLbl: 'Disciplin · hold', shotsLbl: 'Flest skud · hold',
     csUnit: 'clean', cardsUnit: 'kort', shotsUnit: 'skud',
     lblMatchStats: 'Kampstatistik', lblTimeline: 'Forløb', lblLineups: 'Opstillinger',
@@ -94,12 +100,21 @@ const isLive = (m) => m.st === 'in';
 // ---------- my holdet.dk squad ----------
 const MY_TEAMS = ['ESP', 'GER', 'CAN', 'BRA', 'USA', 'ECU', 'FRA', 'COL', 'NOR'];
 const MY_PLAYERS = [
-  ['ESP', 'Simón'], ['ESP', 'Oyarzabal'], ['GER', 'Brown'], ['CAN', 'Fougerolles'], ['BRA', 'Bremer'],
-  ['USA', 'Robinson'], ['ECU', 'Caicedo'], ['FRA', 'Tchouaméni'], ['FRA', 'Mbappé'], ['COL', 'Arias'], ['NOR', 'Haaland'],
+  { code: 'ESP', frag: 'Simón', name: 'Unai Simón', pos: 'GK' },
+  { code: 'GER', frag: 'Brown', name: 'Nathaniel Brown', pos: 'DEF' },
+  { code: 'CAN', frag: 'Fougerolles', name: 'Luc de Fougerolles', pos: 'DEF' },
+  { code: 'BRA', frag: 'Bremer', name: 'Bremer', pos: 'DEF' },
+  { code: 'USA', frag: 'Robinson', name: 'Antonee Robinson', pos: 'DEF' },
+  { code: 'ECU', frag: 'Caicedo', name: 'Moisés Caicedo', pos: 'MID' },
+  { code: 'FRA', frag: 'Tchouaméni', name: 'Aurélien Tchouaméni', pos: 'MID' },
+  { code: 'COL', frag: 'Arias', name: 'Jhon Arias', pos: 'MID' },
+  { code: 'ESP', frag: 'Oyarzabal', name: 'Mikel Oyarzabal', pos: 'FWD' },
+  { code: 'FRA', frag: 'Mbappé', name: 'Kylian Mbappé', pos: 'FWD' },
+  { code: 'NOR', frag: 'Haaland', name: 'Erling Haaland', pos: 'FWD' },
 ];
 const norm = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const myTeam = (code) => MY_TEAMS.includes(code);
-const myPlayer = (name, code) => { const n = norm(name); return MY_PLAYERS.some(([tc, frag]) => tc === code && n.includes(norm(frag))); };
+const myPlayer = (name, code) => { const n = norm(name); return MY_PLAYERS.some((p) => p.code === code && n.includes(norm(p.frag))); };
 const STAR = '<span class="mine" title="Dit holdet.dk-hold">★</span>';
 const teamMark = (code) => (myTeam(code) ? STAR : '');
 const playerMark = (name, code) => (myPlayer(name, code) ? STAR : '');
@@ -583,6 +598,103 @@ function openStats() {
   ensureSummaries().then(() => renderStats()); // assists fill in
 }
 
+// ---------- render: home ----------
+function ordSuffix(n) {
+  if (lang === 'da') return '.';
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+
+function fmtCountdown(utc) {
+  const diff = new Date(utc).getTime() - Date.now();
+  if (diff <= 0) return '';
+  const d = Math.floor(diff / 864e5), h = Math.floor((diff % 864e5) / 36e5), mi = Math.floor((diff % 36e5) / 6e4);
+  if (d > 0) return `${t('cIn')} ${d}${t('cDay')} ${h}${t('cHour')}`;
+  if (h > 0) return `${t('cIn')} ${h}${t('cHour')} ${mi}${t('cMin')}`;
+  return `${t('cIn')} ${mi}${t('cMin')}`;
+}
+
+function mySquadStats() {
+  const stat = MY_PLAYERS.map((p) => ({ ...p, g: 0, a: 0 }));
+  DATA.matches.filter(isPlayed).forEach((m) => (m.goals || []).forEach((gl) => {
+    stat.forEach((p) => {
+      if (p.code !== gl.t) return;
+      if (!gl.og && norm(gl.p).includes(norm(p.frag))) p.g++;
+      if (gl.a && norm(gl.a).includes(norm(p.frag))) p.a++;
+    });
+  }));
+  return stat;
+}
+
+function myPlayedMatches() {
+  return DATA.matches.filter((m) => isPlayed(m) && (myTeam(m.h) || myTeam(m.a)));
+}
+
+function renderHome() {
+  const now = Date.now();
+  const todayIso = dkToday();
+  const live = DATA.matches.filter(isLive);
+  const today = DATA.matches.filter((m) => dkDateIso(m) === todayIso).sort((a, b) => (a.utc || '').localeCompare(b.utc || ''));
+  const latest = DATA.matches.filter((m) => isPlayed(m) && !isLive(m)).sort((a, b) => (b.utc || '').localeCompare(a.utc || '')).slice(0, 5);
+  const next = DATA.matches
+    .filter((m) => (myTeam(m.h) || myTeam(m.a)) && m.utc && new Date(m.utc).getTime() > now && m.st !== 'post' && !isLive(m))
+    .sort((a, b) => new Date(a.utc) - new Date(b.utc))[0];
+
+  let html = `<div class="home-hero"><div class="hh-title">${t('greeting')}</div><div class="hh-sub">${fmtDate(todayIso)}</div></div>`;
+
+  if (live.length) {
+    html += `<div class="home-sec"><div class="home-h"><span class="livedot"></span>${t('hLiveNow')}</div>${live.map(matchRow).join('')}</div>`;
+  }
+
+  if (next) {
+    const H = team(next.h), A = team(next.a);
+    html += `<div class="home-sec"><div class="home-h">${t('hNext')}</div>
+      <div class="next-card">
+        <div class="nc-row">
+          <div class="nc-team"><span class="nc-flag">${H.flag}</span><span class="nc-name">${H.name}${teamMark(next.h)}</span></div>
+          <div class="nc-cd">${fmtCountdown(next.utc)}</div>
+          <div class="nc-team"><span class="nc-flag">${A.flag}</span><span class="nc-name">${A.name}${teamMark(next.a)}</span></div>
+        </div>
+        <div class="nc-meta">${fmtDate(dkDateIso(next))} · ${dkTime(next)} · ${t('group')} ${next.g}</div>
+      </div></div>`;
+  }
+
+  const squad = mySquadStats();
+  html += `<div class="home-sec"><div class="home-h">⭐ ${t('hSquad')}</div><div class="squad-list">${squad.map((p) => `
+    <div class="squad-row">
+      <span class="sq-flag">${team(p.code).flag}</span>
+      <span class="sq-info"><span class="sq-name">${p.name}</span><span class="sq-team">${team(p.code).name} · ${p.pos}</span></span>
+      <span class="sq-stat"><b>${p.g}</b>${t('gAb')}</span>
+      <span class="sq-stat"><b>${p.a}</b>${t('aAb')}</span>
+    </div>`).join('')}</div></div>`;
+
+  const teamsStatus = MY_TEAMS.map((code) => {
+    const g = Object.keys(DATA.groups).find((G) => DATA.groups[G].includes(code));
+    const tb = standings(g), pos = tb.findIndex((r) => r.c === code), row = tb[pos];
+    return { code, g, pos: pos + 1, pts: row.pts };
+  }).sort((a, b) => a.g.localeCompare(b.g));
+  html += `<div class="home-sec"><div class="home-h">${t('hMyTeams')}</div><div class="myteams-list">${teamsStatus.map((s) => `
+    <div class="myteam-row">
+      <span class="mt-flag">${team(s.code).flag}</span>
+      <span class="mt-name">${team(s.code).name}</span>
+      <span class="mt-pos">${t('group')} ${s.g} · ${s.pos}${ordSuffix(s.pos)} · ${s.pts}p</span>
+    </div>`).join('')}</div></div>`;
+
+  html += `<div class="home-sec"><div class="home-h">${t('hToday')}</div>${today.length ? today.map(matchRow).join('') : `<p class="muted-note">${t('hNoToday')}</p>`}</div>`;
+
+  if (latest.length) {
+    html += `<div class="home-sec"><div class="home-h">${t('hLatest')}</div>${latest.map(matchRow).join('')}</div>`;
+  }
+
+  $('#homeView').innerHTML = html;
+  $$('#homeView .match').forEach((el) => el.addEventListener('click', () => openSheet(+el.dataset.mi)));
+}
+
+function openHome() {
+  renderHome();
+  ensureSummaries(myPlayedMatches()).then(() => renderHome());
+}
+
 // ---------- navigation ----------
 function go(view) {
   $$('.view').forEach((v) => (v.hidden = v.dataset.view !== view));
@@ -594,7 +706,7 @@ function go(view) {
 function applyLangChrome() {
   document.documentElement.lang = lang;
   $('#langLabel').textContent = lang === 'en' ? 'DA' : 'EN';
-  const tabKey = { groups: 'groups', matches: 'matches', stats: 'stats', knockout: 'bracket' };
+  const tabKey = { home: 'home', groups: 'groups', matches: 'matches', stats: 'stats', knockout: 'bracket' };
   $$('.tab').forEach((tb) => { $('.tab-lbl', tb).textContent = t(tabKey[tb.dataset.go]); });
 }
 function setLang(next) {
@@ -605,7 +717,7 @@ function setLang(next) {
 }
 
 // ---------- render all ----------
-function renderAll() { renderGroups(); renderMatches(); renderStats(); renderKnockout(); }
+function renderAll() { renderHome(); renderGroups(); renderMatches(); renderStats(); renderKnockout(); }
 
 // ---------- toast ----------
 let toastTimer;
@@ -688,6 +800,7 @@ async function refresh(manual = false, full = false) {
     const changed = mergeEspn(events);
     renderAll();
     if (!$('#view-stats').hidden) ensureSummaries().then((got) => { if (got) renderStats(); });
+    if (!$('#view-home').hidden) ensureSummaries(myPlayedMatches()).then((got) => { if (got) renderHome(); });
     if (manual) toast(changed ? t('updated') : t('upToDate'));
   } catch (err) {
     if (manual) toast(t('offline'));
@@ -705,7 +818,7 @@ function boot() {
   applyLangChrome();
   renderAll();
 
-  $$('.tab').forEach((tb) => tb.addEventListener('click', () => { go(tb.dataset.go); if (tb.dataset.go === 'stats') openStats(); }));
+  $$('.tab').forEach((tb) => tb.addEventListener('click', () => { go(tb.dataset.go); if (tb.dataset.go === 'stats') openStats(); if (tb.dataset.go === 'home') openHome(); }));
   $('#langBtn').addEventListener('click', () => setLang(lang === 'en' ? 'da' : 'en'));
   $('#liveBadge').addEventListener('click', () => refresh(true, true));
   $$('#koSeg .seg-btn').forEach((b) => b.addEventListener('click', () => { koTab = b.dataset.ko; applyKoTab(); }));
