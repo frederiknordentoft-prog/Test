@@ -9,6 +9,9 @@
   body {
     @apply bg-canvas text-ink antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-image: radial-gradient(1200px 600px at 100% -10%, rgba(0, 160, 80, 0.06), transparent 60%),
+      radial-gradient(900px 500px at -10% 0%, rgba(245, 190, 0, 0.05), transparent 55%);
+    background-attachment: fixed;
   }
   * {
     -webkit-tap-highlight-color: transparent;
@@ -53,6 +56,20 @@
   /* Lightning-agtig sidehoved-stribe */
   .page-title {
     @apply text-2xl font-extrabold tracking-tight text-ink;
+  }
+  /* Navigations-pille i sidebaren */
+  .nav-pill {
+    @apply relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-150;
+  }
+  .nav-pill-idle {
+    @apply text-ink-muted hover:bg-slate-100 hover:text-ink;
+  }
+  .nav-pill-active {
+    @apply bg-brand-500 text-white shadow-sm;
+  }
+  /* Glas-effekt til topbar */
+  .glass {
+    @apply bg-surface/80 backdrop-blur-xl;
   }
 }
 

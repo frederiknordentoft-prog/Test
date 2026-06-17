@@ -38,6 +38,54 @@ export function useRootObjectives(): Objective[] {
     .sort((a, b) => a.order - b.order);
 }
 
+export interface OrgPulse {
+  total: number;
+  green: number;
+  yellow: number;
+  red: number;
+  none: number;
+  needs: number;
+  avg: number; // 0..1 gns. fremdrift (rolled-up)
+}
+
+/** Samlet sundhedspuls for hele den aktive cyklus (til sidebar-ringen). */
+export function useOrgPulse(): OrgPulse {
+  const keyResults = useStore((s) => s.keyResults);
+  const objectivesById = useStore((s) => s.objectivesById);
+  const computedByKr = useStore((s) => s.computedByKr);
+  const activeCycleId = useStore((s) => s.activeCycleId);
+
+  const p: OrgPulse = { total: 0, green: 0, yellow: 0, red: 0, none: 0, needs: 0, avg: 0 };
+  let progSum = 0;
+  for (const kr of keyResults) {
+    const obj = objectivesById.get(kr.objectiveId);
+    if (!obj || obj.cycleId !== activeCycleId) continue;
+    const c = computedByKr.get(kr.id);
+    if (!c) continue;
+    p.total += 1;
+    p[c.health] += 1;
+    if (c.needsCheckIn) p.needs += 1;
+    progSum += c.hasContributors ? c.rolledUpProgress : c.progress;
+  }
+  p.avg = p.total ? progSum / p.total : 0;
+  return p;
+}
+
+/** Id'er på KR'er i den aktive cyklus der mangler ugens check-in (kø). */
+export function useStaleKrIds(): string[] {
+  const keyResults = useStore((s) => s.keyResults);
+  const objectivesById = useStore((s) => s.objectivesById);
+  const computedByKr = useStore((s) => s.computedByKr);
+  const activeCycleId = useStore((s) => s.activeCycleId);
+  const out: string[] = [];
+  for (const kr of keyResults) {
+    const obj = objectivesById.get(kr.objectiveId);
+    if (!obj || obj.cycleId !== activeCycleId) continue;
+    if (computedByKr.get(kr.id)?.needsCheckIn) out.push(kr.id);
+  }
+  return out;
+}
+
 /** Distinkte ejere (objectives + KR'er) i den aktive cyklus, sorteret. */
 export function useActiveOwners(): string[] {
   const objectives = useStore((s) => s.objectives);

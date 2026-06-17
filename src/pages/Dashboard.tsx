@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { AlertTriangle, CalendarClock, CheckCircle2, Filter, TrendingUp, Users } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CheckCircle2, Filter, LayoutDashboard, TrendingUp, Users } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useUi } from '../store/useUi';
 import { HEALTH_HEX, HEALTH_LABEL } from '../lib/okr';
@@ -9,6 +9,7 @@ import { cx, HEALTH_SOFT, pct } from '../lib/ui';
 import { LEVEL_LABEL, type HealthColor, type KeyResult, type Objective } from '../types/domain';
 import KrTypePill from '../components/KrTypePill';
 import { HealthDot } from '../components/HealthBadge';
+import PageHeader from '../components/PageHeader';
 
 interface Row {
   kr: KeyResult;
@@ -128,25 +129,24 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Ledelses-dashboard</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Sundhed på tværs af alle Key Results · {cycleName}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-ink-muted" />
-          <select value={scopeId} onChange={(e) => setScopeId(e.target.value)} className="input w-auto py-2 text-sm font-semibold">
-            <option value="all">Hele organisationen</option>
-            {scopeOptions.map((o) => (
-              <option key={o.id} value={o.id}>
-                [{LEVEL_LABEL[o.level]}] {o.title}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <PageHeader
+        icon={<LayoutDashboard size={22} />}
+        title="Dashboard"
+        subtitle={`Sundhed på tværs af alle Key Results · ${cycleName}`}
+        actions={
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="hidden text-ink-muted sm:block" />
+            <select value={scopeId} onChange={(e) => setScopeId(e.target.value)} className="input w-auto py-2 text-sm font-semibold">
+              <option value="all">Hele organisationen</option>
+              {scopeOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  [{LEVEL_LABEL[o.level]}] {o.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
+      />
 
       {rows.length === 0 ? (
         <div className="card p-10 text-center text-ink-muted">Ingen Key Results i dette udsnit.</div>

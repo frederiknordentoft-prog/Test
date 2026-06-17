@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
+  ListTree,
   Plus,
   Search,
   Sparkles,
@@ -22,6 +23,7 @@ import { cx, LEVEL_ACCENT, LEVEL_SOFT, pct } from '../lib/ui';
 import { HealthDot } from '../components/HealthBadge';
 import ProgressBar from '../components/ProgressBar';
 import KrCard from '../components/KrCard';
+import PageHeader from '../components/PageHeader';
 
 const childLevel: Record<Level, Level | null> = { company: 'tribe', tribe: 'team', team: null };
 
@@ -240,17 +242,16 @@ export default function TreeView() {
     <div>
       <CheckInReminder staleKrIds={staleKrIds} />
 
-      <div className="mb-4 flex items-end justify-between gap-4">
-        <div>
-          <h1 className="page-title">Board</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Fra virksomhedsmål ned til team-delmål. Stribede bjælker = auto-rollup.
-          </p>
-        </div>
-        <button onClick={() => openObjectiveEditor({ level: 'company' })} className="btn-primary hidden sm:inline-flex">
-          <Plus size={16} /> Nyt Objective
-        </button>
-      </div>
+      <PageHeader
+        icon={<ListTree size={22} />}
+        title="Board"
+        subtitle="Fra virksomhedsmål ned til team-delmål. Stribede bjælker = auto-rollup."
+        actions={
+          <button onClick={() => openObjectiveEditor({ level: 'company' })} className="btn-primary hidden px-3 py-2 text-sm sm:inline-flex lg:hidden">
+            <Plus size={16} /> Nyt Objective
+          </button>
+        }
+      />
 
       {/* Filterbar */}
       {roots.length > 0 && (
