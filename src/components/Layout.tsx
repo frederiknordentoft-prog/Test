@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarPlus,
   Download,
+  HelpCircle,
   LayoutDashboard,
   ListTree,
   Plus,
@@ -142,23 +143,26 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <nav className="flex flex-col gap-1">
-          {NAV.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              className={({ isActive }) =>
-                cx(
-                  'nav-pill',
-                  isActive ? 'bg-white text-brand-700 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white',
-                )
-              }
-            >
-              <n.icon size={18} /> {n.label}
-            </NavLink>
-          ))}
-        </nav>
+        <div>
+          <div className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wide text-white/45">Overblik</div>
+          <nav className="flex flex-col gap-1">
+            {NAV.map((n) => (
+              <NavLink
+                key={n.to}
+                to={n.to}
+                end={n.end}
+                className={({ isActive }) =>
+                  cx(
+                    'nav-pill',
+                    isActive ? 'bg-white text-brand-700 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white',
+                  )
+                }
+              >
+                <n.icon size={18} /> {n.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
 
         <OrgPulseCard />
 
@@ -171,21 +175,36 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Plus size={16} /> Nyt Objective
         </button>
 
-        <div className="mt-auto rounded-2xl border border-white/15 bg-white/10 p-2">
-          <div className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-white/55">Data</div>
-          <div className="grid grid-cols-2 gap-1">
-            <button onClick={exportToFile} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
-              <Download size={14} /> Eksport
-            </button>
-            <button onClick={() => fileRef.current?.click()} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
-              <Upload size={14} /> Import
-            </button>
-            <button onClick={onDemo} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
-              <Sparkles size={14} /> Eksempel
-            </button>
-            <button onClick={onClear} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-health-red/30">
-              <Trash2 size={14} /> Ryd
-            </button>
+        <div className="mt-auto space-y-3">
+          <div className="rounded-2xl border border-white/15 bg-white/10 p-2">
+            <div className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-white/55">Data</div>
+            <div className="grid grid-cols-2 gap-1">
+              <button onClick={exportToFile} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
+                <Download size={14} /> Eksport
+              </button>
+              <button onClick={() => fileRef.current?.click()} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
+                <Upload size={14} /> Import
+              </button>
+              <button onClick={onDemo} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
+                <Sparkles size={14} /> Eksempel
+              </button>
+              <button onClick={onClear} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-health-red/30">
+                <Trash2 size={14} /> Ryd
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 rounded-2xl border border-white/15 bg-white/10 p-2.5">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-400 text-brand-800">
+              <Target size={18} />
+            </span>
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="truncate text-sm font-bold text-white">OKR-arbejdsplads</div>
+              <div className="truncate text-[11px] text-white/60">Gemt lokalt i browseren</div>
+            </div>
+            <NavLink to="/guide" className="rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white" title="Guide & hjælp">
+              <HelpCircle size={18} />
+            </NavLink>
           </div>
         </div>
       </aside>

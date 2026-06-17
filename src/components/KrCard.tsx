@@ -8,6 +8,7 @@ import ProgressBar from './ProgressBar';
 import { HealthBadge } from './HealthBadge';
 import KrTypePill from './KrTypePill';
 import Sparkline from './Sparkline';
+import Avatar from './Avatar';
 
 interface Props {
   krId: string;
@@ -31,7 +32,7 @@ export default function KrCard({ krId, compact }: Props) {
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
             <KrTypePill type={kr.type} />
             {computed.hasContributors && (
-              <span className="chip bg-violet-50 text-violet-700" title="Fremdrift rulles op fra bidragende KR'er">
+              <span className="chip bg-brand-50 text-brand-700" title="Fremdrift rulles op fra bidragende KR'er">
                 <GitMerge size={12} /> Auto-rollup · {contributorCount}
               </span>
             )}
@@ -48,7 +49,9 @@ export default function KrCard({ krId, compact }: Props) {
           >
             {kr.title}
           </Link>
-          <div className="mt-0.5 text-xs text-ink-muted">Ejer: {kr.owner}</div>
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-ink-muted">
+            <Avatar name={kr.owner} size={18} /> <span className="truncate">{kr.owner}</span>
+          </div>
         </div>
         <div className="shrink-0 text-right">
           <HealthBadge health={computed.health} confidence={computed.confidence} />

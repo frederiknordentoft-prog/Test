@@ -80,7 +80,7 @@ export default function KrDetail() {
               <KrTypePill type={kr.type} />
               <HealthBadge health={computed.health} confidence={computed.confidence} />
               {computed.hasContributors && (
-                <span className="chip bg-violet-50 text-violet-700">
+                <span className="chip bg-brand-50 text-brand-700">
                   <GitMerge size={12} /> Auto-rollup
                 </span>
               )}

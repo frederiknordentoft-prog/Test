@@ -27,6 +27,14 @@ export const HEALTH_SOFT: Record<HealthColor, string> = {
   none: 'bg-slate-100 text-slate-500',
 };
 
+// Fyldt sundhedsfarve (til score-badges som "96").
+export const HEALTH_SOLID: Record<HealthColor, string> = {
+  red: 'bg-health-red text-white',
+  yellow: 'bg-health-yellow text-ink',
+  green: 'bg-health-green text-white',
+  none: 'bg-slate-300 text-ink-soft',
+};
+
 // Niveau-hierarki i brandets palet: grøn (top) → guld (midt) → grå-grøn (bund).
 export const LEVEL_ACCENT: Record<Level, string> = {
   company: 'bg-brand-600',

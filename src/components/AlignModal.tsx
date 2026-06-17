@@ -80,7 +80,7 @@ function AlignBody({ krId, onClose }: { krId: string; onClose: () => void }) {
               const c = computedByKr.get(parent.id);
               return (
                 <li key={l.id} className="flex items-center gap-2 rounded-xl border border-slate-100 p-2.5">
-                  <ArrowUp size={16} className="shrink-0 text-violet-500" />
+                  <ArrowUp size={16} className="shrink-0 text-brand-600" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{parent.title}</div>
                     <div className="truncate text-xs text-ink-muted">
@@ -105,7 +105,7 @@ function AlignBody({ krId, onClose }: { krId: string; onClose: () => void }) {
       {/* Tilføj kobling */}
       <div className="rounded-xl border border-slate-200 p-3">
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-          <GitMerge size={16} className="text-violet-500" /> Ny kobling
+          <GitMerge size={16} className="text-brand-600" /> Ny kobling
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <select value={selected} onChange={(e) => setSelected(e.target.value)} className="input flex-1">

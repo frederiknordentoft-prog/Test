@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
+  LayoutList,
   ListTree,
   Network,
   Plus,
@@ -20,27 +21,31 @@ import type { LucideIcon } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useUi } from '../store/useUi';
 import { useActiveKeyResults, useActiveOwners, useObjectiveSummary, useRootObjectives } from '../lib/selectors';
-import { HEALTH_LABEL } from '../lib/okr';
+import { HEALTH_LABEL, worstHealth } from '../lib/okr';
 import { LEVEL_LABEL, type HealthColor, type Level, type Objective } from '../types/domain';
-import { cx, LEVEL_ACCENT, LEVEL_BORDER, LEVEL_ICONBG, LEVEL_SOFT, LEVEL_TINT, pct } from '../lib/ui';
+import { cx, HEALTH_SOLID, LEVEL_ACCENT, LEVEL_BORDER, LEVEL_ICONBG, LEVEL_SOFT, LEVEL_TINT } from '../lib/ui';
+import { HealthBadge } from '../components/HealthBadge';
+import KrCard from '../components/KrCard';
+import PageHeader from '../components/PageHeader';
+import Avatar from '../components/Avatar';
+import ScoreBadge from '../components/ScoreBadge';
 
 const LEVEL_ICON: Record<Level, LucideIcon> = {
   company: Building2,
   tribe: Network,
   team: Users,
 };
-import { HealthDot } from '../components/HealthBadge';
-import ProgressBar from '../components/ProgressBar';
-import KrCard from '../components/KrCard';
-import PageHeader from '../components/PageHeader';
-
-const childLevel: Record<Level, Level | null> = { company: 'tribe', tribe: 'team', team: null };
 
 interface NodeCtl {
   isOpen: (id: string, depth: number) => boolean;
   toggle: (id: string) => void;
 }
 
+const childLevel: Record<Level, Level | null> = { company: 'tribe', tribe: 'team', team: null };
+
+// ============================================================
+// CASCADE (træ)
+// ============================================================
 function ObjectiveNode({
   objective,
   depth,
@@ -68,7 +73,6 @@ function ObjectiveNode({
         depth > 0 && parentLevel && LEVEL_BORDER[parentLevel],
       )}
     >
-      {/* Forbindelses-knude på connector-linjen */}
       {depth > 0 && (
         <span
           className={cx(
@@ -93,11 +97,8 @@ function ObjectiveNode({
               <span className={cx('chip', LEVEL_SOFT[objective.level])}>
                 <Icon size={12} /> {LEVEL_LABEL[objective.level]}
               </span>
-              <HealthDot health={summary.health} />
               {summary.needsCheckInCount > 0 && (
-                <span className="text-[11px] font-semibold text-[#b76e00]">
-                  {summary.needsCheckInCount} mangler check-in
-                </span>
+                <span className="text-[11px] font-semibold text-[#b76e00]">{summary.needsCheckInCount} mangler check-in</span>
               )}
             </div>
             <Link
@@ -107,17 +108,15 @@ function ObjectiveNode({
             >
               {objective.title}
             </Link>
-            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-muted">
-              <Users size={12} /> {objective.owner}
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-ink-muted">
+              <Avatar name={objective.owner} size={18} /> <span className="truncate">{objective.owner}</span>
             </div>
           </div>
-          <div className="hidden w-40 shrink-0 sm:block">
-            <div className="mb-1 flex justify-between text-xs">
-              <span className="text-ink-muted">{krs.length} KR</span>
-              <span className="font-semibold text-ink-soft">{pct(summary.progress)}</span>
-            </div>
-            <ProgressBar value={summary.progress} health={summary.health} height="sm" />
+          <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
+            <HealthBadge health={summary.health} />
+            <span className="text-[11px] text-ink-muted">{krs.length} KR</span>
           </div>
+          <ScoreBadge value={summary.progress} health={summary.health} size="lg" className="shrink-0" />
         </button>
 
         {open && (
@@ -165,13 +164,90 @@ function ObjectiveNode({
   );
 }
 
+// ============================================================
+// LISTE (Goals)
+// ============================================================
+function GoalRow({ objective, ctl }: { objective: Objective; ctl: NodeCtl }) {
+  const open = ctl.isOpen(objective.id, 2); // default lukket i listen
+  const krs = useStore((s) => s.krsByObjective.get(objective.id) ?? []);
+  const summary = useObjectiveSummary(objective.id);
+  const Icon = LEVEL_ICON[objective.level];
+
+  return (
+    <div className="card overflow-hidden">
+      <button onClick={() => ctl.toggle(objective.id)} className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-slate-50/70">
+        <ChevronRight size={16} className={cx('shrink-0 text-ink-muted transition-transform', open && 'rotate-90')} />
+        <span className={cx('chip shrink-0', LEVEL_SOFT[objective.level])}>
+          <Icon size={12} /> {LEVEL_LABEL[objective.level]}
+        </span>
+        <Avatar name={objective.owner} size={24} className="hidden sm:inline-grid" />
+        <div className="min-w-0 flex-1">
+          <Link
+            to={`/objective/${objective.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="block truncate font-semibold text-ink hover:text-brand-700"
+          >
+            {objective.title}
+          </Link>
+          <div className="truncate text-xs text-ink-muted">{objective.owner}</div>
+        </div>
+        <HealthBadge health={summary.health} className="hidden md:inline-flex" />
+        <span className="hidden shrink-0 text-[11px] text-ink-muted sm:block">{krs.length} KR</span>
+        <ScoreBadge value={summary.progress} health={summary.health} />
+      </button>
+      {open && (
+        <div className="border-t border-slate-100 bg-slate-50/40 px-4 py-3">
+          {krs.length > 0 ? (
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {krs.map((kr) => (
+                <KrCard key={kr.id} krId={kr.id} compact />
+              ))}
+            </div>
+          ) : (
+            <p className="py-1 text-sm text-ink-muted">Ingen Key Results endnu.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GoalsList({ objectives, ctl }: { objectives: Objective[]; ctl: NodeCtl }) {
+  const levels: Level[] = ['company', 'tribe', 'team'];
+  const byLevel = levels.map((lvl) => ({ lvl, items: objectives.filter((o) => o.level === lvl) }));
+  if (objectives.length === 0) {
+    return <div className="card p-12 text-center text-sm text-ink-muted">Ingen mål matcher.</div>;
+  }
+  return (
+    <div className="space-y-6">
+      {byLevel.map(({ lvl, items }) =>
+        items.length === 0 ? null : (
+          <section key={lvl}>
+            <h2 className="mb-2 flex items-center gap-2 px-1 text-[11px] font-bold uppercase tracking-wide text-ink-muted">
+              <span className={cx('h-2 w-2 rounded-full', LEVEL_ACCENT[lvl])} /> {LEVEL_LABEL[lvl]} · {items.length}
+            </h2>
+            <div className="space-y-2">
+              {items.map((o) => (
+                <GoalRow key={o.id} objective={o} ctl={ctl} />
+              ))}
+            </div>
+          </section>
+        ),
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Hjælpekomponenter
+// ============================================================
 function EmptyBoard() {
   const openObjectiveEditor = useUi((s) => s.openObjectiveEditor);
   const loadDemo = useStore((s) => s.loadDemo);
   const navigate = useNavigate();
   return (
     <div className="card grid place-items-center gap-4 p-10 text-center sm:p-14">
-      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-500">
+      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
         <Target size={30} />
       </div>
       <div className="max-w-md">
@@ -217,14 +293,6 @@ function CheckInReminder({ staleKrIds }: { staleKrIds: string[] }) {
   );
 }
 
-const HEALTH_OPTS: { value: HealthColor | 'all'; label: string }[] = [
-  { value: 'all', label: 'Al sundhed' },
-  { value: 'green', label: HEALTH_LABEL.green },
-  { value: 'yellow', label: HEALTH_LABEL.yellow },
-  { value: 'red', label: HEALTH_LABEL.red },
-  { value: 'none', label: HEALTH_LABEL.none },
-];
-
 function LevelLegend({ counts }: { counts: Record<Level, number> }) {
   const levels: Level[] = ['company', 'tribe', 'team'];
   return (
@@ -246,28 +314,28 @@ function LevelLegend({ counts }: { counts: Record<Level, number> }) {
           </Fragment>
         );
       })}
-      <span className="ml-auto hidden shrink-0 pr-1 text-[11px] text-ink-muted sm:block">
-        Mål nedbrydes og ruller op
-      </span>
+      <span className="ml-auto hidden shrink-0 pr-1 text-[11px] text-ink-muted sm:block">Mål nedbrydes og ruller op</span>
     </div>
   );
 }
+
+const STATUS_PILLS: { value: HealthColor | 'all'; label: string }[] = [
+  { value: 'all', label: 'Alle' },
+  { value: 'green', label: HEALTH_LABEL.green },
+  { value: 'yellow', label: HEALTH_LABEL.yellow },
+  { value: 'red', label: HEALTH_LABEL.red },
+];
 
 export default function TreeView() {
   const roots = useRootObjectives();
   const activeKrs = useActiveKeyResults();
   const owners = useActiveOwners();
   const objectives = useStore((s) => s.objectives);
+  const krsByObjective = useStore((s) => s.krsByObjective);
   const computedByKr = useStore((s) => s.computedByKr);
   const activeCycleId = useStore((s) => s.activeCycleId);
-  const openObjectiveEditor = useUi((s) => s.openObjectiveEditor);
 
-  const levelCounts = useMemo(() => {
-    const c: Record<Level, number> = { company: 0, tribe: 0, team: 0 };
-    for (const o of objectives) if (o.cycleId === activeCycleId) c[o.level] += 1;
-    return c;
-  }, [objectives, activeCycleId]);
-
+  const [view, setView] = useState<'cascade' | 'list'>('cascade');
   const [query, setQuery] = useState('');
   const [owner, setOwner] = useState('all');
   const [health, setHealth] = useState<HealthColor | 'all'>('all');
@@ -276,6 +344,12 @@ export default function TreeView() {
 
   const term = query.trim().toLowerCase();
   const filtersActive = term !== '' || owner !== 'all' || health !== 'all' || onlyStale;
+
+  const levelCounts = useMemo(() => {
+    const c: Record<Level, number> = { company: 0, tribe: 0, team: 0 };
+    for (const o of objectives) if (o.cycleId === activeCycleId) c[o.level] += 1;
+    return c;
+  }, [objectives, activeCycleId]);
 
   const allCycleObjIds = useMemo(
     () => objectives.filter((o) => o.cycleId === activeCycleId).map((o) => o.id),
@@ -294,7 +368,32 @@ export default function TreeView() {
     [activeKrs, computedByKr],
   );
 
-  // Filtrerede resultater (flad visning)
+  // Pr-objective metadata (til list-filtrering).
+  const objMeta = (objId: string) => {
+    const krs = krsByObjective.get(objId) ?? [];
+    const comp = krs.map((k) => computedByKr.get(k.id)).filter(Boolean) as NonNullable<ReturnType<typeof computedByKr.get>>[];
+    return {
+      health: worstHealth(comp.map((c) => c.health)),
+      needs: comp.some((c) => c.needsCheckIn),
+      krOwners: krs.map((k) => k.owner),
+    };
+  };
+
+  const listObjectives = useMemo(() => {
+    return objectives
+      .filter((o) => o.cycleId === activeCycleId)
+      .filter((o) => {
+        const meta = objMeta(o.id);
+        if (term && !(o.title.toLowerCase().includes(term) || o.owner.toLowerCase().includes(term))) return false;
+        if (owner !== 'all' && o.owner !== owner && !meta.krOwners.includes(owner)) return false;
+        if (health !== 'all' && meta.health !== health) return false;
+        if (onlyStale && !meta.needs) return false;
+        return true;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [objectives, activeCycleId, term, owner, health, onlyStale, computedByKr, krsByObjective]);
+
+  // Cascade flad-filtrering (KR-resultater)
   const krResults = useMemo(() => {
     if (!filtersActive) return [];
     return activeKrs.filter(({ kr, objective }) => {
@@ -308,21 +407,14 @@ export default function TreeView() {
     });
   }, [filtersActive, activeKrs, term, owner, health, onlyStale, computedByKr]);
 
-  const objResults = useMemo(() => {
-    if (!term) return [];
-    return objectives
-      .filter((o) => o.cycleId === activeCycleId)
-      .filter((o) => o.title.toLowerCase().includes(term) || o.owner.toLowerCase().includes(term))
-      .filter((o) => owner === 'all' || o.owner === owner)
-      .slice(0, 12);
-  }, [term, objectives, activeCycleId, owner]);
-
   const clearFilters = () => {
     setQuery('');
     setOwner('all');
     setHealth('all');
     setOnlyStale(false);
   };
+
+  const showExpandControls = view === 'list' || !filtersActive;
 
   return (
     <div>
@@ -333,18 +425,32 @@ export default function TreeView() {
         title="Board"
         subtitle="Fra virksomhedsmål ned til team-delmål. Stribede bjælker = auto-rollup."
         actions={
-          <button onClick={() => openObjectiveEditor({ level: 'company' })} className="btn-primary hidden px-3 py-2 text-sm sm:inline-flex lg:hidden">
-            <Plus size={16} /> Nyt Objective
-          </button>
+          <div className="inline-flex rounded-xl border border-slate-300 bg-white p-0.5">
+            {([
+              { v: 'cascade', label: 'Kaskade', icon: ListTree },
+              { v: 'list', label: 'Liste', icon: LayoutList },
+            ] as const).map((t) => (
+              <button
+                key={t.v}
+                onClick={() => setView(t.v)}
+                className={cx(
+                  'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
+                  view === t.v ? 'bg-brand-500 text-white shadow-sm' : 'text-ink-muted hover:text-ink',
+                )}
+              >
+                <t.icon size={15} /> <span className="hidden sm:inline">{t.label}</span>
+              </button>
+            ))}
+          </div>
         }
       />
 
-      {roots.length > 0 && !filtersActive && <LevelLegend counts={levelCounts} />}
+      {roots.length > 0 && view === 'cascade' && !filtersActive && <LevelLegend counts={levelCounts} />}
 
       {/* Filterbar */}
       {roots.length > 0 && (
         <div className="card mb-5 flex flex-wrap items-center gap-2 p-2.5">
-          <div className="relative min-w-[180px] flex-1">
+          <div className="relative min-w-[170px] flex-1">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
             <input
               value={query}
@@ -353,21 +459,36 @@ export default function TreeView() {
               className="input py-2 pl-9"
             />
           </div>
+
+          <div className="flex items-center gap-1 rounded-xl border border-slate-300 bg-white p-0.5">
+            {STATUS_PILLS.map((p) => {
+              const active = health === p.value;
+              return (
+                <button
+                  key={p.value}
+                  onClick={() => setHealth(p.value)}
+                  className={cx(
+                    'rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
+                    active
+                      ? p.value === 'all'
+                        ? 'bg-brand-500 text-white'
+                        : HEALTH_SOLID[p.value as HealthColor]
+                      : 'text-ink-muted hover:text-ink',
+                  )}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
           <select value={owner} onChange={(e) => setOwner(e.target.value)} className="input w-auto py-2 text-sm">
             <option value="all">Alle ejere</option>
             {owners.map((o) => (
               <option key={o} value={o}>{o}</option>
             ))}
           </select>
-          <select
-            value={health}
-            onChange={(e) => setHealth(e.target.value as HealthColor | 'all')}
-            className="input w-auto py-2 text-sm"
-          >
-            {HEALTH_OPTS.map((h) => (
-              <option key={h.value} value={h.value}>{h.label}</option>
-            ))}
-          </select>
+
           <button
             onClick={() => setOnlyStale((v) => !v)}
             className={cx(
@@ -377,12 +498,14 @@ export default function TreeView() {
           >
             <Bell size={14} /> Mangler check-in
           </button>
+
           <div className="ml-auto flex items-center gap-1">
-            {filtersActive ? (
+            {filtersActive && (
               <button onClick={clearFilters} className="btn-ghost px-2.5 py-2 text-xs">
                 <X size={14} /> Ryd
               </button>
-            ) : (
+            )}
+            {showExpandControls && (
               <>
                 <button onClick={expandAll} className="btn-ghost px-2.5 py-2 text-xs" title="Fold alle ud">
                   <ChevronsUpDown size={15} />
@@ -396,10 +519,13 @@ export default function TreeView() {
         </div>
       )}
 
+      {/* Indhold */}
       {roots.length === 0 ? (
         <EmptyBoard />
+      ) : view === 'list' ? (
+        <GoalsList objectives={listObjectives} ctl={ctl} />
       ) : filtersActive ? (
-        <FilteredResults objResults={objResults} krResults={krResults} onClear={clearFilters} />
+        <FilteredResults krResults={krResults} onClear={clearFilters} />
       ) : (
         roots.map((o) => <ObjectiveNode key={o.id} objective={o} depth={0} ctl={ctl} />)
       )}
@@ -408,16 +534,13 @@ export default function TreeView() {
 }
 
 function FilteredResults({
-  objResults,
   krResults,
   onClear,
 }: {
-  objResults: Objective[];
   krResults: ReturnType<typeof useActiveKeyResults>;
   onClear: () => void;
 }) {
-  const total = objResults.length + krResults.length;
-  if (total === 0) {
+  if (krResults.length === 0) {
     return (
       <div className="card grid place-items-center gap-3 p-12 text-center">
         <div className="grid h-12 w-12 place-items-center rounded-xl bg-slate-100 text-ink-muted">
@@ -430,49 +553,20 @@ function FilteredResults({
     );
   }
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-ink-muted">
-        {total} {total === 1 ? 'resultat' : 'resultater'}
+    <div>
+      <p className="mb-3 text-sm text-ink-muted">
+        {krResults.length} {krResults.length === 1 ? 'Key Result' : 'Key Results'}
       </p>
-
-      {objResults.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">Objectives</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {objResults.map((o) => (
-              <Link
-                key={o.id}
-                to={`/objective/${o.id}`}
-                className="card flex items-center gap-3 p-3 transition-shadow hover:shadow-cardhover"
-              >
-                <span className={cx('h-8 w-1 shrink-0 rounded-full', LEVEL_ACCENT[o.level])} />
-                <span className="min-w-0 flex-1">
-                  <span className={cx('chip', LEVEL_SOFT[o.level])}>{LEVEL_LABEL[o.level]}</span>
-                  <span className="mt-1 block truncate font-semibold">{o.title}</span>
-                  <span className="block truncate text-xs text-ink-muted">{o.owner}</span>
-                </span>
-                <ChevronRight size={16} className="shrink-0 text-ink-muted" />
-              </Link>
-            ))}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {krResults.map(({ kr, objective }) => (
+          <div key={kr.id}>
+            <div className="mb-1 truncate px-1 text-[11px] text-ink-muted">
+              {LEVEL_LABEL[objective.level]} · {objective.title}
+            </div>
+            <KrCard krId={kr.id} />
           </div>
-        </section>
-      )}
-
-      {krResults.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">Key Results</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {krResults.map(({ kr, objective }) => (
-              <div key={kr.id}>
-                <div className="mb-1 truncate px-1 text-[11px] text-ink-muted">
-                  {LEVEL_LABEL[objective.level]} · {objective.title}
-                </div>
-                <KrCard krId={kr.id} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        ))}
+      </div>
     </div>
   );
 }
