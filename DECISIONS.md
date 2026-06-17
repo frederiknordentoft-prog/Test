@@ -33,6 +33,16 @@ Løbende log over selvstændige beslutninger truffet under bygningen, jf. autono
   rolige flader) i **Danske Spil-grøn (#00a050) som primær** + **gul/guld accent (#ffce1f)**.
   Sundhedsfarver: grøn = brand-grøn, gul = #f5be00, rød bevaret til kritisk status.
 
+## Co-hosting af World Cup-appen
+
+- GitHub Pages serverer kun ét site pr. repo. For at have **begge apps live med
+  forskellige links** lægges World Cup-appen (statisk, fra `vm/`-mappen på
+  branchen `claude/wc2026-tournament-app-k42mv8`) ind under `public/wc/`.
+  Vite kopierer `public/` uændret til output, så den serveres på `/Test/wc/`,
+  mens OKR-appen bliver på `/Test/`.
+- WC-appen bruger udelukkende relative stier (assets, manifest, service worker
+  med scope `./`), så den fungerer uændret under sub-pathen.
+
 ## Arkitektur
 
 - **Hele datasættet holdes i hukommelsen** i Zustand-store og genindlæses efter hver mutation. Datasættet er lille (<200 rækker), så dette er enklere og hurtigt nok frem for granulær cache-invalidering.
