@@ -115,8 +115,22 @@ body {
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
 
 /* ---------- Views ---------- */
-.view { animation: fade .35s ease; }
-@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.view { animation: viewin .32s cubic-bezier(.2,.7,.2,1); }
+@keyframes viewin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Confetti (goal celebration) ---------- */
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 200; overflow: hidden; }
+.confetti i { position: absolute; top: -14px; width: 8px; height: 13px; border-radius: 2px; opacity: .95; animation: fall 2.4s linear forwards; }
+@keyframes fall { to { transform: translateY(106vh) rotate(620deg); opacity: .85; } }
+
+/* ---------- Detail header accent (team colours) ---------- */
+.head-accent { display: flex; height: 4px; border-radius: 999px; overflow: hidden; margin: 2px 0 12px; }
+.head-accent span { flex: 1; }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
 
 /* ---------- Group cards ---------- */
 #groupsGrid { display: grid; gap: 14px; }

@@ -31,6 +31,7 @@ const I18N = {
     home: 'Home', hLiveNow: 'Live now', hNext: 'Your teams · next match', hSquad: 'My squad', hMyTeams: 'My teams',
     hToday: "Today's matches", hLatest: 'Latest results', hNoToday: 'No matches today.', hNothingLive: '',
     cIn: 'in', cDay: 'd', cHour: 'h', cMin: 'm', gAb: 'G', aAb: 'A', posOf: 'in', greeting: 'World Cup 2026',
+    updatedAgo: 'updated', agoSuffix: 'ago',
     cleanSheets: 'Clean sheets · teams', cardsLbl: 'Discipline · teams', shotsLbl: 'Most shots · teams',
     csUnit: 'clean', cardsUnit: 'cards', shotsUnit: 'shots',
     lblMatchStats: 'Match stats', lblTimeline: 'Timeline', lblLineups: 'Line-ups',
@@ -64,6 +65,7 @@ const I18N = {
     home: 'Hjem', hLiveNow: 'Live nu', hNext: 'Dine hold · næste kamp', hSquad: 'Mit hold', hMyTeams: 'Mine hold',
     hToday: 'Dagens kampe', hLatest: 'Seneste resultater', hNoToday: 'Ingen kampe i dag.', hNothingLive: '',
     cIn: 'om', cDay: 'd', cHour: 't', cMin: 'm', gAb: 'M', aAb: 'A', posOf: 'i', greeting: 'VM 2026',
+    updatedAgo: 'opdateret', agoSuffix: 'siden',
     cleanSheets: 'Clean sheets · hold', cardsLbl: 'Disciplin · hold', shotsLbl: 'Flest skud · hold',
     csUnit: 'clean', cardsUnit: 'kort', shotsUnit: 'skud',
     lblMatchStats: 'Kampstatistik', lblTimeline: 'Forløb', lblLineups: 'Opstillinger',
@@ -96,6 +98,23 @@ const t = (k) => I18N[lang][k];
 const team = (code) => DATA.teams[code] || { name: code, flag: '🏳️' };
 const isPlayed = (m) => Number.isInteger(m.hs) && Number.isInteger(m.as);
 const isLive = (m) => m.st === 'in';
+
+// ---------- team colours (subtle accents) ----------
+const COLORS = {
+  MEX: '#006847', KOR: '#c8102e', RSA: '#007a4d', CZE: '#d7141a', CAN: '#d52b1e', SUI: '#d52b1e',
+  QAT: '#8d1b3d', BIH: '#1f4e9c', BRA: '#009c3b', MAR: '#c1272d', SCO: '#0065bd', HAI: '#1c2b9b',
+  USA: '#0a3161', PAR: '#d21034', AUS: '#00843d', TUR: '#e30a17', GER: '#d10a11', ECU: '#034ea2',
+  CIV: '#ff8200', CUW: '#002b7f', NED: '#ec4d00', JPN: '#bc002d', TUN: '#e70013', SWE: '#006aa7',
+  BEL: '#e30613', IRN: '#239f40', EGY: '#ce1126', NZL: '#00247d', ESP: '#c60b1e', URU: '#4f9fd6',
+  KSA: '#006c35', CPV: '#003893', FRA: '#0055a4', SEN: '#00853f', NOR: '#ba0c2f', IRQ: '#007a3d',
+  ARG: '#6cace4', AUT: '#ed2939', ALG: '#006233', JOR: '#007a3d', POR: '#1a7a3d', COL: '#1f3a93',
+  UZB: '#0099b5', COD: '#007fff', ENG: '#cf142b', CRO: '#c8102e', PAN: '#d21034', GHA: '#006b3f',
+};
+const teamColor = (code) => COLORS[code] || '#0b5cff';
+
+// ---------- motion / haptics ----------
+const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const haptic = (ms = 10) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* no-op */ } };
 
 // ---------- my holdet.dk squad ----------
 const MY_TEAMS = ['ESP', 'GER', 'CAN', 'BRA', 'USA', 'ECU', 'FRA', 'COL', 'NOR'];
@@ -300,7 +319,7 @@ function statsCompareHtml(m) {
     const H = statVal(h[key], key), A = statVal(a[key], key);
     const tot = H.n + A.n || 1, lp = Math.round((H.n / tot) * 100);
     return `<div class="cmp"><div class="cmp-top"><span class="cmp-v">${H.d}</span><span class="cmp-lbl">${label}</span><span class="cmp-v">${A.d}</span></div>
-      <div class="cbar"><div class="cbar-l" style="width:${lp}%"></div><div class="cbar-r" style="width:${100 - lp}%"></div></div></div>`;
+      <div class="cbar"><div class="cbar-l" style="width:${lp}%;background:${teamColor(m.h)}"></div><div class="cbar-r" style="width:${100 - lp}%;background:${teamColor(m.a)}"></div></div></div>`;
   }).join('');
   return rows.trim() ? `<div class="sheet-section"><div class="sheet-label">${t('lblMatchStats')}</div>${rows}</div>` : '';
 }
@@ -335,7 +354,8 @@ function fillSheet(m) {
     ${m.ref ? `<div class="info-row"><span>🧑‍⚖️</span><span>${t('refereeLbl')}: ${m.ref}</span></div>` : ''}
   </div>`;
 
-  $('#sheetBody').innerHTML = head + timelineHtml(m) + statsCompareHtml(m) + lineupHtml(m) + info;
+  const accent = `<div class="head-accent"><span style="background:${teamColor(m.h)}"></span><span style="background:${teamColor(m.a)}"></span></div>`;
+  $('#sheetBody').innerHTML = head + accent + timelineHtml(m) + statsCompareHtml(m) + lineupHtml(m) + info;
 }
 
 function openSheet(i) {
@@ -640,7 +660,8 @@ function renderHome() {
     .filter((m) => (myTeam(m.h) || myTeam(m.a)) && m.utc && new Date(m.utc).getTime() > now && m.st !== 'post' && !isLive(m))
     .sort((a, b) => new Date(a.utc) - new Date(b.utc))[0];
 
-  let html = `<div class="home-hero"><div class="hh-title">${t('greeting')}</div><div class="hh-sub">${fmtDate(todayIso)}</div></div>`;
+  const ago = lastUpdated ? ` · ${t('updatedAgo')} ${agoText(lastUpdated)} ${t('agoSuffix')}` : '';
+  let html = `<div class="home-hero"><div class="hh-title">${t('greeting')}</div><div class="hh-sub">${fmtDate(todayIso)}${ago}</div></div>`;
 
   if (live.length) {
     html += `<div class="home-sec"><div class="home-h"><span class="livedot"></span>${t('hLiveNow')}</div>${live.map(matchRow).join('')}</div>`;
@@ -696,10 +717,22 @@ function openHome() {
 }
 
 // ---------- navigation ----------
+const TAB_ORDER = ['home', 'groups', 'matches', 'stats', 'knockout'];
+let currentView = 'home';
+
 function go(view) {
   $$('.view').forEach((v) => (v.hidden = v.dataset.view !== view));
   $$('.tab').forEach((tb) => tb.classList.toggle('active', tb.dataset.go === view));
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function navTo(view) {
+  if (!view || view === currentView) return;
+  currentView = view;
+  go(view);
+  if (view === 'stats') openStats();
+  if (view === 'home') openHome();
+  haptic(8);
 }
 
 // ---------- language ----------
@@ -726,6 +759,39 @@ function toast(msg) {
   el.textContent = msg; el.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => (el.hidden = true), 2400);
+}
+
+// ---------- celebration & freshness ----------
+let lastUpdated = 0;
+function agoText(ts) {
+  if (!ts) return '';
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (s < 60) return `${s}s`;
+  const mi = Math.round(s / 60);
+  return mi < 60 ? `${mi}${t('cMin')}` : `${Math.round(mi / 60)}${t('cHour')}`;
+}
+function confetti(cols) {
+  if (reduceMotion()) return;
+  const wrap = document.createElement('div'); wrap.className = 'confetti';
+  const palette = (cols && cols.length) ? cols : ['#0b5cff', '#f4a000', '#1a9e57', '#e5484d'];
+  for (let i = 0; i < 38; i++) {
+    const p = document.createElement('i');
+    p.style.left = Math.random() * 100 + '%';
+    p.style.background = palette[i % palette.length];
+    p.style.animationDelay = (Math.random() * 0.3).toFixed(2) + 's';
+    p.style.transform = `rotate(${Math.floor(Math.random() * 360)}deg)`;
+    wrap.appendChild(p);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), 2700);
+}
+function celebrate(m, code) {
+  const tm = team(code);
+  const gs = (m.goals || []).filter((g) => g.t === code && !g.og).sort((a, b) => minVal(b.m) - minVal(a.m));
+  const scorer = gs.length ? ` — ${gs[0].p}` : '';
+  toast(`⚽ ${tm.flag} ${tm.name}${scorer}!`);
+  confetti([teamColor(code), '#f4a000', '#ffffff']);
+  haptic([20, 40, 30]);
 }
 
 // ---------- live overlay (ESPN) ----------
@@ -788,9 +854,13 @@ function mergeEspn(events) {
   return changed;
 }
 
+let celebrationsArmed = false;
+
 async function refresh(manual = false, full = false) {
   const badge = $('#liveBadge');
   badge.classList.add('refreshing');
+  const snap = {};
+  DATA.matches.forEach((m) => { if (myTeam(m.h) || myTeam(m.a)) snap[m._i] = { hs: m.hs, as: m.as }; });
   try {
     const dates = datesToFetch(full);
     const results = await Promise.all(dates.map((d) =>
@@ -798,6 +868,17 @@ async function refresh(manual = false, full = false) {
     const events = results.filter(Boolean).flatMap((r) => r.events || []);
     if (!events.length) throw new Error('no events');
     const changed = mergeEspn(events);
+    lastUpdated = Date.now();
+
+    // celebrate a fresh goal by one of my teams (skip the first backfill)
+    if (celebrationsArmed) {
+      for (const m of DATA.matches) {
+        const s = snap[m._i]; if (!s) continue;
+        if (myTeam(m.h) && Number.isInteger(m.hs) && Number.isInteger(s.hs) && m.hs > s.hs) { celebrate(m, m.h); break; }
+        if (myTeam(m.a) && Number.isInteger(m.as) && Number.isInteger(s.as) && m.as > s.as) { celebrate(m, m.a); break; }
+      }
+    }
+
     renderAll();
     if (!$('#view-stats').hidden) ensureSummaries().then((got) => { if (got) renderStats(); });
     if (!$('#view-home').hidden) ensureSummaries(myPlayedMatches()).then((got) => { if (got) renderHome(); });
@@ -806,6 +887,7 @@ async function refresh(manual = false, full = false) {
     if (manual) toast(t('offline'));
   } finally {
     badge.classList.remove('refreshing');
+    celebrationsArmed = true;
   }
 }
 
@@ -818,7 +900,24 @@ function boot() {
   applyLangChrome();
   renderAll();
 
-  $$('.tab').forEach((tb) => tb.addEventListener('click', () => { go(tb.dataset.go); if (tb.dataset.go === 'stats') openStats(); if (tb.dataset.go === 'home') openHome(); }));
+  $$('.tab').forEach((tb) => tb.addEventListener('click', () => navTo(tb.dataset.go)));
+
+  // swipe left/right between tabs
+  let tsX = 0, tsY = 0, tsT = 0, swiping = false;
+  const main = $('#main');
+  main.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { swiping = false; return; }
+    const p = e.touches[0]; tsX = p.clientX; tsY = p.clientY; tsT = Date.now();
+    swiping = !e.target.closest('.filter-row, .seg, .table-scroll, .timeline, .lineups, .cbar, .next-card');
+  }, { passive: true });
+  main.addEventListener('touchend', (e) => {
+    if (!swiping || !$('#sheetOverlay').hidden) return;
+    const p = e.changedTouches[0], dx = p.clientX - tsX, dy = p.clientY - tsY, dt = Date.now() - tsT;
+    if (dt < 600 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.8) {
+      const i = TAB_ORDER.indexOf(currentView), ni = i + (dx < 0 ? 1 : -1);
+      if (ni >= 0 && ni < TAB_ORDER.length) navTo(TAB_ORDER[ni]);
+    }
+  }, { passive: true });
   $('#langBtn').addEventListener('click', () => setLang(lang === 'en' ? 'da' : 'en'));
   $('#liveBadge').addEventListener('click', () => refresh(true, true));
   $$('#koSeg .seg-btn').forEach((b) => b.addEventListener('click', () => { koTab = b.dataset.ko; applyKoTab(); }));
