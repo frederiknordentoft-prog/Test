@@ -1,0 +1,17 @@
+{
+  "name": "OKR — Alignment & Check-ins",
+  "short_name": "OKR",
+  "description": "Internt OKR-system med alignment, ugentlige check-ins og auto-rollup.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#3b66f0",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
