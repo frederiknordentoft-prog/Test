@@ -30,5 +30,12 @@
 - Visuel markering i træ/kort: stribet fremdriftsbjælke + "Auto-rollup · N"-chip med bidragyder-antal.
 - **Verificeret:** build grøn.
 
+## ✅ Fase 5 — Ledelses-dashboard
+- KPI-kort: gns. fremdrift, på-sporet, mål i drift, mangler check-in.
+- Sundhedsdonut (Recharts) + committed/aspirational-opdeling + samlet sundhedsbar.
+- "Mål i drift"-liste sorteret efter alvor med direkte check-in-genvej.
+- Filter på tribe/team (inkl. descendants) + cyklus (global).
+- **Verificeret:** build grøn.
+
 ## ⏳ Næste
-- Fase 5 — Ledelses-dashboard.
+- Fase 6 — CRUD + polish.
