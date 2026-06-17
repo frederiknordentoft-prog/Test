@@ -38,6 +38,21 @@ export function useRootObjectives(): Objective[] {
     .sort((a, b) => a.order - b.order);
 }
 
+/** Distinkte ejere (objectives + KR'er) i den aktive cyklus, sorteret. */
+export function useActiveOwners(): string[] {
+  const objectives = useStore((s) => s.objectives);
+  const keyResults = useStore((s) => s.keyResults);
+  const objectivesById = useStore((s) => s.objectivesById);
+  const activeCycleId = useStore((s) => s.activeCycleId);
+  const set = new Set<string>();
+  for (const o of objectives) if (o.cycleId === activeCycleId && o.owner) set.add(o.owner);
+  for (const k of keyResults) {
+    const obj = objectivesById.get(k.objectiveId);
+    if (obj && obj.cycleId === activeCycleId && k.owner) set.add(k.owner);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'da'));
+}
+
 /** Alle KR'er i den aktive cyklus (til dashboard). */
 export function useActiveKeyResults(): { kr: KeyResult; objective: Objective }[] {
   const keyResults = useStore((s) => s.keyResults);

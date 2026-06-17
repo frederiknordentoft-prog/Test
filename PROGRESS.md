@@ -48,6 +48,15 @@
 
 ## Status: alle 6 faser færdige ✅
 
+## ✅ Skalering til større virksomhed (kritisk review + forbedringer)
+- **Global søgning (⌘K)**: kommandopalette der hopper til ethvert mål/KR/ejer.
+- **Board-filtre**: fritekst, ejer, sundhed, "mangler check-in" + fold alle ud/sammen; aktive filtre giver en flad resultatvisning der skalerer.
+- **Ugens check-in (kø)**: guidet flow gennem alle KR'er der mangler check-in, med fremdrift "X af N".
+- **Dashboard pr. tribe**: tabel med fordeling, fremdrift og manglende check-ins; klik zoomer ind.
+- **Export/Import (JSON)**: backup og portabilitet — afhjælper at data ellers kun lever i én browser.
+- **Cyklus-styring**: opret næste kvartal og før mål videre (carry-over, nulstillet fremdrift).
+- **Verificeret:** build grøn, ruter svarer.
+
 ## ✅ Opfølgning — tom start, guide & redesign
 - Appen starter tom (kun én aktiv kvartalscyklus); eksempel-data er nu opt-in.
 - Ny guide-side (`/guide`) med how-to; førstegangsbesøg lander der.

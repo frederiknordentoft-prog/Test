@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { AlertTriangle, CalendarClock, CheckCircle2, Filter, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CheckCircle2, Filter, TrendingUp, Users } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useUi } from '../store/useUi';
 import { HEALTH_HEX, HEALTH_LABEL } from '../lib/okr';
@@ -93,6 +93,36 @@ export default function Dashboard() {
   const drifting = [...rows]
     .filter((r) => r.health === 'red' || r.health === 'yellow' || r.health === 'none')
     .sort((a, b) => rank(a.health) - rank(b.health) || a.progress - b.progress);
+
+  // Gruppér KR'er pr. tribe (team-KR'er ruller op til deres tribe; company-KR'er for sig).
+  const tribeGroups = useMemo(() => {
+    const map = new Map<string, { id: string; label: string; isTribe: boolean; rows: Row[] }>();
+    for (const r of rows) {
+      let cur: Objective | undefined = r.objective;
+      while (cur && cur.level === 'team' && cur.parentObjectiveId) {
+        cur = objectivesById.get(cur.parentObjectiveId);
+      }
+      const isTribe = cur?.level === 'tribe';
+      const id = isTribe ? cur!.id : '__company__';
+      const label = isTribe ? cur!.title : 'Virksomhedsniveau';
+      if (!map.has(id)) map.set(id, { id, label, isTribe, rows: [] });
+      map.get(id)!.rows.push(r);
+    }
+    return [...map.values()]
+      .map((g) => ({
+        id: g.id,
+        label: g.label,
+        isTribe: g.isTribe,
+        total: g.rows.length,
+        green: g.rows.filter((r) => r.health === 'green').length,
+        yellow: g.rows.filter((r) => r.health === 'yellow').length,
+        red: g.rows.filter((r) => r.health === 'red').length,
+        none: g.rows.filter((r) => r.health === 'none').length,
+        needs: g.rows.filter((r) => r.needsCheckIn).length,
+        avg: g.rows.reduce((a, r) => a + r.progress, 0) / g.rows.length,
+      }))
+      .sort((a, b) => b.red - a.red || b.yellow - a.yellow || b.total - a.total);
+  }, [rows, objectivesById]);
 
   const cycleName = cycles.find((c) => c.id === activeCycleId)?.name ?? '';
 
@@ -229,6 +259,64 @@ export default function Dashboard() {
               </ul>
             </section>
           </div>
+
+          {/* Sundhed pr. tribe */}
+          {tribeGroups.length > 1 && (
+            <section className="card mb-5 overflow-hidden">
+              <div className="card-head">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
+                  <Users size={16} />
+                </span>
+                <h2 className="text-base font-bold">Sundhed pr. tribe</h2>
+                <span className="ml-auto text-xs text-ink-muted">Klik for at zoome ind</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-left text-[11px] uppercase tracking-wide text-ink-muted">
+                      <th className="px-5 py-2.5 font-semibold">Tribe</th>
+                      <th className="px-3 py-2.5 text-center font-semibold">KR</th>
+                      <th className="px-3 py-2.5 font-semibold">Fordeling</th>
+                      <th className="px-3 py-2.5 text-right font-semibold">Fremdrift</th>
+                      <th className="px-5 py-2.5 text-right font-semibold">Mangler</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tribeGroups.map((g) => (
+                      <tr
+                        key={g.id}
+                        onClick={() => g.isTribe && setScopeId(g.id)}
+                        className={cx(
+                          'border-b border-slate-50 last:border-0',
+                          g.isTribe && 'cursor-pointer hover:bg-slate-50',
+                        )}
+                      >
+                        <td className="px-5 py-3 font-semibold">{g.label}</td>
+                        <td className="px-3 py-3 text-center text-ink-soft">{g.total}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex h-2 w-28 overflow-hidden rounded-full bg-slate-100">
+                            {(['green', 'yellow', 'red', 'none'] as HealthColor[]).map((h) =>
+                              g[h] > 0 ? (
+                                <div key={h} style={{ width: `${(g[h] / g.total) * 100}%`, background: HEALTH_HEX[h] }} />
+                              ) : null,
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-right font-semibold tabular-nums">{pct(g.avg)}</td>
+                        <td className="px-5 py-3 text-right">
+                          {g.needs > 0 ? (
+                            <span className="chip bg-accent-50 text-accent-800">{g.needs}</span>
+                          ) : (
+                            <span className="text-ink-muted">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
 
           {/* Mål i drift */}
           <section className="card p-5">

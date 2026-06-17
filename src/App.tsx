@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useStore } from './store/useStore';
+import { useUi } from './store/useUi';
 import Layout from './components/Layout';
 import TreeView from './pages/TreeView';
 import ObjectiveDetail from './pages/ObjectiveDetail';
@@ -15,7 +16,20 @@ export default function App() {
   const init = useStore((s) => s.init);
   const loaded = useStore((s) => s.loaded);
   const navigate = useNavigate();
+  const toggleCommand = useUi((s) => s.toggleCommand);
   const didInit = useRef(false);
+
+  // Global ⌘K / Ctrl+K → kommandopalette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        toggleCommand();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [toggleCommand]);
 
   useEffect(() => {
     if (didInit.current) return;

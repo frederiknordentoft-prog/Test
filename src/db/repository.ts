@@ -183,3 +183,86 @@ export async function createLink(childKrId: string, parentKrId: string, weight =
 export async function deleteLink(id: string): Promise<void> {
   await db.alignmentLinks.delete(id);
 }
+
+// ---- Cyklusser ----
+export async function createCycle(c: Omit<Cycle, 'id'>): Promise<Cycle> {
+  const cycle: Cycle = { ...c, id: uid('cycle') };
+  await db.cycles.add(cycle);
+  return cycle;
+}
+
+/**
+ * Kopiér alle objectives + KR'er (uden check-ins) fra én cyklus til en anden,
+ * så et kvartals struktur kan føres videre. Current nulstilles til baseline,
+ * og alignment-koblinger gendannes mellem de nye KR'er.
+ */
+export async function carryOverCycle(fromCycleId: string, toCycleId: string): Promise<void> {
+  const [objectives, keyResults, links] = await Promise.all([
+    db.objectives.where('cycleId').equals(fromCycleId).toArray(),
+    db.keyResults.toArray(),
+    db.alignmentLinks.toArray(),
+  ]);
+  const objIds = new Set(objectives.map((o) => o.id));
+  const krsToCopy = keyResults.filter((k) => objIds.has(k.objectiveId));
+  const krIds = new Set(krsToCopy.map((k) => k.id));
+
+  const objMap = new Map<string, string>();
+  const krMap = new Map<string, string>();
+  objectives.forEach((o) => objMap.set(o.id, uid('obj')));
+  krsToCopy.forEach((k) => krMap.set(k.id, uid('kr')));
+
+  const newObjectives: Objective[] = objectives.map((o) => ({
+    ...o,
+    id: objMap.get(o.id)!,
+    cycleId: toCycleId,
+    parentObjectiveId: o.parentObjectiveId ? objMap.get(o.parentObjectiveId) : undefined,
+    status: 'on_track',
+  }));
+  const newKrs: KeyResult[] = krsToCopy.map((k) => ({
+    ...k,
+    id: krMap.get(k.id)!,
+    objectiveId: objMap.get(k.objectiveId)!,
+    current: k.baseline, // nulstil fremdrift i ny cyklus
+  }));
+  // Bevar alignment-koblinger hvis begge ender kopieres med.
+  const newLinks: AlignmentLink[] = links
+    .filter((l) => krIds.has(l.childKrId) && krIds.has(l.parentKrId))
+    .map((l) => ({ ...l, id: uid('link'), childKrId: krMap.get(l.childKrId)!, parentKrId: krMap.get(l.parentKrId)! }));
+
+  await db.transaction('rw', [db.objectives, db.keyResults, db.alignmentLinks], async () => {
+    await db.objectives.bulkAdd(newObjectives);
+    await db.keyResults.bulkAdd(newKrs);
+    if (newLinks.length) await db.alignmentLinks.bulkAdd(newLinks);
+  });
+}
+
+// ---- Export / Import (backup & portabilitet) ----
+export interface ExportBundle extends Snapshot {
+  exportedAt: string;
+  version: 1;
+}
+
+export async function exportData(): Promise<ExportBundle> {
+  const snap = await loadAll();
+  return { ...snap, exportedAt: new Date().toISOString(), version: 1 };
+}
+
+export async function importData(bundle: Partial<ExportBundle>): Promise<void> {
+  if (!bundle || !Array.isArray(bundle.objectives) || !Array.isArray(bundle.cycles)) {
+    throw new Error('Filen ligner ikke en gyldig OKR-eksport.');
+  }
+  await db.transaction(
+    'rw',
+    [db.cycles, db.objectives, db.keyResults, db.initiatives, db.checkIns, db.alignmentLinks],
+    async () => {
+      await clearEverything();
+      await db.cycles.bulkAdd(bundle.cycles ?? []);
+      await db.objectives.bulkAdd(bundle.objectives ?? []);
+      await db.keyResults.bulkAdd(bundle.keyResults ?? []);
+      await db.initiatives.bulkAdd(bundle.initiatives ?? []);
+      await db.checkIns.bulkAdd(bundle.checkIns ?? []);
+      await db.alignmentLinks.bulkAdd(bundle.alignmentLinks ?? []);
+    },
+  );
+  if ((await db.cycles.count()) === 0) await ensureBaseline();
+}

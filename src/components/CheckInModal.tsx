@@ -11,22 +11,45 @@ import KrTypePill from './KrTypePill';
 export default function CheckInModal() {
   const krId = useUi((s) => s.checkInKrId);
   const close = useUi((s) => s.closeCheckIn);
+  const next = useUi((s) => s.nextCheckIn);
+  const queueLen = useUi((s) => s.checkInQueue.length);
+  const queuePos = useUi((s) => s.checkInQueuePos);
   const kr = useStore((s) => (krId ? s.krsById.get(krId) : undefined));
   const computed = useStore((s) => (krId ? s.computedByKr.get(krId) : undefined));
   const addCheckIn = useStore((s) => s.addCheckIn);
 
   if (!kr || !computed) return null;
-  return <CheckInForm key={kr.id} krId={kr.id} onClose={close} addCheckIn={addCheckIn} />;
+  const isQueue = queueLen > 1;
+  return (
+    <CheckInForm
+      key={kr.id}
+      krId={kr.id}
+      onClose={close}
+      onNext={next}
+      addCheckIn={addCheckIn}
+      isQueue={isQueue}
+      queuePos={queuePos}
+      queueLen={queueLen}
+    />
+  );
 }
 
 function CheckInForm({
   krId,
   onClose,
+  onNext,
   addCheckIn,
+  isQueue,
+  queuePos,
+  queueLen,
 }: {
   krId: string;
   onClose: () => void;
+  onNext: () => void;
   addCheckIn: ReturnType<typeof useStore.getState>['addCheckIn'];
+  isQueue: boolean;
+  queuePos: number;
+  queueLen: number;
 }) {
   const kr = useStore((s) => s.krsById.get(krId))!;
   const computed = useStore((s) => s.computedByKr.get(krId))!;
@@ -42,6 +65,8 @@ function CheckInForm({
   const newProgress = useMemo(() => rawProgress({ ...kr, current: value }), [kr, value]);
   const delta = value - kr.current;
 
+  const isLast = queuePos >= queueLen - 1;
+
   const submit = async () => {
     setSaving(true);
     await addCheckIn({
@@ -53,24 +78,36 @@ function CheckInForm({
       author: author.trim() || kr.owner,
     });
     setSaved(true);
-    setTimeout(onClose, 650);
+    setTimeout(() => (isQueue && !isLast ? onNext() : onClose()), 600);
   };
+
+  const skip = () => (isQueue && !isLast ? onNext() : onClose());
 
   return (
     <Modal
       open
       onClose={onClose}
-      title="Ugentligt check-in"
+      title={isQueue ? `Ugens check-in · ${queuePos + 1} af ${queueLen}` : 'Ugentligt check-in'}
       subtitle={kr.title}
       footer={
         <>
-          <button onClick={onClose} className="btn-secondary">
-            Annullér
-          </button>
+          {isQueue ? (
+            <button onClick={skip} className="btn-ghost mr-auto">
+              Spring over
+            </button>
+          ) : (
+            <button onClick={onClose} className="btn-secondary">
+              Annullér
+            </button>
+          )}
           <button onClick={submit} disabled={saving} className={cx('btn-primary', saved && 'bg-health-green')}>
             {saved ? (
               <>
                 <Check size={16} /> Gemt
+              </>
+            ) : isQueue && !isLast ? (
+              <>
+                <TrendingUp size={16} /> Gem & næste
               </>
             ) : (
               <>
@@ -81,6 +118,14 @@ function CheckInForm({
         </>
       }
     >
+      {isQueue && (
+        <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-brand-500 transition-all"
+            style={{ width: `${(queuePos / queueLen) * 100}%` }}
+          />
+        </div>
+      )}
       <div className="mb-4 flex items-center gap-2">
         <KrTypePill type={kr.type} />
         <span className="text-xs text-ink-muted">Ejer: {kr.owner}</span>

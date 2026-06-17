@@ -38,6 +38,9 @@ interface StoreState extends Snapshot, Derived {
   setActiveCycle: (id: string) => void;
   loadDemo: () => Promise<void>;
   clearAll: () => Promise<void>;
+  addCycle: (name: string, startDate: string, endDate: string, carryFromCycleId?: string) => Promise<void>;
+  exportToFile: () => Promise<void>;
+  importFromFile: (file: File) => Promise<void>;
   /** Antal objectives på tværs af alle cyklusser (til onboarding/empty-state). */
   isEmpty: () => boolean;
 
@@ -169,6 +172,34 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   isEmpty: () => get().objectives.length === 0,
+
+  addCycle: async (name, startDate, endDate, carryFromCycleId) => {
+    const cycle = await repo.createCycle({ name, startDate, endDate, isActive: false });
+    if (carryFromCycleId) await repo.carryOverCycle(carryFromCycleId, cycle.id);
+    await get().reload();
+    set({ activeCycleId: cycle.id });
+  },
+
+  exportToFile: async () => {
+    const bundle = await repo.exportData();
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `okr-eksport-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  importFromFile: async (file) => {
+    const text = await file.text();
+    const bundle = JSON.parse(text);
+    await repo.importData(bundle);
+    await get().reload();
+    const cycles = get().cycles;
+    const active = cycles.find((c) => c.isActive) ?? cycles[0];
+    set({ activeCycleId: active?.id ?? '' });
+  },
 
   addCheckIn: async (c) => {
     await repo.createCheckIn(c);
