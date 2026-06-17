@@ -9,5 +9,14 @@
 - Zustand-store med afledte maps og computed KR-værdier.
 - **Verificeret:** `npm run build` grøn, `npm run dev` svarer 200, rå OKR-liste renderer.
 
+## ✅ Fase 2 — Trævisning + detaljevisning
+- Layout med sidebar/bundnav, cyklus-vælger, reset.
+- Genbrugskomponenter: ProgressBar, HealthBadge, KrTypePill, Sparkline (Recharts), Modal, KrCard.
+- Trævisning: rekursive objective-noder company→tribe→team, foldbare, med samlet fremdrift og sundhed; stribet bjælke = auto-rollup.
+- ObjectiveDetail: header, KR-grid, child-objektiver, bløde grænse-advarsler.
+- KrDetail: metrik-stat, stor sparkline, check-in-historik, initiativ-liste (arbejde adskilt fra mål), alignment op/ned.
+- Routing (React Router) + UI-store til modaler.
+- **Verificeret:** build grøn, alle ruter svarer 200.
+
 ## ⏳ Næste
-- Fase 2 — Trævisning + detaljevisning.
+- Fase 3 — Check-in-loop.

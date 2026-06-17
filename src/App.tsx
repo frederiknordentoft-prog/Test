@@ -1,36 +1,42 @@
 import { useEffect } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { useStore } from './store/useStore';
-import { formatMetric } from './lib/okr';
+import Layout from './components/Layout';
+import TreeView from './pages/TreeView';
+import ObjectiveDetail from './pages/ObjectiveDetail';
+import KrDetail from './pages/KrDetail';
+import Dashboard from './pages/Dashboard';
+import ModalHost from './components/ModalHost';
 
-// Fase 1: rå liste der beviser at data-laget og seed virker.
-// Erstattes af fuld routing/UI i senere faser.
 export default function App() {
-  const { init, loaded, objectives, krsByObjective } = useStore();
+  const init = useStore((s) => s.init);
+  const loaded = useStore((s) => s.loaded);
 
   useEffect(() => {
     init();
   }, [init]);
 
-  if (!loaded) return <div className="p-8 text-ink-muted">Indlæser…</div>;
+  if (!loaded) {
+    return (
+      <div className="grid min-h-screen place-items-center text-ink-muted">
+        <div className="animate-fade-in text-center">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-brand-500" />
+          Indlæser OKR-systemet…
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
-      <h1 className="text-2xl font-bold mb-6">OKR — rå liste (fase 1)</h1>
-      <div className="space-y-4">
-        {objectives.map((o) => (
-          <div key={o.id} className="card p-4">
-            <div className="text-xs uppercase text-ink-muted">{o.level}</div>
-            <div className="font-semibold">{o.title}</div>
-            <ul className="mt-2 space-y-1 text-sm">
-              {(krsByObjective.get(o.id) ?? []).map((kr) => (
-                <li key={kr.id} className="text-ink-soft">
-                  • {kr.title} — {formatMetric(kr.current, kr)} / {formatMetric(kr.target, kr)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<TreeView />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/objective/:id" element={<ObjectiveDetail />} />
+        <Route path="/kr/:id" element={<KrDetail />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <ModalHost />
+    </Layout>
   );
 }

@@ -168,6 +168,20 @@ function formatThousands(n: number): string {
   return n.toLocaleString('da-DK');
 }
 
+/** Gennemsnit af 0..1-værdier (0 hvis tom). */
+export function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+const HEALTH_RANK: Record<HealthColor, number> = { red: 0, none: 1, yellow: 2, green: 3 };
+
+/** Værste (mest alarmerende) sundhed i en gruppe. */
+export function worstHealth(healths: HealthColor[]): HealthColor {
+  if (healths.length === 0) return 'none';
+  return healths.reduce((a, b) => (HEALTH_RANK[b] < HEALTH_RANK[a] ? b : a));
+}
+
 /** Nudge: simpel heuristik der advarer hvis et KR-titel ligner et initiativ. */
 export function looksLikeInitiative(title: string): boolean {
   const t = title.toLowerCase().trim();
