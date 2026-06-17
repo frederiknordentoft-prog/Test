@@ -32,6 +32,7 @@ const I18N = {
     hToday: "Today's matches", hLatest: 'Latest results', hNoToday: 'No matches today.', hNothingLive: '',
     cIn: 'in', cDay: 'd', cHour: 'h', cMin: 'm', gAb: 'G', aAb: 'A', posOf: 'in', greeting: 'World Cup 2026',
     updatedAgo: 'updated', agoSuffix: 'ago',
+    back: 'Back', pContrib: 'Goals & assists', pFixtures: 'Fixtures & results',
     cleanSheets: 'Clean sheets · teams', cardsLbl: 'Discipline · teams', shotsLbl: 'Most shots · teams',
     csUnit: 'clean', cardsUnit: 'cards', shotsUnit: 'shots',
     lblMatchStats: 'Match stats', lblTimeline: 'Timeline', lblLineups: 'Line-ups',
@@ -66,6 +67,7 @@ const I18N = {
     hToday: 'Dagens kampe', hLatest: 'Seneste resultater', hNoToday: 'Ingen kampe i dag.', hNothingLive: '',
     cIn: 'om', cDay: 'd', cHour: 't', cMin: 'm', gAb: 'M', aAb: 'A', posOf: 'i', greeting: 'VM 2026',
     updatedAgo: 'opdateret', agoSuffix: 'siden',
+    back: 'Tilbage', pContrib: 'Mål & oplæg', pFixtures: 'Kampe & resultater',
     cleanSheets: 'Clean sheets · hold', cardsLbl: 'Disciplin · hold', shotsLbl: 'Flest skud · hold',
     csUnit: 'clean', cardsUnit: 'kort', shotsUnit: 'skud',
     lblMatchStats: 'Kampstatistik', lblTimeline: 'Forløb', lblLineups: 'Opstillinger',
@@ -137,6 +139,8 @@ const myPlayer = (name, code) => { const n = norm(name); return MY_PLAYERS.some(
 const STAR = '<span class="mine" title="Dit holdet.dk-hold">★</span>';
 const teamMark = (code) => (myTeam(code) ? STAR : '');
 const playerMark = (name, code) => (myPlayer(name, code) ? STAR : '');
+const teamLink = (code, text) => `<span class="lk" data-team="${code}">${text}</span>`;
+const playerLink = (code, name, frag) => `<span class="lk" data-player="1" data-code="${code}" data-name="${encodeURIComponent(name)}" data-frag="${encodeURIComponent(frag || name)}">${name}</span>`;
 
 function fmtDate(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString(t('locale'), { weekday: 'short', month: 'short', day: 'numeric' });
@@ -187,7 +191,7 @@ function renderGroups() {
       const cls = i < 2 ? 'qual-row' : i === 2 ? 'qual-edge' : '';
       const gd = r.gf - r.ga;
       return `<tr class="${cls}${myTeam(r.c) ? ' mine-row' : ''}">
-        <td class="team-col"><span class="rank">${i + 1}</span><span class="flag">${tm.flag}</span><span class="team-name">${tm.name}</span>${teamMark(r.c)}</td>
+        <td class="team-col"><span class="rank">${i + 1}</span><span class="flag">${tm.flag}</span>${teamLink(r.c, `<span class="team-name">${tm.name}</span>`)}${teamMark(r.c)}</td>
         <td>${r.p}</td><td>${gd > 0 ? '+' : ''}${gd}</td><td class="pts">${r.pts}</td>
       </tr>`;
     }).join('');
@@ -253,7 +257,6 @@ function renderMatches() {
     activeDay = c.dataset.day; renderMatches();
     $('#view-matches').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
-  $$('#matchesList .match').forEach((el) => el.addEventListener('click', () => openSheet(+el.dataset.mi)));
 }
 
 // ---------- match detail sheet ----------
@@ -268,8 +271,6 @@ function goalLine(g, m) {
     <span class="goal-player">${g.p}${playerMark(g.p, g.t)} ${tags ? `<em>${tags}</em>` : ''}${assist}</span>
   </div>`;
 }
-
-let sheetMi = -1;
 
 function goalsFallbackHtml(m, played) {
   if (!played) return '';
@@ -329,21 +330,21 @@ function lineupHtml(m) {
   const col = (code) => {
     const l = m.lineup[code]; if (!l) return '';
     return `<div class="lu-team"><div class="lu-head">${team(code).flag} ${team(code).name}${teamMark(code)} <span class="lu-form">${l.formation}</span></div>
-      <ol class="lu-xi">${l.xi.map((n) => `<li class="${myPlayer(n, code) ? 'mine-li' : ''}">${n}${playerMark(n, code)}</li>`).join('')}</ol>
-      ${l.subs && l.subs.length ? `<div class="lu-subs"><b>${t('subsLbl')}:</b> ${l.subs.map((n) => `${n}${playerMark(n, code)}`).join(', ')}</div>` : ''}</div>`;
+      <ol class="lu-xi">${l.xi.map((n) => `<li class="${myPlayer(n, code) ? 'mine-li' : ''}">${playerLink(code, n)}${playerMark(n, code)}</li>`).join('')}</ol>
+      ${l.subs && l.subs.length ? `<div class="lu-subs"><b>${t('subsLbl')}:</b> ${l.subs.map((n) => `${playerLink(code, n)}${playerMark(n, code)}`).join(', ')}</div>` : ''}</div>`;
   };
   const h = col(m.h), a = col(m.a);
   if (!h && !a) return '';
   return `<div class="sheet-section"><div class="sheet-label">${t('lblLineups')}</div><div class="lineups">${h}${a}</div></div>`;
 }
 
-function fillSheet(m) {
+function matchSheetHtml(m) {
   const H = team(m.h), A = team(m.a), played = isPlayed(m), live = isLive(m);
   const status = live ? `${t('live')}${m.min ? ` · ${m.min}` : ''}` : (played ? t('fullTime') : t('notPlayed'));
   const head = `<div class="sheet-head">
-    <div class="sheet-team"><span class="sheet-flag">${H.flag}</span><span class="sheet-tname">${H.name}${teamMark(m.h)}</span></div>
+    <div class="sheet-team">${teamLink(m.h, `<span class="sheet-flag">${H.flag}</span><span class="sheet-tname">${H.name}${teamMark(m.h)}</span>`)}</div>
     <div class="sheet-score">${played ? `${m.hs}<span class="x">–</span>${m.as}` : (dkTime(m) || '')}<div class="sheet-status ${live ? 'livetxt' : ''}">${status}</div></div>
-    <div class="sheet-team"><span class="sheet-flag">${A.flag}</span><span class="sheet-tname">${A.name}${teamMark(m.a)}</span></div>
+    <div class="sheet-team">${teamLink(m.a, `<span class="sheet-flag">${A.flag}</span><span class="sheet-tname">${A.name}${teamMark(m.a)}</span>`)}</div>
   </div>`;
 
   const info = `<div class="sheet-info">
@@ -355,23 +356,119 @@ function fillSheet(m) {
   </div>`;
 
   const accent = `<div class="head-accent"><span style="background:${teamColor(m.h)}"></span><span style="background:${teamColor(m.a)}"></span></div>`;
-  $('#sheetBody').innerHTML = head + accent + timelineHtml(m) + statsCompareHtml(m) + lineupHtml(m) + info;
+  return head + accent + timelineHtml(m) + statsCompareHtml(m) + lineupHtml(m) + info;
 }
 
-function openSheet(i) {
-  const m = DATA.matches[i];
-  if (!m) return;
-  sheetMi = i;
-  fillSheet(m);
+// ---------- player & team sheets ----------
+function miniMatch(m) { return matchRow(m); }
+
+function teamFixtures(code) {
+  return DATA.matches.filter((m) => m.h === code || m.a === code)
+    .sort((a, b) => (a.utc || a.date).localeCompare(b.utc || b.date));
+}
+
+function playerSheetHtml(code, name, frag) {
+  frag = frag || name;
+  let goals = 0, assists = 0;
+  const involved = [];
+  DATA.matches.filter(isPlayed).forEach((m) => {
+    if (m.h !== code && m.a !== code) return;
+    let g = 0, a = 0;
+    (m.goals || []).forEach((gl) => {
+      if (gl.t !== code) return;
+      if (!gl.og && norm(gl.p).includes(norm(frag))) g++;
+      if (gl.a && norm(gl.a).includes(norm(frag))) a++;
+    });
+    if (g || a) involved.push({ m, g, a });
+    goals += g; assists += a;
+  });
+  const squad = MY_PLAYERS.find((p) => p.code === code && norm(name).includes(norm(p.frag)));
+  const pos = squad ? ` · ${squad.pos}` : '';
+  const head = `<div class="entity-head">
+    <span class="entity-flag">${team(code).flag}</span>
+    <div class="entity-meta"><div class="entity-name">${name}${myPlayer(name, code) ? STAR : ''}</div>
+      <div class="entity-sub">${teamLink(code, team(code).name)}${pos}</div></div>
+  </div>
+  <div class="head-accent"><span style="background:${teamColor(code)}"></span></div>`;
+  const nums = `<div class="numgrid">
+    <div class="numcard"><div class="big">${goals}</div><div class="cap">${t('nGoals')}</div></div>
+    <div class="numcard"><div class="big">${assists}</div><div class="cap">${t('topAssists')}</div></div>
+    <div class="numcard"><div class="big">${goals + assists}</div><div class="cap">G+A</div></div>
+  </div>`;
+  let contrib = '';
+  if (involved.length) {
+    contrib = `<div class="sheet-section"><div class="sheet-label">${t('pContrib')}</div>${involved.map((x) => {
+      const tag = [x.g ? `⚽×${x.g}` : '', x.a ? `🅰️×${x.a}` : ''].filter(Boolean).join(' ');
+      return `<div class="contrib-row">${miniMatch(x.m)}<div class="contrib-tag">${tag}</div></div>`;
+    }).join('')}</div>`;
+  }
+  const fx = teamFixtures(code);
+  const fixturesHtml = `<div class="sheet-section"><div class="sheet-label">${t('pFixtures')}</div>${fx.map(miniMatch).join('')}</div>`;
+  return head + nums + contrib + fixturesHtml;
+}
+
+function teamSheetHtml(code) {
+  const g = Object.keys(DATA.groups).find((G) => DATA.groups[G].includes(code));
+  const tb = standings(g), pos = tb.findIndex((r) => r.c === code), row = tb[pos];
+  const head = `<div class="entity-head">
+    <span class="entity-flag">${team(code).flag}</span>
+    <div class="entity-meta"><div class="entity-name">${team(code).name}${teamMark(code)}</div>
+      <div class="entity-sub">${t('group')} ${g} · ${pos + 1}${ordSuffix(pos + 1)}</div></div>
+  </div>
+  <div class="head-accent"><span style="background:${teamColor(code)}"></span></div>`;
+  const nums = `<div class="numgrid">
+    <div class="numcard"><div class="big">${row.pts}</div><div class="cap">${t('colPts')}</div></div>
+    <div class="numcard"><div class="big">${row.w}-${row.d}-${row.l}</div><div class="cap">W-D-L</div></div>
+    <div class="numcard"><div class="big">${row.gf}</div><div class="cap">${t('nGoals')}</div></div>
+    <div class="numcard"><div class="big">${row.gf - row.ga > 0 ? '+' : ''}${row.gf - row.ga}</div><div class="cap">${t('colGD')}</div></div>
+  </div>`;
+  // team scorers
+  const sc = {};
+  DATA.matches.filter(isPlayed).forEach((m) => (m.goals || []).forEach((gl) => {
+    if (gl.t !== code || gl.og || !gl.p) return;
+    (sc[gl.p] = sc[gl.p] || { p: gl.p, t: code, n: 0 }).n++;
+  }));
+  const scorers = Object.keys(sc).length ? `<div class="sheet-section"><div class="sheet-label">${t('topScorers')}</div>${leaderRows(sc, t('goalsShort'), 8)}</div>` : '';
+  const fx = teamFixtures(code);
+  const fixturesHtml = `<div class="sheet-section"><div class="sheet-label">${t('pFixtures')}</div>${fx.map(miniMatch).join('')}</div>`;
+  return head + nums + scorers + fixturesHtml;
+}
+
+// ---------- sheet router ----------
+let sheetStack = [];
+
+function showSheet() {
+  const entry = sheetStack[sheetStack.length - 1];
+  if (!entry) return;
+  const back = sheetStack.length > 1 ? `<button class="sheet-back" id="sheetBack">‹ ${t('back')}</button>` : '';
+  let body = '';
+  if (entry.type === 'match') body = matchSheetHtml(DATA.matches[entry.i]);
+  else if (entry.type === 'player') body = playerSheetHtml(entry.code, entry.name, entry.frag);
+  else if (entry.type === 'team') body = teamSheetHtml(entry.code);
+  $('#sheetBody').innerHTML = back + body;
   const ov = $('#sheetOverlay');
   ov.hidden = false;
   requestAnimationFrame(() => ov.classList.add('open'));
-  // pull richer detail (stats, line-ups, timeline) for this match, then refresh
-  if (m.eid) ensureSummaries([m]).then(() => { if (sheetMi === i && !ov.hidden) fillSheet(m); });
+  $('#sheet').scrollTop = 0;
+
+  // enrich asynchronously, then re-render if still on top
+  let mats = [];
+  if (entry.type === 'match') mats = [DATA.matches[entry.i]].filter((m) => m && m.eid);
+  else if (entry.type === 'team') mats = DATA.matches.filter((m) => (m.h === entry.code || m.a === entry.code) && isPlayed(m));
+  else if (entry.type === 'player') mats = DATA.matches.filter((m) => (m.h === entry.code || m.a === entry.code) && isPlayed(m));
+  if (mats.length) ensureSummaries(mats).then((got) => { if (got && sheetStack[sheetStack.length - 1] === entry && !$('#sheetOverlay').hidden) showSheet(); });
 }
 
+function openEntry(entry, fresh) {
+  if (fresh) sheetStack = [];
+  sheetStack.push(entry);
+  haptic(6);
+  showSheet();
+}
+function openSheet(i) { openEntry({ type: 'match', i }, true); }
+
 function closeSheet() {
-  sheetMi = -1;
+  sheetStack = [];
   const ov = $('#sheetOverlay');
   ov.classList.remove('open');
   setTimeout(() => (ov.hidden = true), 220);
@@ -434,10 +531,11 @@ function leaderRows(map, unit, limit = 15, isTeam = false) {
   if (!rows.length) return '';
   return rows.map((r, i) => {
     const mine = isTeam ? myTeam(r.t) : myPlayer(r.p, r.t);
+    const label = isTeam ? teamLink(r.t, r.p) : playerLink(r.t, r.p);
     return `<div class="statrow${mine ? ' mine-row' : ''}">
     <span class="rk">${i + 1}</span>
     <span class="fl">${team(r.t).flag}</span>
-    <span class="nm">${r.p}${mine ? STAR : ''}</span>
+    <span class="nm">${label}${mine ? STAR : ''}</span>
     <span class="vl">${r.n}<small>${unit}</small></span>
   </div>`;
   }).join('');
@@ -682,7 +780,7 @@ function renderHome() {
 
   const squad = mySquadStats();
   html += `<div class="home-sec"><div class="home-h">⭐ ${t('hSquad')}</div><div class="squad-list">${squad.map((p) => `
-    <div class="squad-row">
+    <div class="squad-row lk-row" data-player="1" data-code="${p.code}" data-name="${encodeURIComponent(p.name)}" data-frag="${encodeURIComponent(p.frag)}">
       <span class="sq-flag">${team(p.code).flag}</span>
       <span class="sq-info"><span class="sq-name">${p.name}</span><span class="sq-team">${team(p.code).name} · ${p.pos}</span></span>
       <span class="sq-stat"><b>${p.g}</b>${t('gAb')}</span>
@@ -695,7 +793,7 @@ function renderHome() {
     return { code, g, pos: pos + 1, pts: row.pts };
   }).sort((a, b) => a.g.localeCompare(b.g));
   html += `<div class="home-sec"><div class="home-h">${t('hMyTeams')}</div><div class="myteams-list">${teamsStatus.map((s) => `
-    <div class="myteam-row">
+    <div class="myteam-row lk-row" data-team="${s.code}">
       <span class="mt-flag">${team(s.code).flag}</span>
       <span class="mt-name">${team(s.code).name}</span>
       <span class="mt-pos">${t('group')} ${s.g} · ${s.pos}${ordSuffix(s.pos)} · ${s.pts}p</span>
@@ -708,7 +806,6 @@ function renderHome() {
   }
 
   $('#homeView').innerHTML = html;
-  $$('#homeView .match').forEach((el) => el.addEventListener('click', () => openSheet(+el.dataset.mi)));
 }
 
 function openHome() {
@@ -924,6 +1021,19 @@ function boot() {
   $('#sheetClose').addEventListener('click', closeSheet);
   $('#sheetOverlay').addEventListener('click', (e) => { if (e.target === $('#sheetOverlay')) closeSheet(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+
+  // delegated navigation: players, teams, matches, and sheet back-button
+  document.addEventListener('click', (e) => {
+    const back = e.target.closest('#sheetBack');
+    if (back) { sheetStack.pop(); if (sheetStack.length) showSheet(); else closeSheet(); return; }
+    const inSheet = !!e.target.closest('#sheetBody');
+    const pl = e.target.closest('[data-player]');
+    if (pl) { openEntry({ type: 'player', code: pl.dataset.code, name: decodeURIComponent(pl.dataset.name), frag: decodeURIComponent(pl.dataset.frag) }, !inSheet); return; }
+    const tl = e.target.closest('[data-team]');
+    if (tl) { openEntry({ type: 'team', code: tl.dataset.team }, !inSheet); return; }
+    const mt = e.target.closest('.match');
+    if (mt) { openEntry({ type: 'match', i: +mt.dataset.mi }, !inSheet); return; }
+  });
 
   setTimeout(() => refresh(false, true), 600);                // full backfill on load
   setInterval(() => refresh(false, false), CONFIG.refreshMs); // live window thereafter
