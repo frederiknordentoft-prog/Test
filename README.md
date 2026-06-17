@@ -2,8 +2,10 @@
 
 Et komplet, kørende OKR-værktøj som webapp — bygget til at vise alignment på
 tværs af niveauer, holde mål adskilt fra arbejde, og gøre det ugentlige
-check-in-loop let. Fuldt client-side (ingen backend), forudfyldt med
-realistisk dansk demo-data, så det er demobart i sekundet det åbner.
+check-in-loop let. Fuldt client-side (ingen backend). Appen **starter tom**, så
+du nemt kan fylde dine egne mål i — med en indbygget **guide** og en knap til at
+**indlæse eksempel-data**, hvis du vil udforske først. Designsproget er
+Salesforce-inspireret i Danske Spil-grøn/gul.
 
 ![Niveauer: Virksomhed → Tribe → Team](public/icon.svg)
 
@@ -21,8 +23,9 @@ npm run build    # tsc + vite build → dist/
 npm run preview  # server den byggede app lokalt
 ```
 
-Appen seeder sig selv i IndexedDB første gang den åbner. Vil du starte forfra,
-brug **"Nulstil demo-data"** nederst i sidemenuen.
+Appen starter tom med én aktiv kvartalscyklus. Førstegangsbesøg lander på
+**guiden** (`/guide`). Brug **"Indlæs eksempel-data"** nederst i sidemenuen for at
+udforske med et færdigt datasæt, eller **"Ryd alle data"** for at nulstille.
 
 ## Hvad kan det?
 

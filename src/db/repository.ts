@@ -3,6 +3,7 @@
 // Holder Dexie-detaljer ude af store og UI.
 // ============================================================
 
+import { endOfQuarter, formatISO, getQuarter, getYear, startOfQuarter } from 'date-fns';
 import { db } from './database';
 import { seedData } from './seed';
 import type {
@@ -14,26 +15,48 @@ import type {
   Objective,
 } from '../types/domain';
 
-const SEED_FLAG = 'okr-seeded-v1';
+/** Bygger en cyklus for det kvartal en given dato falder i. */
+function quarterCycle(date = new Date()): Cycle {
+  const q = getQuarter(date);
+  const y = getYear(date);
+  return {
+    id: `cycle-q${q}-${y}`,
+    name: `Q${q} ${y}`,
+    startDate: formatISO(startOfQuarter(date), { representation: 'date' }),
+    endDate: formatISO(endOfQuarter(date), { representation: 'date' }),
+    isActive: true,
+  };
+}
 
-/** Fylder databasen med seed-data første gang (eller efter reset). */
-export async function ensureSeeded(): Promise<void> {
-  const already = localStorage.getItem(SEED_FLAG);
-  const count = await db.objectives.count();
-  if (already && count > 0) return;
+/**
+ * Sikrer at der altid findes mindst én cyklus, så brugeren kan oprette
+ * objectives med det samme. Seeder IKKE eksempel-data — appen starter tom.
+ */
+export async function ensureBaseline(): Promise<void> {
+  const cycleCount = await db.cycles.count();
+  if (cycleCount === 0) {
+    await db.cycles.add(quarterCycle());
+  }
+}
 
+async function clearEverything(): Promise<void> {
+  await Promise.all([
+    db.cycles.clear(),
+    db.objectives.clear(),
+    db.keyResults.clear(),
+    db.initiatives.clear(),
+    db.checkIns.clear(),
+    db.alignmentLinks.clear(),
+  ]);
+}
+
+/** Indlæs det fulde eksempel-datasæt (erstatter alt eksisterende). */
+export async function loadDemoData(): Promise<void> {
   await db.transaction(
     'rw',
     [db.cycles, db.objectives, db.keyResults, db.initiatives, db.checkIns, db.alignmentLinks],
     async () => {
-      await Promise.all([
-        db.cycles.clear(),
-        db.objectives.clear(),
-        db.keyResults.clear(),
-        db.initiatives.clear(),
-        db.checkIns.clear(),
-        db.alignmentLinks.clear(),
-      ]);
+      await clearEverything();
       await db.cycles.bulkAdd(seedData.cycles);
       await db.objectives.bulkAdd(seedData.objectives);
       await db.keyResults.bulkAdd(seedData.keyResults);
@@ -42,13 +65,18 @@ export async function ensureSeeded(): Promise<void> {
       await db.alignmentLinks.bulkAdd(seedData.alignmentLinks);
     },
   );
-  localStorage.setItem(SEED_FLAG, '1');
 }
 
-/** Nulstil alt og seed forfra (bruges fra UI). */
-export async function resetToSeed(): Promise<void> {
-  localStorage.removeItem(SEED_FLAG);
-  await ensureSeeded();
+/** Ryd alle data og start forfra med en tom, aktiv cyklus. */
+export async function clearAllData(): Promise<void> {
+  await db.transaction(
+    'rw',
+    [db.cycles, db.objectives, db.keyResults, db.initiatives, db.checkIns, db.alignmentLinks],
+    async () => {
+      await clearEverything();
+      await db.cycles.add(quarterCycle());
+    },
+  );
 }
 
 export interface Snapshot {

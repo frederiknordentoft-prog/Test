@@ -21,6 +21,18 @@ Løbende log over selvstændige beslutninger truffet under bygningen, jf. autono
 - **8 ugers check-in-historik** genereres deterministisk pr. KR (reproducerbar pseudo-støj), med sundhedsprofiler (grøn/gul/rød/fresh) der giver et varieret dashboard.
 - **Persistens i IndexedDB via Dexie**, seedes én gang (flag i localStorage). Reset-funktion i UI re-seeder.
 
+## Tom start, guide & redesign (efter brugerønske)
+
+- **Appen starter tom** i stedet for at auto-seede. `ensureBaseline()` opretter blot
+  én aktiv kvartalscyklus (udledt af dags dato), så "Nyt Objective" virker fra start.
+- **Eksempel-data er nu opt-in** via "Indlæs eksempel-data" (sidemenu + guide + empty-state),
+  og "Ryd alle data" nulstiller til en tom cyklus.
+- **Guide-side** (`/guide`) som onboarding/how-to. Førstegangsbesøg uden data
+  omdirigeres hertil én gang (flag i localStorage).
+- **Designsprog:** Salesforce/Lightning-agtigt (kort med hoved, rene sideoverskrifter,
+  rolige flader) i **Danske Spil-grøn (#00a050) som primær** + **gul/guld accent (#ffce1f)**.
+  Sundhedsfarver: grøn = brand-grøn, gul = #f5be00, rød bevaret til kritisk status.
+
 ## Arkitektur
 
 - **Hele datasættet holdes i hukommelsen** i Zustand-store og genindlæses efter hver mutation. Datasættet er lille (<200 rækker), så dette er enklere og hurtigt nok frem for granulær cache-invalidering.

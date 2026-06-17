@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import * as repo from '../db/repository';
-import { ensureSeeded, resetToSeed, type Snapshot } from '../db/repository';
+import { clearAllData, ensureBaseline, loadDemoData, type Snapshot } from '../db/repository';
 import { computeKr } from '../lib/okr';
 import type {
   AlignmentLink,
@@ -36,7 +36,10 @@ interface StoreState extends Snapshot, Derived {
   init: () => Promise<void>;
   reload: () => Promise<void>;
   setActiveCycle: (id: string) => void;
-  reset: () => Promise<void>;
+  loadDemo: () => Promise<void>;
+  clearAll: () => Promise<void>;
+  /** Antal objectives på tværs af alle cyklusser (til onboarding/empty-state). */
+  isEmpty: () => boolean;
 
   // Mutationer (wrapper repo + reload)
   addCheckIn: (c: Omit<CheckIn, 'id'>) => Promise<void>;
@@ -135,7 +138,7 @@ export const useStore = create<StoreState>((set, get) => ({
   activeCycleId: '',
 
   init: async () => {
-    await ensureSeeded();
+    await ensureBaseline();
     await get().reload();
     const cycles = get().cycles;
     const active = cycles.find((c) => c.isActive) ?? cycles[0];
@@ -149,13 +152,23 @@ export const useStore = create<StoreState>((set, get) => ({
 
   setActiveCycle: (id) => set({ activeCycleId: id }),
 
-  reset: async () => {
-    await resetToSeed();
+  loadDemo: async () => {
+    await loadDemoData();
     await get().reload();
     const cycles = get().cycles;
     const active = cycles.find((c) => c.isActive) ?? cycles[0];
     set({ activeCycleId: active?.id ?? '' });
   },
+
+  clearAll: async () => {
+    await clearAllData();
+    await get().reload();
+    const cycles = get().cycles;
+    const active = cycles.find((c) => c.isActive) ?? cycles[0];
+    set({ activeCycleId: active?.id ?? '' });
+  },
+
+  isEmpty: () => get().objectives.length === 0,
 
   addCheckIn: async (c) => {
     await repo.createCheckIn(c);

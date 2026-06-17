@@ -1,13 +1,14 @@
 import { type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ListTree, RotateCcw, Target, Plus } from 'lucide-react';
+import { BookOpen, LayoutDashboard, ListTree, Plus, Sparkles, Target, Trash2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useUi } from '../store/useUi';
 import { cx } from '../lib/ui';
 
 const NAV = [
-  { to: '/', label: 'Trævisning', icon: ListTree, end: true },
+  { to: '/', label: 'Board', icon: ListTree, end: true },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: false },
+  { to: '/guide', label: 'Sådan virker det', icon: BookOpen, end: false },
 ];
 
 function CycleSelect() {
@@ -32,12 +33,16 @@ function CycleSelect() {
 }
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const reset = useStore((s) => s.reset);
+  const loadDemo = useStore((s) => s.loadDemo);
+  const clearAll = useStore((s) => s.clearAll);
   const location = useLocation();
   const openObjectiveEditor = useUi((s) => s.openObjectiveEditor);
 
-  const onReset = async () => {
-    if (confirm('Nulstil al data og indlæs demo-seed forfra?')) await reset();
+  const onDemo = async () => {
+    if (confirm('Indlæs eksempel-data? Dette erstatter dine nuværende data.')) await loadDemo();
+  };
+  const onClear = async () => {
+    if (confirm('Ryd ALLE data og start forfra med en tom cyklus?')) await clearAll();
   };
 
   return (
@@ -50,7 +55,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
           <div>
             <div className="text-sm font-extrabold leading-none">OKR</div>
-            <div className="text-[11px] text-ink-muted">Nordlys Games</div>
+            <div className="text-[11px] text-ink-muted">Mål & resultater</div>
           </div>
         </div>
 
@@ -62,7 +67,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               end={n.end}
               className={({ isActive }) =>
                 cx(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors',
                   isActive ? 'bg-brand-50 text-brand-700' : 'text-ink-muted hover:bg-slate-100 hover:text-ink',
                 )
               }
@@ -77,16 +82,16 @@ export default function Layout({ children }: { children: ReactNode }) {
           <CycleSelect />
         </div>
 
-        <button
-          onClick={() => openObjectiveEditor({ level: 'company' })}
-          className="btn-primary mt-6 w-full"
-        >
+        <button onClick={() => openObjectiveEditor({ level: 'company' })} className="btn-primary mt-6 w-full">
           <Plus size={16} /> Nyt Objective
         </button>
 
-        <div className="mt-auto pt-6">
-          <button onClick={onReset} className="btn-ghost w-full justify-start text-xs">
-            <RotateCcw size={14} /> Nulstil demo-data
+        <div className="mt-auto space-y-1 pt-6">
+          <button onClick={onDemo} className="btn-ghost w-full justify-start text-xs">
+            <Sparkles size={14} /> Indlæs eksempel-data
+          </button>
+          <button onClick={onClear} className="btn-ghost w-full justify-start text-xs hover:text-health-red">
+            <Trash2 size={14} /> Ryd alle data
           </button>
         </div>
       </aside>
@@ -110,7 +115,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Bundnavigation (mobil) */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 border-t border-slate-200 bg-surface/95 backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-slate-200 bg-surface/95 backdrop-blur lg:hidden">
         {NAV.map((n) => {
           const active = n.end ? location.pathname === n.to : location.pathname.startsWith(n.to);
           return (
@@ -118,7 +123,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               key={n.to}
               to={n.to}
               className={cx(
-                'flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold',
+                'flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold',
                 active ? 'text-brand-600' : 'text-ink-muted',
               )}
             >

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Bell, ChevronRight, Plus, Target, Users } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Bell, BookOpen, ChevronRight, Plus, Sparkles, Target, Users } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useUi } from '../store/useUi';
 import { useActiveKeyResults, useObjectiveSummary, useRootObjectives } from '../lib/selectors';
@@ -100,6 +100,37 @@ function ObjectiveNode({ objective, depth }: { objective: Objective; depth: numb
   );
 }
 
+function EmptyBoard() {
+  const openObjectiveEditor = useUi((s) => s.openObjectiveEditor);
+  const loadDemo = useStore((s) => s.loadDemo);
+  const navigate = useNavigate();
+  return (
+    <div className="card grid place-items-center gap-4 p-10 text-center sm:p-14">
+      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-500">
+        <Target size={30} />
+      </div>
+      <div className="max-w-md">
+        <p className="text-lg font-bold">Dit board er tomt — lad os ændre det</p>
+        <p className="mt-1 text-sm text-ink-muted">
+          Opret dit første Objective, eller udforsk systemet med et færdigt eksempel. Ny til OKR?
+          Læs den korte guide først.
+        </p>
+      </div>
+      <div className="flex flex-wrap justify-center gap-2.5">
+        <button onClick={() => openObjectiveEditor({ level: 'company' })} className="btn-primary">
+          <Plus size={16} /> Opret Objective
+        </button>
+        <button onClick={() => loadDemo()} className="btn-accent">
+          <Sparkles size={16} /> Indlæs eksempel-data
+        </button>
+        <button onClick={() => navigate('/guide')} className="btn-secondary">
+          <BookOpen size={16} /> Sådan virker det
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CheckInReminder() {
   const krs = useActiveKeyResults();
   const computedByKr = useStore((s) => s.computedByKr);
@@ -145,18 +176,7 @@ export default function TreeView() {
       </div>
 
       {roots.length === 0 ? (
-        <div className="card grid place-items-center gap-3 p-12 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-500">
-            <Target size={26} />
-          </div>
-          <div>
-            <p className="font-semibold">Ingen objectives i denne cyklus endnu</p>
-            <p className="text-sm text-ink-muted">Opret det første virksomhedsmål for at komme i gang.</p>
-          </div>
-          <button onClick={() => openObjectiveEditor({ level: 'company' })} className="btn-primary">
-            <Plus size={16} /> Opret Objective
-          </button>
-        </div>
+        <EmptyBoard />
       ) : (
         roots.map((o) => <ObjectiveNode key={o.id} objective={o} depth={0} />)
       )}

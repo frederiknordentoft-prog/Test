@@ -5,28 +5,42 @@ export default {
     extend: {
       colors: {
         ink: {
-          DEFAULT: '#0f172a',
-          soft: '#334155',
-          muted: '#64748b',
+          DEFAULT: '#0b1d16',
+          soft: '#33433c',
+          muted: '#6b7d75',
         },
-        canvas: '#f6f7f9',
+        canvas: '#f3f6f4',
         surface: '#ffffff',
+        // Danske Spil-inspireret grøn som primærfarve
         brand: {
-          50: '#eef4ff',
-          100: '#dae6ff',
-          200: '#bdd2ff',
-          300: '#90b3ff',
-          400: '#5b89fb',
-          500: '#3b66f0',
-          600: '#274ed6',
-          700: '#213fad',
-          800: '#21388a',
-          900: '#21356f',
+          50: '#e7f7ee',
+          100: '#c4ecd5',
+          200: '#92dcb1',
+          300: '#5bc98c',
+          400: '#27b56a',
+          500: '#00a050',
+          600: '#008a45',
+          700: '#007038',
+          800: '#02592e',
+          900: '#084827',
+        },
+        // Gul/guld accent
+        accent: {
+          50: '#fffbe6',
+          100: '#fff3bd',
+          200: '#ffe885',
+          300: '#ffdc4d',
+          400: '#ffce1f',
+          500: '#f5be00',
+          600: '#cf9a00',
+          700: '#a37700',
+          800: '#7d5b06',
+          900: '#684b0c',
         },
         health: {
           red: '#e5484d',
-          yellow: '#f5a623',
-          green: '#30a46c',
+          yellow: '#f5be00',
+          green: '#00a050',
         },
       },
       fontFamily: {
@@ -43,13 +57,13 @@ export default {
         ],
       },
       boxShadow: {
-        card: '0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06)',
-        cardhover: '0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.06)',
-        modal: '0 20px 50px rgba(15, 23, 42, 0.25)',
+        card: '0 1px 2px rgba(8, 40, 26, 0.05), 0 1px 3px rgba(8, 40, 26, 0.07)',
+        cardhover: '0 6px 16px rgba(8, 40, 26, 0.10), 0 2px 5px rgba(8, 40, 26, 0.06)',
+        modal: '0 24px 60px rgba(8, 40, 26, 0.28)',
       },
       borderRadius: {
-        xl: '14px',
-        '2xl': '18px',
+        xl: '12px',
+        '2xl': '16px',
       },
       keyframes: {
         'fade-in': {

@@ -47,3 +47,10 @@
 - **Verificeret:** build grøn.
 
 ## Status: alle 6 faser færdige ✅
+
+## ✅ Opfølgning — tom start, guide & redesign
+- Appen starter tom (kun én aktiv kvartalscyklus); eksempel-data er nu opt-in.
+- Ny guide-side (`/guide`) med how-to; førstegangsbesøg lander der.
+- Salesforce-inspireret redesign i Danske Spil-grøn/gul.
+- Rige empty-states med CTA'er (opret / indlæs eksempel / guide).
+- **Verificeret:** build grøn.
