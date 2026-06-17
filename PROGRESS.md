@@ -18,5 +18,11 @@
 - Routing (React Router) + UI-store til modaler.
 - **Verificeret:** build grøn, alle ruter svarer 200.
 
+## ✅ Fase 3 — Check-in-loop
+- CheckInModal: ny værdi + confidence-slider (live farve/sundhed) + kommentar + indrapportør. Mobilvenlig (slide-up, bundforankrede knapper).
+- Gemmer til historik og opdaterer KR'ets current → sparkline og fremdrift opdateres live overalt.
+- "Mangler check-in"-chips på KR-kort + påmindelsesbanner i trævisningen med direkte genvej.
+- **Verificeret:** build grøn.
+
 ## ⏳ Næste
-- Fase 3 — Check-in-loop.
+- Fase 4 — Alignment + auto-rollup (rollup-logik er på plads; tilføj kobling-UI + visuel markering).

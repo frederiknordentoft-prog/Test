@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Plus, Target, Users } from 'lucide-react';
+import { Bell, ChevronRight, Plus, Target, Users } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useUi } from '../store/useUi';
-import { useObjectiveSummary, useRootObjectives } from '../lib/selectors';
+import { useActiveKeyResults, useObjectiveSummary, useRootObjectives } from '../lib/selectors';
 import { LEVEL_LABEL, type Level, type Objective } from '../types/domain';
 import { cx, LEVEL_ACCENT, LEVEL_SOFT, pct } from '../lib/ui';
 import { HealthDot } from '../components/HealthBadge';
@@ -100,12 +100,38 @@ function ObjectiveNode({ objective, depth }: { objective: Objective; depth: numb
   );
 }
 
+function CheckInReminder() {
+  const krs = useActiveKeyResults();
+  const computedByKr = useStore((s) => s.computedByKr);
+  const openCheckIn = useUi((s) => s.openCheckIn);
+  const stale = krs.filter(({ kr }) => computedByKr.get(kr.id)?.needsCheckIn);
+  if (stale.length === 0) return null;
+
+  return (
+    <div className="card mb-5 flex flex-col gap-3 border-health-yellow/30 bg-health-yellow/5 p-4 sm:flex-row sm:items-center">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-health-yellow/15 text-[#b76e00]">
+        <Bell size={18} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-ink">
+          {stale.length} {stale.length === 1 ? 'Key Result mangler' : "Key Results mangler"} ugens check-in
+        </p>
+        <p className="text-sm text-ink-muted">Et check-in tager under 30 sekunder. Start med det første.</p>
+      </div>
+      <button onClick={() => openCheckIn(stale[0].kr.id)} className="btn-primary shrink-0">
+        Check ind nu
+      </button>
+    </div>
+  );
+}
+
 export default function TreeView() {
   const roots = useRootObjectives();
   const openObjectiveEditor = useUi((s) => s.openObjectiveEditor);
 
   return (
     <div>
+      <CheckInReminder />
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Alignment-træ</h1>
