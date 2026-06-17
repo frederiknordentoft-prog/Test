@@ -63,9 +63,9 @@ function OrgPulseCard() {
 
   if (pulse.total === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 text-center">
-        <p className="text-sm font-semibold text-ink">Ingen mål endnu</p>
-        <p className="mt-0.5 text-xs text-ink-muted">Pulsen vises, når du har Key Results.</p>
+      <div className="rounded-2xl border border-white/15 bg-white/10 p-4 text-center">
+        <p className="text-sm font-semibold text-white">Ingen mål endnu</p>
+        <p className="mt-0.5 text-xs text-white/60">Pulsen vises, når du har Key Results.</p>
       </div>
     );
   }
@@ -73,16 +73,16 @@ function OrgPulseCard() {
   const legend = (['green', 'yellow', 'red', 'none'] as const).filter((k) => pulse[k] > 0);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/60 p-4 shadow-card">
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Organisationens puls</div>
+    <div className="rounded-2xl border border-white/15 bg-white/10 p-4 shadow-card backdrop-blur-sm">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/55">Organisationens puls</div>
       <div className="flex items-center gap-3">
         <HealthRing pulse={pulse} size={92} thickness={10} />
         <div className="min-w-0 flex-1 space-y-1">
           {legend.map((k) => (
             <div key={k} className="flex items-center gap-2 text-xs">
-              <span className={cx('h-2 w-2 rounded-full', HEALTH_BG[k])} />
-              <span className="text-ink-soft">{HEALTH_LABEL[k]}</span>
-              <span className="ml-auto font-bold tabular-nums">{pulse[k]}</span>
+              <span className={cx('h-2 w-2 rounded-full ring-1 ring-white/20', HEALTH_BG[k])} />
+              <span className="text-white/85">{HEALTH_LABEL[k]}</span>
+              <span className="ml-auto font-bold tabular-nums text-white">{pulse[k]}</span>
             </div>
           ))}
         </div>
@@ -131,14 +131,14 @@ export default function Layout({ children }: { children: ReactNode }) {
       <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={onImport} />
 
       {/* ===== Sidebar (desktop) ===== */}
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col gap-5 overflow-y-auto border-r border-slate-200 bg-surface px-4 py-5 lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col gap-5 overflow-y-auto bg-gradient-to-b from-brand-700 to-brand-900 px-4 py-5 text-white lg:flex">
         <div className="flex items-center gap-3 px-1">
-          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-sm">
+          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-accent-400 text-brand-800 shadow-sm">
             <Target size={21} />
           </div>
           <div>
             <div className="text-base font-extrabold leading-none tracking-tight">OKR</div>
-            <div className="mt-0.5 text-[11px] text-ink-muted">Mål, der flytter noget</div>
+            <div className="mt-0.5 text-[11px] text-white/60">Mål, der flytter noget</div>
           </div>
         </div>
 
@@ -148,7 +148,12 @@ export default function Layout({ children }: { children: ReactNode }) {
               key={n.to}
               to={n.to}
               end={n.end}
-              className={({ isActive }) => cx('nav-pill', isActive ? 'nav-pill-active' : 'nav-pill-idle')}
+              className={({ isActive }) =>
+                cx(
+                  'nav-pill',
+                  isActive ? 'bg-white text-brand-700 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white',
+                )
+              }
             >
               <n.icon size={18} /> {n.label}
             </NavLink>
@@ -158,27 +163,27 @@ export default function Layout({ children }: { children: ReactNode }) {
         <OrgPulseCard />
 
         <div className="space-y-2">
-          <div className="px-1 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Cyklus</div>
+          <div className="px-1 text-[11px] font-semibold uppercase tracking-wide text-white/55">Cyklus</div>
           <CycleSelect />
         </div>
 
-        <button onClick={() => openObjectiveEditor({ level: 'company' })} className="btn-primary w-full">
+        <button onClick={() => openObjectiveEditor({ level: 'company' })} className="btn-accent w-full">
           <Plus size={16} /> Nyt Objective
         </button>
 
-        <div className="mt-auto rounded-2xl border border-slate-200 bg-slate-50/50 p-2">
-          <div className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Data</div>
+        <div className="mt-auto rounded-2xl border border-white/15 bg-white/10 p-2">
+          <div className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-white/55">Data</div>
           <div className="grid grid-cols-2 gap-1">
-            <button onClick={exportToFile} className="btn-ghost justify-start px-2 py-1.5 text-xs">
+            <button onClick={exportToFile} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
               <Download size={14} /> Eksport
             </button>
-            <button onClick={() => fileRef.current?.click()} className="btn-ghost justify-start px-2 py-1.5 text-xs">
+            <button onClick={() => fileRef.current?.click()} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
               <Upload size={14} /> Import
             </button>
-            <button onClick={onDemo} className="btn-ghost justify-start px-2 py-1.5 text-xs">
+            <button onClick={onDemo} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-white/10">
               <Sparkles size={14} /> Eksempel
             </button>
-            <button onClick={onClear} className="btn-ghost justify-start px-2 py-1.5 text-xs hover:text-health-red">
+            <button onClick={onClear} className="btn justify-start px-2 py-1.5 text-xs text-white/80 hover:bg-health-red/30">
               <Trash2 size={14} /> Ryd
             </button>
           </div>

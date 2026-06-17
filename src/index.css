@@ -9,8 +9,9 @@
   body {
     @apply bg-canvas text-ink antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    background-image: radial-gradient(1200px 600px at 100% -10%, rgba(0, 160, 80, 0.06), transparent 60%),
-      radial-gradient(900px 500px at -10% 0%, rgba(245, 190, 0, 0.05), transparent 55%);
+    background-image: radial-gradient(1100px 560px at 105% -12%, rgba(0, 166, 81, 0.13), transparent 58%),
+      radial-gradient(820px 460px at -12% 4%, rgba(255, 203, 5, 0.12), transparent 55%),
+      radial-gradient(700px 700px at 50% 120%, rgba(0, 166, 81, 0.06), transparent 60%);
     background-attachment: fixed;
   }
   * {
