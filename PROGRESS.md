@@ -37,5 +37,13 @@
 - Filter på tribe/team (inkl. descendants) + cyklus (global).
 - **Verificeret:** build grøn.
 
-## ⏳ Næste
-- Fase 6 — CRUD + polish.
+## ✅ Fase 6 — CRUD + polish
+- Editor-modaler for Objective, Key Result og Initiativ (opret/redigér/slet).
+- Blød grænse-advarsel (objectives pr. niveau, KR pr. objective) + live nudge mod udfaldsformulering på KR-titler.
+- Cyklus-skift via global vælger (Q1/Q2); tom cyklus viser empty-state med opret-knap.
+- Polish: konsistent designsprog, empty states, hover/scale/slide-animationer, mobil bundnav.
+- PWA: manifest + service worker (installerbar, offline-skal) + ikoner.
+- README med kør-instruktion.
+- **Verificeret:** build grøn.
+
+## Status: alle 6 faser færdige ✅
