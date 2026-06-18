@@ -44,6 +44,7 @@
 
 /* ---------- holdet.dk squad markers ---------- */
 .mine { color: var(--amber); font-weight: 900; margin: 0 3px; font-size: .92em; }
+.mine-prev { color: var(--ink-3); font-weight: 700; margin: 0 2px; font-size: .72em; opacity: .8; }
 .mine-row { background: color-mix(in srgb, var(--amber) 9%, transparent) !important; }
 .match.mine { box-shadow: inset 3px 0 0 var(--amber), var(--shadow); }
 .mine-li { font-weight: 800; color: var(--ink); }

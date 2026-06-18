@@ -27,7 +27,7 @@ const I18N = {
     goalsShort: 'goals', assistsShort: 'assists',
     nGoals: 'Goals', nMatches: 'Matches', nAvg: 'Goals / match', nBiggest: 'Biggest win',
     loadingAssists: 'Loading assists…', noAssists: 'No assists recorded yet.', noData: 'No matches played yet.',
-    assistBy: 'assist', loadingData: 'Loading…', myLegend: '★ Your holdet.dk team',
+    assistBy: 'assist', loadingData: 'Loading…', myLegend: '★ Your holdet.dk team · ☆ previously',
     home: 'Home', hLiveNow: 'Live now', hNext: 'Your teams · next match', hSquad: 'My squad', hMyTeams: 'My teams',
     hToday: "Today's matches", hLatest: 'Latest results', hNoToday: 'No matches today.', hNothingLive: '',
     cIn: 'in', cDay: 'd', cHour: 'h', cMin: 'm', gAb: 'G', aAb: 'A', posOf: 'in', greeting: 'World Cup 2026',
@@ -62,7 +62,7 @@ const I18N = {
     goalsShort: 'mål', assistsShort: 'assists',
     nGoals: 'Mål', nMatches: 'Kampe', nAvg: 'Mål / kamp', nBiggest: 'Største sejr',
     loadingAssists: 'Henter assists…', noAssists: 'Ingen assists registreret endnu.', noData: 'Ingen kampe spillet endnu.',
-    assistBy: 'oplæg', loadingData: 'Henter…', myLegend: '★ Dit holdet.dk-hold',
+    assistBy: 'oplæg', loadingData: 'Henter…', myLegend: '★ Dit holdet.dk-hold · ☆ tidligere',
     home: 'Hjem', hLiveNow: 'Live nu', hNext: 'Dine hold · næste kamp', hSquad: 'Mit hold', hMyTeams: 'Mine hold',
     hToday: 'Dagens kampe', hLatest: 'Seneste resultater', hNoToday: 'Ingen kampe i dag.', hNothingLive: '',
     cIn: 'om', cDay: 'd', cHour: 't', cMin: 'm', gAb: 'M', aAb: 'A', posOf: 'i', greeting: 'VM 2026',
@@ -119,13 +119,13 @@ const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-redu
 const haptic = (ms = 10) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* no-op */ } };
 
 // ---------- my holdet.dk squad ----------
-const MY_TEAMS = ['ESP', 'GER', 'CAN', 'BRA', 'USA', 'ECU', 'FRA', 'COL', 'NOR'];
+const MY_TEAMS = ['ESP', 'GER', 'CAN', 'ARG', 'BRA', 'ECU', 'FRA', 'COL', 'NOR'];
 const MY_PLAYERS = [
   { code: 'ESP', frag: 'Simón', name: 'Unai Simón', pos: 'GK' },
   { code: 'GER', frag: 'Brown', name: 'Nathaniel Brown', pos: 'DEF' },
   { code: 'CAN', frag: 'Fougerolles', name: 'Luc de Fougerolles', pos: 'DEF' },
-  { code: 'BRA', frag: 'Bremer', name: 'Bremer', pos: 'DEF' },
-  { code: 'USA', frag: 'Robinson', name: 'Antonee Robinson', pos: 'DEF' },
+  { code: 'ARG', frag: 'Medina', name: 'Facundo Medina', pos: 'DEF' },
+  { code: 'BRA', frag: 'Santos', name: 'Douglas Santos', pos: 'DEF' },
   { code: 'ECU', frag: 'Caicedo', name: 'Moisés Caicedo', pos: 'MID' },
   { code: 'FRA', frag: 'Tchouaméni', name: 'Aurélien Tchouaméni', pos: 'MID' },
   { code: 'COL', frag: 'Arias', name: 'Jhon Arias', pos: 'MID' },
@@ -133,12 +133,19 @@ const MY_PLAYERS = [
   { code: 'FRA', frag: 'Mbappé', name: 'Kylian Mbappé', pos: 'FWD' },
   { code: 'NOR', frag: 'Haaland', name: 'Erling Haaland', pos: 'FWD' },
 ];
+// players previously on the squad — get a smaller ☆ marking
+const FORMER_PLAYERS = [
+  { code: 'BRA', frag: 'Bremer' },
+  { code: 'USA', frag: 'Robinson' },
+];
 const norm = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const myTeam = (code) => MY_TEAMS.includes(code);
 const myPlayer = (name, code) => { const n = norm(name); return MY_PLAYERS.some((p) => p.code === code && n.includes(norm(p.frag))); };
+const formerPlayer = (name, code) => { const n = norm(name); return FORMER_PLAYERS.some((p) => p.code === code && n.includes(norm(p.frag))); };
 const STAR = '<span class="mine" title="Dit holdet.dk-hold">★</span>';
+const SUBSTAR = '<span class="mine-prev" title="Tidligere på dit hold">☆</span>';
 const teamMark = (code) => (myTeam(code) ? STAR : '');
-const playerMark = (name, code) => (myPlayer(name, code) ? STAR : '');
+const playerMark = (name, code) => (myPlayer(name, code) ? STAR : (formerPlayer(name, code) ? SUBSTAR : ''));
 const teamLink = (code, text) => `<span class="lk" data-team="${code}">${text}</span>`;
 const playerLink = (code, name, frag) => `<span class="lk" data-player="1" data-code="${code}" data-name="${encodeURIComponent(name)}" data-frag="${encodeURIComponent(frag || name)}">${name}</span>`;
 
@@ -386,7 +393,7 @@ function playerSheetHtml(code, name, frag) {
   const pos = squad ? ` · ${squad.pos}` : '';
   const head = `<div class="entity-head">
     <span class="entity-flag">${team(code).flag}</span>
-    <div class="entity-meta"><div class="entity-name">${name}${myPlayer(name, code) ? STAR : ''}</div>
+    <div class="entity-meta"><div class="entity-name">${name}${playerMark(name, code)}</div>
       <div class="entity-sub">${teamLink(code, team(code).name)}${pos}</div></div>
   </div>
   <div class="head-accent"><span style="background:${teamColor(code)}"></span></div>`;
@@ -532,10 +539,11 @@ function leaderRows(map, unit, limit = 15, isTeam = false) {
   return rows.map((r, i) => {
     const mine = isTeam ? myTeam(r.t) : myPlayer(r.p, r.t);
     const label = isTeam ? teamLink(r.t, r.p) : playerLink(r.t, r.p);
+    const mark = isTeam ? teamMark(r.t) : playerMark(r.p, r.t);
     return `<div class="statrow${mine ? ' mine-row' : ''}">
     <span class="rk">${i + 1}</span>
     <span class="fl">${team(r.t).flag}</span>
-    <span class="nm">${label}${mine ? STAR : ''}</span>
+    <span class="nm">${label}${mark}</span>
     <span class="vl">${r.n}<small>${unit}</small></span>
   </div>`;
   }).join('');
