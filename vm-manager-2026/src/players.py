@@ -84,6 +84,9 @@ P_START_OVERRIDE = {
     # Ecuador: Galindez; Caicedo bekræftet; Valencia spids.
     ("Moises Caicedo", "Ecuador"): 0.88, ("Enner Valencia", "Ecuador"): 0.85,
     ("Hernan Galindez", "Ecuador"): 0.90,
+    ("Willian Pacho", "Ecuador"): 0.90, ("Piero Hincapie", "Ecuador"): 0.88,
+    ("John Yeboah", "Ecuador"): 0.85, ("Gonzalo Plata", "Ecuador"): 0.85,
+    ("Felix 'Feliz' Torres", "Ecuador"): 0.30, ("Pervis Estupinan", "Ecuador"): 0.40,
     # Mexico (4-1-4-1): Rangel(vippen); Jimenez spids (straffeskytte).
     ("Raul Jimenez", "Mexico"): 0.88, ("Roberto Alvarado", "Mexico"): 0.85,
     ("Brian Gutierrez", "Mexico"): 0.85, ("Julian Quinones", "Mexico"): 0.85,

@@ -62,6 +62,16 @@ MATCH_ANCHORS = [
     ("Mexico", "Sydkorea", 1.40),
     ("England", "Ghana", 2.00),
     ("Ecuador", "Elfenbenskysten", 1.30),
+    # --- R2-ankre (friske markedsodds, hentet 14. juni efter R1) ---
+    ("Frankrig", "Irak", 2.55),
+    ("Spanien", "Saudi-Arabien", 2.50),
+    ("Ecuador", "Curaçao", 2.70),
+    ("Norge", "Senegal", 1.50),
+    ("Portugal", "Usbekistan", 2.10),
+    ("England", "Ghana", 2.00),
+    ("Tyskland", "Elfenbenskysten", 1.90),
+    ("Brasilien", "Haiti", 2.60),
+    ("Colombia", "Congo DR", 1.85),
 ]
 
 
