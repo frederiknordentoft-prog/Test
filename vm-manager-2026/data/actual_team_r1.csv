@@ -1,18 +1,18 @@
-# Faktisk hold ved R1-deadline (låst — fra brugerens app-screenshot, 14. juni 2026)
-# Dette er udgangspunktet for R2-optimeringen: transfers/gebyrer/kontrakter
-# regnes fra DENNE trup, ikke fra en frit valgt R1.
+# Faktisk hold EFTER R1 (fra app-screenshot, 14. juni 2026) — udgangspunkt for R2.
+# Transfers/gebyrer/kontrakter i R2 regnes fra DENNE trup og DISSE værdier.
+# Bank efter R1 ≈ 0,407m (Haalands kaptajnbonus; start-bank var 0).
 #
-# Format: navn;hold;position;pris_ved_R1_deadline(mio);kaptajn
-Unai Simon;Spanien;GK;5.0;nej
-Nathaniel Brown;Tyskland;DEF;2.5;nej
-Bremer;Brasilien;DEF;3.0;nej
-Antonee Robinson;USA;DEF;2.0;nej
-Luc De Fougerolles;Canada;DEF;2.0;nej
-Moises Caicedo;Ecuador;MID;3.0;nej
-Aurelien Tchouameni;Frankrig;MID;3.5;nej
-Jhon Arias;Colombia;MID;3.0;nej
-Mikel Oyarzabal;Spanien;ATT;7.5;nej
-Kylian Mbappe;Frankrig;ATT;10.0;nej
-Erling Haaland;Norge;ATT;8.5;ja
-# OBS: Haalands pris bekræftes mod app (screenshot kunne læses som 6,5m).
-# Holdtype: ___ (basis = 3 kontrakter / guld = frie). Bekræftes af bruger.
+# Format: navn;hold;position;værdi_efter_R1(mio);vækst_R1(kr);kaptajn_R1
+Unai Simon;Spanien;GK;5.092;92000;nej
+Nathaniel Brown;Tyskland;DEF;2.809;309000;nej
+Bremer;Brasilien;DEF;2.995;-5000;nej
+Antonee Robinson;USA;DEF;2.064;64000;nej
+Luc De Fougerolles;Canada;DEF;1.994;-6000;nej
+Moises Caicedo;Ecuador;MID;2.991;-9000;nej
+Aurelien Tchouameni;Frankrig;MID;3.554;54000;nej
+Jhon Arias;Colombia;MID;3.044;44000;nej
+Mikel Oyarzabal;Spanien;ATT;7.522;22000;nej
+Kylian Mbappe;Frankrig;ATT;10.324;324000;nej
+Erling Haaland;Norge;ATT;8.907;407000;ja
+# Samlet holdværdi: 51.296m | bank ~0.407m | total ~51.703m (+1.70m vs R1-start)
+# UAFKLARET: holdtype (basis 3 kontrakter / guld frie transfers)?
