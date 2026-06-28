@@ -28,6 +28,7 @@ const I18N = {
     nGoals: 'Goals', nMatches: 'Matches', nAvg: 'Goals / match', nBiggest: 'Biggest win',
     loadingAssists: 'Loading assists…', noAssists: 'No assists recorded yet.', noData: 'No matches played yet.',
     assistBy: 'assist', loadingData: 'Loading…', myLegend: '★ Your holdet.dk team · ☆ previously',
+    myfix: 'My team', myfixTitle: 'My fixtures', upcoming: 'Upcoming', played: 'Played', vsLbl: 'vs',
     home: 'Home', hLiveNow: 'Live now', hNext: 'Your teams · next match', hSquad: 'My squad', hMyTeams: 'My teams',
     hToday: "Today's matches", hLatest: 'Latest results', hNoToday: 'No matches today.', hNothingLive: '',
     cIn: 'in', cDay: 'd', cHour: 'h', cMin: 'm', gAb: 'G', aAb: 'A', posOf: 'in', greeting: 'World Cup 2026',
@@ -63,6 +64,7 @@ const I18N = {
     nGoals: 'Mål', nMatches: 'Kampe', nAvg: 'Mål / kamp', nBiggest: 'Største sejr',
     loadingAssists: 'Henter assists…', noAssists: 'Ingen assists registreret endnu.', noData: 'Ingen kampe spillet endnu.',
     assistBy: 'oplæg', loadingData: 'Henter…', myLegend: '★ Dit holdet.dk-hold · ☆ tidligere',
+    myfix: 'Mit hold', myfixTitle: 'Mine kampe', upcoming: 'Kommende', played: 'Spillede', vsLbl: 'mod',
     home: 'Hjem', hLiveNow: 'Live nu', hNext: 'Dine hold · næste kamp', hSquad: 'Mit hold', hMyTeams: 'Mine hold',
     hToday: 'Dagens kampe', hLatest: 'Seneste resultater', hNoToday: 'Ingen kampe i dag.', hNothingLive: '',
     cIn: 'om', cDay: 'd', cHour: 't', cMin: 'm', gAb: 'M', aAb: 'A', posOf: 'i', greeting: 'VM 2026',
@@ -119,16 +121,16 @@ const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-redu
 const haptic = (ms = 10) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* no-op */ } };
 
 // ---------- my holdet.dk squad ----------
-const MY_TEAMS = ['ESP', 'MAR', 'CAN', 'BRA', 'FRA', 'COL', 'NOR'];
+const MY_TEAMS = ['ESP', 'BRA', 'ARG', 'USA', 'ENG', 'FRA', 'COL', 'MAR', 'NOR'];
 const MY_PLAYERS = [
   { code: 'ESP', frag: 'Simón', name: 'Unai Simón', pos: 'GK' },
-  { code: 'MAR', frag: 'Riad', name: 'Chadi Riad', pos: 'DEF' },
-  { code: 'CAN', frag: 'Fougerolles', name: 'Luc de Fougerolles', pos: 'DEF' },
   { code: 'BRA', frag: 'Santos', name: 'Douglas Santos', pos: 'DEF' },
-  { code: 'MAR', frag: 'Ounahi', name: 'Azzedine Ounahi', pos: 'MID' },
-  { code: 'MAR', frag: 'Saibari', name: 'Ismael Saibari', pos: 'MID' },
+  { code: 'ARG', frag: 'Medina', name: 'Facundo Medina', pos: 'DEF' },
+  { code: 'USA', frag: 'A. Robinson', name: 'Antonee Robinson', pos: 'DEF' },
+  { code: 'ENG', frag: 'Spence', name: 'Djed Spence', pos: 'DEF' },
   { code: 'FRA', frag: 'Tchouaméni', name: 'Aurélien Tchouaméni', pos: 'MID' },
   { code: 'COL', frag: 'Arias', name: 'Jhon Arias', pos: 'MID' },
+  { code: 'MAR', frag: 'Saibari', name: 'Ismael Saibari', pos: 'MID' },
   { code: 'ESP', frag: 'Oyarzabal', name: 'Mikel Oyarzabal', pos: 'FWD' },
   { code: 'FRA', frag: 'Mbappé', name: 'Kylian Mbappé', pos: 'FWD', cap: true },
   { code: 'NOR', frag: 'Haaland', name: 'Erling Haaland', pos: 'FWD' },
@@ -136,10 +138,11 @@ const MY_PLAYERS = [
 // players previously on the squad — get a smaller ☆ marking
 const FORMER_PLAYERS = [
   { code: 'BRA', frag: 'Bremer' },
-  { code: 'USA', frag: 'Robinson' },
   { code: 'GER', frag: 'Brown' },
-  { code: 'ARG', frag: 'Medina' },
   { code: 'ECU', frag: 'Caicedo' },
+  { code: 'MAR', frag: 'Riad' },
+  { code: 'MAR', frag: 'Ounahi' },
+  { code: 'CAN', frag: 'Fougerolles' },
 ];
 const norm = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const myTeam = (code) => MY_TEAMS.includes(code);
@@ -238,7 +241,7 @@ function matchRow(m) {
   const mineCls = myTeam(m.h) || myTeam(m.a) ? ' mine' : '';
   return `<button class="match${mineCls}" data-mi="${m._i}">
     <div class="m-side home ${awayWin ? 'lose' : ''}"><span class="m-name">${H.name}${teamMark(m.h)}</span><span class="m-flag">${H.flag}</span></div>
-    <div class="m-center">${center}<div class="m-gtag">${t('group')} ${m.g}</div></div>
+    <div class="m-center">${center}<div class="m-gtag">${m.ko ? m.ko : `${t('group')} ${m.g}`}</div></div>
     <div class="m-side away ${homeWin ? 'lose' : ''}"><span class="m-flag">${A.flag}</span><span class="m-name">${teamMark(m.a)}${A.name}</span></div>
   </button>`;
 }
@@ -248,7 +251,7 @@ function renderMatches() {
   const todayIso = dkToday();
   if (activeDay === 'all' && !renderMatches._init) {
     if (dates.includes(todayIso)) activeDay = todayIso;
-    else { const next = dates.find((d) => d >= todayIso); if (next) activeDay = next; }
+    else { const next = dates.find((d) => d >= todayIso); activeDay = next || dates[dates.length - 1] || 'all'; }
     renderMatches._init = true;
   }
   const chips = [`<button class="chip ${activeDay === 'all' ? 'active' : ''}" data-day="all">${t('all')}</button>`]
@@ -824,8 +827,30 @@ function openHome() {
   ensureSummaries(myPlayedMatches()).then(() => renderHome());
 }
 
+// ---------- render: my fixtures ----------
+function myPlayersIn(m) {
+  const codes = [m.h, m.a].filter(myTeam);
+  return MY_PLAYERS.filter((p) => codes.includes(p.code)).map((p) => p.name.split(' ').slice(-1)[0]);
+}
+function renderMyFix() {
+  $('#myfixTitle').textContent = t('myfixTitle');
+  const all = DATA.matches.filter((m) => myTeam(m.h) || myTeam(m.a));
+  const key = (m) => m.utc || (m.date + 'T' + (m.time || '00:00'));
+  const upcoming = all.filter((m) => !isPlayed(m) && !isLive(m)).sort((a, b) => key(a).localeCompare(key(b)));
+  const done = all.filter((m) => isPlayed(m) || isLive(m)).sort((a, b) => key(b).localeCompare(key(a)));
+  const block = (list) => list.map((m) => {
+    const mine = myPlayersIn(m);
+    return `<div class="myfix-item">${matchRow(m)}<div class="myfix-players">⭐ ${mine.join(', ')}</div></div>`;
+  }).join('');
+  let html = '';
+  if (upcoming.length) html += `<div class="day-label">${t('upcoming')}</div>${block(upcoming)}`;
+  if (done.length) html += `<div class="day-label">${t('played')}</div>${block(done)}`;
+  if (!all.length) html = `<p class="muted-note">${t('noData')}</p>`;
+  $('#myfixView').innerHTML = html;
+}
+
 // ---------- navigation ----------
-const TAB_ORDER = ['home', 'groups', 'matches', 'stats', 'knockout'];
+const TAB_ORDER = ['home', 'myfix', 'groups', 'matches', 'stats', 'knockout'];
 let currentView = 'home';
 
 function go(view) {
@@ -847,7 +872,7 @@ function navTo(view) {
 function applyLangChrome() {
   document.documentElement.lang = lang;
   $('#langLabel').textContent = lang === 'en' ? 'DA' : 'EN';
-  const tabKey = { home: 'home', groups: 'groups', matches: 'matches', stats: 'stats', knockout: 'bracket' };
+  const tabKey = { home: 'home', myfix: 'myfix', groups: 'groups', matches: 'matches', stats: 'stats', knockout: 'bracket' };
   $$('.tab').forEach((tb) => { $('.tab-lbl', tb).textContent = t(tabKey[tb.dataset.go]); });
 }
 function setLang(next) {
@@ -858,7 +883,7 @@ function setLang(next) {
 }
 
 // ---------- render all ----------
-function renderAll() { renderHome(); renderGroups(); renderMatches(); renderStats(); renderKnockout(); }
+function renderAll() { renderHome(); renderMyFix(); renderGroups(); renderMatches(); renderStats(); renderKnockout(); }
 
 // ---------- toast ----------
 let toastTimer;

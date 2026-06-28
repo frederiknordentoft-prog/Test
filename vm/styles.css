@@ -325,6 +325,11 @@ body {
 .mt-flag { font-size: 20px; line-height: 1; }
 .mt-name { font-weight: 700; font-size: 14px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mt-pos { font-size: 11px; color: var(--ink-3); font-weight: 600; white-space: nowrap; }
+
+/* ---------- My fixtures ---------- */
+.myfix-players { font-size: 11px; color: var(--ink-2); font-weight: 600; margin: -4px 4px 12px; }
+.myfix-item { margin-bottom: 4px; }
+@media (max-width: 400px) { .tab-lbl { font-size: 10px; } .tab-ico { font-size: 19px; } }
 .m-gtag {
   font-size: 9px; font-weight: 800; color: var(--blue);
   background: color-mix(in srgb, var(--blue) 10%, transparent);
