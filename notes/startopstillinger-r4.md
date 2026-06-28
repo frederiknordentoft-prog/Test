@@ -161,3 +161,40 @@ Et `!` efter et navn = markeret i kilden (grøn/gul/rød-farve kunne ikke udtræ
 ## Pointnoter (dødbolde/straffe)
 - PDF refererer en separat **oversigt over alle slutrundens dødboldskytter** (ikke i eksporten).
 - Kendte straffe-/dødboldstagere blandt mine/relevante hold: **Mbappé** (FRA, straffe), **El Kaabi** (MAR), **Haaland** (NOR), **Yamal/Oyarzabal** (ESP), **Messi** (ARG).
+
+---
+
+## Resterende knockout-hold (L–Z) — fra ESPN (sidste gruppekamp)
+> Modstander = R32-kamp. Kan have rotation vs. R32.
+
+### Sydafrika (4-2-3-1) — næste: **Canada**
+- MV: Williams · Forsvar: Mbokazi, Okon, Modiba, Mudau · Midt: Mofokeng, Sithole, Mbatha, Appollis, Maseko · Angreb: Makgopa
+
+### Mexico (4-3-3) — næste: **Ecuador**
+- MV: Rangel · Forsvar: Reyes, Montes, Chávez, J. Sánchez · Midt: E. Álvarez, Romo, Mora · Angreb: G. Martínez, Quiñones, Alvarado
+
+### Paraguay (5-3-2) — næste: **Tyskland**
+- MV: Gil · Forsvar: G. Gómez, Alderete, Velázquez, Maidana, Cáceres · Midt: Cubas, Galarza, D. Gómez · Angreb: Enciso, Ávalos
+
+### Tyskland (3-4-2-1) — næste: **Paraguay**
+- MV: Neuer · Forsvar: Tah, Rüdiger, Kimmich · Midt: Pavlovic, Nmecha, Raum, Sané · Angreb: Havertz, Wirtz, Musiala
+
+### Portugal (4-2-3-1) — næste: **Kroatien**
+- MV: D. Costa · Forsvar: R. Veiga, R. Dias, N. Mendes, Cancelo · Midt: B. Fernandes, Vitinha, R. Neves, J. Félix, P. Neto · Angreb: Ronaldo
+
+### Schweiz (4-2-3-1) — næste: **Algeriet**
+- MV: Kobel · Forsvar: Akanji, Elvedi, R. Rodríguez, Jaquez · Midt: Manzambi, Xhaka, Freuler, Vargas, Sow · Angreb: Embolo
+
+### Senegal (4-3-3) — næste: **Belgien**
+- MV: Diaw · Forsvar: Niakhaté, Seck, Jakobs, Diatta · Midt: Gueye, Camara, Diarra · Angreb: Sarr, Mané, Mbaye
+
+### Sverige (3-4-3) — næste: **Frankrig**
+- MV: Widell Zetterström · Forsvar: Hien, Gudmundsson, Lagerbielke · Midt: Ayari, Lindelöf, Stroud, Bernhardsson · Angreb: Gyökeres, Isak, Elanga
+
+### USA (4-3-3) — næste: **Bosnien-Hercegovina**
+- MV: Turner · Forsvar: McKenzie, M. Robinson, Trusty, Scally · Midt: Berhalter, Reyna, McKennie · Angreb: Pepi, Weah, Aaronson
+
+### Østrig (4-2-3-1) — næste: **Spanien**
+- MV: Schlager · Forsvar: Alaba, Lienhart, Mwene, Posch · Midt: R. Schmid, X. Schlager, Seiwald, Sabitzer, Laimer · Angreb: Arnautovic
+
+> **Komplet:** alle 32 knockout-hold dækket (19 fra PDF A–K + 13 fra ESPN).
