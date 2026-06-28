@@ -148,3 +148,20 @@ til KF). Behold premium-kerne (Messi, Mbappe, Oyarzabal). Sælg døde stier
 (Marokko-trio, Canada; Colombia efter R4). Kaptajn = Messi (58% finale, højest EV).
 Fra KF (R6) bortfalder nationsgrænsen → gå endnu tungere på overlevende favoritter.
 Guld = frie transfers, men 1% gebyr → undgå unødig churn; målrettede skift.
+
+═══════════════════════════════════════════════════════════════════
+## 9. RETTELSE (efter R3, verificeret skærmbillede) — HOLDET HAR HAALAND, IKKE MESSI
+═══════════════════════════════════════════════════════════════════
+Tidligere §5 var FORKERT. Verificeret R4-build (3-4-3, kaptajn Mbappe):
+GK Unai Simon(Spa 5,38m) | DEF Chadi Riad(Mar 2,22) Douglas Santos(Bra 2,72)
+Luc De Fougerolles(Can 2,12) | MID Azzedine Ounahi(Mar 3,11) A.Tchouameni(Fra 3,65)
+Jhon Arias(Col 3,13) Ismael Saibari(Mar 4,12) | ATT Mikel Oyarzabal(Spa 7,98)
+Kylian Mbappe(Fra 10,91 ©) Erling Haaland(Nor 9,28).  Bank 0,32m. Aldrig haft Messi.
+Haaland fik -5k i R3 (hvilet vs Frankrig). 3 Marokkanere mod Holland i R32 (1% finale).
+
+R4-NØGLEBESLUTNING: SÆLG Haaland (Norge, 0% finale, møder Brasilien i R16) →
+KØB Messi (Argentina, 47% finale, letteste vej). ~cash-neutralt (9,28m→9,15m).
+Forward-EV: Haaland 271k vs Messi 820k. Haaland dog +27k bedre i SELVE R4
+(mod Elfenbenskysten vs Messi mod Kap Verde-bus) → "vent 1 runde" giver kun +27k.
+Anbefaling: skift nu (lås den lette vej). Kaptajn forbliver Mbappe (247k > Messi 191k).
+Plus sælg Marokko-trioen → 2 Argentina-CB (Otamendi+L.Martinez, clean sheet v Kap Verde) + billig mid.
