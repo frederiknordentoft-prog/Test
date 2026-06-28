@@ -319,6 +319,7 @@ body {
 .sq-team { font-size: 11px; color: var(--ink-3); font-weight: 600; }
 .sq-stat { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 30px; text-align: center; }
 .sq-stat b { display: block; font-size: 16px; color: var(--ink); font-weight: 800; }
+.cap-badge { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 5px; background: var(--blue); color: #fff; font-size: 10px; font-weight: 800; vertical-align: middle; }
 .myteams-list { display: flex; flex-direction: column; gap: 7px; }
 .myteam-row { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 13px; box-shadow: var(--shadow); }
 .mt-flag { font-size: 20px; line-height: 1; }

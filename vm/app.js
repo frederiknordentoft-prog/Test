@@ -119,24 +119,27 @@ const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-redu
 const haptic = (ms = 10) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* no-op */ } };
 
 // ---------- my holdet.dk squad ----------
-const MY_TEAMS = ['ESP', 'GER', 'CAN', 'ARG', 'BRA', 'ECU', 'FRA', 'COL', 'NOR'];
+const MY_TEAMS = ['ESP', 'MAR', 'CAN', 'BRA', 'FRA', 'COL', 'NOR'];
 const MY_PLAYERS = [
   { code: 'ESP', frag: 'Simón', name: 'Unai Simón', pos: 'GK' },
-  { code: 'GER', frag: 'Brown', name: 'Nathaniel Brown', pos: 'DEF' },
+  { code: 'MAR', frag: 'Riad', name: 'Chadi Riad', pos: 'DEF' },
   { code: 'CAN', frag: 'Fougerolles', name: 'Luc de Fougerolles', pos: 'DEF' },
-  { code: 'ARG', frag: 'Medina', name: 'Facundo Medina', pos: 'DEF' },
   { code: 'BRA', frag: 'Santos', name: 'Douglas Santos', pos: 'DEF' },
-  { code: 'ECU', frag: 'Caicedo', name: 'Moisés Caicedo', pos: 'MID' },
+  { code: 'MAR', frag: 'Ounahi', name: 'Azzedine Ounahi', pos: 'MID' },
+  { code: 'MAR', frag: 'Saibari', name: 'Ismael Saibari', pos: 'MID' },
   { code: 'FRA', frag: 'Tchouaméni', name: 'Aurélien Tchouaméni', pos: 'MID' },
   { code: 'COL', frag: 'Arias', name: 'Jhon Arias', pos: 'MID' },
   { code: 'ESP', frag: 'Oyarzabal', name: 'Mikel Oyarzabal', pos: 'FWD' },
-  { code: 'FRA', frag: 'Mbappé', name: 'Kylian Mbappé', pos: 'FWD' },
+  { code: 'FRA', frag: 'Mbappé', name: 'Kylian Mbappé', pos: 'FWD', cap: true },
   { code: 'NOR', frag: 'Haaland', name: 'Erling Haaland', pos: 'FWD' },
 ];
 // players previously on the squad — get a smaller ☆ marking
 const FORMER_PLAYERS = [
   { code: 'BRA', frag: 'Bremer' },
   { code: 'USA', frag: 'Robinson' },
+  { code: 'GER', frag: 'Brown' },
+  { code: 'ARG', frag: 'Medina' },
+  { code: 'ECU', frag: 'Caicedo' },
 ];
 const norm = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const myTeam = (code) => MY_TEAMS.includes(code);
@@ -790,7 +793,7 @@ function renderHome() {
   html += `<div class="home-sec"><div class="home-h">⭐ ${t('hSquad')}</div><div class="squad-list">${squad.map((p) => `
     <div class="squad-row lk-row" data-player="1" data-code="${p.code}" data-name="${encodeURIComponent(p.name)}" data-frag="${encodeURIComponent(p.frag)}">
       <span class="sq-flag">${team(p.code).flag}</span>
-      <span class="sq-info"><span class="sq-name">${p.name}</span><span class="sq-team">${team(p.code).name} · ${p.pos}</span></span>
+      <span class="sq-info"><span class="sq-name">${p.name}${p.cap ? ' <span class="cap-badge">C</span>' : ''}</span><span class="sq-team">${team(p.code).name} · ${p.pos}</span></span>
       <span class="sq-stat"><b>${p.g}</b>${t('gAb')}</span>
       <span class="sq-stat"><b>${p.a}</b>${t('aAb')}</span>
     </div>`).join('')}</div></div>`;
