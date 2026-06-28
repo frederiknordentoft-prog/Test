@@ -124,3 +124,27 @@ efter kamp. Fra KF (R6) bortfalder nationsgrænsen → stak 5-6 fra finalist-nat
 [ ] Bank + aktuelle salgs-/købspriser (afgør budget)
 [ ] Kaptajn = højeste single-kamp-EV (favorit mod svagest, straffeskytte, høj p_start)
 [ ] Sælg spillere hvis hold er slået ud / har svær kamp
+
+═══════════════════════════════════════════════════════════════════
+## 8. KNOCKOUT-MODEL (knockout.py) — FREMADSKUENDE, bygget efter R3
+═══════════════════════════════════════════════════════════════════
+knockout.py simulerer det FASTE R32-bracket 20k gange (ratings fra
+data/odds_title_r32.csv), og giver pr. spiller: forventet vækst R4-R7 +
+P(når finalen), samt en ILP der finder max-værdi-holdet (nationsgrænse 4).
+Bracket + flow er hardkodet i knockout.py.
+
+P(NÅ FINALEN) — nøglehold: Argentina 58% (LETTESTE vej!) · Frankrig 39% ·
+Spanien 31% · Brasilien 24% · England 22% · Portugal 6% · Holland 6% ·
+Colombia 1% · Marokko 1% · Canada 0%.
+
+DINE SPILLERES forventede R4-R7 vækst: Messi 1079k(58%) · Mbappe 744k(39%) ·
+Oyarzabal 549k(31%) · Simon 310k · Santos 152k · Arias 154k(kun R4) ·
+Tchouameni 132k · Saibari/Riad/Ounahi 21-65k (Marokko ~DØD, 1% finale) ·
+De Fougerolles 26k (Canada ud).
+
+STRATEGI HERFRA (data-drevet): "ARGENTINA-OVERVÆGT + premium-kerne".
+Argentina trak det letteste bracket (58% finale) → stak 4 Argentina (cap-max
+til KF). Behold premium-kerne (Messi, Mbappe, Oyarzabal). Sælg døde stier
+(Marokko-trio, Canada; Colombia efter R4). Kaptajn = Messi (58% finale, højest EV).
+Fra KF (R6) bortfalder nationsgrænsen → gå endnu tungere på overlevende favoritter.
+Guld = frie transfers, men 1% gebyr → undgå unødig churn; målrettede skift.
