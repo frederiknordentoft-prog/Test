@@ -137,3 +137,30 @@ EFP-modellen vil dobble højeste Index/kamp; men den ser ikke kamp-sværhed. Til
 - Elo-styrkerne er mit skøn (ankret til odds) — ikke en officiel model.
 - EFP bruger konstant Index/kamp → overvurderer let spillere med svær R32 (fx Saibari vs Holland), undervurderer lette kampe.
 - ΔEFP ignorerer pris/transfer-begrænsninger; tjek bank.
+
+---
+
+## KRITISK REVISION — målscorer-odds + ekspert/data-modhager
+
+### Målscorer-odds (havde jeg IKKE før — nu med, som proxy)
+Per-kamp anytime-scorer-odds til R32 kunne ikke hentes rent (artiklerne er stadig gruppespil). **Golden Boot-markedet** er den bedste fremadskuende proxy (kombinerer scoringsrate × dyb-vej-sandsynlighed):
+- **Messi +150** (5 mål) = klar favorit → **validerer Messi som #1-køb og anfører.**
+- **Mbappé +200** (4) → behold.
+- **Haaland / Vinícius / Dembélé** delt 2.-plads (4 mål), men **Haaland straffes af markedet for Norges vej** ("hvis de ryger i R32, forsvinder chancen") → **markedet bekræfter Haaland→Messi, ikke kun min model.**
+- **Dembélé** stiger efter hattrick → stærkt køb (Frankrig dyb vej).
+
+→ Markedet er enigt med modellens hovedtræk. Godt — men det afslører også svagheder:
+
+### Modhager (vær kritisk)
+1. **Small-sample-regression (CSV).** Manzambi (195) og Brobbey (196) er turneringens højeste index PÅ 3,7M/3,1M med kun 2–7% ejerskab. At pris+ejerskab IKKE er fulgt med = markedet tror det er en **streak, ikke niveau**. Min "+93 EFP" på Manzambi er sandsynligvis **overvurderet**. Mere bæredygtig differential: **Quiñones (MEX, hjemme på Azteca, 143)** eller **Daniel Muñoz (COL, angribende back, 127, 1,2% ejet)**.
+2. **Minut-/rotationsrisiko i blowouts (startopstillings-filen).** Argentina–Kap Verde og Spanien–Østrig kan blive afgjort tidligt → Messi/Oyarzabal hviles/skiftes ud ved 60' = færre point. Bolds "på vippen"-markører findes netop pga. dette. Chalk i lette kampe har **lavere gulv** end man tror.
+3. **Template-overload for en der vil have varians.** Messi (21%) + Mbappé (21%) + Saibari (22%) = feltets kerne. At eje den **beskytter** føringen, men **giver ikke forspring**. Variansen du ønsker bør komme fra en **differential-anfører** eller differential-angriber — ikke fra at stable chalk.
+4. **Modellen selv:** Index = 3 kampes data (regression), konstant point/kamp ignorerer modstander, Elo er mit skøn. EFP er en pejling, ikke en facit.
+
+### Revideret konklusion
+- **Haaland → Messi: HØJ overbevisning** (model + målscorer-marked + bracket enige).
+- **Ounahi → differential:** vælg **Quiñones (Azteca)** frem for Manzambi (mere bæredygtig), ELLER ved budget **Tchouaméni → Dembélé** (Golden Boot-stiger, Frankrig dyb).
+- **Anfører — vælg bevidst:**
+  - Vil du **beskytte** føringen → **Messi** (chalk, sikker, markeds-favorit).
+  - Vil du **udbygge** føringen (din "mere varians") → **differential-anfører**: Saibari (vs Holland, dit højeste rå-ppg) eller Quiñones (Azteca). Højere risiko, ægte forspring.
+- **Marokko:** behold gerne **Riad** (billig, 100 idx clean sheets) sammen med Saibari — Marokko-chok mod Holland er levende; tving ikke Medina ind medmindre du vil low-risk'e.
