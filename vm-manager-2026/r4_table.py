@@ -38,30 +38,38 @@ ko,pl=setup()
 R32={"Spanien":"Østrig","Argentina":"KapVerde","Frankrig":"Sverige","Brasilien":"Japan",
      "Canada":"Sydafrika","Colombia":"Ghana","Norge":"ElfKyst"}
 
+# R4-hold: BEHOLD Haaland (skift til Messi før R5). Billig mid = pladsholder.
 XI=[("Unai Simon","GK"),("Nicolas Otamendi","DEF"),("Lisandro Martinez","DEF"),
     ("Douglas Santos","DEF"),("Luc De Fougerolles","DEF"),("Aurelien Tchouameni","MID"),
-    ("Jhon Arias","MID"),("Enzo Fernandez","MID"),("Mikel Oyarzabal","ATT"),
-    ("Kylian Mbappe","ATT*C"),("Lionel Messi","ATT")]
-print("="*74); print("ANBEFALET R4-HOLD (4-3-3) — kaptajn Mbappe"); print("="*74)
-print(f"{'Spiller':<20}{'Hold':<10}{'Pos':<6}{'R4-EV':>7}{'R4-7 EV':>9}{'Fin%':>6}")
+    ("Jhon Arias","MID"),("billig mid","MID"),("Mikel Oyarzabal","ATT"),
+    ("Kylian Mbappe","ATT*C"),("Erling Haaland","ATT")]
+R5OPP={"Spanien":"Portugal/Kroatien","Argentina":"Australien/Egypten","Frankrig":"Tyskland",
+       "Brasilien":"Norge/Elfenbenskyst","Colombia":"Schweiz/Algeriet","Canada":"Holland/Marokko",
+       "Norge":"Brasilien"}
+print("="*78); print("R4-HOLD (4-3-3) — BEHOLD Haaland, kaptajn Mbappe"); print("="*78)
+print(f"{'Spiller':<20}{'Hold':<10}{'Pos':<6}{'R4-EV':>7}{'Fin%':>6}")
 tot4=0; cap=None
 for nm,pos in XI:
-    p=g(pl,nm); ev4=p["ev"]["R4"]; tot4+=ev4
+    p=g(pl,nm); ev4=(p['ev']['R4'] if nm!='billig mid' else 30000); tot4+=ev4
     if "C" in pos: cap=p
-    print(f"{nm:<20}{p['team']:<10}{pos:<6}{ev4/1000:6.0f}k{p['ev_tot']/1000:8.0f}k{p['pF']*100:5.0f}%")
-print("-"*74)
-print(f"Sum R4-EV (11 spillere): {tot4/1000:.0f}k  +  kaptajnbonus Mbappe {cap['ev']['R4']/1000:.0f}k")
-print(f"=> Forventet R4-vækst i alt: {(tot4+cap['ev']['R4'])/1e6:.2f}m")
+    print(f"{nm:<20}{p['team']:<10}{pos:<6}{ev4/1000:6.0f}k{p['pF']*100:5.0f}%")
+print("-"*78)
+print(f"Sum R4-EV: {tot4/1000:.0f}k  + kaptajnbonus Mbappe {cap['ev']['R4']/1000:.0f}k  => R4 i alt ~{(tot4+cap['ev']['R4'])/1e6:.2f}m")
+print(f"UDSKIFT R4: SÆLG Riad+Ounahi+Saibari → KØB Otamendi+L.Martinez+billig mid")
 
-print("\n"+"="*74); print("UDSKIFTNINGER  (sælg 3 Marokkanere → køb 2 Arg-CB + 1 mid)"); print("="*74)
-print(f"{'UD':<20}{'R4-EV':>7}   {'IND':<20}{'R4-EV':>7}{'R4-7':>8}")
-outs=["Chadi Riad","Ismael Saibari","Azzedine Ounahi"]
-ins=["Nicolas Otamendi","Lisandro Martinez","Enzo Fernandez"]
-for o,i in zip(outs,ins):
-    po=g(pl,o); pi=g(pl,i)
-    print(f"{o:<20}{po['ev']['R4']/1000:6.0f}k   {i:<20}{pi['ev']['R4']/1000:6.0f}k{pi['ev_tot']/1000:7.0f}k")
-
-print("\n"+"="*74); print("HAALAND vs MESSI — hold-beslutning"); print("="*74)
-for nm in ["Lionel Messi","Erling Haaland"]:
+print("\n"+"="*78); print("R5-FORVENTNINGER (1/8-finaler) — efter Haaland→Messi-byttet"); print("="*78)
+print(f"{'Spiller':<20}{'Hold':<10}{'sandsynlig R5-modst.':<20}{'R5-EV':>7}{'Fin%':>6}")
+R5XI=[("Unai Simon","Spanien"),("Nicolas Otamendi","Argentina"),("Lisandro Martinez","Argentina"),
+      ("Douglas Santos","Brasilien"),("Aurelien Tchouameni","Frankrig"),("Jhon Arias","Colombia"),
+      ("Mikel Oyarzabal","Spanien"),("Kylian Mbappe","Frankrig"),("Lionel Messi","Argentina")]
+for nm,tm in R5XI:
     p=g(pl,nm)
-    print(f"{nm:<16}{p['team']:<10}R4-EV {p['ev']['R4']/1000:5.0f}k  R4-7 EV {p['ev_tot']/1000:5.0f}k  Finale {p['pF']*100:3.0f}%  ({R32.get(p['team'],'?')})")
+    print(f"{nm:<20}{tm:<10}{R5OPP.get(tm,'?'):<20}{p['ev']['R5']/1000:6.0f}k{p['pF']*100:5.0f}%")
+print("-"*78)
+mb=g(pl,"Kylian Mbappe"); me=g(pl,"Lionel Messi")
+print(f"R5-KAPTAJN: Messi (mod Australien/Egypten, R5-EV {me['ev']['R5']/1000:.0f}k) > Mbappe (mod Tyskland, {mb['ev']['R5']/1000:.0f}k)")
+
+print("\n"+"="*78); print("HAALAND vs MESSI (begrunder byttet før R5)"); print("="*78)
+for nm in ["Erling Haaland","Lionel Messi"]:
+    p=g(pl,nm)
+    print(f"{nm:<16}{p['team']:<10}R4-EV {p['ev']['R4']/1000:5.0f}k  R5-EV {p['ev']['R5']/1000:5.0f}k  R4-7 {p['ev_tot']/1000:5.0f}k  Fin {p['pF']*100:3.0f}%")
