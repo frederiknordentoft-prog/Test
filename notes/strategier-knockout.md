@@ -92,3 +92,48 @@ Manzambi (SUI 195) · Quiñones (MEX 143) · Pepe (CIV 131) · Romo (MEX 130) ·
 
 ### Billige clean-sheet-forsvarere (favoritter)
 Medina (ARG 87, 2.7M, vs Kap Verde) · Laporte (ESP 71, 4.8M, vs Østrig) · Cubarsí (ESP 65) · Kounde (FRA 59).
+
+---
+
+## MONTE CARLO-SIMULERING (40.000 kørsler, hele bracket til finalen)
+Model: Elo-styrker (ankret til outright-odds) → kamp-sandsynligheder → præcis bracket (kampe 73–104). EFP = forventede point fremad = (Index/3) × forventede kampe tilbage (Em). Script: `notes/sim.py`.
+
+### Forventede kampe tilbage (Em) + titel% — mine hold
+| Hold | Em | Titel% |
+|---|---|---|
+| **Argentina** | **3.26** | 23% (klar #1 — let R32 + blød vej) |
+| Frankrig | 2.50 | 15% |
+| Spanien | 2.49 | 15% |
+| Brasilien | 2.30 | 9% |
+| Colombia | 1.62 | 1% |
+| Marokko | 1.43 | 1% (vs Holland) |
+| Norge | 1.25 | 0,4% (R16 vs Brasilien) |
+| Canada | 1.20 | 0,1% |
+
+### Mit holds EFP-total (uden anfører): ~477
+Svageste led: Ounahi (8 EFP, bænket), Jhon Arias (22), de Fougerolles (22), Haaland (31, kort runway).
+
+### Optimale handler — rangeret efter ΔEFP (gevinst i forventede point)
+| Handel | ΔEFP | Pris-effekt |
+|---|---|---|
+| **Haaland → Messi** | **+106** | 9,3→9,2M (gratis) |
+| **Ounahi → Manzambi (SUI)** | **+93** | 3,1→3,7M |
+| Tchouaméni → Dembélé (FRA) | +83 | 3,7→6,4M |
+| Oyarzabal → Messi | +87 | (samme køb som #1) |
+| Ounahi → Quiñones (MEX) | +50 | 3,1→3,5M |
+| Riad → Medina (ARG) | +47 | 2,2→2,7M |
+| Douglas Santos → Medina | +33 | 2,7→2,7M |
+
+**Anbefalet pakke (2 handler, ~0,5M bank): Haaland→Messi + Ounahi→Manzambi = +199 EFP (~+42% af mit holds forventede restpoint).**
+Hvis 3. handel/budget: Tchouaméni→Dembélé (+83, koster +2,7M) ELLER Riad→Medina (+47, billig, trimmer Marokko til kun Saibari).
+
+### Bedste EFP-mål samlet (uanset mit hold)
+Messi 137 · Brobbey 124 (NED — men Marokkos modstander, hedge) · Dembélé 117 · Manzambi 101 · Medina 95 · Cunha 85 · Vinícius 82 · Bellingham 82.
+
+### Anfører
+EFP-modellen vil dobble højeste Index/kamp; men den ser ikke kamp-sværhed. Til R4: **Messi (vs Kap Verde)** = højt loft + letteste modstander = bedste anfører. Saibari har højere rå-ppg men spiller mod Holland (varians-valg).
+
+### Caveats (vær ærlig)
+- Elo-styrkerne er mit skøn (ankret til odds) — ikke en officiel model.
+- EFP bruger konstant Index/kamp → overvurderer let spillere med svær R32 (fx Saibari vs Holland), undervurderer lette kampe.
+- ΔEFP ignorerer pris/transfer-begrænsninger; tjek bank.
