@@ -46,7 +46,7 @@ const I18N = {
     all: 'All', today: 'Today',
     fullTime: 'FULL-TIME', live: 'LIVE', group: 'Group',
     koTitle: 'Knockout stage',
-    koDesc: 'The bracket fills in once the group stage ends on June 27. The 12 group winners, 12 runners-up and the 8 best third-placed teams advance to the Round of 32.',
+    koDesc: 'The Round of 32 is set — tap any tie for details. The bracket fills further as each round is played.',
     segR32: 'Round of 32', segPath: 'Path to the final',
     matchN: 'Match', kickoff: 'Kick-off', venue: 'Venue', goalsLbl: 'Goals', tzNote: '(Danish time)',
     noGoals: 'No goals yet.', notPlayed: 'Not played yet', groupStage: 'Group stage',
@@ -82,7 +82,7 @@ const I18N = {
     all: 'Alle', today: 'I dag',
     fullTime: 'FULDTID', live: 'LIVE', group: 'Pulje',
     koTitle: 'Slutspil',
-    koDesc: 'Lodtrækningen falder på plads, når gruppespillet slutter 27. juni. De 12 gruppevindere, 12 toere og de 8 bedste treere går videre til 1/16-finalerne.',
+    koDesc: '1/16-finalerne er trukket — tryk på en kamp for detaljer. Træet fyldes videre, efterhånden som runderne spilles.',
     segR32: '1/16-finaler', segPath: 'Vejen til finalen',
     matchN: 'Kamp', kickoff: 'Kampstart', venue: 'Stadion', goalsLbl: 'Mål', tzNote: '(dansk tid)',
     noGoals: 'Ingen mål endnu.', notPlayed: 'Ikke spillet endnu', groupStage: 'Gruppespil',
@@ -502,18 +502,29 @@ function renderKnockout() {
   $$('#koSeg .seg-btn')[0].textContent = t('segR32');
   $$('#koSeg .seg-btn')[1].textContent = t('segPath');
 
-  const dates = [...new Set(DATA.r32.map((x) => x.date))].sort();
-  $('#r32List').innerHTML = dates.map((d) => {
-    const ties = DATA.r32.filter((x) => x.date === d).map((x) => `
-      <div class="tie">
-        <div class="tie-no">${t('matchN')} ${x.n}</div>
-        <div class="tie-slot"><span class="slot-pill ${x.a.w === 'T' ? 'third' : ''}">${slotLabel(x.a)}</span></div>
-        <div class="tie-v">v</div>
-        <div class="tie-slot"><span class="slot-pill ${x.b.w === 'T' ? 'third' : ''}">${slotLabel(x.b)}</span></div>
-        <div class="tie-city">📍 ${x.city}</div>
-      </div>`).join('');
-    return `<div class="day-group"><div class="day-label">${fmtDate(d)}</div>${ties}</div>`;
-  }).join('');
+  const r32 = DATA.matches.filter((m) => m.ko === 'R32');
+  if (r32.length) {
+    // real Round of 32 ties (teams now known) — reuse match cards (flags, time, score, ⭐)
+    const dates = [...new Set(r32.map(dkDateIso))].sort();
+    $('#r32List').innerHTML = dates.map((d) => {
+      const list = r32.filter((m) => dkDateIso(m) === d)
+        .sort((a, b) => (a.utc || '').localeCompare(b.utc || '')).map(matchRow).join('');
+      return `<div class="day-group"><div class="day-label">${fmtDate(d)}</div>${list}</div>`;
+    }).join('');
+  } else {
+    const dates = [...new Set(DATA.r32.map((x) => x.date))].sort();
+    $('#r32List').innerHTML = dates.map((d) => {
+      const ties = DATA.r32.filter((x) => x.date === d).map((x) => `
+        <div class="tie">
+          <div class="tie-no">${t('matchN')} ${x.n}</div>
+          <div class="tie-slot"><span class="slot-pill ${x.a.w === 'T' ? 'third' : ''}">${slotLabel(x.a)}</span></div>
+          <div class="tie-v">v</div>
+          <div class="tie-slot"><span class="slot-pill ${x.b.w === 'T' ? 'third' : ''}">${slotLabel(x.b)}</span></div>
+          <div class="tie-city">📍 ${x.city}</div>
+        </div>`).join('');
+      return `<div class="day-group"><div class="day-label">${fmtDate(d)}</div>${ties}</div>`;
+    }).join('');
+  }
 
   const icons = ['🎟️', '⚔️', '🥊', '🔥', '🥉', '🏆'];
   $('#bracket').innerHTML = DATA.knockout.map((r, i) => `

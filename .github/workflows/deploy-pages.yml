@@ -1,4 +1,4 @@
-name: Deploy WC 2026 app to Pages
+name: Deploy site (landing + vm + elpriser) to Pages
 on:
   push:
     branches: [claude/wc2026-tournament-app-k42mv8]
@@ -21,6 +21,6 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: vm
+          path: .
       - id: deployment
         uses: actions/deploy-pages@v4
