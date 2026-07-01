@@ -9,85 +9,100 @@
       "levelName": "Første kast",
       "solvable": true,
       "trivialEmptyWin": false,
-      "solutionsFound": 1,
-      "candidatesTried": 5,
+      "solutionsFound": 10,
+      "candidatesTried": 27,
       "stopReason": "exhausted",
-      "example": [
-        {
-          "slotId": "a",
-          "type": "ramp",
-          "rotation": 2
-        }
-      ]
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 1
+          }
+        ]
+      }
     },
     {
       "levelId": "l2",
       "levelName": "Venstre om",
       "solvable": true,
       "trivialEmptyWin": false,
-      "solutionsFound": 1,
-      "candidatesTried": 5,
+      "solutionsFound": 10,
+      "candidatesTried": 27,
       "stopReason": "exhausted",
-      "example": [
-        {
-          "slotId": "a",
-          "type": "funnel",
-          "rotation": 3
-        }
-      ]
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "funnel",
+            "rotation": 2
+          }
+        ]
+      }
     },
     {
       "levelId": "l3",
       "levelName": "Forbi muren",
       "solvable": true,
       "trivialEmptyWin": false,
-      "solutionsFound": 1,
-      "candidatesTried": 49,
-      "stopReason": "exhausted",
-      "example": [
-        {
-          "slotId": "a",
-          "type": "bouncer",
-          "rotation": 2
-        }
-      ]
+      "solutionsFound": 50,
+      "candidatesTried": 428,
+      "stopReason": "solutionCap",
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 1
+          }
+        ]
+      }
     },
     {
       "levelId": "l4",
       "levelName": "Slalom",
       "solvable": true,
       "trivialEmptyWin": false,
-      "solutionsFound": 5,
-      "candidatesTried": 61,
-      "stopReason": "exhausted",
-      "example": [
-        {
-          "slotId": "a",
-          "type": "ramp",
-          "rotation": 2
-        }
-      ]
+      "solutionsFound": 50,
+      "candidatesTried": 566,
+      "stopReason": "solutionCap",
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 1
+          }
+        ]
+      }
     },
     {
       "levelId": "l5",
       "levelName": "Præcision",
       "solvable": true,
       "trivialEmptyWin": false,
-      "solutionsFound": 2,
-      "candidatesTried": 49,
+      "solutionsFound": 29,
+      "candidatesTried": 483,
       "stopReason": "exhausted",
-      "example": [
-        {
-          "slotId": "a",
-          "type": "ramp",
-          "rotation": 2
-        },
-        {
-          "slotId": "b",
-          "type": "funnel",
-          "rotation": 0
-        }
-      ]
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 3
+          },
+          {
+            "slotId": "b",
+            "type": "funnel",
+            "rotation": 6
+          }
+        ]
+      }
     },
     {
       "levelId": "l6",
@@ -95,20 +110,23 @@
       "solvable": true,
       "trivialEmptyWin": false,
       "solutionsFound": 50,
-      "candidatesTried": 7125,
+      "candidatesTried": 36470,
       "stopReason": "solutionCap",
-      "example": [
-        {
-          "slotId": "a",
-          "type": "ramp",
-          "rotation": 1
-        },
-        {
-          "slotId": "c",
-          "type": "bouncer",
-          "rotation": 0
-        }
-      ]
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 5
+          },
+          {
+            "slotId": "c",
+            "type": "bouncer",
+            "rotation": 5
+          }
+        ]
+      }
     }
   ]
 }

@@ -33,3 +33,11 @@ One line per decision: what + why. Locked architecture from the spec is not re-l
 - **Filled slot buttons are translucent with a rotating glyph** — the opaque disc hid the piece; now the real (accurately rotated) canvas body shows through and the glyph rotates with it, so rotation is visible, not just a degree label.
 - **Palette auto-advances when a piece type is exhausted** — placing your last ramp selects the next available type, so the next slot tap isn't a silent no-op.
 - **"Nulstil fremgang" on level select** — lets the player clear completed levels/placements (confirmed dialog); persisted immediately via Dexie.
+
+## Enhancement round (angles, balls, graphics, full-screen)
+- **Rotation offered in 22.5° steps incl. 0°** — `ROTATION_STEPS` is now the 8 angles 0/22.5/…/157.5°; labels show the exact degrees (Danish comma, e.g. "112,5°"). Bars get every orientation; shaped pieces get fine control. The old ±45/±22.5 set is a subset, so nothing regressed.
+- **Three selectable ball types** — `iron` (dense, barely bounces — equals the original tuning, so it's the default and keeps every level solvable), `wood` (controlled middle), `basketball` (larger, springy). Only restitution/friction/air/radius differ; density is cosmetic because a ball colliding with a *static* body reflects independently of its mass. The solver now searches ball × placements and prefers iron in examples; the CLI + tests confirm no level is trivially winnable (empty) on ANY ball.
+- **Physics records ball spin** — each trajectory frame carries the ball angle so the on-screen ball visibly rolls; still bit-identical across runs.
+- **Graphics lift** — top-lit sphere shading + per-type rolling textures (iron pits, wood grain rings, basketball seams), gradient-shaded pieces with drop shadows, a subtle board grid, a glowing target, and the amber path trail.
+- **Full-screen iPhone fit** — `100dvh` flex column with safe-area insets; the board scales to the *available height* (not just width) so the whole game fits with no scrolling. Verified at a 390×844 iPhone viewport (document height == viewport height).
+- **Level-pack tests read `solver-report.json`** — the exhaustive search stays in `npm run solve:levels`; the fast test suite cross-checks the committed report's example solutions against live physics (and fails if a level drifts out of sync), keeping vitest ~1.5 s.

@@ -1,12 +1,9 @@
 import Matter from 'matter-js'
-import type { LevelDef, PieceType, PlacedPiece, Vec2 } from '../types'
+import type { BallType, LevelDef, PieceType, PlacedPiece, Vec2 } from '../types'
 import { createObstacleBody, createPieceBody } from './pieces'
 import {
-  BALL_DENSITY,
-  BALL_FRICTION,
-  BALL_FRICTION_AIR,
-  BALL_RADIUS,
-  BALL_RESTITUTION,
+  BALL_SPECS,
+  DEFAULT_BALL,
   FIXED_DELTA_MS,
   GRAVITY_Y,
   MAX_STEPS,
@@ -20,12 +17,15 @@ const WALL_THICKNESS = 60
 
 export type FailReason = 'target' | 'failzone' | 'settled' | 'timeout'
 
+/** One recorded tick of the ball: centre + spin angle. Bit-identical across runs. */
+export type BallFrame = { x: number; y: number; a: number }
+
 export type SimResult = {
   result: 'won' | 'failed'
   reason: FailReason
   steps: number
-  /** Ball centre per tick, index 0 = drop position. Bit-identical across runs. */
-  trajectory: Vec2[]
+  /** Ball frame per tick, index 0 = drop position. */
+  trajectory: BallFrame[]
 }
 
 export type PieceBody = { body: Matter.Body; type: PieceType; slotId: string }
@@ -33,6 +33,7 @@ export type PieceBody = { body: Matter.Body; type: PieceType; slotId: string }
 export type World = {
   engine: Matter.Engine
   ball: Matter.Body
+  ballType: BallType
   pieces: PieceBody[]
   obstacles: Matter.Body[]
   boundaries: Matter.Body[]
@@ -70,7 +71,11 @@ function makeBoundaries(w: number, h: number): Matter.Body[] {
  * so ids are stable. No stepping happens here; both the headless simulator and
  * the on-screen renderer use this to get the exact same bodies.
  */
-export function buildWorld(level: LevelDef, placements: PlacedPiece[]): World {
+export function buildWorld(
+  level: LevelDef,
+  placements: PlacedPiece[],
+  ballType: BallType = DEFAULT_BALL,
+): World {
   resetMatterGlobals()
 
   const engine = Engine.create()
@@ -93,17 +98,18 @@ export function buildWorld(level: LevelDef, placements: PlacedPiece[]): World {
       return [{ body: createPieceBody(p.type, slot.position, p.rotation), type: p.type, slotId: p.slotId }]
     })
 
-  const ball = Bodies.circle(level.dropPoint.x, level.dropPoint.y, BALL_RADIUS, {
-    restitution: BALL_RESTITUTION,
-    friction: BALL_FRICTION,
-    frictionAir: BALL_FRICTION_AIR,
-    density: BALL_DENSITY,
+  const spec = BALL_SPECS[ballType]
+  const ball = Bodies.circle(level.dropPoint.x, level.dropPoint.y, spec.radius, {
+    restitution: spec.restitution,
+    friction: spec.friction,
+    frictionAir: spec.frictionAir,
+    density: spec.density,
     label: 'ball',
   })
 
   Composite.add(engine.world, [...boundaries, ...obstacles, ...pieces.map((p) => p.body), ball])
 
-  return { engine, ball, pieces, obstacles, boundaries }
+  return { engine, ball, ballType, pieces, obstacles, boundaries }
 }
 
 function dist(a: Vec2, b: Vec2): number {
@@ -115,24 +121,28 @@ function dist(a: Vec2, b: Vec2): number {
  * wall-clock. Used identically by the browser (to get the ball's path to
  * animate) and by the Node solver. Same inputs ⇒ bit-identical trajectory.
  */
-export function simulate(level: LevelDef, placements: PlacedPiece[]): SimResult {
-  const { engine, ball } = buildWorld(level, placements)
+export function simulate(
+  level: LevelDef,
+  placements: PlacedPiece[],
+  ballType: BallType = DEFAULT_BALL,
+): SimResult {
+  const { engine, ball } = buildWorld(level, placements, ballType)
   const target = level.targetZone
   const failZones = level.failZones ?? []
 
-  const trajectory: Vec2[] = [{ x: ball.position.x, y: ball.position.y }]
+  const trajectory: BallFrame[] = [{ x: ball.position.x, y: ball.position.y, a: ball.angle }]
   let stillCount = 0
 
   for (let i = 0; i < MAX_STEPS; i++) {
     Engine.update(engine, FIXED_DELTA_MS)
-    const p: Vec2 = { x: ball.position.x, y: ball.position.y }
-    trajectory.push(p)
+    const frame: BallFrame = { x: ball.position.x, y: ball.position.y, a: ball.angle }
+    trajectory.push(frame)
 
-    if (dist(p, target.position) <= target.radius) {
+    if (dist(frame, target.position) <= target.radius) {
       return { result: 'won', reason: 'target', steps: i + 1, trajectory }
     }
     for (const fz of failZones) {
-      if (dist(p, fz.position) <= fz.radius) {
+      if (dist(frame, fz.position) <= fz.radius) {
         return { result: 'failed', reason: 'failzone', steps: i + 1, trajectory }
       }
     }

@@ -8,6 +8,9 @@ export type Vec2 = { x: number; y: number }
 
 export type PieceType = 'ramp' | 'spinner' | 'funnel' | 'bouncer'
 
+/** Selectable ball, each with distinct feel: dense/dead, springy, or in between. */
+export type BallType = 'iron' | 'basketball' | 'wood'
+
 export type Slot = {
   id: string
   position: Vec2 // fixed anchor point on the board
@@ -48,5 +51,6 @@ export type RunResult = 'idle' | 'running' | 'won' | 'failed'
 export type GameState = {
   currentLevelId: string
   placements: PlacedPiece[]
+  ballType: BallType
   runResult: RunResult
 }

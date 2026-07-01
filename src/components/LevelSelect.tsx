@@ -11,7 +11,7 @@ export function LevelSelect() {
   const resetProgress = useGameStore((s) => s.resetProgress)
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-md flex-col gap-4 px-4 pb-8 pt-6">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 overflow-y-auto px-4 pb-8 pt-6">
       <div className="text-center">
         <h1 className="text-3xl font-black tracking-tight text-slate-100">Kuglebanen</h1>
         <p className="mt-1 text-sm text-slate-400">{UI.selectTitle}</p>

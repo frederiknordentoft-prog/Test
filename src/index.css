@@ -6,25 +6,29 @@
   color-scheme: dark;
 }
 
-html,
-body,
-#root {
+html {
   height: 100%;
 }
 
 body {
   margin: 0;
-  background-color: #0f172a;
+  min-height: 100dvh;
+  background-color: #0b1120;
   color: #e2e8f0;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   /* Prevent iOS double-tap-to-zoom misfires on tap targets. */
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
-/* Respect the iOS safe area so controls aren't hidden behind the home bar. */
+/* Full-height flex root that respects the iPhone safe areas (notch + home bar)
+   so the game fills the screen and nothing hides behind the system UI. */
 #root {
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  min-height: 100dvh;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }

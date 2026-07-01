@@ -37,6 +37,7 @@ export function usePersistence(): void {
           view: state.view,
           currentLevelId: state.currentLevelId,
           placements: state.placements,
+          ballType: state.ballType,
           completedLevels: state.completedLevels,
         })
       }, 150)

@@ -1,4 +1,4 @@
-import type { PieceType } from '../types'
+import type { BallType, PieceType } from '../types'
 
 // ---------------------------------------------------------------------------
 // Deterministic simulation tuning. Everything here is a fixed constant — no
@@ -25,26 +25,78 @@ export const SETTLE_SPEED = 0.18
 /** Consecutive still ticks before we declare the ball settled → failed:settled. */
 export const SETTLE_STEPS = 45
 
-/** Ball geometry / material. Restitution is deliberately low so the ball does
- *  not bounce/drift on the flat floor; springy pieces still bounce it because
- *  Matter uses max(ballRestitution, pieceRestitution) at the contact. */
-export const BALL_RADIUS = 9
-export const BALL_RESTITUTION = 0.16
-export const BALL_FRICTION = 0.05
-export const BALL_FRICTION_AIR = 0.008
-export const BALL_DENSITY = 0.02
+/**
+ * Selectable ball types. Each is a distinct puzzle tool. `iron` matches the
+ * original tuning (dense, barely bounces) and is the default, so every shipped
+ * level stays solvable with it; `wood` is a controlled middle ground; and
+ * `basketball` is large and springy. Springy *pieces* still bounce any ball
+ * because Matter uses max(ballRestitution, pieceRestitution) at the contact.
+ */
+export type BallSpec = {
+  radius: number
+  restitution: number
+  friction: number
+  frictionAir: number
+  density: number
+  label: string
+  /** Base + accent colours the renderer uses to paint each ball's texture. */
+  color: string
+  accent: string
+}
+
+export const BALL_SPECS: Record<BallType, BallSpec> = {
+  iron: {
+    radius: 9,
+    restitution: 0.16,
+    friction: 0.05,
+    frictionAir: 0.008,
+    density: 0.05,
+    label: 'Jern',
+    color: '#9aa6b8',
+    accent: '#e9eef6',
+  },
+  wood: {
+    radius: 9,
+    restitution: 0.34,
+    friction: 0.11,
+    frictionAir: 0.013,
+    density: 0.012,
+    label: 'Trækugle',
+    color: '#b4732f',
+    accent: '#7c4a17',
+  },
+  basketball: {
+    radius: 10,
+    restitution: 0.72,
+    friction: 0.045,
+    frictionAir: 0.006,
+    density: 0.02,
+    label: 'Basketball',
+    color: '#e2712c',
+    accent: '#241a12',
+  },
+}
+
+export const BALL_TYPES: readonly BallType[] = ['iron', 'wood', 'basketball']
+export const DEFAULT_BALL: BallType = 'iron'
 
 /**
- * Fixed rotation step table. A PlacedPiece.rotation is an index into this
- * array (0..3). Values are radians measured from the piece's neutral pose.
- * Four distinct, useful slopes: two left-leaning, two right-leaning.
+ * Fixed rotation step table. A PlacedPiece.rotation is an index into this array.
+ * Angles are offered in 22.5° increments starting at 0° (0, 22.5, 45, 67.5, 90,
+ * 112.5, 135, 157.5) — eight distinct orientations over a half turn, which for a
+ * bar covers every angle and for the shaped pieces gives fine control.
  */
-export const ROTATION_STEPS: readonly number[] = [
-  (-45 * Math.PI) / 180,
-  (-22.5 * Math.PI) / 180,
-  (22.5 * Math.PI) / 180,
-  (45 * Math.PI) / 180,
-]
+export const ROTATION_STEPS: readonly number[] = Array.from(
+  { length: 8 },
+  (_, i) => (i * 22.5 * Math.PI) / 180,
+)
+
+/** The angle in degrees for a rotation index (for UI labels). */
+export function rotationDegrees(index: number): number {
+  const n = ROTATION_STEPS.length
+  const wrapped = ((index % n) + n) % n
+  return wrapped * 22.5
+}
 
 export function rotationRadians(index: number): number {
   const n = ROTATION_STEPS.length

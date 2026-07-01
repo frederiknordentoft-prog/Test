@@ -11,7 +11,7 @@ export default function App() {
   const level = getLevel(currentLevelId)
 
   return (
-    <main className="min-h-full bg-slate-900 text-slate-100">
+    <main className="flex min-h-0 flex-1 flex-col bg-slate-900 text-slate-100">
       {view === 'game' && level ? <GameView level={level} /> : <LevelSelect />}
     </main>
   )

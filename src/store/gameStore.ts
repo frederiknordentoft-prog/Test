@@ -1,8 +1,8 @@
 import { create } from 'zustand'
-import type { PieceType, PlacedPiece, RunResult } from '../types'
+import type { BallType, PieceType, PlacedPiece, RunResult } from '../types'
 import type { FailReason } from '../physics/simulate'
 import { LEVELS, getLevel } from '../../data/levels'
-import { ROTATION_STEPS } from '../physics/constants'
+import { DEFAULT_BALL, ROTATION_STEPS } from '../physics/constants'
 import { canPlace, inventoryTypes, pieceInSlot, remaining } from '../game/inventory'
 
 export type View = 'levelSelect' | 'game'
@@ -12,6 +12,7 @@ export type PersistedState = {
   view: View
   currentLevelId: string
   placements: PlacedPiece[]
+  ballType: BallType
   completedLevels: string[]
 }
 
@@ -19,6 +20,7 @@ export type GameStore = {
   view: View
   currentLevelId: string
   placements: PlacedPiece[]
+  ballType: BallType
   runResult: RunResult
   runReason: FailReason | null
   activePieceType: PieceType | null
@@ -30,6 +32,7 @@ export type GameStore = {
   selectLevel: (id: string) => void
 
   setActivePieceType: (t: PieceType | null) => void
+  setBallType: (b: BallType) => void
   tapSlot: (slotId: string) => void
   rotateSlot: (slotId: string) => void
   removeSlot: (slotId: string) => void
@@ -61,6 +64,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     view: 'levelSelect',
     currentLevelId: firstLevelId,
     placements: [],
+    ballType: DEFAULT_BALL,
     runResult: 'idle',
     runReason: null,
     activePieceType: null,
@@ -68,6 +72,12 @@ export const useGameStore = create<GameStore>((set, get) => {
     hydrated: false,
 
     goToLevelSelect: () => set({ view: 'levelSelect', runResult: 'idle', runReason: null }),
+
+    setBallType: (b) => {
+      // Changing the ball changes the outcome, so it invalidates a finished run.
+      if (get().runResult === 'running') return
+      set({ ballType: b, runResult: 'idle', runReason: null })
+    },
 
     selectLevel: (id) => {
       const level = getLevel(id)
@@ -158,6 +168,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           view: persisted.view === 'game' && validLevel ? 'game' : state.view,
           currentLevelId: nextLevelId,
           placements: persisted.placements ?? state.placements,
+          ballType: persisted.ballType ?? state.ballType,
           completedLevels: persisted.completedLevels ?? state.completedLevels,
           activePieceType: level ? inventoryTypes(level)[0] ?? null : state.activePieceType,
           hydrated: true,

@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { LEVELS, getLevel } from '../data/levels'
 import { solveLevel } from '../src/physics/solver'
 import { simulate } from '../src/physics/simulate'
+import { BALL_TYPES } from '../src/physics/constants'
 import type { LevelDef } from '../src/types'
 
 // ---------------------------------------------------------------------------
@@ -23,19 +24,22 @@ type LevelReport = {
   solutionsFound: number
   candidatesTried: number
   stopReason: string
-  example: { slotId: string; type: string; rotation: number }[] | null
+  example: { ballType: string; placements: { slotId: string; type: string; rotation: number }[] } | null
 }
 
 function describe(example: LevelReport['example']): string {
   if (!example) return '—'
-  if (example.length === 0) return '(no pieces)'
-  return example.map((p) => `${p.slotId}=${p.type}#${p.rotation}`).join(', ')
+  const pieces =
+    example.placements.length === 0
+      ? '(no pieces)'
+      : example.placements.map((p) => `${p.slotId}=${p.type}#${p.rotation}`).join(', ')
+  return `ball=${example.ballType} · ${pieces}`
 }
 
 function solveOne(level: LevelDef): LevelReport {
   const rep = solveLevel(level, { maxSolutions: MAX_SOLUTIONS, maxCandidates: MAX_CANDIDATES })
-  // A level that wins with no pieces at all is not a real puzzle.
-  const trivialEmptyWin = simulate(level, []).result === 'won'
+  // A level that wins with no pieces on ANY ball is not a real puzzle.
+  const trivialEmptyWin = BALL_TYPES.some((b) => simulate(level, [], b).result === 'won')
   return {
     levelId: rep.levelId,
     levelName: rep.levelName,

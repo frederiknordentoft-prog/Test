@@ -1,16 +1,17 @@
 import Dexie, { type Table } from 'dexie'
-import type { PlacedPiece } from '../types'
+import type { BallType, PlacedPiece } from '../types'
 import type { View } from '../store/gameStore'
 
 // Single-table persistence, exactly as specified: one `gameProgress` row holds
-// the current level id, the in-progress placements, and the completed levels.
-// A fixed primary key means we always upsert the same singleton row.
+// the current level id, the in-progress placements, the chosen ball, and the
+// completed levels. A fixed primary key means we always upsert the same row.
 
 export type ProgressRow = {
   id: string
   view: View
   currentLevelId: string
   placements: PlacedPiece[]
+  ballType: BallType
   completedLevels: string[]
 }
 

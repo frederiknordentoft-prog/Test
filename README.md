@@ -66,9 +66,23 @@ installed as a PWA.
 | `spinner` | Kryds | 4-blade pinwheel — an orientation-sensitive "wildcard" kick. |
 
 Every piece is a **static** body; its orientation is set by a rotation index into a
-fixed table (`ROTATION_STEPS = [-45°, -22.5°, +22.5°, +45°]`). The **ball is the
-only moving body**, which is what makes the whole simulation deterministic and the
-solver's search space finite.
+fixed table of **22.5° steps** (`0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5°`). Tapping
+a placed piece cycles the angle. The **ball is the only moving body**, which is what
+makes the whole simulation deterministic and the solver's search space finite.
+
+### The balls
+
+Pick one of three balls before dropping — each is a distinct puzzle tool:
+
+| Ball | Danish | Feel |
+|------|--------|------|
+| `iron` | Jern | Dense, barely bounces (the default; every level is solvable with it). |
+| `wood` | Trækugle | Controlled middle ground. |
+| `basketball` | Basketball | Larger and springy. |
+
+Balls differ in restitution/friction/air/radius (mass is cosmetic — a ball bouncing
+off a *static* body reflects independently of its mass). The headless solver searches
+**ball × placements**, so a level counts as solvable if *some* ball + placement wins.
 
 ---
 

@@ -1,16 +1,16 @@
-import type { LevelDef, PieceType, PlacedPiece } from '../types'
+import type { BallType, LevelDef, PieceType, PlacedPiece } from '../types'
 import { simulate } from './simulate'
-import { PIECE_TYPES, ROTATION_STEPS } from './constants'
+import { BALL_TYPES, PIECE_TYPES, ROTATION_STEPS } from './constants'
 
 // ---------------------------------------------------------------------------
-// Deterministic level solver core. Enumerates every valid slot→(type,rotation)
-// assignment that respects the level's inventory limits, runs the headless
-// deterministic simulation for each, and collects the ones that win. Shared by
-// the `solve:levels` CLI and by the test suite. No DOM, no wall-clock, no RNG →
-// the same level always yields the same example solution.
+// Deterministic level solver core. Enumerates every valid ball-type ×
+// slot→(type,rotation) assignment that respects the level's inventory limits,
+// runs the headless deterministic simulation for each, and collects the ones
+// that win. Shared by the `solve:levels` CLI and the test suite. No DOM, no
+// wall-clock, no RNG → the same level always yields the same example solution.
 // ---------------------------------------------------------------------------
 
-export type Solution = PlacedPiece[]
+export type Solution = { ballType: BallType; placements: PlacedPiece[] }
 
 export type SolveReport = {
   levelId: string
@@ -54,14 +54,14 @@ export function solveLevel(level: LevelDef, opts: SolveOptions = {}): SolveRepor
   let stopReason: SolveReport['stopReason'] = 'exhausted'
   let stop = false
 
-  function recurse(slotIdx: number): void {
+  function recurse(slotIdx: number, ballType: BallType): void {
     if (stop) return
 
     if (slotIdx === slots.length) {
       candidatesTried++
-      const r = simulate(level, current)
+      const r = simulate(level, current, ballType)
       if (r.result === 'won') {
-        solutions.push(current.map((p) => ({ ...p })))
+        solutions.push({ ballType, placements: current.map((p) => ({ ...p })) })
         if (solutions.length >= maxSolutions) {
           stopReason = 'solutionCap'
           stop = true
@@ -78,7 +78,7 @@ export function solveLevel(level: LevelDef, opts: SolveOptions = {}): SolveRepor
     const slot = slots[slotIdx]!
 
     // Option 1: leave this slot empty.
-    recurse(slotIdx + 1)
+    recurse(slotIdx + 1, ballType)
     if (stop) return
 
     // Option 2: place one allowed, still-available piece at each rotation.
@@ -86,7 +86,7 @@ export function solveLevel(level: LevelDef, opts: SolveOptions = {}): SolveRepor
       remaining[t]--
       for (let rot = 0; rot < ROTATION_STEPS.length; rot++) {
         current.push({ slotId: slot.id, type: t, rotation: rot })
-        recurse(slotIdx + 1)
+        recurse(slotIdx + 1, ballType)
         current.pop()
         if (stop) break
       }
@@ -95,7 +95,11 @@ export function solveLevel(level: LevelDef, opts: SolveOptions = {}): SolveRepor
     }
   }
 
-  recurse(0)
+  // Iron first so the default ball is preferred in the reported example.
+  for (const ballType of BALL_TYPES) {
+    if (stop) break
+    recurse(0, ballType)
+  }
 
   return {
     levelId: level.id,
