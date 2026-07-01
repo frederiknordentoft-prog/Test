@@ -190,6 +190,12 @@
           <button class="thm act" data-thm="standard">Standard</button>
           <button class="thm" data-thm="cb">Farveblind</button>
         </div></div>
+      <div class="setrow"><span class="setlbl">Bane</span>
+        <div class="segctl">
+          <button class="mapv act" data-mapv="none">Åben</button>
+          <button class="mapv" data-mapv="pillars">Søjler</button>
+          <button class="mapv" data-mapv="cross">Kryds</button>
+        </div></div>
       <div class="setrow"><span class="setlbl">🔥 Svær AI</span><div class="toggle" id="tgHard"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">💥 Power-ups</span><div class="toggle" id="tgPowerups"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">🌀 Storm</span><div class="toggle on" id="tgStorm"><div class="sw"></div></div></div>
@@ -297,6 +303,11 @@ let COLORS=PALETTES.standard.slice();
 const PU_TYPES=['shield','freeze','ghost'];
 const PU_ICON={shield:'🛡️',freeze:'❄️',ghost:'👻'};
 const NAMES =['Cyan','Pink','Grøn','Amber','Violet','Orange','Teal','Gul'];
+const PERSONAS={ hunter:{hunt:26,threat:2,maxTrail:82,loopMin:6,loopRand:5,attackTrail:26},
+                 expander:{hunt:7,threat:3,maxTrail:70,loopMin:10,loopRand:8,attackTrail:6},
+                 cautious:{hunt:12,threat:5,maxTrail:34,loopMin:5,loopRand:5,attackTrail:9} };
+const PERSONA_NAMES=['hunter','expander','cautious'];
+const PERSONA_DA={hunter:'Jæger',expander:'Ekspander',cautious:'Forsigtig'};
 const DIFF={ normal:{hunt:16,threat:3,maxTrail:56,loopMin:6,loopRand:6,attackTrail:13},
              hard:  {hunt:24,threat:2,maxTrail:72,loopMin:8,loopRand:7,attackTrail:20} };
 const idx=(x,y)=>x+y*W;
@@ -307,6 +318,8 @@ const owner=new Int8Array(TOTAL);   // 0 tom, 1..4 ejer
 const trail=new Int8Array(TOTAL);   // 0 ingen, 1..4 hale-ejer
 const fillAge=new Float32Array(TOTAL);
 const reach=new Uint8Array(TOTAL);
+const obstacle=new Uint8Array(TOTAL);   // forhindringer (bane-variant)
+const blocked=(x,y)=> x<0||y<0||x>=W||y>=H || obstacle[x+y*W]===1;
 let counts=new Array(9).fill(0);    // index by id (0 ubrugt), op til 8 spillere
 let now=0, acc=0, timeLeft=ROUND_TIME, shakeMag=0;
 let particles=[], floatTexts=[], powerups=[], powerSpawnT=0;
@@ -325,7 +338,7 @@ const G={
   difficulty:'normal',   // 'normal' | 'hard'
   speed:6.5,             // celler/sek (langsom 5 / normal 6.5 / hurtig 8)
   cd:0,                  // nedtælling før runde-start (sek)
-  powerupsOn:false, stormOn:true, theme:'standard',
+  powerupsOn:false, stormOn:true, theme:'standard', mapVariant:'none',
   stormM:0, demo:false, myMaxTrail:0,
 };
 
@@ -335,7 +348,8 @@ function makePlayer(id,kind){
     base:null, cx:0,cy:0,prevX:0,prevY:0,dir:{x:1,y:0},nx:0,ny:0,wallDie:false,
     alive:false, trailCells:[], pendingDir:{x:1,y:0}, netDir:null,
     roundWins:0, scheme:null, conn:null,
-    shield:false, ghostT:0, frozenT:0, invulnT:0, homeSteps:0 };
+    shield:false, ghostT:0, frozenT:0, invulnT:0, homeSteps:0,
+    persona: kind==='ai'?PERSONA_NAMES[Math.random()*3|0]:null };
 }
 
 //================= Canvas =================
@@ -353,7 +367,7 @@ function resize(){
 window.addEventListener('resize',resize);
 
 //================= Board helpers =================
-function clearBoard(){ owner.fill(0); trail.fill(0); fillAge.fill(-99999); particles=[]; powerups=[]; floatTexts=[]; G.stormM=0; powerSpawnT=0; }
+function clearBoard(){ owner.fill(0); trail.fill(0); fillAge.fill(-99999); obstacle.fill(0); particles=[]; powerups=[]; floatTexts=[]; G.stormM=0; powerSpawnT=0; }
 function paintBase(cx,cy,id,r){
   r=r||2;
   for(let y=cy-r;y<=cy+r;y++)for(let x=cx-r;x<=cx+r;x++)
@@ -368,7 +382,7 @@ function playerById(id){ for(const p of G.players) if(p.id===id) return p; retur
 //================= Simulation (host/lokal autoritativ) =================
 function inboundTurn(e,d){
   const perps=d.x!==0?[{x:0,y:1},{x:0,y:-1}]:[{x:1,y:0},{x:-1,y:0}];
-  for(const p of perps) if(inB(e.cx+p.x,e.cy+p.y)) return p;
+  for(const p of perps) if(!blocked(e.cx+p.x,e.cy+p.y)) return p;
   return d;
 }
 function localInputDir(p){
@@ -398,8 +412,8 @@ function simulate(){
     let d=decideDir(p);
     if(d.x===-p.dir.x && d.y===-p.dir.y) d=p.dir;     // ingen 180°
     let nx=p.cx+d.x, ny=p.cy+d.y; p.wallDie=false;
-    if(!inB(nx,ny)){
-      if(owner[idx(p.cx,p.cy)]===p.id){ d=inboundTurn(p,d); nx=p.cx+d.x; ny=p.cy+d.y; if(!inB(nx,ny)){nx=p.cx;ny=p.cy;} }
+    if(blocked(nx,ny)){
+      if(owner[idx(p.cx,p.cy)]===p.id){ d=inboundTurn(p,d); nx=p.cx+d.x; ny=p.cy+d.y; if(blocked(nx,ny)){nx=p.cx;ny=p.cy;} }
       else p.wallDie=true;
     }
     p.dir=d; p.nx=nx; p.ny=ny;
@@ -477,13 +491,13 @@ function capture(p){
   const me=p.id;
   for(const c of p.trailCells){ owner[c]=me; trail[c]=0; fillAge[c]=now; }
   reach.fill(0); const st=[];
-  const pf=(x,y)=>{ const i=idx(x,y); if(owner[i]!==me && !reach[i]){reach[i]=1;st.push(i);} };
+  const pf=(x,y)=>{ const i=idx(x,y); if(owner[i]!==me && !reach[i] && !obstacle[i]){reach[i]=1;st.push(i);} };
   for(let x=0;x<W;x++){pf(x,0);pf(x,H-1);} for(let y=0;y<H;y++){pf(0,y);pf(W-1,y);}
   while(st.length){ const i=st.pop(),x=i%W,y=(i/W)|0;
     if(x>0)pf(x-1,y); if(x<W-1)pf(x+1,y); if(y>0)pf(x,y-1); if(y<H-1)pf(x,y+1); }
   let cap=0,sx=0,sy=0; const ccx=p.cx, ccy=p.cy;
   for(let i=0;i<TOTAL;i++){
-    if(owner[i]!==me && !reach[i]){               // indrammet felt (tomt ELLER modstanders) -> mit
+    if(owner[i]!==me && !reach[i] && !obstacle[i]){ // indrammet felt (tomt ELLER modstanders) -> mit
       owner[i]=me; const x=i%W,y=(i/W)|0;
       fillAge[i]=now + (Math.abs(x-ccx)+Math.abs(y-ccy))*9;   // animeret sweep ud fra lukkepunktet
       if(trail[i]){ const o=playerById(trail[i]); if(o){const k=o.trailCells.indexOf(i); if(k>=0)o.trailCells.splice(k,1);} trail[i]=0; }
@@ -501,9 +515,11 @@ function nearestOwn(p){ let b=null,bd=1e9;
   for(let i=0;i<TOTAL;i++){ if(owner[i]!==p.id)continue; const x=i%W,y=(i/W)|0,d=Math.abs(x-p.cx)+Math.abs(y-p.cy); if(d<bd){bd=d;b={x,y};} }
   return b||{x:p.base.x,y:p.base.y};
 }
-function dp(){ return DIFF[G.difficulty]||DIFF.normal; }
+function dp(p){ let b=(p&&p.persona&&PERSONAS[p.persona])||DIFF[G.difficulty]||DIFF.normal;
+  if(G.difficulty==='hard') b={hunt:b.hunt+6,threat:Math.max(1,b.threat-1),maxTrail:b.maxTrail+14,loopMin:b.loopMin,loopRand:b.loopRand,attackTrail:b.attackTrail+5};
+  return b; }
 function probeEmpty(p,sx,sy,dx,dy,len){ let sc=0;
-  for(let s=1;s<=len;s++){ const x=sx+dx*s,y=sy+dy*s; if(!inB(x,y)){sc-=5;break;}
+  for(let s=1;s<=len;s++){ const x=sx+dx*s,y=sy+dy*s; if(blocked(x,y)){sc-=5;break;}
     const o=owner[idx(x,y)]; if(o===0)sc++; else if(o!==p.id)sc-=3; else sc-=1; } return sc; }
 function atFrontier(p){ const x=p.cx,y=p.cy;
   return (x>0&&owner[idx(x-1,y)]===0)||(x<W-1&&owner[idx(x+1,y)]===0)||(y>0&&owner[idx(x,y-1)]===0)||(y<H-1&&owner[idx(x,y+1)]===0); }
@@ -522,7 +538,7 @@ function aiNearestFrontier(p){
 function aiBuildLoop(p){
   let d=DIRS[0],bs=-1e9;
   for(const dd of DIRS){ const sc=probeEmpty(p,p.cx,p.cy,dd.x,dd.y,10); if(sc>bs){bs=sc;d=dd;} }
-  const C=dp(), depth=C.loopMin+(Math.random()*C.loopRand|0);
+  const C=dp(p), depth=C.loopMin+(Math.random()*C.loopRand|0);
   const perps=d.x!==0?[{x:0,y:1},{x:0,y:-1}]:[{x:1,y:0},{x:-1,y:0}];
   let perp=perps[0],ps=-1e9;
   for(const pp of perps){ const sc=probeEmpty(p,p.cx+d.x*depth,p.cy+d.y*depth,pp.x,pp.y,8); if(sc>ps){ps=sc;perp=pp;} }
@@ -535,7 +551,7 @@ function aiBuildLoop(p){
 }
 function aiThreatened(p){
   if(p.trailCells.length===0) return false;
-  const C=dp();
+  const C=dp(p);
   for(const o of G.players){ if(o.id===p.id||!o.alive) continue;
     for(const c of p.trailCells){ const x=c%W,y=(c/W)|0;
       if(Math.abs(o.cx-x)+Math.abs(o.cy-y)<=C.threat) return true; } }
@@ -546,12 +562,13 @@ function aiHunt(p){
   let best=null,bd=1e9;
   for(const o of G.players){ if(o.id===p.id||!o.alive||!o.trailCells.length) continue;
     for(const c of o.trailCells){ const x=c%W,y=(c/W)|0,dd=Math.abs(x-p.cx)+Math.abs(y-p.cy); if(dd<bd){bd=dd;best={x,y};} } }
-  const C=dp(); return (best&&bd<C.hunt)?best:null;
+  const C=dp(p); return (best&&bd<C.hunt)?best:null;
 }
 function aiGreedy(p,tx,ty){
   let best=null,bs=1e9;
   for(const d of DIRS){ if(d.x===-p.dir.x&&d.y===-p.dir.y)continue;
     const nx=p.cx+d.x,ny=p.cy+d.y; if(!inB(nx,ny))continue; const ni=idx(nx,ny);
+    if(obstacle[ni]) continue;                          // undgå forhindringer
     if(owner[ni]!==0 && owner[ni]!==p.id) continue;     // undgå dødelig modstander-jord
     const s=Math.abs(nx-tx)+Math.abs(ny-ty)+Math.random()*0.25;
     if(s<bs){bs=s;best=d;} }
@@ -567,7 +584,7 @@ function aiDecide(p){
     else { const t=nearestOwn(p); return aiGreedy(p,t.x,t.y); }
   }
   // jæger: gå efter eksponerede fjende-streger (dødeligt med ét liv)
-  if(p.phase!=='retreat' && p.trailCells.length<dp().attackTrail){
+  if(p.phase!=='retreat' && p.trailCells.length<dp(p).attackTrail){
     const tgt=aiHunt(p); if(tgt){ p.path=null; return aiGreedy(p,tgt.x,tgt.y); }
   }
   // følg aktiv løkke-rute
@@ -694,8 +711,16 @@ function leaderboardHTML(){
   if(rows.every(r=>r.w===0)) return '<div style="opacity:.5;font-size:13px;text-align:center">Ingen kampe vundet endnu</div>';
   return rows.map((r,i)=>`<div class="sr"><span class="dot" style="background:${r.color}"></span><span class="nm">${i+1}. ${r.nm}</span><span>${r.w} ${r.w===1?'sejr':'sejre'}</span></div>`).join('');
 }
+function addBlock(cx,cy,w,h){ for(let y=cy;y<cy+h;y++)for(let x=cx;x<cx+w;x++) if(inB(x,y)) obstacle[idx(x,y)]=1; }
+function buildObstacles(){ obstacle.fill(0); const v=G.mapVariant;
+  if(v==='pillars'){ const xs=[Math.round(W*0.28),Math.round(W*0.5),Math.round(W*0.72)], ys=[Math.round(H*0.3),Math.round(H*0.7)];
+    for(const x of xs)for(const y of ys) addBlock(x-1,y-1,3,3); }
+  else if(v==='cross'){ const cx=(W>>1)-1, cy=(H>>1)-1;
+    for(let y=5;y<H-5;y++){ if(Math.abs(y-(H>>1))>3){ obstacle[idx(cx,y)]=1; obstacle[idx(cx+1,y)]=1; } }
+    for(let x=5;x<W-5;x++){ if(Math.abs(x-(W>>1))>3){ obstacle[idx(x,cy)]=1; obstacle[idx(x,cy+1)]=1; } } }
+}
 function beginRound(){
-  clearBoard();
+  clearBoard(); buildObstacles();
   for(const p of G.players){ p.base=null; p.alive=false; p.trailCells=[]; p.path=null; p.frontier=null; p.phase='out'; }
   const n=G.players.length;
   G.pickOrder=[]; for(let i=0;i<n;i++) G.pickOrder.push(G.players[(G.roundIndex+i)%n].id);
@@ -706,6 +731,7 @@ function beginRound(){
 }
 function validPick(x,y){
   if(x<3||y<3||x>W-4||y>H-4) return false;
+  for(let yy=y-2;yy<=y+2;yy++)for(let xx=x-2;xx<=x+2;xx++) if(!inB(xx,yy)||obstacle[idx(xx,yy)]) return false;  // ikke oven i forhindring
   const minD=G.players.length>4?8:10;
   for(const p of G.players){ if(p.base){ if(Math.abs(p.base.x-x)<minD && Math.abs(p.base.y-y)<minD) return false; } }
   return true;
@@ -897,7 +923,7 @@ function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
     dx:p.dir.x,dy:p.dir.y,rw:p.roundWins,base:p.base,tlen:p.trailCells.length,
     sh:p.shield,gh:p.ghostT,fz:p.frozenT,iv:p.invulnT}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
-    tl:timeLeft,cd:G.cd,sp:G.speed,wi:G.winnerId,wr:G.winReason,sm:G.stormM,pu:powerups,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
+    tl:timeLeft,cd:G.cd,sp:G.speed,wi:G.winnerId,wr:G.winReason,sm:G.stormM,pu:powerups,mv:G.mapVariant,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
   for(const p of G.players) if(p.conn&&p.conn.open){ msg.my=p.id; p.conn.send(msg); }
 }
 let clientSnapAt=0;
@@ -913,6 +939,7 @@ function clientOnData(d){
   if(oldPhase!=='roundwin' && G.phase==='roundwin'){ const w=playerById(G.winnerId)||(d.ps.find(s=>s.id===G.winnerId)); if(w&&w.color) celebrate(w); else if(G.winnerId) celebrate({color:COLORS[G.winnerId-1]}); }
   timeLeft=d.tl; G.cd=d.cd||0; if(d.sp)G.speed=d.sp; counts=d.cnt; G.mode='online'; G.isHost=false;
   G.stormM=d.sm||0; powerups=d.pu||[];
+  if(d.mv!==undefined && d.mv!==G.mapVariant){ G.mapVariant=d.mv; buildObstacles(); }
   owner.set(d.ow); trail.set(d.tg);
   // spillere
   G.players=d.ps.map(s=>{ let p=playerById(s.id)||makePlayer(s.id,s.kind);
@@ -1074,6 +1101,8 @@ bindTap(document.getElementById('tgPowerups'),()=>{ G.powerupsOn=!G.powerupsOn; 
 bindTap(document.getElementById('tgStorm'),()=>{ G.stormOn=!G.stormOn; document.getElementById('tgStorm').classList.toggle('on',G.stormOn); updateFxInfo(); });
 document.querySelectorAll('.thm').forEach(b=>bindTap(b,()=>{ setTheme(b.dataset.thm);
   document.querySelectorAll('.thm').forEach(x=>x.classList.toggle('act',x===b)); }));
+document.querySelectorAll('.mapv').forEach(b=>bindTap(b,()=>{ G.mapVariant=b.dataset.mapv;
+  document.querySelectorAll('.mapv').forEach(x=>x.classList.toggle('act',x===b)); }));
 bindTap(document.getElementById('tgSound'),()=>{ soundOn=!soundOn;
   document.getElementById('tgSound').classList.toggle('on',soundOn); if(soundOn){ensureAudio();tone(660,0,0.1,'sine',0.25);} });
 bindTap(document.getElementById('tgHard'),()=>{ const on=!document.getElementById('tgHard').classList.contains('on');
@@ -1119,6 +1148,11 @@ function render(frac){
     else { ctx.shadowColor=COLORS[t-1]; ctx.fillStyle=COLORS[t-1]; }
     ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2); }
   ctx.shadowBlur=0;
+  // forhindringer (bane-variant)
+  { let any=false; for(let i=0;i<TOTAL;i++) if(obstacle[i]){any=true;break;}
+    if(any){ ctx.fillStyle='#2b2b38'; ctx.strokeStyle='rgba(200,210,240,.25)'; ctx.lineWidth=1;
+      for(let y=0;y<H;y++)for(let x=0;x<W;x++){ if(!obstacle[idx(x,y)])continue;
+        ctx.fillRect(x*CELL,y*CELL,CELL,CELL); ctx.strokeRect(x*CELL+.5,y*CELL+.5,CELL-1,CELL-1); } } }
   // storm (krympende dødszone)
   { const m=G.stormM||0; if(m>0){ ctx.fillStyle='rgba(255,45,45,'+(0.16+0.06*Math.sin(now/120))+')';
       ctx.fillRect(0,0,W*CELL,m*CELL); ctx.fillRect(0,(H-m)*CELL,W*CELL,m*CELL);
