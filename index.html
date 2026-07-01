@@ -87,6 +87,16 @@
   .segctl button.act{background:var(--p1);color:#06121a;}
   .lbcard{width:100%;}
   .cardhdr{font-size:11px;letter-spacing:.12em;opacity:.55;text-transform:uppercase;font-weight:700;}
+  .howstep{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.45;}
+  .howstep .hn{flex:none;width:30px;height:30px;border-radius:50%;background:rgba(0,229,255,.15);
+    border:1px solid rgba(0,229,255,.4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;}
+  .nameinp{font:inherit;font-size:14px;text-align:right;background:rgba(0,0,0,.3);color:#fff;
+    border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:6px 10px;width:120px;}
+  #emojiBar{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:20;display:flex;gap:6px;
+    background:rgba(6,6,12,.6);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 8px;}
+  #emojiBar.hidden{display:none;}
+  #emojiBar button{background:transparent;box-shadow:none;font-size:22px;padding:4px 6px;border-radius:50%;}
+  #emojiBar button:hover{background:rgba(255,255,255,.12);transform:none;}
   button.sm{padding:8px 16px;font-size:15px;}
   button.round{width:42px;height:42px;padding:0;border-radius:50%;font-size:22px;background:rgba(255,255,255,.12);color:var(--ink);box-shadow:none;}
   button[disabled]{opacity:.4;cursor:not-allowed;transform:none;}
@@ -201,8 +211,10 @@
       <div class="setrow"><span class="setlbl">🌀 Storm</span><div class="toggle on" id="tgStorm"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">🔊 Lydeffekter</span><div class="toggle on" id="tgSound"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">🎵 Musik</span><div class="toggle on" id="tgMusic"><div class="sw"></div></div></div>
+      <div class="setrow"><span class="setlbl">Dit navn</span><input id="nameInput" class="nameinp" maxlength="12" placeholder="Spiller" /></div>
       <div id="fxInfo" class="hint" style="text-align:left;font-size:12px;line-height:1.5;margin-top:2px"></div>
     </div>
+    <button class="settoggle" id="helpBtn"><span>❔ Sådan spiller du</span><span>›</span></button>
 
     <div class="card lbcard">
       <div class="cardhdr">🏆 Leaderboard</div>
@@ -286,7 +298,29 @@
     <div class="standings" id="meStand"></div>
     <div style="font-size:11px;letter-spacing:.1em;opacity:.55;text-transform:uppercase;margin-top:2px">🏆 Sejre i alt</div>
     <div class="standings" id="meLeader"></div>
-    <button id="meAgain">Til menu</button>
+    <div class="row" style="gap:10px">
+      <button id="meAgain">Til menu</button>
+      <button id="meShare" class="sec">📤 Del</button>
+    </div>
+  </div>
+
+  <!-- Onboarding -->
+  <div id="howto" class="overlay hidden">
+   <div class="menu" style="gap:16px">
+    <h2>Sådan spiller du</h2>
+    <div class="card" style="text-align:left;gap:12px;width:min(430px,92vw)">
+      <div class="howstep"><span class="hn">1</span><span>Dit hoved kører hele tiden. Uden for dit farvede område efterlader det en <b>streg</b>.</span></div>
+      <div class="howstep"><span class="hn">2</span><span>Kom <b>hjem til dit eget område</b> for at lukke løkken — alt indenfor bliver din farve.</span></div>
+      <div class="howstep"><span class="hn">⚔️</span><span>Rammer en modstander din <b>åbne streg</b>, dør du. Du har kun <b>ét liv</b>!</span></div>
+      <div class="howstep"><span class="hn">🏆</span><span>Først til <b>50 %</b> vinder — ellers flest felter når tiden er gået.</span></div>
+    </div>
+    <button id="howBtn">Spil!</button>
+   </div>
+  </div>
+
+  <!-- Emoji-reaktioner (online) -->
+  <div id="emojiBar" class="hidden">
+    <button data-e="👍">👍</button><button data-e="🔥">🔥</button><button data-e="😂">😂</button><button data-e="😮">😮</button><button data-e="😡">😡</button>
   </div>
 </div>
 
@@ -681,8 +715,11 @@ function soundWatch(){
 }
 
 //================= Runde / kamp-flow (host/lokal) =================
+function loadName(){ try{ return localStorage.getItem('td_name')||''; }catch(e){ return ''; } }
+function saveName(n){ try{ localStorage.setItem('td_name',n); }catch(e){} }
+function applyMyName(){ const nm=loadName(); if(nm){ const me=playerById(G.myId); if(me) me.name=nm.slice(0,12); } }
 function startMatch(){
-  G.demo=false;
+  G.demo=false; applyMyName();
   for(const p of G.players) p.roundWins=0;
   G.totalRounds=G.players.length;
   G.roundIndex=0; G.recorded=false;
@@ -901,6 +938,8 @@ function hostOnData(conn,d){
   const p=G.players.find(x=>x.conn===conn); if(!p) return;
   if(d.t==='input'){ if(G.phase==='play') p.netDir=d.dir; }
   else if(d.t==='pick'){ doPick(p.id,d.x,d.y); }
+  else if(d.t==='setname'){ if(d.name) p.name=String(d.name).slice(0,12); }
+  else if(d.t==='emoji'){ showEmoji(p.id,d.e); for(const q of G.players) if(q.conn&&q.conn.open) q.conn.send({t:'emoji',id:p.id,e:d.e}); }
 }
 function joinRoom(code){
   if(typeof Peer==='undefined'){ document.getElementById('joinErr').textContent='Online utilgængeligt her.'; return; }
@@ -919,7 +958,7 @@ function joinRoom(code){
 }
 function netSend(obj){ if(G.hostConn&&G.hostConn.open) G.hostConn.send(obj); }
 function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
-  const ps=G.players.map(p=>({id:p.id,kind:p.kind,alive:p.alive,el:p.eliminated,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
+  const ps=G.players.map(p=>({id:p.id,kind:p.kind,nm:p.name,alive:p.alive,el:p.eliminated,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
     dx:p.dir.x,dy:p.dir.y,rw:p.roundWins,base:p.base,tlen:p.trailCells.length,
     sh:p.shield,gh:p.ghostT,fz:p.frozenT,iv:p.invulnT}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
@@ -928,7 +967,8 @@ function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
 }
 let clientSnapAt=0;
 function clientOnData(d){
-  if(d.t==='welcome'){ G.myId=d.yourId; return; }
+  if(d.t==='welcome'){ G.myId=d.yourId; const nm=loadName(); if(nm) netSend({t:'setname',name:nm}); return; }
+  if(d.t==='emoji'){ showEmoji(d.id,d.e); return; }
   if(d.t==='full'){ document.getElementById('joinErr').textContent='Rummet er fuldt.'; showOnly('setupJoin'); document.getElementById('joinConfig').classList.remove('hidden'); document.getElementById('joinWait').classList.add('hidden'); return; }
   if(d.t!=='state') return;
   // spejl host-state
@@ -944,7 +984,7 @@ function clientOnData(d){
   // spillere
   G.players=d.ps.map(s=>{ let p=playerById(s.id)||makePlayer(s.id,s.kind);
     p.prevX=s.px;p.prevY=s.py;p.cx=s.cx;p.cy=s.cy;p.dir={x:s.dx,y:s.dy};p.alive=s.alive;p.eliminated=s.el;p.roundWins=s.rw;p.base=s.base;p.kind=s.kind;
-    p.shield=s.sh;p.ghostT=s.gh;p.frozenT=s.fz;p.invulnT=s.iv;
+    p.shield=s.sh;p.ghostT=s.gh;p.frozenT=s.fz;p.invulnT=s.iv; if(s.nm)p.name=s.nm;
     p.trailCells.length=Math.max(0,s.tlen); return p; });
   clientSnapAt=performance.now();
   // UI-skift afhængig af fase
@@ -965,7 +1005,8 @@ function showOnly(id){ for(const o of OV){ document.getElementById(o).classList.
   document.getElementById('quitBtn').classList.add('hidden');
   document.getElementById('pctTable').classList.add('hidden');
   if(id==='lobby'){ const el=document.getElementById('lobbyLeader'); if(el) el.innerHTML=leaderboardHTML();
-    const st=document.getElementById('lobbyStats'); if(st) st.innerHTML=statsHTML(); updateFxInfo(); } }
+    const st=document.getElementById('lobbyStats'); if(st) st.innerHTML=statsHTML(); updateFxInfo();
+    const ni=document.getElementById('nameInput'); if(ni) ni.value=loadName(); } }
 function showHUD(){ for(const o of OV) document.getElementById(o).classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('quitBtn').classList.remove('hidden'); buildScores(); }
@@ -1082,6 +1123,40 @@ bindTap(document.getElementById('joinConnect'),()=>{ const c=document.getElement
   if(c.length===4) joinRoom(c); else document.getElementById('joinErr').textContent='Koden er 4 tegn.'; });
 bindTap(document.getElementById('reNext'),()=>{ if(G.isHost||G.mode==='local') nextRound(); });
 bindTap(document.getElementById('meAgain'),()=>{ toLobby(); });
+// ---- Onboarding + navn + del + emoji ----
+function showHowto(){ document.getElementById('howto').classList.remove('hidden'); }
+function hideHowto(){ document.getElementById('howto').classList.add('hidden'); }
+bindTap(document.getElementById('howBtn'),()=>{ try{localStorage.setItem('td_seen','1');}catch(e){} hideHowto(); });
+bindTap(document.getElementById('helpBtn'),()=>{ showHowto(); });
+(function(){ const ni=document.getElementById('nameInput'); if(ni){ ni.value=loadName();
+  ni.addEventListener('input',()=>{ saveName(ni.value.trim().slice(0,12)); }); } })();
+document.querySelectorAll('#emojiBar button').forEach(b=>bindTap(b,()=>{ const e=b.dataset.e;
+  if(G.mode==='online' && !G.isHost){ netSend({t:'emoji',e}); }
+  else { const me=playerById(G.myId); if(me) showEmoji(me.id,e);
+         if(G.isHost) for(const q of G.players) if(q.conn&&q.conn.open) q.conn.send({t:'emoji',id:G.myId,e}); } }));
+bindTap(document.getElementById('meShare'),()=>shareResult());
+function shareResult(){
+  try{
+    const cw=580, ch=Math.round(cw*H/W)+120, sc=cw/W;
+    const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const c=cv.getContext('2d');
+    c.fillStyle='#15151e'; c.fillRect(0,0,cw,ch);
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const o=owner[idx(x,y)]; if(o){ c.fillStyle=COLORS[o-1]; c.globalAlpha=.85; c.fillRect(x*sc,y*sc,sc,sc); }
+      if(obstacle[idx(x,y)]){ c.globalAlpha=1; c.fillStyle='#2b2b38'; c.fillRect(x*sc,y*sc,sc,sc); } }
+    c.globalAlpha=1;
+    const rank=[...G.players].sort((a,b)=>counts[b.id]-counts[a.id]);
+    c.fillStyle='#fff'; c.font='800 26px sans-serif'; c.textAlign='center';
+    c.fillText('TERRITORIEDUEL', cw/2, cw*H/W+34);
+    c.font='700 17px sans-serif';
+    const champ=rank[0]; c.fillStyle=champ.color;
+    c.fillText('🏆 '+champ.name+' vandt kampen', cw/2, cw*H/W+64);
+    c.fillStyle='#cfd6ff'; c.font='14px sans-serif';
+    c.fillText(rank.map(p=>p.name+' '+Math.round(counts[p.id]/TOTAL*100)+'%').join('   '), cw/2, cw*H/W+92);
+    cv.toBlob(blob=>{ if(!blob) return; const file=new File([blob],'territorieduel.png',{type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){ navigator.share({files:[file],title:'Territorieduel'}).catch(()=>{}); }
+      else { const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='territorieduel.png'; a.click(); } });
+  }catch(e){}
+}
+
 // Indstillinger: musik + lyd + sværhedsgrad
 bindTap(document.getElementById('tgMusic'),()=>{ musicOn=!musicOn;
   document.getElementById('tgMusic').classList.toggle('on',musicOn);
@@ -1199,7 +1274,14 @@ function render(frac){
   // skrm-flash (start / dd / sejr)
   if(flashA>0.01){ ctx.save(); ctx.globalAlpha=Math.min(0.65,flashA); ctx.fillStyle=flashC;
     ctx.fillRect(0,0,W*CELL,H*CELL); ctx.restore(); }
+  // nær-død: rød pulserende vignet
+  if(G.nearDeath){ ctx.save(); const pl=0.55+0.35*Math.sin(now/70);
+    const g=ctx.createRadialGradient(W*CELL/2,H*CELL/2,H*CELL*0.32,W*CELL/2,H*CELL/2,H*CELL*0.72);
+    g.addColorStop(0,'rgba(255,0,0,0)'); g.addColorStop(1,'rgba(255,20,20,'+(0.20+0.22*pl)+')');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W*CELL,H*CELL); ctx.restore(); }
 }
+function showEmoji(id,e){ const p=playerById(id); if(!p) return;
+  floatText((p.cx+0.5)*CELL,(p.cy-0.6)*CELL, e, '#fff', 30); }
 
 //================= Loop =================
 let last=performance.now(), broadcastAcc=0, prevCd=0, goTimer=0;
@@ -1260,9 +1342,17 @@ function frame(t){
   { const m=document.getElementById('music'); if(m) m.playbackRate=(G.phase==='play'&&G.cd<=0&&timeLeft<=10&&timeLeft>0)?1.06:1.0; }
   updateParticles(dt); updateFloats(dt); if(shakeMag>0)shakeMag=Math.max(0,shakeMag-dt*40);
   soundWatch();
+  // nær-død: en modstander er 1-2 felter fra at krydse din åbne streg
+  { let nd=false; const me=playerById(G.myId);
+    if(G.phase==='play' && G.cd<=0 && me && me.alive && me.trailCells.length>0){
+      outer: for(const o of G.players){ if(o.id===G.myId||!o.alive) continue;
+        for(const c of me.trailCells){ if(Math.abs(o.cx-(c%W))+Math.abs(o.cy-((c/W)|0))<=2){ nd=true; break outer; } } } }
+    if(nd && !G._nd && navigator.vibrate){ try{navigator.vibrate(40);}catch(e){} }
+    G._nd=nd; G.nearDeath=nd; }
   const showStuff=(G.phase==='play'||G.phase==='select'||G.phase==='roundwin');
   if(showStuff && !G.demo) updateHUDLive();
   updateCallout();
+  document.getElementById('emojiBar').classList.toggle('hidden', !(G.mode==='online' && (G.phase==='play'||G.phase==='roundwin')));
   let frac=0;
   if(G.phase==='play'){ frac = authoritative? acc : Math.min(1,(now-clientSnapAt)/(1000/G.speed)); }
   render(frac);
@@ -1273,6 +1363,7 @@ function frame(t){
 resize(); clearBoard();
 showOnly('lobby');
 startDemo();                 // levende AI-kamp bag menuen
+try{ if(!localStorage.getItem('td_seen')) showHowto(); }catch(e){}
 requestAnimationFrame(frame);
 
 // til test i Node
