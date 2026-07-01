@@ -28,3 +28,8 @@ One line per decision: what + why. Locked architecture from the spec is not re-l
 - **Simple view-state toggle (Zustand `view`), no React Router** — level-select ⇄ game is a single boolean; a router would be overkill (spec allowed either).
 - **Slots interacted with via DOM buttons overlaid on the canvas** — large, reliable tap targets (iOS-safe) instead of canvas hit-testing; tap empty = place active type, tap filled = rotate, × = remove.
 - **Persist `view` alongside level/placements/completed in the single `gameProgress` row** — so a mid-level reload returns to the exact level and placements.
+
+## Post-DoD polish
+- **Filled slot buttons are translucent with a rotating glyph** — the opaque disc hid the piece; now the real (accurately rotated) canvas body shows through and the glyph rotates with it, so rotation is visible, not just a degree label.
+- **Palette auto-advances when a piece type is exhausted** — placing your last ramp selects the next available type, so the next slot tap isn't a silent no-op.
+- **"Nulstil fremgang" on level select** — lets the player clear completed levels/placements (confirmed dialog); persisted immediately via Dexie.

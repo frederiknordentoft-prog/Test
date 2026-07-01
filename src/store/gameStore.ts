@@ -3,7 +3,7 @@ import type { PieceType, PlacedPiece, RunResult } from '../types'
 import type { FailReason } from '../physics/simulate'
 import { LEVELS, getLevel } from '../../data/levels'
 import { ROTATION_STEPS } from '../physics/constants'
-import { canPlace, inventoryTypes, pieceInSlot } from '../game/inventory'
+import { canPlace, inventoryTypes, pieceInSlot, remaining } from '../game/inventory'
 
 export type View = 'levelSelect' | 'game'
 
@@ -38,6 +38,7 @@ export type GameStore = {
   dropBall: () => void
   finishRun: (result: 'won' | 'failed', reason: FailReason) => void
   resetRun: () => void
+  resetProgress: () => void
 
   hydrate: (persisted: Partial<PersistedState>) => void
 }
@@ -104,7 +105,14 @@ export const useGameStore = create<GameStore>((set, get) => {
       // Empty slot: place the active piece type if allowed and available.
       if (!activePieceType) return
       if (!canPlace(level, placements, slot, activePieceType)) return
-      edit((ps) => [...ps, { slotId, type: activePieceType, rotation: 0 }])
+      const next = [...placements, { slotId, type: activePieceType, rotation: 0 }]
+      // If that was the last of this type, advance the palette to the next
+      // type the player still has, so the next tap isn't a silent no-op.
+      const nextActive =
+        remaining(level, next, activePieceType) > 0
+          ? activePieceType
+          : inventoryTypes(level).find((t) => remaining(level, next, t) > 0) ?? activePieceType
+      set({ placements: next, activePieceType: nextActive, runResult: 'idle', runReason: null })
     },
 
     rotateSlot: (slotId) => {
@@ -137,6 +145,9 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     resetRun: () => set({ runResult: 'idle', runReason: null }),
+
+    resetProgress: () =>
+      set({ completedLevels: [], placements: [], runResult: 'idle', runReason: null }),
 
     hydrate: (persisted) =>
       set((state) => {

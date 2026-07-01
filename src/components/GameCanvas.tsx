@@ -137,13 +137,28 @@ export function GameCanvas({ level }: Props) {
                   'pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full text-2xl font-bold transition',
                   'active:scale-95 touch-manipulation',
                   placed
-                    ? 'text-slate-900 shadow-lg'
+                    ? 'shadow-lg'
                     : 'border-2 border-dashed border-slate-500/70 text-slate-400 hover:border-sky-400 hover:text-sky-300',
                   !interactive ? 'opacity-70' : '',
                 ].join(' ')}
-                style={placed && spec ? { backgroundColor: spec.color } : undefined}
+                // Filled slots are translucent so the real (accurately rotated) piece
+                // drawn on the canvas shows through; the glyph rotates with it for tactile feedback.
+                style={
+                  placed && spec
+                    ? { backgroundColor: `${spec.color}33`, boxShadow: `0 0 0 2px ${spec.color}`, color: '#f8fafc' }
+                    : undefined
+                }
               >
-                {placed && spec ? spec.glyph : '＋'}
+                {placed && spec ? (
+                  <span
+                    className="transition-transform duration-150"
+                    style={{ transform: `rotate(${ROTATION_STEPS[placed.rotation] ?? 0}rad)`, display: 'inline-block' }}
+                  >
+                    {spec.glyph}
+                  </span>
+                ) : (
+                  '＋'
+                )}
               </button>
 
               {placed && (

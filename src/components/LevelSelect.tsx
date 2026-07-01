@@ -8,6 +8,7 @@ import { InstallPrompt } from './InstallPrompt'
 export function LevelSelect() {
   const selectLevel = useGameStore((s) => s.selectLevel)
   const completed = useGameStore((s) => s.completedLevels)
+  const resetProgress = useGameStore((s) => s.resetProgress)
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col gap-4 px-4 pb-8 pt-6">
@@ -56,6 +57,18 @@ export function LevelSelect() {
       </div>
 
       <InstallPrompt />
+
+      {completed.length > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm('Nulstil al fremgang? Alle klarede baner glemmes.')) resetProgress()
+          }}
+          className="mx-auto mt-1 text-xs text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline touch-manipulation"
+        >
+          Nulstil fremgang
+        </button>
+      )}
     </div>
   )
 }
