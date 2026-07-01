@@ -41,7 +41,7 @@
     gap:16px;text-align:center;background:rgba(8,8,14,.86);backdrop-filter:blur(6px);padding:22px;z-index:10;
     overflow:auto;}
   .overlay.hidden{display:none;}
-  #lobby{background:rgba(10,10,16,.5);}   /* gennemsigtig så AI-demoen ses bag menuen */
+  #lobby,#setupLocal,#setupHost,#setupJoin,#howto{background:rgba(10,10,16,.55);}   /* gennemsigtig så AI-demoen ses bag menuen */
   h1{font-size:clamp(30px,8vw,60px);font-weight:900;letter-spacing:.02em;line-height:1;
     background:linear-gradient(90deg,var(--p1),#fff 45%,var(--p2));-webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 0 18px rgba(0,229,255,.25));}
@@ -97,6 +97,14 @@
   #emojiBar.hidden{display:none;}
   #emojiBar button{background:transparent;box-shadow:none;font-size:22px;padding:4px 6px;border-radius:50%;}
   #emojiBar button:hover{background:rgba(255,255,255,.12);transform:none;}
+  .setcol{display:flex;flex-direction:column;gap:6px;}
+  .segwrap{display:flex;flex-wrap:wrap;gap:6px;}
+  .segwrap button{background:rgba(0,0,0,.3);color:var(--ink);box-shadow:none;border-radius:999px;padding:6px 13px;font-size:13px;font-weight:700;}
+  .segwrap button:hover{transform:none;}
+  .segwrap button.act{background:var(--p1);color:#06121a;}
+  .segwrap button.locked{opacity:.5;}
+  #pingBox{position:fixed;left:8px;top:38px;z-index:19;font-size:11px;opacity:.6;background:rgba(6,6,12,.5);padding:3px 8px;border-radius:8px;}
+  #pingBox.hidden{display:none;}
   button.sm{padding:8px 16px;font-size:15px;}
   button.round{width:42px;height:42px;padding:0;border-radius:50%;font-size:22px;background:rgba(255,255,255,.12);color:var(--ink);box-shadow:none;}
   button[disabled]{opacity:.4;cursor:not-allowed;transform:none;}
@@ -161,6 +169,8 @@
     <div id="musicCtl"><span>🎵</span><input type="range" id="musicSlider" min="0" max="25" value="4" /></div>
   </div>
 
+  <div id="pingBox" class="hidden"></div>
+
   <!-- Centreret kasse: nedtælling / sejr -->
   <div id="callout" class="hidden"></div>
 
@@ -185,6 +195,7 @@
       <button class="moderow" id="modeLocal"><span class="mi">🎮</span><span class="mtxt"><b>Lokalt spil</b><small>På denne enhed · 2–8 spillere</small></span><span class="mch">›</span></button>
       <button class="moderow" id="modeHost"><span class="mi">🌐</span><span class="mtxt"><b>Opret online-spil</b><small>Få en kode · spil fra hver sin enhed</small></span><span class="mch">›</span></button>
       <button class="moderow" id="modeJoin"><span class="mi">🔗</span><span class="mtxt"><b>Deltag online</b><small>Indtast en delt rum-kode</small></span><span class="mch">›</span></button>
+      <button class="moderow" id="dailyBtn"><span class="mi">🗓️</span><span class="mtxt"><b>Daglig udfordring</b><small id="dailySub">Ny bane hver dag</small></span><span class="mch">›</span></button>
     </div>
 
     <button class="settoggle" id="setBtn"><span>⚙︎ Indstillinger</span><span id="setChevron">▾</span></button>
@@ -195,10 +206,18 @@
           <button class="spd act" data-spd="normal">Normal</button>
           <button class="spd" data-spd="fast">Hurtig</button>
         </div></div>
-      <div class="setrow"><span class="setlbl">Tema</span>
-        <div class="segctl">
+      <div class="setcol"><span class="setlbl">Tema / skin</span>
+        <div class="segwrap" id="themeWrap">
           <button class="thm act" data-thm="standard">Standard</button>
           <button class="thm" data-thm="cb">Farveblind</button>
+          <button class="thm" data-thm="gold">Guld</button>
+          <button class="thm" data-thm="sunset">Solnedgang</button>
+        </div></div>
+      <div class="setrow"><span class="setlbl">🎨 Mønstre</span><div class="toggle" id="tgPatterns"><div class="sw"></div></div></div>
+      <div class="setrow"><span class="setlbl">Styring</span>
+        <div class="segctl">
+          <button class="ctl act" data-ctl="follow">Følg finger</button>
+          <button class="ctl" data-ctl="joystick">Joystick</button>
         </div></div>
       <div class="setrow"><span class="setlbl">Bane</span>
         <div class="segctl">
@@ -332,7 +351,10 @@ const WIN_RATIO=0.50, ROUND_TIME=90, STORM_T=20;
 const SPEEDS={slow:5, normal:6.5, fast:8};
 const DIRS=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
 const PALETTES={ standard:['#00e5ff','#ff3d7f','#4dff7c','#ffb020','#9b6bff','#ff6a3d','#19e6c3','#f5f53a'],
-                 cb:['#56b4e9','#e69f00','#009e73','#f0e442','#0072b2','#d55e00','#cc79a7','#bdbdbd'] };
+                 cb:['#56b4e9','#e69f00','#009e73','#f0e442','#0072b2','#d55e00','#cc79a7','#bdbdbd'],
+                 gold:['#ffe14d','#ffb020','#ff8a3d','#ff5d5d','#ff6ab0','#c86bff','#5cd0ff','#8fffa0'],
+                 sunset:['#ff7e5f','#feb47b','#ff5f9e','#c86bff','#7d7bff','#5ce0ff','#5cffcf','#ffd166'] };
+const SKIN_UNLOCK={standard:0,cb:0,gold:3,sunset:8};   // låses op ved N kamp-sejre
 let COLORS=PALETTES.standard.slice();
 const PU_TYPES=['shield','freeze','ghost'];
 const PU_ICON={shield:'🛡️',freeze:'❄️',ghost:'👻'};
@@ -373,6 +395,7 @@ const G={
   speed:6.5,             // celler/sek (langsom 5 / normal 6.5 / hurtig 8)
   cd:0,                  // nedtælling før runde-start (sek)
   powerupsOn:false, stormOn:true, theme:'standard', mapVariant:'none',
+  patternsOn:false, control:'follow', ping:0,
   stormM:0, demo:false, myMaxTrail:0,
 };
 
@@ -420,11 +443,13 @@ function inboundTurn(e,d){
   return d;
 }
 function localInputDir(p){
-  // pointer styrer kun "min" spiller
-  if(p.id===G.myId && inputMode==='pointer' && pointer.active){
-    const dx=pointer.cx-(p.cx+0.5), dy=pointer.cy-(p.cy+0.5);
-    if(Math.abs(dx)>=Math.abs(dy)) return {x:(Math.sign(dx)||p.dir.x),y:0};
-    return {x:0,y:(Math.sign(dy)||p.dir.y)};
+  if(p.id===G.myId){
+    if(G.control==='joystick'){ if(joy.active&&joy.dir) return joy.dir; }
+    else if(inputMode==='pointer' && pointer.active){
+      const dx=pointer.cx-(p.cx+0.5), dy=pointer.cy-(p.cy+0.5);
+      if(Math.abs(dx)>=Math.abs(dy)) return {x:(Math.sign(dx)||p.dir.x),y:0};
+      return {x:0,y:(Math.sign(dy)||p.dir.y)};
+    }
   }
   return p.pendingDir||p.dir;
 }
@@ -847,12 +872,20 @@ function endMatch(){
 //================= Input =================
 let inputMode='pointer';
 const pointer={active:false,cx:0,cy:0};
+const joy={active:false,ox:0,oy:0,kx:0,ky:0,dir:null};
+function evPx(e){ const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
 function evCell(e){ const r=canvas.getBoundingClientRect();
   return { x:(e.clientX-r.left)/r.width*W, y:(e.clientY-r.top)/r.height*H }; }
-canvas.addEventListener('pointermove',e=>{ const c=evCell(e); pointer.cx=c.x;pointer.cy=c.y;pointer.active=true;inputMode='pointer'; e.preventDefault(); },{passive:false});
+canvas.addEventListener('pointermove',e=>{ const c=evCell(e); pointer.cx=c.x;pointer.cy=c.y;pointer.active=true;inputMode='pointer';
+  if(joy.active){ const p=evPx(e); joy.kx=p.x; joy.ky=p.y; const vx=p.x-joy.ox, vy=p.y-joy.oy;
+    if(Math.hypot(vx,vy)>8){ joy.dir = Math.abs(vx)>=Math.abs(vy)?{x:Math.sign(vx),y:0}:{x:0,y:Math.sign(vy)}; } }
+  e.preventDefault(); },{passive:false});
+canvas.addEventListener('pointerup',()=>{ joy.active=false; },{passive:true});
+canvas.addEventListener('pointercancel',()=>{ joy.active=false; },{passive:true});
 canvas.addEventListener('pointerdown',e=>{
   ensureAudio(); startMusic();
   const c=evCell(e); pointer.cx=c.x;pointer.cy=c.y;pointer.active=true;inputMode='pointer';
+  if(G.control==='joystick' && G.phase==='play'){ const p=evPx(e); joy.active=true; joy.ox=p.x; joy.oy=p.y; joy.kx=p.x; joy.ky=p.y; joy.dir=null; }
   if(G.phase==='select'){ // tap for at vælge startfelt
     const x=Math.floor(c.x), y=Math.floor(c.y);
     if(G.mode==='local' || G.picker===G.myId){
@@ -891,8 +924,10 @@ window.addEventListener('keydown',e=>{
 let myLastDir=null;
 function setMyDir(d){ if(!myLastDir||myLastDir.x!==d.x||myLastDir.y!==d.y){ myLastDir={...d}; netSend({t:'input',dir:d}); } }
 function clientPointerToHost(){
-  if(G.mode==='online'&&!G.isHost&&G.phase==='play'&&inputMode==='pointer'&&pointer.active){
+  if(G.mode==='online'&&!G.isHost&&G.phase==='play'){
     const me=playerById(G.myId); if(!me)return;
+    if(G.control==='joystick'){ if(joy.active&&joy.dir) setMyDir(joy.dir); return; }
+    if(inputMode!=='pointer'||!pointer.active) return;
     const dx=pointer.cx-(me.cx+0.5),dy=pointer.cy-(me.cy+0.5);
     const d=Math.abs(dx)>=Math.abs(dy)?{x:Math.sign(dx)||me.dir.x,y:0}:{x:0,y:Math.sign(dy)||me.dir.y};
     setMyDir(d);
@@ -939,6 +974,7 @@ function hostOnData(conn,d){
   if(d.t==='input'){ if(G.phase==='play') p.netDir=d.dir; }
   else if(d.t==='pick'){ doPick(p.id,d.x,d.y); }
   else if(d.t==='setname'){ if(d.name) p.name=String(d.name).slice(0,12); }
+  else if(d.t==='ping'){ if(conn&&conn.open) conn.send({t:'pong',ts:d.ts}); }
   else if(d.t==='emoji'){ showEmoji(p.id,d.e); for(const q of G.players) if(q.conn&&q.conn.open) q.conn.send({t:'emoji',id:p.id,e:d.e}); }
 }
 function joinRoom(code){
@@ -969,6 +1005,7 @@ let clientSnapAt=0;
 function clientOnData(d){
   if(d.t==='welcome'){ G.myId=d.yourId; const nm=loadName(); if(nm) netSend({t:'setname',name:nm}); return; }
   if(d.t==='emoji'){ showEmoji(d.id,d.e); return; }
+  if(d.t==='pong'){ G.ping=Math.round(performance.now()-d.ts); return; }
   if(d.t==='full'){ document.getElementById('joinErr').textContent='Rummet er fuldt.'; showOnly('setupJoin'); document.getElementById('joinConfig').classList.remove('hidden'); document.getElementById('joinWait').classList.add('hidden'); return; }
   if(d.t!=='state') return;
   // spejl host-state
@@ -1006,7 +1043,8 @@ function showOnly(id){ for(const o of OV){ document.getElementById(o).classList.
   document.getElementById('pctTable').classList.add('hidden');
   if(id==='lobby'){ const el=document.getElementById('lobbyLeader'); if(el) el.innerHTML=leaderboardHTML();
     const st=document.getElementById('lobbyStats'); if(st) st.innerHTML=statsHTML(); updateFxInfo();
-    const ni=document.getElementById('nameInput'); if(ni) ni.value=loadName(); } }
+    const ni=document.getElementById('nameInput'); if(ni) ni.value=loadName(); updateThemes();
+    const ds=document.getElementById('dailySub'); if(ds) ds.textContent=dailyDone()?'✓ Klaret i dag · spil igen':'Ny bane hver dag'; } }
 function showHUD(){ for(const o of OV) document.getElementById(o).classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('quitBtn').classList.remove('hidden'); buildScores(); }
@@ -1174,8 +1212,27 @@ function updateFxInfo(){ const el=document.getElementById('fxInfo'); if(!el) ret
   el.innerHTML=s.join('<br>'); el.style.display=s.length?'':'none'; }
 bindTap(document.getElementById('tgPowerups'),()=>{ G.powerupsOn=!G.powerupsOn; document.getElementById('tgPowerups').classList.toggle('on',G.powerupsOn); updateFxInfo(); });
 bindTap(document.getElementById('tgStorm'),()=>{ G.stormOn=!G.stormOn; document.getElementById('tgStorm').classList.toggle('on',G.stormOn); updateFxInfo(); });
-document.querySelectorAll('.thm').forEach(b=>bindTap(b,()=>{ setTheme(b.dataset.thm);
-  document.querySelectorAll('.thm').forEach(x=>x.classList.toggle('act',x===b)); }));
+function totalWins(){ const lb=loadLB(); return Object.values(lb).reduce((a,b)=>a+b,0); }
+function skinUnlocked(name){ return totalWins() >= (SKIN_UNLOCK[name]||0); }
+function updateThemes(){ const w=totalWins();
+  document.querySelectorAll('.thm').forEach(b=>{ const n=b.dataset.thm, need=SKIN_UNLOCK[n]||0, ok=w>=need;
+    b.classList.toggle('locked',!ok);
+    b.textContent=({standard:'Standard',cb:'Farveblind',gold:'Guld',sunset:'Solnedgang'}[n])+(ok?'':' 🔒'); }); }
+document.querySelectorAll('.thm').forEach(b=>bindTap(b,()=>{ const n=b.dataset.thm;
+  if(!skinUnlocked(n)){ const st=document.getElementById('lobbyStats'); if(st)st.textContent='🔒 Lås "'+n+'" op ved '+SKIN_UNLOCK[n]+' kamp-sejre'; return; }
+  setTheme(n); document.querySelectorAll('.thm').forEach(x=>x.classList.toggle('act',x===b)); }));
+bindTap(document.getElementById('tgPatterns'),()=>{ G.patternsOn=!G.patternsOn; document.getElementById('tgPatterns').classList.toggle('on',G.patternsOn); });
+document.querySelectorAll('.ctl').forEach(b=>bindTap(b,()=>{ G.control=b.dataset.ctl;
+  document.querySelectorAll('.ctl').forEach(x=>x.classList.toggle('act',x===b)); }));
+function dayKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function dailyDone(){ try{ return localStorage.getItem('td_daily')===dayKey(); }catch(e){ return false; } }
+bindTap(document.getElementById('dailyBtn'),()=>{
+  const variants=['none','pillars','cross']; const d=new Date(); const seed=(d.getFullYear()*367+ (d.getMonth()+1)*31 + d.getDate());
+  G.mode='local'; G.isHost=true; G.demo=false; G.mapVariant=variants[seed%3]; G.powerupsOn=(seed%2===0); G.stormOn=true; G.difficulty='hard'; G.speed=6.5;
+  G.players=[]; const p=makePlayer(1,'local'); p.scheme='arrows'; G.players.push(p);
+  for(let i=2;i<=4;i++) G.players.push(makePlayer(i,'ai')); G.myId=1;
+  try{ localStorage.setItem('td_daily',dayKey()); }catch(e){}
+  startMatch(); });
 document.querySelectorAll('.mapv').forEach(b=>bindTap(b,()=>{ G.mapVariant=b.dataset.mapv;
   document.querySelectorAll('.mapv').forEach(x=>x.classList.toggle('act',x===b)); }));
 bindTap(document.getElementById('tgSound'),()=>{ soundOn=!soundOn;
@@ -1214,6 +1271,15 @@ function render(frac){
     ctx.fillRect(x*CELL+pad,y*CELL+pad,CELL-2*pad,CELL-2*pad);
     if(age<260){ ctx.globalAlpha=.5*(1-age/260); ctx.fillStyle='#fff'; ctx.fillRect(x*CELL,y*CELL,CELL,CELL); } }
   ctx.globalAlpha=1;
+  // mønstre på territorier (tilgængelighed)
+  if(G.patternsOn){ ctx.strokeStyle='rgba(0,0,0,.30)'; ctx.lineWidth=Math.max(1,CELL*0.09); ctx.beginPath();
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const o=owner[idx(x,y)]; if(!o)continue; const t=(o-1)%4;
+      const mx=x*CELL,my=y*CELL;
+      if(t===0){ ctx.moveTo(mx+2,my+2); ctx.lineTo(mx+CELL-2,my+CELL-2); }
+      else if(t===1){ ctx.moveTo(mx+CELL-2,my+2); ctx.lineTo(mx+2,my+CELL-2); }
+      else if(t===2){ ctx.moveTo(mx+2,my+CELL/2); ctx.lineTo(mx+CELL-2,my+CELL/2); }
+      else { ctx.moveTo(mx+CELL/2,my+2); ctx.lineTo(mx+CELL/2,my+CELL-2); } }
+    ctx.stroke(); }
   // haler — pulserende rødt når stregen er lang/eksponeret (fare)
   const trLen=new Array(9).fill(0); for(const p of G.players) trLen[p.id]=p.trailCells.length;
   const pulse=0.55+0.45*Math.sin(now/90);
@@ -1279,6 +1345,12 @@ function render(frac){
     const g=ctx.createRadialGradient(W*CELL/2,H*CELL/2,H*CELL*0.32,W*CELL/2,H*CELL/2,H*CELL*0.72);
     g.addColorStop(0,'rgba(255,0,0,0)'); g.addColorStop(1,'rgba(255,20,20,'+(0.20+0.22*pl)+')');
     ctx.fillStyle=g; ctx.fillRect(0,0,W*CELL,H*CELL); ctx.restore(); }
+  // joystick
+  if(G.control==='joystick' && joy.active){ ctx.save();
+    ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(joy.ox,joy.oy,CELL*1.6,0,6.283); ctx.stroke();
+    const dx=joy.kx-joy.ox, dy=joy.ky-joy.oy, len=Math.hypot(dx,dy)||1, m=Math.min(len,CELL*1.6);
+    const kx=joy.ox+dx/len*m, ky=joy.oy+dy/len*m;
+    ctx.fillStyle='rgba(0,229,255,.65)'; ctx.beginPath(); ctx.arc(kx,ky,CELL*0.7,0,6.283); ctx.fill(); ctx.restore(); }
 }
 function showEmoji(id,e){ const p=playerById(id); if(!p) return;
   floatText((p.cx+0.5)*CELL,(p.cy-0.6)*CELL, e, '#fff', 30); }
@@ -1329,6 +1401,7 @@ function frame(t){
     }
   } else {
     clientPointerToHost();
+    if(G.mode==='online'){ G._pingT=(G._pingT||0)+dt; if(G._pingT>2){ G._pingT=0; netSend({t:'ping',ts:performance.now()}); } }
   }
   // "KØR!"-blink når nedtællingen slutter (host + klient)
   if(prevCd>0 && G.cd<=0 && G.phase==='play'){ goTimer=0.7; triggerFlash('#ffffff',0.32);
@@ -1353,6 +1426,7 @@ function frame(t){
   if(showStuff && !G.demo) updateHUDLive();
   updateCallout();
   document.getElementById('emojiBar').classList.toggle('hidden', !(G.mode==='online' && (G.phase==='play'||G.phase==='roundwin')));
+  { const pb=document.getElementById('pingBox'); const showp=G.mode==='online'&&!G.isHost&&(G.phase==='play'||G.phase==='roundwin'); pb.classList.toggle('hidden',!showp); if(showp) pb.textContent='📶 '+(G.ping||0)+' ms'; }
   let frac=0;
   if(G.phase==='play'){ frac = authoritative? acc : Math.min(1,(now-clientSnapAt)/(1000/G.speed)); }
   render(frac);
