@@ -105,7 +105,7 @@ export const LEVELS: LevelDef[] = [
       { id: 'c', position: { x: 150, y: 470 }, allowedTypes: [] },
       { id: 'd', position: { x: 300, y: 610 }, allowedTypes: [] },
     ],
-    inventory: { ramp: 1, funnel: 1, bouncer: 1 },
+    inventory: { ramp: 1, funnel: 1, bouncer: 1, spinner: 1 },
   },
 ]
 

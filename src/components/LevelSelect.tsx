@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { inventoryTypes } from '../game/inventory'
 import { PIECE_SPECS } from '../physics/constants'
 import { UI } from '../game/strings'
+import { InstallPrompt } from './InstallPrompt'
 
 export function LevelSelect() {
   const selectLevel = useGameStore((s) => s.selectLevel)
@@ -13,6 +14,9 @@ export function LevelSelect() {
       <div className="text-center">
         <h1 className="text-3xl font-black tracking-tight text-slate-100">Kuglebanen</h1>
         <p className="mt-1 text-sm text-slate-400">{UI.selectTitle}</p>
+        <p className="mt-1 text-xs text-emerald-400">
+          {completed.length} af {LEVELS.length} klaret
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3">
@@ -50,6 +54,8 @@ export function LevelSelect() {
           )
         })}
       </div>
+
+      <InstallPrompt />
     </div>
   )
 }
