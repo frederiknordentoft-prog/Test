@@ -1,0 +1,8 @@
+node_modules
+dist
+dev-dist
+coverage
+*.log
+# scratch / verification harnesses (not part of the deliverable)
+_*.mjs
+_*.ts
