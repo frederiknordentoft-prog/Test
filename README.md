@@ -114,6 +114,7 @@ always drawn).
 ```
 data/levels.ts            The 14-level pack (3 worlds) + getLevel()
 scripts/solve-level.ts    CLI: prove the pack, write solver-report.json, exit != 0 on any failure
+scripts/calibrate.ts      Level-design aid: throw map, per-level diagnostics, arc traces
 solver-report.json        Committed solver proof — the app reads par from it
 src/types.ts              Core data contracts (LevelDef, Breakable, StarCoin, …)
 src/physics/

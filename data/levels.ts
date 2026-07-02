@@ -7,7 +7,7 @@ import type { LevelDef } from '../src/types'
 // falling solution-density curve within each world. Coordinates are in board
 // pixels; the canvas scales the board to fit the screen.
 //
-// Calibration (drop 220,24 → slot 220,210, iron — see _design.ts map):
+// Calibration (drop 220,24 → slot 220,210, iron — see scripts/calibrate.ts map):
 //   ramp    rot1→x397 rot2/3→right wall · rot4→x121 rot5/6→left wall rot7→x43
 //           rot0 = flat shelf: catches and parks the ball
 //   bouncer rot1→x378 (apex 159) … springier, higher arcs; rot0 bounces in place
