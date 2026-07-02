@@ -1,10 +1,10 @@
 import Matter from 'matter-js'
-import type { PieceType, StaticObstacle, Vec2 } from '../types'
-import { PIECE_SPECS, rotationRadians, type PieceSpec } from './constants'
+import type { Breakable, PieceType, StaticObstacle, Vec2 } from '../types'
+import { PIECE_SPECS, PORTAL_RADIUS, rotationIndexToRadians, type PieceSpec } from './constants'
 
 const { Bodies, Body } = Matter
 
-// A piece is always a STATIC deflector whose orientation is set by the rotation
+// A piece is always a STATIC body whose orientation is set by the rotation
 // index. Making the ball the only dynamic body is what keeps the whole
 // simulation trivially deterministic and the solver's search space bounded.
 // (See DECISIONS.md.)
@@ -28,13 +28,29 @@ function mat(spec: PieceSpec, angle = 0): MaterialOpts {
 }
 
 /**
+ * Matter's Body.setStatic (run for every `isStatic: true` body) zeroes
+ * restitution and forces friction to 1, silently killing authored materials —
+ * the collision pair combines the PARENTS' live values (max restitution, min
+ * friction). Restore the intended material on every part after creation so a
+ * springy piece actually bounces the ball. Plain property writes → still
+ * fully deterministic.
+ */
+export function restoreStaticMaterial(body: Matter.Body, restitution: number, friction: number): void {
+  for (const part of body.parts) {
+    part.restitution = restitution
+    part.friction = friction
+  }
+}
+
+/**
  * Build the Matter body for a placed piece at a slot position with a rotation
- * index (0..3 into ROTATION_STEPS). Material properties live on every part so
- * that compound pieces (funnel, spinner) collide with the right restitution.
+ * index into the global 16-step table (validated against the piece's domain).
+ * Material properties live on every part so compound pieces (funnel) collide
+ * with the right restitution.
  */
 export function createPieceBody(type: PieceType, position: Vec2, rotationIndex: number): Matter.Body {
   const spec = PIECE_SPECS[type]
-  const angle = rotationRadians(rotationIndex)
+  const angle = rotationIndexToRadians(type, rotationIndex)
   let body: Matter.Body
 
   switch (type) {
@@ -63,29 +79,26 @@ export function createPieceBody(type: PieceType, position: Vec2, rotationIndex: 
       body = Body.create({ parts: [left, right], isStatic: true })
       break
     }
-    case 'spinner': {
-      // Pinwheel: four blades tilted off their radial spokes so the shape has a
-      // consistent chirality — any hit gets a sideways "spin" kick rather than
-      // splitting ambiguously like a symmetric cross would. Distinct feel from
-      // the straight ramp; orientation (rotation index) changes the kick.
-      const hubR = 5
-      const bladeLen = 30
-      const bladeW = 8
-      const tilt = (38 * Math.PI) / 180
-      const blades: Matter.Body[] = []
-      for (let k = 0; k < 4; k++) {
-        const spoke = (k * Math.PI) / 2
-        const cx = Math.cos(spoke) * (hubR + bladeLen / 2)
-        const cy = Math.sin(spoke) * (hubR + bladeLen / 2)
-        blades.push(Bodies.rectangle(cx, cy, bladeLen, bladeW, mat(spec, spoke + tilt)))
-      }
-      body = Body.create({ parts: blades, isStatic: true })
+    case 'booster':
+      // Solid pad; on contact the sim SETS the ball's velocity along the pad's
+      // axis (see simulate.ts). The renderer draws the arrow.
+      body = Bodies.rectangle(position.x, position.y, 46, 16, mat(spec))
       break
-    }
+    case 'portal':
+      // Sensor disc — never physically collides. The teleport trigger is a
+      // centre-within-radius check in simulate.ts (reads as the portal
+      // "swallowing" the ball rather than firing on a rim graze).
+      body = Bodies.circle(position.x, position.y, PORTAL_RADIUS, {
+        isStatic: true,
+        isSensor: true,
+        label: 'piece:portal',
+      })
+      break
   }
 
   Body.setPosition(body, { x: position.x, y: position.y })
   Body.setAngle(body, angle)
+  if (type !== 'portal') restoreStaticMaterial(body, spec.restitution, spec.friction)
   body.label = `piece:${type}`
   return body
 }
@@ -94,17 +107,19 @@ export function createPieceBody(type: PieceType, position: Vec2, rotationIndex: 
 export function createObstacleBody(o: StaticObstacle): Matter.Body {
   if (o.shape === 'peg') {
     const radius = o.size?.x ?? 8
-    return Bodies.circle(o.position.x, o.position.y, radius, {
+    const peg = Bodies.circle(o.position.x, o.position.y, radius, {
       isStatic: true,
       restitution: 0.35,
       friction: 0.02,
       label: 'obstacle:peg',
     })
+    restoreStaticMaterial(peg, 0.35, 0.02)
+    return peg
   }
   // 'wall' — size is half-extents.
   const halfX = o.size?.x ?? 40
   const halfY = o.size?.y ?? 8
-  return Bodies.rectangle(o.position.x, o.position.y, halfX * 2, halfY * 2, {
+  const wall = Bodies.rectangle(o.position.x, o.position.y, halfX * 2, halfY * 2, {
     isStatic: true,
     restitution: 0.15,
     friction: 0.06,
@@ -112,4 +127,24 @@ export function createObstacleBody(o: StaticObstacle): Matter.Body {
     angle: o.rotation ?? 0,
     label: 'obstacle:wall',
   })
+  restoreStaticMaterial(wall, 0.15, 0.06)
+  return wall
+}
+
+/**
+ * Build the Matter body for a breakable plank. Behaves exactly like a wall
+ * until the simulation removes it on a hard enough impact
+ * (impactSpeed × ball.mass ≥ breakImpulse).
+ */
+export function createBreakableBody(b: Breakable): Matter.Body {
+  const body = Bodies.rectangle(b.position.x, b.position.y, b.size.x * 2, b.size.y * 2, {
+    isStatic: true,
+    restitution: 0.15,
+    friction: 0.06,
+    frictionStatic: 0.3,
+    angle: b.rotation ?? 0,
+    label: `breakable:${b.id}`,
+  })
+  restoreStaticMaterial(body, 0.15, 0.06)
+  return body
 }
