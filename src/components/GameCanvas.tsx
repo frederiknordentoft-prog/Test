@@ -4,6 +4,17 @@ import { buildWorld, previewRun, simulate, type BallFrame, type SimResult } from
 import { degreeLabel, PHYSICS_HZ, PIECE_SPECS, ROTATION_TABLE } from '../physics/constants'
 import { pieceInSlot } from '../game/inventory'
 import { renderScene } from '../render/renderer'
+import {
+  BREAK_COLORS,
+  COIN_COLORS,
+  WIN_COLORS,
+  drawParticles,
+  seedFrom,
+  spawnBurst,
+  type Particle,
+} from '../render/particles'
+import { playBoost, playBreak, playCoin, playFail, playImpact, playPortal, playWin } from '../game/audio'
+import { starsForRun } from '../game/progression'
 import { useGameStore } from '../store/gameStore'
 import { RadialPicker } from './RadialPicker'
 
@@ -41,6 +52,7 @@ export function GameCanvas({ level }: Props) {
   const finalBallRef = useRef<BallFrame>(restFrame)
   const finalTrailRef = useRef<BallFrame[]>([])
   const lastSimRef = useRef<SimResult | null>(null)
+  const particlesRef = useRef<Particle[]>([])
   const dprRef = useRef(1)
 
   const draw = useCallback(
@@ -62,6 +74,10 @@ export function GameCanvas({ level }: Props) {
         sim,
         preview,
       })
+      // Particle overlay (board coordinates persist after renderScene).
+      if (particlesRef.current.length) {
+        particlesRef.current = drawParticles(ctx, particlesRef.current, performance.now() / 1000)
+      }
     },
     [level, world, ballType, runResult, scale, preview],
   )
@@ -90,18 +106,26 @@ export function GameCanvas({ level }: Props) {
     return () => ro.disconnect()
   }, [level])
 
-  // Static frame whenever we are not mid-animation.
+  // Static frame whenever we are not mid-animation. Keeps repainting briefly
+  // after a finished run so the last particle bursts play out.
   useEffect(() => {
     if (runResult === 'running') return
-    if (runResult === 'won' || runResult === 'failed') {
-      const sim = lastSimRef.current
-      draw(finalBallRef.current, finalTrailRef.current, sim ? sim.trajectory.length - 1 : -1, sim)
-    } else {
-      finalTrailRef.current = []
-      finalBallRef.current = { x: level.dropPoint.x, y: level.dropPoint.y, a: 0 }
-      lastSimRef.current = null
-      draw(finalBallRef.current, [], -1, null)
+    let raf = 0
+    const paint = () => {
+      if (runResult === 'won' || runResult === 'failed') {
+        const sim = lastSimRef.current
+        draw(finalBallRef.current, finalTrailRef.current, sim ? sim.trajectory.length - 1 : -1, sim)
+      } else {
+        finalTrailRef.current = []
+        finalBallRef.current = { x: level.dropPoint.x, y: level.dropPoint.y, a: 0 }
+        lastSimRef.current = null
+        particlesRef.current = []
+        draw(finalBallRef.current, [], -1, null)
+      }
+      if (particlesRef.current.length) raf = requestAnimationFrame(paint)
     }
+    paint()
+    return () => cancelAnimationFrame(raf)
   }, [draw, runResult, level.dropPoint])
 
   // Animation: when a run starts, simulate once (deterministic) then play the
@@ -129,18 +153,87 @@ export function GameCanvas({ level }: Props) {
     let raf = 0
     let start = 0
     let cancelled = false
+    let lastIdx = 0
+    let lastImpactAt = 0
+    const coinById = new Map((level.coins ?? []).map((c) => [c.id, c]))
+    const breakableById = new Map((level.breakables ?? []).map((b) => [b.id, b]))
+
+    // Sonify + sparkle the ticks the playhead just crossed. All events come
+    // from the deterministic SimResult; only their display timing is wall-clock.
+    const processTicks = (from: number, to: number, now: number) => {
+      const nowSec = now / 1000
+      for (let j = from + 1; j <= to; j++) {
+        // impacts: a sharp change in tick-to-tick velocity
+        if (j >= 2 && now - lastImpactAt > 70) {
+          const a = traj[j - 2]!
+          const b = traj[j - 1]!
+          const c = traj[j]!
+          const dv = Math.hypot(c.x - 2 * b.x + a.x, c.y - 2 * b.y + a.y)
+          if (dv > 2.4) {
+            playImpact(dv * 2.5, ballType)
+            lastImpactAt = now
+          }
+        }
+        const coinAt = sim.coinTicks.indexOf(j)
+        if (coinAt !== -1) {
+          playCoin(coinAt)
+          const coin = coinById.get(sim.coinsCollected[coinAt] ?? '')
+          if (coin) {
+            particlesRef.current.push(
+              ...spawnBurst(coin.position, COIN_COLORS, 12, seedFrom(level.id, j), nowSec),
+            )
+          }
+        }
+        const breakAt = sim.breakTicks.indexOf(j)
+        if (breakAt !== -1) {
+          playBreak()
+          const plank = breakableById.get(sim.breakablesBroken[breakAt] ?? '')
+          if (plank) {
+            particlesRef.current.push(
+              ...spawnBurst(plank.position, BREAK_COLORS, 18, seedFrom(level.id, j * 7 + 1), nowSec, 120),
+            )
+          }
+        }
+        if (j === sim.firstPlayerContactTick) {
+          // Which piece did the ball meet? Sonify booster/portal distinctly.
+          const frame = traj[j]!
+          let nearest: { type: string; d: number } | null = null
+          for (const piece of world.pieces) {
+            const d = Math.hypot(piece.body.position.x - frame.x, piece.body.position.y - frame.y)
+            if (!nearest || d < nearest.d) nearest = { type: piece.type, d }
+          }
+          if (nearest && nearest.d < 60) {
+            if (nearest.type === 'booster') playBoost()
+            else if (nearest.type === 'portal') playPortal()
+          }
+        }
+      }
+    }
 
     const frame = (now: number) => {
       if (cancelled) return
       if (!start) start = now
       const t = Math.min(1, (now - start) / 1000 / durationSec)
       const idx = Math.max(0, tickFor(t))
+      if (idx > lastIdx) {
+        processTicks(lastIdx, idx, now)
+        lastIdx = idx
+      }
       const pos = traj[idx]!
       const trail = traj.slice(0, idx + 1)
       draw(pos, trail, idx, sim)
       if (idx >= traj.length - 1) {
         finalBallRef.current = pos
         finalTrailRef.current = trail
+        if (sim.result === 'won') {
+          const stars = starsForRun(level, sim, placements.length)
+          playWin(stars)
+          particlesRef.current.push(
+            ...spawnBurst(level.targetZone.position, WIN_COLORS, 26, seedFrom(level.id, traj.length), now / 1000, 130),
+          )
+        } else {
+          playFail()
+        }
         finishRun(sim)
         return
       }

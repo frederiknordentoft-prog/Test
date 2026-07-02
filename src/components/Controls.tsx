@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { totalRemaining } from '../game/inventory'
 import { UI } from '../game/strings'
 import { WORLD_UNLOCK, worldUnlocked } from '../game/progression'
+import { unlockAudio } from '../game/audio'
 import { LEVELS } from '../../data/levels'
 
 type Props = { level: LevelDef }
@@ -30,7 +31,10 @@ export function Controls({ level }: Props) {
         {!finished ? (
           <button
             type="button"
-            onClick={dropBall}
+            onClick={() => {
+              unlockAudio() // create/resume the AudioContext inside the gesture (iOS)
+              dropBall()
+            }}
             disabled={running}
             className="flex-1 rounded-xl bg-sky-500 px-4 py-3 text-base font-bold text-slate-900 shadow-lg transition touch-manipulation hover:bg-sky-400 active:scale-95 disabled:opacity-60"
           >

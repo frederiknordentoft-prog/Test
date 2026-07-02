@@ -41,3 +41,31 @@ One line per decision: what + why. Locked architecture from the spec is not re-l
 - **Graphics lift** — top-lit sphere shading + per-type rolling textures (iron pits, wood grain rings, basketball seams), gradient-shaded pieces with drop shadows, a subtle board grid, a glowing target, and the amber path trail.
 - **Full-screen iPhone fit** — `100dvh` flex column with safe-area insets; the board scales to the *available height* (not just width) so the whole game fits with no scrolling. Verified at a 390×844 iPhone viewport (document height == viewport height).
 - **Level-pack tests read `solver-report.json`** — the exhaustive search stays in `npm run solve:levels`; the fast test suite cross-checks the committed report's example solutions against live physics (and fails if a level drifts out of sync), keeping vitest ~1.5 s.
+
+## Kuglebanen 2.0 rebuild (design: docs/kravspec-v2.md · process: docs/build-prompt-v2.md)
+
+### Physics 2.0
+- **Discovered: `Body.setStatic` zeroes restitution and forces friction=1 on every static body** — all v1 piece/obstacle materials were silently dead (the "springy" bouncer never sprang; its longer throws came from friction 0 alone). Fixed by restoring the authored material on every part after creation (`restoreStaticMaterial`) — Matter's pair combiner (max restitution / min friction) then works as documented. This is what makes the 2.0 bouncer genuinely bounce.
+- **Ball densities re-tuned to iron ≫ wood > basketball (≈12.7 / 3.1 / 1.3)** — mass only matters against breakables (static-body collisions are mass-independent), so the v1-proven feel of each ball is unchanged while `impactSpeed × mass` becomes a real puzzle axis.
+- **Breakable break restores the ball's pre-impact velocity** — the same-tick bounce has already been resolved when we detect the new contact, so restoring makes the ball visibly smash *through* rather than bounce off a plank that no longer exists.
+- **Booster is a velocity-SET on every contact tick** (not an impulse) — predictable "fires you THIS way at THIS speed"; an arrow aimed into its own pad wedges the ball to a timeout, accepted as authored nonsense the solver simply never rewards.
+- **Portal entry is a sensor; the trigger is centre-inside-disc** (not rim contact) so the portal visibly swallows the ball; the recorded frame keeps the pre-teleport pose so the jump happens *between* frames — exactly how the replay draws it. 10-tick cooldown.
+- **Coins have no Matter bodies** — pure swept-segment distance checks (the ball's path segment, not point samples), so a fast ball cannot tunnel past a pickup and the physics is untouched by coin placement.
+- **`firstPlayerContactTick` = first solid pair contact OR portal swallow** — the ghost preview is the real run truncated there, which makes preview-is-exact-prefix true by construction (and unit-tested anyway).
+
+### Solver & levels 2.0
+- **One exhaustive pass instead of literal iterative deepening** — the density metric needs the full space anyway, and min-piece-count over coin-complete wins IS the iterative-deepening par. Half the code, same value.
+- **Clock injection (`opts.now`)** — the CLI enforces time budgets, `src/` stays wall-clock-free and deterministic.
+- **The app reads par from the committed `solver-report.json`** (`PAR_BY_LEVEL`) — par is never hand-authored anywhere.
+- **Density-curve tuning levers found while authoring**: flight-only "ring" targets kill promiscuous floor-roll wins (k9, k10); decoy sockets that *share scarce inventory* add candidates without multiplying wins (k14's twin ramp/booster sockets); allowedTypes restrictions keep the finale's space small enough to exhaust in seconds.
+- **k1+k2 are ★3-with-one-piece levels → 6★ after two levels** — world 2 unlocks exactly when the loop is understood; world 3 needs 16★ (some ★2/★3 replays).
+- **Empty-drop drift is ~-49 px** (deterministic micro-asymmetry over floor bounces) — measured and designed around; every level rejects the 0-piece run on every allowed ball, enforced by the CLI.
+
+### UI 2.0
+- **Radial picker ring clamps its centre to the board** so edge slots (k13's shelf pad, k14's corner sockets) keep every angle button tappable at 390 px.
+- **Placing a piece auto-opens its angle ring** (when it has >1 valid angle) — place-then-aim in two taps total.
+- **Ghost preview only in the idle state** — during replay the trail owns the board; after a finished run any edit resets to idle and the preview returns.
+- **Dexie v2 upgrade resets progress by design** (new star economy), carries the ball preference, and is proven throw-proof against v1 rows by a fake-indexeddb unit test.
+- **Win arpeggio plays one note per star earned** — the count-up is audible as well as visible; all audio is oscillator-only and derived from trajectory events, muted by a persisted toggle.
+- **Particles are analytic f(age) with spawn params from mulberry32 seeded by (level id, tick)** — visually random, actually deterministic; `Math.random()` appears nowhere in src/.
+- **Slow-mo is a playback-speed ramp over the last ~25 ticks of won runs** — the trajectory itself is untouched.
