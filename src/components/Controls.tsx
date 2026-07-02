@@ -8,6 +8,11 @@ import { LEVELS } from '../../data/levels'
 
 type Props = { level: LevelDef }
 
+/** Chunky arcade button: gradient face + solid "edge" that presses down. */
+const CTA =
+  'flex-1 rounded-2xl px-4 py-3 text-base font-black tracking-tight shadow-lg transition touch-manipulation ' +
+  'border-b-4 active:translate-y-[2px] active:border-b-2 disabled:opacity-60 disabled:active:translate-y-0'
+
 export function Controls({ level }: Props) {
   const placements = useGameStore((s) => s.placements)
   const runResult = useGameStore((s) => s.runResult)
@@ -36,17 +41,17 @@ export function Controls({ level }: Props) {
               dropBall()
             }}
             disabled={running}
-            className="flex-1 rounded-xl bg-sky-500 px-4 py-3 text-base font-bold text-slate-900 shadow-lg transition touch-manipulation hover:bg-sky-400 active:scale-95 disabled:opacity-60"
+            className={`${CTA} border-sky-700 bg-gradient-to-b from-sky-400 to-sky-600 text-sky-950 hover:from-sky-300 hover:to-sky-500`}
           >
-            {running ? UI.dropping : UI.drop}
+            {running ? UI.dropping : `▶ ${UI.drop}`}
           </button>
         ) : (
           <button
             type="button"
             onClick={resetRun}
-            className="flex-1 rounded-xl bg-sky-500 px-4 py-3 text-base font-bold text-slate-900 shadow-lg transition touch-manipulation hover:bg-sky-400 active:scale-95"
+            className={`${CTA} border-sky-700 bg-gradient-to-b from-sky-400 to-sky-600 text-sky-950 hover:from-sky-300 hover:to-sky-500`}
           >
-            {UI.retry}
+            ↻ {UI.retry}
           </button>
         )}
 
@@ -54,7 +59,7 @@ export function Controls({ level }: Props) {
           type="button"
           onClick={clearPlacements}
           disabled={running || !hasPieces}
-          className="rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 transition touch-manipulation hover:bg-slate-800 active:scale-95 disabled:opacity-40"
+          className="rounded-2xl border-2 border-slate-600 bg-slate-800/80 px-4 py-3 text-sm font-bold text-slate-200 shadow transition touch-manipulation hover:border-slate-400 hover:bg-slate-700 active:scale-95 disabled:opacity-40"
         >
           {UI.clear}
         </button>
@@ -65,14 +70,16 @@ export function Controls({ level }: Props) {
           type="button"
           onClick={() => nextUnlocked && selectLevel(nextLevel.id)}
           disabled={!nextUnlocked}
-          className="rounded-xl bg-emerald-500 px-4 py-3 text-base font-bold text-slate-900 shadow-lg transition touch-manipulation hover:bg-emerald-400 active:scale-95 disabled:opacity-60"
+          className={`${CTA} border-emerald-700 bg-gradient-to-b from-emerald-400 to-emerald-600 text-emerald-950 hover:from-emerald-300 hover:to-emerald-500`}
         >
           {nextUnlocked ? `${UI.next} →` : `🔒 ${UI.locked(WORLD_UNLOCK[nextLevel.world])}`}
         </button>
       )}
 
       {!finished && (
-        <p className="text-center text-xs text-slate-400">{UI.piecesLeft(totalRemaining(level, placements))}</p>
+        <p className="text-center text-xs font-medium text-slate-400">
+          {UI.piecesLeft(totalRemaining(level, placements))}
+        </p>
       )}
     </div>
   )

@@ -1,7 +1,8 @@
 import type { LevelDef } from '../types'
-import { PIECE_SPECS } from '../physics/constants'
+import { PIECE_SPECS, ROTATION_DOMAINS } from '../physics/constants'
 import { inventoryTypes, remaining } from '../game/inventory'
 import { useGameStore } from '../store/gameStore'
+import { PieceIcon } from './PieceIcon'
 
 type Props = { level: LevelDef }
 
@@ -30,17 +31,23 @@ export function InventoryBar({ level }: Props) {
             onClick={() => setActivePieceType(type)}
             aria-pressed={isActive}
             className={[
-              'flex min-w-[84px] flex-col items-center gap-0.5 rounded-xl border-2 px-3 py-2 transition touch-manipulation active:scale-95',
-              isActive ? 'border-white bg-slate-700/80' : 'border-slate-700 bg-slate-800/60',
+              'relative flex min-w-[84px] flex-col items-center gap-0.5 rounded-xl border-2 px-3 pb-1.5 pt-2 transition touch-manipulation',
+              'hover:-translate-y-0.5 active:scale-95',
+              isActive
+                ? 'border-white bg-gradient-to-b from-slate-600/90 to-slate-700/90 shadow-lg'
+                : 'border-slate-700 bg-slate-800/60 hover:border-slate-500',
               exhausted ? 'opacity-45' : '',
             ].join(' ')}
           >
-            <span className="text-2xl leading-none" style={{ color: spec.color }}>
-              {spec.glyph}
-            </span>
-            <span className="text-xs font-medium text-slate-200">{spec.label}</span>
-            <span className={['text-xs font-bold', exhausted ? 'text-slate-500' : 'text-slate-300'].join(' ')}>
-              {left} tilbage
+            <PieceIcon type={type} rotation={ROTATION_DOMAINS[type][0]} size={30} />
+            <span className="text-xs font-semibold text-slate-100">{spec.label}</span>
+            <span
+              className={[
+                'absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-black shadow',
+                exhausted ? 'bg-slate-600 text-slate-300' : 'bg-amber-400 text-slate-900',
+              ].join(' ')}
+            >
+              {left}
             </span>
           </button>
         )

@@ -200,7 +200,8 @@ committed solver report against live physics.
 **In scope:** single-player puzzle, 14 pre-built levels in 3 star-gated
 worlds, fixed candidate slots, limited inventory, solver-proven star economy,
 local-only persistence, installable offline PWA, deterministic audio/particle
-juice.
+juice, and a desktop-optimised two-column layout with keyboard controls
+(Space = drop, Esc = close the angle picker).
 
 **Explicitly not built (non-goals):** level editor, sharing/backend,
 multiplayer, accounts, monetisation, any randomness, free placement,

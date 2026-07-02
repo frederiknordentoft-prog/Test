@@ -16,7 +16,7 @@ export default function App() {
   useEffect(() => setMuted(muted), [muted])
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-slate-900 text-slate-100">
+    <main className="flex min-h-0 flex-1 flex-col bg-slate-950 bg-[radial-gradient(ellipse_at_top,rgba(30,58,95,0.55),transparent_60%)] text-slate-100">
       {view === 'game' && level ? <GameView level={level} /> : <LevelSelect />}
     </main>
   )

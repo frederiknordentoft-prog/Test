@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { LevelDef } from '../types'
 import { buildWorld, previewRun, simulate, type BallFrame, type SimResult } from '../physics/simulate'
-import { degreeLabel, PHYSICS_HZ, PIECE_SPECS, ROTATION_TABLE } from '../physics/constants'
+import { degreeLabel, PHYSICS_HZ, PIECE_SPECS } from '../physics/constants'
 import { pieceInSlot } from '../game/inventory'
 import { renderScene } from '../render/renderer'
 import {
@@ -17,10 +17,12 @@ import { playBoost, playBreak, playCoin, playFail, playImpact, playPortal, playW
 import { starsForRun } from '../game/progression'
 import { useGameStore } from '../store/gameStore'
 import { RadialPicker } from './RadialPicker'
+import { PieceIcon } from './PieceIcon'
 
 type Props = { level: LevelDef }
 
-const MAX_BOARD_W = 460
+/** Board width cap: phone-sized boards stay crisp; desktop gets a big table. */
+const MAX_BOARD_W = 700
 
 export function GameCanvas({ level }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -256,7 +258,7 @@ export function GameCanvas({ level }: Props) {
   const pickerPiece = openPickerSlot ? pieceInSlot(placements, openPickerSlot) : undefined
 
   return (
-    <div ref={wrapRef} className="flex min-h-0 w-full flex-1 items-center justify-center select-none">
+    <div ref={wrapRef} className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden select-none">
       {/* Inner box is exactly the canvas size, so the slot overlay aligns to it. */}
       <div className="relative" style={{ width: dispW, height: dispH }}>
         <canvas ref={canvasRef} className="block rounded-2xl shadow-2xl" />
@@ -290,12 +292,7 @@ export function GameCanvas({ level }: Props) {
                   }
                 >
                   {placed && spec ? (
-                    <span
-                      className="transition-transform duration-150"
-                      style={{ transform: `rotate(${ROTATION_TABLE[placed.rotation] ?? 0}rad)`, display: 'inline-block' }}
-                    >
-                      {spec.glyph}
-                    </span>
+                    <PieceIcon type={placed.type} rotation={placed.rotation} size={34} color="#f8fafc" />
                   ) : (
                     '＋'
                   )}

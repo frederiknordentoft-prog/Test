@@ -23,13 +23,16 @@ body {
   overscroll-behavior: none;
 }
 
-/* Full-height flex root that respects the iPhone safe areas (notch + home bar)
-   so the game fills the screen and nothing hides behind the system UI. */
+/* HARD full-height flex root that respects the iPhone safe areas (notch +
+   home bar). The height is fixed (not min-) so the layout must always SHRINK
+   content to fit rather than grow the document — the board rescales, the
+   level list scrolls internally, and the page itself never scrolls. */
 #root {
-  min-height: 100dvh;
+  height: 100dvh;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 

@@ -17,7 +17,7 @@ export function StarRow({ stars, size = 'sm', animate = false }: Props) {
           <span
             key={i}
             className={[
-              earned ? 'text-amber-400' : 'text-slate-600',
+              earned ? 'text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.55)]' : 'text-slate-600',
               animate && earned ? 'animate-star-pop opacity-0' : '',
             ].join(' ')}
             style={animate && earned ? { animationDelay: `${(i - 1) * 0.45 + 0.2}s` } : undefined}
