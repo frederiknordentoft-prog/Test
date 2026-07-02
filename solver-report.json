@@ -1,17 +1,18 @@
 {
   "generatedBy": "npm run solve:levels",
-  "allSolvable": true,
-  "anyTrivial": false,
-  "levelCount": 6,
+  "allPass": true,
+  "levelCount": 14,
+  "totalElapsedMs": 6816,
+  "failures": [],
   "levels": [
     {
-      "levelId": "l1",
+      "levelId": "k1",
       "levelName": "Første kast",
-      "solvable": true,
-      "trivialEmptyWin": false,
-      "solutionsFound": 10,
-      "candidatesTried": 27,
-      "stopReason": "exhausted",
+      "world": 1,
+      "par": 1,
+      "star1": true,
+      "star2": true,
+      "star3": true,
       "example": {
         "ballType": "iron",
         "placements": [
@@ -21,73 +22,47 @@
             "rotation": 1
           }
         ]
-      }
-    },
-    {
-      "levelId": "l2",
-      "levelName": "Venstre om",
-      "solvable": true,
-      "trivialEmptyWin": false,
-      "solutionsFound": 10,
-      "candidatesTried": 27,
+      },
+      "solutionDensity": 0.3333333333333333,
+      "candidatesTried": 9,
+      "star1Wins": 3,
+      "emptyWinBalls": [],
       "stopReason": "exhausted",
-      "example": {
-        "ballType": "iron",
-        "placements": [
-          {
-            "slotId": "a",
-            "type": "funnel",
-            "rotation": 2
-          }
-        ]
-      }
+      "elapsedMs": 35
     },
     {
-      "levelId": "l3",
-      "levelName": "Forbi muren",
-      "solvable": true,
-      "trivialEmptyWin": false,
-      "solutionsFound": 50,
-      "candidatesTried": 428,
-      "stopReason": "solutionCap",
+      "levelId": "k2",
+      "levelName": "Begge veje",
+      "world": 1,
+      "par": 1,
+      "star1": true,
+      "star2": true,
+      "star3": true,
       "example": {
         "ballType": "iron",
         "placements": [
           {
             "slotId": "a",
             "type": "ramp",
-            "rotation": 1
+            "rotation": 5
           }
         ]
-      }
-    },
-    {
-      "levelId": "l4",
-      "levelName": "Slalom",
-      "solvable": true,
-      "trivialEmptyWin": false,
-      "solutionsFound": 50,
-      "candidatesTried": 566,
-      "stopReason": "solutionCap",
-      "example": {
-        "ballType": "iron",
-        "placements": [
-          {
-            "slotId": "a",
-            "type": "ramp",
-            "rotation": 1
-          }
-        ]
-      }
-    },
-    {
-      "levelId": "l5",
-      "levelName": "Præcision",
-      "solvable": true,
-      "trivialEmptyWin": false,
-      "solutionsFound": 29,
-      "candidatesTried": 483,
+      },
+      "solutionDensity": 0.2222222222222222,
+      "candidatesTried": 9,
+      "star1Wins": 2,
+      "emptyWinBalls": [],
       "stopReason": "exhausted",
+      "elapsedMs": 12
+    },
+    {
+      "levelId": "k3",
+      "levelName": "Stjernevejen",
+      "world": 1,
+      "par": 1,
+      "star1": true,
+      "star2": true,
+      "star3": true,
       "example": {
         "ballType": "iron",
         "placements": [
@@ -95,23 +70,179 @@
             "slotId": "a",
             "type": "ramp",
             "rotation": 3
+          }
+        ]
+      },
+      "solutionDensity": 0.11764705882352941,
+      "candidatesTried": 17,
+      "star1Wins": 2,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 20
+    },
+    {
+      "levelId": "k4",
+      "levelName": "Blød landing",
+      "world": 1,
+      "par": 1,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "funnel",
+            "rotation": 1
+          }
+        ]
+      },
+      "solutionDensity": 0.09090909090909091,
+      "candidatesTried": 11,
+      "star1Wins": 1,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 20
+    },
+    {
+      "levelId": "k5",
+      "levelName": "Opspring",
+      "world": 1,
+      "par": 1,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "bouncer",
+            "rotation": 1
+          }
+        ]
+      },
+      "solutionDensity": 0.058823529411764705,
+      "candidatesTried": 17,
+      "star1Wins": 1,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 14
+    },
+    {
+      "levelId": "k6",
+      "levelName": "Fuld fart",
+      "world": 2,
+      "par": 1,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "booster",
+            "rotation": 2
+          }
+        ]
+      },
+      "solutionDensity": 0.23529411764705882,
+      "candidatesTried": 17,
+      "star1Wins": 4,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 15
+    },
+    {
+      "levelId": "k7",
+      "levelName": "Gennembrud",
+      "world": 2,
+      "par": 1,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 1
+          }
+        ]
+      },
+      "solutionDensity": 0.17647058823529413,
+      "candidatesTried": 34,
+      "star1Wins": 6,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 32
+    },
+    {
+      "levelId": "k8",
+      "levelName": "Hul i væggen",
+      "world": 2,
+      "par": 1,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "portal",
+            "rotation": 0
+          }
+        ]
+      },
+      "solutionDensity": 0.10526315789473684,
+      "candidatesTried": 19,
+      "star1Wins": 2,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 27
+    },
+    {
+      "levelId": "k9",
+      "levelName": "To trin",
+      "world": 2,
+      "par": 2,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 1
           },
           {
             "slotId": "b",
-            "type": "funnel",
+            "type": "ramp",
             "rotation": 6
           }
         ]
-      }
+      },
+      "solutionDensity": 0.04938271604938271,
+      "candidatesTried": 81,
+      "star1Wins": 4,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 52
     },
     {
-      "levelId": "l6",
-      "levelName": "Mesterværket",
-      "solvable": true,
-      "trivialEmptyWin": false,
-      "solutionsFound": 50,
-      "candidatesTried": 36470,
-      "stopReason": "solutionCap",
+      "levelId": "k10",
+      "levelName": "Sparsommelighed",
+      "world": 2,
+      "par": 2,
+      "star1": true,
+      "star2": true,
+      "star3": true,
       "example": {
         "ballType": "iron",
         "placements": [
@@ -123,10 +254,146 @@
           {
             "slotId": "c",
             "type": "bouncer",
-            "rotation": 5
+            "rotation": 2
           }
         ]
-      }
+      },
+      "solutionDensity": 0.023502241543268576,
+      "candidatesTried": 7361,
+      "star1Wins": 173,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 3409
+    },
+    {
+      "levelId": "k11",
+      "levelName": "Slalom 2.0",
+      "world": 3,
+      "par": 2,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 3
+          },
+          {
+            "slotId": "b",
+            "type": "ramp",
+            "rotation": 7
+          }
+        ]
+      },
+      "solutionDensity": 0.024691358024691357,
+      "candidatesTried": 81,
+      "star1Wins": 2,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 30
+    },
+    {
+      "levelId": "k12",
+      "levelName": "Nålestik",
+      "world": 3,
+      "par": 2,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 6
+          },
+          {
+            "slotId": "b",
+            "type": "funnel",
+            "rotation": 2
+          }
+        ]
+      },
+      "solutionDensity": 0.018518518518518517,
+      "candidatesTried": 54,
+      "star1Wins": 1,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 21
+    },
+    {
+      "levelId": "k13",
+      "levelName": "Maskinen",
+      "world": 3,
+      "par": 3,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 6
+          },
+          {
+            "slotId": "b",
+            "type": "ramp",
+            "rotation": 0
+          },
+          {
+            "slotId": "c",
+            "type": "booster",
+            "rotation": 2
+          }
+        ]
+      },
+      "solutionDensity": 0.003303303303303303,
+      "candidatesTried": 3330,
+      "star1Wins": 11,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 1761
+    },
+    {
+      "levelId": "k14",
+      "levelName": "Mesterværket 2.0",
+      "world": 3,
+      "par": 3,
+      "star1": true,
+      "star2": true,
+      "star3": true,
+      "example": {
+        "ballType": "iron",
+        "placements": [
+          {
+            "slotId": "a",
+            "type": "ramp",
+            "rotation": 5
+          },
+          {
+            "slotId": "b",
+            "type": "portal",
+            "rotation": 0
+          },
+          {
+            "slotId": "c",
+            "type": "booster",
+            "rotation": 1
+          }
+        ]
+      },
+      "solutionDensity": 0.0017825311942959,
+      "candidatesTried": 2244,
+      "star1Wins": 4,
+      "emptyWinBalls": [],
+      "stopReason": "exhausted",
+      "elapsedMs": 1366
     }
   ]
 }

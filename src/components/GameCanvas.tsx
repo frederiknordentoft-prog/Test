@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { LevelDef } from '../types'
 import { buildWorld, simulate, type BallFrame } from '../physics/simulate'
-import { PHYSICS_HZ, PIECE_SPECS, ROTATION_STEPS, rotationDegrees } from '../physics/constants'
+import { PHYSICS_HZ, PIECE_SPECS, ROTATION_TABLE, rotationDegrees } from '../physics/constants'
 import { pieceInSlot } from '../game/inventory'
 import { renderScene } from '../render/renderer'
 import { useGameStore } from '../store/gameStore'
@@ -161,7 +161,7 @@ export function GameCanvas({ level }: Props) {
                   {placed && spec ? (
                     <span
                       className="transition-transform duration-150"
-                      style={{ transform: `rotate(${ROTATION_STEPS[placed.rotation] ?? 0}rad)`, display: 'inline-block' }}
+                      style={{ transform: `rotate(${ROTATION_TABLE[placed.rotation] ?? 0}rad)`, display: 'inline-block' }}
                     >
                       {spec.glyph}
                     </span>

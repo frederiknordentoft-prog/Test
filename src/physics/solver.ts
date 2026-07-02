@@ -1,32 +1,60 @@
 import type { BallType, LevelDef, PieceType, PlacedPiece } from '../types'
 import { simulate } from './simulate'
-import { BALL_TYPES, PIECE_TYPES, ROTATION_STEPS } from './constants'
+import { PIECE_TYPES, ROTATION_DOMAINS } from './constants'
 
 // ---------------------------------------------------------------------------
-// Deterministic level solver core. Enumerates every valid ball-type ×
-// slot→(type,rotation) assignment that respects the level's inventory limits,
-// runs the headless deterministic simulation for each, and collects the ones
-// that win. Shared by the `solve:levels` CLI and the test suite. No DOM, no
-// wall-clock, no RNG → the same level always yields the same example solution.
+// Deterministic level solver 2.0. Exhaustively enumerates every valid
+// ball × slot → (type, rotation-in-domain) assignment that respects the
+// level's inventory, runs the headless deterministic simulation for each, and
+// derives the star economy:
+//   ★1  some assignment wins
+//   ★2  some winning assignment collects ALL coins ("coin-complete")
+//   par the minimum piece count over coin-complete wins (== the first depth an
+//       iterative deepening search would find one at; the exhaustive pass is
+//       needed for the density metric anyway, so par falls out of it)
+//   ★3  ★2 within par pieces — achievable by definition whenever ★2 is
+// plus the solution density (★1 winners / candidates tried), the measured
+// difficulty signal the level curve is tuned against.
+//
+// No DOM, no wall-clock, no RNG → the same level always yields the same
+// report. A clock may be INJECTED (opts.now) by the CLI to enforce a time
+// budget; src/ itself never reads one, and shipped levels are designed to
+// exhaust their search space long before any budget bites.
 // ---------------------------------------------------------------------------
 
 export type Solution = { ballType: BallType; placements: PlacedPiece[] }
 
-export type SolveReport = {
+export type LevelSolveReport = {
   levelId: string
   levelName: string
-  solvable: boolean
+  world: number
+  /** Minimum piece count over coin-complete wins; -1 if none exists. */
+  par: number
+  star1: boolean
+  star2: boolean
+  star3: boolean
+  /** A coin-complete win at par (fewest pieces; ties broken by the level's
+   *  ball order, then enumeration order). */
   example: Solution | null
-  solutionsFound: number
+  /** ★1 winners / candidates tried — comparable across levels when the search
+   *  was exhausted. */
+  solutionDensity: number
   candidatesTried: number
-  stopReason: 'exhausted' | 'solutionCap' | 'candidateCap'
+  star1Wins: number
+  /** Balls that win with ZERO pieces — must be empty for a real puzzle. */
+  emptyWinBalls: BallType[]
+  stopReason: 'exhausted' | 'candidateCap' | 'timeBudget'
+  /** Filled in by the caller if it injected a clock; 0 otherwise. */
+  elapsedMs: number
 }
 
 export type SolveOptions = {
-  /** Stop after this many confirmed solutions (spec suggests 50). */
-  maxSolutions?: number
-  /** Hard cap on full candidate assignments simulated (iteration budget). */
+  /** Hard cap on candidate (placement × ball) simulations. */
   maxCandidates?: number
+  /** Optional time budget — only enforced when `now` is also provided. */
+  timeBudgetMs?: number
+  /** Clock injection point for the CLI. Never used in the browser/tests. */
+  now?: () => number
 }
 
 function allowedTypesForSlot(allowed: PieceType[], remaining: Record<PieceType, number>): PieceType[] {
@@ -34,59 +62,78 @@ function allowedTypesForSlot(allowed: PieceType[], remaining: Record<PieceType, 
   return base.filter((t) => remaining[t] > 0)
 }
 
-/**
- * Brute-force solve a level. Backtracking over slots with inventory pruning
- * keeps the search tiny for realistic inventories (a few pieces), while the
- * candidate cap bounds the worst case. Enumeration order is fixed (slots, then
- * PIECE_TYPES order, then rotation index) so the reported example is stable.
- */
-export function solveLevel(level: LevelDef, opts: SolveOptions = {}): SolveReport {
-  const maxSolutions = opts.maxSolutions ?? 50
+export function solveLevel(level: LevelDef, opts: SolveOptions = {}): LevelSolveReport {
   const maxCandidates = opts.maxCandidates ?? 500_000
+  const startedAt = opts.now?.() ?? 0
+  const deadline =
+    opts.now && opts.timeBudgetMs !== undefined ? startedAt + opts.timeBudgetMs : Infinity
+
   const slots = level.slots
+  const coinCount = level.coins?.length ?? 0
 
   const remaining = {} as Record<PieceType, number>
   for (const t of PIECE_TYPES) remaining[t] = level.inventory[t] ?? 0
 
-  const solutions: Solution[] = []
   const current: PlacedPiece[] = []
   let candidatesTried = 0
-  let stopReason: SolveReport['stopReason'] = 'exhausted'
+  let star1Wins = 0
+  const emptyWinBalls: BallType[] = []
+  let best: { size: number; ballIdx: number; solution: Solution } | null = null
+  let stopReason: LevelSolveReport['stopReason'] = 'exhausted'
   let stop = false
 
-  function recurse(slotIdx: number, ballType: BallType): void {
-    if (stop) return
-
-    if (slotIdx === slots.length) {
-      candidatesTried++
-      const r = simulate(level, current, ballType)
-      if (r.result === 'won') {
-        solutions.push({ ballType, placements: current.map((p) => ({ ...p })) })
-        if (solutions.length >= maxSolutions) {
-          stopReason = 'solutionCap'
-          stop = true
-          return
-        }
-      }
+  function leaf(): void {
+    for (let ballIdx = 0; ballIdx < level.balls.length; ballIdx++) {
+      const ballType = level.balls[ballIdx] as BallType
       if (candidatesTried >= maxCandidates) {
         stopReason = 'candidateCap'
         stop = true
+        return
       }
+      if (opts.now && opts.now() > deadline) {
+        stopReason = 'timeBudget'
+        stop = true
+        return
+      }
+      candidatesTried++
+      const r = simulate(level, current, ballType)
+      if (r.result !== 'won') continue
+      star1Wins++
+      if (current.length === 0 && !emptyWinBalls.includes(ballType)) emptyWinBalls.push(ballType)
+      const coinComplete = r.coinsCollected.length === coinCount
+      if (!coinComplete) continue
+      const size = current.length
+      if (best === null || size < best.size || (size === best.size && ballIdx < best.ballIdx)) {
+        best = {
+          size,
+          ballIdx,
+          solution: { ballType, placements: current.map((p) => ({ ...p })) },
+        }
+      }
+    }
+  }
+
+  // Backtracking over slots with inventory pruning. Enumeration order is fixed
+  // (slot order, empty-first, PIECE_TYPES order, domain order) so the reported
+  // example is stable across runs.
+  function recurse(slotIdx: number): void {
+    if (stop) return
+    if (slotIdx === slots.length) {
+      leaf()
       return
     }
-
     const slot = slots[slotIdx]!
 
     // Option 1: leave this slot empty.
-    recurse(slotIdx + 1, ballType)
+    recurse(slotIdx + 1)
     if (stop) return
 
-    // Option 2: place one allowed, still-available piece at each rotation.
+    // Option 2: each allowed, still-available piece at each domain rotation.
     for (const t of allowedTypesForSlot(slot.allowedTypes, remaining)) {
       remaining[t]--
-      for (let rot = 0; rot < ROTATION_STEPS.length; rot++) {
+      for (const rot of ROTATION_DOMAINS[t]) {
         current.push({ slotId: slot.id, type: t, rotation: rot })
-        recurse(slotIdx + 1, ballType)
+        recurse(slotIdx + 1)
         current.pop()
         if (stop) break
       }
@@ -95,19 +142,24 @@ export function solveLevel(level: LevelDef, opts: SolveOptions = {}): SolveRepor
     }
   }
 
-  // Iron first so the default ball is preferred in the reported example.
-  for (const ballType of BALL_TYPES) {
-    if (stop) break
-    recurse(0, ballType)
-  }
+  recurse(0)
 
+  // TS cannot see the closure mutation of `best` inside leaf() (TS#9998).
+  const b = best as { size: number; ballIdx: number; solution: Solution } | null
   return {
     levelId: level.id,
     levelName: level.name,
-    solvable: solutions.length > 0,
-    example: solutions[0] ?? null,
-    solutionsFound: solutions.length,
+    world: level.world,
+    par: b ? b.size : -1,
+    star1: star1Wins > 0,
+    star2: b !== null,
+    star3: b !== null,
+    example: b ? b.solution : null,
+    solutionDensity: candidatesTried > 0 ? star1Wins / candidatesTried : 0,
     candidatesTried,
+    star1Wins,
+    emptyWinBalls,
     stopReason,
+    elapsedMs: opts.now ? opts.now() - startedAt : 0,
   }
 }

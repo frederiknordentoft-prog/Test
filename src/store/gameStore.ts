@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { BallType, PieceType, PlacedPiece, RunResult } from '../types'
 import type { FailReason } from '../physics/simulate'
 import { LEVELS, getLevel } from '../../data/levels'
-import { DEFAULT_BALL, ROTATION_STEPS } from '../physics/constants'
+import { DEFAULT_BALL, ROTATION_DOMAINS } from '../physics/constants'
 import { canPlace, inventoryTypes, pieceInSlot, remaining } from '../game/inventory'
 
 export type View = 'levelSelect' | 'game'
@@ -127,9 +127,14 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     rotateSlot: (slotId) => {
       edit((ps) =>
-        ps.map((p) =>
-          p.slotId === slotId ? { ...p, rotation: (p.rotation + 1) % ROTATION_STEPS.length } : p,
-        ),
+        ps.map((p) => {
+          if (p.slotId !== slotId) return p
+          // Cycle within the piece type's rotation DOMAIN (kravspec §4.1).
+          const domain = ROTATION_DOMAINS[p.type]
+          const idx = domain.indexOf(p.rotation)
+          const next = domain[(idx + 1) % domain.length] ?? (domain[0] as number)
+          return { ...p, rotation: next }
+        }),
       )
     },
 
