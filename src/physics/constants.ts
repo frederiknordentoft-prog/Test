@@ -120,6 +120,12 @@ export function rotationDegrees(index: number): number {
   return wrapped * 22.5
 }
 
+/** Danish-formatted degree label for a table index ("22,5°", "90°"). */
+export function degreeLabel(index: number): string {
+  const d = rotationDegrees(index)
+  return `${(Number.isInteger(d) ? String(d) : d.toFixed(1)).replace('.', ',')}°`
+}
+
 /**
  * The single source of truth mapping (type, rotation index) → radians.
  * Indices outside the piece's domain fall back to the domain's first entry so

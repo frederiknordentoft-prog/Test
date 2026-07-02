@@ -2,6 +2,7 @@ import type { LevelDef } from '../types'
 import { useGameStore } from '../store/gameStore'
 import { totalRemaining } from '../game/inventory'
 import { UI } from '../game/strings'
+import { WORLD_UNLOCK, worldUnlocked } from '../game/progression'
 import { LEVELS } from '../../data/levels'
 
 type Props = { level: LevelDef }
@@ -13,6 +14,7 @@ export function Controls({ level }: Props) {
   const resetRun = useGameStore((s) => s.resetRun)
   const clearPlacements = useGameStore((s) => s.clearPlacements)
   const selectLevel = useGameStore((s) => s.selectLevel)
+  const starsByLevel = useGameStore((s) => s.starsByLevel)
 
   const running = runResult === 'running'
   const finished = runResult === 'won' || runResult === 'failed'
@@ -20,6 +22,7 @@ export function Controls({ level }: Props) {
 
   const idx = LEVELS.findIndex((l) => l.id === level.id)
   const nextLevel = idx >= 0 && idx < LEVELS.length - 1 ? LEVELS[idx + 1] : undefined
+  const nextUnlocked = nextLevel ? worldUnlocked(nextLevel.world, starsByLevel) : false
 
   return (
     <div className="flex flex-col gap-2">
@@ -56,14 +59,17 @@ export function Controls({ level }: Props) {
       {runResult === 'won' && nextLevel && (
         <button
           type="button"
-          onClick={() => selectLevel(nextLevel.id)}
-          className="rounded-xl bg-emerald-500 px-4 py-3 text-base font-bold text-slate-900 shadow-lg transition touch-manipulation hover:bg-emerald-400 active:scale-95"
+          onClick={() => nextUnlocked && selectLevel(nextLevel.id)}
+          disabled={!nextUnlocked}
+          className="rounded-xl bg-emerald-500 px-4 py-3 text-base font-bold text-slate-900 shadow-lg transition touch-manipulation hover:bg-emerald-400 active:scale-95 disabled:opacity-60"
         >
-          {UI.next} →
+          {nextUnlocked ? `${UI.next} →` : `🔒 ${UI.locked(WORLD_UNLOCK[nextLevel.world])}`}
         </button>
       )}
 
-      <p className="text-center text-xs text-slate-400">{UI.piecesLeft(totalRemaining(level, placements))}</p>
+      {!finished && (
+        <p className="text-center text-xs text-slate-400">{UI.piecesLeft(totalRemaining(level, placements))}</p>
+      )}
     </div>
   )
 }
