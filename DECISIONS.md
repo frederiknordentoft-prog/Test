@@ -69,3 +69,4 @@ One line per decision: what + why. Locked architecture from the spec is not re-l
 - **Win arpeggio plays one note per star earned** — the count-up is audible as well as visible; all audio is oscillator-only and derived from trajectory events, muted by a persisted toggle.
 - **Particles are analytic f(age) with spawn params from mulberry32 seeded by (level id, tick)** — visually random, actually deterministic; `Math.random()` appears nowhere in src/.
 - **Slow-mo is a playback-speed ramp over the last ~25 ticks of won runs** — the trajectory itself is untouched.
+- **Tutorial = one banner with three sequential messages** (place → pick angle → drop) driven by live state, rather than positioned arrow overlays — same teaching sequence, robust at every viewport, and the Playwright gate verifies all three steps appear in order.
