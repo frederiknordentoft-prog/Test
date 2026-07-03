@@ -242,6 +242,7 @@
       <div class="setrow"><span class="setlbl">🔥 Svær AI</span><div class="toggle" id="tgHard"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">💥 Power-ups</span><div class="toggle" id="tgPowerups"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">🌀 Storm</span><div class="toggle on" id="tgStorm"><div class="sw"></div></div></div>
+      <div class="setrow"><span class="setlbl">🎯 Dusør på lederen</span><div class="toggle" id="tgBounty"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">🔊 Lydeffekter</span><div class="toggle on" id="tgSound"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">🎵 Musik</span><div class="toggle on" id="tgMusic"><div class="sw"></div></div></div>
       <div class="setrow"><span class="setlbl">Dit navn</span><input id="nameInput" class="nameinp" maxlength="12" placeholder="Spiller" /></div>
@@ -420,6 +421,7 @@ const G={
   simTick:0,            // deterministisk sim-ur: +1 pr. simulate() (combo-vinduet måles i ticks)
   comboWindowMs:3500,   // kombo-vindue (omregnes lazily til ticks via G.speed — cache aldrig)
   comboMaxStack:4,      // loft på kombo-kæden (undgår runaway-multiplier)
+  bountyOn:false,       // Dusør på lederen (anti-snowball, default FRA)
 };
 try{ if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.fxLevel='low'; }catch(e){}
 
@@ -556,12 +558,17 @@ function simulate(){
     const t=trail[ni];
     if(t!==0 && t!==p.id){ const o=playerById(t); if(o) mark(o,'c',p.id); } // krydser modstanders streg -> de dør
   }
+  const bLeader=bountyLeaderId();                      // beregnes FØR nogen kills muterer state (deterministisk)
   for(const p of kill){
     if(p.invulnT>0) continue;                          // usårlig (lige reddet)
     if(p.shield){ p.shield=false; p.invulnT=1.4;       // skjold redder én gang (ingen attribution; juice i fxWatch)
       for(const c of p.trailCells) if(trail[c]===p.id) trail[c]=0; p.trailCells.length=0;
       continue; }
-    killPlayer(p,cause.get(p));
+    const c=cause.get(p);
+    if(bLeader && p.id===bLeader && c && c.k==='c'){   // dusør: at skære LEDERENS streg krediterer skæreren
+      const cutter=playerById(c.by);
+      if(cutter) cutter.bonus=Math.min(TOTAL, cutter.bonus + p.trailCells.length); }
+    killPlayer(p,c);
   }
   for(const p of alive){
     if(!p.alive) continue;                             // (også frosne flytter ikke: nx==cx)
@@ -618,6 +625,17 @@ function registerCapture(p,gained){
   return credited;
 }
 function credited(id){ const p=playerById(id); return Math.min(TOTAL,(counts[id]||0)+((p&&p.bonus)||0)); }
+// Dusør: lederen (strengt størst krediteret, over 15%) har en synlig pris på sin åbne streg.
+// Beregnes ens på host og klient (kun replikeret state) — ingen ekstra net-felter behøves ud over bountyOn.
+function bountyLeaderId(){
+  if(!G.bountyOn) return 0;
+  let best=null, second=-1;
+  for(const p of G.players){ if(!p.alive) continue; const c=credited(p.id);
+    if(!best||c>best.c){ second=best?best.c:second; best={id:p.id,c}; }
+    else if(c>second) second=c; }
+  if(!best || best.c<TOTAL*0.15 || best.c<=second) return 0;
+  return best.id;
+}
 function capture(p){
   const me=p.id, tlen=p.trailCells.length;            // vundet areal = streg (før mutation) + indelukket
   for(const c of p.trailCells){ owner[c]=me; trail[c]=0; fillAge[c]=now; }
@@ -764,13 +782,13 @@ function pushFeed(html){ if(G.demo) return; feed.push({html,until:now+4500}); wh
 function renderFeed(){ const el=document.getElementById('killfeed'); if(el) el.innerHTML=feed.map(f=>'<div class="kf">'+f.html+'</div>').join(''); }
 function updateFeed(){ let ch=false; while(feed.length && now>feed[0].until){ feed.shift(); ch=true; } if(ch) renderFeed(); }
 function fxName(p,isMe){ return p.id===G.myId?(isMe||'Du'):'<b style="color:'+p.color+'">'+p.name+'</b>'; }
-let fxPrevOwner=null, fxPrevTrail=null, fxAlive={}, fxShield={}, fxCombo={}, fxPhase='';
+let fxPrevOwner=null, fxPrevTrail=null, fxAlive={}, fxShield={}, fxCombo={}, fxBonus={}, fxPhase='';
 function fxWatch(){
   if(G.phase!=='play'){ fxPhase=G.phase; return; }
   if(fxPhase!=='play'){ fxPhase='play';                       // ny runde: resync uden effekter
     fxPrevOwner=owner.slice(); fxPrevTrail=trail.slice();
-    fxAlive={}; fxShield={}; fxCombo={};
-    for(const p of G.players){ fxAlive[p.id]=p.alive; fxShield[p.id]=p.shield; fxCombo[p.id]=p.combo; }
+    fxAlive={}; fxShield={}; fxCombo={}; fxBonus={};
+    for(const p of G.players){ fxAlive[p.id]=p.alive; fxShield[p.id]=p.shield; fxCombo[p.id]=p.combo; fxBonus[p.id]=p.bonus; }
     return;
   }
   // --- combo-pops: kæden steg (diff virker også hos klienter via snapshot) ---
@@ -841,6 +859,16 @@ function fxWatch(){
       if(p.id===G.myId && !G.demo && navigator.vibrate){ try{navigator.vibrate(60);}catch(e){} } }
     fxShield[p.id]=p.shield;
   }
+  // --- dusør indkasseret: bonus steg UDEN erobrede celler (virker også hos klienter) ---
+  if(G.bountyOn) for(const p of G.players){
+    const pb=fxBonus[p.id]||0;
+    if(p.bonus>pb && !gained[p.id]){
+      const hx=(p.cx+0.5)*CELL, hy=(p.cy+0.5)*CELL;
+      floatText(hx,hy-CELL*1.2,'🎯 DUSØR +'+(p.bonus-pb)+'!','#ffd640',20);
+      if(fxScale()>0) spawnRing(hx,hy,'#ffd640',CELL*6,0.6,3);
+      if(!G.demo){ tone(880,1320,0.16,'triangle',0.22); pushFeed(fxName(p)+' indkasserede dusøren! (+'+(p.bonus-pb)+')'); } }
+    fxBonus[p.id]=p.bonus;
+  } else for(const p of G.players) fxBonus[p.id]=p.bonus;
   fxPrevOwner.set(owner); fxPrevTrail.set(trail);
 }
 function floatText(x,y,txt,color,size){ floatTexts.push({x,y,txt,color,size:size||16,life:0,max:1.1}); }
@@ -1182,7 +1210,7 @@ function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
     sh:p.shield,gh:p.ghostT,fz:p.frozenT,iv:p.invulnT,kb:p.killedBy,kk:p.killKind,
     cb:p.combo,cu:p.comboUntil,bo:p.bonus}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
-    tl:timeLeft,cd:G.cd,sp:G.speed,wi:G.winnerId,wr:G.winReason,sm:G.stormM,pu:powerups,mv:G.mapVariant,my:0,tk:G.simTick,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
+    tl:timeLeft,cd:G.cd,sp:G.speed,wi:G.winnerId,wr:G.winReason,sm:G.stormM,pu:powerups,mv:G.mapVariant,my:0,tk:G.simTick,bt:G.bountyOn,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
   for(const p of G.players) if(p.conn&&p.conn.open){ msg.my=p.id; p.conn.send(msg); }
 }
 let clientSnapAt=0;
@@ -1198,7 +1226,7 @@ function clientOnData(d){
   G.phase=d.ph; G.roundIndex=d.ri; G.totalRounds=d.tr_; G.picker=d.pk; G.pickOrder=d.po||[]; G.pickPos=d.pp;
   G.winnerId=d.wi; G.winReason=d.wr;
   if(oldPhase!=='roundwin' && G.phase==='roundwin'){ const w=playerById(G.winnerId)||(d.ps.find(s=>s.id===G.winnerId)); if(w&&w.color) celebrate(w); else if(G.winnerId) celebrate({color:COLORS[G.winnerId-1]}); }
-  timeLeft=d.tl; G.cd=d.cd||0; if(d.sp)G.speed=d.sp; counts=d.cnt; G.simTick=d.tk||0; G.mode='online'; G.isHost=false;
+  timeLeft=d.tl; G.cd=d.cd||0; if(d.sp)G.speed=d.sp; counts=d.cnt; G.simTick=d.tk||0; G.bountyOn=!!d.bt; G.mode='online'; G.isHost=false;
   G.stormM=d.sm||0; powerups=d.pu||[];
   if(d.mv!==undefined && d.mv!==G.mapVariant){ G.mapVariant=d.mv; buildObstacles(); }
   owner.set(d.ow); trail.set(d.tg);
@@ -1395,9 +1423,11 @@ document.querySelectorAll('.spd').forEach(b=>bindTap(b,()=>{ G.speed=SPEEDS[b.da
 function updateFxInfo(){ const el=document.getElementById('fxInfo'); if(!el) return; const s=[];
   if(G.powerupsOn) s.push('💥 <b>Power-ups</b> dukker op på banen: 🛡️ <b>Skjold</b> = overlev ét dødsfald · ❄️ <b>Frys</b> = modstandere fryser kort · 👻 <b>Spøgelse</b> = kør gennem modstanderes farve uden at dø');
   if(G.stormOn) s.push('🌀 <b>Storm</b>: banens kanter lukker dødeligt ind de sidste 20 sekunder — kom væk fra kanten!');
+  if(G.bountyOn) s.push('🎯 <b>Dusør</b>: lederens åbne streg lyser guld — skær den og bliv krediteret bonus-areal svarende til stregens længde');
   el.innerHTML=s.join('<br>'); el.style.display=s.length?'':'none'; }
 bindTap(document.getElementById('tgPowerups'),()=>{ G.powerupsOn=!G.powerupsOn; document.getElementById('tgPowerups').classList.toggle('on',G.powerupsOn); updateFxInfo(); });
 bindTap(document.getElementById('tgStorm'),()=>{ G.stormOn=!G.stormOn; document.getElementById('tgStorm').classList.toggle('on',G.stormOn); updateFxInfo(); });
+bindTap(document.getElementById('tgBounty'),()=>{ G.bountyOn=!G.bountyOn; document.getElementById('tgBounty').classList.toggle('on',G.bountyOn); updateFxInfo(); });
 function totalWins(){ const lb=loadLB(); return Object.values(lb).reduce((a,b)=>a+b,0); }
 function skinUnlocked(name){ return totalWins() >= (SKIN_UNLOCK[name]||0); }
 function updateThemes(){ const w=totalWins();
@@ -1509,12 +1539,14 @@ function render(frac){
   const pulse=0.55+0.45*Math.sin(now/90);
   ctx.shadowBlur=CELL*.9;
   const ndPulse=G.nearDeath?0.3+0.35*Math.sin(now/60):0;    // din streg pulserer hvidt ved nær-død
+  const bLeader=bountyLeaderId(), btPulse=0.35+0.3*Math.sin(now/110);   // dusør: guld-telegraf på lederens streg
   // per-celle shadowBlur er DYR: kun som visuel fallback når bloom ikke kan (fuld effekt uden filter-støtte)
   if(glow||G.fxLevel!=='full') ctx.shadowBlur=0;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const t=trail[idx(x,y)]; if(!t)continue;
     if(trLen[t]>16){ ctx.shadowColor='#ff3030'; ctx.fillStyle='rgba(255,70,70,'+(0.55+0.35*pulse)+')'; }
     else { ctx.shadowColor=COLORS[t-1]; ctx.fillStyle=COLORS[t-1]; }
     ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2);
+    if(t===bLeader){ ctx.fillStyle='rgba(255,214,64,'+btPulse+')'; ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2); }
     if(t===G.myId && ndPulse>0){ ctx.fillStyle='rgba(255,255,255,'+ndPulse+')'; ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2); } }
   ctx.shadowBlur=0;
   // forhindringer (bane-variant)
@@ -1540,6 +1572,10 @@ function render(frac){
       ctx.globalAlpha=1;
       if(p.shield||p.invulnT>0){ ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(hx,hy,r*0.95,0,6.283); ctx.stroke(); }
       if(p.frozenT>0){ ctx.strokeStyle='#9ad8ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(hx,hy,r*1.08,0,6.283); ctx.stroke(); }
+      if(p.id===bLeader){ ctx.strokeStyle='rgba(255,214,64,'+(0.5+0.4*Math.sin(now/110))+')'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.arc(hx,hy,r*1.7,0,6.283); ctx.stroke();
+        ctx.font=Math.floor(CELL*0.8)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('🎯',hx,hy-r*2.6); }
       // kombo-meter: bue = resterende vindue, tal = aktiv multiplier
       if(p.combo>0 && G.phase==='play'){
         const wt=comboWindowTicks();
@@ -1712,7 +1748,7 @@ try{ if(!localStorage.getItem('td_seen')) showHowto(); }catch(e){}
 requestAnimationFrame(frame);
 
 // til test i Node
-if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,finishWin,nextRound,endMatch,soundWatch,startDemo,fillAge,statsHTML:()=>statsHTML(),applyPowerup,spawnPowerup,get powerups(){return powerups},owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,clearBoard,playerById,registerCapture,comboMult,credited,comboWindowTicks,
+if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,finishWin,nextRound,endMatch,soundWatch,startDemo,fillAge,statsHTML:()=>statsHTML(),applyPowerup,spawnPowerup,get powerups(){return powerups},owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,clearBoard,playerById,registerCapture,comboMult,credited,comboWindowTicks,bountyLeaderId,
   setLocalPlayers:(n,ai)=>{ G.mode='local';G.isHost=true;G.players=[];let id=1;const sc=['arrows','wasd','ijkl','tfgh'];
     for(let i=0;i<n;i++){const p=makePlayer(id,'local');p.scheme=sc[i];G.players.push(p);id++;}
     for(let i=0;i<ai;i++)G.players.push(makePlayer(id++,'ai')); G.myId=1; },

@@ -22,3 +22,5 @@
 - **Krediteret areal (counts+bonus) bruges i AL rundestilling** (50%-checket, lone-survivor, ranglister, HUD, share, banner, stats) — det er hele pointen med risk/reward; celle-ejerskab/flood-fill er urørt (byte-identisk grid med/uden combo, testet).
 - **Bonus består efter død** (kæden nulstilles) — samme semantik som frosset land der stadig tæller.
 - **Kombo-tuning:** vindue 3500 ms (~23 ticks v. normal), maxStack 4 ⇒ x1/x1.25/x1.5/x1.75, COMBO_STEP=0.25 ét sted i toppen af scriptet.
+- **Dusør (Phase 4) bygget, default FRA:** leder = strengt størst krediteret OG >15% (undgår flip-flop tidligt); dusør = den skårne stregs længde (transparent og proportional med lederens risiko); krediteres via samme bonus-mekanisme som kombo. Telegraf (guldpuls + 🎯-ring) beregnes ens på host/klient af replikeret state — kun bountyOn (bt) tilføjet snapshottet.
+- **Dusør-pop udledes af bonus-diff uden owner-gevinst** i fxWatch — ingen ekstra event-felter i protokollen, virker hos klienter.
