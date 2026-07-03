@@ -1441,7 +1441,7 @@ try{ if(!localStorage.getItem('td_seen')) showHowto(); }catch(e){}
 requestAnimationFrame(frame);
 
 // til test i Node
-if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,finishWin,nextRound,endMatch,soundWatch,startDemo,fillAge,statsHTML:()=>statsHTML(),applyPowerup,spawnPowerup,get powerups(){return powerups},owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,
+if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,finishWin,nextRound,endMatch,soundWatch,startDemo,fillAge,statsHTML:()=>statsHTML(),applyPowerup,spawnPowerup,get powerups(){return powerups},owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,clearBoard,playerById,
   setLocalPlayers:(n,ai)=>{ G.mode='local';G.isHost=true;G.players=[];let id=1;const sc=['arrows','wasd','ijkl','tfgh'];
     for(let i=0;i<n;i++){const p=makePlayer(id,'local');p.scheme=sc[i];G.players.push(p);id++;}
     for(let i=0;i<ai;i++)G.players.push(makePlayer(id++,'ai')); G.myId=1; },
