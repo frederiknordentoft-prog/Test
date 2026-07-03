@@ -117,6 +117,38 @@ VEJ MOD FINALEN: hold Mbappe/Messi/Oyarzabal/Simon/Tchouameni. Cykl billige slot
 efter kamp. Fra KF (R6) bortfalder nationsgrænsen → stak 5-6 fra finalist-nation(er).
 
 ═══════════════════════════════════════════════════════════════════
+## 6B. STATUS EFTER R4 (R32) + R5-PLAN — opdateret 3. juli
+═══════════════════════════════════════════════════════════════════
+FAKTISK HOLD (R4): Simon; Santos, De Fougerolles, Medina, Robinson;
+Tchouameni, Arias, Saibari; Oyarzabal, Mbappe (C), Haaland. 4-3-3.
+(Bruger valgte Medina+Robinson frem for Otamendi/L.Martinez; beholdt Saibari.)
+
+R32-RESULTATER: TYSKLAND UDE (straffe v Paraguay) · HOLLAND UDE (straffe v
+Marokko!) · Canada 1-0 Sydafrika · Brasilien 2-1 Japan · Norge 2-1 Elfenbensk. ·
+Frankrig 3-0 Sverige · Mexico 2-0 Ecuador · England 2-1 Congo DR · USA 2-0
+Bosnien. Udestående: Spanien-Østrig, Portugal-Kroatien, Schweiz-Algeriet,
+Australien-Egypten, Argentina-Kap Verde, Colombia-Ghana.
+
+R16 (R5): Canada-Marokko · Paraguay-FRANKRIG (kæmpe opgradering, Tyskland væk!) ·
+Brasilien-NORGE (Haaland svær) · Mexico-England · W(Por/Kro)-W(Spa/Øst) ·
+USA-Belgien · W(Arg)-W(Aus/Egy) · W(Sch/Alg)-W(Col/Gha).
+
+FRISKE TITELODDS: Frankrig ~33% (solo-favorit) · Argentina ~18% · Spanien ~12%.
+r5_prep.py-SIM: P(finale): Frankrig 60% · Argentina 41% · Spanien 25% ·
+Brasilien 11% · England 12% · Norge 2% · Marokko 1%.
+
+R5-PLAN (prioriteret, bruger har travlt):
+1. HAALAND → MESSI (det planlagte bytte: Haaland R5 114k/2% finale vs Messi
+   160k/41% — +242k over R5-R7, ~cash-neutralt 9,28→9,15m).
+2. KAPTAJN: MBAPPE mod Paraguay (R5-EV 187k, højeste; Frankrig 60% finale).
+3. De Fougerolles (benket, Canada) → sælg; køb Frankrig-aktiv (Theo Hernandez
+   4,6m DEF 159k / Doue 4,3m 173k / Dembele 6,4m 287k) hvis budget.
+4. TJEK om Medina startede mod Kap Verde (bænket i R3!) → hvis nej: skift til
+   bekræftet Argentina-starter. TJEK Robinson i USA's XI mod Belgien.
+5. Saibari BEHOLDES i R5 (Marokko favorit mod Canada, 70k) — sælges i R6-vinduet.
+6. Fra R6 (KF) bortfalder nationsgrænsen → stak Frankrig (60% finale) tungt.
+
+═══════════════════════════════════════════════════════════════════
 ## 7. TJEKLISTE FØR HVER DEADLINE
 ═══════════════════════════════════════════════════════════════════
 [ ] Bekræftede opstillinger (knockout=fuld styrke, men tjek skader/karantæne i CSV)
