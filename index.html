@@ -454,17 +454,20 @@ window.addEventListener('resize',resize);
 
 //================= Bloom (nedskaleret offscreen + blur + 'lighter') =================
 const GLOW_K=1/3;                                       // glow-lag i 1/3 opløsning (blurres alligevel)
-let glowCv=null, glowCtx=null, bloomCap=false;
+let glowCv=null, glowCtx=null, glowCv2=null, glowCtx2=null, bloomCap=false;
 function initBloom(){
-  bloomCap=false; glowCv=null; glowCtx=null;
+  bloomCap=false; glowCv=null; glowCtx=null; glowCv2=null; glowCtx2=null;
   try{
     const c=document.createElement('canvas'), g=c&&c.getContext&&c.getContext('2d');
     if(!g) return;
     g.filter='blur(2px)';
     if(g.filter!=='blur(2px)') return;                  // Safari<18 eksponerer-men-ignorerer: readback afslører det
-    c.width=Math.max(2,Math.ceil(W*CELL*GLOW_K)); c.height=Math.max(2,Math.ceil(H*CELL*GLOW_K));
+    const gw=Math.max(2,Math.ceil(W*CELL*GLOW_K)), gh=Math.max(2,Math.ceil(H*CELL*GLOW_K));
+    c.width=gw; c.height=gh;
     g.setTransform(GLOW_K,0,0,GLOW_K,0,0);              // samme world-koordinater som hoved-ctx
-    glowCv=c; glowCtx=g; bloomCap=true;
+    const c2=document.createElement('canvas'); c2.width=gw; c2.height=gh;
+    const g2=c2.getContext('2d'); if(!g2) return;
+    glowCv=c; glowCtx=g; glowCv2=c2; glowCtx2=g2; bloomCap=true;
   }catch(e){}
 }
 function bloomOn(){ return bloomCap && G.fxLevel==='full' && G.theme!=='cb'; }  // cb: additiv blanding skader kontrast
@@ -1605,13 +1608,18 @@ function render(frac){
   for(const f of floatTexts){ ctx.globalAlpha=Math.max(0,1-f.life/f.max); ctx.fillStyle=f.color;
     ctx.font='800 '+f.size+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(f.txt,f.x,f.y); }
   ctx.globalAlpha=1;
-  // bloom: lyse lag tegnes nedskaleret, blurres og komposittes additivt tilbage
+  // bloom: lyse lag tegnes nedskaleret, blurres i LAV opløsning (1/9 pixels — billigt selv
+  // uden GPU) og komposittes additivt tilbage; opskaleringen bidrager med gratis udglatning
   if(glow){
     drawGlowLayer(frac,trLen);
+    const g2=glowCtx2;
+    g2.clearRect(0,0,glowCv2.width,glowCv2.height);
+    g2.filter='blur('+Math.max(1.2,CELL*0.5*GLOW_K)+'px)';
+    g2.drawImage(glowCv,0,0);
+    g2.filter='none';
     ctx.save();
-    ctx.filter='blur('+Math.max(3,CELL*0.5)+'px)';
     ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.8;
-    ctx.drawImage(glowCv,0,0,glowCv.width,glowCv.height,0,0,W*CELL,H*CELL);
+    ctx.drawImage(glowCv2,0,0,glowCv2.width,glowCv2.height,0,0,W*CELL,H*CELL);
     ctx.restore();
   }
   // onboarding-pil mod eget land (kun dig, når du er ude)
