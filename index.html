@@ -405,6 +405,7 @@ function makePlayer(id,kind){
     base:null, cx:0,cy:0,prevX:0,prevY:0,dir:{x:1,y:0},nx:0,ny:0,wallDie:false,
     alive:false, trailCells:[], pendingDir:{x:1,y:0}, netDir:null,
     roundWins:0, scheme:null, conn:null,
+    killedBy:0, killKind:'',
     shield:false, ghostT:0, frozenT:0, invulnT:0, homeSteps:0,
     persona: kind==='ai'?PERSONA_NAMES[Math.random()*3|0]:null };
 }
@@ -477,30 +478,31 @@ function simulate(){
     }
     p.dir=d; p.nx=nx; p.ny=ny;
   }
-  const kill=new Set();
+  const kill=new Set(), cause=new Map();
+  const mark=(p,k,by)=>{ kill.add(p); if(!cause.has(p)) cause.set(p,{k,by:by||0}); };   // første årsag vinder
   for(const p of alive){
-    if(p.wallDie) kill.add(p);
-    if(inStorm(p.cx,p.cy)||inStorm(p.nx,p.ny)) kill.add(p);   // fanget i stormen
+    if(p.wallDie) mark(p,'w');
+    if(inStorm(p.cx,p.cy)||inStorm(p.nx,p.ny)) mark(p,'s');   // fanget i stormen
   }
   for(let i=0;i<alive.length;i++)for(let j=i+1;j<alive.length;j++){
     const a=alive[i],b=alive[j];
-    if(a.nx===b.nx&&a.ny===b.ny){kill.add(a);kill.add(b);}
-    if(a.nx===b.cx&&a.ny===b.cy&&b.nx===a.cx&&b.ny===a.cy){kill.add(a);kill.add(b);}
+    if(a.nx===b.nx&&a.ny===b.ny){mark(a,'h',b.id);mark(b,'h',a.id);}
+    if(a.nx===b.cx&&a.ny===b.cy&&b.nx===a.cx&&b.ny===a.cy){mark(a,'h',b.id);mark(b,'h',a.id);}
   }
   for(const p of alive){
     if(p.wallDie) continue;
     const ni=idx(p.nx,p.ny);
-    if(owner[ni]!==0 && owner[ni]!==p.id && p.ghostT<=0) kill.add(p);   // modstander-land = død (spøgelse undtaget)
+    if(owner[ni]!==0 && owner[ni]!==p.id && p.ghostT<=0) mark(p,'l',owner[ni]);   // modstander-land = død (spøgelse undtaget)
     const t=trail[ni];
-    if(t!==0 && t!==p.id){ const o=playerById(t); if(o) kill.add(o); } // krydser modstanders streg -> de dør
+    if(t!==0 && t!==p.id){ const o=playerById(t); if(o) mark(o,'c',p.id); } // krydser modstanders streg -> de dør
   }
   for(const p of kill){
     if(p.invulnT>0) continue;                          // usårlig (lige reddet)
-    if(p.shield){ p.shield=false; p.invulnT=1.4;       // skjold redder én gang
+    if(p.shield){ p.shield=false; p.invulnT=1.4;       // skjold redder én gang (ingen attribution)
       for(const c of p.trailCells) if(trail[c]===p.id) trail[c]=0; p.trailCells.length=0;
       triggerFlash(p.color,0.3); spawnRipple((p.cx+0.5)*CELL,(p.cy+0.5)*CELL,p.color);
       if(p.id===G.myId&&navigator.vibrate){try{navigator.vibrate(60);}catch(e){}} continue; }
-    killPlayer(p);
+    killPlayer(p,cause.get(p));
   }
   for(const p of alive){
     if(!p.alive) continue;                             // (også frosne flytter ikke: nx==cx)
@@ -527,10 +529,11 @@ function spawnPowerup(){
     if(owner[idx(x,y)]===0 && trail[idx(x,y)]===0 && !inStorm(x,y) && !powerups.some(q=>q.x===x&&q.y===y)){
       powerups.push({x,y,type:PU_TYPES[Math.random()*PU_TYPES.length|0]}); return; } }
 }
-function killPlayer(p){
+function killPlayer(p,c){
   if(!p.alive) return;
+  p.killKind=c?c.k:''; p.killedBy=(c&&c.by)||0;       // attribution til kill-feed/dusør
   // ÉT LIV: død = elimineret. Stregen ryddes, men erobret land bliver frosset og tæller stadig.
-  for(const c of p.trailCells) if(trail[c]===p.id) trail[c]=0;
+  for(const tc of p.trailCells) if(trail[tc]===p.id) trail[tc]=0;
   p.trailCells.length=0;
   const dx=(p.cx+0.5)*CELL, dy=(p.cy+0.5)*CELL;
   spawnBurst(dx,dy,p.color); spawnRipple(dx,dy,p.color); spawnFirework(dx,dy,p.color);
@@ -820,7 +823,8 @@ function aiAutoPick(p){
 }
 function startPlay(){
   for(const p of G.players){ p.cx=p.prevX=p.base.x; p.cy=p.prevY=p.base.y;
-    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; p.path=null; p.frontier=null; p.phase='out'; p.homeSteps=0; }
+    p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; p.path=null; p.frontier=null; p.phase='out'; p.homeSteps=0;
+    p.killedBy=0; p.killKind=''; }
   recount(); G.phase='play'; timeLeft=ROUND_TIME; acc=0; G.aiPickTimer=0; G.cd=G.demo?0:3; G._cdl=0; G.myMaxTrail=0;
   if(!G.demo){ showHUD(); flashBanner(''); }
   netBroadcast(true);
@@ -996,7 +1000,7 @@ function netSend(obj){ if(G.hostConn&&G.hostConn.open) G.hostConn.send(obj); }
 function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
   const ps=G.players.map(p=>({id:p.id,kind:p.kind,nm:p.name,alive:p.alive,el:p.eliminated,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
     dx:p.dir.x,dy:p.dir.y,rw:p.roundWins,base:p.base,tlen:p.trailCells.length,
-    sh:p.shield,gh:p.ghostT,fz:p.frozenT,iv:p.invulnT}));
+    sh:p.shield,gh:p.ghostT,fz:p.frozenT,iv:p.invulnT,kb:p.killedBy,kk:p.killKind}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
     tl:timeLeft,cd:G.cd,sp:G.speed,wi:G.winnerId,wr:G.winReason,sm:G.stormM,pu:powerups,mv:G.mapVariant,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
   for(const p of G.players) if(p.conn&&p.conn.open){ msg.my=p.id; p.conn.send(msg); }
@@ -1022,6 +1026,7 @@ function clientOnData(d){
   G.players=d.ps.map(s=>{ let p=playerById(s.id)||makePlayer(s.id,s.kind);
     p.prevX=s.px;p.prevY=s.py;p.cx=s.cx;p.cy=s.cy;p.dir={x:s.dx,y:s.dy};p.alive=s.alive;p.eliminated=s.el;p.roundWins=s.rw;p.base=s.base;p.kind=s.kind;
     p.shield=s.sh;p.ghostT=s.gh;p.frozenT=s.fz;p.invulnT=s.iv; if(s.nm)p.name=s.nm;
+    p.killedBy=s.kb||0; p.killKind=s.kk||'';
     p.trailCells.length=Math.max(0,s.tlen); return p; });
   clientSnapAt=performance.now();
   // UI-skift afhængig af fase
