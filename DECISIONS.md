@@ -17,3 +17,8 @@
 - **Bloom slås fra i farveblind-tema:** additiv blanding udvander Okabe-Ito-kontrasterne; cb beholder shadowBlur-glød ved fuld effekt.
 - **Mønstre tegnes nu lyse (hvid 0.30):** de gamle mørke glyffer ville forsvinde på de nye dæmpede territorie-flader.
 - **Territorie-læsbarhed:** indre flade alpha 0.34 + kant 0.95 i egen hue — kanten ER identiteten; hvid fill-flash og sweep-animation uændret.
+- **Kombo-vinduet måles i sim-ticks (G.simTick), ikke ms:** effekt-timere lever i frame() (dt-sekunder) og kører ikke i Node; rAF-tid drifter med FPS, og et ms-vindue ville dræne under hit-stop (straf for vores egen freeze-frame). Ticks pauser med sim'en, er 100% deterministiske i harnessen og broadcastes til klienter (tk). comboWindowMs forbliver den menneskelige konstant og omregnes lazily via G.speed (cache aldrig — speed kan skifte i demoen).
+- **Kombo=1 giver x1 (ingen bonus):** credited ≡ counts indtil en ægte kæde findes — mekanikken er usynlig før den er fortjent, og paritets-testen (e) er meningsfuld.
+- **Krediteret areal (counts+bonus) bruges i AL rundestilling** (50%-checket, lone-survivor, ranglister, HUD, share, banner, stats) — det er hele pointen med risk/reward; celle-ejerskab/flood-fill er urørt (byte-identisk grid med/uden combo, testet).
+- **Bonus består efter død** (kæden nulstilles) — samme semantik som frosset land der stadig tæller.
+- **Kombo-tuning:** vindue 3500 ms (~23 ticks v. normal), maxStack 4 ⇒ x1/x1.25/x1.5/x1.75, COMBO_STEP=0.25 ét sted i toppen af scriptet.

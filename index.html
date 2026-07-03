@@ -362,6 +362,7 @@
 //================= Konstanter =================
 const W=58,H=36,TOTAL=W*H;
 const WIN_RATIO=0.50, ROUND_TIME=90, STORM_T=20;
+const COMBO_STEP=0.25;                 // multiplier-trin pr. combo-niveau (x1.00/1.25/1.50/1.75 v. maxStack 4)
 const SPEEDS={slow:5, normal:6.5, fast:8};
 const DIRS=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
 const PALETTES={ standard:['#00e5ff','#ff3d7f','#4dff7c','#ffb020','#9b6bff','#ff6a3d','#19e6c3','#f5f53a'],
@@ -416,6 +417,9 @@ const G={
   stormM:0, demo:false, myMaxTrail:0,
   hitStop:0,            // kort sim-frys ved store erobringer (sek, kun host/lokal)
   fxLevel:'full',       // 'full'|'low'|'off' — skalerer shake/partikler/bloom/hit-stop
+  simTick:0,            // deterministisk sim-ur: +1 pr. simulate() (combo-vinduet måles i ticks)
+  comboWindowMs:3500,   // kombo-vindue (omregnes lazily til ticks via G.speed — cache aldrig)
+  comboMaxStack:4,      // loft på kombo-kæden (undgår runaway-multiplier)
 };
 try{ if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.fxLevel='low'; }catch(e){}
 
@@ -426,6 +430,7 @@ function makePlayer(id,kind){
     alive:false, trailCells:[], pendingDir:{x:1,y:0}, netDir:null,
     roundWins:0, scheme:null, conn:null,
     killedBy:0, killKind:'',
+    combo:0, comboUntil:0, bonus:0,   // kombo-erobring: kæde, tick-deadline, banket bonus-kredit (runde-scoped)
     shield:false, ghostT:0, frozenT:0, invulnT:0, homeSteps:0,
     persona: kind==='ai'?PERSONA_NAMES[Math.random()*3|0]:null };
 }
@@ -519,6 +524,7 @@ function decideDir(p){
   return d;
 }
 function simulate(){
+  G.simTick++;                                        // deterministisk tidsbase (pauser under hit-stop, virker i Node)
   const alive=G.players.filter(p=>p.alive);
   for(const p of alive){ p.prevX=p.cx; p.prevY=p.cy; }
   for(const p of alive){
@@ -591,14 +597,29 @@ function killPlayer(p,c){
   p.trailCells.length=0;
   p.alive=false; p.eliminated=true; p.netDir=null;
   p.shield=false; p.ghostT=0; p.frozenT=0; p.invulnT=0;
+  p.combo=0; p.comboUntil=0;                          // kæden dør med dig — banket bonus består (som frosset land)
 }
 function outwardDir(x,y){
   const dx=(W/2)-x, dy=(H/2)-y;
   if(Math.abs(dx)>=Math.abs(dy)) return {x:Math.sign(dx)||1,y:0};
   return {x:0,y:Math.sign(dy)||1};
 }
+//================= Kombo-erobring (deterministisk; rører ALDRIG celle-ejerskab) =================
+function comboWindowTicks(){ return Math.round(G.comboWindowMs*G.speed/1000); }   // lazily: G.speed kan ændres i demo/lobby
+function comboMult(p){ return 1 + Math.max(0,Math.min(p.combo,G.comboMaxStack)-1)*COMBO_STEP; }
+function registerCapture(p,gained){
+  // Kaldes fra capture() med samlet vundet areal (streg + indelukket). Multiplier ganges
+  // KUN på den KREDITEREDE optælling (p.bonus) — grid/flood-fill er urørt.
+  if(gained<=0) return 0;
+  p.combo = (G.simTick<=p.comboUntil) ? Math.min(G.comboMaxStack,p.combo+1) : 1;
+  p.comboUntil = G.simTick + comboWindowTicks();
+  const credited=Math.round(gained*comboMult(p));
+  p.bonus=Math.min(TOTAL, p.bonus + (credited-gained));
+  return credited;
+}
+function credited(id){ const p=playerById(id); return Math.min(TOTAL,(counts[id]||0)+((p&&p.bonus)||0)); }
 function capture(p){
-  const me=p.id;
+  const me=p.id, tlen=p.trailCells.length;            // vundet areal = streg (før mutation) + indelukket
   for(const c of p.trailCells){ owner[c]=me; trail[c]=0; fillAge[c]=now; }
   reach.fill(0); const st=[];
   const pf=(x,y)=>{ const i=idx(x,y); if(owner[i]!==me && !reach[i] && !obstacle[i]){reach[i]=1;st.push(i);} };
@@ -616,6 +637,7 @@ function capture(p){
   }
   p.trailCells.length=0;        // luk løkken: stregen er nu blevet til land
   recount();
+  registerCapture(p, tlen+cap);
   // (Erobrings-juice udledes i fxWatch af owner-diffen — én kodesti for host, lokal og klient.)
 }
 
@@ -742,14 +764,23 @@ function pushFeed(html){ if(G.demo) return; feed.push({html,until:now+4500}); wh
 function renderFeed(){ const el=document.getElementById('killfeed'); if(el) el.innerHTML=feed.map(f=>'<div class="kf">'+f.html+'</div>').join(''); }
 function updateFeed(){ let ch=false; while(feed.length && now>feed[0].until){ feed.shift(); ch=true; } if(ch) renderFeed(); }
 function fxName(p,isMe){ return p.id===G.myId?(isMe||'Du'):'<b style="color:'+p.color+'">'+p.name+'</b>'; }
-let fxPrevOwner=null, fxPrevTrail=null, fxAlive={}, fxShield={}, fxPhase='';
+let fxPrevOwner=null, fxPrevTrail=null, fxAlive={}, fxShield={}, fxCombo={}, fxPhase='';
 function fxWatch(){
   if(G.phase!=='play'){ fxPhase=G.phase; return; }
   if(fxPhase!=='play'){ fxPhase='play';                       // ny runde: resync uden effekter
     fxPrevOwner=owner.slice(); fxPrevTrail=trail.slice();
-    fxAlive={}; fxShield={};
-    for(const p of G.players){ fxAlive[p.id]=p.alive; fxShield[p.id]=p.shield; }
+    fxAlive={}; fxShield={}; fxCombo={};
+    for(const p of G.players){ fxAlive[p.id]=p.alive; fxShield[p.id]=p.shield; fxCombo[p.id]=p.combo; }
     return;
+  }
+  // --- combo-pops: kæden steg (diff virker også hos klienter via snapshot) ---
+  for(const p of G.players){
+    const pc=fxCombo[p.id]||0;
+    if(p.combo>pc && p.combo>=2){
+      floatText((p.cx+0.5)*CELL,(p.cy-1.1)*CELL,'KOMBO x'+p.combo+'!',p.id===G.myId?'#fff':p.color,15+p.combo*3);
+      if(p.id===G.myId && !G.demo) tone(560+p.combo*170,860+p.combo*170,0.13,'square',0.2,0.02);
+    }
+    fxCombo[p.id]=p.combo;
   }
   const fs=fxScale();
   // --- erobringer: owner-diff grupperet pr. spiller ---
@@ -909,7 +940,7 @@ function toLobby(){ teardownNet(); G.mode='local'; showOnly('lobby'); startDemo(
 // ---- Stats (gemmes på enheden) ----
 function loadStats(){ try{ return JSON.parse(localStorage.getItem('td_stats')||'{}'); }catch(e){ return {}; } }
 function saveStats(o){ try{ localStorage.setItem('td_stats',JSON.stringify(o)); }catch(e){} }
-function recordStats(){ const s=loadStats(); const myPct=Math.round((counts[G.myId]||0)/TOTAL*100);
+function recordStats(){ const s=loadStats(); const myPct=Math.round(credited(G.myId)/TOTAL*100);
   s.bestPct=Math.max(s.bestPct||0,myPct); s.longestTrail=Math.max(s.longestTrail||0,G.myMaxTrail||0); saveStats(s); }
 function statsHTML(){ const s=loadStats(); return '🏅 Bedste runde: '+(s.bestPct||0)+'%  ·  Længste streg: '+(s.longestTrail||0); }
 // ---- Leaderboard (gemmes på enheden) ----
@@ -970,28 +1001,30 @@ function aiAutoPick(p){
 function startPlay(){
   for(const p of G.players){ p.cx=p.prevX=p.base.x; p.cy=p.prevY=p.base.y;
     p.dir={...outwardDir(p.base.x,p.base.y)}; p.pendingDir={...p.dir}; p.trailCells=[]; p.alive=true; p.eliminated=false; p.netDir=null; p.path=null; p.frontier=null; p.phase='out'; p.homeSteps=0;
-    p.killedBy=0; p.killKind=''; }
+    p.killedBy=0; p.killKind=''; p.combo=0; p.comboUntil=0; p.bonus=0; }
+  G.simTick=0; G.hitStop=0;
   recount(); G.phase='play'; timeLeft=ROUND_TIME; acc=0; G.aiPickTimer=0; G.cd=G.demo?0:3; G._cdl=0; G.myMaxTrail=0;
   if(!G.demo){ showHUD(); flashBanner(''); }
   netBroadcast(true);
 }
 function checkRoundEnd(){
-  for(const p of G.players){ if(counts[p.id]/TOTAL>=WIN_RATIO){ endRound(p.id,'femti'); return; } }  // 50% = vundet banen
+  // Al rundestilling måles i KREDITERET areal (raw ejerskab + kombo-bonus) — deterministisk, tick-baseret
+  for(const p of G.players){ if(credited(p.id)/TOTAL>=WIN_RATIO){ endRound(p.id,'femti'); return; } }  // 50% = vundet banen
   if(G.players.length<2) return;
   const aliveArr=G.players.filter(p=>p.alive);
   if(aliveArr.length===0){ endRound(null,'alledode'); return; }                                       // alle døde -> flest %
   if(aliveArr.length===1){
     // Sidste i live: runden slutter KUN hvis han har flest % (ellers spiller han videre for at indhente)
     const last=aliveArr[0];
-    let maxOther=-1; for(const p of G.players) if(p.id!==last.id) maxOther=Math.max(maxOther,counts[p.id]);
-    if(counts[last.id] >= maxOther) endRound(last.id,'sidste');
+    let maxOther=-1; for(const p of G.players) if(p.id!==last.id) maxOther=Math.max(maxOther,credited(p.id));
+    if(credited(last.id) >= maxOther) endRound(last.id,'sidste');
   }
 }
 function endRound(winnerId, via){
   if(G.phase!=='play') return;
   if(G.demo){ beginRound(); return; }                 // menu-demo: bare ny runde
   recordStats();
-  const rank=[...G.players].sort((a,b)=>counts[b.id]-counts[a.id]);
+  const rank=[...G.players].sort((a,b)=>credited(b.id)-credited(a.id));
   const wId = winnerId || rank[0].id;
   playerById(wId).roundWins++;
   G.winnerId=wId;
@@ -1004,7 +1037,7 @@ function endRound(winnerId, via){
   netBroadcast(true);
 }
 function finishWin(){
-  const rank=[...G.players].sort((a,b)=>counts[b.id]-counts[a.id]);
+  const rank=[...G.players].sort((a,b)=>credited(b.id)-credited(a.id));
   if(G.roundIndex+1>=G.totalRounds){ endMatch(); }
   else { G.phase='roundend'; showRoundEnd(G.winnerId,rank); netBroadcast(true); }
 }
@@ -1014,7 +1047,7 @@ function nextRound(){
 }
 function endMatch(){
   G.phase='matchend';
-  const rank=[...G.players].sort((a,b)=> b.roundWins-a.roundWins || counts[b.id]-counts[a.id]);
+  const rank=[...G.players].sort((a,b)=> b.roundWins-a.roundWins || credited(b.id)-credited(a.id));
   showMatchEnd(rank);
   netBroadcast(true);
 }
@@ -1146,9 +1179,10 @@ function netSend(obj){ if(G.hostConn&&G.hostConn.open) G.hostConn.send(obj); }
 function netBroadcast(){ if(G.mode!=='online'||!G.isHost) return;
   const ps=G.players.map(p=>({id:p.id,kind:p.kind,nm:p.name,alive:p.alive,el:p.eliminated,cx:p.cx,cy:p.cy,px:p.prevX,py:p.prevY,
     dx:p.dir.x,dy:p.dir.y,rw:p.roundWins,base:p.base,tlen:p.trailCells.length,
-    sh:p.shield,gh:p.ghostT,fz:p.frozenT,iv:p.invulnT,kb:p.killedBy,kk:p.killKind}));
+    sh:p.shield,gh:p.ghostT,fz:p.frozenT,iv:p.invulnT,kb:p.killedBy,kk:p.killKind,
+    cb:p.combo,cu:p.comboUntil,bo:p.bonus}));
   const msg={t:'state',ph:G.phase,ri:G.roundIndex,tr_:G.totalRounds,pk:G.picker,po:G.pickOrder,pp:G.pickPos,
-    tl:timeLeft,cd:G.cd,sp:G.speed,wi:G.winnerId,wr:G.winReason,sm:G.stormM,pu:powerups,mv:G.mapVariant,my:0,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
+    tl:timeLeft,cd:G.cd,sp:G.speed,wi:G.winnerId,wr:G.winReason,sm:G.stormM,pu:powerups,mv:G.mapVariant,my:0,tk:G.simTick,ps,ow:owner.slice(),tg:trail.slice(),cnt:counts};
   for(const p of G.players) if(p.conn&&p.conn.open){ msg.my=p.id; p.conn.send(msg); }
 }
 let clientSnapAt=0;
@@ -1164,7 +1198,7 @@ function clientOnData(d){
   G.phase=d.ph; G.roundIndex=d.ri; G.totalRounds=d.tr_; G.picker=d.pk; G.pickOrder=d.po||[]; G.pickPos=d.pp;
   G.winnerId=d.wi; G.winReason=d.wr;
   if(oldPhase!=='roundwin' && G.phase==='roundwin'){ const w=playerById(G.winnerId)||(d.ps.find(s=>s.id===G.winnerId)); if(w&&w.color) celebrate(w); else if(G.winnerId) celebrate({color:COLORS[G.winnerId-1]}); }
-  timeLeft=d.tl; G.cd=d.cd||0; if(d.sp)G.speed=d.sp; counts=d.cnt; G.mode='online'; G.isHost=false;
+  timeLeft=d.tl; G.cd=d.cd||0; if(d.sp)G.speed=d.sp; counts=d.cnt; G.simTick=d.tk||0; G.mode='online'; G.isHost=false;
   G.stormM=d.sm||0; powerups=d.pu||[];
   if(d.mv!==undefined && d.mv!==G.mapVariant){ G.mapVariant=d.mv; buildObstacles(); }
   owner.set(d.ow); trail.set(d.tg);
@@ -1173,6 +1207,7 @@ function clientOnData(d){
     p.prevX=s.px;p.prevY=s.py;p.cx=s.cx;p.cy=s.cy;p.dir={x:s.dx,y:s.dy};p.alive=s.alive;p.eliminated=s.el;p.roundWins=s.rw;p.base=s.base;p.kind=s.kind;
     p.shield=s.sh;p.ghostT=s.gh;p.frozenT=s.fz;p.invulnT=s.iv; if(s.nm)p.name=s.nm;
     p.killedBy=s.kb||0; p.killKind=s.kk||'';
+    p.combo=s.cb||0; p.comboUntil=s.cu||0; p.bonus=s.bo||0;
     p.trailCells.length=Math.max(0,s.tlen); return p; });
   clientSnapAt=performance.now();
   // UI-skift afhængig af fase
@@ -1182,8 +1217,8 @@ function clientSyncUI(){
   if(G.phase==='select'){ showHUD(); updateSelectUI(); }
   else if(G.phase==='play'){ showHUD(); flashBanner(''); }
   else if(G.phase==='roundwin'){ showHUD(); flashBanner(''); }
-  else if(G.phase==='roundend'){ const rank=[...G.players].sort((a,b)=>counts[b.id]-counts[a.id]); showRoundEnd(rank[0].id,rank,true); }
-  else if(G.phase==='matchend'){ const rank=[...G.players].sort((a,b)=>b.roundWins-a.roundWins||counts[b.id]-counts[a.id]); showMatchEnd(rank,true); }
+  else if(G.phase==='roundend'){ const rank=[...G.players].sort((a,b)=>credited(b.id)-credited(a.id)); showRoundEnd(rank[0].id,rank,true); }
+  else if(G.phase==='matchend'){ const rank=[...G.players].sort((a,b)=>b.roundWins-a.roundWins||credited(b.id)-credited(a.id)); showMatchEnd(rank,true); }
 }
 
 //================= UI helpers =================
@@ -1218,9 +1253,9 @@ function buildPctTable(){
 }
 function updateHUDLive(){
   for(const p of G.players){
-    const pct=counts[p.id]/TOTAL*100;
+    const pct=credited(p.id)/TOTAL*100;
     const sg=document.getElementById('seg'+p.id); if(sg){ sg.style.width=pct.toFixed(2)+'%'; sg.style.opacity=p.eliminated?0.4:1; }
-    const lg=document.getElementById('lg'+p.id); if(lg) lg.textContent=(p.eliminated?'💀':Math.round(pct)+'%');
+    const lg=document.getElementById('lg'+p.id); if(lg) lg.textContent=(p.eliminated?'💀':Math.round(pct)+'%'+(p.combo>=2&&G.simTick<=p.comboUntil?' ×'+comboMult(p).toFixed(2).replace(/\.?0+$/,''):''));
   }
   const s=Math.max(0,Math.ceil(timeLeft));
   document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
@@ -1241,7 +1276,7 @@ function showRoundEnd(winnerId,rank,clientView){
   const w=playerById(winnerId);
   document.getElementById('reTitle').innerHTML=`Runde ${G.roundIndex+1} slut — <span style="color:${w.color}">${w.name}</span> vandt<br><span style="font-size:13px;opacity:.7;font-weight:600">${G.winReason||''}</span>`;
   document.getElementById('reStand').innerHTML=rank.map((p,i)=>
-    `<div class="sr"><span class="dot" style="background:${p.color}"></span><span class="nm">${i+1}. ${p.name}</span><span>${Math.round(counts[p.id]/TOTAL*100)}%</span><span style="opacity:.6">· ${p.roundWins} sejre</span></div>`).join('');
+    `<div class="sr"><span class="dot" style="background:${p.color}"></span><span class="nm">${i+1}. ${p.name}</span><span>${Math.round(credited(p.id)/TOTAL*100)}%</span><span style="opacity:.6">· ${p.roundWins} sejre</span></div>`).join('');
   const btn=document.getElementById('reNext');
   const last=G.roundIndex+1>=G.totalRounds;
   btn.textContent=last?'Se slutresultat':'Næste runde';
@@ -1332,14 +1367,14 @@ function shareResult(){
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const o=owner[idx(x,y)]; if(o){ c.fillStyle=COLORS[o-1]; c.globalAlpha=.85; c.fillRect(x*sc,y*sc,sc,sc); }
       if(obstacle[idx(x,y)]){ c.globalAlpha=1; c.fillStyle='#2b2b38'; c.fillRect(x*sc,y*sc,sc,sc); } }
     c.globalAlpha=1;
-    const rank=[...G.players].sort((a,b)=>counts[b.id]-counts[a.id]);
+    const rank=[...G.players].sort((a,b)=>credited(b.id)-credited(a.id));
     c.fillStyle='#fff'; c.font='800 26px sans-serif'; c.textAlign='center';
     c.fillText('TERRITORIEDUEL', cw/2, cw*H/W+34);
     c.font='700 17px sans-serif';
     const champ=rank[0]; c.fillStyle=champ.color;
     c.fillText('🏆 '+champ.name+' vandt kampen', cw/2, cw*H/W+64);
     c.fillStyle='#cfd6ff'; c.font='14px sans-serif';
-    c.fillText(rank.map(p=>p.name+' '+Math.round(counts[p.id]/TOTAL*100)+'%').join('   '), cw/2, cw*H/W+92);
+    c.fillText(rank.map(p=>p.name+' '+Math.round(credited(p.id)/TOTAL*100)+'%').join('   '), cw/2, cw*H/W+92);
     cv.toBlob(blob=>{ if(!blob) return; const file=new File([blob],'territorieduel.png',{type:'image/png'});
       if(navigator.canShare && navigator.canShare({files:[file]})){ navigator.share({files:[file],title:'Territorieduel'}).catch(()=>{}); }
       else { const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='territorieduel.png'; a.click(); } });
@@ -1504,7 +1539,19 @@ function render(frac){
       ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(hx,hy,r*.18,0,6.283); ctx.fill();
       ctx.globalAlpha=1;
       if(p.shield||p.invulnT>0){ ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(hx,hy,r*0.95,0,6.283); ctx.stroke(); }
-      if(p.frozenT>0){ ctx.strokeStyle='#9ad8ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(hx,hy,r*1.08,0,6.283); ctx.stroke(); } }
+      if(p.frozenT>0){ ctx.strokeStyle='#9ad8ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(hx,hy,r*1.08,0,6.283); ctx.stroke(); }
+      // kombo-meter: bue = resterende vindue, tal = aktiv multiplier
+      if(p.combo>0 && G.phase==='play'){
+        const wt=comboWindowTicks();
+        const sub=(G.mode==='local'||G.isHost)? acc : Math.min(1,(now-clientSnapAt)/(1000/G.speed));
+        const remain=Math.max(0,Math.min(1,(p.comboUntil-G.simTick-sub)/wt));
+        if(remain>0){
+          ctx.strokeStyle=p.color; ctx.lineWidth=2.5; ctx.globalAlpha=0.9;
+          ctx.beginPath(); ctx.arc(hx,hy,r*1.45,-1.5708,-1.5708+remain*6.283); ctx.stroke();
+          if(p.combo>=2){ ctx.fillStyle='#fff'; ctx.font='800 '+Math.max(10,Math.floor(CELL*0.6))+'px sans-serif';
+            ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText('x'+comboMult(p).toFixed(2).replace(/\.?0+$/,''),hx,hy-r*2.1); }
+          ctx.globalAlpha=1; } } }
   }
   for(const p of particles){ ctx.globalAlpha=Math.max(0,1-p.life/p.max); ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.283); ctx.fill(); }
   ctx.globalAlpha=1;
@@ -1585,7 +1632,7 @@ function updateCallout(){
     if(w){ el.className='';
       el.innerHTML='<div class="big" style="color:'+w.color+';text-shadow:0 0 26px '+w.color+'">'+w.name+' vandt!</div>'+
         '<div class="sub" style="color:'+w.color+'">Runde '+(G.roundIndex+1)+' / '+G.totalRounds+'</div>'+
-        '<div class="sub2">'+(G.winReason||'')+' · '+Math.round((counts[G.winnerId]||0)/TOTAL*100)+'%</div>'; }
+        '<div class="sub2">'+(G.winReason||'')+' · '+Math.round(credited(G.winnerId)/TOTAL*100)+'%</div>'; }
     else el.className='hidden';
   } else el.className='hidden';
 }
@@ -1665,7 +1712,7 @@ try{ if(!localStorage.getItem('td_seen')) showHowto(); }catch(e){}
 requestAnimationFrame(frame);
 
 // til test i Node
-if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,finishWin,nextRound,endMatch,soundWatch,startDemo,fillAge,statsHTML:()=>statsHTML(),applyPowerup,spawnPowerup,get powerups(){return powerups},owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,clearBoard,playerById,
+if(typeof globalThis!=='undefined') globalThis.__t={G,simulate,beginRound,startMatch,doPick,startPlay,endRound,finishWin,nextRound,endMatch,soundWatch,startDemo,fillAge,statsHTML:()=>statsHTML(),applyPowerup,spawnPowerup,get powerups(){return powerups},owner,trail,counts:()=>counts,recount,idx,W,H,TOTAL,makePlayer,capture,killPlayer,validPick,clearBoard,playerById,registerCapture,comboMult,credited,comboWindowTicks,
   setLocalPlayers:(n,ai)=>{ G.mode='local';G.isHost=true;G.players=[];let id=1;const sc=['arrows','wasd','ijkl','tfgh'];
     for(let i=0;i<n;i++){const p=makePlayer(id,'local');p.scheme=sc[i];G.players.push(p);id++;}
     for(let i=0;i<ai;i++)G.players.push(makePlayer(id++,'ai')); G.myId=1; },
