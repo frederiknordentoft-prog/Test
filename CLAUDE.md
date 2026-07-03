@@ -30,7 +30,8 @@ https://rawcdn.githack.com/frederiknordentoft-prog/Test/<COMMIT_SHA>/index.html
 ```
 Use a **commit SHA** (not the branch name — the branch has slashes and 404s), and
 `curl` it once to prime the CDN before sending it to the user.
-Development branch: `claude/territorieduel-game-kfLqN`.
+Development branch: `claude/territorieduel-feel-neon-xirilk` (tidligere
+`claude/territorieduel-game-kfLqN`).
 
 ## Game rules (current)
 - Grid **58 × 36** cells. `owner[]` = who owns each cell (0 empty, 1..8), `trail[]`
@@ -98,16 +99,24 @@ Living-menu AI demo behind the (translucent) lobby. Apple-Games-style menu (big 
 rows + tucked-away Settings panel with segmented controls).
 
 ## Testing (do this before shipping any change)
-The whole game logic is deterministic and testable headless in **Node** by extracting
-the `<script>`, stubbing `document`/`window`/`canvas`/`localStorage`/`navigator`/
-`performance`/`requestAnimationFrame`, and driving `globalThis.__t` (exposed at the
-bottom of the script: `simulate`, `startMatch`, `doPick`, `endRound`, `finishWin`,
-`nextRound`, `validPick`, `counts()`, `owner`, `fillAge`, `powerups`, `setLocalPlayers`,
-etc.). A standard smoke test: for each map variant × difficulty, `setLocalPlayers(0,8)`,
-`startMatch()`, then loop — pick valid spots via `validPick`, run `simulate()` in the
-`play` phase, `endRound(null,'tid')`, `finishWin()`, `nextRound()` — and assert it
-reaches `matchend` with zero exceptions. Rendering/audio/network can't run in Node
-(rAF is a no-op there) so load-test those for "no throw"; real online needs two devices.
+The harness is **committed** in `test/`: run
+
+```
+node --test 'test/*.test.mjs'
+```
+
+(the glob matters on Node 22). `test/harness.mjs` extracts the `<script>`, compiles it
+once and evaluates it in a **fresh `vm` realm per test** with blackhole-Proxy stubs for
+`document`/canvas/audio, a Map-backed `localStorage`, and a seeded `Math.random` —
+then drives `globalThis.__t`. `test/match.test.mjs` runs the regression matrix (full
+match to `matchend` for **4 and 8 players × Åben/Søjler/Kryds × normal/Svær**, plus
+board invariants), `test/combo.test.mjs` holds the combo-capture assertions
+(byte-parity of `owner` with/without combo, window/reset/cap semantics), and
+`test/bounty.test.mjs` covers the leader-bounty with the toggle both on and off.
+All of it must be green before shipping. Rendering/audio/network still can't run in
+Node (rAF is a no-op; the load-test asserts "no throw"); real online needs two devices.
+Note for new sim state: the deterministic time base is `G.simTick` (one per
+`simulate()`), NOT wall-clock — frame-time (`now`, dt-timers) never advances headless.
 
 ## Style
 Match the surrounding code: compact, terse, Danish comments, single-file. Keep the
