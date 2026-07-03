@@ -4,12 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Territorieduel</title>
-<meta name="theme-color" content="#15151e" />
+<meta name="theme-color" content="#0a0d16" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230d0d14'/%3E%3Crect x='8' y='8' width='38' height='38' fill='%2300e5ff'/%3E%3Crect x='54' y='8' width='38' height='38' fill='%23ff3d7f'/%3E%3Crect x='8' y='54' width='38' height='38' fill='%234dff7c'/%3E%3Crect x='54' y='54' width='38' height='38' fill='%23ffb020'/%3E%3C/svg%3E" />
 <!-- PeerJS til online-spil (WebRTC). Spillet virker også lokalt uden internet. -->
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-  :root{ --bg:#15151e; --ink:#e8ecff;
+  :root{ --bg:#0a0d16; --ink:#e8ecff;
     --p1:#00e5ff; --p2:#ff3d7f; --p3:#4dff7c; --p4:#ffb020; }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);}
@@ -17,7 +17,7 @@
     font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
     color:var(--ink);display:flex;align-items:center;justify-content:center;
     user-select:none;-webkit-user-select:none;
-    background:radial-gradient(ellipse at 50% 40%, #21212d 0%, #15151e 70%);
+    background:radial-gradient(ellipse at 50% 40%, #141a2c 0%, #0a0d16 70%);
   }
   #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding-top:124px;box-sizing:border-box;}
   canvas{display:block;touch-action:none;border-radius:10px;
@@ -216,7 +216,7 @@
         </div></div>
       <div class="setcol"><span class="setlbl">Tema / skin</span>
         <div class="segwrap" id="themeWrap">
-          <button class="thm act" data-thm="standard">Standard</button>
+          <button class="thm act" data-thm="standard">Neon</button>
           <button class="thm" data-thm="cb">Farveblind</button>
           <button class="thm" data-thm="gold">Guld</button>
           <button class="thm" data-thm="sunset">Solnedgang</button>
@@ -369,6 +369,9 @@ const PALETTES={ standard:['#00e5ff','#ff3d7f','#4dff7c','#ffb020','#9b6bff','#f
                  gold:['#ffe14d','#ffb020','#ff8a3d','#ff5d5d','#ff6ab0','#c86bff','#5cd0ff','#8fffa0'],
                  sunset:['#ff7e5f','#feb47b','#ff5f9e','#c86bff','#7d7bff','#5ce0ff','#5cffcf','#ffd166'] };
 const SKIN_UNLOCK={standard:0,cb:0,gold:3,sunset:8};   // låses op ved N kamp-sejre
+// Neon-identitet: rolig, meget mørk baggrund pr. tema (bruges af render, share-PNG og body-CSS)
+const THEME_BG={standard:'#0a0d16', cb:'#12121a', gold:'#141008', sunset:'#150d18'};
+const THEME_BG_LIFT={standard:'#141a2c', cb:'#1d1d2a', gold:'#241c10', sunset:'#251629'};
 let COLORS=PALETTES.standard.slice();
 const PU_TYPES=['shield','freeze','ghost'];
 const PU_ICON={shield:'🛡️',freeze:'❄️',ghost:'👻'};
@@ -434,12 +437,46 @@ let CELL=14,dpr=1;
 function resize(){
   const availW=window.innerWidth-20, availH=window.innerHeight-124-12;  // plads til topbar + HUD + regler i toppen
   CELL=Math.max(4,Math.floor(Math.min(availW/W,availH/H)));
-  dpr=Math.min(window.devicePixelRatio||1,2);
+  dpr=Math.min(window.devicePixelRatio||1,2);           // dpr-cap: perf-budget på mobil
   canvas.style.width=(W*CELL)+'px'; canvas.style.height=(H*CELL)+'px';
   canvas.width=Math.floor(W*CELL*dpr); canvas.height=Math.floor(H*CELL*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
+  initBloom(); rebuildBg();
 }
 window.addEventListener('resize',resize);
+
+//================= Bloom (nedskaleret offscreen + blur + 'lighter') =================
+const GLOW_K=1/3;                                       // glow-lag i 1/3 opløsning (blurres alligevel)
+let glowCv=null, glowCtx=null, bloomCap=false;
+function initBloom(){
+  bloomCap=false; glowCv=null; glowCtx=null;
+  try{
+    const c=document.createElement('canvas'), g=c&&c.getContext&&c.getContext('2d');
+    if(!g) return;
+    g.filter='blur(2px)';
+    if(g.filter!=='blur(2px)') return;                  // Safari<18 eksponerer-men-ignorerer: readback afslører det
+    c.width=Math.max(2,Math.ceil(W*CELL*GLOW_K)); c.height=Math.max(2,Math.ceil(H*CELL*GLOW_K));
+    g.setTransform(GLOW_K,0,0,GLOW_K,0,0);              // samme world-koordinater som hoved-ctx
+    glowCv=c; glowCtx=g; bloomCap=true;
+  }catch(e){}
+}
+function bloomOn(){ return bloomCap && G.fxLevel==='full' && G.theme!=='cb'; }  // cb: additiv blanding skader kontrast
+// Procedural baggrund: prærendret (mørk flade + vignet + svage grid-prikker) — rolig, ingen assets
+let bgCv=null;
+function rebuildBg(){
+  try{
+    if(!bgCv) bgCv=document.createElement('canvas');
+    const w=Math.max(2,W*CELL), h=Math.max(2,H*CELL);
+    bgCv.width=w; bgCv.height=h;
+    const b=bgCv.getContext('2d'); if(!b) { bgCv=null; return; }
+    b.fillStyle=THEME_BG[G.theme]||THEME_BG.standard; b.fillRect(0,0,w,h);
+    const g=b.createRadialGradient(w/2,h/2,h*0.25,w/2,h/2,h*0.85);
+    g.addColorStop(0,'rgba(70,95,160,0.10)'); g.addColorStop(1,'rgba(0,0,0,0.34)');
+    b.fillStyle=g; b.fillRect(0,0,w,h);
+    b.fillStyle='rgba(140,165,235,0.10)';
+    for(let y=0;y<=H;y++)for(let x=0;x<=W;x++) b.fillRect(x*CELL-0.5,y*CELL-0.5,1,1);   // grid-prikker i krydsene
+  }catch(e){ bgCv=null; }
+}
 
 //================= Board helpers =================
 function clearBoard(){ owner.fill(0); trail.fill(0); fillAge.fill(-99999); obstacle.fill(0); particles=[]; powerups=[]; floatTexts=[]; rings=[]; G.stormM=0; powerSpawnT=0; }
@@ -777,7 +814,17 @@ function fxWatch(){
 }
 function floatText(x,y,txt,color,size){ floatTexts.push({x,y,txt,color,size:size||16,life:0,max:1.1}); }
 function updateFloats(dt){ for(let i=floatTexts.length-1;i>=0;i--){ const f=floatTexts[i]; f.life+=dt; f.y-=28*dt; if(f.life>=f.max)floatTexts.splice(i,1); } }
-function setTheme(name){ const p=PALETTES[name]||PALETTES.standard; for(let i=0;i<4;i++)COLORS[i]=p[i]; G.theme=name; for(const pl of G.players)pl.color=COLORS[pl.id-1]; }
+function setTheme(name){ const p=PALETTES[name]||PALETTES.standard;
+  for(let i=0;i<p.length&&i<COLORS.length;i++)COLORS[i]=p[i];   // ALLE 8 farver (før: kun 4 — spiller 5-8 beholdt standard)
+  G.theme=name; for(const pl of G.players)pl.color=COLORS[pl.id-1];
+  if(!G.demo && (G.phase==='play'||G.phase==='select'||G.phase==='roundwin')) buildScores();  // HUD-farver følger med
+  const bg=THEME_BG[name]||THEME_BG.standard, lift=THEME_BG_LIFT[name]||THEME_BG_LIFT.standard;
+  try{
+    document.body.style.background='radial-gradient(ellipse at 50% 40%, '+lift+' 0%, '+bg+' 70%)';
+    const mt=document.querySelector&&document.querySelector('meta[name="theme-color"]'); if(mt) mt.content=bg;
+  }catch(e){}
+  rebuildBg();
+}
 function inStorm(x,y){ const m=G.stormM||0; return m>0 && (x<m||y<m||x>=W-m||y>=H-m); }
 function celebrate(winner){
   triggerFlash(winner.color,0.5);
@@ -1281,7 +1328,7 @@ function shareResult(){
   try{
     const cw=580, ch=Math.round(cw*H/W)+120, sc=cw/W;
     const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const c=cv.getContext('2d');
-    c.fillStyle='#15151e'; c.fillRect(0,0,cw,ch);
+    c.fillStyle=THEME_BG[G.theme]||THEME_BG.standard; c.fillRect(0,0,cw,ch);
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const o=owner[idx(x,y)]; if(o){ c.fillStyle=COLORS[o-1]; c.globalAlpha=.85; c.fillRect(x*sc,y*sc,sc,sc); }
       if(obstacle[idx(x,y)]){ c.globalAlpha=1; c.fillStyle='#2b2b38'; c.fillRect(x*sc,y*sc,sc,sc); } }
     c.globalAlpha=1;
@@ -1321,7 +1368,7 @@ function skinUnlocked(name){ return totalWins() >= (SKIN_UNLOCK[name]||0); }
 function updateThemes(){ const w=totalWins();
   document.querySelectorAll('.thm').forEach(b=>{ const n=b.dataset.thm, need=SKIN_UNLOCK[n]||0, ok=w>=need;
     b.classList.toggle('locked',!ok);
-    b.textContent=({standard:'Standard',cb:'Farveblind',gold:'Guld',sunset:'Solnedgang'}[n])+(ok?'':' 🔒'); }); }
+    b.textContent=({standard:'Neon',cb:'Farveblind',gold:'Guld',sunset:'Solnedgang'}[n])+(ok?'':' 🔒'); }); }
 document.querySelectorAll('.thm').forEach(b=>bindTap(b,()=>{ const n=b.dataset.thm;
   if(!skinUnlocked(n)){ const st=document.getElementById('lobbyStats'); if(st)st.textContent='🔒 Lås "'+n+'" op ved '+SKIN_UNLOCK[n]+' kamp-sejre'; return; }
   setTheme(n); document.querySelectorAll('.thm').forEach(x=>x.classList.toggle('act',x===b)); }));
@@ -1363,24 +1410,58 @@ function showJoinWait(){ document.getElementById('joinConfig').classList.add('hi
 function teardownNet(){ try{ if(peer){peer.destroy();} }catch(e){} peer=null; G.hostConn=null; }
 
 //================= Render =================
+// Lyse elementer tegnes til glow-laget i SAMME world-koordinater (ctx-transform er GLOW_K)
+function drawGlowLayer(frac,trLen){
+  const g=glowCtx;
+  g.save(); g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,glowCv.width,glowCv.height); g.restore();
+  // land-kanter (neon-omrids af territorier)
+  g.globalAlpha=0.6;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=idx(x,y),o=owner[i]; if(!o)continue;
+    if(now-fillAge[i]<0)continue;
+    const edge=(x===0||owner[i-1]!==o)||(x===W-1||owner[i+1]!==o)||(y===0||owner[i-W]!==o)||(y===H-1||owner[i+W]!==o);
+    if(!edge)continue;
+    g.fillStyle=COLORS[o-1]; g.fillRect(x*CELL,y*CELL,CELL,CELL); }
+  // haler (fare-røde når lange)
+  g.globalAlpha=0.95;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const t=trail[idx(x,y)]; if(!t)continue;
+    g.fillStyle=trLen[t]>16?'#ff4040':COLORS[t-1]; g.fillRect(x*CELL,y*CELL,CELL,CELL); }
+  // heads
+  if(G.phase==='play'||G.phase==='roundend'||G.phase==='roundwin'){
+    for(const p of G.players){ if(!p.alive)continue;
+      const hx=(p.prevX+(p.cx-p.prevX)*frac+.5)*CELL, hy=(p.prevY+(p.cy-p.prevY)*frac+.5)*CELL;
+      g.fillStyle=p.color; g.fillRect(hx-CELL*0.55,hy-CELL*0.55,CELL*1.1,CELL*1.1); } }
+  // partikler + shockwave-ringe + power-ups
+  for(const p of particles){ g.globalAlpha=Math.max(0,1-p.life/p.max)*0.85; g.fillStyle=p.c;
+    g.fillRect(p.x-p.r,p.y-p.r,p.r*2,p.r*2); }
+  for(const r of rings){ const q=r.life/r.max, e=1-(1-q)*(1-q);
+    g.globalAlpha=(1-q)*0.9; g.strokeStyle=r.c; g.lineWidth=Math.max(2,r.lw);
+    g.beginPath(); g.arc(r.x,r.y,r.r0+(r.r1-r.r0)*e,0,6.283); g.stroke(); }
+  for(const pu of powerups){ g.globalAlpha=0.9; g.fillStyle='#fff';
+    g.beginPath(); g.arc((pu.x+0.5)*CELL,(pu.y+0.5)*CELL,CELL*0.5,0,6.283); g.fill(); }
+  g.globalAlpha=1;
+}
 function render(frac){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.save();
   if(shakeMag>.3) ctx.translate((Math.random()*2-1)*shakeMag,(Math.random()*2-1)*shakeMag);
-  ctx.fillStyle='#15151e'; ctx.fillRect(-20,-20,W*CELL+40,H*CELL+40);
-  ctx.strokeStyle='rgba(120,140,200,.06)'; ctx.lineWidth=1; ctx.beginPath();
-  for(let x=0;x<=W;x++){ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,H*CELL);}
-  for(let y=0;y<=H;y++){ctx.moveTo(0,y*CELL);ctx.lineTo(W*CELL,y*CELL);} ctx.stroke();
-  // land
+  const bgc=THEME_BG[G.theme]||THEME_BG.standard;
+  ctx.fillStyle=bgc; ctx.fillRect(-20,-20,W*CELL+40,H*CELL+40);   // margin bag shake
+  if(bgCv) ctx.drawImage(bgCv,0,0,W*CELL,H*CELL);                 // prærendret vignet + grid-prikker
+  if(G.fxLevel==='full'){                                          // ultra-subtilt åndedræt i baggrunden
+    ctx.globalAlpha=0.05+0.03*Math.sin(now/1900); ctx.fillStyle='#3550a0';
+    ctx.fillRect(0,0,W*CELL,H*CELL); ctx.globalAlpha=1; }
+  const glow=bloomOn();
+  // land — neon: dæmpet indre flade + lysende kant mod alt der ikke er ens eget
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=idx(x,y),o=owner[i]; if(!o)continue;
     const age=now-fillAge[i]; if(age<0)continue;        // animeret sweep: vent til feltets tur
     let grow=1; if(age<300)grow=.5+.5*(age/300);
-    ctx.globalAlpha=.78; ctx.fillStyle=COLORS[o-1]; const pad=(1-grow)*CELL*.5;
+    const edge=(x===0||owner[i-1]!==o)||(x===W-1||owner[i+1]!==o)||(y===0||owner[i-W]!==o)||(y===H-1||owner[i+W]!==o);
+    ctx.globalAlpha=edge?0.95:0.34; ctx.fillStyle=COLORS[o-1]; const pad=(1-grow)*CELL*.5;
     ctx.fillRect(x*CELL+pad,y*CELL+pad,CELL-2*pad,CELL-2*pad);
     if(age<260){ ctx.globalAlpha=.5*(1-age/260); ctx.fillStyle='#fff'; ctx.fillRect(x*CELL,y*CELL,CELL,CELL); } }
   ctx.globalAlpha=1;
-  // mønstre på territorier (tilgængelighed)
-  if(G.patternsOn){ ctx.strokeStyle='rgba(0,0,0,.30)'; ctx.lineWidth=Math.max(1,CELL*0.09); ctx.beginPath();
+  // mønstre på territorier (tilgængelighed) — lyse streger så de ses på den dæmpede flade
+  if(G.patternsOn){ ctx.strokeStyle='rgba(255,255,255,.30)'; ctx.lineWidth=Math.max(1,CELL*0.09); ctx.beginPath();
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const o=owner[idx(x,y)]; if(!o)continue; const t=(o-1)%4;
       const mx=x*CELL,my=y*CELL;
       if(t===0){ ctx.moveTo(mx+2,my+2); ctx.lineTo(mx+CELL-2,my+CELL-2); }
@@ -1393,6 +1474,8 @@ function render(frac){
   const pulse=0.55+0.45*Math.sin(now/90);
   ctx.shadowBlur=CELL*.9;
   const ndPulse=G.nearDeath?0.3+0.35*Math.sin(now/60):0;    // din streg pulserer hvidt ved nær-død
+  // per-celle shadowBlur er DYR: kun som visuel fallback når bloom ikke kan (fuld effekt uden filter-støtte)
+  if(glow||G.fxLevel!=='full') ctx.shadowBlur=0;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const t=trail[idx(x,y)]; if(!t)continue;
     if(trLen[t]>16){ ctx.shadowColor='#ff3030'; ctx.fillStyle='rgba(255,70,70,'+(0.55+0.35*pulse)+')'; }
     else { ctx.shadowColor=COLORS[t-1]; ctx.fillStyle=COLORS[t-1]; }
@@ -1416,7 +1499,7 @@ function render(frac){
     for(const p of G.players){ if(!p.alive)continue;
       const hx=(p.prevX+(p.cx-p.prevX)*frac+.5)*CELL, hy=(p.prevY+(p.cy-p.prevY)*frac+.5)*CELL, r=CELL*.62;
       ctx.globalAlpha=p.ghostT>0?0.5:1;
-      ctx.shadowBlur=CELL*1.4; ctx.shadowColor=p.color; ctx.fillStyle=p.color; ctx.beginPath();
+      ctx.shadowBlur=(glow||G.fxLevel!=='full')?0:CELL*1.4; ctx.shadowColor=p.color; ctx.fillStyle=p.color; ctx.beginPath();
       if(ctx.roundRect)ctx.roundRect(hx-r/2,hy-r/2,r,r,r*.3); else ctx.rect(hx-r/2,hy-r/2,r,r); ctx.fill();
       ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(hx,hy,r*.18,0,6.283); ctx.fill();
       ctx.globalAlpha=1;
@@ -1432,13 +1515,22 @@ function render(frac){
   ctx.globalAlpha=1;
   // power-ups
   for(const pu of powerups){ const cx=(pu.x+0.5)*CELL, cy=(pu.y+0.5)*CELL;
-    ctx.shadowBlur=CELL; ctx.shadowColor='#fff'; ctx.fillStyle='rgba(255,255,255,0.92)';
+    ctx.shadowBlur=(glow||G.fxLevel!=='full')?0:CELL; ctx.shadowColor='#fff'; ctx.fillStyle='rgba(255,255,255,0.92)';
     ctx.beginPath(); ctx.arc(cx,cy,CELL*0.42,0,6.283); ctx.fill(); ctx.shadowBlur=0;
     ctx.font=Math.floor(CELL*0.66)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(PU_ICON[pu.type],cx,cy); }
   // float-tekster (combo / power-up)
   for(const f of floatTexts){ ctx.globalAlpha=Math.max(0,1-f.life/f.max); ctx.fillStyle=f.color;
     ctx.font='800 '+f.size+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(f.txt,f.x,f.y); }
   ctx.globalAlpha=1;
+  // bloom: lyse lag tegnes nedskaleret, blurres og komposittes additivt tilbage
+  if(glow){
+    drawGlowLayer(frac,trLen);
+    ctx.save();
+    ctx.filter='blur('+Math.max(3,CELL*0.5)+'px)';
+    ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.8;
+    ctx.drawImage(glowCv,0,0,glowCv.width,glowCv.height,0,0,W*CELL,H*CELL);
+    ctx.restore();
+  }
   // onboarding-pil mod eget land (kun dig, når du er ude)
   if(!G.demo && G.phase==='play'){ const me=playerById(G.myId);
     if(me&&me.alive&&owner[idx(me.cx,me.cy)]!==me.id){ const to=nearestOwn(me);

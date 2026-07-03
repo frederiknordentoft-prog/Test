@@ -95,6 +95,7 @@ export function loadGame({seed = 1} = {}) {
     getElementById: getEl,
     createElement: () => makeElement(bh),
     querySelectorAll: () => [],
+    querySelector: () => null,
     addEventListener() {},
     body: makeElement(bh),
   };
