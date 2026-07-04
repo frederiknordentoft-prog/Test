@@ -149,6 +149,26 @@ R5-PLAN (prioriteret, bruger har travlt):
 6. Fra R6 (KF) bortfalder nationsgrænsen → stak Frankrig (60% finale) tungt.
 
 ═══════════════════════════════════════════════════════════════════
+## 6C. R5-FINAL (4/7) — bekræftede R16-kampe + Bold-opstillinger
+═══════════════════════════════════════════════════════════════════
+HOLD EFTER R4 (Mbappe-C gav +405k; R4 i alt ~+1,6m): Simon; Santos, Medina,
+Robinson, Spence; Tchouameni, Arias, Saibari; Oyarzabal, Mbappe(C), Haaland.
+R16: Canada-Marokko · Paraguay-Frankrig · Brasilien-Norge · Mexico-England ·
+Portugal-SPANIEN · USA-Belgien · Argentina-EGYPTEN · Schweiz-Colombia.
+BOLD 4/7: Tchouameni UDE af Frankrigs XI (4-2-4: Rabiot+Kone) · Spence bænkes
+("så dårlig mod Congo") · Medina GUL (baglår; Tagliafico backup) · Saibari 🟢
+· Arias 🟢 · Robinson 🟢 · Riad 🟢 (starter mod Canada trods skadestvivl).
+SIM (r5_final.py): Fin%: Frankrig 52 · Argentina 41 · Spanien 31 · England 21.
+R5-PLAN (netto ~+340k efter gebyrer, ~cash-neutral):
+1. Haaland(9,5)→MESSI(~9,3): 117k→221k R5, 162k→534k tot. KAPTAJN → MESSI
+   (221k mod Egypten > Mbappe 204k mod Paraguay-bus).
+2. Tchouameni(3,7)→RABIOT(4,2): 5k→43k R5 (Tchou ude af XI!).
+3. Spence(2,7)→RIAD(2,2): 8k→40k R5 (Marokko favorit mod Canada).
+4. Medina 🟡 behold + TJEK før deadline; meldes han ude → Molina(4,1) hvis råd.
+Efter skift: Simon; Santos,Medina,Robinson,Riad; Rabiot,Arias,Saibari;
+Oyarzabal,Mbappe,Messi(C). Nationer: max 2 pr. land ✓ (grænse falder v. KF).
+
+═══════════════════════════════════════════════════════════════════
 ## 7. TJEKLISTE FØR HVER DEADLINE
 ═══════════════════════════════════════════════════════════════════
 [ ] Bekræftede opstillinger (knockout=fuld styrke, men tjek skader/karantæne i CSV)
