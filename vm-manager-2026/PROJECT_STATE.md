@@ -160,8 +160,9 @@ BOLD 4/7: Tchouameni UDE af Frankrigs XI (4-2-4: Rabiot+Kone) · Spence bænkes
 · Arias 🟢 · Robinson 🟢 · Riad 🟢 (starter mod Canada trods skadestvivl).
 SIM (r5_final.py): Fin%: Frankrig 52 · Argentina 41 · Spanien 31 · England 21.
 R5-PLAN (netto ~+340k efter gebyrer, ~cash-neutral):
-1. Haaland(9,5)→MESSI(~9,3): 117k→221k R5, 162k→534k tot. KAPTAJN → MESSI
-   (221k mod Egypten > Mbappe 204k mod Paraguay-bus).
+1. Haaland(9,5)→MESSI(~9,3): 117k→221k R5, 162k→534k tot (P(Messi>Haaland R5)=69%).
+   KAPTAJN: MBAPPE (revideret!): Messi vs Mbappe = 52/48 møntkast, flipper i
+   følsomhedstest → chalk-kaptajn Mbappe vinder for 4.plads-forsvar (match feltet).
 2. Tchouameni(3,7)→RABIOT(4,2): 5k→43k R5 (Tchou ude af XI!).
 3. Spence(2,7)→RIAD(2,2): 8k→40k R5 (Marokko favorit mod Canada).
 4. Medina 🟡 behold + TJEK før deadline; meldes han ude → Molina(4,1) hvis råd.
