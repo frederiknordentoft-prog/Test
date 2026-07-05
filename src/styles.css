@@ -101,8 +101,9 @@ select {
 .gauge-fill.drag { background: linear-gradient(90deg, var(--accent-strong), var(--accent)); }
 .gauge-fill.lift.pos { background: #4ade80; }
 .gauge-fill.lift.neg { background: var(--warn); }
-.gauge-bar.center .gauge-fill { margin-left: 50%; }
-.gauge-bar.center .gauge-fill.neg { margin-left: 0; margin-right: 50%; float: right; }
+.gauge-bar.center { display: flex; }
+.gauge-bar.center .gauge-fill.pos { margin-left: 50%; }
+.gauge-bar.center .gauge-fill.neg { margin-left: auto; margin-right: 50%; }
 .gauge-val { grid-column: 1 / -1; color: var(--text); font-variant-numeric: tabular-nums; }
 .gauge-val em { color: var(--dim); font-style: normal; font-size: 0.7rem; }
 

@@ -50,8 +50,8 @@ void main() {
     float row = mod(id, uRakeRows);
     float jitterY = (hash13(vec3(id, uFrame, uSeed)) - 0.5) * 0.3;
     float y = (row + 0.5 + jitterY) / uRakeRows * float(uSimSize.y);
-    // Spread respawn over a wide x-band so the rake doesn't clump into blobs.
-    float x = 1.5 + hash13(vec3(id, uFrame + 13.0, uSeed)) * 24.0;
+    // Spread respawn over an x-band so the rake doesn't clump into blobs.
+    float x = 1.5 + hash13(vec3(id, uFrame + 13.0, uSeed)) * 12.0;
     pos = vec2(x, y);
     age = 0.0;
   }

@@ -18,8 +18,8 @@ void main() {
   vec2 uv = (st.xy + 0.5) / vec2(uSimSize);
   float speed = length(texture(uF2, uv).zw) / max(uUin, 1e-4);
   vGlow = clamp(0.35 + speed * 0.65, 0.0, 1.4);
-  // fade-in for freshly respawned particles
-  vGlow *= smoothstep(0.0, 40.0, st.z);
+  // fade-in for freshly respawned particles + near the rake (hides the spawn curtain)
+  vGlow *= smoothstep(0.0, 40.0, st.z) * smoothstep(1.0, 26.0, st.x);
   gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0);
   gl_PointSize = uPointSize;
 }
