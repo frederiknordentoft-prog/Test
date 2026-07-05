@@ -10,21 +10,21 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 page.on('console', (msg) => {
-  if (msg.type() === 'error') console.error('[page]', msg.text());
+  if (msg.type() === 'error' || msg.type() === 'warning') console.error('[page]', msg.text());
 });
 page.on('pageerror', (e) => console.error('[pageerror]', e.message));
 
 await page.goto(url, { waitUntil: 'load' });
 console.log('side indlæst, venter på harness…');
 
-const result = await page.waitForFunction(() => window.__harness?.done === true, null, { timeout: 900_000 })
+const result = await page.waitForFunction(() => window.__harness?.done === true, null, { timeout: 1_800_000 })
   .then(() => page.evaluate(() => window.__harness));
 
-const backend = await page.evaluate(() => document.querySelector('canvas')?.getContext('webgl2') ? 'webgl2-canvas' : 'ukendt');
-console.log(`\nBackend-check: ${backend}`);
+console.log(`\nBackend: ${result.backend}`);
 for (const r of result.results) {
   console.log(`${r.pass ? '✅ PASS' : '❌ FAIL'}  ${r.name}\n         ${r.detail}`);
 }
-console.log(result.pass ? '\n✅ Alle GPU-harness-tests bestået' : '\n❌ Fejl i GPU-harness');
+const ok = result.pass && result.backend === 'gpu';
+console.log(ok ? '\n✅ Alle GPU-harness-tests bestået' : '\n❌ Fejl i GPU-harness');
 await browser.close();
-process.exit(result.pass ? 0 : 1);
+process.exit(ok ? 0 : 1);

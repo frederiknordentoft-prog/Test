@@ -15,15 +15,20 @@ interface TestResult {
 
 declare global {
   interface Window {
-    __harness?: { done: boolean; pass: boolean; results: TestResult[] };
+    __harness?: { done: boolean; pass: boolean; backend: string; results: TestResult[] };
   }
 }
 
 // fast=1 (til headless/CI med software-GL): mindre gitter og kortere kørsel.
 const FAST = typeof location !== 'undefined' && new URLSearchParams(location.search).get('fast') === '1';
-const SETTLE = FAST ? 1800 : 3000;
-const MEASURE = FAST ? 1000 : 1500;
+const MEASURE = FAST ? 1200 : 2000;
 const SAMPLE_EVERY = 25;
+
+/** Settle skaleres med flow-udviklingstiden (~1.2 domænekrydsninger). */
+function settleFor(engine: Engine): number {
+  const steps = Math.round((1.2 * engine.grid.w) / Math.max(engine.currentULat, 1e-4));
+  return Math.min(FAST ? 8000 : 14000, Math.max(2500, steps));
+}
 
 const HARNESS_PARAMS: SimParams = {
   windSpeed: 0.5,
@@ -69,21 +74,21 @@ async function measure(engine: Engine, steps = MEASURE): Promise<{ fx: number; f
 }
 
 async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<void> {
-  const uLo = 0.35; // slider values
-  const uHi = 0.85;
+  const uLo = 0.45; // slider values
+  const uHi = 0.9;
 
   // 1+3+4: cylinder at low+high wind
   engine.setShape(makePrimitive('circle'));
   engine.setWindImmediate(uLo);
   engine.reset();
-  await runSteps(engine, SETTLE);
+  await runSteps(engine, settleFor(engine));
   const lo = await measure(engine);
   const uLatLo = engine.currentULat;
   const dLo = engine.frontalCells;
 
   engine.setWindImmediate(uHi);
   engine.reset();
-  await runSteps(engine, SETTLE);
+  await runSteps(engine, settleFor(engine));
   const hi = await measure(engine);
   const uLatHi = engine.currentULat;
 
@@ -119,9 +124,9 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
 
   // 2: plate vs teardrop at same frontal height
   engine.setShape(makePrimitive('plate'));
-  engine.setWindImmediate(0.6);
+  engine.setWindImmediate(0.7);
   engine.reset();
-  await runSteps(engine, SETTLE);
+  await runSteps(engine, settleFor(engine));
   const plate = await measure(engine);
   const dPlate = engine.frontalCells;
   const uPlate = engine.currentULat;
@@ -129,7 +134,7 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
 
   engine.setShape(makePrimitive('teardrop'));
   engine.reset();
-  await runSteps(engine, SETTLE);
+  await runSteps(engine, settleFor(engine));
   const tear = await measure(engine);
   const dTear = engine.frontalCells;
   const cdTear = dragCoefficient(tear.fx, uPlate, dTear);
@@ -148,7 +153,7 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
   const stab = await measure(engine, 500);
   report({
     name: 'Stabilitet (max vind, 6500 steps)',
-    pass: !stab.anyBad && isFinite(stab.fx),
+    pass: !stab.anyBad && isFinite(stab.fx) && stab.fx > 0,
     detail: stab.anyBad ? 'blowup detekteret' : `stabil, drag=${stab.fx.toFixed(3)} (lattice)`,
   });
 }
@@ -180,7 +185,7 @@ export function HarnessPage() {
     }
     setRunning(false);
     setDone(true);
-    window.__harness = { done: true, pass: collected.every((r) => r.pass), results: collected };
+    window.__harness = { done: true, pass: collected.every((r) => r.pass), backend: engine.backendKind, results: collected };
   };
 
   useEffect(() => {
