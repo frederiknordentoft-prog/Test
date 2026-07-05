@@ -1,0 +1,386 @@
+// Engine facade: owns the rAF loop, backend selection (GPU → CPU fallback), wind ramping,
+// pivot dynamics, adaptive quality ladder, rolling force averages and 10 Hz measurement
+// publishing. Pure TS — no React, no store.
+
+import type { Backend, FlowHints, GridSize, Measurements, PoseState, ShapeSpec, SimParams } from './types';
+import { ASPECT } from './types';
+import { createGl } from './gpu/gl';
+import { GpuBackend } from './gpu/GpuBackend';
+import { CpuBackend } from './cpu/CpuBackend';
+import { PivotDynamics } from './pivot';
+import { frontalHeight, massProperties } from './shape/polygon';
+import { DEFAULT_SEED } from './determinism';
+import { dragCoefficient, forceToNewtonPerM, reynolds, TAU0, windMsToULat, windSliderToMs } from './units';
+
+export interface EngineOptions {
+  onMeasure: (m: Measurements) => void;
+  onToast?: (key: 'flow-reset') => void;
+  seed?: number;
+  /** Force CPU backend (debug/testing). */
+  forceCpu?: boolean;
+}
+
+interface QualityPreset {
+  grid: GridSize;
+  substeps: number;
+}
+
+const GPU_LADDER: QualityPreset[] = [
+  { grid: { w: 256, h: 128 }, substeps: 3 },
+  { grid: { w: 384, h: 192 }, substeps: 4 },
+  { grid: { w: 512, h: 256 }, substeps: 5 },
+];
+const CPU_GRID: GridSize = { w: 192, h: 96 };
+
+const DEFAULT_PARAMS: SimParams = {
+  windSpeed: 0.4,
+  density: 1,
+  restAngleDeg: 0,
+  pivotLocked: true,
+  overlay: 'none',
+  smoke: true,
+  paused: false,
+  quality: 'auto',
+  probe: null,
+  reducedMotion: false,
+};
+
+export class Engine {
+  readonly backendKind: 'gpu' | 'cpu';
+
+  private backend: Backend;
+  private canvas: HTMLCanvasElement;
+  private params: SimParams = { ...DEFAULT_PARAMS };
+  private shape: ShapeSpec | null = null;
+  private pivot = new PivotDynamics();
+  private pose: PoseState = { theta: 0, bend: [0, 0] };
+  private opts: EngineOptions;
+
+  private raf = 0;
+  private running = false;
+  private uInCurrent = 0;
+  private lastTime = 0;
+  private fpsEma = 60;
+  private ladderIdx = 2;
+  private ladderTimer = 0;
+  private resets = 0;
+
+  // rolling force window (real-time seconds, lattice forces)
+  private forceWindow: { t: number; fx: number; fy: number; tz: number }[] = [];
+  private lastForce = { fx: 0, fy: 0, tz: 0 };
+  private liftSignT: number[] = [];
+  private lastLiftSign = 0;
+  private lastProbe: { speed: number; rho: number } | null = null;
+  private measureTimer = 0;
+  private polarMomentLat = 1e5;
+  private dLatCells = 1;
+  private startTime = 0;
+
+  constructor(container: HTMLElement, opts: EngineOptions) {
+    this.opts = opts;
+    this.canvas = document.createElement('canvas');
+    this.canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;';
+    container.appendChild(this.canvas);
+
+    let backend: Backend | null = null;
+    if (!opts.forceCpu) {
+      try {
+        const caps = createGl(this.canvas);
+        if (caps) {
+          this.ladderIdx = isProbablyMobile() ? 1 : 2;
+          backend = new GpuBackend(caps, this.canvas, GPU_LADDER[this.ladderIdx].grid, opts.seed ?? DEFAULT_SEED);
+        }
+      } catch (e) {
+        console.warn('GPU backend failed, falling back to CPU:', e);
+        backend = null;
+      }
+    }
+    if (!backend) {
+      // A canvas that returned a webgl2 context can't switch to 2d — replace it.
+      this.canvas.remove();
+      this.canvas = document.createElement('canvas');
+      this.canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;';
+      container.appendChild(this.canvas);
+      backend = new CpuBackend(this.canvas, CPU_GRID, opts.seed ?? DEFAULT_SEED);
+    }
+    this.backend = backend;
+    this.backendKind = backend.kind;
+    this.resizeCanvas(container);
+    this.uInCurrent = windMsToULat(windSliderToMs(this.params.windSpeed));
+    this.backend.reset(this.uInCurrent);
+  }
+
+  resizeCanvas(container: HTMLElement): void {
+    const rect = container.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, this.backend?.kind === 'cpu' ? 1.5 : 2);
+    const w = Math.max(2, Math.round(rect.width * dpr));
+    const h = Math.max(2, Math.round(rect.height * dpr));
+    if (this.canvas.width !== w || this.canvas.height !== h) {
+      this.canvas.width = w;
+      this.canvas.height = h;
+    }
+  }
+
+  setParams(p: SimParams): void {
+    const prev = this.params;
+    this.params = { ...p };
+    if (p.probe !== prev.probe) this.backend.setProbe(p.probe);
+    if (p.density !== prev.density) this.updateMassProps();
+    if (p.pivotLocked && !prev.pivotLocked) this.pivot.snapTo(deg2rad(p.restAngleDeg));
+    if (p.restAngleDeg !== prev.restAngleDeg && p.pivotLocked) this.pivot.snapTo(deg2rad(p.restAngleDeg));
+    if (p.quality !== prev.quality && p.quality !== 'auto') {
+      const idx = p.quality === 'low' ? 0 : p.quality === 'medium' ? 1 : 2;
+      this.applyLadder(idx);
+    }
+  }
+
+  setShape(s: ShapeSpec | null): void {
+    this.shape = s;
+    this.backend.setShape(s);
+    this.updateMassProps();
+    this.pivot.snapTo(deg2rad(this.params.restAngleDeg));
+    this.pose = { theta: this.pivot.theta, bend: [0, 0] };
+    this.backend.setPose(this.pose);
+    this.forceWindow = [];
+    this.liftSignT = [];
+  }
+
+  private updateMassProps(): void {
+    if (!this.shape) return;
+    const mp = massProperties(this.shape.points, this.shape.pivot);
+    const cellsPerUnit = this.backend.grid.h; // tunnel height = 1 unit = h cells
+    this.polarMomentLat = mp.polarMoment * Math.pow(cellsPerUnit, 4);
+    this.pivot.setMassProperties(this.polarMomentLat, this.params.density);
+    this.dLatCells = Math.max(1, frontalHeight(this.shape.points, this.shape.pivot, this.pose.theta) * cellsPerUnit);
+  }
+
+  reset(): void {
+    this.backend.reset(this.uInCurrent);
+    this.forceWindow = [];
+    this.liftSignT = [];
+    this.pivot.snapTo(deg2rad(this.params.restAngleDeg));
+  }
+
+  start(): void {
+    if (this.running) return;
+    this.running = true;
+    this.lastTime = performance.now();
+    this.startTime = this.lastTime;
+    const tick = (t: number) => {
+      if (!this.running) return;
+      this.frame(t);
+      this.raf = requestAnimationFrame(tick);
+    };
+    this.raf = requestAnimationFrame(tick);
+  }
+
+  stop(): void {
+    this.running = false;
+    cancelAnimationFrame(this.raf);
+  }
+
+  dispose(): void {
+    this.stop();
+    this.backend.dispose();
+    this.canvas.remove();
+  }
+
+  private frame(now: number): void {
+    const dt = Math.min(0.1, (now - this.lastTime) / 1000);
+    this.lastTime = now;
+    const fps = dt > 0 ? 1 / dt : 60;
+    this.fpsEma += (fps - this.fpsEma) * 0.05;
+
+    // Wind ramp (~0.35 s time constant) — step changes in inflow cause pressure shocks.
+    const uTarget = windMsToULat(windSliderToMs(this.params.windSpeed));
+    this.uInCurrent += (uTarget - this.uInCurrent) * Math.min(1, dt / 0.35);
+
+    const preset = this.backend.kind === 'gpu' ? GPU_LADDER[this.ladderIdx] : { grid: CPU_GRID, substeps: 2 };
+
+    if (!this.params.paused) {
+      this.backend.step(preset.substeps, { uIn: this.uInCurrent, tau: TAU0 });
+      this.backend.requestForces();
+    } else {
+      this.backend.lastStepCount = 0;
+    }
+
+    // Readbacks → pivot dynamics + rolling window
+    const rb = this.backend.pollReadbacks();
+    const tSec = (now - this.startTime) / 1000;
+    if (rb.force && isFinite(rb.force.fx)) {
+      this.lastForce = rb.force;
+      this.forceWindow.push({ t: tSec, ...rb.force });
+      while (this.forceWindow.length > 2 && this.forceWindow[0].t < tSec - 0.5) this.forceWindow.shift();
+      const sign = rb.force.fy > 0 ? 1 : -1;
+      if (sign !== this.lastLiftSign) {
+        this.lastLiftSign = sign;
+        this.liftSignT.push(tSec);
+        while (this.liftSignT.length > 24) this.liftSignT.shift();
+      }
+    }
+    if (rb.probe) this.lastProbe = rb.probe;
+    if (rb.bad) {
+      this.resets++;
+      this.backend.reset(this.uInCurrent);
+      this.forceWindow = [];
+      this.opts.onToast?.('flow-reset');
+    }
+
+    // Pivot dynamics (uses latest torque; tolerates 1-2 frame readback latency).
+    if (this.shape && !this.params.paused) {
+      this.pivot.step(this.lastForce.tz, this.lastForce.fx, this.lastForce.fy, deg2rad(this.params.restAngleDeg), this.params.pivotLocked, preset.substeps);
+      const newTheta = this.pivot.theta;
+      if (Math.abs(newTheta - this.pose.theta) > 0.002 || Math.abs(this.pivot.bend[0] - this.pose.bend[0]) > 0.0015 || Math.abs(this.pivot.bend[1] - this.pose.bend[1]) > 0.0015) {
+        this.pose = { theta: newTheta, bend: [this.pivot.bend[0], this.pivot.bend[1]] };
+        this.backend.setPose(this.pose);
+        this.dLatCells = this.shape ? Math.max(1, frontalHeight(this.shape.points, this.shape.pivot, newTheta) * this.backend.grid.h) : 1;
+      }
+    }
+
+    this.backend.render(this.params, this.pose, tSec);
+
+    // Adaptive quality (auto mode, GPU only)
+    if (this.params.quality === 'auto' && this.backend.kind === 'gpu') {
+      this.ladderTimer += dt;
+      if (this.fpsEma < 27 && this.ladderTimer > 2 && this.ladderIdx > 0) {
+        this.applyLadder(this.ladderIdx - 1);
+        this.ladderTimer = 0;
+      } else if (this.fpsEma > 55 && this.ladderTimer > 6 && this.ladderIdx < GPU_LADDER.length - 1) {
+        this.applyLadder(this.ladderIdx + 1);
+        this.ladderTimer = 0;
+      }
+    }
+
+    // Publish measurements at ~10 Hz
+    this.measureTimer += dt;
+    if (this.measureTimer >= 0.1) {
+      this.measureTimer = 0;
+      this.opts.onMeasure(this.computeMeasurements(tSec));
+    }
+  }
+
+  private applyLadder(idx: number): void {
+    this.ladderIdx = idx;
+    this.backend.resize(GPU_LADDER[idx].grid);
+    this.updateMassProps();
+  }
+
+  private computeMeasurements(tSec: number): Measurements {
+    const windMs = windSliderToMs(this.params.windSpeed);
+    const uLat = this.uInCurrent;
+    const gridH = this.backend.grid.h;
+    let fx = 0, fy = 0;
+    if (this.forceWindow.length > 0) {
+      for (const s of this.forceWindow) {
+        fx += s.fx;
+        fy += s.fy;
+      }
+      fx /= this.forceWindow.length;
+      fy /= this.forceWindow.length;
+    }
+    const hints: FlowHints = {};
+    if (this.liftSignT.length >= 6) {
+      const dt = this.liftSignT[this.liftSignT.length - 1] - this.liftSignT[0];
+      if (dt > 0.2) {
+        const halfPeriods = this.liftSignT.length - 1;
+        const f = halfPeriods / (2 * dt);
+        if (f > 0.05 && f < 20) hints.shedFreqHz = f;
+      }
+    }
+    if (this.shape) {
+      hints.stagnation = this.stagnationPoint();
+    }
+    const probe = this.lastProbe && this.params.probe
+      ? {
+          speed: (this.lastProbe.speed / Math.max(uLat, 1e-5)) * windMs,
+          pressure: ((this.lastProbe.rho - 1) / 3) * 1.225 * Math.pow(windMs / Math.max(uLat, 1e-5), 2),
+        }
+      : null;
+    return {
+      dragN: this.shape ? forceToNewtonPerM(fx, uLat, this.dLatCells, gridH, windMs) : 0,
+      liftN: this.shape ? forceToNewtonPerM(fy, uLat, this.dLatCells, gridH, windMs) : 0,
+      cd: this.shape ? dragCoefficient(fx, uLat, this.dLatCells) : 0,
+      cl: this.shape ? dragCoefficient(fy, uLat, this.dLatCells) : 0,
+      reynolds: this.shape ? reynolds(uLat, this.dLatCells) : 0,
+      windMs,
+      thetaDeg: rad2deg(this.pose.theta - deg2rad(this.params.restAngleDeg)),
+      probe,
+      fps: Math.round(this.fpsEma),
+      gridW: this.backend.grid.w,
+      gridH: this.backend.grid.h,
+      backend: this.backend.kind,
+      flowHints: hints,
+      resets: this.resets,
+    };
+    void tSec;
+  }
+
+  /** Windward-most point of the posed shape at pivot height — geometric stagnation hint. */
+  private stagnationPoint(): [number, number] | undefined {
+    if (!this.shape) return undefined;
+    const { points, pivot } = this.shape;
+    const c = Math.cos(this.pose.theta);
+    const s = Math.sin(this.pose.theta);
+    let minX = Infinity;
+    let best: [number, number] | undefined;
+    for (let i = 0; i < points.length; i += 2) {
+      const x = points[i] - pivot[0];
+      const y = points[i + 1] - pivot[1];
+      const wx = pivot[0] + this.pose.bend[0] + x * c - y * s;
+      const wy = pivot[1] + this.pose.bend[1] + x * s + y * c;
+      if (Math.abs(wy - pivot[1]) < 0.06 && wx < minX) {
+        minX = wx;
+        best = [wx, wy];
+      }
+    }
+    return best;
+  }
+
+  // ---------- Harness API (synchronous, blocking — test use only) ----------
+
+  runStepsSync(n: number): void {
+    const preset = this.backend.kind === 'gpu' ? GPU_LADDER[this.ladderIdx] : { grid: CPU_GRID, substeps: 2 };
+    void preset;
+    const batch = 40;
+    for (let done = 0; done < n; done += batch) {
+      this.backend.step(Math.min(batch, n - done), { uIn: this.uInCurrent, tau: TAU0 });
+    }
+  }
+
+  setWindImmediate(slider: number): void {
+    this.params.windSpeed = slider;
+    this.uInCurrent = windMsToULat(windSliderToMs(slider));
+  }
+
+  readForceSync(): { fx: number; fy: number; tz: number; bad: boolean } {
+    const b = this.backend as unknown as { readForceSync?: () => { fx: number; fy: number; tz: number; bad: boolean } };
+    if (b.readForceSync) return b.readForceSync();
+    return { fx: 0, fy: 0, tz: 0, bad: false };
+  }
+
+  get grid(): GridSize {
+    return this.backend.grid;
+  }
+
+  get currentULat(): number {
+    return this.uInCurrent;
+  }
+
+  get frontalCells(): number {
+    return this.dLatCells;
+  }
+}
+
+function deg2rad(d: number): number {
+  return (d * Math.PI) / 180;
+}
+
+function rad2deg(r: number): number {
+  return (r * 180) / Math.PI;
+}
+
+function isProbablyMobile(): boolean {
+  return typeof navigator !== 'undefined' && (navigator.maxTouchPoints > 1 || /Mobi|Android/i.test(navigator.userAgent)) && Math.min(screen.width, screen.height) < 800;
+}
+
+export { ASPECT };
