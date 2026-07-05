@@ -48,11 +48,12 @@ void main() {
   if (inSolid || gone || age > maxAge) {
     // Respawn at the rake: evenly spaced rows + per-particle jitter, staggered restart x.
     float row = mod(id, uRakeRows);
-    float jitterY = (hash13(vec3(id, uFrame, uSeed)) - 0.5) * 0.35;
+    float jitterY = (hash13(vec3(id, uFrame, uSeed)) - 0.5) * 0.3;
     float y = (row + 0.5 + jitterY) / uRakeRows * float(uSimSize.y);
-    float x = 1.5 + hash13(vec3(id, uFrame + 13.0, uSeed)) * 6.0;
+    // Spread respawn over a wide x-band so the rake doesn't clump into blobs.
+    float x = 1.5 + hash13(vec3(id, uFrame + 13.0, uSeed)) * 24.0;
     pos = vec2(x, y);
-    age = hash13(vec3(id, uFrame + 29.0, uSeed)) * 60.0; // stagger so streaks stay continuous
+    age = 0.0;
   }
 
   outColor = vec4(pos, age, st.w);

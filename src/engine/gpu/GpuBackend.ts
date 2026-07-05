@@ -401,7 +401,7 @@ export class GpuBackend implements Backend {
       this.bindTex(this.progSmoke, 'uObstacle', this.obstacle.textures[0], 2);
       gl.uniform2i(gl.getUniformLocation(this.progSmoke, 'uSimSize'), this.grid.w, this.grid.h);
       gl.uniform1f(gl.getUniformLocation(this.progSmoke, 'uAdvect'), steps);
-      gl.uniform1f(gl.getUniformLocation(this.progSmoke, 'uDecay'), params.reducedMotion ? 0.94 : 0.965);
+      gl.uniform1f(gl.getUniformLocation(this.progSmoke, 'uDecay'), params.reducedMotion ? 0.94 : 0.982);
       const dyeInject = this.particlesEnabled && !params.reducedMotion ? 0 : 0.16;
       gl.uniform1f(gl.getUniformLocation(this.progSmoke, 'uInject'), dyeInject);
       gl.uniform1f(gl.getUniformLocation(this.progSmoke, 'uRakeRows'), RAKE_ROWS);
@@ -439,10 +439,10 @@ export class GpuBackend implements Backend {
         this.bindTex(this.progPartDraw, 'uF2', this.simA.textures[2], 1);
         gl.uniform2i(gl.getUniformLocation(this.progPartDraw, 'uPosSize'), this.partW, this.partH);
         gl.uniform2i(gl.getUniformLocation(this.progPartDraw, 'uSimSize'), this.grid.w, this.grid.h);
-        gl.uniform1f(gl.getUniformLocation(this.progPartDraw, 'uPointSize'), Math.max(1.5, ch / 320));
+        gl.uniform1f(gl.getUniformLocation(this.progPartDraw, 'uPointSize'), Math.max(1.8, ch / 260));
         gl.uniform1f(gl.getUniformLocation(this.progPartDraw, 'uUin'), Math.max(this.lastUin, 1e-4));
         gl.uniform3f(gl.getUniformLocation(this.progPartDraw, 'uColor'), 0.5, 0.78, 1.0);
-        gl.uniform1f(gl.getUniformLocation(this.progPartDraw, 'uIntensity'), 0.045);
+        gl.uniform1f(gl.getUniformLocation(this.progPartDraw, 'uIntensity'), 0.08);
         gl.bindVertexArray(this.emptyVao);
         gl.drawArrays(gl.POINTS, 0, this.particleCount);
         gl.bindVertexArray(null);
