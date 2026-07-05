@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Engine } from '../engine/Engine';
 import { makePrimitive } from '../engine/shape/primitives';
+import type { SimParams } from '../engine/types';
 import { dragCoefficient } from '../engine/units';
 
 interface TestResult {
@@ -18,9 +19,24 @@ declare global {
   }
 }
 
-const SETTLE = 3000;
-const MEASURE = 1500;
+// fast=1 (til headless/CI med software-GL): mindre gitter og kortere kørsel.
+const FAST = typeof location !== 'undefined' && new URLSearchParams(location.search).get('fast') === '1';
+const SETTLE = FAST ? 1800 : 3000;
+const MEASURE = FAST ? 1000 : 1500;
 const SAMPLE_EVERY = 25;
+
+const HARNESS_PARAMS: SimParams = {
+  windSpeed: 0.5,
+  density: 1,
+  restAngleDeg: 0,
+  pivotLocked: true,
+  overlay: 'none',
+  smoke: false,
+  paused: true, // rAF-loopet må ikke steppe ved siden af harnessens synkrone kørsel
+  quality: FAST ? 'low' : 'high',
+  probe: null,
+  reducedMotion: true,
+};
 
 async function yieldUi(): Promise<void> {
   await new Promise((r) => setTimeout(r, 0));
@@ -150,6 +166,7 @@ export function HarnessPage() {
     setRunning(true);
     const collected: TestResult[] = [];
     const engine = new Engine(ref.current, { onMeasure: () => {} });
+    engine.setParams(HARNESS_PARAMS);
     try {
       await runAll(engine, (r) => {
         collected.push(r);
