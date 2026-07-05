@@ -29,13 +29,15 @@ export default function App() {
       {compareMode ? (
         <CompareView />
       ) : (
-        <div className="tunnel-wrap">
-          <TunnelCanvas />
-          <DrawLayer />
-          <LabelsOverlay />
+        <>
+          <div className="tunnel-wrap">
+            <TunnelCanvas />
+            <DrawLayer />
+            <LabelsOverlay />
+            <ProbeReadout />
+          </div>
           <ForceGauges />
-          <ProbeReadout />
-        </div>
+        </>
       )}
 
       <ShapeToolbar />

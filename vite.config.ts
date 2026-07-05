@@ -28,6 +28,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        // De øvrige apps serveres under /Test/apps/ — vindtunnelens service
+        // worker må aldrig besvare navigationer derind med sin egen index.html.
+        navigateFallbackDenylist: [/\/apps\//],
       },
     }),
   ],

@@ -21,6 +21,8 @@ jobs:
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # alle brancher: de øvrige apps samles med i deploymentet
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -28,6 +30,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - name: Saml øvrige apps under /apps/
+        run: bash scripts/collect-apps.sh
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
