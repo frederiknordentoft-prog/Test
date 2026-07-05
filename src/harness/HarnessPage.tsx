@@ -93,7 +93,8 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
   engine.setWindImmediate(uHi);
   engine.reset();
   await runSteps(engine, settleFor(engine));
-  const hi = await measure(engine);
+  // Længere vindue til Strouhal: skal dække flere shedding-perioder (~1400 steps/periode).
+  const hi = await measure(engine, FAST ? 4200 : 6000);
   const uLatHi = engine.currentULat;
 
   const expected = (uLatHi / uLatLo) ** 2;
@@ -110,7 +111,8 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
   for (let i = 1; i < hi.samples.length; i++) {
     if (Math.sign(hi.samples[i].fy) !== Math.sign(hi.samples[i - 1].fy)) changes++;
   }
-  const fLat = changes / (2 * MEASURE);
+  const stepsMeasured = hi.samples.length * SAMPLE_EVERY;
+  const fLat = changes / (2 * stepsMeasured);
   const st = (fLat * dLo) / uLatHi;
   report({
     name: 'Strouhal (cylinder)',
