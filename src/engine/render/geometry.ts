@@ -10,7 +10,7 @@ export type SceneGeometry = {
 }
 
 export function computeGeometry(w: number, h: number): SceneGeometry {
-  const beamHalf = Math.min(w * 0.36, 330)
+  const beamHalf = Math.min(w * 0.33, 300)
   return {
     w,
     h,
@@ -18,7 +18,8 @@ export function computeGeometry(w: number, h: number): SceneGeometry {
     pivotY: h * 0.24,
     beamHalf,
     chainLen: h * 0.3,
-    panRx: Math.min(beamHalf * 0.52, w * 0.2),
+    // Skålene skal kunne svinge uden at klippe canvas-kanten
+    panRx: Math.min(beamHalf * 0.45, w * 0.15),
     panRy: Math.max(10, h * 0.032),
   }
 }
