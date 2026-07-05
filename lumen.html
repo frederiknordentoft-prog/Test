@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Lumen</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+  }
+  #hint {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 18vh;
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 17px;
+    font-weight: 300;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    pointer-events: none;
+    animation: breathe 3.2s ease-in-out infinite;
+    transition: opacity 1.2s ease;
+  }
+  #hint.hidden { opacity: 0; animation: none; }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.7; }
+  }
+  #toast {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 26px);
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.65);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="hint">Rør ved skærmen</div>
+<div id="toast"></div>
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Konfiguration ----------
+  var MAX_PARTICLES = 20000;
+  var CELL = 26;                 // velocity-grid cellestørrelse i CSS-px
+  var TRAIL_FADE = 0.915;        // hvor længe lysende haler hænger ved
+  var TRAIL_DECAY = 0.0022;      // fjerner sidste rest så sort forbliver sort
+  var FIELD_COUPLING = 3.2;      // hvor hårdt feltet trækker i partiklerne
+  var DRAG = 0.9;                // luftmodstand pr. sekund (som base for pow)
+
+  var canvas = document.getElementById('stage');
+  var hint = document.getElementById('hint');
+  var toast = document.getElementById('toast');
+
+  var W = 0, H = 0, DPR = 1;
+
+  // ---------- Farvepaletter ----------
+  var palettes = [
+    { name: 'Aurora', stops: [[0.15, 0.95, 0.75], [0.45, 0.35, 1.0], [1.0, 0.35, 0.85]] },
+    { name: 'Ember',  stops: [[1.0, 0.55, 0.12], [1.0, 0.30, 0.35], [1.0, 0.85, 0.40]] },
+    { name: 'Ocean',  stops: [[0.20, 0.75, 1.0], [0.25, 0.40, 1.0], [0.50, 1.0, 0.85]] },
+    { name: 'Prisme', stops: null } // fuld hue-cyklus
+  ];
+  var paletteIndex = 0;
+
+  function hue2rgb(h, out) {
+    h = ((h % 1) + 1) % 1;
+    var r = Math.abs(h * 6 - 3) - 1;
+    var g = 2 - Math.abs(h * 6 - 2);
+    var b = 2 - Math.abs(h * 6 - 4);
+    out[0] = Math.min(Math.max(r, 0.15), 1);
+    out[1] = Math.min(Math.max(g, 0.15), 1);
+    out[2] = Math.min(Math.max(b, 0.15), 1);
+  }
+
+  var colTmp = [0, 0, 0];
+  function samplePalette(t, out) {
+    var p = palettes[paletteIndex];
+    if (!p.stops) { hue2rgb(t, out); return; }
+    var stops = p.stops;
+    var n = stops.length;
+    t = ((t % 1) + 1) % 1;
+    var f = t * n;
+    var i0 = Math.floor(f) % n;
+    var i1 = (i0 + 1) % n;
+    var fr = f - Math.floor(f);
+    var a = stops[i0], b = stops[i1];
+    out[0] = a[0] + (b[0] - a[0]) * fr;
+    out[1] = a[1] + (b[1] - a[1]) * fr;
+    out[2] = a[2] + (b[2] - a[2]) * fr;
+  }
+
+  // ---------- Partikelpool (ring-buffer) ----------
+  var px = new Float32Array(MAX_PARTICLES);
+  var py = new Float32Array(MAX_PARTICLES);
+  var vx = new Float32Array(MAX_PARTICLES);
+  var vy = new Float32Array(MAX_PARTICLES);
+  var life = new Float32Array(MAX_PARTICLES);      // sekunder tilbage
+  var maxLife = new Float32Array(MAX_PARTICLES);
+  var size = new Float32Array(MAX_PARTICLES);
+  var cr = new Float32Array(MAX_PARTICLES);
+  var cg = new Float32Array(MAX_PARTICLES);
+  var cb = new Float32Array(MAX_PARTICLES);
+  var cursor = 0;
+  var qualityScale = 1;   // adaptiv kvalitet: 1 → 0.35
+
+  function spawn(x, y, velX, velY, sz, lifeSec, colT) {
+    var i = cursor;
+    cursor = (cursor + 1) % MAX_PARTICLES;
+    px[i] = x; py[i] = y;
+    vx[i] = velX; vy[i] = velY;
+    life[i] = lifeSec; maxLife[i] = lifeSec;
+    size[i] = sz;
+    samplePalette(colT, colTmp);
+    cr[i] = colTmp[0]; cg[i] = colTmp[1]; cb[i] = colTmp[2];
+  }
+
+  var now = 0; // sim-tid i sekunder
+
+  // Elegant "blossom": partikler blomstrer ud fra berøringspunktet
+  function burst(x, y, scale) {
+    var count = Math.round((220 + Math.random() * 120) * scale * qualityScale);
+    var baseT = now * 0.05 + Math.random() * 0.15;
+    for (var k = 0; k < count; k++) {
+      var ang = Math.random() * Math.PI * 2;
+      // eased fart: mange langsomme i midten, få hurtige yderst → blød blomst
+      var speed = 30 + 380 * Math.pow(Math.random(), 1.7);
+      var wobble = 1 + 0.25 * Math.sin(ang * 3 + baseT * 40); // let organisk form
+      var sx = Math.cos(ang) * speed * wobble;
+      var sy = Math.sin(ang) * speed * wobble;
+      var r = Math.random() * 10;
+      var sz = Math.random() < 0.08 ? 7 + Math.random() * 8 : 2 + Math.random() * 3.5;
+      var lifeSec = 2.5 + Math.random() * 4.5;
+      spawn(x + Math.cos(ang) * r, y + Math.sin(ang) * r, sx, sy, sz, lifeSec,
+            baseT + Math.random() * 0.12);
+    }
+    stampRadial(x, y, 110, 420);
+    if (hintHidden && navigator.vibrate) { try { navigator.vibrate(8); } catch (e) {} }
+  }
+
+  function strokeSpawn(x0, y0, x1, y1, velX, velY) {
+    var dist = Math.hypot(x1 - x0, y1 - y0);
+    var count = Math.min(40, Math.max(2, Math.round(dist * 0.9 * qualityScale)));
+    var baseT = now * 0.05;
+    for (var k = 0; k < count; k++) {
+      var f = Math.random();
+      var jx = (Math.random() - 0.5) * 14;
+      var jy = (Math.random() - 0.5) * 14;
+      var sz = Math.random() < 0.05 ? 6 + Math.random() * 6 : 1.8 + Math.random() * 3;
+      spawn(x0 + (x1 - x0) * f + jx, y0 + (y1 - y0) * f + jy,
+            velX * 0.35 + (Math.random() - 0.5) * 60,
+            velY * 0.35 + (Math.random() - 0.5) * 60,
+            sz, 2 + Math.random() * 4, baseT + Math.random() * 0.1);
+    }
+  }
+
+  // ---------- Velocity-grid (pseudo-væske) ----------
+  var gCols = 0, gRows = 0;
+  var gvx, gvy, gtx, gty;
+
+  function initGrid() {
+    gCols = Math.ceil(W / CELL) + 1;
+    gRows = Math.ceil(H / CELL) + 1;
+    gvx = new Float32Array(gCols * gRows);
+    gvy = new Float32Array(gCols * gRows);
+    gtx = new Float32Array(gCols * gRows);
+    gty = new Float32Array(gCols * gRows);
+  }
+
+  function stampForce(x, y, fx, fy, radius) {
+    var rc = Math.ceil(radius / CELL);
+    var ci = Math.round(x / CELL);
+    var cj = Math.round(y / CELL);
+    var r2 = radius * radius;
+    for (var j = cj - rc; j <= cj + rc; j++) {
+      if (j < 0 || j >= gRows) continue;
+      for (var i = ci - rc; i <= ci + rc; i++) {
+        if (i < 0 || i >= gCols) continue;
+        var dx = i * CELL - x, dy = j * CELL - y;
+        var d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        var fall = Math.exp(-d2 / (r2 * 0.45));
+        var idx = j * gCols + i;
+        gvx[idx] += fx * fall;
+        gvy[idx] += fy * fall;
+      }
+    }
+  }
+
+  function stampRadial(x, y, radius, strength) {
+    var rc = Math.ceil(radius / CELL);
+    var ci = Math.round(x / CELL);
+    var cj = Math.round(y / CELL);
+    var r2 = radius * radius;
+    for (var j = cj - rc; j <= cj + rc; j++) {
+      if (j < 0 || j >= gRows) continue;
+      for (var i = ci - rc; i <= ci + rc; i++) {
+        if (i < 0 || i >= gCols) continue;
+        var dx = i * CELL - x, dy = j * CELL - y;
+        var d2 = dx * dx + dy * dy;
+        if (d2 > r2 || d2 < 1) continue;
+        var d = Math.sqrt(d2);
+        var fall = Math.exp(-d2 / (r2 * 0.4));
+        var idx = j * gCols + i;
+        gvx[idx] += (dx / d) * strength * fall;
+        gvy[idx] += (dy / d) * strength * fall;
+      }
+    }
+  }
+
+  function stampVortex(x, y, radius, strength) {
+    var rc = Math.ceil(radius / CELL);
+    var ci = Math.round(x / CELL);
+    var cj = Math.round(y / CELL);
+    var r2 = radius * radius;
+    for (var j = cj - rc; j <= cj + rc; j++) {
+      if (j < 0 || j >= gRows) continue;
+      for (var i = ci - rc; i <= ci + rc; i++) {
+        if (i < 0 || i >= gCols) continue;
+        var dx = i * CELL - x, dy = j * CELL - y;
+        var d2 = dx * dx + dy * dy;
+        if (d2 > r2 || d2 < 1) continue;
+        var d = Math.sqrt(d2);
+        var fall = Math.exp(-d2 / (r2 * 0.5));
+        var idx = j * gCols + i;
+        // tangentiel hvirvel + let indadgående sug
+        gvx[idx] += ((-dy / d) * strength - (dx / d) * strength * 0.22) * fall;
+        gvy[idx] += ((dx / d) * strength - (dy / d) * strength * 0.22) * fall;
+      }
+    }
+  }
+
+  function updateGrid(dt) {
+    var damp = Math.pow(0.28, dt); // kraftig nok dæmpning til elegant efterløb
+    var n = gCols * gRows;
+    // diffusion: blød udveksling med naboer → hvirvlerne breder sig som væske
+    for (var j = 0; j < gRows; j++) {
+      for (var i = 0; i < gCols; i++) {
+        var idx = j * gCols + i;
+        var l = i > 0 ? idx - 1 : idx;
+        var r = i < gCols - 1 ? idx + 1 : idx;
+        var u = j > 0 ? idx - gCols : idx;
+        var d = j < gRows - 1 ? idx + gCols : idx;
+        gtx[idx] = gvx[idx] * 0.72 + (gvx[l] + gvx[r] + gvx[u] + gvx[d]) * 0.07;
+        gty[idx] = gvy[idx] * 0.72 + (gvy[l] + gvy[r] + gvy[u] + gvy[d]) * 0.07;
+      }
+    }
+    for (var k = 0; k < n; k++) {
+      gvx[k] = gtx[k] * damp;
+      gvy[k] = gty[k] * damp;
+    }
+  }
+
+  var fieldOut = [0, 0];
+  function sampleField(x, y) {
+    var gx = x / CELL, gy = y / CELL;
+    var i0 = Math.floor(gx), j0 = Math.floor(gy);
+    var fx = gx - i0, fy = gy - j0;
+    if (i0 < 0) { i0 = 0; fx = 0; }
+    if (j0 < 0) { j0 = 0; fy = 0; }
+    if (i0 > gCols - 2) { i0 = gCols - 2; fx = 1; }
+    if (j0 > gRows - 2) { j0 = gRows - 2; fy = 1; }
+    var idx = j0 * gCols + i0;
+    var a = idx, b = idx + 1, c = idx + gCols, d = idx + gCols + 1;
+    var w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+    fieldOut[0] = gvx[a] * w00 + gvx[b] * w10 + gvx[c] * w01 + gvx[d] * w11;
+    fieldOut[1] = gvy[a] * w00 + gvy[b] * w10 + gvy[c] * w01 + gvy[d] * w11;
+  }
+
+  // Curl-noise: scenen står aldrig helt stille
+  function curlX(x, y, t) {
+    return Math.sin(y * 0.011 + t * 0.55) * Math.cos(x * 0.007 - t * 0.32)
+         + 0.5 * Math.sin(y * 0.027 - t * 0.42);
+  }
+  function curlY(x, y, t) {
+    return Math.sin(x * 0.012 - t * 0.48) * Math.cos(y * 0.008 + t * 0.36)
+         + 0.5 * Math.sin(x * 0.024 + t * 0.51);
+  }
+
+  // ---------- Simulering ----------
+  function stepParticles(dt) {
+    var drag = Math.pow(DRAG, dt * 3);
+    var couple = 1 - Math.exp(-dt * FIELD_COUPLING);
+    var curlAmp = 14;
+    var t = now;
+    for (var i = 0; i < MAX_PARTICLES; i++) {
+      if (life[i] <= 0) continue;
+      life[i] -= dt;
+      var x = px[i], y = py[i];
+      sampleField(x, y);
+      var vxi = vx[i] + (fieldOut[0] - vx[i]) * couple;
+      var vyi = vy[i] + (fieldOut[1] - vy[i]) * couple;
+      vxi += curlX(x, y, t) * curlAmp * dt * 3;
+      vyi += curlY(x, y, t) * curlAmp * dt * 3;
+      vxi *= drag; vyi *= drag;
+      x += vxi * dt; y += vyi * dt;
+      // blød opbremsning ved kanterne
+      if (x < 0) { x = 0; vxi = Math.abs(vxi) * 0.55; }
+      else if (x > W) { x = W; vxi = -Math.abs(vxi) * 0.55; }
+      if (y < 0) { y = 0; vyi = Math.abs(vyi) * 0.55; }
+      else if (y > H) { y = H; vyi = -Math.abs(vyi) * 0.55; }
+      px[i] = x; py[i] = y; vx[i] = vxi; vy[i] = vyi;
+    }
+  }
+
+  // Diskret "støv" i baggrunden så mørket lever
+  var dustTimer = 0;
+  function ambient(dt) {
+    dustTimer -= dt;
+    if (dustTimer <= 0) {
+      dustTimer = 0.06;
+      var x = Math.random() * W, y = Math.random() * H;
+      spawn(x, y, (Math.random() - 0.5) * 12, (Math.random() - 0.5) * 12,
+            1.2 + Math.random() * 2, 5 + Math.random() * 6, now * 0.05 + Math.random() * 0.2);
+    }
+  }
+
+  // ---------- Input ----------
+  var pointers = {}; // id → {x, y, downT, lastMoveT, moved}
+  var lastTap = { t: -1, x: 0, y: 0 };
+  var hintHidden = false;
+
+  function hideHint() {
+    if (!hintHidden) { hintHidden = true; hint.classList.add('hidden'); }
+  }
+
+  var toastTimer = null;
+  function showToast(text) {
+    toast.textContent = text;
+    toast.style.opacity = '1';
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.style.opacity = '0'; }, 1200);
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    hideHint();
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    pointers[e.pointerId] = {
+      x: e.clientX, y: e.clientY,
+      downX: e.clientX, downY: e.clientY,
+      downT: performance.now() / 1000, moved: false
+    };
+    burst(e.clientX, e.clientY, 1);
+  }, { passive: false });
+
+  canvas.addEventListener('pointermove', function (e) {
+    var p = pointers[e.pointerId];
+    if (!p) return;
+    e.preventDefault();
+    var nx = e.clientX, ny = e.clientY;
+    var dx = nx - p.x, dy = ny - p.y;
+    var dist = Math.hypot(dx, dy);
+    if (dist < 0.5) return;
+    if (dist > 4) p.moved = true;
+    // injicér bevægelsen i væskefeltet langs strøget
+    var frameDt = 1 / 60;
+    var velX = dx / frameDt, velY = dy / frameDt;
+    var mag = Math.hypot(velX, velY);
+    if (mag > 2200) { velX *= 2200 / mag; velY *= 2200 / mag; }
+    var steps = Math.max(1, Math.ceil(dist / (CELL * 0.8)));
+    for (var s = 0; s < steps; s++) {
+      var f = (s + 0.5) / steps;
+      stampForce(p.x + dx * f, p.y + dy * f, velX * 0.55, velY * 0.55, 72);
+    }
+    strokeSpawn(p.x, p.y, nx, ny, velX, velY);
+    p.x = nx; p.y = ny;
+  }, { passive: false });
+
+  function endPointer(e) {
+    var p = pointers[e.pointerId];
+    if (!p) return;
+    delete pointers[e.pointerId];
+    var t = performance.now() / 1000;
+    var quickTap = !p.moved && (t - p.downT) < 0.28;
+    if (quickTap) {
+      if (t - lastTap.t < 0.32 && Math.hypot(p.downX - lastTap.x, p.downY - lastTap.y) < 60) {
+        // dobbelt-tap: skift palette
+        paletteIndex = (paletteIndex + 1) % palettes.length;
+        showToast(palettes[paletteIndex].name);
+        burst(p.downX, p.downY, 1.6);
+        lastTap.t = -1;
+      } else {
+        lastTap.t = t; lastTap.x = p.downX; lastTap.y = p.downY;
+      }
+    }
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+  ['touchstart', 'touchmove', 'gesturestart', 'dblclick'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
+  });
+
+  // Hold fingeren stille → blid hvirvel
+  function applyHolds(dt) {
+    var t = performance.now() / 1000;
+    for (var id in pointers) {
+      var p = pointers[id];
+      if (t - p.downT > 0.18) {
+        stampVortex(p.x, p.y, 115, 640 * dt * 8);
+      }
+    }
+  }
+
+  // ---------- WebGL-renderer ----------
+  var gl = null;
+  var glReady = false;
+  var progPoint, progFade, progShow;
+  var quadBuf, pointBuf;
+  var fboA, fboB, texA, texB;
+  var fboW = 0, fboH = 0;
+  var renderData = new Float32Array(MAX_PARTICLES * 7);
+
+  function compile(type, src) {
+    var sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(sh));
+    }
+    return sh;
+  }
+  function link(vs, fs) {
+    var pr = gl.createProgram();
+    gl.attachShader(pr, compile(gl.VERTEX_SHADER, vs));
+    gl.attachShader(pr, compile(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(pr));
+    }
+    return pr;
+  }
+
+  var VS_POINT = [
+    'attribute vec2 aPos;',
+    'attribute float aSize;',
+    'attribute vec4 aColor;',
+    'uniform vec2 uRes;',
+    'uniform float uDpr;',
+    'varying vec4 vColor;',
+    'void main() {',
+    '  vec2 clip = (aPos / uRes) * 2.0 - 1.0;',
+    '  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);',
+    '  gl_PointSize = aSize * uDpr;',
+    '  vColor = aColor;',
+    '}'
+  ].join('\n');
+
+  var FS_POINT = [
+    'precision mediump float;',
+    'varying vec4 vColor;',
+    'void main() {',
+    '  vec2 c = gl_PointCoord - 0.5;',
+    '  float d = length(c) * 2.0;',
+    '  float glow = exp(-d * d * 4.5) * 0.55 + exp(-d * d * 22.0) * 0.9;',
+    '  glow *= smoothstep(1.0, 0.75, d);',
+    '  gl_FragColor = vec4(vColor.rgb * glow * vColor.a, 1.0);',
+    '}'
+  ].join('\n');
+
+  var VS_QUAD = [
+    'attribute vec2 aPos;',
+    'varying vec2 vUv;',
+    'void main() {',
+    '  vUv = aPos * 0.5 + 0.5;',
+    '  gl_Position = vec4(aPos, 0.0, 1.0);',
+    '}'
+  ].join('\n');
+
+  var FS_FADE = [
+    'precision mediump float;',
+    'varying vec2 vUv;',
+    'uniform sampler2D uTex;',
+    'uniform float uFade;',
+    'uniform float uDecay;',
+    'void main() {',
+    '  vec3 c = texture2D(uTex, vUv).rgb;',
+    '  gl_FragColor = vec4(max(c * uFade - uDecay, 0.0), 1.0);',
+    '}'
+  ].join('\n');
+
+  var FS_SHOW = [
+    'precision mediump float;',
+    'varying vec2 vUv;',
+    'uniform sampler2D uTex;',
+    'void main() {',
+    '  vec3 c = texture2D(uTex, vUv).rgb;',
+    '  c = pow(c * 1.06, vec3(0.92));',            // blid tone-løft
+    '  float d = distance(vUv, vec2(0.5));',
+    '  c *= 1.0 - 0.32 * smoothstep(0.45, 0.95, d);', // diskret vignette
+    '  gl_FragColor = vec4(c, 1.0);',
+    '}'
+  ].join('\n');
+
+  function makeFbo(w, h) {
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    var fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    return { fbo: fbo, tex: tex };
+  }
+
+  function initGL() {
+    try {
+      gl = canvas.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: false })
+        || canvas.getContext('experimental-webgl', { alpha: false, antialias: false });
+      if (!gl) return false;
+      progPoint = link(VS_POINT, FS_POINT);
+      progFade = link(VS_QUAD, FS_FADE);
+      progShow = link(VS_QUAD, FS_SHOW);
+      quadBuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      pointBuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, pointBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, renderData.byteLength, gl.DYNAMIC_DRAW);
+      glReady = true;
+      return true;
+    } catch (e) {
+      gl = null;
+      glReady = false;
+      return false;
+    }
+  }
+
+  function resizeGL() {
+    fboW = canvas.width; fboH = canvas.height;
+    var a = makeFbo(fboW, fboH);
+    var b = makeFbo(fboW, fboH);
+    fboA = a.fbo; texA = a.tex;
+    fboB = b.fbo; texB = b.tex;
+  }
+
+  function drawQuad(prog) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    var loc = gl.getAttribLocation(prog, 'aPos');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  function renderGL() {
+    // 1) fade forrige frame ind i FBO A
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fboA);
+    gl.viewport(0, 0, fboW, fboH);
+    gl.disable(gl.BLEND);
+    gl.useProgram(progFade);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texB);
+    gl.uniform1i(gl.getUniformLocation(progFade, 'uTex'), 0);
+    gl.uniform1f(gl.getUniformLocation(progFade, 'uFade'), TRAIL_FADE);
+    gl.uniform1f(gl.getUniformLocation(progFade, 'uDecay'), TRAIL_DECAY);
+    drawQuad(progFade);
+
+    // 2) fyld render-buffer med levende partikler
+    var count = 0;
+    var o = 0;
+    for (var i = 0; i < MAX_PARTICLES; i++) {
+      var l = life[i];
+      if (l <= 0) continue;
+      var ml = maxLife[i];
+      var f = l / ml;
+      var fadeIn = Math.min((ml - l) * 6, 1);
+      var alpha = fadeIn * f * f * (3 - 2 * f); // smoothstep-udtoning
+      var sp = Math.hypot(vx[i], vy[i]);
+      var bright = 0.5 + Math.min(sp / 520, 1) * 0.8;
+      var a = alpha * bright;
+      renderData[o] = px[i];
+      renderData[o + 1] = py[i];
+      renderData[o + 2] = size[i];
+      renderData[o + 3] = cr[i];
+      renderData[o + 4] = cg[i];
+      renderData[o + 5] = cb[i];
+      renderData[o + 6] = a;
+      o += 7;
+      count++;
+    }
+
+    // 3) tegn partikler additivt oveni
+    if (count > 0) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE);
+      gl.useProgram(progPoint);
+      gl.bindBuffer(gl.ARRAY_BUFFER, pointBuf);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, renderData.subarray(0, count * 7));
+      var stride = 28;
+      var locPos = gl.getAttribLocation(progPoint, 'aPos');
+      var locSize = gl.getAttribLocation(progPoint, 'aSize');
+      var locCol = gl.getAttribLocation(progPoint, 'aColor');
+      gl.enableVertexAttribArray(locPos);
+      gl.vertexAttribPointer(locPos, 2, gl.FLOAT, false, stride, 0);
+      gl.enableVertexAttribArray(locSize);
+      gl.vertexAttribPointer(locSize, 1, gl.FLOAT, false, stride, 8);
+      gl.enableVertexAttribArray(locCol);
+      gl.vertexAttribPointer(locCol, 4, gl.FLOAT, false, stride, 12);
+      gl.uniform2f(gl.getUniformLocation(progPoint, 'uRes'), W, H);
+      gl.uniform1f(gl.getUniformLocation(progPoint, 'uDpr'), DPR);
+      gl.drawArrays(gl.POINTS, 0, count);
+    }
+
+    // 4) vis resultatet på skærmen
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.disable(gl.BLEND);
+    gl.useProgram(progShow);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texA);
+    gl.uniform1i(gl.getUniformLocation(progShow, 'uTex'), 0);
+    drawQuad(progShow);
+
+    // 5) byt ping-pong
+    var tf = fboA; fboA = fboB; fboB = tf;
+    var tt = texA; texA = texB; texB = tt;
+  }
+
+  // ---------- Canvas2D-fallback ----------
+  var ctx2d = null;
+
+  function init2D() {
+    MAX_PARTICLES = 4000;
+    ctx2d = canvas.getContext('2d');
+  }
+
+  function render2D() {
+    var c = ctx2d;
+    c.globalCompositeOperation = 'source-over';
+    c.fillStyle = 'rgba(0,0,0,0.14)';
+    c.fillRect(0, 0, canvas.width, canvas.height);
+    c.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < MAX_PARTICLES; i++) {
+      var l = life[i];
+      if (l <= 0) continue;
+      var f = l / maxLife[i];
+      var alpha = Math.min((maxLife[i] - l) * 6, 1) * f * f * (3 - 2 * f);
+      var r = size[i] * DPR * 2.4;
+      c.globalAlpha = Math.min(alpha, 1);
+      c.fillStyle = 'rgb(' + (cr[i] * 255 | 0) + ',' + (cg[i] * 255 | 0) + ',' + (cb[i] * 255 | 0) + ')';
+      c.beginPath();
+      c.arc(px[i] * DPR, py[i] * DPR, r, 0, 6.2832);
+      c.fill();
+    }
+    c.globalAlpha = 1;
+  }
+
+  // ---------- Resize ----------
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    DPR = Math.min(window.devicePixelRatio || 1, 1.75);
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    initGrid();
+    if (glReady) resizeGL();
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function () { setTimeout(resize, 250); });
+
+  // ---------- Adaptiv kvalitet ----------
+  var emaDt = 16;
+  var qualityCheck = 0;
+  function adapt(dtMs) {
+    emaDt = emaDt * 0.95 + dtMs * 0.05;
+    qualityCheck += dtMs;
+    if (qualityCheck > 2000) {
+      qualityCheck = 0;
+      if (emaDt > 21 && qualityScale > 0.35) {
+        qualityScale = Math.max(0.35, qualityScale * 0.72);
+      } else if (emaDt < 14 && qualityScale < 1) {
+        qualityScale = Math.min(1, qualityScale * 1.2);
+      }
+    }
+  }
+
+  // ---------- Hovedloop ----------
+  var lastT = 0;
+  var running = true;
+
+  function frame(tMs) {
+    if (!running) return;
+    requestAnimationFrame(frame);
+    if (!lastT) { lastT = tMs; return; }
+    var dtMs = tMs - lastT;
+    lastT = tMs;
+    if (dtMs > 100) dtMs = 100;
+    var dt = Math.min(dtMs / 1000, 0.033);
+    now += dt;
+    adapt(dtMs);
+
+    applyHolds(dt);
+    updateGrid(dt);
+    ambient(dt);
+    stepParticles(dt);
+
+    if (glReady) renderGL();
+    else if (ctx2d) render2D();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      running = false;
+    } else if (!running) {
+      running = true;
+      lastT = 0;
+      requestAnimationFrame(frame);
+    }
+  });
+
+  canvas.addEventListener('webglcontextlost', function (e) {
+    e.preventDefault();
+    glReady = false;
+  });
+  canvas.addEventListener('webglcontextrestored', function () {
+    if (initGL()) resize();
+  });
+
+  // ---------- Start ----------
+  resize();
+  if (!initGL()) init2D();
+  if (glReady) resizeGL();
+
+  // velkomst: en blid blomstring i midten så skærmen lever fra første sekund
+  setTimeout(function () { burst(W * 0.5, H * 0.42, 1.2); }, 500);
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
