@@ -14,6 +14,7 @@ export interface AppState {
   restAngleDeg: number;
   pivotLocked: boolean;
   paused: boolean;
+  timeScale: number;
 
   // shape slice
   activeTool: Tool;
@@ -56,6 +57,7 @@ export const useStore = create<AppState>((set, get) => ({
   restAngleDeg: 0,
   pivotLocked: true,
   paused: false,
+  timeScale: 1,
 
   activeTool: 'freehand',
   committedShape: null,
@@ -104,6 +106,7 @@ export function selectSimParams(s: AppState): SimParams {
     density: s.density,
     restAngleDeg: s.restAngleDeg,
     pivotLocked: s.pivotLocked,
+    timeScale: s.timeScale,
     overlay: s.overlay,
     smoke: s.smoke,
     paused: s.paused,

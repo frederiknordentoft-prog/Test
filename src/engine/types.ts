@@ -24,6 +24,8 @@ export interface SimParams {
   restAngleDeg: number;
   /** Lock the pivot for clean measurements. */
   pivotLocked: boolean;
+  /** Simulation tempo: 1 = default (slow-motion), 0.25–4 scales substeps per frame. */
+  timeScale: number;
   overlay: OverlayMode;
   smoke: boolean;
   paused: boolean;

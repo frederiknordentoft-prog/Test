@@ -37,6 +37,7 @@ const DEFAULT_PARAMS: SimParams = {
   density: 1,
   restAngleDeg: 0,
   pivotLocked: true,
+  timeScale: 1,
   overlay: 'none',
   smoke: true,
   paused: false,
@@ -72,6 +73,7 @@ export class Engine {
   private lastLiftSign = 0;
   private lastProbe: { speed: number; rho: number } | null = null;
   private measureTimer = 0;
+  private stepAcc = 0;
   private polarMomentLat = 1e5;
   private dLatCells = 1;
   private startTime = 0;
@@ -197,8 +199,17 @@ export class Engine {
 
     const preset = this.backend.kind === 'gpu' ? GPU_LADDER[this.ladderIdx] : { grid: CPU_GRID, substeps: 2 };
 
+    // Tempo: skalér substeps pr. frame; fraktions-akkumulator så fx 0.25× stadig skrider jævnt frem.
+    const timeScale = Math.min(4, Math.max(0.25, this.params.timeScale || 1));
+    let stepsThisFrame = 0;
     if (!this.params.paused) {
-      this.backend.step(preset.substeps, { uIn: this.uInCurrent, tau: TAU0 });
+      this.stepAcc += preset.substeps * timeScale;
+      stepsThisFrame = Math.floor(this.stepAcc);
+      this.stepAcc -= stepsThisFrame;
+    }
+
+    if (stepsThisFrame > 0) {
+      this.backend.step(stepsThisFrame, { uIn: this.uInCurrent, tau: TAU0 });
       this.backend.requestForces();
     } else {
       this.backend.lastStepCount = 0;
@@ -227,8 +238,8 @@ export class Engine {
     }
 
     // Pivot dynamics (uses latest torque; tolerates 1-2 frame readback latency).
-    if (this.shape && !this.params.paused) {
-      this.pivot.step(this.lastForce.tz, this.lastForce.fx, this.lastForce.fy, deg2rad(this.params.restAngleDeg), this.params.pivotLocked, preset.substeps);
+    if (this.shape && !this.params.paused && stepsThisFrame > 0) {
+      this.pivot.step(this.lastForce.tz, this.lastForce.fx, this.lastForce.fy, deg2rad(this.params.restAngleDeg), this.params.pivotLocked, stepsThisFrame);
       const newTheta = this.pivot.theta;
       if (Math.abs(newTheta - this.pose.theta) > 0.002 || Math.abs(this.pivot.bend[0] - this.pose.bend[0]) > 0.0015 || Math.abs(this.pivot.bend[1] - this.pose.bend[1]) > 0.0015) {
         this.pose = { theta: newTheta, bend: [this.pivot.bend[0], this.pivot.bend[1]] };

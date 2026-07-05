@@ -39,6 +39,7 @@ const HARNESS_PARAMS: SimParams = {
   density: 1,
   restAngleDeg: 0,
   pivotLocked: true,
+  timeScale: 1,
   overlay: 'none',
   smoke: false,
   paused: true, // rAF-loopet må ikke steppe ved siden af harnessens synkrone kørsel

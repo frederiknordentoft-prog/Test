@@ -8,6 +8,8 @@ export const da = {
   weightLight: 'Let',
   weightHeavy: 'Tung',
   angleLabel: 'Vinkel',
+  tempoLabel: 'Tempo',
+  tempoHint: '1× er slowmotion — skru op for at se hvirvelgaden i hurtigere takt, eller ned for at studere den',
   lockLabel: 'Lås pind',
   lockedHint: 'Pinden er låst — ren måling',
   freeHint: 'Pinden giver efter for vinden',

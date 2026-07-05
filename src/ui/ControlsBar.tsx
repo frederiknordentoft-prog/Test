@@ -8,6 +8,7 @@ export function ControlsBar() {
   const windSpeed = useStore((s) => s.windSpeed);
   const density = useStore((s) => s.density);
   const restAngleDeg = useStore((s) => s.restAngleDeg);
+  const timeScale = useStore((s) => s.timeScale);
   const pivotLocked = useStore((s) => s.pivotLocked);
   const paused = useStore((s) => s.paused);
   const smoke = useStore((s) => s.smoke);
@@ -52,6 +53,17 @@ export function ControlsBar() {
             showBubble('angle');
           }}
           aria-label={da.angleLabel}
+        />
+      </label>
+
+      <label className="slider-group" title={da.tempoHint}>
+        <span className="slider-label">
+          {da.tempoLabel} <strong>{timeScale < 1 ? `${timeScale.toFixed(2).replace(/0$/, '')}×` : `${timeScale.toFixed(0)}×`}</strong>
+        </span>
+        <input
+          type="range" min={-2} max={2} step={1} value={Math.log2(timeScale)}
+          onChange={(e) => set({ timeScale: Math.pow(2, Number(e.target.value)) })}
+          aria-label={da.tempoLabel}
         />
       </label>
 
