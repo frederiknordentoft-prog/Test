@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  margin: 0;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .tray-chip {
+    @apply flex min-h-[52px] touch-none select-none flex-col items-center justify-center rounded-xl border-2 bg-amber-50/80 px-1 py-1 text-ink shadow-sm transition active:scale-95;
+  }
+  .tray-chip:hover {
+    @apply bg-amber-50;
+  }
+  .tray-chip:focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-blue-700;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tray-chip {
+    transition: none;
+  }
+  .tray-chip:active {
+    transform: none;
+  }
+}
