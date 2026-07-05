@@ -78,7 +78,8 @@
   var CELL = 26;                 // velocity-grid cellestørrelse i CSS-px
   var TRAIL_FADE = 0.915;        // hvor længe lysende haler hænger ved
   var TRAIL_DECAY = 0.0022;      // fjerner sidste rest så sort forbliver sort
-  var FIELD_COUPLING = 3.2;      // hvor hårdt feltet trækker i partiklerne
+  var FIELD_COUPLING = 7;        // hvor hårdt feltet trækker i partiklerne
+  var FINGER_R = 90;             // radius for direkte finger-kobling (CSS-px)
   var DRAG = 0.9;                // luftmodstand pr. sekund (som base for pow)
 
   var canvas = document.getElementById('stage');
@@ -151,9 +152,20 @@
   var now = 0; // sim-tid i sekunder
 
   // Elegant "blossom": partikler blomstrer ud fra berøringspunktet
-  function burst(x, y, scale) {
-    var count = Math.round((220 + Math.random() * 120) * scale * qualityScale);
+  function burst(x, y, scale, ivx, ivy) {
+    ivx = ivx || 0; ivy = ivy || 0;
     var baseT = now * 0.05 + Math.random() * 0.15;
+    // lys kerne med øjeblikkelig effekt: store partikler, synlige fra første frame
+    var coreCount = Math.round(10 + 4 * scale);
+    for (var c = 0; c < coreCount; c++) {
+      var ca = Math.random() * Math.PI * 2;
+      var cs = 30 + Math.random() * 60;
+      spawn(x + (Math.random() - 0.5) * 6, y + (Math.random() - 0.5) * 6,
+            Math.cos(ca) * cs + ivx * 0.4, Math.sin(ca) * cs + ivy * 0.4,
+            8 + Math.random() * 8, 1.2 + Math.random() * 1.5,
+            baseT + Math.random() * 0.08);
+    }
+    var count = Math.round((220 + Math.random() * 120) * scale * qualityScale);
     for (var k = 0; k < count; k++) {
       var ang = Math.random() * Math.PI * 2;
       // eased fart: mange langsomme i midten, få hurtige yderst → blød blomst
@@ -164,7 +176,8 @@
       var r = Math.random() * 10;
       var sz = Math.random() < 0.08 ? 7 + Math.random() * 8 : 2 + Math.random() * 3.5;
       var lifeSec = 2.5 + Math.random() * 4.5;
-      spawn(x + Math.cos(ang) * r, y + Math.sin(ang) * r, sx, sy, sz, lifeSec,
+      spawn(x + Math.cos(ang) * r, y + Math.sin(ang) * r,
+            sx + ivx * 0.4, sy + ivy * 0.4, sz, lifeSec,
             baseT + Math.random() * 0.12);
     }
     stampRadial(x, y, 110, 420);
@@ -181,8 +194,8 @@
       var jy = (Math.random() - 0.5) * 14;
       var sz = Math.random() < 0.05 ? 6 + Math.random() * 6 : 1.8 + Math.random() * 3;
       spawn(x0 + (x1 - x0) * f + jx, y0 + (y1 - y0) * f + jy,
-            velX * 0.35 + (Math.random() - 0.5) * 60,
-            velY * 0.35 + (Math.random() - 0.5) * 60,
+            velX * 0.55 + (Math.random() - 0.5) * 60,
+            velY * 0.55 + (Math.random() - 0.5) * 60,
             sz, 2 + Math.random() * 4, baseT + Math.random() * 0.1);
     }
   }
@@ -264,7 +277,7 @@
   }
 
   function updateGrid(dt) {
-    var damp = Math.pow(0.28, dt); // kraftig nok dæmpning til elegant efterløb
+    var damp = Math.pow(0.34, dt); // dæmpning afstemt så skub føles kraftfulde
     var n = gCols * gRows;
     // diffusion: blød udveksling med naboer → hvirvlerne breder sig som væske
     for (var j = 0; j < gRows; j++) {
@@ -311,11 +324,25 @@
   }
 
   // ---------- Simulering ----------
+  // aktive pointere pakket fladt pr. frame til den direkte finger-kobling
+  var fpX = new Float32Array(10), fpY = new Float32Array(10);
+  var fpVX = new Float32Array(10), fpVY = new Float32Array(10);
+
   function stepParticles(dt) {
     var drag = Math.pow(DRAG, dt * 3);
     var couple = 1 - Math.exp(-dt * FIELD_COUPLING);
     var curlAmp = 14;
     var t = now;
+    var nP = 0;
+    for (var id in pointers) {
+      if (nP >= 10) break;
+      var p = pointers[id];
+      fpX[nP] = p.x; fpY[nP] = p.y;
+      fpVX[nP] = p.velX; fpVY[nP] = p.velY;
+      nP++;
+    }
+    var fingerBlend = Math.min(dt * 26, 0.5); // op til ~35-40 % pr. frame nær centrum
+    var fr2 = FINGER_R * FINGER_R;
     for (var i = 0; i < MAX_PARTICLES; i++) {
       if (life[i] <= 0) continue;
       life[i] -= dt;
@@ -323,6 +350,16 @@
       sampleField(x, y);
       var vxi = vx[i] + (fieldOut[0] - vx[i]) * couple;
       var vyi = vy[i] + (fieldOut[1] - vy[i]) * couple;
+      // direkte kobling: partikler tæt på fingeren følger den øjeblikkeligt
+      for (var j = 0; j < nP; j++) {
+        var ddx = x - fpX[j], ddy = y - fpY[j];
+        if (ddx > FINGER_R || ddx < -FINGER_R || ddy > FINGER_R || ddy < -FINGER_R) continue;
+        var d2 = ddx * ddx + ddy * ddy;
+        if (d2 > fr2) continue;
+        var w = Math.exp(-d2 / (fr2 * 0.35)) * fingerBlend;
+        vxi += (fpVX[j] - vxi) * w - ddx * w * 2.2; // følg fingeren + let sug indad
+        vyi += (fpVY[j] - vyi) * w - ddy * w * 2.2;
+      }
       vxi += curlX(x, y, t) * curlAmp * dt * 3;
       vyi += curlY(x, y, t) * curlAmp * dt * 3;
       vxi *= drag; vyi *= drag;
@@ -372,7 +409,8 @@
     pointers[e.pointerId] = {
       x: e.clientX, y: e.clientY,
       downX: e.clientX, downY: e.clientY,
-      downT: performance.now() / 1000, moved: false
+      downT: performance.now() / 1000, moved: false,
+      velX: 0, velY: 0, lastT: e.timeStamp / 1000
     };
     burst(e.clientX, e.clientY, 1);
   }, { passive: false });
@@ -381,23 +419,32 @@
     var p = pointers[e.pointerId];
     if (!p) return;
     e.preventDefault();
-    var nx = e.clientX, ny = e.clientY;
-    var dx = nx - p.x, dy = ny - p.y;
-    var dist = Math.hypot(dx, dy);
-    if (dist < 0.5) return;
-    if (dist > 4) p.moved = true;
-    // injicér bevægelsen i væskefeltet langs strøget
-    var frameDt = 1 / 60;
-    var velX = dx / frameDt, velY = dy / frameDt;
-    var mag = Math.hypot(velX, velY);
-    if (mag > 2200) { velX *= 2200 / mag; velY *= 2200 / mag; }
-    var steps = Math.max(1, Math.ceil(dist / (CELL * 0.8)));
-    for (var s = 0; s < steps; s++) {
-      var f = (s + 0.5) / steps;
-      stampForce(p.x + dx * f, p.y + dy * f, velX * 0.55, velY * 0.55, 72);
+    // coalesced events: fuld 120-240 Hz touch-opløsning i stedet for rAF-batch
+    var events = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+    if (!events.length) events = [e];
+    for (var k = 0; k < events.length; k++) {
+      var ev = events[k];
+      var nx = ev.clientX, ny = ev.clientY;
+      var tS = ev.timeStamp / 1000;
+      var dtE = Math.min(Math.max(tS - p.lastT, 0.002), 0.05);
+      var dx = nx - p.x, dy = ny - p.y;
+      var dist = Math.hypot(dx, dy);
+      if (dist < 0.3) { p.lastT = tS; continue; }
+      if (dist > 4) p.moved = true;
+      // reel hastighed fra event-tidsstempler (korrekt på 120 Hz-skærme)
+      var velX = dx / dtE, velY = dy / dtE;
+      var mag = Math.hypot(velX, velY);
+      if (mag > 3200) { velX *= 3200 / mag; velY *= 3200 / mag; }
+      p.velX = p.velX * 0.45 + velX * 0.55;
+      p.velY = p.velY * 0.45 + velY * 0.55;
+      var steps = Math.max(1, Math.ceil(dist / (CELL * 0.8)));
+      for (var s = 0; s < steps; s++) {
+        var f = (s + 0.5) / steps;
+        stampForce(p.x + dx * f, p.y + dy * f, velX, velY, 64);
+      }
+      strokeSpawn(p.x, p.y, nx, ny, velX, velY);
+      p.x = nx; p.y = ny; p.lastT = tS;
     }
-    strokeSpawn(p.x, p.y, nx, ny, velX, velY);
-    p.x = nx; p.y = ny;
   }, { passive: false });
 
   function endPointer(e) {
@@ -424,12 +471,15 @@
     document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
   });
 
-  // Hold fingeren stille → blid hvirvel
+  // Hold fingeren stille → blid hvirvel; EMA-hastighed dør ud når fingeren stopper
   function applyHolds(dt) {
     var t = performance.now() / 1000;
+    var decay = Math.exp(-dt * 10);
     for (var id in pointers) {
       var p = pointers[id];
-      if (t - p.downT > 0.18) {
+      p.velX *= decay;
+      p.velY *= decay;
+      if (t - p.downT > 0.08) {
         stampVortex(p.x, p.y, 115, 640 * dt * 8);
       }
     }
@@ -543,8 +593,12 @@
 
   function initGL() {
     try {
-      gl = canvas.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: false })
-        || canvas.getContext('experimental-webgl', { alpha: false, antialias: false });
+      var glOpts = {
+        alpha: false, antialias: false, preserveDrawingBuffer: false,
+        desynchronized: true, powerPreference: 'high-performance'
+      };
+      gl = canvas.getContext('webgl', glOpts)
+        || canvas.getContext('experimental-webgl', glOpts);
       if (!gl) return false;
       progPoint = link(VS_POINT, FS_POINT);
       progFade = link(VS_QUAD, FS_FADE);
@@ -601,7 +655,7 @@
       if (l <= 0) continue;
       var ml = maxLife[i];
       var f = l / ml;
-      var fadeIn = Math.min((ml - l) * 6, 1);
+      var fadeIn = Math.min((ml - l) * 18, 1); // fuld lysstyrke på 2-3 frames
       var alpha = fadeIn * f * f * (3 - 2 * f); // smoothstep-udtoning
       var sp = Math.hypot(vx[i], vy[i]);
       var bright = 0.5 + Math.min(sp / 520, 1) * 0.8;
@@ -672,7 +726,7 @@
       var l = life[i];
       if (l <= 0) continue;
       var f = l / maxLife[i];
-      var alpha = Math.min((maxLife[i] - l) * 6, 1) * f * f * (3 - 2 * f);
+      var alpha = Math.min((maxLife[i] - l) * 18, 1) * f * f * (3 - 2 * f);
       var r = size[i] * DPR * 2.4;
       c.globalAlpha = Math.min(alpha, 1);
       c.fillStyle = 'rgb(' + (cr[i] * 255 | 0) + ',' + (cg[i] * 255 | 0) + ',' + (cb[i] * 255 | 0) + ')';
@@ -753,6 +807,21 @@
   canvas.addEventListener('webglcontextrestored', function () {
     if (initGL()) resize();
   });
+
+  // lille krog til automatiseret test: gennemsnitsfart nær et punkt
+  window.__lumen = {
+    speedNear: function (x, y, r) {
+      var sum = 0, n = 0, r2 = r * r;
+      for (var i = 0; i < MAX_PARTICLES; i++) {
+        if (life[i] <= 0) continue;
+        var dx = px[i] - x, dy = py[i] - y;
+        if (dx * dx + dy * dy > r2) continue;
+        sum += Math.hypot(vx[i], vy[i]);
+        n++;
+      }
+      return n ? sum / n : 0;
+    }
+  };
 
   // ---------- Start ----------
   resize();
