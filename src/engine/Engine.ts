@@ -358,6 +358,15 @@ export class Engine {
     return { fx: 0, fy: 0, tz: 0, bad: false };
   }
 
+  /** Debug/harness: solid pixels in the current obstacle raster. */
+  debugSolidCount(): number {
+    const b = this.backend as unknown as { countSolidPixels?: () => number };
+    if (b.countSolidPixels) return b.countSolidPixels();
+    const cpu = this.backend as unknown as { core?: { solid: Uint8Array } };
+    if (cpu.core) return cpu.core.solid.reduce((a, v) => a + v, 0);
+    return -1;
+  }
+
   get grid(): GridSize {
     return this.backend.grid;
   }

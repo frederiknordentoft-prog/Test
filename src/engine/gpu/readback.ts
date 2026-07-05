@@ -40,12 +40,14 @@ export class AsyncReader {
         ok = false;
       }
       if (!ok) {
+        console.warn('readback: RGBA/FLOAT readPixels failed, switching to HALF_FLOAT');
         this.useHalf = true;
       }
     }
     if (this.useHalf) {
       gl.readPixels(x, y, w, h, gl.RGBA, gl.HALF_FLOAT, 0);
       ok = gl.getError() === gl.NO_ERROR;
+      if (!ok) console.warn('readback: HALF_FLOAT readPixels also failed');
     }
     gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
     if (!ok) return;
@@ -76,10 +78,17 @@ export class AsyncReader {
   /** Blocking read for the test harness (finishes the pipeline). */
   readSync(x: number, y: number, w: number, h: number): Float32Array {
     const gl = this.gl;
+    // Drop any in-flight async request so we don't return a stale one-behind buffer.
+    if (this.pending && this.fence) {
+      gl.deleteSync(this.fence);
+      this.fence = null;
+      this.pending = false;
+    }
     gl.finish();
     this.request(x, y, w, h);
     gl.finish();
     const r = this.poll();
+    if (!r) console.warn('readSync: stale read (fence not signaled or readPixels failed)');
     return r ?? this.floatBuf;
   }
 

@@ -340,6 +340,20 @@ export class GpuBackend implements Backend {
     return out;
   }
 
+  /** Debug/harness: count solid pixels in the rasterized obstacle texture. */
+  countSolidPixels(): number {
+    const gl = this.gl;
+    if (this.obstacleDirty) this.updateObstacle();
+    const buf = new Uint8Array(this.grid.w * this.grid.h * 4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.obstacleRaw.fbo);
+    gl.readBuffer(gl.COLOR_ATTACHMENT0);
+    gl.readPixels(0, 0, this.grid.w, this.grid.h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    let n = 0;
+    for (let i = 0; i < buf.length; i += 4) if (buf[i] > 127) n++;
+    return n;
+  }
+
   /** Blocking force read for the harness. */
   readForceSync(): ForceSample & { bad: boolean } {
     const gl = this.gl;

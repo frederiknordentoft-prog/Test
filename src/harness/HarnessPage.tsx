@@ -20,12 +20,16 @@ declare global {
 }
 
 // fast=1 (til headless/CI med software-GL): mindre gitter og kortere kørsel.
-const FAST = typeof location !== 'undefined' && new URLSearchParams(location.search).get('fast') === '1';
-const MEASURE = FAST ? 1200 : 2000;
+// settle=<n>/measure=<n> kan overstyres til hurtig debugging.
+const QUERY = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
+const FAST = QUERY.get('fast') === '1';
+const MEASURE = Number(QUERY.get('measure')) || (FAST ? 1200 : 2000);
+const SETTLE_OVERRIDE = Number(QUERY.get('settle')) || 0;
 const SAMPLE_EVERY = 25;
 
 /** Settle skaleres med flow-udviklingstiden (~1.2 domænekrydsninger). */
 function settleFor(engine: Engine): number {
+  if (SETTLE_OVERRIDE > 0) return SETTLE_OVERRIDE;
   const steps = Math.round((1.2 * engine.grid.w) / Math.max(engine.currentULat, 1e-4));
   return Math.min(FAST ? 8000 : 14000, Math.max(2500, steps));
 }
@@ -98,7 +102,7 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
   report({
     name: 'v²-lov (cylinder)',
     pass: relRatio > 0.8 && relRatio < 1.25 && lo.fx > 0,
-    detail: `drag(hi)/drag(lo)=${ratio.toFixed(2)}, forventet ${expected.toFixed(2)} (forhold ${relRatio.toFixed(2)})`,
+    detail: `drag(hi)/drag(lo)=${ratio.toFixed(2)}, forventet ${expected.toFixed(2)} (forhold ${relRatio.toFixed(2)}), fx=${lo.fx.toFixed(4)}→${hi.fx.toFixed(4)}, solid=${engine.debugSolidCount()}`,
   });
 
   // Strouhal from lift sign changes at high wind
@@ -142,7 +146,7 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
   report({
     name: 'Strømlinjeform (dråbe vs plade)',
     pass: cdTear < 0.5 * cdPlate && cdPlate > 0.5,
-    detail: `Cd(plade)=${cdPlate.toFixed(2)}, Cd(dråbe)=${cdTear.toFixed(2)} → forhold ${(cdTear / cdPlate).toFixed(2)} (mål < 0.5)`,
+    detail: `Cd(plade)=${cdPlate.toFixed(2)}, Cd(dråbe)=${cdTear.toFixed(2)} → forhold ${(cdTear / cdPlate).toFixed(2)} (mål < 0.5), fx=${plate.fx.toFixed(4)}/${tear.fx.toFixed(4)}, solid=${engine.debugSolidCount()}`,
   });
 
   // 6: stability at max wind
