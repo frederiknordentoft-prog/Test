@@ -75,21 +75,27 @@ export class AsyncReader {
     return this.floatBuf;
   }
 
-  /** Blocking read for the test harness (finishes the pipeline). */
+  /**
+   * Blocking read for the test harness. Bypasses the PBO entirely — rewriting a
+   * fenced PBO discards driver shadow copies (SwiftShader) and returns garbage.
+   */
   readSync(x: number, y: number, w: number, h: number): Float32Array {
     const gl = this.gl;
-    // Drop any in-flight async request so we don't return a stale one-behind buffer.
     if (this.pending && this.fence) {
       gl.deleteSync(this.fence);
       this.fence = null;
       this.pending = false;
     }
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
     gl.finish();
-    this.request(x, y, w, h);
-    gl.finish();
-    const r = this.poll();
-    if (!r) console.warn('readSync: stale read (fence not signaled or readPixels failed)');
-    return r ?? this.floatBuf;
+    if (!this.useHalf) {
+      gl.readPixels(x, y, w, h, gl.RGBA, gl.FLOAT, this.floatBuf);
+      if (gl.getError() === gl.NO_ERROR) return this.floatBuf;
+      this.useHalf = true;
+    }
+    gl.readPixels(x, y, w, h, gl.RGBA, gl.HALF_FLOAT, this.halfBuf);
+    for (let i = 0; i < this.count; i++) this.floatBuf[i] = halfToFloat(this.halfBuf[i]);
+    return this.floatBuf;
   }
 
   dispose(): void {

@@ -358,6 +358,14 @@ export class Engine {
     return { fx: 0, fy: 0, tz: 0, bad: false };
   }
 
+  /** Debug: force-texture ground truth vs reduce chain (GPU only). */
+  debugForceInfo(): string {
+    const b = this.backend as unknown as { debugForceInfo?: () => Record<string, number> };
+    if (!b.debugForceInfo) return 'cpu';
+    const d = b.debugForceInfo();
+    return `direct=(${d.directFx.toFixed(4)},${d.directFy.toFixed(4)}) reduced=(${d.reducedFx.toFixed(4)},${d.reducedFy.toFixed(4)}) boundary=${d.boundaryCells}`;
+  }
+
   /** Debug/harness: solid pixels in the current obstacle raster. */
   debugSolidCount(): number {
     const b = this.backend as unknown as { countSolidPixels?: () => number };

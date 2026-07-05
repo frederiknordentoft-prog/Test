@@ -102,7 +102,7 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
   report({
     name: 'v²-lov (cylinder)',
     pass: relRatio > 0.8 && relRatio < 1.25 && lo.fx > 0,
-    detail: `drag(hi)/drag(lo)=${ratio.toFixed(2)}, forventet ${expected.toFixed(2)} (forhold ${relRatio.toFixed(2)}), fx=${lo.fx.toFixed(4)}→${hi.fx.toFixed(4)}, solid=${engine.debugSolidCount()}`,
+    detail: `drag(hi)/drag(lo)=${ratio.toFixed(2)}, forventet ${expected.toFixed(2)} (forhold ${relRatio.toFixed(2)}), fx=${lo.fx.toFixed(4)}→${hi.fx.toFixed(4)}, solid=${engine.debugSolidCount()}, ${engine.debugForceInfo()}`,
   });
 
   // Strouhal from lift sign changes at high wind

@@ -345,13 +345,43 @@ export class GpuBackend implements Backend {
     const gl = this.gl;
     if (this.obstacleDirty) this.updateObstacle();
     const buf = new Uint8Array(this.grid.w * this.grid.h * 4);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.obstacleRaw.fbo);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.obstacle.fbo);
     gl.readBuffer(gl.COLOR_ATTACHMENT0);
     gl.readPixels(0, 0, this.grid.w, this.grid.h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     let n = 0;
     for (let i = 0; i < buf.length; i += 4) if (buf[i] > 127) n++;
     return n;
+  }
+
+  /** Debug: ground-truth force sums read straight off the force texture + boundary count. */
+  debugForceInfo(): { directFx: number; directFy: number; reducedFx: number; reducedFy: number; boundaryCells: number } {
+    const gl = this.gl;
+    this.runForceReduce();
+    gl.finish();
+    const buf = new Float32Array(this.grid.w * this.grid.h * 4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.force.fbo);
+    gl.readBuffer(gl.COLOR_ATTACHMENT0);
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+    gl.readPixels(0, 0, this.grid.w, this.grid.h, gl.RGBA, gl.FLOAT, buf);
+    let fx = 0, fy = 0;
+    for (let i = 0; i < buf.length; i += 4) {
+      fx += buf[i];
+      fy += buf[i + 1];
+    }
+    const last = this.reduceChain[this.reduceChain.length - 1];
+    const red = new Float32Array(4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, last.fbo);
+    gl.readBuffer(gl.COLOR_ATTACHMENT0);
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.FLOAT, red);
+    // boundary flag count
+    const ob = new Uint8Array(this.grid.w * this.grid.h * 4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.obstacle.fbo);
+    gl.readPixels(0, 0, this.grid.w, this.grid.h, gl.RGBA, gl.UNSIGNED_BYTE, ob);
+    let nb = 0;
+    for (let i = 0; i < ob.length; i += 4) if (ob[i + 1] > 127) nb++;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { directFx: fx, directFy: fy, reducedFx: red[0], reducedFy: red[1], boundaryCells: nb };
   }
 
   /** Blocking force read for the harness. */
