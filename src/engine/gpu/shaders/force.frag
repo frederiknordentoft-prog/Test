@@ -1,6 +1,7 @@
 #version 300 es
-// Momentum-exchange force per boundary-adjacent fluid cell.
-// For each link pointing into a solid neighbor: ΔF = e_i · (f_i + f_ī) with f = g + w.
+// Momentum-exchange force per boundary-adjacent fluid cell (Ladd, stationary wall).
+// The stored state is post-collision f̃; bounce-back returns f̃_i unchanged, so the
+// momentum handed to the wall per link is ΔF = e_i · 2·f̃_i (toward-wall distribution only).
 // Output: R = Fx, G = Fy, B = torque about pivot, A = badness (NaN / rho blowup, scaled 1/1024).
 precision highp float;
 precision highp int;
@@ -50,8 +51,7 @@ void main() {
       if (q.x < 0 || q.y < 0 || q.x >= uSize.x || q.y >= uSize.y) continue;
       if (texelFetch(uObstacle, q, 0).r > 0.5) {
         float fi = fetchG(p, i) + W[i];
-        float fo = fetchG(p, OPP[i]) + W[i];
-        vec2 dF = vec2(E[i]) * (fi + fo);
+        vec2 dF = vec2(E[i]) * (2.0 * fi);
         F += dF;
         vec2 r = vec2(p) + 0.5 + 0.5 * vec2(E[i]) - uPivotCells;
         T += r.x * dF.y - r.y * dF.x;

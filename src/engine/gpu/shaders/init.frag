@@ -20,7 +20,10 @@ void main() {
     o2 = vec4(0.0, 1.0, 0.0, 0.0);
     return;
   }
-  vec2 u = vec2(uUin, 0.0);
+  // Small deterministic transverse perturbation seeds the vortex-street instability
+  // (a perfectly symmetric flow can stay symmetric and never shed).
+  float pert = 0.12 * uUin * sin(float(p.x) * 0.11) * sin(float(p.y) * 0.13 + 0.7);
+  vec2 u = vec2(uUin, pert);
   float usq = dot(u, u);
   float g[9];
   for (int i = 0; i < 9; i++) {

@@ -92,16 +92,25 @@ export class CpuCore {
   }
 
   init(uIn: number): void {
-    const usq = uIn * uIn;
-    for (let i = 0; i < 9; i++) {
-      const eu = EX[i] * uIn;
-      const geq = W[i] * (1 + 3 * eu + 4.5 * eu * eu - 1.5 * usq - 1);
-      this.g[i].fill(geq);
-      this.gNext[i].fill(geq);
+    // Equilibrium at (uIn, small deterministic transverse perturbation). The perturbation
+    // is asymmetric about the midline so the vortex-street instability has a seed —
+    // a perfectly symmetric setup can stay symmetric (and street-free) indefinitely.
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        const idx = y * this.w + x;
+        const pert = 0.12 * uIn * Math.sin(x * 0.11) * Math.sin(y * 0.13 + 0.7);
+        const usq = uIn * uIn + pert * pert;
+        for (let i = 0; i < 9; i++) {
+          const eu = EX[i] * uIn + EY[i] * pert;
+          const geq = W[i] * (1 + 3 * eu + 4.5 * eu * eu - 1.5 * usq - 1);
+          this.g[i][idx] = geq;
+          this.gNext[i][idx] = geq;
+        }
+        this.rho[idx] = 1;
+        this.ux[idx] = uIn;
+        this.uy[idx] = pert;
+      }
     }
-    this.rho.fill(1);
-    this.ux.fill(uIn);
-    this.uy.fill(0);
   }
 
   step(uIn: number, tau0: number): void {
@@ -205,10 +214,10 @@ export class CpuCore {
           const qy = y + EY[i];
           if (qx < 0 || qy < 0 || qx >= w || qy >= h) continue;
           if (!solid[qy * w + qx]) continue;
+          // Ladd momentum exchange, stationary wall: ΔF = e_i · 2·f̃_i (post-collision, toward wall)
           const fi = g[i][idx] + W[i];
-          const fo = g[OPP[i]][idx] + W[i];
-          const dfx = EX[i] * (fi + fo);
-          const dfy = EY[i] * (fi + fo);
+          const dfx = EX[i] * 2 * fi;
+          const dfy = EY[i] * 2 * fi;
           fx += dfx;
           fy += dfy;
           const rx = x + 0.5 + 0.5 * EX[i] - this.pivotCells[0];
