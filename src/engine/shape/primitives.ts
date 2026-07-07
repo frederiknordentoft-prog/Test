@@ -36,7 +36,7 @@ export function makePrimitive(kind: Exclude<ShapeKind, 'freehand'>, center: [num
       // Streamlined symmetric teardrop: round nose left, tapering tail right.
       // Same frontal height as the plate (2*SIZE*0.95 ≈ plate) for honest comparison.
       const halfH = SIZE * 0.95;
-      const len = halfH * 6; // slender: ~3:1 chord/height each side
+      const len = halfH * 7.5; // slender (~3.75:1 chord/height) — real streamlined bodies are ~4:1
       const n = 36;
       // top surface nose→tail, then bottom tail→nose (CCW with y up: go bottom first)
       const upper: number[] = [];
