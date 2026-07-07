@@ -9,9 +9,12 @@ import type { ShapeKind } from '../engine/types';
 
 const W = 256;
 const H = 128;
-const SETTLE = 4000;
-const MEASURE = 2500;
 const SAMPLE = 20;
+
+/** Settle skaleres med flow-udviklingstiden (~1.3 domænekrydsninger). */
+function settleFor(uIn: number): number {
+  return Math.max(3000, Math.ceil((1.3 * W) / uIn));
+}
 
 interface Result {
   name: string;
@@ -19,29 +22,42 @@ interface Result {
   detail: string;
 }
 
-function runCase(kind: Exclude<ShapeKind, 'freehand'>, uIn: number) {
+function runCase(kind: Exclude<ShapeKind, 'freehand'>, uIn: number, measureSteps = 2500) {
   const core = new CpuCore(W, H);
   const shape = makePrimitive(kind);
   core.rasterize(shape, { theta: 0, bend: [0, 0] });
   core.init(uIn);
-  for (let s = 0; s < SETTLE; s++) core.step(uIn, TAU0);
+  const settle = settleFor(uIn);
+  for (let s = 0; s < settle; s++) core.step(uIn, TAU0);
   const samples: { fx: number; fy: number; bad: boolean }[] = [];
-  for (let s = 0; s < MEASURE; s += SAMPLE) {
+  for (let s = 0; s < measureSteps; s += SAMPLE) {
     for (let k = 0; k < SAMPLE; k++) core.step(uIn, TAU0);
     samples.push(core.measureForce());
   }
   const fx = samples.reduce((a, b) => a + b.fx, 0) / samples.length;
   const fy = samples.reduce((a, b) => a + b.fy, 0) / samples.length;
-  let signChanges = 0;
-  for (let i = 1; i < samples.length; i++) {
-    if (Math.sign(samples[i].fy) !== Math.sign(samples[i - 1].fy)) signChanges++;
+  // Shedding frequency via HYSTERESIS zero-crossing of the mean-removed lift —
+  // plain sign-flip counting inflates f with noise when the lift signal is weak.
+  const variance = samples.reduce((a, b) => a + (b.fy - fy) ** 2, 0) / samples.length;
+  const h = 0.5 * Math.sqrt(variance);
+  let state = 0;
+  let flips = 0;
+  for (const s of samples) {
+    const d = s.fy - fy;
+    if (state >= 0 && d < -h) {
+      if (state === 1) flips++;
+      state = -1;
+    } else if (state <= 0 && d > h) {
+      if (state === -1) flips++;
+      state = 1;
+    }
   }
   const dCells = frontalHeight(shape.points, shape.pivot, 0) * H;
   return {
     fx,
     fy,
     anyBad: samples.some((s) => s.bad),
-    fShed: signChanges / (2 * MEASURE),
+    fShed: flips / (2 * measureSteps),
     dCells,
     cd: dragCoefficient(fx, uIn, dCells),
     cl: dragCoefficient(fy, uIn, dCells),
@@ -56,7 +72,7 @@ console.log(`Vindtunnel fysik-verifikation (CPU-kerne, ${W}×${H}, tau=${TAU0}, 
 // --- 1. v² law: cylinder at u and 2u ---
 {
   const lo = runCase('circle', 0.05);
-  const hi = runCase('circle', 0.1);
+  const hi = runCase('circle', 0.1, 5000); // langt vindue: Strouhal kræver mange perioder
   const ratio = hi.fx / lo.fx;
   results.push({
     name: 'v²-lov: drag(2v)/drag(v) ∈ [3.2, 4.8]',

@@ -73,6 +73,9 @@ export class Engine {
   private liftSignSteps: number[] = [];
   private latticeSteps = 0;
   private lastLiftSign = 0;
+  /** Rolling lift mean/amplitude (lattice) — hysteresis so noise flips don't inflate St. */
+  private fyMeanLat = 0;
+  private fyAmpLat = 0;
   private lastProbe: { speed: number; rho: number } | null = null;
   private measureTimer = 0;
   private stepAcc = 0;
@@ -225,11 +228,22 @@ export class Engine {
       this.lastForce = rb.force;
       this.forceWindow.push({ t: tSec, ...rb.force });
       while (this.forceWindow.length > 2 && this.forceWindow[0].t < tSec - 2) this.forceWindow.shift();
-      const sign = rb.force.fy > 0 ? 1 : -1;
-      if (sign !== this.lastLiftSign) {
-        this.lastLiftSign = sign;
-        this.liftSignSteps.push(this.latticeSteps);
-        while (this.liftSignSteps.length > 24) this.liftSignSteps.shift();
+      // Hysteresis zero-crossing of the mean-removed lift: a crossing only counts
+      // once the signal has swung past half the typical amplitude.
+      const dev = rb.force.fy - this.fyMeanLat;
+      const h = 0.5 * this.fyAmpLat;
+      if (this.lastLiftSign >= 0 && dev < -h) {
+        if (this.lastLiftSign === 1) {
+          this.liftSignSteps.push(this.latticeSteps);
+          while (this.liftSignSteps.length > 24) this.liftSignSteps.shift();
+        }
+        this.lastLiftSign = -1;
+      } else if (this.lastLiftSign <= 0 && dev > h) {
+        if (this.lastLiftSign === -1) {
+          this.liftSignSteps.push(this.latticeSteps);
+          while (this.liftSignSteps.length > 24) this.liftSignSteps.shift();
+        }
+        this.lastLiftSign = 1;
       }
     }
     if (rb.probe) this.lastProbe = rb.probe;
@@ -299,6 +313,8 @@ export class Engine {
     } else {
       fxMin = fxMax = fyMin = fyMax = 0;
     }
+    this.fyMeanLat = fy;
+    this.fyAmpLat = (fyMax - fyMin) / 2;
     const hints: FlowHints = {};
     if (this.liftSignSteps.length >= 6) {
       const dSteps = this.liftSignSteps[this.liftSignSteps.length - 1] - this.liftSignSteps[0];

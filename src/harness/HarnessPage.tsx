@@ -108,9 +108,21 @@ async function runAll(engine: Engine, report: (r: TestResult) => void): Promise<
   });
 
   // Strouhal from lift sign changes at high wind
+  // Hysteresis zero-crossing af middel-fjernet løft — rå fortegnsskift inflaterer f med støj.
+  const fyMean = hi.fy;
+  const variance = hi.samples.reduce((a, b) => a + (b.fy - fyMean) ** 2, 0) / hi.samples.length;
+  const h = 0.5 * Math.sqrt(variance);
+  let state = 0;
   let changes = 0;
-  for (let i = 1; i < hi.samples.length; i++) {
-    if (Math.sign(hi.samples[i].fy) !== Math.sign(hi.samples[i - 1].fy)) changes++;
+  for (const s of hi.samples) {
+    const d = s.fy - fyMean;
+    if (state >= 0 && d < -h) {
+      if (state === 1) changes++;
+      state = -1;
+    } else if (state <= 0 && d > h) {
+      if (state === -1) changes++;
+      state = 1;
+    }
   }
   const stepsMeasured = hi.samples.length * SAMPLE_EVERY;
   const fLat = changes / (2 * stepsMeasured);
