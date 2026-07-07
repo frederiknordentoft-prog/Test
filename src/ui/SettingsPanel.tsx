@@ -5,7 +5,9 @@ import {
   ELEMENTS,
   type ElementCategory,
 } from '../data/elements'
+import { MOLECULES } from '../data/molecules'
 import { useGameStore } from '../state/store'
+import { SlidersIcon } from './icons'
 import { ShapeGlyph } from './Tray'
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as ElementCategory[]
@@ -21,10 +23,10 @@ export function SettingsPanel() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-xl hover:bg-amber-900/10"
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-ink/80 hover:bg-amber-900/10"
         aria-label="Indstillinger"
       >
-        ⚙️
+        <SlidersIcon size={18} />
       </button>
       {open && (
         <div
@@ -95,6 +97,24 @@ export function SettingsPanel() {
                 )
               })}
             </ul>
+
+            <details className="mt-4">
+              <summary className="cursor-pointer font-display text-sm font-bold text-ink">
+                Vidste du? — fakta om atomerne
+              </summary>
+              <ul className="mt-2 space-y-2 text-xs leading-relaxed text-ink/80">
+                {ELEMENTS.map((el) => (
+                  <li key={el.symbol}>
+                    <span className="font-bold">{el.navn} ({el.symbol}):</span> {el.fact}
+                  </li>
+                ))}
+                {MOLECULES.map((m) => (
+                  <li key={m.formula}>
+                    <span className="font-bold">{m.navn} ({m.formula}):</span> {m.fact}
+                  </li>
+                ))}
+              </ul>
+            </details>
 
             <p className="mt-4 text-xs leading-relaxed text-ink/60">
               Vægtskålen bruger grundstoffernes standard-atomvægte (IUPAC, forkortet).

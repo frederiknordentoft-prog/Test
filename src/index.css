@@ -22,7 +22,7 @@ body {
 
 @layer components {
   .tray-chip {
-    @apply flex min-h-[52px] touch-none select-none flex-col items-center justify-center rounded-xl border-2 bg-amber-50/80 px-1 py-1 text-ink shadow-sm transition active:scale-95;
+    @apply relative flex min-h-[52px] touch-none select-none flex-col items-center justify-center gap-0.5 rounded-xl border-2 bg-amber-50/80 px-1 py-1 text-ink shadow-sm transition active:scale-95;
   }
   .tray-chip:hover {
     @apply bg-amber-50;
@@ -32,11 +32,28 @@ body {
   }
 }
 
+.hint-bounce {
+  animation: hint-bounce 1.1s ease-in-out infinite;
+}
+
+@keyframes hint-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tray-chip {
     transition: none;
   }
   .tray-chip:active {
     transform: none;
+  }
+  .hint-bounce {
+    animation: none;
   }
 }

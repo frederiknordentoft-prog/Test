@@ -34,9 +34,28 @@ export type VictoryInfo = {
   tilesUsed: number
   optimal: number | null
   breakdown: string | null
+  /** "Vidste du"-faktum knyttet til sejren (molekylet eller et brugt grundstof). */
+  fact: string | null
 }
 
 const SETTINGS_KEY = 'vaegtskaalen-settings'
+const HINT_KEY = 'vaegtskaalen-hint-set'
+
+function hintAlreadySeen(): boolean {
+  try {
+    return localStorage.getItem(HINT_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function markHintSeen(): void {
+  try {
+    localStorage.setItem(HINT_KEY, '1')
+  } catch {
+    // ignorér
+  }
+}
 
 function loadSettings(): Settings {
   try {
@@ -80,6 +99,10 @@ type GameStore = {
   wrongMoleculeHint: boolean
   progress: Progress
   settings: Settings
+  /** Førstegangs-hint: "træk et grundstof op i skålen". */
+  showHint: boolean
+  /** Toast med fortryd efter streak-nulstilling. */
+  streakToast: { message: string; prevProgress: Progress } | null
 
   init: () => void
   setMode: (mode: Mode) => void
@@ -94,6 +117,8 @@ type GameStore = {
   dismissVictory: () => void
   toggleSound: () => void
   toggleReducedMotion: () => void
+  undoStreakReset: () => void
+  dismissStreakToast: () => void
 }
 
 export function playerSideOf(challenge: Challenge): PanSide {
@@ -142,6 +167,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   wrongMoleculeHint: false,
   progress: emptyProgress(),
   settings: loadSettings(),
+  showHint: !hintAlreadySeen(),
+  streakToast: null,
 
   init: () => {
     const settings = loadSettings()
@@ -165,9 +192,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
   newChallenge: (opts = {}) => {
     const s = get()
     const skipPenalty = opts.skipPenalty ?? true
-    if (skipPenalty && !s.solved && s.mode !== 'fri' && playerTiles(s).length > 0) {
+    if (
+      skipPenalty &&
+      !s.solved &&
+      s.mode !== 'fri' &&
+      playerTiles(s).length > 0 &&
+      s.progress.streak > 0
+    ) {
+      const prevProgress = s.progress
       const progress = applySkip(s.progress)
-      set({ progress })
+      set({
+        progress,
+        streakToast: {
+          message: `Streak på ${prevProgress.streak} nulstillet`,
+          prevProgress,
+        },
+      })
       void saveProgress(progress)
     }
 
@@ -205,7 +245,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const left = target === 'left' ? [...s.left, tile] : s.left
     const right = target === 'right' ? [...s.right, tile] : s.right
     engine.syncPans(left, right)
-    set({ left, right, wrongMoleculeHint: false })
+    if (s.showHint) markHintSeen()
+    set({ left, right, wrongMoleculeHint: false, showHint: false })
   },
 
   removeTile: (side, id) => {
@@ -246,6 +287,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       void saveProgress(progress)
       playVictory()
       vibrate([30, 40, 80])
+
+      // "Vidste du": molekylets faktum, ellers et tilfældigt brugt grundstofs
+      let fact: string | null = s.challenge.molecule?.fact ?? null
+      if (!fact) {
+        const elements = player.filter((t) => t.kind === 'element')
+        const pick = elements[Math.floor(Math.random() * elements.length)]
+        fact = pick?.kind === 'element' ? pick.element.fact : null
+      }
+
       set({
         solved: true,
         progress,
@@ -254,6 +304,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           tilesUsed,
           optimal,
           breakdown: s.challenge.molecule ? moleculeBreakdown(s.challenge.molecule) : null,
+          fact,
         },
       })
       return
@@ -290,6 +341,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     persistSettings(settings)
     set({ settings })
   },
+
+  undoStreakReset: () => {
+    const toast = get().streakToast
+    if (!toast) return
+    set({ progress: toast.prevProgress, streakToast: null })
+    void saveProgress(toast.prevProgress)
+  },
+
+  dismissStreakToast: () => set({ streakToast: null }),
 }))
 
 /** Effektiv reduced motion: brugervalg 'reduceret' ELLER OS-præference. */

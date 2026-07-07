@@ -163,14 +163,14 @@ function TrayChip({ el }: { el: Element }) {
         style={{ borderColor: CATEGORY_COLORS[el.category] }}
         aria-label={`${el.navn} (${el.symbol}), ${el.mass.toLocaleString('da-DK')} u, ${CATEGORY_LABELS[el.category]}. Læg i ${shownSide === 'left' ? 'venstre' : 'højre'} skål`}
       >
-        <span className="flex items-center gap-1">
-          <ShapeGlyph el={el} />
-          <span className="font-display text-base font-bold leading-none">{el.symbol}</span>
+        <span className="absolute right-1 top-1" aria-hidden="true">
+          <ShapeGlyph el={el} size={9} />
         </span>
-        <span className="text-[10px] leading-tight opacity-80">{el.navn}</span>
-        <span className="text-[10px] font-semibold leading-tight">
+        <span className="font-display text-lg font-bold leading-none">{el.symbol}</span>
+        <span className="text-[11px] font-semibold leading-tight tabular-nums">
           {el.mass.toLocaleString('da-DK', { maximumFractionDigits: 3 })}
         </span>
+        <span className="text-[9px] leading-tight text-ink/60">{el.navn}</span>
       </button>
       {drag && (
         <div
@@ -199,8 +199,7 @@ export function Tray() {
     <div className="border-t border-amber-900/20 bg-parchment-dark/70 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 pb-1.5">
         <p className="text-xs text-ink/70">
-          Træk et grundstof op i en skål — eller tap for at lægge det. Hold inde
-          for at hælde mange i.
+          Tip: hold en brik inde for at hælde mange i ad gangen.
         </p>
         {mode === 'fri' && (
           <div className="flex shrink-0 gap-1" role="group" aria-label="Aktiv skål ved tap">

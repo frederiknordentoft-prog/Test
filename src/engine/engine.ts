@@ -302,10 +302,24 @@ export class ScaleEngine {
 
     const settled = isSettled(this.phys, left, right, this.params)
     const balanced = Math.abs(rightMicro - leftMicro) <= this.toleranceMicro
-    const hasLeft = this.pans.left.length > 0 || this.virtualLeft !== null
-    const hasRight = this.pans.right.length > 0
 
-    if (balanced && settled && hasLeft && hasRight && !this.celebrated) {
+    // KUN landede brikker tæller som indhold, og ingen må være i luften —
+    // ellers kan 0≈0 udløse en fantom-balance mens alt stadig flyver.
+    let anyFlying = false
+    let landedLeft = 0
+    let landedRight = 0
+    for (const v of this.pans.left) {
+      if (v.landed) landedLeft++
+      else anyFlying = true
+    }
+    for (const v of this.pans.right) {
+      if (v.landed) landedRight++
+      else anyFlying = true
+    }
+    const hasLeft = landedLeft > 0 || this.virtualLeft !== null
+    const hasRight = landedRight > 0
+
+    if (balanced && settled && hasLeft && hasRight && !anyFlying && !this.celebrated) {
       this.celebrated = true
       if (!this.reducedMotion) {
         const g = this.geometry

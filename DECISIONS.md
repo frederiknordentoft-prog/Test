@@ -74,3 +74,24 @@ Beslutninger truffet autonomt under bygningen, med begrundelse.
   balance i fri leg, sejr i balancér/ram/molekyle (inkl. glukose med 24 atomer),
   ren nulstilling, mode-skift, Dexie-persistens over reload, offline-reload
   via service worker, reduced-motion-kontekst.
+
+## v1.1 — faglig korrekthed + polish (to-rollers review)
+
+- **Oxygen/Ilt-kollisionen fjernet:** grundstof 8 hedder nu Oxygen (fagsprog);
+  "Ilt" er forbeholdt molekylet O₂, med noten "dioxygen" i udfordringsteksten.
+- **NaCl mærkes som formelenhed** (iongitter) i udfordringstekst og fakta —
+  salt er ikke et molekyle.
+- **"Vidste du"-fakta** pr. grundstof og molekyle (isotop-forklaringen på
+  decimalerne, u ↔ g/mol-koblingen m.m.): vises ved sejr og i indstillinger.
+- **Fortryd-toast ved streak-tab:** "Ny udfordring" med påbegyndt uløst
+  udfordring nulstiller ikke længere streaken stille; 6 s fortryd-vindue.
+  Straffen udløses desuden kun når streaken faktisk er > 0.
+- **Førstegangs-hint** viser træk-gestussen (forsvinder ved første brik;
+  statisk ved reduced motion). Tray-hjælpeteksten ejer nu kun hold-tippet.
+- **"Færrest brikker" er en variant-chip** (aria-pressed) i stedet for checkbox.
+- **Header-glyffer som SVG** med ens stregvægt i stedet for emoji; indstillinger
+  bruger "sliders"-ikon. App-ikonerne genereres nu med 4× supersampling.
+- **Engine-bugfix (fundet af regressionstest):** celebrate/sejr talte visuelle
+  brikker (også flyvende) men målte kun landede masser — i vinduet hvor begge
+  skåle kun havde flyvende brikker var 0 ≈ 0 "i balance" og kunne give
+  fantomsejr. Nu kræver celebrate landede brikker og ingen i luften.

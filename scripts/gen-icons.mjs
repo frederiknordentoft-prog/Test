@@ -121,11 +121,41 @@ function makeIcon(size) {
   fillCircle(19 * u, 37 * u, 2.6 * u, [0, 158, 115])
   fillCircle(25 * u, 38 * u, 2.6 * u, [213, 94, 0])
 
-  return encodePng(size, px)
+  return px // rå RGBA — enkodning sker efter downsampling
+}
+
+/** 4× supersampling: render stort og midl ned — giver bløde, ikke-pixelerede kanter. */
+function downsample(rgba, srcSize, factor) {
+  const dstSize = srcSize / factor
+  const out = Buffer.alloc(dstSize * dstSize * 4)
+  for (let y = 0; y < dstSize; y++)
+    for (let x = 0; x < dstSize; x++) {
+      let r = 0
+      let g = 0
+      let b = 0
+      let a = 0
+      for (let dy = 0; dy < factor; dy++)
+        for (let dx = 0; dx < factor; dx++) {
+          const i = ((y * factor + dy) * srcSize + x * factor + dx) * 4
+          r += rgba[i]
+          g += rgba[i + 1]
+          b += rgba[i + 2]
+          a += rgba[i + 3]
+        }
+      const n = factor * factor
+      const o = (y * dstSize + x) * 4
+      out[o] = Math.round(r / n)
+      out[o + 1] = Math.round(g / n)
+      out[o + 2] = Math.round(b / n)
+      out[o + 3] = Math.round(a / n)
+    }
+  return out
 }
 
 mkdirSync(OUT_DIR, { recursive: true })
+const SS = 4
 for (const size of [180, 192, 512]) {
-  writeFileSync(join(OUT_DIR, `icon-${size}.png`), makeIcon(size))
+  const big = makeIcon(size * SS)
+  writeFileSync(join(OUT_DIR, `icon-${size}.png`), encodePng(size, downsample(big, size * SS, SS)))
 }
-console.log(`PWA-ikoner genereret i ${OUT_DIR}`)
+console.log(`PWA-ikoner genereret i ${OUT_DIR} (4× supersamplet)`)

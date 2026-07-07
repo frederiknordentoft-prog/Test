@@ -31,7 +31,9 @@ export function ModeBar() {
       break
     case 'molekyle':
       description = challenge.molecule
-        ? `Balancér ${challenge.molecule.navn} (${challenge.molecule.formula}) med de rigtige atomer.`
+        ? `Balancér ${challenge.molecule.navn} (${challenge.molecule.formula}${
+            challenge.molecule.note ? ` — ${challenge.molecule.note}` : ''
+          }) med de rigtige atomer.`
         : ''
       break
   }
@@ -58,15 +60,18 @@ export function ModeBar() {
           ))}
         </div>
         {mode === 'ram' && (
-          <label className="flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-lg bg-amber-900/10 px-3 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={fewest}
-              onChange={(e) => setFewest(e.target.checked)}
-              className="h-4 w-4 accent-amber-800"
-            />
-            Færrest brikker
-          </label>
+          <button
+            type="button"
+            onClick={() => setFewest(!fewest)}
+            aria-pressed={fewest}
+            className={`min-h-[44px] rounded-lg border px-3 text-sm font-semibold transition ${
+              fewest
+                ? 'border-amber-800 bg-amber-800 text-amber-50 shadow'
+                : 'border-amber-900/25 bg-transparent text-ink hover:bg-amber-900/10'
+            }`}
+          >
+            {fewest ? '✓ ' : ''}Færrest brikker
+          </button>
         )}
         {mode !== 'fri' && (
           <button
