@@ -115,6 +115,14 @@ export class Engine {
     this.resizeCanvas(container);
     this.uInCurrent = windMsToULat(windSliderToMs(this.params.windSpeed));
     this.backend.reset(this.uInCurrent);
+    this.warmUp();
+  }
+
+  /** Short burst of substeps after (re)init so the impulsive-start pressure wave
+   *  and its negative-drag phase are mostly over before the user sees the flow. */
+  private warmUp(): void {
+    this.backend.step(240, { uIn: this.uInCurrent, tau: TAU0 });
+    this.latticeSteps += 240;
   }
 
   resizeCanvas(container: HTMLElement): void {
@@ -166,6 +174,7 @@ export class Engine {
     this.forceWindow = [];
     this.liftSignSteps = [];
     this.pivot.snapTo(deg2rad(this.params.restAngleDeg));
+    this.warmUp();
   }
 
   start(): void {

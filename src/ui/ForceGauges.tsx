@@ -10,10 +10,11 @@ export function ForceGauges() {
   if (!m || !hasShape) return null;
 
   // Cd 0..3.5 → 0..100 %; fluctuation band derived from the N/m ratio (same scaling).
-  const dragPct = Math.min(100, (m.cd / 3.5) * 100);
-  const dragBand = m.dragN !== 0 ? Math.min(100, (m.dragFluctN / Math.abs(m.dragN)) * dragPct) : 0;
-  const liftPct = Math.min(50, (Math.abs(m.cl) / 3) * 100);
-  const liftBand = Math.min(50, m.cl !== 0 ? (m.liftFluctN / Math.max(Math.abs(m.liftN), 1e-6)) * liftPct : (m.liftFluctN > 0 ? 12 : 0));
+  // Everything clamped ≥ 0 — a negative CSS width is invalid and falls back to full width.
+  const dragPct = Math.max(0, Math.min(100, (m.cd / 3.5) * 100));
+  const dragBand = Math.max(0, m.dragN !== 0 ? Math.min(100, (m.dragFluctN / Math.abs(m.dragN)) * dragPct) : 0);
+  const liftPct = Math.max(0, Math.min(50, (Math.abs(m.cl) / 3) * 100));
+  const liftBand = Math.max(0, Math.min(50, m.cl !== 0 ? (m.liftFluctN / Math.max(Math.abs(m.liftN), 1e-6)) * liftPct : m.liftFluctN > 0 ? 12 : 0));
 
   return (
     <div className="gauges" aria-live="off" title={da.fluctTitle}>
