@@ -111,11 +111,21 @@
         </div>
       </div>
     </div>
-    <div class="legend reveal">
-      <span><i class="sw green"></i>Billig</span>
-      <span><i class="sw yellow"></i>Normal</span>
-      <span><i class="sw orange"></i>Høj</span>
-      <span><i class="sw red"></i>Dyr</span>
+    <div class="legend reveal" id="legend">
+      <span><i class="sw green"></i><span id="lgGood">Billig</span></span>
+      <span><i class="sw yellow"></i><span id="lgOk">Normal</span></span>
+      <span><i class="sw orange"></i><span id="lgWarn">Høj</span></span>
+      <span><i class="sw red"></i><span id="lgBad">Dyr</span></span>
+    </div>
+    <div class="limits-row reveal">
+      <button class="limits-toggle" id="limitsToggle" aria-expanded="false">Justér farvegrænser</button>
+      <div class="limits" id="limitsPanel" hidden>
+        <label>Billig under <input id="thGood" type="text" inputmode="decimal"> kr</label>
+        <label>Normal under <input id="thOk" type="text" inputmode="decimal"> kr</label>
+        <label>Høj under <input id="thWarn" type="text" inputmode="decimal"> kr</label>
+        <span class="limits-note">Dyr derover. Grænserne gælder alle dage, så farverne kan sammenlignes.</span>
+        <button class="limits-reset" id="limitsReset">Nulstil</button>
+      </div>
     </div>
   </div>
 </section>

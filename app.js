@@ -29,6 +29,10 @@ function radiusTariff(hour, month) {
 
 const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+// Absolute color thresholds (kr/kWh on the displayed price) — same across
+// days so green today means the same as green tomorrow. User-adjustable.
+const THRESH_DEFAULT = { good: 1.00, ok: 1.50, warn: 2.00 };
+
 const state = {
   today: [],
   tomorrow: [],
@@ -36,6 +40,7 @@ const state = {
   tariffs: true,
   gasel: false,
   vat: true,
+  thresholds: { ...THRESH_DEFAULT },
   appliance: { key: "washer", kwh: 1.0, hours: 2 },
 };
 
@@ -80,13 +85,11 @@ const LEVEL = {
   bad:  { label: "Dyr",    color: "#ff453a" },
 };
 
-function levelOf(price, stats) {
-  const { min, max } = stats;
-  const range = max - min || 0.01;
-  const rel = (price - min) / range;
-  if (rel < 0.25) return "good";
-  if (rel < 0.55) return "ok";
-  if (rel < 0.8)  return "warn";
+function levelOf(price) {
+  const t = state.thresholds;
+  if (price < t.good) return "good";
+  if (price < t.ok)   return "ok";
+  if (price < t.warn) return "warn";
   return "bad";
 }
 
@@ -152,7 +155,7 @@ function renderHero() {
   document.getElementById("statMinHint").textContent = "kl. " + hourLabel(prices[stats.minIdx].time_start);
   document.getElementById("statMaxHint").textContent = "kl. " + hourLabel(prices[stats.maxIdx].time_start);
 
-  const lvl = levelOf(cur, stats);
+  const lvl = levelOf(cur);
   document.getElementById("priceLevel").textContent =
     `${LEVEL[lvl].label} pris pr. kWh`;
 
@@ -213,7 +216,7 @@ function renderTable() {
 
   grid.innerHTML = prices.map((p, i) => {
     const price = fullPrice(p.DKK_per_kWh, p.time_start);
-    const lvl = levelOf(price, stats);
+    const lvl = levelOf(price);
     const meta = LEVEL[lvl];
     const widthPct = Math.max(6, ((price - stats.min) / (stats.max - stats.min || 1)) * 100);
     const isNow = i === nowIdx;
@@ -413,7 +416,7 @@ function renderChart() {
 
   chartUI.prices = prices;
   chartUI.values = values;
-  chartUI.colors = values.map(v => LEVEL[levelOf(v, stats)].color);
+  chartUI.colors = values.map(v => LEVEL[levelOf(v)].color);
   chartUI.stats = stats;
   chartUI.nowIdx = nowIdx;
   chartUI.cheapIdx = cheapIdx;
@@ -467,7 +470,7 @@ function updateReadout(idx, animate = true) {
   if (!p) { setReadoutEmpty(); return; }
   const price = chartUI.values[idx];
   const stats = chartUI.stats;
-  const lvl = levelOf(price, stats);
+  const lvl = levelOf(price);
 
   const hStart = new Date(p.time_start).getHours();
   const hEnd = new Date(p.time_end).getHours();
@@ -528,7 +531,21 @@ function initScrub(canvas) {
   });
 
   canvas.addEventListener("pointerup", (e) => {
-    if (isDown && !moved && performance.now() - downT < 400) {
+    const dx = e.clientX - downX;
+    const dy = e.clientY - downY;
+    const dt = performance.now() - downT;
+
+    // Fast horizontal flick on the graph itself = switch day.
+    // Slow drag = scrub (already handled in pointermove).
+    if (isDown && dt < 300 && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) {
+      isDown = false;
+      clearTimeout(chartUI.scrubTimer);
+      chartUI.scrubIdx = null;
+      switchDay(dx < 0 ? "tomorrow" : "today");
+      return;
+    }
+
+    if (isDown && !moved && dt < 400) {
       const i = idxFromEvent(e);
       if (i !== null) jumpToHour(i);
     }
@@ -640,7 +657,80 @@ function updateTabDates() {
   requestAnimationFrame(positionThumb);
 }
 
-// Swipe on chart card (outside canvas — canvas drags are scrubs)
+// ------------- color thresholds -------------
+function renderLegend() {
+  const t = state.thresholds;
+  const set = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+  set("lgGood", `Billig < ${fmt(t.good)}`);
+  set("lgOk", `Normal < ${fmt(t.ok)}`);
+  set("lgWarn", `Høj < ${fmt(t.warn)}`);
+  set("lgBad", `Dyr ≥ ${fmt(t.warn)}`);
+}
+
+function sanitizeThresholds(t) {
+  let good = Math.max(0.05, t.good || THRESH_DEFAULT.good);
+  let ok = Math.max(good + 0.05, t.ok || THRESH_DEFAULT.ok);
+  let warn = Math.max(ok + 0.05, t.warn || THRESH_DEFAULT.warn);
+  const r = (x) => Math.round(x * 100) / 100;
+  return { good: r(good), ok: r(ok), warn: r(warn) };
+}
+
+function initLimits() {
+  const saved = JSON.parse(localStorage.getItem("thresholds") || "null");
+  if (saved) state.thresholds = sanitizeThresholds(saved);
+
+  const inputs = {
+    good: document.getElementById("thGood"),
+    ok: document.getElementById("thOk"),
+    warn: document.getElementById("thWarn"),
+  };
+
+  const fillInputs = () => {
+    inputs.good.value = fmt(state.thresholds.good);
+    inputs.ok.value = fmt(state.thresholds.ok);
+    inputs.warn.value = fmt(state.thresholds.warn);
+  };
+  fillInputs();
+  renderLegend();
+
+  const toggle = document.getElementById("limitsToggle");
+  const panel = document.getElementById("limitsPanel");
+  toggle.addEventListener("click", () => {
+    panel.hidden = !panel.hidden;
+    toggle.setAttribute("aria-expanded", String(!panel.hidden));
+    toggle.textContent = panel.hidden ? "Justér farvegrænser" : "Skjul farvegrænser";
+  });
+
+  const apply = () => {
+    const parse = (el, fallback) => {
+      const v = parseFloat(String(el.value).replace(",", "."));
+      return Number.isFinite(v) ? v : fallback;
+    };
+    state.thresholds = sanitizeThresholds({
+      good: parse(inputs.good, THRESH_DEFAULT.good),
+      ok: parse(inputs.ok, THRESH_DEFAULT.ok),
+      warn: parse(inputs.warn, THRESH_DEFAULT.warn),
+    });
+    localStorage.setItem("thresholds", JSON.stringify(state.thresholds));
+    fillInputs();
+    renderLegend();
+    renderAll();
+  };
+  Object.values(inputs).forEach(el => el.addEventListener("change", apply));
+
+  document.getElementById("limitsReset").addEventListener("click", () => {
+    state.thresholds = { ...THRESH_DEFAULT };
+    localStorage.removeItem("thresholds");
+    fillInputs();
+    renderLegend();
+    renderAll();
+  });
+}
+
+// Swipe on chart card (outside canvas — canvas flicks handled in initScrub)
 function initSwipe() {
   const card = document.querySelector(".chart-card");
   if (!card) return;
@@ -777,6 +867,7 @@ async function boot() {
   initSwipe();
   initAppliances();
   initModes();
+  initLimits();
   initReveals();
   updateTabDates();
 
