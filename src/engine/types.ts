@@ -38,22 +38,33 @@ export interface SimParams {
 export interface FlowHints {
   /** Stagnation point in tunnel coords (front of body), if detectable. */
   stagnation?: [number, number];
-  /** Vortex shedding frequency in Hz (display time), if oscillation detected. */
-  shedFreqHz?: number;
+  /**
+   * Strouhal number St = f·D/U measured in LATTICE time — invariant under
+   * tempo, quality ladder and framerate (a wall-clock Hz would not be).
+   */
+  strouhal?: number;
+  /** Derived real-world shedding frequency for the displayed size/wind, Hz. */
+  shedHzReal?: number;
 }
 
 export interface Measurements {
-  /** Drag/lift in N per meter span (2D!). Rolling-averaged. */
+  /** Drag/lift in N per meter span (2D!). Rolling mean over ~2 s. */
   dragN: number;
   liftN: number;
+  /** Fluctuation amplitude (max−min)/2 over the same window — the vortex-shedding swing. */
+  dragFluctN: number;
+  liftFluctN: number;
   cd: number;
   cl: number;
+  /** Displayed Re, normalized to a nominal grid so the quality ladder can't change it. */
   reynolds: number;
+  /** Frontal height as % of tunnel height — wall blockage (raises Cd vs free flow). */
+  blockagePct: number;
   /** Displayed wind speed, m/s. */
   windMs: number;
   /** Current pivot deflection (deg) relative to rest angle. */
   thetaDeg: number;
-  probe: { speed: number; pressure: number } | null;
+  probe: { speed: number; pressure: number; uRatio: number; cp: number } | null;
   fps: number;
   gridW: number;
   gridH: number;

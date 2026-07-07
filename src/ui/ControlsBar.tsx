@@ -28,18 +28,20 @@ export function ControlsBar() {
         />
       </label>
 
-      <label className="slider-group">
+      <label className={`slider-group ${pivotLocked ? 'dimmed' : ''}`} title={pivotLocked ? da.weightLockedHint : undefined}>
         <span className="slider-label">
           {da.weightLabel} <strong>{density < 0.5 ? da.weightLight : density > 3 ? da.weightHeavy : `${density.toFixed(1)}×`}</strong>
         </span>
         <input
           type="range" min={-1} max={1} step={0.02} value={Math.log10(density)}
           onChange={(e) => {
-            set({ density: Math.pow(10, Number(e.target.value)) });
+            // Dragging Vægt while the pivot is locked is an unambiguous intent — unlock it.
+            set({ density: Math.pow(10, Number(e.target.value)), pivotLocked: false });
             showBubble('weight');
           }}
           aria-label={da.weightLabel}
         />
+        {pivotLocked && <span className="slider-caption">{da.weightLockedHint}</span>}
       </label>
 
       <label className="slider-group">
@@ -76,6 +78,9 @@ export function ControlsBar() {
         </button>
         <button className="btn" onClick={() => set({ paused: !paused })}>
           {paused ? `▶ ${da.play}` : `⏸ ${da.pause}`}
+        </button>
+        <button className="btn" onClick={() => set({ resetFlowNonce: useStore.getState().resetFlowNonce + 1 })}>
+          ↺ {da.resetFlow}
         </button>
       </div>
     </div>

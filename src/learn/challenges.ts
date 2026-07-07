@@ -23,7 +23,7 @@ export const CHALLENGES: Challenge[] = [
     id: 'street',
     title: 'Lav en hvirvelgade',
     detail: 'Sæt en stump form (fx firkant) i vinden og få hvirvler til at løsne sig i takt bagved.',
-    done: (c) => c.hasShape && c.m.flowHints.shedFreqHz !== undefined,
+    done: (c) => c.hasShape && c.m.flowHints.strouhal !== undefined,
   },
   {
     id: 'lowdrag',

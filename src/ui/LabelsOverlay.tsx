@@ -11,7 +11,7 @@ export function LabelsOverlay() {
   if (!labels || !m || !shape) return null;
 
   const stag = m.flowHints.stagnation;
-  const shed = m.flowHints.shedFreqHz;
+  const st = m.flowHints.strouhal;
 
   return (
     <div className="labels-overlay" aria-hidden>
@@ -21,12 +21,12 @@ export function LabelsOverlay() {
           <span className="flow-text">{da.labelStagnation}</span>
         </div>
       )}
-      {shed !== undefined && (
+      {st !== undefined && (
         <div
           className="flow-label street"
           style={{ left: `${Math.min(92, ((shape.pivot[0] + 0.45) / ASPECT) * 100)}%`, top: `${(1 - shape.pivot[1]) * 100}%` }}
         >
-          <span className="flow-text">{da.labelVortexStreet} · {shed.toFixed(1)} Hz</span>
+          <span className="flow-text">{da.labelVortexStreet} · St ≈ {st.toFixed(2)}</span>
         </div>
       )}
     </div>

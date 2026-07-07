@@ -25,11 +25,16 @@ export function TunnelCanvas() {
     if (store.getState().committedShape) engine.setShape(store.getState().committedShape);
 
     let lastShape = store.getState().committedShape;
+    let lastResetNonce = store.getState().resetFlowNonce;
     const unsub = store.subscribe((s) => {
       engine.setParams(selectSimParams(s));
       if (s.committedShape !== lastShape) {
         lastShape = s.committedShape;
         engine.setShape(s.committedShape);
+      }
+      if (s.resetFlowNonce !== lastResetNonce) {
+        lastResetNonce = s.resetFlowNonce;
+        engine.reset();
       }
     });
 

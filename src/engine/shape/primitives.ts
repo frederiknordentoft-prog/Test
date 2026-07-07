@@ -3,7 +3,9 @@
 import type { ShapeKind, ShapeSpec } from '../types';
 
 const DEFAULT_CENTER: [number, number] = [0.7, 0.5];
-const SIZE = 0.16; // half-height-ish scale in tunnel units
+// Half-height-ish scale in tunnel units. Kept small enough that primitives block
+// ~15-21% of the tunnel height — large blockage squeezes the flow and inflates Cd.
+const SIZE = 0.11;
 
 export function makePrimitive(kind: Exclude<ShapeKind, 'freehand'>, center: [number, number] = DEFAULT_CENTER): ShapeSpec {
   const pts: number[] = [];

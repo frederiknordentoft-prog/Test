@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import type { Measurements, OverlayMode, ShapeKind, ShapeSpec, SimParams } from '../engine/types';
+import { makePrimitive } from '../engine/shape/primitives';
 
 export type Tool = ShapeKind | 'probe';
 
@@ -34,6 +35,9 @@ export interface AppState {
   measure: Measurements | null;
   measureB: Measurements | null;
 
+  /** Bump to ask the engine to re-initialize the flow field. */
+  resetFlowNonce: number;
+
   // learn slice
   toast: string | null;
   bubble: string | null;
@@ -59,8 +63,9 @@ export const useStore = create<AppState>((set, get) => ({
   paused: false,
   timeScale: 1,
 
+  // Appen åbner med en form i vinden — hvirvelgade og levende målere fra sekund ét.
   activeTool: 'freehand',
-  committedShape: null,
+  committedShape: makePrimitive('circle'),
   shapeB: null,
 
   overlay: 'none',
@@ -73,6 +78,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   measure: null,
   measureB: null,
+
+  resetFlowNonce: 0,
 
   toast: null,
   bubble: null,

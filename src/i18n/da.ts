@@ -13,6 +13,7 @@ export const da = {
   lockLabel: 'Lås pind',
   lockedHint: 'Pinden er låst — ren måling',
   freeHint: 'Pinden giver efter for vinden',
+  weightLockedHint: 'Lås pinden op for at mærke vægten',
   pause: 'Pause',
   play: 'Kør',
   resetFlow: 'Nulstil luft',
@@ -36,16 +37,24 @@ export const da = {
   drag: 'Modstand',
   lift: 'Løft',
   perMeter: 'N pr. m dybde',
+  fluctTitle: 'Middel ± udsving — svinger i takt med hvirvlerne',
+  ghostHint: 'Tegn din egen form ✏️',
 
   advanced: 'Avanceret',
-  cdLabel: 'Cd (modstandskoefficient)',
-  clLabel: 'Cl (løftkoefficient)',
-  reLabel: 'Reynolds-tal',
+  cdLabel: 'Cd (i denne tunnel)',
+  clLabel: 'Cl (i denne tunnel)',
+  reLabel: 'Reynolds-tal (simuleret)',
+  blockageLabel: 'Blokering',
   gridLabel: 'Gitter',
   fpsLabel: 'Billeder/s',
   backendLabel: 'Motor',
-  shedLabel: 'Hvirvelfrekvens',
+  stLabel: 'Strouhal-tal',
+  stRealLabel: 'Svarer i virkeligheden til',
   deflectLabel: 'Udsving',
+  reHonesty:
+    'Tunnelen simulerer ved lavt Reynolds-tal (som en miniature-model i tyk luft). En rigtig genstand ved samme fart ligger omkring Re ≈ 300.000, hvor Cd typisk er lavere.',
+  blockageHonesty:
+    'Formen fylder en del af tunnelhøjden — væggene presser luften og hæver Cd i forhold til fri strømning.',
   honesty:
     '2D-simulering: kræfter er pr. meter dybde. Objektets bevægelse påvirker luften kvasi-statisk (randens egen fart medregnes ikke). Et lærerigt legetøj — ikke certificeret CFD.',
 
@@ -61,6 +70,9 @@ export const da = {
   labelStagnation: 'Stagnationspunkt: luften bremses helt op',
   labelVortexStreet: 'Hvirvelgade',
   labelsToggle: 'Forklaringer',
+  legendSpeed: 'Fart (× vindfart)',
+  legendPressure: 'Tryk (Cp)',
+  legendVorticity: 'Hvirvler (rotation)',
 
   compare: 'Sammenlign',
   compareClose: 'Luk sammenligning',

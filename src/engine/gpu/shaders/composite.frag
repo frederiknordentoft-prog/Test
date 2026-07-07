@@ -57,9 +57,12 @@ void main() {
     vec3 fc = texture(uLutDiv, vec2(t, 0.5)).rgb;
     col = mix(col, fc, 0.8);
   } else if (uOverlay == 3) {
+    // Pressure as Cp = Δp/(½ρU²), mapped ASYMMETRICALLY to [-3, +1]: Cp > 1 is
+    // impossible in steady incompressible flow, so the stagnation point (Cp = 1)
+    // gets full saturation instead of a washed-out mid-tone.
     float pdev = (mac.y - 1.0) / 3.0; // lattice pressure deviation, p = rho/3
-    float scale = max(uUin * uUin, 1e-5) * 1.2;
-    float t = clamp(pdev / scale * 0.5 + 0.5, 0.0, 1.0);
+    float cp = pdev / max(0.5 * uUin * uUin, 1e-6);
+    float t = clamp((cp + 3.0) / 4.0, 0.0, 1.0);
     vec3 fc = texture(uLutDiv, vec2(t, 0.5)).rgb;
     col = mix(col, fc, 0.8);
   } else if (uOverlay == 4) {

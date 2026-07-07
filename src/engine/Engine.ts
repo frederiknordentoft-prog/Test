@@ -69,7 +69,9 @@ export class Engine {
   // rolling force window (real-time seconds, lattice forces)
   private forceWindow: { t: number; fx: number; fy: number; tz: number }[] = [];
   private lastForce = { fx: 0, fy: 0, tz: 0 };
-  private liftSignT: number[] = [];
+  /** Lift sign flips stamped in cumulative LATTICE steps → tempo-invariant Strouhal. */
+  private liftSignSteps: number[] = [];
+  private latticeSteps = 0;
   private lastLiftSign = 0;
   private lastProbe: { speed: number; rho: number } | null = null;
   private measureTimer = 0;
@@ -144,7 +146,7 @@ export class Engine {
     this.pose = { theta: this.pivot.theta, bend: [0, 0] };
     this.backend.setPose(this.pose);
     this.forceWindow = [];
-    this.liftSignT = [];
+    this.liftSignSteps = [];
   }
 
   private updateMassProps(): void {
@@ -159,7 +161,7 @@ export class Engine {
   reset(): void {
     this.backend.reset(this.uInCurrent);
     this.forceWindow = [];
-    this.liftSignT = [];
+    this.liftSignSteps = [];
     this.pivot.snapTo(deg2rad(this.params.restAngleDeg));
   }
 
@@ -211,6 +213,7 @@ export class Engine {
     if (stepsThisFrame > 0) {
       this.backend.step(stepsThisFrame, { uIn: this.uInCurrent, tau: TAU0 });
       this.backend.requestForces();
+      this.latticeSteps += stepsThisFrame;
     } else {
       this.backend.lastStepCount = 0;
     }
@@ -221,12 +224,12 @@ export class Engine {
     if (rb.force && isFinite(rb.force.fx)) {
       this.lastForce = rb.force;
       this.forceWindow.push({ t: tSec, ...rb.force });
-      while (this.forceWindow.length > 2 && this.forceWindow[0].t < tSec - 0.5) this.forceWindow.shift();
+      while (this.forceWindow.length > 2 && this.forceWindow[0].t < tSec - 2) this.forceWindow.shift();
       const sign = rb.force.fy > 0 ? 1 : -1;
       if (sign !== this.lastLiftSign) {
         this.lastLiftSign = sign;
-        this.liftSignT.push(tSec);
-        while (this.liftSignT.length > 24) this.liftSignT.shift();
+        this.liftSignSteps.push(this.latticeSteps);
+        while (this.liftSignSteps.length > 24) this.liftSignSteps.shift();
       }
     }
     if (rb.probe) this.lastProbe = rb.probe;
@@ -281,38 +284,62 @@ export class Engine {
     const uLat = this.uInCurrent;
     const gridH = this.backend.grid.h;
     let fx = 0, fy = 0;
+    let fxMin = Infinity, fxMax = -Infinity, fyMin = Infinity, fyMax = -Infinity;
     if (this.forceWindow.length > 0) {
       for (const s of this.forceWindow) {
         fx += s.fx;
         fy += s.fy;
+        if (s.fx < fxMin) fxMin = s.fx;
+        if (s.fx > fxMax) fxMax = s.fx;
+        if (s.fy < fyMin) fyMin = s.fy;
+        if (s.fy > fyMax) fyMax = s.fy;
       }
       fx /= this.forceWindow.length;
       fy /= this.forceWindow.length;
+    } else {
+      fxMin = fxMax = fyMin = fyMax = 0;
     }
     const hints: FlowHints = {};
-    if (this.liftSignT.length >= 6) {
-      const dt = this.liftSignT[this.liftSignT.length - 1] - this.liftSignT[0];
-      if (dt > 0.2) {
-        const halfPeriods = this.liftSignT.length - 1;
-        const f = halfPeriods / (2 * dt);
-        if (f > 0.05 && f < 20) hints.shedFreqHz = f;
+    if (this.liftSignSteps.length >= 6) {
+      const dSteps = this.liftSignSteps[this.liftSignSteps.length - 1] - this.liftSignSteps[0];
+      if (dSteps > 100) {
+        const halfPeriods = this.liftSignSteps.length - 1;
+        const fLat = halfPeriods / (2 * dSteps); // per lattice step
+        const st = (fLat * this.dLatCells) / Math.max(uLat, 1e-5);
+        if (st > 0.03 && st < 1) {
+          hints.strouhal = st;
+          // Real-world frequency for the displayed size and wind: f = St·U/D
+          const dM = this.dLatCells * (0.5 / gridH); // TUNNEL_HEIGHT_M / gridH
+          hints.shedHzReal = (st * windMs) / Math.max(dM, 1e-4);
+        }
       }
     }
     if (this.shape) {
       hints.stagnation = this.stagnationPoint();
     }
+    const uLatSafe = Math.max(uLat, 1e-5);
     const probe = this.lastProbe && this.params.probe
       ? {
-          speed: (this.lastProbe.speed / Math.max(uLat, 1e-5)) * windMs,
-          pressure: ((this.lastProbe.rho - 1) / 3) * 1.225 * Math.pow(windMs / Math.max(uLat, 1e-5), 2),
+          speed: (this.lastProbe.speed / uLatSafe) * windMs,
+          pressure: ((this.lastProbe.rho - 1) / 3) * 1.225 * Math.pow(windMs / uLatSafe, 2),
+          uRatio: this.lastProbe.speed / uLatSafe,
+          cp: ((this.lastProbe.rho - 1) / 3) / (0.5 * uLatSafe * uLatSafe),
         }
       : null;
+    // Displayed Re is normalized to a nominal grid height so the adaptive
+    // quality ladder can't silently change the number mid-session.
+    const NOMINAL_GRID_H = 256;
+    const dNominal = this.dLatCells * (NOMINAL_GRID_H / gridH);
+    const fluctScale = (f: number) => (this.shape ? forceToNewtonPerM(f, uLat, this.dLatCells, gridH, windMs) : 0);
     return {
-      dragN: this.shape ? forceToNewtonPerM(fx, uLat, this.dLatCells, gridH, windMs) : 0,
-      liftN: this.shape ? forceToNewtonPerM(fy, uLat, this.dLatCells, gridH, windMs) : 0,
+      dragN: fluctScale(fx),
+      liftN: fluctScale(fy),
+      dragFluctN: Math.abs(fluctScale((fxMax - fxMin) / 2)),
+      liftFluctN: Math.abs(fluctScale((fyMax - fyMin) / 2)),
       cd: this.shape ? dragCoefficient(fx, uLat, this.dLatCells) : 0,
       cl: this.shape ? dragCoefficient(fy, uLat, this.dLatCells) : 0,
-      reynolds: this.shape ? reynolds(uLat, this.dLatCells) : 0,
+      reynolds: this.shape ? reynolds(uLat, dNominal) : 0,
+      blockagePct: this.shape ? (this.dLatCells / gridH) * 100 : 0,
       windMs,
       thetaDeg: rad2deg(this.pose.theta - deg2rad(this.params.restAngleDeg)),
       probe,

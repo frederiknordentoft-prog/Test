@@ -17,7 +17,6 @@ export default defineConfig({
         description: 'Interaktiv aerodynamik-sandkasse: tegn en form og mærk vinden.',
         lang: 'da',
         display: 'standalone',
-        orientation: 'landscape',
         background_color: '#0b0e14',
         theme_color: '#0b0e14',
         icons: [

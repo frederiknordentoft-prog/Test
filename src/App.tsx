@@ -7,6 +7,7 @@ import { ShapeToolbar } from './ui/ShapeToolbar';
 import { OverlayPicker } from './ui/OverlayPicker';
 import { ForceGauges } from './ui/ForceGauges';
 import { ProbeReadout } from './ui/ProbeReadout';
+import { Legend } from './ui/Legend';
 import { AdvancedPanel } from './ui/AdvancedPanel';
 import { LabelsOverlay } from './ui/LabelsOverlay';
 import { LessonBubbles } from './ui/LessonBubbles';
@@ -35,6 +36,7 @@ export default function App() {
             <DrawLayer />
             <LabelsOverlay />
             <ProbeReadout />
+            <Legend />
           </div>
           <ForceGauges />
         </>

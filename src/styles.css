@@ -91,15 +91,26 @@ select {
 }
 .gauge { display: grid; grid-template-columns: 84px 1fr; gap: 2px 10px; align-items: center; font-size: 0.82rem; }
 .gauge-name { color: var(--dim); font-weight: 600; }
-.gauge-bar { height: 7px; background: #1d2436; border-radius: 4px; overflow: hidden; position: relative; }
-.gauge-fill { height: 100%; border-radius: 4px; transition: width 0.12s linear; }
+.gauge-bar { height: 8px; background: #1d2436; border-radius: 4px; overflow: hidden; position: relative; }
+.gauge-fill { height: 100%; border-radius: 4px; transition: width 0.18s ease-out; }
 .gauge-fill.drag { background: linear-gradient(90deg, var(--accent-strong), var(--accent)); }
 .gauge-fill.lift.pos { background: #4ade80; }
 .gauge-fill.lift.neg { background: var(--warn); }
+.gauge-band {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(229, 234, 243, 0.22);
+  border-radius: 4px;
+  pointer-events: none;
+  transition: left 0.18s ease-out, width 0.18s ease-out;
+}
+.gauge-tick { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: #3b4763; }
 .gauge-bar.center { display: flex; }
 .gauge-bar.center .gauge-fill.pos { margin-left: 50%; }
 .gauge-bar.center .gauge-fill.neg { margin-left: auto; margin-right: 50%; }
 .gauge-val { grid-column: 1 / -1; color: var(--text); font-variant-numeric: tabular-nums; }
+.gauge-val .pm { color: var(--dim); font-size: 0.85em; }
 .gauge-val em { color: var(--dim); font-style: normal; font-size: 0.7rem; }
 
 /* ---- Probe ---- */
@@ -131,6 +142,39 @@ select {
   font-size: 0.75rem;
   white-space: nowrap;
 }
+.probe-box.flip { left: auto; right: 14px; }
+.probe-dimless { color: var(--accent); margin-top: 2px; }
+
+/* ---- Ghost hint & legend ---- */
+.ghost-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+.legend {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  color: var(--dim);
+  background: rgba(11, 14, 20, 0.7);
+  border: 1px solid #26304a;
+  border-radius: 999px;
+  padding: 4px 10px;
+  pointer-events: none;
+}
+.legend-bar { width: 90px; height: 8px; border-radius: 4px; }
+.legend-title { color: var(--text); }
+.legend-lo, .legend-hi { font-variant-numeric: tabular-nums; }
 
 /* ---- Flow labels ---- */
 .labels-overlay { position: absolute; inset: 0; pointer-events: none; }
@@ -172,6 +216,8 @@ select {
   align-items: center;
 }
 .slider-group { display: flex; flex-direction: column; gap: 4px; }
+.slider-group.dimmed { opacity: 0.55; }
+.slider-caption { font-size: 0.68rem; color: var(--dim); }
 .slider-label { font-size: 0.8rem; color: var(--dim); display: flex; justify-content: space-between; }
 .slider-label strong { color: var(--text); font-variant-numeric: tabular-nums; }
 
@@ -275,8 +321,35 @@ input[type='range'] {
   .compare-view { grid-template-columns: 1fr; }
 }
 
+/* ---- Landscape phone: tunnel left, controls in a right rail ---- */
+@media (orientation: landscape) and (max-height: 540px) {
+  .app {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(230px, 1fr);
+    grid-template-areas:
+      'top top'
+      'tunnel controls'
+      'gauges controls'
+      'toolbar controls'
+      'adv adv'
+      'chal chal';
+    align-items: start;
+    gap: 8px 10px;
+  }
+  .topbar { grid-area: top; }
+  .tunnel-wrap { grid-area: tunnel; max-height: none; }
+  .gauges { grid-area: gauges; grid-template-columns: 1fr; gap: 4px; padding: 6px 10px; }
+  .toolbar { grid-area: toolbar; justify-content: flex-start; }
+  .controls { grid-area: controls; grid-template-columns: 1fr; gap: 8px; padding: 10px 12px; }
+  .advanced-panel { grid-area: adv; }
+  .challenges { grid-area: chal; }
+  .compare-view { grid-column: 1 / -1; }
+  .tool { padding: 6px 10px; min-height: 34px; font-size: 0.78rem; }
+  input[type='range'] { height: 28px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .gauge-fill { transition: none; }
+  .gauge-fill, .gauge-band { transition: none; }
 }
 
 /* Harness page */
