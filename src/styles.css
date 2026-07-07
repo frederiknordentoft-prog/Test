@@ -198,6 +198,10 @@ select {
   white-space: nowrap;
 }
 .flow-label.street .flow-text { color: var(--accent); }
+@media (max-width: 520px) {
+  /* On small screens the stagnation text would cover the shape — keep just the dot. */
+  .flow-label:not(.street) .flow-text { display: none; }
+}
 
 /* ---- Toolbar & controls ---- */
 .toolbar { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
