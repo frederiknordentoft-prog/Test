@@ -23,16 +23,18 @@ export function Legend() {
   if (overlay === 'none' || overlay === 'streamlines') return null;
 
   const cfg = overlay === 'speed'
-    ? { g: seq, title: da.legendSpeed, lo: '0', hi: '1,6×' }
+    ? { g: seq, title: da.legendSpeed, lo: '0', mid: null, hi: '1,6×' }
     : overlay === 'pressure'
-      ? { g: div, title: da.legendPressure, lo: '−3', hi: '+1' }
-      : { g: div, title: da.legendVorticity, lo: '−', hi: '+' };
+      ? { g: div, title: da.legendPressure, lo: '−3', mid: '0', hi: '+1' }
+      : { g: div, title: da.legendVorticity, lo: '−', mid: null, hi: '+' };
 
   return (
     <div className="legend" aria-hidden>
       <span className="legend-title">{cfg.title}</span>
       <span className="legend-lo">{cfg.lo}</span>
-      <span className="legend-bar" style={{ background: cfg.g }} />
+      <span className="legend-bar" style={{ background: cfg.g }}>
+        {cfg.mid && <span className="legend-mid">{cfg.mid}</span>}
+      </span>
       <span className="legend-hi">{cfg.hi}</span>
     </div>
   );

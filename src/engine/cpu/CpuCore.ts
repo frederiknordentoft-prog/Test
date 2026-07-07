@@ -98,7 +98,7 @@ export class CpuCore {
     for (let y = 0; y < this.h; y++) {
       for (let x = 0; x < this.w; x++) {
         const idx = y * this.w + x;
-        const pert = 0.12 * uIn * Math.sin(x * 0.11) * Math.sin(y * 0.13 + 0.7);
+        const pert = 0.05 * uIn * Math.sin(x * 0.11) * Math.sin(y * 0.13 + 0.7);
         const usq = uIn * uIn + pert * pert;
         for (let i = 0; i < 9; i++) {
           const eu = EX[i] * uIn + EY[i] * pert;

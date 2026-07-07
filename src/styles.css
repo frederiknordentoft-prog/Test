@@ -172,7 +172,15 @@ select {
   padding: 4px 10px;
   pointer-events: none;
 }
-.legend-bar { width: 90px; height: 8px; border-radius: 4px; }
+.legend-bar { width: 90px; height: 8px; border-radius: 4px; position: relative; }
+.legend-mid {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--dim);
+}
 .legend-title { color: var(--text); }
 .legend-lo, .legend-hi { font-variant-numeric: tabular-nums; }
 

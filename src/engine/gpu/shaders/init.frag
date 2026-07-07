@@ -22,7 +22,8 @@ void main() {
   }
   // Small deterministic transverse perturbation seeds the vortex-street instability
   // (a perfectly symmetric flow can stay symmetric and never shed).
-  float pert = 0.12 * uUin * sin(float(p.x) * 0.11) * sin(float(p.y) * 0.13 + 0.7);
+  // Kept small so the seed doesn't show as a visible checkerboard in the pressure overlay.
+  float pert = 0.05 * uUin * sin(float(p.x) * 0.11) * sin(float(p.y) * 0.13 + 0.7);
   vec2 u = vec2(uUin, pert);
   float usq = dot(u, u);
   float g[9];

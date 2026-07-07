@@ -140,9 +140,9 @@ export class CpuBackend implements Backend {
         }
         let t: number;
         if (params.overlay === 'pressure') {
-          // Cp mapped asymmetrically to [-3, +1] — matches composite.frag
+          // Piecewise Cp: [-3,0]→[0,0.5], [0,+1]→[0.5,1] — matches composite.frag
           const cp = (core.rho[idx] - 1) / 3 / (0.5 * uin * uin);
-          t = (cp + 3) / 4;
+          t = cp < 0 ? 0.5 * Math.max(0, (cp + 3) / 3) : 0.5 + 0.5 * Math.min(1, cp);
         } else if (params.overlay === 'vorticity') {
           const xm = Math.max(0, x - 1), xp = Math.min(w - 1, x + 1);
           const ym = Math.max(0, y - 1), yp = Math.min(h - 1, y + 1);
