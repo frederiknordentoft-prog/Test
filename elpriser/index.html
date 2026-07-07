@@ -86,23 +86,46 @@
     <p class="eyebrow reveal">Timepriser</p>
     <h2 class="headline-md light reveal">24 timer. Et blik.</h2>
     <div class="tabs reveal" role="tablist">
-      <button class="tab active" data-day="today">I dag</button>
-      <button class="tab" data-day="tomorrow" id="tabTomorrow">I morgen</button>
+      <span class="tab-thumb" id="tabThumb" aria-hidden="true"></span>
+      <button class="tab active" data-day="today" role="tab" aria-selected="true">
+        <span class="tab-title">I dag</span>
+        <span class="tab-date" id="tabDateToday"></span>
+      </button>
+      <button class="tab" data-day="tomorrow" id="tabTomorrow" role="tab" aria-selected="false">
+        <span class="tab-title">I morgen</span>
+        <span class="tab-date" id="tabDateTomorrow"></span>
+      </button>
     </div>
     <div class="chart-card reveal">
+      <div class="readout" id="readout" aria-live="polite">
+        <div class="readout-price"><span id="roPrice">–</span><span class="readout-unit">kr/kWh</span></div>
+        <div class="readout-meta">
+          <span id="roHour">–</span><span class="rsep">·</span><span id="roLevel">–</span><span class="rsep">·</span><span id="roDiff">–</span>
+        </div>
+      </div>
       <div class="chart-wrap">
-        <canvas id="priceChart"></canvas>
+        <canvas id="priceChart" aria-label="Timepriser som søjlediagram"></canvas>
         <div id="nowBadge" class="now-badge" hidden>NU</div>
         <div id="chartEmpty" class="chart-empty" hidden>
           Morgendagens priser udgives omkring kl. 13.
         </div>
       </div>
     </div>
-    <div class="legend reveal">
-      <span><i class="sw green"></i>Billig</span>
-      <span><i class="sw yellow"></i>Normal</span>
-      <span><i class="sw orange"></i>Høj</span>
-      <span><i class="sw red"></i>Dyr</span>
+    <div class="legend reveal" id="legend">
+      <span><i class="sw green"></i><span id="lgGood">Billig</span></span>
+      <span><i class="sw yellow"></i><span id="lgOk">Normal</span></span>
+      <span><i class="sw orange"></i><span id="lgWarn">Høj</span></span>
+      <span><i class="sw red"></i><span id="lgBad">Dyr</span></span>
+    </div>
+    <div class="limits-row reveal">
+      <button class="limits-toggle" id="limitsToggle" aria-expanded="false">Justér farvegrænser</button>
+      <div class="limits" id="limitsPanel" hidden>
+        <label>Billig under <input id="thGood" type="text" inputmode="decimal"> kr</label>
+        <label>Normal under <input id="thOk" type="text" inputmode="decimal"> kr</label>
+        <label>Høj under <input id="thWarn" type="text" inputmode="decimal"> kr</label>
+        <span class="limits-note">Dyr derover. Grænserne gælder alle dage, så farverne kan sammenlignes.</span>
+        <button class="limits-reset" id="limitsReset">Nulstil</button>
+      </div>
     </div>
   </div>
 </section>
