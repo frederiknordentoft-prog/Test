@@ -27,6 +27,8 @@ function radiusTariff(hour, month) {
   return isSummer ? 0.1991 : 0.3982;                           // Høj
 }
 
+const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 const state = {
   today: [],
   tomorrow: [],
@@ -35,7 +37,21 @@ const state = {
   gasel: false,
   vat: true,
   appliance: { key: "washer", kwh: 1.0, hours: 2 },
+};
+
+// Chart runtime state (single persistent Chart.js instance)
+const chartUI = {
   chart: null,
+  prices: [],      // raw API rows for the displayed day
+  values: [],      // computed kr/kWh
+  colors: [],      // level color per bar
+  stats: null,
+  nowIdx: -1,
+  cheapIdx: -1,    // cheapest upcoming hour (dot marker)
+  scrubIdx: null,  // finger/mouse position, null = idle
+  scrubTimer: null,
+  roPrice: null,   // last readout price (for tween)
+  badgeRO: null,
 };
 
 // ------------- utils -------------
@@ -92,6 +108,12 @@ function currentHourIndex(prices) {
   });
 }
 
+function hexWithAlpha(hex, alpha) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 // ------------- fetch -------------
 async function fetchDay(date) {
   try {
@@ -111,6 +133,7 @@ async function loadData() {
   if (!td.length) toast("Kunne ikke hente dagens priser.");
   const tomorrowTab = document.getElementById("tabTomorrow");
   tomorrowTab.disabled = tm.length === 0;
+  updateTabDates();
 }
 
 // ------------- hero -------------
@@ -138,11 +161,10 @@ function renderHero() {
   if (state.tariffs) parts.push("afgifter");
   if (state.gasel) parts.push("Gasel");
   if (state.vat) parts.push("moms");
-  const modeTxt = parts.join(" + ");
   const echo = document.getElementById("modeEcho");
-  if (echo) echo.textContent = modeTxt;
+  if (echo) echo.textContent = parts.join(" + ");
 
-  // Next cheap hour tip (based on spot, since tariffs may re-rank — but tip uses full price)
+  // Next cheap hour tip
   const forward = [];
   if (idx >= 0) prices.slice(idx + 1).forEach(p => forward.push(p));
   state.tomorrow.forEach(p => forward.push(p));
@@ -204,23 +226,27 @@ function renderTable() {
   }).join("");
 }
 
-// ------------- chart -------------
-function hexWithAlpha(hex, alpha) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  return `rgba(${r},${g},${b},${alpha})`;
+// ============================================================
+// CHART — persistent instance, scrub readout, morphing updates
+// ============================================================
+
+// Opacity for a bar given scrub + past-hour dimming
+function barAlpha(i) {
+  if (chartUI.scrubIdx !== null) return i === chartUI.scrubIdx ? 1 : 0.3;
+  if (state.view === "today" && chartUI.nowIdx >= 0 && i < chartUI.nowIdx) return 0.35;
+  return 1;
 }
 
-// Plugin: dashed average line + "avg" label
+// Plugin: dashed average line + label
 const avgLinePlugin = {
   id: "avgLine",
-  afterDatasetsDraw(chart, _args, opts) {
-    const y = opts && opts.avg;
-    if (!y) return;
+  afterDatasetsDraw(chart) {
+    const stats = chartUI.stats;
+    if (!stats || !stats.avg) return;
     const { ctx, chartArea: { left, right }, scales } = chart;
-    const yPix = scales.y.getPixelForValue(y);
+    const yPix = scales.y.getPixelForValue(stats.avg);
     ctx.save();
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.32)";
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -231,25 +257,131 @@ const avgLinePlugin = {
     ctx.fillStyle = "rgba(235, 235, 245, 0.6)";
     ctx.font = "500 10.5px -apple-system, BlinkMacSystemFont, sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(`gns. ${fmt(y)}`, right - 6, yPix - 5);
+    ctx.fillText(`gns. ${fmt(stats.avg)}`, right - 6, yPix - 5);
     ctx.restore();
   },
 };
 
-function positionNowBadge(chart, nowIdx) {
+// Plugin: small green dot under the cheapest upcoming hour
+const cheapDotPlugin = {
+  id: "cheapDot",
+  afterDatasetsDraw(chart) {
+    const i = chartUI.cheapIdx;
+    if (i < 0) return;
+    const bar = chart.getDatasetMeta(0).data[i];
+    if (!bar) return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.fillStyle = "#30d158";
+    ctx.beginPath();
+    ctx.arc(bar.x, chart.chartArea.bottom + 5, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  },
+};
+
+function positionNowBadge() {
   const badge = document.getElementById("nowBadge");
-  if (!badge) return;
-  if (nowIdx < 0) { badge.hidden = true; return; }
-  const meta = chart.getDatasetMeta(0);
-  const bar = meta.data[nowIdx];
+  const chart = chartUI.chart;
+  if (!badge || !chart) return;
+  const nowIdx = chartUI.nowIdx;
+  if (nowIdx < 0 || state.view !== "today") { badge.hidden = true; return; }
+  const bar = chart.getDatasetMeta(0).data[nowIdx];
   if (!bar) { badge.hidden = true; return; }
   const wrap = badge.parentElement.getBoundingClientRect();
   const canvas = chart.canvas.getBoundingClientRect();
-  const offsetX = canvas.left - wrap.left + bar.x;
-  const offsetY = canvas.top - wrap.top + bar.y;
-  badge.style.left = offsetX + "px";
-  badge.style.top = offsetY + "px";
+  badge.style.left = (canvas.left - wrap.left + bar.x) + "px";
+  badge.style.top = (canvas.top - wrap.top + bar.y) + "px";
   badge.hidden = false;
+}
+
+function ensureChart() {
+  if (chartUI.chart) return chartUI.chart;
+  const canvas = document.getElementById("priceChart");
+  const tickColor = "rgba(235, 235, 245, 0.45)";
+
+  chartUI.chart = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        backgroundColor: (ctx) => {
+          const i = ctx.dataIndex;
+          const color = chartUI.colors[i] || "#666";
+          const a = barAlpha(i);
+          const { chartArea } = ctx.chart;
+          if (!chartArea) return hexWithAlpha(color, a);
+          const g = ctx.chart.ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          g.addColorStop(0, hexWithAlpha(color, a));
+          g.addColorStop(1, hexWithAlpha(color, 0.55 * a));
+          return g;
+        },
+        borderColor: (ctx) =>
+          ctx.dataIndex === chartUI.nowIdx && state.view === "today" ? "#ffffff" : "transparent",
+        borderWidth: (ctx) =>
+          ctx.dataIndex === chartUI.nowIdx && state.view === "today" ? 2 : 0,
+        borderRadius: 8,
+        borderSkipped: false,
+        barPercentage: 0.9,
+        categoryPercentage: 0.9,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: REDUCE_MOTION ? false : {
+        duration: 800,
+        easing: "easeOutQuart",
+        onComplete: positionNowBadge,
+      },
+      events: [], // all interaction handled by our own pointer handlers
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color: tickColor,
+            font: { size: 11, family: "-apple-system, sans-serif" },
+            maxRotation: 0,
+            autoSkip: false,
+            padding: 12,
+            callback(value, index) {
+              return index % 3 === 0 ? this.getLabelForValue(value) : "";
+            },
+          },
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: "rgba(255, 255, 255, 0.04)" },
+          border: { display: false },
+          ticks: {
+            color: tickColor,
+            font: { size: 11, family: "-apple-system, sans-serif" },
+            callback: (v) => fmt(v),
+            padding: 10,
+            maxTicksLimit: 5,
+          },
+        },
+      },
+    },
+    plugins: [avgLinePlugin, cheapDotPlugin],
+  });
+
+  initScrub(canvas);
+
+  if (chartUI.badgeRO) chartUI.badgeRO.disconnect();
+  chartUI.badgeRO = new ResizeObserver(() => {
+    positionNowBadge();
+    positionThumb();
+  });
+  chartUI.badgeRO.observe(canvas.parentElement);
+
+  return chartUI.chart;
 }
 
 function renderChart() {
@@ -262,135 +394,160 @@ function renderChart() {
     empty.hidden = false;
     canvas.style.display = "none";
     if (badge) badge.hidden = true;
-    if (state.chart) { state.chart.destroy(); state.chart = null; }
+    setReadoutEmpty();
     return;
   }
   empty.hidden = true;
   canvas.style.display = "block";
 
   const stats = statsOf(prices);
-  const labels = prices.map(p => hourNum(p.time_start));
   const values = prices.map(p => fullPrice(p.DKK_per_kWh, p.time_start));
-  const colors = values.map(v => LEVEL[levelOf(v, stats)].color);
   const nowIdx = state.view === "today" ? currentHourIndex(prices) : -1;
 
-  // Subtle vertical gradient per bar — top: color, bottom: color at 55%
-  const bgColors = (context) => {
-    const { chart, dataIndex } = context;
-    const { ctx, chartArea } = chart;
-    if (!chartArea) return colors[dataIndex];
-    const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-    g.addColorStop(0, colors[dataIndex]);
-    g.addColorStop(1, hexWithAlpha(colors[dataIndex], 0.55));
-    return g;
-  };
-
-  const borders = values.map((_, i) => i === nowIdx ? "#ffffff" : "transparent");
-  const borderWidths = values.map((_, i) => i === nowIdx ? 2 : 0);
-  const baseHoverBg = values.map((_, i) => hexWithAlpha(colors[i], 1));
-
-  if (state.chart) state.chart.destroy();
-
-  const tickColor = "rgba(235, 235, 245, 0.45)";
-  const gridColor = "rgba(255, 255, 255, 0.06)";
-
-  state.chart = new Chart(canvas, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{
-        data: values,
-        backgroundColor: bgColors,
-        hoverBackgroundColor: baseHoverBg,
-        borderColor: borders,
-        borderWidth: borderWidths,
-        borderRadius: 8,
-        borderSkipped: false,
-        barPercentage: 0.9,
-        categoryPercentage: 0.9,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: {
-        duration: 900,
-        easing: "easeOutQuart",
-        onComplete: () => positionNowBadge(state.chart, nowIdx),
-      },
-      onHover: (e, els) => {
-        e.native.target.style.cursor = els.length ? "pointer" : "default";
-      },
-      onClick: (_e, els) => {
-        if (!els.length) return;
-        const i = els[0].index;
-        jumpToHour(i);
-      },
-      plugins: {
-        legend: { display: false },
-        avgLine: { avg: stats.avg },
-        tooltip: {
-          backgroundColor: "rgba(28, 28, 30, 0.98)",
-          borderColor: "rgba(255, 255, 255, 0.1)",
-          borderWidth: 1,
-          padding: 14,
-          cornerRadius: 12,
-          titleFont: { size: 13, weight: "600", family: "-apple-system, sans-serif" },
-          bodyFont: { size: 13, family: "-apple-system, sans-serif" },
-          displayColors: false,
-          callbacks: {
-            title: (items) => `Kl. ${items[0].label}:00`,
-            label: (ctx) => {
-              const kr = ctx.parsed.y;
-              const lvl = LEVEL[levelOf(kr, stats)].label;
-              return `${fmt(kr)} kr/kWh · ${lvl}`;
-            },
-            afterLabel: (ctx) => {
-              const diff = ctx.parsed.y - stats.avg;
-              const sign = diff >= 0 ? "+" : "";
-              return [`${sign}${fmt(diff)} kr vs. gns.`, "", "Klik for at se i tabel"];
-            },
-          },
-        },
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          border: { display: false },
-          ticks: {
-            color: tickColor,
-            font: { size: 11, family: "-apple-system, sans-serif" },
-            maxRotation: 0,
-            autoSkip: true,
-            autoSkipPadding: 12,
-          },
-        },
-        y: {
-          beginAtZero: true,
-          grid: { color: gridColor },
-          border: { display: false },
-          ticks: {
-            color: tickColor,
-            font: { size: 11, family: "-apple-system, sans-serif" },
-            callback: (v) => fmt(v),
-            padding: 10,
-          },
-        },
-      },
-    },
-    plugins: [avgLinePlugin],
+  // Cheapest upcoming hour: strictly future today, any hour tomorrow
+  let cheapIdx = -1, cheapVal = Infinity;
+  values.forEach((v, i) => {
+    if (state.view === "today" && i <= nowIdx) return;
+    if (v < cheapVal) { cheapVal = v; cheapIdx = i; }
   });
 
-  // Re-position badge on layout/resize
-  if (state._badgeRO) state._badgeRO.disconnect();
-  state._badgeRO = new ResizeObserver(() => positionNowBadge(state.chart, nowIdx));
-  state._badgeRO.observe(canvas.parentElement);
+  chartUI.prices = prices;
+  chartUI.values = values;
+  chartUI.colors = values.map(v => LEVEL[levelOf(v, stats)].color);
+  chartUI.stats = stats;
+  chartUI.nowIdx = nowIdx;
+  chartUI.cheapIdx = cheapIdx;
+  chartUI.scrubIdx = null;
+
+  const chart = ensureChart();
+  chart.data.labels = prices.map(p => hourNum(p.time_start));
+  chart.data.datasets[0].data = values;
+  chart.update(); // morphs bars to new heights — no destroy
+
+  canvas.setAttribute("aria-label",
+    `Timepriser ${state.view === "today" ? "i dag" : "i morgen"}: ` +
+    `laveste ${fmt(stats.min)} kr kl. ${hourLabel(prices[stats.minIdx].time_start)}, ` +
+    `højeste ${fmt(stats.max)} kr kl. ${hourLabel(prices[stats.maxIdx].time_start)}`);
+
+  updateReadout(defaultReadoutIdx(), false);
+}
+
+// ------------- readout (Apple Stocks-style) -------------
+function defaultReadoutIdx() {
+  if (state.view === "today" && chartUI.nowIdx >= 0) return chartUI.nowIdx;
+  if (chartUI.cheapIdx >= 0) return chartUI.cheapIdx;
+  return 0;
+}
+
+function setReadoutEmpty() {
+  document.getElementById("roPrice").textContent = "–";
+  document.getElementById("roHour").textContent = "–";
+  document.getElementById("roLevel").textContent = "–";
+  document.getElementById("roLevel").style.color = "";
+  document.getElementById("roDiff").textContent = "–";
+  chartUI.roPrice = null;
+}
+
+function tweenPrice(el, from, to) {
+  if (REDUCE_MOTION || from === null || Math.abs(to - from) < 0.005) {
+    el.textContent = fmt(to);
+    return;
+  }
+  const t0 = performance.now(), dur = 120;
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / dur);
+    el.textContent = fmt(from + (to - from) * k);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function updateReadout(idx, animate = true) {
+  const p = chartUI.prices[idx];
+  if (!p) { setReadoutEmpty(); return; }
+  const price = chartUI.values[idx];
+  const stats = chartUI.stats;
+  const lvl = levelOf(price, stats);
+
+  const hStart = new Date(p.time_start).getHours();
+  const hEnd = new Date(p.time_end).getHours();
+  const isNow = idx === chartUI.nowIdx && state.view === "today";
+  document.getElementById("roHour").textContent =
+    `Kl. ${pad(hStart)}–${pad(hEnd)}` + (isNow ? " · nu" : "");
+
+  const lvlEl = document.getElementById("roLevel");
+  lvlEl.textContent = LEVEL[lvl].label;
+  lvlEl.style.color = LEVEL[lvl].color;
+
+  const diff = price - stats.avg;
+  document.getElementById("roDiff").textContent =
+    `${diff >= 0 ? "+" : "−"}${fmt(Math.abs(diff))} vs. gns.`;
+
+  const priceEl = document.getElementById("roPrice");
+  tweenPrice(priceEl, animate ? chartUI.roPrice : null, price);
+  chartUI.roPrice = price;
+}
+
+// ------------- scrub interaction -------------
+function scrubTo(idx) {
+  if (idx === null || idx === chartUI.scrubIdx) return;
+  clearTimeout(chartUI.scrubTimer);
+  chartUI.scrubIdx = idx;
+  updateReadout(idx);
+  chartUI.chart.update("none"); // instant recolor, no animation
+}
+
+function scheduleScrubReset() {
+  clearTimeout(chartUI.scrubTimer);
+  chartUI.scrubTimer = setTimeout(() => {
+    chartUI.scrubIdx = null;
+    updateReadout(defaultReadoutIdx());
+    if (chartUI.chart) chartUI.chart.update("none");
+  }, 2500);
+}
+
+function initScrub(canvas) {
+  let downX = 0, downY = 0, downT = 0, moved = false, isDown = false;
+
+  const idxFromEvent = (e) => {
+    const els = chartUI.chart.getElementsAtEventForMode(e, "index", { intersect: false }, false);
+    return els.length ? els[0].index : null;
+  };
+
+  canvas.addEventListener("pointerdown", (e) => {
+    isDown = true; moved = false;
+    downX = e.clientX; downY = e.clientY; downT = performance.now();
+    scrubTo(idxFromEvent(e));
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse" || isDown) {
+      if (isDown && Math.hypot(e.clientX - downX, e.clientY - downY) > 6) moved = true;
+      scrubTo(idxFromEvent(e));
+    }
+  });
+
+  canvas.addEventListener("pointerup", (e) => {
+    if (isDown && !moved && performance.now() - downT < 400) {
+      const i = idxFromEvent(e);
+      if (i !== null) jumpToHour(i);
+    }
+    isDown = false;
+    scheduleScrubReset();
+  });
+
+  canvas.addEventListener("pointerleave", () => {
+    isDown = false;
+    scheduleScrubReset();
+  });
+
+  canvas.style.cursor = "crosshair";
 }
 
 function jumpToHour(idx) {
   const row = document.querySelector(`.hour-row[data-hour="${idx}"]`);
   if (!row) return;
-  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  row.scrollIntoView({ behavior: REDUCE_MOTION ? "auto" : "smooth", block: "center" });
   row.classList.remove("flash");
   void row.offsetWidth;
   row.classList.add("flash");
@@ -440,19 +597,70 @@ function renderCalculator() {
   `;
 }
 
-// ------------- UI wiring -------------
-function initTabs() {
-  document.querySelectorAll(".tab").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (btn.disabled) return;
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      btn.classList.add("active");
-      state.view = btn.dataset.day;
-      renderChart(); renderLists(); renderTable();
-    });
+// ------------- tabs / day switch -------------
+function switchDay(day) {
+  if (day === state.view) return;
+  const btn = document.querySelector(`.tab[data-day="${day}"]`);
+  if (!btn || btn.disabled) return;
+  document.querySelectorAll(".tab").forEach(t => {
+    const active = t === btn;
+    t.classList.toggle("active", active);
+    t.setAttribute("aria-selected", active ? "true" : "false");
   });
+  state.view = day;
+  positionThumb();
+  renderChart();
+  renderLists();
+  renderTable();
 }
 
+function initTabs() {
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => switchDay(btn.dataset.day));
+  });
+  window.addEventListener("resize", positionThumb);
+}
+
+function positionThumb() {
+  const active = document.querySelector(".tab.active");
+  const thumb = document.getElementById("tabThumb");
+  if (!active || !thumb) return;
+  thumb.style.width = active.offsetWidth + "px";
+  thumb.style.transform = `translateX(${active.offsetLeft}px)`;
+}
+
+function updateTabDates() {
+  const t = new Date();
+  const m = new Date(t);
+  m.setDate(t.getDate() + 1);
+  const f = (d) => d.toLocaleDateString("da-DK", { weekday: "short", day: "numeric" });
+  document.getElementById("tabDateToday").textContent = f(t);
+  const tomEl = document.getElementById("tabDateTomorrow");
+  tomEl.textContent = state.tomorrow.length ? f(m) : "fra ca. 13.00";
+  requestAnimationFrame(positionThumb);
+}
+
+// Swipe on chart card (outside canvas — canvas drags are scrubs)
+function initSwipe() {
+  const card = document.querySelector(".chart-card");
+  if (!card) return;
+  let sx = 0, sy = 0, valid = false;
+  card.addEventListener("touchstart", (e) => {
+    valid = e.target.id !== "priceChart";
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+  }, { passive: true });
+  card.addEventListener("touchend", (e) => {
+    if (!valid) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 2 * Math.abs(dy)) {
+      switchDay(dx < 0 ? "tomorrow" : "today");
+    }
+  }, { passive: true });
+}
+
+// ------------- UI wiring -------------
 function initAppliances() {
   document.querySelectorAll(".chip").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -469,7 +677,6 @@ function initAppliances() {
 }
 
 function initModes() {
-  // Restore persisted modes
   const saved = JSON.parse(localStorage.getItem("modes") || "null");
   if (saved) {
     state.tariffs = !!saved.tariffs;
@@ -538,7 +745,6 @@ function initReveals() {
 }
 
 function initScrollTop() {
-  // Ensure first load starts at top, regardless of browser restore or hash
   window.addEventListener("load", () => {
     if (!location.hash || location.hash === "#top") {
       window.scrollTo(0, 0);
@@ -568,9 +774,11 @@ async function boot() {
   initTheme();
   initClock();
   initTabs();
+  initSwipe();
   initAppliances();
   initModes();
   initReveals();
+  updateTabDates();
 
   await loadData();
   renderAll();

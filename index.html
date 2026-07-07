@@ -86,12 +86,25 @@
     <p class="eyebrow reveal">Timepriser</p>
     <h2 class="headline-md light reveal">24 timer. Et blik.</h2>
     <div class="tabs reveal" role="tablist">
-      <button class="tab active" data-day="today">I dag</button>
-      <button class="tab" data-day="tomorrow" id="tabTomorrow">I morgen</button>
+      <span class="tab-thumb" id="tabThumb" aria-hidden="true"></span>
+      <button class="tab active" data-day="today" role="tab" aria-selected="true">
+        <span class="tab-title">I dag</span>
+        <span class="tab-date" id="tabDateToday"></span>
+      </button>
+      <button class="tab" data-day="tomorrow" id="tabTomorrow" role="tab" aria-selected="false">
+        <span class="tab-title">I morgen</span>
+        <span class="tab-date" id="tabDateTomorrow"></span>
+      </button>
     </div>
     <div class="chart-card reveal">
+      <div class="readout" id="readout" aria-live="polite">
+        <div class="readout-price"><span id="roPrice">–</span><span class="readout-unit">kr/kWh</span></div>
+        <div class="readout-meta">
+          <span id="roHour">–</span><span class="rsep">·</span><span id="roLevel">–</span><span class="rsep">·</span><span id="roDiff">–</span>
+        </div>
+      </div>
       <div class="chart-wrap">
-        <canvas id="priceChart"></canvas>
+        <canvas id="priceChart" aria-label="Timepriser som søjlediagram"></canvas>
         <div id="nowBadge" class="now-badge" hidden>NU</div>
         <div id="chartEmpty" class="chart-empty" hidden>
           Morgendagens priser udgives omkring kl. 13.
