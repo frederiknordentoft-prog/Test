@@ -218,3 +218,37 @@ Forward-EV: Haaland 271k vs Messi 820k. Haaland dog +27k bedre i SELVE R4
 (mod Elfenbenskysten vs Messi mod Kap Verde-bus) → "vent 1 runde" giver kun +27k.
 Anbefaling: skift nu (lås den lette vej). Kaptajn forbliver Mbappe (247k > Messi 191k).
 Plus sælg Marokko-trioen → 2 Argentina-CB (Otamendi+L.Martinez, clean sheet v Kap Verde) + billig mid.
+
+═══════════════════════════════════════════════════════════════════
+## 6D. R6-PLAN (8/7) — kvartfinaler, nationsgrænse BORTFALDET
+═══════════════════════════════════════════════════════════════════
+R5-RESULTAT: Alle 4 planlagte skift udført. Kaptajn Mbappe +237k (Messi +234k).
+Hold efter R5: Maignan 5,654 · Santos✝ 2,755 · Medina 2,805 · Robinson✝ 2,228 ·
+Riad 2,246 · Rabiot 4,285 · Arias✝ 3,352 · Saibari 4,186(skadet ℹ️) ·
+Oyarzabal 8,403 · Mbappe© 11,555 · Messi 9,640.  (✝=slået ud, frosset værdi)
+
+KVARTFINALER (9.-11/7): Marokko-Frankrig (FRA -180, mu 0,75/1,85) ·
+Norge-England (ENG -105/NOR +260, mu 1,05/1,35; Haaland topscorer, 2 mål v Brasilien!) ·
+Spanien-Belgien (ESP -160, mu 1,60/0,75; Spanien 0 mål imod i 5 kampe) ·
+Argentina-Schweiz (ARG -140, mu 1,45/0,70; Schweiz 2 clean sheets i træk).
+Titelodds 7/7 (FOX, de-vig): FRA 33% · ESP 19% · ARG 18% · ENG 15% · NOR 6% ·
+MAR 3,2% · BEL 2,9% · SUI 2,6%.  Sim (r6_final.py): FRA 53% finale, ESP 44%, ARG 40%.
+
+NYHEDER: Saibari UDE (baglår, MR-scannet) · Tchouameni UDE (lår) ·
+MEDINA BÆNK (Lisandro Martinez fit igen; ARG XI: Molina-Romero-LiMa-Tagliafico) ·
+Riad returnerer for Marokko — men mod Frankrig · Spence STARTER for England ·
+FRA XI: Maignan; Kounde, Upamecano, Saliba, Digne; Kone, Rabiot; Dembele, Olise,
+Barcola; Mbappe.  Positions-huller: Barcola & Enzo Fernandez = MID i holdet,
+spiller i front-tre.
+
+R6-BESLUTNING (sim, fee-bevidst — r6_final.py + scratchpad opt):
+SÆLG 6: Santos+Robinson+Arias (døde, 8,335m) + Saibari (skadet+møder FRA) +
+Riad (møder FRA, EV 9k) + Medina (bænk, EV 24k < Frankrig-DEF 84-90k) = 17,57m.
+KØB (kerne, robust i alle bank-scenarier): Kounde(FRA DEF ~3,9m, 90k EV) +
+Digne(FRA DEF ~3,7m, 84k) + Spence(ENG DEF ~2,9m, 54k).
+Slot 4-6 efter bank: Koné(FRA MID ~3,8m, 60k) hvis råd → ellers Berg(NOR MID
+2,65m, 21k)/Østigård(NOR DEF 2,9m, 33k) → resten billige frosne fillers (~1,93m, EV 0).
+Formation 4-3-3: Maignan | Kounde Digne Spence (+DEF4) | Rabiot Koné (+MID3) |
+Oyarzabal Mbappe© Messi.  KAPTAJN: MBAPPE (192k > Messi 160k — klar, chalk).
+EV-priser på købskandidater er R3-snapshot +2-6% skøn — VERIFICÉR i appen.
+Egne EV R6+R7: Mbappe 328k · Messi 257k · Oyarzabal 193k · Maignan 129k · Rabiot 63k.
