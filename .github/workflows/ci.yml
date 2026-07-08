@@ -1,0 +1,27 @@
+# CI only — denne branch må ALDRIG deploye til Pages.
+# Sitet ejes af oversigts-branchen claude/wc2026-tournament-app-k42mv8;
+# deploy sker ved at kopiere dist/ ind i vindtunnel/-undermappen dér (se dens CLAUDE.md).
+name: CI
+
+on:
+  push:
+    branches: [claude/wind-tunnel-vision-j5cevp]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build

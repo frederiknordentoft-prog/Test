@@ -11,7 +11,7 @@ const browser = await chromium.launch({
 // Desktop: default load (circle should be in the wind immediately) + gauges band
 const desk = await browser.newPage({ viewport: { width: 1100, height: 800 } });
 desk.on('pageerror', (e) => console.error('[pageerror]', e.message));
-await desk.goto('http://localhost:4173/Test/', { waitUntil: 'load' });
+await desk.goto('http://localhost:4173/Test/vindtunnel/', { waitUntil: 'load' });
 await desk.waitForTimeout(9000);
 await desk.screenshot({ path: `${outDir}/v11-desktop-default.png` });
 
@@ -23,14 +23,14 @@ await desk.close();
 
 // Portrait phone
 const port = await browser.newPage({ viewport: { width: 390, height: 844 } });
-await port.goto('http://localhost:4173/Test/', { waitUntil: 'load' });
+await port.goto('http://localhost:4173/Test/vindtunnel/', { waitUntil: 'load' });
 await port.waitForTimeout(5000);
 await port.screenshot({ path: `${outDir}/v11-portrait.png` });
 await port.close();
 
 // Landscape phone
 const land = await browser.newPage({ viewport: { width: 844, height: 390 } });
-await land.goto('http://localhost:4173/Test/', { waitUntil: 'load' });
+await land.goto('http://localhost:4173/Test/vindtunnel/', { waitUntil: 'load' });
 await land.waitForTimeout(5000);
 await land.screenshot({ path: `${outDir}/v11-landscape.png` });
 await land.close();

@@ -8,7 +8,7 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage({ viewport: { width: 1100, height: 750 } });
 page.on('pageerror', (e) => console.error('[pageerror]', e.message));
-await page.goto('http://localhost:4173/Test/', { waitUntil: 'load' });
+await page.goto('http://localhost:4173/Test/vindtunnel/', { waitUntil: 'load' });
 await page.waitForTimeout(4000);
 await page.screenshot({ path: `${outDir}/shot-1-tom.png` });
 

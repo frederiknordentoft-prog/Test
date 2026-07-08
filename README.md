@@ -38,8 +38,12 @@ npm run build    # typecheck + produktion
 npm run lint     # eslint (håndhæver bl.a. at src/engine/** er React-fri)
 ```
 
-Deployes automatisk til GitHub Pages fra branchen via `.github/workflows/deploy.yml`.
-⚠️ Kræver at Pages er slået til i repo-settings med **GitHub Actions** som source.
+**Deploy:** Sitet ejes af oversigts-branchen `claude/wc2026-tournament-app-k42mv8`
+("Mine projekter" i roden, én undermappe pr. app). Læs `CLAUDE.md` på den branch
+før deploy. Kort: byg (`base: '/Test/vindtunnel/'`), kopiér `dist/` ind i
+`vindtunnel/`-undermappen på oversigts-branchen via worktree, push, og verificér
+at roden og ALLE undermapper stadig svarer 200. Deploy ALDRIG til site-roden —
+denne branchs workflow (`ci.yml`) kører kun lint+build.
 
 ## Arkitektur
 

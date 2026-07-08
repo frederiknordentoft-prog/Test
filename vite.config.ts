@@ -4,7 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'node:path';
 
 export default defineConfig({
-  base: '/Test/',
+  // Appen bor i sin egen undermappe på oversigts-branchen — se CLAUDE.md på
+  // claude/wc2026-tournament-app-k42mv8. Deploy ALDRIG til site-roden.
+  base: '/Test/vindtunnel/',
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
   plugins: [
     react(),
@@ -27,9 +29,6 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
-        // De øvrige apps serveres under /Test/apps/ — vindtunnelens service
-        // worker må aldrig besvare navigationer derind med sin egen index.html.
-        navigateFallbackDenylist: [/\/apps\//],
       },
     }),
   ],
