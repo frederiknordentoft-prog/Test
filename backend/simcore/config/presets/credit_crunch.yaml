@@ -1,0 +1,20 @@
+name: Credit Crunch
+description: Thin firm cash buffers, few banks, lending standards tighten mid-run.
+seed: 42
+ticks: 400
+tick_resolution: day
+scenario: credit_crunch
+actors:
+  retail: {count: 130}
+  institutional: {count: 24}
+  hedge_fund: {count: 14}
+  bank: {count: 3}
+  firm:
+    count: 34
+    wealth: {dist: lognormal, params: {mean: 10.3, sigma: 0.6}}
+  supplier: {count: 22}
+  customer: {count: 67}
+  media: {count: 4}
+  regulator: {count: 2}
+economy:
+  loan_rate_spread: 0.0008

@@ -65,6 +65,7 @@ class Simulation:
         self.systemic_history: list[float] = []
         self._last_systemic = 0.0
         self.metrics_history: list[dict] = []
+        self.asset_history: list[dict] = []
         self.events_log: list = []
         self.recent_decisions: deque = deque(maxlen=3000)
         self.recent_trades: deque = deque(maxlen=3000)
@@ -273,6 +274,12 @@ class Simulation:
                 self._kill_actor(actor, reason="bankruptcy")
 
         # 11. recording
+        for aid, asset in self.market.assets.items():
+            self.asset_history.append(
+                {"tick": t, "asset_id": aid, "price": round(asset.price, 4),
+                 "fundamental": round(asset.fundamental, 4), "volume": round(asset.volume, 2),
+                 "volatility": round(asset.sigma, 5), "spread": round(asset.spread, 5)}
+            )
         if self.recorder:
             for aid, asset in self.market.assets.items():
                 self.recorder.asset_tick(t, aid, asset.price, asset.fundamental,

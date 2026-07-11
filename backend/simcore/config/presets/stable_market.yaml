@@ -1,0 +1,21 @@
+name: Stable Market
+description: Calm baseline — deep liquidity, institutional-heavy, low leverage, no scheduled shocks.
+seed: 42
+ticks: 500
+tick_resolution: day
+actors:
+  retail: {count: 120}
+  institutional: {count: 40}
+  hedge_fund: {count: 8}
+  bank: {count: 6}
+  firm: {count: 30}
+  supplier: {count: 24}
+  customer: {count: 60}
+  media: {count: 4}
+  regulator: {count: 2}
+market:
+  impact_alpha: 0.03
+  noise_sigma: 0.0025
+  depth_frac: 0.03
+  sentiment_beta: 0.25
+  max_leverage: 2.0

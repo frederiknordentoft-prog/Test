@@ -1,0 +1,62 @@
+"""API request schemas and config assembly."""
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+from simcore.config.loader import config_from_dict, load_preset
+from simcore.events.scenarios import get_scenario
+from simcore.models.config import EventConfig, SimConfig, default_actor_mix
+
+
+class CreateRunRequest(BaseModel):
+    preset_id: str | None = None
+    config: dict[str, Any] | None = None   # full config dict (may include "scenario")
+    label: str = ""
+    seed: int | None = None
+    ticks: int | None = None
+    tick_resolution: str | None = None
+    n_actors: int | None = None
+    actor_counts: dict[str, int] | None = None
+    scenario: str | None = None
+    events: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class CreateMonteCarloRequest(CreateRunRequest):
+    n_seeds: int = 10
+    base_seed: int = 1000
+
+
+class StepRequest(BaseModel):
+    n: int = 1
+
+
+class SpeedRequest(BaseModel):
+    tps: float = 20.0
+
+
+def build_config(req: CreateRunRequest) -> SimConfig:
+    if req.preset_id:
+        cfg = load_preset(req.preset_id)
+    elif req.config:
+        cfg = config_from_dict(req.config)
+    else:
+        cfg = SimConfig()
+    if req.n_actors:
+        cfg.actors = default_actor_mix(req.n_actors)
+    if req.actor_counts:
+        for k, v in req.actor_counts.items():
+            if k in cfg.actors:
+                cfg.actors[k].count = int(v)
+    if req.seed is not None:
+        cfg.seed = req.seed
+    if req.ticks is not None:
+        cfg.ticks = req.ticks
+    if req.tick_resolution is not None:
+        cfg.tick_resolution = req.tick_resolution  # type: ignore[assignment]
+    if req.scenario:
+        cfg.events = list(cfg.events) + get_scenario(req.scenario)
+    for e in req.events:
+        cfg.events.append(EventConfig(**e))
+    return cfg

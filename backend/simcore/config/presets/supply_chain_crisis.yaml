@@ -1,0 +1,16 @@
+name: Supply Chain Crisis
+description: Concentrated supplier base hit by a stoppage plus a commodity spike.
+seed: 42
+ticks: 400
+tick_resolution: day
+scenario: supply_chain_crisis
+actors:
+  retail: {count: 130}
+  institutional: {count: 24}
+  hedge_fund: {count: 12}
+  bank: {count: 6}
+  firm: {count: 32}
+  supplier: {count: 8}
+  customer: {count: 62}
+  media: {count: 4}
+  regulator: {count: 2}
