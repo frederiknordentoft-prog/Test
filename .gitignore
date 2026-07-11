@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Data / runtime artifacts
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/exports/
+*.sqlite3
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
