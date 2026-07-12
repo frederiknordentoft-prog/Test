@@ -61,3 +61,40 @@ def compute_population_metrics(
     m["young_share"] = round(float((pop.age < gcfg.young_age_threshold).mean()), 4)
     m["male_share"] = round(float(pop.male.mean()), 4)
     return m
+
+
+def compute_market_metrics(gcfg: GamblingConfig, results: dict[str, dict]) -> dict[str, float]:
+    """Market share, channelization and concentration from the per-track
+    AttractionMarket results. This is the headline output: market size, market
+    share (incl. Danske Spil's) and where customers leak to."""
+    m: dict[str, float] = {}
+    ds_ids = {o.operator_id for o in gcfg.operators if o.is_ds}
+    tot_licensed = 0.0
+    tot_offshore = 0.0
+    per_op_bsi: dict[str, float] = {}
+
+    for tid, r in results.items():
+        m[f"channelization_{tid}"] = round(r["channelization"], 4)
+        m[f"offshore_bsi_{tid}"] = round(r["offshore_bsi"], 3)
+        m[f"market_size_{tid}"] = round(r["total_bsi"], 3)
+        m[f"hhi_{tid}"] = round(r["hhi"], 1)
+        ds_share = sum(s for oid, s in r["shares"].items() if oid in ds_ids)
+        m[f"ds_share_{tid}"] = round(ds_share, 4)
+        tot_licensed += r["licensed_bsi"]
+        tot_offshore += r["offshore_bsi"]
+        for opid, bsi in r["operator_bsi"].items():
+            per_op_bsi[opid] = per_op_bsi.get(opid, 0.0) + bsi
+
+    total = tot_licensed + tot_offshore
+    denom = max(total, 1e-9)
+    m["channelization"] = round(tot_licensed / denom, 4)   # overall (dynamic; overrides the static value)
+    m["offshore_share"] = round(tot_offshore / denom, 4)
+    m["market_size_total"] = round(total, 3)               # incl. offshore leakage
+
+    ds_bsi = sum(per_op_bsi.get(i, 0.0) for i in ds_ids)
+    m["ds_bsi_total"] = round(ds_bsi, 3)
+    m["ds_share_total"] = round(ds_bsi / denom, 4)          # Danske Spil market share
+    for opid, bsi in per_op_bsi.items():
+        m[f"bsi_op_{opid}"] = round(bsi, 3)
+        m[f"share_op_{opid}"] = round(bsi / denom, 4)
+    return m

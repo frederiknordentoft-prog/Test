@@ -60,6 +60,78 @@ class TrackConfig(BaseModel):
     growth_rate: float = Field(0.0, ge=-0.5, le=1.0)  # annual trend (fraction)
 
 
+OperatorKind = Literal[
+    "ds_monopoly",   # Danske Lotteri Spil — monopoly on lottery + scratch
+    "ds_licensed",   # Danske Licens Spil — competition-exposed (casino + sports)
+    "licensed",      # other licensed competitors (bet365, Unibet, Betano, long-tail)
+    "offshore",      # unregulated — non-optional; the channelization leak
+    "prediction",    # prediction markets — regulatory arbitrage; non-optional
+]
+
+
+class OperatorConfig(BaseModel):
+    """An operator (or channel) in the attraction model. Attributes are in
+    [0,1] and feed the players' multinomial-logit utility. ``tax_free`` marks
+    whether a player's winnings are tax-free (a strong onshore driver — offshore
+    and prediction lack it)."""
+
+    operator_id: str
+    name: str
+    kind: OperatorKind
+    tracks: list[TrackId]
+    rtp: float = Field(0.55, ge=0.0, le=1.0)             # payout / return-to-player
+    product_breadth: float = Field(0.5, ge=0.0, le=1.0)  # crash games etc.
+    brand: float = Field(0.5, ge=0.0, le=1.0)
+    marketing_reach: float = Field(0.5, ge=0.0, le=1.0)
+    friction: float = Field(0.5, ge=0.0, le=1.0)         # MitID/KYC/withdrawal (higher = worse)
+    protection: float = Field(0.5, ge=0.0, le=1.0)       # ROFUS/limits (plus for some, minus for others)
+    tax_free: bool = True
+    appeal: float = Field(0.0, ge=-5.0, le=5.0)          # static utility offset
+
+    @property
+    def licensed(self) -> bool:
+        return self.kind in ("ds_monopoly", "ds_licensed", "licensed")
+
+    @property
+    def is_ds(self) -> bool:
+        return self.kind in ("ds_monopoly", "ds_licensed")
+
+
+DEFAULT_OPERATORS: list[dict] = [
+    # Danske Spil split into two agents (perspective §2.2).
+    {"operator_id": "ds_lotteri", "name": "Danske Lotteri Spil", "kind": "ds_monopoly",
+     "tracks": ["lottery", "scratch"], "rtp": 0.50, "product_breadth": 0.50, "brand": 0.95,
+     "marketing_reach": 0.70, "friction": 0.40, "protection": 0.85, "tax_free": True},
+    {"operator_id": "ds_licens", "name": "Danske Licens Spil", "kind": "ds_licensed",
+     "tracks": ["casino", "sports"], "rtp": 0.55, "product_breadth": 0.60, "brand": 0.90,
+     "marketing_reach": 0.70, "friction": 0.50, "protection": 0.90, "tax_free": True},
+    # Licensed competitors.
+    {"operator_id": "bet365", "name": "bet365", "kind": "licensed",
+     "tracks": ["sports", "casino"], "rtp": 0.60, "product_breadth": 0.70, "brand": 0.80,
+     "marketing_reach": 0.60, "friction": 0.50, "protection": 0.70, "tax_free": True},
+    {"operator_id": "unibet", "name": "Unibet (FDJ)", "kind": "licensed",
+     "tracks": ["casino", "sports"], "rtp": 0.58, "product_breadth": 0.65, "brand": 0.72,
+     "marketing_reach": 0.60, "friction": 0.50, "protection": 0.70, "tax_free": True},
+    {"operator_id": "betano", "name": "Betano (Kaizen)", "kind": "licensed",
+     "tracks": ["sports", "casino"], "rtp": 0.62, "product_breadth": 0.70, "brand": 0.58,
+     "marketing_reach": 0.92, "friction": 0.50, "protection": 0.65, "tax_free": True},
+    {"operator_id": "longtail", "name": "Øvrige licenshavere", "kind": "licensed",
+     "tracks": ["casino", "sports"], "rtp": 0.57, "product_breadth": 0.55, "brand": 0.40,
+     "marketing_reach": 0.40, "friction": 0.50, "protection": 0.60, "tax_free": True},
+    # Non-optional unregulated channels.
+    {"operator_id": "offshore", "name": "Offshore/ureguleret", "kind": "offshore",
+     "tracks": ["lottery", "scratch", "casino", "sports"], "rtp": 0.75, "product_breadth": 0.95,
+     "brand": 0.35, "marketing_reach": 0.50, "friction": 0.20, "protection": 0.10, "tax_free": False},
+    {"operator_id": "prediction", "name": "Prediction markets", "kind": "prediction",
+     "tracks": ["sports"], "rtp": 0.70, "product_breadth": 0.60, "brand": 0.50,
+     "marketing_reach": 0.60, "friction": 0.25, "protection": 0.20, "tax_free": False},
+]
+
+
+def default_operators() -> list[OperatorConfig]:
+    return [OperatorConfig(**o) for o in DEFAULT_OPERATORS]
+
+
 DEFAULT_TRACKS: list[dict] = [
     {"track_id": "lottery", "name": "Lotterier", "competitive": False,
      "annual_bsi": 2.0, "tax_rate": 0.0, "seasonal": False},
@@ -82,7 +154,14 @@ class GamblingConfig(BaseModel):
     AI diffusion, entry and the stakeholder loops on top."""
 
     tracks: list[TrackConfig] = Field(default_factory=default_tracks)
+    operators: list[OperatorConfig] = Field(default_factory=default_operators)
     calendar: CalendarConfig = Field(default_factory=CalendarConfig)
+
+    # Multinomial-logit temperature: higher spreads choice out (less winner-take-all).
+    logit_temperature: float = Field(1.0, ge=0.1, le=10.0)
+    # Baseline channelization on the monopoly tracks (DS licensed share); the
+    # competitive tracks calibrate to channelization_start.
+    monopoly_channelization: float = Field(0.95, ge=0.0, le=1.0)
 
     # Channelization is contested — treated as an interval, not a point. Only
     # conclusions robust across [low, high] should be reported (dossier fælde 2).
@@ -121,7 +200,18 @@ class GamblingConfig(BaseModel):
             )
         if self.channelization_low > self.channelization_high:
             raise ValueError("channelization_low must be <= channelization_high")
+        track_ids = set(ids)
+        op_ids = [o.operator_id for o in self.operators]
+        if len(set(op_ids)) != len(op_ids):
+            raise ValueError(f"duplicate operator_id in {op_ids}")
+        for o in self.operators:
+            bad = [t for t in o.tracks if t not in track_ids]
+            if bad:
+                raise ValueError(f"operator {o.operator_id} references unknown track(s) {bad}")
         return self
+
+    def operators_for(self, track_id: str) -> list[OperatorConfig]:
+        return [o for o in self.operators if track_id in o.tracks]
 
     def track(self, track_id: str) -> TrackConfig:
         for t in self.tracks:

@@ -21,9 +21,13 @@ from collections import deque
 import numpy as np
 
 from simcore.engine.rng import RngHub
-from simcore.gambling.calendar import sports_intensity
 from simcore.gambling.config import GamblingConfig
-from simcore.gambling.indicators import compute_gambling_metrics, compute_population_metrics
+from simcore.gambling.indicators import (
+    compute_gambling_metrics,
+    compute_market_metrics,
+    compute_population_metrics,
+)
+from simcore.gambling.market import AttractionMarket
 from simcore.gambling.population import (
     build_population,
     calibrate_track_scale,
@@ -52,14 +56,15 @@ class GamblingSimulation:
         # etaper). An empty list keeps Recorder.register_run happy.
         self.actors: list = []
 
-        # Player universe (Etape 1): heavy-tailed spend on five orthogonal axes,
-        # calibrated so aggregate BSI per track matches the anchors.
+        # Player universe (Etape 1): heavy-tailed spend on five orthogonal axes.
         self.pop = build_population(self.gcfg, self.hub.population)
-        self.track_scale = calibrate_track_scale(self.pop, self.gcfg)
-        player_track = player_track_spend(self.pop, self.track_scale)  # [n, ntracks]
-        self.track_base = player_track.sum(axis=0)                     # per-track monthly (mio)
-        self.player_total = player_track.sum(axis=1)                   # per-player monthly (mio)
+        player_track = player_track_spend(self.pop, calibrate_track_scale(self.pop, self.gcfg))
+        self.player_total = player_track.sum(axis=1)     # per-player monthly (concentration basis)
         self.customers = customer_counts(self.pop, self.gcfg)
+
+        # Attraction market (Etape 2): per-track multinomial-logit operator
+        # choice + channelization engine, calibrated to the baseline targets.
+        self.market = AttractionMarket(self.gcfg, self.pop)
 
         self.tick = 0
         self.metrics_history: list[dict] = []
@@ -78,21 +83,16 @@ class GamblingSimulation:
     # ------------------------------------------------------------------ #
     def step(self) -> dict[str, float]:
         t = self.tick
-        # Per-track monthly BSI from the calibrated population, with the sports
-        # calendar on seasonal tracks and optional per-track noise.
-        bsi_by_track = {}
-        for i, track in enumerate(self.gcfg.tracks):
-            v = float(self.track_base[i])
-            if track.seasonal:
-                v *= sports_intensity(t, self.gcfg.calendar)
-            if self.gcfg.baseline_noise > 0:
-                v *= float(np.exp(self.hub.assets[i].normal(0.0, self.gcfg.baseline_noise)))
-            bsi_by_track[track.track_id] = v
+        # Attraction market: per-track operator choice → shares, channelization,
+        # and per-operator BSI. The headline bsi_<track> is the licensed BSI.
+        results = self.market.clear(t)
+        bsi_by_track = {tid: r["licensed_bsi"] for tid, r in results.items()}
 
         metrics = compute_gambling_metrics(self.gcfg, t, bsi_by_track)
         metrics.update(
             compute_population_metrics(self.pop, self.gcfg, self.customers, self.player_total)
         )
+        metrics.update(compute_market_metrics(self.gcfg, results))
 
         # Per-track history (reuses the asset_tick shape so /assets works).
         for track_id, bsi in bsi_by_track.items():
