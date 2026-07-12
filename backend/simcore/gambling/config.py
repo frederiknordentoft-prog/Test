@@ -90,8 +90,23 @@ class GamblingConfig(BaseModel):
     channelization_low: float = Field(0.72, ge=0.0, le=1.0)
     channelization_high: float = Field(0.92, ge=0.0, le=1.0)
 
-    population: int = Field(500, ge=50, le=20000)   # player agents (from Etape 1)
+    population: int = Field(500, ge=50, le=20000)   # player agents
     baseline_noise: float = Field(0.0, ge=0.0, le=0.5)  # monthly lognormal noise on BSI
+
+    # --- population shape (Etape 1) ------------------------------------- #
+    # Number of real active gamblers the agent population represents (for
+    # scaling agent counts to customer numbers). No hard DK anchor exists.
+    represented_customers: int = Field(2_500_000, ge=1000)
+    # Heavy-tailed monthly spend: lognormal sigma is the income-concentration
+    # knob (higher => a smaller share of players make up more of the BSI). This
+    # is the single most important / most uncertain lever (perspective §2.1) and
+    # must be swept in sensitivity analysis — see params.yaml.
+    spend_sigma: float = Field(1.10, ge=0.10, le=3.00)
+    # Minimum per-track preference weight for a player to count as a customer of
+    # that track.
+    participation_threshold: float = Field(0.05, ge=0.0, le=1.0)
+    male_fraction: float = Field(0.62, ge=0.0, le=1.0)   # online accounts skew male
+    young_age_threshold: int = Field(25, ge=18, le=40)
 
     @model_validator(mode="after")
     def _check(self) -> "GamblingConfig":

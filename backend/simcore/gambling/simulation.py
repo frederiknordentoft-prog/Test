@@ -21,9 +21,15 @@ from collections import deque
 import numpy as np
 
 from simcore.engine.rng import RngHub
+from simcore.gambling.calendar import sports_intensity
 from simcore.gambling.config import GamblingConfig
-from simcore.gambling.indicators import compute_gambling_metrics
-from simcore.gambling.market import track_monthly_bsi
+from simcore.gambling.indicators import compute_gambling_metrics, compute_population_metrics
+from simcore.gambling.population import (
+    build_population,
+    calibrate_track_scale,
+    customer_counts,
+    player_track_spend,
+)
 from simcore.models.config import SimConfig
 from simcore.persistence.db import connect
 from simcore.persistence.recorder import Recorder
@@ -42,9 +48,18 @@ class GamblingSimulation:
         self.gcfg = GamblingConfig.model_validate(config.gambling or {})
         self.hub = RngHub(config.seed, self.gcfg.population, len(self.gcfg.tracks))
 
-        # No finance actors in the gambling domain (players/operators arrive in
-        # later etaper). An empty list keeps Recorder.register_run happy.
+        # No finance actors in the gambling domain (operators arrive in later
+        # etaper). An empty list keeps Recorder.register_run happy.
         self.actors: list = []
+
+        # Player universe (Etape 1): heavy-tailed spend on five orthogonal axes,
+        # calibrated so aggregate BSI per track matches the anchors.
+        self.pop = build_population(self.gcfg, self.hub.population)
+        self.track_scale = calibrate_track_scale(self.pop, self.gcfg)
+        player_track = player_track_spend(self.pop, self.track_scale)  # [n, ntracks]
+        self.track_base = player_track.sum(axis=0)                     # per-track monthly (mio)
+        self.player_total = player_track.sum(axis=1)                   # per-player monthly (mio)
+        self.customers = customer_counts(self.pop, self.gcfg)
 
         self.tick = 0
         self.metrics_history: list[dict] = []
@@ -63,14 +78,21 @@ class GamblingSimulation:
     # ------------------------------------------------------------------ #
     def step(self) -> dict[str, float]:
         t = self.tick
-        # Per-track monthly BSI (each track gets its own rng stream for noise).
+        # Per-track monthly BSI from the calibrated population, with the sports
+        # calendar on seasonal tracks and optional per-track noise.
         bsi_by_track = {}
         for i, track in enumerate(self.gcfg.tracks):
-            bsi_by_track[track.track_id] = track_monthly_bsi(
-                track, t, self.gcfg, self.hub.assets[i]
-            )
+            v = float(self.track_base[i])
+            if track.seasonal:
+                v *= sports_intensity(t, self.gcfg.calendar)
+            if self.gcfg.baseline_noise > 0:
+                v *= float(np.exp(self.hub.assets[i].normal(0.0, self.gcfg.baseline_noise)))
+            bsi_by_track[track.track_id] = v
 
         metrics = compute_gambling_metrics(self.gcfg, t, bsi_by_track)
+        metrics.update(
+            compute_population_metrics(self.pop, self.gcfg, self.customers, self.player_total)
+        )
 
         # Per-track history (reuses the asset_tick shape so /assets works).
         for track_id, bsi in bsi_by_track.items():
