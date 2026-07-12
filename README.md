@@ -11,6 +11,42 @@ time on a financial market coupled to a simple real economy.
 > emergent behavior. Outputs are scenario explorations, never predictions, and must
 > not be presented as financial advice or forecasts.
 
+## Version 2 — Danish gambling market (branch foresight)
+
+A second simulation **domain** models the **Danish gambling market** for Danske
+Spil: the headline outputs are **market size, market share and number of
+customers** across four product tracks — **lotteries, scratch cards, online
+casino, sports betting** — and how **stakeholders / customers / competitors**
+react to shocks, especially **wild AI development and adoption**.
+
+Pick it on the Setup page (**🎲 Gambling market**) or with `domain: "gambling"`
+on the API; runs are monthly. Highlights:
+
+- **Players** drawn on five orthogonal, freely-combinable axes (heavy-tailed
+  spend, vertical preference, latent risk, age×gender, offshore propensity) —
+  never an average player.
+- **Attraction market**: a multinomial-logit operator choice → market share, a
+  **channelization engine** (licensed vs. **offshore + prediction markets**, both
+  non-optional), and **Danske Spil split into two agents** (Lotteri Spil
+  monopoly, Licens Spil competition).
+- **AI diffusion**: a rising frontier with per-operator S-curve adoption feeding
+  personalization + market growth; **entry/exit/M&A** with a frontier-gated
+  big-tech entrant.
+- **Four feedback loops**: the channelization **false positive** (tightening
+  lowers *measured* harm while hidden offshore harm rises), the delayed political
+  agent (overshoot), the **udlodning** coalition (resistance to tightening), and
+  consolidation (HHI). State **tax revenue** is an output — the core tension.
+- **Robustness**, not point estimates: channelization is treated as an interval
+  (72–92 %) and income concentration as the #1 uncertain parameter; the
+  robustness analysis reports which conclusions hold across the assumption grid.
+- Nine policy-grounded presets (`dk_baseline`, `spilpakke_1`,
+  `spilpakke_2_prediction`, `prediction_market_surge`, `crash_games_licensed`,
+  `wild_ai_boom`, `consolidation_wave`, `light_touch`, `responsible_first`).
+
+> Illustrative **foresight**, not a forecast — calibrated to 2024/25 anchors with
+> documented uncertainty. See **[backend/simcore/gambling/README.md](backend/simcore/gambling/README.md)**
+> for the model, the parameter register and the honest data limitation.
+
 ## What it does
 
 - **300+ heterogeneous actors** (scales to 1000+), each with its own objectives,
@@ -181,12 +217,17 @@ Interactive docs at `http://localhost:8000/docs`.
 
 ```bash
 cd backend
-pytest                    # 55 unit tests (~10 s): population, RNG reproducibility
+pytest                    # 100+ unit tests (~15 s): finance + gambling domains;
+                          # population, RNG reproducibility
                           # (incl. PYTHONHASHSEED variation), clearing math, margin,
                           # decision cores & explanation consistency, networks,
                           # events, economy, credit, export, API end-to-end,
                           # reaction analysis, HTML report, parquet, saved scenarios,
-                          # request validation, archived-run fallback
+                          # request validation, archived-run fallback; and the
+                          # gambling domain (Etape 0-5): calibration/anchors,
+                          # 5-axis population, logit shares & channelization,
+                          # AI diffusion & entry/M&A, the four loops & the
+                          # channelization false positive, Monte Carlo & robustness
 pytest -m statistical     # 3 paired-seed integration tests (~minutes):
                           #  1. negative shocks lower average post-shock prices
                           #  2. high leverage fattens downside (deeper drawdowns)
