@@ -87,6 +87,10 @@ class OperatorConfig(BaseModel):
     protection: float = Field(0.5, ge=0.0, le=1.0)       # ROFUS/limits (plus for some, minus for others)
     tax_free: bool = True
     appeal: float = Field(0.0, ge=-5.0, le=5.0)          # static utility offset
+    # AI diffusion (Etape 3): starting capability and adoption speed toward the
+    # frontier. Early adopters (higher adoption) gain a temporary, decaying edge.
+    ai_cap0: float = Field(0.10, ge=0.0, le=1.0)
+    ai_adoption: float = Field(0.08, ge=0.0, le=1.0)
 
     @property
     def licensed(self) -> bool:
@@ -132,6 +136,47 @@ def default_operators() -> list[OperatorConfig]:
     return [OperatorConfig(**o) for o in DEFAULT_OPERATORS]
 
 
+class EntrantConfig(OperatorConfig):
+    """A potential entrant: an operator spec plus entry economics. Enters when
+    expected NPV clears the barrier and the AI frontier passes ``min_frontier``
+    (big-tech is gated high). ``consolidator`` acquires the weakest incumbent
+    instead of launching greenfield."""
+
+    entry_cost: float = Field(200.0, ge=0.0)     # one-off, mio DKK
+    entry_barrier: float = Field(0.0, ge=0.0)    # extra NPV hurdle (regulatory/other)
+    min_frontier: float = Field(0.0, ge=0.0, le=1.0)  # AI-frontier gate
+    consolidator: bool = False                   # M&A instead of greenfield
+
+
+DEFAULT_ENTRANTS: list[dict] = [
+    {"operator_id": "ai_casino", "name": "AI-native casino", "kind": "licensed",
+     "tracks": ["casino"], "rtp": 0.64, "product_breadth": 0.85, "brand": 0.35,
+     "marketing_reach": 0.70, "friction": 0.45, "protection": 0.55, "tax_free": True,
+     "ai_cap0": 0.55, "ai_adoption": 0.20, "entry_cost": 180.0, "min_frontier": 0.40},
+    {"operator_id": "ai_sportsbook", "name": "AI-native sportsbook", "kind": "licensed",
+     "tracks": ["sports", "casino"], "rtp": 0.63, "product_breadth": 0.72, "brand": 0.35,
+     "marketing_reach": 0.90, "friction": 0.45, "protection": 0.55, "tax_free": True,
+     "ai_cap0": 0.50, "ai_adoption": 0.22, "entry_cost": 160.0, "min_frontier": 0.35},
+    {"operator_id": "bigtech", "name": "Big-tech super-app", "kind": "licensed",
+     "tracks": ["casino", "sports"], "rtp": 0.62, "product_breadth": 0.80, "brand": 0.85,
+     "marketing_reach": 0.95, "friction": 0.30, "protection": 0.60, "tax_free": True,
+     "ai_cap0": 0.80, "ai_adoption": 0.25, "entry_cost": 600.0, "entry_barrier": 400.0,
+     "min_frontier": 0.70},
+    {"operator_id": "crypto_casino", "name": "Crypto-casino", "kind": "offshore",
+     "tracks": ["casino"], "rtp": 0.82, "product_breadth": 0.98, "brand": 0.30,
+     "marketing_reach": 0.55, "friction": 0.15, "protection": 0.05, "tax_free": False,
+     "ai_cap0": 0.45, "ai_adoption": 0.20, "entry_cost": 60.0, "min_frontier": 0.35},
+    {"operator_id": "consolidator", "name": "Konsolidator (Allwyn/FDJ-type)", "kind": "licensed",
+     "tracks": ["casino", "sports"], "rtp": 0.60, "product_breadth": 0.68, "brand": 0.80,
+     "marketing_reach": 0.80, "friction": 0.48, "protection": 0.68, "tax_free": True,
+     "ai_cap0": 0.30, "ai_adoption": 0.12, "entry_cost": 500.0, "consolidator": True},
+]
+
+
+def default_entrants() -> list[EntrantConfig]:
+    return [EntrantConfig(**e) for e in DEFAULT_ENTRANTS]
+
+
 DEFAULT_TRACKS: list[dict] = [
     {"track_id": "lottery", "name": "Lotterier", "competitive": False,
      "annual_bsi": 2.0, "tax_rate": 0.0, "seasonal": False},
@@ -162,6 +207,24 @@ class GamblingConfig(BaseModel):
     # Baseline channelization on the monopoly tracks (DS licensed share); the
     # competitive tracks calibrate to channelization_start.
     monopoly_channelization: float = Field(0.95, ge=0.0, le=1.0)
+
+    # --- AI diffusion + entry (Etape 3) --------------------------------- #
+    ai_enabled: bool = True
+    entry_enabled: bool = True
+    ai_frontier_start: float = Field(0.20, ge=0.0, le=1.0)
+    ai_frontier_growth: float = Field(0.010, ge=0.0, le=0.5)   # per-tick drift toward 1.0
+    # Additive frontier jumps ("wild AI") — [{"tick": int, "size": float}, ...].
+    ai_shocks: list[dict] = Field(default_factory=list)
+    ai_personalization_gain: float = Field(2.0, ge=0.0, le=10.0)  # AI cap -> choice utility
+    ai_engagement_gain: float = Field(0.50, ge=0.0, le=3.0)    # best AI cap -> market-size growth
+    ai_bigtech_threshold: float = Field(0.70, ge=0.0, le=1.0)  # frontier gate for big-tech entry
+
+    entrants: list[EntrantConfig] = Field(default_factory=default_entrants)
+    entry_eval_period: int = Field(3, ge=1)          # evaluate entry every N ticks
+    entry_profit_margin: float = Field(0.25, ge=0.0, le=1.0)   # profit as share of BSI
+    entry_horizon_months: int = Field(36, ge=1)      # NPV horizon
+    survival_share: float = Field(0.015, ge=0.0, le=1.0)       # exit below this share
+    survival_periods: int = Field(6, ge=1)           # ...for this many consecutive ticks
 
     # Channelization is contested — treated as an interval, not a point. Only
     # conclusions robust across [low, high] should be reported (dossier fælde 2).
@@ -204,10 +267,13 @@ class GamblingConfig(BaseModel):
         op_ids = [o.operator_id for o in self.operators]
         if len(set(op_ids)) != len(op_ids):
             raise ValueError(f"duplicate operator_id in {op_ids}")
-        for o in self.operators:
+        for o in list(self.operators) + list(self.entrants):
             bad = [t for t in o.tracks if t not in track_ids]
             if bad:
                 raise ValueError(f"operator {o.operator_id} references unknown track(s) {bad}")
+        clash = {o.operator_id for o in self.operators} & {e.operator_id for e in self.entrants}
+        if clash:
+            raise ValueError(f"entrant ids clash with operators: {clash}")
         return self
 
     def operators_for(self, track_id: str) -> list[OperatorConfig]:

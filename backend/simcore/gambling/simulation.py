@@ -21,8 +21,12 @@ from collections import deque
 import numpy as np
 
 from simcore.engine.rng import RngHub
+from simcore.events.scheduler import EventRecord
+from simcore.gambling.ai_diffusion import AIDiffusion
 from simcore.gambling.config import GamblingConfig
+from simcore.gambling.entry import EntryManager
 from simcore.gambling.indicators import (
+    compute_ai_entry_metrics,
     compute_gambling_metrics,
     compute_market_metrics,
     compute_population_metrics,
@@ -66,6 +70,12 @@ class GamblingSimulation:
         # choice + channelization engine, calibrated to the baseline targets.
         self.market = AttractionMarket(self.gcfg, self.pop)
 
+        # AI diffusion + entry/exit/M&A (Etape 3).
+        self.ai = AIDiffusion(self.gcfg)
+        self.entry = EntryManager(self.gcfg)
+        self._last_results: dict = {}
+        self._entry_event_idx = 0
+
         self.tick = 0
         self.metrics_history: list[dict] = []
         self.asset_history: list[dict] = []
@@ -83,9 +93,27 @@ class GamblingSimulation:
     # ------------------------------------------------------------------ #
     def step(self) -> dict[str, float]:
         t = self.tick
-        # Attraction market: per-track operator choice → shares, channelization,
-        # and per-operator BSI. The headline bsi_<track> is the licensed BSI.
-        results = self.market.clear(t)
+        ai_on = self.gcfg.ai_enabled
+
+        # 1. Entry/exit/M&A, evaluated against last tick's results + a dry-run
+        #    (gated by the AI frontier, so big-tech needs wild AI to enter).
+        if self.gcfg.entry_enabled:
+            self.entry.evaluate(t, self.market, self.ai, self._last_results, self.hub.events)
+            self.entry.check_exits(t, self.market, self.ai, self._last_results)
+            self._drain_entry_events(t)
+
+        # 2. Attraction market clears with AI personalization + engagement, using
+        #    the *current* AI state (advanced at tick-end so t=0 is pristine).
+        if ai_on:
+            appeal_mods = {
+                tid: np.array(self.ai.personalization_offset(tm.operators))
+                for tid, tm in self.market.tracks.items()
+            }
+            engagement = self.ai.engagement_multiplier()
+        else:
+            appeal_mods, engagement = None, 1.0
+        results = self.market.clear(t, appeal_mods, engagement)
+        self._last_results = results
         bsi_by_track = {tid: r["licensed_bsi"] for tid, r in results.items()}
 
         metrics = compute_gambling_metrics(self.gcfg, t, bsi_by_track)
@@ -93,6 +121,11 @@ class GamblingSimulation:
             compute_population_metrics(self.pop, self.gcfg, self.customers, self.player_total)
         )
         metrics.update(compute_market_metrics(self.gcfg, results))
+        metrics.update(compute_ai_entry_metrics(self.gcfg, self.ai, self.entry, self.market))
+
+        # 3. Advance AI for the next tick (frontier + per-operator capability).
+        if ai_on:
+            self.ai.step(t, frontier_shock=self._frontier_shock(t))
 
         # Per-track history (reuses the asset_tick shape so /assets works).
         for track_id, bsi in bsi_by_track.items():
@@ -111,6 +144,26 @@ class GamblingSimulation:
 
         self.tick += 1
         return metrics
+
+    # ------------------------------------------------------------------ #
+    def _frontier_shock(self, tick: int) -> float:
+        """Additive AI-frontier jump at this tick from configured shocks
+        (Etape 4/5 also inject shocks via events)."""
+        return float(sum(s.get("size", 0.0) for s in self.gcfg.ai_shocks
+                         if int(s.get("tick", -1)) == tick))
+
+    def _drain_entry_events(self, tick: int) -> None:
+        """Turn new entry/exit/M&A events into EventRecords for the log/recorder."""
+        for ev in self.entry.events[self._entry_event_idx:]:
+            rec = EventRecord(
+                tick=ev["tick"], name=f'{ev["kind"]}: {ev["operator_id"]}',
+                event_type=ev["kind"], magnitude=1.0, phase="start",
+                payload={"operator_id": ev["operator_id"], "detail": ev.get("detail", "")},
+            )
+            self.events_log.append(rec)
+            if self.recorder:
+                self.recorder.event(rec)
+        self._entry_event_idx = len(self.entry.events)
 
     # ------------------------------------------------------------------ #
     def run(self, n_ticks: int | None = None, on_tick=None, should_stop=None) -> None:

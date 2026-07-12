@@ -82,6 +82,9 @@ def _run(preset="dk_baseline", ticks=None):
     cfg = load_preset(preset)
     if ticks is not None:
         cfg.ticks = ticks
+    # Etape 0 tests the pure calibrated baseline: AI diffusion and entry off, so
+    # the market stays flat at the anchors (those dynamics are tested in Etape 3).
+    cfg.gambling = {**(cfg.gambling or {}), "ai_enabled": False, "entry_enabled": False}
     sim = GamblingSimulation(cfg)
     sim.run()
     return cfg, sim

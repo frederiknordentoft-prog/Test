@@ -98,3 +98,18 @@ def compute_market_metrics(gcfg: GamblingConfig, results: dict[str, dict]) -> di
         m[f"bsi_op_{opid}"] = round(bsi, 3)
         m[f"share_op_{opid}"] = round(bsi / denom, 4)
     return m
+
+
+def compute_ai_entry_metrics(gcfg: GamblingConfig, ai, entry, market) -> dict[str, float]:
+    """AI diffusion + entry/exit state: the frontier, per-operator capability,
+    the engagement multiplier, and the count of active operators / entrants."""
+    m: dict[str, float] = {}
+    m["ai_frontier"] = round(float(ai.frontier), 4)
+    m["ai_best_cap"] = round(float(ai.best_cap()), 4)
+    m["ai_engagement"] = round(float(ai.engagement_multiplier()), 4)
+    for oid, cap in ai.cap.items():
+        m[f"ai_cap_{oid}"] = round(float(cap), 4)
+    m["n_operators"] = float(sum(1 for o in market.operators if o.licensed))
+    m["n_entrants"] = float(len(entry.entered))
+    m["n_exits"] = float(len(entry.exited))
+    return m
