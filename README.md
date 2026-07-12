@@ -100,6 +100,9 @@ cd ../backend && uvicorn api.main:app --port 8000   # http://localhost:8000
 docker compose up --build   # http://localhost:8000
 ```
 
+*(The compose setup is provided for convenience but was not runnable in the
+development sandbox — the non-Docker path above is the fully verified one.)*
+
 ### Headless / CLI
 
 ```bash
