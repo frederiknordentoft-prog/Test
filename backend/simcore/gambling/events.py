@@ -51,6 +51,12 @@ def liberalize(reg, ev, sim) -> None:
     reg.monopoly_scope = max(0.0, reg.monopoly_scope - _p(ev, "size", 0.5))
 
 
+def crash_games_licensed(reg, ev, sim) -> None:
+    """Legalize the products (crash games/virtual sport) that today only exist
+    offshore — licensed operators gain appeal, pulling channelization up."""
+    reg.licensed_bonus = min(3.0, reg.licensed_bonus + _p(ev, "size", 0.8))
+
+
 def ai_breakthrough(reg, ev, sim) -> None:
     """Wild-AI jump — pushes the frontier directly."""
     sim.ai.frontier = min(1.0, sim.ai.frontier + _p(ev, "size", 0.3))
@@ -69,6 +75,7 @@ GAMBLING_EVENT_HANDLERS: dict[str, Callable] = {
     "enforcement_boost": enforcement_boost,
     "rg_2_0": rg_2_0,
     "liberalize": liberalize,
+    "crash_games_licensed": crash_games_licensed,
     "ai_breakthrough": ai_breakthrough,
     "offshore_surge": offshore_surge,
 }

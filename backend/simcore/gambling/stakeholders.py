@@ -31,14 +31,16 @@ class RegulationState:
     tax_add: float = 0.0        # extra tax fraction -> licensed RTP down
     loss_limits: float = 0.0    # 0..1 (reduces harm and licensed appeal)
     rg_detection: float = 0.0   # 0..1 AI-based harm detection (dual-use)
-    monopoly_scope: float = 1.0 # 1 = intact monopoly, <1 = liberalized (unused until Etape 5)
+    monopoly_scope: float = 1.0 # 1 = intact monopoly, <1 = liberalized
+    licensed_bonus: float = 0.0 # licensed appeal bonus (e.g. crash games legalized onshore)
 
     def appeal_mods(self, market) -> dict[str, np.ndarray]:
         """Per-track, per-operator choice-utility modifiers from the current
         policy. Licensed operators lose appeal from friction/ad-ban/tax/limits;
         offshore/prediction lose appeal from enforcement."""
         licensed_penalty = (0.8 * self.rg_friction + 0.9 * self.ad_ban
-                            + 2.0 * self.tax_add + 0.5 * self.loss_limits)
+                            + 2.0 * self.tax_add + 0.5 * self.loss_limits
+                            - self.licensed_bonus)
         offshore_penalty = 1.4 * self.enforcement
         mods: dict[str, np.ndarray] = {}
         for tid, tm in market.tracks.items():
