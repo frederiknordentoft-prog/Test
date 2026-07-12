@@ -6,6 +6,7 @@ import { ActorOverview } from "../components/ActorOverview";
 import { ControlBar } from "../components/ControlBar";
 import { DecisionLog } from "../components/DecisionLog";
 import { EventTimeline } from "../components/EventTimeline";
+import { GamblingDashboard } from "../components/GamblingDashboard";
 import { MarketOverview } from "../components/MarketOverview";
 import { NetworkView } from "../components/NetworkView";
 import { ReactionPanel } from "../components/ReactionPanel";
@@ -21,16 +22,17 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 export function RunPage() {
-  const { runId, tick, status } = useSimStore();
+  const { runId, tick, status, domain } = useSimStore();
   const [tab, setTab] = useState<Tab>("market");
   const [actors, setActors] = useState<ActorsResponse | null>(null);
   const [decisions, setDecisions] = useState<DecisionLogEntry[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
+  const isGambling = domain === "gambling";
 
   useRunSocket(runId);
 
   useEffect(() => {
-    if (!runId) return;
+    if (!runId || isGambling) return; // gambling views read the metrics frame only
     let stop = false;
     const poll = async () => {
       try {
@@ -55,6 +57,15 @@ export function RunPage() {
     return (
       <div className="page">
         <div className="muted">No simulation yet — create one from the setup page.</div>
+      </div>
+    );
+  }
+
+  if (isGambling) {
+    return (
+      <div className="page">
+        <ControlBar />
+        <GamblingDashboard />
       </div>
     );
   }

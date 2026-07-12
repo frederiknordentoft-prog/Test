@@ -12,13 +12,6 @@ import { api } from "../api/client";
 import type { MonteCarloStatus, Preset } from "../api/types";
 import { ChartCard, GRID, MUTED, SERIES } from "../components/charts";
 
-const HIST_KEYS = [
-  { key: "final_price_index", label: "Final price index" },
-  { key: "max_drawdown", label: "Max drawdown" },
-  { key: "bankruptcies_total", label: "Bankruptcies" },
-  { key: "worst_systemic_risk", label: "Worst systemic risk" },
-];
-
 const PCT_ROWS = ["min", "p5", "p25", "median", "p75", "p95", "max", "mean"];
 
 export function MonteCarloPage() {
@@ -53,17 +46,20 @@ export function MonteCarloPage() {
     return () => clearInterval(iv);
   }, [mcId]);
 
+  const selectedDomain = presets.find((p) => p.id === presetId)?.domain ?? "finance";
+  const isGambling = selectedDomain === "gambling";
+
   const launch = async () => {
     setError(null);
     setStatus(null);
     try {
       const r = await api.createMonteCarlo({
         preset_id: presetId,
-        scenario: scenario || null,
+        domain: selectedDomain,
         n_seeds: nSeeds,
         ticks,
-        n_actors: nActors,
-        label: `mc ${presetId ?? "default"} ${scenario}`,
+        label: `mc ${presetId ?? "default"} ${isGambling ? "" : scenario}`,
+        ...(isGambling ? {} : { scenario: scenario || null, n_actors: nActors }),
       });
       setMcId(r.mc_id);
     } catch (e) {
@@ -72,6 +68,9 @@ export function MonteCarloPage() {
   };
 
   const result = status?.result;
+  const histKeys = result
+    ? Object.keys(result.percentiles).filter((k) => result.runs[0] && k in result.runs[0]).slice(0, 6)
+    : [];
 
   return (
     <div className="page">
@@ -88,15 +87,17 @@ export function MonteCarloPage() {
               ))}
             </select>
           </div>
-          <div className="field">
-            <label>Scenario</label>
-            <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
-              <option value="">— none —</option>
-              {scenarios.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
+          {!isGambling && (
+            <div className="field">
+              <label>Scenario</label>
+              <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
+                <option value="">— none —</option>
+                {scenarios.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="field">
             <label>Seeds</label>
             <select value={nSeeds} onChange={(e) => setNSeeds(+e.target.value)}>
@@ -109,10 +110,12 @@ export function MonteCarloPage() {
             <label>Ticks</label>
             <input type="number" value={ticks} onChange={(e) => setTicks(+e.target.value)} />
           </div>
-          <div className="field">
-            <label>Actors</label>
-            <input type="number" value={nActors} onChange={(e) => setNActors(+e.target.value)} />
-          </div>
+          {!isGambling && (
+            <div className="field">
+              <label>Actors</label>
+              <input type="number" value={nActors} onChange={(e) => setNActors(+e.target.value)} />
+            </div>
+          )}
           <div className="field" style={{ display: "flex", alignItems: "flex-end" }}>
             <button className="primary" onClick={launch} disabled={status?.status === "running"}>
               Run batch
@@ -158,8 +161,8 @@ export function MonteCarloPage() {
             </table>
           </ChartCard>
           <div className="grid grid-2" style={{ marginTop: 16 }}>
-            {HIST_KEYS.map(({ key, label }, i) => (
-              <ChartCard key={key} title={`${label} across seeds`}>
+            {histKeys.map((key, i) => (
+              <ChartCard key={key} title={`${key} across seeds`}>
                 <Histogram values={result.runs.map((r) => Number(r[key]))} color={SERIES[i % SERIES.length]} />
               </ChartCard>
             ))}

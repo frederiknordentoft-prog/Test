@@ -3,11 +3,12 @@ export interface Frame {
   tick: number;
   ticks_target: number;
   status: string;
+  domain?: string; // "finance" | "gambling"
   prices: Record<string, number>;
-  fundamentals: Record<string, number>;
-  volatility: Record<string, number>;
-  spread: Record<string, number>;
-  volume: Record<string, number>;
+  fundamentals?: Record<string, number>;
+  volatility?: Record<string, number>;
+  spread?: Record<string, number>;
+  volume?: Record<string, number>;
   metrics: Record<string, number>;
   new_events: EventMarker[];
 }
@@ -24,6 +25,7 @@ export interface Preset {
   id: string;
   name: string;
   description: string;
+  domain?: string; // "finance" | "gambling"
 }
 
 export interface ScenarioInfo {

@@ -23,6 +23,7 @@ class CreateRunRequest(BaseModel):
     scenario: str | None = None
     events: list[dict[str, Any]] = Field(default_factory=list)
     domain: str | None = None  # "finance" | "gambling"; overrides the base config's
+    gambling_overrides: dict[str, Any] | None = None  # merged onto the base gambling config
 
 
 class CreateMonteCarloRequest(CreateRunRequest):
@@ -76,6 +77,8 @@ def build_config(req: CreateRunRequest) -> SimConfig:
     for e in req.events:
         cfg.events.append(EventConfig(**e))
     if cfg.sim_domain == "gambling":
+        if req.gambling_overrides:
+            cfg.gambling = {**(cfg.gambling or {}), **req.gambling_overrides}
         # Validate the gambling block now so a bad config surfaces as a 422 at
         # request time rather than an opaque error inside the sim thread.
         from pydantic import ValidationError

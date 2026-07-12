@@ -3,27 +3,30 @@ import type { EventMarker, Frame } from "../api/types";
 
 export interface HistoryPoint {
   tick: number;
-  price_index: number;
-  systemic_risk: number;
-  mean_sentiment: number;
-  mean_stress: number;
-  mean_leverage: number;
-  liquidity_index: number;
-  credit_tightness: number;
-  bankruptcies_total: number;
-  margin_calls_total: number;
-  wealth_gini: number;
-  employment_index: number;
-  forced_volume_share: number;
-  volume: number;
-  spread: number;
-  [assetPrice: string]: number; // p_<assetId> series
+  // finance fields (present only for finance runs)
+  price_index?: number;
+  systemic_risk?: number;
+  mean_sentiment?: number;
+  mean_stress?: number;
+  mean_leverage?: number;
+  liquidity_index?: number;
+  credit_tightness?: number;
+  bankruptcies_total?: number;
+  margin_calls_total?: number;
+  wealth_gini?: number;
+  employment_index?: number;
+  forced_volume_share?: number;
+  volume?: number;
+  spread?: number;
+  // gambling runs spread every metric key directly; both domains add p_<id>
+  [key: string]: number | undefined;
 }
 
 interface SimState {
   runId: string | null;
   label: string;
   status: string;
+  domain: string;
   tick: number;
   ticksTarget: number;
   assetIds: string[];
@@ -40,6 +43,7 @@ export const useSimStore = create<SimState>((set, get) => ({
   runId: null,
   label: "",
   status: "created",
+  domain: "finance",
   tick: 0,
   ticksTarget: 0,
   assetIds: [],
@@ -52,28 +56,36 @@ export const useSimStore = create<SimState>((set, get) => ({
 
   applyFrame: (f) => {
     const s = get();
-    const assetIds = Object.keys(f.prices);
-    const point: HistoryPoint = {
-      tick: f.tick,
-      price_index: f.metrics.price_index ?? 100,
-      systemic_risk: f.metrics.systemic_risk ?? 0,
-      mean_sentiment: f.metrics.mean_sentiment ?? 0,
-      mean_stress: f.metrics.mean_stress ?? 0,
-      mean_leverage: f.metrics.mean_leverage ?? 0,
-      liquidity_index: f.metrics.liquidity_index ?? 1,
-      credit_tightness: f.metrics.credit_tightness ?? 0,
-      bankruptcies_total: f.metrics.bankruptcies_total ?? 0,
-      margin_calls_total: f.metrics.margin_calls_total ?? 0,
-      wealth_gini: f.metrics.wealth_gini ?? 0,
-      employment_index: f.metrics.employment_index ?? 1,
-      forced_volume_share: f.metrics.forced_volume_share ?? 0,
-      volume: Object.values(f.volume).reduce((a, b) => a + b, 0),
-      spread: assetIds.length
-        ? Object.values(f.spread).reduce((a, b) => a + b, 0) / assetIds.length
-        : 0,
-    };
-    for (const [aid, p] of Object.entries(f.prices)) point[`p_${aid}`] = p;
-    for (const [aid, fv] of Object.entries(f.fundamentals)) point[`f_${aid}`] = fv;
+    const isGambling = f.domain === "gambling";
+    const assetIds = Object.keys(f.prices ?? {});
+    let point: HistoryPoint;
+    if (isGambling) {
+      // Gambling frames carry every named series directly in metrics.
+      point = { tick: f.tick, ...f.metrics };
+      for (const [tid, bsi] of Object.entries(f.prices ?? {})) point[`p_${tid}`] = bsi;
+    } else {
+      point = {
+        tick: f.tick,
+        price_index: f.metrics.price_index ?? 100,
+        systemic_risk: f.metrics.systemic_risk ?? 0,
+        mean_sentiment: f.metrics.mean_sentiment ?? 0,
+        mean_stress: f.metrics.mean_stress ?? 0,
+        mean_leverage: f.metrics.mean_leverage ?? 0,
+        liquidity_index: f.metrics.liquidity_index ?? 1,
+        credit_tightness: f.metrics.credit_tightness ?? 0,
+        bankruptcies_total: f.metrics.bankruptcies_total ?? 0,
+        margin_calls_total: f.metrics.margin_calls_total ?? 0,
+        wealth_gini: f.metrics.wealth_gini ?? 0,
+        employment_index: f.metrics.employment_index ?? 1,
+        forced_volume_share: f.metrics.forced_volume_share ?? 0,
+        volume: Object.values(f.volume ?? {}).reduce((a, b) => a + b, 0),
+        spread: assetIds.length
+          ? Object.values(f.spread ?? {}).reduce((a, b) => a + b, 0) / assetIds.length
+          : 0,
+      };
+      for (const [aid, p] of Object.entries(f.prices ?? {})) point[`p_${aid}`] = p;
+      for (const [aid, fv] of Object.entries(f.fundamentals ?? {})) point[`f_${aid}`] = fv;
+    }
 
     let history = s.history;
     const last = history[history.length - 1];
@@ -84,6 +96,7 @@ export const useSimStore = create<SimState>((set, get) => ({
     set({
       lastFrame: f,
       status: f.status,
+      domain: isGambling ? "gambling" : "finance",
       tick: f.tick,
       ticksTarget: f.ticks_target,
       assetIds,

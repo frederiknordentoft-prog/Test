@@ -105,6 +105,16 @@ def client(tmp_path, monkeypatch):
     return TestClient(create_app())
 
 
+def test_api_gambling_overrides_merge(client):
+    body = {"preset_id": "dk_baseline", "ticks": 8, "domain": "gambling",
+            "gambling_overrides": {"population": 300, "channelization_start": 0.90,
+                                   "channelization_low": 0.50, "channelization_high": 0.99}}
+    r = client.post("/api/runs", json=body)
+    assert r.status_code == 200
+    g = r.json()["config"]["gambling"]
+    assert g["population"] == 300 and g["channelization_start"] == 0.90
+
+
 def test_api_gambling_monte_carlo(client):
     r = client.post("/api/montecarlo", json={"preset_id": "dk_baseline", "ticks": 10, "n_seeds": 3})
     assert r.status_code == 200
