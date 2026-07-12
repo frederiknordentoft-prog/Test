@@ -226,6 +226,36 @@ class GamblingConfig(BaseModel):
     survival_share: float = Field(0.015, ge=0.0, le=1.0)       # exit below this share
     survival_periods: int = Field(6, ge=1)           # ...for this many consecutive ticks
 
+    # --- stakeholders + the four loops (Etape 4) ------------------------ #
+    stakeholders_enabled: bool = True
+    # Harm: offshore play is more harmful (no ROFUS/limits); limits and AI-based
+    # RG detection reduce licensed harm. The gap between true and measured harm
+    # is the channelization false positive (loop 1).
+    offshore_harm_coeff: float = Field(2.2, ge=1.0, le=6.0)
+    harm_scale: float = Field(22.0, ge=0.0, le=200.0)   # scales the harm index to ~0-100
+    loss_limit_harm_reduction: float = Field(0.50, ge=0.0, le=1.0)
+    rg_detection_harm_reduction: float = Field(0.40, ge=0.0, le=1.0)
+    # Regulator (Spillemyndigheden): reacts to measured harm; enforcement against
+    # offshore decays (mirror sites) unless renewed.
+    regulator_enabled: bool = True
+    reg_harm_threshold: float = Field(55.0, ge=0.0)
+    reg_step: float = Field(0.15, ge=0.0, le=2.0)
+    enforcement_decay: float = Field(0.10, ge=0.0, le=1.0)
+    reg_offshore_alarm: float = Field(0.20, ge=0.0, le=1.0)
+    # Political agent (Skatteministeriet/Folketinget): reacts to *visible* harm
+    # with a 12-24 month delay -> overshoot/oscillation.
+    political_enabled: bool = True
+    political_delay: int = Field(18, ge=0, le=60)
+    political_threshold: float = Field(60.0, ge=0.0)
+    political_tax_step: float = Field(0.05, ge=0.0, le=1.0)
+    political_limit_step: float = Field(0.25, ge=0.0, le=1.0)
+    political_cooldown: int = Field(18, ge=1)
+    # Udlodning loop (loop 3): DS profit funds sport/culture -> resistance to
+    # tightening (raises the political threshold).
+    ds_profit_margin: float = Field(0.35, ge=0.0, le=1.0)
+    udlodning_ratio: float = Field(0.85, ge=0.0, le=1.0)
+    udlodning_resistance: float = Field(0.35, ge=0.0, le=3.0)
+
     # Channelization is contested — treated as an interval, not a point. Only
     # conclusions robust across [low, high] should be reported (dossier fælde 2).
     channelization_start: float = Field(0.82, ge=0.0, le=1.0)

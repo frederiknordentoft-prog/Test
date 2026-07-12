@@ -25,13 +25,23 @@ from simcore.events.scheduler import EventRecord
 from simcore.gambling.ai_diffusion import AIDiffusion
 from simcore.gambling.config import GamblingConfig
 from simcore.gambling.entry import EntryManager
+from simcore.gambling.events import GAMBLING_EVENT_HANDLERS
+from simcore.gambling.harm import compute_harm
 from simcore.gambling.indicators import (
     compute_ai_entry_metrics,
     compute_gambling_metrics,
     compute_market_metrics,
     compute_population_metrics,
+    compute_revenue,
+    compute_stakeholder_metrics,
 )
 from simcore.gambling.market import AttractionMarket
+from simcore.gambling.stakeholders import (
+    PoliticalAgent,
+    Regulator,
+    RegulationState,
+    udlodning_from,
+)
 from simcore.gambling.population import (
     build_population,
     calibrate_track_scale,
@@ -76,6 +86,13 @@ class GamblingSimulation:
         self._last_results: dict = {}
         self._entry_event_idx = 0
 
+        # Stakeholders + the four loops (Etape 4).
+        self.reg = RegulationState()
+        self.regulator = Regulator(self.gcfg)
+        self.political = PoliticalAgent(self.gcfg)
+        self._measured_hist: list[float] = []
+        self._udlodning_baseline: float | None = None
+
         self.tick = 0
         self.metrics_history: list[dict] = []
         self.asset_history: list[dict] = []
@@ -94,24 +111,21 @@ class GamblingSimulation:
     def step(self) -> dict[str, float]:
         t = self.tick
         ai_on = self.gcfg.ai_enabled
+        stake_on = self.gcfg.stakeholders_enabled
 
-        # 1. Entry/exit/M&A, evaluated against last tick's results + a dry-run
-        #    (gated by the AI frontier, so big-tech needs wild AI to enter).
+        # 1. Scheduled policy/market events (Spilpakke, ad ban, tax, ...).
+        self._apply_gambling_events(t)
+
+        # 2. Entry/exit/M&A, gated by the AI frontier (big-tech needs wild AI).
         if self.gcfg.entry_enabled:
             self.entry.evaluate(t, self.market, self.ai, self._last_results, self.hub.events)
             self.entry.check_exits(t, self.market, self.ai, self._last_results)
             self._drain_entry_events(t)
 
-        # 2. Attraction market clears with AI personalization + engagement, using
-        #    the *current* AI state (advanced at tick-end so t=0 is pristine).
-        if ai_on:
-            appeal_mods = {
-                tid: np.array(self.ai.personalization_offset(tm.operators))
-                for tid, tm in self.market.tracks.items()
-            }
-            engagement = self.ai.engagement_multiplier()
-        else:
-            appeal_mods, engagement = None, 1.0
+        # 3. Choice-utility modifiers: AI personalization + regulation. The market
+        #    clears with the *current* AI state (advanced at tick-end).
+        appeal_mods = self._appeal_mods(ai_on, stake_on)
+        engagement = self.ai.engagement_multiplier() if ai_on else 1.0
         results = self.market.clear(t, appeal_mods, engagement)
         self._last_results = results
         bsi_by_track = {tid: r["licensed_bsi"] for tid, r in results.items()}
@@ -122,8 +136,28 @@ class GamblingSimulation:
         )
         metrics.update(compute_market_metrics(self.gcfg, results))
         metrics.update(compute_ai_entry_metrics(self.gcfg, self.ai, self.entry, self.market))
+        metrics.update(compute_revenue(self.gcfg, self.reg, results))
 
-        # 3. Advance AI for the next tick (frontier + per-operator capability).
+        # 4. Harm + the stakeholder loops (measured vs true harm, regulator with
+        #    enforcement decay, delayed political agent, udlodning resistance).
+        if stake_on:
+            harm = compute_harm(self.gcfg, self.reg, results, self.pop)
+            metrics.update(harm)
+            self._measured_hist.append(harm["measured_harm"])
+            udl = udlodning_from(self.gcfg, metrics.get("ds_bsi_total", 0.0))
+            if self._udlodning_baseline is None:
+                self._udlodning_baseline = max(udl, 1e-9)
+            if self.gcfg.regulator_enabled:
+                self.regulator.update(self.reg, harm["measured_harm"],
+                                      metrics.get("offshore_share", 0.0))
+            if self.gcfg.political_enabled and self.political.update(
+                self.reg, self._measured_hist, t, udl, self._udlodning_baseline
+            ):
+                self._log_gambling_event(t, f"Politisk stramning #{self.political.packages}",
+                                         "political_tightening", "delayed reaction to visible harm")
+            metrics.update(compute_stakeholder_metrics(self.reg, udl, self.political))
+
+        # 5. Advance AI for the next tick (frontier + per-operator capability).
         if ai_on:
             self.ai.step(t, frontier_shock=self._frontier_shock(t))
 
@@ -144,6 +178,37 @@ class GamblingSimulation:
 
         self.tick += 1
         return metrics
+
+    # ------------------------------------------------------------------ #
+    def _appeal_mods(self, ai_on: bool, stake_on: bool):
+        """Combined per-track, per-operator choice-utility modifiers from AI
+        personalization and the regulation state."""
+        if not ai_on and not stake_on:
+            return None
+        reg_mods = self.reg.appeal_mods(self.market) if stake_on else None
+        mods = {}
+        for tid, tm in self.market.tracks.items():
+            arr = np.zeros(len(tm.operators))
+            if ai_on:
+                arr = arr + np.array(self.ai.personalization_offset(tm.operators))
+            if reg_mods is not None:
+                arr = arr + reg_mods[tid]
+            mods[tid] = arr
+        return mods
+
+    def _apply_gambling_events(self, tick: int) -> None:
+        for ev in self.config.events:
+            if ev.start_tick == tick and ev.event_type in GAMBLING_EVENT_HANDLERS:
+                GAMBLING_EVENT_HANDLERS[ev.event_type](self.reg, ev, self)
+                self._log_gambling_event(tick, ev.name or ev.event_type, ev.event_type,
+                                         ev.description or "")
+
+    def _log_gambling_event(self, tick: int, name: str, event_type: str, detail: str) -> None:
+        rec = EventRecord(tick=tick, name=name, event_type=event_type, magnitude=1.0,
+                          phase="start", payload={"detail": detail})
+        self.events_log.append(rec)
+        if self.recorder:
+            self.recorder.event(rec)
 
     # ------------------------------------------------------------------ #
     def _frontier_shock(self, tick: int) -> float:

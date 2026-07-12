@@ -113,3 +113,32 @@ def compute_ai_entry_metrics(gcfg: GamblingConfig, ai, entry, market) -> dict[st
     m["n_entrants"] = float(len(entry.entered))
     m["n_exits"] = float(len(entry.exited))
     return m
+
+
+def compute_stakeholder_metrics(reg, udlodning: float, political) -> dict[str, float]:
+    """Policy state + the udlodning loop output."""
+    return {
+        "reg_friction": round(float(reg.rg_friction), 4),
+        "ad_ban": round(float(reg.ad_ban), 4),
+        "enforcement": round(float(reg.enforcement), 4),
+        "tax_add": round(float(reg.tax_add), 4),
+        "loss_limits": round(float(reg.loss_limits), 4),
+        "rg_detection": round(float(reg.rg_detection), 4),
+        "monopoly_scope": round(float(reg.monopoly_scope), 4),
+        "udlodning": round(float(udlodning), 3),
+        "political_packages": float(political.packages),
+    }
+
+
+def compute_revenue(gcfg: GamblingConfig, reg, results: dict[str, dict]) -> dict[str, float]:
+    """State gambling-tax revenue from the licensed BSI (28% on the competitive
+    segment + any political tax add). The core policy trade-off: tightening can
+    shrink licensed BSI and thus revenue (dossier §11.1)."""
+    rev = 0.0
+    for t in gcfg.tracks:
+        r = results.get(t.track_id)
+        if not r:
+            continue
+        rate = t.tax_rate + (reg.tax_add if t.competitive else 0.0)
+        rev += r["licensed_bsi"] * max(0.0, rate)
+    return {"state_revenue": round(rev, 3)}
