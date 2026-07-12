@@ -25,3 +25,4 @@ data/exports/
 .DS_Store
 .idea/
 .vscode/
+frontend/tsconfig.tsbuildinfo
