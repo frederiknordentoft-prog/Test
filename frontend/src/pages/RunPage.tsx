@@ -7,15 +7,25 @@ import { ControlBar } from "../components/ControlBar";
 import { DecisionLog } from "../components/DecisionLog";
 import { EventTimeline } from "../components/EventTimeline";
 import { MarketOverview } from "../components/MarketOverview";
+import { NetworkView } from "../components/NetworkView";
+import { ReactionPanel } from "../components/ReactionPanel";
 import { useSimStore } from "../store/simStore";
 
-type Tab = "market" | "actors" | "decisions";
+type Tab = "market" | "actors" | "network" | "decisions";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "market", label: "Market" },
+  { id: "actors", label: "Actors" },
+  { id: "network", label: "Network" },
+  { id: "decisions", label: "Decisions & events" },
+];
 
 export function RunPage() {
   const { runId, tick, status } = useSimStore();
   const [tab, setTab] = useState<Tab>("market");
   const [actors, setActors] = useState<ActorsResponse | null>(null);
   const [decisions, setDecisions] = useState<DecisionLogEntry[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
 
   useRunSocket(runId);
 
@@ -53,23 +63,27 @@ export function RunPage() {
     <div className="page">
       <ControlBar />
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        {(["market", "actors", "decisions"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            className={tab === t ? "primary" : ""}
-            onClick={() => setTab(t)}
-          >
-            {t === "market" ? "Market" : t === "actors" ? "Actors" : "Decisions & events"}
+        {TABS.map((t) => (
+          <button key={t.id} className={tab === t.id ? "primary" : ""} onClick={() => setTab(t.id)}>
+            {t.label}
           </button>
         ))}
       </div>
       {tab === "market" && <MarketOverview />}
       {tab === "actors" && <ActorOverview actors={actors} />}
+      {tab === "network" && <NetworkView />}
       {tab === "decisions" && (
-        <div className="grid grid-2">
-          <DecisionLog decisions={decisions} />
-          <EventTimeline />
-        </div>
+        <>
+          {selectedEvent !== null && (
+            <div style={{ marginBottom: 16 }}>
+              <ReactionPanel eventIndex={selectedEvent} onClose={() => setSelectedEvent(null)} />
+            </div>
+          )}
+          <div className="grid grid-2">
+            <DecisionLog decisions={decisions} />
+            <EventTimeline onSelect={setSelectedEvent} />
+          </div>
+        </>
       )}
     </div>
   );

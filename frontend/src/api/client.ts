@@ -32,4 +32,21 @@ export const api = {
   events: (runId: string) => req<import("./types").EventMarker[]>(`/api/runs/${runId}/events`),
   exportRun: (runId: string, fmt: string) =>
     req<{ files: string[]; directory: string }>(`/api/runs/${runId}/export?fmt=${fmt}`),
+  runs: () => req<import("./types").RunListEntry[]>("/api/runs"),
+  metrics: (runId: string, names: string[]) =>
+    req<{ ticks: number[]; series: Record<string, number[]> }>(
+      `/api/runs/${runId}/metrics?names=${names.join(",")}`,
+    ),
+  network: (runId: string, layer: string) =>
+    req<import("./types").NetworkResponse>(`/api/runs/${runId}/network?layer=${layer}`),
+  reactions: (runId: string, eventIndex: number, window = 15) =>
+    req<import("./types").ReactionsResponse>(
+      `/api/runs/${runId}/events/${eventIndex}/reactions?window=${window}`,
+    ),
+  createMonteCarlo: (body: unknown) =>
+    req<{ mc_id: string }>("/api/montecarlo", { method: "POST", body: JSON.stringify(body) }),
+  getMonteCarlo: (mcId: string) => req<import("./types").MonteCarloStatus>(`/api/montecarlo/${mcId}`),
+  savedConfigs: () => req<import("./types").SavedConfig[]>("/api/configs"),
+  saveConfig: (body: unknown) =>
+    req<{ id: string; name: string }>("/api/configs", { method: "POST", body: JSON.stringify(body) }),
 };

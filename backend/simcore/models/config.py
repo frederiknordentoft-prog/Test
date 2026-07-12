@@ -80,7 +80,7 @@ class ActorTypeConfig(BaseModel):
     """Per-type population settings. Traits omitted here fall back to the
     type profile defaults."""
 
-    count: int = 0
+    count: int = Field(0, ge=0, le=5000)
     wealth: DistributionSpec | None = None
     traits: dict[str, DistributionSpec] = Field(default_factory=dict)
     decision_models: dict[str, float] | None = None  # mixture weights
@@ -144,10 +144,10 @@ class NetworkLayerConfig(BaseModel):
 class SignalConfig(BaseModel):
     """How a signal attached to an event is published."""
 
-    publicity: float = 1.0            # share of population reached directly
-    credibility: float = 0.9
-    truth: float = 1.0                # 1 = true, 0 = fabricated rumor
-    channel_delay: int = 0            # base delay in ticks before delivery
+    publicity: float = Field(1.0, ge=0.0, le=1.0)  # share of population reached directly
+    credibility: float = Field(0.9, ge=0.0, le=1.0)
+    truth: float = Field(1.0, ge=0.0, le=1.0)      # 1 = true, 0 = fabricated rumor
+    channel_delay: int = Field(0, ge=0, le=100)    # base delay in ticks before delivery
 
 
 class EventConfig(BaseModel):
@@ -158,22 +158,22 @@ class EventConfig(BaseModel):
     name: str
     event_type: str                   # key into the event library
     description: str = ""
-    start_tick: int | None = None     # fixed schedule ...
-    probability: float = 0.0          # ... or per-tick hazard (exclusive with start_tick)
-    duration: int = 1
-    magnitude: float = 1.0
+    start_tick: int | None = Field(None, ge=0)  # fixed schedule ...
+    probability: float = Field(0.0, ge=0.0, le=1.0)  # ... or per-tick hazard
+    duration: int = Field(1, ge=1, le=5000)
+    magnitude: float = Field(1.0, ge=-5.0, le=5.0)
     targets: dict[str, Any] = Field(default_factory=dict)  # actor_type / actor_id / asset_id
     params: dict[str, Any] = Field(default_factory=dict)
     signal: SignalConfig = Field(default_factory=SignalConfig)
-    escalation_probability: float = 0.0  # chance the event re-fires stronger
-    de_escalation_probability: float = 0.0  # chance an active event is called off early
+    escalation_probability: float = Field(0.0, ge=0.0, le=1.0)
+    de_escalation_probability: float = Field(0.0, ge=0.0, le=1.0)
 
 
 class RecordingConfig(BaseModel):
-    snapshot_interval: int = 10       # actor snapshots every N ticks
-    decision_log_sample: float = 1.0  # fraction of decisions persisted
-    flush_interval: int = 25          # recorder flush cadence (ticks)
-    history_window: int = 512         # in-memory ring buffer length
+    snapshot_interval: int = Field(10, ge=1)   # actor snapshots every N ticks
+    decision_log_sample: float = Field(1.0, ge=0.0, le=1.0)
+    flush_interval: int = Field(25, ge=1)      # recorder flush cadence (ticks)
+    history_window: int = Field(512, ge=64)    # in-memory ring buffer length
 
 
 class SystemicRiskWeights(BaseModel):
@@ -190,8 +190,8 @@ class SystemicRiskWeights(BaseModel):
 class SimConfig(BaseModel):
     name: str = "simulation"
     description: str = ""
-    seed: int = 42
-    ticks: int = 500
+    seed: int = Field(42, ge=0)
+    ticks: int = Field(500, ge=1, le=20000)
     tick_resolution: Literal["minute", "hour", "day", "week", "quarter"] = "day"
     actors: dict[str, ActorTypeConfig] = Field(default_factory=dict)
     assets: list[AssetConfig] = Field(default_factory=list)
@@ -204,6 +204,13 @@ class SimConfig(BaseModel):
 
     @model_validator(mode="after")
     def _defaults(self) -> "SimConfig":
+        if self.market.initial_margin <= self.market.maintenance_margin:
+            raise ValueError(
+                f"initial_margin ({self.market.initial_margin}) must exceed "
+                f"maintenance_margin ({self.market.maintenance_margin})"
+            )
+        if self.market.max_leverage < 1.0:
+            raise ValueError("max_leverage must be >= 1.0")
         if not self.assets:
             self.assets = [
                 AssetConfig(asset_id=f"EQ{i+1}", initial_price=100.0) for i in range(5)

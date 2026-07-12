@@ -26,10 +26,14 @@ class Subscriber:
 
 
 class RunHandle:
-    def __init__(self, config: SimConfig, label: str = "", db_path: str | None = DB_PATH):
+    def __init__(self, config: SimConfig, label: str = "", db_path: str | None = None):
         self.run_id = uuid.uuid4().hex[:12]
         self.config = config
-        self.sim = Simulation(config, db_path=db_path, run_id=self.run_id, label=label)
+        # resolve at call time so tests / deployments can repoint the module DB_PATH
+        import api.runner as _runner_mod
+
+        resolved_db = db_path if db_path is not None else _runner_mod.DB_PATH
+        self.sim = Simulation(config, db_path=resolved_db, run_id=self.run_id, label=label)
         self.label = label or config.name
         self.status = "created"
         self.error: str | None = None

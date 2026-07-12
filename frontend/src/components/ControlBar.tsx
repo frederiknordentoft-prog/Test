@@ -61,15 +61,26 @@ export function ControlBar() {
         <span className="muted" style={{ fontVariantNumeric: "tabular-nums" }}>
           tick {tick} / {ticksTarget}
         </span>
-        <button
-          onClick={() =>
+        <select
+          style={{ width: 130 }}
+          defaultValue=""
+          onChange={(e) => {
+            const fmt = e.target.value;
+            e.target.value = "";
+            if (!fmt) return;
             api
-              .exportRun(runId, "csv")
+              .exportRun(runId, fmt)
               .then((r) => alert(`Exported ${r.files.length} files to\n${r.directory}`))
-              .catch((e) => alert(String(e)))
-          }
+              .catch((err) => alert(String(err)));
+          }}
         >
-          Export CSV
+          <option value="">Export…</option>
+          <option value="csv">CSV</option>
+          <option value="json">JSON</option>
+          <option value="parquet">Parquet</option>
+        </select>
+        <button onClick={() => window.open(`/api/runs/${runId}/report`, "_blank")}>
+          HTML report
         </button>
       </div>
     </div>

@@ -40,7 +40,18 @@ time on a financial market coupled to a simple real economy.
   per actor/asset/subsystem); identical seeds give identical runs, verified by state
   hashes in CI.
 - **Monte Carlo**: run the same scenario across many seeds headless and read
-  distributions (median, percentiles, worst case) instead of single paths.
+  distributions (median, percentiles, worst case) instead of single paths — with a
+  dedicated UI showing percentile tables and outcome histograms.
+- **Network visualization**: force-directed view of any relationship layer (social,
+  information, customer, supplier, credit); node size = market power, color = actor
+  type or sentiment, white ring = systemically important (top-decile centrality).
+- **Run comparison**: overlay any metric across 2–4 runs (baseline vs. shock,
+  different seeds, leverage regimes); archived runs are reloaded from SQLite.
+- **Reaction analysis**: click any event to see who reacted, how, and *why* (driver
+  frequencies from the actual decision logs), how the reaction spread tick by tick,
+  and second-order effects (margin calls, defaults, credit tightening) in the window.
+- **Saved scenarios**: save any setup (preset + overrides + custom events) as a named
+  scenario and reload it later.
 
 ## Architecture
 
@@ -124,8 +135,14 @@ python scripts/benchmark.py --actors 300 --ticks 1000                 # performa
      wealth distribution, sentiment/stress/inequality time series, richest actors.
    - *Decisions & events*: live decision log with driver chips (why each actor acted)
      and the event timeline.
-3. **Export CSV** writes config, population, metrics, asset ticks, trades, decisions
-   and events to `data/exports/<run_id>/`.
+   - *Network*: force-graph of the chosen relationship layer with systemic-importance
+     highlighting.
+3. **Monte Carlo page** — run a preset/scenario across N seeds and read distributions.
+4. **Compare page** — overlay a metric across selected runs with a summary table.
+5. **Export** (CSV / JSON / Parquet) writes config, population, metrics, asset ticks,
+   trades, decisions and events to `data/exports/<run_id>/`; **HTML report** produces
+   a self-contained analysis document with embedded interactive charts; every chart
+   in the UI has an SVG download button.
 
 ## Key API endpoints
 
@@ -136,8 +153,11 @@ POST /api/runs/{id}/step {n}        run n ticks then pause
 POST /api/runs/{id}/speed {tps}
 GET  /api/runs/{id}                 status + headline metrics
 GET  /api/runs/{id}/metrics|assets|actors|decisions|trades|events|network|export
+GET  /api/runs/{id}/report          self-contained HTML analysis report
+GET  /api/runs/{id}/events/{i}/reactions?window=15   reaction analysis for one event
 WS   /api/runs/{id}/ws              live frames (≤10/s, coalesced)
 GET  /api/presets | /api/scenarios | /api/event-types
+GET/POST/DELETE /api/configs        saved scenarios (reload with saved_id)
 POST /api/montecarlo                multi-seed batch; GET /api/montecarlo/{id}
 ```
 
@@ -161,10 +181,12 @@ Interactive docs at `http://localhost:8000/docs`.
 
 ```bash
 cd backend
-pytest                    # 48 unit tests (~10 s): population, RNG reproducibility
+pytest                    # 55 unit tests (~10 s): population, RNG reproducibility
                           # (incl. PYTHONHASHSEED variation), clearing math, margin,
                           # decision cores & explanation consistency, networks,
-                          # events, economy, credit, export, API end-to-end
+                          # events, economy, credit, export, API end-to-end,
+                          # reaction analysis, HTML report, parquet, saved scenarios,
+                          # request validation, archived-run fallback
 pytest -m statistical     # 3 paired-seed integration tests (~minutes):
                           #  1. negative shocks lower average post-shock prices
                           #  2. high leverage fattens downside (deeper drawdowns)
@@ -187,16 +209,16 @@ vectorized (NumPy + sparse adjacency). `scripts/benchmark.py` prints per-tick ti
   residual flow); balance sheets are tracked per actor but the monetary system is open.
 - Long baseline runs show boom-bust cycles and can drift — this is emergent herding
   behavior, tunable via presets, not calibrated to any real market.
-- Live runs exist in process memory; a server restart keeps SQLite history but drops
-  run control. Regulator/media actors are simple first versions.
+- Live runs exist in process memory; a server restart keeps SQLite history (metrics
+  and run listings survive as archived runs) but drops run control. Regulator/media
+  actors are simple first versions.
 - Monte Carlo runs sequentially (parallelism is a roadmap item).
 
-## Roadmap (phase 2/3)
+## Roadmap
 
-Network visualization view, run comparison UI, per-event reaction-analysis drill-down,
-Parquet + HTML report export, vectorized decide fast path for 1000+ actors, parallel
-Monte Carlo, richer regulator/media behavior, LLM-driven key actors via the existing
-adapter interface, custom network editor, labor market.
+Vectorized decide fast path for 1000+ actors, parallel Monte Carlo, richer
+regulator/media behavior, LLM-driven key actors via the existing adapter interface,
+custom network editor, labor market, PNG chart export (server-side rendering).
 
 ## License / intent
 

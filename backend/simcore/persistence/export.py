@@ -34,6 +34,15 @@ def export_run(conn: sqlite3.Connection, run_id: str, out_dir: str | Path,
         if fmt == "json":
             path = out / f"{run_id}_{table}.json"
             df.to_json(path, orient="records")
+        elif fmt == "parquet":
+            try:
+                import pyarrow  # noqa: F401
+            except ImportError as e:
+                raise RuntimeError(
+                    "parquet export requires pyarrow — install with: pip install pyarrow"
+                ) from e
+            path = out / f"{run_id}_{table}.parquet"
+            df.to_parquet(path, index=False)
         else:
             path = out / f"{run_id}_{table}.csv"
             df.to_csv(path, index=False)

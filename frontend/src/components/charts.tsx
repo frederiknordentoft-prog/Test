@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import {
   CartesianGrid,
   Line,
@@ -25,9 +25,36 @@ const tooltipStyle = {
 };
 
 export function ChartCard({ title, children }: { title: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const downloadSvg = () => {
+    const svg = ref.current?.querySelector("svg");
+    if (!svg) return;
+    const clone = svg.cloneNode(true) as SVGElement;
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clone.setAttribute("style", "background:#1a1a19");
+    const blob = new Blob([new XMLSerializer().serializeToString(clone)], {
+      type: "image/svg+xml",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 60)}.svg`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   return (
-    <div className="card">
-      <h3>{title}</h3>
+    <div className="card" ref={ref}>
+      <div style={{ display: "flex", alignItems: "baseline" }}>
+        <h3 style={{ flex: 1 }}>{title}</h3>
+        <button
+          onClick={downloadSvg}
+          title="Download chart as SVG"
+          style={{ padding: "2px 8px", fontSize: 11 }}
+        >
+          SVG ↓
+        </button>
+      </div>
       {children}
     </div>
   );

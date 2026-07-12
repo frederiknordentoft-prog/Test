@@ -29,8 +29,8 @@ def create_run(req: CreateRunRequest):
 
 
 @router.get("")
-def list_runs():
-    return [
+def list_runs(include_archived: bool = True):
+    live = [
         {
             "run_id": h.run_id,
             "label": h.label,
@@ -38,9 +38,33 @@ def list_runs():
             "tick": h.sim.tick,
             "ticks_target": h.config.ticks,
             "seed": h.config.seed,
+            "archived": False,
         }
         for h in REGISTRY.runs.values()
     ]
+    if not include_archived:
+        return live
+    live_ids = {r["run_id"] for r in live}
+    try:
+        from api.runner import DB_PATH
+        from simcore.persistence.db import connect
+
+        conn = connect(DB_PATH)
+        rows = conn.execute(
+            "SELECT run_id, label, status, tick_count, ticks_target, seed FROM runs "
+            "ORDER BY created_at DESC LIMIT 100"
+        ).fetchall()
+        conn.close()
+        for run_id, label, status, tick, target, seed in rows:
+            if run_id not in live_ids:
+                live.append({
+                    "run_id": run_id, "label": label, "status": status,
+                    "tick": tick, "ticks_target": target, "seed": seed,
+                    "archived": True,
+                })
+    except Exception:
+        pass  # a missing/locked DB must never break run listing
+    return live
 
 
 @router.get("/{run_id}")

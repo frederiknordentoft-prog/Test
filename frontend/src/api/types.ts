@@ -93,3 +93,64 @@ export interface CustomEvent {
   duration: number;
   magnitude: number;
 }
+
+export interface RunListEntry {
+  run_id: string;
+  label: string;
+  status: string;
+  tick: number;
+  ticks_target: number;
+  seed: number;
+  archived: boolean;
+}
+
+export interface NetworkNode {
+  id: number;
+  type: string;
+  alive: boolean;
+  wealth: number;
+  market_power: number;
+  sentiment: number;
+  centrality: number;
+  systemic: boolean;
+}
+
+export interface NetworkResponse {
+  layer: string;
+  nodes: NetworkNode[];
+  edges: { source: number; target: number; strength: number }[];
+}
+
+export interface ReactionsResponse {
+  event: { tick: number; name: string; type: string; magnitude: number; phase: string };
+  window: [number, number];
+  n_decisions: number;
+  reactions_by_type: { actor_type: string; action: string; count: number; total_qty: number }[];
+  top_drivers: { driver: string; count: number; mean_contribution: number }[];
+  reactions_per_tick: { tick: number; count: number }[];
+  price_moves: Record<string, { return: number; trough_return: number }>;
+  second_order: Record<string, number>;
+  note: string;
+}
+
+export interface MonteCarloStatus {
+  mc_id: string;
+  label: string;
+  status: string;
+  progress: number;
+  total: number;
+  error: string | null;
+  result: {
+    n_runs: number;
+    runs: Record<string, number>[];
+    percentiles: Record<string, Record<string, number>>;
+  } | null;
+}
+
+export interface SavedConfig {
+  id: string;
+  name: string;
+  description: string;
+  seed: number | null;
+  ticks: number | null;
+}

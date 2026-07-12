@@ -12,20 +12,26 @@ from simcore.models.config import EventConfig, SimConfig, default_actor_mix
 
 class CreateRunRequest(BaseModel):
     preset_id: str | None = None
+    saved_id: str | None = None            # a scenario saved via POST /api/configs
     config: dict[str, Any] | None = None   # full config dict (may include "scenario")
     label: str = ""
-    seed: int | None = None
-    ticks: int | None = None
+    seed: int | None = Field(None, ge=0)
+    ticks: int | None = Field(None, ge=1, le=20000)
     tick_resolution: str | None = None
-    n_actors: int | None = None
+    n_actors: int | None = Field(None, ge=10, le=5000)
     actor_counts: dict[str, int] | None = None
     scenario: str | None = None
     events: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class CreateMonteCarloRequest(CreateRunRequest):
-    n_seeds: int = 10
-    base_seed: int = 1000
+    n_seeds: int = Field(10, ge=1, le=500)
+    base_seed: int = Field(1000, ge=0)
+
+
+class SaveConfigRequest(CreateRunRequest):
+    name: str
+    description: str = ""
 
 
 class StepRequest(BaseModel):
@@ -37,7 +43,11 @@ class SpeedRequest(BaseModel):
 
 
 def build_config(req: CreateRunRequest) -> SimConfig:
-    if req.preset_id:
+    if req.saved_id:
+        from api.routes.configs import load_saved
+
+        cfg = load_saved(req.saved_id)
+    elif req.preset_id:
         cfg = load_preset(req.preset_id)
     elif req.config:
         cfg = config_from_dict(req.config)

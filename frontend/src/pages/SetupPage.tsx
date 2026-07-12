@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { CustomEvent, Preset, ScenarioInfo } from "../api/types";
+import type { CustomEvent, Preset, SavedConfig, ScenarioInfo } from "../api/types";
 import { useSimStore } from "../store/simStore";
 
 const RESOLUTIONS = ["minute", "hour", "day", "week", "quarter"];
@@ -8,9 +8,11 @@ const RESOLUTIONS = ["minute", "hour", "day", "week", "quarter"];
 export function SetupPage({ onCreated }: { onCreated: () => void }) {
   const setRun = useSimStore((s) => s.setRun);
   const [presets, setPresets] = useState<Preset[]>([]);
+  const [saved, setSaved] = useState<SavedConfig[]>([]);
   const [scenarios, setScenarios] = useState<ScenarioInfo[]>([]);
   const [eventTypes, setEventTypes] = useState<string[]>([]);
   const [presetId, setPresetId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [scenario, setScenario] = useState<string>("");
   const [label, setLabel] = useState("");
   const [seed, setSeed] = useState(42);
@@ -23,6 +25,7 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
 
   useEffect(() => {
     api.presets().then(setPresets).catch((e) => setError(String(e)));
+    api.savedConfigs().then(setSaved).catch(() => {});
     api.scenarios().then(setScenarios).catch(() => {});
     api.eventTypes().then(setEventTypes).catch(() => {});
   }, []);
@@ -38,8 +41,9 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
     setError(null);
     try {
       const body = {
-        preset_id: presetId,
-        label: label || (presetId ?? "custom run"),
+        preset_id: savedId ? null : presetId,
+        saved_id: savedId,
+        label: label || (savedId ?? presetId ?? "custom run"),
         seed,
         ticks,
         n_actors: nActors,
@@ -57,6 +61,27 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
     }
   };
 
+  const saveScenario = async () => {
+    const name = window.prompt("Name for this scenario:");
+    if (!name) return;
+    try {
+      await api.saveConfig({
+        name,
+        preset_id: savedId ? null : presetId,
+        saved_id: savedId,
+        seed,
+        ticks,
+        n_actors: nActors,
+        tick_resolution: resolution,
+        scenario: scenario || null,
+        events,
+      });
+      setSaved(await api.savedConfigs());
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
   const selectedScenario = scenarios.find((s) => s.id === scenario);
 
   return (
@@ -65,8 +90,8 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
       <div className="section-title">1 · Choose a market preset</div>
       <div className="preset-grid">
         <div
-          className={`preset-card ${presetId === null ? "selected" : ""}`}
-          onClick={() => setPresetId(null)}
+          className={`preset-card ${presetId === null && savedId === null ? "selected" : ""}`}
+          onClick={() => { setPresetId(null); setSavedId(null); }}
         >
           <div className="name">Default Market</div>
           <div className="desc">Balanced 300-actor mix, moderate depth and leverage.</div>
@@ -75,10 +100,20 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
           <div
             key={p.id}
             className={`preset-card ${presetId === p.id ? "selected" : ""}`}
-            onClick={() => setPresetId(p.id)}
+            onClick={() => { setPresetId(p.id); setSavedId(null); }}
           >
             <div className="name">{p.name}</div>
             <div className="desc">{p.description}</div>
+          </div>
+        ))}
+        {saved.map((sc) => (
+          <div
+            key={sc.id}
+            className={`preset-card ${savedId === sc.id ? "selected" : ""}`}
+            onClick={() => { setSavedId(sc.id); setPresetId(null); }}
+          >
+            <div className="name">💾 {sc.name}</div>
+            <div className="desc">{sc.description || `saved scenario · seed ${sc.seed} · ${sc.ticks} ticks`}</div>
           </div>
         ))}
       </div>
@@ -173,6 +208,7 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
         <button className="primary" onClick={create} disabled={busy}>
           {busy ? "Creating…" : "Create simulation"}
         </button>
+        <button onClick={saveScenario}>Save as scenario</button>
         <span className="muted">
           The run is created paused — start it from the run view.
         </span>

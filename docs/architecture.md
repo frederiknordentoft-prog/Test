@@ -366,10 +366,12 @@ calls at 50–150 µs ≈ 15–45 s; all other stages are vectorized (~10 ms/tic
 
 ## 18. Phase plan
 
-- **Phase 1 (this delivery)**: everything above, end-to-end runnable; 7 actor types;
-  5 events; 5 presets; Setup + Run pages; tests; benchmark; README.
-- **Phase 2**: regulator & media actors; remaining events/scenarios/presets; network
-  visualization; run comparison; reaction-analysis drill-down; Parquet + HTML report;
-  vectorized decide fast path; parallel Monte Carlo; Docker publishing.
-- **Phase 3**: LLM adapter wiring for key actors; custom network editor; labor
-  market; multi-good economy; distribution editor UI.
+- **Phase 1 (delivered)**: end-to-end engine with 9 actor types (incl. regulator &
+  media), 12 events, 11 scenarios, 5 presets; Setup + Run pages; tests; benchmark.
+- **Phase 2 (delivered)**: network visualization; Monte Carlo UI; run comparison
+  (with SQLite fallback for archived runs); per-event reaction analysis built from
+  the actual decision logs; Parquet + self-contained HTML report + SVG chart
+  downloads; saved scenarios; request/config validation hardening.
+- **Phase 3 (open)**: vectorized decide fast path for 1000+ actors; parallel Monte
+  Carlo; LLM adapter wiring for key actors; custom network editor; labor market;
+  multi-good economy; distribution editor UI.
