@@ -1,0 +1,28 @@
+# Example experiment config — run with:
+#   cd backend && python scripts/run_headless.py --config ../configs/example_experiment.yaml
+name: Rumor panic in a leveraged market
+description: Fabricated rumor hits a market with generous margin rules.
+seed: 42
+ticks: 300
+tick_resolution: day
+scenario: rumor_panic
+actors:
+  retail: {count: 160}
+  institutional: {count: 20}
+  hedge_fund: {count: 25}
+  bank: {count: 5}
+  firm: {count: 30}
+  supplier: {count: 20}
+  customer: {count: 34}
+  media: {count: 5}
+  regulator: {count: 1}
+market:
+  max_leverage: 4.0
+  initial_margin: 0.3
+  maintenance_margin: 0.2
+events:
+  - name: Follow-up margin tightening
+    event_type: margin_shock
+    start_tick: 60
+    duration: 30
+    magnitude: 0.8

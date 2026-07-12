@@ -155,7 +155,9 @@ class PopulationFactory:
         splits = rng.dirichlet(np.ones(k))
         lever = 1.0
         if actor.can_leverage:
-            lever = 1.0 + float(rng.beta(2, 3)) * 1.0  # initial leverage 1.0–2.0
+            # initial leverage respects the configured cap (up to 1.0-2.5x)
+            extra = max(self.config.market.max_leverage - 1.0, 0.0)
+            lever = 1.0 + float(rng.beta(2, 3)) * min(extra, 1.5)
         target_value = w * frac * lever
         s.margin_debt = max(0.0, target_value - w * frac)
         s.cash = w - w * frac
