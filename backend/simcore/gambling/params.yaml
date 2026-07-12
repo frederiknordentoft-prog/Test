@@ -1,0 +1,161 @@
+# Parameter register for the Danish gambling-market simulation.
+#
+# Per the design perspective (fælde 3), this file is "as important as the code":
+# every parameter must be either (a) calibratable against public data, or (b)
+# justified by theory/literature. Each entry records value, unit, source,
+# confidence and whether it must be swept in sensitivity analysis.
+#
+# confidence:  green  = official/published data
+#              yellow = estimate / contested / derived
+#              red    = no data — pure scenario assumption
+#
+# sensitivity: true  => must be varied in Monte Carlo sensitivity runs
+#
+# Values here are 2024/25 anchors and are also encoded in presets/dk_baseline.yaml.
+# This register is the human-readable, source-annotated companion to that preset.
+
+meta:
+  vintage: "2024/2025"
+  currency: DKK
+  note: >
+    Illustrative foresight, not a forecast. The four modelled tracks
+    (lottery + scratch + casino + sports) sum to ~8.7 bn DKK BSI; total Danish
+    BSI (~11.0 bn) additionally includes land-based casino and gaming machines,
+    which are out of scope for the four-track view.
+
+parameters:
+
+  - name: bsi_total_all_gambling
+    value: 11.0
+    unit: bn_DKK
+    source: "Spillemyndigheden — Spilmarkedet i tal 2024"
+    confidence: green
+    sensitivity: false
+    note: "Whole market incl. land-based/machines; the 4 tracks are a subset."
+
+  - name: annual_bsi_lottery
+    value: 2.0
+    unit: bn_DKK
+    source: "Derived split of the ~2.8-3.0 bn monopoly block (Lotto+Eurojackpot)"
+    confidence: yellow
+    sensitivity: true
+    note: "Lottery/scratch are bundled in public stats; split is an assumption."
+
+  - name: annual_bsi_scratch
+    value: 1.0
+    unit: bn_DKK
+    source: "Derived split of the ~2.8-3.0 bn monopoly block (Quick/Skrab)"
+    confidence: yellow
+    sensitivity: true
+
+  - name: annual_bsi_casino
+    value: 3.5
+    unit: bn_DKK
+    source: "Spillemyndigheden 2024 (+14.7 % YoY, growth engine, no calendar)"
+    confidence: green
+    sensitivity: false
+
+  - name: annual_bsi_sports
+    value: 2.21
+    unit: bn_DKK
+    source: "Spillemyndigheden 2024 (+1.2 % YoY, volatile, calendar-driven)"
+    confidence: green
+    sensitivity: false
+
+  - name: gambling_tax_rate
+    value: 0.28
+    unit: fraction_of_BSI
+    source: "Spilafgiftsloven — 28 % on the liberalized segment"
+    confidence: green
+    sensitivity: false
+
+  - name: winnings_tax_free
+    value: 1
+    unit: bool
+    source: "DK tax rules — winnings tax-free for players (onshore channeling driver)"
+    confidence: green
+    sensitivity: false
+
+  - name: channelization_rate
+    value: 0.82
+    unit: fraction
+    source: "Contested: 72 % (H2 Gambling Capital) .. 91.5 % (Spillemyndigheden)"
+    confidence: yellow
+    sensitivity: true
+    interval: [0.72, 0.92]
+    note: "Treat as an interval. Report only conclusions robust across it (fælde 2)."
+
+  - name: online_share
+    value: 0.68
+    unit: fraction
+    source: "Spillemyndigheden"
+    confidence: yellow
+    sensitivity: false
+
+  - name: mobile_share
+    value: 0.70
+    unit: fraction
+    source: "Spillemyndigheden"
+    confidence: green
+    sensitivity: false
+
+  - name: sports_seasonality_amplitude
+    value: 0.45
+    unit: fraction_month_on_month
+    source: "Spillemyndigheden monthly stats: betting swung -46 % .. +14 % YoY in 2 months"
+    confidence: green
+    sensitivity: true
+
+  - name: ds_bsi_2025
+    value: 5.16
+    unit: bn_DKK
+    source: "Danske Spil annual report 2025"
+    confidence: green
+    sensitivity: false
+
+  - name: ds_profit_2025
+    value: 2.01
+    unit: bn_DKK
+    source: "Danske Spil annual report 2025"
+    confidence: green
+    sensitivity: false
+
+  - name: udlodning_2025
+    value: 1.79
+    unit: bn_DKK
+    source: "Danske Spil — distribution to sport/culture/associations"
+    confidence: green
+    sensitivity: false
+    note: "Drives the udlodning feedback loop (stakeholder resistance to tightening)."
+
+  - name: income_concentration_top_share
+    value: 0.05
+    unit: fraction_of_players
+    source: "NO DK DATA — international prior (heavy-tailed spend)"
+    confidence: red
+    sensitivity: true
+    note: >
+      The single most important missing parameter (perspective §2.1/§10):
+      what share of players make up what share of BSI. Must always be swept.
+
+  - name: problem_gamblers_adults
+    value: 500000
+    unit: persons
+    source: "Rambøll/Spillemyndigheden — adults with some gambling problem"
+    confidence: green
+    sensitivity: false
+
+  - name: rofus_registered
+    value: 60000
+    unit: persons
+    source: "Spillemyndigheden — ROFUS self-exclusion register"
+    confidence: green
+    sensitivity: false
+
+  - name: young_male_rofus_share_under20
+    value: 0.96
+    unit: fraction
+    source: "Spillemyndigheden — 96 % of ROFUS under-20 are men"
+    confidence: green
+    sensitivity: false
+    note: "Young men are a distinct agent class, not a variation (perspective §2.1)."

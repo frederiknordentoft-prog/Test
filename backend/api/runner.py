@@ -12,11 +12,22 @@ import uuid
 from dataclasses import dataclass, field
 
 from simcore.analytics.montecarlo import run_monte_carlo
-from simcore.engine.simulation import Simulation
 from simcore.models.config import SimConfig
 
 DB_PATH = "../data/simulator.db"
 FRAME_INTERVAL = 0.1  # seconds between websocket frames (<=10 fps)
+
+
+def make_simulation(config: SimConfig, db_path: str | None, run_id: str, label: str):
+    """Pick the Simulation class by domain (imports are lazy so the finance
+    path never pays for gambling code and vice versa)."""
+    if getattr(config, "sim_domain", "finance") == "gambling":
+        from simcore.gambling.simulation import GamblingSimulation
+
+        return GamblingSimulation(config, db_path=db_path, run_id=run_id, label=label)
+    from simcore.engine.simulation import Simulation
+
+    return Simulation(config, db_path=db_path, run_id=run_id, label=label)
 
 
 @dataclass
@@ -33,7 +44,7 @@ class RunHandle:
         import api.runner as _runner_mod
 
         resolved_db = db_path if db_path is not None else _runner_mod.DB_PATH
-        self.sim = Simulation(config, db_path=resolved_db, run_id=self.run_id, label=label)
+        self.sim = make_simulation(config, resolved_db, self.run_id, label)
         self.label = label or config.name
         self.status = "created"
         self.error: str | None = None
@@ -109,6 +120,8 @@ class RunHandle:
 
     # ------------------------------------------------------------------ #
     def frame(self) -> dict:
+        if getattr(self.config, "sim_domain", "finance") == "gambling":
+            return self._gambling_frame()
         sim = self.sim
         m = sim.metrics_history[-1] if sim.metrics_history else {}
         new_events = [
@@ -135,6 +148,35 @@ class RunHandle:
                     "bankruptcies_total", "margin_calls_total", "wealth_gini",
                     "employment_index", "forced_volume_share",
                 )
+            },
+            "new_events": new_events,
+        }
+
+    def _gambling_frame(self) -> dict:
+        """WebSocket/status frame for the gambling domain. Prices are per-track
+        monthly BSI; metrics pass through every numeric series from the last
+        tick so new series (share, customers, revenue, …) added in later etaper
+        surface with no change here."""
+        sim = self.sim
+        m = sim.metrics_history[-1] if sim.metrics_history else {}
+        new_events = [
+            {"tick": r.tick, "name": r.name, "type": r.event_type, "phase": r.phase,
+             "magnitude": r.magnitude}
+            for r in sim.events_log[self._last_event_idx:]
+        ]
+        self._last_event_idx = len(sim.events_log)
+        prices = sim.prices() if hasattr(sim, "prices") else {}
+        return {
+            "run_id": self.run_id,
+            "tick": sim.tick,
+            "ticks_target": self.config.ticks,
+            "status": self.status,
+            "domain": "gambling",
+            "prices": {k: round(float(v), 3) for k, v in prices.items()},
+            "metrics": {
+                k: round(float(v), 4)
+                for k, v in m.items()
+                if k != "tick" and isinstance(v, (int, float))
             },
             "new_events": new_events,
         }

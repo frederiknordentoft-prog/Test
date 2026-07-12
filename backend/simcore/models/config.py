@@ -192,7 +192,12 @@ class SimConfig(BaseModel):
     description: str = ""
     seed: int = Field(42, ge=0)
     ticks: int = Field(500, ge=1, le=20000)
-    tick_resolution: Literal["minute", "hour", "day", "week", "quarter"] = "day"
+    tick_resolution: Literal["minute", "hour", "day", "week", "month", "quarter"] = "day"
+    sim_domain: Literal["finance", "gambling"] = "finance"
+    # Raw gambling-domain config; validated into a GamblingConfig by the
+    # GamblingSimulation (kept as a dict here so models/config.py has no
+    # dependency on the gambling package — avoids an import cycle).
+    gambling: dict[str, Any] | None = None
     actors: dict[str, ActorTypeConfig] = Field(default_factory=dict)
     assets: list[AssetConfig] = Field(default_factory=list)
     market: MarketConfig = Field(default_factory=MarketConfig)
@@ -211,17 +216,20 @@ class SimConfig(BaseModel):
             )
         if self.market.max_leverage < 1.0:
             raise ValueError("max_leverage must be >= 1.0")
-        if not self.assets:
-            self.assets = [
-                AssetConfig(asset_id=f"EQ{i+1}", initial_price=100.0) for i in range(5)
-            ]
-        if not self.actors:
-            self.actors = default_actor_mix()
-        if not self.networks:
-            self.networks = {
-                "social": NetworkLayerConfig(kind="scale_free", params={"m": 3}),
-                "information": NetworkLayerConfig(kind="small_world", params={"k": 6, "p": 0.1}),
-            }
+        # The gambling domain builds its own population/market from the
+        # ``gambling`` block; don't inject the finance defaults for it.
+        if self.sim_domain == "finance":
+            if not self.assets:
+                self.assets = [
+                    AssetConfig(asset_id=f"EQ{i+1}", initial_price=100.0) for i in range(5)
+                ]
+            if not self.actors:
+                self.actors = default_actor_mix()
+            if not self.networks:
+                self.networks = {
+                    "social": NetworkLayerConfig(kind="scale_free", params={"m": 3}),
+                    "information": NetworkLayerConfig(kind="small_world", params={"k": 6, "p": 0.1}),
+                }
         return self
 
     @property

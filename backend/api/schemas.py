@@ -22,6 +22,7 @@ class CreateRunRequest(BaseModel):
     actor_counts: dict[str, int] | None = None
     scenario: str | None = None
     events: list[dict[str, Any]] = Field(default_factory=list)
+    domain: str | None = None  # "finance" | "gambling"; overrides the base config's
 
 
 class CreateMonteCarloRequest(CreateRunRequest):
@@ -53,12 +54,17 @@ def build_config(req: CreateRunRequest) -> SimConfig:
         cfg = config_from_dict(req.config)
     else:
         cfg = SimConfig()
-    if req.n_actors:
-        cfg.actors = default_actor_mix(req.n_actors)
-    if req.actor_counts:
-        for k, v in req.actor_counts.items():
-            if k in cfg.actors:
-                cfg.actors[k].count = int(v)
+    if req.domain is not None:
+        cfg.sim_domain = req.domain  # type: ignore[assignment]
+    # Actor-count overrides only apply to the finance population; the gambling
+    # domain builds its own population from the ``gambling`` block.
+    if cfg.sim_domain == "finance":
+        if req.n_actors:
+            cfg.actors = default_actor_mix(req.n_actors)
+        if req.actor_counts:
+            for k, v in req.actor_counts.items():
+                if k in cfg.actors:
+                    cfg.actors[k].count = int(v)
     if req.seed is not None:
         cfg.seed = req.seed
     if req.ticks is not None:
@@ -69,4 +75,15 @@ def build_config(req: CreateRunRequest) -> SimConfig:
         cfg.events = list(cfg.events) + get_scenario(req.scenario)
     for e in req.events:
         cfg.events.append(EventConfig(**e))
+    if cfg.sim_domain == "gambling":
+        # Validate the gambling block now so a bad config surfaces as a 422 at
+        # request time rather than an opaque error inside the sim thread.
+        from pydantic import ValidationError
+
+        from simcore.gambling.config import GamblingConfig
+
+        try:
+            GamblingConfig.model_validate(cfg.gambling or {})
+        except ValidationError as e:
+            raise ValueError(f"invalid gambling config: {e}") from e
     return cfg

@@ -41,6 +41,7 @@ def list_presets() -> list[dict[str, str]]:
                 "id": p.stem,
                 "name": data.get("name", p.stem),
                 "description": data.get("description", ""),
+                "domain": data.get("sim_domain", "finance"),
             }
         )
     return out
