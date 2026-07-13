@@ -38,6 +38,10 @@ class EntryManager:
         self.exited: list[str] = []
         self._low_share: dict[str, int] = {}
         self.events: list[dict] = []   # (tick, kind, operator_id, detail) for logging
+        # Optional link to the P&L layer: an entrant arrives with a cash runway,
+        # and a challenger that burns through it exits on economics — not only
+        # on the market-share survival rule. Set by the simulation when enabled.
+        self.economics = None
 
     # ------------------------------------------------------------------ #
     def _estimate_bsi(self, market: AttractionMarket, op: OperatorConfig,
@@ -125,15 +129,21 @@ class EntryManager:
                ent: EntrantConfig, target: str | None = None) -> None:
         op = OperatorConfig(**{k: getattr(ent, k) for k in OperatorConfig.model_fields})
         op.entry_tick = tick   # ramp effective brand/reach from a low base
+        runway = ent.entry_cost * self.gcfg.econ_runway_multiple + self.gcfg.econ_runway
         if target is not None:
             ai.drop(target)
             market.replace_operator(target, op)
             ai.register(op.operator_id, ent.ai_cap0)
+            if self.economics is not None:
+                self.economics.drop(target)
+                self.economics.register_runway(op.operator_id, runway)
             self.events.append({"tick": tick, "kind": "m&a", "operator_id": op.operator_id,
                                 "detail": f"acquired {target}"})
         else:
             market.add_operator(op)
             ai.register(op.operator_id, ent.ai_cap0)
+            if self.economics is not None:
+                self.economics.register_runway(op.operator_id, runway)
             self.events.append({"tick": tick, "kind": "entry", "operator_id": op.operator_id,
                                 "detail": ent.kind})
         self.pending.remove(ent)
@@ -159,6 +169,20 @@ class EntryManager:
                 # its members churn internally, but the block does not exit as
                 # one unit on a single survival threshold (category error).
                 continue
+            # Cash-exhaustion exit: a challenger whose acquisition burn has
+            # outrun its runway past the grace period is financially
+            # unsustainable and folds even if its share is still respectable
+            # (the DraftKings/Kindred pattern — share bought on unsustainable
+            # spend). This is a *separate* exit path from the survival rule.
+            if self.economics is not None and self.economics.cash_exhausted(op.operator_id):
+                market.remove_operator(op.operator_id)
+                ai.drop(op.operator_id)
+                self.economics.drop(op.operator_id)
+                self.exited.append(op.operator_id)
+                self._low_share.pop(op.operator_id, None)
+                self.events.append({"tick": tick, "kind": "exit", "operator_id": op.operator_id,
+                                    "detail": "cash runway exhausted"})
+                continue
             s = share.get(op.operator_id, 0.0)
             if s < self.gcfg.survival_share:
                 self._low_share[op.operator_id] = self._low_share.get(op.operator_id, 0) + 1
@@ -167,6 +191,8 @@ class EntryManager:
             if self._low_share[op.operator_id] >= self.gcfg.survival_periods:
                 market.remove_operator(op.operator_id)
                 ai.drop(op.operator_id)
+                if self.economics is not None:
+                    self.economics.drop(op.operator_id)
                 self.exited.append(op.operator_id)
                 self._low_share.pop(op.operator_id, None)
                 self.events.append({"tick": tick, "kind": "exit", "operator_id": op.operator_id,

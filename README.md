@@ -32,6 +32,13 @@ on the API; runs are monthly. Highlights:
 - **AI diffusion**: a rising frontier with per-operator S-curve adoption feeding
   personalization + market growth; **entry/exit/M&A** with a frontier-gated
   big-tech entrant.
+- **Competitor & industry intelligence**: every operator carries a monthly
+  **P&L** (marketing, bonus, opex, gambling tax → EBIT margin and a running cash
+  position) calibrated to real annual-report ratios (Flutter marketing 22.8 % of
+  revenue, competitive EBIT 18–25 %, monopoly ~39 %, M&A 9–13× EBITDA). Commercial
+  intensity now costs money, so an aggressive challenger's acquisition burn is
+  visible and can **exhaust the cash runway** it entered with — the DraftKings/
+  Betano spend-now-earn-later pattern, ending in a cash-driven exit.
 - **Four feedback loops**: the channelization **false positive** (tightening
   lowers *measured* harm while hidden offshore harm rises), the delayed political
   agent (overshoot), the **udlodning** coalition (resistance to tightening), and

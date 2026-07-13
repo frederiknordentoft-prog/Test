@@ -99,6 +99,34 @@ def trends():
     return TREND_CATALOG
 
 
+@router.get("/competitor-intelligence")
+def competitor_intelligence():
+    """The competitor & industry-intelligence reference: the real annual-report
+    figures the operator P&L is calibrated against (marketing % of GGR,
+    acquisition economics, M&A multiples, EBIT-margin band) plus the model's
+    own economic parameters. Lets the operator-economics panel show *why* a
+    challenger's burn looks the way it does."""
+    reg = load_register()
+    econ_names = {
+        "econ_marketing_ratio", "econ_bonus_ratio", "econ_opex_ratio",
+        "econ_runway_multiple", "econ_burn_grace", "flutter_marketing_pct_revenue",
+        "draftkings_ltv_cac", "ma_ev_ebitda_multiple", "casino_hold_pct",
+        "competitive_ebit_margin", "acquisition_multiple", "entry_profit_margin",
+    }
+    params = [p for p in param_table() if p["name"] in econ_names]
+    return {
+        "meta": reg["meta"],
+        "parameters": params,
+        "note": (
+            "Operatørernes P&L er kalibreret mod offentlige årsrapporter: markedsføring "
+            "~20 % af GGR (Flutter 22,8 %), konkurrencedygtig EBIT-margin 18-25 %, "
+            "monopol ~39 %, opkøbsmultipler 9-13× EBITDA. En aggressiv udfordrer "
+            "(Betano-arketypen) brænder kontant på markedsføring og bonus og kan løbe "
+            "tør for sin startkapital — ligesom i virkeligheden."
+        ),
+    }
+
+
 @router.get("/forecast-validation")
 def forecast_validation():
     """The 'can this predict the future?' bundle (Etape D): reality anchors for

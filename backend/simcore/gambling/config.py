@@ -355,6 +355,21 @@ class GamblingConfig(BaseModel):
     operators_enabled: bool = True
     op_adjust_rate: float = Field(0.08, ge=0.0, le=1.0)         # attr drift speed per tick
     op_realloc_substitutability: float = Field(0.6, ge=0.0, le=1.0)  # closed→open efficiency
+
+    # --- operator business models (competitor intelligence) -------------- #
+    # Monthly P&L ratios (share of GGR) calibrated to operator annual reports:
+    # marketing ~20 % of revenue (Flutter 22.8 %, Kindred ~19 %), bonus ~18 %
+    # (RSI ~17 % ad+promo), opex ~18 % → competitive EBIT margin ~15-25 %.
+    economics_enabled: bool = True
+    econ_marketing_ratio: float = Field(0.33, ge=0.0, le=1.0)   # × reach → ~20 % of GGR at reach 0.6
+    econ_bonus_ratio: float = Field(0.30, ge=0.0, le=1.0)       # × bonus → ~18 % of GGR at bonus 0.6
+    econ_opex_ratio: float = Field(0.18, ge=0.0, le=1.0)        # platform/staff/compliance
+    # A challenger enters with a cash runway (raised capital) to fund the
+    # acquisition burn; entry_cost × this multiple. If it burns past the runway
+    # for econ_burn_grace months it is unsustainable and exits.
+    econ_runway_multiple: float = Field(6.0, ge=0.0, le=50.0)
+    econ_runway: float = Field(50.0, ge=0.0)                    # extra tolerance (mio DKK)
+    econ_burn_grace: int = Field(18, ge=1, le=120)             # months of cash burn tolerated
     # Entrants build share over time (brand awareness, trust, distribution): a
     # new operator's effective brand+reach ramp from ``entrant_ramp_floor`` to
     # full over this many months. Calibrated (Etape C) so a Betano-style

@@ -141,6 +141,41 @@ def compute_ai_entry_metrics(gcfg: GamblingConfig, ai, entry, market) -> dict[st
     return m
 
 
+def compute_economics_metrics(gcfg: GamblingConfig, economics, market) -> dict[str, float]:
+    """Per-operator monthly P&L (marketing/bonus/opex/tax → EBIT → cash) plus a
+    Danske Spil aggregate. This is the competitor & industry-intelligence layer:
+    commercial intensity now costs money, so an aggressive challenger's burn is
+    visible and its cash runway can be exhausted. Calibrated to real annual-report
+    ratios (Flutter marketing 22.8 % of revenue, competitive EBIT margins 18-25 %,
+    monopoly ~39 %)."""
+    m: dict[str, float] = {}
+    last = economics.last
+    ds_ids = {o.operator_id for o in gcfg.operators if o.is_ds}
+    ds_ggr = ds_ebit = 0.0
+    ind_ggr = ind_ebit = 0.0                      # competitive (non-DS licensed) aggregate
+    for op in market.operators:
+        row = last.get(op.operator_id)
+        if not row:
+            continue
+        oid = op.operator_id
+        m[f"ebit_op_{oid}"] = round(row["ebit"], 3)
+        m[f"ebit_margin_op_{oid}"] = round(row["ebit_margin"], 4)
+        m[f"marketing_op_{oid}"] = round(row["marketing"], 3)
+        m[f"bonus_op_{oid}"] = round(row["bonus"], 3)
+        m[f"cash_op_{oid}"] = round(row.get("cash", 0.0), 1)
+        if op.is_ds:
+            ds_ggr += row["ggr"]
+            ds_ebit += row["ebit"]
+        elif op.licensed:
+            ind_ggr += row["ggr"]
+            ind_ebit += row["ebit"]
+    m["ds_ebit"] = round(ds_ebit, 3)
+    m["ds_ebit_margin"] = round(ds_ebit / ds_ggr, 4) if ds_ggr > 0 else 0.0
+    m["industry_ebit"] = round(ind_ebit, 3)
+    m["industry_ebit_margin"] = round(ind_ebit / ind_ggr, 4) if ind_ggr > 0 else 0.0
+    return m
+
+
 def compute_stakeholder_metrics(reg, udlodning: float, political) -> dict[str, float]:
     """Policy state + the udlodning loop output."""
     return {

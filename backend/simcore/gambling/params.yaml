@@ -517,3 +517,96 @@ parameters:
     source: "Spillemyndigheden register (Jun 2026): 23 casino+betting, 12 casino-only, 14 limited casino, 5 betting-only"
     confidence: green
     sensitivity: false
+
+  # ----------------------------------------------------------------------- #
+  # Competitor & industry intelligence (companion) — operator P&L ratios,
+  # calibrated to public annual reports. These turn commercial intensity into a
+  # cost so an aggressive challenger's burn is visible and its runway can run
+  # out. The *_ratio fields multiply reach/bonus, so the effective % of GGR is
+  # lower than the coefficient (marketing ~20 % of GGR at reach 0.6).
+
+  - name: econ_marketing_ratio
+    config_field: econ_marketing_ratio
+    value: 0.33
+    unit: coeff_x_reach
+    source: "Flutter 22.8 % of revenue on marketing; Kindred ~19 %, Evoke/888 ~25 % — × reach 0.6 ≈ 20 % of GGR"
+    confidence: yellow
+    sensitivity: true
+    interval: [0.20, 0.50]
+    note: "Monopoly pays 0.15× this (little acquisition marketing — retail/brand-led)."
+
+  - name: econ_bonus_ratio
+    config_field: econ_bonus_ratio
+    value: 0.30
+    unit: coeff_x_bonus
+    source: "RSI ~17 % ad+promo; NGR/GGR bonus bridge 8-40 % across operators — × bonus 0.6 ≈ 18 % of GGR"
+    confidence: red
+    sensitivity: true
+    interval: [0.15, 0.45]
+
+  - name: econ_opex_ratio
+    config_field: econ_opex_ratio
+    value: 0.18
+    unit: fraction_of_GGR
+    source: "Platform/staff/compliance opex; residual so competitive EBIT lands 18-25 % (Betsson 23 %, Entain online 25 %)"
+    confidence: red
+    sensitivity: true
+    interval: [0.10, 0.28]
+
+  - name: econ_runway_multiple
+    config_field: econ_runway_multiple
+    value: 6.0
+    unit: multiple_of_entry_cost
+    source: "NO DATA — raised capital a challenger enters with, as a multiple of entry cost (VC/PE-style acquisition war-chest)"
+    confidence: red
+    sensitivity: true
+    interval: [2.0, 12.0]
+    note: "Governs how long a high-burn Betano-type can outspend its revenue before folding on economics."
+
+  - name: econ_burn_grace
+    config_field: econ_burn_grace
+    value: 18
+    unit: months
+    source: "DraftKings cohort payback ~18 months (CAC $371 / LTV $2,546, 6.9× LTV/CAC) — burn tolerated before exit"
+    confidence: red
+    sensitivity: false
+    interval: [12, 36]
+
+  # Reference anchors (documentation; not wired to a config field) — the real
+  # figures the P&L ratios and M&A logic are calibrated against.
+
+  - name: flutter_marketing_pct_revenue
+    value: 0.228
+    unit: fraction_of_revenue
+    source: "Flutter Entertainment annual report 2023: sales & marketing 22.8 % of revenue"
+    confidence: green
+    sensitivity: false
+
+  - name: draftkings_ltv_cac
+    value: 6.9
+    unit: ratio
+    source: "DraftKings investor materials: CAC ~$371, LTV ~$2,546 (~18-month payback) — acquisition-economics anchor"
+    confidence: yellow
+    sensitivity: false
+
+  - name: ma_ev_ebitda_multiple
+    value: 10.0
+    unit: EV_EBITDA
+    source: "Sector M&A 9-13× EBITDA (Kindred/FDJ 10.9×, Snai/Playtech 9.0×) — podium-strategy valuation band"
+    confidence: yellow
+    sensitivity: false
+    note: "The model prices acquisitions on years-of-profit (acquisition_multiple) rather than EBITDA; this is the reality check."
+
+  - name: casino_hold_pct
+    value: 0.045
+    unit: fraction_of_stakes
+    source: "Online casino gross win margin 3-6 % of amounts staked (GGR/turnover); betting hold higher"
+    confidence: yellow
+    sensitivity: false
+
+  - name: competitive_ebit_margin
+    value: 0.22
+    unit: fraction_of_revenue
+    source: "Betsson 23.2 %, Entain online 25.3 %, Evoke ~18 % — competitive online EBIT margin band the P&L reproduces"
+    confidence: green
+    sensitivity: false

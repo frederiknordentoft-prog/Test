@@ -29,12 +29,14 @@ from simcore.gambling.events import GAMBLING_EVENT_HANDLERS
 from simcore.gambling.harm import compute_harm
 from simcore.gambling.indicators import (
     compute_ai_entry_metrics,
+    compute_economics_metrics,
     compute_gambling_metrics,
     compute_market_metrics,
     compute_population_metrics,
     compute_revenue,
     compute_stakeholder_metrics,
 )
+from simcore.gambling.economics import OperatorEconomics
 from simcore.gambling.market import AttractionMarket
 from simcore.gambling.operators import OperatorAgents
 from simcore.gambling.stakeholders import (
@@ -86,6 +88,11 @@ class GamblingSimulation:
         self.ai = AIDiffusion(self.gcfg)
         self.entry = EntryManager(self.gcfg)
         self.operators = OperatorAgents(self.gcfg)
+        self.economics = OperatorEconomics(self.gcfg)
+        # Entrants arrive with a cash runway and can fold when it is exhausted —
+        # let the entry manager consult the P&L layer (only when economics run).
+        if self.gcfg.economics_enabled:
+            self.entry.economics = self.economics
         self._last_results: dict = {}
         self._entry_event_idx = 0
 
@@ -177,6 +184,15 @@ class GamblingSimulation:
         metrics.update(compute_market_metrics(self.gcfg, results))
         metrics.update(compute_ai_entry_metrics(self.gcfg, self.ai, self.entry, self.market))
         metrics.update(compute_revenue(self.gcfg, self.reg, results))
+
+        # 3a. Operator P&L (competitor & industry intelligence): marketing,
+        #     bonus, opex and gambling tax turn each operator's GGR into an EBIT
+        #     margin and a running cash position. Commercial intensity now has a
+        #     price, so an aggressive challenger's burn is visible and its cash
+        #     runway (consulted by the entry manager) can run out.
+        if self.gcfg.economics_enabled:
+            self.economics.step(results, self.market, reg)
+            metrics.update(compute_economics_metrics(self.gcfg, self.economics, self.market))
 
         # 3b. ROFUS: high-risk players playing licensed can self-exclude
         #     (boosted by AI-based RG detection); near-absorbing.

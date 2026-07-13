@@ -182,3 +182,21 @@ export interface ForecastValidation {
   };
   honesty: string;
 }
+
+export interface RegisterParam {
+  name: string;
+  value: number | string;
+  unit: string;
+  source: string;
+  confidence: string;
+  sensitivity: boolean;
+  interval?: number[] | null;
+  note?: string;
+  config_field?: string | null;
+}
+
+export interface CompetitorIntelligence {
+  meta: Record<string, unknown>;
+  parameters: RegisterParam[];
+  note: string;
+}

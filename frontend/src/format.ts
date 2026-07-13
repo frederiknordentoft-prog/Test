@@ -148,6 +148,11 @@ export const METRIC_LABELS: Record<string, { name: string; unit: Unit }> = {
   final_wealth_gini: { name: "Gini (slut)", unit: "raw" },
   final_mean_leverage: { name: "Gearing (slut)", unit: "raw" },
   n_entrants_mc: { name: "Indtrædere", unit: "antal" },
+  // Operator economics (competitor & industry intelligence)
+  ds_ebit: { name: "DS driftsresultat (EBIT)", unit: "mio_kr" },
+  ds_ebit_margin: { name: "DS EBIT-margin", unit: "pct" },
+  industry_ebit: { name: "Konkurrenternes EBIT", unit: "mio_kr" },
+  industry_ebit_margin: { name: "Konkurrenternes EBIT-margin", unit: "pct" },
 };
 
 export function metricLabel(key: string): string {

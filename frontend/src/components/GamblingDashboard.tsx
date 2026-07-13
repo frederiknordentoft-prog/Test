@@ -43,6 +43,10 @@ export function GamblingDashboard() {
      "Estimeret antal unikke kunder på tværs af alle spor og udbydere. Kalibreret: ~1,4 mio. lotterikunder, nogle hundrede tusinde pr. liberaliseret spor — af ~4,5 mio. voksne danskere."],
     ["Licenserede udbydere", formatDa(last.n_licensees, "antal"),
      "Antal repræsenterede licensindehavere: 5 navngivne agenter + ~35 i den aggregerede long-tail (Spillemyndighedens register: 54 inkl. begrænsede licenser)."],
+    ["DS EBIT-margin", formatDa(last.ds_ebit_margin, "pct"),
+     "Danske Spils driftsmargin (EBIT/GGR) i modellen. Kalibreret mod årsrapporten (~39 %): monopolet på lotteri/skrab er meget profitabelt, mens den liberaliserede del kræver markedsføring og bonus og tjener mindre."],
+    ["Konkurrenternes EBIT-margin", formatDa(last.industry_ebit_margin, "pct"),
+     "De licenserede konkurrenters samlede driftsmargin. Konkurrencedygtige operatører lander typisk på 18-25 % (Betsson 23 %, Entain online 25 %) — men en aggressiv udfordrer i vækstfase kan have negativ margin, fordi den brænder kontant på kundeanskaffelse."],
   ] as const;
 
   return (
@@ -236,6 +240,43 @@ export function GamblingDashboard() {
             xLabel="md"
             series={[
               { key: "rofus_stock", name: "ROFUS-bestand", color: COLORS.harmMeasured },
+            ]}
+          />
+        </ChartCard>
+
+        <ChartCard
+          title="Operatørernes driftsmargin (EBIT ÷ GGR)"
+          info="Kommerciel intensitet koster nu penge. Hver operatør har en månedlig resultatopgørelse kalibreret mod rigtige årsrapporter: markedsføring ~20 % af GGR (Flutter 22,8 %), bonus ~18 %, afgift 28 %. Monopolet (lotteri) tjener meget; en aggressiv udfordrer kan have NEGATIV margin, fordi den brænder på kundeanskaffelse (spend-nu-tjen-senere)."
+        >
+          <MetricChart
+            data={history}
+            events={events}
+            unit="pct"
+            xLabel="md"
+            series={[
+              { key: "ebit_margin_op_ds_lotteri", name: "DS monopol (lotteri)", color: COLORS.lottery },
+              { key: "ebit_margin_op_ds_licens", name: "DS liberaliseret", color: COLORS.ds },
+              { key: "ebit_margin_op_bet365", name: "bet365", color: COLORS.competitors },
+              { key: "ebit_margin_op_betano", name: "Betano (udfordrer)", color: COLORS.offshore },
+              { key: "ebit_margin_op_longtail", name: "Øvrige licenshavere", color: COLORS.neutral },
+            ]}
+          />
+        </ChartCard>
+
+        <ChartCard
+          title="Kommerciel intensitet — markedsføring & bonus pr. måned (mio. kr.)"
+          info="Hvad operatørerne bruger på at vinde og fastholde kunder. Danske Spil er brand-/detailledet og bruger relativt lidt; en sponsorat-drevet udfordrer (Betano-arketypen) og offshore kører leverne varmt. Det er dét, der presser Danske Spils andel — og det, der kan løbe en udfordrer tør for kapital."
+        >
+          <MetricChart
+            data={history}
+            events={events}
+            unit="mio_kr"
+            xLabel="md"
+            series={[
+              { key: "marketing_op_ds_licens", name: "DS markedsføring", color: COLORS.ds },
+              { key: "marketing_op_betano", name: "Betano markedsføring", color: COLORS.offshore },
+              { key: "bonus_op_betano", name: "Betano bonus", color: COLORS.prediction },
+              { key: "marketing_op_offshore", name: "Offshore markedsføring", color: COLORS.neutral },
             ]}
           />
         </ChartCard>
