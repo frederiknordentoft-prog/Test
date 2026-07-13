@@ -47,6 +47,121 @@ def _line_fig(x, series: dict[str, list], title: str, events=None, ytitle: str =
 
 
 def generate_report(sim: "Simulation") -> str:
+    """Domain-aware report entry point (the finance layout raised KeyError on
+    gambling runs — a user-reported bug)."""
+    if getattr(sim.config, "sim_domain", "finance") == "gambling":
+        return _gambling_report(sim)
+    return _finance_report(sim)
+
+
+def _rolling12(vals: list[float]) -> list[float]:
+    """Trailing 12-month sum, annualized for the first partial year."""
+    out = []
+    for i in range(len(vals)):
+        window = vals[max(0, i - 11): i + 1]
+        out.append(sum(window) * 12.0 / len(window))
+    return out
+
+
+def _gambling_report(sim) -> str:
+    import plotly.io as pio
+
+    cfg = sim.config
+    g = sim.gcfg
+    mh = sim.metrics_history
+    ticks = [m["tick"] for m in mh]
+    starts = [r for r in sim.events_log if r.phase == "start"]
+
+    def col(key):
+        return [float(m.get(key, 0.0)) for m in mh]
+
+    track_names = {t.track_id: t.name for t in g.tracks}
+    figs = []
+    rolling = {"Hele markedet (inkl. offshore)": [v / 1000.0 for v in _rolling12(col("market_size_total"))]}
+    for t in g.tracks:
+        rolling[track_names[t.track_id]] = [v / 1000.0 for v in _rolling12(col(f"bsi_{t.track_id}"))]
+    figs.append(_line_fig(ticks, rolling, "Markedets størrelse — rullende 12 måneder",
+                          events=starts, ytitle="mia. kr./år"))
+    figs.append(_line_fig(
+        ticks,
+        {"DS samlet andel": col("ds_share_total"),
+         "DS andel, liberaliseret marked": col("ds_share_liberalized")},
+        "Danske Spils markedsandel", events=starts, ytitle="andel"))
+    figs.append(_line_fig(
+        ticks,
+        {"Kanalisering (antagelse)": col("channelization"),
+         "korridor lav (72 %)": col("channelization_low"),
+         "korridor høj (92 %)": col("channelization_high"),
+         "Offshore-andel": col("offshore_share")},
+        "Kanalisering — omstridt interval, ikke et punkt", events=starts, ytitle="andel"))
+    figs.append(_line_fig(
+        ticks,
+        {track_names[t.track_id]: col(f"customers_{t.track_id}") for t in g.tracks},
+        "Kunder pr. spor (alle udbydere)", events=starts, ytitle="personer"))
+    figs.append(_line_fig(
+        ticks,
+        {"Målt skade": col("measured_harm"), "Sand skade": col("true_harm"),
+         "Skjult (offshore)": col("harm_gap")},
+        "Kernespændingen: målt vs. sand skade", events=starts, ytitle="indeks"))
+    figs.append(_line_fig(
+        ticks,
+        {"Afgiftsprovenu": col("state_revenue"), "Udlodning": col("udlodning")},
+        "Statens provenu & udlodning (mio. kr./md)", events=starts, ytitle="mio. kr./md"))
+
+    fig_html = "".join(
+        pio.to_html(f, include_plotlyjs=("cdn" if i > 0 else True), full_html=False)
+        for i, f in enumerate(figs)
+    )
+
+    m_end = mh[-1] if mh else {}
+    kpis = [
+        ("DS markedsandel (samlet)", f'{m_end.get("ds_share_total", 0) * 100:.1f} %'),
+        ("DS andel, liberaliseret marked", f'{m_end.get("ds_share_liberalized", 0) * 100:.1f} %'),
+        ("Kanalisering", f'{m_end.get("channelization", 0) * 100:.1f} %'),
+        ("Marked, rullende 12 mdr.", f'{_rolling12(col("market_size_total"))[-1] / 1000:.1f} mia. kr.' if mh else "—"),
+        ("Kunder (unikke, est.)", f'{m_end.get("customers_total", 0):,.0f}'.replace(",", ".")),
+        ("Licenserede udbydere (repr.)", f'{m_end.get("n_licensees", 0):.0f}'),
+        ("Statens provenu (md)", f'{m_end.get("state_revenue", 0):.0f} mio. kr.'),
+        ("Udlodning (md)", f'{m_end.get("udlodning", 0):.0f} mio. kr.'),
+        ("ROFUS-bestand", f'{m_end.get("rofus_stock", 0):,.0f}'.replace(",", ".")),
+    ]
+    summary_rows = "".join(f"<tr><td>{k}</td><td>{v}</td></tr>" for k, v in kpis)
+    event_rows = "".join(
+        f"<tr><td>{r.tick}</td><td>{r.name}</td><td>{r.event_type}</td><td>{r.phase}</td></tr>"
+        for r in sim.events_log
+    ) or "<tr><td colspan=4>ingen</td></tr>"
+
+    try:
+        from simcore.gambling.params import load_params
+        param_rows = "".join(
+            f"<tr><td>{p.name}</td><td>{p.value}</td><td>{p.confidence}</td><td>{p.source}</td></tr>"
+            for p in load_params()
+        )
+    except Exception:  # pragma: no cover
+        param_rows = "<tr><td colspan=4>register utilgængeligt</td></tr>"
+
+    return f"""<!doctype html><html><head><meta charset="utf-8">
+<title>Spilmarkeds-rapport — {cfg.name}</title><style>{_STYLE}</style></head><body>
+<h1>Spilmarkeds-rapport — {cfg.name}</h1>
+<p class="meta">kørsel {sim.run_id} · seed {cfg.seed} · {sim.tick} måneder · {g.population} spilleragenter</p>
+<div class="disclaimer"><b>Illustrativ foresight — ikke en prognose.</b>
+Kanalisering er omstridt (72–92 %) og behandles som et interval; operatør-markedsandele har
+ingen officiel kilde; indtægtskoncentrationen er den vigtigste usikre parameter. Rapportér kun
+konklusioner, der er robuste på tværs af antagelserne (se parameterregistret nederst).</div>
+<h2>Nøgletal (slutmåned)</h2><table><tbody>{summary_rows}</tbody></table>
+{fig_html}
+<h2>Hændelser</h2>
+<table><thead><tr><th>måned</th><th>navn</th><th>type</th><th>fase</th></tr></thead>
+<tbody>{event_rows}</tbody></table>
+<h2>Parameterregister (værdi · konfidens · kilde)</h2>
+<table><thead><tr><th>parameter</th><th>værdi</th><th>konfidens</th><th>kilde</th></tr></thead>
+<tbody>{param_rows}</tbody></table>
+<h2>Konfiguration</h2>
+<details><summary>fuld config-JSON</summary><pre>{json.dumps(cfg.model_dump(), indent=2, default=str)}</pre></details>
+</body></html>"""
+
+
+def _finance_report(sim: "Simulation") -> str:
     import plotly.graph_objects as go
     import plotly.io as pio
 

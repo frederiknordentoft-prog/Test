@@ -44,7 +44,9 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
-export function ChartCard({ title, children }: { title: string; children: ReactNode }) {
+export function ChartCard({ title, info, children }: {
+  title: string; info?: string; children: ReactNode;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   const downloadSvg = () => {
@@ -65,8 +67,14 @@ export function ChartCard({ title, children }: { title: string; children: ReactN
 
   return (
     <div className="card" ref={ref}>
-      <div style={{ display: "flex", alignItems: "baseline" }}>
-        <h3 style={{ flex: 1 }}>{title}</h3>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+        <h3 style={{ flex: "0 1 auto", margin: 0 }}>{title}</h3>
+        {info && (
+          <span className="info-dot" tabIndex={0} aria-label={info}>
+            ⓘ<span className="info-tip">{info}</span>
+          </span>
+        )}
+        <span style={{ flex: 1 }} />
         <button
           onClick={downloadSvg}
           title="Download grafen som SVG"

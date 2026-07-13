@@ -16,6 +16,30 @@ const DEFAULT_LEVERS = {
   entry_enabled: true,
 };
 
+/** σ → "top-5 % of players hold X % of revenue" (measured empirically in the
+ *  model incl. the risk coupling) so the lever speaks human, not lognormal. */
+const TOP5_MAP: [number, number][] = [
+  [1.1, 0.33], [1.3, 0.39], [1.5, 0.46], [1.7, 0.54], [1.9, 0.61], [2.2, 0.71],
+];
+function top5Share(sigma: number): number {
+  if (sigma <= TOP5_MAP[0][0]) return TOP5_MAP[0][1];
+  for (let i = 1; i < TOP5_MAP.length; i++) {
+    const [x1, y1] = TOP5_MAP[i - 1];
+    const [x2, y2] = TOP5_MAP[i];
+    if (sigma <= x2) return y1 + ((sigma - x1) / (x2 - x1)) * (y2 - y1);
+  }
+  return TOP5_MAP[TOP5_MAP.length - 1][1];
+}
+
+/** Operator-strategy panel defaults (mirror DEFAULT_OPERATORS in the backend). */
+const OP_DEFAULTS: Record<string, { name: string; marketing: number; bonus: number;
+  ai_adoption: number; aggressiveness: number }> = {
+  ds_licens: { name: "Danske Spil (Licens)", marketing: 0.70, bonus: 0.35,
+               ai_adoption: 0.08, aggressiveness: 0.50 },
+  betano: { name: "Betano (udfordrer)", marketing: 0.92, bonus: 0.90,
+            ai_adoption: 0.08, aggressiveness: 0.92 },
+};
+
 export function SetupPage({ onCreated }: { onCreated: () => void }) {
   const setRun = useSimStore((s) => s.setRun);
   const [presets, setPresets] = useState<Preset[]>([]);
@@ -33,6 +57,7 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
   const [resolution, setResolution] = useState("month");
   const [events, setEvents] = useState<CustomEvent[]>([]);
   const [levers, setLevers] = useState({ ...DEFAULT_LEVERS });
+  const [ops, setOps] = useState(() => structuredClone(OP_DEFAULTS));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveName, setSaveName] = useState("");
@@ -74,11 +99,25 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
       },
     ]);
 
-  const gamblingOverrides = () => ({
-    ...levers,
-    channelization_low: Math.min(0.72, levers.channelization_start),
-    channelization_high: Math.max(0.92, levers.channelization_start),
-  });
+  const gamblingOverrides = () => {
+    // Only send operator overrides that differ from the archetype defaults.
+    const operator_overrides: Record<string, Record<string, number>> = {};
+    for (const [oid, v] of Object.entries(ops)) {
+      const d = OP_DEFAULTS[oid];
+      const patch: Record<string, number> = {};
+      if (v.marketing !== d.marketing) patch.marketing_reach = v.marketing;
+      if (v.bonus !== d.bonus) patch.bonus = v.bonus;
+      if (v.ai_adoption !== d.ai_adoption) patch.ai_adoption = v.ai_adoption;
+      if (v.aggressiveness !== d.aggressiveness) patch.aggressiveness = v.aggressiveness;
+      if (Object.keys(patch).length) operator_overrides[oid] = patch;
+    }
+    return {
+      ...levers,
+      channelization_low: Math.min(0.72, levers.channelization_start),
+      channelization_high: Math.max(0.92, levers.channelization_start),
+      ...(Object.keys(operator_overrides).length ? { operator_overrides } : {}),
+    };
+  };
 
   const body = () => ({
     preset_id: savedId ? null : presetId,
@@ -143,7 +182,10 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
   };
 
   const selectedScenario = scenarios.find((s) => s.id === scenario);
-  const resetLevers = () => setLevers({ ...DEFAULT_LEVERS });
+  const resetLevers = () => {
+    setLevers({ ...DEFAULT_LEVERS });
+    setOps(structuredClone(OP_DEFAULTS));
+  };
 
   return (
     <div className="page">
@@ -239,9 +281,10 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
               <div className="lever-group-title">Marked &amp; kunder</div>
               <div className="form-grid">
                 <Slider
-                  label={<>Indtægtskoncentration <span className="chip warn">mest følsom</span></>}
-                  value={levers.spend_sigma} display={levers.spend_sigma.toFixed(2)}
-                  hint="Hvor stor en del af omsætningen kommer fra de største spillere (1,7 ≈ top-5 % står for ~60 %)."
+                  label={<>Spillekoncentration <span className="chip warn">mest følsom</span></>}
+                  value={levers.spend_sigma}
+                  display={`top-5 % står for ~${Math.round(top5Share(levers.spend_sigma) * 100)} %`}
+                  hint="Hvor stor en del af omsætningen kommer fra de 5 % mest spillende. Ingen dansk statistik findes — internationale studier peger på 50-70 %. Alle policy-konklusioner afhænger af den her."
                   min={1.1} max={2.2} step={0.05}
                   onChange={(v) => setLevers({ ...levers, spend_sigma: v })} />
                 <Slider
@@ -278,6 +321,36 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
                   </label>
                   <div className="hint">AI-native udfordrere, big-tech, konsolidatorer og crypto-casinoer.</div>
                 </div>
+              </div>
+            </div>
+            <div className="lever-group">
+              <div className="lever-group-title">Operatør-strategier — Danske Spil vs. udfordreren</div>
+              <div className="grid grid-2">
+                {Object.entries(ops).map(([oid, v]) => (
+                  <div key={oid} style={{ minWidth: 260 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>{v.name}</div>
+                    <Slider label="Marketingtryk" value={v.marketing}
+                      display={`${Math.round(v.marketing * 100)} %`}
+                      hint="Synlighed/acquisition-muskel. Rammes af reklameforbud."
+                      min={0.1} max={1} step={0.02}
+                      onChange={(x) => setOps({ ...ops, [oid]: { ...v, marketing: x } })} />
+                    <Slider label="Bonusintensitet" value={v.bonus}
+                      display={`${Math.round(v.bonus * 100)} %`}
+                      hint="Velkomst-/retention-bonusser. Rammes af bonusrestriktioner."
+                      min={0} max={1} step={0.05}
+                      onChange={(x) => setOps({ ...ops, [oid]: { ...v, bonus: x } })} />
+                    <Slider label="AI-adoptionsfart" value={v.ai_adoption}
+                      display={`${(v.ai_adoption * 100).toFixed(0)} %/md`}
+                      hint="Hvor hurtigt operatøren indhenter AI-fronten (personalisering, retention)."
+                      min={0.02} max={0.30} step={0.01}
+                      onChange={(x) => setOps({ ...ops, [oid]: { ...v, ai_adoption: x } })} />
+                    <Slider label="Risikovillighed" value={v.aggressiveness}
+                      display={`${Math.round(v.aggressiveness * 100)} %`}
+                      hint="Hvor hårdt operatøren omallokerer budget og brænder kapital, når markedet skifter."
+                      min={0.1} max={1} step={0.02}
+                      onChange={(x) => setOps({ ...ops, [oid]: { ...v, aggressiveness: x } })} />
+                  </div>
+                ))}
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 4 }}>

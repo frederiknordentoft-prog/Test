@@ -238,3 +238,34 @@ details[open].card > summary::before { content: "▾ "; }
   max-width: 70vw;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ----- info tooltips (feedback round) ----- */
+.info-dot {
+  position: relative;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: help;
+  user-select: none;
+}
+.info-dot .info-tip {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 20px;
+  z-index: 50;
+  width: 300px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+.info-dot:hover .info-tip,
+.info-dot:focus .info-tip,
+.info-dot:focus-visible .info-tip {
+  display: block;
+}
+.info-mini { color: var(--text-muted); font-size: 10px; }

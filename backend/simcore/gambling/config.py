@@ -382,9 +382,27 @@ class GamblingConfig(BaseModel):
     baseline_noise: float = Field(0.0, ge=0.0, le=0.5)  # monthly lognormal noise on BSI
 
     # --- population shape (Etape 1) ------------------------------------- #
-    # Number of real active gamblers the agent population represents (for
-    # scaling agent counts to customer numbers). No hard DK anchor exists.
+    # Legacy total-population scale (kept for the engagement-level view);
+    # actual customer counts are calibrated per track to customer_anchors.
     represented_customers: int = Field(2_500_000, ge=1000)
+    # Per-track customer anchors (people, all providers): calibrated so the
+    # baseline counts are recognizable — ~4.5 M adult Danes, lottery reaches
+    # ~1.4 M, the other verticals a few hundred thousand each. Estimates, not
+    # official statistics (see params.yaml).
+    customer_anchors: dict[str, float] = Field(default_factory=lambda: {
+        "lottery": 1_400_000.0, "scratch": 700_000.0,
+        "casino": 450_000.0, "sports": 500_000.0,
+    })
+    # Licensed operators in Denmark: Spillemyndigheden's register lists 54
+    # licence holders (June 2026; 23 casino+betting, 12 casino-only, 14
+    # limited casino, 5 betting-only). The model names 5 of the ~40 full-scale
+    # operators as agents; ``longtail_licensees`` is how many real licences the
+    # aggregated "Øvrige licenshavere" agent represents.
+    longtail_licensees: int = Field(35, ge=0, le=100)
+    # Per-operator field overrides ({operator_id: {field: value}}) — the UI's
+    # "operator strategy" panel (DS vs competitors: marketing pressure, bonus
+    # intensity, AI adoption, aggressiveness, payout ...).
+    operator_overrides: dict[str, dict[str, float | bool]] = Field(default_factory=dict)
     # Heavy-tailed monthly spend: lognormal sigma is the income-concentration
     # knob (higher => a smaller share of players make up more of the BSI). This
     # is the single most important / most uncertain lever (perspective §2.1) and
@@ -422,6 +440,22 @@ class GamblingConfig(BaseModel):
         clash = {o.operator_id for o in self.operators} & {e.operator_id for e in self.entrants}
         if clash:
             raise ValueError(f"entrant ids clash with operators: {clash}")
+        # Apply per-operator strategy overrides (validated field names).
+        if self.operator_overrides:
+            by_id = {o.operator_id: o for o in list(self.operators) + list(self.entrants)}
+            allowed = set(OperatorConfig.model_fields) - {"operator_id", "kind", "tracks", "name"}
+            for oid, patch in self.operator_overrides.items():
+                op = by_id.get(oid)
+                if op is None:
+                    raise ValueError(f"operator_overrides: unknown operator '{oid}'")
+                for field, value in patch.items():
+                    if field not in allowed:
+                        raise ValueError(
+                            f"operator_overrides: unknown field '{field}' for '{oid}'")
+                    setattr(op, field, value)
+        bad_anchor = [t for t in self.customer_anchors if t not in track_ids]
+        if bad_anchor:
+            raise ValueError(f"customer_anchors references unknown track(s) {bad_anchor}")
         return self
 
     def operators_for(self, track_id: str) -> list[OperatorConfig]:

@@ -44,6 +44,7 @@ from simcore.gambling.stakeholders import (
     udlodning_from,
 )
 from simcore.gambling.population import (
+    anchored_customer_counts,
     build_population,
     calibrate_track_scale,
     customer_counts,
@@ -93,6 +94,11 @@ class GamblingSimulation:
         # ROFUS self-exclusion register (near-absorbing player state).
         self.rofus = np.zeros(self.pop.n, dtype=bool)
         self._rofus_inflow = 0.0
+
+        # Customer-count calibration state (anchored on the first clear).
+        self._cust_scales: dict[str, float] | None = None
+        self._cust_kappa: float | None = None
+        self._customer_base: float | None = None   # baseline unique customers (ROFUS scale)
 
         self.tick = 0
         self.metrics_history: list[dict] = []
@@ -146,10 +152,15 @@ class GamblingSimulation:
         self._last_results = results
         bsi_by_track = {tid: r["licensed_bsi"] for tid, r in results.items()}
 
-        # Customer counts are endogenous: expected customers per track follow
-        # the players' current participation probabilities (1 − outside option),
-        # so policy/AI/entry genuinely move them.
-        self.customers = customer_counts(self.pop, self.gcfg, self.market.participation())
+        # Customer counts are endogenous (participation probabilities drive the
+        # dynamics) and anchored (per-track scales calibrated once, at t0, to
+        # the recognizable Danish levels — ~1.4 M lottery customers etc.).
+        self.customers, self._cust_scales, self._cust_kappa = anchored_customer_counts(
+            self.pop, self.gcfg, self.market.participation(),
+            self._cust_scales, self._cust_kappa,
+        )
+        if self._customer_base is None:
+            self._customer_base = max(self.customers.get("_unique", 1.0), 1.0)
 
         metrics = compute_gambling_metrics(self.gcfg, t, bsi_by_track)
         metrics.update(
@@ -163,8 +174,8 @@ class GamblingSimulation:
         #     (boosted by AI-based RG detection); near-absorbing.
         if self.gcfg.rofus_enabled:
             self._rofus_step()
-            metrics["rofus_stock"] = round(
-                float(self.rofus.mean()) * self.gcfg.represented_customers, 0)
+            people = self._customer_base or self.gcfg.represented_customers
+            metrics["rofus_stock"] = round(float(self.rofus.mean()) * people, 0)
             metrics["rofus_inflow"] = round(self._rofus_inflow, 0)
 
         # 4. Harm + the stakeholder loops (measured vs true harm, regulator with

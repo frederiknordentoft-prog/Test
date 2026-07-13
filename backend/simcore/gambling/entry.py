@@ -153,6 +153,11 @@ class EntryManager:
         for op in list(market.operators):
             if not op.licensed or op.is_ds:
                 continue
+            if op.operator_id == "longtail":
+                # The long tail is an *aggregate* of ~35 independent licensees;
+                # its members churn internally, but the block does not exit as
+                # one unit on a single survival threshold (category error).
+                continue
             s = share.get(op.operator_id, 0.0)
             if s < self.gcfg.survival_share:
                 self._low_share[op.operator_id] = self._low_share.get(op.operator_id, 0) + 1

@@ -104,6 +104,19 @@ def compute_market_metrics(gcfg: GamblingConfig, results: dict[str, dict]) -> di
     for opid, bsi in per_op_bsi.items():
         m[f"bsi_op_{opid}"] = round(bsi, 3)
         m[f"share_op_{opid}"] = round(bsi / denom, 4)
+
+    # DS's share of the *liberalized, licensed* market (casino + sports) — the
+    # segment where DS actually competes; the total share is diluted by the
+    # protected monopoly block.
+    comp_tracks = {t.track_id for t in gcfg.tracks if t.competitive}
+    lib_licensed = sum(results[tid]["licensed_bsi"] for tid in comp_tracks if tid in results)
+    ds_lib = 0.0
+    for tid in comp_tracks:
+        r = results.get(tid)
+        if not r:
+            continue
+        ds_lib += sum(b for oid, b in r["operator_bsi"].items() if oid in ds_ids)
+    m["ds_share_liberalized"] = round(ds_lib / max(lib_licensed, 1e-9), 4)
     return m
 
 
@@ -117,6 +130,12 @@ def compute_ai_entry_metrics(gcfg: GamblingConfig, ai, entry, market) -> dict[st
     for oid, cap in ai.cap.items():
         m[f"ai_cap_{oid}"] = round(float(cap), 4)
     m["n_operators"] = float(sum(1 for o in market.operators if o.licensed))
+    # Real licences represented: the named licensed agents plus the ~35 full-
+    # scale licence holders the aggregated long-tail agent stands for
+    # (Spillemyndigheden's register lists 54 holders incl. limited licences).
+    named = sum(1 for o in market.operators if o.licensed and o.operator_id != "longtail")
+    longtail_active = any(o.operator_id == "longtail" for o in market.operators)
+    m["n_licensees"] = float(named + (gcfg.longtail_licensees if longtail_active else 0))
     m["n_entrants"] = float(len(entry.entered))
     m["n_exits"] = float(len(entry.exited))
     return m

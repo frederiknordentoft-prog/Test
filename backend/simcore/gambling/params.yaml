@@ -400,3 +400,36 @@ parameters:
     confidence: yellow
     sensitivity: false
     note: "Encoded as tax_rate on the monopoly tracks so state_revenue includes the monopoly's fiscal contribution."
+
+  - name: customer_anchor_lottery
+    value: 1400000
+    unit: persons
+    source: "Estimate: ~4.5 M adult Danes; lottery is the broadest vertical (user-calibrated, no official per-vertical customer statistics)"
+    confidence: yellow
+    sensitivity: true
+    interval: [1000000, 1600000]
+    note: "Baseline customers per vertical are anchored here; the choice model moves them."
+
+  - name: customer_anchor_casino
+    value: 450000
+    unit: persons
+    source: "Estimate: a few hundred thousand across all providers (300-800k band)"
+    confidence: red
+    sensitivity: true
+    interval: [300000, 800000]
+
+  - name: customer_anchor_sports
+    value: 500000
+    unit: persons
+    source: "Estimate: a few hundred thousand across all providers (300-800k band)"
+    confidence: red
+    sensitivity: true
+    interval: [300000, 800000]
+
+  - name: licensed_operators_dk
+    value: 54
+    unit: licence_holders
+    source: "Spillemyndigheden tilladelsesindehaver-register (juni 2026): 23 casino+betting, 12 kun casino, 14 begrænset casino, 5 kun betting"
+    confidence: green
+    sensitivity: false
+    note: "~40 full-scale operators; the model names 5 as agents and aggregates ~35 in the long tail (longtail_licensees)."

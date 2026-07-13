@@ -114,6 +114,48 @@ def concentration(total_spend_per_player: np.ndarray, top_fraction: float) -> fl
     return float(top.sum() / total) if total > 0 else 0.0
 
 
+def anchored_customer_counts(
+    pop: PlayerArrays, gcfg: GamblingConfig,
+    participation: dict[str, np.ndarray],
+    scales: dict[str, float] | None = None,
+    kappa: float | None = None,
+) -> tuple[dict[str, float], dict[str, float], float]:
+    """Per-track expected customer counts calibrated to ``customer_anchors``.
+
+    The agent population carries the *dynamics* (who plays, per tick, from the
+    choice probabilities); the anchors carry the *level* (~1.4 M lottery
+    customers, a few hundred thousand per liberalized vertical — of ~4.5 M
+    adult Danes). On the first call the per-track scale factors and the overlap
+    factor κ (unique ÷ sum of track counts, from the agent-level engagement
+    overlap) are calibrated and then held fixed, so policy/AI/entry move the
+    counts away from the anchored baseline instead of being re-absorbed."""
+    engaged = pop.pref >= gcfg.participation_threshold
+    ones = np.ones(pop.n)
+    raw: dict[str, float] = {}
+    p_not_any = np.ones(pop.n)
+    for i, tid in enumerate(pop.track_ids):
+        p_customer = engaged[:, i] * participation.get(tid, ones)
+        raw[tid] = float(p_customer.sum())
+        p_not_any *= 1.0 - p_customer
+    raw_unique = float((1.0 - p_not_any).sum())
+
+    if scales is None or kappa is None:
+        scales = {tid: gcfg.customer_anchors.get(tid, 0.0) / max(raw[tid], 1e-9)
+                  for tid in pop.track_ids}
+        # Overlap factor φ: how many *new* unique customers each additional
+        # vertical adds beyond the largest one, measured in agent space. Keeps
+        # unique ≥ the biggest vertical (a plain unique/sum ratio broke that
+        # invariant once per-track people-scales diverged).
+        raw_max = max(raw.values(), default=0.0)
+        others = max(sum(raw.values()) - raw_max, 1e-9)
+        kappa = max(0.0, raw_unique - raw_max) / others
+
+    counts = {tid: raw[tid] * scales[tid] for tid in pop.track_ids}
+    biggest = max(counts.values(), default=0.0)
+    counts["_unique"] = biggest + kappa * (sum(counts[tid] for tid in pop.track_ids) - biggest)
+    return counts, scales, kappa
+
+
 def customer_counts(pop: PlayerArrays, gcfg: GamblingConfig,
                     participation: dict[str, np.ndarray] | None = None) -> dict[str, float]:
     """Per-track expected customer counts (scaled to ``represented_customers``)
