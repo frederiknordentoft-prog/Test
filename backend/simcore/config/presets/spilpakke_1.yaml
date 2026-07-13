@@ -11,6 +11,13 @@ gambling:
   channelization_start: 0.82
   channelization_low: 0.72
   channelization_high: 0.92
-  calendar: {enabled: true, amplitude: 0.45, start_month: 1}
+  calendar:
+    enabled: true
+    amplitude: 1.0
+    start_month: 1
+    tournament_ticks: [17, 18, 41, 42]   # EM/VM-somre (juni+juli, år 1 og 3)
+    tournament_boost: 0.6
 events:
-  - {name: Spilpakke 1, event_type: spilpakke_1, start_tick: 12, description: Reklame-/bonus-/affiliate-stramning + grænser}
+  # Vedtaget ultimo år 0; faseindført frem mod fuld effekt ~14 måneder senere
+  # (whistle-to-whistle + bonus-/affiliate-restriktioner + grænser).
+  - {name: Spilpakke 1, event_type: spilpakke_1, start_tick: 12, duration: 14, description: Reklame-/bonus-/affiliate-stramning + grænser}

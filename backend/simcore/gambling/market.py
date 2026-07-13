@@ -29,7 +29,7 @@ from simcore.gambling.calendar import sports_intensity
 from simcore.gambling.config import GamblingConfig, OperatorConfig
 from simcore.gambling.decisions import (
     budget_weighted_shares,
-    choice_probabilities,
+    nested_choice_probabilities,
     operator_attr_arrays,
     player_betas,
     utilities,
@@ -60,6 +60,8 @@ class TrackMarket:
         # highest for low-risk players — the breadth exits first.
         self._outside_beta = betas["outside"]
         self.last_participation: np.ndarray | None = None
+        self.last_lic_prob: np.ndarray | None = None
+        self.last_unl_prob: np.ndarray | None = None
         self.set_operators(operators)
 
         if delta is not None and outside_delta is not None:
@@ -84,6 +86,19 @@ class TrackMarket:
         self.attrs = operator_attr_arrays(operators)
         self.licensed_mask = np.array([o.licensed for o in operators])
         self.unlicensed_mask = ~self.licensed_mask
+        self.offshore_mask = np.array([o.kind == "offshore" for o in operators])
+        self.prediction_mask = np.array([o.kind == "prediction" for o in operators])
+        # Nested logit: licensed=0, unlicensed=1, outside=2 (last column).
+        m = len(operators)
+        self._nest_index = np.full(m + 1, 2)
+        self._nest_index[:m] = np.where(self.licensed_mask, 0, 1)
+        self._nest_lambdas = [self.gcfg.nest_lambda_licensed,
+                              self.gcfg.nest_lambda_unlicensed, 1.0]
+
+    def refresh_attrs(self) -> None:
+        """Recompute attribute arrays after operator agents mutate their
+        OperatorConfig fields (endogenous behaviour)."""
+        self.set_operators(self.operators)
 
     # ------------------------------------------------------------------ #
     def _policy_attrs(self, reg) -> dict[str, np.ndarray]:
@@ -107,8 +122,16 @@ class TrackMarket:
 
         friction = a["friction"].copy()
         friction[lic] = friction[lic] + g.rg_friction_gain * reg.rg_friction
-        friction[unl] = friction[unl] + g.enforcement_friction * reg.enforcement
+        # DNS/payment blocking bites offshore only — prediction markets are
+        # financial derivatives distributed via fintech apps and cannot be
+        # blocked on the same legal basis (dossier §10.1).
+        friction[self.offshore_mask] += g.enforcement_friction * reg.enforcement
         a["friction"] = friction
+
+        if reg.prediction_boost and self.prediction_mask.any():
+            appeal = a["appeal"].copy()
+            appeal[self.prediction_mask] += reg.prediction_boost
+            a["appeal"] = appeal
 
         rtp = a["rtp"].copy()
         rtp[lic] = np.clip(rtp[lic] - g.rtp_tax_passthrough * reg.tax_add, 0.0, 1.0)
@@ -127,8 +150,11 @@ class TrackMarket:
 
     def _full_utilities(self, reg=None, extra_offsets: np.ndarray | None = None,
                         unlicensed_delta: float | None = None,
-                        outside_delta: float | None = None) -> np.ndarray:
-        """[n, m+1] utility matrix: operators + the outside option (last col)."""
+                        outside_delta: float | None = None,
+                        rofus: np.ndarray | None = None) -> np.ndarray:
+        """[n, m+1] utility matrix: operators + the outside option (last col).
+        ROFUS-registered players have licensed alternatives blocked (the
+        self-exclusion register covers the licensed market only)."""
         du = self.unlicensed_delta if unlicensed_delta is None else unlicensed_delta
         do = self.outside_delta if outside_delta is None else outside_delta
         u = utilities(self.betas, self._policy_attrs(reg))
@@ -137,12 +163,17 @@ class TrackMarket:
         if extra_offsets is not None:
             off = off + extra_offsets
         u = u + off[None, :]
+        if rofus is not None and rofus.any():
+            u[np.ix_(rofus, np.where(self.licensed_mask)[0])] -= self.gcfg.rofus_penalty
         outside = (do + self._outside_beta)[:, None]
         return np.concatenate([u, outside], axis=1)
 
+    def _probs(self, u_full: np.ndarray) -> np.ndarray:
+        return nested_choice_probabilities(u_full, self._nest_index, self._nest_lambdas,
+                                           self.temperature)
+
     def _shares_for(self, du: float, do: float) -> np.ndarray:
-        probs = choice_probabilities(self._full_utilities(unlicensed_delta=du, outside_delta=do),
-                                     self.temperature)
+        probs = self._probs(self._full_utilities(unlicensed_delta=du, outside_delta=do))
         return budget_weighted_shares(probs, self.weights)
 
     def _calibrate(self) -> tuple[float, float]:
@@ -190,9 +221,13 @@ class TrackMarket:
 
     # ------------------------------------------------------------------ #
     def clear(self, tick: int, reg=None, extra_offsets: np.ndarray | None = None,
-              engagement: float = 1.0, noise: float = 1.0) -> dict:
-        probs = choice_probabilities(self._full_utilities(reg, extra_offsets), self.temperature)
+              engagement: float = 1.0, noise: float = 1.0,
+              rofus: np.ndarray | None = None) -> dict:
+        probs = self._probs(self._full_utilities(reg, extra_offsets, rofus=rofus))
         self.last_participation = 1.0 - probs[:, -1]
+        m = len(self.operators)
+        self.last_lic_prob = probs[:, :m][:, self.licensed_mask].sum(axis=1)
+        self.last_unl_prob = probs[:, :m][:, self.unlicensed_mask].sum(axis=1)
         shares_full = budget_weighted_shares(probs, self.weights)
         shares = shares_full[:-1]                       # operator shares of potential
         outside_share = float(shares_full[-1])
@@ -282,12 +317,21 @@ class AttractionMarket:
         return {tid: tm.last_participation for tid, tm in self.tracks.items()
                 if tm.last_participation is not None}
 
+    def refresh_attrs(self) -> None:
+        """Recompute all tracks' attribute arrays after operator agents mutate
+        their OperatorConfig fields."""
+        for tm in self.tracks.values():
+            tm.refresh_attrs()
+
     # ------------------------------------------------------------------ #
     def clear(self, tick: int, reg=None, ai_offsets: dict[str, np.ndarray] | None = None,
-              engagement: float = 1.0, noise: dict[str, float] | None = None) -> dict[str, dict]:
+              engagement: float | dict[str, float] = 1.0,
+              noise: dict[str, float] | None = None,
+              rofus: np.ndarray | None = None) -> dict[str, dict]:
         out = {}
         for tid, tm in self.tracks.items():
             extra = None if ai_offsets is None else ai_offsets.get(tid)
             nz = 1.0 if noise is None else noise.get(tid, 1.0)
-            out[tid] = tm.clear(tick, reg, extra, engagement, nz)
+            eng = engagement.get(tid, 1.0) if isinstance(engagement, dict) else engagement
+            out[tid] = tm.clear(tick, reg, extra, eng, nz, rofus)
         return out

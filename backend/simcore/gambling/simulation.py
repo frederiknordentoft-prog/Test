@@ -36,6 +36,7 @@ from simcore.gambling.indicators import (
     compute_stakeholder_metrics,
 )
 from simcore.gambling.market import AttractionMarket
+from simcore.gambling.operators import OperatorAgents
 from simcore.gambling.stakeholders import (
     PoliticalAgent,
     Regulator,
@@ -75,9 +76,10 @@ class GamblingSimulation:
         # choice + channelization engine, calibrated to the baseline targets.
         self.market = AttractionMarket(self.gcfg, self.pop)
 
-        # AI diffusion + entry/exit/M&A (Etape 3).
+        # AI diffusion + entry/exit/M&A (Etape 3) + endogenous operator agents.
         self.ai = AIDiffusion(self.gcfg)
         self.entry = EntryManager(self.gcfg)
+        self.operators = OperatorAgents(self.gcfg)
         self._last_results: dict = {}
         self._entry_event_idx = 0
 
@@ -87,6 +89,10 @@ class GamblingSimulation:
         self.political = PoliticalAgent(self.gcfg)
         self._measured_hist: list[float] = []
         self._udlodning_baseline: float | None = None
+
+        # ROFUS self-exclusion register (near-absorbing player state).
+        self.rofus = np.zeros(self.pop.n, dtype=bool)
+        self._rofus_inflow = 0.0
 
         self.tick = 0
         self.metrics_history: list[dict] = []
@@ -117,14 +123,26 @@ class GamblingSimulation:
             self.entry.check_exits(t, self.market, self.ai, self._last_results)
             self._drain_entry_events(t)
 
+        # 2b. Endogenous operator behaviour: licensed operators reallocate
+        #     their commercial budget when regulation closes channels
+        #     (ad ban → brand/product/F2P — the Klub Lotto pattern).
+        if self.gcfg.operators_enabled:
+            self.operators.step(t, self.market, self.reg, self)
+
         # 3. Clear the market: policy acts on operator attributes (mediated by
         #    per-segment betas), AI adds personalization offsets, and each track
         #    carries its observed growth trend + optional baseline noise. The
         #    market clears with the *current* AI state (advanced at tick-end).
         ai_offsets = self._ai_offsets() if ai_on else None
-        engagement = self.ai.engagement_multiplier() if ai_on else 1.0
+        # Engagement is per track: only operators serving a track can grow its
+        # demand (no cross-track AI spillover from casino into lottery).
+        engagement: float | dict[str, float] = 1.0
+        if ai_on:
+            engagement = {tid: self.ai.engagement_for(tm.operators)
+                          for tid, tm in self.market.tracks.items()}
         reg = self.reg if stake_on else None
-        results = self.market.clear(t, reg, ai_offsets, engagement, self._noise())
+        rofus = self.rofus if self.gcfg.rofus_enabled else None
+        results = self.market.clear(t, reg, ai_offsets, engagement, self._noise(), rofus)
         self._last_results = results
         bsi_by_track = {tid: r["licensed_bsi"] for tid, r in results.items()}
 
@@ -141,10 +159,18 @@ class GamblingSimulation:
         metrics.update(compute_ai_entry_metrics(self.gcfg, self.ai, self.entry, self.market))
         metrics.update(compute_revenue(self.gcfg, self.reg, results))
 
+        # 3b. ROFUS: high-risk players playing licensed can self-exclude
+        #     (boosted by AI-based RG detection); near-absorbing.
+        if self.gcfg.rofus_enabled:
+            self._rofus_step()
+            metrics["rofus_stock"] = round(
+                float(self.rofus.mean()) * self.gcfg.represented_customers, 0)
+            metrics["rofus_inflow"] = round(self._rofus_inflow, 0)
+
         # 4. Harm + the stakeholder loops (measured vs true harm, regulator with
         #    enforcement decay, delayed political agent, udlodning resistance).
         if stake_on:
-            harm = compute_harm(self.gcfg, self.reg, results, self.pop)
+            harm = compute_harm(self.gcfg, self.reg, results, self.pop, self.market)
             metrics.update(harm)
             self._measured_hist.append(harm["measured_harm"])
             udl = udlodning_from(self.gcfg, metrics.get("ds_bsi_total", 0.0))
@@ -188,6 +214,28 @@ class GamblingSimulation:
         return {tid: np.array(self.ai.personalization_offset(tm.operators))
                 for tid, tm in self.market.tracks.items()}
 
+    def _rofus_step(self) -> None:
+        """ROFUS inflow/exit. Inflow hazard rises with the player's latent risk
+        (squared — the escalated tail self-excludes), with how much licensed
+        play they actually have (only visible players are caught/nudged), and
+        with AI-based RG detection. Exit is rare: near-absorbing."""
+        g = self.gcfg
+        lic_play = np.zeros(self.pop.n)
+        n_tracks = 0
+        for tm in self.market.tracks.values():
+            if tm.last_lic_prob is not None:
+                lic_play += tm.last_lic_prob
+                n_tracks += 1
+        if n_tracks:
+            lic_play /= n_tracks
+        hazard = (g.rofus_base_rate * (self.pop.risk ** 2) * lic_play
+                  * (1.0 + g.rofus_detection_gain * self.reg.rg_detection))
+        rng = self.hub.economy
+        inflow = (~self.rofus) & (rng.random(self.pop.n) < hazard)
+        outflow = self.rofus & (rng.random(self.pop.n) < g.rofus_exit_rate)
+        self.rofus = (self.rofus | inflow) & ~outflow
+        self._rofus_inflow = float(inflow.sum()) / max(self.pop.n, 1) * g.represented_customers
+
     def _noise(self) -> dict[str, float] | None:
         """Per-track multiplicative baseline noise (mean-one lognormal), drawn
         from the per-track RNG streams so runs stay reproducible per seed. The
@@ -203,11 +251,25 @@ class GamblingSimulation:
         return out
 
     def _apply_gambling_events(self, tick: int) -> None:
+        """Apply scheduled policy/market events. ``duration > 1`` phases the
+        event in as a ramp: the handler runs every tick of the window with
+        magnitude/duration, so e.g. Spilpakke 1 builds up over its real 14-month
+        implementation period instead of landing as a one-tick cliff."""
         for ev in self.config.events:
-            if ev.start_tick == tick and ev.event_type in GAMBLING_EVENT_HANDLERS:
-                GAMBLING_EVENT_HANDLERS[ev.event_type](self.reg, ev, self)
-                self._log_gambling_event(tick, ev.name or ev.event_type, ev.event_type,
-                                         ev.description or "")
+            if ev.start_tick is None or ev.event_type not in GAMBLING_EVENT_HANDLERS:
+                continue
+            dur = max(1, ev.duration)
+            if not (ev.start_tick <= tick < ev.start_tick + dur):
+                continue
+            step_ev = ev if dur == 1 else ev.model_copy(
+                update={"magnitude": (ev.magnitude or 1.0) / dur}
+            )
+            GAMBLING_EVENT_HANDLERS[ev.event_type](self.reg, step_ev, self)
+            if tick == ev.start_tick:
+                detail = ev.description or ""
+                if dur > 1:
+                    detail = (detail + f" (indfases over {dur} måneder)").strip()
+                self._log_gambling_event(tick, ev.name or ev.event_type, ev.event_type, detail)
 
     def _log_gambling_event(self, tick: int, name: str, event_type: str, detail: str) -> None:
         rec = EventRecord(tick=tick, name=name, event_type=event_type, magnitude=1.0,

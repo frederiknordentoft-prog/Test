@@ -53,12 +53,40 @@ were run against the first build; the market core was reworked accordingly:
 - **Etape 1:** heavy-tailed 5-axis player population + customer counts.
 - **Etape 2:** multinomial-logit operator choice → market share; channelization
   engine (licensed / offshore / prediction); Danske Spil split into two agents.
-- **Etape 3:** AI diffusion + entry/exit/M&A. (*Truly endogenous per-tick
-  operator decisions — budget reallocation across marketing/bonus/brand/product
-  when channels close — are the next planned wave; operator attributes are
-  currently static between policy effects.*)
+- **Etape 3:** AI diffusion + entry/exit/M&A.
 - **Etape 4:** stakeholder reactions + the four feedback loops.
 - **Etape 5:** scenarios + Monte Carlo distributions + robustness report + UI.
+
+## Behaviour & mechanisms (second red-team wave)
+
+- **Endogenous operator behaviour**: licensed operators reallocate their
+  commercial budget across {marketing, bonus, brand, product} every tick
+  (`operators.py`). At baseline attributes rest at their archetype anchors;
+  when regulation closes a channel the stranded budget flows to the open ones
+  at reduced efficiency (the Klub Lotto pattern), scaled by `aggressiveness`
+  (Betano pivots hard). Every reallocation is logged with drivers.
+- **Nested logit** (licensed / unlicensed / outside nests, λ registered):
+  fixes IIA — a licensed entrant competes primarily with licensed incumbents
+  instead of mechanically raising channelization.
+- **Spilpakke 1 phases in** over its real ~14-month implementation window
+  (`duration` on gambling events ramps the handler).
+- **Tournament years**: EM/VM summers (`tournament_ticks`) drive the observed
+  −46 %..+14 % YoY betting swings; a repeating monthly pattern alone produces
+  0 % YoY by construction. Casino stays the stable leg.
+- **Player-level harm**: harm = risk × spend-exposure per channel per player,
+  so the channelization false positive is emergent (the tail leaves the
+  measurement apparatus), not an arithmetic identity. **ROFUS** is a
+  near-absorbing player state (hazard ∝ risk² × licensed play × RG detection);
+  excluded players can still leak offshore — harm displacement is visible.
+- **Prediction markets** start at ≈0 and arrive as a structural discontinuity
+  (`prediction_surge`); DNS/payment enforcement cannot touch them (financial
+  derivative via fintech apps) — enforcement even pushes the tail *toward*
+  them within the unlicensed nest.
+- **Entry/M&A realism**: discounted NPV with an execution draw taken
+  unconditionally (CRN-safe); the AI-native entrant's capability edge is priced
+  into its own entry appraisal; the consolidator buys the highest-NPV target
+  (podium strategy — in practice the fast-growing challenger, the FDJ/Kindred
+  pattern), and a sponsorship-led challenger can enter with no AI gate.
 
 ## Honest data limitation
 

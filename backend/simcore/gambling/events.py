@@ -25,9 +25,19 @@ def spilpakke_1(reg, ev, sim) -> None:
 
 
 def spilpakke_2(reg, ev, sim) -> None:
-    """Targets prediction markets / offshore arbitrage: enforcement + friction."""
+    """Targets prediction markets / offshore arbitrage: closes the
+    financial-product loophole (prediction cannot be DNS-blocked, but its DK
+    distribution can be regulated away) + enforcement + friction."""
     reg.enforcement = min(1.0, reg.enforcement + _p(ev, "enforcement", 0.5))
     reg.rg_friction = min(3.0, reg.rg_friction + _p(ev, "rg_friction", 0.3))
+    reg.prediction_boost = max(-4.0, reg.prediction_boost - _p(ev, "prediction_clampdown", 1.5))
+
+
+def prediction_surge(reg, ev, sim) -> None:
+    """The financial-product loophole opens: prediction markets arrive via
+    fintech-app distribution (Robinhood/Coinbase-style) — a structural
+    discontinuity, not smooth growth."""
+    reg.prediction_boost = min(6.0, reg.prediction_boost + _p(ev, "size", 2.0))
 
 
 def ad_ban(reg, ev, sim) -> None:
@@ -71,6 +81,7 @@ def offshore_surge(reg, ev, sim) -> None:
 GAMBLING_EVENT_HANDLERS: dict[str, Callable] = {
     "spilpakke_1": spilpakke_1,
     "spilpakke_2": spilpakke_2,
+    "prediction_surge": prediction_surge,
     "ad_ban": ad_ban,
     "tax_change": tax_change,
     "enforcement_boost": enforcement_boost,

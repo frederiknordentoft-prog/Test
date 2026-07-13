@@ -111,6 +111,53 @@ def choice_probabilities(u: np.ndarray, temperature: float) -> np.ndarray:
     return e / e.sum(axis=1, keepdims=True)
 
 
+def nested_choice_probabilities(
+    u: np.ndarray, nest_index: np.ndarray, nest_lambdas: list[float], temperature: float,
+) -> np.ndarray:
+    """Two-level nested logit (numerically stable, vectorized).
+
+    Plain MNL has the IIA property: a licensed entrant draws probability mass
+    from offshore and the outside option *in proportion to their shares*, so
+    entry mechanically raises channelization — exactly the setting where IIA is
+    known to fail (critic finding). Nesting the alternatives (licensed /
+    unlicensed / outside) with dissimilarity parameters λ < 1 makes substitution
+    happen mostly *within* a nest: an entrant competes primarily with the other
+    licensed operators.
+
+    ``nest_index[j]`` assigns alternative j to a nest; ``nest_lambdas[k]`` is
+    nest k's dissimilarity (λ = 1 for every nest reduces to plain MNL).
+    P(j) = P(nest k) · P(j | k) with inclusive values
+    IV_k = λ_k · logsumexp(u_j / λ_k) over j ∈ k.
+    """
+    z = u / max(temperature, 1e-6)
+    n, m = z.shape
+    n_nests = len(nest_lambdas)
+    probs = np.zeros_like(z)
+    ivs = np.full((n, n_nests), -np.inf)
+    within: list[np.ndarray | None] = [None] * n_nests
+    cols: list[np.ndarray] = [np.where(nest_index == k)[0] for k in range(n_nests)]
+
+    for k, lam in enumerate(nest_lambdas):
+        if len(cols[k]) == 0:
+            continue
+        lam = max(lam, 1e-3)
+        zk = z[:, cols[k]] / lam
+        zmax = zk.max(axis=1, keepdims=True)
+        e = np.exp(zk - zmax)
+        s = e.sum(axis=1, keepdims=True)
+        within[k] = e / s
+        ivs[:, k] = lam * (np.log(s) + zmax)[:, 0]
+
+    iv_max = ivs.max(axis=1, keepdims=True)
+    nest_e = np.where(np.isfinite(ivs), np.exp(ivs - iv_max), 0.0)
+    nest_p = nest_e / nest_e.sum(axis=1, keepdims=True)
+
+    for k in range(n_nests):
+        if within[k] is not None:
+            probs[:, cols[k]] = nest_p[:, [k]] * within[k]
+    return probs
+
+
 def budget_weighted_shares(probs: np.ndarray, weights: np.ndarray) -> np.ndarray:
     """Aggregate alternative shares = budget-weighted mean of choice probabilities."""
     w = weights / max(float(weights.sum()), 1e-12)

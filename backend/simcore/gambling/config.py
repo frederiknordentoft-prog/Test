@@ -21,12 +21,15 @@ TrackId = Literal["lottery", "scratch", "casino", "sports"]
 
 class CalendarConfig(BaseModel):
     """Sports calendar: a monthly 'sports intensity' curve that drives betting
-    seasonality. The dossier is explicit that any model must have this feature —
-    betting swings ±45 %/month year-on-year, while casino has no calendar and is
-    the commercially stable leg."""
+    seasonality. The dossier is explicit that any model must have this feature.
+    The within-year pattern gives the league rhythm; ``tournament_ticks``
+    (EM/VM summers, typically every other year) give the *between-year*
+    variation that produces the observed −46 %..+14 % YoY swings — a repeating
+    12-month pattern alone produces 0 % YoY by construction. Casino has no
+    calendar and is the commercially stable leg."""
 
     enabled: bool = True
-    amplitude: float = Field(0.45, ge=0.0, le=2.0)  # ±45 %/month per dossier
+    amplitude: float = Field(1.0, ge=0.0, le=2.0)   # 1.0 = raw monthly pattern
     # Relative month-of-year weights (Jan..Dec); normalized to mean 1.0 in use.
     monthly_pattern: list[float] = Field(
         default_factory=lambda: [
@@ -34,8 +37,8 @@ class CalendarConfig(BaseModel):
         ]
     )
     start_month: int = Field(1, ge=1, le=12)  # calendar month at tick 0
-    tournament_ticks: list[int] = Field(default_factory=list)  # extra spikes (EM/VM/CL)
-    tournament_boost: float = Field(0.30, ge=0.0, le=2.0)
+    tournament_ticks: list[int] = Field(default_factory=list)  # EM/VM summer months (ticks)
+    tournament_boost: float = Field(0.60, ge=0.0, le=2.0)
 
     @model_validator(mode="after")
     def _check(self) -> "CalendarConfig":
@@ -88,6 +91,9 @@ class OperatorConfig(BaseModel):
     protection: float = Field(0.5, ge=0.0, le=1.0)       # ROFUS/limits (plus for some, minus for others)
     tax_free: bool = True
     appeal: float = Field(0.0, ge=-5.0, le=5.0)          # static utility offset
+    # How hard the operator plays its commercial levers (budget reallocation
+    # when channels close, burn rate). Betano-type challengers sit high.
+    aggressiveness: float = Field(0.5, ge=0.0, le=1.0)
     # AI diffusion (Etape 3): starting capability and adoption speed toward the
     # frontier. Early adopters (higher adoption) gain a temporary, decaying edge.
     ai_cap0: float = Field(0.10, ge=0.0, le=1.0)
@@ -119,7 +125,8 @@ DEFAULT_OPERATORS: list[dict] = [
      "brand": 0.72, "marketing_reach": 0.60, "friction": 0.50, "protection": 0.70, "tax_free": True},
     {"operator_id": "betano", "name": "Betano (Kaizen)", "kind": "licensed",
      "tracks": ["sports", "casino"], "rtp": 0.62, "product_breadth": 0.70, "bonus": 0.90,
-     "brand": 0.58, "marketing_reach": 0.92, "friction": 0.50, "protection": 0.65, "tax_free": True},
+     "brand": 0.58, "marketing_reach": 0.92, "friction": 0.50, "protection": 0.65,
+     "tax_free": True, "aggressiveness": 0.92},
     {"operator_id": "longtail", "name": "Øvrige licenshavere", "kind": "licensed",
      "tracks": ["casino", "sports"], "rtp": 0.57, "product_breadth": 0.55, "bonus": 0.50,
      "brand": 0.40, "marketing_reach": 0.40, "friction": 0.50, "protection": 0.60, "tax_free": True},
@@ -128,9 +135,13 @@ DEFAULT_OPERATORS: list[dict] = [
      "tracks": ["lottery", "scratch", "casino", "sports"], "rtp": 0.75, "product_breadth": 0.95,
      "bonus": 0.95, "brand": 0.35, "marketing_reach": 0.50, "friction": 0.20, "protection": 0.10,
      "tax_free": False},
+    # Prediction markets start at ≈0 share (appeal −2.5): they are a *structural
+    # discontinuity* that arrives via fintech-app distribution when the
+    # loophole opens (a prediction_surge event), not a smoothly-grown incumbent.
     {"operator_id": "prediction", "name": "Prediction markets", "kind": "prediction",
      "tracks": ["sports"], "rtp": 0.70, "product_breadth": 0.60, "bonus": 0.30, "brand": 0.50,
-     "marketing_reach": 0.60, "friction": 0.25, "protection": 0.20, "tax_free": False},
+     "marketing_reach": 0.60, "friction": 0.25, "protection": 0.20, "tax_free": False,
+     "appeal": -2.5},
 ]
 
 
@@ -168,10 +179,22 @@ DEFAULT_ENTRANTS: list[dict] = [
      "tracks": ["casino"], "rtp": 0.82, "product_breadth": 0.98, "bonus": 0.95, "brand": 0.30,
      "marketing_reach": 0.55, "friction": 0.15, "protection": 0.05, "tax_free": False,
      "ai_cap0": 0.45, "ai_adoption": 0.20, "entry_cost": 60.0, "min_frontier": 0.35},
+    # Consolidator pays the acquisition price (multiple × target profit);
+    # entry_cost here is deal/transaction cost only. min_frontier keeps the
+    # consolidation wave a mid-horizon phenomenon, not a day-one buyout.
     {"operator_id": "consolidator", "name": "Konsolidator (Allwyn/FDJ-type)", "kind": "licensed",
      "tracks": ["casino", "sports"], "rtp": 0.60, "product_breadth": 0.68, "bonus": 0.60,
      "brand": 0.80, "marketing_reach": 0.80, "friction": 0.48, "protection": 0.68, "tax_free": True,
-     "ai_cap0": 0.30, "ai_adoption": 0.12, "entry_cost": 500.0, "consolidator": True},
+     "ai_cap0": 0.30, "ai_adoption": 0.12, "entry_cost": 100.0, "min_frontier": 0.35,
+     "consolidator": True},
+    # Sponsorship-led aggressive challenger (the Betano playbook, next wave):
+    # enters on market economics alone — NO AI gate (critic finding: the pool
+    # only held AI/big-tech archetypes, so a Betano-style entry couldn't occur).
+    {"operator_id": "challenger", "name": "Aggressiv udfordrer (sponsorat-drevet)",
+     "kind": "licensed", "tracks": ["sports", "casino"], "rtp": 0.62,
+     "product_breadth": 0.65, "bonus": 0.95, "brand": 0.45, "marketing_reach": 0.95,
+     "friction": 0.50, "protection": 0.62, "tax_free": True, "aggressiveness": 0.95,
+     "ai_cap0": 0.15, "ai_adoption": 0.10, "entry_cost": 260.0, "min_frontier": 0.0},
 ]
 
 
@@ -234,10 +257,36 @@ class GamblingConfig(BaseModel):
     # --- policy → attribute pass-through --------------------------------- #
     # Policy levers act on operator *attributes* (mediated by per-segment betas)
     # instead of uniform utility constants, so heterogeneous responses emerge.
+    # DNS/payment enforcement raises *offshore* friction only — prediction
+    # markets are regulated as financial derivatives distributed via fintech
+    # apps and cannot be blocked on the same legal basis (dossier §10.1).
     rtp_tax_passthrough: float = Field(0.5, ge=0.0, le=1.0)   # tax_add -> licensed rtp down
-    enforcement_friction: float = Field(0.6, ge=0.0, le=3.0)  # enforcement -> unlicensed friction up
+    enforcement_friction: float = Field(0.6, ge=0.0, le=3.0)  # enforcement -> offshore friction up
     limits_protection_gain: float = Field(0.5, ge=0.0, le=2.0)  # loss limits -> licensed protection up
     rg_friction_gain: float = Field(0.5, ge=0.0, le=2.0)      # rg_friction -> licensed friction up
+
+    # --- nested logit (IIA fix) ------------------------------------------ #
+    # Dissimilarity parameters for the licensed / unlicensed nests (outside is
+    # its own single-alternative nest). λ = 1 degrades to plain MNL; λ < 1 makes
+    # substitution happen mostly within the nest, so a licensed entrant competes
+    # primarily with licensed incumbents instead of mechanically raising
+    # channelization by draining offshore proportionally.
+    nest_lambda_licensed: float = Field(0.5, ge=0.05, le=1.0)
+    nest_lambda_unlicensed: float = Field(0.5, ge=0.05, le=1.0)
+
+    # --- ROFUS (self-exclusion, near-absorbing) --------------------------- #
+    # High-risk players playing licensed can self-exclude (or be nudged by
+    # AI-based RG detection). ROFUS blocks *licensed* play only — the excluded
+    # can still leak offshore, which is exactly the displacement the harm
+    # accounting must be able to show.
+    rofus_enabled: bool = True
+    # Monthly hazard scale: hazard_i = rate · risk_i² · licensed-play_i. For the
+    # escalated tail (risk ≈ 0.7+) that is ~0.3 %/month — a stock of the order
+    # of the real 60k register builds over a few simulated years.
+    rofus_base_rate: float = Field(0.01, ge=0.0, le=0.2)
+    rofus_detection_gain: float = Field(2.0, ge=0.0, le=10.0)  # rg_detection multiplier
+    rofus_exit_rate: float = Field(0.005, ge=0.0, le=0.5)    # near-absorbing
+    rofus_penalty: float = Field(6.0, ge=0.0, le=20.0)       # licensed-utility block
 
     # --- AI diffusion + entry (Etape 3) --------------------------------- #
     ai_enabled: bool = True
@@ -257,8 +306,23 @@ class GamblingConfig(BaseModel):
     entry_eval_period: int = Field(3, ge=1)          # evaluate entry every N ticks
     entry_profit_margin: float = Field(0.25, ge=0.0, le=1.0)   # profit as share of BSI
     entry_horizon_months: int = Field(36, ge=1)      # NPV horizon
+    entry_discount_annual: float = Field(0.10, ge=0.0, le=1.0)  # NPV discount rate
+    entry_go_prob: float = Field(0.6, ge=0.0, le=1.0)  # execution risk given positive NPV
+    # M&A: price as a multiple of the target's annual profit ("podium strategy" —
+    # acquirers buy strong local brands, valued on earnings, not the cheapest).
+    acquisition_multiple: float = Field(2.0, ge=0.0, le=20.0)
     survival_share: float = Field(0.015, ge=0.0, le=1.0)       # exit below this share
     survival_periods: int = Field(6, ge=1)           # ...for this many consecutive ticks
+
+    # --- endogenous operator behaviour ------------------------------------ #
+    # Each licensed operator reallocates its commercial budget across channels
+    # {marketing, bonus, brand, product} every tick. At baseline (all channels
+    # open) attributes rest at their archetype anchors; when regulation closes a
+    # channel, the freed budget flows to the open ones (the Klub Lotto / §10.5
+    # pattern) at reduced efficiency.
+    operators_enabled: bool = True
+    op_adjust_rate: float = Field(0.08, ge=0.0, le=1.0)         # attr drift speed per tick
+    op_realloc_substitutability: float = Field(0.6, ge=0.0, le=1.0)  # closed→open efficiency
 
     # --- stakeholders + the four loops (Etape 4) ------------------------ #
     stakeholders_enabled: bool = True
@@ -266,7 +330,10 @@ class GamblingConfig(BaseModel):
     # RG detection reduce licensed harm. The gap between true and measured harm
     # is the channelization false positive (loop 1).
     offshore_harm_coeff: float = Field(2.2, ge=1.0, le=6.0)
-    harm_scale: float = Field(22.0, ge=0.0, le=200.0)   # scales the harm index to ~0-100
+    # Scales the player-level harm index to ~0-100. Harm is spend-weighted per
+    # player; with the risk↔spend coupling the spend-weighted risk sits well
+    # above the population mean, hence the lower scale than the old aggregate.
+    harm_scale: float = Field(15.0, ge=0.0, le=200.0)
     loss_limit_harm_reduction: float = Field(0.50, ge=0.0, le=1.0)
     rg_detection_harm_reduction: float = Field(0.40, ge=0.0, le=1.0)
     # Regulator (Spillemyndigheden): reacts to measured harm; enforcement against

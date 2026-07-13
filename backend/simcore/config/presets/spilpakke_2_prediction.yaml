@@ -13,8 +13,10 @@ gambling:
   channelization_high: 0.92
   calendar:
     enabled: true
-    amplitude: 0.45
+    amplitude: 1.0
     start_month: 1
+    tournament_ticks: [17, 18, 41, 42]   # EM/VM-somre (juni+juli, år 1 og 3)
+    tournament_boost: 0.6
 events:
 - name: Spilpakke 2
   event_type: spilpakke_2

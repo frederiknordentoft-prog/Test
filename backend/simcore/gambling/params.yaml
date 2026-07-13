@@ -240,7 +240,57 @@ parameters:
   - name: enforcement_friction
     value: 0.6
     unit: friction_per_enforcement_unit
-    source: "NO DATA — DNS/payment blocking raises unlicensed friction (decays via mirror sites)"
+    source: "NO DATA — DNS/payment blocking raises OFFSHORE friction only (prediction is unblockable); decays via mirror sites"
     confidence: red
     sensitivity: true
     interval: [0.0, 2.0]
+
+  - name: nest_lambda_licensed
+    value: 0.5
+    unit: dissimilarity
+    source: "Theory (nested logit): substitution is mostly within-nest; no DK estimate"
+    confidence: red
+    sensitivity: true
+    interval: [0.3, 1.0]
+    note: "λ = 1 degrades to plain MNL (IIA). Governs how much an entrant cannibalizes incumbents vs. drains offshore."
+
+  - name: nest_lambda_unlicensed
+    value: 0.5
+    unit: dissimilarity
+    source: "Theory (nested logit) — offshore/prediction are close substitutes for the tail"
+    confidence: red
+    sensitivity: true
+    interval: [0.3, 1.0]
+
+  - name: entry_go_prob
+    value: 0.6
+    unit: probability_per_evaluation
+    source: "NO DATA — execution risk given a positive entry NPV (was an unregistered hardcode)"
+    confidence: red
+    sensitivity: true
+    interval: [0.3, 0.9]
+
+  - name: acquisition_multiple
+    value: 2.0
+    unit: years_of_profit
+    source: "Rough M&A valuation prior (sector deals run wide); podium strategy targets strong brands"
+    confidence: red
+    sensitivity: true
+    interval: [1.5, 6.0]
+
+  - name: rofus_base_rate
+    value: 0.01
+    unit: monthly_hazard_scale
+    source: "Set so the register stock is of the order of the real ~60k over a few simulated years"
+    confidence: red
+    sensitivity: true
+    interval: [0.002, 0.03]
+    note: "Effective hazard = rate × risk² × licensed-play; ~0.3 %/month for the escalated tail."
+
+  - name: op_realloc_substitutability
+    value: 0.6
+    unit: fraction
+    source: "Klub Lotto pattern (dossier §10.5): brand/F2P partially substitutes closed ad channels"
+    confidence: red
+    sensitivity: true
+    interval: [0.2, 0.9]

@@ -36,6 +36,7 @@ class RegulationState:
     rg_detection: float = 0.0       # 0..1 AI-based harm detection (dual-use)
     monopoly_scope: float = 1.0     # 1 = intact monopoly, <1 = liberalized
     licensed_bonus: float = 0.0     # licensed product boost (e.g. crash games legalized onshore)
+    prediction_boost: float = 0.0   # fintech-loophole state: >0 = prediction markets distributed
 
 
 class Regulator:

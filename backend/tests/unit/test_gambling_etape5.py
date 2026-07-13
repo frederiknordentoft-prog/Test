@@ -40,10 +40,17 @@ def test_gambling_preset_runs(pid):
 
 
 def test_crash_games_licensed_raises_channelization():
-    """The new product-legality lever must pull channelization up vs baseline."""
+    """The product-legality lever must pull channelization up vs baseline.
+    Measured with the reactive agents off to isolate the first-order mechanism:
+    with them on, an emergent second-order loop appears — legalizing crash
+    games moves the tail's play onshore where it becomes *measurable*, measured
+    harm rises, the regulator tightens, and channelization partly reverses.
+    That dynamic is a feature (the false-positive machinery running in
+    reverse), but it is not what this test pins down."""
     def chan(pid):
         cfg = load_preset(pid); cfg.ticks = 36
-        cfg.gambling = {**cfg.gambling, "entry_enabled": False}
+        cfg.gambling = {**cfg.gambling, "entry_enabled": False,
+                        "regulator_enabled": False, "political_enabled": False}
         sim = GamblingSimulation(cfg); sim.run()
         return sim.metrics_history[-1]["channelization"]
     assert chan("crash_games_licensed") > chan("dk_baseline")

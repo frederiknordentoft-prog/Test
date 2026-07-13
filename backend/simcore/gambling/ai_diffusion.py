@@ -57,8 +57,19 @@ class AIDiffusion:
                 for o in operators]
 
     def engagement_multiplier(self) -> float:
-        """Market-size multiplier: AI capability *beyond baseline* grows total
-        demand (personalized UX pulls in latent play). Relative to baseline so
-        the market starts at the calibrated anchor."""
+        """Global market-size multiplier: best AI capability *beyond baseline*
+        grows total demand (personalized UX pulls in latent play). Relative to
+        baseline so the market starts at the calibrated anchor. Used for
+        market-wide appraisals (entry economics); per-track demand uses
+        ``engagement_for`` instead."""
         excess = max(0.0, self.best_cap() - self.cap_baseline)
+        return 1.0 + self.gcfg.ai_engagement_gain * excess
+
+    def engagement_for(self, operators) -> float:
+        """Per-track engagement multiplier: only the capability of operators
+        actually *serving the track* can grow its demand — an AI-native casino
+        does not grow the lottery market (cross-track spillover was a critic
+        finding)."""
+        caps = [self.cap.get(o.operator_id, 0.0) for o in operators]
+        excess = max(0.0, max(caps, default=0.0) - self.cap_baseline)
         return 1.0 + self.gcfg.ai_engagement_gain * excess

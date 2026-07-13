@@ -82,9 +82,11 @@ def _run(preset="dk_baseline", ticks=None):
     cfg = load_preset(preset)
     if ticks is not None:
         cfg.ticks = ticks
-    # Etape 0 tests the pure calibrated baseline: AI diffusion and entry off, so
-    # the market stays flat at the anchors (those dynamics are tested in Etape 3).
-    cfg.gambling = {**(cfg.gambling or {}), "ai_enabled": False, "entry_enabled": False}
+    # Etape 0 tests the pure calibrated baseline: AI diffusion, entry and the
+    # ROFUS drain off, so the market stays at the anchors (those dynamics are
+    # tested in Etape 3 / Bølge 2).
+    cfg.gambling = {**(cfg.gambling or {}), "ai_enabled": False, "entry_enabled": False,
+                    "rofus_enabled": False}
     sim = GamblingSimulation(cfg)
     sim.run()
     return cfg, sim
@@ -137,7 +139,7 @@ def test_baseline_noise_is_live_and_reproducible():
     cfg = load_preset("dk_baseline")
     cfg.ticks = 12
     cfg.gambling = {**(cfg.gambling or {}), "ai_enabled": False, "entry_enabled": False,
-                    "baseline_noise": 0.05}
+                    "rofus_enabled": False, "baseline_noise": 0.05}
     noisy_a = GamblingSimulation(cfg)
     noisy_a.run()
     noisy_b = GamblingSimulation(cfg.model_copy(deep=True))

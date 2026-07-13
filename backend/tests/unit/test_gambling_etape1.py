@@ -149,8 +149,10 @@ def test_customer_counts_move_under_policy():
 
 
 def test_sim_anchor_match_preserved_with_population():
-    """Population-driven BSI must still reproduce the Etape-0 anchor match."""
-    sim = _sim()
+    """Population-driven BSI must still reproduce the Etape-0 anchor match.
+    (Entry and the ROFUS drain are isolated: an entrant arriving at t0 or the
+    register filling up legitimately move BSI — tested elsewhere.)"""
+    sim = _sim(rofus_enabled=False, entry_enabled=False)
     for track_id, annual in (("lottery", 2.0), ("scratch", 1.0), ("casino", 3.5)):
         series = [m[f"bsi_{track_id}"] for m in sim.metrics_history]
         assert series[0] == pytest.approx(annual / 12 * BN_TO_MIO, rel=1e-3)

@@ -14,8 +14,10 @@ gambling:
   channelization_high: 0.92
   calendar:
     enabled: true
-    amplitude: 0.45
+    amplitude: 1.0
     start_month: 1
+    tournament_ticks: [17, 18, 41, 42]   # EM/VM-somre (juni+juli, år 1 og 3)
+    tournament_boost: 0.6
   # growth_rate = observed annual trend (dossier): casino is the growth engine
   # (+14.7 %), sports near-flat (+1.2 %), the monopoly block flat since 2012.
   tracks:
