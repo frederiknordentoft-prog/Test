@@ -103,6 +103,10 @@ class OperatorConfig(BaseModel):
     # How hard the operator plays its commercial levers (budget reallocation
     # when channels close, burn rate). Betano-type challengers sit high.
     aggressiveness: float = Field(0.5, ge=0.0, le=1.0)
+    # Tick at which this operator entered (None for incumbents present at t0).
+    # New entrants ramp their effective brand/reach from a low base over
+    # entrant_ramp_months — share is built, not captured instantly.
+    entry_tick: int | None = None
     # AI diffusion (Etape 3): starting capability and adoption speed toward the
     # frontier. Early adopters (higher adoption) gain a temporary, decaying edge.
     ai_cap0: float = Field(0.10, ge=0.0, le=1.0)
@@ -283,6 +287,15 @@ class GamblingConfig(BaseModel):
     enforcement_friction: float = Field(0.6, ge=0.0, le=3.0)  # enforcement -> offshore friction up
     limits_protection_gain: float = Field(0.5, ge=0.0, le=2.0)  # loss limits -> licensed protection up
     rg_friction_gain: float = Field(0.5, ge=0.0, le=2.0)      # rg_friction -> licensed friction up
+    # A bonus ban actively pushes players toward offshore bonuses (Sweden survey:
+    # 58 % would switch offshore for better bonuses). This offshore-appeal pull
+    # activates ONLY when bonuses are restricted, so it leaves the baseline (and
+    # the DS BSI anchor) untouched while amplifying the shock — and because
+    # casino's offshore is structurally closer, it tips more casino players over,
+    # reproducing the Swedish casino-channelization collapse (57-72 %). Default
+    # 0.6 was calibrated so a full bonus ban lands casino channelization mid-band
+    # (~0.65) while betting stays >0.82 — validated in calibration/experiments.
+    bonus_ban_offshore_pull: float = Field(0.6, ge=0.0, le=4.0)
 
     # --- nested logit (IIA fix) ------------------------------------------ #
     # Dissimilarity parameters for the licensed / unlicensed nests (outside is
@@ -342,6 +355,14 @@ class GamblingConfig(BaseModel):
     operators_enabled: bool = True
     op_adjust_rate: float = Field(0.08, ge=0.0, le=1.0)         # attr drift speed per tick
     op_realloc_substitutability: float = Field(0.6, ge=0.0, le=1.0)  # closed→open efficiency
+    # Entrants build share over time (brand awareness, trust, distribution): a
+    # new operator's effective brand+reach ramp from ``entrant_ramp_floor`` to
+    # full over this many months. Calibrated (Etape C) so a Betano-style
+    # challenger reaches ~4 % at 2 years (real ~3.7 %) and matures toward ~14 %
+    # over 5 years (≈ bet365's DK share) — the observed entry trajectory, not an
+    # instantaneous equilibrium capture.
+    entrant_ramp_months: int = Field(60, ge=1, le=120)
+    entrant_ramp_floor: float = Field(0.05, ge=0.0, le=1.0)
 
     # --- stakeholders + the four loops (Etape 4) ------------------------ #
     stakeholders_enabled: bool = True
@@ -383,6 +404,13 @@ class GamblingConfig(BaseModel):
     channelization_start: float = Field(0.82, ge=0.0, le=1.0)
     channelization_low: float = Field(0.72, ge=0.0, le=1.0)
     channelization_high: float = Field(0.92, ge=0.0, le=1.0)
+    # Per-track channelization OFFSETS from channelization_start for the
+    # competitive tracks. Casino is structurally less channelized than sports
+    # (DK H2GC casino ~70 % / betting ~74 %; Sweden casino 57-72 % / betting
+    # ~95 %). Kept as offsets so channelization_start stays the master knob
+    # (the UI slider, Morris and robustness all move both tracks together).
+    track_channelization_offset: dict[str, float] = Field(
+        default_factory=lambda: {"casino": -0.03, "sports": 0.04})
 
     population: int = Field(500, ge=50, le=20000)   # player agents
     baseline_noise: float = Field(0.0, ge=0.0, le=0.5)  # monthly lognormal noise on BSI

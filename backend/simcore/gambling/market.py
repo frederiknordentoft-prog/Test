@@ -55,7 +55,18 @@ class TrackMarket:
         self.betas = betas
         idx = pop.track_ids.index(track.track_id)
         self.weights = pop.budget * pop.pref[:, idx]
-        self.target = gcfg.monopoly_channelization if not track.competitive else gcfg.channelization_start
+        # Per-track channelization target: online casino/slots is structurally
+        # less channelized than sports betting (offshore casino offers crash
+        # games, higher RTP, no limits — a real draw; offshore sportsbooks are
+        # far less differentiated from licensed live/odds products). DK H2GC:
+        # casino ~70 % vs betting ~74 %; Sweden: casino 57-72 % vs betting ~95 %.
+        # A lower casino target also makes its offshore alternative "closer", so
+        # a bonus ban tips more casino players over — the documented asymmetry.
+        if not track.competitive:
+            self.target = gcfg.monopoly_channelization
+        else:
+            offset = gcfg.track_channelization_offset.get(track.track_id, 0.0)
+            self.target = float(min(0.995, max(0.05, gcfg.channelization_start + offset)))
         # Per-player outside-option utility (before the calibrated delta):
         # highest for low-risk players — the breadth exits first.
         self._outside_beta = betas["outside"]
@@ -133,6 +144,14 @@ class TrackMarket:
             appeal[self.prediction_mask] += reg.prediction_boost
             a["appeal"] = appeal
 
+        # A bonus ban actively drives bonus-seeking players offshore (only active
+        # under the ban, so baseline is untouched). Hits casino harder because
+        # its offshore alternative is structurally closer to the tipping point.
+        if reg.bonus_restriction and g.bonus_ban_offshore_pull:
+            appeal = a["appeal"].copy()
+            appeal[self.offshore_mask] += g.bonus_ban_offshore_pull * reg.bonus_restriction
+            a["appeal"] = appeal
+
         payout = a["payout"].copy()
         payout[lic] = np.clip(payout[lic] - g.rtp_tax_passthrough * reg.tax_add, 0.0, 1.0)
         a["payout"] = payout
@@ -148,16 +167,36 @@ class TrackMarket:
             a["breadth"] = breadth
         return a
 
+    def _ramped_attrs(self, attrs: dict[str, np.ndarray], tick: int) -> dict[str, np.ndarray]:
+        """Ramp new entrants' effective brand + reach from a low base toward
+        full over ``entrant_ramp_months`` — share is built, not captured
+        instantly (an entrant's brand/trust/distribution take years)."""
+        g = self.gcfg
+        ramp = np.ones(len(self.operators))
+        touched = False
+        for i, o in enumerate(self.operators):
+            et = getattr(o, "entry_tick", None)
+            if et is not None and tick - et < g.entrant_ramp_months:
+                ramp[i] = g.entrant_ramp_floor + (1.0 - g.entrant_ramp_floor) * max(
+                    0.0, (tick - et) / g.entrant_ramp_months)
+                touched = True
+        if not touched:
+            return attrs
+        a = dict(attrs)
+        for key in ("brand", "marketing"):
+            a[key] = a[key] * ramp
+        return a
+
     def _full_utilities(self, reg=None, extra_offsets: np.ndarray | None = None,
                         unlicensed_delta: float | None = None,
                         outside_delta: float | None = None,
-                        rofus: np.ndarray | None = None) -> np.ndarray:
+                        rofus: np.ndarray | None = None, tick: int = 0) -> np.ndarray:
         """[n, m+1] utility matrix: operators + the outside option (last col).
         ROFUS-registered players have licensed alternatives blocked (the
         self-exclusion register covers the licensed market only)."""
         du = self.unlicensed_delta if unlicensed_delta is None else unlicensed_delta
         do = self.outside_delta if outside_delta is None else outside_delta
-        u = utilities(self.betas, self._policy_attrs(reg))
+        u = utilities(self.betas, self._ramped_attrs(self._policy_attrs(reg), tick))
         off = np.zeros(len(self.operators))
         off[self.unlicensed_mask] = du
         if extra_offsets is not None:
@@ -223,7 +262,7 @@ class TrackMarket:
     def clear(self, tick: int, reg=None, extra_offsets: np.ndarray | None = None,
               engagement: float = 1.0, noise: float = 1.0,
               rofus: np.ndarray | None = None) -> dict:
-        probs = self._probs(self._full_utilities(reg, extra_offsets, rofus=rofus))
+        probs = self._probs(self._full_utilities(reg, extra_offsets, rofus=rofus, tick=tick))
         self.last_participation = 1.0 - probs[:, -1]
         m = len(self.operators)
         self.last_lic_prob = probs[:, :m][:, self.licensed_mask].sum(axis=1)

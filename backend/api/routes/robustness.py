@@ -99,6 +99,16 @@ def trends():
     return TREND_CATALOG
 
 
+@router.get("/natural-experiments")
+def natural_experiments():
+    """Validation against documented natural experiments (Etape C): does the
+    model reproduce the Swedish bonus-ban channelization collapse and a
+    Betano-style entry — emergently, without hardcoding?"""
+    from simcore.gambling.calibration.natural_experiments import run_natural_experiments
+
+    return run_natural_experiments()
+
+
 @router.get("/hindcast")
 def hindcast():
     """Backtest against the real Spillemyndigheden series (flagship Etape B):

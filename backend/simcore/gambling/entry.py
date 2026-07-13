@@ -124,6 +124,7 @@ class EntryManager:
     def _enter(self, tick: int, market: AttractionMarket, ai: AIDiffusion,
                ent: EntrantConfig, target: str | None = None) -> None:
         op = OperatorConfig(**{k: getattr(ent, k) for k in OperatorConfig.model_fields})
+        op.entry_tick = tick   # ramp effective brand/reach from a low base
         if target is not None:
             ai.drop(target)
             market.replace_operator(target, op)

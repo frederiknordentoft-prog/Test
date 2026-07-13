@@ -49,8 +49,12 @@ def test_baseline_participation_matches_target():
 def test_baseline_channelization_within_interval():
     gcfg, _p, mkt = _market()
     res = mkt.clear(0)
+    # Competitive tracks calibrate to channelization_start + per-track offset;
+    # casino is structurally below sports (DK H2GC / Sweden evidence).
     for tid in ("casino", "sports"):
-        assert res[tid]["channelization"] == pytest.approx(gcfg.channelization_start, abs=0.01)
+        target = gcfg.channelization_start + gcfg.track_channelization_offset.get(tid, 0.0)
+        assert res[tid]["channelization"] == pytest.approx(target, abs=0.01)
+    assert res["casino"]["channelization"] < res["sports"]["channelization"]
     for tid in ("lottery", "scratch"):
         assert res[tid]["channelization"] == pytest.approx(gcfg.monopoly_channelization, abs=0.01)
     total_lic = sum(r["licensed_bsi"] for r in res.values())
