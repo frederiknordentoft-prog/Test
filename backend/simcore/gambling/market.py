@@ -133,9 +133,9 @@ class TrackMarket:
             appeal[self.prediction_mask] += reg.prediction_boost
             a["appeal"] = appeal
 
-        rtp = a["rtp"].copy()
-        rtp[lic] = np.clip(rtp[lic] - g.rtp_tax_passthrough * reg.tax_add, 0.0, 1.0)
-        a["rtp"] = rtp
+        payout = a["payout"].copy()
+        payout[lic] = np.clip(payout[lic] - g.rtp_tax_passthrough * reg.tax_add, 0.0, 1.0)
+        a["payout"] = payout
 
         protection = a["protection"].copy()
         protection[lic] = np.clip(protection[lic] + g.limits_protection_gain * reg.loss_limits,

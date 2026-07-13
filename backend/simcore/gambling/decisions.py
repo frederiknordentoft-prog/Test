@@ -33,7 +33,7 @@ from simcore.gambling.population import PlayerArrays
 from simcore.models.actions import Driver
 
 # Driver keys (order is fixed; used for both the vectorized path and Drivers).
-DRIVERS = ("rtp", "breadth", "bonus", "brand", "friction", "taxfree", "protection", "marketing")
+DRIVERS = ("payout", "breadth", "bonus", "brand", "friction", "taxfree", "protection", "marketing")
 
 
 def player_betas(pop: PlayerArrays, gcfg: GamblingConfig) -> dict[str, np.ndarray]:
@@ -48,7 +48,7 @@ def player_betas(pop: PlayerArrays, gcfg: GamblingConfig) -> dict[str, np.ndarra
     risk = pop.risk
     young = (pop.age < gcfg.young_age_threshold).astype(float)
     return {
-        "rtp": 0.8 + 0.8 * risk,
+        "payout": 0.8 + 0.8 * risk,
         "breadth": 0.2 + 1.6 * risk + 0.3 * young,
         "bonus": 0.5 + 1.2 * risk + 0.5 * young,
         "brand": 1.0 - 0.5 * risk,
@@ -66,7 +66,7 @@ def operator_attr_arrays(operators: list[OperatorConfig]) -> dict[str, np.ndarra
     ``unlicensed`` marks the offshore/prediction channels for the per-player
     offshore-affinity shift."""
     return {
-        "rtp": np.array([o.rtp for o in operators]),
+        "payout": np.array([o.payout for o in operators]),
         "breadth": np.array([o.product_breadth for o in operators]),
         "bonus": np.array([o.bonus for o in operators]),
         "brand": np.array([o.brand for o in operators]),
@@ -85,10 +85,10 @@ def utilities(
     appeal_offset: np.ndarray | None = None,
 ) -> np.ndarray:
     """Utility matrix U[player, operator] (vectorized β·x)."""
-    n = len(betas["rtp"])
-    m = len(attrs["rtp"])
+    n = len(betas["payout"])
+    m = len(attrs["payout"])
     u = np.zeros((n, m))
-    u += betas["rtp"][:, None] * attrs["rtp"][None, :]
+    u += betas["payout"][:, None] * attrs["payout"][None, :]
     u += betas["breadth"][:, None] * attrs["breadth"][None, :]
     u += betas["bonus"][:, None] * attrs["bonus"][None, :]
     u += betas["brand"][:, None] * attrs["brand"][None, :]
@@ -171,7 +171,7 @@ def explain_choice(
     """Re-express one player's operator choice through the stochastic core so the
     decision log carries the actual drivers (for reaction analysis)."""
     signed = {  # (+ for utility-adding drivers, − for friction)
-        "rtp": 1, "breadth": 1, "bonus": 1, "brand": 1, "friction": -1,
+        "payout": 1, "breadth": 1, "bonus": 1, "brand": 1, "friction": -1,
         "taxfree": 1, "protection": 1, "marketing": 1,
     }
     drivers = [

@@ -77,6 +77,7 @@ parameters:
     sensitivity: false
 
   - name: channelization_rate
+    config_field: channelization_start
     value: 0.82
     unit: fraction
     source: "Contested: 72 % (H2 Gambling Capital) .. 91.5 % (Spillemyndigheden)"
@@ -100,6 +101,7 @@ parameters:
     sensitivity: false
 
   - name: sports_seasonality_amplitude
+    config_field: calendar.amplitude
     value: 0.45
     unit: fraction_month_on_month
     source: "Spillemyndigheden monthly stats: betting swung -46 % .. +14 % YoY in 2 months"
@@ -165,6 +167,7 @@ parameters:
   # These are priors, not measurements — flagged red and swept accordingly.
 
   - name: spend_sigma
+    config_field: spend_sigma
     value: 1.70
     unit: lognormal_sigma
     source: "NO DK DATA — set so top-5 % of players ≈ 50-70 % of BSI (international priors)"
@@ -176,6 +179,7 @@ parameters:
       every policy conclusion scales with this (perspective §2.1). Always sweep.
 
   - name: risk_spend_coupling
+    config_field: risk_spend_coupling
     value: 3.0
     unit: log_spend_per_risk_unit
     source: "NO DATA — prior; harm and spend are known to be concentrated in the same tail"
@@ -188,6 +192,7 @@ parameters:
       offshore-prone *in behaviour*, not only in the spend distribution.
 
   - name: participation_start
+    config_field: participation_start
     value: 0.80
     unit: fraction_of_engaged_budget
     source: "NO DATA — scenario prior for the baseline outside-option share"
@@ -200,6 +205,7 @@ parameters:
       margin so tightening can shrink the market, not only re-route it.
 
   - name: outside_risk_beta
+    config_field: outside_risk_beta
     value: 2.0
     unit: utility_per_risk_unit
     source: "Theory: low-risk breadth players exit first; the tail keeps playing"
@@ -208,6 +214,7 @@ parameters:
     interval: [0.5, 5.0]
 
   - name: offshore_affinity_beta
+    config_field: offshore_affinity_beta
     value: 2.0
     unit: utility_per_propensity_unit
     source: "Theory: axis 5 (offshore propensity) must shift choices toward unlicensed"
@@ -230,6 +237,7 @@ parameters:
     sensitivity: false
 
   - name: rtp_tax_passthrough
+    config_field: rtp_tax_passthrough
     value: 0.5
     unit: fraction
     source: "NO DATA — assumed pass-through of extra tax into worse player odds"
@@ -238,6 +246,7 @@ parameters:
     interval: [0.0, 1.0]
 
   - name: enforcement_friction
+    config_field: enforcement_friction
     value: 0.6
     unit: friction_per_enforcement_unit
     source: "NO DATA — DNS/payment blocking raises OFFSHORE friction only (prediction is unblockable); decays via mirror sites"
@@ -246,6 +255,7 @@ parameters:
     interval: [0.0, 2.0]
 
   - name: nest_lambda_licensed
+    config_field: nest_lambda_licensed
     value: 0.5
     unit: dissimilarity
     source: "Theory (nested logit): substitution is mostly within-nest; no DK estimate"
@@ -255,6 +265,7 @@ parameters:
     note: "λ = 1 degrades to plain MNL (IIA). Governs how much an entrant cannibalizes incumbents vs. drains offshore."
 
   - name: nest_lambda_unlicensed
+    config_field: nest_lambda_unlicensed
     value: 0.5
     unit: dissimilarity
     source: "Theory (nested logit) — offshore/prediction are close substitutes for the tail"
@@ -263,6 +274,7 @@ parameters:
     interval: [0.3, 1.0]
 
   - name: entry_go_prob
+    config_field: entry_go_prob
     value: 0.6
     unit: probability_per_evaluation
     source: "NO DATA — execution risk given a positive entry NPV (was an unregistered hardcode)"
@@ -271,6 +283,7 @@ parameters:
     interval: [0.3, 0.9]
 
   - name: acquisition_multiple
+    config_field: acquisition_multiple
     value: 2.0
     unit: years_of_profit
     source: "Rough M&A valuation prior (sector deals run wide); podium strategy targets strong brands"
@@ -279,6 +292,7 @@ parameters:
     interval: [1.5, 6.0]
 
   - name: rofus_base_rate
+    config_field: rofus_base_rate
     value: 0.01
     unit: monthly_hazard_scale
     source: "Set so the register stock is of the order of the real ~60k over a few simulated years"
@@ -288,9 +302,101 @@ parameters:
     note: "Effective hazard = rate × risk² × licensed-play; ~0.3 %/month for the escalated tail."
 
   - name: op_realloc_substitutability
+    config_field: op_realloc_substitutability
     value: 0.6
     unit: fraction
     source: "Klub Lotto pattern (dossier §10.5): brand/F2P partially substitutes closed ad channels"
     confidence: red
     sensitivity: true
     interval: [0.2, 0.9]
+
+  # Loop-/effect-strength constants that drive the headline conclusions —
+  # previously hardcoded and unregistered (fælde 3). All red priors.
+
+  - name: harm_scale
+    config_field: harm_scale
+    value: 15.0
+    unit: index_scale
+    source: "NO DATA — scales the player-level harm index to a ~0-100 dashboard range"
+    confidence: red
+    sensitivity: true
+    interval: [8.0, 30.0]
+
+  - name: offshore_harm_coeff
+    config_field: offshore_harm_coeff
+    value: 2.2
+    unit: multiplier
+    source: "Theory: no ROFUS/limits/detection offshore -> higher harm per krone; no DK estimate"
+    confidence: red
+    sensitivity: true
+    interval: [1.2, 4.0]
+
+  - name: ai_personalization_gain
+    config_field: ai_personalization_gain
+    value: 2.0
+    unit: utility_per_capability
+    source: "NO DATA — AI capability -> choice-utility bump (dossier cites +18 % retention potential)"
+    confidence: red
+    sensitivity: true
+    interval: [0.5, 4.0]
+
+  - name: ai_engagement_gain
+    config_field: ai_engagement_gain
+    value: 0.15
+    unit: market_growth_per_capability
+    source: "NO DATA — residual AI engagement channel on top of the observed track trends"
+    confidence: red
+    sensitivity: true
+    interval: [0.0, 0.6]
+
+  - name: political_threshold
+    config_field: political_threshold
+    value: 60.0
+    unit: measured_harm_index
+    source: "NO DATA — visible-harm level that triggers a tightening package"
+    confidence: red
+    sensitivity: true
+    interval: [40.0, 90.0]
+
+  - name: udlodning_resistance
+    config_field: udlodning_resistance
+    value: 0.35
+    unit: threshold_multiplier
+    source: "Structural (loop 3): the udlodning coalition raises the tightening bar; size unknown"
+    confidence: red
+    sensitivity: true
+    interval: [0.0, 1.5]
+
+  - name: loss_limit_harm_reduction
+    config_field: loss_limit_harm_reduction
+    value: 0.5
+    unit: fraction
+    source: "NO DK EVALUATION — assumed licensed-harm reduction from loss/deposit limits"
+    confidence: red
+    sensitivity: true
+    interval: [0.2, 0.8]
+
+  - name: logit_temperature
+    config_field: logit_temperature
+    value: 1.0
+    unit: softmax_temperature
+    source: "Unidentified scale — should be pinned against a natural experiment (Swedish bonus ban)"
+    confidence: red
+    sensitivity: true
+    interval: [0.6, 2.0]
+
+  - name: ds_profit_margin
+    config_field: ds_profit_margin
+    value: 0.389
+    unit: fraction_of_BSI
+    source: "Danske Spil annual report 2025: 2.008/5.158 bn"
+    confidence: green
+    sensitivity: false
+
+  - name: monopoly_win_tax
+    value: 0.15
+    unit: fraction_of_BSI
+    source: "Gevinstafgift 15 % of winnings ~= 15 % of BSI at ~50 % payout (approximation)"
+    confidence: yellow
+    sensitivity: false
+    note: "Encoded as tax_rate on the monopoly tracks so state_revenue includes the monopoly's fiscal contribution."

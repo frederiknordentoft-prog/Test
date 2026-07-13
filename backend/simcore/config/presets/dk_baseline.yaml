@@ -21,18 +21,19 @@ gambling:
   # growth_rate = observed annual trend (dossier): casino is the growth engine
   # (+14.7 %), sports near-flat (+1.2 %), the monopoly block flat since 2012.
   tracks:
+    # tax_rate 0.15 = gevinstafgift-approksimation (15 % af gevinster ≈ 15 % af BSI ved payout ~50 %)
     - track_id: lottery
       name: Lotterier
       competitive: false
       annual_bsi: 2.0
-      tax_rate: 0.0
+      tax_rate: 0.15
       seasonal: false
       growth_rate: 0.0
     - track_id: scratch
       name: Skrabelodder
       competitive: false
       annual_bsi: 1.0
-      tax_rate: 0.0
+      tax_rate: 0.15
       seasonal: false
       growth_rate: 0.0
     - track_id: casino
