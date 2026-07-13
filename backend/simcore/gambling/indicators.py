@@ -73,20 +73,27 @@ def compute_market_metrics(gcfg: GamblingConfig, results: dict[str, dict]) -> di
     tot_offshore = 0.0
     per_op_bsi: dict[str, float] = {}
 
+    tot_potential = 0.0
     for tid, r in results.items():
         m[f"channelization_{tid}"] = round(r["channelization"], 4)
         m[f"offshore_bsi_{tid}"] = round(r["offshore_bsi"], 3)
         m[f"market_size_{tid}"] = round(r["total_bsi"], 3)
+        m[f"participation_{tid}"] = round(r["participation"], 4)
         m[f"hhi_{tid}"] = round(r["hhi"], 1)
-        ds_share = sum(s for oid, s in r["shares"].items() if oid in ds_ids)
+        in_market = max(r["participation"], 1e-12)
+        ds_share = sum(s for oid, s in r["shares"].items() if oid in ds_ids) / in_market
         m[f"ds_share_{tid}"] = round(ds_share, 4)
         tot_licensed += r["licensed_bsi"]
         tot_offshore += r["offshore_bsi"]
+        tot_potential += r.get("potential_bsi", r["total_bsi"])
         for opid, bsi in r["operator_bsi"].items():
             per_op_bsi[opid] = per_op_bsi.get(opid, 0.0) + bsi
 
     total = tot_licensed + tot_offshore
     denom = max(total, 1e-9)
+    # Demand elasticity made visible: how much of the potential is wagered at
+    # all (the outside option is the rest). Tightening can now shrink this.
+    m["participation"] = round(total / max(tot_potential, 1e-9), 4)
     m["channelization"] = round(tot_licensed / denom, 4)   # overall (dynamic; overrides the static value)
     m["offshore_share"] = round(tot_offshore / denom, 4)
     m["market_size_total"] = round(total, 3)               # incl. offshore leakage

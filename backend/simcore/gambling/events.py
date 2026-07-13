@@ -19,6 +19,7 @@ def _p(ev, key, default):
 def spilpakke_1(reg, ev, sim) -> None:
     """Ad ban (whistle-to-whistle), bonus/affiliate restrictions, loss limits."""
     reg.ad_ban = min(1.0, reg.ad_ban + _p(ev, "ad_ban", 0.55))
+    reg.bonus_restriction = min(1.0, reg.bonus_restriction + _p(ev, "bonus_restriction", 0.60))
     reg.rg_friction = min(3.0, reg.rg_friction + _p(ev, "rg_friction", 0.7))
     reg.loss_limits = min(1.0, reg.loss_limits + _p(ev, "loss_limits", 0.35))
 

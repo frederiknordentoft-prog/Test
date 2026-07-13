@@ -1,20 +1,25 @@
 """AttractionMarket: per-track market-share allocation + channelization engine.
 
-Each competitive track (casino, sports) runs a full multinomial-logit choice
-between the licensed operators, offshore and prediction markets; each monopoly
-track (lottery, scratch) is a two-way choice between the DS monopoly and
-offshore leakage. Aggregate operator shares are the budget-weighted mean of the
-players' choice probabilities, so the heterogeneous tail moves shares
-endogenously.
+Each track runs a multinomial-logit choice between the licensed operators,
+offshore/prediction channels **and an outside option ("spiller ikke")** — so
+total demand is elastic: tightening can shrink the market (the breadth exits to
+the outside option) instead of only re-routing spend offshore. Aggregate shares
+are the budget-weighted mean of the players' choice probabilities, so the
+heterogeneous tail moves shares endogenously.
 
-Calibration is done once, at baseline: a scalar appeal offset on the unlicensed
-channels is solved (per track) so channelization matches the target
-(channelization_start for competitive tracks, monopoly_channelization for the
-monopoly ones), and total demand is anchored so the licensed portion equals the
-reported 2024/25 BSI. The offset and total-demand level are then held fixed, so
-later dynamics — AI personalization, entry/exit, bans, tax, enforcement — move
-channelization and market size *away* from baseline instead of being calibrated
-away.
+Policy acts on operator *attributes* (marketing under an ad ban, bonuses under
+bonus restrictions, friction under RG rules, RTP under tax pass-through), which
+the players' per-segment betas then mediate — an acquisition-led challenger
+loses more from an ad ban than a brand/retail incumbent, emergently.
+
+Calibration is done once, at baseline: per track, two scalar offsets are solved
+jointly (alternating bisection) — the unlicensed appeal delta so channelization
+matches the contested target, and the outside-option delta so baseline
+participation matches ``participation_start``. Both are then held fixed, and the
+demand level is anchored so the licensed portion equals the reported 2024/25
+BSI. Later dynamics — growth trends, AI, entry/exit, bans, tax, enforcement —
+move channelization, market size and participation *away* from baseline instead
+of being calibrated away.
 """
 from __future__ import annotations
 
@@ -35,89 +40,190 @@ BN_TO_MIO = 1000.0
 
 
 class TrackMarket:
-    """The per-track choice problem. Calibration (``delta``, ``total_base``) is
-    computed once at baseline and then reused across operator-set changes."""
+    """The per-track choice problem. Calibration (``unlicensed_delta``,
+    ``outside_delta``, ``total_base``) is computed once at baseline and then
+    reused across operator-set changes."""
 
     def __init__(self, gcfg: GamblingConfig, pop: PlayerArrays, betas, track,
                  operators: list[OperatorConfig],
-                 delta: float | None = None, total_base: float | None = None):
+                 delta: float | None = None, total_base: float | None = None,
+                 outside_delta: float | None = None):
         self.track = track
+        self.gcfg = gcfg
         self.calendar = gcfg.calendar
         self.temperature = gcfg.logit_temperature
         self.betas = betas
         idx = pop.track_ids.index(track.track_id)
         self.weights = pop.budget * pop.pref[:, idx]
         self.target = gcfg.monopoly_channelization if not track.competitive else gcfg.channelization_start
+        # Per-player outside-option utility (before the calibrated delta):
+        # highest for low-risk players — the breadth exits first.
+        self._outside_beta = betas["outside"]
+        self.last_participation: np.ndarray | None = None
         self.set_operators(operators)
 
-        if delta is None:
-            self.unlicensed_delta = self._solve_delta(self.target)
-        else:
+        if delta is not None and outside_delta is not None:
             self.unlicensed_delta = delta
+            self.outside_delta = outside_delta
+        else:
+            self.unlicensed_delta, self.outside_delta = self._calibrate()
         if total_base is None:
+            # Baseline licensed share of potential = participation × channelization,
+            # so anchoring licensed BSI to the dossier value fixes the potential.
             anchor_monthly = track.annual_bsi / 12.0 * BN_TO_MIO
-            self.total_base = anchor_monthly / max(self.target, 1e-6)
+            lic0 = self.target * gcfg.participation_start
+            self.total_base = anchor_monthly / max(lic0, 1e-6)
         else:
             self.total_base = total_base
 
     # ------------------------------------------------------------------ #
     def set_operators(self, operators: list[OperatorConfig]) -> None:
-        """(Re)bind the operator set — recomputes attributes and utilities but
-        keeps the calibrated delta/total_base."""
+        """(Re)bind the operator set — recomputes attributes but keeps the
+        calibrated deltas/total_base."""
         self.operators = operators
         self.attrs = operator_attr_arrays(operators)
         self.licensed_mask = np.array([o.licensed for o in operators])
         self.unlicensed_mask = ~self.licensed_mask
-        self._base_u = utilities(self.betas, self.attrs)
 
-    def _offset(self, appeal_mods: np.ndarray | None) -> np.ndarray:
+    # ------------------------------------------------------------------ #
+    def _policy_attrs(self, reg) -> dict[str, np.ndarray]:
+        """Apply the regulation state to operator attributes. The per-segment
+        betas then mediate the response — this is where an ad ban hits the
+        acquisition-led challenger harder than the brand incumbent."""
+        if reg is None:
+            return self.attrs
+        g = self.gcfg
+        a = dict(self.attrs)
+        lic = self.licensed_mask
+        unl = self.unlicensed_mask
+
+        marketing = a["marketing"].copy()
+        marketing[lic] *= max(0.0, 1.0 - reg.ad_ban)          # ads switched off
+        a["marketing"] = marketing
+
+        bonus = a["bonus"].copy()
+        bonus[lic] *= max(0.0, 1.0 - reg.bonus_restriction)   # bonus/affiliate rules
+        a["bonus"] = bonus
+
+        friction = a["friction"].copy()
+        friction[lic] = friction[lic] + g.rg_friction_gain * reg.rg_friction
+        friction[unl] = friction[unl] + g.enforcement_friction * reg.enforcement
+        a["friction"] = friction
+
+        rtp = a["rtp"].copy()
+        rtp[lic] = np.clip(rtp[lic] - g.rtp_tax_passthrough * reg.tax_add, 0.0, 1.0)
+        a["rtp"] = rtp
+
+        protection = a["protection"].copy()
+        protection[lic] = np.clip(protection[lic] + g.limits_protection_gain * reg.loss_limits,
+                                  0.0, 1.5)
+        a["protection"] = protection
+
+        if reg.licensed_bonus:  # e.g. crash games legalized onshore
+            breadth = a["breadth"].copy()
+            breadth[lic] = np.clip(breadth[lic] + 0.3 * reg.licensed_bonus, 0.0, 1.2)
+            a["breadth"] = breadth
+        return a
+
+    def _full_utilities(self, reg=None, extra_offsets: np.ndarray | None = None,
+                        unlicensed_delta: float | None = None,
+                        outside_delta: float | None = None) -> np.ndarray:
+        """[n, m+1] utility matrix: operators + the outside option (last col)."""
+        du = self.unlicensed_delta if unlicensed_delta is None else unlicensed_delta
+        do = self.outside_delta if outside_delta is None else outside_delta
+        u = utilities(self.betas, self._policy_attrs(reg))
         off = np.zeros(len(self.operators))
-        off[self.unlicensed_mask] = self.unlicensed_delta
-        if appeal_mods is not None:
-            off = off + appeal_mods
-        return off
+        off[self.unlicensed_mask] = du
+        if extra_offsets is not None:
+            off = off + extra_offsets
+        u = u + off[None, :]
+        outside = (do + self._outside_beta)[:, None]
+        return np.concatenate([u, outside], axis=1)
 
-    def _channelization_for(self, delta: float) -> float:
-        off = np.zeros(len(self.operators))
-        off[self.unlicensed_mask] = delta
-        probs = choice_probabilities(self._base_u + off[None, :], self.temperature)
-        shares = budget_weighted_shares(probs, self.weights)
-        return float(shares[self.licensed_mask].sum())
+    def _shares_for(self, du: float, do: float) -> np.ndarray:
+        probs = choice_probabilities(self._full_utilities(unlicensed_delta=du, outside_delta=do),
+                                     self.temperature)
+        return budget_weighted_shares(probs, self.weights)
 
-    def _solve_delta(self, target: float) -> float:
-        """Bisection for the unlicensed appeal offset so baseline channelization
-        equals ``target`` (channelization is monotone decreasing in delta)."""
+    def _calibrate(self) -> tuple[float, float]:
+        """Jointly solve (unlicensed_delta, outside_delta) so that at baseline
+        channelization = target AND participation = participation_start.
+        Alternating bisection on two monotone coordinates converges fast."""
         if not self.unlicensed_mask.any():
-            return 0.0
+            # No unlicensed channel: only the outside option is calibrated.
+            du = 0.0
+            do = self._solve_outside(du)
+            return du, do
+        du, do = 0.0, 0.0
+        for _ in range(6):
+            du = self._solve_unlicensed(do)
+            do = self._solve_outside(du)
+        return du, do
+
+    def _solve_unlicensed(self, do: float) -> float:
+        """Bisection: channelization (licensed share of in-market spend) is
+        monotone decreasing in the unlicensed delta."""
         lo, hi = -12.0, 12.0
-        for _ in range(60):
+        for _ in range(50):
             mid = 0.5 * (lo + hi)
-            if self._channelization_for(mid) > target:
+            s = self._shares_for(mid, do)
+            in_market = float(s[:-1].sum())
+            chan = float(s[:-1][self.licensed_mask].sum()) / max(in_market, 1e-12)
+            if chan > self.target:
+                lo = mid
+            else:
+                hi = mid
+        return 0.5 * (lo + hi)
+
+    def _solve_outside(self, du: float) -> float:
+        """Bisection: participation (1 − outside share) is monotone decreasing
+        in the outside delta."""
+        lo, hi = -14.0, 14.0
+        for _ in range(50):
+            mid = 0.5 * (lo + hi)
+            part = 1.0 - float(self._shares_for(du, mid)[-1])
+            if part > self.gcfg.participation_start:
                 lo = mid
             else:
                 hi = mid
         return 0.5 * (lo + hi)
 
     # ------------------------------------------------------------------ #
-    def clear(self, tick: int, appeal_mods: np.ndarray | None = None,
-              engagement: float = 1.0) -> dict:
-        probs = choice_probabilities(self._base_u + self._offset(appeal_mods)[None, :],
-                                     self.temperature)
-        shares = budget_weighted_shares(probs, self.weights)
+    def clear(self, tick: int, reg=None, extra_offsets: np.ndarray | None = None,
+              engagement: float = 1.0, noise: float = 1.0) -> dict:
+        probs = choice_probabilities(self._full_utilities(reg, extra_offsets), self.temperature)
+        self.last_participation = 1.0 - probs[:, -1]
+        shares_full = budget_weighted_shares(probs, self.weights)
+        shares = shares_full[:-1]                       # operator shares of potential
+        outside_share = float(shares_full[-1])
+        in_market = float(shares.sum())
+
         season = sports_intensity(tick, self.calendar) if self.track.seasonal else 1.0
-        total = self.total_base * season * engagement
-        operator_bsi = {o.operator_id: float(shares[i] * total)
+        growth = (1.0 + self.track.growth_rate) ** (tick / 12.0)
+        potential = self.total_base * season * engagement * growth * noise
+
+        operator_bsi = {o.operator_id: float(shares[i] * potential)
                         for i, o in enumerate(self.operators)}
-        licensed_bsi = float(shares[self.licensed_mask].sum() * total)
-        offshore_bsi = float(shares[self.unlicensed_mask].sum() * total)
+        licensed_share = float(shares[self.licensed_mask].sum())
+        licensed_bsi = licensed_share * potential
+        offshore_bsi = float(shares[self.unlicensed_mask].sum()) * potential
+
+        # HHI on the licensed market (the convention for concentration).
+        lic_shares = shares[self.licensed_mask]
+        lic_total = float(lic_shares.sum())
+        hhi = float(np.sum((lic_shares / max(lic_total, 1e-12)) ** 2) * 10000.0)
+
         return {
             "shares": {o.operator_id: float(shares[i]) for i, o in enumerate(self.operators)},
+            "outside_share": outside_share,
+            "participation": in_market,
             "operator_bsi": operator_bsi,
-            "channelization": float(shares[self.licensed_mask].sum()),
+            "channelization": licensed_share / max(in_market, 1e-12),
             "licensed_bsi": licensed_bsi,
             "offshore_bsi": offshore_bsi,
             "total_bsi": licensed_bsi + offshore_bsi,
-            "hhi": float(np.sum(shares ** 2) * 10000.0),
+            "potential_bsi": potential,
+            "hhi": hhi,
         }
 
 
@@ -125,7 +231,7 @@ class AttractionMarket:
     def __init__(self, gcfg: GamblingConfig, pop: PlayerArrays):
         self.gcfg = gcfg
         self.pop = pop
-        self.betas = player_betas(pop, gcfg.young_age_threshold)
+        self.betas = player_betas(pop, gcfg)
         self.operators: list[OperatorConfig] = list(gcfg.operators)
         self.tracks: dict[str, TrackMarket] = {}
         for track in gcfg.tracks:
@@ -170,11 +276,18 @@ class AttractionMarket:
     def has_operator(self, operator_id: str) -> bool:
         return any(o.operator_id == operator_id for o in self.operators)
 
+    def participation(self) -> dict[str, np.ndarray]:
+        """Per-track per-player probability of playing this month (from the last
+        clear) — feeds the endogenous customer counts."""
+        return {tid: tm.last_participation for tid, tm in self.tracks.items()
+                if tm.last_participation is not None}
+
     # ------------------------------------------------------------------ #
-    def clear(self, tick: int, appeal_mods: dict[str, np.ndarray] | None = None,
-              engagement: float = 1.0) -> dict[str, dict]:
+    def clear(self, tick: int, reg=None, ai_offsets: dict[str, np.ndarray] | None = None,
+              engagement: float = 1.0, noise: dict[str, float] | None = None) -> dict[str, dict]:
         out = {}
         for tid, tm in self.tracks.items():
-            mods = None if appeal_mods is None else appeal_mods.get(tid)
-            out[tid] = tm.clear(tick, mods, engagement)
+            extra = None if ai_offsets is None else ai_offsets.get(tid)
+            nz = 1.0 if noise is None else noise.get(tid, 1.0)
+            out[tid] = tm.clear(tick, reg, extra, engagement, nz)
         return out

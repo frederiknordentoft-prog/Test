@@ -90,27 +90,63 @@ def _run(preset="dk_baseline", ticks=None):
     return cfg, sim
 
 
-def test_baseline_non_seasonal_tracks_are_stable():
+def test_baseline_monopoly_tracks_are_flat_and_anchored():
+    """The monopoly block has been flat since 2012 — zero growth, exact anchor."""
     cfg, sim = _run(ticks=24)
-    for track_id, annual in (("lottery", 2.0), ("scratch", 1.0), ("casino", 3.5)):
+    for track_id, annual in (("lottery", 2.0), ("scratch", 1.0)):
         series = [m[f"bsi_{track_id}"] for m in sim.metrics_history]
         assert len(set(round(v, 6) for v in series)) == 1, f"{track_id} must be flat"
         assert series[0] == pytest.approx(annual / 12 * BN_TO_MIO, rel=1e-3)
+
+
+def test_baseline_casino_is_the_growth_engine():
+    """Casino must be anchored at t0 and carry the observed +14.7 %/yr trend —
+    the inverted-growth baseline was a critic finding."""
+    _cfg, sim = _run(ticks=25)
+    casino = [m["bsi_casino"] for m in sim.metrics_history]
+    lottery = [m["bsi_lottery"] for m in sim.metrics_history]
+    assert casino[0] == pytest.approx(3.5 / 12 * BN_TO_MIO, rel=1e-3)
+    assert casino[12] / casino[0] == pytest.approx(1.147, rel=1e-2)
+    assert casino[24] / casino[0] > lottery[24] / lottery[0] + 0.25
 
 
 def test_baseline_sports_is_seasonal():
     _cfg, sim = _run(ticks=24)
     sports = [m["bsi_sports"] for m in sim.metrics_history]
     assert max(sports) > min(sports)               # betting varies with the calendar
-    # annual mean matches the anchor (sports intensity averages to 1.0/year)
+    # annual mean matches the anchor (sports intensity averages to 1.0/year;
+    # the +1.2 %/yr trend adds a small drift within the year)
     first_year = sports[:12]
-    assert sum(first_year) == pytest.approx(2.21 / 12 * BN_TO_MIO * 12, rel=1e-3)
+    assert sum(first_year) == pytest.approx(2.21 / 12 * BN_TO_MIO * 12, rel=1e-2)
 
 
 def test_baseline_total_matches_four_track_anchor():
     _cfg, sim = _run(ticks=12)
     annual_total = sum(m["bsi_total"] for m in sim.metrics_history)  # 12 monthly sums
-    assert annual_total == pytest.approx((2.0 + 1.0 + 3.5 + 2.21) * BN_TO_MIO, rel=1e-3)
+    # Anchored at t0; casino's +14.7 %/yr trend adds ~+3 % over the first year.
+    assert annual_total == pytest.approx((2.0 + 1.0 + 3.5 + 2.21) * BN_TO_MIO, rel=0.05)
+    first = sim.metrics_history[0]
+    assert first["bsi_lottery"] + first["bsi_scratch"] + first["bsi_casino"] \
+        == pytest.approx((2.0 + 1.0 + 3.5) / 12 * BN_TO_MIO, rel=1e-3)
+
+
+def test_baseline_noise_is_live_and_reproducible():
+    """`baseline_noise` must actually roughen the series (it was a dead knob) —
+    deterministically per seed."""
+    _c1, quiet = _run(ticks=12)
+    cfg = load_preset("dk_baseline")
+    cfg.ticks = 12
+    cfg.gambling = {**(cfg.gambling or {}), "ai_enabled": False, "entry_enabled": False,
+                    "baseline_noise": 0.05}
+    noisy_a = GamblingSimulation(cfg)
+    noisy_a.run()
+    noisy_b = GamblingSimulation(cfg.model_copy(deep=True))
+    noisy_b.run()
+    lottery_quiet = [m["bsi_lottery"] for m in quiet.metrics_history]
+    lottery_noisy = [m["bsi_lottery"] for m in noisy_a.metrics_history]
+    assert len(set(round(v, 6) for v in lottery_quiet)) == 1
+    assert len(set(round(v, 6) for v in lottery_noisy)) > 1, "noise must be live"
+    assert noisy_a.state_hash() == noisy_b.state_hash()      # still reproducible
 
 
 def test_reproducibility_same_seed_same_hash():

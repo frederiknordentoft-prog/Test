@@ -81,6 +81,7 @@ class OperatorConfig(BaseModel):
     tracks: list[TrackId]
     rtp: float = Field(0.55, ge=0.0, le=1.0)             # payout / return-to-player
     product_breadth: float = Field(0.5, ge=0.0, le=1.0)  # crash games etc.
+    bonus: float = Field(0.5, ge=0.0, le=1.0)            # acquisition/retention bonus intensity (β3)
     brand: float = Field(0.5, ge=0.0, le=1.0)
     marketing_reach: float = Field(0.5, ge=0.0, le=1.0)
     friction: float = Field(0.5, ge=0.0, le=1.0)         # MitID/KYC/withdrawal (higher = worse)
@@ -104,30 +105,31 @@ class OperatorConfig(BaseModel):
 DEFAULT_OPERATORS: list[dict] = [
     # Danske Spil split into two agents (perspective §2.2).
     {"operator_id": "ds_lotteri", "name": "Danske Lotteri Spil", "kind": "ds_monopoly",
-     "tracks": ["lottery", "scratch"], "rtp": 0.50, "product_breadth": 0.50, "brand": 0.95,
-     "marketing_reach": 0.70, "friction": 0.40, "protection": 0.85, "tax_free": True},
+     "tracks": ["lottery", "scratch"], "rtp": 0.50, "product_breadth": 0.50, "bonus": 0.10,
+     "brand": 0.95, "marketing_reach": 0.70, "friction": 0.40, "protection": 0.85, "tax_free": True},
     {"operator_id": "ds_licens", "name": "Danske Licens Spil", "kind": "ds_licensed",
-     "tracks": ["casino", "sports"], "rtp": 0.55, "product_breadth": 0.60, "brand": 0.90,
-     "marketing_reach": 0.70, "friction": 0.50, "protection": 0.90, "tax_free": True},
+     "tracks": ["casino", "sports"], "rtp": 0.55, "product_breadth": 0.60, "bonus": 0.35,
+     "brand": 0.90, "marketing_reach": 0.70, "friction": 0.50, "protection": 0.90, "tax_free": True},
     # Licensed competitors.
     {"operator_id": "bet365", "name": "bet365", "kind": "licensed",
-     "tracks": ["sports", "casino"], "rtp": 0.60, "product_breadth": 0.70, "brand": 0.80,
-     "marketing_reach": 0.60, "friction": 0.50, "protection": 0.70, "tax_free": True},
+     "tracks": ["sports", "casino"], "rtp": 0.60, "product_breadth": 0.70, "bonus": 0.60,
+     "brand": 0.80, "marketing_reach": 0.60, "friction": 0.50, "protection": 0.70, "tax_free": True},
     {"operator_id": "unibet", "name": "Unibet (FDJ)", "kind": "licensed",
-     "tracks": ["casino", "sports"], "rtp": 0.58, "product_breadth": 0.65, "brand": 0.72,
-     "marketing_reach": 0.60, "friction": 0.50, "protection": 0.70, "tax_free": True},
+     "tracks": ["casino", "sports"], "rtp": 0.58, "product_breadth": 0.65, "bonus": 0.60,
+     "brand": 0.72, "marketing_reach": 0.60, "friction": 0.50, "protection": 0.70, "tax_free": True},
     {"operator_id": "betano", "name": "Betano (Kaizen)", "kind": "licensed",
-     "tracks": ["sports", "casino"], "rtp": 0.62, "product_breadth": 0.70, "brand": 0.58,
-     "marketing_reach": 0.92, "friction": 0.50, "protection": 0.65, "tax_free": True},
+     "tracks": ["sports", "casino"], "rtp": 0.62, "product_breadth": 0.70, "bonus": 0.90,
+     "brand": 0.58, "marketing_reach": 0.92, "friction": 0.50, "protection": 0.65, "tax_free": True},
     {"operator_id": "longtail", "name": "Øvrige licenshavere", "kind": "licensed",
-     "tracks": ["casino", "sports"], "rtp": 0.57, "product_breadth": 0.55, "brand": 0.40,
-     "marketing_reach": 0.40, "friction": 0.50, "protection": 0.60, "tax_free": True},
+     "tracks": ["casino", "sports"], "rtp": 0.57, "product_breadth": 0.55, "bonus": 0.50,
+     "brand": 0.40, "marketing_reach": 0.40, "friction": 0.50, "protection": 0.60, "tax_free": True},
     # Non-optional unregulated channels.
     {"operator_id": "offshore", "name": "Offshore/ureguleret", "kind": "offshore",
      "tracks": ["lottery", "scratch", "casino", "sports"], "rtp": 0.75, "product_breadth": 0.95,
-     "brand": 0.35, "marketing_reach": 0.50, "friction": 0.20, "protection": 0.10, "tax_free": False},
+     "bonus": 0.95, "brand": 0.35, "marketing_reach": 0.50, "friction": 0.20, "protection": 0.10,
+     "tax_free": False},
     {"operator_id": "prediction", "name": "Prediction markets", "kind": "prediction",
-     "tracks": ["sports"], "rtp": 0.70, "product_breadth": 0.60, "brand": 0.50,
+     "tracks": ["sports"], "rtp": 0.70, "product_breadth": 0.60, "bonus": 0.30, "brand": 0.50,
      "marketing_reach": 0.60, "friction": 0.25, "protection": 0.20, "tax_free": False},
 ]
 
@@ -150,25 +152,25 @@ class EntrantConfig(OperatorConfig):
 
 DEFAULT_ENTRANTS: list[dict] = [
     {"operator_id": "ai_casino", "name": "AI-native casino", "kind": "licensed",
-     "tracks": ["casino"], "rtp": 0.64, "product_breadth": 0.85, "brand": 0.35,
+     "tracks": ["casino"], "rtp": 0.64, "product_breadth": 0.85, "bonus": 0.70, "brand": 0.35,
      "marketing_reach": 0.70, "friction": 0.45, "protection": 0.55, "tax_free": True,
      "ai_cap0": 0.55, "ai_adoption": 0.20, "entry_cost": 180.0, "min_frontier": 0.40},
     {"operator_id": "ai_sportsbook", "name": "AI-native sportsbook", "kind": "licensed",
-     "tracks": ["sports", "casino"], "rtp": 0.63, "product_breadth": 0.72, "brand": 0.35,
-     "marketing_reach": 0.90, "friction": 0.45, "protection": 0.55, "tax_free": True,
+     "tracks": ["sports", "casino"], "rtp": 0.63, "product_breadth": 0.72, "bonus": 0.75,
+     "brand": 0.35, "marketing_reach": 0.90, "friction": 0.45, "protection": 0.55, "tax_free": True,
      "ai_cap0": 0.50, "ai_adoption": 0.22, "entry_cost": 160.0, "min_frontier": 0.35},
     {"operator_id": "bigtech", "name": "Big-tech super-app", "kind": "licensed",
-     "tracks": ["casino", "sports"], "rtp": 0.62, "product_breadth": 0.80, "brand": 0.85,
-     "marketing_reach": 0.95, "friction": 0.30, "protection": 0.60, "tax_free": True,
+     "tracks": ["casino", "sports"], "rtp": 0.62, "product_breadth": 0.80, "bonus": 0.50,
+     "brand": 0.85, "marketing_reach": 0.95, "friction": 0.30, "protection": 0.60, "tax_free": True,
      "ai_cap0": 0.80, "ai_adoption": 0.25, "entry_cost": 600.0, "entry_barrier": 400.0,
      "min_frontier": 0.70},
     {"operator_id": "crypto_casino", "name": "Crypto-casino", "kind": "offshore",
-     "tracks": ["casino"], "rtp": 0.82, "product_breadth": 0.98, "brand": 0.30,
+     "tracks": ["casino"], "rtp": 0.82, "product_breadth": 0.98, "bonus": 0.95, "brand": 0.30,
      "marketing_reach": 0.55, "friction": 0.15, "protection": 0.05, "tax_free": False,
      "ai_cap0": 0.45, "ai_adoption": 0.20, "entry_cost": 60.0, "min_frontier": 0.35},
     {"operator_id": "consolidator", "name": "Konsolidator (Allwyn/FDJ-type)", "kind": "licensed",
-     "tracks": ["casino", "sports"], "rtp": 0.60, "product_breadth": 0.68, "brand": 0.80,
-     "marketing_reach": 0.80, "friction": 0.48, "protection": 0.68, "tax_free": True,
+     "tracks": ["casino", "sports"], "rtp": 0.60, "product_breadth": 0.68, "bonus": 0.60,
+     "brand": 0.80, "marketing_reach": 0.80, "friction": 0.48, "protection": 0.68, "tax_free": True,
      "ai_cap0": 0.30, "ai_adoption": 0.12, "entry_cost": 500.0, "consolidator": True},
 ]
 
@@ -178,14 +180,17 @@ def default_entrants() -> list[EntrantConfig]:
 
 
 DEFAULT_TRACKS: list[dict] = [
+    # growth_rate is the dossier's observed annual trend: casino is the growth
+    # engine (+14.7 %), sports is near-flat (+1.2 %), the monopoly block has
+    # been flat since 2012.
     {"track_id": "lottery", "name": "Lotterier", "competitive": False,
-     "annual_bsi": 2.0, "tax_rate": 0.0, "seasonal": False},
+     "annual_bsi": 2.0, "tax_rate": 0.0, "seasonal": False, "growth_rate": 0.0},
     {"track_id": "scratch", "name": "Skrabelodder", "competitive": False,
-     "annual_bsi": 1.0, "tax_rate": 0.0, "seasonal": False},
+     "annual_bsi": 1.0, "tax_rate": 0.0, "seasonal": False, "growth_rate": 0.0},
     {"track_id": "casino", "name": "Online casino", "competitive": True,
-     "annual_bsi": 3.5, "tax_rate": 0.28, "seasonal": False},
+     "annual_bsi": 3.5, "tax_rate": 0.28, "seasonal": False, "growth_rate": 0.147},
     {"track_id": "sports", "name": "Sportsbetting", "competitive": True,
-     "annual_bsi": 2.21, "tax_rate": 0.28, "seasonal": True},
+     "annual_bsi": 2.21, "tax_rate": 0.28, "seasonal": True, "growth_rate": 0.012},
 ]
 
 
@@ -208,6 +213,32 @@ class GamblingConfig(BaseModel):
     # competitive tracks calibrate to channelization_start.
     monopoly_channelization: float = Field(0.95, ge=0.0, le=1.0)
 
+    # --- outside option ("spiller ikke") --------------------------------- #
+    # Every track's choice set includes a no-play alternative, so total demand
+    # is elastic: tightening can shrink the market, not only re-route it.
+    # ``participation_start`` is the baseline share of track-engaged budget that
+    # is actually wagered (calibrated jointly with the unlicensed delta);
+    # ``outside_risk_beta`` makes the outside option most attractive to low-risk
+    # players — the breadth exits, the tail keeps playing (and leaks offshore).
+    participation_start: float = Field(0.80, ge=0.05, le=0.99)
+    outside_risk_beta: float = Field(2.0, ge=0.0, le=10.0)
+
+    # --- heavy-tail ↔ behaviour coupling --------------------------------- #
+    # Spend is drawn with a risk-dependent location, so the top spenders are
+    # disproportionately high-risk (the tail that is friction-tolerant and
+    # offshore-prone). ``offshore_affinity_beta`` scales how strongly a player's
+    # offshore-propensity axis shifts utility toward unlicensed alternatives.
+    risk_spend_coupling: float = Field(3.0, ge=0.0, le=8.0)
+    offshore_affinity_beta: float = Field(2.0, ge=0.0, le=10.0)
+
+    # --- policy → attribute pass-through --------------------------------- #
+    # Policy levers act on operator *attributes* (mediated by per-segment betas)
+    # instead of uniform utility constants, so heterogeneous responses emerge.
+    rtp_tax_passthrough: float = Field(0.5, ge=0.0, le=1.0)   # tax_add -> licensed rtp down
+    enforcement_friction: float = Field(0.6, ge=0.0, le=3.0)  # enforcement -> unlicensed friction up
+    limits_protection_gain: float = Field(0.5, ge=0.0, le=2.0)  # loss limits -> licensed protection up
+    rg_friction_gain: float = Field(0.5, ge=0.0, le=2.0)      # rg_friction -> licensed friction up
+
     # --- AI diffusion + entry (Etape 3) --------------------------------- #
     ai_enabled: bool = True
     entry_enabled: bool = True
@@ -216,7 +247,10 @@ class GamblingConfig(BaseModel):
     # Additive frontier jumps ("wild AI") — [{"tick": int, "size": float}, ...].
     ai_shocks: list[dict] = Field(default_factory=list)
     ai_personalization_gain: float = Field(2.0, ge=0.0, le=10.0)  # AI cap -> choice utility
-    ai_engagement_gain: float = Field(0.50, ge=0.0, le=3.0)    # best AI cap -> market-size growth
+    # Best AI cap beyond baseline -> extra market-size growth. Kept small: the
+    # observed baseline trend is carried by TrackConfig.growth_rate; this is the
+    # *residual* AI-driven engagement channel on top.
+    ai_engagement_gain: float = Field(0.15, ge=0.0, le=3.0)
     ai_bigtech_threshold: float = Field(0.70, ge=0.0, le=1.0)  # frontier gate for big-tech entry
 
     entrants: list[EntrantConfig] = Field(default_factory=default_entrants)
@@ -272,8 +306,10 @@ class GamblingConfig(BaseModel):
     # Heavy-tailed monthly spend: lognormal sigma is the income-concentration
     # knob (higher => a smaller share of players make up more of the BSI). This
     # is the single most important / most uncertain lever (perspective §2.1) and
-    # must be swept in sensitivity analysis — see params.yaml.
-    spend_sigma: float = Field(1.10, ge=0.10, le=3.00)
+    # must be swept in sensitivity analysis — see params.yaml. Default 1.70
+    # targets top-5 % ≈ 50-70 % of BSI (international priors); 1.10 gave ~30 %,
+    # far too thin.
+    spend_sigma: float = Field(1.70, ge=0.10, le=3.00)
     # Minimum per-track preference weight for a player to count as a customer of
     # that track.
     participation_threshold: float = Field(0.05, ge=0.0, le=1.0)

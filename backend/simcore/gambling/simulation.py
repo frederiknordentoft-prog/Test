@@ -52,11 +52,6 @@ from simcore.models.config import SimConfig
 from simcore.persistence.db import connect
 from simcore.persistence.recorder import Recorder
 
-# Event types the gambling domain knows how to handle. Empty in Etape 0 — the
-# generic finance handlers must never run against a gambling sim (they expect a
-# finance market/population). Gambling event handlers are added in Etape 4.
-GAMBLING_EVENT_TYPES: frozenset[str] = frozenset()
-
 
 class GamblingSimulation:
     def __init__(self, config: SimConfig, db_path: str | None = None,
@@ -122,13 +117,21 @@ class GamblingSimulation:
             self.entry.check_exits(t, self.market, self.ai, self._last_results)
             self._drain_entry_events(t)
 
-        # 3. Choice-utility modifiers: AI personalization + regulation. The market
-        #    clears with the *current* AI state (advanced at tick-end).
-        appeal_mods = self._appeal_mods(ai_on, stake_on)
+        # 3. Clear the market: policy acts on operator attributes (mediated by
+        #    per-segment betas), AI adds personalization offsets, and each track
+        #    carries its observed growth trend + optional baseline noise. The
+        #    market clears with the *current* AI state (advanced at tick-end).
+        ai_offsets = self._ai_offsets() if ai_on else None
         engagement = self.ai.engagement_multiplier() if ai_on else 1.0
-        results = self.market.clear(t, appeal_mods, engagement)
+        reg = self.reg if stake_on else None
+        results = self.market.clear(t, reg, ai_offsets, engagement, self._noise())
         self._last_results = results
         bsi_by_track = {tid: r["licensed_bsi"] for tid, r in results.items()}
+
+        # Customer counts are endogenous: expected customers per track follow
+        # the players' current participation probabilities (1 − outside option),
+        # so policy/AI/entry genuinely move them.
+        self.customers = customer_counts(self.pop, self.gcfg, self.market.participation())
 
         metrics = compute_gambling_metrics(self.gcfg, t, bsi_by_track)
         metrics.update(
@@ -180,21 +183,24 @@ class GamblingSimulation:
         return metrics
 
     # ------------------------------------------------------------------ #
-    def _appeal_mods(self, ai_on: bool, stake_on: bool):
-        """Combined per-track, per-operator choice-utility modifiers from AI
-        personalization and the regulation state."""
-        if not ai_on and not stake_on:
+    def _ai_offsets(self) -> dict[str, np.ndarray]:
+        """Per-track, per-operator choice-utility offsets from AI personalization."""
+        return {tid: np.array(self.ai.personalization_offset(tm.operators))
+                for tid, tm in self.market.tracks.items()}
+
+    def _noise(self) -> dict[str, float] | None:
+        """Per-track multiplicative baseline noise (mean-one lognormal), drawn
+        from the per-track RNG streams so runs stay reproducible per seed. The
+        real betting series is 'extremely volatile' — a perfectly smooth
+        baseline misreads as precision."""
+        sigma = self.gcfg.baseline_noise
+        if sigma <= 0.0:
             return None
-        reg_mods = self.reg.appeal_mods(self.market) if stake_on else None
-        mods = {}
-        for tid, tm in self.market.tracks.items():
-            arr = np.zeros(len(tm.operators))
-            if ai_on:
-                arr = arr + np.array(self.ai.personalization_offset(tm.operators))
-            if reg_mods is not None:
-                arr = arr + reg_mods[tid]
-            mods[tid] = arr
-        return mods
+        out: dict[str, float] = {}
+        for i, t in enumerate(self.gcfg.tracks):
+            rng = self.hub.assets[i % len(self.hub.assets)]
+            out[t.track_id] = float(np.exp(rng.normal(0.0, sigma) - 0.5 * sigma * sigma))
+        return out
 
     def _apply_gambling_events(self, tick: int) -> None:
         for ev in self.config.events:

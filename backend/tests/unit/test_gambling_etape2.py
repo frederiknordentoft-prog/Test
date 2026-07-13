@@ -29,11 +29,21 @@ def _market(**over):
 
 
 # --------------------------------------------------------------------------- #
-def test_shares_sum_to_one_per_track():
+def test_shares_plus_outside_sum_to_one_per_track():
+    """Budget conservation: operator shares + the outside option exhaust the
+    potential — nothing is created or destroyed by the choice model."""
     _g, _p, mkt = _market()
     res = mkt.clear(0)
     for tid, r in res.items():
-        assert sum(r["shares"].values()) == pytest.approx(1.0, abs=1e-9)
+        assert sum(r["shares"].values()) + r["outside_share"] == pytest.approx(1.0, abs=1e-9)
+        assert r["participation"] == pytest.approx(sum(r["shares"].values()), abs=1e-9)
+
+
+def test_baseline_participation_matches_target():
+    gcfg, _p, mkt = _market()
+    res = mkt.clear(0)
+    for tid, r in res.items():
+        assert r["participation"] == pytest.approx(gcfg.participation_start, abs=0.01)
 
 
 def test_baseline_channelization_within_interval():
@@ -70,9 +80,18 @@ def test_offshore_and_prediction_are_in_the_choice_set():
 
 
 def test_casino_overtakes_betting():
+    """Not just the static anchor (3.5 > 2.21): the growth *dynamic* must have
+    casino pulling away from near-flat sports (critic finding — the old test
+    asserted only the trivial tick-0 anchor)."""
     _g, _p, mkt = _market()
-    res = mkt.clear(0)
-    assert res["casino"]["licensed_bsi"] > res["sports"]["licensed_bsi"]
+    res0 = mkt.clear(0)
+    res24 = mkt.clear(24)
+    assert res0["casino"]["licensed_bsi"] > res0["sports"]["licensed_bsi"]
+    casino_growth = res24["casino"]["licensed_bsi"] / res0["casino"]["licensed_bsi"]
+    # compare sports year-on-year at the same calendar month to strip seasonality
+    sports_growth = mkt.clear(24)["sports"]["licensed_bsi"] / mkt.clear(12)["sports"]["licensed_bsi"]
+    assert casino_growth > 1.25                       # ~1.147² over two years
+    assert casino_growth > sports_growth + 0.20
 
 
 def test_channelization_falls_when_licensed_appeal_drops():
@@ -82,8 +101,26 @@ def test_channelization_falls_when_licensed_appeal_drops():
     tm = mkt.tracks["casino"]
     base = tm.clear(0)["channelization"]
     mods = np.array([-3.0 if o.licensed else 0.0 for o in tm.operators])
-    penalized = tm.clear(0, mods)["channelization"]
+    penalized = tm.clear(0, extra_offsets=mods)["channelization"]
     assert penalized < base - 0.05
+
+
+def test_total_demand_is_elastic_under_tightening():
+    """THE critic experiment: maximal tightening must shrink the total market
+    (before: exactly 0.00 % — every krone was mechanically re-routed offshore).
+    The breadth exits to the outside option; only part of the loss leaks."""
+    from simcore.gambling.stakeholders import RegulationState
+
+    _g, _p, mkt = _market()
+    base = mkt.clear(0)
+    reg = RegulationState(ad_ban=1.0, rg_friction=1.0, loss_limits=1.0, bonus_restriction=1.0)
+    tight = mkt.clear(0, reg)
+    total_base = sum(r["total_bsi"] for r in base.values())
+    total_tight = sum(r["total_bsi"] for r in tight.values())
+    assert total_tight < total_base * 0.95, "tightening must be able to shrink demand"
+    # ...while channelization still falls (part of the response is leakage)
+    chan = lambda res: sum(r["licensed_bsi"] for r in res.values()) / sum(r["total_bsi"] for r in res.values())
+    assert chan(tight) < chan(base) - 0.03
 
 
 def test_tail_leaks_offshore_endogenously():
@@ -92,12 +129,43 @@ def test_tail_leaks_offshore_endogenously():
     gcfg, pop, _m = _market(population=4000)
     ops = gcfg.operators_for("casino")
     attrs = operator_attr_arrays(ops)
-    betas = player_betas(pop, gcfg.young_age_threshold)
+    betas = player_betas(pop, gcfg)
     probs = choice_probabilities(utilities(betas, attrs), gcfg.logit_temperature)
     off = next(i for i, o in enumerate(ops) if o.kind == "offshore")
     hi = pop.risk > 0.7
     lo = pop.risk < 0.3
     assert probs[hi, off].mean() > probs[lo, off].mean() + 0.02
+
+
+def test_top_spenders_leak_offshore_more_than_the_breadth():
+    """The tail is behavioural, not cosmetic: under tightening, the top-5 %
+    spenders shift toward unlicensed alternatives markedly more than the rest
+    (before: 5.73 % vs 5.66 % — statistically identical)."""
+    from simcore.gambling.stakeholders import RegulationState
+
+    gcfg, pop, mkt = _market(population=4000)
+    tm = mkt.tracks["casino"]
+    reg = RegulationState(ad_ban=0.8, rg_friction=1.0, loss_limits=1.0, bonus_restriction=0.8)
+    pb = choice_probabilities(tm._full_utilities(None), tm.temperature)
+    pt = choice_probabilities(tm._full_utilities(reg), tm.temperature)
+    unl = np.where(tm.unlicensed_mask)[0]
+    shift = pt[:, unl].sum(axis=1) - pb[:, unl].sum(axis=1)
+    top = pop.budget >= np.quantile(pop.budget, 0.95)
+    assert shift[top].mean() > shift[~top].mean() * 1.5
+
+
+def test_ad_ban_hits_acquisition_led_operators_harder():
+    """The asymmetry the whole Spilpakke analysis is about: an ad ban must hurt
+    the acquisition-led challenger (Betano, reach 0.92) relatively more than the
+    brand/retail incumbent (DS) — emergently, not by construction."""
+    from simcore.gambling.stakeholders import RegulationState
+
+    _g, _p, mkt = _market()
+    base = mkt.clear(0)["sports"]["shares"]
+    banned = mkt.clear(0, RegulationState(ad_ban=1.0, bonus_restriction=0.6))["sports"]["shares"]
+    betano_loss = 1.0 - banned["betano"] / base["betano"]
+    ds_loss = 1.0 - banned["ds_licens"] / base["ds_licens"]
+    assert betano_loss > ds_loss + 0.10
 
 
 def test_hhi_and_operator_bsi_consistency():

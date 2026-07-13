@@ -60,8 +60,13 @@ def build_population(gcfg: GamblingConfig, rng: np.random.Generator) -> PlayerAr
     # --- axis 5: offshore propensity (rises with risk and youth) ---
     offshore = np.clip(0.35 * risk + 0.20 * young + 0.5 * rng.beta(2.0, 5.0, n), 0.0, 1.0)
 
-    # --- axis 2: heavy-tailed monthly spend (concentration = spend_sigma) ---
-    budget = rng.lognormal(0.0, gcfg.spend_sigma, n)
+    # --- axis 2: heavy-tailed monthly spend, coupled to risk ---
+    # log-spend = coupling·(risk − mean) + N(0, σ): the top spenders are drawn
+    # disproportionately from the high-risk tail, so the tail is not cosmetic —
+    # it is the friction-tolerant, offshore-prone part of the BSI (perspective
+    # §2.1). With coupling 0 this degrades to the old independent draw.
+    budget = np.exp(gcfg.risk_spend_coupling * (risk - float(risk.mean()))
+                    + rng.normal(0.0, gcfg.spend_sigma, n))
 
     # --- axis 1: vertical preference (sparse base + demographic/risk tilt) ---
     base = rng.dirichlet(np.full(len(tracks), 0.6), n)   # sparse-ish, heterogeneous
@@ -109,14 +114,26 @@ def concentration(total_spend_per_player: np.ndarray, top_fraction: float) -> fl
     return float(top.sum() / total) if total > 0 else 0.0
 
 
-def customer_counts(pop: PlayerArrays, gcfg: GamblingConfig) -> dict[str, float]:
-    """Per-track customer counts (scaled to represented_customers) plus the
-    unique total. A player is a customer of a track if their preference weight
-    for it is at least ``participation_threshold`` (multi-homing allowed)."""
+def customer_counts(pop: PlayerArrays, gcfg: GamblingConfig,
+                    participation: dict[str, np.ndarray] | None = None) -> dict[str, float]:
+    """Per-track expected customer counts (scaled to ``represented_customers``)
+    plus the unique total.
+
+    A player is *engaged* with a track if their preference weight passes
+    ``participation_threshold`` (multi-homing allowed). ``participation`` maps
+    track_id → per-player probability of actually playing this month (1 − the
+    outside-option probability from the choice model); the expected customer
+    count is the sum of engaged × participating probabilities, so policy, AI and
+    entry genuinely move customer counts every tick. Without ``participation``
+    (pre-market init) the counts are the engaged-population upper bound."""
     scale_people = gcfg.represented_customers / max(pop.n, 1)
-    active = pop.pref >= gcfg.participation_threshold          # [n, n_tracks] bool
+    engaged = pop.pref >= gcfg.participation_threshold          # [n, n_tracks] bool
     out: dict[str, float] = {}
+    p_not_any = np.ones(pop.n)
     for i, tid in enumerate(pop.track_ids):
-        out[tid] = float(active[:, i].sum()) * scale_people
-    out["_unique"] = float((active.any(axis=1)).sum()) * scale_people
+        p_play = np.ones(pop.n) if participation is None else participation.get(tid, np.ones(pop.n))
+        p_customer = engaged[:, i] * p_play
+        out[tid] = float(p_customer.sum()) * scale_people
+        p_not_any *= 1.0 - p_customer
+    out["_unique"] = float((1.0 - p_not_any).sum()) * scale_people
     return out

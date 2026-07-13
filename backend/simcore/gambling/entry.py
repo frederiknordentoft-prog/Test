@@ -40,8 +40,8 @@ class EntryManager:
                 continue
             temp = TrackMarket(self.gcfg, market.pop, market.betas, tm.track,
                                tm.operators + [op], delta=tm.unlicensed_delta,
-                               total_base=tm.total_base)
-            r = temp.clear(0, None, engagement)
+                               total_base=tm.total_base, outside_delta=tm.outside_delta)
+            r = temp.clear(0, engagement=engagement)
             total += r["operator_bsi"].get(op.operator_id, 0.0)
         return total
 

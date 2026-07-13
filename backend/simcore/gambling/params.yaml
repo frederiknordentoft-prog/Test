@@ -159,3 +159,88 @@ parameters:
     confidence: green
     sensitivity: false
     note: "Young men are a distinct agent class, not a variation (perspective §2.1)."
+
+  # ----------------------------------------------------------------------- #
+  # Behavioural / mechanism parameters (added in the market-physics rework).
+  # These are priors, not measurements — flagged red and swept accordingly.
+
+  - name: spend_sigma
+    value: 1.70
+    unit: lognormal_sigma
+    source: "NO DK DATA — set so top-5 % of players ≈ 50-70 % of BSI (international priors)"
+    confidence: red
+    sensitivity: true
+    interval: [1.1, 2.2]
+    note: >
+      THE income-concentration knob. 1.10 gave top-5 % ≈ 30 % — far too thin;
+      every policy conclusion scales with this (perspective §2.1). Always sweep.
+
+  - name: risk_spend_coupling
+    value: 3.0
+    unit: log_spend_per_risk_unit
+    source: "NO DATA — prior; harm and spend are known to be concentrated in the same tail"
+    confidence: red
+    sensitivity: true
+    interval: [0.0, 6.0]
+    note: >
+      Location shift of log-spend in latent risk: makes the top spenders
+      disproportionately high-risk, so the tail is friction-tolerant and
+      offshore-prone *in behaviour*, not only in the spend distribution.
+
+  - name: participation_start
+    value: 0.80
+    unit: fraction_of_engaged_budget
+    source: "NO DATA — scenario prior for the baseline outside-option share"
+    confidence: red
+    sensitivity: true
+    interval: [0.6, 0.95]
+    note: >
+      Baseline share of track-engaged budget actually wagered; the rest sits in
+      the outside option ("spiller ikke"). Gives total demand a participation
+      margin so tightening can shrink the market, not only re-route it.
+
+  - name: outside_risk_beta
+    value: 2.0
+    unit: utility_per_risk_unit
+    source: "Theory: low-risk breadth players exit first; the tail keeps playing"
+    confidence: red
+    sensitivity: true
+    interval: [0.5, 5.0]
+
+  - name: offshore_affinity_beta
+    value: 2.0
+    unit: utility_per_propensity_unit
+    source: "Theory: axis 5 (offshore propensity) must shift choices toward unlicensed"
+    confidence: red
+    sensitivity: true
+    interval: [0.5, 5.0]
+
+  - name: track_growth_casino
+    value: 0.147
+    unit: fraction_per_year
+    source: "Spillemyndigheden 2024: online casino +14.7 % YoY (the growth engine)"
+    confidence: green
+    sensitivity: false
+
+  - name: track_growth_sports
+    value: 0.012
+    unit: fraction_per_year
+    source: "Spillemyndigheden 2024: betting +1.2 % YoY (near-flat trend, volatile months)"
+    confidence: green
+    sensitivity: false
+
+  - name: rtp_tax_passthrough
+    value: 0.5
+    unit: fraction
+    source: "NO DATA — assumed pass-through of extra tax into worse player odds"
+    confidence: red
+    sensitivity: true
+    interval: [0.0, 1.0]
+
+  - name: enforcement_friction
+    value: 0.6
+    unit: friction_per_enforcement_unit
+    source: "NO DATA — DNS/payment blocking raises unlicensed friction (decays via mirror sites)"
+    confidence: red
+    sensitivity: true
+    interval: [0.0, 2.0]

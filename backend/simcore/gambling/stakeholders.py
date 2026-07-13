@@ -1,9 +1,13 @@
 """Stakeholders and the balancing/reinforcing loops (perspective §3).
 
-- ``RegulationState`` is the policy vector (RG friction, ad ban, offshore
-  enforcement, extra tax, loss limits, AI-based RG detection). It maps to
-  per-operator choice-utility modifiers, so tightening lowers licensed appeal
-  (and pushes the tail offshore) while enforcement lowers offshore appeal.
+- ``RegulationState`` is the policy vector (RG friction, ad ban, bonus
+  restrictions, offshore enforcement, extra tax, loss limits, AI-based RG
+  detection). It is consumed by ``TrackMarket._policy_attrs``, which maps each
+  lever onto the operator *attributes* it actually touches (marketing under an
+  ad ban, bonuses under bonus restrictions, friction, RTP under tax
+  pass-through) — the players' per-segment betas then mediate the response, so
+  heterogeneous effects (Betano vs DS under an ad ban; the tail vs the breadth
+  under friction) emerge instead of being uniform.
 - ``Regulator`` (Spillemyndigheden) reacts to *measured* harm and offshore
   alarm; its offshore enforcement **decays** each tick (mirror sites / captured
   subdomains) unless renewed — so Denmark cannot block its way out of the
@@ -18,36 +22,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import numpy as np
-
 from simcore.gambling.config import GamblingConfig
 
 
 @dataclass
 class RegulationState:
-    rg_friction: float = 0.0    # licensed friction (utility penalty)
-    ad_ban: float = 0.0         # 0..1 licensed marketing/acquisition loss
-    enforcement: float = 0.0    # 0..1 offshore blocking (decays)
-    tax_add: float = 0.0        # extra tax fraction -> licensed RTP down
-    loss_limits: float = 0.0    # 0..1 (reduces harm and licensed appeal)
-    rg_detection: float = 0.0   # 0..1 AI-based harm detection (dual-use)
-    monopoly_scope: float = 1.0 # 1 = intact monopoly, <1 = liberalized
-    licensed_bonus: float = 0.0 # licensed appeal bonus (e.g. crash games legalized onshore)
-
-    def appeal_mods(self, market) -> dict[str, np.ndarray]:
-        """Per-track, per-operator choice-utility modifiers from the current
-        policy. Licensed operators lose appeal from friction/ad-ban/tax/limits;
-        offshore/prediction lose appeal from enforcement."""
-        licensed_penalty = (0.8 * self.rg_friction + 0.9 * self.ad_ban
-                            + 2.0 * self.tax_add + 0.5 * self.loss_limits
-                            - self.licensed_bonus)
-        offshore_penalty = 1.4 * self.enforcement
-        mods: dict[str, np.ndarray] = {}
-        for tid, tm in market.tracks.items():
-            arr = np.array([-licensed_penalty if o.licensed else -offshore_penalty
-                            for o in tm.operators])
-            mods[tid] = arr
-        return mods
+    rg_friction: float = 0.0        # licensed friction add-on (MitID, limits UX, cooldowns)
+    ad_ban: float = 0.0             # 0..1 fraction of licensed marketing switched off
+    bonus_restriction: float = 0.0  # 0..1 fraction of licensed bonus value banned (β3 lever)
+    enforcement: float = 0.0        # 0..1 offshore blocking (decays; raises unlicensed friction)
+    tax_add: float = 0.0            # extra tax fraction -> licensed RTP down (pass-through)
+    loss_limits: float = 0.0        # 0..1 (reduces harm; raises licensed protection)
+    rg_detection: float = 0.0       # 0..1 AI-based harm detection (dual-use)
+    monopoly_scope: float = 1.0     # 1 = intact monopoly, <1 = liberalized
+    licensed_bonus: float = 0.0     # licensed product boost (e.g. crash games legalized onshore)
 
 
 class Regulator:
@@ -95,6 +83,7 @@ class PoliticalAgent:
             reg.tax_add = min(1.0, reg.tax_add + g.political_tax_step)
             reg.loss_limits = min(1.0, reg.loss_limits + g.political_limit_step)
             reg.ad_ban = min(1.0, reg.ad_ban + 0.3)
+            reg.bonus_restriction = min(1.0, reg.bonus_restriction + 0.3)
             self._cooldown = g.political_cooldown
             self.packages += 1
             return True

@@ -78,12 +78,32 @@ def test_calibration_matches_track_anchors():
 
 
 def test_customer_counts_coherent():
+    """Without participation probabilities the counts are the engaged upper
+    bound; with them they scale down accordingly."""
     gcfg, pop = _pop(population=1000, represented_customers=2_500_000)
     c = customer_counts(pop, gcfg)
-    assert c["_unique"] == pytest.approx(2_500_000, rel=1e-9)   # every agent plays >=1 track
+    assert c["_unique"] == pytest.approx(2_500_000, rel=1e-9)   # every agent engages >=1 track
     per_track_sum = sum(c[t.track_id] for t in gcfg.tracks)
     assert per_track_sum >= c["_unique"]                         # multi-homing
     assert all(c[t.track_id] > 0 for t in gcfg.tracks)
+    # participation probabilities scale the expected counts down
+    part = {t.track_id: np.full(pop.n, 0.5) for t in gcfg.tracks}
+    half = customer_counts(pop, gcfg, part)
+    for t in gcfg.tracks:
+        assert half[t.track_id] == pytest.approx(0.5 * c[t.track_id], rel=1e-9)
+    assert half["_unique"] < c["_unique"]
+
+
+def test_tail_is_coupled_to_risk():
+    """The heavy tail must not be cosmetic: the top spenders are drawn
+    disproportionately from the high-risk segment (critic finding — an
+    independent tail degenerates into the homogeneous-player model)."""
+    gcfg, pop = _pop(population=6000)
+    top = pop.budget >= np.quantile(pop.budget, 0.95)
+    assert pop.risk[top].mean() > pop.risk[~top].mean() + 0.05
+    # default concentration hits the international prior band (top-5 % ≈ 50-70 %)
+    top5 = concentration(pop.budget, 0.05)
+    assert 0.45 <= top5 <= 0.80
 
 
 # --------------------------------------------------------------------------- #
@@ -104,8 +124,28 @@ def test_sim_emits_customer_and_concentration_series():
     for key in ("customers_total", "customers_casino", "customers_sports",
                 "top5pct_bsi_share", "top1pct_bsi_share", "young_share", "at_risk_share"):
         assert key in last
-    assert last["customers_total"] == pytest.approx(2_500_000, rel=1e-9)
+    # With the outside option, expected customers sit strictly below the
+    # engaged population — no longer an echo of the input.
+    assert 0 < last["customers_total"] < 2_500_000
     assert 0.0 < last["top5pct_bsi_share"] <= 1.0
+
+
+def test_customer_counts_move_under_policy():
+    """Customer counts are endogenous: a Spilpakke shock must reduce expected
+    sports customers vs baseline (critic finding — they were a constant)."""
+    from simcore.models.config import EventConfig
+
+    cfg = load_preset("dk_baseline")
+    cfg.ticks = 18
+    cfg.gambling = {**(cfg.gambling or {}), "ai_enabled": False, "entry_enabled": False}
+    base = GamblingSimulation(cfg)
+    base.run()
+    cfg2 = cfg.model_copy(deep=True)
+    cfg2.events = [EventConfig(name="Spilpakke 1", event_type="spilpakke_1", start_tick=4)]
+    pak = GamblingSimulation(cfg2)
+    pak.run()
+    assert pak.metrics_history[-1]["customers_sports"] < base.metrics_history[-1]["customers_sports"]
+    assert pak.metrics_history[-1]["customers_total"] < base.metrics_history[-1]["customers_total"]
 
 
 def test_sim_anchor_match_preserved_with_population():

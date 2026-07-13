@@ -48,9 +48,13 @@ class AIDiffusion:
 
     def personalization_offset(self, operators) -> "list[float]":
         """Per-operator choice-utility bump from AI personalization (order matches
-        ``operators``)."""
+        ``operators``). Measured *relative to the baseline best capability* —
+        same convention as the engagement multiplier — so the calibrated t0
+        market is undisturbed and only capability *gains* (or an entrant's
+        AI-native edge over the incumbents' baseline) move choices."""
         gain = self.gcfg.ai_personalization_gain
-        return [gain * self.cap.get(o.operator_id, 0.0) for o in operators]
+        return [gain * (self.cap.get(o.operator_id, 0.0) - self.cap_baseline)
+                for o in operators]
 
     def engagement_multiplier(self) -> float:
         """Market-size multiplier: AI capability *beyond baseline* grows total

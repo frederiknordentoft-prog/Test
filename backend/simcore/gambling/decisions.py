@@ -1,15 +1,23 @@
 """Player operator-choice: a multinomial-logit / random-utility model.
 
 The player's utility over an operator *j* is a β-weighted sum of drivers
-(payout, product breadth, brand, friction, tax-free winnings, protection,
+(payout, product breadth, bonus, brand, friction, tax-free winnings, protection,
 marketing reach) — the perspective's §4.1 utility. The **β-vector varies per
 segment**: that is the whole point. A young, high-risk, friction-tolerant player
-weights product breadth (crash games) up and protection/tax-free down, so the
-tail leaks offshore under tightening; a mainstream low-risk player is the
-opposite. This endogenous, heterogeneous response is what lets the model produce
-the channelization dynamics honestly instead of assuming them.
+weights product breadth (crash games) and bonuses up and protection/tax-free
+down, so the tail leaks offshore under tightening; a mainstream low-risk player
+is the opposite.
 
-The bulk computation is vectorized (numpy) for 500–20 000 players × ~7 operators.
+Two further pieces make the heterogeneity behavioural rather than cosmetic:
+
+- an **outside option** ("spiller ikke") sits in every choice set, most
+  attractive to low-risk players (``outside_risk_beta``) — so tightening can
+  shrink total demand (the breadth exits) instead of only re-routing it;
+- the **offshore-propensity axis** (axis 5) shifts utility toward unlicensed
+  alternatives per player (``offshore_affinity_beta``), so the tail responds to
+  tightening by leaking offshore while the breadth does not.
+
+The bulk computation is vectorized (numpy) for 500–20 000 players × ~8 operators.
 For explainability (decision log / reaction analysis) a representative player's
 choice is re-expressed through the engine's stochastic core
 (``Driver`` + ``explanation``), so the "why" comes from the same machinery the
@@ -20,42 +28,54 @@ from __future__ import annotations
 import numpy as np
 
 from simcore.decisions.stochastic import explanation
-from simcore.gambling.config import OperatorConfig
+from simcore.gambling.config import GamblingConfig, OperatorConfig
 from simcore.gambling.population import PlayerArrays
 from simcore.models.actions import Driver
 
 # Driver keys (order is fixed; used for both the vectorized path and Drivers).
-DRIVERS = ("rtp", "breadth", "brand", "friction", "taxfree", "protection", "marketing")
+DRIVERS = ("rtp", "breadth", "bonus", "brand", "friction", "taxfree", "protection", "marketing")
 
 
-def player_betas(pop: PlayerArrays, young_age_threshold: int) -> dict[str, np.ndarray]:
+def player_betas(pop: PlayerArrays, gcfg: GamblingConfig) -> dict[str, np.ndarray]:
     """Per-player β weights on each driver, derived from the five axes. Friction
     aversion falls with risk (the tail is friction-tolerant); protection flips
-    sign (a plus for low-risk players, a minus for high-risk ones)."""
+    sign (a plus for low-risk players, a minus for high-risk ones); bonus appeal
+    rises with risk and youth (β3 — the lever Spilpakke restricts).
+
+    Also carries two non-driver betas: ``offshore_affinity`` (axis 5 → shifts
+    utility toward unlicensed alternatives) and ``outside`` (the no-play
+    alternative's utility, highest for low-risk players)."""
     risk = pop.risk
-    young = (pop.age < young_age_threshold).astype(float)
+    young = (pop.age < gcfg.young_age_threshold).astype(float)
     return {
         "rtp": 0.8 + 0.8 * risk,
         "breadth": 0.2 + 1.6 * risk + 0.3 * young,
+        "bonus": 0.5 + 1.2 * risk + 0.5 * young,
         "brand": 1.0 - 0.5 * risk,
         "friction": 1.4 * (1.0 - 0.75 * risk),         # subtracted in the utility
         "taxfree": 0.8 * (1.0 - 0.5 * risk),
         "protection": 1.0 * (1.0 - risk) - 0.8 * risk,  # sign flips with risk
         "marketing": 0.4 + 0.9 * young + 0.3 * risk,
+        "offshore_affinity": gcfg.offshore_affinity_beta * pop.offshore,
+        "outside": gcfg.outside_risk_beta * (1.0 - risk),
     }
 
 
 def operator_attr_arrays(operators: list[OperatorConfig]) -> dict[str, np.ndarray]:
-    """Per-operator attribute vectors (order matches ``operators``)."""
+    """Per-operator attribute vectors (order matches ``operators``).
+    ``unlicensed`` marks the offshore/prediction channels for the per-player
+    offshore-affinity shift."""
     return {
         "rtp": np.array([o.rtp for o in operators]),
         "breadth": np.array([o.product_breadth for o in operators]),
+        "bonus": np.array([o.bonus for o in operators]),
         "brand": np.array([o.brand for o in operators]),
         "friction": np.array([o.friction for o in operators]),
         "taxfree": np.array([1.0 if o.tax_free else 0.0 for o in operators]),
         "protection": np.array([o.protection for o in operators]),
         "marketing": np.array([o.marketing_reach for o in operators]),
         "appeal": np.array([o.appeal for o in operators]),
+        "unlicensed": np.array([0.0 if o.licensed else 1.0 for o in operators]),
     }
 
 
@@ -70,11 +90,13 @@ def utilities(
     u = np.zeros((n, m))
     u += betas["rtp"][:, None] * attrs["rtp"][None, :]
     u += betas["breadth"][:, None] * attrs["breadth"][None, :]
+    u += betas["bonus"][:, None] * attrs["bonus"][None, :]
     u += betas["brand"][:, None] * attrs["brand"][None, :]
     u -= betas["friction"][:, None] * attrs["friction"][None, :]
     u += betas["taxfree"][:, None] * attrs["taxfree"][None, :]
     u += betas["protection"][:, None] * attrs["protection"][None, :]
     u += betas["marketing"][:, None] * attrs["marketing"][None, :]
+    u += betas["offshore_affinity"][:, None] * attrs["unlicensed"][None, :]
     u += attrs["appeal"][None, :]
     if appeal_offset is not None:
         u += appeal_offset[None, :]
@@ -82,7 +104,7 @@ def utilities(
 
 
 def choice_probabilities(u: np.ndarray, temperature: float) -> np.ndarray:
-    """Softmax over operators per player (numerically stable)."""
+    """Softmax over alternatives per player (numerically stable)."""
     z = u / max(temperature, 1e-6)
     z -= z.max(axis=1, keepdims=True)
     e = np.exp(z)
@@ -90,7 +112,7 @@ def choice_probabilities(u: np.ndarray, temperature: float) -> np.ndarray:
 
 
 def budget_weighted_shares(probs: np.ndarray, weights: np.ndarray) -> np.ndarray:
-    """Aggregate operator shares = budget-weighted mean of choice probabilities."""
+    """Aggregate alternative shares = budget-weighted mean of choice probabilities."""
     w = weights / max(float(weights.sum()), 1e-12)
     return probs.T @ w
 
@@ -102,7 +124,7 @@ def explain_choice(
     """Re-express one player's operator choice through the stochastic core so the
     decision log carries the actual drivers (for reaction analysis)."""
     signed = {  # (+ for utility-adding drivers, − for friction)
-        "rtp": 1, "breadth": 1, "brand": 1, "friction": -1,
+        "rtp": 1, "breadth": 1, "bonus": 1, "brand": 1, "friction": -1,
         "taxfree": 1, "protection": 1, "marketing": 1,
     }
     drivers = [

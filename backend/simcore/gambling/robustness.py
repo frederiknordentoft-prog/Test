@@ -16,7 +16,7 @@ from simcore.gambling.simulation import GamblingSimulation
 from simcore.models.config import SimConfig
 
 DEFAULT_CHANNELIZATION_GRID = [0.72, 0.82, 0.92]      # the contested interval
-DEFAULT_SIGMA_GRID = [0.7, 1.1, 1.6]                  # income concentration prior
+DEFAULT_SIGMA_GRID = [1.1, 1.7, 2.2]                  # income concentration prior (top-5 % ≈ 30..75 % of BSI)
 DEFAULT_METRICS = [
     "measured_harm", "harm_gap", "true_harm", "channelization",
     "state_revenue", "ds_share_total", "offshore_share",

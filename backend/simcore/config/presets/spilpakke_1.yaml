@@ -12,10 +12,5 @@ gambling:
   channelization_low: 0.72
   channelization_high: 0.92
   calendar: {enabled: true, amplitude: 0.45, start_month: 1}
-  tracks:
-    - {track_id: lottery, name: Lotterier, competitive: false, annual_bsi: 2.0, tax_rate: 0.0, seasonal: false}
-    - {track_id: scratch, name: Skrabelodder, competitive: false, annual_bsi: 1.0, tax_rate: 0.0, seasonal: false}
-    - {track_id: casino, name: Online casino, competitive: true, annual_bsi: 3.5, tax_rate: 0.28, seasonal: false}
-    - {track_id: sports, name: Sportsbetting, competitive: true, annual_bsi: 2.21, tax_rate: 0.28, seasonal: true}
 events:
   - {name: Spilpakke 1, event_type: spilpakke_1, start_tick: 12, description: Reklame-/bonus-/affiliate-stramning + grænser}
