@@ -80,6 +80,14 @@ def summarize_gambling(sim) -> dict[str, float]:
     }
 
 
+# Per-tick fan-chart series (p5/p50/p95 across seeds) per domain — so the UI
+# can draw uncertainty over *time*, not only end-state histograms.
+FAN_KEYS = {
+    "finance": ["price_index", "systemic_risk"],
+    "gambling": ["channelization", "ds_share_total", "market_size_total", "customers_total"],
+}
+
+
 def _make_headless(cfg: SimConfig):
     if getattr(cfg, "sim_domain", "finance") == "gambling":
         from simcore.gambling.simulation import GamblingSimulation
@@ -98,6 +106,8 @@ def run_monte_carlo(
 ) -> dict:
     rows: list[dict[str, float]] = []
     keys = FINANCE_SUMMARY_KEYS
+    fan_keys = FAN_KEYS.get(getattr(config, "sim_domain", "finance"), [])
+    fan_series: dict[str, list[list[float]]] = {k: [] for k in fan_keys}
     for i, seed in enumerate(seeds):
         if should_stop is not None and should_stop():
             break
@@ -106,6 +116,8 @@ def run_monte_carlo(
         sim, summarize, keys = _make_headless(cfg)  # headless: no persistence
         sim.run()
         rows.append(summarize(sim))
+        for k in fan_keys:
+            fan_series[k].append([float(m.get(k, 0.0)) for m in sim.metrics_history])
         if on_progress is not None:
             on_progress(i + 1, len(seeds))
 
@@ -122,4 +134,21 @@ def run_monte_carlo(
             "max": float(vals.max()),
             "mean": float(vals.mean()),
         }
-    return {"n_runs": len(rows), "runs": rows, "percentiles": percentiles}
+
+    # Per-tick fan bands: uncertainty drawn over time instead of only end-state.
+    series_percentiles: dict[str, dict[str, list[float]]] = {}
+    for k, runs_series in fan_series.items():
+        lengths = [len(s) for s in runs_series if s]
+        if not lengths:
+            continue
+        n = min(lengths)
+        arr = np.array([s[:n] for s in runs_series if s])
+        series_percentiles[k] = {
+            "ticks": list(range(n)),
+            "p5": np.percentile(arr, 5, axis=0).round(4).tolist(),
+            "p50": np.percentile(arr, 50, axis=0).round(4).tolist(),
+            "p95": np.percentile(arr, 95, axis=0).round(4).tolist(),
+        }
+
+    return {"n_runs": len(rows), "runs": rows, "percentiles": percentiles,
+            "series_percentiles": series_percentiles}

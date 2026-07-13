@@ -8,10 +8,10 @@ import { useSimStore } from "./store/simStore";
 type View = "setup" | "run" | "montecarlo" | "compare";
 
 const NAV: { id: View; label: string }[] = [
-  { id: "setup", label: "Setup" },
-  { id: "run", label: "Run" },
+  { id: "setup", label: "Opsætning" },
+  { id: "run", label: "Kørsel" },
   { id: "montecarlo", label: "Monte Carlo" },
-  { id: "compare", label: "Compare" },
+  { id: "compare", label: "Sammenlign" },
 ];
 
 export default function App() {
@@ -23,7 +23,7 @@ export default function App() {
       <div className="topbar">
         <h1>Agent Market Simulator</h1>
         <span className="subtitle">
-          exploratory agent-based simulation — not a forecasting tool
+          eksplorativ agentbaseret simulation — ikke et prognoseværktøj
         </span>
         <div className="spacer" />
         {NAV.map((n) => (

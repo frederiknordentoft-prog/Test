@@ -10,17 +10,32 @@ import {
 } from "recharts";
 import { api } from "../api/client";
 import type { MonteCarloStatus, Preset } from "../api/types";
-import { ChartCard, GRID, MUTED, SERIES } from "../components/charts";
+import { ChartCard, COLORS, FanChart, GRID, MUTED, SERIES } from "../components/charts";
+import { formatDa, metricLabel, metricUnit } from "../format";
 
-const PCT_ROWS = ["min", "p5", "p25", "median", "p75", "p95", "max", "mean"];
+const PCT_ROWS = ["min", "p5", "p25", "median", "p75", "p95", "max", "mean"] as const;
+const PCT_LABELS: Record<string, string> = {
+  min: "min", p5: "p5", p25: "p25", median: "median",
+  p75: "p75", p95: "p95", max: "max", mean: "gns.",
+};
+const FAN_COLORS: Record<string, string> = {
+  channelization: COLORS.ds,
+  ds_share_total: COLORS.ds,
+  market_size_total: COLORS.revenue,
+  customers_total: COLORS.sports,
+  price_index: COLORS.ds,
+  systemic_risk: COLORS.offshore,
+};
+
+type SeriesPercentiles = Record<string, { ticks: number[]; p5: number[]; p50: number[]; p95: number[] }>;
 
 export function MonteCarloPage() {
   const [presets, setPresets] = useState<Preset[]>([]);
-  const [presetId, setPresetId] = useState<string | null>(null);
+  const [presetId, setPresetId] = useState<string | null>("dk_baseline");
   const [scenario, setScenario] = useState("");
   const [scenarios, setScenarios] = useState<string[]>([]);
   const [nSeeds, setNSeeds] = useState(10);
-  const [ticks, setTicks] = useState(150);
+  const [ticks, setTicks] = useState(60);
   const [nActors, setNActors] = useState(150);
   const [mcId, setMcId] = useState<string | null>(null);
   const [status, setStatus] = useState<MonteCarloStatus | null>(null);
@@ -68,6 +83,8 @@ export function MonteCarloPage() {
   };
 
   const result = status?.result;
+  const fans = ((result as { series_percentiles?: SeriesPercentiles } | undefined)
+    ?.series_percentiles ?? {}) as SeriesPercentiles;
   const histKeys = result
     ? Object.keys(result.percentiles).filter((k) => result.runs[0] && k in result.runs[0]).slice(0, 6)
     : [];
@@ -76,12 +93,15 @@ export function MonteCarloPage() {
     <div className="page">
       {error && <div className="error-box">{error}</div>}
       <div className="card" style={{ marginBottom: 16 }}>
-        <h3>Monte Carlo experiment — same scenario, many seeds</h3>
+        <h3>Monte Carlo — samme scenarie, mange seeds</h3>
+        <p className="muted" style={{ margin: "0 0 10px", fontSize: 12 }}>
+          Læs fordelinger og percentiler, aldrig enkelte kørsler. Viften viser p5–p95 over tid.
+        </p>
         <div className="form-grid">
           <div className="field">
-            <label>Preset</label>
+            <label>Scenarie</label>
             <select value={presetId ?? ""} onChange={(e) => setPresetId(e.target.value || null)}>
-              <option value="">Default Market</option>
+              <option value="">Standardmarked (finans)</option>
               {presets.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
@@ -89,9 +109,9 @@ export function MonteCarloPage() {
           </div>
           {!isGambling && (
             <div className="field">
-              <label>Scenario</label>
+              <label>Scenario-events</label>
               <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
-                <option value="">— none —</option>
+                <option value="">— ingen —</option>
                 {scenarios.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -107,18 +127,18 @@ export function MonteCarloPage() {
             </select>
           </div>
           <div className="field">
-            <label>Ticks</label>
+            <label>{isGambling ? "Måneder" : "Ticks"}</label>
             <input type="number" value={ticks} onChange={(e) => setTicks(+e.target.value)} />
           </div>
           {!isGambling && (
             <div className="field">
-              <label>Actors</label>
+              <label>Aktører</label>
               <input type="number" value={nActors} onChange={(e) => setNActors(+e.target.value)} />
             </div>
           )}
           <div className="field" style={{ display: "flex", alignItems: "flex-end" }}>
             <button className="primary" onClick={launch} disabled={status?.status === "running"}>
-              Run batch
+              ▶ Kør batch
             </button>
           </div>
         </div>
@@ -131,38 +151,54 @@ export function MonteCarloPage() {
                 style={{ width: `${(100 * status.progress) / Math.max(status.total, 1)}%` }}
               />
             </div>
-            <span className="muted">{status.progress}/{status.total} runs</span>
+            <span className="muted">{status.progress}/{status.total} kørsler</span>
           </div>
         )}
       </div>
 
       {result && (
         <>
-          <ChartCard title={`Outcome distributions (${result.n_runs} seeds) — read percentiles, not single paths`}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  {PCT_ROWS.map((p) => (
-                    <th key={p}>{p}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(result.percentiles).map(([k, row]) => (
-                  <tr key={k}>
-                    <td>{k}</td>
+          {Object.keys(fans).length > 0 && (
+            <div className="grid grid-2" style={{ marginBottom: 16 }}>
+              {Object.entries(fans).map(([key, f]) => (
+                <ChartCard key={key} title={`${metricLabel(key)} — p5–p95 over tid (${result.n_runs} seeds)`}>
+                  <FanChart ticks={f.ticks} p5={f.p5} p50={f.p50} p95={f.p95}
+                    color={FAN_COLORS[key] ?? COLORS.ds} unit={metricUnit(key)} />
+                </ChartCard>
+              ))}
+            </div>
+          )}
+
+          <ChartCard title={`Slutfordelinger (${result.n_runs} seeds)`}>
+            <div style={{ overflowX: "auto" }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nøgletal</th>
                     {PCT_ROWS.map((p) => (
-                      <td key={p}>{Number(row[p]).toFixed(2)}</td>
+                      <th key={p}>{PCT_LABELS[p]}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {Object.entries(result.percentiles).map(([k, row]) => (
+                    <tr key={k}>
+                      <td>{metricLabel(k)}</td>
+                      {PCT_ROWS.map((p) => (
+                        <td key={p} style={{ fontVariantNumeric: "tabular-nums" }}>
+                          {formatDa(Number(row[p]), metricUnit(k))}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </ChartCard>
+
           <div className="grid grid-2" style={{ marginTop: 16 }}>
             {histKeys.map((key, i) => (
-              <ChartCard key={key} title={`${key} across seeds`}>
+              <ChartCard key={key} title={`${metricLabel(key)} på tværs af seeds`}>
                 <Histogram values={result.runs.map((r) => Number(r[key]))} color={SERIES[i % SERIES.length]} />
               </ChartCard>
             ))}
