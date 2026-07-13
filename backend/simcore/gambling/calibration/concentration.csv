@@ -1,0 +1,13 @@
+study,vertical,percentile,share,year,confidence,source
+patterns_of_play,all_online,top1,0.3743,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,all_online,top5,0.6694,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,all_online,top10,0.790,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,all_online,top20,0.8923,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,slots_rng,top1,0.5978,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,slots_rng,top5,0.8171,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,slots_rng,top20,0.9367,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,live_casino,top5,0.7378,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,sports,top1,0.3489,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,sports,top5,0.6481,2019,green,forrest_mchale_liverpool_natcen
+patterns_of_play,sports,top20,0.8783,2019,green,forrest_mchale_liverpool_natcen
+salonen_finland,all,top4_2,0.50,2016,yellow,salonen_et_al_finland

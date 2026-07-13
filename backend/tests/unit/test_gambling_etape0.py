@@ -108,8 +108,9 @@ def test_baseline_casino_is_the_growth_engine():
     casino = [m["bsi_casino"] for m in sim.metrics_history]
     lottery = [m["bsi_lottery"] for m in sim.metrics_history]
     assert casino[0] == pytest.approx(3.5 / 12 * BN_TO_MIO, rel=1e-3)
-    assert casino[12] / casino[0] == pytest.approx(1.147, rel=1e-2)
-    assert casino[24] / casino[0] > lottery[24] / lottery[0] + 0.25
+    # hindcast-calibrated growth: casino +12.8 %/yr (was eyeballed +14.7 %)
+    assert casino[12] / casino[0] == pytest.approx(1.128, rel=1e-2)
+    assert casino[24] / casino[0] > lottery[24] / lottery[0] + 0.20
 
 
 def test_baseline_sports_is_seasonal():

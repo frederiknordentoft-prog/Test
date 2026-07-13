@@ -217,9 +217,10 @@ def default_entrants() -> list[EntrantConfig]:
 
 
 DEFAULT_TRACKS: list[dict] = [
-    # growth_rate is the dossier's observed annual trend: casino is the growth
-    # engine (+14.7 %), sports is near-flat (+1.2 %), the monopoly block has
-    # been flat since 2012.
+    # growth_rate is CALIBRATED from the hindcast (Etape B) — the recent 3-year
+    # CAGR of the real Spillemyndigheden series (2022→2025): casino +12.8 %
+    # (growth engine, accelerating), sports −0.8 % (near-flat, volatile),
+    # lottery +0.9 %, scratch flat. See simcore/gambling/calibration/.
     # Monopoly tax_rate 0.15 approximates the 15 % gevinstafgift (winnings tax)
     # on the lottery block: with lottery payout ≈ 50 %, winnings ≈ BSI, so the
     # state's take ≈ 15 % of BSI. Ignoring it understated the monopoly's fiscal
@@ -229,9 +230,9 @@ DEFAULT_TRACKS: list[dict] = [
     {"track_id": "scratch", "name": "Skrabelodder", "competitive": False,
      "annual_bsi": 1.0, "tax_rate": 0.15, "seasonal": False, "growth_rate": 0.0},
     {"track_id": "casino", "name": "Online casino", "competitive": True,
-     "annual_bsi": 3.5, "tax_rate": 0.28, "seasonal": False, "growth_rate": 0.147},
+     "annual_bsi": 3.5, "tax_rate": 0.28, "seasonal": False, "growth_rate": 0.128},
     {"track_id": "sports", "name": "Sportsbetting", "competitive": True,
-     "annual_bsi": 2.21, "tax_rate": 0.28, "seasonal": True, "growth_rate": 0.012},
+     "annual_bsi": 2.21, "tax_rate": 0.28, "seasonal": True, "growth_rate": -0.008},
 ]
 
 
@@ -414,10 +415,11 @@ class GamblingConfig(BaseModel):
     # Heavy-tailed monthly spend: lognormal sigma is the income-concentration
     # knob (higher => a smaller share of players make up more of the BSI). This
     # is the single most important / most uncertain lever (perspective §2.1) and
-    # must be swept in sensitivity analysis — see params.yaml. Default 1.70
-    # targets top-5 % ≈ 50-70 % of BSI (international priors); 1.10 gave ~30 %,
-    # far too thin.
-    spend_sigma: float = Field(1.70, ge=0.10, le=3.00)
+    # must be swept in sensitivity analysis — see params.yaml. Default 2.00 is
+    # now ANCHORED to real data: UK Patterns of Play (139k accounts) finds
+    # top-5 % = 67 % of all online GGY (2.00 → ~65 % in-model). Online casino is
+    # even more concentrated (top-5 % = 82 %); sports less (65 %).
+    spend_sigma: float = Field(2.00, ge=0.10, le=3.00)
     # Minimum per-track preference weight for a player to count as a customer of
     # that track.
     participation_threshold: float = Field(0.05, ge=0.0, le=1.0)

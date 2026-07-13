@@ -168,12 +168,12 @@ parameters:
 
   - name: spend_sigma
     config_field: spend_sigma
-    value: 1.70
+    value: 2.00
     unit: lognormal_sigma
-    source: "NO DK DATA — set so top-5 % of players ≈ 50-70 % of BSI (international priors)"
-    confidence: red
+    source: "ANCHORED: UK Patterns of Play (139k accounts) top-5 % = 67 % of online GGY; 2.00 gives ~64 % in-model"
+    confidence: yellow
     sensitivity: true
-    interval: [1.1, 2.2]
+    interval: [1.5, 2.5]
     note: >
       THE income-concentration knob. 1.10 gave top-5 % ≈ 30 % — far too thin;
       every policy conclusion scales with this (perspective §2.1). Always sweep.
@@ -223,16 +223,16 @@ parameters:
     interval: [0.5, 5.0]
 
   - name: track_growth_casino
-    value: 0.147
+    value: 0.128
     unit: fraction_per_year
-    source: "Spillemyndigheden 2024: online casino +14.7 % YoY (the growth engine)"
+    source: "Hindcast-calibrated: recent 3-yr CAGR 2022->2025 (see casino_growth_calibrated). Single-year 2023->24 was +14.7 %."
     confidence: green
     sensitivity: false
 
   - name: track_growth_sports
-    value: 0.012
+    value: -0.008
     unit: fraction_per_year
-    source: "Spillemyndigheden 2024: betting +1.2 % YoY (near-flat trend, volatile months)"
+    source: "Hindcast-calibrated: recent 3-yr CAGR 2022->2025 (near-flat/declining). Single-year 2023->24 was +1.2 %."
     confidence: green
     sensitivity: false
 
@@ -457,3 +457,63 @@ parameters:
     confidence: red
     sensitivity: true
     interval: [0.003, 0.02]
+
+  # ----------------------------------------------------------------------- #
+  # Real calibration data (flagship Etape A/B) — see calibration/ + manifest.
+
+  - name: concentration_top5_all_online
+    value: 0.6694
+    unit: fraction_of_ggy
+    source: "UK Patterns of Play (Forrest/McHale, Univ. Liverpool for NatCen/GambleAware), 139,152 accounts 2018/19"
+    confidence: green
+    sensitivity: false
+    note: "The #1 data hole, now filled. Anchors spend_sigma. Casino/slots even higher (top-5 % = 82 %)."
+
+  - name: concentration_top5_casino
+    value: 0.8171
+    unit: fraction_of_ggy
+    source: "UK Patterns of Play — online slots/RNG, the most concentrated vertical"
+    confidence: green
+    sensitivity: false
+
+  - name: casino_growth_calibrated
+    value: 0.128
+    unit: fraction_per_year
+    source: "Hindcast (Etape B): recent 3-yr CAGR of Spillemyndigheden casino GGR 2022->2025 (3000->4310 mio)"
+    confidence: green
+    sensitivity: true
+    interval: [0.05, 0.22]
+    note: "Casino overtook betting in 2020 (COVID); accelerating (+22 % 2024->2025). Backtest MAPE 8.8 %, beats naive."
+
+  - name: sports_growth_calibrated
+    value: -0.008
+    unit: fraction_per_year
+    source: "Hindcast (Etape B): recent 3-yr CAGR of Spillemyndigheden betting GGR 2022->2025 (near-flat/declining)"
+    confidence: green
+    sensitivity: true
+    interval: [-0.05, 0.05]
+    note: "Betting is mature+volatile; the model does NOT beat a random-walk here (honest — flat series)."
+
+  - name: sweden_casino_channelization
+    value: 0.70
+    unit: fraction
+    source: "Spelinspektionen 2024 — online casino channelization (57 % ATG .. 78 % Copenhagen Economics)"
+    confidence: yellow
+    sensitivity: true
+    interval: [0.57, 0.82]
+    note: "Natural experiment (Etape C): bonus ban drives casino channelization far below betting (~95 %)."
+
+  - name: ds_liberalized_share_observed
+    value: 0.25
+    unit: fraction
+    source: "businessofigaming analyst 2026: Danske Spil ~24.6 % of the Danish ONLINE market (incl. online lottery)"
+    confidence: red
+    sensitivity: false
+    note: "Different denominator than the model's ds_share_liberalized (licensed casino+sports); single analyst, MEDIUM. Reference only."
+
+  - name: dk_licensees_total
+    value: 54
+    unit: licence_holders
+    source: "Spillemyndigheden register (Jun 2026): 23 casino+betting, 12 casino-only, 14 limited casino, 5 betting-only"
+    confidence: green
+    sensitivity: false

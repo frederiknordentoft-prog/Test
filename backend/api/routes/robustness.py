@@ -99,6 +99,34 @@ def trends():
     return TREND_CATALOG
 
 
+@router.get("/hindcast")
+def hindcast():
+    """Backtest against the real Spillemyndigheden series (flagship Etape B):
+    per-vertical fit, out-of-sample skill vs naive baselines, and an honest
+    verdict on what the model can and cannot predict."""
+    from simcore.gambling.calibration.hindcast import run_hindcast
+
+    return run_hindcast()
+
+
+@router.get("/calibration-data")
+def calibration_data():
+    """The committed real calibration data (historical series + concentration +
+    natural-experiment targets) with source and confidence per row — the
+    provenance behind the model's anchors."""
+    from simcore.gambling.calibration.loader import (
+        concentration,
+        experiments,
+        historical,
+    )
+
+    return {
+        "historical": historical().to_dict(orient="records"),
+        "concentration": concentration().to_dict(orient="records"),
+        "experiments": experiments().to_dict(orient="records"),
+    }
+
+
 @router.post("/robustness")
 def create_robustness(req: RobustnessRequest):
     try:

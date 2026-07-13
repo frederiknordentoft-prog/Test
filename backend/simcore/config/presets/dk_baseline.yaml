@@ -19,8 +19,9 @@ gambling:
     tournament_every: 24                 # EM/VM-somre hvert andet år (juni+juli)
     tournament_offset: 17
     tournament_boost: 0.6
-  # growth_rate = observed annual trend (dossier): casino is the growth engine
-  # (+14.7 %), sports near-flat (+1.2 %), the monopoly block flat since 2012.
+  # growth_rate = hindcast-calibrated recent 3-yr CAGR (Spillemyndigheden 2022->2025):
+  # casino +12.8 % (growth engine, accelerating), sports -0.8 % (flat/volatile),
+  # lottery +0.9 %, scratch flat. See simcore/gambling/calibration/.
   tracks:
     # tax_rate 0.15 = gevinstafgift-approksimation (15 % af gevinster ≈ 15 % af BSI ved payout ~50 %)
     - track_id: lottery
@@ -43,11 +44,11 @@ gambling:
       annual_bsi: 3.5
       tax_rate: 0.28
       seasonal: false
-      growth_rate: 0.147
+      growth_rate: 0.128
     - track_id: sports
       name: Sportsbetting
       competitive: true
       annual_bsi: 2.21
       tax_rate: 0.28
       seasonal: true
-      growth_rate: 0.012
+      growth_rate: -0.008
