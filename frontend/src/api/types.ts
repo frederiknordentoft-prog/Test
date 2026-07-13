@@ -156,3 +156,29 @@ export interface SavedConfig {
   seed: number | null;
   ticks: number | null;
 }
+
+export interface RealityAnchor {
+  year: number;
+  value: number;
+  confidence: string;
+  unit?: string;
+  note?: string;
+}
+
+export interface ForecastValidation {
+  anchor_year: number;
+  reality_anchors: Record<string, RealityAnchor>;
+  hindcast: {
+    summary: string;
+    n_series: number;
+    n_beats_random_walk: number;
+    per_series: { vertical: string; beats_random_walk: boolean; mape: number; verdict: string }[];
+  };
+  natural_experiments: {
+    summary: string;
+    n_reproduced: number;
+    n_total: number;
+    checks: { experiment: string; reproduced: boolean; verdict: string }[];
+  };
+  honesty: string;
+}

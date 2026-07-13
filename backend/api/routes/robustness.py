@@ -99,6 +99,17 @@ def trends():
     return TREND_CATALOG
 
 
+@router.get("/forecast-validation")
+def forecast_validation():
+    """The 'can this predict the future?' bundle (Etape D): reality anchors for
+    the nowcasting overlay, the backtest skill, the natural-experiment
+    validation, and an honest statement of what the model can and cannot
+    predict."""
+    from simcore.gambling.calibration.forecast import forecast_validation as fv
+
+    return fv()
+
+
 @router.get("/natural-experiments")
 def natural_experiments():
     """Validation against documented natural experiments (Etape C): does the

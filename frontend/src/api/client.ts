@@ -49,6 +49,7 @@ export const api = {
   trends: () =>
     req<{ id: string; name: string; desc: string; kind: string; realism: string;
           default: number }[]>("/api/trends"),
+  forecastValidation: () => req<import("./types").ForecastValidation>("/api/forecast-validation"),
   savedConfigs: () => req<import("./types").SavedConfig[]>("/api/configs"),
   saveConfig: (body: unknown) =>
     req<{ id: string; name: string }>("/api/configs", { method: "POST", body: JSON.stringify(body) }),

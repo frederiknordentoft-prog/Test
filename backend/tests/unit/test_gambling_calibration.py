@@ -102,6 +102,26 @@ def client(tmp_path, monkeypatch):
     return TestClient(create_app())
 
 
+def test_forecast_validation_bundle():
+    from simcore.gambling.calibration.forecast import forecast_validation
+    fv = forecast_validation()
+    # reality anchors for the nowcasting overlay
+    assert "bsi_casino" in fv["reality_anchors"]
+    assert fv["reality_anchors"]["bsi_casino"]["year"] == 2025
+    # evidence for trust: backtest skill + natural experiments
+    assert fv["hindcast"]["n_series"] >= 2
+    assert fv["natural_experiments"]["n_reproduced"] == 2
+    assert "bud" in fv["honesty"].lower() and "robust" in fv["honesty"].lower()
+
+
+def test_api_forecast_validation(client):
+    r = client.get("/api/forecast-validation")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["anchor_year"] == 2025
+    assert data["reality_anchors"] and data["hindcast"] and data["natural_experiments"]
+
+
 def test_api_hindcast_and_calibration_data(client):
     h = client.get("/api/hindcast")
     assert h.status_code == 200

@@ -4,6 +4,7 @@ import {
   CartesianGrid,
   ComposedChart,
   Line,
+  ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -212,21 +213,28 @@ export function MetricChart({
   );
 }
 
-/** Fan chart: p5–p95 band + median line over time (Monte Carlo uncertainty). */
+/** Fan chart: p5–p95 band + median line over time (Monte Carlo uncertainty),
+ *  with an optional reality anchor (the latest actual, for nowcasting). */
 export function FanChart({
   ticks, p5, p50, p95, color, unit = "raw", height = 220,
+  anchorYear, anchor, xLabelMode = "month",
 }: {
   ticks: number[]; p5: number[]; p50: number[]; p95: number[];
   color: string; unit?: Unit; height?: number;
+  anchorYear?: number; anchor?: number | null; xLabelMode?: "month" | "year";
 }) {
   const data = ticks.map((t, i) => ({
     tick: t, p5: p5[i], p50: p50[i], band: p95[i] - p5[i],
   }));
+  const anchorInBand = anchor != null && anchor >= p5[0] * 0.9 && anchor <= p95[0] * 1.1;
+  const label = (t: number) =>
+    anchorYear != null ? `${anchorYear + Math.round(t / 12)}` : `md ${t}`;
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={data} margin={{ top: 6, right: 12, bottom: 2, left: 0 }}>
         <CartesianGrid stroke={GRID} strokeDasharray="2 4" vertical={false} />
-        <XAxis dataKey="tick" stroke={MUTED} tick={{ fontSize: 11, fill: MUTED }} tickLine={false} />
+        <XAxis dataKey="tick" stroke={MUTED} tick={{ fontSize: 11, fill: MUTED }} tickLine={false}
+          tickFormatter={xLabelMode === "year" ? label : undefined} />
         <YAxis stroke={MUTED} tick={{ fontSize: 11, fill: MUTED }} tickLine={false} width={56}
           domain={["auto", "auto"]} tickFormatter={(v: number) => axisDa(v, unit)} />
         <Tooltip
@@ -237,7 +245,7 @@ export function FanChart({
             return [typeof value === "number" ? formatDa(value, unit) : value,
                     name === "p50" ? "median" : name];
           }}
-          labelFormatter={(t) => `måned ${t}`}
+          labelFormatter={(t) => (xLabelMode === "year" ? label(t as number) : `måned ${t}`)}
         />
         <Area dataKey="p5" stackId="fan" stroke="none" fill="transparent"
           isAnimationActive={false} legendType="none" name="p5" />
@@ -245,6 +253,12 @@ export function FanChart({
           isAnimationActive={false} legendType="none" name="band" />
         <Line dataKey="p50" name="p50" stroke={color} strokeWidth={2} dot={false}
           isAnimationActive={false} />
+        {anchor != null && (
+          <ReferenceDot x={0} y={anchor} r={5} isFront
+            fill={anchorInBand ? "#199e70" : "#e66767"} stroke="#fff" strokeWidth={1}
+            label={{ value: `faktisk ${anchorYear ?? ""}`, position: "top",
+                     fill: anchorInBand ? "#199e70" : "#e66767", fontSize: 10 }} />
+        )}
       </ComposedChart>
     </ResponsiveContainer>
   );
