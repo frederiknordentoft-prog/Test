@@ -15,7 +15,8 @@ gambling:
     enabled: true
     amplitude: 1.0
     start_month: 1
-    tournament_ticks: [17, 18, 41, 42]   # EM/VM-somre (juni+juli, år 1 og 3)
+    tournament_every: 24                 # EM/VM-somre hvert andet år (juni+juli)
+    tournament_offset: 17
     tournament_boost: 0.6
 events:
 - name: Spilpakke 2

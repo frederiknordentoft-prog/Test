@@ -37,7 +37,12 @@ class CalendarConfig(BaseModel):
         ]
     )
     start_month: int = Field(1, ge=1, le=12)  # calendar month at tick 0
-    tournament_ticks: list[int] = Field(default_factory=list)  # EM/VM summer months (ticks)
+    tournament_ticks: list[int] = Field(default_factory=list)  # explicit EM/VM months (ticks)
+    # Periodic tournaments (for long horizons): a 2-month summer boost every
+    # ``tournament_every`` months starting at ``tournament_offset`` — EM/VM
+    # alternate every other year, so 15-year runs keep their rhythm.
+    tournament_every: int | None = Field(None, ge=12, le=60)
+    tournament_offset: int = Field(17, ge=0)
     tournament_boost: float = Field(0.60, ge=0.0, le=2.0)
 
     @model_validator(mode="after")
@@ -403,6 +408,9 @@ class GamblingConfig(BaseModel):
     # "operator strategy" panel (DS vs competitors: marketing pressure, bonus
     # intensity, AI adoption, aggressiveness, payout ...).
     operator_overrides: dict[str, dict[str, float | bool]] = Field(default_factory=dict)
+    # Long-run trends ({trend_id: strength 0..1}) from the clickable trend
+    # panel — validated against simcore.gambling.trends.TREND_CATALOG.
+    trends: dict[str, float] = Field(default_factory=dict)
     # Heavy-tailed monthly spend: lognormal sigma is the income-concentration
     # knob (higher => a smaller share of players make up more of the BSI). This
     # is the single most important / most uncertain lever (perspective §2.1) and
@@ -456,6 +464,14 @@ class GamblingConfig(BaseModel):
         bad_anchor = [t for t in self.customer_anchors if t not in track_ids]
         if bad_anchor:
             raise ValueError(f"customer_anchors references unknown track(s) {bad_anchor}")
+        if self.trends:
+            from simcore.gambling.trends import TREND_IDS
+            unknown = [t for t in self.trends if t not in TREND_IDS]
+            if unknown:
+                raise ValueError(f"unknown trend id(s): {unknown}")
+            bad = {t: s for t, s in self.trends.items() if not 0.0 <= s <= 1.0}
+            if bad:
+                raise ValueError(f"trend strengths must be within [0, 1]: {bad}")
         return self
 
     def operators_for(self, track_id: str) -> list[OperatorConfig]:

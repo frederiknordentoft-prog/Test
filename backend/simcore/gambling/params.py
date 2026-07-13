@@ -35,7 +35,7 @@ class Param:
 
 def load_register(path: str | Path | None = None) -> dict[str, Any]:
     """Return the full register: {'meta': {...}, 'parameters': [Param, ...]}."""
-    data = yaml.safe_load(Path(path or PARAMS_PATH).read_text()) or {}
+    data = yaml.safe_load(Path(path or PARAMS_PATH).read_text(encoding="utf-8")) or {}
     params = [
         Param(
             name=p["name"],

@@ -46,6 +46,9 @@ export const api = {
   createMonteCarlo: (body: unknown) =>
     req<{ mc_id: string }>("/api/montecarlo", { method: "POST", body: JSON.stringify(body) }),
   getMonteCarlo: (mcId: string) => req<import("./types").MonteCarloStatus>(`/api/montecarlo/${mcId}`),
+  trends: () =>
+    req<{ id: string; name: string; desc: string; kind: string; realism: string;
+          default: number }[]>("/api/trends"),
   savedConfigs: () => req<import("./types").SavedConfig[]>("/api/configs"),
   saveConfig: (body: unknown) =>
     req<{ id: string; name: string }>("/api/configs", { method: "POST", body: JSON.stringify(body) }),

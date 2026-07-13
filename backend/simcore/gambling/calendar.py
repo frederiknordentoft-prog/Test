@@ -37,6 +37,9 @@ def sports_intensity(tick: int, cal: CalendarConfig) -> float:
     mean = sum(cal.monthly_pattern) / 12.0
     rel = cal.monthly_pattern[month] / mean       # normalized around 1.0
     intensity = 1.0 + cal.amplitude * (rel - 1.0)
-    if tick in set(cal.tournament_ticks):
+    boosted = tick in set(cal.tournament_ticks)
+    if not boosted and cal.tournament_every and tick >= cal.tournament_offset:
+        boosted = (tick - cal.tournament_offset) % cal.tournament_every < 2
+    if boosted:
         intensity *= 1.0 + cal.tournament_boost
     return max(0.05, intensity)

@@ -90,6 +90,15 @@ def params():
     return {"meta": reg["meta"], "parameters": param_table()}
 
 
+@router.get("/trends")
+def trends():
+    """The clickable long-run trend catalog (id, Danish name/description,
+    realism grade, default strength) for the setup panel."""
+    from simcore.gambling.trends import TREND_CATALOG
+
+    return TREND_CATALOG
+
+
 @router.post("/robustness")
 def create_robustness(req: RobustnessRequest):
     try:

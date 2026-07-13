@@ -433,3 +433,27 @@ parameters:
     confidence: green
     sensitivity: false
     note: "~40 full-scale operators; the model names 5 as agents and aggregates ~35 in the long tail (longtail_licensees)."
+
+  - name: dk_ggr_per_adult_eur
+    value: 420
+    unit: EUR_per_adult_per_year
+    source: "Afledt: EGBA/H2 2024 — DK samlet GGR ~€1,9 mia. / ~4,5 mio. voksne"
+    confidence: yellow
+    sensitivity: false
+    note: "Benchmark for eu_convergence-trenden."
+
+  - name: uk_ggr_per_adult_eur
+    value: 550
+    unit: EUR_per_adult_per_year
+    source: "Afledt: EGBA 2024 — UK GGR ~€30,8 mia. / ~55 mio. voksne"
+    confidence: yellow
+    sensitivity: false
+    note: "Nordvesteuropæisk topniveau; gabet DK->UK (~+30 %) driver eu_convergence ved fuld styrke (+2,5 %/år over ~12 år)."
+
+  - name: trend_regulatory_drift_full
+    value: 0.010
+    unit: rg_friction_per_month
+    source: "Kalibreret: 5 års drift ved fuld styrke ~ én Spilpakke (EU-mønster: NL/DE/SE strammer løbende)"
+    confidence: red
+    sensitivity: true
+    interval: [0.003, 0.02]

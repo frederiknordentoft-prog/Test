@@ -27,7 +27,7 @@ def config_from_dict(data: dict[str, Any]) -> SimConfig:
 
 def load_config(path: str | Path) -> SimConfig:
     path = Path(path)
-    text = path.read_text()
+    text = path.read_text(encoding="utf-8")
     data = yaml.safe_load(text) if path.suffix in (".yaml", ".yml") else json.loads(text)
     return config_from_dict(data)
 
@@ -35,7 +35,7 @@ def load_config(path: str | Path) -> SimConfig:
 def list_presets() -> list[dict[str, str]]:
     out = []
     for p in sorted(PRESET_DIR.glob("*.yaml")):
-        data = yaml.safe_load(p.read_text())
+        data = yaml.safe_load(p.read_text(encoding="utf-8"))
         out.append(
             {
                 "id": p.stem,
@@ -58,7 +58,7 @@ def preset_raw(preset_id: str) -> dict[str, Any]:
     path = PRESET_DIR / f"{preset_id}.yaml"
     if not path.exists():
         raise FileNotFoundError(f"unknown preset '{preset_id}'")
-    return yaml.safe_load(path.read_text())
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
 def event_from_dict(data: dict[str, Any]) -> EventConfig:

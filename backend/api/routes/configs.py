@@ -27,7 +27,7 @@ def load_saved(saved_id: str) -> SimConfig:
     path = SAVED_DIR / f"{saved_id}.yaml"
     if not path.exists():
         raise FileNotFoundError(f"unknown saved scenario '{saved_id}'")
-    data = yaml.safe_load(path.read_text())
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
     data.pop("saved_name", None)
     data.pop("saved_description", None)
     return config_from_dict(data)
@@ -71,7 +71,7 @@ def list_saved():
     SAVED_DIR.mkdir(parents=True, exist_ok=True)
     out = []
     for p in sorted(SAVED_DIR.glob("*.yaml")):
-        data = yaml.safe_load(p.read_text()) or {}
+        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
         out.append({
             "id": p.stem,
             "name": data.get("saved_name", p.stem),
@@ -95,7 +95,8 @@ def save_config(req: SaveConfigRequest):
     data = cfg.model_dump(mode="json")
     data["saved_name"] = req.name
     data["saved_description"] = req.description
-    (SAVED_DIR / f"{saved_id}.yaml").write_text(yaml.safe_dump(data, sort_keys=False))
+    (SAVED_DIR / f"{saved_id}.yaml").write_text(
+        yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
     return {"id": saved_id, "name": req.name}
 
 
@@ -104,7 +105,7 @@ def get_saved(saved_id: str):
     path = SAVED_DIR / f"{saved_id}.yaml"
     if not path.exists():
         raise HTTPException(404, f"unknown saved scenario '{saved_id}'")
-    return yaml.safe_load(path.read_text())
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
 @router.delete("/configs/{saved_id}")

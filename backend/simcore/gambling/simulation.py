@@ -43,6 +43,7 @@ from simcore.gambling.stakeholders import (
     RegulationState,
     udlodning_from,
 )
+from simcore.gambling.trends import apply_config_trends, step_trends
 from simcore.gambling.population import (
     anchored_customer_counts,
     build_population,
@@ -61,6 +62,10 @@ class GamblingSimulation:
         self.config = config
         self.run_id = run_id or uuid.uuid4().hex[:12]
         self.gcfg = GamblingConfig.model_validate(config.gambling or {})
+        # Long-run trends: one-off parameter adjustments (growth rates, AI
+        # speed) apply before anything is built, so they flow into the run's
+        # dynamics without disturbing the t0 level anchors.
+        apply_config_trends(self.gcfg)
         self.hub = RngHub(config.seed, self.gcfg.population, len(self.gcfg.tracks))
 
         # No finance actors in the gambling domain (operators arrive in later
@@ -120,8 +125,11 @@ class GamblingSimulation:
         ai_on = self.gcfg.ai_enabled
         stake_on = self.gcfg.stakeholders_enabled
 
-        # 1. Scheduled policy/market events (Spilpakke, ad ban, tax, ...).
+        # 1. Scheduled policy/market events (Spilpakke, ad ban, tax, ...) and
+        #    the monthly drift from long-run trends (regulatory creep,
+        #    offshore professionalization, prediction-loophole growth).
         self._apply_gambling_events(t)
+        step_trends(self)
 
         # 2. Entry/exit/M&A, gated by the AI frontier (big-tech needs wild AI).
         if self.gcfg.entry_enabled:

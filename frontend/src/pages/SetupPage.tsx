@@ -58,6 +58,10 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
   const [events, setEvents] = useState<CustomEvent[]>([]);
   const [levers, setLevers] = useState({ ...DEFAULT_LEVERS });
   const [ops, setOps] = useState(() => structuredClone(OP_DEFAULTS));
+  const [trendCatalog, setTrendCatalog] = useState<
+    { id: string; name: string; desc: string; realism: string; default: number }[]
+  >([]);
+  const [trends, setTrends] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveName, setSaveName] = useState("");
@@ -68,6 +72,7 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
     api.savedConfigs().then(setSaved).catch(() => {});
     api.scenarios().then(setScenarios).catch(() => {});
     api.eventTypes().then(setEventTypes).catch(() => {});
+    api.trends().then(setTrendCatalog).catch(() => {});
   }, []);
 
   const isGambling = domain === "gambling";
@@ -116,7 +121,17 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
       channelization_low: Math.min(0.72, levers.channelization_start),
       channelization_high: Math.max(0.92, levers.channelization_start),
       ...(Object.keys(operator_overrides).length ? { operator_overrides } : {}),
+      ...(Object.keys(trends).length ? { trends } : {}),
     };
+  };
+
+  const toggleTrend = (id: string, def: number) => {
+    setTrends((t) => {
+      const next = { ...t };
+      if (id in next) delete next[id];
+      else next[id] = def;
+      return next;
+    });
   };
 
   const body = () => ({
@@ -323,6 +338,66 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
                 </div>
               </div>
             </div>
+            <div className="lever-group">
+              <div className="lever-group-title">
+                Langsigtede trends — klik en trend til, og sæt styrken
+              </div>
+              <div className="trend-list">
+                {trendCatalog.map((t) => {
+                  const active = t.id in trends;
+                  return (
+                    <div key={t.id} className={`trend-row ${active ? "active" : ""}`}>
+                      <label className="trend-toggle">
+                        <input
+                          type="checkbox"
+                          checked={active}
+                          onChange={() => toggleTrend(t.id, t.default)}
+                        />
+                        <span className="trend-name">{t.name}</span>
+                        <span className={`chip realism-${t.realism === "høj" ? "high" : t.realism === "middel" ? "mid" : "low"}`}>
+                          {t.realism === "høj" ? "realistisk" : t.realism === "middel" ? "plausibel" : "spekulativ"}
+                        </span>
+                        <span className="info-dot" tabIndex={0} aria-label={t.desc}>
+                          ⓘ<span className="info-tip">{t.desc}</span>
+                        </span>
+                      </label>
+                      {active && (
+                        <div className="trend-slider">
+                          <span className="muted" style={{ fontSize: 11 }}>Svag</span>
+                          <input
+                            type="range"
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={trends[t.id]}
+                            onChange={(e) => setTrends({ ...trends, [t.id]: +e.target.value })}
+                          />
+                          <span className="muted" style={{ fontSize: 11 }}>Stærk</span>
+                          <span className="trend-value">{Math.round(trends[t.id] * 100)} %</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
+                <span className="muted" style={{ fontSize: 11 }}>Horisont:</span>
+                {[["6 år", 72], ["10 år", 120], ["15 år", 180]].map(([lbl, n]) => (
+                  <button
+                    key={lbl}
+                    className={ticks === n ? "primary" : ""}
+                    style={{ fontSize: 12, padding: "3px 10px" }}
+                    onClick={() => setTicks(n as number)}
+                  >
+                    {lbl}
+                  </button>
+                ))}
+                <span className="muted" style={{ fontSize: 11 }}>
+                  ({ticks} måneder — trends kumulerer over hele horisonten)
+                </span>
+              </div>
+            </div>
+
             <div className="lever-group">
               <div className="lever-group-title">Operatør-strategier — Danske Spil vs. udfordreren</div>
               <div className="grid grid-2">

@@ -269,3 +269,36 @@ details[open].card > summary::before { content: "▾ "; }
   display: block;
 }
 .info-mini { color: var(--text-muted); font-size: 10px; }
+
+/* ----- trend panel (clickable trends with strength sliders) ----- */
+.trend-list { display: flex; flex-direction: column; gap: 4px; }
+.trend-row {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.trend-row.active { background: var(--surface-2); border-color: var(--border); }
+.trend-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0;
+}
+.trend-name { font-size: 13px; }
+.trend-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 2px 26px;
+}
+.trend-slider input[type="range"] { flex: 1; max-width: 420px; }
+.trend-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  min-width: 44px;
+  text-align: right;
+}
+.chip.realism-high { background: #1d3a2a; color: #4fc98a; }
+.chip.realism-mid { background: #3a3320; color: #d9b64c; }
+.chip.realism-low { background: #3a2430; color: #e08bb0; }

@@ -221,7 +221,7 @@ def report(run_id: str):
     html = generate_report(h.sim)
     out_dir = EXPORT_DIR / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "report.html").write_text(html)
+    (out_dir / "report.html").write_text(html, encoding="utf-8")
     return HTMLResponse(html)
 
 

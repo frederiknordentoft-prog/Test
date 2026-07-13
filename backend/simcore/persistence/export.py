@@ -22,7 +22,9 @@ def export_run(conn: sqlite3.Connection, run_id: str, out_dir: str | Path,
         raise KeyError(f"unknown run '{run_id}'")
 
     config_path = out / f"{run_id}_config.json"
-    config_path.write_text(json.dumps(json.loads(run_row.iloc[0]["config_json"]), indent=2))
+    config_path.write_text(
+        json.dumps(json.loads(run_row.iloc[0]["config_json"]), indent=2, ensure_ascii=False),
+        encoding="utf-8")
     written.append(str(config_path))
 
     for table in TABLES:
@@ -45,6 +47,6 @@ def export_run(conn: sqlite3.Connection, run_id: str, out_dir: str | Path,
             df.to_parquet(path, index=False)
         else:
             path = out / f"{run_id}_{table}.csv"
-            df.to_csv(path, index=False)
+            df.to_csv(path, index=False, encoding="utf-8")
         written.append(str(path))
     return written
