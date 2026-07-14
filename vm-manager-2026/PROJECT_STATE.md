@@ -252,3 +252,30 @@ Formation 4-3-3: Maignan | Kounde Digne Spence (+DEF4) | Rabiot Koné (+MID3) |
 Oyarzabal Mbappe© Messi.  KAPTAJN: MBAPPE (192k > Messi 160k — klar, chalk).
 EV-priser på købskandidater er R3-snapshot +2-6% skøn — VERIFICÉR i appen.
 Egne EV R6+R7: Mbappe 328k · Messi 257k · Oyarzabal 193k · Maignan 129k · Rabiot 63k.
+
+═══════════════════════════════════════════════════════════════════
+## 6E. R7-PLAN (14/7) — SIDSTE RUNDE: SF + bronze + finale
+═══════════════════════════════════════════════════════════════════
+R6-RESULTAT: Frankrig slog Marokko, England-Norge 2-1, Spanien-Belgien 2-1,
+Argentina-Schweiz 3-1 eft. forl. Kaptajn Mbappe +280k. Bruger solgte også
+Oyarzabal→Dembélé (+177k i R6) og købte Østigård/Berg (Norge røg ud → døde).
+HOLD efter R6 (bank 395k): Maignan 5,786 · Kounde 4,026 · Digne 3,918 ·
+Spence 2,764 · Østigård✝ 2,738 · Rabiot 4,337 · Koné 3,710 · Berg✝ 2,736 ·
+Dembélé 6,742 · Mbappé© 11,835 · Messi 9,764.
+
+SEMIFINALER: Frankrig-Spanien 14/7 (FRA +135/X +210/ESP +210, adv -150) ·
+England-Argentina 15/7 (ENG +165/X +190/ARG +200, adv -122). Tabere spiller
+BRONZEKAMP → alle 4 hold har 2 kampe i R7. Titel: FRA 40% ESP 24% ENG 20% ARG 16%.
+Opstillinger (Bold 13/7): Tchouameni IND for Koné (L'Equipe) · Reece James IND
+for Spence · Pedri+Baena droppet (Rodri+F.Ruiz+Olmo) · ARG 4-4-2 uændret.
+
+R7-BESLUTNING (r7_final.py, 2-kamps EV, fee-regnskab):
+**INGEN TRANSFERS.** Alle kandidat-træk er NET-NEGATIVE med kun 2 kampe tilbage:
+gebyr (1% + tvungen filler-fee ~19k) > EV-gevinst i hvert scenarie:
+Koné→Tchouameni −12k · Ø/B→Tchoua+filler −11k · →James+filler −14k ·
+→Upamecano+filler passer ikke i budget (6,41 > 5,87) · Dembélé→Kane −42k.
+Frossen værdi (Østigård/Berg 5,47m) tæller stadig i slutstillingen — ingen risiko.
+EV 2 kampe: Mbappé 307k · Messi 205k · Dembélé 149k · Maignan 122k · Kounde 81k ·
+Digne 79k · Rabiot 55k · Koné 20k · Spence 17k. KAPTAJN: MBAPPÉ (307k, klar).
+LÆRDOM: sidst i turneringen kollapser transfer-værdien — EV-horisonten er kort,
+men gebyret er konstant. "Gør intet" er ofte det rigtige træk i sidste runde.
