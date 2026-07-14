@@ -39,6 +39,16 @@ on the API; runs are monthly. Highlights:
   intensity now costs money, so an aggressive challenger's acquisition burn is
   visible and can **exhaust the cash runway** it entered with — the DraftKings/
   Betano spend-now-earn-later pattern, ending in a cash-driven exit.
+- **Investment case (capital-fund lens)**: lay a private-equity **deal** over
+  the market — back a greenfield challenger, buy out an incumbent, or roll up
+  the long tail — finance it (equity + leverage) and hold it. The owned
+  operator's EBITDA path is endogenous (its share moves with competition, AI and
+  regulation), and the module turns it into **IRR / MOIC / EV-EBITDA**, a
+  **value-creation bridge** (EBITDA growth × multiple expansion × deleveraging),
+  and a **thesis-risk tornado** (how a Spilpakke, tax hike, wild-AI entrant or
+  offshore surge moves the return) — all as a **distribution** across seeds with
+  a p5 downside and a probability of capital loss. Illustrative foresight, not
+  investment advice.
 - **Four feedback loops**: the channelization **false positive** (tightening
   lowers *measured* harm while hidden offshore harm rises), the delayed political
   agent (overshoot), the **udlodning** coalition (resistance to tightening), and

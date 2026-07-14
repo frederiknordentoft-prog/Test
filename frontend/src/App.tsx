@@ -2,12 +2,13 @@ import { useState } from "react";
 import { ComparePage } from "./pages/ComparePage";
 import { ForecastPage } from "./pages/ForecastPage";
 import { IntroPage } from "./pages/IntroPage";
+import { InvesteringscasePage } from "./pages/InvesteringscasePage";
 import { MonteCarloPage } from "./pages/MonteCarloPage";
 import { RunPage } from "./pages/RunPage";
 import { SetupPage } from "./pages/SetupPage";
 import { useSimStore } from "./store/simStore";
 
-type View = "intro" | "setup" | "run" | "montecarlo" | "forecast" | "compare";
+type View = "intro" | "setup" | "run" | "montecarlo" | "forecast" | "investeringscase" | "compare";
 
 const NAV: { id: View; label: string }[] = [
   { id: "intro", label: "Sådan virker det" },
@@ -15,6 +16,7 @@ const NAV: { id: View; label: string }[] = [
   { id: "run", label: "Kørsel" },
   { id: "montecarlo", label: "Monte Carlo" },
   { id: "forecast", label: "Prognose & validering" },
+  { id: "investeringscase", label: "Investeringscase" },
   { id: "compare", label: "Sammenlign" },
 ];
 
@@ -46,6 +48,7 @@ export default function App() {
       {view === "run" && <RunPage />}
       {view === "montecarlo" && <MonteCarloPage />}
       {view === "forecast" && <ForecastPage />}
+      {view === "investeringscase" && <InvesteringscasePage />}
       {view === "compare" && <ComparePage />}
     </>
   );

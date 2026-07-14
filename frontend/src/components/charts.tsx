@@ -1,7 +1,10 @@
 import { useRef, type ReactNode } from "react";
 import {
   Area,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Line,
   ReferenceDot,
@@ -260,6 +263,110 @@ export function FanChart({
                      fill: anchorInBand ? "#199e70" : "#e66767", fontSize: 10 }} />
         )}
       </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
+/** Distribution histogram across Monte Carlo seeds (IRR, MOIC, …). Buckets are
+ *  labelled with the series unit so the x-axis reads in the right terms. */
+export function Histogram({
+  values, color, unit = "raw", height = 200,
+}: { values: number[]; color: string; unit?: Unit; height?: number }) {
+  if (!values.length) return null;
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const nb = Math.min(12, Math.max(5, Math.round(Math.sqrt(values.length) * 1.5)));
+  const w = (hi - lo) / nb || 1;
+  const buckets = Array.from({ length: nb }, (_, i) => ({
+    bucket: axisDa(lo + i * w + w / 2, unit),
+    count: 0,
+  }));
+  for (const v of values) {
+    const idx = Math.min(nb - 1, Math.max(0, Math.floor((v - lo) / w)));
+    buckets[idx].count += 1;
+  }
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={buckets} margin={{ top: 6, right: 12, bottom: 2, left: 0 }}>
+        <CartesianGrid stroke={GRID} strokeDasharray="2 4" vertical={false} />
+        <XAxis dataKey="bucket" stroke={MUTED} tick={{ fontSize: 10, fill: MUTED }} tickLine={false} />
+        <YAxis stroke={MUTED} tick={{ fontSize: 11, fill: MUTED }} tickLine={false} width={36}
+          allowDecimals={false} />
+        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#2d2d2b", opacity: 0.4 }} />
+        <Bar dataKey="count" name="seeds" fill={color} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+/** Value-creation waterfall (the PE bridge): a floating bar per component
+ *  between an entry total and an exit total. Green = value created, red =
+ *  destroyed, blue = the entry/exit anchors. */
+export function Waterfall({
+  entry, exit, components, unit = "mio_kr", height = 240,
+}: {
+  entry: { label: string; value: number };
+  exit: { label: string; value: number };
+  components: { label: string; value: number }[];
+  unit?: Unit; height?: number;
+}) {
+  let running = entry.value;
+  const rows: { name: string; base: number; span: number; kind: string; delta: number }[] = [
+    { name: entry.label, base: 0, span: entry.value, kind: "total", delta: entry.value },
+  ];
+  for (const c of components) {
+    const base = c.value >= 0 ? running : running + c.value;
+    rows.push({ name: c.label, base, span: Math.abs(c.value),
+      kind: c.value >= 0 ? "pos" : "neg", delta: c.value });
+    running += c.value;
+  }
+  rows.push({ name: exit.label, base: 0, span: exit.value, kind: "total", delta: exit.value });
+  const fill = (k: string) => (k === "total" ? COLORS.ds : k === "pos" ? COLORS.revenue : COLORS.offshore);
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={rows} margin={{ top: 6, right: 12, bottom: 2, left: 0 }}>
+        <CartesianGrid stroke={GRID} strokeDasharray="2 4" vertical={false} />
+        <XAxis dataKey="name" stroke={MUTED} tick={{ fontSize: 10, fill: MUTED }} tickLine={false}
+          interval={0} />
+        <YAxis stroke={MUTED} tick={{ fontSize: 11, fill: MUTED }} tickLine={false} width={56}
+          tickFormatter={(v: number) => axisDa(v, unit)} />
+        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#2d2d2b", opacity: 0.3 }}
+          formatter={(_v: number | string, _n: string, p: { payload?: { delta: number } }) =>
+            [formatDa(p?.payload?.delta ?? 0, unit), "bidrag"]} />
+        <Bar dataKey="base" stackId="wf" fill="transparent" isAnimationActive={false} legendType="none" />
+        <Bar dataKey="span" stackId="wf" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+          {rows.map((r, i) => <Cell key={i} fill={fill(r.kind)} />)}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+/** Tornado: horizontal bars of an effect (e.g. IRR delta) per scenario, most
+ *  extreme first. Green = the effect helps, red = it hurts. */
+export function Tornado({
+  items, unit = "pct", height = 220,
+}: {
+  items: { name: string; value: number }[];
+  unit?: Unit; height?: number;
+}) {
+  if (!items.length) return null;
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={items} layout="vertical" margin={{ top: 6, right: 16, bottom: 2, left: 8 }}>
+        <CartesianGrid stroke={GRID} strokeDasharray="2 4" horizontal={false} />
+        <XAxis type="number" stroke={MUTED} tick={{ fontSize: 11, fill: MUTED }} tickLine={false}
+          tickFormatter={(v: number) => axisDa(v, unit)} />
+        <YAxis type="category" dataKey="name" stroke={MUTED} width={180}
+          tick={{ fontSize: 10, fill: MUTED }} tickLine={false} />
+        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#2d2d2b", opacity: 0.3 }}
+          formatter={(v: number | string) =>
+            [typeof v === "number" ? formatDa(v, unit) : v, "effekt på IRR"]} />
+        <ReferenceLine x={0} stroke={MUTED} />
+        <Bar dataKey="value" radius={[0, 3, 3, 0]} isAnimationActive={false}>
+          {items.map((it, i) => <Cell key={i} fill={it.value >= 0 ? COLORS.revenue : COLORS.offshore} />)}
+        </Bar>
+      </BarChart>
     </ResponsiveContainer>
   );
 }

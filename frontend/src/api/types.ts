@@ -200,3 +200,34 @@ export interface CompetitorIntelligence {
   parameters: RegisterParam[];
   note: string;
 }
+
+export type Percentiles = Record<string, number>;   // min/p5/p25/median/p75/p95/max/mean
+
+export interface InvestmentResult {
+  n_runs: number;
+  archetype: string;
+  target: string;
+  hold_years: number;
+  leverage: number;
+  entry_multiple: number;
+  exit_multiple: number;
+  runs: Record<string, number>[];
+  percentiles: Record<string, Percentiles>;
+  median: Record<string, number>;
+  bridge: {
+    ebitda_growth: number; multiple: number; deleverage_fcf: number;
+    equity_entry: number; equity_exit: number;
+  };
+  nav_fan: { ticks: number[]; p5: number[]; p50: number[]; p95: number[] };
+  prob_loss: number;
+  tornado?: { id: string; name: string; scenario_irr: number; irr_delta: number }[];
+}
+
+export interface InvestmentStatus {
+  inv_id: string;
+  status: string;
+  progress: number;
+  total: number;
+  result: InvestmentResult | null;
+  error: string | null;
+}

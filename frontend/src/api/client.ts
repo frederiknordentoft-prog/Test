@@ -52,6 +52,11 @@ export const api = {
   forecastValidation: () => req<import("./types").ForecastValidation>("/api/forecast-validation"),
   competitorIntelligence: () =>
     req<import("./types").CompetitorIntelligence>("/api/competitor-intelligence"),
+  createInvestment: (body: unknown) =>
+    req<{ inv_id: string; total: number }>("/api/investment",
+      { method: "POST", body: JSON.stringify(body) }),
+  getInvestment: (invId: string) =>
+    req<import("./types").InvestmentStatus>(`/api/investment/${invId}`),
   savedConfigs: () => req<import("./types").SavedConfig[]>("/api/configs"),
   saveConfig: (body: unknown) =>
     req<{ id: string; name: string }>("/api/configs", { method: "POST", body: JSON.stringify(body) }),

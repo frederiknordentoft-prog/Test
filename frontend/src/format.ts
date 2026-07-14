@@ -153,6 +153,12 @@ export const METRIC_LABELS: Record<string, { name: string; unit: Unit }> = {
   ds_ebit_margin: { name: "DS EBIT-margin", unit: "pct" },
   industry_ebit: { name: "Konkurrenternes EBIT", unit: "mio_kr" },
   industry_ebit_margin: { name: "Konkurrenternes EBIT-margin", unit: "pct" },
+  // Investment / deal returns (capital-fund lens)
+  deal_irr: { name: "IRR (internt afkast)", unit: "pct" },
+  deal_moic: { name: "MOIC (afkastmultipel)", unit: "x" },
+  equity_value: { name: "Egenkapitalværdi ved exit", unit: "mio_kr" },
+  ev_ebitda_exit: { name: "EV/EBITDA ved exit", unit: "x" },
+  payback_years: { name: "Tilbagebetalingstid", unit: "raw" },
 };
 
 export function metricLabel(key: string): string {
