@@ -220,6 +220,39 @@ def default_entrants() -> list[EntrantConfig]:
     return [EntrantConfig(**e) for e in DEFAULT_ENTRANTS]
 
 
+class DealConfig(BaseModel):
+    """A capital-fund investment case laid over the market simulation.
+
+    A deal establishes an *owned* operator (a greenfield challenger the fund
+    backs, an incumbent it buys out, or the long tail it rolls up), holds it for
+    ``hold_years``, and is valued at exit on an EV/EBITDA multiple. The
+    simulation supplies the EBITDA *path* endogenously (share moves with
+    competition, AI and regulation); this config only says what is owned and how
+    it is financed, so ``investment.py`` can turn the path into PE returns (IRR,
+    MOIC, value-creation bridge). Opt-in: with no deal, the market runs exactly
+    as before.
+    """
+
+    archetype: Literal["greenfield", "buyout", "rollup"] = "buyout"
+    # Owned operator: an entrant id (greenfield, e.g. "ai_casino"), an incumbent
+    # operator id (buyout, e.g. "unibet"), or "longtail" (rollup). Note that an
+    # aggressive-burn target (betano, challenger) is structurally loss-making in
+    # the P&L model and correctly shows as a poor buyout — pick a profitable one.
+    target: str = "unibet"
+    committed_capital: float = Field(400.0, ge=0.0)   # equity for greenfield (mio DKK)
+    leverage: float = Field(3.0, ge=0.0, le=10.0)     # entry net debt / EBITDA (0 = all-equity)
+    debt_rate_annual: float = Field(0.09, ge=0.0, le=0.5)
+    hold_years: int = Field(5, ge=1, le=15)
+    entry_multiple: float = Field(10.0, ge=0.0, le=30.0)   # EV/EBITDA at entry
+    exit_multiple: float = Field(10.0, ge=0.0, le=30.0)    # EV/EBITDA at exit
+    transaction_cost: float = Field(0.0, ge=0.0)      # one-off deal cost (mio DKK)
+    # Operational improvement the owner brings (buyout/rollup): OperatorConfig
+    # field overrides on the target (e.g. lift marketing_reach, ai_adoption,
+    # lower friction). Validated against OperatorConfig fields at apply time.
+    improvement: dict[str, float] = Field(default_factory=dict)
+    n_seeds: int = Field(24, ge=1, le=500)
+
+
 DEFAULT_TRACKS: list[dict] = [
     # growth_rate is CALIBRATED from the hindcast (Etape B) — the recent 3-year
     # CAGR of the real Spillemyndigheden series (2022→2025): casino +12.8 %
