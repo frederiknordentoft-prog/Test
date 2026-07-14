@@ -15,5 +15,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Night-avoidance tests assert wall-clock behaviour → pin the zone.
+    env: { TZ: 'Europe/Copenhagen' },
   },
 });

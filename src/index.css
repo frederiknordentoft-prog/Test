@@ -818,6 +818,48 @@ ol {
   transform: translate(-50%, 0);
 }
 
+/* ---------- PDF / print button ---------- */
+.pdf-btn {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.12s var(--easing), background 0.15s;
+}
+.pdf-btn:hover {
+  background: var(--accent-soft);
+}
+.pdf-btn:active {
+  transform: scale(0.98);
+}
+.pdf-hint {
+  margin-top: -8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+/* ---------- Night-adjustment banner ---------- */
+.banner-night {
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface));
+  color: var(--accent-strong);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+/* ---------- Print sheet: hidden on screen, shown on paper ---------- */
+.print-sheet {
+  display: none;
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -826,5 +868,117 @@ ol {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------- Print ("Gem som PDF") ---------- */
+@media print {
+  @page {
+    margin: 16mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+  }
+  /* Hide every interactive element and the on-screen tree. */
+  .app-bar,
+  .toast,
+  .sheet-backdrop,
+  .result {
+    display: none !important;
+  }
+  .app {
+    max-width: none;
+    min-height: 0;
+    padding: 0;
+    display: block;
+  }
+
+  .print-sheet {
+    display: block !important;
+    color: #000;
+    line-height: 1.4;
+  }
+  .print-title {
+    font-size: 20pt;
+    margin-bottom: 6pt;
+  }
+  .print-intro {
+    font-size: 10.5pt;
+    color: #333;
+    margin-bottom: 8pt;
+  }
+  .print-meta {
+    font-weight: 700;
+    margin-bottom: 4pt;
+  }
+  .print-adjust {
+    font-size: 10.5pt;
+    color: #333;
+    margin-bottom: 10pt;
+  }
+  .print-sheet h2 {
+    font-size: 13pt;
+    margin: 12pt 0 6pt;
+    border-bottom: 1px solid #bbb;
+    padding-bottom: 2pt;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .print-recipe {
+    margin: 8pt 0 14pt;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-recipe ul {
+    list-style: none;
+    padding: 0;
+    max-width: 70mm;
+  }
+  .print-recipe li {
+    display: flex;
+    justify-content: space-between;
+    padding: 2pt 0;
+  }
+  .print-steps {
+    list-style: none;
+    padding: 0;
+  }
+  .print-step {
+    padding: 7pt 0;
+    border-bottom: 1px solid #ddd;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-when {
+    font-weight: 700;
+    font-size: 11pt;
+  }
+  .print-what {
+    font-size: 12pt;
+    margin-top: 1pt;
+  }
+  .print-desc {
+    font-size: 10.5pt;
+    color: #333;
+    margin-top: 2pt;
+  }
+  .print-step-note {
+    font-size: 10pt;
+    color: #444;
+    margin-top: 3pt;
+    font-style: italic;
+  }
+  .print-footer {
+    margin-top: 12pt;
+    font-size: 10pt;
+    color: #333;
+  }
+  .print-title,
+  .print-intro {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }

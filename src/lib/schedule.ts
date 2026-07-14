@@ -4,6 +4,8 @@
 // Each milestone has a "gap before" = the duration of the phase that leads
 // into it. time(i) = finishAt − Σ(gap[j] for j > i).
 
+import { formatColdProof, formatDayTimeAbsolute } from './format';
+
 export type Temp = 'cool' | 'normal' | 'warm';
 export type ColdProof = 8 | 12 | 16;
 export type Size = 'small' | 'large';
@@ -135,13 +137,18 @@ const META: Record<MilestoneId, MilestoneMeta> = {
   },
   preheat: {
     icon: '🔥',
-    title: 'Tænd ovnen og varm gryden op',
-    description: 'Varm ovn og støbejernsgryde grundigt op — gerne 250 °C med låg på.',
+    title: 'Varm ovnen op',
+    description:
+      'Varm ovnen grundigt op til 250 °C. Sæt en bagesten eller en bageplade midt i ovnen, ' +
+      'og stil en tom bradepande i bunden — den skal bruges til damp.',
   },
   bake: {
     icon: '🍞',
     title: 'Bag brødet',
-    description: 'Vend dejen i den varme gryde, snit toppen, og bag med låg. Tag låget af undervejs for sprød skorpe.',
+    description:
+      'Sæt brødet på den varme sten, og snit toppen. Hæld straks en kop kogende vand i den ' +
+      'varme bradepande for damp, og luk ovnen. Bag med damp de første ca. 20 min, tag så ' +
+      'bradepanden ud, og bag færdig, til skorpen er gylden og sprød.',
   },
   cool: {
     icon: '⏳',
@@ -162,10 +169,10 @@ interface Segment {
   canDelay: boolean;
 }
 
-function segments(input: PlanInput): Segment[] {
+function segments(input: PlanInput, coldProofMin?: number): Segment[] {
   const activation = ACTIVATION[input.temp];
   const firstRise = FIRST_RISE[input.temp];
-  const coldProof = input.coldProofHours * 60;
+  const coldProof = coldProofMin ?? input.coldProofHours * 60;
 
   const segs: Segment[] = [];
   if (!input.hasActiveStarter) {
@@ -190,12 +197,20 @@ function segments(input: PlanInput): Segment[] {
 }
 
 /**
- * Compute the full schedule, backward from `input.finishAt`.
+ * Compute the full schedule, backward from the finish time.
  * Pure: same input → same output. Times are epoch ms (DST-correct).
+ *
+ * `override` lets the night post-processor re-anchor (a snapped finish) or
+ * re-time the cold proof without duplicating the geometry. With no override
+ * the result is byte-identical to the plain backward schedule.
  */
-export function computeSchedule(input: PlanInput): Milestone[] {
-  const segs = segments(input);
+export function computeSchedule(
+  input: PlanInput,
+  override?: { finishAt?: number; coldProofMin?: number },
+): Milestone[] {
+  const segs = segments(input, override?.coldProofMin);
   const gaps = segs.map((s) => s.baseGap + (input.delays[s.id] ?? 0));
+  const finishAt = override?.finishAt ?? input.finishAt;
 
   const out: Milestone[] = new Array(segs.length);
   let suffixMin = 0; // Σ of gaps strictly after the current index
@@ -208,7 +223,7 @@ export function computeSchedule(input: PlanInput): Milestone[] {
       title: meta.title,
       description: meta.description,
       note: meta.note,
-      at: input.finishAt - suffixMin * 60000,
+      at: finishAt - suffixMin * 60000,
       canDelay: seg.canDelay,
       gapBeforeMin: gaps[i],
     };
@@ -220,4 +235,218 @@ export function computeSchedule(input: PlanInput): Milestone[] {
 /** Total minutes from the first step to finish, for the given input. */
 export function totalMinutes(input: PlanInput): number {
   return segments(input).reduce((sum, s) => sum + s.baseGap + (input.delays[s.id] ?? 0), 0);
+}
+
+// ============================================================
+//  Night avoidance
+//  No milestone requiring human involvement may land in the local
+//  window [23:00, 06:00). The elastic lever is the cold proof
+//  (fridge→preheat): it repositions the whole evening/active cluster.
+//  The morning cluster (preheat/bake/cool) is pinned to the finish and
+//  cannot be moved by the cold proof — an early-morning/night finish is
+//  therefore structurally infeasible.
+// ============================================================
+
+const MIN = 60000;
+const NIGHT_START = 23 * 60; // minutes-of-day
+const NIGHT_END = 6 * 60;
+const CP_MIN = 6 * 60; // never schedule less than 6 h cold proof
+const CP_MAX = 24 * 60; // never more than 24 h
+const TRIM_CAP = 2 * 60; // may shorten the user's cold proof by at most 2 h
+
+/** Steps that need a person present — everything except the endpoint `done`. */
+const HUMAN_IDS: MilestoneId[] = [
+  'feed', 'mix', 'salt', 'fold1', 'fold2', 'fold3', 'fold4', 'shape', 'fridge', 'preheat', 'bake', 'cool',
+];
+
+const minutesOfDay = (at: number): number => {
+  const d = new Date(at);
+  return d.getHours() * 60 + d.getMinutes();
+};
+
+/** True if the instant falls in [23:00, 06:00) local time. */
+const inNight = (at: number): boolean => {
+  const m = minutesOfDay(at);
+  return m >= NIGHT_START || m < NIGHT_END;
+};
+
+/** Epoch ms for h:m on the local calendar day containing `ref`. DST-safe. */
+const atLocal = (ref: number, h: number, m: number): number => {
+  const d = new Date(ref);
+  d.setHours(h, m, 0, 0);
+  return d.getTime();
+};
+
+const dayShift = (at: number, days: number): number => {
+  const d = new Date(at);
+  d.setDate(d.getDate() + days);
+  return d.getTime();
+};
+
+const sameLocalDay = (a: number, b: number): boolean => atLocal(a, 0, 0) === atLocal(b, 0, 0);
+
+/**
+ * The contiguous evening cluster ends at `fridge` and starts `dMin` earlier.
+ * Since it is < 17 h long, it is night-free iff both ends are daytime and on
+ * the same calendar day (then the whole span sits inside [06:00, 23:00)).
+ */
+const blockNightFree = (fridge: number, dMin: number): boolean => {
+  const head = fridge - dMin * MIN;
+  return !inNight(fridge) && !inNight(head) && sameLocalDay(fridge, head);
+};
+
+/**
+ * Choose the cold-proof length (minutes) that keeps the evening cluster out of
+ * the night. Prefer a small trim (≤ 2 h); otherwise extend so the cluster ends
+ * at 22:59 the day before the offending night. Clamped to [6 h, 24 h].
+ */
+function chooseColdProof(preheatAt: number, dMin: number, cp0Min: number): number {
+  const fridge0 = preheatAt - cp0Min * MIN;
+  if (blockNightFree(fridge0, dMin)) return cp0Min;
+
+  // (a) Small trim: slide the cluster later so its head sits at 06:00.
+  const fridgeTrim = atLocal(fridge0, 6, 0) + dMin * MIN;
+  const cpTrim = Math.round((preheatAt - fridgeTrim) / MIN);
+  if (
+    blockNightFree(fridgeTrim, dMin) &&
+    cpTrim >= CP_MIN &&
+    cp0Min - cpTrim > 0 &&
+    cp0Min - cpTrim <= TRIM_CAP
+  ) {
+    return cpTrim;
+  }
+
+  // (b) Extend: fridge → 22:59 of the latest earlier day that clears the night.
+  for (const off of [0, -1, -2]) {
+    const fridgeExt = atLocal(dayShift(fridge0, off), 22, 59);
+    if (fridgeExt <= fridge0 && blockNightFree(fridgeExt, dMin)) {
+      const cpExt = Math.round((preheatAt - fridgeExt) / MIN);
+      if (cpExt <= CP_MAX) return cpExt;
+      break;
+    }
+  }
+
+  // (c) Best effort within caps — a night step may remain (caller warns).
+  const fallback = Math.round((preheatAt - atLocal(dayShift(fridge0, -1), 22, 59)) / MIN);
+  return Math.max(CP_MIN, Math.min(CP_MAX, fallback));
+}
+
+export interface NightPolicy {
+  avoidNight: boolean;
+  coldProof: 'adjust' | 'keep';
+  finish: 'snap' | 'keep';
+}
+
+export interface NightAdjustment {
+  applied: boolean;
+  targetColdProofMin: number;
+  effectiveColdProofMin: number;
+  coldProofChanged: boolean;
+  finishNudgedTo: number | null;
+  status: 'ok' | 'adjusted' | 'nightUnavoidable';
+  nightSteps: MilestoneId[];
+  note: string | null;
+}
+
+export interface SafeSchedule {
+  milestones: Milestone[];
+  adjustment: NightAdjustment;
+}
+
+const DEFAULT_NIGHT_POLICY: NightPolicy = { avoidNight: true, coldProof: 'adjust', finish: 'keep' };
+
+const atOf = (ms: Milestone[], id: MilestoneId): number => ms.find((m) => m.id === id)!.at;
+
+function buildNote(a: {
+  status: NightAdjustment['status'];
+  effectiveColdProofMin: number;
+  targetColdProofMin: number;
+  coldProofChanged: boolean;
+  finishNudgedTo: number | null;
+}): string | null {
+  if (a.status === 'nightUnavoidable') {
+    return 'Nogle trin falder mellem kl. 23 og 06 og kan ikke undgås med dit valgte færdig-tidspunkt — prøv et senere tidspunkt.';
+  }
+  const parts: string[] = [];
+  if (a.finishNudgedTo !== null) {
+    parts.push(
+      `Færdig-tidspunktet er rykket til ${formatDayTimeAbsolute(a.finishNudgedTo)}, så bagningen ikke sker om natten.`,
+    );
+  }
+  if (a.coldProofChanged) {
+    const verb = a.effectiveColdProofMin > a.targetColdProofMin ? 'forlænget' : 'forkortet';
+    parts.push(
+      `Koldhævningen er ${verb} til ${formatColdProof(a.effectiveColdProofMin)} ` +
+        `(du valgte ${a.targetColdProofMin / 60} t), så ingen trin falder mellem kl. 23 og 06.`,
+    );
+  }
+  return parts.length ? parts.join(' ') : null;
+}
+
+/**
+ * Compute the schedule and, unless disabled, adjust it so no human step lands
+ * in the night. Pure over `input`, so it re-runs automatically whenever the
+ * input changes (manual delays, finish edits) via the caller's memo.
+ */
+export function computeScheduleSafe(input: PlanInput, policyIn?: Partial<NightPolicy>): SafeSchedule {
+  const policy = { ...DEFAULT_NIGHT_POLICY, ...policyIn };
+  const cp0 = input.coldProofHours * 60;
+
+  if (!policy.avoidNight) {
+    return {
+      milestones: computeSchedule(input),
+      adjustment: {
+        applied: false,
+        targetColdProofMin: cp0,
+        effectiveColdProofMin: cp0,
+        coldProofChanged: false,
+        finishNudgedTo: null,
+        status: 'ok',
+        nightSteps: [],
+        note: null,
+      },
+    };
+  }
+
+  // (B) Finish feasibility — the morning cluster is pinned to the finish.
+  let finishAt = input.finishAt;
+  let finishNudgedTo: number | null = null;
+  const morningBad = [150, 105, 60].some((gap) => inNight(finishAt - gap * MIN));
+  if (morningBad && policy.finish === 'snap') {
+    finishAt = atLocal(input.finishAt, 8, 30); // preheat → 06:00
+    finishNudgedTo = finishAt;
+  }
+
+  // (A) Evening cluster — pick the effective cold proof.
+  const firstId: MilestoneId = input.hasActiveStarter ? 'mix' : 'feed';
+  const base = computeSchedule(input, { finishAt });
+  const preheatAt = atOf(base, 'preheat');
+  const dMin = (atOf(base, 'fridge') - atOf(base, firstId)) / MIN;
+  const effectiveColdProofMin = policy.coldProof === 'adjust' ? chooseColdProof(preheatAt, dMin, cp0) : cp0;
+
+  // Final schedule + residual-night audit.
+  const milestones = computeSchedule(input, { finishAt, coldProofMin: effectiveColdProofMin });
+  const present = new Set(milestones.map((m) => m.id));
+  const nightSteps = HUMAN_IDS.filter((id) => present.has(id) && inNight(atOf(milestones, id)));
+
+  const coldProofChanged = effectiveColdProofMin !== cp0;
+  const status: NightAdjustment['status'] = nightSteps.length
+    ? 'nightUnavoidable'
+    : coldProofChanged || finishNudgedTo !== null
+      ? 'adjusted'
+      : 'ok';
+
+  return {
+    milestones,
+    adjustment: {
+      applied: true,
+      targetColdProofMin: cp0,
+      effectiveColdProofMin,
+      coldProofChanged,
+      finishNudgedTo,
+      status,
+      nightSteps,
+      note: buildNote({ status, effectiveColdProofMin, targetColdProofMin: cp0, coldProofChanged, finishNudgedTo }),
+    },
+  };
 }

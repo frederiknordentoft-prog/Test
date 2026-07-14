@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "TZ=Europe/Copenhagen vitest run"
   },
   "dependencies": {
     "react": "^18.3.1",

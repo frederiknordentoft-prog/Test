@@ -100,3 +100,16 @@ export function defaultFinish(now: number = Date.now()): number {
   d.setHours(17, 0, 0, 0);
   return d.getTime();
 }
+
+/** Absolute weekday + date + time — for print/paper, where "I dag" is meaningless. */
+export function formatDayTimeAbsolute(ts: number): string {
+  return `${cap(weekdayFmt.format(ts))} d. ${dateFmt.format(ts)} kl. ${timeFmt.format(ts)}`;
+}
+
+/** Cold-proof duration as Danish text: "15 t 31 min" / "12 t". */
+export function formatColdProof(min: number): string {
+  const total = Math.max(0, Math.round(min));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return m === 0 ? `${h} t` : `${h} t ${m} min`;
+}
