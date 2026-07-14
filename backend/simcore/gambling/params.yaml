@@ -610,3 +610,47 @@ parameters:
     source: "Betsson 23.2 %, Entain online 25.3 %, Evoke ~18 % — competitive online EBIT margin band the P&L reproduces"
     confidence: green
     sensitivity: false
+
+  # ----------------------------------------------------------------------- #
+  # Investment / deal-returns (capital-fund lens) — LBO calibration anchors.
+  # These parameterise DealConfig (a per-analysis input, not a market-level
+  # config field), so they are reference anchors, not Morris-swept parameters.
+
+  - name: deal_entry_exit_multiple
+    value: 10.0
+    unit: EV_EBITDA
+    source: "Sector M&A 9-13× EBITDA (Kindred/FDJ 10.9×, Snai/Playtech 9.0×); DraftKings/Flutter trade richer"
+    confidence: yellow
+    sensitivity: false
+    note: "DealConfig entry_multiple/exit_multiple default; multiple expansion = exit − entry."
+
+  - name: deal_leverage_ebitda
+    value: 3.0
+    unit: net_debt_over_EBITDA
+    source: "PE buyout leverage typically 4-6× EBITDA; gaming deals often lower (regulatory/cash-flow risk). Default 3× conservative."
+    confidence: red
+    sensitivity: false
+    interval: [0.0, 6.0]
+
+  - name: deal_debt_rate_annual
+    value: 0.09
+    unit: fraction_per_year
+    source: "Leveraged-loan / high-yield cost of debt ~8-10 % for mid-market sponsor deals (2024-25 rates)"
+    confidence: yellow
+    sensitivity: false
+    interval: [0.06, 0.12]
+
+  - name: deal_hold_years
+    value: 5
+    unit: years
+    source: "Typical PE hold 3-7 years (buy, improve, exit); venture/greenfield often longer"
+    confidence: green
+    sensitivity: false
+    interval: [3, 7]
+
+  - name: deal_ltv_cac_anchor
+    value: 6.9
+    unit: ratio
+    source: "DraftKings CAC ~$371 / LTV ~$2,546 (~18-mo payback) — the acquisition economics a greenfield/challenger deal rests on"
+    confidence: yellow
+    sensitivity: false

@@ -35,7 +35,22 @@ import numpy as np
 
 from simcore.gambling.config import DealConfig, GamblingConfig, OperatorConfig
 from simcore.gambling.simulation import GamblingSimulation
-from simcore.models.config import SimConfig
+from simcore.models.config import EventConfig, SimConfig
+
+# Downside / thesis-risk scenarios: the shocks an IC stress-tests a hold
+# against. Each injects a mid-hold policy/market event (reusing the gambling
+# event library) and the tornado reports how much median IRR moves. Names are
+# the Danish labels shown in the UI.
+STRESS_SCENARIOS: list[dict] = [
+    {"id": "spilpakke", "name": "Spilpakke (reklame- + bonusstramning)",
+     "events": [{"event_type": "spilpakke_1", "magnitude": 1.0}]},
+    {"id": "tax_hike", "name": "Skatteforhøjelse (+10 pct-point)",
+     "events": [{"event_type": "tax_change", "magnitude": 1.0, "params": {"size": 0.10}}]},
+    {"id": "ai_boom", "name": "Vild AI (big-tech-indtræder)",
+     "events": [{"event_type": "ai_breakthrough", "magnitude": 1.0, "params": {"size": 0.45}}]},
+    {"id": "offshore", "name": "Offshore-bølge (håndhævelse svækkes)",
+     "events": [{"event_type": "offshore_surge", "magnitude": 1.0, "params": {"size": 0.30}}]},
+]
 
 # Deal-level summary keys aggregated into a distribution across seeds.
 DEAL_SUMMARY_KEYS = [
@@ -306,6 +321,39 @@ def deal_monte_carlo(base: SimConfig, deal: DealConfig, seeds: list[int],
         "nav_fan": nav_fan,
         "prob_loss": prob_loss,
     }
+
+
+def deal_stress_tornado(base: SimConfig, deal: DealConfig, seeds: list[int],
+                        baseline_median_irr: float | None = None,
+                        on_progress: Callable[[int, int], None] | None = None) -> list[dict]:
+    """Stress-test the deal against the thesis-risk scenarios and report how far
+    each moves the median IRR — the tornado an IC reads to see what kills the
+    return. Each scenario injects a mid-hold shock (a Spilpakke, a tax hike, a
+    wild-AI entrant, an offshore surge) via the normal event machinery."""
+    if baseline_median_irr is None:
+        base_mc = deal_monte_carlo(base, deal, seeds)
+        baseline_median_irr = base_mc["percentiles"]["deal_irr"]["median"]
+
+    shock_tick = max(1, deal.hold_years * 12 // 3)   # ~one-third into the hold
+    out: list[dict] = []
+    for i, sc in enumerate(STRESS_SCENARIOS):
+        cfg = base.model_copy(deep=True)
+        events = list(cfg.events)
+        for j, spec in enumerate(sc["events"]):
+            events.append(EventConfig(
+                name=sc["name"], event_type=spec["event_type"],
+                start_tick=shock_tick, magnitude=spec.get("magnitude", 1.0),
+                params=spec.get("params", {})))
+        cfg.events = events
+        mc = deal_monte_carlo(cfg, deal, seeds)
+        med = mc["percentiles"]["deal_irr"]["median"]
+        out.append({"id": sc["id"], "name": sc["name"],
+                    "scenario_irr": float(med),
+                    "irr_delta": float(med - baseline_median_irr)})
+        if on_progress is not None:
+            on_progress(i + 1, len(STRESS_SCENARIOS))
+    out.sort(key=lambda d: d["irr_delta"])   # most damaging first
+    return out
 
 
 def _nav_fan(navs: list[list[float]]) -> dict[str, list[float]]:

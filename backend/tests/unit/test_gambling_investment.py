@@ -8,15 +8,17 @@ supplied endogenously by the simulation. These tests pin the finance identities
 (IRR/MOIC, the value bridge, leverage amplification) and confirm the layer is a
 read-only overlay that never disturbs the baseline anchors.
 """
-import math
+import time
 
 import pytest
+from fastapi.testclient import TestClient
 
 from simcore.config.loader import load_preset
 from simcore.gambling.config import DealConfig
 from simcore.gambling.investment import (
     DEAL_SUMMARY_KEYS,
     deal_monte_carlo,
+    deal_stress_tornado,
     evaluate_deal,
     irr,
 )
@@ -145,3 +147,71 @@ def test_evaluate_does_not_mutate_base(base):
     assert base.ticks == before_ticks
     assert [o["operator_id"] if isinstance(o, dict) else o
             for o in (base.gambling or {}).get("operators", [])] == before_ops
+
+
+# --------------------------------------------------------------------------- #
+# Downside / thesis-risk tornado
+def test_stress_tornado_ranks_scenarios(base):
+    deal = DealConfig(archetype="buyout", target="unibet", hold_years=3, n_seeds=4)
+    seeds = [3000 + i for i in range(4)]
+    tor = deal_stress_tornado(base, deal, seeds)
+    assert len(tor) == 4                               # one per stress scenario
+    # sorted most-damaging first (ascending IRR delta)
+    assert tor == sorted(tor, key=lambda d: d["irr_delta"])
+    assert all("scenario_irr" in t and "irr_delta" in t for t in tor)
+
+
+# --------------------------------------------------------------------------- #
+# API exposure
+@pytest.fixture()
+def client(tmp_path, monkeypatch):
+    import api.runner as runner_mod
+
+    monkeypatch.setattr(runner_mod, "DB_PATH", str(tmp_path / "inv.db"))
+    from api.main import create_app
+
+    return TestClient(create_app())
+
+
+def test_api_investment_roundtrip(client):
+    body = {"preset_id": "dk_baseline",
+            "gambling_overrides": {"population": 200},
+            "deal": {"archetype": "buyout", "target": "unibet", "leverage": 3.0,
+                     "hold_years": 2, "n_seeds": 3},
+            "tornado": True, "tornado_seeds": 2}
+    r = client.post("/api/investment", json=body)
+    assert r.status_code == 200
+    inv_id = r.json()["inv_id"]
+    deadline = time.time() + 120
+    while time.time() < deadline:
+        data = client.get(f"/api/investment/{inv_id}").json()
+        if data["status"] in ("finished", "error"):
+            break
+        time.sleep(0.3)
+    assert data["status"] == "finished", data.get("error")
+    result = data["result"]
+    assert result["n_runs"] == 3
+    assert "deal_irr" in result["percentiles"] and "deal_moic" in result["percentiles"]
+    assert result["nav_fan"]["p50"] and result["bridge"]
+    assert len(result["tornado"]) == 4
+    assert client.get("/api/investment/nope").status_code == 404
+
+
+def test_api_investment_bad_target_is_422(client):
+    body = {"preset_id": "dk_baseline",
+            "deal": {"archetype": "buyout", "target": "does_not_exist", "n_seeds": 2}}
+    r = client.post("/api/investment", json=body)
+    # bad target surfaces when the deal runs; the create still validates the
+    # request shape (422 only if the deal fails at build). Accept either the
+    # 422 at request time or an error status after polling.
+    if r.status_code == 200:
+        inv_id = r.json()["inv_id"]
+        deadline = time.time() + 60
+        while time.time() < deadline:
+            data = client.get(f"/api/investment/{inv_id}").json()
+            if data["status"] in ("finished", "error"):
+                break
+            time.sleep(0.3)
+        assert data["status"] == "error"
+    else:
+        assert r.status_code == 422

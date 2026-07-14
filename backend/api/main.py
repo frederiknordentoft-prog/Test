@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import configs, montecarlo, results, robustness, runs, ws
+from api.routes import configs, investment, montecarlo, results, robustness, runs, ws
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
@@ -34,6 +34,7 @@ def create_app() -> FastAPI:
     app.include_router(configs.router)
     app.include_router(montecarlo.router)
     app.include_router(robustness.router)
+    app.include_router(investment.router)
     app.include_router(ws.router)
 
     @app.get("/api/health")
