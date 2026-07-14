@@ -1,0 +1,16 @@
+{
+  "name": "Surdej — Bageplan",
+  "short_name": "Surdej",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "lang": "da",
+  "background_color": "#f7f1e6",
+  "theme_color": "#b5661f",
+  "description": "Planlæg dit surdejsbrød baglæns fra det tidspunkt, det skal være færdigt.",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
