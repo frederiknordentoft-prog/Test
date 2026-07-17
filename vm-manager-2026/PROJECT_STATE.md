@@ -279,3 +279,22 @@ EV 2 kampe: Mbappé 307k · Messi 205k · Dembélé 149k · Maignan 122k · Koun
 Digne 79k · Rabiot 55k · Koné 20k · Spence 17k. KAPTAJN: MBAPPÉ (307k, klar).
 LÆRDOM: sidst i turneringen kollapser transfer-værdien — EV-horisonten er kort,
 men gebyret er konstant. "Gør intet" er ofte det rigtige træk i sidste runde.
+
+═══════════════════════════════════════════════════════════════════
+## 6F. R8-PLAN (16/7) — BRONZE (FRA-ENG 18/7) + FINALE (ESP-ARG 19/7)
+═══════════════════════════════════════════════════════════════════
+SF-RESULTAT: Spanien-Frankrig 2-0 · Argentina-England 2-1. Messi +197k i SF.
+Bruger UDFØRTE Koné→Tchouameni (godt call). Hold uændret ellers, bank 360k.
+Golden Boot: Mbappé 8 = Messi 8 → Mbappé spiller bronze trods Deschamps-rotation
+("I'm going to rotate, yes" — rollespillere i fare, Mbappé motiveret, beIN 17/7).
+Sim (r8_final.py): bronze FRA 67% (mus 1,65/1,05, åben kamp) · finale ESP 58%
+(mus 1,20/0,95). EV sidste kamp: Mbappé 164k · Messi 99k · Dembélé 61k ·
+Maignan 47k · Kounde 31k · Digne 29k · Tchouameni 24k · Rabiot 22k · Spence 10k.
+R8-BESLUTNING: INGEN TRANSFERS (igen). Bedste kandidat netto efter gebyr:
+Oyarzabal +11k — men ATT-pladserne er fulde og swap Dembélé→Oyar = −53k.
+Alle øvrige (Cubarsi/Simon/Tagliafico/...) negative ELLER passer ikke i budget
+(Ø+Berg+bank = 5,83m < billigste finalist-DEF 4,2m + tvungen filler 1,96m).
+KAPTAJN: MBAPPÉ (164k >> Messi 99k). TRIGGER-REGEL: viser L'Équipes forventede
+XI fredag at Mbappé IKKE starter bronze → skift kaptajn til Messi inden deadline
+(fredag ~23, FØR officielle opstillinger — beslut på forventede XI'er).
+SLUTSTATUS: 4.-plads forsvares med chalk hele vejen. Spillet slutter 19/7.
