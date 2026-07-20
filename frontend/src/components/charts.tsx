@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   Area,
   Bar,
@@ -48,6 +48,44 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
+const TIP_WIDTH = 300;
+
+/** ⓘ tooltip that can never be clipped: rendered position:fixed (its containing
+ *  block is the viewport, so `.card { overflow: auto }` cannot cut it) and
+ *  clamped to the screen edges. A user-reported bug: the old absolute-positioned
+ *  tip disappeared behind the card edge in the right grid column. */
+export function InfoTip({ text }: { text: string }) {
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+
+  const show = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - TIP_WIDTH - 12));
+    // Flip above the anchor when there is no room below.
+    const below = r.bottom + 8;
+    const top = below + 180 > window.innerHeight ? Math.max(8, r.top - 8 - 180) : below;
+    setPos({ left, top });
+  };
+
+  return (
+    <span
+      className="info-dot"
+      tabIndex={0}
+      aria-label={text}
+      onMouseEnter={(e) => show(e.currentTarget)}
+      onFocus={(e) => show(e.currentTarget)}
+      onMouseLeave={() => setPos(null)}
+      onBlur={() => setPos(null)}
+    >
+      ⓘ
+      {pos && (
+        <span className="info-tip-fixed" style={{ left: pos.left, top: pos.top }}>
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function ChartCard({ title, info, children }: {
   title: string; info?: string; children: ReactNode;
 }) {
@@ -73,11 +111,7 @@ export function ChartCard({ title, info, children }: {
     <div className="card" ref={ref}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <h3 style={{ flex: "0 1 auto", margin: 0 }}>{title}</h3>
-        {info && (
-          <span className="info-dot" tabIndex={0} aria-label={info}>
-            ⓘ<span className="info-tip">{info}</span>
-          </span>
-        )}
+        {info && <InfoTip text={info} />}
         <span style={{ flex: 1 }} />
         <button
           onClick={downloadSvg}
@@ -229,6 +263,13 @@ export function FanChart({
   const data = ticks.map((t, i) => ({
     tick: t, p5: p5[i], p50: p50[i], band: p95[i] - p5[i],
   }));
+  // Stacked areas pin the y-axis to 0, which wastes the plot for large-kr
+  // series ("markedsstørrelsen starter på 0 kr" — user report). Anchor the
+  // axis to the data instead (include the reality anchor when present).
+  const lo = Math.min(...p5, ...(anchor != null ? [anchor] : []));
+  const hi = Math.max(...p95, ...(anchor != null ? [anchor] : []));
+  const pad = (hi - lo) * 0.06 || Math.abs(hi) * 0.05 || 1;
+  const yDomain: [number, number] = [lo - pad, hi + pad];
   const anchorInBand = anchor != null && anchor >= p5[0] * 0.9 && anchor <= p95[0] * 1.1;
   const label = (t: number) =>
     anchorYear != null ? `${anchorYear + Math.round(t / 12)}` : `md ${t}`;
@@ -239,7 +280,8 @@ export function FanChart({
         <XAxis dataKey="tick" stroke={MUTED} tick={{ fontSize: 11, fill: MUTED }} tickLine={false}
           tickFormatter={xLabelMode === "year" ? label : undefined} />
         <YAxis stroke={MUTED} tick={{ fontSize: 11, fill: MUTED }} tickLine={false} width={56}
-          domain={["auto", "auto"]} tickFormatter={(v: number) => axisDa(v, unit)} />
+          domain={yDomain} allowDataOverflow
+          tickFormatter={(v: number) => axisDa(v, unit)} />
         <Tooltip
           contentStyle={tooltipStyle}
           labelStyle={{ color: MUTED }}

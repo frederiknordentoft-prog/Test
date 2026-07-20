@@ -35,6 +35,8 @@ export function GamblingDashboard() {
      "Danske Spils andel af HELE spilmarkedet inkl. offshore — monopolet på lotteri/skrab trækker den op."],
     ["DS andel (liberaliseret)", formatDa(last.ds_share_liberalized, "pct"),
      "Danske Spils andel af det liberaliserede, licenserede marked (online casino + sportsbetting) — dér, hvor DS reelt konkurrerer."],
+    ["DS andel (lotteri)", formatDa(last.ds_share_lottery, "pct"),
+     "Danske Spils andel af lotterimarkedet. Monopolet holder den tæt på 100 % — resten er offshore-lækage (udenlandske lotto-sider)."],
     ["Kanalisering", formatDa(last.channelization, "pct"),
      "Andelen af spillet, der foregår hos licenserede danske udbydere. Omstridt tal — vises som korridoren 72–92 % i grafen."],
     ["Marked, rullende 12 mdr.", formatDa(rolling[rolling.length - 1]?.roll_market_size_total as number * 1000, "mio_kr"),
@@ -42,7 +44,7 @@ export function GamblingDashboard() {
     ["Kunder (unikke, est.)", formatDa(last.customers_total, "antal"),
      "Estimeret antal unikke kunder på tværs af alle spor og udbydere. Kalibreret: ~1,4 mio. lotterikunder, nogle hundrede tusinde pr. liberaliseret spor — af ~4,5 mio. voksne danskere."],
     ["Licenserede udbydere", formatDa(last.n_licensees, "antal"),
-     "Antal repræsenterede licensindehavere: 5 navngivne agenter + ~35 i den aggregerede long-tail (Spillemyndighedens register: 54 inkl. begrænsede licenser)."],
+     "Antal repræsenterede licensindehavere: 8 navngivne agenter + ~32 i den aggregerede long-tail (Spillemyndighedens register: 54 inkl. begrænsede licenser)."],
     ["DS EBIT-margin", formatDa(last.ds_ebit_margin, "pct"),
      "Danske Spils driftsmargin (EBIT/GGR) i modellen. Kalibreret mod årsrapporten (~39 %): monopolet på lotteri/skrab er meget profitabelt, mens den liberaliserede del kræver markedsføring og bonus og tjener mindre."],
     ["Konkurrenternes EBIT-margin", formatDa(last.industry_ebit_margin, "pct"),
@@ -107,7 +109,7 @@ export function GamblingDashboard() {
 
         <ChartCard
           title="Danske Spils markedsandel"
-          info="'Samlet' = andel af hele markedet (løftet af lotteri-monopolet). 'Liberaliseret' = andel af det licenserede casino+sport-marked, hvor DS konkurrerer på lige vilkår — det mest ærlige konkurrence-tal."
+          info="'Samlet' = andel af hele markedet (løftet af lotteri-monopolet). 'Liberaliseret' = andel af det licenserede casino+sport-marked, hvor DS konkurrerer på lige vilkår — det mest ærlige konkurrence-tal. 'Lotteri' = monopolets andel af lotterimarkedet (resten er offshore-lækage)."
         >
           <MetricChart
             data={history}
@@ -118,8 +120,33 @@ export function GamblingDashboard() {
             series={[
               { key: "ds_share_total", name: "Samlet", color: COLORS.ds },
               { key: "ds_share_liberalized", name: "Liberaliseret marked", color: COLORS.prediction },
+              { key: "ds_share_lottery", name: "Lotteri", color: COLORS.lottery },
               { key: "ds_share_casino", name: "Casino", color: COLORS.casino },
               { key: "ds_share_sports", name: "Sport", color: COLORS.sports },
+            ]}
+          />
+        </ChartCard>
+
+        <ChartCard
+          title="Operatørernes markedsandele"
+          info="Hver navngiven operatørs andel af HELE markedet (inkl. offshore). 'Øvrige licenshavere' er ét aggregat af ~32 små licenser. Ingen officiel kilde findes for operatør-andele — niveauerne er kalibrerede antagelser; dynamikken (hvem vinder/taber under chok) er modellens udsagn."
+        >
+          <MetricChart
+            data={history}
+            events={events}
+            unit="pct"
+            xLabel="md"
+            series={[
+              { key: "share_op_ds_lotteri", name: "DS Lotteri", color: COLORS.lottery },
+              { key: "share_op_ds_licens", name: "DS Licens", color: COLORS.ds },
+              { key: "share_op_betano", name: "Betano", color: COLORS.prediction },
+              { key: "share_op_bet365", name: "bet365", color: COLORS.competitors },
+              { key: "share_op_unibet", name: "Unibet", color: COLORS.sports },
+              { key: "share_op_leovegas", name: "LeoVegas", color: COLORS.ai },
+              { key: "share_op_betsson", name: "Betsson", color: COLORS.harmMeasured },
+              { key: "share_op_mrgreen", name: "Mr Green", color: COLORS.scratch },
+              { key: "share_op_longtail", name: "Øvrige (~32)", color: COLORS.neutral },
+              { key: "share_op_offshore", name: "Offshore", color: COLORS.offshore },
             ]}
           />
         </ChartCard>
@@ -145,19 +172,19 @@ export function GamblingDashboard() {
 
         <ChartCard
           title="Kunder pr. spor"
-          info="Estimeret antal kunder pr. produktspor på tværs af ALLE udbydere (stablet). Kalibreret til danske niveauer: ~1,4 mio. lotterikunder, ~450-500.000 på casino og sport. Politik, AI og nye konkurrenter flytter tallene."
+          info="Estimeret antal kunder pr. produktspor på tværs af ALLE udbydere. VIGTIGT: linjerne må IKKE lægges sammen — den samme person tæller med i flere spor (spiller både lotto og casino). 'Unikke' er det reelle antal forskellige mennesker. Kalibreret: ~1,4 mio. lotterikunder, ~400-550.000 pr. liberaliseret spor."
         >
           <MetricChart
             data={history}
             events={events}
             unit="antal"
             xLabel="md"
-            stacked
             series={[
-              { key: "customers_casino", name: "Casino", color: COLORS.casino },
-              { key: "customers_sports", name: "Sport", color: COLORS.sports },
+              { key: "customers_total", name: "Unikke (på tværs af spor)", color: COLORS.ds },
               { key: "customers_lottery", name: "Lotteri", color: COLORS.lottery },
               { key: "customers_scratch", name: "Skrab", color: COLORS.scratch },
+              { key: "customers_sports", name: "Sport", color: COLORS.sports },
+              { key: "customers_casino", name: "Casino", color: COLORS.casino },
             ]}
           />
         </ChartCard>

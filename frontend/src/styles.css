@@ -247,12 +247,12 @@ details[open].card > summary::before { content: "▾ "; }
   cursor: help;
   user-select: none;
 }
-.info-dot .info-tip {
-  display: none;
-  position: absolute;
-  left: 0;
-  top: 20px;
-  z-index: 50;
+/* position: fixed — the containing block is the viewport, so the card's
+   overflow clip cannot cut the tooltip (user report: "forsvinder bag kanter").
+   Coordinates are set inline by InfoTip, clamped to the screen edges. */
+.info-tip-fixed {
+  position: fixed;
+  z-index: 200;
   width: 300px;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -262,11 +262,7 @@ details[open].card > summary::before { content: "▾ "; }
   line-height: 1.5;
   color: var(--text-secondary);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
-}
-.info-dot:hover .info-tip,
-.info-dot:focus .info-tip,
-.info-dot:focus-visible .info-tip {
-  display: block;
+  pointer-events: none;
 }
 .info-mini { color: var(--text-muted); font-size: 10px; }
 

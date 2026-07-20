@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "../api/client";
 import type { CustomEvent, Preset, SavedConfig, ScenarioInfo } from "../api/types";
+import { InfoTip } from "../components/charts";
 import { useSimStore } from "../store/simStore";
 import { EVENT_LABELS, toast } from "../format";
 
@@ -31,13 +32,27 @@ function top5Share(sigma: number): number {
   return TOP5_MAP[TOP5_MAP.length - 1][1];
 }
 
-/** Operator-strategy panel defaults (mirror DEFAULT_OPERATORS in the backend). */
+/** Operator-strategy panel defaults (mirror DEFAULT_OPERATORS in the backend).
+ *  All named operators are adjustable — the user asked "is Betano the only one
+ *  you can tune?"; now the whole named field is. */
 const OP_DEFAULTS: Record<string, { name: string; marketing: number; bonus: number;
   ai_adoption: number; aggressiveness: number }> = {
+  ds_lotteri: { name: "Danske Spil (Lotteri-monopol)", marketing: 0.70, bonus: 0.10,
+                ai_adoption: 0.08, aggressiveness: 0.50 },
   ds_licens: { name: "Danske Spil (Licens)", marketing: 0.70, bonus: 0.35,
                ai_adoption: 0.08, aggressiveness: 0.50 },
+  bet365: { name: "bet365", marketing: 0.60, bonus: 0.60,
+            ai_adoption: 0.08, aggressiveness: 0.50 },
+  unibet: { name: "Unibet (FDJ)", marketing: 0.60, bonus: 0.60,
+            ai_adoption: 0.08, aggressiveness: 0.50 },
   betano: { name: "Betano (udfordrer)", marketing: 0.92, bonus: 0.90,
             ai_adoption: 0.08, aggressiveness: 0.92 },
+  leovegas: { name: "LeoVegas (MGM)", marketing: 0.52, bonus: 0.62,
+              ai_adoption: 0.08, aggressiveness: 0.50 },
+  betsson: { name: "Betsson / NordicBet", marketing: 0.50, bonus: 0.58,
+             ai_adoption: 0.08, aggressiveness: 0.50 },
+  mrgreen: { name: "Mr Green (Evoke)", marketing: 0.45, bonus: 0.58,
+             ai_adoption: 0.08, aggressiveness: 0.50 },
 };
 
 export function SetupPage({ onCreated }: { onCreated: () => void }) {
@@ -357,9 +372,7 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
                         <span className={`chip realism-${t.realism === "høj" ? "high" : t.realism === "middel" ? "mid" : "low"}`}>
                           {t.realism === "høj" ? "realistisk" : t.realism === "middel" ? "plausibel" : "spekulativ"}
                         </span>
-                        <span className="info-dot" tabIndex={0} aria-label={t.desc}>
-                          ⓘ<span className="info-tip">{t.desc}</span>
-                        </span>
+                        <InfoTip text={t.desc} />
                       </label>
                       {active && (
                         <div className="trend-slider">
@@ -399,7 +412,9 @@ export function SetupPage({ onCreated }: { onCreated: () => void }) {
             </div>
 
             <div className="lever-group">
-              <div className="lever-group-title">Operatør-strategier — Danske Spil vs. udfordreren</div>
+              <div className="lever-group-title">
+                Operatør-strategier — alle 8 navngivne operatører (long-tail på ~32 licenser justeres ikke enkeltvis)
+              </div>
               <div className="grid grid-2">
                 {Object.entries(ops).map(([oid, v]) => (
                   <div key={oid} style={{ minWidth: 260 }}>
