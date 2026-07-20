@@ -7,6 +7,7 @@ import { MonteCarloPage } from "./pages/MonteCarloPage";
 import { RunPage } from "./pages/RunPage";
 import { SetupPage } from "./pages/SetupPage";
 import { useSimStore } from "./store/simStore";
+import { APP_VERSION } from "./version";
 
 type View = "intro" | "setup" | "run" | "montecarlo" | "forecast" | "investeringscase" | "compare";
 
@@ -32,16 +33,18 @@ export default function App() {
           eksplorativ agentbaseret simulation — ikke et prognoseværktøj
         </span>
         <div className="spacer" />
-        {NAV.map((n) => (
-          <button
-            key={n.id}
-            className={view === n.id ? "primary" : ""}
-            disabled={n.id === "run" && !runId}
-            onClick={() => setView(n.id)}
-          >
-            {n.label}
-          </button>
-        ))}
+        <nav className="nav">
+          {NAV.map((n) => (
+            <button
+              key={n.id}
+              className={view === n.id ? "active" : ""}
+              disabled={n.id === "run" && !runId}
+              onClick={() => setView(n.id)}
+            >
+              {n.label}
+            </button>
+          ))}
+        </nav>
       </div>
       {view === "intro" && <IntroPage onStart={() => setView("setup")} />}
       {view === "setup" && <SetupPage onCreated={() => setView("run")} />}
@@ -50,6 +53,13 @@ export default function App() {
       {view === "forecast" && <ForecastPage />}
       {view === "investeringscase" && <InvesteringscasePage />}
       {view === "compare" && <ComparePage />}
+      <footer className="app-footer">
+        <span>Agent Market Simulator</span>
+        <span className="dot">·</span>
+        <span className="ver">v{APP_VERSION}</span>
+        <span className="dot">·</span>
+        <span>Danske Spil branch-foresight — illustrativ, ikke et prognoseværktøj</span>
+      </footer>
     </>
   );
 }
