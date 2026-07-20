@@ -121,6 +121,20 @@ def test_a_bleeding_entrant_can_exit_on_cash():
     assert cash_exits, "a bleeding entrant on a 1-mio runway should exit on cash"
 
 
+def test_established_incumbent_does_not_cash_fold():
+    """An established t0 incumbent (Betano — aggressive burn, but a going concern
+    with a parent balance sheet) must NEVER be force-exited by cash exhaustion.
+    Only operators that entered with a raised-capital runway can fold on cash."""
+    sim = _sim(ticks=72, entry_enabled=True)
+    cash_exits = [e["operator_id"] for e in sim.entry.events
+                  if e["kind"] == "exit" and "cash" in e["detail"]]
+    # Every cash-driven exit must be an operator that actually entered.
+    for oid in cash_exits:
+        assert oid in sim.entry.entered, f"t0 incumbent '{oid}' folded on cash — it has no runway"
+    # Betano is a named t0 incumbent → it may be acquired (M&A) but never cash-folds.
+    assert "betano" not in cash_exits
+
+
 # --------------------------------------------------------------------------- #
 # Metrics + API exposure
 def test_economics_metrics_emitted():

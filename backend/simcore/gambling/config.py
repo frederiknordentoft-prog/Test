@@ -155,9 +155,13 @@ DEFAULT_OPERATORS: list[dict] = [
     {"operator_id": "betsson", "name": "Betsson / NordicBet", "kind": "licensed",
      "tracks": ["sports", "casino"], "payout": 0.59, "product_breadth": 0.62, "bonus": 0.58,
      "brand": 0.55, "marketing_reach": 0.50, "friction": 0.50, "protection": 0.66, "tax_free": True},
+    # appeal 0.35: Mr Green is casino-only and the smallest named brand; without
+    # the offset it dips just under the survival floor and exits in month 5,
+    # which defeats the point of naming it. Keeps it a small-but-present ~2 %.
     {"operator_id": "mrgreen", "name": "Mr Green (Evoke)", "kind": "licensed",
      "tracks": ["casino"], "payout": 0.58, "product_breadth": 0.58, "bonus": 0.58,
-     "brand": 0.48, "marketing_reach": 0.45, "friction": 0.50, "protection": 0.68, "tax_free": True},
+     "brand": 0.48, "marketing_reach": 0.45, "friction": 0.50, "protection": 0.68,
+     "tax_free": True, "appeal": 0.35},
     # appeal 0.55: the block is an *aggregate* of ~32 small licensees — each is
     # tiny, but together they hold a visible slice; without the offset the
     # softmax squashes the low-brand aggregate to ~1 % which misreads the tail.

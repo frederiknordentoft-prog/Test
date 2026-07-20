@@ -134,7 +134,11 @@ class EntryManager:
     def _enter(self, tick: int, market: AttractionMarket, ai: AIDiffusion,
                ent: EntrantConfig, target: str | None = None) -> None:
         op = OperatorConfig(**{k: getattr(ent, k) for k in OperatorConfig.model_fields})
-        op.entry_tick = tick   # ramp effective brand/reach from a low base
+        # Greenfield ramps brand/reach from a low base; an M&A acquirer inherits
+        # the target's ESTABLISHED position (a strong brand it just bought), so
+        # it must NOT ramp from the floor — otherwise a strong acquired brand
+        # (e.g. bet365) collapses to a survival-exit weeks later.
+        op.entry_tick = None if target is not None else tick
         runway = ent.entry_cost * self.gcfg.econ_runway_multiple + self.gcfg.econ_runway
         if target is not None:
             ai.drop(target)
@@ -180,7 +184,12 @@ class EntryManager:
             # unsustainable and folds even if its share is still respectable
             # (the DraftKings/Kindred pattern — share bought on unsustainable
             # spend). This is a *separate* exit path from the survival rule.
-            if self.economics is not None and self.economics.cash_exhausted(op.operator_id):
+            # Applies ONLY to operators that actually ENTERED with a raised-capital
+            # runway — an established t0 incumbent (e.g. Betano/Kaizen) has a
+            # parent balance sheet, so it pulls back commercially (operators.py
+            # reallocation) rather than folding on a few months of marketing burn.
+            if (self.economics is not None and op.operator_id in self.entered
+                    and self.economics.cash_exhausted(op.operator_id)):
                 market.remove_operator(op.operator_id)
                 ai.drop(op.operator_id)
                 self.economics.drop(op.operator_id)
