@@ -85,7 +85,8 @@ def _gambling_report(sim) -> str:
     figs.append(_line_fig(
         ticks,
         {"DS samlet andel": col("ds_share_total"),
-         "DS andel, liberaliseret marked": col("ds_share_liberalized")},
+         "DS andel, liberaliseret marked": col("ds_share_liberalized"),
+         "DS andel, lotterimarkedet": col("ds_share_lottery")},
         "Danske Spils markedsandel", events=starts, ytitle="andel"))
     figs.append(_line_fig(
         ticks,
@@ -94,10 +95,13 @@ def _gambling_report(sim) -> str:
          "korridor høj (92 %)": col("channelization_high"),
          "Offshore-andel": col("offshore_share")},
         "Kanalisering — omstridt interval, ikke et punkt", events=starts, ytitle="andel"))
+    customer_series = {track_names[t.track_id]: col(f"customers_{t.track_id}")
+                       for t in g.tracks}
+    customer_series["Unikke kunder (på tværs af spor)"] = col("customers_total")
     figs.append(_line_fig(
-        ticks,
-        {track_names[t.track_id]: col(f"customers_{t.track_id}") for t in g.tracks},
-        "Kunder pr. spor (alle udbydere)", events=starts, ytitle="personer"))
+        ticks, customer_series,
+        "Kunder pr. spor (alle udbydere; en kunde kan tælle i flere spor)",
+        events=starts, ytitle="personer"))
     figs.append(_line_fig(
         ticks,
         {"Målt skade": col("measured_harm"), "Sand skade": col("true_harm"),
@@ -117,6 +121,7 @@ def _gambling_report(sim) -> str:
     kpis = [
         ("DS markedsandel (samlet)", f'{m_end.get("ds_share_total", 0) * 100:.1f} %'),
         ("DS andel, liberaliseret marked", f'{m_end.get("ds_share_liberalized", 0) * 100:.1f} %'),
+        ("DS andel, lotterimarkedet", f'{m_end.get("ds_share_lottery", 0) * 100:.1f} %'),
         ("Kanalisering", f'{m_end.get("channelization", 0) * 100:.1f} %'),
         ("Marked, rullende 12 mdr.", f'{_rolling12(col("market_size_total"))[-1] / 1000:.1f} mia. kr.' if mh else "—"),
         ("Kunder (unikke, est.)", f'{m_end.get("customers_total", 0):,.0f}'.replace(",", ".")),

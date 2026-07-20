@@ -47,6 +47,8 @@ def export_run(conn: sqlite3.Connection, run_id: str, out_dir: str | Path,
             df.to_parquet(path, index=False)
         else:
             path = out / f"{run_id}_{table}.csv"
-            df.to_csv(path, index=False, encoding="utf-8")
+            # utf-8-sig (BOM): Excel on Windows guesses cp1252 for BOM-less CSV
+            # and renders "små" as "smÃ¥" — the BOM makes it autodetect UTF-8.
+            df.to_csv(path, index=False, encoding="utf-8-sig")
         written.append(str(path))
     return written

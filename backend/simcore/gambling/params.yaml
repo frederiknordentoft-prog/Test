@@ -411,17 +411,25 @@ parameters:
     note: "Baseline customers per vertical are anchored here; the choice model moves them."
 
   - name: customer_anchor_casino
-    value: 450000
+    value: 400000
     unit: persons
-    source: "Estimate: a few hundred thousand across all providers (300-800k band)"
+    source: "Estimate: a few hundred thousand across all providers (300-800k band); user feedback round 2 -> low-mid of band"
     confidence: red
     sensitivity: true
     interval: [300000, 800000]
 
   - name: customer_anchor_sports
-    value: 500000
+    value: 450000
     unit: persons
-    source: "Estimate: a few hundred thousand across all providers (300-800k band)"
+    source: "Estimate: a few hundred thousand across all providers (300-800k band); user feedback round 2 -> low-mid of band"
+    confidence: red
+    sensitivity: true
+    interval: [300000, 800000]
+
+  - name: customer_anchor_scratch
+    value: 550000
+    unit: persons
+    source: "Estimate: scratch reaches broader than casino/sports but far below lottery; user feedback round 2 (was 700k, read as too high)"
     confidence: red
     sensitivity: true
     interval: [300000, 800000]
@@ -432,7 +440,7 @@ parameters:
     source: "Spillemyndigheden tilladelsesindehaver-register (juni 2026): 23 casino+betting, 12 kun casino, 14 begrænset casino, 5 kun betting"
     confidence: green
     sensitivity: false
-    note: "~40 full-scale operators; the model names 5 as agents and aggregates ~35 in the long tail (longtail_licensees)."
+    note: "~40 full-scale operators; the model names 8 as agents (incl. LeoVegas/Betsson/Mr Green) and aggregates ~32 in the long tail (longtail_licensees)."
 
   - name: dk_ggr_per_adult_eur
     value: 420

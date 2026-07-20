@@ -95,6 +95,12 @@ class EntryManager:
         for op in market.operators:
             if not op.licensed or op.is_ds or op.operator_id not in agg:
                 continue
+            if op.operator_id == "longtail":
+                # The long tail is an *aggregate* of ~32 independent licensees —
+                # not a single company one deal can buy (same category error the
+                # exit rule guards against). Real consolidators buy one strong
+                # brand (FDJ/Kindred), not "all the small firms at once".
+                continue
             monthly_profit = agg[op.operator_id] * margin
             price = self.gcfg.acquisition_multiple * monthly_profit * 12.0
             cap_uplift = max(0.0, ent.ai_cap0 - ai.cap.get(op.operator_id, 0.0))

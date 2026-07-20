@@ -29,6 +29,42 @@ def test_gambling_html_report_generates():
     assert "Spilmarkeds-rapport" in html
     assert "rullende 12" in html
     assert "Kanalisering" in html and "parameterregistret" in html.lower() or "Parameterregister" in html
+    # Feedback round 2: DS lottery share + unique-customers line in the report.
+    assert "lotterimarkedet" in html
+    assert "Unikke kunder" in html
+
+
+def test_report_survives_server_restart(tmp_path, monkeypatch):
+    """Feedback round 2 ("HTML virker ikke"): after a server restart the report
+    button opened a raw 404-JSON tab, because /report only knew in-memory runs.
+    It must now rebuild the report from the database — and show a friendly
+    Danish error page for a genuinely unknown run, never raw JSON."""
+    import api.runner as runner_mod
+
+    db = str(tmp_path / "restart.db")
+    monkeypatch.setattr(runner_mod, "DB_PATH", db)
+
+    # A recorded run, as the UI would have created it — then "restart": the
+    # registry has no handle, only the database remains.
+    cfg = load_preset("dk_baseline")
+    cfg.ticks = 6
+    cfg.gambling = {**(cfg.gambling or {}), "ai_enabled": False, "entry_enabled": False,
+                    "rofus_enabled": False}
+    sim = GamblingSimulation(cfg, db_path=db)
+    sim.run()
+
+    from api.main import create_app
+    client = TestClient(create_app())
+
+    r = client.get(f"/api/runs/{sim.run_id}/report")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "Spilmarkeds-rapport" in r.text
+
+    r = client.get("/api/runs/does-not-exist/report")
+    assert r.status_code == 404
+    assert "text/html" in r.headers["content-type"]
+    assert "Rapporten kan ikke vises" in r.text     # friendly page, not raw JSON
 
 
 def test_customer_counts_match_danish_anchors_at_baseline():
@@ -36,13 +72,14 @@ def test_customer_counts_match_danish_anchors_at_baseline():
     a few hundred thousand each — not millions (user feedback)."""
     sim = _sim(ticks=6)
     m0 = sim.metrics_history[0]
+    # Feedback round 2: low-mid of the user's 300-800k band per liberalized vertical.
     assert m0["customers_lottery"] == pytest.approx(1_400_000, rel=1e-6)
-    assert m0["customers_scratch"] == pytest.approx(700_000, rel=1e-6)
-    assert m0["customers_casino"] == pytest.approx(450_000, rel=1e-6)
-    assert m0["customers_sports"] == pytest.approx(500_000, rel=1e-6)
+    assert m0["customers_scratch"] == pytest.approx(550_000, rel=1e-6)
+    assert m0["customers_casino"] == pytest.approx(400_000, rel=1e-6)
+    assert m0["customers_sports"] == pytest.approx(450_000, rel=1e-6)
     # unique respects overlap: below the sum, above the biggest vertical
     total = m0["customers_total"]
-    assert m0["customers_lottery"] < total < 3_050_000
+    assert m0["customers_lottery"] < total < 2_800_000
     assert total < 1_500_000 * 1.5   # sanity vs the adult population
 
 

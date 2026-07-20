@@ -54,7 +54,7 @@ def main() -> None:
         out = Path(args.out)
         out.mkdir(parents=True, exist_ok=True)
         path = out / f"montecarlo_{cfg.name.replace(' ', '_')}.json"
-        path.write_text(json.dumps(result, indent=2))
+        path.write_text(json.dumps(result, indent=2), encoding="utf-8")
         print(f"full result -> {path}")
         return
 

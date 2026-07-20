@@ -211,14 +211,83 @@ def export(run_id: str, fmt: str = "csv"):
     return {"files": files, "directory": str(out_dir.resolve())}
 
 
+class _ReportShim:
+    """Just enough of a gambling sim for ``generate_report`` when the live run
+    is gone (server restarted): config + metrics + events reloaded from SQLite.
+    The report button used to open a raw 404-JSON tab in exactly that case —
+    a user-reported "rapporten virker ikke"."""
+
+    def __init__(self, run_id: str, config, metrics_history: list[dict], events: list):
+        from simcore.gambling.config import GamblingConfig
+
+        self.run_id = run_id
+        self.config = config
+        self.gcfg = GamblingConfig.model_validate(config.gambling or {})
+        self.metrics_history = metrics_history
+        self.events_log = events
+        self.tick = (metrics_history[-1]["tick"] + 1) if metrics_history else 0
+
+
+def _report_shim_from_db(run_id: str) -> "_ReportShim | None":
+    import json as _json
+
+    from api.runner import DB_PATH
+    from simcore.events.scheduler import EventRecord
+    from simcore.models.config import SimConfig
+    from simcore.persistence.db import connect
+
+    conn = connect(DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT config_json FROM runs WHERE run_id=?", (run_id,)).fetchone()
+        if row is None:
+            return None
+        config = SimConfig(**_json.loads(row[0]))
+        if getattr(config, "sim_domain", "finance") != "gambling":
+            return None   # the finance report needs the live market/actors
+        try:
+            history = _metrics_from_db(run_id)
+        except HTTPException:
+            return None
+        events = [
+            EventRecord(tick=t, name=n, event_type=et, magnitude=m or 1.0,
+                        phase=p or "start", payload=_json.loads(pj) if pj else {})
+            for t, n, et, m, p, pj in conn.execute(
+                "SELECT tick, name, event_type, magnitude, phase, payload_json "
+                "FROM events WHERE run_id=? ORDER BY tick", (run_id,)).fetchall()
+        ]
+        return _ReportShim(run_id, config, history, events)
+    finally:
+        conn.close()
+
+
+def _report_error_page(run_id: str) -> str:
+    return f"""<!doctype html><html><head><meta charset="utf-8">
+<title>Rapport ikke tilgængelig</title></head>
+<body style="font-family: -apple-system, 'Segoe UI', sans-serif; max-width: 640px;
+margin: 60px auto; line-height: 1.6;">
+<h1 style="font-size: 20px;">Rapporten kan ikke vises</h1>
+<p>Kørslen <code>{run_id}</code> findes hverken i serverens hukommelse eller i
+databasen (eller er en finans-kørsel, hvis rapport kræver den kørende simulation).</p>
+<p><b>Løsning:</b> gå tilbage til appen, kør en ny simulation, og klik på
+rapport-knappen igen, mens serveren stadig kører.</p>
+</body></html>"""
+
+
 @router.get("/{run_id}/report")
 def report(run_id: str):
     from fastapi.responses import HTMLResponse
 
     from simcore.persistence.report import generate_report
 
-    h = _handle(run_id)
-    html = generate_report(h.sim)
+    try:
+        sim = REGISTRY.get(run_id).sim
+    except KeyError:
+        shim = _report_shim_from_db(run_id)   # archived run (server restarted)
+        if shim is None:
+            return HTMLResponse(_report_error_page(run_id), status_code=404)
+        sim = shim
+    html = generate_report(sim)
     out_dir = EXPORT_DIR / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "report.html").write_text(html, encoding="utf-8")

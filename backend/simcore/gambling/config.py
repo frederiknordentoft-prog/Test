@@ -126,14 +126,15 @@ DEFAULT_OPERATORS: list[dict] = [
     {"operator_id": "ds_lotteri", "name": "Danske Lotteri Spil", "kind": "ds_monopoly",
      "tracks": ["lottery", "scratch"], "payout": 0.50, "product_breadth": 0.50, "bonus": 0.10,
      "brand": 0.95, "marketing_reach": 0.70, "friction": 0.40, "protection": 0.85, "tax_free": True},
-    # appeal 0.65 calibrates DS's competitive share so total DS BSI hits the
-    # green 5.16 bn/yr anchor (Danske Spil annual report 2025) — DS is the
-    # largest licensed operator; the generic attrs alone understated it (~14 %
-    # of the competitive segment vs the ~39 % the anchor implies).
+    # appeal calibrates DS's competitive share so total DS BSI hits the green
+    # 5.16 bn/yr anchor (Danske Spil annual report 2025) — DS is the largest
+    # licensed operator; the generic attrs alone understated it (~14 % of the
+    # competitive segment vs the ~39 % the anchor implies). Re-tuned 0.65→0.74
+    # when LeoVegas/Betsson/Mr Green were added (they dilute every incumbent).
     {"operator_id": "ds_licens", "name": "Danske Licens Spil", "kind": "ds_licensed",
      "tracks": ["casino", "sports"], "payout": 0.55, "product_breadth": 0.60, "bonus": 0.35,
      "brand": 0.90, "marketing_reach": 0.70, "friction": 0.50, "protection": 0.90,
-     "tax_free": True, "appeal": 0.65},
+     "tax_free": True, "appeal": 0.82},
     # Licensed competitors.
     {"operator_id": "bet365", "name": "bet365", "kind": "licensed",
      "tracks": ["sports", "casino"], "payout": 0.60, "product_breadth": 0.70, "bonus": 0.60,
@@ -145,9 +146,25 @@ DEFAULT_OPERATORS: list[dict] = [
      "tracks": ["sports", "casino"], "payout": 0.62, "product_breadth": 0.70, "bonus": 0.90,
      "brand": 0.58, "marketing_reach": 0.92, "friction": 0.50, "protection": 0.65,
      "tax_free": True, "aggressiveness": 0.92},
+    # Mid-tier named brands (feedback round 2: "kun 8 operatører?" — the market
+    # felt empty). Carved out of the long tail: real DK-licensed operators with
+    # moderate attributes, so the operator landscape reads like the actual one.
+    {"operator_id": "leovegas", "name": "LeoVegas (MGM)", "kind": "licensed",
+     "tracks": ["casino", "sports"], "payout": 0.59, "product_breadth": 0.62, "bonus": 0.62,
+     "brand": 0.52, "marketing_reach": 0.52, "friction": 0.50, "protection": 0.65, "tax_free": True},
+    {"operator_id": "betsson", "name": "Betsson / NordicBet", "kind": "licensed",
+     "tracks": ["sports", "casino"], "payout": 0.59, "product_breadth": 0.62, "bonus": 0.58,
+     "brand": 0.55, "marketing_reach": 0.50, "friction": 0.50, "protection": 0.66, "tax_free": True},
+    {"operator_id": "mrgreen", "name": "Mr Green (Evoke)", "kind": "licensed",
+     "tracks": ["casino"], "payout": 0.58, "product_breadth": 0.58, "bonus": 0.58,
+     "brand": 0.48, "marketing_reach": 0.45, "friction": 0.50, "protection": 0.68, "tax_free": True},
+    # appeal 0.55: the block is an *aggregate* of ~32 small licensees — each is
+    # tiny, but together they hold a visible slice; without the offset the
+    # softmax squashes the low-brand aggregate to ~1 % which misreads the tail.
     {"operator_id": "longtail", "name": "Øvrige licenshavere", "kind": "licensed",
-     "tracks": ["casino", "sports"], "payout": 0.57, "product_breadth": 0.55, "bonus": 0.50,
-     "brand": 0.40, "marketing_reach": 0.40, "friction": 0.50, "protection": 0.60, "tax_free": True},
+     "tracks": ["casino", "sports"], "payout": 0.57, "product_breadth": 0.54, "bonus": 0.48,
+     "brand": 0.38, "marketing_reach": 0.38, "friction": 0.50, "protection": 0.60,
+     "tax_free": True, "appeal": 0.55},
     # Non-optional unregulated channels.
     {"operator_id": "offshore", "name": "Offshore/ureguleret", "kind": "offshore",
      "tracks": ["lottery", "scratch", "casino", "sports"], "payout": 0.75, "product_breadth": 0.95,
@@ -472,15 +489,15 @@ class GamblingConfig(BaseModel):
     # ~1.4 M, the other verticals a few hundred thousand each. Estimates, not
     # official statistics (see params.yaml).
     customer_anchors: dict[str, float] = Field(default_factory=lambda: {
-        "lottery": 1_400_000.0, "scratch": 700_000.0,
-        "casino": 450_000.0, "sports": 500_000.0,
+        "lottery": 1_400_000.0, "scratch": 550_000.0,
+        "casino": 400_000.0, "sports": 450_000.0,
     })
     # Licensed operators in Denmark: Spillemyndigheden's register lists 54
     # licence holders (June 2026; 23 casino+betting, 12 casino-only, 14
-    # limited casino, 5 betting-only). The model names 5 of the ~40 full-scale
+    # limited casino, 5 betting-only). The model names 8 of the ~40 full-scale
     # operators as agents; ``longtail_licensees`` is how many real licences the
     # aggregated "Øvrige licenshavere" agent represents.
-    longtail_licensees: int = Field(35, ge=0, le=100)
+    longtail_licensees: int = Field(32, ge=0, le=100)
     # Per-operator field overrides ({operator_id: {field: value}}) — the UI's
     # "operator strategy" panel (DS vs competitors: marketing pressure, bonus
     # intensity, AI adoption, aggressiveness, payout ...).

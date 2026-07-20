@@ -130,7 +130,7 @@ def compute_ai_entry_metrics(gcfg: GamblingConfig, ai, entry, market) -> dict[st
     for oid, cap in ai.cap.items():
         m[f"ai_cap_{oid}"] = round(float(cap), 4)
     m["n_operators"] = float(sum(1 for o in market.operators if o.licensed))
-    # Real licences represented: the named licensed agents plus the ~35 full-
+    # Real licences represented: the named licensed agents plus the ~32 full-
     # scale licence holders the aggregated long-tail agent stands for
     # (Spillemyndigheden's register lists 54 holders incl. limited licences).
     named = sum(1 for o in market.operators if o.licensed and o.operator_id != "longtail")
