@@ -1,0 +1,54 @@
+<!--
+  Front-page card template for the "Mine projekter" page (root index.html of the
+  overview branch claude/wc2026-tournament-app-k42mv8).
+
+  Adding a NEW app = THREE small edits to that index.html, and nothing else:
+
+  1) A new <a class="card XX"> inside <div class="cards"> (append after the last card).
+  2) A matching ".XX .emoji" gradient rule inside the <style> block (next to the others).
+  3) Bump the lead count: <p class="lead">Fem web-apps …</p> → the next number
+     (fem→seks→syv→otte→ni→ti …).
+
+  Pick a short 2-letter class "XX" that isn't taken yet (existing: vm, el, ku, va, vt, su),
+  an emoji, a title, a one-line subtitle, and a gradient in your app's colours.
+  Do NOT alter any other card, rule, or the count of a different app.
+-->
+
+<!-- 1) The card (inside <div class="cards">) -->
+<a class="card XX" href="./YOUR-APP/">
+  <span class="emoji">🎯</span>
+  <span class="card-body">
+    <span class="card-title">Din apps navn</span>
+    <span class="card-sub">Kort undertitel · hvad appen gør</span>
+  </span>
+  <span class="chev">›</span>
+</a>
+
+<!-- 2) The gradient rule (inside <style>, next to `.vt .emoji { … }`) -->
+<style>
+  .XX .emoji { background: linear-gradient(135deg, #123456, #abcdef); }
+</style>
+
+<!--
+  Reference — the existing cards look exactly like this (do not edit these; shown only so
+  your new card matches):
+
+  <a class="card su" href="./surdej/">
+    <span class="emoji">🍞</span>
+    <span class="card-body">
+      <span class="card-title">Surdej</span>
+      <span class="card-sub">Planlæg surdejsbrød · baglæns fra du vil spise</span>
+    </span>
+    <span class="chev">›</span>
+  </a>
+
+  .su .emoji { background: linear-gradient(135deg, #9a5b2d, #e9c07a); }
+
+  Taken classes/gradients so far:
+    vm → ⚽  linear-gradient(135deg, #0a3aa8, #4b86ff)
+    el → ⚡  linear-gradient(135deg, #f4a000, #ffd34d)
+    ku → 🎱  linear-gradient(135deg, #0f172a, #22c55e)
+    va → ⚖️  linear-gradient(135deg, #6e5528, #e9cf8a)
+    vt → 🌬️  linear-gradient(135deg, #0c4a6e, #7dd3fc)
+    su → 🍞  linear-gradient(135deg, #9a5b2d, #e9c07a)
+-->
