@@ -7,8 +7,8 @@ description: >-
   ship, "lægge op/online", or push a built app to that site; add a new app to the
   "Mine projekter" front page; update an already-deployed app; or wire up an app's subfolder
   and direct link. Every app lives in its own subfolder and is reachable BOTH from the
-  front-page cards AND directly at /Test/<app>/. It enforces a safe worktree deploy so apps
-  never clobber each other. Trigger even when the user only says "deploy the app", "add it to
+  front-page cards AND directly at its own /Test subfolder URL. It enforces a safe worktree
+  deploy so apps never clobber each other. Trigger even when the user only says "deploy the app", "add it to
   my projects page", "put it online like the others", or "opdater appen på Pages".
 ---
 
