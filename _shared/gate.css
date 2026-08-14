@@ -1,0 +1,125 @@
+/* ---------------------------------------------------------------------------
+   gate.css — skjuler siden indtil gate.js har låst op.
+
+   Bevidst "fails closed": er JavaScript slået fra, eller når gate.js ikke at
+   loade, forbliver indholdet skjult. Det koster, at siden er tom i et split-
+   sekund ved load — til gengæld blinker indholdet ikke forbi før låsen.
+   --------------------------------------------------------------------------- */
+
+html:not(.gate-open) body > *:not(.gate) {
+  display: none !important;
+}
+
+.gate {
+  --gate-bg: #f3f4f8;
+  --gate-surface: #fff;
+  --gate-ink: #16181d;
+  --gate-ink-2: #5b606b;
+  --gate-line: #e7e9f0;
+  --gate-accent: #0b5cff;
+  --gate-bad: #d92d20;
+
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--gate-bg);
+  color: var(--gate-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gate {
+    --gate-bg: #0a0a0b;
+    --gate-surface: #16171a;
+    --gate-ink: #f2f3f5;
+    --gate-ink-2: #a8adb8;
+    --gate-line: #26282d;
+    --gate-bad: #ff6b6b;
+  }
+}
+
+.gate-card {
+  width: 100%;
+  max-width: 340px;
+  padding: 28px 24px 24px;
+  background: var(--gate-surface);
+  border: 1px solid var(--gate-line);
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 30px rgba(16, 24, 40, 0.08);
+  text-align: center;
+}
+
+.gate-lock { font-size: 34px; line-height: 1; }
+
+.gate-title {
+  margin: 12px 0 4px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.gate-sub {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--gate-ink-2);
+}
+
+.gate-form { display: flex; flex-direction: column; gap: 10px; }
+
+.gate-input {
+  width: 100%;
+  padding: 13px 14px;
+  font-size: 16px; /* 16px forhindrer at iOS zoomer ved fokus */
+  font-family: inherit;
+  color: var(--gate-ink);
+  background: var(--gate-bg);
+  border: 1px solid var(--gate-line);
+  border-radius: 12px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.gate-input:focus { border-color: var(--gate-accent); }
+
+.gate-btn {
+  padding: 13px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  background: var(--gate-accent);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.gate-btn:active { transform: scale(0.98); }
+.gate-btn[disabled] { opacity: 0.5; cursor: default; }
+
+.gate-error {
+  min-height: 18px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--gate-bad);
+}
+
+.gate-shake { animation: gate-shake 0.32s ease; }
+
+@keyframes gate-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-7px); }
+  75%      { transform: translateX(7px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-shake { animation: none; }
+  .gate-btn:active { transform: none; }
+}

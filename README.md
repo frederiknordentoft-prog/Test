@@ -1,13 +1,22 @@
 # Web apps
 
-This branch hosts two independent web apps behind one landing page, so both can
-be live on the same GitHub Pages site at once:
+This branch hosts several independent web apps behind one landing page, so they
+can all be live on the same GitHub Pages site at once:
 
 | Path | App |
 |------|-----|
-| `/` | Landing page linking to both |
+| `/` | Landing page linking to all of them |
 | `/vm/` | **World Cup 2026** — groups, fixtures, results, scorers, bracket |
 | `/elpriser/` | **Elpriser** — hourly electricity spot prices (Østdanmark) |
+| `/kuglebanen/` | **Kuglebanen** — physics puzzle: build the track, get the ball home |
+| `/vaegtskaalen/` | **Vægtskålen** — balance the elements, feel what atoms weigh |
+| `/vindtunnel/` | **Vindtunnel** — aerodynamics sandbox: draw a shape, feel the wind |
+| `/surdej/` | **Surdej** — plan sourdough backwards from when you want to eat |
+| `/element-sandbox/` | **Element Sandbox** — falling sand with 35 elements |
+
+**Adding a new page?** See **[PUBLICER.md](PUBLICER.md)** for the full recipe —
+including the routes that need no shell, and how to handle pages that need a
+login. Deploy rules for agents live in [CLAUDE.md](CLAUDE.md).
 
 ## Open it locally
 
@@ -74,11 +83,16 @@ Cup app.
 
 ## Publish on GitHub Pages
 
-Plain static files, no build step. In **Settings → Pages → Build and
-deployment**:
+Already set up — nothing to configure. **Settings → Pages → Source** is
+**GitHub Actions**, and `.github/workflows/deploy-pages.yml` publishes the whole
+branch on every push to it. A deploy takes 1–2 minutes.
 
-1. **Source:** Deploy from a branch.
-2. **Branch:** this branch, folder **/ (root)** → **Save**.
+To add or update an app, use the deploy script rather than copying files by
+hand — it refuses to touch anything outside your own subfolder:
 
-Within a minute both apps are live: `…github.io/<repo>/vm/` and
-`…github.io/<repo>/elpriser/`, with the landing page at the root.
+```bash
+scripts/deploy-page.sh --slug minapp --from dist \
+  --title "Min App" --emoji "🚀" --sub "Kort beskrivelse"
+
+scripts/verify-site.sh   # all paths 200, landing page intact
+```
