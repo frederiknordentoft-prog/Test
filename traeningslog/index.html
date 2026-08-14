@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Træningslog — Program A / B</title>
+<style>
+:root{
+  color-scheme: light;
+  --surface:#ffffff; --plane:#f9f9f7; --ink:#0b0b0b; --sec:#52514e; --mut:#898781;
+  --line:#e1e0d9; --rule:#c3c2b7; --blue:#2a78d6; --blue-soft:#eaf2fd;
+  --orange:#eb6834; --orange-soft:#fdf0ea; --good:#0ca30c; --good-ink:#006300;
+  --field:#f4f3f0; --border:rgba(11,11,11,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --surface:#1f1f1e; --plane:#0d0d0d; --ink:#ffffff; --sec:#c3c2b7; --mut:#898781;
+    --line:#2c2c2a; --rule:#383835; --blue:#3987e5; --blue-soft:#132437;
+    --orange:#d95926; --orange-soft:#2a1710; --good:#0ca30c; --good-ink:#0ca30c;
+    --field:#141413; --border:rgba(255,255,255,.10);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--plane);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;
+  -webkit-text-size-adjust:100%;padding-bottom:130px}
+.wrap{max-width:620px;margin:0 auto;padding:14px 14px 0}
+
+.tip{background:var(--blue-soft);border-left:3px solid var(--blue);border-radius:0 10px 10px 0;
+  padding:12px 14px;font-size:13px;margin:0 0 14px;line-height:1.55}
+.tip b{display:block;margin-bottom:3px;font-size:13.5px}
+
+/* dagvælger — ren CSS, virker uden JavaScript */
+.pick{display:none}
+.days{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.days label{padding:12px 8px;border-radius:11px;border:1.5px solid var(--line);background:var(--surface);
+  font-size:15px;font-weight:700;text-align:center;cursor:pointer;color:var(--sec);
+  display:block;user-select:none}
+.days label small{display:block;font-weight:500;font-size:11.5px;opacity:.85;margin-top:2px}
+#pA:checked ~ .wrap .days label[for=pA]{background:var(--blue);border-color:var(--blue);color:#fff}
+#pB:checked ~ .wrap .days label[for=pB]{background:var(--orange);border-color:var(--orange);color:#fff}
+.dagA,.dagB{display:none}
+#pA:checked ~ .wrap .dagA{display:block}
+#pB:checked ~ .wrap .dagB{display:block}
+
+.clock{background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  padding:9px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.clock .t{font-size:23px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.clock .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.btn{border:1.5px solid var(--rule);background:var(--surface);color:var(--ink);
+  border-radius:11px;padding:11px 15px;font-size:14.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:active{opacity:.75}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+
+.ex{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:14px 14px 12px;margin-bottom:11px}
+.exh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.exn{font-size:16.5px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+.exn .num{color:var(--mut);margin-right:6px}
+.badge{font-size:11px;font-weight:700;color:var(--blue);background:var(--blue-soft);
+  border-radius:20px;padding:3px 9px;white-space:nowrap;flex:0 0 auto;margin-top:2px}
+.cue{font-size:12.5px;color:var(--sec);margin:6px 0 8px}
+.wu{border-color:var(--blue);background:var(--blue-soft)}
+.wurow{display:flex;gap:11px;align-items:flex-start;padding:10px 0;
+  border-top:1px solid var(--border);font-size:13.5px;line-height:1.45;cursor:pointer}
+.wurow input{width:23px;height:23px;flex:0 0 23px;margin:0;accent-color:var(--blue)}
+.wurow b{color:var(--ink)}
+.wudet{margin-top:10px;font-size:13px;color:var(--sec);border-top:1px solid var(--border);padding-top:4px}
+.wudet summary{cursor:pointer;color:var(--blue);font-weight:700;padding:7px 0;font-size:12.5px;
+  letter-spacing:.02em;text-transform:uppercase;list-style:none}
+.wudet summary::-webkit-details-marker{display:none}
+.wudet summary::before{content:"▸ "}
+.wudet[open] summary::before{content:"▾ "}
+.wudet ul{margin:2px 0 6px;padding-left:17px}
+.wudet li{margin:7px 0}
+.wudet b{color:var(--ink)}
+.cue b{color:var(--ink)}
+.prev{font-size:12px;color:var(--mut);margin:0 0 12px;font-variant-numeric:tabular-nums}
+.prev b{color:var(--blue)}
+.row{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center}
+.lab{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+.lab2{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
+  margin:13px 0 9px}
+.wbox{display:flex;align-items:center;gap:8px}
+input[type=number],input[type=text]{width:100%;background:var(--field);
+  border:1.5px solid var(--line);border-radius:10px;padding:12px 8px;font-size:20px;font-weight:700;
+  text-align:center;color:var(--ink);font-family:inherit;font-variant-numeric:tabular-nums;
+  -moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
+input:focus{outline:none;border-color:var(--blue);background:var(--surface)}
+input:not(:placeholder-shown){border-color:var(--good);color:var(--good-ink)}
+.unit{font-size:13px;color:var(--mut);flex:0 0 auto;white-space:nowrap}
+.sets{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.sets input{padding:15px 4px;font-size:25px}
+.setwrap{position:relative}
+.setno{position:absolute;top:-7px;left:11px;background:var(--surface);padding:0 6px;
+  font-size:10px;font-weight:700;color:var(--mut);letter-spacing:.06em;z-index:1}
+.restrow{display:flex;gap:7px;margin-top:12px}
+.rest{flex:1;background:var(--blue-soft);border:1.5px solid transparent;color:var(--blue);
+  border-radius:10px;padding:10px;font-size:13.5px;font-weight:700;cursor:pointer;
+  font-family:inherit;text-align:center}
+.rest:active{border-color:var(--blue)}
+
+.timer{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--blue);color:#fff;
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom));display:none;
+  align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -4px 22px rgba(0,0,0,.18)}
+.timer.on{display:flex}
+.timer.warn{background:var(--good)}
+.timer .big{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
+.timer .lbl{font-size:12px;opacity:.9;text-transform:uppercase;letter-spacing:.09em}
+.timer button{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.45);color:#fff;
+  border-radius:10px;padding:10px 14px;font-size:14px;font-weight:700;font-family:inherit}
+
+.out{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px;margin:20px 0 12px}
+.out h3{margin:0 0 4px;font-size:16.5px}
+.out p{font-size:12.5px;color:var(--sec);margin:0 0 11px}
+.outbox{background:var(--field);border:1px solid var(--line);border-radius:10px;padding:12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.6;
+  word-break:break-word;min-height:50px}
+.outbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.warnbox{background:var(--orange-soft);border-left:3px solid var(--orange);border-radius:0 10px 10px 0;
+  padding:12px 14px;font-size:13px;margin:14px 0;line-height:1.55}
+.warnbox b{display:block;margin-bottom:3px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:100px;background:var(--ink);
+  color:var(--plane);padding:11px 20px;border-radius:24px;font-size:14px;font-weight:600;
+  opacity:0;transition:opacity .2s;pointer-events:none;z-index:40}
+.toast.on{opacity:1}
+.foot{color:var(--mut);font-size:11.5px;text-align:center;padding:8px 0 24px;line-height:1.55}
+.jsonly{display:none}
+</style>
+</head>
+<body>
+<input type="radio" name="pick" id="pA" class="pick" checked>
+<input type="radio" name="pick" id="pB" class="pick">
+
+<div class="wrap">
+
+<div class="tip">
+  <b>Virker knapperne ikke?</b>
+  Så er JavaScript slået fra i den fremviser, du kigger i. <strong>Hent filen og åbn den i Safari
+  eller Chrome</strong> — så virker ur, pausetimer og kopiér-knap. Du kan også bare skrive
+  tallene i felterne og taste linjen manuelt; øvelser, måltal og pausetider står her uanset hvad.
+</div>
+
+<div class="days">
+  <label for="pA">Dag A<small>mandag · knæ, pres, træk</small></label>
+  <label for="pB">Dag B<small>torsdag · hofte, ét ben, lodret</small></label>
+</div>
+
+<div class="clock jsonly">
+  <div><div class="l">Varighed</div><div class="t" id="clk">0:00</div></div>
+  <button class="btn" id="clkBtn" type="button">Start</button>
+</div>
+
+<!-- ---------- DAG A ---------- -->
+<div class="dagA">
+
+<div class="ex wu">
+  <div class="exh"><div class="exn"><span class="num">0</span>Opvarmning</div>
+    <span class="badge">8 min</span></div>
+  <p class="cue">Sæt flueben når blokken er kørt. <b>Rampesæt tælles ikke med i tallene nedenfor.</b></p>
+  <label class="wurow"><input type="checkbox" data-w="1"><span><b>3 min puls op.</b>
+    Løbebånd 5,5–6 km/t ved 2 %, eller Zwift i letteste gear. Stop ved puls 110–120 og fugtig pande — ikke hårdere.</span></label>
+  <label class="wurow"><input type="checkbox" data-w="2"><span><b>Bevægelighed, 4 øvelser.</b>
+    Ankel mod væg 8/side · Verdens største stræk 4/side · Hoftesving 4 kg ×10 · Skulderpasseringer ×10.</span></label>
+  <label class="wurow"><input type="checkbox" data-w="3"><span><b>Rampesæt.</b> Goblet squat 8 × 5 kg, så 5 × 15 kg. Og ét sæt på 8 med de to 5 kg håndvægte før bænkpres. Skal føles nemt.</span></label>
+  <details class="wudet"><summary>Sådan gør du de fire</summary>
+  <ul>
+    <li><b>Ankel mod væg</b> — tåspidsen 10 cm fra væggen, skub knæet frem til det rører, hælen bliver i gulvet. 8 pr. side. <i>Løsner det, der både begrænser din squat og belaster læggen.</i></li>
+    <li><b>Verdens største stræk</b> — langt udfald, samme sides albue ned mod indersiden af foden, drej så brystet op og følg hånden med øjnene. 4 pr. side. <i>Åbner hoftebøjer og brystryg efter en dag på stolen.</i></li>
+    <li><b>Hoftesving, 4 kg</b> — hoften bagud, ryggen flad, klem ballerne i toppen. 10. <i>Indøver hoftehængslet før RDL og rygbøjninger.</i></li>
+    <li><b>Skulderpasseringer med kost</b> — bredt greb, strakte arme, fra lårene op og ned bag ryggen. 10. <i>Skulderen klar til pres, træk og pull-ups.</i></li>
+  </ul></details>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">1</span>Goblet squat med tempo</div>
+    <span class="badge">3 × 8</span></div>
+  <p class="cue"><b>Fire sekunder ned, to sekunders pause i bunden.</b> Håndvægten lodret mod brystet, albuer ind.</p>
+  <p class="prev">Sidst: 20 kg × 8 / 8 / 8 &nbsp;·&nbsp; Mål: <b>8 / 8 / 8 med pause i bunden</b></p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="20" data-k="GS" data-f="w">
+    <span class="unit">kg</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="GS" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="GS" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="GS" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="120">▶ Pause 120 s</button>
+    <button type="button" class="rest" data-p="90">▶ 90 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">2</span>Bænkpres, flad bænk</div>
+    <span class="badge">3 × 8–12</span></div>
+  <p class="cue">Skulderbladene sammen og ned. <b>Tre sekunder ned</b> til brysthøjde. Stop 5–10 cm fra hinanden i toppen.</p>
+  <p class="prev">Sidst: 15 kg × 14 / 8 / 6 &nbsp;·&nbsp; Mål: <b>11 / 10 / 10</b></p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="15" data-k="BP" data-f="w">
+    <span class="unit">kg pr. hånd</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="BP" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="BP" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="BP" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="120">▶ Pause 120 s</button>
+    <button type="button" class="rest" data-p="90">▶ 90 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">3</span>Enarms roning</div>
+    <span class="badge">3 × 8–12</span></div>
+  <p class="cue">Knæ og hånd på bænken, ryggen vandret. <b>Træk ind mod hoften</b>, ikke mod skulderen.</p>
+  <p class="prev">Sidst: 20 kg × 10 / 7 / 8 &nbsp;·&nbsp; Mål: <b>10 / 9 / 9</b> pr. arm</p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="20" data-k="ROW" data-f="w">
+    <span class="unit">kg</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="ROW" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="ROW" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="ROW" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="120">▶ Pause 120 s</button>
+    <button type="button" class="rest" data-p="90">▶ 90 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">4</span>Rygbøjninger</div>
+    <span class="badge">3 × 10–15</span></div>
+  <p class="cue">Op til ryggen er lige — <b>ikke længere</b>. Hold et sekund, klem ballerne.</p>
+  <p class="prev">Sidst: kropsvægt × 10 / 10 / 10 &nbsp;·&nbsp; Mål: <b>14 / 13 / 12</b></p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="0" data-k="RYG" data-f="w">
+    <span class="unit">kg ekstra</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="RYG" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="RYG" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="RYG" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="60">▶ Pause 60 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">5</span>Mavehjul fra knæ</div>
+    <span class="badge">3 × 5–10</span></div>
+  <p class="cue">Rul kun så langt ud, som lænden kan holdes fra at svaje. <b>Mærkes det i lænden, er du gået for langt.</b></p>
+  <p class="prev">Sidst: 7 / 8 / 7 &nbsp;·&nbsp; Mål: <b>9 / 9 / 8</b></p>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="HJUL" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="HJUL" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="HJUL" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="60">▶ Pause 60 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">6</span>Stående etbens tåhævning</div>
+    <span class="badge">3 × 12</span></div>
+  <p class="cue">Forfoden på et trin. <b>Hælen helt ned under trinnet.</b> Tre sek. op, ét holdt, fire sek. ned.</p>
+  <p class="prev">Ny øvelse &nbsp;·&nbsp; Mål: <b>12 / 12 / 12</b> pr. ben</p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="20" data-k="TÅ" data-f="w">
+    <span class="unit">kg</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="TÅ" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="TÅ" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="TÅ" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="60">▶ Pause 60 s</button></div>
+</div>
+</div>
+
+<!-- ---------- DAG B ---------- -->
+<div class="dagB">
+
+<div class="ex wu">
+  <div class="exh"><div class="exn"><span class="num">0</span>Opvarmning</div>
+    <span class="badge">8 min</span></div>
+  <p class="cue">Sæt flueben når blokken er kørt. <b>Rampesæt tælles ikke med i tallene nedenfor.</b></p>
+  <label class="wurow"><input type="checkbox" data-w="1"><span><b>3 min puls op.</b>
+    Løbebånd 5,5–6 km/t ved 2 %, eller Zwift i letteste gear. Stop ved puls 110–120 og fugtig pande — ikke hårdere.</span></label>
+  <label class="wurow"><input type="checkbox" data-w="2"><span><b>Bevægelighed, 4 øvelser.</b>
+    Ankel mod væg 8/side · Verdens største stræk 4/side · Hoftesving 4 kg ×10 · Skulderpasseringer ×10.</span></label>
+  <label class="wurow"><input type="checkbox" data-w="3"><span><b>Rampesæt.</b> Etbens RDL 8 pr. side × 5 kg. Og før pull-ups: 5 skulderbladstræk i hæng — strakte arme, træk kun skulderbladene ned og sammen.</span></label>
+  <details class="wudet"><summary>Sådan gør du de fire</summary>
+  <ul>
+    <li><b>Ankel mod væg</b> — tåspidsen 10 cm fra væggen, skub knæet frem til det rører, hælen bliver i gulvet. 8 pr. side. <i>Løsner det, der både begrænser din squat og belaster læggen.</i></li>
+    <li><b>Verdens største stræk</b> — langt udfald, samme sides albue ned mod indersiden af foden, drej så brystet op og følg hånden med øjnene. 4 pr. side. <i>Åbner hoftebøjer og brystryg efter en dag på stolen.</i></li>
+    <li><b>Hoftesving, 4 kg</b> — hoften bagud, ryggen flad, klem ballerne i toppen. 10. <i>Indøver hoftehængslet før RDL og rygbøjninger.</i></li>
+    <li><b>Skulderpasseringer med kost</b> — bredt greb, strakte arme, fra lårene op og ned bag ryggen. 10. <i>Skulderen klar til pres, træk og pull-ups.</i></li>
+  </ul></details>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">1</span>Etbens rumænsk dødløft</div>
+    <span class="badge">3 × 8</span></div>
+  <p class="cue">Håndvægten i <b>modsat hånd af standben</b>. Skub hoften bagud, begge hoftekamme peger mod gulvet.</p>
+  <p class="prev">Ny øvelse &nbsp;·&nbsp; Mål: <b>8 / 8 / 8</b> pr. ben</p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="20" data-k="RDL" data-f="w">
+    <span class="unit">kg</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="RDL" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="RDL" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="RDL" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="120">▶ Pause 120 s</button>
+    <button type="button" class="rest" data-p="90">▶ 90 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">2</span>Bulgarsk split squat</div>
+    <span class="badge">3 × 8</span></div>
+  <p class="cue">Bagerste vrist på bænken. Pres op gennem <b>forreste hæl</b>. Uge 1: 10 kg. Fra uge 2: 15 kg.</p>
+  <p class="prev">Ny øvelse &nbsp;·&nbsp; Mål: <b>8 / 8 / 8</b> pr. ben</p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="10" data-k="SPLIT" data-f="w">
+    <span class="unit">kg pr. hånd</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="SPLIT" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="SPLIT" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="SPLIT" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="120">▶ Pause 120 s</button>
+    <button type="button" class="rest" data-p="90">▶ 90 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">3</span>Pull-ups</div>
+    <span class="badge">3 sæt</span></div>
+  <p class="cue">Overhåndsgreb, fuldt hæng, hagen over stangen, ingen sving. <b>Kan du under 3, kør negative:</b> spring op, fem sekunder ned.</p>
+  <p class="prev">Ikke testet endnu &nbsp;·&nbsp; <b>Første sæt: alt hvad du har</b></p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="0" data-k="PULL" data-f="w">
+    <span class="unit">kg ekstra</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="PULL" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="PULL" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="PULL" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="120">▶ Pause 120 s</button>
+    <button type="button" class="rest" data-p="90">▶ 90 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">4</span>Skulderpres siddende</div>
+    <span class="badge">3 × 8–12</span></div>
+  <p class="cue">Ryglænet næsten lodret. <b>Spænd ballerne</b>, så svajer lænden ikke. Ned til ørehøjde.</p>
+  <p class="prev">Ny øvelse &nbsp;·&nbsp; Mål: <b>10 / 10 / 10</b></p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="10" data-k="SKULD" data-f="w">
+    <span class="unit">kg pr. hånd</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="SKULD" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="SKULD" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="SKULD" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="90">▶ Pause 90 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">5</span>Sidestøt</div>
+    <span class="badge">3 × 20–40 s</span></div>
+  <p class="cue">Albue under skulder, lige linje fra ankel til øre. <b>Træk vejret normalt</b> — holder du vejret, har du spændt forkert. Notér sekunder.</p>
+  <p class="prev">Ny øvelse &nbsp;·&nbsp; Mål: <b>30 / 30 / 30</b> sek. pr. side</p>
+  <div class="lab2">Sekunder</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="SIDE" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="SIDE" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="SIDE" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="60">▶ Pause 60 s</button></div>
+</div>
+
+<div class="ex">
+  <div class="exh"><div class="exn"><span class="num">6</span>Siddende tåhævning</div>
+    <span class="badge">3 × 15</span></div>
+  <p class="cue">Knæ i 90°, håndvægt på hvert lår. <b>Bøjet knæ kobler den store lægmuskel fra</b> — det er soleus, der arbejder.</p>
+  <p class="prev">Ny øvelse &nbsp;·&nbsp; Mål: <b>15 / 15 / 15</b></p>
+  <div class="row"><div class="lab">Vægt</div><div class="wbox">
+    <input type="number" inputmode="decimal" step="0.5" placeholder="20" data-k="TÅ" data-f="w">
+    <span class="unit">kg pr. lår</span></div></div>
+  <div class="lab2">Gentagelser</div>
+  <div class="sets">
+    <div class="setwrap"><span class="setno">SÆT 1</span><input type="number" inputmode="numeric" placeholder="–" data-k="TÅ" data-f="0"></div>
+    <div class="setwrap"><span class="setno">SÆT 2</span><input type="number" inputmode="numeric" placeholder="–" data-k="TÅ" data-f="1"></div>
+    <div class="setwrap"><span class="setno">SÆT 3</span><input type="number" inputmode="numeric" placeholder="–" data-k="TÅ" data-f="2"></div>
+  </div>
+  <div class="restrow jsonly"><button type="button" class="rest" data-p="60">▶ Pause 60 s</button></div>
+</div>
+</div>
+
+<div class="out jsonly">
+  <h3>Dagens log</h3>
+  <p>Opdateres mens du taster. Kopiér den ind i Stravas beskrivelsesfelt og send den til mig.</p>
+  <div class="outbox" id="out">— endnu ingen tal —</div>
+  <div class="outbtns">
+    <button class="btn pri" type="button" id="copyBtn">Kopiér linje</button>
+    <button class="btn" type="button" id="resetBtn">Nulstil</button>
+  </div>
+</div>
+
+<div class="warnbox">
+  <b>Uden JavaScript skriver du linjen selv.</b>
+  Format: <code>Dag A · 32 min · OPV ✓ · GS 20x8/8/8 · BP 15x11/10/10 · ROW 20x10/9/9 · RYG 14/13/12 · HJUL 9/9/8 · TÅ 20x12/12/12</code>
+  — forkortelserne står i hver øvelses felt. Send den til mig, og sæt den i Stravas beskrivelsesfelt.
+</div>
+
+<div class="foot">
+  Program A / B · revision 6 · 14. august 2026<br>
+  Første sæt stoppes ved det øverste måltal, også når du kan tage flere.<br>Opvarmningen er otte minutter og er ikke valgfri — den fulde beskrivelse står i programmet.
+</div>
+</div>
+
+<div class="timer" id="timer">
+  <div><div class="lbl" id="tlbl">Pause</div><div class="big" id="tbig">2:00</div></div>
+  <div style="display:flex;gap:8px">
+    <button type="button" id="add30">+30s</button>
+    <button type="button" id="stopR">Færdig</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  document.querySelectorAll('.jsonly').forEach(function(e){ e.classList.remove('jsonly'); });
+  document.querySelector('.tip').style.display='none';
+  document.querySelector('.warnbox').style.display='none';
+  var elapsed=0,tick=null,t0=0,restT=null,restLeft=0;
+
+  function dag(){ return document.getElementById('pB').checked ? 'B':'A'; }
+  function scope(){ return document.querySelector(dag()==='A'?'.dagA':'.dagB'); }
+
+  function build(){
+    var box=document.getElementById('out'), seen=[], parts=[];
+    scope().querySelectorAll('input[data-k]').forEach(function(inp){
+      var k=inp.getAttribute('data-k');
+      if(seen.indexOf(k)>-1) return; seen.push(k);
+      var reps=[],w='';
+      scope().querySelectorAll('input[data-k="'+k+'"]').forEach(function(x){
+        var f=x.getAttribute('data-f');
+        if(f==='w'){ if(x.value&&+x.value>0) w=String(x.value).replace('.',',')+'x'; }
+        else if(x.value&&+x.value>0) reps.push(x.value);
+      });
+      if(reps.length) parts.push(k+' '+w+reps.join('/'));
+    });
+    var wb=scope().querySelectorAll('input[data-w]'), wn=0;
+    wb.forEach(function(c){ if(c.checked) wn++; });
+    var opv = wn===wb.length ? 'OPV ✓' : (wn===0 ? 'OPV ✗' : 'OPV '+wn+'/'+wb.length);
+    var m=Math.round(elapsed/60);
+    if(!parts.length){
+      box.textContent = wn ? 'Dag '+dag()+(m>0?' · '+m+' min':'')+' · '+opv : '— endnu ingen tal —';
+      return; }
+    box.textContent='Dag '+dag()+(m>0?' · '+m+' min':'')+' · '+opv+' · '+parts.join(' · ');
+  }
+
+  function drawClock(){
+    var s=Math.floor(elapsed);
+    document.getElementById('clk').textContent=Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);
+  }
+  function toggleClock(){
+    var b=document.getElementById('clkBtn');
+    if(tick){ clearInterval(tick); tick=null; b.textContent='Fortsæt'; }
+    else { t0=Date.now()-elapsed*1000; b.textContent='Pause';
+      tick=setInterval(function(){ elapsed=(Date.now()-t0)/1000; drawClock(); build(); },1000); }
+  }
+  document.getElementById('clkBtn').addEventListener('click',toggleClock);
+
+  document.addEventListener('change',function(e){
+    if(!e.target.matches('input[data-w]')) return;
+    if(!tick && elapsed===0) toggleClock();
+    build();
+  });
+  document.addEventListener('input',function(e){
+    if(!e.target.matches('input[data-k],input[data-w]')) return;
+    if(!tick && elapsed===0) toggleClock();
+    build();
+  });
+  document.getElementById('pA').addEventListener('change',build);
+  document.getElementById('pB').addEventListener('change',build);
+
+  function drawRest(){
+    var v=Math.max(0,restLeft);
+    document.getElementById('tbig').textContent=Math.floor(v/60)+':'+('0'+(v%60)).slice(-2);
+  }
+  document.querySelectorAll('.rest').forEach(function(b){
+    b.addEventListener('click',function(){
+      restLeft=+b.getAttribute('data-p');
+      var T=document.getElementById('timer');
+      T.classList.add('on'); T.classList.remove('warn');
+      document.getElementById('tlbl').textContent='Pause';
+      drawRest();
+      if(restT) clearInterval(restT);
+      restT=setInterval(function(){
+        restLeft--; drawRest();
+        if(restLeft<=0){
+          T.classList.add('warn');
+          document.getElementById('tlbl').textContent='Klar til næste sæt';
+          document.getElementById('tbig').textContent='GO';
+          clearInterval(restT); restT=null;
+          setTimeout(function(){ T.classList.remove('on'); },4000);
+        }
+      },1000);
+    });
+  });
+  document.getElementById('add30').addEventListener('click',function(){ restLeft+=30; drawRest(); });
+  document.getElementById('stopR').addEventListener('click',function(){
+    if(restT) clearInterval(restT); restT=null;
+    document.getElementById('timer').classList.remove('on');
+  });
+
+  function toast(m){
+    var t=document.getElementById('toast');
+    t.textContent=m; t.classList.add('on');
+    setTimeout(function(){ t.classList.remove('on'); },1900);
+  }
+  document.getElementById('copyBtn').addEventListener('click',function(){
+    var txt=document.getElementById('out').textContent;
+    if(txt.charAt(0)==='—'){ toast('Ingen tal endnu'); return; }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){toast('Kopieret');},fb);
+    } else fb();
+    function fb(){
+      var ta=document.createElement('textarea');
+      ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); toast('Kopieret'); }
+      catch(e){ toast('Markér linjen og kopiér manuelt'); }
+      document.body.removeChild(ta);
+    }
+  });
+  document.getElementById('resetBtn').addEventListener('click',function(){
+    document.querySelectorAll('input[data-k]').forEach(function(i){ i.value=''; });
+    document.querySelectorAll('input[data-w]').forEach(function(i){ i.checked=false; });
+    elapsed=0; if(tick){clearInterval(tick);tick=null;}
+    document.getElementById('clkBtn').textContent='Start';
+    drawClock(); build(); toast('Nulstillet');
+  });
+
+  drawClock(); build();
+})();
+</script>
+</body>
+</html>
