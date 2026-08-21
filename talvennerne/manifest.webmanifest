@@ -1,0 +1,17 @@
+{
+  "name": "Talvennerne",
+  "short_name": "Talvenner",
+  "description": "Regnespil for indskolingen — plus og minus i et univers med små væsener.",
+  "lang": "da",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1b1233",
+  "theme_color": "#1b1233",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
