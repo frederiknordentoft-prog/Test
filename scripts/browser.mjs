@@ -11,5 +11,12 @@ const CANDIDATES = [
 
 export function launch(options = {}) {
   const executablePath = CANDIDATES.find((p) => existsSync(p))
-  return chromium.launch({ ...options, ...(executablePath ? { executablePath } : {}) })
+  // Chromium ignores HTTPS_PROXY, so hand it the agent proxy explicitly when one
+  // is configured. Localhost is bypassed so `vite preview` still works.
+  const server = process.env.HTTPS_PROXY ?? process.env.https_proxy
+  return chromium.launch({
+    ...options,
+    ...(executablePath ? { executablePath } : {}),
+    ...(server ? { proxy: { server, bypass: 'localhost,127.0.0.1,::1' } } : {}),
+  })
 }
