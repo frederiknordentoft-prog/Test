@@ -23,13 +23,16 @@ function explain(task: Task, accent: string): Explanation {
 
   switch (task.skill) {
     case 'addTo20': {
-      const toTen = 10 - a
-      const rest = b - toTen
+      // start from the bigger number, the way it is taught
+      const big = Math.max(a, b)
+      const small = Math.min(a, b)
+      const toTen = 10 - big
+      const rest = small - toTen
       return {
-        line: `${a} og ${toTen} giver 10 — og ${rest} mere er ${answer}.`,
+        line: `${big} og ${toTen} giver 10 — og ${rest} mere er ${answer}.`,
         visual: (
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <TenFrame filled={a} added={toTen} color={accent} size={22} />
+            <TenFrame filled={big} added={toTen} color={accent} size={22} />
             <span className="text-2xl opacity-80">+</span>
             <Dots n={rest} color={accent} size={20} />
           </div>

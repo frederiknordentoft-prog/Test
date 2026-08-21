@@ -122,9 +122,10 @@ export function PromptDisplay({ task, accent, scaffold = false }: { task: Task; 
       return (
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-3">
-            <TenFrame filled={task.a} color={accent} showGap size={22} />
+            {/* the frame always holds the bigger number — that is the way over the ten */}
+            <TenFrame filled={Math.max(task.a, task.b)} color={accent} showGap size={22} />
             <span className="text-3xl opacity-80">+</span>
-            <Dots n={task.b} color={accent} size={20} />
+            <Dots n={Math.min(task.a, task.b)} color={accent} size={20} />
           </div>
           <Equation>
             <span className="tabular-nums">{task.a}</span> <Op>+</Op> <span className="tabular-nums">{task.b}</span> <Op>=</Op> <Blank />

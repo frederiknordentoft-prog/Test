@@ -290,3 +290,28 @@ describe('round building', () => {
     for (const t of countRound) expect(['count', 'choice']).toContain(t.kind)
   })
 })
+
+describe('the crossing-the-ten strategy', () => {
+  it('always has a whole number of counters to move, whichever way the sum is written', () => {
+    // "2 + 9" must be explained as "9 and 1 is 10, and 1 more" — filling the frame
+    // from the smaller number would ask the child to add a negative amount
+    for (const f of factsFor('addTo20')) {
+      const big = Math.max(f.a, f.b)
+      const small = Math.min(f.a, f.b)
+      const toTen = 10 - big
+      const rest = small - toTen
+      expect(`${f.id}: fyld ${toTen}, så ${rest}`).toBe(`${f.id}: fyld ${Math.max(toTen, 0)}, så ${Math.max(rest, 0)}`)
+      expect(big + toTen).toBe(10)
+      expect(10 + rest).toBe(f.answer)
+    }
+  })
+
+  it('does the same for coming back down over the ten', () => {
+    for (const f of factsFor('subTo20')) {
+      const toTen = f.a - 10
+      const rest = f.b - toTen
+      expect(rest).toBeGreaterThanOrEqual(0)
+      expect(10 - rest).toBe(f.answer)
+    }
+  })
+})
