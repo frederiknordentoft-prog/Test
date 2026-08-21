@@ -14,7 +14,6 @@ function validKinds(skill: SkillId): TaskKind[] {
       return ['choice', 'pair']
     case 'doubles':
     case 'halves':
-    case 'tensAndOnes':
       return ['choice', 'keypad', 'numberline']
     default:
       return ['choice', 'keypad']
@@ -102,8 +101,27 @@ export function buildRound({ facts, states, roundIndex, size, kinds, rng }: Roun
   const rest = rng.shuffle(chosen.filter((f) => f !== opener))
   const ordered = opener ? [opener, ...rest] : rest
 
+  // The earliest levels deliberately hold only a handful of facts — counting to
+  // five is five facts. Repeating them inside one round is not padding, it is the
+  // practice. Never back to back, though: that reads as a glitch, not a drill.
+  padToSize(ordered, facts, size, rng)
+
   const tasks = ordered.map((f, i) => buildTask(f, pickKind(f.skill, kinds, rng), rng, i))
   return balanceAnswerPositions(tasks, rng)
+}
+
+function padToSize(ordered: Fact[], facts: readonly Fact[], size: number, rng: Rng): void {
+  if (facts.length === 0) return
+  let guard = size * 8
+  while (ordered.length < size && guard-- > 0) {
+    for (const f of rng.shuffle(facts)) {
+      if (ordered.length >= size) break
+      if (ordered[ordered.length - 1]?.id === f.id) continue
+      ordered.push(f)
+    }
+  }
+  // last resort for a single-fact pool: allow the repeat rather than a short round
+  while (ordered.length < size) ordered.push(facts[0])
 }
 
 /**

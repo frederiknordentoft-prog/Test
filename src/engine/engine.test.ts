@@ -169,10 +169,30 @@ describe('round building', () => {
     }
   })
 
-  it('never asks the same fact twice in one round', () => {
+  it('never asks the same fact twice when the pool is big enough', () => {
     for (let seed = 0; seed < 25; seed++) {
       const round = buildRound({ facts: pool, states: {}, roundIndex: 0, size: 10, kinds: ['choice'], rng: makeRng(seed) })
       expect(new Set(round.map((t) => t.factId)).size).toBe(10)
+    }
+  })
+
+  it('repeats facts rather than cutting the round short on a tiny pool', () => {
+    const tiny = factsFor('count').slice(0, 3)
+    for (let seed = 0; seed < 25; seed++) {
+      const round = buildRound({ facts: tiny, states: {}, roundIndex: 0, size: 10, kinds: ['choice'], rng: makeRng(seed) })
+      expect(round).toHaveLength(10)
+      expect(new Set(round.map((t) => t.id)).size).toBe(10)
+    }
+  })
+
+  it('never puts the same fact back to back', () => {
+    for (const size of [8, 10, 12]) {
+      for (const small of [factsFor('count').slice(0, 3), factsFor('tenFriends').slice(0, 4), pool]) {
+        for (let seed = 0; seed < 20; seed++) {
+          const round = buildRound({ facts: small, states: {}, roundIndex: 0, size, kinds: ['choice'], rng: makeRng(seed) })
+          for (let i = 1; i < round.length; i++) expect(round[i].factId).not.toBe(round[i - 1].factId)
+        }
+      }
     }
   })
 
