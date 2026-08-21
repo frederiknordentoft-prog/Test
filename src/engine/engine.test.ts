@@ -3,7 +3,7 @@ import { factsFor, factsForSkills } from './facts'
 import { distractorsFor } from './distractors'
 import { buildTask } from './tasks'
 import { buildRound } from './roundBuilder'
-import { emptyState, isDue, masteryOf, updateFactState } from './mastery'
+import { GUESSABLE_CEILING, MAX_BOX, ceilingFor, emptyState, isDue, masteryOf, updateFactState } from './mastery'
 import { hashSeed, makeRng } from './rng'
 import type { Fact, FactStates, SkillId } from './types'
 
@@ -129,19 +129,40 @@ describe('mastery', () => {
   const FAST = 5000
 
   it('promotes a quick correct answer', () => {
-    expect(updateFactState(undefined, true, 1200, 1, FAST).box).toBe(1)
+    expect(updateFactState(undefined, true, 1200, 1, FAST, 'keypad').box).toBe(1)
   })
 
   it('holds position when the answer is right but slow — knowing is not recalling', () => {
     const at3 = { ...emptyState(), box: 3, seen: 4 }
-    expect(updateFactState(at3, true, 11000, 5, FAST).box).toBe(3)
+    expect(updateFactState(at3, true, 11000, 5, FAST, 'keypad').box).toBe(3)
   })
 
   it('drops two boxes on a mistake, never all the way to zero from the top', () => {
     const at5 = { ...emptyState(), box: 5, seen: 9 }
-    expect(updateFactState(at5, false, 3000, 5, FAST).box).toBe(3)
+    expect(updateFactState(at5, false, 3000, 5, FAST, 'keypad').box).toBe(3)
     const at1 = { ...emptyState(), box: 1, seen: 2 }
-    expect(updateFactState(at1, false, 3000, 5, FAST).box).toBe(0)
+    expect(updateFactState(at1, false, 3000, 5, FAST, 'keypad').box).toBe(0)
+  })
+
+  it('will not let picking from three buttons prove a fact is known', () => {
+    let state = emptyState()
+    // twenty perfect, instant answers — every one of them a one-in-three tap
+    for (let i = 0; i < 20; i++) state = updateFactState(state, true, 400, i, FAST, 'choice')
+    expect(state.box).toBe(GUESSABLE_CEILING)
+    expect(ceilingFor('choice')).toBe(GUESSABLE_CEILING)
+    expect(ceilingFor('pair')).toBe(GUESSABLE_CEILING)
+  })
+
+  it('lets a typed answer carry a fact the rest of the way', () => {
+    let state = emptyState()
+    for (let i = 0; i < 20; i++) state = updateFactState(state, true, 400, i, FAST, 'keypad')
+    expect(state.box).toBe(MAX_BOX)
+    for (const kind of ['keypad', 'count', 'numberline'] as const) expect(ceilingFor(kind)).toBe(MAX_BOX)
+  })
+
+  it('never demotes a proven fact just because it came back as multiple choice', () => {
+    const proven = { ...emptyState(), box: 5, seen: 12 }
+    expect(updateFactState(proven, true, 400, 20, FAST, 'choice').box).toBe(5)
   })
 
   it('rests a well-known fact for longer than a shaky one', () => {
@@ -235,6 +256,30 @@ describe('round building', () => {
   it('is reproducible from its seed', () => {
     const opts = { facts: pool, states: {}, roundIndex: 0, size: 10, kinds: ['choice'] as const }
     expect(buildRound({ ...opts, rng: makeRng(99) })).toEqual(buildRound({ ...opts, rng: makeRng(99) }))
+  })
+
+  it('asks the hard way once multiple choice has taken a fact as far as it can', () => {
+    const states: FactStates = {}
+    const nearlyThere = pool.slice(0, 4)
+    for (const f of nearlyThere)
+      states[f.id] = { ...emptyState(), box: GUESSABLE_CEILING, seen: 9, correct: 8, lastRound: 0 }
+
+    const round = buildRound({
+      facts: pool, states, roundIndex: 9, size: 10,
+      kinds: ['choice', 'keypad'], rng: makeRng(4),
+    })
+    const proven = new Set(nearlyThere.map((f) => f.id))
+    const asked = round.filter((t) => proven.has(t.factId))
+    expect(asked.length).toBeGreaterThan(0)
+    for (const task of asked) expect(`${task.factId}: ${task.kind}`).toBe(`${task.factId}: keypad`)
+  })
+
+  it('leaves a nearly-there fact on buttons when the level has nothing else', () => {
+    const states: FactStates = {}
+    for (const f of pool.slice(0, 4))
+      states[f.id] = { ...emptyState(), box: GUESSABLE_CEILING, seen: 9, correct: 8, lastRound: 0 }
+    const round = buildRound({ facts: pool, states, roundIndex: 9, size: 10, kinds: ['choice'], rng: makeRng(4) })
+    for (const task of round) expect(task.kind).toBe('choice')
   })
 
   it('only uses presentations that fit the skill', () => {

@@ -44,7 +44,7 @@ export function CountTask({ task, onAnswer, locked, result, accent }: TaskProps)
         }}
       >
         {taken.length === 0 ? (
-          <span className="text-4xl opacity-45">🧺</span>
+          <span className="text-4xl opacity-75">🧺</span>
         ) : (
           taken.map((index) => (
             <button key={index} type="button" onClick={() => toggle(index)} disabled={locked}
@@ -58,7 +58,7 @@ export function CountTask({ task, onAnswer, locked, result, accent }: TaskProps)
 
       <div className="flex items-center gap-3">
         <span className="text-3xl font-black tabular-nums" style={{ color: accent }}>{taken.length}</span>
-        <span className="text-sm font-bold uppercase tracking-widest opacity-60">i kurven</span>
+        <span className="text-sm font-bold uppercase tracking-widest opacity-85">i kurven</span>
       </div>
 
       {/* the pile to pick from */}
@@ -78,7 +78,7 @@ export function CountTask({ task, onAnswer, locked, result, accent }: TaskProps)
 
       <button type="button" disabled={locked || taken.length === 0}
         onClick={(e) => onAnswer(taken.length, centreOf(e.currentTarget))}
-        className="tap-target h-16 w-full rounded-3xl bg-emerald-400 text-2xl font-black text-[#0b2b1d] shadow-[0_6px_0_rgba(0,60,35,0.45)] disabled:opacity-35">
+        className="tap-target h-16 w-full rounded-3xl bg-emerald-400 text-2xl font-black text-[#0b2b1d] shadow-[0_6px_0_rgba(0,60,35,0.45)] disabled:opacity-45">
         Færdig
       </button>
     </div>

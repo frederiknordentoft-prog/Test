@@ -1,6 +1,6 @@
-import type { FactStates } from '../engine/types'
+import type { FactStates, Task } from '../engine/types'
 
-export const SAVE_VERSION = 1
+export const SAVE_VERSION = 2
 const KEY = 'talvennerne.save'
 
 export interface Settings {
@@ -26,6 +26,25 @@ export interface CollectedCreature {
   y: number
 }
 
+/**
+ * A round the child walked away from. Kept whole so it can be picked up exactly
+ * where it was — a call to dinner should not cost eight right answers.
+ */
+export interface PausedRound {
+  levelId: string
+  islandIndex: number
+  queue: Task[]
+  current: Task
+  answered: number
+  solvedFacts: string[]
+  total: number
+  streak: number
+  bestStreak: number
+  mistakes: number
+  goldenUsed: boolean
+  goldenCaught: boolean
+}
+
 export interface SaveData {
   version: number
   /** true once the welcome screen has been through, so it never comes back */
@@ -36,6 +55,11 @@ export interface SaveData {
   /** level id → how many times it has been completed */
   levels: Record<string, number>
   creatures: CollectedCreature[]
+  /** islands a grown-up opened from the parent panel, regardless of progress */
+  unlockedIslands: string[]
+  /** the talven the child takes along on a round; empty = the most recent one */
+  buddyUid: string
+  pausedRound: PausedRound | null
   settings: Settings
   streak: { count: number; best: number; lastDay: string | null; days: string[] }
   totalRounds: number
@@ -51,6 +75,9 @@ export function defaultSave(): SaveData {
     facts: {},
     levels: {},
     creatures: [],
+    unlockedIslands: [],
+    buddyUid: '',
+    pausedRound: null,
     settings: { sound: true, speech: true, autoSpeak: true, motion: true },
     streak: { count: 0, best: 0, lastDay: null, days: [] },
     totalRounds: 0,
@@ -75,6 +102,8 @@ function migrate(raw: unknown): SaveData | null {
     facts: { ...data.facts },
     levels: { ...data.levels },
     creatures: Array.isArray(data.creatures) ? data.creatures : [],
+    unlockedIslands: Array.isArray(data.unlockedIslands) ? data.unlockedIslands : [],
+    pausedRound: data.pausedRound ?? null,
     settings: { ...base.settings, ...data.settings },
     streak: { ...base.streak, ...data.streak },
   }

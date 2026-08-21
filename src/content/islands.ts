@@ -30,6 +30,8 @@ export interface Island {
   emoji: string
   skills: SkillId[]
   levels: Level[]
+  /** the school year this island belongs to — lets a grown-up open the right ones */
+  grade: 0 | 1 | 2
   palette: IslandPalette
   /** how many turer must be done here before the next island opens */
   unlockAfter: number
@@ -54,6 +56,7 @@ export const ISLANDS: Island[] = [
     emoji: '🌲',
     skills: ['count', 'neighbour'],
     unlockAfter: 4,
+    grade: 0,
     palette: { skyFrom: '#0e3b2e', skyTo: '#1d7a5a', ground: '#0a2a20', accent: '#7df5b8', glow: '#34d399' },
     species: [
       { id: 'skov-mos', name: 'Mosmis' },
@@ -78,6 +81,7 @@ export const ISLANDS: Island[] = [
     emoji: '🌼',
     skills: ['addTo10'],
     unlockAfter: 4,
+    grade: 0,
     palette: { skyFrom: '#3d5a12', skyTo: '#8fc422', ground: '#2c4210', accent: '#fff07c', glow: '#c6f24e' },
     species: [
       { id: 'eng-bi', name: 'Plusbi' },
@@ -102,6 +106,7 @@ export const ISLANDS: Island[] = [
     emoji: '🪻',
     skills: ['subTo10'],
     unlockAfter: 4,
+    grade: 0,
     palette: { skyFrom: '#2b1b4d', skyTo: '#5b3fa0', ground: '#1a1030', accent: '#c4b5fd', glow: '#a78bfa' },
     species: [
       { id: 'mose-tåge', name: 'Tågetrold' },
@@ -126,6 +131,7 @@ export const ISLANDS: Island[] = [
     emoji: '💎',
     skills: ['tenFriends'],
     unlockAfter: 4,
+    grade: 1,
     palette: { skyFrom: '#3b2410', skyTo: '#a9631c', ground: '#241505', accent: '#ffd166', glow: '#fbbf24' },
     species: [
       { id: 'hule-krystal', name: 'Krystalkim' },
@@ -150,6 +156,7 @@ export const ISLANDS: Island[] = [
     emoji: '⛰️',
     skills: ['doubles', 'halves'],
     unlockAfter: 4,
+    grade: 1,
     palette: { skyFrom: '#123a5c', skyTo: '#5fb2e6', ground: '#0d2740', accent: '#e0f2fe', glow: '#7dd3fc' },
     species: [
       { id: 'bjerg-sne', name: 'Snefnug-Sam' },
@@ -174,6 +181,7 @@ export const ISLANDS: Island[] = [
     emoji: '🌉',
     skills: ['addTo20', 'subTo20'],
     unlockAfter: 6,
+    grade: 1,
     palette: { skyFrom: '#5c1a2e', skyTo: '#e2703a', ground: '#33101c', accent: '#ffd6a5', glow: '#fb7185' },
     species: [
       { id: 'bro-lygte', name: 'Brolygte' },
@@ -198,6 +206,7 @@ export const ISLANDS: Island[] = [
     emoji: '🌊',
     skills: ['tensAndOnes', 'addTo100', 'subTo100'],
     unlockAfter: 6,
+    grade: 2,
     palette: { skyFrom: '#062a4a', skyTo: '#1d84c4', ground: '#03182b', accent: '#a5f3fc', glow: '#22d3ee' },
     species: [
       { id: 'hav-blaek', name: 'Blækket' },

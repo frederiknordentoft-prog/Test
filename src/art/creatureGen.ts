@@ -16,7 +16,7 @@ export interface CreatureLook {
   bottomBias: number
   eyes: 1 | 2 | 3
   eyeSize: number
-  pupil: 'dot' | 'ring' | 'sleepy'
+  pupil: 'dot' | 'ring'
   mouth: 'smile' | 'o' | 'wave' | 'fang'
   crown: 'none' | 'ears' | 'horns' | 'antenna' | 'fin'
   pattern: 'none' | 'spots' | 'stripes' | 'belly'
@@ -48,7 +48,7 @@ export function lookFor(speciesId: string, variant = 0, hueBase?: number): Creat
     bottomBias: silhouette === 'egg' ? 0.86 + rng.next() * 0.12 : 0.62 + rng.next() * 0.3,
     eyes: pick(rng, [2, 2, 2, 2, 1, 3] as const),
     eyeSize: 7 + rng.next() * 4,
-    pupil: pick(rng, ['dot', 'dot', 'ring', 'sleepy'] as const),
+    pupil: pick(rng, ['dot', 'dot', 'dot', 'ring'] as const),
     mouth: pick(rng, ['smile', 'smile', 'o', 'wave', 'fang'] as const),
     crown: pick(rng, ['none', 'ears', 'horns', 'antenna', 'fin'] as const),
     pattern: pick(rng, ['none', 'spots', 'stripes', 'belly'] as const),

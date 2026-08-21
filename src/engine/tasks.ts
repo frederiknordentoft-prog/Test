@@ -27,6 +27,22 @@ function boundsFor(fact: Fact): [number, number] {
   }
 }
 
+/**
+ * A number line is a picture of how big numbers are, so its far end has to be a
+ * number the child could actually land on. `boundsFor` is deliberately wider than
+ * the answers so distractors have room; that headroom has no business on a line.
+ */
+function lineBoundsFor(fact: Fact): [number, number] {
+  switch (fact.skill) {
+    case 'doubles':
+      return [0, 20]
+    case 'halves':
+      return [0, 10]
+    default:
+      return boundsFor(fact)
+  }
+}
+
 function opFor(fact: Fact): '+' | '−' | null {
   switch (fact.skill) {
     case 'addTo10':
@@ -83,7 +99,7 @@ export function speechFor(fact: Fact, kind: TaskKind): string {
 
 /** Turn a fact into one on-screen task. Pure: same fact + kind + seed → same task. */
 export function buildTask(fact: Fact, kind: TaskKind, rng: Rng, occurrence: number): Task {
-  const range = boundsFor(fact)
+  const range = kind === 'numberline' ? lineBoundsFor(fact) : boundsFor(fact)
   const optionCount = kind === 'choice' ? 3 : kind === 'pair' ? 4 : 0
 
   let options: number[] = []

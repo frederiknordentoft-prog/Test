@@ -36,7 +36,7 @@ export function MyIslandScreen({ onBack }: { onBack: () => void }) {
             className="tap-target grid h-12 w-12 min-h-0 place-items-center rounded-2xl bg-black/25 text-xl ring-1 ring-white/20">‹</button>
           <div>
             <p className="text-xl font-black leading-tight">{save.avatar} Min ø</p>
-            <p className="text-sm opacity-75">
+            <p className="text-sm opacity-90">
               {save.creatures.length === 0 ? 'Vind din første talven på kortet' : 'Træk dine talvenner derhen du vil'}
             </p>
           </div>

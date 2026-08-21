@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { TaskProps } from './types'
 import { centreOf } from './types'
+import { TenFrame } from './Manipulatives'
 import { sfx } from '../../audio/sfx'
 import { haptics } from '../../fx/haptics'
 
@@ -69,26 +70,29 @@ export function PairTask({ task, onAnswer, locked, result, accent }: TaskProps) 
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-8">
+    <div className="flex w-full max-w-md flex-col items-center gap-5">
+      {/* the empty squares are the answer — you can count them */}
+      <TenFrame filled={task.a} added={result?.correct ? task.answer : 0} color={accent} showGap size={24} />
+
       <div className="flex items-center gap-4">
         <div className="grid h-24 w-24 place-items-center rounded-full text-5xl font-black tabular-nums shadow-[0_6px_0_rgba(0,0,0,0.3)]"
           style={{ background: accent, color: '#1b1233' }}>
           {task.a}
         </div>
-        <span className="text-4xl font-black opacity-60">+</span>
+        <span className="text-4xl font-black opacity-85">+</span>
         <div ref={targetRef}
           className="grid h-24 w-24 place-items-center rounded-full border-4 border-dashed text-4xl font-black transition-colors"
           style={{
             borderColor: result?.correct ? 'rgb(52 211 153)' : 'rgba(255,255,255,0.45)',
             background: result?.correct ? 'rgba(52,211,153,0.3)' : drag ? 'rgba(255,255,255,0.16)' : 'transparent',
           }}>
-          {result ? <span className={result.correct ? 'punch' : 'nudge'}>{task.answer}</span> : <span className="opacity-45">?</span>}
+          {result ? <span className={result.correct ? 'punch' : 'nudge'}>{task.answer}</span> : <span className="opacity-70">?</span>}
         </div>
-        <span className="text-4xl font-black opacity-60">=</span>
+        <span className="text-4xl font-black opacity-85">=</span>
         <div className="grid h-20 w-20 place-items-center rounded-full bg-white/12 text-4xl font-black ring-1 ring-white/25">10</div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-4">
+      <div className="flex flex-wrap items-center justify-center gap-3">
         {task.options.map((option) => {
           const isDragging = drag?.option === option
           const isFlying = flying === option
@@ -101,7 +105,7 @@ export function PairTask({ task, onAnswer, locked, result, accent }: TaskProps) 
               onPointerMove={onMove}
               onPointerUp={onUp}
               onPointerCancel={() => setDrag(null)}
-              className="grid h-20 w-20 touch-none place-items-center rounded-full bg-white/95 text-4xl font-black tabular-nums text-[#1b1233] shadow-[0_6px_0_rgba(0,0,0,0.3)]"
+              className="grid h-[4.25rem] w-[4.25rem] touch-none place-items-center rounded-full bg-white/95 text-4xl font-black tabular-nums text-[#1b1233] shadow-[0_6px_0_rgba(0,0,0,0.3)] sm:h-20 sm:w-20"
               style={{
                 transform: isDragging ? `translate(${drag.dx}px, ${drag.dy}px) scale(1.12)` : isFlying ? 'scale(0.2)' : 'none',
                 opacity: isFlying ? 0 : 1,

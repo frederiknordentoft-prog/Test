@@ -1,6 +1,6 @@
 import type { Fact, FactStates, SkillId, Task, TaskKind } from './types'
 import type { Rng } from './rng'
-import { isDue } from './mastery'
+import { GUESSABLE_CEILING, isDue, isFreeEntry } from './mastery'
 import { buildTask } from './tasks'
 
 /** Which presentations actually make sense for a skill. */
@@ -20,9 +20,19 @@ function validKinds(skill: SkillId): TaskKind[] {
   }
 }
 
-function pickKind(skill: SkillId, allowed: readonly TaskKind[], rng: Rng): TaskKind {
-  const usable = validKinds(skill).filter((k) => allowed.includes(k))
+function pickKind(fact: Fact, allowed: readonly TaskKind[], states: FactStates, rng: Rng): TaskKind {
+  const usable = validKinds(fact.skill).filter((k) => allowed.includes(k))
   if (usable.length === 0) return 'choice'
+
+  // A fact that has gone as far as multiple choice can carry it gets asked the
+  // hard way, so the child can show they actually know the number rather than
+  // recognise it. This is how the app escalates on its own: buttons while it is
+  // new, keypad once it is nearly there.
+  if ((states[fact.id]?.box ?? 0) >= GUESSABLE_CEILING) {
+    const free = usable.filter(isFreeEntry)
+    if (free.length > 0) return free[0]
+  }
+
   // the level's first listed kind is the house style; the others turn up often
   // enough to keep a round from feeling like a worksheet
   if (usable.length === 1 || rng.next() > 0.35) return usable[0]
@@ -106,7 +116,7 @@ export function buildRound({ facts, states, roundIndex, size, kinds, rng }: Roun
   // practice. Never back to back, though: that reads as a glitch, not a drill.
   padToSize(ordered, facts, size, rng)
 
-  const tasks = ordered.map((f, i) => buildTask(f, pickKind(f.skill, kinds, rng), rng, i))
+  const tasks = ordered.map((f, i) => buildTask(f, pickKind(f, kinds, states, rng), rng, i))
   return balanceAnswerPositions(tasks, rng)
 }
 

@@ -30,25 +30,28 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
           <p className="mt-1 text-base opacity-80">Regn og saml små væsener</p>
         </div>
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value.slice(0, 12))}
-          placeholder="Hvad hedder du?"
-          aria-label="Dit navn"
-          className="w-full max-w-xs rounded-2xl bg-black/30 px-4 py-4 text-center text-xl font-bold ring-1 ring-white/20 outline-none placeholder:opacity-55 focus:ring-white/55"
-        />
-
-        <div className="flex max-w-xs flex-wrap justify-center gap-2">
+        {/* Picking a face needs no reading. The name is a bonus, not a gate — a
+            six-year-old should never meet a text field before they meet a sum. */}
+        <p className="text-base font-bold opacity-90">Vælg din figur</p>
+        <div className="flex max-w-sm flex-wrap justify-center gap-2.5">
           {CHILD_AVATARS.map((emoji) => (
-            <button key={emoji} type="button"
+            <button key={emoji} type="button" aria-label={`Vælg ${emoji}`}
               onClick={() => { sfx.pop(); setAvatar(emoji) }}
-              className={`tap-target grid h-14 w-14 min-h-0 place-items-center rounded-2xl text-3xl ring-1 transition-colors ${
-                avatar === emoji ? 'bg-white/90 ring-white' : 'bg-white/10 ring-white/20'
+              className={`tap-target grid h-16 w-16 min-h-0 place-items-center rounded-2xl text-4xl ring-2 transition-transform ${
+                avatar === emoji ? 'scale-110 bg-white/90 ring-white' : 'bg-white/10 ring-white/25'
               }`}>
               {emoji}
             </button>
           ))}
         </div>
+
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, 12))}
+          placeholder="Dit navn — kan springes over"
+          aria-label="Dit navn"
+          className="w-full max-w-xs rounded-2xl bg-black/30 px-4 py-3 text-center text-base font-bold ring-1 ring-white/25 outline-none placeholder:opacity-75 focus:ring-white/60"
+        />
 
         <BigButton tone="gold" className="h-16 w-full max-w-xs text-2xl"
           onPress={() => {

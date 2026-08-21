@@ -132,15 +132,12 @@ export function Creature({ look, mood = 'idle', size = 120, golden = false, clas
       <g className="creature-eyes">
         {eyes.map((x, i) => (
           <g key={i}>
-            <ellipse cx={x} cy={faceY} rx={look.eyeSize} ry={look.eyeSize * (look.pupil === 'sleepy' ? 0.62 : 1)} fill="#fff" />
+            <ellipse cx={x} cy={faceY} rx={look.eyeSize} ry={look.eyeSize} fill="#fff" />
             {look.pupil === 'ring' ? (
               <>
                 <circle cx={x} cy={faceY} r={look.eyeSize * 0.55} fill="#1b1233" />
                 <circle cx={x} cy={faceY} r={look.eyeSize * 0.26} fill={`hsl(${hue}, 90%, 60%)`} />
               </>
-            ) : look.pupil === 'sleepy' ? (
-              <path d={`M ${x - look.eyeSize * 0.7} ${faceY} q ${look.eyeSize * 0.7} ${look.eyeSize * 0.7} ${look.eyeSize * 1.4} 0`}
-                stroke="#1b1233" strokeWidth="2.6" fill="none" strokeLinecap="round" />
             ) : (
               <circle cx={x} cy={faceY + 1} r={look.eyeSize * 0.5} fill="#1b1233" />
             )}
@@ -155,10 +152,12 @@ export function Creature({ look, mood = 'idle', size = 120, golden = false, clas
         ) : look.mouth === 'o' ? (
           <ellipse cx="50" cy={mouthY} rx={mood === 'cheer' ? 8 : 5} ry={mood === 'cheer' ? 9 : 5.5} fill="#1b1233" stroke="none" />
         ) : look.mouth === 'wave' ? (
-          <path d={`M ${50 - 10} ${mouthY} q 5 5 10 0 q 5 -5 10 0`} />
+          mood === 'cheer'
+            ? <path d={`M ${50 - 10} ${mouthY} q 10 14 20 0`} />
+            : <path d={`M ${50 - 10} ${mouthY} q 5 5 10 0 q 5 -5 10 0`} />
         ) : look.mouth === 'fang' ? (
           <>
-            <path d={`M ${50 - 9} ${mouthY} q 9 7 18 0`} />
+            <path d={`M ${50 - 9} ${mouthY} q 9 ${mood === 'cheer' ? 13 : 7} 18 0`} />
             <path d={`M ${50 - 4} ${mouthY + 3} l 2 4 l 2 -4`} fill="#fff" stroke="none" />
           </>
         ) : (

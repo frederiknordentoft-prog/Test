@@ -30,7 +30,7 @@ export function BigButton({ children, onPress, tone = 'primary', className = '',
       type="button"
       aria-label={label}
       disabled={disabled}
-      className={`tap-target rounded-3xl px-5 font-extrabold disabled:opacity-40 ${TONES[tone]} ${className}`}
+      className={`tap-target rounded-3xl px-5 font-extrabold disabled:opacity-45 ${TONES[tone]} ${className}`}
       onPointerDown={() => {
         if (disabled) return
         if (!silent) sfx.tap()

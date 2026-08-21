@@ -33,7 +33,7 @@ export function IslandScreen({ islandId, onStart, onBack }: {
           </button>
           <div>
             <p className="text-xl font-black leading-tight">{island.emoji} {island.name}</p>
-            <p className="text-sm opacity-75">{island.tagline}</p>
+            <p className="text-sm opacity-90">{island.tagline}</p>
           </div>
         </header>
 
@@ -51,7 +51,7 @@ export function IslandScreen({ islandId, onStart, onBack }: {
                   aria-label={open ? level.name : `${level.name} — låst`}
                   onPointerDown={() => open && speak(level.name)}
                   onClick={() => { sfx.whoosh(); onStart(level.id) }}
-                  className={`tap-target flex items-center gap-4 rounded-3xl px-4 py-4 text-left ring-1 disabled:opacity-40 ${
+                  className={`tap-target flex items-center gap-4 rounded-3xl px-4 py-4 text-left ring-1 disabled:opacity-75 ${
                     level.festival ? 'card-sheen ring-amber-200/50' : 'ring-white/15'
                   }`}
                   style={{ background: level.festival ? 'rgba(255, 209, 102, 0.18)' : 'rgba(255,255,255,0.09)' }}
@@ -62,7 +62,7 @@ export function IslandScreen({ islandId, onStart, onBack }: {
                   </span>
                   <span className="flex-1">
                     <span className="block text-lg font-black">{level.name}</span>
-                    <span className="block text-xs uppercase tracking-widest opacity-60">
+                    <span className="block text-xs uppercase tracking-widest opacity-85">
                       {level.festival ? 'Fest · alt du har lært' : `${level.size} opgaver`}
                     </span>
                   </span>

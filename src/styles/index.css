@@ -127,7 +127,17 @@ input, textarea { -webkit-user-select: text; user-select: text; }
   100% { transform: translate(var(--fx, 40px), var(--fy, -30px)) rotate(12deg); }
 }
 
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
 .creature { animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 90%; }
+.creature-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 6.5s ease-in-out infinite;
+}
 .creature-cheer { animation: cheer 0.62s cubic-bezier(.34,1.56,.64,1); }
 .creature-think { animation: think 2.4s ease-in-out infinite; }
 .creature-sad { animation: none; opacity: 0.85; }
@@ -171,21 +181,46 @@ input, textarea { -webkit-user-select: text; user-select: text; }
   justify-content: center;
   width: 100%;
   min-height: 0;
+  min-width: 0;
 }
 
-/* On a landscape iPad the question and the answers sit side by side instead of
-   leaving two thirds of the screen empty. */
-@media (orientation: landscape) and (min-width: 820px) and (min-height: 500px) {
+/* Side by side in landscape — on a phone too. A phone in landscape is about
+   390 px tall, which is nowhere near enough to stack a question above its answers,
+   and the page cannot scroll. Every phone used to fall outside this rule. */
+@media (orientation: landscape) and (min-height: 380px) {
   .round-stage {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 4rem;
+    gap: 1.5rem;
     max-width: 68rem;
     margin: 0 auto;
   }
   .round-stage > * { flex: 1 1 0; width: auto; }
 }
+
+@media (orientation: landscape) and (min-width: 820px) and (min-height: 500px) {
+  .round-stage { gap: 4rem; }
+}
+
+/* A phone on its side has about 390 px of height and no room to be generous.
+   Everything comes down a size so the answers stay on the screen. */
+@media (orientation: landscape) and (max-height: 460px) {
+  .round-stage { gap: 1.5rem; max-width: 44rem; }
+  .round-stage > * { max-width: 21rem; }
+  .prompt-big { font-size: 2.5rem; }
+  .answer-tile { height: 4.5rem; font-size: 2.5rem; }
+}
+
+/* One place decides how big the question is drawn. */
+.prompt-big { font-size: 3.75rem; line-height: 1; }
+@media (min-width: 640px) { .prompt-big { font-size: 4.5rem; } }
+
+/* The companion used to be sized from a window.innerWidth read during render,
+   which never updated when the device was turned. */
+.companion { width: 92px; height: 92px; }
+@media (min-width: 820px) { .companion { width: 124px; height: 124px; } }
+@media (orientation: landscape) and (max-height: 460px) { .companion { width: 62px; height: 62px; } }
 
 /* ---------- accessibility ---------- */
 
@@ -197,6 +232,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }
   }
 }
 
+.calm .creature-eyes,
 .calm .creature,
 .calm .creature-halo,
 .calm .egg-wobble,

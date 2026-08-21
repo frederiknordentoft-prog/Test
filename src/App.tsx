@@ -8,7 +8,7 @@ import { MyIslandScreen } from './ui/screens/MyIslandScreen'
 import { ParentScreen } from './ui/screens/ParentScreen'
 import { WelcomeScreen } from './ui/screens/WelcomeScreen'
 import { ParticleCanvas } from './fx/ParticleCanvas'
-import { useProfile } from './state/useProfile'
+import { nextLevel, useProfile } from './state/useProfile'
 import { useRound } from './state/useRound'
 import { setSoundEnabled, unlockAudio } from './audio/sfx'
 import { setSpeechEnabled, stopSpeech } from './audio/speech'
@@ -72,9 +72,30 @@ export function App() {
     }
   }, [save.totalRounds])
 
+  const startLevel = (levelId: string) => {
+    round.start(levelId)
+    setScreen({ k: 'round' })
+  }
+
+  /** ✕ keeps the round instead of throwing it away. */
+  const pauseToMap = () => {
+    round.pause()
+    setScreen({ k: 'map' })
+  }
+
   const backToMap = () => {
     round.quit()
     setScreen({ k: 'map' })
+  }
+
+  const playNext = () => {
+    const next = nextLevel(save)
+    if (next) startLevel(next.levelId)
+  }
+
+  const resumePaused = () => {
+    round.resume()
+    setScreen({ k: 'round' })
   }
 
   if (screen.k === 'welcome') {
@@ -94,6 +115,8 @@ export function App() {
           onOpenAlbum={() => setScreen({ k: 'album' })}
           onOpenMyIsland={() => setScreen({ k: 'myisland' })}
           onOpenParent={() => setScreen({ k: 'parent' })}
+          onPlayNext={playNext}
+          onResume={resumePaused}
         />
       )}
 
@@ -101,18 +124,15 @@ export function App() {
         <IslandScreen
           islandId={screen.id}
           onBack={() => setScreen({ k: 'map' })}
-          onStart={(levelId) => {
-            round.start(levelId)
-            setScreen({ k: 'round' })
-          }}
+          onStart={startLevel}
         />
       )}
 
       {screen.k === 'round' &&
         (round.status === 'finished' ? (
-          <RewardScreen onDone={backToMap} />
+          <RewardScreen onDone={backToMap} onAgain={() => { round.quit(); playNext() }} />
         ) : (
-          <RoundScreen onQuit={backToMap} />
+          <RoundScreen onQuit={pauseToMap} />
         ))}
 
       {screen.k === 'album' && <AlbumScreen onBack={() => setScreen({ k: 'map' })} />}

@@ -14,7 +14,7 @@ import { sfx } from '../../audio/sfx'
 import { haptics } from '../../fx/haptics'
 import { speak } from '../../audio/speech'
 
-type Step = 'summary' | 'egg' | 'name'
+type Step = 'summary' | 'egg' | 'name' | 'done'
 
 /**
  * The end of every round.
@@ -23,7 +23,7 @@ type Step = 'summary' | 'egg' | 'name'
  * sometimes gets nothing learns that practising might be pointless; a child who
  * always gets *something* comes back to find out what.
  */
-export function RewardScreen({ onDone }: { onDone: () => void }) {
+export function RewardScreen({ onDone, onAgain }: { onDone: () => void; onAgain: () => void }) {
   const round = useRound()
   const save = useProfile((s) => s.save)
   const collect = useProfile((s) => s.collect)
@@ -84,7 +84,7 @@ export function RewardScreen({ onDone }: { onDone: () => void }) {
       x: 0.2 + Math.random() * 0.6,
       y: 0.45 + Math.random() * 0.4,
     })
-    onDone()
+    setStep('done')
   }
 
   return (
@@ -150,12 +150,31 @@ export function RewardScreen({ onDone }: { onDone: () => void }) {
               onChange={(e) => setChosenName(e.target.value.slice(0, 14))}
               placeholder="… eller skriv selv"
               aria-label="Navn på din talven"
-              className="w-full rounded-2xl bg-black/45 px-4 py-3 text-center text-lg font-bold ring-1 ring-white/30 outline-none placeholder:opacity-60 focus:ring-white/70"
+              className="w-full rounded-2xl bg-black/45 px-4 py-3 text-center text-lg font-bold ring-1 ring-white/30 outline-none placeholder:opacity-75 focus:ring-white/70"
             />
 
             <BigButton tone="primary" className="h-16 w-full text-2xl" onPress={keep}>
               Behold {chosenName.trim() || prize.species.name}
             </BigButton>
+          </div>
+        )}
+
+        {/* The moment the child most wants to go again is right here. Do not make
+            them walk back through the map to do it. */}
+        {step === 'done' && (
+          <div className="pop-in flex w-full max-w-sm flex-col items-center gap-5 rounded-[2rem] bg-[#1b1233]/75 p-6 ring-1 ring-white/15 backdrop-blur-sm">
+            <Creature look={prize.look} mood="cheer" size={124} golden={golden} />
+            <p className="text-center text-xl font-black">
+              {chosenName.trim() || prize.species.name} flyttede ind på din ø
+            </p>
+            <div className="flex w-full flex-col gap-2">
+              <BigButton tone="gold" className="h-16 w-full text-2xl" onPress={() => { sfx.whoosh(); onAgain() }}>
+                ▶︎ En tur mere
+              </BigButton>
+              <BigButton tone="soft" className="h-14 w-full text-lg" onPress={onDone}>
+                Til kortet
+              </BigButton>
+            </div>
           </div>
         )}
       </div>
@@ -167,7 +186,7 @@ function Stat({ value, label, accent }: { value: string; label: string; accent: 
   return (
     <div className="rounded-2xl bg-black/25 px-2 py-3 ring-1 ring-white/15">
       <div className="text-3xl font-black tabular-nums" style={{ color: accent }}>{value}</div>
-      <div className="text-[11px] font-bold uppercase tracking-widest opacity-65">{label}</div>
+      <div className="text-[11px] font-bold uppercase tracking-widest opacity-85">{label}</div>
     </div>
   )
 }

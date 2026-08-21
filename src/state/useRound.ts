@@ -38,6 +38,9 @@ interface RoundStore {
   submit: (value: number) => AnswerResult
   next: () => void
   skipGolden: () => void
+  /** step away but keep the round whole, so it can be finished later */
+  pause: () => void
+  resume: () => void
   quit: () => void
 }
 
@@ -112,7 +115,14 @@ export const useRound = create<RoundStore>((set, get) => ({
     const correct = value === task.answer
     const ms = Date.now() - s.askedAt
     const golden = s.status === 'golden'
-    useProfile.getState().recordAnswer(task.factId, correct, ms, fastMsFor(task.kind, task.answer))
+
+    // The golden egg is a bonus the child may always walk away from, so missing it
+    // must not cost anything either. Only a caught egg reaches the mastery model —
+    // otherwise daring to try would be punished, which is the one thing this
+    // mechanic was built to avoid.
+    if (!golden || correct) {
+      useProfile.getState().recordAnswer(task.factId, correct, ms, fastMsFor(task.kind, task.answer), task.kind)
+    }
 
     if (golden) {
       set({ goldenCaught: correct, lastResult: { correct, given: value, answer: task.answer, golden: true } })
@@ -176,6 +186,53 @@ export const useRound = create<RoundStore>((set, get) => ({
   },
 
   skipGolden: () => get().next(),
+
+  pause: () => {
+    if (get().status === 'idle' || get().status === 'finished') {
+      get().quit()
+      return
+    }
+    // If the task on screen has already been answered — the beat after a correct
+    // answer, or the whole golden-egg interlude — the round has to move on before
+    // it is stored. Otherwise that task comes back on resume and is counted a
+    // second time, and the child clears eleven of ten.
+    if (get().lastResult !== null || get().status === 'golden') get().next()
+
+    const s = get()
+    if (s.status === 'finished' || !s.current) {
+      get().quit()
+      return
+    }
+    useProfile.getState().savePausedRound({
+      levelId: s.levelId,
+      islandIndex: s.islandIndex,
+      queue: s.queue,
+      current: s.current,
+      answered: s.answered,
+      solvedFacts: s.solvedFacts,
+      total: s.total,
+      streak: s.streak,
+      bestStreak: s.bestStreak,
+      mistakes: s.mistakes,
+      goldenUsed: s.goldenUsed,
+      goldenCaught: s.goldenCaught,
+    })
+    set({ status: 'idle', current: null, queue: [], goldenTask: null, lastResult: null })
+  },
+
+  resume: () => {
+    const paused = useProfile.getState().save.pausedRound
+    if (!paused) return
+    set({
+      ...paused,
+      status: 'playing',
+      goldenTask: null,
+      lastResult: null,
+      // the clock starts again now — a pause is not slowness
+      askedAt: Date.now(),
+    })
+    useProfile.getState().savePausedRound(null)
+  },
 
   quit: () => set({ status: 'idle', current: null, queue: [], goldenTask: null, lastResult: null }),
 }))

@@ -34,7 +34,16 @@ export function KeypadTask({ task, onAnswer, locked, result, accent }: TaskProps
           ['--tw-ring-color' as string]: result ? 'transparent' : 'rgba(255,255,255,0.28)',
         }}
       >
-        {result && !result.correct ? <span className="nudge">{result.answer}</span> : (entry || <span className="opacity-40">–</span>)}
+        {result && !result.correct ? (
+          // the child's own answer stays on screen beside the right one — replacing
+          // it in place reads as "you mistyped", not "you miscounted"
+          <span className="flex items-baseline gap-4">
+            <span className="text-3xl line-through opacity-70">{result.given}</span>
+            <span className="nudge" style={{ color: accent }}>{result.answer}</span>
+          </span>
+        ) : (
+          entry || <span className="opacity-55">–</span>
+        )}
       </div>
 
       <div className="grid w-full grid-cols-3 gap-2.5">
@@ -57,7 +66,7 @@ export function KeypadTask({ task, onAnswer, locked, result, accent }: TaskProps
         </button>
         <button ref={okRef} type="button" disabled={locked || value === null} aria-label="Svar"
           onClick={(e) => value !== null && onAnswer(value, centreOf(e.currentTarget))}
-          className="tap-target h-16 rounded-2xl bg-emerald-400 text-2xl font-black text-[#0b2b1d] shadow-[0_5px_0_rgba(0,60,35,0.45)] disabled:opacity-35">
+          className="tap-target h-16 rounded-2xl bg-emerald-400 text-2xl font-black text-[#0b2b1d] shadow-[0_5px_0_rgba(0,60,35,0.45)] disabled:opacity-45">
           ✓
         </button>
       </div>
