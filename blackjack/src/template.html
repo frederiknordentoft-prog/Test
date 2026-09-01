@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Blackjack</title>
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Blackjack — klassikeren, designet helt enkelt. Rigtige regler, 3:2, ingen støj.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23000'/%3E%3Cpath fill='%23fff' d='M50 14C40 27 15 43 15 59c0 9 7 16 16 16 7 0 12-3 16-8-2 8-6 15-11 19h28c-5-4-9-11-11-19 4 5 9 8 16 8 9 0 16-7 16-16 0-16-25-32-35-45z'/%3E%3C/svg%3E">
+<!-- @style -->
+</head>
+<body>
+<div id="app" class="app" data-phase="intro" data-theme-mode="auto">
+
+  <!-- ===== Intro (apple.com hero) ===== -->
+  <section class="intro" id="intro" aria-label="Velkommen">
+    <div class="intro-inner">
+      <p class="intro-eyebrow" data-i18n="introEyebrow">Nyt kortspil</p>
+      <h1 class="intro-title">Blackjack<span class="dot">.</span></h1>
+      <p class="intro-sub" data-i18n="introSub">Klassikeren. Uden støj.</p>
+      <div class="intro-cta">
+        <button class="btn btn-primary btn-lg" id="btnPlay" data-i18n="play">Spil nu</button>
+        <button class="btn btn-link" id="btnIntroRules" data-i18n="howToPlay">Sådan spiller du</button>
+      </div>
+      <p class="intro-fine" id="introFine"></p>
+    </div>
+    <div class="intro-cards" aria-hidden="true" id="introCards"></div>
+  </section>
+
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>Blackjack</span></div>
+      <div class="topbar-right">
+        <div class="balance" id="balanceBox" aria-live="off">
+          <span class="balance-label" data-i18n="balance">Saldo</span>
+          <span class="balance-value" id="balance">10.000 kr.</span>
+        </div>
+        <button class="icon-btn" id="btnSound" aria-label="Lyd til/fra" aria-pressed="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z"/><path class="snd-wave" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="snd-wave" d="M18 6.7a7.5 7.5 0 0 1 0 10.6"/><path class="snd-off" d="M16 9l5 6M21 9l-5 6"/></svg>
+        </button>
+        <button class="icon-btn" id="btnSettings" aria-label="Indstillinger">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Table ===== -->
+  <main class="table" id="table">
+    <div class="table-surface" aria-hidden="true"></div>
+
+    <div class="shoe" id="shoe" aria-hidden="true">
+      <div class="shoe-card"></div><div class="shoe-card"></div><div class="shoe-card"></div>
+      <div class="shoe-meter"><span id="shoeFill"></span></div>
+    </div>
+
+    <section class="seat seat-dealer" aria-label="Dealer">
+      <div class="hand-meta">
+        <span class="hand-name" data-i18n="dealer">Dealer</span>
+        <span class="badge badge-value" id="dealerValue" hidden></span>
+      </div>
+      <div class="cards" id="dealerCards" style="--n:0"></div>
+    </section>
+
+    <div class="centre">
+      <div class="message" id="message" aria-live="polite"></div>
+      <div class="bet-spot" id="betSpot">
+        <div class="bet-ring" id="betRing"><span class="bet-ring-label" data-i18n="betHere">Indsats</span></div>
+        <div class="bet-stack" id="betStack"></div>
+        <div class="bet-amount" id="betAmount"></div>
+      </div>
+      <div class="side-bets" id="sideBets"></div>
+    </div>
+
+    <section class="seat seat-player" aria-label="Dine hænder">
+      <div class="hands" id="hands" data-count="0"></div>
+    </section>
+  </main>
+
+  <!-- ===== Dock ===== -->
+  <footer class="dock" id="dock">
+    <div class="dock-inner">
+      <div class="hint" id="hint" hidden></div>
+
+      <div class="panel panel-bet" data-panel="betting">
+        <div class="chips" id="chips" role="group" aria-label="Jetoner"></div>
+        <div class="row">
+          <div class="row-left">
+            <button class="btn btn-secondary btn-sm" id="btnUndo" data-i18n="undo">Fortryd</button>
+            <button class="btn btn-secondary btn-sm" id="btnClear" data-i18n="clear">Ryd</button>
+            <button class="btn btn-secondary btn-sm" id="btnDoubleBet" data-i18n="doubleBet">×2</button>
+            <button class="btn btn-secondary btn-sm" id="btnRebet" data-i18n="rebet">Gentag</button>
+          </div>
+          <button class="btn btn-primary btn-deal" id="btnDeal" data-i18n="deal">Giv kort</button>
+        </div>
+      </div>
+
+      <div class="panel panel-play" data-panel="player">
+        <div class="row row-actions">
+          <button class="btn btn-secondary btn-sm btn-act" id="btnSurrender" data-i18n="surrender">Overgiv</button>
+          <button class="btn btn-secondary btn-sm btn-act" id="btnSplit" data-i18n="split">Split</button>
+          <button class="btn btn-secondary btn-sm btn-act" id="btnDouble" data-i18n="double">Fordobl</button>
+          <button class="btn btn-secondary btn-act btn-main" id="btnHit" data-i18n="hit">Kort</button>
+          <button class="btn btn-secondary btn-act btn-main" id="btnStand" data-i18n="stand">Stå</button>
+        </div>
+      </div>
+
+      <div class="panel panel-insurance" data-panel="insurance">
+        <div class="row row-insurance">
+          <div class="insurance-text"><strong id="insuranceTitle"></strong><span id="insuranceSub"></span></div>
+          <div class="row-right">
+            <button class="btn btn-secondary" id="btnInsNo" data-i18n="noThanks">Nej tak</button>
+            <button class="btn btn-primary" id="btnInsYes"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-settled" data-panel="settled">
+        <div class="row">
+          <button class="btn btn-secondary" id="btnNewBet" data-i18n="newBet">Ny indsats</button>
+          <button class="btn btn-primary btn-deal" id="btnRebetDeal" data-i18n="rebetDeal">Gentag og giv kort</button>
+        </div>
+      </div>
+
+      <div class="panel panel-busy" data-panel="dealing"><div class="row row-busy"><span class="busy-text" id="busyText"></span></div></div>
+      <p class="reg" id="reg" aria-label="Ansvarligt spil"></p>
+    </div>
+  </footer>
+
+  <!-- ===== Toast + announcements ===== -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="sr-only" id="announce" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- ===== Sheets ===== -->
+  <div class="sheet-backdrop" id="backdrop" hidden></div>
+
+  <section class="sheet" id="sheetSettings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+    <div class="sheet-drag" aria-hidden="true"></div>
+    <header class="sheet-head">
+      <h2 id="settingsTitle" data-i18n="settings">Indstillinger</h2>
+      <button class="icon-btn sheet-close" data-close aria-label="Luk"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="sheet-body">
+      <div class="group">
+        <div class="setting">
+          <span data-i18n="theme">Udseende</span>
+          <div class="seg" id="segTheme" role="radiogroup">
+            <button data-v="auto" role="radio" data-i18n="auto">Auto</button>
+            <button data-v="light" role="radio" data-i18n="light">Lys</button>
+            <button data-v="dark" role="radio" data-i18n="dark">Mørk</button>
+          </div>
+        </div>
+        <div class="setting">
+          <span data-i18n="language">Sprog</span>
+          <div class="seg" id="segLang" role="radiogroup">
+            <button data-v="da" role="radio">Dansk</button>
+            <button data-v="en" role="radio">English</button>
+          </div>
+        </div>
+        <div class="setting">
+          <span data-i18n="speed">Tempo</span>
+          <div class="seg" id="segSpeed" role="radiogroup">
+            <button data-v="normal" role="radio" data-i18n="normal">Normal</button>
+            <button data-v="fast" role="radio" data-i18n="fast">Hurtig</button>
+          </div>
+        </div>
+        <label class="setting">
+          <span data-i18n="sound">Lyd</span>
+          <input type="checkbox" class="switch" id="swSound" checked>
+        </label>
+        <label class="setting">
+          <span data-i18n="hints">Strategi-hint</span>
+          <input type="checkbox" class="switch" id="swHints">
+        </label>
+        <label class="setting">
+          <span data-i18n="haptics">Vibration</span>
+          <input type="checkbox" class="switch" id="swHaptics" checked>
+        </label>
+      </div>
+
+      <h3 class="group-title" data-i18n="statistics">Statistik</h3>
+      <div class="group">
+        <div class="history" id="history" aria-label="Seneste runder"></div>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <div class="group">
+        <button class="btn btn-secondary btn-block" id="btnRules2" data-i18n="rules">Regler</button>
+        <button class="btn btn-secondary btn-block btn-danger" id="btnReset" data-i18n="resetBalance">Nulstil saldo</button>
+      </div>
+      <p class="fine" data-i18n="demoNote">Demo. Der spilles ikke med rigtige penge.</p>
+    </div>
+  </section>
+
+  <section class="sheet" id="sheetRules" role="dialog" aria-modal="true" aria-labelledby="rulesTitle" hidden>
+    <div class="sheet-drag" aria-hidden="true"></div>
+    <header class="sheet-head">
+      <h2 id="rulesTitle" data-i18n="rules">Regler</h2>
+      <button class="icon-btn sheet-close" data-close aria-label="Luk"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="sheet-body" id="rulesBody"></div>
+  </section>
+
+  <section class="sheet sheet-sm" id="sheetConfirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+    <div class="sheet-body confirm">
+      <h2 id="confirmTitle"></h2>
+      <p id="confirmText"></p>
+      <div class="row">
+        <button class="btn btn-secondary" data-close data-i18n="cancel">Annuller</button>
+        <button class="btn btn-primary" id="btnConfirm"></button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- @engine -->
+<!-- @cards -->
+<!-- @audio -->
+<!-- @app -->
+</body>
+</html>
