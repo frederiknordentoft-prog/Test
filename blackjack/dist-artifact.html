@@ -1579,7 +1579,7 @@ strong { font-weight: 600; }
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
       language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategi-hint', haptics: 'Vibration',
       statistics: 'Statistik', rules: 'Regler', resetBalance: 'Nulstil saldo', demoNote: 'Demo. Der spilles ikke med rigtige penge.', cancel: 'Annuller',
-      placeBet: 'Vælg din indsats.', idle: 'Klar, når du er.', yourTurn: 'Din tur', handOf: 'Hånd {n} af {m}', dealerDraws: 'Dealeren trækker', dealerChecks: 'Dealeren kigger efter blackjack',
+      placeBet: 'Vælg din indsats.', ready: 'Tryk Giv kort, når du er klar.', idle: 'Klar, når du er.', yourTurn: 'Din tur', youDraw: 'Du trækker {card}, i alt {total}', dealerReveals: 'Dealeren vender {card}, i alt {total}', dealerDraws2: 'Dealeren trækker {card}, i alt {total}', balanceIs: 'Saldo {amt}', chip: 'Jeton {amt}', shoeLeft: '{n} kort tilbage i skoen', rcTitle: 'Du har spillet i {n} minutter', rcText: 'Nettoresultat i denne session: {amt}. Hold gerne en pause.', continue_: 'Fortsæt', rebetAmt: 'Gentag {amt} og giv kort', handOf: 'Hånd {n} af {m}', dealerDraws: 'Dealeren trækker', dealerChecks: 'Dealeren kigger efter blackjack',
       dealerHas: 'Dealeren har {n}', dealerBust: 'Dealeren går bust', dealerBlackjack: 'Dealeren har blackjack', dealing: 'Giver kort …',
       youWon: 'Du vandt {amt}', youLost: 'Dealeren vandt', push: 'Uafgjort', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Gav op', won: 'Gevinst', lost: 'Tab',
       evenMoneyLabel: 'Lige penge', insuranceQ: 'Dealeren viser et es.', insuranceSub: 'Forsikring koster {amt} og betaler 2:1, hvis dealeren har blackjack.', insureFor: 'Forsikr for {amt}',
@@ -1603,7 +1603,7 @@ strong { font-weight: 600; }
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
       language: 'Language', speed: 'Pace', normal: 'Normal', fast: 'Fast', sound: 'Sound', hints: 'Strategy hint', haptics: 'Haptics',
       statistics: 'Statistics', rules: 'Rules', resetBalance: 'Reset balance', demoNote: 'Demo. No real money is played.', cancel: 'Cancel',
-      placeBet: 'Place your bet.', idle: 'Ready when you are.', yourTurn: 'Your turn', handOf: 'Hand {n} of {m}', dealerDraws: 'Dealer draws', dealerChecks: 'Dealer checks for blackjack',
+      placeBet: 'Place your bet.', ready: 'Tap Deal when you are ready.', idle: 'Ready when you are.', yourTurn: 'Your turn', youDraw: 'You draw {card}, total {total}', dealerReveals: 'Dealer reveals {card}, total {total}', dealerDraws2: 'Dealer draws {card}, total {total}', balanceIs: 'Balance {amt}', chip: 'Chip {amt}', shoeLeft: '{n} cards left in the shoe', rcTitle: 'You have been playing for {n} minutes', rcText: 'Net result this session: {amt}. Consider taking a break.', continue_: 'Continue', rebetAmt: 'Rebet {amt} and deal', handOf: 'Hand {n} of {m}', dealerDraws: 'Dealer draws', dealerChecks: 'Dealer checks for blackjack',
       dealerHas: 'Dealer has {n}', dealerBust: 'Dealer busts', dealerBlackjack: 'Dealer has blackjack', dealing: 'Dealing …',
       youWon: 'You won {amt}', youLost: 'Dealer wins', push: 'Push', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Surrendered', won: 'Won', lost: 'Lost',
       evenMoneyLabel: 'Even money', insuranceQ: 'Dealer shows an ace.', insuranceSub: 'Insurance costs {amt} and pays 2:1 if the dealer has blackjack.', insureFor: 'Insure for {amt}',
@@ -1801,7 +1801,7 @@ strong { font-weight: 600; }
     b.className = 'chip'; b.dataset.value = value;
     if (k != null) { b.style.setProperty('--k', k); b.style.setProperty('--rot', (((k * 7919) % 9) - 4) * 0.6 + 'deg'); } else b.type = 'button';
     b.innerHTML = `<span class="chip-value">${value >= 1000 ? (value / 1000) + 'K' : value}</span>`;
-    b.setAttribute('aria-label', fmt(value));
+    b.setAttribute('aria-label', t('chip', { amt: fmt(value) }));
     return b;
   }
   function renderBet() {
@@ -1823,11 +1823,12 @@ strong { font-weight: 600; }
     el.btnDoubleBet.disabled = !betting || !game.bet || game.bet * 2 > game.rules.maxBet || game.bet * 2 > game.balance;
     el.btnRebet.disabled = !betting || !game.lastBet || game.lastBet > game.balance || game.lastBet === game.bet;
     const broke = betting && game.balance < game.rules.minBet && game.bet < game.rules.minBet;
-    el.btnDeal.textContent = broke ? t('getChips', { amt: fmt(game.rules.startBalance) }) : t('deal');
+    el.btnDeal.textContent = broke ? t('getChips', { amt: fmt(game.rules.startBalance) }) : (betting && game.bet >= game.rules.minBet ? `${t('deal')} · ${fmt(game.bet)}` : t('deal'));
     el.btnDeal.dataset.mode = broke ? 'reset' : 'deal';
     el.btnDeal.disabled = !betting || (!broke && !game.canDeal().ok);
     if (betting) el.btnDeal.title = broke ? '' : (game.canDeal().ok ? '' : t('minBet', { amt: fmt(game.rules.minBet) }));
     el.btnRebetDeal.disabled = !(game.phase === BJ.PHASE.SETTLED && game.lastBet && game.lastBet <= game.balance);
+    el.btnRebetDeal.textContent = game.lastBet ? t('rebetAmt', { amt: fmt(game.lastBet) }) : t('rebetDeal');
   }
   async function flyChip(fromEl, value) {
     if (reduceMotion.matches) return;
@@ -1901,7 +1902,7 @@ strong { font-weight: 600; }
   function renderPhaseMessage() {
     if (game.phase === BJ.PHASE.BETTING) {
       if (game.balance < game.rules.minBet && game.bet < game.rules.minBet) message(t('outOfChips'));
-      else message(t('placeBet'), 'sub');
+      else message(game.bet >= game.rules.minBet ? t('ready') : t('placeBet'), 'sub');
     }
   }
   function setPhase(p) { app.dataset.phase = p; renderBetControls(); armIdle(); }
@@ -1955,6 +1956,7 @@ strong { font-weight: 600; }
   function renderShoe() {
     const s = game.shoe;
     el.shoeFill.style.transform = `scaleX(${Math.max(0.04, s.remaining / s.total)})`;
+    el.shoe.setAttribute('aria-label', t('shoeLeft', { n: s.remaining }));
   }
 
   /* ---------------- event playback ---------------- */
@@ -2031,6 +2033,7 @@ strong { font-weight: 600; }
           if (hole && hole.classList.contains('face-down')) {
             hole.classList.remove('face-down'); hole.setAttribute('aria-label', Cards.label(e.card.rank, e.card.suit, settings.lang));
             sound.flip();
+            announce(t('dealerReveals', { card: Cards.label(e.card.rank, e.card.suit, settings.lang), total: BJ.handValue(game.dealer.cards.slice(0, 2)).total }));
             await wait(600);
           }
           updateDealerBadge();
@@ -2050,6 +2053,7 @@ strong { font-weight: 600; }
         }
         case 'card': {
           await dealCard(cardsOf(e.hand), e.card); updateHandBadge(e.hand); renderShoe();
+          announce(t('youDraw', { card: Cards.label(e.card.rank, e.card.suit, settings.lang), total: e.value.total }));
           await wait(160);
           break;
         }
@@ -2100,6 +2104,7 @@ strong { font-weight: 600; }
         case 'dealerCard': {
           setPhase('dealer'); el.busyText.textContent = t('dealerDraws'); message(t('dealerDraws'), 'sub');
           await dealCard(el.dealerCards, e.card); updateDealerBadge(); renderShoe();
+          announce(t('dealerDraws2', { card: Cards.label(e.card.rank, e.card.suit, settings.lang), total: e.value.total }));
           await wait(520);
           break;
         }
@@ -2148,7 +2153,7 @@ strong { font-weight: 600; }
     else if (e.net > 0) message(t('youWon', { amt: `<span class="amount">${fmt(e.net)}</span>` }));
     else if (e.net < 0) message(t('youLost'));
     else message(t('push'));
-    announce(e.net > 0 ? t('youWon', { amt: fmt(e.net) }) : e.net < 0 ? t('youLost') : t('push'));
+    announce((e.net > 0 ? t('youWon', { amt: fmt(e.net) }) : e.net < 0 ? t('youLost') : t('push')) + '. ' + t('balanceIs', { amt: fmt(e.balance) }));
     await wait(500);
     // Chips: payout to balance or loss to dealer.
     if (e.payout > 0) {
@@ -2186,7 +2191,7 @@ strong { font-weight: 600; }
     sound.chip(); haptic(6);
     if (fromEl) flyChip(fromEl, value).then(() => renderBet()); else renderBet();
     renderBetControls();
-    message('');
+    renderPhaseMessage();
   }
   async function onDeal() {
     if (busy) return;
@@ -2205,6 +2210,7 @@ strong { font-weight: 600; }
       setPhase('betting');
       renderBet(); renderShoe(); save();
       if (game.balance < game.rules.minBet) { renderPhaseMessage(); setTimeout(() => openConfirm(true), 350); return; }
+      if (realityCheck()) { renderPhaseMessage(); return; }
       if (rebetAndDeal && game.lastBet && game.lastBet <= game.balance) {
         game.rebet(); renderBet(); sound.chips(3);
         await wait(320);
@@ -2216,7 +2222,20 @@ strong { font-weight: 600; }
       if (game.lastBet && game.lastBet <= game.balance) { /* keep it quick: chips ready */ }
     } finally { busy = false; renderBetControls(); }
   }
+  let playSeconds = 0, rcShownAt = 0, sessionStartNet = null;
+  setInterval(() => { if (!document.hidden && app.dataset.phase !== 'intro') playSeconds++; }, 1000);
+  function realityCheck() {
+    if (playSeconds - rcShownAt < 3600 || openSheetEl) return false;
+    rcShownAt = playSeconds;
+    const net = game.stats.net - (sessionStartNet == null ? 0 : sessionStartNet);
+    $('#confirmTitle').textContent = t('rcTitle', { n: Math.round(playSeconds / 60) });
+    $('#confirmText').textContent = t('rcText', { amt: (net > 0 ? '+' : '') + fmt(net) });
+    $('#btnConfirm').textContent = t('continue_'); $('#btnConfirm').dataset.mode = 'rc';
+    openSheet(el.sheetConfirm);
+    return true;
+  }
   function openConfirm(empty) {
+    $('#btnConfirm').dataset.mode = 'reset';
     $('#confirmTitle').textContent = empty ? t('emptyTitle') : t('resetQ');
     $('#confirmText').textContent = empty ? t('emptyText', { amt: fmt(game.rules.startBalance) }) : t('resetText', { amt: fmt(game.rules.startBalance) });
     $('#btnConfirm').textContent = empty ? t('startOver') : t('reset');
@@ -2269,8 +2288,8 @@ strong { font-weight: 600; }
   function wire() {
     // chip tray
     game.rules.chips.forEach(v => { const c = chipEl(v); el.chips.appendChild(c); c.addEventListener('click', () => addChip(v, c)); });
-    el.btnUndo.addEventListener('click', () => { if (busy) return; game.removeLastChip(); sound.tap(); renderBet(); });
-    el.btnClear.addEventListener('click', () => { if (busy) return; game.clearBet(); sound.tap(); renderBet(); });
+    el.btnUndo.addEventListener('click', () => { if (busy) return; game.removeLastChip(); sound.tap(); renderBet(); renderPhaseMessage(); });
+    el.btnClear.addEventListener('click', () => { if (busy) return; game.clearBet(); sound.tap(); renderBet(); renderPhaseMessage(); });
     el.btnDoubleBet.addEventListener('click', () => { if (busy) return; try { game.doubleBet(); sound.chips(2); } catch (e) { toast(t(e.code === 'max' ? 'maxBet' : 'noFunds', { amt: fmt(game.rules.maxBet) })); } renderBet(); });
     el.btnRebet.addEventListener('click', () => { if (busy) return; try { game.rebet(); sound.chips(3); } catch (e) { toast(t('noFunds')); } renderBet(); });
     el.btnDeal.addEventListener('click', onDeal);
@@ -2283,12 +2302,12 @@ strong { font-weight: 600; }
     el.btnInsNo.addEventListener('click', () => run(() => game.insurance(false)));
     el.btnNewBet.addEventListener('click', () => onNextRound(false));
     el.btnRebetDeal.addEventListener('click', () => onNextRound(true));
-    el.betStack.addEventListener('click', () => { if (busy || game.phase !== BJ.PHASE.BETTING) return; game.removeLastChip(); sound.tap(); renderBet(); });
+    el.betStack.addEventListener('click', () => { if (busy || game.phase !== BJ.PHASE.BETTING) return; game.removeLastChip(); sound.tap(); renderBet(); renderPhaseMessage(); });
     $('#btnPlay').addEventListener('click', leaveIntro);
     $('#btnIntroRules').addEventListener('click', () => openSheet(el.sheetRules));
     $('#btnRules2').addEventListener('click', () => openSheet(el.sheetRules));
     $('#btnReset').addEventListener('click', () => { if (game.phase !== BJ.PHASE.BETTING) { toast(t('placeBet')); return; } openConfirm(); });
-    $('#btnConfirm').addEventListener('click', doReset);
+    $('#btnConfirm').addEventListener('click', () => { if ($('#btnConfirm').dataset.mode === 'rc') closeSheets(); else doReset(); });
     el.btnSettings.addEventListener('click', () => openSheet(el.sheetSettings));
     el.btnSound.addEventListener('click', () => { settings.sound = !settings.sound; sound.setEnabled(settings.sound); syncSettingsUI(); applyLang(); save(); if (settings.sound) sound.tap(); });
     $$('[data-close]').forEach(b => b.addEventListener('click', () => closeSheets()));
@@ -2327,7 +2346,7 @@ strong { font-weight: 600; }
         else if (k === 'p' && !el.btnSplit.disabled) run(() => game.split());
         else if (k === 'r' && !el.btnSurrender.disabled) run(() => game.surrender());
       } else if (ph === BJ.PHASE.INSURANCE) {
-        if (k === 'y') run(() => game.insurance(true)); else if (k === 'n') run(() => game.insurance(false));
+        if (k === 'y' || k === 'j') run(() => game.insurance(true)); else if (k === 'n') run(() => game.insurance(false));
       } else if (ph === BJ.PHASE.BETTING) {
         const idx = parseInt(k, 10);
         if (idx >= 1 && idx <= game.rules.chips.length) { const c = el.chips.children[idx - 1]; addChip(game.rules.chips[idx - 1], c); }
@@ -2340,6 +2359,7 @@ strong { font-weight: 600; }
   if (!navigator.vibrate) { const row = $('#swHaptics').closest('.setting'); if (row) row.hidden = true; }
   applyTheme(); applySpeed(); buildIntro(); wire(); applyLang();
   renderBalance(false); renderBet(); renderHistory(); renderStats(); renderShoe();
+  sessionStartNet = game.stats.net;
   // Debug / test hooks (harmless in production; no effect on outcomes unless used).
   window.__bj = { game, rig: s => game.shoe.rig(s), play, settings, leaveIntro, get busy() { return busy; } };
 })();
