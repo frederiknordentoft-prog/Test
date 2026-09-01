@@ -14,24 +14,24 @@
       introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
       introFine: '18+ · {decks} kortspil · Dealeren står på 17 · Blackjack betaler 3:2 · Demo uden rigtige penge',
       balance: 'Saldo', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
-      surrender: 'Overgiv', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Spil videre',
+      surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Spil videre',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
       language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategi-hint', haptics: 'Vibration',
       statistics: 'Statistik', rules: 'Regler', resetBalance: 'Nulstil saldo', demoNote: 'Demo. Der spilles ikke med rigtige penge.', cancel: 'Annuller',
       placeBet: 'Vælg din indsats.', idle: 'Klar, når du er.', yourTurn: 'Din tur', handOf: 'Hånd {n} af {m}', dealerDraws: 'Dealeren trækker', dealerChecks: 'Dealeren kigger efter blackjack',
       dealerHas: 'Dealeren har {n}', dealerBust: 'Dealeren går bust', dealerBlackjack: 'Dealeren har blackjack', dealing: 'Giver kort …',
-      youWon: 'Du vandt {amt}', youLost: 'Dealeren vandt', push: 'Uafgjort', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Overgivet', won: 'Vandt', lost: 'Tabt',
-      evenMoneyLabel: 'Even money', insuranceQ: 'Dealeren viser et es.', insuranceSub: 'Forsikring koster {amt} og betaler 2:1, hvis dealeren har blackjack.', insureFor: 'Forsikr for {amt}',
+      youWon: 'Du vandt {amt}', youLost: 'Dealeren vandt', push: 'Uafgjort', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Gav op', won: 'Gevinst', lost: 'Tab',
+      evenMoneyLabel: 'Lige penge', insuranceQ: 'Dealeren viser et es.', insuranceSub: 'Forsikring koster {amt} og betaler 2:1, hvis dealeren har blackjack.', insureFor: 'Forsikr for {amt}',
       evenMoneyQ: 'Du har blackjack. Dealeren viser et es.', evenMoneySub: 'Tag {amt} nu (1:1), eller vent og få 3:2, hvis dealeren ikke også har blackjack.', takeEvenMoney: 'Tag 1:1',
-      insuranceLabel: 'Forsikring', insuranceLost: 'Forsikringen tabt', insuranceWon: 'Forsikringen vandt {amt}', insuranceBet: 'Forsikring {amt}', evenMoneyTaken: 'Even money taget',
+      insuranceLabel: 'Forsikring', insuranceLost: 'Forsikringen tabt', insuranceWon: 'Forsikringen vandt {amt}', insuranceBet: 'Forsikring {amt}', evenMoneyTaken: 'Lige penge taget',
       shuffling: 'Kortene blandes …', cutCard: 'Kortene blandes inden næste hånd', minBet: 'Mindste indsats er {amt}', maxBet: 'Bordet tager højst {amt}', noFunds: 'Ikke nok på saldoen', outOfChips: 'Tom saldo.',
       getChips: 'Start forfra med {amt}', resetQ: 'Start forfra?', resetText: 'Din saldo sættes til {amt}. Det er legepenge. Statistikken bevares.', reset: 'Nulstil', emptyTitle: 'Tom saldo.', emptyText: 'Sådan går det nogle gange. Du kan starte forfra med {amt}.', startOver: 'Start forfra',
       reg: '18+ · Spil ansvarligt · StopSpillet 70 22 28 25 · ROFUS', noHistory: 'Ingen runder endnu', soundOn: 'Lyd til', soundOff: 'Lyd fra',
       hintLabel: 'Basisstrategi', stRounds: 'Runder', stWinRate: 'Vundet', stBlackjacks: 'Blackjacks', stNet: 'Netto', stBest: 'Største gevinst', stStreak: 'Bedste stime', stWagered: 'Omsat',
       rulesTitle: 'Sådan spiller du', rulesIntro: 'Kom tættest på 21 uden at gå over. Billedkort tæller 10, es tæller 1 eller 11. Dealeren trækker til 16 og står på 17. Blackjack betaler 3:2.',
       rDecks: 'Kortspil', rS17: 'Dealeren står på', rS17v: 'Alle 17', rH17v: 'Hårde 17 (trækker på blød 17)', rBJ: 'Blackjack betaler', rIns: 'Forsikring betaler', rPeek: 'Dealeren kigger efter blackjack', rPeekV: 'Ved es og 10',
-      rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, ingen re-split', rSurr: 'Overgivelse', rSurrV: 'Sen, kun på de første to kort',
-      rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct} % af skoen', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Overgiv', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
+      rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, ingen re-split', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort',
+      rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct} % af skoen', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
       recent: 'Seneste runder', chips: 'Jetoner', dealerLabel: 'Dealer',
     },
     en: {
@@ -425,7 +425,7 @@
         case 'insuranceOffer': case 'evenMoneyOffer': {
           const even = e.type === 'evenMoneyOffer';
           el.insuranceTitle.textContent = even ? t('evenMoneyQ') : t('insuranceQ');
-          el.insuranceSub.textContent = even ? t('evenMoneySub', { amt: fmt(game.bet) }) : t('insuranceSub', { amt: fmt(e.cost) });
+          el.insuranceSub.textContent = even ? t('evenMoneySub', { amt: fmt(e.stake) }) : t('insuranceSub', { amt: fmt(e.cost) });
           el.btnInsYes.textContent = even ? t('takeEvenMoney') : t('insureFor', { amt: fmt(e.cost) });
           el.btnInsNo.textContent = even ? t('keepPlaying') : t('noThanks');
           message(even ? t('evenMoneyLabel') + '?' : t('insuranceLabel') + '?');
@@ -559,7 +559,7 @@
     setActiveHand(-1); handEls.forEach(h => h.classList.remove('inactive', 'done'));
     const anyBJ = e.results.some(r => r.outcome === 'blackjack');
     // Per-hand labels, staggered.
-    for (const r of e.results) {
+    for (const r of e.results.slice().reverse()) {
       const lab = $('.hand-result', handEls[r.hand]);
       lab.className = 'hand-result ' + OUTCOME_CLASS[r.outcome];
       lab.innerHTML = outcomeText(r);

@@ -30,7 +30,8 @@
     lateSurrender: true,
     minBet: 10,
     maxBet: 5000,
-    chips: [10, 25, 50, 100, 500, 1000],
+    chips: [10, 20, 50, 100, 500, 1000],
+    burnCard: true,           // one card burned after every shuffle, as at the table
     startBalance: 10000,
   });
 
@@ -89,6 +90,7 @@
       this.decks = decks;
       this.rng = opts.rng || (opts.seed != null ? mulberry32(opts.seed) : cryptoRandom());
       this.penetration = opts.penetration != null ? opts.penetration : 0.75;
+      this.burn = !!opts.burn;
       this.cards = [];
       this.index = 0;
       this.cutIndex = 0;
@@ -105,7 +107,7 @@
         [cards[i], cards[j]] = [cards[j], cards[i]];
       }
       this.cards = cards;
-      this.index = 0;
+      this.index = this.burn ? 1 : 0;
       this.cutIndex = Math.floor(cards.length * this.penetration);
       this.shuffles++;
     }
@@ -130,6 +132,7 @@
     constructor(code, message) { super(message || code); this.code = code; }
   }
 
+  const NO_ACTIONS = Object.freeze({ hit: false, stand: false, double: false, split: false, surrender: false });
   function newHand(bet, extra = {}) {
     return Object.assign({
       cards: [], bet, done: false, doubled: false, surrendered: false,
@@ -140,7 +143,7 @@
   class Game {
     constructor(options = {}) {
       this.rules = Object.assign({}, DEFAULT_RULES, options.rules || {});
-      this.shoe = options.shoe || new Shoe(this.rules.decks, { seed: options.seed, penetration: this.rules.penetration });
+      this.shoe = options.shoe || new Shoe(this.rules.decks, { seed: options.seed, penetration: this.rules.penetration, burn: this.rules.burnCard });
       this.balance = options.balance != null ? options.balance : this.rules.startBalance;
       this.phase = PHASE.BETTING;
       this.bet = 0;              // staged bet (chips placed, not yet deducted)
@@ -242,11 +245,12 @@
 
       const up = this.dealer.cards[0];
       const playerBJ = isNatural(this.hands[0].cards);
-      const canInsure = this.rules.insurance && up.rank === 'A' && this.balance >= this.bet / 2;
+      const stake = this.hands[0].bet;
+      const canInsure = this.rules.insurance && up.rank === 'A' && this.balance >= stake / 2;
 
       if (canInsure && this.rules.peek) {
         this.phase = PHASE.INSURANCE;
-        ev.push({ type: playerBJ && this.rules.evenMoney ? 'evenMoneyOffer' : 'insuranceOffer', cost: this.bet / 2 });
+        ev.push({ type: playerBJ && this.rules.evenMoney ? 'evenMoneyOffer' : 'insuranceOffer', cost: stake / 2, stake });
         return ev;
       }
       return ev.concat(this._afterInsurance(playerBJ));
@@ -266,7 +270,7 @@
           this.dealer.holeHidden = false;
           return ev.concat(this._settle());
         }
-        this.insuranceBet = this.bet / 2;
+        this.insuranceBet = this.hands[0].bet / 2;
         this.balance -= this.insuranceBet;
         ev.push({ type: 'insuranceTaken', amount: this.insuranceBet, balance: this.balance });
       } else {
@@ -365,10 +369,11 @@
       h.fromSplit = true; h.splitAces = aces;
       this.hands.splice(i + 1, 0, h2);
       const ev = [{ type: 'split', hand: i, newHand: i + 1, balance: this.balance, hands: this.hands.length }];
-      // Casino procedure: second card to the first hand, then to the second.
-      const c1 = this._drawTo(h);  ev.push({ type: 'card', hand: i, card: c1, value: handValue(h.cards) });
-      const c2 = this._drawTo(h2); ev.push({ type: 'card', hand: i + 1, card: c2, value: handValue(h2.cards) });
+      // Casino procedure: the first hand gets its second card now and is played out;
+      // the new hand receives its card only when it becomes active.
+      const c1 = this._drawTo(h); ev.push({ type: 'card', hand: i, card: c1, value: handValue(h.cards) });
       if (aces && !this.rules.hitSplitAces) {
+        const c2 = this._drawTo(h2); ev.push({ type: 'card', hand: i + 1, card: c2, value: handValue(h2.cards) });
         h.done = true; h2.done = true;
         return ev.concat(this._advance());
       }
@@ -395,12 +400,18 @@
       if (next !== -1) {
         this.activeHand = next;
         const h = this.hands[next];
-        const v = handValue(h.cards);
-        if (v.total === 21 && h.cards.length === 2) { // e.g. split hand dealt to 21 → stands automatically
-          h.done = true;
-          return [{ type: 'activeHand', hand: next, actions: this.availableActions(next) }, { type: 'twentyOne', hand: next }].concat(this._advance());
+        const ev = [];
+        if (h.cards.length === 1) { // split hand waiting for its second card
+          ev.push({ type: 'activeHand', hand: next, actions: NO_ACTIONS });
+          const c = this._drawTo(h);
+          ev.push({ type: 'card', hand: next, card: c, value: handValue(h.cards) });
         }
-        return [{ type: 'activeHand', hand: next, actions: this.availableActions(next) }];
+        const v = handValue(h.cards);
+        if (v.total === 21 && h.cards.length === 2) { // split hand dealt to 21 → stands automatically
+          h.done = true;
+          return ev.concat([{ type: 'activeHand', hand: next, actions: this.availableActions(next) }, { type: 'twentyOne', hand: next }], this._advance());
+        }
+        return ev.concat([{ type: 'activeHand', hand: next, actions: this.availableActions(next) }]);
       }
       this.activeHand = -1;
       return this._dealerTurn();

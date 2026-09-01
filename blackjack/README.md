@@ -27,10 +27,10 @@ Tænkt som Apple ville lave det, hvis det lå på apple.com:
 | Split | Op til 4 hænder, 10-kort af forskellig rang må splittes |
 | Splittede esser | Ét kort pr. es, ingen re-split, A+10 er 21 (ikke blackjack) |
 | Overgivelse | Sen, kun på de første to kort |
-| Indsats | 10 – 5.000 kr. · jetoner 10/25/50/100/500/1000 |
+| Indsats | 10 – 5.000 kr. · jetoner 10/20/50/100/500/1000 |
 | Saldo | 10.000 kr. demo. Ingen rigtige penge. |
 
-Tastatur: mellemrum/enter = giv kort / gentag, `H` kort, `S` stå, `D` fordobl, `P` split, `R` overgiv, `Y`/`N` forsikring, `1`–`6` jetoner, `Esc` luk.
+Tastatur: mellemrum/enter = giv kort / gentag, `H` kort, `S` stå, `D` fordobl, `P` split, `R` giv op, `Y`/`N` forsikring, `1`–`6` jetoner, `Esc` luk.
 
 ## Kode
 

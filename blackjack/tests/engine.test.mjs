@@ -197,10 +197,11 @@ test('split: two hands, each gets a card, both play, settle separately', () => {
   assert.equal(g.hands.length, 2);
   assert.equal(g.balance, 9800);
   assert.equal(g.hands[0].cards.length, 2); // 8 + 10 = 18
-  assert.equal(g.hands[1].cards.length, 2); // 8 + 3 = 11
+  assert.equal(g.hands[1].cards.length, 1); // 8, waits for its card
   assert.equal(g.activeHand, 0);
   ev = g.stand();
   assert.equal(g.activeHand, 1);
+  assert.equal(g.hands[1].cards.length, 2); // 8 + 3 = 11
   assert.equal(g.availableActions().double, true); // DAS
   ev = g.double(); // 11 + 8 = 19
   const s = settle(ev);
@@ -208,6 +209,26 @@ test('split: two hands, each gets a card, both play, settle separately', () => {
   assert.equal(s.results[1].outcome, 'win');  // 19 vs 17
   assert.equal(s.payout, 200 + 400);
   assert.equal(g.balance, 10300);
+});
+
+test('split: second hand receives its card only when it becomes active', () => {
+  const g = new Game({ seed: 1 });
+  play(g, 100, '8♠ 10♦ 8♣ 7♥ 5♦ 9♣ 2♠');
+  const ev = g.split();
+  assert.equal(g.hands[0].cards.length, 2);
+  assert.equal(g.hands[1].cards.length, 1);
+  assert.equal(ev.filter(e => e.type === 'card').length, 1);
+  const ev2 = g.stand();
+  assert.deepEqual(types(ev2).slice(0, 3), ['stand', 'activeHand', 'card']);
+  assert.equal(g.hands[1].cards.length, 2);
+  assert.equal(g.activeHand, 1);
+});
+
+test('one card is burned after every shuffle', () => {
+  const s = new Shoe(6, { seed: 1, burn: true });
+  assert.equal(s.remaining, 311);
+  const g = new Game({ seed: 1 });
+  assert.equal(g.shoe.remaining, 311);
 });
 
 test('split aces: one card each, 21 is not blackjack', () => {
@@ -234,12 +255,12 @@ test('split 21 vs dealer blackjack-looking 21 after draw loses (not a natural)',
 
 test('resplit up to 4 hands, no more', () => {
   const g = new Game({ seed: 1 });
-  play(g, 100, '8♠ 10♦ 8♣ 7♥ 8♦ 2♣ 8♥ 3♣ 8♠ 4♦');
-  g.split();            // H0: 8♠ 8♦ ; H1: 8♣ 2♣
+  play(g, 100, '8♠ 10♦ 8♣ 7♥ 8♦ 8♥ 8♠ 4♦ 2♣ 3♣ 9♦ 9♣');
+  g.split();            // H0: 8♠ 8♦ ; H1: 8♣ (waits)
   assert.equal(g.availableActions().split, true);
-  g.split();            // H0: 8♠ 8♥ ; H1: 8♦ 3♣ ; H2: 8♣ 2♣
+  g.split();            // H0: 8♠ 8♥ ; H1: 8♦ ; H2: 8♣
   assert.equal(g.hands.length, 3);
-  g.split();            // H0: 8♠ 8♠ ; H1: 8♥ 4♦ ; ...
+  g.split();            // H0: 8♠ 8♠ ; H1: 8♥ ; H2: 8♦ ; H3: 8♣
   assert.equal(g.hands.length, 4);
   assert.equal(g.availableActions().split, false);
   assert.equal(g.balance, 9600);

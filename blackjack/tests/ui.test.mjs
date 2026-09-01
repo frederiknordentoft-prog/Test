@@ -63,7 +63,7 @@ await scenario('dealer bust pays; balance text updates', desktop, async a => {
 });
 
 await scenario('split to four hands on phone renders all hands', phone, async a => {
-  await a.rig('8♠ 10♦ 8♣ 7♥ 8♦ 2♣ 8♥ 3♣ 8♠ 4♦ 9♣ 9♦ 9♥');
+  await a.rig('8♠ 10♦ 8♣ 7♥ 8♦ 8♥ 3♣ 4♦ 9♣ 9♦ 9♥ 2♣');
   await a.click('#chips .chip[data-value="100"]');
   await a.click('#btnDeal'); await a.settle();
   await a.click('#btnSplit'); await a.settle();
@@ -129,7 +129,7 @@ await scenario('keyboard: digits bet, space deals, h/s play, space rebets', desk
 
 await scenario('rebet & deal one-tap; new bet path; undo/clear', phone, async a => {
   await a.rig('10♠ 10♦ 8♣ 8♥');
-  await a.click('#chips .chip[data-value="50"]'); await a.click('#chips .chip[data-value="25"]');
+  await a.click('#chips .chip[data-value="50"]'); await a.click('#chips .chip[data-value="20"]');
   await a.click('#btnUndo'); let s = await a.settle(); assert.equal(s.bet, 50);
   await a.click('#btnClear'); s = await a.settle(); assert.equal(s.bet, 0);
   await a.click('#chips .chip[data-value="50"]');
