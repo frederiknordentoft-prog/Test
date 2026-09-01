@@ -13,7 +13,7 @@
     da: {
       introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
       introFine: '18+ · {decks} kortspil · Dealeren står på 17 · Blackjack betaler 3:2 · Demo uden rigtige penge',
-      balance: 'Saldo', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
+      balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
       surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Spil videre',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
       language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategi-hint', haptics: 'Vibration',
@@ -37,7 +37,7 @@
     en: {
       introEyebrow: 'Card game', introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
       introFine: '18+ · {decks} decks · Dealer stands on 17 · Blackjack pays 3:2 · Demo, no real money',
-      balance: 'Balance', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
+      balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
       surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Keep playing',
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
       language: 'Language', speed: 'Pace', normal: 'Normal', fast: 'Fast', sound: 'Sound', hints: 'Strategy hint', haptics: 'Haptics',
@@ -81,6 +81,7 @@
   let speedFactor = 1;
 
   const wait = ms => new Promise(r => setTimeout(r, Math.max(0, ms * speedFactor * (reduceMotion.matches ? 0.35 : 1))));
+  const settled = (anim, ms = 1500) => Promise.race([anim.finished.catch(() => {}), new Promise(r => setTimeout(r, ms))]);
   const haptic = p => { if (settings.haptics && navigator.vibrate) { try { navigator.vibrate(p); } catch (e) { /* ignore */ } } };
 
   /* ---------------- DOM refs ---------------- */
@@ -164,7 +165,7 @@
       { transform: 'translate(0, 0) rotate(0) scale(1)', opacity: 1 },
     ], { duration: dur, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'both' });
     sound.deal();
-    await anim.finished.catch(() => {});
+    await settled(anim);
     anim.commitStyles && anim.cancel();
     c.style.transform = '';
     c.classList.remove('flying');
@@ -199,12 +200,16 @@
     const bb = $('.badge-bet', handEls[i]);
     bb.hidden = !(game.hands.length > 1 || h.doubled);
     bb.textContent = fmt(h.bet);
+    handEls[i].setAttribute('role', 'group');
+    handEls[i].setAttribute('aria-label', `${t('yourHand')}${game.hands.length > 1 ? ' ' + (i + 1) : ''}: ${h.cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}${v.soft && v.total < 21 ? ' (' + (v.total - 10) + '/' + v.total + ')' : ''}`);
   }
   function updateDealerBadge() {
     const d = game.dealer;
     if (!d.cards.length) { el.dealerValue.hidden = true; return; }
     const v = d.holeHidden ? BJ.handValue(d.cards.slice(0, 1)) : BJ.handValue(d.cards);
     updateBadge(el.dealerValue, v, { blackjack: !d.holeHidden && BJ.isNatural(d.cards) });
+    el.dealerCards.setAttribute('role', 'group');
+    el.dealerCards.setAttribute('aria-label', `${t('dealer')}: ${d.cards.map((c, i) => d.holeHidden && i === 1 ? t('hiddenCard') : Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}`);
   }
   function setActiveHand(i) {
     handEls.forEach((h, k) => {
@@ -276,7 +281,7 @@
       { transform: `translate(${dx * 0.5}px, ${dy * 0.55 - 30}px) scale(0.9)`, offset: 0.5 },
       { transform: `translate(${dx}px, ${dy}px) scale(${44 / from.width})` },
     ], { duration: 380 * speedFactor, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'forwards' });
-    await a.finished.catch(() => {});
+    await settled(a);
     ghost.remove();
   }
   async function stackTo(target, { fade = true } = {}) {

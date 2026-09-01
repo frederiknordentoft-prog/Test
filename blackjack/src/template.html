@@ -35,7 +35,7 @@
       <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>Blackjack</span></div>
       <div class="topbar-right">
         <div class="balance" id="balanceBox" aria-live="off">
-          <span class="balance-label" data-i18n="balance">Saldo</span>
+          <span class="balance-label" data-i18n="demoBalance">Demo · saldo</span>
           <span class="balance-value" id="balance">10.000 kr.</span>
         </div>
         <button class="icon-btn" id="btnSound" aria-label="Lyd til/fra" aria-pressed="true">
@@ -76,7 +76,7 @@
     </div>
 
     <section class="seat seat-player" aria-label="Dine hænder">
-      <div class="hands" id="hands" data-count="0"></div>
+      <div class="hands" id="hands" data-count="0" role="group"></div>
     </section>
   </main>
 
@@ -169,15 +169,15 @@
         </div>
         <label class="setting">
           <span data-i18n="sound">Lyd</span>
-          <input type="checkbox" class="switch" id="swSound" checked>
+          <input type="checkbox" class="switch" id="swSound" role="switch" checked>
         </label>
         <label class="setting">
           <span data-i18n="hints">Strategi-hint</span>
-          <input type="checkbox" class="switch" id="swHints">
+          <input type="checkbox" class="switch" id="swHints" role="switch">
         </label>
         <label class="setting">
           <span data-i18n="haptics">Vibration</span>
-          <input type="checkbox" class="switch" id="swHaptics" checked>
+          <input type="checkbox" class="switch" id="swHaptics" role="switch" checked>
         </label>
       </div>
 

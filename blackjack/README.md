@@ -56,4 +56,6 @@ node --test tests/engine.test.mjs
 node tests/ui.test.mjs
 ```
 
+Saldo, indstillinger og statistik gemmes i `localStorage` efter hver afsluttet runde. Genindlæses siden midt i en runde, annulleres runden, og indsatsen står igen på saldoen.
+
 Motoren er adskilt fra præsentationen: `Game` returnerer en ordnet liste af events for hver handling (`deal`, `card`, `peek`, `reveal`, `settle` …), og UI'et afspiller dem med timing. Udfald afhænger kun af skoen (Fisher–Yates med `crypto.getRandomValues`); animationer rører aldrig resultatet.

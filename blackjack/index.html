@@ -275,7 +275,7 @@ strong { font-weight: 600; }
 .chip { --c: #6e6e73; --c-text: #fff; position: relative; flex: none; width: var(--chip-size); height: var(--chip-size); border-radius: 50%; background: var(--c); box-shadow: var(--chip-shadow), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.25); transition: transform .18s var(--spring), opacity .2s, filter .2s; will-change: transform; }
 .chip::before { content: ""; position: absolute; inset: 2px; border-radius: 50%; border: 5px dashed rgba(255,255,255,.92); }
 .chip::after { content: ""; position: absolute; inset: 11px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.5), inset 0 1px 2px rgba(0,0,0,.2); }
-.chip-value { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font-weight: 700; font-size: 15px; letter-spacing: -0.02em; color: var(--c-text); font-variant-numeric: tabular-nums; }
+.chip-value { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font-weight: 600; font-size: 15px; letter-spacing: -0.02em; color: var(--c-text); font-variant-numeric: tabular-nums; }
 .chip[data-value="10"] { --c: #e8e8ed; --c-text: #1d1d1f; }
 .chip[data-value="10"]::before { border-color: rgba(0,0,0,.35); }
 .chip[data-value="10"]::after { box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.2), inset 0 1px 2px rgba(0,0,0,.1); }
@@ -303,7 +303,7 @@ strong { font-weight: 600; }
 .sheet-sm { width: min(92%, 380px); border-radius: 22px; bottom: auto; top: 50%; transform: translate(-50%, calc(-50% + 12px)) scale(0.98); }
 .sheet-sm.show { transform: translate(-50%, -50%) scale(1); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 8px; }
-.sheet-head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.sheet-head h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
 .sheet-body { overflow: auto; padding: 8px 20px 20px; -webkit-overflow-scrolling: touch; }
 .group { background: var(--fill); border-radius: 14px; padding: 4px 14px; margin-bottom: 16px; }
 .group .btn-block { margin: 8px 0; }
@@ -324,7 +324,7 @@ strong { font-weight: 600; }
 .stat span { font-size: 12px; color: var(--label-2); }
 .fine { font-size: 12px; color: var(--label-3); text-align: center; margin: 4px 0 0; }
 .confirm { text-align: center; padding: 26px 22px 22px; }
-.confirm h2 { margin: 0 0 6px; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+.confirm h2 { margin: 0 0 6px; font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
 .confirm p { margin: 0 0 18px; color: var(--label-2); font-size: 15px; }
 .rules-list { margin: 0; padding: 0; list-style: none; }
 .rules-list li { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 0.5px solid var(--hairline); font-size: 15px; }
@@ -341,7 +341,7 @@ strong { font-weight: 600; }
 .intro.leave { opacity: 0; transform: scale(1.03); pointer-events: none; }
 .intro-inner { position: relative; z-index: 2; text-align: center; padding: 24px; max-width: 680px; }
 .intro-eyebrow { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: var(--label-2); letter-spacing: -0.01em; animation: rise .8s var(--ease) both; }
-.intro-title { margin: 0; font-size: clamp(56px, 11vw, 96px); font-weight: 700; letter-spacing: -0.035em; line-height: 1; animation: rise .9s var(--ease) .05s both; }
+.intro-title { margin: 0; font-size: clamp(56px, 11vw, 96px); font-weight: 600; letter-spacing: -0.035em; line-height: 1; animation: rise .9s var(--ease) .05s both; }
 .intro-title .dot { color: var(--accent); }
 .intro-sub { margin: 14px 0 0; font-size: clamp(21px, 3.2vw, 28px); font-weight: 500; letter-spacing: -0.02em; color: var(--label-2); animation: rise .9s var(--ease) .15s both; }
 .intro-cta { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 34px; animation: rise .9s var(--ease) .3s both; }
@@ -383,7 +383,7 @@ strong { font-weight: 600; }
 @media (max-width: 600px) {
   :root { --card-w: 84px; --overlap: 26px; --chip-size: 50px; }
   .topbar-inner { height: 48px; padding: 0 14px; }
-  .balance-label { display: none; }
+  .balance-label { font-size: 10px; }
   .table { padding: 8px 12px 6px; }
   .table-surface { border-radius: 22px 22px 0 0; }
   .seat-dealer { padding-top: 8px; }
@@ -493,7 +493,7 @@ strong { font-weight: 600; }
       <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>Blackjack</span></div>
       <div class="topbar-right">
         <div class="balance" id="balanceBox" aria-live="off">
-          <span class="balance-label" data-i18n="balance">Saldo</span>
+          <span class="balance-label" data-i18n="demoBalance">Demo · saldo</span>
           <span class="balance-value" id="balance">10.000 kr.</span>
         </div>
         <button class="icon-btn" id="btnSound" aria-label="Lyd til/fra" aria-pressed="true">
@@ -534,7 +534,7 @@ strong { font-weight: 600; }
     </div>
 
     <section class="seat seat-player" aria-label="Dine hænder">
-      <div class="hands" id="hands" data-count="0"></div>
+      <div class="hands" id="hands" data-count="0" role="group"></div>
     </section>
   </main>
 
@@ -627,15 +627,15 @@ strong { font-weight: 600; }
         </div>
         <label class="setting">
           <span data-i18n="sound">Lyd</span>
-          <input type="checkbox" class="switch" id="swSound" checked>
+          <input type="checkbox" class="switch" id="swSound" role="switch" checked>
         </label>
         <label class="setting">
           <span data-i18n="hints">Strategi-hint</span>
-          <input type="checkbox" class="switch" id="swHints">
+          <input type="checkbox" class="switch" id="swHints" role="switch">
         </label>
         <label class="setting">
           <span data-i18n="haptics">Vibration</span>
-          <input type="checkbox" class="switch" id="swHaptics" checked>
+          <input type="checkbox" class="switch" id="swHaptics" role="switch" checked>
         </label>
       </div>
 
@@ -1584,7 +1584,7 @@ strong { font-weight: 600; }
     da: {
       introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
       introFine: '18+ · {decks} kortspil · Dealeren står på 17 · Blackjack betaler 3:2 · Demo uden rigtige penge',
-      balance: 'Saldo', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
+      balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
       surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Spil videre',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
       language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategi-hint', haptics: 'Vibration',
@@ -1608,7 +1608,7 @@ strong { font-weight: 600; }
     en: {
       introEyebrow: 'Card game', introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
       introFine: '18+ · {decks} decks · Dealer stands on 17 · Blackjack pays 3:2 · Demo, no real money',
-      balance: 'Balance', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
+      balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
       surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Keep playing',
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
       language: 'Language', speed: 'Pace', normal: 'Normal', fast: 'Fast', sound: 'Sound', hints: 'Strategy hint', haptics: 'Haptics',
@@ -1652,6 +1652,7 @@ strong { font-weight: 600; }
   let speedFactor = 1;
 
   const wait = ms => new Promise(r => setTimeout(r, Math.max(0, ms * speedFactor * (reduceMotion.matches ? 0.35 : 1))));
+  const settled = (anim, ms = 1500) => Promise.race([anim.finished.catch(() => {}), new Promise(r => setTimeout(r, ms))]);
   const haptic = p => { if (settings.haptics && navigator.vibrate) { try { navigator.vibrate(p); } catch (e) { /* ignore */ } } };
 
   /* ---------------- DOM refs ---------------- */
@@ -1735,7 +1736,7 @@ strong { font-weight: 600; }
       { transform: 'translate(0, 0) rotate(0) scale(1)', opacity: 1 },
     ], { duration: dur, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'both' });
     sound.deal();
-    await anim.finished.catch(() => {});
+    await settled(anim);
     anim.commitStyles && anim.cancel();
     c.style.transform = '';
     c.classList.remove('flying');
@@ -1770,12 +1771,16 @@ strong { font-weight: 600; }
     const bb = $('.badge-bet', handEls[i]);
     bb.hidden = !(game.hands.length > 1 || h.doubled);
     bb.textContent = fmt(h.bet);
+    handEls[i].setAttribute('role', 'group');
+    handEls[i].setAttribute('aria-label', `${t('yourHand')}${game.hands.length > 1 ? ' ' + (i + 1) : ''}: ${h.cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}${v.soft && v.total < 21 ? ' (' + (v.total - 10) + '/' + v.total + ')' : ''}`);
   }
   function updateDealerBadge() {
     const d = game.dealer;
     if (!d.cards.length) { el.dealerValue.hidden = true; return; }
     const v = d.holeHidden ? BJ.handValue(d.cards.slice(0, 1)) : BJ.handValue(d.cards);
     updateBadge(el.dealerValue, v, { blackjack: !d.holeHidden && BJ.isNatural(d.cards) });
+    el.dealerCards.setAttribute('role', 'group');
+    el.dealerCards.setAttribute('aria-label', `${t('dealer')}: ${d.cards.map((c, i) => d.holeHidden && i === 1 ? t('hiddenCard') : Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}`);
   }
   function setActiveHand(i) {
     handEls.forEach((h, k) => {
@@ -1847,7 +1852,7 @@ strong { font-weight: 600; }
       { transform: `translate(${dx * 0.5}px, ${dy * 0.55 - 30}px) scale(0.9)`, offset: 0.5 },
       { transform: `translate(${dx}px, ${dy}px) scale(${44 / from.width})` },
     ], { duration: 380 * speedFactor, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'forwards' });
-    await a.finished.catch(() => {});
+    await settled(a);
     ghost.remove();
   }
   async function stackTo(target, { fade = true } = {}) {
