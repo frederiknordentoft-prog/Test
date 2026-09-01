@@ -340,6 +340,19 @@ strong { font-weight: 600; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .intro-cards { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .intro-cards .card { position: absolute; inset: auto; height: auto; width: clamp(120px, 14vw, 190px); opacity: 0; animation: introCard 1.4s var(--ease) both; perspective: none; }
+.intro-cards .ic1 { left: 6%; bottom: 14%; --r: -14deg; --r0: -28deg; }
+.intro-cards .ic2 { right: 8%; top: 12%; --r: 8deg; --r0: 16deg; }
+.intro-cards .ic3 { right: 16%; bottom: 10%; --r: -6deg; --r0: -12deg; }
+.intro-cards .ic4 { left: 12%; top: 16%; --r: 12deg; --r0: 24deg; }
+@media (max-width: 700px) {
+  .intro-cards .card { width: 108px; }
+  .intro-cards .ic1 { left: 4%; bottom: auto; top: -46px; --r: -16deg; }
+  .intro-cards .ic2 { right: 6%; top: -30px; --r: 10deg; }
+  .intro-cards .ic3 { right: 10%; bottom: -70px; --r: -8deg; }
+  .intro-cards .ic4 { left: 8%; bottom: -56px; top: auto; --r: 14deg; }
+  .intro-inner { padding: 24px 20px; }
+  .intro-fine { margin-top: 28px; }
+}
 .intro-cards .card .card-face { box-shadow: var(--card-shadow-lift), 0 0 0 0.5px var(--card-edge); }
 @keyframes introCard { from { opacity: 0; transform: translateY(40px) rotate(var(--r0)); } to { opacity: 1; transform: translateY(0) rotate(var(--r)); } }
 
@@ -394,13 +407,25 @@ strong { font-weight: 600; }
   .sheet-head { padding: 16px 18px 6px; }
 }
 @media (max-height: 520px) and (orientation: landscape) {
-  :root { --card-w: 70px; --overlap: 22px; --chip-size: 44px; }
-  .centre { min-height: 70px; }
-  .message { font-size: 16px; }
-  .bet-spot { height: 62px; } .bet-ring { width: 46px; height: 46px; } .bet-amount { top: 50px; font-size: 13px; }
-  .chips { padding-bottom: 6px; }
-  .btn { height: 40px; }
-  .seat-dealer { padding-top: 4px; }
+  :root { --card-w: 78px; --overlap: 24px; --chip-size: 42px; }
+  .topbar-inner { height: 40px; }
+  .table { grid-template-columns: 1fr minmax(180px, auto) 1fr; grid-template-rows: 1fr; align-items: center; padding: 6px 56px 6px 16px; }
+  .seat-dealer, .seat-player { align-self: center; padding: 0; }
+  .centre { min-height: 0; gap: 4px; }
+  .message { font-size: 17px; min-height: 22px; }
+  .message.big { font-size: 24px; }
+  .bet-spot { height: 60px; } .bet-ring { width: 44px; height: 44px; } .bet-ring-label { font-size: 9px; }
+  .bet-stack { top: 22px; } .bet-stack .chip { width: 36px; height: 36px; left: -18px; top: -18px; }
+  .bet-amount { top: 46px; font-size: 13px; }
+  .hands { gap: 10px; }
+  .hands[data-count="3"], .hands[data-count="4"] { --card-w: 56px; --overlap: 18px; }
+  .chips { padding: 0 0 6px; }
+  .btn { height: 38px; font-size: 15px; }
+  .btn-sm { height: 32px; }
+  .dock-inner { padding: 6px 14px 6px; }
+  .reg { margin-top: 4px; font-size: 10px; }
+  .shoe { top: 8px; right: 10px; width: 30px; }
+  .hint { top: -6px; }
 }
 .insurance-text { display: flex; flex-direction: column; gap: 2px; margin-right: auto; }
 .insurance-text strong { font-size: 17px; }
@@ -1238,11 +1263,12 @@ strong { font-weight: 600; }
   const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Roboto, Inter, Arial, sans-serif";
 
   // Suit glyphs, normalised to a 100×100 box, centred at (50,50).
+  // Constructed from circles and tangent lines (no arcs), so they scale and animate cleanly.
   const GLYPH = {
-    H: 'M50 91 C31 76 7 58 7 36 C7 24 16 14 28 14 C38 14 46 20 50 29 C54 20 62 14 72 14 C84 14 93 24 93 36 C93 58 69 76 50 91 Z',
-    D: 'M50 5 C60 23 75 38 93 50 C75 62 60 77 50 95 C40 77 25 62 7 50 C25 38 40 23 50 5 Z',
-    S: 'M50 7 C38 22 8 41 8 60 C8 71 16 79 27 79 C35 79 41 76 46 70 C44 80 39 88 33 93 L67 93 C61 88 56 80 54 70 C59 76 65 79 73 79 C84 79 92 71 92 60 C92 41 62 22 50 7 Z',
-    C: 'M50 8 C39 8 30 17 30 28 C30 33 32 38 35 41 C33 40 30 40 28 40 C17 40 8 49 8 60 C8 71 17 80 28 80 C36 80 42 76 46 70 C44 80 39 88 33 93 L67 93 C61 88 56 80 54 70 C58 76 64 80 72 80 C83 80 92 71 92 60 C92 49 83 40 72 40 C70 40 67 40 65 41 C68 38 70 33 70 28 C70 17 61 8 50 8 Z',
+    H: 'M50 95C31.1 76.3 24.9 66.5 8.2 47.5C1.7 40.1 0.2 29.5 4.3 20.5C8.4 11.6 17.5 5.9 27.4 6C37.3 6.1 46.1 12.1 50 21.2C53.9 12.1 62.7 6.1 72.6 6C82.5 5.9 91.6 11.6 95.7 20.5C99.8 29.5 98.3 40.1 91.8 47.5C75.1 66.5 68.9 76.3 50 95Z',
+    D: 'M50 4Q73.9 22.9 88 50Q73.9 77.1 50 96Q26.1 77.1 12 50Q26.1 22.9 50 4Z',
+    S: 'M50 4C64.5 17.3 74.9 28.5 89 42.2C96.9 50 98.3 62.2 92.4 71.5C86.5 80.9 74.9 84.9 64.5 81.1L52.9 70.6C53.5 84.5 60 93.2 69 96L31 96C40 93.2 46.5 84.5 47.1 70.6L35.5 81.1C25.1 84.9 13.5 80.9 7.6 71.5C1.7 62.2 3.1 50 11 42.2C25.1 28.5 35.5 17.3 50 4Z',
+    C: 'M29.3 38.1C24.6 28.4 27.2 16.8 35.6 10C44 3.3 56 3.3 64.4 10C72.8 16.8 75.4 28.4 70.7 38.1C80.7 38.8 89.1 45.9 91.4 55.7C93.7 65.5 89.4 75.7 80.8 80.8C72.1 85.9 61.1 84.8 53.7 78.1C53.1 85 60 93.4 69 96L31 96C40 93.4 46.9 85 46.3 78.1C38.9 84.8 27.9 85.9 19.2 80.8C10.6 75.7 6.3 65.5 8.6 55.7C10.9 45.9 19.3 38.8 29.3 38.1Z',
   };
   const COLOR = { H: '#D8322B', D: '#D8322B', S: '#1D1D1F', C: '#1D1D1F' };
   const NAME = { H: 'hjerter', D: 'ruder', S: 'spar', C: 'klør' };
@@ -1302,8 +1328,8 @@ strong { font-weight: 600; }
   function ace(suit, color) {
     const big = suit === 'S';
     return `<g fill="${color}">
-      ${glyph(suit, 125, 175, big ? 150 : 128, 0)}
-      ${big ? `<circle cx="125" cy="175" r="98" fill="none" stroke="${color}" stroke-opacity="0.14" stroke-width="2"/>` : ''}
+      ${big ? glyph('S', 125, 175, 182, 0, `fill="none" stroke="${color}" stroke-opacity="0.22" stroke-width="1.2"`) : ''}
+      ${glyph(suit, 125, 175, big ? 138 : 124, 0)}
     </g>`;
   }
 
@@ -1318,7 +1344,7 @@ strong { font-weight: 600; }
     if (rank === 'A') body = ace(suit, color);
     else if (rank === 'K' || rank === 'Q' || rank === 'J') body = court(rank, suit, color);
     else {
-      const size = rank === '2' || rank === '3' ? 60 : rank === '10' ? 46 : 52;
+      const size = rank === '2' || rank === '3' ? 56 : rank === '10' ? 44 : 50;
       body = `<g fill="${color}">${PIPS[rank].map(([x, y, f]) => glyph(suit, x, y, size, f)).join('')}</g>`;
     }
     const label = `${rank} ${NAME[suit]}`;
@@ -1482,9 +1508,9 @@ strong { font-weight: 600; }
     win() {
       if (!this._ok('win', 200)) return;
       const t = this.ctx.currentTime;
-      this._tone('triangle', 659.25, 659.25, t, 0.01, 0.18, 0.2, { lp: 3000 });
-      this._tone('triangle', 880, 880, t + 0.11, 0.01, 0.28, 0.2, { lp: 3000 });
-      this._tone('sine', 1760, 1760, t + 0.11, 0.01, 0.2, 0.05);
+      this._tone('triangle', 659.25, 659.25, t, 0.01, 0.18, 0.2, { lp: 3200 });
+      this._tone('triangle', 987.77, 987.77, t + 0.11, 0.01, 0.3, 0.2, { lp: 3200 });
+      this._tone('sine', 1975.5, 1975.5, t + 0.11, 0.01, 0.2, 0.04);
     }
     blackjack() {
       if (!this._ok('blackjack', 300)) return;
@@ -1502,19 +1528,19 @@ strong { font-weight: 600; }
     bust() {
       if (!this._ok('bust', 200)) return;
       const t = this.ctx.currentTime;
-      this._tone('triangle', 420, 420, t, 0.005, 0.1, 0.14, { lp: 2000 });
-      this._tone('triangle', 300, 280, t + 0.09, 0.005, 0.18, 0.14, { lp: 2000 });
+      this._tone('triangle', 783.99, 783.99, t, 0.005, 0.1, 0.12, { lp: 2400 });
+      this._tone('triangle', 587.33, 570, t + 0.09, 0.005, 0.2, 0.12, { lp: 2400 });
     }
     push() {
       if (!this._ok('push', 200)) return;
       const t = this.ctx.currentTime;
-      this._tone('triangle', 440, 440, t, 0.01, 0.16, 0.16, { lp: 2500 });
+      this._tone('triangle', 523.25, 523.25, t, 0.01, 0.18, 0.16, { lp: 2500 });
     }
     notify() {
       if (!this._ok('notify', 200)) return;
       const t = this.ctx.currentTime;
-      this._tone('sine', 880, 880, t, 0.01, 0.14, 0.12);
-      this._tone('sine', 1108.7, 1108.7, t + 0.09, 0.01, 0.2, 0.12);
+      this._tone('sine', 783.99, 783.99, t, 0.01, 0.14, 0.12);
+      this._tone('sine', 1046.5, 1046.5, t + 0.1, 0.01, 0.22, 0.12);
     }
     shuffle() {
       if (!this._ok('shuffle', 500)) return;
@@ -1566,7 +1592,7 @@ strong { font-weight: 600; }
       rulesTitle: 'Sådan spiller du', rulesIntro: 'Kom tættest på 21 uden at gå over. Billedkort tæller 10, es tæller 1 eller 11. Dealeren trækker til 16 og står på 17. Blackjack betaler 3:2.',
       rDecks: 'Kortspil', rS17: 'Dealeren står på', rS17v: 'Alle 17', rH17v: 'Hårde 17 (trækker på blød 17)', rBJ: 'Blackjack betaler', rIns: 'Forsikring betaler', rPeek: 'Dealeren kigger efter blackjack', rPeekV: 'Ved es og 10',
       rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, ingen re-split', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort',
-      rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct} % af skoen', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
+      rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct} % af skoen', rRtp: 'Teoretisk tilbagebetaling (RTP)', rRtpV: '99,66 % med basisstrategi', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
       recent: 'Seneste runder', chips: 'Jetoner', dealerLabel: 'Dealer',
     },
     en: {
@@ -1590,7 +1616,7 @@ strong { font-weight: 600; }
       rulesTitle: 'How to play', rulesIntro: 'Get closest to 21 without going over. Face cards count 10, aces 1 or 11. The dealer draws to 16 and stands on 17. Blackjack pays 3:2.',
       rDecks: 'Decks', rS17: 'Dealer stands on', rS17v: 'All 17s', rH17v: 'Hard 17 (hits soft 17)', rBJ: 'Blackjack pays', rIns: 'Insurance pays', rPeek: 'Dealer peeks for blackjack', rPeekV: 'On ace and ten',
       rDouble: 'Double', rDoubleV: 'On any two cards', rDAS: 'Double after split', rSplit: 'Split', rSplitV: 'Up to {n} hands', rAces: 'Split aces', rAcesV: 'One card each, no re-split', rSurr: 'Surrender', rSurrV: 'Late, first two cards only',
-      rLimits: 'Bet limits', rCut: 'Shuffle', rCutV: 'At {pct} % of the shoe', yes: 'Yes', no: 'No', keys: 'Keyboard', kDeal: 'Deal / rebet', kHit: 'Hit', kStand: 'Stand', kDouble: 'Double', kSplit: 'Split', kSurr: 'Surrender', kIns: 'Insurance yes / no', kEsc: 'Close',
+      rLimits: 'Bet limits', rCut: 'Shuffle', rCutV: 'At {pct} % of the shoe', rRtp: 'Theoretical return (RTP)', rRtpV: '99.66 % with basic strategy', yes: 'Yes', no: 'No', keys: 'Keyboard', kDeal: 'Deal / rebet', kHit: 'Hit', kStand: 'Stand', kDouble: 'Double', kSplit: 'Split', kSurr: 'Surrender', kIns: 'Insurance yes / no', kEsc: 'Close',
       recent: 'Recent rounds', chips: 'Chips', dealerLabel: 'Dealer',
     },
   };
@@ -1915,7 +1941,7 @@ strong { font-weight: 600; }
     const rows = [
       [t('rDecks'), r.decks], [t('rS17'), r.dealerHitsSoft17 ? t('rH17v') : t('rS17v')], [t('rBJ'), '3:2'], [t('rIns'), '2:1'], [t('rPeek'), t('rPeekV')],
       [t('rDouble'), t('rDoubleV')], [t('rDAS'), r.doubleAfterSplit ? t('yes') : t('no')], [t('rSplit'), t('rSplitV', { n: r.maxSplits + 1 })], [t('rAces'), t('rAcesV')],
-      [t('rSurr'), r.lateSurrender ? t('rSurrV') : t('no')], [t('rLimits'), `${fmt(r.minBet)} – ${fmt(r.maxBet)}`], [t('rCut'), t('rCutV', { pct: Math.round(r.penetration * 100) })],
+      [t('rSurr'), r.lateSurrender ? t('rSurrV') : t('no')], [t('rLimits'), `${fmt(r.minBet)} – ${fmt(r.maxBet)}`], [t('rCut'), t('rCutV', { pct: Math.round(r.penetration * 100) })], [t('rRtp'), t('rRtpV')],
     ];
     const keys = [['␣', t('kDeal')], ['H', t('kHit')], ['S', t('kStand')], ['D', t('kDouble')], ['P', t('kSplit')], ['R', t('kSurr')], ['Y / N', t('kIns')], ['Esc', t('kEsc')]];
     el.rulesBody.innerHTML = `<p class="rules-intro">${t('rulesIntro')}</p><ul class="rules-list">${rows.map(([k, v]) => `<li><span>${k}</span><span>${v}</span></li>`).join('')}</ul>
@@ -2217,10 +2243,11 @@ strong { font-weight: 600; }
 
   /* ---------------- intro ---------------- */
   function buildIntro() {
-    const spec = [['A', 'S', -14, 'left: 6%; bottom: 14%', 1], ['K', 'H', 8, 'right: 8%; top: 12%', 2], ['Q', 'C', -6, 'right: 16%; bottom: 10%', 3], ['10', 'D', 12, 'left: 12%; top: 16%', 4]];
+    const spec = [['A', 'S'], ['K', 'H'], ['Q', 'C'], ['10', 'D']];
     el.introCards.innerHTML = '';
-    spec.forEach(([r, s, rot, pos, i]) => {
-      const c = document.createElement('div'); c.className = 'card'; c.style.cssText = pos + `; --r:${rot}deg; --r0:${rot * 2}deg; animation-delay:${0.25 + i * 0.12}s`;
+    spec.forEach(([r, s], i) => {
+      const c = document.createElement('div'); c.className = 'card ic ic' + (i + 1);
+      c.style.animationDelay = (0.25 + i * 0.12) + 's';
       c.innerHTML = `<div class="card-inner"><div class="card-face card-front">${Cards.svg(r, s)}</div></div>`;
       el.introCards.appendChild(c);
     });

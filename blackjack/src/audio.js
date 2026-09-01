@@ -110,9 +110,9 @@
     win() {
       if (!this._ok('win', 200)) return;
       const t = this.ctx.currentTime;
-      this._tone('triangle', 659.25, 659.25, t, 0.01, 0.18, 0.2, { lp: 3000 });
-      this._tone('triangle', 880, 880, t + 0.11, 0.01, 0.28, 0.2, { lp: 3000 });
-      this._tone('sine', 1760, 1760, t + 0.11, 0.01, 0.2, 0.05);
+      this._tone('triangle', 659.25, 659.25, t, 0.01, 0.18, 0.2, { lp: 3200 });
+      this._tone('triangle', 987.77, 987.77, t + 0.11, 0.01, 0.3, 0.2, { lp: 3200 });
+      this._tone('sine', 1975.5, 1975.5, t + 0.11, 0.01, 0.2, 0.04);
     }
     blackjack() {
       if (!this._ok('blackjack', 300)) return;
@@ -130,19 +130,19 @@
     bust() {
       if (!this._ok('bust', 200)) return;
       const t = this.ctx.currentTime;
-      this._tone('triangle', 420, 420, t, 0.005, 0.1, 0.14, { lp: 2000 });
-      this._tone('triangle', 300, 280, t + 0.09, 0.005, 0.18, 0.14, { lp: 2000 });
+      this._tone('triangle', 783.99, 783.99, t, 0.005, 0.1, 0.12, { lp: 2400 });
+      this._tone('triangle', 587.33, 570, t + 0.09, 0.005, 0.2, 0.12, { lp: 2400 });
     }
     push() {
       if (!this._ok('push', 200)) return;
       const t = this.ctx.currentTime;
-      this._tone('triangle', 440, 440, t, 0.01, 0.16, 0.16, { lp: 2500 });
+      this._tone('triangle', 523.25, 523.25, t, 0.01, 0.18, 0.16, { lp: 2500 });
     }
     notify() {
       if (!this._ok('notify', 200)) return;
       const t = this.ctx.currentTime;
-      this._tone('sine', 880, 880, t, 0.01, 0.14, 0.12);
-      this._tone('sine', 1108.7, 1108.7, t + 0.09, 0.01, 0.2, 0.12);
+      this._tone('sine', 783.99, 783.99, t, 0.01, 0.14, 0.12);
+      this._tone('sine', 1046.5, 1046.5, t + 0.1, 0.01, 0.22, 0.12);
     }
     shuffle() {
       if (!this._ok('shuffle', 500)) return;

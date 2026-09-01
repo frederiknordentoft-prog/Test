@@ -31,7 +31,7 @@
       rulesTitle: 'Sådan spiller du', rulesIntro: 'Kom tættest på 21 uden at gå over. Billedkort tæller 10, es tæller 1 eller 11. Dealeren trækker til 16 og står på 17. Blackjack betaler 3:2.',
       rDecks: 'Kortspil', rS17: 'Dealeren står på', rS17v: 'Alle 17', rH17v: 'Hårde 17 (trækker på blød 17)', rBJ: 'Blackjack betaler', rIns: 'Forsikring betaler', rPeek: 'Dealeren kigger efter blackjack', rPeekV: 'Ved es og 10',
       rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, ingen re-split', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort',
-      rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct} % af skoen', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
+      rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct} % af skoen', rRtp: 'Teoretisk tilbagebetaling (RTP)', rRtpV: '99,66 % med basisstrategi', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
       recent: 'Seneste runder', chips: 'Jetoner', dealerLabel: 'Dealer',
     },
     en: {
@@ -55,7 +55,7 @@
       rulesTitle: 'How to play', rulesIntro: 'Get closest to 21 without going over. Face cards count 10, aces 1 or 11. The dealer draws to 16 and stands on 17. Blackjack pays 3:2.',
       rDecks: 'Decks', rS17: 'Dealer stands on', rS17v: 'All 17s', rH17v: 'Hard 17 (hits soft 17)', rBJ: 'Blackjack pays', rIns: 'Insurance pays', rPeek: 'Dealer peeks for blackjack', rPeekV: 'On ace and ten',
       rDouble: 'Double', rDoubleV: 'On any two cards', rDAS: 'Double after split', rSplit: 'Split', rSplitV: 'Up to {n} hands', rAces: 'Split aces', rAcesV: 'One card each, no re-split', rSurr: 'Surrender', rSurrV: 'Late, first two cards only',
-      rLimits: 'Bet limits', rCut: 'Shuffle', rCutV: 'At {pct} % of the shoe', yes: 'Yes', no: 'No', keys: 'Keyboard', kDeal: 'Deal / rebet', kHit: 'Hit', kStand: 'Stand', kDouble: 'Double', kSplit: 'Split', kSurr: 'Surrender', kIns: 'Insurance yes / no', kEsc: 'Close',
+      rLimits: 'Bet limits', rCut: 'Shuffle', rCutV: 'At {pct} % of the shoe', rRtp: 'Theoretical return (RTP)', rRtpV: '99.66 % with basic strategy', yes: 'Yes', no: 'No', keys: 'Keyboard', kDeal: 'Deal / rebet', kHit: 'Hit', kStand: 'Stand', kDouble: 'Double', kSplit: 'Split', kSurr: 'Surrender', kIns: 'Insurance yes / no', kEsc: 'Close',
       recent: 'Recent rounds', chips: 'Chips', dealerLabel: 'Dealer',
     },
   };
@@ -380,7 +380,7 @@
     const rows = [
       [t('rDecks'), r.decks], [t('rS17'), r.dealerHitsSoft17 ? t('rH17v') : t('rS17v')], [t('rBJ'), '3:2'], [t('rIns'), '2:1'], [t('rPeek'), t('rPeekV')],
       [t('rDouble'), t('rDoubleV')], [t('rDAS'), r.doubleAfterSplit ? t('yes') : t('no')], [t('rSplit'), t('rSplitV', { n: r.maxSplits + 1 })], [t('rAces'), t('rAcesV')],
-      [t('rSurr'), r.lateSurrender ? t('rSurrV') : t('no')], [t('rLimits'), `${fmt(r.minBet)} – ${fmt(r.maxBet)}`], [t('rCut'), t('rCutV', { pct: Math.round(r.penetration * 100) })],
+      [t('rSurr'), r.lateSurrender ? t('rSurrV') : t('no')], [t('rLimits'), `${fmt(r.minBet)} – ${fmt(r.maxBet)}`], [t('rCut'), t('rCutV', { pct: Math.round(r.penetration * 100) })], [t('rRtp'), t('rRtpV')],
     ];
     const keys = [['␣', t('kDeal')], ['H', t('kHit')], ['S', t('kStand')], ['D', t('kDouble')], ['P', t('kSplit')], ['R', t('kSurr')], ['Y / N', t('kIns')], ['Esc', t('kEsc')]];
     el.rulesBody.innerHTML = `<p class="rules-intro">${t('rulesIntro')}</p><ul class="rules-list">${rows.map(([k, v]) => `<li><span>${k}</span><span>${v}</span></li>`).join('')}</ul>
@@ -682,10 +682,11 @@
 
   /* ---------------- intro ---------------- */
   function buildIntro() {
-    const spec = [['A', 'S', -14, 'left: 6%; bottom: 14%', 1], ['K', 'H', 8, 'right: 8%; top: 12%', 2], ['Q', 'C', -6, 'right: 16%; bottom: 10%', 3], ['10', 'D', 12, 'left: 12%; top: 16%', 4]];
+    const spec = [['A', 'S'], ['K', 'H'], ['Q', 'C'], ['10', 'D']];
     el.introCards.innerHTML = '';
-    spec.forEach(([r, s, rot, pos, i]) => {
-      const c = document.createElement('div'); c.className = 'card'; c.style.cssText = pos + `; --r:${rot}deg; --r0:${rot * 2}deg; animation-delay:${0.25 + i * 0.12}s`;
+    spec.forEach(([r, s], i) => {
+      const c = document.createElement('div'); c.className = 'card ic ic' + (i + 1);
+      c.style.animationDelay = (0.25 + i * 0.12) + 's';
       c.innerHTML = `<div class="card-inner"><div class="card-face card-front">${Cards.svg(r, s)}</div></div>`;
       el.introCards.appendChild(c);
     });

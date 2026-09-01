@@ -337,6 +337,19 @@ strong { font-weight: 600; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .intro-cards { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .intro-cards .card { position: absolute; inset: auto; height: auto; width: clamp(120px, 14vw, 190px); opacity: 0; animation: introCard 1.4s var(--ease) both; perspective: none; }
+.intro-cards .ic1 { left: 6%; bottom: 14%; --r: -14deg; --r0: -28deg; }
+.intro-cards .ic2 { right: 8%; top: 12%; --r: 8deg; --r0: 16deg; }
+.intro-cards .ic3 { right: 16%; bottom: 10%; --r: -6deg; --r0: -12deg; }
+.intro-cards .ic4 { left: 12%; top: 16%; --r: 12deg; --r0: 24deg; }
+@media (max-width: 700px) {
+  .intro-cards .card { width: 108px; }
+  .intro-cards .ic1 { left: 4%; bottom: auto; top: -46px; --r: -16deg; }
+  .intro-cards .ic2 { right: 6%; top: -30px; --r: 10deg; }
+  .intro-cards .ic3 { right: 10%; bottom: -70px; --r: -8deg; }
+  .intro-cards .ic4 { left: 8%; bottom: -56px; top: auto; --r: 14deg; }
+  .intro-inner { padding: 24px 20px; }
+  .intro-fine { margin-top: 28px; }
+}
 .intro-cards .card .card-face { box-shadow: var(--card-shadow-lift), 0 0 0 0.5px var(--card-edge); }
 @keyframes introCard { from { opacity: 0; transform: translateY(40px) rotate(var(--r0)); } to { opacity: 1; transform: translateY(0) rotate(var(--r)); } }
 
@@ -391,13 +404,25 @@ strong { font-weight: 600; }
   .sheet-head { padding: 16px 18px 6px; }
 }
 @media (max-height: 520px) and (orientation: landscape) {
-  :root { --card-w: 70px; --overlap: 22px; --chip-size: 44px; }
-  .centre { min-height: 70px; }
-  .message { font-size: 16px; }
-  .bet-spot { height: 62px; } .bet-ring { width: 46px; height: 46px; } .bet-amount { top: 50px; font-size: 13px; }
-  .chips { padding-bottom: 6px; }
-  .btn { height: 40px; }
-  .seat-dealer { padding-top: 4px; }
+  :root { --card-w: 78px; --overlap: 24px; --chip-size: 42px; }
+  .topbar-inner { height: 40px; }
+  .table { grid-template-columns: 1fr minmax(180px, auto) 1fr; grid-template-rows: 1fr; align-items: center; padding: 6px 56px 6px 16px; }
+  .seat-dealer, .seat-player { align-self: center; padding: 0; }
+  .centre { min-height: 0; gap: 4px; }
+  .message { font-size: 17px; min-height: 22px; }
+  .message.big { font-size: 24px; }
+  .bet-spot { height: 60px; } .bet-ring { width: 44px; height: 44px; } .bet-ring-label { font-size: 9px; }
+  .bet-stack { top: 22px; } .bet-stack .chip { width: 36px; height: 36px; left: -18px; top: -18px; }
+  .bet-amount { top: 46px; font-size: 13px; }
+  .hands { gap: 10px; }
+  .hands[data-count="3"], .hands[data-count="4"] { --card-w: 56px; --overlap: 18px; }
+  .chips { padding: 0 0 6px; }
+  .btn { height: 38px; font-size: 15px; }
+  .btn-sm { height: 32px; }
+  .dock-inner { padding: 6px 14px 6px; }
+  .reg { margin-top: 4px; font-size: 10px; }
+  .shoe { top: 8px; right: 10px; width: 30px; }
+  .hint { top: -6px; }
 }
 .insurance-text { display: flex; flex-direction: column; gap: 2px; margin-right: auto; }
 .insurance-text strong { font-size: 17px; }

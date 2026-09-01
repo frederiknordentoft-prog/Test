@@ -13,11 +13,12 @@
   const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Roboto, Inter, Arial, sans-serif";
 
   // Suit glyphs, normalised to a 100×100 box, centred at (50,50).
+  // Constructed from circles and tangent lines (no arcs), so they scale and animate cleanly.
   const GLYPH = {
-    H: 'M50 91 C31 76 7 58 7 36 C7 24 16 14 28 14 C38 14 46 20 50 29 C54 20 62 14 72 14 C84 14 93 24 93 36 C93 58 69 76 50 91 Z',
-    D: 'M50 5 C60 23 75 38 93 50 C75 62 60 77 50 95 C40 77 25 62 7 50 C25 38 40 23 50 5 Z',
-    S: 'M50 7 C38 22 8 41 8 60 C8 71 16 79 27 79 C35 79 41 76 46 70 C44 80 39 88 33 93 L67 93 C61 88 56 80 54 70 C59 76 65 79 73 79 C84 79 92 71 92 60 C92 41 62 22 50 7 Z',
-    C: 'M50 8 C39 8 30 17 30 28 C30 33 32 38 35 41 C33 40 30 40 28 40 C17 40 8 49 8 60 C8 71 17 80 28 80 C36 80 42 76 46 70 C44 80 39 88 33 93 L67 93 C61 88 56 80 54 70 C58 76 64 80 72 80 C83 80 92 71 92 60 C92 49 83 40 72 40 C70 40 67 40 65 41 C68 38 70 33 70 28 C70 17 61 8 50 8 Z',
+    H: 'M50 95C31.1 76.3 24.9 66.5 8.2 47.5C1.7 40.1 0.2 29.5 4.3 20.5C8.4 11.6 17.5 5.9 27.4 6C37.3 6.1 46.1 12.1 50 21.2C53.9 12.1 62.7 6.1 72.6 6C82.5 5.9 91.6 11.6 95.7 20.5C99.8 29.5 98.3 40.1 91.8 47.5C75.1 66.5 68.9 76.3 50 95Z',
+    D: 'M50 4Q73.9 22.9 88 50Q73.9 77.1 50 96Q26.1 77.1 12 50Q26.1 22.9 50 4Z',
+    S: 'M50 4C64.5 17.3 74.9 28.5 89 42.2C96.9 50 98.3 62.2 92.4 71.5C86.5 80.9 74.9 84.9 64.5 81.1L52.9 70.6C53.5 84.5 60 93.2 69 96L31 96C40 93.2 46.5 84.5 47.1 70.6L35.5 81.1C25.1 84.9 13.5 80.9 7.6 71.5C1.7 62.2 3.1 50 11 42.2C25.1 28.5 35.5 17.3 50 4Z',
+    C: 'M29.3 38.1C24.6 28.4 27.2 16.8 35.6 10C44 3.3 56 3.3 64.4 10C72.8 16.8 75.4 28.4 70.7 38.1C80.7 38.8 89.1 45.9 91.4 55.7C93.7 65.5 89.4 75.7 80.8 80.8C72.1 85.9 61.1 84.8 53.7 78.1C53.1 85 60 93.4 69 96L31 96C40 93.4 46.9 85 46.3 78.1C38.9 84.8 27.9 85.9 19.2 80.8C10.6 75.7 6.3 65.5 8.6 55.7C10.9 45.9 19.3 38.8 29.3 38.1Z',
   };
   const COLOR = { H: '#D8322B', D: '#D8322B', S: '#1D1D1F', C: '#1D1D1F' };
   const NAME = { H: 'hjerter', D: 'ruder', S: 'spar', C: 'klør' };
@@ -77,8 +78,8 @@
   function ace(suit, color) {
     const big = suit === 'S';
     return `<g fill="${color}">
-      ${glyph(suit, 125, 175, big ? 150 : 128, 0)}
-      ${big ? `<circle cx="125" cy="175" r="98" fill="none" stroke="${color}" stroke-opacity="0.14" stroke-width="2"/>` : ''}
+      ${big ? glyph('S', 125, 175, 182, 0, `fill="none" stroke="${color}" stroke-opacity="0.22" stroke-width="1.2"`) : ''}
+      ${glyph(suit, 125, 175, big ? 138 : 124, 0)}
     </g>`;
   }
 
@@ -93,7 +94,7 @@
     if (rank === 'A') body = ace(suit, color);
     else if (rank === 'K' || rank === 'Q' || rank === 'J') body = court(rank, suit, color);
     else {
-      const size = rank === '2' || rank === '3' ? 60 : rank === '10' ? 46 : 52;
+      const size = rank === '2' || rank === '3' ? 56 : rank === '10' ? 44 : 50;
       body = `<g fill="${color}">${PIPS[rank].map(([x, y, f]) => glyph(suit, x, y, size, f)).join('')}</g>`;
     }
     const label = `${rank} ${NAME[suit]}`;
