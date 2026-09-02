@@ -625,7 +625,11 @@
   async function run(fn) {
     if (busy) return;
     busy = true;
-    try { await play(fn()); }
+    try {
+      const ev = fn();
+      if (ev.some(e => e.type === 'settle')) { safeBalance = game.balance; save(); } // persist the decided round before animating it
+      await play(ev);
+    }
     catch (err) { if (!(err instanceof BJ.GameError)) console.error(err); }
     finally { busy = false; renderBetControls(); }
   }

@@ -812,7 +812,7 @@ strong { font-weight: 600; }
   const NO_ACTIONS = Object.freeze({ hit: false, stand: false, double: false, split: false, surrender: false });
   function newHand(bet, extra = {}) {
     return Object.assign({
-      cards: [], bet, done: false, doubled: false, surrendered: false,
+      cards: [], bet, baseBet: bet, done: false, doubled: false, surrendered: false,
       fromSplit: false, splitAces: false, result: null, payout: 0, net: 0,
     }, extra);
   }
@@ -923,11 +923,12 @@ strong { font-weight: 600; }
       const up = this.dealer.cards[0];
       const playerBJ = isNatural(this.hands[0].cards);
       const stake = this.hands[0].bet;
+      const offerEvenMoney = this.rules.insurance && this.rules.evenMoney && up.rank === 'A' && playerBJ; // costs nothing
       const canInsure = this.rules.insurance && up.rank === 'A' && this.balance >= stake / 2;
 
-      if (canInsure && this.rules.peek) {
+      if (offerEvenMoney || canInsure) {
         this.phase = PHASE.INSURANCE;
-        ev.push({ type: playerBJ && this.rules.evenMoney ? 'evenMoneyOffer' : 'insuranceOffer', cost: stake / 2, stake });
+        ev.push({ type: offerEvenMoney ? 'evenMoneyOffer' : 'insuranceOffer', cost: stake / 2, stake });
         return ev;
       }
       return ev.concat(this._afterInsurance(playerBJ));
@@ -947,8 +948,9 @@ strong { font-weight: 600; }
           this.dealer.holeHidden = false;
           return ev.concat(this._settle());
         }
+        if (this.balance < this.hands[0].bet / 2) throw new GameError('balance');
         this.insuranceBet = this.hands[0].bet / 2;
-        this.balance -= this.insuranceBet;
+        this.balance -= this.insuranceBet; this.stats.wagered += this.insuranceBet;
         ev.push({ type: 'insuranceTaken', amount: this.insuranceBet, balance: this.balance });
       } else {
         ev.push({ type: 'insuranceDeclined' });
@@ -1042,7 +1044,7 @@ strong { font-weight: 600; }
       this.balance -= h.bet; this.stats.wagered += h.bet;
       const aces = h.cards[0].rank === 'A';
       const moved = h.cards.pop();
-      const h2 = newHand(h.bet, { cards: [moved], fromSplit: true, splitAces: aces });
+      const h2 = newHand(h.bet, { cards: [moved], fromSplit: true, splitAces: aces, baseBet: 0 });
       h.fromSplit = true; h.splitAces = aces;
       this.hands.splice(i + 1, 0, h2);
       const ev = [{ type: 'split', hand: i, newHand: i + 1, balance: this.balance, hands: this.hands.length }];
@@ -1051,7 +1053,10 @@ strong { font-weight: 600; }
       const c1 = this._drawTo(h); ev.push({ type: 'card', hand: i, card: c1, value: handValue(h.cards) });
       if (aces && !this.rules.hitSplitAces) {
         const c2 = this._drawTo(h2); ev.push({ type: 'card', hand: i + 1, card: c2, value: handValue(h2.cards) });
-        h.done = true; h2.done = true;
+        // One card each. With the (non-default) resplitAces rule a new pair of aces may be split again.
+        const canResplit = hh => this.rules.resplitAces && hh.cards[1].rank === 'A' && this.hands.length < this.rules.maxSplits + 1 && this.balance >= hh.bet;
+        h.done = !canResplit(h); h2.done = !canResplit(h2);
+        if (!h.done) return ev.concat([{ type: 'activeHand', hand: i, actions: this.availableActions(i) }]);
         return ev.concat(this._advance());
       }
       return ev.concat(this._afterCard(i));
@@ -1129,7 +1134,7 @@ strong { font-weight: 600; }
         else if (v.bust) { outcome = 'bust'; payout = 0; }
         else if (natural && dealerBJ) { outcome = 'push'; payout = h.bet; }
         else if (natural) { outcome = 'blackjack'; payout = h.bet + h.bet * this.rules.blackjackPays; }
-        else if (dealerBJ) { outcome = 'lose'; payout = 0; }
+        else if (dealerBJ) { outcome = 'lose'; payout = this.rules.peek ? 0 : h.bet - h.baseBet; } // no-hole-card tables: original bet only
         else if (dv.bust) { outcome = 'win'; payout = h.bet * 2; }
         else if (v.total > dv.total) { outcome = 'win'; payout = h.bet * 2; }
         else if (v.total < dv.total) { outcome = 'lose'; payout = 0; }
@@ -1160,7 +1165,7 @@ strong { font-weight: 600; }
       else if (net < 0) { s.lost++; s.streak = Math.min(-1, s.streak - 1); }
       else { s.pushed++; }
       if (net > s.biggestWin) s.biggestWin = net;
-      s.blackjacks += results.filter(r => r.outcome === 'blackjack').length;
+      s.blackjacks += this.hands.filter(h => isNatural(h.cards) && !h.fromSplit).length;
       const entry = {
         roundId: this.roundId, net, totalBet, payout: payoutTotal,
         outcomes: results.map(r => r.outcome), dealer: dv.total, dealerBJ,
@@ -1234,8 +1239,8 @@ strong { font-weight: 600; }
     if (v.soft && v.total <= 21 && playerCards.some(c => c.rank === 'A')) {
       const t = v.total;
       if (t >= 20) return 'stand';
-      if (t === 19) return (up === 6 && two) ? D('stand') : 'stand';
-      if (t === 18) { if (up <= 6) return two ? D('stand') : 'stand'; if (up <= 8) return 'stand'; return 'hit'; }
+      if (t === 19) return 'stand';
+      if (t === 18) { if (up >= 3 && up <= 6) return two ? D('stand') : 'stand'; if (up <= 8) return 'stand'; return 'hit'; }
       if (t === 17) return (up >= 3 && up <= 6) ? D('hit') : 'hit';
       if (t === 16 || t === 15) return (up >= 4 && up <= 6) ? D('hit') : 'hit';
       return (up === 5 || up === 6) ? D('hit') : 'hit';
@@ -1244,7 +1249,7 @@ strong { font-weight: 600; }
     if (t >= 17) return 'stand';
     if (t >= 13) return up <= 6 ? 'stand' : (t === 16 && up >= 9 && actions.surrender ? 'surrender' : (t === 15 && up === 10 && actions.surrender ? 'surrender' : 'hit'));
     if (t === 12) return (up >= 4 && up <= 6) ? 'stand' : 'hit';
-    if (t === 11) return D('hit');
+    if (t === 11) return up === 11 ? 'hit' : D('hit');
     if (t === 10) return up <= 9 ? D('hit') : 'hit';
     if (t === 9) return (up >= 3 && up <= 6) ? D('hit') : 'hit';
     return 'hit';
@@ -2196,7 +2201,11 @@ strong { font-weight: 600; }
   async function run(fn) {
     if (busy) return;
     busy = true;
-    try { await play(fn()); }
+    try {
+      const ev = fn();
+      if (ev.some(e => e.type === 'settle')) { safeBalance = game.balance; save(); } // persist the decided round before animating it
+      await play(ev);
+    }
     catch (err) { if (!(err instanceof BJ.GameError)) console.error(err); }
     finally { busy = false; renderBetControls(); }
   }
