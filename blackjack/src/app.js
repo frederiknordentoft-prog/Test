@@ -66,8 +66,10 @@
   /* ---------------- persistence ---------------- */
   const KEY = 'blackjack.apple.v1';
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+  let safeBalance = null; // balance as of the last completed round — never a mid-round figure
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify({ balance: game.balance, settings, stats: game.stats, history: game.history.slice(0, 20) })); } catch (e) { /* ignore */ }
+    const bal = (game.phase === BJ.PHASE.BETTING || game.phase === BJ.PHASE.SETTLED) ? game.balance : safeBalance;
+    try { localStorage.setItem(KEY, JSON.stringify({ balance: bal, settings, stats: game.stats, history: game.history.slice(0, 20) })); } catch (e) { /* ignore */ }
   }
   const saved = load();
   if (saved && saved.settings) Object.assign(settings, saved.settings);
@@ -77,6 +79,7 @@
   if (saved && Array.isArray(saved.history)) game.history = saved.history;
   const sound = new Sound();
   sound.setEnabled(settings.sound);
+  safeBalance = game.balance;
   let busy = false;
   let speedFactor = 1;
 
@@ -180,7 +183,7 @@
     const h = document.createElement('div');
     h.className = 'hand'; h.dataset.index = i;
     h.innerHTML = `<div class="hand-top"><span class="badge badge-value" hidden></span><span class="badge badge-bet" hidden></span></div>
-      <div class="cards-wrap"><div class="cards" style="--n:0"></div><div class="hand-result" role="status"></div></div>`;
+      <div class="cards-wrap"><div class="cards" style="--n:0"></div><div class="hand-result" aria-hidden="true"></div></div>`;
     return h;
   }
   function cardsOf(i) { return $('.cards', handEls[i]); }
@@ -480,6 +483,13 @@
           break;
         }
         case 'activeHand': {
+          if (game.hands[e.hand].cards.length < 2) { // split hand about to receive its second card
+            setPhase('dealing'); el.busyText.textContent = '';
+            setActiveHand(e.hand);
+            message(t('handOf', { n: e.hand + 1, m: game.hands.length }));
+            await wait(200);
+            break;
+          }
           setPhase('player');
           setActiveHand(e.hand);
           updateHandBadge(e.hand);
@@ -604,6 +614,7 @@
     el.betStack.innerHTML = ''; el.betAmount.textContent = ''; el.betSpot.classList.remove('has-bet');
     renderBalance();
     if (e.net !== 0) sound.counter();
+    safeBalance = game.balance;
     renderHistory(); renderStats(); renderShoe(); save();
     await wait(450);
     setPhase('settled');
@@ -643,8 +654,9 @@
     if (busy || game.phase !== BJ.PHASE.SETTLED) return;
     busy = true;
     try {
-      game.nextRound();
+      const endEv = game.nextRound();
       setPhase('dealing'); el.busyText.textContent = '';
+      if (endEv[0] && endEv[0].shuffleNext) toast(t('cutCard'));
       await sweepTable();
       setPhase('betting');
       renderBet(); renderShoe(); save();
@@ -682,7 +694,7 @@
   }
   function doReset() {
     if (game.phase !== BJ.PHASE.BETTING) return;
-    game.resetBalance(); renderBalance(); renderBet(); renderPhaseMessage(); save(); closeSheets(); sound.chips(3);
+    game.resetBalance(); safeBalance = game.balance; renderBalance(); renderBet(); renderPhaseMessage(); save(); closeSheets(); sound.chips(3);
   }
 
   /* ---------------- sheets ---------------- */
@@ -763,15 +775,26 @@
     ['pointerdown', 'keydown', 'touchstart'].forEach(evn => document.addEventListener(evn, unlock, { passive: true }));
     document.addEventListener('visibilitychange', () => { if (!document.hidden) sound.resume(); });
     ['pointerdown', 'keydown'].forEach(evn => document.addEventListener(evn, armIdle, { passive: true }));
+    document.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('button'); if (b && ev.detail > 0 && !openSheetEl) b.blur(); });
     // keyboard
     document.addEventListener('keydown', ev => {
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
       const k = ev.key.toLowerCase();
       if (k === 'escape') { if (openSheetEl) { closeSheets(); ev.preventDefault(); } return; }
-      if (openSheetEl) return;
+      if (openSheetEl) {
+        if (ev.key === 'Tab') {
+          const f = $$('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])', openSheetEl).filter(x => x.offsetParent !== null);
+          if (!f.length) return;
+          const first = f[0], last = f[f.length - 1];
+          if (ev.shiftKey && document.activeElement === first) { last.focus(); ev.preventDefault(); }
+          else if (!ev.shiftKey && document.activeElement === last) { first.focus(); ev.preventDefault(); }
+        }
+        return;
+      }
       if (app.dataset.phase === 'intro') { if (k === ' ' || k === 'enter') { leaveIntro(); ev.preventDefault(); } return; }
       const tag = document.activeElement && document.activeElement.tagName;
       if (tag === 'INPUT') return;
+      if (tag === 'BUTTON' && (k === ' ' || k === 'enter')) return; // native activation of the focused control
       const ph = game.phase;
       if (k === ' ' || k === 'enter') {
         if (ph === BJ.PHASE.BETTING) { if (!game.bet && game.lastBet && game.lastBet <= game.balance) { game.rebet(); sound.chips(3); renderBet(); } else onDeal(); }
@@ -789,7 +812,7 @@
       } else if (ph === BJ.PHASE.BETTING) {
         const idx = parseInt(k, 10);
         if (idx >= 1 && idx <= game.rules.chips.length) { const c = el.chips.children[idx - 1]; addChip(game.rules.chips[idx - 1], c); }
-        else if (k === 'backspace') { game.removeLastChip(); renderBet(); }
+        else if (k === 'backspace') { game.removeLastChip(); renderBet(); renderPhaseMessage(); }
       }
     });
   }
