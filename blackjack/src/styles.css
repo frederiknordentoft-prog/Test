@@ -473,3 +473,12 @@ strong { font-weight: 600; }
 @media (min-width: 720px) { .sheet-drag { display: none; } }
 @media (prefers-reduced-transparency: reduce) { .topbar, .dock, .sheet, .toast, .hand-result, .hint { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--elev); } }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .topbar, .dock, .sheet, .toast, .hand-result, .hint { background: var(--elev); } }
+
+/* Desktop: betting panel on one row so every dock state has the same, compact height */
+@media (min-width: 900px) {
+  .panel-bet { display: flex; align-items: center; justify-content: center; gap: 28px; }
+  .panel-bet .chips { padding: 0; }
+  .panel-bet .row { flex: none; }
+  .panel-bet .row-left { margin-right: 0; }
+  .panels { min-height: 64px; }
+}

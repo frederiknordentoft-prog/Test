@@ -22,11 +22,11 @@ Tænkt som Apple ville lave det, hvis det lå på apple.com:
 | Kortspil | 6, blandes ved 75 % af skoen (cut card) |
 | Dealer | Står på alle 17 (S17), kigger efter blackjack ved es og 10 |
 | Blackjack | Betaler 3:2 |
-| Forsikring | 2:1, tilbydes ved es; even money ved egen blackjack |
+| Forsikring | 2:1, tilbydes ved es; lige penge ved egen blackjack |
 | Fordobling | På alle to kort, også efter split |
 | Split | Op til 4 hænder, 10-kort af forskellig rang må splittes |
 | Splittede esser | Ét kort pr. es, ingen re-split, A+10 er 21 (ikke blackjack) |
-| Overgivelse | Sen, kun på de første to kort |
+| Giv op (surrender) | Sen, kun på de første to kort, ikke efter split |
 | Indsats | 10 – 5.000 kr. · jetoner 10/20/50/100/500/1000 |
 | Saldo | 10.000 kr. demo. Ingen rigtige penge. |
 
@@ -44,7 +44,8 @@ blackjack/
   src/styles.css      ← designsystem (tokens, materialer, motion, responsivt)
   src/template.html   ← DOM-skelet
   build.mjs           ← inliner src/* til index.html (ingen dependencies)
-  tests/engine.test.mjs  ← 36 regeltests (node --test)
+  tests/engine.test.mjs  ← 38 regeltests (node --test)
+  tests/scenarios.test.mjs ← 68 scenarietests fra reglerevisionen
   tests/ui.test.mjs      ← end-to-end tests i Chromium (Playwright)
 ```
 
@@ -52,7 +53,7 @@ Byg og test:
 
 ```
 node build.mjs
-node --test tests/engine.test.mjs
+node --test tests/engine.test.mjs tests/scenarios.test.mjs
 node tests/ui.test.mjs
 ```
 

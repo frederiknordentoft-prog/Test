@@ -137,7 +137,7 @@
       ? { A: 'es', J: 'knægt', Q: 'dame', K: 'konge' }
       : { A: 'ace', J: 'jack', Q: 'queen', K: 'king' };
     const r = names[rank] || rank;
-    return lang === 'da' ? `${r} i ${NAME[suit]}` : `${r} of ${NAME_EN[suit]}`;
+    return lang === 'da' ? `${NAME[suit]} ${r}` : `${r} of ${NAME_EN[suit]}`;
   }
 
   return { svg, back, label, GLYPH, COLOR, W, H };

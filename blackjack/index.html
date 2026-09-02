@@ -486,6 +486,15 @@ strong { font-weight: 600; }
 @media (prefers-reduced-transparency: reduce) { .topbar, .dock, .sheet, .toast, .hand-result, .hint { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--elev); } }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .topbar, .dock, .sheet, .toast, .hand-result, .hint { background: var(--elev); } }
 
+/* Desktop: betting panel on one row so every dock state has the same, compact height */
+@media (min-width: 900px) {
+  .panel-bet { display: flex; align-items: center; justify-content: center; gap: 28px; }
+  .panel-bet .chips { padding: 0; }
+  .panel-bet .row { flex: none; }
+  .panel-bet .row-left { margin-right: 0; }
+  .panels { min-height: 64px; }
+}
+
 </style>
 </head>
 <body>
@@ -494,7 +503,7 @@ strong { font-weight: 600; }
   <!-- ===== Intro (apple.com hero) ===== -->
   <section class="intro" id="intro" aria-label="Velkommen" data-i18n-label="welcome">
     <div class="intro-inner">
-      <p class="intro-eyebrow" data-i18n="introEyebrow">Nyt kortspil</p>
+      <p class="intro-eyebrow" data-i18n="introEyebrow">Kortspil</p>
       <h1 class="intro-title">Blackjack<span class="dot">.</span></h1>
       <p class="intro-sub" data-i18n="introSub">Klassikeren. Uden støj.</p>
       <div class="intro-cta">
@@ -651,7 +660,7 @@ strong { font-weight: 600; }
           <input type="checkbox" class="switch" id="swSound" role="switch" checked>
         </label>
         <label class="setting">
-          <span data-i18n="hints">Strategi-hint</span>
+          <span data-i18n="hints">Strategihint</span>
           <input type="checkbox" class="switch" id="swHints" role="switch">
         </label>
         <label class="setting">
@@ -1424,7 +1433,7 @@ strong { font-weight: 600; }
       ? { A: 'es', J: 'knægt', Q: 'dame', K: 'konge' }
       : { A: 'ace', J: 'jack', Q: 'queen', K: 'king' };
     const r = names[rank] || rank;
-    return lang === 'da' ? `${r} i ${NAME[suit]}` : `${r} of ${NAME_EN[suit]}`;
+    return lang === 'da' ? `${NAME[suit]} ${r}` : `${r} of ${NAME_EN[suit]}`;
   }
 
   return { svg, back, label, GLYPH, COLOR, W, H };
@@ -1609,56 +1618,56 @@ strong { font-weight: 600; }
   const I18N = {
     da: {
       introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
-      introFine: '18+ · {decks} kortspil · Dealeren står på 17 · Blackjack betaler 3:2 · Demo uden rigtige penge',
+      introFine: '18+\u00a0· {decks}\u00a0kortspil · Dealeren står på\u00a017 · Blackjack betaler\u00a03:2 · Demo uden rigtige penge',
       balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', yourHands: 'Dine hænder', welcome: 'Velkommen', close: 'Luk', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
-      surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Spil videre',
+      surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Vent på 3:2',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
-      language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategi-hint', haptics: 'Vibration',
+      language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategihint', haptics: 'Vibration',
       statistics: 'Statistik', rules: 'Regler', resetBalance: 'Nulstil saldo', demoNote: 'Demo. Der spilles ikke med rigtige penge.', cancel: 'Annuller',
-      placeBet: 'Vælg din indsats.', ready: 'Tryk Giv kort, når du er klar.', idle: 'Klar, når du er.', yourTurn: 'Din tur', youDraw: 'Du trækker {card}, i alt {total}', dealerReveals: 'Dealeren vender {card}, i alt {total}', dealerDraws2: 'Dealeren trækker {card}, i alt {total}', balanceIs: 'Saldo {amt}', chip: 'Jeton {amt}', shoeLeft: '{n} kort tilbage i skoen', rcTitle: 'Du har spillet i {n} minutter', rcText: 'Nettoresultat i denne session: {amt}. Hold gerne en pause.', continue_: 'Fortsæt', rebetAmt: 'Gentag {amt} og giv kort', resetLocked: 'Kan nulstilles, når runden er slut.', betReturned: 'Indsatsen retur', handOf: 'Hånd {n} af {m}', dealerDraws: 'Dealeren trækker', dealerChecks: 'Dealeren kigger efter blackjack',
+      placeBet: 'Vælg din indsats.', ready: 'Tryk på Giv kort, når du er klar.', idle: 'Klar, når du er.', yourTurn: 'Din tur', youDraw: 'Du trækker {card}, i alt {total}', dealerReveals: 'Dealeren vender {card}, i alt {total}', dealerDraws2: 'Dealeren trækker {card}, i alt {total}', balanceIs: 'Saldo {amt}', chip: 'Jeton {amt}', shoeLeft: '{n} kort tilbage i skoen', rcTitle: 'Du har spillet i {n} minutter', rcText: 'Hold gerne en pause. Nettoresultat i denne session: {amt}', continue_: 'Fortsæt', rebetAmt: 'Gentag {amt} og giv kort', resetLocked: 'Kan nulstilles, når runden er slut.', betReturned: 'Indsatsen retur', handOf: 'Hånd {n} af {m}', dealerDraws: 'Dealeren trækker', dealerChecks: 'Dealeren kigger efter blackjack',
       dealerHas: 'Dealeren har {n}', dealerBust: 'Dealeren går bust', dealerBlackjack: 'Dealeren har blackjack', dealing: 'Giver kort …',
-      youWon: 'Du vandt {amt}', youLost: 'Dealeren vandt', push: 'Uafgjort', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Gav op', won: 'Gevinst', lost: 'Tab',
+      youWon: 'Du vandt {amt}', youLost: 'Dealeren vandt', push: 'Uafgjort', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Gav op', won: 'Vundet', lost: 'Tabt',
       evenMoneyLabel: 'Lige penge', insuranceQ: 'Dealeren viser et es.', insuranceSub: 'Forsikring koster {amt} og betaler 2:1, hvis dealeren har blackjack.', insureFor: 'Forsikr for {amt}',
       evenMoneyQ: 'Du har blackjack. Dealeren viser et es.', evenMoneySub: 'Tag {amt} nu (1:1), eller vent og få 3:2, hvis dealeren ikke også har blackjack.', takeEvenMoney: 'Tag 1:1',
-      insuranceLabel: 'Forsikring', insuranceLost: 'Forsikringen tabt', insuranceWon: 'Forsikringen vandt {amt}', insuranceBet: 'Forsikring {amt}', evenMoneyTaken: 'Lige penge taget',
-      shuffling: 'Kortene blandes …', cutCard: 'Kortene blandes inden næste hånd', minBet: 'Mindste indsats er {amt}', maxBet: 'Bordet tager højst {amt}', noFunds: 'Ikke nok på saldoen', outOfChips: 'Tom saldo.',
-      getChips: 'Start forfra med {amt}', resetQ: 'Start forfra?', resetText: 'Din saldo sættes til {amt}. Det er legepenge. Statistikken bevares.', reset: 'Nulstil', emptyTitle: 'Tom saldo.', emptyText: 'Sådan går det nogle gange. Du kan starte forfra med {amt}.', startOver: 'Start forfra',
+      insuranceLabel: 'Forsikring', insuranceLost: 'Forsikringen tabt', insuranceWon: 'Forsikringen betaler {amt}', insuranceBet: 'Forsikring {amt}', evenMoneyTaken: 'Lige penge taget',
+      shuffling: 'Kortene blandes …', cutCard: 'Kortene blandes inden næste hånd', minBet: 'Mindste indsats er {amt}', maxBet: 'Højeste indsats er {amt}', noFunds: 'Ikke nok på saldoen', outOfChips: 'Tom saldo.',
+      getChips: 'Start forfra', resetQ: 'Start forfra?', resetText: 'Saldoen sættes til {amt} i legepenge. Statistikken bevares.', reset: 'Nulstil', emptyTitle: 'Tom saldo.', emptyText: 'Sådan går det nogle gange. Du kan starte forfra med {amt} i legepenge.', startOver: 'Start forfra',
       reg: '18+ · Spil ansvarligt · StopSpillet 70 22 28 25 · ROFUS', noHistory: 'Ingen runder endnu', soundOn: 'Lyd til', soundOff: 'Lyd fra',
       hintLabel: 'Basisstrategi', stRounds: 'Runder', stWinRate: 'Vundet', stBlackjacks: 'Blackjacks', stNet: 'Netto', stBest: 'Største gevinst', stStreak: 'Bedste stime', stWagered: 'Omsat',
       rulesTitle: 'Sådan spiller du', rulesIntro: 'Kom tættest på 21 uden at gå over. Billedkort tæller 10, es tæller 1 eller 11. Dealeren trækker til 16 og står på 17. Blackjack betaler 3:2.',
       rDecks: 'Kortspil', rS17: 'Dealeren står på', rS17v: 'Alle 17', rH17v: 'Hårde 17 (trækker på blød 17)', rBJ: 'Blackjack betaler', rIns: 'Forsikring betaler', rPeek: 'Dealeren kigger efter blackjack', rPeekV: 'Ved es og 10',
-      rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, ingen re-split', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort',
-      rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct} % af skoen', rRtp: 'Teoretisk tilbagebetaling (RTP)', rRtpV: '99,66 % med basisstrategi', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
+      rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, kan ikke splittes igen. Es + 10 tæller 21, ikke blackjack', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort, ikke efter split', rEven: 'Lige penge', rEvenV: 'Ved egen blackjack mod es, betaler 1:1', rTens: 'Split af 10-kort', rTensV: 'Alle 10-værdier (10, J, Q, K)',
+      rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct}\u00a0% af skoen', rRtp: 'Teoretisk tilbagebetaling (RTP)', rRtpV: '99,66\u00a0% med basisstrategi', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
       recent: 'Seneste runder', chips: 'Jetoner', dealerLabel: 'Dealer',
     },
     en: {
       introEyebrow: 'Card game', introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
-      introFine: '18+ · {decks} decks · Dealer stands on 17 · Blackjack pays 3:2 · Demo, no real money',
+      introFine: '18+\u00a0· {decks}\u00a0decks · Dealer stands on\u00a017 · Blackjack pays\u00a03:2 · Demo, no real money',
       balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', yourHands: 'Your hands', welcome: 'Welcome', close: 'Close', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
-      surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Keep playing',
+      surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Wait for 3:2',
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
       language: 'Language', speed: 'Pace', normal: 'Normal', fast: 'Fast', sound: 'Sound', hints: 'Strategy hint', haptics: 'Haptics',
       statistics: 'Statistics', rules: 'Rules', resetBalance: 'Reset balance', demoNote: 'Demo. No real money is played.', cancel: 'Cancel',
-      placeBet: 'Place your bet.', ready: 'Tap Deal when you are ready.', idle: 'Ready when you are.', yourTurn: 'Your turn', youDraw: 'You draw {card}, total {total}', dealerReveals: 'Dealer reveals {card}, total {total}', dealerDraws2: 'Dealer draws {card}, total {total}', balanceIs: 'Balance {amt}', chip: 'Chip {amt}', shoeLeft: '{n} cards left in the shoe', rcTitle: 'You have been playing for {n} minutes', rcText: 'Net result this session: {amt}. Consider taking a break.', continue_: 'Continue', rebetAmt: 'Rebet {amt} and deal', resetLocked: 'Available between rounds.', betReturned: 'Bet returned', handOf: 'Hand {n} of {m}', dealerDraws: 'Dealer draws', dealerChecks: 'Dealer checks for blackjack',
+      placeBet: 'Place your bet.', ready: 'Tap Deal when you’re ready.', idle: 'Ready when you are.', yourTurn: 'Your turn', youDraw: 'You draw {card}, total {total}', dealerReveals: 'Dealer reveals {card}, total {total}', dealerDraws2: 'Dealer draws {card}, total {total}', balanceIs: 'Balance {amt}', chip: 'Chip {amt}', shoeLeft: '{n} cards left in the shoe', rcTitle: 'You have been playing for {n} minutes', rcText: 'Consider taking a break. Net result this session: {amt}', continue_: 'Continue', rebetAmt: 'Rebet {amt} and deal', resetLocked: 'Available between rounds.', betReturned: 'Bet returned', handOf: 'Hand {n} of {m}', dealerDraws: 'Dealer draws', dealerChecks: 'Dealer checks for blackjack',
       dealerHas: 'Dealer has {n}', dealerBust: 'Dealer busts', dealerBlackjack: 'Dealer has blackjack', dealing: 'Dealing …',
       youWon: 'You won {amt}', youLost: 'Dealer wins', push: 'Push', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Surrendered', won: 'Won', lost: 'Lost',
       evenMoneyLabel: 'Even money', insuranceQ: 'Dealer shows an ace.', insuranceSub: 'Insurance costs {amt} and pays 2:1 if the dealer has blackjack.', insureFor: 'Insure for {amt}',
       evenMoneyQ: 'You have blackjack. Dealer shows an ace.', evenMoneySub: 'Take {amt} now (1:1), or wait for 3:2 if the dealer does not also have blackjack.', takeEvenMoney: 'Take 1:1',
-      insuranceLabel: 'Insurance', insuranceLost: 'Insurance lost', insuranceWon: 'Insurance won {amt}', insuranceBet: 'Insurance {amt}', evenMoneyTaken: 'Even money taken',
-      shuffling: 'Shuffling …', cutCard: 'The shoe is shuffled before the next hand', minBet: 'Minimum bet is {amt}', maxBet: 'Table max is {amt}', noFunds: 'Not enough balance', outOfChips: 'Empty balance.',
-      getChips: 'Start over with {amt}', resetQ: 'Start over?', resetText: 'Your balance is set to {amt}. It is play money. Statistics are kept.', reset: 'Reset', emptyTitle: 'Empty balance.', emptyText: 'It happens. You can start over with {amt}.', startOver: 'Start over',
+      insuranceLabel: 'Insurance', insuranceLost: 'Insurance lost', insuranceWon: 'Insurance pays {amt}', insuranceBet: 'Insurance {amt}', evenMoneyTaken: 'Even money taken',
+      shuffling: 'Shuffling …', cutCard: 'The shoe is shuffled before the next hand', minBet: 'Minimum bet is {amt}', maxBet: 'Maximum bet is {amt}', noFunds: 'Not enough funds', outOfChips: 'Out of funds.',
+      getChips: 'Start over', resetQ: 'Start over?', resetText: 'Your balance is set to {amt} of play money. Statistics are kept.', reset: 'Reset', emptyTitle: 'Out of funds.', emptyText: 'It happens. You can start over with {amt} of play money.', startOver: 'Start over',
       reg: '18+ · Play responsibly · StopSpillet 70 22 28 25 · ROFUS', noHistory: 'No rounds yet', soundOn: 'Sound on', soundOff: 'Sound off',
       hintLabel: 'Basic strategy', stRounds: 'Rounds', stWinRate: 'Won', stBlackjacks: 'Blackjacks', stNet: 'Net', stBest: 'Biggest win', stStreak: 'Best streak', stWagered: 'Wagered',
       rulesTitle: 'How to play', rulesIntro: 'Get closest to 21 without going over. Face cards count 10, aces 1 or 11. The dealer draws to 16 and stands on 17. Blackjack pays 3:2.',
       rDecks: 'Decks', rS17: 'Dealer stands on', rS17v: 'All 17s', rH17v: 'Hard 17 (hits soft 17)', rBJ: 'Blackjack pays', rIns: 'Insurance pays', rPeek: 'Dealer peeks for blackjack', rPeekV: 'On ace and ten',
-      rDouble: 'Double', rDoubleV: 'On any two cards', rDAS: 'Double after split', rSplit: 'Split', rSplitV: 'Up to {n} hands', rAces: 'Split aces', rAcesV: 'One card each, no re-split', rSurr: 'Surrender', rSurrV: 'Late, first two cards only',
-      rLimits: 'Bet limits', rCut: 'Shuffle', rCutV: 'At {pct} % of the shoe', rRtp: 'Theoretical return (RTP)', rRtpV: '99.66 % with basic strategy', yes: 'Yes', no: 'No', keys: 'Keyboard', kDeal: 'Deal / rebet', kHit: 'Hit', kStand: 'Stand', kDouble: 'Double', kSplit: 'Split', kSurr: 'Surrender', kIns: 'Insurance yes / no', kEsc: 'Close',
+      rDouble: 'Double', rDoubleV: 'On any two cards', rDAS: 'Double after split', rSplit: 'Split', rSplitV: 'Up to {n} hands', rAces: 'Split aces', rAcesV: 'One card each, no further split. Ace + ten counts 21, not blackjack', rSurr: 'Surrender', rSurrV: 'Late, first two cards only, not after a split', rEven: 'Even money', rEvenV: 'On your blackjack vs an ace, pays 1:1', rTens: 'Splitting tens', rTensV: 'Any two ten-value cards',
+      rLimits: 'Bet limits', rCut: 'Shuffle', rCutV: 'At {pct}\u00a0% of the shoe', rRtp: 'Theoretical return (RTP)', rRtpV: '99.66\u00a0% with basic strategy', yes: 'Yes', no: 'No', keys: 'Keyboard', kDeal: 'Deal / rebet', kHit: 'Hit', kStand: 'Stand', kDouble: 'Double', kSplit: 'Split', kSurr: 'Surrender', kIns: 'Insurance yes / no', kEsc: 'Close',
       recent: 'Recent rounds', chips: 'Chips', dealerLabel: 'Dealer',
     },
   };
   const settings = { theme: 'auto', lang: 'da', speed: 'normal', sound: true, hints: false, haptics: true };
   const t = (k, p = {}) => (I18N[settings.lang][k] || I18N.da[k] || k).replace(/\{(\w+)\}/g, (_, n) => p[n] != null ? p[n] : '');
-  const fmt = n => new Intl.NumberFormat(settings.lang === 'da' ? 'da-DK' : 'en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n) + ' kr.';
+  const fmt = n => new Intl.NumberFormat(settings.lang === 'da' ? 'da-DK' : 'en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n).replace('-', '\u2212') + '\u00a0kr.';
 
   /* ---------------- persistence ---------------- */
   const KEY = 'blackjack.apple.v1';
@@ -2016,15 +2025,15 @@ strong { font-weight: 600; }
   }
   function renderStats() {
     const s = game.stats;
-    const rate = s.rounds ? Math.round((s.won / s.rounds) * 100) + ' %' : '–';
+    const rate = s.rounds ? Math.round((s.won / s.rounds) * 100) + '\u00a0%' : '–';
     const rows = [[t('stRounds'), s.rounds], [t('stWinRate'), rate], [t('stBlackjacks'), s.blackjacks], [t('stNet'), (s.net > 0 ? '+' : '') + fmt(s.net)], [t('stBest'), fmt(s.biggestWin)], [t('stStreak'), s.bestStreak], [t('stWagered'), fmt(s.wagered)]];
     el.stats.innerHTML = rows.map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');
   }
   function renderRules() {
     const r = game.rules;
     const rows = [
-      [t('rDecks'), r.decks], [t('rS17'), r.dealerHitsSoft17 ? t('rH17v') : t('rS17v')], [t('rBJ'), '3:2'], [t('rIns'), '2:1'], [t('rPeek'), t('rPeekV')],
-      [t('rDouble'), t('rDoubleV')], [t('rDAS'), r.doubleAfterSplit ? t('yes') : t('no')], [t('rSplit'), t('rSplitV', { n: r.maxSplits + 1 })], [t('rAces'), t('rAcesV')],
+      [t('rDecks'), r.decks], [t('rS17'), r.dealerHitsSoft17 ? t('rH17v') : t('rS17v')], [t('rBJ'), r.blackjackPays === 1.5 ? '3:2' : r.blackjackPays === 1.2 ? '6:5' : `${r.blackjackPays}:1`], [t('rIns'), `${r.insurancePays}:1`], [t('rPeek'), r.peek ? t('rPeekV') : t('no')],
+      [t('rEven'), r.evenMoney ? t('rEvenV') : t('no')], [t('rDouble'), t('rDoubleV')], [t('rDAS'), r.doubleAfterSplit ? t('yes') : t('no')], [t('rSplit'), t('rSplitV', { n: r.maxSplits + 1 })], [t('rTens'), r.splitTenValues ? t('rTensV') : t('no')], [t('rAces'), t('rAcesV')],
       [t('rSurr'), r.lateSurrender ? t('rSurrV') : t('no')], [t('rLimits'), `${fmt(r.minBet)} – ${fmt(r.maxBet)}`], [t('rCut'), t('rCutV', { pct: Math.round(r.penetration * 100) })], [t('rRtp'), t('rRtpV')],
     ];
     const keys = [['␣', t('kDeal')], ['H', t('kHit')], ['S', t('kStand')], ['D', t('kDouble')], ['P', t('kSplit')], ['R', t('kSurr')], ['Y / N', t('kIns')], ['Esc', t('kEsc')]];
@@ -2041,7 +2050,7 @@ strong { font-weight: 600; }
   const OUTCOME_CLASS = { win: 'win', blackjack: 'bj', evenMoney: 'win', push: 'push', lose: 'lose', bust: 'lose', surrender: 'lose' };
   function outcomeText(r) {
     const amt = r.net !== 0 ? `<small>${r.net > 0 ? '+' : '−'}${fmt(Math.abs(r.net))}</small>` : '';
-    const label = { win: t('won'), blackjack: '3 : 2', evenMoney: t('evenMoneyLabel'), push: t('push'), lose: t('lost'), bust: t('bust'), surrender: t('surrendered') }[r.outcome];
+    const label = { win: t('won'), blackjack: '3:2', evenMoney: t('evenMoneyLabel'), push: t('push'), lose: t('lost'), bust: t('bust'), surrender: t('surrendered') }[r.outcome];
     return `<span>${label}</span>${amt}`;
   }
   async function play(events) {
@@ -2072,7 +2081,7 @@ strong { font-weight: 600; }
         case 'insuranceOffer': case 'evenMoneyOffer': {
           const even = e.type === 'evenMoneyOffer';
           lastOffer = e; renderOffer();
-          message(() => even ? t('evenMoneyLabel') + '?' : t('insuranceLabel') + '?');
+          message(() => even ? t('evenMoneyQ') : t('insuranceQ'), 'sub');
           announce(el.insuranceSub.textContent);
           sound.notify();
           setPhase('insurance');
