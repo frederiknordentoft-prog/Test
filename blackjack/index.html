@@ -121,13 +121,13 @@ strong { font-weight: 600; }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
 .brand-mark { width: 18px; height: 18px; border-radius: 5px; background: var(--label); display: inline-block; position: relative; }
 .brand-mark::after { content: ""; position: absolute; inset: 4px; background: var(--bg); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 7C38 22 8 41 8 60c0 11 8 19 19 19 8 0 14-3 19-9-2 10-7 18-13 23h34c-6-5-11-13-13-23 5 6 11 9 19 9 11 0 19-8 19-19 0-19-30-38-42-53z'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 7C38 22 8 41 8 60c0 11 8 19 19 19 8 0 14-3 19-9-2 10-7 18-13 23h34c-6-5-11-13-13-23 5 6 11 9 19 9 11 0 19-8 19-19 0-19-30-38-42-53z'/%3E%3C/svg%3E") center/contain no-repeat; }
-.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 2px; }
 .balance { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; margin-right: 8px; }
 .balance-label { font-size: 11px; color: var(--label-2); letter-spacing: 0.02em; text-transform: uppercase; }
 .balance-value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; transition: color .3s; }
 .balance-value.up { color: var(--green); }
 .balance-value.down { color: var(--red); }
-.icon-btn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--label-2); transition: background .15s, color .15s, transform .15s; }
+.icon-btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--label-2); transition: background .15s, color .15s, transform .15s; }
 .icon-btn:hover { background: var(--fill); color: var(--label); }
 .icon-btn:active { transform: scale(0.94); }
 .snd-off { display: none; }
@@ -180,7 +180,7 @@ strong { font-weight: 600; }
 .card-back { transform: rotateY(180deg); background: #0b0b0f; }
 .card-front::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(160deg, rgba(255,255,255,.35), rgba(255,255,255,0) 40%, rgba(0,0,0,0.02) 100%); pointer-events: none; }
 .card.dealt { animation: none; }
-.card.dim .card-face { filter: brightness(0.78) saturate(0.8); transition: filter .4s; }
+.hand.dim .card-face, .card.dim .card-face { filter: brightness(0.78) saturate(0.8); transition: filter .4s; }
 
 /* ---------- Player hands ---------- */
 .hands { display: flex; align-items: flex-end; justify-content: center; gap: clamp(12px, 3vw, 40px); }
@@ -246,11 +246,11 @@ strong { font-weight: 600; }
 .row-right { display: flex; gap: 10px; }
 .row-busy { min-height: 48px; }
 .busy-text { color: var(--label-2); font-size: 15px; font-weight: 500; }
-.hint { position: absolute; left: 50%; top: -14px; transform: translate(-50%, -100%); padding: 6px 12px; border-radius: 12px; background: var(--glass-strong); border: 0.5px solid var(--hairline); font-size: 13px; color: var(--label-2); white-space: nowrap; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.hint { display: block; width: max-content; margin: 0 auto 10px; padding: 5px 12px; border-radius: 12px; background: var(--fill); font-size: 13px; color: var(--label-2); white-space: nowrap; }
 .hint b { color: var(--label); font-weight: 600; }
 
 /* ---------- Buttons ---------- */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; min-width: 48px; padding: 0 22px; border-radius: 980px; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; transition: background .15s, transform .12s var(--ease), opacity .2s, color .15s; -webkit-user-select: none; user-select: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; min-width: 0; padding: 0 22px; border-radius: 980px; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; transition: background .15s, transform .12s var(--ease), opacity .2s, color .15s; -webkit-user-select: none; user-select: none; }
 .btn:active { transform: scale(0.96); }
 .btn:disabled { opacity: 0.32; pointer-events: none; }
 .btn-primary { background: var(--accent-fill); color: var(--on-accent); }
@@ -258,7 +258,8 @@ strong { font-weight: 600; }
 .btn-secondary { background: var(--fill); color: var(--label); }
 .btn-secondary:hover { background: var(--fill-hover); }
 .btn-secondary:active { background: var(--fill-press); }
-.btn-sm { height: 36px; padding: 0 14px; font-size: 15px; }
+.btn-sm { height: 38px; padding: 0 14px; font-size: 15px; position: relative; }
+.btn-sm::after { content: ""; position: absolute; inset: -4px; border-radius: inherit; }
 .btn-lg { height: 56px; padding: 0 32px; font-size: 19px; }
 .btn-link { color: var(--accent); padding: 0 8px; background: none; }
 .btn-link:hover { text-decoration: underline; }
@@ -291,7 +292,7 @@ strong { font-weight: 600; }
 .chip.fly { position: fixed; z-index: 100; pointer-events: none; margin: 0; }
 
 /* ---------- Toast ---------- */
-.toast { position: fixed; left: 50%; bottom: calc(150px + var(--safe-b)); transform: translate(-50%, 12px); opacity: 0; z-index: 50; padding: 10px 16px; border-radius: 980px; background: var(--glass-strong); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 0.5px solid var(--hairline); box-shadow: 0 8px 30px rgba(0,0,0,.3); font-size: 15px; font-weight: 500; color: var(--label); white-space: nowrap; pointer-events: none; transition: transform .35s var(--spring), opacity .25s; }
+.toast { position: fixed; left: 50%; bottom: calc(150px + var(--safe-b)); transform: translate(-50%, 12px); opacity: 0; z-index: 70; padding: 10px 16px; border-radius: 980px; background: var(--glass-strong); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 0.5px solid var(--hairline); box-shadow: 0 8px 30px rgba(0,0,0,.3); font-size: 15px; font-weight: 500; color: var(--label); white-space: nowrap; pointer-events: none; transition: transform .35s var(--spring), opacity .25s; }
 .toast.show { transform: translate(-50%, 0); opacity: 1; }
 
 /* ---------- Sheets ---------- */
@@ -308,10 +309,10 @@ strong { font-weight: 600; }
 .group { background: var(--fill); border-radius: 14px; padding: 4px 14px; margin-bottom: 16px; }
 .group .btn-block { margin: 8px 0; }
 .group-title { font-size: 13px; color: var(--label-2); text-transform: uppercase; letter-spacing: .04em; margin: 4px 0 8px 2px; font-weight: 500; }
-.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 6px 0; border-bottom: 0.5px solid var(--hairline); font-size: 16px; }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 6px 0; border-bottom: 0.5px solid var(--hairline); font-size: 16px; }
 .setting:last-child { border-bottom: 0; }
-.seg { display: inline-flex; background: var(--fill); border-radius: 9px; padding: 2px; gap: 2px; }
-.seg button { height: 30px; padding: 0 12px; border-radius: 7px; font-size: 14px; font-weight: 500; color: var(--label-2); transition: background .2s, color .2s; }
+.seg { display: inline-flex; background: var(--fill); border-radius: 10px; padding: 4px; gap: 2px; }
+.seg button { height: 36px; padding: 0 12px; border-radius: 7px; font-size: 14px; font-weight: 500; color: var(--label-2); transition: background .2s, color .2s; }
 .seg button[aria-checked="true"] { background: var(--elev-2); color: var(--label); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
 :root[data-theme="light"] .seg button[aria-checked="true"] { background: #fff; }
 .switch { appearance: none; -webkit-appearance: none; width: 51px; height: 31px; border-radius: 16px; background: var(--fill-press); position: relative; transition: background .25s; cursor: pointer; flex: none; margin: 0; }
@@ -394,24 +395,32 @@ strong { font-weight: 600; }
   .bet-ring { width: 56px; height: 56px; }
   .bet-stack .chip { width: 40px; height: 40px; left: -20px; top: -20px; }
   .bet-amount { top: 60px; font-size: 14px; }
+  #hands { max-width: 100%; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 0; }
+  #hands::-webkit-scrollbar { display: none; }
   .hands[data-count="2"] { --card-w: 78px; --overlap: 24px; }
-  .hands[data-count="3"] { --card-w: 64px; --overlap: 20px; gap: 10px; }
-  .hands[data-count="4"] { --card-w: 54px; --overlap: 16px; gap: 8px; }
-  .hands[data-count="3"] .hand-top, .hands[data-count="4"] .hand-top { height: 24px; }
-  .hands[data-count="4"] .badge { height: 22px; font-size: 12px; padding: 0 7px; }
+  .hands[data-count="3"] { --card-w: 64px; --overlap: 16px; gap: 8px; }
+  .hands[data-count="4"] { --card-w: 56px; --overlap: 12px; gap: 6px; }
+  .hands[data-count="3"] .cards-wrap, .hands[data-count="4"] .cards-wrap { padding: 3px; }
+  .hands[data-count="3"] .hand-top, .hands[data-count="4"] .hand-top { height: 24px; gap: 4px; }
+  .hands[data-count="3"] .badge, .hands[data-count="4"] .badge { height: 22px; font-size: 12px; padding: 0 6px; }
+  .hands[data-count="4"] .hand-result, .hands[data-count="3"] .hand-result { padding: 8px 10px; font-size: 14px; }
+  .panel-settled .row { flex-direction: column-reverse; }
+  .panel-settled .row .btn { width: 100%; }
+  .panel-play .btn-act:not(.btn-main) { height: 44px; }
   .chips { gap: 10px; justify-content: flex-start; padding: 2px 2px 10px; }
   .chips::after { content: ""; flex: none; width: 2px; }
   .row-left { gap: 6px; }
   .row-left .btn-sm { padding: 0 12px; }
   .btn-deal { min-width: 0; flex: 1; }
   .panel-play .row-actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-  .panel-play .btn-act:not(.btn-main) { grid-column: span 2; height: 40px; padding: 0 8px; }
+  .panel-play .btn-act:not(.btn-main) { grid-column: span 2; padding: 0 8px; }
   .panel-play .btn-main { grid-column: span 3; height: 52px; font-size: 18px; }
   .panel-settled .row .btn { flex: 1; padding: 0 12px; }
   .row-insurance { flex-direction: column; align-items: stretch; }
   .row-insurance .row-right .btn { flex: 1; }
   .shoe { top: 10px; right: 12px; width: 34px; }
-  .toast { bottom: calc(160px + var(--safe-b)); max-width: 92vw; white-space: normal; text-align: center; }
+  .toast { top: calc(60px + var(--safe-t)); bottom: auto; transform: translate(-50%, -12px); max-width: 92vw; white-space: normal; text-align: center; }
+  .toast.show { transform: translate(-50%, 0); }
   .dock-inner { padding: 10px 14px 12px; }
   .sheet-head { padding: 16px 18px 6px; }
 }
@@ -488,7 +497,7 @@ strong { font-weight: 600; }
   </section>
 
   <!-- ===== Top bar ===== -->
-  <header class="topbar">
+  <header class="topbar" inert>
     <div class="topbar-inner">
       <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>Blackjack</span></div>
       <div class="topbar-right">
@@ -507,7 +516,7 @@ strong { font-weight: 600; }
   </header>
 
   <!-- ===== Table ===== -->
-  <main class="table" id="table">
+  <main class="table" id="table" inert>
     <div class="table-surface" aria-hidden="true"></div>
 
     <div class="shoe" id="shoe" aria-hidden="true">
@@ -539,7 +548,7 @@ strong { font-weight: 600; }
   </main>
 
   <!-- ===== Dock ===== -->
-  <footer class="dock" id="dock">
+  <footer class="dock" id="dock" inert>
     <div class="dock-inner">
       <div class="hint" id="hint" hidden></div>
 
@@ -570,7 +579,7 @@ strong { font-weight: 600; }
         <div class="row row-insurance">
           <div class="insurance-text"><strong id="insuranceTitle"></strong><span id="insuranceSub"></span></div>
           <div class="row-right">
-            <button class="btn btn-secondary" id="btnInsNo" data-i18n="noThanks">Nej tak</button>
+            <button class="btn btn-secondary" id="btnInsNo">Nej tak</button>
             <button class="btn btn-primary" id="btnInsYes"></button>
           </div>
         </div>
@@ -648,6 +657,7 @@ strong { font-weight: 600; }
       <div class="group">
         <button class="btn btn-secondary btn-block" id="btnRules2" data-i18n="rules">Regler</button>
         <button class="btn btn-secondary btn-block btn-danger" id="btnReset" data-i18n="resetBalance">Nulstil saldo</button>
+        <p class="fine" id="resetHint" hidden></p>
       </div>
       <p class="fine" data-i18n="demoNote">Demo. Der spilles ikke med rigtige penge.</p>
     </div>
@@ -1594,7 +1604,7 @@ strong { font-weight: 600; }
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
       language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategi-hint', haptics: 'Vibration',
       statistics: 'Statistik', rules: 'Regler', resetBalance: 'Nulstil saldo', demoNote: 'Demo. Der spilles ikke med rigtige penge.', cancel: 'Annuller',
-      placeBet: 'Vælg din indsats.', ready: 'Tryk Giv kort, når du er klar.', idle: 'Klar, når du er.', yourTurn: 'Din tur', youDraw: 'Du trækker {card}, i alt {total}', dealerReveals: 'Dealeren vender {card}, i alt {total}', dealerDraws2: 'Dealeren trækker {card}, i alt {total}', balanceIs: 'Saldo {amt}', chip: 'Jeton {amt}', shoeLeft: '{n} kort tilbage i skoen', rcTitle: 'Du har spillet i {n} minutter', rcText: 'Nettoresultat i denne session: {amt}. Hold gerne en pause.', continue_: 'Fortsæt', rebetAmt: 'Gentag {amt} og giv kort', handOf: 'Hånd {n} af {m}', dealerDraws: 'Dealeren trækker', dealerChecks: 'Dealeren kigger efter blackjack',
+      placeBet: 'Vælg din indsats.', ready: 'Tryk Giv kort, når du er klar.', idle: 'Klar, når du er.', yourTurn: 'Din tur', youDraw: 'Du trækker {card}, i alt {total}', dealerReveals: 'Dealeren vender {card}, i alt {total}', dealerDraws2: 'Dealeren trækker {card}, i alt {total}', balanceIs: 'Saldo {amt}', chip: 'Jeton {amt}', shoeLeft: '{n} kort tilbage i skoen', rcTitle: 'Du har spillet i {n} minutter', rcText: 'Nettoresultat i denne session: {amt}. Hold gerne en pause.', continue_: 'Fortsæt', rebetAmt: 'Gentag {amt} og giv kort', resetLocked: 'Kan nulstilles, når runden er slut.', betReturned: 'Indsatsen retur', handOf: 'Hånd {n} af {m}', dealerDraws: 'Dealeren trækker', dealerChecks: 'Dealeren kigger efter blackjack',
       dealerHas: 'Dealeren har {n}', dealerBust: 'Dealeren går bust', dealerBlackjack: 'Dealeren har blackjack', dealing: 'Giver kort …',
       youWon: 'Du vandt {amt}', youLost: 'Dealeren vandt', push: 'Uafgjort', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Gav op', won: 'Gevinst', lost: 'Tab',
       evenMoneyLabel: 'Lige penge', insuranceQ: 'Dealeren viser et es.', insuranceSub: 'Forsikring koster {amt} og betaler 2:1, hvis dealeren har blackjack.', insureFor: 'Forsikr for {amt}',
@@ -1618,7 +1628,7 @@ strong { font-weight: 600; }
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
       language: 'Language', speed: 'Pace', normal: 'Normal', fast: 'Fast', sound: 'Sound', hints: 'Strategy hint', haptics: 'Haptics',
       statistics: 'Statistics', rules: 'Rules', resetBalance: 'Reset balance', demoNote: 'Demo. No real money is played.', cancel: 'Cancel',
-      placeBet: 'Place your bet.', ready: 'Tap Deal when you are ready.', idle: 'Ready when you are.', yourTurn: 'Your turn', youDraw: 'You draw {card}, total {total}', dealerReveals: 'Dealer reveals {card}, total {total}', dealerDraws2: 'Dealer draws {card}, total {total}', balanceIs: 'Balance {amt}', chip: 'Chip {amt}', shoeLeft: '{n} cards left in the shoe', rcTitle: 'You have been playing for {n} minutes', rcText: 'Net result this session: {amt}. Consider taking a break.', continue_: 'Continue', rebetAmt: 'Rebet {amt} and deal', handOf: 'Hand {n} of {m}', dealerDraws: 'Dealer draws', dealerChecks: 'Dealer checks for blackjack',
+      placeBet: 'Place your bet.', ready: 'Tap Deal when you are ready.', idle: 'Ready when you are.', yourTurn: 'Your turn', youDraw: 'You draw {card}, total {total}', dealerReveals: 'Dealer reveals {card}, total {total}', dealerDraws2: 'Dealer draws {card}, total {total}', balanceIs: 'Balance {amt}', chip: 'Chip {amt}', shoeLeft: '{n} cards left in the shoe', rcTitle: 'You have been playing for {n} minutes', rcText: 'Net result this session: {amt}. Consider taking a break.', continue_: 'Continue', rebetAmt: 'Rebet {amt} and deal', resetLocked: 'Available between rounds.', betReturned: 'Bet returned', handOf: 'Hand {n} of {m}', dealerDraws: 'Dealer draws', dealerChecks: 'Dealer checks for blackjack',
       dealerHas: 'Dealer has {n}', dealerBust: 'Dealer busts', dealerBlackjack: 'Dealer has blackjack', dealing: 'Dealing …',
       youWon: 'You won {amt}', youLost: 'Dealer wins', push: 'Push', blackjack: 'Blackjack', bust: 'Bust', surrendered: 'Surrendered', won: 'Won', lost: 'Lost',
       evenMoneyLabel: 'Even money', insuranceQ: 'Dealer shows an ace.', insuranceSub: 'Insurance costs {amt} and pays 2:1 if the dealer has blackjack.', insureFor: 'Insure for {amt}',
@@ -1648,11 +1658,19 @@ strong { font-weight: 600; }
     try { localStorage.setItem(KEY, JSON.stringify({ balance: bal, settings, stats: game.stats, history: game.history.slice(0, 20) })); } catch (e) { /* ignore */ }
   }
   const saved = load();
-  if (saved && saved.settings) Object.assign(settings, saved.settings);
+  if (saved && saved.settings && typeof saved.settings === 'object') {
+    const v = saved.settings;
+    if (['auto', 'light', 'dark'].includes(v.theme)) settings.theme = v.theme;
+    if (['da', 'en'].includes(v.lang)) settings.lang = v.lang;
+    if (['normal', 'fast'].includes(v.speed)) settings.speed = v.speed;
+    for (const k of ['sound', 'hints', 'haptics']) if (typeof v[k] === 'boolean') settings[k] = v[k];
+  }
+  if (saved && !(Number.isFinite(saved.balance) && saved.balance >= 0)) saved.balance = undefined;
+  if (saved && saved.stats && typeof saved.stats !== 'object') saved.stats = undefined;
 
   /* ---------------- game + sound ---------------- */
   const game = new BJ.Game({ balance: saved && typeof saved.balance === 'number' ? saved.balance : undefined, stats: saved && saved.stats ? saved.stats : undefined });
-  if (saved && Array.isArray(saved.history)) game.history = saved.history;
+  if (saved && Array.isArray(saved.history)) game.history = saved.history.filter(e => e && Array.isArray(e.outcomes) && Number.isFinite(e.net));
   const sound = new Sound();
   sound.setEnabled(settings.sound);
   safeBalance = game.balance;
@@ -1696,7 +1714,8 @@ strong { font-weight: 600; }
     renderClock();
     el.chips.setAttribute('aria-label', t('chips'));
     renderRules(); renderStats(); syncSettingsUI();
-    if (!busy) renderPhaseMessage();
+    relabelTable();
+    if (!busy && game.phase === BJ.PHASE.BETTING) renderPhaseMessage();
     renderBet();
   }
   function renderClock() {
@@ -1786,11 +1805,13 @@ strong { font-weight: 600; }
     const d = game.dealer;
     if (!d.cards.length) { el.dealerValue.hidden = true; return; }
     const v = d.holeHidden ? BJ.handValue(d.cards.slice(0, 1)) : BJ.handValue(d.cards);
-    updateBadge(el.dealerValue, v, { blackjack: !d.holeHidden && BJ.isNatural(d.cards) });
+    const finished = !d.holeHidden && (game.phase === BJ.PHASE.DEALER || game.phase === BJ.PHASE.SETTLED);
+    updateBadge(el.dealerValue, finished ? { ...v, soft: false } : v, { blackjack: !d.holeHidden && BJ.isNatural(d.cards) });
     el.dealerCards.setAttribute('role', 'group');
     el.dealerCards.setAttribute('aria-label', `${t('dealer')}: ${d.cards.map((c, i) => d.holeHidden && i === 1 ? t('hiddenCard') : Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}`);
   }
   function setActiveHand(i) {
+    if (i >= 0 && handEls[i] && el.hands.scrollWidth > el.hands.clientWidth) handEls[i].scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
     handEls.forEach((h, k) => {
       h.classList.toggle('active', k === i);
       h.classList.toggle('inactive', i >= 0 && k !== i && !game.hands[k].done);
@@ -1823,8 +1844,10 @@ strong { font-weight: 600; }
     return b;
   }
   function renderBet() {
-    const chips = game.phase === BJ.PHASE.BETTING ? game.betChips : game.hands.reduce((a, h) => a.concat(BJ.decompose(h.bet, game.rules.chips)), []);
-    const total = game.phase === BJ.PHASE.BETTING ? game.bet : game.hands.reduce((s, h) => s + h.bet, 0);
+    if (busy && game.phase === BJ.PHASE.SETTLED) { renderBetControls(); return; } // never interrupt the payout animation
+    const inPlay = [BJ.PHASE.INSURANCE, BJ.PHASE.PLAYER, BJ.PHASE.DEALER].includes(game.phase);
+    const chips = game.phase === BJ.PHASE.BETTING ? game.betChips : inPlay ? game.hands.reduce((a, h) => a.concat(BJ.decompose(h.bet, game.rules.chips)), []) : [];
+    const total = game.phase === BJ.PHASE.BETTING ? game.bet : inPlay ? game.hands.reduce((s, h) => s + h.bet, 0) : 0;
     el.betStack.innerHTML = '';
     const shown = chips.slice(-24);
     shown.forEach((v, k) => el.betStack.appendChild(chipEl(v, k)));
@@ -1841,7 +1864,8 @@ strong { font-weight: 600; }
     el.btnDoubleBet.disabled = !betting || !game.bet || game.bet * 2 > game.rules.maxBet || game.bet * 2 > game.balance;
     el.btnRebet.disabled = !betting || !game.lastBet || game.lastBet > game.balance || game.lastBet === game.bet;
     const broke = betting && game.balance < game.rules.minBet && game.bet < game.rules.minBet;
-    el.btnDeal.textContent = broke ? t('getChips', { amt: fmt(game.rules.startBalance) }) : (betting && game.bet >= game.rules.minBet ? `${t('deal')} · ${fmt(game.bet)}` : t('deal'));
+    const narrow = window.matchMedia('(max-width: 600px)').matches;
+    el.btnDeal.textContent = broke ? t('getChips', { amt: fmt(game.rules.startBalance) }) : (betting && !narrow && game.bet >= game.rules.minBet ? `${t('deal')} · ${fmt(game.bet)}` : t('deal'));
     el.btnDeal.dataset.mode = broke ? 'reset' : 'deal';
     el.btnDeal.disabled = !betting || (!broke && !game.canDeal().ok);
     if (betting) el.btnDeal.title = broke ? '' : (game.canDeal().ok ? '' : t('minBet', { amt: fmt(game.rules.minBet) }));
@@ -1905,11 +1929,13 @@ strong { font-weight: 600; }
   }
 
   /* ---------------- messages ---------------- */
-  let msgTimer = null;
+  let msgTimer = null, lastMsg = null;
+  /** text may be a string or a function producing it (re-run on language change). */
   function message(text, cls = '') {
+    lastMsg = { text, cls };
     clearTimeout(msgTimer);
     el.message.classList.add('hide');
-    msgTimer = setTimeout(() => { el.message.innerHTML = text; el.message.className = 'message ' + cls; }, 120);
+    msgTimer = setTimeout(() => { el.message.innerHTML = typeof text === 'function' ? text() : text; el.message.className = 'message ' + cls; }, 120);
   }
   function announce(text) { el.announce.textContent = ''; setTimeout(() => { el.announce.textContent = text; }, 50); }
   let toastTimer = null;
@@ -1919,16 +1945,17 @@ strong { font-weight: 600; }
   }
   function renderPhaseMessage() {
     if (game.phase === BJ.PHASE.BETTING) {
-      if (game.balance < game.rules.minBet && game.bet < game.rules.minBet) message(t('outOfChips'));
+      if (game.balance < game.rules.minBet && game.bet < game.rules.minBet) message(() => t('outOfChips'));
       else message(game.bet >= game.rules.minBet ? t('ready') : t('placeBet'), 'sub');
     }
   }
-  function setPhase(p) { app.dataset.phase = p; renderBetControls(); armIdle(); }
+  function setPhase(p) { app.dataset.phase = p; renderBetControls(); armIdle(); syncResetButton(); }
+  function syncResetButton() { const ok = game.phase === BJ.PHASE.BETTING && !busy; $('#btnReset').disabled = !ok; $('#resetHint').hidden = ok; $('#resetHint').textContent = t('resetLocked'); }
   let idleTimer = null;
   function armIdle() {
     clearTimeout(idleTimer);
     if (game.phase !== BJ.PHASE.BETTING || app.dataset.phase === 'intro') return;
-    idleTimer = setTimeout(() => { if (game.phase === BJ.PHASE.BETTING && !busy && !openSheetEl && game.balance >= game.rules.minBet) message(t('idle'), 'sub'); }, 45000);
+    idleTimer = setTimeout(() => { if (game.phase === BJ.PHASE.BETTING && !busy && !openSheetEl && game.balance >= game.rules.minBet) message(() => t('idle'), 'sub'); }, 45000);
   }
 
   /* ---------------- hint ---------------- */
@@ -1988,6 +2015,7 @@ strong { font-weight: 600; }
     for (const e of events) {
       switch (e.type) {
         case 'shuffle': {
+          setPhase('dealing'); el.busyText.textContent = t('shuffling');
           el.shoe.classList.add('shuffling'); toast(t('shuffling')); sound.shuffle();
           await wait(1500); el.shoe.classList.remove('shuffling'); renderShoe();
           break;
@@ -2010,11 +2038,8 @@ strong { font-weight: 600; }
         }
         case 'insuranceOffer': case 'evenMoneyOffer': {
           const even = e.type === 'evenMoneyOffer';
-          el.insuranceTitle.textContent = even ? t('evenMoneyQ') : t('insuranceQ');
-          el.insuranceSub.textContent = even ? t('evenMoneySub', { amt: fmt(e.stake) }) : t('insuranceSub', { amt: fmt(e.cost) });
-          el.btnInsYes.textContent = even ? t('takeEvenMoney') : t('insureFor', { amt: fmt(e.cost) });
-          el.btnInsNo.textContent = even ? t('keepPlaying') : t('noThanks');
-          message(even ? t('evenMoneyLabel') + '?' : t('insuranceLabel') + '?');
+          lastOffer = e; renderOffer();
+          message(() => even ? t('evenMoneyLabel') + '?' : t('insuranceLabel') + '?');
           announce(el.insuranceSub.textContent);
           sound.notify();
           setPhase('insurance');
@@ -2031,13 +2056,13 @@ strong { font-weight: 600; }
         case 'evenMoneyTaken': { toast(t('evenMoneyTaken')); sound.chip(); await wait(300); break; }
         case 'peek': {
           setPhase('dealing'); el.busyText.textContent = t('dealerChecks');
-          message(t('dealerChecks'), 'sub');
+          message(() => t('dealerChecks'), 'sub');
           const hole = el.dealerCards.children[1];
           if (hole) { hole.classList.add('peek'); }
           await wait(900);
           if (hole) hole.classList.remove('peek');
           await wait(250);
-          if (e.blackjack) { message(t('dealerBlackjack')); announce(t('dealerBlackjack')); }
+          if (e.blackjack) { message(() => t('dealerBlackjack')); announce(t('dealerBlackjack')); }
           break;
         }
         case 'insuranceLost': {
@@ -2062,7 +2087,7 @@ strong { font-weight: 600; }
           if (game.hands[e.hand].cards.length < 2) { // split hand about to receive its second card
             setPhase('dealing'); el.busyText.textContent = '';
             setActiveHand(e.hand);
-            message(t('handOf', { n: e.hand + 1, m: game.hands.length }));
+            message(() => t('handOf', { n: e.hand + 1, m: game.hands.length }));
             await wait(200);
             break;
           }
@@ -2070,7 +2095,7 @@ strong { font-weight: 600; }
           setActiveHand(e.hand);
           updateHandBadge(e.hand);
           const many = game.hands.length > 1;
-          message(many ? t('handOf', { n: e.hand + 1, m: game.hands.length }) : t('yourTurn'), many ? '' : 'sub');
+          message(() => game.hands.length > 1 ? t('handOf', { n: e.hand + 1, m: game.hands.length }) : t('yourTurn'), many ? '' : 'sub');
           renderActions(e.actions);
           renderHint();
           announce((many ? t('handOf', { n: e.hand + 1, m: game.hands.length }) + '. ' : '') + describeHand(e.hand));
@@ -2113,7 +2138,7 @@ strong { font-weight: 600; }
           updateHandBadge(e.hand);
           handEls[e.hand].classList.add('dim');
           sound.bust(); haptic([20, 40, 20]);
-          message(t('bust'));
+          message(() => t('bust'));
           await wait(550);
           break;
         }
@@ -2122,24 +2147,44 @@ strong { font-weight: 600; }
         case 'surrender': {
           setPhase('dealing'); el.busyText.textContent = '';
           handEls[e.hand].classList.add('dim'); sound.push();
-          message(t('surrendered'));
+          message(() => t('surrendered'));
           await wait(400);
           break;
         }
         case 'dealerCard': {
-          setPhase('dealer'); el.busyText.textContent = t('dealerDraws'); message(t('dealerDraws'), 'sub');
+          setPhase('dealer'); el.busyText.textContent = t('dealerDraws'); message(() => t('dealerDraws'), 'sub');
           await dealCard(el.dealerCards, e.card); updateDealerBadge(); renderShoe();
           announce(t('dealerDraws2', { card: Cards.label(e.card.rank, e.card.suit, settings.lang), total: e.value.total }));
           await wait(520);
           break;
         }
-        case 'dealerBust': { updateDealerBadge(); message(t('dealerBust')); sound.bust(); await wait(500); break; }
-        case 'dealerStand': { message(t('dealerHas', { n: e.value.total }), 'sub'); await wait(350); break; }
+        case 'dealerBust': { updateDealerBadge(); message(() => t('dealerBust')); sound.bust(); await wait(500); break; }
+        case 'dealerStand': { message(() => t('dealerHas', { n: e.value.total }), 'sub'); await wait(350); break; }
         case 'settle': { await settle(e); break; }
         case 'roundEnd': { renderBet(); renderShoe(); if (e.shuffleNext) toast(t('cutCard')); break; }
         default: break;
       }
     }
+  }
+  let lastOffer = null;
+  function renderOffer() {
+    const e = lastOffer; if (!e) return;
+    const even = e.type === 'evenMoneyOffer';
+    el.insuranceTitle.textContent = even ? t('evenMoneyQ') : t('insuranceQ');
+    el.insuranceSub.textContent = even ? t('evenMoneySub', { amt: fmt(e.stake) }) : t('insuranceSub', { amt: fmt(e.cost) });
+    el.btnInsYes.textContent = even ? t('takeEvenMoney') : t('insureFor', { amt: fmt(e.cost) });
+    el.btnInsNo.textContent = even ? t('keepPlaying') : t('noThanks');
+  }
+  /** Re-render every language-dependent piece of the live table (language switch mid-round). */
+  function relabelTable() {
+    renderBalance(false);
+    if (lastMsg) message(lastMsg.text, lastMsg.cls);
+    if (game.phase === BJ.PHASE.INSURANCE) renderOffer();
+    $$('.card[data-id]').forEach(c => { if (c.getAttribute('aria-label')) { const id = c.dataset.id; c.setAttribute('aria-label', Cards.label(id.slice(0, -1), id.slice(-1), settings.lang)); } });
+    game.hands.forEach((h, i) => { updateHandBadge(i); if (h.result && handEls[i]) { const lab = $('.hand-result', handEls[i]); if (lab.classList.contains('show')) lab.innerHTML = outcomeText({ outcome: h.result, net: h.net }); } });
+    if (game.dealer.cards.length) updateDealerBadge();
+    renderHint();
+    $('#resetHint').textContent = t('resetLocked');
   }
   function describeHand(i) {
     const h = game.hands[i]; const v = BJ.handValue(h.cards);
@@ -2174,15 +2219,17 @@ strong { font-weight: 600; }
     else if (e.net > 0) { sound.win(); haptic([15, 40, 25]); }
     else if (e.net < 0) { sound.lose(); haptic(30); }
     else { sound.push(); }
-    if (anyBJ && e.net > 0) message(`${t('blackjack')}<span class="dot">.</span>`, 'big');
-    else if (e.net > 0) message(t('youWon', { amt: `<span class="amount">${fmt(e.net)}</span>` }));
-    else if (e.net < 0) message(t('youLost'));
-    else message(t('push'));
-    announce((e.net > 0 ? t('youWon', { amt: fmt(e.net) }) : e.net < 0 ? t('youLost') : t('push')) + '. ' + t('balanceIs', { amt: fmt(e.balance) }));
+    const insWin = e.insurance && e.insurance.outcome === 'win';
+    if (anyBJ && e.net > 0) message(() => `${t('blackjack')}<span class="dot">.</span>`, 'big');
+    else if (insWin && e.net <= 0) message(() => t('insuranceWon', { amt: fmt(e.insurance.net) }));
+    else if (e.net > 0) message(() => t('youWon', { amt: `<span class="amount">${fmt(e.net)}</span>` }));
+    else if (e.net < 0) message(() => t('youLost'));
+    else message(() => t('push'));
+    announce((insWin && e.net <= 0 ? t('dealerBlackjack') + '. ' + t('insuranceWon', { amt: fmt(e.insurance.net) }) : e.net > 0 ? t('youWon', { amt: fmt(e.net) }) : e.net < 0 ? t('youLost') : t('push')) + '. ' + t('balanceIs', { amt: fmt(e.balance) }));
     await wait(500);
     // Chips: payout to balance or loss to dealer.
     if (e.payout > 0) {
-      floatAmount(e.net, el.betSpot);
+      if (e.net !== 0) floatAmount(e.net, el.betSpot);
       await stackTo(el.balanceBox);
     } else {
       await stackTo(el.dealerCards);
@@ -2278,22 +2325,24 @@ strong { font-weight: 600; }
   }
 
   /* ---------------- sheets ---------------- */
-  let openSheetEl = null, lastFocus = null;
+  let openSheetEl = null, lastFocus = null, parentSheet = null;
   function openSheet(s) {
-    lastFocus = document.activeElement;
-    closeSheets(true);
+    if (openSheetEl && openSheetEl !== s) { parentSheet = { sheet: openSheetEl, focus: lastFocus }; closeSheets(true, true); }
+    else { parentSheet = null; lastFocus = document.activeElement; closeSheets(true, true); }
     openSheetEl = s; s.hidden = false; el.backdrop.hidden = false;
     requestAnimationFrame(() => { s.classList.add('show'); el.backdrop.classList.add('show'); });
-    const f = $('button, input', s); if (f) setTimeout(() => f.focus(), 50);
-    if (s === el.sheetSettings) renderStats();
+    const f = s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s); if (f) setTimeout(() => f.focus(), 50);
+    if (s === el.sheetSettings) { renderStats(); syncResetButton(); }
   }
-  function closeSheets(immediate) {
+  function closeSheets(immediate, keepParent) {
     if (!openSheetEl) return;
     const s = openSheetEl; openSheetEl = null;
     s.classList.remove('show'); el.backdrop.classList.remove('show');
     const done = () => { s.hidden = true; el.backdrop.hidden = true; };
     if (immediate) done(); else setTimeout(done, 320);
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    if (!keepParent && parentSheet) { const p = parentSheet; parentSheet = null; lastFocus = p.focus; openSheet(p.sheet); return; }
+    const target = lastFocus && lastFocus.focus && lastFocus.offsetParent !== null ? lastFocus : el.btnSettings;
+    target.focus();
   }
 
   /* ---------------- intro ---------------- */
@@ -2311,6 +2360,7 @@ strong { font-weight: 600; }
     if (app.dataset.phase !== 'intro') return;
     sound.unlock();
     el.intro.classList.add('leave');
+    ['.topbar', '#table', '#dock'].forEach(sel => $(sel).removeAttribute('inert'));
     setTimeout(() => { el.intro.hidden = true; }, 650);
     setPhase('betting'); renderPhaseMessage(); renderBet();
   }
@@ -2337,7 +2387,7 @@ strong { font-weight: 600; }
     $('#btnPlay').addEventListener('click', leaveIntro);
     $('#btnIntroRules').addEventListener('click', () => openSheet(el.sheetRules));
     $('#btnRules2').addEventListener('click', () => openSheet(el.sheetRules));
-    $('#btnReset').addEventListener('click', () => { if (game.phase !== BJ.PHASE.BETTING) { toast(t('placeBet')); return; } openConfirm(); });
+    $('#btnReset').addEventListener('click', () => { if (game.phase !== BJ.PHASE.BETTING || busy) return; openConfirm(); });
     $('#btnConfirm').addEventListener('click', () => { if ($('#btnConfirm').dataset.mode === 'rc') closeSheets(); else doReset(); });
     el.btnSettings.addEventListener('click', () => openSheet(el.sheetSettings));
     el.btnSound.addEventListener('click', () => { settings.sound = !settings.sound; sound.setEnabled(settings.sound); syncSettingsUI(); applyLang(); save(); if (settings.sound) sound.tap(); });
@@ -2371,10 +2421,10 @@ strong { font-weight: 600; }
         }
         return;
       }
-      if (app.dataset.phase === 'intro') { if (k === ' ' || k === 'enter') { leaveIntro(); ev.preventDefault(); } return; }
       const tag = document.activeElement && document.activeElement.tagName;
       if (tag === 'INPUT') return;
       if (tag === 'BUTTON' && (k === ' ' || k === 'enter')) return; // native activation of the focused control
+      if (app.dataset.phase === 'intro') { if (k === ' ' || k === 'enter') { leaveIntro(); ev.preventDefault(); } return; }
       const ph = game.phase;
       if (k === ' ' || k === 'enter') {
         if (ph === BJ.PHASE.BETTING) { if (!game.bet && game.lastBet && game.lastBet <= game.balance) { game.rebet(); sound.chips(3); renderBet(); } else onDeal(); }
@@ -2390,6 +2440,7 @@ strong { font-weight: 600; }
       } else if (ph === BJ.PHASE.INSURANCE) {
         if (k === 'y' || k === 'j') run(() => game.insurance(true)); else if (k === 'n') run(() => game.insurance(false));
       } else if (ph === BJ.PHASE.BETTING) {
+        if (busy) return;
         const idx = parseInt(k, 10);
         if (idx >= 1 && idx <= game.rules.chips.length) { const c = el.chips.children[idx - 1]; addChip(game.rules.chips[idx - 1], c); }
         else if (k === 'backspace') { game.removeLastChip(); renderBet(); renderPhaseMessage(); }

@@ -30,7 +30,7 @@
   </section>
 
   <!-- ===== Top bar ===== -->
-  <header class="topbar">
+  <header class="topbar" inert>
     <div class="topbar-inner">
       <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>Blackjack</span></div>
       <div class="topbar-right">
@@ -49,7 +49,7 @@
   </header>
 
   <!-- ===== Table ===== -->
-  <main class="table" id="table">
+  <main class="table" id="table" inert>
     <div class="table-surface" aria-hidden="true"></div>
 
     <div class="shoe" id="shoe" aria-hidden="true">
@@ -81,7 +81,7 @@
   </main>
 
   <!-- ===== Dock ===== -->
-  <footer class="dock" id="dock">
+  <footer class="dock" id="dock" inert>
     <div class="dock-inner">
       <div class="hint" id="hint" hidden></div>
 
@@ -112,7 +112,7 @@
         <div class="row row-insurance">
           <div class="insurance-text"><strong id="insuranceTitle"></strong><span id="insuranceSub"></span></div>
           <div class="row-right">
-            <button class="btn btn-secondary" id="btnInsNo" data-i18n="noThanks">Nej tak</button>
+            <button class="btn btn-secondary" id="btnInsNo">Nej tak</button>
             <button class="btn btn-primary" id="btnInsYes"></button>
           </div>
         </div>
@@ -190,6 +190,7 @@
       <div class="group">
         <button class="btn btn-secondary btn-block" id="btnRules2" data-i18n="rules">Regler</button>
         <button class="btn btn-secondary btn-block btn-danger" id="btnReset" data-i18n="resetBalance">Nulstil saldo</button>
+        <p class="fine" id="resetHint" hidden></p>
       </div>
       <p class="fine" data-i18n="demoNote">Demo. Der spilles ikke med rigtige penge.</p>
     </div>
