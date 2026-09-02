@@ -185,6 +185,40 @@ await scenario('reshuffle happens at cut card without errors (fast pace)', deskt
   assert.equal(s.app, 'settled');
 });
 
+await scenario('settings change mid-round never persists the deducted balance; reload restores it', desktop, async a => {
+  await a.rig('10♠ 6♦ 7♣ 9♥');
+  await a.click('#chips .chip[data-value="500"]');
+  await a.click('#btnDeal'); await a.settle();
+  await a.click('#btnSound'); // triggers save() mid-round
+  const stored = await a.page.evaluate(() => JSON.parse(localStorage.getItem('blackjack.apple.v1')).balance);
+  assert.equal(stored, 10000, 'stored balance must be the pre-round balance');
+  await a.page.reload({ waitUntil: 'load' });
+  await a.page.click('#btnPlay');
+  const s = await a.settle();
+  assert.equal(s.balance, 10000);
+  assert.equal(s.app, 'betting');
+});
+
+await scenario('keyboard: Enter on a focused action button activates it natively', desktop, async a => {
+  await a.rig('10♠ 6♦ 7♣ 9♥ 2♠');
+  await a.click('#chips .chip[data-value="100"]');
+  await a.click('#btnDeal'); await a.settle();
+  await a.page.focus('#btnHit');
+  await a.page.keyboard.press('Enter');
+  const s = await a.settle();
+  assert.equal(s.hands[0].cards.length, 3, 'Enter on the focused Hit button draws a card');
+});
+
+await scenario('Tab is trapped inside an open sheet; Escape closes it and returns focus', desktop, async a => {
+  await a.click('#btnSettings');
+  await a.page.waitForTimeout(150);
+  for (let i = 0; i < 40; i++) await a.page.keyboard.press('Tab');
+  assert.equal(await a.page.evaluate(() => !!document.activeElement.closest('#sheetSettings')), true, 'focus stays inside the sheet');
+  await a.page.keyboard.press('Escape');
+  await a.page.waitForTimeout(400);
+  assert.equal(await a.page.evaluate(() => document.getElementById('sheetSettings').hidden), true);
+});
+
 await browser.close();
 console.log(`\n${passes} passed, ${failures} failed`);
 process.exit(failures ? 1 : 0);
