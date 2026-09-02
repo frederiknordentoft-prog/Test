@@ -219,6 +219,39 @@ await scenario('Tab is trapped inside an open sheet; Escape closes it and return
   assert.equal(await a.page.evaluate(() => document.getElementById('sheetSettings').hidden), true);
 });
 
+await scenario('nested sheets: returning from Rules to Settings leaves no ghost sheet over the controls', desktop, async a => {
+  await a.click('#btnSettings'); await a.page.waitForTimeout(200);
+  await a.click('#btnRules2'); await a.page.waitForTimeout(400);
+  await a.click('#sheetRules [data-close]'); await a.page.waitForTimeout(500);
+  const r = await a.page.evaluate(() => {
+    const seg = document.querySelector('#segLang button[data-v="en"]').getBoundingClientRect();
+    const hit = document.elementFromPoint(seg.left + seg.width / 2, seg.top + seg.height / 2);
+    return { rulesHidden: document.getElementById('sheetRules').hidden, settingsVisible: !document.getElementById('sheetSettings').hidden, hitInSettings: !!hit.closest('#sheetSettings') };
+  });
+  assert.deepEqual(r, { rulesHidden: true, settingsVisible: true, hitInSettings: true });
+  await a.click('#segLang button[data-v="en"]');
+  assert.equal(await a.page.evaluate(() => window.__bj.settings.lang), 'en');
+});
+
+await scenario('phone: settled-panel buttons keep a 44pt hit height and the SE layout does not overlap', { width: 375, height: 667 }, async a => {
+  await a.rig('8♠ A♦ 8♣ 9♥ 2♦ 10♠');
+  await a.click('#chips .chip[data-value="100"]');
+  await a.click('#btnDeal'); let s = await a.settle();
+  assert.equal(s.app, 'insurance');
+  const ov = await a.page.evaluate(() => {
+    const r = sel => document.querySelector(sel).getBoundingClientRect();
+    const m = r('#message'), d = r('#dealerCards'), amt = r('#betAmount'), badge = r('#hands .badge-value');
+    return { msgOverDealer: Math.max(0, Math.min(m.bottom, d.bottom) - Math.max(m.top, d.top)), amountOverBadge: Math.max(0, Math.min(amt.bottom, badge.bottom) - Math.max(amt.top, badge.top)) };
+  });
+  assert.ok(ov.msgOverDealer <= 0, 'message must not cover the dealer cards: ' + JSON.stringify(ov));
+  assert.ok(ov.amountOverBadge <= 8, 'bet amount must not cover the hand badge: ' + JSON.stringify(ov));
+  await a.click('#btnInsNo'); await a.settle();
+  await a.click('#btnStand'); s = await a.settle();
+  assert.equal(s.app, 'settled');
+  const h = await a.page.evaluate(() => [document.getElementById('btnRebetDeal').getBoundingClientRect().height, document.getElementById('btnNewBet').getBoundingClientRect().height]);
+  assert.ok(h.every(x => x >= 44), 'settled buttons ≥44px: ' + h.join(','));
+});
+
 await browser.close();
 console.log(`\n${passes} passed, ${failures} failed`);
 process.exit(failures ? 1 : 0);

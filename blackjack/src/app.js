@@ -12,7 +12,7 @@
   const I18N = {
     da: {
       introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
-      introFine: '18+\u00a0· {decks}\u00a0kortspil · Dealeren står på\u00a017 · Blackjack betaler\u00a03:2 · Demo uden rigtige penge',
+      introFine: '18+\u00a0· {decks}\u00a0kortspil\u00a0· Dealeren står på\u00a017\u00a0· Blackjack betaler\u00a03:2\u00a0· Demo uden rigtige penge',
       balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', yourHands: 'Dine hænder', welcome: 'Velkommen', close: 'Luk', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
       surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Vent på 3:2',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
@@ -30,13 +30,13 @@
       hintLabel: 'Basisstrategi', stRounds: 'Runder', stWinRate: 'Vundet', stBlackjacks: 'Blackjacks', stNet: 'Netto', stBest: 'Største gevinst', stStreak: 'Bedste stime', stWagered: 'Omsat',
       rulesTitle: 'Sådan spiller du', rulesIntro: 'Kom tættest på 21 uden at gå over. Billedkort tæller 10, es tæller 1 eller 11. Dealeren trækker til 16 og står på 17. Blackjack betaler 3:2.',
       rDecks: 'Kortspil', rS17: 'Dealeren står på', rS17v: 'Alle 17', rH17v: 'Hårde 17 (trækker på blød 17)', rBJ: 'Blackjack betaler', rIns: 'Forsikring betaler', rPeek: 'Dealeren kigger efter blackjack', rPeekV: 'Ved es og 10',
-      rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, kan ikke splittes igen. Es + 10 tæller 21, ikke blackjack', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort, ikke efter split', rEven: 'Lige penge', rEvenV: 'Ved egen blackjack mod es, betaler 1:1', rTens: 'Split af 10-kort', rTensV: 'Alle 10-værdier (10, J, Q, K)',
+      rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDoubleOn: 'Kun på {range}', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, kan ikke splittes igen. Es + 10 tæller 21, ikke blackjack', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort, ikke efter split', rEven: 'Lige penge', rEvenV: 'Ved egen blackjack mod es, betaler 1:1', rTens: 'Split af 10-kort', rTensV: 'Alle 10-værdier (10, J, Q, K)',
       rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct}\u00a0% af skoen', rRtp: 'Teoretisk tilbagebetaling (RTP)', rRtpV: '99,66\u00a0% med basisstrategi', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
       recent: 'Seneste runder', chips: 'Jetoner', dealerLabel: 'Dealer',
     },
     en: {
       introEyebrow: 'Card game', introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
-      introFine: '18+\u00a0· {decks}\u00a0decks · Dealer stands on\u00a017 · Blackjack pays\u00a03:2 · Demo, no real money',
+      introFine: '18+\u00a0· {decks}\u00a0decks\u00a0· Dealer stands on\u00a017\u00a0· Blackjack pays\u00a03:2\u00a0· Demo, no real money',
       balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', yourHands: 'Your hands', welcome: 'Welcome', close: 'Close', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
       surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Wait for 3:2',
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
@@ -54,7 +54,7 @@
       hintLabel: 'Basic strategy', stRounds: 'Rounds', stWinRate: 'Won', stBlackjacks: 'Blackjacks', stNet: 'Net', stBest: 'Biggest win', stStreak: 'Best streak', stWagered: 'Wagered',
       rulesTitle: 'How to play', rulesIntro: 'Get closest to 21 without going over. Face cards count 10, aces 1 or 11. The dealer draws to 16 and stands on 17. Blackjack pays 3:2.',
       rDecks: 'Decks', rS17: 'Dealer stands on', rS17v: 'All 17s', rH17v: 'Hard 17 (hits soft 17)', rBJ: 'Blackjack pays', rIns: 'Insurance pays', rPeek: 'Dealer peeks for blackjack', rPeekV: 'On ace and ten',
-      rDouble: 'Double', rDoubleV: 'On any two cards', rDAS: 'Double after split', rSplit: 'Split', rSplitV: 'Up to {n} hands', rAces: 'Split aces', rAcesV: 'One card each, no further split. Ace + ten counts 21, not blackjack', rSurr: 'Surrender', rSurrV: 'Late, first two cards only, not after a split', rEven: 'Even money', rEvenV: 'On your blackjack vs an ace, pays 1:1', rTens: 'Splitting tens', rTensV: 'Any two ten-value cards',
+      rDouble: 'Double', rDoubleV: 'On any two cards', rDoubleOn: 'Only on {range}', rDAS: 'Double after split', rSplit: 'Split', rSplitV: 'Up to {n} hands', rAces: 'Split aces', rAcesV: 'One card each, no further split. Ace + ten counts 21, not blackjack', rSurr: 'Surrender', rSurrV: 'Late, first two cards only, not after a split', rEven: 'Even money', rEvenV: 'On your blackjack vs an ace, pays 1:1', rTens: 'Splitting tens', rTensV: 'Any two ten-value cards',
       rLimits: 'Bet limits', rCut: 'Shuffle', rCutV: 'At {pct}\u00a0% of the shoe', rRtp: 'Theoretical return (RTP)', rRtpV: '99.66\u00a0% with basic strategy', yes: 'Yes', no: 'No', keys: 'Keyboard', kDeal: 'Deal / rebet', kHit: 'Hit', kStand: 'Stand', kDouble: 'Double', kSplit: 'Split', kSurr: 'Surrender', kIns: 'Insurance yes / no', kEsc: 'Close',
       recent: 'Recent rounds', chips: 'Chips', dealerLabel: 'Dealer',
     },
@@ -66,10 +66,11 @@
   /* ---------------- persistence ---------------- */
   const KEY = 'blackjack.apple.v1';
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
-  let safeBalance = null; // balance as of the last completed round — never a mid-round figure
+  let safeBalance = null, safeStats = null; // as of the last completed round — never a mid-round figure
+  function snapshotSafe() { safeBalance = game.balance; safeStats = JSON.parse(JSON.stringify(game.stats)); }
   function save() {
-    const bal = (game.phase === BJ.PHASE.BETTING || game.phase === BJ.PHASE.SETTLED) ? game.balance : safeBalance;
-    try { localStorage.setItem(KEY, JSON.stringify({ balance: bal, settings, stats: game.stats, history: game.history.slice(0, 20) })); } catch (e) { /* ignore */ }
+    const inRound = !(game.phase === BJ.PHASE.BETTING || game.phase === BJ.PHASE.SETTLED);
+    try { localStorage.setItem(KEY, JSON.stringify({ balance: inRound ? safeBalance : game.balance, settings, stats: inRound ? safeStats : game.stats, history: game.history.slice(0, 20) })); } catch (e) { /* ignore */ }
   }
   const saved = load();
   if (saved && saved.settings && typeof saved.settings === 'object') {
@@ -87,7 +88,7 @@
   if (saved && Array.isArray(saved.history)) game.history = saved.history.filter(e => e && Array.isArray(e.outcomes) && Number.isFinite(e.net));
   const sound = new Sound();
   sound.setEnabled(settings.sound);
-  safeBalance = game.balance;
+  snapshotSafe();
   let busy = false;
   let speedFactor = 1;
 
@@ -193,6 +194,7 @@
     anim.commitStyles && anim.cancel();
     c.style.transform = ''; c.style.willChange = '';
     c.classList.remove('flying');
+    if (!faceDown) setTimeout(() => c.classList.add('flat'), 650 * speedFactor);
     if (sideways) c.querySelector('.card-inner').style.transform = 'rotate(90deg)';
     return c;
   }
@@ -427,7 +429,7 @@
     const r = game.rules;
     const rows = [
       [t('rDecks'), r.decks], [t('rS17'), r.dealerHitsSoft17 ? t('rH17v') : t('rS17v')], [t('rBJ'), r.blackjackPays === 1.5 ? '3:2' : r.blackjackPays === 1.2 ? '6:5' : `${r.blackjackPays}:1`], [t('rIns'), `${r.insurancePays}:1`], [t('rPeek'), r.peek ? t('rPeekV') : t('no')],
-      [t('rEven'), r.evenMoney ? t('rEvenV') : t('no')], [t('rDouble'), t('rDoubleV')], [t('rDAS'), r.doubleAfterSplit ? t('yes') : t('no')], [t('rSplit'), t('rSplitV', { n: r.maxSplits + 1 })], [t('rTens'), r.splitTenValues ? t('rTensV') : t('no')], [t('rAces'), t('rAcesV')],
+      [t('rEven'), r.evenMoney ? t('rEvenV') : t('no')], [t('rDouble'), r.doubleOn === 'any' ? t('rDoubleV') : t('rDoubleOn', { range: r.doubleOn.replace('-', '–') })], [t('rDAS'), r.doubleAfterSplit ? t('yes') : t('no')], [t('rSplit'), t('rSplitV', { n: r.maxSplits + 1 })], [t('rTens'), r.splitTenValues ? t('rTensV') : t('no')], [t('rAces'), t('rAcesV')],
       [t('rSurr'), r.lateSurrender ? t('rSurrV') : t('no')], [t('rLimits'), `${fmt(r.minBet)} – ${fmt(r.maxBet)}`], [t('rCut'), t('rCutV', { pct: Math.round(r.penetration * 100) })], [t('rRtp'), t('rRtpV')],
     ];
     const keys = [['␣', t('kDeal')], ['H', t('kHit')], ['S', t('kStand')], ['D', t('kDouble')], ['P', t('kSplit')], ['R', t('kSurr')], ['Y / N', t('kIns')], ['Esc', t('kEsc')]];
@@ -515,6 +517,7 @@
             sound.flip();
             announce(t('dealerReveals', { card: Cards.label(e.card.rank, e.card.suit, settings.lang), total: BJ.handValue(game.dealer.cards.slice(0, 2)).total }));
             await wait(600);
+            hole.classList.add('flat');
           }
           updateDealerBadge();
           await wait(250);
@@ -604,8 +607,14 @@
     }
   }
   let lastOffer = null;
+  function presizeOffer() { // longest strings, so the (invisible) panel already has its final height
+    el.insuranceTitle.textContent = t('evenMoneyQ');
+    el.insuranceSub.textContent = t('evenMoneySub', { amt: fmt(game.rules.maxBet) });
+    el.btnInsYes.textContent = t('insureFor', { amt: fmt(game.rules.maxBet / 2) });
+    el.btnInsNo.textContent = t('keepPlaying');
+  }
   function renderOffer() {
-    const e = lastOffer; if (!e) return;
+    const e = lastOffer; if (!e) { presizeOffer(); return; }
     const even = e.type === 'evenMoneyOffer';
     el.insuranceTitle.textContent = even ? t('evenMoneyQ') : t('insuranceQ');
     el.insuranceSub.textContent = even ? t('evenMoneySub', { amt: fmt(e.stake) }) : t('insuranceSub', { amt: fmt(e.cost) });
@@ -616,7 +625,7 @@
   function relabelTable() {
     renderBalance(false);
     if (lastMsg) message(lastMsg.text, lastMsg.cls);
-    if (game.phase === BJ.PHASE.INSURANCE) renderOffer();
+    if (game.phase === BJ.PHASE.INSURANCE) renderOffer(); else presizeOffer();
     game.hands.forEach((h, i) => { updateHandBadge(i); if (h.result && handEls[i]) { const lab = $('.hand-result', handEls[i]); if (lab.classList.contains('show')) lab.innerHTML = outcomeText({ outcome: h.result, net: h.net }); } });
     if (game.dealer.cards.length) updateDealerBadge();
     renderHint();
@@ -673,7 +682,7 @@
     el.betStack.innerHTML = ''; el.betAmount.textContent = ''; el.betSpot.classList.remove('has-bet');
     renderBalance();
     if (e.net !== 0) sound.counter();
-    safeBalance = game.balance;
+    snapshotSafe();
     renderHistory(); renderStats(); renderShoe(); save();
     await wait(450);
     setPhase('settled');
@@ -686,7 +695,7 @@
     busy = true;
     try {
       const ev = fn();
-      if (ev.some(e => e.type === 'settle')) { safeBalance = game.balance; save(); } // persist the decided round before animating it
+      if (ev.some(e => e.type === 'settle')) { snapshotSafe(); save(); } // persist the decided round before animating it
       await play(ev);
     }
     catch (err) { if (!(err instanceof BJ.GameError)) console.error(err); }
@@ -758,15 +767,15 @@
   }
   function doReset() {
     if (game.phase !== BJ.PHASE.BETTING) return;
-    game.resetBalance(); safeBalance = game.balance; renderBalance(); renderBet(); renderPhaseMessage(); save(); closeSheets(); sound.chips(3);
+    game.resetBalance(); snapshotSafe(); renderBalance(); renderBet(); renderPhaseMessage(); save(); closeSheets(); sound.chips(3);
   }
 
   /* ---------------- sheets ---------------- */
-  let openSheetEl = null, lastFocus = null, parentSheet = null, closeTimer = null;
+  let openSheetEl = null, lastFocus = null, parentSheet = null;
   function openSheet(s, focusEl) {
     if (openSheetEl && openSheetEl !== s) { parentSheet = { sheet: openSheetEl, focus: lastFocus }; closeSheets(true, true); }
     else { parentSheet = null; lastFocus = document.activeElement; closeSheets(true, true); }
-    clearTimeout(closeTimer);
+    clearTimeout(s._closeTimer); s._closeTimer = null;
     openSheetEl = s; s.hidden = false; el.backdrop.hidden = false;
     requestAnimationFrame(() => { s.classList.add('show'); el.backdrop.classList.add('show'); });
     const f = focusEl || (s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s)); if (f) setTimeout(() => f.focus(), 50);
@@ -776,9 +785,9 @@
     if (!openSheetEl) return;
     const s = openSheetEl; openSheetEl = null;
     s.classList.remove('show'); el.backdrop.classList.remove('show');
-    clearTimeout(closeTimer);
-    const done = () => { s.hidden = true; if (!openSheetEl) el.backdrop.hidden = true; };
-    if (immediate) done(); else closeTimer = setTimeout(done, 320);
+    clearTimeout(s._closeTimer);
+    const done = () => { s.hidden = true; s._closeTimer = null; if (!openSheetEl) el.backdrop.hidden = true; };
+    if (immediate) done(); else s._closeTimer = setTimeout(done, 320);
     if (!keepParent && parentSheet) { const p = parentSheet; parentSheet = null; lastFocus = p.focus; openSheet(p.sheet); return; }
     const target = lastFocus && lastFocus.focus && lastFocus.offsetParent !== null ? lastFocus : el.btnSettings;
     target.focus();

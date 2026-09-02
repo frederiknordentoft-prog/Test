@@ -252,7 +252,7 @@ strong { font-weight: 600; }
 .row-right { display: flex; gap: 10px; }
 .row-busy { min-height: 48px; }
 .busy-text { color: var(--label-2); font-size: 15px; font-weight: 500; }
-.hint { display: block; width: max-content; min-height: 26px; margin: 0 auto 10px; padding: 5px 12px; border-radius: 12px; background: var(--fill); font-size: 13px; color: var(--label-2); white-space: nowrap; visibility: hidden; }
+.hint { display: block; width: max-content; min-height: 28px; line-height: 18px; margin: 0 auto 10px; padding: 5px 12px; border-radius: 12px; background: var(--fill); font-size: 13px; color: var(--label-2); white-space: nowrap; visibility: hidden; }
 .hint.on { visibility: visible; }
 .hint b { color: var(--label); font-weight: 600; }
 
@@ -288,7 +288,7 @@ strong { font-weight: 600; }
 .chip[data-value="10"] { --c: #e8e8ed; --c-text: #1d1d1f; }
 .chip[data-value="10"]::before { border-color: rgba(0,0,0,.35); }
 .chip[data-value="10"]::after { box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.2), inset 0 1px 2px rgba(0,0,0,.1); }
-.chip[data-value="20"] { --c: #1f8a3f; }
+.chip[data-value="20"] { --c: #17783a; }
 .chip[data-value="50"] { --c: #0a5fd6; }
 .chip[data-value="100"] { --c: #2c2c2e; }
 .chip[data-value="500"] { --c: #7a3fd1; }
@@ -308,6 +308,7 @@ strong { font-weight: 600; }
 .sheet-backdrop.show { opacity: 1; }
 .sheet { position: fixed; z-index: 61; left: 50%; bottom: 0; transform: translate(-50%, 24px); opacity: 0; width: min(100%, 520px); max-height: min(86vh, 760px); display: flex; flex-direction: column; background: var(--glass-strong); backdrop-filter: saturate(180%) blur(30px); -webkit-backdrop-filter: saturate(180%) blur(30px); border-radius: 22px 22px 0 0; box-shadow: 0 -10px 60px rgba(0,0,0,.35), 0 0 0 0.5px var(--hairline); transition: transform .45s var(--ease), opacity .3s; padding-bottom: var(--safe-b); }
 .sheet.show { transform: translate(-50%, 0); opacity: 1; }
+.sheet:not(.show) { pointer-events: none; }
 @media (min-width: 720px) { .sheet { bottom: auto; top: 50%; transform: translate(-50%, calc(-50% + 16px)) scale(0.98); border-radius: 22px; } .sheet.show { transform: translate(-50%, -50%) scale(1); } }
 .sheet-sm { width: min(92%, 380px); border-radius: 22px; bottom: auto; top: 50%; transform: translate(-50%, calc(-50% + 12px)) scale(0.98); }
 .sheet-sm.show { transform: translate(-50%, -50%) scale(1); }
@@ -413,7 +414,7 @@ strong { font-weight: 600; }
   .hands[data-count="3"] .badge, .hands[data-count="4"] .badge { height: 22px; font-size: 12px; padding: 0 6px; }
   .hands[data-count="4"] .hand-result, .hands[data-count="3"] .hand-result { padding: 8px 10px; font-size: 14px; }
   .panel-settled .row { flex-direction: column-reverse; }
-  .panel-settled .row .btn { width: 100%; }
+  .panel-settled .row .btn { flex: 0 0 auto; width: 100%; min-height: 48px; padding: 0 12px; }
   .panel-play .btn-act:not(.btn-main) { height: 44px; }
   .chips { gap: 10px; justify-content: flex-start; padding: 2px 2px 10px; }
   .chips::after { content: ""; flex: none; width: 2px; }
@@ -423,7 +424,6 @@ strong { font-weight: 600; }
   .panel-play .row-actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
   .panel-play .btn-act:not(.btn-main) { grid-column: span 2; padding: 0 8px; }
   .panel-play .btn-main { grid-column: span 3; height: 52px; font-size: 18px; }
-  .panel-settled .row .btn { flex: 1; padding: 0 12px; }
   .row-insurance { flex-direction: column; align-items: stretch; }
   .row-insurance .row-right .btn { flex: 1; }
   .shoe { top: 10px; right: 12px; width: 34px; }
@@ -433,7 +433,7 @@ strong { font-weight: 600; }
   .sheet-head { padding: 16px 18px 6px; }
 }
 @media (max-height: 520px) and (orientation: landscape) {
-  :root { --card-w: 78px; --overlap: 24px; --chip-size: 42px; }
+  :root { --card-w: 78px; --overlap: 24px; --chip-size: 44px; }
   .topbar-inner { height: 40px; }
   .table { grid-template-columns: 1fr minmax(180px, auto) 1fr; grid-template-rows: 1fr; align-items: center; padding: 6px 56px 6px 16px; }
   .seat-dealer, .seat-player { align-self: center; padding: 0; }
@@ -494,6 +494,21 @@ strong { font-weight: 600; }
   .panel-bet .row-left { margin-right: 0; }
   .panels { min-height: 64px; }
 }
+
+/* Short phones (iPhone SE): keep dealer, centre and player from touching */
+@media (max-width: 600px) and (max-height: 700px) {
+  :root { --card-w: 72px; --overlap: 22px; }
+  .hand-meta, .hand-top { height: 24px; }
+  .seat { gap: 6px; }
+  .centre { min-height: 0; gap: 4px; }
+  .bet-spot { height: 70px; }
+  .bet-amount { top: 52px; }
+  .insurance-text span { font-size: 13px; }
+}
+/* A finished flip needs no 3-D context: flatten to save compositor layers */
+.card.flat { perspective: none; }
+.card.flat .card-inner { transform-style: flat; }
+.card.flat .card-back { display: none; }
 
 </style>
 </head>
@@ -1316,7 +1331,7 @@ strong { font-weight: 600; }
     S: 'M50 4C64.5 17.3 74.9 28.5 89 42.2C96.9 50 98.3 62.2 92.4 71.5C86.5 80.9 74.9 84.9 64.5 81.1L52.9 70.6C53.5 84.5 60 93.2 69 96L31 96C40 93.2 46.5 84.5 47.1 70.6L35.5 81.1C25.1 84.9 13.5 80.9 7.6 71.5C1.7 62.2 3.1 50 11 42.2C25.1 28.5 35.5 17.3 50 4Z',
     C: 'M29.3 38.1C24.6 28.4 27.2 16.8 35.6 10C44 3.3 56 3.3 64.4 10C72.8 16.8 75.4 28.4 70.7 38.1C80.7 38.8 89.1 45.9 91.4 55.7C93.7 65.5 89.4 75.7 80.8 80.8C72.1 85.9 61.1 84.8 53.7 78.1C53.1 85 60 93.4 69 96L31 96C40 93.4 46.9 85 46.3 78.1C38.9 84.8 27.9 85.9 19.2 80.8C10.6 75.7 6.3 65.5 8.6 55.7C10.9 45.9 19.3 38.8 29.3 38.1Z',
   };
-  const COLOR = { H: '#D8322B', D: '#D8322B', S: '#1D1D1F', C: '#1D1D1F' };
+  const COLOR = { H: '#A8201C', D: '#A8201C', S: '#1D1D1F', C: '#1D1D1F' };
   const NAME = { H: 'hjerter', D: 'ruder', S: 'spar', C: 'klør' };
   const NAME_EN = { H: 'hearts', D: 'diamonds', S: 'spades', C: 'clubs' };
 
@@ -1618,7 +1633,7 @@ strong { font-weight: 600; }
   const I18N = {
     da: {
       introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
-      introFine: '18+\u00a0· {decks}\u00a0kortspil · Dealeren står på\u00a017 · Blackjack betaler\u00a03:2 · Demo uden rigtige penge',
+      introFine: '18+\u00a0· {decks}\u00a0kortspil\u00a0· Dealeren står på\u00a017\u00a0· Blackjack betaler\u00a03:2\u00a0· Demo uden rigtige penge',
       balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', yourHands: 'Dine hænder', welcome: 'Velkommen', close: 'Luk', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
       surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Vent på 3:2',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
@@ -1636,13 +1651,13 @@ strong { font-weight: 600; }
       hintLabel: 'Basisstrategi', stRounds: 'Runder', stWinRate: 'Vundet', stBlackjacks: 'Blackjacks', stNet: 'Netto', stBest: 'Største gevinst', stStreak: 'Bedste stime', stWagered: 'Omsat',
       rulesTitle: 'Sådan spiller du', rulesIntro: 'Kom tættest på 21 uden at gå over. Billedkort tæller 10, es tæller 1 eller 11. Dealeren trækker til 16 og står på 17. Blackjack betaler 3:2.',
       rDecks: 'Kortspil', rS17: 'Dealeren står på', rS17v: 'Alle 17', rH17v: 'Hårde 17 (trækker på blød 17)', rBJ: 'Blackjack betaler', rIns: 'Forsikring betaler', rPeek: 'Dealeren kigger efter blackjack', rPeekV: 'Ved es og 10',
-      rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, kan ikke splittes igen. Es + 10 tæller 21, ikke blackjack', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort, ikke efter split', rEven: 'Lige penge', rEvenV: 'Ved egen blackjack mod es, betaler 1:1', rTens: 'Split af 10-kort', rTensV: 'Alle 10-værdier (10, J, Q, K)',
+      rDouble: 'Fordobling', rDoubleV: 'På alle to kort', rDoubleOn: 'Kun på {range}', rDAS: 'Fordobling efter split', rSplit: 'Split', rSplitV: 'Op til {n} hænder', rAces: 'Splittede esser', rAcesV: 'Ét kort pr. es, kan ikke splittes igen. Es + 10 tæller 21, ikke blackjack', rSurr: 'Giv op (surrender)', rSurrV: 'Sen, kun på de første to kort, ikke efter split', rEven: 'Lige penge', rEvenV: 'Ved egen blackjack mod es, betaler 1:1', rTens: 'Split af 10-kort', rTensV: 'Alle 10-værdier (10, J, Q, K)',
       rLimits: 'Indsats', rCut: 'Blanding', rCutV: 'Ved {pct}\u00a0% af skoen', rRtp: 'Teoretisk tilbagebetaling (RTP)', rRtpV: '99,66\u00a0% med basisstrategi', yes: 'Ja', no: 'Nej', keys: 'Tastatur', kDeal: 'Giv kort / gentag', kHit: 'Kort', kStand: 'Stå', kDouble: 'Fordobl', kSplit: 'Split', kSurr: 'Giv op', kIns: 'Forsikring ja / nej', kEsc: 'Luk',
       recent: 'Seneste runder', chips: 'Jetoner', dealerLabel: 'Dealer',
     },
     en: {
       introEyebrow: 'Card game', introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
-      introFine: '18+\u00a0· {decks}\u00a0decks · Dealer stands on\u00a017 · Blackjack pays\u00a03:2 · Demo, no real money',
+      introFine: '18+\u00a0· {decks}\u00a0decks\u00a0· Dealer stands on\u00a017\u00a0· Blackjack pays\u00a03:2\u00a0· Demo, no real money',
       balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', yourHands: 'Your hands', welcome: 'Welcome', close: 'Close', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
       surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Wait for 3:2',
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
@@ -1660,7 +1675,7 @@ strong { font-weight: 600; }
       hintLabel: 'Basic strategy', stRounds: 'Rounds', stWinRate: 'Won', stBlackjacks: 'Blackjacks', stNet: 'Net', stBest: 'Biggest win', stStreak: 'Best streak', stWagered: 'Wagered',
       rulesTitle: 'How to play', rulesIntro: 'Get closest to 21 without going over. Face cards count 10, aces 1 or 11. The dealer draws to 16 and stands on 17. Blackjack pays 3:2.',
       rDecks: 'Decks', rS17: 'Dealer stands on', rS17v: 'All 17s', rH17v: 'Hard 17 (hits soft 17)', rBJ: 'Blackjack pays', rIns: 'Insurance pays', rPeek: 'Dealer peeks for blackjack', rPeekV: 'On ace and ten',
-      rDouble: 'Double', rDoubleV: 'On any two cards', rDAS: 'Double after split', rSplit: 'Split', rSplitV: 'Up to {n} hands', rAces: 'Split aces', rAcesV: 'One card each, no further split. Ace + ten counts 21, not blackjack', rSurr: 'Surrender', rSurrV: 'Late, first two cards only, not after a split', rEven: 'Even money', rEvenV: 'On your blackjack vs an ace, pays 1:1', rTens: 'Splitting tens', rTensV: 'Any two ten-value cards',
+      rDouble: 'Double', rDoubleV: 'On any two cards', rDoubleOn: 'Only on {range}', rDAS: 'Double after split', rSplit: 'Split', rSplitV: 'Up to {n} hands', rAces: 'Split aces', rAcesV: 'One card each, no further split. Ace + ten counts 21, not blackjack', rSurr: 'Surrender', rSurrV: 'Late, first two cards only, not after a split', rEven: 'Even money', rEvenV: 'On your blackjack vs an ace, pays 1:1', rTens: 'Splitting tens', rTensV: 'Any two ten-value cards',
       rLimits: 'Bet limits', rCut: 'Shuffle', rCutV: 'At {pct}\u00a0% of the shoe', rRtp: 'Theoretical return (RTP)', rRtpV: '99.66\u00a0% with basic strategy', yes: 'Yes', no: 'No', keys: 'Keyboard', kDeal: 'Deal / rebet', kHit: 'Hit', kStand: 'Stand', kDouble: 'Double', kSplit: 'Split', kSurr: 'Surrender', kIns: 'Insurance yes / no', kEsc: 'Close',
       recent: 'Recent rounds', chips: 'Chips', dealerLabel: 'Dealer',
     },
@@ -1672,10 +1687,11 @@ strong { font-weight: 600; }
   /* ---------------- persistence ---------------- */
   const KEY = 'blackjack.apple.v1';
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
-  let safeBalance = null; // balance as of the last completed round — never a mid-round figure
+  let safeBalance = null, safeStats = null; // as of the last completed round — never a mid-round figure
+  function snapshotSafe() { safeBalance = game.balance; safeStats = JSON.parse(JSON.stringify(game.stats)); }
   function save() {
-    const bal = (game.phase === BJ.PHASE.BETTING || game.phase === BJ.PHASE.SETTLED) ? game.balance : safeBalance;
-    try { localStorage.setItem(KEY, JSON.stringify({ balance: bal, settings, stats: game.stats, history: game.history.slice(0, 20) })); } catch (e) { /* ignore */ }
+    const inRound = !(game.phase === BJ.PHASE.BETTING || game.phase === BJ.PHASE.SETTLED);
+    try { localStorage.setItem(KEY, JSON.stringify({ balance: inRound ? safeBalance : game.balance, settings, stats: inRound ? safeStats : game.stats, history: game.history.slice(0, 20) })); } catch (e) { /* ignore */ }
   }
   const saved = load();
   if (saved && saved.settings && typeof saved.settings === 'object') {
@@ -1693,7 +1709,7 @@ strong { font-weight: 600; }
   if (saved && Array.isArray(saved.history)) game.history = saved.history.filter(e => e && Array.isArray(e.outcomes) && Number.isFinite(e.net));
   const sound = new Sound();
   sound.setEnabled(settings.sound);
-  safeBalance = game.balance;
+  snapshotSafe();
   let busy = false;
   let speedFactor = 1;
 
@@ -1799,6 +1815,7 @@ strong { font-weight: 600; }
     anim.commitStyles && anim.cancel();
     c.style.transform = ''; c.style.willChange = '';
     c.classList.remove('flying');
+    if (!faceDown) setTimeout(() => c.classList.add('flat'), 650 * speedFactor);
     if (sideways) c.querySelector('.card-inner').style.transform = 'rotate(90deg)';
     return c;
   }
@@ -2033,7 +2050,7 @@ strong { font-weight: 600; }
     const r = game.rules;
     const rows = [
       [t('rDecks'), r.decks], [t('rS17'), r.dealerHitsSoft17 ? t('rH17v') : t('rS17v')], [t('rBJ'), r.blackjackPays === 1.5 ? '3:2' : r.blackjackPays === 1.2 ? '6:5' : `${r.blackjackPays}:1`], [t('rIns'), `${r.insurancePays}:1`], [t('rPeek'), r.peek ? t('rPeekV') : t('no')],
-      [t('rEven'), r.evenMoney ? t('rEvenV') : t('no')], [t('rDouble'), t('rDoubleV')], [t('rDAS'), r.doubleAfterSplit ? t('yes') : t('no')], [t('rSplit'), t('rSplitV', { n: r.maxSplits + 1 })], [t('rTens'), r.splitTenValues ? t('rTensV') : t('no')], [t('rAces'), t('rAcesV')],
+      [t('rEven'), r.evenMoney ? t('rEvenV') : t('no')], [t('rDouble'), r.doubleOn === 'any' ? t('rDoubleV') : t('rDoubleOn', { range: r.doubleOn.replace('-', '–') })], [t('rDAS'), r.doubleAfterSplit ? t('yes') : t('no')], [t('rSplit'), t('rSplitV', { n: r.maxSplits + 1 })], [t('rTens'), r.splitTenValues ? t('rTensV') : t('no')], [t('rAces'), t('rAcesV')],
       [t('rSurr'), r.lateSurrender ? t('rSurrV') : t('no')], [t('rLimits'), `${fmt(r.minBet)} – ${fmt(r.maxBet)}`], [t('rCut'), t('rCutV', { pct: Math.round(r.penetration * 100) })], [t('rRtp'), t('rRtpV')],
     ];
     const keys = [['␣', t('kDeal')], ['H', t('kHit')], ['S', t('kStand')], ['D', t('kDouble')], ['P', t('kSplit')], ['R', t('kSurr')], ['Y / N', t('kIns')], ['Esc', t('kEsc')]];
@@ -2121,6 +2138,7 @@ strong { font-weight: 600; }
             sound.flip();
             announce(t('dealerReveals', { card: Cards.label(e.card.rank, e.card.suit, settings.lang), total: BJ.handValue(game.dealer.cards.slice(0, 2)).total }));
             await wait(600);
+            hole.classList.add('flat');
           }
           updateDealerBadge();
           await wait(250);
@@ -2210,8 +2228,14 @@ strong { font-weight: 600; }
     }
   }
   let lastOffer = null;
+  function presizeOffer() { // longest strings, so the (invisible) panel already has its final height
+    el.insuranceTitle.textContent = t('evenMoneyQ');
+    el.insuranceSub.textContent = t('evenMoneySub', { amt: fmt(game.rules.maxBet) });
+    el.btnInsYes.textContent = t('insureFor', { amt: fmt(game.rules.maxBet / 2) });
+    el.btnInsNo.textContent = t('keepPlaying');
+  }
   function renderOffer() {
-    const e = lastOffer; if (!e) return;
+    const e = lastOffer; if (!e) { presizeOffer(); return; }
     const even = e.type === 'evenMoneyOffer';
     el.insuranceTitle.textContent = even ? t('evenMoneyQ') : t('insuranceQ');
     el.insuranceSub.textContent = even ? t('evenMoneySub', { amt: fmt(e.stake) }) : t('insuranceSub', { amt: fmt(e.cost) });
@@ -2222,7 +2246,7 @@ strong { font-weight: 600; }
   function relabelTable() {
     renderBalance(false);
     if (lastMsg) message(lastMsg.text, lastMsg.cls);
-    if (game.phase === BJ.PHASE.INSURANCE) renderOffer();
+    if (game.phase === BJ.PHASE.INSURANCE) renderOffer(); else presizeOffer();
     game.hands.forEach((h, i) => { updateHandBadge(i); if (h.result && handEls[i]) { const lab = $('.hand-result', handEls[i]); if (lab.classList.contains('show')) lab.innerHTML = outcomeText({ outcome: h.result, net: h.net }); } });
     if (game.dealer.cards.length) updateDealerBadge();
     renderHint();
@@ -2279,7 +2303,7 @@ strong { font-weight: 600; }
     el.betStack.innerHTML = ''; el.betAmount.textContent = ''; el.betSpot.classList.remove('has-bet');
     renderBalance();
     if (e.net !== 0) sound.counter();
-    safeBalance = game.balance;
+    snapshotSafe();
     renderHistory(); renderStats(); renderShoe(); save();
     await wait(450);
     setPhase('settled');
@@ -2292,7 +2316,7 @@ strong { font-weight: 600; }
     busy = true;
     try {
       const ev = fn();
-      if (ev.some(e => e.type === 'settle')) { safeBalance = game.balance; save(); } // persist the decided round before animating it
+      if (ev.some(e => e.type === 'settle')) { snapshotSafe(); save(); } // persist the decided round before animating it
       await play(ev);
     }
     catch (err) { if (!(err instanceof BJ.GameError)) console.error(err); }
@@ -2364,15 +2388,15 @@ strong { font-weight: 600; }
   }
   function doReset() {
     if (game.phase !== BJ.PHASE.BETTING) return;
-    game.resetBalance(); safeBalance = game.balance; renderBalance(); renderBet(); renderPhaseMessage(); save(); closeSheets(); sound.chips(3);
+    game.resetBalance(); snapshotSafe(); renderBalance(); renderBet(); renderPhaseMessage(); save(); closeSheets(); sound.chips(3);
   }
 
   /* ---------------- sheets ---------------- */
-  let openSheetEl = null, lastFocus = null, parentSheet = null, closeTimer = null;
+  let openSheetEl = null, lastFocus = null, parentSheet = null;
   function openSheet(s, focusEl) {
     if (openSheetEl && openSheetEl !== s) { parentSheet = { sheet: openSheetEl, focus: lastFocus }; closeSheets(true, true); }
     else { parentSheet = null; lastFocus = document.activeElement; closeSheets(true, true); }
-    clearTimeout(closeTimer);
+    clearTimeout(s._closeTimer); s._closeTimer = null;
     openSheetEl = s; s.hidden = false; el.backdrop.hidden = false;
     requestAnimationFrame(() => { s.classList.add('show'); el.backdrop.classList.add('show'); });
     const f = focusEl || (s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s)); if (f) setTimeout(() => f.focus(), 50);
@@ -2382,9 +2406,9 @@ strong { font-weight: 600; }
     if (!openSheetEl) return;
     const s = openSheetEl; openSheetEl = null;
     s.classList.remove('show'); el.backdrop.classList.remove('show');
-    clearTimeout(closeTimer);
-    const done = () => { s.hidden = true; if (!openSheetEl) el.backdrop.hidden = true; };
-    if (immediate) done(); else closeTimer = setTimeout(done, 320);
+    clearTimeout(s._closeTimer);
+    const done = () => { s.hidden = true; s._closeTimer = null; if (!openSheetEl) el.backdrop.hidden = true; };
+    if (immediate) done(); else s._closeTimer = setTimeout(done, 320);
     if (!keepParent && parentSheet) { const p = parentSheet; parentSheet = null; lastFocus = p.focus; openSheet(p.sheet); return; }
     const target = lastFocus && lastFocus.focus && lastFocus.offsetParent !== null ? lastFocus : el.btnSettings;
     target.focus();
