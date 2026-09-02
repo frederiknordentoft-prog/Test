@@ -145,19 +145,22 @@
   function hideToast() { el.toast.classList.remove('show'); }
 
   /* ---------- sheets ---------- */
-  let openSheetEl = null;
+  let openSheetEl = null, lastFocus = null;
   function openSheet(id) {
     closeSheet();
     const sh = $('#' + id); if (!sh) return;
     sh.hidden = false; el.scrim.classList.add('show');
     requestAnimationFrame(() => { sh.classList.add('show'); });
     openSheetEl = sh;
-    const first = sh.querySelector('button.btn-pill, button:not([data-close])'); if (first) setTimeout(() => first.focus(), 250);
+    lastFocus = document.activeElement;
+    sh.setAttribute('tabindex', '-1');
+    setTimeout(() => sh.focus({ preventScroll: true }), 250);
   }
   function closeSheet() {
     if (!openSheetEl) return;
     const sh = openSheetEl; openSheetEl = null;
     sh.classList.remove('show'); el.scrim.classList.remove('show');
+    if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
     setTimeout(() => { if (!sh.classList.contains('show')) sh.hidden = true; }, 450);
   }
   el.scrim.addEventListener('click', () => { if (openSheetEl && openSheetEl.id !== 'sheetWelcome') closeSheet(); });
@@ -338,7 +341,12 @@
   /* ---------- the spin ---------- */
   let debugNext = null;
   async function spin() {
-    if (state.busy || openSheetEl) return;
+    if (state.busy) return;
+    if (openSheetEl && openSheetEl.id !== 'sheetInfo') {
+      // a blocking sheet is open: free spins / autospin resume once it closes
+      if (state.free || state.auto) setTimeout(spin, 500);
+      return;
+    }
     const b = bet();
     if (!state.free && state.balance < b) {
       audio.error();
@@ -414,7 +422,8 @@
       if (state.free) {
         updateFreeIsland(r.total, label);
         const node = $('#fsWin');
-        if (node) await countUp(node, r.total, turbo ? 350 : 650, { tick: true });
+        if (tier === 'big') burst(1.0);
+        if (node) await countUp(node, r.total, tier === 'big' ? (turbo ? 700 : 1200) : (turbo ? 350 : 650), { tick: true });
       } else {
         island.set(`<span class="i-label">${label}</span><span class="i-amount" id="islandAmount">0,00 kr.</span>`, { tier });
         const node = $('#islandAmount');
@@ -511,7 +520,7 @@
 
   /* ---------- autospin ---------- */
   function startAuto(opts) {
-    state.auto = { left: opts.count, startBalance: state.balance, lossLimit: opts.lossLimit, winLimit: opts.winLimit, stopOnBonus: opts.stopOnBonus };
+    state.auto = { left: opts.count, startBalance: state.balance, lossLimit: opts.lossLimit, winLimit: opts.winLimit };
     el.autoBtn.setAttribute('aria-pressed', 'true');
     setSpinButton('auto');
     spin();
@@ -537,15 +546,14 @@
   el.autoBtn.addEventListener('click', () => {
     audio.click();
     if (state.auto) { stopAuto('Autospin stoppet.'); return; }
-    if (state.busy) return;
+    if (state.busy || state.free) return;
     openSheet('sheetAuto');
   });
   let autoCount = 10;
   $$('#autoCount button').forEach((b) => b.addEventListener('click', () => { audio.click(); autoCount = +b.dataset.v; $$('#autoCount button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
-  $('#autoStopBonus').addEventListener('click', (e) => { const s = e.currentTarget; const on = s.getAttribute('aria-checked') !== 'true'; s.setAttribute('aria-checked', String(on)); audio.toggle(on); });
   $('#autoStart').addEventListener('click', () => {
     audio.click(); closeSheet();
-    startAuto({ count: autoCount, lossLimit: +$('#autoLoss').value, winLimit: +$('#autoWin').value, stopOnBonus: $('#autoStopBonus').getAttribute('aria-checked') === 'true' });
+    startAuto({ count: autoCount, lossLimit: +$('#autoLoss').value, winLimit: +$('#autoWin').value });
   });
 
   /* ---------- turbo / info ---------- */

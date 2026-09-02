@@ -100,7 +100,7 @@
   }
   function caption(ctx, text, y, color) {
     ctx.save();
-    ctx.font = '600 9.5px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif';
+    ctx.font = '700 11.5px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color;
     ctx.fillText(text, 50, y);
     ctx.restore();

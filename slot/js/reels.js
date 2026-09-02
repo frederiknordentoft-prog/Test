@@ -228,6 +228,10 @@
     }
 
     _beginStop(s, i, now) {
+      if (this.pendingStrips && this.strips[i] !== this.pendingStrips[i]) {
+        this.strips[i] = this.pendingStrips[i];
+        s.pos = ((s.pos % this.strips[i].length) + this.strips[i].length) % this.strips[i].length;
+      }
       const len = this.strips[i].length;
       s.phase = 'stop'; s.t0 = now; s.p0 = s.pos;
       // end must be <= p0 - minTravel and ≡ target (mod len)
