@@ -26,7 +26,8 @@
   --fill-press: rgba(255, 255, 255, 0.22);
   --label: #f5f5f7;
   --label-2: rgba(235, 235, 245, 0.62);
-  --label-3: rgba(235, 235, 245, 0.32);
+  --label-3: rgba(235, 235, 245, 0.42);
+  --line-3: rgba(235, 235, 245, 0.28);
   --accent: #2997ff;
   --accent-fill: #0071e3;
   --accent-fill-hover: #0a7bee;
@@ -62,12 +63,13 @@
   --fill-hover: rgba(0, 0, 0, 0.10);
   --fill-press: rgba(0, 0, 0, 0.14);
   --label: #1d1d1f;
-  --label-2: rgba(60, 60, 67, 0.62);
-  --label-3: rgba(60, 60, 67, 0.32);
+  --label-2: rgba(60, 60, 67, 0.78);
+  --label-3: rgba(60, 60, 67, 0.50);
+  --line-3: rgba(60, 60, 67, 0.28);
   --accent: #0066cc;
   --accent-fill: #0071e3;
   --accent-fill-hover: #0077ed;
-  --green: #1f8f3a;
+  --green: #1a7a32;
   --red: #d70015;
   --amber: #b25000;
   --table-a: #ffffff;
@@ -91,7 +93,8 @@ body {
   touch-action: manipulation;
 }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; }
-button:focus-visible, input:focus-visible { outline: none; box-shadow: var(--focus); }
+button:focus-visible, input:focus-visible, .seg button[aria-checked="true"]:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+.btn-act.suggested:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent), 0 0 0 2px var(--accent) inset; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 strong { font-weight: 600; }
@@ -115,7 +118,7 @@ strong { font-weight: 600; }
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 2px; }
 .balance { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; margin-right: 8px; }
 .balance-label { font-size: 11px; color: var(--label-2); letter-spacing: 0.02em; text-transform: uppercase; }
-.balance-value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; transition: color .3s; }
+.balance-value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; transition: color .3s; min-width: 7.5ch; text-align: right; }
 .balance-value.up { color: var(--green); }
 .balance-value.down { color: var(--red); }
 .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--label-2); transition: background .15s, color .15s, transform .15s; }
@@ -126,9 +129,9 @@ strong { font-weight: 600; }
 #btnSound[aria-pressed="false"] .snd-off { display: block; }
 
 /* history dots */
-.history i { width: 7px; height: 7px; border-radius: 50%; background: var(--label-3); display: block; transform: scale(0); animation: dotIn .3s var(--spring) forwards; }
+.history i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-3); display: block; transform: scale(0); animation: dotIn .3s var(--spring) forwards; }
 .history i.w { background: var(--green); }
-.history i.l { background: var(--label-3); }
+.history i.l { background: var(--line-3); }
 .history i.p { background: var(--label-2); }
 .history i.b { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 @keyframes dotIn { to { transform: scale(1); } }
@@ -154,15 +157,16 @@ strong { font-weight: 600; }
 /* ---------- Badges ---------- */
 .badge { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--fill); color: var(--label); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; transition: background .25s, color .25s, transform .2s; }
 .badge.pop { animation: pop .35s var(--spring); }
-.badge-bust { background: var(--red); color: #fff; }
+.badge-bust { background: #d62b23; color: #fff; }
+:root[data-theme="light"] .badge-bust { background: var(--red); }
 .badge-21 { background: var(--label); color: var(--bg); }
 .badge-bj { background: var(--accent-fill); color: #fff; }
 .badge-bet { background: transparent; border: 1px solid var(--hairline); color: var(--label-2); font-weight: 500; }
 @keyframes pop { 0% { transform: scale(0.8); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
 
 /* ---------- Cards ---------- */
-.cards { position: relative; height: calc(var(--card-w) * 1.4); width: calc(var(--card-w) + max(var(--n) - 1, 0) * var(--overlap)); transition: width .3s var(--ease); }
-.card { position: absolute; top: 0; left: calc(var(--i) * var(--overlap)); width: var(--card-w); aspect-ratio: 5 / 7; perspective: 900px; transition: left .3s var(--ease); z-index: calc(1 + var(--i)); will-change: transform; }
+.cards { position: relative; height: calc(var(--card-w) * 1.4); width: calc(var(--card-w) + max(var(--n) - 1, 0) * var(--overlap)); }
+.card { position: absolute; top: 0; left: calc(var(--i) * var(--overlap)); width: var(--card-w); aspect-ratio: 5 / 7; perspective: 900px; z-index: calc(1 + var(--i)); }
 .card-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform calc(.55s * var(--speed)) var(--ease); }
 .card.face-down .card-inner { transform: rotateY(180deg); }
 .card.peek .card-inner { transform: rotateY(180deg) translateY(-8px) rotateZ(-5deg); transition-duration: .4s; }
@@ -177,13 +181,14 @@ strong { font-weight: 600; }
 .hands { display: flex; align-items: flex-end; justify-content: center; gap: clamp(12px, 3vw, 40px); }
 .hand { display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; transition: transform .35s var(--ease), opacity .35s; }
 .hand-top { display: flex; align-items: center; gap: 8px; height: 28px; }
-.hand .cards-wrap { position: relative; padding: 6px; border-radius: calc(var(--card-w) * 0.072 + 6px); transition: box-shadow .3s; }
-.hand.active .cards-wrap { box-shadow: 0 0 0 2px var(--accent); }
-.hands[data-count="1"] .hand.active .cards-wrap { box-shadow: none; }
+.hand .cards-wrap { position: relative; padding: 6px; border-radius: calc(var(--card-w) * 0.072 + 6px); }
+.hand .cards-wrap::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 2px var(--accent); opacity: 0; transition: opacity .3s; pointer-events: none; }
+.hand.active .cards-wrap::after { opacity: 1; }
+.hands[data-count="1"] .hand.active .cards-wrap::after { opacity: 0; }
 .hand.inactive { opacity: .55; transform: scale(0.94); }
 .hand.done { transform: scale(0.97); }
 .hand-result { position: absolute; left: 50%; top: 74%; transform: translate(-50%, -50%) scale(0.6); opacity: 0; z-index: 30; pointer-events: none;
-  display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 18px; border-radius: 16px; background: var(--glass-strong); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 30px rgba(0,0,0,.35), 0 0 0 0.5px var(--hairline);
+  display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 18px; border-radius: 16px; background: var(--glass-strong); box-shadow: 0 8px 30px rgba(0,0,0,.35), 0 0 0 0.5px var(--hairline);
   font-weight: 600; font-size: 17px; letter-spacing: -0.01em; white-space: nowrap; transition: transform .45s var(--spring), opacity .3s; }
 .hand-result.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 .hand-result small { font-size: 13px; font-weight: 500; color: var(--label-2); }
@@ -202,8 +207,8 @@ strong { font-weight: 600; }
 .message .amount.neg { color: var(--label-2); }
 
 .bet-spot { position: relative; width: 120px; height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
-.bet-ring { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 64px; height: 64px; border-radius: 50%; border: 1.5px dashed var(--label-3); display: grid; place-items: center; transition: opacity .3s, transform .3s var(--ease); }
-.bet-ring-label { font-size: 11px; color: var(--label-3); letter-spacing: .04em; text-transform: uppercase; font-weight: 500; }
+.bet-ring { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 64px; height: 64px; border-radius: 50%; border: 1.5px dashed var(--line-3); display: grid; place-items: center; transition: opacity .3s, transform .3s var(--ease); }
+.bet-ring-label { font-size: 11px; color: var(--label-2); letter-spacing: .04em; text-transform: uppercase; font-weight: 500; }
 .bet-spot.has-bet .bet-ring, .app[data-phase="settled"] .bet-ring, .app[data-phase="dealing"] .bet-ring, .app[data-phase="dealer"] .bet-ring { opacity: 0; transform: translateX(-50%) scale(0.8); }
 .bet-stack { position: absolute; left: 50%; top: 32px; width: 0; height: 0; }
 .bet-stack .chip { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; --chip-size: 44px; box-shadow: 0 1px 0 rgba(0,0,0,.5), 0 2px 4px rgba(0,0,0,.35); transform: translateY(calc(var(--k) * -3px)) rotate(var(--rot, 0deg)); z-index: var(--k); cursor: default; }
@@ -229,15 +234,17 @@ strong { font-weight: 600; }
 /* ---------- Dock ---------- */
 .dock { position: relative; z-index: 5; padding-bottom: var(--safe-b); background: var(--glass); backdrop-filter: saturate(180%) blur(24px); -webkit-backdrop-filter: saturate(180%) blur(24px); border-top: 1px solid var(--hairline-2); }
 .dock-inner { max-width: 1180px; margin: 0 auto; padding: 12px 16px 14px; position: relative; }
-.panel { display: none; }
-.app[data-phase="betting"] .panel-bet, .app[data-phase="player"] .panel-play, .app[data-phase="insurance"] .panel-insurance, .app[data-phase="settled"] .panel-settled, .app[data-phase="dealing"] .panel-busy, .app[data-phase="dealer"] .panel-busy, .app[data-phase="intro"] .panel-bet { display: block; animation: panelIn .35s var(--ease); }
+.panels { display: grid; align-items: end; }
+.panel { grid-area: 1 / 1; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.app[data-phase="betting"] .panel-bet, .app[data-phase="player"] .panel-play, .app[data-phase="insurance"] .panel-insurance, .app[data-phase="settled"] .panel-settled, .app[data-phase="dealing"] .panel-busy, .app[data-phase="dealer"] .panel-busy, .app[data-phase="intro"] .panel-bet { visibility: visible; opacity: 1; pointer-events: auto; animation: panelIn .35s var(--ease); }
 @keyframes panelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .row-left { display: flex; gap: 8px; flex-wrap: wrap; margin-right: auto; }
 .row-right { display: flex; gap: 10px; }
 .row-busy { min-height: 48px; }
 .busy-text { color: var(--label-2); font-size: 15px; font-weight: 500; }
-.hint { display: block; width: max-content; margin: 0 auto 10px; padding: 5px 12px; border-radius: 12px; background: var(--fill); font-size: 13px; color: var(--label-2); white-space: nowrap; }
+.hint { display: block; width: max-content; min-height: 26px; margin: 0 auto 10px; padding: 5px 12px; border-radius: 12px; background: var(--fill); font-size: 13px; color: var(--label-2); white-space: nowrap; visibility: hidden; }
+.hint.on { visibility: visible; }
 .hint b { color: var(--label); font-weight: 600; }
 
 /* ---------- Buttons ---------- */
@@ -250,7 +257,7 @@ strong { font-weight: 600; }
 .btn-secondary:hover { background: var(--fill-hover); }
 .btn-secondary:active { background: var(--fill-press); }
 .btn-sm { height: 38px; padding: 0 14px; font-size: 15px; position: relative; }
-.btn-sm::after { content: ""; position: absolute; inset: -4px; border-radius: inherit; }
+.btn-sm::after { content: ""; position: absolute; inset: -3px; border-radius: inherit; }
 .btn-lg { height: 56px; padding: 0 32px; font-size: 19px; }
 .btn-link { color: var(--accent); padding: 0 8px; background: none; }
 .btn-link:hover { text-decoration: underline; }
@@ -264,17 +271,18 @@ strong { font-weight: 600; }
 /* ---------- Chips ---------- */
 .chips { display: flex; justify-content: center; gap: 12px; padding: 4px 0 12px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .chips::-webkit-scrollbar { display: none; }
-.chip { --c: #6e6e73; --c-text: #fff; position: relative; flex: none; width: var(--chip-size); height: var(--chip-size); border-radius: 50%; background: var(--c); box-shadow: var(--chip-shadow), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.25); transition: transform .18s var(--spring), opacity .2s, filter .2s; will-change: transform; }
+.chips .chip::before { inset: 2px; }
+.chip { --c: #6e6e73; --c-text: #fff; position: relative; flex: none; width: var(--chip-size); height: var(--chip-size); border-radius: 50%; background: var(--c); box-shadow: var(--chip-shadow), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.25); transition: transform .18s var(--spring), opacity .2s, filter .2s; }
 .chip::before { content: ""; position: absolute; inset: 2px; border-radius: 50%; border: 5px dashed rgba(255,255,255,.92); }
 .chip::after { content: ""; position: absolute; inset: 11px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.5), inset 0 1px 2px rgba(0,0,0,.2); }
 .chip-value { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font-weight: 600; font-size: 15px; letter-spacing: -0.02em; color: var(--c-text); font-variant-numeric: tabular-nums; }
 .chip[data-value="10"] { --c: #e8e8ed; --c-text: #1d1d1f; }
 .chip[data-value="10"]::before { border-color: rgba(0,0,0,.35); }
 .chip[data-value="10"]::after { box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.2), inset 0 1px 2px rgba(0,0,0,.1); }
-.chip[data-value="20"] { --c: #2fb457; }
-.chip[data-value="50"] { --c: #0a7cff; }
+.chip[data-value="20"] { --c: #1f8a3f; }
+.chip[data-value="50"] { --c: #0a5fd6; }
 .chip[data-value="100"] { --c: #2c2c2e; }
-.chip[data-value="500"] { --c: #a855f7; }
+.chip[data-value="500"] { --c: #7a3fd1; }
 .chip[data-value="1000"] { --c: #f0a020; --c-text: #1d1d1f; }
 .chips .chip:hover { transform: translateY(-4px) scale(1.04); }
 .chips .chip:active { transform: translateY(-1px) scale(0.96); }
@@ -283,7 +291,7 @@ strong { font-weight: 600; }
 .chip.fly { position: fixed; z-index: 100; pointer-events: none; margin: 0; }
 
 /* ---------- Toast ---------- */
-.toast { position: fixed; left: 50%; bottom: calc(150px + var(--safe-b)); transform: translate(-50%, 12px); opacity: 0; z-index: 70; padding: 10px 16px; border-radius: 980px; background: var(--glass-strong); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 0.5px solid var(--hairline); box-shadow: 0 8px 30px rgba(0,0,0,.3); font-size: 15px; font-weight: 500; color: var(--label); white-space: nowrap; pointer-events: none; transition: transform .35s var(--spring), opacity .25s; }
+.toast { position: fixed; left: 50%; bottom: calc(150px + var(--safe-b)); transform: translate(-50%, 12px); opacity: 0; z-index: 70; padding: 10px 16px; border-radius: 980px; background: var(--glass-strong); border: 0.5px solid var(--hairline); box-shadow: 0 8px 30px rgba(0,0,0,.3); font-size: 15px; font-weight: 500; color: var(--label); white-space: nowrap; pointer-events: none; transition: transform .35s var(--spring), opacity .25s; }
 .toast.show { transform: translate(-50%, 0); opacity: 1; }
 
 /* ---------- Sheets ---------- */
@@ -303,7 +311,8 @@ strong { font-weight: 600; }
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 6px 0; border-bottom: 0.5px solid var(--hairline); font-size: 16px; }
 .setting:last-child { border-bottom: 0; }
 .seg { display: inline-flex; background: var(--fill); border-radius: 10px; padding: 4px; gap: 2px; }
-.seg button { height: 36px; padding: 0 12px; border-radius: 7px; font-size: 14px; font-weight: 500; color: var(--label-2); transition: background .2s, color .2s; }
+.seg button { position: relative; height: 36px; padding: 0 12px; border-radius: 7px; font-size: 14px; font-weight: 500; color: var(--label-2); transition: background .2s, color .2s; }
+.seg button::after { content: ""; position: absolute; inset: -4px; }
 .seg button[aria-checked="true"] { background: var(--elev-2); color: var(--label); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
 :root[data-theme="light"] .seg button[aria-checked="true"] { background: #fff; }
 .switch { appearance: none; -webkit-appearance: none; width: 51px; height: 31px; border-radius: 16px; background: var(--fill-press); position: relative; transition: background .25s; cursor: pointer; flex: none; margin: 0; }
@@ -314,7 +323,7 @@ strong { font-weight: 600; }
 .stat { display: flex; flex-direction: column; gap: 2px; }
 .stat b { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .stat span { font-size: 12px; color: var(--label-2); }
-.fine { font-size: 12px; color: var(--label-3); text-align: center; margin: 4px 0 0; }
+.fine { font-size: 12px; color: var(--label-2); text-align: center; margin: 4px 0 0; }
 .confirm { text-align: center; padding: 26px 22px 22px; }
 .confirm h2 { margin: 0 0 6px; font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
 .confirm p { margin: 0 0 18px; color: var(--label-2); font-size: 15px; }
@@ -337,7 +346,7 @@ strong { font-weight: 600; }
 .intro-title .dot { color: var(--accent); }
 .intro-sub { margin: 14px 0 0; font-size: clamp(21px, 3.2vw, 28px); font-weight: 500; letter-spacing: -0.02em; color: var(--label-2); animation: rise .9s var(--ease) .15s both; }
 .intro-cta { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 34px; animation: rise .9s var(--ease) .3s both; }
-.intro-fine { margin: 40px 0 0; font-size: 13px; color: var(--label-3); animation: rise .9s var(--ease) .45s both; }
+.intro-fine { margin: 40px 0 0; font-size: 13px; color: var(--label-2); animation: rise .9s var(--ease) .45s both; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .intro-cards { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .intro-cards .card { position: absolute; inset: auto; height: auto; width: clamp(120px, 14vw, 190px); opacity: 0; animation: introCard 1.4s var(--ease) both; perspective: none; }
@@ -375,7 +384,6 @@ strong { font-weight: 600; }
 @media (max-width: 600px) {
   :root { --card-w: 84px; --overlap: 26px; --chip-size: 50px; }
   .topbar-inner { height: 48px; padding: 0 14px; }
-  .balance-label { font-size: 10px; }
   .table { padding: 8px 12px 6px; }
   .table-surface { border-radius: 22px 22px 0 0; }
   .seat-dealer { padding-top: 8px; }
@@ -423,16 +431,18 @@ strong { font-weight: 600; }
   .centre { min-height: 0; gap: 4px; }
   .message { font-size: 17px; min-height: 22px; }
   .message.big { font-size: 24px; }
-  .bet-spot { height: 60px; } .bet-ring { width: 44px; height: 44px; } .bet-ring-label { font-size: 9px; }
+  .bet-spot { height: 60px; } .bet-ring { width: 44px; height: 44px; } .bet-ring-label { font-size: 11px; }
   .bet-stack { top: 22px; } .bet-stack .chip { width: 36px; height: 36px; left: -18px; top: -18px; }
   .bet-amount { top: 46px; font-size: 13px; }
   .hands { gap: 10px; }
   .hands[data-count="3"], .hands[data-count="4"] { --card-w: 56px; --overlap: 18px; }
   .chips { padding: 0 0 6px; }
-  .btn { height: 38px; font-size: 15px; }
-  .btn-sm { height: 32px; }
+  .btn { height: 44px; font-size: 15px; }
+  .btn-sm { height: 38px; }
+  .chips .chip { position: relative; }
+  .chips .chip .chip-value::after { content: ""; position: absolute; inset: -4px; }
   .dock-inner { padding: 6px 14px 6px; }
-  .reg { margin-top: 4px; font-size: 10px; }
+  .reg { margin-top: 4px; }
   .shoe { top: 8px; right: 10px; width: 30px; }
   .hint { top: -6px; }
 }
@@ -454,25 +464,25 @@ strong { font-weight: 600; }
 }
 .history { display: flex; gap: 6px; align-items: center; min-height: 20px; padding: 12px 14px 4px; flex-wrap: wrap; }
 .history i { width: 8px; height: 8px; }
-.history:empty::after { content: attr(data-empty); font-size: 12px; color: var(--label-3); }
+.history:empty::after { content: attr(data-empty); font-size: 12px; color: var(--label-2); }
 .sweep { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
 .sweep::after { content: ""; position: absolute; top: -40%; bottom: -40%; left: -70%; width: 60%; background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%); transform: skewX(-12deg); animation: sweep .9s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 @keyframes sweep { to { transform: skewX(-12deg) translateX(400%); } }
-.reg { margin: 8px 0 0; text-align: center; font-size: 11px; line-height: 14px; color: var(--label-3); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.reg b { font-weight: 500; color: var(--label-2); }
+.reg { margin: 8px 0 0; text-align: center; font-size: 11px; line-height: 14px; color: var(--label-2); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reg b { font-weight: 600; color: var(--label); }
 .shoe.pull .shoe-card:last-child { animation: pull .22s var(--ease); }
 @keyframes pull { 50% { transform: translate(-7px, 2px) rotate(-2deg); } }
-.sheet-drag { width: 36px; height: 5px; border-radius: 3px; background: var(--label-3); margin: 8px auto -4px; opacity: .6; }
+.sheet-drag { width: 36px; height: 5px; border-radius: 3px; background: var(--line-3); margin: 8px auto -4px; opacity: .6; }
 @media (min-width: 720px) { .sheet-drag { display: none; } }
 @media (prefers-reduced-transparency: reduce) { .topbar, .dock, .sheet, .toast, .hand-result, .hint { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--elev); } }
-@supports not (backdrop-filter: blur(1px)) { .topbar, .dock, .sheet, .toast, .hand-result, .hint { background: var(--elev); } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .topbar, .dock, .sheet, .toast, .hand-result, .hint { background: var(--elev); } }
 
 </style>
 
 <div id="app" class="app" data-phase="intro" data-theme-mode="auto">
 
   <!-- ===== Intro (apple.com hero) ===== -->
-  <section class="intro" id="intro" aria-label="Velkommen">
+  <section class="intro" id="intro" aria-label="Velkommen" data-i18n-label="welcome">
     <div class="intro-inner">
       <p class="intro-eyebrow" data-i18n="introEyebrow">Nyt kortspil</p>
       <h1 class="intro-title">Blackjack<span class="dot">.</span></h1>
@@ -498,7 +508,7 @@ strong { font-weight: 600; }
         <button class="icon-btn" id="btnSound" aria-label="Lyd til/fra" aria-pressed="true">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z"/><path class="snd-wave" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="snd-wave" d="M18 6.7a7.5 7.5 0 0 1 0 10.6"/><path class="snd-off" d="M16 9l5 6M21 9l-5 6"/></svg>
         </button>
-        <button class="icon-btn" id="btnSettings" aria-label="Indstillinger">
+        <button class="icon-btn" id="btnSettings" aria-label="Indstillinger" data-i18n-label="settings">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         </button>
       </div>
@@ -514,7 +524,7 @@ strong { font-weight: 600; }
       <div class="shoe-meter"><span id="shoeFill"></span></div>
     </div>
 
-    <section class="seat seat-dealer" aria-label="Dealer">
+    <section class="seat seat-dealer" aria-label="Dealer" data-i18n-label="dealer">
       <div class="hand-meta">
         <span class="hand-name" data-i18n="dealer">Dealer</span>
         <span class="badge badge-value" id="dealerValue" hidden></span>
@@ -523,7 +533,7 @@ strong { font-weight: 600; }
     </section>
 
     <div class="centre">
-      <div class="message" id="message" aria-live="polite"></div>
+      <div class="message" id="message"></div>
       <div class="bet-spot" id="betSpot">
         <div class="bet-ring" id="betRing"><span class="bet-ring-label" data-i18n="betHere">Indsats</span></div>
         <div class="bet-stack" id="betStack"></div>
@@ -532,7 +542,7 @@ strong { font-weight: 600; }
       <div class="side-bets" id="sideBets"></div>
     </div>
 
-    <section class="seat seat-player" aria-label="Dine hænder">
+    <section class="seat seat-player" aria-label="Dine hænder" data-i18n-label="yourHands">
       <div class="hands" id="hands" data-count="0" role="group"></div>
     </section>
   </main>
@@ -540,10 +550,10 @@ strong { font-weight: 600; }
   <!-- ===== Dock ===== -->
   <footer class="dock" id="dock" inert>
     <div class="dock-inner">
-      <div class="hint" id="hint" hidden></div>
-
+      <div class="hint" id="hint"></div>
+      <div class="panels">
       <div class="panel panel-bet" data-panel="betting">
-        <div class="chips" id="chips" role="group" aria-label="Jetoner"></div>
+        <div class="chips" id="chips" role="group" aria-label="Jetoner" data-i18n-label="chips"></div>
         <div class="row">
           <div class="row-left">
             <button class="btn btn-secondary btn-sm" id="btnUndo" data-i18n="undo">Fortryd</button>
@@ -583,13 +593,15 @@ strong { font-weight: 600; }
       </div>
 
       <div class="panel panel-busy" data-panel="dealing"><div class="row row-busy"><span class="busy-text" id="busyText"></span></div></div>
-      <p class="reg" id="reg" aria-label="Ansvarligt spil"></p>
+      </div>
+      <p class="reg" id="reg"></p>
     </div>
   </footer>
 
   <!-- ===== Toast + announcements ===== -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="sr-only" id="announce" aria-live="polite" aria-atomic="true"></div>
+  <div class="sr-only" id="alert" role="alert" aria-atomic="true"></div>
 
   <!-- ===== Sheets ===== -->
   <div class="sheet-backdrop" id="backdrop" hidden></div>
@@ -598,7 +610,7 @@ strong { font-weight: 600; }
     <div class="sheet-drag" aria-hidden="true"></div>
     <header class="sheet-head">
       <h2 id="settingsTitle" data-i18n="settings">Indstillinger</h2>
-      <button class="icon-btn sheet-close" data-close aria-label="Luk"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button class="icon-btn sheet-close" data-close aria-label="Luk" data-i18n-label="close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </header>
     <div class="sheet-body">
       <div class="group">
@@ -657,12 +669,12 @@ strong { font-weight: 600; }
     <div class="sheet-drag" aria-hidden="true"></div>
     <header class="sheet-head">
       <h2 id="rulesTitle" data-i18n="rules">Regler</h2>
-      <button class="icon-btn sheet-close" data-close aria-label="Luk"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button class="icon-btn sheet-close" data-close aria-label="Luk" data-i18n-label="close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </header>
     <div class="sheet-body" id="rulesBody"></div>
   </section>
 
-  <section class="sheet sheet-sm" id="sheetConfirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+  <section class="sheet sheet-sm" id="sheetConfirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText" hidden>
     <div class="sheet-body confirm">
       <h2 id="confirmTitle"></h2>
       <p id="confirmText"></p>
@@ -1362,8 +1374,7 @@ strong { font-weight: 600; }
       const size = rank === '2' || rank === '3' ? 56 : rank === '10' ? 44 : 50;
       body = `<g fill="${color}">${PIPS[rank].map(([x, y, f]) => glyph(suit, x, y, size, f)).join('')}</g>`;
     }
-    const label = `${rank} ${NAME[suit]}`;
-    const out = `<svg class="card-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${label}" shape-rendering="geometricPrecision">
+    const out = `<svg class="card-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" shape-rendering="geometricPrecision">
       <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="#fff"/>
       ${index(rank, suit, color)}
       <g transform="rotate(180 ${W / 2} ${H / 2})">${index(rank, suit, color)}</g>
@@ -1589,7 +1600,7 @@ strong { font-weight: 600; }
     da: {
       introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
       introFine: '18+ · {decks} kortspil · Dealeren står på 17 · Blackjack betaler 3:2 · Demo uden rigtige penge',
-      balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
+      balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', yourHands: 'Dine hænder', welcome: 'Velkommen', close: 'Luk', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
       surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Spil videre',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
       language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategi-hint', haptics: 'Vibration',
@@ -1613,7 +1624,7 @@ strong { font-weight: 600; }
     en: {
       introEyebrow: 'Card game', introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
       introFine: '18+ · {decks} decks · Dealer stands on 17 · Blackjack pays 3:2 · Demo, no real money',
-      balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
+      balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', yourHands: 'Your hands', welcome: 'Welcome', close: 'Close', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
       surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Keep playing',
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
       language: 'Language', speed: 'Pace', normal: 'Normal', fast: 'Fast', sound: 'Sound', hints: 'Strategy hint', haptics: 'Haptics',
@@ -1697,6 +1708,8 @@ strong { font-weight: 600; }
   function applyLang() {
     document.documentElement.lang = settings.lang;
     $$('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+    $$('[data-i18n-label]').forEach(n => n.setAttribute('aria-label', t(n.dataset.i18nLabel)));
+    $$('.chip', el.chips).forEach(c => c.setAttribute('aria-label', t('chip', { amt: fmt(+c.dataset.value) })));
     el.introFine.textContent = t('introFine', { decks: game.rules.decks });
     el.btnSound.setAttribute('aria-label', settings.sound ? t('soundOn') : t('soundOff'));
     el.history.setAttribute('aria-label', t('recent')); el.history.dataset.empty = t('noHistory');
@@ -1715,31 +1728,38 @@ strong { font-weight: 600; }
   }
   setInterval(renderClock, 15000);
   function syncSettingsUI() {
-    const seg = (id, v) => $$('#' + id + ' button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === v)));
+    const seg = (id, v) => $$('#' + id + ' button').forEach(b => { b.setAttribute('aria-checked', String(b.dataset.v === v)); b.tabIndex = b.dataset.v === v ? 0 : -1; });
     seg('segTheme', settings.theme); seg('segLang', settings.lang); seg('segSpeed', settings.speed);
     $('#swSound').checked = settings.sound; $('#swHints').checked = settings.hints; $('#swHaptics').checked = settings.haptics;
     el.btnSound.setAttribute('aria-pressed', String(settings.sound));
   }
 
   /* ---------------- cards ---------------- */
-  function cardEl(card, faceDown) {
+  /** Cards are decorative for assistive tech — the hand/dealer groups carry the names. A hidden hole card has no identity in the DOM. */
+  function cardEl(card, faceDown, keepSecret) {
     const d = document.createElement('div');
     d.className = 'card' + (faceDown ? ' face-down' : '');
-    d.innerHTML = `<div class="card-inner"><div class="card-face card-front">${Cards.svg(card.rank, card.suit)}</div><div class="card-face card-back">${Cards.back()}</div></div>`;
-    d.setAttribute('aria-label', faceDown ? '' : Cards.label(card.rank, card.suit, settings.lang));
-    d.dataset.id = card.id;
+    d.setAttribute('aria-hidden', 'true');
+    d.innerHTML = `<div class="card-inner"><div class="card-face card-front">${keepSecret ? '' : Cards.svg(card.rank, card.suit)}</div><div class="card-face card-back">${Cards.back()}</div></div>`;
+    if (!keepSecret) d.dataset.id = card.id;
     return d;
+  }
+  function revealCardEl(c, card) { // fill in a secret front before flipping it
+    if (!c.dataset.id) { c.querySelector('.card-front').innerHTML = Cards.svg(card.rank, card.suit); c.dataset.id = card.id; }
   }
   function setCount(container, n) { container.style.setProperty('--n', n); }
   /** Deal a card from the shoe into a container with a FLIP animation. */
   async function dealCard(container, card, { faceDown = false, sideways = false } = {}) {
     const n = container.children.length;
-    const c = cardEl(card, true);
+    const c = cardEl(card, true, faceDown);
     c.style.setProperty('--i', n);
     if (sideways) c.classList.add('sideways');
+    const hand = container.closest('.hand') || container;
+    const before = hand.getBoundingClientRect();
     container.appendChild(c);
-    if (!faceDown) c.setAttribute('aria-label', Cards.label(card.rank, card.suit, settings.lang));
     setCount(container, n + 1);
+    const after = hand.getBoundingClientRect();
+    if (!reduceMotion.matches && Math.abs(before.left - after.left) > 0.5) hand.animate([{ transform: `translateX(${before.left - after.left}px)` }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', composite: 'add' });
     const from = el.shoe.getBoundingClientRect();
     const to = c.getBoundingClientRect();
     const dx = from.left + from.width / 2 - (to.left + to.width / 2);
@@ -1748,14 +1768,17 @@ strong { font-weight: 600; }
     c.classList.add('flying');
     el.shoe.classList.remove('pull'); void el.shoe.offsetWidth; el.shoe.classList.add('pull');
     if (!faceDown) setTimeout(() => c.classList.remove('face-down'), reduceMotion.matches ? 0 : dur * 0.45);
-    const anim = c.animate([
-      { transform: `translate(${dx}px, ${dy}px) rotate(-10deg) scale(${from.width / to.width})`, opacity: 0.6 },
-      { transform: 'translate(0, 0) rotate(0) scale(1)', opacity: 1 },
-    ], { duration: dur, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'both' });
+    c.style.willChange = 'transform';
+    const anim = reduceMotion.matches
+      ? c.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, fill: 'both' })
+      : c.animate([
+        { transform: `translate(${dx}px, ${dy}px) rotate(-10deg) scale(${from.width / to.width})`, opacity: 0.6 },
+        { transform: 'translate(0, 0) rotate(0) scale(1)', opacity: 1 },
+      ], { duration: dur, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'both' });
     sound.deal();
     await settled(anim);
     anim.commitStyles && anim.cancel();
-    c.style.transform = '';
+    c.style.transform = ''; c.style.willChange = '';
     c.classList.remove('flying');
     if (sideways) c.querySelector('.card-inner').style.transform = 'rotate(90deg)';
     return c;
@@ -1781,24 +1804,31 @@ strong { font-weight: 600; }
     if (opts.blackjack) badge.textContent = t('blackjack');
     badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
   }
+  function shownCards(i) { const h = game.hands[i]; return h ? h.cards.slice(0, cardsOf(i).children.length) : []; }
   function updateHandBadge(i) {
     const h = game.hands[i]; if (!h || !handEls[i]) return;
-    const v = BJ.handValue(h.cards);
-    updateBadge($('.badge-value', handEls[i]), v, { blackjack: BJ.isNatural(h.cards) && !h.fromSplit });
+    const cards = shownCards(i);
+    if (!cards.length) return;
+    const v = BJ.handValue(cards);
+    updateBadge($('.badge-value', handEls[i]), v, { blackjack: BJ.isNatural(cards) && !h.fromSplit });
     const bb = $('.badge-bet', handEls[i]);
     bb.hidden = !(game.hands.length > 1 || h.doubled);
     bb.textContent = fmt(h.bet);
     handEls[i].setAttribute('role', 'group');
-    handEls[i].setAttribute('aria-label', `${t('yourHand')}${game.hands.length > 1 ? ' ' + (i + 1) : ''}: ${h.cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}${v.soft && v.total < 21 ? ' (' + (v.total - 10) + '/' + v.total + ')' : ''}`);
+    handEls[i].setAttribute('aria-label', `${t('yourHand')}${game.hands.length > 1 ? ' ' + (i + 1) : ''}: ${cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}${v.soft && v.total < 21 ? ' (' + (v.total - 10) + '/' + v.total + ')' : ''}`);
   }
   function updateDealerBadge() {
     const d = game.dealer;
-    if (!d.cards.length) { el.dealerValue.hidden = true; return; }
-    const v = d.holeHidden ? BJ.handValue(d.cards.slice(0, 1)) : BJ.handValue(d.cards);
-    const finished = !d.holeHidden && (game.phase === BJ.PHASE.DEALER || game.phase === BJ.PHASE.SETTLED);
-    updateBadge(el.dealerValue, finished ? { ...v, soft: false } : v, { blackjack: !d.holeHidden && BJ.isNatural(d.cards) });
+    const shown = el.dealerCards.children.length;
+    if (!d.cards.length || !shown) { el.dealerValue.hidden = true; return; }
+    const hole = el.dealerCards.children[1];
+    const hidden = !!hole && hole.classList.contains('face-down');
+    const cards = hidden ? d.cards.slice(0, 1) : d.cards.slice(0, shown);
+    const v = BJ.handValue(cards);
+    const finished = !hidden && shown >= 2 && (game.phase === BJ.PHASE.DEALER || game.phase === BJ.PHASE.SETTLED) && shown === d.cards.length;
+    updateBadge(el.dealerValue, finished ? { ...v, soft: false } : v, { blackjack: !hidden && BJ.isNatural(cards) });
     el.dealerCards.setAttribute('role', 'group');
-    el.dealerCards.setAttribute('aria-label', `${t('dealer')}: ${d.cards.map((c, i) => d.holeHidden && i === 1 ? t('hiddenCard') : Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}`);
+    el.dealerCards.setAttribute('aria-label', `${t('dealer')}: ${cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).concat(hidden ? [t('hiddenCard')] : []).join(', ')} — ${v.total}`);
   }
   function setActiveHand(i) {
     if (i >= 0 && handEls[i] && el.hands.scrollWidth > el.hands.clientWidth) handEls[i].scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
@@ -1818,7 +1848,7 @@ strong { font-weight: 600; }
     const cards = $$('.card', el.dealerCards).concat($$('.hand .card'));
     if (!cards.length) return;
     const dur = 350 * speedFactor;
-    cards.forEach((c, i) => c.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(40px, -60px) rotate(6deg)', opacity: 0 }], { duration: dur, delay: i * 20, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }));
+    cards.forEach((c, i) => c.animate(reduceMotion.matches ? [{ opacity: 1 }, { opacity: 0 }] : [{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(40px, -60px) rotate(6deg)', opacity: 0 }], { duration: reduceMotion.matches ? 160 : dur, delay: reduceMotion.matches ? 0 : i * 20, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }));
     $$('.hand-result').forEach(r => r.classList.remove('show'));
     await wait(dur + cards.length * 20);
     clearTable();
@@ -1868,6 +1898,7 @@ strong { font-weight: 600; }
     const to = el.betStack.getBoundingClientRect();
     const ghost = chipEl(value, 0); ghost.classList.add('fly');
     ghost.style.left = from.left + 'px'; ghost.style.top = from.top + 'px'; ghost.style.width = from.width + 'px'; ghost.style.height = from.height + 'px';
+    ghost.style.willChange = 'transform';
     document.body.appendChild(ghost);
     const dx = to.left - from.left - from.width / 2, dy = to.top - from.top - from.height / 2 - 2.5 * Math.min(game.betChips.length, 24);
     const a = ghost.animate([
@@ -1902,7 +1933,8 @@ strong { font-weight: 600; }
     el.balance.classList.toggle('up', delta > 0); el.balance.classList.toggle('down', delta < 0);
     const step = now => {
       const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
-      shownBalance = Math.round((start + delta * e) * 2) / 2;
+      const stepSize = Number.isInteger(target) ? 1 : 0.5;
+      shownBalance = Math.round((start + delta * e) / stepSize) * stepSize;
       el.balance.textContent = fmt(shownBalance);
       if (p < 1) requestAnimationFrame(step); else { shownBalance = target; el.balance.textContent = fmt(target); setTimeout(() => el.balance.classList.remove('up', 'down'), 600); }
     };
@@ -1927,7 +1959,8 @@ strong { font-weight: 600; }
     el.message.classList.add('hide');
     msgTimer = setTimeout(() => { el.message.innerHTML = typeof text === 'function' ? text() : text; el.message.className = 'message ' + cls; }, 120);
   }
-  function announce(text) { el.announce.textContent = ''; setTimeout(() => { el.announce.textContent = text; }, 50); }
+  function announce(text) { el.announce.textContent = ''; setTimeout(() => { el.announce.textContent = String(text).replace(/\.\.\s/g, '. ').replace(/\.\.$/, '.'); }, 50); }
+  function alertText(text) { const a = $('#alert'); a.textContent = ''; setTimeout(() => { a.textContent = text; }, 50); }
   let toastTimer = null;
   function toast(text) {
     el.toast.textContent = text; el.toast.classList.add('show');
@@ -1951,14 +1984,14 @@ strong { font-weight: 600; }
   /* ---------------- hint ---------------- */
   function renderHint() {
     $$('.btn-act').forEach(b => b.classList.remove('suggested'));
-    if (!settings.hints || game.phase !== BJ.PHASE.PLAYER || game.activeHand < 0) { el.hint.hidden = true; return; }
+    if (!settings.hints || game.phase !== BJ.PHASE.PLAYER || game.activeHand < 0) { el.hint.classList.remove('on'); return; }
     const h = game.hands[game.activeHand];
     const s = BJ.basicStrategy(h.cards, game.dealer.cards[0], game.availableActions());
     const map = { hit: el.btnHit, stand: el.btnStand, double: el.btnDouble, split: el.btnSplit, surrender: el.btnSurrender };
     const btn = map[s];
     if (btn && !btn.disabled) btn.classList.add('suggested');
     el.hint.innerHTML = `${t('hintLabel')}: <b>${t(s)}</b>`;
-    el.hint.hidden = false;
+    el.hint.classList.add('on');
   }
 
   /* ---------------- history / stats / rules ---------------- */
@@ -2064,7 +2097,8 @@ strong { font-weight: 600; }
         case 'reveal': {
           const hole = el.dealerCards.children[1];
           if (hole && hole.classList.contains('face-down')) {
-            hole.classList.remove('face-down'); hole.setAttribute('aria-label', Cards.label(e.card.rank, e.card.suit, settings.lang));
+            revealCardEl(hole, e.card);
+            hole.classList.remove('face-down');
             sound.flip();
             announce(t('dealerReveals', { card: Cards.label(e.card.rank, e.card.suit, settings.lang), total: BJ.handValue(game.dealer.cards.slice(0, 2)).total }));
             await wait(600);
@@ -2074,7 +2108,7 @@ strong { font-weight: 600; }
           break;
         }
         case 'activeHand': {
-          if (game.hands[e.hand].cards.length < 2) { // split hand about to receive its second card
+          if (!Object.values(e.actions).some(Boolean) && cardsOf(e.hand).children.length < 2) { // split hand about to receive its second card
             setPhase('dealing'); el.busyText.textContent = '';
             setActiveHand(e.hand);
             message(() => t('handOf', { n: e.hand + 1, m: game.hands.length }));
@@ -2128,16 +2162,16 @@ strong { font-weight: 600; }
           updateHandBadge(e.hand);
           handEls[e.hand].classList.add('dim');
           sound.bust(); haptic([20, 40, 20]);
-          message(() => t('bust'));
+          message(() => t('bust')); announce(t('bust'));
           await wait(550);
           break;
         }
         case 'twentyOne': { updateHandBadge(e.hand); await wait(450); break; }
-        case 'stand': { setPhase('dealing'); el.busyText.textContent = ''; el.hint.hidden = true; await wait(300); break; }
+        case 'stand': { setPhase('dealing'); el.busyText.textContent = ''; el.hint.classList.remove('on'); await wait(300); break; }
         case 'surrender': {
           setPhase('dealing'); el.busyText.textContent = '';
           handEls[e.hand].classList.add('dim'); sound.push();
-          message(() => t('surrendered'));
+          message(() => t('surrendered')); announce(t('surrendered'));
           await wait(400);
           break;
         }
@@ -2148,8 +2182,8 @@ strong { font-weight: 600; }
           await wait(520);
           break;
         }
-        case 'dealerBust': { updateDealerBadge(); message(() => t('dealerBust')); sound.bust(); await wait(500); break; }
-        case 'dealerStand': { message(() => t('dealerHas', { n: e.value.total }), 'sub'); await wait(350); break; }
+        case 'dealerBust': { updateDealerBadge(); message(() => t('dealerBust')); announce(t('dealerBust')); sound.bust(); await wait(500); break; }
+        case 'dealerStand': { updateDealerBadge(); message(() => t('dealerHas', { n: e.value.total }), 'sub'); announce(t('dealerHas', { n: e.value.total })); await wait(350); break; }
         case 'settle': { await settle(e); break; }
         case 'roundEnd': { renderBet(); renderShoe(); if (e.shuffleNext) toast(t('cutCard')); break; }
         default: break;
@@ -2170,15 +2204,14 @@ strong { font-weight: 600; }
     renderBalance(false);
     if (lastMsg) message(lastMsg.text, lastMsg.cls);
     if (game.phase === BJ.PHASE.INSURANCE) renderOffer();
-    $$('.card[data-id]').forEach(c => { if (c.getAttribute('aria-label')) { const id = c.dataset.id; c.setAttribute('aria-label', Cards.label(id.slice(0, -1), id.slice(-1), settings.lang)); } });
     game.hands.forEach((h, i) => { updateHandBadge(i); if (h.result && handEls[i]) { const lab = $('.hand-result', handEls[i]); if (lab.classList.contains('show')) lab.innerHTML = outcomeText({ outcome: h.result, net: h.net }); } });
     if (game.dealer.cards.length) updateDealerBadge();
     renderHint();
     $('#resetHint').textContent = t('resetLocked');
   }
   function describeHand(i) {
-    const h = game.hands[i]; const v = BJ.handValue(h.cards);
-    return h.cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ') + ' = ' + v.total + '. ' + t('dealerLabel') + ': ' + Cards.label(game.dealer.cards[0].rank, game.dealer.cards[0].suit, settings.lang);
+    const cards = shownCards(i); const v = BJ.handValue(cards);
+    return cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ') + ' = ' + v.total + '. ' + t('dealerLabel') + ': ' + Cards.label(game.dealer.cards[0].rank, game.dealer.cards[0].suit, settings.lang);
   }
   function renderActions(a) {
     el.btnHit.disabled = !a.hit; el.btnStand.disabled = !a.stand; el.btnDouble.disabled = !a.double; el.btnSplit.disabled = !a.split; el.btnSurrender.disabled = !a.surrender;
@@ -2186,7 +2219,7 @@ strong { font-weight: 600; }
   }
   async function settle(e) {
     setPhase('dealing'); el.busyText.textContent = '';
-    el.hint.hidden = true;
+    el.hint.classList.remove('on');
     setActiveHand(-1); handEls.forEach(h => h.classList.remove('inactive', 'done'));
     const anyBJ = e.results.some(r => r.outcome === 'blackjack');
     // Per-hand labels, staggered.
@@ -2250,7 +2283,8 @@ strong { font-weight: 600; }
     if (busy || game.phase !== BJ.PHASE.BETTING) return;
     const c = game.canAddChip(value);
     if (!c.ok) {
-      toast(c.reason === 'max' ? t('maxBet', { amt: fmt(game.rules.maxBet) }) : t('noFunds'));
+      const msg = c.reason === 'max' ? t('maxBet', { amt: fmt(game.rules.maxBet) }) : t('noFunds');
+      toast(msg); alertText(msg);
       el.betSpot.classList.remove('shake'); void el.betSpot.offsetWidth; el.betSpot.classList.add('shake');
       return;
     }
@@ -2264,7 +2298,7 @@ strong { font-weight: 600; }
     if (busy) return;
     if (el.btnDeal.dataset.mode === 'reset') { openConfirm(true); return; }
     const c = game.canDeal();
-    if (!c.ok) { toast(c.reason === 'min' ? t('minBet', { amt: fmt(game.rules.minBet) }) : c.reason === 'max' ? t('maxBet', { amt: fmt(game.rules.maxBet) }) : t('noFunds')); return; }
+    if (!c.ok) { const msg = c.reason === 'min' ? t('minBet', { amt: fmt(game.rules.minBet) }) : c.reason === 'max' ? t('maxBet', { amt: fmt(game.rules.maxBet) }) : t('noFunds'); toast(msg); alertText(msg); return; }
     await run(() => game.deal());
   }
   async function onNextRound(rebetAndDeal) {
@@ -2307,7 +2341,7 @@ strong { font-weight: 600; }
     $('#confirmTitle').textContent = empty ? t('emptyTitle') : t('resetQ');
     $('#confirmText').textContent = empty ? t('emptyText', { amt: fmt(game.rules.startBalance) }) : t('resetText', { amt: fmt(game.rules.startBalance) });
     $('#btnConfirm').textContent = empty ? t('startOver') : t('reset');
-    openSheet(el.sheetConfirm);
+    openSheet(el.sheetConfirm, empty ? null : $('#sheetConfirm [data-close]'));
   }
   function doReset() {
     if (game.phase !== BJ.PHASE.BETTING) return;
@@ -2315,21 +2349,23 @@ strong { font-weight: 600; }
   }
 
   /* ---------------- sheets ---------------- */
-  let openSheetEl = null, lastFocus = null, parentSheet = null;
-  function openSheet(s) {
+  let openSheetEl = null, lastFocus = null, parentSheet = null, closeTimer = null;
+  function openSheet(s, focusEl) {
     if (openSheetEl && openSheetEl !== s) { parentSheet = { sheet: openSheetEl, focus: lastFocus }; closeSheets(true, true); }
     else { parentSheet = null; lastFocus = document.activeElement; closeSheets(true, true); }
+    clearTimeout(closeTimer);
     openSheetEl = s; s.hidden = false; el.backdrop.hidden = false;
     requestAnimationFrame(() => { s.classList.add('show'); el.backdrop.classList.add('show'); });
-    const f = s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s); if (f) setTimeout(() => f.focus(), 50);
+    const f = focusEl || (s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s)); if (f) setTimeout(() => f.focus(), 50);
     if (s === el.sheetSettings) { renderStats(); syncResetButton(); }
   }
   function closeSheets(immediate, keepParent) {
     if (!openSheetEl) return;
     const s = openSheetEl; openSheetEl = null;
     s.classList.remove('show'); el.backdrop.classList.remove('show');
-    const done = () => { s.hidden = true; el.backdrop.hidden = true; };
-    if (immediate) done(); else setTimeout(done, 320);
+    clearTimeout(closeTimer);
+    const done = () => { s.hidden = true; if (!openSheetEl) el.backdrop.hidden = true; };
+    if (immediate) done(); else closeTimer = setTimeout(done, 320);
     if (!keepParent && parentSheet) { const p = parentSheet; parentSheet = null; lastFocus = p.focus; openSheet(p.sheet); return; }
     const target = lastFocus && lastFocus.focus && lastFocus.offsetParent !== null ? lastFocus : el.btnSettings;
     target.focus();
@@ -2402,6 +2438,11 @@ strong { font-weight: 600; }
       const k = ev.key.toLowerCase();
       if (k === 'escape') { if (openSheetEl) { closeSheets(); ev.preventDefault(); } return; }
       if (openSheetEl) {
+        if (ev.key.startsWith('Arrow') && document.activeElement && document.activeElement.getAttribute('role') === 'radio') {
+          const g = $$('button', document.activeElement.parentElement); const i = g.indexOf(document.activeElement);
+          const fwd = ev.key === 'ArrowRight' || ev.key === 'ArrowDown';
+          const n = g[(i + (fwd ? 1 : g.length - 1)) % g.length]; n.focus(); n.click(); ev.preventDefault(); return;
+        }
         if (ev.key === 'Tab') {
           const f = $$('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])', openSheetEl).filter(x => x.offsetParent !== null);
           if (!f.length) return;
@@ -2417,6 +2458,7 @@ strong { font-weight: 600; }
       if (app.dataset.phase === 'intro') { if (k === ' ' || k === 'enter') { leaveIntro(); ev.preventDefault(); } return; }
       const ph = game.phase;
       if (k === ' ' || k === 'enter') {
+        if (busy) { ev.preventDefault(); return; }
         if (ph === BJ.PHASE.BETTING) { if (!game.bet && game.lastBet && game.lastBet <= game.balance) { game.rebet(); sound.chips(3); renderBet(); } else onDeal(); }
         else if (ph === BJ.PHASE.SETTLED) onNextRound(true);
         ev.preventDefault(); return;

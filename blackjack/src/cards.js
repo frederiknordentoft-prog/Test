@@ -97,8 +97,7 @@
       const size = rank === '2' || rank === '3' ? 56 : rank === '10' ? 44 : 50;
       body = `<g fill="${color}">${PIPS[rank].map(([x, y, f]) => glyph(suit, x, y, size, f)).join('')}</g>`;
     }
-    const label = `${rank} ${NAME[suit]}`;
-    const out = `<svg class="card-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${label}" shape-rendering="geometricPrecision">
+    const out = `<svg class="card-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" shape-rendering="geometricPrecision">
       <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="#fff"/>
       ${index(rank, suit, color)}
       <g transform="rotate(180 ${W / 2} ${H / 2})">${index(rank, suit, color)}</g>

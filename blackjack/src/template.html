@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Blackjack</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +15,7 @@
 <div id="app" class="app" data-phase="intro" data-theme-mode="auto">
 
   <!-- ===== Intro (apple.com hero) ===== -->
-  <section class="intro" id="intro" aria-label="Velkommen">
+  <section class="intro" id="intro" aria-label="Velkommen" data-i18n-label="welcome">
     <div class="intro-inner">
       <p class="intro-eyebrow" data-i18n="introEyebrow">Nyt kortspil</p>
       <h1 class="intro-title">Blackjack<span class="dot">.</span></h1>
@@ -41,7 +41,7 @@
         <button class="icon-btn" id="btnSound" aria-label="Lyd til/fra" aria-pressed="true">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z"/><path class="snd-wave" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="snd-wave" d="M18 6.7a7.5 7.5 0 0 1 0 10.6"/><path class="snd-off" d="M16 9l5 6M21 9l-5 6"/></svg>
         </button>
-        <button class="icon-btn" id="btnSettings" aria-label="Indstillinger">
+        <button class="icon-btn" id="btnSettings" aria-label="Indstillinger" data-i18n-label="settings">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         </button>
       </div>
@@ -57,7 +57,7 @@
       <div class="shoe-meter"><span id="shoeFill"></span></div>
     </div>
 
-    <section class="seat seat-dealer" aria-label="Dealer">
+    <section class="seat seat-dealer" aria-label="Dealer" data-i18n-label="dealer">
       <div class="hand-meta">
         <span class="hand-name" data-i18n="dealer">Dealer</span>
         <span class="badge badge-value" id="dealerValue" hidden></span>
@@ -66,7 +66,7 @@
     </section>
 
     <div class="centre">
-      <div class="message" id="message" aria-live="polite"></div>
+      <div class="message" id="message"></div>
       <div class="bet-spot" id="betSpot">
         <div class="bet-ring" id="betRing"><span class="bet-ring-label" data-i18n="betHere">Indsats</span></div>
         <div class="bet-stack" id="betStack"></div>
@@ -75,7 +75,7 @@
       <div class="side-bets" id="sideBets"></div>
     </div>
 
-    <section class="seat seat-player" aria-label="Dine hænder">
+    <section class="seat seat-player" aria-label="Dine hænder" data-i18n-label="yourHands">
       <div class="hands" id="hands" data-count="0" role="group"></div>
     </section>
   </main>
@@ -83,10 +83,10 @@
   <!-- ===== Dock ===== -->
   <footer class="dock" id="dock" inert>
     <div class="dock-inner">
-      <div class="hint" id="hint" hidden></div>
-
+      <div class="hint" id="hint"></div>
+      <div class="panels">
       <div class="panel panel-bet" data-panel="betting">
-        <div class="chips" id="chips" role="group" aria-label="Jetoner"></div>
+        <div class="chips" id="chips" role="group" aria-label="Jetoner" data-i18n-label="chips"></div>
         <div class="row">
           <div class="row-left">
             <button class="btn btn-secondary btn-sm" id="btnUndo" data-i18n="undo">Fortryd</button>
@@ -126,13 +126,15 @@
       </div>
 
       <div class="panel panel-busy" data-panel="dealing"><div class="row row-busy"><span class="busy-text" id="busyText"></span></div></div>
-      <p class="reg" id="reg" aria-label="Ansvarligt spil"></p>
+      </div>
+      <p class="reg" id="reg"></p>
     </div>
   </footer>
 
   <!-- ===== Toast + announcements ===== -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="sr-only" id="announce" aria-live="polite" aria-atomic="true"></div>
+  <div class="sr-only" id="alert" role="alert" aria-atomic="true"></div>
 
   <!-- ===== Sheets ===== -->
   <div class="sheet-backdrop" id="backdrop" hidden></div>
@@ -141,7 +143,7 @@
     <div class="sheet-drag" aria-hidden="true"></div>
     <header class="sheet-head">
       <h2 id="settingsTitle" data-i18n="settings">Indstillinger</h2>
-      <button class="icon-btn sheet-close" data-close aria-label="Luk"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button class="icon-btn sheet-close" data-close aria-label="Luk" data-i18n-label="close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </header>
     <div class="sheet-body">
       <div class="group">
@@ -200,12 +202,12 @@
     <div class="sheet-drag" aria-hidden="true"></div>
     <header class="sheet-head">
       <h2 id="rulesTitle" data-i18n="rules">Regler</h2>
-      <button class="icon-btn sheet-close" data-close aria-label="Luk"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button class="icon-btn sheet-close" data-close aria-label="Luk" data-i18n-label="close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </header>
     <div class="sheet-body" id="rulesBody"></div>
   </section>
 
-  <section class="sheet sheet-sm" id="sheetConfirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+  <section class="sheet sheet-sm" id="sheetConfirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText" hidden>
     <div class="sheet-body confirm">
       <h2 id="confirmTitle"></h2>
       <p id="confirmText"></p>

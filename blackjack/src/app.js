@@ -13,7 +13,7 @@
     da: {
       introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
       introFine: '18+ · {decks} kortspil · Dealeren står på 17 · Blackjack betaler 3:2 · Demo uden rigtige penge',
-      balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
+      balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', yourHands: 'Dine hænder', welcome: 'Velkommen', close: 'Luk', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
       surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Spil videre',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
       language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategi-hint', haptics: 'Vibration',
@@ -37,7 +37,7 @@
     en: {
       introEyebrow: 'Card game', introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
       introFine: '18+ · {decks} decks · Dealer stands on 17 · Blackjack pays 3:2 · Demo, no real money',
-      balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
+      balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', yourHands: 'Your hands', welcome: 'Welcome', close: 'Close', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
       surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Keep playing',
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
       language: 'Language', speed: 'Pace', normal: 'Normal', fast: 'Fast', sound: 'Sound', hints: 'Strategy hint', haptics: 'Haptics',
@@ -121,6 +121,8 @@
   function applyLang() {
     document.documentElement.lang = settings.lang;
     $$('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+    $$('[data-i18n-label]').forEach(n => n.setAttribute('aria-label', t(n.dataset.i18nLabel)));
+    $$('.chip', el.chips).forEach(c => c.setAttribute('aria-label', t('chip', { amt: fmt(+c.dataset.value) })));
     el.introFine.textContent = t('introFine', { decks: game.rules.decks });
     el.btnSound.setAttribute('aria-label', settings.sound ? t('soundOn') : t('soundOff'));
     el.history.setAttribute('aria-label', t('recent')); el.history.dataset.empty = t('noHistory');
@@ -139,31 +141,38 @@
   }
   setInterval(renderClock, 15000);
   function syncSettingsUI() {
-    const seg = (id, v) => $$('#' + id + ' button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === v)));
+    const seg = (id, v) => $$('#' + id + ' button').forEach(b => { b.setAttribute('aria-checked', String(b.dataset.v === v)); b.tabIndex = b.dataset.v === v ? 0 : -1; });
     seg('segTheme', settings.theme); seg('segLang', settings.lang); seg('segSpeed', settings.speed);
     $('#swSound').checked = settings.sound; $('#swHints').checked = settings.hints; $('#swHaptics').checked = settings.haptics;
     el.btnSound.setAttribute('aria-pressed', String(settings.sound));
   }
 
   /* ---------------- cards ---------------- */
-  function cardEl(card, faceDown) {
+  /** Cards are decorative for assistive tech — the hand/dealer groups carry the names. A hidden hole card has no identity in the DOM. */
+  function cardEl(card, faceDown, keepSecret) {
     const d = document.createElement('div');
     d.className = 'card' + (faceDown ? ' face-down' : '');
-    d.innerHTML = `<div class="card-inner"><div class="card-face card-front">${Cards.svg(card.rank, card.suit)}</div><div class="card-face card-back">${Cards.back()}</div></div>`;
-    d.setAttribute('aria-label', faceDown ? '' : Cards.label(card.rank, card.suit, settings.lang));
-    d.dataset.id = card.id;
+    d.setAttribute('aria-hidden', 'true');
+    d.innerHTML = `<div class="card-inner"><div class="card-face card-front">${keepSecret ? '' : Cards.svg(card.rank, card.suit)}</div><div class="card-face card-back">${Cards.back()}</div></div>`;
+    if (!keepSecret) d.dataset.id = card.id;
     return d;
+  }
+  function revealCardEl(c, card) { // fill in a secret front before flipping it
+    if (!c.dataset.id) { c.querySelector('.card-front').innerHTML = Cards.svg(card.rank, card.suit); c.dataset.id = card.id; }
   }
   function setCount(container, n) { container.style.setProperty('--n', n); }
   /** Deal a card from the shoe into a container with a FLIP animation. */
   async function dealCard(container, card, { faceDown = false, sideways = false } = {}) {
     const n = container.children.length;
-    const c = cardEl(card, true);
+    const c = cardEl(card, true, faceDown);
     c.style.setProperty('--i', n);
     if (sideways) c.classList.add('sideways');
+    const hand = container.closest('.hand') || container;
+    const before = hand.getBoundingClientRect();
     container.appendChild(c);
-    if (!faceDown) c.setAttribute('aria-label', Cards.label(card.rank, card.suit, settings.lang));
     setCount(container, n + 1);
+    const after = hand.getBoundingClientRect();
+    if (!reduceMotion.matches && Math.abs(before.left - after.left) > 0.5) hand.animate([{ transform: `translateX(${before.left - after.left}px)` }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', composite: 'add' });
     const from = el.shoe.getBoundingClientRect();
     const to = c.getBoundingClientRect();
     const dx = from.left + from.width / 2 - (to.left + to.width / 2);
@@ -172,14 +181,17 @@
     c.classList.add('flying');
     el.shoe.classList.remove('pull'); void el.shoe.offsetWidth; el.shoe.classList.add('pull');
     if (!faceDown) setTimeout(() => c.classList.remove('face-down'), reduceMotion.matches ? 0 : dur * 0.45);
-    const anim = c.animate([
-      { transform: `translate(${dx}px, ${dy}px) rotate(-10deg) scale(${from.width / to.width})`, opacity: 0.6 },
-      { transform: 'translate(0, 0) rotate(0) scale(1)', opacity: 1 },
-    ], { duration: dur, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'both' });
+    c.style.willChange = 'transform';
+    const anim = reduceMotion.matches
+      ? c.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, fill: 'both' })
+      : c.animate([
+        { transform: `translate(${dx}px, ${dy}px) rotate(-10deg) scale(${from.width / to.width})`, opacity: 0.6 },
+        { transform: 'translate(0, 0) rotate(0) scale(1)', opacity: 1 },
+      ], { duration: dur, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'both' });
     sound.deal();
     await settled(anim);
     anim.commitStyles && anim.cancel();
-    c.style.transform = '';
+    c.style.transform = ''; c.style.willChange = '';
     c.classList.remove('flying');
     if (sideways) c.querySelector('.card-inner').style.transform = 'rotate(90deg)';
     return c;
@@ -205,24 +217,31 @@
     if (opts.blackjack) badge.textContent = t('blackjack');
     badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
   }
+  function shownCards(i) { const h = game.hands[i]; return h ? h.cards.slice(0, cardsOf(i).children.length) : []; }
   function updateHandBadge(i) {
     const h = game.hands[i]; if (!h || !handEls[i]) return;
-    const v = BJ.handValue(h.cards);
-    updateBadge($('.badge-value', handEls[i]), v, { blackjack: BJ.isNatural(h.cards) && !h.fromSplit });
+    const cards = shownCards(i);
+    if (!cards.length) return;
+    const v = BJ.handValue(cards);
+    updateBadge($('.badge-value', handEls[i]), v, { blackjack: BJ.isNatural(cards) && !h.fromSplit });
     const bb = $('.badge-bet', handEls[i]);
     bb.hidden = !(game.hands.length > 1 || h.doubled);
     bb.textContent = fmt(h.bet);
     handEls[i].setAttribute('role', 'group');
-    handEls[i].setAttribute('aria-label', `${t('yourHand')}${game.hands.length > 1 ? ' ' + (i + 1) : ''}: ${h.cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}${v.soft && v.total < 21 ? ' (' + (v.total - 10) + '/' + v.total + ')' : ''}`);
+    handEls[i].setAttribute('aria-label', `${t('yourHand')}${game.hands.length > 1 ? ' ' + (i + 1) : ''}: ${cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}${v.soft && v.total < 21 ? ' (' + (v.total - 10) + '/' + v.total + ')' : ''}`);
   }
   function updateDealerBadge() {
     const d = game.dealer;
-    if (!d.cards.length) { el.dealerValue.hidden = true; return; }
-    const v = d.holeHidden ? BJ.handValue(d.cards.slice(0, 1)) : BJ.handValue(d.cards);
-    const finished = !d.holeHidden && (game.phase === BJ.PHASE.DEALER || game.phase === BJ.PHASE.SETTLED);
-    updateBadge(el.dealerValue, finished ? { ...v, soft: false } : v, { blackjack: !d.holeHidden && BJ.isNatural(d.cards) });
+    const shown = el.dealerCards.children.length;
+    if (!d.cards.length || !shown) { el.dealerValue.hidden = true; return; }
+    const hole = el.dealerCards.children[1];
+    const hidden = !!hole && hole.classList.contains('face-down');
+    const cards = hidden ? d.cards.slice(0, 1) : d.cards.slice(0, shown);
+    const v = BJ.handValue(cards);
+    const finished = !hidden && shown >= 2 && (game.phase === BJ.PHASE.DEALER || game.phase === BJ.PHASE.SETTLED) && shown === d.cards.length;
+    updateBadge(el.dealerValue, finished ? { ...v, soft: false } : v, { blackjack: !hidden && BJ.isNatural(cards) });
     el.dealerCards.setAttribute('role', 'group');
-    el.dealerCards.setAttribute('aria-label', `${t('dealer')}: ${d.cards.map((c, i) => d.holeHidden && i === 1 ? t('hiddenCard') : Cards.label(c.rank, c.suit, settings.lang)).join(', ')} — ${v.total}`);
+    el.dealerCards.setAttribute('aria-label', `${t('dealer')}: ${cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).concat(hidden ? [t('hiddenCard')] : []).join(', ')} — ${v.total}`);
   }
   function setActiveHand(i) {
     if (i >= 0 && handEls[i] && el.hands.scrollWidth > el.hands.clientWidth) handEls[i].scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
@@ -242,7 +261,7 @@
     const cards = $$('.card', el.dealerCards).concat($$('.hand .card'));
     if (!cards.length) return;
     const dur = 350 * speedFactor;
-    cards.forEach((c, i) => c.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(40px, -60px) rotate(6deg)', opacity: 0 }], { duration: dur, delay: i * 20, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }));
+    cards.forEach((c, i) => c.animate(reduceMotion.matches ? [{ opacity: 1 }, { opacity: 0 }] : [{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(40px, -60px) rotate(6deg)', opacity: 0 }], { duration: reduceMotion.matches ? 160 : dur, delay: reduceMotion.matches ? 0 : i * 20, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }));
     $$('.hand-result').forEach(r => r.classList.remove('show'));
     await wait(dur + cards.length * 20);
     clearTable();
@@ -292,6 +311,7 @@
     const to = el.betStack.getBoundingClientRect();
     const ghost = chipEl(value, 0); ghost.classList.add('fly');
     ghost.style.left = from.left + 'px'; ghost.style.top = from.top + 'px'; ghost.style.width = from.width + 'px'; ghost.style.height = from.height + 'px';
+    ghost.style.willChange = 'transform';
     document.body.appendChild(ghost);
     const dx = to.left - from.left - from.width / 2, dy = to.top - from.top - from.height / 2 - 2.5 * Math.min(game.betChips.length, 24);
     const a = ghost.animate([
@@ -326,7 +346,8 @@
     el.balance.classList.toggle('up', delta > 0); el.balance.classList.toggle('down', delta < 0);
     const step = now => {
       const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
-      shownBalance = Math.round((start + delta * e) * 2) / 2;
+      const stepSize = Number.isInteger(target) ? 1 : 0.5;
+      shownBalance = Math.round((start + delta * e) / stepSize) * stepSize;
       el.balance.textContent = fmt(shownBalance);
       if (p < 1) requestAnimationFrame(step); else { shownBalance = target; el.balance.textContent = fmt(target); setTimeout(() => el.balance.classList.remove('up', 'down'), 600); }
     };
@@ -351,7 +372,8 @@
     el.message.classList.add('hide');
     msgTimer = setTimeout(() => { el.message.innerHTML = typeof text === 'function' ? text() : text; el.message.className = 'message ' + cls; }, 120);
   }
-  function announce(text) { el.announce.textContent = ''; setTimeout(() => { el.announce.textContent = text; }, 50); }
+  function announce(text) { el.announce.textContent = ''; setTimeout(() => { el.announce.textContent = String(text).replace(/\.\.\s/g, '. ').replace(/\.\.$/, '.'); }, 50); }
+  function alertText(text) { const a = $('#alert'); a.textContent = ''; setTimeout(() => { a.textContent = text; }, 50); }
   let toastTimer = null;
   function toast(text) {
     el.toast.textContent = text; el.toast.classList.add('show');
@@ -375,14 +397,14 @@
   /* ---------------- hint ---------------- */
   function renderHint() {
     $$('.btn-act').forEach(b => b.classList.remove('suggested'));
-    if (!settings.hints || game.phase !== BJ.PHASE.PLAYER || game.activeHand < 0) { el.hint.hidden = true; return; }
+    if (!settings.hints || game.phase !== BJ.PHASE.PLAYER || game.activeHand < 0) { el.hint.classList.remove('on'); return; }
     const h = game.hands[game.activeHand];
     const s = BJ.basicStrategy(h.cards, game.dealer.cards[0], game.availableActions());
     const map = { hit: el.btnHit, stand: el.btnStand, double: el.btnDouble, split: el.btnSplit, surrender: el.btnSurrender };
     const btn = map[s];
     if (btn && !btn.disabled) btn.classList.add('suggested');
     el.hint.innerHTML = `${t('hintLabel')}: <b>${t(s)}</b>`;
-    el.hint.hidden = false;
+    el.hint.classList.add('on');
   }
 
   /* ---------------- history / stats / rules ---------------- */
@@ -488,7 +510,8 @@
         case 'reveal': {
           const hole = el.dealerCards.children[1];
           if (hole && hole.classList.contains('face-down')) {
-            hole.classList.remove('face-down'); hole.setAttribute('aria-label', Cards.label(e.card.rank, e.card.suit, settings.lang));
+            revealCardEl(hole, e.card);
+            hole.classList.remove('face-down');
             sound.flip();
             announce(t('dealerReveals', { card: Cards.label(e.card.rank, e.card.suit, settings.lang), total: BJ.handValue(game.dealer.cards.slice(0, 2)).total }));
             await wait(600);
@@ -498,7 +521,7 @@
           break;
         }
         case 'activeHand': {
-          if (game.hands[e.hand].cards.length < 2) { // split hand about to receive its second card
+          if (!Object.values(e.actions).some(Boolean) && cardsOf(e.hand).children.length < 2) { // split hand about to receive its second card
             setPhase('dealing'); el.busyText.textContent = '';
             setActiveHand(e.hand);
             message(() => t('handOf', { n: e.hand + 1, m: game.hands.length }));
@@ -552,16 +575,16 @@
           updateHandBadge(e.hand);
           handEls[e.hand].classList.add('dim');
           sound.bust(); haptic([20, 40, 20]);
-          message(() => t('bust'));
+          message(() => t('bust')); announce(t('bust'));
           await wait(550);
           break;
         }
         case 'twentyOne': { updateHandBadge(e.hand); await wait(450); break; }
-        case 'stand': { setPhase('dealing'); el.busyText.textContent = ''; el.hint.hidden = true; await wait(300); break; }
+        case 'stand': { setPhase('dealing'); el.busyText.textContent = ''; el.hint.classList.remove('on'); await wait(300); break; }
         case 'surrender': {
           setPhase('dealing'); el.busyText.textContent = '';
           handEls[e.hand].classList.add('dim'); sound.push();
-          message(() => t('surrendered'));
+          message(() => t('surrendered')); announce(t('surrendered'));
           await wait(400);
           break;
         }
@@ -572,8 +595,8 @@
           await wait(520);
           break;
         }
-        case 'dealerBust': { updateDealerBadge(); message(() => t('dealerBust')); sound.bust(); await wait(500); break; }
-        case 'dealerStand': { message(() => t('dealerHas', { n: e.value.total }), 'sub'); await wait(350); break; }
+        case 'dealerBust': { updateDealerBadge(); message(() => t('dealerBust')); announce(t('dealerBust')); sound.bust(); await wait(500); break; }
+        case 'dealerStand': { updateDealerBadge(); message(() => t('dealerHas', { n: e.value.total }), 'sub'); announce(t('dealerHas', { n: e.value.total })); await wait(350); break; }
         case 'settle': { await settle(e); break; }
         case 'roundEnd': { renderBet(); renderShoe(); if (e.shuffleNext) toast(t('cutCard')); break; }
         default: break;
@@ -594,15 +617,14 @@
     renderBalance(false);
     if (lastMsg) message(lastMsg.text, lastMsg.cls);
     if (game.phase === BJ.PHASE.INSURANCE) renderOffer();
-    $$('.card[data-id]').forEach(c => { if (c.getAttribute('aria-label')) { const id = c.dataset.id; c.setAttribute('aria-label', Cards.label(id.slice(0, -1), id.slice(-1), settings.lang)); } });
     game.hands.forEach((h, i) => { updateHandBadge(i); if (h.result && handEls[i]) { const lab = $('.hand-result', handEls[i]); if (lab.classList.contains('show')) lab.innerHTML = outcomeText({ outcome: h.result, net: h.net }); } });
     if (game.dealer.cards.length) updateDealerBadge();
     renderHint();
     $('#resetHint').textContent = t('resetLocked');
   }
   function describeHand(i) {
-    const h = game.hands[i]; const v = BJ.handValue(h.cards);
-    return h.cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ') + ' = ' + v.total + '. ' + t('dealerLabel') + ': ' + Cards.label(game.dealer.cards[0].rank, game.dealer.cards[0].suit, settings.lang);
+    const cards = shownCards(i); const v = BJ.handValue(cards);
+    return cards.map(c => Cards.label(c.rank, c.suit, settings.lang)).join(', ') + ' = ' + v.total + '. ' + t('dealerLabel') + ': ' + Cards.label(game.dealer.cards[0].rank, game.dealer.cards[0].suit, settings.lang);
   }
   function renderActions(a) {
     el.btnHit.disabled = !a.hit; el.btnStand.disabled = !a.stand; el.btnDouble.disabled = !a.double; el.btnSplit.disabled = !a.split; el.btnSurrender.disabled = !a.surrender;
@@ -610,7 +632,7 @@
   }
   async function settle(e) {
     setPhase('dealing'); el.busyText.textContent = '';
-    el.hint.hidden = true;
+    el.hint.classList.remove('on');
     setActiveHand(-1); handEls.forEach(h => h.classList.remove('inactive', 'done'));
     const anyBJ = e.results.some(r => r.outcome === 'blackjack');
     // Per-hand labels, staggered.
@@ -674,7 +696,8 @@
     if (busy || game.phase !== BJ.PHASE.BETTING) return;
     const c = game.canAddChip(value);
     if (!c.ok) {
-      toast(c.reason === 'max' ? t('maxBet', { amt: fmt(game.rules.maxBet) }) : t('noFunds'));
+      const msg = c.reason === 'max' ? t('maxBet', { amt: fmt(game.rules.maxBet) }) : t('noFunds');
+      toast(msg); alertText(msg);
       el.betSpot.classList.remove('shake'); void el.betSpot.offsetWidth; el.betSpot.classList.add('shake');
       return;
     }
@@ -688,7 +711,7 @@
     if (busy) return;
     if (el.btnDeal.dataset.mode === 'reset') { openConfirm(true); return; }
     const c = game.canDeal();
-    if (!c.ok) { toast(c.reason === 'min' ? t('minBet', { amt: fmt(game.rules.minBet) }) : c.reason === 'max' ? t('maxBet', { amt: fmt(game.rules.maxBet) }) : t('noFunds')); return; }
+    if (!c.ok) { const msg = c.reason === 'min' ? t('minBet', { amt: fmt(game.rules.minBet) }) : c.reason === 'max' ? t('maxBet', { amt: fmt(game.rules.maxBet) }) : t('noFunds'); toast(msg); alertText(msg); return; }
     await run(() => game.deal());
   }
   async function onNextRound(rebetAndDeal) {
@@ -731,7 +754,7 @@
     $('#confirmTitle').textContent = empty ? t('emptyTitle') : t('resetQ');
     $('#confirmText').textContent = empty ? t('emptyText', { amt: fmt(game.rules.startBalance) }) : t('resetText', { amt: fmt(game.rules.startBalance) });
     $('#btnConfirm').textContent = empty ? t('startOver') : t('reset');
-    openSheet(el.sheetConfirm);
+    openSheet(el.sheetConfirm, empty ? null : $('#sheetConfirm [data-close]'));
   }
   function doReset() {
     if (game.phase !== BJ.PHASE.BETTING) return;
@@ -739,21 +762,23 @@
   }
 
   /* ---------------- sheets ---------------- */
-  let openSheetEl = null, lastFocus = null, parentSheet = null;
-  function openSheet(s) {
+  let openSheetEl = null, lastFocus = null, parentSheet = null, closeTimer = null;
+  function openSheet(s, focusEl) {
     if (openSheetEl && openSheetEl !== s) { parentSheet = { sheet: openSheetEl, focus: lastFocus }; closeSheets(true, true); }
     else { parentSheet = null; lastFocus = document.activeElement; closeSheets(true, true); }
+    clearTimeout(closeTimer);
     openSheetEl = s; s.hidden = false; el.backdrop.hidden = false;
     requestAnimationFrame(() => { s.classList.add('show'); el.backdrop.classList.add('show'); });
-    const f = s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s); if (f) setTimeout(() => f.focus(), 50);
+    const f = focusEl || (s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s)); if (f) setTimeout(() => f.focus(), 50);
     if (s === el.sheetSettings) { renderStats(); syncResetButton(); }
   }
   function closeSheets(immediate, keepParent) {
     if (!openSheetEl) return;
     const s = openSheetEl; openSheetEl = null;
     s.classList.remove('show'); el.backdrop.classList.remove('show');
-    const done = () => { s.hidden = true; el.backdrop.hidden = true; };
-    if (immediate) done(); else setTimeout(done, 320);
+    clearTimeout(closeTimer);
+    const done = () => { s.hidden = true; if (!openSheetEl) el.backdrop.hidden = true; };
+    if (immediate) done(); else closeTimer = setTimeout(done, 320);
     if (!keepParent && parentSheet) { const p = parentSheet; parentSheet = null; lastFocus = p.focus; openSheet(p.sheet); return; }
     const target = lastFocus && lastFocus.focus && lastFocus.offsetParent !== null ? lastFocus : el.btnSettings;
     target.focus();
@@ -826,6 +851,11 @@
       const k = ev.key.toLowerCase();
       if (k === 'escape') { if (openSheetEl) { closeSheets(); ev.preventDefault(); } return; }
       if (openSheetEl) {
+        if (ev.key.startsWith('Arrow') && document.activeElement && document.activeElement.getAttribute('role') === 'radio') {
+          const g = $$('button', document.activeElement.parentElement); const i = g.indexOf(document.activeElement);
+          const fwd = ev.key === 'ArrowRight' || ev.key === 'ArrowDown';
+          const n = g[(i + (fwd ? 1 : g.length - 1)) % g.length]; n.focus(); n.click(); ev.preventDefault(); return;
+        }
         if (ev.key === 'Tab') {
           const f = $$('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])', openSheetEl).filter(x => x.offsetParent !== null);
           if (!f.length) return;
@@ -841,6 +871,7 @@
       if (app.dataset.phase === 'intro') { if (k === ' ' || k === 'enter') { leaveIntro(); ev.preventDefault(); } return; }
       const ph = game.phase;
       if (k === ' ' || k === 'enter') {
+        if (busy) { ev.preventDefault(); return; }
         if (ph === BJ.PHASE.BETTING) { if (!game.bet && game.lastBet && game.lastBet <= game.balance) { game.rebet(); sound.chips(3); renderBet(); } else onDeal(); }
         else if (ph === BJ.PHASE.SETTLED) onNextRound(true);
         ev.preventDefault(); return;
