@@ -224,9 +224,10 @@ await scenario('nested sheets: returning from Rules to Settings leaves no ghost 
   await a.click('#btnRules2'); await a.page.waitForTimeout(400);
   await a.click('#sheetRules [data-close]'); await a.page.waitForTimeout(500);
   const r = await a.page.evaluate(() => {
-    const seg = document.querySelector('#segLang button[data-v="en"]').getBoundingClientRect();
-    const hit = document.elementFromPoint(seg.left + seg.width / 2, seg.top + seg.height / 2);
-    return { rulesHidden: document.getElementById('sheetRules').hidden, settingsVisible: !document.getElementById('sheetSettings').hidden, hitInSettings: !!hit.closest('#sheetSettings') };
+    const probe = sel => { const b = document.querySelector(sel).getBoundingClientRect(); const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!(hit && hit.closest('#sheetSettings')); };
+    const backAtRules = probe('#btnRules2') && document.activeElement.id === 'btnRules2'; // the sheet comes back where the user left it
+    document.querySelector('#sheetSettings .sheet-body').scrollTop = 0;
+    return { rulesHidden: document.getElementById('sheetRules').hidden, settingsVisible: !document.getElementById('sheetSettings').hidden, hitInSettings: backAtRules && probe('#segLang button[data-v="en"]') };
   });
   assert.deepEqual(r, { rulesHidden: true, settingsVisible: true, hitInSettings: true });
   await a.click('#segLang button[data-v="en"]');

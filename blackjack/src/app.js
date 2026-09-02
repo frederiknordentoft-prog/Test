@@ -11,9 +11,9 @@
   /* ---------------- i18n ---------------- */
   const I18N = {
     da: {
-      introEyebrow: 'Kortspil', introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
+      introSub: 'Klassikeren. Uden støj.', play: 'Spil nu', howToPlay: 'Sådan spiller du',
       introFine: '18+\u00a0· {decks}\u00a0kortspil\u00a0· Dealeren står på\u00a017\u00a0· Blackjack betaler\u00a03:2\u00a0· Demo uden rigtige penge',
-      balance: 'Saldo', demoBalance: 'Demo · saldo', yourHand: 'Din hånd', yourHands: 'Dine hænder', welcome: 'Velkommen', close: 'Luk', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
+      balance: 'Saldo', demoBalance: 'Demo-saldo', yourHand: 'Din hånd', yourHands: 'Dine hænder', welcome: 'Velkommen', close: 'Luk', hiddenCard: 'skjult kort', dealer: 'Dealer', betHere: 'Indsats', undo: 'Fortryd', clear: 'Ryd', doubleBet: '×2', rebet: 'Gentag', deal: 'Giv kort',
       surrender: 'Giv op', split: 'Split', double: 'Fordobl', hit: 'Kort', stand: 'Stå', noThanks: 'Nej tak', keepPlaying: 'Vent på 3:2',
       newBet: 'Ny indsats', rebetDeal: 'Gentag og giv kort', settings: 'Indstillinger', theme: 'Udseende', auto: 'Auto', light: 'Lys', dark: 'Mørk',
       language: 'Sprog', speed: 'Tempo', normal: 'Normal', fast: 'Hurtig', sound: 'Lyd', hints: 'Strategihint', haptics: 'Vibration',
@@ -35,9 +35,9 @@
       recent: 'Seneste runder', chips: 'Jetoner', dealerLabel: 'Dealer',
     },
     en: {
-      introEyebrow: 'Card game', introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
+      introSub: 'The classic. Without the noise.', play: 'Play now', howToPlay: 'How to play',
       introFine: '18+\u00a0· {decks}\u00a0decks\u00a0· Dealer stands on\u00a017\u00a0· Blackjack pays\u00a03:2\u00a0· Demo, no real money',
-      balance: 'Balance', demoBalance: 'Demo · balance', yourHand: 'Your hand', yourHands: 'Your hands', welcome: 'Welcome', close: 'Close', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
+      balance: 'Balance', demoBalance: 'Demo balance', yourHand: 'Your hand', yourHands: 'Your hands', welcome: 'Welcome', close: 'Close', hiddenCard: 'hidden card', dealer: 'Dealer', betHere: 'Bet', undo: 'Undo', clear: 'Clear', doubleBet: '×2', rebet: 'Rebet', deal: 'Deal',
       surrender: 'Surrender', split: 'Split', double: 'Double', hit: 'Hit', stand: 'Stand', noThanks: 'No thanks', keepPlaying: 'Wait for 3:2',
       newBet: 'New bet', rebetDeal: 'Rebet and deal', settings: 'Settings', theme: 'Appearance', auto: 'Auto', light: 'Light', dark: 'Dark',
       language: 'Language', speed: 'Pace', normal: 'Normal', fast: 'Fast', sound: 'Sound', hints: 'Strategy hint', haptics: 'Haptics',
@@ -119,12 +119,22 @@
   }
   mqLight.addEventListener('change', applyTheme);
   function applySpeed() { speedFactor = settings.speed === 'fast' ? 0.55 : 1; document.documentElement.style.setProperty('--speed', String(speedFactor)); }
+  function renderIntroFine() {
+    const parts = t('introFine', { decks: game.rules.decks }).split(/\u00a0· /);
+    el.introFine.innerHTML = parts.map((p, i) => `${i ? '<span class="sep"> · </span>' : ''}<span class="nw">${p}</span>`).join('');
+    fitIntroFine();
+  }
+  function fitIntroFine() { // a separator that would end a line is hidden, so no line starts or ends with '·'
+    const segs = $$('.nw', el.introFine), seps = $$('.sep', el.introFine);
+    seps.forEach((sp, i) => sp.classList.toggle('hide', segs[i].offsetTop !== segs[i + 1].offsetTop));
+  }
+  window.addEventListener('resize', () => { if (!el.intro.hidden) fitIntroFine(); });
   function applyLang() {
     document.documentElement.lang = settings.lang;
     $$('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
     $$('[data-i18n-label]').forEach(n => n.setAttribute('aria-label', t(n.dataset.i18nLabel)));
     $$('.chip', el.chips).forEach(c => c.setAttribute('aria-label', t('chip', { amt: fmt(+c.dataset.value) })));
-    el.introFine.textContent = t('introFine', { decks: game.rules.decks });
+    renderIntroFine();
     el.btnSound.setAttribute('aria-label', settings.sound ? t('soundOn') : t('soundOff'));
     el.history.setAttribute('aria-label', t('recent')); el.history.dataset.empty = t('noHistory');
     $('#rulesTitle').textContent = t('rulesTitle'); $('#btnIntroRules').textContent = t('howToPlay');
@@ -274,7 +284,7 @@
     const b = document.createElement(k == null ? 'button' : 'div');
     b.className = 'chip'; b.dataset.value = value;
     if (k != null) { b.style.setProperty('--k', k); b.style.setProperty('--rot', (((k * 7919) % 9) - 4) * 0.6 + 'deg'); } else b.type = 'button';
-    b.innerHTML = `<span class="chip-value">${value >= 1000 ? (value / 1000) + 'K' : value}</span>`;
+    b.innerHTML = `<span class="chip-value">${value >= 1000 ? new Intl.NumberFormat(settings.lang === 'da' ? 'da-DK' : 'en-GB').format(value) : value}</span>`;
     b.setAttribute('aria-label', t('chip', { amt: fmt(value) }));
     return b;
   }
@@ -434,7 +444,8 @@
     ];
     const keys = [['␣', t('kDeal')], ['H', t('kHit')], ['S', t('kStand')], ['D', t('kDouble')], ['P', t('kSplit')], ['R', t('kSurr')], ['Y / N', t('kIns')], ['Esc', t('kEsc')]];
     el.rulesBody.innerHTML = `<p class="rules-intro">${t('rulesIntro')}</p><ul class="rules-list">${rows.map(([k, v]) => `<li><span>${k}</span><span>${v}</span></li>`).join('')}</ul>
-      <h3 class="rules-h">${t('keys')}</h3><div class="kbd-list">${keys.map(([k, v]) => `<kbd>${k}</kbd><span>${v}</span>`).join('')}</div>`;
+      <h3 class="rules-h">${t('keys')}</h3><div class="kbd-list">${keys.map(([k, v]) => `<kbd>${k}</kbd><span>${v}</span>`).join('')}</div>
+      <p class="fine">${t('demoNote')}</p>`;
   }
   function renderShoe() {
     const s = game.shoe;
@@ -446,7 +457,8 @@
   const OUTCOME_CLASS = { win: 'win', blackjack: 'bj', evenMoney: 'win', push: 'push', lose: 'lose', bust: 'lose', surrender: 'lose' };
   function outcomeText(r) {
     const amt = r.net !== 0 ? `<small>${r.net > 0 ? '+' : '−'}${fmt(Math.abs(r.net))}</small>` : '';
-    const label = { win: t('won'), blackjack: '3:2', evenMoney: t('evenMoneyLabel'), push: t('push'), lose: t('lost'), bust: t('bust'), surrender: t('surrendered') }[r.outcome];
+    if (r.outcome === 'blackjack' || r.outcome === 'bust') return amt; // the hand's badge already says it
+    const label = { win: t('won'), evenMoney: t('evenMoneyLabel'), push: t('push'), lose: t('lost'), surrender: t('surrendered') }[r.outcome];
     return `<span>${label}</span>${amt}`;
   }
   async function play(events) {
@@ -651,10 +663,9 @@
       lab.innerHTML = outcomeText(r);
       lab.classList.add('show');
       if (r.outcome === 'blackjack') {
-        const g = document.createElement('div'); g.className = 'glow'; $('.cards-wrap', handEls[r.hand]).prepend(g); setTimeout(() => g.remove(), 1700);
+        const g = document.createElement('div'); g.className = 'glow'; $('.cards-wrap', handEls[r.hand]).prepend(g); setTimeout(() => g.remove(), 700);
         if (!reduceMotion.matches) $$('.card-front', handEls[r.hand]).forEach((f, k) => setTimeout(() => { const sw = document.createElement('div'); sw.className = 'sweep'; f.appendChild(sw); setTimeout(() => sw.remove(), 1000); }, 150 + k * 110));
       }
-      else if (r.net > 0) { const g = document.createElement('div'); g.className = 'glow green'; $('.cards-wrap', handEls[r.hand]).prepend(g); setTimeout(() => g.remove(), 1700); }
       if (r.net < 0 && r.outcome !== 'bust') handEls[r.hand].classList.add('dim');
       await wait(e.results.length > 1 ? 260 : 0);
     }
@@ -772,13 +783,18 @@
 
   /* ---------------- sheets ---------------- */
   let openSheetEl = null, lastFocus = null, parentSheet = null;
-  function openSheet(s, focusEl) {
-    if (openSheetEl && openSheetEl !== s) { parentSheet = { sheet: openSheetEl, focus: lastFocus }; closeSheets(true, true); }
+  function openSheet(s, focusEl, restoreScroll) {
+    if (openSheetEl && openSheetEl !== s) { // child sheet: remember where the parent was, so coming back feels like nothing moved
+      const body = $('.sheet-body', openSheetEl), a = document.activeElement;
+      parentSheet = { sheet: openSheetEl, outer: lastFocus, focus: openSheetEl.contains(a) ? a : null, scrollTop: body ? body.scrollTop : 0 };
+      closeSheets(true, true);
+    }
     else { parentSheet = null; lastFocus = document.activeElement; closeSheets(true, true); }
     clearTimeout(s._closeTimer); s._closeTimer = null;
     openSheetEl = s; s.hidden = false; el.backdrop.hidden = false;
+    if (restoreScroll != null) { const body = $('.sheet-body', s); if (body) body.scrollTop = restoreScroll; }
     requestAnimationFrame(() => { s.classList.add('show'); el.backdrop.classList.add('show'); });
-    const f = focusEl || (s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s)); if (f) setTimeout(() => f.focus(), 50);
+    const f = focusEl || (s === el.sheetConfirm ? $('#btnConfirm') : $('button, input', s)); if (f) setTimeout(() => f.focus({ preventScroll: restoreScroll != null }), 50);
     if (s === el.sheetSettings) { renderStats(); syncResetButton(); }
   }
   function closeSheets(immediate, keepParent) {
@@ -788,7 +804,7 @@
     clearTimeout(s._closeTimer);
     const done = () => { s.hidden = true; s._closeTimer = null; if (!openSheetEl) el.backdrop.hidden = true; };
     if (immediate) done(); else s._closeTimer = setTimeout(done, 320);
-    if (!keepParent && parentSheet) { const p = parentSheet; parentSheet = null; lastFocus = p.focus; openSheet(p.sheet); return; }
+    if (!keepParent && parentSheet) { const p = parentSheet; parentSheet = null; lastFocus = p.outer; openSheet(p.sheet, p.focus || undefined, p.scrollTop); return; }
     const target = lastFocus && lastFocus.focus && lastFocus.offsetParent !== null ? lastFocus : el.btnSettings;
     target.focus();
   }
@@ -904,6 +920,7 @@
 
   /* ---------------- boot ---------------- */
   if (!navigator.vibrate) { const row = $('#swHaptics').closest('.setting'); if (row) row.hidden = true; }
+  $$('.shoe-card', el.shoe).forEach(c => { c.innerHTML = Cards.back(); });
   applyTheme(); applySpeed(); buildIntro(); wire(); applyLang();
   renderBalance(false); renderBet(); renderHistory(); renderStats(); renderShoe();
   sessionStartNet = game.stats.net;
