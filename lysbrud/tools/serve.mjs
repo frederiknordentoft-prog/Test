@@ -1,10 +1,13 @@
 /* Minimal statisk server til udvikling: node tools/serve.mjs [port] */
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { extname, join, normalize, resolve } from 'node:path';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+/* node tools/serve.mjs [port] [rod] — roden er som standard projektmappen. */
 const PORT = Number(process.argv[2] || 8080);
+const ROOT = process.argv[3]
+  ? resolve(process.argv[3])
+  : new URL('..', import.meta.url).pathname;
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
