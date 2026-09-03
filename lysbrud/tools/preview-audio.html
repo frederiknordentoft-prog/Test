@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LYSBRUD — lydforhåndsvisning</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 28px 32px 60px;
+    background: #07091c;
+    color: #eef1ff;
+    font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  h1 { font-size: 17px; letter-spacing: .10em; text-transform: uppercase; color: #d5a63f; margin: 0 0 4px; }
+  p.note { margin: 0 0 22px; color: #98a0c8; max-width: 62ch; }
+  h2 {
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: #98a0c8; margin: 26px 0 10px; font-weight: 600;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button {
+    font: inherit; font-size: 12px; letter-spacing: .04em;
+    color: #eef1ff; cursor: pointer;
+    background: linear-gradient(150deg, #161a4a, #0d1030 62%, #0a0c26);
+    border: 1px solid rgba(213,166,63,.28);
+    border-radius: 5px; padding: 8px 13px;
+  }
+  button:hover { border-color: rgba(213,166,63,.7); color: #f7dc8a; }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid #5fe3d3; outline-offset: 2px; }
+  button.on { border-color: #5fe3d3; color: #5fe3d3; }
+  button.big { border-color: rgba(213,166,63,.55); color: #f7dc8a; }
+  .bar {
+    display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+    padding: 12px 14px; margin-bottom: 8px;
+    background: #0b0e28; border: 1px solid rgba(213,166,63,.18); border-radius: 6px;
+  }
+  .state { color: #98a0c8; font-variant-numeric: tabular-nums; }
+  .state b { color: #5fe3d3; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Lysbrud — lydforhåndsvisning</h1>
+<p class="note">
+  Alle lyde syntetiseres i WebAudio — ingen lydfiler. Klik et vilkårligt sted for at
+  låse lyden op (browserpolitik kræver en brugerhandling). Skalaen er mol-pentaton,
+  så to lyde der overlapper aldrig kan skurre mod hinanden.
+</p>
+
+<div class="bar">
+  <button id="btn-unlock" type="button">Lås lyd op</button>
+  <button id="btn-mute" type="button">Slå lyd fra</button>
+  <button id="btn-seq" class="big" type="button">Spil hel sekvens</button>
+  <span class="state">tilstand: <b id="state">låst</b></span>
+</div>
+
+<div id="out"></div>
+
+<script type="module">
+import { createAudio } from '../src/audio.js';
+
+const audio = createAudio();
+const out = document.getElementById('out');
+const stateEl = document.getElementById('state');
+const btnUnlock = document.getElementById('btn-unlock');
+const btnMute = document.getElementById('btn-mute');
+const btnSeq = document.getElementById('btn-seq');
+
+function refresh() {
+  stateEl.textContent = audio.isMuted() ? 'lyd fra' : 'klar';
+  btnMute.textContent = audio.isMuted() ? 'Slå lyd til' : 'Slå lyd fra';
+  btnMute.classList.toggle('on', audio.isMuted());
+}
+
+document.addEventListener('pointerdown', () => { audio.unlock(); refresh(); }, { once: true });
+btnUnlock.addEventListener('click', () => { audio.unlock(); refresh(); });
+btnMute.addEventListener('click', () => { audio.setMuted(!audio.isMuted()); refresh(); });
+
+function section(title, entries) {
+  const h = document.createElement('h2');
+  h.textContent = title;
+  out.appendChild(h);
+  const row = document.createElement('div');
+  row.className = 'row';
+  for (const [label, fn, cls] of entries) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    if (cls) b.className = cls;
+    b.addEventListener('click', () => { audio.unlock(); fn(b); refresh(); });
+    row.appendChild(b);
+  }
+  out.appendChild(row);
+}
+
+const ringLabels = ['ring 0 — inderst', 'ring 1', 'ring 2', 'ring 3', 'ring 4 — yderst'];
+
+section('Spin', [
+  ['spinStart()', () => audio.spinStart()],
+  ['spinLoop — til/fra', b => {
+    const on = !b.classList.contains('on');
+    audio.spinLoop(on);
+    b.classList.toggle('on', on);
+  }],
+]);
+
+section('ringStop(i) — en helttone lavere pr. ring',
+  ringLabels.map((l, i) => [l, () => audio.ringStop(i)]));
+
+section('shatter(tier) — 0 = isskår … 8 = klar kvarts',
+  [0, 2, 4, 6, 8].map(t => ['tier ' + t, () => audio.shatter(t)])
+    .concat([['sværm på én frame', () => { for (let k = 0; k < 24; k++) audio.shatter(k % 9); }]]));
+
+section('cascade(n) — stigende pentaton klokke, med loft',
+  [0, 1, 2, 3, 4, 5, 6, 7, 12].map(n => ['n = ' + n, () => audio.cascade(n)]));
+
+section('reactor(step)',
+  [0, 1, 2, 3, 4, 5, 6].map(s => ['trin ' + s, () => audio.reactor(s)]));
+
+section('win(tier) — hvert trin er en ny gestus', [
+  ['small', () => audio.win('small')],
+  ['big', () => audio.win('big')],
+  ['mega', () => audio.win('mega'), 'big'],
+  ['epic', () => audio.win('epic'), 'big'],
+  ['LYSBRUD!', () => audio.win('lysbrud'), 'big'],
+]);
+
+section('prismCharge(n) — den femte åbner bonussen',
+  [1, 2, 3, 4, 5].map(n => [n + ' / 5', () => audio.prismCharge(n), n === 5 ? 'big' : '']));
+
+section('Bonus og interface', [
+  ['bonusStart()', () => audio.bonusStart()],
+  ['bonusEnd()', () => audio.bonusEnd()],
+  ['tick()', () => audio.tick()],
+  ['tick ×25 — gevinsttæller', () => {
+    let k = 0;
+    const id = setInterval(() => { audio.tick(); if (++k >= 25) clearInterval(id); }, 55);
+  }],
+  ['click()', () => audio.click()],
+]);
+
+/* Hel sekvens: spin → ringstop → to kaskader → prisme → stor gevinst. */
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+async function sequence() {
+  btnSeq.disabled = true;
+  audio.spinStart();
+  audio.spinLoop(true);
+  await wait(1100);
+  for (let r = 4; r >= 0; r--) { audio.ringStop(r); await wait(300); }
+  audio.spinLoop(false);
+  await wait(300);
+  for (let s = 0; s < 3; s++) {
+    audio.reactor(s);
+    audio.cascade(s);
+    await wait(620);
+    for (let k = 0; k < 9; k++) audio.shatter(2 + (k % 6));
+    await wait(700);
+  }
+  audio.prismCharge(4);
+  await wait(700);
+  audio.win('mega');
+  await wait(900);
+  for (let k = 0; k < 22; k++) { audio.tick(); await wait(58); }
+  await wait(2600);
+  btnSeq.disabled = false;
+}
+
+btnSeq.addEventListener('click', () => { audio.unlock(); sequence(); });
+
+refresh();
+</script>
+</body>
+</html>

@@ -28,7 +28,7 @@ const GLASS = [1, 2.01, 2.99, 4.21];
 const METAL = [1, 2.76, 5.40, 8.93];
 
 const MASTER_GAIN = 0.62;               // kontraktens loft er 0.7
-const MAX_VOICES = 96;                  // hård polyfoni-grænse
+const MAX_VOICES = 120;                 // hård polyfoni-grænse
 const NOISE_SECONDS = 2;
 
 /* Egen lille generator: config-projektet forbyder Math.random, og
@@ -146,29 +146,8 @@ export function createAudio() {
      Alle spillyde nedenfor er skrevet i disse tre + tre gestus-hjælpere.
      Ingen oscillator-boilerplate gentages.                              */
 
-  /** Ren tone. {freq,type,dur,attack,hold,decay,gain,detune,bend,when,send,pan} */
-  function tone(o) {
-    if (!ctx || !claim()) return;
-    const dur = Math.max(0.03, o.dur == null ? 0.4 : o.dur);
-    const t0 = at(o.when);
-    const f = Math.max(20, o.freq || ROOT);
-
-    const osc = ctx.createOscillator();
-    osc.type = o.type || 'sine';
-    osc.frequency.setValueAtTime(f, t0);
-    if (o.detune) osc.detune.setValueAtTime(o.detune, t0);
-    if (o.bend && o.bend > 0 && o.bend !== 1) {
-      osc.frequency.exponentialRampToValueAtTime(
-        clamp(f * o.bend, 20, 18000), t0 + dur * clamp(o.bendTime || 1, 0.05, 1));
-    }
-
-    const g = ctx.createGain();
-    // decay er et alias for dur når kalderen tænker i henfald.
-    const end = env(g.gain, t0, o.attack == null ? 0.006 : o.attack,
-      o.hold || 0, o.decay == null ? dur : o.decay, o.gain == null ? 0.14 : o.gain);
-    osc.connect(g);
-
-    const tail = [osc, g];
+  /** Udgang: tørt til master (evt. via panorering) + valgfrit shimmer-send. */
+  function route(g, o, tail) {
     if (o.pan && hasPan) {
       const p = ctx.createStereoPanner();
       p.pan.value = clamp(o.pan, -1, 1);
@@ -183,57 +162,81 @@ export function createAudio() {
       g.connect(s); s.connect(send);
       tail.push(s);
     }
+  }
 
-    osc.onended = () => release(tail);
-    osc.start(t0);
-    osc.stop(end + 0.03);
+  /** Ren tone. {freq,type,dur,attack,hold,decay,gain,detune,bend,when,send,pan} */
+  function tone(o) {
+    if (!ctx || !claim()) return;
+    const tail = [];
+    try {
+      const dur = Math.max(0.03, o.dur == null ? 0.4 : o.dur);
+      const t0 = at(o.when);
+      const f = Math.max(20, o.freq || ROOT);
+
+      const osc = ctx.createOscillator();
+      tail.push(osc);
+      osc.type = o.type || 'sine';
+      osc.frequency.setValueAtTime(f, t0);
+      if (o.detune) osc.detune.setValueAtTime(o.detune, t0);
+      if (o.bend && o.bend > 0 && o.bend !== 1) {
+        osc.frequency.exponentialRampToValueAtTime(
+          clamp(f * o.bend, 20, 18000), t0 + dur * clamp(o.bendTime || 1, 0.05, 1));
+      }
+
+      const g = ctx.createGain();
+      tail.push(g);
+      // decay er et alias for dur når kalderen tænker i henfald.
+      const end = env(g.gain, t0, o.attack == null ? 0.006 : o.attack,
+        o.hold || 0, o.decay == null ? dur : o.decay, o.gain == null ? 0.14 : o.gain);
+      osc.connect(g);
+      route(g, o, tail);
+
+      osc.onended = () => release(tail);
+      osc.start(t0);
+      osc.stop(end + 0.03);
+    } catch (e) {
+      release(tail);                    // stemmen må aldrig blive hængende i tælleren
+    }
   }
 
   /** Filtreret støj. {dur,filterType,freq,q,gain,attack,hold,sweep,when,send,pan} */
   function noise(o) {
     if (!ctx || !noiseBuf || !claim()) return;
-    const dur = Math.max(0.02, o.dur == null ? 0.2 : o.dur);
-    const t0 = at(o.when);
-    const f = clamp(o.freq == null ? 1200 : o.freq, 20, 18000);
+    const tail = [];
+    try {
+      const dur = Math.max(0.02, o.dur == null ? 0.2 : o.dur);
+      const t0 = at(o.when);
+      const f = clamp(o.freq == null ? 1200 : o.freq, 20, 18000);
 
-    const src = ctx.createBufferSource();
-    src.buffer = noiseBuf;
-    if (dur + 0.1 >= NOISE_SECONDS) src.loop = true;
-    const offset = src.loop ? 0 : rand() * (NOISE_SECONDS - dur - 0.08);
+      const src = ctx.createBufferSource();
+      tail.push(src);
+      src.buffer = noiseBuf;
+      if (dur + 0.1 >= NOISE_SECONDS) src.loop = true;
+      const offset = src.loop ? 0 : rand() * (NOISE_SECONDS - dur - 0.08);
 
-    const flt = ctx.createBiquadFilter();
-    flt.type = o.filterType || 'bandpass';
-    flt.frequency.setValueAtTime(f, t0);
-    if (o.sweep && o.sweep > 0 && o.sweep !== 1) {
-      flt.frequency.exponentialRampToValueAtTime(clamp(f * o.sweep, 20, 18000), t0 + dur);
+      const flt = ctx.createBiquadFilter();
+      tail.push(flt);
+      flt.type = o.filterType || 'bandpass';
+      flt.frequency.setValueAtTime(f, t0);
+      if (o.sweep && o.sweep > 0 && o.sweep !== 1) {
+        flt.frequency.exponentialRampToValueAtTime(clamp(f * o.sweep, 20, 18000), t0 + dur);
+      }
+      flt.Q.value = o.q == null ? 1 : o.q;
+
+      const g = ctx.createGain();
+      tail.push(g);
+      const end = env(g.gain, t0, o.attack == null ? 0.004 : o.attack,
+        o.hold || 0, dur, o.gain == null ? 0.08 : o.gain);
+
+      src.connect(flt); flt.connect(g);
+      route(g, o, tail);
+
+      src.onended = () => release(tail);
+      src.start(t0, Math.max(0, offset));
+      src.stop(end + 0.03);
+    } catch (e) {
+      release(tail);
     }
-    flt.Q.value = o.q == null ? 1 : o.q;
-
-    const g = ctx.createGain();
-    const end = env(g.gain, t0, o.attack == null ? 0.004 : o.attack,
-      o.hold || 0, dur, o.gain == null ? 0.08 : o.gain);
-
-    src.connect(flt); flt.connect(g);
-
-    const tail = [src, flt, g];
-    if (o.pan && hasPan) {
-      const p = ctx.createStereoPanner();
-      p.pan.value = clamp(o.pan, -1, 1);
-      g.connect(p); p.connect(master);
-      tail.push(p);
-    } else {
-      g.connect(master);
-    }
-    if (o.send) {
-      const s = ctx.createGain();
-      s.gain.value = clamp(o.send, 0, 1);
-      g.connect(s); s.connect(send);
-      tail.push(s);
-    }
-
-    src.onended = () => release(tail);
-    src.start(t0, Math.max(0, offset));
-    src.stop(end + 0.03);
   }
 
   /** Akkord/klynge på skalatrin. {degrees,base,spread,fall,…tone-opts} */
@@ -590,6 +593,7 @@ export function createAudio() {
         s.connect(master);
         s.onended = () => { try { s.disconnect(); } catch (e) { /* ok */ } };
         s.start(ctx.currentTime);
+        s.stop(ctx.currentTime + 0.02);   // så den også river sig selv ned
       }
     } catch (e) {
       dead = true;

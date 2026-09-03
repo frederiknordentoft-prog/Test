@@ -117,12 +117,16 @@ __req(${JSON.stringify(ENTRY)});
 let html = await readFile(join(ROOT, 'index.html'), 'utf8');
 const css = await readFile(join(ROOT, 'styles.css'), 'utf8');
 
-html = html.replace(/<link rel="stylesheet" href="styles\.css" \/>/, `<style>\n${css}\n</style>`);
-html = html.replace(/<script type="module" src="src\/main\.js"><\/script>/, `<script>\n${bundle}\n</script>`);
+const LINK_TAG = /<link rel="stylesheet" href="styles\.css"\s*\/?>/;
+const SCRIPT_TAG = /<script type="module" src="src\/main\.js"><\/script>/;
 
-if (html.includes('styles.css') || html.includes('src/main.js')) {
-  throw new Error('Erstatning i index.html slog fejl — tjek tag-formen.');
-}
+if (!LINK_TAG.test(html)) throw new Error('Fandt ikke <link> til styles.css i index.html.');
+if (!SCRIPT_TAG.test(html)) throw new Error('Fandt ikke <script type="module"> til src/main.js i index.html.');
+
+// $-tegn i erstatningsteksten må ikke tolkes som backreferences.
+const literal = text => () => text;
+html = html.replace(LINK_TAG, literal(`<style>\n${css}\n</style>`));
+html = html.replace(SCRIPT_TAG, literal(`<script>\n${bundle}\n</script>`));
 
 await mkdir(join(ROOT, 'dist'), { recursive: true });
 await writeFile(join(ROOT, 'dist', 'lysbrud.html'), html);

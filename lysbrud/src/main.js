@@ -42,6 +42,9 @@ const PROFILE = (() => {
 
 const TURNS = [3.7, 3.1, 2.6, 2.1, 1.7];   // omdrejninger pr. ring, inderst → yderst
 
+/* Tegnelag der kan slås fra under profilering (window.LYSBRUD.perf). */
+const perf = { backdrop: true, ambient: true, plates: true, frame: true, symbols: true, bloom: true };
+
 /* ------------------------------------------------------------- opsætning */
 
 const canvas = document.getElementById('game-canvas');
@@ -201,23 +204,24 @@ function render(t, dt) {
   const sh = fx.shakeVec;
   ctx.clearRect(0, 0, viewW, viewH);
 
-  if (backdrop) ctx.drawImage(backdrop.canvas, 0, 0, viewW, viewH);
+  if (backdrop && perf.backdrop) ctx.drawImage(backdrop.canvas, 0, 0, viewW, viewH);
   else { ctx.fillStyle = PALETTE.cavern0; ctx.fillRect(0, 0, viewW, viewH); }
-  drawAmbient(ctx, viewW, viewH, t, dpr);
+  if (perf.ambient) drawAmbient(ctx, viewW, viewH, t, dpr);
 
   ctx.save();
   ctx.translate(sh.x, sh.y);
 
   if (view.board) {
-    wheel.drawPlates(ctx, view.offsets);
-    wheel.drawFrame(ctx);
-    wheel.drawSymbols(ctx, view.board, view.offsets, view.blur);
+    if (perf.plates) wheel.drawPlates(ctx, view.offsets);
+    if (perf.frame) wheel.drawFrame(ctx);
+    if (perf.symbols) wheel.drawSymbols(ctx, view.board, view.offsets, view.blur);
     wheel.drawCore(ctx, t, view.coreEnergy, view.coreTint);
   }
   fx.draw(ctx);
   ctx.restore();
 
   // Blødt bloom-pas over de lysende elementer.
+  if (!perf.bloom) return;
   const g = fx.beginGlow();
   if (g) {
     g.save();
@@ -388,7 +392,7 @@ async function playSteps(result) {
       const mid = c.cells[Math.floor(c.cells.length / 2)];
       const p = wheel.point(view.offsets, mid[0], mid[1]);
       const def = SYMBOL_BY_ID[c.symbol];
-      fx.addLabel(p.x, p.y - 14, formatShort(cash), def.edge, Math.min(30, 17 + c.size), 1300);
+      fx.addLabel(p.x, p.y - 14, formatShort(cash), def.glow, Math.min(32, 18 + c.size * 1.2), 1400);
     }
     running += step.win;
     ui.setWin(running); ui.flashWin();
@@ -418,7 +422,8 @@ async function playSteps(result) {
 
 function formatShort(v) {
   if (v >= 10000) return Math.round(v / 1000) + 'k';
-  return v >= 100 ? String(Math.round(v)) : v.toFixed(v < 10 ? 2 : 1).replace('.', ',');
+  if (v >= 100) return String(Math.round(v));
+  return v.toFixed(2).replace('.', ',');
 }
 
 /** Animerer et sæt celler ud (splintres) eller ind (krystalliserer). */
@@ -666,6 +671,7 @@ window.LYSBRUD = {
     runSpinLoop();
   },
   spin() { if (!state.busy) runSpinLoop(); },
+  fx, wheel, director, perf,
   state,
   view,
 };

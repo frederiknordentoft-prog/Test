@@ -33,16 +33,25 @@ export function createFx() {
   const shakeVec = { x: 0, y: 0 };
   let calm = false;
 
-  let glow = null, gctx = null, glowScale = 0.5, gw = 0, gh = 0, cssW = 0, cssH = 0, dpr = 1;
+  /* Bloom kører i lav opløsning. Et fuldskærms-blur i canvas koster over
+     halvdelen af billedraten på en maskine uden GPU-acceleration; ved at
+     sløre 0,36× og først derefter skalere op bliver det ~8× billigere og
+     ser reelt blødere ud. */
+  const GLOW_SCALE = 0.36;
+  let glow = null, gctx = null, blurBuf = null, bctx = null;
+  let gw = 0, gh = 0, cssW = 0, cssH = 0, dpr = 1;
   let blurOk = true;
 
   function resize(w, h, ratio) {
     cssW = w; cssH = h; dpr = ratio;
-    gw = Math.max(2, Math.round(w * glowScale));
-    gh = Math.max(2, Math.round(h * glowScale));
+    gw = Math.max(2, Math.round(w * GLOW_SCALE));
+    gh = Math.max(2, Math.round(h * GLOW_SCALE));
     if (!glow) glow = document.createElement('canvas');
+    if (!blurBuf) blurBuf = document.createElement('canvas');
     glow.width = gw; glow.height = gh;
+    blurBuf.width = gw; blurBuf.height = gh;
     gctx = glow.getContext('2d');
+    bctx = blurBuf.getContext('2d');
     blurOk = typeof gctx.filter === 'string';
   }
 
@@ -252,42 +261,79 @@ export function createFx() {
   }
 
   function traceSeg(g, s, k) {
-    if (s.kind === 'arc') {
-      const a0 = s.a0 - Math.PI / 2;
-      const a1 = s.a0 + (s.a1 - s.a0) * k - Math.PI / 2;
-      g.arc(s.cx, s.cy, s.rad, a0, a1, s.a1 < s.a0);
-    } else {
-      g.moveTo(s.x0, s.y0);
-      g.lineTo(s.x0 + (s.x1 - s.x0) * k, s.y0 + (s.y1 - s.y0) * k);
-    }
+  if (s.kind === 'arc') {
+    const a0 = s.a0 - Math.PI / 2;
+    const a1 = s.a0 + (s.a1 - s.a0) * k - Math.PI / 2;
+    // moveTo først: uden den trækker canvas en linje fra forrige delsti hertil.
+    g.moveTo(s.cx + s.rad * Math.cos(a0), s.cy + s.rad * Math.sin(a0));
+    g.arc(s.cx, s.cy, s.rad, a0, a1, s.a1 < s.a0);
+  } else {
+    g.moveTo(s.x0, s.y0);
+    g.lineTo(s.x0 + (s.x1 - s.x0) * k, s.y0 + (s.y1 - s.y0) * k);
   }
+}
 
-  function drawChains(g) {
-    for (const c of chains) {
-      if (!c.on || !c.segs) continue;
-      const grow = Math.min(1, c.t / c.dur);
-      const fade = c.t > c.dur ? 1 - (c.t - c.dur) / c.hold : 1;
-      const total = c.segs.length;
-      const shown = grow * total;
-      g.save();
-      g.globalCompositeOperation = 'lighter';
-      g.lineCap = 'round'; g.lineJoin = 'round';
-      for (let pass = 0; pass < 2; pass++) {
-        g.beginPath();
-        for (let i = 0; i < total; i++) {
-          const k = Math.max(0, Math.min(1, shown - i));
-          if (k <= 0) break;
-          traceSeg(g, c.segs[i], k);
-        }
-        g.strokeStyle = pass === 0 ? withAlpha(c.color, 0.30 * fade) : `rgba(255,255,255,${0.85 * fade})`;
-        g.lineWidth = pass === 0 ? c.width * 4.2 : c.width;
-        g.stroke();
+/** Endepunkt for et segment ved fremdrift k — bruges til knuderne. */
+function segEnd(s, k) {
+  if (s.kind === 'arc') {
+    const a = s.a0 + (s.a1 - s.a0) * k - Math.PI / 2;
+    return [s.cx + s.rad * Math.cos(a), s.cy + s.rad * Math.sin(a)];
+  }
+  return [s.x0 + (s.x1 - s.x0) * k, s.y0 + (s.y1 - s.y0) * k];
+}
+
+/** Energikæden tegnes i fire lag, så den læses som lys og ikke som en streg:
+ *  bredt farvet skær → farvet krop → hvid kerne → lysende knuder. */
+function drawChains(g) {
+  for (const c of chains) {
+    if (!c.on || !c.segs || !c.segs.length) continue;
+    const grow = Math.min(1, c.t / c.dur);
+    const fade = c.t > c.dur ? Math.max(0, 1 - (c.t - c.dur) / c.hold) : 1;
+    const total = c.segs.length;
+    const shown = grow * total;
+
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+
+    const layers = [
+      [c.width * 7.0, withAlpha(c.color, 0.22 * fade)],
+      [c.width * 3.2, withAlpha(c.color, 0.55 * fade)],
+      [c.width * 1.0, `rgba(255,255,255,${0.95 * fade})`],
+    ];
+    for (const [width, style] of layers) {
+      g.beginPath();
+      for (let i = 0; i < total; i++) {
+        const k = Math.min(1, shown - i);
+        if (k <= 0) break;
+        traceSeg(g, c.segs[i], k);
       }
-      g.restore();
+      g.lineWidth = width;
+      g.strokeStyle = style;
+      g.stroke();
     }
-  }
 
-  function drawLabels(g) {
+    // Knuder: en lysende prik hvor kæden rammer hver celle.
+    for (let i = 0; i < total; i++) {
+      const k = Math.min(1, shown - i);
+      if (k <= 0) break;
+      const [x, y] = segEnd(c.segs[i], k);
+      const rr = c.width * 2.1;
+      const dot = g.createRadialGradient(x, y, 0, x, y, rr * 2.4);
+      dot.addColorStop(0, `rgba(255,255,255,${0.9 * fade})`);
+      dot.addColorStop(0.35, withAlpha(c.color, 0.65 * fade));
+      dot.addColorStop(1, withAlpha(c.color, 0));
+      g.beginPath();
+      g.arc(x, y, rr * 2.4, 0, TAU);
+      g.fillStyle = dot;
+      g.fill();
+    }
+    g.restore();
+  }
+}
+
+function drawLabels(g) {
     g.save();
     g.textAlign = 'center'; g.textBaseline = 'middle';
     for (const l of labels) {
@@ -323,26 +369,30 @@ export function createFx() {
     gctx.setTransform(1, 0, 0, 1, 0, 0);
     gctx.clearRect(0, 0, gw, gh);
     gctx.save();
-    gctx.scale(glowScale, glowScale);
+    gctx.scale(GLOW_SCALE, GLOW_SCALE);
     return gctx;
   }
 
   function endGlow(g, strength = 1) {
     if (!gctx) return;
     gctx.restore();
+
+    let src = glow;
+    if (blurOk && bctx) {
+      // Slør i lav opløsning; opskaleringen bagefter blødgør yderligere.
+      bctx.setTransform(1, 0, 0, 1, 0, 0);
+      bctx.clearRect(0, 0, gw, gh);
+      bctx.filter = 'blur(4px)';
+      bctx.drawImage(glow, 0, 0);
+      bctx.filter = 'none';
+      src = blurBuf;
+    }
+
     g.save();
     g.globalCompositeOperation = 'lighter';
     g.globalAlpha = Math.min(1, strength);
-    if (blurOk) {
-      g.filter = 'blur(10px)';
-      g.drawImage(glow, 0, 0, cssW, cssH);
-      g.globalAlpha = Math.min(1, strength * 0.55);
-      g.filter = 'blur(28px)';
-      g.drawImage(glow, 0, 0, cssW, cssH);
-      g.filter = 'none';
-    } else {
-      g.drawImage(glow, 0, 0, cssW, cssH);
-    }
+    g.imageSmoothingEnabled = true;
+    g.drawImage(src, 0, 0, cssW, cssH);
     g.restore();
   }
 
@@ -352,5 +402,6 @@ export function createFx() {
     addChain, addLabel, shake, clear,
     beginGlow, endGlow,
     get shakeVec() { return shakeVec; },
+    get activeChains() { return chains.filter(c => c.on).map(c => ({ segs: c.segs ? c.segs.length : 0, t: c.t, dur: c.dur, color: c.color })); },
   };
 }

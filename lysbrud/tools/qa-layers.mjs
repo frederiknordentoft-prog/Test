@@ -1,0 +1,24 @@
+import { chromium } from 'playwright-core';
+import { spawn } from 'node:child_process';
+import { setTimeout as sleep } from 'node:timers/promises';
+const srv = spawn('node', ['tools/serve.mjs','8197'], {stdio:'ignore', cwd:'/home/user/Test/lysbrud'});
+await sleep(800);
+const b = await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args:['--no-sandbox','--disable-background-networking','--no-first-run']});
+const p = await b.newPage({viewport:{width:1400,height:820}});
+await p.goto('http://localhost:8197/index.html',{waitUntil:'networkidle'});
+await sleep(1500);
+await p.evaluate(()=>{window.__f=0;const t=()=>{window.__f++;requestAnimationFrame(t)};requestAnimationFrame(t)});
+const measure = async (label, cfg) => {
+  await p.evaluate(c=>{ Object.assign(window.LYSBRUD.perf, c); window.__f=0; }, cfg);
+  await sleep(2500);
+  const f = await p.evaluate(()=>window.__f);
+  console.log(label.padEnd(30), (f/2.5).toFixed(0) + ' fps');
+};
+const ALL = {backdrop:true,ambient:true,plates:true,frame:true,symbols:true,bloom:true};
+await measure('alt til', ALL);
+await measure('uden bloom', {...ALL, bloom:false});
+await measure('uden bloom+ambient', {...ALL, bloom:false, ambient:false});
+await measure('uden bloom+ambient+symboler', {...ALL, bloom:false, ambient:false, symbols:false});
+await measure('kun baggrund', {backdrop:true,ambient:false,plates:false,frame:false,symbols:false,bloom:false});
+await measure('intet', {backdrop:false,ambient:false,plates:false,frame:false,symbols:false,bloom:false});
+await b.close(); srv.kill();

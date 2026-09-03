@@ -11,7 +11,7 @@ al lyd er syntetiseret med WebAudio.
 
 ```
 npm run serve     # http://localhost:8080/
-npm test          # motor- og instruktørtests
+npm test          # motor- og instruktørtests (119 + 25 asserts)
 npm run build     # → dist/lysbrud.html (én selvstændig fil)
 ```
 
@@ -56,21 +56,21 @@ med mere end 80 % af den smalleste celles bredde.
 Alle tal nedenfor er **målt**, ikke anslået. Værktøjerne der målte dem ligger i `tools/`:
 
 ```
-node tools/balance.mjs --spins 25000 --eps 0.8    # profil for den committede config
+node tools/balance.mjs --spins 120000 --eps 0.8   # profil for den committede config
 node tools/curve.mjs   --spins 60000              # kalibrerer gevinstkurven mod et RTP-mål
 node tools/model.mjs                              # uafhængig model, fejer parameterrummet
 ```
 
-### Basisspillet — 25 000 spins à 25 kr.
+### Basisspillet — 120 000 spins à 25 kr.
 
 | | |
 | --- | --- |
-| RTP | **96,78 %** |
-| Døde spins | 0,51 % |
-| Kaskader pr. spin | 2,12 |
+| RTP | **96,40 %** |
+| Døde spins | 0,57 % |
+| Kaskader pr. spin | 2,11 |
 | Klynger pr. spin | 6,5 (gennemsnitlig størrelse 3,5) |
-| Største gevinst | 164× indsats |
-| Fordeling | <1×: 75,0 % · 1–5×: 22,2 % · 5–15×: 2,0 % · 15–60×: 0,29 % · 60–250×: 0,04 % |
+| Største gevinst i stikprøven | 522× indsats |
+| Fordeling | <1×: 75,0 % · 1–5×: 22,2 % · 5–15×: 1,9 % · 15–60×: 0,29 % · 60–250×: 0,03 % |
 
 Hyppigheden er høj og gevinsterne små — det er kaskadespillets natur, og det er derfor
 gevinsttabellen er så stejl: en klynge på 3 betaler småpenge, mens 15+ betaler op til 467×.
@@ -92,7 +92,7 @@ er grunden til at 3 er standard.
 
 ### Demo-økonomi — læs denne
 
-Basisspillet er ærligt kalibreret til 96,78 % RTP. **Prisme-bonussen er det ikke.** Den
+Basisspillet er ærligt kalibreret til 96,4 % RTP. **Prisme-bonussen er det ikke.** Den
 udløses bevidst efter cirka 10 spins, så demoen faktisk når at vise den; en produktionsudgave
 ville udløse den hver 250.–350. spin. En bonusrunde giver i gennemsnit ~660× indsats
 (median 395×, p99 ~4 600×, målt max 21 254× på 3 000 runder), og med den udløsningsfrekvens
@@ -102,6 +102,10 @@ To tal flytter det til produktionsniveau, og intet andet skal røres:
 
 * `prism`-vægtene i `REEL_WEIGHTS` (i dag 0,42–0,75 pr. ring) → cirka 0,05
 * eventuelt `BONUS.steps`-toppen (i dag 15×) hvis bonussen skal være mindre
+
+`BONUS.wildColorMinTier` er ikke pynt: vælger kernen en hyppig farve, kommer hver
+farves delgraf over perkolationstærsklen, hele brættet bliver forbundet, og kaskaderne
+løber i loft. Kernen vælger derfor kun blandt de sjældnere farver.
 
 Bonusrunden er også grunden til at mockuppens 248 750 kr. på en indsats på 25 kr. (9 950×)
 er et realistisk tal i dette spil og ikke bare et pænt mockup-tal — det ligger omkring
@@ -135,6 +139,22 @@ to screenshots (bl.a. ved at rulle hjulet ud i polære koordinater — se
 til enhver opløsning. Referencerne ligger i `reference/` udelukkende til sammenligning.
 
 ---
+
+## Ydelse
+
+Målt i headless Chromium uden GPU (software-rasterisering, 4 kerner), 1400×820:
+**60 fps i hvile, 51 fps under fuld partikelbelastning.** En rigtig maskine med
+GPU-komposition ligger over det.
+
+Det kostede én rettelse at komme dertil. Bloom-passet var oprindeligt to fuldskærms
+`filter: blur()`-blits, og alene det kostede 33 fps — resten af scenen kørte 60. Nu
+sløres der i 0,36× opløsning og skaleres op bagefter: samme udseende, cirka en ottendedel
+af rasteriseringsarbejdet. `tools/qa-layers.mjs` slår hvert tegnelag fra ét ad gangen og
+måler forskellen, hvis nogen skal gøre øvelsen igen.
+
+Resten af budgettet holdes af prærendering: hver rings celleplade og hvert symbol tegnes
+én gang til et offscreen-lærred og stemples derefter, så en frame er ~200 `drawImage`-kald
+frem for tusindvis af stier.
 
 ## Tilgængelighed og drift
 

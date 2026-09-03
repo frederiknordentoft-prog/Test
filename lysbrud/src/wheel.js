@@ -421,7 +421,7 @@ export function createWheelRenderer() {
         g.save();
         g.translate(layout.cx, layout.cy);
         g.rotate(a);
-        if (s.dim > 0) g.globalAlpha = 1 - s.dim * 0.45;
+        if (s.dim > 0) g.globalAlpha = 1 - s.dim * 0.28;
         g.drawImage(spr.canvas, -spr.ox, -spr.oy, spr.w, spr.h);
         g.restore();
       }
@@ -446,7 +446,7 @@ export function createWheelRenderer() {
           g.rotate(aa);
           g.translate(0, -(rad + s.lift));
           if (s.scale !== 1) g.scale(s.scale, s.scale);
-          g.globalAlpha = alpha * (s.dim > 0 ? 1 - s.dim * 0.72 : 1);
+          g.globalAlpha = alpha * (s.dim > 0 ? 1 - s.dim * 0.55 : 1);
 
           const mult = board.wildMult[r][i];
           if (id === 'wild' && mult > 1) {
