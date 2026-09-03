@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="da"><head><meta charset="utf-8"><title>QA hjul</title>
+<style>html,body{margin:0;height:100%;background:#07081a;overflow:hidden}
+canvas{display:block;width:100vw;height:100vh}</style></head><body>
+<canvas id="c"></canvas>
+<script type="module">
+import { createWheelRenderer } from '../src/wheel.js';
+import { createBoard } from '../src/engine.js';
+import { makeRng } from '../src/rng.js';
+const c = document.getElementById('c');
+const g = c.getContext('2d');
+const dpr = 1;
+const W = innerWidth, H = innerHeight;
+c.width = W*dpr; c.height = H*dpr; g.setTransform(dpr,0,0,dpr,0,0);
+const wheel = createWheelRenderer();
+wheel.resize(W, H, dpr);
+const rng = makeRng(11);
+const board = createBoard(rng, {});
+const off = board.offsets.slice();
+g.fillStyle = '#0a0a1c'; g.fillRect(0,0,W,H);
+const grad = g.createRadialGradient(W/2,H/2,10,W/2,H/2,Math.max(W,H)*0.6);
+grad.addColorStop(0,'#221646'); grad.addColorStop(1,'#07081a');
+g.fillStyle = grad; g.fillRect(0,0,W,H);
+wheel.drawPlates(g, off);
+wheel.drawFrame(g);
+wheel.drawSymbols(g, board, off, null);
+wheel.drawCore(g, 1200, 0.3, null);
+document.title='klar';
+</script></body></html>

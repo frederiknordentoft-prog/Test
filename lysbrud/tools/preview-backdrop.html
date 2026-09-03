@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LYSBRUD — baggrundsprøve</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; min-height: 100%;
+    background: #04060f; color: #eef1ff;
+    font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  main { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px; }
+  h1 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #d5a63f; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; color: #98a0c8; }
+  input[type=number] {
+    width: 110px; padding: 4px 7px; border-radius: 6px;
+    border: 1px solid #221646; background: #0a0a1c; color: #eef1ff; font: inherit;
+  }
+  button {
+    padding: 5px 13px; border-radius: 6px; border: 1px solid #8a6520;
+    background: #141033; color: #f7dc8a; font: inherit; cursor: pointer;
+  }
+  button:hover { background: #221646; }
+  button:focus-visible, input:focus-visible { outline: 2px solid #5fe3d3; outline-offset: 2px; }
+  .frame { border: 1px solid #221646; border-radius: 10px; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,0.75); }
+  canvas { display: block; }
+  .note { color: #98a0c8; max-width: 60ch; text-align: center; }
+  code { color: #5fe3d3; }
+  .grid { position: absolute; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Lysbrud — krystalhulen</h1>
+  <div class="bar">
+    <label>Frø <input id="seed" type="number" value="20260903" step="1"></label>
+    <button id="reseed" type="button">Næste frø</button>
+    <label><input id="anim" type="checkbox" checked> Støvlag</label>
+    <label><input id="wheel" type="checkbox"> Hjulmaske</label>
+    <span id="stat" style="color:#98a0c8">–</span>
+  </div>
+  <div class="frame"><canvas id="c" width="1440" height="820"></canvas></div>
+  <p class="note">
+    1440 × 820. Kræver en HTTP-server pga. ES-moduler — kør
+    <code>node tools/serve.mjs</code> og åbn <code>/tools/preview-backdrop.html</code>.
+    “Hjulmaske” lægger en grå skive der hvor spillehjulet dækker, så man kan
+    bedømme hvad der reelt er synligt bag det.
+  </p>
+</main>
+
+<script type="module">
+import { createBackdrop, drawAmbient } from '../src/art/backdrop.js';
+
+const W = 1440, H = 820;
+const canvas = document.getElementById('c');
+const seedEl = document.getElementById('seed');
+const animEl = document.getElementById('anim');
+const wheelEl = document.getElementById('wheel');
+const statEl = document.getElementById('stat');
+
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+canvas.width = Math.round(W * dpr);
+canvas.height = Math.round(H * dpr);
+canvas.style.width = W + 'px';
+canvas.style.height = H + 'px';
+const ctx = canvas.getContext('2d');
+
+let backdrop = null;
+
+function bake() {
+  const t0 = performance.now();
+  backdrop = createBackdrop(W, H, Number(seedEl.value) || 0);
+  statEl.textContent = 'bagt på ' + (performance.now() - t0).toFixed(0) + ' ms';
+}
+
+/* Grå skive svarende til spillehjulets dækning i mockuppen. */
+function drawWheelMask() {
+  const r = H * 0.44;
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = '#0d1030';
+  ctx.beginPath();
+  ctx.arc(W * 0.5, H * 0.47, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#d5a63f';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
+}
+
+let frames = 0, last = performance.now(), fps = 0;
+
+function loop(now) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (backdrop) ctx.drawImage(backdrop.canvas, 0, 0, W, H);
+  if (animEl.checked) drawAmbient(ctx, W, H, now, dpr);
+  if (wheelEl.checked) drawWheelMask();
+
+  frames++;
+  if (now - last > 500) {
+    fps = Math.round(frames * 1000 / (now - last));
+    frames = 0; last = now;
+    statEl.textContent = fps + ' fps';
+  }
+  requestAnimationFrame(loop);
+}
+
+seedEl.addEventListener('change', bake);
+document.getElementById('reseed').addEventListener('click', () => {
+  seedEl.value = String((Number(seedEl.value) || 0) + 7919);
+  bake();
+});
+
+bake();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

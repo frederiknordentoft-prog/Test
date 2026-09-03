@@ -71,7 +71,9 @@ function star(n, rot, ctrlRad) {
    ctrl     : ét kontrolpunkt pr. kant (null = rette kanter)
    scale    : formens radius i forhold til kroppens radius
    webInner : radius for den indre forbindelsespolygon i spindelvævet
-   table    : valgfri — radius for en lys "tavle" midt i stenen (brillantslib) */
+   table    : valgfri — radius for en lys "tavle" midt i stenen (brillantslib)
+   coreTint : valgfri — hvilken mørk farve kernen trækkes imod (default DEEP)
+   coreK    : valgfri — hvor hårdt kernen mørknes, 1 = normal               */
 const SHAPES = {
   /* smal sekskantet krystal, spids top og bund */
   shard: {
@@ -90,10 +92,12 @@ const SHAPES = {
     tips: [[-0.55, -0.72], [0.55, -0.72], [1.02, 0], [0.55, 0.72], [-0.55, 0.72], [-1.02, 0]],
     ctrl: null, scale: 0.95, webInner: 0.46,
   },
-  /* rund brillant — mange små facetter og en stor tavle i midten.
-     Tavlen er det der skiller den fra oktogonen ved 34 px: lys kerne
-     i stedet for mørk. */
-  brilliant: { tips: ring(12, Math.PI / 12, 1), ctrl: null, scale: 0.92, webInner: 0.54, table: 0.50 },
+  /* rund brillant — den eneste sten med LYS kerne. Det er dét der skiller
+     den fra oktogonen ved 34 px, og det markerer den som højest betalende. */
+  brilliant: {
+    tips: ring(12, Math.PI / 12, 1), ctrl: null, scale: 0.92, webInner: 0.54,
+    table: 0.40, coreTint: '#0a1440', coreK: 0.92,
+  },
   /* nedadpegende trekantskår */
   triangle: {
     tips: [[0, 1], [-0.866, -0.5], [0.866, -0.5]],
@@ -247,16 +251,27 @@ function drawTable(ctx, S, rr, base, edge) {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  /* kilefacetter fra tavlens rand ud til hvert hjørne i silhuetten */
+  /* kronens hovedfacetter: hele kiler fra tavlen ud til hvert andet hjørne */
   ctx.beginPath();
-  for (let i = 0; i < S.tips.length; i++) {
+  for (let i = 0; i < S.tips.length; i += 2) {
     const t = S.tips[i];
     const len = Math.hypot(t[0], t[1]) || 1;
     ctx.moveTo(t[0] / len * tr * 0.98, t[1] / len * tr * 0.98);
     ctx.lineTo(t[0] * rr * 0.93, t[1] * rr * 0.93);
   }
-  ctx.lineWidth = Math.max(0.55, rr * 0.038);
-  ctx.strokeStyle = rgba(edge, 0.52);
+  ctx.lineWidth = Math.max(0.55, rr * 0.040);
+  ctx.strokeStyle = rgba(edge, 0.58);
+  ctx.stroke();
+
+  /* korte rundistfacetter imellem hovedfacetterne */
+  ctx.beginPath();
+  for (let i = 1; i < S.tips.length; i += 2) {
+    const t = S.tips[i];
+    ctx.moveTo(t[0] * rr * 0.70, t[1] * rr * 0.70);
+    ctx.lineTo(t[0] * rr * 0.93, t[1] * rr * 0.93);
+  }
+  ctx.lineWidth = Math.max(0.5, rr * 0.028);
+  ctx.strokeStyle = rgba(edge, 0.22);
   ctx.stroke();
 
   /* mørk kant under tavlen */
@@ -268,9 +283,9 @@ function drawTable(ctx, S, rr, base, edge) {
   /* selve tavlen — halvgennemsigtig, så kernen stadig anes */
   tracePath(ctx, T, tr);
   const tg = ctx.createLinearGradient(-tr * 0.9, -tr, tr * 0.9, tr);
-  tg.addColorStop(0.00, rgba(mixHex(edge, '#ffffff', 0.55), 0.94));
-  tg.addColorStop(0.48, rgba(edge, 0.62));
-  tg.addColorStop(1.00, rgba(base, 0.40));
+  tg.addColorStop(0.00, rgba(mixHex(edge, '#ffffff', 0.60), 0.96));
+  tg.addColorStop(0.46, rgba(edge, 0.60));
+  tg.addColorStop(1.00, rgba(base, 0.20));
   ctx.fillStyle = tg;
   ctx.fill();
 
@@ -299,9 +314,11 @@ function drawGem(ctx, def, R, dim) {
   const edge = dim ? mixHex(def.edge, PALETTE.cellDark, 0.45) : def.edge;
   const glow = dim ? mixHex(def.glow, PALETTE.cellDark, 0.45) : def.glow;
 
-  const midc = mixHex(base, DEEP, 0.34);
-  const core = mixHex(base, DEEP, 0.72);
-  const deep = mixHex(base, DEEP, 0.88);
+  const tint = S.coreTint || DEEP;
+  const kk = S.coreK == null ? 1 : S.coreK;
+  const midc = mixHex(base, tint, 0.34 * kk);
+  const core = mixHex(base, tint, 0.72 * kk);
+  const deep = mixHex(base, tint, 0.88 * kk);
 
   ctx.save();
   ctx.lineJoin = 'round';
@@ -338,7 +355,7 @@ function drawGem(ctx, def, R, dim) {
   rim.addColorStop(0.00, mixHex(edge, '#ffffff', 0.30));
   rim.addColorStop(0.28, mixHex(base, edge, 0.60));
   rim.addColorStop(0.60, base);
-  rim.addColorStop(1.00, mixHex(base, DEEP, 0.52));
+  rim.addColorStop(1.00, mixHex(base, tint, 0.52 * kk));
   ctx.strokeStyle = rim;
   ctx.lineWidth = rr * 0.34;
   ctx.stroke();
@@ -359,16 +376,15 @@ function drawGem(ctx, def, R, dim) {
   ctx.stroke();
   ctx.restore();
 
-  /* spindelvæv */
-  drawWeb(ctx, S, rr, edge);
-
-  /* brillantens tavle lægges oven på vævet */
+  /* spindelvæv — eller brillantslibning, aldrig begge (det bliver til et hjul) */
   if (S.table) {
     ctx.save();
     tracePath(ctx, S, rr);
     ctx.clip();
     drawTable(ctx, S, rr, base, edge);
     ctx.restore();
+  } else {
+    drawWeb(ctx, S, rr, edge);
   }
 
   /* specular: blød hvid klat på facetten øverst til venstre */
@@ -535,16 +551,18 @@ function drawMedallion(ctx, R, dim) {
 }
 
 /* --------------------------------------------------------------- prisme
-   Oktaeder: to stablede pyramider set let ovenfra. Sekskantet silhuet,
-   seks facetter der mødes i det forreste ækvatorpunkt W.                    */
+   Oktaeder: to stablede pyramider set skråt ovenfra. Sekskantet silhuet.
+   Det forreste ækvatorpunkt W ligger LANGT under midten — det er dét der
+   gør at stenen læses som en høj overpyramide og en forkortet underpyramide
+   i stedet for en isometrisk terning.                                       */
 
 const PRISM_T  = [0, -1.00];
 const PRISM_B  = [0,  1.00];
-const PRISM_UL = [-0.84, -0.30];
-const PRISM_UR = [ 0.84, -0.30];
-const PRISM_LL = [-0.84,  0.30];
-const PRISM_LR = [ 0.84,  0.30];
-const PRISM_W  = [0, 0.10];
+const PRISM_UL = [-0.86, -0.34];
+const PRISM_UR = [ 0.86, -0.34];
+const PRISM_LL = [-0.86,  0.34];
+const PRISM_LR = [ 0.86,  0.34];
+const PRISM_W  = [0, 0.42];
 
 const PRISM_HULL = { tips: [PRISM_T, PRISM_UR, PRISM_LR, PRISM_B, PRISM_LL, PRISM_UL], ctrl: null };
 
@@ -558,8 +576,8 @@ function fillFace(ctx, pts, colour, rr) {
     if (p[1] > maxy) maxy = p[1];
   }
   const g = ctx.createLinearGradient(minx * rr, miny * rr, maxx * rr + 0.01, maxy * rr + 0.01);
-  g.addColorStop(0, mixHex(colour, '#ffffff', 0.20));
-  g.addColorStop(1, mixHex(colour, '#080a2c', 0.32));
+  g.addColorStop(0, mixHex(colour, '#ffffff', 0.24));
+  g.addColorStop(1, mixHex(colour, '#070a2e', 0.26));
   ctx.beginPath();
   ctx.moveTo(pts[0][0] * rr, pts[0][1] * rr);
   for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0] * rr, pts[i][1] * rr);
@@ -572,19 +590,23 @@ function drawPrism(ctx, def, R, dim) {
   const rr = R;
   const base = dim ? mixHex(def.base, PALETTE.cellDark, 0.45) : def.base;
   const edge = dim ? mixHex(def.edge, PALETTE.cellDark, 0.45) : def.edge;
+  const halo = dim ? mixHex(def.glow, PALETTE.cellDark, 0.45) : def.glow;
 
-  const lite   = mixHex(edge, '#ffffff', 0.28);
-  const blue   = mixHex(base, '#2a6cff', 0.62);
-  const violet = mixHex(base, '#7a3cff', 0.30);
-  const dark   = mixHex(base, '#050a30', 0.78);
+  /* Kontrasten er hele pointen: næsten hvid øverst til venstre, mættet blå
+     til venstre, mættet violet til højre, dyb skygge nederst.               */
+  const lite   = mixHex(edge, '#ffffff', 0.62);
+  const blue   = mixHex(base, '#1a52ff', 0.78);
+  const violet = mixHex(base, '#a63cff', 0.46);
+  const darkB  = mixHex(blue, '#050a30', 0.62);
+  const darkV  = mixHex(violet, '#1a0640', 0.58);
 
   const faces = [
-    { p: [PRISM_T,  PRISM_UL, PRISM_W ], c: mixHex(lite, '#ffffff', 0.32) },
-    { p: [PRISM_T,  PRISM_W,  PRISM_UR], c: mixHex(blue, lite, 0.46) },
+    { p: [PRISM_T,  PRISM_UL, PRISM_W ], c: mixHex(lite, '#bcd4ff', 0.30) },
+    { p: [PRISM_T,  PRISM_W,  PRISM_UR], c: mixHex(blue, lite, 0.62) },
     { p: [PRISM_UL, PRISM_LL, PRISM_W ], c: blue },
-    { p: [PRISM_UR, PRISM_W,  PRISM_LR], c: mixHex(violet, lite, 0.14) },
-    { p: [PRISM_LL, PRISM_B,  PRISM_W ], c: mixHex(blue, dark, 0.46) },
-    { p: [PRISM_W,  PRISM_B,  PRISM_LR], c: mixHex(violet, dark, 0.42) },
+    { p: [PRISM_UR, PRISM_W,  PRISM_LR], c: violet },
+    { p: [PRISM_LL, PRISM_B,  PRISM_W ], c: darkB },
+    { p: [PRISM_W,  PRISM_B,  PRISM_LR], c: darkV },
   ];
 
   ctx.save();
@@ -605,31 +627,54 @@ function drawPrism(ctx, def, R, dim) {
   tracePath(ctx, PRISM_HULL, rr);
   ctx.clip();
   const inner = [PRISM_T, PRISM_UL, PRISM_UR, PRISM_LL, PRISM_LR, PRISM_B];
-  ctx.beginPath();
-  for (let i = 0; i < inner.length; i++) {
-    ctx.moveTo(inner[i][0] * rr, inner[i][1] * rr);
-    ctx.lineTo(PRISM_W[0] * rr, PRISM_W[1] * rr);
-  }
-  ctx.lineWidth = Math.max(0.7, rr * 0.045);
-  ctx.strokeStyle = 'rgba(255,255,255,0.52)';
+  const spokes = () => {
+    ctx.beginPath();
+    for (let i = 0; i < inner.length; i++) {
+      ctx.moveTo(inner[i][0] * rr, inner[i][1] * rr);
+      ctx.lineTo(PRISM_W[0] * rr, PRISM_W[1] * rr);
+    }
+  };
+  /* mørk understregning giver kanterne bid mod de lyse facetter */
+  spokes();
+  ctx.lineWidth = Math.max(1, rr * 0.075);
+  ctx.strokeStyle = 'rgba(10,14,54,0.34)';
+  ctx.stroke();
+  spokes();
+  ctx.lineWidth = Math.max(0.7, rr * 0.042);
+  ctx.strokeStyle = 'rgba(255,255,255,0.80)';
   ctx.stroke();
 
-  /* svage indre reflekser fra ækvatoren */
+  /* bagsidens kanter anet gennem den gennemsigtige sten */
   ctx.beginPath();
   ctx.moveTo(PRISM_UL[0] * rr, PRISM_UL[1] * rr);
-  ctx.lineTo(PRISM_LR[0] * rr, PRISM_LR[1] * rr);
-  ctx.moveTo(PRISM_UR[0] * rr, PRISM_UR[1] * rr);
-  ctx.lineTo(PRISM_LL[0] * rr, PRISM_LL[1] * rr);
-  ctx.lineWidth = Math.max(0.5, rr * 0.028);
-  ctx.strokeStyle = 'rgba(233,242,255,0.20)';
+  ctx.lineTo(0, -rr * 0.10);
+  ctx.lineTo(PRISM_UR[0] * rr, PRISM_UR[1] * rr);
+  ctx.moveTo(PRISM_T[0] * rr, PRISM_T[1] * rr);
+  ctx.lineTo(0, -rr * 0.10);
+  ctx.lineTo(PRISM_B[0] * rr, PRISM_B[1] * rr);
+  ctx.lineWidth = Math.max(0.5, rr * 0.026);
+  ctx.strokeStyle = 'rgba(233,242,255,0.22)';
   ctx.stroke();
 
-  /* bloom på den øverste venstre facet */
-  const bx = -rr * 0.34, by = -rr * 0.46, br = rr * 0.62;
+  /* indre lysning så stenen ser gennemlyst ud og ikke som papir */
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const ig = ctx.createRadialGradient(0, -rr * 0.18, rr * 0.04, 0, -rr * 0.18, rr * 1.05);
+  ig.addColorStop(0.00, rgba(halo, 0.30));
+  ig.addColorStop(0.55, rgba(halo, 0.10));
+  ig.addColorStop(1.00, rgba(halo, 0));
+  ctx.fillStyle = ig;
+  ctx.beginPath();
+  ctx.arc(0, -rr * 0.18, rr * 1.05, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+
+  /* bloom holdt stramt på den øverste venstre facet, ellers udvaskes stenen */
+  const bx = -rr * 0.30, by = -rr * 0.50, br = rr * 0.44;
   const bl = ctx.createRadialGradient(bx, by, 0, bx, by, br);
-  bl.addColorStop(0.00, 'rgba(255,255,255,0.55)');
-  bl.addColorStop(0.42, 'rgba(226,236,255,0.16)');
-  bl.addColorStop(1.00, 'rgba(226,236,255,0)');
+  bl.addColorStop(0.00, 'rgba(255,255,255,0.60)');
+  bl.addColorStop(0.40, 'rgba(232,240,255,0.15)');
+  bl.addColorStop(1.00, 'rgba(232,240,255,0)');
   ctx.fillStyle = bl;
   ctx.beginPath();
   ctx.arc(bx, by, br, 0, TAU);

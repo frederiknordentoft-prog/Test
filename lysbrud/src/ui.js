@@ -15,6 +15,7 @@ export function createUi(handlers) {
     bet:        $('bet-value'),
     win:        $('win-value'),
     auto:       $('auto-value'),
+    autoToggle: $('auto-toggle'),
     betUp:      $('bet-up'),      betDown:  $('bet-down'),
     autoUp:     $('auto-up'),     autoDown: $('auto-down'),
     spin:       $('spin-button'), spinLabel: $('spin-label'), spinSub: $('spin-sub'),
@@ -56,7 +57,14 @@ export function createUi(handlers) {
 
   function setBalance(v) { el.balance.textContent = kr(v); }
   function setBet(v)     { el.bet.textContent = kr(v); }
-  function setAuto(v)    { el.auto.textContent = String(v); }
+  function setAuto(v, running) {
+    el.auto.textContent = String(v);
+    if (el.autoToggle) {
+      el.autoToggle.classList.toggle('is-running', !!running);
+      el.autoToggle.setAttribute('aria-pressed', running ? 'true' : 'false');
+      el.autoToggle.title = running ? 'Stop autospil' : 'Start autospil';
+    }
+  }
   function setWin(v)     { el.win.textContent = kr(v); }
 
   function flashWin() {
@@ -304,6 +312,12 @@ export function createUi(handlers) {
   el.betUp.addEventListener('click', () => handlers.onBet(+1));
   el.betDown.addEventListener('click', () => handlers.onBet(-1));
   el.autoUp.addEventListener('click', () => handlers.onAuto(+1));
+  if (el.autoToggle) {
+    el.autoToggle.addEventListener('click', () => handlers.onAutoToggle());
+    el.autoToggle.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlers.onAutoToggle(); }
+    });
+  }
   el.autoDown.addEventListener('click', () => handlers.onAuto(-1));
 
   el.btnSound.addEventListener('click', () => handlers.onSound());

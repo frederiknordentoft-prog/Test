@@ -405,7 +405,9 @@ export function createDirector(rng, opts) {
     mem.lastCharge = charge;
     if (inBonus || charge >= PRISM_TARGET) mem.bonusSeen = true;
 
-    const base = { bet: bet, wildColor: wildColor, bonus: inBonus };
+    // I bonus bæres reaktortrinnet med fra forrige gratisspin.
+    const startStep = inBonus && Number.isInteger(s.startStep) ? Math.max(0, s.startStep) : 0;
+    const base = { bet: bet, wildColor: wildColor, bonus: inBonus, startStep: startStep };
 
     let result;
     if (!scripted) {
@@ -416,6 +418,7 @@ export function createDirector(rng, opts) {
         bet: bet,
         wildColor: wildColor,
         bonus: inBonus,
+        startStep: startStep,
         weights: buildWeights(plan.mood, plan.prismScale, wildColor),
       };
       result = sample(spin, rand, opts2, plan, bet);

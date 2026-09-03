@@ -95,11 +95,16 @@ const ui = createUi({
   currentBet: bet,
   onSpin: () => {
     audio.unlock();
+    if (state.autoLeft > 0) { stopAuto('AUTOSPIL STOPPET'); return; }
     if (state.busy) { state.forceStop = true; return; }
-    if (state.autoLeft > 0) { state.autoLeft = 0; ui.setSpinState('idle'); refreshAuto(); return; }
-    const n = AUTOPLAY_LEVELS[state.autoIdx];
-    startSpin(false);
-    void n;
+    runSpinLoop();
+  },
+  onAutoToggle: () => {
+    audio.unlock();
+    if (state.autoLeft > 0) { stopAuto('AUTOSPIL STOPPET'); return; }
+    state.autoLeft = AUTOPLAY_LEVELS[state.autoIdx];
+    refreshAuto();
+    if (!state.busy) runSpinLoop();
   },
   onBet: dir => {
     if (state.busy) return;
@@ -109,6 +114,7 @@ const ui = createUi({
   },
   onAuto: dir => {
     audio.click();
+    if (state.autoLeft > 0) return;                       // ændr ikke serien mens den kører
     state.autoIdx = Math.max(0, Math.min(AUTOPLAY_LEVELS.length - 1, state.autoIdx + dir));
     refreshAuto();
   },
@@ -128,7 +134,7 @@ const ui = createUi({
 });
 
 function refreshAuto() {
-  ui.setAuto(state.autoLeft > 0 ? state.autoLeft : AUTOPLAY_LEVELS[state.autoIdx]);
+  ui.setAuto(state.autoLeft > 0 ? state.autoLeft : AUTOPLAY_LEVELS[state.autoIdx], state.autoLeft > 0);
 }
 
 /* ---------------------------------------------------------------- layout */
@@ -161,8 +167,20 @@ function positionRails() {
   right.style.setProperty('--gap', Math.max(8, rightEdge * 0.16) + 'px');
 }
 
-window.addEventListener('resize', () => { resize(); });
-if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(stage);
+let resizeTimer = 0;
+let lastSize = '';
+function scheduleResize() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const rect = stage.getBoundingClientRect();
+    const key = Math.round(rect.width) + 'x' + Math.round(rect.height) + '@' + (window.devicePixelRatio || 1);
+    if (key === lastSize) return;
+    lastSize = key;
+    resize();
+  }, 120);
+}
+window.addEventListener('resize', scheduleResize);
+if (window.ResizeObserver) new ResizeObserver(scheduleResize).observe(stage);
 
 /* --------------------------------------------------------------- løkken */
 
@@ -193,7 +211,7 @@ function render(t, dt) {
   if (view.board) {
     wheel.drawPlates(ctx, view.offsets);
     wheel.drawFrame(ctx);
-    wheel.drawSymbols(ctx, { ...view.board, offsets: view.offsets }, view.blur);
+    wheel.drawSymbols(ctx, view.board, view.offsets, view.blur);
     wheel.drawCore(ctx, t, view.coreEnergy, view.coreTint);
   }
   fx.draw(ctx);
@@ -292,8 +310,9 @@ function animateSpin(targetOffsets, anticipate) {
  *  søgning, så kæden vokser udad fra ét punkt. */
 function chainSegments(cluster, board) {
   const L = wheel.layout;
+  const off = board.offsets;
   const inCluster = new Set(cluster.cells.map(([r, i]) => `${r}:${i}`));
-  const nb = neighbours({ ...board, offsets: view.offsets });
+  const nb = neighbours(board);
   const start = `${cluster.cells[0][0]}:${cluster.cells[0][1]}`;
   const seen = new Set([start]);
   const queue = [start];
@@ -311,15 +330,15 @@ function chainSegments(cluster, board) {
       drawn.add(pair);
       const [r2, i2] = other.split(':').map(Number);
       if (r2 === r) {
-        const a0 = view.offsets[r] + (i + 0.5) * L.step[r];
-        let a1 = view.offsets[r] + (i2 + 0.5) * L.step[r];
+        const a0 = off[r] + (i + 0.5) * L.step[r];
+        let a1 = off[r] + (i2 + 0.5) * L.step[r];
         // Vælg den korte vej rundt.
         while (a1 - a0 > Math.PI) a1 -= TAU;
         while (a0 - a1 > Math.PI) a1 += TAU;
         segs.push({ kind: 'arc', cx: L.cx, cy: L.cy, rad: L.ringMid[r], a0, a1 });
       } else {
-        const p0 = wheel.point(view.offsets, r, i);
-        const p1 = wheel.point(view.offsets, r2, i2);
+        const p0 = wheel.point(off, r, i);
+        const p1 = wheel.point(off, r2, i2);
         segs.push({ kind: 'line', x0: p0.x, y0: p0.y, x1: p1.x, y1: p1.y });
       }
       if (!seen.has(other)) { seen.add(other); queue.push(other); }
@@ -332,7 +351,6 @@ function chainSegments(cluster, board) {
 
 async function playSteps(result) {
   let running = 0;
-  const stepsSource = state.inBonus ? BONUS.steps : REACTOR_STEPS;
 
   for (let s = 0; s < result.steps.length; s++) {
     const step = result.steps[s];
@@ -341,10 +359,9 @@ async function playSteps(result) {
 
     if (!step.clusters.length) break;
 
-    const idx = Math.min(stepsSource.length - 1, state.inBonus ? state.reactorIdx : s);
-    state.reactorIdx = idx;
-    setReactorUi(stepsSource[idx]);
-    if (s > 0 || state.inBonus) { audio.reactor(idx); ui.pulseReactor(); }
+    // Motoren har allerede afgjort trinnet — vis dét, gæt ikke om.
+    setReactorUi(step.multiplier);
+    if (s > 0 || state.inBonus) { audio.reactor(s); ui.pulseReactor(); }
 
     // Fremhæv vinderne, dæmp resten.
     const winners = new Set();
@@ -367,7 +384,7 @@ async function playSteps(result) {
 
     // Gevinsttal ved hver klynge.
     for (const c of step.clusters) {
-      const cash = c.pay * bet() * stepsSource[idx];
+      const cash = c.pay * bet() * step.multiplier;
       const mid = c.cells[Math.floor(c.cells.length / 2)];
       const p = wheel.point(view.offsets, mid[0], mid[1]);
       const def = SYMBOL_BY_ID[c.symbol];
@@ -395,6 +412,7 @@ async function playSteps(result) {
   }
 
   wheel.resetStyles();
+  state.reactorIdx = Number.isInteger(result.endStep) ? result.endStep : 0;
   return running;
 }
 
@@ -426,7 +444,7 @@ function animateCells(cells, mode) {
 
 function setReactorUi(value) {
   const steps = state.inBonus ? BONUS.steps : REACTOR_STEPS;
-  const idx = steps.indexOf(value);
+  const idx = Math.max(0, steps.indexOf(value));
   ui.setReactor(value, steps.length > 1 ? idx / (steps.length - 1) : 0);
 }
 
@@ -452,7 +470,9 @@ async function chargePrism(hits) {
 async function runBonus() {
   // Kernen vælger en farve — vægtet mod midterste niveauer.
   const weights = {};
-  for (const s of SYMBOLS) weights[s.id] = [3, 5, 6, 6, 4, 2][s.tier];
+  for (const s of SYMBOLS) {
+    if (s.tier >= BONUS.wildColorMinTier) weights[s.id] = 1 + (SYMBOLS.length - s.tier) * 0.35;
+  }
   const colorId = pickWeighted(rng, weights);
   state.bonusColor = colorId;
   state.inBonus = true;
@@ -478,6 +498,7 @@ async function runBonus() {
     const result = director.nextSpin({
       bet: bet(), spinIndex: state.spinIndex++, prismCharge: 0,
       inBonus: true, wildColor: colorId, balance: state.balance,
+      startStep: state.reactorIdx,          // multiplikatoren bæres videre
     });
     await animateSpin(result.steps[0].board.offsets, false);
     view.board = result.steps[0].board;
@@ -532,17 +553,13 @@ async function presentWin(amount) {
 
 /* ------------------------------------------------------------ spin-flow */
 
-async function startSpin(fromAuto) {
-  if (state.busy) return;
-  if (state.balance < bet()) { ui.setHint('UTILSTRÆKKELIG SALDO — NULSTIL I INDSTILLINGER', true); return; }
-
-  state.busy = true;
+async function startSpin() {
   state.forceStop = false;
   state.reactorIdx = 0;
   ui.hideWin();
   fx.clear();
   wheel.resetStyles();
-  ui.setSpinState('spinning');
+  ui.setSpinState('stop', state.autoLeft > 0 ? String(state.autoLeft) : '');
   ui.setHint(state.autoLeft > 0 ? `AUTOSPIL — ${state.autoLeft} TILBAGE` : 'RINGENE ROTERER…');
   setReactorUi(REACTOR_STEPS[0]);
 
@@ -561,6 +578,7 @@ async function startSpin(fromAuto) {
 
   await animateSpin(result.steps[0].board.offsets, anticipate);
   view.board = result.steps[0].board;
+  ui.setSpinState('spinning');
   ui.setHint('');
 
   if (result.prismHits > 0) await chargePrism(result.prismHits);
@@ -571,23 +589,42 @@ async function startSpin(fromAuto) {
   ui.setWin(won);
   await presentWin(won);
 
-  if (state.prismCharge >= PRISM_TARGET) {
-    await runBonus();
-  }
+  if (state.prismCharge >= PRISM_TARGET) await runBonus();
+  return won;
+}
 
-  state.busy = false;
-  ui.setSpinState(state.autoLeft > 0 ? 'auto' : 'idle', state.autoLeft > 0 ? `${state.autoLeft}` : '');
-  if (!state.inBonus && won === 0) ui.setHint(idleHint());
-  else if (!state.inBonus) ui.setHint('');
-
-  if (state.autoLeft > 0) {
-    state.autoLeft--;
+/** Kører ét spin, eller hele autospil-serien hvis der er spins tilbage. */
+async function runSpinLoop() {
+  if (state.busy) return;
+  state.busy = true;
+  try {
+    do {
+      if (state.balance < bet()) {
+        ui.setHint('UTILSTRÆKKELIG SALDO — NULSTIL I INDSTILLINGER', true);
+        state.autoLeft = 0;
+        break;
+      }
+      await startSpin();
+      if (state.autoLeft > 0) {
+        state.autoLeft--;
+        refreshAuto();
+        if (state.autoLeft > 0) await wait(TIMING.autoplayGap);
+      }
+    } while (state.autoLeft > 0);
+  } finally {
+    state.busy = false;
+    state.autoLeft = 0;
     refreshAuto();
-    await wait(TIMING.autoplayGap);
-    if (state.autoLeft >= 0 && !state.busy) startSpin(true);
-    if (state.autoLeft === 0) { ui.setSpinState('idle'); refreshAuto(); }
+    ui.setSpinState('idle');
+    if (!state.inBonus) ui.setHint(idleHint());
   }
-  void fromAuto;
+}
+
+function stopAuto(message) {
+  state.autoLeft = 0;
+  state.forceStop = true;
+  refreshAuto();
+  if (message) ui.setHint(message);
 }
 
 function idleHint() {
@@ -595,15 +632,6 @@ function idleHint() {
   if (state.prismCharge > 0) return `PRISME-BONUS ${state.prismCharge}/${PRISM_TARGET} — BLIV VED`;
   return 'TRYK SPIL FOR AT AKTIVERE PRISMEN';
 }
-
-/* Autospil starter når man trykker på SPIL med autospil valgt. */
-document.getElementById('spin-button').addEventListener('contextmenu', e => {
-  e.preventDefault();
-  if (state.busy) return;
-  state.autoLeft = AUTOPLAY_LEVELS[state.autoIdx];
-  refreshAuto();
-  startSpin(true);
-});
 
 /* ------------------------------------------------------------------ start */
 
@@ -629,14 +657,15 @@ function boot() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
 else boot();
 
-/* Autospil via langt tryk / dobbelt-modifier gøres tilgængeligt i UI'et. */
+/* Krog til automatiseret QA og til at starte autospil udefra. */
 window.LYSBRUD = {
   startAuto(n) {
     if (state.busy) return;
     state.autoLeft = n || AUTOPLAY_LEVELS[state.autoIdx];
     refreshAuto();
-    startSpin(true);
+    runSpinLoop();
   },
+  spin() { if (!state.busy) runSpinLoop(); },
   state,
   view,
 };
