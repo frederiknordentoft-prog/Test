@@ -510,7 +510,7 @@ function drawMedallion(ctx, R, dim) {
   ctx.stroke();
 
   /* firtakket guldstjerne */
-  const sr = rIn * 0.80;
+  const sr = rIn * 0.94;
   ctx.lineJoin = 'round';
 
   tracePath(ctx, WILD_STAR, sr);
@@ -558,11 +558,11 @@ function drawMedallion(ctx, R, dim) {
 
 const PRISM_T  = [0, -1.00];
 const PRISM_B  = [0,  1.00];
-const PRISM_UL = [-0.86, -0.34];
-const PRISM_UR = [ 0.86, -0.34];
-const PRISM_LL = [-0.86,  0.34];
-const PRISM_LR = [ 0.86,  0.34];
-const PRISM_W  = [0, 0.42];
+const PRISM_UL = [-0.58, -0.26];
+const PRISM_UR = [ 0.58, -0.26];
+const PRISM_LL = [-0.50,  0.10];
+const PRISM_LR = [ 0.50,  0.10];
+const PRISM_W  = [0, 0.20];
 
 const PRISM_HULL = { tips: [PRISM_T, PRISM_UR, PRISM_LR, PRISM_B, PRISM_LL, PRISM_UL], ctrl: null };
 

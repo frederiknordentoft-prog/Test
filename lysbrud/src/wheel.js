@@ -70,42 +70,40 @@ function buildCellSprite(ring, layout, dpr, variant) {
   g.save();
   g.clip(path);
 
-  // Grundflade: dyb navy, en anelse lysere på midten af cellen.
+  // Grundflade: dyb, ret ensartet navy — mockuppens celler er flade, ikke vignetterede.
   const base = g.createLinearGradient(0, -rOut, 0, -rIn);
-  const dark = variant ? '#080b24' : '#0a0d2c';
-  const lite = variant ? '#141a4c' : '#182055';
-  base.addColorStop(0.00, dark);
-  base.addColorStop(0.42, lite);
-  base.addColorStop(1.00, variant ? '#060819' : '#080a22');
+  const outerC = variant ? '#0f1338' : '#111641';
+  const midC   = variant ? '#171d4e' : '#1a2158';
+  const innerC = variant ? '#0d1130' : '#0f1438';
+  base.addColorStop(0.00, outerC);
+  base.addColorStop(0.46, midC);
+  base.addColorStop(1.00, innerC);
   g.fillStyle = base;
   g.fillRect(-w, -rOut - pad, w * 2, h + pad * 2);
 
   // Lys ovenfra-venstre, som resten af scenen.
   const key = g.createLinearGradient(-w * 0.5, -rOut, w * 0.5, -rIn);
-  key.addColorStop(0, 'rgba(150,150,255,0.13)');
-  key.addColorStop(0.55, 'rgba(90,80,200,0.04)');
-  key.addColorStop(1, 'rgba(0,0,0,0.20)');
+  key.addColorStop(0, 'rgba(160,160,255,0.10)');
+  key.addColorStop(0.55, 'rgba(90,80,200,0.03)');
+  key.addColorStop(1, 'rgba(0,0,0,0.12)');
   g.fillStyle = key;
   g.fillRect(-w, -rOut - pad, w * 2, h + pad * 2);
 
   // Blødt skær ud fra prismen i midten.
   const sheen = g.createRadialGradient(0, 0, rIn * 0.85, 0, 0, rOut * 1.06);
-  sheen.addColorStop(0, 'rgba(126,104,255,0.20)');
+  sheen.addColorStop(0, 'rgba(126,104,255,0.14)');
   sheen.addColorStop(1, 'rgba(10,8,40,0)');
   g.fillStyle = sheen;
   g.fillRect(-w, -rOut - pad, w * 2, h + pad * 2);
 
-  // Kraftig indvendig skygge — det er den der giver cellen dybde.
-  g.strokeStyle = 'rgba(0,0,0,0.78)';
-  g.lineWidth = 5.5;
-  g.stroke(path);
-  g.strokeStyle = 'rgba(0,0,0,0.45)';
-  g.lineWidth = 2.2;
+  // Let indvendig skygge — nok til at cellen læses som en plade, ikke mere.
+  g.strokeStyle = 'rgba(0,0,0,0.55)';
+  g.lineWidth = 3.0;
   g.stroke(path);
 
   g.restore();
 
-  // Facetkanter langs cellens to radiale sider: lys mod uret, mørk med uret.
+  // Guldstreger mellem cellerne — i mockuppen er skillelinjerne tydeligt gyldne.
   const edge = (sign, color, width, inset) => {
     g.beginPath();
     const a0 = -Math.PI / 2 + sign * (half - inset);
@@ -113,17 +111,16 @@ function buildCellSprite(ring, layout, dpr, variant) {
     g.lineTo(rOut * Math.cos(a0), rOut * Math.sin(a0));
     g.strokeStyle = color; g.lineWidth = width; g.stroke();
   };
-  edge(-1, 'rgba(236,198,116,0.62)', 1.7, 0);
-  edge(-1, 'rgba(255,244,208,0.26)', 0.9, half * 0.045);
-  edge( 1, 'rgba(18,12,4,0.85)', 1.9, 0);
+  for (const sign of [-1, 1]) {
+    edge(sign, 'rgba(10,7,2,0.75)', 3.0, 0);
+    edge(sign, 'rgba(222,180,86,0.95)', 1.9, 0);
+    edge(sign, 'rgba(255,240,196,0.35)', 0.7, half * 0.035 * -sign);
+  }
 
   // Tynde buer langs cellens inder- og yderkant, så trapezen læses som en plade.
   g.beginPath();
-  g.arc(0, 0, rOut - 1.2, -Math.PI / 2 - half * 0.92, -Math.PI / 2 + half * 0.92);
-  g.strokeStyle = 'rgba(160,150,255,0.16)'; g.lineWidth = 1.1; g.stroke();
-  g.beginPath();
-  g.arc(0, 0, rIn + 1.2, -Math.PI / 2 - half * 0.92, -Math.PI / 2 + half * 0.92);
-  g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 1.1; g.stroke();
+  g.arc(0, 0, rOut - 1.4, -Math.PI / 2 - half * 0.9, -Math.PI / 2 + half * 0.9);
+  g.strokeStyle = 'rgba(170,160,255,0.13)'; g.lineWidth = 1.0; g.stroke();
 
   return { canvas: c, w, h, ox, oy, rOut };
 }
@@ -230,8 +227,8 @@ function drawCoreChamber(g, layout, t, energy, tint) {
   g.save();
   g.beginPath(); g.arc(cx, cy, rc * 0.995, 0, TAU); g.clip();
   const webs = [
-    { dir:  1, arms: 8,  alpha: 0.52, width: 1.5, from: 0.30, to: 1.02, rings: [0.46, 0.66, 0.86] },
-    { dir: -1, arms: 12, alpha: 0.26, width: 1.0, from: 0.44, to: 1.02, rings: [0.58, 0.78] },
+    { dir:  1, arms: 8,  alpha: 0.72, width: 1.8, from: 0.26, to: 1.02, rings: [0.42, 0.62, 0.84] },
+    { dir: -1, arms: 12, alpha: 0.38, width: 1.2, from: 0.40, to: 1.02, rings: [0.54, 0.76] },
   ];
   for (const wcfg of webs) {
     g.save();
@@ -279,9 +276,9 @@ function drawPrismCore(g, layout, t, energy, tint) {
   const breathe = 1 + 0.022 * Math.sin(t * 0.0011);
 
   // Oktaeder målt af mockuppen: bredde ≈ 0,72·rc, højde ≈ 0,88·rc pr. halvdel.
-  const w = rc * 0.72 * breathe;
-  const hTop = rc * 0.84 * breathe;
-  const hBot = rc * 0.92 * breathe;
+  const w = rc * 0.80 * breathe;
+  const hTop = rc * 0.90 * breathe;
+  const hBot = rc * 0.97 * breathe;
   const shoulder = -hTop * 0.20;              // hvor de øvre facetter mødes
   const inner = w * 0.36;
 
@@ -398,7 +395,7 @@ export function createWheelRenderer() {
       });
       const arc = layout.ringMid[r] * layout.step[r];
       const thick = layout.ringOut[r] - layout.ringIn[r];
-      symbolSize.push(Math.min(arc, thick) * 1.24);
+      symbolSize.push(Math.min(arc, thick) * 1.06);
     }
     atlas = buildSymbolAtlas(symbolSize, dpr);
     return layout;
