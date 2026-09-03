@@ -35,7 +35,7 @@
       this.getTheme = opts.getTheme || (() => 'light');
 
       this.state = this.strips.map((s, i) => ({
-        pos: 0, phase: 'idle', t0: 0, p0: 0, end: 0, stopAt: 0, dur: 0, overshoot: 0, lastIdx: 0, stopped: true, glow: 0,
+        pos: 0, phase: 'idle', t0: 0, p0: 0, end: 0, stopAt: 0, dur: 0, overshoot: 0, lastIdx: 0, stopped: true, glow: 0, flash: 0,
       }));
       this.layout = null;
       this.dpr = Math.min(2.5, root.devicePixelRatio || 1);
@@ -209,7 +209,7 @@
           if (idx !== s.lastIdx && this.audio && t < 0.6) this.audio.tick(clamp(Math.abs(s.vel) / prof.vmax, 0.2, 1));
           s.lastIdx = idx;
           if (t >= 1) {
-            s.pos = s.end; s.phase = 'idle'; s.stopped = true; s.anticipating = false; s.vel = 0;
+            s.pos = s.end; s.phase = 'idle'; s.stopped = true; s.anticipating = false; s.vel = 0; s.flash = 1;
             s.pos = ((s.pos % len) + len) % len;
             s.lastIdx = s.pos;
             this.onReelStop(i, now);
@@ -247,7 +247,10 @@
       const moving = this.update(now);
       this.time = now;
       const hl = this.highlight;
-      if (moving || this._needsDraw || hl || this.state.some((s) => s.glow > 0)) { this.draw(now); this._needsDraw = false; }
+      const colors = this.art.colors(this.getTheme());
+      if (colors.idleSparkle && !this.spinning && !this.reduced) this._tickSparkles(now);
+      const fx = this.state.some((s) => s.flash > 0) || this._wildVisible || (this._sparkles && this._sparkles.length > 0);
+      if (moving || this._needsDraw || hl || fx) { this.draw(now); this._needsDraw = false; }
       this.last = now;
       this._raf = requestAnimationFrame(this.loop);
     }
@@ -260,6 +263,8 @@
       const theme = this.getTheme();
       const colors = this.art.colors(theme);
       const { cell, gap, x0, y0, radius } = L;
+      const dt = Math.min(0.05, (now - this.last) / 1000);
+      this._wildVisible = false;
 
       for (let r = 0; r < this.reels; r++) {
         const s = this.state[r];
@@ -293,11 +298,19 @@
           if (y + cell < y0 - cell || y > y0 + L.gridH + cell) continue;
           this.drawSymbol(ctx, id, rx, y, cell, blur, speed, r, base + k, now, colors, theme);
         }
+        // landing flash (skin option): a quick wash of light down the column as it stops
+        if (colors.landFlash && s.flash > 0 && !this.reduced) {
+          const g = ctx.createLinearGradient(rx, y0, rx, y0 + L.gridH);
+          g.addColorStop(0, `rgba(255,255,255,${0.22 * s.flash})`); g.addColorStop(0.5, `rgba(255,255,255,${0.06 * s.flash})`); g.addColorStop(1, `rgba(255,255,255,${0.2 * s.flash})`);
+          ctx.fillStyle = g; ctx.fillRect(rx, y0, cell, L.gridH);
+          s.flash = Math.max(0, s.flash - dt * 4.5);
+        } else if (s.flash > 0) s.flash = 0;
         ctx.restore();
       }
 
       // win lines & highlights
       if (this.highlight) this.drawHighlight(ctx, now, colors);
+      if (colors.idleSparkle && !this.spinning) this._drawSparkles(ctx, now);
     }
 
     drawSymbol(ctx, id, x, y, cell, blur, speed, reel, absIdx, now, colors, theme) {
@@ -317,8 +330,25 @@
           alpha = inWin ? 0.8 : 0.4;
         }
       }
+      // wild pulse (skin option): a slow rainbow breathing behind a landed wild
+      if (colors.wildPulse && id === 'WILD' && s.stopped && !this.spinning) {
+        const row = absIdx - Math.round(s.pos);
+        if (row >= 0 && row < this.rows) {
+          this._wildVisible = true;
+          const p = 0.5 + 0.5 * Math.sin(now / 420 + reel);
+          const g = ctx.createRadialGradient(x + cell / 2, y + cell / 2, cell * 0.1, x + cell / 2, y + cell / 2, cell * 0.62);
+          g.addColorStop(0, `rgba(255,255,255,${0.22 + 0.18 * p})`); g.addColorStop(0.5, `rgba(125,249,255,${0.12 + 0.1 * p})`); g.addColorStop(1, 'rgba(255,79,216,0)');
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(x - cell * 0.2, y - cell * 0.2, cell * 1.4, cell * 1.4); ctx.restore();
+        }
+      }
       ctx.save();
       ctx.globalAlpha = alpha;
+      if (colors.bloom && scale !== 1 && !this.reduced) {
+        // bloom behind a winning symbol
+        const g = ctx.createRadialGradient(x + cell / 2, y + cell / 2, cell * 0.15, x + cell / 2, y + cell / 2, cell * 0.7);
+        g.addColorStop(0, hexA(colors.accent, 0.45)); g.addColorStop(0.6, hexA(colors.accent, 0.12)); g.addColorStop(1, hexA(colors.accent, 0));
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(x - cell * 0.3, y - cell * 0.3, cell * 1.6, cell * 1.6); ctx.restore();
+      }
       if (blur > 0.02 && !this.reduced) {
         // motion streak: stretched ghost copies
         const stretch = 1 + 0.35 * blur;
@@ -356,6 +386,34 @@
       ctx.restore();
     }
 
+    /* Idle sparkles (skin option): a glint blooms on a random visible symbol now and then. */
+    _tickSparkles(now) {
+      if (!this._sparkles) { this._sparkles = []; this._nextSparkle = now + 600; }
+      if (now >= this._nextSparkle && this.layout) {
+        const reel = Math.floor(Math.random() * this.reels), row = Math.floor(Math.random() * this.rows);
+        const c = this.cellCenter(reel, row);
+        const cell = this.layout.cell;
+        this._sparkles.push({ x: c.x + (Math.random() - 0.5) * cell * 0.5, y: c.y + (Math.random() - 0.5) * cell * 0.5, t0: now, dur: 650 + Math.random() * 350, size: cell * (0.06 + Math.random() * 0.06) });
+        this._nextSparkle = now + 500 + Math.random() * 900;
+      }
+      this._sparkles = this._sparkles.filter((sp) => now - sp.t0 < sp.dur);
+    }
+    _drawSparkles(ctx, now) {
+      if (!this._sparkles || !this._sparkles.length) return;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (const sp of this._sparkles) {
+        const u = (now - sp.t0) / sp.dur; const a = Math.sin(Math.PI * u); const s = sp.size * (0.6 + 0.8 * a);
+        ctx.save(); ctx.translate(sp.x, sp.y); ctx.rotate(u * 0.8);
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 2.2); g.addColorStop(0, `rgba(255,255,255,${0.45 * a})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, s * 2.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(255,255,255,${0.95 * a})`;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) { const r = i % 2 ? s * 0.22 : s; const ang = (i / 8) * Math.PI * 2 - Math.PI / 2; const px = Math.cos(ang) * r, py = Math.sin(ang) * r; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }
+        ctx.closePath(); ctx.fill(); ctx.restore();
+      }
+      ctx.restore();
+    }
+
     _tmp(px) {
       if (!this._tmpCanvas || this._tmpCanvas.width !== px) { this._tmpCanvas = document.createElement('canvas'); this._tmpCanvas.width = this._tmpCanvas.height = px; }
       return this._tmpCanvas;
@@ -380,9 +438,15 @@
         const reveal = clamp(t / 0.45, 0, 1);
         ctx.save();
         ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.strokeStyle = hexA(colors.accent, 0.9);
-        ctx.lineWidth = Math.max(2.5, cell * 0.032);
-        ctx.shadowColor = hexA(colors.accent, 0.45); ctx.shadowBlur = cell * 0.25;
+        let stroke = hexA(colors.accent, 0.9);
+        if (colors.line && pts.length > 1) {
+          const lg = ctx.createLinearGradient(pts[0].x, pts[0].y, pts[pts.length - 1].x, pts[pts.length - 1].y);
+          colors.line.forEach((c, i) => lg.addColorStop(i / (colors.line.length - 1), hexA(c, 0.95)));
+          stroke = lg;
+        }
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = Math.max(2.5, cell * (colors.line ? 0.04 : 0.032));
+        ctx.shadowColor = hexA(colors.line ? colors.line[0] : colors.accent, colors.line ? 0.7 : 0.45); ctx.shadowBlur = cell * (colors.line ? 0.35 : 0.25);
         // animated draw-on: stroke a path up to `reveal` of total length
         const total = pathLength(pts);
         drawPartialPath(ctx, pts, total * easeOutCubic(reveal));
@@ -393,8 +457,9 @@
         for (const p of line.positions) {
           const c = this.cellCenter(p.reel, p.row);
           ctx.save();
-          ctx.strokeStyle = hexA(colors.accent, 0.9);
+          ctx.strokeStyle = stroke;
           ctx.lineWidth = Math.max(1.5, cell * 0.024);
+          if (colors.line) { ctx.shadowColor = hexA(colors.line[1] || colors.line[0], 0.6); ctx.shadowBlur = cell * 0.2; }
           roundRect(ctx, c.x - cell / 2 + 1, c.y - cell / 2 + 1, cell - 2, cell - 2, radius);
           ctx.stroke();
           ctx.restore();

@@ -46,7 +46,20 @@
         this.parts.push({
           kind, x: rnd(x0, x1), y: -20 - rnd(0, 200), vx: rnd(-25, 25), vy: rnd(70, 190),
           life: -rnd(0, duration), ttl: rnd(2.2, 3.4), rot: rnd(0, Math.PI * 2), vr: rnd(-4, 4),
-          size: kind === 'glint' ? rnd(6, 14) : rnd(6, 10), color: colors[i % colors.length], w: rnd(0.5, 1), drift: rnd(0.8, 2.2),
+          size: kind === 'glint' ? rnd(6, 14) : rnd(6, 10), color: colors[i % colors.length], w: rnd(0.5, 1), drift: rnd(0.8, 2.2), sides: 3 + Math.floor(Math.random() * 4),
+        });
+      }
+    }
+    /* Gem shards: small glowing polygons thrown from a point (Nova skin). */
+    shards(x, y, { count = 26, colors, power = 1 } = {}) {
+      if (this.reduced) count = Math.ceil(count / 3);
+      for (let i = 0; i < count; i++) {
+        const a = rnd(-Math.PI, 0) - rnd(0, 0.4) + rnd(0, 0.8); // mostly upwards
+        const sp = rnd(160, 460) * power;
+        this.parts.push({
+          kind: 'shard', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120 * power,
+          life: 0, ttl: rnd(1.1, 2.0), rot: rnd(0, Math.PI * 2), vr: rnd(-9, 9),
+          size: rnd(5, 11), color: colors[i % colors.length], sides: 3 + Math.floor(Math.random() * 4), w: 1,
         });
       }
     }
@@ -72,7 +85,7 @@
       for (const p of this.parts) {
         p.life += dt;
         if (p.life < 0) continue;
-        if (p.kind === 'confetti' || p.kind === 'glint') {
+        if (p.kind === 'confetti' || p.kind === 'glint' || p.kind === 'shard') {
           p.vy += g * dt * (p.drift ? 0.12 : 1);
           p.vx *= (1 - 1.6 * dt); p.vy *= (1 - (p.drift ? 0.2 : 0.9) * dt);
           p.x += p.vx * dt + (p.drift ? Math.sin(p.life * p.drift * 3) * 30 * dt : 0);
@@ -107,6 +120,20 @@
           ctx.rotate(p.rot * 0.3);
           const s = p.size * (0.6 + 0.4 * Math.sin(p.life * 9));
           star4(ctx, s); ctx.fill();
+        } else if (p.kind === 'shard') {
+          ctx.rotate(p.rot);
+          const s = p.size, sides = p.sides || 4;
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 2.2);
+          glow.addColorStop(0, p.color); glow.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.globalAlpha *= 0.35; ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0, 0, s * 2.2, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+          ctx.beginPath();
+          for (let i = 0; i < sides; i++) { const a = (i / sides) * Math.PI * 2; const rr = i % 2 ? s * 0.75 : s; const px = Math.cos(a) * rr, py = Math.sin(a) * rr; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }
+          ctx.closePath();
+          ctx.fillStyle = p.color; ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1; ctx.stroke();
+          ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.beginPath(); ctx.ellipse(-s * 0.25, -s * 0.3, s * 0.35, s * 0.18, -0.6, 0, Math.PI * 2); ctx.fill();
         } else if (p.kind === 'bokeh') {
           const g = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size);
           g.addColorStop(0, p.color); g.addColorStop(1, 'rgba(255,255,255,0)');

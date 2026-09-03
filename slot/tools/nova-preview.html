@@ -1,0 +1,20 @@
+<!DOCTYPE html><html lang="da"><head><meta charset="utf-8"><title>Nova symbols</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&display=swap">
+<style>
+body{margin:0;font-family:Rubik,-apple-system,sans-serif;background:radial-gradient(1200px 600px at 30% 0%,#2a1560 0%,#120a2e 45%,#05030f 100%);color:#fff;padding:24px;min-height:100vh}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;max-width:760px}
+.cell{background:rgba(12,8,38,.85);border:1px solid rgba(255,255,255,.08);border-radius:18px;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.cell canvas{width:100%;height:100%}
+.big{display:flex;gap:16px;margin-top:24px}.big .cell{width:200px}
+</style></head><body>
+<div class="grid" id="g"></div><div class="big" id="big"></div>
+<script src="../js/art-nova.js"></script>
+<script>
+document.fonts.ready.then(()=>{
+const ids=['WILD','SCAT','H1','H2','H3','H4','L1','L2','L3','L4'];const dpr=2;
+ids.forEach(id=>{const d=document.createElement('div');d.className='cell';d.appendChild(SlotArtNova.symbol(id,280,dpr));g.appendChild(d);});
+['WILD','SCAT','H1','H2'].forEach(id=>{const d=document.createElement('div');d.className='cell';d.appendChild(SlotArtNova.symbol(id+'_big',400,dpr));big.appendChild(d);});
+});
+// big variants: same painter at higher px
+const orig=SlotArtNova.symbol;
+</script></body></html>

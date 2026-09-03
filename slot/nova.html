@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Nova · Fem valser. Ren energi.</title>
+<meta name="description" content="Nova – en spilleautomat-demo med fem valser af glødende ædelsten i det ydre rum. Kun demokreditter." />
+<meta name="theme-color" content="#05030f" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230b0626'/%3E%3Cpolygon points='50,8 60,38 92,38 66,56 76,88 50,68 24,88 34,56 8,38 40,38' fill='%237df9ff'/%3E%3C/svg%3E" />
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('objekt.theme');
+      if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+      else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme', 'dark');
+    } catch (e) {}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&display=swap" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="skins/nova.css" />
+</head>
+<body>
+<canvas id="starfield" aria-hidden="true"></canvas>
+
+<nav class="nav" aria-label="Hovednavigation">
+  <div class="nav-inner">
+    <a class="nav-brand" href="#top">Nova</a>
+    <div class="nav-links">
+      <a href="#sadan">Sådan spiller du</a>
+      <a href="#gevinster">Gevinsttabel</a>
+      <a href="#ansvar">Ansvarligt spil</a>
+    </div>
+    <div class="nav-right">
+      <span class="pill-demo" title="Demo – kun demokreditter">Demo</span>
+      <span class="clock" id="clock" aria-label="Klokken">--:--</span>
+      <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="Lyd til/fra" title="Lyd (M)">
+        <svg viewBox="0 0 24 24" class="on"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+        <svg viewBox="0 0 24 24" class="off"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l4 6M21 9l-4 6"/></svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="Skift lyst/mørkt tema" title="Tema">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<a id="top"></a>
+
+<header class="hero">
+  <p class="eyebrow">Demo · Spil for sjov</p>
+  <h1>Nova.</h1>
+  <p class="sub">Fem valser. Ren energi.</p>
+  <div class="links">
+    <a href="#sadan">Sådan spiller du ›</a>
+    <a href="#gevinster">Se gevinsttabellen ›</a>
+  </div>
+</header>
+
+<section class="stage" id="spil" aria-label="Spillet">
+  <div class="machine" id="machine" data-mode="base" tabindex="-1">
+    <div class="machine-top">
+      <div class="stat">
+        <span class="label" id="balanceLabel">Demosaldo</span>
+        <span class="value num" id="balance" aria-live="off">1.000,00 kr.</span>
+      </div>
+      <div class="island" id="island" aria-live="off"><div class="island-inner" id="islandInner"></div></div>
+      <div class="stat right">
+        <span class="label">Indsats</span>
+        <span class="value num" id="betTop">10,00 kr.</span>
+      </div>
+    </div>
+
+    <div class="tray" id="tray">
+      <div class="tray-inner" id="trayInner">
+        <canvas id="reels" aria-label="Valser" role="img"></canvas>
+        <canvas id="fx" aria-hidden="true"></canvas>
+      </div>
+      <div class="tray-overlay" id="overlay">
+        <div class="echo"></div><div class="echo"></div><div class="echo"></div><div class="echo"></div>
+        <div class="ov" id="overlayContent"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="left">
+        <div class="bet" role="group" aria-label="Indsats">
+          <button class="step" id="betMinus" aria-label="Sænk indsats">−</button>
+          <div class="bet-value"><span class="label">Indsats</span><span class="value num" id="bet">10,00 kr.</span></div>
+          <button class="step" id="betPlus" aria-label="Hæv indsats">+</button>
+        </div>
+      </div>
+      <div class="center">
+        <button class="spin" id="spin" aria-label="Spin (mellemrum)">
+          <svg class="ring" aria-hidden="true"><rect id="ringRect" x="1" y="1" rx="999" ry="999" /></svg>
+          <span class="spin-label" id="spinLabel">Spin</span>
+        </button>
+      </div>
+      <div class="right">
+        <button class="aux" id="autoBtn" aria-label="Autospin"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg><span class="t">Autospin</span></button>
+        <button class="aux icon-only" id="turboBtn" aria-pressed="false" aria-label="Hurtigt spil" title="Hurtigt spil (T)"><svg viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 9-12h-6l1-6z"/></svg></button>
+        <button class="aux icon-only" id="infoBtn" aria-label="Spilinfo" title="Spilinfo (I)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <p class="compliance">
+    <span class="age">18+</span><span class="sep">·</span>Demokreditter uden værdi – ingen rigtige penge<span class="sep">·</span>RTP 96,16 %<span class="sep">·</span>Spilletid <span class="num" id="session">0:00</span><br />
+    Spil med omtanke<span class="sep">·</span><a href="https://www.stopspillet.dk" target="_blank" rel="noopener">StopSpillet.dk</a> 70 22 28 25<span class="sep">·</span><a href="https://www.rofus.nu" target="_blank" rel="noopener">ROFUS</a>
+  </p>
+</section>
+
+<section class="section" id="sadan">
+  <div class="section-head reveal">
+    <h2>Fem valser. Tyve linjer.<br />Og et univers af ædelsten.</h2>
+    <p>Match tre eller flere ens symboler fra venstre mod højre på en gevinstlinje.</p>
+  </div>
+  <div class="features">
+    <div class="feature reveal">
+      <div class="fig"><canvas data-sym="WILD"></canvas></div>
+      <h3>Stjerne. Wild.</h3>
+      <p>Erstatter alle andre symboler undtagen Planeten og fuldender linjer, der ellers ville mangle ét symbol.</p>
+      <div class="kv">Findes på valse 2, 3, 4 og 5</div>
+    </div>
+    <div class="feature reveal">
+      <div class="fig"><canvas data-sym="SCAT"></canvas></div>
+      <h3>Planet. Bonus.</h3>
+      <p>Tre eller flere planeter hvor som helst udløser 10 gratis spins, hvor alle gevinster tæller dobbelt. Tre nye planeter giver 5 spins mere.</p>
+      <div class="kv">Planeterne betaler også 2×, 10× eller 50× indsatsen</div>
+    </div>
+    <div class="feature reveal">
+      <div class="fig"><canvas data-sym="H1"></canvas></div>
+      <h3>Gevinst. I fire trin.</h3>
+      <p>Gevinst, Stor gevinst, Mega gevinst og Episk gevinst. Jo større gevinst, jo mere lyser universet op – og ved de største regner det med ædelsten.</p>
+      <div class="kv">Stor fra 8× · Mega fra 20× · Episk fra 50× indsatsen</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="gevinster">
+  <div class="section-head reveal">
+    <h2>Gevinsttabel.</h2>
+    <p>Værdier ved den aktuelle indsats på <span class="num" id="ptBet">10,00 kr.</span></p>
+  </div>
+  <div class="paytable" id="paytable"></div>
+  <p class="pt-caption">Linjegevinster udbetales fra venstre mod højre. Kun den højeste gevinst pr. linje udbetales. Planeten betaler som multiplum af den samlede indsats.</p>
+  <div class="lines" id="lines" aria-label="De 20 gevinstlinjer"></div>
+</section>
+
+<section class="section" id="ansvar">
+  <div class="section-head reveal">
+    <h2>Spil med omtanke.</h2>
+    <p>Det her er en demo. Men reglerne for ansvarligt spil gælder altid.</p>
+  </div>
+  <div class="rg">
+    <div class="card reveal"><h3>Kun demokreditter</h3><p>Saldoen i Nova har ingen værdi, og gevinster kan ikke udbetales. Spillet bruger samme matematik og tilbagebetalingsprocent, som det ville ved spil for penge.</p></div>
+    <div class="card reveal"><h3>Har du brug for hjælp?</h3><p>StopSpillet er Spillemyndighedens hjælpelinje: <a href="https://www.stopspillet.dk" target="_blank" rel="noopener">stopspillet.dk</a> · 70 22 28 25.</p></div>
+    <div class="card reveal"><h3>Har du brug for en pause?</h3><p>Du kan udelukke dig fra alle danske spiludbydere via <a href="https://www.rofus.nu" target="_blank" rel="noopener">ROFUS</a> – midlertidigt eller permanent.</p></div>
+    <div class="card reveal"><h3>Tid og penge</h3><p>Spilletid og klokkeslæt er altid synlige. Ved spil for penge sætter du indbetalingsgrænser, før du spiller. Efter 30 minutter minder Nova dig om, hvor længe du har spillet.</p></div>
+  </div>
+</section>
+
+<footer class="footer">
+  Nova er en designdemo. Ikke et licenseret spil. Rigtige spil hos danske udbydere er under tilsyn af Spillemyndigheden.<br />
+  <span class="age" style="border:1.5px solid currentColor;border-radius:4px;padding:0 4px;font-weight:600;font-size:11px">18+</span> · Spil med omtanke · StopSpillet.dk · ROFUS
+</footer>
+
+<!-- ===== overlays ===== -->
+<div class="veil" id="veil" aria-hidden="true"></div>
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sheetInfo" role="dialog" aria-modal="true" aria-labelledby="sheetInfoTitle" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head"><h2 id="sheetInfoTitle">Spilinfo</h2><button class="close" data-close aria-label="Luk"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="pt">Gevinsttabel</button>
+    <button role="tab" aria-selected="false" data-tab="rules">Regler</button>
+    <button role="tab" aria-selected="false" data-tab="about">Om spillet</button>
+  </div>
+  <div class="tabpanel" data-panel="pt">
+    <p>Gevinst i kr. ved indsats <span class="num" id="infoBet">10,00 kr.</span></p>
+    <div class="mini-pt" id="miniPt" style="margin-top:10px"></div>
+  </div>
+  <div class="tabpanel" data-panel="rules" hidden>
+    <h3>Sådan vinder du</h3>
+    <ul>
+      <li>Fem valser, tre rækker og 20 faste gevinstlinjer.</li>
+      <li>Tre eller flere ens symboler fra venstre mod højre på en linje giver gevinst. Kun den højeste gevinst pr. linje udbetales.</li>
+      <li>Stjernen (Wild) findes på valse 2–5 og erstatter alle symboler undtagen Planeten.</li>
+      <li>Planeten (Bonus) betaler hvor som helst: 3 = 2×, 4 = 10×, 5 = 50× den samlede indsats.</li>
+    </ul>
+    <h3>Gratis spins</h3>
+    <ul>
+      <li>Tre eller flere planeter giver 10 gratis spins med samme indsats. Alle gevinster ganges med 2.</li>
+      <li>Tre planeter under gratis spins giver 5 spins mere.</li>
+      <li>Valserne har flere stjerner under gratis spins.</li>
+    </ul>
+    <h3>Autospin</h3>
+    <ul>
+      <li>Vælg antal spins og stopbetingelser. Der er mindst 3 sekunder mellem hvert resultat.</li>
+      <li>Autospin stopper ved gratis spins, ved utilstrækkelig saldo og når en grænse nås. Tryk Stop for at afbryde.</li>
+    </ul>
+    <h3>Tastatur</h3>
+    <ul><li>Mellemrum: Spin (når ingen knap har fokus) · ↑/↓: Indsats · A: Autospin · T: Hurtigt spil · I: Spilinfo · M: Lyd</li></ul>
+  </div>
+  <div class="tabpanel" data-panel="about" hidden>
+    <div class="kv-row"><span>Teoretisk tilbagebetaling (RTP)</span><span>96,16 %</span></div>
+    <div class="kv-row"><span>Heraf gratis spins</span><span>22,0 %</span></div>
+    <div class="kv-row"><span>Gevinstfrekvens</span><span>ca. 36 %</span></div>
+    <div class="kv-row"><span>Volatilitet</span><span>Middel</span></div>
+    <div class="kv-row"><span>Største simulerede gevinst</span><span>475 × indsatsen</span></div>
+    <div class="kv-row"><span>Indsats</span><span>2 – 100 kr.</span></div>
+    <div class="kv-row"><span>Version</span><span>Demo 1.0</span></div>
+    <p style="margin-top:14px">Denne demo bruger demokreditter uden værdi. Gevinster kan ikke udbetales. Udfaldet af hvert spin afgøres, i det øjeblik du trykker Spin – alt, der sker på valserne bagefter, er ren præsentation.</p>
+    <div class="actions"><button class="btn-pill secondary" id="resetBalance">Nulstil demosaldo</button></div>
+  </div>
+</div>
+
+<div class="sheet" id="sheetAuto" role="dialog" aria-modal="true" aria-labelledby="sheetAutoTitle" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head"><h2 id="sheetAutoTitle">Autospin</h2><button class="close" data-close aria-label="Luk"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <h3 style="margin-top:0">Antal spins</h3>
+  <div class="segmented" id="autoCount">
+    <button aria-pressed="true" data-v="10">10</button><button aria-pressed="false" data-v="25">25</button><button aria-pressed="false" data-v="50">50</button><button aria-pressed="false" data-v="100">100</button>
+  </div>
+  <div style="margin-top:14px">
+    <div class="field"><div class="f-label"><span>Stop hvis tab overstiger</span><span class="f-sub">Samlet tab i denne autospin-serie</span></div>
+      <select id="autoLoss"><option value="0">Ingen grænse</option><option value="50">50 kr.</option><option value="100" selected>100 kr.</option><option value="250">250 kr.</option><option value="500">500 kr.</option></select></div>
+    <div class="field"><div class="f-label"><span>Stop hvis enkelt gevinst overstiger</span></div>
+      <select id="autoWin"><option value="0">Ingen grænse</option><option value="100">100 kr.</option><option value="250">250 kr.</option><option value="500" selected>500 kr.</option><option value="1000">1.000 kr.</option></select></div>
+  </div>
+  <p style="margin-top:8px;font-size:12px">Der er mindst 3 sekunder mellem hvert resultat. Autospin stopper automatisk ved gratis spins, ved utilstrækkelig saldo og når en grænse nås.</p>
+  <div class="actions"><button class="btn-pill secondary" data-close>Annullér</button><button class="btn-pill" id="autoStart">Start autospin</button></div>
+</div>
+
+<div class="sheet" id="sheetWelcome" role="dialog" aria-modal="true" aria-labelledby="sheetWelcomeTitle" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head"><h2 id="sheetWelcomeTitle">Velkommen til Nova</h2></div>
+  <p>Det her er en designdemo af en spilleautomat. Du spiller med demokreditter uden værdi – ingen rigtige penge, ingen udbetaling.</p>
+  <p style="margin-top:8px">Du skal være fyldt 18 år for at spille. Spil med omtanke.</p>
+  <div class="actions"><button class="btn-pill" id="welcomeOk">Jeg er fyldt 18 – fortsæt</button></div>
+</div>
+
+<div class="sheet" id="sheetReality" role="dialog" aria-modal="true" aria-labelledby="sheetRealityTitle" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head"><h2 id="sheetRealityTitle">Du har spillet i 30 minutter</h2></div>
+  <div class="kv-row"><span>Resultat i denne session</span><span class="num" id="realityNet">0,00 kr.</span></div>
+  <div class="kv-row"><span>Antal spin</span><span class="num" id="realitySpins">0</span></div>
+  <div class="actions"><button class="btn-pill secondary" id="realityPause">Hold pause</button><button class="btn-pill" data-close>Fortsæt</button></div>
+</div>
+
+<div class="toast" id="toast" role="status"><span id="toastText"></span><button id="toastAction" hidden></button></div>
+<div id="sr" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script src="js/math.js"></script>
+<script src="js/art-nova.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/reels.js"></script>
+<script src="js/starfield.js"></script>
+<script src="skins/nova.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

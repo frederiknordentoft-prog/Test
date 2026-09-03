@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Objekt · Fem valser. Ægte vægt.</title>
-<meta name="description" content="Objekt – en spilleautomat-demo med fem valser, designet med Apple-disciplin. Kun demokreditter." />
-<meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%231d1d1f'/%3E%3Ccircle cx='50' cy='50' r='24' fill='none' stroke='%23d9d4cc' stroke-width='14'/%3E%3Ccircle cx='50' cy='24' r='5' fill='%230071e3'/%3E%3C/svg%3E" />
+<title>Nova · Fem valser. Ren energi.</title>
+<meta name="description" content="Nova – en spilleautomat-demo med fem valser af glødende ædelsten i det ydre rum. Kun demokreditter." />
+<meta name="theme-color" content="#05030f" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230b0626'/%3E%3Cpolygon points='50,8 60,38 92,38 66,56 76,88 50,68 24,88 34,56 8,38 40,38' fill='%237df9ff'/%3E%3C/svg%3E" />
 <script>
   (function () {
     try {
@@ -17,6 +16,8 @@
     } catch (e) {}
   })();
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&display=swap" />
 <style>
 /* ============================================================
    Objekt · Apple-disciplined slot demo
@@ -436,12 +437,171 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
 @media (max-width: 560px) { .mini-pt { grid-template-columns: 1fr; } }
 
 </style>
+<style>
+/* ============================================================
+   Nova skin · cosmic gems over a live starfield.
+   Loaded after styles.css; overrides the design tokens for every
+   theme state (the skin is deliberately single-theme: deep space).
+   ============================================================ */
+:root, html[data-theme="light"], html[data-theme="dark"] {
+  --bg: #05030f;
+  --bg-soft: rgba(255,255,255,0.05);
+  --surface: rgba(22, 13, 58, 0.62);
+  --surface-2: rgba(255,255,255,0.08);
+  --tray: rgba(6, 3, 22, 0.72);
+  --text: #f4f2ff;
+  --sub: #b8b0e0;
+  --sub-2: #8f86bf;
+  --hair: rgba(255,255,255,0.12);
+  --hair-strong: rgba(255,255,255,0.22);
+  --accent: #3ee6ff;
+  --accent-hover: #7df9ff;
+  --accent-soft: rgba(62,230,255,0.16);
+  --accent-2: #ff4fd8;
+  --gold: #ffd166;
+  --island: rgba(8, 4, 30, 0.85);
+  --island-text: #f4f2ff;
+  --nav-bg: rgba(5, 3, 15, 0.55);
+  --sheet-bg: rgba(16, 9, 44, 0.88);
+  --card-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 20px 60px rgba(0,0,0,0.55);
+  --tray-inset: inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 0 50px rgba(62,230,255,0.08);
+  --btn-shadow: none;
+  --font-display: "Rubik", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: dark;
+}
+html, body { background: var(--bg); }
+#starfield { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.nav, .hero, .stage, .section, .footer, .veil, .scrim, .sheet, .toast { position: relative; z-index: 1; }
+.nav { position: sticky; }
+.veil, .scrim, .sheet, .toast { position: fixed; }
+#themeBtn { display: none; }
+
+/* type */
+.nav-brand, .hero h1, .section-head h2, .feature h3, .spin, .island, .ov h2, .ov .ov-amount, .sheet-head h2, .btn-pill, .pt .name { font-family: var(--font-display); }
+.nav-brand { font-weight: 800; letter-spacing: 0.02em; }
+.hero h1 {
+  display: inline-block; font-weight: 900; letter-spacing: -0.01em;
+  background: linear-gradient(90deg, #7df9ff 0%, #ff4fd8 50%, #ffd166 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero { text-shadow: none; }
+.hero h1::selection { -webkit-text-fill-color: #fff; }
+.eyebrow { color: var(--gold); }
+.hero .sub { color: #d8d2f5; }
+.hero .links { color: var(--accent); }
+.section-head h2 { font-weight: 800; }
+
+/* nav */
+.nav { border-bottom-color: rgba(255,255,255,0.08); }
+.pill-demo { color: #061033; background: var(--gold); }
+.clock { color: var(--sub); }
+.icon-btn { color: var(--sub); }
+.icon-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+/* machine */
+.machine {
+  background: linear-gradient(180deg, rgba(40, 24, 96, 0.72), rgba(14, 8, 40, 0.86));
+  -webkit-backdrop-filter: blur(16px) saturate(140%); backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 0 0 1px rgba(125,249,255,0.22), 0 0 46px rgba(62,230,255,0.18), 0 30px 90px rgba(0,0,0,0.65);
+  --m-text: #f4f2ff; --m-sub: #b8b0e0; --m-tray: rgba(6,3,22,0.72); --m-surface: rgba(255,255,255,0.1); --m-hair: rgba(255,255,255,0.12);
+}
+.machine::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(120deg, rgba(125,249,255,0.55), rgba(255,79,216,0.35) 50%, rgba(255,209,102,0.45));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; padding: 1px;
+  opacity: 0.9;
+}
+.machine[data-mode="free"] {
+  background: linear-gradient(180deg, rgba(96, 40, 30, 0.72), rgba(40, 10, 40, 0.88));
+  box-shadow: 0 0 0 1px rgba(255,209,102,0.45), 0 0 70px rgba(255,79,216,0.32), 0 30px 90px rgba(0,0,0,0.65);
+  --m-tray: rgba(20, 4, 24, 0.72);
+}
+.machine[data-mode="free"]::before { background: linear-gradient(120deg, rgba(255,209,102,0.7), rgba(255,79,216,0.5) 60%, rgba(125,249,255,0.5)); animation: novaEdge 3s linear infinite; }
+@keyframes novaEdge { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+.stat .label { color: var(--m-sub); }
+.stat .value { color: #fff; text-shadow: 0 0 14px rgba(125,249,255,0.35); }
+
+/* tray */
+.tray { background: var(--m-tray); box-shadow: var(--tray-inset); }
+.tray-overlay { background: rgba(6,3,20,0.62); color: #f4f2ff; }
+.machine[data-mode="free"] .tray-overlay { background: rgba(20,6,20,0.66); }
+.ov h2.grad { background: linear-gradient(90deg, #7df9ff, #ff4fd8, #ffd166); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ov .ov-amount { color: #fff; text-shadow: 0 0 24px rgba(125,249,255,0.55), 0 0 60px rgba(255,79,216,0.35); }
+.ov .ov-sub, .machine[data-mode="free"] .ov .ov-sub { color: #d8d2f5; }
+.ov-eyebrow { color: var(--gold); }
+.echo { border-color: rgba(125,249,255,0.7); }
+.echo:nth-child(2) { border-color: rgba(255,79,216,0.7); } .echo:nth-child(3) { border-color: rgba(255,209,102,0.7); }
+
+/* island */
+.island { background: var(--island); box-shadow: 0 0 0 1px rgba(125,249,255,0.55), 0 0 22px rgba(62,230,255,0.35); }
+html[data-theme="dark"] .island, .machine[data-mode="free"] .island { box-shadow: 0 0 0 1px rgba(125,249,255,0.55), 0 0 22px rgba(62,230,255,0.35); }
+:where(html[data-theme="dark"], .machine[data-mode="free"]) .island { background: var(--island); }
+.island .i-label, .island .i-col .i-sub { color: #b8b0e0; }
+.island.tier-big { background: linear-gradient(135deg, #ffd166, #ff9f43); color: #2a1a05; box-shadow: 0 0 0 1px rgba(255,255,255,0.35), 0 0 28px rgba(255,209,102,0.55); }
+.island.tier-big .i-label { color: rgba(42,26,5,0.7); }
+.island.tier-mega, .island.tier-epic { background: linear-gradient(135deg, #7df9ff, #ff4fd8 55%, #ffd166); color: #061033; box-shadow: 0 0 0 1px rgba(255,255,255,0.4), 0 0 32px rgba(255,79,216,0.5); }
+.island.tier-mega .i-label, .island.tier-epic .i-label { color: rgba(6,16,51,0.7); }
+.island .i-badge { background: var(--gold); color: #2a1a05; }
+
+/* controls */
+.bet { background: rgba(255,255,255,0.07); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+.bet .step { background: rgba(255,255,255,0.12); color: #fff; }
+.bet .step:hover { background: rgba(125,249,255,0.25); }
+.bet-value .label { color: var(--m-sub); }
+.spin {
+  background: linear-gradient(180deg, #a6fbff 0%, #3ee6ff 45%, #12a8f0 100%);
+  color: #061033; font-weight: 800; letter-spacing: 0.01em;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.35), 0 0 28px rgba(62,230,255,0.55), 0 10px 30px rgba(0,0,0,0.45);
+}
+.spin::after { content: ""; position: absolute; inset: 2px 10px auto 10px; height: 40%; border-radius: 999px; background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0)); pointer-events: none; }
+.spin:hover { background: linear-gradient(180deg, #c9fdff 0%, #62ecff 45%, #1db3ff 100%); }
+.spin:disabled { opacity: 0.55; }
+.machine[data-mode="free"] .spin:disabled { opacity: 1; background: rgba(255,255,255,0.12); color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,0.18); }
+.machine[data-mode="free"] .spin:disabled::after { display: none; }
+.spin svg.ring rect { stroke: rgba(255,255,255,0.9); }
+.spin .count { background: rgba(6,16,51,0.18); }
+.aux { background: rgba(255,255,255,0.08); color: #f4f2ff; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); }
+.aux:hover { background: rgba(125,249,255,0.2); }
+.aux[aria-pressed="true"] { background: var(--accent); color: #061033; }
+
+/* compliance + sections */
+.compliance { color: var(--sub-2); }
+.feature, .pt, .rg .card, .line { background: var(--surface); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.feature p, .rg p { color: var(--sub); }
+.feature .kv, .pt .note, .pt-caption, .line .n { color: var(--sub-2); }
+.pt .row { color: var(--sub); }
+.pt .row b { color: #fff; }
+.line .c { background: rgba(255,255,255,0.08); }
+.line .c.on { background: var(--accent); box-shadow: 0 0 8px rgba(62,230,255,0.7); }
+.footer { color: var(--sub-2); }
+
+/* pills, sheets, toast */
+.btn-pill { background: linear-gradient(180deg, #a6fbff, #3ee6ff 45%, #12a8f0); color: #061033; box-shadow: 0 0 22px rgba(62,230,255,0.45); }
+.btn-pill:hover { background: linear-gradient(180deg, #c9fdff, #62ecff 45%, #1db3ff); }
+.btn-pill.secondary { background: rgba(255,255,255,0.1); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); }
+.sheet { background: var(--sheet-bg); box-shadow: 0 0 0 1px rgba(125,249,255,0.25), 0 -8px 60px rgba(0,0,0,0.6); }
+.sheet .close { background: rgba(255,255,255,0.1); color: #fff; }
+.tabs button[aria-selected="true"] { background: var(--accent); color: #061033; }
+.segmented { background: rgba(255,255,255,0.08); }
+.segmented button { color: var(--sub); }
+.segmented button[aria-pressed="true"], html[data-theme="dark"] .segmented button[aria-pressed="true"] { background: var(--accent); color: #061033; box-shadow: none; }
+.field select { background: rgba(255,255,255,0.1); color: #fff; }
+.mini-pt .m { background: rgba(255,255,255,0.06); }
+.mini-pt .mvv em { color: var(--sub-2); }
+.toast { background: rgba(8,4,30,0.92); box-shadow: 0 0 0 1px rgba(125,249,255,0.45), 0 8px 30px rgba(0,0,0,0.6); }
+.toast button { color: var(--accent); }
+.scrim { background: rgba(0,0,0,0.5); }
+.veil { background: rgba(2,1,8,0.6); }
+:focus-visible { outline-color: var(--gold); }
+
+</style>
 </head>
 <body>
+<canvas id="starfield" aria-hidden="true"></canvas>
 
 <nav class="nav" aria-label="Hovednavigation">
   <div class="nav-inner">
-    <a class="nav-brand" href="#top">Objekt</a>
+    <a class="nav-brand" href="#top">Nova</a>
     <div class="nav-links">
       <a href="#sadan">Sådan spiller du</a>
       <a href="#gevinster">Gevinsttabel</a>
@@ -465,8 +625,8 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
 
 <header class="hero">
   <p class="eyebrow">Demo · Spil for sjov</p>
-  <h1>Objekt.</h1>
-  <p class="sub">Fem valser. Ægte vægt.</p>
+  <h1>Nova.</h1>
+  <p class="sub">Fem valser. Ren energi.</p>
   <div class="links">
     <a href="#sadan">Sådan spiller du ›</a>
     <a href="#gevinster">Se gevinsttabellen ›</a>
@@ -528,26 +688,26 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
 
 <section class="section" id="sadan">
   <div class="section-head reveal">
-    <h2>Fem valser. Tyve linjer.<br />Og tre objekter, der ændrer alt.</h2>
-    <p>Match tre eller flere ens objekter fra venstre mod højre på en gevinstlinje.</p>
+    <h2>Fem valser. Tyve linjer.<br />Og et univers af ædelsten.</h2>
+    <p>Match tre eller flere ens symboler fra venstre mod højre på en gevinstlinje.</p>
   </div>
   <div class="features">
     <div class="feature reveal">
       <div class="fig"><canvas data-sym="WILD"></canvas></div>
-      <h3>Prisme. Wild.</h3>
-      <p>Erstatter alle andre objekter undtagen Ringen og fuldender linjer, der ellers ville mangle ét objekt.</p>
+      <h3>Stjerne. Wild.</h3>
+      <p>Erstatter alle andre symboler undtagen Planeten og fuldender linjer, der ellers ville mangle ét symbol.</p>
       <div class="kv">Findes på valse 2, 3, 4 og 5</div>
     </div>
     <div class="feature reveal">
       <div class="fig"><canvas data-sym="SCAT"></canvas></div>
-      <h3>Ring. Bonus.</h3>
-      <p>Tre eller flere ringe hvor som helst udløser 10 gratis spins, hvor alle gevinster tæller dobbelt. Tre nye ringe giver 5 spins mere.</p>
-      <div class="kv">Ringene betaler også 2×, 10× eller 50× indsatsen</div>
+      <h3>Planet. Bonus.</h3>
+      <p>Tre eller flere planeter hvor som helst udløser 10 gratis spins, hvor alle gevinster tæller dobbelt. Tre nye planeter giver 5 spins mere.</p>
+      <div class="kv">Planeterne betaler også 2×, 10× eller 50× indsatsen</div>
     </div>
     <div class="feature reveal">
       <div class="fig"><canvas data-sym="H1"></canvas></div>
       <h3>Gevinst. I fire trin.</h3>
-      <p>Gevinst, Stor gevinst, Mega gevinst og Episk gevinst. Alt vises i det samme, rolige element øverst i spillet. Ingen bannere. Intet fyrværkeri.</p>
+      <p>Gevinst, Stor gevinst, Mega gevinst og Episk gevinst. Jo større gevinst, jo mere lyser universet op – og ved de største regner det med ædelsten.</p>
       <div class="kv">Stor fra 8× · Mega fra 20× · Episk fra 50× indsatsen</div>
     </div>
   </div>
@@ -559,7 +719,7 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
     <p>Værdier ved den aktuelle indsats på <span class="num" id="ptBet">10,00 kr.</span></p>
   </div>
   <div class="paytable" id="paytable"></div>
-  <p class="pt-caption">Linjegevinster udbetales fra venstre mod højre. Kun den højeste gevinst pr. linje udbetales. Ringen betaler som multiplum af den samlede indsats.</p>
+  <p class="pt-caption">Linjegevinster udbetales fra venstre mod højre. Kun den højeste gevinst pr. linje udbetales. Planeten betaler som multiplum af den samlede indsats.</p>
   <div class="lines" id="lines" aria-label="De 20 gevinstlinjer"></div>
 </section>
 
@@ -569,15 +729,15 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
     <p>Det her er en demo. Men reglerne for ansvarligt spil gælder altid.</p>
   </div>
   <div class="rg">
-    <div class="card reveal"><h3>Kun demokreditter</h3><p>Saldoen i Objekt har ingen værdi, og gevinster kan ikke udbetales. Spillet bruger samme matematik og tilbagebetalingsprocent, som det ville ved spil for penge.</p></div>
+    <div class="card reveal"><h3>Kun demokreditter</h3><p>Saldoen i Nova har ingen værdi, og gevinster kan ikke udbetales. Spillet bruger samme matematik og tilbagebetalingsprocent, som det ville ved spil for penge.</p></div>
     <div class="card reveal"><h3>Har du brug for hjælp?</h3><p>StopSpillet er Spillemyndighedens hjælpelinje: <a href="https://www.stopspillet.dk" target="_blank" rel="noopener">stopspillet.dk</a> · 70 22 28 25.</p></div>
     <div class="card reveal"><h3>Har du brug for en pause?</h3><p>Du kan udelukke dig fra alle danske spiludbydere via <a href="https://www.rofus.nu" target="_blank" rel="noopener">ROFUS</a> – midlertidigt eller permanent.</p></div>
-    <div class="card reveal"><h3>Tid og penge</h3><p>Spilletid og klokkeslæt er altid synlige. Ved spil for penge sætter du indbetalingsgrænser, før du spiller. Efter 30 minutter minder Objekt dig om, hvor længe du har spillet.</p></div>
+    <div class="card reveal"><h3>Tid og penge</h3><p>Spilletid og klokkeslæt er altid synlige. Ved spil for penge sætter du indbetalingsgrænser, før du spiller. Efter 30 minutter minder Nova dig om, hvor længe du har spillet.</p></div>
   </div>
 </section>
 
 <footer class="footer">
-  Objekt er en designdemo. Ikke et licenseret spil. Rigtige spil hos danske udbydere er under tilsyn af Spillemyndigheden.<br />
+  Nova er en designdemo. Ikke et licenseret spil. Rigtige spil hos danske udbydere er under tilsyn af Spillemyndigheden.<br />
   <span class="age" style="border:1.5px solid currentColor;border-radius:4px;padding:0 4px;font-weight:600;font-size:11px">18+</span> · Spil med omtanke · StopSpillet.dk · ROFUS
 </footer>
 
@@ -601,15 +761,15 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
     <h3>Sådan vinder du</h3>
     <ul>
       <li>Fem valser, tre rækker og 20 faste gevinstlinjer.</li>
-      <li>Tre eller flere ens objekter fra venstre mod højre på en linje giver gevinst. Kun den højeste gevinst pr. linje udbetales.</li>
-      <li>Prismet (Wild) findes på valse 2–5 og erstatter alle objekter undtagen Ringen.</li>
-      <li>Ringen (Bonus) betaler hvor som helst: 3 = 2×, 4 = 10×, 5 = 50× den samlede indsats.</li>
+      <li>Tre eller flere ens symboler fra venstre mod højre på en linje giver gevinst. Kun den højeste gevinst pr. linje udbetales.</li>
+      <li>Stjernen (Wild) findes på valse 2–5 og erstatter alle symboler undtagen Planeten.</li>
+      <li>Planeten (Bonus) betaler hvor som helst: 3 = 2×, 4 = 10×, 5 = 50× den samlede indsats.</li>
     </ul>
     <h3>Gratis spins</h3>
     <ul>
-      <li>Tre eller flere ringe giver 10 gratis spins med samme indsats. Alle gevinster ganges med 2.</li>
-      <li>Tre ringe under gratis spins giver 5 spins mere.</li>
-      <li>Valserne har flere prismer under gratis spins.</li>
+      <li>Tre eller flere planeter giver 10 gratis spins med samme indsats. Alle gevinster ganges med 2.</li>
+      <li>Tre planeter under gratis spins giver 5 spins mere.</li>
+      <li>Valserne har flere stjerner under gratis spins.</li>
     </ul>
     <h3>Autospin</h3>
     <ul>
@@ -651,7 +811,7 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
 
 <div class="sheet" id="sheetWelcome" role="dialog" aria-modal="true" aria-labelledby="sheetWelcomeTitle" hidden>
   <div class="grab"></div>
-  <div class="sheet-head"><h2 id="sheetWelcomeTitle">Velkommen til Objekt</h2></div>
+  <div class="sheet-head"><h2 id="sheetWelcomeTitle">Velkommen til Nova</h2></div>
   <p>Det her er en designdemo af en spilleautomat. Du spiller med demokreditter uden værdi – ingen rigtige penge, ingen udbetaling.</p>
   <p style="margin-top:8px">Du skal være fyldt 18 år for at spille. Spil med omtanke.</p>
   <div class="actions"><button class="btn-pill" id="welcomeOk">Jeg er fyldt 18 – fortsæt</button></div>
@@ -891,368 +1051,284 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
 </script>
 <script>
 /* =========================================================================
-   SlotArt — procedural symbol renderer ("Objekt": physical materials under
-   one top-left key light). No image assets: every symbol is drawn with
-   gradients, paths and baked shadows into an offscreen canvas, once per size.
-   Coordinate space: 100 × 100 units, scaled to the requested pixel size.
+   SlotArtNova — "Nova" skin: cosmic gem symbols, drawn procedurally.
+   Same API as SlotArt: symbol(id, px, dpr, theme) → canvas, colors(theme).
+   Faceted gems with bloom, a gold BAR, a ruby 7, a rainbow star (Wild)
+   and a ringed planet (Bonus). Coordinate space 100 × 100.
    ========================================================================= */
 (function (root) {
   'use strict';
 
   const COLORS = {
-    light: { well: '#fbfbfd', accent: '#0071e3', scatter: '#0071e3', ink: '#1d1d1f', sub: '#6e6e73', shadow: 'rgba(0,0,0,0.22)' },
-    dark:  { well: '#343438', accent: '#2997ff', scatter: '#2997ff', ink: '#f5f5f7', sub: '#86868b', shadow: 'rgba(0,0,0,0.5)' },
+    dark: { well: '#0c0826', accent: '#3ee6ff', accent2: '#ff4fd8', gold: '#ffd166', scatter: '#7df9ff', ink: '#f4f2ff', sub: '#b8b0e0',
+            line: ['#3ee6ff', '#ff4fd8', '#ffd166'], bloom: true, landFlash: true, wildPulse: true, idleSparkle: true },
   };
-  const ACCENT = '#0071e3';
+  COLORS.light = COLORS.dark;
 
   const SYMBOLS = {
-    WILD: { name: 'Prisme', caption: 'Wild', tier: 'wild' },
-    SCAT: { name: 'Ring', caption: 'Bonus', tier: 'scatter' },
-    H1: { name: 'Safirlinse', tier: 'high' },
-    H2: { name: 'Titanblok', tier: 'high' },
-    H3: { name: 'Keramik', tier: 'high' },
-    H4: { name: 'Stålkugle', tier: 'high' },
-    L1: { name: 'A', sub: 'Midnight', tier: 'low', color: '#2e3440', glyph: 'A' },
-    L2: { name: 'K', sub: 'Starlight', tier: 'low', color: '#e6e0d5', glyph: 'K' },
-    L3: { name: 'Q', sub: 'Sierra Blue', tier: 'low', color: '#a3bfd9', glyph: 'Q' },
-    L4: { name: 'J', sub: 'Graphite', tier: 'low', color: '#5b5b5f', glyph: 'J' },
+    WILD: { name: 'Stjerne', caption: 'Wild', tier: 'wild' },
+    SCAT: { name: 'Planet', caption: 'Bonus', tier: 'scatter' },
+    H1: { name: 'BAR', tier: 'high', color: '#ffd166' },
+    H2: { name: 'Syver', tier: 'high', color: '#ff3b5c' },
+    H3: { name: 'Gul sten', tier: 'high', color: '#ffe14d', shape: 'diamond' },
+    H4: { name: 'Grøn sten', tier: 'high', color: '#2ee59d', shape: 'hex' },
+    L1: { name: 'Orange sten', tier: 'low', color: '#ff8c2a', shape: 'octagon' },
+    L2: { name: 'Blå sten', tier: 'low', color: '#3b8bff', shape: 'oval' },
+    L3: { name: 'Lilla sten', tier: 'low', color: '#b04cff', shape: 'triangle' },
+    L4: { name: 'Pink sten', tier: 'low', color: '#ff4fa3', shape: 'pentagon' },
   };
 
-  /* ---------- helpers ---------- */
-  function makeCanvas(px) {
-    const c = typeof OffscreenCanvas !== 'undefined' && false ? new OffscreenCanvas(px, px) : document.createElement('canvas');
-    c.width = px; c.height = px; return c;
+  /* ---------- colour helpers ---------- */
+  function rgb(hex) { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function mix(hex, to, t) { const a = rgb(hex), b = typeof to === 'string' ? rgb(to) : to; return `rgb(${a.map((c, i) => Math.round(c + (b[i] - c) * t)).join(',')})`; }
+  const light = (hex, t) => mix(hex, [255, 255, 255], t);
+  const dark = (hex, t) => mix(hex, [0, 0, 0], t);
+  function rgba(hex, a) { const [r, g, b] = rgb(hex); return `rgba(${r},${g},${b},${a})`; }
+
+  /* ---------- geometry ---------- */
+  function polygon(n, cx, cy, r, rot) {
+    const pts = [];
+    for (let i = 0; i < n; i++) { const a = rot + (i / n) * Math.PI * 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+    return pts;
   }
-  function squircle(ctx, cx, cy, w, h, n) {
-    // superellipse |x/a|^n + |y/b|^n = 1 sampled as a polygon
-    n = n || 4.5; const a = w / 2, b = h / 2; const N = 96;
+  const SHAPES = {
+    diamond: () => [[50, 10], [86, 50], [50, 90], [14, 50]],
+    hex: () => polygon(6, 50, 50, 40, Math.PI / 6),
+    octagon: () => polygon(8, 50, 50, 40, Math.PI / 8),
+    pentagon: () => polygon(5, 50, 52, 40, -Math.PI / 2),
+    triangle: () => [[50, 12], [88, 80], [12, 80]],
+    oval: () => polygon(24, 50, 50, 40, 0),
+  };
+  function path(ctx, pts, round) {
     ctx.beginPath();
-    for (let i = 0; i <= N; i++) {
-      const t = (i / N) * Math.PI * 2;
-      const ct = Math.cos(t), st = Math.sin(t);
-      const x = Math.sign(ct) * Math.pow(Math.abs(ct), 2 / n) * a;
-      const y = Math.sign(st) * Math.pow(Math.abs(st), 2 / n) * b;
-      if (i === 0) ctx.moveTo(cx + x, cy + y); else ctx.lineTo(cx + x, cy + y);
+    if (!round) { pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.closePath(); return; }
+    // rounded polygon via arcTo
+    const n = pts.length;
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[i], p1 = pts[(i + 1) % n], p2 = pts[(i + 2) % n];
+      const mx = (p0[0] + p1[0]) / 2, my = (p0[1] + p1[1]) / 2;
+      if (i === 0) ctx.moveTo(mx, my);
+      ctx.arcTo(p1[0], p1[1], p2[0], p2[1], round);
     }
     ctx.closePath();
   }
-  function roundRect(ctx, x, y, w, h, r) {
-    r = Math.min(r, w / 2, h / 2);
-    ctx.beginPath(); ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  function scalePts(pts, k, cx, cy) { return pts.map(([x, y]) => [cx + (x - cx) * k, cy + (y - cy) * k]); }
+  function centroid(pts) { let x = 0, y = 0; pts.forEach((p) => { x += p[0]; y += p[1]; }); return [x / pts.length, y / pts.length]; }
+
+  function bloom(ctx, cx, cy, r, hex, a) {
+    const g = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+    g.addColorStop(0, rgba(hex, a)); g.addColorStop(0.6, rgba(hex, a * 0.35)); g.addColorStop(1, rgba(hex, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
   }
-  function contactShadow(ctx, cx, cy, rx, ry, alpha) {
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
-    g.addColorStop(0, `rgba(0,0,0,${alpha})`);
-    g.addColorStop(0.55, `rgba(0,0,0,${alpha * 0.45})`);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.save(); ctx.translate(cx, cy); ctx.scale(1, ry / rx); ctx.translate(-cx, -cy);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rx, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-  }
-  function specular(ctx, cx, cy, rx, ry, alpha, rot) {
-    ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot || 0); ctx.scale(1, ry / rx);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
-    g.addColorStop(0, `rgba(255,255,255,${alpha})`);
-    g.addColorStop(0.5, `rgba(255,255,255,${alpha * 0.35})`);
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rx, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-  }
-  function brushed(ctx, x, y, w, h, count, alpha, horizontal, seed) {
-    let s = seed || 7;
-    const r = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
-    ctx.save(); ctx.lineWidth = 0.6;
-    for (let i = 0; i < count; i++) {
-      const p = r();
-      const a = alpha * (0.3 + 0.7 * r());
-      ctx.strokeStyle = r() > 0.5 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a * 0.8})`;
-      ctx.beginPath();
-      if (horizontal) { const yy = y + p * h; ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); }
-      else { const xx = x + p * w; ctx.moveTo(xx, y); ctx.lineTo(xx, y + h); }
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-  function radialBrush(ctx, cx, cy, r0, r1, count, alpha, seed) {
-    let s = seed || 11;
-    const rnd = () => { s = (s * 48271) % 2147483647; return s / 2147483647; };
-    ctx.save(); ctx.lineWidth = 0.5;
-    for (let i = 0; i < count; i++) {
-      const a = rnd() * Math.PI * 2; const al = alpha * (0.2 + 0.8 * rnd());
-      ctx.strokeStyle = rnd() > 0.5 ? `rgba(255,255,255,${al})` : `rgba(0,0,0,${al})`;
-      ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); ctx.stroke();
-    }
-    ctx.restore();
-  }
-  function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
-  function shade(hex, amt) { // amt -1..1
-    const n = parseInt(hex.slice(1), 16); let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-    const f = (c) => Math.round(amt < 0 ? c * (1 + amt) : c + (255 - c) * amt);
-    return `rgb(${f(r)},${f(g)},${f(b)})`;
-  }
-  function caption(ctx, text, y, color) {
-    ctx.save();
-    ctx.font = '700 11.5px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color;
-    ctx.fillText(text, 50, y);
-    ctx.restore();
+  function glint(ctx, x, y, s, a) {
+    ctx.save(); ctx.translate(x, y); ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) { const r = i % 2 ? s * 0.22 : s; const ang = (i / 8) * Math.PI * 2 - Math.PI / 2; const px = Math.cos(ang) * r, py = Math.sin(ang) * r; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }
+    ctx.closePath(); ctx.fill(); ctx.restore();
   }
 
-  /* ---------- symbol painters (100×100 space) ---------- */
-  const painters = {
-    /* Glass prism cube — Wild */
-    WILD(ctx, theme) {
-      contactShadow(ctx, 50, 82, 30, 7, theme === 'dark' ? 0.55 : 0.28);
-      // isometric cube: top face, left face, right face
-      const T = [[50, 22], [78, 36], [50, 50], [22, 36]];
-      const L = [[22, 36], [50, 50], [50, 80], [22, 66]];
-      const R = [[50, 50], [78, 36], [78, 66], [50, 80]];
-      const poly = (p) => { ctx.beginPath(); p.forEach((q, i) => (i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]))); ctx.closePath(); };
-      // faces: translucent cool glass
-      let g = ctx.createLinearGradient(22, 36, 50, 80);
-      g.addColorStop(0, 'rgba(184,214,246,0.95)'); g.addColorStop(1, 'rgba(94,148,214,0.92)');
-      poly(L); ctx.fillStyle = g; ctx.fill();
-      g = ctx.createLinearGradient(78, 36, 50, 80);
-      g.addColorStop(0, 'rgba(214,232,252,0.95)'); g.addColorStop(1, 'rgba(120,170,230,0.92)');
-      poly(R); ctx.fillStyle = g; ctx.fill();
-      g = ctx.createLinearGradient(22, 22, 78, 50);
-      g.addColorStop(0, 'rgba(250,253,255,1)'); g.addColorStop(0.6, 'rgba(226,240,254,1)'); g.addColorStop(1, 'rgba(190,220,250,1)');
-      poly(T); ctx.fillStyle = g; ctx.fill();
-      // inner light: a soft core glow (light trapped in the glass) + refraction shard
-      ctx.save(); poly([[50, 22], [78, 36], [78, 66], [50, 80], [22, 66], [22, 36]]); ctx.clip();
-      g = ctx.createRadialGradient(52, 52, 2, 52, 52, 26);
-      g.addColorStop(0, 'rgba(255,255,255,0.75)'); g.addColorStop(0.5, 'rgba(180,215,255,0.25)'); g.addColorStop(1, 'rgba(120,170,230,0)');
+  /* ---------- faceted gem ---------- */
+  function gem(ctx, spec) {
+    const hex = spec.color, oval = spec.shape === 'oval';
+    const pts = SHAPES[spec.shape]();
+    const [cx, cy] = centroid(pts);
+    const round = spec.shape === 'triangle' ? 6 : spec.shape === 'diamond' ? 3 : 0;
+    // bloom behind
+    bloom(ctx, cx, cy + 2, 52, hex, 0.5);
+    // body
+    ctx.save(); path(ctx, pts, round); ctx.clip();
+    let g = ctx.createLinearGradient(15, 10, 85, 90);
+    g.addColorStop(0, light(hex, 0.45)); g.addColorStop(0.45, hex); g.addColorStop(1, dark(hex, 0.55));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
+    if (oval) {
+      // cabochon: smooth dome
+      g = ctx.createRadialGradient(cx - 12, cy - 14, 2, cx, cy, 44);
+      g.addColorStop(0, light(hex, 0.7)); g.addColorStop(0.35, light(hex, 0.15)); g.addColorStop(0.8, hex); g.addColorStop(1, dark(hex, 0.6));
       ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      ctx.globalAlpha = 0.28; ctx.fillStyle = '#ffffff';
-      poly([[30, 44], [44, 51], [44, 70], [30, 63]]); ctx.fill();
-      ctx.restore();
-      // caustic tint on the right face
-      ctx.save(); poly(R); ctx.clip();
-      g = ctx.createLinearGradient(50, 50, 78, 66);
-      g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.35)'); g.addColorStop(0.55, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g; ctx.fillRect(40, 30, 50, 60); ctx.restore();
-      // bright edges
-      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 1.6;
-      poly(T); ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.moveTo(50, 50); ctx.lineTo(50, 80); ctx.stroke();
-      ctx.strokeStyle = 'rgba(40,90,160,0.35)'; ctx.lineWidth = 1;
-      poly(L); ctx.stroke(); poly(R); ctx.stroke();
-      // specular on top
-      specular(ctx, 42, 30, 9, 4, 0.95, -0.45);
-      caption(ctx, 'Wild', 91, theme === 'dark' ? '#f5f5f7' : '#1d1d1f');
-    },
-
-    /* Titanium torus — Bonus scatter */
-    SCAT(ctx, theme) {
-      contactShadow(ctx, 50, 83, 30, 6, theme === 'dark' ? 0.55 : 0.28);
-      const cx = 50, cy = 50, R = 32, r = 15.5;
-      // ring body: conic brushed if available
-      ctx.save();
-      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.arc(cx, cy, r, 0, Math.PI * 2, true);
-      ctx.clip('evenodd');
-      let g;
-      if (ctx.createConicGradient) {
-        g = ctx.createConicGradient(-Math.PI / 2, cx, cy);
-        const stops = [[0, '#d9d4cc'], [0.12, '#a8a29a'], [0.25, '#cfc9c1'], [0.4, '#8e8a85'], [0.55, '#c9c3bb'], [0.7, '#9b968f'], [0.85, '#e0dbd3'], [1, '#d9d4cc']];
-        stops.forEach(([p, c]) => g.addColorStop(p, c));
-      } else {
-        g = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
-        g.addColorStop(0, '#d9d4cc'); g.addColorStop(0.5, '#9b968f'); g.addColorStop(1, '#cfc9c1');
+    } else {
+      // crown facets: triangles from outer vertices to the table
+      const table = scalePts(pts, 0.52, cx, cy - 2);
+      const n = pts.length;
+      for (let i = 0; i < n; i++) {
+        const a = pts[i], b = pts[(i + 1) % n], c = table[(i + 1) % n], d = table[i];
+        const ang = Math.atan2((a[1] + b[1]) / 2 - cy, (a[0] + b[0]) / 2 - cx);
+        const lit = 0.5 + 0.5 * Math.cos(ang + Math.PI * 0.75); // key light from top-left
+        ctx.fillStyle = lit > 0.5 ? `rgba(255,255,255,${(lit - 0.5) * 0.55})` : `rgba(0,0,0,${(0.5 - lit) * 0.45})`;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); ctx.closePath(); ctx.fill();
+        // facet edge lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(d[0], d[1]); ctx.stroke();
       }
+      // table
+      g = ctx.createLinearGradient(cx - 20, cy - 24, cx + 20, cy + 16);
+      g.addColorStop(0, light(hex, 0.75)); g.addColorStop(0.5, light(hex, 0.25)); g.addColorStop(1, hex);
+      ctx.fillStyle = g; path(ctx, table); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 0.9; ctx.stroke();
+      // inner light
+      g = ctx.createRadialGradient(cx - 10, cy - 12, 1, cx, cy, 30);
+      g.addColorStop(0, 'rgba(255,255,255,0.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      radialBrush(ctx, cx, cy, r, R, 420, 0.07, 5);
-      // top-left light / bottom-right dark
-      g = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
-      g.addColorStop(0, 'rgba(255,255,255,0.55)'); g.addColorStop(0.45, 'rgba(255,255,255,0)'); g.addColorStop(0.55, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.35)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      ctx.restore();
-      // bevels
-      ctx.lineWidth = 1.4;
-      ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.beginPath(); ctx.arc(cx, cy, R - 0.7, Math.PI * 0.9, Math.PI * 1.75); ctx.stroke();
-      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.arc(cx, cy, R - 0.7, Math.PI * -0.1, Math.PI * 0.75); ctx.stroke();
-      ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(cx, cy, r + 0.7, Math.PI * 0.9, Math.PI * 1.75); ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(cx, cy, r + 0.7, Math.PI * -0.1, Math.PI * 0.75); ctx.stroke();
-      // index dot in accent
-      ctx.fillStyle = ACCENT; ctx.beginPath(); ctx.arc(cx, cy - (R + r) / 2, 3.2, 0, Math.PI * 2); ctx.fill();
-      specular(ctx, cx, cy - (R + r) / 2, 4.5, 4.5, 0.5);
-      caption(ctx, 'Bonus', 91, theme === 'dark' ? '#f5f5f7' : '#1d1d1f');
-    },
-
-    /* Sapphire camera lens */
-    H1(ctx, theme) {
-      contactShadow(ctx, 50, 84, 31, 6, theme === 'dark' ? 0.55 : 0.3);
-      const cx = 50, cy = 49;
-      // bezel
-      let g = ctx.createLinearGradient(cx - 34, cy - 34, cx + 34, cy + 34);
-      g.addColorStop(0, '#6c6c70'); g.addColorStop(0.5, '#2a2a2d'); g.addColorStop(1, '#4a4a4e');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 34, 0, Math.PI * 2); ctx.fill();
-      // stepped rings
-      const rings = [[31, '#1c1c1e'], [28.5, '#3a3a3d'], [27, '#141416'], [24.5, '#2c2c2f']];
-      rings.forEach(([r, c]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); });
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 0.8;
-      ctx.beginPath(); ctx.arc(cx, cy, 30, Math.PI * 0.85, Math.PI * 1.7); ctx.stroke();
-      ctx.beginPath(); ctx.arc(cx, cy, 26, Math.PI * 0.85, Math.PI * 1.7); ctx.stroke();
-      // glass
-      g = ctx.createRadialGradient(cx - 6, cy - 8, 2, cx, cy, 23);
-      g.addColorStop(0, '#2b3f7a'); g.addColorStop(0.45, '#101d45'); g.addColorStop(1, '#070c1c');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 23, 0, Math.PI * 2); ctx.fill();
-      // lens element reflections
-      const refl = [[cx + 3, cy + 4, 14, 'rgba(106,90,205,0.35)'], [cx - 2, cy + 1, 9, 'rgba(58,120,220,0.45)'], [cx + 4, cy - 2, 5, 'rgba(150,120,255,0.5)']];
-      refl.forEach(([x, y, r, c]) => { const gg = ctx.createRadialGradient(x, y, 0, x, y, r); gg.addColorStop(0, c); gg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
-      // Fresnel rim
-      g = ctx.createRadialGradient(cx, cy, 18, cx, cy, 23);
-      g.addColorStop(0, 'rgba(120,160,255,0)'); g.addColorStop(1, 'rgba(120,160,255,0.35)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 23, 0, Math.PI * 2); ctx.fill();
-      // specular arc at 10 o'clock
-      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, 23, 0, Math.PI * 2); ctx.clip();
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.arc(cx, cy, 19, Math.PI * 1.08, Math.PI * 1.42); ctx.stroke();
-      specular(ctx, cx - 9, cy - 10, 5, 3, 0.85, -0.6);
-      specular(ctx, cx + 9, cy + 9, 3, 2, 0.35, -0.6);
-      ctx.restore();
-    },
-
-    /* Titanium slab (squircle) */
-    H2(ctx, theme) {
-      contactShadow(ctx, 50, 85, 32, 6, theme === 'dark' ? 0.55 : 0.3);
-      const x = 15, y = 14, w = 70, h = 70;
-      ctx.save(); squircle(ctx, 50, 49, w, h, 4.6); ctx.clip();
-      let g = ctx.createLinearGradient(x, y, x + w, y + h);
-      g.addColorStop(0, '#cfc9c1'); g.addColorStop(0.5, '#b9b3ab'); g.addColorStop(1, '#8e8a85');
-      ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
-      brushed(ctx, x, y, w, h, 320, 0.07, true, 3);
-      // diagonal sheen
-      g = ctx.createLinearGradient(x, y + h, x + w, y);
-      g.addColorStop(0.3, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.32)'); g.addColorStop(0.7, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
-      // chamfers
-      g = ctx.createLinearGradient(x, y, x, y + h);
-      g.addColorStop(0, 'rgba(255,255,255,0.6)'); g.addColorStop(0.08, 'rgba(255,255,255,0)'); g.addColorStop(0.92, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.45)');
-      ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
-      ctx.restore();
-      squircle(ctx, 50, 49, w - 1, h - 1, 4.6);
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1; ctx.stroke();
-      squircle(ctx, 50, 49, w, h, 4.6);
-      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.8; ctx.stroke();
-      specular(ctx, 34, 30, 10, 6, 0.35, -0.5);
-    },
-
-    /* Glossy white ceramic pebble */
-    H3(ctx, theme) {
-      contactShadow(ctx, 50, 84, 34, 7, theme === 'dark' ? 0.6 : 0.32);
-      const w = 78, h = 64, cx = 50, cy = 50;
-      ctx.save(); squircle(ctx, cx, cy, w, h, 3.6); ctx.clip();
-      let g = ctx.createRadialGradient(cx - 18, cy - 22, 4, cx, cy, 52);
-      g.addColorStop(0, '#ffffff'); g.addColorStop(0.55, '#f4f3ef'); g.addColorStop(1, '#d9d6cf');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      // ambient occlusion at the bottom
-      g = ctx.createLinearGradient(0, cy, 0, cy + h / 2);
-      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(90,80,70,0.28)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      // broad soft reflection (window)
-      g = ctx.createLinearGradient(cx - 30, cy - 30, cx + 10, cy + 20);
-      g.addColorStop(0, 'rgba(255,255,255,0.7)'); g.addColorStop(0.5, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      // hard specular
-      ctx.save(); ctx.translate(cx - 22, cy - 18); ctx.rotate(-0.55);
-      g = ctx.createLinearGradient(-10, 0, 10, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g; roundRect(ctx, -11, -2.2, 22, 4.4, 2.2); ctx.fill(); ctx.restore();
-      // rim light bottom-right
-      g = ctx.createRadialGradient(cx + 18, cy + 16, 10, cx + 18, cy + 16, 34);
-      g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.85, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0.6)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      ctx.restore();
-      squircle(ctx, cx, cy, w, h, 3.6);
-      ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 0.8; ctx.stroke();
-    },
-
-    /* Polished steel mirror sphere */
-    H4(ctx, theme) {
-      contactShadow(ctx, 50, 85, 30, 6, theme === 'dark' ? 0.6 : 0.32);
-      const cx = 50, cy = 49, r = 34;
-      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
-      // sky (upper) and floor (lower), curved horizon
-      let g = ctx.createLinearGradient(0, cy - r, 0, cy + r);
-      g.addColorStop(0, '#f2f4f7'); g.addColorStop(0.42, '#c9cdd3'); g.addColorStop(0.5, '#6e7176'); g.addColorStop(0.52, '#3f4145'); g.addColorStop(0.8, '#2a2b2e'); g.addColorStop(1, '#55585d');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      // curved horizon band
-      g = ctx.createLinearGradient(0, cy - 4, 0, cy + 6);
-      g.addColorStop(0, 'rgba(201,205,211,0)'); g.addColorStop(0.45, 'rgba(201,205,211,0.9)'); g.addColorStop(0.5, 'rgba(90,93,98,0.9)'); g.addColorStop(1, 'rgba(63,65,69,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, cy + 1, r + 4, 5.5, 0, 0, Math.PI * 2); ctx.fill();
-      // window reflection (soft rectangle)
-      ctx.save(); ctx.translate(cx - 12, cy - 16); ctx.rotate(-0.35);
-      g = ctx.createLinearGradient(-12, -8, 12, 8); g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(1, 'rgba(255,255,255,0.15)');
-      ctx.fillStyle = g; roundRect(ctx, -12, -8, 24, 16, 5); ctx.fill(); ctx.restore();
-      // Fresnel darkening at the rim
-      g = ctx.createRadialGradient(cx, cy, r * 0.7, cx, cy, r);
-      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.45)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      // floor bounce light at the bottom
-      g = ctx.createRadialGradient(cx, cy + r, 2, cx, cy + r, r * 0.9);
-      g.addColorStop(0, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-      specular(ctx, cx - 14, cy - 15, 5, 3.5, 1, -0.5);
-      ctx.restore();
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.8; ctx.stroke();
-    },
-  };
-
-  /* Anodised aluminium disc with an engraved glyph (four low symbols) */
-  function disc(ctx, theme, spec) {
-    contactShadow(ctx, 50, 85, 30, 6, theme === 'dark' ? 0.55 : 0.28);
-    const cx = 50, cy = 49, r = 33;
-    const base = spec.color;
-    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
-    let g = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
-    g.addColorStop(0, shade(base, 0.22)); g.addColorStop(0.5, base); g.addColorStop(1, shade(base, -0.22));
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
-    radialBrush(ctx, cx, cy, 4, r, 360, spec.color === '#e6e0d5' ? 0.035 : 0.055, 21);
-    // subtle anisotropic sheen
-    g = ctx.createLinearGradient(cx - r, cy + r, cx + r, cy - r);
-    g.addColorStop(0.35, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.18)'); g.addColorStop(0.65, 'rgba(255,255,255,0)');
+    }
+    // bottom-right depth
+    g = ctx.createLinearGradient(cx, cy, 90, 95);
+    g.addColorStop(0.3, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.35)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
     ctx.restore();
-    // chamfered edge: light top-left, dark bottom-right
-    ctx.lineWidth = 2.6;
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.arc(cx, cy, r - 1.3, Math.PI * 0.85, Math.PI * 1.75); ctx.stroke();
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(cx, cy, r - 1.3, Math.PI * -0.15, Math.PI * 0.8); ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 0.8; ctx.stroke();
-    // engraved letter: dark cut with a light lower edge (embossed keycap look)
-    const lightDisc = spec.color === '#e6e0d5' || spec.color === '#a3bfd9';
-    const dark = lightDisc ? 'rgba(60,55,50,0.62)' : 'rgba(0,0,0,0.6)';
-    const light = lightDisc ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.32)';
-    const glyph = (fill, dy) => {
-      ctx.save(); ctx.translate(cx, cy + dy + 1.5); ctx.fillStyle = fill;
-      ctx.font = '600 40px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(spec.glyph, 0, 0); ctx.restore();
-    };
-    glyph(light, 1.1); glyph(dark, 0);
+    // outline: light inner, dark outer
+    path(ctx, pts, round); ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.save(); ctx.globalCompositeOperation = 'destination-over'; path(ctx, scalePts(pts, 1.04, cx, cy), round); ctx.fillStyle = dark(hex, 0.7); ctx.fill(); ctx.restore();
+    // speculars
+    ctx.save(); ctx.translate(cx - 14, cy - 18); ctx.rotate(-0.6);
+    g = ctx.createLinearGradient(-9, 0, 9, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.95)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, 10, 3.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    glint(ctx, cx + 16, cy + 14, 4.5, 0.85);
+    glint(ctx, cx - 22, cy - 6, 2.5, 0.7);
   }
-  ['L1', 'L2', 'L3', 'L4'].forEach((id) => { painters[id] = (ctx, theme) => disc(ctx, theme, SYMBOLS[id]); });
+
+  /* ---------- BAR ---------- */
+  function bar(ctx) {
+    bloom(ctx, 50, 52, 54, '#ffd166', 0.45);
+    const x = 10, y = 30, w = 80, h = 40, r = 9;
+    const rr = (xx, yy, ww, hh, rad) => { ctx.beginPath(); ctx.moveTo(xx + rad, yy); ctx.arcTo(xx + ww, yy, xx + ww, yy + hh, rad); ctx.arcTo(xx + ww, yy + hh, xx, yy + hh, rad); ctx.arcTo(xx, yy + hh, xx, yy, rad); ctx.arcTo(xx, yy, xx + ww, yy, rad); ctx.closePath(); };
+    // depth
+    rr(x, y + 3, w, h, r); ctx.fillStyle = '#7a4c08'; ctx.fill();
+    // gold body
+    let g = ctx.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, '#fff6c2'); g.addColorStop(0.28, '#ffd75e'); g.addColorStop(0.55, '#f0a800'); g.addColorStop(0.8, '#ffcd3c'); g.addColorStop(1, '#b57a10');
+    rr(x, y, w, h, r); ctx.fillStyle = g; ctx.fill();
+    ctx.save(); rr(x, y, w, h, r); ctx.clip();
+    g = ctx.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.45, 'rgba(255,255,255,0.5)'); g.addColorStop(0.55, 'rgba(255,255,255,0.05)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+    rr(x + 1, y + 1, w - 2, h - 2, r - 1); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.2; ctx.stroke();
+    rr(x, y, w, h, r); ctx.strokeStyle = 'rgba(90,50,0,0.6)'; ctx.lineWidth = 1.2; ctx.stroke();
+    // text
+    ctx.font = '900 27px "Rubik", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillText('BAR', 50, y + h / 2 + 2.2);
+    g = ctx.createLinearGradient(0, y + 8, 0, y + h - 8); g.addColorStop(0, '#3a1f6e'); g.addColorStop(1, '#1b0f3d');
+    ctx.fillStyle = g; ctx.fillText('BAR', 50, y + h / 2 + 1);
+    glint(ctx, x + 12, y + 6, 4, 0.9);
+  }
+
+  /* ---------- Ruby seven ---------- */
+  function seven(ctx) {
+    bloom(ctx, 52, 52, 52, '#ff3b5c', 0.5);
+    ctx.font = '900 78px "Rubik", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // extrusion
+    for (let i = 6; i >= 1; i--) { ctx.fillStyle = i > 3 ? '#5a0016' : '#8a0024'; ctx.fillText('7', 50 + i * 0.7, 54 + i * 0.9); }
+    // face
+    let g = ctx.createLinearGradient(0, 18, 0, 92);
+    g.addColorStop(0, '#ff8fa3'); g.addColorStop(0.35, '#ff3b5c'); g.addColorStop(0.7, '#d1163a'); g.addColorStop(1, '#8f0a26');
+    ctx.fillStyle = g; ctx.fillText('7', 50, 54);
+    // glass highlight (upper half)
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, 100, 50); ctx.clip();
+    ctx.fillStyle = 'rgba(255,255,255,0.32)'; ctx.fillText('7', 50, 54); ctx.restore();
+    ctx.lineWidth = 1.4; ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.strokeText('7', 50, 54);
+    glint(ctx, 35, 24, 5, 0.95); glint(ctx, 60, 70, 3, 0.7);
+  }
+
+  /* ---------- Rainbow star (Wild) ---------- */
+  function star(ctx) {
+    const cx = 50, cy = 46;
+    ['#3ee6ff', '#ff4fd8', '#ffd166'].forEach((c, i) => bloom(ctx, cx + (i - 1) * 6, cy, 54, c, 0.28));
+    const pts = [];
+    for (let i = 0; i < 16; i++) { const r = i % 2 ? 19 : 40; const a = (i / 16) * Math.PI * 2 - Math.PI / 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+    ctx.save(); path(ctx, pts, 2); ctx.clip();
+    let g;
+    if (ctx.createConicGradient) {
+      g = ctx.createConicGradient(-Math.PI / 2, cx, cy);
+      [['#ff4fd8', 0], ['#ff8c2a', 0.16], ['#ffe14d', 0.33], ['#2ee59d', 0.5], ['#3ee6ff', 0.66], ['#7b61ff', 0.83], ['#ff4fd8', 1]].forEach(([c, p]) => g.addColorStop(p, c));
+    } else { g = ctx.createLinearGradient(10, 10, 90, 90); g.addColorStop(0, '#ff4fd8'); g.addColorStop(0.5, '#ffe14d'); g.addColorStop(1, '#3ee6ff'); }
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
+    // facets: alternate light/dark wedges
+    for (let i = 0; i < 16; i++) {
+      const a = pts[i], b = pts[(i + 1) % 16];
+      ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)';
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.closePath(); ctx.fill();
+    }
+    // white core
+    g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 22);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.45, 'rgba(255,255,255,0.75)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
+    ctx.restore();
+    path(ctx, pts, 2); ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.3; ctx.stroke();
+    glint(ctx, cx - 12, cy - 14, 5, 1);
+    captionPill(ctx, 'WILD', 88);
+  }
+
+  /* ---------- Ringed planet (Bonus) ---------- */
+  function planet(ctx) {
+    const cx = 50, cy = 46;
+    bloom(ctx, cx, cy, 54, '#7df9ff', 0.4);
+    // back half of the ring
+    const ring = (front) => {
+      ctx.save(); ctx.translate(cx, cy + 2); ctx.rotate(-0.42);
+      ctx.beginPath(); ctx.ellipse(0, 0, 46, 13, 0, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2);
+      const g = ctx.createLinearGradient(-46, 0, 46, 0);
+      g.addColorStop(0, 'rgba(125,249,255,0)'); g.addColorStop(0.2, 'rgba(125,249,255,0.9)'); g.addColorStop(0.5, 'rgba(255,255,255,1)'); g.addColorStop(0.8, 'rgba(255,79,216,0.9)'); g.addColorStop(1, 'rgba(255,79,216,0)');
+      ctx.strokeStyle = g; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 0, 46, 13, 0, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.restore();
+    };
+    ring(false);
+    // sphere
+    let g = ctx.createRadialGradient(cx - 9, cy - 10, 2, cx, cy, 27);
+    g.addColorStop(0, '#dffcff'); g.addColorStop(0.3, '#6fd6ff'); g.addColorStop(0.7, '#5a3bff'); g.addColorStop(1, '#1a0b4a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 26, 0, Math.PI * 2); ctx.fill();
+    // bands
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, 26, 0, Math.PI * 2); ctx.clip();
+    for (let i = -2; i <= 2; i++) { ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(cx, cy + i * 9, 30, 3.2, -0.42, 0, Math.PI * 2); ctx.fill(); }
+    g = ctx.createRadialGradient(cx, cy, 20, cx, cy, 26); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.45)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 100, 100);
+    ctx.restore();
+    ring(true);
+    ctx.beginPath(); ctx.arc(cx, cy, 26, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+    glint(ctx, cx - 10, cy - 12, 4.5, 0.95);
+    captionPill(ctx, 'BONUS', 88);
+  }
+
+  function captionPill(ctx, text, y) {
+    ctx.save();
+    ctx.font = '800 9.5px "Rubik", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w = ctx.measureText(text).width + 12;
+    ctx.fillStyle = 'rgba(8,4,28,0.82)';
+    ctx.beginPath(); ctx.moveTo(50 - w / 2 + 6, y - 7); ctx.arcTo(50 + w / 2, y - 7, 50 + w / 2, y + 7, 7); ctx.arcTo(50 + w / 2, y + 7, 50 - w / 2, y + 7, 7); ctx.arcTo(50 - w / 2, y + 7, 50 - w / 2, y - 7, 7); ctx.arcTo(50 - w / 2, y - 7, 50 + w / 2, y - 7, 7); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.fillText(text, 50, y + 0.5);
+    ctx.restore();
+  }
+
+  const painters = {
+    WILD: (ctx) => star(ctx),
+    SCAT: (ctx) => planet(ctx),
+    H1: (ctx) => bar(ctx),
+    H2: (ctx) => seven(ctx),
+  };
+  ['H3', 'H4', 'L1', 'L2', 'L3', 'L4'].forEach((id) => { painters[id] = (ctx) => gem(ctx, SYMBOLS[id]); });
 
   /* ---------- public API ---------- */
   const cache = new Map();
   function symbol(id, px, dpr, theme) {
-    theme = theme || 'light';
-    const key = id + '|' + px + '|' + theme;
+    const key = id + '|' + px;
     let c = cache.get(key);
     if (c) return c;
-    c = makeCanvas(px);
+    c = document.createElement('canvas'); c.width = px; c.height = px;
     const ctx = c.getContext('2d');
     ctx.scale(px / 100, px / 100);
     ctx.lineJoin = 'round';
     const paint = painters[id];
-    if (paint) paint(ctx, theme);
+    if (paint) paint(ctx);
     cache.set(key, c);
     return c;
   }
-  function colors(theme) { return COLORS[theme] || COLORS.light; }
+  function colors(theme) { return COLORS.dark; }
   function clearCache() { cache.clear(); }
 
-  root.SlotArt = { symbol, colors, clearCache, SYMBOLS, ACCENT, painters, util: { squircle, roundRect, contactShadow, specular } };
+  root.SlotArtNova = { symbol, colors, clearCache, SYMBOLS, ACCENT: '#3ee6ff', painters };
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
@@ -2137,6 +2213,149 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
   root.ReelEngine.PROFILES = PROFILES;
   root.ReelEngine.util = { roundRect, hexA, clamp, easeOutCubic, easeInOut };
 })(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+/* =========================================================================
+   Starfield — full-window space background for the Nova skin.
+   Radial star drift that turns into hyperspace streaks while the reels spin,
+   a slowly breathing nebula, and a flash on wins. Cheap: one canvas, capped DPR.
+   ========================================================================= */
+(function (root) {
+  'use strict';
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const TINTS = ['255,255,255', '125,249,255', '255,150,235', '255,225,160'];
+
+  class Starfield {
+    constructor(canvas, opts) {
+      this.canvas = canvas; this.ctx = canvas.getContext('2d');
+      this.reduced = !!(opts && opts.reducedMotion);
+      this.dpr = Math.min(1.5, root.devicePixelRatio || 1);
+      this.warp = 0; this.warpTarget = 0; this.glow = 0; this.mode = 0; this.modeTarget = 0; // 0 base, 1 free
+      this.stars = [];
+      this.last = performance.now();
+      this.resize();
+      this._onResize = () => this.resize();
+      root.addEventListener('resize', this._onResize);
+      this._raf = requestAnimationFrame((t) => this.loop(t));
+    }
+    resize() {
+      this.w = root.innerWidth; this.h = root.innerHeight;
+      this.canvas.width = Math.round(this.w * this.dpr); this.canvas.height = Math.round(this.h * this.dpr);
+      this.canvas.style.width = this.w + 'px'; this.canvas.style.height = this.h + 'px';
+      const n = Math.round(Math.min(320, Math.max(140, (this.w * this.h) / 5200)));
+      if (this.stars.length !== n) { this.stars = []; for (let i = 0; i < n; i++) this.stars.push(this.spawn(true)); }
+      this.nebula = [this.bakeNebula(false), this.bakeNebula(true)];
+      this.dirty = true;
+    }
+    spawn(anywhere) {
+      return { a: rnd(0, Math.PI * 2), r: anywhere ? Math.pow(Math.random(), 0.6) : rnd(0.01, 0.06), z: rnd(0.25, 1), tw: rnd(0, Math.PI * 2), tint: TINTS[Math.random() < 0.7 ? 0 : 1 + Math.floor(Math.random() * 3)] };
+    }
+    bakeNebula(free) {
+      const c = document.createElement('canvas'); const W = 512, H = 320; c.width = W; c.height = H;
+      const x = c.getContext('2d');
+      const blobs = free
+        ? [[0.25, 0.15, 0.55, '255,170,60', 0.55], [0.75, 0.7, 0.6, '255,79,216', 0.5], [0.5, 0.45, 0.45, '255,225,120', 0.35]]
+        : [[0.2, 0.1, 0.55, '120,60,220', 0.6], [0.8, 0.75, 0.6, '30,140,255', 0.45], [0.55, 0.4, 0.45, '255,79,216', 0.28]];
+      blobs.forEach(([bx, by, br, col, a]) => {
+        const g = x.createRadialGradient(bx * W, by * H, 0, bx * W, by * H, br * W);
+        g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(0.5, `rgba(${col},${a * 0.35})`); g.addColorStop(1, `rgba(${col},0)`);
+        x.fillStyle = g; x.fillRect(0, 0, W, H);
+      });
+      return c;
+    }
+    setWarp(v) { this.warpTarget = Math.max(0, Math.min(1, v)); }
+    flash(strength) { this.glow = Math.max(this.glow, strength || 1); }
+    setMode(m) { this.modeTarget = m === 'free' ? 1 : 0; }
+    loop(now) {
+      const dt = Math.min(0.05, (now - this.last) / 1000); this.last = now;
+      this.warp += (this.warpTarget - this.warp) * Math.min(1, dt * (this.warpTarget > this.warp ? 3.2 : 2.2));
+      this.mode += (this.modeTarget - this.mode) * Math.min(1, dt * 1.5);
+      this.glow = Math.max(0, this.glow - dt * 1.4);
+      if (!this.reduced || this.dirty) { this.draw(now, dt); this.dirty = false; }
+      this._raf = requestAnimationFrame((t) => this.loop(t));
+    }
+    draw(now, dt) {
+      const ctx = this.ctx, dpr = this.dpr, w = this.w, h = this.h;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // ground
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, '#0b0626'); bg.addColorStop(0.5, '#08041c'); bg.addColorStop(1, '#03020c');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+      // nebula (two bakes crossfaded by mode), breathing
+      const breath = 0.85 + 0.15 * Math.sin(now / 4000) + this.glow * 0.6;
+      ctx.save(); ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = Math.min(1, breath * (1 - this.mode)); ctx.drawImage(this.nebula[0], -w * 0.1, -h * 0.15, w * 1.2, h * 1.3);
+      ctx.globalAlpha = Math.min(1, breath * this.mode); if (this.mode > 0.01) ctx.drawImage(this.nebula[1], -w * 0.1, -h * 0.15, w * 1.2, h * 1.3);
+      ctx.restore();
+      // stars
+      const cx = w * 0.5, cy = h * 0.42, R = Math.max(w, h) * 0.78;
+      const warp = this.warp, speed = (0.012 + warp * 1.1);
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (const s of this.stars) {
+        if (!this.reduced) { s.r += speed * (0.4 + s.z) * dt * (0.3 + s.r * 1.4); s.tw += dt * 2; }
+        if (s.r > 1.15) Object.assign(s, this.spawn(false));
+        const x = cx + Math.cos(s.a) * s.r * R, y = cy + Math.sin(s.a) * s.r * R;
+        const twinkle = 0.55 + 0.45 * Math.sin(s.tw * (1 + s.z));
+        const size = (0.5 + s.z * 1.5) * (0.7 + s.r * 0.6);
+        const alpha = Math.min(1, (0.35 + 0.65 * twinkle) * (0.5 + s.z * 0.6) * (0.6 + this.glow * 0.5));
+        if (warp > 0.04) {
+          const len = warp * (8 + 70 * s.r * s.z);
+          const x0 = cx + Math.cos(s.a) * Math.max(0, s.r * R - len), y0 = cy + Math.sin(s.a) * Math.max(0, s.r * R - len);
+          const g = ctx.createLinearGradient(x0, y0, x, y);
+          g.addColorStop(0, `rgba(${s.tint},0)`); g.addColorStop(1, `rgba(${s.tint},${alpha})`);
+          ctx.strokeStyle = g; ctx.lineWidth = size * (1 + warp * 0.6); ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x, y); ctx.stroke();
+        } else {
+          ctx.fillStyle = `rgba(${s.tint},${alpha})`;
+          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+          if (s.z > 0.85 && twinkle > 0.8) { // cross sparkle on the brightest
+            ctx.strokeStyle = `rgba(${s.tint},${(twinkle - 0.8) * 2.5 * 0.6})`; ctx.lineWidth = 0.8;
+            ctx.beginPath(); ctx.moveTo(x - size * 4, y); ctx.lineTo(x + size * 4, y); ctx.moveTo(x, y - size * 4); ctx.lineTo(x, y + size * 4); ctx.stroke();
+          }
+        }
+      }
+      ctx.restore();
+      // win flash: soft white-cyan wash from the centre
+      if (this.glow > 0.02) {
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.7);
+        g.addColorStop(0, `rgba(125,249,255,${this.glow * 0.16})`); g.addColorStop(1, 'rgba(125,249,255,0)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      }
+    }
+    destroy() { cancelAnimationFrame(this._raf); root.removeEventListener('resize', this._onResize); }
+  }
+  root.Starfield = Starfield;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+/* Nova skin: wires the cosmic art + starfield into the shared game (app.js reads window.SlotSkin). */
+(function () {
+  'use strict';
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sf = new Starfield(document.getElementById('starfield'), { reducedMotion: reduced });
+  window.SlotSkin = {
+    name: 'nova',
+    art: SlotArtNova,
+    particles: 'shards',
+    fxColors: ['#ffe14d', '#2ee59d', '#ff8c2a', '#3b8bff', '#b04cff', '#ff4fa3', '#7df9ff'],
+    onSpinStart() { sf.setWarp(1); },
+    onSpinEnd() { sf.setWarp(0); },
+    onReelStop(i, column) { if (column && column.includes('WILD')) sf.flash(0.5); },
+    onWin(tier) { sf.flash(tier === 'win' ? 0.6 : tier === 'big' ? 1 : 1.4); },
+    onFreeEnter() { sf.setMode('free'); sf.flash(1.2); },
+    onFreeExit() { sf.setMode('base'); },
+    starfield: sf,
+  };
+  // Re-bake symbols once the display font is available (BAR / 7 use it).
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load('900 20px Rubik').then(() => {
+      SlotArtNova.clearCache();
+      if (window.Objekt) { window.Objekt.engine.symbolCache.clear(); window.Objekt.engine._needsDraw = true; window.Objekt.renderStaticArt && window.Objekt.renderStaticArt(); }
+    }).catch(() => {});
+  }
+})();
 
 </script>
 <script>
