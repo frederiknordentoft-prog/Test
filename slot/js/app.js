@@ -28,9 +28,10 @@
   const AUTO_MIN_GAP = 3000;          // Spillemyndigheden: ≥ 3 s between results in autospin
   const REALITY_CHECK_MS = 30 * 60 * 1000;
 
+  const num = (v, d) => (typeof v === 'number' && Number.isFinite(v)) ? v : d;
   const state = {
-    balance: store.get('balance', START_BALANCE),
-    betIndex: clamp(store.get('betIndex', 2), 0, BETS.length - 1),
+    balance: Math.max(0, num(store.get('balance', START_BALANCE), START_BALANCE)),
+    betIndex: (() => { const i = store.get('betIndex', 2); return Number.isInteger(i) ? clamp(i, 0, BETS.length - 1) : 2; })(),
     turbo: !!store.get('turbo', false),
     sound: store.get('sound', true) !== false,
     busy: false, spinning: false, auto: null, free: null,
@@ -47,7 +48,7 @@
     spin: $('#spin'), spinLabel: $('#spinLabel'), ringRect: $('#ringRect'),
     betMinus: $('#betMinus'), betPlus: $('#betPlus'), autoBtn: $('#autoBtn'), turboBtn: $('#turboBtn'), infoBtn: $('#infoBtn'),
     soundBtn: $('#soundBtn'), themeBtn: $('#themeBtn'), clock: $('#clock'), session: $('#session'),
-    scrim: $('#scrim'), veil: $('#veil'), toast: $('#toast'), toastText: $('#toastText'), toastAction: $('#toastAction'),
+    scrim: $('#scrim'), veil: $('#veil'), toast: $('#toast'), toastText: $('#toastText'), toastAction: $('#toastAction'), sr: $('#sr'),
   };
 
   /* ---------- theme ---------- */
@@ -146,19 +147,28 @@
 
   /* ---------- sheets ---------- */
   let openSheetEl = null, lastFocus = null;
+  /* While a sheet is open the rest of the page is inert (no Tab escape, no clicks). */
+  function setInert(sh, on) {
+    Array.from(document.body.children).forEach((n) => {
+      if (n !== sh && n !== el.scrim && n !== el.toast && n.tagName !== 'SCRIPT') { try { n.inert = on; } catch (e) {} }
+    });
+  }
   function openSheet(id) {
+    if (openSheetEl && openSheetEl.id === 'sheetWelcome' && id !== 'sheetWelcome') return; // the age gate cannot be replaced
     closeSheet();
     const sh = $('#' + id); if (!sh) return;
     sh.hidden = false; el.scrim.classList.add('show');
     requestAnimationFrame(() => { sh.classList.add('show'); });
     openSheetEl = sh;
     lastFocus = document.activeElement;
+    setInert(sh, true);
     sh.setAttribute('tabindex', '-1');
     setTimeout(() => sh.focus({ preventScroll: true }), 250);
   }
   function closeSheet() {
     if (!openSheetEl) return;
     const sh = openSheetEl; openSheetEl = null;
+    setInert(sh, false);
     sh.classList.remove('show'); el.scrim.classList.remove('show');
     if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
     setTimeout(() => { if (!sh.classList.contains('show')) sh.hidden = true; }, 450);
@@ -171,6 +181,10 @@
     $$('[role=tab]', sheet).forEach((x) => x.setAttribute('aria-selected', String(x === t)));
     $$('.tabpanel', sheet).forEach((p) => { p.hidden = p.dataset.panel !== t.dataset.tab; });
   }));
+
+  /* ---------- screen-reader announcements (one per result, never per frame) ---------- */
+  function announce(t) { if (!el.sr) return; el.sr.textContent = ''; setTimeout(() => { el.sr.textContent = t; }, 50); }
+  const TIER_DA = { win: 'Gevinst', big: 'Stor gevinst', mega: 'Mega gevinst', epic: 'Episk gevinst' };
 
   /* ---------- clock / session / reality check ---------- */
   function tickClock() {
@@ -216,7 +230,7 @@
     store.set('betIndex', state.betIndex);
   }
   function changeBet(delta) {
-    if (state.busy || state.free) return;
+    if (state.busy || state.free || state.auto) return;
     const i = clamp(state.betIndex + delta, 0, BETS.length - 1);
     if (i === state.betIndex) return;
     state.betIndex = i; audio.click(); renderBet();
@@ -235,7 +249,7 @@
     if (mode === 'idle') { el.spinLabel.innerHTML = 'Spin'; el.spin.setAttribute('aria-label', 'Spin (mellemrum)'); }
     else if (mode === 'stop') { el.spinLabel.innerHTML = ICON_STOP + 'Stop'; el.spin.setAttribute('aria-label', 'Stop valserne'); }
     else if (mode === 'auto') { el.spinLabel.innerHTML = ICON_STOP + 'Stop <span class="count">' + state.auto.left + '</span>'; el.spin.setAttribute('aria-label', 'Stop autospin'); }
-    else if (mode === 'free') { el.spinLabel.innerHTML = 'Gratis spin'; el.spin.disabled = true; }
+    else if (mode === 'free') { const f = state.free; el.spinLabel.innerHTML = 'Gratis spin' + (f ? ` <span class="count">${Math.min(f.played, f.total)} af ${f.total}</span>` : ''); el.spin.disabled = true; el.spin.setAttribute('aria-label', 'Gratis spins kører'); }
     else if (mode === 'disabled') { el.spin.disabled = true; }
   }
   let ringLen = 0;
@@ -283,7 +297,7 @@
     return new Promise((resolve) => {
       if (reducedMotion || dur <= 0) { node.textContent = kr(to); resolve(); return; }
       const t0 = performance.now(); let done = false;
-      const finish = () => { if (done) return; done = true; node.textContent = kr(to); opts.onEnd && opts.onEnd(); resolve(); };
+      const finish = () => { if (done) return; done = true; countUpSkip = null; node.textContent = kr(to); opts.onEnd && opts.onEnd(); resolve(); };
       countUpSkip = finish;
       const step = (now) => {
         if (done) return;
@@ -307,12 +321,17 @@
     const hl = { cells, lines, activeLine: null, activeCells: null, dim: true, scatter: r.scatters >= 3 ? r.scatterPositions : null };
     engine.setHighlight(hl);
     if (!lines.length) return;
+    const tier = M.winTier(r.total, bet());
+    const label = TIER_DA[tier] || 'Gevinst';
     let i = -1;
     const next = () => {
       i = (i + 1) % lines.length;
       hl.activeLine = i; hl.activeCells = new Set(lines[i].positions.map((p) => p.reel + ',' + p.row));
       engine.setHighlight(hl);
-      if (lines.length > 1 && !state.free) island.set(`<span class="i-label">${symName(lines[i].symbol)} × ${lines[i].count}</span><span class="i-amount">${kr(lines[i].amount)}</span>`);
+      if (lines.length > 1 && !state.free) {
+        const lw = lines[i];
+        island.set(`<span class="i-col"><span><span class="i-label">${label}</span><span class="i-amount">${kr(r.total)}</span></span><span class="i-sub">${symName(lw.symbol)} × ${lw.count} · ${kr(lw.amount)} · linje ${i + 1} af ${lines.length}</span></span>`, { two: true, tier });
+      }
     };
     cycleTimer = setTimeout(function loop() { next(); cycleTimer = setTimeout(loop, 1500); }, 1300);
   }
@@ -384,8 +403,13 @@
     const r = outcome.result;
     state.lastResultAt = performance.now();
     state.lastWin = r.total;
+    // The outcome is final: credit and persist now; the presentation only lags the display.
+    if (r.total > 0) { state.balance = Math.round((state.balance + r.total) * 100) / 100; store.set('balance', state.balance); }
+    el.reels.setAttribute('aria-label', 'Valser: ' + outcome.board.map((c) => c.map(symName).join(', ')).join(' | '));
+    announce(r.total > 0 ? `${TIER_DA[M.winTier(r.total, b)]} ${kr(r.total)}` : 'Ingen gevinst');
     if (r.total > 0) await presentWin(r, b);
     if (r.freeSpins) await handleFreeSpins(r, b);
+    if (state.free) store.set('free', state.free);
     state.busy = false;
     renderBet();
 
@@ -431,7 +455,7 @@
         await countUp(node, r.total, tier === 'big' ? (turbo ? 700 : 1200) : (turbo ? 350 : 650), { tick: true });
       }
       if (tier === 'big') audio.rollEnd();
-      setBalance(state.balance + r.total);
+      balanceNum.set(state.balance);
       await sleep(tier === 'big' ? (turbo ? 500 : 900) : (turbo ? 250 : 450));
     } else {
       // mega / epic — keynote, not fireworks
@@ -444,7 +468,7 @@
       let skipped = false;
       p.then(() => { skipped = true; if (countUpSkip) { const f = countUpSkip; countUpSkip = null; f(); } });
       await countUp(node, r.total, epic ? (turbo ? 1800 : 3000) : (turbo ? 1300 : 2200), { tick: true, onEnd: () => audio.rollEnd() });
-      setBalance(state.balance + r.total);
+      balanceNum.set(state.balance);
       if (!skipped) await Promise.race([p, sleep(epic ? 1800 : 1400)]);
       hideOverlay();
       el.veil.classList.remove('show'); el.machine.classList.remove('raised');
@@ -475,15 +499,20 @@
   }
   async function handleFreeSpins(r, b) {
     if (!state.free) {
-      if (state.auto) stopAuto('Autospin sat på pause – gratis spins starter.');
+      if (state.auto) stopAuto('Autospin stoppet – gratis spins starter.');
+      // The award is final: persist it before the Start overlay so a reload cannot lose it.
+      const pending = { total: r.freeSpins, left: r.freeSpins, played: 0, won: 0, bet: b, badge: 0 };
+      store.set('free', pending);
       audio.scatterLand(4);
+      announce(`${r.freeSpins} gratis spins`);
       await sleep(700);
       setSpinButton('disabled');
       await showOverlay({ eyebrow: 'Bonus', title: `${r.freeSpins} gratis spins.`, sub: `Alle gevinster ganges med ${M.FREE_SPINS_MULTIPLIER} · Indsats ${kr(b)}`, button: 'Start' });
+      const kbd = el.overlayContent.contains(document.activeElement);
       hideOverlay();
-      state.free = { total: r.freeSpins, left: r.freeSpins, played: 0, won: 0, bet: b, badge: 0 };
-      el.machine.dataset.mode = 'free';
-      engine.symbolCache.clear(); engine._needsDraw = true;
+      if (kbd) el.machine.focus({ preventScroll: true });
+      state.free = pending;
+      enterFreeMode();
       audio.bonusEnter();
       stopWinCycle(); engine.clearHighlight();
       updateFreeIsland();
@@ -491,15 +520,22 @@
       await sleep(900);
     } else {
       state.free.left += r.freeSpins; state.free.total += r.freeSpins; state.free.badge = r.freeSpins;
+      store.set('free', state.free);
       audio.scatterLand(5);
+      announce(`${r.freeSpins} ekstra gratis spins`);
       updateFreeIsland();
       await sleep(1200);
       state.free.badge = 0;
     }
   }
+  function enterFreeMode() {
+    el.machine.dataset.mode = 'free';
+    engine.symbolCache.clear(); engine._needsDraw = true;
+  }
   function scheduleNextFreeSpin() {
     const f = state.free; if (!f) return;
     if (f.left <= 0) { endFreeSpins(); return; }
+    store.set('free', f); // pre-decrement: an interrupted spin is replayed, not skipped
     setTimeout(() => { if (!state.free) return; f.left--; f.played++; spin(); }, state.turbo ? 500 : 900);
   }
   async function endFreeSpins() {
@@ -507,15 +543,31 @@
     state.busy = true;
     stopWinCycle(); engine.clearHighlight();
     audio.bonusExit();
+    announce(`Gratis spins gav ${kr(f.won)}`);
     await showOverlay({ eyebrow: 'Gratis spins er slut', title: 'Gratis spins gav', amount: kr(f.won), sub: `${f.total} spins · Indsats ${kr(f.bet)}`, button: 'Fortsæt' });
+    const kbd = el.overlayContent.contains(document.activeElement);
     hideOverlay();
     state.free = null;
+    store.set('free', null);
     el.machine.dataset.mode = 'base';
     engine.symbolCache.clear(); engine._needsDraw = true;
     island.set(`<span class="i-label">Gratis spins</span><span class="i-amount">${kr(f.won)}</span>`);
     setSpinButton('idle');
+    if (kbd) el.spin.focus({ preventScroll: true });
     state.busy = false;
     renderBet();
+  }
+  /* Resume a bonus interrupted by a reload. */
+  function restoreFreeSpins() {
+    const f = store.get('free', null);
+    if (!f || typeof f !== 'object' || !Number.isFinite(f.left) || !Number.isFinite(f.total) || !BETS.includes(f.bet)) { if (f) store.set('free', null); return; }
+    state.free = { total: f.total, left: Math.max(0, f.left), played: num(f.played, 0), won: num(f.won, 0), bet: f.bet, badge: 0 };
+    state.betIndex = BETS.indexOf(f.bet);
+    enterFreeMode();
+    engine.setStrips(M.FREE_STRIPS.map((s) => s.slice()), [3, 11, 7, 19, 2]);
+    updateFreeIsland();
+    setSpinButton('free');
+    setTimeout(() => { toast('Gratis spins fortsætter.'); if (!state.free) return; if (state.free.left <= 0) endFreeSpins(); else scheduleNextFreeSpin(); }, 1200);
   }
 
   /* ---------- autospin ---------- */
@@ -529,7 +581,7 @@
     if (!state.auto) return;
     state.auto = null;
     el.autoBtn.setAttribute('aria-pressed', 'false');
-    if (!state.free && !state.spinning) setSpinButton('idle');
+    if (!state.free) setSpinButton(state.spinning ? 'stop' : 'idle');
     if (msg) toast(msg);
   }
   function scheduleNextAuto() {
@@ -563,11 +615,13 @@
   el.infoBtn.addEventListener('click', () => { audio.click(); openSheet('sheetInfo'); });
 
   /* ---------- spin button ---------- */
+  function quickStopReels() { engine.quickStop(); el.ringRect.style.transition = 'stroke-dashoffset .3s ease-out'; el.ringRect.style.strokeDashoffset = 0; }
   el.spin.addEventListener('click', () => {
     if (el.spin.disabled) return;
     audio.click();
-    if (state.spinning) { engine.quickStop(); el.ringRect.style.transition = 'stroke-dashoffset .3s ease-out'; el.ringRect.style.strokeDashoffset = 0; return; }
-    if (state.auto) { stopAuto('Autospin stoppet.'); return; }
+    if (state.auto) { stopAuto('Autospin stoppet.'); if (state.spinning) quickStopReels(); return; } // "Stop N": one press halts the series
+    if (state.spinning) { quickStopReels(); return; }
+    if (state.busy && countUpSkip) { const f = countUpSkip; countUpSkip = null; f(); return; }   // pressing during a count-up completes it
     spin();
   });
 
@@ -582,7 +636,11 @@
       const ob = $('#ovBtn'); if (ob) ob.click(); else el.overlay.click();
       return;
     }
-    if (e.code === 'Space' || e.key === 'Enter') { if (e.target === el.spin || e.code === 'Space') { e.preventDefault(); el.spin.click(); } }
+    if (e.code === 'Space' || e.key === 'Enter') {
+      if (e.target === el.spin) return; // native activation of the Spin button
+      const onControl = !!(e.target.closest && e.target.closest('button, a[href], [role=button], [role=tab], select, [tabindex]:not([tabindex="-1"])'));
+      if (e.code === 'Space' && !onControl) { e.preventDefault(); el.spin.click(); }
+    }
     else if (e.key === 'ArrowUp' || e.key === '+') { e.preventDefault(); changeBet(1); }
     else if (e.key === 'ArrowDown' || e.key === '-') { e.preventDefault(); changeBet(-1); }
     else if (e.key === 'a' || e.key === 'A') el.autoBtn.click();
@@ -610,9 +668,10 @@
     if (!pt.childElementCount) {
       pt.innerHTML = PT_ORDER.map((id) => {
         const s = SlotArt.SYMBOLS[id];
-        const note = id === 'WILD' ? 'Erstatter alle undtagen Ring' : id === 'SCAT' ? '× samlet indsats · 3+ giver 10 gratis spins' : '';
+        const note = id === 'WILD' ? 'Erstatter alle objekter undtagen Ring. Findes på valse 2–5.' : id === 'SCAT' ? '× samlet indsats · 3+ giver 10 gratis spins' : '';
+        const rows = id === 'WILD' ? '' : `<div class="row"><span>5 ens</span><b data-v="${id}:2"></b></div><div class="row"><span>4 ens</span><b data-v="${id}:1"></b></div><div class="row"><span>3 ens</span><b data-v="${id}:0"></b></div>`;
         return `<div class="pt reveal"><div class="fig"><canvas data-sym="${id}"></canvas></div><div class="name">${s.name}${s.caption ? ' · ' + s.caption : ''}${s.sub ? ' <span style="color:var(--sub-2);font-weight:500">' + s.sub + '</span>' : ''}</div>
-          <div class="row"><span>5 ens</span><b data-v="${id}:2"></b></div><div class="row"><span>4 ens</span><b data-v="${id}:1"></b></div><div class="row"><span>3 ens</span><b data-v="${id}:0"></b></div>${note ? `<div class="note">${note}</div>` : ''}</div>`;
+          ${rows}${note ? `<div class="note">${note}</div>` : ''}</div>`;
       }).join('');
       mini.innerHTML = PT_ORDER.map((id) => `<div class="m"><canvas data-sym="${id}"></canvas><div><div class="mn">${SlotArt.SYMBOLS[id].name}</div><div class="mv" data-mv="${id}"></div></div></div>`).join('');
       renderStaticArt();
@@ -620,7 +679,11 @@
     }
     const val = (id, k) => id === 'SCAT' ? M.SCATTER_PAY[k] * b : M.PAYTABLE[id][k] * lineBet;
     $$('[data-v]', pt).forEach((n) => { const [id, k] = n.dataset.v.split(':'); n.textContent = kr(val(id, +k)); });
-    $$('[data-mv]', mini).forEach((n) => { const id = n.dataset.mv; n.textContent = [2, 1, 0].map((k) => kr(val(id, k))).join(' · '); });
+    $$('[data-mv]', mini).forEach((n) => {
+      const id = n.dataset.mv;
+      if (id === 'WILD') { n.textContent = 'Erstatter alle undtagen Ring · valse 2–5'; return; }
+      n.innerHTML = [[2, '5×'], [1, '4×'], [0, '3×']].map(([k, l]) => `<span class="mvv"><em>${l}</em>${fmtNum.format(val(id, k))}</span>`).join('');
+    });
   }
   function renderLines() {
     $('#lines').innerHTML = M.LINES.map((line, i) => {
@@ -650,6 +713,7 @@
   });
 
   /* ---------- init ---------- */
+  restoreFreeSpins();
   renderLines();
   renderBet();
   balanceNum.set(state.balance);

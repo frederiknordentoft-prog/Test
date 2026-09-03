@@ -112,6 +112,7 @@ button:disabled { cursor: default; }
 .hero .links a:hover { text-decoration: underline; }
 @media (max-width: 720px) { .hero { padding: 26px 16px 14px; } .hero h1 { font-size: 36px; } .hero .sub { font-size: 17px; margin-top: 4px; } .hero .links { display: none; } }
 
+
 /* ---------- STAGE / MACHINE ---------- */
 .stage { max-width: 980px; margin: 0 auto; padding: 8px 20px 48px; }
 @media (max-width: 720px) { .stage { padding: 4px 12px 32px; } }
@@ -157,10 +158,22 @@ html[data-theme="dark"] .island, .machine[data-mode="free"] .island { box-shadow
 .island .i-col > span:first-child { display: inline-flex; gap: 6px; align-items: center; }
 .island .i-col .i-sub { font-size: 12px; color: rgba(245,245,247,0.62); font-weight: 500; }
 .island .i-badge { background: var(--accent); color: #fff; font-size: 12px; padding: 1px 8px; border-radius: 999px; animation: pop .5s var(--spring); }
-.island.tier-big { background: #1d1d1f; }
+.island.tier-big { background: var(--accent); }
+.island.tier-big .i-label { color: rgba(255,255,255,0.8); }
+.island.tier-big .i-amount { font-size: 17px; }
+.island.show.tier-big { height: 40px; }
 .island.tier-mega, .island.tier-epic { background: linear-gradient(135deg, #0071e3, #5e5ce6 60%, #bf5af2); }
 @keyframes pop { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@media (max-width: 720px) { .island-inner { font-size: 13px; padding: 0 13px; gap: 8px; } .island.show { height: 32px; } .island.two { height: 50px; } }
+@media (max-width: 720px) { .island-inner { font-size: 13px; padding: 0 13px; gap: 8px; } .island.show { height: 32px; } .island.two { height: 50px; } .island.show.tier-big { height: 36px; } }
+/* dark theme / Space Black card: the default island must stay visible against the dark card; tier classes (0,2,0) still win */
+:where(html[data-theme="dark"], .machine[data-mode="free"]) .island { background: #2c2c2e; }
+/* #4: during free spins the (always two-line) island gets its own row on phones */
+@media (max-width: 720px) {
+  .machine[data-mode="free"] .machine-top { grid-template-columns: 1fr 1fr; grid-template-rows: auto 50px; grid-template-areas: "bal bet" "isl isl"; row-gap: 6px; }
+  .machine[data-mode="free"] .machine-top .stat:first-child { grid-area: bal; }
+  .machine[data-mode="free"] .machine-top .stat.right { grid-area: bet; }
+  .machine[data-mode="free"] .island { grid-area: isl; justify-self: center; }
+}
 
 /* Tray */
 .tray {
@@ -182,7 +195,7 @@ html[data-theme="dark"] .island, .machine[data-mode="free"] .island { box-shadow
 }
 .machine[data-mode="free"] .tray-overlay, html[data-theme="dark"] .tray-overlay { background: rgba(20,20,22,0.6); color: #f5f5f7; }
 .tray-overlay.show { opacity: 1; pointer-events: auto; }
-.tray-overlay .ov { transform: translateY(10px) scale(0.98); transition: transform .5s var(--spring); padding: 12px 20px; max-width: 100%; }
+.tray-overlay .ov { position: relative; z-index: 1; transform: translateY(10px) scale(0.98); transition: transform .5s var(--spring); padding: 12px 20px; max-width: 100%; }
 .tray-overlay.show .ov { transform: none; }
 .ov-eyebrow { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
 .ov h2 { font-size: clamp(26px, 5vw, 44px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; }
@@ -191,7 +204,7 @@ html[data-theme="dark"] .island, .machine[data-mode="free"] .island { box-shadow
 .machine[data-mode="free"] .ov .ov-sub, html[data-theme="dark"] .ov .ov-sub { color: #a1a1a6; }
 .ov .ov-amount { font-size: clamp(38px, 7vw, 72px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .ov .ov-actions { margin-top: 16px; display: flex; gap: 12px; justify-content: center; }
-.echo { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--accent); transform: translate(-50%, -50%) scale(0.2); opacity: 0; pointer-events: none; }
+.echo { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--accent); transform: translate(-50%, -50%) scale(0.2); opacity: 0; pointer-events: none; }
 .tray-overlay.show .echo { animation: echo 2.2s var(--ease) infinite; }
 .echo:nth-child(2) { animation-delay: .35s !important; } .echo:nth-child(3) { animation-delay: .7s !important; } .echo:nth-child(4) { animation-delay: 1.05s !important; }
 @keyframes echo { 0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; } 15% { opacity: .5; } 100% { transform: translate(-50%, -50%) scale(12); opacity: 0; } }
@@ -222,6 +235,8 @@ html[data-theme="dark"] .island, .machine[data-mode="free"] .island { box-shadow
 .spin:hover { background: var(--accent-hover); }
 .spin:active { transform: scale(0.96); }
 .spin:disabled { opacity: 0.5; box-shadow: none; }
+.machine[data-mode="free"] .spin:disabled { opacity: 1; background: rgba(255,255,255,0.12); color: #f5f5f7; box-shadow: none; }
+.machine:focus, .machine:focus-visible { outline: none; }
 .spin .spin-label { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; }
 .spin svg.ring { position: absolute; inset: -3px; width: calc(100% + 6px); height: calc(100% + 6px); pointer-events: none; }
 .spin svg.ring rect { fill: none; stroke: rgba(255,255,255,0.55); stroke-width: 2; stroke-linecap: round; }
@@ -354,7 +369,9 @@ html[data-theme="dark"] .segmented button[aria-pressed="true"] { background: #48
 .mini-pt .m { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 6px 10px 6px 6px; }
 .mini-pt .m canvas { width: 44px; height: 44px; flex: none; }
 .mini-pt .m .mn { font-size: 12px; font-weight: 600; }
-.mini-pt .m .mv { font-size: 11px; color: var(--sub); }
+.mini-pt .m .mv { font-size: 11px; color: var(--sub); display: flex; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.mini-pt .mvv { white-space: nowrap; }
+.mini-pt .mvv em { font-style: normal; color: var(--sub-2); margin-right: 3px; font-size: 10px; }
 .kv-row { display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-top: 0.5px solid var(--hair); }
 .kv-row span:last-child { font-weight: 600; }
 
@@ -383,3 +400,17 @@ html[data-theme="dark"] .toast { box-shadow: 0 0 0 0.5px rgba(255,255,255,0.18),
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ---------- Laptops: keep the Spin button above the fold ----------
+   (placed last so it wins over the base .machine / .tray-inner rules) */
+@media (min-width: 721px) and (max-height: 960px) {
+  .hero { padding: 24px 20px 10px; }
+  .hero h1 { font-size: 46px; }
+  .hero .sub { font-size: 20px; margin-top: 2px; }
+  .hero .links { margin-top: 8px; font-size: 14px; }
+  .stage { padding-top: 2px; }
+  .tray-inner { max-height: calc(100svh - 440px); min-height: 220px; }
+  /* card width follows the capped tray height so the 5×3 grid fills the tray (ratio 1.694 + paddings) */
+  .machine { max-width: clamp(560px, calc((100svh - 440px) * 1.694 + 48px), 820px); }
+}
+@media (max-width: 560px) { .mini-pt { grid-template-columns: 1fr; } }

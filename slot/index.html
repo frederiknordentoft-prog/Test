@@ -56,13 +56,13 @@
 </header>
 
 <section class="stage" id="spil" aria-label="Spillet">
-  <div class="machine" id="machine" data-mode="base">
+  <div class="machine" id="machine" data-mode="base" tabindex="-1">
     <div class="machine-top">
       <div class="stat">
         <span class="label" id="balanceLabel">Demosaldo</span>
         <span class="value num" id="balance" aria-live="off">1.000,00 kr.</span>
       </div>
-      <div class="island" id="island" role="status" aria-live="polite"><div class="island-inner" id="islandInner"></div></div>
+      <div class="island" id="island" aria-live="off"><div class="island-inner" id="islandInner"></div></div>
       <div class="stat right">
         <span class="label">Indsats</span>
         <span class="value num" id="betTop">10,00 kr.</span>
@@ -74,7 +74,7 @@
         <canvas id="reels" aria-label="Valser" role="img"></canvas>
         <canvas id="fx" aria-hidden="true"></canvas>
       </div>
-      <div class="tray-overlay" id="overlay" aria-live="polite">
+      <div class="tray-overlay" id="overlay">
         <div class="echo"></div><div class="echo"></div><div class="echo"></div><div class="echo"></div>
         <div class="ov" id="overlayContent"></div>
       </div>
@@ -117,7 +117,7 @@
     <div class="feature reveal">
       <div class="fig"><canvas data-sym="WILD"></canvas></div>
       <h3>Prisme. Wild.</h3>
-      <p>Erstatter alle andre objekter undtagen Ringen. Fem prismer på en linje giver spillets største gevinst.</p>
+      <p>Erstatter alle andre objekter undtagen Ringen og fuldender linjer, der ellers ville mangle ét objekt.</p>
       <div class="kv">Findes på valse 2, 3, 4 og 5</div>
     </div>
     <div class="feature reveal">
@@ -128,8 +128,8 @@
     </div>
     <div class="feature reveal">
       <div class="fig"><canvas data-sym="H1"></canvas></div>
-      <h3>Gevinst. I tre trin.</h3>
-      <p>Gevinst, Stor gevinst og Mega gevinst. Alt vises i det samme, rolige element øverst i spillet. Ingen bannere. Ingen fyrværkeri.</p>
+      <h3>Gevinst. I fire trin.</h3>
+      <p>Gevinst, Stor gevinst, Mega gevinst og Episk gevinst. Alt vises i det samme, rolige element øverst i spillet. Ingen bannere. Intet fyrværkeri.</p>
       <div class="kv">Stor fra 8× · Mega fra 20× · Episk fra 50× indsatsen</div>
     </div>
   </div>
@@ -176,7 +176,7 @@
     <button role="tab" aria-selected="false" data-tab="about">Om spillet</button>
   </div>
   <div class="tabpanel" data-panel="pt">
-    <p>Ved indsats <span class="num" id="infoBet">10,00 kr.</span> · fem · fire · tre ens</p>
+    <p>Gevinst i kr. ved indsats <span class="num" id="infoBet">10,00 kr.</span></p>
     <div class="mini-pt" id="miniPt" style="margin-top:10px"></div>
   </div>
   <div class="tabpanel" data-panel="rules" hidden>
@@ -184,7 +184,7 @@
     <ul>
       <li>Fem valser, tre rækker og 20 faste gevinstlinjer.</li>
       <li>Tre eller flere ens objekter fra venstre mod højre på en linje giver gevinst. Kun den højeste gevinst pr. linje udbetales.</li>
-      <li>Prismet (Wild) erstatter alle objekter undtagen Ringen. Fem prismer giver 1.000 × linjeindsatsen.</li>
+      <li>Prismet (Wild) findes på valse 2–5 og erstatter alle objekter undtagen Ringen.</li>
       <li>Ringen (Bonus) betaler hvor som helst: 3 = 2×, 4 = 10×, 5 = 50× den samlede indsats.</li>
     </ul>
     <h3>Gratis spins</h3>
@@ -195,18 +195,18 @@
     </ul>
     <h3>Autospin</h3>
     <ul>
-      <li>Vælg antal spin og stopbetingelser. Der er mindst 3 sekunder mellem hvert resultat.</li>
+      <li>Vælg antal spins og stopbetingelser. Der er mindst 3 sekunder mellem hvert resultat.</li>
       <li>Autospin stopper ved gratis spins, ved utilstrækkelig saldo og når en grænse nås. Tryk Stop for at afbryde.</li>
     </ul>
     <h3>Tastatur</h3>
-    <ul><li>Mellemrum/Enter: Spin · ↑/↓: Indsats · A: Autospin · T: Hurtigt spil · I: Spilinfo · M: Lyd</li></ul>
+    <ul><li>Mellemrum: Spin (når ingen knap har fokus) · ↑/↓: Indsats · A: Autospin · T: Hurtigt spil · I: Spilinfo · M: Lyd</li></ul>
   </div>
   <div class="tabpanel" data-panel="about" hidden>
     <div class="kv-row"><span>Teoretisk tilbagebetaling (RTP)</span><span>96,16 %</span></div>
     <div class="kv-row"><span>Heraf gratis spins</span><span>22,0 %</span></div>
     <div class="kv-row"><span>Gevinstfrekvens</span><span>ca. 36 %</span></div>
     <div class="kv-row"><span>Volatilitet</span><span>Middel</span></div>
-    <div class="kv-row"><span>Maks. gevinst pr. spin</span><span>1.000 × linjeindsats</span></div>
+    <div class="kv-row"><span>Største simulerede gevinst</span><span>475 × indsatsen</span></div>
     <div class="kv-row"><span>Indsats</span><span>2 – 100 kr.</span></div>
     <div class="kv-row"><span>Version</span><span>Demo 1.0</span></div>
     <p style="margin-top:14px">Denne demo bruger demokreditter uden værdi. Gevinster kan ikke udbetales. Udfaldet af hvert spin afgøres, i det øjeblik du trykker Spin – alt, der sker på valserne bagefter, er ren præsentation.</p>
@@ -217,7 +217,7 @@
 <div class="sheet" id="sheetAuto" role="dialog" aria-modal="true" aria-labelledby="sheetAutoTitle" hidden>
   <div class="grab"></div>
   <div class="sheet-head"><h2 id="sheetAutoTitle">Autospin</h2><button class="close" data-close aria-label="Luk"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-  <h3 style="margin-top:0">Antal spin</h3>
+  <h3 style="margin-top:0">Antal spins</h3>
   <div class="segmented" id="autoCount">
     <button aria-pressed="true" data-v="10">10</button><button aria-pressed="false" data-v="25">25</button><button aria-pressed="false" data-v="50">50</button><button aria-pressed="false" data-v="100">100</button>
   </div>
@@ -236,7 +236,7 @@
   <div class="sheet-head"><h2 id="sheetWelcomeTitle">Velkommen til Objekt</h2></div>
   <p>Det her er en designdemo af en spilleautomat. Du spiller med demokreditter uden værdi – ingen rigtige penge, ingen udbetaling.</p>
   <p style="margin-top:8px">Du skal være fyldt 18 år for at spille. Spil med omtanke.</p>
-  <div class="actions"><button class="btn-pill" id="welcomeOk">Jeg er over 18 – fortsæt</button></div>
+  <div class="actions"><button class="btn-pill" id="welcomeOk">Jeg er fyldt 18 – fortsæt</button></div>
 </div>
 
 <div class="sheet" id="sheetReality" role="dialog" aria-modal="true" aria-labelledby="sheetRealityTitle" hidden>
@@ -248,6 +248,7 @@
 </div>
 
 <div class="toast" id="toast" role="status"><span id="toastText"></span><button id="toastAction" hidden></button></div>
+<div id="sr" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script src="js/math.js"></script>
 <script src="js/art.js"></script>

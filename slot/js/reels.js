@@ -149,6 +149,7 @@
           s.anticipating = false;
         }
       });
+      this.anticipateFrom = null; // no tease shimmer after a quick stop
     }
 
     /* Extend the remaining reels for a scatter-tease. */
@@ -290,7 +291,7 @@
           const id = strip[idx];
           const y = y0 + (k - frac) * (cell + gap);
           if (y + cell < y0 - cell || y > y0 + L.gridH + cell) continue;
-          this.drawSymbol(ctx, id, rx, y, cell, blur, speed, r, base + k, now, colors);
+          this.drawSymbol(ctx, id, rx, y, cell, blur, speed, r, base + k, now, colors, theme);
         }
         ctx.restore();
       }
@@ -299,8 +300,8 @@
       if (this.highlight) this.drawHighlight(ctx, now, colors);
     }
 
-    drawSymbol(ctx, id, x, y, cell, blur, speed, reel, absIdx, now, colors) {
-      const img = this.symbolImage(id, this.getTheme());
+    drawSymbol(ctx, id, x, y, cell, blur, speed, reel, absIdx, now, colors, theme) {
+      const img = this.symbolImage(id, theme);
       const hl = this.highlight;
       let scale = 1, alpha = 1;
       const s = this.state[reel];
