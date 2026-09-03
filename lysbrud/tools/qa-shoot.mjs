@@ -1,0 +1,13 @@
+import { chromium } from 'playwright-core';
+import { spawn } from 'node:child_process';
+import { setTimeout as sleep } from 'node:timers/promises';
+const srv = spawn('node', ['tools/serve.mjs', '8131'], {stdio:'ignore', cwd:'/home/user/Test/lysbrud'});
+await sleep(700);
+const b = await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args:['--no-sandbox']});
+const p = await b.newPage({viewport:{width:760,height:900}, deviceScaleFactor:1});
+const errs=[]; p.on('pageerror',e=>errs.push(e.message)); p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
+await p.goto('http://localhost:8131/tools/qa-symbols.html',{waitUntil:'networkidle'});
+await sleep(1200);
+await p.screenshot({path:'/tmp/qa-symbols.png', fullPage:true});
+console.log(errs.length?errs.join('\n'):'no errors');
+await b.close(); srv.kill();

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LYSBRUD — symbolforhåndsvisning</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 28px 32px 60px;
+    background: #07091c;
+    color: #eef1ff;
+    font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  h1 { font-size: 17px; letter-spacing: .10em; text-transform: uppercase; color: #d5a63f; margin: 0 0 4px; }
+  p.note { margin: 0 0 26px; color: #98a0c8; }
+  h2 {
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: #98a0c8; margin: 30px 0 12px; font-weight: 600;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+  .cell {
+    /* samme baggrund som en hjulcelle */
+    background: linear-gradient(150deg, #161a4a, #0d1030 62%, #0a0c26);
+    border: 1px solid rgba(213,166,63,.22);
+    border-radius: 5px;
+    padding: 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .cell.plain { background: #0d1030; }
+  .cell canvas { display: block; }
+  .cap { font-size: 10px; letter-spacing: .05em; color: #98a0c8; }
+  .toolbar { display: flex; gap: 18px; align-items: center; margin-bottom: 8px; color: #98a0c8; }
+  label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>Lysbrud — symbolforhåndsvisning</h1>
+<p class="note">Alle symboler tegnet procedurelt på hjulcellens baggrund. Ingen billedfiler.</p>
+
+<div class="toolbar">
+  <label><input type="checkbox" id="opt-atlas" /> brug sprite-atlas</label>
+  <label><input type="checkbox" id="opt-dim" /> nedtonet</label>
+  <label><input type="checkbox" id="opt-rot" /> roteret 20°</label>
+  <label>glød <input type="range" id="opt-glow" min="0" max="3" step="0.1" value="1" /></label>
+  <span id="opt-glow-val">1.0</span>
+</div>
+
+<div id="out"></div>
+
+<script type="module">
+import { ALL_SYMBOL_IDS, SYMBOL_BY_ID } from '../src/config.js';
+import { drawSymbol, buildSymbolAtlas } from '../src/art/symbols.js';
+
+const SIZES = [34, 56, 120];
+const DPR = Math.min(2, window.devicePixelRatio || 1);
+const out = document.getElementById('out');
+const optAtlas = document.getElementById('opt-atlas');
+const optDim = document.getElementById('opt-dim');
+const optRot = document.getElementById('opt-rot');
+const optGlow = document.getElementById('opt-glow');
+const glowVal = document.getElementById('opt-glow-val');
+
+const atlas = buildSymbolAtlas(SIZES, DPR);
+
+function chip(id, size, opts, useAtlas, ringIndex) {
+  const c = document.createElement('canvas');
+  c.width = Math.round(size * DPR);
+  c.height = Math.round(size * DPR);
+  c.style.width = size + 'px';
+  c.style.height = size + 'px';
+  const g = c.getContext('2d');
+  g.scale(c.width / size, c.width / size);
+  const spr = useAtlas ? atlas.get(id, ringIndex) : null;
+  if (spr) g.drawImage(spr, 0, 0, size, size);
+  else drawSymbol(g, id, size / 2, size / 2, size, opts);
+  return c;
+}
+
+function cell(canvas, caption, plain) {
+  const d = document.createElement('div');
+  d.className = 'cell' + (plain ? ' plain' : '');
+  d.appendChild(canvas);
+  const s = document.createElement('span');
+  s.className = 'cap';
+  s.textContent = caption;
+  d.appendChild(s);
+  return d;
+}
+
+function section(title) {
+  const h = document.createElement('h2');
+  h.textContent = title;
+  out.appendChild(h);
+  const r = document.createElement('div');
+  r.className = 'row';
+  out.appendChild(r);
+  return r;
+}
+
+function render() {
+  out.textContent = '';
+  const opts = {
+    glow: Number(optGlow.value),
+    dim: optDim.checked,
+    rotation: optRot.checked ? Math.PI / 9 : 0,
+  };
+  const useAtlas = optAtlas.checked;
+  glowVal.textContent = Number(optGlow.value).toFixed(1);
+
+  SIZES.forEach((size, ri) => {
+    const row = section(size + ' px' + (useAtlas ? ' · atlas' : ' · direkte'));
+    for (const id of ALL_SYMBOL_IDS) {
+      const def = SYMBOL_BY_ID[id];
+      row.appendChild(cell(chip(id, size, opts, useAtlas, ri), def.name, false));
+    }
+  });
+
+  const badges = section('wild-multiplikator · 56 px og 120 px');
+  for (const size of [56, 120]) {
+    for (const m of [1, 2, 3, 5]) {
+      const o = Object.assign({}, opts, { wildMult: m });
+      badges.appendChild(cell(chip('wild', size, o, false, 0), 'x' + m, false));
+    }
+  }
+
+  const flat = section('flad baggrund · 80 px (kontrolgruppe for kontur og glød)');
+  for (const id of ALL_SYMBOL_IDS) {
+    flat.appendChild(cell(chip(id, 80, opts, false, 0), id, true));
+  }
+}
+
+for (const el of [optAtlas, optDim, optRot, optGlow]) el.addEventListener('input', render);
+render();
+</script>
+</body>
+</html>

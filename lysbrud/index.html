@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Lysbrud | Online Casino</title>
+<meta name="theme-color" content="#04060f" />
+<meta name="description" content="Lysbrud — fem koncentriske ringe, kaskader og en reaktor der bygger mod lysbruddet." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 26 16 16 30 6 16Z' fill='%238f7bff'/%3E%3Cpath d='M16 2 26 16H6Z' fill='%23c9d8ff'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#spin-button">Spring til spilknappen</a>
+
+<!-- ============================================================ topbar -->
+<header class="topbar">
+  <a class="brand" href="#" aria-label="Nordlys Casino — forside">
+    <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+      <defs>
+        <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="#5fe3d3"/>
+          <stop offset="55%" stop-color="#d5a63f"/>
+          <stop offset="100%" stop-color="#5fe3d3"/>
+        </linearGradient>
+      </defs>
+      <path d="M20 1.5 23.6 14.2 34.5 7.2 27.5 18.1 40.5 20 27.5 21.9 34.5 32.8 23.6 25.8 20 38.5 16.4 25.8 5.5 32.8 12.5 21.9 -0.5 20 12.5 18.1 5.5 7.2 16.4 14.2Z"
+            fill="none" stroke="url(#brandGrad)" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M20 7.5 22.3 15.9 30.6 13.6 25.6 20 30.6 26.4 22.3 24.1 20 32.5 17.7 24.1 9.4 26.4 14.4 20 9.4 13.6 17.7 15.9Z"
+            fill="url(#brandGrad)" opacity=".55"/>
+    </svg>
+    <span class="brand-text">
+      <span class="brand-name">NORDLYS</span>
+      <span class="brand-sub">CASINO</span>
+    </span>
+  </a>
+
+  <nav class="topnav" aria-label="Hovedmenu">
+    <a href="#" class="topnav-link is-current">CASINO</a>
+    <a href="#" class="topnav-link">LIVE CASINO</a>
+    <a href="#" class="topnav-link">KAMPAGNER</a>
+    <a href="#" class="topnav-link">TURNERINGER</a>
+  </nav>
+
+  <div class="topbar-right">
+    <button class="responsible" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ic"><path d="M12 2.6 20 6v6.2c0 4.6-3.2 8.2-8 9.2-4.8-1-8-4.6-8-9.2V6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span>SPIL ANSVARLIGT</span>
+    </button>
+    <div class="balance">
+      <span class="balance-label">SALDO</span>
+      <span class="balance-value" id="balance-value" aria-live="off">1.280,00 KR.</span>
+    </div>
+    <button class="btn-deposit" type="button">INDBETAL</button>
+    <button class="avatar" type="button" aria-label="Min konto">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c1.3-3.6 4-5.2 7-5.2s5.7 1.6 7 5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- ========================================================= sidebar -->
+  <aside class="sidebar" aria-label="Spilkategorier">
+    <nav class="sidenav">
+      <a href="#" class="sidenav-item is-active">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 3.2 14.6 9l6.4.6-4.8 4.2 1.4 6.2L12 16.8 6.4 20l1.4-6.2L3 9.6 9.4 9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span>ANBEFALET</span>
+      </a>
+      <a href="#" class="sidenav-item">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M6 4h12l3.2 5-9.2 11L2.8 9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span>SLOTS</span>
+      </a>
+      <a href="#" class="sidenav-item">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M3 8.5 7 12l5-6.5 5 6.5 4-3.5-1.6 10H4.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span>JACKPOTS</span>
+      </a>
+      <a href="#" class="sidenav-item">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><circle cx="12" cy="8.6" r="3.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4.6 20c1.5-3.9 4.3-5.6 7.4-5.6s5.9 1.7 7.4 5.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>LIVE CASINO</span>
+      </a>
+      <a href="#" class="sidenav-item">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 3.6c2.6 3.4 7 5.6 7 9.2a4.2 4.2 0 0 1-7 3.1 4.2 4.2 0 0 1-7-3.1c0-3.6 4.4-5.8 7-9.2Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 16v4.4M9.4 20.4h5.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>BORDSPIL</span>
+      </a>
+      <a href="#" class="sidenav-item">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><rect x="7.5" y="4.5" width="12" height="15" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7.5v12h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>VIDEO POKER</span>
+      </a>
+      <a href="#" class="sidenav-item">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><rect x="2.5" y="7.5" width="19" height="10" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 11v3M5.5 12.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="11.6" r=".9" fill="currentColor"/><circle cx="18" cy="13.8" r=".9" fill="currentColor"/></svg>
+        <span>ANDRE SPIL</span>
+      </a>
+      <hr class="sidenav-rule" />
+      <a href="#" class="sidenav-item">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 19.6C6.6 16 3.6 13.1 3.6 9.9A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 8.4 2.3c0 3.2-3 6.1-8.4 9.7Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span>FAVORITTER</span>
+      </a>
+      <a href="#" class="sidenav-item">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 7.4V12l3 1.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>SENEST SPILLEDE</span>
+      </a>
+    </nav>
+    <div class="sidesearch">
+      <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><circle cx="11" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m15.6 15.6 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input type="search" placeholder="SØG SPIL" aria-label="Søg spil" />
+    </div>
+  </aside>
+
+  <!-- ============================================================ stage -->
+  <main class="stage" id="stage">
+    <canvas id="game-canvas" aria-label="Lysbrud spilleplade" role="img"></canvas>
+
+    <!-- Titel -->
+    <div class="game-title" id="game-title">
+      <span class="game-title-word">LYSBRUD</span>
+      <svg class="game-title-gem" viewBox="0 0 40 64" aria-hidden="true">
+        <path d="M20 1 37 24 20 63 3 24Z" fill="#6f5cf0"/>
+        <path d="M20 1 37 24H20Z" fill="#cfe0ff"/>
+        <path d="M20 1 3 24h17Z" fill="#9db6ff"/>
+        <path d="M20 63 37 24H20Z" fill="#4e39c8"/>
+        <path d="M20 63 3 24h17Z" fill="#7c67ff"/>
+      </svg>
+    </div>
+
+    <!-- Prisme-bonus måler -->
+    <div class="rail rail-left" id="prism-rail">
+      <div class="rail-plate">
+        <span class="rail-title">PRISME-BONUS</span>
+        <span class="rail-count"><b id="prism-count">0</b><i>/</i><em>5</em></span>
+      </div>
+      <div class="rail-body">
+        <div class="rail-spine" aria-hidden="true"></div>
+        <ol class="prism-slots" id="prism-slots" aria-label="Prisme-ladning">
+          <li class="prism-slot"></li>
+          <li class="prism-slot"></li>
+          <li class="prism-slot"></li>
+          <li class="prism-slot"></li>
+          <li class="prism-slot"></li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Reaktor-energi måler -->
+    <div class="rail rail-right" id="reactor-rail">
+      <div class="rail-plate rail-plate-right">
+        <span class="rail-title">REAKTOR<br />ENERGI</span>
+      </div>
+      <div class="reactor-dial" id="reactor-dial">
+        <span class="reactor-value" id="reactor-value">1<i>x</i></span>
+      </div>
+      <div class="reactor-column" aria-hidden="true">
+        <div class="reactor-fill" id="reactor-fill"></div>
+        <div class="reactor-ticks">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hjælpetekst under hjulet -->
+    <p class="hint" id="hint">TRYK SPIL FOR AT AKTIVERE PRISMEN</p>
+
+    <!-- Gevinst-overlay -->
+    <div class="winbox" id="winbox" aria-live="polite">
+      <span class="winbox-tier" id="winbox-tier">MEGA GEVINST</span>
+      <span class="winbox-amount" id="winbox-amount">0 KR.</span>
+    </div>
+
+    <!-- Bonus intro-overlay -->
+    <div class="bonusbox" id="bonusbox" role="dialog" aria-modal="false" aria-labelledby="bonusbox-title">
+      <div class="bonusbox-inner">
+        <span class="bonusbox-kicker">PRISMEN ER LADET</span>
+        <h2 class="bonusbox-title" id="bonusbox-title">PRISME-BONUS</h2>
+        <div class="bonusbox-color" id="bonusbox-color">
+          <span class="bonusbox-color-label">KERNEN VÆLGER</span>
+          <canvas class="bonusbox-swatch" id="bonusbox-swatch" width="120" height="120"></canvas>
+          <span class="bonusbox-color-name" id="bonusbox-color-name">AMETYST</span>
+        </div>
+        <p class="bonusbox-note">Alle <b id="bonusbox-note-color">ametyst</b>-symboler bliver aktive wilds.<br /><b id="bonusbox-spins">8</b> gratisspin — multiplikatoren nulstilles ikke.</p>
+        <button class="btn-primary" id="bonusbox-start" type="button">START</button>
+      </div>
+    </div>
+
+    <!-- Bonus HUD -->
+    <div class="bonus-hud" id="bonus-hud">
+      <span class="bonus-hud-item">GRATISSPIN <b id="bonus-spins-left">8</b></span>
+      <span class="bonus-hud-sep"></span>
+      <span class="bonus-hud-item">BONUSGEVINST <b id="bonus-total">0,00 KR.</b></span>
+      <span class="bonus-hud-sep"></span>
+      <span class="bonus-hud-item">WILD-FARVE <b id="bonus-color">AMETYST</b></span>
+    </div>
+  </main>
+</div>
+
+<!-- ========================================================== controls -->
+<footer class="controlbar">
+  <div class="ctl-group ctl-icons">
+    <button class="ctl-icon" id="btn-info" type="button" aria-label="Spilinfo og gevinsttabel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 10.6v6.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.15" fill="currentColor"/></svg>
+    </button>
+    <button class="ctl-icon" id="btn-settings" type="button" aria-label="Indstillinger">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3 5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <button class="ctl-icon" id="btn-sound" type="button" aria-label="Lyd til/fra" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-sound-on"><path d="M4.5 9.5h3.2L12.5 5.6v12.8L7.7 14.5H4.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M15.6 9.2a4 4 0 0 1 0 5.6M18.1 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-sound-off"><path d="M4.5 9.5h3.2L12.5 5.6v12.8L7.7 14.5H4.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m16 9.5 5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="ctl-group ctl-stepper">
+    <button class="ctl-step" id="bet-down" type="button" aria-label="Sænk indsats">−</button>
+    <div class="ctl-readout">
+      <span class="ctl-label">INDSATS</span>
+      <span class="ctl-value" id="bet-value">25,00 KR.</span>
+    </div>
+    <button class="ctl-step" id="bet-up" type="button" aria-label="Hæv indsats">+</button>
+  </div>
+
+  <div class="ctl-group ctl-win">
+    <div class="ctl-readout">
+      <span class="ctl-label">GEVINST</span>
+      <span class="ctl-value ctl-value-gold" id="win-value" aria-live="polite">0,00 KR.</span>
+    </div>
+  </div>
+
+  <div class="ctl-group ctl-stepper">
+    <button class="ctl-step" id="auto-down" type="button" aria-label="Færre autospil">−</button>
+    <div class="ctl-readout">
+      <span class="ctl-label">AUTOSPIL</span>
+      <span class="ctl-value" id="auto-value">23</span>
+    </div>
+    <button class="ctl-step" id="auto-up" type="button" aria-label="Flere autospil">+</button>
+  </div>
+
+  <button class="spin" id="spin-button" type="button">
+    <span class="spin-face">
+      <span class="spin-label" id="spin-label">SPIL</span>
+      <span class="spin-sub" id="spin-sub"></span>
+    </span>
+  </button>
+</footer>
+
+<!-- ============================================================ modaler -->
+<div class="modal" id="modal-info" role="dialog" aria-modal="true" aria-labelledby="modal-info-title" hidden>
+  <div class="modal-scrim" data-close></div>
+  <div class="modal-panel">
+    <header class="modal-head">
+      <h2 id="modal-info-title">Sådan virker LYSBRUD</h2>
+      <button class="modal-close" type="button" data-close aria-label="Luk">×</button>
+    </header>
+    <div class="modal-body" id="modal-info-body"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="modal-settings-title" hidden>
+  <div class="modal-scrim" data-close></div>
+  <div class="modal-panel modal-panel-narrow">
+    <header class="modal-head">
+      <h2 id="modal-settings-title">Indstillinger</h2>
+      <button class="modal-close" type="button" data-close aria-label="Luk">×</button>
+    </header>
+    <div class="modal-body">
+      <label class="setting">
+        <span class="setting-text"><b>Hurtigt spil</b><i>Springer forsinkelser over mellem kaskader.</i></span>
+        <input type="checkbox" id="set-turbo" class="switch" />
+      </label>
+      <label class="setting">
+        <span class="setting-text"><b>Lyd</b><i>Syntetiseret krystallyd — ingen lydfiler.</i></span>
+        <input type="checkbox" id="set-sound" class="switch" checked />
+      </label>
+      <label class="setting">
+        <span class="setting-text"><b>Reducer bevægelse</b><i>Dæmper rystelser, glimt og partikler.</i></span>
+        <input type="checkbox" id="set-calm" class="switch" />
+      </label>
+      <label class="setting">
+        <span class="setting-text"><b>Instrueret demo</b><i>Tilrettelagt tempo der viser alle mekanikker. Slå fra for rå RNG.</i></span>
+        <input type="checkbox" id="set-scripted" class="switch" checked />
+      </label>
+      <hr class="setting-rule" />
+      <button class="btn-ghost" id="set-reset" type="button">Nulstil saldo til 1.280,00 kr.</button>
+      <p class="setting-foot">Demoversion. Ingen rigtige penge. 18+ · <a href="#">Spil ansvarligt</a></p>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

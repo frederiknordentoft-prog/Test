@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="da"><head><meta charset="utf-8"><title>QA symboler</title>
+<style>body{margin:0;background:#0d1030;color:#eef1ff;font:13px system-ui}
+.row{display:flex;align-items:center;gap:6px;padding:6px 10px}
+.lbl{width:110px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#98a0c8}
+canvas{background:#0f1338;border-radius:4px}</style></head><body>
+<div id="out"></div>
+<script type="module">
+import { ALL_SYMBOL_IDS, SYMBOL_BY_ID } from '../src/config.js';
+import { drawSymbol, buildSymbolAtlas } from '../src/art/symbols.js';
+const out = document.getElementById('out');
+const sizes = [34, 48, 64, 110];
+for (const id of ALL_SYMBOL_IDS) {
+  const row = document.createElement('div'); row.className = 'row';
+  const l = document.createElement('span'); l.className='lbl'; l.textContent = SYMBOL_BY_ID[id].name || id;
+  row.appendChild(l);
+  for (const s of sizes) {
+    const c = document.createElement('canvas'); c.width = s*2; c.height = s*2;
+    c.style.width = s+'px'; c.style.height = s+'px';
+    const g = c.getContext('2d'); g.scale(2,2);
+    drawSymbol(g, id, s/2, s/2, s*0.9, { glow: 1 });
+    row.appendChild(c);
+  }
+  // wild med multiplikator
+  if (id === 'wild') for (const m of [2,3,5]) {
+    const c = document.createElement('canvas'); c.width=128; c.height=128; c.style.width='64px'; c.style.height='64px';
+    const g=c.getContext('2d'); g.scale(2,2); drawSymbol(g,'wild',32,32,58,{glow:1,wildMult:m});
+    row.appendChild(c);
+  }
+  const atlasC = buildSymbolAtlas([34,44,54,64,74], 2).get(id, 2);
+  if (atlasC) { const im = document.createElement('canvas'); im.width=atlasC.width; im.height=atlasC.height;
+    im.style.width='54px'; im.style.height='54px'; im.getContext('2d').drawImage(atlasC,0,0); row.appendChild(im); }
+  out.appendChild(row);
+}
+document.title = 'klar';
+</script></body></html>
