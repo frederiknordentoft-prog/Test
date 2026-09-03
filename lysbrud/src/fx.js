@@ -333,11 +333,16 @@ export function createFx() {
     g.save();
     g.globalCompositeOperation = 'lighter';
     g.globalAlpha = Math.min(1, strength);
-    if (blurOk) g.filter = 'blur(13px)';
-    g.drawImage(glow, 0, 0, cssW, cssH);
-    g.filter = 'none';
-    g.globalAlpha = Math.min(1, strength * 0.5);
-    g.drawImage(glow, 0, 0, cssW, cssH);
+    if (blurOk) {
+      g.filter = 'blur(10px)';
+      g.drawImage(glow, 0, 0, cssW, cssH);
+      g.globalAlpha = Math.min(1, strength * 0.55);
+      g.filter = 'blur(28px)';
+      g.drawImage(glow, 0, 0, cssW, cssH);
+      g.filter = 'none';
+    } else {
+      g.drawImage(glow, 0, 0, cssW, cssH);
+    }
     g.restore();
   }
 

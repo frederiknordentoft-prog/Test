@@ -20,6 +20,12 @@ const TAU = Math.PI * 2;
 /** Sikkerhedsloft på kaskadekæden — beskytter mod et teoretisk uendeligt løb. */
 export const MAX_CASCADES = 40;
 
+/** Dødt bånd omkring overlaps-tærsklen.
+ *  Når to celler flugter præcist, lander buelængden på tærsklen med
+ *  flydendetalsstøj i sidste bit, og to lige korrekte udregninger kan så
+ *  svare forskelligt. Båndet gør uafgjort til et entydigt "ikke naboer". */
+const ADJ_TIE = 1e-9;
+
 /* ------------------------------------------------------- flad indeksering
    Internt arbejdes der med ét fladt celleindeks f = RING_BASE[r] + i
    (0 … TOTAL_CELLS-1). Det gør flood fill og nabotabeller markant hurtigere
@@ -110,7 +116,7 @@ function buildAdjacency(offsets) {
   for (let r = 0; r < RING_COUNT - 1; r++) {
     const nA = GEOM.cells[r], nB = GEOM.cells[r + 1];
     const wA = CELL_WIDTH[r], wB = CELL_WIDTH[r + 1];
-    const eps = GEOM.overlapEps * Math.min(wA, wB);
+    const eps = GEOM.overlapEps * Math.min(wA, wB) + ADJ_TIE;
     const sA = starts[r], sB = starts[r + 1];
     const baseA = RING_BASE[r], baseB = RING_BASE[r + 1];
     for (let i = 0; i < nA; i++) {
