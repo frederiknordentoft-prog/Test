@@ -35,6 +35,13 @@ Alt herinde er udviklings- og verifikationsværktøj. Intet af det indgår i spi
     node tools/qa-layers.mjs        # billedrate med hvert tegnelag slået fra ét ad gangen
     node tools/qa-perf.mjs          # billedrate i hvile og under spin, mod en tom referenceside
     node tools/qa-dist.mjs          # verificerer dist/lysbrud.html åbnet direkte fra disk
+    node tools/qa-win.mjs --mult 120   # forhåndsviser lysbruddet og fotograferer hele sekvensen
+    node tools/qa-winfps.mjs        # billedrate midt i lysbruddet
+    node tools/qa-antic.mjs         # tvinger anticipation og et ringstop-glimt frem og fotograferer
+
+`window.LYSBRUD.previewWin(mult)` afspiller gevinstpræsentationen for et vilkårligt multiplum
+af indsatsen uden at spinne — det er dét, qa-win.mjs bruger. `window.LYSBRUD.fx.layers` og
+`window.LYSBRUD.perf` slår tegnelag fra ét ad gangen.
 
 `qa-layers.mjs` bruger `window.LYSBRUD.perf`, som slår de enkelte tegnelag fra.
 Det var dét, der afslørede at bloom-passet alene kostede 33 fps.

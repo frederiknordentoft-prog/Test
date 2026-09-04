@@ -14,6 +14,7 @@
   }
   main { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px; }
   h1 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #d5a63f; }
+  h2 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #98a0c8; }
   .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; }
   .bar label { display: inline-flex; gap: 6px; align-items: center; color: #98a0c8; }
   input[type=number] {
@@ -30,7 +31,6 @@
   canvas { display: block; }
   .note { color: #98a0c8; max-width: 60ch; text-align: center; }
   code { color: #5fe3d3; }
-  .grid { position: absolute; }
 </style>
 </head>
 <body>
@@ -43,42 +43,61 @@
     <label><input id="wheel" type="checkbox"> Hjulmaske</label>
     <span id="stat" style="color:#98a0c8">–</span>
   </div>
-  <div class="frame"><canvas id="c" width="1440" height="820"></canvas></div>
+
+  <h2>1 · Hvile — createBackdrop</h2>
+  <div class="frame"><canvas id="c0" width="1200" height="700"></canvas></div>
+
+  <h2>2 · Gevinst — lit-pas ovenpå ved alpha 0,5</h2>
+  <div class="frame"><canvas id="c1" width="1200" height="700"></canvas></div>
+
+  <h2>3 · Gevinst — lit-pas ovenpå ved alpha 1,0</h2>
+  <div class="frame"><canvas id="c2" width="1200" height="700"></canvas></div>
+
   <p class="note">
-    1440 × 820. Kræver en HTTP-server pga. ES-moduler — kør
+    1200 × 700. Kræver en HTTP-server pga. ES-moduler — kør
     <code>node tools/serve.mjs</code> og åbn <code>/tools/preview-backdrop.html</code>.
-    “Hjulmaske” lægger en grå skive der hvor spillehjulet dækker, så man kan
-    bedømme hvad der reelt er synligt bag det.
+    Lit-passet (<code>createBackdropLit</code>) lægges ovenpå hulen med
+    <code>globalCompositeOperation = 'lighter'</code>, præcis som spillet gør det
+    under store gevinster. “Hjulmaske” lægger en grå skive der hvor spillehjulet
+    dækker, så man kan bedømme hvad der reelt er synligt bag det.
   </p>
 </main>
 
 <script type="module">
-import { createBackdrop, drawAmbient } from '../src/art/backdrop.js';
+import { createBackdrop, createBackdropLit, drawAmbient } from '../src/art/backdrop.js';
 
-const W = 1440, H = 820;
-const canvas = document.getElementById('c');
+const W = 1200, H = 700;
 const seedEl = document.getElementById('seed');
 const animEl = document.getElementById('anim');
 const wheelEl = document.getElementById('wheel');
 const statEl = document.getElementById('stat');
 
 const dpr = Math.min(2, window.devicePixelRatio || 1);
-canvas.width = Math.round(W * dpr);
-canvas.height = Math.round(H * dpr);
-canvas.style.width = W + 'px';
-canvas.style.height = H + 'px';
-const ctx = canvas.getContext('2d');
+const views = ['c0', 'c1', 'c2'].map((id, i) => {
+  const canvas = document.getElementById(id);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  return { canvas, ctx: canvas.getContext('2d'), litAlpha: [0, 0.5, 1.0][i] };
+});
 
 let backdrop = null;
+let lit = null;
 
 function bake() {
+  const seed = Number(seedEl.value) || 0;
   const t0 = performance.now();
-  backdrop = createBackdrop(W, H, Number(seedEl.value) || 0);
-  statEl.textContent = 'bagt på ' + (performance.now() - t0).toFixed(0) + ' ms';
+  backdrop = createBackdrop(W, H, seed);
+  const t1 = performance.now();
+  lit = createBackdropLit(W, H, seed);
+  const t2 = performance.now();
+  statEl.textContent = 'hule ' + (t1 - t0).toFixed(0) + ' ms · lys ' + (t2 - t1).toFixed(0) + ' ms';
+  paintStatic();
 }
 
 /* Grå skive svarende til spillehjulets dækning i mockuppen. */
-function drawWheelMask() {
+function drawWheelMask(ctx) {
   const r = H * 0.44;
   ctx.save();
   ctx.globalAlpha = 0.85;
@@ -92,15 +111,32 @@ function drawWheelMask() {
   ctx.restore();
 }
 
-let frames = 0, last = performance.now(), fps = 0;
-
-function loop(now) {
+function compose(v, now) {
+  const ctx = v.ctx;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
   if (backdrop) ctx.drawImage(backdrop.canvas, 0, 0, W, H);
-  if (animEl.checked) drawAmbient(ctx, W, H, now, dpr);
-  if (wheelEl.checked) drawWheelMask();
+  if (lit && v.litAlpha > 0) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = v.litAlpha;
+    ctx.drawImage(lit.canvas, 0, 0, W, H);
+    ctx.restore();
+  }
+  if (animEl.checked && now !== undefined) drawAmbient(ctx, W, H, now, dpr);
+  if (wheelEl.checked) drawWheelMask(ctx);
+}
 
+/* De to gevinstvisninger er statiske; kun hvilevisningen animeres. */
+function paintStatic() {
+  compose(views[1]);
+  compose(views[2]);
+}
+
+let frames = 0, last = performance.now(), fps = 0;
+
+function loop(now) {
+  compose(views[0], now);
   frames++;
   if (now - last > 500) {
     fps = Math.round(frames * 1000 / (now - last));
@@ -111,6 +147,7 @@ function loop(now) {
 }
 
 seedEl.addEventListener('change', bake);
+wheelEl.addEventListener('change', paintStatic);
 document.getElementById('reseed').addEventListener('click', () => {
   seedEl.value = String((Number(seedEl.value) || 0) + 7919);
   bake();

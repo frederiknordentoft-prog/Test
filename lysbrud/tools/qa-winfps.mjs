@@ -1,0 +1,17 @@
+import { chromium } from 'playwright-core';
+import { spawn } from 'node:child_process';
+import { setTimeout as sleep } from 'node:timers/promises';
+const srv = spawn('node', ['tools/serve.mjs','8241'], {stdio:'ignore', cwd:'/home/user/Test/lysbrud'});
+await sleep(800);
+const b = await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args:['--no-sandbox','--disable-background-networking','--no-first-run']});
+const p = await b.newPage({viewport:{width:1400,height:820}});
+await p.goto('http://localhost:8241/index.html',{waitUntil:'networkidle'});
+await sleep(1200);
+await p.evaluate(()=>{window.__f=0;const t=()=>{window.__f++;requestAnimationFrame(t)};requestAnimationFrame(t)});
+await p.evaluate(()=>{ window.__f=0; window.LYSBRUD.previewWin(300); });
+await sleep(1500);
+console.log('fps under lysbrud (første 1,5 s):', ((await p.evaluate(()=>window.__f))/1.5).toFixed(0));
+await p.evaluate(()=>{ window.__f=0; });
+await sleep(1500);
+console.log('fps under overlay+krystaller   :', ((await p.evaluate(()=>window.__f))/1.5).toFixed(0));
+await b.close(); srv.kill();

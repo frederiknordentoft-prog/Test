@@ -4,6 +4,7 @@
 
 import { GEOM, PALETTE, RING_COUNT, SYMBOL_BY_ID } from './config.js';
 import { buildSymbolAtlas, drawSymbol } from './art/symbols.js';
+import { drawWildBadge } from './art/badges.js';
 
 const TAU = Math.PI * 2;
 
@@ -428,8 +429,29 @@ export function createWheelRenderer() {
     }
   }
 
+  /* Wild-badges samles op under symbolpasset og tegnes opret bagefter. */
+  const badgeQueue = [];
+
+  /* Halo-sprites: én pr. glødfarve, tegnet én gang. */
+  const halos = new Map();
+  function haloSprite(color) {
+    let c = halos.get(color);
+    if (c) return c;
+    const px = 96;
+    c = document.createElement('canvas'); c.width = px; c.height = px;
+    const h = c.getContext('2d');
+    const grad = h.createRadialGradient(px / 2, px / 2, px * 0.06, px / 2, px / 2, px / 2);
+    grad.addColorStop(0, withAlpha(color, 1));
+    grad.addColorStop(0.45, withAlpha(color, 0.38));
+    grad.addColorStop(1, withAlpha(color, 0));
+    h.fillStyle = grad; h.fillRect(0, 0, px, px);
+    halos.set(color, c);
+    return c;
+  }
+
   /** Tegner symbolerne oven på pladerne. blur = tangential sløring 0..1. */
   function drawSymbols(g, board, offsets, blurPerRing) {
+    badgeQueue.length = 0;
     for (let r = 0; r < RING_COUNT; r++) {
       const n = GEOM.cells[r], step = layout.step[r];
       const rad = layout.ringMid[r];
@@ -448,23 +470,17 @@ export function createWheelRenderer() {
           if (s.scale !== 1) g.scale(s.scale, s.scale);
           g.globalAlpha = alpha * (s.dim > 0 ? 1 - s.dim * 0.55 : 1);
 
-          const mult = board.wildMult[r][i];
-          if (id === 'wild' && mult > 1) {
-            drawSymbol(g, 'wild', 0, 0, size, { glow: 1 + s.glow, wildMult: mult });
-          } else {
-            const spr = atlas.get(id, r);
-            if (spr) g.drawImage(spr, -size / 2, -size / 2, size, size);
-            else drawSymbol(g, id, 0, 0, size, { glow: 1 + s.glow });
-          }
+          const spr = atlas.get(id, r);
+          if (spr) g.drawImage(spr, -size / 2, -size / 2, size, size);
+          else drawSymbol(g, id, 0, 0, size, { glow: 1 + s.glow });
 
           if (s.glow > 0) {
+            // Haloen er en cachet sprite pr. farve — 100 gradienter pr. frame kostede 8 fps.
             g.globalCompositeOperation = 'lighter';
+            g.globalAlpha *= Math.min(1, 0.55 * s.glow);
             const def = SYMBOL_BY_ID[id];
-            const halo = g.createRadialGradient(0, 0, size * 0.1, 0, 0, size * 0.85);
-            halo.addColorStop(0, withAlpha(def ? def.glow : '#ffffff', 0.55 * s.glow));
-            halo.addColorStop(1, withAlpha(def ? def.glow : '#ffffff', 0));
-            g.beginPath(); g.arc(0, 0, size * 0.85, 0, TAU);
-            g.fillStyle = halo; g.fill();
+            const hs = haloSprite(def ? def.glow : '#ffffff');
+            g.drawImage(hs, -size * 0.85, -size * 0.85, size * 1.7, size * 1.7);
           }
           g.restore();
         };
@@ -476,8 +492,21 @@ export function createWheelRenderer() {
           drawOne(a, s.alpha * 0.72);
         } else {
           drawOne(a, s.alpha);
+          const mult = board.wildMult[r][i];
+          if (id === 'wild' && mult > 1) {
+            badgeQueue.push({
+              x: layout.cx + (rad + s.lift) * Math.sin(a),
+              y: layout.cy - (rad + s.lift) * Math.cos(a),
+              size: size * 1.42 * s.scale, mult,
+              glow: s.glow, alpha: s.alpha * (s.dim > 0 ? 1 - s.dim * 0.55 : 1),
+            });
+          }
         }
       }
+    }
+    // Badges opret og ovenpå alt — de må gerne rage ud over cellen.
+    for (const b of badgeQueue) {
+      drawWildBadge(g, b.x, b.y, b.size, b.mult, { glow: 1 + b.glow, alpha: b.alpha, lit: b.glow });
     }
   }
 

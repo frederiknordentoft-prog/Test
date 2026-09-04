@@ -50,6 +50,8 @@ function rewriteImports(src, file, deps) {
     const target = resolveSpec(file, spec);
     deps.push(target);
     if (!clause) return `__req(${JSON.stringify(target)});`;
+    const ns = clause.match(/^\*\s+as\s+([A-Za-z_$][\w$]*)$/);
+    if (ns) return `const ${ns[1]} = __req(${JSON.stringify(target)});`;
     const named = clause.match(/\{([\s\S]*)\}/);
     if (!named) throw new Error(`Kun navngivne imports understøttes: ${m.trim()} (i ${file})`);
     const bindings = named[1].split(',').map(s => s.trim()).filter(Boolean).map(s => {

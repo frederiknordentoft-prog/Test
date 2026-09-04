@@ -9,7 +9,7 @@ import { neighbours, createBoard } from './engine.js';
 import { createDirector } from './director.js';
 import { createWheelRenderer, withAlpha } from './wheel.js';
 import { createFx } from './fx.js';
-import { createBackdrop, drawAmbient } from './art/backdrop.js';
+import * as backdropArt from './art/backdrop.js';
 import { createAudio } from './audio.js';
 import { createUi } from './ui.js';
 
@@ -43,7 +43,7 @@ const PROFILE = (() => {
 const TURNS = [3.7, 3.1, 2.6, 2.1, 1.7];   // omdrejninger pr. ring, inderst → yderst
 
 /* Tegnelag der kan slås fra under profilering (window.LYSBRUD.perf). */
-const perf = { backdrop: true, ambient: true, plates: true, frame: true, symbols: true, bloom: true };
+const perf = { backdrop: true, ambient: true, plates: true, frame: true, symbols: true, bloom: true, lit: true, litAll: true };
 
 /* ------------------------------------------------------------- opsætning */
 
@@ -57,7 +57,7 @@ const fx = createFx();
 const audio = createAudio();
 const director = createDirector(rng, { scripted: true });
 
-let backdrop = null;
+let backdrop = null, backdropLit = null;
 let dpr = 1, viewW = 0, viewH = 0;
 
 const state = {
@@ -90,6 +90,8 @@ const view = {
   blur: new Array(RING_COUNT).fill(0),
   coreEnergy: 0,
   coreTint: null,
+  coreDecay: false,      // når sand, toner coreEnergy selv ud frame for frame
+  litAll: 0,             // 0..1: alle symboler får halo (bruges under store gevinster)
 };
 
 /* -------------------------------------------------------------------- ui */
@@ -154,7 +156,10 @@ function resize() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   wheel.resize(viewW, viewH, dpr);
   fx.resize(viewW, viewH, dpr);
-  backdrop = createBackdrop(viewW, viewH, 20260903);
+  fx.setLayout(wheel.layout);
+  backdrop = backdropArt.createBackdrop(viewW, viewH, 20260903);
+  // Det lyse pas er valgfrit — uden det lyser hulen bare ikke op ved gevinster.
+  backdropLit = typeof backdropArt.createBackdropLit === 'function' ? backdropArt.createBackdropLit(viewW, viewH, 20260903) : null;
   positionRails();
 }
 
@@ -194,6 +199,16 @@ function frame(now) {
   const dt = Math.min(64, now - last);
   last = now; clock += dt;
 
+  if (view.coreDecay) {
+    view.coreEnergy *= Math.pow(0.5, dt / 520);
+    if (view.coreEnergy < 0.01) { view.coreEnergy = 0; view.coreDecay = false; }
+  }
+  if (view.litAll > 0 && perf.litAll) {
+    for (let r = 0; r < RING_COUNT; r++) for (let i = 0; i < GEOM.cells[r]; i++) {
+      const st = wheel.styleAt(r, i);
+      if (st.dim === 0) st.glow = Math.max(st.glow, view.litAll);
+    }
+  }
   fx.update(dt);
   render(clock, dt);
   requestAnimationFrame(frame);
@@ -206,7 +221,15 @@ function render(t, dt) {
 
   if (backdrop && perf.backdrop) ctx.drawImage(backdrop.canvas, 0, 0, viewW, viewH);
   else { ctx.fillStyle = PALETTE.cavern0; ctx.fillRect(0, 0, viewW, viewH); }
-  if (perf.ambient) drawAmbient(ctx, viewW, viewH, t, dpr);
+  const sceneLight = fx.sceneLight;
+  if (backdropLit && perf.lit && sceneLight > 0.01) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = Math.min(1, sceneLight);
+    ctx.drawImage(backdropLit.canvas, 0, 0, viewW, viewH);
+    ctx.restore();
+  }
+  if (perf.ambient) backdropArt.drawAmbient(ctx, viewW, viewH, t, dpr);
 
   ctx.save();
   ctx.translate(sh.x, sh.y);
@@ -227,7 +250,7 @@ function render(t, dt) {
     g.save();
     g.translate(sh.x, sh.y);
     if (view.board) wheel.drawCore(g, t, view.coreEnergy, view.coreTint);
-    fx.draw(g);
+    fx.draw(g, true);
     g.restore();
     fx.endGlow(ctx, 0.55);
   }
@@ -238,6 +261,23 @@ function render(t, dt) {
 const wait = ms => new Promise(r => setTimeout(r, Math.max(0, state.turbo ? ms * 0.42 : ms)));
 
 function easeOutCubic(k) { return 1 - Math.pow(1 - k, 3); }
+
+/** Midtpunktet af et DOM-element, målt i lærredets koordinater. */
+function domPoint(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const r = el.getBoundingClientRect(), st = stage.getBoundingClientRect();
+  if (r.width === 0 && r.height === 0) return null;
+  return { x: r.left + r.width / 2 - st.left, y: r.top + r.height / 2 - st.top };
+}
+
+/** Stråle fra prismekernen til et panel — reaktoren eller prismemåleren. */
+function beamTo(id, color) {
+  const p = domPoint(id);
+  const L = wheel.layout;
+  if (!p || !L) return;
+  fx.beam(L.cx, L.cy, p.x, p.y, color, 560);
+}
 
 /** Korteste vej fra a til b i retningen dir (+1 = med uret). */
 function forwardDelta(a, b, dir) {
@@ -291,7 +331,15 @@ function animateSpin(targetOffsets, anticipate) {
           view.blur[r] = 0;
           audio.ringStop(r);
           fx.shake(r === 0 ? 5 : 2.4);
-          if (anticipate && r === 1) view.coreEnergy = 0.8;
+          // Ringen låser: en lysring langs dens yderkant og et par glimt på skinnen.
+          const L = wheel.layout;
+          const edge = L.ringOut[r];
+          fx.addRing(L.cx, L.cy, edge - 4, edge + 22, 680, PALETTE.gold3, 3);
+          for (let k = 0; k < 3; k++) {
+            const ga = Math.random() * TAU;
+            fx.emitGlints(L.cx + edge * Math.sin(ga), L.cy - edge * Math.cos(ga), 1, 18, '#fff6d4', 4);
+          }
+          if (anticipate && r === 1) { view.coreEnergy = 0.9; fx.setAnticipation(true); audio.prismCharge(4); }
         }
       }
       // Prismen lader op mens ringene standser.
@@ -301,6 +349,7 @@ function animateSpin(targetOffsets, anticipate) {
       if (allDone) {
         audio.spinLoop(false);
         view.coreEnergy = 0;
+        fx.setAnticipation(false);
         resolve();
       } else requestAnimationFrame(tick);
     };
@@ -365,7 +414,12 @@ async function playSteps(result) {
 
     // Motoren har allerede afgjort trinnet — vis dét, gæt ikke om.
     setReactorUi(step.multiplier);
-    if (s > 0 || state.inBonus) { audio.reactor(s); ui.pulseReactor(); }
+    if (s > 0 || state.inBonus) {
+      audio.reactor(s); ui.pulseReactor();
+      // Energien løber fra kernen op i reaktoren.
+      beamTo('reactor-dial', PALETTE.teal);
+      view.coreEnergy = Math.max(view.coreEnergy, 0.6 + 0.1 * s); view.coreDecay = true;
+    }
 
     // Fremhæv vinderne, dæmp resten.
     const winners = new Set();
@@ -373,18 +427,28 @@ async function playSteps(result) {
     for (let r = 0; r < RING_COUNT; r++) {
       for (let i = 0; i < GEOM.cells[r]; i++) {
         const st = wheel.styleAt(r, i);
-        if (winners.has(`${r}:${i}`)) { st.glow = 1; st.dim = 0; }
+        if (winners.has(`${r}:${i}`)) { st.glow = 1.3; st.dim = 0; }
         else st.dim = 1;
       }
     }
 
-    // Kæderne tegnes.
+    // Kæderne tegnes; den største klynge sætter farven på skinnerne.
+    let biggest = step.clusters[0];
     for (const c of step.clusters) {
       const def = SYMBOL_BY_ID[c.symbol];
       fx.addChain(chainSegments(c, step.board), def.glow, TIMING.chainDraw, 2.6, 700);
+      if (c.size > biggest.size) biggest = c;
     }
+    const stepTint = SYMBOL_BY_ID[biggest.symbol].glow;
+    fx.railGlow(0.28 + 0.12 * Math.min(4, s), stepTint, TIMING.chainDraw + 900);
+    fx.flashLight(0.10 + 0.06 * Math.min(4, s), 500);
     audio.cascade(s);
     await wait(TIMING.chainDraw + 120);
+    // Glimt på hver vindercelle idet kæden er fuldt tegnet.
+    for (const [r, i] of step.removed) {
+      const p = wheel.point(view.offsets, r, i);
+      fx.emitGlints(p.x, p.y, 1, wheel.symbolSize[r] * 0.8, SYMBOL_BY_ID[step.board.grid[r][i]].edge, 3);
+    }
 
     // Gevinsttal ved hver klynge.
     for (const c of step.clusters) {
@@ -405,12 +469,22 @@ async function playSteps(result) {
       audio.shatter(SYMBOL_BY_ID[step.board.grid[r][i]].tier || 0);
     }
     fx.shake(Math.min(14, 3 + step.removed.length * 0.5));
+    // Store splintringer sender krystaller ud fra kernen.
+    if (step.removed.length >= 8) {
+      const L = wheel.layout;
+      fx.emitCrystals(L.cx, L.cy, Math.min(14, Math.round(step.removed.length / 2)), 0.5, stepTint);
+      fx.emitStreaks(L.cx, L.cy, 8, 0.5, stepTint);
+    }
     await animateCells(step.removed, 'out');
 
     if (!step.nextBoard) break;
 
-    // Genopfyldning.
+    // Genopfyldning — de nye symboler krystalliserer ind med et glimt.
     view.board = step.nextBoard;
+    for (const [r, i] of step.removed) {
+      const p = wheel.point(view.offsets, r, i);
+      fx.emitGlints(p.x, p.y, 1, wheel.symbolSize[r] * 0.7, '#ffffff', 2);
+    }
     await animateCells(step.removed, 'in');
     await wait(TIMING.cascadeGap);
   }
@@ -464,9 +538,18 @@ async function chargePrism(hits) {
     audio.prismCharge(state.prismCharge);
     const L = wheel.layout;
     fx.emitBurst(L.cx, L.cy, PALETTE.haze, 26, 1.5);
-    view.coreEnergy = 0.9;
+    fx.emitGlints(L.cx, L.cy, 6, 26, '#e9f2ff', L.core * 0.8);
+    beamTo('prism-rail', '#a9c4ff');
+    view.coreEnergy = 0.9; view.coreDecay = false;
+    if (state.prismCharge >= PRISM_TARGET) {
+      fx.burst(L.cx, L.cy, 0.7, '#a9c4ff', 1300);
+      fx.emitCrystals(L.cx, L.cy, 12, 0.7, '#c9d8ff');
+      fx.railGlow(0.8, '#a9c4ff', 1600);
+      fx.shake(12);
+      view.coreEnergy = 1.5;
+    }
     await wait(330);
-    view.coreEnergy = 0;
+    view.coreDecay = true;
   }
 }
 
@@ -488,8 +571,14 @@ async function runBonus() {
   const def = SYMBOL_BY_ID[colorId];
   view.coreTint = def.glow;
   audio.bonusStart();
-  fx.emitBurst(wheel.layout.cx, wheel.layout.cy, def.glow, 90, 3.4);
+  const L = wheel.layout;
+  fx.burst(L.cx, L.cy, 1.1, def.glow, 1800);
+  fx.emitCrystals(L.cx, L.cy, 26, 1.1, def.edge);
+  fx.emitStreaks(L.cx, L.cy, 24, 1.1, def.glow);
+  fx.emitBurst(L.cx, L.cy, def.glow, 90, 3.4);
+  fx.railGlow(1.0, def.glow, 2600);
   fx.shake(18);
+  view.coreEnergy = 1.6; view.coreDecay = true;
   await ui.showBonusIntro(colorId, BONUS.freeSpins);
 
   state.prismCharge = 0;
@@ -515,6 +604,7 @@ async function runBonus() {
       fx.emitBurst(wheel.layout.cx, wheel.layout.cy, PALETTE.gold3, 60, 2.4);
     }
 
+    fx.railGlow(0.22, def.glow, 4000);   // skinnerne ulmer hele bonusrunden
     const won = await playSteps(result);
     state.bonusTotal += won;
     state.balance += won;
@@ -539,21 +629,51 @@ async function runBonus() {
 
 /* ---------------------------------------------------- gevinstpræsentation */
 
+/** Lysbruddet. Styrken følger gevinstens størrelse, så små gevinster forbliver rolige. */
+const WIN_POWER = { big: 0.55, mega: 0.85, epic: 1.05, lysbrud: 1.3 };
+
 async function presentWin(amount) {
   if (amount <= 0) return;
   const mult = amount / bet();
   const tier = ui.tierFor(mult);
   if (!tier) { audio.win('small'); return; }
 
-  audio.win(tier.key === 'big' ? 'big' : tier.key);
-  const dur = Math.min(TIMING.winCountMax, TIMING.winCountMin + mult * 12);
-  fx.shake(tier.key === 'big' ? 8 : 16);
-  fx.emitRain(viewW, viewH, tier.key === 'big' ? PALETTE.gold3 : '#a9c4ff', tier.key === 'big' ? 34 : 90);
+  const power = WIN_POWER[tier.key] || 0.55;
+  const warm = tier.key === 'big' || tier.key === 'mega';
+  const tint = warm ? PALETTE.gold3 : '#e6efff';
   const L = wheel.layout;
-  fx.emitBurst(L.cx, L.cy, PALETTE.gold3, tier.key === 'big' ? 40 : 110, 3);
-  await ui.showWin(amount, tier, state.turbo ? dur * 0.5 : dur);
+  const dur = Math.min(TIMING.winCountMax, TIMING.winCountMin + mult * 12);
+
+  audio.win(tier.key);
+
+  // 1) Kernen blænder, stråler bryder ud gennem ringene, skinnerne tænder.
+  view.coreEnergy = 1.2 + power * 0.5; view.coreDecay = true;
+  fx.burst(L.cx, L.cy, power, tint, 1400 + power * 500);
+  fx.railGlow(0.6 + 0.5 * power, tint, dur + TIMING.overlayHold);
+  fx.emitStreaks(L.cx, L.cy, Math.round(14 + 18 * power), power, tint);
+  fx.shake(10 + 14 * power);
+  view.litAll = 0.45 + 0.35 * power;
+
+  // 2) Krystaller og glimt flyver ud over hele scenen.
+  fx.emitCrystals(L.cx, L.cy, Math.round(12 + 22 * power), power);
+  fx.emitGlints(L.cx, L.cy, Math.round(14 + 20 * power), 34, '#ffffff', L.R * 1.05);
+  fx.emitRain(viewW, viewH, warm ? PALETTE.gold3 : '#a9c4ff', Math.round(30 + 60 * power));
+  fx.emitBurst(L.cx, L.cy, tint, Math.round(40 + 70 * power), 3);
+
+  // 3) Beløbet tæller op; halvvejs kommer en ekstra bølge så det ikke dør ud.
+  const count = ui.showWin(amount, tier, state.turbo ? dur * 0.5 : dur);
+  await wait(Math.min(dur * 0.45, 900));
+  if (!state.calm) {
+    fx.addRing(L.cx, L.cy, L.core, L.rim * 1.25, 900, tint, 3);
+    fx.emitCrystals(L.cx, L.cy, Math.round(6 + 10 * power), power * 0.8);
+    fx.emitGlints(L.cx, L.cy, Math.round(10 + 12 * power), 30, tint, L.R);
+    if (power >= 1) { fx.burst(L.cx, L.cy, power * 0.6, tint, 1200); fx.shake(8); }
+  }
+  await count;
   await wait(TIMING.overlayHold);
   ui.hideWin();
+  view.litAll = 0;
+  wheel.resetStyles();
 }
 
 /* ------------------------------------------------------------ spin-flow */
@@ -671,6 +791,12 @@ window.LYSBRUD = {
     runSpinLoop();
   },
   spin() { if (!state.busy) runSpinLoop(); },
+  /** Forhåndsvis gevinstpræsentationen for et beløb (multiplikator af indsatsen). */
+  async previewWin(mult) {
+    if (state.busy) return;
+    state.busy = true;
+    try { await presentWin(bet() * (mult || 100)); } finally { state.busy = false; }
+  },
   fx, wheel, director, perf,
   state,
   view,

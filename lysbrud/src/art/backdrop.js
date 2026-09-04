@@ -1,12 +1,17 @@
 /* LYSBRUD — krystalhulen bag hjulet.
-   Baggrunden bages én gang i klart adskilte lag: grund → fjerne vægge →
-   mellemkrystaller → gulv → forgrundskrystaller → lysskakter → gnister →
-   vignette → filmkorn. Alt er proceduralt og deterministisk ud fra frøet;
-   Math.random bruges ingen steder. Værdien holdes meget lav overalt, så
-   hjulets guldskinner og symboler er det eneste der reelt lyser.
+   Geometrien (alle krystaller, revner, klynger) lægges ÉN gang af
+   layoutCave(width, height, seed) og deles af to bagninger:
+     createBackdrop     — selve hulen: grund → fjerne vægge → spir →
+                          mellemkrystaller → gulv → gulvklynger →
+                          forgrundsametyster → lysskakter → gnister →
+                          vignette → filmkorn
+     createBackdropLit  — kun højlysene på gennemsigtigt lærred (guld + cyan),
+                          som spillet lægger ovenpå med 'lighter' ved gevinst
+   Alt er proceduralt og deterministisk ud fra frøet; Math.random bruges
+   ingen steder. Værdien holdes lav overalt, så hjulet er det der lyser.
    drawAmbient() er den eneste del der tegnes hver frame.                     */
 
-import { PALETTE } from '../config.js';
+import { PALETTE, SYMBOL_BY_ID } from '../config.js';
 import { makeRng } from '../rng.js';
 
 const TAU = Math.PI * 2;
@@ -34,18 +39,38 @@ function rgba(h, a) {
   return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + clamp(a, 0, 1) + ')';
 }
 
-/* Afledte hulenuancer. Alt stammer fra PALETTE — ingen løse paletteværdier. */
+/* Hulens egne stenfarver lånes fra de to gems der bor i den. */
+const AMETHYST = SYMBOL_BY_ID.purple;
+const ICE = SYMBOL_BY_ID.cyan;
+
+/* Afledte hulenuancer. Alt stammer fra PALETTE/SYMBOLS — ingen løse værdier. */
 const TINT = {
-  wallDeep:  mixHex(PALETTE.ink,     PALETTE.cavern1, 0.22),
-  wallMid:   mixHex(PALETTE.cavern0, PALETTE.cavern2, 0.46),
-  wallHigh:  mixHex(PALETTE.cavern1, PALETTE.cavern3, 0.55),
-  cold:      mixHex(PALETTE.cavern1, PALETTE.teal,    0.34),
-  coldRim:   mixHex(PALETTE.cavern3, PALETTE.teal,    0.50),
-  floorDark: mixHex(PALETTE.ink,     PALETTE.cavern2, 0.40),
-  floorMid:  mixHex(PALETTE.cavern1, PALETTE.cavern3, 0.40),
-  floorLit:  mixHex(PALETTE.cavern2, PALETTE.cavern3, 0.62),
-  shardCore: mixHex(PALETTE.cavern3, PALETTE.haze,    0.55),
-  shardTip:  mixHex(PALETTE.haze,    PALETTE.text,    0.62),
+  wallDeep:    mixHex(PALETTE.ink,     PALETTE.cavern1, 0.22),
+  wallMid:     mixHex(PALETTE.cavern0, PALETTE.cavern2, 0.46),
+  wallHigh:    mixHex(PALETTE.cavern1, PALETTE.cavern3, 0.55),
+  cold:        mixHex(PALETTE.cavern1, PALETTE.teal,    0.34),
+  coldRim:     mixHex(PALETTE.cavern3, PALETTE.teal,    0.50),
+  floorDark:   mixHex(PALETTE.ink,     PALETTE.cavern2, 0.40),
+  floorMid:    mixHex(PALETTE.cavern1, PALETTE.cavern3, 0.40),
+  floorLit:    mixHex(PALETTE.cavern2, PALETTE.cavern3, 0.62),
+  floorWarm:   mixHex(PALETTE.cavern3, PALETTE.gold1,   0.45),
+  floorCool:   mixHex(PALETTE.cavern2, PALETTE.teal,    0.18),
+  shardCore:   mixHex(PALETTE.cavern3, PALETTE.haze,    0.55),
+  shardTip:    mixHex(PALETTE.haze,    PALETTE.text,    0.62),
+  spireCold:   mixHex(PALETTE.cavern2, ICE.glow,        0.30),
+  amethyst0:   mixHex(PALETTE.cavern2, AMETHYST.base,   0.28),   // dyb, mættet kerne
+  amethyst1:   mixHex(PALETTE.cavern3, AMETHYST.base,   0.55),   // mellemfacet
+  amethyst2:   mixHex(AMETHYST.base,   AMETHYST.edge,   0.18),   // lysvendt facet
+  amethystRim: mixHex(AMETHYST.edge,   PALETTE.text,    0.50),
+  cyanRim:     mixHex(ICE.glow,        ICE.edge,        0.55),   // ≈ #9cf0ff
+};
+
+/* Gevinstlysets tre toner: varm hvidguld → guld → cyan modlys. */
+const LIT = {
+  gold0: PALETTE.gold4,
+  gold1: PALETTE.gold3,
+  gold2: PALETTE.gold2,
+  cyan:  TINT.cyanRim,
 };
 
 /* --------------------------------------------------------------- lærreder */
@@ -105,56 +130,280 @@ function blurredLayer(w, h, radius, paint) {
   return out;
 }
 
-/* -------------------------------------------------------------- krystaller
-   Et spir er to facetter der mødes i en lodret ryg fra spidsen til basen.
-   Det giver en ægte slebet flade i stedet for en flad trekant.               */
+/** Frø-afledning, så hver bagning har sin egen uafhængige strøm. */
+function seedKey(seed, tag) { return String(seed) + ':' + tag; }
 
+/* ------------------------------------------------------------ stihjælpere */
+
+function polyPath(ctx, pts) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+}
+
+/** Åben kantlinje (spids → fod). Lukkes bevidst ikke — det er en kant. */
+function strokePolyline(ctx, pts, style, width) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.strokeStyle = style;
+  ctx.lineWidth = width;
+  ctx.stroke();
+}
+
+/** Gradient lodret hen over én facet. stops: [[t, colour], …] */
+function facetGradient(ctx, f, stops) {
+  let y0 = Infinity, y1 = -Infinity;
+  for (let i = 0; i < f.pts.length; i++) {
+    const y = f.pts[i][1];
+    if (y < y0) y0 = y;
+    if (y > y1) y1 = y;
+  }
+  if (y1 - y0 < 0.5) y1 = y0 + 0.5;
+  const g = ctx.createLinearGradient(0, y0, 0, y1);
+  for (let i = 0; i < stops.length; i++) g.addColorStop(stops[i][0], stops[i][1]);
+  return g;
+}
+
+/** Hældning/spejling for væg- og loftkrystaller. Kaldes indenfor save(). */
+function applyItemTransform(ctx, it) {
+  if (!it.tilt && !it.flip) return;
+  ctx.translate(it.cx, it.baseY);
+  if (it.tilt) ctx.rotate(it.tilt);
+  if (it.flip) ctx.scale(1, -1);
+  ctx.translate(-it.cx, -it.baseY);
+}
+
+/* -------------------------------------------------------------- krystaller
+   Alle krystaller deler samme beskrivelse, så begge bagninger kan tegne dem:
+     outline   lukket silhuet
+     facets    [{pts, side, top}]  side −1 = venstre, +1 = højre
+     edgeL/R   silhuetkanter fra spids til fod
+     ridge     den lodrette midterkant
+     capEdges  (kun søjler) pyramidens indre kanter                           */
+
+/** Spir: to facetter der mødes i en lodret ryg fra spidsen til basen. */
 function makePrism(rng, cx, baseY, height, halfW, lean) {
   const apexX = cx + lean * halfW * 1.5;
   const apexY = baseY - height;
   const sh = 0.24 + rng() * 0.30;                 // skulderens højde
+  const sy = baseY - height * sh;
+  const lx = cx - halfW;
+  const rx = cx + halfW;
+  const lsx = cx - halfW * (0.60 + rng() * 0.36);
+  const rsx = cx + halfW * (0.60 + rng() * 0.36);
   return {
-    apexX: apexX,
-    apexY: apexY,
-    baseY: baseY,
-    sy: baseY - height * sh,
-    lx: cx - halfW,
-    rx: cx + halfW,
-    lsx: cx - halfW * (0.60 + rng() * 0.36),
-    rsx: cx + halfW * (0.60 + rng() * 0.36),
-    halfW: halfW,
-    height: height,
+    kind: 'spire',
+    cx: cx, apexX: apexX, apexY: apexY, baseY: baseY, sy: sy,
+    lx: lx, rx: rx, lsx: lsx, rsx: rsx, halfW: halfW, height: height,
+    outline: [[lx, baseY], [lsx, sy], [apexX, apexY], [rsx, sy], [rx, baseY]],
+    edgeL: [[apexX, apexY], [lsx, sy], [lx, baseY]],
+    edgeR: [[apexX, apexY], [rsx, sy], [rx, baseY]],
+    ridge: [[apexX, apexY], [apexX, baseY]],
+    capEdges: null,
+    facets: [
+      { pts: [[apexX, apexY], [lsx, sy], [lx, baseY], [apexX, baseY]], side: -1, top: false },
+      { pts: [[apexX, apexY], [rsx, sy], [rx, baseY], [apexX, baseY]], side: 1, top: false },
+    ],
   };
 }
 
-function prismPath(ctx, p) {
-  ctx.beginPath();
-  ctx.moveTo(p.lx, p.baseY);
-  ctx.lineTo(p.lsx, p.sy);
-  ctx.lineTo(p.apexX, p.apexY);
-  ctx.lineTo(p.rsx, p.sy);
-  ctx.lineTo(p.rx, p.baseY);
-  ctx.closePath();
+/** Søjle: sekskantet prisme med pyramidespids — de tunge ametyster forrest. */
+function makeColumn(rng, cx, baseY, height, halfW, lean) {
+  const apexX = cx + lean * halfW * 1.2;
+  const apexY = baseY - height;
+  const cap = 0.22 + rng() * 0.16;                 // pyramidens andel af højden
+  const shoulder = baseY - height * (1 - cap);
+  const yL = shoulder + (rng() - 0.5) * height * 0.05;
+  const yR = shoulder + (rng() - 0.5) * height * 0.05;
+  const mx = cx + (rng() - 0.5) * halfW * 0.5;     // forreste lodrette kant
+  const yM = Math.max(yL, yR) + height * cap * (0.30 + rng() * 0.22);
+  const lx = cx - halfW;
+  const rx = cx + halfW;
+  return {
+    kind: 'column',
+    cx: cx, apexX: apexX, apexY: apexY, baseY: baseY, halfW: halfW, height: height,
+    outline: [[lx, baseY], [lx, yL], [apexX, apexY], [rx, yR], [rx, baseY]],
+    edgeL: [[apexX, apexY], [lx, yL], [lx, baseY]],
+    edgeR: [[apexX, apexY], [rx, yR], [rx, baseY]],
+    ridge: [[mx, yM], [mx, baseY]],
+    capEdges: [[[lx, yL], [mx, yM]], [[mx, yM], [rx, yR]], [[apexX, apexY], [mx, yM]]],
+    facets: [
+      { pts: [[lx, yL], [apexX, apexY], [mx, yM]], side: -1, top: true },
+      { pts: [[mx, yM], [apexX, apexY], [rx, yR]], side: 1, top: true },
+      { pts: [[lx, yL], [mx, yM], [mx, baseY], [lx, baseY]], side: -1, top: false },
+      { pts: [[mx, yM], [rx, yR], [rx, baseY], [mx, baseY]], side: 1, top: false },
+    ],
+  };
 }
 
-/** side < 0 = venstre facet, side > 0 = højre facet. Deles af ryggen. */
-function facetPath(ctx, p, side) {
-  ctx.beginPath();
-  ctx.moveTo(p.apexX, p.apexY);
-  if (side < 0) {
-    ctx.lineTo(p.lsx, p.sy);
-    ctx.lineTo(p.lx, p.baseY);
-  } else {
-    ctx.lineTo(p.rsx, p.sy);
-    ctx.lineTo(p.rx, p.baseY);
+/* ------------------------------------------------------------ gulvprojektion */
+
+function floorY(L, z) { return L.horizon + L.depth / z; }
+function floorX(L, u, z) { return L.proj.vpx + L.proj.fx * u / z; }
+
+/* ------------------------------------------------------------------ layout */
+
+/**
+ * Lægger hele hulens geometri. Ren funktion af (width, height, seed) —
+ * ingen tegning, intet DOM. Begge bagninger tegner ud fra resultatet.
+ */
+export function layoutCave(width, height, seed) {
+  const w = Math.max(2, Math.round(width || 0));
+  const h = Math.max(2, Math.round(height || 0));
+  const rng = makeRng(seed);
+  const horizon = Math.round(h * 0.78);        // stengulvet fylder nederste ~22 %
+  const depth = h - horizon;
+  const L = {
+    w: w, h: h, horizon: horizon, depth: depth,
+    wheel: { x: w * 0.5, y: h * 0.47, r: h * 0.44 },   // hvor hjulet sidder
+    proj: { vpx: w * 0.5, fx: w * 0.11 },
+    far: [], spires: [], mid: [], floorClusters: [], fgClusters: [], cracks: [],
+  };
+
+  /* fjerne vægge */
+  for (let s = 0; s < 2; s++) {
+    const side = s === 0 ? -1 : 1;
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const t = (i + rng() * 0.7) / n;
+      const cx = side < 0 ? w * (-0.06 + t * 0.46) : w * (1.06 - t * 0.46);
+      const height = h * (0.66 - t * 0.30) * (0.75 + rng() * 0.5);
+      const halfW = w * (0.105 - t * 0.048) * (0.7 + rng() * 0.7);
+      const baseY = horizon + h * (0.02 + rng() * 0.06);
+      const p = makePrism(rng, cx, baseY, height, Math.max(6, halfW), (rng() - 0.5) * 0.5);
+      L.far.push({ p: p, side: side });
+    }
   }
-  ctx.lineTo(p.apexX, p.baseY);
-  ctx.closePath();
+
+  /* høje, tynde spir op ad væggene */
+  for (let s = 0; s < 2; s++) {
+    const side = s === 0 ? -1 : 1;
+    const n = 3 + Math.floor(rng() * 2);
+    for (let i = 0; i < n; i++) {
+      const t = (i + rng() * 0.8) / n;
+      const cx = side < 0 ? w * (0.015 + t * 0.15) : w * (0.985 - t * 0.15);
+      const baseY = horizon + h * (0.03 + rng() * 0.08);
+      const height = h * (0.50 + rng() * 0.30) * (1 - t * 0.35);
+      const halfW = w * (0.006 + rng() * 0.009);
+      const tilt = -side * (0.02 + rng() * 0.09);
+      const p = makePrism(rng, cx, baseY, height, Math.max(3, halfW), (rng() - 0.5) * 0.3);
+      L.spires.push({ p: p, side: side, tilt: tilt, flip: false, cx: cx, baseY: baseY, cold: true });
+    }
+  }
+
+  /* mellemkrystaller */
+  for (let s = 0; s < 2; s++) {
+    const side = s === 0 ? -1 : 1;
+
+    /* spir der vokser op fra vægfoden */
+    const n = 9;
+    for (let i = 0; i < n; i++) {
+      const t = (i + rng() * 0.8) / n;
+      const cx = side < 0 ? w * (0.01 + t * 0.29) : w * (0.99 - t * 0.29);
+      const baseY = horizon + h * (0.005 + rng() * 0.045);
+      const height = h * (0.40 - t * 0.22) * (0.55 + rng() * 0.85);
+      const halfW = w * (0.030 - t * 0.013) * (0.6 + rng() * 0.9);
+      const tilt = -side * (0.03 + rng() * 0.20);
+      const p = makePrism(rng, cx, baseY, Math.max(18, height), Math.max(4, halfW), (rng() - 0.5) * 0.6);
+      L.mid.push({ p: p, side: side, tilt: tilt, flip: false, cx: cx, baseY: baseY, cold: rng() < 0.28 });
+    }
+
+    /* små spir der stikker ud af væggen i forskellige højder */
+    const m = 7;
+    for (let i = 0; i < m; i++) {
+      const cx = side < 0 ? w * (0.005 + rng() * 0.27) : w * (0.995 - rng() * 0.27);
+      const baseY = h * (0.20 + rng() * 0.54);
+      const height = h * (0.05 + rng() * 0.13);
+      const halfW = w * (0.007 + rng() * 0.013);
+      const tilt = -side * (0.35 + rng() * 0.55);
+      const p = makePrism(rng, cx, baseY, height, halfW, (rng() - 0.5) * 0.8);
+      L.mid.push({ p: p, side: side, tilt: tilt, flip: false, cx: cx, baseY: baseY, cold: rng() < 0.28 });
+    }
+
+    /* nedhængende krystaller fra loftet */
+    const k = 5;
+    for (let i = 0; i < k; i++) {
+      const cx = side < 0 ? w * (0.02 + rng() * 0.30) : w * (0.98 - rng() * 0.30);
+      const rootY = -h * 0.03;
+      const height = h * (0.09 + rng() * 0.20);
+      const halfW = w * (0.008 + rng() * 0.016);
+      const p = makePrism(rng, cx, rootY, height, halfW, (rng() - 0.5) * 0.5);
+      L.mid.push({ p: p, side: side, tilt: 0, flip: true, cx: cx, baseY: rootY, cold: rng() < 0.28 });
+    }
+  }
+
+  /* små gulvklynger */
+  for (let i = 0; i < 10; i++) {
+    const side = i % 2 === 0 ? -1 : 1;
+    const t = rng();
+    const x = w * (0.5 + side * (0.19 + t * 0.31));
+    const dy = Math.pow(rng(), 0.75);
+    const baseY = horizon + depth * (0.06 + dy * 0.78);
+    const scale = h * (0.020 + dy * 0.068) * (0.7 + rng() * 0.7);
+    const count = 3 + Math.floor(rng() * 3);
+    const mid = (count - 1) / 2;
+    const prisms = [];
+    for (let j = 0; j < count; j++) {
+      const off = (j - mid) * scale * (0.32 + rng() * 0.20);
+      const shrink = 1 - Math.abs(j - mid) * 0.16;
+      const height = scale * (0.78 + rng() * 1.05) * clamp(shrink, 0.35, 1);
+      const halfW = scale * (0.12 + rng() * 0.10);
+      prisms.push(makePrism(rng, x + off, baseY + scale * 0.06 * rng(), height, halfW, (rng() - 0.5) * 0.8));
+    }
+    L.floorClusters.push({ x: x, baseY: baseY, scale: scale, litSide: -side, prisms: prisms });
+  }
+
+  /* to store ametystklynger, nederst til venstre og højre — den højeste ~28 % */
+  for (let s = 0; s < 2; s++) {
+    const side = s === 0 ? -1 : 1;
+    const x = w * (0.5 + side * (0.30 + rng() * 0.05));
+    const baseY = h * (0.975 + rng() * 0.03);
+    const tall = h * (0.26 + rng() * 0.035);
+    const count = 4 + Math.floor(rng() * 3);
+    const mid = (count - 1) / 2;
+    const tallIdx = Math.floor(mid);
+    const crystals = [];
+    for (let i = 0; i < count; i++) {
+      const off = (i - mid) * tall * (0.20 + rng() * 0.09);
+      const rel = Math.abs(i - mid) / Math.max(1, mid);
+      const height = i === tallIdx
+        ? tall
+        : tall * (0.40 + rng() * 0.35) * (1 - rel * 0.25);
+      const halfW = Math.max(height * (0.13 + rng() * 0.05), tall * 0.075);   // tunge, ikke spinkle
+      const lean = Math.abs(off) < 0.5
+        ? (rng() - 0.5) * 0.2
+        : (off < 0 ? -1 : 1) * (0.08 + rng() * 0.22);   // spidsen læner udad
+      const by = baseY + (rng() - 0.35) * tall * 0.08;
+      crystals.push(makeColumn(rng, x + off, by, height, halfW, lean));
+    }
+    crystals.sort(function (a, b) { return a.baseY - b.baseY; });   // fjernest først
+    L.fgClusters.push({ x: x, baseY: baseY, scale: tall, litSide: -side, crystals: crystals });
+  }
+
+  /* revner der løber mod horisonten */
+  for (let c = 0; c < 8; c++) {
+    let u = (rng() - 0.5) * 28;
+    let z = 1 + rng() * 1.4;
+    const pts = [[floorX(L, u, z), floorY(L, z), z]];
+    const segs = 5 + Math.floor(rng() * 5);
+    for (let s = 0; s < segs; s++) {
+      z += 0.45 + rng() * 1.05;
+      u += (rng() - 0.5) * 2.8;
+      pts.push([floorX(L, u, z), floorY(L, z), z]);
+    }
+    L.cracks.push(pts);
+  }
+
+  return L;
 }
 
 /* --------------------------------------------------------------- 1: grund */
 
-function paintBase(ctx, w, h, horizon) {
+function paintBase(ctx, L) {
+  const w = L.w, h = L.h, horizon = L.horizon;
+  ctx.save();
   const g = ctx.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0.00, PALETTE.ink);
   g.addColorStop(0.13, PALETTE.cavern0);
@@ -164,7 +413,6 @@ function paintBase(ctx, w, h, horizon) {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 
-  ctx.save();
   ctx.globalCompositeOperation = 'lighter';
 
   /* violet dis lige bag hjulet — kammerets eget lys */
@@ -198,45 +446,78 @@ function pocket(ctx, x, y, r, colour, alpha) {
 
 /* --------------------------------------------------------- 2: fjerne vægge */
 
-function paintFarWalls(ctx, w, h, horizon, rng) {
+function paintFarWalls(ctx, L) {
+  const w = L.w, h = L.h;
   const radius = clamp(Math.min(w, h) * 0.030, 6, 34);
   const layer = blurredLayer(w, h, radius, function (c) {
-    for (let s = 0; s < 2; s++) {
-      const side = s === 0 ? -1 : 1;
-      const n = 6;
-      for (let i = 0; i < n; i++) {
-        const t = (i + rng() * 0.7) / n;
-        const cx = side < 0 ? w * (-0.06 + t * 0.46) : w * (1.06 - t * 0.46);
-        const height = h * (0.66 - t * 0.30) * (0.75 + rng() * 0.5);
-        const halfW = w * (0.105 - t * 0.048) * (0.7 + rng() * 0.7);
-        const baseY = horizon + h * (0.02 + rng() * 0.06);
-        const p = makePrism(rng, cx, baseY, height, Math.max(6, halfW), (rng() - 0.5) * 0.5);
-
-        const fill = c.createLinearGradient(0, p.apexY, 0, p.baseY);
-        fill.addColorStop(0.00, rgba(TINT.wallHigh, 0.52));
-        fill.addColorStop(0.38, rgba(TINT.wallMid,  0.62));
-        fill.addColorStop(1.00, rgba(PALETTE.ink,   0.78));
-        prismPath(c, p);
-        c.fillStyle = fill;
-        c.fill();
-
-        /* svagt kantlys på den side der vender ind mod midten */
-        c.beginPath();
-        c.moveTo(p.apexX, p.apexY);
-        c.lineTo(side < 0 ? p.rsx : p.lsx, p.sy);
-        c.lineTo(side < 0 ? p.rx : p.lx, p.baseY);
-        c.strokeStyle = rgba(TINT.cold, 0.24);
-        c.lineWidth = Math.max(2, p.halfW * 0.14);
-        c.stroke();
-      }
+    for (let i = 0; i < L.far.length; i++) {
+      const it = L.far[i];
+      const p = it.p;
+      const fill = c.createLinearGradient(0, p.apexY, 0, p.baseY);
+      fill.addColorStop(0.00, rgba(TINT.wallHigh, 0.52));
+      fill.addColorStop(0.38, rgba(TINT.wallMid,  0.62));
+      fill.addColorStop(1.00, rgba(PALETTE.ink,   0.78));
+      polyPath(c, p.outline);
+      c.fillStyle = fill;
+      c.fill();
+      /* svagt kantlys på den side der vender ind mod midten */
+      strokePolyline(c, it.side < 0 ? p.edgeR : p.edgeL, rgba(TINT.cold, 0.24), Math.max(2, p.halfW * 0.14));
     }
   });
+  ctx.save();
   ctx.drawImage(layer, 0, 0, w, h);
+  ctx.restore();
 }
 
-/* ---------------------------------------------------- 3: mellemkrystaller */
+/* ------------------------------------------------------------ 3a: spir */
 
-function drawWallPrism(ctx, p, litSide, rng) {
+function paintSpires(ctx, L) {
+  for (let i = 0; i < L.spires.length; i++) {
+    const it = L.spires[i];
+    const p = it.p;
+    ctx.save();
+    applyItemTransform(ctx, it);
+
+    const fill = ctx.createLinearGradient(0, p.apexY, 0, p.baseY);
+    fill.addColorStop(0.00, mixHex(PALETTE.cavern2, TINT.spireCold, 0.55));
+    fill.addColorStop(0.30, mixHex(PALETTE.cavern1, PALETTE.cavern2, 0.60));
+    fill.addColorStop(1.00, mixHex(PALETTE.ink, PALETTE.cavern1, 0.35));
+    polyPath(ctx, p.outline);
+    ctx.fillStyle = fill;
+    ctx.fill();
+
+    /* facetten mod hjulet er en anelse lysere */
+    polyPath(ctx, p.facets[it.side < 0 ? 1 : 0].pts);
+    ctx.fillStyle = rgba(TINT.spireCold, 0.18);
+    ctx.fill();
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round';
+    const edge = it.side < 0 ? p.edgeR : p.edgeL;
+    strokePolyline(ctx, edge, rgba(TINT.cyanRim, 0.12), Math.max(2, p.halfW * 0.9));
+    strokePolyline(ctx, edge, rgba(TINT.cyanRim, 0.48), Math.max(0.8, p.halfW * 0.22));
+    strokePolyline(ctx, p.ridge, rgba(PALETTE.text, 0.10), Math.max(0.5, p.halfW * 0.08));
+    const ar = p.halfW * 3.5;
+    const g = ctx.createRadialGradient(p.apexX, p.apexY, 0, p.apexX, p.apexY, ar);
+    g.addColorStop(0.00, rgba(TINT.cyanRim, 0.30));
+    g.addColorStop(1.00, rgba(TINT.cyanRim, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(p.apexX - ar, p.apexY - ar, ar * 2, ar * 2);
+    ctx.restore();
+
+    polyPath(ctx, p.outline);
+    ctx.strokeStyle = rgba(PALETTE.ink, 0.5);
+    ctx.lineWidth = Math.max(0.5, p.halfW * 0.10);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/* ---------------------------------------------------- 3b: mellemkrystaller */
+
+function drawWallPrism(ctx, p, litSide, cold) {
+  ctx.save();
   const dark = ctx.createLinearGradient(0, p.apexY, 0, p.baseY);
   dark.addColorStop(0.00, mixHex(PALETTE.cavern1, PALETTE.cavern2, 0.45));
   dark.addColorStop(0.50, mixHex(PALETTE.cavern1, PALETTE.ink, 0.42));
@@ -248,10 +529,10 @@ function drawWallPrism(ctx, p, litSide, rng) {
   lit.addColorStop(0.78, mixHex(PALETTE.cavern1, PALETTE.ink, 0.30));
   lit.addColorStop(1.00, mixHex(PALETTE.ink, PALETTE.cavern1, 0.20));
 
-  facetPath(ctx, p, -1);
+  polyPath(ctx, p.facets[0].pts);
   ctx.fillStyle = litSide < 0 ? lit : dark;
   ctx.fill();
-  facetPath(ctx, p, 1);
+  polyPath(ctx, p.facets[1].pts);
   ctx.fillStyle = litSide > 0 ? lit : dark;
   ctx.fill();
 
@@ -273,96 +554,36 @@ function drawWallPrism(ctx, p, litSide, rng) {
   /* kantlys langs ryggen og den oplyste yderkant */
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  ctx.strokeStyle = rgba(rng() < 0.28 ? TINT.coldRim : PALETTE.haze, 0.26);
-  ctx.lineWidth = Math.max(0.7, p.halfW * 0.11);
-  ctx.beginPath();
-  ctx.moveTo(p.apexX, p.apexY);
-  ctx.lineTo(litSide < 0 ? p.lsx : p.rsx, p.sy);
-  ctx.lineTo(litSide < 0 ? p.lx : p.rx, p.baseY);
-  ctx.stroke();
-
-  ctx.strokeStyle = rgba(PALETTE.text, 0.14);
-  ctx.lineWidth = Math.max(0.5, p.halfW * 0.06);
-  ctx.beginPath();
-  ctx.moveTo(p.apexX, p.apexY);
-  ctx.lineTo(p.apexX, p.baseY);
-  ctx.stroke();
+  strokePolyline(ctx, litSide < 0 ? p.edgeL : p.edgeR,
+    rgba(cold ? TINT.coldRim : PALETTE.haze, 0.26), Math.max(0.7, p.halfW * 0.11));
+  strokePolyline(ctx, p.ridge, rgba(PALETTE.text, 0.14), Math.max(0.5, p.halfW * 0.06));
   ctx.restore();
 
   /* nær-sort kontur, så silhuetten holder mod disen */
-  prismPath(ctx, p);
+  polyPath(ctx, p.outline);
   ctx.strokeStyle = rgba(PALETTE.ink, 0.5);
   ctx.lineWidth = Math.max(0.5, p.halfW * 0.07);
   ctx.stroke();
+  ctx.restore();
 }
 
-function paintMidCrystals(ctx, w, h, horizon, rng) {
-  for (let s = 0; s < 2; s++) {
-    const side = s === 0 ? -1 : 1;
-
-    /* spir der vokser op fra vægfoden */
-    const n = 9;
-    for (let i = 0; i < n; i++) {
-      const t = (i + rng() * 0.8) / n;
-      const cx = side < 0 ? w * (0.01 + t * 0.29) : w * (0.99 - t * 0.29);
-      const baseY = horizon + h * (0.005 + rng() * 0.045);
-      const height = h * (0.40 - t * 0.22) * (0.55 + rng() * 0.85);
-      const halfW = w * (0.030 - t * 0.013) * (0.6 + rng() * 0.9);
-      const tilt = -side * (0.03 + rng() * 0.20);
-      const p = makePrism(rng, cx, baseY, Math.max(18, height), Math.max(4, halfW), (rng() - 0.5) * 0.6);
-      ctx.save();
-      ctx.translate(cx, baseY);
-      ctx.rotate(tilt);
-      ctx.translate(-cx, -baseY);
-      drawWallPrism(ctx, p, -side, rng);
-      ctx.restore();
-    }
-
-    /* små spir der stikker ud af væggen i forskellige højder */
-    const m = 7;
-    for (let i = 0; i < m; i++) {
-      const cx = side < 0 ? w * (0.005 + rng() * 0.27) : w * (0.995 - rng() * 0.27);
-      const baseY = h * (0.20 + rng() * 0.54);
-      const height = h * (0.05 + rng() * 0.13);
-      const halfW = w * (0.007 + rng() * 0.013);
-      const tilt = -side * (0.35 + rng() * 0.55);
-      const p = makePrism(rng, cx, baseY, height, halfW, (rng() - 0.5) * 0.8);
-      ctx.save();
-      ctx.translate(cx, baseY);
-      ctx.rotate(tilt);
-      ctx.translate(-cx, -baseY);
-      drawWallPrism(ctx, p, -side, rng);
-      ctx.restore();
-    }
-
-    /* nedhængende krystaller fra loftet */
-    const k = 5;
-    for (let i = 0; i < k; i++) {
-      const cx = side < 0 ? w * (0.02 + rng() * 0.30) : w * (0.98 - rng() * 0.30);
-      const rootY = -h * 0.03;
-      const height = h * (0.09 + rng() * 0.20);
-      const halfW = w * (0.008 + rng() * 0.016);
-      const p = makePrism(rng, cx, rootY, height, halfW, (rng() - 0.5) * 0.5);
-      ctx.save();
-      ctx.translate(cx, rootY);
-      ctx.scale(1, -1);                        // vend spidsen nedad
-      ctx.translate(-cx, -rootY);
-      drawWallPrism(ctx, p, -side, rng);
-      ctx.restore();
-    }
+function paintMidCrystals(ctx, L) {
+  for (let i = 0; i < L.mid.length; i++) {
+    const it = L.mid[i];
+    ctx.save();
+    applyItemTransform(ctx, it);
+    drawWallPrism(ctx, it.p, -it.side, it.cold);
+    ctx.restore();
   }
 }
 
 /* ----------------------------------------------------------------- 4: gulv */
 
-function paintFloor(ctx, w, h, horizon, rng) {
-  const depth = h - horizon;
+function paintFloor(ctx, L, rng) {
+  const w = L.w, h = L.h, horizon = L.horizon, depth = L.depth;
   if (depth < 8) return;
-
-  const vpx = w * 0.5;
-  const fx = w * 0.11;
-  const yOf = function (z) { return horizon + depth / z; };
-  const xOf = function (u, z) { return vpx + fx * u / z; };
+  const vpx = L.proj.vpx;
+  const fx = L.proj.fx;
 
   ctx.save();
   ctx.beginPath();
@@ -382,8 +603,8 @@ function paintFloor(ctx, w, h, horizon, rng) {
   const step = 0.55;
   const lightR = w * 0.46;
   for (let z = 1; z < 60; z += step) {
-    const y0 = yOf(z);
-    const y1 = yOf(z + step);
+    const y0 = floorY(L, z);
+    const y1 = floorY(L, z + step);
     const rowH = y0 - y1;
     if (rowH < 0.9) break;
     const cell = fx / z;
@@ -391,10 +612,10 @@ function paintFloor(ctx, w, h, horizon, rng) {
     const fade = clamp((z - 1) / 5.5, 0, 1);
     const solid = rowH >= 2.0;
     for (let u = -uMax; u < uMax; u++) {
-      const xa0 = xOf(u, z);
-      const xb0 = xOf(u + 1, z);
-      const xa1 = xOf(u, z + step);
-      const xb1 = xOf(u + 1, z + step);
+      const xa0 = floorX(L, u, z);
+      const xb0 = floorX(L, u + 1, z);
+      const xa1 = floorX(L, u, z + step);
+      const xb1 = floorX(L, u + 1, z + step);
       const j = rng();
       if (xb0 < -3 && xb1 < -3) continue;
       if (xa0 > w + 3 && xa1 > w + 3) continue;
@@ -404,6 +625,8 @@ function paintFloor(ctx, w, h, horizon, rng) {
       const d = Math.hypot(mx - vpx, (my - horizon) * 1.4) / lightR;
       const lit = clamp(1 - d, 0, 1);
       let col = mixHex(TINT.floorDark, TINT.floorLit, 0.14 + lit * 0.60 + j * 0.16);
+      col = mixHex(col, TINT.floorWarm, lit * lit * 0.45);    // varmt under hjulet
+      col = mixHex(col, TINT.floorCool, (1 - lit) * 0.30);    // koldt i siderne
       col = mixHex(col, PALETTE.ink, fade * 0.60);
 
       ctx.beginPath();
@@ -425,7 +648,7 @@ function paintFloor(ctx, w, h, horizon, rng) {
         ctx.beginPath();
         ctx.moveTo(xa1, y1);
         ctx.lineTo(xb1, y1);
-        ctx.strokeStyle = rgba(TINT.shardCore, 0.30 * lit * (1 - fade * 0.8));
+        ctx.strokeStyle = rgba(mixHex(TINT.shardCore, PALETTE.gold2, lit * 0.5), 0.30 * lit * (1 - fade * 0.8));
         ctx.lineWidth = clamp(rowH * 0.07, 0.5, 1.4);
         ctx.stroke();
       }
@@ -433,25 +656,12 @@ function paintFloor(ctx, w, h, horizon, rng) {
   }
 
   /* revner der løber mod horisonten */
-  for (let c = 0; c < 8; c++) {
-    let u = (rng() - 0.5) * 28;
-    let z = 1 + rng() * 1.4;
-    ctx.beginPath();
-    ctx.moveTo(xOf(u, z), yOf(z));
-    const segs = 5 + Math.floor(rng() * 5);
-    for (let s = 0; s < segs; s++) {
-      z += 0.45 + rng() * 1.05;
-      u += (rng() - 0.5) * 2.8;
-      ctx.lineTo(xOf(u, z), yOf(z));
-    }
-    ctx.strokeStyle = rgba(PALETTE.ink, 0.60);
-    ctx.lineWidth = 1.6;
-    ctx.stroke();
+  for (let c = 0; c < L.cracks.length; c++) {
+    const pts = L.cracks[c];
+    strokePolyline(ctx, pts, rgba(PALETTE.ink, 0.60), 1.6);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.strokeStyle = rgba(TINT.shardCore, 0.10);
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
+    strokePolyline(ctx, pts, rgba(TINT.shardCore, 0.10), 0.8);
     ctx.restore();
   }
 
@@ -462,24 +672,49 @@ function paintFloor(ctx, w, h, horizon, rng) {
   ctx.fillStyle = far;
   ctx.fillRect(0, horizon, w, depth * 0.34);
 
-  /* lyspøl under hjulet */
   ctx.globalCompositeOperation = 'lighter';
+
+  /* kold-varm deling: violet-cyan i siderne … */
+  const coolL = ctx.createLinearGradient(0, 0, w * 0.34, 0);
+  coolL.addColorStop(0.00, rgba(TINT.floorCool, 0.30));
+  coolL.addColorStop(1.00, rgba(TINT.floorCool, 0));
+  ctx.fillStyle = coolL;
+  ctx.fillRect(0, horizon, w * 0.34, depth);
+  const coolR = ctx.createLinearGradient(w, 0, w * 0.66, 0);
+  coolR.addColorStop(0.00, rgba(TINT.floorCool, 0.30));
+  coolR.addColorStop(1.00, rgba(TINT.floorCool, 0));
+  ctx.fillStyle = coolR;
+  ctx.fillRect(w * 0.66, horizon, w * 0.34, depth);
+
+  /* … og en svag varm pøl der hvor hjulet står */
   const pool = ctx.createRadialGradient(vpx, horizon + depth * 0.10, depth * 0.04,
                                         vpx, horizon + depth * 0.14, w * 0.52);
-  pool.addColorStop(0.00, rgba(PALETTE.haze,    0.16));
-  pool.addColorStop(0.38, rgba(PALETTE.cavern3, 0.08));
+  pool.addColorStop(0.00, rgba(PALETTE.haze,    0.12));
+  pool.addColorStop(0.38, rgba(PALETTE.cavern3, 0.07));
   pool.addColorStop(1.00, rgba(PALETTE.cavern3, 0));
   ctx.fillStyle = pool;
   ctx.fillRect(0, horizon, w, depth);
+
+  ctx.save();
+  ctx.translate(vpx, horizon + depth * 0.12);
+  ctx.scale(1, 0.36);
+  const wr = w * 0.30;
+  const warm = ctx.createRadialGradient(0, 0, 0, 0, 0, wr);
+  warm.addColorStop(0.00, rgba(PALETTE.gold2, 0.15));
+  warm.addColorStop(0.40, rgba(PALETTE.gold1, 0.08));
+  warm.addColorStop(1.00, rgba(PALETTE.gold1, 0));
+  ctx.fillStyle = warm;
+  ctx.fillRect(-wr, -wr, wr * 2, wr * 2);
+  ctx.restore();
   ctx.restore();
 
-  /* selve horisontlinjen — tynd, lysest i midten */
+  /* selve horisontlinjen — tynd, varmest i midten */
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const line = ctx.createLinearGradient(0, 0, w, 0);
   line.addColorStop(0.00, rgba(TINT.cold, 0));
   line.addColorStop(0.26, rgba(TINT.cold, 0.09));
-  line.addColorStop(0.50, rgba(PALETTE.haze, 0.20));
+  line.addColorStop(0.50, rgba(mixHex(PALETTE.haze, PALETTE.gold2, 0.45), 0.22));
   line.addColorStop(0.74, rgba(TINT.cold, 0.09));
   line.addColorStop(1.00, rgba(TINT.cold, 0));
   ctx.fillStyle = line;
@@ -487,9 +722,10 @@ function paintFloor(ctx, w, h, horizon, rng) {
   ctx.restore();
 }
 
-/* ------------------------------------------------- 5: forgrundskrystaller */
+/* ------------------------------------------------------- 5: gulvklynger */
 
 function drawShardPrism(ctx, p, litSide) {
+  ctx.save();
   const dark = ctx.createLinearGradient(0, p.apexY, 0, p.baseY);
   dark.addColorStop(0.00, mixHex(TINT.shardCore, PALETTE.cavern2, 0.40));
   dark.addColorStop(0.52, mixHex(PALETTE.cavern2, PALETTE.cavern1, 0.55));
@@ -501,78 +737,184 @@ function drawShardPrism(ctx, p, litSide) {
   lit.addColorStop(0.72, mixHex(PALETTE.cavern3, PALETTE.cavern1, 0.50));
   lit.addColorStop(1.00, mixHex(PALETTE.cavern1, PALETTE.ink, 0.45));
 
-  facetPath(ctx, p, -1);
+  polyPath(ctx, p.facets[0].pts);
   ctx.fillStyle = litSide < 0 ? lit : dark;
   ctx.fill();
-  facetPath(ctx, p, 1);
+  polyPath(ctx, p.facets[1].pts);
   ctx.fillStyle = litSide > 0 ? lit : dark;
   ctx.fill();
 
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  ctx.strokeStyle = rgba(TINT.shardTip, 0.42);
-  ctx.lineWidth = Math.max(0.6, p.halfW * 0.18);
-  ctx.beginPath();
-  ctx.moveTo(p.apexX, p.apexY);
-  ctx.lineTo(litSide < 0 ? p.lsx : p.rsx, p.sy);
-  ctx.lineTo(litSide < 0 ? p.lx : p.rx, p.baseY);
-  ctx.stroke();
+  strokePolyline(ctx, litSide < 0 ? p.edgeL : p.edgeR, rgba(TINT.shardTip, 0.42), Math.max(0.6, p.halfW * 0.18));
   ctx.restore();
 
-  prismPath(ctx, p);
+  polyPath(ctx, p.outline);
   ctx.strokeStyle = rgba(PALETTE.ink, 0.55);
   ctx.lineWidth = Math.max(0.5, p.halfW * 0.11);
   ctx.stroke();
+  ctx.restore();
 }
 
-function drawShardCluster(ctx, rng, x, baseY, scale, litSide) {
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  const glow = ctx.createRadialGradient(x, baseY - scale * 0.55, scale * 0.06,
-                                        x, baseY - scale * 0.45, scale * 2.4);
-  glow.addColorStop(0.00, rgba(PALETTE.haze,    0.24));
-  glow.addColorStop(0.34, rgba(PALETTE.cavern3, 0.11));
-  glow.addColorStop(1.00, rgba(PALETTE.cavern3, 0));
-  ctx.fillStyle = glow;
-  ctx.fillRect(x - scale * 2.5, baseY - scale * 3.0, scale * 5, scale * 4.4);
+function paintFloorCrystals(ctx, L) {
+  for (let i = 0; i < L.floorClusters.length; i++) {
+    const cl = L.floorClusters[i];
+    const x = cl.x, baseY = cl.baseY, scale = cl.scale;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = ctx.createRadialGradient(x, baseY - scale * 0.55, scale * 0.06,
+                                          x, baseY - scale * 0.45, scale * 2.4);
+    glow.addColorStop(0.00, rgba(PALETTE.haze,    0.24));
+    glow.addColorStop(0.34, rgba(PALETTE.cavern3, 0.11));
+    glow.addColorStop(1.00, rgba(PALETTE.cavern3, 0));
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - scale * 2.5, baseY - scale * 3.0, scale * 5, scale * 4.4);
 
-  const pool = ctx.createRadialGradient(x, baseY, scale * 0.04, x, baseY, scale * 1.3);
-  pool.addColorStop(0.00, rgba(PALETTE.haze, 0.20));
-  pool.addColorStop(1.00, rgba(PALETTE.haze, 0));
-  ctx.beginPath();
-  ctx.ellipse(x, baseY, scale * 1.3, scale * 0.32, 0, 0, TAU);
-  ctx.fillStyle = pool;
-  ctx.fill();
+    const pool = ctx.createRadialGradient(x, baseY, scale * 0.04, x, baseY, scale * 1.3);
+    pool.addColorStop(0.00, rgba(PALETTE.haze, 0.20));
+    pool.addColorStop(1.00, rgba(PALETTE.haze, 0));
+    ctx.beginPath();
+    ctx.ellipse(x, baseY, scale * 1.3, scale * 0.32, 0, 0, TAU);
+    ctx.closePath();
+    ctx.fillStyle = pool;
+    ctx.fill();
+    ctx.restore();
+
+    for (let j = 0; j < cl.prisms.length; j++) drawShardPrism(ctx, cl.prisms[j], cl.litSide);
+  }
+}
+
+/* ------------------------------------------------ 6: forgrundsametyster */
+
+function drawAmethyst(ctx, c, litSide) {
+  ctx.save();
+  const facets = c.facets;
+  for (let i = 0; i < facets.length; i++) {
+    const f = facets[i];
+    const towards = f.side === litSide;
+    let stops;
+    if (f.top) {
+      stops = towards
+        ? [[0, TINT.amethyst2], [0.55, TINT.amethyst1], [1, TINT.amethyst0]]
+        : [[0, TINT.amethyst1], [0.60, TINT.amethyst0], [1, mixHex(TINT.amethyst0, PALETTE.cavern1, 0.5)]];
+    } else {
+      stops = towards
+        ? [[0, TINT.amethyst1], [0.45, TINT.amethyst0], [1, mixHex(PALETTE.cavern2, PALETTE.ink, 0.45)]]
+        : [[0, TINT.amethyst0], [0.50, mixHex(PALETTE.cavern2, PALETTE.cavern1, 0.5)], [1, mixHex(PALETTE.cavern1, PALETTE.ink, 0.55)]];
+    }
+    polyPath(ctx, f.pts);
+    ctx.fillStyle = facetGradient(ctx, f, stops);
+    ctx.fill();
+  }
+
+  /* indre glød — violet kerne med et koldt stik mod hjulet, klippet til stenen */
+  ctx.save();
+  polyPath(ctx, c.outline);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'lighter';
+  const gy = c.baseY - c.height * 0.58;
+  const gr = c.height * 0.50;
+  const gv = ctx.createRadialGradient(c.cx, gy, 0, c.cx, gy, gr);
+  gv.addColorStop(0.00, rgba(AMETHYST.glow, 0.30));
+  gv.addColorStop(0.45, rgba(AMETHYST.glow, 0.10));
+  gv.addColorStop(1.00, rgba(AMETHYST.glow, 0));
+  ctx.fillStyle = gv;
+  ctx.fillRect(c.cx - gr, gy - gr, gr * 2, gr * 2);
+  const cx2 = c.cx + litSide * c.halfW * 0.45;
+  const cy2 = c.baseY - c.height * 0.36;
+  const cr2 = c.height * 0.30;
+  const gc = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, cr2);
+  gc.addColorStop(0.00, rgba(ICE.glow, 0.16));
+  gc.addColorStop(1.00, rgba(ICE.glow, 0));
+  ctx.fillStyle = gc;
+  ctx.fillRect(cx2 - cr2, cy2 - cr2, cr2 * 2, cr2 * 2);
   ctx.restore();
 
-  const count = 3 + Math.floor(rng() * 3);
-  const mid = (count - 1) / 2;
-  for (let i = 0; i < count; i++) {
-    const off = (i - mid) * scale * (0.32 + rng() * 0.20);
-    const shrink = 1 - Math.abs(i - mid) * 0.16;
-    const height = scale * (0.78 + rng() * 1.05) * clamp(shrink, 0.35, 1);
-    const halfW = scale * (0.12 + rng() * 0.10);
-    const p = makePrism(rng, x + off, baseY + scale * 0.06 * rng(), height, halfW, (rng() - 0.5) * 0.8);
-    drawShardPrism(ctx, p, litSide);
+  /* facetgrænser */
+  ctx.lineJoin = 'round';
+  const thin = Math.max(0.5, c.halfW * 0.05);
+  const caps = c.capEdges || [];
+  for (let i = 0; i < caps.length; i++) strokePolyline(ctx, caps[i], rgba(PALETTE.ink, 0.35), thin);
+  strokePolyline(ctx, c.ridge, rgba(PALETTE.ink, 0.35), thin);
+
+  /* kantlys: lys rand mod hjulet, cyan på bagkanten, hvidt glimt i spidsen */
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  strokePolyline(ctx, c.ridge, rgba(TINT.cyanRim, 0.28), thin);
+  const litEdge = litSide < 0 ? c.edgeL : c.edgeR;
+  const darkEdge = litSide < 0 ? c.edgeR : c.edgeL;
+  strokePolyline(ctx, litEdge, rgba(AMETHYST.glow, 0.22), Math.max(2, c.halfW * 0.40));
+  strokePolyline(ctx, litEdge, rgba(TINT.amethystRim, 0.72), Math.max(0.8, c.halfW * 0.10));
+  strokePolyline(ctx, darkEdge, rgba(TINT.cyanRim, 0.22), Math.max(0.6, c.halfW * 0.06));
+  const ar = c.halfW * 1.1;
+  const ag = ctx.createRadialGradient(c.apexX, c.apexY, 0, c.apexX, c.apexY, ar);
+  ag.addColorStop(0.00, rgba(PALETTE.text, 0.55));
+  ag.addColorStop(0.35, rgba(TINT.amethystRim, 0.25));
+  ag.addColorStop(1.00, rgba(TINT.amethystRim, 0));
+  ctx.fillStyle = ag;
+  ctx.fillRect(c.apexX - ar, c.apexY - ar, ar * 2, ar * 2);
+  ctx.restore();
+
+  /* tynd mørk kontur */
+  polyPath(ctx, c.outline);
+  ctx.strokeStyle = rgba(PALETTE.ink, 0.62);
+  ctx.lineWidth = Math.max(0.6, c.halfW * 0.08);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function paintForeground(ctx, L) {
+  for (let k = 0; k < L.fgClusters.length; k++) {
+    const cl = L.fgClusters[k];
+    const s = cl.scale;
+
+    /* glød bag klyngen: violet med et cyan stik på hjulsiden */
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = ctx.createRadialGradient(cl.x, cl.baseY - s * 0.5, s * 0.05, cl.x, cl.baseY - s * 0.4, s * 1.5);
+    glow.addColorStop(0.00, rgba(AMETHYST.glow, 0.22));
+    glow.addColorStop(0.40, rgba(PALETTE.haze,  0.10));
+    glow.addColorStop(1.00, rgba(PALETTE.haze,  0));
+    ctx.fillStyle = glow;
+    ctx.fillRect(cl.x - s * 1.6, cl.baseY - s * 2.0, s * 3.2, s * 2.6);
+    const ccx = cl.x + cl.litSide * s * 0.5;
+    const ccy = cl.baseY - s * 0.30;
+    const cool = ctx.createRadialGradient(ccx, ccy, 0, ccx, ccy, s * 0.9);
+    cool.addColorStop(0.00, rgba(ICE.glow, 0.10));
+    cool.addColorStop(1.00, rgba(ICE.glow, 0));
+    ctx.fillStyle = cool;
+    ctx.fillRect(ccx - s, ccy - s, s * 2, s * 2);
+    ctx.restore();
+
+    /* mørk fod, så stenene står i gulvet og ikke på det */
+    ctx.save();
+    const foot = ctx.createRadialGradient(cl.x, cl.baseY, 0, cl.x, cl.baseY, s * 1.0);
+    foot.addColorStop(0.00, rgba(PALETTE.ink, 0.55));
+    foot.addColorStop(1.00, rgba(PALETTE.ink, 0));
+    ctx.beginPath();
+    ctx.ellipse(cl.x, cl.baseY, s * 1.0, s * 0.22, 0, 0, TAU);
+    ctx.closePath();
+    ctx.fillStyle = foot;
+    ctx.fill();
+    ctx.globalCompositeOperation = 'lighter';
+    const pool = ctx.createRadialGradient(cl.x, cl.baseY, 0, cl.x, cl.baseY, s * 0.9);
+    pool.addColorStop(0.00, rgba(PALETTE.haze, 0.22));
+    pool.addColorStop(1.00, rgba(PALETTE.haze, 0));
+    ctx.beginPath();
+    ctx.ellipse(cl.x, cl.baseY, s * 0.9, s * 0.20, 0, 0, TAU);
+    ctx.closePath();
+    ctx.fillStyle = pool;
+    ctx.fill();
+    ctx.restore();
+
+    for (let i = 0; i < cl.crystals.length; i++) drawAmethyst(ctx, cl.crystals[i], cl.litSide);
   }
 }
 
-function paintFloorCrystals(ctx, w, h, horizon, rng) {
-  const depth = h - horizon;
-  for (let i = 0; i < 10; i++) {
-    const side = i % 2 === 0 ? -1 : 1;
-    const t = rng();
-    const x = w * (0.5 + side * (0.19 + t * 0.31));
-    const dy = Math.pow(rng(), 0.75);
-    const baseY = horizon + depth * (0.06 + dy * 0.78);
-    const scale = h * (0.020 + dy * 0.068) * (0.7 + rng() * 0.7);
-    drawShardCluster(ctx, rng, x, baseY, scale, -side);
-  }
-}
+/* --------------------------------------------------------- 7: lysskakter */
 
-/* --------------------------------------------------------- 6: lysskakter */
-
-function paintShafts(ctx, w, h, rng) {
+function paintShafts(ctx, L, rng) {
+  const w = L.w, h = L.h;
   const radius = clamp(Math.min(w, h) * 0.045, 8, 46);
   const layer = blurredLayer(w, h, radius, function (c) {
     for (let i = 0; i < 3; i++) {
@@ -602,9 +944,10 @@ function paintShafts(ctx, w, h, rng) {
   ctx.restore();
 }
 
-/* ------------------------------------------------------------- 7: gnister */
+/* ------------------------------------------------------------- 8: gnister */
 
-function paintSparks(ctx, w, h, rng) {
+function paintSparks(ctx, L, rng) {
+  const w = L.w, h = L.h;
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
 
@@ -633,35 +976,41 @@ function paintSparks(ctx, w, h, rng) {
     const y = h * (0.06 + rng() * 0.66);
     const r = h * (0.006 + rng() * 0.016);
     const a = 0.24 + rng() * 0.34;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0.00, rgba(PALETTE.text, a));
-    g.addColorStop(0.34, rgba(PALETTE.haze, a * 0.4));
-    g.addColorStop(1.00, rgba(PALETTE.haze, 0));
-    ctx.fillStyle = g;
-    ctx.fillRect(x - r, y - r, r * 2, r * 2);
-
-    const flare = r * (2.6 + rng() * 2.2);
-    const fh = ctx.createLinearGradient(x - flare, y, x + flare, y);
-    fh.addColorStop(0.00, rgba(PALETTE.text, 0));
-    fh.addColorStop(0.50, rgba(PALETTE.text, a * 0.55));
-    fh.addColorStop(1.00, rgba(PALETTE.text, 0));
-    ctx.fillStyle = fh;
-    ctx.fillRect(x - flare, y - Math.max(0.5, r * 0.09), flare * 2, Math.max(1, r * 0.18));
-
-    const fv = ctx.createLinearGradient(x, y - flare, x, y + flare);
-    fv.addColorStop(0.00, rgba(PALETTE.text, 0));
-    fv.addColorStop(0.50, rgba(PALETTE.text, a * 0.42));
-    fv.addColorStop(1.00, rgba(PALETTE.text, 0));
-    ctx.fillStyle = fv;
-    ctx.fillRect(x - Math.max(0.5, r * 0.09), y - flare, Math.max(1, r * 0.18), flare * 2);
+    starFlare(ctx, x, y, r, r * (2.6 + rng() * 2.2), a, PALETTE.text, PALETTE.haze);
   }
 
   ctx.restore();
 }
 
-/* ------------------------------------------------------------ 8: vignette */
+/** Lille stjerne: blød kerne + vandret og lodret flare. Additiv. */
+function starFlare(ctx, x, y, r, flare, a, core, halo) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0.00, rgba(core, a));
+  g.addColorStop(0.34, rgba(halo, a * 0.4));
+  g.addColorStop(1.00, rgba(halo, 0));
+  ctx.fillStyle = g;
+  ctx.fillRect(x - r, y - r, r * 2, r * 2);
 
-function paintVignette(ctx, w, h) {
+  const fh = ctx.createLinearGradient(x - flare, y, x + flare, y);
+  fh.addColorStop(0.00, rgba(core, 0));
+  fh.addColorStop(0.50, rgba(core, a * 0.55));
+  fh.addColorStop(1.00, rgba(core, 0));
+  ctx.fillStyle = fh;
+  ctx.fillRect(x - flare, y - Math.max(0.5, r * 0.09), flare * 2, Math.max(1, r * 0.18));
+
+  const fv = ctx.createLinearGradient(x, y - flare, x, y + flare);
+  fv.addColorStop(0.00, rgba(core, 0));
+  fv.addColorStop(0.50, rgba(core, a * 0.42));
+  fv.addColorStop(1.00, rgba(core, 0));
+  ctx.fillStyle = fv;
+  ctx.fillRect(x - Math.max(0.5, r * 0.09), y - flare, Math.max(1, r * 0.18), flare * 2);
+}
+
+/* ------------------------------------------------------------ 9: vignette */
+
+function paintVignette(ctx, L) {
+  const w = L.w, h = L.h;
+  ctx.save();
   const g = ctx.createRadialGradient(w * 0.5, h * 0.46, Math.min(w, h) * 0.16,
                                      w * 0.5, h * 0.52, Math.max(w, h) * 0.80);
   g.addColorStop(0.00, rgba(PALETTE.ink, 0));
@@ -675,6 +1024,7 @@ function paintVignette(ctx, w, h) {
   edgeFalloff(ctx, ctx.createLinearGradient(w, 0, w * 0.83, 0), 0.58, w * 0.83, 0, w * 0.17, h);
   edgeFalloff(ctx, ctx.createLinearGradient(0, 0, 0, h * 0.14), 0.52, 0, 0, w, h * 0.14);
   edgeFalloff(ctx, ctx.createLinearGradient(0, h, 0, h * 0.86), 0.50, 0, h * 0.86, w, h * 0.14);
+  ctx.restore();
 }
 
 function edgeFalloff(ctx, grad, alpha, x, y, w, h) {
@@ -684,7 +1034,7 @@ function edgeFalloff(ctx, grad, alpha, x, y, w, h) {
   ctx.fillRect(x, y, w, h);
 }
 
-/* ---------------------------------------------------------------- 9: korn */
+/* --------------------------------------------------------------- 10: korn */
 
 function paintGrain(ctx, canvas, rng, amount) {
   const size = 128;
@@ -723,28 +1073,304 @@ function paintGrain(ctx, canvas, rng, amount) {
  * @returns {{canvas: HTMLCanvasElement, width: number, height: number}}
  */
 export function createBackdrop(width, height, seed) {
-  const w = Math.max(2, Math.round(width || 0));
-  const h = Math.max(2, Math.round(height || 0));
+  const L = layoutCave(width, height, seed);
   const scale = renderScale();
 
-  const canvas = makeCanvas(w * scale, h * scale);
+  const canvas = makeCanvas(L.w * scale, L.h * scale);
   const ctx = canvas.getContext('2d');
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
-  const rng = makeRng(seed);
-  const horizon = Math.round(h * 0.78);        // stengulvet fylder nederste ~22 %
+  const rng = makeRng(seedKey(seed, 'paint'));   // kun skygge-jitter, aldrig geometri
 
-  paintBase(ctx, w, h, horizon);
-  paintFarWalls(ctx, w, h, horizon, rng);
-  paintMidCrystals(ctx, w, h, horizon, rng);
-  paintFloor(ctx, w, h, horizon, rng);
-  paintFloorCrystals(ctx, w, h, horizon, rng);
-  paintShafts(ctx, w, h, rng);
-  paintSparks(ctx, w, h, rng);
-  paintVignette(ctx, w, h);
+  paintBase(ctx, L);
+  paintFarWalls(ctx, L);
+  paintSpires(ctx, L);
+  paintMidCrystals(ctx, L);
+  paintFloor(ctx, L, rng);
+  paintFloorCrystals(ctx, L);
+  paintForeground(ctx, L);
+  paintShafts(ctx, L, rng);
+  paintSparks(ctx, L, rng);
+  paintVignette(ctx, L);
   paintGrain(ctx, canvas, rng, 0.55);
 
-  return { canvas: canvas, width: w, height: h };
+  return { canvas: canvas, width: L.w, height: L.h };
+}
+
+/* ------------------------------------------------------------ gevinstlys
+   Kun højlys på gennemsigtig bund. Spillet lægger laget ovenpå hulen med
+   globalCompositeOperation 'lighter' og en globalAlpha 0..1, så lyset
+   vokser ud fra hjulet. Ingen mørke pixels — alt er guld, hvidguld og cyan. */
+
+/** Lysstyrke 0.22..1 efter afstand til hjulet — hulen lyser op indefra. */
+function lightAt(L, x, y) {
+  const d = Math.hypot(x - L.wheel.x, (y - L.wheel.y) * 1.15);
+  return clamp(1.18 - d / (L.wheel.r * 2.3), 0.22, 1);
+}
+
+function litGlow(ctx, L, rng) {
+  const w = L.w, h = L.h, W = L.wheel;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  /* den store varme glød omkring hjulet */
+  const r1 = Math.max(w, h) * 0.85;
+  const g = ctx.createRadialGradient(W.x, W.y, W.r * 0.45, W.x, W.y, r1);
+  g.addColorStop(0.00, rgba(LIT.gold0, 0.42));
+  g.addColorStop(0.22, rgba(LIT.gold1, 0.30));
+  g.addColorStop(0.50, rgba(LIT.gold2, 0.13));
+  g.addColorStop(1.00, rgba(LIT.gold2, 0));
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+
+  /* varm pøl på gulvet under hjulet */
+  ctx.save();
+  ctx.translate(W.x, L.horizon + L.depth * 0.10);
+  ctx.scale(1, 0.34);
+  const pr = w * 0.55;
+  const pg = ctx.createRadialGradient(0, 0, 0, 0, 0, pr);
+  pg.addColorStop(0.00, rgba(LIT.gold0, 0.40));
+  pg.addColorStop(0.35, rgba(LIT.gold1, 0.20));
+  pg.addColorStop(1.00, rgba(LIT.gold2, 0));
+  ctx.fillStyle = pg;
+  ctx.fillRect(-pr, -pr, pr * 2, pr * 2);
+  ctx.restore();
+
+  /* bløde stråler ud fra hjulet */
+  const radius = clamp(Math.min(w, h) * 0.035, 6, 40);
+  const layer = blurredLayer(w, h, radius, function (c) {
+    const n = 18;
+    const len = Math.max(w, h) * 1.2;
+    for (let i = 0; i < n; i++) {
+      const a = (i + rng() * 0.6) / n * TAU;
+      const spread = 0.012 + rng() * 0.030;
+      const alpha = 0.10 + rng() * 0.16;
+      const rg = c.createRadialGradient(W.x, W.y, W.r * 0.6, W.x, W.y, len);
+      rg.addColorStop(0.00, rgba(LIT.gold0, alpha));
+      rg.addColorStop(0.45, rgba(LIT.gold1, alpha * 0.45));
+      rg.addColorStop(1.00, rgba(LIT.gold1, 0));
+      c.beginPath();
+      c.moveTo(W.x, W.y);
+      c.lineTo(W.x + Math.cos(a - spread) * len, W.y + Math.sin(a - spread) * len);
+      c.lineTo(W.x + Math.cos(a + spread) * len, W.y + Math.sin(a + spread) * len);
+      c.closePath();
+      c.fillStyle = rg;
+      c.fill();
+    }
+  });
+  ctx.drawImage(layer, 0, 0, w, h);
+  ctx.restore();
+}
+
+function litFloor(ctx, L) {
+  const w = L.w, horizon = L.horizon, depth = L.depth;
+  if (depth < 8) return;
+  const vpx = L.proj.vpx;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, horizon, w, depth);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  /* fliserækker: den fjerne kant fanger guldet, stærkest under hjulet */
+  const step = 0.55;
+  const lightR = w * 0.46;
+  for (let z = 1; z < 60; z += step) {
+    const y1 = floorY(L, z + step);
+    const rowH = floorY(L, z) - y1;
+    if (rowH < 1.6) break;
+    const fade = clamp((z - 1) / 5.5, 0, 1);
+    const a = 0.34 * (1 - fade * 0.85);
+    if (a < 0.02) continue;
+    const rg = ctx.createLinearGradient(vpx - lightR, 0, vpx + lightR, 0);
+    rg.addColorStop(0.00, rgba(LIT.gold1, 0));
+    rg.addColorStop(0.50, rgba(LIT.gold1, a));
+    rg.addColorStop(1.00, rgba(LIT.gold1, 0));
+    ctx.beginPath();
+    ctx.moveTo(0, y1);
+    ctx.lineTo(w, y1);
+    ctx.strokeStyle = rg;
+    ctx.lineWidth = clamp(rowH * 0.08, 0.5, 1.4);
+    ctx.stroke();
+  }
+
+  /* flisesømme der samles under hjulet */
+  for (let u = -14; u <= 14; u += 2) {
+    const a = 0.14 * clamp(1 - Math.abs(u) / 16, 0, 1);
+    const sg = ctx.createLinearGradient(0, horizon + depth, 0, horizon);
+    sg.addColorStop(0.00, rgba(LIT.gold1, a));
+    sg.addColorStop(0.55, rgba(LIT.gold1, a * 0.45));
+    sg.addColorStop(1.00, rgba(LIT.gold1, 0));
+    ctx.beginPath();
+    ctx.moveTo(floorX(L, u, 1), floorY(L, 1));
+    ctx.lineTo(floorX(L, u, 60), floorY(L, 60));
+    ctx.strokeStyle = sg;
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+  }
+
+  /* revnerne lyser som tynde guldlinjer ind mod hjulet */
+  for (let c = 0; c < L.cracks.length; c++) {
+    const pts = L.cracks[c];
+    strokePolyline(ctx, pts, rgba(LIT.gold1, 0.20), 4.5);
+    strokePolyline(ctx, pts, rgba(LIT.gold0, 0.62), 1.3);
+  }
+  ctx.restore();
+}
+
+/** Højlys på én krystal: lysvendte facetter i guld, bagsiden i cyan modlys. */
+function litCrystal(ctx, c, litSide, k) {
+  ctx.save();
+  const facets = c.facets;
+  for (let i = 0; i < facets.length; i++) {
+    const f = facets[i];
+    const towards = f.side === litSide;
+    const boost = f.top ? 1.25 : 1;
+    const stops = towards
+      ? [[0, rgba(LIT.gold0, 0.78 * k * boost)], [0.45, rgba(LIT.gold1, 0.44 * k * boost)], [1, rgba(LIT.gold2, 0.12 * k)]]
+      : [[0, rgba(LIT.cyan, 0.26 * k * boost)], [0.60, rgba(LIT.cyan, 0.08 * k)], [1, rgba(LIT.cyan, 0)]];
+    polyPath(ctx, f.pts);
+    ctx.fillStyle = facetGradient(ctx, f, stops);
+    ctx.fill();
+  }
+
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  const litEdge = litSide < 0 ? c.edgeL : c.edgeR;
+  const darkEdge = litSide < 0 ? c.edgeR : c.edgeL;
+  strokePolyline(ctx, litEdge, rgba(LIT.gold1, 0.28 * k), Math.max(2, c.halfW * 0.50));
+  strokePolyline(ctx, litEdge, rgba(LIT.gold0, 0.72 * k), Math.max(0.8, c.halfW * 0.12));
+  strokePolyline(ctx, darkEdge, rgba(LIT.cyan, 0.50 * k), Math.max(0.6, c.halfW * 0.07));
+  strokePolyline(ctx, c.ridge, rgba(LIT.gold1, 0.45 * k), Math.max(0.5, c.halfW * 0.06));
+  const caps = c.capEdges || [];
+  for (let i = 0; i < caps.length; i++) {
+    strokePolyline(ctx, caps[i], rgba(LIT.gold0, 0.55 * k), Math.max(0.5, c.halfW * 0.06));
+  }
+
+  /* glimt i spidsen */
+  const ar = Math.max(2, c.halfW * 1.8);
+  const ag = ctx.createRadialGradient(c.apexX, c.apexY, 0, c.apexX, c.apexY, ar);
+  ag.addColorStop(0.00, rgba(LIT.gold0, 0.75 * k));
+  ag.addColorStop(0.40, rgba(LIT.gold1, 0.25 * k));
+  ag.addColorStop(1.00, rgba(LIT.gold1, 0));
+  ctx.fillStyle = ag;
+  ctx.fillRect(c.apexX - ar, c.apexY - ar, ar * 2, ar * 2);
+  ctx.restore();
+}
+
+function litFarWalls(ctx, L) {
+  const w = L.w, h = L.h;
+  const radius = clamp(Math.min(w, h) * 0.030, 6, 34);
+  const layer = blurredLayer(w, h, radius, function (c) {
+    for (let i = 0; i < L.far.length; i++) {
+      const it = L.far[i];
+      const p = it.p;
+      const k = lightAt(L, p.apexX, (p.apexY + p.baseY) * 0.5);
+      const f = p.facets[it.side < 0 ? 1 : 0];
+      polyPath(c, f.pts);
+      c.fillStyle = facetGradient(c, f, [[0, rgba(LIT.gold0, 0.30 * k)], [0.5, rgba(LIT.gold1, 0.14 * k)], [1, rgba(LIT.gold2, 0)]]);
+      c.fill();
+      strokePolyline(c, it.side < 0 ? p.edgeR : p.edgeL, rgba(LIT.gold0, 0.45 * k), Math.max(2, p.halfW * 0.16));
+    }
+  });
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.9;
+  ctx.drawImage(layer, 0, 0, w, h);
+  ctx.restore();
+}
+
+function litCrystals(ctx, L) {
+  /* vægspir og mellemkrystaller — med samme hældning/spejling som hulen */
+  const wall = L.spires.concat(L.mid);
+  for (let i = 0; i < wall.length; i++) {
+    const it = wall[i];
+    const p = it.p;
+    const k = lightAt(L, it.cx, it.flip ? it.baseY + p.height * 0.5 : it.baseY - p.height * 0.5);
+    ctx.save();
+    applyItemTransform(ctx, it);
+    litCrystal(ctx, p, -it.side, k);
+    ctx.restore();
+  }
+
+  /* små gulvklynger */
+  for (let i = 0; i < L.floorClusters.length; i++) {
+    const cl = L.floorClusters[i];
+    const k = lightAt(L, cl.x, cl.baseY - cl.scale * 0.5);
+    for (let j = 0; j < cl.prisms.length; j++) litCrystal(ctx, cl.prisms[j], cl.litSide, k);
+  }
+
+  /* de store ametyster — guld på hjulsiden, cyan bagpå, varm glød omkring */
+  for (let i = 0; i < L.fgClusters.length; i++) {
+    const cl = L.fgClusters[i];
+    const s = cl.scale;
+    const k = lightAt(L, cl.x + cl.litSide * s * 0.3, cl.baseY - s * 0.6);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const gx = cl.x + cl.litSide * s * 0.35;
+    const gy = cl.baseY - s * 0.55;
+    const gg = ctx.createRadialGradient(gx, gy, 0, gx, gy, s * 1.4);
+    gg.addColorStop(0.00, rgba(LIT.gold1, 0.22 * k));
+    gg.addColorStop(0.45, rgba(LIT.gold2, 0.10 * k));
+    gg.addColorStop(1.00, rgba(LIT.gold2, 0));
+    ctx.fillStyle = gg;
+    ctx.fillRect(gx - s * 1.5, gy - s * 1.5, s * 3, s * 3);
+    ctx.restore();
+    for (let j = 0; j < cl.crystals.length; j++) litCrystal(ctx, cl.crystals[j], cl.litSide, k);
+  }
+}
+
+function litSparkles(ctx, L, rng) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < L.fgClusters.length; i++) {
+    const cl = L.fgClusters[i];
+    /* kun den højeste sten får en stjerne — ellers stabler flarerne sig til en klat */
+    let c = cl.crystals[0];
+    for (let j = 1; j < cl.crystals.length; j++) if (cl.crystals[j].height > c.height) c = cl.crystals[j];
+    const r = Math.max(2, c.halfW * (0.6 + rng() * 0.3));
+    starFlare(ctx, c.apexX, c.apexY, r, r * (3 + rng() * 2), 0.45, LIT.gold0, LIT.gold1);
+  }
+  for (let i = 0; i < L.spires.length; i++) {
+    const it = L.spires[i];
+    const p = it.p;
+    ctx.save();
+    applyItemTransform(ctx, it);
+    const r = Math.max(2, p.halfW * 1.4);
+    starFlare(ctx, p.apexX, p.apexY, r, r * (2.5 + rng() * 2), 0.45, LIT.cyan, LIT.gold1);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/**
+ * Bager gevinstlyset: samme geometri som createBackdrop for samme argumenter,
+ * men kun højlysene på gennemsigtig bund. Lægges ovenpå med 'lighter'.
+ * @param {number} width
+ * @param {number} height
+ * @param {number|string} seed
+ * @returns {{canvas: HTMLCanvasElement, width: number, height: number}}
+ */
+export function createBackdropLit(width, height, seed) {
+  const L = layoutCave(width, height, seed);
+  const scale = renderScale();
+
+  const canvas = makeCanvas(L.w * scale, L.h * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+  const rng = makeRng(seedKey(seed, 'lit'));
+
+  litGlow(ctx, L, rng);
+  litFloor(ctx, L);
+  litFarWalls(ctx, L);
+  litCrystals(ctx, L);
+  litSparkles(ctx, L, rng);
+
+  return { canvas: canvas, width: L.w, height: L.h };
 }
 
 /* ------------------------------------------------------- levende partikler

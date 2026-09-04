@@ -31,7 +31,8 @@ npm run build     # → dist/lysbrud.html (én selvstændig fil)
 | `src/wheel.js` | Hjulets geometri, celleplader, guldskinner, prismekerne |
 | `src/fx.js` | Partikler, energikæder, flyvende tal, rystelser, bloom |
 | `src/art/symbols.js` | Procedural symbolkunst + sprite-atlas |
-| `src/art/backdrop.js` | Krystalhulen bag hjulet |
+| `src/art/badges.js` | Wild-badgen (W ×N) og glimt |
+| `src/art/backdrop.js` | Krystalhulen bag hjulet, plus det lyse pas der tændes ved gevinster |
 | `src/audio.js` | WebAudio-syntese |
 | `src/ui.js` | DOM-laget: målere, overlays, modaler |
 | `src/main.js` | Tilstandsmaskine, animationsløkke, spilflow |
@@ -113,6 +114,24 @@ p99,8 i bonusfordelingen.
 
 ---
 
+## Lysbruddet
+
+Gevinstpræsentationen er bygget som én sekvens, hvis styrke følger gevinstens størrelse
+(`WIN_POWER` i `main.js`), så små gevinster forbliver rolige og store bliver et klimaks:
+
+1. kernen blænder, og 30 guldstråler bryder ud gennem alle fem ringe
+2. tre chokringe løber udad fra kernen, og skinnerne tænder — et lys løber rundt om hver
+3. alle symboler får halo, krystalsplinter flyver ud mod kameraet, lysstriber og glimt følger
+4. hulen bag hjulet lyser op (det lyse baggrundspas komposites additivt med scenelyset)
+5. halvvejs i optællingen kommer en ekstra bølge, så det ikke dør ud under beløbet
+
+Derudover: en lysring langs ringens kant hver gang en ring låser; stjerneudbrud fra kernen
+mens sidste ring bremser ved 4/5; en stråle fra kernen til reaktoren når multiplikatoren
+stiger; glimt når nye symboler krystalliserer ind. Wilds med multiplikator bærer mockuppens
+blå stjerne-badge med guld-W, tegnet opret oven på hjulet.
+
+`window.LYSBRUD.previewWin(120)` i konsollen afspiller sekvensen uden at spinne.
+
 ## Demo-instruktøren
 
 `director.js` afgør hvilke udfald spilleren ser. Den erstatter ikke motoren — den
@@ -143,8 +162,10 @@ til enhver opløsning. Referencerne ligger i `reference/` udelukkende til sammen
 ## Ydelse
 
 Målt i headless Chromium uden GPU (software-rasterisering, 4 kerner), 1400×820:
-**60 fps i hvile, 51 fps under fuld partikelbelastning.** En rigtig maskine med
-GPU-komposition ligger over det.
+**60 fps i hvile, ~50 fps under kaskader, 22–28 fps i de to sekunder et lysbrud står på.**
+Det sidste er summen af mange fuldskærms-additive lag oven i hinanden og er dét
+software-rasterisering koster; en rigtig maskine med GPU-komposition ligger langt over.
+`tools/qa-winfps.mjs` måler det.
 
 Det kostede én rettelse at komme dertil. Bloom-passet var oprindeligt to fuldskærms
 `filter: blur()`-blits, og alene det kostede 33 fps — resten af scenen kørte 60. Nu

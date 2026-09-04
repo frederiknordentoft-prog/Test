@@ -137,10 +137,16 @@ export function createUi(handlers) {
     if (winCounter) cancelAnimationFrame(winCounter);
     return new Promise(resolve => {
       const t0 = performance.now();
+      let lastText = '';
+      let frameNo = 0;
       const step = now => {
         const k = Math.min(1, (now - t0) / duration);
         const eased = 1 - Math.pow(1 - k, 2.6);
-        el.winAmount.textContent = krBig(Math.round(amount * eased));
+        // Teksten re-rasteriseres med skygger hver gang den ændres — hver anden frame rækker.
+        if (k >= 1 || (frameNo++ & 1) === 0) {
+          const text = krBig(Math.round(amount * eased));
+          if (text !== lastText) { el.winAmount.textContent = text; lastText = text; }
+        }
         if (k < 1) winCounter = requestAnimationFrame(step);
         else { winCounter = null; resolve(); }
       };

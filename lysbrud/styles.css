@@ -494,12 +494,23 @@ b, em, i, strong { font-style: normal; }
 
 @supports ((-webkit-background-clip: text) or (background-clip: text)) {
   .game-title-word {
-    background-image: linear-gradient(180deg, #ffffff 0%, #cfe0ff 34%, #8fa7dd 52%, #e8f0ff 74%, #ffffff 100%);
+    /* Holografisk krom som i mockuppen: sølv → is → violet → guld, med et langsomt løbende skær. */
+    background-image:
+      linear-gradient(100deg, rgba(255,255,255,0) 35%, rgba(255,255,255,0.75) 48%, rgba(255,255,255,0) 61%),
+      linear-gradient(180deg, #ffffff 0%, #e6f2ff 22%, #9ee8ff 36%, #c9b6ff 50%, #f7e7b8 64%, #ffffff 78%, #b8c8ff 100%);
+    background-size: 240% 100%, 100% 100%;
+    background-position: 120% 0, 0 0;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     -webkit-text-fill-color: transparent;
+    animation: title-sheen 7s ease-in-out infinite;
   }
+  @keyframes title-sheen {
+    0%, 55%  { background-position: 120% 0, 0 0; }
+    100%     { background-position: -120% 0, 0 0; }
+  }
+  body.is-calm .game-title-word { animation: none; }
 }
 
 .game-title-gem {
@@ -955,7 +966,6 @@ b, em, i, strong { font-style: normal; }
   paint-order: stroke fill;
   filter:
     drop-shadow(0 3px 0 rgba(58, 38, 4, 0.9))
-    drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7))
     drop-shadow(var(--amount-glow));
 }
 
