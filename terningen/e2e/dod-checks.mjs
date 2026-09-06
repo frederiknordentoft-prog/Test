@@ -144,7 +144,7 @@ await page.waitForTimeout(1200)
 const stopped = await gearRates()
 check('bottleneck: stopped (rate 0)', stopped.every(r => r === 0), JSON.stringify(stopped))
 check('bottleneck: hash', hash() === 'beat=4&open=teknologi&bottleneck=teknologi', hash())
-check('bottleneck: tag shown', await page.locator('.face[data-component="teknologi"] .bottleneck-tag').count() === 1)
+check('bottleneck: tag shown (front and back)', await page.locator('.face[data-component="teknologi"] .face-front .bottleneck-tag').count() === 1 && await page.locator('.face[data-component="teknologi"] .face-back .bottleneck-tag').count() === 1)
 check('bottleneck: only one', await page.locator('.face[data-bottleneck="true"], .clockwork[data-bottleneck="true"]').count() === 1)
 await shot('bottleneck-teknologi')
 // bottleneck on another component while one is open → replaces
