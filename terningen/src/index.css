@@ -480,13 +480,13 @@ button {
   box-sizing: border-box;
   overflow: auto;
   border-radius: 12px;
-  background: var(--navy-65);
+  /* Ingen backdrop-filter: det ville tvinge compositoren til at gensample den roterende
+     scene bag panelet hver frame (dyrt i Safari). Næsten dækkende navy i stedet. */
+  background: var(--navy-92);
   border: 1px solid var(--brass-mid-35);
   box-shadow:
     0 30px 80px var(--vignette-85),
     inset 0 1px 0 var(--brass-light-12);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   transform-origin: left center;
   animation: panel-fold var(--dur-panel) var(--ease-out) both;
 }
