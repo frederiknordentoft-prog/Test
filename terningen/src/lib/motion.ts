@@ -30,3 +30,22 @@ export function blurIfPointer(e: { detail: number; currentTarget: EventTarget | 
   const fromPointer = e.detail > 0 || (e.button !== undefined && e.button !== 0)
   if (fromPointer && e.currentTarget instanceof HTMLElement) e.currentTarget.blur()
 }
+
+/** Finder fladen (eller urværket) for en komponent i DOM'en. */
+export function componentElement(id: string): HTMLElement | null {
+  if (typeof document === 'undefined') return null
+  const el = document.querySelector(`[data-component="${id}"][role="button"]`)
+  return el instanceof HTMLElement ? el : null
+}
+
+/**
+ * Giver tastaturfokus tilbage til komponentens flade efter Esc eller Luk — men kun hvis
+ * fokus stod inde i panelet (en tastaturbruger); ellers ville mellemrum bagefter genåbne
+ * fladen i stedet for at gå videre i fortællingen.
+ */
+export function restoreFocusAfterClose(id: string): void {
+  if (typeof document === 'undefined') return
+  const active = document.activeElement
+  if (!(active instanceof Element) || !active.closest('.panel-card')) return
+  componentElement(id)?.focus()
+}

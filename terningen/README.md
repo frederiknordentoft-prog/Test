@@ -64,7 +64,9 @@ Farver ligger som CSS-variabler i `src/styles/tokens.css`.
   `rotateX/rotateY + translateZ`. Eksplosion = større `translateZ`; åbning = rotation om hængselkanten.
 - Urværket er procedurelt genererede SVG-tandhjul (`makeGearPath`), ét `<svg>` per hjul, roteret med
   CSS-animation. Nabohjul kører modsat med hastighed omvendt proportional med radius; indgrebet er
-  verificeret geometrisk i tests. Bremsning ramper animationernes `playbackRate` via Web Animations API.
+  verificeret geometrisk i tests. Bremsning og genstart er én compositor-drevet Web Animations-overgang
+  per hjul, der starter i hjulets aktuelle vinkel og afleverer til CSS-animationen i samme vinkel —
+  ingen JS-loop, ingen hop.
 - `prefers-reduced-motion: reduce` slår rotation og alle overgange fra; alt indhold er stadig tilgængeligt.
 
 ```
@@ -72,7 +74,8 @@ src/
   components/   Cube, CubeFace, Clockwork, Gear, ComponentPanel, StageOverlay, Controls
   store/        useModelStore.ts   (Zustand + to-vejs hash-synkronisering)
   content/      model.ts           (alt tekst, typed)
-  lib/          gear.ts (makeGearPath), gearTrain.ts, cube.ts, hash.ts, beats.ts, motion.ts
+  lib/          gear.ts (makeGearPath), gearTrain.ts, cube.ts, hash.ts, beats.ts,
+                clockworkMotion.ts (bremse/genstart-matematik), motion.ts
   styles/       tokens.css         (designtokens som CSS-variabler)
 ```
 

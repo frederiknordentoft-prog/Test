@@ -27,6 +27,7 @@ function CubeFaceImpl({ face, componentId, open, dim, bottleneck }: Props) {
     toggleBottleneck(componentId)
   }
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.repeat) return
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       toggleOpen(componentId)

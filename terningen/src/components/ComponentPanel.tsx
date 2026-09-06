@@ -1,6 +1,6 @@
 import { UI, getComponent } from '../content/model'
 import { pipLayout } from '../lib/cube'
-import { blurIfPointer } from '../lib/motion'
+import { blurIfPointer, restoreFocusAfterClose } from '../lib/motion'
 import { useModelStore } from '../store/useModelStore'
 
 /** Tekstpanelet, der folder ind ved siden af terningen. */
@@ -35,6 +35,7 @@ export function ComponentPanel() {
             type="button"
             className="chip"
             onClick={(e) => {
+              if (e.detail === 0) restoreFocusAfterClose(c.id) // tastatur: fokus tilbage til fladen
               blurIfPointer(e)
               close()
             }}

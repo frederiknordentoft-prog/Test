@@ -37,6 +37,8 @@ function GearImpl({ spec }: Props) {
         viewBox={`${-R} ${-R} ${2 * R} ${2 * R}`}
         aria-hidden="true"
         focusable="false"
+        data-period={period}
+        data-dir={spec.dir}
         style={
           {
             '--gear-period': `${period}s`,

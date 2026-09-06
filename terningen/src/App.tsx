@@ -4,6 +4,7 @@ import { Controls } from './components/Controls'
 import { Cube } from './components/Cube'
 import { StageOverlay } from './components/StageOverlay'
 import { FIRST_BEAT, LAST_BEAT } from './lib/beats'
+import { restoreFocusAfterClose } from './lib/motion'
 import { startHashSync, useModelStore } from './store/useModelStore'
 
 function isEditableTarget(t: EventTarget | null): boolean {
@@ -18,6 +19,15 @@ function isActivatable(t: EventTarget | null): boolean {
   return t.tagName === 'BUTTON' || t.tagName === 'A' || t.getAttribute('role') === 'button'
 }
 
+const SCROLL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', ' ', 'Home', 'End'])
+
+/** Står fokus i et panel, der faktisk kan scrolle, må scrolltasterne styre panelet. */
+function isInsideScrollablePanel(t: EventTarget | null): boolean {
+  if (!(t instanceof Element)) return false
+  const card = t.closest('.panel-card')
+  return card instanceof HTMLElement && card.scrollHeight > card.clientHeight + 1
+}
+
 export default function App() {
   const openComponent = useModelStore((s) => s.openComponent)
 
@@ -25,8 +35,9 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return
       if (isEditableTarget(e.target)) return
+      if (SCROLL_KEYS.has(e.key) && isInsideScrollablePanel(e.target)) return
       const s = useModelStore.getState()
       switch (e.key) {
         case 'ArrowRight':
@@ -56,13 +67,16 @@ export default function App() {
           e.preventDefault()
           s.goToBeat(LAST_BEAT)
           break
-        case 'Escape':
+        case 'Escape': {
           // Esc uden noget åbent er bevidst en no-op.
-          if (s.openComponent) {
+          const id = s.openComponent
+          if (id) {
             e.preventDefault()
+            restoreFocusAfterClose(id) // læses FØR panelet forsvinder
             s.close()
           }
           break
+        }
         case 'b':
         case 'B':
           if (s.openComponent) {

@@ -372,6 +372,11 @@ button {
   fill: var(--bg-vignette);
 }
 
+/* Bremset eller under bremsning/genstart: CSS-animationen er slået fra, uanset reduced-motion */
+.clockwork[data-motion] .gear-spin {
+  animation: none;
+}
+
 @keyframes gear-spin {
   from {
     transform: rotate(0deg);
