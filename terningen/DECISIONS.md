@@ -24,3 +24,4 @@
 20. **Enter/mellemrum på en fokuseret flade eller knap aktiverer elementet, ikke fortællingen** — forventet tastaturadfærd; piletaster styrer altid fortællingen.
 21. **Amber bruges kun på flaskehalsens flade/urværk, FLASKEHALS-mærkat og flaskehalsknappen** — knappen er den handling, der sætter flaskehalsen, og amber betyder derfor stadig kun "flaskehals".
 22. **Safari kan ikke køres i build-miljøet** — verificeret i Chromium; Safari-kendte faldgruber undgået (ingen opacity/overflow/filter på preserve-3d-elementer, `-webkit-backface-visibility`, ingen SVG-filtre, individuelle CSS-egenskaber undgået). Se README.
+23. **DoD-flows automatiseret som Playwright-script (`npm run e2e`)** — de manuelle afprøvninger i DoD er kodet som 75 kontroller med skærmbilleder, så gaten kan køres igen efter hver ændring; Playwright er devDependency, browseren installeres separat.

@@ -30,6 +30,20 @@ npm run build       # vite build → dist/ (relative stier, kan serveres fra en 
 npm run preview
 ```
 
+End-to-end-gennemgang af Definition of Done i en rigtig browser (kræver en kørende `npm run dev`
+i et andet vindue og Chromium til Playwright):
+
+```bash
+npx playwright install chromium   # én gang
+npm run e2e                       # alle flows, edge cases og layoutkontrol ved 1920×1080
+npm run e2e:all                   # 1366×768, 1920×1080 og 2560×1440
+```
+
+Scriptet (`e2e/dod-checks.mjs`) afprøver de seks DoD-flows, deep-links (gyldige og ugyldige),
+hurtige klik midt i en animation, Esc uden noget åbent, flaskehals på en åben komponent,
+`prefers-reduced-motion` slået til/fra midt i en session, tastaturnavigation, browserzoom
+125 %/150 % og tekstoverløb/layout-hop — og gemmer skærmbilleder i `e2e/shots/`.
+
 ## Betjening
 
 | Handling | Mus | Tastatur |
@@ -75,6 +89,9 @@ src/
   125 % og 150 %. Safari kunne ikke køres i build-miljøet; Safari-specifikke faldgruber er undgået
   (ingen `opacity`/`overflow`/`filter` på `preserve-3d`-elementer, `-webkit-backface-visibility`,
   ingen SVG-filtre, ingen individuelle transform-egenskaber). Se DECISIONS.md #22.
+- Browserkrav: Tailwind CSS 4 forudsætter Safari 16.4+, Chrome 111+ eller Firefox 128+ (moderne
+  CSS som `@property` og `color-mix()`); det er også de versioner, Web Animations API'ens
+  `updatePlaybackRate` og `:focus-visible` er sikre i.
 - Fabrikkerne rundt om terningen og AI Bet-laget er bevidst ikke bygget; arkitekturen (én skærm med
   lag, tilstand i store + hash, indhold i ét modul) er klar til at få dem lagt ovenpå.
 
