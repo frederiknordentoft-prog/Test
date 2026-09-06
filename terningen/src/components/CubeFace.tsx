@@ -16,6 +16,8 @@ function CubeFaceImpl({ face, componentId, open, dim, bottleneck }: Props) {
   const toggleOpen = useModelStore((s) => s.toggleOpen)
   const toggleBottleneck = useModelStore((s) => s.toggleBottleneck)
   const component = getComponent(componentId)
+  const baseLabel = open ? UI.ariaCloseFace(component.title) : UI.ariaOpenFace(component.title)
+  const ariaLabel = bottleneck ? UI.ariaWithBottleneck(baseLabel) : baseLabel
 
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
     blurIfPointer(e)
@@ -41,7 +43,7 @@ function CubeFaceImpl({ face, componentId, open, dim, bottleneck }: Props) {
       className="face"
       role="button"
       tabIndex={0}
-      aria-label={open ? UI.ariaCloseFace(component.title) : UI.ariaOpenFace(component.title)}
+      aria-label={ariaLabel}
       aria-pressed={open}
       data-side={face.side}
       data-pips={face.pips}

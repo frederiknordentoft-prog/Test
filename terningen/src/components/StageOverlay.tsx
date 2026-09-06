@@ -7,12 +7,13 @@ export function StageOverlay() {
   const visible = beat === 0
   return (
     <>
-      <div className="brand" aria-hidden="true">
+      {/* Sidens varige overskrift (app-navnet); AI VALUE CREATION er scenens overskrift i beat 0. */}
+      <h1 className="brand">
         <strong>{UI.appTitle}</strong>
         <span>{UI.appSubtitle}</span>
-      </div>
+      </h1>
       <header className="headline" data-visible={visible} aria-hidden={!visible}>
-        <h1>{HEADLINE.title}</h1>
+        <h2>{HEADLINE.title}</h2>
         <p>{HEADLINE.subtitle}</p>
       </header>
     </>

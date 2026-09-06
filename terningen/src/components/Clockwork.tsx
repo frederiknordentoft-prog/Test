@@ -47,6 +47,8 @@ export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking
   const toggleOpen = useModelStore((s) => s.toggleOpen)
   const toggleBottleneck = useModelStore((s) => s.toggleBottleneck)
   const core = getComponent(CORE_ID)
+  const baseLabel = open ? UI.ariaCloseFace(core.title) : UI.ariaOpenFace(core.title)
+  const ariaLabel = bottleneck ? UI.ariaWithBottleneck(baseLabel) : baseLabel
 
   useEffect(() => {
     const root = rootRef.current
@@ -162,7 +164,7 @@ export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking
       className="clockwork"
       role="button"
       tabIndex={visible ? 0 : -1}
-      aria-label={open ? UI.ariaCloseFace(core.title) : UI.ariaOpenFace(core.title)}
+      aria-label={ariaLabel}
       aria-pressed={open}
       data-component={CORE_ID}
       data-visible={visible}

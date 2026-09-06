@@ -10,13 +10,14 @@ export function ComponentPanel() {
   const close = useModelStore((s) => s.close)
   const toggleBottleneck = useModelStore((s) => s.toggleBottleneck)
 
-  if (!openComponent) return <aside className="panel" aria-hidden="true" />
-
-  const c = getComponent(openComponent)
-  const isBottleneck = bottleneck === c.id
+  // Én stabil live-region: den findes altid, og indholdet indsættes i den, så skærmlæsere
+  // annoncerer første åbning (en region, der oprettes og fyldes i samme commit, annonceres ikke).
+  const c = openComponent ? getComponent(openComponent) : null
+  const isBottleneck = c !== null && bottleneck === c.id
 
   return (
     <aside className="panel" aria-live="polite">
+      {c && (
       <section key={c.id} className="panel-card" aria-labelledby="panel-title">
         <div className="panel-top">
           <div className="panel-eyebrow">
@@ -75,6 +76,7 @@ export function ComponentPanel() {
           </button>
         </div>
       </section>
+      )}
     </aside>
   )
 }

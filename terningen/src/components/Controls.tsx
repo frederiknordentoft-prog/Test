@@ -85,7 +85,7 @@ export function Controls() {
             blurIfPointer(e)
             prev()
           }}
-          disabled={beat === FIRST_BEAT}
+          aria-disabled={beat === FIRST_BEAT}
           aria-label={UI.prev}
         >
           ‹ {UI.prev}
@@ -100,7 +100,7 @@ export function Controls() {
             blurIfPointer(e)
             next()
           }}
-          disabled={beat === LAST_BEAT}
+          aria-disabled={beat === LAST_BEAT}
           aria-label={UI.next}
         >
           {UI.next} ›

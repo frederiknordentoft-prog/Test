@@ -161,6 +161,7 @@ export const UI = {
   hints: '← → mellemrum: fortællingen · klik: åbn side · Esc: luk · B / højreklik: flaskehals',
   ariaOpenFace: (title: string) => `Åbn ${title}`,
   ariaCloseFace: (title: string) => `Luk ${title}`,
+  ariaWithBottleneck: (label: string) => `${label} — markeret som flaskehals`,
   ariaCube: 'Terningen — AI-transformationsmodellen',
   ariaClockwork: 'Urværket — Arbejdsgange',
   ariaControls: 'Styring af fortællingen',
