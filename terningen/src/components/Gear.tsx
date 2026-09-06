@@ -45,12 +45,14 @@ function GearImpl({ spec }: Props) {
         }
       >
         <defs>
+          {/* Farverne sættes som CSS (style), ikke som præsentationsattributter — var() i
+              attributter opløses ikke i ældre WebKit. */}
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="var(--brass-dark)" />
-            <stop offset="0.38" stopColor={isBack ? 'var(--brass-dark)' : 'var(--brass-mid)'} />
-            <stop offset="0.5" stopColor={isBack ? 'var(--brass-mid)' : 'var(--brass-light)'} />
-            <stop offset="0.62" stopColor={isBack ? 'var(--brass-dark)' : 'var(--brass-mid)'} />
-            <stop offset="1" stopColor="var(--brass-dark)" />
+            <stop offset="0" style={{ stopColor: 'var(--brass-dark)' }} />
+            <stop offset="0.38" style={{ stopColor: isBack ? 'var(--brass-dark)' : 'var(--brass-mid)' }} />
+            <stop offset="0.5" style={{ stopColor: isBack ? 'var(--brass-mid)' : 'var(--brass-light)' }} />
+            <stop offset="0.62" style={{ stopColor: isBack ? 'var(--brass-dark)' : 'var(--brass-mid)' }} />
+            <stop offset="1" style={{ stopColor: 'var(--brass-dark)' }} />
           </linearGradient>
         </defs>
         <g transform={`rotate(${spec.phase})`}>
