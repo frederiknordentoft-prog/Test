@@ -141,33 +141,29 @@ export const HEADLINE = {
 } as const
 
 /** Al øvrig UI-tekst. */
+const UI_TITLE = { appTitle: 'Terningen', appSubtitle: 'AI-transformation 2027' } as const
+
 export const UI = {
-  appTitle: 'Terningen',
-  appSubtitle: 'AI-transformation 2027',
+  ...UI_TITLE,
   coreLabel: 'KERNE',
-  coreTag: 'Urværket · kernen',
+  faceLabel: (pips: number) => `Side ${pips}`,
   assemble: 'Saml',
   explode: 'Eksplodér',
-  prev: 'Forrige',
-  next: 'Næste',
+  prev: '‹ Forrige',
+  next: 'Næste ›',
   close: 'Luk',
   bottleneckTag: 'FLASKEHALS',
   setBottleneck: 'Markér som flaskehals',
   clearBottleneck: 'Fjern flaskehals',
-  bottleneckActive: 'Flaskehals',
   questionsHeading: 'Spørgsmål til ledelsesdiskussionen',
-  storyLabel: 'Fortælling',
-  componentsLabel: 'Komponenter',
-  hints: '← → mellemrum: fortællingen · klik: åbn side · Esc: luk · B / højreklik: flaskehals',
+  hints: '← → mellemrum: fortællingen · klik: åbn side · Esc: luk · højreklik: flaskehals · B: flaskehals på den åbne side',
   ariaOpenFace: (title: string) => `Åbn ${title}`,
   ariaCloseFace: (title: string) => `Luk ${title}`,
   ariaWithBottleneck: (label: string) => `${label} — markeret som flaskehals`,
+  ariaPrev: 'Forrige',
+  ariaNext: 'Næste',
   ariaCube: 'Terningen — AI-transformationsmodellen',
-  ariaClockwork: 'Urværket — Arbejdsgange',
   ariaControls: 'Styring af fortællingen',
   beatOf: (n: number, total: number) => `${n} / ${total}`,
-  beatNames: {
-    assembled: 'Samlet',
-    exploded: 'Eksploderet',
-  },
+  documentTitle: `${UI_TITLE.appTitle} · ${UI_TITLE.appSubtitle}`,
 } as const

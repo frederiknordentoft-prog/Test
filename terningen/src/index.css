@@ -117,9 +117,14 @@ button {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   border-radius: calc(var(--cube) * 0.035);
+  /*
+   * Gløden skifter via box-shadow på selve fladen, men med en kort overgang (260 ms): et
+   * permanent glødlag (pseudo-element med stor blur, opacity 0) blev målt til at halvere
+   * framerate ved software-rendering, mens en kort repaint af én flade er billig.
+   */
   transition:
     opacity var(--dur-move) var(--ease-out),
-    box-shadow var(--dur-move) var(--ease-out);
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .face-front {
@@ -175,7 +180,6 @@ button {
   box-shadow:
     inset 0 -1px 2px var(--shade-45),
     0 1px 1px var(--ivory);
-  transition: background var(--dur-move) var(--ease-out);
 }
 
 .face-label {
@@ -280,7 +284,11 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-.clockwork[data-dim='true'] {
+/* Dæmpning lægges på bladene (hjul, plade, label), ikke på gruppen — en gruppe-opacity over
+   seks uafhængigt animerede lag ville kræve en offscreen-overflade i hver frame. */
+.clockwork[data-dim='true'] .gear-spin,
+.clockwork[data-dim='true'] .core-plate,
+.clockwork[data-dim='true'] .core-label {
   opacity: 0.35;
 }
 
@@ -297,7 +305,9 @@ button {
     inset 0 0 0 1px var(--brass-dark),
     inset 0 0 calc(var(--clock) * 0.06) var(--shade-45),
     0 0 calc(var(--clock) * 0.05) var(--shade-45);
-  transition: box-shadow var(--dur-move) var(--ease-out);
+  transition:
+    opacity var(--dur-move) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .clockwork[data-open='true'] .core-plate {
@@ -305,6 +315,13 @@ button {
     inset 0 0 0 1px var(--brass-light),
     inset 0 0 calc(var(--clock) * 0.06) var(--shade-45),
     0 0 calc(var(--clock) * 0.09) var(--brass-mid-35);
+}
+
+.clockwork[data-bottleneck='true'] .core-plate {
+  box-shadow:
+    inset 0 0 0 1px var(--amber),
+    inset 0 0 calc(var(--clock) * 0.06) var(--shade-45),
+    0 0 calc(var(--clock) * 0.09) var(--amber-45);
 }
 
 .core-glow {
@@ -325,13 +342,6 @@ button {
   opacity: 1;
 }
 
-.clockwork[data-bottleneck='true'] .core-plate {
-  box-shadow:
-    inset 0 0 0 1px var(--amber),
-    inset 0 0 calc(var(--clock) * 0.06) var(--shade-45),
-    0 0 calc(var(--clock) * 0.09) var(--amber-45);
-}
-
 .clockwork:focus-visible {
   outline: none;
 }
@@ -348,10 +358,6 @@ button {
   pointer-events: none;
 }
 
-.gear-slot[data-layer='back'] {
-  opacity: 0.82;
-}
-
 .gear-spin {
   display: block;
   width: 100%;
@@ -361,11 +367,11 @@ button {
   animation: gear-spin var(--gear-period, 16s) linear infinite;
   animation-direction: var(--gear-direction, normal);
   will-change: transform;
+  transition: opacity var(--dur-move) var(--ease-out);
 }
 
 .gear-stroke {
-  stroke: var(--brass-dark);
-  transition: stroke var(--dur-move) var(--ease-out);
+  stroke: var(--brass-dark); /* ingen transition: stroke er en paint-egenskab på seks animerede lag */
 }
 
 .clockwork[data-bottleneck='true'] .gear-stroke {
@@ -681,6 +687,20 @@ button {
   color: var(--bg-deep);
 }
 
+.chip-title {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  font-size: 0.92em;
+}
+
+@media (max-width: 1500px) {
+  /* på mindre skærme bærer terningeøjnene chippen; titlen ligger i aria-label/title */
+  .chip-title {
+    display: none;
+  }
+}
+
 .chip-pips {
   display: inline-grid;
   grid-template-columns: repeat(3, 1fr);
@@ -700,7 +720,21 @@ button {
   background: var(--brass-dark);
 }
 
-.chip[data-active='true'] .chip-pips {
+.chip[data-active='true'] .chip-title {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  font-size: 0.92em;
+}
+
+@media (max-width: 1500px) {
+  /* på mindre skærme bærer terningeøjnene chippen; titlen ligger i aria-label/title */
+  .chip-title {
+    display: none;
+  }
+}
+
+.chip-pips {
   background: var(--bg-deep);
 }
 
@@ -868,8 +902,7 @@ button {
   .core-label,
   .headline,
   .chip,
-  .pip,
-  .gear-stroke {
+  .gear-spin {
     transition: none;
   }
 

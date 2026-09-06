@@ -25,7 +25,8 @@ Produktionsbuild og kvalitetsporte:
 ```bash
 npm run typecheck   # tsc --noEmit (app + node-config)
 npm run lint        # eslint
-npm run test        # vitest: beats, hash round-trip, makeGearPath, tandhjulskæde, terningegeometri
+npm run test        # vitest: beats, hash round-trip, makeGearPath, tandhjulskæde, terningegeometri,
+                    #         bremsning/genstart af urværket
 npm run build       # vite build → dist/ (relative stier, kan serveres fra en undermappe)
 npm run preview
 ```
@@ -48,13 +49,15 @@ hurtige klik midt i en animation, Esc uden noget åbent, flaskehals på en åben
 
 | Handling | Mus | Tastatur |
 |---|---|---|
-| Næste / forrige beat | Knapper nederst | `→` `↓` `PgDn` `Mellemrum` `Enter` / `←` `↑` `PgUp` |
+| Næste / forrige beat | Knapper nederst | `→` `↓` `PgDn` `Mellemrum` `Enter` / `←` `↑` `PgUp` (ét tryk = ét beat; tastegentagelse ignoreres) |
 | Første / sidste beat | – | `Home` / `End` |
 | Saml / eksplodér | Knapper nederst | – |
 | Åbn / luk en komponent | Klik på flade, urværk eller chip | `Tab` til fladen, `Enter`/`Mellemrum`; `Esc` lukker |
 | Sæt / fjern flaskehals | Knap i panelet eller højreklik på flade/urværk | `B` (på den åbne komponent) |
 
-Alt indhold (titler, kernesætninger, spørgsmål, UI-tekster) ligger i `src/content/model.ts`.
+Alt indhold (titler, kernesætninger, spørgsmål, UI-tekster, sidetitel) ligger i `src/content/model.ts`.
+`<title>` i `index.html` er kun fallback, før scriptet sætter `document.title` fra samme modul.
+Under 1500 px bredde viser komponentchipperne kun terningeøjne; titlen ligger i `aria-label`/`title`.
 Farver ligger som CSS-variabler i `src/styles/tokens.css`.
 
 ## Arkitektur
@@ -87,14 +90,16 @@ src/
   hinanden) falder tilbage til beat 0 uden at crashe; hashen skrives altid om til kanonisk form.
 - Terningen drejer, så den åbnede side vender mod kameraet — ellers kan siderne 4, 5 og 6 ikke nås
   fra ét fast kamera. Urværket vender altid mod kameraet.
-- Amber er semantisk: kun flaskehalsens flade/urværk, mærkatet FLASKEHALS og knappen, der sætter den.
+- Amber er semantisk: kun det, der ER flaskehalsen — dens flade (for- og bagside) eller urværket,
+  mærkatet FLASKEHALS, den aktive "Fjern flaskehals"-knap og komponentens chip. Den inaktive
+  "Markér som flaskehals"-knap er almindelig messing.
 - Verificeret i Chromium (Playwright) ved 1366×768, 1920×1080 og 2560×1440 samt browserzoom
   125 % og 150 %. Safari kunne ikke køres i build-miljøet; Safari-specifikke faldgruber er undgået
   (ingen `opacity`/`overflow`/`filter` på `preserve-3d`-elementer, `-webkit-backface-visibility`,
   ingen SVG-filtre, ingen individuelle transform-egenskaber). Se DECISIONS.md #22.
 - Browserkrav: Tailwind CSS 4 forudsætter Safari 16.4+, Chrome 111+ eller Firefox 128+ (moderne
-  CSS som `@property` og `color-mix()`); det er også de versioner, Web Animations API'ens
-  `updatePlaybackRate` og `:focus-visible` er sikre i.
+  CSS som `@property` og `color-mix()`); det er også versioner, hvor Web Animations API
+  (`Element.animate`, `getAnimations`, `Animation.finished`) og `:focus-visible` er sikre.
 - Fabrikkerne rundt om terningen og AI Bet-laget er bevidst ikke bygget; arkitekturen (én skærm med
   lag, tilstand i store + hash, indhold i ét modul) er klar til at få dem lagt ovenpå.
 

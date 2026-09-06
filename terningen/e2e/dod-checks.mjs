@@ -171,6 +171,20 @@ let prev = await angles(); let worst = 0
 for (let t = 0; t < 14; t++) { await page.waitForTimeout(80); const cur = await angles(); worst = Math.max(worst, maxStep(prev, cur)); prev = cur }
 check('bottleneck removed: no jump at handover to CSS spin (max 80ms step < 12°)', worst < 12, `worst step ${worst.toFixed(1)}°`)
 check('bottleneck removed: gears run again (CSS animation, rate 1)', (await motion()) === 'running' && (await cssRunning()) >= 5 && (await gearRates()).every(r => r === 1), `${await motion()} css=${await cssRunning()}`)
+// interruptions mid-transition must stay velocity-continuous (no kick)
+await page.keyboard.press('b'); await page.waitForTimeout(400)   // mid-brake
+await page.keyboard.press('b')                                    // release while still decelerating
+let prevI = await angles(); let worstI = 0
+for (let t = 0; t < 18; t++) { await page.waitForTimeout(70); const cur = await angles(); worstI = Math.max(worstI, maxStep(prevI, cur)); prevI = cur }
+check('interrupt: release mid-brake → no kick, back to running', worstI < 12 && (await motion()) === 'running', `worst step ${worstI.toFixed(1)}° motion=${await motion()}`)
+await page.keyboard.press('b'); await page.waitForTimeout(1500)  // stop fully
+await page.keyboard.press('b'); await page.waitForTimeout(300)   // start resuming
+await page.keyboard.press('b')                                    // brake mid-resume
+let prevJ = await angles(); let worstJ = 0
+for (let t = 0; t < 20; t++) { await page.waitForTimeout(70); const cur = await angles(); worstJ = Math.max(worstJ, maxStep(prevJ, cur)); prevJ = cur }
+check('interrupt: brake mid-resume → no kick, ends stopped', worstJ < 12 && (await motion()) === 'stopped', `worst step ${worstJ.toFixed(1)}° motion=${await motion()}`)
+await page.keyboard.press('b'); await page.waitForTimeout(1300)  // release again → running
+check('interrupt: final state running', (await motion()) === 'running' && hash() === 'beat=4&open=teknologi', hash())
 
 // Esc with nothing open → no-op
 await page.keyboard.press('Escape')

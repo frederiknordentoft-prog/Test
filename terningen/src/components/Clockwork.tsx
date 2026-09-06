@@ -4,13 +4,14 @@ import { CLOCK_TILT, type View } from '../lib/cube'
 import { TRAIN } from '../lib/gearTrain'
 import {
   BRAKE_MS,
-  EASE_IN,
-  EASE_OUT,
   RESUME_MS,
   WAAPI_ID,
   angleFromTransform,
-  coastAngle,
   delayForAngle,
+  motionKeyframes,
+  omega,
+  velocityAt,
+  type MotionKind,
 } from '../lib/clockworkMotion'
 import { blurIfPointer, prefersReducedMotion } from '../lib/motion'
 import { useModelStore } from '../store/useModelStore'
@@ -44,6 +45,8 @@ export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking
   const rootRef = useRef<HTMLDivElement>(null)
   const genRef = useRef(0)
   const firstRunRef = useRef(true)
+  /** Igangværende overgange per hjul, så en afbrydelse kan fortsætte fra den faktiske hastighed. */
+  const inFlightRef = useRef(new Map<Element, { anim: Animation; kind: MotionKind; v0: number; v1: number; D: number }>())
   const toggleOpen = useModelStore((s) => s.toggleOpen)
   const toggleBottleneck = useModelStore((s) => s.toggleBottleneck)
   const core = getComponent(CORE_ID)
@@ -66,11 +69,31 @@ export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking
         if (a.id === WAAPI_ID) a.cancel()
       })
     }
+    const inFlight = inFlightRef.current
     const currentAngle = (el: Element) => angleFromTransform(getComputedStyle(el).transform)
     const specOf = (el: SVGSVGElement) => ({
       period: Number(el.dataset.period ?? '16'),
       dir: (el.dataset.dir === '-1' ? -1 : 1) as 1 | -1,
     })
+    /** Hjulets hastighed lige nu: fra en igangværende overgang, fra CSS-animationen eller 0. */
+    const currentVelocity = (el: SVGSVGElement): number => {
+      const f = inFlight.get(el)
+      if (f && f.anim.playState === 'running') {
+        const u = Number(f.anim.currentTime ?? 0) / f.D
+        return velocityAt(f.kind, f.v0, f.v1, u)
+      }
+      if (root.dataset.motion === undefined && !reduced) {
+        const { period, dir } = specOf(el)
+        return omega(period, dir)
+      }
+      return 0
+    }
+    const start = (el: SVGSVGElement, kind: MotionKind, a0: number, v0: number, v1: number, D: number) => {
+      cancelWaapi(el)
+      const anim = el.animate(motionKeyframes(kind, a0, v0, v1, D), { id: WAAPI_ID, duration: D, easing: 'linear', fill: 'forwards' })
+      inFlight.set(el, { anim, kind, v0, v1, D })
+      return anim
+    }
 
     if (braking) {
       // Allerede bremset/bremsende (fx StrictMode kører effekten to gange): intet at gøre.
@@ -78,23 +101,15 @@ export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking
       // Deep-link, reduceret bevægelse eller ingen WAAPI: stå stille med det samme.
       if (first || reduced || !canAnimate || gears.length === 0) {
         gears.forEach(cancelWaapi)
+        inFlight.clear()
         root.dataset.motion = 'stopped'
         return
       }
-      const angles = gears.map(currentAngle) // læs FØR CSS-animationen fjernes
+      // Læs vinkel og hastighed FØR CSS-animationen fjernes / overgangen annulleres.
+      const angles = gears.map(currentAngle)
+      const velocities = gears.map(currentVelocity)
       root.dataset.motion = 'braking'
-      const anims = gears.map((el, i) => {
-        cancelWaapi(el)
-        const from = angles[i] ?? 0
-        const { period, dir } = specOf(el)
-        const to = from + coastAngle(period, dir, BRAKE_MS)
-        return el.animate([{ transform: `rotate(${from}deg)` }, { transform: `rotate(${to}deg)` }], {
-          id: WAAPI_ID,
-          duration: BRAKE_MS,
-          easing: EASE_OUT,
-          fill: 'forwards',
-        })
-      })
+      const anims = gears.map((el, i) => start(el, 'brake', angles[i] ?? 0, velocities[i] ?? 0, 0, BRAKE_MS))
       Promise.all(anims.map((a) => a.finished))
         .then(() => {
           if (gen === genRef.current) root.dataset.motion = 'stopped'
@@ -110,22 +125,16 @@ export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking
         cancelWaapi(el)
         el.style.animationDelay = ''
       })
+      inFlight.clear()
       delete root.dataset.motion
       return
     }
     const angles = gears.map(currentAngle) // inkl. den holdte bremsevinkel
+    const velocities = gears.map(currentVelocity) // 0 i stilstand, >0 hvis bremsningen afbrydes
     root.dataset.motion = 'resuming'
     const anims = gears.map((el, i) => {
-      cancelWaapi(el)
-      const from = angles[i] ?? 0
       const { period, dir } = specOf(el)
-      const to = from + coastAngle(period, dir, RESUME_MS)
-      return el.animate([{ transform: `rotate(${from}deg)` }, { transform: `rotate(${to}deg)` }], {
-        id: WAAPI_ID,
-        duration: RESUME_MS,
-        easing: EASE_IN,
-        fill: 'forwards',
-      })
+      return start(el, 'resume', angles[i] ?? 0, velocities[i] ?? 0, omega(period, dir), RESUME_MS)
     })
     Promise.all(anims.map((a) => a.finished))
       .then(() => {
@@ -137,6 +146,7 @@ export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking
         })
         delete root.dataset.motion
         gears.forEach(cancelWaapi)
+        inFlight.clear()
       })
       .catch(() => {})
   }, [braking])

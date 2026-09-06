@@ -30,7 +30,7 @@ export function ComponentPanel() {
                 ))}
               </span>
             )}
-            <span>{c.pips === null ? UI.coreLabel : `${c.pips}`}</span>
+            <span>{c.pips === null ? UI.coreLabel : UI.faceLabel(c.pips)}</span>
           </div>
           <button
             type="button"

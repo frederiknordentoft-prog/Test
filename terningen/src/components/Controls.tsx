@@ -56,6 +56,7 @@ export function Controls() {
               data-active={active}
               data-bottleneck={bottleneck === id}
               aria-pressed={active}
+              aria-label={c.title}
               onClick={(e) => {
                 blurIfPointer(e)
                 toggleOpen(id)
@@ -71,7 +72,7 @@ export function Controls() {
                   ))}
                 </span>
               )}
-              <span>{c.title}</span>
+              <span className="chip-title">{c.title}</span>
             </button>
           )
         })}
@@ -86,9 +87,9 @@ export function Controls() {
             prev()
           }}
           aria-disabled={beat === FIRST_BEAT}
-          aria-label={UI.prev}
+          aria-label={UI.ariaPrev}
         >
-          ‹ {UI.prev}
+          {UI.prev}
         </button>
         <span className="beat-counter" aria-live="polite">
           {UI.beatOf(beat + 1, BEAT_COUNT)}
@@ -101,9 +102,9 @@ export function Controls() {
             next()
           }}
           aria-disabled={beat === LAST_BEAT}
-          aria-label={UI.next}
+          aria-label={UI.ariaNext}
         >
-          {UI.next} ›
+          {UI.next}
         </button>
       </div>
       <p className="hints">{UI.hints}</p>
