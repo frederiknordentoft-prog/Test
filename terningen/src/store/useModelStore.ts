@@ -19,7 +19,6 @@ export type ModelActions = {
   open: (id: ComponentId) => void
   close: () => void
   toggleOpen: (id: ComponentId) => void
-  setBottleneck: (id: ComponentId | null) => void
   toggleBottleneck: (id: ComponentId) => void
   /** Erstatter hele tilstanden (bruges af hash-synkroniseringen). */
   hydrate: (state: ModelState) => void
@@ -64,7 +63,6 @@ export const useModelStore = create<ModelStore>()((set, get) => ({
     else s.open(id)
   },
 
-  setBottleneck: (id) => set({ bottleneck: id }),
   toggleBottleneck: (id) => set((s) => ({ bottleneck: s.bottleneck === id ? null : id })),
 
   hydrate: (state) => set({ ...state }),
@@ -84,11 +82,35 @@ export function selectModelState(s: ModelStore): ModelState {
 export function startHashSync(): () => void {
   const store = useModelStore
 
+  // Skrivninger samles til én per frame (Safari afviser >100 replaceState på 30 s), og en
+  // afvist skrivning må aldrig vælte store-lytteren — så falder vi tilbage til location.replace.
+  let pending: number | null = null
   const writeHash = (state: ModelState) => {
     const hash = serializeHash(state)
-    if (window.location.hash !== hash) {
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`)
+    if (window.location.hash === hash) return
+    const url = `${window.location.pathname}${window.location.search}${hash}`
+    const flush = () => {
+      pending = null
+      const latest = serializeHash(selectModelState(store.getState()))
+      if (window.location.hash === latest) return
+      const latestUrl = `${window.location.pathname}${window.location.search}${latest}`
+      try {
+        window.history.replaceState(null, '', latestUrl)
+      } catch {
+        try {
+          window.location.replace(latestUrl)
+        } catch {
+          /* ignorér — tilstanden lever videre i storen */
+        }
+      }
     }
+    if (pending !== null) return
+    if (typeof window.requestAnimationFrame === 'function') pending = window.requestAnimationFrame(flush)
+    else {
+      pending = 1
+      flush()
+    }
+    void url
   }
 
   const applyFromLocation = () => {

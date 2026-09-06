@@ -16,8 +16,8 @@ organisationens evne til at omsætte AI til værdi, og et roterende urværk i mi
 
 ```bash
 cd terningen
-npm install --legacy-peer-deps   # se DECISIONS.md #3
-npm run dev                      # http://localhost:5173
+npm ci              # Node ≥ 20.19; lockfilen er committet
+npm run dev         # http://localhost:5173 (strictPort — fejler højt, hvis porten er optaget)
 ```
 
 Produktionsbuild og kvalitetsporte:
@@ -38,6 +38,7 @@ i et andet vindue og Chromium til Playwright):
 npx playwright install chromium   # én gang
 npm run e2e                       # alle flows, edge cases og layoutkontrol ved 1920×1080
 npm run e2e:all                   # 1366×768, 1920×1080 og 2560×1440
+TERNINGEN_URL=http://localhost:4173/ npm run e2e   # mod fx `npm run preview`
 ```
 
 Scriptet (`e2e/dod-checks.mjs`) afprøver de seks DoD-flows, deep-links (gyldige og ugyldige),

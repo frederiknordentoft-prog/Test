@@ -4,6 +4,8 @@
  * så layoutet skalerer med terningen.
  */
 
+import { TOOTH_ROOT_FRACTION, TOOTH_TIP_FRACTION } from './gear'
+
 export type GearLayer = 'front' | 'back'
 
 export type TrainDef =
@@ -138,7 +140,12 @@ export function periodFor(spec: GearSpec): number {
  * Geometrisk indgrebstest: hver tandspids på A, der rager ind i B's tandzone,
  * skal ligge i et mellemrum på B (og omvendt). Returnerer en liste af problemer.
  */
-export function meshProblems(a: GearSpec, b: GearSpec, rootFraction = 0.5, tipFraction = 0.3): string[] {
+export function meshProblems(
+  a: GearSpec,
+  b: GearSpec,
+  rootFraction = TOOTH_ROOT_FRACTION,
+  tipFraction = TOOTH_TIP_FRACTION,
+): string[] {
   const problems: string[] = []
   const check = (from: GearSpec, to: GearSpec) => {
     const pitchFrom = 360 / from.teeth

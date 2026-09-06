@@ -4,7 +4,7 @@
 
 1. **Projektet ligger i `terningen/`** — repo-roden indeholder allerede en anden app (elpris-dashboard); intet uden for projektmappen røres.
 2. **Toolchain pinnet til Vite 7 / TypeScript 5.9 / Vitest 4 / ESLint 9 / Tailwind 4** — nyeste majors (Vite 8, TS 7, Vitest 5) var udgivet få uger før build; de kendte versioner er stabile sammen med typescript-eslint og React-plugins.
-3. **`npm install --legacy-peer-deps`** — npm 10.9.7 fejlede med en intern arborist-fejl (`edgesOut` på null) under peer-opløsning; flaget omgår det uden at ændre de installerede versioner.
+3. **Første installation krævede `npm install --legacy-peer-deps`** — npm 10.9.7 fejlede med en intern arborist-fejl (`edgesOut` på null) under peer-opløsning. Med den committede `package-lock.json` virker `npm ci` uden flag (verificeret), så README anbefaler det; `engines.node >= 20.19` er sat.
 4. **Beat-rækkefølge = specifikationens tabel: øjne 1→6, kernen sidst (beat 8)** — deep-link-eksemplet `#beat=4&open=teknologi` (3 øjne) fastlægger beat = øjne + 1; Arbejdsgange som finale matcher fortællingen "værdien opstår, når arbejdsgangen bygges om".
 5. **Ugyldigt deep-link ⇒ hele tilstanden falder tilbage til beat 0** (også ved delvist gyldige værdier og ved `beat`/`open` der modsiger hinanden) — DoD siger "fald tilbage til beat 0"; forudsigeligt frem for halvt gættet tilstand. Hashen skrives altid om til kanonisk form (`#beat=…&open=…&bottleneck=…`).
 6. **Storen initialiseres synkront fra URL-hashen** — så et deep-link viser præcis tilstanden fra første render uden indgangsanimation eller bremseramp.
@@ -35,3 +35,7 @@
 31. **Bremse/genstart-kurverne er hastighedskontinuerte også ved afbrydelser** — keyframes genereres fra den faktiske øjeblikshastighed (v(u)=v0·(1−u)² ved bremsning, v0+(v1−v0)·u² ved genstart), så et tryk midt i en overgang aldrig giver et ryk.
 32. **Komponentchips i versaler med bred sporing ≥ 1500 px, kun øjne derunder** — følger typografireglen for komponenttitler uden at chiprækken ombrydes i tre linjer på 1366 px; titlen ligger i `aria-label`/`title`.
 33. **Ubrugte UI-strenge fjernet fra `model.ts`** — modulet skal kun love det, der faktisk vises; pilene i Forrige/Næste og sidetitlen ligger nu også der.
+34. **Tailwind CSS 4 er med som base (preflight) og token-bro (`@theme inline`), ikke som utility-klasser** — terningens 3D, gradienter og animationer er håndskrevet CSS på designtokens; `@theme`-broen eksponerer tokens som utilities til de lag, der skal lægges ovenpå senere (fabrikkerne, AI Bet).
+35. **Hash-skrivninger samles til én per frame og er fejltolerante** — Safari afviser mere end 100 `replaceState` på 30 s; en afvist skrivning må ikke vælte store-lytteren.
+36. **`strictPort` på dev-serveren** — ellers kunne `npm run e2e` stille ramme en anden server på 5174.
+37. **Tandprofilens konstanter deles mellem `makeGearPath` og indgrebstesten** — testen skal verificere den profil, der faktisk tegnes.
