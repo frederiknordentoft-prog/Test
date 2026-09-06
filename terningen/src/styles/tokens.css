@@ -1,0 +1,63 @@
+/* Designtokens (låst). Ingen løse hex-værdier uden for denne fil. */
+:root {
+  --bg-deep: #0A1626;      /* baggrund, mørk navy */
+  --bg-vignette: #060E1A;  /* radial vignette i hjørnerne */
+  --brass-dark: #8A6A24;
+  --brass-mid: #C9A227;
+  --brass-light: #F2DFA0;
+  --ivory: #F4EDDC;        /* terningens ydersider */
+  --amber: #FF9F1C;        /* KUN flaskehals — brug den aldrig dekorativt */
+  --text-primary: #F4EDDC;
+  --text-muted: #8FA3BC;
+
+  /* Afledte, gennemsigtige varianter (samme farver, kun alpha) */
+  --brass-mid-20: rgb(201 162 39 / 0.2);
+  --brass-mid-35: rgb(201 162 39 / 0.35);
+  --brass-light-12: rgb(242 223 160 / 0.12);
+  --brass-light-45: rgb(242 223 160 / 0.45);
+  --ivory-08: rgb(244 237 220 / 0.08);
+  --ivory-14: rgb(244 237 220 / 0.14);
+  --navy-40: rgb(10 22 38 / 0.4);
+  --navy-65: rgb(10 22 38 / 0.65);
+  --vignette-55: rgb(6 14 26 / 0.55);
+  --vignette-85: rgb(6 14 26 / 0.85);
+  --amber-18: rgb(255 159 28 / 0.18);
+  --amber-45: rgb(255 159 28 / 0.45);
+  --amber-70: rgb(255 159 28 / 0.7);
+  --shade-06: rgb(0 0 0 / 0.06);
+  --shade-14: rgb(0 0 0 / 0.14);
+  --shade-22: rgb(0 0 0 / 0.22);
+  --shade-45: rgb(0 0 0 / 0.45);
+
+  /* Messing som poleret metal: smalt lyst bånd */
+  --brass-gradient: linear-gradient(
+    135deg,
+    var(--brass-dark) 0%,
+    var(--brass-mid) 38%,
+    var(--brass-light) 50%,
+    var(--brass-mid) 60%,
+    var(--brass-dark) 100%
+  );
+  --brass-gradient-soft: linear-gradient(160deg, var(--brass-dark) 0%, var(--brass-mid) 55%, var(--brass-light) 100%);
+  --ivory-gradient: linear-gradient(150deg, var(--ivory) 0%, var(--ivory) 55%, rgb(232 222 198) 100%);
+
+  /* Typografi */
+  --font-sans: 'Inter', 'SF Pro Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-swing: cubic-bezier(0.34, 1.1, 0.4, 1);
+  --dur-fast: 260ms;
+  --dur-move: 820ms;
+  --dur-swing: 720ms;
+  --dur-panel: 560ms;
+
+  /* Geometri */
+  --cube: clamp(150px, 26vmin, 400px);
+  --half: calc(var(--cube) / 2);
+  --clock: calc(var(--cube) * 1.32);
+  --shift: clamp(140px, 13vw, 300px);
+  --panel-w: clamp(380px, 31vw, 640px);
+  --controls-reserve: clamp(124px, 14vh, 160px); /* plads til styringen i bunden */
+  --panel-top: clamp(56px, 8vh, 120px);
+}
