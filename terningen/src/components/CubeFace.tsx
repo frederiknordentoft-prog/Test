@@ -68,7 +68,9 @@ function CubeFaceImpl({ face, componentId, open, dim, bottleneck }: Props) {
           </div>
         )}
       </div>
-      <div className="face-back" aria-hidden="true" />
+      <div className="face-back" aria-hidden="true">
+        {bottleneck && <div className="bottleneck-tag">{UI.bottleneckTag}</div>}
+      </div>
     </div>
   )
 }

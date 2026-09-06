@@ -60,6 +60,9 @@ export const EXPLODE_FACTOR = 1.9
  */
 export const SWING_DEG = 52
 
+/** Urværkets faste resthældning i forhold til kameraet (grader) — giver dybde uden kantstilling. */
+export const CLOCK_TILT: View = { rx: 9, ry: -16 }
+
 /**
  * Urværkets skala når terningen er samlet. Boksen (inkl. gløden) skal ligge helt inden
  * for den indskrevne kugle, så dens plan ikke skærer fladerne (det giver synlige sømme).

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, type KeyboardEvent, type MouseEvent } from 'react'
 import { CORE_ID, UI, getComponent } from '../content/model'
-import type { View } from '../lib/cube'
+import { CLOCK_TILT, type View } from '../lib/cube'
 import { TRAIN } from '../lib/gearTrain'
 import { blurIfPointer, easeInOutCubic, easeOutCubic } from '../lib/motion'
 import { useModelStore } from '../store/useModelStore'
@@ -31,8 +31,9 @@ function setRate(a: Animation, rate: number) {
 }
 
 /**
- * Urværket: SVG-tandhjul i terningens centrum, drejet ind i 3D-rummet så det
- * altid vender mod kameraet (billboard). Rotationen er ren CSS-animation;
+ * Urværket: SVG-tandhjul i terningens centrum, drejet ind i 3D-rummet: det følger
+ * kameraet (billboard) med en fast resthældning, så hjulene viser ægte perspektiv
+ * uden nogensinde at stå på kant. Rotationen er ren CSS-animation;
  * bremsning sker ved at rampe animationernes playbackRate — ikke et JS-loop.
  */
 export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking }: Props) {
@@ -134,7 +135,9 @@ export function Clockwork({ view, scale, visible, dim, open, bottleneck, braking
       data-dim={dim}
       data-open={open}
       data-bottleneck={bottleneck}
-      style={{ transform: `rotateY(${-view.ry}deg) rotateX(${-view.rx}deg) translateZ(0) scale(${scale})` }}
+      style={{
+        transform: `rotateY(${-view.ry}deg) rotateX(${-view.rx}deg) rotateY(${CLOCK_TILT.ry}deg) rotateX(${CLOCK_TILT.rx}deg) translateZ(0) scale(${scale})`,
+      }}
       onClick={onClick}
       onContextMenu={onContextMenu}
       onKeyDown={onKeyDown}

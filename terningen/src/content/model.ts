@@ -38,7 +38,7 @@ export const COMPONENTS: readonly ModelComponent[] = [
   {
     id: 'arbejdsgange',
     title: 'Arbejdsgange',
-    kicker: 'Værdien opstår, når arbejdsgangen bygges om.',
+    kicker: 'Værdien opstår, når arbejdsgangen bygges om',
     pips: null,
     questions: [
       'Hvordan ser processen ud i dag?',
@@ -52,7 +52,7 @@ export const COMPONENTS: readonly ModelComponent[] = [
   {
     id: 'mennesker',
     title: 'Mennesker, roller og mandat',
-    kicker: 'AI ændrer arbejdsdelingen, ikke kun opgaverne.',
+    kicker: 'AI ændrer arbejdsdelingen, ikke kun opgaverne',
     pips: 2,
     questions: [
       'Hvad gør mennesket?',
@@ -66,7 +66,7 @@ export const COMPONENTS: readonly ModelComponent[] = [
   {
     id: 'teknologi',
     title: 'Teknologi og data',
-    kicker: 'Understøttende infrastruktur — ikke slutproduktet.',
+    kicker: 'Understøttende infrastruktur — ikke slutproduktet',
     pips: 3,
     questions: [
       'Hvilke modeller og værktøjer skal understøtte processen?',
@@ -78,7 +78,7 @@ export const COMPONENTS: readonly ModelComponent[] = [
   {
     id: 'buildbuyown',
     title: 'Build / Buy / Own',
-    kicker: 'AI ændrer magtbalancen med leverandørerne.',
+    kicker: 'AI ændrer magtbalancen med leverandørerne',
     pips: 4,
     questions: [
       'Hvad kan vi nu udvikle selv?',
@@ -91,7 +91,7 @@ export const COMPONENTS: readonly ModelComponent[] = [
   {
     id: 'governance',
     title: 'Governance og ansvarlighed',
-    kicker: 'Designparameter, ikke en efterfølgende bremse.',
+    kicker: 'Designparameter, ikke en efterfølgende bremse',
     pips: 5,
     questions: [
       'Hvilke risici skal håndteres?',
@@ -104,7 +104,7 @@ export const COMPONENTS: readonly ModelComponent[] = [
   {
     id: 'maaling',
     title: 'Måling og værdirealisering',
-    kicker: 'Mål udfald, ikke aktivitet.',
+    kicker: 'Mål udfald, ikke aktivitet',
     pips: 6,
     questions: [
       'Hvad var baseline?',
