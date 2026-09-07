@@ -39,3 +39,4 @@
 35. **Hash-skrivninger samles til én per frame og er fejltolerante** — Safari afviser mere end 100 `replaceState` på 30 s; en afvist skrivning må ikke vælte store-lytteren.
 36. **`strictPort` på dev-serveren** — ellers kunne `npm run e2e` stille ramme en anden server på 5174.
 37. **Tandprofilens konstanter deles mellem `makeGearPath` og indgrebstesten** — testen skal verificere den profil, der faktisk tegnes.
+38. **Uafhængig review i syv perspektiver (spec, CSS-3D/Safari, state/React, tilgængelighed, performance, indhold/sprog, tests/tooling)** — 38 fund; de valide er rettet (#21–#37). To modstridende verifikationer bekræftede rettelserne; de resterende verifikatorer og en DoD-kritiker kunne ikke køre (sessionsgrænse), så DoD-gennemgangen i README er lavet manuelt mod den kørende app og e2e-suiten.

@@ -83,6 +83,21 @@ src/
   styles/       tokens.css         (designtokens som CSS-variabler)
 ```
 
+## Definition of Done — status
+
+| Krav | Status | Verificeret ved |
+|---|---|---|
+| `npm run typecheck` uden fejl | ✅ | tsc, app + node-config |
+| `npm run lint` ren | ✅ | eslint (ts/tsx + js/mjs) |
+| `npm run build` lykkes | ✅ | vite build → `dist/` |
+| Vitest: beat-sekvensering, hash round-trip, `makeGearPath` | ✅ | 34 tests i 6 filer (også tandhjulskæde, terningegeometri, bremsekurver) |
+| Flow 1–6 (eksplodér, åbn, skift, flaskehals, piletaster, deep-link) | ✅ | `npm run e2e` — 81 kontroller, grønne ved 1366×768, 1920×1080, 2560×1440 og mod produktionsbuild |
+| Ingen layout-hop/tekstoverløb ved de tre opløsninger | ✅ | e2e måler panelposition/-bredde, scroll-overflow og viewport-overflow i hvert beat |
+| `prefers-reduced-motion` slår rotation og svingninger fra | ✅ | e2e emulerer reduce/no-preference, også skiftet midt i en session |
+| ~60 fps med alle tandhjul synlige | ✅ Chromium | rAF-måling 60–61 fps ved 1920×1080 i headless Chromium (software-rendering); ét composited lag per hjul |
+| Fungerer i Safari og Chrome | ⚠️ Chrome verificeret, Safari ikke kørt | Safari kunne ikke køres i byggemiljøet; WebKit-faldgruber er undgået efter kode-review (se DECISIONS #22, #10, #11, #35) |
+| README + DECISIONS | ✅ | denne fil og `DECISIONS.md` (37 beslutninger) |
+
 ## Antagelser
 
 - Beat-rækkefølgen følger specifikationens tabel: øjne 1–6 (beat 2–7) og kernen Arbejdsgange som
