@@ -12,6 +12,13 @@ organisationens evne til at omsætte AI til værdi, og et roterende urværk i mi
 - **Fortællingen:** 9 beats (samlet → eksploderet → de seks sider → kernen) styres med tastaturet.
 - **Deep-links:** hele tilstanden ligger i URL-hashen, fx `#beat=4&open=teknologi&bottleneck=governance`.
 
+## Test uden installation
+
+- **Hosted side:** appen er udgivet som en privat Artifact-side, der kan åbnes direkte i Chrome
+  og Safari (også på iPhone/iPad): se linket i sessionen/`DECISIONS.md` #39.
+- **Én fil:** `npm run build:single` skriver `dist/terningen.html` — hele appen i én HTML-fil,
+  der kan åbnes ved dobbeltklik eller sendes som vedhæftning. Deep-links virker også fra filen.
+
 ## Kør
 
 ```bash

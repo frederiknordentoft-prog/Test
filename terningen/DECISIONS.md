@@ -40,3 +40,5 @@
 36. **`strictPort` på dev-serveren** — ellers kunne `npm run e2e` stille ramme en anden server på 5174.
 37. **Tandprofilens konstanter deles mellem `makeGearPath` og indgrebstesten** — testen skal verificere den profil, der faktisk tegnes.
 38. **Uafhængig review i syv perspektiver (spec, CSS-3D/Safari, state/React, tilgængelighed, performance, indhold/sprog, tests/tooling)** — 38 fund; de valide er rettet (#21–#37). To modstridende verifikationer bekræftede rettelserne; de resterende verifikatorer og en DoD-kritiker kunne ikke køre (sessionsgrænse), så DoD-gennemgangen i README er lavet manuelt mod den kørende app og e2e-suiten.
+39. **Én-fils-build (`npm run build:single`) og hosted Artifact-side** — den nemmeste test er et link eller én fil uden installation: https://claude.ai/code/artifact/a34a3cfc-f381-4b19-bbef-c825a8042c3c. Scriptet inliner CSS og JS fra `dist/` og escaper `</script` og `<!--`, så bundtet er sikkert at inline.
+40. **Vinkelkontrollerne i e2e måler hastighed (°/s), ikke faste trin** — stikprøver med fast interval var følsomme for timing-jitter under belastning; en hastighedsgrænse på 1,6 × maksimal hjulhastighed fanger stadig ethvert ryk.

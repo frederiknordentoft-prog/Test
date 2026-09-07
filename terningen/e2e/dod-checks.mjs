@@ -32,8 +32,11 @@ const gearRates = async () => page.evaluate(() => document.querySelectorAll('.ge
 const motion = async (pg = page) => pg.evaluate(() => document.querySelector('.clockwork')?.dataset.motion ?? 'running')
 const cssRunning = async (pg = page) => pg.evaluate(() => document.querySelector('.clockwork').getAnimations({subtree:true}).filter(a => a.animationName === 'gear-spin' && a.playState === 'running').length)
 const waapiRunning = async (pg = page) => pg.evaluate(() => document.querySelector('.clockwork').getAnimations({subtree:true}).filter(a => a.id === 'gear-brake' && a.playState === 'running').length)
-const angles = async (pg = page) => pg.evaluate(() => [...document.querySelectorAll('.gear-spin')].map(el => { const t = getComputedStyle(el).transform; const m = t.match(/matrix\(([^)]+)\)/); if (!m) return 0; const v = m[1].split(',').map(Number); return Math.atan2(v[1], v[0]) * 180 / Math.PI }))
+const angles = async (pg = page) => { const r = await pg.evaluate(() => ({ t: performance.now(), a: [...document.querySelectorAll('.gear-spin')].map(el => { const t = getComputedStyle(el).transform; const m = t.match(/matrix\(([^)]+)\)/); if (!m) return 0; const v = m[1].split(',').map(Number); return Math.atan2(v[1], v[0]) * 180 / Math.PI }) })); const arr = r.a; arr.t = r.t; return arr }
 const maxStep = (a, b) => Math.max(...a.map((x, i) => { let d = Math.abs(b[i] - x) % 360; return Math.min(d, 360 - d) }))
+// max angular velocity between two samples in °/s (the fastest gear runs 90 °/s); a jump shows up as a far higher value
+const maxVelocity = (a, b) => maxStep(a, b) / Math.max(1, (b.t ?? 0) - (a.t ?? 0)) * 1000
+const V_LIMIT = 90 * 1.6
 const shot = async (name) => page.screenshot({ path: `${OUT}/${tag}-${name}.png` })
 const overflowCheck = async (label) => {
   const r = await page.evaluate(() => {
@@ -168,21 +171,21 @@ await page.locator('.face[data-component="mennesker"]').click({ button: 'right' 
 await page.waitForTimeout(200)
 check('bottleneck removed: resuming via compositor animation', (await motion()) === 'resuming' && (await waapiRunning()) >= 5, `${await motion()} waapi=${await waapiRunning()}`)
 let prev = await angles(); let worst = 0
-for (let t = 0; t < 14; t++) { await page.waitForTimeout(80); const cur = await angles(); worst = Math.max(worst, maxStep(prev, cur)); prev = cur }
-check('bottleneck removed: no jump at handover to CSS spin (max 80ms step < 12°)', worst < 12, `worst step ${worst.toFixed(1)}°`)
+for (let t = 0; t < 14; t++) { await page.waitForTimeout(80); const cur = await angles(); worst = Math.max(worst, maxVelocity(prev, cur)); prev = cur }
+check('bottleneck removed: no jump at handover to CSS spin (velocity stays below 1.6× max)', worst < V_LIMIT, `worst ${worst.toFixed(0)} °/s`)
 check('bottleneck removed: gears run again (CSS animation, rate 1)', (await motion()) === 'running' && (await cssRunning()) >= 5 && (await gearRates()).every(r => r === 1), `${await motion()} css=${await cssRunning()}`)
 // interruptions mid-transition must stay velocity-continuous (no kick)
 await page.keyboard.press('b'); await page.waitForTimeout(400)   // mid-brake
 await page.keyboard.press('b')                                    // release while still decelerating
 let prevI = await angles(); let worstI = 0
-for (let t = 0; t < 18; t++) { await page.waitForTimeout(70); const cur = await angles(); worstI = Math.max(worstI, maxStep(prevI, cur)); prevI = cur }
-check('interrupt: release mid-brake → no kick, back to running', worstI < 12 && (await motion()) === 'running', `worst step ${worstI.toFixed(1)}° motion=${await motion()}`)
+for (let t = 0; t < 18; t++) { await page.waitForTimeout(70); const cur = await angles(); worstI = Math.max(worstI, maxVelocity(prevI, cur)); prevI = cur }
+check('interrupt: release mid-brake → no kick, back to running', worstI < V_LIMIT && (await motion()) === 'running', `worst ${worstI.toFixed(0)} °/s motion=${await motion()}`)
 await page.keyboard.press('b'); await page.waitForTimeout(1500)  // stop fully
 await page.keyboard.press('b'); await page.waitForTimeout(300)   // start resuming
 await page.keyboard.press('b')                                    // brake mid-resume
 let prevJ = await angles(); let worstJ = 0
-for (let t = 0; t < 20; t++) { await page.waitForTimeout(70); const cur = await angles(); worstJ = Math.max(worstJ, maxStep(prevJ, cur)); prevJ = cur }
-check('interrupt: brake mid-resume → no kick, ends stopped', worstJ < 12 && (await motion()) === 'stopped', `worst step ${worstJ.toFixed(1)}° motion=${await motion()}`)
+for (let t = 0; t < 20; t++) { await page.waitForTimeout(70); const cur = await angles(); worstJ = Math.max(worstJ, maxVelocity(prevJ, cur)); prevJ = cur }
+check('interrupt: brake mid-resume → no kick, ends stopped', worstJ < V_LIMIT && (await motion()) === 'stopped', `worst ${worstJ.toFixed(0)} °/s motion=${await motion()}`)
 await page.keyboard.press('b'); await page.waitForTimeout(1300)  // release again → running
 check('interrupt: final state running', (await motion()) === 'running' && hash() === 'beat=4&open=teknologi', hash())
 

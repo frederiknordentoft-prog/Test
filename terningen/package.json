@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "node e2e/dod-checks.mjs 1920 1080",
-    "e2e:all": "node e2e/dod-checks.mjs 1366 768 && node e2e/dod-checks.mjs 1920 1080 && node e2e/dod-checks.mjs 2560 1440"
+    "e2e:all": "node e2e/dod-checks.mjs 1366 768 && node e2e/dod-checks.mjs 1920 1080 && node e2e/dod-checks.mjs 2560 1440",
+    "build:single": "vite build && node scripts/single-file.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",
