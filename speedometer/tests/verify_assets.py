@@ -3,7 +3,7 @@
 
 Called by verify.mjs through child_process, but usable on its own:
 
-    python3 tests/verify_assets.py gif  tests/out/anim.gif  --frames 15 --width 600 --height 384 --loop forever
+    python3 tests/verify_assets.py gif  tests/out/anim.gif  --frames 15 --width 600 --height 384 --loop forever --delay 40
     python3 tests/verify_assets.py pptx tests/out/native.pptx --png tests/out/pptx-slide1.png --slides 2 --min-shapes 8
 
 Output protocol (one line per check, parsed by verify.mjs):
@@ -107,11 +107,19 @@ def verify_gif(args):
         report("PASS", "gif-loop", f"loop metadata: {loop!r}")
 
     # Timing: browsers clamp delays below ~20 ms, so anything in 20–200 ms is sane.
+    # With --delay every frame must carry exactly that delay (the app uses 40 ms
+    # = 25 fps so the GIF runs at the on-screen playback speed).
     if durations:
         avg = sum(durations) / len(durations)
         fps = 1000 / avg if avg else 0
-        check(all(20 <= d <= 200 for d in durations), "gif-timing", f"{avg:.0f} ms/frame ≈ {fps:.0f} fps",
-              f"frame delays outside 20–200 ms: {sorted(set(durations))}")
+        total = sum(durations)
+        if args.delay is not None:
+            check(all(d == args.delay for d in durations), "gif-timing",
+                  f"every frame {args.delay} ms ≈ {fps:.0f} fps, total {total / 1000:.2f} s",
+                  f"expected {args.delay} ms on every frame, got {sorted(set(durations))}")
+        else:
+            check(all(20 <= d <= 200 for d in durations), "gif-timing", f"{avg:.0f} ms/frame ≈ {fps:.0f} fps, total {total / 1000:.2f} s",
+                  f"frame delays outside 20–200 ms: {sorted(set(durations))}")
 
     # Motion: the needle must actually move — first, middle and last frame differ.
     if len(frames) >= 2 and n_frames >= 2:
@@ -400,6 +408,7 @@ def main(argv=None):
     g.add_argument("--width", type=int, default=None)
     g.add_argument("--height", type=int, default=None)
     g.add_argument("--loop", choices=["forever", "once", "any"], default="any")
+    g.add_argument("--delay", type=int, default=None, help="exact per-frame delay in ms expected on every frame")
     g.set_defaults(func=verify_gif)
 
     p = sub.add_parser("pptx", help="check a PPTX and render slide 1")

@@ -24,7 +24,8 @@
  *                      window.Exporters.pngDataUrl (node tests / pre-rendered).
  *
  * Coordinate systems
- *   Design space: 1000 × 640 px, hub at (500, 500) — identical to gauge.js.
+ *   Design space: 1000 × 640 px, nominal hub at (500, 500), centred by the
+ *   layout (hub at y ≈ 481 by default) — identical to gauge.js.
  *   The design is mapped onto a 6.4 in wide box centred on a 16:9 slide
  *   (10 × 5.625 in), i.e. 1 px = 0.0064 in.
  *
@@ -103,6 +104,7 @@
     labelFontSize: 24,
     cardInset: 20,
     cardRadius: 28,
+    cardPad: 24,            // clearance between the artwork and the card's inner edge
     padTop: 20,
     padBottom: 22,
     trailMinDeg: 0.4
@@ -256,16 +258,40 @@
   }
 
   /**
-   * Vertical layout in the 1000 × 640 design space — a faithful copy of
-   * gauge.js computeLayout() so the native slide and the PNG line up.
+   * Vertical layout in the 1000 × 640 design space. When gauge.js is loaded
+   * the result comes straight from Gauge.layout() so the native slide and
+   * the PNG can never drift apart; otherwise this is a faithful copy of
+   * gauge.js computeLayout().
    *
    * The dial needs rOuter + tick above the hub and hubR below it; the text
-   * stack (number / chip / label) sits below, unscaled. When the stack does
-   * not fit, the dial is scaled by `scale` about its hub and pushed up.
+   * stack (number / chip / label) sits below, unscaled. The whole block is
+   * centred vertically (equal margins, hub at y ≈ 481 by default). When it
+   * does not fit within the minimum margins (padTop/padBottom, or
+   * cardInset + cardPad for the 'card' background) the dial is scaled by
+   * `scale` about its hub.
    */
   function computeLayout(st, G) {
+    const gauge = global && global.Gauge;
+    if (gauge && typeof gauge.layout === 'function') {
+      try {
+        const L = gauge.layout(st);
+        if (L && Number.isFinite(L.hubY) && Number.isFinite(L.scale)) {
+          return {
+            scale: L.scale,
+            hubX: Number.isFinite(L.hubX) ? L.hubX : G.cx,
+            hubY: L.hubY,
+            numberY: L.numberY == null ? null : L.numberY,
+            chipY: L.chipY == null ? null : L.chipY,
+            labelY: L.labelY == null ? null : L.labelY
+          };
+        }
+      } catch (_) { /* fall back to the local copy */ }
+    }
     const dialAbove = G.rOuter + G.tickGap + G.tickLen + 2; // 440
     const dialBelow = G.hubR;
+    const card = st.background === 'card';
+    const padTop = card ? G.cardInset + G.cardPad : G.padTop;
+    const padBottom = card ? G.cardInset + G.cardPad : G.padBottom;
 
     let cursor = 0; // distance below the hub's bottom edge
     let numberBaseline = null;
@@ -289,9 +315,10 @@
     }
     const stack = cursor;
 
-    const avail = G.H - G.padTop - G.padBottom - stack;
+    const avail = G.H - padTop - padBottom - stack;
     const scale = clamp(avail / (dialAbove + dialBelow), 0.5, 1);
-    const hubY = Math.min(G.cy, G.H - G.padBottom - stack - dialBelow * scale);
+    const block = (dialAbove + dialBelow) * scale + stack;   // dial + text, scaled
+    const hubY = (G.H - block) / 2 + dialAbove * scale;       // equal margins
     const hubBottom = hubY + dialBelow * scale;
 
     return {
@@ -402,10 +429,21 @@
       ? { type: 'outer', blur: 5, offset: 1.5, angle: 90, color: '000000', opacity: 0.12 }
       : null);
     // Interior boundaries are shortened by half a gap; the outer ends stay at
-    // exactly 180° and 360° so the baseline is flat, like the SVG.
-    addArc('Bue rød (0–' + formatNumber(t1) + ' %)', pptAngle(0), pptAngle(t1) - half, rOut, rIn, { color: C.bad }, arcShadow());
-    addArc('Bue gul (' + formatNumber(t1) + '–' + formatNumber(t2) + ' %)', pptAngle(t1) + half, pptAngle(t2) - half, rOut, rIn, { color: C.warn }, arcShadow());
-    addArc('Bue grøn (' + formatNumber(t2) + '–100 %)', pptAngle(t2) + half, pptAngle(100), rOut, rIn, { color: C.good }, arcShadow());
+    // exactly 180° and 360° so the baseline is flat, like the SVG. A segment
+    // without extent (threshold at 0/100, or t1 = t2) is skipped, and a
+    // boundary only gets its half gap when a drawn segment lies beyond it.
+    const arcs = [
+      { name: 'Bue rød (0–' + formatNumber(t1) + ' %)', a: pptAngle(0), b: pptAngle(t1), color: C.bad },
+      { name: 'Bue gul (' + formatNumber(t1) + '–' + formatNumber(t2) + ' %)', a: pptAngle(t1), b: pptAngle(t2), color: C.warn },
+      { name: 'Bue grøn (' + formatNumber(t2) + '–100 %)', a: pptAngle(t2), b: pptAngle(100), color: C.good }
+    ];
+    const visible = arcs.map((arc, i) => (i === arcs.length - 1 ? arc.b : arc.b - half) - (i === 0 ? arc.a : arc.a + half) >= 0.05);
+    arcs.forEach((arc, i) => {
+      if (!visible[i]) return;
+      const from = visible.slice(0, i).some(Boolean) ? arc.a + half : arc.a;
+      const to = visible.slice(i + 1).some(Boolean) ? arc.b - half : arc.b;
+      addArc(arc.name, from, to, rOut, rIn, { color: arc.color }, arcShadow());
+    });
 
     /* ---- motion trail: sweep wedge + ghost needles ----------------- */
     const deltaDeg = (st.value - st.prev) * 1.8;

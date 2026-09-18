@@ -27,7 +27,7 @@ Under **Avanceret** kan du justere zonegrænserne, sporstyrken og en valgfri und
 
 | Format | Brug til | Bemærk |
 |---|---|---|
-| **Kopiér som billede** | Den hurtigste vej ind i en slide | Lægger en PNG i høj opløsning (3×) med gennemsigtig baggrund i udklipsholderen. Firefox tillader ikke billedkopiering – brug Download PNG i stedet. |
+| **Kopiér som billede** | Den hurtigste vej ind i en slide | Lægger en PNG i den opløsning, du har valgt ved siden af Download PNG (2×, 3× eller 4× = 2000/3000/4000 px bred), i udklipsholderen. Baggrunden følger indstillingen Baggrund – vælg Gennemsigtig for at lægge speedometeret oven på kortet. Ældre browsere (fx Firefox før version 127) kan ikke kopiere billeder – værktøjet viser så en besked, og du bruger Download PNG i stedet. |
 | **PNG** | Statiske slides | Vælg 2×, 3× eller 4× (2000, 3000 eller 4000 px bred). Baggrunden følger indstillingen Baggrund. |
 | **GIF (animeret)** | Bevægelse i slideshow | Afspilles kun i fremvisningstilstand i PowerPoint. GIF kan ikke være gennemsigtig, så vælg baggrundsfarve (Hvid, Kortfarve eller egen farve) og om den skal køre én gang eller uendeligt. |
 | **PPTX** | Redigerbare figurer | Slide 1 indeholder speedometeret som rigtige PowerPoint-former (buer, pil, nav, chip), som du kan farve og flytte. Slide 2 indeholder samme speedometer som PNG. Kræver internet første gang. |
@@ -35,10 +35,11 @@ Under **Avanceret** kan du justere zonegrænserne, sporstyrken og en valgfri und
 
 ## Tips
 
-- **Næste måned:** klik **Brug sidste eksport som forrige**. Værktøjet husker den sidste værdi, du eksporterede eller kopierede, så forrige position altid er korrekt.
+- **Næste måned:** når du har kopieret eller eksporteret én gang, vises linket **Brug sidste eksport som forrige (62 %)** under Forrige værdi – klik det næste måned, så er forrige position altid korrekt. Værktøjet husker den sidste værdi, du eksporterede eller kopierede.
 - **Link med værdier:** åbn filen med `?value=62&prev=48` efter filnavnet (fx `speedometer.html?value=62&prev=48`) for at forudfylde felterne – praktisk i en tjekliste eller en genvej.
 - Dine indstillinger huskes i browseren mellem besøg. Slet browserens webstedsdata for at nulstille.
-- Slå **Vis tal** og **Undertekst** til, hvis værdien og en tekst som "RESULTATER" skal med i selve billedet. Overskriften i forhåndsvisningen er kun til skærmen.
+- Slå **Vis tal** til og udfyld **Undertekst (valgfri)** under Avanceret, hvis værdien og en tekst som "RESULTATER" skal med i selve billedet. Overskriften i forhåndsvisningen er kun til skærmen.
+- **Farvetema** (Auto/Lys/Mørk) øverst til højre styrer kun appens farver – eksporten er altid tegnet til en lys slide.
 - **Sporstyrke** styrer hvor markant bevægelsessporet er: 0,5 er diskret, 1,5 er dramatisk.
 - Værktøjet respekterer browserens indstilling for reduceret bevægelse og springer i så fald animationen over.
 

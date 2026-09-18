@@ -20,8 +20,12 @@
   /** Colour of the "Kort" gauge background (light --card-2, the exported artwork is theme independent). */
   const CARD_COLOR = '#F3F3F1';
 
-  /** Animation parameters – must match what the GIF exporter uses so both look identical. */
-  const ANIM = { frames: 45, fps: 30, hold: 15 };
+  /**
+   * Animation parameters – must match the GIF exporter's defaults so both look
+   * identical. 25 fps = a 40 ms frame (a whole number of GIF centiseconds), so
+   * the exported GIF runs at exactly the on-screen speed: 38 + 13 frames ≈ 2.04 s.
+   */
+  const ANIM = { frames: 38, fps: 25, hold: 13 };
 
   /** UI-only state on top of Gauge.defaults. */
   const UI_DEFAULTS = {
@@ -225,6 +229,10 @@
     prevReadout: $('prev-readout'),
     useLastExport: $('use-last-export'),
     delta: $('delta-readout'),
+    valueError: $('value-error'),
+    prevError: $('prev-error'),
+    t1Error: $('t1-error'),
+    t2Error: $('t2-error'),
 
     toggleTrail: $('toggle-trail'),
     togglePrev: $('toggle-prev'),
@@ -287,8 +295,8 @@
 
   /** Render the live SVG preview. Cancels a running animation first. */
   function renderGauge() {
-    stopPlayback();
-    Gauge.mount(el.stage, gaugeState());
+    if (playing) stopPlayback();               // re-mounts the static state itself
+    else Gauge.mount(el.stage, gaugeState());
   }
 
   /** Update the delta line and caption. */
@@ -303,12 +311,15 @@
     if (delta > 0) { glyph = '▲'; sign = '+'; dir = 'up'; }
     else if (delta < 0) { glyph = '▼'; sign = MINUS; dir = 'down'; }
     else { glyph = '●'; sign = '±'; dir = 'zero'; }
-    el.delta.textContent = `${glyph} ${sign}${fmt(Math.abs(delta))} procentpoint`;
+    // Visible: "▲ +14 procentpoint". Announced: "Stigning på 14 procentpoint" –
+    // the glyph and sign are hidden from AT and a visually hidden prefix spells
+    // the direction out (aria-label is not allowed on a paragraph).
+    const spoken = dir === 'up' ? 'Stigning på ' : dir === 'down' ? 'Fald på ' : 'Ingen ændring: ';
+    el.delta.innerHTML =
+      `<span class="delta__glyph" aria-hidden="true">${glyph}</span> ` +
+      `<span class="visually-hidden">${spoken}</span>` +
+      `<span aria-hidden="true">${sign}</span>${fmt(Math.abs(delta))} procentpoint`;
     el.delta.dataset.direction = dir;
-    el.delta.setAttribute('aria-label',
-      dir === 'up' ? `Stigning på ${fmt(delta)} procentpoint`
-        : dir === 'down' ? `Fald på ${fmt(Math.abs(delta))} procentpoint`
-          : 'Ingen ændring');
   }
 
   /** Paint the filled part of a WebKit range track. */
@@ -332,8 +343,8 @@
    * should be left alone (the one the user is typing in right now).
    */
   function syncControls(skip) {
-    if (skip !== el.valueInput) { el.valueInput.value = fmt(state.value); el.valueInput.removeAttribute('aria-invalid'); }
-    if (skip !== el.prevInput) { el.prevInput.value = fmt(state.prev); el.prevInput.removeAttribute('aria-invalid'); }
+    if (skip !== el.valueInput) { el.valueInput.value = fmt(state.value); setInvalid(el.valueInput, false); }
+    if (skip !== el.prevInput) { el.prevInput.value = fmt(state.prev); setInvalid(el.prevInput, false); }
     el.valueSlider.value = state.value;
     el.prevSlider.value = state.prev;
     paintSlider(el.valueSlider);
@@ -346,8 +357,8 @@
     setRadio(el.backgroundSeg, state.background);
     setRadio(el.styleSeg, state.style);
 
-    if (skip !== el.t1Input) { el.t1Input.value = fmt(state.thresholds[0]); el.t1Input.removeAttribute('aria-invalid'); }
-    if (skip !== el.t2Input) { el.t2Input.value = fmt(state.thresholds[1]); el.t2Input.removeAttribute('aria-invalid'); }
+    if (skip !== el.t1Input) { el.t1Input.value = fmt(state.thresholds[0]); setInvalid(el.t1Input, false); }
+    if (skip !== el.t2Input) { el.t2Input.value = fmt(state.thresholds[1]); setInvalid(el.t2Input, false); }
     el.trailStrength.value = state.trailStrength;
     el.trailStrengthReadout.textContent = fmt1(state.trailStrength);
     paintSlider(el.trailStrength);
@@ -411,6 +422,27 @@
   /* Number inputs + sliders                                             */
   /* ------------------------------------------------------------------ */
 
+  /** Inline error message for each number field (index.html: <p class="field__error">). */
+  const errorFor = new Map([
+    [el.valueInput, el.valueError], [el.prevInput, el.prevError], [el.t1Input, el.t1Error], [el.t2Input, el.t2Error]
+  ]);
+  errorFor.forEach((_, input) => { input.dataset.hint = input.getAttribute('aria-describedby') || ''; });
+
+  /**
+   * Mark a number field (in)valid: aria-invalid, a visible message under the
+   * field (so the state is never colour-only) and aria-describedby pointing at it.
+   */
+  function setInvalid(input, invalid) {
+    if (invalid) input.setAttribute('aria-invalid', 'true');
+    else input.removeAttribute('aria-invalid');
+    const error = errorFor.get(input);
+    if (!error) return;
+    error.hidden = !invalid;
+    const ids = [input.dataset.hint, invalid ? error.id : ''].filter(Boolean).join(' ');
+    if (ids) input.setAttribute('aria-describedby', ids);
+    else input.removeAttribute('aria-describedby');
+  }
+
   /**
    * Wire a text input (Danish decimals) and a slider to one numeric key.
    * Empty / invalid text keeps the last valid value and marks the field.
@@ -419,10 +451,10 @@
     input.addEventListener('input', () => {
       const n = parseDecimal(input.value);
       if (!Number.isFinite(n)) {
-        input.setAttribute('aria-invalid', 'true');
+        setInvalid(input, true);
         return;
       }
-      input.removeAttribute('aria-invalid');
+      setInvalid(input, false);
       update({ [key]: n }, input);
     });
 
@@ -491,8 +523,8 @@
   function bindThreshold(input, index) {
     input.addEventListener('input', () => {
       const n = parseDecimal(input.value);
-      if (!Number.isFinite(n)) { input.setAttribute('aria-invalid', 'true'); return; }
-      input.removeAttribute('aria-invalid');
+      if (!Number.isFinite(n)) { setInvalid(input, true); return; }
+      setInvalid(input, false);
       const t = state.thresholds.slice();
       t[index] = n;
       update({ thresholds: t }, input);
@@ -523,17 +555,30 @@
   /* ------------------------------------------------------------------ */
 
   let toastTimer = 0;
+  let toastSeq = 0;
 
-  /** Show a toast. kind: 'ok' | 'error' | 'info'. */
+  /**
+   * Show a toast. kind: 'ok' | 'error' | 'info'. The live region (#toast) is
+   * always rendered – only faded out – so assistive tech already knows it
+   * when the text is injected one frame after it becomes visible.
+   */
   function showToast(message, kind = 'ok') {
     window.clearTimeout(toastTimer);
-    el.toast.hidden = true;                     // restart the entrance animation
+    const seq = ++toastSeq;
+    el.toast.classList.remove('is-visible');    // restart the entrance animation
     el.toast.dataset.kind = kind;
-    el.toastText.textContent = message;
+    el.toastText.textContent = '';
     // Force a reflow so the animation replays for consecutive toasts.
     void el.toast.offsetWidth;
-    el.toast.hidden = false;
-    toastTimer = window.setTimeout(() => { el.toast.hidden = true; }, kind === 'error' ? 8000 : 4200);
+    el.toast.classList.add('is-visible');
+    window.requestAnimationFrame(() => { if (seq === toastSeq) el.toastText.textContent = message; });
+    toastTimer = window.setTimeout(hideToast, kind === 'error' ? 8000 : 4200);
+  }
+
+  function hideToast() {
+    toastSeq++;
+    el.toast.classList.remove('is-visible');
+    el.toastText.textContent = '';
   }
 
   function showProgress(label, ratio) {
@@ -595,6 +640,12 @@
     }
   }
 
+  /** The user declined the (claude.ai) download: nothing was saved, so do not remember it as an export. */
+  function declined() {
+    hideProgress();
+    showToast('Download annulleret', 'info');
+  }
+
   /** The GIF background colour resolved from state. */
   function gifBackgroundColor() {
     switch (state.gifBackground) {
@@ -628,7 +679,7 @@
     const s = gaugeState();
     const svg = Exporters.svgString(s);
     const blob = await Exporters.svgToPngBlob(svg, { scale: state.pngScale, background: null });
-    await Exporters.saveFile(Exporters.filename(s, 'png'), blob);
+    if (!(await Exporters.saveFile(Exporters.filename(s, 'png'), blob))) { declined(); return; }
     rememberExport();
     showToast(`PNG gemt (${state.pngScale * 1000} px bred)`);
   }, 'Kunne ikke gemme PNG'));
@@ -638,7 +689,7 @@
     const s = gaugeState();
     const svg = Exporters.svgString(s);
     const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-    await Exporters.saveFile(Exporters.filename(s, 'svg'), blob);
+    if (!(await Exporters.saveFile(Exporters.filename(s, 'svg'), blob))) { declined(); return; }
     rememberExport();
     showToast('SVG gemt');
   }, 'Kunne ikke gemme SVG'));
@@ -657,7 +708,7 @@
       onProgress: (i, total) => showProgress(`Genererer GIF… ${i}/${total}`, total ? i / total : 0)
     });
     showProgress('Gemmer GIF…', 1);
-    await Exporters.saveFile(Exporters.filename(s, 'gif'), blob);
+    if (!(await Exporters.saveFile(Exporters.filename(s, 'gif'), blob))) { declined(); return; }
     hideProgress();
     rememberExport();
     showToast(state.gifLoop === 'forever' ? 'GIF gemt (afspilles uendeligt)' : 'GIF gemt (afspilles én gang)');
@@ -672,7 +723,7 @@
     const s = gaugeState();
     showProgress('Bygger PPTX…', null);
     const blob = await PptxExport.build(s, { includeNativeSlide: true, includeImageSlide: true, title: '' });
-    await Exporters.saveFile(Exporters.filename(s, 'pptx'), blob);
+    if (!(await Exporters.saveFile(Exporters.filename(s, 'pptx'), blob))) { declined(); return; }
     hideProgress();
     rememberExport();
     showToast('PPTX gemt – slide 1 er redigerbare figurer, slide 2 er et billede');
@@ -710,12 +761,14 @@
   /* Animation playback                                                  */
   /* ------------------------------------------------------------------ */
 
+  /** Interrupt playback and put the static render back so the preview matches the exports. */
   function stopPlayback() {
     if (!playing) return;
     playing = false;
     window.cancelAnimationFrame(rafId);
     el.btnPlay.disabled = false;
     el.btnPlayLabel.textContent = 'Afspil bevægelse';
+    Gauge.mount(el.stage, gaugeState());
   }
 
   function play() {
@@ -795,7 +848,7 @@
 
   document.addEventListener('keydown', (e) => {
     // Escape closes the toast
-    if (e.key === 'Escape' && !el.toast.hidden) el.toast.hidden = true;
+    if (e.key === 'Escape' && el.toast.classList.contains('is-visible')) hideToast();
   });
 
   /* ------------------------------------------------------------------ */

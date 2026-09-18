@@ -346,7 +346,9 @@ try {
           return { alpha: a / n, lum: l / n };
         };
         const geo = G.geometry;
-        const polar = (deg, rad) => [(geo.cx + rad * Math.cos(deg * Math.PI / 180)) * scale, (geo.cy - rad * Math.sin(deg * Math.PI / 180)) * scale];
+        // The dial is centred by the layout (hub ≈ 481, scale 1 by default) — probe around the real hub.
+        const L = G.layout(state);
+        const polar = (deg, rad) => [(L.hubX + rad * L.scale * Math.cos(deg * Math.PI / 180)) * scale, (L.hubY - rad * L.scale * Math.sin(deg * Math.PI / 180)) * scale];
         const rProbe = 250;              // hub (44) < 250 < inner arc edge (296): only the needle lives here
         const needleAngle = G.valueToAngle(state.value);
         // Scan the half ring: where is the darkest opaque thing?
@@ -411,7 +413,7 @@ try {
 
   /* ------------------------------------------------------------ 3 */
   await step('3. Animated GIF', async () => {
-    const gifOpts = { width: 600, fps: 30, frames: 12, hold: 3, background: '#FFFFFF', loop: 'forever' };
+    const gifOpts = { width: 600, fps: 25, frames: 12, hold: 3, background: '#FFFFFF', loop: 'forever' };
     const g = await page.evaluate(async (opts) => {
       const state = Object.assign({}, window.Gauge.defaults, { value: 62, prev: 48 });
       const expectedFrames = window.Gauge.animationFrames(state, { frames: opts.frames, fps: opts.fps, hold: opts.hold }).length;
@@ -428,17 +430,17 @@ try {
       `unexpected signature "${g.sig}" / type ${g.type}`);
     check(g.progressCalls > 0 && g.last && g.last[0] === g.last[1], 'gif-progress', `onProgress called ${g.progressCalls}× and finished at ${g.last ? g.last.join('/') : '–'}`,
       `onProgress calls ${g.progressCalls}, last ${g.last ? g.last.join('/') : '–'}`);
-    runAssets(['gif', outFile('anim.gif'), '--frames', String(g.expectedFrames), '--width', '600', '--height', '384', '--loop', 'forever']);
+    runAssets(['gif', outFile('anim.gif'), '--frames', String(g.expectedFrames), '--width', '600', '--height', '384', '--loop', 'forever', '--delay', '40']);
 
     // Play-once variant (small): the NETSCAPE loop block must be absent.
     const once = await page.evaluate(async () => {
       const state = Object.assign({}, window.Gauge.defaults, { value: 20, prev: 80 });
-      const blob = await window.Exporters.gifBlob(state, { width: 250, fps: 30, frames: 4, hold: 1, background: 'card', loop: 'once' });
+      const blob = await window.Exporters.gifBlob(state, { width: 250, fps: 25, frames: 4, hold: 1, background: 'card', loop: 'once' });
       const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
       return { size: blob.size, b64 };
     });
     writeBase64('anim-once.gif', once.b64);
-    runAssets(['gif', outFile('anim-once.gif'), '--frames', '5', '--width', '250', '--height', '160', '--loop', 'once']);
+    runAssets(['gif', outFile('anim-once.gif'), '--frames', '5', '--width', '250', '--height', '160', '--loop', 'once', '--delay', '40']);
   });
 
   /* ------------------------------------------------------------ 4 */

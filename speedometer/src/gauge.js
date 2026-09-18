@@ -6,11 +6,13 @@
  * GIF frames and (via Gauge.geometry) the native PPTX shapes.
  *
  * Coordinate system: a 1000 × 640 design space. The dial (arc, trail, needle,
- * hub) is drawn around the hub at (500, 500); text blocks (big number, delta
- * chip, label) sit below the hub. When the text stack does not fit in the
- * 640 px height the dial is scaled down slightly and shifted up — see
- * computeLayout(). If state.width/height differ from 1000 × 640 the whole
- * drawing is letterboxed into that viewBox, never distorted.
+ * hub) is drawn around a nominal hub at (500, 500) and the whole dial + text
+ * block (big number, delta chip, label below the hub) is then centred
+ * vertically in the canvas — the hub lands at y ≈ 481 in the default layout.
+ * When the block does not fit (tall text stack, or the 'card' background's
+ * clearance) the dial is scaled down slightly — see computeLayout(). If
+ * state.width/height differ from 1000 × 640 the whole drawing is letterboxed
+ * into that viewBox, never distorted.
  *
  * Angles: "gauge degrees" are measured counter-clockwise from 3 o'clock.
  *   0 %  → 180° (needle points left)
@@ -22,8 +24,9 @@
  * The motion-blur trail is a long-exposure streak of the needle's sweep from
  * prev to value: nested annular sectors build a smooth angular density ramp
  * (faint at prev, dense behind the needle), softened by one Gaussian blur and
- * faded towards the hub by a radial mask, with a few tight needle echoes just
- * behind the needle. The crisp needle is always drawn last.
+ * faded by a radial mask towards the hub and again across the coloured band,
+ * with a few tightly packed, fused needle echoes just behind the needle
+ * (masked the same way). The crisp needle is always drawn last.
  *
  * Classic script, ES2020, no dependencies. Everything user-facing is Danish.
  */
@@ -84,6 +87,7 @@
     labelFontSize: 24,
     cardInset: 20,
     cardRadius: 28,
+    cardPad: 24,            // minimum clearance between the artwork and the card's inner edge
     padTop: 20,             // minimum margins used when the layout has to compress
     padBottom: 22,
     /* Trail tuning */
@@ -91,8 +95,15 @@
     wedgeOpacity: 0.07,      // streak density at prev (the swept-area wedge)
     trailDensity: 0.5,      // streak density just behind the needle (× trailStrength)
     trailGamma: 1.5,         // density curve: D(t) ∝ t^gamma (dense near the needle)
-    trailEchoes: [[2.2, 0.16], [4.6, 0.12], [7.4, 0.08], [10.8, 0.05]], // [degrees behind the needle, opacity]
-    trailEchoBlur: 2.2,
+    // Needle echoes: [degrees behind the needle, opacity]. Packed ≤ 1.2° apart
+    // and blurred hard (trailEchoBlur) so they fuse into one soft shadow of the
+    // sweep instead of a comb of separate needles over the coloured band.
+    trailEchoes: [[1.1, 0.13], [2.2, 0.11], [3.3, 0.09], [4.4, 0.07], [5.5, 0.055], [6.6, 0.04]],
+    trailEchoBlur: 5.5,
+    // Radial trail mask: fully faded at the hub, solid through the interior,
+    // fading again across the band (from rInner to the needle tip) so the band
+    // only picks up a soft shadow of the sweep.
+    trailBandFade: 0.22,     // mask opacity at the needle tip
     colors: COLORS
   });
 
@@ -251,16 +262,23 @@
    * Vertical layout in the 1000 × 640 design space.
    *
    * The dial needs 440 px above the hub centre (arc + prev tick) and hubR
-   * below it. The text stack below the hub is drawn unscaled. If the stack
-   * does not fit, the dial is scaled by `s` (< 1) about its hub and pushed up
-   * so that top/bottom margins stay ≥ padTop / padBottom. In the default
-   * configuration s = 1 and the hub stays at cy = 500, matching the spec
-   * numbers (chip centre at cy + 96).
+   * below it. The text stack below the hub is drawn unscaled. The whole
+   * block (dial + stack) is centred vertically in the canvas, so the top and
+   * bottom margins are always equal (≈ 41 px in the default chip-only
+   * layout, hub at y ≈ 481). If the block does not fit within the minimum
+   * margins — padTop / padBottom, or cardInset + cardPad when the 'card'
+   * background is drawn — the dial is scaled by `s` (< 1) about its hub.
+   *
+   * pptx-export.js mirrors this function (and prefers Gauge.layout at
+   * runtime) so the native slide lines up with the PNG.
    */
   function computeLayout(st) {
     const G = GEOMETRY;
     const dialAbove = G.rOuter + G.tickGap + G.tickLen + 2; // 440
     const dialBelow = G.hubR;
+    const card = st.background === 'card';
+    const padTop = card ? G.cardInset + G.cardPad : G.padTop;
+    const padBottom = card ? G.cardInset + G.cardPad : G.padBottom;
 
     // Measure the text stack (independent of scale).
     let cursor = 0; // distance below the hub's bottom edge
@@ -285,9 +303,11 @@
     }
     const stack = cursor;
 
-    const avail = G.H - G.padTop - G.padBottom - stack;
+    const avail = G.H - padTop - padBottom - stack;
     const s = clamp(avail / (dialAbove + dialBelow), 0.5, 1);
-    const hubY = Math.min(G.cy, G.H - G.padBottom - stack - dialBelow * s);
+    const block = (dialAbove + dialBelow) * s + stack;      // dial + text, scaled
+    const top = (G.H - block) / 2;                          // equal margins
+    const hubY = top + dialAbove * s;
     const hubBottom = hubY + dialBelow * s;
 
     return {
@@ -295,6 +315,8 @@
       hubX: G.cx,
       hubY,
       hubBottom,
+      top,
+      bottom: top + block,
       numberY: numberBaseline == null ? null : hubBottom + numberBaseline,
       chipY: chipCy == null ? null : hubBottom + chipCy,
       labelY: labelBaseline == null ? null : hubBottom + labelBaseline,
@@ -438,7 +460,7 @@
     /* ---- dial group (scaled/shifted by the layout) ---------------- */
     const dial = [];
     const dialTransform =
-      L.scale === 1 && L.hubY === G.cy
+      L.scale === 1 && L.hubY === G.cy && L.hubX === G.cx
         ? ''
         : ' transform="translate(' + num(L.hubX) + ' ' + num(L.hubY) + ') scale(' + num(L.scale) + ') translate(' + (-G.cx) + ' ' + (-G.cy) + ')"';
 
@@ -450,16 +472,20 @@
       { key: 'warn', a: valueToAngle(t1), b: valueToAngle(t2), first: false, last: false },
       { key: 'good', a: valueToAngle(t2), b: valueToAngle(100), first: false, last: true }
     ];
+    // Gauge angle decreases with value; each interior boundary is shortened by
+    // half a gap. A segment without visible extent (threshold at 0/100, or
+    // t1 = t2) is skipped – and a boundary only gets its half gap when a drawn
+    // segment lies beyond it, so the arc still ends flat at 0 % and 100 %.
+    const visible = segs.map((seg) => (seg.first ? seg.a : seg.a - half) - (seg.last ? seg.b : seg.b + half) >= 0.05);
     const arcShapes = [];
-    for (const seg of segs) {
-      // Gauge angle decreases with value; shorten each interior boundary by half a gap.
-      const a = seg.first ? seg.a : seg.a - half;
-      const b = seg.last ? seg.b : seg.b + half;
-      if (a - b < 0.05) continue; // segment has no visible extent
+    segs.forEach((seg, i) => {
+      if (!visible[i]) return;
+      const a = visible.slice(0, i).some(Boolean) ? seg.a - half : seg.a;
+      const b = visible.slice(i + 1).some(Boolean) ? seg.b + half : seg.b;
       const d = annularSectorPath(a, b, G.rInner, G.rOuter);
       const fill = classic ? 'url(#' + id + '-grad-' + seg.key + ')' : COLORS[seg.key];
       arcShapes.push('<path d="' + d + '" fill="' + fill + '"/>');
-    }
+    });
     dial.push('<g' + (classic ? ' filter="url(#' + id + '-arc-shadow)"' : '') + '>' + arcShapes.join('') + '</g>');
 
     /* Motion-blur trail --------------------------------------------- */
@@ -512,45 +538,46 @@
       }
       // Blur just enough to melt the steps between layers (wider steps → softer).
       const blur = clamp(widestPx / 3, 2.5, 9);
+      // Radial mask: faded at the hub (every sweep would pile up there),
+      // solid through the interior, then fading across the band from rInner
+      // to the needle tip so the streak ends softly instead of on a hard arc
+      // and the band only carries a light shadow of the sweep.
       defs.push(
         '<filter id="' + id + '-trail-blur" ' + filterBox + '><feGaussianBlur stdDeviation="' + num(blur) + '"/></filter>',
         '<radialGradient id="' + id + '-trail-fade" gradientUnits="userSpaceOnUse" cx="' + G.cx + '" cy="' + G.cy + '" r="' + G.needleLen + '">' +
         '<stop offset="' + num(G.hubR / G.needleLen) + '" stop-color="#FFFFFF" stop-opacity="0.15"/>' +
         '<stop offset="0.55" stop-color="#FFFFFF" stop-opacity="1"/>' +
-        '<stop offset="1" stop-color="#FFFFFF" stop-opacity="1"/></radialGradient>',
+        '<stop offset="' + num(G.rInner / G.needleLen) + '" stop-color="#FFFFFF" stop-opacity="1"/>' +
+        '<stop offset="1" stop-color="#FFFFFF" stop-opacity="' + num(G.trailBandFade) + '"/></radialGradient>',
         '<mask id="' + id + '-trail-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="' + G.W + '" height="' + G.H + '">' +
         '<rect x="0" y="0" width="' + G.W + '" height="' + G.H + '" fill="url(#' + id + '-trail-fade)"/></mask>'
       );
-      dial.push(
-        '<g mask="url(#' + id + '-trail-mask)"><g filter="url(#' + id + '-trail-blur)">' + layers.join('') + '</g></g>'
-      );
+      const trailGroup = ['<g filter="url(#' + id + '-trail-blur)">' + layers.join('') + '</g>'];
 
-      // Needle echoes: a few soft silhouettes just behind the needle give the
-      // streak its "needle" texture (multi-exposure feel). They are faint and
-      // packed tightly behind the needle (fixed angular offsets, not sweep
-      // fractions) so they melt into the streak instead of reading as a fan of
-      // separate needles; skipped for short sweeps where they would overlap.
+      // Needle echoes: a few silhouettes packed tightly behind the needle
+      // (fixed angular offsets ≤ 1.2° apart, not sweep fractions) and blurred
+      // hard enough to fuse into one soft shadow of the sweep — never a fan of
+      // separate needles over the coloured band. They are solid-filled (a
+      // gradient fill inside the blur filter leaves blocky raster artefacts in
+      // Chromium) and share the radial trail mask for the hub-side fade.
+      // Skipped for short sweeps where they would overlap prev.
       if (absDelta >= 9) {
         const ghostD = ghostPath();
-        const echoes = G.trailEchoes;
         const ghosts = [];
         const dir = delta > 0 ? 1 : -1;
-        for (const [behindDeg, op] of echoes) {
+        for (const [behindDeg, op] of G.trailEchoes) {
           if (behindDeg > absDelta * 0.9) continue;   // never reach past prev
           ghosts.push(
-            '<path d="' + ghostD + '" fill="url(#' + id + '-ghost-grad)" fill-opacity="' + num(clamp(op * strength * fade, 0, 1)) +
+            '<path d="' + ghostD + '" fill="' + COLORS.needle + '" fill-opacity="' + num(clamp(op * strength * fade, 0, 1)) +
             '" transform="' + atAngle(angleNow - dir * behindDeg) + '"/>'
           );
         }
-        defs.push(
-          '<linearGradient id="' + id + '-ghost-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="' + G.needleLen + '" y2="0">' +
-          '<stop offset="0.12" stop-color="' + COLORS.needle + '" stop-opacity="0"/>' +
-          '<stop offset="0.5" stop-color="' + COLORS.needle + '" stop-opacity="0.7"/>' +
-          '<stop offset="1" stop-color="' + COLORS.needle + '" stop-opacity="1"/></linearGradient>',
-          '<filter id="' + id + '-echo-blur" ' + filterBox + '><feGaussianBlur stdDeviation="' + num(G.trailEchoBlur) + '"/></filter>'
-        );
-        dial.push('<g filter="url(#' + id + '-echo-blur)">' + ghosts.join('') + '</g>');
+        if (ghosts.length) {
+          defs.push('<filter id="' + id + '-echo-blur" ' + filterBox + '><feGaussianBlur stdDeviation="' + num(G.trailEchoBlur) + '"/></filter>');
+          trailGroup.push('<g filter="url(#' + id + '-echo-blur)">' + ghosts.join('') + '</g>');
+        }
       }
+      dial.push('<g mask="url(#' + id + '-trail-mask)">' + trailGroup.join('') + '</g>');
     }
 
     /* Prev marker: dashed outline needle + small tick outside the arc. */
@@ -657,23 +684,26 @@
    * Per-frame states for the prev → value spring animation.
    *
    * Returns `frames` motion frames followed by `hold` static frames
-   * (frames + hold states in total). During motion the needle follows
+   * (frames + hold states in total). Defaults: 38 motion + 13 hold frames at
+   * 25 fps — a 40 ms frame period, i.e. a whole number of GIF centiseconds,
+   * so the exported GIF and the on-screen playback run at exactly the same
+   * speed (≈ 2.04 s). During motion the needle follows
    * prev + (value − prev) × ease.spring(t); the trail runs from where the
    * needle was ≈ 0.12 s earlier (velocity streak). As the spring settles the
    * trail origin eases back to `prev`, so the last motion frame is identical
    * to the static render and the hold frames continue seamlessly.
    */
   function animationFrames(state, opts) {
-    const o = Object.assign({ frames: 45, fps: 30, hold: 15 }, opts || {});
+    const o = Object.assign({ frames: 38, fps: 25, hold: 13 }, opts || {});
     const frames = Math.max(1, Math.round(o.frames));
     const hold = Math.max(0, Math.round(o.hold));
-    const fps = o.fps > 0 ? o.fps : 30;
+    const fps = o.fps > 0 ? o.fps : 25;
     const st = normalizeState(state);
     const out = [];
 
     const travel = st.value - st.prev;
     const duration = frames / fps;              // seconds of motion
-    const lag = duration > 0 ? 0.12 / duration : 0; // 0.12 s in normalised time
+    const lag = duration > 0 ? 0.12 / duration : 0; // 0.12 s in normalised time (3 frames at 25 fps)
 
     for (let k = 0; k < frames; k++) {
       const t = frames > 1 ? k / (frames - 1) : 1;

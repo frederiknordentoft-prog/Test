@@ -14,7 +14,7 @@
   /* Brand tokens (light) */
   --ink: #10303B;
   --ink-2: #3C5560;
-  --ink-3: #6E8289;
+  --ink-3: #5C6F77;            /* 5.3:1 on white, 4.7:1 on --card-2 */
   --ground: #F4F4F2;
   --card: #FFFFFF;
   --card-2: #F3F3F1;
@@ -26,6 +26,15 @@
   --warn: #F0A62E;
   --bad: #DE3E2E;
   --needle: #1C1C1E;
+  /* Readout tints for the live delta text – darker than --good/--bad so 15 px text passes 4.5:1 on --card-2 */
+  --delta-up: #157A3C;
+  --delta-down: #B8301F;
+
+  /* Preview stage: the light "slide" plate behind the gauge. Deliberately NOT
+     redefined in the dark theme – the exported artwork has fixed colours made
+     for a light slide, and the preview must always show it that way. */
+  --stage: #F3F3F1;
+  --stage-line: #E1E3E0;
 
   /* Derived UI tokens */
   --accent-hover: #D9912A;
@@ -34,10 +43,11 @@
   --control-on: #10303B;
   --control-knob: #FFFFFF;
   --control-off: #CFD5D3;
+  --control-border: #86938F;   /* ring around an OFF switch: 3.2:1 on white (WCAG 1.4.11) */
   --seg-bg: #EBECEA;
   --seg-on: #FFFFFF;
   --input-bg: #FFFFFF;
-  --input-border: #CBD2D0;
+  --input-border: #86938F;     /* 3.2:1 on white (WCAG 1.4.11) */
   --hover-bg: #F6F7F6;
   --shadow-1: 0 1px 2px rgba(16, 48, 59, 0.06), 0 1px 1px rgba(16, 48, 59, 0.04);
   --shadow-2: 0 8px 24px rgba(16, 48, 59, 0.10), 0 2px 6px rgba(16, 48, 59, 0.06);
@@ -76,11 +86,14 @@
     --ink: #EEF3F4;
     --ink-2: #C4D2D6;
     --ink-3: #8AA0A7;
+    --delta-up: #4CC27A;
+    --delta-down: #F27A6B;
 
     --focus: #E7A23A;
     --control-on: #E7A23A;
     --control-knob: #1A1A1A;
     --control-off: #2F4A53;
+    --control-border: #2F4A53;
     --seg-bg: #0F1C21;
     --seg-on: #23404A;
     --input-bg: #0F1C21;
@@ -104,11 +117,14 @@
   --ink: #EEF3F4;
   --ink-2: #C4D2D6;
   --ink-3: #8AA0A7;
+  --delta-up: #4CC27A;
+  --delta-down: #F27A6B;
 
   --focus: #E7A23A;
   --control-on: #E7A23A;
   --control-knob: #1A1A1A;
   --control-off: #2F4A53;
+  --control-border: #2F4A53;
   --seg-bg: #0F1C21;
   --seg-on: #23404A;
   --input-bg: #0F1C21;
@@ -337,6 +353,13 @@ button:disabled { cursor: not-allowed; }
   border-color: var(--danger);
   background: var(--danger-bg);
 }
+.field__error {
+  margin: var(--space-2) 0 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--danger);
+}
+
 .num-input__suffix {
   position: absolute;
   right: var(--space-3); top: 50%;
@@ -357,7 +380,7 @@ button:disabled { cursor: not-allowed; }
   font-size: 15px;
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
-.text-input::placeholder { color: var(--ink-3); opacity: 0.8; }
+.text-input::placeholder { color: var(--ink-3); opacity: 1; }
 .text-input:hover { border-color: var(--ink-3); }
 .text-input:focus-visible {
   outline: none;
@@ -439,10 +462,12 @@ button:disabled { cursor: not-allowed; }
   background: var(--card-2);
   font-size: 15px;
   font-weight: 600;
-  color: var(--ink-3);
+  color: var(--ink);
 }
-.delta[data-direction="up"] { color: var(--good); }
-.delta[data-direction="down"] { color: var(--bad); }
+/* Only the glyph is tinted; the number stays in --ink and the direction is also in the sign. */
+.delta__glyph { color: var(--ink-3); }
+.delta[data-direction="up"] .delta__glyph { color: var(--delta-up); }
+.delta[data-direction="down"] .delta__glyph { color: var(--delta-down); }
 
 /* --- Switches ----------------------------------------------------------- */
 
@@ -476,6 +501,7 @@ button:disabled { cursor: not-allowed; }
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+.switch[aria-checked="false"] { box-shadow: inset 0 0 0 1px var(--control-border); }
 .switch[aria-checked="true"] { background: var(--control-on); }
 .switch[aria-checked="true"] .switch__knob { transform: translateX(18px); background: var(--control-knob); }
 .switch:hover:not(:disabled) { filter: brightness(0.96); }
@@ -758,10 +784,17 @@ button:disabled { cursor: not-allowed; }
   background: var(--card);
 }
 
+/* The gauge sits on a theme-independent light plate (see --stage above) so
+   the fixed-colour artwork previews the way it will look on a slide, also in
+   dark mode where the card itself turns dark. */
 .slide-card__stage {
   margin: var(--space-4) auto 0;
   max-width: 720px;
   width: 100%;
+  padding: var(--space-2);
+  background: var(--stage);
+  border: 1px solid var(--stage-line);
+  border-radius: var(--radius-l);
 }
 .slide-card__stage svg {
   display: block;
@@ -825,7 +858,13 @@ button:disabled { cursor: not-allowed; }
   font-weight: 500;
   line-height: 1.4;
   z-index: 50;
+  /* Rendered but invisible at rest, so the live region exists before text arrives. */
   opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 12px);
+}
+.toast.is-visible {
+  pointer-events: auto;
   animation: toast-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 .toast::before {
@@ -894,6 +933,6 @@ button:disabled { cursor: not-allowed; }
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-  .toast { opacity: 1; }
+  .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
   .progress[data-indeterminate="true"] .progress__bar { width: 100%; opacity: 0.5; animation: none; }
 }

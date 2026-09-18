@@ -301,7 +301,7 @@
    * the capability is unavailable, a normal browser download is triggered.
    * @param {string} name
    * @param {Blob} blob
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>} true when saved, false when the user declined
    */
   async function saveFile(name, blob) {
     if (!(blob instanceof Blob)) throw makeError('no-data', 'Der er ingen fil at gemme.');
@@ -318,13 +318,14 @@
         try {
           await downloads.save({ filename: safeName, data: blob });
         } catch (err) {
-          if (err && err.code === 'declined') return; // user said no — not an error
+          if (err && err.code === 'declined') return false; // user said no — not an error
           throw err;
         }
-        return;
+        return true;
       }
     }
     downloadViaAnchor(safeName, blob);
+    return true;
   }
 
   /**
@@ -385,9 +386,9 @@
    * @param {object} state
    * @param {object} [opts]
    * @param {number}  [opts.width=900]        pixel width (height follows the viewBox ratio)
-   * @param {number}  [opts.fps=30]
-   * @param {number}  [opts.frames=45]        animated frames (spring)
-   * @param {number}  [opts.hold=15]          static frames appended at the end
+   * @param {number}  [opts.fps=25]          25 fps = 40 ms frames, exactly representable in GIF (10 ms units)
+   * @param {number}  [opts.frames=38]        animated frames (spring)
+   * @param {number}  [opts.hold=13]          static frames appended at the end (38 + 13 frames ≈ 2.04 s)
    * @param {string}  [opts.background='#FFFFFF']  solid colour ('card' → card fill)
    * @param {'once'|'forever'} [opts.loop='once']
    * @param {(done:number, total:number)=>void} [opts.onProgress]  called as work steps
@@ -406,18 +407,18 @@
 
     const {
       width = 900,
-      fps = 30,
-      frames = 45,
-      hold = 15,
+      fps = 25,
+      frames = 38,
+      hold = 13,
       background = '#FFFFFF',
       loop = 'once',
       onProgress = null,
     } = opts;
 
     const merged = fullState(state);
-    const safeFps = clamp(num(fps, 30), 1, 60);
-    const safeFrames = Math.max(2, Math.round(num(frames, 45)));
-    const safeHold = Math.max(0, Math.round(num(hold, 15)));
+    const safeFps = clamp(num(fps, 25), 1, 60);
+    const safeFrames = Math.max(2, Math.round(num(frames, 38)));
+    const safeHold = Math.max(0, Math.round(num(hold, 13)));
 
     const frameStates = G.animationFrames(merged, { frames: safeFrames, fps: safeFps, hold: safeHold });
     if (!Array.isArray(frameStates) || frameStates.length === 0) {
@@ -431,7 +432,9 @@
     const h = Math.max(16, Math.round(w * vbH / vbW));
     const bg = solidColor(background);
     // Browsers treat GIF delays of ≤ 10 ms as 100 ms; 20 ms is the safe floor.
-    const delay = Math.max(20, Math.round(1000 / safeFps));
+    // GIF stores delays in whole centiseconds, so round to 10 ms here (the
+    // default 25 fps → exactly 40 ms) and hand the same value to every frame.
+    const delay = Math.max(20, Math.round(1000 / safeFps / 10) * 10);
     const repeat = loop === 'forever' ? 0 : -1; // -1 = no NETSCAPE loop block = play once
 
     const total = frameStates.length;

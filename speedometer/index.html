@@ -75,6 +75,7 @@
                    aria-label="Nuværende værdi, skyder">
           </div>
           <p class="field__hint visually-hidden" id="value-hint">0 til 100 procent. Brug komma eller punktum som decimaltegn.</p>
+          <p class="field__error" id="value-error" hidden>Indtast et tal mellem 0 og 100</p>
         </div>
 
         <!-- 2. Previous value -->
@@ -92,13 +93,14 @@
             <input class="slider" type="range" id="prev-slider" min="0" max="100" step="0.5" value="48"
                    aria-label="Forrige værdi, skyder">
           </div>
+          <p class="field__error" id="prev-error" hidden>Indtast et tal mellem 0 og 100</p>
           <button class="link-button" type="button" id="use-last-export" hidden>
             Brug sidste eksport som forrige
           </button>
         </div>
 
         <!-- 3. Live delta -->
-        <p class="delta num" id="delta-readout" aria-live="polite">▲ +14 procentpoint</p>
+        <p class="delta num" id="delta-readout" aria-live="polite" data-direction="up"><span class="delta__glyph" aria-hidden="true">▲</span> <span class="visually-hidden">Stigning på </span><span aria-hidden="true">+</span>14 procentpoint</p>
 
         <hr class="divider">
 
@@ -153,6 +155,7 @@
                   <input class="num-input__field num" type="text" inputmode="decimal" autocomplete="off" id="t1-input" value="33,3">
                   <span class="num-input__suffix" aria-hidden="true">%</span>
                 </div>
+                <p class="field__error" id="t1-error" hidden>Indtast et tal mellem 0 og 100</p>
               </div>
               <div class="field field--small">
                 <label class="field__label" for="t2-input">Gul til</label>
@@ -160,6 +163,7 @@
                   <input class="num-input__field num" type="text" inputmode="decimal" autocomplete="off" id="t2-input" value="66,7">
                   <span class="num-input__suffix" aria-hidden="true">%</span>
                 </div>
+                <p class="field__error" id="t2-error" hidden>Indtast et tal mellem 0 og 100</p>
               </div>
             </div>
 
@@ -268,7 +272,8 @@
           <input class="slide-card__title" type="text" id="preview-title" value="Resultater" maxlength="60"
                  aria-label="Korttitel (vises kun her, ikke i eksporten)" title="Korttitel – kun i forhåndsvisningen">
 
-          <div class="slide-card__stage" id="gauge-stage" aria-label="Speedometer" role="img"></div>
+          <!-- Plain container: the rendered <svg role="img"> carries the accessible name/description. -->
+          <div class="slide-card__stage" id="gauge-stage"></div>
 
           <div class="slide-card__foot">
             <p class="slide-card__caption num" id="preview-caption">Forrige 48 % → Nu 62 %</p>
@@ -286,8 +291,8 @@
     </main>
   </div>
 
-  <!-- Toast (screen readers hear it through aria-live) -->
-  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <!-- Toast: always rendered (faded out at rest) so the live region exists before a message is injected -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
     <span class="toast__text" id="toast-text"></span>
   </div>
 
