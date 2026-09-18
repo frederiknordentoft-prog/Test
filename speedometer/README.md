@@ -6,6 +6,8 @@ Ingen installation, ingen server, ingen konto. Alt sker lokalt i din browser og 
 
 ## Sådan åbner du det
 
+Online-version (kræver login på claude.ai): https://claude.ai/artifact/YXem9FKDMpLmjfQEuMsbEo – samme værktøj, intet at downloade. Downloads fra den version går gennem claude.ai's gem-dialog.
+
 1. Dobbeltklik på `dist/speedometer.html` – det åbner i din standardbrowser (Chrome, Edge, Safari eller Firefox).
 2. Filen kan ligge hvor som helst (skrivebord, OneDrive, et delt drev) og sendes som én fil til kolleger.
 
