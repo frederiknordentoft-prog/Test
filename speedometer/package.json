@@ -1,0 +1,9 @@
+{
+  "name": "ds-speedometer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node tests/verify.mjs"
+  }
+}
