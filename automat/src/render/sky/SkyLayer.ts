@@ -146,6 +146,11 @@ export class SkyLayer extends Container {
   auroraScale = 0.5;
   /** Draw the live aurora every N-th displayed frame (1 = 60 Hz, 2 = 30 Hz on low tiers). */
   auroraEvery = 1;
+  /**
+   * Calm mode (game's "Rolig tilstand"): no shimmer at all, curtain / ray / fold motion at ×0.5,
+   * softer travelling surges and a dimmer, slower CME front. Safe to toggle at any time.
+   */
+  calm = false;
 
   private readonly r: Renderer;
   private readonly comp: Pass;
@@ -160,7 +165,7 @@ export class SkyLayer extends Container {
   private dirtyStatic = true; private dirtyLand = true; private dirtyAur = true;
   private busy = false;
   private frameN = 0;
-  private phase = 0; private fast = 0; private lastT = Number.NaN;
+  private phase = 0; private fast = 0; private foldPh = 0; private lastT = Number.NaN;
   private readonly tier: SkyTier = { intensity: 0, speed: 0, fold: 0, red: 0, violet: 0, stars: 0, crackle: 0 };
   private readonly env: RGB[] = [[0.24, 1, 0.69], [0.1, 0.89, 0.84], [0.1, 0.89, 0.84]];
   // scratch colours
@@ -186,7 +191,7 @@ export class SkyLayer extends Container {
     this.stat = new Pass('static', STATIC_FRAG, {});
     this.land = new Pass('land', LAND_FRAG, { uL: v4(), uL2: v4() });
     this.aur = new Pass('aurora', AURORA_FRAG, {
-      uP: v4(), uA: v4(), uB: v4(), uC: v4(), uSeam: v4(), uCSeam: v3(), uCBody: v3(), uCTop: v3(), uCFringe: v3(), uSSeam: v3(), uSBody: v3(), uSTop: v3(), uSFringe: v3(), uSun: v4(), uCme: v4(),
+      uP: v4(), uA: v4(), uB: v4(), uC: v4(), uQ: v4(), uFx: v4(), uSeam: v4(), uCSeam: v3(), uCBody: v3(), uCTop: v3(), uCFringe: v3(), uSSeam: v3(), uSBody: v3(), uSTop: v3(), uSFringe: v3(), uSun: v4(), uCme: v4(),
     });
     this.comp = new Pass('composite', COMP_FRAG, {
       uK: v4(), uK2: v4(), uLight: v3(), uHaze: v3(), uGlowC: v3(), uSun: v4(), uCme: v4(), uL: v4(),
@@ -228,12 +233,16 @@ export class SkyLayer extends Container {
     // motion phase is integrated so speed changes never make the curtains lurch
     const t = p.time;
     const dt = t - this.lastT;
-    const speed = T.speed * (1 + 1.5 * storm);
-    const fastSpeed = 1 + 3 * storm + 2 * T.crackle;
-    if (!(dt >= 0 && dt < 0.5)) { this.phase = t * speed; this.fast = t * fastSpeed; }
-    else { this.phase += dt * speed; this.fast += dt * fastSpeed; }
+    // photosensitivity: all brightness modulation is slow (< 1 Hz) and small; the storm is violent through
+    // motion and shape (speed, folds, turbulence), never through strobing. Crackle does not drive any flicker.
+    const calm = this.calm;
+    const speed = T.speed * (1 + 0.9 * storm) * (calm ? 0.5 : 1);
+    const fastSpeed = calm ? 0 : 0.6;
+    const foldSpeed = T.speed * (1 + 0.3 * storm) * (calm ? 0.5 : 1);  // folds evolve slowly even in the storm
+    if (!(dt >= 0 && dt < 0.5)) { this.phase = t * speed; this.fast = t * fastSpeed; this.foldPh = t * foldSpeed; }
+    else { this.phase += dt * speed; this.fast += dt * fastSpeed; this.foldPh += dt * foldSpeed; }
     this.lastT = t;
-    this.phase %= 20000; this.fast %= 20000;
+    this.phase %= 20000; this.fast %= 20000; this.foldPh %= 20000;
 
     // ---- colours: base (tier) set and Solstorm set; blended in OKLab for the CPU-side mix ----
     const red = T.red, violet = T.violet;
@@ -261,7 +270,13 @@ export class SkyLayer extends Container {
     const a = this.aur.u;
     const P = a.uP as Float32Array; P[0] = this.phase; P[1] = this.fast; P[2] = t % TIME_WRAP; P[3] = storm;
     const A = a.uA as Float32Array; A[0] = inten; A[1] = Math.min(1.2, T.fold + 0.25 * storm); A[2] = topMix; A[3] = Math.min(1, violet + storm);
-    const B = a.uB as Float32Array; B[0] = Math.min(1, T.crackle * 0.6 + storm * 0.7); B[1] = 1.15 + 0.5 * T.fold + 0.4 * storm; B[2] = 1 + 0.1 * glow; B[3] = storm * 1.2 + T.crackle * 0.35;
+    const B = a.uB as Float32Array; B[0] = Math.min(1, T.crackle * 0.6 + storm * 0.7); B[1] = 1.15 + 0.5 * T.fold + 0.4 * storm; B[2] = 1 + 0.1 * glow; B[3] = storm * 0.9 + T.crackle * 0.3;
+    (a.uQ as Float32Array)[0] = this.foldPh;
+    const Fx = a.uFx as Float32Array;
+    Fx[0] = calm ? 0 : 0.05 * Math.min(1, T.crackle + storm);           // shimmer amplitude (±5 % max)
+    Fx[1] = (0.3 - 0.14 * storm) * (calm ? 0.5 : 1);                     // travelling surge amplitude
+    Fx[2] = calm ? 0.55 : 1;                                             // CME brightness
+    Fx[3] = calm ? 0.4 : 1;                                              // CME turbulence speed
     const Cc = a.uC as Float32Array; Cc[0] = smooth(0, 0.8, red) * (1 - 0.35 * storm) + 0.35 * storm; Cc[1] = T.crackle * (1 - storm);
     set3(a.uCSeam as Float32Array, this.bSeam);
     set3(a.uCBody as Float32Array, this.bBody);

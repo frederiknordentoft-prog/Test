@@ -7,7 +7,13 @@ import {
   type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, lin, glide, shaper, bell, chimeVoice, gong, brass, aah, prng,
 } from './dsp.ts';
 
-export interface SfxAsset { ch: 1 | 2; dur: number; div?: 1 | 2 | 4; build(ctx: Ctx, out: AudioNode): void }
+export interface SfxAsset {
+  ch: 1 | 2; dur: number;
+  div?: 1 | 2 | 4;   // bandwidth hint: render at hw/div everywhere
+  minRate?: number;  // floor for the hinted rate (default 11 kHz)
+  liteRate?: number; // lite devices: render rate for unhinted one-shots (default 32 kHz, audited)
+  build(ctx: Ctx, out: AudioNode): void;
+}
 
 /** Bell zones (MIDI) for 'land': any target pitch is ≤ 2.5 semitones from a zone. */
 export const LAND_ZONES = [69, 74, 79, 84, 89, 94];
@@ -219,7 +225,7 @@ for (const v of [0, 1]) {
 }
 
 A.anticipation = {
-  ch: 2, dur: 3.1, div: 2,
+  ch: 2, dur: 3.1, div: 2, minRate: 22000,
   build(ctx, out) {
     const lpL = filt(ctx, 'lowpass', 350, 3.2), lpR = filt(ctx, 'lowpass', 350, 3.2);
     for (const lp of [lpL, lpR]) glide(lp.frequency, 0, 320, 2300, 2.3);
@@ -407,7 +413,7 @@ A.stormWin = {
 
 // ------------------------------------------------------------------ storm set
 A.stormSwell = {
-  ch: 1, dur: 2.7, div: 4,
+  ch: 1, dur: 2.7, div: 2, minRate: 22000,
   build(ctx, out) {
     const env = gain(ctx, 0);
     env.gain.setValueAtTime(0.0008, 0);
@@ -676,7 +682,7 @@ function crackle(ctx: Ctx, out: AudioNode, t0: number, dur: number, rate: number
 }
 
 A.reform = {
-  ch: 2, dur: 2.0, div: 2,
+  ch: 2, dur: 2.0, div: 2, minRate: 22000,
   build(ctx, out) {
     const lp = filt(ctx, 'lowpass', 250, 1.5);
     glide(lp.frequency, 0, 240, 1500, 1.2);

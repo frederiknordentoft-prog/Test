@@ -50,6 +50,8 @@ export interface SaveData {
   stats: Stats;
   activeStorm: ActiveStorm | null;
   lastPlayed: number;
+  /** Last real spin (retention of the meter is 365 days after this, not after any save). */
+  lastSpinAt: number;
 }
 
 export const START_BALANCE_ORE = 100_000; // 1.000,00 kr legepenge
@@ -57,6 +59,8 @@ const KEY = 'nordlys.v1';
 const RETAIN_MS = 365 * 24 * 3600 * 1000;
 
 export let storageOk = true;
+/** Set when a saved meter expired (365 days after the last spin) — the game shows a notice. */
+export let expiredOnLoad = false;
 
 export function defaults(seed: number, stakeOre: number): SaveData {
   return {
@@ -72,6 +76,7 @@ export function defaults(seed: number, stakeOre: number): SaveData {
     stats: { spins: 0, storms: 0, bestWinX: 0, highestKp: 0 },
     activeStorm: null,
     lastPlayed: Date.now(),
+    lastSpinAt: Date.now(),
   };
 }
 
@@ -83,7 +88,8 @@ export function load(seed: number, stakeOre: number): SaveData {
     const s = JSON.parse(raw) as SaveData;
     if (s.v !== 1) return d;
     // Progress retained for 365 days after the last spin (rules §3).
-    if (Date.now() - (s.lastPlayed || 0) > RETAIN_MS) {
+    if (Date.now() - (s.lastSpinAt || s.lastPlayed || 0) > RETAIN_MS) {
+      if (s.meter.charge > 0) expiredOnLoad = true;
       s.meter = { charge: 0, stakeSumOre: 0 };
       s.perksPending = 0;
     }

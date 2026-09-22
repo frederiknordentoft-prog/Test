@@ -26,7 +26,13 @@ export function prng(seed: number): () => number {
 
 // ------------------------------------------------------------------ buffers
 const noiseCache = new WeakMap<Ctx, Map<string, AudioBuffer>>();
-/** Seeded white-noise buffer (cached per context). */
+/**
+ * Amplitude scale that keeps white-noise power per Hz independent of the render rate (a 24 kHz render
+ * would otherwise put 2× the noise density into the audible band as a 48 kHz one).
+ */
+export const noiseScale = (sr: number): number => Math.sqrt(sr / 48000);
+
+/** Seeded white-noise buffer (cached per context), level-matched across render rates. */
 export function noiseBuf(ctx: Ctx, seconds = 4, seed = 1, ch = 1): AudioBuffer {
   let m = noiseCache.get(ctx);
   if (!m) { m = new Map(); noiseCache.set(ctx, m); }
@@ -35,10 +41,11 @@ export function noiseBuf(ctx: Ctx, seconds = 4, seed = 1, ch = 1): AudioBuffer {
   if (!b) {
     const n = Math.max(1, Math.floor(seconds * ctx.sampleRate));
     b = ctx.createBuffer(ch, n, ctx.sampleRate);
+    const k = noiseScale(ctx.sampleRate);
     for (let c = 0; c < ch; c++) {
       const r = prng(seed * 7919 + c * 104729);
       const d = b.getChannelData(c);
-      for (let i = 0; i < n; i++) d[i] = r() * 2 - 1;
+      for (let i = 0; i < n; i++) d[i] = (r() * 2 - 1) * k;
     }
     m.set(key, b);
   }

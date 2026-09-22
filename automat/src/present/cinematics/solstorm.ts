@@ -22,6 +22,7 @@ export interface CineWorld {
   banners: Container;
   impactPoint: () => { x: number; y: number }; // grid centre (screen px)
   gridTop: () => number;            // y of the grid's top edge (screen px)
+  titleBand: () => { top: number; height: number }; // free band above the grid (the Kp-arc slot, hidden in cine mode)
   screen: () => { w: number; h: number };
   buildStormStage: () => void;      // configure 8×8 storm grid + storm frame (hidden)
   revealFrame: (tl: gsap.core.Timeline, at: number) => void; // molten frame draw-in
@@ -44,7 +45,9 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
   let resolveDone!: () => void;
   const done = new Promise<void>((r) => (resolveDone = r));
   const startedWall = performance.now();
-  const canSkip = () => viewedOnce && performance.now() - startedWall > 1500;
+  let skipped = false;
+  // Skippable from the 2nd viewing, after 1.5 s, and only before the reform (never seek backwards).
+  const canSkip = () => !skipped && viewedOnce && performance.now() - startedWall > 1500 && tl.time() < 3.4;
 
   const { w: W, h: H } = w.screen();
   const logoSize = Math.max(30, Math.min(W, 720) * 0.1);
@@ -53,11 +56,11 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
   const sub = new IsText({ text: 'G5 · EKSTREM', size: subSize, style: 'plasma', tracking: 0.3 });
   const kpTxt = new IsText({ text: 'KP 9', size: Math.max(28, Math.min(W, 720) * 0.09), style: 'plasma' });
   for (const t of [logo, sub, kpTxt]) { t.alpha = 0; w.banners.addChild(t); }
-  // Stack above the grid (the demo watermark sits right on the grid's top edge).
-  const subY = w.gridTop() - 24 - subSize * 0.6;
-  const logoY = Math.max(64 + logoSize * 0.6, subY - subSize * 0.9 - logoSize * 0.75);
+  // Title lives in the Kp-arc band (the DOM chip is hidden in cine mode), subtitle just under it.
+  const band = w.titleBand();
+  const logoY = band.top + Math.max(logoSize * 0.62, band.height * 0.42);
   logo.position.set(W / 2, logoY);
-  sub.position.set(W / 2, Math.max(subY, logoY + logoSize * 0.75 + subSize * 0.7));
+  sub.position.set(W / 2, Math.min(logoY + logoSize * 0.82 + subSize * 0.4, w.gridTop() - subSize * 0.9 - 10));
   kpTxt.position.set(W / 2, H * 0.42);
 
   const cleanup = () => {
@@ -65,7 +68,8 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
     w.uber.cinematic = false;
     w.uber.zoom = 0; w.uber.glitch = 0; w.uber.exposure = 0; w.uber.heat = 0;
     w.uber.rings.fill(0);
-    kpTxt.destroy();
+    w.sky.cme = 0;
+    if (!kpTxt.destroyed) kpTxt.destroy();
     gsap.to([logo, sub], { alpha: 0, duration: 0.8, delay: 1.4, onComplete: () => { logo.destroy(); sub.destroy(); } });
   };
 
@@ -190,7 +194,9 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
 
   const skip = () => {
     if (!canSkip()) return;
-    // applyState('reform'): set everything explicitly, then continue from the reform label.
+    skipped = true;
+    // Seek FIRST (suppressing callbacks), then applyState('reform') explicitly so no tween overwrites it.
+    tl.seek('reform', true);
     w.shatter.stop();
     w.hideForShatter(false);
     w.buildStormStage();
@@ -205,7 +211,6 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
     A.play('reform', { when: t0s + 3.4 });
     logo.letters.forEach((_L: Container, i: number) => A.play('letterSlam', { when: t0s + 3.75 + i * 0.07, gain: 0.8 }));
     A.startStorm(t0s + 5.6);
-    tl.seek('reform', true);
   };
   void crand;
   return { done, skip, canSkip };

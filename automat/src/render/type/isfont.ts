@@ -9,8 +9,8 @@
 // render — tween letter.scale / rotation / alpha / position freely. Changing `.text`
 // rewrites the quads in place (no allocation unless the text grows past its capacity).
 import {
-  Buffer, BufferUsage, Container, Geometry, Mesh, Rectangle, RenderTexture, Shader, UniformGroup,
-  type DestroyOptions, type Renderer,
+  Buffer, BufferUsage, Container, Geometry, Matrix, Mesh, Rectangle, RenderTexture, Shader, UniformGroup,
+  type DestroyOptions, type Renderer, type Texture,
 } from 'pixi.js';
 import { getAtlas, penAt, type IsAtlas } from './atlas.ts';
 import { CAP } from './glyphs.ts';
@@ -440,8 +440,30 @@ export class IsText extends Container {
     }
   }
 
+  /**
+   * Local-space rectangle that covers everything this text draws (glyph cells incl. the
+   * glow / shadow margin, decor quads). Current letter transforms are included.
+   */
+  drawBounds(out = new Rectangle()): Rectangle {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    const v = this._v;
+    for (let q = 0; q < this._used; q++) {
+      for (let c = 0; c < 4; c++) {
+        const o = q * QUAD + c * FLOATS;
+        if (v[o] < x0) x0 = v[o]; if (v[o] > x1) x1 = v[o];
+        if (v[o + 1] < y0) y0 = v[o + 1]; if (v[o + 1] > y1) y1 = v[o + 1];
+      }
+    }
+    if (x0 > x1) { x0 = x1 = y0 = y1 = 0; }
+    out.x = x0; out.y = y0; out.width = x1 - x0; out.height = y1 - y0;
+    return out;
+  }
+
   /** Per-frame (onRender): fold changed letter transforms into the buffer, tick the clock. */
   private _sync = (): void => {
+    // hidden text (e.g. the grid's mark labels at alpha 0): nothing to do; any pending
+    // letter / reveal changes are picked up on the first visible frame
+    if (!this.visible || this.localAlpha <= 0) return;
     this._u[U_TIME] = clockFn();
     const n = this.letters.length;
     let dirty = false;
@@ -466,4 +488,97 @@ export class IsText extends Container {
     this._geom.destroy(true);
     super.destroy({ children: true, ...(typeof options === 'object' ? options : {}) });
   }
+}
+
+// ====================================================================== label textures
+// Static strings (mark labels ×2…×128, small fixed captions) baked once into a cached
+// RenderTexture at the renderer's resolution and drawn with plain, batchable Sprites.
+// Same glyphs / bevel / outline / glow as IsText (decor off). Sprite anchor 0.5 = the
+// visual centre of the cap height, exactly like an IsText's position.
+
+interface LabelEntry { rt: RenderTexture; text: string; style: IsStyle; cap: number; res: number }
+interface LabelCache { map: Map<string, LabelEntry>; pending: boolean }
+const labelCaches = new WeakMap<Renderer, LabelCache>();
+let scratch: IsText | null = null;
+const scratchBounds = new Rectangle();
+const scratchMatrix = new Matrix();
+
+const labelKey = (text: string, style: IsStyle, cap: number) => text + '|' + style + '|' + cap;
+const roundCap = (capPx: number) => Math.max(1, Math.round(capPx * 2) / 2); // nearest 0.5 px
+
+function labelCache(renderer: Renderer): LabelCache {
+  let c = labelCaches.get(renderer);
+  if (!c) {
+    c = { map: new Map(), pending: false };
+    labelCaches.set(renderer, c);
+    const cache = c;
+    // GPU content is lost with the context; the resolution can change on resize —
+    // re-render every cached label (deferred a frame so all systems are ready again)
+    const again = () => {
+      if (cache.pending) return;
+      cache.pending = true;
+      requestAnimationFrame(() => { cache.pending = false; invalidateIsLabels(renderer); });
+    };
+    renderer.runners.contextChange.add({ contextChange: again } as never);
+    renderer.runners.resolutionChange.add({ resolutionChange: again } as never);
+  }
+  return c;
+}
+
+function renderLabel(renderer: Renderer, e: LabelEntry, create: boolean): void {
+  if (!scratch || scratch.destroyed) scratch = new IsText({ text: '', size: e.cap, style: e.style, decor: false });
+  const t = scratch;
+  t.size = e.cap;
+  t.style = e.style;
+  t.text = e.text;
+  t.reveal = 1; t.glow = 1; t.sweep = -0.2;
+  const b = t.drawBounds(scratchBounds);
+  // symmetric around the visual centre so anchor 0.5 lands on it
+  const hw = Math.ceil(Math.max(-b.x, b.x + b.width) + 1);
+  const hh = Math.ceil(Math.max(-b.y, b.y + b.height) + 1);
+  const res = renderer.resolution;
+  if (create) e.rt = RenderTexture.create({ width: hw * 2, height: hh * 2, resolution: res, antialias: false, label: 'isLabel' });
+  else if (e.res !== res || e.rt.width !== hw * 2 || e.rt.height !== hh * 2) e.rt.resize(hw * 2, hh * 2, res);
+  e.res = res;
+  scratchMatrix.identity().translate(hw, hh);
+  renderer.render({ container: t, target: e.rt, clear: true, clearColor: [0, 0, 0, 0], transform: scratchMatrix });
+}
+
+/**
+ * Cached texture of `text` in the IsText look (no logo decor), for a plain Sprite with
+ * anchor 0.5. `capPx` = cap height in CSS px (rounded to 0.5 px for the cache key).
+ * Rendered at renderer.resolution; re-rendered automatically after context loss or a
+ * resolution change (same Texture object, so existing sprites keep working).
+ */
+export function isLabelTexture(renderer: Renderer, text: string, style: IsStyle, capPx: number): Texture {
+  const cap = roundCap(capPx);
+  const c = labelCache(renderer);
+  const key = labelKey(text, style, cap);
+  let e = c.map.get(key);
+  if (!e) {
+    e = { rt: null as unknown as RenderTexture, text, style, cap, res: 0 };
+    renderLabel(renderer, e, true);
+    c.map.set(key, e);
+  } else if (e.res !== renderer.resolution) renderLabel(renderer, e, false);
+  return e.rt;
+}
+
+/** Bake every text × style combination up front (e.g. ×2…×128 in ice/gold/plasma). */
+export function prewarmIsLabels(renderer: Renderer, texts: string[], styles: IsStyle[], capPx: number): void {
+  for (const st of styles) for (const tx of texts) isLabelTexture(renderer, tx, st, capPx);
+}
+
+/** Re-render all cached labels (called automatically on contextChange / resolutionChange). */
+export function invalidateIsLabels(renderer: Renderer): void {
+  const c = labelCaches.get(renderer);
+  if (!c) return;
+  for (const e of c.map.values()) if (!e.rt.destroyed) renderLabel(renderer, e, false);
+}
+
+/** Destroy every cached label texture of this renderer (sprites using them must be gone). */
+export function releaseIsLabels(renderer: Renderer): void {
+  const c = labelCaches.get(renderer);
+  if (!c) return;
+  for (const e of c.map.values()) e.rt.destroy(true);
+  c.map.clear();
 }

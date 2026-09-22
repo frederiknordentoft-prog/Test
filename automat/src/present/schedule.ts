@@ -62,8 +62,10 @@ export function landTimes(cols: number, anticipation: { fromCol: number } | null
   return out;
 }
 
-export function schedule(r: SpinResult): { beats: Beat[]; resultAt: number; profile: Profile } {
-  const profile = profileOf(r.totalOre, r.stakeOre);
+/** `paidOre` = what the player actually paid for this spin (0 for a free Ladet spin / storm spin). */
+export function schedule(r: SpinResult, paidOre: number = r.stakeOre): { beats: Beat[]; resultAt: number; profile: Profile } {
+  const profile = profileOf(r.totalOre, paidOre);
+  const netto = r.mode === 'base' && paidOre > 0; // the Netto line only exists for paid base spins
   const warm = profile === 'win';
   const beats: Beat[] = [];
   beats.push({ t: 0, kind: 'dropOut' });
@@ -90,14 +92,14 @@ export function schedule(r: SpinResult): { beats: Beat[]; resultAt: number; prof
     running += st.stepWinOre;
     beats.push({ t: t + T.highlight + 0.05, kind: 'motes', step: k });
     beats.push({ t: t + T.highlight + 0.18, kind: 'markUp', step: k, warm });
-    if (warm && !crossed && running > r.stakeOre) { crossed = true; beats.push({ t: t + T.highlight + 0.1, kind: 'nettoCross', step: k, running }); }
+    if (warm && netto && !crossed && running > paidOre) { crossed = true; beats.push({ t: t + T.highlight + 0.1, kind: 'nettoCross', step: k, running }); }
     beats.push({ t: t + T.fallAfter, kind: 'fall', step: k, running });
     beats.push({ t: t + T.fallAfter + 0.05, kind: 'refill', step: k });
     t += T.stepGap;
   });
   if (r.sunPayOre > 0) {
     beats.push({ t, kind: 'sunPay', warm });
-    if (warm && !crossed && r.totalOre > r.stakeOre) { crossed = true; beats.push({ t: t + 0.1, kind: 'nettoCross', running: r.totalOre }); }
+    if (warm && netto && !crossed && r.totalOre > paidOre) { crossed = true; beats.push({ t: t + 0.1, kind: 'nettoCross', running: r.totalOre }); }
     t += 0.9;
   }
   const resultAt = Math.max(T.floor, t + 0.05);

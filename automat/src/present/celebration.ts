@@ -20,6 +20,7 @@ export class Celebration extends Container {
   private startedAt = 0;
   private needsContinue = false;
   private w = 0; private cy = 0;
+  private demoTag: IsText | null = null;
   active = false;
 
   constructor() {
@@ -50,22 +51,29 @@ export class Celebration extends Container {
   }
 
   /** Returns a promise that resolves when the celebration ends (auto, skip or continue). */
-  play(tier: number, totalOre: number, stakeOre: number, o: { audio: GameAudio; particles: Particles; storm: boolean; calm: boolean; onNeedsContinue: (b: boolean) => void }): Promise<void> {
+  play(tier: number, totalOre: number, stakeOre: number, o: { audio: GameAudio; particles: Particles; storm: boolean; calm: boolean; demo?: boolean; onNeedsContinue: (b: boolean) => void; onCount?: (ore: number) => void }): Promise<void> {
     this.kill();
     const s = Math.min(this.w, 700);
-    const titleSize = Math.max(22, s * (tier >= 4 ? 0.085 : 0.07));
-    // Rebuild texts at the right size (cheap; glyph sprites come from the shared SDF atlas).
-    this.title.destroy(); this.amount.destroy();
-    this.title = new IsText({ text: TIER_NAMES[tier], size: titleSize, style: o.storm ? 'molten' : 'gold' });
-    this.amount = new IsText({ text: '0,00 KR', size: Math.max(18, s * 0.06), style: o.storm ? 'molten' : 'gold' });
+    // The amount is the hero; the tier name is the eyebrow.
+    const titleSize = Math.max(18, s * (tier >= 4 ? 0.065 : 0.055));
+    const amountSize = Math.max(28, s * (tier >= 4 ? 0.12 : 0.1));
+    this.title.destroy(); this.amount.destroy(); this.demoTag?.destroy(); this.demoTag = null;
+    this.title = new IsText({ text: TIER_NAMES[tier], size: titleSize, style: o.storm ? 'molten' : 'gold', tracking: 0.12 });
+    this.amount = new IsText({ text: '0,00 KR', size: amountSize, style: o.storm ? 'molten' : 'gold' });
     this.addChild(this.title, this.amount);
-    this.title.position.set(this.w / 2, this.cy - s * 0.07);
-    this.amount.position.set(this.w / 2, this.cy + s * 0.06);
+    this.title.position.set(this.w / 2, this.cy - amountSize * 0.95);
+    this.amount.position.set(this.w / 2, this.cy + amountSize * 0.2);
+    if (o.demo) {
+      this.demoTag = new IsText({ text: 'DEMO · KREDITERES IKKE', size: Math.max(10, s * 0.024), style: 'muted', tracking: 0.2 });
+      this.demoTag.position.set(this.w / 2, this.cy + amountSize * 1.15);
+      this.addChild(this.demoTag);
+    }
     this.visible = true;
     this.active = true;
     this.alpha = 1;
     this.halo.tint = o.storm ? PAL.molten : PAL.gold;
-    this.needsContinue = tier >= 4;
+    // ≥100× needs an explicit "Fortsæt" — except in a storm, whose summary card already asks for it.
+    this.needsContinue = tier >= 4 && !o.storm;
     this.startedAt = performance.now();
     const dur = TIER_SECS[tier];
     const counter = { v: 0 };
@@ -81,7 +89,7 @@ export class Celebration extends Container {
       .fromTo(this.amount, { alpha: 0 }, { alpha: 1, duration: 0.2 }, 0.3)
       .to(counter, {
         v: totalOre, duration: Math.max(0.6, dur - 0.4), ease: tier >= 3 ? 'expo.out' : 'power2.out',
-        onUpdate: () => { this.amount.text = fmtKr(Math.round(counter.v)).toUpperCase(); },
+        onUpdate: () => { this.amount.text = fmtKr(Math.round(counter.v)).toUpperCase(); o.onCount?.(counter.v); },
       }, 0.3)
       .call(() => { o.audio.play('countTick'); }, [], 0.3);
     this.title.reveal = 1;

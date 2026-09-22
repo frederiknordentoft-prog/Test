@@ -37,6 +37,8 @@ console.log('\n=== SFX one-shots (48 kHz, normalised to −1 dBFS peak; mix gain
 console.log(table(r.assets));
 console.log('\n=== Music stems (tiled to 8 bars) ===');
 console.log(table(r.stems));
+console.log('\n=== Reduced-rate audit (vs full-rate render; must be < 0.5 % lost and < 1.5 dB ⅓-oct error) ===');
+console.log(table(r.audit));
 console.log('\n=== Offline full-mix scenarios (through HP 35 Hz → limiter −1 dBFS → ceiling) ===');
 console.log(table(r.scen));
 console.log('\n=== Checks ===');

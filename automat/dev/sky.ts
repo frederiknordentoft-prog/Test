@@ -16,6 +16,7 @@ await app.init({
 });
 document.body.prepend(app.canvas);
 const sky = new SkyLayer(app.renderer);
+(sky as unknown as { calm: boolean }).calm = num('calm', 0) === 1;
 app.stage.addChild(sky);
 
 interface Mock { gridX: number; gridY: number; size: number; hy: number; desktop: boolean; top: number; bottom: number }
@@ -88,3 +89,55 @@ app.ticker.add(() => {
   if (seq === 'cine') cine(t);
   sky.update(P);
 });
+
+// ---------------------------------------------------------------- luminance trace (#trace=1)
+// Fixed-step 60 fps, reads back the frame each step, mean relative luminance (full frame + sky band above
+// the grid), then counts ≥10 % opposing swings (hysteresis on relative change) in any 1 s window.
+if (q.get('trace') === '1') {
+  app.stop();
+  const frames = num('frames', 180), fps = 60;
+  const w = window.innerWidth, h = window.innerHeight;
+  const { Rectangle } = await import('pixi.js');
+  const lin = (c: number) => { const x = c / 255; return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); };
+  const LUT = new Float32Array(256); for (let i = 0; i < 256; i++) LUT[i] = lin(i);
+  const full: number[] = [], band: number[] = [];
+  const TN = 4; const tiles: number[][] = []; for (let k = 0; k < TN * TN; k++) tiles.push([]);
+  const m = measure(w, h);
+  const bandH = Math.max(8, m.gridY);
+  for (let i = 0; i < frames; i++) {
+    P.time = t0 + i / fps;
+    if (seq === 'cine') cine(P.time);
+    sky.update(P);
+    const out = app.renderer.extract.pixels({ target: app.stage, frame: new Rectangle(0, 0, w, h), resolution: 0.25 });
+    const px = out.pixels, W = out.width, H = out.height;
+    const bandRows = Math.round(H * bandH / h);
+    let s = 0, sb = 0, nb = 0;
+    const ts = new Float64Array(TN * TN), tc = new Float64Array(TN * TN);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const o = (y * W + x) * 4;
+      const Y = 0.2126 * LUT[px[o]] + 0.7152 * LUT[px[o + 1]] + 0.0722 * LUT[px[o + 2]];
+      s += Y; if (y < bandRows) { sb += Y; nb++; }
+      const k = Math.min(TN - 1, Math.floor(y * TN / H)) * TN + Math.min(TN - 1, Math.floor(x * TN / W));
+      ts[k] += Y; tc[k]++;
+    }
+    full.push(s / (W * H)); band.push(sb / Math.max(1, nb));
+    for (let k = 0; k < TN * TN; k++) tiles[k].push(ts[k] / Math.max(1, tc[k]));
+  }
+  const swings = (L: number[]) => {
+    const ev: number[] = []; let dir = 0, hi = L[0], lo = L[0];
+    for (let i = 1; i < L.length; i++) {
+      const v = L[i]; hi = Math.max(hi, v); lo = Math.min(lo, v);
+      if (dir !== -1 && v <= hi * 0.9) { ev.push(i); dir = -1; hi = lo = v; }
+      else if (dir !== 1 && v >= lo * 1.1) { ev.push(i); dir = 1; hi = lo = v; }
+    }
+    let maxPerSec = 0;
+    for (let a = 0; a < ev.length; a++) { let n = 0; for (let b = a; b < ev.length && ev[b] - ev[a] < fps; b++) n++; maxPerSec = Math.max(maxPerSec, n); }
+    const mn = Math.min(...L), mx = Math.max(...L);
+    let maxStep = 0; for (let i = 1; i < L.length; i++) maxStep = Math.max(maxStep, Math.abs(L[i] - L[i - 1]) / Math.max(1e-6, L[i - 1]));
+    return { swings: ev.length, maxSwingsPerSec: maxPerSec, min: +mn.toFixed(4), max: +mx.toFixed(4), rangePct: +(100 * (mx - mn) / mx).toFixed(1), maxFrameStepPct: +(100 * maxStep).toFixed(2) };
+  };
+  const tr = tiles.map(swings);
+  let wi = 0; if (q.has('tile')) wi = num('tile', 0); else tr.forEach((t, i) => { const w0 = tr[wi]; if (t.maxSwingsPerSec > w0.maxSwingsPerSec || (t.maxSwingsPerSec === w0.maxSwingsPerSec && t.maxFrameStepPct > w0.maxFrameStepPct)) wi = i; });
+  const worst = { tile: wi, ...tr[wi], series: num('dump', 0) ? tiles[wi].map((v) => +v.toFixed(3)) : undefined };
+  (window as unknown as { __trace: unknown }).__trace = { frames, params: { ...P }, calm: sky.calm, full: swings(full), skyBand: swings(band), worstTile16: worst };
+}

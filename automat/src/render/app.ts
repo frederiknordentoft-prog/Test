@@ -26,12 +26,13 @@ export interface Stage {
   h: number;
 }
 
-export function pickResolution(w: number, h: number): number {
+/** Resolution = min(device DPR, quality cap, pixel budget), never below 1. */
+export function pickResolution(w: number, h: number, cap = 2): number {
   const dpr = window.devicePixelRatio || 1;
   const mobile = Math.min(w, h) < 700;
   const budget = mobile ? 1.8e6 : 3.5e6;
   const px = Math.max(1, w * h);
-  return Math.max(1, Math.min(dpr, 2, Math.sqrt(budget / px)));
+  return Math.max(1, Math.min(dpr, cap, Math.sqrt(budget / px)));
 }
 
 export async function createStage(host: HTMLElement): Promise<Stage> {
@@ -39,8 +40,10 @@ export async function createStage(host: HTMLElement): Promise<Stage> {
   const w = host.clientWidth || window.innerWidth;
   const h = host.clientHeight || window.innerHeight;
   const res = pickResolution(w, h);
+  // MSAA only where it is visible (DPR 1 desktop); at DPR ≥ 2 it would multisample the full-screen
+  // filter textures for ~40 MB and two resolves per frame for no visible gain.
   await app.init({
-    width: w, height: h, resolution: res, autoDensity: true, antialias: true,
+    width: w, height: h, resolution: res, autoDensity: true, antialias: (window.devicePixelRatio || 1) < 2,
     background: '#050B1A', preference: 'webgl', powerPreference: 'high-performance',
     preserveDrawingBuffer: false, autoStart: true, sharedTicker: false,
   });
@@ -75,8 +78,8 @@ export function setCameraSize(st: Stage, w: number, h: number): void {
   st.world.filterArea = new Rectangle(0, 0, w, h);
 }
 
-export function resizeStage(st: Stage, w: number, h: number): void {
-  const res = pickResolution(w, h);
+export function resizeStage(st: Stage, w: number, h: number, cap = 2): void {
+  const res = pickResolution(w, h, cap);
   if (Math.abs(res - st.res) > 0.01) { st.renderer.resolution = res; st.res = res; }
   st.renderer.resize(w, h);
   setCameraSize(st, w, h);

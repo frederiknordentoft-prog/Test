@@ -1,7 +1,7 @@
 // Audio harness: buttons for every SFX + music transport, a post-limiter spectrum/peak meter, and an
 // automated QA suite (#check) that renders every asset and several full-mix scenarios offline.
 import { GameAudio, audio, type Sfx, type PlayOpts, type SchedLog } from '../src/audio/audio.ts';
-import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, assetDiv, RENDER_STATS } from '../src/audio/assets.ts';
+import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, assetRate, isStormAsset, RENDER_STATS } from '../src/audio/assets.ts';
 import { barFrames, grid, BASE_BPM, STORM_BPM } from '../src/audio/music.ts';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -38,6 +38,8 @@ function buildUI(): void {
   btn(r, 'duck −40 / 0.06', () => A.duck(-40, 0.06));
   btn(r, 'duck 0', () => A.duck(0, 0.3));
   r = section('Storm');
+  btn(r, 'prepareStorm()', () => { const t = performance.now(); void A.prepareStorm().then(() => log(`storm core ready in ${Math.round(performance.now() - t)} ms`)); }, 'storm');
+  btn(r, 'releaseStorm()', () => A.releaseStorm(), 'storm');
   btn(r, 'startStorm(now+1)', () => A.startStorm(A.now() + 1), 'storm');
   for (const x of [2, 8, 32, 128]) btn(r, `stormLevel ×${x}`, () => A.stormLevel(x), 'storm');
   btn(r, 'stopStorm → fade → startBase(3 s)', () => { A.stopStorm(); A.play('fade'); setTimeout(() => A.startBase(), 3000); }, 'storm');
@@ -55,6 +57,7 @@ function buildUI(): void {
   for (let l = 1; l <= 3; l++) btn(r, `sun ${l}`, P('sun', { level: l }));
   for (let l = 1; l <= 2; l++) btn(r, `win ${l}`, () => { A.play('win', { level: l }); setTimeout(() => A.play('countTick'), 300); });
   for (let l = 3; l <= 5; l++) btn(r, `bigWin ${l}`, () => { A.play('bigWin', { level: l }); setTimeout(() => A.play('countTick'), 300); });
+  btn(r, 'stopCount()', () => A.stopCount());
   for (let l = 1; l <= 8; l++) btn(r, `levelUp ${l}`, P('levelUp', { level: l }));
   r = section('Other SFX');
   for (const n of ['tap', 'stakeUp', 'stakeDown', 'spin', 'shatter', 'returnTick', 'nettoCross', 'mote', 'anticipation', 'countTick',
@@ -108,7 +111,7 @@ function scope(): void {
     const an = A.analyser();
     const s = A.stats();
     const pos = A.position();
-    $('status').textContent = `state ${s.state} · sr ${s.sampleRate} (render ${s.renderRate}) · assets ${s.rendered}/${s.total} (${s.mb.toFixed(1)} MB, failed ${s.failed})\n` +
+    $('status').textContent = `state ${s.state} · sr ${s.sampleRate}${s.lite ? " (lite)" : ""} · assets ${s.rendered}/${s.total} (${s.mb.toFixed(1)} MB, storm ${s.stormMb.toFixed(1)} MB, failed ${s.failed})\n` +
       `now ${A.now().toFixed(3)} · latency ${(A.latency() * 1000).toFixed(1)} ms · voices ${s.voices} · base ${s.base} L${s.layers} · storm ${s.storm} ×${s.stormX}` +
       (pos ? ` · ${pos.kind} bar ${pos.bar} beat ${pos.beat + 1}` : '');
     x.fillStyle = '#030814'; x.fillRect(0, 0, cv.width, cv.height);
@@ -198,6 +201,67 @@ function spectrum(ch: Float32Array[], sr: number): { bands: number[]; centroid: 
     for (let b = 0; b < BANDS.length; b++) if (f >= BANDS[b][1] && f < BANDS[b][2]) bands[b] += pow[k];
   }
   return { bands: bands.map((v) => (tot > 0 ? (100 * v) / tot : 0)), centroid: tot > 0 ? cen / tot : 0 };
+}
+
+/** Welch power spectrum (bins of sr/N). */
+function welch(ch: Float32Array[], sr: number, N = 4096): { pow: Float64Array; df: number } {
+  const hop = N / 2, pow = new Float64Array(N / 2), win = new Float64Array(N);
+  for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (N - 1));
+  const re = new Float64Array(N), im = new Float64Array(N);
+  const len = ch[0].length;
+  for (let s = 0; s + N <= Math.max(len, N); s += hop) {
+    for (const d of ch) {
+      re.fill(0); im.fill(0);
+      for (let i = 0; i < N; i++) re[i] = (d[s + i] ?? 0) * win[i];
+      fftMag(re, im);
+      for (let k = 0; k < N / 2; k++) pow[k] += re[k] * re[k] + im[k] * im[k];
+    }
+  }
+  return { pow, df: sr / N };
+}
+/** % of energy above `hz`. */
+function bandShare(ch: Float32Array[], sr: number, hz: number): number {
+  const { pow, df } = welch(ch, sr);
+  let tot = 0, hi = 0;
+  for (let k = 1; k < pow.length; k++) { tot += pow[k]; if (k * df >= hz) hi += pow[k]; }
+  return tot > 0 ? (100 * hi) / tot : 0;
+}
+/**
+ * ⅓-octave spectral error (spectra normalised below fmax), level-aware: bands within 15 dB of the loudest
+ * band may differ by ≤ 1.5 dB, 15–25 dB below by ≤ 3 dB, 25–35 dB below by ≤ 6 dB (quieter bands are
+ * masked and contribute little). Returns the band with the largest excess over its allowance.
+ */
+function thirdOctErr(a: Float32Array[], asr: number, b: Float32Array[], bsr: number, fmax: number): { worst: number; at: number; below: number; allowed: number; excess: number } {
+  // radix-2 FFT: same N for both; bands integrate energy by Hz, spectra are normalised, so the
+  // different bin widths do not matter
+  const A = welch(a, asr, 4096), B = welch(b, bsr, 4096);
+  const bands: number[] = [];
+  for (let f = 63; f * 1.12 <= fmax; f *= Math.pow(2, 1 / 3)) bands.push(f);
+  const lvl = (P: { pow: Float64Array; df: number }) => {
+    const e = bands.map((fc) => { let s = 0; for (let k = 1; k < P.pow.length; k++) { const f = k * P.df; if (f >= fc / 1.122 && f < fc * 1.122) s += P.pow[k]; } return s; });
+    const tot = e.reduce((x, y) => x + y, 0) || 1;
+    return e.map((x) => 10 * Math.log10(x / tot + 1e-15));
+  };
+  const la = lvl(A), lb = lvl(B);
+  const top = Math.max(...la);
+  let worst = 0, at = 0, below = 0, allowed = 0, excess = -Infinity;
+  la.forEach((v, i) => {
+    const bl = top - v;
+    if (bl > 35) return;
+    const al = bl <= 15 ? 1.5 : bl <= 25 ? 3 : 6;
+    const d = Math.abs(v - lb[i]);
+    if (d - al > excess) { excess = d - al; worst = d; at = bands[i]; below = bl; allowed = al; }
+  });
+  return { worst, at, below, allowed, excess };
+}
+function diffRms(a: AudioBuffer, b: AudioBuffer, t0: number, t1: number): number {
+  let e = 0, n = 0;
+  const i0 = Math.floor(t0 * a.sampleRate), i1 = Math.min(a.length, Math.floor(t1 * a.sampleRate));
+  for (let c = 0; c < a.numberOfChannels; c++) {
+    const x = a.getChannelData(c), y = b.getChannelData(c);
+    for (let i = i0; i < i1; i++) { const d = x[i] - y[i]; e += d * d; n++; }
+  }
+  return Math.sqrt(e / Math.max(1, n));
 }
 
 function stats(b: AudioBuffer): { peak: number; rms: number; nan: number; dc: number } {
@@ -294,7 +358,7 @@ function overCount(b: AudioBuffer, thr: number): number {
 }
 
 async function runCheck(): Promise<void> {
-  const res: { assets: Row[]; stems: Row[]; scen: Row[]; checks: Row[]; fail: string[]; done: boolean } = { assets: [], stems: [], scen: [], checks: [], fail: [], done: false };
+  const res: { assets: Row[]; stems: Row[]; audit: Row[]; scen: Row[]; checks: Row[]; fail: string[]; done: boolean } = { assets: [], stems: [], audit: [], scen: [], checks: [], fail: [], done: false };
   (window as unknown as { __audioCheck: typeof res }).__audioCheck = res;
   const fail = (m: string) => { res.fail.push(m); log('FAIL ' + m); };
   const check = (name: string, ok: boolean, detail: string) => { res.checks.push({ name, ok, detail }); if (!ok) fail(`${name}: ${detail}`); };
@@ -312,7 +376,7 @@ async function runCheck(): Promise<void> {
       (shared as unknown as { assets: Map<string, AudioBuffer> }).assets.set(id, b);
       if (isStem(id)) {
         const def = stemDef(id)!;
-        const div = assetDiv(id, SR), bsr = b.sampleRate;
+        const div = assetRate(id, SR).div, bsr = b.sampleRate;
         const bf = barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, bsr, div);
         const t8 = tile(b, bf * 8);
         const s = stats(t8);
@@ -354,7 +418,36 @@ async function runCheck(): Promise<void> {
       }
       log(`rendered ${id} (${ms.toFixed(0)} ms)`);
     }
-    check('asset memory', totalBytes < 64 * 1048576, `${(totalBytes / 1048576).toFixed(1)} MB @${SR} Hz (${ids.length} assets, ${totalMs.toFixed(0)} ms total offline render)`);
+    check('asset memory (all)', totalBytes < 64 * 1048576, `${(totalBytes / 1048576).toFixed(1)} MB @${SR} Hz (${ids.length} assets, ${totalMs.toFixed(0)} ms total offline render)`);
+    // memory split: base (eager) vs storm (prepareStorm), normal vs lite (≤ 2 GB / iOS) rate policy
+    const mem = { base: 0, storm: 0, baseLite: 0, stormLite: 0 };
+    for (const id of ids) {
+      const b = shared.asset(id)!;
+      const bytes = b.length * b.numberOfChannels * 4;
+      const lite = bytes * assetRate(id, SR, true).sr / assetRate(id, SR).sr;
+      if (isStormAsset(id)) { mem.storm += bytes; mem.stormLite += lite; } else { mem.base += bytes; mem.baseLite += lite; }
+    }
+    const MB = (x: number) => (x / 1048576).toFixed(1);
+    check('memory: base only (eager)', mem.base < 32 * 1048576, `${MB(mem.base)} MB normal · ${MB(mem.baseLite)} MB lite/iOS @${SR} Hz`);
+    res.checks.push({ name: 'memory: with storm prepared', ok: true, detail: `${MB(mem.base + mem.storm)} MB normal (storm +${MB(mem.storm)}) · ${MB(mem.baseLite + mem.stormLite)} MB lite/iOS (storm +${MB(mem.stormLite)})` });
+
+    // ---------------- 1b. reduced-rate audit: every asset rendered below hw rate (normal or lite) vs its
+    // full-rate render: energy lost above the reduced Nyquist + worst ⅓-octave error below it.
+    for (const id of ids) {
+      const divs = [...new Set([assetRate(id, SR).div, assetRate(id, SR, true).div])].filter((d) => d > 1);
+      if (!divs.length) continue;
+      const full = await renderAsset(id, SR, { div: 1 });
+      const fch = Array.from({ length: full.numberOfChannels }, (_, c) => full.getChannelData(c));
+      for (const d of divs) {
+        const red = await renderAsset(id, SR, { div: d });
+        const rsr = SR / d;
+        const lost = bandShare(fch, SR, rsr * 0.45);
+        const err = thirdOctErr(fch, SR, Array.from({ length: red.numberOfChannels }, (_, c) => red.getChannelData(c)), rsr, rsr * 0.4);
+        const mode = d === assetRate(id, SR).div ? 'normal' : 'lite';
+        res.audit.push({ id, mode, rate: Math.round(rsr), lostAbovePct: +lost.toFixed(3), maxBandErrDb: +err.worst.toFixed(2), atHz: Math.round(err.at), bandBelowTopDb: +err.below.toFixed(1), allowedDb: err.allowed, excessDb: +err.excess.toFixed(2) });
+        if (lost > 0.5 || err.excess > 0) fail(`${id} @${Math.round(rsr)} Hz (${mode}) not transparent: ${lost.toFixed(2)} % lost; ${err.worst.toFixed(2)} dB at ${Math.round(err.at)} Hz (${err.below.toFixed(0)} dB below peak band, allowed ${err.allowed})`);
+      }
+    }
 
     // ---------------- 2. storm downbeat accuracy + bar-aligned stormLevel (master bypassed = pure timing)
     const at1 = 1.25; // exact frame 60000
@@ -388,6 +481,24 @@ async function runCheck(): Promise<void> {
       at(1.0, () => { g.stopStorm(); g.play('bigWin', { level: 4 }); g.play('win', { level: 1 }); g.play('win', { level: 1 }); });
     });
     check('storm uses B♭ stinger, base uses F stingers', sw2.g.playLog!.join(',') === 'stormWin,bigWin4,win1a', `played ${sw2.g.playLog!.join(',')} (2nd win1 rate-limited)`);
+
+    // skipped celebration: stopCount() / play('countTick', {level: 0}) cut the tick roll at once
+    const roll = (stop: 0 | 1 | 2) => scenario(2.8, shared, (g, at) => {
+      at(0.05, () => g.play('bigWin', { level: 4 }));
+      at(0.35, () => g.play('countTick'));
+      if (stop === 1) at(0.8, () => g.stopCount());
+      if (stop === 2) at(0.8, () => g.play('countTick', { level: 0 }));
+    }, { bypassMaster: true });
+    const base = await scenario(2.8, shared, (g, at) => { at(0.05, () => g.play('bigWin', { level: 4 })); }, { bypassMaster: true });
+    const [rA, rB, rC] = [await roll(0), await roll(1), await roll(2)];
+    // count tick onsets after the skip in (render − stinger-only): a jump of > 6 dB between 20 ms windows
+    const onsets = (x: AudioBuffer) => {
+      let n = 0, prev = -200;
+      for (let t = 0.95; t < 2.6; t += 0.02) { // from 150 ms after the skip (early reflections of the last tick) const v = dB(diffRms(x, base.buf, t, t + 0.02)); if (v > prev + 6 && v > -75) n++; prev = v; }
+      return n;
+    };
+    const [oA, oB, oC] = [onsets(rA.buf), onsets(rB.buf), onsets(rC.buf)];
+    check('stopCount cuts the tick roll', oA >= 5 && oB === 0 && oC === 0, `tick onsets after the skip: roll ${oA} → stopCount ${oB} · countTick level 0 ${oC}`);
 
     // ---------------- 3. base layers: bar-aligned entry, rapid sweep collapses (no stacking)
     const b1 = await scenario(9, shared, (g, at) => { at(0, () => { g.setBaseLayers(1); g.startBase(); }); }, { bypassMaster: true });
@@ -530,7 +641,7 @@ async function runCheck(): Promise<void> {
     try { po = new PerformanceObserver((l) => { for (const e of l.getEntries()) longest = Math.max(longest, e.duration); }); po.observe({ type: 'longtask', buffered: false }); } catch { /* */ }
     const p0 = performance.now();
     const ready: Record<string, number> = {};
-    const watch = ['land74a', 'base0', 'stormSwell', 'storm0', 'base4', 'storm3'];
+    const watch = ['land74a', 'base0', 'base1', 'base4', 'bigWin5'];
     while (rt.stats().rendered + rt.stats().failed < rt.stats().total && performance.now() - p0 < 60000) {
       for (const id of watch) if (ready[id] === undefined && rt.asset(id)) ready[id] = performance.now() - p0 + uMs;
       await new Promise((r) => setTimeout(r, 20));
@@ -539,7 +650,23 @@ async function runCheck(): Promise<void> {
     res.checks.push({ name: 'time-to-ready after unlock (ms)', ok: true, detail: watch.map((id) => `${id} ${Math.round(ready[id] ?? pipeMs)}`).join(' · ') });
     po?.disconnect();
     const st = rt.stats();
-    check('pipeline renders everything', st.failed === 0 && st.rendered === st.total, `${st.rendered}/${st.total} in ${(pipeMs / 1000).toFixed(2)} s wall, ${st.mb.toFixed(1)} MB @ ${st.renderRate} Hz, longest main-thread task ${longest.toFixed(0)} ms`);
+    check('base pipeline renders everything, no storm', st.failed === 0 && st.rendered === st.total && st.stormMb === 0 && !st.stormPrepared, `${st.rendered}/${st.total} in ${(pipeMs / 1000).toFixed(2)} s wall, ${st.mb.toFixed(1)} MB @ ${st.sampleRate} Hz (lite ${st.lite}), longest main-thread task ${longest.toFixed(0)} ms`);
+    // lazy storm set
+    const pz0 = performance.now();
+    const pA = rt.prepareStorm(), pB = rt.prepareStorm();
+    await pA;
+    const coreMs = performance.now() - pz0;
+    check('prepareStorm idempotent + resolves on core', pA === pB && !!rt.asset('storm0') && !!rt.asset('impact'), `core ready in ${Math.round(coreMs)} ms`);
+    while (rt.stats().rendered + rt.stats().failed < rt.stats().total && performance.now() - pz0 < 60000) await new Promise((r) => setTimeout(r, 20));
+    const sp2 = rt.stats();
+    res.checks.push({ name: 'memory realtime: base → storm prepared', ok: true, detail: `${st.mb.toFixed(1)} MB → ${sp2.mb.toFixed(1)} MB (storm ${sp2.stormMb.toFixed(1)} MB, all in ${Math.round(performance.now() - pz0)} ms) @ ${sp2.sampleRate} Hz` });
+    rt.releaseStorm();
+    const sp3 = rt.stats();
+    check('releaseStorm frees the storm set', sp3.stormMb === 0 && Math.abs(sp3.mb - st.mb) < 0.01 && !sp3.stormPrepared, `${sp3.mb.toFixed(1)} MB after release`);
+    const pre2 = new GameAudio();
+    let preResolved = false;
+    await Promise.race([pre2.prepareStorm().then(() => { preResolved = true; }), new Promise((r) => setTimeout(r, 50))]);
+    check('prepareStorm before unlock resolves (no-op)', preResolved, `resolved ${preResolved}`);
     if (rt.ctx?.state === 'running') {
       rt.startBase(); rt.setBaseLayers(5);
       const a0 = rt.now();

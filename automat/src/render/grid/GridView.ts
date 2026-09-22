@@ -1,17 +1,28 @@
 // Grid view: cell backdrops, marks, symbol sprites, glows and mark labels.
 // Pure view — the director drives it with GSAP; it never decides outcomes.
-import { Container, Sprite, Graphics } from 'pixi.js';
+import { Container, Sprite, Graphics, type Renderer } from 'pixi.js';
 import { softBand } from '../tex.ts';
 import { gsap } from 'gsap';
 import { SYM, type Sym } from '../../math/types.ts';
 import { PAL } from '../../core/palette.ts';
-import { IsText, type SymbolSet, type CellFx } from '../modules.ts';
+import { isLabelTexture, prewarmIsLabels, type IsStyle, type SymbolSet, type CellFx } from '../modules.ts';
+
+const MARK_TEXTS = ['×2', '×4', '×8', '×16', '×32', '×64', '×128'];
+
+/** Destroy a display object after killing any GSAP tweens on it (a tween on a destroyed Pixi
+ *  object throws inside the ticker and would stop the whole loop). */
+export function dropDisplay(d: { destroyed: boolean; destroy: () => void; scale?: unknown } | null | undefined): void {
+  if (!d || d.destroyed) return;
+  gsap.killTweensOf(d);
+  if (d.scale) gsap.killTweensOf(d.scale);
+  d.destroy();
+}
 
 export interface CellNode {
   bg: Sprite;
   mark: Sprite;      // frost overlay (mark = 1) / plasma (storm ≥2)
   ring: Sprite;      // multiplier pill backdrop
-  label: IsText;     // ×N
+  label: Sprite;     // ×N (baked Isfont label texture — batches into ~1 draw call)
   glow: Sprite;      // additive symbol glow
 }
 
@@ -34,6 +45,12 @@ export class GridView extends Container {
   marks: number[] = [];
   set: SymbolSet | null = null;
   fx: CellFx | null = null;
+  /** Needed to bake the multiplier label textures. */
+  renderer: Renderer | null = null;
+  private labelCap = 10;
+  private markStyle(v: number): IsStyle {
+    return this.storm ? (v >= 32 ? 'gold' : 'plasma') : v >= 32 ? 'plasma' : v >= 8 ? 'gold' : 'ice';
+  }
 
   constructor() {
     super();
@@ -49,18 +66,21 @@ export class GridView extends Container {
   configure(cols: number, rows: number, cell: number, set: SymbolSet, fx: CellFx, storm: boolean): void {
     this.cols = cols; this.rows = rows; this.cell = cell; this.set = set; this.fx = fx; this.storm = storm;
     const n = cols * rows;
-    for (const c of this.cells) { c.bg.destroy(); c.mark.destroy(); c.ring.destroy(); c.label.destroy(); c.glow.destroy(); }
-    for (const s of this.syms) s?.destroy();
+    this.labelCap = Math.round(Math.max(10, cell * 0.2) * 2) / 2;
+    prewarmIsLabels(this.renderer!, MARK_TEXTS, storm ? ['plasma', 'gold'] : ['ice', 'gold', 'plasma'], this.labelCap);
+    for (const c of this.cells) { dropDisplay(c.bg); dropDisplay(c.mark); dropDisplay(c.ring); dropDisplay(c.label); dropDisplay(c.glow); }
+    for (const s of this.syms) dropDisplay(s);
     this.cells = []; this.syms = new Array(n).fill(null); this.symOf = new Array(n).fill(SYM.L1); this.marks = new Array(n).fill(0);
     for (let i = 0; i < n; i++) {
       const { x, y } = this.center(i);
       const bg = new Sprite(storm ? fx.stormBg : fx.cellBg); bg.anchor.set(0.5); bg.position.set(x, y); bg.width = bg.height = cell; bg.alpha = storm ? 0.9 : 0.55;
       const mark = new Sprite(storm ? fx.plasmaBg : fx.frost); mark.anchor.set(0.5); mark.position.set(x, y); mark.width = mark.height = cell; mark.alpha = 0;
       const glow = new Sprite(set.glow); glow.anchor.set(0.5); glow.position.set(x, y); glow.width = glow.height = cell * 1.5; glow.alpha = 0;
-      const ring = new Sprite(fx.markRing); ring.anchor.set(0.5); ring.width = cell * 0.62; ring.height = cell * 0.3; ring.position.set(x, y + cell * 0.3); ring.alpha = 0;
-      const label = new IsText({ text: '×2', size: Math.max(8, cell * 0.16), style: 'ice' });
-      label.position.set(x, y + cell * 0.3); label.alpha = 0;
-      this.bgLayer.addChild(bg); this.markLayer.addChild(mark); this.glowLayer.addChild(glow); this.markLayer.addChild(ring); this.labelLayer.addChild(label);
+      // Multiplier badge: pill + digits sit ABOVE the symbol, low in the cell.
+      const ring = new Sprite(fx.markRing); ring.anchor.set(0.5); ring.width = cell * 0.58; ring.height = cell * 0.3; ring.position.set(x, y + cell * 0.31); ring.alpha = 0;
+      const label = new Sprite(isLabelTexture(this.renderer!, '×2', storm ? 'plasma' : 'ice', this.labelCap));
+      label.anchor.set(0.5); label.position.set(x, y + cell * 0.31); label.alpha = 0;
+      this.bgLayer.addChild(bg); this.markLayer.addChild(mark); this.glowLayer.addChild(glow); this.labelLayer.addChild(ring, label);
       this.cells.push({ bg, mark, ring, label, glow });
     }
     this.maskG.clear().rect(0, 0, cols * cell, rows * cell).fill(0xffffff);
@@ -72,7 +92,7 @@ export class GridView extends Container {
     this.set = set;
     for (let i = 0; i < this.syms.length; i++) {
       const s = this.syms[i];
-      if (s) s.texture = set.textures[this.symOf[i]];
+      if (s) { s.texture = set.textures[this.symOf[i]]; s.width = s.height = this.cell; }
       this.cells[i].glow.texture = set.glow;
     }
   }
@@ -87,7 +107,7 @@ export class GridView extends Container {
    *  toGlobal would include the camera shake/zoom and make effects spawn off-cell). */
   globalCenter(i: number): { x: number; y: number } {
     const c = this.center(i);
-    return { x: this.x + c.x, y: this.y + c.y };
+    return { x: this.x + c.x * this.scale.x, y: this.y + c.y * this.scale.y };
   }
 
   makeSym(i: number, s: Sym): Sprite {
@@ -97,7 +117,7 @@ export class GridView extends Container {
     const { x, y } = this.center(i);
     sp.position.set(x, y);
     this.symLayer.addChild(sp);
-    this.syms[i]?.destroy();
+    dropDisplay(this.syms[i]);
     this.syms[i] = sp;
     this.symOf[i] = s;
     return sp;
@@ -110,7 +130,7 @@ export class GridView extends Container {
   }
 
   clearSyms(): void {
-    for (let i = 0; i < this.syms.length; i++) { this.syms[i]?.destroy(); this.syms[i] = null; }
+    for (let i = 0; i < this.syms.length; i++) { dropDisplay(this.syms[i]); this.syms[i] = null; }
   }
 
   /** Mark visuals: 0 none, 1 frost, ≥2 multiplier pill. */
@@ -120,10 +140,7 @@ export class GridView extends Container {
     this.marks[i] = v;
     const frostA = v >= 1 ? (this.storm ? (v >= 2 ? 1 : 0.5) : 0.9) : 0;
     const ringA = v >= 2 ? 1 : 0;
-    if (v >= 2) {
-      c.label.text = '×' + v;
-      c.label.style = this.storm ? 'plasma' : 'ice';
-    }
+    if (v >= 2) c.label.texture = isLabelTexture(this.renderer!, '×' + v, this.markStyle(v), this.labelCap);
     if (!animate) { c.mark.alpha = frostA; c.ring.alpha = ringA; c.label.alpha = ringA; return; }
     gsap.to(c.mark, { alpha: frostA, duration: 0.3, ease: 'power2.out' });
     if (v >= 2 && v !== prev) {
@@ -155,6 +172,15 @@ export class GridView extends Container {
         tl.to(s.scale, { x: base * 1.1, y: base * 1.1, duration: 0.14, ease: 'power2.out' }, at);
         tl.to(s.scale, { x: base, y: base, duration: 0.2, ease: 'power2.in' }, at + 0.22);
       }
+    }
+  }
+
+  /** Dim every symbol that is not in `keep` (win focus); restore with dimOthers(tl, at, null). */
+  dimOthers(tl: gsap.core.Timeline, at: number, keep: Set<number> | null, alpha = 0.42): void {
+    for (let i = 0; i < this.syms.length; i++) {
+      const s = this.syms[i];
+      if (!s) continue;
+      tl.to(s, { alpha: keep && !keep.has(i) ? alpha : 1, duration: 0.14, ease: 'power1.out' }, at);
     }
   }
 

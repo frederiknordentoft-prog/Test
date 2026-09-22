@@ -14,7 +14,7 @@
 import { crand } from '../core/cosmeticRng.ts';
 import { TIER_SECS } from '../present/schedule.ts';
 import { makeIR, dbToGain } from './dsp.ts';
-import { renderAsset, RENDER_ORDER, allAssetIds } from './assets.ts';
+import { renderAsset, allAssetIds, baseAssetIds, isStormAsset, STORM_CORE, STORM_EXTRA } from './assets.ts';
 import { LAND_ZONES, CHIME_LADDER, CHIME_ZONES, LEVEL_SEMIS, nearestZone } from './sfx.ts';
 import { barFrames, BASE_BPM, STORM_BPM, LAND_BASE, LAND_STORM } from './music.ts';
 
@@ -134,7 +134,12 @@ export class GameAudio {
   private queue: string[] = [];
   private rendering = false;
   private failed = new Set<string>();
-  private renderRate = 48000;
+  private hwRate = 48000;     // context sample rate (the bar grid is defined on it)
+  private lite = false;       // low-memory device (≤ 2 GB or iOS): long stems render at reduced rates
+  private stormPrepared = false;
+  private stormPromise: Promise<void> | null = null;
+  private stormResolve: (() => void) | null = null;
+  private releasePending = false;
   private voices: Voice[] = [];
   private lastAt: Partial<Record<Sfx, number>> = {};
   private deferred: Deferred[] = [];
@@ -167,7 +172,8 @@ export class GameAudio {
   // ================================================================ lifecycle
   /**
    * Call from the first user gesture (iOS-safe): creates the context synchronously inside the gesture,
-   * starts a silent buffer, resumes, and kicks off background rendering of all assets. Resolves within
+   * starts a silent buffer, resumes, and kicks off background rendering of the BASE assets (storm assets
+   * render on prepareStorm() / startStorm()). Resolves within
    * ~0.6 s even if the browser refuses to start audio (then it retries on the next gesture). Never throws.
    */
   async unlock(): Promise<void> {
@@ -181,13 +187,16 @@ export class GameAudio {
         try { c = new AC({ latencyHint: 'interactive' }); } catch { c = new AC(); }
         this._ctx = c;
         this.realtime = true;
+        // Low-memory devices render long stems at reduced rates (see assets.ts). Safari has no
+        // deviceMemory, so iOS/iPadOS counts as low-memory.
         const nav = navigator as Navigator & { deviceMemory?: number };
-        // Low-memory devices render assets at half rate (halves memory + render time; playback resamples).
-        this.renderRate = (nav.deviceMemory ?? 8) <= 2 ? Math.round(c.sampleRate / 2) : c.sampleRate;
+        const ios = /iPad|iPhone|iPod/.test(nav.userAgent) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1);
+        this.hwRate = c.sampleRate;
+        this.lite = (nav.deviceMemory ?? (ios ? 2 : 8)) <= 2;
         this.build(c);
         c.addEventListener('statechange', () => this.onState());
         setInterval(() => this.tick(), TICK_MS); // lives as long as the page (singleton)
-        this.queue = RENDER_ORDER.concat(allAssetIds().filter((id) => !RENDER_ORDER.includes(id)));
+        this.queue = baseAssetIds();
         void this.pump();
       }
       const c = this._ctx as AudioContext;
@@ -379,13 +388,18 @@ export class GameAudio {
       while (this.queue.length) {
         const id = this.queue.shift()!;
         if (this.assets.has(id) || this.failed.has(id)) continue;
+        const storm = isStormAsset(id);
+        if (storm && !this.stormPrepared) continue; // released while queued
         try {
-          const b = await renderAsset(id, this.renderRate);
-          this.assets.set(id, b);
-          this.onAsset(id);
+          const b = await renderAsset(id, this.hwRate, { lite: this.lite });
+          if (!storm || this.stormPrepared) { // drop storm renders that finished after releaseStorm()
+            this.assets.set(id, b);
+            this.onAsset(id);
+          }
         } catch {
           this.failed.add(id);
         }
+        if (storm) this.checkStormReady();
         if (this.realtime) await sleep(0); // yield: one small offline render per task
       }
     } finally {
@@ -393,9 +407,10 @@ export class GameAudio {
     }
   }
 
-  /** Move ids to the front of the render queue. */
+  /** Move ids to the front of the render queue (asking for any storm asset prepares the storm set). */
   private bump(ids: string[]): void {
     if (!this._ctx) return;
+    if (!this.stormPrepared && ids.some(isStormAsset)) void this.prepareStorm();
     for (let i = ids.length - 1; i >= 0; i--) {
       const id = ids[i];
       if (this.assets.has(id) || this.failed.has(id)) continue;
@@ -442,7 +457,7 @@ export class GameAudio {
     const layers = ids.map(() => { const g = c.createGain(); g.gain.value = 0; g.connect(group); return g; });
     return {
       kind, ids, group, layers, src: ids.map(() => null), start,
-      bar: barFrames(bpm, this.renderRate) / this.renderRate, // identical for every render divisor
+      bar: barFrames(bpm, this.hwRate) / this.hwRate, // identical for every render divisor
       committed: ids.map(() => false), pendAt: ids.map(() => -1), pendOn: ids.map(() => false),
       stopped: false, alive: 0,
     };
@@ -537,6 +552,60 @@ export class GameAudio {
     p.setTargetAtTime(1, now + hold, release / 3);
   }
 
+  // ================================================================ storm assets (lazy)
+  /**
+   * Render the storm set in the background (idempotent). Resolves when the storm core loop + the
+   * cinematic one-shots are ready (or failed); the later storm layers/stingers keep rendering after that.
+   * Before unlock() it resolves immediately (nothing to render yet). startStorm() calls this itself.
+   */
+  prepareStorm(): Promise<void> {
+    if (!this._ctx) return Promise.resolve();
+    this.releasePending = false;
+    if (!this.stormPrepared || !this.stormPromise) {
+      this.stormPrepared = true;
+      this.stormPromise = new Promise<void>((r) => { this.stormResolve = r; });
+      this.bump(STORM_CORE);
+      for (const id of STORM_EXTRA) if (!this.assets.has(id) && !this.queue.includes(id)) this.queue.push(id);
+      void this.pump();
+    }
+    this.checkStormReady();
+    return this.stormPromise;
+  }
+
+  private checkStormReady(): void {
+    if (!this.stormResolve) return;
+    if (STORM_CORE.every((id) => this.assets.has(id) || this.failed.has(id))) {
+      const r = this.stormResolve;
+      this.stormResolve = null;
+      r();
+    }
+  }
+
+  /**
+   * Free the storm set (call after the storm outro). If a storm is still playing the release happens
+   * when it stops. Buffers still held by voices that are fading out are freed when those voices end.
+   */
+  releaseStorm(): void {
+    if (!this._ctx) return;
+    if (this.stormS || this.stormPending >= 0) { this.releasePending = true; return; }
+    this.releasePending = false;
+    this.stormPrepared = false;
+    this.stormPromise = null;
+    if (this.stormResolve) { const r = this.stormResolve; this.stormResolve = null; r(); }
+    this.queue = this.queue.filter((id) => !isStormAsset(id));
+    this.deferred = this.deferred.filter((d) => !isStormAsset(d.id));
+    for (const id of [...STORM_CORE, ...STORM_EXTRA]) { this.assets.delete(id); this.failed.delete(id); }
+  }
+
+  /** Stop the celebration count-up tick roll immediately (skipped celebration). */
+  stopCount(): void {
+    const c = this._ctx;
+    if (!c || !this.n) return;
+    const now = c.currentTime;
+    for (const v of this.roll) if (!v.dead) this.fadeVoice(v, now, 0.004);
+    this.roll = [];
+  }
+
   // ================================================================ music API
   /** Start the base bed (idempotent). Fades in from bar 1; stops a running storm. */
   startBase(): void {
@@ -584,6 +653,7 @@ export class GameAudio {
     if (!this.live()) {
       this.stormPending = Number.isFinite(atCtxTime) ? atCtxTime : 0;
       this.stormPendingPerf = !this.everRan;
+      void this.prepareStorm();
       this.inStorm = true;
       this.baseWanted = false;
       return;
@@ -628,17 +698,19 @@ export class GameAudio {
   stopStorm(): void {
     this.inStorm = false;
     this.stormPending = -1;
-    if (!this.live()) return;
     try {
       const s = this.stormS;
-      if (!s) return;
-      const now = this._ctx!.currentTime;
-      this.stopSession(s, now, 2.2);
-      this.stormS = null;
-      this.duckReleaseAt = -1;
-      this.releaseDuck(now, 0.15);
-      this.xfadeVerb('base', now, 2.5);
+      if (s && this._ctx) {
+        const now = this._ctx.currentTime;
+        // Running: musical 2 s fade. Suspended/interrupted: stop at once (nothing is audible anyway).
+        this.stopSession(s, now, this.live() ? 2.2 : 0.02);
+        this.stormS = null;
+        this.duckReleaseAt = -1;
+        this.releaseDuck(now, 0.15);
+        this.xfadeVerb('base', now, 2.5);
+      }
     } catch { /* */ }
+    if (this.releasePending) this.releaseStorm();
   }
 
   /**
@@ -688,6 +760,7 @@ export class GameAudio {
   // ================================================================ SFX
   /** Fire-and-forget SFX. `when` (now()-domain) schedules sample-accurately. Silent no-op before unlock. */
   play(name: Sfx, opts: PlayOpts = {}): void {
+    if (name === 'countTick' && opts.level === 0) { this.stopCount(); return; } // skip → stop the roll
     if (this.muted || !this.live()) return;
     try { this.playImpl(name, opts); } catch { /* never throw */ }
   }
@@ -906,14 +979,20 @@ export class GameAudio {
   }
 
   // ================================================================ QA / harness
-  /** Runtime stats for harness/QA. */
-  stats(): { state: string; sampleRate: number; renderRate: number; rendered: number; total: number; failed: number; mb: number; voices: number; base: boolean; storm: boolean; layers: number; stormX: number } {
-    let bytes = 0;
-    for (const b of this.assets.values()) bytes += b.length * b.numberOfChannels * 4;
+  /** Runtime stats for harness/QA (mb = all rendered buffers; stormMb = the storm share of it). */
+  stats(): { state: string; sampleRate: number; lite: boolean; rendered: number; total: number; failed: number; mb: number; stormMb: number; stormPrepared: boolean; voices: number; base: boolean; storm: boolean; layers: number; stormX: number } {
+    let bytes = 0, storm = 0;
+    for (const [id, b] of this.assets) {
+      const n = b.length * b.numberOfChannels * 4;
+      bytes += n;
+      if (isStormAsset(id)) storm += n;
+    }
+    const total = this.stormPrepared ? allAssetIds().length : baseAssetIds().length;
     return {
       state: this._ctx ? (this.realtime ? ((this._ctx as AudioContext).state as string) : 'offline') : 'locked',
-      sampleRate: this._ctx?.sampleRate ?? 0, renderRate: this.renderRate,
-      rendered: this.assets.size, total: allAssetIds().length, failed: this.failed.size, mb: bytes / 1048576,
+      sampleRate: this._ctx?.sampleRate ?? 0, lite: this.lite,
+      rendered: this.assets.size, total, failed: this.failed.size, mb: bytes / 1048576, stormMb: storm / 1048576,
+      stormPrepared: this.stormPrepared,
       voices: this.voices.length, base: !!this.baseS, storm: !!this.stormS, layers: this.baseLayers, stormX: this.stormX,
     };
   }
@@ -936,8 +1015,9 @@ export class GameAudio {
     this._ctx = ctx;
     this.realtime = false;
     this.everRan = true;
-    this.renderRate = ctx.sampleRate;
+    this.hwRate = ctx.sampleRate;
     this.build(ctx, !!opts.bypassMaster);
+    this.stormPrepared = true;
     for (const id of allAssetIds()) {
       if (!this.assets.has(id)) this.assets.set(id, await renderAsset(id, ctx.sampleRate));
     }

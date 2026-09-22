@@ -21,6 +21,8 @@ import type { Sym } from '../math/types.ts';
 import { idleGrid } from '../present/director.ts';
 import type { Hud } from '../ui/hud.ts';
 
+/** Resolution caps per adaptive quality tier (high, medium, low). */
+const QCAP = [2, 1.5, 1.25];
 const toHex = (c: [number, number, number]) => ((Math.round(c[0] * 255) << 16) | (Math.round(c[1] * 255) << 8) | Math.round(c[2] * 255)) >>> 0;
 
 export class World {
@@ -81,6 +83,7 @@ export class World {
     const st = await createStage(this.hud.canvasHost);
     this.stage = st;
     installIsfont(st.renderer);
+    this.grid.renderer = st.renderer;
     setIsfontClock(() => clock.real);
     this.sky = new SkyLayer(st.renderer);
     st.layers.sky.addChild(this.sky);
@@ -120,10 +123,12 @@ export class World {
     const ro = new ResizeObserver(() => { this.layoutDirty = true; });
     ro.observe(this.hud.root);
     ro.observe(this.hud.slotGrid);
+    ro.observe(document.getElementById('demoPill')!);
     st.app.ticker.add((tk) => {
       if (this.manual) return;
       this.watchPerf(tk.deltaMS);
-      this.frameStep(Math.min(0.05, tk.deltaMS / 1000));
+      // One bad tween/effect must never stop the ticker (Pixi would stop scheduling rAF).
+      try { this.frameStep(Math.min(0.05, tk.deltaMS / 1000)); } catch (e) { console.error(e); }
     });
   }
 
@@ -134,7 +139,7 @@ export class World {
     const st = this.stage;
     const host = this.hud.root.getBoundingClientRect();
     const w = Math.round(host.width), h = Math.round(host.height);
-    if (w !== st.w || h !== st.h) resizeStage(st, w, h);
+    if (w !== st.w || h !== st.h) resizeStage(st, w, h, QCAP[this.quality]);
     const gs = this.measure(this.hud.slotGrid);
     const pad = Math.max(10, Math.min(gs.width, gs.height) * 0.035);
     const cols = this.storm ? CONFIG.stormCols : CONFIG.cols;
@@ -153,51 +158,86 @@ export class World {
     const want = cell * st.res * 1.25;
     const steps = [64, 96, 128, 160, 192, 256];
     const px = steps.find((p) => p >= want) ?? 256;
-    if (!this.storm && px !== this.cellPx && this.baseSet) {
+    if (!this.storm && !this.busy && px !== this.cellPx && this.baseSet) {
+      // Texture size step: re-bake now, rebuild the grid in placeGrid (keeping symbols + marks).
       this.cellPx = px;
       const oldFx = this.cellFx, oldSet = this.baseSet;
       this.cellFx = bakeCellFx(st.renderer, px);
       this.baseSet = bakeSymbols(st.renderer, { edition: 'base', cellPx: px, env: this.sky.envColors() });
       gsap.delayedCall(8, () => { destroyCellFx(oldFx); destroySymbolSet(oldSet); });
-      if (this.grid.cells.length) { this.grid.setSymbolSet(this.baseSet); this.grid.configure(this.grid.cols, this.grid.rows, this.grid.cell, this.baseSet, this.cellFx, false); }
+      this.gridRebuild = true;
     } else if (!this.baseSet) this.cellPx = px;
     this.stormCellPx = steps.find((p) => p >= (size / CONFIG.stormCols) * st.res * 1.25) ?? 192;
     this.layoutDirty = false;
     // logo placement (header centre) unless intro owns it
     if (!this.logoIntro) this.placeLogo();
+    this.onLayout?.();
+  }
+
+  /** While a presentation runs the grid is never rebuilt (tweens target its sprites) — it is
+   *  scaled instead, and rebuilt by flushLayout() once the game is back at a resting state. */
+  busy = false;
+  private gridRebuild = false;
+  onLayout: (() => void) | null = null;
+  flushLayout(): void {
+    this.busy = false;
+    this.layout();
+    this.placeGrid();
   }
 
   private logoIntro = true;
+  private splashLogoSize = 40;
+  private headerLogoCap(hdrH: number): number {
+    return this.stage.w >= 1000 ? Math.min(34, hdrH * 0.5) : Math.min(22, Math.max(12, hdrH * 0.38));
+  }
+  /** Would a header logo of this cap height fit between the demo pill and the icon buttons? */
+  private headerHasRoom(cap: number): boolean {
+    const host = this.hud.root.getBoundingClientRect();
+    const pill = document.getElementById('demoPill')!.getBoundingClientRect();
+    const icons = (document.querySelector('#hdr .right') as HTMLElement).getBoundingClientRect();
+    const half = (cap * 5.6 * 1.05) / 2; // NORDLYS ≈ 5.6 cap heights wide incl. tracking
+    const cx = this.stage.w / 2 + host.left;
+    return pill.right + 8 < cx - half && icons.left - 8 > cx + half;
+  }
   private placeLogo(): void {
     const hdr = document.getElementById('hdr')!.getBoundingClientRect();
     const host = this.hud.root.getBoundingClientRect();
-    const target = Math.min(22, Math.max(12, hdr.height * 0.34));
+    const target = this.headerLogoCap(hdr.height);
     this.logo.scale.set(target / 40);
     this.logo.position.set(this.stage.w / 2, hdr.top - host.top + hdr.height / 2);
-    // Hide the header logo when the demo pill and icon buttons leave no room for it.
-    const pill = document.getElementById('demoPill')!.getBoundingClientRect();
-    const icons = (document.querySelector('#hdr .right') as HTMLElement).getBoundingClientRect();
-    const half = (this.logo.width * 1.05) / 2;
-    const cx = this.stage.w / 2 + host.left;
-    this.logo.visible = pill.right + 8 < cx - half && icons.left - 8 > cx + half;
+    this.logo.alpha = 1;
+    this.logo.visible = this.headerHasRoom(target);
   }
 
   private placeGrid(): void {
     const r = this.gridRect;
     const cols = this.grid.cols;
     const cell = Math.floor(r.size / cols);
-    if (cell !== this.grid.cell) {
+    if (this.busy) {
+      // Mid-presentation: scale the existing grid to the new size, rebuild later.
+      const s = cell / this.grid.cell;
+      this.grid.scale.set(s);
+      if (cell !== this.grid.cell) this.gridRebuild = true;
+    } else if (cell !== this.grid.cell || this.gridRebuild) {
       const grid = this.grid.symOf.slice();
       const marks = this.grid.marks.slice();
       const had = this.grid.syms.some((s) => s);
+      this.grid.scale.set(1);
       this.grid.configure(cols, this.grid.rows, cell, this.storm && this.stormSet ? this.stormSet : this.baseSet, this.cellFx, this.storm);
-      if (had) this.grid.setGrid(grid, marks);
+      if (had && grid.length === cols * this.grid.rows) this.grid.setGrid(grid, marks);
+      this.gridRebuild = false;
     }
-    this.grid.position.set(r.x + (r.size - cols * cell) / 2, r.y + (r.size - cols * cell) / 2);
+    const drawn = cols * this.grid.cell * this.grid.scale.x;
+    this.grid.position.set(r.x + (r.size - drawn) / 2, r.y + (r.size - drawn) / 2);
     this.popups.position.set(0, 0);
   }
 
   gridCenterY(): number { return this.gridRect.y + this.gridRect.size / 2; }
+  arcBand(): { top: number; height: number } {
+    const host = this.hud.root.getBoundingClientRect();
+    const a = this.hud.slotArc.getBoundingClientRect();
+    return { top: a.top - host.top, height: a.height };
+  }
 
   // ------------------------------------------------------------ frame loop
   frameStep(dt: number): void {
@@ -217,7 +257,7 @@ export class World {
     this.arc.storm = this.skyP.storm;
     this.arc.update(dt, t);
     const env = this.sky.envColors();
-    this.frame.update(t, toHex(env[0]), this.skyP.glow + (this.storm ? 0.5 : 0));
+    this.frame.update(t, toHex(env[0]), this.skyP.glow + (this.storm ? 0.5 : 0), this.calm);
     const tier = TIERS[Math.min(9, Math.floor(this.skyP.kp))];
     this.frame.setCrackle(this.storm ? 0.25 : tier.sky.crackle);
     // fx
@@ -242,23 +282,34 @@ export class World {
     this.bloom.strength = this.bloomCtl.strength * (this.calm ? 0.8 : 1);
   }
 
-  /** Down a tier after 1.5 s averaging > 19 ms/frame, up after 5 s < 12 ms. */
+  /** Adaptive quality against the display's own refresh interval (so 30 Hz Low Power Mode or 120 Hz
+   *  screens are judged correctly): down a tier after ~1.5 s of frames > 1.3× vsync, up after ~8 s ≤ 1.05×. */
+  private vsyncSamples: number[] = [];
+  private vsync = 0;
+  private skipNext = false;
   private watchPerf(ms: number): void {
-    if (document.hidden) return;
+    if (document.hidden) { this.skipNext = true; return; }
+    if (this.skipNext) { this.skipNext = false; return; }
+    if (!this.vsync) {
+      this.vsyncSamples.push(ms);
+      if (this.vsyncSamples.length >= 90) {
+        const sorted = this.vsyncSamples.slice().sort((a, b) => a - b);
+        this.vsync = Math.max(6, sorted[Math.floor(sorted.length * 0.25)]);
+      }
+      return;
+    }
     this.perfAcc += ms; this.perfN++;
     if (this.perfAcc < 500) return;
     const avg = this.perfAcc / this.perfN;
     this.perfAcc = 0; this.perfN = 0;
-    if (avg > 19) { this.perfSlow++; this.perfFast = 0; } else if (avg < 12) { this.perfFast++; this.perfSlow = 0; } else { this.perfSlow = 0; this.perfFast = 0; }
+    if (avg > this.vsync * 1.3) { this.perfSlow++; this.perfFast = 0; } else if (avg <= this.vsync * 1.05) { this.perfFast++; this.perfSlow = 0; } else { this.perfSlow = 0; this.perfFast = 0; }
     if (this.perfSlow >= 3 && this.quality < 2) { this.setQuality(this.quality + 1); this.perfSlow = 0; }
-    else if (this.perfFast >= 10 && this.quality > 0) { this.setQuality(this.quality - 1); this.perfFast = 0; }
+    else if (this.perfFast >= 16 && this.quality > 0) { this.setQuality(this.quality - 1); this.perfFast = 0; }
   }
   setQuality(q: number): void {
     this.quality = q;
     const st = this.stage;
-    const cap = [2, 1.5, 1][q];
-    const res = Math.min(cap, Math.max(1, window.devicePixelRatio || 1));
-    if (Math.abs(st.renderer.resolution - res) > 0.01) { st.renderer.resolution = res; st.res = res; st.renderer.resize(st.w, st.h); }
+    resizeStage(st, st.w, st.h, QCAP[q]);
     this.particles.setBudget([2400, 1400, 600][q]);
     this.bloom.enabled = q < 2;
     this.sky.auroraEvery = q >= 1 ? 2 : 1;
@@ -286,7 +337,11 @@ export class World {
     this.flashUntil = now + Math.max(0.033, ms / 1000);
   }
   announce(text: string): void { this.sr.textContent = text; }
-  setCalm(b: boolean): void { this.calm = b; if (this.cellShatter) this.cellShatter.calm = b; }
+  setCalm(b: boolean): void {
+    this.calm = b;
+    if (this.cellShatter) this.cellShatter.calm = b;
+    if (this.sky && 'calm' in this.sky) (this.sky as unknown as { calm: boolean }).calm = b;
+  }
   capture(): Texture { return captureScene(this.stage); }
   hideForShatter(b: boolean): void {
     const L = this.stage.layers;
@@ -301,6 +356,7 @@ export class World {
     this.skyP.kp = Math.min(this.kpDisplay(), 1);
     const W = this.stage.w, H = this.stage.h;
     const size = Math.max(34, Math.min(W, 760) * 0.12);
+    this.splashLogoSize = size;
     this.logo.destroy();
     this.logo = new IsText({ text: 'NORDLYS', size, style: 'ice', tracking: 0.14 });
     this.stage.layers.banners.addChild(this.logo);
@@ -317,13 +373,16 @@ export class World {
     gsap.to(o, { k: kp, duration: 1.2, ease: 'power2.out', onUpdate: () => { this.skyP.kp = o.k; } });
     gsap.to(this.frame, { alpha: 1, duration: 0.9, delay: 0.2 });
     gsap.to(this.arc, { alpha: 1, duration: 0.8, delay: 0.5 });
-    // logo flies to the header
+    // logo flies to the header, scaling down on the way (or fading if the header has no room for it)
     const hdr = document.getElementById('hdr')!.getBoundingClientRect();
     const host = this.hud.root.getBoundingClientRect();
-    const target = Math.min(22, Math.max(12, hdr.height * 0.34));
-    const s = target / (this.logo.height / (this.logo.scale.y || 1) * 0.72 || 40);
-    await new Promise<void>((res) => gsap.to(this.logo, { y: hdr.top - host.top + hdr.height / 2, duration: 1.0, delay: 0.5, ease: 'power3.inOut', onComplete: res }));
-    gsap.to(this.logo.scale, { x: Math.min(1, s), y: Math.min(1, s), duration: 0.001 });
+    const target = this.headerLogoCap(hdr.height);
+    const s = target / this.splashLogoSize;
+    const fits = this.headerHasRoom(target);
+    await new Promise<void>((res) => {
+      gsap.to(this.logo, { y: hdr.top - host.top + hdr.height / 2, alpha: fits ? 1 : 0, duration: 1.0, delay: 0.5, ease: 'power3.inOut', onComplete: res });
+      gsap.to(this.logo.scale, { x: s, y: s, duration: 1.0, delay: 0.5, ease: 'power3.inOut' });
+    });
     this.logoIntro = false;
     this.logo.destroy();
     this.logo = new IsText({ text: 'NORDLYS', size: 40, style: 'ice', tracking: 0.14 });
@@ -356,6 +415,7 @@ export class World {
   // ------------------------------------------------------------ symbol baking
   async rebakeBase(): Promise<void> {
     const set = await bakeSymbolsAsync(this.stage.renderer, { edition: 'base', cellPx: this.cellPx, env: this.sky.envColors() });
+    if (set.cellPx !== this.cellPx) { destroySymbolSet(set); return this.rebakeBase(); } // resized meanwhile
     const old = this.baseSet;
     this.baseSet = set;
     if (!this.storm) this.grid.setSymbolSet(set);

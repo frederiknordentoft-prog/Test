@@ -230,7 +230,9 @@ void main() {
 
 // ───────────────────────────────────────── live emissive pass (half res) ─────────────────────────────────────────
 export const AURORA_FRAG = HEAD + /* glsl */ `
-uniform vec4 uP;        // x: integrated curtain phase, y: fast phase (flicker), z: time (wrapped), w: storm
+uniform vec4 uP;        // x: integrated curtain phase, y: slow flicker phase (≤ 0.6 /s), z: time (wrapped), w: storm
+uniform vec4 uQ;        // x: fold phase (slow, not storm-accelerated → no fold-birth brightness pops)
+uniform vec4 uFx;       // photosensitivity limits: flicker amp (≤ 0.05), pulse amp, CME brightness, CME time scale
 uniform vec4 uA;        // intensity, fold, topMix (red), violet
 uniform vec4 uB;        // crackle, ray sharpness, brightness mul (glow), turbulence
 uniform vec4 uC;        // red (630 nm) layer amount, Kp≥7 escalation (crackle), 0, 0
@@ -271,15 +273,15 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float xw = (p.x - uScr.x * 0.5) / max(uScr.x, 640.0);
   float X = (p.x - uScr.x * 0.5) / (270.0 * sc) + seed * 7.13;
   // folds: the along-curtain coordinate s is warped; where ds/dx → 0 the sheet is seen edge-on → brighter
-  float F = (0.25 + 0.95 * uA.y) * (1.0 + 0.45 * storm);
-  vec2 wd = warp(X, ph, seed);
+  float F = (0.25 + 0.95 * uA.y) * (1.0 + 0.25 * storm);
+  vec2 wd = warp(X, uQ.x, seed);
   float wv = wd.x;
   float turb = 0.0;
-  if (uB.w > 0.0) turb = uB.w * (n1(X * 2.6 + uP.y * 0.45 + seed) - 0.5);   // storm turbulence (uniform branch)
+  if (uB.w > 0.0) turb = uB.w * (n1(X * 2.6 + ph * 0.16 + seed) - 0.5);    // storm turbulence: shape, not brightness
   float s = X + F * wv + turb * 0.22;
   float ds = 1.0 + F * wd.y;
-  float edge = min(1.0 / max(abs(ds), 0.3), 2.6);
-  edge = mix(1.0, edge, 0.7);
+  // edge-on brightening, bounded and smooth (a fold can never pop by more than ~+80 %)
+  float edge = 1.0 + 0.8 * exp(-ds * ds / 0.2);
   // seam follows the folded sheet (so folds kink the lower border) + slow drift + perspective sag + tilt
   float lg = n1(s * 0.62 + ph * 0.022 + seed * 11.0) - 0.5;
   float lg2 = n1(X * 0.21 - ph * 0.012 + seed * 5.0) - 0.5;
@@ -291,7 +293,7 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   env = 0.1 + 0.9 * env;
   // extent varies along the sheet
   float Hs = HY * hF * (0.55 + 0.9 * n1(s * 1.4 - ph * 0.08 + seed * 3.0)) * (1.0 + 0.3 * uC.y);
-  float pulse = 0.7 + 0.3 * sin(s * 1.9 - ph * 0.55 + seed * 2.0);
+  float pulse = 1.0 - uFx.y + uFx.y * sin(s * 1.9 - ph * 0.55 + seed * 2.0);   // slow travelling surge (< 0.5 Hz)
   // diffuse atmospheric glow around the sheet
   vec3 glow = mix(cBody, cTop, 0.5 * uC.x) * exp(-abs(h - Hs * 0.3) / (Hs * 0.8 + 1.0)) * 0.05 * br * env * pulse;
   if (h < -48.0 * sc) return glow;              // well below the seam only the glow remains (early out)
@@ -301,16 +303,19 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float conv = (seamY - vy) / max(p.y - vy, 1.0);
   float foot = uScr.x * 0.5 + (p.x - uScr.x * 0.5) * conv;
   float Xf = (foot - uScr.x * 0.5) / (270.0 * sc) + seed * 7.13;
-  vec2 wf = warp(Xf, ph, seed);
+  vec2 wf = warp(Xf, uQ.x, seed);
   float sr = Xf + F * wf.x + turb * 0.22;
   // band-limited ray octaves: fade to their mean before they alias (analytic d(sr)/texel, no derivatives)
   float fws = abs(conv * (1.0 + F * wf.y)) / (270.0 * sc * uScr.w);
   float f1 = 19.0 * (1.0 + 0.2 * storm), f2 = 44.0;
-  float r1 = mix(n1(sr * f1 + ph * 0.7 + seed * 20.0), 0.5, smoothstep(0.22, 0.45, fws * f1));
-  float a2 = smoothstep(0.22, 0.45, fws * f2);
+  // edge-on (|ds| → 0) the line of sight crosses a long stretch of the sheet: rays average out. This also
+  // keeps the scrolling ray noise from turning into a coherent large-area flicker inside folds.
+  float avg = 1.0 - smoothstep(0.1, 0.65, abs(1.0 + F * wf.y));
+  float r1 = mix(n1(sr * f1 + ph * 0.7 + seed * 20.0), 0.5, max(smoothstep(0.22, 0.45, fws * f1), avg));
+  float a2 = max(smoothstep(0.22, 0.45, fws * f2), avg);
   float r2 = 0.5;
   if (a2 < 1.0) r2 = mix(n1(sr * f2 - ph * 1.2 + seed * 40.0), 0.5, a2);
-  float r3 = n1(sr * 6.0 + ph * 0.22 + seed * 60.0);
+  float r3 = mix(n1(sr * 6.0 + ph * 0.22 + seed * 60.0), 0.5, avg * 0.8);
   float rays = smoothstep(0.15, 0.88, r1 * 0.5 + r2 * 0.3 + r3 * 0.2);
   rays = pow(rays, uB.y);
   float Hr = Hs * (0.3 + 1.1 * rays);
@@ -320,9 +325,9 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float below = exp(min(h, 0.0) / (1.3 / uScr.w));            // razor lower edge (≈1.3 texels)
   float rayK = smoothstep(0.0, 0.35, hp / Hs);                 // striations strongest higher up
   float I = (body * mix(0.75 + 0.3 * rays, 0.25 + 0.9 * rays, rayK) + seamLn * (0.45 + 0.6 * rays)) * below;
-  // brightness surges travelling along the curtain + crackle flicker
+  // gentle shimmer: slow phase (< 1 Hz per point), amplitude capped at ±5 % (FlashBudget / PLAN §6)
   float flick = 1.0;
-  if (uB.x > 0.0) flick += uB.x * 0.6 * (n1(s * 4.0 + uP.y * 5.0 + seed) - 0.5) * 2.0;
+  if (uFx.x > 0.0) flick += uFx.x * (n1(s * 1.3 + uP.y + seed) - 0.5) * 2.0;
   float k = pulse * flick * edge * br * env;
   I *= k;
   // colour by height: bright 557.7 nm seam → green body → violet band → red/pink tops
@@ -400,7 +405,7 @@ vec3 sunLayer(vec2 p, vec3 bg) {
 vec3 cmeLayer(vec2 p) {
   float k = uCme.x;
   float H = uScr.y;
-  float t = uP.z;
+  float t = uP.z * uFx.w;
   vec2 C = vec2(uScr.x * 0.5, -H * 1.1);
   vec2 v = p - C;
   float rho = length(v);
@@ -422,7 +427,7 @@ vec3 cmeLayer(vec2 p) {
   c += mix(C_CRIMSON, C_MAGENTA, turb * 0.5) * bk * (0.12 + 0.3 * lanes) * (0.6 + 0.4 * exp(e / (0.4 * H)));
   // faint pre-glow ahead
   c += C_CRIMSON * exp(-max(e, 0.0) / (0.1 * H)) * (1.0 - bk) * 0.12;
-  return c * uCme.y;
+  return c * uCme.y * uFx.z;
 }
 
 void main() {

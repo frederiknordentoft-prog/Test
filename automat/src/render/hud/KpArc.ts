@@ -12,7 +12,9 @@ function lerpColor(a: number, b: number, t: number): number {
 }
 
 export class KpArc extends Container {
+  private under = new Graphics();
   private track = new Graphics();
+  private sun = new Graphics();
   private fill = new Graphics();
   private glow = new Graphics();
   private head = new Sprite(softDot());
@@ -35,8 +37,8 @@ export class KpArc extends Container {
     this.glow.blendMode = 'add';
     this.head.anchor.set(0.5); this.head.blendMode = 'add';
     this.halo.anchor.set(0.5); this.halo.blendMode = 'add'; this.halo.alpha = 0.25;
-    this.addChild(this.track, this.glow, this.fill, this.halo, this.head);
-    for (let g = 1; g <= 5; g++) {
+    this.addChild(this.under, this.track, this.glow, this.fill, this.sun, this.halo, this.head);
+    for (let g = 1; g <= 4; g++) {
       const t = new Text({ text: 'G' + g, style: { fontFamily: 'system-ui, sans-serif', fontSize: 10, fontWeight: '700', fill: 0x9cc9ff, letterSpacing: 1 } });
       t.anchor.set(0.5); t.alpha = 0.55;
       this.labels.push(t); this.addChild(t);
@@ -48,15 +50,17 @@ export class KpArc extends Container {
 
   layout(x: number, y: number, w: number, h: number): void {
     this.position.set(x, y);
-    const span = Math.min(w * 0.86, 560);
+    const span = Math.min(w * 0.84, 600);
     const compact = h < 60;
-    this.thick = compact ? 5 : 8;
-    // Circle through the endpoints with a sagitta that gives a gentle curve.
-    const sag = compact ? 4 : Math.min(h * 0.42, 34);
+    const wide = w >= 560;
+    this.thick = compact ? 6 : wide ? 12 : 10;
+    // Reserve the bottom ~30 px for the DOM goal chip; the arc lives above it.
+    const hh = Math.max(20, h - (compact ? 0 : 30));
+    const sag = compact ? 4 : Math.min(hh * 0.45, 30);
     const half = span / 2;
     this.R = (half * half + sag * sag) / (2 * sag);
     this.cx = w / 2;
-    const top = compact ? h * 0.45 : h * 0.34;
+    const top = compact ? h * 0.42 : Math.max(this.thick, hh * 0.28);
     this.cy = top + this.R;
     const ang = Math.asin(half / this.R);
     this.a0 = -Math.PI / 2 - ang;
@@ -64,18 +68,28 @@ export class KpArc extends Container {
     this.head.width = this.head.height = this.thick * 5;
     this.halo.width = this.halo.height = this.thick * 12;
     const fs = compact ? 9 : 10;
-    for (let g = 0; g < 5; g++) {
+    for (let g = 0; g < 4; g++) {
       const segMid = this.segAngle(4 + g + 0.5);
       const r = this.R + this.thick * 1.6 + (compact ? 3 : 6);
       this.labels[g].style.fontSize = fs;
       this.labels[g].position.set(this.cx + Math.cos(segMid) * r, this.cy + Math.sin(segMid) * r);
-      this.labels[g].visible = !compact && w >= 560;
+      this.labels[g].visible = !compact && wide;
     }
     const endA = this.a1;
     this.lockLabel.style.fontSize = fs;
-    // "SOLSTORM" sits just above the (lower) right end of the arc, right-aligned to it.
-    this.lockLabel.position.set(this.cx + Math.cos(endA) * this.R + this.thick * 0.5, this.cy + Math.sin(endA) * this.R - this.thick * 2.2);
-    this.lockLabel.visible = !compact;
+    // Desktop: "SOLSTORM" right of the end cap. Everywhere: a small sun glyph marks segment 9 as the goal.
+    const ex = this.cx + Math.cos(endA) * this.R, ey = this.cy + Math.sin(endA) * this.R;
+    this.lockLabel.anchor.set(0, 0.5);
+    this.lockLabel.position.set(ex + this.thick * 1.6 + 6, ey);
+    this.lockLabel.visible = wide && !compact;
+    this.sun.clear();
+    const sr = this.thick * 0.55;
+    this.sun.circle(ex, ey, sr).fill({ color: 0xff6a4a, alpha: 0.9 });
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      this.sun.moveTo(ex + Math.cos(a) * sr * 1.5, ey + Math.sin(a) * sr * 1.5).lineTo(ex + Math.cos(a) * sr * 2.3, ey + Math.sin(a) * sr * 2.3);
+    }
+    this.sun.stroke({ width: 1.5, color: 0xff8a6a, alpha: 0.85, cap: 'round' });
     this.drawnKp = -1;
     this.redraw();
   }
@@ -103,10 +117,14 @@ export class KpArc extends Container {
     this.drawnKp = this.kp;
     const gap = 0.045;
     const t = this.thick;
+    // Dark underlay so the meter reads on any sky, then a clearly visible track.
+    this.under.clear();
+    this.arcPath(this.under, 0, 9, this.R);
+    this.under.stroke({ width: t + 5, color: 0x02060f, alpha: 0.55, cap: 'round' });
     this.track.clear();
     for (let s = 0; s < 9; s++) {
       this.arcPath(this.track, s + gap, s + 1 - gap, this.R);
-      this.track.stroke({ width: t, color: s === 8 ? 0x5a1020 : 0x9cc9ff, alpha: s === 8 ? 0.55 : 0.13, cap: 'round' });
+      this.track.stroke({ width: t, color: s === 8 ? 0x7a1a2c : 0x9cc9ff, alpha: s === 8 ? 0.6 : 0.28, cap: 'round' });
     }
     this.fill.clear();
     this.glow.clear();
@@ -118,7 +136,7 @@ export class KpArc extends Container {
       this.arcPath(this.fill, s + gap, s + gap + (1 - 2 * gap) * f, this.R);
       this.fill.stroke({ width: t, color: c, alpha: 1, cap: 'round' });
       this.arcPath(this.glow, s + gap, s + gap + (1 - 2 * gap) * f, this.R);
-      this.glow.stroke({ width: t * 3.2, color: c, alpha: 0.22, cap: 'round' });
+      this.glow.stroke({ width: t * 3.2, color: c, alpha: 0.2, cap: 'butt' });
     }
     const ha = this.segAngle(Math.min(9, k));
     this.head.position.set(this.cx + Math.cos(ha) * this.R, this.cy + Math.sin(ha) * this.R);
@@ -126,16 +144,17 @@ export class KpArc extends Container {
     const seg = Math.min(8, Math.floor(k));
     this.head.tint = lerpColor(SEG_COLORS[seg], 0xffffff, 0.45);
     this.halo.tint = SEG_COLORS[seg];
-    this.head.visible = this.halo.visible = k > 0.01;
-    for (let g = 0; g < 5; g++) this.labels[g].alpha = k >= 5 + g ? 1 : 0.45;
+    this.head.visible = this.halo.visible = true;
+    for (let g = 0; g < 4; g++) this.labels[g].alpha = k >= 5 + g ? 1 : 0.5;
     this.lockLabel.alpha = k >= 8 ? 1 : 0.55;
   }
 
   /** Per-frame: breathing head + pulse decay. */
   update(dt: number, time: number): void {
     this.pulse = Math.max(0, this.pulse - dt * 2.5);
-    const b = 0.85 + 0.15 * Math.sin(time * 3.1) + this.pulse * 0.8;
+    const b = (this.kp > 0.01 ? 0.85 : 0.5) + 0.15 * Math.sin(time * 3.1) + this.pulse * 0.8;
     this.head.alpha = Math.min(1, b);
+    this.sun.alpha = this.kp >= 8 ? 0.8 + 0.2 * Math.sin(time * 2.4) : 0.7;
     this.halo.alpha = 0.18 + 0.12 * Math.sin(time * 1.7) + this.pulse * 0.5;
     this.lockLabel.alpha = this.kp >= 8 ? 0.75 + 0.25 * Math.sin(time * 6) : this.lockLabel.alpha;
   }

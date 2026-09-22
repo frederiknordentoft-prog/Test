@@ -18,6 +18,7 @@ const ICON = {
   sound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
   mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
   bolt: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L4 14h6.5L9 22l10-12.5h-6.6z"/></svg>',
+  dots: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
 };
 
 const h = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', html = ''): HTMLElementTagNameMap[K] => {
@@ -57,22 +58,23 @@ export class Hud {
         <div class="r"><span class="badge" id="modeBadge">NORDLYS</span><span class="badge demo">Demo<span class="long"> · legepenge</span></span></div>
       </header>
       <div id="hdr">
-        <button class="pill" id="demoPill" aria-label="Demo-værktøj: springer progressionen over. Findes ikke i den rigtige version.">
-          <span class="tag">DEMO</span>${ICON.bolt}<span>Udløs Solstorm</span>
+        <button class="pill" id="demoPill" aria-label="Udløs Solstorm – demo-værktøj der springer progressionen over. Findes ikke i den rigtige version.">
+          <span class="tag">DEMO</span>${ICON.bolt}<span class="txt">Udløs Solstorm</span>
         </button>
         <div class="right">
+          <button class="iconbtn" id="toolsBtn" aria-label="Demo-værktøjer">${ICON.dots}</button>
           <button class="iconbtn" id="muteBtn" aria-label="Lyd til/fra">${ICON.sound}</button>
           <button class="iconbtn" id="menuBtn" aria-label="Menu, regler og indstillinger">${ICON.menu}</button>
         </div>
       </div>
       <div class="side left" id="sideL"><div class="panel"><h4>Kp-stigen</h4><div class="ladder" id="ladderSide"></div></div></div>
-      <div id="slot-arc"><button id="goal" aria-live="polite"></button></div>
+      <div id="slot-arc"><button id="goal" aria-label="Kp-stigen: se hvad der sker ved hvert niveau"></button></div>
       <div id="slot-grid"></div>
       <div class="side right" id="sideR">
         <div class="panel"><h4>Gevinsttabel · ved indsats</h4><div id="payMini"></div></div>
-        <div class="panel" style="flex:1"><h4>Seneste spil</h4><div class="hist" id="histSide"></div></div>
+        <div class="panel hist-panel"><h4>Seneste spin</h4><div class="hist" id="histSide"></div></div>
       </div>
-      <div id="winstrip" aria-live="polite">
+      <div id="winstrip">
         <div class="bar"><div class="fill"></div><div class="mark"></div></div>
         <div class="text"><span id="winL">Held og lykke</span><span id="winR" class="num"></span></div>
       </div>
@@ -91,7 +93,7 @@ export class Hud {
         </div>
       </div>
       <footer id="foot">
-        <span class="l">18+ · <a href="https://www.stopspillet.dk" target="_blank" rel="noopener">StopSpillet 70 22 28 25</a> · <a href="https://www.spillemyndigheden.dk/rofus" target="_blank" rel="noopener">ROFUS</a> · Spil ansvarligt</span>
+        <span class="l">18+ · <a href="https://www.stopspillet.dk" target="_blank" rel="noopener">StopSpillet 70 22 28 25</a> · <a href="https://www.spillemyndigheden.dk/rofus" target="_blank" rel="noopener">ROFUS</a><span class="rg-extra"> · Spil ansvarligt</span></span>
         <span class="r num" id="session">Session 0 min · Netto ±0,00 kr</span>
       </footer>`;
     host.appendChild(ui);
@@ -104,7 +106,8 @@ export class Hud {
       <div class="overlay" id="summary"><div class="card" id="summaryCard"></div></div>
       <div id="banner" role="status"><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>
       <div id="notice"></div>
-      <div class="sheet-wrap" id="menuWrap"><div class="sheet" role="dialog" aria-label="Menu">
+      <div id="calmChip" class="chip"><span>Rolig tilstand (systemindstilling)</span><button id="calmFx" class="linkbtn">Vis fuld effekt</button></div>
+      <div class="sheet-wrap" id="menuWrap"><div class="sheet" role="dialog" aria-modal="true" aria-label="Menu">
         <div class="grab"></div>
         <header><h3>NORDLYS</h3><button class="iconbtn" id="menuClose" aria-label="Luk">✕</button></header>
         <div class="tabs" role="tablist" id="tabs">
@@ -114,7 +117,7 @@ export class Hud {
         </div>
         <div class="body" id="menuBody"></div>
       </div></div>
-      <div class="sheet-wrap" id="drawerWrap"><div class="sheet" role="dialog" aria-label="Demo-værktøjer">
+      <div class="sheet-wrap" id="drawerWrap"><div class="sheet" role="dialog" aria-modal="true" aria-label="Demo-værktøjer">
         <div class="grab"></div>
         <header><h3 style="color:#ffd79a">DEMO-VÆRKTØJER</h3><button class="iconbtn" id="drawerClose" aria-label="Luk">✕</button></header>
         <div class="body">
@@ -123,14 +126,14 @@ export class Hud {
             <button class="btn storm small" id="dTrigger">⚡ Udløs Solstorm</button>
             <button class="btn ghost small" id="dSuns">Udløs via 4 sole</button>
           </div>
-          <div class="setting"><span>Sæt Kp (sandkasse)</span><input type="range" min="0" max="8.9" step="0.1" id="dKp"></div>
+          <label class="setting"><span>Vis Kp (kun forhåndsvisning)</span><input type="range" min="0" max="8.9" step="0.1" id="dKp" aria-label="Vis Kp, kun forhåndsvisning"></label>
           <div class="actions"><button class="btn ghost small" id="dReset">Nulstil demo</button><button class="btn ghost small" id="dFx" style="display:none">Vis fuld effekt</button></div>
-          <p class="hint">Genveje: Mellemrum = spin · E = demo · M = lyd · Esc = spring over. Direkte link til demo-stormen: tilføj <code>#solstorm</code> til adressen.</p>
+          <p class="hint">"Vis Kp" ændrer kun himlen og buen – din rigtige måler røres ikke. Genveje: Mellemrum = spin · E = demo · M = lyd · Esc = spring over. Direkte link til demo-stormen: tilføj <code>#solstorm</code> til adressen.</p>
         </div>
       </div></div>`;
     host.appendChild(ov);
 
-    for (const id of ['reg', 'clock', 'regBal', 'modeBadge', 'demoPill', 'muteBtn', 'menuBtn', 'goal', 'winstrip', 'winL', 'winR', 'bal', 'stake', 'stakeDn', 'stakeUp', 'lock', 'spinBtn', 'spinCap', 'ring', 'session',
+    for (const id of ['toolsBtn', 'calmChip', 'calmFx', 'reg', 'clock', 'regBal', 'modeBadge', 'demoPill', 'muteBtn', 'menuBtn', 'goal', 'winstrip', 'winL', 'winR', 'bal', 'stake', 'stakeDn', 'stakeUp', 'lock', 'spinBtn', 'spinCap', 'ring', 'session',
       'splash', 'unlockBtn', 'stormReady', 'stormInfo', 'startStormBtn', 'bigwin', 'continueBtn', 'summary', 'summaryCard', 'banner', 'bannerT', 'bannerS', 'notice',
       'menuWrap', 'menuClose', 'menuBody', 'tabs', 'drawerWrap', 'drawerClose', 'dTrigger', 'dSuns', 'dKp', 'dReset', 'dFx', 'ladderSide', 'payMini', 'histSide']) {
       this.el[id] = document.getElementById(id)!;
@@ -144,6 +147,8 @@ export class Hud {
   private press(el: HTMLElement, fn: () => void): void {
     el.addEventListener('click', (e) => {
       e.preventDefault();
+      // Pointer clicks drop focus so a later Space still means "spin"; keyboard activation keeps it.
+      if ((e as MouseEvent).detail > 0) el.blur();
       if (performance.now() - this.lastPress < 60) return;
       this.lastPress = performance.now();
       fn();
@@ -155,7 +160,9 @@ export class Hud {
     this.press(this.el.spinBtn, () => I({ t: 'spin' }));
     this.press(this.el.stakeUp, () => I({ t: 'stakeUp' }));
     this.press(this.el.stakeDn, () => I({ t: 'stakeDown' }));
-    this.press(this.el.demoPill, () => this.openDrawer(true));
+    this.press(this.el.demoPill, () => I({ t: 'demo' }));
+    this.press(this.el.toolsBtn, () => this.openDrawer(true));
+    this.press(this.el.calmFx, () => I({ t: 'fullFx' }));
     this.press(this.el.drawerClose, () => this.openDrawer(false));
     this.press(this.el.dTrigger, () => { this.openDrawer(false); I({ t: 'demo' }); });
     this.press(this.el.dSuns, () => { this.openDrawer(false); I({ t: 'demoSuns' }); });
@@ -199,7 +206,9 @@ export class Hud {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT') return;
       if (e.code === 'Space' || e.code === 'Enter') {
-        if ((e.target as HTMLElement)?.tagName === 'BUTTON' && e.code === 'Enter') return;
+        // Never hijack a focused control or link (keyboard users must be able to open StopSpillet/ROFUS).
+        const t = e.target as HTMLElement;
+        if (t && t !== document.body && t.closest('a,button,input,select,textarea,[role="tab"],summary')) return;
         e.preventDefault();
         if (this.el.splash.classList.contains('show')) I({ t: 'unlock' });
         else if (this.el.stormReady.classList.contains('show')) I({ t: 'startStorm' });
@@ -249,25 +258,26 @@ export class Hud {
   showFullFxOption(b: boolean): void { this.el.dFx.style.display = b ? '' : 'none'; }
   setDemoKp(kp: number): void { (this.el.dKp as HTMLInputElement).value = String(Math.min(8.9, kp)); }
 
-  setGoal(kp: number, charge: number, K: number, avgSpinsLeft: number | null): void {
+  /** Goal chip: always points at the next REWARD (Ladet spin at Kp 3/5/7, Solstorm at Kp 9) with the neutral
+   *  expected distance "≈ N spin" (responsible-gambling disclosure: an average, not a promise). */
+  setGoal(kp: number, charge: number, K: number, avgSpinsTo: (targetKp: number) => number | null): void {
     const cur = Math.floor(kp);
-    const next = TIERS.find((t) => t.kp === cur + 1);
-    if (!next) { this.el.goal.innerHTML = `<span class="kp">Kp 9 · G5</span><span class="sep">·</span><b>SOLSTORM</b>`; return; }
-    const need = Math.max(0, Math.ceil(next.frac * K - charge));
-    const label = next.kp === 9 ? 'SOLSTORM' : next.perk ? 'Ladet spin' : next.change.split('·')[0].trim();
-    const g = next.gName ? ` ${next.gName}` : '';
-    const labCls = next.perk || next.kp === 9 ? '' : ' class="lab"';
-    this.el.goal.innerHTML = `<span class="kp">Kp ${fmt1(kp)}</span><span class="sep">·</span>Næste: <b>Kp ${next.kp}${g}</b><span${labCls}>→ ${label}</span><span class="sep">·</span><span class="num">${fmtInt(need)} ladning</span>${avgSpinsLeft ? `<span class="spins"><span class="sep">·</span><span class="num">≈ ${fmtInt(avgSpinsLeft)} spin</span></span>` : ''}`;
+    const reward = TIERS.find((t) => t.kp > cur && (t.perk || t.kp === 9));
+    if (!reward) { this.el.goal.innerHTML = `<span class="in"><span class="kp">Kp 9 · G5</span><span class="sep">·</span><b>SOLSTORM</b></span>`; return; }
+    const need = Math.max(0, Math.ceil(reward.frac * K - charge));
+    const what = reward.kp === 9 ? 'Solstorm' : 'Ladet spin';
+    const n = avgSpinsTo(reward.kp);
+    this.el.goal.innerHTML = `<span class="in"><span class="kp">Kp ${fmt1(kp)}</span><span class="sep">·</span>${what} ved <b>Kp ${reward.kp}</b>${n ? `<span class="sep">·</span><span class="num">≈ ${fmtInt(n)} spin</span>` : ''}<span class="lab"><span class="sep">·</span><span class="num">${fmtInt(need)} ladning</span></span><span class="chev" aria-hidden="true">›</span></span>`;
   }
 
   /** Storm status in the goal chip (replaces the Kp goal while Solstorm runs). */
-  setStormGoal(spin: number, total: number, maxMark: number, winOre: number, stakeOre: number): void {
-    this.el.goal.innerHTML = `<span class="kp">SOLSTORM</span><span class="sep">·</span>Spin <b class="num">${spin}/${total}</b><span class="sep">·</span>Højeste mærke <b class="num">×${maxMark}</b><span class="spins"><span class="sep">·</span><span class="num">${fmtKr(winOre)} (${fmtX(winOre / stakeOre)})</span></span>`;
+  setStormGoal(spin: number, total: number, maxMark: number, winOre: number, stakeOre: number, demo = false): void {
+    this.el.goal.innerHTML = `<span class="in"><span class="kp">${demo ? 'DEMO · ' : ''}SOLSTORM</span><span class="sep">·</span>Stormspin <b class="num">${spin}/${total}</b><span class="sep">·</span>Højeste mærke <b class="num">×${maxMark}</b><span class="lab"><span class="sep">·</span><span class="num">${fmtKr(winOre)} (${fmtX(winOre / stakeOre)})</span></span></span>`;
   }
   setSplash(b: boolean): void { document.documentElement.classList.toggle('splash', b); }
 
   /** Netto-linje. fraction of 3× stake; marker at 1×. */
-  setWin(totalOre: number, stakeOre: number, profile: 'win' | 'return' | 'push' | 'none' | 'live', label?: string): void {
+  setWin(totalOre: number, stakeOre: number, profile: 'win' | 'return' | 'push' | 'none' | 'live', label?: string, paidOre: number = stakeOre): void {
     const ws = this.el.winstrip;
     const fill = ws.querySelector('.fill') as HTMLElement;
     const f = Math.min(1, totalOre / (stakeOre * 3));
@@ -278,19 +288,19 @@ export class Hud {
     if (profile === 'none') { this.el.winL.textContent = 'Ingen gevinst'; this.el.winR.textContent = ''; return; }
     if (profile === 'return') {
       this.el.winL.innerHTML = `Retur <span class="amt num">${fmtKr(totalOre)}</span>`;
-      this.el.winR.textContent = `netto ${fmtSignedKr(totalOre - stakeOre)}`;
+      this.el.winR.textContent = `netto ${fmtSignedKr(totalOre - paidOre)}`;
       return;
     }
     if (profile === 'push') { this.el.winL.innerHTML = `Indsats retur <span class="amt num">${fmtKr(totalOre)}</span>`; this.el.winR.textContent = 'netto ±0,00 kr'; return; }
     this.el.winL.innerHTML = `Gevinst <span class="amt num">${fmtKr(totalOre)}</span>`;
-    this.el.winR.textContent = `netto ${fmtSignedKr(totalOre - stakeOre)}`;
+    this.el.winR.textContent = paidOre === 0 ? 'gratis spin' : `netto ${fmtSignedKr(totalOre - paidOre)}`;
   }
   clearWin(text = ''): void { this.setWin(0, 1, 'none', text); }
   flashNetto(): void { const ws = this.el.winstrip; ws.classList.remove('cross'); void ws.offsetWidth; ws.classList.add('cross'); }
 
   setSpin(state: 'idle' | 'busy' | 'perk' | 'disabled' | 'storm', cap?: string): void {
     const b = this.el.spinBtn as HTMLButtonElement;
-    b.classList.toggle('idle', state === 'idle' || state === 'perk');
+    b.classList.toggle('idle', state === 'idle' || state === 'perk' || state === 'storm');
     b.classList.toggle('busy', state === 'busy');
     b.classList.toggle('perk', state === 'perk');
     // 'disabled' = balance below stake: the button stays pressable and the game answers with "Fyld op".
@@ -328,14 +338,21 @@ export class Hud {
     if (b) this.renderMenu();
     this.el.menuWrap.classList.toggle('show', b);
     this.onIntent({ t: 'menu', open: b });
+    if (b) setTimeout(() => this.el.menuClose.focus(), 50); else this.el.menuBtn.focus({ preventScroll: true });
   }
-  openDrawer(b: boolean): void { this.el.drawerWrap.classList.toggle('show', b); }
+  openDrawer(b: boolean): void {
+    this.el.drawerWrap.classList.toggle('show', b);
+    this.onIntent({ t: 'menu', open: b });
+    if (b) setTimeout(() => this.el.drawerClose.focus(), 50); else this.el.toolsBtn.focus({ preventScroll: true });
+  }
+  setCalmChip(b: boolean): void { this.el.calmChip.classList.toggle('show', b); }
   menuOpen(): boolean { return this.el.menuWrap.classList.contains('show') || this.el.drawerWrap.classList.contains('show'); }
 
   // ---------------- side panels (desktop) ----------------
-  refreshSide(stakeOre: number): void {
+  refreshSide(stakeOre: number, storm = false): void {
     this.el.ladderSide.innerHTML = this.ladderHtml();
-    this.el.payMini.innerHTML = this.payMiniHtml(stakeOre);
+    this.el.payMini.innerHTML = this.payMiniHtml(stakeOre, storm);
+    (this.el.payMini.previousElementSibling as HTMLElement).textContent = storm ? 'Solstorm · gevinst før mærker' : 'Gevinsttabel · ved indsats';
     this.el.histSide.innerHTML = this.histHtml(8);
   }
 
@@ -347,14 +364,14 @@ export class Hud {
     switch (this.menuTab) {
       case 'rules': body.innerHTML = this.rulesHtml(); break;
       case 'pay': body.innerHTML = this.payHtml(); break;
-      case 'ladder': body.innerHTML = `<p>Himlen er progressionsbaren. Hver knust krystal giver ladning (lav 1, høj 2, wild 3, 3 sole +${CONFIG.sunCharge}). Ved Kp 9 rammer Solstormen.</p><div class="ladder">${this.ladderHtml()}</div>`; break;
-      case 'hist': body.innerHTML = `<p>De seneste 100 spil med Spil-ID. Hvert spil kan genskabes byte for byte fra Spil-ID og gemt forudgående tilstand.</p><div class="hist">${this.histHtml(100)}</div>`; break;
+      case 'ladder': body.innerHTML = `<p>Nordlyset viser dit fremskridt. Knuste symboler giver ladning (lav krystal 1, høj 2, WILD 3, 3 sole +${CONFIG.sunCharge}). Ladet spin ved Kp 3, 5 og 7 · Solstorm ved Kp 9. Tallene til højre er det gennemsnitlige antal spin fra Kp 0.</p><p class="hint">Dit fremskridt gemmes i 365 dage efter dit sidste spin.</p><div class="ladder">${this.ladderHtml()}</div>`; break;
+      case 'hist': body.innerHTML = `<p>De seneste 100 spin. Hvert spin kan genskabes præcist ud fra sit Spil-ID og den gemte tilstand før spinnet.</p><div class="hist"><div class="h head"><span>Spil-ID</span><span>Gevinst</span><span>Netto</span></div>${this.histHtml(100)}</div>`; break;
       case 'settings': body.innerHTML = `
-        <div class="setting"><span>Musik</span><input type="range" min="0" max="1" step="0.05" value="${st.music}" data-k="music"></div>
-        <div class="setting"><span>Lydeffekter</span><input type="range" min="0" max="1" step="0.05" value="${st.sfx}" data-k="sfx"></div>
-        <div class="setting"><span>Lyd slået fra</span><input type="checkbox" ${st.muted ? 'checked' : ''} data-k="muted"></div>
-        <div class="setting"><span>Haptik (Android)</span><input type="checkbox" ${st.haptics ? 'checked' : ''} data-k="haptics"></div>
-        <div class="setting"><span>Rolig tilstand</span><select data-k="calm"><option value="auto" ${st.calm === 'auto' ? 'selected' : ''}>Følg system</option><option value="on" ${st.calm === 'on' ? 'selected' : ''}>Til</option><option value="off" ${st.calm === 'off' ? 'selected' : ''}>Fra</option></select></div>
+        <label class="setting"><span>Musik</span><input type="range" min="0" max="1" step="0.05" value="${st.music}" data-k="music" id="setMusic"></label>
+        <label class="setting"><span>Lydeffekter</span><input type="range" min="0" max="1" step="0.05" value="${st.sfx}" data-k="sfx" id="setSfx"></label>
+        <label class="setting"><span>Lyd slået fra</span><input type="checkbox" ${st.muted ? 'checked' : ''} data-k="muted" id="setMuted"></label>
+        <label class="setting"><span>Haptik (Android)</span><input type="checkbox" ${st.haptics ? 'checked' : ''} data-k="haptics" id="setHaptics"></label>
+        <label class="setting"><span>Rolig tilstand</span><select data-k="calm" id="setCalm"><option value="auto" ${st.calm === 'auto' ? 'selected' : ''}>Følg system</option><option value="on" ${st.calm === 'on' ? 'selected' : ''}>Til</option><option value="off" ${st.calm === 'off' ? 'selected' : ''}>Fra</option></select></label>
         <p class="hint">Rolig tilstand fjerner rystelser, blink, kromatiske effekter og glasskår og bruger bløde overgange i stedet.</p>
         <div class="actions"><button class="btn ghost small" data-act="refill">Fyld op (legepenge)</button><button class="btn ghost small" data-act="reset">Nulstil demo</button></div>`; break;
       case 'rg': body.innerHTML = `
@@ -363,7 +380,7 @@ export class Hud {
         <p>Spil aldrig for mere, end du har råd til at tabe. Sæt grænser for tid og penge, og hold pauser.</p>
         <p>Rådgivning: <a href="https://www.stopspillet.dk" target="_blank" rel="noopener">StopSpillet 70 22 28 25</a> · Udelukkelse: <a href="https://www.spillemyndigheden.dk/rofus" target="_blank" rel="noopener">ROFUS</a>.</p>
         <h4>Designprincipper</h4>
-        <p>Mindst 3,0 s pr. spil · ingen turbo, autoplay eller køb af bonus · resultater under indsatsen fejres ikke · ingen konstruerede "næsten"-resultater · sessionstid og netto vises altid.</p>`; break;
+        <p>Mindst 3,0 s pr. spin · ingen turbo, autoplay eller køb af bonus · resultater under indsatsen fejres ikke · ingen konstruerede "næsten"-resultater · sessionstid og netto vises altid.</p>`; break;
     }
   }
 
@@ -371,19 +388,19 @@ export class Hud {
     const R = REPORT, C = CONFIG;
     return `
       <h4>Sådan spiller du</h4>
-      <p>${C.cols}×${C.rows} felter. <b>5 eller flere</b> ens symboler, der hænger sammen vandret eller lodret, giver gevinst. Nordlysbuen (WILD) erstatter alle krystaller og kan indgå i flere klynger.</p>
+      <p>${C.cols}×${C.rows} felter. <b>5 eller flere</b> ens symboler, der hænger sammen vandret eller lodret, giver gevinst. Nordlysbuen (WILD) erstatter alle symboler undtagen Solen og kan indgå i flere klynger.</p>
       <h4>Isskred</h4>
-      <p>Vindende krystaller knuses, resten falder ned, og nye falder ind ovenfra. Det fortsætter, så længe der er nye gevinster.</p>
+      <p>Vindende symboler knuses, resten falder ned, og nye falder ind ovenfra. Det fortsætter, så længe der er nye gevinster.</p>
       <h4>Frostmærker</h4>
-      <p>Et felt, der indgår i en gevinst, bliver frosset. Næste gevinst på feltet giver ×2, derefter ×4, ×8 op til ×${C.baseMarkCap}. En klynges gevinst ganges med summen af mærker på ×2 eller mere i klyngen. Mærker gælder inden for ét spil. En vindende WILD hopper to mærketrin.</p>
+      <p>Et felt, der indgår i en gevinst, bliver frosset. Næste gevinst på feltet giver ×2, derefter ×4, ×8 op til ×${C.baseMarkCap}. En klynges gevinst ganges med summen af mærker på ×2 eller mere i klyngen. Mærker gælder inden for ét spin. En vindende WILD hopper to mærketrin.</p>
       <h4>Ladning og Kp</h4>
-      <p>Knuste krystaller giver ladning (lav 1, høj 2, wild 3). Ladningen gemmes i <b>365 dage efter dit sidste spil</b> og nulstilles derefter. Ved Kp 3, 5 og 7 får du et <b>Ladet spin</b>: et gratis spil ved låst indsats med 4 felter på ×2.</p>
+      <p>Knuste symboler giver ladning (lav krystal 1, høj 2, WILD 3). Ladningen gemmes i <b>365 dage efter dit sidste spin</b> og nulstilles derefter. Ved Kp 3, 5 og 7 får du et <b>Ladet spin</b>: et gratis spin ved låst indsats med 4 felter på ×2.</p>
       <p><b>Låst indsats</b> = gennemsnittet af de indsatser, ladningen er optjent med (vægtet efter ladning). Det bruges til Ladede spin og Solstorm via Kp 9, så det ikke kan betale sig at skifte indsats.</p>
       <h4>Solen</h4>
       <p>Solen lander kun i første fald, højst én pr. kolonne. 3 sole betaler ${C.sunPayX}× indsats og giver +${C.sunCharge} ladning. 4 eller flere sole udløser Solstorm. Når 3 sole er synlige, og der er kolonner tilbage, lander de resterende kolonner langsommere (fast regel).</p>
       <h4>SOLSTORM · G5 EKSTREM</h4>
-      <p>Udløses ved Kp 9 (ved låst indsats; måleren nulstilles) eller ved 4+ sole (ved spillets indsats; måleren bevares). Begge på én gang giver én storm ved spillets indsats.</p>
-      <p>${C.stormSpins} stormspil på ${C.stormCols}×${C.stormRows}. Stormen starter med ${C.stormStartMarks} felter på ×2. Plasmamærker bevares hele stormen og går op til ×${C.stormMarkCap}. Før hvert 4. stormspil fordobler en Stormbølge alle mærker på ×2 eller mere. 3+ sole giver +${C.retriggerSpins} spil (højst ${C.maxStormSpins}). Stormgaranti: mindst ${C.guaranteeX}× indsats, vist på en separat linje. Der optjenes ikke ladning under Solstorm.</p>
+      <p>Udløses ved Kp 9 (ved låst indsats; måleren nulstilles) eller ved 4+ sole (ved spinnets indsats; måleren bevares). Begge på én gang giver én storm ved spinnets indsats.</p>
+      <p>${C.stormSpins} gratis stormspin på ${C.stormCols}×${C.stormRows}. Stormen starter med ${C.stormStartMarks} felter på ×2. Plasmamærker bevares hele stormen og går op til ×${C.stormMarkCap}. Før hvert 4. stormspin fordobler en Stormbølge alle mærker på ×2 eller mere. 3+ sole giver +${C.retriggerSpins} stormspin (højst ${C.maxStormSpins}). <b>I Solstorm udbetaler klynger ${fmtPct(C.stormPayScale, 2)} af gevinsttabellen (før mærker)</b> – det er plasmamærkerne, der bærer gevinsten. Sole i stormen udbetaler ikke. Stormgaranti: mindst ${C.guaranteeX}× indsats, vist på en separat linje. Der optjenes ikke ladning under Solstorm.</p>
       <h4>Tal</h4>
       <div class="kv num">
         <span>Tilbagebetaling (RTP), samlet</span><span>${fmtPct(R.rtp)} ± ${fmtPct(R.rtpCi95, 2)}</span>
@@ -391,13 +408,13 @@ export class Hud {
         <span>Heraf Ladede spin</span><span>${fmtPct(R.perkRtp)}</span>
         <span>Minimum-RTP uden gemt fremskridt</span><span>${fmtPct(R.rtpMin)}</span>
         <span>Basisspil (klynger + sole)</span><span>${fmtPct(R.baseSpinRtp)}</span>
-        <span>Pr. Solstorm-spil (gennemsnit)</span><span>${fmtPct(R.perStormSpinRtp, 0)}</span>
-        <span>Gevinst over indsatsen</span><span>${fmtPct(R.netWinRate, 1)} af spil</span>
-        <span>Gevinst (alle, inkl. retur)</span><span>${fmtPct(R.hitRate, 1)} af spil</span>
+        <span>Pr. stormspin (gennemsnit)</span><span>${fmt1(R.perStormSpinRtp)}× indsats</span>
+        <span>Gevinst over indsatsen</span><span>${fmtPct(R.netWinRate, 1)} af spin</span>
+        <span>Gevinst (alle, inkl. retur)</span><span>${fmtPct(R.hitRate, 1)} af spin</span>
         <span>Solstorm i alt</span><span>ca. ${fmtOdds(R.stormRate)}</span>
         <span>· via Kp 9</span><span>ca. ${fmtOdds(R.routeARate)}</span>
         <span>· via 4+ sole</span><span>ca. ${fmtOdds(R.routeBRate)}</span>
-        <span>Gns. spil til Kp 9</span><span>ca. ${fmtInt(R.avgSpinsToKp9)}</span>
+        <span>Gns. spin til Kp 9</span><span>ca. ${fmtInt(R.avgSpinsToKp9)}</span>
         <span>Solstorm, gennemsnit</span><span>${fmtX(R.stormMeanX)}</span>
         <span>Solstorm, median / P90</span><span>${fmtX(R.stormP50X)} / ${fmtX(R.stormP90X)}</span>
         <span>Mindste klyngegevinst</span><span>${fmtX(R.minWinX)} indsats</span>
@@ -405,35 +422,41 @@ export class Hud {
         <span>Volatilitet</span><span>lav i basisspillet, høj i Solstorm</span>
         <span>Matematikmodel</span><span>v1 · ${C.modelHash.slice(0, 8)}</span>
       </div>
-      <p class="hint">Alle tal kommer fra Monte Carlo-simulering (${fmtInt(R.spinsSimulated)} basisspil, ${fmtInt(R.stormsSimulated)} storme). RTP er et langsigtet gennemsnit; enkelte sessioner varierer.</p>`;
+      <p class="hint">Alle tal kommer fra Monte Carlo-simulering (${fmtInt(R.spinsSimulated)} basisspin, ${fmtInt(R.stormsSimulated)} storme). RTP er et langsigtet gennemsnit; enkelte sessioner varierer.</p>`;
   }
 
   private payHtml(): string {
     const C = CONFIG;
     const heads = ['5', '6', '7', '8', '9–10', '11–12', '13–15', '16+'];
-    let t = `<p>Gevinst i × indsats efter klyngestørrelse (før mærker).</p><table class="num"><tr><th>Symbol</th>${heads.map((x) => `<th>${x}</th>`).join('')}</tr>`;
-    for (let s = 6; s >= 0; s--) {
-      t += `<tr><td>${SYM_NAMES[s]}</td>${C.paytable[s].map((v) => `<td>${fmt1(v * C.payScale).replace(',0', '')}</td>`).join('')}</tr>`;
-    }
-    t += '</table>';
-    t += `<p>Solen: 3 sole = ${C.sunPayX}× indsats. 4+ sole = Solstorm.</p>`;
-    return t;
+    const table = (scale: number, dec: number) => {
+      let t = `<div style="overflow-x:auto"><table class="num"><tr><th>Symbol</th>${heads.map((x) => `<th>${x}</th>`).join('')}</tr>`;
+      for (let s = 6; s >= 0; s--) {
+        t += `<tr><td>${SYM_NAMES[s]}</td>${C.paytable[s].map((v) => `<td>${new Intl.NumberFormat('da-DK', { maximumFractionDigits: dec }).format(v * scale)}</td>`).join('')}</tr>`;
+      }
+      return t + '</table></div>';
+    };
+    return `<h4>Basisspil</h4><p>Gevinst i × indsats efter klyngestørrelse (før mærker).</p>${table(C.payScale, 1)}
+      <p>Solen: 3 sole = ${C.sunPayX}× indsats. 4+ sole = Solstorm.</p>
+      <h4>Solstorm</h4><p>I stormen udbetaler klynger ${fmtPct(C.stormPayScale, 2)} af tabellen ovenfor, før plasmamærker.</p>${table(C.payScale * C.stormPayScale, 2)}`;
   }
-  private payMiniHtml(stakeOre: number): string {
+  private payMiniHtml(stakeOre: number, storm = false): string {
     const C = CONFIG;
-    const rows = [6, 5, 4, 3, 0].map((s) => `<tr><td>${SYM_NAMES[s]}</td><td>${fmtKr(Math.round(C.paytable[s][0] * C.payScale * stakeOre))}</td><td>${fmtKr(Math.round(C.paytable[s][7] * C.payScale * stakeOre))}</td></tr>`).join('');
+    const k = C.payScale * (storm ? C.stormPayScale : 1);
+    const rows = [6, 5, 4, 3, 0].map((s) => `<tr><td>${SYM_NAMES[s]}</td><td>${fmtKr(Math.round(C.paytable[s][0] * k * stakeOre))}</td><td>${fmtKr(Math.round(C.paytable[s][7] * k * stakeOre))}</td></tr>`).join('');
     return `<table class="num" style="width:100%;font-size:12px;border-collapse:collapse"><tr style="color:var(--muted)"><td></td><td>5</td><td>16+</td></tr>${rows}</table>`;
   }
   private ladderHtml(): string {
     const kp = this.kpRef();
     return TIERS.filter((t) => t.kp > 0).map((t) => {
       const cls = kp >= t.kp ? 'on' : Math.floor(kp) + 1 === t.kp ? 'next' : '';
-      return `<div class="r ${cls}"><span class="k">Kp ${t.kp}</span><span><span class="c">${t.change}</span><br><span class="g">${t.gName ? t.gName + ' · ' : ''}${t.name}</span></span><span class="g num">${Math.round(t.frac * 100)} %</span></div>`;
+      const spins = REPORT.kpMeanSpins?.[t.kp - 1];
+      return `<div class="r ${cls}"><span class="k">Kp ${t.kp}</span><span><span class="c">${t.change}</span><br><span class="g">${t.gName ? t.gName + ' · ' : ''}${t.name}</span></span><span class="g num">${spins ? '≈ ' + fmtInt(Math.round(spins)) + ' spin' : ''}</span></div>`;
     }).reverse().join('');
   }
   private histHtml(n: number): string {
     const hs = this.historyRef().slice(-n).reverse();
-    if (!hs.length) return '<p class="hint">Ingen spil endnu.</p>';
-    return hs.map((e) => `<div class="h"><span class="id">${e.spinId}${e.mode !== 'base' ? ' · ' + e.mode : ''}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtKr(e.winOre)}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtSignedKr(e.netOre)}</span></div>`).join('');
+    if (!hs.length) return '<p class="hint">Ingen spin endnu.</p>';
+    const modeName: Record<string, string> = { perk: 'Ladet spin', storm: 'Solstorm', demo: 'Demo' };
+    return hs.map((e) => `<div class="h"><span class="id">${e.spinId}${e.mode !== 'base' ? ' · ' + (modeName[e.mode] ?? e.mode) : ''}${e.spinId.endsWith('-G') ? ' · garanti' : ''}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtKr(e.winOre)}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtSignedKr(e.netOre)}</span></div>`).join('');
   }
 }

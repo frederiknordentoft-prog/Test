@@ -1,6 +1,6 @@
 // Game controller: state machine, money, meter, storms, demo. Presentation is delegated.
 import { gsap } from 'gsap';
-import { Text } from 'pixi.js';
+import { Container, Graphics, Text } from 'pixi.js';
 import { spinRng, newSessionSeed } from '../math/rng.ts';
 import { spinBase } from '../math/engine.ts';
 import { createStorm, stormSpin, finishStorm, type StormState } from '../math/storm.ts';
@@ -9,7 +9,7 @@ import { CONFIG, REPORT } from '../math/config.ts';
 import type { SpinResult, Sym } from '../math/types.ts';
 import { TIERS, kpFromCharge } from './tiers.ts';
 import { bus } from './bus.ts';
-import { load, save, defaults, wipe, setPersistenceEnabled, storageOk, START_BALANCE_ORE, type SaveData, type HistoryEntry } from './store.ts';
+import { load, save, defaults, wipe, setPersistenceEnabled, storageOk, expiredOnLoad, START_BALANCE_ORE, type SaveData, type HistoryEntry } from './store.ts';
 import { presentSpin, idleGrid, type PresentCtx } from '../present/director.ts';
 import { profileOf, winTier } from '../present/schedule.ts';
 import { Celebration } from '../present/celebration.ts';
@@ -42,7 +42,7 @@ export class Game {
   private waiters: Partial<Record<'startStorm' | 'continue', () => void>> = {};
   private demoPending = false;
   private fullFx = false;
-  private watermark: Text;
+  private watermark: Container;
   private lastModalClose = 0;
   /** Active storm (kept for QA / debug inspection). */
   stormState: StormState | null = null;
@@ -58,13 +58,21 @@ export class Game {
     this.lastTier = Math.floor(this.kp());
     this.celebration = new Celebration();
     w.stage.layers.banners.addChild(this.celebration);
-    this.watermark = new Text({ text: 'DEMO · Solstorm udløst manuelt', style: { fontFamily: 'system-ui, sans-serif', fontSize: 12, fontWeight: '700', fill: 0xffd79a, letterSpacing: 1 } });
-    this.watermark.anchor.set(0.5, 1); this.watermark.alpha = 0.85; this.watermark.visible = false;
+    const wmText = new Text({ text: 'DEMO · Solstorm udløst manuelt · krediteres ikke', style: { fontFamily: 'system-ui, sans-serif', fontSize: 11, fontWeight: '700', fill: 0xffd79a, letterSpacing: 0.6 } });
+    wmText.anchor.set(0.5);
+    this.watermark = new Container();
+    this.watermark.addChild(new Graphics(), wmText);
+    this.watermark.visible = false;
     w.stage.layers.hud.addChild(this.watermark);
+    w.onLayout = () => {
+      this.layoutWatermark();
+      if (this.celebration.active) this.celebration.layout(w.stage.w, w.stage.h, w.gridCenterY());
+    };
     hud.bindRefs({ history: () => this.s.history, settings: () => this.s.settings, kp: () => this.kp() });
     this.applySettings();
     this.refreshHud();
     if (!storageOk) hud.notice('<span class="chip warn">Lagring er ikke tilgængelig · fremskridt gemmes kun i denne fane</span>');
+    else if (expiredOnLoad) hud.notice('<span class="chip warn">Din ladning er udløbet (365 dage efter dit sidste spin) og er nulstillet</span>');
     setInterval(() => this.tickClock(), 1000);
     this.tickClock();
     document.addEventListener('visibilitychange', () => {
@@ -87,8 +95,13 @@ export class Game {
     this.hud.setDemoEnabled(idle || to === 'spinning' || to === 'celebrating', this.demoPending);
     const lockStake = to !== 'idle';
     this.hud.setStake(this.s.stakeOre, this.stakeIndex() > 0, this.stakeIndex() < CONFIG.stakesOre.length - 1, lockStake || this.s.perksPending > 0);
+    // Resting states may rebuild the grid after a resize; presentations only scale it.
+    const resting = to === 'idle' || to === 'splash' || to === 'stormReady' || to === 'stormSummary';
+    if (resting) this.w.flushLayout(); else this.w.busy = true;
     if (idle) this.refreshSpinButton();
-    else if (to === 'spinning' || to === 'stormSpinning') this.hud.setSpin('busy', to === 'stormSpinning' ? 'STORM' : undefined);
+    else if (to === 'stormReady') this.hud.setSpin('storm', 'START');
+    else if (to === 'stormSpinning') this.hud.setSpin('busy', 'STORM');
+    else this.hud.setSpin('busy');
   }
   private stakeIndex(): number { return CONFIG.stakesOre.indexOf(this.s.stakeOre); }
   private refreshSpinButton(): void {
@@ -101,11 +114,12 @@ export class Game {
     if (!this.s.settings.haptics || this.calm()) return;
     try { navigator.vibrate?.(p); } catch { /* ignore */ }
   }
-  private avgSpinsLeft(): number | null {
-    const next = TIERS.find((t) => t.kp === Math.floor(this.kp()) + 1);
-    if (!next) return null;
+  /** Neutral expected distance to a Kp: mean spins from Kp 0 (report) minus where you are now. */
+  private avgSpinsTo(targetKp: number): number | null {
+    const target = TIERS[targetKp];
+    if (!target) return null;
     const cbar = REPORT.avgChargePerSpin > 0 ? REPORT.avgChargePerSpin : CONFIG.K / REPORT.avgSpinsToKp9;
-    const need = Math.max(0, next.frac * CONFIG.K - this.displayCharge);
+    const need = Math.max(0, target.frac * CONFIG.K - this.displayCharge);
     return Math.max(1, Math.round(need / cbar));
   }
   refreshHud(): void {
@@ -113,10 +127,10 @@ export class Game {
     h.setBalance(this.s.balanceOre);
     h.setStake(this.s.stakeOre, this.stakeIndex() > 0, this.stakeIndex() < CONFIG.stakesOre.length - 1, this.state !== 'idle' && this.state !== 'splash' || this.s.perksPending > 0);
     const locked = this.s.meter.charge > 0 ? lockedStakeOre(this.s.meter) : this.s.stakeOre;
-    h.setLock(this.s.meter.charge > 0 ? `Låst stormindsats ${fmtKr(locked)}` : '');
-    h.setGoal(this.kp(), this.displayCharge, CONFIG.K, this.avgSpinsLeft());
+    h.setLock(this.s.meter.charge > 0 ? `Låst indsats ${fmtKr(locked)}` : '');
+    h.setGoal(this.kp(), this.displayCharge, CONFIG.K, (k) => this.avgSpinsTo(k));
     h.setMuted(this.s.settings.muted);
-    h.refreshSide(this.s.stakeOre);
+    h.refreshSide(this.stormMeta?.stakeOre ?? this.s.stakeOre, !!this.stormMeta);
     h.setDemoKp(this.kp());
   }
   private tickClock(): void {
@@ -130,6 +144,7 @@ export class Game {
     document.documentElement.classList.toggle('calm', this.calm());
     const fromOs = st.calm === 'auto' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.hud.showFullFxOption(fromOs && !this.fullFx);
+    this.hud.setCalmChip(fromOs && !this.fullFx);
     this.w.setCalm(this.calm());
   }
 
@@ -138,13 +153,18 @@ export class Game {
     if (performance.now() - this.lastModalClose < 250 && (i.t === 'spin' || i.t === 'continue' || i.t === 'startStorm')) return;
     switch (i.t) {
       case 'unlock': if (this.state === 'splash') void this.intro(); break;
-      case 'spin': if (this.hud.menuOpen()) return; void this.spin(); break;
+      case 'spin':
+        if (this.hud.menuOpen()) return;
+        // The thumb goes to the big button: it starts the storm / continues where that is the only action.
+        if (this.state === 'stormReady') { this.resolveWaiter('startStorm'); break; }
+        if (this.hud.isShown('summary') || this.hud.isShown('bigwin')) { this.dispatch({ t: 'continue' }); break; }
+        void this.spin(); break;
       case 'stakeUp': this.changeStake(1); break;
       case 'stakeDown': this.changeStake(-1); break;
       case 'demo': this.requestDemo(); break;
-      case 'demoSuns': if (this.state === 'idle') void this.demoSuns(); break;
-      case 'demoKp': if (this.state === 'idle') this.demoSetKp(i.kp); break;
-      case 'demoReset': if (this.state === 'idle' || this.state === 'splash') this.demoReset(); break;
+      case 'demoSuns': if (this.state === 'idle') void this.demoSuns(); else this.toolsBusy(); break;
+      case 'demoKp': if (this.state === 'idle') this.demoSetKp(i.kp); else this.toolsBusy(); break;
+      case 'demoReset': if (this.state === 'idle' || this.state === 'splash') this.demoReset(); else this.toolsBusy(); break;
       case 'startStorm': this.resolveWaiter('startStorm'); break;
       case 'continue': this.hud.show('bigwin', false); if (this.celebration.active) this.celebration.continue(); else this.resolveWaiter('continue'); this.lastModalClose = performance.now(); break;
       case 'skip': if (this.hud.menuOpen()) return; if (this.celebration.active) this.celebration.skip(); else if (this.cine?.canSkip()) this.cine.skip(); break;
@@ -155,6 +175,7 @@ export class Game {
       case 'menu': if (!i.open) this.lastModalClose = performance.now(); break;
     }
   }
+  private toolsBusy(): void { this.hud.banner('DEMO-VÆRKTØJER', 'Virker mellem spin – prøv igen, når spinnet er færdigt'); }
   private resolveWaiter(k: 'startStorm' | 'continue'): void { const f = this.waiters[k]; if (f) { delete this.waiters[k]; f(); } }
   private waitFor(k: 'startStorm' | 'continue'): Promise<void> { return new Promise((r) => { this.waiters[k] = r; }); }
 
@@ -197,22 +218,25 @@ export class Game {
     this.hud.pulseDemo();
     if (this.s.activeStorm) { await this.resumeStorm(); return; }
     this.setState('idle');
-    if (this.s.perksPending > 0) this.hud.banner('LADET SPIN KLAR', `Gratis spil ved låst indsats ${fmtKr(lockedStakeOre(this.s.meter))}`);
+    if (this.s.perksPending > 0) this.hud.banner('LADET SPIN KLAR', `Gratis spin ved låst indsats ${fmtKr(lockedStakeOre(this.s.meter))}`);
     if (this.w.demoOnLoad) { this.w.demoOnLoad = false; setTimeout(() => this.requestDemo(), 2000); }
   }
 
   // ---------------------------------------------------------------- base spin
-  private presentCtx(storm: boolean): PresentCtx {
+  private presentCtx(storm: boolean, inertCharge = false): PresentCtx {
     const w = this.w;
     return {
       grid: w.grid, cellShatter: w.cellShatter, particles: w.particles, motes: w.motes, arc: w.arc, popups: w.popups,
       hud: this.hud, audio: w.audio, calm: () => this.calm(), shake: (t) => w.shake(t), glowPulse: () => w.glowPulse(storm),
-      onCharge: (a) => this.addDisplayCharge(a), haptic: (p) => this.haptic(p),
+      onCharge: inertCharge ? () => {} : (a) => this.addDisplayCharge(a), haptic: (p) => this.haptic(p),
     };
   }
 
+  /** The model is committed before presentation; the arc may never run ahead of it. */
+  private chargeCap = 0;
+  private deferLevelUps = false;
   private addDisplayCharge(a: number): void {
-    this.displayCharge = Math.min(CONFIG.K, this.displayCharge + a);
+    this.displayCharge = Math.min(CONFIG.K, this.chargeCap, this.displayCharge + a);
     this.w.arc.pulse = Math.min(1, this.w.arc.pulse + 0.35);
     this.onKpDisplayChanged();
   }
@@ -220,20 +244,20 @@ export class Game {
     const kp = this.kp();
     this.w.arc.setKp(kp);
     const tier = Math.floor(kp);
-    if (tier > this.lastTier && this.state !== 'demoLapse') {
-      for (let t = this.lastTier + 1; t <= Math.min(8, tier); t++) this.levelUp(t);
-    }
-    this.lastTier = Math.max(this.lastTier, tier);
-    if (tier < this.lastTier) this.lastTier = tier;
+    // LDW rule: no level-up fanfare in the middle of a sub-stake result — they fire after the result.
+    if (this.deferLevelUps || this.preview || this.state === 'demoLapse') return;
+    if (tier > this.lastTier) for (let t = this.lastTier + 1; t <= Math.min(8, tier); t++) this.levelUp(t);
+    this.lastTier = tier;
   }
   private levelUp(t: number): void {
     const T = TIERS[t];
     this.w.audio.play('levelUp', { level: t });
     this.w.audio.setBaseLayers(T.music);
     this.w.breathe();
-    const title = T.gName ? `GEOMAGNETISK STORM · ${T.gName} ${T.name.replace(' storm', '').toUpperCase()}` : `KP ${t} · ${T.name.toUpperCase()}`;
-    this.hud.banner(title, T.change + (T.perk ? ' · gratis ved låst indsats' : ''));
-    this.s.stats.highestKp = Math.max(this.s.stats.highestKp, t);
+    const title = T.gName ? `GEOMAGNETISK STORM · ${T.gName}` : `KP ${t} · ${T.name.toUpperCase()}`;
+    this.hud.banner(title, `Kp ${t} · ${T.change}${T.perk ? ' · gratis ved låst indsats' : ''}`);
+    if (!this.demoMode) this.s.stats.highestKp = Math.max(this.s.stats.highestKp, t);
+    if (t >= 6) this.prepareStorm();
     this.maybeRebake(t);
   }
   private maybeRebake(tier: number): void {
@@ -241,80 +265,95 @@ export class Game {
     this.rebakeTier = tier;
     void this.w.rebakeBase();
   }
+  private prepareStorm(): void {
+    (this.w.audio as unknown as { prepareStorm?: () => Promise<void> }).prepareStorm?.();
+  }
 
   async spin(): Promise<void> {
     if (this.state !== 'idle') return;
+    this.endPreview();
     const perk = this.s.perksPending > 0;
     const stake = perk ? lockedStakeOre(this.s.meter) : this.s.stakeOre;
-    if (!perk && this.s.balanceOre < stake) {
-      if (this.s.balanceOre < this.s.stakeOre) this.refill();
-      return;
-    }
+    if (!perk && this.s.balanceOre < stake) { this.refill(); return; }
     this.setState('spinning');
     const pre = { charge: this.s.meter.charge, stakeSumOre: this.s.meter.stakeSumOre, perksPending: this.s.perksPending };
     if (perk) this.s.perksPending--;
     else { this.s.balanceOre -= stake; this.sessionNet -= stake; }
+    const paid = perk ? 0 : stake;
     const domain = perk ? 'perk' : 'base';
     const idx = ++this.s.counters[domain];
-    const rng = spinRng(this.s.sessionSeed, domain, idx);
-    const r = spinBase(rng, stake, { perk });
-    this.hud.setBalance(this.s.balanceOre);
-    this.hud.clearWin(perk ? `Ladet spin · ${fmtKr(stake)} · 4 felter ×2` : '');
+    const r = spinBase(spinRng(this.s.sessionSeed, domain, idx), stake, { perk });
+    const shownBalance = this.s.balanceOre;
+    // ---- commit the WHOLE outcome before presentation (a reload mid-spin loses nothing) ----
     const m = addCharge(this.s.meter, r.chargeGained, stake);
-    this.persist(); // outcome committed before presentation
-    const pr = await presentSpin(this.presentCtx(false), r, { storm: false, freshMarks: true });
-    // settle
     this.s.balanceOre += r.totalOre;
     this.sessionNet += r.totalOre;
-    this.displayCharge = Math.min(CONFIG.K, this.s.meter.charge);
-    this.onKpDisplayChanged();
-    this.finishSpinHud(r, pr.profile);
-    this.record(r, perk ? 'perk' : 'base', stake, perk ? r.totalOre : r.totalOre - stake, pre);
+    this.record(r, perk ? 'perk' : 'base', stake, r.totalOre - paid, pre);
     const perks = m.tiersCrossed.filter((t) => TIERS[t]?.perk).length;
     this.s.perksPending += perks;
+    this.chargeCap = m.stormA ? CONFIG.K : this.s.meter.charge;
+    let storm: { source: StormSource; stake: number; idx: number } | null = null;
+    if (m.stormA || r.triggers.stormB) {
+      const source: StormSource = m.stormA && r.triggers.stormB ? 'AB' : m.stormA ? 'A' : 'B';
+      const stormStake = source === 'A' ? lockedStakeOre(this.s.meter) : stake;
+      if (m.stormA) resetMeter(this.s.meter);
+      const sidx = ++this.s.counters.storm;
+      this.s.activeStorm = { source: source as 'A' | 'B' | 'AB', stakeOre: stormStake, seedIdx: sidx, spinIndex: 0, spinsTotal: CONFIG.stormSpins, marks: [], winOre: 0, maxMark: 2 };
+      this.s.stats.storms++;
+      storm = { source, stake: stormStake, idx: sidx };
+    }
+    this.s.lastSpinAt = Date.now();
     this.persist();
+    // ---- presentation ----
+    this.hud.setBalance(shownBalance);
+    this.hud.clearWin(perk ? `Ladet spin · gratis · ${fmtKr(stake)} · 4 felter ×2` : '');
+    const profile = profileOf(r.totalOre, paid);
+    this.deferLevelUps = profile !== 'win';
+    if (r.anticipation || this.kp() >= 6) this.prepareStorm();
+    await presentSpin(this.presentCtx(false), r, { storm: false, freshMarks: true, paidOre: paid });
+    this.displayCharge = Math.min(CONFIG.K, this.chargeCap);
+    this.deferLevelUps = false;
+    this.onKpDisplayChanged();
     const tier = winTier(r.totalOre, stake);
     if (tier >= 2) {
       this.setState('celebrating');
-      await this.celebrate(tier, r.totalOre, stake, false);
-    } else if (tier === 1) this.w.audio.play('win', { level: 1 });
-    const A = m.stormA, B = r.triggers.stormB;
-    if (A || B) {
-      const source: StormSource = A && B ? 'AB' : A ? 'A' : 'B';
-      const stormStake = source === 'A' ? lockedStakeOre(this.s.meter) : stake;
-      if (A) { resetMeter(this.s.meter); }
-      this.persist();
-      await this.runStorm(source, stormStake);
+      await this.celebrate(tier, r.totalOre, stake, false, paid);
+    } else if (tier === 1 || (profile === 'win' && perk)) this.w.audio.play('win', { level: 1 });
+    this.finishSpinHud(r, profile, paid);
+    if (storm) {
+      await this.runStorm(storm.source, storm.stake, { resume: { idx: storm.idx, spinIndex: 0 } });
       return;
     }
     this.refreshHud();
     this.setState('idle');
-    if (perks > 0) this.hud.banner('LADET SPIN', `Gratis spil med 4 felter ×2 ved låst indsats ${fmtKr(lockedStakeOre(this.s.meter))}`);
+    if (perks > 0) this.hud.banner('LADET SPIN', `Gratis spin med 4 felter ×2 ved låst indsats ${fmtKr(lockedStakeOre(this.s.meter))}`);
     this.afterIdle();
   }
 
-  private finishSpinHud(r: SpinResult, profile: ReturnType<typeof profileOf>): void {
-    this.hud.setWin(r.totalOre, r.stakeOre, profile);
+  private finishSpinHud(r: SpinResult, profile: ReturnType<typeof profileOf>, paid: number): void {
+    this.hud.setWin(r.totalOre, r.stakeOre, profile, undefined, paid);
     this.hud.setBalance(this.s.balanceOre);
-    const a = profile === 'win' ? `Gevinst ${fmtKr(r.totalOre)}. Netto ${fmtSignedKr(r.totalOre - r.stakeOre)}.` : profile === 'return' ? `Retur ${fmtKr(r.totalOre)}, netto ${fmtSignedKr(r.totalOre - r.stakeOre)}.` : profile === 'push' ? 'Indsats retur.' : 'Ingen gevinst.';
+    const net = fmtSignedKr(r.totalOre - paid);
+    const a = profile === 'win' ? `Gevinst ${fmtKr(r.totalOre)}. Netto ${net}.` : profile === 'return' ? `Retur ${fmtKr(r.totalOre)}, netto ${net}.` : profile === 'push' ? 'Indsats retur.' : 'Ingen gevinst.';
     bus.emit('win:final', { totalOre: r.totalOre, stakeOre: r.stakeOre, profile });
     this.w.announce(`${a} Kp ${fmt1(this.kp())}.`);
   }
 
-  private record(r: SpinResult, mode: HistoryEntry['mode'], stakeOre: number, netOre: number, pre: HistoryEntry['pre']): void {
-    if (mode === 'demo') return;
+  private record(r: { spinId: string; totalOre: number }, mode: HistoryEntry['mode'], stakeOre: number, netOre: number, pre: HistoryEntry['pre']): void {
+    if (mode === 'demo' || this.demoMode) return;
     this.s.history.push({ spinId: r.spinId, mode, stakeOre, winOre: r.totalOre, netOre, pre, at: Date.now() });
     if (this.s.history.length > 100) this.s.history.splice(0, this.s.history.length - 100);
     this.s.stats.spins++;
     this.s.stats.bestWinX = Math.max(this.s.stats.bestWinX, r.totalOre / stakeOre);
   }
 
-  private async celebrate(tier: number, totalOre: number, stakeOre: number, storm: boolean): Promise<void> {
+  private async celebrate(tier: number, totalOre: number, stakeOre: number, storm: boolean, paid: number): Promise<void> {
     const w = this.w;
     this.celebration.layout(w.stage.w, w.stage.h, w.gridCenterY());
     await this.celebration.play(tier, totalOre, stakeOre, {
-      audio: w.audio, particles: w.particles, storm, calm: this.calm(),
+      audio: w.audio, particles: w.particles, storm, calm: this.calm(), demo: this.demoMode,
       onNeedsContinue: (b) => this.hud.show('bigwin', b),
+      onCount: (v) => { if (!storm) this.hud.setWin(Math.round(v), stakeOre, 'win', undefined, paid); },
     });
     this.hud.show('bigwin', false);
   }
@@ -324,61 +363,73 @@ export class Game {
   }
 
   // ---------------------------------------------------------------- storm
-  private async runStorm(source: StormSource, stakeOre: number, opts: { resume?: { idx: number; spinIndex: number }; demo?: boolean } = {}): Promise<void> {
+  private async runStorm(source: StormSource, stakeOre: number, opts: { resume?: { idx: number; spinIndex: number } } = {}): Promise<void> {
     const demo = source === 'demo';
     const w = this.w;
+    const D = demo ? 'DEMO · ' : '';
     this.setState('stormTransition');
-    const domain = demo ? 'demo' : 'storm';
-    const idx = opts.resume ? opts.resume.idx : ++this.s.counters[domain];
-    const rng = spinRng(this.s.sessionSeed, domain, 100000 + idx);
+    const idx = demo ? ++this.s.counters.demo : opts.resume!.idx;
+    const rng = spinRng(this.s.sessionSeed, demo ? 'demo' : 'storm', 100000 + idx);
     const st = createStorm(rng, stakeOre);
     // Resume: replay silently to reconstruct the exact state.
     if (opts.resume) for (let k = 0; k < opts.resume.spinIndex; k++) stormSpin(st, rng, this.stormId(idx, k));
     this.stormState = st;
     this.stormMeta = { source, stakeOre };
-    if (!demo) { this.s.activeStorm = { source: source as 'A' | 'B' | 'AB', stakeOre, seedIdx: idx, spinIndex: st.spinIndex, spinsTotal: st.spinsTotal, marks: st.marks.slice(), winOre: st.winOre, maxMark: st.maxMark }; this.s.stats.storms++; this.persist(); }
+    if (!demo && this.s.activeStorm) { Object.assign(this.s.activeStorm, { spinIndex: st.spinIndex, spinsTotal: st.spinsTotal, marks: st.marks.slice(), winOre: st.winOre, maxMark: st.maxMark }); this.persist(); }
+    this.prepareStorm();
     await w.ensureExtremeAssets();
     this.watermark.visible = demo;
     this.layoutWatermark();
-    this.hud.clearWin(`Solstorm · ${st.spinsTotal} stormspin${demo ? ' · demo' : ''}`);
-    this.hud.setStormGoal(st.spinIndex, st.spinsTotal, Math.max(2, st.maxMark), st.winOre, stakeOre);
+    this.setCine(true);
     this.cine = playSolstormIntro(this.cineWorld(st));
     await this.cine.done;
     this.cine = null;
+    // Status only after the reveal (no spoiler during the cinematic).
+    this.hud.clearWin(`${D}Solstorm · ${st.spinsTotal - st.spinIndex} stormspin${demo ? ' · krediteres ikke' : ''}`);
+    this.hud.setStormGoal(st.spinIndex, st.spinsTotal, Math.max(2, st.maxMark), st.winOre, stakeOre, demo);
     this.setState('stormReady');
-    this.hud.setStormInfo(`${st.spinsTotal - st.spinIndex} SOLSTORM-SPIN · ${source === 'A' ? 'Låst indsats' : 'Indsats'} ${fmtKr(stakeOre)}${demo ? ' · DEMO' : ''}`);
+    this.hud.setStormInfo(`${D}${st.spinsTotal - st.spinIndex} stormspin · ${source === 'A' ? 'låst indsats' : 'indsats'} ${fmtKr(stakeOre)}`);
     this.hud.show('stormReady', true);
-    this.hud.setMode('storm', `SOLSTORM ${st.spinIndex}/${st.spinsTotal}`);
+    this.hud.setMode('storm', `${D}SOLSTORM ${st.spinIndex}/${st.spinsTotal}`);
+    this.hud.refreshSide(stakeOre, true);
     await this.waitFor('startStorm');
     this.hud.show('stormReady', false);
+    this.setCine(false);
     this.setState('stormSpinning');
     const ctx = this.presentCtx(true);
     while (st.spinIndex < st.spinsTotal) {
       const k = st.spinIndex;
+      const before = st.winOre;
       const { result, meta } = stormSpin(st, rng, this.stormId(idx, k));
-      this.hud.setMode('storm', `SOLSTORM ${meta.index + 1}/${meta.total}`);
-      this.hud.setStormGoal(meta.index + 1, meta.total, Math.max(2, st.maxMark), st.winOre - result.totalOre, stakeOre);
+      if (!demo) {
+        this.record(result, 'storm', stakeOre, result.totalOre, { charge: this.s.meter.charge, stakeSumOre: this.s.meter.stakeSumOre, perksPending: this.s.perksPending });
+        if (this.s.activeStorm) { this.s.activeStorm.spinIndex = st.spinIndex; this.s.activeStorm.spinsTotal = st.spinsTotal; }
+        this.persist();
+      }
+      this.hud.setMode('storm', `${D}SOLSTORM ${meta.index + 1}/${meta.total}`);
+      this.hud.setStormGoal(meta.index + 1, meta.total, Math.max(2, st.maxMark), before, stakeOre, demo);
       if (meta.wave) await w.stormWave(meta.wave.before, meta.wave.after);
-      this.hud.setWin(st.winOre - result.totalOre, stakeOre, 'live', `Solstorm ${meta.index + 1}/${meta.total}`);
-      await presentSpin(ctx, result, { storm: true, freshMarks: false });
-      this.hud.setWin(st.winOre, stakeOre, 'live', `Solstorm ${meta.index + 1}/${st.spinsTotal} · ${fmtKr(st.winOre)} (${fmtX(st.winOre / stakeOre)})`);
+      this.hud.setWin(before, stakeOre, 'live', `${D}Solstorm ${meta.index + 1}/${meta.total} · ${fmtKr(before)}`);
+      await presentSpin(ctx, result, { storm: true, freshMarks: false, paidOre: 0, liveStrip: false });
+      this.hud.setWin(st.winOre, stakeOre, 'live', `${D}Solstorm ${meta.index + 1}/${st.spinsTotal} · ${fmtKr(st.winOre)} (${fmtX(st.winOre / stakeOre)})`);
       w.audio.stormLevel(st.maxMark);
-      this.hud.setStormGoal(meta.index + 1, st.spinsTotal, st.maxMark, st.winOre, stakeOre);
+      this.hud.setStormGoal(meta.index + 1, st.spinsTotal, st.maxMark, st.winOre, stakeOre, demo);
       if (result.triggers.retriggerSpins > 0) {
-        this.hud.banner(`+${result.triggers.retriggerSpins} SOLSTORM-SPIN`, `${st.spinsTotal} i alt`, 'storm');
+        this.hud.banner(`+${result.triggers.retriggerSpins} STORMSPIN`, `${st.spinsTotal} stormspin i alt`, 'storm');
         w.audio.play('sun', { level: 3 });
         await wait(0.8);
       }
-      if (!demo && this.s.activeStorm) { this.s.activeStorm.spinIndex = st.spinIndex; this.s.activeStorm.spinsTotal = st.spinsTotal; this.persist(); }
-      if (!demo) this.record(result, 'storm', stakeOre, result.totalOre, { charge: this.s.meter.charge, stakeSumOre: this.s.meter.stakeSumOre, perksPending: this.s.perksPending });
       await wait(0.25);
     }
     const sum = finishStorm(st);
     const total = sum.winOre + sum.guaranteeOre;
+    if (!demo) {
+      if (sum.guaranteeOre > 0) this.record({ spinId: this.stormId(idx, 99) + '-G', totalOre: sum.guaranteeOre }, 'storm', stakeOre, sum.guaranteeOre, { charge: this.s.meter.charge, stakeSumOre: this.s.meter.stakeSumOre, perksPending: this.s.perksPending });
+      this.s.balanceOre += total; this.sessionNet += total; this.s.activeStorm = null; this.s.lastSpinAt = Date.now(); this.persist();
+    }
     this.setState('stormSummary');
     const tier = winTier(total, stakeOre);
-    if (tier >= 2) await this.celebrate(tier, total, stakeOre, true);
-    if (!demo) { this.s.balanceOre += total; this.sessionNet += total; this.s.activeStorm = null; this.persist(); }
+    if (tier >= 2) await this.celebrate(tier, total, stakeOre, true, 0);
     this.hud.setBalance(this.s.balanceOre);
     this.hud.showSummary(`
       <h2>${demo ? 'DEMO-RESULTAT' : 'SOLSTORM'}</h2>
@@ -387,7 +438,7 @@ export class Game {
       <div class="sub num">${fmtX(total / stakeOre)} indsats · ${sum.spins} stormspin</div>
       <div class="rows num">
         <div><span>Stormgevinst</span><b>${fmtKr(sum.winOre)}</b></div>
-        ${sum.guaranteeOre > 0 ? `<div><span>Stormgaranti</span><b>+${fmtKr(sum.guaranteeOre)}</b></div>` : ''}
+        ${sum.guaranteeOre > 0 ? `<div><span>Stormgaranti (min. ${CONFIG.guaranteeX}×)</span><b>+${fmtKr(sum.guaranteeOre)}</b></div>` : ''}
         <div><span>Højeste mærke</span><b>×${sum.maxMark}</b></div>
         <div><span>${source === 'A' ? 'Låst indsats' : 'Indsats'}</span><b>${fmtKr(stakeOre)}</b></div>
         ${demo ? '' : `<div><span>Session netto</span><b>${fmtSignedKr(this.sessionNet)}</b></div>`}
@@ -398,15 +449,20 @@ export class Game {
     this.hud.show('summary', false);
     this.setState('stormOutro');
     this.watermark.visible = false;
+    // The meter may have been reset (route A): let the sky/arc settle to the real Kp during the outro.
+    this.displayCharge = this.s.meter.charge;
+    this.chargeCap = this.s.meter.charge;
+    this.lastTier = Math.floor(this.kp());
+    this.w.arc.setKp(this.kp());
     await w.stormOutro();
+    (w.audio as unknown as { releaseStorm?: () => void }).releaseStorm?.();
     this.hud.setMode('base');
     this.stormState = null;
     this.stormMeta = null;
-    this.hud.clearWin(demo ? 'Demo-storm afsluttet' : `Solstorm gav ${fmtKr(total)}`);
-    this.displayCharge = this.s.meter.charge;
-    this.lastTier = Math.floor(this.kp());
-    this.w.arc.setKp(this.kp());
+    this.hud.clearWin(demo ? 'Demo-storm afsluttet · krediteres ikke' : `Solstorm gav ${fmtKr(total)}`);
     this.w.audio.setBaseLayers(TIERS[Math.floor(this.kp())].music);
+    this.rebakeTier = -1;
+    this.maybeRebake(Math.floor(this.kp()));
     this.refreshHud();
     this.setState('idle');
     this.afterIdle();
@@ -418,9 +474,11 @@ export class Game {
 
   private async resumeStorm(): Promise<void> {
     const a = this.s.activeStorm!;
-    this.hud.banner('STORMEN FORTSÆTTER', `${a.spinsTotal - a.spinIndex} stormspil tilbage`, 'storm');
+    this.hud.banner('STORMEN FORTSÆTTER', `${a.spinsTotal - a.spinIndex} stormspin tilbage`, 'storm');
     await this.runStorm(a.source, a.stakeOre, { resume: { idx: a.seedIdx, spinIndex: a.spinIndex } });
   }
+
+  private setCine(b: boolean): void { document.documentElement.classList.toggle('cine', b); }
 
   private cineWorld(st: StormState): CineWorld {
     const w = this.w;
@@ -435,11 +493,12 @@ export class Game {
       banners: w.stage.layers.banners,
       impactPoint: () => ({ x: w.gridRect.x + w.gridRect.size / 2, y: w.gridRect.y + w.gridRect.size / 2 }),
       gridTop: () => w.gridRect.y,
+      titleBand: () => w.arcBand(),
       screen: () => ({ w: w.stage.w, h: w.stage.h }),
       buildStormStage: () => w.buildStormStage(st.marks),
       revealFrame: (tl, at) => w.revealStormFrame(tl, at),
       dropStormSymbols: (tl, at) => w.dropStormSymbols(tl, at, st.marks),
-      onModeStorm: () => { this.hud.setMode('storm', `SOLSTORM 0/${st.spinsTotal}`); },
+      onModeStorm: () => { this.hud.setMode('storm', `${this.demoMode ? 'DEMO · ' : ''}SOLSTORM`); },
       calm: this.calm(),
       haptic: (p) => this.haptic(p),
       flash: (a, ms) => w.flash(a, ms),
@@ -447,30 +506,43 @@ export class Game {
   }
 
   private layoutWatermark(): void {
-    this.watermark.position.set(this.w.stage.w / 2, this.w.gridRect.y - 6);
+    // A dark pill centred on the frame's top border; drawn in the canvas so #clean can't hide it.
+    const r = this.w.gridRect;
+    const txt = this.watermark.getChildAt(1) as Text;
+    const bg = this.watermark.getChildAt(0) as Graphics;
+    const pw = txt.width + 18, ph = txt.height + 6;
+    bg.clear().roundRect(-pw / 2, -ph / 2, pw, ph, ph / 2).fill({ color: 0x140a02, alpha: 0.82 }).stroke({ width: 1, color: 0xffb547, alpha: 0.8 });
+    this.watermark.position.set(r.x + r.size / 2, r.y - Math.max(6, r.size * 0.022));
   }
 
   // ---------------------------------------------------------------- demo tools
+  private demoMode = false;
   requestDemo(): void {
     if (this.state === 'idle') { void this.demo(); return; }
     if (this.state === 'spinning' || this.state === 'celebrating') { this.demoPending = true; this.hud.setDemoEnabled(true, true); }
   }
 
+  private snapshot() { return { meter: { ...this.s.meter }, perks: this.s.perksPending, display: this.displayCharge, lastTier: this.lastTier, cap: this.chargeCap }; }
+  private restore(snap: ReturnType<Game['snapshot']>): void {
+    this.s.meter = snap.meter; this.s.perksPending = snap.perks; this.displayCharge = snap.display; this.lastTier = snap.lastTier; this.chargeCap = snap.cap;
+    this.w.arc.setKp(this.kp());
+    this.w.skyP.kp = this.kp();
+  }
+
   private async demo(): Promise<void> {
     if (this.state !== 'idle') return;
+    this.endPreview();
     setPersistenceEnabled(false);
-    const snap = { meter: { ...this.s.meter }, perks: this.s.perksPending, display: this.displayCharge, lastTier: this.lastTier };
+    this.demoMode = true;
+    const snap = this.snapshot();
     this.setState('demoLapse');
+    this.setCine(true);
+    this.prepareStorm();
     this.hud.banner('DEMO · SOLSTORM', 'Progressionen spoles frem · krediteres ikke', 'storm', 2400);
     await this.w.timeLapse(this.kp(), 2.4);
     await this.runStorm('demo', this.s.stakeOre);
-    // restore the real meter
-    this.s.meter = snap.meter;
-    this.s.perksPending = snap.perks;
-    this.displayCharge = snap.display;
-    this.lastTier = snap.lastTier;
-    this.w.arc.setKp(this.kp());
-    this.w.skyP.kp = this.kp();
+    this.restore(snap);
+    this.demoMode = false;
     setPersistenceEnabled(true);
     this.refreshHud();
     this.hud.banner('DIT FREMSKRIDT ER GENDANNET', `Kp ${fmt1(this.kp())} · demo-stormen talte ikke med`);
@@ -478,48 +550,62 @@ export class Game {
 
   /** Demo: find a real base spin with 4+ suns in the demo domain, present it, then run a (demo) storm. */
   private async demoSuns(): Promise<void> {
-    setPersistenceEnabled(false);
-    const snap = { meter: { ...this.s.meter }, perks: this.s.perksPending, display: this.displayCharge, lastTier: this.lastTier };
+    this.endPreview();
     let r: SpinResult | null = null;
     for (let k = 0; k < 40000 && !r; k++) {
       const idx = ++this.s.counters.demo;
       const cand = spinBase(spinRng(this.s.sessionSeed, 'demo', idx), this.s.stakeOre, {});
       if (cand.triggers.stormB) r = cand;
     }
-    if (!r) { setPersistenceEnabled(true); return; }
+    if (!r) return;
+    setPersistenceEnabled(false);
+    this.demoMode = true;
+    const snap = this.snapshot();
     this.setState('spinning');
     this.watermark.visible = true; this.layoutWatermark();
-    this.hud.clearWin('DEMO · spil med 4+ sole (søgt frem, krediteres ikke)');
-    await presentSpin(this.presentCtx(false), r, { storm: false, freshMarks: true });
+    this.hud.clearWin('DEMO · spin med 4+ sole (søgt frem) · krediteres ikke');
+    this.prepareStorm();
+    await presentSpin(this.presentCtx(false, true), r, { storm: false, freshMarks: true, liveStrip: false });
     await this.runStorm('demo', this.s.stakeOre);
-    this.s.meter = snap.meter; this.s.perksPending = snap.perks; this.displayCharge = snap.display; this.lastTier = snap.lastTier;
-    this.w.arc.setKp(this.kp());
+    this.restore(snap);
+    this.demoMode = false;
     setPersistenceEnabled(true);
     this.refreshHud();
   }
 
+  /** "Vis Kp": a visual preview only — the real meter is never touched. Ends at the next spin. */
+  private preview: { display: number; lastTier: number } | null = null;
   private demoSetKp(kp: number): void {
-    const f = TIERS[Math.floor(kp)].frac + (TIERS[Math.min(9, Math.floor(kp) + 1)].frac - TIERS[Math.floor(kp)].frac) * (kp - Math.floor(kp));
-    const charge = Math.floor(f * CONFIG.K);
-    this.s.meter.charge = charge;
-    this.s.meter.stakeSumOre = charge * this.s.stakeOre;
-    this.displayCharge = charge;
-    this.lastTier = Math.floor(this.kp());
+    if (!this.preview) this.preview = { display: this.displayCharge, lastTier: this.lastTier };
+    const i = Math.floor(kp);
+    const f = TIERS[i].frac + (TIERS[Math.min(9, i + 1)].frac - TIERS[i].frac) * (kp - i);
+    this.displayCharge = Math.floor(f * CONFIG.K);
     this.w.arc.setKp(this.kp());
-    this.w.audio.setBaseLayers(TIERS[this.lastTier].music);
-    this.maybeRebake(this.lastTier);
+    this.w.audio.setBaseLayers(TIERS[i].music);
+    this.maybeRebake(i);
     this.refreshHud();
-    this.persist();
-    this.hud.banner(`SANDKASSE · KP ${fmt1(this.kp())}`, 'Måleren er sat manuelt (demo)');
+    this.hud.banner(`FORHÅNDSVISNING · KP ${fmt1(this.kp())}`, 'Kun visning · din måler er uændret · slutter ved næste spin');
+  }
+  private endPreview(): void {
+    if (!this.preview) return;
+    this.displayCharge = this.preview.display;
+    this.lastTier = this.preview.lastTier;
+    this.preview = null;
+    this.w.arc.setKp(this.kp());
+    this.w.audio.setBaseLayers(TIERS[Math.floor(this.kp())].music);
+    this.maybeRebake(Math.floor(this.kp()));
+    this.refreshHud();
   }
 
   private demoReset(): void {
+    this.preview = null;
     wipe();
     const seed = newSessionSeed();
     this.s = defaults(seed, CONFIG.defaultStakeOre);
     this.sessionNet = 0;
     this.sessionStart = Date.now();
     this.displayCharge = 0;
+    this.chargeCap = 0;
     this.lastTier = 0;
     this.w.arc.setKp(0);
     this.w.audio.setBaseLayers(1);
@@ -528,7 +614,7 @@ export class Game {
     this.refreshHud();
     this.refreshSpinButton();
     this.persist();
-    this.hud.banner('DEMO NULSTILLET', 'Saldo 1.000,00 kr · Kp 0');
+    this.hud.banner('DEMO NULSTILLET', `Saldo ${fmtKr(START_BALANCE_ORE)} · Kp 0`);
   }
 
   /** Debug/QA hooks. */

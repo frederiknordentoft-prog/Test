@@ -23,14 +23,14 @@ export interface Tier {
 // Front-loaded thresholds (fractions of K) — see PLAN.md §3.
 export const TIERS: Tier[] = [
   { kp: 0, name: 'Stille', gName: '', frac: 0, perk: false, change: 'Svagt grønt nordlys', sky: { intensity: 0.35, speed: 0.6, fold: 0.15, red: 0, violet: 0, stars: 1, crackle: 0 }, music: 1 },
-  { kp: 1, name: 'Stille', gName: '', frac: 0.004, perk: false, change: 'Glas-arpeggio tændes', sky: { intensity: 0.42, speed: 0.7, fold: 0.2, red: 0, violet: 0, stars: 0.95, crackle: 0 }, music: 2 },
+  { kp: 1, name: 'Vågner', gName: '', frac: 0.004, perk: false, change: 'Nordlyset vågner · klokketoner', sky: { intensity: 0.42, speed: 0.7, fold: 0.2, red: 0, violet: 0, stars: 0.95, crackle: 0 }, music: 2 },
   { kp: 2, name: 'Uro', gName: '', frac: 0.012, perk: false, change: 'Tykkere gardiner', sky: { intensity: 0.5, speed: 0.8, fold: 0.3, red: 0, violet: 0.05, stars: 0.9, crackle: 0 }, music: 2 },
-  { kp: 3, name: 'Uro', gName: '', frac: 0.03, perk: true, change: 'Ladet spin · 4 felter x2', sky: { intensity: 0.58, speed: 0.9, fold: 0.38, red: 0, violet: 0.1, stars: 0.85, crackle: 0 }, music: 2 },
-  { kp: 4, name: 'Aktiv', gName: '', frac: 0.06, perk: false, change: 'Rimlys på isrammen · puls-bas', sky: { intensity: 0.66, speed: 1.0, fold: 0.45, red: 0.05, violet: 0.2, stars: 0.8, crackle: 0 }, music: 3 },
+  { kp: 3, name: 'Uro', gName: '', frac: 0.03, perk: true, change: 'Ladet spin · 4 felter ×2', sky: { intensity: 0.58, speed: 0.9, fold: 0.38, red: 0, violet: 0.1, stars: 0.85, crackle: 0 }, music: 2 },
+  { kp: 4, name: 'Aktiv', gName: '', frac: 0.06, perk: false, change: 'Rimfrost på rammen · dyb bas', sky: { intensity: 0.66, speed: 1.0, fold: 0.45, red: 0.05, violet: 0.2, stars: 0.8, crackle: 0 }, music: 3 },
   { kp: 5, name: 'Svag storm', gName: 'G1', frac: 0.11, perk: true, change: 'Violet nordlys · Ladet spin', sky: { intensity: 0.74, speed: 1.1, fold: 0.55, red: 0.1, violet: 0.55, stars: 0.7, crackle: 0 }, music: 3 },
-  { kp: 6, name: 'Moderat storm', gName: 'G2', frac: 0.19, perk: false, change: 'Foldede gardiner · perkussion', sky: { intensity: 0.82, speed: 1.25, fold: 0.7, red: 0.2, violet: 0.6, stars: 0.6, crackle: 0.05 }, music: 4 },
+  { kp: 6, name: 'Moderat storm', gName: 'G2', frac: 0.19, perk: false, change: 'Foldede gardiner · trommer', sky: { intensity: 0.82, speed: 1.25, fold: 0.7, red: 0.2, violet: 0.6, stars: 0.6, crackle: 0.05 }, music: 4 },
   { kp: 7, name: 'Kraftig storm', gName: 'G3', frac: 0.31, perk: true, change: 'Røde toppe · Ladet spin', sky: { intensity: 0.9, speed: 1.4, fold: 0.8, red: 0.65, violet: 0.6, stars: 0.5, crackle: 0.15 }, music: 4 },
-  { kp: 8, name: 'Svær storm', gName: 'G4', frac: 0.55, perk: false, change: 'Knitren i rammen · ostinato', sky: { intensity: 0.97, speed: 1.6, fold: 0.9, red: 0.85, violet: 0.65, stars: 0.4, crackle: 0.5 }, music: 5 },
+  { kp: 8, name: 'Svær storm', gName: 'G4', frac: 0.55, perk: false, change: 'Knitren i rammen · strygere', sky: { intensity: 0.97, speed: 1.6, fold: 0.9, red: 0.85, violet: 0.65, stars: 0.4, crackle: 0.5 }, music: 5 },
   { kp: 9, name: 'Ekstrem', gName: 'G5', frac: 1, perk: false, change: 'SOLSTORM', sky: { intensity: 1, speed: 1.8, fold: 1, red: 1, violet: 0.7, stars: 0.3, crackle: 1 }, music: 5 },
 ];
 

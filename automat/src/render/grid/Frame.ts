@@ -108,11 +108,12 @@ export class Frame {
   }
 
   /** Per frame: tint glow to the aurora, breathe. */
-  update(time: number, tint: number, energy: number): void {
+  update(time: number, tint: number, energy: number, calm = false): void {
     this.glowG.tint = tint;
-    this.glowG.alpha = 0.55 + 0.25 * energy + 0.08 * Math.sin(time * 1.3);
+    this.glowG.alpha = 0.55 + 0.25 * Math.min(1, energy) + 0.08 * Math.sin(time * 1.3);
     for (let i = 0; i < 4; i++) this.corners[i].alpha = 0.35 + 0.25 * Math.sin(time * 2 + i * 1.7) + energy * 0.2;
-    this.cracks.alpha = 0.6 + 0.4 * Math.sin(time * 23) * this.crackle;
+    // Photosensitivity: crack shimmer ≤ 1.2 Hz, none in calm mode.
+    this.cracks.alpha = calm ? 0.6 : 0.6 + 0.3 * Math.sin(time * Math.PI * 2 * 1.2) * this.crackle;
   }
 
   set visible(b: boolean) { this.back.visible = b; this.front.visible = b; }

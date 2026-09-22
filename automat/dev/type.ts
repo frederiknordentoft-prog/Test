@@ -7,8 +7,8 @@
 //   #view=atlas                 raw SDF atlas (R = distance, G = arc length)
 //   #view=perf                  timing probes (text setter, construction)
 //   common: &reveal=0.5 &glow=1 &sweep=0.4 &t=2.0 (shader clock) &letter=3 (letter-slam frame)
-import { Application, Container, FillGradient, Graphics, Rectangle, Sprite, Texture, type Filter, type Renderer } from 'pixi.js';
-import { IsText, installIsfont, isfontStats, setIsfontClock, type IsStyle } from '../src/render/type/isfont.ts';
+import { Application, Container, FillGradient, Graphics, Matrix, Rectangle, RenderTexture, Sprite, Texture, type Filter, type Renderer } from 'pixi.js';
+import { IsText, installIsfont, isfontStats, setIsfontClock, isLabelTexture, prewarmIsLabels, type IsStyle } from '../src/render/type/isfont.ts';
 import { getAtlas } from '../src/render/type/atlas.ts';
 import { GLYPHS } from '../src/render/type/glyphs.ts';
 import { PAL } from '../src/core/palette.ts';
@@ -186,6 +186,50 @@ if (view === 'sheet') {
   T('×4', Math.max(10, cell * 0.2), 'ice', gx + cell * 2, gy + cell * 1.5 - cell * 0.32);
   T('3 SOLE · 6,00 KR', Math.max(12, cell * 0.24), 'gold', gx + cell * 3, gy + cell * 4.6);
   T('3 SOLE · 0,60 KR', Math.max(12, cell * 0.24), 'muted', gx + cell * 3, gy + cell * 5.4);
+} else if (view === 'labels') {
+  // left: live IsText, right: Sprite(isLabelTexture) — should be indistinguishable
+  world.addChild(sky());
+  const marks = ['×2', '×4', '×8', '×16', '×32', '×64', '×128'];
+  const styles: IsStyle[] = ['ice', 'gold', 'plasma'];
+  const caps = [10, 12, 16];
+  const t0 = performance.now();
+  for (const c of caps) prewarmIsLabels(r, marks, styles, c);
+  probe.prewarmMs = +(performance.now() - t0).toFixed(1);
+  let y = 26;
+  for (const cap of caps) {
+    for (const st of styles) {
+      const cell = cap / 0.16;
+      marks.forEach((m, i) => {
+        const x = 30 + i * (W - 60) / 7 + (W - 60) / 14;
+        pill(x - cell * 0.02, y, cell * 0.5, cell * 0.3);
+        pill(x - cell * 0.02, y + cell * 0.34, cell * 0.5, cell * 0.3);
+        const live = T(m, cap, st, x, y);
+        live.x = Math.round(live.x); live.y = Math.round(live.y);
+        const sp = new Sprite(isLabelTexture(r, m, st, cap));
+        sp.anchor.set(0.5);
+        sp.position.set(Math.round(x), Math.round(y + cell * 0.34));
+        world.addChild(sp);
+      });
+      y += cap / 0.16 * 0.78;
+    }
+  }
+  // objective check: render both into equal RTs and diff the bytes
+  let maxDiff = 0, sumDiff = 0, count = 0;
+  for (const cap of caps) for (const st of styles) for (const m of marks) {
+    const tex = isLabelTexture(r, m, st, cap);
+    const w = tex.width, h = tex.height;
+    const a = RenderTexture.create({ width: w, height: h, resolution: r.resolution });
+    const b = RenderTexture.create({ width: w, height: h, resolution: r.resolution });
+    const live = new IsText({ text: m, size: cap, style: st, decor: false });
+    const sp = new Sprite(tex); sp.anchor.set(0.5);
+    const mtx = new Matrix().translate(w / 2, h / 2);
+    r.render({ container: live, target: a, clear: true, clearColor: [0, 0, 0, 0], transform: mtx });
+    r.render({ container: sp, target: b, clear: true, clearColor: [0, 0, 0, 0], transform: mtx });
+    const pa = r.extract.pixels(a).pixels, pb = r.extract.pixels(b).pixels;
+    for (let i = 0; i < pa.length; i++) { const d = Math.abs(pa[i] - pb[i]); if (d > maxDiff) maxDiff = d; sumDiff += d; count++; }
+    live.destroy(); sp.destroy(); a.destroy(true); b.destroy(true);
+  }
+  probe.labelDiff = { maxByte: maxDiff, meanByte: +(sumDiff / count).toFixed(4), textures: marks.length * styles.length * caps.length };
 } else if (view === 'glyphs') {
   world.addChild(sky());
   const style = (hp.get('style') ?? 'ice') as IsStyle;
@@ -265,3 +309,14 @@ if (view === 'sheet') {
 }
 
 void skyLayer;
+
+// &lose=1: simulate WebGL context loss + restore (labels must re-render, atlas re-upload)
+if (hp.get('lose') === '1') {
+  setTimeout(() => {
+    const gl = (r as unknown as { gl: WebGL2RenderingContext }).gl;
+    const ext = gl.getExtension('WEBGL_lose_context');
+    probe.lost = !!ext;
+    ext?.loseContext();
+    setTimeout(() => { ext?.restoreContext(); setTimeout(() => { probe.restored = !gl.isContextLost(); }, 600); }, 400);
+  }, 600);
+}

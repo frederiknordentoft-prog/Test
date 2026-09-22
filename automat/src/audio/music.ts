@@ -13,7 +13,7 @@
 // per sample while a param is automated). Brightness envelopes are two STATIC filters crossfaded by gains;
 // slowly swept noise beds are generated in JS.
 import {
-  type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, shaper, bell, aah, prng, eqPowerCurve, loopHz, newBuffer, yieldNow,
+  type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, shaper, bell, aah, prng, eqPowerCurve, loopHz, newBuffer, yieldNow, noiseScale,
 } from './dsp.ts';
 
 export const BASE_BPM = 84;
@@ -41,7 +41,8 @@ export interface StemDef {
   ch: 1 | 2;
   tail: number;          // seconds rendered past the loop end (folded back)
   rmsDb: number;         // loudness target after folding
-  div?: 1 | 2 | 4;       // render at full/div (bandwidth hint; saves memory + render time)
+  div?: 1 | 2 | 4;       // render at hw/div (bandwidth hint; saves memory + render time)
+  minRate?: number;      // never render below this rate, even on lite devices (default 11 kHz)
   build(ctx: Ctx, out: AudioNode, g: Grid): void | Promise<void>;
 }
 
@@ -110,11 +111,13 @@ async function windBuffer(ctx: Ctx, g: Grid, F: number, seed: number): Promise<A
   const sweepHz = loopHz(0.09, g.loop), gustHz = loopHz(0.17, g.loop), gust2Hz = loopHz(0.41, g.loop);
   const fin = eqPowerCurve(1024, true), fout = eqPowerCurve(1024, false);
   const hpA = 1 - Math.exp(-2 * Math.PI * 250 / sr);
+  const lpA = 1 - Math.exp(-2 * Math.PI * 3500 / sr); // darken: no hiss above the gusts
+  const ns = noiseScale(sr);
   for (let c = 0; c < 2; c++) {
     const r = prng(seed + c * 1013);
     const d = b.getChannelData(c);
     const side = c ? 1 : -1;
-    let low = 0, band = 0, hpS = 0, f = 0.1, k = 1;
+    let low = 0, band = 0, hpS = 0, lpS = 0, lpS2 = 0, f = 0.1, k = 1;
     const q = 1 / 0.8;
     for (let i = 0; i < n; i++) {
       if ((i & 31) === 0) {
@@ -127,12 +130,14 @@ async function windBuffer(ctx: Ctx, g: Grid, F: number, seed: number): Promise<A
         else if (t >= g.loop) env = fout[Math.min(1023, Math.floor(((t - g.loop) / F) * 1023))];
         k = (1 + 0.35 * Math.sin(2 * Math.PI * gustHz * t + c * 0.7)) * env;
       }
-      const x = r() * 2 - 1;
+      const x = (r() * 2 - 1) * ns;
       low += f * band;
       const high = x - low - q * band;
       band += f * high;
       hpS += hpA * (band - hpS);
-      d[i] = (band - hpS) * k;
+      lpS += lpA * (band - hpS - lpS);
+      lpS2 += lpA * (lpS - lpS2);
+      d[i] = lpS2 * k * 1.3;
     }
     await yieldNow();
   }
@@ -150,7 +155,7 @@ function pumpEnv(p: AudioParam, kicks: number[], depth = 0.22, rec = 0.085): voi
 
 // ------------------------------------------------------------------ BASE stems
 const L0: StemDef = {
-  id: 'base0', group: 'base', layer: 0, bars: 4, ch: 2, tail: 5, rmsDb: -21, div: 2,
+  id: 'base0', group: 'base', layer: 0, bars: 4, ch: 2, tail: 5, rmsDb: -21, div: 2, minRate: 22000,
   async build(ctx, out, g) {
     const bus = gain(ctx, 1);
     bus.connect(out);
@@ -181,7 +186,7 @@ const ARP_B = [5, -1, 4, 2, 3, -1, 1, 0];
 const ARP_VEL = [1, 0.55, 0.75, 0.6, 0.9, 0.55, 0.7, 0.5];
 
 const L1: StemDef = {
-  id: 'base1', group: 'base', layer: 1, bars: 8, ch: 2, tail: 5, rmsDb: -25,
+  id: 'base1', group: 'base', layer: 1, bars: 8, ch: 2, tail: 5, rmsDb: -25, div: 2, minRate: 22000,
   build(ctx, out, g) {
     // dotted-8th ping-pong echo with a dark feedback path
     const dry = gain(ctx, 1);
@@ -218,7 +223,7 @@ const L1: StemDef = {
 };
 
 const L2: StemDef = {
-  id: 'base2', group: 'base', layer: 2, bars: 4, ch: 1, tail: 2, rmsDb: -24, div: 4,
+  id: 'base2', group: 'base', layer: 2, bars: 4, ch: 1, tail: 2, rmsDb: -24, div: 4, minRate: 11000,
   build(ctx, out, g) {
     const lp = filt(ctx, 'lowpass', 850, 0.5);
     const sat = shaper(ctx, 2.2);
@@ -254,7 +259,7 @@ const L2: StemDef = {
 };
 
 const L3: StemDef = {
-  id: 'base3', group: 'base', layer: 3, bars: 4, ch: 1, tail: 1.5, rmsDb: -28,
+  id: 'base3', group: 'base', layer: 3, bars: 4, ch: 1, tail: 1.5, rmsDb: -28, minRate: 40000,
   build(ctx, out, g) {
     const r = prng(303);
     const kickLp = filt(ctx, 'lowpass', 1400, 0.5);
@@ -352,7 +357,7 @@ function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
 }
 
 const L4: StemDef = {
-  id: 'base4', group: 'base', layer: 4, bars: 4, ch: 2, tail: 1.5, rmsDb: -29, div: 2,
+  id: 'base4', group: 'base', layer: 4, bars: 4, ch: 2, tail: 1.5, rmsDb: -29, div: 2, minRate: 22000,
   build(ctx, out, g) {
     // muted pluck: bright path (fast decay) + dark resonant path; 4 static filters, L/R alternating
     const chains = [-0.25, 0.25].map((p) => {
@@ -438,7 +443,7 @@ function hatBus(ctx: Ctx, out: AudioNode, p: number): AudioNode {
 }
 
 const CORE: StemDef = {
-  id: 'storm0', group: 'storm', layer: 0, bars: 8, ch: 2, tail: 2.5, rmsDb: -15,
+  id: 'storm0', group: 'storm', layer: 0, bars: 8, ch: 2, tail: 2.5, rmsDb: -15, minRate: 40000,
   build(ctx, out, g) {
     const kicks = stormKickTimes(g);
     const drums = gain(ctx, 1);
@@ -533,7 +538,7 @@ const CORE: StemDef = {
 };
 
 const STABS: StemDef = {
-  id: 'storm1', group: 'storm', layer: 1, bars: 4, ch: 2, tail: 1.5, rmsDb: -22, div: 2,
+  id: 'storm1', group: 'storm', layer: 1, bars: 4, ch: 2, tail: 1.5, rmsDb: -22, div: 2, minRate: 22000,
   build(ctx, out, g) {
     const kicks = stormKickTimes(g);
     const pump = gain(ctx, 1);
@@ -574,7 +579,7 @@ const STABS: StemDef = {
 };
 
 const HATS: StemDef = {
-  id: 'storm2', group: 'storm', layer: 2, bars: 4, ch: 2, tail: 1, rmsDb: -27,
+  id: 'storm2', group: 'storm', layer: 2, bars: 4, ch: 2, tail: 1, rmsDb: -27, minRate: 40000,
   build(ctx, out, g) {
     const r = prng(1212);
     const vel = [0.5, 0.22, 0.35, 0.25];
@@ -592,7 +597,7 @@ const HATS: StemDef = {
 };
 
 const CHOIR: StemDef = {
-  id: 'storm3', group: 'storm', layer: 3, bars: 4, ch: 2, tail: 3.2, rmsDb: -23, div: 2,
+  id: 'storm3', group: 'storm', layer: 3, bars: 4, ch: 2, tail: 3.2, rmsDb: -23, div: 2, minRate: 22000,
   build(ctx, out, g) {
     const kicks = stormKickTimes(g);
     const pump = gain(ctx, 1);

@@ -8,7 +8,7 @@ import { fmtKr } from '../core/format.ts';
 import { crand, crange } from '../core/cosmeticRng.ts';
 import { schedule, T, type Profile } from './schedule.ts';
 import { hitStop } from './clock.ts';
-import type { GridView } from '../render/grid/GridView.ts';
+import { dropDisplay, type GridView } from '../render/grid/GridView.ts';
 import type { KpArc } from '../render/hud/KpArc.ts';
 import type { Hud } from '../ui/hud.ts';
 import { IsText, type CellShatter, type Particles, type Motes } from '../render/modules.ts';
@@ -39,8 +39,9 @@ export interface PresentResult { profile: Profile; resultAt: number }
  * Present one spin. `marksBefore` are shown at the start (perk / storm persistence).
  * Resolves at the result beat (≥ 3.0 s after the press).
  */
-export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boolean; freshMarks: boolean }): Promise<PresentResult> {
-  const { beats, resultAt, profile } = schedule(r);
+export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boolean; freshMarks: boolean; paidOre?: number; liveStrip?: boolean }): Promise<PresentResult> {
+  const { beats, resultAt, profile } = schedule(r, opts.paidOre ?? r.stakeOre);
+  const sc = () => g.scale.x; // grid may be scaled mid-presentation after a resize
   const g = ctx.grid;
   const cell = g.cell;
   const size = g.size;
@@ -125,7 +126,11 @@ export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boole
     st.clusters.forEach((cl) => {
       g.glowCells(sub, 0, cl.cells, warm ? SYM_GLOW[cl.sym] : 0x7f93b2, warm ? 0.95 : 0.3);
     });
-    if (warm) { ctx.glowPulse(); ctx.haptic(10); }
+    if (warm) {
+      // Win focus: everything that is not part of this step's clusters steps back.
+      g.dimOthers(sub, 0, new Set(st.removed), 0.4);
+      ctx.glowPulse(); ctx.haptic(10);
+    }
   };
 
   const shatter = (k: number) => {
@@ -136,8 +141,8 @@ export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boole
       const s = g.syms[i];
       const p = g.globalCenter(i);
       if (s) {
-        ctx.cellShatter.burst(s.texture, p.x, p.y, cell, { warm });
-        s.destroy();
+        ctx.cellShatter.burst(s.texture, p.x, p.y, cell * sc(), { warm });
+        dropDisplay(s);
         g.syms[i] = null;
       }
       if (warm && !ctx.calm()) ctx.particles.emit('spark', p.x, p.y, 3, { color: SYM_GLOW[g.symOf[i]], speed: 220, spread: Math.PI * 2, life: 0.5 });
@@ -153,8 +158,9 @@ export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boole
     let sx = 0, sy = 0;
     for (const i of cl.cells) { const c = g.center(i); sx += c.x; sy += c.y; }
     sx /= cl.cells.length; sy /= cl.cells.length;
-    const txt = new IsText({ text: fmtKr(cl.winOre).toUpperCase(), size: Math.max(11, cell * (warm ? 0.26 : 0.2)), style: warm ? 'gold' : 'muted' });
-    txt.position.set(g.x + sx, g.y + sy);
+    const big = cl.winOre >= r.stakeOre;
+    const txt = new IsText({ text: fmtKr(cl.winOre).toUpperCase(), size: Math.max(11, cell * sc() * (warm ? (big ? 0.34 : 0.26) : 0.2)), style: warm ? 'gold' : 'muted' });
+    txt.position.set(g.x + sx * sc(), g.y + sy * sc());
     ctx.popups.addChild(txt);
     txt.alpha = 0;
     const s0 = txt.scale.x;
@@ -165,8 +171,8 @@ export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boole
       .to(txt, { alpha: 0, duration: 0.35 }, 0.8);
     if (warm) txt.glow = 1.2;
     if (cl.mult > 1) {
-      const m = new IsText({ text: '×' + cl.mult, size: Math.max(10, cell * 0.2), style: opts.storm ? 'plasma' : 'ice' });
-      m.position.set(g.x + sx, g.y + sy - cell * 0.32);
+      const m = new IsText({ text: '×' + cl.mult, size: Math.max(10, cell * sc() * 0.24), style: opts.storm ? 'plasma' : 'ice' });
+      m.position.set(g.x + sx * sc(), g.y + (sy - cell * 0.36) * sc());
       ctx.popups.addChild(m);
       gsap.timeline({ onComplete: () => m.destroy() })
         .fromTo(m.scale, { x: 2, y: 2 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' })
@@ -217,7 +223,8 @@ export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boole
     g.syms = next;
     g.symOf = nextSym;
     running = runningOre;
-    if (warm) ctx.hud.setWin(running, r.stakeOre, 'live');
+    if (warm) { const s2 = gsap.timeline(); g.dimOthers(s2, 0, null); }
+    if (warm && opts.liveStrip !== false && !opts.storm) ctx.hud.setWin(running, r.stakeOre, 'live');
   };
 
   const refill = (k: number) => {
@@ -246,8 +253,8 @@ export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boole
       gsap.fromTo(g.cells[i].glow, { alpha: 1 }, { alpha: 0, duration: 1.2 });
     }
     const c = g.center(r.sunCells[1] ?? r.sunCells[0]);
-    const txt = new IsText({ text: '3 SOLE · ' + fmtKr(r.sunPayOre).toUpperCase(), size: Math.max(12, cell * 0.24), style: warm ? 'gold' : 'muted' });
-    txt.position.set(g.x + c.x, g.y + c.y);
+    const txt = new IsText({ text: '3 SOLE · ' + fmtKr(r.sunPayOre).toUpperCase(), size: Math.max(12, cell * sc() * 0.26), style: warm ? 'gold' : 'muted' });
+    txt.position.set(g.x + c.x * sc(), g.y + c.y * sc());
     ctx.popups.addChild(txt);
     gsap.timeline({ onComplete: () => txt.destroy() }).fromTo(txt.scale, { x: 0.5, y: 0.5 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2)' }).to(txt, { y: txt.y - cell * 0.6, alpha: 0, duration: 1, delay: 0.5 });
   };
@@ -285,7 +292,9 @@ export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boole
       const last = r.steps[r.steps.length - 1];
       for (let i = 0; i < last.grid.length; i++) {
         if (!g.syms[i] || g.symOf[i] !== last.grid[i]) g.makeSym(i, last.grid[i] as Sym);
+        const s = g.syms[i]; if (s) s.alpha = 1;
       }
+      ctx.motes.flush?.();
       resolve({ profile, resultAt });
     }, [], resultAt);
     tl.play(0);
