@@ -66,6 +66,7 @@ function calmCine(t: number): void {
 }
 function cine(t: number): void {
   if (seq === 'calmcine') { calmCine(t); return; }
+  if (seq === 'lapse') { const k0 = num('kp', 3); P.kp = k0 + (9 - k0) * (1 - Math.cos(Math.PI / 2 * seg(t, 0, 2.4))); P.glow = t > 2.4 ? Math.max(0, 1 - (t - 2.4) * 1.4) : 0; return; }
   // mirrors src/present/cinematics/solstorm.ts
   const kp0 = num('kp', 7);
   P.kp = kp0 + (9 - kp0) * easeIn2(seg(t, 0.18, 1.18));
@@ -85,14 +86,14 @@ layout();
 window.addEventListener('resize', layout);
 
 const start = performance.now();
-if (seq === 'cine' || seq === 'calmcine') cine(t0);
+if (seq === 'cine' || seq === 'calmcine' || seq === 'lapse') cine(t0);
 sky.update(P);
 layout();
 app.ticker.add(() => {
   if (!anim) return;
   const t = t0 + (performance.now() - start) / 1000;
   P.time = t;
-  if (seq === 'cine' || seq === 'calmcine') cine(t);
+  if (seq === 'cine' || seq === 'calmcine' || seq === 'lapse') cine(t);
   sky.update(P);
 });
 
@@ -112,7 +113,7 @@ if (q.get('trace') === '1') {
   const bandH = Math.max(8, m.gridY);
   for (let i = 0; i < frames; i++) {
     P.time = t0 + i / fps;
-    if (seq === 'cine' || seq === 'calmcine') cine(P.time);
+    if (seq === 'cine' || seq === 'calmcine' || seq === 'lapse') cine(P.time);
     sky.update(P);
     const out = app.renderer.extract.pixels({ target: app.stage, frame: new Rectangle(0, 0, w, h), resolution: 0.25 });
     const px = out.pixels, W = out.width, H = out.height;
@@ -144,6 +145,7 @@ if (q.get('trace') === '1') {
   };
   const tr = tiles.map(swings);
   let wi = 0; if (q.has('tile')) wi = num('tile', 0); else tr.forEach((t, i) => { const w0 = tr[wi]; if (t.maxSwingsPerSec > w0.maxSwingsPerSec || (t.maxSwingsPerSec === w0.maxSwingsPerSec && t.maxFrameStepPct > w0.maxFrameStepPct)) wi = i; });
-  const worst = { tile: wi, ...tr[wi], series: num('dump', 0) ? tiles[wi].map((v) => +v.toFixed(3)) : undefined };
+  const src = num('tile', 0) < 0 ? full : tiles[wi];
+  const worst = { tile: wi, ...tr[wi], series: num('dump', 0) ? src.map((v) => +v.toFixed(3)) : undefined };
   (window as unknown as { __trace: unknown }).__trace = { frames, params: { ...P }, calm: sky.calm, full: swings(full), skyBand: swings(band), worstTile16: worst };
 }

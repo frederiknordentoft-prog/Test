@@ -307,7 +307,7 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float sr = Xf + F * wf.x + turb * 0.22;
   // band-limited ray octaves: fade to their mean before they alias (analytic d(sr)/texel, no derivatives)
   float fws = abs(conv * (1.0 + F * wf.y)) / (270.0 * sc * uScr.w);
-  float f1 = 19.0 * (1.0 + 0.2 * storm), f2 = 44.0;
+  float f1 = 19.0, f2 = 44.0;   // constant: scaling the ray coordinate by a ramping param re-rolls every ray each frame
   // edge-on (|ds| → 0) the line of sight crosses a long stretch of the sheet: rays average out. This also
   // keeps the scrolling ray noise from turning into a coherent large-area flicker inside folds.
   float avg = 1.0 - smoothstep(0.1, 0.65, abs(1.0 + F * wf.y));
@@ -418,7 +418,7 @@ vec3 cmeLayer(vec2 p) {
   float e = rho - rf - (b1 - 0.5) * H * 0.22 - (b2 - 0.5) * H * 0.035;  // > 0: ahead of the front
   float turb = fbm3(fq * vec2(2.2, 4.5) + vec2(t * 0.4, -t * 1.8));
   // thick hot band right behind the edge, very short falloff ahead of it
-  float heat = e < 0.0 ? exp(e / (0.085 * H)) : exp(-e / (0.01 * H));
+  float heat = e < 0.0 ? exp(e / (0.085 * H)) : exp(-e / (0.022 * H));
   heat *= 0.55 + 0.75 * turb;
   vec3 c = sunColor(sat(heat * 1.15)) * smoothstep(0.02, 0.3, heat) * (0.4 + 1.1 * heat);
   // swept region: streaming crimson/magenta plasma with dark lanes
@@ -446,12 +446,13 @@ void main() {
     }
     if (uSun.w > 0.001) c = sunLayer(p, c);
   }
-  if (uCme.x > 0.0) c += cmeLayer(p);
+  float cmeA = 0.0;
+  if (uCme.x > 0.0) { vec3 cm = cmeLayer(p); c += cm; cmeA = sat(luma(cm)); }
   float mx = max(c.r, max(c.g, c.b));                    // hue-preserving soft shoulder
   if (mx > 0.62) c *= (0.62 + 0.38 * (1.0 - exp(-(mx - 0.62) / 0.38))) / mx;
   c = sqrt(sat3(c));                                     // sqrt encode → more precision in the darks
   c += (hash12(gl_FragCoord.xy) - 0.5) * (1.0 / 255.0);
-  finalColor = vec4(c, 1.0);
+  finalColor = vec4(c, sqrt(cmeA));                      // alpha: CME luminance, lights the land in the composite
 }
 `;
 
@@ -541,6 +542,7 @@ void main() {
     vec2 ruv = (rp - uOrigin) / uExt;
     vec3 aur;
     vec3 refl = skyAt(ruv, rp, 0.35, aur);
+    refl *= 1.0 - 0.55 * uCme.y * step(0.0, uCme.x);   // the mirrored CME front must not make a second pass
     if (uSun.w > 0.001) {                    // a wavy sea breaks the mirrored disk into the glitter path
       float sd = length(rp - uSun.xy) / uSun.z;
       refl *= mix(0.3, 1.0, smoothstep(0.7, 1.6, sd));
@@ -573,10 +575,9 @@ void main() {
   }
   vec4 L = texture(uLand, uv);
   vec3 land = shadeLand(L);
-  if (uCme.x > 0.0) {                        // cheap analytic wash over the land as the front passes
-    float rho = length(p - vec2(uScr.x * 0.5, -uScr.y * 1.1));
-    float e = rho - mix(uScr.y * 0.95, uScr.y * 2.45, uCme.x);
-    land += vec3(1.0, 0.2, 0.12) * smoothstep(0.1 * uScr.y, -0.2 * uScr.y, e) * 0.16 * uCme.y;   // monotonic wash (single transition)
+  if (uCme.x > 0.0) {                        // the CME front sweeps over the land too (same data as the sky: no double pass)
+    float ca = texture(uAur, uv).a; ca *= ca;
+    land += vec3(1.0, 0.36, 0.16) * ca * 0.75;
   }
   col = mix(col, land, L.r);
   // horizon haze / sea mist

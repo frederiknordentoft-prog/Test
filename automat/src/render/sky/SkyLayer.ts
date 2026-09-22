@@ -129,6 +129,8 @@ class Pass {
   // reused render options (no per-frame allocation on our side)
   private readonly opts: { container: Container; target: RenderTexture | null; clear: boolean; clearColor: number[] } =
     { container: this.root, target: null, clear: true, clearColor: [0, 0, 0, 1] };
+  /** Clear colour for this pass (the aurora pass clears alpha to 0: its alpha carries the CME mask). */
+  setClear(r: number, g: number, b: number, a: number): void { const c = this.opts.clearColor; c[0] = r; c[1] = g; c[2] = b; c[3] = a; }
   draw(renderer: Renderer, target: RenderTexture, w: number, h: number): void {
     this.mesh.position.set(0, 0);
     this.mesh.scale.set(w, h);
@@ -194,6 +196,7 @@ export class SkyLayer extends Container {
     this.aur = new Pass('aurora', AURORA_FRAG, {
       uP: v4(), uA: v4(), uB: v4(), uC: v4(), uQ: v4(), uFx: v4(), uSeam: v4(), uCSeam: v3(), uCBody: v3(), uCTop: v3(), uCFringe: v3(), uSSeam: v3(), uSBody: v3(), uSTop: v3(), uSFringe: v3(), uSun: v4(), uCme: v4(),
     });
+    this.aur.setClear(0, 0, 0, 0);
     this.comp = new Pass('composite', COMP_FRAG, {
       uK: v4(), uK2: v4(), uLight: v3(), uHaze: v3(), uGlowC: v3(), uSun: v4(), uCme: v4(), uL: v4(),
     }, { uStatic: Texture.WHITE, uLand: Texture.EMPTY, uAur: Texture.EMPTY });
@@ -312,7 +315,7 @@ export class SkyLayer extends Container {
     const K2 = c.uK2 as Float32Array; K2[0] = inten; K2[1] = glow; K2[2] = 1; K2[3] = S[3];
     // light on the chalk: aurora ambient (+ the plasma sun in the storm)
     const L = c.uLight as Float32Array;
-    const lk = inten * 0.27 * (1 + 0.12 * glow) * (1 - 0.65 * storm);
+    const lk = inten * 0.27 * (1 + 0.1 * glow) * (1 - 0.65 * storm);
     for (let i = 0; i < 3; i++) {
       const aur = (this.cBody[i] * 0.6 + this.cTop[i] * 0.25 * topMix + this.cFringe[i] * 0.15) * lk;
       L[i] = aur + (C.crimson[i] * 0.55 + C.molten[i] * 0.45) * S[3] * 0.08;
@@ -324,7 +327,7 @@ export class SkyLayer extends Container {
       Hz[i] = base + (st - base) * storm;
     }
     const G = c.uGlowC as Float32Array;
-    for (let i = 0; i < 3; i++) G[i] = ((this.cBody[i] * 0.7 + this.cTop[i] * 0.3 * topMix) * inten * 0.018 + C.redTop[i] * red * T.crackle * 0.022 * (1 - storm)) * (1 + 0.5 * glow) + C.crimson[i] * cmeVis * 0.05;
+    for (let i = 0; i < 3; i++) G[i] = ((this.cBody[i] * 0.7 + this.cTop[i] * 0.3 * topMix) * inten * 0.018 + C.redTop[i] * red * T.crackle * 0.022 * (1 - storm)) * (1 + 0.1 * glow) + C.crimson[i] * cmeVis * 0.05;
     const CS = c.uSun as Float32Array; CS[0] = S[0]; CS[1] = S[1]; CS[2] = S[2]; CS[3] = S[3];
     const CM = c.uCme as Float32Array; CM[0] = M[0]; CM[1] = M[1];
     this.dirtyAur = true;
