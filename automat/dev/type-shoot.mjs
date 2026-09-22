@@ -6,14 +6,13 @@ const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium',
   args: ['--use-gl=angle', '--use-angle=swiftshader-webgl', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
 });
-const page = await browser.newPage({ viewport: { width: +w, height: +h }, deviceScaleFactor: +dpr });
 const errors = [];
-page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-page.on('console', (m) => { if (m.type() === 'error' && !/404/.test(m.text())) errors.push(m.text()); });
 for (const job of jobs) {
   const [hash, rest] = job.split('=>');
   const [out, clip] = rest.split('@');
-  await page.goto('about:blank');
+  const page = await browser.newPage({ viewport: { width: +w, height: +h }, deviceScaleFactor: +dpr });
+  page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error' && !/404/.test(m.text())) errors.push(m.text()); });
   await page.goto('http://127.0.0.1:5183/dev/type.html#' + hash);
   await page.waitForFunction(() => window.__probe && window.__probe.atlas, null, { timeout: 20000 });
   await page.waitForTimeout(1200);
@@ -22,6 +21,7 @@ for (const job of jobs) {
   await page.screenshot(opt);
   const probe = await page.evaluate(() => window.__probe);
   console.log(out, JSON.stringify(probe).slice(0, 300));
+  await page.close();
 }
 if (errors.length) console.log('ERRORS', errors);
 await browser.close();
