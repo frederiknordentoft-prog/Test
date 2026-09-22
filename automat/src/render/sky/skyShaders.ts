@@ -416,14 +416,14 @@ vec3 cmeLayer(vec2 p) {
   float b2 = vnoise(fq * 3.4 + vec2(t * 1.1, -t * 0.6));
   float rf = mix(H * 0.95, H * 2.45, k);
   float e = rho - rf - (b1 - 0.5) * H * 0.22 - (b2 - 0.5) * H * 0.035;  // > 0: ahead of the front
-  float turb = fbm3(fq * vec2(2.2, 4.5) + vec2(t * 0.4, -t * 1.8));
+  float turb = fbm3(fq * vec2(2.2, 4.5) + vec2(t * 0.3, -t * 0.9));
   // thick hot band right behind the edge, very short falloff ahead of it
   float heat = e < 0.0 ? exp(e / (0.085 * H)) : exp(-e / (0.022 * H));
-  heat *= 0.55 + 0.75 * turb;
+  heat *= 0.72 + 0.45 * turb;                   // billows modulate the band gently (no strobing inside the front)
   vec3 c = sunColor(sat(heat * 1.15)) * smoothstep(0.02, 0.3, heat) * (0.4 + 1.1 * heat);
   // swept region: streaming crimson/magenta plasma with dark lanes
   float bk = 1.0 - smoothstep(-0.01 * H, 0.0, e);
-  float lanes = smoothstep(0.25, 0.75, fbm3(vec2(fq.x * 1.4, fq.y * 0.8 - t * 1.3)));
+  float lanes = smoothstep(0.25, 0.75, fbm3(vec2(fq.x * 1.4, fq.y * 0.8 - t * 0.6)));
   c += mix(C_CRIMSON, C_MAGENTA, turb * 0.5) * bk * (0.12 + 0.3 * lanes) * (0.6 + 0.4 * exp(e / (0.4 * H)));
   // faint pre-glow ahead
   c += C_CRIMSON * exp(-max(e, 0.0) / (0.1 * H)) * (1.0 - bk) * 0.12;

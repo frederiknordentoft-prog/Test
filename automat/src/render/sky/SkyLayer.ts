@@ -237,13 +237,13 @@ export class SkyLayer extends Container {
     const dt = t - this.lastT;
     const resync = !(dt >= 0 && dt < 0.5);
     // photosensitivity: `storm` is rate-limited (≤ 2.5 /s) so the impact jump 0.35 → 1 is a ~0.25 s blend, and
-    // when the CME is cut (cme → 0 at impact) the swept plasma fades out over ~0.7 s instead of vanishing.
+    // when the CME is cut (cme → 0 at impact) the swept plasma fades out over ~1.2 s (overlapping the sun-rise).
     const stormIn = clamp01(p.storm);
     this.stormS = resync ? stormIn : this.stormS + Math.max(-dt * 2.5, Math.min(dt * 2.5, stormIn - this.stormS));
     const cmeIn = clamp01(p.cme);
     if (resync) this.cmeAfter = 0;
     else if (cmeIn < 0.02 && this.cmePrev >= 0.3) this.cmeAfter = 1;
-    else this.cmeAfter = Math.max(0, this.cmeAfter - dt / 0.7);
+    else this.cmeAfter = Math.max(0, this.cmeAfter - dt / 1.2);
     if (cmeIn >= 0.02) this.cmeAfter = 0;
     this.cmePrev = cmeIn;
     const storm = this.stormS, glow = clamp01(p.glow), sun = Math.max(0, p.sun);
