@@ -21,7 +21,9 @@ await page.route('**/@vite/client', (r) => r.fulfill({
 }));
 const t0 = Date.now();
 await page.goto(`${base}/dev/audio.html#check`);
-await page.waitForFunction(() => window.__audioCheck?.done === true, null, { timeout: 1200000, polling: 500 });
+// fail fast if the page itself breaks (syntax/module errors never set __audioCheck)
+const broken = new Promise((_, rej) => page.on('pageerror', (e) => rej(new Error('page error: ' + e.message))));
+await Promise.race([page.waitForFunction(() => window.__audioCheck?.done === true, null, { timeout: 900000, polling: 500 }), broken]);
 const r = await page.evaluate(() => window.__audioCheck);
 await browser.close();
 

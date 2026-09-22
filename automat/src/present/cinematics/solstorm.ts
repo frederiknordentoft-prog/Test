@@ -125,7 +125,7 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
   // ---------------- 2.20 IMPACT ----------------
   tl.addLabel('impact', 2.2)
     .call(() => {
-      w.flash(0.85, 40);
+      w.flash(0.6, 40); // kept below the WCAG general-flash margin (see scripts/luminance.mjs)
       hitStop(120, false);
       const p = w.impactPoint();
       const { w: sw, h: sh } = w.screen();

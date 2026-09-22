@@ -494,7 +494,8 @@ async function runCheck(): Promise<void> {
     // count tick onsets after the skip in (render − stinger-only): a jump of > 6 dB between 20 ms windows
     const onsets = (x: AudioBuffer) => {
       let n = 0, prev = -200;
-      for (let t = 0.95; t < 2.6; t += 0.02) { // from 150 ms after the skip (early reflections of the last tick) const v = dB(diffRms(x, base.buf, t, t + 0.02)); if (v > prev + 6 && v > -75) n++; prev = v; }
+      // from 150 ms after the skip (early reflections of the last tick)
+      for (let t = 0.95; t < 2.6; t += 0.02) { const v = dB(diffRms(x, base.buf, t, t + 0.02)); if (v > prev + 6 && v > -75) n++; prev = v; }
       return n;
     };
     const [oA, oB, oC] = [onsets(rA.buf), onsets(rB.buf), onsets(rC.buf)];
