@@ -297,7 +297,7 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   if (h < -48.0 * sc) return glow;              // well below the seam only the glow remains (early out)
   // rays follow magnetic field lines that converge toward the magnetic zenith (above the screen):
   // the ray pattern is looked up at the ray's foot on the seam
-  float vy = -HY * 2.0;
+  float vy = -HY * (2.0 - 1.2 * uC.y);             // Kp 8–9: the rays fan out from an overhead corona
   float conv = (seamY - vy) / max(p.y - vy, 1.0);
   float foot = uScr.x * 0.5 + (p.x - uScr.x * 0.5) * conv;
   float Xf = (foot - uScr.x * 0.5) / (270.0 * sc) + seed * 7.13;
@@ -332,7 +332,7 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   // 630 nm red layer: higher, taller and more diffuse than the green, faint ray structure
   float Hred = Hs * (1.3 + 0.8 * rays) * (1.0 + 0.6 * uC.y);
   float red = smoothstep(-0.02 * Hs, 0.45 * Hs, h) * exp(-max(h - 0.4 * Hs, 0.0) / Hred);
-  e += cTop * red * (0.35 + 0.65 * r3) * (0.55 + 0.45 * rays) * uC.x * k * 0.55;
+  e += cTop * red * (0.35 + 0.65 * r3) * (0.55 + 0.45 * rays) * uC.x * k * (0.55 + 0.3 * uC.y);
   // violet/magenta fringe just under the seam (N2+ lower border)
   float fr = exp(min(h, 0.0) / (11.0 * sc)) * (1.0 - below);
   e += cFringe * fr * uA.w * 0.9 * k;
@@ -433,7 +433,7 @@ void main() {
       cTop = mix(uCTop, uSTop, st); cFringe = mix(uCFringe, uSFringe, st);
       c += curtain(p, 0.0, uSeam.x, 0.04, 0.30, 0.75, 0.55, 0.10, 0.02);    // far: low arc on the horizon
       c += curtain(p, 1.73, uSeam.y, 0.11, 0.55, 0.95, 0.80, 0.35, -0.16);  // mid: descends to the right
-      c += curtain(p, 3.91, uSeam.z, 0.10, 0.85, 1.10, 1.05, 0.55, 0.12);   // near: hugs the grid top, tall, brightest
+      c += curtain(p, 3.91, uSeam.z, 0.075, 0.85, 1.10, 1.05, 0.55, 0.12);   // near: hugs the grid top, tall, brightest
       c *= uA.x * uB.z;
     }
     if (uSun.w > 0.001) c = sunLayer(p, c);

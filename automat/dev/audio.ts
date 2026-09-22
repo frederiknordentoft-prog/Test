@@ -1,7 +1,7 @@
 // Audio harness: buttons for every SFX + music transport, a post-limiter spectrum/peak meter, and an
 // automated QA suite (#check) that renders every asset and several full-mix scenarios offline.
 import { GameAudio, audio, type Sfx, type PlayOpts, type SchedLog } from '../src/audio/audio.ts';
-import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, RENDER_STATS } from '../src/audio/assets.ts';
+import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, assetDiv, RENDER_STATS } from '../src/audio/assets.ts';
 import { barFrames, grid, BASE_BPM, STORM_BPM } from '../src/audio/music.ts';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -312,13 +312,15 @@ async function runCheck(): Promise<void> {
       (shared as unknown as { assets: Map<string, AudioBuffer> }).assets.set(id, b);
       if (isStem(id)) {
         const def = stemDef(id)!;
-        const bf = barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, SR);
+        const div = assetDiv(id, SR), bsr = b.sampleRate;
+        const bf = barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, bsr, div);
         const t8 = tile(b, bf * 8);
         const s = stats(t8);
         const sm = seam(b);
-        const sp = spectrum([t8.getChannelData(0)], SR);
-        const exact = b.length === stemLoopFrames(def, SR) && b.length % bf === 0;
-        const row: Row = { id, bars: def.bars, ch: b.numberOfChannels, sec: +(b.length / SR).toFixed(3), exactBars: exact, rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, seamJump: +sm.jump.toFixed(5), seamRatio: +sm.ratio.toFixed(2), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: Math.round(RENDER_STATS.get(id)!.build), postMs: Math.round(RENDER_STATS.get(id)!.post) };
+        const sp = spectrum([t8.getChannelData(0)], bsr);
+        const secPerBar = bf / bsr, ref = barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, SR) / SR;
+        const exact = b.length === stemLoopFrames(def, bsr, div) && b.length % bf === 0 && Math.abs(secPerBar - ref) < 1e-12;
+        const row: Row = { id, bars: def.bars, ch: b.numberOfChannels, rate: bsr, sec: +(b.length / bsr).toFixed(3), exactBars: exact, rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, seamJump: +sm.jump.toFixed(5), seamRatio: +sm.ratio.toFixed(2), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: Math.round(RENDER_STATS.get(id)!.build), postMs: Math.round(RENDER_STATS.get(id)!.post) };
         res.stems.push(row);
         if (!(s.rms > 0.003)) fail(`${id} silent (rms ${dB(s.rms).toFixed(1)} dB)`);
         if (s.peak > 0.99) fail(`${id} peak ${s.peak}`);
@@ -327,12 +329,12 @@ async function runCheck(): Promise<void> {
         if (sm.ratio > 3 && sm.jump > 0.002) fail(`${id} loop seam jump ${sm.jump.toFixed(4)} (${sm.ratio.toFixed(1)}× p99.9)`);
       } else {
         const s = stats(b);
-        const sec = b.length / SR;
-        const sp = spectrum(Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c)), SR);
+        const sec = b.length / b.sampleRate;
+        const sp = spectrum(Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c)), b.sampleRate);
         const head = Math.abs(b.getChannelData(0)[0]);
         let tailMax = 0;
-        for (let c = 0; c < b.numberOfChannels; c++) { const d = b.getChannelData(c); for (let i = Math.max(0, d.length - Math.floor(0.005 * SR)); i < d.length; i++) tailMax = Math.max(tailMax, Math.abs(d[i])); }
-        const row: Row = { id, ch: b.numberOfChannels, sec: +sec.toFixed(3), rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, head: +head.toFixed(4), tail: +tailMax.toFixed(4), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: Math.round(RENDER_STATS.get(id)!.build), postMs: Math.round(RENDER_STATS.get(id)!.post) };
+        for (let c = 0; c < b.numberOfChannels; c++) { const d = b.getChannelData(c); for (let i = Math.max(0, d.length - Math.floor(0.005 * b.sampleRate)); i < d.length; i++) tailMax = Math.max(tailMax, Math.abs(d[i])); }
+        const row: Row = { id, ch: b.numberOfChannels, rate: b.sampleRate, sec: +sec.toFixed(3), rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, head: +head.toFixed(4), tail: +tailMax.toFixed(4), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: Math.round(RENDER_STATS.get(id)!.build), postMs: Math.round(RENDER_STATS.get(id)!.post) };
         res.assets.push(row);
         if (!(s.rms > 0.0015)) fail(`${id} silent (rms ${dB(s.rms).toFixed(1)} dB)`);
         if (s.peak > 0.99) fail(`${id} peak ${s.peak}`);

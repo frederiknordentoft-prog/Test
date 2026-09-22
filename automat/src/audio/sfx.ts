@@ -7,7 +7,7 @@ import {
   type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, lin, glide, shaper, bell, chimeVoice, gong, brass, aah, prng,
 } from './dsp.ts';
 
-export interface SfxAsset { ch: 1 | 2; dur: number; build(ctx: Ctx, out: AudioNode): void }
+export interface SfxAsset { ch: 1 | 2; dur: number; div?: 1 | 2 | 4; build(ctx: Ctx, out: AudioNode): void }
 
 /** Bell zones (MIDI) for 'land': any target pitch is ≤ 2.5 semitones from a zone. */
 export const LAND_ZONES = [69, 74, 79, 84, 89, 94];
@@ -30,7 +30,7 @@ const A: Record<string, SfxAsset> = {};
 for (const z of LAND_ZONES) {
   for (const rr of [0, 1]) {
     A[`land${z}${rr ? 'b' : 'a'}`] = {
-      ch: 1, dur: 2.2,
+      ch: 1, dur: 2.0,
       build(ctx, out) {
         const tau = 0.56 * Math.pow(2, -(z - 74) / 26);
         bell(ctx, out, 0.002, mtof(z), 0.8, {
@@ -44,7 +44,7 @@ for (const z of LAND_ZONES) {
 
 for (const z of CHIME_ZONES) {
   A[`chime${z}`] = {
-    ch: 1, dur: 3.2,
+    ch: 1, dur: 2.8,
     build(ctx, out) { chimeVoice(ctx, out, 0.002, mtof(z), 0.8, 0.95 * Math.pow(2, -(z - 74) / 28)); },
   };
 }
@@ -218,7 +218,7 @@ for (const v of [0, 1]) {
 }
 
 A.anticipation = {
-  ch: 2, dur: 3.1,
+  ch: 2, dur: 3.1, div: 2,
   build(ctx, out) {
     const lpL = filt(ctx, 'lowpass', 350, 3.2), lpR = filt(ctx, 'lowpass', 350, 3.2);
     for (const lp of [lpL, lpR]) glide(lp.frequency, 0, 320, 2300, 2.3);
@@ -266,7 +266,7 @@ A.countTick = {
 
 for (const root of LEVEL_ZONES) {
   A[`levelUp${root}`] = {
-    ch: 1, dur: 4.6,
+    ch: 1, dur: 4.0,
     build(ctx, out) {
       const hit = 0.32;
       // quick upward riser into the hit
@@ -291,7 +291,7 @@ for (const root of LEVEL_ZONES) {
 const SUN_ROOT = [0, 62, 69, 74];
 for (const l of [1, 2, 3]) {
   A[`sun${l}`] = {
-    ch: 1, dur: 3.4,
+    ch: 1, dur: 3.0,
     build(ctx, out) {
       const f = mtof(SUN_ROOT[l]);
       gong(ctx, out, 0.002, f, 0.75, { tau: 0.75 + 0.2 * l, bright: 0.65 + 0.15 * l, strike: 0.2, sub: 0.22, seed: 40 + l });
@@ -351,7 +351,7 @@ const BIG: Record<number, { hold: number; voices: number }> = {
 };
 for (const l of [3, 4, 5]) {
   A[`bigWin${l}`] = {
-    ch: 1, dur: 2.2 + BIG[l].hold + 1.6,
+    ch: 1, dur: 1.9 + BIG[l].hold + 1.4,
     build(ctx, out) {
       const b = BIG[l];
       const amp = 0.075 + 0.01 * (l - 3);
@@ -381,7 +381,7 @@ for (const l of [3, 4, 5]) {
 
 // ------------------------------------------------------------------ storm set
 A.stormSwell = {
-  ch: 1, dur: 2.7,
+  ch: 1, dur: 2.7, div: 4,
   build(ctx, out) {
     const env = gain(ctx, 0);
     env.gain.setValueAtTime(0.0008, 0);
@@ -470,12 +470,12 @@ A.impact = {
     const mbp = filt(ctx, 'bandpass', 700, 0.7);
     const mbs = shaper(ctx, 2);
     const mbg = gain(ctx, 0);
-    perc(mbg.gain, 0.001, 0.75, 0.001, 0.11);
+    perc(mbg.gain, 0.001, 1.0, 0.001, 0.11);
     mb.connect(mbp).connect(mbg).connect(mbs).connect(out);
     // metallic ring (inharmonic FM)
     const r = pan(ctx, 0);
     r.connect(out);
-    bell(ctx, r, 0.002, 176, 0.5, { ratio: 1.414, index: 4.5, itau: 0.12, tau: 0.7, body: 0.3, tine: 0.1, strike: 0 });
+    bell(ctx, r, 0.002, 176, 0.6, { ratio: 1.414, index: 4.5, itau: 0.12, tau: 0.7, body: 0.3, tine: 0.1, strike: 0 });
     // stereo tail
     for (const side of [-1, 1]) {
       const tn = noise(ctx, 0, 3, 1420 + side, 4);
@@ -489,7 +489,7 @@ A.impact = {
 };
 
 A.drop808 = {
-  ch: 1, dur: 2.5,
+  ch: 1, dur: 2.5, div: 4,
   build(ctx, out) {
     const o = osc(ctx, 'sine', 55, 0, 2.5);
     glide(o.frequency, 0.001, 55, 30, 1.4);
@@ -641,7 +641,7 @@ function crackle(ctx: Ctx, out: AudioNode, t0: number, dur: number, rate: number
 }
 
 A.reform = {
-  ch: 2, dur: 2.0,
+  ch: 2, dur: 2.0, div: 2,
   build(ctx, out) {
     const lp = filt(ctx, 'lowpass', 250, 1.5);
     glide(lp.frequency, 0, 240, 1500, 1.2);

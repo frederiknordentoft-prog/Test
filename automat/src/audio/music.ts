@@ -18,12 +18,17 @@ import {
 
 export const BASE_BPM = 84;
 export const STORM_BPM = 140;
-/** Frames per bar at `bpm` (rounded; the rounded value IS the tempo grid everywhere). */
-export const barFrames = (bpm: number, sr: number): number => Math.round((sr * 240) / bpm);
+/**
+ * Frames per bar for a buffer rendered at `sr = full / div` (div ∈ 1, 2, 4). The bar is quantised on a
+ * quarter-rate grid, so its length in SECONDS is identical for every divisor: stems rendered at different
+ * rates (bandwidth-limited stems use lower rates to save memory) stay sample-locked forever.
+ */
+export const barFrames = (bpm: number, sr: number, div = 1): number =>
+  Math.round(((sr * div) / 4) * (240 / bpm)) * (4 / div);
 
 export interface Grid { sr: number; bar: number; beat: number; s16: number; loop: number; bars: number; end: number }
-export function grid(bpm: number, sr: number, bars: number, tail = 0): Grid {
-  const bf = barFrames(bpm, sr);
+export function grid(bpm: number, sr: number, bars: number, tail = 0, div = 1): Grid {
+  const bf = barFrames(bpm, sr, div);
   const bar = bf / sr;
   return { sr, bar, beat: bar / 4, s16: bar / 16, loop: (bf * bars) / sr, bars, end: (bf * bars) / sr + tail };
 }
@@ -36,6 +41,7 @@ export interface StemDef {
   ch: 1 | 2;
   tail: number;          // seconds rendered past the loop end (folded back)
   rmsDb: number;         // loudness target after folding
+  div?: 1 | 2 | 4;       // render at full/div (bandwidth hint; saves memory + render time)
   build(ctx: Ctx, out: AudioNode, g: Grid): void;
 }
 
@@ -107,25 +113,25 @@ function windBuffer(ctx: Ctx, g: Grid, F: number, seed: number): AudioBuffer {
     const r = prng(seed + c * 1013);
     const d = b.getChannelData(c);
     const side = c ? 1 : -1;
-    let low = 0, band = 0, hpS = 0, f = 0.1;
+    let low = 0, band = 0, hpS = 0, f = 0.1, k = 1;
     const q = 1 / 0.8;
     for (let i = 0; i < n; i++) {
-      const t = i / sr;
       if ((i & 31) === 0) {
+        // control rate (every 32 samples): filter centre, gusts, loop crossfade
+        const t = i / sr;
         const fc = 900 + 420 * side * Math.sin(2 * Math.PI * sweepHz * t) + 180 * Math.sin(2 * Math.PI * gust2Hz * t + c);
         f = 2 * Math.sin(Math.PI * Math.min(fc, sr / 6) / sr);
+        let env = 1;
+        if (t < F) env = fin[Math.min(1023, Math.floor((t / F) * 1023))];
+        else if (t >= g.loop) env = fout[Math.min(1023, Math.floor(((t - g.loop) / F) * 1023))];
+        k = (1 + 0.35 * Math.sin(2 * Math.PI * gustHz * t + c * 0.7)) * env;
       }
       const x = r() * 2 - 1;
       low += f * band;
       const high = x - low - q * band;
       band += f * high;
       hpS += hpA * (band - hpS);
-      const y = band - hpS;
-      const gst = 1 + 0.35 * Math.sin(2 * Math.PI * gustHz * t + c * 0.7);
-      let env = 1;
-      if (t < F) env = fin[Math.min(1023, Math.floor((t / F) * 1023))];
-      else if (t >= g.loop) env = fout[Math.min(1023, Math.floor(((t - g.loop) / F) * 1023))];
-      d[i] = y * gst * env;
+      d[i] = (band - hpS) * k;
     }
   }
   return b;
@@ -142,7 +148,7 @@ function pumpEnv(p: AudioParam, kicks: number[], depth = 0.22, rec = 0.085): voi
 
 // ------------------------------------------------------------------ BASE stems
 const L0: StemDef = {
-  id: 'base0', group: 'base', layer: 0, bars: 4, ch: 2, tail: 5, rmsDb: -21,
+  id: 'base0', group: 'base', layer: 0, bars: 4, ch: 2, tail: 5, rmsDb: -21, div: 2,
   build(ctx, out, g) {
     const bus = gain(ctx, 1);
     bus.connect(out);
@@ -203,17 +209,17 @@ const L1: StemDef = {
         if ((b === 3 || b === 7) && s >= 6) continue;
         const t = wrap(b * g.bar + s * (g.beat / 2) + 0.004 + (rnd() - 0.5) * 0.006, g);
         const v = ARP_VEL[s] * (b >= 4 ? 0.92 : 1);
-        bell(ctx, s % 2 ? pR : pL, t, mtof(pool[k]), 0.2 * v, { ratio: 3.5, index: 0.9 + 0.5 * v, itau: 0.12, tau: 0.42, body: 0.55, tine: 0.08, strike: 0.02, lp: 7000, seed: 900 + b * 8 + s });
+        bell(ctx, s % 2 ? pR : pL, t, mtof(pool[k]), 0.2 * v, { ratio: 3.5, index: 0.9 + 0.5 * v, itau: 0.12, tau: 0.42, body: 0.55, tine: 0.08, strike: 0, lp: 7000, seed: 900 + b * 8 + s });
       }
     }
   },
 };
 
 const L2: StemDef = {
-  id: 'base2', group: 'base', layer: 2, bars: 4, ch: 1, tail: 2, rmsDb: -24,
+  id: 'base2', group: 'base', layer: 2, bars: 4, ch: 1, tail: 2, rmsDb: -24, div: 4,
   build(ctx, out, g) {
-    const lp = filt(ctx, 'lowpass', 520, 0.5);
-    const sat = shaper(ctx, 1.6);
+    const lp = filt(ctx, 'lowpass', 850, 0.5);
+    const sat = shaper(ctx, 2.2);
     const hp = filt(ctx, 'highpass', 38, 0.6);
     lp.connect(sat).connect(hp).connect(out);
     for (let b = 0; b < 4; b++) {
@@ -225,9 +231,10 @@ const L2: StemDef = {
           o.frequency.setValueAtTime(f * 1.35, t);
           o.frequency.exponentialRampToValueAtTime(f, t + 0.05);
           const h = osc(ctx, 'triangle', f * 2, t, t + 1.2);
+          const h3 = osc(ctx, 'sine', f * 3, t, t + 0.5);
           const e = gain(ctx, 0);
           perc(e.gain, t, 0.55 * v, 0.006, tau);
-          o.connect(e); h.connect(gain(ctx, 0.22)).connect(e);
+          o.connect(e); h.connect(gain(ctx, 0.35)).connect(e); h3.connect(gain(ctx, 0.12)).connect(e);
           e.connect(lp);
         }
       }
@@ -334,7 +341,7 @@ function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
 }
 
 const L4: StemDef = {
-  id: 'base4', group: 'base', layer: 4, bars: 4, ch: 2, tail: 1.5, rmsDb: -29,
+  id: 'base4', group: 'base', layer: 4, bars: 4, ch: 2, tail: 1.5, rmsDb: -29, div: 2,
   build(ctx, out, g) {
     // muted pluck: bright path (fast decay) + dark resonant path; 4 static filters, L/R alternating
     const chains = [-0.25, 0.25].map((p) => {
@@ -505,7 +512,7 @@ const CORE: StemDef = {
 };
 
 const STABS: StemDef = {
-  id: 'storm1', group: 'storm', layer: 1, bars: 4, ch: 2, tail: 1.5, rmsDb: -22,
+  id: 'storm1', group: 'storm', layer: 1, bars: 4, ch: 2, tail: 1.5, rmsDb: -22, div: 2,
   build(ctx, out, g) {
     const kicks = stormKickTimes(g);
     const pump = gain(ctx, 1);
@@ -564,7 +571,7 @@ const HATS: StemDef = {
 };
 
 const CHOIR: StemDef = {
-  id: 'storm3', group: 'storm', layer: 3, bars: 4, ch: 2, tail: 3.2, rmsDb: -23,
+  id: 'storm3', group: 'storm', layer: 3, bars: 4, ch: 2, tail: 3.2, rmsDb: -23, div: 2,
   build(ctx, out, g) {
     const kicks = stormKickTimes(g);
     const pump = gain(ctx, 1);

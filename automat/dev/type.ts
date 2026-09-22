@@ -136,6 +136,10 @@ if (view === 'sheet') {
     });
   }
   probe.letters = logo.letters.length;
+} else if (view === 'one') {
+  world.addChild(sky());
+  const t = T(hp.get('text') ?? 'NO', num('size', 120), (hp.get('style') ?? 'ice') as IsStyle, W / 2, H / 2, { tracking: num('tracking', 0) });
+  probe.textWidth = t.textWidth;
 } else if (view === 'glyphs') {
   world.addChild(sky());
   const style = (hp.get('style') ?? 'ice') as IsStyle;

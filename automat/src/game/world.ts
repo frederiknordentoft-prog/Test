@@ -277,7 +277,7 @@ export class World {
     this.flashUntil = now + Math.max(0.033, ms / 1000);
   }
   announce(text: string): void { this.sr.textContent = text; }
-  setCalm(b: boolean): void { this.calm = b; }
+  setCalm(b: boolean): void { this.calm = b; if (this.cellShatter) this.cellShatter.calm = b; }
   capture(): Texture { return captureScene(this.stage); }
   hideForShatter(b: boolean): void {
     const L = this.stage.layers;

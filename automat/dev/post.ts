@@ -106,7 +106,9 @@ function paintSky(): HTMLCanvasElement {
 const world = new Container();
 world.filterArea = new Rectangle(0, 0, W, H);
 app.stage.addChild(world);
-world.addChild(new Sprite(Texture.from(paintSky())));
+const scene = new Container(); // like src/render/app.ts: world > scene (scene.alpha is the calm crossfade)
+world.addChild(scene);
+scene.addChild(new Sprite(Texture.from(paintSky())));
 
 // sun (white-hot core, gold / crimson corona)
 {
@@ -121,12 +123,12 @@ world.addChild(new Sprite(Texture.from(paintSky())));
   sun.circle(sx, sy, sr * 3).fill(corona);
   sun.circle(sx, sy, sr).fill(stormScene ? 0xff6a00 : 0xffe6a8);
   sun.circle(sx, sy, sr * 0.72).fill(0xfff4e0);
-  world.addChild(sun);
+  scene.addChild(sun);
 }
 
 // glass panel ("grid frame") + symbols
 const panel = new Container();
-world.addChild(panel);
+scene.addChild(panel);
 const px = 12, py = Math.round(H * 0.31), pw = W - 24, cols = 5, rows = 4;
 const cell = Math.floor((pw - 16) / cols), ph = cell * rows + 16;
 {
@@ -186,7 +188,7 @@ if (!probe.realSymbols) addFallbackGems();
     const x = px + rnd() * pw, y = py - 30 + rnd() * 40, s = 0.8 + rnd() * 1.8;
     g.circle(x, y, s).fill(stormScene ? (rnd() > 0.5 ? PAL.molten : PAL.stormGold) : (rnd() > 0.5 ? PAL.mote : PAL.teal));
   }
-  world.addChild(g);
+  scene.addChild(g);
 }
 
 // multiplier pill (cyan on dark, reserved colour must survive the storm grade)
@@ -194,9 +196,9 @@ if (!probe.realSymbols) addFallbackGems();
   const g = new Graphics();
   const x = px + pw - 70, y = py + ph + 12;
   g.roundRect(x, y, 58, 26, 13).fill({ color: 0x05070d, alpha: 0.9 }).stroke({ width: 1, color: PAL.cyan, alpha: 0.5 });
-  world.addChild(g);
+  scene.addChild(g);
   const t = new Text({ text: stormScene ? 'x64' : 'x8', style: { fontFamily: 'system-ui, sans-serif', fontSize: 15, fontWeight: '800', fill: PAL.cyan } });
-  t.anchor.set(0.5); t.position.set(x + 29, y + 13); world.addChild(t);
+  t.anchor.set(0.5); t.position.set(x + 29, y + 13); scene.addChild(t);
 }
 
 // type: centre readout (zero-CA zone) + small HUD rows near the bottom
@@ -211,7 +213,7 @@ for (const s of textSpecs) {
   const t = new Text({ text: s.text, style: { fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: s.size, fontWeight: (s.weight ?? '500') as '500', fill: s.color, letterSpacing: s.size < 12 ? 0.4 : 1 } });
   t.anchor.set(s.anchor ?? 0, 0.5);
   t.position.set(Math.round(s.x), Math.round(s.y));
-  world.addChild(t);
+  scene.addChild(t);
 }
 
 // 1-device-pixel gratings at the exact screen centre (sharpness probe)
@@ -222,7 +224,7 @@ const grate = { x: Math.round(W / 2 - 24), y: Math.round(H / 2 - 30), w: 48, h: 
   const step = 1 / dpr;
   for (let i = 0; i < grate.w * dpr; i += 2) g.rect(grate.x + i * step, grate.y, step, grate.h).fill(0xeaf8ff);
   for (let j = 0; j < grate.h * dpr; j += 2) g.rect(grate.x, grate.y + grate.h + 4 + j * step, grate.w, step).fill(0xeaf8ff);
-  world.addChild(g);
+  scene.addChild(g);
 }
 
 // rotated square (MSAA probe: with antialias 'inherit' its edges must have partial-coverage pixels)
@@ -232,7 +234,7 @@ const aaBox = { x: Math.round(W / 2 + 34), y: Math.round(H / 2 - 32), w: 30, h: 
   g.rect(aaBox.x, aaBox.y, aaBox.w, aaBox.h).fill(0x05070d);
   const sq = new Graphics().rect(-8, -8, 16, 16).fill(0xeaf8ff);
   sq.position.set(aaBox.x + aaBox.w / 2, aaBox.y + aaBox.h / 2); sq.rotation = 0.5;
-  world.addChild(g, sq);
+  scene.addChild(g, sq);
 }
 
 // ------------------------------------------------------------------ post
@@ -264,6 +266,7 @@ function applyParams(u: UberPost, grainOverride?: number): void {
     u.time = 10 + t;
   }
 }
+scene.alpha = num('alpha', 1);
 applyParams(uber);
 bloom.strength = num('str', seqT !== null ? (seqT < 1.2 ? 1 : seqT < 2.2 ? 1 + 0.8 * (seqT - 1.2) : 1.8) * (seqT >= 2.5 ? 1.6 : 1) : 1 + 0.6 * storm);
 bloom.threshold = num('thr', bloom.threshold);

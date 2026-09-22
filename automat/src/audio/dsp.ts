@@ -160,7 +160,7 @@ export interface BellOpts {
 /** FM bell / glass voice (sine carrier, sine modulator at ratio × f). Mono into `out`. */
 export function bell(ctx: Ctx, out: AudioNode, t: number, f: number, amp: number, o: BellOpts = {}): void {
   const ratio = o.ratio ?? 3.5, index = o.index ?? 1.6, itau = o.itau ?? 0.16, tau = o.tau ?? 0.55;
-  const end = t + tau * 7 + 0.05;
+  const end = t + tau * 9.1 + 0.02;
   const lp = filt(ctx, 'lowpass', o.lp ?? 9000, 0.5);
   lp.connect(out);
   // FM pair
@@ -179,13 +179,13 @@ export function bell(ctx: Ctx, out: AudioNode, t: number, f: number, amp: number
   if (body > 0) {
     const b = osc(ctx, 'sine', f, t, end, o.detune ?? 0);
     const bg = gain(ctx, 0);
-    perc(bg.gain, t, amp * body, 0.004, tau * 1.5);
+    perc(bg.gain, t, amp * body, 0.004, tau * 1.3);
     b.connect(bg).connect(lp);
   }
   // tine: glass-bar partial (2.756 ×) decays fast
   const tine = o.tine ?? 0.12;
   if (tine > 0 && f * 2.756 < ctx.sampleRate * 0.45) {
-    const x = osc(ctx, 'sine', f * 2.756, t, t + 1.2);
+    const x = osc(ctx, 'sine', f * 2.756, t, t + tau * 2.3 + 0.02);
     const xg = gain(ctx, 0);
     perc(xg.gain, t, amp * tine, 0.0015, tau * 0.3);
     x.connect(xg).connect(lp);

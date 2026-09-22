@@ -12,23 +12,44 @@ export const isStem = (id: string): boolean => id in STEM_BY_ID;
 export const stemDef = (id: string): StemDef | undefined => STEM_BY_ID[id];
 export const allAssetIds = (): string[] => [...Object.keys(SFX_ASSETS), ...STEMS.map((s) => s.id)];
 
-export function stemLoopFrames(def: StemDef, sr: number): number {
-  return barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, sr) * def.bars;
+export function stemLoopFrames(def: StemDef, sr: number, div = 1): number {
+  return barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, sr, div) * def.bars;
+}
+
+/** Effective divisor for an asset rendered for a context/render rate `full` (never below ~11 kHz). */
+export function assetDiv(id: string, full: number): 1 | 2 | 4 {
+  const want = (STEM_BY_ID[id]?.div ?? SFX_ASSETS[id]?.div ?? 1) as 1 | 2 | 4;
+  for (const d of [4, 2] as const) if (want >= d && full / d >= 11000) return d;
+  return 1;
 }
 
 /** Main-thread cost per asset (ms): graph build, offline render wall time, post-processing. */
 export const RENDER_STATS = new Map<string, { build: number; render: number; post: number }>();
 const clock = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
-/** Render one asset at `sr`. Throws only if the platform lacks OfflineAudioContext. */
-export async function renderAsset(id: string, sr: number): Promise<AudioBuffer> {
+/**
+ * Render one asset for a context whose render rate is `full` (bandwidth-limited assets use full/2 or
+ * full/4; playback resamples). Falls back to `full` if the platform rejects the lower rate.
+ * Throws only if the platform lacks OfflineAudioContext.
+ */
+export async function renderAsset(id: string, full: number): Promise<AudioBuffer> {
+  const div = assetDiv(id, full);
+  try {
+    return await renderAt(id, full / div, div);
+  } catch (e) {
+    if (div === 1) throw e;
+    return renderAt(id, full, 1);
+  }
+}
+
+async function renderAt(id: string, sr: number, div: number): Promise<AudioBuffer> {
   const stem = STEM_BY_ID[id];
   const a = SFX_ASSETS[id];
   if (!stem && !a) throw new Error('unknown audio asset ' + id);
   const t0 = clock();
   let ctx: OfflineAudioContext;
   if (stem) {
-    const g = grid(stem.group === 'base' ? BASE_BPM : STORM_BPM, sr, stem.bars, stem.tail);
+    const g = grid(stem.group === 'base' ? BASE_BPM : STORM_BPM, sr, stem.bars, stem.tail, div);
     ctx = new OfflineAudioContext(stem.ch, Math.ceil(g.end * sr), sr);
     const out = ctx.createGain();
     out.connect(ctx.destination);
@@ -42,7 +63,7 @@ export async function renderAsset(id: string, sr: number): Promise<AudioBuffer> 
   const t1 = clock();
   const raw = await ctx.startRendering();
   const t2 = clock();
-  const res = stem ? finishLoop(raw, stemLoopFrames(stem, sr), stem.rmsDb) : finishOneShot(raw, SFX_PEAK);
+  const res = stem ? finishLoop(raw, stemLoopFrames(stem, sr, div), stem.rmsDb) : finishOneShot(raw, SFX_PEAK);
   RENDER_STATS.set(id, { build: t1 - t0, render: t2 - t1, post: clock() - t2 });
   return res;
 }

@@ -186,7 +186,7 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
   const skip = () => {
     if (!canSkip()) return;
     // applyState('reform'): set everything explicitly, then continue from the reform label.
-    w.shatter.crackReveal = 1;
+    w.shatter.stop();
     w.hideForShatter(false);
     w.buildStormStage();
     w.onModeStorm();

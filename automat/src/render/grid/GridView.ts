@@ -83,11 +83,11 @@ export class GridView extends Container {
   center(i: number): { x: number; y: number } {
     return { x: (this.colOf(i) + 0.5) * this.cell, y: (this.rowOf(i) + 0.5) * this.cell };
   }
-  /** Global (stage) position of a cell centre. */
+  /** Cell centre in SCENE coordinates (the fx layers are scene children with identity transforms;
+   *  toGlobal would include the camera shake/zoom and make effects spawn off-cell). */
   globalCenter(i: number): { x: number; y: number } {
     const c = this.center(i);
-    const p = this.toGlobal(c);
-    return { x: p.x, y: p.y };
+    return { x: this.x + c.x, y: this.y + c.y };
   }
 
   makeSym(i: number, s: Sym): Sprite {

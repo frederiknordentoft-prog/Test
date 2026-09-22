@@ -83,8 +83,8 @@ export class KpArc extends Container {
 
   /** Global position of the fill head (mote target). */
   headGlobal(): { x: number; y: number } {
-    const p = this.toGlobal(this.head.position);
-    return { x: p.x, y: p.y };
+    // scene coordinates (arc layer is an identity-transform child of the scene)
+    return { x: this.x + this.head.x, y: this.y + this.head.y };
   }
 
   setKp(kp: number): void {

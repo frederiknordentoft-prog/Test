@@ -293,7 +293,7 @@ export class SkyLayer extends Container {
       Hz[i] = base + (st - base) * storm;
     }
     const G = c.uGlowC as Float32Array;
-    for (let i = 0; i < 3; i++) G[i] = (this.cBody[i] * 0.7 + this.cTop[i] * 0.3 * topMix) * inten * 0.018 * (1 + 0.5 * glow) + C.crimson[i] * cme * 0.05;
+    for (let i = 0; i < 3; i++) G[i] = ((this.cBody[i] * 0.7 + this.cTop[i] * 0.3 * topMix) * inten * 0.018 + C.redTop[i] * red * T.crackle * 0.022 * (1 - storm)) * (1 + 0.5 * glow) + C.crimson[i] * cme * 0.05;
     const CS = c.uSun as Float32Array; CS[0] = S[0]; CS[1] = S[1]; CS[2] = S[2]; CS[3] = S[3];
     const CM = c.uCme as Float32Array; CM[0] = M[0]; CM[1] = M[1];
     this.dirtyAur = true;
@@ -372,7 +372,7 @@ export class SkyLayer extends Container {
     const sv = this.aur.u.uSeam as Float32Array;
     const top = this.gridTop();
     sv[0] = 0.11; sv[1] = 0.37;
-    sv[2] = Math.max(0.5, Math.min(0.8, 1 - (top - 0.025 * h) / hy));
+    sv[2] = Math.max(0.5, Math.min(0.82, 1 - (top + 0.012 * h) / hy));
   }
 
   /** Grid top (CSS px): from setFocus(), else estimated like world.layout() (portrait: horizon = top + 0.86·size, size ≈ 0.93·w). */

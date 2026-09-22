@@ -40,7 +40,7 @@ const CFG: Record<Sfx, Cfg> = {
   stakeUp:      { db: -23, verb: 'room', ui: true, cents: 4, jdb: 0.5, max: 3, gap: 0.04 },
   stakeDown:    { db: -23, verb: 'room', ui: true, cents: 4, jdb: 0.5, max: 3, gap: 0.04 },
   spin:         { db: -25, verb: 'room', cents: 60, jdb: 1, max: 2, gap: 0.1 },
-  land:         { db: -14, verb: 'hall', cents: 4, jdb: 1, max: 12, gap: 0.018 },
+  land:         { db: -15, verb: 'hall', cents: 4, jdb: 1, max: 12, gap: 0.018 },
   chime:        { db: -13, verb: 'hall', cents: 3, jdb: 0.5, max: 6, gap: 0.05 },
   shatter:      { db: -17, verb: 'room', cents: 35, jdb: 1, max: 6, gap: 0.03 },
   returnTick:   { db: -18, verb: 'dry', cents: 20, jdb: 0.4, max: 3, gap: 0.05 },
@@ -435,7 +435,7 @@ export class GameAudio {
     const layers = ids.map(() => { const g = c.createGain(); g.gain.value = 0; g.connect(group); return g; });
     return {
       kind, ids, group, layers, src: ids.map(() => null), start,
-      bar: barFrames(bpm, this.renderRate) / this.renderRate,
+      bar: barFrames(bpm, this.renderRate) / this.renderRate, // identical for every render divisor
       committed: ids.map(() => false), pendAt: ids.map(() => -1), pendOn: ids.map(() => false),
       stopped: false, alive: 0,
     };
