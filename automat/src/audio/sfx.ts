@@ -14,8 +14,8 @@ export const LAND_ZONES = [69, 74, 79, 84, 89, 94];
 /** Chime ladder (win cascade steps): D5 F5 A5 C6 D6 F6 A6 C7. */
 export const CHIME_LADDER = [74, 77, 81, 84, 86, 89, 93, 96];
 export const CHIME_ZONES = [74, 81, 86, 93];
-/** levelUp gong zones (MIDI roots) and per-level offsets from D3 (D-dorian pentatonic climb). */
-export const LEVEL_ZONES = [50, 62];
+/** levelUp gong zones (MIDI roots) and per-level offsets from D4 (D-dorian pentatonic climb). */
+export const LEVEL_ZONES = [62, 74];
 export const LEVEL_SEMIS = [0, 0, 2, 3, 7, 10, 12, 14, 15, 17, 19];
 
 export const nearestZone = (m: number, zones: readonly number[]): number => {
@@ -30,7 +30,7 @@ const A: Record<string, SfxAsset> = {};
 for (const z of LAND_ZONES) {
   for (const rr of [0, 1]) {
     A[`land${z}${rr ? 'b' : 'a'}`] = {
-      ch: 1, dur: 2.6,
+      ch: 1, dur: 2.2,
       build(ctx, out) {
         const tau = 0.56 * Math.pow(2, -(z - 74) / 26);
         bell(ctx, out, 0.002, mtof(z), 0.8, {
@@ -413,11 +413,11 @@ A.stormRiser = {
     const T = 1.0;
     // reverse cymbal (stereo noise)
     const n = noise(ctx, 0, T + 0.01, 1300, 3, 2);
-    const hp = filt(ctx, 'highpass', 3200, 0.7);
-    const pk = filt(ctx, 'peaking', 8500, 1, 5);
+    const hp = filt(ctx, 'highpass', 2600, 0.7);
+    const pk = filt(ctx, 'lowpass', 9000, 0.6);
     const e = gain(ctx, 0);
     e.gain.setValueAtTime(0.001, 0);
-    e.gain.exponentialRampToValueAtTime(0.5, T - 0.015);
+    e.gain.exponentialRampToValueAtTime(0.22, T - 0.015);
     e.gain.linearRampToValueAtTime(0, T);
     n.connect(hp).connect(pk).connect(e).connect(out);
     // roar riser
@@ -426,12 +426,18 @@ A.stormRiser = {
     const rg = gain(ctx, 0.6);
     rn.connect(rg).connect(src);
     for (const d of [-9, 9]) osc(ctx, 'sawtooth', mtof(38), 0, T + 0.01, d).connect(gain(ctx, 0.25)).connect(src);
+    // tonal scream: a rising saw pair that the band-pass tracks
+    for (const d of [-12, 12]) {
+      const x = osc(ctx, 'sawtooth', mtof(50), 0, T + 0.01, d);
+      glide(x.frequency, 0, mtof(50), mtof(74), T);
+      x.connect(gain(ctx, 0.18)).connect(src);
+    }
     const bp = filt(ctx, 'bandpass', 200, 2.2);
     glide(bp.frequency, 0, 200, 6000, T);
     const sat = shaper(ctx, 3);
     const re = gain(ctx, 0);
     re.gain.setValueAtTime(0.004, 0);
-    re.gain.exponentialRampToValueAtTime(0.42, T - 0.015);
+    re.gain.exponentialRampToValueAtTime(0.6, T - 0.015);
     re.gain.linearRampToValueAtTime(0, T);
     src.connect(bp).connect(sat).connect(re);
     re.connect(pan(ctx, -0.25)).connect(out);
@@ -445,7 +451,7 @@ A.impact = {
     const sub = osc(ctx, 'sine', 90, 0, 2);
     glide(sub.frequency, 0.001, 92, 32, 0.38);
     const sg = gain(ctx, 0);
-    perc(sg.gain, 0.001, 0.95, 0.002, 0.5);
+    perc(sg.gain, 0.001, 0.8, 0.002, 0.5);
     const sat = shaper(ctx, 2.2);
     sub.connect(sg).connect(sat).connect(out);
     // punch + crack
@@ -459,10 +465,17 @@ A.impact = {
     const cg = gain(ctx, 0);
     perc(cg.gain, 0.001, 0.45, 0.0003, 0.018);
     c.connect(hp).connect(cg).connect(out);
+    // mid "thwack" body (what phone speakers actually reproduce)
+    const mb = noise(ctx, 0, 0.6, 1430);
+    const mbp = filt(ctx, 'bandpass', 700, 0.7);
+    const mbs = shaper(ctx, 2);
+    const mbg = gain(ctx, 0);
+    perc(mbg.gain, 0.001, 0.75, 0.001, 0.11);
+    mb.connect(mbp).connect(mbg).connect(mbs).connect(out);
     // metallic ring (inharmonic FM)
     const r = pan(ctx, 0);
     r.connect(out);
-    bell(ctx, r, 0.002, 176, 0.35, { ratio: 1.414, index: 4.5, itau: 0.12, tau: 0.55, body: 0.3, tine: 0.1, strike: 0 });
+    bell(ctx, r, 0.002, 176, 0.5, { ratio: 1.414, index: 4.5, itau: 0.12, tau: 0.7, body: 0.3, tine: 0.1, strike: 0 });
     // stereo tail
     for (const side of [-1, 1]) {
       const tn = noise(ctx, 0, 3, 1420 + side, 4);
@@ -499,7 +512,7 @@ A.glassXL = {
     const r = prng(1500);
     for (let k = 0; k < 42; k++) {
       const t = 0.002 + Math.pow(r(), 2.2) * 0.9;
-      const f = 1400 + r() * 7200;
+      const f = 1100 + r() * 5200;
       const a = (0.1 + r() * 0.18) * (1 - t * 0.7);
       const p = pan(ctx, (r() - 0.5) * 1.6);
       p.connect(out);
@@ -520,14 +533,14 @@ A.glassXL = {
       o.connect(g).connect(p);
     }
     const n = noise(ctx, 0, 1.2, 1510, 3, 2);
-    const hp = filt(ctx, 'highpass', 1500, 0.7);
+    const hp = filt(ctx, 'bandpass', 2600, 0.5);
     const ng = gain(ctx, 0);
-    perc(ng.gain, 0.001, 0.45, 0.0005, 0.22);
+    perc(ng.gain, 0.001, 0.45, 0.0005, 0.2);
     n.connect(hp).connect(ng).connect(out);
     const cr = noise(ctx, 0, 0.3, 1520);
-    const bp = filt(ctx, 'bandpass', 420, 1.1);
+    const bp = filt(ctx, 'bandpass', 480, 0.9);
     const cg = gain(ctx, 0);
-    perc(cg.gain, 0.001, 0.4, 0.001, 0.045);
+    perc(cg.gain, 0.001, 0.7, 0.001, 0.06);
     cr.connect(bp).connect(cg).connect(out);
   },
 };
@@ -562,15 +575,20 @@ A.waveBoom = {
     const o = osc(ctx, 'sine', 70, 0, 2.5);
     glide(o.frequency, 0.001, 72, 34, 0.9);
     const g = gain(ctx, 0);
-    perc(g.gain, 0.001, 0.85, 0.005, 0.5);
+    perc(g.gain, 0.001, 0.6, 0.005, 0.5);
     const sat = shaper(ctx, 2);
     o.connect(g).connect(sat).connect(out);
+    const th = noise(ctx, 0, 0.5, 1730);
+    const thb = filt(ctx, 'bandpass', 520, 0.8);
+    const thg = gain(ctx, 0);
+    perc(thg.gain, 0.001, 0.6, 0.002, 0.09);
+    th.connect(thb).connect(thg).connect(out);
     // whoosh sweeping left → right like the band crossing the grid
     const n = noise(ctx, 0, 1.6, 1700, 3);
     const bp = filt(ctx, 'bandpass', 2800, 1.4);
     glide(bp.frequency, 0, 2800, 330, 0.95);
     const ng = gain(ctx, 0);
-    lin(ng.gain, [[0, 0], [0.14, 0.45], [0.8, 0.2], [1.3, 0]]);
+    lin(ng.gain, [[0, 0], [0.14, 0.8], [0.8, 0.35], [1.3, 0]]);
     const p = pan(ctx, -0.9);
     p.pan.linearRampToValueAtTime(0.9, 0.95);
     n.connect(bp).connect(ng).connect(p).connect(out);

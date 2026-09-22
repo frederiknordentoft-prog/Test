@@ -21,7 +21,7 @@
 import { Container, RenderTexture, Texture, type Renderer, type TextureSource } from 'pixi.js';
 import { crand } from '../../core/cosmeticRng.ts';
 import { PAL } from '../../core/palette.ts';
-import { Particles } from './Particles.ts';
+import { Particles, type EmitFxOptions } from './Particles.ts';
 import { ShardBatch } from './parts/shards.ts';
 import { CrackMesh } from './parts/cracks.ts';
 import { buildFracture, polyCentroid, voronoiCells } from './parts/voronoi.ts';
@@ -83,7 +83,10 @@ export class CellShatter extends Container {
   private batchLayer = new Container();
   /** Internal flash + shardlet particles (warm only). */
   readonly sparks: Particles;
+  /** Reduced-motion mode: warm bursts become a short, gentle break (no flash, no shardlets, no flips). */
+  calm = false;
   private frameBursts = 0;
+  private dirty = false;
 
   constructor() {
     super();
@@ -100,6 +103,8 @@ export class CellShatter extends Container {
     const src = tex.source;
     if (!src || src.destroyed) return;
     const batch = this.batchFor(src);
+    this.dirty = true;
+    const calm = this.calm;
     const uv = tex.uvs;
     const warm = !!o?.warm;
     const pat = warm ? PATTERNS[Math.floor(crand() * PATTERNS.length) % PATTERNS.length] : null;
@@ -131,13 +136,14 @@ export class CellShatter extends Container {
         const d = Math.hypot(pcx, pcy) || 1e-3;
         const dx = pcx / d, dy = pcy / d;
         const sp = (95 + 115 * crand()) * s * kick * (0.55 + 0.75 * Math.min(1, d / 0.3));
-        p.vx = dx * sp + (crand() - 0.5) * 36 * s;
-        p.vy = dy * sp - (55 + 75 * crand()) * s;
+        const cm = calm ? 0.35 : 1;
+        p.vx = (dx * sp + (crand() - 0.5) * 36 * s) * cm;
+        p.vy = (dy * sp - (55 + 75 * crand()) * s) * cm;
         p.rot = 0;
-        p.vrot = (crand() * 2 - 1) * 6;
+        p.vrot = (crand() * 2 - 1) * 6 * cm;
         p.fa = crand() * Math.PI;
         p.fp = 0;
-        p.fr = (crand() < 0.5 ? -1 : 1) * (2 + crand() * 3.5);
+        p.fr = calm ? 0 : (crand() < 0.5 ? -1 : 1) * (2 + crand() * 3.5);
         p.life = 0.55 + crand() * 0.2;
         p.hold = hold;
       } else {
@@ -148,28 +154,41 @@ export class CellShatter extends Container {
       }
       p.mx = flip; p.my = flop; p.sw = swap;
     }
-    if (warm) {
+    if (warm && !calm) {
       const k = this.frameBursts++;
       const damp = 1 / (1 + k * 0.09);
-      this.sparks.emitFx('flash', cx, cy, 1, { size: (size * 1.5) / 90, intensity: 0.55 * damp, heat: 0.8 * damp, life: 0.16 });
-      this.sparks.emitFx('shardlet', cx, cy, 4, { speed: 230 * s, size: Math.max(0.6, s * 0.9), gravity: 900 * s, life: 0.6, jitter: size * 0.25 });
+      FLASH_O.size = (size * 1.5) / 90; FLASH_O.intensity = 0.55 * damp; FLASH_O.heat = 0.8 * damp;
+      this.sparks.emitFx('flash', cx, cy, 1, FLASH_O);
+      SHARDLET_O.speed = 230 * s; SHARDLET_O.size = Math.max(0.6, s * 0.9); SHARDLET_O.gravity = 900 * s; SHARDLET_O.jitter = size * 0.25;
+      this.sparks.emitFx('shardlet', cx, cy, 4, SHARDLET_O);
     }
   }
 
   private batchFor(src: TextureSource): ShardBatch {
-    for (const b of this.batches) if (b.source === src) return b;
+    const bs = this.batches;
+    for (let i = 0; i < bs.length; i++) if (bs[i].source === src) return bs[i];
     const b = new ShardBatch(src, 1024, 3072, { cold: 0xeaf8ff, hot: 0xffffff, fromTexture: 1 });
     this.batches.push(b);
     this.batchLayer.addChild(b.mesh);
-    src.once('destroy', () => this.dropBatch(b));
+    const onDestroy = () => this.dropBatch(b);
+    src.once('destroy', onDestroy);
+    b.release = () => { if (!src.destroyed) src.off('destroy', onDestroy); };
     return b;
   }
 
+  /** Remove a batch: its pieces die, its mesh/buffers are freed (source destroyed, or idle > 5 s). */
   private dropBatch(b: ShardBatch): void {
     for (let i = this.n - 1; i >= 0; i--) if (this.all[i].batch === b) this.kill(i);
     const i = this.batches.indexOf(b);
     if (i >= 0) this.batches.splice(i, 1);
+    b.release?.();
+    b.release = null;
     b.destroy();
+  }
+
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    while (this.batches.length) this.dropBatch(this.batches[this.batches.length - 1]);
+    super.destroy(options);
   }
 
   private alloc(): CellPiece {
@@ -186,10 +205,21 @@ export class CellShatter extends Container {
   update(dt: number): void {
     this.frameBursts = 0;
     this.sparks.update(dt);
+    const bs = this.batches;
+    // prune batches whose symbol set is gone from play (old Kp / edition bakes nobody destroyed)
+    if (dt > 0) {
+      for (let i = bs.length - 1; i >= 0; i--) {
+        const b = bs[i];
+        b.idle = b.ni === 0 ? b.idle + dt : 0;
+        if (b.idle > 5) this.dropBatch(b);
+      }
+    }
     if (this.n === 0) {
-      for (const b of this.batches) if (b.mesh.visible) b.mesh.visible = false;
+      if (this.dirty) { for (let i = 0; i < bs.length; i++) { bs[i].begin(); bs[i].end(); } this.dirty = false; }
       return;
     }
+    if (dt <= 0 && !this.dirty) return; // hit-stop: geometry from the last frame stays valid
+    this.dirty = false;
     if (dt > 0) {
       let i = 0;
       while (i < this.n) {
@@ -209,11 +239,12 @@ export class CellShatter extends Container {
         }
         i++;
       }
+      if (this.n === 0) this.dirty = true; // hide meshes on the next pass
     }
     // ── write geometry ──
-    for (const b of this.batches) b.begin();
+    for (let i = 0; i < bs.length; i++) bs[i].begin();
     for (let i = 0; i < this.n; i++) this.writePiece(this.all[i]);
-    for (const b of this.batches) b.end();
+    for (let i = 0; i < bs.length; i++) bs[i].end();
   }
 
   private writePiece(p: CellPiece): void {
@@ -281,6 +312,10 @@ export class CellShatter extends Container {
 // ═══════════════════════════════════════════ screen shatter ═══════════════════════════════════════════
 
 const FLY_T = 1.0;
+/** Scratch emit options (event-time emitters reuse one object instead of allocating per particle). */
+const DEBRIS_O: EmitFxOptions = {};
+const FLASH_O: EmitFxOptions = { life: 0.16 };
+const SHARDLET_O: EmitFxOptions = { life: 0.6 };
 
 export class ScreenShatter extends Container {
   /** 0..1 — glowing cracks propagate outward; at 1 the shards separate automatically. */
@@ -401,6 +436,9 @@ export class ScreenShatter extends Container {
     this.build();
   }
 
+  /** Stop immediately and clear (skip paths). Also called internally when the flight ends. */
+  stop(): void { this.finish(); }
+
   private finish(): void {
     if (this.src && !this.src.destroyed) this.src.off('destroy', this.srcDestroyed);
     this.src = null;
@@ -444,9 +482,18 @@ export class ScreenShatter extends Container {
       const sp = diag * (0.18 + 0.5 * Math.exp(-d / (0.3 * diag))) * (0.5 + crand());
       const vx = (dx / d) * sp, vy = (dy / d) * sp - diag * 0.08 * crand();
       const r = crand();
-      if (r < 0.56) this.debris.emitFx('shardlet', x, y, 1, { vx, vy, speed: 60, size: 0.7 + crand() * 0.9, gravity: diag * 0.9, life: 0.95, color: crand() < 0.3 ? 0xffc8f0 : 0xeaf8ff, jitter: 0 });
-      else if (r < 0.86) this.debris.emitFx('spark', x, y, 1, { vx, vy, speed: 80, size: 0.8 + crand() * 0.6, gravity: diag * 0.3, life: 0.6, color: crand() < 0.5 ? PAL.magenta : 0xfff4e0, jitter: 0 });
-      else this.debris.emitFx('ember', x, y, 1, { vx: vx * 0.6, vy: vy * 0.6, speed: 40, size: 1.1, gravity: diag * 0.25, life: 0.9, color: PAL.molten, jitter: 0 });
+      const o = DEBRIS_O;
+      o.vx = vx; o.vy = vy; o.jitter = 0;
+      if (r < 0.56) {
+        o.speed = 60; o.size = 0.7 + crand() * 0.9; o.gravity = diag * 0.9; o.life = 0.95; o.color = crand() < 0.3 ? 0xffc8f0 : 0xeaf8ff;
+        this.debris.emitFx('shardlet', x, y, 1, o);
+      } else if (r < 0.86) {
+        o.speed = 80; o.size = 0.8 + crand() * 0.6; o.gravity = diag * 0.3; o.life = 0.6; o.color = crand() < 0.5 ? PAL.magenta : 0xfff4e0;
+        this.debris.emitFx('spark', x, y, 1, o);
+      } else {
+        o.vx = vx * 0.6; o.vy = vy * 0.6; o.speed = 40; o.size = 1.1; o.gravity = diag * 0.25; o.life = 0.9; o.color = PAL.molten;
+        this.debris.emitFx('ember', x, y, 1, o);
+      }
     }
     this.debris.emitFx('ring', ix, iy, 1, { size: diag * 0.5 / 70, intensity: 0.5, heat: 0.5, life: 0.45, color: 0xffc8f0 });
   }
@@ -545,6 +592,15 @@ export class ScreenShatter extends Container {
     cm.end();
   }
 
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.finish();
+    this.removeChildren();
+    this.shards?.destroy();
+    this.cracks.destroy();
+    this.debris.destroy({ children: true });
+    super.destroy(options);
+  }
+
   /** Compile every fx program once (1×1 target) so the IMPACT frame never hitches on a shader link. */
   private prewarm(): void {
     try {
@@ -560,8 +616,7 @@ export class ScreenShatter extends Container {
       const c = new CrackMesh(1);
       c.begin(); c.chain(new Float32Array([0, 1]), new Float32Array([0, 1]), new Float32Array([0, 0]), 2, 1, 0, 0); c.end();
       const p = new Particles(4);
-      p.emitFx('flash', 1, 1, 1);
-      p.update(0.01);
+      p.primeForPrewarm();
       root.addChild(b.mesh, c.mesh, p);
       this.renderer.render({ container: root, target: rt, clear: true });
       prewarmMotes(this.renderer, rt);

@@ -126,10 +126,18 @@ class Pass {
     o[0] = x; o[1] = y; e[0] = w; e[1] = h;
     s[0] = sw; s[1] = sh; s[2] = hy; s[3] = devPx;
   }
+  // reused render options (no per-frame allocation on our side)
+  private readonly opts: { container: Container; target: RenderTexture | null; clear: boolean; clearColor: number[] } =
+    { container: this.root, target: null, clear: true, clearColor: [0, 0, 0, 1] };
   draw(renderer: Renderer, target: RenderTexture, w: number, h: number): void {
     this.mesh.position.set(0, 0);
     this.mesh.scale.set(w, h);
-    renderer.render({ container: this.root, target, clear: true, clearColor: [0, 0, 0, 1] });
+    this.opts.target = target;
+    renderer.render(this.opts as unknown as Parameters<Renderer['render']>[0]);
+  }
+  destroy(): void {
+    this.root.destroy({ children: true });
+    this.shader.destroy();
   }
 }
 
@@ -148,6 +156,7 @@ export class SkyLayer extends Container {
   private rtLand: RenderTexture | null = null;
   private rtAur: RenderTexture | null = null;
   private w = 0; private h = 0; private hy = 0; private res = 0;
+  private focus: { x: number; y: number; size: number } | null = null;
   private dirtyStatic = true; private dirtyLand = true; private dirtyAur = true;
   private busy = false;
   private frameN = 0;
@@ -177,10 +186,10 @@ export class SkyLayer extends Container {
     this.stat = new Pass('static', STATIC_FRAG, {});
     this.land = new Pass('land', LAND_FRAG, { uL: v4(), uL2: v4() });
     this.aur = new Pass('aurora', AURORA_FRAG, {
-      uP: v4(), uA: v4(), uB: v4(), uC: v4(), uCSeam: v3(), uCBody: v3(), uCTop: v3(), uCFringe: v3(), uSSeam: v3(), uSBody: v3(), uSTop: v3(), uSFringe: v3(), uSun: v4(), uCme: v4(),
+      uP: v4(), uA: v4(), uB: v4(), uC: v4(), uSeam: v4(), uCSeam: v3(), uCBody: v3(), uCTop: v3(), uCFringe: v3(), uSSeam: v3(), uSBody: v3(), uSTop: v3(), uSFringe: v3(), uSun: v4(), uCme: v4(),
     });
     this.comp = new Pass('composite', COMP_FRAG, {
-      uK: v4(), uK2: v4(), uLight: v3(), uHaze: v3(), uGlowC: v3(), uSun: v4(), uCme: v4(),
+      uK: v4(), uK2: v4(), uLight: v3(), uHaze: v3(), uGlowC: v3(), uSun: v4(), uCme: v4(), uL: v4(),
     }, { uStatic: Texture.WHITE, uLand: Texture.EMPTY, uAur: Texture.EMPTY });
     this.addChild(this.comp.mesh);
     renderer.runners.prerender.add(this.hooks);
@@ -201,6 +210,15 @@ export class SkyLayer extends Container {
     if (hy !== this.hy) { this.hy = hy; this.dirtyLand = true; }
     this.layoutPasses();
     this.dirtyAur = true;
+  }
+
+  /**
+   * Optional (extra API): the grid rect in CSS px. The near curtain's seam and the plasma sun are composed
+   * around the grid top; without this the rect is estimated from horizonY exactly as world.layout() derives it.
+   */
+  setFocus(x: number, y: number, size: number): void {
+    this.focus = { x, y, size };
+    this.layoutPasses();
   }
 
   /** Per frame, allocation-free. Only sets uniforms; the GPU passes run on the next render. */
@@ -244,7 +262,7 @@ export class SkyLayer extends Container {
     const P = a.uP as Float32Array; P[0] = this.phase; P[1] = this.fast; P[2] = t % TIME_WRAP; P[3] = storm;
     const A = a.uA as Float32Array; A[0] = inten; A[1] = Math.min(1.2, T.fold + 0.25 * storm); A[2] = topMix; A[3] = Math.min(1, violet + storm);
     const B = a.uB as Float32Array; B[0] = Math.min(1, T.crackle * 0.6 + storm * 0.7); B[1] = 1.15 + 0.5 * T.fold + 0.4 * storm; B[2] = 1 + 0.1 * glow; B[3] = storm * 1.2 + T.crackle * 0.35;
-    const Cc = a.uC as Float32Array; Cc[0] = smooth(0, 0.8, red) * (1 - 0.35 * storm) + 0.35 * storm;
+    const Cc = a.uC as Float32Array; Cc[0] = smooth(0, 0.8, red) * (1 - 0.35 * storm) + 0.35 * storm; Cc[1] = T.crackle * (1 - storm);
     set3(a.uCSeam as Float32Array, this.bSeam);
     set3(a.uCBody as Float32Array, this.bBody);
     set3(a.uCTop as Float32Array, this.bTop);
@@ -308,8 +326,9 @@ export class SkyLayer extends Container {
     this.r.runners.contextChange.remove(this.hooks);
     this.rtStatic?.destroy(true); this.rtLand?.destroy(true); this.rtAur?.destroy(true);
     this.rtStatic = this.rtLand = this.rtAur = null;
-    for (const p of [this.stat, this.land, this.aur]) p.root.destroy({ children: true });
+    for (const p of [this.stat, this.land, this.aur]) p.destroy();
     super.destroy(options);
+    this.comp.shader.destroy();
   }
 
   // ───────────────────────────────────────── internals ─────────────────────────────────────────
@@ -348,19 +367,31 @@ export class SkyLayer extends Container {
       L[0] = 0.37; L[1] = sea * 0.92; L[2] = Math.min(sea * 0.92 * 1.3, hy * 0.62); L[3] = 8;
       L2[0] = 0.75; L2[1] = Math.max(10, hy * 0.06); L2[2] = 0.64; L2[3] = Math.max(2, h * 0.004);
     }
+    (this.comp.u.uL as Float32Array).set(L);
+    // curtain seams: the near one hangs just above the grid so its bright lower border frames the board
+    const sv = this.aur.u.uSeam as Float32Array;
+    const top = this.gridTop();
+    sv[0] = 0.11; sv[1] = 0.37;
+    sv[2] = Math.max(0.5, Math.min(0.8, 1 - (top - 0.025 * h) / hy));
   }
 
-  /** Plasma sun: rises from behind the sea horizon; at sun = 0.62 it sits just above the grid top. */
+  /** Grid top (CSS px): from setFocus(), else estimated like world.layout() (portrait: horizon = top + 0.86·size, size ≈ 0.93·w). */
+  private gridTop(): number {
+    if (this.focus) return this.focus.y;
+    const w = this.w || 1, h = this.h || 1, hy = this.hy || h * 0.66;
+    return w / h < 1.1 ? Math.max(h * 0.1, hy - 0.86 * 0.93 * w) : h * 0.25;
+  }
+
+  /** Plasma sun: rises from behind the sea horizon; at sun = 0.62 it sits on the grid top. */
   private sunGeom(sun: number, out: Float32Array): void {
     const w = this.w || 1, h = this.h || 1, hy = this.hy || h * 0.66;
     const portrait = w / h < 1.1;
     const R = portrait ? Math.min(w * 0.3, h * 0.17) : Math.min(h * 0.2, w * 0.14);
-    // grid top estimate from world.layout(): portrait horizon = gridTop + 0.86·size, size ≈ 0.93·w
-    const gridTop = portrait ? Math.max(h * 0.1, hy - 0.86 * 0.93 * w) : h * 0.25;
+    const gridTop = this.gridTop();
     const target = gridTop + R * 0.05;
     const start = hy + R * 1.25;
     const k = sun / 0.62;
-    out[0] = w * 0.5;
+    out[0] = this.focus ? this.focus.x + this.focus.size * 0.5 : w * 0.5;
     out[1] = start + (target - start) * k;
     out[2] = R;
     out[3] = clamp01(sun * 5);

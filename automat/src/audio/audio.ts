@@ -718,9 +718,9 @@ export class GameAudio {
       case 'levelUp': {
         const L = clamp(Math.round(o.level ?? 1), 1, LEVEL_SEMIS.length - 1);
         const semis = LEVEL_SEMIS[L];
-        const z = semis <= 7 ? 50 : 62;
+        const z = semis <= 7 ? 62 : 74;
         id = `levelUp${z}`;
-        rate *= Math.pow(2, (50 + semis - z) / 12);
+        rate *= Math.pow(2, (62 + semis - z) / 12);
         this.musicDip(-3, 1.2, 1.0);
         break;
       }

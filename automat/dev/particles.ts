@@ -89,7 +89,7 @@ const arcHead = { x: W * 0.62, y: gy - Math.max(40, H * 0.1) };
 let set: SymbolSet | null = null;
 let cfx: CellFx | null = null;
 const storm = view === 'cells64';
-try {
+if (!hp.has('noart')) try {
   const px = [64, 96, 128, 160, 192, 256].find((p) => p >= cell * renderer.resolution * 1.25) ?? 256;
   set = bakeSymbols(renderer, { edition: storm ? 'storm' : 'base', cellPx: px, env: storm ? STORM_ENV : [[0.24, 1.0, 0.69], [0.10, 0.89, 0.84], [0.54, 0.36, 1.0]] });
   cfx = bakeCellFx(renderer, px);
@@ -266,7 +266,64 @@ function step(dt: number): void {
   now += dt;
 }
 
-if (view === 'kinds') {
+if (view === 'qa') {
+  const res: Record<string, unknown> = {};
+  // 1) onArrive exactly once — normal flight, pool overflow (250 > 192), and flush()
+  const counts = new Map<number, number>();
+  const cb = (id: number) => () => counts.set(id, (counts.get(id) ?? 0) + 1);
+  for (let i = 0; i < 250; i++) motes.launch({ x: 50, y: 700 }, { x: 300, y: 100 }, 1, { dur: 0.5, onArrive: cb(i) });
+  motes.launch({ x: 50, y: 700 }, { x: 300, y: 100 }, 3, { dur: 0.5, onArrive: cb(1000) }); // n = 3 → 3 calls
+  for (let i = 0; i < 20; i++) motes.update(1 / 60);
+  // hit-stop: nothing may arrive while dt = 0
+  const before = [...counts.values()].reduce((a, b) => a + b, 0);
+  for (let i = 0; i < 60; i++) motes.update(0);
+  const during = [...counts.values()].reduce((a, b) => a + b, 0);
+  for (let i = 0; i < 90; i++) motes.update(1 / 60);
+  let bad = 0;
+  for (let i = 0; i < 250; i++) if (counts.get(i) !== 1) bad++;
+  res.motesExactlyOnce = bad === 0 && counts.get(1000) === 3;
+  res.motesFrozenDuringHitStop = before === during;
+  // flush fires pending ones exactly once
+  let fl = 0;
+  motes.launch({ x: 0, y: 0 }, { x: 10, y: 10 }, 5, { dur: 5, onArrive: () => fl++ });
+  motes.update(1 / 60); motes.flush(); motes.update(1 / 60); motes.flush();
+  res.flushOnce = fl === 5;
+  // 2) particles: hit-stop freeze + budget
+  particles.emit('ember', 100, 100, 50, { speed: 200 });
+  particles.update(1 / 60);
+  const snap = particles.pc.particleChildren.map((q) => q.x + q.y * 1e4 + q.color);
+  for (let i = 0; i < 30; i++) particles.update(0);
+  const snap2 = particles.pc.particleChildren.map((q) => q.x + q.y * 1e4 + q.color);
+  res.particlesFrozen = snap.length === snap2.length && snap.every((v, i) => v === snap2[i]);
+  particles.setBudget(10);
+  particles.emit('spark', 100, 100, 100);
+  res.budgetRespected = particles.count <= 10;
+  particles.setBudget(2400);
+  for (let i = 0; i < 200; i++) particles.update(1 / 60);
+  res.particlesDrain = particles.count === 0;
+  // 3) cell shatter: 64 bursts, pieces die, cold emits nothing
+  const tex = symTex(1);
+  for (let i = 0; i < 64; i++) cellShatter.burst(tex, 100 + (i % 8) * 40, 200 + Math.floor(i / 8) * 40, 40, { warm: true });
+  res.cellPieces64 = cellShatter.count;
+  const sp0 = cellShatter.sparks.count;
+  cellShatter.burst(tex, 100, 100, 40, { warm: false });
+  res.coldNoSparks = cellShatter.sparks.count === sp0;
+  for (let i = 0; i < 90; i++) cellShatter.update(1 / 60);
+  res.cellDrain = cellShatter.count === 0 && cellShatter.sparks.count === 0;
+  // 4) screen shatter lifecycle
+  const rt = RenderTexture.create({ width: W, height: H });
+  res.doneBeforeStart = screenShatter.done;
+  screenShatter.start(rt, { x: W / 2, y: H / 2 }, { cells: 48 });
+  res.notDoneAfterStart = !screenShatter.done;
+  for (let i = 0; i < 30; i++) screenShatter.update(0); // hit-stop at the impact
+  for (let i = 0; i <= 15; i++) { screenShatter.crackReveal = i / 15; screenShatter.update(1 / 60); }
+  let frames = 0;
+  while (!screenShatter.done && frames < 600) { screenShatter.update(1 / 60); frames++; }
+  res.flightSeconds = +(frames / 60).toFixed(2);
+  res.doneAndCleared = screenShatter.done && screenShatter.children.every((c) => !c.visible || c === screenShatter.children[screenShatter.children.length - 1]);
+  res.rtNotDestroyed = !rt.destroyed && !rt.source.destroyed;
+  Object.assign(probe, res);
+} else if (view === 'kinds') {
   // one static particle per kind, big, mid-life: inspect shapes/colours
   const kinds = ['spark', 'ember', 'snow', 'dust', 'shardlet', 'glint', 'flash', 'ring', 'spike'] as const;
   kinds.forEach((k, i) => {

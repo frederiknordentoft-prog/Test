@@ -379,8 +379,9 @@ export class Hud {
       <p>${C.stormSpins} stormspil på ${C.stormCols}×${C.stormRows}. Stormen starter med ${C.stormStartMarks} felter på ×2. Plasmamærker bevares hele stormen og går op til ×${C.stormMarkCap}. Før hvert 4. stormspil fordobler en Stormbølge alle mærker på ×2 eller mere. 3+ sole giver +${C.retriggerSpins} spil (højst ${C.maxStormSpins}). Stormgaranti: mindst ${C.guaranteeX}× indsats, vist på en separat linje. Der optjenes ikke ladning under Solstorm.</p>
       <h4>Tal</h4>
       <div class="kv num">
-        <span>Tilbagebetaling (RTP), samlet</span><span>${fmtPct(R.rtp)}</span>
-        <span>Heraf Solstorm</span><span>${fmtPct(R.rtp - R.baseSpinRtp)}</span>
+        <span>Tilbagebetaling (RTP), samlet</span><span>${fmtPct(R.rtp)} ± ${fmtPct(R.rtpCi95, 2)}</span>
+        <span>Heraf Solstorm (Kp 9 + 4 sole)</span><span>${fmtPct(R.stormARtp + R.stormBRtp)}</span>
+        <span>Heraf Ladede spin</span><span>${fmtPct(R.perkRtp)}</span>
         <span>Minimum-RTP uden gemt fremskridt</span><span>${fmtPct(R.rtpMin)}</span>
         <span>Basisspil (klynger + sole)</span><span>${fmtPct(R.baseSpinRtp)}</span>
         <span>Pr. Solstorm-spil (gennemsnit)</span><span>${fmtPct(R.perStormSpinRtp, 0)}</span>
@@ -392,6 +393,7 @@ export class Hud {
         <span>Gns. spil til Kp 9</span><span>ca. ${fmtInt(R.avgSpinsToKp9)}</span>
         <span>Solstorm, gennemsnit</span><span>${fmtX(R.stormMeanX)}</span>
         <span>Solstorm, median / P90</span><span>${fmtX(R.stormP50X)} / ${fmtX(R.stormP90X)}</span>
+        <span>Mindste klyngegevinst</span><span>${fmtX(R.minWinX)} indsats</span>
         <span>Maks. gevinst</span><span>${fmtInt(C.maxWinX)}× indsats</span>
         <span>Volatilitet</span><span>lav i basisspillet, høj i Solstorm</span>
         <span>Matematikmodel</span><span>v1 · ${C.modelHash.slice(0, 8)}</span>

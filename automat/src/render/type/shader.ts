@@ -5,9 +5,11 @@ import { PPU, MARGIN, SD_MIN, SD_RANGE } from './atlas.ts';
 export type IsStyle = 'ice' | 'gold' | 'molten' | 'plasma' | 'muted';
 
 /** Packed style + runtime uniforms: vec4 uS[N_VEC]. */
-export const N_VEC = 12;
+export const N_VEC = 14;
 export const U_GLOW = 9 * 4, U_SWEEP = 9 * 4 + 1, U_REVEAL = 9 * 4 + 2, U_TIME = 9 * 4 + 3;
-export const U_TEXTW = 10 * 4, U_SHIMMER = 10 * 4 + 1, U_AURORA = 10 * 4 + 2, U_REVK = 10 * 4 + 3, U_SHADOW = 11 * 4;
+export const U_TEXTW = 10 * 4, U_SHIMMER = 10 * 4 + 1, U_AURORA = 10 * 4 + 2, U_REVK = 10 * 4 + 3;
+export const U_SHADOW = 11 * 4, U_SLITY = 11 * 4 + 1, U_SLITW = 11 * 4 + 2, U_REFLECT = 11 * 4 + 3;
+export const U_EXTRUDE = 12 * 4 + 3, U_SPREAD = 13 * 4, U_HORIZON = 13 * 4 + 1;
 
 interface StyleDef {
   face0: number; face1: number; face2: number;   // bottom, middle, top of the cap height
@@ -22,6 +24,8 @@ interface StyleDef {
   bevelW: number; bevelStr: number;              // bevel width (fraction of half-width), strength
   weight: number; outline: number;               // stroke weight offset, outline width (units)
   shimmer: number; aurora: number;
+  extrude: number; extrudeC: number;             // display-size 3D depth (units) and side colour
+  spread: number;                                // shadow softness (units)
 }
 
 const STYLES: Record<IsStyle, StyleDef> = {
@@ -31,6 +35,7 @@ const STYLES: Record<IsStyle, StyleDef> = {
     spec: 0xffffff, specAmt: 0.9, rim: 0x04102a, rimA: 0.92,
     glow: 0x5cc8ff, glowFall: 1.05, glowAmt: 0.85, shadow: 0.5,
     bevelW: 0.5, bevelStr: 1.4, weight: 0, outline: 0.34, shimmer: 0, aurora: 1,
+    extrude: 0.9, extrudeC: 0x1d4f7a, spread: 1.4,
   },
   gold: {
     face0: 0xffc25a, face1: 0xffd36b, face2: 0xfff4c8, horizon: 0.55,
@@ -38,20 +43,23 @@ const STYLES: Record<IsStyle, StyleDef> = {
     spec: 0xffffff, specAmt: 1.1, rim: 0x2a1300, rimA: 0.95,
     glow: 0xffa83a, glowFall: 1.15, glowAmt: 0.9, shadow: 0.55,
     bevelW: 1.0, bevelStr: 0.9, weight: 0.08, outline: 0.36, shimmer: 0, aurora: 0,
+    extrude: 1.0, extrudeC: 0x7a3c06, spread: 1.4,
   },
   molten: {
-    face0: 0xffc23d, face1: 0xff6a00, face2: 0xfff4e0, horizon: 0,
-    core: 0xfff4e0, coreAmt: 0.6, edge: 0xff2a00, edgeAmt: 0.45, emissive: 0.9,
-    spec: 0xfff4e0, specAmt: 0.6, rim: 0x250400, rimA: 0.9,
-    glow: 0xff5a14, glowFall: 1.3, glowAmt: 1.0, shadow: 0.35,
-    bevelW: 0.6, bevelStr: 0.9, weight: 0.05, outline: 0.32, shimmer: 0.14, aurora: 0,
+    face0: 0xff5a00, face1: 0xffa21e, face2: 0xfff4e0, horizon: 0,
+    core: 0xfffbf0, coreAmt: 0.55, edge: 0xc81800, edgeAmt: 0.6, emissive: 0.85,
+    spec: 0xfff4e0, specAmt: 0.7, rim: 0x160100, rimA: 1,
+    glow: 0xff4a0a, glowFall: 1.25, glowAmt: 1.0, shadow: 0.8,
+    bevelW: 0.6, bevelStr: 1.0, weight: 0.06, outline: 0.46, shimmer: 0.12, aurora: 0,
+    extrude: 1.0, extrudeC: 0x5a0a00, spread: 1.7,
   },
   plasma: {
-    face0: 0xff1e3c, face1: 0xff2bd6, face2: 0xffe2f6, horizon: 0,
-    core: 0xfff0fb, coreAmt: 0.5, edge: 0xff1e3c, edgeAmt: 0.4, emissive: 0.85,
-    spec: 0xffe8fa, specAmt: 0.5, rim: 0x1c0010, rimA: 0.9,
-    glow: 0xff2bd6, glowFall: 1.3, glowAmt: 1.0, shadow: 0.35,
-    bevelW: 0.6, bevelStr: 0.9, weight: 0.05, outline: 0.32, shimmer: 0.1, aurora: 0,
+    face0: 0xff2a6a, face1: 0xff5ae0, face2: 0xfff0fb, horizon: 0,
+    core: 0xffffff, coreAmt: 0.5, edge: 0xd0003c, edgeAmt: 0.55, emissive: 0.85,
+    spec: 0xffe8fa, specAmt: 0.6, rim: 0x14000c, rimA: 1,
+    glow: 0xff2bd6, glowFall: 1.25, glowAmt: 1.0, shadow: 0.8,
+    bevelW: 0.6, bevelStr: 1.0, weight: 0.06, outline: 0.46, shimmer: 0.08, aurora: 0,
+    extrude: 0.9, extrudeC: 0x4a0030, spread: 1.7,
   },
   muted: {
     face0: 0x7f93b2, face1: 0x93a6c4, face2: 0xc3d0e4, horizon: 0.1,
@@ -59,6 +67,7 @@ const STYLES: Record<IsStyle, StyleDef> = {
     spec: 0xffffff, specAmt: 0.3, rim: 0x050b1a, rimA: 0.75,
     glow: 0x2a4a7a, glowFall: 1.0, glowAmt: 0.45, shadow: 0.45,
     bevelW: 0.45, bevelStr: 0.9, weight: 0.05, outline: 0.3, shimmer: 0, aurora: 0,
+    extrude: 0, extrudeC: 0x0a1428, spread: 1.3,
   },
 };
 
@@ -83,6 +92,9 @@ export function writeStyle(u: Float32Array, name: IsStyle, size: number): void {
   u[U_AURORA] = s.aurora * big;
   u[U_SHIMMER] = s.shimmer;
   u[U_SHADOW] = s.shadow;
+  put(u, 48, s.extrudeC, s.extrude * Math.min(1, Math.max(0, (size - 22) / 16)));
+  u[U_SPREAD] = s.spread;
+  if (!u[U_HORIZON]) u[U_HORIZON] = 0.5;
 }
 
 /** Glow base amount of a style (multiplies the runtime .glow). */
@@ -160,25 +172,45 @@ void main() {
   }
 
   if (vMisc.z > 0.5) {
-    // decor: four-point star glint (quad-local coords in vText)
     vec2 q = vText;
-    float h = exp(-abs(q.y) * 38.0) * pow(max(1.0 - abs(q.x), 0.0), 2.4);
-    float v = exp(-abs(q.x) * 38.0) * pow(max(1.0 - abs(q.y) * 1.7, 0.0), 2.4);
-    float d = exp(-length(q) * 10.0);
-    float tw = 0.8 + 0.2 * sin(time * 2.3 + vMisc.w * 6.2831);
-    float I = ((h + v * 0.85) * 0.85 + d * 1.1) * tw * smoothstep(0.85, 1.0, lr);
-    vec3 col = mix(uS[6].rgb, vec3(1.0), 0.55) * I * max(glowAmt, 0.35);
+    float I;
+    if (vMisc.z < 1.5) {
+      // north-star glint: four-point star (quad-local coords in vText)
+      float h = exp(-abs(q.y) * 34.0) * pow(max(1.0 - abs(q.x), 0.0), 2.2);
+      float v = exp(-abs(q.x) * 34.0) * pow(max(1.0 - abs(q.y) * 1.6, 0.0), 2.2);
+      float dg = exp(-length(q) * 9.0);
+      float tw = 0.78 + 0.22 * sin(time * 2.3 + vMisc.w * 6.2831);
+      I = ((h + v * 0.8) * 1.1 + dg * 1.6) * tw * smoothstep(0.85, 1.0, lr);
+    } else {
+      // horizon streak: grows out from the centre as the word is revealed
+      float ax = abs(q.x);
+      float grow = smoothstep(0.25, 1.0, P9.z);
+      float reach = smoothstep(grow, grow * 0.6, ax);
+      float core = exp(-abs(q.y) * 22.0) * pow(max(1.0 - ax, 0.0), 1.6);
+      float halo = exp(-abs(q.y) * 5.0) * pow(max(1.0 - ax, 0.0), 3.0) * 0.22;
+      I = (core + halo) * reach * (1.0 + 0.6 * exp(-pow((q.x * 0.5 + 0.5 - P9.y) * 6.0, 2.0)));
+    }
+    vec3 col = mix(uS[6].rgb, vec3(1.0), vMisc.z < 1.5 ? 0.6 : 0.35) * I * max(glowAmt, 0.3);
     finalColor = vec4(col, 0.0) * vColor * vMisc.x;
     return;
   }
 
   float sd = tx.r * SDRANGE + SDMIN - weight;
+  vec2 g = tx.ba * 2.0 - 1.0;
+  // horizon slit (display logos): a thin cut through every letter, faded out when sub-pixel
+  vec4 P11 = uS[11];
+  float below = 0.0;
+  if (P11.z > 0.0) {
+    float slw = P11.z * smoothstep(0.9, 1.8, P11.z / upp);
+    float dy = abs(vText.y - P11.y) - slw * 0.5;
+    if (slw > 0.0 && -dy > sd) { sd = -dy; g = vec2(0.0, vText.y > P11.y ? -1.0 : 1.0); }
+    below = smoothstep(P11.y + 0.05, P11.y - 0.05, vText.y) * P11.w;
+  }
   float face = clamp(0.5 - sd / upp, 0.0, 1.0);
   float ow = min(max(P8.w, upp * 0.85), 0.95);
   float rim = clamp(0.5 - (sd - ow) / upp, 0.0, 1.0);
 
   // bevel normal from the stored distance gradient
-  vec2 g = tx.ba * 2.0 - 1.0;
   float inset = max(-sd, 0.0);
   float bw = max(P8.x * halfW, upp * 1.1);
   float k = clamp(inset / bw, 0.0, 1.0);
@@ -191,14 +223,22 @@ void main() {
   // body gradient over the cap height, with a metal horizon
   float y = clamp(vText.y / 14.0, -0.3, 1.3);
   float e = clamp(upp / 14.0, 0.004, 0.08);
-  vec3 top = mix(uS[1].rgb, uS[2].rgb, smoothstep(0.5, 1.0, y));
-  vec3 bot = mix(uS[0].rgb, uS[1].rgb * (1.0 - 0.45 * uS[0].w), smoothstep(0.0, 0.5, y));
-  vec3 fc = mix(bot, top, smoothstep(0.5 - e, 0.5 + e, y));
+  float hy = uS[13].y;
+  vec3 top = mix(uS[1].rgb, uS[2].rgb, smoothstep(hy, 1.0, y));
+  vec3 bot = mix(uS[0].rgb, uS[1].rgb * (1.0 - 0.45 * uS[0].w), smoothstep(0.0, hy, y));
+  vec3 fc = mix(bot, top, smoothstep(hy - e, hy + e, y));
 
   // aurora reflection (display-size ice)
   if (P10.z > 0.0) {
     vec3 ac = auroraRamp(vText.x * 0.021 - time * 0.035 + y * 0.12);
     fc = mix(fc, fc * ac * 1.35, P10.z * clamp(1.0 - y * 1.25, 0.0, 1.0) * 0.6);
+  }
+  // below the horizon: the word's reflection in the sea — deeper, aurora-tinted, rippled
+  if (below > 0.0) {
+    vec3 ac = P10.z > 0.0 ? auroraRamp(vText.x * 0.017 + 0.35 - time * 0.02) : uS[4].rgb;
+    float rip = 0.5 + 0.5 * sin(vText.y * 5.5 + sin(vText.x * 0.9 + time * 1.3) * 1.2 - time * 2.0);
+    vec3 deep = mix(uS[0].rgb * 0.6, ac, 0.55) * (0.8 + 0.25 * rip);
+    fc = mix(fc, deep, below * 0.75);
   }
   // hot core / inner edge tint
   float core = smoothstep(0.2, 0.95, inset / halfW);
@@ -225,12 +265,29 @@ void main() {
   gl *= smoothstep(MARGIN - weight - 0.2, MARGIN - weight - 1.8, go);
   gl *= glowAmt * (1.0 + tip * 3.0 + sw * 0.8);
 
-  // soft offset shadow
-  float sdS = texture(uTexture, vUV + vec2(-0.3, -0.9) * PPU / ATLAS).r * SDRANGE + SDMIN - weight;
-  float shA = uS[11].x * exp(-max(sdS, 0.0) / 1.2) * smoothstep(MARGIN - 0.5, MARGIN - 2.0, max(sdS, 0.0));
+  // soft offset shadow + display-size extrusion (the word as a block of ice / metal)
+  vec2 offUV = vec2(-0.3, -0.9) * PPU / ATLAS;
+  float sdS = texture(uTexture, vUV + offUV * 1.25).r * SDRANGE + SDMIN - weight;
+  float spread = uS[13].x;
+  float shA = uS[11].x * exp(-max(sdS, 0.0) / spread) * smoothstep(MARGIN - 0.3, MARGIN - 2.2, max(sdS, 0.0));
 
   vec4 c = vec4(0.0, 0.0, 0.0, shA);
   c.rgb += uS[6].rgb * gl;
+  float exd = uS[12].w;
+  if (exd > 0.0) {
+    vec2 st = offUV * exd;
+    float s1 = texture(uTexture, vUV + st * 0.34).r;
+    float s2 = texture(uTexture, vUV + st * 0.67).r;
+    float s3 = texture(uTexture, vUV + st).r;
+    float sdE = min(min(s1, s2), s3) * SDRANGE + SDMIN - weight;
+    float exA = clamp(0.5 - sdE / upp, 0.0, 1.0);
+    float exR = clamp(0.5 - (sdE - ow * 0.8) / upp, 0.0, 1.0);
+    // side shading: darker towards the back copy, lit a little from above
+    float back = step(s3, min(s1, s2) + 1e-4);
+    vec3 side = uS[12].rgb * mix(1.35, 0.75, back) * (0.85 + 0.3 * y);
+    c = mix(c, vec4(uS[5].rgb, 1.0), exR * uS[5].w);
+    c = mix(c, vec4(side, 1.0), exA);
+  }
   c = mix(c, vec4(uS[5].rgb, 1.0), rim * uS[5].w);
   c = mix(c, vec4(lit, 1.0), face);
   c.rgb += (vec3(0.95) * sw + (uS[6].rgb * 0.6 + 0.8) * tip * 1.4) * face;

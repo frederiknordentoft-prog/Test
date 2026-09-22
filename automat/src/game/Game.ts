@@ -104,7 +104,7 @@ export class Game {
   private avgSpinsLeft(): number | null {
     const next = TIERS.find((t) => t.kp === Math.floor(this.kp()) + 1);
     if (!next) return null;
-    const cbar = REPORT.avgSpinsToKp9 > 0 ? CONFIG.K / REPORT.avgSpinsToKp9 : 5;
+    const cbar = REPORT.avgChargePerSpin > 0 ? REPORT.avgChargePerSpin : CONFIG.K / REPORT.avgSpinsToKp9;
     const need = Math.max(0, next.frac * CONFIG.K - this.displayCharge);
     return Math.max(1, Math.round(need / cbar));
   }

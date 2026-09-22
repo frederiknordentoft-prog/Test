@@ -126,15 +126,15 @@ export class UberPost extends Filter {
 
     const storm = clamp01(this.storm);
     const boost = blendGrade(GRADE_BASE, GRADE_STORM, storm, u.uLift, u.uInvGamma, u.uGain, u.uTone, u.uVigTint);
-    const t = ((this.time % TIME_WRAP) + TIME_WRAP) % TIME_WRAP;
-    u.uFx[0] = Math.max(0, this.ca);
+    const t = (((this.time || 0) % TIME_WRAP) + TIME_WRAP) % TIME_WRAP;
+    u.uFx[0] = Math.max(0, this.ca || 0);
     u.uFx[1] = clamp01(this.vignette * boost.vigBoost);
-    u.uFx[2] = Math.max(0, this.grain) * boost.grainBoost * GRAIN_AMP;
+    u.uFx[2] = Math.max(0, this.grain || 0) * boost.grainBoost * GRAIN_AMP;
     u.uFx[3] = clamp01(this.exposure);
     u.uFx2[0] = t; u.uFx2[1] = storm; u.uFx2[2] = Math.floor(t * 24) % 211; u.uFx2[3] = rootRes;
 
-    u.uCine[0] = Math.max(0, this.zoom); u.uCine[1] = clamp01(this.glitch); u.uCine[2] = clamp01(this.heat);
-    u.uZoomCenter[0] = this.zoomCenter[0]; u.uZoomCenter[1] = this.zoomCenter[1];
+    u.uCine[0] = Math.max(0, this.zoom || 0); u.uCine[1] = clamp01(this.glitch); u.uCine[2] = clamp01(this.heat);
+    u.uZoomCenter[0] = this.zoomCenter[0] ?? 0.5; u.uZoomCenter[1] = this.zoomCenter[1] ?? 0.45;
     const src = this.rings, dst = u.uRings;
     for (let i = 0; i < 12; i++) dst[i] = src[i] || 0;
   }

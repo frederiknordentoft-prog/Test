@@ -126,22 +126,22 @@ vec4 nearCoast(vec2 p) {
   float z = 1.0 / max(iz, 1e-3);
   float yb = HY + uL.y * (iz - izM);                // waterline
   float hg = uL.z * iz;                             // cliff height (px)
-  // buttresses (spurs of the klint) repeat along the coast in world z → compressed toward the vanishing point.
-  // f = 0 at a buttress' lit leading edge → 1 deep in the shadowed recess before the next one.
-  float q = z * 1.55 + 0.55;
-  float qi = floor(q);
-  float f = fract(q);
-  float fj = sat(f + 0.07 * (n1(q * 3.0 + p.y / max(hg, 1.0) * 3.0) - 0.5) + 0.03 * (n1(p.y / max(hg * 0.03, 1.0)) - 0.5));
-  float lead = smoothstep(0.0, 0.035, fj) * (1.0 - smoothstep(0.975, 1.0, fj));  // soft occlusion edge
-  float head = pow(1.0 - fj, 0.7);
-  float hasRav = step(0.62, hash11(qi * 7.31 + 2.0));                            // only some recesses are ravines
-  float ravine = hasRav * smoothstep(0.7, 0.78, fj) * (1.0 - smoothstep(0.93, 1.0, fj));
-  float bump = hash11(qi * 3.7 + 1.0);
-  hg *= 0.88 + 0.12 * head * (0.6 + 0.4 * bump) - 0.22 * ravine + 0.08 * (n1(z * 2.3 + 4.0) - 0.5);
+  // V-shaped wooded gullies cut the chalk wall at intervals along the coast (world z) → compressed with distance.
+  float q = z * 1.45 + 0.35 + 0.25 * (n1(z * 1.3) - 0.5);
+  float qi = floor(q + 0.5);                        // nearest gully index
+  float f = q - qi;                                 // -0.5..0.5, 0 at the gully
+  float dqdx = 1.45 * (1.0 - izM) / (iz * iz * uL.x * W);
+  float segW = 1.0 / max(dqdx, 1e-4);               // screen px between gullies
+  float gStr = 0.45 + 0.55 * hash11(qi * 7.31 + 2.0);
+  hg *= 1.0 + 0.08 * (n1(z * 2.3 + 4.0) - 0.5) + 0.05 * (hash11(qi * 3.7) - 0.5);
   hg *= 1.0 - 0.8 * smoothstep(0.82, 1.0, s);      // the coast sinks into the distance
-  yb += hg * 0.03 * head * head;                   // buttress feet reach further into the sea
-  yb += (n1(p.x / max(hg * 0.1, 2.0) + 3.0) - 0.5) * hg * 0.02;
-  float yChalk = yb - hg * (0.8 + 0.06 * (n1(p.x / max(hg * 0.09, 2.0)) - 0.5));
+  yb += (n1(p.x / max(hg * 0.1, 2.0) + 3.0) - 0.5) * hg * 0.025;
+  float yy0 = sat((yb - p.y) / max(hg, 1.0));
+  float dg = abs(f) * segW + (n1(p.y / max(hg * 0.04, 1.0) + qi * 5.0) - 0.5) * segW * 0.05;   // px to the gully axis
+  float gw = segW * 0.16 * gStr * pow(yy0, 1.4);    // gully half-width: wide at the top → closes toward the foot
+  float gully = 1.0 - smoothstep(gw - 1.2 * px, gw + 1.2 * px, dg);
+  float notch = exp(-dg / max(segW * 0.08 * gStr, 1.0)) * gStr;           // canopy dips into the gully
+  float yChalk = yb - hg * (0.8 + 0.06 * (n1(p.x / max(hg * 0.09, 2.0)) - 0.5)) + hg * 0.1 * notch;
   // tree line on top (beech forest): bumpy canopy
   float tree = hg * 0.19;
   float cf = p.x / max(hg * 0.035, 1.3);
@@ -151,33 +151,31 @@ vec4 nearCoast(vec2 p) {
   float cov = smoothstep(yTop - aa, yTop + aa, p.y) * (1.0 - smoothstep(yb - aa, yb + aa, p.y));
   cov *= 1.0 - smoothstep(1.0, 1.02, s);
   float yy = sat((yb - p.y) / max(hg, 1.0));       // 0 at the waterline → 1 at the top
-  // vegetation spills down the gullies and fills the ravines
-  float sx = p.x / max(hg * 0.11, 2.2);
-  float gulN = ridgeN(sx + yy * 0.4 + qi * 0.37);
-  float yVeg = yChalk + hg * (0.08 * pow(1.0 - gulN, 3.0) + 0.7 * ravine);
-  float inChalk = smoothstep(yVeg - aa, yVeg + 2.0 * px, p.y);
+  float inChalk = smoothstep(yChalk - aa, yChalk + 2.0 * px, p.y) * (1.0 - gully);
   // rock: anisotropic fbm (vertical fissures + rough patches), lit ribs
   vec2 rq = vec2(p.x / max(hg * 0.03, 1.0), (yb - p.y) / max(hg * 0.055, 1.0) + qi * 3.1);
   float rock = fbm3(rq) * 0.7 + vnoise(rq * vec2(3.0, 0.8) + 5.0) * 0.3;
   float rib = ridgeN(p.x / max(hg * 0.05, 1.3) + yy * 1.2 + qi);
-  float alb = mix(0.45, 1.0, smoothstep(0.15, 0.85, rock)) * (0.74 + 0.26 * rib);
+  float alb = mix(0.5, 1.0, smoothstep(0.15, 0.85, rock)) * (0.78 + 0.22 * rib);
   alb *= 1.0 - 0.07 * smoothstep(0.85, 1.0, sin(yy * 40.0 + rock * 4.0));        // flint bands
-  // buttress shading: bright leading edge, rolling into the recess, crevice shadow before the next edge
-  float shade = mix(0.16, 1.0, pow(head, 1.3)) * lead + (1.0 - lead) * 0.1;
-  shade *= 1.0 - 0.55 * smoothstep(0.82, 0.97, fj);
-  alb *= shade * (1.0 - ravine);
+  // rounded wall between gullies: darker toward the gully (AO / turning away), lit on the leading side
+  float side = smoothstep(0.0, 0.5, abs(f)) ;
+  float lit = mix(0.55, 1.0, side) * (f < 0.0 ? 0.82 : 1.0);
+  alb *= lit * (0.8 + 0.2 * n1(qi * 1.7 + 0.5));
   alb *= 0.72 + 0.28 * smoothstep(0.0, 0.85, yy);                                  // lit from above
-  // talus fans at the foot (grey debris cones) + dark shingle strip
-  float fan = smoothstep(0.14, 0.0, yy + 0.06 * (gulN - 0.5));
-  alb = mix(alb, (0.2 + 0.12 * rock) * (0.5 + 0.5 * head), fan);
+  // talus fans at the foot (grey debris cones below each gully) + dark shingle strip
+  float fanW = segW * 0.2 * gStr * (1.0 - yy / 0.16);
+  float fan = (1.0 - smoothstep(fanW * 0.7, fanW, dg)) * step(yy, 0.16);
+  alb = mix(alb, 0.22 + 0.12 * rock, fan);
   alb *= 1.0 - 0.75 * smoothstep(0.025, 0.0, yy);
-  alb *= 0.45 + 0.55 * smoothstep(0.0, 0.06, (p.y - yVeg) / max(hg, 1.0));       // AO below the canopy
+  alb *= 0.45 + 0.55 * smoothstep(0.0, 0.06, (p.y - yChalk) / max(hg, 1.0));     // AO below the canopy
+  alb *= 1.0 - 0.6 * exp(-max(dg - gw, 0.0) / 2.5) * step(0.02, gw);            // shadow lip along the gully
   float chalk = inChalk * alb;
   // surf line where the sea meets the cliff foot
   chalk += exp(-abs(p.y - (yb - 1.0 * px)) / (0.8 * px)) * 0.45 * (0.4 + 0.6 * n1(p.x * 0.35));
   float depth = sat((z - 1.0) / (uL.w - 1.0));
   float rim = exp(-max(p.y - yTop, 0.0) / max(1.4 * px, hg * 0.01)) * (1.0 - inChalk);
-  rim += exp(-max(p.y - yVeg, 0.0) / max(1.2 * px, hg * 0.012)) * inChalk * 0.5;   // chalk crest catches the sky
+  rim += exp(-max(p.y - yChalk, 0.0) / max(1.2 * px, hg * 0.012)) * inChalk * 0.5;   // chalk crest catches the sky
   return vec4(cov, sat(chalk), depth, sat(rim));
 }
 
@@ -235,7 +233,8 @@ export const AURORA_FRAG = HEAD + /* glsl */ `
 uniform vec4 uP;        // x: integrated curtain phase, y: fast phase (flicker), z: time (wrapped), w: storm
 uniform vec4 uA;        // intensity, fold, topMix (red), violet
 uniform vec4 uB;        // crackle, ray sharpness, brightness mul (glow), turbulence
-uniform vec4 uC;        // red (630 nm) layer amount, 0, 0, 0
+uniform vec4 uC;        // red (630 nm) layer amount, Kp≥7 escalation (crackle), 0, 0
+uniform vec4 uSeam;     // seam heights (fraction of horizon height) for the far, mid, near curtain
 uniform vec3 uCSeam;     // base (tier) colours
 uniform vec3 uCBody;
 uniform vec3 uCTop;
@@ -275,31 +274,40 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float F = (0.25 + 0.95 * uA.y) * (1.0 + 0.45 * storm);
   vec2 wd = warp(X, ph, seed);
   float wv = wd.x;
-  float turb = uB.w * (n1(X * 2.6 + uP.y * 0.45 + seed) - 0.5);
+  float turb = 0.0;
+  if (uB.w > 0.0) turb = uB.w * (n1(X * 2.6 + uP.y * 0.45 + seed) - 0.5);   // storm turbulence (uniform branch)
   float s = X + F * wv + turb * 0.22;
   float ds = 1.0 + F * wd.y;
   float edge = min(1.0 / max(abs(ds), 0.3), 2.6);
   edge = mix(1.0, edge, 0.7);
-  // seam follows the folded sheet (so folds kink the lower border) + slow drift + perspective sag
+  // seam follows the folded sheet (so folds kink the lower border) + slow drift + perspective sag + tilt
   float lg = n1(s * 0.62 + ph * 0.022 + seed * 11.0) - 0.5;
   float lg2 = n1(X * 0.21 - ph * 0.012 + seed * 5.0) - 0.5;
   float seamY = HY * (1.0 - vS - amp * (lg * 2.0 + lg2 * 1.8 + 0.7 * wv) + arc * xw * xw + tilt * xw);
   seamY += (n1(s * 5.0 + ph * 0.35 + seed * 2.0) - 0.5) * 6.0 * sc + turb * 22.0 * sc;
   float h = seamY - p.y;                        // px above the seam
-  // rays follow magnetic field lines that converge toward the magnetic zenith (above the screen):
-  // shift the ray lookup to the ray's foot on the seam
-  float vy = -HY * 2.0;
-  float foot = uScr.x * 0.5 + (p.x - uScr.x * 0.5) * (seamY - vy) / max(p.y - vy, 1.0);
-  float Xf = (foot - uScr.x * 0.5) / (270.0 * sc) + seed * 7.13;
-  float sr = Xf + F * warp(Xf, ph, seed).x + turb * 0.22;
   // the sheet breaks into pieces: brightness envelope along s
-  float env = smoothstep(0.18 + 0.2 * storm, 0.72, n1(s * 0.65 - ph * 0.035 + seed * 9.0));
+  float env = smoothstep(0.18 + 0.2 * storm - 0.14 * uB.x * (1.0 - storm), 0.72, n1(s * 0.65 - ph * 0.035 + seed * 9.0));
   env = 0.1 + 0.9 * env * (0.75 + 0.25 * n1(s * 2.1 + seed));
   // extent varies along the sheet
-  float Hs = HY * hF * (0.55 + 0.9 * n1(s * 1.4 - ph * 0.08 + seed * 3.0));
-  // vertical ray striations scrolling along the curtain
-  float r1 = n1(sr * 21.0 * (1.0 + 0.3 * storm) + ph * 0.7 + seed * 20.0);
-  float r2 = n1(sr * 53.0 - ph * 1.2 + seed * 40.0);
+  float Hs = HY * hF * (0.55 + 0.9 * n1(s * 1.4 - ph * 0.08 + seed * 3.0)) * (1.0 + 0.3 * uC.y);
+  float pulse = 0.7 + 0.3 * sin(s * 1.9 - ph * 0.55 + seed * 2.0);
+  // diffuse atmospheric glow around the sheet
+  vec3 glow = mix(cBody, cTop, 0.5 * uC.x) * exp(-abs(h - Hs * 0.3) / (Hs * 0.8 + 1.0)) * 0.05 * br * env * pulse;
+  if (h < -48.0 * sc) return glow;              // well below the seam only the glow remains (early out)
+  // rays follow magnetic field lines that converge toward the magnetic zenith (above the screen):
+  // the ray pattern is looked up at the ray's foot on the seam
+  float vy = -HY * 2.0;
+  float conv = (seamY - vy) / max(p.y - vy, 1.0);
+  float foot = uScr.x * 0.5 + (p.x - uScr.x * 0.5) * conv;
+  float Xf = (foot - uScr.x * 0.5) / (270.0 * sc) + seed * 7.13;
+  vec2 wf = warp(Xf, ph, seed);
+  float sr = Xf + F * wf.x + turb * 0.22;
+  // band-limited ray octaves: fade to their mean before they alias (analytic d(sr)/texel, no derivatives)
+  float fws = abs(conv * (1.0 + F * wf.y)) / (270.0 * sc * uScr.w);
+  float f1 = 19.0 * (1.0 + 0.2 * storm), f2 = 44.0;
+  float r1 = mix(n1(sr * f1 + ph * 0.7 + seed * 20.0), 0.5, smoothstep(0.22, 0.45, fws * f1));
+  float r2 = mix(n1(sr * f2 - ph * 1.2 + seed * 40.0), 0.5, smoothstep(0.22, 0.45, fws * f2));
   float r3 = n1(sr * 6.0 + ph * 0.22 + seed * 60.0);
   float rays = smoothstep(0.15, 0.88, r1 * 0.5 + r2 * 0.3 + r3 * 0.2);
   rays = pow(rays, uB.y);
@@ -307,30 +315,28 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float hp = max(h, 0.0);
   float body = exp(-hp / Hr);
   float seamLn = exp(-hp / (2.0 * sc + 0.018 * Hs));
-  float below = exp(min(h, 0.0) / (1.3 * (2.0 / uScr.w)));     // razor lower edge (≈1.3 texels)
+  float below = exp(min(h, 0.0) / (1.3 / uScr.w));            // razor lower edge (≈1.3 texels)
   float rayK = smoothstep(0.0, 0.35, hp / Hs);                 // striations strongest higher up
   float I = (body * mix(0.75 + 0.3 * rays, 0.25 + 0.9 * rays, rayK) + seamLn * (0.45 + 0.6 * rays)) * below;
   // brightness surges travelling along the curtain + crackle flicker
-  float pulse = 0.7 + 0.3 * sin(s * 1.9 - ph * 0.55 + seed * 2.0);
-  float flick = 1.0 + uB.x * 0.6 * (n1(s * 4.0 + uP.y * 5.0 + seed) - 0.5) * 2.0;
+  float flick = 1.0;
+  if (uB.x > 0.0) flick += uB.x * 0.6 * (n1(s * 4.0 + uP.y * 5.0 + seed) - 0.5) * 2.0;
   float k = pulse * flick * edge * br * env;
   I *= k;
-  // colour by height: bright 557.7 nm seam → green body → teal/violet/red higher up
+  // colour by height: bright 557.7 nm seam → green body → violet band → red/pink tops
   float hn = hp / Hs;
   vec3 col = mix(cSeam, cBody, sat(hn * 6.0 + (1.0 - seamLn) * 0.35));
   col = mix(col, cFringe, smoothstep(0.05, 0.4, hn) * (1.0 - smoothstep(0.5, 0.95, hn)) * uA.w * 0.45);
   col = mix(col, cTop, smoothstep(0.1, 0.9, hn) * uA.z);
-  vec3 e = col * I;
+  vec3 e = col * I + glow;
   // 630 nm red layer: higher, taller and more diffuse than the green, faint ray structure
-  float Hred = Hs * (1.3 + 0.8 * rays);
+  float Hred = Hs * (1.3 + 0.8 * rays) * (1.0 + 0.6 * uC.y);
   float red = smoothstep(-0.02 * Hs, 0.45 * Hs, h) * exp(-max(h - 0.4 * Hs, 0.0) / Hred);
   e += cTop * red * (0.35 + 0.65 * r3) * (0.55 + 0.45 * rays) * uC.x * k * 0.55;
   // violet/magenta fringe just under the seam (N2+ lower border)
   float fr = exp(min(h, 0.0) / (11.0 * sc)) * (1.0 - below);
   e += cFringe * fr * uA.w * 0.9 * k;
   e += cFringe * seamLn * uA.w * 0.25 * k * below;
-  // diffuse atmospheric glow around the sheet
-  e += mix(cBody, cTop, 0.5 * uC.x) * exp(-abs(h - Hs * 0.3) / (Hs * 0.8 + 1.0)) * 0.05 * br * env * pulse;
   return e;
 }
 
@@ -373,14 +379,14 @@ vec3 sunLayer(vec2 p, vec3 bg) {
   if (d < 1.0 + aa) {
     float mu = sqrt(max(1.0 - d * d, 0.0));
     vec2 sp = q / (0.3 + 0.7 * mu);                       // foreshortened toward the limb
-    float g1 = vnoise(sp * 15.0 + vec2(t * 0.16, 0.0));
-    float g2 = vnoise(sp * 33.0 - vec2(0.0, t * 0.23));
+    float g1 = vnoise(sp * 24.0 + vec2(t * 0.16, 0.0));
+    float g2 = vnoise(sp * 52.0 - vec2(0.0, t * 0.23));
     float gran = g1 * 0.6 + g2 * 0.4;
-    float big = vnoise(sp * 3.2 + vec2(t * 0.02, 7.0));
+    float big = fbm3(sp * 2.6 + vec2(t * 0.02, 7.0));
     float fac = smoothstep(0.55, 0.8, big) * (1.0 - mu);
-    float limb = pow(mu, 0.45);
-    float heat = limb * (0.84 + 0.2 * (gran - 0.5) + 0.12 * (big - 0.5)) + fac * 0.22;
-    vec3 dc = sunColor(sat(heat * 0.94));
+    float limb = pow(mu, 0.7);
+    float heat = 0.1 + limb * (0.8 + 0.2 * (gran - 0.5) + 0.16 * (big - 0.5)) + fac * 0.2;
+    vec3 dc = sunColor(sat(heat));
     dc += C_MAGENTA * exp(-(1.0 - d) * R / 2.0) * 0.45;   // chromosphere
     float cover = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
     col = mix(col, dc, cover * sat(amt * 1.3));
@@ -425,15 +431,16 @@ void main() {
       float st = sat((uP.w * 1.9 * uScr.z - p.y) / (0.45 * uScr.z) + uP.w * 0.3) * sat(uP.w * 3.0);
       cSeam = mix(uCSeam, uSSeam, st); cBody = mix(uCBody, uSBody, st);
       cTop = mix(uCTop, uSTop, st); cFringe = mix(uCFringe, uSFringe, st);
-      c += curtain(p, 0.0, 0.11, 0.04, 0.30, 0.75, 0.55, 0.10, 0.02);    // far: low arc on the horizon
-      c += curtain(p, 1.73, 0.37, 0.11, 0.55, 0.95, 0.80, 0.35, -0.16);  // mid: descends to the right
-      c += curtain(p, 3.91, 0.64, 0.10, 0.85, 1.10, 1.05, 0.55, 0.12);   // near: tall, brightest, rises right
+      c += curtain(p, 0.0, uSeam.x, 0.04, 0.30, 0.75, 0.55, 0.10, 0.02);    // far: low arc on the horizon
+      c += curtain(p, 1.73, uSeam.y, 0.11, 0.55, 0.95, 0.80, 0.35, -0.16);  // mid: descends to the right
+      c += curtain(p, 3.91, uSeam.z, 0.10, 0.85, 1.10, 1.05, 0.55, 0.12);   // near: hugs the grid top, tall, brightest
       c *= uA.x * uB.z;
     }
     if (uSun.w > 0.001) c = sunLayer(p, c);
   }
   if (uCme.x > 0.0) c += cmeLayer(p);
-  c = mix(c, 0.72 + 0.28 * (1.0 - exp(-(c - 0.72) / 0.28)), step(0.72, c));   // soft shoulder, keeps hue
+  float mx = max(c.r, max(c.g, c.b));                    // hue-preserving soft shoulder
+  if (mx > 0.62) c *= (0.62 + 0.38 * (1.0 - exp(-(mx - 0.62) / 0.38))) / mx;
   c = sqrt(sat3(c));                                     // sqrt encode → more precision in the darks
   c += (hash12(gl_FragCoord.xy) - 0.5) * (1.0 / 255.0);
   finalColor = vec4(c, 1.0);
@@ -452,6 +459,15 @@ uniform vec3 uHaze;     // horizon haze colour
 uniform vec3 uGlowC;    // sky ambient tint from the aurora
 uniform vec4 uSun;      // cx, cy, R, amount (for the glitter path)
 uniform vec4 uCme;      // progress, fade
+uniform vec4 uL;        // near coast (same as the land bake): vanish x fraction, waterline drop, height, zMax
+
+// analytic waterline of the near coast (land is mirrored about its own foot, the sky about the horizon)
+float waterline(float x) {
+  float s = x / (uL.x * uScr.x);
+  if (s >= 1.0) return uScr.z;
+  float izM = 1.0 / uL.w;
+  return uScr.z + uL.y * ((1.0 - max(s, -0.1) * (1.0 - izM)) - izM);
+}
 
 vec3 skyGrad(float y) {
   float HY = uScr.z;
@@ -518,7 +534,9 @@ void main() {
       float sd = length(rp - uSun.xy) / uSun.z;
       refl *= mix(0.3, 1.0, smoothstep(0.7, 1.6, sd));
     }
-    vec4 RL = texture(uLand, ruv);
+    float wl = waterline(p.x);
+    vec2 lp = vec2(rp.x, min(2.0 * wl - p.y + (wave - 0.5) * min(dy, 180.0) * 0.25, wl - 0.5));
+    vec4 RL = texture(uLand, (lp - uOrigin) / uExt);
     refl = mix(refl, shadeLand(RL), RL.r);
     // second tap: vertical smear (long reflections of the curtains)
     vec2 rp2 = vec2(rp.x, min(rp.y + (0.5 + 0.5 * w1) * min(dy, 160.0) * 0.18, HY - 0.5));

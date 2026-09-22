@@ -1,7 +1,7 @@
 // Audio harness: buttons for every SFX + music transport, a post-limiter spectrum/peak meter, and an
 // automated QA suite (#check) that renders every asset and several full-mix scenarios offline.
 import { GameAudio, audio, type Sfx, type PlayOpts, type SchedLog } from '../src/audio/audio.ts';
-import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames } from '../src/audio/assets.ts';
+import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, RENDER_STATS } from '../src/audio/assets.ts';
 import { barFrames, grid, BASE_BPM, STORM_BPM } from '../src/audio/music.ts';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -318,7 +318,7 @@ async function runCheck(): Promise<void> {
         const sm = seam(b);
         const sp = spectrum([t8.getChannelData(0)], SR);
         const exact = b.length === stemLoopFrames(def, SR) && b.length % bf === 0;
-        const row: Row = { id, bars: def.bars, ch: b.numberOfChannels, sec: +(b.length / SR).toFixed(3), exactBars: exact, rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, seamJump: +sm.jump.toFixed(5), seamRatio: +sm.ratio.toFixed(2), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms) };
+        const row: Row = { id, bars: def.bars, ch: b.numberOfChannels, sec: +(b.length / SR).toFixed(3), exactBars: exact, rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, seamJump: +sm.jump.toFixed(5), seamRatio: +sm.ratio.toFixed(2), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: Math.round(RENDER_STATS.get(id)!.build), postMs: Math.round(RENDER_STATS.get(id)!.post) };
         res.stems.push(row);
         if (!(s.rms > 0.003)) fail(`${id} silent (rms ${dB(s.rms).toFixed(1)} dB)`);
         if (s.peak > 0.99) fail(`${id} peak ${s.peak}`);
@@ -332,7 +332,7 @@ async function runCheck(): Promise<void> {
         const head = Math.abs(b.getChannelData(0)[0]);
         let tailMax = 0;
         for (let c = 0; c < b.numberOfChannels; c++) { const d = b.getChannelData(c); for (let i = Math.max(0, d.length - Math.floor(0.005 * SR)); i < d.length; i++) tailMax = Math.max(tailMax, Math.abs(d[i])); }
-        const row: Row = { id, ch: b.numberOfChannels, sec: +sec.toFixed(3), rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, head: +head.toFixed(4), tail: +tailMax.toFixed(4), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms) };
+        const row: Row = { id, ch: b.numberOfChannels, sec: +sec.toFixed(3), rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, head: +head.toFixed(4), tail: +tailMax.toFixed(4), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: Math.round(RENDER_STATS.get(id)!.build), postMs: Math.round(RENDER_STATS.get(id)!.post) };
         res.assets.push(row);
         if (!(s.rms > 0.0015)) fail(`${id} silent (rms ${dB(s.rms).toFixed(1)} dB)`);
         if (s.peak > 0.99) fail(`${id} peak ${s.peak}`);
@@ -433,7 +433,7 @@ async function runCheck(): Promise<void> {
     const withLands = windowRms(spinMix.buf, 3.6, 5.1);
     res.checks.push({ name: 'balance: base L5 music vs lands window', ok: true, detail: `music ${dB(musicOnly).toFixed(1)} dBFS rms → with lands ${dB(withLands).toFixed(1)} dBFS rms` });
 
-    const cine = await scenario(27, shared, (g, at) => {
+    const cine = await scenario(29, shared, (g, at) => {
       at(0, () => { g.setBaseLayers(3); g.startBase(); });
       const T0 = 2.0, t0 = T0 + 0.06;
       at(T0, () => {
@@ -458,17 +458,17 @@ async function runCheck(): Promise<void> {
       at(T0 + 23.5, () => { g.startBase(); g.setBaseLayers(2); });
     });
     const cs = stats(cine.buf);
-    res.scen.push({ id: 'Solstorm cinematic → storm ×128 → outro', sec: 27, rmsDb: +dB(cs.rms).toFixed(1), peakDb: +dB(cs.peak).toFixed(1), over088: overCount(cine.buf, 0.88), renderMs: Math.round(cine.ms) });
+    res.scen.push({ id: 'Solstorm cinematic → storm ×128 → outro', sec: 29, rmsDb: +dB(cs.rms).toFixed(1), peakDb: +dB(cs.peak).toFixed(1), over088: overCount(cine.buf, 0.88), renderMs: Math.round(cine.ms) });
     check('cinematic mix never clips', cs.peak <= 0.99 && cs.nan === 0, `peak ${cs.peak.toFixed(4)}`);
     const ducked = windowRms(cine.buf, 2.3, 2.9), preDuck = windowRms(cine.buf, 1.2, 1.95);
     res.checks.push({ name: 'cinematic: base ducked at hit-stop', ok: true, detail: `base ${dB(preDuck).toFixed(1)} → ${dB(ducked).toFixed(1)} dBFS (swell rising)` });
     const stormBody = windowRms(cine.buf, 2.06 + 5.7, 2.06 + 8.5);
     check('cinematic: storm music plays after downbeat', dB(stormBody) > -35, `storm rms ${dB(stormBody).toFixed(1)} dBFS`);
-    const outroBase = windowRms(cine.buf, 2 + 25, 27);
+    const outroBase = windowRms(cine.buf, 27, 29);
     check('outro: base returns', dB(outroBase) > -60, `base rms ${dB(outroBase).toFixed(1)} dBFS`);
     // loudness timeline (1 s windows)
     const tl: string[] = [];
-    for (let s = 0; s < 27; s += 1) tl.push(dB(windowRms(cine.buf, s, s + 1)).toFixed(0));
+    for (let s = 0; s < 29; s += 1) tl.push(dB(windowRms(cine.buf, s, s + 1)).toFixed(0));
     res.checks.push({ name: 'cinematic loudness timeline (dBFS rms / s)', ok: true, detail: tl.join(' ') });
 
     // ---------------- 6. pre-unlock contract: silent no-ops, never throw, clock advances

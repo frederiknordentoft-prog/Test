@@ -491,8 +491,6 @@ export function buildAtlas(): IsAtlas {
   lut[0x20] = -2; lut[0xa0] = -2; lut[0x202f] = -3; lut[0x2009] = -3; lut[0x200a] = -3;
   lut[0x2212] = chars.indexOf('−');
   lut[0x2013] = chars.indexOf('-'); lut[0x2010] = chars.indexOf('-'); lut[0x2011] = chars.indexOf('-');
-  lut[0x78] = lut[0xd7]; // plain 'x' → multiplication sign (×N labels)
-  lut[0x58] = chars.indexOf('X');
   lut[0x2022] = chars.indexOf('·'); lut[0x2219] = chars.indexOf('·');
   const n = chars.length;
   const kern = new Float32Array(n * n);

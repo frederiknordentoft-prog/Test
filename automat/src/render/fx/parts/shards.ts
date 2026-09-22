@@ -52,10 +52,12 @@ void main() {
   float alpha = vA.x, rim = vA.y, shade = vA.z, spec = vA.w;
   float ca = vB.y, dissolve = vB.z, cold = vB.w;
   // radial chromatic split, strongest at the piece border
-  vec2 o = vLocal * ca * vEdge * vEdge;
   vec4 c = texture(uTexture, vUV);
-  c.r = texture(uTexture, vUV + o).r;
-  c.b = texture(uTexture, vUV - o).b;
+  if (ca > 0.0) {
+    vec2 o = vLocal * ca * vEdge * vEdge;
+    c.r = texture(uTexture, vUV + o).r;
+    c.b = texture(uTexture, vUV - o).b;
+  }
   // RETURN profile: desaturated, dim, cool slate
   float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
   c.rgb = mix(c.rgb, vec3(lum) * vec3(0.70, 0.78, 0.92), cold * 0.88);
@@ -104,6 +106,10 @@ export class ShardBatch {
   source: TextureSource;
   nv = 0;
   ni = 0;
+  /** Seconds this batch has had nothing to draw (owners prune long-idle batches). */
+  idle = 0;
+  /** Owner hook (e.g. the source 'destroy' listener) so it can be detached on prune. */
+  release: (() => void) | null = null;
 
   constructor(source: TextureSource, verts: number, indices: number, rim: RimStyle) {
     this.source = source;

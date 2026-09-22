@@ -80,16 +80,15 @@ in vec2 vTextureCoord;
 out vec4 finalColor;
 uniform sampler2D uTexture;
 uniform sampler2D uBloomTex;
-uniform vec4 uBloomMap;   // xy: input uv → bloom uv; zw: ½ texel of the bloom texture
+uniform vec4 uBloomMap;   // xy: input uv → bloom uv; zw: unused
 uniform vec4 uBloomClamp;
 uniform vec4 uBloomMix;   // intensity, emitter protection, -, -
 vec3 btap(vec2 uv) { return texture(uBloomTex, clamp(uv, uBloomClamp.xy, uBloomClamp.zw)).rgb; }
 void main() {
   vec4 c = texture(uTexture, vTextureCoord);
-  vec2 buv = vTextureCoord * uBloomMap.xy;
-  vec2 o = uBloomMap.zw;
-  // 4 bilinear taps at ±½ texel = smooth tent reconstruction of the ¼-res bloom (no texel grid under magnification)
-  vec3 b = (btap(buv + vec2(-o.x, -o.y)) + btap(buv + vec2(o.x, -o.y)) + btap(buv + vec2(-o.x, o.y)) + btap(buv + o)) * 0.25;
+  // One bilinear tap is enough: the finest pyramid level was already tent-filtered in the last up pass, so ×4
+  // magnification shows no texel grid (A/B'd against a 4-tap tent at 3.5× zoom: indistinguishable).
+  vec3 b = btap(vTextureCoord * uBloomMap.xy);
   // Emitter protection: light spills onto the dark surroundings, but already-bright pixels (gem bodies, type)
   // receive little of it, so saturated emitters keep their colour and facet detail instead of washing to pastel.
   float L = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));

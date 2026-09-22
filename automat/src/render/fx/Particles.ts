@@ -58,8 +58,8 @@ DEF[K.spark] = { slot: ATLAS_SLOTS.streak, size: 24, aspect: 0.3, speed: 240, sp
 DEF[K.ember] = { slot: ATLAS_SLOTS.ember, size: 11, aspect: 1, speed: 120, spread: TAU, angle: -Math.PI / 2, life: 1.0, gravity: -26, drag: 1.1, color: 0xff6a00, heat: 0.9, intensity: 1.0, spin: 0, jitter: 3 };
 DEF[K.snow] = { slot: ATLAS_SLOTS.flake, size: 16, aspect: 1, speed: 60, spread: 1.4, angle: -Math.PI / 2, life: 0.7, gravity: 34, drag: 3.2, color: 0xeaf8ff, heat: 0.6, intensity: 0.9, spin: 2.5, jitter: 6 };
 DEF[K.dust] = { slot: ATLAS_SLOTS.bokeh, size: 12, aspect: 1, speed: 30, spread: TAU, angle: -Math.PI / 2, life: 1.4, gravity: -6, drag: 1.4, color: 0x9cc9ff, heat: 0, intensity: 0.4, spin: 0, jitter: 8 };
-DEF[K.shardlet] = { slot: ATLAS_SLOTS.shard, size: 11, aspect: 1, speed: 260, spread: TAU, angle: -Math.PI / 2, life: 0.8, gravity: 900, drag: 0.8, color: 0xeaf8ff, heat: 0.3, intensity: 0.9, spin: 14, jitter: 4 };
-DEF[K.glint] = { slot: ATLAS_SLOTS.glint, size: 30, aspect: 1, speed: 160, spread: TAU, angle: -Math.PI / 2, life: 0.9, gravity: 0, drag: 3.4, color: 0xffd36b, heat: 1.0, intensity: 1.25, spin: 0.8, jitter: 4 };
+DEF[K.shardlet] = { slot: ATLAS_SLOTS.shard, size: 11, aspect: 1, speed: 260, spread: TAU, angle: -Math.PI / 2, life: 0.8, gravity: 900, drag: 0.8, color: 0xeaf8ff, heat: 0.45, intensity: 1.0, spin: 14, jitter: 4 };
+DEF[K.glint] = { slot: ATLAS_SLOTS.glint, size: 34, aspect: 1, speed: 160, spread: TAU, angle: -Math.PI / 2, life: 0.9, gravity: 0, drag: 3.4, color: 0xffd36b, heat: 1.0, intensity: 1.25, spin: 0.8, jitter: 4 };
 DEF[K.flash] = { slot: ATLAS_SLOTS.flash, size: 90, aspect: 1, speed: 0, spread: 0, angle: 0, life: 0.18, gravity: 0, drag: 0, color: 0xfff4e0, heat: 0.9, intensity: 0.75, spin: 0, jitter: 0 };
 DEF[K.ring] = { slot: ATLAS_SLOTS.ring, size: 70, aspect: 1, speed: 0, spread: 0, angle: 0, life: 0.32, gravity: 0, drag: 0, color: 0xeaf8ff, heat: 0.6, intensity: 0.8, spin: 0, jitter: 0 };
 DEF[K.spike] = { slot: ATLAS_SLOTS.spike, size: 120, aspect: 0.16, speed: 0, spread: 0, angle: 0, life: 0.22, gravity: 0, drag: 0, color: 0xfff4e0, heat: 0.8, intensity: 0.6, spin: 0, jitter: 0 };
@@ -126,7 +126,7 @@ export class Particles extends Container {
   emit(kind: ParticleKind, x: number, y: number, n: number, o?: EmitOptions): boolean;
   emit(event: string | symbol, ...args: any[]): boolean;
   emit(kind: string | symbol, ...args: any[]): boolean {
-    if (typeof kind === 'string' && kind in K && typeof args[0] === 'number') {
+    if (typeof kind === 'string' && Object.prototype.hasOwnProperty.call(K, kind) && typeof args[0] === 'number') {
       this.emitFx(kind as FxKind, args[0], args[1], args[2], args[3] as EmitFxOptions | undefined);
       return true;
     }
@@ -156,8 +156,8 @@ export class Particles extends Container {
       const p = this.alloc();
       if (!p) return;
       const a = angle + (crand() - 0.5) * spread;
-      // most particles slower, a few fast: reads as depth, not a flat ring
-      const s = speed * (0.28 + 0.72 * Math.pow(crand(), 0.55));
+      // broad speed spread + per-particle drag variance: bursts read as a volume, never as a flat ring
+      const s = speed * (0.14 + 0.86 * Math.pow(crand(), 0.8));
       const ja = crand() * TAU, jr = jit * Math.sqrt(crand());
       p.kind = id;
       p.texture = this.textures[id];
@@ -166,11 +166,12 @@ export class Particles extends Container {
       p.vx = Math.cos(a) * s + bvx;
       p.vy = Math.sin(a) * s + bvy;
       p.age = 0;
-      p.delay = delay;
+      // glints twinkle in over ~60 ms instead of all popping on the same frame
+      p.delay = delay + (id === K.glint ? crand() * 0.06 : 0);
       p.life = life * (0.62 + 0.38 * crand());
       p.base = size * (0.6 + 0.6 * crand());
       p.aspect = d.aspect;
-      p.drag = drag;
+      p.drag = drag * (0.7 + 0.6 * crand());
       p.grav = grav;
       p.spin = (crand() * 2 - 1) * d.spin;
       p.seed = crand();
@@ -184,6 +185,18 @@ export class Particles extends Container {
       p.color = 0;
     }
     if (this.n > 0) this.pc.visible = true;
+  }
+
+  /** @internal Pre-warm helper: one deterministic, visible particle — consumes no cosmetic RNG. */
+  primeForPrewarm(): void {
+    const p = this.alloc();
+    if (!p) return;
+    p.kind = K.flash; p.texture = this.textures[K.flash];
+    p.x = 1; p.y = 1; p.vx = 0; p.vy = 0; p.age = 0; p.delay = 0; p.life = 1;
+    p.base = 2; p.aspect = 1; p.drag = 0; p.grav = 0; p.spin = 0; p.seed = 0;
+    p.r = 1; p.g = 1; p.b = 1; p.heat = 1; p.inten = 1; p.rotation = 0;
+    p.scaleX = p.scaleY = 2 / TEXW; p.color = packRGBA(1, 1, 1, 1);
+    this.pc.visible = true;
   }
 
   /** Remove everything immediately. */
@@ -274,10 +287,10 @@ export class Particles extends Container {
         }
         case K.shardlet: {
           p.rotation += p.spin * dt;
-          const spec = Math.pow(Math.abs(Math.cos(p.rotation * 1.7 + p.seed * 6)), 12);
+          const spec = Math.pow(Math.abs(Math.cos(p.rotation * 1.7 + p.seed * 6)), 6);
           const f = 1 - a * a;
-          inten *= f * (0.55 + 0.45 * spec);
-          heat *= f * (0.15 + 2.2 * spec);
+          inten *= f * (0.65 + 0.55 * spec);
+          heat *= f * (0.25 + 2.0 * spec);
           // fake tumble: foreshorten one axis
           sy = p.base * (0.35 + 0.65 * Math.abs(Math.sin(p.age * (5 + p.seed * 6) + p.seed * 9)));
           break;

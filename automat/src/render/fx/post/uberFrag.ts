@@ -1,6 +1,6 @@
 // UberPost fragment shader. One source, two compiled variants via `#define CINEMATIC 0|1`.
 //
-//  base      : radial spectral CA (5 taps) → lift/gamma/gain grade (cool ↔ crimson by storm) → exposure flash → vignette → grain
+//  base      : radial CA (3 taps; 5-tap spectral above 1 px) → lift/gamma/gain grade (cool ↔ crimson by storm) → exposure flash → vignette → grain
 //  cinematic : + shock rings (refraction + prismatic rim), heat haze (top 25 %), glitch bands,
 //              and an 8-tap *spectral* gather that does radial zoom blur, CA and glitch RGB split in one loop.
 //
@@ -81,10 +81,10 @@ void main() {
     // refraction: derivative-of-gaussian lens, samples are pulled toward the front (a pressure wave in glass)
     ds -= (d / dist) * (x * g * R.w * w * 0.9) / asp;
     // plasma front: thin white-hot leading edge, molten body, crimson wake (palette: whiteHot / molten / crimson)
-    float core = exp(-(x - 0.45) * (x - 0.45) * 10.0);
-    float body = exp(-(x + 0.15) * (x + 0.15) * 1.6);
-    float wake = exp(-(x + 1.3) * (x + 1.3) * 0.9);
-    rim += (vec3(1.0, 0.957, 0.878) * core * 1.05 + vec3(1.0, 0.416, 0.0) * body * 0.34 + vec3(1.0, 0.118, 0.235) * wake * 0.16) * R.w;
+    float core = exp(-(x - 0.5) * (x - 0.5) * 16.0);
+    float body = exp(-(x + 0.05) * (x + 0.05) * 1.8);
+    float wake = exp(-(x + 1.25) * (x + 1.25) * 0.8);
+    rim += (vec3(1.0, 0.957, 0.878) * core * 0.95 + vec3(1.0, 0.416, 0.0) * body * 0.6 + vec3(1.0, 0.118, 0.235) * wake * 0.3) * R.w;
     shock += g * R.w;
   }
   float heatM = 0.0;
@@ -143,14 +143,19 @@ void main() {
   }
   c = vec4(acc / wsum, aacc * 0.125);
 #else
-  // 5-tap spectral CA: smooth red→blue dispersion instead of discrete ghost copies at storm strength (2.5 px).
-  // At the centre caOff = 0 → every tap hits the same texel centre → bit-exact, no softening.
+  // Radial CA. At the centre caOff = 0 → every tap hits the same texel centre → bit-exact, no softening.
   vec4 g = tap(uv);
-  vec4 p1 = tap(uv + caOff), p2 = tap(uv + caOff * 0.5), m2 = tap(uv - caOff * 0.5), m1 = tap(uv - caOff);
-  c = vec4(p1.r * 0.5 + p2.r * 0.35 + g.r * 0.15,
-           g.g * 0.5 + (p2.g + m2.g) * 0.25,
-           m1.b * 0.5 + m2.b * 0.35 + g.b * 0.15,
-           g.a);
+  if (uFx.x > 1.0) {
+    // storm strength (> 1 px): 5-tap spectral dispersion, smooth red→blue instead of discrete ghost copies
+    vec4 p1 = tap(uv + caOff), p2 = tap(uv + caOff * 0.5), m2 = tap(uv - caOff * 0.5), m1 = tap(uv - caOff);
+    c = vec4(p1.r * 0.5 + p2.r * 0.35 + g.r * 0.15,
+             g.g * 0.5 + (p2.g + m2.g) * 0.25,
+             m1.b * 0.5 + m2.b * 0.35 + g.b * 0.15,
+             g.a);
+  } else {
+    // base (≤ 1 px at the corners): 3 taps are indistinguishable from 5 (uniform branch, no divergence)
+    c = vec4(tap(uv + caOff * 0.7).r, g.g, tap(uv - caOff * 0.7).b, g.a);
+  }
 #endif
 
   float a = c.a;

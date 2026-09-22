@@ -6,7 +6,12 @@
 //        core: kick 150→45 Hz, synthetic breaks, reese bass, dark pad, sidechain pump (8 bars)
 //        stabs (x≥8) supersaw · hats (x≥32) double-time · choir (x≥128) formant "aah" (4 bars each)
 // Every stem's length is an exact whole number of bars in frames (8-bar = 2 × 4-bar), so stems that are
-// started together stay sample-locked forever. Tails past the loop end are folded onto the start.
+// started together stay sample-locked forever. Tails past the loop end are folded onto the start, and
+// every modulation runs a whole number of cycles per loop, so loops are seamless.
+//
+// Render-cost rule: no filter-frequency automation on long voices (Chrome recomputes biquad coefficients
+// per sample while a param is automated). Brightness envelopes are two STATIC filters crossfaded by gains;
+// slowly swept noise beds are generated in JS.
 import {
   type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, shaper, bell, aah, prng, eqPowerCurve, loopHz, newBuffer,
 } from './dsp.ts';
@@ -70,24 +75,60 @@ export const LAND_STORM: number[][] = [
 /** Time wrapped into the loop (events scheduled "before 0" land at the end and fold back). */
 const wrap = (t: number, g: Grid) => ((t % g.loop) + g.loop) % g.loop;
 
-function padVoice(ctx: Ctx, out: AudioNode, t: number, dur: number, m: number, amp: number, p: number, lfoA: AudioNode, lfoB: AudioNode): void {
+/** Pad voice: 2 detuned saws + octave triangle through a static low-pass; slow swell. */
+function padVoice(ctx: Ctx, out: AudioNode, t: number, dur: number, m: number, amp: number, p: number, det: number): void {
   const f = mtof(m);
-  const end = t + dur + 4;
-  const lp = filt(ctx, 'lowpass', 700, 0.35);
-  const cut = Math.min(2600, 520 + f * 2.2);
-  lp.frequency.setValueAtTime(cut * 0.45, t);
-  lp.frequency.setTargetAtTime(cut, t, 0.9);
-  lp.frequency.setTargetAtTime(cut * 0.5, t + dur, 0.8);
+  const end = t + dur + 3.5;
+  const lp = filt(ctx, 'lowpass', Math.min(2400, 480 + f * 2.0), 0.35);
   const g = gain(ctx, 0);
   swell(g.gain, t, dur, amp, 0.42, 0.55);
-  const pn = pan(ctx, p);
-  lp.connect(g).connect(pn).connect(out);
-  const a = osc(ctx, 'sawtooth', f, t, end, -6);
-  const b = osc(ctx, 'sawtooth', f, t, end, 6);
-  lfoA.connect(a.detune); lfoB.connect(b.detune);
-  const air = osc(ctx, 'triangle', f * 2, t, end, 3);
-  const ga = gain(ctx, 0.4), gb = gain(ctx, 0.4), gair = gain(ctx, 0.12);
-  a.connect(ga).connect(lp); b.connect(gb).connect(lp); air.connect(gair).connect(lp);
+  lp.connect(g).connect(pan(ctx, p)).connect(out);
+  const a = osc(ctx, 'sawtooth', f, t, end, -det);
+  const b = osc(ctx, 'sawtooth', f, t, end, det * 0.8);
+  const air = osc(ctx, 'triangle', f * 2, t, end, det * 0.5);
+  a.connect(gain(ctx, 0.4)).connect(lp);
+  b.connect(gain(ctx, 0.4)).connect(lp);
+  air.connect(gain(ctx, 0.12)).connect(lp);
+}
+
+/**
+ * Wind bed generated in JS: stereo white noise through a Chamberlin state-variable band-pass whose
+ * centre sweeps slowly (whole cycles per loop), with gusts; equal-power fade-in over [0,F] and fade-out
+ * over [loop, loop+F], so folding the tail makes a seamless crossfade.
+ */
+function windBuffer(ctx: Ctx, g: Grid, F: number, seed: number): AudioBuffer {
+  const sr = ctx.sampleRate;
+  const n = Math.ceil((g.loop + F) * sr);
+  const b = newBuffer(2, n, sr);
+  const sweepHz = loopHz(0.09, g.loop), gustHz = loopHz(0.17, g.loop), gust2Hz = loopHz(0.41, g.loop);
+  const fin = eqPowerCurve(1024, true), fout = eqPowerCurve(1024, false);
+  const hpA = 1 - Math.exp(-2 * Math.PI * 250 / sr);
+  for (let c = 0; c < 2; c++) {
+    const r = prng(seed + c * 1013);
+    const d = b.getChannelData(c);
+    const side = c ? 1 : -1;
+    let low = 0, band = 0, hpS = 0, f = 0.1;
+    const q = 1 / 0.8;
+    for (let i = 0; i < n; i++) {
+      const t = i / sr;
+      if ((i & 31) === 0) {
+        const fc = 900 + 420 * side * Math.sin(2 * Math.PI * sweepHz * t) + 180 * Math.sin(2 * Math.PI * gust2Hz * t + c);
+        f = 2 * Math.sin(Math.PI * Math.min(fc, sr / 6) / sr);
+      }
+      const x = r() * 2 - 1;
+      low += f * band;
+      const high = x - low - q * band;
+      band += f * high;
+      hpS += hpA * (band - hpS);
+      const y = band - hpS;
+      const gst = 1 + 0.35 * Math.sin(2 * Math.PI * gustHz * t + c * 0.7);
+      let env = 1;
+      if (t < F) env = fin[Math.min(1023, Math.floor((t / F) * 1023))];
+      else if (t >= g.loop) env = fout[Math.min(1023, Math.floor(((t - g.loop) / F) * 1023))];
+      d[i] = y * gst * env;
+    }
+  }
+  return b;
 }
 
 function pumpEnv(p: AudioParam, kicks: number[], depth = 0.22, rec = 0.085): void {
@@ -101,44 +142,23 @@ function pumpEnv(p: AudioParam, kicks: number[], depth = 0.22, rec = 0.085): voi
 
 // ------------------------------------------------------------------ BASE stems
 const L0: StemDef = {
-  id: 'base0', group: 'base', layer: 0, bars: 4, ch: 2, tail: 5.5, rmsDb: -21,
+  id: 'base0', group: 'base', layer: 0, bars: 4, ch: 2, tail: 5, rmsDb: -21,
   build(ctx, out, g) {
     const bus = gain(ctx, 1);
     bus.connect(out);
-    // slow ensemble detune — whole cycles per loop so the fold is seamless
-    const la = osc(ctx, 'sine', loopHz(0.13, g.loop), 0, g.end);
-    const lb = osc(ctx, 'sine', loopHz(0.21, g.loop), 0, g.end);
-    const lga = gain(ctx, 4), lgb = gain(ctx, -4);
-    la.connect(lga); lb.connect(lgb);
     for (let b = 0; b < 4; b++) {
       const t = wrap(b * g.bar - 0.3, g);
       const ch = BASE_PAD[b];
       ch.forEach((m, i) => {
         const p = (i / (ch.length - 1) - 0.5) * 0.7 * (i % 2 ? 1 : -1);
-        padVoice(ctx, bus, t, g.bar + 0.1, m, i === 0 ? 0.05 : 0.04, p, lga, lgb);
+        padVoice(ctx, bus, t, g.bar + 0.1, m, i === 0 ? 0.05 : 0.04, p, 4 + i * 1.3);
       });
     }
-    // wind: two decorrelated noise beds, slowly swept band-pass, gusts; equal-power loop crossfade.
     const F = 2.5;
-    for (const side of [-1, 1]) {
-      const n = noise(ctx, 0, g.loop + F + 0.01, side < 0 ? 101 : 202, 9);
-      const bp = filt(ctx, 'bandpass', 900, 0.8);
-      const sw = osc(ctx, 'sine', loopHz(0.09, g.loop), 0, g.loop + F + 0.01);
-      const swg = gain(ctx, 420 * side);
-      sw.connect(swg).connect(bp.frequency);
-      const gust = osc(ctx, 'sine', loopHz(0.17, g.loop), 0, g.loop + F + 0.01);
-      const gg = gain(ctx, 0.35);
-      const amp = gain(ctx, 1);
-      gust.connect(gg).connect(amp.gain);
-      const xf = gain(ctx, 0);
-      const nC = 256;
-      xf.gain.setValueCurveAtTime(eqPowerCurve(nC, true), 0, F);
-      xf.gain.setValueAtTime(1, g.loop);
-      xf.gain.setValueCurveAtTime(eqPowerCurve(nC, false), g.loop, F);
-      const lvl = gain(ctx, 0.022);
-      const hp = filt(ctx, 'highpass', 250, 0.5);
-      n.connect(bp).connect(hp).connect(amp).connect(xf).connect(lvl).connect(pan(ctx, side * 0.8)).connect(bus);
-    }
+    const w = ctx.createBufferSource();
+    w.buffer = windBuffer(ctx, g, F, 101);
+    w.connect(gain(ctx, 0.05)).connect(bus);
+    w.start(0);
   },
 };
 
@@ -169,8 +189,9 @@ const L1: StemDef = {
     dr.connect(fb2).connect(dl);
     dl.connect(merger, 0, 0);
     dr.connect(merger, 0, 1);
-    const wet = gain(ctx, 0.8);
-    merger.connect(wet).connect(out);
+    merger.connect(gain(ctx, 0.8)).connect(out);
+    const pL = pan(ctx, -0.28), pR = pan(ctx, 0.28);
+    pL.connect(dry); pR.connect(dry);
     const rnd = prng(77);
     for (let b = 0; b < 8; b++) {
       const pool = ARP_POOL[b % 4];
@@ -180,12 +201,9 @@ const L1: StemDef = {
         if (k < 0) continue;
         // phrase endings breathe: last bar of each half drops the final two notes
         if ((b === 3 || b === 7) && s >= 6) continue;
-        const t = b * g.bar + s * (g.beat / 2) + (rnd() - 0.5) * 0.006;
-        const m = pool[k];
+        const t = wrap(b * g.bar + s * (g.beat / 2) + 0.004 + (rnd() - 0.5) * 0.006, g);
         const v = ARP_VEL[s] * (b >= 4 ? 0.92 : 1);
-        const p = pan(ctx, ((s % 2) ? 0.28 : -0.28) + (rnd() - 0.5) * 0.1);
-        p.connect(dry);
-        bell(ctx, p, t, mtof(m), 0.2 * v, { ratio: 3.5, index: 0.9 + 0.5 * v, itau: 0.12, tau: 0.42, body: 0.55, tine: 0.08, strike: 0.02, lp: 7000, seed: 900 + b * 8 + s });
+        bell(ctx, s % 2 ? pR : pL, t, mtof(pool[k]), 0.2 * v, { ratio: 3.5, index: 0.9 + 0.5 * v, itau: 0.12, tau: 0.42, body: 0.55, tine: 0.08, strike: 0.02, lp: 7000, seed: 900 + b * 8 + s });
       }
     }
   },
@@ -202,15 +220,14 @@ const L2: StemDef = {
       const f = mtof(BASE_ROOT[b]);
       for (const beat of [0, 2]) {
         for (const [dt, v, tau] of [[0, 1, 0.2], [0.19, 0.55, 0.14]] as const) {
-          const t = b * g.bar + beat * g.beat + dt;
+          const t = b * g.bar + beat * g.beat + dt + 0.001;
           const o = osc(ctx, 'sine', f, t, t + 1.2);
           o.frequency.setValueAtTime(f * 1.35, t);
-          o.frequency.setTargetAtTime(f, t, 0.012);
+          o.frequency.exponentialRampToValueAtTime(f, t + 0.05);
           const h = osc(ctx, 'triangle', f * 2, t, t + 1.2);
-          const hg = gain(ctx, 0.22);
           const e = gain(ctx, 0);
           perc(e.gain, t, 0.55 * v, 0.006, tau);
-          o.connect(e); h.connect(hg).connect(e);
+          o.connect(e); h.connect(gain(ctx, 0.22)).connect(e);
           e.connect(lp);
         }
       }
@@ -222,29 +239,29 @@ const L3: StemDef = {
   id: 'base3', group: 'base', layer: 3, bars: 4, ch: 2, tail: 1.5, rmsDb: -28,
   build(ctx, out, g) {
     const r = prng(303);
+    const kickLp = filt(ctx, 'lowpass', 1400, 0.5);
+    kickLp.connect(out);
     // felt kick: 1 and the "and" of 3; pickup in bar 4
     for (let b = 0; b < 4; b++) {
       const steps = b === 3 ? [0, 10, 14] : [0, 10];
       for (const s of steps) {
-        const t = b * g.bar + s * g.s16;
-        const o = osc(ctx, 'sine', 95, t, t + 0.6);
+        const t = b * g.bar + s * g.s16 + 0.001;
+        const o = osc(ctx, 'sine', 96, t, t + 0.6);
         o.frequency.setValueAtTime(96, t);
-        o.frequency.setTargetAtTime(50, t, 0.035);
+        o.frequency.exponentialRampToValueAtTime(50, t + 0.12);
         const e = gain(ctx, 0);
         perc(e.gain, t, s === 0 ? 0.7 : 0.5, 0.004, 0.11);
         o.connect(e).connect(out);
         const n = noise(ctx, t, t + 0.03, 31 + s);
-        const nl = filt(ctx, 'lowpass', 1400, 0.5);
         const ne = gain(ctx, 0);
         perc(ne.gain, t, 0.06, 0.001, 0.006);
-        n.connect(nl).connect(ne).connect(out);
+        n.connect(ne).connect(kickLp);
       }
     }
-    // shaker 16ths
+    // shaker 16ths (one noise source, gated)
     const shHp = filt(ctx, 'highpass', 5200, 0.6);
     const shBp = filt(ctx, 'bandpass', 8200, 0.9);
-    const shP = pan(ctx, 0.3);
-    shHp.connect(shBp).connect(shP).connect(out);
+    shHp.connect(shBp).connect(pan(ctx, 0.3)).connect(out);
     const sh = noise(ctx, 0, g.loop + 0.5, 404, 5);
     const she = gain(ctx, 0);
     sh.connect(she).connect(shHp);
@@ -252,7 +269,7 @@ const L3: StemDef = {
     const acc = [0.55, 0.22, 0.38, 0.24];
     for (let b = 0; b < 4; b++) {
       for (let s = 0; s < 16; s++) {
-        const t = b * g.bar + s * g.s16 + (r() - 0.5) * 0.008;
+        const t = b * g.bar + s * g.s16 + 0.002 + Math.abs(r() - 0.5) * 0.008;
         let v = acc[s % 4] * (0.85 + r() * 0.3);
         if (b === 3 && s >= 12) v *= 1 + (s - 11) * 0.25; // small crescendo into the loop
         she.gain.setValueAtTime(0, t);
@@ -261,20 +278,21 @@ const L3: StemDef = {
       }
     }
     // soft woody tick on 2 and 4
+    const wbp = filt(ctx, 'bandpass', 1700, 3);
+    const wp = pan(ctx, -0.22);
+    wbp.connect(wp);
+    wp.connect(out);
     for (let b = 0; b < 4; b++) {
       for (const s of [4, 12]) {
         const t = b * g.bar + s * g.s16;
         const n = noise(ctx, t, t + 0.06, 505 + s + b);
-        const bp = filt(ctx, 'bandpass', 1700, 3);
         const e = gain(ctx, 0);
         perc(e.gain, t, 0.22, 0.0008, 0.018);
         const o = osc(ctx, 'sine', 820, t, t + 0.1);
         const oe = gain(ctx, 0);
         perc(oe.gain, t, 0.08, 0.001, 0.02);
-        const p = pan(ctx, -0.22);
-        n.connect(bp).connect(e).connect(p);
-        o.connect(oe).connect(p);
-        p.connect(out);
+        n.connect(e).connect(wbp);
+        o.connect(oe).connect(wp);
       }
     }
   },
@@ -288,7 +306,7 @@ const OST_POOL: number[][] = [
 ];
 const OST_PAT = [0, 1, 2, 1, 0, 1, 3, 1, 0, 1, 2, 1, 0, 3, 2, 1];
 
-/** JS-generated aurora crackle: sparse resonant micro-clicks, stereo. */
+/** JS-generated aurora crackle: sparse resonant micro-clicks, stereo, wrapping at the loop length. */
 function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
   const sr = ctx.sampleRate;
   const n = Math.floor(seconds * sr);
@@ -296,7 +314,7 @@ function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
   const L = b.getChannelData(0), R = b.getChannelData(1);
   const r = prng(seed);
   let t = 0;
-  while (true) {
+  for (;;) {
     t += -Math.log(1 - r()) / 7; // ~7 events / s
     const i0 = Math.floor(t * sr);
     if (i0 >= n) break;
@@ -318,30 +336,35 @@ function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
 const L4: StemDef = {
   id: 'base4', group: 'base', layer: 4, bars: 4, ch: 2, tail: 1.5, rmsDb: -29,
   build(ctx, out, g) {
+    // muted pluck: bright path (fast decay) + dark resonant path; 4 static filters, L/R alternating
+    const chains = [-0.25, 0.25].map((p) => {
+      const pn = pan(ctx, p);
+      pn.connect(out);
+      const bright = filt(ctx, 'lowpass', 2600, 0.8);
+      const dark = filt(ctx, 'lowpass', 430, 2.5);
+      bright.connect(pn); dark.connect(pn);
+      return { bright, dark };
+    });
     for (let b = 0; b < 4; b++) {
       const pool = OST_POOL[b];
       for (let s = 0; s < 16; s++) {
-        const t = b * g.bar + s * g.s16;
+        const t = b * g.bar + s * g.s16 + 0.001;
         const f = mtof(pool[OST_PAT[s]]);
         const acc = s % 4 === 0 ? 1 : s % 2 === 0 ? 0.7 : 0.5;
-        const lp = filt(ctx, 'lowpass', 400, 2.5);
-        lp.frequency.setValueAtTime(2600 * acc, t);
-        lp.frequency.setTargetAtTime(420, t, 0.045);
-        const e = gain(ctx, 0);
-        perc(e.gain, t, 0.13 * acc, 0.002, 0.075);
-        const p = pan(ctx, s % 2 ? 0.25 : -0.25);
-        const a = osc(ctx, 'sawtooth', f, t, t + 0.6, -4);
-        const c = osc(ctx, 'square', f, t, t + 0.6, 5);
-        const cg = gain(ctx, 0.35);
-        a.connect(lp); c.connect(cg).connect(lp);
-        lp.connect(e).connect(p).connect(out);
+        const ch = chains[s % 2];
+        const src = gain(ctx, 1);
+        osc(ctx, 'sawtooth', f, t, t + 0.6, -4).connect(src);
+        osc(ctx, 'square', f, t, t + 0.6, 5).connect(gain(ctx, 0.35)).connect(src);
+        const eb = gain(ctx, 0), ed = gain(ctx, 0);
+        perc(eb.gain, t, 0.09 * acc * acc, 0.002, 0.035);
+        perc(ed.gain, t, 0.12 * acc, 0.003, 0.085);
+        src.connect(eb).connect(ch.bright);
+        src.connect(ed).connect(ch.dark);
       }
     }
     const cr = ctx.createBufferSource();
     cr.buffer = crackleBuffer(ctx, g.loop, 4242);
-    const hp = filt(ctx, 'highpass', 900, 0.5);
-    const cg = gain(ctx, 0.05);
-    cr.connect(hp).connect(cg).connect(out);
+    cr.connect(filt(ctx, 'highpass', 900, 0.5)).connect(gain(ctx, 0.05)).connect(out);
     cr.start(0);
   },
 };
@@ -358,39 +381,42 @@ function stormKickTimes(g: Grid): number[] {
 function kick(ctx: Ctx, out: AudioNode, t: number, v: number): void {
   const o = osc(ctx, 'sine', 150, t, t + 0.7);
   o.frequency.setValueAtTime(150, t);
-  o.frequency.setTargetAtTime(45, t, 0.028);
+  o.frequency.exponentialRampToValueAtTime(45, t + 0.11);
   const e = gain(ctx, 0);
   perc(e.gain, t, v, 0.0015, 0.15);
-  const sat = shaper(ctx, 2.2);
-  o.connect(e).connect(sat).connect(out);
+  o.connect(e).connect(out);
   const n = noise(ctx, t, t + 0.02, 61);
-  const hp = filt(ctx, 'highpass', 2800, 0.7);
   const ne = gain(ctx, 0);
-  perc(ne.gain, t, v * 0.25, 0.0005, 0.004);
-  n.connect(hp).connect(ne).connect(out);
+  perc(ne.gain, t, v * 0.12, 0.0005, 0.004);
+  n.connect(ne).connect(out);
 }
 
-function snare(ctx: Ctx, out: AudioNode, t: number, v: number, seed: number): void {
+function snare(ctx: Ctx, body: AudioNode, nz: AudioNode, t: number, v: number, seed: number): void {
   const o = osc(ctx, 'triangle', 190, t, t + 0.4);
-  o.frequency.setTargetAtTime(160, t, 0.05);
+  o.frequency.setValueAtTime(190, t);
+  o.frequency.exponentialRampToValueAtTime(160, t + 0.12);
   const oe = gain(ctx, 0);
   perc(oe.gain, t, v * 0.5, 0.001, 0.055);
-  o.connect(oe).connect(out);
+  o.connect(oe).connect(body);
   const n = noise(ctx, t, t + 0.5, seed);
-  const hp = filt(ctx, 'highpass', 1100, 0.6);
-  const bp = filt(ctx, 'peaking', 3600, 0.8, 5);
   const ne = gain(ctx, 0);
   perc(ne.gain, t, v * 0.55, 0.0008, 0.09);
-  n.connect(hp).connect(bp).connect(ne).connect(out);
+  n.connect(ne).connect(nz);
 }
 
 function hat(ctx: Ctx, out: AudioNode, t: number, v: number, open: boolean, seed: number): void {
   const n = noise(ctx, t, t + (open ? 0.6 : 0.12), seed, 3);
-  const hp = filt(ctx, 'highpass', open ? 6500 : 7800, 0.7);
-  const pk = filt(ctx, 'peaking', 10500, 1.2, 4);
   const e = gain(ctx, 0);
   perc(e.gain, t, v, 0.0006, open ? 0.075 : 0.018);
-  n.connect(hp).connect(pk).connect(e).connect(out);
+  n.connect(e).connect(out);
+}
+
+/** Shared static hat filter chain → out. */
+function hatBus(ctx: Ctx, out: AudioNode, p: number): AudioNode {
+  const hp = filt(ctx, 'highpass', 7200, 0.7);
+  const pk = filt(ctx, 'peaking', 10500, 1.2, 4);
+  hp.connect(pk).connect(pan(ctx, p)).connect(out);
+  return hp;
 }
 
 const CORE: StemDef = {
@@ -399,49 +425,52 @@ const CORE: StemDef = {
     const kicks = stormKickTimes(g);
     const drums = gain(ctx, 1);
     drums.connect(out);
-    kicks.forEach((t, i) => kick(ctx, drums, t, i % 3 === 0 ? 1 : 0.9));
-    const sn = pan(ctx, 0.05);
-    sn.connect(drums);
+    const kb = shaper(ctx, 2.2);
+    kb.connect(drums);
+    kicks.forEach((t, i) => kick(ctx, kb, t + 0.0005, i % 3 === 0 ? 1 : 0.9));
+    // snare: shared body + noise filters
+    const sp = pan(ctx, 0.05);
+    sp.connect(drums);
+    const snHp = filt(ctx, 'highpass', 1100, 0.6), snPk = filt(ctx, 'peaking', 3600, 0.8, 5);
+    snHp.connect(snPk).connect(sp);
+    const sn = (t: number, v: number, seed: number) => snare(ctx, sp, snHp, t, v, seed);
+    const hL = hatBus(ctx, drums, -0.2), hR = hatBus(ctx, drums, 0.3);
     for (let b = 0; b < 8; b++) {
-      snare(ctx, sn, b * g.bar + 4 * g.s16, 0.9, 700 + b);
-      snare(ctx, sn, b * g.bar + 12 * g.s16, 0.95, 720 + b);
+      sn(b * g.bar + 4 * g.s16, 0.9, 700 + b);
+      sn(b * g.bar + 12 * g.s16, 0.95, 720 + b);
       if (b !== 7) {
-        snare(ctx, sn, b * g.bar + 7 * g.s16, 0.22, 740 + b);
-        snare(ctx, sn, b * g.bar + 15 * g.s16, b % 2 ? 0.3 : 0.18, 760 + b);
+        sn(b * g.bar + 7 * g.s16, 0.22, 740 + b);
+        sn(b * g.bar + 15 * g.s16, b % 2 ? 0.3 : 0.18, 760 + b);
       }
-      // 8th hats, softer on the beat
-      for (let s = 0; s < 16; s += 2) {
-        const hp = pan(ctx, s % 4 ? 0.3 : -0.2);
-        hp.connect(drums);
-        hat(ctx, hp, b * g.bar + s * g.s16, s % 4 ? 0.2 : 0.1, false, 800 + b * 16 + s);
-      }
+      for (let s = 0; s < 16; s += 2) hat(ctx, s % 4 ? hR : hL, b * g.bar + s * g.s16, s % 4 ? 0.2 : 0.1, false, 800 + b * 16 + s);
     }
     // bar 8: snare roll crescendo + noise riser into the downbeat
-    for (let s = 8; s < 16; s++) snare(ctx, sn, 7 * g.bar + s * g.s16, 0.25 + (s - 8) * 0.09, 900 + s);
-    snare(ctx, sn, 7 * g.bar + 4 * g.s16, 0.9, 930);
+    for (let s = 8; s < 16; s++) sn(7 * g.bar + s * g.s16, 0.25 + (s - 8) * 0.09, 900 + s);
     {
       const t0 = 7 * g.bar + 8 * g.s16, t1 = 8 * g.bar;
       const n = noise(ctx, t0, t1 + 0.02, 950, 4, 2);
-      const bp = filt(ctx, 'bandpass', 800, 1.2);
-      bp.frequency.setValueAtTime(700, t0);
-      bp.frequency.exponentialRampToValueAtTime(7000, t1);
+      const bp = filt(ctx, 'bandpass', 2400, 0.7);
       const e = gain(ctx, 0);
       e.gain.setValueAtTime(0, t0);
       e.gain.linearRampToValueAtTime(0.16, t1 - 0.01);
       e.gain.linearRampToValueAtTime(0, t1);
       n.connect(bp).connect(e).connect(drums);
     }
-    // --- pumped tonal bus (reese + dark pad)
+    // --- pumped tonal bus: reese through two static low-passes crossfaded by an LFO (filter movement)
     const pump = gain(ctx, 1);
     pumpEnv(pump.gain, kicks.concat(kicks.map((k) => k + g.loop)));
     pump.connect(out);
-    const rlp = filt(ctx, 'lowpass', 480, 1.6);
+    const rIn = gain(ctx, 1);
+    const lpA = filt(ctx, 'lowpass', 300, 1.6), lpB = filt(ctx, 'lowpass', 950, 1.3);
+    const gA = gain(ctx, 0.5), gB = gain(ctx, 0.5);
     const lfo = osc(ctx, 'sine', loopHz(0.28, g.loop), 0, g.end);
-    const lg = gain(ctx, 260);
-    lfo.connect(lg).connect(rlp.frequency);
+    lfo.connect(gain(ctx, 0.45)).connect(gA.gain);
+    lfo.connect(gain(ctx, -0.45)).connect(gB.gain);
     const rsat = shaper(ctx, 1.8);
     const rhp = filt(ctx, 'highpass', 36, 0.7);
-    rlp.connect(rsat).connect(rhp).connect(pump);
+    rIn.connect(lpA).connect(gA).connect(rsat);
+    rIn.connect(lpB).connect(gB).connect(rsat);
+    rsat.connect(rhp).connect(pump);
     for (let b = 0; b < 8; b++) {
       const root = STORM_ROOT[b % 4];
       const notes: [number, number, number][] = b === 7
@@ -457,23 +486,19 @@ const CORE: StemDef = {
         e.gain.setValueAtTime(0.32, t + d - 0.012);
         e.gain.linearRampToValueAtTime(0, t + d + 0.004);
         for (const det of [-16, 14]) osc(ctx, 'sawtooth', f, t, t + d + 0.05, det).connect(e);
-        const sub = osc(ctx, 'sine', f, t, t + d + 0.05);
-        const sg = gain(ctx, 0.9);
-        sub.connect(sg).connect(e);
-        e.connect(rlp);
+        osc(ctx, 'sine', f, t, t + d + 0.05).connect(gain(ctx, 0.9)).connect(e);
+        e.connect(rIn);
       }
     }
     const plp = filt(ctx, 'lowpass', 1100, 0.4);
-    const pg = gain(ctx, 1);
-    plp.connect(pg).connect(pump);
+    plp.connect(pump);
     for (let b = 0; b < 8; b++) {
       const t = b * g.bar;
       STORM_TRIAD[b % 4].forEach((m, i) => {
         const e = gain(ctx, 0);
         swell(e.gain, t, g.bar - 0.05, 0.035, 0.06, 0.08);
-        const p = pan(ctx, (i - 1) * 0.5);
         for (const det of [-7, 7]) osc(ctx, 'sawtooth', mtof(m - 12), t, t + g.bar + 0.6, det).connect(e);
-        e.connect(p).connect(plp);
+        e.connect(pan(ctx, (i - 1) * 0.5)).connect(plp);
       });
     }
   },
@@ -486,32 +511,34 @@ const STABS: StemDef = {
     const pump = gain(ctx, 1);
     pumpEnv(pump.gain, kicks.concat(kicks.map((k) => k + g.loop)), 0.35, 0.07);
     pump.connect(out);
+    // two static filters: bright attack path + body path, gated per hit
+    const lpBright = filt(ctx, 'lowpass', 5200, 0.9), lpBody = filt(ctx, 'lowpass', 1300, 1.1);
+    lpBright.connect(pump); lpBody.connect(pump);
     const hits = [0, 3, 6, 10, 12];
     for (let b = 0; b < 4; b++) {
       const triad = STORM_TRIAD[b % 4];
       const voicing = [triad[0], triad[1], triad[2], triad[0] + 12];
-      const lp = filt(ctx, 'lowpass', 1200, 1.1);
-      const gate = gain(ctx, 0);
-      lp.connect(gate).connect(pump);
+      const sum = gain(ctx, 1);
+      const gBr = gain(ctx, 0), gBo = gain(ctx, 0);
+      sum.connect(gBr).connect(lpBright);
+      sum.connect(gBo).connect(lpBody);
       const t0 = b * g.bar, t1 = t0 + g.bar + 0.3;
       for (const s of hits) {
-        const t = t0 + s * g.s16;
+        const t = t0 + s * g.s16 + 0.001;
         const len = s === 12 ? g.s16 * 2.4 : g.s16 * 1.1;
-        gate.gain.setValueAtTime(0, t);
-        gate.gain.linearRampToValueAtTime(0.1, t + 0.003);
-        gate.gain.setTargetAtTime(0.06, t + 0.003, 0.05);
-        gate.gain.setTargetAtTime(0, t + len, 0.025);
-        lp.frequency.setValueAtTime(5200, t);
-        lp.frequency.setTargetAtTime(1300, t, 0.06);
+        gBo.gain.setValueAtTime(0, t);
+        gBo.gain.linearRampToValueAtTime(0.09, t + 0.003);
+        gBo.gain.setTargetAtTime(0.055, t + 0.003, 0.05);
+        gBo.gain.setTargetAtTime(0, t + len, 0.025);
+        gBr.gain.setValueAtTime(0, t);
+        gBr.gain.linearRampToValueAtTime(0.07, t + 0.002);
+        gBr.gain.setTargetAtTime(0, t + 0.002, 0.03);
       }
       voicing.forEach((m, vi) => {
         const f = mtof(m);
         for (let k = 0; k < 5; k++) {
-          const det = (k - 2) * 11;
-          const x = osc(ctx, 'sawtooth', f, t0, t1, det + vi * 0.7);
-          const p = pan(ctx, ((k - 2) / 2) * 0.7);
-          const xg = gain(ctx, 0.2);
-          x.connect(xg).connect(p).connect(lp);
+          const x = osc(ctx, 'sawtooth', f, t0, t1, (k - 2) * 11 + vi * 0.7);
+          x.connect(gain(ctx, 0.2)).connect(pan(ctx, ((k - 2) / 2) * 0.7)).connect(sum);
         }
       });
     }
@@ -523,14 +550,14 @@ const HATS: StemDef = {
   build(ctx, out, g) {
     const r = prng(1212);
     const vel = [0.5, 0.22, 0.35, 0.25];
+    const hL = hatBus(ctx, out, -0.32), hR = hatBus(ctx, out, 0.38);
     for (let b = 0; b < 4; b++) {
       for (let s = 0; s < 16; s++) {
-        const t = b * g.bar + s * g.s16 + (r() - 0.5) * 0.004;
-        const p = pan(ctx, s % 2 ? 0.38 : -0.32);
-        p.connect(out);
+        const t = b * g.bar + s * g.s16 + 0.002 + Math.abs(r() - 0.5) * 0.004;
+        const bus = s % 2 ? hR : hL;
         const open = s % 4 === 2 && !(b === 3 && s > 8);
-        hat(ctx, p, t, open ? 0.3 : vel[s % 4] * (0.85 + r() * 0.3), open, 1300 + b * 16 + s);
-        if (b === 3 && s >= 12) hat(ctx, p, t + g.s16 / 2, 0.18, false, 1400 + s); // 32nd flourish
+        hat(ctx, bus, t, open ? 0.3 : vel[s % 4] * (0.85 + r() * 0.3), open, 1300 + b * 16 + s);
+        if (b === 3 && s >= 12) hat(ctx, bus, t + g.s16 / 2, 0.18, false, 1400 + s); // 32nd flourish
       }
     }
   },
@@ -546,7 +573,7 @@ const CHOIR: StemDef = {
     const V: number[][] = [[62, 69, 74, 77], [63, 70, 75, 79], [62, 69, 74, 77], [60, 67, 72, 75]];
     for (let b = 0; b < 4; b++) {
       V[b].forEach((m, i) => {
-        aah(ctx, pump, b * g.bar - 0.02 + (b === 0 ? g.loop : 0), g.bar - 0.1, mtof(m), 0.05, (i - 1.5) * 0.4, 0.12, 0.35, i < 2 ? 'o' : 'a');
+        aah(ctx, pump, wrap(b * g.bar - 0.02, g), g.bar - 0.1, mtof(m), 0.05, (i - 1.5) * 0.4, 0.12, 0.35, i < 2 ? 'o' : 'a');
       });
     }
   },

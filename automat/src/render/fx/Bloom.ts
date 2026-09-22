@@ -8,7 +8,7 @@
 //   prefilter  full → ¼ res   (4 taps, soft-knee threshold, Karis average)          ≈ 1/16 px × 4 taps
 //   down ×(n−1)               (dual filter, 5 taps)                                  ≈ 1/64 + 1/256 + …
 //   up   ×(n−1)               (dual filter 8 taps + 3×3 tent of the finer level)
-//   composite  full res       (scene + tent-reconstructed bloom, 5 taps)             1 full-res pass
+//   composite  full res       (scene + bloom, 2 taps)                                1 full-res pass
 //
 // n is chosen so the coarsest texel is ≈ 16–40 css px (halo radius ≈ 3× that) regardless of DPR / screen size.
 // Zero allocations per frame; render targets are resized only when the screen size / resolution changes.
@@ -94,7 +94,7 @@ export class BloomFilter extends Filter {
 
   override apply(fm: FilterSystem, input: Texture, output: RenderSurface, clearMode: boolean): void {
     const cu = this.cu;
-    const k = this.strength * GAIN;
+    const k = (this.strength || 0) * GAIN;
     if (!(k > 0.001)) {
       cu.uBloomMix[0] = 0;
       fm.applyFilter(this, input, output, clearMode);
@@ -106,14 +106,14 @@ export class BloomFilter extends Filter {
     for (let i = 0; i < n; i++) { setFrame(L[i], w, h); if (i < n - 1) setFrame(U[i], w, h); }
 
     // 1. threshold + ¼-res downsample
-    const kn = Math.max(1e-3, this.knee);
+    const kn = Math.max(1e-3, this.knee || 0);
     const th = this.preU.uThreshold;
-    th[0] = this.threshold; th[1] = kn; th[2] = 1 / (4 * kn);
+    th[0] = this.threshold || 0; th[1] = kn; th[2] = 1 / (4 * kn);
     fm.applyFilter(this.pre, input, L[0], true);
     // 2. down the pyramid
     for (let i = 1; i < n; i++) fm.applyFilter(this.down, L[i - 1], L[i], true);
     // 3. back up, accumulating every radius
-    const sc = Math.min(1, Math.max(0, this.scatter));
+    const sc = Math.min(1, Math.max(0, this.scatter || 0));
     for (let i = n - 2; i >= 0; i--) {
       const src = i === n - 2 ? L[n - 1] : U[i + 1];
       const cur = L[i];
@@ -130,11 +130,9 @@ export class BloomFilter extends Filter {
     const b = U[0];
     cu.uBloomMap[0] = input.source.width / b.source.width;
     cu.uBloomMap[1] = input.source.height / b.source.height;
-    cu.uBloomMap[2] = 0.5 / b.source.pixelWidth;
-    cu.uBloomMap[3] = 0.5 / b.source.pixelHeight;
     validClamp(b, w, h, this.res[0], cu.uBloomClamp);
     cu.uBloomMix[0] = k;
-    cu.uBloomMix[1] = Math.min(1, Math.max(0, this.protect));
+    cu.uBloomMix[1] = Math.min(1, Math.max(0, this.protect || 0));
     fm.applyFilter(this, input, output, clearMode);
   }
 

@@ -7,7 +7,7 @@
 //   #view=atlas                 raw SDF atlas (R = distance, G = arc length)
 //   #view=perf                  timing probes (text setter, construction)
 //   common: &reveal=0.5 &glow=1 &sweep=0.4 &t=2.0 (shader clock) &letter=3 (letter-slam frame)
-import { Application, Container, FillGradient, Graphics, Sprite, Texture, type Renderer } from 'pixi.js';
+import { Application, Container, FillGradient, Graphics, Rectangle, Sprite, Texture, type Filter, type Renderer } from 'pixi.js';
 import { IsText, installIsfont, isfontStats, setIsfontClock, type IsStyle } from '../src/render/type/isfont.ts';
 import { getAtlas } from '../src/render/type/atlas.ts';
 import { GLYPHS } from '../src/render/type/glyphs.ts';
@@ -33,7 +33,32 @@ installIsfont(r);
 probe.installMs = +(performance.now() - t0).toFixed(1);
 probe.atlas = isfontStats(); probe.atlasMs = (window as unknown as { __isfontMs?: unknown }).__isfontMs;
 
+// world container (optionally with the game's bloom, like the real scene graph)
+const world = new Container();
+app.stage.addChild(world);
+if (hp.get('bloom') === '1') {
+  try {
+    const { createBloom } = await import('../src/render/fx/Bloom.ts');
+    world.filters = [createBloom() as unknown as Filter];
+    world.filterArea = new Rectangle(0, 0, W, H);
+  } catch (e) { console.warn('bloom unavailable', e); }
+}
+const realSky = hp.get('real') === '1';
+let skyLayer: (Container & { update(p: unknown): void }) | null = null;
+
 function sky(storm = false): Container {
+  if (realSky) {
+    const holder = new Container();
+    import('../src/render/sky/SkyLayer.ts').then(({ SkyLayer }) => {
+      const sl = new SkyLayer(r) as unknown as Container & { resize(w: number, h: number, hy: number): void; update(p: unknown): void };
+      sl.resize(W, H, H * 0.72);
+      skyLayer = sl;
+      holder.addChild(sl);
+      const kp = num('kp', storm ? 9 : 4);
+      sl.update({ kp, storm: storm ? 1 : 0, glow: 0, cme: 0, sun: storm ? 0.6 : 0, time: tClock });
+    }).catch((e) => console.warn('sky unavailable', e));
+    return holder;
+  }
   const c = new Container();
   const g = new Graphics();
   const fill = new FillGradient({
@@ -62,18 +87,18 @@ function T(text: string, size: number, style: IsStyle, x: number, y: number, o: 
   const t = new IsText({ text, size, style, tracking: o.tracking, align: o.align });
   t.position.set(x, y);
   t.reveal = reveal; t.glow = glow; t.sweep = sweep;
-  app.stage.addChild(t);
+  world.addChild(t);
   return t;
 }
 
 function pill(x: number, y: number, w: number, h: number, color = 0x0a1630, stroke = 0x3af2ff): void {
   const g = new Graphics();
   g.roundRect(x - w / 2, y - h / 2, w, h, h / 2).fill({ color, alpha: 0.92 }).stroke({ color: stroke, alpha: 0.5, width: 1 });
-  app.stage.addChild(g);
+  world.addChild(g);
 }
 
 if (view === 'sheet') {
-  app.stage.addChild(sky());
+  world.addChild(sky());
   const m = Math.min(W, 760);
   let y = H * 0.1;
   T('NORDLYS', Math.max(34, m * 0.12), 'ice', W / 2, y, { tracking: 0.14 }); y += m * 0.16;
@@ -88,14 +113,14 @@ if (view === 'sheet') {
   T('0123456789 .,:%×+−-/·!', 20, 'ice', W / 2, y, { tracking: 0.06 }); y += 34;
   T('MEGA GEVINST  EPISK GEVINST  FLOT GEVINST', 12, 'gold', W / 2, y);
 } else if (view === 'logo') {
-  app.stage.addChild(sky());
+  world.addChild(sky());
   const size = Math.max(34, Math.min(W, 760) * 0.12);
   T('NORDLYS', size, 'ice', W / 2, H * 0.36, { tracking: 0.14 });
   const hdr = T('NORDLYS', 40, 'ice', W / 2, H * 0.06, { tracking: 0.14 });
   hdr.scale.set(18 / 40);
-  probe.logo = { size, width: +(app.stage.children[app.stage.children.length - 2] as IsText).width.toFixed(1) };
+  probe.logo = { size, width: +(world.children[world.children.length - 2] as IsText).width.toFixed(1) };
 } else if (view === 'storm') {
-  app.stage.addChild(sky(true));
+  world.addChild(sky(true));
   const m = Math.min(W, 720);
   const logo = T('SOLSTORM', Math.max(34, m * 0.1), 'molten', W / 2, H * 0.2, { tracking: 0.08 });
   T('G5 · EKSTREM', Math.max(14, m * 0.035), 'plasma', W / 2, H * 0.2 + logo.height * 0.62 + 6, { tracking: 0.3 });
@@ -112,7 +137,7 @@ if (view === 'sheet') {
   }
   probe.letters = logo.letters.length;
 } else if (view === 'glyphs') {
-  app.stage.addChild(sky());
+  world.addChild(sky());
   const style = (hp.get('style') ?? 'ice') as IsStyle;
   const chars = Object.keys(GLYPHS);
   const size = num('size', 34);
@@ -121,7 +146,7 @@ if (view === 'sheet') {
   const from = num('from', 0);
   chars.slice(from).forEach((c, i) => T(c, size, style, cw * (i % cols + 0.5), ch * (Math.floor(i / cols) + 0.7)));
 } else if (view === 'small') {
-  app.stage.addChild(sky());
+  world.addChild(sky());
   let y = 30;
   for (const s of [8, 9, 10, 12, 14]) {
     const cell = s / 0.16;
@@ -163,7 +188,7 @@ if (view === 'sheet') {
   sp.scale.set(k);
   app.stage.addChild(sp);
 } else if (view === 'perf') {
-  app.stage.addChild(sky());
+  world.addChild(sky());
   const t = T('0,00 KR', 30, 'gold', W / 2, H / 2);
   let s = performance.now();
   for (let i = 0; i < 20000; i++) t.text = (i * 137 / 100).toFixed(2).replace('.', ',') + ' KR';
@@ -188,3 +213,5 @@ if (view === 'sheet') {
   app.ticker.add(() => { frames++; t.text = (frames * 3.17).toFixed(2).replace('.', ',') + ' KR'; });
   setTimeout(() => { probe.fps = +(frames / ((performance.now() - f0) / 1000)).toFixed(1); }, 1500);
 }
+
+void skyLayer;

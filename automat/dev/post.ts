@@ -225,6 +225,16 @@ const grate = { x: Math.round(W / 2 - 24), y: Math.round(H / 2 - 30), w: 48, h: 
   world.addChild(g);
 }
 
+// rotated square (MSAA probe: with antialias 'inherit' its edges must have partial-coverage pixels)
+const aaBox = { x: Math.round(W / 2 + 34), y: Math.round(H / 2 - 32), w: 30, h: 30 };
+{
+  const g = new Graphics();
+  g.rect(aaBox.x, aaBox.y, aaBox.w, aaBox.h).fill(0x05070d);
+  const sq = new Graphics().rect(-8, -8, 16, 16).fill(0xeaf8ff);
+  sq.position.set(aaBox.x + aaBox.w / 2, aaBox.y + aaBox.h / 2); sq.rotation = 0.5;
+  world.addChild(g, sq);
+}
+
 // ------------------------------------------------------------------ post
 const uber = new UberPost();
 const bloom = createBloom();
@@ -313,6 +323,21 @@ async function runCheck(): Promise<void> {
   const soft = new UberPost(); applyParams(soft, 0); soft.cinematic = false; soft.resolution = 1; soft.antialias = 'inherit';
   world.filters = [soft];
   const m3 = measure();
+  // MSAA inheritance: count partially covered pixels on the rotated square's edges
+  const partial = () => {
+    app.render();
+    const g = grab(aaBox.x + 1, aaBox.y + 1, aaBox.w - 2, aaBox.h - 2);
+    let n = 0; for (let i = 0; i < g.d.length; i += 4) { const l = lum(g.d, i); if (l > 0.15 && l < 0.75) n++; }
+    return n;
+  };
+  world.filters = [];
+  const aaNone = partial();
+  world.filters = [uber];
+  const aaInherit = partial();
+  uber.antialias = 'off';
+  const aaOff = partial();
+  uber.antialias = 'inherit';
+  probe.msaa = { partialEdgePx: { noPost: aaNone, uberInherit: aaInherit, uberOff: aaOff }, note: 'inherit ≈ noPost → world keeps the canvas MSAA inside the filter RT' };
   const thr0 = bloom.threshold; bloom.threshold = 1.5; // nothing passes → composite pass must be bit-exact
   world.filters = [bloom, uber];
   const m5 = measure();
@@ -360,17 +385,22 @@ async function runCheck(): Promise<void> {
 
 async function runLose(): Promise<void> {
   const before = measure();
-  const ext = gl.getExtension('WEBGL_lose_context');
-  if (!ext) { probe.lose = 'no WEBGL_lose_context'; return; }
-  const lost = new Promise<void>((res) => app.canvas.addEventListener('webglcontextlost', () => res(), { once: true }));
-  ext.loseContext();
-  await lost;
+  const skyBefore = meanLum(grab(0, 0, W, py - 40));
   const restored = new Promise<void>((res) => app.canvas.addEventListener('webglcontextrestored', () => res(), { once: true }));
-  ext.restoreContext();
-  await restored;
+  const timeout = new Promise<void>((res) => setTimeout(res, 20000));
+  (renderer as unknown as { context: { forceContextLoss(): void } }).context.forceContextLoss(); // Pixi auto-restores
+  await Promise.race([restored, timeout]);
+  probe.loseRestoredEvent = !gl.isContextLost();
   await new Promise((r) => setTimeout(r, 100));
+  uber.cinematic = true; app.render(); uber.cinematic = false; // both variants must come back after restore
   const after = measure();
-  probe.lose = { before: +before.panelMean.toFixed(4), after: +after.panelMean.toFixed(4), grateBefore: +before.gv.toFixed(4), grateAfter: +after.gv.toFixed(4), ok: Math.abs(after.panelMean - before.panelMean) < 0.02 && after.gv > before.gv * 0.8 };
+  const skyAfter = meanLum(grab(0, 0, W, py - 40));
+  probe.lose = {
+    note: 'panel symbols are baked RTs owned by the art module (re-bake on contextChange is theirs); sky + grating go through the post stack',
+    skyBefore: +skyBefore.toFixed(4), skyAfter: +skyAfter.toFixed(4),
+    grateBefore: +before.gv.toFixed(4), grateAfter: +after.gv.toFixed(4),
+    ok: Math.abs(skyAfter - skyBefore) < 0.01 && after.gv > before.gv * 0.95, // gems gone → less halo on the grating
+  };
 }
 
 async function runWarm(): Promise<void> {

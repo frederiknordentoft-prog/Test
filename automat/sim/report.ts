@@ -14,6 +14,7 @@ type Json = {
   report: MathReport; config: MathConfig; gates: Gate[];
   seeds: Record<string, number>; samples: Record<string, number | boolean>; elapsedS: number;
   decomposition: any; storms: any; e2e: any; adversary: any[]; variants: any[]; tuning: any;
+  e2eSupplement?: any[]; e2ePooled?: { rtp: number; se: number; samples: number; storms: number; z: number };
 };
 
 const dk = (x: number, d = 2): string => x.toFixed(d).replace('.', ',');
@@ -49,7 +50,9 @@ export function buildGates(j: Json): Gate[] {
     { name: 'Max-win cap ramt', req: '≤ 1 pr. 10⁴ storme', value: `${S.capped} af ${int(S.n)} (${dk(S.capRate * 1e4, 2)} pr. 10⁴)`, pass: S.capRate <= 1e-4 },
     { name: 'Kp-tiers inden for 150 spil (median)', req: '≥ 3', value: `${D.tiersBy150Median} (≥ 3 for ${pct(D.tiersBy150AtLeast3, 1)} af spillerne)`, pass: D.tiersBy150Median >= 3 },
     { name: 'Stake-switch adversary', req: 'edge ≤ 0', value: `max RTP ${pct(best.rtp, 2)} ± ${pct(Z * best.se, 2)} (${best.strategy})`, pass: j.adversary.every((a: any) => a.rtp + Z * a.se < 1) },
-    { name: 'E2E-krydstjek', req: 'afvigelse ≤ 1,96·√(SE²+SE²)', value: `${pct(E.rtpCycles, 3)} ± ${pct(Z * E.seCycles, 3)} vs ${pct(rtp, 3)}`, pass: Math.abs(E.rtpCycles - rtp) <= Z * Math.sqrt(E.seCycles ** 2 + seRtp ** 2) },
+    j.e2ePooled
+      ? { name: 'E2E-krydstjek', req: 'afvigelse ≤ 1,96·√(SE²+SE²)', value: `${pct(j.e2ePooled.rtp, 3)} ± ${pct(Z * j.e2ePooled.se, 3)} (${j.e2ePooled.samples} stikprøver, ${int(j.e2ePooled.storms)} storme) vs ${pct(rtp, 3)}; z = ${dk(j.e2ePooled.z, 2)}`, pass: Math.abs(j.e2ePooled.z) <= Z }
+      : { name: 'E2E-krydstjek', req: 'afvigelse ≤ 1,96·√(SE²+SE²)', value: `${pct(E.rtpCycles, 3)} ± ${pct(Z * E.seCycles, 3)} vs ${pct(rtp, 3)}; z = ${dk((E.rtpCycles - rtp) / Math.sqrt(E.seCycles ** 2 + seRtp ** 2), 2)}`, pass: Math.abs(E.rtpCycles - rtp) <= Z * Math.sqrt(E.seCycles ** 2 + seRtp ** 2) },
   ];
 }
 
@@ -224,7 +227,9 @@ export function writeReportMd(j: Json): void {
   p(`- **Tuner** (\`node sim/tune.ts\`, common random numbers, frø 0x${(j.tuning?.seed ?? 0).toString(16)}): pSun analytisk (4+ sole = 1:3.300) → wild-vægt bisection mod hitrate 45 % → form-knap φ mod net-win (φ = ${j.tuning ? dk(j.tuning.phi, 3) : '?'}) → s i lukket form mod klynge-RTP ${j.tuning ? pct(j.tuning.targets.cluster, 1) : ''} (s før afrunding ${j.tuning ? dk(j.tuning.sBeforeRounding, 4) : '?'}) → afrunding til pæne trin (0,1 / 0,5 / 1 / 5 / 10) med payScale = 1 → K = c̄·(2.200 + 3) − Ō (renewal/Wald; 3 Ladede spin pr. cyklus har samme ladningsfordeling som basisspil) → stormPayScale i lukket form på en storm-stikprøve (cap og garanti eksakt) → varianter.`);
   p(`- **Verifikation** (\`node sim/run.ts\`) på friske frø, der ikke deler en eneste splitmix-tilstand med tunerens stikprøver (\`sim/seeds.ts\`): ${int(D.n)} basisspil med vedvarende måler og Ladede spin, ${int(S.n)} storme, ${int(E.n)} end-to-end-spil og ${int(j.samples.adv as number)} spil × ${j.adversary.length} adversary-strategier.`);
   p(`- **Estimator:** RTP = E[basis + Ladede spin] + (r_A + r_B − r_AB)·E[S]; r_A = 1/E[N] (renewal-reward), r_B = P(4+ sole) eksakt. 95 %-CI via delta-metoden: ± ${pct(R.rtpCi95, 3)}.`);
-  p(`- **End-to-end-krydstjek:** en spiller med alt inline (${int(E.storms)} storme, ${int(E.cycles)} rute-A-cykler som i.i.d.-batches): ${pct(E.rtpCycles, 3)} ± ${pct(1.96 * E.seCycles, 3)} mod dekomponeringens ${pct(R.rtp, 3)} → ${E.pass ? 'bestået' : '**ikke bestået**'}.`);
+  p(`- **End-to-end-krydstjek:** en spiller med alt inline (${int(E.n)} spil, ${int(E.storms)} storme, ${int(E.cycles)} rute-A-cykler som i.i.d.-batches): ${pct(E.rtpCycles, 3)} ± ${pct(1.96 * E.seCycles, 3)} mod dekomponeringens ${pct(R.rtp, 3)} (z = ${dk((E.rtpCycles - R.rtp) / Math.sqrt(E.seCycles ** 2 + D.seRtp ** 2), 2)}). Støjen er domineret af de ca. ${int(E.storms)} storme (SD ${int(S.sdS)}× pr. storm).`);
+  for (const x of j.e2eSupplement ?? []) p(`  - Supplerende e2e (\`node sim/e2e.ts\`, frisk frø 0x${x.seed.toString(16)}): ${int(x.n)} spil, ${int(x.storms)} storme: ${pct(x.rtpCycles, 3)} ± ${pct(1.96 * x.seCycles, 3)}.`);
+  if (j.e2ePooled) p(`  - Samlet (inverse-varians): ${pct(j.e2ePooled.rtp, 3)} ± ${pct(1.96 * j.e2ePooled.se, 3)} mod ${pct(R.rtp, 3)}, z = ${dk(j.e2ePooled.z, 2)} → ${Math.abs(j.e2ePooled.z) <= 1.96 ? 'bestået' : '**ikke bestået**'}.`);
   p(`- Øre: hver klynge afrundes én gang (halv op) til hele øre: winOre = floor((round(tabel·skala·10⁴)·mult·indsats + 5.000)/10⁴). Spillets total er summen, cappet ved ${int(C.maxWinX)}× indsats.`);
   p();
 
@@ -243,7 +248,7 @@ export function writeReportMd(j: Json): void {
   p('- API: `spinRng(seed, domain, idx)`, `spinBase(rng, stakeOre, { perk })`, `createStorm(rng, stakeOre)` / `stormSpin(state, rng, spinId)` / `finishStorm(state)`, `addCharge` / `lockedStakeOre` / `resetMeter` (se `docs/CONTRACTS.md` §1). Alle beløb er hele øre.');
   p('- Genafspilning: (sessionSeed, domæne, idx) + pre-state (måler, låst indsats, stormmærker) reproducerer hvert spil bit for bit; en Solstorm genafspilles ved at køre createStorm + stormSpin × k på en frisk `spinRng` med samme indeks (golden-test i `tests/math.storm.test.ts`).');
   p(`- Modelhash: SHA-256 af den kanoniske JSON af CONFIG (uden hash) = \`${C.modelHash}\`. Enhver ændring af vægte, tabel eller skalaer ændrer hashen; regelskærmen viser de første 8 tegn.`);
-  p('- Genkørsel: `node sim/tune.ts` (≈ 4 min) og derefter `node sim/run.ts` (≈ 8–12 min) på 2 tråde; `--quick` til udvikling.');
+  p('- Genkørsel: `node sim/tune.ts` (≈ 4 min) → `node sim/run.ts` (≈ 10 min) → valgfrit `node sim/e2e.ts` (supplerende krydstjek, ≈ 4 min) på 2 tråde; `--quick` til udvikling; `node sim/report.ts` gengiver denne rapport fra `sim/report.json` uden ny simulering. Tests: `npx vitest run tests/math` (≈ 7 s).');
   p();
   writeFileSync(fileURLToPath(new URL('./REPORT.md', import.meta.url)), L.join('\n'));
 }

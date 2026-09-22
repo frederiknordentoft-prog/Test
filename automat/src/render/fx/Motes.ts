@@ -1,5 +1,5 @@
 // NORDLYS · charge motes (CONTRACTS.md §7): glowing #CFEFFF motes that ride a curved "field line"
-// (cubic Bézier bowing outward) with a helical offset (sin across the line, cos → depth: size/brightness),
+// (cubic Bézier: burst up out of the cell, arc over, home in) with a helical offset (sin across the line, cos → depth: size/brightness),
 // a short tapered comet trail and an arrival spark at the Kp-arc head.
 //
 // Rendering: ONE additive mesh with a procedural shader (no textures): trail ribbons, heads and arrival
@@ -72,6 +72,9 @@ class Mote {
   amp = 8; turns = 2; phase = 0; size = 1;
   r = 1; g = 1; b = 1;
   cb: (() => void) | null = null;
+  /** Live target (the caller's point object): the path end + approach tangent follow it every frame. */
+  target: { x: number; y: number } | null = null;
+  ox2 = 0; oy2 = 0;
   arrived = false;
   flash = -1;
   order = 0;
@@ -108,6 +111,7 @@ export class Motes extends Container {
   private geo: DynGeometry;
   private live = 0;
   private orderSeq = 0;
+  private dirty = false;
   /** Recent-arrival energy (decays ~0.25 s) → arrival flashes dim when motes land in quick succession. */
   private energy = 0;
   private damp = 1;
@@ -125,8 +129,29 @@ export class Motes extends Container {
     this.addChild(this.mesh);
   }
 
+  /** @internal Render one deterministic mote into `target` so the program links before the first win. */
+  static prewarm(renderer: Renderer, target: RenderTexture): void {
+    const ms = new Motes();
+    const m = ms.pool[0];
+    m.x0 = 0; m.y0 = 2; m.x1 = 0; m.y1 = 1; m.x2 = 2; m.y2 = 1; m.x3 = 2; m.y3 = 0;
+    m.amp = 0; m.turns = 1; m.phase = 0; m.size = 0.2; m.dur = 0.2; m.t = 0;
+    m.r = m.g = m.b = 1; m.cb = null; m.target = null; m.arrived = false; m.flash = -1; m.active = true;
+    ms.live = 1; ms.dirty = true;
+    ms.update(0.05);
+    renderer.render({ container: ms, target, clear: false });
+    ms.destroy();
+  }
+
+  /** Teardown: frees the mesh + buffers. Pending onArrive callbacks are NOT fired (call flush() first if needed). */
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.removeChild(this.mesh);
+    this.mesh.destroy();
+    this.geo.destroy();
+    super.destroy(options);
+  }
+
   /** Motes in flight (not counting arrival flashes). */
-  get inFlight(): number { let n = 0; for (const m of this.pool) if (m.active && !m.arrived) n++; return n; }
+  get inFlight(): number { let n = 0; for (let i = 0; i < MAX; i++) if (this.pool[i].active && !this.pool[i].arrived) n++; return n; }
 
   launch(from: { x: number; y: number }, to: { x: number; y: number }, n: number, o?: MoteOptions): void {
     const cnt = Math.max(0, Math.floor(n));
@@ -147,8 +172,10 @@ export class Motes extends Container {
       const r2 = L * (0.22 + 0.18 * crand());
       m.x0 = fx; m.y0 = fy;
       m.x1 = fx + Math.cos(a1) * r1; m.y1 = fy + Math.sin(a1) * r1;
-      m.x2 = to.x + Math.cos(back) * r2; m.y2 = to.y + Math.sin(back) * r2;
+      m.ox2 = Math.cos(back) * r2; m.oy2 = Math.sin(back) * r2;
+      m.x2 = to.x + m.ox2; m.y2 = to.y + m.oy2;
       m.x3 = to.x; m.y3 = to.y;
+      m.target = to;
       m.amp = Math.min(12, Math.max(4, L * 0.028)) * (0.7 + 0.6 * crand());
       m.turns = 1.2 + crand() * 1.1;
       m.phase = crand() * Math.PI * 2;
@@ -163,15 +190,16 @@ export class Motes extends Container {
       m.order = this.orderSeq++;
       this.live++;
     }
-    if (this.live > 0) this.mesh.visible = true;
+    this.dirty = true;
   }
 
   /** Fire every pending onArrive now and clear (skip / reset paths). */
   flush(): void {
-    for (const m of this.pool) {
+    for (let i = 0; i < MAX; i++) {
+      const m = this.pool[i];
       if (!m.active) continue;
       const cb = m.arrived ? null : m.cb;
-      m.active = false; m.cb = null; m.arrived = true;
+      m.active = false; m.cb = null; m.arrived = true; m.target = null;
       if (cb) this.fire(cb);
     }
     this.live = 0;
@@ -180,14 +208,15 @@ export class Motes extends Container {
 
   private alloc(): Mote {
     let oldest: Mote | null = null;
-    for (const m of this.pool) {
+    for (let i = 0; i < MAX; i++) {
+      const m = this.pool[i];
       if (!m.active) return m;
       if (!oldest || m.order < oldest.order) oldest = m;
     }
     // pool exhausted: recycle the oldest; its arrival still fires exactly once
     const m = oldest!;
     if (!m.arrived && m.cb) { const cb = m.cb; m.cb = null; m.arrived = true; this.fire(cb); }
-    m.active = false;
+    m.active = false; m.target = null;
     this.live--;
     return m;
   }
@@ -198,16 +227,21 @@ export class Motes extends Container {
 
   update(dt: number): void {
     if (this.live === 0) { if (this.mesh.visible) this.mesh.visible = false; return; }
+    if (dt <= 0 && !this.dirty) return; // hit-stop: last frame's geometry stays valid
+    this.dirty = false;
     if (dt > 0) {
       this.energy *= Math.exp(-dt / 0.25);
       for (let i = 0; i < MAX; i++) {
         const m = this.pool[i];
         if (!m.active) continue;
         if (!m.arrived) {
+          const tg = m.target;
+          if (tg) { m.x3 = tg.x; m.y3 = tg.y; m.x2 = tg.x + m.ox2; m.y2 = tg.y + m.oy2; }
           m.t += dt;
           if (m.t >= m.dur) {
             m.arrived = true;
             m.flash = 0;
+            m.target = null;
             this.energy += 1;
             const cb = m.cb; m.cb = null;
             if (cb) this.fire(cb);
@@ -251,7 +285,7 @@ export class Motes extends Container {
         pxPrev = x; pyPrev = y;
         const k = 1 - q;
         const w = (1.6 + 5.4 * Math.pow(k, 0.8)) * m.size * (1 + 0.22 * depth);
-        const inten = Math.pow(k, 1.5) * fadeIn * (0.5 + 0.18 * depth) * (m.arrived ? tail0 : 1);
+        const inten = Math.pow(k, 1.5) * fadeIn * (0.62 + 0.2 * depth) * (m.arrived ? tail0 : 1);
         const core = Math.pow(k, 2.2) * fadeIn * 0.85 * (m.arrived ? tail0 : 1);
         const nx = -dy * w, ny = dx * w;
         let o = nv * STRIDE;
@@ -268,7 +302,7 @@ export class Motes extends Container {
       if (!m.arrived) {
         evalPath(m, m.t);
         const pop = Math.min(1, m.t / 0.1);
-        const R = 15 * m.size * (1 + 0.28 * PD) * (0.55 + 0.45 * pop);
+        const R = 17 * m.size * (1 + 0.28 * PD) * (0.55 + 0.45 * pop);
         const hi = (0.85 + 0.25 * PD) * fadeIn;
         nv = this.quad(nv, PX, PY, R, m.r * hi, m.g * hi, m.b * hi, hi, 1);
         ix[ni++] = nv - 4; ix[ni++] = nv - 3; ix[ni++] = nv - 2; ix[ni++] = nv - 4; ix[ni++] = nv - 2; ix[ni++] = nv - 1;
@@ -303,12 +337,7 @@ export class Motes extends Container {
   }
 }
 
-/** Compile the mote program ahead of the first win (called by ScreenShatter's pre-warm). */
+/** Compile the mote program ahead of the first win (called by ScreenShatter's pre-warm). Uses no cosmetic RNG. */
 export function prewarmMotes(renderer: Renderer, target: RenderTexture): void {
-  const m = new Motes();
-  m.launch({ x: 0, y: 0 }, { x: 2, y: 2 }, 1, { dur: 0.2 });
-  m.update(0.05);
-  renderer.render({ container: m, target, clear: false });
-  m.flush();
-  m.destroy({ children: true });
+  Motes.prewarm(renderer, target);
 }

@@ -16,26 +16,35 @@ export function stemLoopFrames(def: StemDef, sr: number): number {
   return barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, sr) * def.bars;
 }
 
+/** Main-thread cost per asset (ms): graph build, offline render wall time, post-processing. */
+export const RENDER_STATS = new Map<string, { build: number; render: number; post: number }>();
+const clock = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
 /** Render one asset at `sr`. Throws only if the platform lacks OfflineAudioContext. */
 export async function renderAsset(id: string, sr: number): Promise<AudioBuffer> {
   const stem = STEM_BY_ID[id];
+  const a = SFX_ASSETS[id];
+  if (!stem && !a) throw new Error('unknown audio asset ' + id);
+  const t0 = clock();
+  let ctx: OfflineAudioContext;
   if (stem) {
     const g = grid(stem.group === 'base' ? BASE_BPM : STORM_BPM, sr, stem.bars, stem.tail);
-    const ctx = new OfflineAudioContext(stem.ch, Math.ceil(g.end * sr), sr);
+    ctx = new OfflineAudioContext(stem.ch, Math.ceil(g.end * sr), sr);
     const out = ctx.createGain();
     out.connect(ctx.destination);
     stem.build(ctx, out, g);
-    const raw = await ctx.startRendering();
-    return finishLoop(raw, stemLoopFrames(stem, sr), stem.rmsDb);
+  } else {
+    ctx = new OfflineAudioContext(a.ch, Math.ceil(a.dur * sr), sr);
+    const out = ctx.createGain();
+    out.connect(ctx.destination);
+    a.build(ctx, out);
   }
-  const a = SFX_ASSETS[id];
-  if (!a) throw new Error('unknown audio asset ' + id);
-  const ctx = new OfflineAudioContext(a.ch, Math.ceil(a.dur * sr), sr);
-  const out = ctx.createGain();
-  out.connect(ctx.destination);
-  a.build(ctx, out);
+  const t1 = clock();
   const raw = await ctx.startRendering();
-  return finishOneShot(raw, SFX_PEAK);
+  const t2 = clock();
+  const res = stem ? finishLoop(raw, stemLoopFrames(stem, sr), stem.rmsDb) : finishOneShot(raw, SFX_PEAK);
+  RENDER_STATS.set(id, { build: t1 - t0, render: t2 - t1, post: clock() - t2 });
+  return res;
 }
 
 /**
@@ -49,7 +58,7 @@ export const RENDER_ORDER: string[] = [
   'land74b', 'land79b', 'land84b', 'land69b', 'land89b', 'land94b', 'spin1', 'spin2',
   'returnTick0', 'returnTick1', 'chime74', 'chime81', 'chime86', 'chime93', 'shatter0', 'shatter1', 'shatter2',
   'nettoCross', 'markUp', 'mote0', 'mote1', 'sun1', 'sun2', 'sun3', 'anticipation', 'countTick', 'win1', 'win2',
-  'stakeUp', 'stakeDown', 'levelUp50', 'levelUp62',
+  'stakeUp', 'stakeDown', 'levelUp62', 'levelUp74',
   'stormSwell', 'stormRiser', 'impact', 'drop808', 'glassXL', 'reform', 'letterSlam0', 'letterSlam1', 'storm0',
   'base1', 'base2', 'base3', 'base4',
   'bigWin3', 'bigWin4', 'bigWin5', 'waveBoom', 'summary', 'fade',

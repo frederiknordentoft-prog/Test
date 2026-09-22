@@ -205,7 +205,7 @@ export function bell(ctx: Ctx, out: AudioNode, t: number, f: number, amp: number
 export function chimeVoice(ctx: Ctx, out: AudioNode, t: number, f: number, amp: number, tau = 0.9): void {
   const lp = filt(ctx, 'lowpass', 11000, 0.5);
   lp.connect(out);
-  const parts: [number, number, number][] = [[1, 1, 1], [2.756, 0.42, 0.45], [5.404, 0.2, 0.22], [2.0, 0.18, 0.7]];
+  const parts: [number, number, number][] = [[1, 1, 1], [2.756, 0.5, 0.45], [5.404, 0.26, 0.22], [2.0, 0.18, 0.7]];
   for (const [r, a, d] of parts) {
     if (f * r > ctx.sampleRate * 0.45) continue;
     for (const det of [-2.5, 2.5]) {
@@ -223,7 +223,7 @@ export function chimeVoice(ctx: Ctx, out: AudioNode, t: number, f: number, amp: 
   mg.gain.setTargetAtTime(0, t, 0.05);
   mod.connect(mg).connect(car.frequency);
   const ag = gain(ctx, 0);
-  perc(ag.gain, t, amp * 0.1, 0.001, 0.08);
+  perc(ag.gain, t, amp * 0.16, 0.001, 0.08);
   car.connect(ag).connect(lp);
 }
 
@@ -265,26 +265,39 @@ export function gong(ctx: Ctx, out: AudioNode, t: number, f: number, amp: number
 }
 
 export interface BrassOpts { a?: number; r?: number; bright?: number; det?: number; pan?: number; scoop?: number }
-/** Brass-like filtered saw stack (3 detuned saws, filter "blat" envelope, pitch scoop). */
+/**
+ * Brass-like saw stack (3 detuned saws, pitch scoop). The filter "blat" is two STATIC low-passes
+ * (bright + body) crossfaded by gain envelopes — cheap (no per-sample biquad coefficient updates).
+ */
 export function brass(ctx: Ctx, out: AudioNode, t: number, dur: number, f: number, amp: number, o: BrassOpts = {}): void {
   const a = o.a ?? 0.05, r = o.r ?? 0.35, bright = o.bright ?? 1, det = o.det ?? 7;
   const end = t + dur + r * 6;
-  const lp = filt(ctx, 'lowpass', 300, 0.9);
+  const src = gain(ctx, 1);
   const peakF = Math.min(ctx.sampleRate * 0.4, (900 + f * 5) * bright);
-  lp.frequency.setValueAtTime(f * 1.2, t);
-  lp.frequency.linearRampToValueAtTime(peakF, t + a + 0.06);
-  lp.frequency.setTargetAtTime(peakF * 0.55, t + a + 0.06, 0.25);
-  lp.frequency.setTargetAtTime(f * 1.5, t + dur, r);
+  const lpB = filt(ctx, 'lowpass', peakF, 0.9);
+  const lpD = filt(ctx, 'lowpass', Math.min(ctx.sampleRate * 0.4, f * 2.4 + 250), 0.7);
+  const gB = gain(ctx, 0), gD = gain(ctx, 0);
+  // bright path blooms then settles (the "blat"); body path sustains
+  gB.gain.setValueAtTime(0, t);
+  gB.gain.linearRampToValueAtTime(0.75, t + a + 0.05);
+  gB.gain.linearRampToValueAtTime(0.3, t + a + 0.4);
+  gB.gain.linearRampToValueAtTime(0, t + dur + r);
+  gD.gain.setValueAtTime(0.25, t);
+  gD.gain.linearRampToValueAtTime(0.8, t + a + 0.3);
+  src.connect(lpB).connect(gB);
+  src.connect(lpD).connect(gD);
   const g = gain(ctx, 0);
   swell(g.gain, t, dur, amp, a / 2.5, r / 3);
   const pn = pan(ctx, o.pan ?? 0);
-  lp.connect(g).connect(pn).connect(out);
+  gB.connect(g); gD.connect(g);
+  g.connect(pn).connect(out);
   const scoop = o.scoop ?? -35;
   for (const d of [-det, 0, det]) {
     const x = osc(ctx, 'sawtooth', f, t, end, d + scoop);
-    x.detune.setTargetAtTime(d, t, 0.03);
+    x.detune.setValueAtTime(d + scoop, t);
+    x.detune.linearRampToValueAtTime(d, t + 0.07);
     const xg = gain(ctx, 0.33);
-    x.connect(xg).connect(lp);
+    x.connect(xg).connect(src);
   }
 }
 
@@ -426,8 +439,12 @@ export function finishOneShot(b: AudioBuffer, peak: number, floorDb = -64): Audi
     const d = b.getChannelData(c);
     for (let i = d.length - 1; i > last; i--) if (Math.abs(d[i]) > thr) { last = i; break; }
   }
-  const fade = Math.floor(0.03 * sr);
-  const len = Math.min(b.length, last + fade + 1);
+  // Decayed below the floor → short 30 ms fade after the last audible sample; otherwise the render was
+  // cut while still ringing → long (≤ 300 ms, ≤ 15 %) fade so the cut is a natural-sounding decay.
+  const short = Math.floor(0.03 * sr);
+  const ringing = last >= b.length - short - 1;
+  const fade = ringing ? Math.min(Math.floor(0.3 * sr), Math.floor(b.length * 0.15)) : short;
+  const len = Math.min(b.length, last + (ringing ? 0 : fade) + 1);
   const out = newBuffer(ch, len, sr);
   for (let c = 0; c < ch; c++) {
     const src = b.getChannelData(c).subarray(0, len);

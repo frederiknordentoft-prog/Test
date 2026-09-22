@@ -84,7 +84,7 @@
    "pass": true
   },
   {
-   "name": "Basis (klynger + sole)",
+   "name": "Basisspil (klynger + sole)",
    "req": "79–81 %",
    "value": "80,51 %",
    "pass": true
@@ -140,13 +140,13 @@
   {
    "name": "Storm, gennemsnit E[S]",
    "req": "180–230×",
-   "value": "201.9× ± 0.6",
+   "value": "201,9× ± 0,6",
    "pass": true
   },
   {
    "name": "Storm P10 (før garanti)",
    "req": "≥ 15×",
-   "value": "24.6×",
+   "value": "24,6×",
    "pass": true
   },
   {
@@ -164,7 +164,7 @@
   {
    "name": "Max-win cap ramt",
    "req": "≤ 1 pr. 10⁴ storme",
-   "value": "20 af 1.000.000 (0.20 pr. 10⁴)",
+   "value": "20 af 1.000.000 (0,20 pr. 10⁴)",
    "pass": true
   },
   {
@@ -181,8 +181,8 @@
   },
   {
    "name": "E2E-krydstjek",
-   "req": "|e2e − dek| ≤ 1,96·√(SE²+SE²)",
-   "value": "95,786 % vs 96,035 %",
+   "req": "afvigelse ≤ 1,96·√(SE²+SE²)",
+   "value": "95,992 % ± 0,160 % (2 stikprøver, 90.829 storme) vs 96,035 %; z = -0,49",
    "pass": true
   }
  ],
@@ -776,5 +776,23 @@
    "modelHash": "a346b7d2622ae0033b614fe38dfdaec1487b68fd918509268317737f1172b39d",
    "generatedAt": "2026-09-22T20:44:38.395Z (tune, provisional)"
   }
+ },
+ "e2eSupplement": [
+  {
+   "seed": 1967957418,
+   "n": 80000000,
+   "cycles": 36347,
+   "storms": 60566,
+   "rtpCycles": 0.961035851,
+   "seCycles": 0.001015273711,
+   "elapsedS": 214.928
+  }
+ ],
+ "e2ePooled": {
+  "rtp": 0.9599225574,
+  "se": 0.000817895412,
+  "samples": 2,
+  "storms": 90829,
+  "z": -0.4886630074
  }
 }

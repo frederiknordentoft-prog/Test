@@ -14,7 +14,9 @@ import {
 } from 'pixi.js';
 import { getAtlas, type IsAtlas } from './atlas.ts';
 import { CAP } from './glyphs.ts';
-import { isProgram, writeStyle, N_VEC, U_GLOW, U_SWEEP, U_REVEAL, U_TIME, U_TEXTW, U_REVK, type IsStyle } from './shader.ts';
+import {
+  isProgram, writeStyle, N_VEC, U_GLOW, U_SWEEP, U_REVEAL, U_TIME, U_TEXTW, U_REVK, U_SLITY, U_SLITW, U_REFLECT, U_HORIZON, type IsStyle,
+} from './shader.ts';
 
 export type { IsStyle } from './shader.ts';
 export type IsAlign = 'center' | 'left' | 'right';
@@ -30,6 +32,17 @@ export interface IsTextOptions {
   /** logo ornaments (star glint) for display words; default true */
   decor?: boolean;
 }
+
+/**
+ * Logo lockups: display words get a signature treatment when set at ≥ 22 px —
+ * a horizon slit through every letter (reflection tint below it), a horizon light
+ * streak running through the slit past both ends, and a star glint on the O.
+ */
+interface Lockup { slitY: number; slitW: number; reflect: number; glint: string; gx: number; gy: number; gs: number; streak: number }
+const LOCKUPS: Record<string, Lockup> = {
+  NORDLYS: { slitY: 4.1, slitW: 0.62, reflect: 1, glint: 'O', gx: 0.86, gy: 13.0, gs: 12, streak: 1.5 },
+  SOLSTORM: { slitY: 4.1, slitW: 0.62, reflect: 0.7, glint: 'O', gx: 0.86, gy: 13.0, gs: 12, streak: 1.3 },
+};
 
 const FLOATS = 10;           // per vertex: pos2 uv2 text2 misc4
 const STRIDE = FLOATS * 4;
@@ -101,9 +114,12 @@ export class IsText extends Container {
   private _gid = new Int16Array(8);
   private _gx = new Float32Array(8);    // glyph origin x (units, text space)
   private _tick = new Int32Array(8);
-  private _nDecor = 0;
-  private _decorOf = new Int16Array(2);  // letter index each decor quad follows
-  private _decorP = new Float32Array(8); // decor: cx, cy (units, glyph space), size, seed
+  private _under = 0;                   // decor quads drawn beneath the glyphs (streak)
+  private _over = 0;                    // decor quads drawn above (glint)
+  private _glintOf = 0;                 // letter the glint follows
+  private _lock: Lockup | null = null;
+  private _inkL = 0;                    // ink extent (units, after alignment offset)
+  private _inkR = 0;
   private _dirty = false;
   private _bounds = new Rectangle();
 
@@ -235,10 +251,12 @@ export class IsText extends Container {
       const c = s.charCodeAt(i);
       if (c < lut.length && lut[c] >= 0) count++;
     }
-    // decor: star glint on the O of display words
-    const decorOn = this._decor && this._size >= 22 && (s === 'NORDLYS' || s === 'SOLSTORM');
-    const nDecor = decorOn ? 1 : 0;
-    this._ensure(count + nDecor, count);
+    // logo lockup (display words only)
+    const lock = this._decor && this._size >= 22 ? LOCKUPS[s] ?? null : null;
+    this._lock = lock;
+    this._under = lock && lock.streak > 0 ? 1 : 0;
+    this._over = lock && lock.glint ? 1 : 0;
+    this._ensure(this._under + count + this._over, count);
     // pass 2: pen positions
     const track = this._tracking * CAP;
     let pen = 0, prev = -1, k = 0;
@@ -276,16 +294,20 @@ export class IsText extends Container {
         this.letters.push(L);
       } else if (L.visible) L.visible = false;
     }
-    // decor anchor
-    this._nDecor = nDecor;
-    if (nDecor) {
-      const oi = s.indexOf('O');
+    this._inkL = inkL + off;
+    this._inkR = inkR + off;
+    if (lock) {
       let li = 0;
-      for (let i = 0, kk = 0; i < s.length && i <= oi; i++) { const c = s.charCodeAt(i); if (c < lut.length && lut[c] >= 0) { li = kk; kk++; } }
-      this._decorOf[0] = li;
-      const g = G[this._gid[li]];
-      this._decorP[0] = g.w * 0.86; this._decorP[1] = 13.2; this._decorP[2] = 9.5; this._decorP[3] = 0.37;
+      for (let i = 0, kk = 0; i < s.length; i++) {
+        const c = s.charCodeAt(i);
+        if (c < lut.length && lut[c] >= 0) { if (s[i] === lock.glint) { li = kk; break; } kk++; }
+      }
+      this._glintOf = li;
     }
+    this._u[U_SLITY] = lock ? lock.slitY : 0;
+    this._u[U_SLITW] = lock ? lock.slitW : 0;
+    this._u[U_REFLECT] = lock ? lock.reflect : 0;
+    this._u[U_HORIZON] = lock ? lock.slitY / CAP : 0.5;
     // text-space uniforms
     this._u[U_TEXTW] = W;
     // bounds: cap-height box around the ink
@@ -296,8 +318,8 @@ export class IsText extends Container {
     this._bounds.height = CAP * sc;
     // write every quad
     for (let j = 0; j < count; j++) this._writeQuad(j);
-    for (let d = 0; d < nDecor; d++) this._writeDecor(d, count + d);
-    const used = count + nDecor;
+    this._writeDecor();
+    const used = this._under + count + this._over;
     if (this._prevUsed > used) this._v.fill(0, used * QUAD, this._prevUsed * QUAD);
     this._used = used;
     this._upload(Math.max(used, this._prevUsed));
@@ -321,7 +343,7 @@ export class IsText extends Container {
     const cx = g.w / 2, cy = CAP / 2;               // pivot: glyph centre (units)
     const phase = this.letters.length > 1 ? j / (this.letters.length - 1) : 0;
     const v = this._v;
-    let o = j * QUAD;
+    let o = (this._under + j) * QUAD;
     const u0 = g.px / A.width, v0 = g.py / A.height;
     const u1 = (g.px + g.pw) / A.width, v1 = (g.py + g.ph) / A.height;
     const gx = this._gx[j];
@@ -344,35 +366,51 @@ export class IsText extends Container {
     }
   }
 
-  private _writeDecor(d: number, q: number): void {
-    const li = this._decorOf[d];
-    const L = this._pool[li] as Tickable;
-    L.updateLocalTransform();
-    const m = L.localTransform;
-    const g = this._atlas.glyphs[this._gid[li]];
-    const sc = this._pxu;
-    const px = this._decorP[d * 4], py = this._decorP[d * 4 + 1], hs = this._decorP[d * 4 + 2];
-    const cx = g.w / 2, cy = CAP / 2;
-    const alpha = L.visible ? L.alpha : 0;
-    const phase = this.letters.length > 1 ? li / (this.letters.length - 1) : 0;
-    const v = this._v;
-    let o = q * QUAD;
-    // any texel of the atlas gutter works as a dummy uv (the decor branch ignores it)
-    for (let c = 0; c < 4; c++) {
-      const right = c === 1 || c === 2, bottom = c >= 2;
-      const qx = right ? 1 : -1, qy = bottom ? -1 : 1;
-      const lx = (px + qx * hs - cx) * sc, ly = (cy - (py + qy * hs * 0.75)) * sc;
-      v[o] = m.a * lx + m.c * ly + m.tx;
-      v[o + 1] = m.b * lx + m.d * ly + m.ty;
-      v[o + 2] = 0.5 / this._atlas.width;
-      v[o + 3] = 0.5 / this._atlas.height;
-      v[o + 4] = qx;
-      v[o + 5] = qy;
-      v[o + 6] = alpha;
-      v[o + 7] = phase;
-      v[o + 8] = 1;
-      v[o + 9] = this._decorP[d * 4 + 3];
-      o += FLOATS;
+  /** Streak (under the glyphs, follows the whole word) and glint (over, follows its letter). */
+  private _writeDecor(): void {
+    const lock = this._lock;
+    if (!lock) return;
+    const v = this._v, sc = this._pxu, n = this.letters.length;
+    const du = 0.5 / this._atlas.width, dv = 0.5 / this._atlas.height; // dummy uv (gutter texel)
+    if (this._under) {
+      let a = 0;
+      for (let j = 0; j < n; j++) { const L = this._pool[j]; a += L.visible ? L.alpha : 0; }
+      a = n ? a / n : 1;
+      const ext = lock.streak * CAP;
+      const x0 = (this._inkL - ext) * sc, x1 = (this._inkR + ext) * sc;
+      const yc = (CAP / 2 - lock.slitY) * sc, hh = 2.8 * sc;
+      let o = 0;
+      for (let c = 0; c < 4; c++) {
+        const right = c === 1 || c === 2, bottom = c >= 2;
+        v[o] = right ? x1 : x0; v[o + 1] = yc + (bottom ? hh : -hh);
+        v[o + 2] = du; v[o + 3] = dv;
+        v[o + 4] = right ? 1 : -1; v[o + 5] = bottom ? -1 : 1;
+        v[o + 6] = a; v[o + 7] = 0.5; v[o + 8] = 2; v[o + 9] = 0;
+        o += FLOATS;
+      }
+    }
+    if (this._over && n > 0) {
+      const li = this._glintOf;
+      const L = this._pool[li] as Tickable;
+      L.updateLocalTransform();
+      const m = L.localTransform;
+      const g = this._atlas.glyphs[this._gid[li]];
+      const px = g.w * lock.gx, py = lock.gy, hs = lock.gs;
+      const cx = g.w / 2, cy = CAP / 2;
+      const alpha = L.visible ? L.alpha : 0;
+      const phase = n > 1 ? li / (n - 1) : 0;
+      let o = (this._under + n) * QUAD;
+      for (let c = 0; c < 4; c++) {
+        const right = c === 1 || c === 2, bottom = c >= 2;
+        const qx = right ? 1 : -1, qy = bottom ? -1 : 1;
+        const lx = (px + qx * hs - cx) * sc, ly = (cy - (py + qy * hs * 0.75)) * sc;
+        v[o] = m.a * lx + m.c * ly + m.tx;
+        v[o + 1] = m.b * lx + m.d * ly + m.ty;
+        v[o + 2] = du; v[o + 3] = dv;
+        v[o + 4] = qx; v[o + 5] = qy;
+        v[o + 6] = alpha; v[o + 7] = phase; v[o + 8] = 1; v[o + 9] = 0.37;
+        o += FLOATS;
+      }
     }
   }
 
@@ -388,7 +426,7 @@ export class IsText extends Container {
       }
     }
     if (dirty) {
-      for (let d = 0; d < this._nDecor; d++) this._writeDecor(d, n + d);
+      this._writeDecor();
       this._upload(this._used);
     }
   };
