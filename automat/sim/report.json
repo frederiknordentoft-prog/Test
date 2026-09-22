@@ -1,0 +1,780 @@
+{
+ "report": {
+  "rtp": 0.9603454021,
+  "rtpMin": 0.8663311447,
+  "meterShare": 0.09401425744,
+  "hitRate": 0.4500179,
+  "netWinRate": 0.2869079583,
+  "ldwShareOfHits": 0.3389999783,
+  "stormRate": 0.0007579895462,
+  "routeARate": 0.000454580802,
+  "routeBRate": 0.0003034087442,
+  "avgSpinsToKp9": 2199.828931,
+  "stormMeanX": 201.9064923,
+  "stormP10X": 24.55,
+  "stormP50X": 112.415,
+  "stormP90X": 458.27,
+  "stormP99X": 1304.355,
+  "guaranteeUseRate": 0.132338,
+  "baseSdX": 1.965783266,
+  "blendedSdX": 9.82153705,
+  "perStormSpinRtp": 19.60522924,
+  "baseSpinRtp": 0.8051460008,
+  "kpMedianSpins": [
+   11,
+   30,
+   71,
+   135,
+   245,
+   420,
+   684,
+   1211,
+   2201
+  ],
+  "spinsSimulated": 120000000,
+  "stormsSimulated": 1000000,
+  "variants": [
+   {
+    "rtp": 0.96,
+    "payScale": 1,
+    "stormPayScale": 0.2781
+   },
+   {
+    "rtp": 0.94,
+    "payScale": 0.97874,
+    "stormPayScale": 0.2722
+   },
+   {
+    "rtp": 0.92,
+    "payScale": 0.95748,
+    "stormPayScale": 0.2663
+   }
+  ],
+  "rtpCi95": 0.0005536941374,
+  "clusterRtp": 0.7892651508,
+  "sunRtp": 0.01588630705,
+  "perkRtp": 0.002156390833,
+  "stormARtp": 0.09178281519,
+  "stormBRtp": 0.06126019527,
+  "avgChargePerSpin": 5.5869312,
+  "kpMeanSpins": [
+   11.4,
+   29.6,
+   69.1,
+   134.2,
+   244.1,
+   419,
+   682.8,
+   1210,
+   2199.8
+  ],
+  "minWinX": 0.4,
+  "capHitRate": 0.00002,
+  "guaranteeCostShare": 0.007786532678,
+  "baseP99X": 6.960724163,
+  "blendedP99X": 7.345590457,
+  "modelHash": "a346b7d2622ae0033b614fe38dfdaec1487b68fd918509268317737f1172b39d",
+  "generatedAt": "2026-09-22T21:00:08.282Z (sim/run.ts)"
+ },
+ "gates": [
+  {
+   "name": "Samlet RTP",
+   "req": "96,00 ± 0,10 %",
+   "value": "96,035 % (95 %-CI ± 0,055 %)",
+   "pass": true
+  },
+  {
+   "name": "Basis (klynger + sole)",
+   "req": "79–81 %",
+   "value": "80,51 %",
+   "pass": true
+  },
+  {
+   "name": "Minimum-RTP uden gemt fremskridt (basis + rute B)",
+   "req": "≥ 86 %",
+   "value": "86,63 % ± 0,04 %",
+   "pass": true
+  },
+  {
+   "name": "Målerafhængig andel",
+   "req": "≤ 10 pp",
+   "value": "9,40 pp",
+   "pass": true
+  },
+  {
+   "name": "Net-win (T > indsats)",
+   "req": "≥ 25 % af betalte spil",
+   "value": "28,69 %",
+   "pass": true
+  },
+  {
+   "name": "Hitrate (T > 0)",
+   "req": "≥ 43 %",
+   "value": "45,00 %",
+   "pass": true
+  },
+  {
+   "name": "LDW-andel af hits (0 < T < indsats)",
+   "req": "≤ 45 %",
+   "value": "33,90 %",
+   "pass": true
+  },
+  {
+   "name": "Solstorm samlet",
+   "req": "1:1.100–1:1.600",
+   "value": "1:1.319",
+   "pass": true
+  },
+  {
+   "name": "· rute A (Kp 9)",
+   "req": "≈ 1:2.200",
+   "value": "1:2.200",
+   "pass": true
+  },
+  {
+   "name": "· rute B (4+ sole)",
+   "req": "≈ 1:3.300",
+   "value": "1:3.296",
+   "pass": true
+  },
+  {
+   "name": "Storm, gennemsnit E[S]",
+   "req": "180–230×",
+   "value": "201.9× ± 0.6",
+   "pass": true
+  },
+  {
+   "name": "Storm P10 (før garanti)",
+   "req": "≥ 15×",
+   "value": "24.6×",
+   "pass": true
+  },
+  {
+   "name": "Garanti brugt",
+   "req": "≤ 20 % af storme",
+   "value": "13,23 %",
+   "pass": true
+  },
+  {
+   "name": "Garantiens pris",
+   "req": "≤ 5 % af E[S]",
+   "value": "0,78 %",
+   "pass": true
+  },
+  {
+   "name": "Max-win cap ramt",
+   "req": "≤ 1 pr. 10⁴ storme",
+   "value": "20 af 1.000.000 (0.20 pr. 10⁴)",
+   "pass": true
+  },
+  {
+   "name": "Kp-tiers inden for 150 spil (median)",
+   "req": "≥ 3",
+   "value": "4 (≥ 3 for 100,0 % af spillerne)",
+   "pass": true
+  },
+  {
+   "name": "Stake-switch adversary",
+   "req": "edge ≤ 0",
+   "value": "max RTP 96,44 % ± 0,11 % (perkSnipe)",
+   "pass": true
+  },
+  {
+   "name": "E2E-krydstjek",
+   "req": "|e2e − dek| ≤ 1,96·√(SE²+SE²)",
+   "value": "95,786 % vs 96,035 %",
+   "pass": true
+  }
+ ],
+ "config": {
+  "cols": 6,
+  "rows": 6,
+  "stormCols": 8,
+  "stormRows": 8,
+  "weights": [
+   26,
+   25,
+   23,
+   22,
+   10,
+   8,
+   6,
+   2.3
+  ],
+  "stormWeights": [
+   26,
+   25,
+   23,
+   22,
+   10,
+   8,
+   6,
+   3
+  ],
+  "pSun": 0.06897,
+  "pSunStorm": 0.06,
+  "paytable": [
+   [
+    0.4,
+    1.1,
+    1.3,
+    1.6,
+    2.2,
+    3.5,
+    7,
+    20
+   ],
+   [
+    0.5,
+    1.1,
+    1.4,
+    1.7,
+    2.5,
+    4,
+    8,
+    25
+   ],
+   [
+    0.5,
+    1.2,
+    1.5,
+    1.9,
+    2.8,
+    4.5,
+    9,
+    30
+   ],
+   [
+    0.6,
+    1.3,
+    1.6,
+    2.1,
+    3,
+    5,
+    10,
+    40
+   ],
+   [
+    1.2,
+    1.8,
+    2.6,
+    3.8,
+    6,
+    10,
+    25,
+    80
+   ],
+   [
+    1.6,
+    2.5,
+    3.6,
+    5.5,
+    9,
+    15,
+    40,
+    120
+   ],
+   [
+    2.5,
+    4,
+    6,
+    9,
+    15,
+    25,
+    60,
+    250
+   ]
+  ],
+  "payScale": 1,
+  "stormPayScale": 0.2781,
+  "K": 12290,
+  "baseMarkCap": 32,
+  "stormMarkCap": 128,
+  "stormSpins": 10,
+  "stormStartMarks": 6,
+  "retriggerSpins": 3,
+  "maxStormSpins": 20,
+  "guaranteeX": 30,
+  "maxWinX": 10000,
+  "sunPayX": 3,
+  "sunCharge": 150,
+  "stakesOre": [
+   50,
+   100,
+   200,
+   400,
+   600,
+   1000,
+   2000,
+   5000,
+   10000
+  ],
+  "defaultStakeOre": 200,
+  "modelHash": "a346b7d2622ae0033b614fe38dfdaec1487b68fd918509268317737f1172b39d"
+ },
+ "seeds": {
+  "base": 1313624624,
+  "storm": 1313624880,
+  "e2e": 1313621296,
+  "adv": 1330397891
+ },
+ "samples": {
+  "base": 120000000,
+  "storm": 1000000,
+  "e2e": 40000000,
+  "adv": 4000000,
+  "stakeStorms": 100000,
+  "chunks": 48,
+  "quick": false
+ },
+ "elapsedS": 630.526,
+ "decomposition": {
+  "stake": 200,
+  "n": 120000000,
+  "base": 0.8051460008,
+  "sdBase": 1.965783266,
+  "clusterRtp": 0.7892651508,
+  "sunRtp": 0.01588630705,
+  "sunRtpSampled": 0.01588085,
+  "perkRtp": 0.002156390833,
+  "perkRate": 0.001364125,
+  "perkEV": 1.580786829,
+  "BP": 0.8073023917,
+  "seBP": 0.0001802769004,
+  "EN": 2199.828931,
+  "sdN": 106.6768993,
+  "seEN": 0.45686143,
+  "cycles": 54522,
+  "overshoot": 16.96660064,
+  "pB": 0.0003030370305,
+  "p3": 0.005295435683,
+  "rA": 0.000454580802,
+  "rBall": 0.0003034504109,
+  "rAB": 4.166666667e-8,
+  "countedRates": {
+   "stormA": 0.00045435,
+   "stormB": 0.0003044083333,
+   "stormBpaid": 0.0003040083333,
+   "stormBperk": 4e-7,
+   "stormAB": 4.166666667e-8
+  },
+  "stormRate": 0.0007579895462,
+  "rtp": 0.9603454021,
+  "seRtp": 0.0002825021977,
+  "ci95": 0.0005536941374,
+  "rtpMin": 0.8663311447,
+  "seMin": 0.0001992630654,
+  "hits": 0.4500179,
+  "net": 0.2869079583,
+  "push": 0.01055388333,
+  "ldw": 0.1525560583,
+  "sun3": 0.005293616667,
+  "sun4": 0.0003040083333,
+  "cappedBase": 0,
+  "maxBaseX": 735.2,
+  "baseQuantiles": [
+   {
+    "q": 0.5,
+    "x": 0
+   },
+   {
+    "q": 0.75,
+    "x": 1.101928941
+   },
+   {
+    "q": 0.9,
+    "x": 2.188518642
+   },
+   {
+    "q": 0.95,
+    "x": 3.189747167
+   },
+   {
+    "q": 0.99,
+    "x": 6.960724163
+   },
+   {
+    "q": 0.999,
+    "x": 22.13903045
+   }
+  ],
+  "chargeMean": 5.5869312,
+  "chargeSd": 12.75876941,
+  "kpMedianSpins": [
+   11,
+   30,
+   71,
+   135,
+   245,
+   420,
+   684,
+   1211,
+   2201
+  ],
+  "kpMeanSpins": [
+   11.4,
+   29.6,
+   69.1,
+   134.2,
+   244.1,
+   419,
+   682.8,
+   1210,
+   2199.8
+  ],
+  "tiersBy150": [
+   0,
+   0,
+   0,
+   14870,
+   39449,
+   249,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tiersBy150Median": 4,
+  "tiersBy150AtLeast3": 1
+ },
+ "storms": {
+  "n": 1000000,
+  "stake": 200,
+  "ES": 201.9064923,
+  "sdS": 285.8437069,
+  "seES": 0.2858437069,
+  "meanW": 200.3343408,
+  "meanG": 1.5721515,
+  "guarUse": 0.132338,
+  "guarCost": 0.007786532678,
+  "capped": 20,
+  "capRate": 0.00002,
+  "avgSpins": 10.298604,
+  "retriggerRate": 0.092605,
+  "perStormSpinRtp": 19.60522924,
+  "quantilesW": [
+   {
+    "q": 0.01,
+    "x": 6.555
+   },
+   {
+    "q": 0.05,
+    "x": 15.72
+   },
+   {
+    "q": 0.1,
+    "x": 24.55
+   },
+   {
+    "q": 0.2,
+    "x": 41.605
+   },
+   {
+    "q": 0.25,
+    "x": 50.79
+   },
+   {
+    "q": 0.5,
+    "x": 112.415
+   },
+   {
+    "q": 0.75,
+    "x": 241.13
+   },
+   {
+    "q": 0.9,
+    "x": 458.27
+   },
+   {
+    "q": 0.95,
+    "x": 662.9
+   },
+   {
+    "q": 0.99,
+    "x": 1304.355
+   },
+   {
+    "q": 0.999,
+    "x": 2945.425
+   },
+   {
+    "q": 0.9999,
+    "x": 6118.645
+   }
+  ],
+  "maxW": 10000,
+  "maxMarkHist": [
+   0,
+   0,
+   0,
+   0.000313,
+   0.012876,
+   0.081731,
+   0.192149,
+   0.712931
+  ],
+  "spinsHist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.000001,
+   0.000001,
+   0.907393,
+   0,
+   0.000002,
+   0.086108,
+   0.000002,
+   0.000001,
+   0.006065,
+   0,
+   0,
+   0.000394,
+   0.000033
+  ],
+  "stakeCheck": [
+   {
+    "stakeOre": 50,
+    "meanW": 200.2797602
+   },
+   {
+    "stakeOre": 200,
+    "meanW": 200.2749686
+   },
+   {
+    "stakeOre": 10000,
+    "meanW": 200.275964
+   }
+  ]
+ },
+ "e2e": {
+  "n": 40000000,
+  "cycles": 18148,
+  "storms": 30263,
+  "stormsA": 18148,
+  "stormsB": 12115,
+  "rtpCycles": 0.9578642827,
+  "seCycles": 0.001380479447,
+  "rtpPlain": 0.9577030567,
+  "sd": 9.70399833,
+  "pass": true,
+  "p99": 7.345590457
+ },
+ "adversary": [
+  {
+   "strategy": "const",
+   "rtp": 0.9601907912,
+   "se": 0.00009369743685,
+   "edge": -0.03980920875,
+   "vsConst": 0,
+   "rawRtp": 0.956454602,
+   "stormsA": 1815,
+   "perks": 5468,
+   "stakedKr": 8000000,
+   "perkShare": 0.002244575687,
+   "stormAShare": 0.09161507087
+  },
+  {
+   "strategy": "lowHigh",
+   "rtp": 0.9581034823,
+   "se": 0.000183333209,
+   "edge": -0.04189651773,
+   "vsConst": -0.002087308977,
+   "rawRtp": 0.9496899204,
+   "stormsA": 1815,
+   "perks": 5468,
+   "stakedKr": 180671553,
+   "perkShare": 0.00002484702932,
+   "stormAShare": 0.09174749055
+  },
+  {
+   "strategy": "highLow",
+   "rtp": 0.9618781241,
+   "se": 0.0001410376312,
+   "edge": -0.03812187587,
+   "vsConst": 0.001687332886,
+   "rawRtp": 0.9619600983,
+   "stormsA": 1815,
+   "perks": 5468,
+   "stakedKr": 221328447,
+   "perkShare": 0.004056551641,
+   "stormAShare": 0.09149042781
+  },
+  {
+   "strategy": "random",
+   "rtp": 0.9601812009,
+   "se": 0.0001784647161,
+   "edge": -0.03981879908,
+   "vsConst": -0.000009590322807,
+   "rawRtp": 0.9596401277,
+   "stormsA": 1815,
+   "perks": 5468,
+   "stakedKr": 86005140,
+   "perkShare": 0.002248278182,
+   "stormAShare": 0.09160177805
+  },
+  {
+   "strategy": "perkHunt",
+   "rtp": 0.9639952883,
+   "se": 0.0005790602208,
+   "edge": -0.0360047117,
+   "vsConst": 0.003804497058,
+   "rawRtp": 0.9776705863,
+   "stormsA": 1815,
+   "perks": 5468,
+   "stakedKr": 9429068,
+   "perkShare": 0.006101526635,
+   "stormAShare": 0.09156261699
+  },
+  {
+   "strategy": "perkSnipe",
+   "rtp": 0.9644116134,
+   "se": 0.0005549546015,
+   "edge": -0.03558838661,
+   "vsConst": 0.004220822146,
+   "rawRtp": 0.9705440037,
+   "stormsA": 1815,
+   "perks": 5468,
+   "stakedKr": 3592000,
+   "perkShare": 0.007834112498,
+   "stormAShare": 0.0902463562
+  },
+  {
+   "strategy": "quitEarly",
+   "rtp": 0.8770162773,
+   "se": 0.00001397055304,
+   "edge": -0.1229837227,
+   "vsConst": -0.08317451394,
+   "rawRtp": 0.8731639659,
+   "stormsA": 0,
+   "perks": 26030,
+   "stakedKr": 8000000,
+   "perkShare": 0.01068513261,
+   "stormAShare": 0
+  }
+ ],
+ "variants": [
+  {
+   "rtp": 0.96,
+   "payScale": 1,
+   "stormPayScale": 0.2781,
+   "estRtp": 0.9603508592
+  },
+  {
+   "rtp": 0.94,
+   "payScale": 0.97874,
+   "stormPayScale": 0.2722,
+   "estRtp": 0.9403431326
+  },
+  {
+   "rtp": 0.92,
+   "payScale": 0.95748,
+   "stormPayScale": 0.2663,
+   "estRtp": 0.920337307
+  }
+ ],
+ "tuning": {
+  "phi": 0,
+  "sBeforeRounding": 0.9974851882,
+  "targets": {
+   "hit": 0.45,
+   "net": 0.27,
+   "cluster": 0.787,
+   "spinsPerA": 2200,
+   "spinsPerB": 3300,
+   "rtp": 0.96
+  },
+  "samples": {
+   "N_HIT": 1500000,
+   "N_WACC": 60000000,
+   "N_REC": 5000000,
+   "N_PERK": 1000000,
+   "N_STORM": 800000
+  },
+  "seed": 1313625173,
+  "perkEV": 1.5836456,
+  "overshoot": 18.10419426,
+  "cbar": 5.58430275,
+  "provisional": {
+   "rtp": 0.9600083213,
+   "rtpMin": 0.8660528023,
+   "meterShare": 0.09395551907,
+   "hitRate": 0.4500388,
+   "netWinRate": 0.2871282,
+   "ldwShareOfHits": 0.3385885839,
+   "stormRate": 0.000757709039,
+   "routeARate": 0.0004543278131,
+   "routeBRate": 0.0003033812259,
+   "avgSpinsToKp9": 2201.053889,
+   "stormMeanX": 201.897268,
+   "stormP10X": 24.63966,
+   "stormP50X": 112.49145,
+   "stormP90X": 460.39455,
+   "stormP99X": 1306.59723,
+   "guaranteeUseRate": 0.131325,
+   "baseSdX": 1.961145167,
+   "blendedSdX": 12,
+   "perStormSpinRtp": 19.60077734,
+   "baseSpinRtp": 0.8048704537,
+   "kpMedianSpins": [
+    10,
+    30,
+    70,
+    140,
+    250,
+    420,
+    680,
+    1200,
+    2200
+   ],
+   "spinsSimulated": 60000000,
+   "stormsSimulated": 800000,
+   "variants": [
+    {
+     "rtp": 0.96,
+     "payScale": 1,
+     "stormPayScale": 0.2781
+    },
+    {
+     "rtp": 0.94,
+     "payScale": 0.97874,
+     "stormPayScale": 0.2722
+    },
+    {
+     "rtp": 0.92,
+     "payScale": 0.95748,
+     "stormPayScale": 0.2663
+    }
+   ],
+   "rtpCi95": 0,
+   "clusterRtp": 0.7889841467,
+   "sunRtp": 0.01588630705,
+   "perkRtp": 0.002158482727,
+   "stormARtp": 0.09172754424,
+   "stormBRtp": 0.06125184066,
+   "avgChargePerSpin": 5.58430275,
+   "kpMeanSpins": [
+    10,
+    30,
+    70,
+    140,
+    250,
+    420,
+    680,
+    1200,
+    2200
+   ],
+   "minWinX": 0.4,
+   "capHitRate": 0.00001,
+   "guaranteeCostShare": 0.007749611766,
+   "baseP99X": 20,
+   "blendedP99X": 25,
+   "modelHash": "a346b7d2622ae0033b614fe38dfdaec1487b68fd918509268317737f1172b39d",
+   "generatedAt": "2026-09-22T20:44:38.395Z (tune, provisional)"
+  }
+ }
+}

@@ -9,6 +9,7 @@ import { softBand } from '../render/tex.ts';
 import {
   IsText, installIsfont, bakeSymbols, bakeSymbolsAsync, bakeCellFx, SkyLayer, UberPost, createBloom,
   Particles, CellShatter, ScreenShatter, Motes, type SymbolSet, type CellFx, type SkyParams,
+  destroySymbolSet, destroyCellFx, onArtContextRestored, STORM_ENV,
 } from '../render/modules.ts';
 import { audio, type GameAudio } from '../audio/audio.ts';
 import { tick, clock, setManualClock } from '../present/clock.ts';
@@ -106,6 +107,15 @@ export class World {
     this.baseSet = bakeSymbols(st.renderer, { edition: 'base', cellPx: this.cellPx, env: this.sky.envColors() });
     this.grid.configure(CONFIG.cols, CONFIG.rows, this.gridRect.cell, this.baseSet, this.cellFx, false);
     this.placeGrid();
+    // WebGL context loss (common when iOS backgrounds a tab): re-bake every GPU-baked texture.
+    onArtContextRestored(st.renderer, () => {
+      this.cellFx = bakeCellFx(st.renderer, this.cellPx);
+      this.baseSet = bakeSymbols(st.renderer, { edition: 'base', cellPx: this.cellPx, env: this.sky.envColors() });
+      if (this.stormSet || this.storm) this.stormSet = bakeSymbols(st.renderer, { edition: 'storm', cellPx: this.stormCellPx, env: STORM_ENV });
+      const grid = this.grid.symOf.slice(), marks = this.grid.marks.slice();
+      this.grid.configure(this.grid.cols, this.grid.rows, this.grid.cell, this.storm && this.stormSet ? this.stormSet : this.baseSet, this.cellFx, this.storm);
+      if (grid.length === this.grid.cols * this.grid.rows) this.grid.setGrid(grid, marks);
+    });
     const ro = new ResizeObserver(() => { this.layoutDirty = true; });
     ro.observe(this.hud.root);
     ro.observe(this.hud.slotGrid);
@@ -143,8 +153,10 @@ export class World {
     const px = steps.find((p) => p >= want) ?? 256;
     if (!this.storm && px !== this.cellPx && this.baseSet) {
       this.cellPx = px;
+      const oldFx = this.cellFx, oldSet = this.baseSet;
       this.cellFx = bakeCellFx(st.renderer, px);
       this.baseSet = bakeSymbols(st.renderer, { edition: 'base', cellPx: px, env: this.sky.envColors() });
+      gsap.delayedCall(4, () => { destroyCellFx(oldFx); destroySymbolSet(oldSet); });
       if (this.grid.cells.length) { this.grid.setSymbolSet(this.baseSet); this.grid.configure(this.grid.cols, this.grid.rows, this.grid.cell, this.baseSet, this.cellFx, false); }
     } else if (!this.baseSet) this.cellPx = px;
     this.stormCellPx = steps.find((p) => p >= (size / CONFIG.stormCols) * st.res * 1.25) ?? 192;
@@ -338,12 +350,12 @@ export class World {
     const old = this.baseSet;
     this.baseSet = set;
     if (!this.storm) this.grid.setSymbolSet(set);
-    gsap.delayedCall(4, () => { for (const t of old.textures) t.destroy(true); old.glow.destroy(true); });
+    gsap.delayedCall(4, () => destroySymbolSet(old));
   }
   private prebakeStorm(): Promise<SymbolSet> {
     if (this.stormSet) return Promise.resolve(this.stormSet);
     if (!this.stormBaking) {
-      this.stormBaking = bakeSymbolsAsync(this.stage.renderer, { edition: 'storm', cellPx: this.stormCellPx, env: [[1, 0.12, 0.24], [1, 0.42, 0], [1, 0.17, 0.84]] })
+      this.stormBaking = bakeSymbolsAsync(this.stage.renderer, { edition: 'storm', cellPx: this.stormCellPx, env: STORM_ENV })
         .then((s: SymbolSet) => (this.stormSet = s));
     }
     return this.stormBaking!;
@@ -351,7 +363,7 @@ export class World {
   async ensureExtremeAssets(): Promise<void> {
     if (this.stormSet) return;
     // Fallback: synchronous bake if the async one has not started/finished.
-    if (!this.stormBaking) this.stormSet = bakeSymbols(this.stage.renderer, { edition: 'storm', cellPx: this.stormCellPx, env: [[1, 0.12, 0.24], [1, 0.42, 0], [1, 0.17, 0.84]] });
+    if (!this.stormBaking) this.stormSet = bakeSymbols(this.stage.renderer, { edition: 'storm', cellPx: this.stormCellPx, env: STORM_ENV });
     else await this.stormBaking;
   }
 

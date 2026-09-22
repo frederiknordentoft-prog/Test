@@ -45,7 +45,6 @@ export function stormDone(state: StormState): boolean {
   return state.capped || state.spinIndex >= state.spinsTotal;
 }
 
-const tmpMarks = new Uint8Array(MAX_CELLS);
 
 function maxOf(a: Uint8Array, n: number): number {
   let m = 0;
@@ -89,9 +88,9 @@ function advanceState(state: StormState, marks: Uint8Array, n: number, added: nu
   }
 }
 
-/** Applies the 30× guarantee (as its own line). */
+/** Applies the 30× guarantee (as its own line). The guarantee never lifts a storm above the max win. */
 export function finishStorm(state: StormState, model: Model = DEFAULT_MODEL): StormSummary {
-  const floorOre = model.cfg.guaranteeX * state.stakeOre;
+  const floorOre = Math.min(model.cfg.guaranteeX, model.cfg.maxWinX) * state.stakeOre;
   return {
     stakeOre: state.stakeOre,
     spins: state.spinIndex,
@@ -105,38 +104,40 @@ export function finishStorm(state: StormState, model: Model = DEFAULT_MODEL): St
 // ------------------------------------------------------------------------------------------------
 // Whole-storm helpers (replay / tests / demo)
 // ------------------------------------------------------------------------------------------------
-/** Plays a complete storm with the recommended index convention (create = startIdx, spins = startIdx+1…). */
-export function playStorm(sessionSeed: number, domain: Domain, startIdx: number, stakeOre: number, model: Model = DEFAULT_MODEL): {
-  spins: { result: SpinResult; meta: StormSpinMeta }[]; summary: StormSummary; nextIdx: number;
+/**
+ * Plays a complete storm exactly like the game: ONE rng = spinRng(sessionSeed, domain, rngIdx) is used for
+ * createStorm and then for every storm spin in order (R14). Replaying with the same arguments reproduces
+ * the storm bit for bit.
+ */
+export function playStorm(sessionSeed: number, domain: Domain, rngIdx: number, stakeOre: number, opts?: { model?: Model; spinId?: (k: number) => string }): {
+  spins: { result: SpinResult; meta: StormSpinMeta }[]; summary: StormSummary;
 } {
-  const rng = new Xoshiro128ss();
-  const state = createStorm(rng.seedSpin(sessionSeed, domain, startIdx), stakeOre, model);
-  let idx = startIdx + 1;
+  const model = opts?.model ?? DEFAULT_MODEL;
+  const rng = new Xoshiro128ss().seedSpin(sessionSeed, domain, rngIdx);
+  const state = createStorm(rng, stakeOre, model);
   const spins: { result: SpinResult; meta: StormSpinMeta }[] = [];
   while (!stormDone(state)) {
-    spins.push(stormSpin(state, new Xoshiro128ss().seedSpin(sessionSeed, domain, idx), makeSpinId(sessionSeed, domain, idx), model));
-    idx++;
+    const k = state.spinIndex;
+    spins.push(stormSpin(state, rng, opts?.spinId ? opts.spinId(k) : makeSpinId(sessionSeed, domain, rngIdx) + '.' + String(k + 1).padStart(2, '0'), model));
   }
-  return { spins, summary: finishStorm(state, model), nextIdx: idx };
+  return { spins, summary: finishStorm(state, model) };
 }
 
 // ------------------------------------------------------------------------------------------------
-// Simulator fast path (identical rules, no SpinResult, no allocation)
+// Simulator fast path (identical rules and identical rng consumption, no SpinResult, no allocation)
 // ------------------------------------------------------------------------------------------------
 export const STORM_OUT = { winOre: 0, spins: 0, maxMark: 0, capped: false, retriggers: 0 };
 const simMarks = new Uint8Array(MAX_CELLS);
 
-/** Full storm; rng is reseeded per spin exactly like playStorm (create = startIdx, spins startIdx+1…). */
-export function simStorm(model: Model, rng: Xoshiro128ss, sessionSeed: number, domain: Domain, startIdx: number, stakeOre: number): void {
+/** Full storm on an rng that the caller seeded once (same stream semantics as playStorm / Game). */
+export function simStorm(model: Model, rng: Rng, stakeOre: number): void {
   const cfg = model.cfg, mm = model.storm, n = mm.geo.n, cap = mm.markCap;
   simMarks.fill(0, 0, n);
-  rng.seedSpin(sessionSeed, domain, startIdx);
   placeStartMarks(rng, simMarks, n, cfg.stormStartMarks);
   let total = cfg.stormSpins, i = 0, win = 0, maxMark = cfg.stormStartMarks > 0 ? 2 : 0, capped = false, retr = 0;
   const capAll = cfg.maxWinX * stakeOre;
   while (i < total) {
     if (waveBefore(i)) applyWave(simMarks, n, cap);
-    rng.seedSpin(sessionSeed, domain, startIdx + 1 + i);
     runSpinCore(mm, cfg, rng, stakeOre, simMarks, capAll - win, null);
     win += OUT.totalOre;
     if (OUT.retrigger > 0 && total < cfg.maxStormSpins) {

@@ -1,4 +1,4 @@
-// Tiny worker pool (≤ 3 workers — other processes share the 4-core box).
+// Tiny worker pool (≤ 2 workers — other agents share the 4-core box; NL_WORKERS=1 to go lower).
 import { Worker } from 'node:worker_threads';
 import { cpus } from 'node:os';
 import type { Job } from './core.ts';
@@ -11,8 +11,8 @@ export class Pool {
   private seq = 0;
   readonly size: number;
 
-  constructor(size = Math.min(3, Math.max(1, cpus().length - 1))) {
-    this.size = Math.min(3, size);
+  constructor(size = Number(process.env.NL_WORKERS ?? 2)) {
+    this.size = Math.max(1, Math.min(2, size, cpus().length - 1));
     for (let i = 0; i < this.size; i++) {
       const w = new Worker(new URL('./worker.ts', import.meta.url));
       w.on('message', (m: { id: number; res?: unknown; err?: string }) => {

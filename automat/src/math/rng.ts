@@ -65,12 +65,17 @@ export class Xoshiro128ss implements Rng {
   s1 = 0;
   s2 = 0;
   s3 = 0;
+  /** Provenance of the last seedSpin (numbers only, so the simulator's hot path never builds strings). */
+  seedSeed = 0;
+  seedDomain: Domain | '' = '';
+  seedIdx = -1;
 
   constructor(s0 = 1, s1 = 0, s2 = 0, s3 = 0) {
     this.setState(s0, s1, s2, s3);
   }
 
   setState(s0: number, s1: number, s2: number, s3: number): void {
+    this.seedDomain = '';
     this.s0 = s0 >>> 0;
     this.s1 = s1 >>> 0;
     this.s2 = s2 >>> 0;
@@ -92,7 +97,15 @@ export class Xoshiro128ss implements Rng {
     st = (st + GOLDEN) >>> 0;
     const d = splitmixOut(st);
     this.setState(a, b, c, d);
+    this.seedSeed = sessionSeed >>> 0;
+    this.seedDomain = domain;
+    this.seedIdx = idx;
     return this;
+  }
+
+  /** spinId of the (seed, domain, idx) this generator was seeded with ('' if seeded by hand). */
+  get spinId(): string {
+    return this.seedDomain === '' ? '' : makeSpinId(this.seedSeed, this.seedDomain, this.seedIdx);
   }
 
   u32(): number {

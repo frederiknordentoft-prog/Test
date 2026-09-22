@@ -66,15 +66,22 @@
 //     (cap 128) → meta.wave. 3+ suns in a storm spin → +retriggerSpins (3), total ≤ maxStormSpins (20).
 //     Storm suns never pay and give no charge. The storm's running win is capped at maxWinX·stake; when
 //     the cap is reached the storm ends after that spin. finishStorm: guaranteeOre =
-//     max(0, guaranteeX·stake − winOre), shown on its own line.
+//     max(0, min(guaranteeX, maxWinX)·stake − winOre), shown on its own line (never lifts past the max win).
 //
-// R14 RNG (rng.ts). Every spin has its own xoshiro128** seeded from the splitmix32 stream
-//     (sessionSeed ^ DOMAIN[domain]) advanced by 4·idx; per-spin call order:
-//       [perk marks (perk only)] → 36|64 cell draws (col-major) → per column sun Bernoulli (+ row int)
-//       → cascade refills (R7).
-//     createStorm consumes its own spinRng (6 mark picks). Recommended counters: base / perk / storm /
-//     demo each keep an independent idx; a storm uses idx n for createStorm and n+1.. for its spins.
-//     spinId = NL-<seed hex8>-<B|S|P|D><idx 6 digits>.
+// R14 RNG (rng.ts). rng = spinRng(sessionSeed, domain, idx) = xoshiro128** whose 4 state words are the
+//     outputs 4·idx+1 … 4·idx+4 of the splitmix32 stream started at (sessionSeed ^ DOMAIN[domain]) >>> 0
+//     (DOMAIN = BASE/STOR/PERK/DEMO as ASCII words, see rng.ts). Draw primitives: u32(); next() = u32/2^32;
+//     int(n) = Lemire multiply-shift with rejection.
+//     BASE / PERK spin: one fresh rng per spin (domain 'base' or 'perk', idx = that domain's counter).
+//       call order: [perk: 4 × int(36) mark picks, repeats re-drawn] → 36 cell draws (col-major, R2)
+//       → per column c = 0..5: u32() < sunThr ? int(rows) (R3) → cascade refills (R7), step by step.
+//     STORM: ONE rng for the whole storm (domain 'storm', or 'demo' for the demo storm):
+//       createStorm: 6 × int(64) start-mark picks (repeats re-drawn); then every stormSpin in order
+//       continues the SAME stream: [wave: no draws] → 64 cell draws → 8 sun Bernoullis → refills.
+//       Replaying a storm = re-running createStorm + stormSpin × k on a fresh spinRng with the same
+//       (seed, domain, idx) — bit-identical (tested). The game uses idx = 100000 + storm counter.
+//     spinId = NL-<seed hex8>-<B|S|P|D><idx 6 digits> (makeSpinId). spinBase defaults to the id of the
+//     spinRng it was given when opts.spinId is omitted.
 // ================================================================================================
 import { SYM, type Mark, type Mode, type SpinResult, type Step, type Sym } from './types.ts';
 import { CONFIG, type MathConfig } from './config.ts';
@@ -160,10 +167,12 @@ export const OUT = {
 };
 
 /**
- * Simulator hook: when `on`, every paying cluster appends (sym·8 + bucket, mult) — lets the tuner
- * re-price a recorded sample under any paytable exactly (the cascade itself never depends on pays).
+ * Simulator hook (off in the game). The cascade never depends on the pays, so a sample of
+ * (sym·8 + bucket, mult) pairs prices ANY paytable exactly:
+ *   on = 1 → append every paying cluster's pair to sb/mult (tuner: non-linear metrics such as net-win)
+ *   on = 2 → only accumulate acc[sym·8 + bucket] += mult (tuner: linear cluster-RTP weights, no memory)
  */
-export const PAIR_SINK = { on: false, sb: new Uint8Array(0), mult: new Uint16Array(0), n: 0 };
+export const PAIR_SINK = { on: 0, sb: new Uint8Array(0), mult: new Uint16Array(0), n: 0, acc: new Float64Array(56) };
 
 /** Optional recorder for the public API (allocates). */
 export interface Recorder {
@@ -233,10 +242,12 @@ export function runSpinCore(mm: ModeModel, cfg: MathConfig, rng: Rng, stakeOre: 
       const unit = pay[sb];
       const win = Math.floor((unit * mult * stakeOre + 5000) / 10000);
       stepWin += win;
-      if (PAIR_SINK.on) {
-        PAIR_SINK.sb[PAIR_SINK.n] = sb;
-        PAIR_SINK.mult[PAIR_SINK.n] = mult > 65535 ? 65535 : mult;
-        PAIR_SINK.n++;
+      if (PAIR_SINK.on !== 0) {
+        if (PAIR_SINK.on === 1) {
+          PAIR_SINK.sb[PAIR_SINK.n] = sb;
+          PAIR_SINK.mult[PAIR_SINK.n] = mult > 65535 ? 65535 : mult;
+          PAIR_SINK.n++;
+        } else PAIR_SINK.acc[sb] += mult;
       }
       if (step) {
         const cl: number[] = [];
@@ -384,7 +395,7 @@ export function spinBase(rng: Rng, stakeOre: number, opts?: { perk?: boolean; sp
   const before = toMarks(marks, n);
   const rec: Recorder = { initial: [], steps: [], sunCells: [] };
   runSpinCore(mm, model.cfg, rng, stakeOre, marks, model.cfg.maxWinX * stakeOre, rec);
-  return buildResult('base', mm, opts?.spinId ?? '', stakeOre, before, marks, rec, perk, 0);
+  return buildResult('base', mm, opts?.spinId ?? (rng as { spinId?: string }).spinId ?? '', stakeOre, before, marks, rec, perk, 0);
 }
 
 /** Smallest possible non-zero cluster win (× stake), for the rules screen. */

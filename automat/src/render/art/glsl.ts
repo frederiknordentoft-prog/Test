@@ -23,11 +23,15 @@ precision highp float;
 in vec2 vUV;
 out vec4 finalColor;
 uniform float uPx;     // one texel in p units (2 / cellPx)
-uniform float uStorm;  // 0 = base edition, 1 = storm edition
+#ifndef STORM_ED
+#define STORM_ED 0
+#endif
+const float uStorm = float(STORM_ED);  // edition is a compile-time constant (dead branches are stripped)
 uniform float uSeed;
 uniform vec3 uEnv0;    // aurora env colours (0..1)
 uniform vec3 uEnv1;
 uniform vec3 uEnv2;
+uniform float uAspect; // target width / height (1 for square cells)
 
 #define PI 3.14159265
 #define TAU 6.28318531

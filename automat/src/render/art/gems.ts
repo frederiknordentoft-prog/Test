@@ -45,7 +45,7 @@ float sdPoly(vec2 p) {
 
 // Facet lookup. q: polygon space (fan centre at origin).
 // n: facet normal, fid: facet id (-1 = table), ed: distance to nearest facet edge, g: gauge (1 = girdle)
-void facet(vec2 q, out vec3 n, out float fid, out float ed, out float g, out vec2 fc) {
+void facet(vec2 q, out vec3 n, out float fid, out float ed, out float g, out vec2 fc, out float kk) {
   int k = 0; float best = -1e9;
   for (int i = 0; i < ${MAX_POLY}; i++) {
     if (i >= uN) break;
@@ -55,7 +55,7 @@ void facet(vec2 q, out vec3 n, out float fid, out float ed, out float g, out vec
     float gg = dot(q, nn) / dot(a, nn);
     if (gg > best) { best = gg; k = i; }
   }
-  g = best;
+  g = best; kk = float(k);
   float s = uTable;
   vec2 a = PV(k), b = PV(k + 1), ap = PV(k - 1), bn = PV(k + 2);
   vec2 Ta = a * s, Tb = b * s, Tp = ap * s, Tn = bn * s;
@@ -93,66 +93,74 @@ void facet(vec2 q, out vec3 n, out float fid, out float ed, out float g, out vec
 }
 
 vec3 gemRamp(float x) {
-  vec3 hi = mix(uHue, vec3(1.0), 0.78);
-  vec3 c = mix(uDeep, uHue, smoothstep(0.0, 0.55, x));
-  return mix(c, hi, smoothstep(0.62, 1.1, x));
+  // deep → hue → pale hue → white. Most of the stone lives in the saturated middle.
+  vec3 c = mix(uDeep * 0.45, uDeep, smoothstep(0.0, 0.18, x));
+  c = mix(c, uHue, smoothstep(0.14, 0.62, x));
+  c = mix(c, mix(uHue, vec3(1.0), 0.5), smoothstep(0.62, 0.98, x));
+  return mix(c, vec3(1.0), smoothstep(0.98, 1.35, x));
 }
 vec3 obsRamp(float x) {
-  vec3 deep = vec3(0.028, 0.008, 0.014);
-  vec3 mid = vec3(0.085, 0.022, 0.035) + uVein * 0.018;
-  vec3 hi = vec3(0.30, 0.16, 0.18);
-  return mix(mix(deep, mid, smoothstep(0.0, 0.6, x)), hi, smoothstep(0.75, 1.2, x));
+  // black volcanic glass, faintly tinted by the gem's own (hot) vein colour so each stone keeps its family
+  vec3 mid = mix(vec3(0.075, 0.024, 0.034), uVein * 0.09, 0.45);
+  vec3 c = mix(vec3(0.012, 0.004, 0.008), mid, smoothstep(0.0, 0.55, x));
+  return mix(c, mix(vec3(0.34, 0.22, 0.24), uVein * 0.5, 0.3), smoothstep(0.65, 1.3, x));
 }
 
 // full shading of one sample (no alpha). q: polygon space.
 vec3 shadeGem(vec2 q, out float edOut, out vec3 nOut, out float gOut) {
-  vec3 n; float fid; float ed; float g; vec2 fc;
-  facet(q, n, fid, ed, g, fc);
+  vec3 n; float fid; float ed; float g; vec2 fc; float kk;
+  facet(q, n, fid, ed, g, fc, kk);
   edOut = ed; gOut = g;
   bool storm = uStorm > 0.5;
   vec3 H = normalize(KEY + vec3(0.0, 0.0, 1.0));
+  float side = sat(dot(q, vec2(-0.6, 0.8)) * 0.8 + 0.5);   // 1 = top-left (lit) → 0 = bottom-right
   vec3 col;
   if (fid < 0.0) {
-    // TABLE: flat window into the stone, showing the mirrored pavilion
-    vec2 vq = rot2(3.14159 / float(uN)) * (-q / uTable) * 0.97;
-    vec3 n2; float fid2; float ed2; float g2; vec2 fc2;
-    facet(vq, n2, fid2, ed2, g2, fc2);
-    float lum;
-    if (fid2 < 0.0) {
-      // culet / deep centre
-      float rr = length(q) / (uTable * 0.5);
-      lum = 0.30 + 0.35 * exp(-rr * rr * 3.0);
-    } else {
-      vec3 Ldn = normalize(vec3(0.55, -0.62, 0.55)); // bounced light from opposite side
-      float b1 = pow(max(dot(n2, Ldn), 0.0), 2.0);
-      float b2 = 0.5 + 0.5 * cos(n2.x * 17.0 + 0.4) * cos(n2.y * 13.0 - 1.1);
-      lum = 0.10 + 0.55 * b1 + 0.38 * b2 + 0.22 * (hash11(fid2 * 3.7 + uSeed) - 0.5);
-    }
-    float vline = 1.0 - smoothstep(0.4 * uPx, 1.8 * uPx, ed2 * uTable);
-    lum += vline * 0.18;
-    col = storm ? obsRamp(lum * 0.9) : gemRamp(lum * 0.92);
-    // table surface: broad diagonal sheen + faint flat env reflection
-    float sheen = smoothstep(0.35, -0.25, dot(q, vec2(0.62, -0.78)) / max(uTable, 0.01) + 0.2);
-    col += vec3(1.0) * sheen * (storm ? 0.05 : 0.07);
-    col += envAvg() * (storm ? 0.10 : 0.07);
+    // TABLE — "hearts & arrows": 2N wedges seen through the flat table, alternating value
+    int k = int(kk);
+    vec2 a = PV(k), b = PV(k + 1);
+    vec2 G = (a + b) * 0.5;
+    float hf = cross2(G, q) > 0.0 ? 1.0 : 0.0;
+    float wid = kk * 2.0 + hf;
+    float alt = mod(wid + (storm ? 1.0 : 0.0), 2.0);
+    float rr = g / uTable;                      // 0 centre → 1 table border
+    float wr = hash11(wid * 2.31 + uSeed * 5.0);
+    float lum = 0.20 + 0.36 * alt + 0.20 * wr + 0.30 * (side - 0.5);
+    lum *= 0.62 + 0.55 * smoothstep(0.05, 1.0, rr);          // light returns along the arrows
+    lum = mix(lum, 0.95, exp(-rr * rr * 38.0) * 0.55);       // small bright culet star
+    col = storm ? obsRamp(lum * 0.8) : gemRamp(lum);
+    // arrow lines (fine, low contrast)
+    float wl = min(min(sdSeg(q, vec2(0.0), a * uTable), sdSeg(q, vec2(0.0), b * uTable)), sdSeg(q, vec2(0.0), G * uTable * 0.96));
+    float wline = 1.0 - smoothstep(0.3 * uPx, 1.2 * uPx, wl * uScale);
+    col = mix(col, storm ? uVein * 0.5 : mix(uHue, vec3(1.0), 0.45), wline * 0.28 * smoothstep(0.1, 0.5, rr));
+    // glassy table surface: soft diagonal reflection + faint env
+    float tq = dot(q / uTable, vec2(0.62, -0.78));
+    float sheen = smoothstep(0.25, -0.35, tq) * (0.55 + 0.45 * smoothstep(0.9, 0.2, rr));
+    col += vec3(1.0) * sheen * (storm ? 0.035 : 0.10);
+    col += envRefl(vec3(-q / uTable * 0.6, 0.8)) * (storm ? 0.05 : 0.14) * smoothstep(0.2, 1.0, rr);
     nOut = vec3(0.0, 0.0, 1.0);
   } else {
     // CROWN facet
-    n = normalize(n + (hash31(fid * 1.731 + uSeed * 7.0) - 0.5) * vec3(0.20, 0.20, 0.0));
-    vec3 nb = normalize(n + vec3((q - fc) * 0.55, 0.0)); // slight convexity so light gradients across a facet
+    n = normalize(n + (hash31(fid * 1.731 + uSeed * 7.0) - 0.5) * vec3(0.22, 0.22, 0.0));
+    vec3 nb = normalize(n + vec3((q - fc) * 0.40, 0.0));    // slight convexity → gradient across a facet
     nOut = n;
-    float ndl = max(dot(nb, KEY), 0.0);
-    vec3 rf = refract(vec3(0.0, 0.0, -1.0), n, 0.42);
-    float br = 0.5 + 0.5 * cos(abs(rf.x) * 21.0 + 1.3) * cos(rf.y * 17.0 - 0.7);
-    br = mix(br, hash11(fid * 1.37 + uSeed), 0.38);
-    float girdleDark = smoothstep(0.78, 1.0, g) * 0.22;
-    float lum = 0.10 + 0.62 * br + 0.50 * ndl * ndl - girdleDark;
+    float ndl = dot(nb, KEY);
+    float fr = hash11(fid * 1.37 + uSeed);
+    float lum = 0.04 + 0.92 * pow(sat(ndl * 1.25 - 0.05), 1.7);
+    lum += (fr - 0.5) * 0.42;
+    // light return: bottom-right facets carry the saturated inner bounce, not black
+    float back = sat(dot(n.xy, vec2(0.6, -0.8)) * 3.0);
+    lum = max(lum, back * (0.30 + 0.32 * fr));
+    lum -= smoothstep(0.85, 1.0, g) * 0.10;                  // thick glass at the girdle
+    lum += 0.10 * (side - 0.5);
     col = storm ? obsRamp(lum) : gemRamp(lum);
     vec3 R = reflect(vec3(0.0, 0.0, -1.0), nb);
-    float fres = 0.20 + 1.6 * (1.0 - n.z);
-    col += envRefl(R) * fres * (storm ? 0.55 : 0.30);
+    float fres = 0.18 + 2.2 * (1.0 - n.z);
+    vec3 env = envRefl(R);
+    env = mix(env, luma(env) * (uHue * 0.8 + 0.2), storm ? 0.0 : 0.35);   // keep the stone saturated under any sky
+    col += env * fres * (storm ? 0.30 : 0.52) * (storm ? (0.35 + 0.9 * (1.0 - side)) : 1.0);
     float sp = pow(max(dot(nb, H), 0.0), 80.0);
-    col += (storm ? vec3(1.0, 0.86, 0.78) : vec3(1.0, 0.99, 0.96)) * sp * 1.7;
+    col += (storm ? vec3(1.0, 0.80, 0.74) : vec3(1.0, 0.99, 0.96)) * sp * (storm ? 0.9 : 1.15);
   }
   return col;
 }
@@ -169,63 +177,66 @@ void main() {
 
   vec3 inside = vec3(0.0);
   if (d < 2.0 * uPx) {
-    // 3-tap radial dispersion
+    // 3-tap radial dispersion (fringes at facet seams, stronger toward the girdle)
     vec2 dir = normalize(q + vec2(1e-4));
-    vec2 dq = dir * pxq * 1.25;
+    vec2 dq = dir * pxq * 1.1;
     float edR, edG, edB, gR, gG, gB; vec3 nR, nG, nB;
     vec3 cR = shadeGem(q + dq, edR, nR, gR);
     vec3 cG = shadeGem(q, edG, nG, gG);
     vec3 cB = shadeGem(q - dq, edB, nB, gB);
     vec3 col = vec3(cR.r, cG.g, cB.b);
 
-    // facet edge highlights (analytic, covers the facet seams)
+    // facet edge highlights: bright on the lit side, hue-tinted in the shade
     float edPx = edG * uScale;
-    float line = 1.0 - smoothstep(0.25 * uPx, 1.35 * uPx, edPx);
-    float facing = sat(dot(nG, KEY) * 1.4 - 0.2);
-    vec3 edgeCol = storm ? mix(uVein, uVeinCore, 0.35) * (0.55 + 0.7 * facing)
-                         : mix(uHue, vec3(1.0), 0.62) * (0.62 + 0.75 * facing);
-    col = mix(col, edgeCol, line * (storm ? 0.55 : 0.62));
+    float line = 1.0 - smoothstep(0.2 * uPx, 1.25 * uPx, edPx);
+    float facing = sat(dot(nG, KEY) * 1.6 - 0.25);
+    float sd = sat(dot(q, vec2(-0.6, 0.8)) * 0.8 + 0.5);
+    vec3 edgeCol = storm ? mix(uVein, uVeinCore, 0.3) * (0.45 + 0.7 * facing)
+                         : mix(uHue, vec3(1.0), 0.35 + 0.5 * facing) * (0.55 + 0.6 * max(facing, sd));
+    col = mix(col, edgeCol, line * (storm ? 0.60 : 0.58));
 
-    // storm: magma veins seen through the faceted glass (offset per facet normal = refraction)
+    // storm: magma veins seen through the faceted glass (offset per facet normal = refraction).
+    // Veins = zero-crossings of two warped fbm fields → thin, continuous, branching cracks.
     if (storm) {
-      vec2 vp = q * 2.1 + nG.xy * 0.16 + uSeed * 3.7;
-      vp += (vec2(fbm3(vp * 0.8), fbm3(vp * 0.8 + 7.3)) - 0.5) * 1.3;
-      float rv = ridge4(vp);
-      float pulse = 0.55 + 0.75 * fbm3(q * 1.7 + 11.0);
-      float vein = smoothstep(0.50, 0.86, rv) * pulse;
-      float core = smoothstep(0.80, 0.97, rv) * pulse;
-      float halo = smoothstep(0.25, 0.8, rv) * pulse;
-      float tableGlow = (1.0 - smoothstep(0.0, uTable, gG)) * 0.35;
-      col += uVein * (vein * 1.25 + halo * 0.16 + tableGlow * 0.5) + uVeinCore * core * 1.2;
+      vec2 vp = q * 1.25 + nG.xy * 0.22 + uSeed * 3.7;
+      vp += (vec2(fbm3(vp * 0.9), fbm3(vp * 0.9 + 7.3)) - 0.5) * 1.1;
+      float l1 = abs(fbm4(vp * 1.1) - 0.5);
+      float l2 = abs(fbm3(vp * 1.9 + 3.3) - 0.5);
+      float pulse = 0.60 + 0.65 * fbm3(q * 1.4 + 11.0);
+      float vein = (exp(-l1 / 0.020) + exp(-l2 / 0.011) * 0.35) * pulse;
+      float core = (exp(-l1 / 0.006) + exp(-l2 / 0.0035) * 0.3) * pulse;
+      float halo = (exp(-l1 / 0.08) + exp(-l2 / 0.05) * 0.25) * pulse;
+      float inner = (1.0 - smoothstep(0.0, 0.95, gG)) * 0.16;
+      col += uVein * (vein * 1.15 + halo * 0.24 + inner * 1.4) + uVeinCore * core * 1.05;
     }
 
-    // girdle rim: thin bright lip, lit from top-left
-    float rim = 1.0 - smoothstep(0.4 * uPx, 2.6 * uPx, -d);
+    // girdle rim: thin bright lip, lit from top-left, hue rim light bottom-right
+    float rim = 1.0 - smoothstep(0.35 * uPx, 2.2 * uPx, -d);
     float rimL = sat(dot(normalize(q), KEY.xy) * 0.9 + 0.35);
-    vec3 rimCol = storm ? mix(uVein, uVeinCore, 0.5) * (0.5 + rimL) : mix(uHue, vec3(1.0), 0.55) * (0.45 + 0.9 * rimL);
-    col = mix(col, rimCol, rim * 0.75);
+    vec3 rimCol = storm ? mix(uVein, uVeinCore, 0.45) * (0.55 + rimL)
+                        : mix(mix(uHue, vec3(1.0), 0.25) * 0.9, vec3(1.0), rimL * 0.8) * (0.6 + 0.7 * rimL);
+    col = mix(col, rimCol, rim * 0.8);
 
     // overall value structure: lit top-left, weight bottom-right
-    col *= 0.88 + 0.24 * sat(dot(q, vec2(-0.6, 0.8)) * 0.7 + 0.5);
+    col *= 0.86 + 0.26 * sd;
     inside = col;
   }
 
   // soft drop glow + shadow
   float od = max(d, 0.0);
   vec3 gc = storm ? uVein : uHue;
-  float glow = (exp(-od / 0.04) * 0.55 + exp(-od / 0.14) * 0.28) * cellFade(p);
-  float dsh = (sdPoly((p - uCenter - vec2(0.0, -0.05)) / uScale) - uRound) * uScale;
-  float shadow = exp(-max(dsh, 0.0) / 0.05) * 0.45 * cellFade(p);
+  float glow = (exp(-od / 0.035) * 0.55 + exp(-od / 0.12) * 0.26) * cellFade(p);
+  float dsh = (sdPoly((p - uCenter - vec2(0.0, -0.045)) / uScale) - uRound) * uScale;
+  float shadow = exp(-max(dsh, 0.0) / 0.045) * 0.5 * cellFade(p);
 
-  vec4 outc = vec4(0.0);
-  outc = vec4(0.0, 0.0, 0.0, shadow);                          // dark drop
-  outc = vec4(gc * glow, glow * 0.45) + outc * (1.0 - glow * 0.45); // coloured glow over it
-  outc = vec4(inside * cov, cov) + outc * (1.0 - cov);          // stone over
+  vec4 outc = vec4(0.0, 0.0, 0.0, shadow);                          // dark drop
+  outc = vec4(gc * glow, glow * 0.45) + outc * (1.0 - glow * 0.45);  // coloured glow over it
+  outc = vec4(inside * cov, cov) + outc * (1.0 - cov);               // stone over
 
   // inner sparkles (star glints on facet junctions)
   float sk = sparkle(p - uSpark.xy, uSpark.z) * uSpark.w + sparkle(p - uSpark2.xy, uSpark2.z) * uSpark2.w;
   sk *= cellFade(p);
-  vec3 skc = storm ? mix(vec3(1.0, 0.92, 0.8), uVeinCore, 0.3) : mix(vec3(1.0), uHue, 0.18);
+  vec3 skc = storm ? mix(vec3(1.0, 0.92, 0.8), uVeinCore, 0.3) : mix(vec3(1.0), uHue, 0.12);
   outc.rgb += skc * sk;
   outc.a = sat(outc.a + sk * 0.5);
   finalColor = outc;
@@ -273,32 +284,24 @@ function trillion(): [number, number][] {
 // L2 princess: square rotated 45° (diamond), edges subdivided for a richer crown
 function princess(): [number, number][] {
   const pts: [number, number][] = [];
-  for (let i = 0; i < 4; i++) {
-    const a = i * 90;
-    pts.push(polar(a, 1));
-    pts.push(polar(a + 45, 0.7071 * 1.035));
-  }
+  for (let i = 0; i < 4; i++) pts.push(polar(i * 90, 1));
   return ensureCCW(pts);
 }
 // L3 hexagonal brilliant: pointy-top hexagon, subdivided edges
 function hexBrilliant(): [number, number][] {
   const pts: [number, number][] = [];
-  for (let i = 0; i < 6; i++) {
-    const a = 90 + i * 60;
-    pts.push(polar(a, 1));
-    pts.push(polar(a + 30, 0.866 * 1.025));
-  }
+  for (let i = 0; i < 6; i++) pts.push(polar(90 + i * 60, 1));
   return ensureCCW(pts);
 }
 // L4 pear / teardrop: point up, round belly
 function pear(): [number, number][] {
   const pts: [number, number][] = [];
-  const N = 14;
+  const N = 10;
   for (let i = 0; i < N; i++) {
     // denser sampling around the belly
     const u = i / N;
     const t = u * Math.PI * 2;
-    const x = -Math.sin(t) * Math.pow(Math.sin(t / 2), 1.15) * 0.78;
+    const x = -Math.sin(t) * Math.pow(Math.sin(t / 2), 1.15) * 0.92;
     const y = Math.cos(t) * 1.0;
     pts.push([x, y]);
   }
@@ -309,9 +312,9 @@ function pear(): [number, number][] {
 
 export const GEM_DEFS: GemDef[] = [
   { poly: trillion(), center: [0, -0.13], scale: 0.99, table: 0.5, mid: 0.8, crownH: 0.3, round: 0.035, hue: 0x5ce1ff, deep: 0x06265a, vein: 0x2fd8ff, veinCore: 0xeaffff, seed: 1.3 },
-  { poly: princess(), center: [0, 0], scale: 0.9, table: 0.52, mid: 0.8, crownH: 0.3, round: 0.02, hue: 0x3dffb0, deep: 0x02402e, vein: 0xb6ff3d, veinCore: 0xf6ffd0, seed: 2.7 },
+  { poly: princess(), center: [0, 0], scale: 0.9, table: 0.52, mid: 0.8, crownH: 0.3, round: 0.02, hue: 0x3dffb0, deep: 0x02402e, vein: 0xc8ff2e, veinCore: 0xfbffd8, seed: 2.7 },
   { poly: hexBrilliant(), center: [0, 0], scale: 0.9, table: 0.52, mid: 0.8, crownH: 0.3, round: 0.015, hue: 0x8a5cff, deep: 0x1c0a58, vein: 0xff2bd6, veinCore: 0xffd6f6, seed: 3.1 },
-  { poly: pear(), center: [0, -0.06], scale: 0.88, table: 0.52, mid: 0.8, crownH: 0.3, round: 0.02, hue: 0xff5c9a, deep: 0x4a0726, vein: 0xff5a1e, veinCore: 0xffe2b0, seed: 4.9 },
+  { poly: pear(), center: [0, -0.165], scale: 0.86, table: 0.52, mid: 0.8, crownH: 0.3, round: 0.02, hue: 0xff5c9a, deep: 0x4a0726, vein: 0xff5a1e, veinCore: 0xffe2b0, seed: 4.9 },
 ];
 
 /** Sparkle positions: brightest table vertex toward the key light + a small one on the far crown. */

@@ -18,44 +18,42 @@ float sdPebble(vec2 p) {
   return (k - 1.0) * AR * 0.80 * 0.97;
 }
 
-// fern fossil: a curled frond with alternating pinnae. returns ink density 0..1
+// fern fossil: an arched frond with alternating pinnae (stem = circular arc). returns ink density 0..1
+const float FERN_ST = 0.052;
+float pinnae(float s, float rad, float sgn, float off, float L) {
+  float ink = 0.0;
+  float i = floor((s - off) / FERN_ST + 0.5);
+  for (int kk = -2; kk <= 1; kk++) {
+    float ii = i + float(kk);
+    float s0 = ii * FERN_ST + off;
+    float uu = s0 / L;
+    float valid = step(0.05, uu) * step(uu, 0.97);
+    float len = 0.16 * (1.0 - uu * 0.8) * (0.85 + 0.3 * hash11(ii * 3.1 + sgn));
+    vec2 dirv = normalize(vec2(0.55, 0.83 * sgn));
+    vec2 w = vec2(s - s0, rad);
+    float t = sat(dot(w, dirv) / len);
+    vec2 cp = dirv * t * len + vec2(-dirv.y, dirv.x) * sgn * sin(t * 3.14159) * 0.012;
+    float dd = length(w - cp);
+    float wdt = 0.017 * (1.0 - t * 0.7) * (1.0 - uu * 0.45);
+    ink = max(ink, valid * (1.0 - smoothstep(wdt * 0.45, wdt, dd)) * 0.9);
+  }
+  return ink;
+}
 float fern(vec2 p) {
-  vec2 c = vec2(0.52, -0.62);       // curvature centre of the stem arc
-  float R = 0.78;
+  vec2 c = vec2(0.47, 0.47);          // curvature centre of the stem arc
+  float R = 0.80;
   vec2 v = p - c;
   float ang = atan(v.y, v.x);
-  float a0 = 1.72, a1 = 2.52;         // stem angular extent
+  float a0 = -1.80, a1 = -2.80;       // base → tip (clockwise)
   float u = (ang - a0) / (a1 - a0);   // 0 base → 1 tip
-  float rad = length(v) - R;          // signed offset from stem
-  float L = (a1 - a0) * R;
+  float rad = length(v) - R;          // signed offset from the stem (+ = outer side)
+  float L = abs(a1 - a0) * R;
   float s = u * L;
-  float ink = 0.0;
-  // stem
-  float stem = abs(rad) - 0.0065 * (1.0 - 0.6 * u);
-  float inStem = step(0.0, u) * step(u, 1.0);
-  ink = max(ink, inStem * (1.0 - smoothstep(0.0, 0.006, stem)));
-  // pinnae
-  float step_ = 0.043;
-  for (int side = 0; side < 2; side++) {
-    float sgn = side == 0 ? 1.0 : -1.0;
-    float off = side == 0 ? 0.0 : step_ * 0.5;
-    float i = floor((s - off) / step_ + 0.5);
-    for (int kk = -1; kk <= 1; kk++) {
-      float ii = i + float(kk);
-      float s0 = ii * step_ + off;
-      float uu = s0 / L;
-      if (uu < 0.04 || uu > 0.97) continue;
-      float len = 0.105 * (1.0 - uu * 0.85) * (0.85 + 0.3 * hash11(ii * 3.1 + sgn));
-      vec2 base = vec2(s0, 0.0);
-      vec2 dirv = normalize(vec2(0.62, 0.78 * sgn));
-      vec2 pt = vec2(s, rad);
-      vec2 w = pt - base;
-      float t = sat(dot(w, dirv) / len);
-      float dd = length(w - dirv * t * len);
-      float wdt = 0.012 * (1.0 - t * 0.75) * (1.0 - uu * 0.5);
-      ink = max(ink, (1.0 - smoothstep(wdt * 0.5, wdt, dd)) * 0.9);
-    }
-  }
+  float stem = abs(rad) - 0.009 * (1.0 - 0.6 * u);
+  float inStem = step(-0.02, u) * step(u, 1.02);
+  float ink = inStem * (1.0 - smoothstep(0.0, 0.007, stem));
+  ink = max(ink, pinnae(s, rad, 1.0, 0.0, L));
+  ink = max(ink, pinnae(s, rad, -1.0, FERN_ST * 0.5, L));
   return ink;
 }
 
@@ -89,7 +87,7 @@ void main() {
       // internal flow bands + dust
       float flow = fbm4(vec2(l.x * 2.2 + fbm3(l * 3.0) * 1.2, l.y * 6.0));
       col *= 0.86 + 0.26 * flow;
-      float dust = smoothstep(0.82, 0.95, vnoise(l * 70.0)) * 0.4;
+      float dust = smoothstep(0.90, 0.98, vnoise(l * 55.0 + 3.0)) * 0.25;
       col *= 1.0 - dust * 0.5;
       // subsurface: warm glow opposite the key light
       vec2 gc = vec2(0.20, -0.22);
@@ -97,8 +95,10 @@ void main() {
       col += vec3(1.0, 0.62, 0.18) * sss * 0.42;
       col += vec3(1.0, 0.85, 0.45) * exp(-dot(p - gc, p - gc) / 0.03) * 0.25;
       // fern fossil (inside, soft-edged, slightly refracted)
-      float fe = fern(p + n.xy * 0.02);
-      col = mix(col, col * vec3(0.30, 0.16, 0.05), fe * 0.75);
+      float fe = fern(p + n.xy * 0.025);
+      float feHalo = fern(p * 0.985 + n.xy * 0.025 + 0.004);
+      col = mix(col, col * vec3(0.26, 0.12, 0.03), fe * 0.62);
+      col += vec3(1.0, 0.75, 0.3) * sat(feHalo - fe) * 0.12;
       // bubbles
       for (int i = 0; i < 7; i++) {
         float fi = float(i);
@@ -121,9 +121,12 @@ void main() {
       float fres = pow(1.0 - n.z, 2.0);
       col += envRefl(reflect(vec3(0.0, 0.0, -1.0), n)) * fres * 0.55;
       // crescent specular hugging the top-left rim + hotspot
-      float rimBand = smoothstep(0.02, 0.07, -d) * (1.0 - smoothstep(0.08, 0.17, -d));
-      float angW = pow(sat(dot(normalize(p + 1e-5), vec2(-0.62, 0.78))), 3.0);
-      col += vec3(1.0, 0.98, 0.9) * rimBand * angW * 0.75;
+      float rimBand = smoothstep(0.028, 0.045, -d) * (1.0 - smoothstep(0.075, 0.11, -d));
+      float angW = pow(sat(dot(normalize(p + 1e-5), vec2(-0.62, 0.78)) * 1.15), 4.0);
+      col += vec3(1.0, 0.98, 0.9) * rimBand * angW * 0.95;
+      // secondary rim light (bottom-right) from the sky
+      float angB = pow(sat(dot(normalize(p + 1e-5), vec2(0.6, -0.8))), 3.0);
+      col += mix(vec3(1.0, 0.7, 0.35), envAvg(), 0.5) * rimBand * angB * 0.35;
       float sp = pow(max(dot(n, H), 0.0), 60.0);
       col += vec3(1.0, 0.98, 0.92) * sp * 0.8;
       col += vec3(1.0) * exp(-dot(p - vec2(-0.36, 0.34), p - vec2(-0.36, 0.34)) / 0.0018) * 0.9;
@@ -175,220 +178,271 @@ void main() {
 `;
 
 // ───────────────────────────────────────────── WILD ─────────────────────────────────────────────────
+// Nordlysbue: faceted ice hex plate (flat-top, 12 bevel facets) with crystal prongs at the vertices,
+// a window onto a mini aurora sky, and a glass ribbon carrying "WILD" in monoline capsule strokes
+// (same stroke language as the game's Isfont) with tube bevel, gradient fill, dark outline and glow.
+// STORM: obsidian frame with molten seams, a plasma orb with lightning in the window, white-hot lettering.
 export const WILD_FRAG = ART_HEAD + /* glsl */ `
-const float HA = 0.70;   // hex apothem (outer)
-const float BW = 0.125;  // bevel width
+const float HA = 0.64;   // hex apothem (outer)
+const float BW = 0.115;  // bevel width
+const float RV = 0.7390; // outer vertex radius = HA / cos 30°
+const vec2 BAN_C = vec2(0.0, -0.265);  // ribbon centre
+const vec2 BAN_H = vec2(0.78, 0.205);  // ribbon half size
+const float CAP = 0.30;  // cap height of the lettering (p units)
+const float HW = 0.125;  // stroke half-width (cap units)
+const float ADV = 0.47;  // gap between glyph skeletons (cap units)
+const float TXT_W = 3.69; // skeleton width of "WILD" (cap units)
 
-float sdSpikes(vec2 p) {
-  float d = 1e9;
+// ---- lettering ---------------------------------------------------------------------------------
+float sdWild(vec2 p) {   // p in cap units, origin = left end of the baseline
+  float d = sdSeg(p, vec2(0.0, 1.0), vec2(0.25, 0.0));
+  d = min(d, sdSeg(p, vec2(0.25, 0.0), vec2(0.5, 0.74)));
+  d = min(d, sdSeg(p, vec2(0.5, 0.74), vec2(0.75, 0.0)));
+  d = min(d, sdSeg(p, vec2(0.75, 0.0), vec2(1.0, 1.0)));
+  float x = 1.0 + ADV;
+  d = min(d, sdSeg(p, vec2(x, 0.0), vec2(x, 1.0)));                       // I
+  x += ADV;
+  d = min(d, sdSeg(p, vec2(x, 1.0), vec2(x, 0.0)));                       // L
+  d = min(d, sdSeg(p, vec2(x, 0.0), vec2(x + 0.56, 0.0)));
+  x += 0.56 + ADV;
+  d = min(d, sdSeg(p, vec2(x, 0.0), vec2(x, 1.0)));                       // D
+  d = min(d, sdSeg(p, vec2(x, 1.0), vec2(x + 0.26, 1.0)));
+  d = min(d, sdSeg(p, vec2(x, 0.0), vec2(x + 0.26, 0.0)));
+  vec2 v = p - vec2(x + 0.26, 0.5);
+  float arc = v.x >= 0.0 ? abs(length(v) - 0.5) : min(length(v - vec2(0.0, 0.5)), length(v + vec2(0.0, 0.5)));
+  return min(d, arc);
+}
+vec2 txtLocal(vec2 p) { return (p - BAN_C) / CAP + vec2(TXT_W * 0.5, 0.5); }
+
+// returns premultiplied lettering layer (fill + outline + glow) for base/storm
+vec4 lettering(vec2 p, bool storm) {
+  vec2 t = txtLocal(p);
+  float sk = sdWild(t);
+  float e = 0.01;
+  vec2 g = vec2(sdWild(t + vec2(e, 0.0)) - sdWild(t - vec2(e, 0.0)), sdWild(t + vec2(0.0, e)) - sdWild(t - vec2(0.0, e)));
+  g = g / max(length(g), 1e-4);
+  float dIn = (sk - HW) * CAP;                  // p units; < 0 inside the stroke
+  float dOut = (sk - HW - 0.085) * CAP;         // outline
+  float cIn = cover(dIn), cOut = cover(dOut);
+  float x = sat(sk / HW);
+  vec3 n = normalize(vec3(g * x, sqrt(max(0.0, 1.0 - x * x)) + 0.15));
+  float ndl = sat(dot(n, KEY));
+  float sp = pow(sat(dot(n, normalize(KEY + vec3(0.0, 0.0, 1.0)))), 24.0);
+  float ty = sat(t.y);
+  vec3 fill;
+  if (storm) {
+    fill = mix(vec3(1.0, 0.16, 0.30), vec3(1.0, 0.55, 0.12), smoothstep(0.0, 0.45, ty));
+    fill = mix(fill, vec3(1.0, 0.96, 0.84), smoothstep(0.45, 0.95, ty));
+  } else {
+    fill = mix(vec3(0.16, 0.95, 0.66), vec3(0.93, 1.0, 0.98), smoothstep(0.0, 0.85, ty));
+  }
+  vec3 col = fill * (0.62 + 0.52 * ndl) + vec3(1.0) * sp * 0.75;
+  vec3 oc = storm ? vec3(0.10, 0.0, 0.03) : vec3(0.01, 0.04, 0.09);
+  vec3 rgb = mix(oc, col, cIn);
+  float a = cOut;
+  // glow beyond the outline
+  float od = max(dOut, 0.0);
+  float gl = (exp(-od / 0.03) * 0.5 + exp(-od / 0.08) * 0.2) * (1.0 - cOut);
+  vec3 gc = storm ? vec3(1.0, 0.2, 0.62) : vec3(0.24, 1.0, 0.69);
+  return vec4(rgb * a + gc * gl, a + gl * 0.4);
+}
+
+// ---- frame --------------------------------------------------------------------------------------
+float sdProngs(vec2 p, out vec2 axis, out float along) {
+  float d = 1e9; axis = vec2(1.0, 0.0); along = 0.0;
   for (int i = 0; i < 6; i++) {
     float a = float(i) * 1.0471976;
     vec2 dir = vec2(cos(a), sin(a));
-    vec2 nrm = vec2(-dir.y, dir.x);
-    float rv = HA * 1.1547;
-    vec2 base = dir * (rv - 0.04);
-    vec2 tip = dir * (rv + 0.135);
-    // tapered main spike
-    vec2 w = p - base;
-    float t = sat(dot(w, dir) / length(tip - base));
-    float wd = mix(0.028, 0.004, t);
-    d = min(d, length(w - (tip - base) * t) - wd);
-    // side branches
-    for (int s = -1; s <= 1; s += 2) {
-      vec2 b0 = dir * (rv + 0.045);
-      vec2 bd = normalize(dir + nrm * float(s) * 1.2);
-      vec2 b1 = b0 + bd * 0.06;
-      vec2 wb = p - b0;
-      float tb = sat(dot(wb, bd) / 0.06);
-      d = min(d, length(wb - bd * 0.06 * tb) - mix(0.012, 0.003, tb));
-    }
+    vec2 b = dir * (RV - 0.05);
+    float L = 0.18;
+    vec2 w = p - b;
+    float t = sat(dot(w, dir) / L);
+    float dd = length(w - dir * t * L) - mix(0.044, 0.0, t);
+    if (dd < d) { d = dd; axis = dir; along = t; }
   }
   return d;
 }
+// facet normal of the two-step bevel (flat-top hex: side normals at 30° + k·60°)
+vec3 bevelNormal(vec2 p, float dOuter) {
+  float a = atan(p.y, p.x);
+  float k = floor((a - 0.5235988) / 1.0471976 + 0.5);
+  float sa = k * 1.0471976 + 0.5235988;
+  vec2 sn = vec2(cos(sa), sin(sa));
+  float tb = sat(-dOuter / BW);
+  float tilt = tb < 0.48 ? 0.95 : 0.40;
+  return normalize(vec3(sn * tilt, 1.0));
+}
 
+// ---- window contents ----------------------------------------------------------------------------
 vec3 aurora(vec2 w, out float ai) {
-  // w: window space (~ -1..1)
   float x = w.x;
-  float y0 = -0.30 + 0.20 * sin(x * 2.3 + 0.6) + 0.08 * sin(x * 5.3 + 1.3);
+  float y0 = 0.02 + 0.16 * sin(x * 2.3 + 0.6) + 0.07 * sin(x * 5.3 + 1.3);
   float dy = w.y - y0;
   float rays = 0.45 + 0.55 * vnoise(vec2(x * 13.0, 0.5)) * (0.6 + 0.4 * vnoise(vec2(x * 37.0, 2.0)));
-  float body = dy > 0.0 ? exp(-dy / (0.62 * rays)) : exp(dy / 0.035);
+  float body = dy > 0.0 ? exp(-dy / (0.60 * rays)) : exp(dy / 0.035);
   body *= 0.55 + 0.45 * smoothstep(-1.0, 0.3, sin(x * 4.0 + 1.0));
-  // second, higher and fainter curtain
-  float y1 = 0.12 + 0.14 * sin(x * 1.7 + 2.4);
+  float y1 = 0.36 + 0.12 * sin(x * 1.7 + 2.4);
   float dy1 = w.y - y1;
   float rays1 = 0.5 + 0.5 * vnoise(vec2(x * 9.0, 7.0));
-  float body1 = (dy1 > 0.0 ? exp(-dy1 / (0.45 * rays1)) : exp(dy1 / 0.05)) * 0.5;
+  float body1 = (dy1 > 0.0 ? exp(-dy1 / (0.42 * rays1)) : exp(dy1 / 0.05)) * 0.5;
   vec3 green = mix(vec3(0.24, 1.0, 0.69), uEnv0, 0.35);
   vec3 top = mix(vec3(0.54, 0.36, 1.0), uEnv2, 0.5);
   vec3 c = mix(green, top, sat(dy * 1.3)) * body + mix(green, top, sat(dy1 * 1.2 + 0.3)) * body1;
-  c += vec3(0.8, 1.0, 0.9) * exp(dy / 0.02) * step(dy, 0.0) * 0.0;
+  c += vec3(0.85, 1.0, 0.92) * exp(dy / 0.018) * step(dy, 0.0) * body * 0.0;
   ai = sat(body + body1);
   return c;
 }
 
-vec4 wildBase(vec2 p) {
-  float dOuter = sdHex(p, HA) - 0.018;
-  float dSp = sdSpikes(p);
-  float dAll = min(dOuter, dSp);
-  float covAll = cover(dAll);
-  float dIn = sdHex(p, HA - BW);
-  float fade = cellFade(p);
-
-  // bevel normal from the hex SDF gradient
-  float eps = 0.003;
-  vec2 g = normalize(vec2(sdHex(p + vec2(eps, 0.0), HA) - sdHex(p - vec2(eps, 0.0), HA), sdHex(p + vec2(0.0, eps), HA) - sdHex(p - vec2(0.0, eps), HA)) + 1e-6);
-
-  vec3 col = vec3(0.0);
-  if (dAll < 2.0 * uPx) {
-    if (dIn < 0.0) {
-      // WINDOW: night sky + mini aurora, recessed under the rim
-      vec2 w = p / (HA - BW);
-      vec3 sky = mix(vec3(0.02, 0.04, 0.10), vec3(0.05, 0.10, 0.22), sat(w.y * 0.5 + 0.5));
-      float ai;
-      vec3 au = aurora(w, ai);
-      sky += au * 0.95;
-      // stars
-      vec2 sg = w * 18.0;
-      vec2 si = floor(sg);
-      float sh = hash12(si + 5.0);
-      vec2 so = fract(sg) - 0.5 - (hash22(si) - 0.5) * 0.6;
-      sky += vec3(0.85, 0.92, 1.0) * step(0.86, sh) * exp(-dot(so, so) * 60.0) * (1.0 - ai * 0.7) * 0.9;
-      // sea horizon with reflection
-      float hz = -0.66;
-      if (w.y < hz) {
-        vec2 rw = vec2(w.x, 2.0 * hz - w.y);
-        float ai2; vec3 au2 = aurora(rw, ai2);
-        float ripple = 0.6 + 0.4 * sin(w.y * 90.0 + vnoise(w * vec2(6.0, 40.0)) * 6.0);
-        sky = vec3(0.01, 0.02, 0.05) + au2 * 0.35 * ripple;
-      }
-      sky += vec3(0.6, 1.0, 0.85) * exp(-abs(w.y - hz) / 0.012) * 0.25;
-      // inner shadow under the top-left rim
-      float ish = exp(dIn / 0.05) * sat(dot(g, KEY.xy) * 0.8 + 0.4);
-      sky *= 1.0 - ish * 0.55;
-      // glass sheen across the window
-      float sheen = smoothstep(0.12, 0.0, abs(dot(p, vec2(0.70, 0.71)) - 0.22)) * 0.10;
-      col = sky + vec3(0.8, 0.95, 1.0) * sheen;
-    }
-    if (dOuter < 0.0 && dIn >= 0.0) {
-      // ICE BEVEL: two-step bevel, frosted, env reflections
-      float tb = sat(-dOuter / BW);  // 0 outer edge → 1 inner edge
-      float steep = step(tb, 0.45);
-      vec3 n = normalize(vec3(g * (steep > 0.5 ? 0.95 : 0.45), 1.0));
-      float ndl = dot(n, KEY);
-      float frost = fbm4(p * 22.0) * 0.7 + vnoise(p * 90.0) * 0.3;
-      vec3 iceHi = vec3(0.93, 0.98, 1.0), iceMid = vec3(0.56, 0.78, 0.98), iceLo = vec3(0.13, 0.27, 0.52);
-      float f = sat(ndl * 1.2 + 0.25) * (0.82 + 0.3 * frost);
-      col = f < 0.5 ? mix(iceLo, iceMid, f * 2.0) : mix(iceMid, iceHi, (f - 0.5) * 2.0);
-      col += envRefl(reflect(vec3(0.0, 0.0, -1.0), n)) * 0.45;
-      float sp = pow(max(dot(n, normalize(KEY + vec3(0.0, 0.0, 1.0))), 0.0), 60.0);
-      col += vec3(1.0) * sp * 1.1;
-      // hairline cracks in the ice
-      float cr = ridge4(p * 7.0 + 3.0);
-      col += vec3(0.85, 0.95, 1.0) * smoothstep(0.78, 0.95, cr) * 0.35;
-      // lips
-      col += vec3(1.0) * exp(-abs(-dOuter) / (1.2 * uPx)) * 0.55 * sat(ndl + 0.6);
-      col += vec3(0.9, 1.0, 1.0) * exp(-abs(dIn) / (1.1 * uPx)) * 0.7;
-      col += vec3(1.0) * exp(-abs(tb - 0.45) * BW / (0.9 * uPx)) * 0.25;
-    }
-    if (dOuter >= 0.0 && dSp < 0.0) {
-      // snowflake spikes
-      float t = sat(length(p) - HA);
-      col = mix(vec3(0.92, 0.98, 1.0), vec3(0.55, 0.78, 1.0), t * 4.0);
-      col += envAvg() * 0.2;
-    }
-  }
-
-  float od = max(dAll, 0.0);
-  vec3 gcol = mix(vec3(0.24, 1.0, 0.69), uEnv0, 0.3);
-  float glow = (exp(-od / 0.04) * 0.55 + exp(-od / 0.15) * 0.3) * fade;
-  float dsh = min(sdHex(p - vec2(0.0, -0.05), HA), sdSpikes(p - vec2(0.0, -0.05)));
-  float shadow = exp(-max(dsh, 0.0) / 0.05) * 0.5 * fade;
-  vec4 o = vec4(0.0, 0.0, 0.0, shadow);
-  o = vec4(gcol * glow, glow * 0.45) + o * (1.0 - glow * 0.45);
-  o = vec4(col * covAll, covAll) + o * (1.0 - covAll);
-  return o;
+vec3 skyWindow(vec2 p, vec2 g, float dIn) {
+  vec2 w = p / (HA - BW);
+  vec3 sky = mix(vec3(0.015, 0.03, 0.085), vec3(0.05, 0.10, 0.22), sat(w.y * 0.5 + 0.5));
+  float ai;
+  sky += aurora(w, ai) * 1.45;
+  vec2 sg = w * 16.0;
+  vec2 si = floor(sg);
+  float sh = hash12(si + 5.0);
+  vec2 so = fract(sg) - 0.5 - (hash22(si) - 0.5) * 0.6;
+  sky += vec3(0.85, 0.92, 1.0) * step(0.84, sh) * exp(-dot(so, so) * 55.0) * (1.0 - ai * 0.7) * 0.9;
+  // inner shadow under the top-left rim
+  float ish = exp(dIn / 0.05) * sat(dot(g, KEY.xy) * 0.8 + 0.4);
+  sky *= 1.0 - ish * 0.55;
+  // glass sheen across the window
+  float sheen = smoothstep(0.10, 0.0, abs(dot(p, vec2(0.70, 0.71)) - 0.26)) * 0.10;
+  return sky + vec3(0.8, 0.95, 1.0) * sheen;
 }
 
-// STORM: plasma orb inside an obsidian hex frame
-vec4 wildStorm(vec2 p) {
-  float dOuter = sdHex(p, HA) - 0.018;
-  float dSp = sdSpikes(p);
+vec3 plasmaOrb(vec2 p, float OR) {
+  float r = length(p);
+  float th = atan(p.y, p.x);
+  vec3 gas = mix(vec3(0.20, 0.0, 0.16), vec3(0.03, 0.0, 0.05), sat(r / OR));
+  gas += vec3(0.5, 0.05, 0.4) * fbm4(p * 4.0 + 1.3) * 0.35;
+  float fil = 0.0, contact = 0.0;
+  for (int i = 0; i < 7; i++) {
+    float fi = float(i);
+    float a0 = fi * 0.8976 + hash11(fi * 1.7) * 0.6;
+    float path = a0 + (fbm3(vec2(r * 3.2, fi * 5.3)) - 0.5) * 1.6 * r + (fbm3(vec2(r * 11.0, fi * 2.1)) - 0.5) * 0.35 * r;
+    float da = abs(mod(th - path + PI, TAU) - PI) * r;
+    float wdt = 0.0035 + 0.006 * r;
+    fil += exp(-da / wdt) * smoothstep(0.08, 0.14, r);
+    float bp = path + (fbm3(vec2(r * 6.0, fi * 9.1)) - 0.3) * 0.9 * (r - 0.3);
+    float db = abs(mod(th - bp + PI, TAU) - PI) * r;
+    fil += exp(-db / (wdt * 0.8)) * smoothstep(0.3, 0.42, r) * 0.6;
+    vec2 cp = vec2(cos(path), sin(path)) * OR;
+    contact += exp(-dot(p - cp, p - cp) / 0.0020);
+  }
+  vec3 col = gas + vec3(1.0, 0.25, 0.85) * fil * 0.9 + vec3(1.0, 0.85, 0.95) * pow(fil, 2.0) * 0.35;
+  col += vec3(1.0, 0.55, 0.9) * contact * 0.9 + vec3(1.0, 0.9, 0.95) * exp(-r / 0.07) * 1.3;
+  col = mix(col, vec3(1.0, 0.95, 0.98), 1.0 - smoothstep(0.07 - uPx, 0.07 + uPx, r));
+  float z = sqrt(max(0.0, 1.0 - (r / OR) * (r / OR)));
+  vec3 gn = vec3(p / OR, z);
+  float fres = pow(1.0 - z, 3.0);
+  col += vec3(1.0, 0.16, 0.36) * fres * 0.9;
+  col += envRefl(reflect(vec3(0.0, 0.0, -1.0), gn)) * fres * 0.5;
+  float hl = exp(-dot(p - vec2(-0.20, 0.24), p - vec2(-0.20, 0.24)) / 0.010);
+  col += vec3(1.0) * hl * 0.45;
+  return col;
+}
+
+vec4 wild(vec2 p, bool storm) {
+  float dOuter = sdHex(p, HA) - 0.012;
+  vec2 pAxis; float pAlong;
+  float dSp = sdProngs(p, pAxis, pAlong);
   float dAll = min(dOuter, dSp);
   float covAll = cover(dAll);
   float dIn = sdHex(p, HA - BW);
   float fade = cellFade(p);
   float eps = 0.003;
   vec2 g = normalize(vec2(sdHex(p + vec2(eps, 0.0), HA) - sdHex(p - vec2(eps, 0.0), HA), sdHex(p + vec2(0.0, eps), HA) - sdHex(p - vec2(0.0, eps), HA)) + 1e-6);
-  const float OR = 0.60;
-  float r = length(p);
-  float dOrb = r - OR;
+  vec3 H = normalize(KEY + vec3(0.0, 0.0, 1.0));
+
   vec3 col = vec3(0.0);
   if (dAll < 2.0 * uPx) {
-    // frame
-    float tb = sat(-dOuter / BW);
-    vec3 n = normalize(vec3(g * (tb < 0.45 ? 0.95 : 0.45), 1.0));
-    float ndl = dot(n, KEY);
-    col = mix(vec3(0.03, 0.008, 0.012), vec3(0.16, 0.06, 0.08), sat(ndl * 1.1 + 0.2));
-    col += envRefl(reflect(vec3(0.0, 0.0, -1.0), n)) * 0.45;
-    col += vec3(1.0, 0.9, 0.85) * pow(max(dot(n, normalize(KEY + vec3(0.0, 0.0, 1.0))), 0.0), 50.0) * 0.8;
-    float vr = ridge4(p * 5.0 + 2.0);
-    col += vec3(1.0, 0.17, 0.6) * smoothstep(0.7, 0.92, vr) * 0.8;
-    col += vec3(1.0, 0.2, 0.5) * exp(-abs(dOuter) / (1.3 * uPx)) * 0.8;
-    col += vec3(1.0, 0.5, 0.8) * exp(-abs(dIn) / (1.2 * uPx)) * 0.6;
-    if (dOuter >= 0.0 && dSp < 0.0) col = mix(vec3(0.08, 0.02, 0.03), vec3(1.0, 0.25, 0.6), 0.35 + 0.4 * sat(length(p) - HA) * 4.0);
-
-    if (dOrb < 0.0) {
-      // interior gas
-      vec3 gas = mix(vec3(0.16, 0.0, 0.14), vec3(0.03, 0.0, 0.05), sat(r / OR));
-      gas += vec3(0.5, 0.05, 0.4) * fbm4(p * 4.0 + 1.3) * 0.35;
-      // lightning filaments from the core to the glass
-      float th = atan(p.y, p.x);
-      float fil = 0.0, contact = 0.0;
-      for (int i = 0; i < 7; i++) {
-        float fi = float(i);
-        float a0 = fi * 0.8976 + hash11(fi * 1.7) * 0.6;
-        float path = a0 + (fbm3(vec2(r * 3.2, fi * 5.3)) - 0.5) * 1.6 * r + (fbm3(vec2(r * 11.0, fi * 2.1)) - 0.5) * 0.35 * r;
-        float da = abs(mod(th - path + PI, TAU) - PI) * r;
-        float wdt = 0.0035 + 0.006 * r;
-        fil += exp(-da / wdt) * smoothstep(0.08, 0.14, r);
-        // branch
-        float bp = path + (fbm3(vec2(r * 6.0, fi * 9.1)) - 0.3) * 0.9 * (r - 0.3);
-        float db = abs(mod(th - bp + PI, TAU) - PI) * r;
-        fil += exp(-db / (wdt * 0.8)) * smoothstep(0.3, 0.42, r) * 0.6;
-        vec2 cp = vec2(cos(path), sin(path)) * OR;
-        contact += exp(-dot(p - cp, p - cp) / 0.0022);
+    // window (inner hex)
+    if (storm) {
+      vec3 bg = mix(vec3(0.05, 0.0, 0.03), vec3(0.12, 0.0, 0.06), sat(p.y + 0.5));
+      float OR = 0.47;
+      float dOrb = length(p - vec2(0.0, 0.03)) - OR;
+      col = dOrb < 0.0 ? plasmaOrb(p - vec2(0.0, 0.03), OR) : bg + vec3(1.0, 0.1, 0.4) * exp(-dOrb / 0.04) * 0.5;
+      col += vec3(1.0, 0.6, 0.85) * exp(-abs(dOrb) / (1.2 * uPx)) * 0.6;
+    } else {
+      col = skyWindow(p, g, dIn);
+    }
+    // bevel (12 facets)
+    if (dOuter < 0.0 && dIn >= 0.0) {
+      vec3 n = bevelNormal(p, dOuter);
+      float ndl = dot(n, KEY);
+      float f = sat(ndl * 1.15 + 0.12);
+      vec3 R = reflect(vec3(0.0, 0.0, -1.0), n);
+      float sp = pow(max(dot(n, H), 0.0), 60.0);
+      if (storm) {
+        col = mix(vec3(0.012, 0.003, 0.008), vec3(0.16, 0.05, 0.09), f * f);
+        col += mix(envRefl(R), vec3(1.0, 0.17, 0.6) * luma(envRefl(R)), 0.5) * 0.32 * (1.2 - f) + vec3(1.0, 0.85, 0.9) * sp * 0.9;
+        vec2 vq = p * 2.6 + (vec2(fbm3(p * 2.0), fbm3(p * 2.0 + 4.1)) - 0.5) * 0.9;
+        float lv = abs(fbm4(vq) - 0.5);
+        col += vec3(1.0, 0.16, 0.52) * exp(-lv / 0.014) * 0.85 + vec3(1.0, 0.75, 0.9) * exp(-lv / 0.004) * 0.5;
+        col += vec3(1.0, 0.12, 0.45) * sat(dot(-g, KEY.xy) * 1.2) * 0.22;   // hot rim light on the shaded sides
+      } else {
+        float frost = fbm4(p * 22.0) * 0.7 + vnoise(p * 90.0) * 0.3;
+        vec3 iceLo = vec3(0.05, 0.13, 0.30), iceMid = vec3(0.34, 0.60, 0.90), iceHi = vec3(0.80, 0.92, 1.0);
+        float ff = sat(f * 0.92 * (0.80 + 0.32 * frost));
+        col = ff < 0.5 ? mix(iceLo, iceMid, ff * 2.0) : mix(iceMid, iceHi, (ff - 0.5) * 2.0);
+        col += envRefl(R) * 0.45 + vec3(1.0) * sp * 0.7;
+        col += vec3(0.85, 0.95, 1.0) * smoothstep(0.80, 0.95, ridge4(p * 7.0 + 3.0)) * 0.25;
       }
-      vec3 filCol = vec3(1.0, 0.25, 0.85) * fil * 0.9 + vec3(1.0, 0.85, 0.95) * pow(fil, 2.0) * 0.35;
-      float coreG = exp(-r / 0.07);
-      col = gas + filCol + vec3(1.0, 0.55, 0.9) * contact * 0.9 + vec3(1.0, 0.9, 0.95) * coreG * 1.3;
-      // electrode
-      float el = 1.0 - smoothstep(0.075 - uPx, 0.075 + uPx, r);
-      col = mix(col, vec3(1.0, 0.95, 0.98), el);
-      // glass: fresnel rim, reflection, highlight
-      float z = sqrt(max(0.0, 1.0 - (r / OR) * (r / OR)));
-      vec3 gn = vec3(p / OR, z);
-      float fres = pow(1.0 - z, 3.0);
-      col += vec3(1.0, 0.16, 0.36) * fres * 0.9;
-      col += envRefl(reflect(vec3(0.0, 0.0, -1.0), gn)) * fres * 0.6;
-      float hl = exp(-dot(p - vec2(-0.25, 0.3), p - vec2(-0.25, 0.3)) / 0.012);
-      float cres = smoothstep(0.06, 0.0, abs(length(p - vec2(0.05, -0.05)) - 0.5)) * sat(dot(normalize(p), vec2(-0.7, 0.7)) * 1.5 - 0.3);
-      col += vec3(1.0) * (hl * 0.55 + cres * 0.30);
-      col += vec3(1.0, 0.6, 0.85) * exp(-abs(dOrb) / (1.2 * uPx)) * 0.7;
+      // facet seams + lips
+      float tb = sat(-dOuter / BW);
+      vec3 lipC = storm ? vec3(1.0, 0.28, 0.55) : vec3(1.0);
+      col += lipC * exp(-abs(dOuter) / (1.1 * uPx)) * 0.55 * sat(dot(g, KEY.xy) + 0.6);
+      col += (storm ? vec3(1.0, 0.5, 0.75) : vec3(0.85, 1.0, 1.0)) * exp(-abs(dIn) / (1.0 * uPx)) * 0.75;
+      col += lipC * exp(-abs(tb - 0.48) * BW / (0.8 * uPx)) * 0.22;
+    }
+    // prongs (crystal spikes, ridge along the axis)
+    if (dOuter >= 0.0 && dSp < 0.0) {
+      vec2 nrm = vec2(-pAxis.y, pAxis.x);
+      float sd = sign(dot(p, nrm) + 1e-6);
+      vec3 n = normalize(vec3(nrm * sd * 0.9 + pAxis * 0.25, 0.6));
+      float f = sat(dot(n, KEY) * 1.2 + 0.2);
+      col = storm ? mix(vec3(0.05, 0.01, 0.02), vec3(1.0, 0.35, 0.6), f * 0.6 + pAlong * 0.4)
+                  : mix(vec3(0.30, 0.55, 0.90), vec3(0.95, 1.0, 1.0), f);
+      col += (storm ? vec3(1.0, 0.5, 0.2) : vec3(0.6, 1.0, 0.85)) * pAlong * pAlong * 0.5;
+      float ridge = exp(-abs(dot(p, nrm) - dot(pAxis * 0.0, nrm)) / (0.9 * uPx)) * 0.0;
+      col += vec3(1.0) * ridge;
     }
   }
+
+  // ribbon
+  float dBan = sdRoundBox(p - BAN_C, BAN_H, 0.075);
+  float covBan = cover(dBan);
+  vec3 banC;
+  {
+    float by = sat((p.y - BAN_C.y) / BAN_H.y * 0.5 + 0.5);
+    banC = storm ? mix(vec3(0.03, 0.0, 0.015), vec3(0.14, 0.02, 0.05), by) : mix(vec3(0.01, 0.03, 0.08), vec3(0.05, 0.13, 0.25), by);
+    // glossy top band
+    banC += (storm ? vec3(1.0, 0.4, 0.5) : vec3(0.6, 0.9, 1.0)) * smoothstep(0.62, 0.95, by) * 0.10;
+    float lip = exp(-abs(dBan + 1.0 * uPx) / (1.0 * uPx));
+    banC += (storm ? vec3(1.0, 0.35, 0.6) : vec3(0.75, 0.95, 1.0)) * lip * (0.35 + 0.55 * by);
+  }
+  // drop shadow of the ribbon onto the plate
+  float dBanSh = sdRoundBox(p - BAN_C - vec2(0.0, -0.035), BAN_H, 0.075);
+  float banSh = exp(-max(dBanSh, 0.0) / 0.03) * 0.55 * covAll;
+
   float od = max(dAll, 0.0);
-  float glow = (exp(-od / 0.04) * 0.6 + exp(-od / 0.15) * 0.35) * fade;
-  float dsh = min(sdHex(p - vec2(0.0, -0.05), HA), sdSpikes(p - vec2(0.0, -0.05)));
-  float shadow = exp(-max(dsh, 0.0) / 0.05) * 0.5 * fade;
+  vec3 gcol = storm ? vec3(1.0, 0.17, 0.7) : mix(vec3(0.24, 1.0, 0.69), uEnv0, 0.3);
+  float glow = (exp(-od / 0.04) * 0.55 + exp(-od / 0.14) * 0.3) * fade;
+  float dsh = min(sdHex(p - vec2(0.0, -0.045), HA), sdProngs(p - vec2(0.0, -0.045), pAxis, pAlong));
+  float shadow = exp(-max(min(dsh, dBanSh), 0.0) / 0.05) * 0.5 * fade;
   vec4 o = vec4(0.0, 0.0, 0.0, shadow);
-  o = vec4(vec3(1.0, 0.17, 0.7) * glow, glow * 0.45) + o * (1.0 - glow * 0.45);
-  o = vec4(col * covAll, covAll) + o * (1.0 - covAll);
+  o = vec4(gcol * glow, glow * 0.45) + o * (1.0 - glow * 0.45);
+  o = vec4(col * covAll * (1.0 - banSh), covAll) + o * (1.0 - covAll);
+  o = vec4(banC * covBan, covBan) + o * (1.0 - covBan);
+  vec4 tx = lettering(p, storm);
+  o = vec4(tx.rgb, tx.a) + o * (1.0 - sat(tx.a));
+  o.a = sat(o.a);
   return o;
 }
 
 void main() {
   vec2 p = cellP();
-  finalColor = uStorm > 0.5 ? wildStorm(p) : wildBase(p);
+  finalColor = wild(p, uStorm > 0.5);
 }
 `;

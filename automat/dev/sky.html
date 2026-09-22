@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>sky harness</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+  #mock { position: fixed; inset: 0; pointer-events: none; }
+  .bar { position: absolute; left: 0; right: 0; }
+  .reg { top: 0; height: 26px; background: linear-gradient(180deg, rgba(3,7,18,0.92), rgba(3,7,18,0.7)); border-bottom: 1px solid rgba(156,201,255,0.16); }
+  .plate { position: absolute; border-radius: 22px; background: linear-gradient(180deg, rgba(12,28,60,0.60), rgba(6,14,32,0.62) 55%, rgba(4,9,22,0.74)); border: 2px solid rgba(207,239,255,0.7); box-shadow: 0 0 18px rgba(156,201,255,0.25); }
+  .cell { position: absolute; border-radius: 8px; background: linear-gradient(180deg, rgba(19,36,69,0.34), rgba(5,11,28,0.5)); }
+  .side { position: absolute; border-radius: 16px; background: rgba(6,14,34,0.56); border: 1px solid rgba(156,201,255,0.16); backdrop-filter: blur(10px); }
+  .spin { position: absolute; width: 88px; height: 88px; border-radius: 50%; border: 2px solid rgba(234,248,255,0.6); background: rgba(6,14,34,0.56); }
+  .chip { position: absolute; height: 26px; border-radius: 13px; background: rgba(6,14,34,0.56); border: 1px solid rgba(156,201,255,0.16); }
+</style>
+</head>
+<body>
+<div id="mock"></div>
+<script type="module" src="./sky.ts"></script>
+</body>
+</html>

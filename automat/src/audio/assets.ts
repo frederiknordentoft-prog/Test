@@ -1,0 +1,57 @@
+// Asset registry + offline renderer: every SFX one-shot and every music stem is rendered once through its
+// own short OfflineAudioContext (runs on the audio render thread; the main thread only builds the graph),
+// then post-processed (DC removal, normalisation, trimming or loop folding).
+import { SFX_ASSETS } from './sfx.ts';
+import { STEM_BY_ID, STEMS, grid, barFrames, BASE_BPM, STORM_BPM, type StemDef } from './music.ts';
+import { finishOneShot, finishLoop } from './dsp.ts';
+
+/** One-shot normalisation peak (−1 dBFS); per-SFX mix levels are applied at play time. */
+export const SFX_PEAK = 0.891;
+
+export const isStem = (id: string): boolean => id in STEM_BY_ID;
+export const stemDef = (id: string): StemDef | undefined => STEM_BY_ID[id];
+export const allAssetIds = (): string[] => [...Object.keys(SFX_ASSETS), ...STEMS.map((s) => s.id)];
+
+export function stemLoopFrames(def: StemDef, sr: number): number {
+  return barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, sr) * def.bars;
+}
+
+/** Render one asset at `sr`. Throws only if the platform lacks OfflineAudioContext. */
+export async function renderAsset(id: string, sr: number): Promise<AudioBuffer> {
+  const stem = STEM_BY_ID[id];
+  if (stem) {
+    const g = grid(stem.group === 'base' ? BASE_BPM : STORM_BPM, sr, stem.bars, stem.tail);
+    const ctx = new OfflineAudioContext(stem.ch, Math.ceil(g.end * sr), sr);
+    const out = ctx.createGain();
+    out.connect(ctx.destination);
+    stem.build(ctx, out, g);
+    const raw = await ctx.startRendering();
+    return finishLoop(raw, stemLoopFrames(stem, sr), stem.rmsDb);
+  }
+  const a = SFX_ASSETS[id];
+  if (!a) throw new Error('unknown audio asset ' + id);
+  const ctx = new OfflineAudioContext(a.ch, Math.ceil(a.dur * sr), sr);
+  const out = ctx.createGain();
+  out.connect(ctx.destination);
+  a.build(ctx, out);
+  const raw = await ctx.startRendering();
+  return finishOneShot(raw, SFX_PEAK);
+}
+
+/**
+ * Render order after unlock: the very first sounds (land arpeggio at grid assembly, UI), the base bed,
+ * everything a base spin can trigger, then the Solstorm cinematic set + storm core (the demo can reach the
+ * storm ~5 s after unlock), then the remaining base layers and storm layers. Callers can bump any id.
+ */
+export const RENDER_ORDER: string[] = [
+  'land74a', 'land79a', 'land84a', 'land69a', 'land89a', 'land94a', 'tap', 'spin0',
+  'base0',
+  'land74b', 'land79b', 'land84b', 'land69b', 'land89b', 'land94b', 'spin1', 'spin2',
+  'returnTick0', 'returnTick1', 'chime74', 'chime81', 'chime86', 'chime93', 'shatter0', 'shatter1', 'shatter2',
+  'nettoCross', 'markUp', 'mote0', 'mote1', 'sun1', 'sun2', 'sun3', 'anticipation', 'countTick', 'win1', 'win2',
+  'stakeUp', 'stakeDown', 'levelUp50', 'levelUp62',
+  'stormSwell', 'stormRiser', 'impact', 'drop808', 'glassXL', 'reform', 'letterSlam0', 'letterSlam1', 'storm0',
+  'base1', 'base2', 'base3', 'base4',
+  'bigWin3', 'bigWin4', 'bigWin5', 'waveBoom', 'summary', 'fade',
+  'storm1', 'storm2', 'storm3',
+];
