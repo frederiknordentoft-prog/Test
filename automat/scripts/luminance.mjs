@@ -63,6 +63,18 @@ for (let i = 0; i < swings.length; i++) {
   for (let j = i; j < swings.length && swings[j] - swings[i] < 30; j++) n++;
   worst = Math.max(worst, Math.floor(n / 2)); // a flash = a pair of opposing changes
 }
+// WCAG 2.3.1 general flash: opposing changes of ≥ 0.1 relative luminance where the darker state is < 0.8.
+const wcagSwings = [];
+{
+  let ext = trace[0].L, d0 = 0;
+  for (let i = 1; i < trace.length; i++) {
+    const L = trace[i].L, d = L - ext;
+    if (Math.abs(d) >= 0.1 && Math.min(L, ext) < 0.8) { const nd = Math.sign(d); if (nd !== d0) { wcagSwings.push(i); d0 = nd; } ext = L; }
+    else if ((d0 > 0 && L > ext) || (d0 < 0 && L < ext)) ext = L;
+  }
+}
+let wcagWorst = 0;
+for (let i = 0; i < wcagSwings.length; i++) { let n = 0; for (let j = i; j < wcagSwings.length && wcagSwings[j] - wcagSwings[i] < 30; j++) n++; wcagWorst = Math.max(wcagWorst, Math.floor(n / 2)); }
 const maxRed = Math.max(...trace.map((t) => t.red));
-console.log(JSON.stringify({ calm: calm === '1', frames: trace.length, swings: swings.length, worstFlashesPerSecond: worst, maxSaturatedRedShare: +maxRed.toFixed(3), minL: +Math.min(...trace.map((t) => t.L)).toFixed(4), maxL: +Math.max(...trace.map((t) => t.L)).toFixed(4), pass: worst <= 3 && maxRed < 0.25 }));
+console.log(JSON.stringify({ calm: calm === '1', frames: trace.length, swings: swings.length, worstFlashesPerSecond: worst, wcagFlashesPerSecond: wcagWorst, maxSaturatedRedShare: +maxRed.toFixed(3), minL: +Math.min(...trace.map((t) => t.L)).toFixed(4), maxL: +Math.max(...trace.map((t) => t.L)).toFixed(4), pass: wcagWorst <= 3 && worst <= 3 && maxRed < 0.25 }));
 await browser.close();
