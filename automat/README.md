@@ -20,7 +20,7 @@ Artifacts modtager kun et rent `#anker`. Flags skrives derfor som tokens, der ka
 
 | Link | Effekt |
 |---|---|
-| `#solstorm` | Demo-stormen starter automatisk 2 s efter "Tænd himlen" |
+| `#solstorm` | Demo-stormen starter automatisk 2 s efter "Tænd himlen" (demo-pillen udløser den også direkte; ⋯ åbner demo-værktøjerne) |
 | `#clean` | Skjuler demo-pillen til optagelser. Vandmærket "DEMO" i canvas bliver stående |
 | `#fullfx` | Fuld effekt, selvom systemet beder om reduceret bevægelse |
 | `#fps` | Viser FPS i et overlay |
@@ -46,5 +46,32 @@ src/ui/        DOM-HUD: skarp tekst, a11y, regulatoriske strips, menu, regler, d
 - Der er ingen konstruerede near-misses. Anticipation følger en fast regel, der kan ses i reglerne.
 - Solstorm-cinematic'en er slavet til lyd-uret, og hit-stops fryser kun effekter.
 - Demo-knappen kører på en in-memory kopi af state. Den krediteres ikke saldoen, og den rigtige måler gendannes bagefter.
+
+## Verifikation
+
+| Område | Resultat | Kommando |
+|---|---|---|
+| Matematik (samlet RTP) | 96,035 % ± 0,055 pp (95 %-CI) | `npm run sim` |
+| Matematik (gates) | 18 af 18 bestået på friske seeds; par sheet i `sim/REPORT.md` | `npm run sim` |
+| Tests | 70/70 grønne: RNG-vektorer, klynger, kaskader, storm-replay, måler, golden hashes, 3,0 s-gulv, LDW-profiler og grænser mellem lag | `npm test` |
+| Fotosensitivitet | WCAG 2.3.1: højst 1 blink/s (grænse 3); streng 10 %-måling højst 2/s; mættet rød højst 20 % af skærmen | `node scripts/luminance.mjs` |
+| Visuel QA | Deterministisk Playwright-tur (SwiftShader WebGL2) ved 390×844, 375×667 og 1920×1080, uden page-fejl | `node scripts/tour.mjs` |
+| Artifact | Single-file ca. 1 MB uden eksterne hosts | `npm run build:artifact` |
+
+**Lyd:**
+- Tjekket headless med 39 checks: ingen clipping, sømløse loops, storm-downbeat på 0 frames' afvigelse og bar-alignede lag.
+- Er ikke lyttetestet af et menneske.
+
+**Ydelse:**
+- Headless SwiftShader siger intet om rigtig GPU-tid. Brug `#fps` på en telefon.
+- Adaptiv kvalitet (H/M/L) justerer opløsning, partikler, bloom og nordlysets frekvens.
+
+**Review:**
+- Et panel med fire linser (visuel, UX/copy, kode, compliance/ydelse) gennemgik spillet.
+- Efter rettelserne tjekkede en adversariel verifikation hvert fund. Resultatet var fikset eller bevidst udskudt.
+- Bevidst udskudt:
+  - Isfont-atlasset bygges ved boot, ikke ved build.
+  - Bloom-composite og uber-pass er ikke slået sammen.
+  - Der er ingen downloadet brødtekst-font, fordi alle assets skal være lavet i kode.
 
 Se [PLAN.md](PLAN.md) for designet og [docs/CONTRACTS.md](docs/CONTRACTS.md) for modulgrænserne.
