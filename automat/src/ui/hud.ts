@@ -450,7 +450,7 @@ export class Hud {
     return TIERS.filter((t) => t.kp > 0).map((t) => {
       const cls = kp >= t.kp ? 'on' : Math.floor(kp) + 1 === t.kp ? 'next' : '';
       const spins = REPORT.kpMeanSpins?.[t.kp - 1];
-      return `<div class="r ${cls}"><span class="k">Kp ${t.kp}</span><span><span class="c">${t.change}</span><br><span class="g">${t.gName ? t.gName + ' · ' : ''}${t.name}</span></span><span class="g num">${spins ? '≈ ' + fmtInt(Math.round(spins)) + ' spin' : ''}</span></div>`;
+      return `<div class="r ${cls}"><span class="k">Kp ${t.kp}</span><span><span class="c">${t.change}</span><br><span class="g">${t.gName ? t.gName + ' · ' : ''}${t.name}${spins ? ' · <span class="num">≈ ' + fmtInt(Math.round(spins)) + ' spin</span>' : ''}</span></span></div>`;
     }).reverse().join('');
   }
   private histHtml(n: number): string {

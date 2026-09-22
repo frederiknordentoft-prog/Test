@@ -61,6 +61,8 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
   const logoY = band.top + Math.max(logoSize * 0.62, band.height * 0.42);
   logo.position.set(W / 2, logoY);
   sub.position.set(W / 2, Math.min(logoY + logoSize * 0.82 + subSize * 0.4, w.gridTop() - subSize * 0.9 - 10));
+  // Low phones: the band only fits the title — drop the subtitle rather than collide with the watermark.
+  const showSub = band.height >= 90;
   kpTxt.position.set(W / 2, H * 0.42);
 
   const cleanup = () => {
@@ -81,7 +83,8 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
       .call(() => { w.buildStormStage(); w.onModeStorm(); }, [], 0.8)
       .to(w.scene, { alpha: 1, duration: 0.8 }, 0.85)
       .call(() => { const sub2 = gsap.timeline(); w.revealFrame(sub2, 0); w.dropStormSymbols(sub2, 0.2); }, [], 0.9)
-      .to([logo, sub], { alpha: 1, duration: 0.6 }, 1.2)
+      .to(logo, { alpha: 1, duration: 0.6 }, 1.2)
+      .to(sub, { alpha: showSub ? 1 : 0, duration: 0.6 }, 1.2)
       .call(() => A.startStorm(t0 + 2.2), [], 2.0);
     tl.call(() => { cleanup(); viewedOnce = true; resolveDone(); }, [], 2.4);
     anchorToAudio(() => A.now(), () => A.latency());
@@ -172,7 +175,7 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
       .call(() => { w.camera.trauma = Math.max(w.camera.trauma, 0.25); }, [], t + 0.05);
     at('letterSlam', t, { gain: 0.8 });
   });
-  tl.fromTo(sub, { alpha: 0 }, { alpha: 1, duration: 0.4 }, 4.35)
+  tl.fromTo(sub, { alpha: 0 }, { alpha: showSub ? 1 : 0, duration: 0.4 }, 4.35)
     .fromTo(logo, { glow: 2 }, { glow: 1, duration: 1.2 }, 3.75);
 
   // ---------------- 4.60 – 5.60 symbols rain in + start marks ----------------
