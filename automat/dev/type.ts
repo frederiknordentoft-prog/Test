@@ -47,6 +47,7 @@ const realSky = hp.get('real') === '1';
 let skyLayer: (Container & { update(p: unknown): void }) | null = null;
 
 function sky(storm = false): Container {
+  if (hp.get('bg') === 'black') return new Container();
   if (realSky) {
     const holder = new Container();
     import('../src/render/sky/SkyLayer.ts').then(({ SkyLayer }) => {

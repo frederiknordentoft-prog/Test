@@ -29,11 +29,11 @@ function makeRT(): RenderTexture {
 }
 
 export class BloomFilter extends Filter {
-  /** Max-channel brightness where bloom starts (soft knee around it). Dark UI glass (< ~0.35) never blooms. */
-  threshold = 0.6;
+  /** Brightness (½ max-channel + ½ luma) where bloom starts, soft knee around it. Dark UI glass never blooms. */
+  threshold = 0.55;
   /** Soft-knee half width. */
   knee = 0.32;
-  /** 1.0 base, 1.6 storm, up to ~1.8 in the cinematic. 0 = pass-through (chain skipped). */
+  /** 1.0 base, 1.6 storm, up to ~1.8 in the cinematic (log-compressed above 1). 0 = pass-through (chain skipped). */
   strength = 1;
   /** 0..1: 0 = tight glow on the emitter only, 1 = all energy in the widest halo. */
   scatter = 0.55;
@@ -94,7 +94,9 @@ export class BloomFilter extends Filter {
 
   override apply(fm: FilterSystem, input: Texture, output: RenderSurface, clearMode: boolean): void {
     const cu = this.cu;
-    const k = (this.strength || 0) * GAIN;
+    // linear to 1, logarithmic above (1.6 → 1.47, 2.56 → 1.94): dense emitter fields (64 storm cells) never fog over
+    const st = this.strength || 0;
+    const k = (st <= 1 ? st : 1 + Math.log(st)) * GAIN;
     if (!(k > 0.001)) {
       cu.uBloomMix[0] = 0;
       fm.applyFilter(this, input, output, clearMode);
@@ -134,6 +136,15 @@ export class BloomFilter extends Filter {
     cu.uBloomMix[0] = k;
     cu.uBloomMix[1] = Math.min(1, Math.max(0, this.protect || 0));
     fm.applyFilter(this, input, output, clearMode);
+  }
+
+  /** Frees the pyramid render targets and sub-filters. Programs are shared (GlProgram.from cache) and kept. */
+  override destroy(): void {
+    for (const t of this.L) t.destroy(true);
+    for (const t of this.U) t.destroy(true);
+    this.pre.destroy(); this.down.destroy();
+    for (const f of this.ups) f.destroy();
+    super.destroy(false);
   }
 
   /** (Re)size the pyramid when the filter frame outgrows it, shrinks a lot, or the resolution changes. */

@@ -282,10 +282,11 @@ export class SkyLayer extends Container {
     const K2 = c.uK2 as Float32Array; K2[0] = inten; K2[1] = glow; K2[2] = 1; K2[3] = S[3];
     // light on the chalk: aurora ambient (+ the plasma sun in the storm)
     const L = c.uLight as Float32Array;
-    const lk = inten * 0.27 * (1 + 0.12 * glow) * (1 - 0.45 * storm);
-    L[0] = (this.cBody[0] * 0.6 + this.cTop[0] * 0.25 * topMix + this.cFringe[0] * 0.15) * lk + C.molten[0] * S[3] * 0.2;
-    L[1] = (this.cBody[1] * 0.6 + this.cTop[1] * 0.25 * topMix + this.cFringe[1] * 0.15) * lk + C.molten[1] * S[3] * 0.2;
-    L[2] = (this.cBody[2] * 0.6 + this.cTop[2] * 0.25 * topMix + this.cFringe[2] * 0.15) * lk + C.molten[2] * S[3] * 0.2;
+    const lk = inten * 0.27 * (1 + 0.12 * glow) * (1 - 0.65 * storm);
+    for (let i = 0; i < 3; i++) {
+      const aur = (this.cBody[i] * 0.6 + this.cTop[i] * 0.25 * topMix + this.cFringe[i] * 0.15) * lk;
+      L[i] = aur + (C.crimson[i] * 0.55 + C.molten[i] * 0.45) * S[3] * 0.08;
+    }
     const Hz = c.uHaze as Float32Array;
     for (let i = 0; i < 3; i++) {
       const base = C.airglow[i] * 0.55 + this.cBody[i] * inten * 0.07;
@@ -326,8 +327,10 @@ export class SkyLayer extends Container {
     this.r.runners.contextChange.remove(this.hooks);
     this.rtStatic?.destroy(true); this.rtLand?.destroy(true); this.rtAur?.destroy(true);
     this.rtStatic = this.rtLand = this.rtAur = null;
-    for (const p of [this.stat, this.land, this.aur]) p.destroy();
+    this.stat.destroy(); this.land.destroy(); this.aur.destroy();
+    const mesh = this.comp.mesh;
     super.destroy(options);
+    if (!mesh.destroyed) mesh.destroy();
     this.comp.shader.destroy();
   }
 
@@ -338,7 +341,7 @@ export class SkyLayer extends Container {
     const mk = (r: number) => RenderTexture.create({ width: W, height: H, resolution: r, antialias: false, scaleMode: 'linear' });
     this.rtStatic = mk(res);
     this.rtLand = mk(res);
-    this.rtAur = mk(Math.max(0.25, res * this.auroraScale));
+    this.rtAur = mk(this.auroraRes());
     const R = this.comp.shader.resources as Record<string, unknown>;
     R.uStatic = this.rtStatic.source;
     R.uLand = this.rtLand.source;
@@ -351,7 +354,7 @@ export class SkyLayer extends Container {
     // RT passes: quad covers the RT; composite: quad covers screen + margin in the scene
     this.stat.frame(-MARGIN, -MARGIN, W, H, w, h, hy, res);
     this.land.frame(-MARGIN, -MARGIN, W, H, w, h, hy, res);
-    this.aur.frame(-MARGIN, -MARGIN, W, H, w, h, hy, res * this.auroraScale);
+    this.aur.frame(-MARGIN, -MARGIN, W, H, w, h, hy, this.auroraRes());
     this.comp.frame(-MARGIN, -MARGIN, W, H, w, h, hy, res);
     this.comp.mesh.position.set(-MARGIN, -MARGIN);
     this.comp.mesh.scale.set(W, H);
@@ -374,6 +377,9 @@ export class SkyLayer extends Container {
     sv[0] = 0.11; sv[1] = 0.37;
     sv[2] = Math.max(0.5, Math.min(0.82, 1 - (top + 0.012 * h) / hy));
   }
+
+  /** Aurora RT resolution: auroraScale × canvas resolution, capped at 1 texel per CSS px. */
+  private auroraRes(): number { return Math.max(0.25, Math.min(1, this.res * this.auroraScale)); }
 
   /** Grid top (CSS px): from setFocus(), else estimated like world.layout() (portrait: horizon = top + 0.86·size, size ≈ 0.93·w). */
   private gridTop(): number {

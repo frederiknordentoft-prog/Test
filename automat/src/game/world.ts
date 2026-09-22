@@ -146,6 +146,7 @@ export class World {
     const portrait = w / h < 1.1;
     const horizonY = portrait ? this.gridRect.y + size * 0.86 : h * 0.66;
     this.sky.resize(w, h, horizonY);
+    this.sky.setFocus(this.gridRect.x, this.gridRect.y, size);
     this.frame.layout(this.gridRect.x, this.gridRect.y, size, this.storm);
     // symbol texture size for this cell size
     const want = cell * st.res * 1.25;
@@ -253,6 +254,7 @@ export class World {
     if (Math.abs(st.renderer.resolution - res) > 0.01) { st.renderer.resolution = res; st.res = res; st.renderer.resize(st.w, st.h); }
     this.particles.setBudget([2400, 1400, 600][q]);
     this.bloom.enabled = q < 2;
+    this.sky.auroraEvery = q >= 1 ? 2 : 1;
   }
 
   /** Headless deterministic stepping for screenshots / QA. */

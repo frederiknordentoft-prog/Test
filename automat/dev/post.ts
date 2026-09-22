@@ -395,7 +395,12 @@ async function runLose(): Promise<void> {
   await Promise.race([restored, timeout]);
   probe.loseRestoredEvent = !gl.isContextLost();
   await new Promise((r) => setTimeout(r, 100));
-  uber.cinematic = true; app.render(); uber.cinematic = false; // both variants must come back after restore
+  // programs are gone after a restore: the first frame must re-link (incl. the cinematic pre-warm), the first
+  // cinematic frame afterwards must link nothing
+  const k0 = glStats.link; app.render();
+  const k1 = glStats.link; uber.cinematic = true; app.render();
+  const k2 = glStats.link; uber.cinematic = false;
+  probe.loseWarm = { linksFirstFrameAfterRestore: k1 - k0, linksFirstCinematicFrameAfterRestore: k2 - k1 };
   const after = measure();
   const skyAfter = meanLum(grab(0, 0, W, py - 40));
   probe.lose = {

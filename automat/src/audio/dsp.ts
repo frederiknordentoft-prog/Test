@@ -45,12 +45,17 @@ export function noiseBuf(ctx: Ctx, seconds = 4, seed = 1, ch = 1): AudioBuffer {
   return b;
 }
 
-/** Looping noise source started at t0 (random offset), stopped at t1. */
+/**
+ * Looping noise source started at t0, stopped at t1. Hits share a few cached noise buffers per context
+ * (seed picks one of 4 variants + a golden-ratio offset), so building a graph with hundreds of noise hits
+ * costs no per-hit buffer generation on the main thread.
+ */
 export function noise(ctx: Ctx, t0: number, t1: number, seed = 1, seconds = 4, ch = 1): AudioBufferSourceNode {
   const s = ctx.createBufferSource();
-  s.buffer = noiseBuf(ctx, seconds, seed, ch);
+  const len = seconds > 4 ? Math.ceil(seconds) : 4;
+  s.buffer = noiseBuf(ctx, len, 1 + (Math.abs(Math.floor(seed)) % 4), ch);
   s.loop = true;
-  const off = (seed * 0.61803) % 1 * seconds;
+  const off = ((Math.abs(seed) * 0.61803398875) % 1) * len;
   s.start(Math.max(0, t0), off);
   s.stop(Math.max(t0 + 0.001, t1));
   return s;
@@ -343,21 +348,21 @@ export function makeIR(ctx: Ctx, o: IROpts): AudioBuffer {
   const pre = Math.floor(o.pre * sr);
   const a1 = 1 - Math.exp(-2 * Math.PI * 700 / sr);    // low/high split
   const a2 = 1 - Math.exp(-2 * Math.PI * 9000 / sr);   // gentle top roll-off
-  const kLo = -6.9078 / (o.rt60 * sr);
-  const kHi = -6.9078 / (o.rt60 * o.damp * sr);
+  const mLo = Math.exp(-6.9078 / (o.rt60 * sr));
+  const mHi = Math.exp(-6.9078 / (o.rt60 * o.damp * sr));
+  const bLen = 0.03 * sr;
   for (let c = 0; c < 2; c++) {
     const r = prng(o.seed * 31 + c * 977);
     const d = buf.getChannelData(c);
-    let lp = 0, top = 0;
-    for (let i = 0; i < n; i++) {
+    let lp = 0, top = 0, eLo = 1.6, eHi = 1;
+    for (let i = pre; i < n; i++) {
       const j = i - pre;
-      if (j < 0) continue;
       const x = r() * 2 - 1;
       top += a2 * (x - top);
       lp += a1 * (top - lp);
-      const hi = top - lp;
-      const build = j < 0.03 * sr ? j / (0.03 * sr) : 1; // diffusion build-up
-      d[i] = (lp * 1.6 * Math.exp(kLo * j) + hi * Math.exp(kHi * j)) * build;
+      const build = j < bLen ? j / bLen : 1; // diffusion build-up
+      d[i] = (lp * eLo + (top - lp) * eHi) * build;
+      eLo *= mLo; eHi *= mHi;
     }
     // early reflections (distinct per channel → width)
     const er = o.er ?? 9;
@@ -418,38 +423,38 @@ export function scale(b: AudioBuffer, k: number): void {
 
 /**
  * One-shot post: remove DC, normalise to `peak`, trim trailing audio below `floorDb` (relative to peak)
- * and apply a short fade so the trimmed end is click-free.
+ * and fade the end so the trim is click-free. Three linear passes; no allocations beyond the output.
  */
 export function finishOneShot(b: AudioBuffer, peak: number, floorDb = -64): AudioBuffer {
-  const ch = b.numberOfChannels, sr = b.sampleRate;
-  // DC
+  const ch = b.numberOfChannels, sr = b.sampleRate, n = b.length;
+  const mean: number[] = [];
+  let p = 0;
   for (let c = 0; c < ch; c++) {
     const d = b.getChannelData(c);
     let m = 0;
-    for (let i = 0; i < d.length; i++) m += d[i];
-    m /= d.length;
-    if (Math.abs(m) > 1e-6) for (let i = 0; i < d.length; i++) d[i] -= m;
+    for (let i = 0; i < n; i++) m += d[i];
+    m /= n;
+    mean.push(m);
+    for (let i = 0; i < n; i++) { const v = d[i] - m; const a = v < 0 ? -v : v; if (a > p) p = a; }
   }
-  const p = peakOf(b);
   if (p < 1e-9) return b;
-  scale(b, peak / p);
-  const thr = peak * Math.pow(10, floorDb / 20);
+  const k = peak / p;
+  const thr = p * Math.pow(10, floorDb / 20);
   let last = 0;
   for (let c = 0; c < ch; c++) {
-    const d = b.getChannelData(c);
-    for (let i = d.length - 1; i > last; i--) if (Math.abs(d[i]) > thr) { last = i; break; }
+    const d = b.getChannelData(c), m = mean[c];
+    for (let i = n - 1; i > last; i--) { const v = d[i] - m; if (v > thr || v < -thr) { last = i; break; } }
   }
   // Decayed below the floor → short 30 ms fade after the last audible sample; otherwise the render was
   // cut while still ringing → long (≤ 300 ms, ≤ 15 %) fade so the cut is a natural-sounding decay.
   const short = Math.floor(0.03 * sr);
-  const ringing = last >= b.length - short - 1;
-  const fade = ringing ? Math.min(Math.floor(0.3 * sr), Math.floor(b.length * 0.15)) : short;
-  const len = Math.min(b.length, last + (ringing ? 0 : fade) + 1);
+  const ringing = last >= n - short - 1;
+  const fade = ringing ? Math.min(Math.floor(0.3 * sr), Math.floor(n * 0.15)) : short;
+  const len = Math.min(n, last + (ringing ? 0 : fade) + 1);
   const out = newBuffer(ch, len, sr);
   for (let c = 0; c < ch; c++) {
-    const src = b.getChannelData(c).subarray(0, len);
-    const d = out.getChannelData(c);
-    d.set(src);
+    const src = b.getChannelData(c), d = out.getChannelData(c), m = mean[c];
+    for (let i = 0; i < len; i++) d[i] = (src[i] - m) * k;
     for (let i = 0; i < fade && i < len; i++) d[len - 1 - i] *= i / fade;
   }
   return out;
@@ -460,28 +465,35 @@ export function finishOneShot(b: AudioBuffer, peak: number, floorDb = -64): Audi
  * the first), remove DC, normalise to `rmsDb` (capped so the peak stays ≤ maxPeak).
  */
 export function finishLoop(b: AudioBuffer, loopFrames: number, rmsDb: number, maxPeak = 0.9): AudioBuffer {
-  const ch = b.numberOfChannels, sr = b.sampleRate;
+  const ch = b.numberOfChannels, sr = b.sampleRate, n = b.length;
   const out = newBuffer(ch, loopFrames, sr);
   const tailFade = Math.floor(0.08 * sr);
+  let e = 0, pk = 0;
   for (let c = 0; c < ch; c++) {
-    const src = b.getChannelData(c);
-    const d = out.getChannelData(c);
-    const n = src.length;
-    for (let i = 0; i < n; i++) {
-      let v = src[i];
-      if (i > n - tailFade) v *= (n - i) / tailFade;
-      d[i % loopFrames] += v;
+    const src = b.getChannelData(c), d = out.getChannelData(c);
+    d.set(src.subarray(0, Math.min(loopFrames, n)));
+    for (let start = loopFrames; start < n; start += loopFrames) {
+      const end = Math.min(n, start + loopFrames);
+      for (let i = start; i < end; i++) {
+        const v = i > n - tailFade ? src[i] * ((n - i) / tailFade) : src[i];
+        d[i - start] += v;
+      }
     }
     let m = 0;
     for (let i = 0; i < loopFrames; i++) m += d[i];
     m /= loopFrames;
-    for (let i = 0; i < loopFrames; i++) d[i] -= m;
+    for (let i = 0; i < loopFrames; i++) {
+      const v = d[i] - m;
+      d[i] = v;
+      e += v * v;
+      const a = v < 0 ? -v : v;
+      if (a > pk) pk = a;
+    }
   }
-  const r = rmsOf(out);
+  const r = Math.sqrt(e / (loopFrames * ch));
   if (r > 1e-9) {
     let k = dbToGain(rmsDb) / r;
-    const p = peakOf(out) * k;
-    if (p > maxPeak) k *= maxPeak / p;
+    if (pk * k > maxPeak) k = maxPeak / pk;
     scale(out, k);
   }
   return out;

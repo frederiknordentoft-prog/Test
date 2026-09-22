@@ -164,12 +164,13 @@ for (const v of [0, 1]) {
   };
 }
 
+// Upward fifth D6 → A6 + D7 glint: fits both D dorian (base) and D phrygian (storm).
 A.nettoCross = {
   ch: 1, dur: 1.6,
   build(ctx, out) {
-    chimeVoice(ctx, out, 0.002, mtof(88), 0.5, 0.32);   // E6
+    chimeVoice(ctx, out, 0.002, mtof(86), 0.5, 0.32);   // D6
     chimeVoice(ctx, out, 0.062, mtof(93), 0.62, 0.42);  // A6
-    const o = osc(ctx, 'sine', mtof(100), 0.062, 0.6);  // E7 glint
+    const o = osc(ctx, 'sine', mtof(98), 0.062, 0.6);   // D7 glint
     const g = gain(ctx, 0);
     perc(g.gain, 0.062, 0.1, 0.001, 0.07);
     o.connect(g).connect(out);
@@ -233,10 +234,11 @@ A.anticipation = {
     lpL.connect(pan(ctx, -0.45)).connect(trem);
     lpR.connect(pan(ctx, 0.45)).connect(trem);
     trem.connect(env).connect(out);
-    [50, 57, 62, 64].forEach((m, i) => {
+    // open fifths D3 A3 D4 A4: tension from motion (filter + tremolo), not from a mode-specific 9th
+    [50, 57, 62, 69].forEach((m, i) => {
       for (const d of [-8, 8]) {
         const o = osc(ctx, 'sawtooth', mtof(m), 0, 3.1, d);
-        const g = gain(ctx, i === 3 ? 0.07 : 0.12);
+        const g = gain(ctx, i === 3 ? 0.06 : 0.12);
         o.connect(g).connect(d < 0 ? lpL : lpR);
       }
     });
@@ -379,6 +381,21 @@ for (const l of [3, 4, 5]) {
   };
 }
 
+// Storm stinger: IV–V–I in B♭ major (E♭maj9 → F6/9 → B♭add9), diatonic to D phrygian, so it sits on
+// top of the running storm loop without clashes (the F-major base stingers would rub E against E♭).
+A.stormWin = {
+  ch: 1, dur: 5.6,
+  build(ctx, out) {
+    const amp = 0.08;
+    stinger(ctx, out, [
+      { t: 0.01, d: 0.28, notes: [51, 58, 62, 67, 77], amp, bright: 0.9 },
+      { t: 0.32, d: 0.28, notes: [53, 60, 67, 69, 74], amp, bright: 1 },
+      { t: 0.64, d: 2.6, notes: [46, 53, 60, 62, 65, 70], amp: amp * 1.1, bright: 1.15 },
+    ], [[0.62, 2.7, 70, 0.05], [0.62, 2.7, 74, 0.045], [0.62, 2.7, 77, 0.04]],
+    [77, 82, 84, 86, 89, 94].map((m, i) => [0.66 + i * 0.07, m] as [number, number]), [0.64]);
+  },
+};
+
 // ------------------------------------------------------------------ storm set
 A.stormSwell = {
   ch: 1, dur: 2.7, div: 4,
@@ -395,7 +412,8 @@ A.stormSwell = {
     lfo.connect(lg).connect(trem.gain);
     const sat = shaper(ctx, 1.6);
     env.connect(trem).connect(sat).connect(out);
-    for (const [f, a] of [[40, 0.7], [80, 0.25], [120.5, 0.08]] as const) {
+    // 40 Hz sub + body tuned to D (D2, A2) so the swell sits in the key on small speakers
+    for (const [f, a] of [[40, 0.7], [mtof(38), 0.22], [mtof(45), 0.07]] as const) {
       const o = osc(ctx, 'sine', f, 0, 2.7);
       const g = gain(ctx, a);
       o.connect(g).connect(env);
@@ -607,7 +625,7 @@ A.waveBoom = {
       const tg = gain(ctx, 0);
       perc(tg.gain, t, 0.22, 0.0005, 0.01);
       tn.connect(tb).connect(tg).connect(pp);
-      const to = osc(ctx, 'sine', mtof(81 + [0, 2, 3, 5, 7, 8, 10, 12][c2]), t, t + 0.2);
+      const to = osc(ctx, 'sine', mtof(81 + [0, 1, 3, 5, 6, 8, 10, 12][c2]), t, t + 0.2); // A B♭ C D E♭ F G A (D phrygian)
       const tog = gain(ctx, 0);
       perc(tog.gain, t, 0.06, 0.001, 0.03);
       to.connect(tog).connect(pp);

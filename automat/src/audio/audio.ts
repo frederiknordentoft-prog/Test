@@ -13,7 +13,7 @@
 import { crand } from '../core/cosmeticRng.ts';
 import { TIER_SECS } from '../present/schedule.ts';
 import { makeIR, dbToGain } from './dsp.ts';
-import { renderAsset, RENDER_ORDER, allAssetIds, stemDef } from './assets.ts';
+import { renderAsset, RENDER_ORDER, allAssetIds } from './assets.ts';
 import { LAND_ZONES, CHIME_LADDER, CHIME_ZONES, LEVEL_SEMIS, nearestZone } from './sfx.ts';
 import { barFrames, BASE_BPM, STORM_BPM, LAND_BASE, LAND_STORM } from './music.ts';
 
@@ -515,10 +515,12 @@ export class GameAudio {
     }
   }
 
+  /** Release duck() and any held win/summary dip. */
   private releaseDuck(t: number, tau: number): void {
-    const p = this.n!.duck.gain;
-    p.cancelScheduledValues(t);
-    p.setTargetAtTime(1, t, tau);
+    for (const p of [this.n!.duck.gain, this.n!.dip.gain]) {
+      p.cancelScheduledValues(t);
+      p.setTargetAtTime(1, t, tau);
+    }
   }
 
   private musicDip(db: number, hold: number, release: number): void {
@@ -739,18 +741,19 @@ export class GameAudio {
         return;
       case 'win': {
         const L = clamp(Math.round(o.level ?? 1), 1, 5);
-        if (L >= 3) { this.playImpl('bigWin', { ...o, level: L }); return; }
-        id = `win${L}`;
+        if (L >= 3) { this.lastAt.bigWin = undefined; this.playImpl('bigWin', { ...o, level: L }); return; }
         this.lastWin = { level: L, t };
+        if (this.inStorm) { id = 'stormWin'; db -= 3; this.musicDip(-8, 2.2, 1.2); break; }
+        id = `win${L}`;
         if (L === 2) this.musicDip(-4, 1.2, 1.0);
         break;
       }
       case 'bigWin': {
         const L = clamp(Math.round(o.level ?? 3), 3, 5);
-        id = `bigWin${L}`;
+        id = this.inStorm ? 'stormWin' : `bigWin${L}`;
         db += (L - 3) * 1;
         this.lastWin = { level: L, t };
-        this.musicDip(-7, 1.6 + (L - 3) * 0.8, 1.4);
+        this.musicDip(this.inStorm ? -9 : -7, 1.6 + (L - 3) * 0.8, 1.4);
         break;
       }
       case 'letterSlam':
@@ -764,7 +767,8 @@ export class GameAudio {
         if (this.baseS) { this.stopSession(this.baseS, t, 1.6); this.baseS = null; }
         this.baseWanted = false;
         break;
-      case 'summary': this.musicDip(-5, 2.5, 1.2); break;
+      // Summary card waits for "Fortsæt": the storm loop steps back and stays back until stopStorm().
+      case 'summary': this.musicDip(-6, 600, 1.2); break;
       default: break;
     }
 
@@ -908,8 +912,6 @@ export class GameAudio {
   adoptAssets(from: GameAudio): void { for (const [k, v] of from.assets) this.assets.set(k, v); }
   /** QA: look up a rendered asset. */
   asset(id: string): AudioBuffer | undefined { return this.assets.get(id); }
-  /** QA: is `id` a stem? */
-  static isStem(id: string): boolean { return !!stemDef(id); }
 }
 
 /** The game-wide singleton. */

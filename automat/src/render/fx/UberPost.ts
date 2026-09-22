@@ -62,7 +62,10 @@ export class UberPost extends Filter {
 
   private _cinematic = false;
   private readonly u: U;
-  private _warmGl: unknown = null;
+  private _warm = false;
+  private _runner: { add(i: unknown): unknown; remove(i: unknown): unknown } | null = null;
+  /** renderer.runners.contextChange listener: programs are gone after a context restore → pre-warm again. */
+  private readonly _ctx = { contextChange: () => { this._warm = false; } };
 
   constructor() {
     const [base] = programs();
@@ -91,14 +94,18 @@ export class UberPost extends Filter {
     this.glProgram = v ? cine : base;
   }
 
-  /** Optional explicit pre-warm; apply() also does it automatically on the first frame / after context loss. */
-  resetWarm(): void { this._warmGl = null; }
+  /** Force a pre-warm of the inactive variant on the next frame (apply() does it on the first frame and after a
+   *  WebGL context restore by itself). */
+  resetWarm(): void { this._warm = false; }
 
   override apply(fm: FilterSystem, input: Texture, output: RenderSurface, clearMode: boolean): void {
     this.sync(fm, input);
-    const gl = (fm.renderer as unknown as { gl?: unknown }).gl ?? fm.renderer;
-    if (this._warmGl !== gl) {
-      this._warmGl = gl;
+    if (!this._runner) {
+      this._runner = fm.renderer.runners.contextChange as unknown as UberPost['_runner'];
+      this._runner!.add(this._ctx);
+    }
+    if (!this._warm) {
+      this._warm = true;
       const [base, cine] = programs();
       const cur = this.glProgram;
       const tiny = TexturePool.getOptimalTexture(tinyReq);
@@ -108,6 +115,13 @@ export class UberPost extends Filter {
       TexturePool.returnTexture(tiny);
     }
     fm.applyFilter(this, input, output, clearMode);
+  }
+
+  /** Programs are shared module-wide (GlProgram.from cache), so they are never destroyed here. */
+  override destroy(): void {
+    this._runner?.remove(this._ctx);
+    this._runner = null;
+    super.destroy(false);
   }
 
   private sync(fm: FilterSystem, input: Texture): void {

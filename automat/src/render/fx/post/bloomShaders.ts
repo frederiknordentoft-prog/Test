@@ -23,7 +23,9 @@ ${POST_COMMON}
 export const PREFILTER_FRAG = /* glsl */ `${HEAD}
 uniform vec4 uThreshold; // threshold, knee, 1/(4·knee), -
 vec3 knee(vec3 c) {
-  float br = max(c.r, max(c.g, c.b));
+  // brightness = ½ max-channel + ½ luma: white-hot, gold, cyan, aurora green, pink gems bloom; a large field of
+  // saturated-but-dark crimson (storm sky, luma ≈ 0.25) does not — no full-screen red haze.
+  float br = 0.5 * max(c.r, max(c.g, c.b)) + 0.5 * dot(c, LUMA);
   float rq = clamp(br - uThreshold.x + uThreshold.y, 0.0, 2.0 * uThreshold.y);
   rq = rq * rq * uThreshold.z;
   return c * (max(rq, br - uThreshold.x) / max(br, 1e-4));

@@ -501,8 +501,14 @@ async function runCheck(): Promise<void> {
     let po: PerformanceObserver | null = null;
     try { po = new PerformanceObserver((l) => { for (const e of l.getEntries()) longest = Math.max(longest, e.duration); }); po.observe({ type: 'longtask', buffered: false }); } catch { /* */ }
     const p0 = performance.now();
-    while (rt.stats().rendered + rt.stats().failed < rt.stats().total && performance.now() - p0 < 60000) await new Promise((r) => setTimeout(r, 50));
+    const ready: Record<string, number> = {};
+    const watch = ['land74a', 'base0', 'stormSwell', 'storm0', 'base4', 'storm3'];
+    while (rt.stats().rendered + rt.stats().failed < rt.stats().total && performance.now() - p0 < 60000) {
+      for (const id of watch) if (ready[id] === undefined && rt.asset(id)) ready[id] = performance.now() - p0 + uMs;
+      await new Promise((r) => setTimeout(r, 20));
+    }
     const pipeMs = performance.now() - p0 + uMs;
+    res.checks.push({ name: 'time-to-ready after unlock (ms)', ok: true, detail: watch.map((id) => `${id} ${Math.round(ready[id] ?? pipeMs)}`).join(' · ') });
     po?.disconnect();
     const st = rt.stats();
     check('pipeline renders everything', st.failed === 0 && st.rendered === st.total, `${st.rendered}/${st.total} in ${(pipeMs / 1000).toFixed(2)} s wall, ${st.mb.toFixed(1)} MB @ ${st.renderRate} Hz, longest main-thread task ${longest.toFixed(0)} ms`);

@@ -356,7 +356,7 @@ export class IsText extends Container {
       v[o + 1] = m.b * lx + m.d * ly + m.ty;
       v[o + 2] = right ? u1 : u0;
       v[o + 3] = bottom ? v1 : v0;
-      v[o + 4] = gx + ux;
+      v[o + 4] = gx - this._inkL + ux; // text space: 0 at the left ink edge
       v[o + 5] = uy;
       v[o + 6] = alpha;
       v[o + 7] = phase;

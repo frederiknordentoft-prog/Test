@@ -288,7 +288,7 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float h = seamY - p.y;                        // px above the seam
   // the sheet breaks into pieces: brightness envelope along s
   float env = smoothstep(0.18 + 0.2 * storm - 0.14 * uB.x * (1.0 - storm), 0.72, n1(s * 0.65 - ph * 0.035 + seed * 9.0));
-  env = 0.1 + 0.9 * env * (0.75 + 0.25 * n1(s * 2.1 + seed));
+  env = 0.1 + 0.9 * env;
   // extent varies along the sheet
   float Hs = HY * hF * (0.55 + 0.9 * n1(s * 1.4 - ph * 0.08 + seed * 3.0)) * (1.0 + 0.3 * uC.y);
   float pulse = 0.7 + 0.3 * sin(s * 1.9 - ph * 0.55 + seed * 2.0);
@@ -307,7 +307,9 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float fws = abs(conv * (1.0 + F * wf.y)) / (270.0 * sc * uScr.w);
   float f1 = 19.0 * (1.0 + 0.2 * storm), f2 = 44.0;
   float r1 = mix(n1(sr * f1 + ph * 0.7 + seed * 20.0), 0.5, smoothstep(0.22, 0.45, fws * f1));
-  float r2 = mix(n1(sr * f2 - ph * 1.2 + seed * 40.0), 0.5, smoothstep(0.22, 0.45, fws * f2));
+  float a2 = smoothstep(0.22, 0.45, fws * f2);
+  float r2 = 0.5;
+  if (a2 < 1.0) r2 = mix(n1(sr * f2 - ph * 1.2 + seed * 40.0), 0.5, a2);
   float r3 = n1(sr * 6.0 + ph * 0.22 + seed * 60.0);
   float rays = smoothstep(0.15, 0.88, r1 * 0.5 + r2 * 0.3 + r3 * 0.2);
   rays = pow(rays, uB.y);
@@ -361,18 +363,18 @@ vec3 sunLayer(vec2 p, vec3 bg) {
   float rn = vnoise(dir * 16.0 + vec2(0.0, t * 0.06));
   float rn2 = vnoise(dir * 43.0 - vec2(t * 0.05, 0.0));
   float rays = pow(rn * 0.6 + rn2 * 0.4, 3.0) * 1.3 * exp(-od * 0.9) * smoothstep(0.02, 0.25, od);
-  vec3 cor = mix(C_CRIMSON, C_MOLTEN, exp(-od * 2.5) * 0.8);
+  vec3 cor = mix(mix(C_CRIMSON, C_MAGENTA, 0.25 * streamer), C_MOLTEN, exp(-od * 2.5) * 0.85);
   col += cor * (corona + rays * 0.55) * amt;
   // prominences: polar-fbm flame tongues at the limb
   if (d > 0.9 && d < 1.9) {
     float nt = vnoise(dir * 3.5 + vec2(3.1, t * 0.025));
-    float htop = 0.05 + 0.42 * pow(nt, 2.2);
+    float htop = 0.04 + 0.36 * pow(nt, 2.6);
     float tb = vnoise(dir * 13.0 + vec2(od * 7.0 - t * 0.35, t * 0.08));
     float tb2 = vnoise(dir * 29.0 + vec2(od * 13.0 - t * 0.6, 3.0));
-    float tongue = exp(-od / htop) * smoothstep(0.35, 0.75, tb * 0.7 + tb2 * 0.3 + 0.3 - od / htop * 0.2);
-    float heat = exp(-od / (htop * 0.35));
-    vec3 pc = mix(mix(C_MAGENTA, C_CRIMSON, 0.4), C_MOLTEN, heat * 0.8);
-    col += pc * tongue * 1.8 * amt * smoothstep(0.9, 1.0, d);
+    float tongue = exp(-od / htop) * smoothstep(0.45, 0.8, tb * 0.7 + tb2 * 0.3 + 0.28 - od / htop * 0.22);
+    float heat = exp(-od / (htop * 0.4));
+    vec3 pc = mix(mix(C_MAGENTA, C_CRIMSON, 0.7), mix(C_MOLTEN, C_GOLD, 0.3), heat);
+    col += pc * tongue * 1.5 * amt * smoothstep(0.9, 1.0, d);
   }
   // photosphere: limb darkening + fine granulation + faculae + a few umbrae
   float aa = 1.4 * (2.0 / uScr.w) / R;
@@ -403,11 +405,12 @@ vec3 cmeLayer(vec2 p) {
   vec2 v = p - C;
   float rho = length(v);
   float ang = atan(v.x, v.y);
-  vec2 fq = vec2(ang * rho / H * 3.2, rho / H * 3.0 - k * 2.5);       // polar: arc length × radius
-  float b1 = fbm3(fq + vec2(0.0, -t * 0.7));
+  vec2 fq = vec2(ang * rho / H * 3.2 + 17.3, rho / H * 3.0 - k * 2.5);   // polar: arc length × radius
+  // large lobes depend on the angle only (no pinched-off bubbles); small billows ride on top
+  float b1 = fbm3(vec2(fq.x * 0.9, k * 1.2 - t * 0.35));
   float b2 = vnoise(fq * 3.4 + vec2(t * 1.1, -t * 0.6));
   float rf = mix(H * 0.95, H * 2.45, k);
-  float e = rho - rf - (b1 - 0.5) * H * 0.2 - (b2 - 0.5) * H * 0.045;  // > 0: ahead of the front
+  float e = rho - rf - (b1 - 0.5) * H * 0.22 - (b2 - 0.5) * H * 0.035;  // > 0: ahead of the front
   float turb = fbm3(fq * vec2(2.2, 4.5) + vec2(t * 0.4, -t * 1.8));
   // thick hot band right behind the edge, very short falloff ahead of it
   float heat = e < 0.0 ? exp(e / (0.085 * H)) : exp(-e / (0.01 * H));
@@ -481,7 +484,7 @@ vec3 skyGrad(float y) {
   return c;
 }
 
-vec3 skyAt(vec2 uv, vec2 p, float starK) {
+vec3 skyAt(vec2 uv, vec2 p, float starK, out vec3 aur) {
   vec3 c = skyGrad(p.y);
   vec4 st = texture(uStatic, uv);
   float v = sat((uScr.z - p.y) / max(uScr.z, 1.0));
@@ -493,15 +496,16 @@ vec3 skyAt(vec2 uv, vec2 p, float starK) {
   vec3 sc = ph < 0.16 ? vec3(1.0, 0.80, 0.62) : (ph > 0.8 ? vec3(0.72, 0.84, 1.0) : vec3(0.95, 0.97, 1.0));
   c += sc * st.r * tw * uK.x * starK * ext;
   vec3 a = texture(uAur, uv).rgb;
-  c += a * a;
-  return c;
+  aur = a * a;
+  return c + aur;
 }
 
 vec3 shadeLand(vec4 L) {
-  vec3 c = vec3(0.012, 0.018, 0.040) * (1.0 - 0.3 * L.b);
+  vec3 c = mix(vec3(0.012, 0.018, 0.040), vec3(0.03, 0.004, 0.008), uK.z) * (1.0 - 0.3 * L.b);
   vec3 chalkC = vec3(0.79, 0.83, 0.90);
-  c += chalkC * L.g * (vec3(0.10, 0.11, 0.14) + uLight * 2.0);
-  c += uLight * L.a * 0.55;
+  vec3 amb = mix(vec3(0.10, 0.11, 0.14), vec3(0.05, 0.012, 0.018), uK.z);
+  c += chalkC * L.g * (amb + uLight * 2.0);
+  c += (uLight + vec3(1.0, 0.35, 0.08) * uK2.w * uK.z * 0.35) * L.a * 0.6;
   return mix(c, uHaze * 0.9, L.b * 0.5);
 }
 
@@ -513,7 +517,8 @@ void main() {
   float HY = uScr.z;
   vec3 col;
   if (p.y < HY) {
-    col = skyAt(uv, p, 1.0);
+    vec3 aurS;
+    col = skyAt(uv, p, 1.0, aurS);
   } else {
     // ---- sea: mirrored sky + land, perspective ripples, streak highlights ----
     float dy = p.y - HY;
@@ -529,7 +534,8 @@ void main() {
     vec2 rp = vec2(p.x + (w2 - 0.5) * min(dy, 120.0) * 0.05 * fade, HY - dy + (wave - 0.5) * min(dy, 180.0) * 0.4);
     rp.y = min(rp.y, HY - 0.5);
     vec2 ruv = (rp - uOrigin) / uExt;
-    vec3 refl = skyAt(ruv, rp, 0.35);
+    vec3 aur;
+    vec3 refl = skyAt(ruv, rp, 0.35, aur);
     if (uSun.w > 0.001) {                    // a wavy sea breaks the mirrored disk into the glitter path
       float sd = length(rp - uSun.xy) / uSun.z;
       refl *= mix(0.3, 1.0, smoothstep(0.7, 1.6, sd));
@@ -542,13 +548,12 @@ void main() {
     vec2 rp2 = vec2(rp.x, min(rp.y + (0.5 + 0.5 * w1) * min(dy, 160.0) * 0.18, HY - 0.5));
     vec3 a2 = texture(uAur, (rp2 - uOrigin) / uExt).rgb;
     refl = refl * 0.7 + a2 * a2 * 0.3;
-    float fres = mix(0.46, 0.24, sqrt(dn));
+    float fres = mix(0.46, 0.3, sqrt(dn));
     vec3 water = mix(vec3(0.004, 0.010, 0.024), vec3(0.020, 0.003, 0.006), uK.z) + skyGrad(HY - 2.0) * 0.18;
     col = water + refl * fres * uK2.z;
     // crest glints: horizontal streaks catching the aurora
     float crest = pow(sat((w2 - 0.6) * 3.2), 2.5) * fade;
-    vec3 aur = texture(uAur, ruv).rgb;
-    col += aur * aur * crest * 0.9 + uGlowC * crest * 0.6;
+    col += aur * crest * 1.3 + uGlowC * crest * 0.8;
     // the CME front sweeps over the sea as well (aurora RT holds only CME below the horizon)
     if (uCme.x > 0.0) { vec3 cm = texture(uAur, uv).rgb; col += cm * cm; }
     // plasma-sun glitter path

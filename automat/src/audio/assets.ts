@@ -82,6 +82,6 @@ export const RENDER_ORDER: string[] = [
   'stakeUp', 'stakeDown', 'levelUp62', 'levelUp74',
   'stormSwell', 'stormRiser', 'impact', 'drop808', 'glassXL', 'reform', 'letterSlam0', 'letterSlam1', 'storm0',
   'base1', 'base2', 'base3', 'base4',
-  'bigWin3', 'bigWin4', 'bigWin5', 'waveBoom', 'summary', 'fade',
+  'bigWin3', 'bigWin4', 'bigWin5', 'waveBoom', 'summary', 'stormWin', 'fade',
   'storm1', 'storm2', 'storm3',
 ];

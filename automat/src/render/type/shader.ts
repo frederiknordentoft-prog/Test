@@ -125,6 +125,7 @@ void main() {
 }
 `;
 
+// NB: never call smoothstep with edge0 >= edge1 (undefined in GLSL ES; SwiftShader returns garbage).
 const FRAG = /* glsl */ `#version 300 es
 precision highp float;
 in vec2 vUV;
@@ -162,12 +163,16 @@ void main() {
   // reveal (per-letter stagger)
   float lr = 1.0;
   float vis = 1.0;
+  float visSoft = 1.0;
   float tip = 0.0;
   vec4 tx = texture(uTexture, vUV);
   if (P9.z < 0.999) {
     lr = clamp(P9.z * (1.0 + P10.w) - vMisc.y * P10.w, 0.0, 1.0);
     float lr2 = lr * 1.06 - 0.03;
-    vis = smoothstep(lr2 + 0.025, lr2 - 0.025, tx.g);
+    vis = 1.0 - smoothstep(lr2 - 0.025, lr2 + 0.025, tx.g);
+    // halo + shadow bloom per letter once it is drawn (the far-field arc param is only
+    // piecewise smooth, so masking the halo per stroke would cut it along medial axes)
+    visSoft = smoothstep(0.78, 1.0, lr);
     tip = step(0.001, lr) * (1.0 - step(0.999, lr)) * exp(-abs(tx.g - lr2) * 26.0);
   }
 
@@ -185,7 +190,7 @@ void main() {
       // horizon streak: grows out from the centre as the word is revealed
       float ax = abs(q.x);
       float grow = smoothstep(0.25, 1.0, P9.z);
-      float reach = smoothstep(grow, grow * 0.6, ax);
+      float reach = 1.0 - smoothstep(grow * 0.6, grow + 1e-4, ax);
       float core = exp(-abs(q.y) * 22.0) * pow(max(1.0 - ax, 0.0), 1.6);
       float halo = exp(-abs(q.y) * 5.0) * pow(max(1.0 - ax, 0.0), 3.0) * 0.22;
       I = (core + halo) * reach * (1.0 + 0.6 * exp(-pow((q.x * 0.5 + 0.5 - P9.y) * 6.0, 2.0)));
@@ -204,7 +209,7 @@ void main() {
     float slw = P11.z * smoothstep(0.9, 1.8, P11.z / upp);
     float dy = abs(vText.y - P11.y) - slw * 0.5;
     if (slw > 0.0 && -dy > sd) { sd = -dy; g = vec2(0.0, vText.y > P11.y ? -1.0 : 1.0); }
-    below = smoothstep(P11.y + 0.05, P11.y - 0.05, vText.y) * P11.w;
+    below = (1.0 - smoothstep(P11.y - 0.05, P11.y + 0.05, vText.y)) * P11.w;
   }
   float face = clamp(0.5 - sd / upp, 0.0, 1.0);
   float ow = min(max(P8.w, upp * 0.85), 0.95);
@@ -256,42 +261,49 @@ void main() {
   float span = P10.x + 20.0;
   float cxs = -10.0 + (P9.y + 0.0) * span;
   float ds = vText.x + (vText.y - 7.0) * 0.45 - cxs;
-  float sw = exp(-ds * ds / 5.0) * smoothstep(-0.2, -0.1, P9.y) * smoothstep(1.2, 1.1, P9.y);
+  float sw = exp(-ds * ds / 5.0) * smoothstep(-0.2, -0.1, P9.y) * (1.0 - smoothstep(1.1, 1.2, P9.y));
 
   // glow (two-lobe falloff, faded to zero at the cell margin)
   float go = max(sd, 0.0);
   float fall = uS[6].w;
-  float gl = exp(-go / fall) * 0.7 + exp(-go / (fall * 2.7)) * 0.3;
-  gl *= smoothstep(MARGIN - weight - 0.2, MARGIN - weight - 1.8, go);
-  gl *= glowAmt * (1.0 + tip * 3.0 + sw * 0.8);
+  // tight rim lobe + gaussian halo that has decayed well before the atlas margin
+  float gl = exp(-go / (fall * 0.55)) * 0.55 + exp(-(go * go) / (fall * fall * 2.6)) * 0.5;
+  gl *= 1.0 - smoothstep(MARGIN - weight - 1.2, MARGIN - weight - 0.1, go);
+  float glTip = exp(-go / 0.9) * tip;
+  gl *= glowAmt * (1.0 + sw * 0.8);
 
   // soft offset shadow + display-size extrusion (the word as a block of ice / metal)
   vec2 offUV = vec2(-0.3, -0.9) * PPU / ATLAS;
   float sdS = texture(uTexture, vUV + offUV * 1.25).r * SDRANGE + SDMIN - weight;
   float spread = uS[13].x;
-  float shA = uS[11].x * exp(-max(sdS, 0.0) / spread) * smoothstep(MARGIN - 0.3, MARGIN - 2.2, max(sdS, 0.0));
+  float shA = uS[11].x * exp(-(sdS * sdS) / (spread * spread * 1.4)) * step(0.0, sdS);
+  shA = sdS < 0.0 ? uS[11].x : shA;
 
-  vec4 c = vec4(0.0, 0.0, 0.0, shA);
-  c.rgb += uS[6].rgb * gl;
+  vec4 c = vec4(0.0, 0.0, 0.0, shA * visSoft);
+  c.rgb += uS[6].rgb * gl * visSoft;
   float exd = uS[12].w;
   if (exd > 0.0) {
     vec2 st = offUV * exd;
-    float s1 = texture(uTexture, vUV + st * 0.34).r;
-    float s2 = texture(uTexture, vUV + st * 0.67).r;
-    float s3 = texture(uTexture, vUV + st).r;
-    float sdE = min(min(s1, s2), s3) * SDRANGE + SDMIN - weight;
-    float exA = clamp(0.5 - sdE / upp, 0.0, 1.0);
-    float exR = clamp(0.5 - (sdE - ow * 0.8) / upp, 0.0, 1.0);
+    vec2 e1 = texture(uTexture, vUV + st * 0.34).rg;
+    vec2 e2 = texture(uTexture, vUV + st * 0.67).rg;
+    vec2 e3 = texture(uTexture, vUV + st).rg;
+    vec2 em = e1.x < e2.x ? e1 : e2;
+    float back = step(e3.x, em.x + 1e-4);
+    em = e3.x < em.x ? e3 : em;
+    float sdE = em.x * SDRANGE + SDMIN - weight;
+    // the side belongs to the stroke that casts it: reveal it with that stroke's arc length
+    float visE = P9.z < 0.999 ? 1.0 - smoothstep(lr * 1.06 - 0.055, lr * 1.06 - 0.005, em.y) : 1.0;
+    float exA = clamp(0.5 - sdE / upp, 0.0, 1.0) * visE;
+    float exR = clamp(0.5 - (sdE - ow * 0.8) / upp, 0.0, 1.0) * visE;
     // side shading: darker towards the back copy, lit a little from above
-    float back = step(s3, min(s1, s2) + 1e-4);
     vec3 side = uS[12].rgb * mix(1.35, 0.75, back) * (0.85 + 0.3 * y);
     c = mix(c, vec4(uS[5].rgb, 1.0), exR * uS[5].w);
     c = mix(c, vec4(side, 1.0), exA);
   }
-  c = mix(c, vec4(uS[5].rgb, 1.0), rim * uS[5].w);
-  c = mix(c, vec4(lit, 1.0), face);
-  c.rgb += (vec3(0.95) * sw + (uS[6].rgb * 0.6 + 0.8) * tip * 1.4) * face;
-  c *= vis;
+  c = mix(c, vec4(uS[5].rgb, 1.0), rim * uS[5].w * vis);
+  c = mix(c, vec4(lit, 1.0), face * vis);
+  c.rgb += (vec3(0.95) * sw + (uS[6].rgb * 0.6 + 0.8) * tip * 1.4) * face * vis;
+  c.rgb += (uS[6].rgb + 0.5) * glTip * 1.6 * max(glowAmt, 0.5);
   finalColor = c * vColor * vMisc.x;
 }
 `;

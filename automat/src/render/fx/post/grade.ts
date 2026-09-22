@@ -29,15 +29,17 @@ export const GRADE_BASE: GradePreset = {
   grainBoost: 1,
 };
 
-/** SOLSTORM: hot and violent. Crimson-black lift, molten mids, white-hot highlights, hard contrast. */
+/** SOLSTORM: hot and violent, but never a red wash. Heat lives in the highlights (molten → white-hot) and in hard
+ *  contrast; shadows fall to crimson-black; mids and saturation are pushed only lightly (the storm art is already
+ *  crimson — a strong red mid push turned half the frame into saturated red, see PLAN §6 photosensitivity). */
 export const GRADE_STORM: GradePreset = {
-  lift: [0.034, 0.0, 0.01],
-  gamma: [1.12, 0.94, 0.92],
-  gain: [1.07, 0.97, 0.9],
-  contrast: 1.2,
-  pivot: 0.4,
-  sat: 1.2,
-  vigTint: [0.56, 0.16, 0.2], // edges burn toward crimson-black
+  lift: [0.026, 0.0, 0.008],
+  gamma: [1.04, 0.98, 0.95],
+  gain: [1.05, 1.0, 0.9],
+  contrast: 1.22,
+  pivot: 0.42,
+  sat: 1.06,
+  vigTint: [0.46, 0.16, 0.2], // edges burn toward crimson-black
   vigBoost: 1.45,
   grainBoost: 1.5,
 };

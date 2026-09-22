@@ -47,11 +47,12 @@ export interface StemDef {
 
 // ------------------------------------------------------------------ harmony
 // Base (D dorian) chords, voiced for the pad (MIDI).
+// Open voicings, no semitone clusters; top line A4 – A4 – G4 – A4 (common-tone voice leading).
 export const BASE_PAD: number[][] = [
-  [50, 57, 60, 64, 65], // Dm9    D3 A3 C4 E4 F4
-  [46, 53, 57, 60, 62], // Bbmaj9 Bb2 F3 A3 C4 D4
+  [50, 53, 60, 64, 69], // Dm9    D3 F3 C4 E4 A4
+  [46, 53, 60, 62, 69], // Bbmaj9 Bb2 F3 C4 D4 A4
   [41, 48, 57, 64, 67], // Fmaj9  F2 C3 A3 E4 G4
-  [48, 55, 57, 62, 64], // C6/9   C3 G3 A3 D4 E4
+  [48, 55, 62, 64, 69], // C6/9   C3 G3 D4 E4 A4
 ];
 export const BASE_ROOT = [38, 34, 41, 36]; // D2 Bb1 F2 C2
 // Storm (D phrygian): Dm – Eb – Dm – Cm
@@ -243,7 +244,7 @@ const L2: StemDef = {
 };
 
 const L3: StemDef = {
-  id: 'base3', group: 'base', layer: 3, bars: 4, ch: 2, tail: 1.5, rmsDb: -28,
+  id: 'base3', group: 'base', layer: 3, bars: 4, ch: 1, tail: 1.5, rmsDb: -28,
   build(ctx, out, g) {
     const r = prng(303);
     const kickLp = filt(ctx, 'lowpass', 1400, 0.5);
