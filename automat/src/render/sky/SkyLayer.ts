@@ -16,7 +16,7 @@ import { SKY_VERT, STATIC_FRAG, LAND_FRAG, AURORA_FRAG, COMP_FRAG } from './skyS
 export interface SkyParams {
   kp: number;        // continuous 0..9 → tiers.skyAt()
   storm: number;     // 0..1 blend to the Solstorm sky (crimson void + plasma sun)
-  glow: number;      // 0..1 charge-glow envelope (≤10 % luminance lift at 1)
+  glow: number;      // 0..1 charge-glow envelope (≤10 % luminance lift at 1; shaders output sRGB-encoded values → ×1.04)
   cme: number;       // 0..1 CME plasma front progress (top → bottom) during the cinematic, 0 = off
   sun: number;       // 0..1 plasma sun rising in the storm void
   time: number;      // seconds
@@ -287,10 +287,10 @@ export class SkyLayer extends Container {
     const a = this.aur.u;
     const P = a.uP as Float32Array; P[0] = this.phase; P[1] = this.fast; P[2] = t % TIME_WRAP; P[3] = storm;
     const A = a.uA as Float32Array; A[0] = inten; A[1] = Math.min(1.2, T.fold + 0.25 * storm); A[2] = topMix; A[3] = Math.min(1, violet + storm);
-    const B = a.uB as Float32Array; B[0] = Math.min(1, T.crackle * 0.6 + storm * 0.7); B[1] = 1.15 + 0.5 * T.fold + 0.4 * storm; B[2] = 1 + 0.1 * glow; B[3] = storm * 0.9 + T.crackle * 0.3;
+    const B = a.uB as Float32Array; B[0] = Math.min(1, T.crackle * 0.6 + storm * 0.7); B[1] = 1.15 + 0.5 * T.fold + 0.4 * storm; B[2] = 1 + 0.04 * glow; B[3] = storm * 0.9 + T.crackle * 0.3;
     (a.uQ as Float32Array)[0] = this.foldPh;
     const Fx = a.uFx as Float32Array;
-    Fx[0] = calm ? 0 : 0.05 * Math.min(1, T.crackle + storm);           // shimmer amplitude (±5 % max)
+    Fx[0] = calm ? 0 : 0.035 * Math.min(1, T.crackle + storm);          // shimmer: ±3.5 % encoded ≈ ±8 % luminance
     Fx[1] = (0.3 - 0.18 * storm) * (calm ? 0.5 : 1);                     // travelling surge amplitude
     Fx[2] = calm ? 0.55 : 1;                                             // CME brightness
     Fx[3] = calm ? 0.4 : 1;                                              // CME turbulence speed
@@ -315,7 +315,7 @@ export class SkyLayer extends Container {
     const K2 = c.uK2 as Float32Array; K2[0] = inten; K2[1] = glow; K2[2] = 1; K2[3] = S[3];
     // light on the chalk: aurora ambient (+ the plasma sun in the storm)
     const L = c.uLight as Float32Array;
-    const lk = inten * 0.27 * (1 + 0.1 * glow) * (1 - 0.65 * storm);
+    const lk = inten * 0.27 * (1 + 0.04 * glow) * (1 - 0.65 * storm);
     for (let i = 0; i < 3; i++) {
       const aur = (this.cBody[i] * 0.6 + this.cTop[i] * 0.25 * topMix + this.cFringe[i] * 0.15) * lk;
       L[i] = aur + (C.crimson[i] * 0.55 + C.molten[i] * 0.45) * S[3] * 0.08;
@@ -327,7 +327,7 @@ export class SkyLayer extends Container {
       Hz[i] = base + (st - base) * storm;
     }
     const G = c.uGlowC as Float32Array;
-    for (let i = 0; i < 3; i++) G[i] = ((this.cBody[i] * 0.7 + this.cTop[i] * 0.3 * topMix) * inten * 0.018 + C.redTop[i] * red * T.crackle * 0.022 * (1 - storm)) * (1 + 0.1 * glow) + C.crimson[i] * cmeVis * 0.05;
+    for (let i = 0; i < 3; i++) G[i] = ((this.cBody[i] * 0.7 + this.cTop[i] * 0.3 * topMix) * inten * 0.018 + C.redTop[i] * red * T.crackle * 0.022 * (1 - storm)) * (1 + 0.04 * glow) + C.crimson[i] * cmeVis * 0.05;
     const CS = c.uSun as Float32Array; CS[0] = S[0]; CS[1] = S[1]; CS[2] = S[2]; CS[3] = S[3];
     const CM = c.uCme as Float32Array; CM[0] = M[0]; CM[1] = M[1];
     this.dirtyAur = true;

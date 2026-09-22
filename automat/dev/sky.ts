@@ -130,18 +130,25 @@ if (q.get('trace') === '1') {
     full.push(s / (W * H)); band.push(sb / Math.max(1, nb));
     for (let k = 0; k < TN * TN; k++) tiles[k].push(ts[k] / Math.max(1, tc[k]));
   }
-  const swings = (L: number[]) => {
+  // opposing swings: relative ≥ 10 % of the level AND ≥ 0.01 absolute (10× stricter than WCAG's ΔY ≥ 0.1),
+  // plus the WCAG-style absolute count (ΔY ≥ 0.1 of max relative luminance)
+  const count = (L: number[], rel: number, abs: number) => {
     const ev: number[] = []; let dir = 0, hi = L[0], lo = L[0];
     for (let i = 1; i < L.length; i++) {
       const v = L[i]; hi = Math.max(hi, v); lo = Math.min(lo, v);
-      if (dir !== -1 && v <= hi * 0.9) { ev.push(i); dir = -1; hi = lo = v; }
-      else if (dir !== 1 && v >= lo * 1.1) { ev.push(i); dir = 1; hi = lo = v; }
+      if (dir !== -1 && v <= hi * (1 - rel) && hi - v >= abs) { ev.push(i); dir = -1; hi = lo = v; }
+      else if (dir !== 1 && v >= lo * (1 + rel) && v - lo >= abs) { ev.push(i); dir = 1; hi = lo = v; }
     }
     let maxPerSec = 0;
     for (let a = 0; a < ev.length; a++) { let n = 0; for (let b = a; b < ev.length && ev[b] - ev[a] < fps; b++) n++; maxPerSec = Math.max(maxPerSec, n); }
+    return { ev, maxPerSec };
+  };
+  const swings = (L: number[]) => {
+    const { ev, maxPerSec } = count(L, 0.1, 0.01);
+    const wcag = count(L, 0, 0.1).maxPerSec;
     const mn = Math.min(...L), mx = Math.max(...L);
     let maxStep = 0; for (let i = 1; i < L.length; i++) maxStep = Math.max(maxStep, Math.abs(L[i] - L[i - 1]) / Math.max(1e-6, L[i - 1]));
-    return { swings: ev.length, maxSwingsPerSec: maxPerSec, min: +mn.toFixed(4), max: +mx.toFixed(4), rangePct: +(100 * (mx - mn) / mx).toFixed(1), maxFrameStepPct: +(100 * maxStep).toFixed(2) };
+    return { swings: ev.length, maxSwingsPerSec: maxPerSec, wcagPerSec: wcag, min: +mn.toFixed(4), max: +mx.toFixed(4), rangePct: +(100 * (mx - mn) / mx).toFixed(1), maxFrameStepPct: +(100 * maxStep).toFixed(2) };
   };
   const tr = tiles.map(swings);
   let wi = 0; if (q.has('tile')) wi = num('tile', 0); else tr.forEach((t, i) => { const w0 = tr[wi]; if (t.maxSwingsPerSec > w0.maxSwingsPerSec || (t.maxSwingsPerSec === w0.maxSwingsPerSec && t.maxFrameStepPct > w0.maxFrameStepPct)) wi = i; });

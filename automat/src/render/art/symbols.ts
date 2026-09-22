@@ -8,7 +8,7 @@
 //
 // Costs (one bake = 9 symbols + 1 glow): 10 shader draws of (2·cellPx)² + 10 blits; e.g. cellPx 160 → 1 M fragments.
 // GPU memory per set = 10 · cellPx² · 4 B (256 px → 2.6 MB) + one shared scratch RT of (2·cellPx)².
-import { Container, Geometry, GlProgram, Mesh, RenderTexture, Shader, Sprite, UniformGroup, type Renderer, type Texture } from 'pixi.js';
+import { Container, Geometry, GlProgram, Mesh, RenderTexture, Shader, Sprite, UniformGroup, Texture, type Renderer } from 'pixi.js';
 import { ART_VERT } from './glsl.ts';
 import { GEM_DEFS, GEM_FRAG, MAX_POLY, gemSparkles } from './gems.ts';
 import { MOON_FRAG, STAR_FRAG, SUN_FRAG } from './celestial.ts';
@@ -146,7 +146,8 @@ function paint(renderer: Renderer, p: Program, w: number, h: number): RenderText
   if (ss === 1) { p.draw(renderer, out, w, h); return out; }
   const sw = w * ss, sh = h * ss;
   if (!scratch || scratch.width < sw || scratch.height < sh || scratch.destroyed) {
-    scratch?.destroy(true);
+    // Unbind before destroying: the blit sprite still references the old scratch (Pixi warns otherwise).
+    if (scratch) { blitSprite.texture = Texture.EMPTY; scratch.destroy(true); }
     const s = Math.max(sw, sh, 256);
     scratch = newTarget(s, s);
   }

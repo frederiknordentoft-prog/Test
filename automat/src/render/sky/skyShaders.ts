@@ -232,7 +232,7 @@ void main() {
 export const AURORA_FRAG = HEAD + /* glsl */ `
 uniform vec4 uP;        // x: integrated curtain phase, y: slow flicker phase (≤ 0.6 /s), z: time (wrapped), w: storm
 uniform vec4 uQ;        // x: fold phase (slow, not storm-accelerated → no fold-birth brightness pops)
-uniform vec4 uFx;       // photosensitivity limits: flicker amp (≤ 0.05), pulse amp, CME brightness, CME time scale
+uniform vec4 uFx;       // photosensitivity limits: shimmer amp (≤ 0.035 encoded ≈ 8 % luminance), pulse amp, CME brightness, CME time scale
 uniform vec4 uA;        // intensity, fold, topMix (red), violet
 uniform vec4 uB;        // crackle, ray sharpness, brightness mul (glow), turbulence
 uniform vec4 uC;        // red (630 nm) layer amount, Kp≥7 escalation (crackle), 0, 0
@@ -325,7 +325,7 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float below = exp(min(h, 0.0) / (1.3 / uScr.w));            // razor lower edge (≈1.3 texels)
   float rayK = smoothstep(0.0, 0.35, hp / Hs);                 // striations strongest higher up
   float I = (body * mix(0.75 + 0.3 * rays, 0.25 + 0.9 * rays, rayK) + seamLn * (0.45 + 0.6 * rays)) * below;
-  // gentle shimmer: slow phase (< 1 Hz per point), amplitude capped at ±5 % (FlashBudget / PLAN §6)
+  // gentle shimmer: slow phase (< 1 Hz per point), amplitude ≤ ±3.5 % encoded ≈ ±8 % luminance (FlashBudget / PLAN §6)
   float flick = 1.0;
   if (uFx.x > 0.0) flick += uFx.x * (n1(s * 1.3 + uP.y + seed) - 0.5) * 2.0;
   float k = pulse * flick * edge * br * env;
@@ -542,7 +542,7 @@ void main() {
     vec2 ruv = (rp - uOrigin) / uExt;
     vec3 aur;
     vec3 refl = skyAt(ruv, rp, 0.35, aur);
-    refl *= 1.0 - 0.55 * uCme.y * step(0.0, uCme.x);   // the mirrored CME front must not make a second pass
+    refl *= 1.0 - 0.8 * uCme.y * step(0.0, uCme.x);    // the mirrored CME front must not make a second pass
     if (uSun.w > 0.001) {                    // a wavy sea breaks the mirrored disk into the glitter path
       float sd = length(rp - uSun.xy) / uSun.z;
       refl *= mix(0.3, 1.0, smoothstep(0.7, 1.6, sd));
