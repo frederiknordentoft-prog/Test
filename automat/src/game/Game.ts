@@ -289,7 +289,6 @@ export class Game {
     // ---- commit the WHOLE outcome before presentation (a reload mid-spin loses nothing) ----
     const m = addCharge(this.s.meter, r.chargeGained, stake);
     this.s.balanceOre += r.totalOre;
-    this.sessionNet += r.totalOre;
     this.record(r, perk ? 'perk' : 'base', stake, r.totalOre - paid, pre);
     const perks = m.tiersCrossed.filter((t) => TIERS[t]?.perk).length;
     this.s.perksPending += perks;
@@ -333,6 +332,9 @@ export class Game {
   }
 
   private finishSpinHud(r: SpinResult, profile: ReturnType<typeof profileOf>, paid: number): void {
+    // Session net only moves when the result is shown (never reveal an outcome early in the footer).
+    this.sessionNet += r.totalOre;
+    this.tickClock();
     this.hud.setWin(r.totalOre, r.stakeOre, profile, undefined, paid);
     this.hud.setBalance(this.s.balanceOre);
     const net = fmtSignedKr(r.totalOre - paid);
@@ -383,21 +385,32 @@ export class Game {
     await w.ensureExtremeAssets();
     this.watermark.visible = demo;
     this.layoutWatermark();
-    this.setCine(true);
     this.w.logo.visible = false; // the SOLSTORM title owns the band above the grid now
-    this.cine = playSolstormIntro(this.cineWorld(st));
-    await this.cine.done;
-    this.cine = null;
+    const finishedAlready = !!opts.resume && st.spinIndex >= st.spinsTotal;
+    if (finishedAlready) {
+      // Reloaded after the last stormspin was committed: go straight to the payout.
+      w.buildStormStage(st.marks);
+      w.revealStormFrame(gsap.timeline(), 0);
+      w.skyP.storm = 1; w.skyP.sun = 0.62;
+      this.hud.setMode('storm', 'SOLSTORM');
+    } else {
+      this.setCine(true);
+      this.cine = playSolstormIntro(this.cineWorld(st));
+      await this.cine.done;
+      this.cine = null;
+    }
     // Status only after the reveal (no spoiler during the cinematic).
     this.hud.clearWin(`${D}Solstorm · ${st.spinsTotal - st.spinIndex} stormspin${demo ? ' · krediteres ikke' : ''}`);
     this.hud.setStormGoal(st.spinIndex, st.spinsTotal, Math.max(2, st.maxMark), st.winOre, stakeOre, demo);
     this.setState('stormReady');
     this.hud.setStormInfo(`${D}${st.spinsTotal - st.spinIndex} stormspin · ${source === 'A' ? 'låst indsats' : 'indsats'} ${fmtKr(stakeOre)}`);
-    this.hud.show('stormReady', true);
     this.hud.setMode('storm', `${D}SOLSTORM ${st.spinIndex}/${st.spinsTotal}`);
     this.hud.refreshSide(stakeOre, true);
-    await this.waitFor('startStorm');
-    this.hud.show('stormReady', false);
+    if (!finishedAlready) {
+      this.hud.show('stormReady', true);
+      await this.waitFor('startStorm');
+      this.hud.show('stormReady', false);
+    }
     this.setCine(false);
     this.setState('stormSpinning');
     const ctx = this.presentCtx(true);
@@ -429,11 +442,12 @@ export class Game {
     const total = sum.winOre + sum.guaranteeOre;
     if (!demo) {
       if (sum.guaranteeOre > 0) this.record({ spinId: this.stormId(idx, 99) + '-G', totalOre: sum.guaranteeOre }, 'storm', stakeOre, sum.guaranteeOre, { charge: this.s.meter.charge, stakeSumOre: this.s.meter.stakeSumOre, perksPending: this.s.perksPending });
-      this.s.balanceOre += total; this.sessionNet += total; this.s.activeStorm = null; this.s.lastSpinAt = Date.now(); this.persist();
+      this.s.balanceOre += total; this.s.activeStorm = null; this.s.lastSpinAt = Date.now(); this.persist();
     }
     this.setState('stormSummary');
     const tier = winTier(total, stakeOre);
     if (tier >= 2) await this.celebrate(tier, total, stakeOre, true, 0);
+    if (!demo) { this.sessionNet += total; this.tickClock(); }
     this.hud.setBalance(this.s.balanceOre);
     this.hud.showSummary(`
       <h2>${demo ? 'DEMO-RESULTAT' : 'SOLSTORM'}</h2>
@@ -523,6 +537,7 @@ export class Game {
   // ---------------------------------------------------------------- demo tools
   private demoMode = false;
   requestDemo(): void {
+    if (this.demoMode) return; // a demo is already running (e.g. "Udløs via 4 sole")
     if (this.state === 'idle') { void this.demo(); return; }
     if (this.state === 'spinning' || this.state === 'celebrating') { this.demoPending = true; this.hud.setDemoEnabled(true, true); }
   }

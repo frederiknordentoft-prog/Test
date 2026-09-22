@@ -190,23 +190,29 @@ export class World {
   private headerLogoCap(hdrH: number): number {
     return this.stage.w >= 1000 ? Math.min(34, hdrH * 0.5) : Math.min(22, Math.max(12, hdrH * 0.38));
   }
-  /** Would a header logo of this cap height fit between the demo pill and the icon buttons? */
-  private headerHasRoom(cap: number): boolean {
+  /** Would a header logo of this cap height fit between the demo pill and the icon buttons?
+   *  Returns the x (stage px) to centre it on — the screen centre if possible, else the centre of the free gap. */
+  private headerSlot(cap: number): number | null {
     const host = this.hud.root.getBoundingClientRect();
     const pill = document.getElementById('demoPill')!.getBoundingClientRect();
     const icons = (document.querySelector('#hdr .right') as HTMLElement).getBoundingClientRect();
-    const half = (cap * 5.6 * 1.05) / 2; // NORDLYS ≈ 5.6 cap heights wide incl. tracking
+    const need = cap * 5.6 * 1.05; // NORDLYS ≈ 5.6 cap heights wide incl. tracking
+    const a = pill.right + 8, b = icons.left - 8;
     const cx = this.stage.w / 2 + host.left;
-    return pill.right + 8 < cx - half && icons.left - 8 > cx + half;
+    if (a < cx - need / 2 && b > cx + need / 2) return this.stage.w / 2;
+    if (b - a >= need) return (a + b) / 2 - host.left;
+    return null;
   }
   placeLogo(): void {
     const hdr = document.getElementById('hdr')!.getBoundingClientRect();
     const host = this.hud.root.getBoundingClientRect();
-    const target = this.headerLogoCap(hdr.height);
+    let target = this.headerLogoCap(hdr.height);
     this.logo.alpha = 1;
-    if (this.headerHasRoom(target)) {
+    let x = this.headerSlot(target);
+    if (x === null) { const small = Math.max(14, target * 0.78); const x2 = this.headerSlot(small); if (x2 !== null) { target = small; x = x2; } }
+    if (x !== null) {
       this.logo.scale.set(target / 40);
-      this.logo.position.set(this.stage.w / 2, hdr.top - host.top + hdr.height / 2);
+      this.logo.position.set(x, hdr.top - host.top + hdr.height / 2);
       this.logo.visible = true;
       return;
     }
@@ -220,11 +226,12 @@ export class World {
     } else this.logo.visible = false;
   }
   /** Where the intro logo lands (same rule as placeLogo). */
-  private logoTarget(): { y: number; cap: number; visible: boolean } {
+  private logoTarget(): { y: number; cap: number; visible: boolean; x?: number } {
     const hdr = document.getElementById('hdr')!.getBoundingClientRect();
     const host = this.hud.root.getBoundingClientRect();
     const target = this.headerLogoCap(hdr.height);
-    if (this.headerHasRoom(target)) return { y: hdr.top - host.top + hdr.height / 2, cap: target, visible: true };
+    const x = this.headerSlot(target) ?? this.headerSlot(Math.max(14, target * 0.78));
+    if (x !== null) return { y: hdr.top - host.top + hdr.height / 2, cap: this.headerSlot(target) !== null ? target : Math.max(14, target * 0.78), visible: true, x };
     const band = this.arcBand();
     if (band.height >= 110) return { y: band.top + band.height * 0.5, cap: Math.min(20, band.height * 0.14), visible: true };
     return { y: hdr.top - host.top + hdr.height / 2, cap: target, visible: false };
@@ -315,7 +322,8 @@ export class World {
       this.vsyncSamples.push(ms);
       if (this.vsyncSamples.length >= 90) {
         const sorted = this.vsyncSamples.slice().sort((a, b) => a - b);
-        this.vsync = Math.max(6, sorted[Math.floor(sorted.length * 0.25)]);
+        // Never accept a "refresh interval" slower than ~55 Hz: a device that is slow from frame one must still downgrade.
+        this.vsync = Math.min(1000 / 55, Math.max(6, sorted[Math.floor(sorted.length * 0.25)]));
       }
       return;
     }
@@ -399,7 +407,7 @@ export class World {
     const s = tgt.cap / this.splashLogoSize;
     const fits = tgt.visible;
     await new Promise<void>((res) => {
-      gsap.to(this.logo, { y: tgt.y, alpha: fits ? 1 : 0, duration: 1.0, delay: 0.5, ease: 'power3.inOut', onComplete: res });
+      gsap.to(this.logo, { x: tgt.x ?? this.logo.x, y: tgt.y, alpha: fits ? 1 : 0, duration: 1.0, delay: 0.5, ease: 'power3.inOut', onComplete: res });
       gsap.to(this.logo.scale, { x: s, y: s, duration: 1.0, delay: 0.5, ease: 'power3.inOut' });
     });
     this.logoIntro = false;

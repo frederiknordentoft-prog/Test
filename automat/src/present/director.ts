@@ -224,7 +224,7 @@ export function presentSpin(ctx: PresentCtx, r: SpinResult, opts: { storm: boole
     g.symOf = nextSym;
     running = runningOre;
     if (warm) { const s2 = gsap.timeline(); g.dimOthers(s2, 0, null); }
-    if (warm && opts.liveStrip !== false && !opts.storm) ctx.hud.setWin(running, r.stakeOre, 'live');
+    if (warm && opts.liveStrip !== false && !opts.storm) ctx.hud.setWin(running, r.stakeOre, 'live', undefined, opts.paidOre ?? r.stakeOre);
   };
 
   const refill = (k: number) => {

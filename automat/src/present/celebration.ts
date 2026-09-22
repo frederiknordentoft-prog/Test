@@ -21,6 +21,7 @@ export class Celebration extends Container {
   private needsContinue = false;
   private w = 0; private cy = 0;
   private demoTag: IsText | null = null;
+  private amountSize = 30;
   active = false;
 
   constructor() {
@@ -43,8 +44,9 @@ export class Celebration extends Container {
     this.w = w; this.cy = cy; void h;
     this.dim.clear().rect(0, 0, w, h).fill({ color: 0x02040c, alpha: 0.55 });
     const s = Math.min(w, 700);
-    this.title.position.set(w / 2, cy - s * 0.07);
-    this.amount.position.set(w / 2, cy + s * 0.06);
+    this.title.position.set(w / 2, cy - this.amountSize * 0.95);
+    this.amount.position.set(w / 2, cy + this.amountSize * 0.2);
+    this.demoTag?.position.set(w / 2, cy + this.amountSize * 1.15);
     this.rays.position.set(w / 2, cy);
     this.halo.position.set(w / 2, cy);
     this.halo.width = this.halo.height = s * 1.3;
@@ -57,6 +59,7 @@ export class Celebration extends Container {
     // The amount is the hero; the tier name is the eyebrow.
     const titleSize = Math.max(18, s * (tier >= 4 ? 0.065 : 0.055));
     const amountSize = Math.max(28, s * (tier >= 4 ? 0.12 : 0.1));
+    this.amountSize = amountSize;
     this.title.destroy(); this.amount.destroy(); this.demoTag?.destroy(); this.demoTag = null;
     this.title = new IsText({ text: TIER_NAMES[tier], size: titleSize, style: o.storm ? 'molten' : 'gold', tracking: 0.12 });
     this.amount = new IsText({ text: '0,00 KR', size: amountSize, style: o.storm ? 'molten' : 'gold' });

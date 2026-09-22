@@ -219,8 +219,8 @@ export class Hud {
       else if (e.code === 'KeyM') I({ t: 'mute' });
       else if (e.code === 'KeyE') I({ t: 'demo' });
       else if (e.code === 'Escape') {
-        if (this.el.menuWrap.classList.contains('show')) this.openMenu(false);
-        else if (this.el.drawerWrap.classList.contains('show')) this.openDrawer(false);
+        if (this.el.menuWrap.classList.contains('show')) this.openMenu(false, true);
+        else if (this.el.drawerWrap.classList.contains('show')) this.openDrawer(false, true);
         else I({ t: 'skip' });
       }
     });
@@ -237,7 +237,9 @@ export class Hud {
   // ---------------- state setters ----------------
   setClock(d: Date): void { this.el.clock.textContent = d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }); }
   setBalance(ore: number): void { this.el.bal.textContent = fmtKr(ore); this.el.regBal.textContent = 'Saldo ' + fmtKr(ore); }
+  private stakeOre = 200;
   setStake(ore: number, canDn: boolean, canUp: boolean, locked = false): void {
+    this.stakeOre = ore;
     this.el.stake.textContent = fmtKr(ore);
     (this.el.stakeDn as HTMLButtonElement).disabled = !canDn || locked;
     (this.el.stakeUp as HTMLButtonElement).disabled = !canUp || locked;
@@ -334,18 +336,30 @@ export class Hud {
     setTimeout(() => (this.el.summaryCard.querySelector('button') as HTMLButtonElement | null)?.focus(), 400);
   }
 
-  openMenu(b: boolean): void {
+  /** Focus moves into the dialog on open; it is returned to the opener only for keyboard closes (Esc),
+   *  otherwise a later Space would re-open the dialog instead of spinning. */
+  openMenu(b: boolean, restoreFocus = false): void {
     if (b) this.renderMenu();
     this.el.menuWrap.classList.toggle('show', b);
     this.onIntent({ t: 'menu', open: b });
-    if (b) setTimeout(() => this.el.menuClose.focus(), 50); else this.el.menuBtn.focus({ preventScroll: true });
+    if (b) setTimeout(() => this.el.menuClose.focus(), 50);
+    else if (restoreFocus) this.el.menuBtn.focus({ preventScroll: true });
+    else (document.activeElement as HTMLElement | null)?.blur?.();
   }
-  openDrawer(b: boolean): void {
+  openDrawer(b: boolean, restoreFocus = false): void {
     this.el.drawerWrap.classList.toggle('show', b);
     this.onIntent({ t: 'menu', open: b });
-    if (b) setTimeout(() => this.el.drawerClose.focus(), 50); else this.el.toolsBtn.focus({ preventScroll: true });
+    if (b) setTimeout(() => this.el.drawerClose.focus(), 50);
+    else if (restoreFocus) this.el.toolsBtn.focus({ preventScroll: true });
+    else (document.activeElement as HTMLElement | null)?.blur?.();
   }
-  setCalmChip(b: boolean): void { this.el.calmChip.classList.toggle('show', b); }
+  private calmChipTimer = 0;
+  /** Shown for 8 s (it would otherwise cover the Kp arc); "Vis fuld effekt" stays in the demo tools + settings. */
+  setCalmChip(b: boolean): void {
+    this.el.calmChip.classList.toggle('show', b);
+    clearTimeout(this.calmChipTimer);
+    if (b) this.calmChipTimer = window.setTimeout(() => this.el.calmChip.classList.remove('show'), 8000);
+  }
   menuOpen(): boolean { return this.el.menuWrap.classList.contains('show') || this.el.drawerWrap.classList.contains('show'); }
 
   // ---------------- side panels (desktop) ----------------
@@ -428,16 +442,17 @@ export class Hud {
   private payHtml(): string {
     const C = CONFIG;
     const heads = ['5', '6', '7', '8', '9–10', '11–12', '13–15', '16+'];
-    const table = (scale: number, dec: number) => {
+    const kr = (ore: number) => fmtKr(ore).replace(' kr', '');
+    const table = (scale: number) => {
       let t = `<div style="overflow-x:auto"><table class="num"><tr><th>Symbol</th>${heads.map((x) => `<th>${x}</th>`).join('')}</tr>`;
       for (let s = 6; s >= 0; s--) {
-        t += `<tr><td>${SYM_NAMES[s]}</td>${C.paytable[s].map((v) => `<td>${new Intl.NumberFormat('da-DK', { maximumFractionDigits: dec }).format(v * scale)}</td>`).join('')}</tr>`;
+        t += `<tr><td>${SYM_NAMES[s]}</td>${C.paytable[s].map((v) => `<td>${kr(Math.round(v * scale * this.stakeOre))}</td>`).join('')}</tr>`;
       }
       return t + '</table></div>';
     };
-    return `<h4>Basisspil</h4><p>Gevinst i × indsats efter klyngestørrelse (før mærker).</p>${table(C.payScale, 1)}
-      <p>Solen: 3 sole = ${C.sunPayX}× indsats. 4+ sole = Solstorm.</p>
-      <h4>Solstorm</h4><p>I stormen udbetaler klynger ${fmtPct(C.stormPayScale, 2)} af tabellen ovenfor, før plasmamærker.</p>${table(C.payScale * C.stormPayScale, 2)}`;
+    return `<h4>Basisspil · kr ved indsats ${fmtKr(this.stakeOre)}</h4><p>Gevinst i kr efter klyngestørrelse (før mærker). I × indsats: fra ${fmtX(C.paytable[0][0] * C.payScale)} til ${fmtX(C.paytable[6][7] * C.payScale)}.</p>${table(C.payScale)}
+      <p>Solen: 3 sole = ${C.sunPayX}× indsats (${fmtKr(C.sunPayX * this.stakeOre)}). 4+ sole = Solstorm.</p>
+      <h4>Solstorm · kr ved samme indsats</h4><p>I stormen udbetaler klynger ${fmtPct(C.stormPayScale, 2)} af tabellen ovenfor, før plasmamærker.</p>${table(C.payScale * C.stormPayScale)}`;
   }
   private payMiniHtml(stakeOre: number, storm = false): string {
     const C = CONFIG;
