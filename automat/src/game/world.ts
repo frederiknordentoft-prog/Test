@@ -232,7 +232,7 @@ export class World {
     if (this.calm) { this.uber.ca = 0; this.uber.glitch = 0; this.uber.zoom = 0; }
     else if (!this.uber.cinematic) this.uber.ca = 0.5 + this.skyP.storm * 2;
     this.uber.exposure = t < this.flashUntil ? this.uber.exposure : 0;
-    this.bloom.strength = this.bloomCtl.strength * (this.storm ? 1.6 : 1) * (this.calm ? 0.8 : 1);
+    this.bloom.strength = this.bloomCtl.strength * (this.calm ? 0.8 : 1);
   }
 
   /** Down a tier after 1.5 s averaging > 19 ms/frame, up after 5 s < 12 ms. */
@@ -485,6 +485,7 @@ export class World {
     await new Promise<void>((res) => {
       const tl = gsap.timeline({ onComplete: res });
       tl.to(this.skyP, { storm: 0, sun: 0, duration: 3, ease: 'sine.inOut' }, 0)
+        .to(this.bloomCtl, { strength: 1, duration: 2 }, 0)
         .to(this.skyP, { kp: this.kpDisplay(), duration: 3 }, 0)
         .to(g, { alpha: 0, duration: 0.8 }, 0.3)
         .to(this.frame, { alpha: 0, duration: 0.8 }, 0.3)

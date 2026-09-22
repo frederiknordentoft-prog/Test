@@ -56,7 +56,7 @@ export class KpArc extends Container {
     const half = span / 2;
     this.R = (half * half + sag * sag) / (2 * sag);
     this.cx = w / 2;
-    const top = compact ? h * 0.45 : h * 0.3;
+    const top = compact ? h * 0.45 : h * 0.34;
     this.cy = top + this.R;
     const ang = Math.asin(half / this.R);
     this.a0 = -Math.PI / 2 - ang;
@@ -69,11 +69,12 @@ export class KpArc extends Container {
       const r = this.R + this.thick * 1.6 + (compact ? 3 : 6);
       this.labels[g].style.fontSize = fs;
       this.labels[g].position.set(this.cx + Math.cos(segMid) * r, this.cy + Math.sin(segMid) * r);
-      this.labels[g].visible = !compact;
+      this.labels[g].visible = !compact && w >= 560;
     }
     const endA = this.a1;
     this.lockLabel.style.fontSize = fs;
-    this.lockLabel.position.set(this.cx + Math.cos(endA) * this.R, this.cy + Math.sin(endA) * this.R - this.thick * 2.2 - (compact ? 0 : 8));
+    // "SOLSTORM" sits just above the (lower) right end of the arc, right-aligned to it.
+    this.lockLabel.position.set(this.cx + Math.cos(endA) * this.R + this.thick * 0.5, this.cy + Math.sin(endA) * this.R - this.thick * 2.2);
     this.lockLabel.visible = !compact;
     this.drawnKp = -1;
     this.redraw();

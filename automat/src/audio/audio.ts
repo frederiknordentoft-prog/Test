@@ -41,7 +41,7 @@ const CFG: Record<Sfx, Cfg> = {
   stakeDown:    { db: -23, verb: 'room', ui: true, cents: 4, jdb: 0.5, max: 3, gap: 0.04 },
   spin:         { db: -25, verb: 'room', cents: 60, jdb: 1, max: 2, gap: 0.1 },
   land:         { db: -15, verb: 'hall', cents: 4, jdb: 1, max: 12, gap: 0.018 },
-  chime:        { db: -13, verb: 'hall', cents: 3, jdb: 0.5, max: 6, gap: 0.05 },
+  chime:        { db: -11, verb: 'hall', cents: 3, jdb: 0.5, max: 6, gap: 0.05 },
   shatter:      { db: -17, verb: 'room', cents: 35, jdb: 1, max: 6, gap: 0.03 },
   returnTick:   { db: -18, verb: 'dry', cents: 20, jdb: 0.4, max: 3, gap: 0.05 },
   nettoCross:   { db: -16, verb: 'hall', cents: 0, jdb: 0, max: 2, gap: 0.2 },
@@ -51,7 +51,7 @@ const CFG: Record<Sfx, Cfg> = {
   sun:          { db: -11, verb: 'hall', cents: 2, jdb: 0, max: 5, gap: 0.05 },
   anticipation: { db: -15, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.2 },
   countTick:    { db: -27, verb: 'room', cents: 10, jdb: 0.5, max: 30, gap: 0.04 },
-  win:          { db: -12, verb: 'hall', cents: 0, jdb: 0, max: 2, gap: 0.2 },
+  win:          { db: -12, verb: 'hall', cents: 3, jdb: 0.5, max: 2, gap: 0.2 },
   bigWin:       { db: -8, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.3 },
   stormSwell:   { db: -7, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.3 },
   stormRiser:   { db: -7, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.3 },
@@ -140,6 +140,7 @@ export class GameAudio {
   private baseS: Session | null = null;
   private stormS: Session | null = null;
   private baseWanted = false;
+  private stormPending = -1;  // startStorm() requested while the context was not running
   private baseLayers = 1;
   private stormX = 0;
   private inStorm = false;
@@ -154,6 +155,8 @@ export class GameAudio {
   private tap: AnalyserNode | null = null;
   /** Scheduler decisions (for QA); null disables logging. */
   schedLog: SchedLog[] | null = null;
+  /** Asset ids actually voiced (for QA); null disables logging. */
+  playLog: string[] | null = null;
 
   /** The live AudioContext (null before unlock()). */
   get ctx(): AudioContext | null {
@@ -227,6 +230,8 @@ export class GameAudio {
         this.rawT = -1;
       }
       this.disarmGesture();
+      if (this.stormPending >= 0) this.startStorm(Math.max(this.stormPending, this.now()));
+      else if (this.baseWanted && !this.baseS && !this.stormS) this.startBase();
     } else if (this.wantRunning && st !== 'closed') {
       // 'interrupted' (iOS call/Siri) or an OS suspend: try now, else on the next gesture.
       c.resume().catch(noop);
@@ -313,7 +318,7 @@ export class GameAudio {
     lim.threshold.value = -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12;
     const ceil = c.createWaveShaper();
     ceil.curve = ceilingCurve();
-    ceil.oversample = '2x';
+    ceil.oversample = 'none'; // identity below 0.88 → no aliasing unless it engages (rare); zero CPU
     if (bypassMaster) master.connect(c.destination); // QA timing probes only
     else master.connect(hp).connect(lim).connect(ceil).connect(c.destination);
 
@@ -533,11 +538,12 @@ export class GameAudio {
   // ================================================================ music API
   /** Start the base bed (idempotent). Fades in from bar 1; stops a running storm. */
   startBase(): void {
-    if (!this.live()) return;
+    if (!this._ctx) return;                                   // before unlock(): silent no-op
+    if (!this.live()) { if (!this.stormS) this.baseWanted = true; return; } // starts once running
+    this.baseWanted = true;
     try {
       if (this.stormS) this.stopStorm();
       if (this.baseS && !this.baseS.stopped) return;
-      this.baseWanted = true;
       if (!this.assets.has('base0')) { this.bump(['base0']); return; } // starts when the bed is rendered
       const c = this._ctx!, now = c.currentTime;
       const S = now + 0.08;
@@ -572,12 +578,18 @@ export class GameAudio {
    * Also fades the base bed out, releases any duck() at the downbeat and crossfades to the storm reverb.
    */
   startStorm(atCtxTime: number): void {
-    if (!this.live()) return;
+    if (!this._ctx) return;
+    if (!this.live()) { this.stormPending = Number.isFinite(atCtxTime) ? atCtxTime : 0; this.inStorm = true; this.baseWanted = false; return; }
+    this.stormPending = -1;
     try {
       const c = this._ctx!, now = c.currentTime;
       let S = this.toCtxTime(atCtxTime);
       if (!(S > now + 0.01)) S = now + 0.01;
-      if (this.stormS && !this.stormS.stopped) return;
+      if (this.stormS && !this.stormS.stopped) {
+        if (this.stormS.start <= now + 0.02) return;   // already running
+        this.stopSession(this.stormS, now, 0.01);        // downbeat not reached yet: move it
+        this.stormS = null;
+      }
       this.bump(STORM_CINE);
       this.inStorm = true;
       this.stormX = 0;
@@ -607,6 +619,7 @@ export class GameAudio {
   /** Fade the storm out (~2 s) and return to the base reverb. Call startBase() afterwards. */
   stopStorm(): void {
     this.inStorm = false;
+    this.stormPending = -1;
     if (!this.live()) return;
     try {
       const s = this.stormS;
@@ -744,7 +757,8 @@ export class GameAudio {
         if (L >= 3) { this.lastAt.bigWin = undefined; this.playImpl('bigWin', { ...o, level: L }); return; }
         this.lastWin = { level: L, t };
         if (this.inStorm) { id = 'stormWin'; db -= 3; this.musicDip(-8, 2.2, 1.2); break; }
-        id = `win${L}`;
+        id = L === 1 ? `win1${this.next('win1', 2) ? 'b' : 'a'}` : 'win2';
+        if (L === 1) db -= 2;
         if (L === 2) this.musicDip(-4, 1.2, 1.0);
         break;
       }
@@ -781,6 +795,7 @@ export class GameAudio {
       return;
     }
     const v = this.voice(name, buf, t, rate, amp, pn);
+    this.playLog?.push(id);
     if (name === 'anticipation') this.anticip = v;
   }
 
@@ -868,6 +883,18 @@ export class GameAudio {
       v.g.gain.setTargetAtTime(0, at, tau);
       v.src.stop(at + tau * 8);
     } catch { /* */ }
+  }
+
+  /**
+   * Extra (not in the contract): silence every SFX that was scheduled with `when` but has not started
+   * yet — e.g. when a cinematic is skipped. Follow with startStorm(newDownbeat) to move the downbeat.
+   */
+  cancelScheduled(): void {
+    const c = this._ctx;
+    if (!c) return;
+    const now = c.currentTime;
+    for (const v of this.voices) if (!v.dead && v.t > now + 0.005) this.fadeVoice(v, now, 0.005);
+    this.deferred.length = 0;
   }
 
   // ================================================================ QA / harness

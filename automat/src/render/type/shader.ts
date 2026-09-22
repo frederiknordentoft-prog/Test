@@ -30,7 +30,7 @@ interface StyleDef {
 
 const STYLES: Record<IsStyle, StyleDef> = {
   ice: {
-    face0: 0xa9d8ff, face1: 0xeaf8ff, face2: 0xffffff, horizon: 0.3,
+    face0: 0x9ccfff, face1: 0xd2ecff, face2: 0xf6fcff, horizon: 0.3,
     core: 0xffffff, coreAmt: 0.2, edge: 0x5fd0ff, edgeAmt: 0.55, emissive: 0.35,
     spec: 0xffffff, specAmt: 0.9, rim: 0x04102a, rimA: 0.92,
     glow: 0x5cc8ff, glowFall: 1.05, glowAmt: 0.85, shadow: 0.5,
@@ -54,12 +54,12 @@ const STYLES: Record<IsStyle, StyleDef> = {
     extrude: 1.0, extrudeC: 0x5a0a00, spread: 1.7,
   },
   plasma: {
-    face0: 0xff2a6a, face1: 0xff5ae0, face2: 0xfff0fb, horizon: 0,
-    core: 0xffffff, coreAmt: 0.5, edge: 0xd0003c, edgeAmt: 0.55, emissive: 0.85,
-    spec: 0xffe8fa, specAmt: 0.6, rim: 0x14000c, rimA: 1,
-    glow: 0xff2bd6, glowFall: 1.25, glowAmt: 1.0, shadow: 0.8,
-    bevelW: 0.6, bevelStr: 1.0, weight: 0.06, outline: 0.46, shimmer: 0.08, aurora: 0,
-    extrude: 0.9, extrudeC: 0x4a0030, spread: 1.7,
+    face0: 0xff4f9e, face1: 0xffa8ee, face2: 0xffffff, horizon: 0,
+    core: 0xffffff, coreAmt: 0.45, edge: 0xe0005a, edgeAmt: 0.6, emissive: 0.85,
+    spec: 0xffe8fa, specAmt: 0.6, rim: 0x16000e, rimA: 1,
+    glow: 0xff2bd6, glowFall: 1.25, glowAmt: 1.0, shadow: 0.85,
+    bevelW: 0.6, bevelStr: 1.0, weight: 0.08, outline: 0.5, shimmer: 0.08, aurora: 0,
+    extrude: 0.9, extrudeC: 0x4a0030, spread: 1.8,
   },
   muted: {
     face0: 0x7f93b2, face1: 0x93a6c4, face2: 0xc3d0e4, horizon: 0.1,
@@ -270,7 +270,7 @@ void main() {
   float gl = exp(-go / (fall * 0.55)) * 0.55 + exp(-(go * go) / (fall * fall * 2.6)) * 0.5;
   gl *= 1.0 - smoothstep(MARGIN - weight - 1.2, MARGIN - weight - 0.1, go);
   float glTip = exp(-go / 0.9) * tip;
-  gl *= glowAmt * (1.0 + sw * 0.8);
+  gl *= glowAmt * (1.0 + sw * 2.2);
 
   // soft offset shadow + display-size extrusion (the word as a block of ice / metal)
   vec2 offUV = vec2(-0.3, -0.9) * PPU / ATLAS;
@@ -296,13 +296,13 @@ void main() {
     float exA = clamp(0.5 - sdE / upp, 0.0, 1.0) * visE;
     float exR = clamp(0.5 - (sdE - ow * 0.8) / upp, 0.0, 1.0) * visE;
     // side shading: darker towards the back copy, lit a little from above
-    vec3 side = uS[12].rgb * mix(1.35, 0.75, back) * (0.85 + 0.3 * y);
+    vec3 side = uS[12].rgb * mix(1.35, 0.75, back) * (0.85 + 0.3 * y) + sw * uS[6].rgb * 0.5;
     c = mix(c, vec4(uS[5].rgb, 1.0), exR * uS[5].w);
     c = mix(c, vec4(side, 1.0), exA);
   }
   c = mix(c, vec4(uS[5].rgb, 1.0), rim * uS[5].w * vis);
   c = mix(c, vec4(lit, 1.0), face * vis);
-  c.rgb += (vec3(0.95) * sw + (uS[6].rgb * 0.6 + 0.8) * tip * 1.4) * face * vis;
+  c.rgb += ((vec3(0.8) + uS[6].rgb * 0.4) * sw + (uS[6].rgb * 0.6 + 0.8) * tip * 1.4) * face * vis;
   c.rgb += (uS[6].rgb + 0.5) * glTip * 1.6 * max(glowAmt, 0.5);
   finalColor = c * vColor * vMisc.x;
 }

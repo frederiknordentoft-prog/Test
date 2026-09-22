@@ -335,10 +335,19 @@ function stinger(ctx: Ctx, out: AudioNode, chords: Chord[], choir: [number, numb
   }
 }
 const Bb9 = [46, 53, 57, 62, 72], C69 = [48, 55, 62, 64, 69], F9 = [53, 60, 64, 67, 69];
-A.win1 = {
-  ch: 1, dur: 2.4,
-  build(ctx, out) { stinger(ctx, out, [{ t: 0.01, d: 0.5, notes: [53, 60, 64, 69], amp: 0.09 }], [[0.04, 0.6, 72, 0.05]], [[0.03, 84], [0.1, 89]], []); },
-};
+// Tier-1 wins are frequent: bell-led and soft (brass only as a warm bed), two voicings round-robin.
+for (const [v, notes, bells] of [[0, [53, 60, 64, 69], [84, 89]], [1, [57, 60, 64, 67], [81, 88]]] as const) {
+  A[`win1${v ? 'b' : 'a'}`] = {
+    ch: 1, dur: 2.2,
+    build(ctx, out) {
+      const bed = gain(ctx, 1);
+      bed.connect(out);
+      notes.forEach((m, i) => brass(ctx, bed, 0.02, 0.42, mtof(m), 0.05 * (i === 0 ? 1 : 0.8), { a: 0.09, r: 0.45, bright: 0.75, pan: (i / 3 - 0.5) * 0.6 }));
+      aah(ctx, out, 0.05, 0.5, mtof(72), 0.03, 0, 0.14, 0.5);
+      bells.forEach((m, i) => bell(ctx, out, 0.012 + i * 0.07, mtof(m), 0.3, { index: 1.2, tau: 0.5, body: 0.5, tine: 0.1 }));
+    },
+  };
+}
 A.win2 = {
   ch: 1, dur: 3.0,
   build(ctx, out) {

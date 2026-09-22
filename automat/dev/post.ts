@@ -275,6 +275,7 @@ bloom.scatter = num('scatter', bloom.scatter);
 bloom.protect = num('protect', bloom.protect);
 const useBloom = hp.get('bloom') !== '0';
 const setFilters = () => { world.filters = fx === 'none' ? [] : useBloom ? [bloom, uber] : [uber]; };
+if (hp.get('bloomEnabled') === '0') bloom.enabled = false; // world.ts low-quality tier path: [bloom, uber] with bloom disabled
 setFilters();
 
 // ------------------------------------------------------------------ pixel metrics

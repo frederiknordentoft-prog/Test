@@ -44,6 +44,9 @@ const LOCKUPS: Record<string, Lockup> = {
   SOLSTORM: { slitY: 4.1, slitW: 0.62, reflect: 0.7, glint: 'O', gx: 0.86, gy: 13.0, gs: 12, streak: 1.3 },
 };
 
+/** Line box height as a multiple of the cap height (what .height reports). */
+export const LINE = 1.38;
+
 const FLOATS = 10;           // per vertex: pos2 uv2 text2 misc4
 const STRIDE = FLOATS * 4;
 const QUAD = FLOATS * 4;     // floats per quad
@@ -168,6 +171,7 @@ export class IsText extends Container {
   // ------------------------------------------------------------------ public API
   get text(): string { return this._text; }
   set text(v: string) {
+    if (this.destroyed) return;
     v = v ?? '';
     if (v === this._text) return;
     this._text = v;
@@ -184,6 +188,7 @@ export class IsText extends Container {
   /** Cap height in CSS px (re-lays out; cheap). */
   get size(): number { return this._size; }
   set size(v: number) {
+    if (this.destroyed) return;
     v = Math.max(1, v);
     if (v === this._size) return;
     this._size = v;
@@ -193,10 +198,10 @@ export class IsText extends Container {
   }
 
   get tracking(): number { return this._tracking; }
-  set tracking(v: number) { if (v !== this._tracking) { this._tracking = v; this._layout(); } }
+  set tracking(v: number) { if (v !== this._tracking && !this.destroyed) { this._tracking = v; this._layout(); } }
 
   get align(): IsAlign { return this._align; }
-  set align(v: IsAlign) { if (v !== this._align) { this._align = v; this._layout(); } }
+  set align(v: IsAlign) { if (v !== this._align && !this.destroyed) { this._align = v; this._layout(); } }
 
   /** 0..1 stroke reveal along each glyph's drawing order (letters staggered). */
   get reveal(): number { return this._u[U_REVEAL]; }
@@ -310,12 +315,13 @@ export class IsText extends Container {
     this._u[U_HORIZON] = lock ? lock.slitY / CAP : 0.5;
     // text-space uniforms
     this._u[U_TEXTW] = W;
-    // bounds: cap-height box around the ink
+    // bounds: ink width × line box (cap height + room for glow / extrusion), centred on
+    // the cap-height middle → .width = ink width, .height = LINE × cap height
     const bx = (inkL + off) * sc;
     this._bounds.x = count > 0 ? bx : 0;
-    this._bounds.y = -CAP * sc / 2;
+    this._bounds.y = (-CAP * LINE * sc) / 2;
     this._bounds.width = W * sc;
-    this._bounds.height = CAP * sc;
+    this._bounds.height = CAP * LINE * sc;
     // write every quad
     for (let j = 0; j < count; j++) this._writeQuad(j);
     this._writeDecor();

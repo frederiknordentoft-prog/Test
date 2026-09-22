@@ -141,6 +141,50 @@ if (view === 'sheet') {
   world.addChild(sky());
   const t = T(hp.get('text') ?? 'NO', num('size', 120), (hp.get('style') ?? 'ice') as IsStyle, W / 2, H / 2, { tracking: num('tracking', 0) });
   probe.textWidth = t.textWidth;
+} else if (view === 'words') {
+  world.addChild(sky());
+  const words = ['NORDLYS', 'SOLSTORM', 'G5 · EKSTREM', 'STOR GEVINST', 'MEGA GEVINST', 'EPISK GEVINST', 'FLOT GEVINST', '1.234,50 KR', '3 SOLE · 6,00 KR', 'KP 9 ×128', 'LAVAVÆRK ÅBEN TAVLE'];
+  const size = num('size', 36);
+  words.forEach((w, i) => T(w, size, (hp.get('style') ?? 'ice') as IsStyle, W / 2, 40 + i * size * 1.75, { tracking: num('tracking', 0) }));
+} else if (view === 'celebrate') {
+  // mirrors src/present/celebration.ts layout (dim + rays + halo + title + count-up)
+  world.addChild(sky(hp.get('storm') === '1'));
+  const storm = hp.get('storm') === '1';
+  const dim = new Graphics().rect(0, 0, W, H).fill({ color: 0x02040c, alpha: 0.55 });
+  world.addChild(dim);
+  const s = Math.min(W, 700), cy = H * 0.42;
+  const rays = new Container();
+  for (let i = 0; i < 14; i++) {
+    const g = new Graphics().poly([0, 0, -18, -900, 18, -900]).fill({ color: 0xffffff, alpha: 0.06 });
+    g.rotation = (i / 14) * Math.PI * 2 + 0.3; rays.addChild(g);
+  }
+  rays.position.set(W / 2, cy); world.addChild(rays);
+  const tier = num('tier', 4);
+  const names = ['', 'FLOT GEVINST', 'STOR GEVINST', 'MEGA GEVINST', 'EPISK GEVINST', 'EPISK GEVINST'];
+  const title = T(names[tier] ?? 'EPISK GEVINST', Math.max(22, s * (tier >= 4 ? 0.085 : 0.07)), storm ? 'molten' : 'gold', W / 2, cy - s * 0.07);
+  T(hp.get('amount') ?? '1.234,50 KR', Math.max(18, s * 0.06), storm ? 'molten' : 'gold', W / 2, cy + s * 0.06);
+  probe.titleH = title.height;
+} else if (view === 'popups') {
+  world.addChild(sky());
+  const cell = num('cell', 56), cols = 6;
+  const gx = (W - cell * cols) / 2, gy = 80;
+  const g = new Graphics();
+  for (let i = 0; i < 36; i++) {
+    const c = i % cols, rr = Math.floor(i / cols);
+    g.roundRect(gx + c * cell + 3, gy + rr * cell + 3, cell - 6, cell - 6, 8).fill({ color: [0x5ce1ff, 0x3dffb0, 0x8a5cff, 0xff5c9a, 0xe6eeff, 0xffd36b][(i * 7) % 6], alpha: 0.28 });
+  }
+  world.addChild(g);
+  for (const [i, v] of [[7, 2], [8, 4], [14, 8], [21, 16], [27, 32]] as const) {
+    const c = i % cols, rr = Math.floor(i / cols);
+    const x = gx + (c + 0.5) * cell, y = gy + (rr + 0.5) * cell + cell * 0.3;
+    pill(x, y, cell * 0.62, cell * 0.3);
+    T('×' + v, Math.max(8, cell * 0.16), 'ice', x, y);
+  }
+  T('12,40 KR', Math.max(11, cell * 0.26), 'gold', gx + cell * 2, gy + cell * 1.5);
+  T('0,60 KR', Math.max(11, cell * 0.2), 'muted', gx + cell * 4.5, gy + cell * 3.2);
+  T('×4', Math.max(10, cell * 0.2), 'ice', gx + cell * 2, gy + cell * 1.5 - cell * 0.32);
+  T('3 SOLE · 6,00 KR', Math.max(12, cell * 0.24), 'gold', gx + cell * 3, gy + cell * 4.6);
+  T('3 SOLE · 0,60 KR', Math.max(12, cell * 0.24), 'muted', gx + cell * 3, gy + cell * 5.4);
 } else if (view === 'glyphs') {
   world.addChild(sky());
   const style = (hp.get('style') ?? 'ice') as IsStyle;

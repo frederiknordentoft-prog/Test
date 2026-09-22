@@ -124,9 +124,12 @@ void main() {
   vec2 spread = caOff * 1.5 + vec2(split / uMap.x, 0.0);
   // jitter is constant along each radial ray (random per ~1.5 css px of arc): leftover sampling noise becomes
   // radial streak texture that reads as speed, instead of isotropic sand
-  vec2 dz = (sp - uZoomCenter) * uScreen.xy;
-  float ray = floor((atan(dz.y, dz.x) * 0.15915 + 0.5) * 1700.0);
-  float j = hash12(vec2(ray, floor(t * 30.0)));
+  float j = 0.5;
+  if (uCine.x > 0.0) {
+    vec2 dz = (sp - uZoomCenter) * uScreen.xy;
+    float ray = floor((atan(dz.y, dz.x + 1e-4) * 0.15915 + 0.5) * 1700.0);
+    j = hash12(vec2(ray, floor(t * 30.0)));
+  }
   vec3 acc = vec3(0.0);
   vec3 wsum = vec3(0.0);
   float aacc = 0.0;
@@ -162,7 +165,7 @@ void main() {
   vec3 col = grade(c.rgb / max(a, 1e-5));
 
 #if CINEMATIC
-  // shock rim: white-hot core, red outer / blue inner fringe; added after the grade so it stays hot
+  // shock front light (white-hot / molten / crimson), added after the grade so it stays hot
   col += rim * vec3(1.0, 0.93, 0.84) * 1.15 + shock * vec3(1.0, 0.42, 0.08) * 0.07;
   col += heatM * vec3(1.0, 0.42, 0.0) * 0.045;
   if (gBand > 0.0) {

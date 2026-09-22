@@ -13,7 +13,7 @@
 // per sample while a param is automated). Brightness envelopes are two STATIC filters crossfaded by gains;
 // slowly swept noise beds are generated in JS.
 import {
-  type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, shaper, bell, aah, prng, eqPowerCurve, loopHz, newBuffer,
+  type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, shaper, bell, aah, prng, eqPowerCurve, loopHz, newBuffer, yieldNow,
 } from './dsp.ts';
 
 export const BASE_BPM = 84;
@@ -42,7 +42,7 @@ export interface StemDef {
   tail: number;          // seconds rendered past the loop end (folded back)
   rmsDb: number;         // loudness target after folding
   div?: 1 | 2 | 4;       // render at full/div (bandwidth hint; saves memory + render time)
-  build(ctx: Ctx, out: AudioNode, g: Grid): void;
+  build(ctx: Ctx, out: AudioNode, g: Grid): void | Promise<void>;
 }
 
 // ------------------------------------------------------------------ harmony
@@ -103,7 +103,7 @@ function padVoice(ctx: Ctx, out: AudioNode, t: number, dur: number, m: number, a
  * centre sweeps slowly (whole cycles per loop), with gusts; equal-power fade-in over [0,F] and fade-out
  * over [loop, loop+F], so folding the tail makes a seamless crossfade.
  */
-function windBuffer(ctx: Ctx, g: Grid, F: number, seed: number): AudioBuffer {
+async function windBuffer(ctx: Ctx, g: Grid, F: number, seed: number): Promise<AudioBuffer> {
   const sr = ctx.sampleRate;
   const n = Math.ceil((g.loop + F) * sr);
   const b = newBuffer(2, n, sr);
@@ -134,6 +134,7 @@ function windBuffer(ctx: Ctx, g: Grid, F: number, seed: number): AudioBuffer {
       hpS += hpA * (band - hpS);
       d[i] = (band - hpS) * k;
     }
+    await yieldNow();
   }
   return b;
 }
@@ -150,7 +151,7 @@ function pumpEnv(p: AudioParam, kicks: number[], depth = 0.22, rec = 0.085): voi
 // ------------------------------------------------------------------ BASE stems
 const L0: StemDef = {
   id: 'base0', group: 'base', layer: 0, bars: 4, ch: 2, tail: 5, rmsDb: -21, div: 2,
-  build(ctx, out, g) {
+  async build(ctx, out, g) {
     const bus = gain(ctx, 1);
     bus.connect(out);
     for (let b = 0; b < 4; b++) {
@@ -163,7 +164,7 @@ const L0: StemDef = {
     }
     const F = 2.5;
     const w = ctx.createBufferSource();
-    w.buffer = windBuffer(ctx, g, F, 101);
+    w.buffer = await windBuffer(ctx, g, F, 101);
     w.connect(gain(ctx, 0.05)).connect(bus);
     w.start(0);
   },

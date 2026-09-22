@@ -21,6 +21,7 @@ export interface CineWorld {
   particles: Particles;
   banners: Container;
   impactPoint: () => { x: number; y: number }; // grid centre (screen px)
+  gridTop: () => number;            // y of the grid's top edge (screen px)
   screen: () => { w: number; h: number };
   buildStormStage: () => void;      // configure 8×8 storm grid + storm frame (hidden)
   revealFrame: (tl: gsap.core.Timeline, at: number) => void; // molten frame draw-in
@@ -46,13 +47,17 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
   const canSkip = () => viewedOnce && performance.now() - startedWall > 1500;
 
   const { w: W, h: H } = w.screen();
-  const logo = new IsText({ text: 'SOLSTORM', size: Math.max(34, Math.min(W, 720) * 0.1), style: 'molten', tracking: 0.08 });
-  const sub = new IsText({ text: 'G5 · EKSTREM', size: Math.max(14, Math.min(W, 720) * 0.035), style: 'plasma', tracking: 0.3 });
+  const logoSize = Math.max(30, Math.min(W, 720) * 0.1);
+  const subSize = Math.max(12, Math.min(W, 720) * 0.032);
+  const logo = new IsText({ text: 'SOLSTORM', size: logoSize, style: 'molten', tracking: 0.08 });
+  const sub = new IsText({ text: 'G5 · EKSTREM', size: subSize, style: 'plasma', tracking: 0.3 });
   const kpTxt = new IsText({ text: 'KP 9', size: Math.max(28, Math.min(W, 720) * 0.09), style: 'plasma' });
   for (const t of [logo, sub, kpTxt]) { t.alpha = 0; w.banners.addChild(t); }
-  const cy = H * 0.2;
-  logo.position.set(W / 2, cy);
-  sub.position.set(W / 2, cy + logo.height * 0.62 + 6);
+  // Stack above the grid (the demo watermark sits right on the grid's top edge).
+  const subY = w.gridTop() - 24 - subSize * 0.6;
+  const logoY = Math.max(64 + logoSize * 0.6, subY - subSize * 0.9 - logoSize * 0.75);
+  logo.position.set(W / 2, logoY);
+  sub.position.set(W / 2, Math.max(subY, logoY + logoSize * 0.75 + subSize * 0.7));
   kpTxt.position.set(W / 2, H * 0.42);
 
   const cleanup = () => {

@@ -460,11 +460,15 @@ export function finishOneShot(b: AudioBuffer, peak: number, floorDb = -64): Audi
   return out;
 }
 
+/** Yield to the event loop (keeps big post-processing passes out of one long main-thread task). */
+export const yieldNow = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
+
 /**
  * Loop post: fold everything past `loopFrames` back onto the start (so tails of the last bar ring into
- * the first), remove DC, normalise to `rmsDb` (capped so the peak stays ≤ maxPeak).
+ * the first), remove DC, normalise to `rmsDb` (capped so the peak stays ≤ maxPeak). Yields between
+ * per-channel passes so a 23 s stereo stem never blocks the main thread for long.
  */
-export function finishLoop(b: AudioBuffer, loopFrames: number, rmsDb: number, maxPeak = 0.9): AudioBuffer {
+export async function finishLoop(b: AudioBuffer, loopFrames: number, rmsDb: number, maxPeak = 0.9): Promise<AudioBuffer> {
   const ch = b.numberOfChannels, sr = b.sampleRate, n = b.length;
   const out = newBuffer(ch, loopFrames, sr);
   const tailFade = Math.floor(0.08 * sr);
@@ -479,6 +483,7 @@ export function finishLoop(b: AudioBuffer, loopFrames: number, rmsDb: number, ma
         d[i - start] += v;
       }
     }
+    await yieldNow();
     let m = 0;
     for (let i = 0; i < loopFrames; i++) m += d[i];
     m /= loopFrames;
@@ -489,12 +494,17 @@ export function finishLoop(b: AudioBuffer, loopFrames: number, rmsDb: number, ma
       const a = v < 0 ? -v : v;
       if (a > pk) pk = a;
     }
+    await yieldNow();
   }
   const r = Math.sqrt(e / (loopFrames * ch));
   if (r > 1e-9) {
     let k = dbToGain(rmsDb) / r;
     if (pk * k > maxPeak) k = maxPeak / pk;
-    scale(out, k);
+    for (let c = 0; c < ch; c++) {
+      const d = out.getChannelData(c);
+      for (let i = 0; i < loopFrames; i++) d[i] *= k;
+      if (c < ch - 1) await yieldNow();
+    }
   }
   return out;
 }

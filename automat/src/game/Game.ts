@@ -428,6 +428,7 @@ export class Game {
       particles: w.particles,
       banners: w.stage.layers.banners,
       impactPoint: () => ({ x: w.gridRect.x + w.gridRect.size / 2, y: w.gridRect.y + w.gridRect.size / 2 }),
+      gridTop: () => w.gridRect.y,
       screen: () => ({ w: w.stage.w, h: w.stage.h }),
       buildStormStage: () => w.buildStormStage(st.marks),
       revealFrame: (tl, at) => w.revealStormFrame(tl, at),

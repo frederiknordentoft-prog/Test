@@ -141,7 +141,7 @@ html, body {
 
 /* Deck */
 #deck {
-  height: var(--deck-h); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+  height: var(--deck-h); display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px;
   padding: 0 var(--gutter);
 }
 .cell-l { justify-self: start; min-width: 0; }
@@ -151,13 +151,13 @@ html, body {
 .stake { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .stake .row { display: flex; align-items: center; gap: 6px; }
 .step {
-  width: 36px; height: 36px; border-radius: 50%; cursor: pointer; color: var(--ice); font-size: 20px; line-height: 1;
+  width: 34px; height: 34px; border-radius: 50%; cursor: pointer; color: var(--ice); font-size: 20px; line-height: 1;
   background: var(--glass); border: 1px solid var(--line-strong); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   display: grid; place-items: center; transition: transform 0.12s var(--ease), opacity 0.2s;
 }
 .step:active { transform: scale(0.9); }
 .step[disabled] { opacity: 0.35; }
-.stake .val { min-width: 84px; text-align: center; font-size: 17px; }
+.stake .val { min-width: 74px; text-align: center; font-size: 17px; }
 .lock { font-size: 10.5px; color: var(--violet); letter-spacing: 0.04em; height: 12px; }
 
 .spin {
@@ -199,6 +199,10 @@ html, body {
 }
 #foot a { color: var(--frost); text-decoration: none; }
 #foot .l { overflow: hidden; text-overflow: ellipsis; }
+
+#modeBadge { display: none; }
+:root[data-mode='storm'] #modeBadge { display: inline-flex; }
+@media (max-width: 520px) { #regBal { display: none; } }
 
 /* ---------- side panels (desktop) ---------- */
 .side { display: none; }
@@ -326,6 +330,9 @@ html, body {
   .spin { width: 72px; height: 72px; }
   .spin .ico svg { width: 30px; height: 30px; }
   .val { font-size: 17px; }
+}
+@media (max-width: 400px) {
+  .cell-l .val { font-size: 16px; }
 }
 @media (max-width: 360px) {
   :root { --gutter: 8px; }

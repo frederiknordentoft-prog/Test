@@ -365,6 +365,22 @@ async function runCheck(): Promise<void> {
     const f2 = firstAbove(fr.buf, 1e-7);
     check('startStorm fractional time', Math.abs(f2 - at2 * SR) <= 1.01, `first sample ${f2}, expected ${(at2 * SR).toFixed(2)}`);
 
+    // downbeat moved before it happens (e.g. cinematic skip): cancelScheduled + startStorm(new time)
+    const mv = await scenario(3, shared, (g, at) => {
+      at(0, () => { g.startStorm(2.5); g.play('impact', { when: 1.0 }); });
+      at(0.5, () => { g.cancelScheduled(); g.startStorm(1.5); });
+    }, { bypassMaster: true });
+    const fm = firstAbove(mv.buf, 1e-7);
+    check('startStorm reschedules a pending downbeat', Math.abs(fm - 1.5 * SR) <= 1, `first sample ${fm} (expected ${1.5 * SR}; cancelled impact at ${SR} must be silent)`);
+    // storm stinger routing
+    const sw2 = await scenario(2, shared, (g, at) => {
+      g.playLog = [];
+      at(0, () => { g.startStorm(0.5); });
+      at(0.2, () => g.play('bigWin', { level: 4 }));
+      at(1.0, () => { g.stopStorm(); g.play('bigWin', { level: 4 }); g.play('win', { level: 1 }); g.play('win', { level: 1 }); });
+    });
+    check('storm uses B♭ stinger, base uses F stingers', sw2.g.playLog!.join(',') === 'stormWin,bigWin4,win1a', `played ${sw2.g.playLog!.join(',')} (2nd win1 rate-limited)`);
+
     // ---------------- 3. base layers: bar-aligned entry, rapid sweep collapses (no stacking)
     const b1 = await scenario(9, shared, (g, at) => { at(0, () => { g.setBaseLayers(1); g.startBase(); }); }, { bypassMaster: true });
     const b2 = await scenario(9, shared, (g, at) => { at(0, () => { g.setBaseLayers(1); g.startBase(); }); at(1.0, () => g.setBaseLayers(3)); }, { bypassMaster: true });
@@ -533,6 +549,18 @@ async function runCheck(): Promise<void> {
       check('voices alive in realtime', rt.stats().voices > 0, `${rt.stats().voices} voices`);
       rt.suspend();
     }
+    // startBase() after unlock() but before the context runs must not be lost
+    const rt2 = new GameAudio();
+    await rt2.unlock();
+    rt2.suspend();
+    await new Promise((r) => setTimeout(r, 100));
+    rt2.startBase();
+    const lostBefore = rt2.stats().base;
+    rt2.resume();
+    const q0 = performance.now();
+    while (!rt2.stats().base && performance.now() - q0 < 8000) await new Promise((r) => setTimeout(r, 50));
+    check('startBase intent survives a non-running context', !lostBefore && rt2.stats().base, `base running after resume: ${rt2.stats().base} (${Math.round(performance.now() - q0)} ms)`);
+    rt2.suspend();
     void grid;
   } catch (e) {
     fail('exception ' + (e as Error).stack);
@@ -542,3 +570,6 @@ async function runCheck(): Promise<void> {
 }
 
 if (location.hash.includes('check')) void runCheck();
+
+// diagnostics hook for ad-hoc QA scripts
+(window as unknown as { __audioDev: unknown }).__audioDev = { GameAudio, RENDER_STATS };
