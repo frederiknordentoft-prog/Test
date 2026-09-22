@@ -4,6 +4,8 @@ import { softDot } from '../tex.ts';
 import { PAL } from '../../core/palette.ts';
 
 const SEG_COLORS = [PAL.green, PAL.green, PAL.teal, PAL.teal, PAL.violet, PAL.violet, PAL.redTop, PAL.redTop, PAL.crimson];
+// In the Solstorm the sky is crimson — the meter turns white-hot → molten so it still reads.
+const STORM_COLORS = [0xfff4e0, 0xffe6c0, 0xffd49a, 0xffc070, 0xffa94a, 0xff9030, 0xff7a1e, 0xff6a00, 0xff5a10];
 
 function lerpColor(a: number, b: number, t: number): number {
   const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
@@ -132,7 +134,7 @@ export class KpArc extends Container {
     for (let s = 0; s < 9; s++) {
       const f = Math.max(0, Math.min(1, k - s));
       if (f <= 0) break;
-      const c = lerpColor(SEG_COLORS[s], PAL.crimson, this.storm);
+      const c = lerpColor(SEG_COLORS[s], STORM_COLORS[s], this.storm);
       this.arcPath(this.fill, s + gap, s + gap + (1 - 2 * gap) * f, this.R);
       this.fill.stroke({ width: t, color: c, alpha: 1, cap: 'round' });
       this.arcPath(this.glow, s + gap, s + gap + (1 - 2 * gap) * f, this.R);
@@ -142,15 +144,17 @@ export class KpArc extends Container {
     this.head.position.set(this.cx + Math.cos(ha) * this.R, this.cy + Math.sin(ha) * this.R);
     this.halo.position.copyFrom(this.head.position);
     const seg = Math.min(8, Math.floor(k));
-    this.head.tint = lerpColor(SEG_COLORS[seg], 0xffffff, 0.45);
-    this.halo.tint = SEG_COLORS[seg];
+    this.head.tint = lerpColor(lerpColor(SEG_COLORS[seg], STORM_COLORS[seg], this.storm), 0xffffff, 0.45);
+    this.halo.tint = lerpColor(SEG_COLORS[seg], STORM_COLORS[seg], this.storm);
     this.head.visible = this.halo.visible = true;
     for (let g = 0; g < 4; g++) this.labels[g].alpha = k >= 5 + g ? 1 : 0.5;
     this.lockLabel.alpha = k >= 8 ? 1 : 0.55;
   }
 
   /** Per-frame: breathing head + pulse decay. */
+  private drawnStorm = 0;
   update(dt: number, time: number): void {
+    if (Math.abs(this.storm - this.drawnStorm) > 0.05) { this.drawnStorm = this.storm; this.redraw(); }
     this.pulse = Math.max(0, this.pulse - dt * 2.5);
     const b = (this.kp > 0.01 ? 0.85 : 0.5) + 0.15 * Math.sin(time * 3.1) + this.pulse * 0.8;
     this.head.alpha = Math.min(1, b);

@@ -166,6 +166,7 @@ export class SkyLayer extends Container {
   private busy = false;
   private frameN = 0;
   private phase = 0; private fast = 0; private foldPh = 0; private lastT = Number.NaN;
+  private stormS = 0; private cmePrev = 0; private cmeAfter = 0;
   private readonly tier: SkyTier = { intensity: 0, speed: 0, fold: 0, red: 0, violet: 0, stars: 0, crackle: 0 };
   private readonly env: RGB[] = [[0.24, 1, 0.69], [0.1, 0.89, 0.84], [0.1, 0.89, 0.84]];
   // scratch colours
@@ -229,17 +230,30 @@ export class SkyLayer extends Container {
   /** Per frame, allocation-free. Only sets uniforms; the GPU passes run on the next render. */
   update(p: SkyParams): void {
     const T = skyInto(p.kp, this.tier);
-    const storm = clamp01(p.storm), glow = clamp01(p.glow), cme = clamp01(p.cme), sun = Math.max(0, p.sun);
-    // motion phase is integrated so speed changes never make the curtains lurch
     const t = p.time;
     const dt = t - this.lastT;
+    const resync = !(dt >= 0 && dt < 0.5);
+    // photosensitivity: `storm` is rate-limited (≤ 2.5 /s) so the impact jump 0.35 → 1 is a ~0.25 s blend, and
+    // when the CME is cut (cme → 0 at impact) the swept plasma fades out over ~0.7 s instead of vanishing.
+    const stormIn = clamp01(p.storm);
+    this.stormS = resync ? stormIn : this.stormS + Math.max(-dt * 2.5, Math.min(dt * 2.5, stormIn - this.stormS));
+    const cmeIn = clamp01(p.cme);
+    if (resync) this.cmeAfter = 0;
+    else if (cmeIn < 0.02 && this.cmePrev >= 0.3) this.cmeAfter = 1;
+    else this.cmeAfter = Math.max(0, this.cmeAfter - dt / 0.7);
+    if (cmeIn >= 0.02) this.cmeAfter = 0;
+    this.cmePrev = cmeIn;
+    const storm = this.stormS, glow = clamp01(p.glow), sun = Math.max(0, p.sun);
+    const after = this.cmeAfter * this.cmeAfter * (3 - 2 * this.cmeAfter);
+    const cme = cmeIn >= 0.02 ? cmeIn : after > 0 ? 1 : 0;
+    // motion phase is integrated so speed changes never make the curtains lurch
     // photosensitivity: all brightness modulation is slow (< 1 Hz) and small; the storm is violent through
     // motion and shape (speed, folds, turbulence), never through strobing. Crackle does not drive any flicker.
     const calm = this.calm;
     const speed = T.speed * (1 + 0.9 * storm) * (calm ? 0.5 : 1);
     const fastSpeed = calm ? 0 : 0.6;
     const foldSpeed = T.speed * (1 + 0.3 * storm) * (calm ? 0.5 : 1);  // folds evolve slowly even in the storm
-    if (!(dt >= 0 && dt < 0.5)) { this.phase = t * speed; this.fast = t * fastSpeed; this.foldPh = t * foldSpeed; }
+    if (resync) { this.phase = t * speed; this.fast = t * fastSpeed; this.foldPh = t * foldSpeed; }
     else { this.phase += dt * speed; this.fast += dt * fastSpeed; this.foldPh += dt * foldSpeed; }
     this.lastT = t;
     this.phase %= 20000; this.fast %= 20000; this.foldPh %= 20000;
@@ -274,7 +288,7 @@ export class SkyLayer extends Container {
     (a.uQ as Float32Array)[0] = this.foldPh;
     const Fx = a.uFx as Float32Array;
     Fx[0] = calm ? 0 : 0.05 * Math.min(1, T.crackle + storm);           // shimmer amplitude (±5 % max)
-    Fx[1] = (0.3 - 0.14 * storm) * (calm ? 0.5 : 1);                     // travelling surge amplitude
+    Fx[1] = (0.3 - 0.18 * storm) * (calm ? 0.5 : 1);                     // travelling surge amplitude
     Fx[2] = calm ? 0.55 : 1;                                             // CME brightness
     Fx[3] = calm ? 0.4 : 1;                                              // CME turbulence speed
     const Cc = a.uC as Float32Array; Cc[0] = smooth(0, 0.8, red) * (1 - 0.35 * storm) + 0.35 * storm; Cc[1] = T.crackle * (1 - storm);
@@ -288,12 +302,13 @@ export class SkyLayer extends Container {
     set3(a.uSFringe as Float32Array, this.sFringe);
     const S = a.uSun as Float32Array;
     this.sunGeom(sun, S);
-    const M = a.uCme as Float32Array; M[0] = cme; M[1] = smooth(0, 0.06, cme);
+    const M = a.uCme as Float32Array; M[0] = cme; M[1] = cmeIn >= 0.02 ? smooth(0, 0.06, cmeIn) : after;
 
     // ---- composite uniforms ----
     const c = this.comp.u;
     const K = c.uK as Float32Array;
-    K[0] = T.stars * (1 - 0.8 * storm) * (1 - 0.35 * cme); K[1] = 0.2 * T.stars * (1 - 0.85 * storm); K[2] = storm; K[3] = t % TIME_WRAP;
+    const cmeVis = cmeIn >= 0.02 ? cmeIn : after;
+    K[0] = T.stars * (1 - 0.8 * storm) * (1 - 0.35 * cmeVis); K[1] = 0.2 * T.stars * (1 - 0.85 * storm); K[2] = storm; K[3] = t % TIME_WRAP;
     const K2 = c.uK2 as Float32Array; K2[0] = inten; K2[1] = glow; K2[2] = 1; K2[3] = S[3];
     // light on the chalk: aurora ambient (+ the plasma sun in the storm)
     const L = c.uLight as Float32Array;
@@ -309,7 +324,7 @@ export class SkyLayer extends Container {
       Hz[i] = base + (st - base) * storm;
     }
     const G = c.uGlowC as Float32Array;
-    for (let i = 0; i < 3; i++) G[i] = ((this.cBody[i] * 0.7 + this.cTop[i] * 0.3 * topMix) * inten * 0.018 + C.redTop[i] * red * T.crackle * 0.022 * (1 - storm)) * (1 + 0.5 * glow) + C.crimson[i] * cme * 0.05;
+    for (let i = 0; i < 3; i++) G[i] = ((this.cBody[i] * 0.7 + this.cTop[i] * 0.3 * topMix) * inten * 0.018 + C.redTop[i] * red * T.crackle * 0.022 * (1 - storm)) * (1 + 0.5 * glow) + C.crimson[i] * cmeVis * 0.05;
     const CS = c.uSun as Float32Array; CS[0] = S[0]; CS[1] = S[1]; CS[2] = S[2]; CS[3] = S[3];
     const CM = c.uCme as Float32Array; CM[0] = M[0]; CM[1] = M[1];
     this.dirtyAur = true;

@@ -101,7 +101,7 @@ export class Hud {
     const ov = h('div'); ov.id = 'overlays';
     ov.innerHTML = `
       <div class="overlay" id="splash"><div class="center"><button class="btn" id="unlockBtn">Tænd himlen</button><div class="hint">Legepenge · 18+ · Lyd anbefales</div></div></div>
-      <div class="overlay" id="stormReady"><div class="center"><div class="info num" id="stormInfo"></div><button class="btn storm" id="startStormBtn">Start Solstormen</button></div></div>
+      <div class="overlay" id="stormReady"><div class="center"><button class="btn storm two" id="startStormBtn"><span>Start Solstormen</span><small class="num" id="stormInfo"></small></button></div></div>
       <div class="overlay" id="bigwin"><div class="center"><button class="btn ghost small" id="continueBtn">Fortsæt</button></div></div>
       <div class="overlay" id="summary"><div class="card" id="summaryCard"></div></div>
       <div id="banner" role="status"><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>

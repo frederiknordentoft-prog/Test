@@ -59,7 +59,13 @@ const P: SkyParams = { kp: num('kp', 0), storm: num('storm', 0), glow: num('glow
 const easeIn2 = (x: number) => x * x;
 const easeOut2 = (x: number) => 1 - (1 - x) * (1 - x);
 const seg = (t: number, a: number, b: number) => Math.max(0, Math.min(1, (t - a) / (b - a)));
+function calmCine(t: number): void {
+  // mirrors the calm branch of solstorm.ts: 2 s sine crossfade storm 0→1, sun 0→0.55, no CME
+  const k = seg(t, 0, 2); const e = 0.5 - 0.5 * Math.cos(Math.PI * k);
+  P.kp = num('kp', 7) + (9 - num('kp', 7)) * e; P.storm = e; P.sun = 0.55 * e; P.cme = 0;
+}
 function cine(t: number): void {
+  if (seq === 'calmcine') { calmCine(t); return; }
   // mirrors src/present/cinematics/solstorm.ts
   const kp0 = num('kp', 7);
   P.kp = kp0 + (9 - kp0) * easeIn2(seg(t, 0.18, 1.18));
@@ -79,14 +85,14 @@ layout();
 window.addEventListener('resize', layout);
 
 const start = performance.now();
-if (seq === 'cine') cine(t0);
+if (seq === 'cine' || seq === 'calmcine') cine(t0);
 sky.update(P);
 layout();
 app.ticker.add(() => {
   if (!anim) return;
   const t = t0 + (performance.now() - start) / 1000;
   P.time = t;
-  if (seq === 'cine') cine(t);
+  if (seq === 'cine' || seq === 'calmcine') cine(t);
   sky.update(P);
 });
 
@@ -106,7 +112,7 @@ if (q.get('trace') === '1') {
   const bandH = Math.max(8, m.gridY);
   for (let i = 0; i < frames; i++) {
     P.time = t0 + i / fps;
-    if (seq === 'cine') cine(P.time);
+    if (seq === 'cine' || seq === 'calmcine') cine(P.time);
     sky.update(P);
     const out = app.renderer.extract.pixels({ target: app.stage, frame: new Rectangle(0, 0, w, h), resolution: 0.25 });
     const px = out.pixels, W = out.width, H = out.height;

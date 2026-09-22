@@ -381,6 +381,7 @@ export class Game {
     this.watermark.visible = demo;
     this.layoutWatermark();
     this.setCine(true);
+    this.w.logo.visible = false; // the SOLSTORM title owns the band above the grid now
     this.cine = playSolstormIntro(this.cineWorld(st));
     await this.cine.done;
     this.cine = null;
@@ -455,6 +456,7 @@ export class Game {
     this.lastTier = Math.floor(this.kp());
     this.w.arc.setKp(this.kp());
     await w.stormOutro();
+    w.placeLogo();
     (w.audio as unknown as { releaseStorm?: () => void }).releaseStorm?.();
     this.hud.setMode('base');
     this.stormState = null;

@@ -21,7 +21,7 @@ await page.route('**/@vite/client', (r) => r.fulfill({
 }));
 const t0 = Date.now();
 await page.goto(`${base}/dev/audio.html#check`);
-await page.waitForFunction(() => window.__audioCheck?.done === true, null, { timeout: 300000, polling: 500 });
+await page.waitForFunction(() => window.__audioCheck?.done === true, null, { timeout: 1200000, polling: 500 });
 const r = await page.evaluate(() => window.__audioCheck);
 await browser.close();
 

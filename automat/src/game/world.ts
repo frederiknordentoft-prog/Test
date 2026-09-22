@@ -170,7 +170,7 @@ export class World {
     this.stormCellPx = steps.find((p) => p >= (size / CONFIG.stormCols) * st.res * 1.25) ?? 192;
     this.layoutDirty = false;
     // logo placement (header centre) unless intro owns it
-    if (!this.logoIntro) this.placeLogo();
+    if (!this.logoIntro && !this.storm) this.placeLogo();
     this.onLayout?.();
   }
 
@@ -199,14 +199,35 @@ export class World {
     const cx = this.stage.w / 2 + host.left;
     return pill.right + 8 < cx - half && icons.left - 8 > cx + half;
   }
-  private placeLogo(): void {
+  placeLogo(): void {
     const hdr = document.getElementById('hdr')!.getBoundingClientRect();
     const host = this.hud.root.getBoundingClientRect();
     const target = this.headerLogoCap(hdr.height);
-    this.logo.scale.set(target / 40);
-    this.logo.position.set(this.stage.w / 2, hdr.top - host.top + hdr.height / 2);
     this.logo.alpha = 1;
-    this.logo.visible = this.headerHasRoom(target);
+    if (this.headerHasRoom(target)) {
+      this.logo.scale.set(target / 40);
+      this.logo.position.set(this.stage.w / 2, hdr.top - host.top + hdr.height / 2);
+      this.logo.visible = true;
+      return;
+    }
+    // Narrow phones: crown the grid instead — the logo sits inside the Kp arc's hump, above the goal chip.
+    const band = this.arcBand();
+    if (band.height >= 110) {
+      const cap = Math.min(20, band.height * 0.14);
+      this.logo.scale.set(cap / 40);
+      this.logo.position.set(this.stage.w / 2, band.top + band.height * 0.5);
+      this.logo.visible = true;
+    } else this.logo.visible = false;
+  }
+  /** Where the intro logo lands (same rule as placeLogo). */
+  private logoTarget(): { y: number; cap: number; visible: boolean } {
+    const hdr = document.getElementById('hdr')!.getBoundingClientRect();
+    const host = this.hud.root.getBoundingClientRect();
+    const target = this.headerLogoCap(hdr.height);
+    if (this.headerHasRoom(target)) return { y: hdr.top - host.top + hdr.height / 2, cap: target, visible: true };
+    const band = this.arcBand();
+    if (band.height >= 110) return { y: band.top + band.height * 0.5, cap: Math.min(20, band.height * 0.14), visible: true };
+    return { y: hdr.top - host.top + hdr.height / 2, cap: target, visible: false };
   }
 
   private placeGrid(): void {
@@ -374,13 +395,11 @@ export class World {
     gsap.to(this.frame, { alpha: 1, duration: 0.9, delay: 0.2 });
     gsap.to(this.arc, { alpha: 1, duration: 0.8, delay: 0.5 });
     // logo flies to the header, scaling down on the way (or fading if the header has no room for it)
-    const hdr = document.getElementById('hdr')!.getBoundingClientRect();
-    const host = this.hud.root.getBoundingClientRect();
-    const target = this.headerLogoCap(hdr.height);
-    const s = target / this.splashLogoSize;
-    const fits = this.headerHasRoom(target);
+    const tgt = this.logoTarget();
+    const s = tgt.cap / this.splashLogoSize;
+    const fits = tgt.visible;
     await new Promise<void>((res) => {
-      gsap.to(this.logo, { y: hdr.top - host.top + hdr.height / 2, alpha: fits ? 1 : 0, duration: 1.0, delay: 0.5, ease: 'power3.inOut', onComplete: res });
+      gsap.to(this.logo, { y: tgt.y, alpha: fits ? 1 : 0, duration: 1.0, delay: 0.5, ease: 'power3.inOut', onComplete: res });
       gsap.to(this.logo.scale, { x: s, y: s, duration: 1.0, delay: 0.5, ease: 'power3.inOut' });
     });
     this.logoIntro = false;

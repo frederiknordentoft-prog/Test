@@ -286,7 +286,7 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float lg = n1(s * 0.62 + ph * 0.022 + seed * 11.0) - 0.5;
   float lg2 = n1(X * 0.21 - ph * 0.012 + seed * 5.0) - 0.5;
   float seamY = HY * (1.0 - vS - amp * (lg * 2.0 + lg2 * 1.8 + 0.7 * wv) + arc * xw * xw + tilt * xw);
-  seamY += (n1(s * 5.0 + ph * 0.35 + seed * 2.0) - 0.5) * 6.0 * sc + turb * 22.0 * sc;
+  seamY += (n1(s * 5.0 + ph * 0.25 + seed * 2.0) - 0.5) * 6.0 * sc + turb * 22.0 * sc;
   float h = seamY - p.y;                        // px above the seam
   // the sheet breaks into pieces: brightness envelope along s
   float env = smoothstep(0.18 + 0.2 * storm - 0.14 * uB.x * (1.0 - storm), 0.72, n1(s * 0.65 - ph * 0.035 + seed * 9.0));
@@ -315,7 +315,7 @@ vec3 curtain(vec2 p, float seed, float vS, float amp, float hF, float br, float 
   float a2 = max(smoothstep(0.22, 0.45, fws * f2), avg);
   float r2 = 0.5;
   if (a2 < 1.0) r2 = mix(n1(sr * f2 - ph * 1.2 + seed * 40.0), 0.5, a2);
-  float r3 = mix(n1(sr * 6.0 + ph * 0.22 + seed * 60.0), 0.5, avg * 0.8);
+  float r3 = mix(n1(sr * 6.0 + ph * 0.12 + seed * 60.0), 0.5, avg * 0.8);
   float rays = smoothstep(0.15, 0.88, r1 * 0.5 + r2 * 0.3 + r3 * 0.2);
   rays = pow(rays, uB.y);
   float Hr = Hs * (0.3 + 1.1 * rays);
@@ -374,8 +374,8 @@ vec3 sunLayer(vec2 p, vec3 bg) {
   if (d > 0.9 && d < 1.9) {
     float nt = vnoise(dir * 3.5 + vec2(3.1, t * 0.025));
     float htop = 0.04 + 0.36 * pow(nt, 2.6);
-    float tb = vnoise(dir * 13.0 + vec2(od * 7.0 - t * 0.35, t * 0.08));
-    float tb2 = vnoise(dir * 29.0 + vec2(od * 13.0 - t * 0.6, 3.0));
+    float tb = vnoise(dir * 13.0 + vec2(od * 7.0 - t * 0.22, t * 0.05));
+    float tb2 = vnoise(dir * 29.0 + vec2(od * 13.0 - t * 0.38, 3.0));
     float tongue = exp(-od / htop) * smoothstep(0.45, 0.8, tb * 0.7 + tb2 * 0.3 + 0.28 - od / htop * 0.22);
     float heat = exp(-od / (htop * 0.4));
     vec3 pc = mix(mix(C_MAGENTA, C_CRIMSON, 0.7), mix(C_MOLTEN, C_GOLD, 0.3), heat);
@@ -576,7 +576,7 @@ void main() {
   if (uCme.x > 0.0) {                        // cheap analytic wash over the land as the front passes
     float rho = length(p - vec2(uScr.x * 0.5, -uScr.y * 1.1));
     float e = rho - mix(uScr.y * 0.95, uScr.y * 2.45, uCme.x);
-    land += vec3(1.0, 0.2, 0.12) * (exp(-abs(e) / (0.06 * uScr.y)) * 0.5 + (1.0 - step(0.0, e)) * 0.12) * uCme.y;
+    land += vec3(1.0, 0.2, 0.12) * smoothstep(0.1 * uScr.y, -0.2 * uScr.y, e) * 0.16 * uCme.y;   // monotonic wash (single transition)
   }
   col = mix(col, land, L.r);
   // horizon haze / sea mist
