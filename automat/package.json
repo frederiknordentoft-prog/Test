@@ -1,0 +1,30 @@
+{
+  "name": "nordlys",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "build": "vite build",
+    "build:artifact": "vite build --mode artifact && node scripts/to-artifact.mjs",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "sim": "node sim/run.ts",
+    "tune": "node sim/tune.ts",
+    "shoot": "node scripts/shoot.mjs"
+  },
+  "dependencies": {
+    "gsap": "3.15.0",
+    "pixi-filters": "6.1.5",
+    "pixi.js": "8.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "playwright-core": "1.56.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.0",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.1"
+  }
+}
