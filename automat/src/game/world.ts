@@ -158,7 +158,7 @@ export class World {
       const oldFx = this.cellFx, oldSet = this.baseSet;
       this.cellFx = bakeCellFx(st.renderer, px);
       this.baseSet = bakeSymbols(st.renderer, { edition: 'base', cellPx: px, env: this.sky.envColors() });
-      gsap.delayedCall(4, () => { destroyCellFx(oldFx); destroySymbolSet(oldSet); });
+      gsap.delayedCall(8, () => { destroyCellFx(oldFx); destroySymbolSet(oldSet); });
       if (this.grid.cells.length) { this.grid.setSymbolSet(this.baseSet); this.grid.configure(this.grid.cols, this.grid.rows, this.grid.cell, this.baseSet, this.cellFx, false); }
     } else if (!this.baseSet) this.cellPx = px;
     this.stormCellPx = steps.find((p) => p >= (size / CONFIG.stormCols) * st.res * 1.25) ?? 192;
@@ -359,7 +359,8 @@ export class World {
     const old = this.baseSet;
     this.baseSet = set;
     if (!this.storm) this.grid.setSymbolSet(set);
-    gsap.delayedCall(4, () => destroySymbolSet(old));
+    // CellShatter releases its per-texture batches after 5 s idle; destroy only after that so no bind group still holds them.
+    gsap.delayedCall(8, () => destroySymbolSet(old));
   }
   private prebakeStorm(): Promise<SymbolSet> {
     if (this.stormSet) return Promise.resolve(this.stormSet);
