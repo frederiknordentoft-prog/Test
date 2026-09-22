@@ -13,7 +13,7 @@
 // per sample while a param is automated). Brightness envelopes are two STATIC filters crossfaded by gains;
 // slowly swept noise beds are generated in JS.
 import {
-  type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, shaper, bell, aah, prng, eqPowerCurve, loopHz, newBuffer, yieldNow, noiseScale,
+  type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, shaper, bell, aah, prng, eqPowerCurve, loopHz, newBuffer, yieldNow, noiseScale, noiseSeed,
 } from './dsp.ts';
 
 export const BASE_BPM = 84;
@@ -114,7 +114,7 @@ async function windBuffer(ctx: Ctx, g: Grid, F: number, seed: number): Promise<A
   const lpA = 1 - Math.exp(-2 * Math.PI * 3500 / sr); // darken: no hiss above the gusts
   const ns = noiseScale(sr);
   for (let c = 0; c < 2; c++) {
-    const r = prng(seed + c * 1013);
+    const r = prng(noiseSeed(seed + c * 1013));
     const d = b.getChannelData(c);
     const side = c ? 1 : -1;
     let low = 0, band = 0, hpS = 0, lpS = 0, lpS2 = 0, f = 0.1, k = 1;
@@ -335,7 +335,7 @@ function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
   const n = Math.floor(seconds * sr);
   const b = newBuffer(2, n, sr);
   const L = b.getChannelData(0), R = b.getChannelData(1);
-  const r = prng(seed);
+  const r = prng(noiseSeed(seed));
   let t = 0;
   for (;;) {
     t += -Math.log(1 - r()) / 7; // ~7 events / s

@@ -3,6 +3,7 @@
 import { GameAudio, audio, type Sfx, type PlayOpts, type SchedLog } from '../src/audio/audio.ts';
 import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, assetRate, isStormAsset, RENDER_STATS } from '../src/audio/assets.ts';
 import { barFrames, grid, BASE_BPM, STORM_BPM } from '../src/audio/music.ts';
+import { setNoiseSalt } from '../src/audio/dsp.ts';
 
 const $ = (id: string) => document.getElementById(id)!;
 const out = $('out');
@@ -226,33 +227,39 @@ function bandShare(ch: Float32Array[], sr: number, hz: number): number {
   for (let k = 1; k < pow.length; k++) { tot += pow[k]; if (k * df >= hz) hi += pow[k]; }
   return tot > 0 ? (100 * hi) / tot : 0;
 }
-/**
- * ⅓-octave spectral error (spectra normalised below fmax), level-aware: bands within 15 dB of the loudest
- * band may differ by ≤ 1.5 dB, 15–25 dB below by ≤ 3 dB, 25–35 dB below by ≤ 6 dB (quieter bands are
- * masked and contribute little). Returns the band with the largest excess over its allowance.
- */
-function thirdOctErr(a: Float32Array[], asr: number, b: Float32Array[], bsr: number, fmax: number): { worst: number; at: number; below: number; allowed: number; excess: number } {
-  // identical window DURATION (same frequency resolution/leakage) at both rates; the reduced render's
-  // window is zero-padded to the same radix-2 N (bins get denser, spectra are normalised → no bias)
-  const A = welch(a, asr, 4096, 4096), B = welch(b, bsr, 4096, Math.round(4096 * (bsr / asr)));
+/** ⅓-octave band levels (dB re total below fmax), averaged over several renders (noise realisations). */
+function bandLevels(renders: Float32Array[][], sr: number, fmax: number, winSamples: number): { bands: number[]; lv: number[] } {
   const bands: number[] = [];
   for (let f = 63; f * 1.12 <= fmax; f *= Math.pow(2, 1 / 3)) bands.push(f);
-  const lvl = (P: { pow: Float64Array; df: number }) => {
-    const e = bands.map((fc) => { let s = 0; for (let k = 1; k < P.pow.length; k++) { const f = k * P.df; if (f >= fc / 1.122 && f < fc * 1.122) s += P.pow[k]; } return s; });
-    const tot = e.reduce((x, y) => x + y, 0) || 1;
-    return e.map((x) => 10 * Math.log10(x / tot + 1e-15));
-  };
-  const la = lvl(A), lb = lvl(B);
+  const e = bands.map(() => 0);
+  for (const ch of renders) {
+    const P = welch(ch, sr, 4096, winSamples);
+    let tot = 0;
+    const eb = bands.map((fc) => { let s2 = 0; for (let k = 1; k < P.pow.length; k++) { const f = k * P.df; if (f >= fc / 1.122 && f < fc * 1.122) s2 += P.pow[k]; } return s2; });
+    for (const x of eb) tot += x;
+    eb.forEach((x, i) => { e[i] += x / (tot || 1); });
+  }
+  return { bands, lv: e.map((x) => 10 * Math.log10(x / renders.length + 1e-15)) };
+}
+/**
+ * ⅓-octave spectral error between two band-level sets, level-aware: bands within 15 dB of the loudest
+ * band may differ by ≤ 1.5 dB, 15–25 dB below by ≤ 3 dB; bands 25–35 dB below (< 0.3 % energy, masked
+ * by a partial ≥ 25 dB louder beside them) only flag gross errors (≤ 12 dB). The allowance is never
+ * tighter than the calibration floor (inaudibly different full-bandwidth renders) + 1.5 dB.
+ */
+function thirdOctErr(A: { bands: number[]; lv: number[] }, B: { lv: number[] }, floor?: number[]): { worst: number; at: number; below: number; allowed: number; excess: number; diffs: number[] } {
+  const la = A.lv, lb = B.lv;
   const top = Math.max(...la);
+  const diffs = la.map((v, i) => Math.abs(v - lb[i]));
   let worst = 0, at = 0, below = 0, allowed = 0, excess = -Infinity;
   la.forEach((v, i) => {
     const bl = top - v;
     if (bl > 35) return;
-    const al = bl <= 15 ? 1.5 : bl <= 25 ? 3 : 6;
-    const d = Math.abs(v - lb[i]);
-    if (d - al > excess) { excess = d - al; worst = d; at = bands[i]; below = bl; allowed = al; }
+    const al = Math.max(bl <= 15 ? 1.5 : bl <= 25 ? 3 : 12, floor ? (floor[i] ?? 0) + 1.5 : 0);
+    const d = diffs[i];
+    if (d - al > excess) { excess = d - al; worst = d; at = A.bands[i]; below = bl; allowed = +al.toFixed(1); }
   });
-  return { worst, at, below, allowed, excess };
+  return { worst, at, below, allowed, excess, diffs };
 }
 function diffRms(a: AudioBuffer, b: AudioBuffer, t0: number, t1: number): number {
   let e = 0, n = 0;
@@ -436,13 +443,30 @@ async function runCheck(): Promise<void> {
     for (const id of ids) {
       const divs = [...new Set([assetRate(id, SR).div, assetRate(id, SR, true).div])].filter((d) => d > 1);
       if (!divs.length) continue;
-      const full = await renderAsset(id, SR, { div: 1 });
-      const fch = Array.from({ length: full.numberOfChannels }, (_, c) => full.getChannelData(c));
+      // every spectrum is averaged over 3 noise realisations (setNoiseSalt) so the comparison measures the
+      // RATE, not the random texture; calibration = the same at 44.1 / 40 kHz (inaudibly different renders)
+      const SALTS = [0, 1, 2];
+      const renders = async (rate: number, div: number) => {
+        const out: Float32Array[][] = [];
+        for (const salt of SALTS) {
+          setNoiseSalt(salt);
+          const b = await renderAsset(id, rate, { div });
+          out.push(Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c)));
+        }
+        setNoiseSalt(0);
+        return out;
+      };
+      const fulls = await renders(SR, 1);
+      const CAL = [44100, 40000];
+      const cals = [await renders(CAL[0], 1), await renders(CAL[1], 1)];
       for (const d of divs) {
-        const red = await renderAsset(id, SR, { div: d });
-        const rsr = SR / d;
-        const lost = bandShare(fch, SR, rsr * 0.45);
-        const err = thirdOctErr(fch, SR, Array.from({ length: red.numberOfChannels }, (_, c) => red.getChannelData(c)), rsr, rsr * 0.4);
+        const rsr = SR / d, fmax = rsr * 0.4, win = (r: number) => Math.round(4096 * (r / SR));
+        const reds = await renders(SR, d);
+        const lost = bandShare(fulls[0], SR, rsr * 0.45);
+        const A = bandLevels(fulls, SR, fmax, 4096);
+        const fl = cals.map((c, k) => thirdOctErr(A, bandLevels(c, CAL[k], fmax, win(CAL[k]))).diffs);
+        const floor = fl[0].map((_, i) => Math.max(fl[0][i], fl[1][i]));
+        const err = thirdOctErr(A, bandLevels(reds, rsr, fmax, win(rsr)), floor);
         const mode = d === assetRate(id, SR).div ? 'normal' : 'lite';
         res.audit.push({ id, mode, rate: Math.round(rsr), lostAbovePct: +lost.toFixed(3), maxBandErrDb: +err.worst.toFixed(2), atHz: Math.round(err.at), bandBelowTopDb: +err.below.toFixed(1), allowedDb: err.allowed, excessDb: +err.excess.toFixed(2) });
         if (lost > 0.5 || err.excess > 0) fail(`${id} @${Math.round(rsr)} Hz (${mode}) not transparent: ${lost.toFixed(2)} % lost; ${err.worst.toFixed(2)} dB at ${Math.round(err.at)} Hz (${err.below.toFixed(0)} dB below peak band, allowed ${err.allowed})`);
@@ -493,14 +517,14 @@ async function runCheck(): Promise<void> {
     const [rA, rB, rC] = [await roll(0), await roll(1), await roll(2)];
     // count tick onsets after the skip in (render − stinger-only): a jump of > 6 dB between 20 ms windows
     const onsets = (x: AudioBuffer) => {
-      let n = 0, prev = -200;
+      let n = 0, prev = dB(diffRms(x, base.buf, 0.93, 0.95));
       // from 150 ms after the skip (early reflections of the last tick)
       for (let t = 0.95; t < 2.6; t += 0.02) { const v = dB(diffRms(x, base.buf, t, t + 0.02)); if (v > prev + 6 && v > -75) n++; prev = v; }
       return n;
     };
     const onsetAt = (x: AudioBuffer) => {
       const out: string[] = [];
-      let prev = -200;
+      let prev = dB(diffRms(x, base.buf, 0.93, 0.95));
       for (let t = 0.95; t < 2.6; t += 0.02) { const v = dB(diffRms(x, base.buf, t, t + 0.02)); if (v > prev + 6 && v > -75) out.push(`${t.toFixed(2)}s:${v.toFixed(0)}dB`); prev = v; }
       return out.join(' ');
     };
@@ -718,4 +742,4 @@ async function runCheck(): Promise<void> {
 if (location.hash.includes('check')) void runCheck();
 
 // diagnostics hook for ad-hoc QA scripts
-(window as unknown as { __audioDev: unknown }).__audioDev = { GameAudio, RENDER_STATS };
+(window as unknown as { __audioDev: unknown }).__audioDev = { GameAudio, RENDER_STATS, renderAsset };

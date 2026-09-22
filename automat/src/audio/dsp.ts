@@ -25,6 +25,15 @@ export function prng(seed: number): () => number {
 }
 
 // ------------------------------------------------------------------ buffers
+/**
+ * QA only: selects an independent realisation of every NOISE signal (not of structural randomness such as
+ * ping pitches or humanise timing). The reduced-rate audit averages spectra over several realisations.
+ */
+let noiseSalt = 0;
+export function setNoiseSalt(n: number): void { noiseSalt = n | 0; }
+/** Seed for a noise-signal generator (salted for QA; identical in production). */
+export const noiseSeed = (seed: number): number => seed + noiseSalt * 1000003;
+
 const noiseCache = new WeakMap<Ctx, Map<string, AudioBuffer>>();
 /**
  * Amplitude scale that keeps white-noise power per Hz independent of the render rate (a 24 kHz render
@@ -36,14 +45,14 @@ export const noiseScale = (sr: number): number => Math.sqrt(sr / 48000);
 export function noiseBuf(ctx: Ctx, seconds = 4, seed = 1, ch = 1): AudioBuffer {
   let m = noiseCache.get(ctx);
   if (!m) { m = new Map(); noiseCache.set(ctx, m); }
-  const key = `${seconds}:${seed}:${ch}`;
+  const key = `${seconds}:${seed}:${ch}:${noiseSalt}`;
   let b = m.get(key);
   if (!b) {
     const n = Math.max(1, Math.floor(seconds * ctx.sampleRate));
     b = ctx.createBuffer(ch, n, ctx.sampleRate);
     const k = noiseScale(ctx.sampleRate);
     for (let c = 0; c < ch; c++) {
-      const r = prng(seed * 7919 + c * 104729);
+      const r = prng(noiseSeed(seed * 7919 + c * 104729));
       const d = b.getChannelData(c);
       for (let i = 0; i < n; i++) d[i] = (r() * 2 - 1) * k;
     }

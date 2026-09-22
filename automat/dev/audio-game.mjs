@@ -19,7 +19,7 @@ for (let s = 0; s < secs; s++) {
     if (!a) return null;
     const st = a.stats();
     const p = a.position();
-    return `${st.state} r${st.rendered}/${st.total} v${st.voices} base:${st.base}/L${st.layers} storm:${st.storm}×${st.stormX}${p ? ` ${p.kind}@${p.bar}.${p.beat}` : ''} now=${a.now().toFixed(2)}`;
+    return `${st.state} r${st.rendered}/${st.total} ${st.mb.toFixed(1)}MB(storm ${st.stormMb.toFixed(1)}) v${st.voices} base:${st.base}/L${st.layers} storm:${st.storm}×${st.stormX}${p ? ` ${p.kind}@${p.bar}.${p.beat}` : ''} now=${a.now().toFixed(2)}`;
   }));
 }
 console.log(samples.map((s, i) => `${i + 1}s ${s}`).join('\n'));

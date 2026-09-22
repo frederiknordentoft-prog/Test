@@ -4,7 +4,7 @@
 // sparse and soft for anything that repeats per spin, cinematic weight only for the storm set.
 // No coin sounds anywhere.
 import {
-  type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, lin, glide, shaper, bell, chimeVoice, gong, brass, aah, prng,
+  type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, lin, glide, shaper, bell, chimeVoice, gong, brass, aah, prng, noiseSeed,
 } from './dsp.ts';
 
 export interface SfxAsset {
@@ -36,7 +36,7 @@ const A: Record<string, SfxAsset> = {};
 for (const z of LAND_ZONES) {
   for (const rr of [0, 1]) {
     A[`land${z}${rr ? 'b' : 'a'}`] = {
-      ch: 1, dur: 2.0,
+      ch: 1, dur: 2.0, liteRate: z >= 89 ? 48000 : 32000, // top zones: FM sidebands near 16 kHz (audit)
       build(ctx, out) {
         const tau = 0.56 * Math.pow(2, -(z - 74) / 26);
         bell(ctx, out, 0.002, mtof(z), 0.8, {
@@ -57,7 +57,7 @@ for (const z of CHIME_ZONES) {
 
 for (const v of [0, 1, 2]) {
   A[`shatter${v}`] = {
-    ch: 1, dur: 1.1,
+    ch: 1, dur: 1.1, liteRate: 48000, // glass air above 14 kHz (audit)
     build(ctx, out) {
       const r = prng(500 + v * 17);
       const bus = filt(ctx, 'highpass', 300, 0.6);
@@ -102,7 +102,7 @@ for (const v of [0, 1, 2]) {
 
 for (const v of [0, 1, 2]) {
   A[`spin${v}`] = {
-    ch: 1, dur: 0.8,
+    ch: 1, dur: 0.8, liteRate: 48000, // swept low-pass loses ~4 dB of air near a 16 kHz Nyquist (audit)
     build(ctx, out) {
       const n = noise(ctx, 0, 0.8, 600 + v);
       const lp = filt(ctx, 'lowpass', 4000, 0.9);
@@ -207,7 +207,7 @@ A.markUp = {
 
 for (const v of [0, 1]) {
   A[`mote${v}`] = {
-    ch: 1, dur: 0.35,
+    ch: 1, dur: 0.35, liteRate: 48000, // zip skirt near 8 kHz (audit)
     build(ctx, out) {
       const n = noise(ctx, 0, 0.3, 900 + v);
       const bp = filt(ctx, 'bandpass', 1500, 4.5);
@@ -413,7 +413,7 @@ A.stormWin = {
 
 // ------------------------------------------------------------------ storm set
 A.stormSwell = {
-  ch: 1, dur: 2.7, div: 2, minRate: 22000,
+  ch: 1, dur: 2.7, liteRate: 48000, // saturated noise hiss is shaped near Nyquist at any lower rate (audit)
   build(ctx, out) {
     const env = gain(ctx, 0);
     env.gain.setValueAtTime(0.0008, 0);
@@ -449,7 +449,7 @@ A.stormSwell = {
 };
 
 A.stormRiser = {
-  ch: 2, dur: 1.05,
+  ch: 2, dur: 1.05, liteRate: 48000, // reverse-cymbal air above 14 kHz (audit)
   build(ctx, out) {
     const T = 1.0;
     // reverse cymbal (stereo noise)
@@ -662,7 +662,7 @@ function crackle(ctx: Ctx, out: AudioNode, t0: number, dur: number, rate: number
   const n = Math.floor(dur * sr);
   const b = ctx.createBuffer(2, n, sr);
   const L = b.getChannelData(0), R = b.getChannelData(1);
-  const r = prng(seed);
+  const r = prng(noiseSeed(seed));
   let t = 0;
   while (true) {
     t += -Math.log(1 - r()) / rate;

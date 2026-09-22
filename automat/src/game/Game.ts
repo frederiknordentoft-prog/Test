@@ -167,7 +167,11 @@ export class Game {
       case 'demoReset': if (this.state === 'idle' || this.state === 'splash') this.demoReset(); else this.toolsBusy(); break;
       case 'startStorm': this.resolveWaiter('startStorm'); break;
       case 'continue': this.hud.show('bigwin', false); if (this.celebration.active) this.celebration.continue(); else this.resolveWaiter('continue'); this.lastModalClose = performance.now(); break;
-      case 'skip': if (this.hud.menuOpen()) return; if (this.celebration.active) this.celebration.skip(); else if (this.cine?.canSkip()) this.cine.skip(); break;
+      case 'skip':
+        if (this.hud.menuOpen()) return;
+        if (this.celebration.active) { if (this.celebration.skip()) this.w.audio.stopCount(); }
+        else if (this.cine?.canSkip()) this.cine.skip();
+        break;
       case 'mute': this.s.settings.muted = !this.s.settings.muted; this.applySettings(); this.hud.setMuted(this.s.settings.muted); this.persist(); break;
       case 'refill': this.refill(); break;
       case 'settings': Object.assign(this.s.settings, i.s); this.applySettings(); this.persist(); break;
@@ -265,9 +269,7 @@ export class Game {
     this.rebakeTier = tier;
     void this.w.rebakeBase();
   }
-  private prepareStorm(): void {
-    (this.w.audio as unknown as { prepareStorm?: () => Promise<void> }).prepareStorm?.();
-  }
+  private prepareStorm(): Promise<void> { return this.w.audio.prepareStorm(); }
 
   async spin(): Promise<void> {
     if (this.state !== 'idle') return;
@@ -376,7 +378,8 @@ export class Game {
     this.stormState = st;
     this.stormMeta = { source, stakeOre };
     if (!demo && this.s.activeStorm) { Object.assign(this.s.activeStorm, { spinIndex: st.spinIndex, spinsTotal: st.spinsTotal, marks: st.marks.slice(), winOre: st.winOre, maxMark: st.maxMark }); this.persist(); }
-    this.prepareStorm();
+    // Storm sound + art must be ready before the cinematic's first beat (resumed storms prepare here).
+    await Promise.race([this.prepareStorm(), new Promise<void>((r) => setTimeout(r, 2000))]);
     await w.ensureExtremeAssets();
     this.watermark.visible = demo;
     this.layoutWatermark();
@@ -457,7 +460,7 @@ export class Game {
     this.w.arc.setKp(this.kp());
     await w.stormOutro();
     w.placeLogo();
-    (w.audio as unknown as { releaseStorm?: () => void }).releaseStorm?.();
+    w.audio.releaseStorm();
     this.hud.setMode('base');
     this.stormState = null;
     this.stormMeta = null;
