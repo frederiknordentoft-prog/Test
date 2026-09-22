@@ -173,6 +173,12 @@ export class World {
     const target = Math.min(22, Math.max(12, hdr.height * 0.34));
     this.logo.scale.set(target / 40);
     this.logo.position.set(this.stage.w / 2, hdr.top - host.top + hdr.height / 2);
+    // Hide the header logo when the demo pill and icon buttons leave no room for it.
+    const pill = document.getElementById('demoPill')!.getBoundingClientRect();
+    const icons = (document.querySelector('#hdr .right') as HTMLElement).getBoundingClientRect();
+    const half = (this.logo.width * 1.05) / 2;
+    const cx = this.stage.w / 2 + host.left;
+    this.logo.visible = pill.right + 8 < cx - half && icons.left - 8 > cx + half;
   }
 
   private placeGrid(): void {

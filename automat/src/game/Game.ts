@@ -178,12 +178,14 @@ export class Game {
   // ---------------------------------------------------------------- boot / intro
   boot(): void {
     this.setState('splash');
+    this.hud.setSplash(true);
     this.hud.show('splash', true);
     this.w.showSplash();
   }
 
   async intro(): Promise<void> {
     this.hud.show('splash', false);
+    this.hud.setSplash(false);
     this.setState('intro');
     await this.w.audio.unlock();
     this.w.audio.startBase();
@@ -338,6 +340,8 @@ export class Game {
     await w.ensureExtremeAssets();
     this.watermark.visible = demo;
     this.layoutWatermark();
+    this.hud.clearWin(`Solstorm · ${st.spinsTotal} stormspin${demo ? ' · demo' : ''}`);
+    this.hud.setStormGoal(st.spinIndex, st.spinsTotal, Math.max(2, st.maxMark), st.winOre, stakeOre);
     this.cine = playSolstormIntro(this.cineWorld(st));
     await this.cine.done;
     this.cine = null;
@@ -353,11 +357,13 @@ export class Game {
       const k = st.spinIndex;
       const { result, meta } = stormSpin(st, rng, this.stormId(idx, k));
       this.hud.setMode('storm', `SOLSTORM ${meta.index + 1}/${meta.total}`);
+      this.hud.setStormGoal(meta.index + 1, meta.total, Math.max(2, st.maxMark), st.winOre - result.totalOre, stakeOre);
       if (meta.wave) await w.stormWave(meta.wave.before, meta.wave.after);
       this.hud.setWin(st.winOre - result.totalOre, stakeOre, 'live', `Solstorm ${meta.index + 1}/${meta.total}`);
       await presentSpin(ctx, result, { storm: true, freshMarks: false });
       this.hud.setWin(st.winOre, stakeOre, 'live', `Solstorm ${meta.index + 1}/${st.spinsTotal} · ${fmtKr(st.winOre)} (${fmtX(st.winOre / stakeOre)})`);
       w.audio.stormLevel(st.maxMark);
+      this.hud.setStormGoal(meta.index + 1, st.spinsTotal, st.maxMark, st.winOre, stakeOre);
       if (result.triggers.retriggerSpins > 0) {
         this.hud.banner(`+${result.triggers.retriggerSpins} SOLSTORM-SPIN`, `${st.spinsTotal} i alt`, 'storm');
         w.audio.play('sun', { level: 3 });

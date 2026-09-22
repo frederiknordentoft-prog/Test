@@ -9,7 +9,8 @@
 // share one start time, so layers are sample-locked; layer gains change only on bar boundaries via a
 // look-ahead scheduler (25 ms timer, 120 ms horizon). SFX are pre-rendered one-shots (see sfx.ts) played
 // with crand jitter. Before unlock() nothing makes sound and nothing throws; now() runs on
-// performance.now() and continues seamlessly on the audio clock once the context is running.
+// performance.now()/1000 until the context runs, then it IS ctx.currentTime (so `when` values may be
+// derived from either now() or ctx.currentTime).
 import { crand } from '../core/cosmeticRng.ts';
 import { TIER_SECS } from '../present/schedule.ts';
 import { makeIR, dbToGain } from './dsp.ts';
@@ -119,8 +120,8 @@ export class GameAudio {
   private _ctx: BaseAudioContext | null = null;
   private realtime = true;
   private everRan = false;
-  private off = 0;
   private lastNow = 0;
+  private stormPendingPerf = false;
   private rawT = -1;
   private rawPerf = 0;
   private lat = -1;
@@ -224,10 +225,12 @@ export class GameAudio {
     const st = c.state as string;
     if (st === 'running') {
       if (!this.everRan) {
-        // Continue the pre-unlock performance clock seamlessly on the audio clock.
         this.everRan = true;
-        this.off = Math.max(perfNow(), this.lastNow) - c.currentTime;
         this.rawT = -1;
+        this.lastNow = 0;
+        // A downbeat requested on the pre-run performance clock → same moment on the audio clock.
+        if (this.stormPending >= 0 && this.stormPendingPerf) this.stormPending -= perfNow() - c.currentTime;
+        this.stormPendingPerf = false;
       }
       this.disarmGesture();
       if (this.stormPending >= 0) this.startStorm(Math.max(this.stormPending, this.now()));
@@ -276,22 +279,21 @@ export class GameAudio {
 
   // ================================================================ clock
   /**
-   * Audio clock in seconds. Before the context runs it is performance.now()/1000; once running it is
-   * ctx.currentTime + a constant offset chosen so the value is continuous, extrapolated between audio
-   * callbacks for smooth visuals, and monotonic. Pass values derived from now() as `when`.
+   * Audio clock in seconds = AudioContext time. Before the context has ever run (no unlock yet, or the
+   * browser refused to start audio) it is performance.now()/1000 so visual timelines keep moving; it
+   * switches to ctx.currentTime once, when the context first runs (nothing is audio-anchored across
+   * unlock in the game). While running it is extrapolated between audio callbacks (≤ 50 ms) so visuals
+   * slaved to it move smoothly, and monotonic. Frozen while suspended.
    */
   now(): number {
     const c = this._ctx;
-    let t: number;
-    if (!c || !this.everRan) t = perfNow();
-    else if (!this.realtime) t = c.currentTime;
-    else {
-      const raw = c.currentTime, p = perfNow();
-      if (raw !== this.rawT) { this.rawT = raw; this.rawPerf = p; }
-      const extra = (c as AudioContext).state === 'running' ? Math.min(Math.max(0, p - this.rawPerf), 0.05) : 0;
-      t = raw + extra + this.off;
-    }
-    if (t < this.lastNow) t = this.lastNow;
+    if (!c || !this.everRan) return perfNow();
+    if (!this.realtime) return c.currentTime;
+    const raw = c.currentTime, p = perfNow();
+    if (raw !== this.rawT) { this.rawT = raw; this.rawPerf = p; }
+    const extra = (c as AudioContext).state === 'running' ? Math.min(Math.max(0, p - this.rawPerf), 0.05) : 0;
+    let t = raw + extra;
+    if (t < this.lastNow) t = this.lastNow; // extrapolation overshoot: hold, never step back
     this.lastNow = t;
     return t;
   }
@@ -305,8 +307,8 @@ export class GameAudio {
     return this.lat;
   }
 
-  /** Convert a now()-domain time to AudioContext time. */
-  toCtxTime(t: number): number { return this.realtime ? t - this.off : t; }
+  /** now()-domain → AudioContext time (identity once the context has run; kept for clarity). */
+  toCtxTime(t: number): number { return t; }
 
   // ================================================================ graph
   private build(c: BaseAudioContext, bypassMaster = false): void {
@@ -579,7 +581,13 @@ export class GameAudio {
    */
   startStorm(atCtxTime: number): void {
     if (!this._ctx) return;
-    if (!this.live()) { this.stormPending = Number.isFinite(atCtxTime) ? atCtxTime : 0; this.inStorm = true; this.baseWanted = false; return; }
+    if (!this.live()) {
+      this.stormPending = Number.isFinite(atCtxTime) ? atCtxTime : 0;
+      this.stormPendingPerf = !this.everRan;
+      this.inStorm = true;
+      this.baseWanted = false;
+      return;
+    }
     this.stormPending = -1;
     try {
       const c = this._ctx!, now = c.currentTime;
@@ -928,7 +936,6 @@ export class GameAudio {
     this._ctx = ctx;
     this.realtime = false;
     this.everRan = true;
-    this.off = 0;
     this.renderRate = ctx.sampleRate;
     this.build(ctx, !!opts.bypassMaster);
     for (const id of allAssetIds()) {

@@ -54,7 +54,7 @@ export class Hud {
     ui.innerHTML = `
       <header id="reg" role="banner">
         <div class="l"><b>NORDLYS</b><span class="num" id="clock" aria-label="Klokken">--:--</span><span class="hide-xs" id="regBal"></span></div>
-        <div class="r"><span class="badge" id="modeBadge">NORDLYS</span><span class="badge demo">Demo · legepenge</span></div>
+        <div class="r"><span class="badge" id="modeBadge">NORDLYS</span><span class="badge demo">Demo<span class="long"> · legepenge</span></span></div>
       </header>
       <div id="hdr">
         <button class="pill" id="demoPill" aria-label="Demo-værktøj: springer progressionen over. Findes ikke i den rigtige version.">
@@ -256,8 +256,15 @@ export class Hud {
     const need = Math.max(0, Math.ceil(next.frac * K - charge));
     const label = next.kp === 9 ? 'SOLSTORM' : next.perk ? 'Ladet spin' : next.change.split('·')[0].trim();
     const g = next.gName ? ` ${next.gName}` : '';
-    this.el.goal.innerHTML = `<span class="kp">Kp ${fmt1(kp)}</span><span class="sep">·</span>Næste: <b>Kp ${next.kp}${g}</b> → ${label}<span class="sep">·</span><span class="num">${fmtInt(need)} ladning</span>${avgSpinsLeft ? `<span class="sep">·</span><span class="num">≈ ${fmtInt(avgSpinsLeft)} spin</span>` : ''}`;
+    const labCls = next.perk || next.kp === 9 ? '' : ' class="lab"';
+    this.el.goal.innerHTML = `<span class="kp">Kp ${fmt1(kp)}</span><span class="sep">·</span>Næste: <b>Kp ${next.kp}${g}</b><span${labCls}>→ ${label}</span><span class="sep">·</span><span class="num">${fmtInt(need)} ladning</span>${avgSpinsLeft ? `<span class="spins"><span class="sep">·</span><span class="num">≈ ${fmtInt(avgSpinsLeft)} spin</span></span>` : ''}`;
   }
+
+  /** Storm status in the goal chip (replaces the Kp goal while Solstorm runs). */
+  setStormGoal(spin: number, total: number, maxMark: number, winOre: number, stakeOre: number): void {
+    this.el.goal.innerHTML = `<span class="kp">SOLSTORM</span><span class="sep">·</span>Spin <b class="num">${spin}/${total}</b><span class="sep">·</span>Højeste mærke <b class="num">×${maxMark}</b><span class="spins"><span class="sep">·</span><span class="num">${fmtKr(winOre)} (${fmtX(winOre / stakeOre)})</span></span>`;
+  }
+  setSplash(b: boolean): void { document.documentElement.classList.toggle('splash', b); }
 
   /** Netto-linje. fraction of 3× stake; marker at 1×. */
   setWin(totalOre: number, stakeOre: number, profile: 'win' | 'return' | 'push' | 'none' | 'live', label?: string): void {

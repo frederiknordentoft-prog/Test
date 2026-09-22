@@ -327,6 +327,7 @@ async function runCheck(): Promise<void> {
         if (s.nan) fail(`${id} NaN ${s.nan}`);
         if (!exact) fail(`${id} length ${b.length} not a whole number of bars (${bf})`);
         if (sm.ratio > 3 && sm.jump > 0.002) fail(`${id} loop seam jump ${sm.jump.toFixed(4)} (${sm.ratio.toFixed(1)}× p99.9)`);
+        if (sp.bands[2] + sp.bands[3] + sp.bands[4] + sp.bands[5] < 10) fail(`${id} not phone-audible (${(sp.bands[2] + sp.bands[3] + sp.bands[4] + sp.bands[5]).toFixed(1)} % above 160 Hz)`);
       } else {
         const s = stats(b);
         const sec = b.length / b.sampleRate;
@@ -343,6 +344,12 @@ async function runCheck(): Promise<void> {
         if (head > 0.05) fail(`${id} starts with a click (${head})`);
         if (tailMax > 0.01) fail(`${id} ends abruptly (${tailMax})`);
         if (Math.abs(s.dc) > 0.002) fail(`${id} DC ${s.dc}`);
+        // spectral sanity: per-spin sounds must not be harsh or rumbly; big hits must reach phone speakers
+        const above160 = sp.bands[2] + sp.bands[3] + sp.bands[4] + sp.bands[5];
+        if (/^(land|chime|tap|spin|returnTick|mote|markUp|nettoCross|countTick|stake|shatter)/.test(id) && (sp.bands[0] > 1 || (sp.bands[5] > 12 && !id.startsWith('shatter')) || sp.bands[5] > 45))
+          fail(`${id} spectral balance (sub ${sp.bands[0].toFixed(1)} %, air ${sp.bands[5].toFixed(1)} %)`);
+        if (/^(impact|waveBoom|stormSwell|glassXL|stormRiser|letterSlam|reform|win|bigWin|stormWin|sun|levelUp)/.test(id) && above160 < 10)
+          fail(`${id} not phone-audible: only ${above160.toFixed(1)} % energy above 160 Hz`);
       }
       log(`rendered ${id} (${ms.toFixed(0)} ms)`);
     }
@@ -512,7 +519,11 @@ async function runCheck(): Promise<void> {
     const uMs = performance.now() - u0;
     const after = rt.now();
     check('unlock resolves fast', uMs < 800, `${uMs.toFixed(0)} ms, state ${rt.ctx?.state}`);
-    check('now() continuous across unlock', after >= before && after - before < 0.9, `before ${before.toFixed(3)} after ${after.toFixed(3)}`);
+    const ct = rt.ctx?.currentTime ?? -1;
+    check('now() is AudioContext time once running', after - ct >= -0.001 && after - ct < 0.06, `now ${after.toFixed(4)} vs ctx.currentTime ${ct.toFixed(4)} (pre-unlock perf clock was ${before.toFixed(2)})`);
+    let mono = true, prevT = rt.now();
+    for (let k = 0; k < 120; k++) { await new Promise((r) => setTimeout(r, 2)); const x = rt.now(); if (x < prevT) mono = false; prevT = x; }
+    check('now() monotonic while running', mono, `sampled 120× over ~300 ms`);
     let longest = 0;
     let po: PerformanceObserver | null = null;
     try { po = new PerformanceObserver((l) => { for (const e of l.getEntries()) longest = Math.max(longest, e.duration); }); po.observe({ type: 'longtask', buffered: false }); } catch { /* */ }

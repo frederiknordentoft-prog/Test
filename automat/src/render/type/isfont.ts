@@ -12,7 +12,7 @@ import {
   Buffer, BufferUsage, Container, Geometry, Mesh, Rectangle, RenderTexture, Shader, UniformGroup,
   type DestroyOptions, type Renderer,
 } from 'pixi.js';
-import { getAtlas, type IsAtlas } from './atlas.ts';
+import { getAtlas, penAt, type IsAtlas } from './atlas.ts';
 import { CAP } from './glyphs.ts';
 import {
   isProgram, writeStyle, N_VEC, U_GLOW, U_SWEEP, U_REVEAL, U_TIME, U_TEXTW, U_REVK, U_SLITY, U_SLITW, U_REFLECT, U_HORIZON, type IsStyle,
@@ -40,14 +40,14 @@ export interface IsTextOptions {
  */
 interface Lockup { slitY: number; slitW: number; reflect: number; glint: string; gx: number; gy: number; gs: number; streak: number }
 const LOCKUPS: Record<string, Lockup> = {
-  NORDLYS: { slitY: 4.1, slitW: 0.62, reflect: 1, glint: 'O', gx: 0.86, gy: 13.0, gs: 12, streak: 1.5 },
-  SOLSTORM: { slitY: 4.1, slitW: 0.62, reflect: 0.7, glint: 'O', gx: 0.86, gy: 13.0, gs: 12, streak: 1.3 },
+  NORDLYS: { slitY: 4.1, slitW: 0.62, reflect: 1, glint: 'O', gx: 0.86, gy: 13.0, gs: 15, streak: 1.5 },
+  SOLSTORM: { slitY: 4.1, slitW: 0.62, reflect: 0.7, glint: 'O', gx: 0.86, gy: 13.0, gs: 14, streak: 1.3 },
 };
 
 /** Line box height as a multiple of the cap height (what .height reports). */
 export const LINE = 1.38;
 
-const FLOATS = 10;           // per vertex: pos2 uv2 text2 misc4
+const FLOATS = 12;           // per vertex: pos2 uv2 text2 misc4 tip2
 const STRIDE = FLOATS * 4;
 const QUAD = FLOATS * 4;     // floats per quad
 
@@ -121,9 +121,10 @@ export class IsText extends Container {
   private _over = 0;                    // decor quads drawn above (glint)
   private _glintOf = 0;                 // letter the glint follows
   private _lock: Lockup | null = null;
+  private _tipDirty = false;
+  private readonly _pen = new Float32Array(2);
   private _inkL = 0;                    // ink extent (units, after alignment offset)
   private _inkR = 0;
-  private _dirty = false;
   private _bounds = new Rectangle();
 
   constructor(opts: IsTextOptions) {
@@ -158,6 +159,7 @@ export class IsText extends Container {
         aUV: { buffer: this._vbuf, format: 'float32x2', stride: STRIDE, offset: 8 },
         aText: { buffer: this._vbuf, format: 'float32x2', stride: STRIDE, offset: 16 },
         aMisc: { buffer: this._vbuf, format: 'float32x4', stride: STRIDE, offset: 24 },
+        aTip: { buffer: this._vbuf, format: 'float32x2', stride: STRIDE, offset: 40 },
       },
       indexBuffer: this._ibuf,
     });
@@ -205,7 +207,10 @@ export class IsText extends Container {
 
   /** 0..1 stroke reveal along each glyph's drawing order (letters staggered). */
   get reveal(): number { return this._u[U_REVEAL]; }
-  set reveal(v: number) { this._u[U_REVEAL] = v < 0 ? 0 : v > 1 ? 1 : v; }
+  set reveal(v: number) {
+    v = v < 0 ? 0 : v > 1 ? 1 : v;
+    if (v !== this._u[U_REVEAL]) { this._u[U_REVEAL] = v; this._tipDirty = true; }
+  }
 
   /** Outer glow multiplier, 0..2 (1 = style default). */
   get glow(): number { return this._u[U_GLOW]; }
@@ -334,7 +339,6 @@ export class IsText extends Container {
 
   private _upload(quads: number): void {
     this._vbuf.update(Math.max(1, quads) * QUAD * 4);
-    this._dirty = false;
   }
 
   private _writeQuad(j: number): void {
@@ -353,6 +357,8 @@ export class IsText extends Container {
     const u0 = g.px / A.width, v0 = g.py / A.height;
     const u1 = (g.px + g.pw) / A.width, v1 = (g.py + g.ph) / A.height;
     const gx = this._gx[j];
+    this._penOf(j);
+    const pen0 = this._pen[0], pen1 = this._pen[1];
     for (let c = 0; c < 4; c++) {
       const right = c === 1 || c === 2, bottom = c >= 2;
       const ux = g.ux + (right ? g.uw : 0);
@@ -368,8 +374,22 @@ export class IsText extends Container {
       v[o + 7] = phase;
       v[o + 8] = 0;
       v[o + 9] = 0;
+      v[o + 10] = pen0;
+      v[o + 11] = pen1;
       o += FLOATS;
     }
+  }
+
+  /** Pen position (text space) of letter j at the current reveal — drives the tip glow. */
+  private _penOf(j: number): void {
+    const rv = this._u[U_REVEAL];
+    const out = this._pen;
+    if (rv >= 0.999) { out[0] = -1e4; out[1] = -1e4; return; }
+    const n = this.letters.length;
+    const K = this._u[U_REVK];
+    const lr = Math.max(0, Math.min(1, rv * (1 + K) - (n > 1 ? j / (n - 1) : 0) * K));
+    penAt(this._atlas, this._gid[j], lr * 1.06 - 0.03, out);
+    out[0] += this._gx[j] - this._inkL;
   }
 
   /** Streak (under the glyphs, follows the whole word) and glint (over, follows its letter). */
@@ -391,7 +411,7 @@ export class IsText extends Container {
         v[o] = right ? x1 : x0; v[o + 1] = yc + (bottom ? hh : -hh);
         v[o + 2] = du; v[o + 3] = dv;
         v[o + 4] = right ? 1 : -1; v[o + 5] = bottom ? -1 : 1;
-        v[o + 6] = a; v[o + 7] = 0.5; v[o + 8] = 2; v[o + 9] = 0;
+        v[o + 6] = a; v[o + 7] = 0.5; v[o + 8] = 2; v[o + 9] = 0; v[o + 10] = 0; v[o + 11] = 0;
         o += FLOATS;
       }
     }
@@ -414,7 +434,7 @@ export class IsText extends Container {
         v[o + 1] = m.b * lx + m.d * ly + m.ty;
         v[o + 2] = du; v[o + 3] = dv;
         v[o + 4] = qx; v[o + 5] = qy;
-        v[o + 6] = alpha; v[o + 7] = phase; v[o + 8] = 1; v[o + 9] = 0.37;
+        v[o + 6] = alpha; v[o + 7] = phase; v[o + 8] = 1; v[o + 9] = 0.37; v[o + 10] = 0; v[o + 11] = 0;
         o += FLOATS;
       }
     }
@@ -424,9 +444,11 @@ export class IsText extends Container {
   private _sync = (): void => {
     this._u[U_TIME] = clockFn();
     const n = this.letters.length;
-    let dirty = this._dirty;
+    let dirty = false;
+    const tips = this._tipDirty;
+    this._tipDirty = false;
     for (let j = 0; j < n; j++) {
-      if ((this._pool[j] as Tickable)._didContainerChangeTick !== this._tick[j]) {
+      if (tips || (this._pool[j] as Tickable)._didContainerChangeTick !== this._tick[j]) {
         this._writeQuad(j);
         dirty = true;
       }

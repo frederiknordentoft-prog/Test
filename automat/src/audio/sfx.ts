@@ -431,6 +431,14 @@ A.stormSwell = {
     const lp = filt(ctx, 'lowpass', 140, 0.8);
     const ng = gain(ctx, 0.5);
     n.connect(lp).connect(ng).connect(env);
+    // what a phone speaker can reproduce: rising air-pressure band + a dark D/A drone (≥ 150 Hz)
+    const pn = noise(ctx, 0, 2.7, 1210, 4);
+    const pb = filt(ctx, 'bandpass', 600, 1.1);
+    glide(pb.frequency, 0, 320, 1500, 2.2);
+    pn.connect(pb).connect(gain(ctx, 0.9)).connect(env);
+    const dl = filt(ctx, 'lowpass', 700, 0.7);
+    dl.connect(gain(ctx, 0.5)).connect(env);
+    for (const m of [50, 57]) for (const d of [-7, 7]) osc(ctx, 'sawtooth', mtof(m), 0, 2.7, d).connect(gain(ctx, 0.25)).connect(dl);
   },
 };
 
@@ -485,7 +493,7 @@ A.impact = {
     const n = noise(ctx, 0, 0.4, 1400, 3, 2);
     const lp = filt(ctx, 'lowpass', 3200, 0.7);
     const ng = gain(ctx, 0);
-    perc(ng.gain, 0.001, 0.5, 0.0005, 0.07);
+    perc(ng.gain, 0.001, 0.75, 0.0005, 0.08);
     n.connect(lp).connect(ng).connect(out);
     const c = noise(ctx, 0, 0.1, 1410, 3, 2);
     const hp = filt(ctx, 'highpass', 2200, 0.7);
@@ -497,7 +505,7 @@ A.impact = {
     const mbp = filt(ctx, 'bandpass', 700, 0.7);
     const mbs = shaper(ctx, 2);
     const mbg = gain(ctx, 0);
-    perc(mbg.gain, 0.001, 1.0, 0.001, 0.11);
+    perc(mbg.gain, 0.001, 1.5, 0.001, 0.12);
     mb.connect(mbp).connect(mbg).connect(mbs).connect(out);
     // metallic ring (inharmonic FM)
     const r = pan(ctx, 0);
@@ -602,20 +610,20 @@ A.waveBoom = {
     const o = osc(ctx, 'sine', 70, 0, 2.5);
     glide(o.frequency, 0.001, 72, 34, 0.9);
     const g = gain(ctx, 0);
-    perc(g.gain, 0.001, 0.6, 0.005, 0.5);
+    perc(g.gain, 0.001, 0.42, 0.005, 0.45);
     const sat = shaper(ctx, 2);
     o.connect(g).connect(sat).connect(out);
     const th = noise(ctx, 0, 0.5, 1730);
     const thb = filt(ctx, 'bandpass', 520, 0.8);
     const thg = gain(ctx, 0);
-    perc(thg.gain, 0.001, 0.6, 0.002, 0.09);
+    perc(thg.gain, 0.001, 0.9, 0.002, 0.1);
     th.connect(thb).connect(thg).connect(out);
     // whoosh sweeping left → right like the band crossing the grid
     const n = noise(ctx, 0, 1.6, 1700, 3);
     const bp = filt(ctx, 'bandpass', 2800, 1.4);
     glide(bp.frequency, 0, 2800, 330, 0.95);
     const ng = gain(ctx, 0);
-    lin(ng.gain, [[0, 0], [0.14, 0.8], [0.8, 0.35], [1.3, 0]]);
+    lin(ng.gain, [[0, 0], [0.14, 1.6], [0.8, 0.7], [1.3, 0]]);
     const p = pan(ctx, -0.9);
     p.pan.linearRampToValueAtTime(0.9, 0.95);
     n.connect(bp).connect(ng).connect(p).connect(out);
@@ -632,7 +640,7 @@ A.waveBoom = {
       const tn = noise(ctx, t, t + 0.05, 1720 + c2);
       const tb = filt(ctx, 'bandpass', 3000 + c2 * 120, 2);
       const tg = gain(ctx, 0);
-      perc(tg.gain, t, 0.22, 0.0005, 0.01);
+      perc(tg.gain, t, 0.35, 0.0005, 0.012);
       tn.connect(tb).connect(tg).connect(pp);
       const to = osc(ctx, 'sine', mtof(81 + [0, 1, 3, 5, 6, 8, 10, 12][c2]), t, t + 0.2); // A B♭ C D E♭ F G A (D phrygian)
       const tog = gain(ctx, 0);

@@ -224,6 +224,8 @@ const L2: StemDef = {
     const sat = shaper(ctx, 2.2);
     const hp = filt(ctx, 'highpass', 38, 0.6);
     lp.connect(sat).connect(hp).connect(out);
+    const knock = filt(ctx, 'bandpass', 720, 0.9);
+    knock.connect(out);
     for (let b = 0; b < 4; b++) {
       const f = mtof(BASE_ROOT[b]);
       for (const beat of [0, 2]) {
@@ -232,12 +234,19 @@ const L2: StemDef = {
           const o = osc(ctx, 'sine', f, t, t + 1.2);
           o.frequency.setValueAtTime(f * 1.35, t);
           o.frequency.exponentialRampToValueAtTime(f, t + 0.05);
+          // 2nd–4th harmonics carry the pulse on phone speakers (the ear rebuilds the 58–87 Hz fundamental)
           const h = osc(ctx, 'triangle', f * 2, t, t + 1.2);
-          const h3 = osc(ctx, 'sine', f * 3, t, t + 0.5);
+          const h3 = osc(ctx, 'sine', f * 3, t, t + 0.9);
+          const h4 = osc(ctx, 'sine', f * 4, t, t + 0.6);
           const e = gain(ctx, 0);
           perc(e.gain, t, 0.55 * v, 0.006, tau);
-          o.connect(e); h.connect(gain(ctx, 0.35)).connect(e); h3.connect(gain(ctx, 0.12)).connect(e);
+          o.connect(e); h.connect(gain(ctx, 0.55)).connect(e); h3.connect(gain(ctx, 0.32)).connect(e); h4.connect(gain(ctx, 0.14)).connect(e);
           e.connect(lp);
+          // stethoscope "knock": a short muffled noise band (what phone speakers carry)
+          const kn = noise(ctx, t, t + 0.1, 220 + b * 4 + beat);
+          const ke = gain(ctx, 0);
+          perc(ke.gain, t, 0.5 * v, 0.001, 0.03);
+          kn.connect(ke).connect(knock);
         }
       }
     }
@@ -259,11 +268,11 @@ const L3: StemDef = {
         o.frequency.setValueAtTime(96, t);
         o.frequency.exponentialRampToValueAtTime(50, t + 0.12);
         const e = gain(ctx, 0);
-        perc(e.gain, t, s === 0 ? 0.7 : 0.5, 0.004, 0.11);
+        perc(e.gain, t, s === 0 ? 0.5 : 0.36, 0.004, 0.1);
         o.connect(e).connect(out);
-        const n = noise(ctx, t, t + 0.03, 31 + s);
+        const n = noise(ctx, t, t + 0.04, 31 + s);
         const ne = gain(ctx, 0);
-        perc(ne.gain, t, 0.06, 0.001, 0.006);
+        perc(ne.gain, t, 0.16, 0.001, 0.01);
         n.connect(ne).connect(kickLp);
       }
     }
@@ -282,7 +291,7 @@ const L3: StemDef = {
         let v = acc[s % 4] * (0.85 + r() * 0.3);
         if (b === 3 && s >= 12) v *= 1 + (s - 11) * 0.25; // small crescendo into the loop
         she.gain.setValueAtTime(0, t);
-        she.gain.linearRampToValueAtTime(v * 0.5, t + 0.006);
+        she.gain.linearRampToValueAtTime(v * 1.3, t + 0.006);
         she.gain.setTargetAtTime(0, t + 0.006, 0.028);
       }
     }
@@ -296,10 +305,10 @@ const L3: StemDef = {
         const t = b * g.bar + s * g.s16;
         const n = noise(ctx, t, t + 0.06, 505 + s + b);
         const e = gain(ctx, 0);
-        perc(e.gain, t, 0.22, 0.0008, 0.018);
+        perc(e.gain, t, 0.55, 0.0008, 0.02);
         const o = osc(ctx, 'sine', 820, t, t + 0.1);
         const oe = gain(ctx, 0);
-        perc(oe.gain, t, 0.08, 0.001, 0.02);
+        perc(oe.gain, t, 0.18, 0.001, 0.022);
         n.connect(e).connect(wbp);
         o.connect(oe).connect(wp);
       }
@@ -470,7 +479,7 @@ const CORE: StemDef = {
     pumpEnv(pump.gain, kicks.concat(kicks.map((k) => k + g.loop)));
     pump.connect(out);
     const rIn = gain(ctx, 1);
-    const lpA = filt(ctx, 'lowpass', 300, 1.6), lpB = filt(ctx, 'lowpass', 950, 1.3);
+    const lpA = filt(ctx, 'lowpass', 420, 1.6), lpB = filt(ctx, 'lowpass', 1600, 1.2);
     const gA = gain(ctx, 0.5), gB = gain(ctx, 0.5);
     const lfo = osc(ctx, 'sine', loopHz(0.28, g.loop), 0, g.end);
     lfo.connect(gain(ctx, 0.45)).connect(gA.gain);
@@ -505,7 +514,7 @@ const CORE: StemDef = {
       const t = b * g.bar;
       STORM_TRIAD[b % 4].forEach((m, i) => {
         const e = gain(ctx, 0);
-        swell(e.gain, t, g.bar - 0.05, 0.035, 0.06, 0.08);
+        swell(e.gain, t, g.bar - 0.05, 0.06, 0.06, 0.08);
         for (const det of [-7, 7]) osc(ctx, 'sawtooth', mtof(m - 12), t, t + g.bar + 0.6, det).connect(e);
         e.connect(pan(ctx, (i - 1) * 0.5)).connect(plp);
       });

@@ -62,12 +62,12 @@ const STYLES: Record<IsStyle, StyleDef> = {
     extrude: 0.9, extrudeC: 0x4a0030, spread: 1.8,
   },
   muted: {
-    face0: 0x7f93b2, face1: 0x93a6c4, face2: 0xc3d0e4, horizon: 0.1,
-    core: 0xffffff, coreAmt: 0, edge: 0xffffff, edgeAmt: 0, emissive: 0.3,
-    spec: 0xffffff, specAmt: 0.3, rim: 0x050b1a, rimA: 0.75,
-    glow: 0x2a4a7a, glowFall: 1.0, glowAmt: 0.45, shadow: 0.45,
-    bevelW: 0.45, bevelStr: 0.9, weight: 0.05, outline: 0.3, shimmer: 0, aurora: 0,
-    extrude: 0, extrudeC: 0x0a1428, spread: 1.3,
+    face0: 0x8397b8, face1: 0xa9b9d2, face2: 0xe2eaf5, horizon: 0.18,
+    core: 0xffffff, coreAmt: 0, edge: 0xc8d6ec, edgeAmt: 0.2, emissive: 0.3,
+    spec: 0xffffff, specAmt: 0.45, rim: 0x040914, rimA: 0.88,
+    glow: 0x1e3a66, glowFall: 1.0, glowAmt: 0.5, shadow: 0.6,
+    bevelW: 0.45, bevelStr: 1.0, weight: 0.05, outline: 0.32, shimmer: 0, aurora: 0,
+    extrude: 0, extrudeC: 0x0a1428, spread: 1.4,
   },
 };
 
@@ -97,15 +97,13 @@ export function writeStyle(u: Float32Array, name: IsStyle, size: number): void {
   if (!u[U_HORIZON]) u[U_HORIZON] = 0.5;
 }
 
-/** Glow base amount of a style (multiplies the runtime .glow). */
-export function styleGlow(name: IsStyle): number { return (STYLES[name] ?? STYLES.ice).glowAmt; }
-
 const VERT = /* glsl */ `#version 300 es
 precision highp float;
 in vec2 aPosition;
 in vec2 aUV;
 in vec2 aText;
 in vec4 aMisc;
+in vec2 aTip;
 uniform mat3 uProjectionMatrix;
 uniform mat3 uWorldTransformMatrix;
 uniform vec4 uWorldColorAlpha;
@@ -115,12 +113,14 @@ out vec2 vUV;
 out vec2 vText;
 out vec4 vMisc;
 out vec4 vColor;
+out vec2 vTip;
 void main() {
   mat3 m = uProjectionMatrix * uWorldTransformMatrix * uTransformMatrix;
   gl_Position = vec4((m * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
   vUV = aUV;
   vText = aText;
   vMisc = aMisc;
+  vTip = aTip;
   vColor = uWorldColorAlpha * uColor;
 }
 `;
@@ -132,6 +132,7 @@ in vec2 vUV;
 in vec2 vText;
 in vec4 vMisc;
 in vec4 vColor;
+in vec2 vTip;
 out vec4 finalColor;
 uniform sampler2D uTexture;
 uniform vec4 uS[${N_VEC}];
@@ -165,6 +166,7 @@ void main() {
   float vis = 1.0;
   float visSoft = 1.0;
   float tip = 0.0;
+  float tipWide = 0.0;
   vec4 tx = texture(uTexture, vUV);
   if (P9.z < 0.999) {
     lr = clamp(P9.z * (1.0 + P10.w) - vMisc.y * P10.w, 0.0, 1.0);
@@ -173,7 +175,10 @@ void main() {
     // halo + shadow bloom per letter once it is drawn (the far-field arc param is only
     // piecewise smooth, so masking the halo per stroke would cut it along medial axes)
     visSoft = smoothstep(0.78, 1.0, lr);
-    tip = step(0.001, lr) * (1.0 - step(0.999, lr)) * exp(-abs(tx.g - lr2) * 26.0);
+    float live = step(0.001, lr) * (1.0 - step(0.999, lr));
+    tip = live * exp(-abs(tx.g - lr2) * 26.0);
+    // pen-tip halo: radial around the CPU-computed pen position (no arc-length seams)
+    tipWide = live * exp(-length(vText - vTip) / 1.3);
   }
 
   if (vMisc.z > 0.5) {
@@ -269,7 +274,7 @@ void main() {
   // tight rim lobe + gaussian halo that has decayed well before the atlas margin
   float gl = exp(-go / (fall * 0.55)) * 0.55 + exp(-(go * go) / (fall * fall * 2.6)) * 0.5;
   gl *= 1.0 - smoothstep(MARGIN - weight - 1.2, MARGIN - weight - 0.1, go);
-  float glTip = exp(-go / 0.9) * tip;
+  float glTip = tipWide;
   gl *= glowAmt * (1.0 + sw * 2.2);
 
   // soft offset shadow + display-size extrusion (the word as a block of ice / metal)
@@ -278,6 +283,8 @@ void main() {
   float spread = uS[13].x;
   float shA = uS[11].x * exp(-(sdS * sdS) / (spread * spread * 1.4)) * step(0.0, sdS);
   shA = sdS < 0.0 ? uS[11].x : shA;
+  // the shadow sample is offset: fade by this texel's own distance so it never ends at the quad edge
+  shA *= 1.0 - smoothstep(MARGIN - 1.6, MARGIN - 0.2, max(sd, 0.0) + weight);
 
   vec4 c = vec4(0.0, 0.0, 0.0, shA * visSoft);
   c.rgb += uS[6].rgb * gl * visSoft;
@@ -293,6 +300,8 @@ void main() {
     float sdE = em.x * SDRANGE + SDMIN - weight;
     // the side belongs to the stroke that casts it: reveal it with that stroke's arc length
     float visE = P9.z < 0.999 ? 1.0 - smoothstep(lr * 1.06 - 0.055, lr * 1.06 - 0.005, em.y) : 1.0;
+    // …and never through the face of a stroke that is not drawn yet
+    visE *= mix(vis, 1.0, clamp(0.5 + sd / upp, 0.0, 1.0));
     float exA = clamp(0.5 - sdE / upp, 0.0, 1.0) * visE;
     float exR = clamp(0.5 - (sdE - ow * 0.8) / upp, 0.0, 1.0) * visE;
     // side shading: darker towards the back copy, lit a little from above
@@ -300,7 +309,8 @@ void main() {
     c = mix(c, vec4(uS[5].rgb, 1.0), exR * uS[5].w);
     c = mix(c, vec4(side, 1.0), exA);
   }
-  c = mix(c, vec4(uS[5].rgb, 1.0), rim * uS[5].w * vis);
+  // (in-progress letters: lighter rim — near junctions the rim can borrow a neighbour's arc length)
+  c = mix(c, vec4(uS[5].rgb, 1.0), rim * uS[5].w * vis * mix(0.35, 1.0, visSoft));
   c = mix(c, vec4(lit, 1.0), face * vis);
   c.rgb += ((vec3(0.8) + uS[6].rgb * 0.4) * sw + (uS[6].rgb * 0.6 + 0.8) * tip * 1.4) * face * vis;
   c.rgb += (uS[6].rgb + 0.5) * glTip * 1.6 * max(glowAmt, 0.5);

@@ -42,6 +42,30 @@ export interface IsAtlas {
   kern: Float32Array;   // [a * n + b]
   n: number;
   ms: number;
+  /** compiled skeletons (pen position for the reveal tip) */
+  skel: CGlyph[];
+}
+
+/** Pen position (glyph units) at normalised arc length t along glyph gi → out[0], out[1]. */
+export function penAt(a: IsAtlas, gi: number, t: number, out: Float32Array): void {
+  const g = a.skel[gi];
+  const target = Math.max(0, Math.min(1, t)) * g.total;
+  let last: Piece | null = null;
+  for (let si = 0; si < g.strokes.length; si++) {
+    const ps = g.strokes[si].pieces;
+    for (let pi = 0; pi < ps.length; pi++) {
+      const p = ps[pi];
+      if (p.t === T_POLY) continue;
+      last = p;
+      if (target > p.s1) continue;
+      const f = p.s1 > p.s0 ? Math.max(0, (target - p.s0) / (p.s1 - p.s0)) : 0;
+      if (p.t === T_LINE) { out[0] = p.oax + (p.obx - p.oax) * f; out[1] = p.oay + (p.oby - p.oay) * f; }
+      else if (p.t === T_ARC) { const an = p.a0 + p.sw * f; out[0] = p.cx + Math.cos(an) * p.rad; out[1] = p.cy + Math.sin(an) * p.rad; }
+      else { const an = Math.PI / 2 + f * 2 * Math.PI; out[0] = p.cx + Math.cos(an) * p.rad; out[1] = p.cy + Math.sin(an) * p.rad; }
+      return;
+    }
+  }
+  if (last) { out[0] = last.t === T_LINE ? last.obx : last.bx; out[1] = last.t === T_LINE ? last.oby : last.by; }
 }
 
 // ------------------------------------------------------------------ primitives
@@ -344,32 +368,38 @@ function evalPiece(p: Piece, x: number, y: number, best: number): number {
 
 function evalGlyph(g: CGlyph, x: number, y: number, bound0: number): number {
   let best = bound0, bestS = 1;
+  // inside the ink the reveal param is the EARLIEST arc length of any stroke covering the
+  // texel, so a later stroke overlapping an earlier one never notches it during the reveal
+  let coverS = 1e9;
   const strokes = g.strokes;
   for (let si = 0; si < strokes.length; si++) {
     const st = strokes[si];
     const clip = st.lo - y > y - st.hi ? st.lo - y : y - st.hi;
-    if (clip >= best) continue;
-    let sd = 1e9, ss = 0;
+    if (clip >= (best > 0 ? best : 0)) continue;
+    let sd = 1e9, ss = 0, cs = 1e9;
     const pieces = st.pieces;
     for (let pi = 0; pi < pieces.length; pi++) {
       const p = pieces[pi];
-      // lower bound from the skeleton bbox
+      // lower bound from the skeleton bbox (keep candidates that may still cover the texel)
       const bx = x < p.x0 ? p.x0 - x : x > p.x1 ? x - p.x1 : 0;
       const by = y < p.y0 ? p.y0 - y : y > p.y1 ? y - p.y1 : 0;
-      const bound = sd < best ? sd : best;
+      let bound = sd < best ? sd : best;
+      if (bound < 0) bound = 0;
       const lb = bx * bx + by * by;
       if (lb > 0) {
         const lim = bound + R0 + 0.01;
-        if (lim <= 0 || lb >= lim * lim) continue;
+        if (lb >= lim * lim) continue;
       }
-      const d = evalPiece(p, x, y, sd);
+      const d = evalPiece(p, x, y, sd < 0 ? 0 : sd);
+      if (d < 0 && OUT[0] < cs) cs = OUT[0];
       if (d < sd) { sd = d; ss = OUT[0]; }
     }
     if (sd >= 1e9) continue;
     if (clip > sd) sd = clip;
+    if (sd < 0 && cs < coverS) coverS = cs;
     if (sd < best) { best = sd; bestS = ss; }
   }
-  OUT[1] = bestS;
+  OUT[1] = best < 0 && coverS < 1e9 ? coverS : bestS;
   return best;
 }
 
@@ -500,5 +530,5 @@ export function buildAtlas(): IsAtlas {
   }
   const ms = performance.now() - t0;
   if (typeof window !== 'undefined') (window as unknown as { __isfontMs?: unknown }).__isfontMs = { total: +ms.toFixed(1), measure: +msMeasure.toFixed(1) };
-  return { source, width: W, height: H, glyphs: infos, lut, kern, n, ms };
+  return { source, width: W, height: H, glyphs: infos, lut, kern, n, ms, skel: compiled };
 }

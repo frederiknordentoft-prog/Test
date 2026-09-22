@@ -201,6 +201,14 @@ html, body {
 #foot .l { overflow: hidden; text-overflow: ellipsis; }
 
 #modeBadge { display: none; }
+/* Splash: only the sky, the logo and the call to action. */
+:root.splash #winstrip, :root.splash #deck, :root.splash #goal, :root.splash #demoPill { opacity: 0; pointer-events: none; }
+#winstrip, #deck, #goal, #demoPill { transition: opacity 0.6s var(--ease); }
+@media (max-width: 440px) {
+  #goal .lab, #goal .spins { display: none; }
+  :root[data-mode='storm'] #reg .l b { display: none; }
+  .badge.demo .long { display: none; }
+}
 :root[data-mode='storm'] #modeBadge { display: inline-flex; }
 @media (max-width: 520px) { #regBal { display: none; } }
 
@@ -226,7 +234,7 @@ html, body {
 .btn.small { height: 40px; padding: 0 18px; font-size: 12px; }
 .hint { font-size: 12px; color: var(--frost); opacity: 0.85; letter-spacing: 0.04em; }
 
-#splash .center { bottom: calc(env(safe-area-inset-bottom) + 12%); }
+#splash .center { bottom: calc(env(safe-area-inset-bottom) + var(--foot-h) + 28px); }
 #splash .btn { animation: splashIn 0.9s var(--ease) both 0.6s; }
 @keyframes splashIn { from { opacity: 0; transform: translateY(12px) scale(0.96); } }
 
