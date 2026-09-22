@@ -227,7 +227,8 @@ export function chimeVoice(ctx: Ctx, out: AudioNode, t: number, f: number, amp: 
       o.connect(g).connect(lp);
     }
   }
-  // sparkle
+  // sparkle (skipped where its modulator would exceed Nyquist on low-rate renders)
+  if (f * 7 > ctx.sampleRate * 0.45) return;
   const car = osc(ctx, 'sine', f * 2, t, t + 0.6);
   const mod = osc(ctx, 'sine', f * 7, t, t + 0.6);
   const mg = gain(ctx, 0);

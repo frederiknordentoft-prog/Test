@@ -203,16 +203,16 @@ function spectrum(ch: Float32Array[], sr: number): { bands: number[]; centroid: 
   return { bands: bands.map((v) => (tot > 0 ? (100 * v) / tot : 0)), centroid: tot > 0 ? cen / tot : 0 };
 }
 
-/** Welch power spectrum (bins of sr/N). */
-function welch(ch: Float32Array[], sr: number, N = 4096): { pow: Float64Array; df: number } {
-  const hop = N / 2, pow = new Float64Array(N / 2), win = new Float64Array(N);
-  for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (N - 1));
+/** Welch power spectrum: Hann windows of L samples, zero-padded to N (radix-2), bins of sr/N. */
+function welch(ch: Float32Array[], sr: number, N = 4096, L = N): { pow: Float64Array; df: number } {
+  const hop = Math.max(1, Math.floor(L / 2)), pow = new Float64Array(N / 2), win = new Float64Array(L);
+  for (let i = 0; i < L; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (L - 1));
   const re = new Float64Array(N), im = new Float64Array(N);
   const len = ch[0].length;
-  for (let s = 0; s + N <= Math.max(len, N); s += hop) {
+  for (let s = 0; s + L <= Math.max(len, L); s += hop) {
     for (const d of ch) {
       re.fill(0); im.fill(0);
-      for (let i = 0; i < N; i++) re[i] = (d[s + i] ?? 0) * win[i];
+      for (let i = 0; i < L; i++) re[i] = (d[s + i] ?? 0) * win[i];
       fftMag(re, im);
       for (let k = 0; k < N / 2; k++) pow[k] += re[k] * re[k] + im[k] * im[k];
     }
@@ -232,9 +232,9 @@ function bandShare(ch: Float32Array[], sr: number, hz: number): number {
  * masked and contribute little). Returns the band with the largest excess over its allowance.
  */
 function thirdOctErr(a: Float32Array[], asr: number, b: Float32Array[], bsr: number, fmax: number): { worst: number; at: number; below: number; allowed: number; excess: number } {
-  // radix-2 FFT: same N for both; bands integrate energy by Hz, spectra are normalised, so the
-  // different bin widths do not matter
-  const A = welch(a, asr, 4096), B = welch(b, bsr, 4096);
+  // identical window DURATION (same frequency resolution/leakage) at both rates; the reduced render's
+  // window is zero-padded to the same radix-2 N (bins get denser, spectra are normalised → no bias)
+  const A = welch(a, asr, 4096, 4096), B = welch(b, bsr, 4096, Math.round(4096 * (bsr / asr)));
   const bands: number[] = [];
   for (let f = 63; f * 1.12 <= fmax; f *= Math.pow(2, 1 / 3)) bands.push(f);
   const lvl = (P: { pow: Float64Array; df: number }) => {
@@ -498,8 +498,14 @@ async function runCheck(): Promise<void> {
       for (let t = 0.95; t < 2.6; t += 0.02) { const v = dB(diffRms(x, base.buf, t, t + 0.02)); if (v > prev + 6 && v > -75) n++; prev = v; }
       return n;
     };
+    const onsetAt = (x: AudioBuffer) => {
+      const out: string[] = [];
+      let prev = -200;
+      for (let t = 0.95; t < 2.6; t += 0.02) { const v = dB(diffRms(x, base.buf, t, t + 0.02)); if (v > prev + 6 && v > -75) out.push(`${t.toFixed(2)}s:${v.toFixed(0)}dB`); prev = v; }
+      return out.join(' ');
+    };
     const [oA, oB, oC] = [onsets(rA.buf), onsets(rB.buf), onsets(rC.buf)];
-    check('stopCount cuts the tick roll', oA >= 5 && oB === 0 && oC === 0, `tick onsets after the skip: roll ${oA} → stopCount ${oB} · countTick level 0 ${oC}`);
+    check('stopCount cuts the tick roll', oA >= 5 && oB === 0 && oC === 0, `tick onsets after the skip: roll ${oA} → stopCount ${oB} · countTick level 0 ${oC} [${onsetAt(rB.buf)}]`);
 
     // ---------------- 3. base layers: bar-aligned entry, rapid sweep collapses (no stacking)
     const b1 = await scenario(9, shared, (g, at) => { at(0, () => { g.setBaseLayers(1); g.startBase(); }); }, { bypassMaster: true });

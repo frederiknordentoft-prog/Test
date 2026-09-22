@@ -441,9 +441,9 @@ A.stormSwell = {
     const pn = noise(ctx, 0, 2.7, 1210, 4);
     const pb = filt(ctx, 'bandpass', 600, 1.1);
     glide(pb.frequency, 0, 320, 1500, 2.2);
-    pn.connect(pb).connect(gain(ctx, 0.9)).connect(env);
+    pn.connect(pb).connect(gain(ctx, 1.6)).connect(env);
     const dl = filt(ctx, 'lowpass', 700, 0.7);
-    dl.connect(gain(ctx, 0.5)).connect(env);
+    dl.connect(gain(ctx, 0.6)).connect(env);
     for (const m of [50, 57]) for (const d of [-7, 7]) osc(ctx, 'sawtooth', mtof(m), 0, 2.7, d).connect(gain(ctx, 0.25)).connect(dl);
   },
 };
