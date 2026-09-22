@@ -56,7 +56,7 @@ src/ui/        DOM-HUD: skarp tekst, a11y, regulatoriske strips, menu, regler, d
 | Tests | 70/70 grønne: RNG-vektorer, klynger, kaskader, storm-replay, måler, golden hashes, 3,0 s-gulv, LDW-profiler og grænser mellem lag | `npm test` |
 | Fotosensitivitet | WCAG 2.3.1: højst 1 blink/s (grænse 3); streng 10 %-måling højst 2/s; mættet rød højst 20 % af skærmen | `node scripts/luminance.mjs` |
 | Visuel QA | Deterministisk Playwright-tur (SwiftShader WebGL2) ved 390×844, 375×667 og 1920×1080, uden page-fejl | `node scripts/tour.mjs` |
-| Artifact | Single-file ca. 1 MB uden eksterne hosts | `npm run build:artifact` |
+| Artifact | Single-file ca. 1 MB uden eksterne hosts. Kører hele Solstorm-demoen i artifact-rammen under en streng CSP (ingen `unsafe-eval`) | `npm run build:artifact` |
 
 **Lyd:**
 - Tjekket headless med 39 checks: ingen clipping, sømløse loops, storm-downbeat på 0 frames' afvigelse og bar-alignede lag.

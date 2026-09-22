@@ -8,6 +8,7 @@
 //    │   └─ shatterLayer
 //    └─ hud (no filters: demo watermark, calm chip)
 import { Application, Container, Filter, RenderTexture, Rectangle, type Renderer } from 'pixi.js';
+import 'pixi.js/unsafe-eval'; // polyfills Pixi's generated uniform/UBO sync: the Artifact CSP forbids eval
 
 Filter.defaultOptions.resolution = 'inherit'; // default is 1 → soft on retina
 
