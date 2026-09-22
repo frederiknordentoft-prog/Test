@@ -18,7 +18,11 @@ const ctx = await browser.newContext({ viewport: { width: W, height: H }, device
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push('console: ' + m.text()); });
+const warnings = new Map();
+page.on('console', (m) => {
+  if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text())) errors.push('console: ' + m.text());
+  if (m.type() === 'warning' && !/GPU stall|GL Driver/.test(m.text())) warnings.set(m.text().slice(0, 160), (warnings.get(m.text().slice(0, 160)) ?? 0) + 1);
+});
 
 await page.goto(base + '?seed=7');
 await page.waitForFunction(() => window.__slot, null, { timeout: 30000 });
@@ -81,5 +85,5 @@ await page.evaluate(() => { window.__slot.cont(); });
 await adv(1500); await shot('22-outro');
 await untilState('idle'); await adv(500); await shot('23-back-idle');
 
-console.log(JSON.stringify({ errors }, null, 1));
+console.log(JSON.stringify({ errors, warnings: [...warnings.entries()] }, null, 1));
 await browser.close();

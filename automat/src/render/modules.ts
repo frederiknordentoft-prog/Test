@@ -1,5 +1,5 @@
 // Single import point for the parallel-built modules (paths fixed here once).
-export { IsText, installIsfont } from './type/isfont.ts';
+export { IsText, installIsfont, setIsfontClock } from './type/isfont.ts';
 export type { IsStyle } from './type/isfont.ts';
 export { bakeSymbols, bakeSymbolsAsync, bakeCellFx, destroySymbolSet, destroyCellFx, onArtContextRestored, STORM_ENV } from './art/symbols.ts';
 export type { SymbolSet, CellFx, Edition } from './art/symbols.ts';

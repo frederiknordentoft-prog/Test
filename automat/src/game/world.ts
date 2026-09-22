@@ -7,7 +7,7 @@ import { Frame } from '../render/grid/Frame.ts';
 import { KpArc } from '../render/hud/KpArc.ts';
 import { softBand } from '../render/tex.ts';
 import {
-  IsText, installIsfont, bakeSymbols, bakeSymbolsAsync, bakeCellFx, SkyLayer, UberPost, createBloom,
+  IsText, installIsfont, setIsfontClock, bakeSymbols, bakeSymbolsAsync, bakeCellFx, SkyLayer, UberPost, createBloom,
   Particles, CellShatter, ScreenShatter, Motes, type SymbolSet, type CellFx, type SkyParams,
   destroySymbolSet, destroyCellFx, onArtContextRestored, STORM_ENV,
 } from '../render/modules.ts';
@@ -81,6 +81,7 @@ export class World {
     const st = await createStage(this.hud.canvasHost);
     this.stage = st;
     installIsfont(st.renderer);
+    setIsfontClock(() => clock.real);
     this.sky = new SkyLayer(st.renderer);
     st.layers.sky.addChild(this.sky);
     st.layers.frameBack.addChild(this.frame.back);
