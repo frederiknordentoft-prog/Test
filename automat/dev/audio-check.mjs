@@ -13,6 +13,12 @@ const page = await browser.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.type() + ': ' + m.text()); });
+// Other agents edit files concurrently: stub Vite's HMR client so a broadcast full-reload can't restart
+// the QA page mid-run.
+await page.route('**/@vite/client', (r) => r.fulfill({
+  contentType: 'application/javascript',
+  body: 'export const createHotContext=()=>({accept(){},dispose(){},prune(){},invalidate(){},on(){},off(){},send(){},data:{}});export const updateStyle=()=>{};export const removeStyle=()=>{};export const injectQuery=(u)=>u;',
+}));
 const t0 = Date.now();
 await page.goto(`${base}/dev/audio.html#check`);
 await page.waitForFunction(() => window.__audioCheck?.done === true, null, { timeout: 300000, polling: 500 });

@@ -199,6 +199,12 @@ export function playSolstormIntro(w: CineWorld): CineHandle {
     w.uber.zoom = 0; w.uber.glitch = 0; w.uber.exposure = 0; w.uber.rings.fill(0);
     w.camera.trauma = 0;
     kpTxt.alpha = 0;
+    // Audio was pre-scheduled on the original timeline: cancel it and re-schedule from the reform label.
+    A.cancelScheduled();
+    const t0s = A.now() + 0.03 - 3.4;
+    A.play('reform', { when: t0s + 3.4 });
+    logo.letters.forEach((_L: Container, i: number) => A.play('letterSlam', { when: t0s + 3.75 + i * 0.07, gain: 0.8 }));
+    A.startStorm(t0s + 5.6);
     tl.seek('reform', true);
   };
   void crand;

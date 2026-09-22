@@ -445,13 +445,13 @@ const CORE: StemDef = {
     drums.connect(out);
     const kb = shaper(ctx, 2.2);
     kb.connect(drums);
-    kicks.forEach((t, i) => kick(ctx, kb, t + 0.0005, i % 3 === 0 ? 1 : 0.9));
+    kicks.forEach((t, i) => kick(ctx, kb, t + 0.0005, i % 3 === 0 ? 0.62 : 0.56));
     // snare: shared body + noise filters
     const sp = pan(ctx, 0.05);
     sp.connect(drums);
     const snHp = filt(ctx, 'highpass', 1100, 0.6), snPk = filt(ctx, 'peaking', 3600, 0.8, 5);
     snHp.connect(snPk).connect(sp);
-    const sn = (t: number, v: number, seed: number) => snare(ctx, sp, snHp, t, v, seed);
+    const sn = (t: number, v: number, seed: number) => snare(ctx, sp, snHp, t, v * 1.45, seed);
     const hL = hatBus(ctx, drums, -0.2), hR = hatBus(ctx, drums, 0.3);
     for (let b = 0; b < 8; b++) {
       sn(b * g.bar + 4 * g.s16, 0.9, 700 + b);
@@ -460,7 +460,7 @@ const CORE: StemDef = {
         sn(b * g.bar + 7 * g.s16, 0.22, 740 + b);
         sn(b * g.bar + 15 * g.s16, b % 2 ? 0.3 : 0.18, 760 + b);
       }
-      for (let s = 0; s < 16; s += 2) hat(ctx, s % 4 ? hR : hL, b * g.bar + s * g.s16, s % 4 ? 0.2 : 0.1, false, 800 + b * 16 + s);
+      for (let s = 0; s < 16; s += 2) hat(ctx, s % 4 ? hR : hL, b * g.bar + s * g.s16, s % 4 ? 0.3 : 0.15, false, 800 + b * 16 + s);
     }
     // bar 8: snare roll crescendo + noise riser into the downbeat
     for (let s = 8; s < 16; s++) sn(7 * g.bar + s * g.s16, 0.25 + (s - 8) * 0.09, 900 + s);
@@ -489,6 +489,9 @@ const CORE: StemDef = {
     rIn.connect(lpA).connect(gA).connect(rsat);
     rIn.connect(lpB).connect(gB).connect(rsat);
     rsat.connect(rhp).connect(pump);
+    // mid "growl" (octave-up saws through a static band-pass): what makes a reese audible on phones
+    const growl = filt(ctx, 'bandpass', 900, 0.6);
+    growl.connect(gain(ctx, 1.0)).connect(pump);
     for (let b = 0; b < 8; b++) {
       const root = STORM_ROOT[b % 4];
       const notes: [number, number, number][] = b === 7
@@ -504,17 +507,24 @@ const CORE: StemDef = {
         e.gain.setValueAtTime(0.32, t + d - 0.012);
         e.gain.linearRampToValueAtTime(0, t + d + 0.004);
         for (const det of [-16, 14]) osc(ctx, 'sawtooth', f, t, t + d + 0.05, det).connect(e);
-        osc(ctx, 'sine', f, t, t + d + 0.05).connect(gain(ctx, 0.9)).connect(e);
+        osc(ctx, 'sine', f, t, t + d + 0.05).connect(gain(ctx, 0.45)).connect(e);
         e.connect(rIn);
+        const ge = gain(ctx, 0);
+        ge.gain.setValueAtTime(0, t);
+        ge.gain.linearRampToValueAtTime(0.5, t + 0.006);
+        ge.gain.setValueAtTime(0.5, t + d - 0.012);
+        ge.gain.linearRampToValueAtTime(0, t + d + 0.004);
+        for (const det of [-22, 19]) osc(ctx, 'sawtooth', f * 2, t, t + d + 0.05, det).connect(ge);
+        ge.connect(growl);
       }
     }
-    const plp = filt(ctx, 'lowpass', 1100, 0.4);
+    const plp = filt(ctx, 'lowpass', 1800, 0.4);
     plp.connect(pump);
     for (let b = 0; b < 8; b++) {
       const t = b * g.bar;
       STORM_TRIAD[b % 4].forEach((m, i) => {
         const e = gain(ctx, 0);
-        swell(e.gain, t, g.bar - 0.05, 0.06, 0.06, 0.08);
+        swell(e.gain, t, g.bar - 0.05, 0.09, 0.06, 0.08);
         for (const det of [-7, 7]) osc(ctx, 'sawtooth', mtof(m - 12), t, t + g.bar + 0.6, det).connect(e);
         e.connect(pan(ctx, (i - 1) * 0.5)).connect(plp);
       });

@@ -320,7 +320,8 @@ async function runCheck(): Promise<void> {
         const sp = spectrum([t8.getChannelData(0)], bsr);
         const secPerBar = bf / bsr, ref = barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, SR) / SR;
         const exact = b.length === stemLoopFrames(def, bsr, div) && b.length % bf === 0 && Math.abs(secPerBar - ref) < 1e-12;
-        const row: Row = { id, bars: def.bars, ch: b.numberOfChannels, rate: bsr, sec: +(b.length / bsr).toFixed(3), exactBars: exact, rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, seamJump: +sm.jump.toFixed(5), seamRatio: +sm.ratio.toFixed(2), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: Math.round(RENDER_STATS.get(id)!.build), postMs: Math.round(RENDER_STATS.get(id)!.post) };
+        const phoneDb = dB(s.rms) + 10 * Math.log10(Math.max(1e-9, (sp.bands[2] + sp.bands[3] + sp.bands[4] + sp.bands[5]) / 100));
+        const row: Row = { id, phoneRmsDb: +phoneDb.toFixed(1), bars: def.bars, ch: b.numberOfChannels, rate: bsr, sec: +(b.length / bsr).toFixed(3), exactBars: exact, rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, seamJump: +sm.jump.toFixed(5), seamRatio: +sm.ratio.toFixed(2), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: Math.round(RENDER_STATS.get(id)!.build), postMs: Math.round(RENDER_STATS.get(id)!.post) };
         res.stems.push(row);
         if (!(s.rms > 0.003)) fail(`${id} silent (rms ${dB(s.rms).toFixed(1)} dB)`);
         if (s.peak > 0.99) fail(`${id} peak ${s.peak}`);
