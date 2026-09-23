@@ -1,12 +1,14 @@
 // Terningen · Playwright check of the Game wiring (SwiftShader WebGL2, deterministic advance() stepping).
-// Usage: node scripts/dice-check.mjs [baseUrl=http://127.0.0.1:4173/] [only=award,demo,storm,unlock,reset]
+// Usage: node scripts/dice-check.mjs [baseUrl=http://127.0.0.1:4173/] [only=award,demo,suns,storm,resume,unlock,reset]
+// (each Solstorm costs many minutes under SwiftShader: 'demo' runs demo(), 'suns' adds demoSuns())
 // Instruments localStorage.setItem per key. Exit code 1 on any failure.
 // Covers spec tests a (base award), k (first-die card), l (hello), reload mid-award, g (demo isolation: demo(),
-// demoSuns(), dDie, dFirst, the 5 previews, dGate skipped + full), d (real storm), m (unlock), i (reset), j (opt-out).
+// demoSuns(), dDie, dFirst, the 5 previews, dGate skipped + full), d (real storm), e (reload mid-storm), m (unlock),
+// i (reset), j (opt-out).
 import { chromium } from 'playwright-core';
 
 const [base = 'http://127.0.0.1:4173/', only = ''] = process.argv.slice(2);
-const want = new Set(only ? only.split(',') : ['award', 'demo', 'storm', 'unlock', 'reset']);
+const want = new Set(only ? only.split(',') : ['award', 'demo', 'suns', 'storm', 'resume', 'unlock', 'reset']);
 const KEY = 'terningen.v1';
 
 const browser = await chromium.launch({
@@ -18,10 +20,13 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 page.on('console', (m) => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
-// a dev server's HMR client must not reload the page mid-run
+// a dev server's HMR client must not reload the page mid-run (the stub still injects the CSS modules; a dev
+// server is worth it: import.meta.env.DEV arms the "dice changed by demo" guard)
 await page.route('**/@vite/client', (r) => r.fulfill({
   contentType: 'application/javascript',
-  body: 'export const createHotContext=()=>({accept(){},dispose(){},prune(){},invalidate(){},on(){},off(){},send(){},data:{}});export const updateStyle=()=>{};export const removeStyle=()=>{};export const injectQuery=(u)=>u;',
+  body: 'export const createHotContext=()=>({accept(){},dispose(){},prune(){},invalidate(){},on(){},off(){},send(){},data:{}});'
+    + 'export const updateStyle=(id,css)=>{let s=document.querySelector(`style[data-vite-dev-id="${id}"]`);if(!s){s=document.createElement("style");s.setAttribute("data-vite-dev-id",id);document.head.appendChild(s);}s.textContent=css;};'
+    + 'export const removeStyle=()=>{};export const injectQuery=(u)=>u;',
 }));
 await ctx.addInitScript(() => {
   const orig = Storage.prototype.setItem;
@@ -37,18 +42,24 @@ const adv = (ms, step = 50) => ev(async ([ms, step]) => {
   for (let t = 0; t < ms; t += step) { window.__slot.advance(Math.min(step, ms - t), false); await new Promise((r) => setTimeout(r, 0)); }
 }, [ms, step]);
 const state = () => ev(() => window.__slot.state());
-const until = async (pred, max = 30000, step = 100) => { for (let t = 0; t <= max; t += step) { if (await ev(pred)) return t; await adv(step); } return -1; };
+// a little real time per step: storm/gate entry race their lazy audio against REAL-time 2 s timeouts
+const until = async (pred, max = 30000, step = 100) => { for (let t = 0; t <= max; t += step) { if (await ev(pred)) return t; await adv(step); await new Promise((r) => setTimeout(r, 15)); } return -1; };
+// the ceremony's pre-roll races audio.prepareGate() against a REAL-time 2 s timeout: poll in real time too
+const untilStarted = async () => { const t0 = Date.now(); while (Date.now() - t0 < 8000) { if (await ev(() => window.__slot.gate()?.started)) return Date.now() - t0; await adv(50); await new Promise((r) => setTimeout(r, 50)); } return -1; };
 const untilState = (s, max) => until(new Function(`return window.__slot.state() === ${JSON.stringify(s)}`), max);
 const stored = () => ev((k) => localStorage.getItem(k), KEY);
 const storedDice = async () => JSON.parse((await stored()) ?? 'null');
 const chip = () => ev(() => document.querySelector('#diceN .cur:last-child')?.textContent ?? document.getElementById('diceN').textContent);
-const click = (sel) => ev((s) => document.querySelector(s).click(), sel);
+// hud.press() drops a second press within 60 ms (real time): space the clicks out
+const click = async (sel) => { await new Promise((r) => setTimeout(r, 80)); await ev((s) => document.querySelector(s).click(), sel); };
 const shown = (id) => ev((i) => document.getElementById(i).classList.contains('show'), id);
 
 async function boot(hash = '', fresh = false) {
   if (fresh) { await page.goto(base + '?seed=7'); await page.waitForFunction(() => window.__slot); await ev(() => localStorage.clear()); }
   await page.goto(base + '?seed=7' + hash);
   await page.waitForFunction(() => window.__slot, null, { timeout: 60000 });
+  // no screenshots here: stop Pixi's own rAF render loop (SwiftShader) so stepping runs ~25× faster
+  await ev(() => window.__slot.world.stage.app.ticker.stop());
   await adv(300);
   await ev(() => window.__slot.unlock());
   const t = await untilState('idle', 20000);
@@ -91,7 +102,7 @@ if (want.has('award')) {
   await page.keyboard.press('Space');
   await adv(100);
   check((await state()) === 'diceCard', 'Space is ignored before 1,5 s');
-  await ev(() => document.querySelector('#summaryCard [data-act="ok"]').click());
+  await click('#summaryCard [data-act="ok"]');
   await adv(100);
   check((await state()) === 'diceCard', '"Forstået" is ignored before 1,5 s');
   await adv(1500);
@@ -129,7 +140,7 @@ if (want.has('demo')) {
   // dFirst
   await click('#dFirst'); await adv(300);
   check((await state()) === 'diceCard' && (await ev(() => !!document.querySelector('#summaryCard .demo-note'))), 'dFirst: first-die card with the amber demo note');
-  await adv(1600); await ev(() => document.querySelector('#summaryCard [data-act="ok"]').click()); await idle('dFirst', 3000);
+  await adv(1600); await click('#summaryCard [data-act="ok"]'); await idle('dFirst', 3000);
   // previews
   for (const n of [0, 25, 250, 1000, 1948]) {
     await click(`#dSeg button[data-n="${n}"]`); await adv(1000);
@@ -140,27 +151,29 @@ if (want.has('demo')) {
   // dGate, skipped at 2,5 s after T0 and in full
   for (const full of [false, true]) {
     await click('#dGate');
-    const st = await until(() => window.__slot.gate()?.started, 8000);
-    check(st >= 0, `dGate${full ? ' (full)' : ' (skip)'}: ceremony starts`, `${st} ms`);
+    const st = await untilStarted();
+    check(st >= 0, `dGate${full ? ' (full)' : ' (skip)'}: ceremony starts`, `${st} ms real time`);
     check(await ev(() => !document.getElementById('chRibbon').hidden && document.getElementById('chRibbon').textContent.startsWith('DEMO')), 'dGate: amber DEMO ribbon pinned');
     if (!full) { await adv(3000); await page.keyboard.press('Escape'); await adv(200); }
     const pl = await until(() => window.__slot.gate()?.placard, 25000, 250);
     check(pl >= 0, `dGate${full ? ' (full)' : ' (skip)'}: placard`, `${pl} ms`);
     check(await ev(() => !!document.querySelector('#summaryCard.placard .demo-note')), 'dGate: placard starts with the demo note');
-    await ev(() => document.querySelector('#summaryCard [data-act="endDemo"]').click());
+    await click('#summaryCard [data-act="endDemo"]');
     await idle('dGate end demo', 5000);
     check(await ev(() => document.getElementById('bannerT').textContent === 'DIN SAMLING ER UÆNDRET'), 'dGate: "DIN SAMLING ER UÆNDRET" banner');
     check((await ev(() => window.__slot.dice())).unlock !== 'seen', 'dGate never writes unlock');
   }
   // demo() and demoSuns() storms
-  for (const [name, go] of [['demo()', () => window.__slot.demo()], ['demoSuns()', () => document.getElementById('dSuns').click()]]) {
+  const storms = [['demo()', () => window.__slot.demo()], ['demoSuns()', () => document.getElementById('dSuns').click()]].filter(([n]) => n === 'demo()' || want.has('suns'));
+  for (const [name, go] of storms) {
+    await new Promise((r) => setTimeout(r, 80));
     await ev(go);
     const r = await untilState('stormReady', 30000);
     check(r >= 0, `${name}: storm ready`);
     await ev(() => window.__slot.startStorm());
     const s = await untilState('stormSummary', 90000);
     check(s >= 0, `${name}: storm summary`);
-    await adv(4000);
+    await until(() => document.getElementById('summary').classList.contains('show'), 15000, 250);
     const sum = await ev(() => document.getElementById('summaryCard').textContent);
     check(sum.includes('giver ingen terninger'), `${name}: demo note says "giver ingen terninger"`);
     const ghosts = /Terninger · demo · tæller ikke\s*(\d+)/.exec(sum);
@@ -186,7 +199,7 @@ if (want.has('storm')) {
   let maxHeld = 0;
   for (let t = 0; t < 120000 && (await state()) !== 'stormSummary'; t += 500) { await adv(500); maxHeld = Math.max(maxHeld, (await ev(() => window.__slot.award())).held); }
   check((await state()) === 'stormSummary', 'storm: summary');
-  await adv(4000);
+  await until(() => document.getElementById('summary').classList.contains('show'), 15000, 250);
   const h = await ev((n) => window.__slot.save().history.slice(n), hist0);
   const expected = h.filter((e) => e.mode === 'storm' && !e.spinId.endsWith('-G') && e.winOre >= 10 * e.stakeOre).length;
   const marked = h.filter((e) => e.mode === 'storm' && e.die).length;
@@ -202,11 +215,48 @@ if (want.has('storm')) {
   check((await chip()) === String((await ev(() => window.__slot.dice())).count), '#diceN equals the count at idle', await chip());
 }
 
+// ------------------------------------------------------------------ e · reload mid-storm (no double count, held row restored)
+if (want.has('resume')) {
+  if (!['award', 'demo', 'storm'].some((k) => want.has(k))) { await boot('', true); await ev(() => window.__slot.setSeed(20260922)); await adv(1400); }
+  const before = (await ev(() => window.__slot.dice())).count;
+  const hist0 = await ev(() => window.__slot.save().history.length);
+  await ev(() => window.__slot.qaNext('sun4'));
+  await ev(() => { window.__slot.spin(); });
+  check((await untilState('stormReady', 40000)) >= 0, 'resume: storm ready');
+  await ev(() => window.__slot.startStorm());
+  // reload right after the first storm die is committed (on the last spin this exercises the straight-to-payout resume)
+  check((await until(() => { const a = window.__slot.save().activeStorm; return !a || (a.diceAwarded ?? 0) >= 1 || window.__slot.state() === 'stormSummary'; }, 60000, 50)) >= 0, 'resume: a storm die is committed');
+  const mid = await ev(() => ({ awarded: window.__slot.save().activeStorm?.diceAwarded ?? 0, count: window.__slot.dice().count, at: window.__slot.save().activeStorm?.spinIndex }));
+  console.log(`      resume: reload at storm spin ${mid.at} with ${mid.awarded} held`);
+  await page.goto(base + '?seed=7');
+  await page.waitForFunction(() => window.__slot, null, { timeout: 60000 });
+  await ev(() => window.__slot.world.stage.app.ticker.stop());
+  await adv(300);
+  await ev(() => window.__slot.unlock());
+  check((await until(() => ['stormReady', 'stormSummary'].includes(window.__slot.state()), 20000)) >= 0, 'resume: the storm resumes after the reload');
+  const after = await ev(() => ({ awarded: window.__slot.save().activeStorm?.diceAwarded ?? 0, count: window.__slot.dice().count, held: window.__slot.award().held, shown: window.__slot.award().shown }));
+  check(after.count === mid.count && after.awarded === mid.awarded, 'resume: the reload keeps the committed dice (no loss, no re-award)', `awarded ${mid.awarded} → ${after.awarded}, count ${mid.count} → ${after.count}`);
+  check(after.held === after.awarded && after.shown === after.count - after.awarded, 'resume: the held row is rebuilt and the chip shows count − held', `held ${after.held}, shown ${after.shown}`);
+  if ((await state()) === 'stormReady') await ev(() => window.__slot.startStorm());
+  check((await untilState('stormSummary', 60000)) >= 0, 'resume: storm summary');
+  await until(() => document.getElementById('summary').classList.contains('show'), 15000, 250);
+  const h = await ev((n) => window.__slot.save().history.slice(n), hist0);
+  const expected = h.filter((e) => e.mode === 'storm' && !e.spinId.endsWith('-G') && e.winOre >= 10 * e.stakeOre).length;
+  const baseDie = h.filter((e) => e.mode === 'base' && e.die).length;
+  const delta = (await ev(() => window.__slot.dice())).count - before;
+  check(delta === expected + baseDie, 'resume: count delta = qualifying storm spins (no double count)', `delta ${delta}, storm ${expected}, trigger spin ${baseDie}`);
+  const sum = await ev(() => document.getElementById('summaryCard').textContent);
+  if (expected > 0) check(new RegExp(`Terninger fra stormen\\s*${expected}`).test(sum), 'resume: summary row counts the whole storm (diceAwarded survived the reload)');
+  await ev(() => window.__slot.cont());
+  check((await untilState('idle', 20000)) >= 0, 'resume: idle after the outro');
+  check((await chip()) === String((await ev(() => window.__slot.dice())).count), 'resume: #diceN equals the count at idle', await chip());
+}
+
 // ------------------------------------------------------------------ m · unlock (1948 card, "Ikke nu", real ceremony)
 if (want.has('unlock')) {
   if (!['award', 'demo', 'storm'].some((k) => want.has(k))) { await boot('', true); await ev(() => window.__slot.setSeed(20260922)); await adv(1400); }
   await adv(600);
-  if ((await state()) === 'diceCard') { await adv(1600); await ev(() => document.querySelector('#summaryCard [data-act="ok"]')?.click()); await adv(300); }
+  if ((await state()) === 'diceCard') { await adv(1600); await click('#summaryCard [data-act="ok"]'); await adv(300); }
   await ev(() => window.__slot.qaDice(1947));
   await ev(() => window.__slot.qaNext('die'));
   await ev(() => { window.__slot.spin(); });
@@ -216,20 +266,20 @@ if (want.has('unlock')) {
   check((await storedDice())?.unlock === 'pending' && (await storedDice())?.offered === true, "unlock 'pending' and offered persisted");
   await page.keyboard.press('Space'); await adv(1700); await page.keyboard.press('Space'); await adv(200);
   check((await state()) === 'diceCard', 'the 1948 card is inert to Space');
-  await ev(() => document.querySelector('#summaryCard [data-act="later"]').click());
+  await click('#summaryCard [data-act="later"]');
   await adv(300);
   check((await state()) === 'idle', '"Ikke nu" closes the card');
   await click('#diceBtn'); await adv(1000);
   check((await state()) === 'chamber' && (await ev(() => !document.getElementById('chOpen').hidden)), 'the chamber offers [Åbn porten]');
   await click('#chOpen');
-  await until(() => window.__slot.gate()?.started, 8000);
+  check((await untilStarted()) >= 0, 'real ceremony starts');
   await adv(9000);
   check((await storedDice())?.unlock === 'pending', "unlock still 'pending' before the seal beat (bar 5)");
   const pl = await until(() => window.__slot.gate()?.placard, 20000, 250);
   check(pl >= 0, 'real ceremony: placard');
   const d = await storedDice();
   check(d?.unlock === 'seen' && typeof d?.unlockedAt === 'number', "real ceremony: unlock 'seen' + unlockedAt persisted");
-  await ev(() => document.querySelector('#summaryCard [data-act="back"]').click());
+  await click('#summaryCard [data-act="back"]');
   check((await untilState('idle', 5000)) >= 0, '"Tilbage til NORDLYS" closes the chamber');
   check(await ev(() => document.getElementById('diceBtn').classList.contains('open')), 'chip has the .open ring');
   await click('#diceBtn'); await adv(1000);
@@ -246,7 +296,7 @@ if (want.has('reset')) {
   check((await chip()) === '0', 'Nulstil demo: chip shows 0');
   check(await ev(() => document.getElementById('bannerS').textContent.endsWith('0 terninger')), 'Nulstil demo banner');
   await ev(() => window.__slot.setSeed(20260922));
-  await ev(() => document.getElementById('hello').hidden || document.querySelector('#hello [data-hello="close"]').click());
+  if (!(await ev(() => document.getElementById('hello').hidden))) await click('#hello [data-hello="close"]');
   // opt-out: the chip hides, no award die, the count still increments
   await ev(() => window.__slot.game.dispatch({ t: 'settings', s: { dice: false } }));
   check(await ev(() => getComputedStyle(document.getElementById('diceBtn')).display === 'none'), 'opt-out: #diceBtn hidden');
