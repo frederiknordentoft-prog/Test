@@ -10,8 +10,9 @@
 // expiry resets the meter, never the dice), the placard at 360×640, 375×667 and 844×390 (the claim whole with its guard,
 // the buttons and the ribbon clear), and the visual pass at 390×844, 375×667 and 1920×1080 (shots + overlap/fit assertions).
 // Kvit eller dobbelt ('gamble': no card for the first die, the choice committed at the press and shown ≥ 3,0 s later,
-// win/loss/keep, reloads mid-choice and mid-throw without a new draw, a second tab's stale card, the storm's one
-// choice, the 1948 edges, demo isolation, the landing, the result never shown early: screen reader, menu) and autospin
+// win/loss/keep, one tap at the result ending the hold and the flights (≤ 600 ms), reloads mid-choice and mid-throw
+// without a new draw, a second tab's stale card, the storm's one choice (its released dice land on the niche, shown
+// again from stormOutro), the 1948 edges, demo isolation, the landing, the result never shown early: screen reader, menu) and autospin
 // ('auto': ≥ 3,0 s between presses, every stop with its banner and a true summary, the stake locked, also behind the
 // sheet). The older sections predate the choice: award b/c run with "Tilbyd Kvit eller dobbelt" off, storm/resume/perk
 // keep any offer.
@@ -387,7 +388,12 @@ if (want.has('unlock')) {
   check(d?.unlock === 'seen' && typeof d?.unlockedAt === 'number', "real ceremony: unlock 'seen' + unlockedAt persisted");
   await click('#summaryCard [data-act="back"]');
   check((await untilState('idle', 5000)) >= 0, '"Tilbage til NORDLYS" closes the chamber');
-  check(await ev(() => document.getElementById('diceBtn').classList.contains('open')), 'chip has the .open ring');
+  // the niche (the old chip's .open ring): after the real unlock a slow aurora ring turns around it
+  check(await ev(() => {
+    const v = document.getElementById('vault'), rim = v?.querySelector('.v-rim i');
+    return v?.dataset.unlock === 'seen' && !!rim && +getComputedStyle(rim).opacity > 0.5
+      && (document.documentElement.classList.contains('calm') || getComputedStyle(rim).animationName !== 'none');
+  }), 'the niche has the aurora ring after the unlock');
   await click('#diceBtn'); await adv(1000);
   check(await ev(() => document.getElementById('chamber').dataset.state === 'open' && !document.getElementById('chReplay').hidden), 'the chamber reopens in the open state with [Se åbningen igen]');
   // replay: the leaves reset to the closed, all-lit pose, the whole ceremony runs as GENSYN, "Luk" returns to the open chamber
@@ -806,6 +812,21 @@ if (want.has('gamble')) {
     check((await chip()) === String(c + 1), 'keep: the die lands in the home', await chip());
   }
 
+  // 5b · ONE tap at the result ends the hold and hurries the rest: the split's beat (300 ms) and the flights (300 ms)
+  c = (await ev(() => window.__slot.dice())).count;
+  await ev(() => window.__slot.qaGamble(6));
+  if (await offerAfterDie('one-tap skip')) {
+    await adv(1100);
+    await bet('double');
+    let res = -1;
+    for (let t = 0; t < 6000 && res < 0; t += FRAME) { await adv(FRAME, FRAME); await watch(); if ((await ev(() => window.__slot.gambleRun()?.phase)) === 'result') res = t + FRAME; }
+    await ev(() => window.__slot.game.dispatch({ t: 'skip' }));
+    let landAt = -1;
+    for (let t = FRAME; t <= 1500 && landAt < 0; t += FRAME) { await adv(FRAME, FRAME); await watch(); if ((await chip()) === String(c + 2)) landAt = t; }
+    check(res >= 3000 - 0.5 && landAt > 0 && landAt <= 600 + 2 * FRAME + 0.5, 'one tap at the result (never before 3,0 s): the hold ends and both dice land ≤ 600 ms later', `result at ${res.toFixed(0)} ms, landed ${landAt.toFixed(0)} ms after the tap`);
+    await toIdle('one-tap skip');
+  }
+
   // 6 · reload mid-choice: the same offer again, no new draw
   c = (await ev(() => window.__slot.dice())).count; gc = await ev(() => window.__slot.save().counters.gamble);
   if (await offerAfterDie('reload mid-choice')) {
@@ -905,6 +926,17 @@ if (want.has('gamble')) {
   check(scW?.count === 2 * k && scW.dice.length === Math.min(2 * k, 8), 'scene · storm: a win turns the fan into the 2k payout dice (held on for the outro\'s release)', `${scW?.count} staged, ${scW?.dice.length} on screen`);
   check((await untilW("window.__slot.state() === 'stormOutro'", 10000, 50, false, 15)) >= 0, 'storm: the outro follows the result');
   check((await ev(() => window.__slot.award())).heldDice === 2 * k, 'storm: 2k dice held for the outro', String((await ev(() => window.__slot.award())).heldDice));
+  // the niche is back from stormOutro: every released die flies to a niche that is fully shown, and lands ON it
+  const nicheShown = () => ev(() => { const v = document.getElementById('vault'), c = getComputedStyle(v), r = v.querySelector('.v-niche').getBoundingClientRect();
+    return !document.documentElement.classList.contains('vault-away') && c.visibility === 'visible' && +c.opacity >= 0.99 && r.width > 0 && r.top >= 0 && r.bottom <= innerHeight; });
+  let outFly = null, outFrames = 0, outHidden = 0;
+  for (let t = 0; t < 15000 && (await state()) !== 'idle'; t += FRAME) {
+    await adv(FRAME, FRAME); await watch(); await new Promise((r) => setTimeout(r, 4));
+    const f = await ev(FLY);
+    if (f) { outFly = f; outFrames++; if (!(await nicheShown())) outHidden++; }
+  }
+  const outMiss = outFly ? Math.hypot(outFly.x - outFly.tx, outFly.y - outFly.ty) : 99;
+  check(outFrames > 0 && outHidden === 0 && outMiss <= 4, 'storm: the outro\'s released dice fly to the niche while it is shown, and land on it (last frame ≤ 4 px)', `${outFrames} flight frames, ${outHidden} with the niche away, Δ ${outMiss.toFixed(1)} px`);
   await toIdle('storm', 15);
   check((await chip()) === String(cK + k) && (await ev(() => window.__slot.dice())).count === cK + k, 'storm: 2k released in the outro; the home equals the count at idle', await chip());
 

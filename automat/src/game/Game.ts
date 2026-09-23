@@ -1026,12 +1026,12 @@ export class Game {
     this.setState('idle');
     this.afterIdle();
   }
-  /** Tap / Space / Enter / Esc after the choice: ends the result hold, or hurries the flights home (≤ 300 ms).
-   *  Never the throw: nothing shortens it below T.floor. */
+  /** Tap / Space / Enter / Esc after the choice: ONE tap ends the result hold and hurries the rest (the split or the
+   *  frost, then the flights home at 300 ms each). Never the throw: nothing shortens it below T.floor. */
   private gambleSkipHold(): void {
     const run = this.gambleRun;
     if (!run) return;
-    if (run.phase === 'result') run.skip?.();
+    if (run.phase === 'result') { this.award.gambleSkip(); run.skip?.(); }
     else if (run.phase === 'settle') this.award.gambleSkip();
   }
 
