@@ -76,7 +76,8 @@ Tallene står åbent i reglerne.
 
 **Tempo:**
 - Mindst **3,0 s** fra tryk til resultat (SCP.07.03 §5.1.1.5).
-- Ingen turbo, slam-stop, autoplay eller bonus buy.
+- Ingen turbo, slam-stop eller bonus buy.
+- Autospin (10, 25, 50 eller 100 spin) kræver en tabsgrænse og går altid gennem det samme spin med 3,0 s-gulvet. Det stopper ved hver terning, ved Ladet spin, ved Solstorm, før tabet i runden ville overstige grænsen, ved for lav saldo, menu, skjult fane og STOP. Det fylder aldrig saldoen op og fortsætter aldrig efter en genindlæsning (brugerens valg 2026-09-23, se `docs/briefs/dice-gamble-autospin.md`).
 - Tryk under et spin ignoreres; de sættes ikke i kø.
 - Spin-knappens ring fyldes over de 3 s.
 
@@ -587,7 +588,8 @@ Feature freeze ved ca. 60 % af session-budgettet.
 - Legepenge og "DEMO · LEGEPENGE" hele tiden.
 - WIN/RETURN-profiler, så Spilpakke 1s LDW-forbud (2027) overholdes allerede nu.
 - Ingen konstruerede near-misses. Anticipation-reglen er fast og logget.
-- 3 s-cyklus, ingen turbo, autoplay eller bonus buy. Extreme optjenes altid i basisspillet.
+- 3 s-cyklus, også i autospin, ingen turbo eller bonus buy. Autospin kræver en tabsgrænse og stopper ved hver terning, Ladet spin og Solstorm. Extreme optjenes altid i basisspillet.
+- Kvit eller dobbelt gælder kun nye terninger (aldrig penge og aldrig terninger i kammeret): ét valg pr. tildeling, fair chancer, Behold er forvalgt, resultatet trækkes og gemmes ved valget og vises tidligst 3,0 s senere. Valget kan slås fra.
 - Persistens og sjældenhed er fuldt oplyst, inkl. "≈ N spin i snit". Kp 8 har spænding, men ingen nedtælling; det er dokumenteret som et bevidst valg.
 - Rolig og saglig tekst, aldrig "så tæt på".
 - Demo-storme er mærket i canvas, tæller ikke og krediteres ikke.

@@ -697,6 +697,7 @@ export class Game {
   /** Drawer "Vis en terning med valg", the header pill's "Terning" and #terning: the demo die with the whole choice
    *  (demoThrow on the 'demo' domain). No money celebration, no staged win; the number never changes. */
   private async demoGamble(): Promise<void> {
+    this.stopAuto('demo');
     this.hideHello();
     const t = this.beginDiceDemo();
     this.setState('demoDie');

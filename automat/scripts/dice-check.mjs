@@ -57,9 +57,9 @@ const until = async (pred, max = 30000, step = 100) => { for (let t = 0; t <= ma
 // the ceremony's pre-roll races audio.prepareGate() against a REAL-time 2 s timeout: poll in real time too
 const untilStarted = async () => { const t0 = Date.now(); while (Date.now() - t0 < 8000) { if (await ev(() => window.__slot.gate()?.started)) return Date.now() - t0; await adv(50); await new Promise((r) => setTimeout(r, 50)); } return -1; };
 const untilState = (s, max) => until(new Function(`return window.__slot.state() === ${JSON.stringify(s)}`), max);
-/** keepIfOffered: on the way to state `s`, Behold on any Kvit eller dobbelt card once it is armed (1,0 s). */
+/** keepIfOffered: until state `s`, Behold on any Kvit eller dobbelt card on the way once it is armed (1,0 s). */
 const KEEP = `const q = window.__slot; if (q.state() === 'gambleOffer' && q.gambleRun()?.armed) q.choose('keep');`;
-const untilStateKeep = (s, max) => until(new Function(`${KEEP} return window.__slot.state() === ${JSON.stringify(s)};`), max);
+const keepIfOffered = (s, max) => until(new Function(`${KEEP} return window.__slot.state() === ${JSON.stringify(s)};`), max);
 const untilKeep = (pred, max) => until(new Function(`${KEEP} return (${pred})();`), max);
 const stored = () => ev((k) => localStorage.getItem(k), KEY);
 const storedDice = async () => JSON.parse((await stored()) ?? 'null');
@@ -272,7 +272,7 @@ if (want.has('storm')) {
   const hist0 = await ev(() => window.__slot.save().history.length);
   await ev(() => window.__slot.qaNext('sun4'));
   await ev(() => { window.__slot.spin(); });
-  check((await untilStateKeep('stormReady', 40000)) >= 0, 'storm: ready');
+  check((await keepIfOffered('stormReady', 40000)) >= 0, 'storm: ready');
   const chipBefore = await chip();
   await ev(() => window.__slot.startStorm());
   let maxHeld = 0;
@@ -289,7 +289,7 @@ if (want.has('storm')) {
   if (expected > 0) check(new RegExp(`Terninger fra stormen\\s*${expected}`).test(sum), 'storm: summary row "Terninger fra stormen"');
   check((await chip()) === chipBefore, 'storm: the chip does not move while the dice are held', `${chipBefore} → ${await chip()}`);
   await ev(() => window.__slot.cont());
-  check((await untilStateKeep('idle', 20000)) >= 0, 'storm: idle after the outro (Behold on the storm\'s choice)');
+  check((await keepIfOffered('idle', 20000)) >= 0, 'storm: idle after the outro (Behold on the storm\'s choice)');
   const a = await ev(() => window.__slot.award());
   check(a.held === 0 && a.heldDice === 0, 'storm: the held row is empty after the outro');
   check((await chip()) === String((await ev(() => window.__slot.dice())).count), '#diceN equals the count at idle', await chip());
@@ -302,7 +302,7 @@ if (want.has('resume')) {
   const hist0 = await ev(() => window.__slot.save().history.length);
   await ev(() => window.__slot.qaNext('sun4'));
   await ev(() => { window.__slot.spin(); });
-  check((await untilStateKeep('stormReady', 40000)) >= 0, 'resume: storm ready');
+  check((await keepIfOffered('stormReady', 40000)) >= 0, 'resume: storm ready');
   await ev(() => window.__slot.startStorm());
   // reload right after the first storm die is committed (on the last spin this exercises the straight-to-payout resume)
   check((await until(() => { const a = window.__slot.save().activeStorm; return !a || (a.diceAwarded ?? 0) >= 1 || window.__slot.state() === 'stormSummary'; }, 60000, 50)) >= 0, 'resume: a storm die is committed');
@@ -328,7 +328,7 @@ if (want.has('resume')) {
   const sum = await ev(() => document.getElementById('summaryCard').textContent);
   if (expected > 0) check(new RegExp(`Terninger fra stormen\\s*${expected}`).test(sum), 'resume: summary row counts the whole storm (diceAwarded survived the reload)');
   await ev(() => window.__slot.cont());
-  check((await untilStateKeep('idle', 20000)) >= 0, 'resume: idle after the outro (Behold on the storm\'s choice)');
+  check((await keepIfOffered('idle', 20000)) >= 0, 'resume: idle after the outro (Behold on the storm\'s choice)');
   check((await chip()) === String((await ev(() => window.__slot.dice())).count), 'resume: #diceN equals the count at idle', await chip());
 }
 
@@ -418,7 +418,7 @@ if (want.has('perk')) {
   check(d1?.count === c0 + 1, 'f · the Ladet spin that wins ≥ 10× its locked stake commits exactly one die at the press', `${c0} → ${d1?.count}`);
   check(last?.mode === 'perk' && last?.die === true && last?.stakeOre === 100 && last?.winOre >= 10 * 100, 'f · history: mode perk, die === true, stake = the locked 1 kr, win ≥ 10× it', `x ${q?.x?.toFixed(2)}, win ${last?.winOre} øre at ${last?.stakeOre} øre`);
   check(last?.winOre < 10 * 1000, 'f · the same win is < 10× the 10 kr stake shown (judged at that stake, it would give no die)', `${last?.winOre} øre`);
-  await untilStateKeep('idle', 20000);
+  await keepIfOffered('idle', 20000);
   await adv(400);
   if ((await state()) === 'diceCard') { await adv(1600); await click('#summaryCard [data-act="ok"]'); await adv(300); }
   const after = await ev(() => ({ count: window.__slot.dice().count, perks: window.__slot.save().perksPending, st: window.__slot.state() }));
@@ -657,6 +657,7 @@ if (want.has('gamble')) {
   check(d2?.count === c0 + 1 && d2?.gamble?.stake === 1 && d2?.gamble?.source === 'spin' && !d2?.gamble?.settled, '2nd die: count +1 and the open choice (stake 1) in terningen.v1 at the SPIN press', JSON.stringify(d2?.gamble));
   check((await untilW("window.__slot.state() === 'gambleOffer'", 20000)) >= 0, '2nd die: the Kvit eller dobbelt card after the celebration');
   check((await chip()) === String(c0), 'the chip still shows the count before the award while the card waits', await chip());
+  check(!(await ev(() => window.__slot.vault())), 'the dice home is not idle-active while the card is up');
   await new Promise((r) => setTimeout(r, 450)); // showSummary focuses [data-primary] after 400 ms (real time)
   check(await ev(() => document.activeElement?.dataset?.gamble === 'keep'), 'Behold is focused first');
   const btns = await ev(() => [...document.querySelectorAll('#summaryCard [data-gamble]')].map((b) => b.dataset.gamble + (b.hasAttribute('data-primary') ? '*' : '')).join(' '));
@@ -693,6 +694,7 @@ if (want.has('gamble')) {
   check(landAt > 0 && miss <= 4 && Math.abs(lastFly.w - lastFly.tw) <= 4, 'win: the 2 dice land ON the dice home (last frame ≤ 4 px)', lastFly ? `Δ ${miss.toFixed(1)} px after ${landAt.toFixed(0)} ms` : 'no flight seen');
   await toIdle('win');
   check((await storedDice())?.gamble === null && (await chip()) === String(c0 + 2), 'win: the choice closes; the home shows the count', await chip());
+  check(await ev(() => window.__slot.vault()), 'the dice home is idle-active again at a quiet idle');
 
   // 4 · a loss: back to the count before the award, never below
   let c = (await ev(() => window.__slot.dice())).count;
@@ -838,15 +840,18 @@ if (want.has('auto')) {
   const bal = () => ev(() => window.__slot.save().balanceOre);
   /** Steps until the run has stopped and the game rests (idle or a card); press times in game ms. */
   const run = async (max = 90000) => {
-    const out = []; let last = await base(), t = 0, locked = true;
+    const out = []; let last = await base(), t = 0, locked = true, vaultOff = true;
     for (; t < max; t += 50) {
       await adv(50);
       const b = await base();
       if (b !== last) { out.push(t); last = b; }
-      if (await ev(() => !!window.__slot.auto())) locked &&= await ev(() => document.getElementById('stakeUp').disabled && document.getElementById('stakeDn').disabled);
+      if (await ev(() => !!window.__slot.auto())) {
+        locked &&= await ev(() => document.getElementById('stakeUp').disabled && document.getElementById('stakeDn').disabled);
+        vaultOff &&= !(await ev(() => window.__slot.vault()));
+      }
       else if (!['spinning', 'celebrating'].includes(await state())) break;
     }
-    return { out, locked, reason: await ev(() => window.__slot.autoStopped()) };
+    return { out, locked, vaultOff, reason: await ev(() => window.__slot.autoStopped()) };
   };
   const banner = () => ev(() => document.getElementById('bannerT').textContent);
   const after = async (ms) => { const b0 = await base(); await adv(ms); return (await base()) - b0; };
@@ -878,7 +883,7 @@ if (want.has('auto')) {
   const gaps = at.slice(1).map((t, i) => t - at[i]);
   check(r.reason === 'done' && (await base()) - b1 === 10 && (await banner()) === 'Autospin færdig', 'done: 10 spins, "Autospin færdig"', `${(await base()) - b1} spins, ${r.reason}`);
   check(gaps.length === 9 && gaps.every((g) => g >= 3000), 'every press ≥ 3,0 s after the last (the floor holds, no turbo)', `min ${Math.min(...gaps)} ms`);
-  check(r.locked, 'the stake buttons are disabled during autospin (spinning and between spins)');
+  check(r.locked && r.vaultOff, 'the stake buttons are disabled and the dice home is not idle-active during autospin (spinning and between spins)');
   check(start - (await bal()) <= 10 * S, 'done: the round\'s loss within the limit', `${start - (await bal())} øre`);
 
   // loss: 25 spins, 10× → stops BEFORE the loss could pass the limit
@@ -918,7 +923,7 @@ if (want.has('auto')) {
   await ev(() => window.__slot.autoStart(10, 10));
   r = await run();
   check(r.reason === 'die' && (await state()) === 'gambleOffer', 'die: stops at the die, its card shows', `${r.reason} ${await state()}`);
-  await untilStateKeep('idle', 20000);
+  await keepIfOffered('idle', 20000);
 
   // Ladet spin: Kp just under 3, the first charging spin crosses it
   await ev(() => { const s = window.__slot.save(); s.meter = { charge: 368, stakeSumOre: 368 * s.stakeOre }; });
@@ -930,7 +935,7 @@ if (want.has('auto')) {
   await ev(() => { window.__slot.save().perksPending = 0; });
   await ev(() => window.__slot.qaNext('sun4'));
   await ev(() => window.__slot.autoStart(10, 10));
-  await untilStateKeep('stormReady', 40000);
+  await keepIfOffered('stormReady', 40000);
   // (a die on the trigger spin stops the run first; its choice is kept on the way)
   const why = (await ev(() => window.__slot.save().history.at(-1)?.die)) ? 'die' : 'storm';
   check((await ev(() => window.__slot.autoStopped())) === why && !(await ev(() => window.__slot.auto())), `Solstorm: the run stops (${why}) before the storm starts`);

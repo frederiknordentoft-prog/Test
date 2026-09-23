@@ -9,7 +9,7 @@ import { dieArtReady } from './render/art/dieImage.ts';
 
 // Deep links: artifacts only receive a bare #anchor, so flags are plain tokens joined by '_' or '-':
 //   #solstorm  #clean  #fullfx  #fps  #autostart   (e.g. #solstorm_clean). Dev also accepts ?seed=123.
-//   Terningen: #1948 (demo gate ceremony)  #kammer (Terningekammeret)  #terning (a demo die), e.g. #1948_clean.
+//   Terningen: #1948 (demo gate ceremony)  #kammer (Terningekammeret)  #terning (a demo die with its choice), e.g. #1948_clean.
 const tokens = new Set(location.hash.replace(/^#/, '').toLowerCase().split(/[-_.~]+/).filter(Boolean));
 const query = new URLSearchParams(location.search);
 const flag = (t: string) => tokens.has(t) || query.get(t) === '1';

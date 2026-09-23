@@ -458,13 +458,10 @@ export class Hud {
     this.el.autoBtn.setAttribute('aria-label', state ? AUTO.stopAria(state.left) : AUTO.pillAria);
     if (!state && reason) this.banner(AUTO.stop(reason), summary ?? '');
   }
-  isAutoSheetOpen(): boolean { return this.el.autoWrap.classList.contains('show'); }
   /** The sheet: count (10/25/50/100) and a loss limit (kr) from autoLimits at this stake; the first limit is preset. */
   openAutoSheet(b: boolean, restoreFocus = false, stakeOre = this.autoStake): void {
     if (b) {
       this.autoStake = stakeOre;
-      const ls = autoLimits(stakeOre, this.autoPick.n);
-      if (!ls.includes(this.autoPick.l)) this.autoPick.l = ls[0] ?? 0;
       this.renderAutoSheet();
     }
     this.el.autoWrap.classList.toggle('show', b);
@@ -476,7 +473,7 @@ export class Hud {
   }
   private renderAutoSheet(): void {
     const ls = autoLimits(this.autoStake, this.autoPick.n);
-    if (!ls.includes(this.autoPick.l)) this.autoPick.l = ls[ls.length - 1] ?? 0;
+    if (!ls.includes(this.autoPick.l)) this.autoPick.l = ls[0] ?? 0; // the smallest limit is the default
     this.el.autoN.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(+x.dataset.n! === this.autoPick.n)));
     this.el.autoL.innerHTML = ls.map((l) => `<button class="btn ghost small num" data-l="${l}" aria-pressed="${l === this.autoPick.l}">${fmtKr(l)}</button>`).join('');
     this.el.autoHint.textContent = AUTO.limitHint(this.autoPick.l);
