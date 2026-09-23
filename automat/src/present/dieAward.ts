@@ -113,7 +113,7 @@ class DomFlyer {
 export class DieAward extends Container {
   private h: AwardHost;
   private overlays: HTMLElement;
-  private cur: { n: number; die: DieUnit | null; fast: boolean; fly: gsap.core.Tween | null; flying: boolean } | null = null;
+  private cur: { n: number; die: DieUnit | null; fast: boolean; fly: gsap.core.Tween | null; flying: boolean; go: (() => void) | null } | null = null;
   private heldDice: DieUnit[] = [];
   private more: IsText | null = null;
   private moreN = 0;
@@ -148,7 +148,7 @@ export class DieAward extends Container {
     d.position.set(W / 2, w.gridCenterY() + amountSize * 0.2 + amountSize * 0.55 + size * 0.6);
     this.addChild(d);
     this.cur?.die?.kill();
-    this.cur = { n, die: d, fast: o.instant, fly: null, flying: false };
+    this.cur = { n, die: d, fast: o.instant, fly: null, flying: false, go: null };
     if (o.instant) { Object.assign(d.st, { sc: 1, rot: 0, halo: calm ? 0 : 0.35, cap: 0.85 }); d.apply(); return; }
     if (calm) {
       d.alpha = 0; Object.assign(d.st, { sc: 1, rot: 0, halo: 0, cap: 0.85 }); d.apply();
@@ -180,6 +180,7 @@ export class DieAward extends Container {
     const a = this.cur;
     if (!a) return;
     a.fast = true;
+    a.go?.(); // a flight waiting for its beat starts at once
     const tw = a.fly;
     if (tw && tw.isActive()) { const left = tw.duration() - tw.time(); if (left > 0.3) tw.timeScale(left / 0.3); }
   }
@@ -196,8 +197,15 @@ export class DieAward extends Container {
         a.fly = gsap.to(d, { alpha: 0, duration: a.fast ? 0.2 : 0.25, onComplete: () => { d.kill(); done(); } });
         return;
       }
-      a.flying = true;
-      a.fly = this.flight(d, { dur: a.fast ? 0.3 : 0.6, spin: 1.25, onDone: done });
+      // R+2,70 close → R+2,75 the flight (the caption fades meanwhile); after a skip it starts at once, 300 ms
+      const wait = a.fast ? null : gsap.delayedCall(0.05, () => a.go?.());
+      a.go = () => {
+        a.go = null;
+        wait?.kill();
+        a.flying = true;
+        a.fly = this.flight(d, { dur: a.fast ? 0.3 : 0.6, spin: 1.25, onDone: done });
+      };
+      if (!wait) a.go();
     });
   }
 
@@ -401,8 +409,14 @@ export class DieAward extends Container {
       const go = 0.52 + 1.3;
       tl.to(d.st, { cap: 0, duration: 0.15, onUpdate: d.apply }, go);
       tl.to(this.dim, { alpha: 0, duration: 0.5 }, go);
+      if (calm) {
+        // calm: no flight — the die fades out in place (250 ms) and the tag shows at the chip
+        tl.to(d, { alpha: 0, duration: 0.25, onComplete: () => d.kill() }, go)
+          .call(() => { this.h.hud.demoDiceTag(); this.moving--; res(); }, [], go + 0.25);
+        return;
+      }
       tl.call(() => {
-        this.flight(d, { dur: 0.6, spin: calm ? 0 : 1.25, dissolve: true, onDone: () => { this.h.hud.demoDiceTag(); gsap.delayedCall(0.4, () => { this.moving--; res(); }); } });
+        this.flight(d, { dur: 0.6, spin: 1.25, dissolve: true, onDone: () => { this.h.hud.demoDiceTag(); gsap.delayedCall(0.4, () => { this.moving--; res(); }); } });
       }, [], go);
     });
   }

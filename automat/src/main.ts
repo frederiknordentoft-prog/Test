@@ -5,6 +5,7 @@ import { Game } from './game/Game.ts';
 import { seedCosmetic } from './core/cosmeticRng.ts';
 import { kpFromCharge } from './game/tiers.ts';
 import { CONFIG } from './math/config.ts';
+import { dieArtReady } from './render/art/dieImage.ts';
 
 // Deep links: artifacts only receive a bare #anchor, so flags are plain tokens joined by '_' or '-':
 //   #solstorm  #clean  #fullfx  #fps  #autostart   (e.g. #solstorm_clean). Dev also accepts ?seed=123.
@@ -46,7 +47,7 @@ async function boot(): Promise<void> {
   if (flag('fullfx')) game.dispatch({ t: 'fullFx' });
   game.boot();
   for (const i of queue.splice(0)) game.dispatch(i);
-  const dbg = { ...game.debug(), advance: (ms: number, render = true) => world.advance(ms, render), world, game };
+  const dbg = { ...game.debug(), advance: (ms: number, render = true) => world.advance(ms, render), world, game, dieArt: dieArtReady };
   (window as unknown as { __slot: typeof dbg }).__slot = dbg;
   if (flag('fps')) fpsOverlay();
   if (flag('autostart')) { game.noticeExpired(); game.dispatch({ t: 'unlock' }); }

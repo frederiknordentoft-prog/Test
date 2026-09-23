@@ -36,8 +36,10 @@ Artifacts modtager kun et rent `#anker`. Flags skrives derfor som tokens, der ka
 ```
 src/math/      Outcome-motor: ren TypeScript, seedet xoshiro128**, isomorf og RGS-klar
 src/game/      Game (state machine, penge, måler, storme, demo), World (render-ejer), store, tiers
-src/present/   schedule (ren: SpinResult → Beat[]), director (GSAP), celebration, Solstorm-cinematic, clock
-src/render/    Pixi v8: sky, symbol-art, Isfont, grid/frame, Kp-bue, post (bloom + uber), partikler/skår
+src/present/   schedule (ren: SpinResult → Beat[]), director (GSAP), celebration, Solstorm-cinematic, clock,
+               Terningen: dieAward (Pixi + DOM-flugt), dicePresenter, portens ceremoni (cinematics/gate.ts)
+src/render/    Pixi v8: sky, symbol-art, Isfont, grid/frame, Kp-bue, post (bloom + uber), partikler/skår,
+               porten under klinten (chamber/GateView + det rene flise-gitter gateLattice), terningens billede (art/dieImage)
 src/audio/     Rå WebAudio: FM-klokker, pre-renderede stems, adaptive lag, stormmusik, Polar Night-bund (polarLoop.ts)
 src/ui/        DOM-HUD: skarp tekst, a11y, regulatoriske strips, menu, regler, demo-værktøjer
 ```
@@ -56,8 +58,8 @@ src/ui/        DOM-HUD: skarp tekst, a11y, regulatoriske strips, menu, regler, d
 |---|---|---|
 | Matematik (samlet RTP) | 96,035 % ± 0,055 pp (95 %-CI) | `npm run sim` |
 | Matematik (gates) | 18 af 18 bestået på friske seeds; par sheet i `sim/REPORT.md` | `npm run sim` |
-| Tests | 115 grønne (+ 4 todo til portens flise-gitter): RNG-vektorer, klynger, kaskader, storm-replay, måler, golden hashes, 3,0 s-gulv, LDW-profiler, grænser mellem lag, terning-reglen, copy-lint og terningernes ene mutator | `npm test` |
-| Terningen | 101 Playwright-checks: tildeling før præsentationen, landing før idle, kort vist én gang, reload midt i en tildeling og midt i en storm, porten (rigtig og demo) og nul skrivninger til `terningen.v1` fra alle demo-værktøjer | `node scripts/dice-check.mjs` |
+| Tests | 119 grønne: RNG-vektorer, klynger, kaskader, storm-replay, måler, golden hashes, 3,0 s-gulv, LDW-profiler, grænser mellem lag, terning-reglen, copy-lint, terningernes ene mutator og portens flise-gitter (1948 fliser, 974 pr. fløj, golden hashes, ingen frontlinje, ingen forudsigelig sidste flise) | `npm test` |
+| Terningen | 203 Playwright-checks: tildeling før præsentationen, fødsel ved R+1,5 s, flugten (R+2,75 → 3,35 s) lander på chippen, skip ≤ 300 ms, landing før idle, kort vist én gang, reload midt i en tildeling og midt i en storm, stormterninger holdt på rammen og sluppet i outroen, porten (rigtig og demo, hele partituret på takt-gridden) og nul skrivninger til `terningen.v1` fra alle demo-værktøjer. Visuel runde ved 390×844, 375×667 og 1920×1080: skærmbilleder og overlap-tjek mod #reg, #foot, dækket og Kp-buen | `node scripts/dice-check.mjs` |
 | Fotosensitivitet | WCAG 2.3.1: højst 1 blink/s (grænse 3); streng 10 %-måling højst 2/s; mættet rød højst 20 % af skærmen | `node scripts/luminance.mjs` |
 | Visuel QA | Deterministisk Playwright-tur (SwiftShader WebGL2) ved 390×844, 375×667 og 1920×1080, uden page-fejl | `node scripts/tour.mjs` |
 | Artifact | Single-file ca. 2,5 MB (heraf 1,5 MB indlejret MP3) uden eksterne hosts. Kører hele Solstorm-demoen i artifact-rammen under en streng CSP (ingen `unsafe-eval`) | `npm run build:artifact` |
@@ -78,5 +80,9 @@ src/ui/        DOM-HUD: skarp tekst, a11y, regulatoriske strips, menu, regler, d
   - Isfont-atlasset bygges ved boot, ikke ved build.
   - Bloom-composite og uber-pass er ikke slået sammen.
   - Der er ingen downloadet brødtekst-font, fordi alle assets skal være lavet i kode.
+
+**Kendte grænser:**
+- Alle assets er lavet i kode undtagen Polar Night og terningens billede (brugerens eget, `assets-src/terning.png`). Begge er indlejret som bytes og afkodes uden at hente en URL. Billedet beskæres og kodes til WebP 512 + 128 px med `node scripts/die-asset.mjs`.
+- Portens 1948 fliser er ca. 3 px store på en 360 px telefon.
 
 Se [PLAN.md](PLAN.md) for designet og [docs/CONTRACTS.md](docs/CONTRACTS.md) for modulgrænserne.

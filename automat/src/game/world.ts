@@ -215,7 +215,10 @@ export class World {
     if (b - a >= need) return (a + b) / 2 - host.left;
     return null;
   }
+  /** Terningekammeret owns the screen: the header logo stays hidden through resizes until it closes. */
+  logoHold = false;
   placeLogo(): void {
+    if (this.logoHold) { this.logo.visible = false; return; }
     const hdr = document.getElementById('hdr')!.getBoundingClientRect();
     const host = this.hud.root.getBoundingClientRect();
     let target = this.headerLogoCap(hdr.height);

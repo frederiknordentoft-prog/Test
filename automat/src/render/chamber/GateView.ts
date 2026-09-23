@@ -151,6 +151,8 @@ export class GateView extends Container {
   private seed = -1;
   private count = -1;
   private dirtyTint = true;
+  private edgesAt = -1;
+  private edgesGeom: GateGeom | null = null;
 
   constructor() {
     super();
@@ -564,6 +566,8 @@ export class GateView extends Container {
     const dim = mixHex(0xffffff, 0x5a6a8a, t);
     this.leafL.tint = dim; this.leafR.tint = dim;
     this.leafL.alpha = this.leafR.alpha = this.edges.alpha = this.leafFade;
+    if (g && t === this.edgesAt && g === this.edgesGeom) return; // the strips only change with the swing
+    this.edgesAt = t; this.edgesGeom = g;
     this.edges.clear();
     if (g && t > 0.01) {
       const w = 6 * t, hw = g.W / 2, ex = hw * s, dy = Math.sin(0.05 * t) * ex;

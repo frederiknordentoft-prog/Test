@@ -164,6 +164,7 @@ export class PixiDicePresenter implements DicePresenter {
     this.gate.setView(view, this.h.seed());
     this.gate.calm = this.h.calm();
     this.gate.visible = true;
+    w.logoHold = true;
     w.logo.visible = false;
     await this.transition(true);
     this.domAlpha(1);
@@ -188,6 +189,7 @@ export class PixiDicePresenter implements DicePresenter {
     this.machine.a = 1;
     w.setMachineAlpha(1);
     w.cam.zoom = 1;
+    w.logoHold = false;
     w.placeLogo();
   }
 
@@ -205,7 +207,7 @@ export class PixiDicePresenter implements DicePresenter {
   }
   closeGate(): Promise<void> {
     const calm = this.h.calm();
-    return new Promise<void>((res) => { void this.gate.closeTo(calm ? 0.5 : 1.2, calm).then(() => res()); });
+    return new Promise<void>((res) => { void this.gate.closeTo(calm ? 0.5 : 1.2, calm).then(() => { this.gate.state = 'pending'; res(); }); });
   }
 
   /** Phones: the bottom-anchored placard must never cover "AUTOMAT 1948" and its concept label: the gate rises until

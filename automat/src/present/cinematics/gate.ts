@@ -176,7 +176,7 @@ export function playGateCeremony(w: GateWorld, o: { eyebrow: string; onSeal(): v
     gsap.to(g, { lightLevel: 0.6, warm: 0.5, lantern: 0.3, groove: 0.5, duration: settle, ease: 'sine.inOut' });
     gsap.to(w.sky, { skyGlowFloor: 0, duration: settle, ease: 'sine.inOut' });
     gsap.to(w.bloom, { strength: 1, duration: settle, ease: 'sine.inOut' });
-    gsap.to(w.camera, { zoom: 1.03, duration: settle, ease: 'sine.inOut' });
+    if (!calm) gsap.to(w.camera, { zoom: 1.03, duration: settle, ease: 'sine.inOut' }); // back to the chamber's framing
     if (!skipped) { A.fadeOut('gateDrone', 4); A.fadeOut('lightPad', 4); }
     resolveDone();
   }

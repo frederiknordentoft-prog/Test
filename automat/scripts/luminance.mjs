@@ -1,10 +1,12 @@
 // Photosensitivity check (WCAG 2.3.1-style general flash heuristic, whole-screen):
-// steps the real game at 30 fps through the demo time-lapse, the Solstorm cinematic and the first storm spins,
-// reads the canvas back each frame and counts opposing ≥10 % relative-luminance swings per second.
-// Usage: node scripts/luminance.mjs [baseUrl] [calm=0|1]
+// steps the real game at 30 fps through a segment, reads the canvas back each frame and counts opposing ≥10 %
+// relative-luminance swings per second. Segments: 'storm' (default: the demo time-lapse, the Solstorm cinematic and
+// the first storm spins), 'award' (Terningen: "Vis en terning", the die's birth, glint and flight) and 'gate' (the full
+// demo gate ceremony, no skip, to its placard).
+// Usage: node scripts/luminance.mjs [baseUrl] [calm=0|1] [segment=storm|award|gate]
 import { chromium } from 'playwright-core';
 
-const [base = 'http://127.0.0.1:4173/', calm = '0'] = process.argv.slice(2);
+const [base = 'http://127.0.0.1:4173/', calm = '0', segment = 'storm'] = process.argv.slice(2);
 const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium',
   args: ['--use-gl=angle', '--use-angle=swiftshader-webgl', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
@@ -37,12 +39,23 @@ const lum = () => page.evaluate(() => {
 await page.evaluate(() => window.__slot.advance(1500, false));
 await page.evaluate(() => window.__slot.unlock());
 for (let i = 0; i < 160; i++) { await page.evaluate(() => window.__slot.advance(50, false)); if ((await page.evaluate(() => window.__slot.state())) === 'idle') break; }
-await page.evaluate(() => window.__slot.demo());
 const trace = [];
-for (let f = 0; f < 30 * 16; f++) {
-  const st = await page.evaluate(() => window.__slot.state());
-  if (st === 'stormReady') await page.evaluate(() => window.__slot.startStorm());
-  trace.push(await lum());
+if (segment === 'storm') {
+  await page.evaluate(() => window.__slot.demo());
+  for (let f = 0; f < 30 * 16; f++) {
+    const st = await page.evaluate(() => window.__slot.state());
+    if (st === 'stormReady') await page.evaluate(() => window.__slot.startStorm());
+    trace.push(await lum());
+  }
+} else if (segment === 'award') {
+  await page.evaluate(() => { window.__slot.setSeed(99); window.__slot.game.dispatch({ t: 'demoDie' }); });
+  for (let f = 0; f < 30 * 4; f++) trace.push(await lum());
+} else {
+  // the pre-roll races audio.prepareGate() against a real-time 2 s timeout: let real time pass until the ceremony runs
+  await page.evaluate(() => window.__slot.game.dispatch({ t: 'demoGate' }));
+  for (let i = 0; i < 80 && !(await page.evaluate(() => window.__slot.gate()?.started)); i++) { trace.push(await lum()); await page.waitForTimeout(50); }
+  for (let f = 0; f < 30 * 24 && !(await page.evaluate(() => window.__slot.gate()?.placard)); f++) trace.push(await lum());
+  for (let f = 0; f < 30 * 2; f++) trace.push(await lum()); // the settle under the placard
 }
 // count opposing swings ≥ 10 % (relative to the darker frame, darker < 0.8) inside any 1 s window
 const swings = [];
@@ -76,5 +89,11 @@ const wcagSwings = [];
 let wcagWorst = 0;
 for (let i = 0; i < wcagSwings.length; i++) { let n = 0; for (let j = i; j < wcagSwings.length && wcagSwings[j] - wcagSwings[i] < 30; j++) n++; wcagWorst = Math.max(wcagWorst, Math.floor(n / 2)); }
 const maxRed = Math.max(...trace.map((t) => t.red));
-console.log(JSON.stringify({ calm: calm === '1', frames: trace.length, swings: swings.length, worstFlashesPerSecond: worst, wcagFlashesPerSecond: wcagWorst, maxSaturatedRedShare: +maxRed.toFixed(3), minL: +Math.min(...trace.map((t) => t.L)).toFixed(4), maxL: +Math.max(...trace.map((t) => t.L)).toFixed(4), pass: wcagWorst <= 3 && worst <= 3 && maxRed < 0.25 }));
+let maxStep = 0, maxStepRel = 0;
+for (let i = 1; i < trace.length; i++) {
+  const d = Math.abs(trace[i].L - trace[i - 1].L);
+  maxStep = Math.max(maxStep, d);
+  maxStepRel = Math.max(maxStepRel, d / Math.max(0.02, Math.min(trace[i].L, trace[i - 1].L)));
+}
+console.log(JSON.stringify({ segment, calm: calm === '1', frames: trace.length, maxFrameStepL: +maxStep.toFixed(4), maxFrameStepRel: +maxStepRel.toFixed(3), swings: swings.length, worstFlashesPerSecond: worst, wcagFlashesPerSecond: wcagWorst, maxSaturatedRedShare: +maxRed.toFixed(3), minL: +Math.min(...trace.map((t) => t.L)).toFixed(4), maxL: +Math.max(...trace.map((t) => t.L)).toFixed(4), pass: wcagWorst <= 3 && worst <= 3 && maxRed < 0.25 }));
 await browser.close();
