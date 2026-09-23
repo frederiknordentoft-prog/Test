@@ -2,6 +2,8 @@
 //  BASE  85.2 BPM, D dorian, Dm9 – Bbmaj9 – Fmaj9 – C6/9 (one chord per bar).
 //        L0 pad + wind (4 bars) · L1 glass arp (8 bars, A/B phrase) · L2 heartbeat pulse bass (4 bars)
 //        L3 soft percussion (4 bars) · L4 tension ostinato + aurora crackle (4 bars)
+//        Under the "Polar Night" recording L1, L2 and L4 follow ITS chords instead (base1p 8 bars,
+//        base2p/base4p 16 bars, phase-locked to the loop's bar 1; see POLAR_CHORDS).
 //  STORM 140 BPM, D phrygian, Dm – Eb – Dm – Cm.
 //        core: kick 150→45 Hz, synthetic breaks, reese bass, dark pad, sidechain pump (8 bars)
 //        stabs (x≥8) supersaw · hats (x≥32) double-time · choir (x≥128) formant "aah" (4 bars each)
@@ -82,6 +84,17 @@ export const LAND_STORM: number[][] = [
   [69, 74, 77, 81, 84, 86, 89, 93], // Dm
   [67, 72, 75, 79, 82, 84, 87, 91], // Cm: G4 C5 Eb5 G5 Bb5 C6 Eb6 G6
 ];
+
+/**
+ * "Polar Night" loop harmony (polarLoop.ts: D aeolian, one chord per bar), loop bar 1 = index 0:
+ * Dm C F C/E Gm Dm C C | Dm C F Gm Dm Am B♭ C. `pcs` = chord pitch classes (0 = C), `bass` = the bass
+ * note base2p plays (MIDI; a line D2 C2 F2 E2 G2 … A1 B♭1 C2 that walks back up into bar 1).
+ */
+const CHORD_PCS: Record<string, number[]> = { Dm: [2, 5, 9], C: [0, 4, 7], 'C/E': [0, 4, 7], F: [5, 9, 0], Gm: [7, 10, 2], Am: [9, 0, 4], 'B♭': [10, 2, 5] };
+export const POLAR_CHORDS: { name: string; pcs: number[]; bass: number }[] = ([
+  ['Dm', 38], ['C', 36], ['F', 41], ['C/E', 40], ['Gm', 43], ['Dm', 38], ['C', 36], ['C', 36],
+  ['Dm', 38], ['C', 36], ['F', 41], ['Gm', 43], ['Dm', 38], ['Am', 33], ['B♭', 34], ['C', 36],
+] as [string, number][]).map(([name, bass]) => ({ name, bass, pcs: CHORD_PCS[name] }));
 
 // ------------------------------------------------------------------ helpers
 /** Time wrapped into the loop (events scheduled "before 0" land at the end and fold back). */
@@ -179,18 +192,35 @@ const L0: StemDef = {
   },
 };
 
-const ARP_POOL: number[][] = [
+export const ARP_POOL: number[][] = [
   [74, 76, 77, 81, 84, 86], // Dm9:    D5 E5 F5 A5 C6 D6
   [74, 77, 81, 84, 86, 89], // Bbmaj9: D5 F5 A5 C6 D6 F6
   [72, 76, 79, 81, 84, 88], // Fmaj9:  C5 E5 G5 A5 C6 E6
   [72, 74, 76, 79, 81, 86], // C6/9:   C5 D5 E5 G5 A5 D6
 ];
-const ARP_A = [0, 3, 1, 4, 2, 5, 3, 1];
-const ARP_B = [5, -1, 4, 2, 3, -1, 1, 0];
+/**
+ * Under "Polar Night": the 8-bar arp loop plays twice per 16-bar loop, so bar b's six notes must fit the
+ * chords of loop bars b AND b+8 (POLAR_CHORDS): chord tones and colour notes only — no note a semitone
+ * above a chord tone, none a tritone from the root (the procedural pools put F over C and Am, loop bars 2,
+ * 10 and 14).
+ */
+export const ARP_POLAR: number[][] = [
+  [74, 76, 77, 81, 84, 86], // Dm  | Dm   D5 E5 F5 A5 C6 D6
+  [72, 74, 76, 79, 81, 86], // C   | C    C5 D5 E5 G5 A5 D6
+  [72, 76, 79, 81, 84, 88], // F   | F    C5 E5 G5 A5 C6 E6
+  [72, 74, 79, 81, 84, 86], // C/E | Gm   C5 D5 G5 A5 C6 D6
+  [74, 77, 79, 81, 84, 86], // Gm  | Dm   D5 F5 G5 A5 C6 D6
+  [72, 74, 76, 81, 84, 88], // Dm  | Am   C5 D5 E5 A5 C6 E6
+  [72, 74, 79, 81, 84, 86], // C   | B♭   C5 D5 G5 A5 C6 D6
+  [72, 74, 76, 79, 81, 86], // C   | C    C5 D5 E5 G5 A5 D6
+];
+export const ARP_A = [0, 3, 1, 4, 2, 5, 3, 1];
+export const ARP_B = [5, -1, 4, 2, 3, -1, 1, 0];
 const ARP_VEL = [1, 0.55, 0.75, 0.6, 0.9, 0.55, 0.7, 0.5];
 
-const L1: StemDef = {
-  id: 'base1', group: 'base', layer: 1, bars: 8, ch: 2, tail: 5, rmsDb: -25, div: 2, minRate: 22000,
+/** L1 glass arp, 8 bars: bar b draws from `pools[b]` (A phrase bars 1–4, B phrase bars 5–8). */
+const arpStem = (id: string, pools: number[][]): StemDef => ({
+  id, group: 'base', layer: 1, bars: 8, ch: 2, tail: 5, rmsDb: -25, div: 2, minRate: 22000,
   build(ctx, out, g) {
     // dotted-8th ping-pong echo with a dark feedback path
     const dry = gain(ctx, 1);
@@ -211,7 +241,7 @@ const L1: StemDef = {
     pL.connect(dry); pR.connect(dry);
     const rnd = prng(77);
     for (let b = 0; b < 8; b++) {
-      const pool = ARP_POOL[b % 4];
+      const pool = pools[b];
       const pat = b < 4 ? ARP_A : ARP_B;
       for (let s = 0; s < 8; s++) {
         const k = pat[s];
@@ -224,10 +254,13 @@ const L1: StemDef = {
       }
     }
   },
-};
+});
+const L1 = arpStem('base1', [0, 1, 2, 3, 0, 1, 2, 3].map((k) => ARP_POOL[k]));
+const L1P = arpStem('base1p', ARP_POLAR);
 
-const L2: StemDef = {
-  id: 'base2', group: 'base', layer: 2, bars: 4, ch: 1, tail: 2, rmsDb: -24, div: 4, minRate: 11000,
+/** L2 heartbeat pulse bass: one bar per entry of `roots` (MIDI), on beats 1 and 3. */
+const pulseStem = (id: string, roots: number[]): StemDef => ({
+  id, group: 'base', layer: 2, bars: roots.length, ch: 1, tail: 2, rmsDb: -24, div: 4, minRate: 11000,
   build(ctx, out, g) {
     const lp = filt(ctx, 'lowpass', 850, 0.5);
     const sat = shaper(ctx, 2.2);
@@ -235,8 +268,8 @@ const L2: StemDef = {
     lp.connect(sat).connect(hp).connect(out);
     const knock = filt(ctx, 'bandpass', 720, 0.9);
     knock.connect(out);
-    for (let b = 0; b < 4; b++) {
-      const f = mtof(BASE_ROOT[b]);
+    for (let b = 0; b < roots.length; b++) {
+      const f = mtof(roots[b]);
       for (const beat of [0, 2]) {
         for (const [dt, v, tau] of [[0, 1, 0.2], [0.19, 0.55, 0.14]] as const) {
           const t = b * g.bar + beat * g.beat + dt + 0.001;
@@ -260,7 +293,9 @@ const L2: StemDef = {
       }
     }
   },
-};
+});
+const L2 = pulseStem('base2', BASE_ROOT);
+const L2P = pulseStem('base2p', POLAR_CHORDS.map((c) => c.bass));
 
 const L3: StemDef = {
   id: 'base3', group: 'base', layer: 3, bars: 4, ch: 1, tail: 1.5, rmsDb: -28, minRate: 40000,
@@ -325,16 +360,26 @@ const L3: StemDef = {
   },
 };
 
-const OST_POOL: number[][] = [
+export const OST_POOL: number[][] = [
   [62, 69, 64, 65], // D4 A4 E4 F4
   [58, 65, 62, 69], // Bb3 F4 D4 A4
   [57, 64, 60, 65], // A3 E4 C4 F4
   [55, 64, 60, 62], // G3 E4 C4 D4
 ];
-const OST_PAT = [0, 1, 2, 1, 0, 1, 3, 1, 0, 1, 2, 1, 0, 3, 2, 1];
+/** Ostinato pools under "Polar Night", per chord: chord tones only, same register and pattern roles. */
+export const OST_POLAR: Record<string, number[]> = {
+  Dm: [62, 69, 65, 57],    // D4 A4 F4 A3
+  C: [60, 67, 64, 55],     // C4 G4 E4 G3
+  F: [57, 69, 60, 65],     // A3 A4 C4 F4
+  'C/E': [55, 67, 60, 64], // G3 G4 C4 E4
+  Gm: [58, 67, 62, 55],    // B♭3 G4 D4 G3
+  Am: [57, 69, 64, 60],    // A3 A4 E4 C4
+  'B♭': [58, 65, 62, 70],  // B♭3 F4 D4 B♭4
+};
+export const OST_PAT = [0, 1, 2, 1, 0, 1, 3, 1, 0, 1, 2, 1, 0, 3, 2, 1];
 
-/** JS-generated aurora crackle: sparse resonant micro-clicks, stereo, wrapping at the loop length. */
-function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
+/** JS-generated aurora crackle: sparse resonant micro-clicks (1.5 kHz … fmax), stereo, wrapping at the loop length. */
+function crackleBuffer(ctx: Ctx, seconds: number, seed: number, fmax = 6000): AudioBuffer {
   const sr = ctx.sampleRate;
   const n = Math.floor(seconds * sr);
   const b = newBuffer(2, n, sr);
@@ -345,7 +390,7 @@ function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
     t += -Math.log(1 - r()) / 7; // ~7 events / s
     const i0 = Math.floor(t * sr);
     if (i0 >= n) break;
-    const f = 1500 + r() * 4500;
+    const f = 1500 + r() * (fmax - 1500);
     const w = 2 * Math.PI * f / sr;
     const len = Math.floor((0.002 + r() * 0.006) * sr);
     const amp = 0.15 + r() * r() * 0.85;
@@ -360,8 +405,12 @@ function crackleBuffer(ctx: Ctx, seconds: number, seed: number): AudioBuffer {
   return b;
 }
 
-const L4: StemDef = {
-  id: 'base4', group: 'base', layer: 4, bars: 4, ch: 2, tail: 1.5, rmsDb: -29, div: 2, minRate: 22000,
+/**
+ * L4 tension ostinato + aurora crackle: one bar per entry of `pools`. The 16-bar Polar Night variant renders
+ * at hw/4 (memory; audited) with the crackle kept under 4.2 kHz so it survives that rate.
+ */
+const ostinatoStem = (id: string, pools: number[][], o: { div: 2 | 4; minRate: number; crackleMax: number }): StemDef => ({
+  id, group: 'base', layer: 4, bars: pools.length, ch: 2, tail: 1.5, rmsDb: -29, div: o.div, minRate: o.minRate,
   build(ctx, out, g) {
     // muted pluck: bright path (fast decay) + dark resonant path; 4 static filters, L/R alternating
     const chains = [-0.25, 0.25].map((p) => {
@@ -372,8 +421,8 @@ const L4: StemDef = {
       bright.connect(pn); dark.connect(pn);
       return { bright, dark };
     });
-    for (let b = 0; b < 4; b++) {
-      const pool = OST_POOL[b];
+    for (let b = 0; b < pools.length; b++) {
+      const pool = pools[b];
       for (let s = 0; s < 16; s++) {
         const t = b * g.bar + s * g.s16 + 0.001;
         const f = mtof(pool[OST_PAT[s]]);
@@ -390,11 +439,13 @@ const L4: StemDef = {
       }
     }
     const cr = ctx.createBufferSource();
-    cr.buffer = crackleBuffer(ctx, g.loop, 4242);
+    cr.buffer = crackleBuffer(ctx, g.loop, 4242, o.crackleMax);
     cr.connect(filt(ctx, 'highpass', 900, 0.5)).connect(gain(ctx, 0.05)).connect(out);
     cr.start(0);
   },
-};
+});
+const L4 = ostinatoStem('base4', OST_POOL, { div: 2, minRate: 22000, crackleMax: 6000 });
+const L4P = ostinatoStem('base4p', POLAR_CHORDS.map((c) => OST_POLAR[c.name]), { div: 4, minRate: 11000, crackleMax: 4200 });
 
 // ------------------------------------------------------------------ STORM stems
 const KICKS: number[][] = [[0, 10], [0, 7, 10], [0, 10], [0, 3, 10, 14]];
@@ -616,5 +667,5 @@ const CHOIR: StemDef = {
   },
 };
 
-export const STEMS: StemDef[] = [L0, L1, L2, L3, L4, CORE, STABS, HATS, CHOIR];
+export const STEMS: StemDef[] = [L0, L1, L2, L3, L4, L1P, L2P, L4P, CORE, STABS, HATS, CHOIR];
 export const STEM_BY_ID: Record<string, StemDef> = Object.fromEntries(STEMS.map((s) => [s.id, s]));

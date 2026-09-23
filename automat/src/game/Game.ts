@@ -10,7 +10,8 @@ import type { SpinResult, Sym } from '../math/types.ts';
 import { TIERS, kpFromCharge } from './tiers.ts';
 import { bus } from './bus.ts';
 import { welcomeCopy } from '../ui/welcome.ts';
-import { load, save, defaults, wipe, setPersistenceEnabled, storageOk, expiredOnLoad, START_BALANCE_ORE, type SaveData, type HistoryEntry } from './store.ts';
+import { realDiceView, type DiceStore } from './dice.ts';
+import { loadDice, load, save, defaults, wipe, setPersistenceEnabled, storageOk, expiredOnLoad, START_BALANCE_ORE, type SaveData, type HistoryEntry } from './store.ts';
 import { presentSpin, idleGrid, type PresentCtx } from '../present/director.ts';
 import { profileOf, winTier } from '../present/schedule.ts';
 import { Celebration } from '../present/celebration.ts';
@@ -31,6 +32,8 @@ type StormSource = 'A' | 'B' | 'AB' | 'demo';
 export class Game {
   state: GameState = 'boot';
   s: SaveData;
+  /** Terningen: a separate, never-expiring store ('terningen.v1'); the award rule is wired in the next step. */
+  dice: DiceStore;
   hud: Hud;
   w: World;
   /** Charge shown on the arc (animated by motes); the model is s.meter. */
@@ -54,6 +57,7 @@ export class Game {
     this.hud = hud;
     this.w = w;
     this.s = load(newSessionSeed(), CONFIG.defaultStakeOre);
+    this.dice = loadDice(newSessionSeed());
     if (!CONFIG.stakesOre.includes(this.s.stakeOre)) this.s.stakeOre = CONFIG.defaultStakeOre;
     this.displayCharge = this.s.meter.charge;
     this.lastTier = Math.floor(this.kp());
@@ -70,7 +74,7 @@ export class Game {
       if (this.state === 'splash') hud.placeWelcome(w.splashLogoBottom());
       if (this.celebration.active) this.celebration.layout(w.stage.w, w.stage.h, w.gridCenterY());
     };
-    hud.bindRefs({ history: () => this.s.history, settings: () => this.s.settings, kp: () => this.kp() });
+    hud.bindRefs({ history: () => this.s.history, settings: () => this.s.settings, kp: () => this.kp(), dice: () => realDiceView(this.dice) });
     this.applySettings();
     this.refreshHud();
     if (!storageOk) hud.notice('<span class="chip warn">Lagring er ikke tilgængelig · fremskridt gemmes kun i denne fane</span>');

@@ -6,7 +6,7 @@ import { softDot } from '../render/tex.ts';
 import { fmtKr } from '../core/format.ts';
 import { PAL } from '../core/palette.ts';
 import { crand } from '../core/cosmeticRng.ts';
-import { TIER_NAMES, TIER_SECS } from './schedule.ts';
+import { TIER_NAMES, TIER_SECS, dieBirthAt, celebrateEndWithDie } from './schedule.ts';
 import type { GameAudio } from '../audio/audio.ts';
 
 export class Celebration extends Container {
@@ -22,6 +22,9 @@ export class Celebration extends Container {
   private w = 0; private cy = 0;
   private demoTag: IsText | null = null;
   private amountSize = 30;
+  /** Terningen: the die's birth hook (called once — at dieBirthAt, or instantly on a skip before it). */
+  private die: { onBirth(instant: boolean): void } | null = null;
+  private born = false;
   active = false;
 
   constructor() {
@@ -53,8 +56,10 @@ export class Celebration extends Container {
   }
 
   /** Returns a promise that resolves when the celebration ends (auto, skip or continue). */
-  play(tier: number, totalOre: number, stakeOre: number, o: { audio: GameAudio; particles: Particles; storm: boolean; calm: boolean; demo?: boolean; onNeedsContinue: (b: boolean) => void; onCount?: (ore: number) => void }): Promise<void> {
+  play(tier: number, totalOre: number, stakeOre: number, o: { audio: GameAudio; particles: Particles; storm: boolean; calm: boolean; demo?: boolean; onNeedsContinue: (b: boolean) => void; onCount?: (ore: number) => void; die?: { onBirth(instant: boolean): void } }): Promise<void> {
     this.kill();
+    this.die = o.die ?? null;
+    this.born = false;
     const s = Math.min(this.w, 700);
     // The amount is the hero; the tier name is the eyebrow.
     const titleSize = Math.max(18, s * (tier >= 4 ? 0.065 : 0.055));
@@ -104,20 +109,30 @@ export class Celebration extends Container {
       if (++bursts < 3 + tier * 2) gsap.delayedCall(0.35, burst);
     };
     burst();
+    // A die is born after the count-up and the close moves out to leave room for it (schedule() is untouched).
+    const birth = dieBirthAt(tier);
+    if (this.die) this.tl.call(() => this.birth(false), [], birth);
     return new Promise<void>((resolve) => {
       this.resolve = resolve;
       if (this.needsContinue) {
-        this.tl!.call(() => o.onNeedsContinue(true), [], Math.max(1, dur - 0.5));
+        this.tl!.call(() => o.onNeedsContinue(true), [], this.die ? Math.max(dur - 0.5, birth + 0.9) : Math.max(1, dur - 0.5));
       } else {
-        this.tl!.call(() => this.finish(), [], dur + 0.6);
+        this.tl!.call(() => this.finish(), [], this.die ? celebrateEndWithDie(tier) : dur + 0.6);
       }
       void stakeOre;
     });
   }
 
-  /** Tap/Esc: skip after 1 s (jump the count-up to the end, then close). */
+  private birth(instant: boolean): void {
+    if (!this.die || this.born) return;
+    this.born = true;
+    this.die.onBirth(instant);
+  }
+
+  /** Tap/Esc: skip after 1 s (jump the count-up to the end, then close). A die not born yet appears instantly. */
   skip(): boolean {
     if (!this.active || performance.now() - this.startedAt < 1000) return false;
+    this.birth(true);
     if (this.needsContinue) { this.tl?.progress(1); return false; }
     this.finish();
     return true;
@@ -127,6 +142,7 @@ export class Celebration extends Container {
 
   private finish(): void {
     if (!this.active) return;
+    this.birth(true); // "Fortsæt" before the birth beat: the die still exists before its flight
     this.active = false;
     this.tl?.kill();
     gsap.to(this, { alpha: 0, duration: 0.3, onComplete: () => { this.visible = false; } });

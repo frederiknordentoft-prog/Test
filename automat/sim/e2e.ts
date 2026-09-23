@@ -31,6 +31,7 @@ async function main() {
     { seed: S.e2e, domain: 'base', from: 0, n: sm.e2e }, { seed: S.e2e, domain: 'perk', from: 0, n: sm.e2e }, { seed: S.e2e, domain: 'storm', from: 0, n: sm.e2e },
     { seed: S.adv, domain: 'base', from: 0, n: sm.adv }, { seed: S.adv, domain: 'perk', from: 0, n: sm.adv },
     ...((j.e2eSupplement ?? []) as { seed: number; n: number }[]).flatMap((x) => (['base', 'perk', 'storm'] as const).map((d) => ({ seed: x.seed, domain: d, from: 0, n: x.n }))),
+    ...(j.dice ? [{ seed: j.dice.seed, domain: 'base' as const, from: 0, n: j.dice.journeys * j.dice.stride }, { seed: j.dice.seed, domain: 'perk' as const, from: 0, n: j.dice.journeys * j.dice.perkStride }, { seed: j.dice.seed, domain: 'storm' as const, from: 0, n: j.dice.journeys * j.dice.stormStride }] : []),
   ];
   const per = Math.ceil(N / chunks);
   const side = Math.ceil(per * 0.004) + 2000;

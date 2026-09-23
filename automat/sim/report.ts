@@ -15,6 +15,7 @@ type Json = {
   seeds: Record<string, number>; samples: Record<string, number | boolean>; elapsedS: number;
   decomposition: any; storms: any; e2e: any; adversary: any[]; variants: any[]; tuning: any;
   e2eSupplement?: any[]; e2ePooled?: { rtp: number; se: number; samples: number; storms: number; z: number };
+  dice?: any;
 };
 
 const dk = (x: number, d = 2): string => x.toFixed(d).replace('.', ',');
@@ -54,6 +55,33 @@ export function buildGates(j: Json): Gate[] {
       ? { name: 'E2E-krydstjek', req: 'afvigelse ≤ 1,96·√(SE²+SE²)', value: `${pct(j.e2ePooled.rtp, 3)} ± ${pct(Z * j.e2ePooled.se, 3)} (${j.e2ePooled.samples} stikprøver, ${int(j.e2ePooled.storms)} storme) vs ${pct(rtp, 3)}; z = ${dk(j.e2ePooled.z, 2)}`, pass: Math.abs(j.e2ePooled.z) <= Z }
       : { name: 'E2E-krydstjek', req: 'afvigelse ≤ 1,96·√(SE²+SE²)', value: `${pct(E.rtpCycles, 3)} ± ${pct(Z * E.seCycles, 3)} vs ${pct(rtp, 3)}; z = ${dk((E.rtpCycles - rtp) / Math.sqrt(E.seCycles ** 2 + seRtp ** 2), 2)}`, pass: Math.abs(E.rtpCycles - rtp) <= Z * Math.sqrt(E.seCycles ** 2 + seRtp ** 2) },
   ];
+}
+
+/** §14 Terningen: the REPORT dice fields and the renewal-CLT cross-check (status only — no effect on any value above). */
+function writeDiceMd(j: Json, p: (s?: string) => void): void {
+  const R = j.report, D = j.dice, E = D.e2e;
+  const r100 = (x: number) => int(Math.round(x / 100) * 100);
+  p('## 14. Terningen (1948)');
+  p();
+  p(`Et spin giver én terning, når spinnets egen gevinst er mindst 10× den indsats, det er afgjort ved: almindelige spin ved indsatsen, Ladede spin ved den låste indsats, hvert stormspin ved stormens indsats. Stormgarantien er ikke et spin. Terningerne ændrer ingen gevinst, sandsynlighed eller RTP. Kørsel: ${D.mode ?? 'sim/run.ts'}${D.generatedAt ? ' · ' + D.generatedAt : ''}.`);
+  p();
+  p('| Felt | Værdi | Kilde |');
+  p('|---|---:|---|');
+  p(`| diceRate · terning pr. betalt spin (inkl. Ladede spin og stormspin) | ${pct(R.diceRate, 3)} · 1 pr. ${dk(1 / R.diceRate, 1)} | e2e, ${int(E.n)} betalte spin (± ${pct(1.96 * E.seRate, 4)}) |`);
+  p(`| diceRateBase · kun almindelige og Ladede spin | 1 pr. ${dk(1 / R.diceRateBase, 1)} | e2e (${int(E.diceBase)} + ${int(E.dicePerk)} terninger) |`);
+  p(`| diceStormShare · andel fra stormspin | ${pct(R.diceStormShare, 1)} | e2e (${int(E.diceStorm)} terninger) |`);
+  p(`| diceP1 · P(betalt spin giver ≥ 1 terning) | ${pct(R.diceP1, 3)} | e2e |`);
+  p(`| diceFirstMedian · første terning (median) | ${int(R.diceFirstMedian)} spin | ⌈ln 0,5 / ln(1 − diceP1)⌉ |`);
+  p(`| dice1948Spins · betalte spin til 1948 terninger | ${int(R.dice1948Spins)} (P5 ${int(R.dice1948SpinsP5)} · P95 ${int(R.dice1948SpinsP95)}) | ${int(R.diceJourneys)} forløb, SD ${int(D.spinsSd)} |`);
+  p(`| Spilletid ved mindst 3,0 s pr. spin | mindst ${int(Math.floor((R.dice1948Spins * 3) / 3600))} timer | |`);
+  p(`| dice1948LossX · nettotab undervejs (× indsats) | ${int(R.dice1948LossX)}× (P5 ${int(R.dice1948LossP5X)}× · P95 ${int(R.dice1948LossP95X)}×) | SD ${int(D.lossSd)}× |`);
+  p(`| · ved 0,50 kr / 2,00 kr pr. spin | ${r100(R.dice1948LossX * 0.5)} kr / ${r100(R.dice1948LossX * 2)} kr | |`);
+  p(`| dice1948LossShare · forløb med nettotab | ${pct(R.dice1948LossShare, 1)} | |`);
+  p();
+  p(`Fornyelses-CLT (terninger pr. betalt spin som i.i.d. belønninger, μ = ${dk(R.diceRate, 5)}, σ² = ${dk(E.varD, 5)}): E[N] ≈ 1948/μ = ${int(D.clt.mean)}, SD ≈ √(1948·σ²/μ³) = ${int(D.clt.sd)}, 90 % ≈ ${int(D.clt.p5)}–${int(D.clt.p95)}; simuleret ${int(R.dice1948Spins)} (${int(R.dice1948SpinsP5)}–${int(R.dice1948SpinsP95)}), afvigelse ${pct(R.dice1948Spins / D.clt.mean - 1, 2)}. Wald: E[tab] ≈ E[N]·(1 − RTP) = ${int(D.clt.lossWald)}× mod simuleret ${int(R.dice1948LossX)}×.`);
+  p();
+  p(`Forløbene: friske spillere (tom måler) ved konstant indsats ${kr(D.stake)}, alt inline som e2e; frisk frø 0x${(D.seed >>> 0).toString(16)}, ${int(D.stride)} basisspil-indeks pr. forløb (${int(D.journeysTotals.paid)} betalte spin, ${int(D.journeysTotals.storms)} storme i alt; rate i forløbene 1 pr. ${dk(1 / D.journeyRate, 1)}).`);
+  p();
 }
 
 /** Markdown table cell: escape pipes. */
@@ -250,6 +278,7 @@ export function writeReportMd(j: Json): void {
   p(`- Modelhash: SHA-256 af den kanoniske JSON af CONFIG (uden hash) = \`${C.modelHash}\`. Enhver ændring af vægte, tabel eller skalaer ændrer hashen; regelskærmen viser de første 8 tegn.`);
   p('- Genkørsel: `node sim/tune.ts` (≈ 4 min) → `node sim/run.ts` (≈ 10 min) → valgfrit `node sim/e2e.ts` (supplerende krydstjek, ≈ 4 min) på 2 tråde; `--quick` til udvikling; `node sim/report.ts` gengiver denne rapport fra `sim/report.json` uden ny simulering. Tests: `npx vitest run tests/math` (≈ 7 s).');
   p();
+  if (j.dice) writeDiceMd(j, p);
   writeFileSync(fileURLToPath(new URL('./REPORT.md', import.meta.url)), L.join('\n'));
 }
 

@@ -115,14 +115,14 @@ Ladning: 5,587 pr. spil i snit (SD 12,8). K = 12.290.
 
 | Kp | Andel af K | Ladning | Median spil | Gennemsnit spil | Ændring |
 |---|---:|---:|---:|---:|---|
-| 1 | 0,4 % | 49 | 11 | 11 | Glas-arpeggio tændes |
+| 1 | 0,4 % | 49 | 11 | 11 | Nordlyset vågner · klokketoner |
 | 2 | 1,2 % | 147 | 30 | 30 | Tykkere gardiner |
-| 3 | 3,0 % | 369 | 71 | 69 | Ladet spin · 4 felter x2 |
-| 4 | 6,0 % | 737 | 135 | 134 | Rimlys på isrammen · puls-bas |
+| 3 | 3,0 % | 369 | 71 | 69 | Ladet spin · 4 felter ×2 |
+| 4 | 6,0 % | 737 | 135 | 134 | Rimfrost på rammen · dyb bas |
 | 5 · G1 | 11,0 % | 1.352 | 245 | 244 | Violet nordlys · Ladet spin |
-| 6 · G2 | 19,0 % | 2.335 | 420 | 419 | Foldede gardiner · perkussion |
+| 6 · G2 | 19,0 % | 2.335 | 420 | 419 | Foldede gardiner · trommer |
 | 7 · G3 | 31,0 % | 3.810 | 684 | 683 | Røde toppe · Ladet spin |
-| 8 · G4 | 55,0 % | 6.760 | 1.211 | 1.210 | Knitren i rammen · ostinato |
+| 8 · G4 | 55,0 % | 6.760 | 1.211 | 1.210 | Knitren i rammen · strygere |
 | 9 · G5 | 100,0 % | 12.290 | 2.201 | 2.200 | SOLSTORM |
 
 Efter 150 spil har medianspilleren krydset **4 tiers**; 100,0 % har krydset mindst 3.
@@ -205,3 +205,24 @@ Låst indsats = floor(Σ ladning·indsats / Σ ladning) gør værdien af hver la
 - Genafspilning: (sessionSeed, domæne, idx) + pre-state (måler, låst indsats, stormmærker) reproducerer hvert spil bit for bit; en Solstorm genafspilles ved at køre createStorm + stormSpin × k på en frisk `spinRng` med samme indeks (golden-test i `tests/math.storm.test.ts`).
 - Modelhash: SHA-256 af den kanoniske JSON af CONFIG (uden hash) = `a346b7d2622ae0033b614fe38dfdaec1487b68fd918509268317737f1172b39d`. Enhver ændring af vægte, tabel eller skalaer ændrer hashen; regelskærmen viser de første 8 tegn.
 - Genkørsel: `node sim/tune.ts` (≈ 4 min) → `node sim/run.ts` (≈ 10 min) → valgfrit `node sim/e2e.ts` (supplerende krydstjek, ≈ 4 min) på 2 tråde; `--quick` til udvikling; `node sim/report.ts` gengiver denne rapport fra `sim/report.json` uden ny simulering. Tests: `npx vitest run tests/math` (≈ 7 s).
+
+## 14. Terningen (1948)
+
+Et spin giver én terning, når spinnets egen gevinst er mindst 10× den indsats, det er afgjort ved: almindelige spin ved indsatsen, Ladede spin ved den låste indsats, hvert stormspin ved stormens indsats. Stormgarantien er ikke et spin. Terningerne ændrer ingen gevinst, sandsynlighed eller RTP. Kørsel: sim/run.ts --dice · 2026-09-23T08:49:36.240Z.
+
+| Felt | Værdi | Kilde |
+|---|---:|---|
+| diceRate · terning pr. betalt spin (inkl. Ladede spin og stormspin) | 0,714 % · 1 pr. 140,1 | e2e, 40.000.000 betalte spin (± 0,0035 %) |
+| diceRateBase · kun almindelige og Ladede spin | 1 pr. 197,6 | e2e (200.804 + 1.576 terninger) |
+| diceStormShare · andel fra stormspin | 29,1 % | e2e (83.230 terninger) |
+| diceP1 · P(betalt spin giver ≥ 1 terning) | 0,574 % | e2e |
+| diceFirstMedian · første terning (median) | 121 spin | ⌈ln 0,5 / ln(1 − diceP1)⌉ |
+| dice1948Spins · betalte spin til 1948 terninger | 272.704 (P5 261.390 · P95 285.228) | 400 forløb, SD 7.305 |
+| Spilletid ved mindst 3,0 s pr. spin | mindst 227 timer | |
+| dice1948LossX · nettotab undervejs (× indsats) | 11.051× (P5 2.932× · P95 18.794×) | SD 4.789× |
+| · ved 0,50 kr / 2,00 kr pr. spin | 5.500 kr / 22.100 kr | |
+| dice1948LossShare · forløb med nettotab | 98,3 % | |
+
+Fornyelses-CLT (terninger pr. betalt spin som i.i.d. belønninger, μ = 0,00714, σ² = 0,01309): E[N] ≈ 1948/μ = 272.820, SD ≈ √(1948·σ²/μ³) = 8.368, 90 % ≈ 259.055–286.584; simuleret 272.704 (261.390–285.228), afvigelse -0,04 %. Wald: E[tab] ≈ E[N]·(1 − RTP) = 10.819× mod simuleret 11.051×.
+
+Forløbene: friske spillere (tom måler) ved konstant indsats 2,00 kr, alt inline som e2e; frisk frø 0x5a4c5714, 400.000 basisspil-indeks pr. forløb (109.081.544 betalte spin, 82.680 storme i alt; rate i forløbene 1 pr. 140,0).

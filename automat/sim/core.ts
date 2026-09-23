@@ -11,6 +11,7 @@ import { STORM_OUT, simStorm } from '../src/math/storm.ts';
 import { Xoshiro128ss } from '../src/math/rng.ts';
 import type { MathConfig } from '../src/math/config.ts';
 import { TIERS } from '../src/game/tiers.ts';
+import { DICE_MIN_X } from '../src/game/dice.ts';
 import { HIST_BINS, histBin } from './stats.ts';
 
 export const TIER_MAX_SPINS = 12000;
@@ -25,6 +26,7 @@ export type Job =
   | { kind: 'base'; cfg: MathConfig; seed: number; from: number; count: number; stake: number; perkSeed: number; perkFrom: number }
   | { kind: 'storm'; cfg: MathConfig; seed: number; from: number; count: number; stake: number }
   | { kind: 'e2e'; cfg: MathConfig; seed: number; from: number; count: number; stake: number; perkSeed: number; perkFrom: number; stormSeed: number; stormFrom: number }
+  | { kind: 'dice'; cfg: MathConfig; seed: number; from: number; count: number; stake: number; goal: number; stride: number; perkStride: number; stormStride: number }
   | { kind: 'adv'; cfg: MathConfig; seed: number; from: number; count: number; strategy: Strategy; ES: number; baseRtp: number; perkEV: number; pB: number; perkSeed: number; perkFrom: number };
 
 // ------------------------------------------------------------------------------------------------
@@ -347,6 +349,8 @@ export interface E2EStats {
   // regenerative (route-A) cycles: W = Σ return (× stake), N = paid spins
   cycles: number; cW: number; cN: number; cW2: number; cN2: number; cWN: number;
   tailW: number; tailN: number; // the unfinished last cycle (not used in the ratio estimator)
+  // Terningen: dice by source (base / Ladet spin / storm spin), paid spins with ≥ 1 die, Σ dice² per paid spin
+  diceBase: number; dicePerk: number; diceStorm: number; diceSpins: number; diceSumD2: number;
 }
 
 /** End-to-end player: everything inline (perks, route A/B storms with guarantee), constant stake. */
@@ -355,15 +359,18 @@ export function jobE2E(j: Extract<Job, { kind: 'e2e' }>): E2EStats {
   const rng = new Xoshiro128ss();
   const stake = j.stake, K = j.cfg.K, G = j.cfg.guaranteeX;
   const meter = new MeterSim(j.cfg);
-  const st: E2EStats = { n: 0, stake, sumX: 0, sumX2: 0, hist: new Float64Array(HIST_BINS), storms: 0, stormsA: 0, stormsB: 0, cycles: 0, cW: 0, cN: 0, cW2: 0, cN2: 0, cWN: 0, tailW: 0, tailN: 0 };
+  const st: E2EStats = { n: 0, stake, sumX: 0, sumX2: 0, hist: new Float64Array(HIST_BINS), storms: 0, stormsA: 0, stormsB: 0, cycles: 0, cW: 0, cN: 0, cW2: 0, cN2: 0, cWN: 0, tailW: 0, tailN: 0,
+    diceBase: 0, dicePerk: 0, diceStorm: 0, diceSpins: 0, diceSumD2: 0 };
   let perkIdx = j.perkFrom, stormIdx = j.stormFrom;
   let curW = 0, curN = 0; // current cycle
-  let spinRet = 0;
+  let spinRet = 0, spinDice = 0;
   let cycleEnded = false;
   const playStormAt = (stakeOre: number): number => {
     rng.seedSpin(j.stormSeed, 'storm', stormIdx++);
-    simStorm(model, rng, stakeOre);
+    simStorm(model, rng, stakeOre, DICE_MIN_X);
     st.storms++;
+    st.diceStorm += STORM_OUT.dice;
+    spinDice += STORM_OUT.dice;
     const w = STORM_OUT.winOre;
     return w < G * stakeOre ? G * stakeOre : w;
   };
@@ -385,6 +392,8 @@ export function jobE2E(j: Extract<Job, { kind: 'e2e' }>): E2EStats {
     rng.seedSpin(j.seed, 'base', j.from + i);
     simBaseSpin(model, rng, stake, false);
     spinRet = OUT.totalOre;
+    spinDice = 0;
+    if (OUT.totalOre >= DICE_MIN_X * stake) { st.diceBase++; spinDice++; }
     cycleEnded = false;
     after(OUT.charge, stake, OUT.stormB);
     while (meter.perkQueue > 0) {
@@ -393,8 +402,10 @@ export function jobE2E(j: Extract<Job, { kind: 'e2e' }>): E2EStats {
       rng.seedSpin(j.perkSeed, 'perk', perkIdx++);
       simBaseSpin(model, rng, ls, true);
       spinRet += OUT.totalOre;
+      if (OUT.totalOre >= DICE_MIN_X * ls) { st.dicePerk++; spinDice++; }
       after(OUT.charge, ls, OUT.stormB);
     }
+    if (spinDice > 0) { st.diceSpins++; st.diceSumD2 += spinDice * spinDice; }
     const x = spinRet / stake;
     st.n++;
     st.sumX += x;
@@ -410,6 +421,73 @@ export function jobE2E(j: Extract<Job, { kind: 'e2e' }>): E2EStats {
   }
   st.tailW = curW;
   st.tailN = curN;
+  return st;
+}
+
+// ------------------------------------------------------------------------------------------------
+export interface DiceStats {
+  n: number; stake: number;
+  spins: Float64Array;      // per journey: paid spins until the goal-th die
+  lossX: Float64Array;      // per journey: net loss over the journey (Σ stake − Σ return), × stake
+  paid: number; dice: number; diceBase: number; dicePerk: number; diceStorm: number; storms: number;
+}
+
+/**
+ * Terningen journeys: fresh players (meter 0), constant stake, everything inline exactly as jobE2E (Ladede spin at
+ * the locked stake, route A/B storms with the guarantee), each played until `goal` dice. A die is a spin whose OWN
+ * total is ≥ DICE_MIN_X × the stake it was evaluated at (game/dice.ts). Journey g uses base idx [g·stride, (g+1)·stride)
+ * and the matching perk / storm strides, so any journey replays on its own.
+ */
+export function jobDice(j: Extract<Job, { kind: 'dice' }>): DiceStats {
+  const model = compileModel(j.cfg);
+  const rng = new Xoshiro128ss();
+  const stake = j.stake, K = j.cfg.K, G = j.cfg.guaranteeX;
+  const st: DiceStats = { n: 0, stake, spins: new Float64Array(j.count), lossX: new Float64Array(j.count), paid: 0, dice: 0, diceBase: 0, dicePerk: 0, diceStorm: 0, storms: 0 };
+  for (let k = 0; k < j.count; k++) {
+    const g = j.from + k;
+    const meter = new MeterSim(j.cfg);
+    let bi = g * j.stride, pi = g * j.perkStride, si = g * j.stormStride;
+    const bEnd = bi + j.stride, pEnd = pi + j.perkStride, sEnd = si + j.stormStride;
+    let dice = 0, paid = 0, ret = 0;
+    const after = (c: number, spinStake: number, stormB: boolean): void => {
+      meter.add(c, spinStake);
+      const a = meter.charge >= K;
+      if (!a && !stormB) return;
+      const sStake = stormB ? spinStake : meter.locked();
+      if (a) { meter.reset(); meter.perkQueue = 0; }
+      if (si >= sEnd) throw new Error('dice journey: storm stride overflow');
+      rng.seedSpin(j.seed, 'storm', si++);
+      simStorm(model, rng, sStake, DICE_MIN_X);
+      st.storms++;
+      dice += STORM_OUT.dice;
+      st.diceStorm += STORM_OUT.dice;
+      ret += STORM_OUT.winOre < G * sStake ? G * sStake : STORM_OUT.winOre;
+    };
+    while (dice < j.goal) {
+      if (bi >= bEnd) throw new Error('dice journey: base stride overflow');
+      rng.seedSpin(j.seed, 'base', bi++);
+      simBaseSpin(model, rng, stake, false);
+      paid++;
+      ret += OUT.totalOre;
+      if (OUT.totalOre >= DICE_MIN_X * stake) { dice++; st.diceBase++; }
+      after(OUT.charge, stake, OUT.stormB);
+      while (meter.perkQueue > 0) {
+        meter.perkQueue--;
+        const ls = meter.locked();
+        if (pi >= pEnd) throw new Error('dice journey: perk stride overflow');
+        rng.seedSpin(j.seed, 'perk', pi++);
+        simBaseSpin(model, rng, ls, true);
+        ret += OUT.totalOre;
+        if (OUT.totalOre >= DICE_MIN_X * ls) { dice++; st.dicePerk++; }
+        after(OUT.charge, ls, OUT.stormB);
+      }
+    }
+    st.spins[k] = paid;
+    st.lossX[k] = paid - ret / stake;
+    st.n++;
+    st.paid += paid;
+    st.dice += dice;
+  }
   return st;
 }
 
@@ -500,6 +578,7 @@ export function runJob(j: Job): unknown {
     case 'base': return jobBase(j);
     case 'storm': return jobStorm(j);
     case 'e2e': return jobE2E(j);
+    case 'dice': return jobDice(j);
     case 'adv': return jobAdv(j);
   }
 }

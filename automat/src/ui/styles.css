@@ -499,3 +499,166 @@ html, body {
 /* tap: the welcome and the button exhale together (hud.show adds .leaving for 240 ms) */
 #splash.leaving #welcome { opacity: 0; transform: translateY(-4px); transition: opacity 240ms ease-out, transform 240ms ease-out; }
 #splash.leaving .center { opacity: 0; transition: opacity 240ms ease-out; pointer-events: none; }
+
+/* ============================================================
+   Terningen — status only. Gold = money, violet = dice. The count is a quiet chip under Saldo (never in #reg),
+   no idle animation, no pulse, no glow at rest; never a fraction, bar or remaining count.
+   ============================================================ */
+.cell-l { display: flex; flex-direction: column; align-items: flex-start; }
+.dice { position:relative; display:inline-flex; align-items:center; gap:5px; height:22px; margin-top:3px; padding:0 8px 0 2px; border-radius:11px;
+  border:1px solid rgba(138,92,255,.32); background:rgba(20,10,44,.40); color:#cdb8ff; font:650 12px/1 system-ui,sans-serif; letter-spacing:.02em; cursor:pointer; pointer-events:auto; }
+.dice::before { content:''; position:absolute; inset:-11px -6px; }          /* 44 px tall hit area */
+.dice .ico { width:18px; height:18px; flex:none; }                             /* DPR canvas */
+.dice .w { display:none; color:var(--muted); font-weight:600; }
+.dice.zero { color:var(--muted); border-color:var(--line); background:transparent; }
+.dice.open .ico { border-radius:50%; box-shadow:0 0 0 1px rgba(25,227,214,.55); }   /* after the real unlock */
+.dice[aria-disabled='true'] { cursor:default; }
+.dice:focus-visible { outline:2px solid var(--teal); outline-offset:2px; }
+.dice .n { position:relative; overflow:hidden; height:14px; display:inline-grid; align-items:center; }                 /* number roll */
+.dice .n > span { grid-area: 1 / 1; line-height:14px; transition: transform .22s var(--ease), opacity .22s var(--ease); }
+.dice .n > .in { transform: translateY(100%); opacity: 0; transition: none; }
+.dice .n > .out { transform: translateY(-100%); opacity: 0; }
+:root.calm .dice .n > span { transition: opacity .2s linear; transform: none !important; }
+.dice.land .ico { animation:diceLand .26s var(--ease); }
+.dice.land { animation:diceRing .5s ease-out; }
+@keyframes diceLand { 50% { transform:scale(1.15); } }
+@keyframes diceRing { from { box-shadow:0 0 0 0 rgba(138,92,255,.7); } to { box-shadow:0 0 0 10px rgba(138,92,255,0); } }
+:root.calm .dice.land { box-shadow:0 0 0 2px rgba(138,92,255,.6); transition:box-shadow .6s; }   /* static ring, no scale */
+.dice-demo-tag { position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%); padding:2px 7px; border-radius:8px; white-space:nowrap;
+  font:700 10.5px/1.3 system-ui,sans-serif; letter-spacing:.06em; color:#1d1203; background:#ffb547; pointer-events:none; animation: diceTag 1.5s ease-out both; }
+@keyframes diceTag { from { opacity:0; transform:translate(-50%, 6px); } 15% { opacity:1; transform:translate(-50%, 0); } 80% { opacity:1; } to { opacity:0; } }
+@media (max-height:640px) { .dice { height:20px; font-size:11.5px; } .dice .ico { width:16px; height:16px; } }
+@media (min-width:1000px) and (min-aspect-ratio:5/4) { .dice { height:24px; font-size:12.5px; } .dice .ico { width:20px; height:20px; } .dice .w { display:inline; } }
+:root.nodice .dice, :root.nodice .dice-panel { display:none; }                /* setting "Vis terninger i spillet" off */
+:root.splash .dice { visibility: hidden; }
+
+/* desktop panel: the FIRST child of #sideR */
+.dice-panel { display:flex; flex-direction:column; gap:6px; flex:none; }
+.dp-row { display:flex; align-items:center; gap:10px; background:none; border:none; padding:0; cursor:pointer; color:#cdb8ff; font:700 18px/1 system-ui,sans-serif; }
+.dp-row .ico { width:36px; height:36px; }
+.dp-row .w { font-size:13px; font-weight:600; color:var(--muted); }
+.dp-row.zero { color:var(--muted); }
+.dp-row.open .ico { border-radius:50%; box-shadow:0 0 0 1px rgba(25,227,214,.55); }
+.dice-panel .linkbtn { align-self:flex-start; color:#cdb8ff; text-decoration:none; }
+.dp-row[aria-disabled='true'], .dice-panel .linkbtn[aria-disabled='true'] { cursor:default; }
+@media (min-width: 1000px) and (min-aspect-ratio: 5/4) { .hist-panel { flex:1; min-height:0; max-height:none; } }
+
+/* menu tab "Terningen" */
+.dice-top { align-items:center; margin-top:4px; }
+.dice-status { color:#cdb8ff; font-weight:650; }
+
+/* first-visit introduction: non-modal coach card above the chip (it never takes focus) */
+#hello { position:absolute; z-index:6; width:min(320px, calc(100% - 32px)); padding:14px 16px; border-radius:16px; pointer-events:auto;
+  background:var(--glass-strong); border:1px solid rgba(138,92,255,.40); box-shadow:0 12px 40px rgba(0,0,0,.5); color:#cfe2ff; }
+#hello[hidden] { display:none; }
+#hello.in { animation: helloIn .4s var(--ease) both; }
+@keyframes helloIn { from { opacity:0; transform:translateY(6px); } }
+:root.calm #hello.in { animation: wFade .4s linear both; }
+#hello .caret { position:absolute; bottom:-6px; width:10px; height:10px; transform:rotate(45deg); background:var(--glass-strong); border-right:1px solid rgba(138,92,255,.40); border-bottom:1px solid rgba(138,92,255,.40); }
+#hello .medal { float:left; width:44px; height:44px; margin:0 10px 4px 0; }
+#hello .eb { margin:0; font-size:10.5px; letter-spacing:.2em; color:var(--muted); font-weight:650; }
+#hello h3 { margin:2px 0 6px; font-size:15px; font-weight:700; color:var(--ice); }
+#hello p { margin:0 0 6px; font-size:13.5px; line-height:1.42; }
+#hello .b { color:#cfe2ff; }
+#hello .m { color:#b9d9ff; }
+#hello .facts { color:#cfe2ff; }                                             /* same size as the body, never a footnote */
+#hello .btns { clear:both; display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+
+/* relic cards (#summary): first die, unlock, placard */
+.card.relic { padding-top:56px; border-color:rgba(138,92,255,.45); box-shadow:0 0 50px rgba(138,92,255,.22),0 20px 60px rgba(0,0,0,.6); overflow:visible; }
+.card.relic .medal { position:absolute; left:50%; top:-44px; width:88px; height:88px; transform:translateX(-50%); }   /* die canvas */
+.card.relic h2 { color:#cdb8ff; }
+.card.relic h2:focus { outline:none; }
+.card.relic .t { font-size:20px; font-weight:700; color:var(--ice); margin:2px 0 8px; }
+.card.relic p { font-size:13.5px; line-height:1.45; color:#cfe2ff; margin:0 0 8px; text-align:left; }
+.card.relic .facts { color:#cfe2ff; }                      /* same size as the body */
+.card.relic .btns { display:flex; gap:10px; justify-content:center; margin-top:12px; }
+.card.relic .big1948 { font-size:44px; font-weight:800; letter-spacing:.08em; margin:4px 0; background:linear-gradient(90deg,#19e3d6,#8a5cff,#ff2bd6); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.btn.gate { color:#f3ecff; background:linear-gradient(180deg,#b28cff,#6a3ae0 55%,#3b1a8f); box-shadow:0 0 0 1px rgba(230,214,255,.55) inset, 0 0 26px rgba(138,92,255,.45); animation:none; }
+.card.placard { padding-top:22px; }
+.card.placard .chip.concept, .ch-myth .chip.concept { margin:0 auto 10px; font-size:11.5px; color:var(--frost); border-color:var(--line-strong); }
+.card.placard .muted { color:var(--muted); }
+.card.placard .pl-body { max-height:40vh; overflow-y:auto; }
+@media (max-width: 999px), (max-aspect-ratio: 5/4) {
+  .card.placard { top:auto; bottom:calc(var(--foot-h) + 12px + env(safe-area-inset-bottom)); transform:translate(-50%, 8px); max-height:52%; display:flex; flex-direction:column; }
+  .overlay.show .card.placard { transform:translate(-50%, 0); }
+}
+@media (min-width: 1000px) and (min-aspect-ratio: 5/4) { .card.placard { left:auto; right:24px; transform:translate(0, -50%); } .overlay.show .card.placard { transform:translate(0, -50%); } }
+
+/* ---------- Terningekammeret (DOM over the gate; no backdrop-filter: the Pixi world is the backdrop) ---------- */
+#chamber { position:absolute; left:0; right:0; z-index:5; pointer-events:auto;
+  top:calc(var(--reg-h) + env(safe-area-inset-top)); bottom:calc(var(--foot-h) + env(safe-area-inset-bottom));
+  display:grid; grid-template-rows:auto 46px auto minmax(200px,1fr) auto auto 52px; padding:0 16px; overflow:hidden;
+  background:linear-gradient(180deg, rgba(3,7,18,.55) 0, rgba(3,7,18,0) 24%, rgba(3,7,18,0) 66%, rgba(3,7,18,.78) 82%, rgba(3,7,18,.9) 100%);
+  animation: wFade .4s ease-out both; }
+#chamber[hidden] { display:none; }
+.ch-ribbon { position:sticky; top:0; margin:6px auto 0; padding:5px 10px; border-radius:10px; text-align:center; font-size:11.5px; color:#ffd79a; border:1px dashed rgba(255,181,71,.6); background:rgba(20,12,4,.72); }
+.ch-ribbon.neutral { color:var(--frost); border:1px solid var(--line-strong); background:rgba(6,14,34,.7); }
+.ch-ribbon[hidden] { display:none; }
+.ch-hdr { display:flex; align-items:center; gap:8px; }
+.ch-hdr > div { flex:1; min-width:0; }
+.ch-eb { margin:0; font-size:11px; letter-spacing:.24em; color:var(--muted); text-transform:uppercase; }
+.ch-hdr h2 { margin:0; font-size:20px; font-weight:600; color:var(--ice); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ch-myth { text-align:center; font-size:14.5px; line-height:20px; max-width:344px; margin:4px auto 0; text-shadow:0 1px 10px rgba(5,11,26,.85); }
+.ch-myth .l, .ch-myth .pair { display:block; }
+.ch-myth .cool { color:#b9d9ff; } .ch-myth .ice { color:var(--ice); } .ch-myth .strong { color:var(--ice); font-weight:500; } .ch-myth .muted { color:var(--muted); }
+.ch-myth .chip.concept { display:inline-flex; margin:6px auto 2px; }
+.ch-myth .cond { display:none; }
+.ch-gate { position:relative; min-height:0; display:grid; place-items:center; }
+.gate-stub { display:flex; flex-direction:column; align-items:center; gap:6px; opacity:.9; }
+.gate-stub .lintel { font:700 18px/1 system-ui,sans-serif; letter-spacing:.45em; color:rgba(234,248,255,.55); padding:6px 14px; border:1px solid var(--line-strong); border-radius:4px; }
+.gate-stub .g-title, .gate-stub .g-concept { display:none; }
+#chamber[data-state='open'] .gate-stub .lintel { color:var(--ice); text-shadow:0 0 12px rgba(25,227,214,.6); }
+#chamber[data-state='open'] .gate-stub .g-title { display:block; font:700 22px/1 system-ui,sans-serif; letter-spacing:.14em; color:var(--ice); }
+#chamber[data-state='open'] .gate-stub .g-concept { display:block; font-size:10px; letter-spacing:.3em; color:var(--muted); }
+.ch-count { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px 10px; padding-top:4px; }
+.ch-count .n { font-size:34px; font-weight:800; background:linear-gradient(90deg,#19e3d6,#8a5cff,#ff2bd6); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.ch-count.zero .n { background:none; color:var(--muted); }
+.ch-count .w { color:var(--frost); font-size:14px; }
+.ch-count .tag { font-size:11px; color:#1d1203; background:#ffb547; border-radius:6px; padding:2px 6px; letter-spacing:.04em; }
+.ch-count .tag[hidden], .ch-count [hidden] { display:none; }
+.ch-count .st { color:var(--ice); font-size:13px; }
+.ch-facts { list-style:none; margin:6px 0 0; padding:0; display:grid; gap:4px; font-size:12px; line-height:17px; color:rgba(156,201,255,.9); }
+.ch-facts li { border-left:1px solid rgba(138,92,255,.35); padding-left:8px; }
+.ch-act { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+#chamber .btn, #chamber .iconbtn { min-height:40px; }
+/* fit steps (ChamberDom.place): 1 eyebrow · 2 myth line 7 · 3 condensed myth · 4 smaller facts · 5 compact count + actions */
+#chamber:is([data-fit='1'],[data-fit='2'],[data-fit='3'],[data-fit='4'],[data-fit='5']) .ch-eb { display:none; }
+#chamber:is([data-fit='2'],[data-fit='3'],[data-fit='4'],[data-fit='5']) .ch-myth .n7 { display:none; }
+#chamber:is([data-fit='3'],[data-fit='4'],[data-fit='5']) .ch-myth .full { display:none; }
+#chamber:is([data-fit='3'],[data-fit='4'],[data-fit='5']) .ch-myth .cond { display:block; }
+#chamber:is([data-fit='4'],[data-fit='5']) .ch-facts { font-size:11.5px; line-height:15.5px; }
+#chamber[data-fit='5'] { grid-template-rows:auto 46px auto minmax(200px,1fr) auto auto 44px; }
+#chamber[data-fit='5'] .ch-count .n { font-size:26px; }
+/* ceremony: the chamber text fades out (the ribbon, #reg and #foot stay) */
+:root.ceremony #chamber > :not(.ch-ribbon):not(.ch-gate) { opacity:0; pointer-events:none; transition:opacity .6s ease-out; }
+@media (max-height: 500px) and (orientation: landscape) {
+  #chamber { grid-template-columns:55% 45%; grid-template-rows:auto 46px auto auto auto 1fr; }
+  #chamber > :not(.ch-gate) { grid-column:1; }
+  .ch-gate { grid-column:2; grid-row:1 / -1; }
+  #chamber { overflow-y:auto; }
+}
+@media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
+  #chamber { grid-template-columns:minmax(280px,26%) 1fr minmax(300px,26%); grid-template-rows:auto 60px 1fr auto auto 52px; column-gap:24px; padding:0 24px; }
+  .ch-ribbon { grid-column:1 / -1; }
+  .ch-hdr { grid-column:1 / -1; }
+  .ch-hdr h2 { font-size:30px; }
+  .ch-myth { grid-column:1; grid-row:3 / 6; align-self:start; margin-top:12vh; font-size:18px; line-height:28px; }
+  .ch-gate { grid-column:2; grid-row:3 / 7; }
+  .ch-count { grid-column:3; grid-row:4; align-self:end; justify-content:flex-start; }
+  .ch-count .n { font-size:64px; }
+  .ch-facts { grid-column:3; grid-row:5; font-size:13px; line-height:19px; }
+  .ch-act { grid-column:3; grid-row:6; }
+}
+/* chamber and ceremony mode: the machine UI hides (inert too), the balance moves into the regulatory strip */
+:root.chamber #hdr, :root.chamber #slot-arc, :root.chamber #winstrip, :root.chamber #deck, :root.chamber .side { visibility:hidden; }
+:root.chamber #reg #regBal { display:inline !important; }
+@media (max-width: 440px) { :root.chamber #reg .l b { display:none; } }
+
+/* demo drawer: Terningen block */
+.d-dice { margin-top:14px; padding-top:10px; border-top:1px solid var(--line); }
+.d-dice h4 { margin:0 0 4px; }
+.seg-lbl { margin:12px 0 6px; font-size:12px; color:var(--frost); }
+.seg { display:flex; flex-wrap:wrap; gap:6px; }
+.seg .btn.small { height:36px; padding:0 12px; letter-spacing:.06em; }
+.seg .btn[aria-pressed='true'] { border-color:rgba(255,181,71,.7); color:#ffd79a; }

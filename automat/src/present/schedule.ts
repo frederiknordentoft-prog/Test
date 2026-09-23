@@ -14,6 +14,11 @@ export function profileOf(totalOre: number, stakeOre: number): Profile {
 
 export const TIER_NAMES = ['', 'GEVINST', 'FLOT GEVINST', 'STOR GEVINST', 'MEGA GEVINST', 'EPISK GEVINST'] as const;
 export const TIER_SECS = [0, 0.8, 1.6, 3, 6, 9];
+/** Terningen: the die is born inside the celebration after the count-up (never during the title slam, 0,05–0,60 s)
+ *  — tier 2 at 1,50 s (count-up end); tiers 3–5 when expo.out already shows ≥ 99,6 % of the amount. */
+export const dieBirthAt = (tier: number) => 0.3 + Math.max(0.6, TIER_SECS[tier] - 0.4) - (tier >= 3 ? 0.4 : 0);
+/** Auto-close of a celebration that carries a die (tier 2: 2,70 s instead of 2,20; tier 3: 3,70 s instead of 3,60). */
+export const celebrateEndWithDie = (tier: number) => Math.max(TIER_SECS[tier] + 0.6, dieBirthAt(tier) + 1.2);
 export function winTier(totalOre: number, stakeOre: number): number {
   if (totalOre <= stakeOre) return 0;
   const x = totalOre / stakeOre;

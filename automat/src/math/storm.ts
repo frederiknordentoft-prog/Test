@@ -126,20 +126,23 @@ export function playStorm(sessionSeed: number, domain: Domain, rngIdx: number, s
 // ------------------------------------------------------------------------------------------------
 // Simulator fast path (identical rules and identical rng consumption, no SpinResult, no allocation)
 // ------------------------------------------------------------------------------------------------
-export const STORM_OUT = { winOre: 0, spins: 0, maxMark: 0, capped: false, retriggers: 0 };
+export const STORM_OUT = { winOre: 0, spins: 0, maxMark: 0, capped: false, retriggers: 0, dice: 0 };
 const simMarks = new Uint8Array(MAX_CELLS);
 
-/** Full storm on an rng that the caller seeded once (same stream semantics as playStorm / Game). */
-export function simStorm(model: Model, rng: Rng, stakeOre: number): void {
+/** Full storm on an rng that the caller seeded once (same stream semantics as playStorm / Game).
+ *  `dieX` > 0 also counts STORM_OUT.dice: storm spins whose own win is ≥ dieX × the storm stake (the caller passes
+ *  the game's die rule; src/math knows nothing about dice). It never touches the rng. */
+export function simStorm(model: Model, rng: Rng, stakeOre: number, dieX = 0): void {
   const cfg = model.cfg, mm = model.storm, n = mm.geo.n, cap = mm.markCap;
   simMarks.fill(0, 0, n);
   placeStartMarks(rng, simMarks, n, cfg.stormStartMarks);
-  let total = cfg.stormSpins, i = 0, win = 0, maxMark = cfg.stormStartMarks > 0 ? 2 : 0, capped = false, retr = 0;
-  const capAll = cfg.maxWinX * stakeOre;
+  let total = cfg.stormSpins, i = 0, win = 0, maxMark = cfg.stormStartMarks > 0 ? 2 : 0, capped = false, retr = 0, dice = 0;
+  const capAll = cfg.maxWinX * stakeOre, dieOre = dieX * stakeOre;
   while (i < total) {
     if (waveBefore(i)) applyWave(simMarks, n, cap);
     runSpinCore(mm, cfg, rng, stakeOre, simMarks, capAll - win, null);
     win += OUT.totalOre;
+    if (dieX > 0 && OUT.totalOre >= dieOre) dice++;
     if (OUT.retrigger > 0 && total < cfg.maxStormSpins) {
       total = Math.min(cfg.maxStormSpins, total + OUT.retrigger);
       retr++;
@@ -157,4 +160,5 @@ export function simStorm(model: Model, rng: Rng, stakeOre: number): void {
   STORM_OUT.maxMark = maxMark;
   STORM_OUT.capped = capped;
   STORM_OUT.retriggers = retr;
+  STORM_OUT.dice = dice;
 }

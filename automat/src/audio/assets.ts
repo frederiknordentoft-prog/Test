@@ -100,11 +100,26 @@ const STORM_SET = new Set([...STORM_CORE, ...STORM_EXTRA]);
 /** Storm-only assets are rendered lazily (prepareStorm) and can be freed again (releaseStorm). */
 export const isStormAsset = (id: string): boolean => STORM_SET.has(id);
 
+/** The gate ceremony's own sounds: rendered lazily (prepareGate), freed again (releaseGate). */
+export const GATE_SET = ['gateDrone', 'tileShimmer', 'keystone', 'sealCrack', 'gateBreath', 'lightPad'];
+export const isGateAsset = (id: string): boolean => GATE_SET.includes(id);
+
+/**
+ * Base layer assets (L0–L4) per bed: under the Polar Night recording the bells, bass and ostinato follow
+ * its chords (base1p/base2p/base4p, music.ts); under the procedural pad they keep its cycle.
+ */
+export const baseLayerIds = (bed: string): string[] =>
+  (bed === POLAR_ID ? [POLAR_ID, 'base1p', 'base2p', 'base3', 'base4p'] : ['base0', 'base1', 'base2', 'base3', 'base4']);
+/** Assets that depend on the chosen bed (the engine frees the ones neither the bed nor the running music uses). */
+export const BED_ASSETS: ReadonlySet<string> = new Set(['base0', 'base1', 'base2', 'base4', POLAR_ID, 'base1p', 'base2p', 'base4p']);
+
 /**
  * Base render order after unlock: the very first sounds (land arpeggio at grid assembly, UI), the base
  * bed (procedural base0, then the Polar Night recording — its decode runs alongside the queue, see
- * GameAudio.pump), everything a base spin can trigger, the remaining base layers, then the big-win stingers.
- * Storm assets are NOT here (see STORM_CORE / STORM_EXTRA). Callers can bump any id.
+ * GameAudio.pump), everything a base spin can trigger, the remaining base layers, the big-win stingers,
+ * then the dice sounds (small; any spin or card can need them). Listed with the procedural layers;
+ * baseAssetIds('polar') swaps in the bed's own. Storm and gate assets are NOT here (see STORM_CORE /
+ * STORM_EXTRA / GATE_SET). Callers can bump any id.
  */
 export const RENDER_ORDER: string[] = [
   'land74a', 'land79a', 'land84a', 'land69a', 'land89a', 'land94a', 'tap', 'spin0',
@@ -115,6 +130,15 @@ export const RENDER_ORDER: string[] = [
   'stakeUp', 'stakeDown', 'levelUp62', 'levelUp74',
   'base1', 'base2', 'base3', 'base4',
   'bigWin3', 'bigWin4', 'bigWin5',
+  'dieLand', 'dieBirth', 'dieQuench', 'dieHold', 'bell1948a', 'bell1948b',
 ];
-/** Every base (non-storm) asset, in render order. */
-export const baseAssetIds = (): string[] => RENDER_ORDER.concat(allAssetIds().filter((id) => !RENDER_ORDER.includes(id) && !isStormAsset(id)));
+/**
+ * Every base (non-storm, non-gate) asset for bed source `src`, in render order: 'polar' renders the
+ * recording and the layers that follow it (base0 stays as the fallback until the recording is decoded),
+ * 'code' the procedural layers only.
+ */
+export function baseAssetIds(src: 'polar' | 'code' = 'polar'): string[] {
+  const mine = baseLayerIds(src === 'polar' ? POLAR_ID : 'base0'), code = baseLayerIds('base0');
+  const order = RENDER_ORDER.map((id) => (id === POLAR_ID || id === 'base0' ? id : mine[code.indexOf(id)] ?? id)).filter((id) => src === 'polar' || id !== POLAR_ID);
+  return order.concat(allAssetIds().filter((id) => !order.includes(id) && !isStormAsset(id) && !isGateAsset(id) && !BED_ASSETS.has(id)));
+}

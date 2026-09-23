@@ -74,7 +74,20 @@
   "baseP99X": 6.960724163,
   "blendedP99X": 7.345590457,
   "modelHash": "a346b7d2622ae0033b614fe38dfdaec1487b68fd918509268317737f1172b39d",
-  "generatedAt": "2026-09-22T21:00:08.282Z (sim/run.ts)"
+  "generatedAt": "2026-09-22T21:00:08.282Z (sim/run.ts)",
+  "diceRate": 0.00714025,
+  "diceRateBase": 0.0050595,
+  "diceStormShare": 0.2914113651,
+  "diceP1": 0.0057385,
+  "diceFirstMedian": 121,
+  "dice1948Spins": 272703.86,
+  "dice1948SpinsP5": 261390,
+  "dice1948SpinsP95": 285228,
+  "dice1948LossX": 11051.34069,
+  "dice1948LossP5X": 2931.51,
+  "dice1948LossP95X": 18794.42,
+  "dice1948LossShare": 0.9825,
+  "diceJourneys": 400
  },
  "gates": [
   {
@@ -316,7 +329,8 @@
   "base": 1313624624,
   "storm": 1313624880,
   "e2e": 1313621296,
-  "adv": 1330397891
+  "adv": 1330397891,
+  "dice": 1514952468
  },
  "samples": {
   "base": 120000000,
@@ -325,7 +339,8 @@
   "adv": 4000000,
   "stakeStorms": 100000,
   "chunks": 48,
-  "quick": false
+  "quick": false,
+  "dice": 400
  },
  "elapsedS": 630.526,
  "decomposition": {
@@ -794,5 +809,46 @@
   "samples": 2,
   "storms": 90829,
   "z": -0.4886630074
+ },
+ "dice": {
+  "seed": 1514952468,
+  "journeys": 400,
+  "goal": 1948,
+  "stake": 200,
+  "stride": 400000,
+  "perkStride": 3000,
+  "stormStride": 3000,
+  "elapsedS": 238.65,
+  "e2e": {
+   "n": 40000000,
+   "diceBase": 200804,
+   "dicePerk": 1576,
+   "diceStorm": 83230,
+   "diceSpins": 229540,
+   "varD": 0.01308596683,
+   "seRate": 0.00001808726543
+  },
+  "journeysTotals": {
+   "paid": 109081544,
+   "dice": 779398,
+   "base": 546671,
+   "perk": 4431,
+   "storm": 228296,
+   "storms": 82680
+  },
+  "journeyRate": 0.007145095049,
+  "spinsSd": 7305.082688,
+  "lossSd": 4788.783912,
+  "spinsMin": 247462,
+  "spinsMax": 297222,
+  "clt": {
+   "mean": 272819.5791,
+   "sd": 8368.107622,
+   "p5": 259055.2639,
+   "p95": 286583.8944,
+   "lossWald": 10818.5507
+  },
+  "mode": "sim/run.ts --dice",
+  "generatedAt": "2026-09-23T08:49:36.240Z"
  }
 }

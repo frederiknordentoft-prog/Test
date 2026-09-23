@@ -49,6 +49,16 @@ export interface MathReport {
   capHitRate: number;           // storms hitting the max-win cap
   guaranteeCostShare: number;   // guarantee EV / storm EV
   baseP99X: number; blendedP99X: number;
+  // ---- Terningen (dice meta-game; status only, no effect on any value above) ----
+  diceRate: number;             // dice per PAID spin, incl. its Ladede spin and storm spins
+  diceRateBase: number;         // same, base + Ladet spin dice only
+  diceStormShare: number;       // share of dice from storm spins
+  diceP1: number;               // P(a paid spin yields ≥ 1 die)
+  diceFirstMedian: number;      // ceil(ln 0,5 / ln(1 − diceP1)) paid spins
+  dice1948Spins: number; dice1948SpinsP5: number; dice1948SpinsP95: number;   // paid spins to 1948 dice
+  dice1948LossX: number; dice1948LossP5X: number; dice1948LossP95X: number;   // net loss over the journey, × stake
+  dice1948LossShare: number;    // share of journeys ending with a net loss
+  diceJourneys: number;         // journeys simulated (fresh players, meter 0, constant stake)
   modelHash: string;
   generatedAt: string;
 }

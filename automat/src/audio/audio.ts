@@ -2,7 +2,7 @@
 //
 // Graph:  voices ─┬─ sfx{dry,room,hall} ─ vol ─┐
 //                 └─ ui ────────────────── vol ─┤
-//         base/storm sessions ─ music vol ─ duck ─ dip ─┤→ master(mute) → HP 35 Hz → limiter (−1 dBFS)
+//         base/storm sessions ─ music vol ─ musicLP ─ duck ─ dip ─┤→ master(mute) → HP 35 Hz → limiter (−1 dBFS)
 //         (room/hall/ui/music sends) → HP/LP → [base IR 2.8 s | storm IR 1.6 s] ─┘        → ceiling → out
 //
 // Music is pre-rendered loopable stems (see music.ts) played as looping AudioBufferSourceNodes that all
@@ -14,8 +14,8 @@
 import { crand } from '../core/cosmeticRng.ts';
 import { TIER_SECS } from '../present/schedule.ts';
 import { makeIR, dbToGain } from './dsp.ts';
-import { renderAsset, allAssetIds, baseAssetIds, isStormAsset, STORM_CORE, STORM_EXTRA } from './assets.ts';
-import { LAND_ZONES, CHIME_LADDER, CHIME_ZONES, LEVEL_SEMIS, nearestZone } from './sfx.ts';
+import { renderAsset, allAssetIds, baseAssetIds, isStormAsset, isGateAsset, baseLayerIds, STORM_CORE, STORM_EXTRA, GATE_SET, BED_ASSETS } from './assets.ts';
+import { LAND_ZONES, CHIME_LADDER, CHIME_ZONES, LEVEL_SEMIS, BELL_1948, nearestZone } from './sfx.ts';
 import { barFrames, BASE_BPM, STORM_BPM, LAND_BASE, LAND_STORM } from './music.ts';
 import { POLAR_ID } from './polar.ts';
 
@@ -24,9 +24,16 @@ export type MusicSource = 'polar' | 'code';
 
 export type Sfx = 'tap' | 'stakeUp' | 'stakeDown' | 'spin' | 'land' | 'chime' | 'shatter' | 'returnTick' | 'nettoCross'
   | 'markUp' | 'mote' | 'levelUp' | 'sun' | 'anticipation' | 'countTick' | 'win' | 'bigWin'
-  | 'stormSwell' | 'stormRiser' | 'impact' | 'glassXL' | 'drop808' | 'letterSlam' | 'waveBoom' | 'reform' | 'summary' | 'fade';
+  | 'stormSwell' | 'stormRiser' | 'impact' | 'glassXL' | 'drop808' | 'letterSlam' | 'waveBoom' | 'reform' | 'summary' | 'fade'
+  // Terningen: the award, the storm pop/hold, the year bells (level 1–4 = 1-9-4-8, 5–8 an octave up) …
+  | 'dieBirth' | 'dieLand' | 'dieQuench' | 'dieHold' | 'bell1948'
+  // … and the gate ceremony (lazy set: prepareGate / releaseGate)
+  | 'gateDrone' | 'tileShimmer' | 'keystone' | 'sealCrack' | 'gateBreath' | 'lightPad';
 
 export interface PlayOpts { col?: number; step?: number; level?: number; when?: number; gain?: number }
+
+/** Calm mode plays every dice and gate sound 3 dB softer (setCalm). */
+export const CALM_GAIN = 0.7;
 
 type Verb = 'dry' | 'room' | 'hall';
 interface Cfg {
@@ -68,13 +75,26 @@ const CFG: Record<Sfx, Cfg> = {
   reform:       { db: -11, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.2 },
   summary:      { db: -10, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.3 },
   fade:         { db: -11, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.3 },
+  // dice: the award sounds sit ≥ 6 dB under the 'win' stinger; the ceremony's are its own moment
+  dieBirth:     { db: -20, verb: 'hall', cents: 3, jdb: 0, max: 1, gap: 0.3 },
+  dieLand:      { db: -22, verb: 'room', ui: true, cents: 3, jdb: 0, max: 3, gap: 0.05 },
+  dieQuench:    { db: -24, verb: 'room', cents: 0, jdb: 0, max: 2, gap: 0.05 },
+  dieHold:      { db: -26, verb: 'room', cents: 0, jdb: 0, max: 3, gap: 0.05 },
+  bell1948:     { db: -14, verb: 'hall', cents: 0, jdb: 0, max: 4, gap: 0.1 },
+  gateDrone:    { db: -18, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.5 },
+  tileShimmer:  { db: -22, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.5 },
+  keystone:     { db: -14, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.3 },
+  sealCrack:    { db: -14, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.3 },
+  gateBreath:   { db: -18, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.3 },
+  lightPad:     { db: -18, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.5 },
 };
+/** Sounds that calm mode softens (CALM_GAIN). */
+const DICE_SFX = new Set<Sfx>(['dieBirth', 'dieLand', 'dieQuench', 'dieHold', 'bell1948', 'gateDrone', 'tileShimmer', 'keystone', 'sealCrack', 'gateBreath', 'lightPad']);
 
 const SEND_DB = { room: -16, hall: -9, ui: -20, music: -13 };
 const HORIZON = 0.12;   // scheduler look-ahead (s)
 const TICK_MS = 25;
 const MAX_VOICES = 48;
-const BASE_IDS = ['base0', 'base1', 'base2', 'base3', 'base4'];
 const STORM_IDS = ['storm0', 'storm1', 'storm2', 'storm3'];
 const STORM_AT = [0, 8, 32, 128]; // stormLevel thresholds per storm layer
 const STORM_CINE = ['storm0', 'stormSwell', 'stormRiser', 'impact', 'drop808', 'glassXL', 'reform', 'letterSlam0', 'letterSlam1', 'land74a', 'markUp'];
@@ -84,7 +104,7 @@ const BED_WAIT = 4;   // s startBase() waits for the Polar decode before startin
 interface Voice { src: AudioBufferSourceNode; g: GainNode; name: Sfx; t: number; end: number; dead: boolean }
 interface Session {
   kind: 'base' | 'storm';
-  ids: string[];
+  ids: string[];      // asset per layer (base: baseLayerIds(bed) — layer 0 is the bed, 1/2/4 follow its chords)
   group: GainNode;
   layers: GainNode[];
   src: (AudioBufferSourceNode | null)[];
@@ -95,11 +115,11 @@ interface Session {
   pendOn: boolean[];
   stopped: boolean;
   alive: number;      // started sources not yet ended
-  bed: { id: string; g: GainNode } | null; // base only: layer-0 asset (base0 | polar) behind its own gain
+  sg: (GainNode | null)[]; // base only: each layer's source behind its own gain (a bed switch crossfades them)
 }
 interface Nodes {
   master: GainNode; out: AudioNode;
-  music: GainNode; duck: GainNode; dip: GainNode;
+  music: GainNode; musicLP: BiquadFilterNode; duck: GainNode; dip: GainNode;
   sfx: Record<Verb, GainNode>; sfxVol: GainNode[]; ui: GainNode; uiVol: GainNode;
   sendBase: GainNode; sendStorm: GainNode;
 }
@@ -150,6 +170,10 @@ export class GameAudio {
   private stormPromise: Promise<void> | null = null;
   private stormResolve: (() => void) | null = null;
   private releasePending = false;
+  private gatePrepared = false;
+  private gatePromise: Promise<void> | null = null;
+  private gateResolve: (() => void) | null = null;
+  private calm = false;
   private voices: Voice[] = [];
   private lastAt: Partial<Record<Sfx, number>> = {};
   private deferred: Deferred[] = [];
@@ -206,7 +230,7 @@ export class GameAudio {
         this.build(c);
         c.addEventListener('statechange', () => this.onState());
         setInterval(() => this.tick(), TICK_MS); // lives as long as the page (singleton)
-        this.queue = baseAssetIds();
+        this.queue = baseAssetIds(this.bedPref);
         void this.pump();
       }
       const c = this._ctx as AudioContext;
@@ -361,7 +385,10 @@ export class GameAudio {
     verbOut.connect(master);
 
     const music = G(this.volMusic * this.volMusic), duck = G(1), dip = G(1);
-    music.connect(duck).connect(dip).connect(master);
+    // music low-pass (setMusicFilter): at rest its cutoff sits at Nyquist, where the biquad is the identity
+    const musicLP = c.createBiquadFilter();
+    musicLP.type = 'lowpass'; musicLP.Q.value = 0.5; musicLP.frequency.value = c.sampleRate / 2;
+    music.connect(musicLP).connect(duck).connect(dip).connect(master);
     dip.connect(G(dbToGain(SEND_DB.music))).connect(verbIn);
 
     const sv = this.volSfx * this.volSfx;
@@ -376,7 +403,7 @@ export class GameAudio {
     const ui = G(1), uiVol = G(sv);
     ui.connect(uiVol).connect(master);
     uiVol.connect(G(dbToGain(SEND_DB.ui))).connect(verbIn);
-    this.n = { master, out: ceil, music, duck, dip, sfx, sfxVol, ui, uiVol, sendBase, sendStorm };
+    this.n = { master, out: ceil, music, musicLP, duck, dip, sfx, sfxVol, ui, uiVol, sendBase, sendStorm };
   }
 
   /** Post-limiter analyser for meters/QA (not connected to the output). */
@@ -400,11 +427,12 @@ export class GameAudio {
         const id = this.queue.shift()!;
         if (this.assets.has(id) || this.failed.has(id)) continue;
         if (id === POLAR_ID) { this.loadPolar(); continue; } // decodes off-thread; don't hold up the renders
-        const storm = isStormAsset(id);
-        if (storm && !this.stormPrepared) continue; // released while queued
+        const storm = isStormAsset(id), gate = isGateAsset(id);
+        if ((storm && !this.stormPrepared) || (gate && !this.gatePrepared)) continue; // released while queued
+        if (BED_ASSETS.has(id) && !this.keepSet().has(id)) continue; // a layer of the bed nobody plays (any more)
         try {
           const b = await renderAsset(id, this.hwRate, { lite: this.lite });
-          if (!storm || this.stormPrepared) { // drop storm renders that finished after releaseStorm()
+          if ((!storm || this.stormPrepared) && (!gate || this.gatePrepared)) { // drop renders that finished after a release
             this.assets.set(id, b);
             this.onAsset(id);
           }
@@ -412,6 +440,7 @@ export class GameAudio {
           this.failed.add(id);
         }
         if (storm) this.checkStormReady();
+        if (gate) this.checkGateReady();
         if (this.realtime) await sleep(0); // yield: one small offline render per task
       }
     } finally {
@@ -419,10 +448,11 @@ export class GameAudio {
     }
   }
 
-  /** Move ids to the front of the render queue (asking for any storm asset prepares the storm set). */
+  /** Move ids to the front of the render queue (asking for any storm/gate asset prepares that set). */
   private bump(ids: string[]): void {
     if (!this._ctx) return;
     if (!this.stormPrepared && ids.some(isStormAsset)) void this.prepareStorm();
+    if (!this.gatePrepared && ids.some(isGateAsset)) void this.prepareGate();
     for (let i = ids.length - 1; i >= 0; i--) {
       const id = ids[i];
       if (this.assets.has(id) || this.failed.has(id)) continue;
@@ -435,7 +465,7 @@ export class GameAudio {
 
   private onAsset(id: string): void {
     if ((id === 'base0' || id === POLAR_ID) && this.baseWanted && !this.baseS) this.startBase();
-    if (id === 'base0' || id === POLAR_ID) this.syncBed();
+    if (BED_ASSETS.has(id)) this.syncBed();
     if (this.live()) this.tick();
   }
 
@@ -470,36 +500,72 @@ export class GameAudio {
     return null;
   }
 
-  /** Keep a running base session on the chosen bed (live crossfade); free the recording when unused. */
+  /**
+   * Keep a running base session on the chosen bed (live crossfade, together with the layers that follow the
+   * bed's chords — once those that are audible are rendered); free the bed-dependent assets nothing uses.
+   */
   private syncBed(): void {
     const s = this.baseS;
-    if (s && !s.stopped && s.bed && this.live()) {
+    if (s && !s.stopped && this.live()) {
       const want = this.bedPref === 'polar' && this.assets.has(POLAR_ID) ? POLAR_ID : 'base0';
-      if (want !== s.bed.id && this.assets.has(want)) this.switchBed(s, want, this._ctx!.currentTime);
+      if (want !== s.ids[0] && this.assets.has(want)) {
+        const need = baseLayerIds(want).slice(1, this.baseLayers);
+        if (need.every((id) => this.assets.has(id) || this.failed.has(id))) this.switchBed(s, want, this._ctx!.currentTime);
+        else this.bump(need);
+      }
     }
-    if (this.bedPref === 'code' && !(s && !s.stopped && s.bed?.id === POLAR_ID)) this.assets.delete(POLAR_ID);
+    const keep = this.keepSet();
+    for (const id of BED_ASSETS) if (!keep.has(id)) this.assets.delete(id);
   }
 
-  /** Crossfade layer 0 of a base session to asset `id`, started at once but phase-locked to its grid. */
-  private switchBed(s: Session, id: string, now: number): void {
-    const c = this._ctx!, buf = this.assets.get(id);
-    if (!s.bed || !buf) return;
+  /**
+   * Bed-dependent assets worth holding: the chosen bed's layers, the procedural ones as the fallback until
+   * the recording is decoded, and whatever the running base session plays.
+   */
+  private keepSet(): Set<string> {
+    const rec = this.bedPref === 'polar' && !this.failed.has(POLAR_ID);
+    const k = new Set(baseLayerIds(rec ? POLAR_ID : 'base0'));
+    if (rec && !this.assets.has(POLAR_ID)) for (const id of baseLayerIds('base0')) k.add(id);
+    const s = this.baseS;
+    if (s && !s.stopped) for (const id of s.ids) k.add(id);
+    return k;
+  }
+
+  /** Asset ids of the base layers: the running session's, else those of the bed it would start on. */
+  private layerIds(): string[] {
+    const s = this.baseS;
+    if (s && !s.stopped) return s.ids;
+    return baseLayerIds(this.bedPref === 'polar' && !this.failed.has(POLAR_ID) ? POLAR_ID : 'base0');
+  }
+
+  /**
+   * Switch a base session to `bed`: every layer whose asset differs (the bed, and the layers that follow its
+   * chords) crossfades, started at once but phase-locked to the grid. A layer whose new asset is not
+   * rendered yet goes quiet and is attached on a bar line when it arrives.
+   */
+  private switchBed(s: Session, bed: string, now: number): void {
+    const c = this._ctx!, ids = baseLayerIds(bed);
     const t = Math.max(now + 0.03, s.start);
-    const old = s.src[0], og = s.bed.g;
-    og.gain.cancelScheduledValues(t);
-    og.gain.setTargetAtTime(0, t, BED_TAU);
-    if (old) {
-      try { old.stop(t + BED_TAU * 10); } catch { /* */ }
-      old.addEventListener('ended', () => { try { og.disconnect(); } catch { /* */ } });
-    } else {
-      try { og.disconnect(); } catch { /* */ }
+    for (let i = 0; i < ids.length; i++) {
+      if (ids[i] === s.ids[i]) continue;
+      const old = s.src[i], og = s.sg[i]!;
+      og.gain.cancelScheduledValues(t);
+      og.gain.setTargetAtTime(0, t, BED_TAU);
+      if (old) {
+        try { old.stop(t + BED_TAU * 10); } catch { /* */ }
+        old.addEventListener('ended', () => { try { og.disconnect(); } catch { /* */ } });
+      } else {
+        try { og.disconnect(); } catch { /* */ }
+      }
+      const g = c.createGain();
+      g.gain.value = old ? 0 : 1;
+      g.connect(s.layers[i]);
+      if (old) g.gain.setTargetAtTime(1, t, BED_TAU);
+      s.sg[i] = g;
+      s.ids[i] = ids[i];
+      const buf = this.assets.get(ids[i]);
+      s.src[i] = buf ? this.loopSrc(s, buf, g, t) : null;
     }
-    const g = c.createGain();
-    g.gain.value = old ? 0 : 1;
-    g.connect(s.layers[0]);
-    if (old) g.gain.setTargetAtTime(1, t, BED_TAU);
-    s.bed = { id, g };
-    s.src[0] = this.loopSrc(s, buf, g, t);
   }
 
   // ================================================================ scheduler
@@ -524,21 +590,20 @@ export class GameAudio {
     } catch { /* never throw from the timer */ }
   }
 
-  private newSession(kind: 'base' | 'storm', start: number, bed?: string): Session {
+  private newSession(kind: 'base' | 'storm', start: number, bed = 'base0'): Session {
     const c = this._ctx!;
-    const ids = kind === 'base' ? BASE_IDS : STORM_IDS;
+    const ids = kind === 'base' ? baseLayerIds(bed) : STORM_IDS.slice();
     const bpm = kind === 'base' ? BASE_BPM : STORM_BPM;
     const group = c.createGain();
     group.gain.value = 0;
     group.connect(this.n!.music);
     const layers = ids.map(() => { const g = c.createGain(); g.gain.value = 0; g.connect(group); return g; });
-    let b: Session['bed'] = null;
-    if (bed) { const g = c.createGain(); g.connect(layers[0]); b = { id: bed, g }; }
+    const sg = layers.map((l) => { if (kind !== 'base') return null; const g = c.createGain(); g.connect(l); return g; });
     return {
       kind, ids, group, layers, src: ids.map(() => null), start,
       bar: barFrames(bpm, this.hwRate) / this.hwRate, // identical for every render divisor
       committed: ids.map(() => false), pendAt: ids.map(() => -1), pendOn: ids.map(() => false),
-      stopped: false, alive: 0, bed: b,
+      stopped: false, alive: 0, sg,
     };
   }
 
@@ -546,12 +611,11 @@ export class GameAudio {
   private attach(s: Session, now: number): void {
     for (let i = 0; i < s.ids.length; i++) {
       if (s.src[i]) continue;
-      const bed = i === 0 ? s.bed : null;
-      const buf = this.assets.get(bed ? bed.id : s.ids[i]);
+      const buf = this.assets.get(s.ids[i]);
       if (!buf) continue;
       let t = s.start;
       if (now + 0.03 > s.start) t = s.start + Math.ceil((now + 0.03 - s.start) / s.bar) * s.bar;
-      s.src[i] = this.loopSrc(s, buf, bed ? bed.g : s.layers[i], t);
+      s.src[i] = this.loopSrc(s, buf, s.sg[i] ?? s.layers[i], t);
     }
   }
 
@@ -677,6 +741,47 @@ export class GameAudio {
     for (const id of [...STORM_CORE, ...STORM_EXTRA]) { this.assets.delete(id); this.failed.delete(id); }
   }
 
+  // ================================================================ gate assets (lazy)
+  /**
+   * Render the gate ceremony's set in the background (idempotent): gateDrone, tileShimmer, keystone,
+   * sealCrack, gateBreath, lightPad. Resolves when all six are ready (or failed); before unlock() at once.
+   * Call when the Terningekammeret opens and when a ceremony is requested (race it against ~2 s). A gate
+   * sound played before it is ready renders on demand and, if scheduled ahead, plays when it lands in time.
+   */
+  prepareGate(): Promise<void> {
+    if (!this._ctx) return Promise.resolve();
+    if (!this.gatePrepared || !this.gatePromise) {
+      this.gatePrepared = true;
+      this.gatePromise = new Promise<void>((r) => { this.gateResolve = r; });
+      this.bump(GATE_SET);
+    }
+    this.checkGateReady();
+    return this.gatePromise;
+  }
+
+  private checkGateReady(): void {
+    if (!this.gateResolve) return;
+    if (GATE_SET.every((id) => this.assets.has(id) || this.failed.has(id))) {
+      const r = this.gateResolve;
+      this.gateResolve = null;
+      r();
+    }
+  }
+
+  /**
+   * Free the gate set (after the ceremony, or when the chamber closes; ~7 MB). Voices still sounding keep
+   * their buffers until they end; a pending prepareGate() resolves.
+   */
+  releaseGate(): void {
+    if (!this._ctx) return;
+    this.gatePrepared = false;
+    this.gatePromise = null;
+    if (this.gateResolve) { const r = this.gateResolve; this.gateResolve = null; r(); }
+    this.queue = this.queue.filter((id) => !isGateAsset(id));
+    this.deferred = this.deferred.filter((d) => !isGateAsset(d.id));
+    for (const id of GATE_SET) { this.assets.delete(id); this.failed.delete(id); }
+  }
+
   /** Stop the celebration count-up tick roll immediately (skipped celebration). */
   stopCount(): void {
     const c = this._ctx;
@@ -712,7 +817,7 @@ export class GameAudio {
       this.releaseDuck(S, 0.15);
       this.xfadeVerb('base', now, 2.5);
       this.inStorm = false;
-      this.bump(BASE_IDS.slice(0, this.baseLayers));
+      this.bump(s.ids.slice(0, this.baseLayers));
     } catch { /* */ }
   }
 
@@ -721,14 +826,15 @@ export class GameAudio {
     const v = clamp(Math.round(Number.isFinite(n) ? n : 1), 1, 5);
     this.baseLayers = v;
     if (!this.live()) return;
-    this.bump(BASE_IDS.slice(0, v));
+    this.bump(this.layerIds().slice(0, v));
     this.tick();
   }
 
   /**
    * Base bed source (setting "Musik"): the Polar Night recording or the procedural pad. A running base
-   * crossfades (~1 s, phase-locked) as soon as the chosen bed is ready; choosing 'code' frees the decoded
-   * recording, choosing 'polar' decodes it again.
+   * crossfades (~1 s, phase-locked) as soon as the chosen bed and its audible layers are ready — under the
+   * recording the bells, bass and ostinato follow its chords (base1p/2p/4p), under the pad its cycle;
+   * choosing 'code' frees the decoded recording and its layers, choosing 'polar' decodes it again.
    */
   setMusicSource(src: MusicSource): void {
     const v: MusicSource = src === 'code' ? 'code' : 'polar';
@@ -736,7 +842,10 @@ export class GameAudio {
     this.bedPref = v;
     this.bedWait = -1;
     if (!this._ctx) return;
-    this.bump([v === 'polar' ? POLAR_ID : 'base0']);
+    const ids = baseLayerIds(v === 'polar' ? POLAR_ID : 'base0');
+    this.bump(ids.slice(0, this.baseLayers));
+    for (const id of ids) if (!this.assets.has(id) && !this.queue.includes(id)) this.queue.push(id);
+    void this.pump();
     this.syncBed();
   }
 
@@ -825,6 +934,54 @@ export class GameAudio {
       p.setTargetAtTime(target, now, tc);
       if (this.duckReleaseAt > now) p.setValueAtTime(1, this.duckReleaseAt);
     } catch { /* */ }
+  }
+
+  /**
+   * Low-pass the music bus (music → musicLP → duck → dip; SFX untouched) to `hz` (clamped 200 Hz … 20 kHz;
+   * 20 kHz = open, exactly transparent), gliding in log-frequency so it arrives in `seconds`. Holds until
+   * the next call: nothing releases it by itself. Terningekammeret: 4500 on open, 20000 on close (none in
+   * the open state after the unlock); the gate ceremony: 900 in bar 1, 20000 from bar 5; skip: 20000 in 0.3 s.
+   */
+  setMusicFilter(hz: number, seconds: number): void {
+    const c = this._ctx;
+    if (!c || !this.n) return;
+    try {
+      const now = c.currentTime, nyq = c.sampleRate / 2, p = this.n.musicLP.frequency;
+      const h = clamp(Number.isFinite(hz) ? hz : 20000, 200, 20000);
+      const f = h >= 20000 ? nyq : Math.min(h, nyq);
+      const d = Math.max(0.005, Number.isFinite(seconds) ? seconds : 0.1);
+      const hold = (p as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam }).cancelAndHoldAtTime;
+      if (typeof hold === 'function') hold.call(p, now);
+      else { const v = p.value; p.cancelScheduledValues(now); p.setValueAtTime(v, now); }
+      p.exponentialRampToValueAtTime(f, now + d);
+    } catch { /* */ }
+  }
+
+  /**
+   * Fade every voice of `name` (sounding, or scheduled and not started) to silence: −35 dB after `seconds`,
+   * stopped after 2×. The gate drone and light pad on a skip (0.3 s) and at the ceremony end (4 s).
+   */
+  fadeOut(name: Sfx, seconds: number): void {
+    const c = this._ctx;
+    if (!c || !this.n) return;
+    try {
+      const now = c.currentTime, tau = Math.max(0.002, (Number.isFinite(seconds) ? seconds : 0.3) / 4);
+      for (const v of this.voices) if (!v.dead && v.name === name) this.fadeVoice(v, now, tau);
+      this.deferred = this.deferred.filter((d) => d.name !== name);
+    } catch { /* */ }
+  }
+
+  /** Calm mode: every dice and gate sound plays at CALM_GAIN (−3 dB). Callers never apply it themselves. */
+  setCalm(on: boolean): void { this.calm = !!on; }
+
+  /**
+   * First bar line of the running music at or after `t` (now()-domain), or `t` itself when no music runs.
+   * The gate ceremony's T0 = nextBar(now() + 0.9): it rides the loop, bar 1 of the ceremony on a bar line.
+   */
+  nextBar(t: number): number {
+    const s = this.stormS ?? this.baseS;
+    if (!s || s.stopped || !Number.isFinite(t)) return t;
+    return s.start + Math.max(0, Math.ceil((t - s.start) / s.bar - 1e-9)) * s.bar;
   }
 
   setMuted(b: boolean): void {
@@ -960,10 +1117,17 @@ export class GameAudio {
         break;
       // Summary card waits for "Fortsæt": the storm loop steps back and stays back until stopStorm().
       case 'summary': this.musicDip(-6, 600, 1.2); break;
+      case 'bell1948': { // the year motif: level 1–4 = 1-9-4-8 = D3 E4 G3 D4, 5–8 the same an octave up
+        const L = clamp(Math.round(o.level ?? 1), 1, 8);
+        const [z, semis] = BELL_1948[(L - 1) % 4];
+        id = `bell1948${z}`;
+        rate *= Math.pow(2, (semis + (L > 4 ? 12 : 0)) / 12);
+        break;
+      }
       default: break;
     }
 
-    const amp = dbToGain(db) * og * this.jdb(cfg.jdb);
+    const amp = dbToGain(db) * og * this.jdb(cfg.jdb) * (this.calm && DICE_SFX.has(name) ? CALM_GAIN : 1);
     const buf = this.assets.get(id);
     if (!buf) {
       // Not rendered yet: render it next; if it was scheduled ahead, play it when it lands in time.
@@ -1038,15 +1202,16 @@ export class GameAudio {
       if (k >= 0) this.voices.splice(k, 1);
       try { tail.disconnect(); } catch { /* */ }
     };
-    // voice caps: per name, then global (steal oldest)
-    const now = c.currentTime;
+    // voice caps: per name, then global (steal oldest). Only voices that sound while this one does count
+    // (a motif scheduled ahead with `when` is not a pile-up), and a stolen voice stops when this one starts.
+    const from = Math.max(c.currentTime, t);
     let same = 0, all = 0;
     for (let i = this.voices.length - 1; i >= 0; i--) {
       const w = this.voices[i];
-      if (w.dead || w.end < now) continue;
+      if (w.dead || w.end < from || w.t > v.end) continue;
       all++;
       if (w.name === name) same++;
-      if ((w.name === name && same > cfg.max) || all > MAX_VOICES) this.fadeVoice(w, Math.max(now, w.t), 0.01);
+      if ((w.name === name && same > cfg.max) || all > MAX_VOICES) this.fadeVoice(w, Math.max(from, w.t), 0.01);
     }
     return v;
   }
@@ -1075,30 +1240,36 @@ export class GameAudio {
   }
 
   // ================================================================ QA / harness
-  /** Runtime stats for harness/QA (mb = all rendered buffers; stormMb = the storm share of it). */
-  stats(): { state: string; sampleRate: number; lite: boolean; rendered: number; total: number; failed: number; mb: number; stormMb: number; stormPrepared: boolean; voices: number; base: boolean; storm: boolean; layers: number; stormX: number; bed: string | null; bedMb: number } {
-    let bytes = 0, storm = 0;
+  /**
+   * Runtime stats for harness/QA (mb = all rendered buffers; stormMb / gateMb = the lazy sets' share of it;
+   * total = what the pipeline holds when done: the chosen bed's base set + the prepared lazy sets).
+   */
+  stats(): { state: string; sampleRate: number; lite: boolean; rendered: number; total: number; failed: number; mb: number; stormMb: number; stormPrepared: boolean; gateMb: number; gatePrepared: boolean; voices: number; base: boolean; storm: boolean; layers: number; stormX: number; bed: string | null; bedMb: number } {
+    let bytes = 0, storm = 0, gate = 0;
     for (const [id, b] of this.assets) {
       const n = b.length * b.numberOfChannels * 4;
       bytes += n;
       if (isStormAsset(id)) storm += n;
+      if (isGateAsset(id)) gate += n;
     }
-    const total = (this.stormPrepared ? allAssetIds().length : baseAssetIds().length) - (this.bedPref === 'polar' ? 0 : 1); // polar only when chosen
+    const keep = this.keepSet();
+    const total = baseAssetIds(this.bedPref).filter((id) => !BED_ASSETS.has(id) || keep.has(id)).length
+      + (this.stormPrepared ? STORM_CORE.length + STORM_EXTRA.length : 0) + (this.gatePrepared ? GATE_SET.length : 0);
     const pb = this.assets.get(POLAR_ID);
     return {
       state: this._ctx ? (this.realtime ? ((this._ctx as AudioContext).state as string) : 'offline') : 'locked',
       sampleRate: this._ctx?.sampleRate ?? 0, lite: this.lite,
       rendered: this.assets.size, total, failed: this.failed.size, mb: bytes / 1048576, stormMb: storm / 1048576,
-      stormPrepared: this.stormPrepared,
+      stormPrepared: this.stormPrepared, gateMb: gate / 1048576, gatePrepared: this.gatePrepared,
       voices: this.voices.length, base: !!this.baseS, storm: !!this.stormS, layers: this.baseLayers, stormX: this.stormX,
-      bed: this.baseS?.bed?.id ?? null, bedMb: pb ? (pb.length * pb.numberOfChannels * 4) / 1048576 : 0,
+      bed: this.baseS?.ids[0] ?? null, bedMb: pb ? (pb.length * pb.numberOfChannels * 4) / 1048576 : 0,
     };
   }
 
-  /** QA: the running session's bar grid (ctx time of loop position 0, seconds per bar) and base bed. */
+  /** The running session's bar grid (ctx time of loop position 0, seconds per bar) and base bed. */
   grid(): { kind: 'base' | 'storm'; start: number; bar: number; bed: string | null } | null {
     const s = this.stormS ?? this.baseS;
-    return s ? { kind: s.kind, start: s.start, bar: s.bar, bed: s.bed?.id ?? null } : null;
+    return s ? { kind: s.kind, start: s.start, bar: s.bar, bed: s.kind === 'base' ? s.ids[0] : null } : null;
   }
 
   /** Current bar position (for harness displays): {kind, bar, beat} or null. */
@@ -1122,6 +1293,7 @@ export class GameAudio {
     this.hwRate = ctx.sampleRate;
     this.build(ctx, !!opts.bypassMaster);
     this.stormPrepared = true;
+    this.gatePrepared = true;
     for (const id of allAssetIds()) {
       if (!this.assets.has(id)) this.assets.set(id, await renderAsset(id, ctx.sampleRate));
     }

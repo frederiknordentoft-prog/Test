@@ -6,12 +6,21 @@ import { CONFIG, REPORT } from '../math/config.ts';
 import { SYM_NAMES } from '../math/types.ts';
 import type { HistoryEntry, Settings } from '../game/store.ts';
 import { kpLegendSvg, stormShardsSvg, type WelcomeCopy } from './welcome.ts';
+import { fmtDice, diceWord, PREVIEW_STEPS, type DiceView, type PreviewStep } from '../game/dice.ts';
+import { CHIP_TITLE, DEMO_TAG, PANEL, MENU, DRAWER, chipAria, diceRulesHtml } from './diceCopy.ts';
+import { paintDie, onDiePainterChange } from './diceIcon.ts';
+import { ChamberDom, chamberMarkup } from './chamber.ts';
 
 export type Intent =
   | { t: 'unlock' } | { t: 'spin' } | { t: 'stakeUp' } | { t: 'stakeDown' }
   | { t: 'demo' } | { t: 'demoSuns' } | { t: 'demoKp'; kp: number } | { t: 'demoReset' }
   | { t: 'startStorm' } | { t: 'continue' } | { t: 'skip' } | { t: 'mute' } | { t: 'refill' }
-  | { t: 'settings'; s: Partial<Settings> } | { t: 'fullFx' } | { t: 'menu'; open: boolean };
+  | { t: 'settings'; s: Partial<Settings> } | { t: 'fullFx' } | { t: 'menu'; open: boolean }
+  // Terningen
+  | { t: 'chamber'; open: boolean; key?: boolean } | { t: 'gateOpen' } | { t: 'gateReplay' }
+  | { t: 'diceCard'; act: 'ok' | 'chamber' | 'gate' | 'later' } | { t: 'hello'; act: 'close' | 'chamber' }
+  | { t: 'placard'; act: 'chamber' | 'back' | 'endDemo' | 'close' }
+  | { t: 'demoDie' } | { t: 'demoFirstDie' } | { t: 'demoGate' } | { t: 'demoChamber'; n: PreviewStep };
 
 const ICON = {
   spin: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M38 17a15 15 0 0 0-26.5-3.5"/><path d="M11 7v7h7"/><path d="M10 31a15 15 0 0 0 26.5 3.5"/><path d="M37 41v-7h-7"/><path d="M24 17l1.8 4.2L30 23l-4.2 1.8L24 29l-1.8-4.2L18 23l4.2-1.8z" fill="currentColor" stroke="none"/></svg>',
@@ -40,8 +49,11 @@ export class Hud {
   private bannerTimer = 0;
   private menuTab = 'rules';
   private historyRef: () => HistoryEntry[] = () => [];
-  private settingsRef: () => Settings = () => ({ music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar' });
+  private settingsRef: () => Settings = () => ({ music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar', dice: true });
   private kpRef: () => number = () => 0;
+  private diceRef: () => DiceView = () => ({ count: 0, unlock: 'none', mode: 'real' });
+  /** Terningekammeret DOM (text + state; the gate art is the presenter's). */
+  chamber!: ChamberDom;
   private lastPress = 0;
 
   constructor(host: HTMLElement, onIntent: (i: Intent) => void) {
@@ -72,6 +84,10 @@ export class Hud {
       <div id="slot-arc"><button id="goal" aria-label="Kp-stigen: se hvad der sker ved hvert niveau"></button></div>
       <div id="slot-grid"></div>
       <div class="side right" id="sideR">
+        <div class="panel dice-panel"><h4>${PANEL.h}</h4>
+          <button class="dp-row" id="diceRow"><canvas class="ico" id="diceIco2" aria-hidden="true"></canvas><span class="n num" id="diceN2">0</span><span class="w" id="diceW2">terninger</span></button>
+          <button class="linkbtn" id="diceLink">${PANEL.link}</button>
+        </div>
         <div class="panel"><h4>Gevinsttabel · ved indsats</h4><div id="payMini"></div></div>
         <div class="panel hist-panel"><h4>Seneste spin</h4><div class="hist" id="histSide"></div></div>
       </div>
@@ -80,7 +96,13 @@ export class Hud {
         <div class="text"><span id="winL">Held og lykke</span><span id="winR" class="num"></span></div>
       </div>
       <div id="deck">
-        <div class="cell-l"><div class="lbl">Saldo</div><div class="val num" id="bal">–</div></div>
+        <div class="cell-l"><div class="lbl">Saldo</div><div class="val num" id="bal">–</div>
+          <button class="dice zero" id="diceBtn" aria-label="${chipAria(0, 'none')}" title="${CHIP_TITLE}">
+            <canvas class="ico" id="diceIco" aria-hidden="true"></canvas>
+            <span class="n num" id="diceN"><span class="cur">0</span></span>
+            <span class="w" id="diceW"> terninger</span>
+          </button>
+        </div>
         <div class="stake">
           <div class="lbl">Indsats</div>
           <div class="row"><button class="step" id="stakeDn" aria-label="Sænk indsats">−</button><div class="val num" id="stake">–</div><button class="step" id="stakeUp" aria-label="Hæv indsats">+</button></div>
@@ -106,6 +128,8 @@ export class Hud {
       <div class="overlay" id="bigwin"><div class="center"><button class="btn ghost small" id="continueBtn">Fortsæt</button></div></div>
       <div class="overlay" id="summary"><div class="card" id="summaryCard"></div></div>
       <div id="banner" role="status"><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>
+      <section id="hello" role="dialog" aria-modal="false" aria-labelledby="helloTitle" hidden></section>
+      ${chamberMarkup(ICON.sound)}
       <div id="notice"></div>
       <div id="calmChip" class="chip"><span>Rolig tilstand (systemindstilling)</span><button id="calmFx" class="linkbtn">Vis fuld effekt</button></div>
       <div class="sheet-wrap" id="menuWrap"><div class="sheet" role="dialog" aria-modal="true" aria-label="Menu">
@@ -113,7 +137,7 @@ export class Hud {
         <header><h3>NORDLYS</h3><button class="iconbtn" id="menuClose" aria-label="Luk">✕</button></header>
         <div class="tabs" role="tablist" id="tabs">
           <button role="tab" data-tab="rules">Regler & RTP</button><button role="tab" data-tab="pay">Gevinsttabel</button>
-          <button role="tab" data-tab="ladder">Kp-stigen</button><button role="tab" data-tab="hist">Historik</button>
+          <button role="tab" data-tab="ladder">Kp-stigen</button><button role="tab" data-tab="dice">${MENU.tab}</button><button role="tab" data-tab="hist">Historik</button>
           <button role="tab" data-tab="settings">Indstillinger</button><button role="tab" data-tab="rg">Spil ansvarligt</button>
         </div>
         <div class="body" id="menuBody"></div>
@@ -122,23 +146,30 @@ export class Hud {
         <div class="grab"></div>
         <header><h3 style="color:#ffd79a">DEMO-VÆRKTØJER</h3><button class="iconbtn" id="drawerClose" aria-label="Luk">✕</button></header>
         <div class="body">
-          <p class="chip warn">Kun til demonstration. Findes ikke i den rigtige version. Demo-storme krediteres ikke saldoen og tæller ikke i statistikken.</p>
+          <p class="chip warn">${DRAWER.warn}</p>
           <div class="actions">
             <button class="btn storm small" id="dTrigger">⚡ Udløs Solstorm</button>
             <button class="btn ghost small" id="dSuns">Udløs via 4 sole</button>
           </div>
           <label class="setting"><span>Vis Kp (kun forhåndsvisning)</span><input type="range" min="0" max="8.9" step="0.1" id="dKp" aria-label="Vis Kp, kun forhåndsvisning"></label>
+          <div class="d-dice"><h4>${DRAWER.h}</h4>
+            <div class="actions"><button class="btn ghost small" id="dDie">${DRAWER.die}</button><button class="btn ghost small" id="dFirst">${DRAWER.first}</button><button class="btn ghost small" id="dGate">${DRAWER.gate}</button></div>
+            <p class="seg-lbl" id="dSegL">${DRAWER.segLabel}</p>
+            <div class="seg" id="dSeg" role="group" aria-label="${DRAWER.segAria}">${PREVIEW_STEPS.map((n) => `<button class="btn ghost small" data-n="${n}" aria-pressed="false">${DRAWER.seg(n)}</button>`).join('')}</div>
+          </div>
           <div class="actions"><button class="btn ghost small" id="dReset">Nulstil demo</button><button class="btn ghost small" id="dFx" style="display:none">Vis fuld effekt</button></div>
-          <p class="hint">"Vis Kp" ændrer kun himlen og buen – din rigtige måler røres ikke. Genveje: Mellemrum = spin · E = demo · M = lyd · Esc = spring over. Direkte link til demo-stormen: tilføj <code>#solstorm</code> til adressen.</p>
+          <p class="hint">${DRAWER.hintHtml}</p>
         </div>
       </div></div>`;
     host.appendChild(ov);
 
     for (const id of ['toolsBtn', 'calmChip', 'calmFx', 'reg', 'clock', 'regBal', 'modeBadge', 'demoPill', 'muteBtn', 'menuBtn', 'goal', 'winstrip', 'winL', 'winR', 'bal', 'stake', 'stakeDn', 'stakeUp', 'lock', 'spinBtn', 'spinCap', 'ring', 'session',
       'splash', 'welcome', 'wEyebrow', 'wBody', 'wLegend', 'wSum', 'unlockBtn', 'stormReady', 'stormInfo', 'startStormBtn', 'bigwin', 'continueBtn', 'summary', 'summaryCard', 'banner', 'bannerT', 'bannerS', 'notice',
-      'menuWrap', 'menuClose', 'menuBody', 'tabs', 'drawerWrap', 'drawerClose', 'dTrigger', 'dSuns', 'dKp', 'dReset', 'dFx', 'ladderSide', 'payMini', 'histSide']) {
+      'menuWrap', 'menuClose', 'menuBody', 'tabs', 'drawerWrap', 'drawerClose', 'dTrigger', 'dSuns', 'dKp', 'dReset', 'dFx', 'ladderSide', 'payMini', 'histSide',
+      'diceBtn', 'diceIco', 'diceN', 'diceW', 'diceRow', 'diceIco2', 'diceN2', 'diceW2', 'diceLink', 'hello', 'dDie', 'dFirst', 'dGate', 'dSeg']) {
       this.el[id] = document.getElementById(id)!;
     }
+    this.chamber = new ChamberDom(ov);
     this.slotArc = document.getElementById('slot-arc')!;
     this.slotGrid = document.getElementById('slot-grid')!;
     this.wire();
@@ -186,14 +217,51 @@ export class Hud {
     });
     this.el.summary.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest('button');
-      if (b?.dataset.act === 'continue') I({ t: 'continue' });
+      const act = b?.dataset.act;
+      if (!act) return;
+      const card = this.el.summaryCard.classList;
+      if (card.contains('placard')) I({ t: 'placard', act: act as 'chamber' | 'back' | 'endDemo' | 'close' });
+      else if (card.contains('relic')) I({ t: 'diceCard', act: act as 'ok' | 'chamber' | 'gate' | 'later' });
+      else if (act === 'continue') I({ t: 'continue' });
     });
     this.el.menuBody.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest('button');
       if (!b) return;
       if (b.dataset.act === 'refill') I({ t: 'refill' });
       if (b.dataset.act === 'reset') { this.openMenu(false); I({ t: 'demoReset' }); }
+      if (b.dataset.act === 'chamber') { this.openMenu(false); if (!this.chamber.isShown()) I({ t: 'chamber', open: true }); }
     });
+    // Terningen: chip, desktop panel, drawer tools, hello card, chamber buttons
+    const openChamber = () => I({ t: 'chamber', open: true });
+    this.press(this.el.diceBtn, openChamber);
+    this.press(this.el.diceRow, openChamber);
+    this.press(this.el.diceLink, openChamber);
+    this.press(this.el.dDie, () => { this.openDrawer(false); I({ t: 'demoDie' }); });
+    this.press(this.el.dFirst, () => { this.openDrawer(false); I({ t: 'demoFirstDie' }); });
+    this.press(this.el.dGate, () => { this.openDrawer(false); I({ t: 'demoGate' }); });
+    this.el.dSeg.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('button');
+      if (!b) return;
+      this.el.dSeg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      this.openDrawer(false);
+      I({ t: 'demoChamber', n: +b.dataset.n! as PreviewStep });
+    });
+    this.el.hello.addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest('button')?.dataset.hello;
+      if (a === 'close' || a === 'chamber') I({ t: 'hello', act: a });
+    });
+    const ch = this.chamber.el;
+    const chb = (id: string, f: () => void) => this.press(ch.querySelector('#' + id) as HTMLElement, f);
+    chb('chClose', () => I({ t: 'chamber', open: false }));
+    chb('chDone', () => I({ t: 'chamber', open: false }));
+    chb('chOpen', () => I({ t: 'gateOpen' }));
+    chb('chReplay', () => I({ t: 'gateReplay' }));
+    chb('chMute', () => I({ t: 'mute' }));
+    chb('chRules', () => { this.menuTab = 'dice'; this.openMenu(true); });
+    // ceremony: a tap anywhere on the chamber skips (the Game allows it from 2,0 s)
+    ch.addEventListener('pointerdown', () => { if (document.documentElement.classList.contains('ceremony')) I({ t: 'skip' }); });
+    onDiePainterChange(() => this.paintDiceIcons());
+    window.addEventListener('resize', () => { this.paintDiceIcons(); this.placeHello(); this.chamber.place(); });
     this.el.menuBody.addEventListener('input', (e) => {
       const t = e.target as HTMLInputElement;
       const k = t.dataset.k as keyof Settings | undefined;
@@ -219,9 +287,12 @@ export class Hud {
       else if (e.code === 'ArrowDown') I({ t: 'stakeDown' });
       else if (e.code === 'KeyM') I({ t: 'mute' });
       else if (e.code === 'KeyE') I({ t: 'demo' });
+      else if (e.code === 'KeyT') { if (!this.menuOpen()) I({ t: 'chamber', open: true }); }
       else if (e.code === 'Escape') {
         if (this.el.menuWrap.classList.contains('show')) this.openMenu(false, true);
         else if (this.el.drawerWrap.classList.contains('show')) this.openDrawer(false, true);
+        else if (this.chamber.isShown() && !document.documentElement.classList.contains('ceremony') && !this.isShown('summary')) I({ t: 'chamber', open: false, key: true });
+        else if (this.helloShown()) I({ t: 'hello', act: 'close' });
         else I({ t: 'skip' });
       }
     });
@@ -229,10 +300,11 @@ export class Hud {
     this.canvasHost.addEventListener('pointerdown', () => I({ t: 'skip' }));
   }
 
-  bindRefs(refs: { history: () => HistoryEntry[]; settings: () => Settings; kp: () => number }): void {
+  bindRefs(refs: { history: () => HistoryEntry[]; settings: () => Settings; kp: () => number; dice: () => DiceView }): void {
     this.historyRef = refs.history;
     this.settingsRef = refs.settings;
     this.kpRef = refs.kp;
+    this.diceRef = refs.dice;
   }
 
   // ---------------- state setters ----------------
@@ -400,16 +472,21 @@ export class Hud {
   }
   isShown(id: 'splash' | 'stormReady' | 'bigwin' | 'summary'): boolean { return this.el[id].classList.contains('show'); }
   setStormInfo(text: string): void { this.el.stormInfo.textContent = text; }
-  showSummary(html: string, tone: 'storm' | 'base' = 'storm'): void {
-    this.el.summaryCard.className = 'card' + (tone === 'base' ? ' base' : '');
+  /** 'relic' = a Terningen card (.card.base.relic), 'placard' = the gate placard (.card.base.relic.placard).
+   *  Focus goes to [data-primary] first (else [data-focus], else the first button). */
+  showSummary(html: string, tone: 'storm' | 'base' | 'relic' | 'placard' = 'storm'): void {
+    this.el.summaryCard.className = 'card' + (tone === 'storm' ? '' : ' base') + (tone === 'relic' || tone === 'placard' ? ' relic' : '') + (tone === 'placard' ? ' placard' : '');
     this.el.summaryCard.innerHTML = html;
     this.show('summary', true);
-    setTimeout(() => (this.el.summaryCard.querySelector('button') as HTMLButtonElement | null)?.focus(), 400);
+    const card = this.el.summaryCard;
+    setTimeout(() => (card.querySelector<HTMLElement>('[data-primary]') ?? card.querySelector<HTMLElement>('[data-focus]') ?? card.querySelector('button'))?.focus({ preventScroll: true }), 400);
   }
+  summaryEl(): HTMLElement { return this.el.summaryCard; }
 
   /** Focus moves into the dialog on open; it is returned to the opener only for keyboard closes (Esc),
    *  otherwise a later Space would re-open the dialog instead of spinning. */
-  openMenu(b: boolean, restoreFocus = false): void {
+  openMenu(b: boolean, restoreFocus = false, tab?: string): void {
+    if (tab) this.menuTab = tab;
     if (b) this.renderMenu();
     this.el.menuWrap.classList.toggle('show', b);
     this.onIntent({ t: 'menu', open: b });
@@ -433,6 +510,118 @@ export class Hud {
   }
   menuOpen(): boolean { return this.el.menuWrap.classList.contains('show') || this.el.drawerWrap.classList.contains('show'); }
 
+  // ---------------- Terningen: chip, panel, landing ----------------
+  private diceShown = -1;
+  private diceUnlock: DiceView['unlock'] = 'none';
+  /** The chip is status only: a count, never a fraction. `enabled` = idle (tap opens the chamber); otherwise aria-disabled. */
+  setDice(shown: number, o: { show: boolean; unlock: DiceView['unlock']; enabled: boolean }): void {
+    const b = this.el.diceBtn;
+    document.documentElement.classList.toggle('nodice', !o.show);
+    b.setAttribute('aria-label', chipAria(shown, o.unlock));
+    b.setAttribute('aria-disabled', String(!o.enabled));
+    this.el.diceRow.setAttribute('aria-disabled', String(!o.enabled));
+    this.el.diceLink.setAttribute('aria-disabled', String(!o.enabled));
+    b.classList.toggle('open', o.unlock === 'seen');
+    this.el.diceRow.classList.toggle('open', o.unlock === 'seen');
+    if (shown === this.diceShown && o.unlock === this.diceUnlock) return;
+    const repaint = (shown === 0) !== (this.diceShown === 0) || this.diceShown < 0;
+    this.diceShown = shown;
+    this.diceUnlock = o.unlock;
+    this.setDiceText(shown);
+    if (repaint) this.paintDiceIcons();
+  }
+  private setDiceText(n: number): void {
+    this.el.diceBtn.classList.toggle('zero', n === 0);
+    this.el.diceN.innerHTML = `<span class="cur">${fmtDice(n)}</span>`;
+    this.el.diceW.textContent = ' ' + diceWord(n);
+    this.el.diceN2.textContent = fmtDice(n);
+    this.el.diceW2.textContent = diceWord(n);
+    this.el.diceRow.classList.toggle('zero', n === 0);
+  }
+  paintDiceIcons(): void {
+    const st = this.diceShown > 0 ? 'die' : 'socket';
+    for (const c of [this.el.diceIco, this.el.diceIco2] as HTMLCanvasElement[]) {
+      const px = c.clientWidth;
+      if (px > 0) paintDie(c, px, { state: st, ring: this.diceUnlock === 'seen' });
+    }
+  }
+  /** Icon centre of the chip in #app coordinates (= stage px): where every flight lands, on every viewport. */
+  diceTarget(): { x: number; y: number; size: number } {
+    const host = this.root.getBoundingClientRect();
+    const r = this.el.diceIco.getBoundingClientRect();
+    if (r.width > 0) return { x: r.left + r.width / 2 - host.left, y: r.top + r.height / 2 - host.top, size: r.width };
+    const d = document.getElementById('deck')!.getBoundingClientRect();
+    return { x: d.left + 40 - host.left, y: d.top + d.height / 2 - host.top, size: 18 };
+  }
+  private landTimer = 0;
+  /** A die lands on the chip: .land pop + ring for 500 ms and the number rolls (calm: a crossfade and a static ring). */
+  landDice(n: number, calm: boolean): void {
+    const b = this.el.diceBtn;
+    const old = this.el.diceN.querySelector('.cur');
+    this.diceShown = n;
+    b.classList.toggle('zero', n === 0);
+    this.el.diceW.textContent = ' ' + diceWord(n);
+    this.el.diceN2.textContent = fmtDice(n);
+    this.el.diceW2.textContent = diceWord(n);
+    this.el.diceRow.classList.toggle('zero', n === 0);
+    const nxt = document.createElement('span');
+    nxt.className = 'cur in';
+    nxt.textContent = fmtDice(n);
+    if (old) { old.className = 'old out'; setTimeout(() => old.remove(), calm ? 220 : 240); }
+    this.el.diceN.appendChild(nxt);
+    void nxt.offsetWidth;
+    nxt.classList.remove('in');
+    b.classList.remove('land'); void b.offsetWidth; b.classList.add('land');
+    clearTimeout(this.landTimer);
+    this.landTimer = window.setTimeout(() => b.classList.remove('land'), calm ? 800 : 500);
+    this.paintDiceIcons();
+  }
+  /** Demo landing: the amber "+1 demo" floats 8 px above the chip for 1,5 s; the number is unchanged. */
+  demoDiceTag(): void {
+    const t = document.createElement('span');
+    t.className = 'dice-demo-tag';
+    t.textContent = DEMO_TAG;
+    this.el.diceBtn.appendChild(t);
+    setTimeout(() => t.remove(), 1500);
+  }
+  focusDiceChip(): void { this.el.diceBtn.focus({ preventScroll: true }); }
+
+  // ---------------- Terningen: first-visit introduction (#hello, non-modal coach card) ----------------
+  showHello(html: string): HTMLElement {
+    const el = this.el.hello;
+    el.innerHTML = `<div class="caret" aria-hidden="true"></div>${html}`;
+    el.hidden = false;
+    this.placeHello();
+    el.classList.remove('in'); void el.offsetWidth; el.classList.add('in');
+    return el;
+  }
+  hideHello(): void { this.el.hello.hidden = true; this.el.hello.classList.remove('in'); }
+  helloShown(): boolean { return !this.el.hello.hidden; }
+  /** Anchored above the chip: left = max(gutter, chip.left − 12), bottom = innerHeight − chip.top + 10, caret on the icon. */
+  placeHello(): void {
+    const el = this.el.hello;
+    if (el.hidden) return;
+    const host = this.root.getBoundingClientRect();
+    const chip = this.el.diceBtn.getBoundingClientRect();
+    const ico = this.el.diceIco.getBoundingClientRect();
+    const gutter = 16;
+    const left = Math.max(gutter, chip.left - 12 - host.left);
+    el.style.left = left + 'px';
+    el.style.bottom = Math.round(host.bottom - chip.top + 10) + 'px';
+    (el.querySelector('.caret') as HTMLElement | null)?.style.setProperty('left', Math.max(12, ico.left + ico.width / 2 - host.left - left - 5) + 'px');
+  }
+
+  // ---------------- Terningen: chamber / ceremony mode ----------------
+  /** :root.chamber hides the machine UI (visibility + inert); #reg (now with the balance) and #foot stay interactive. */
+  setChamberMode(b: boolean): void {
+    document.documentElement.classList.toggle('chamber', b);
+    for (const el of [document.getElementById('hdr'), this.slotArc, this.el.winstrip, document.getElementById('deck'), ...Array.from(document.querySelectorAll('.side'))]) {
+      if (!el) continue;
+      if (b) el.setAttribute('inert', ''); else el.removeAttribute('inert');
+    }
+  }
+  setCeremonyMode(b: boolean): void { document.documentElement.classList.toggle('ceremony', b); }
+
   // ---------------- side panels (desktop) ----------------
   refreshSide(stakeOre: number, storm = false): void {
     this.el.ladderSide.innerHTML = this.ladderHtml();
@@ -449,8 +638,9 @@ export class Hud {
     switch (this.menuTab) {
       case 'rules': body.innerHTML = this.rulesHtml(); break;
       case 'pay': body.innerHTML = this.payHtml(); break;
-      case 'ladder': body.innerHTML = `<p>Nordlyset viser dit fremskridt. Knuste symboler giver ladning (lav krystal 1, høj 2, WILD 3, 3 sole +${CONFIG.sunCharge}). Ladet spin ved Kp 3, 5 og 7 · Solstorm ved Kp 9. Tallene til højre er det gennemsnitlige antal spin fra Kp 0.</p><p class="hint">Dit fremskridt gemmes i 365 dage efter dit sidste spin.</p><div class="ladder">${this.ladderHtml()}</div>`; break;
-      case 'hist': body.innerHTML = `<p>De seneste 100 spin. Hvert spin kan genskabes præcist ud fra sit Spil-ID og den gemte tilstand før spinnet.</p><div class="hist"><div class="h head"><span>Spil-ID</span><span>Gevinst</span><span>Netto</span></div>${this.histHtml(100)}</div>`; break;
+      case 'ladder': body.innerHTML = `<p>Nordlyset viser dit fremskridt. Knuste symboler giver ladning (lav krystal 1, høj 2, WILD 3, 3 sole +${CONFIG.sunCharge}). Ladet spin ved Kp 3, 5 og 7 · Solstorm ved Kp 9. Tallene til højre er det gennemsnitlige antal spin fra Kp 0.</p><p class="hint">Dit fremskridt gemmes i 365 dage efter dit sidste spin.</p><p class="hint">${MENU.kpHint}</p><div class="ladder">${this.ladderHtml()}</div>`; break;
+      case 'dice': body.innerHTML = `<div class="actions dice-top"><button class="btn ghost small" data-act="chamber">${MENU.open}</button><span class="dice-status num">${MENU.status(this.diceRef().count)}</span></div>${diceRulesHtml()}`; break;
+      case 'hist': body.innerHTML = `<p>De seneste 100 spin. Hvert spin kan genskabes præcist ud fra sit Spil-ID og den gemte tilstand før spinnet.${MENU.histIntro}</p><div class="hist"><div class="h head"><span>Spil-ID</span><span>Gevinst</span><span>Netto</span></div>${this.histHtml(100)}</div>`; break;
       case 'settings': body.innerHTML = `
         <label class="setting"><span>Musik</span><select data-k="musicSource" id="setMusicSrc"><option value="polar" ${st.musicSource !== 'code' ? 'selected' : ''}>Polar Night</option><option value="code" ${st.musicSource === 'code' ? 'selected' : ''}>Kode</option></select></label>
         <label class="setting"><span>Musikstyrke</span><input type="range" min="0" max="1" step="0.05" value="${st.music}" data-k="music" id="setMusic"></label>
@@ -459,6 +649,8 @@ export class Hud {
         <label class="setting"><span>Haptik (Android)</span><input type="checkbox" ${st.haptics ? 'checked' : ''} data-k="haptics" id="setHaptics"></label>
         <label class="setting"><span>Rolig tilstand</span><select data-k="calm" id="setCalm"><option value="auto" ${st.calm === 'auto' ? 'selected' : ''}>Følg system</option><option value="on" ${st.calm === 'on' ? 'selected' : ''}>Til</option><option value="off" ${st.calm === 'off' ? 'selected' : ''}>Fra</option></select></label>
         <p class="hint">Rolig tilstand fjerner rystelser, blink, kromatiske effekter og glasskår og bruger bløde overgange i stedet.</p>
+        <label class="setting"><span>${MENU.setting}</span><input type="checkbox" ${st.dice !== false ? 'checked' : ''} data-k="dice" id="setDice"></label>
+        <p class="hint">${MENU.settingHint}</p>
         <div class="actions"><button class="btn ghost small" data-act="refill">Fyld op (legepenge)</button><button class="btn ghost small" data-act="reset">Nulstil demo</button></div>`; break;
       case 'rg': body.innerHTML = `
         <h4>Spil med omtanke</h4>
@@ -466,7 +658,7 @@ export class Hud {
         <p>Spil aldrig for mere, end du har råd til at tabe. Sæt grænser for tid og penge, og hold pauser.</p>
         <p>Rådgivning: <a href="https://www.stopspillet.dk" target="_blank" rel="noopener">StopSpillet 70 22 28 25</a> · Udelukkelse: <a href="https://www.spillemyndigheden.dk/rofus" target="_blank" rel="noopener">ROFUS</a>.</p>
         <h4>Designprincipper</h4>
-        <p>Mindst 3,0 s pr. spin · ingen turbo, autoplay eller køb af bonus · resultater under indsatsen fejres ikke · ingen konstruerede "næsten"-resultater · sessionstid og netto vises altid.</p>`; break;
+        <p>Mindst 3,0 s pr. spin · ingen turbo, autoplay eller køb af bonus · resultater under indsatsen fejres ikke · ingen konstruerede "næsten"-resultater · sessionstid og netto vises altid.${MENU.rgLine}</p>`; break;
     }
   }
 
@@ -487,6 +679,7 @@ export class Hud {
       <h4>SOLSTORM · G5 EKSTREM</h4>
       <p>Udløses ved Kp 9 (ved låst indsats; måleren nulstilles) eller ved 4+ sole (ved spinnets indsats; måleren bevares). Begge på én gang giver én storm ved spinnets indsats.</p>
       <p>${C.stormSpins} gratis stormspin på ${C.stormCols}×${C.stormRows}. Stormen starter med ${C.stormStartMarks} felter på ×2. Plasmamærker bevares hele stormen og går op til ×${C.stormMarkCap}. Før hvert 4. stormspin fordobler en Stormbølge alle mærker på ×2 eller mere. 3+ sole giver +${C.retriggerSpins} stormspin (højst ${C.maxStormSpins}). <b>I Solstorm udbetaler klynger ${fmtPct(C.stormPayScale, 2)} af gevinsttabellen (før mærker)</b> – det er plasmamærkerne, der bærer gevinsten. Sole i stormen udbetaler ikke. Stormgaranti: mindst ${C.guaranteeX}× indsats, vist på en separat linje. Der optjenes ikke ladning under Solstorm.</p>
+      ${diceRulesHtml(R, C)}
       <h4>Tal</h4>
       <div class="kv num">
         <span>Tilbagebetaling (RTP), samlet</span><span>${fmtPct(R.rtp)} ± ${fmtPct(R.rtpCi95, 2)}</span>
@@ -544,6 +737,6 @@ export class Hud {
     const hs = this.historyRef().slice(-n).reverse();
     if (!hs.length) return '<p class="hint">Ingen spin endnu.</p>';
     const modeName: Record<string, string> = { perk: 'Ladet spin', storm: 'Solstorm', demo: 'Demo' };
-    return hs.map((e) => `<div class="h"><span class="id">${e.spinId}${e.mode !== 'base' ? ' · ' + (modeName[e.mode] ?? e.mode) : ''}${e.spinId.endsWith('-G') ? ' · garanti' : ''}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtKr(e.winOre)}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtSignedKr(e.netOre)}</span></div>`).join('');
+    return hs.map((e) => `<div class="h"><span class="id">${e.spinId}${e.mode !== 'base' ? ' · ' + (modeName[e.mode] ?? e.mode) : ''}${e.die ? MENU.histMark : ''}${e.spinId.endsWith('-G') ? ' · garanti' : ''}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtKr(e.winOre)}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtSignedKr(e.netOre)}</span></div>`).join('');
   }
 }

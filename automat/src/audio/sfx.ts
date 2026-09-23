@@ -745,4 +745,217 @@ A.fade = {
   },
 };
 
+// ------------------------------------------------------------------ dice (Terningen) + the gate
+// Everything in D aeolian so it sits on "Polar Night"; glass and stone, never coins; no escalating pitch.
+
+/**
+ * bell1948 `level` → [zone, semitones]: the year as a tune, 1-9-4-8 = root, 9th, 4th, octave = D3 E4 G3 D4
+ * (zone a = the D3 bell, b = the D4 bell). Levels 5–8 = the same motif an octave up (the ceremony's echo).
+ */
+export const BELL_1948: readonly (readonly ['a' | 'b', number])[] = [['a', 0], ['b', 2], ['a', 5], ['b', 0]];
+
+/** Glass tick: FM sine (inharmonic 1.41 modulator, band kept under 12 kHz) with a fast index decay. */
+function glassTick(ctx: Ctx, out: AudioNode, t: number, f: number, amp: number, tau: number, pn?: number): void {
+  let dst = out;
+  if (pn !== undefined) { dst = pan(ctx, pn); dst.connect(out); }
+  const car = osc(ctx, 'sine', f, t, t + tau * 9);
+  const mod = osc(ctx, 'sine', f * 1.41, t, t + tau * 9);
+  const mg = gain(ctx, 0);
+  mg.gain.setValueAtTime(f * 0.6, t);
+  mg.gain.setTargetAtTime(0, t, Math.min(0.012, tau / 2));
+  mod.connect(mg).connect(car.frequency);
+  const g = gain(ctx, 0);
+  perc(g.gain, t, amp, 0.0008, tau);
+  car.connect(g).connect(dst);
+}
+/** Glass click: two FM tines at 2.9 and 4.3 kHz, τ 30 ms. */
+function glassClick(ctx: Ctx, out: AudioNode, t: number, amp: number, pn?: number): void {
+  glassTick(ctx, out, t, 2900, amp, 0.03, pn);
+  glassTick(ctx, out, t, 4300, amp * 0.6, 0.03, pn);
+}
+
+/**
+ * Tower bell: hum, prime, tierce, quint, nominal and an upper partial, each with its own decay d (the
+ * time to −35 dB: τ = d/4), split ±1.5 cents L/R (the slow beat of a cast bell), plus an 8 ms strike.
+ * `decay` scales every d.
+ */
+function towerBell(ctx: Ctx, out: AudioNode, t: number, f: number, amp: number, decay = 1, seed = 7): void {
+  const P: [number, number, number][] = [[0.5, 0.45, 4.0], [1, 1, 3.2], [1.19, 0.6, 2.4], [1.5, 0.25, 1.8], [2.0, 0.5, 1.2], [2.76, 0.2, 0.8]];
+  const L = pan(ctx, -0.35), R = pan(ctx, 0.35);
+  L.connect(out); R.connect(out);
+  for (const [r, a, d] of P) {
+    if (f * r > ctx.sampleRate * 0.45) continue;
+    const tau = (d * decay) / 4;
+    for (const [det, side] of [[-1.5, L], [1.5, R]] as const) {
+      const o = osc(ctx, 'sine', f * r, t, t + tau * 11 + 0.05, det);
+      const g = gain(ctx, 0);
+      perc(g.gain, t, amp * a * 0.5, 0.002, tau);
+      o.connect(g).connect(side);
+    }
+  }
+  const n = noise(ctx, t, t + 0.012, seed);
+  const lp = filt(ctx, 'lowpass', 3000, 0.7);
+  const ng = gain(ctx, 0);
+  lin(ng.gain, [[t, 0], [t + 0.0008, amp * 0.3], [t + 0.008, 0]]);
+  n.connect(lp).connect(ng).connect(out);
+}
+
+A.dieBirth = {
+  ch: 2, dur: 1.9,
+  build(ctx, out) {
+    // three glass clicks, then a D5 + A5 FM bell dyad, then a breath of air
+    ([[0, 0.5, -0.25], [0.085, 0.35, 0.2], [0.15, 0.25, -0.05]] as const).forEach(([t, a, p]) => glassClick(ctx, out, 0.002 + t, a, p));
+    for (const [m, a, p] of [[74, 0.3, -0.2], [81, 0.24, 0.2]] as const) {
+      const pn = pan(ctx, p);
+      pn.connect(out);
+      bell(ctx, pn, 0.18, mtof(m), a, { ratio: 3.5, index: 1.1, itau: 0.12, tau: 0.9, body: 0.35, tine: 0.08, strike: 0.02, lp: 9000, seed: 2000 + m });
+    }
+    const n = noise(ctx, 0.35, 0.7, 2010, 4, 2);
+    const bp = filt(ctx, 'bandpass', 8000, 1.2);
+    const g = gain(ctx, 0);
+    lin(g.gain, [[0.35, 0], [0.47, 0.05], [0.65, 0]]);
+    n.connect(bp).connect(g).connect(out);
+  },
+};
+
+// glass on stone: a 3 ms click, a 180 Hz body and a 900 Hz ring (UI bus)
+A.dieLand = {
+  ch: 1, dur: 0.25,
+  build(ctx, out) {
+    const n = noise(ctx, 0, 0.01, 2020);
+    const hp = filt(ctx, 'highpass', 2000, 0.7);
+    const ng = gain(ctx, 0);
+    lin(ng.gain, [[0, 0], [0.0005, 0.45], [0.003, 0]]);
+    n.connect(hp).connect(ng).connect(out);
+    const o = osc(ctx, 'sine', 180, 0, 0.25);
+    const og = gain(ctx, 0);
+    perc(og.gain, 0.0005, 0.5, 0.002, 0.05);
+    o.connect(og).connect(out);
+    const r = noise(ctx, 0, 0.25, 2030);
+    const bp = filt(ctx, 'bandpass', 900, 12);
+    const rg = gain(ctx, 0);
+    perc(rg.gain, 0.0005, 5, 0.001, 0.08);
+    r.connect(bp).connect(rg).connect(out);
+  },
+};
+
+// the storm die cools: a 3–6 kHz hiss (180 ms) and two glass clicks
+A.dieQuench = {
+  ch: 1, dur: 0.4,
+  build(ctx, out) {
+    const n = noise(ctx, 0, 0.3, 2040);
+    const hp = filt(ctx, 'highpass', 3000, 0.7), lp = filt(ctx, 'lowpass', 6000, 0.7);
+    const g = gain(ctx, 0);
+    perc(g.gain, 0, 0.5, 0.006, 0.045);
+    n.connect(hp).connect(lp).connect(g).connect(out);
+    glassClick(ctx, out, 0.12, 0.3);
+    glassClick(ctx, out, 0.19, 0.22);
+  },
+};
+
+// held on the molten frame: one glass tick, the same pitch every time
+A.dieHold = {
+  ch: 1, dur: 0.3,
+  build(ctx, out) { glassTick(ctx, out, 0.001, 2350, 0.6, 0.06); },
+};
+
+for (const [z, m] of [['a', 50], ['b', 62]] as const) { // D3, D4
+  A[`bell1948${z}`] = {
+    ch: 2, dur: 5.0, div: 2,
+    build(ctx, out) { towerBell(ctx, out, 0.002, mtof(m), 0.8, 1, 2050 + m); },
+  };
+}
+
+// ---- gate set (lazy: prepareGate / releaseGate)
+// the gate holds its breath: D1 + A1 sine pairs 0.3 Hz apart (slow beat), soft upper partials so small
+// speakers hear it, and the cliff's air (noise LP 200 Hz); 1.5 s attack, release from 10 s
+A.gateDrone = {
+  ch: 2, dur: 12, div: 4,
+  build(ctx, out) {
+    const env = gain(ctx, 0);
+    lin(env.gain, [[0, 0], [1.5, 1], [10, 1], [11.95, 0]]);
+    env.connect(out);
+    for (const [m, a] of [[26, 0.5], [33, 0.34], [38, 0.1], [45, 0.07], [50, 0.045], [57, 0.03]] as const) {
+      for (const [df, p] of [[-0.15, -0.5], [0.15, 0.5]] as const) osc(ctx, 'sine', mtof(m) + df, 0, 12).connect(gain(ctx, a)).connect(pan(ctx, p)).connect(env);
+    }
+    const n = noise(ctx, 0, 12, 2060, 12, 2);
+    n.connect(filt(ctx, 'lowpass', 200, 0.7)).connect(gain(ctx, 1.5)).connect(env);
+  },
+};
+
+// 1948 lights: 16 FM glass notes rippling up the Dm7 chord tones in 1.6 s, alternating ±0.4
+const SHIMMER = [74, 77, 81, 84, 86, 89, 93, 96]; // D5 F5 A5 C6 D6 F6 A6 C7
+A.tileShimmer = {
+  ch: 2, dur: 3.2,
+  build(ctx, out) {
+    const L = pan(ctx, -0.4), R = pan(ctx, 0.4);
+    L.connect(out); R.connect(out);
+    [0, 1, 0, 2, 1, 3, 2, 4, 3, 5, 4, 6, 5, 7, 6, 7].forEach((k, i) => {
+      bell(ctx, i % 2 ? R : L, 0.002 + i * 0.1, mtof(SHIMMER[k]), 0.2 * (1 - k * 0.04), { ratio: 3.5, index: 1.0, itau: 0.1, tau: 0.35, body: 0.4, tine: 0.08, strike: 0.01, lp: 9000, seed: 2070 + i });
+    });
+  },
+};
+
+// the key seats: a stone tock, a glass click and a low D2 tower bell (prime decay 2.5 s)
+A.keystone = {
+  ch: 2, dur: 3.5,
+  build(ctx, out) {
+    const n = noise(ctx, 0, 0.8, 2090);
+    const lp = filt(ctx, 'lowpass', 400, 0.7);
+    const ng = gain(ctx, 0);
+    perc(ng.gain, 0.001, 0.8, 0.001, 0.12);
+    n.connect(lp).connect(ng).connect(out);
+    const o = osc(ctx, 'sine', 110, 0, 1.2);
+    glide(o.frequency, 0.001, 110, 90, 0.02);
+    const og = gain(ctx, 0);
+    perc(og.gain, 0.001, 0.7, 0.002, 0.12);
+    o.connect(og).connect(out);
+    glassClick(ctx, out, 0.004, 0.3, 0.15);
+    towerBell(ctx, out, 0.006, mtof(38), 0.75, 2.5 / 3.2, 2095);
+  },
+};
+
+// the seal breaks: a crack swept 1.2 → 6 kHz in 60 ms and a 38 Hz thump (+ its 2nd/3rd harmonics for phones)
+A.sealCrack = {
+  ch: 2, dur: 2.0, liteRate: 48000,
+  build(ctx, out) {
+    const n = noise(ctx, 0, 0.7, 2100, 4, 2);
+    const bp = filt(ctx, 'bandpass', 1200, 1.1);
+    glide(bp.frequency, 0.001, 1200, 6000, 0.06);
+    const g = gain(ctx, 0);
+    perc(g.gain, 0.001, 1.0, 0.0006, 0.08);
+    n.connect(bp).connect(g).connect(out);
+    for (const [h, a] of [[1, 0.9], [2, 0.22], [3, 0.08]] as const) {
+      const o = osc(ctx, 'sine', 38 * h, 0, 1.9);
+      glide(o.frequency, 0.001, 58 * h, 38 * h, 0.04);
+      const og = gain(ctx, 0);
+      perc(og.gain, 0.001, a, 0.004, 0.25 / h);
+      o.connect(og).connect(out);
+    }
+  },
+};
+
+// the leaves swing: noise under a low-pass opening 200 → 1400 Hz beneath a 2.3 s swell
+A.gateBreath = {
+  ch: 2, dur: 2.8, div: 2, minRate: 22000,
+  build(ctx, out) {
+    const n = noise(ctx, 0, 2.8, 2110, 4, 2);
+    const lp = filt(ctx, 'lowpass', 200, 0.8);
+    glide(lp.frequency, 0, 200, 1400, 2.3);
+    const g = gain(ctx, 0);
+    lin(g.gain, [[0, 0], [1.5, 0.9], [2.3, 0.45], [2.75, 0]]);
+    n.connect(lp).connect(g).connect(out);
+  },
+};
+
+// cold light: an "aah" choir on Dm(add9) — D3 A3 F4 E5 (the spec's E4 F4 opened out: no semitone cluster)
+A.lightPad = {
+  ch: 2, dur: 7, div: 2, minRate: 22000,
+  build(ctx, out) {
+    ([[50, 0.05, -0.3], [57, 0.045, 0.3], [65, 0.035, -0.15], [76, 0.025, 0.15]] as const).forEach(([m, a, p]) => {
+      aah(ctx, out, 0.01, 2.9, mtof(m), a, p, 0.4, 2.6, m < 60 ? 'o' : 'a');
+    });
+  },
+};
+
 export const SFX_ASSETS: Readonly<Record<string, SfxAsset>> = A;
