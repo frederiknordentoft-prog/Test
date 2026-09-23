@@ -167,8 +167,10 @@ for (const vp of vps) {
       if (phone) check(g.h <= cap + 0.5, `phones: the card is a bottom sheet ≤ ${H < 560 ? 62 : 43} % of the height (the staged die stays in view)`, `${g.h.toFixed(0)} px of ${H}`);
       check(Math.abs(g.cardTop - (g.top - g.host)) <= 1.5, 'hud.gambleCardTop() is the card\'s top edge', `${g.cardTop.toFixed(1)} vs ${(g.top - g.host).toFixed(1)}`);
       check(g.focus === 'keep' && g.medal, 'Behold is focused first; the die medal is painted');
+      // the shot once the die has risen and grown to its stage (the 0,7 s lift; the money celebration has closed)
+      await adv(1000);
       await shot('h20-gamble-offer');
-      await adv(1100);
+      await adv(100);
       await ev(() => window.__slot.qaGamble(5));
       await real(300);
       await click('#summaryCard [data-gamble="double"]');
@@ -178,6 +180,10 @@ for (const vp of vps) {
       await shot('h21-gamble-throw');
       await until("document.getElementById('summaryCard').textContent.includes('Terningen viser')", 8000, 50);
       await adv(200);
+      // the compact result card never covers the niche (the payout dice land in view)
+      const cov = await ev(() => { const a = document.getElementById('summaryCard').getBoundingClientRect(), b = document.querySelector('#vault .v-niche').getBoundingClientRect();
+        return b.width < 1 ? 0 : Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)); });
+      check(cov < 1, 'the result card leaves the niche in view (the payout dice land where they can be seen)', `${cov.toFixed(0)} px²`);
       await shot('h22-gamble-result');
       await untilState('idle', 20000);
       await adv(300); await real(300);

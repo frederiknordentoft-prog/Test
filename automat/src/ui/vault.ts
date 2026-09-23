@@ -47,7 +47,7 @@ const AWAY = new Set(['boot', 'splash', 'chamber', 'ceremony', 'demoLapse', 'sto
 /** The grid frame's rim beyond the grid square (px). */
 const RIM = 7;
 
-const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+const easeInOut = (t: number) => 0.5 - Math.cos(Math.PI * t) / 2; // sine: the band never lingers at the edges
 const clamp = (a: number, v: number, b: number) => Math.max(a, Math.min(b, v));
 
 export class Vault {
@@ -98,7 +98,12 @@ export class Vault {
     matchMedia(DESK).addEventListener('change', () => this.mount());
     window.addEventListener('resize', () => { this.repaint(); this.fit(); });
     document.addEventListener('visibilitychange', () => this.schedule());
-    bus.on('state', ({ to }) => document.documentElement.classList.toggle('vault-away', AWAY.has(to)));
+    // the storm's one choice (after its summary, the frame still molten) is a molten phase too: the fan holds the dice
+    // and the outro releases them, so the niche comes back with stormOutro
+    bus.on('state', ({ to }) => {
+      const stormChoice = (to === 'gambleOffer' || to === 'gambleReveal') && document.documentElement.dataset.mode === 'storm';
+      document.documentElement.classList.toggle('vault-away', AWAY.has(to) || stormChoice);
+    });
     this.wireHover();
   }
 
@@ -179,14 +184,15 @@ export class Vault {
     nxt.classList.remove('in');
     if (was === 0 && n > 0) this.thaw(calm);
     if (calm) {
-      this.catchEl.animate([{ opacity: 0 }, { opacity: 0.8, offset: 0.25 }, { opacity: 0 }], { duration: 900, easing: 'linear' });
+      this.catchEl.animate([{ opacity: 0 }, { opacity: 0.8, offset: 0.34 }, { opacity: 0 }], { duration: 900, easing: 'linear' });
       return;
     }
+    // every brightening is a ramp of ≥ 300 ms (photosensitivity), also on this small ring
     this.catchEl.animate([
-      { opacity: 0, transform: 'scale(.72)' }, { opacity: 0.85, transform: 'scale(.9)', offset: 0.2 }, { opacity: 0, transform: 'scale(1.5)' },
-    ], { duration: 680, easing: 'cubic-bezier(.2,.7,.3,1)' });
+      { opacity: 0, transform: 'scale(.72)' }, { opacity: 0.85, transform: 'scale(.95)', offset: 0.32 }, { opacity: 0, transform: 'scale(1.5)' },
+    ], { duration: 940, easing: 'linear' });
     this.puff.animate([
-      { opacity: 0, transform: 'translate(-50%, 6px) scale(.55)' }, { opacity: 0.7, transform: 'translate(-50%, -4px) scale(.9)', offset: 0.28 },
+      { opacity: 0, transform: 'translate(-50%, 6px) scale(.55)' }, { opacity: 0.7, transform: 'translate(-50%, -4px) scale(.9)', offset: 0.3 },
       { opacity: 0, transform: 'translate(-50%, -30px) scale(1.4)' },
     ], { duration: 1000, easing: 'cubic-bezier(.2,.7,.3,1)' });
     this.dip.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(3px)', offset: 0.3 }, { transform: 'translateY(0)' }], { duration: 440, easing: 'cubic-bezier(.2,.7,.3,1)' });
@@ -275,7 +281,7 @@ export class Vault {
     const step = (now: number) => {
       const t = (now - t0) / ms;
       if (t >= 1) { paintDie(cv, px, { state: st }); this.raf = 0; return; }
-      paintDieLit(cv, px, { state: st }, easeInOut(Math.max(0, t)), ang, st === 'frozen' ? 0.45 : 0.55);
+      paintDieLit(cv, px, { state: st }, easeInOut(Math.max(0, t)), ang, st === 'frozen' ? 0.5 : 0.62);
       this.raf = requestAnimationFrame(step);
     };
     this.raf = requestAnimationFrame(step);
@@ -294,7 +300,7 @@ export class Vault {
         { opacity: 0, transform: 'translate(-50%, -50%) scale(.2) rotate(0deg)' },
         { opacity: 1, transform: 'translate(-50%, -50%) scale(1) rotate(45deg)', offset: 0.4 },
         { opacity: 0, transform: 'translate(-50%, -50%) scale(.3) rotate(90deg)' },
-      ], { duration: 650, delay: delay + i * 170, easing: 'ease-out', fill: 'backwards' });
+      ], { duration: 760, delay: delay + i * 170, easing: 'ease-out', fill: 'backwards' });
     }
   }
   /** 0,5 s: a small rotate/translate jitter (±4°, ±2 px) with an ease-out tail. Frozen (0 dice): a shiver in the ice. */

@@ -662,9 +662,24 @@ export class Hud {
    *  note are never dropped. Desktop: a centred card under the die (no steps needed). */
   private fitGamble(): void {
     const card = this.el.summaryCard;
+    card.style.left = '';
     if (!card.classList.contains('gamble')) return; // (the placard keeps its own fit steps: Hud.fitPlacard)
     delete card.dataset.fit;
-    if (!this.isShown('summary') || card.dataset.g !== 'offer') return;
+    card.style.width = '';
+    if (!this.isShown('summary')) return;
+    if (card.dataset.g !== 'offer') {
+      // the throw and the result (compact text): on phones the card steps aside, left of the niche, wherever it would
+      // cover it or come close under it (the result's taller body would; the throw steps aside too, so the card never
+      // jumps between the two), so the payout dice are seen landing and the count rolling
+      const n = this.vault.nicheRect(), c = card.getBoundingClientRect(), host = this.root.getBoundingClientRect();
+      const away = document.documentElement.classList.contains('vault-away'); // (the storm's choice: the niche is away)
+      if (away || this.vault.el.classList.contains('desk') || n.width < 1 || !(c.top < n.bottom + 64 && c.bottom > n.top && c.right > n.left - 8)) return;
+      const gut = host.width < 380 ? 8 : 12, w = Math.floor(n.left - 8 - host.left - gut);
+      if (w < 240) return;
+      card.style.width = w + 'px';
+      card.style.left = gut + w / 2 + 'px'; // (the card is centred on `left` by its transform)
+      return;
+    }
     const host = this.root.getBoundingClientRect();
     const cap = host.height * (host.height < 560 ? 0.6 : 0.42);
     for (let f = 1; f <= 3 && card.offsetHeight > cap; f++) card.dataset.fit = String(f);

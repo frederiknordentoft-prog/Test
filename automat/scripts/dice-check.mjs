@@ -625,7 +625,7 @@ if (want.has('visual')) {
       check((vh <= vw || l.slot.h >= 200 - 0.5) && l.sw <= l.vw, `${tag} · chamber ${n}: gate slot ≥ 200 px in portrait, no horizontal scroll`, `${l.slot?.h.toFixed(0)} px`);
       check(l.lintel.length === 4 && txt.every((r) => r.x >= -1 && r.x + r.w <= l.vw + 1 && !ov(r, l.reg) && !ov(r, l.foot)) && !l.lintel.some((d) => l.myth.some((m) => ov(d, m) > 4)), `${tag} · chamber ${n}: the Pixi lintel${n === '1948' ? ', "AUTOMAT 1948" and its label' : ''} on screen, clear of #reg/#foot and the myth text`);
       if (n === '1948') check(!!l.title && !!l.concept && l.concept.y > l.title.y, `${tag} · open gate: the name with its concept label directly under it`);
-      check(!l.niche && !!l.chDie && !ov(l.chDie, l.chN), `${tag} · chamber ${n}: the niche is hidden; the user's die stands beside the count`);
+      check(!l.niche && !!l.chDie && !ov(l.chDie, l.chN), `${tag} · chamber ${n}: the niche is hidden; the user's die stands beside the count`, JSON.stringify({ niche: l.niche, chDie: l.chDie, chN: l.chN }));
       await click('#chDone'); await untilState('idle', 3000);
     }
     // the ceremony (demo): key frames on T0; #reg/#foot and the ribbon stay; the placard never covers the name

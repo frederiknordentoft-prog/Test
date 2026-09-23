@@ -353,7 +353,7 @@ html, body {
 #bigwin .center { bottom: calc(var(--deck-h) + var(--foot-h) + 28px + env(safe-area-inset-bottom)); }
 
 /* ---------- sheets (menu, drawer) ---------- */
-.sheet-wrap { position: absolute; inset: 0; background: rgba(2, 5, 12, 0.55); opacity: 0; pointer-events: none; transition: opacity 0.3s var(--ease); }
+.sheet-wrap { position: absolute; inset: 0; z-index: 7; background: rgba(2, 5, 12, 0.55); opacity: 0; pointer-events: none; transition: opacity 0.3s var(--ease); }   /* modal: over banners, cards and the coach card */
 .sheet-wrap.show { opacity: 1; pointer-events: auto; }
 .sheet {
   position: absolute; left: 0; right: 0; bottom: 0; max-height: 86%; display: flex; flex-direction: column;
@@ -566,13 +566,15 @@ html, body {
 
 /* first-visit introduction: non-modal coach card above the chip (it never takes focus) */
 #hello { position:absolute; z-index:6; width:min(320px, calc(100% - 32px)); padding:14px 16px; border-radius:16px; pointer-events:auto;
-  background:var(--glass-strong); border:1px solid rgba(138,92,255,.40); box-shadow:0 12px 40px rgba(0,0,0,.5); color:#cfe2ff; }
+  background:var(--glass-strong); border:1px solid rgba(138,92,255,.40); box-shadow:0 12px 40px rgba(0,0,0,.5); color:#cfe2ff;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }                /* the panel text under it never reads through */
 #hello[hidden] { display:none !important; }   /* (over the grid layout of #hello.side) */
 #hello.in { animation: helloIn .4s var(--ease) both; }
 @keyframes helloIn { from { opacity:0; transform:translateY(6px); } }
 :root.calm #hello.in { animation: wFade .4s linear both; }
 #hello .caret { position:absolute; bottom:-6px; width:10px; height:10px; transform:rotate(45deg); background:var(--glass-strong); border-right:1px solid rgba(138,92,255,.40); border-bottom:1px solid rgba(138,92,255,.40); }
 #hello .medal { float:left; width:44px; height:44px; margin:0 10px 4px 0; }
+#hello:not(.side) .b { clear:left; }                                          /* the body starts under the medal, never beside it */
 #hello .eb { margin:0; font-size:10.5px; letter-spacing:.2em; color:var(--muted); font-weight:650; }
 #hello h3 { margin:2px 0 6px; font-size:15px; font-weight:700; color:var(--ice); }
 #hello p { margin:0 0 6px; font-size:13.5px; line-height:1.42; }
@@ -727,6 +729,7 @@ html, body {
 }
 /* chamber and ceremony mode: the machine UI hides (inert too), the balance moves into the regulatory strip */
 :root.chamber #hdr, :root.chamber #slot-arc, :root.chamber #winstrip, :root.chamber #deck, :root.chamber .side { visibility:hidden; }
+:root.chamber #banner { opacity:0; transition:none; }                           /* a machine banner never shows through the chamber's clear middle */
 :root.chamber #reg #regBal { display:inline !important; }
 :root.chamber #summary { z-index:6; }                                          /* the placard sits above the chamber (z 5) and its scrim */
 :root.chamber .sheet-wrap { z-index:7; }                                       /* "Regler og tal ›" opens the menu over the chamber */
@@ -796,11 +799,12 @@ html, body {
     radial-gradient(circle at 30% 18%, rgba(234, 248, 255, 0.07) 0 0.7px, transparent 1.2px) 0 0 / 17px 13px,
     radial-gradient(circle at 70% 60%, rgba(234, 248, 255, 0.05) 0 0.7px, transparent 1.2px) 3px 5px / 11px 19px,
     linear-gradient(180deg, rgba(58, 96, 160, 0.34), rgba(14, 26, 56, 0.62) 46%, rgba(8, 14, 32, 0.84));
-  box-shadow: inset 0 9px 16px rgba(0, 0, 0, 0.55), inset 0 -14px 20px rgba(138, 92, 255, 0.12), inset 0 1px 0 rgba(234, 248, 255, 0.22), 0 6px 18px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 9px 16px rgba(0, 0, 0, 0.55), inset 0 -14px 20px rgba(138, 92, 255, 0.12), inset 0 1px 0 rgba(234, 248, 255, 0.22), 0 6px 18px rgba(0, 0, 0, 0.45), 0 0 18px rgba(138, 92, 255, 0.14);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.vault.zero .v-glass { box-shadow: inset 0 9px 16px rgba(0, 0, 0, 0.55), inset 0 -14px 20px rgba(156, 201, 255, 0.08), inset 0 1px 0 rgba(234, 248, 255, 0.22), 0 6px 18px rgba(0, 0, 0, 0.45); }
 /* the faint aurora rim, drawn only along the arch and the sides (a mask ring that follows the arch) */
 .v-rim { inset: -1px; border-radius: calc(var(--r) + 1px) calc(var(--r) + 1px) 10px 10px; overflow: hidden; --rw: 1.3px;
-  background: linear-gradient(165deg, rgba(25, 227, 214, 0.6), rgba(138, 92, 255, 0.5) 50%, rgba(255, 43, 214, 0.34) 85%, rgba(255, 43, 214, 0.05));
+  background: linear-gradient(165deg, rgba(25, 227, 214, 0.72), rgba(138, 92, 255, 0.6) 50%, rgba(255, 43, 214, 0.42) 85%, rgba(255, 43, 214, 0.06));
   -webkit-mask: radial-gradient(circle at 50% calc(var(--r) + 1px), transparent calc(var(--r) + 1px - var(--rw)), #000 calc(var(--r) + 1.6px - var(--rw))) top / 100% calc(var(--r) + 1px) no-repeat,
     linear-gradient(90deg, #000 var(--rw), transparent var(--rw) calc(100% - var(--rw)), #000 calc(100% - var(--rw))) bottom / 100% calc(100% - var(--r) - 1px) no-repeat;
   mask: radial-gradient(circle at 50% calc(var(--r) + 1px), transparent calc(var(--r) + 1px - var(--rw)), #000 calc(var(--r) + 1.6px - var(--rw))) top / 100% calc(var(--r) + 1px) no-repeat,
@@ -834,7 +838,7 @@ html, body {
 .v-frozen { opacity: 0; }
 .vault.zero .v-frozen { opacity: 1; }
 /* the ice block that holds the die at 0 (a clear cube with rime; the first landing thaws it) */
-.v-ice { position: absolute; inset: -4%; border-radius: 24%; opacity: 0; pointer-events: none; transform: rotate(-6deg);
+.v-ice { position: absolute; inset: 2%; border-radius: 27%; opacity: 0; pointer-events: none; transform: rotate(-6deg);
   background: radial-gradient(ellipse 60% 45% at 30% 22%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 70%),
     linear-gradient(150deg, rgba(226, 244, 255, 0.3), rgba(160, 205, 255, 0.06) 38%, rgba(190, 225, 255, 0.14) 70%, rgba(234, 248, 255, 0.34));
   box-shadow: inset 0 0 0 1px rgba(234, 248, 255, 0.46), inset 0 0 12px rgba(200, 230, 255, 0.3), 0 0 10px rgba(156, 201, 255, 0.18); }
@@ -885,20 +889,25 @@ html, body {
 :root.vault-away #vault, :root.splash #vault, :root.cine #vault { opacity: 0; visibility: hidden; transition: opacity 0.4s var(--ease), visibility 0s linear 0.4s; }
 :root.vault-away #vault *, :root.splash #vault *, :root.cine #vault * { pointer-events: none !important; }
 :root.nodice #vault, :root.nodice #diceBtn { display: none; }
+/* the chamber hides the machine UI at once (its own crossfade covers the stage): so does the niche (a fading niche would
+   keep an explicit `visible` through its transition and show over the chamber) */
+:root.chamber #vault { opacity: 0; visibility: hidden; transition: none; }
 /* calm: everything static (no bob, glint, rattle, tilt, turning ring); the landing is a static ring */
 :root.calm .v-bob, :root.calm .v-shadow, :root.calm .v-rim i, :root.calm .v-aura i { animation: none !important; }
 :root.calm .v-tilt { transform: none !important; }
 :root.calm .v-spec { display: none; }
 /* desktop: the last block of the right column, a 96 px die, the count, "terninger" and "Porten under klinten ›" */
 @media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
-  #vault { --die: 96px; --nw: 124px; --top: 12px; --nh: calc(var(--die) + 34px); position: relative; left: auto; bottom: auto; transform: none; flex: none; pointer-events: auto;
+  #vault { --die: 96px; --nw: 132px; --top: 16px; --nh: calc(var(--die) + 40px); position: relative; left: auto; bottom: auto; transform: none; flex: none; pointer-events: auto;
     padding: 12px 14px 14px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   #vault .v-h { display: block; margin: 0 0 8px; font-size: 11px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
   .v-btn { display: flex; align-items: center; gap: 16px; width: 100%; height: auto; text-align: left; }
   .v-niche { position: relative; flex: none; height: var(--nh); }
-  .v-count { position: static; flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 26px; font-size: 34px; color: #cdb8ff; text-shadow: 0 0 18px rgba(138, 92, 255, 0.35); }
-  .v-count .n { height: 36px; }
-  .v-count .n > span { line-height: 36px; }
+  .v-count { position: static; flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 26px; font-size: 34px; color: #cdb8ff; text-shadow: none; }
+  /* the roll clips the numeral box: a tight glow (a wide one would show the clip as a rectangle), none at 0 */
+  .v-count .n { height: 40px; padding: 0 6px; margin: 0 -6px; }
+  .v-count .n > span { line-height: 40px; text-shadow: 0 0 5px rgba(138, 92, 255, 0.5), 0 1px 2px rgba(5, 11, 26, 0.8); }
+  .vault.zero .v-count .n > span { text-shadow: 0 1px 2px rgba(5, 11, 26, 0.8); }
   .v-count .w { display: block; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; text-shadow: none; }
   #vault .v-link { display: inline-flex; position: absolute; left: calc(14px + var(--nw) + 16px); right: 8px; bottom: 18px; color: #cdb8ff; text-decoration: none; min-height: 24px; align-items: center; text-align: left; font-size: 11.5px; line-height: 1.25; }
   #vault .v-link[aria-disabled='true'] { cursor: default; opacity: 0.6; }
@@ -936,6 +945,16 @@ html, body {
 .pill .pseg[disabled] { opacity: 0.45; cursor: default; }
 .pill .pseg:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
 .pill .sep { width: 1px; height: 16px; background: rgba(255, 181, 71, 0.5); }
+/* phones (< 440 px): icons only, and tight enough (≤ 108 px) that the header logo still fits beside it at 360 px; the die
+   segment keeps a finger-wide target */
+@media (max-width: 440px) {
+  .pill { gap: 4px; padding: 0 1px 0 6px; }
+  .pill .tag { font-size: 9px; letter-spacing: 0.1em; padding: 3px 4px; }
+  .pill .pseg { gap: 4px; }
+  #demoStorm { padding: 0 3px 0 0; }
+  #demoDieSeg { padding: 0 6px 0 5px; }
+  .pill .pill-die { width: 18px; height: 18px; }
+}
 
 /* ---------- the die icons (the user's image; the coded die only if it cannot decode) ---------- */
 .die-ico { display: inline-block; flex: none; }

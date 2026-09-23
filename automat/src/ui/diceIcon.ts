@@ -74,14 +74,18 @@ export function paintDieLit(canvas: HTMLCanvasElement, cssPx: number, o: { state
   if (!g) return;
   const dpr = canvas.width / cssPx;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const c = cssPx / 2, r = cssPx * 0.72, dx = Math.cos(angle) * r, dy = Math.sin(angle) * r;
+  // the gradient spans the die's body along `angle` (the art fills ~84 % of its square), so the band is on the die for
+  // most of the sweep: a soft lead, a bright core and a thin trailing sparkle line
+  const c = cssPx / 2, r = cssPx * 0.5, dx = Math.cos(angle) * r, dy = Math.sin(angle) * r;
   const gr = g.createLinearGradient(c - dx, c - dy, c + dx, c + dy);
   const at = (x: number) => Math.min(1, Math.max(0, x));
-  const p = -0.2 + t * 1.4, w = 0.13;
+  const p = -0.18 + t * 1.36, w = 0.16;
   gr.addColorStop(at(p - w), 'rgba(255,255,255,0)');
-  gr.addColorStop(at(p - w * 0.25), `rgba(255,255,255,${a * 0.8})`);
+  gr.addColorStop(at(p - w * 0.35), `rgba(255,255,255,${a * 0.55})`);
   gr.addColorStop(at(p), `rgba(255,255,255,${a})`);
-  gr.addColorStop(at(p + w), 'rgba(255,255,255,0)');
+  gr.addColorStop(at(p + w * 0.3), `rgba(255,255,255,${a * 0.2})`);
+  gr.addColorStop(at(p + w * 0.55), `rgba(255,255,255,${a * 0.5})`);
+  gr.addColorStop(at(p + w * 0.75), 'rgba(255,255,255,0)');
   g.globalCompositeOperation = 'source-atop';
   g.fillStyle = gr;
   g.fillRect(0, 0, cssPx, cssPx);
