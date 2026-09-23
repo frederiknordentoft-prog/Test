@@ -68,6 +68,13 @@ await page.evaluate(() => window.__slot.qaNext('bigwin'));
 await page.evaluate(() => { window.__slot.spin(); });
 await untilState('celebrating'); await adv(1200); await shot('09-bigwin');
 await untilState('idle', 30000);
+// the big win (≥ 10×) is this player's first die: the one-time card takes over at the next idle
+await adv(600);
+if ((await state()) === 'diceCard') {
+  await adv(1600); await shot('09b-first-die');
+  await page.evaluate(() => document.querySelector('#summaryCard [data-act="ok"]')?.click());
+  await untilState('idle', 5000);
+}
 
 // Kp 7 sky
 await page.evaluate(() => window.__slot.setKp(7.4));
