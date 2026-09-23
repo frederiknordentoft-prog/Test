@@ -237,8 +237,9 @@ export class Game {
         if (i.open) { if (this.state === 'idle') void this.openChamber(); }
         else if (this.state === 'chamber') void this.closeChamber(!!i.key);
         break;
-      case 'gateOpen': if (this.state === 'chamber' && this.dice.unlock === 'pending' && this.chamberView.mode === 'real') void this.runCeremony('real'); break;
-      case 'gateReplay': if (this.state === 'chamber' && this.dice.unlock === 'seen' && this.chamberView.mode === 'real') void this.runCeremony('replay'); break;
+      // (never while the chamber is closing: runCeremony refuses that too)
+      case 'gateOpen': if (this.state === 'chamber' && !this.chamberClosing && this.dice.unlock === 'pending' && this.chamberView.mode === 'real') void this.runCeremony('real'); break;
+      case 'gateReplay': if (this.state === 'chamber' && !this.chamberClosing && this.dice.unlock === 'seen' && this.chamberView.mode === 'real') void this.runCeremony('replay'); break;
       case 'diceCard': this.cardAct(i.act); break;
       case 'hello':
         this.hideHello();
@@ -444,14 +445,17 @@ export class Game {
     if (!this.s.settings.dice) { this.dice.introSeen = true; this.dice.helloSeen = true; } // opted out: no cards later
     return n;
   }
-  /** Celebration birth beat (or instantly on a skip before it). */
+  /** Celebration birth beat (or instantly on a skip before it). Opted out since the celebration began: no die. */
   private dieBirth(n: number, tier: number, instant: boolean): void {
+    if (!this.s.settings.dice) return;
     this.award.awardBirth(n, { instant, tier });
     if (!instant) this.w.audio.play('dieBirth', { when: this.w.audio.now() + 0.05 });
   }
-  /** After the celebration: the flight to the chip (landDice rolls the number). Opted out: the count moves silently. */
+  /** After the celebration: the flight to the chip (landDice rolls the number). Opted out: the count moves silently
+   *  (turned off mid-award, the die already on screen fades where it is, so nothing of the award is left in flight). */
   private async flyDie(): Promise<void> {
     if (this.s.settings.dice) { await this.award.awardFly(); return; }
+    this.award.awardDrop();
     this.shownDice = Math.max(0, this.dice.count - this.heldDice);
     this.refreshDice();
   }
@@ -541,7 +545,7 @@ export class Game {
     const t = this.w.audio.now();
     this.w.audio.play('bell1948', { level: 1, gain: 0.5, when: t });
     this.w.audio.play('bell1948', { level: 2, gain: 0.5, when: t + 0.704 });
-    this.w.announce(firstDieCopy().sr);
+    this.w.announce(demo ? firstDieCopy().srDemo(this.dice.count) : firstDieCopy().sr);
     if (!demo) { this.dice.introSeen = true; this.dice.helloSeen = true; this.persist(); }
   }
   /** Die nr. 1948: shown once (offered), at the next idle. "Ikke nu" keeps 'pending'; there is never a reminder. */
@@ -619,6 +623,8 @@ export class Game {
   private chamberView: DiceView = { count: 0, unlock: 'none', mode: 'real' };
   private chamberDemo: { snap: ReturnType<Game['snapshot']>; before: string } | null = null;
   private chamberClosing = false;
+  /** The 900 ms open still running (a ceremony asked for meanwhile starts after it). */
+  private chamberOpening: Promise<void> | null = null;
   private ribbonFor(v: DiceView, kind: RibbonKind | null): { kind: RibbonKind; text: string } | null {
     return kind ? { kind, text: chamberRibbon(kind, v.count, this.dice.count) } : null;
   }
@@ -640,7 +646,10 @@ export class Game {
     this.setState('chamber');
     this.hud.setChamberMode(true);
     this.chamberAudio(true);
-    await this.award.openChamber(view, { ribbon: this.ribbonFor(view, preview === undefined ? null : 'preview'), realN: this.dice.count });
+    const opening = this.award.openChamber(view, { ribbon: this.ribbonFor(view, preview === undefined ? null : 'preview'), realN: this.dice.count });
+    this.chamberOpening = opening;
+    await opening;
+    if (this.chamberOpening === opening) this.chamberOpening = null;
   }
   /** Esc / ✕ / "Luk". A preview ends here and the real view is restored. Focus returns to the chip for Esc only. */
   private async closeChamber(key = false): Promise<void> {
@@ -663,7 +672,8 @@ export class Game {
   /** 'real' (die nr. 1948, pending: writes 'seen' at the seal beat or on skip), 'replay' (no writes), 'demo' (drawer / #1948:
    *  a hard cut to 1948 on a snapshot with persistence off, the amber ribbon pinned throughout, never writes). */
   private async runCeremony(kind: CeremonyKind): Promise<void> {
-    if (this.ceremonyRun || (kind === 'real' && this.dice.unlock !== 'pending')) return;
+    // never into a closing chamber: its close would hide the ceremony and leave a placard no button can close
+    if (this.ceremonyRun || this.chamberClosing || (kind === 'real' && this.dice.unlock !== 'pending')) return;
     if (this.state !== 'idle' && this.state !== 'chamber') return;
     this.hideHello();
     const demo = kind === 'demo' ? this.beginDiceDemo() : null;
@@ -678,7 +688,7 @@ export class Game {
     this.hud.setChamberMode(true);
     this.hud.setCeremonyMode(true);
     const ready = Promise.race([this.w.audio.prepareGate(), new Promise<void>((r) => setTimeout(r, 2000))]);
-    if (this.award.chamberOpen()) this.award.setChamberView(view, opts);
+    if (this.award.chamberOpen()) { if (this.chamberOpening) await this.chamberOpening; this.award.setChamberView(view, opts); }
     else { this.chamberAudio(true); await this.award.openChamber(view, opts); }
     await ready;
     this.w.announce(srCeremonyStart(kind, n));
@@ -722,12 +732,13 @@ export class Game {
     // "Se kammeret" / replay "Luk" stay in the chamber (open state); "Tilbage til NORDLYS" / "Afslut demo" close it
     const stay = !run.demo && act !== 'back';
     if (stay) this.hud.setCeremonyMode(false);
-    if (run.demo) await this.award.closeGate(); // the demo leaves close again before the real view returns
+    if (run.demo) await this.award.closeGate(); // the demo leaves close again (the amber ribbon stays pinned)
     this.ceremonyRun = null;
     if (run.demo) this.finishDiceDemo(run.demo);
     const real = realDiceView(this.dice);
     this.chamberView = real;
-    this.award.setChamberView(real, { ribbon: null, realN: this.dice.count });
+    // a chamber about to close fades out as it is: no one-frame cut to the real count (the next open renders it)
+    if (stay) this.award.setChamberView(real, { ribbon: null, realN: this.dice.count });
     this.setState('chamber');
     if (stay) { this.chamberAudio(true); return; } // after a real unlock the music is unfiltered
     await this.closeChamber();

@@ -9,7 +9,7 @@ const ICON_CLOSE = '✕';
 
 /** Markup of the section (inserted in #overlays BEFORE #menuWrap, so the rules menu can open on top of it). */
 export function chamberMarkup(soundIcon: string): string {
-  return `<section id="chamber" role="dialog" aria-modal="true" aria-labelledby="chTitle" aria-describedby="chSum" hidden>
+  return `<section id="chamber" role="dialog" aria-modal="true" aria-labelledby="chTitle" aria-describedby="chSum" tabindex="-1" hidden>
     <div id="chRibbon" class="ch-ribbon" hidden></div>
     <header class="ch-hdr">
       <div><p class="ch-eb">${CHAMBER.eyebrow}</p><h2 id="chTitle">${CHAMBER.title}</h2></div>
@@ -83,7 +83,21 @@ export class ChamberDom {
 
   show(b: boolean): void {
     this.el.hidden = !b;
-    if (b) setTimeout(() => (this.q('chClose') as HTMLButtonElement).focus({ preventScroll: true }), 50);
+    // in the ceremony the dialog itself holds focus (its controls are inert), so Space reaches the skip
+    if (b) setTimeout(() => (this.ceremony ? this.el : this.q('chClose')).focus({ preventScroll: true }), 50);
+  }
+
+  private ceremony = false;
+  /** The ceremony: the faded chamber text and its controls go inert (no Tab, no Enter on an invisible "Regler og
+   *  tal ›" or "Luk"); focus moves to the dialog itself, where Space / Esc / Enter reach the skip. Afterwards the
+   *  controls come back, and focus that was lost (the placard closed) returns to "Luk". */
+  setCeremony(b: boolean): void {
+    this.ceremony = b;
+    this.el.querySelectorAll<HTMLElement>(':scope > :not(.ch-ribbon):not(.ch-gate):not(.sr)').forEach((c) => { c.inert = b; });
+    if (!this.isShown()) return;
+    const a = document.activeElement;
+    if (b) this.el.focus({ preventScroll: true });
+    else if (!a || a === document.body || a === this.el || !a.getClientRects().length) this.q('chClose').focus({ preventScroll: true });
   }
 
   /** Fit loop (phone portrait): raise data-fit until the gate slot is ≥ 200 px and nothing overflows (the gate row

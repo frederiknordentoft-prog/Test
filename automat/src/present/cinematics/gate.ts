@@ -53,6 +53,7 @@ export function playGateCeremony(w: GateWorld, o: { eyebrow: string; onSeal(): v
   const kd = g.keyDie;
 
   g.eyebrow.text = o.eyebrow;
+  g.fitEyebrow(); // its width depends on the text (e.g. "DEMO · FORHÅNDSVISNING" on a landscape phone's slot)
   g.eyebrow.alpha = 0;
   g.title.visible = g.concept.visible = false;
   g.keySeated = false;
@@ -112,7 +113,8 @@ export function playGateCeremony(w: GateWorld, o: { eyebrow: string; onSeal(): v
       },
     }, P(GATE_T.travel));
     tl.call(() => { g.ghost.visible = false; g.keySeated = true; kd.position.set(G().keystone.x, G().keystone.y); w.haptic(25); }, [], P(GATE_T.seat))
-      .fromTo(kd, { width: G().keySize * 1.08, height: G().keySize * 1.08 }, { width: G().keySize, height: G().keySize, duration: 0.2, ease: 'back.out(2)', immediateRender: false }, P(GATE_T.seat))
+      // function values: read when the tween starts (a resize since the timeline was built has a new geometry)
+      .fromTo(kd, { width: () => G().keySize * 1.08, height: () => G().keySize * 1.08 }, { width: () => G().keySize, height: () => G().keySize, duration: 0.2, ease: 'back.out(2)', immediateRender: false }, P(GATE_T.seat))
       .to(w.camera, { zoom: 1.075, duration: 0.12, ease: 'power2.out' }, P(GATE_T.seat))
       .to(w.camera, { zoom: 1.065, duration: 0.18, ease: 'power2.inOut' }, P(GATE_T.seat + 0.12));
     at('dieBirth', GATE_T.key, { gain: 0.5 });
@@ -152,7 +154,7 @@ export function playGateCeremony(w: GateWorld, o: { eyebrow: string; onSeal(): v
     }, [], P(GATE_T.name))
       .to(g.title, { reveal: 1, duration: 1.2, ease: 'power2.inOut' }, P(GATE_T.name))
       .to(g.title, { sweep: 1.2, duration: 1.2, ease: 'power1.inOut' }, P(GATE_T.name))
-      .fromTo(g.title, { y: G().oy + 0.3 * G().H + 10 }, { y: G().oy + 0.3 * G().H, duration: 1.2, ease: 'power2.out', immediateRender: false }, P(GATE_T.name))
+      .fromTo(g.title, { y: () => G().oy + 0.3 * G().H + 10 }, { y: () => G().oy + 0.3 * G().H, duration: 1.2, ease: 'power2.out', immediateRender: false }, P(GATE_T.name))
       .to(g.concept, { alpha: 1, duration: 0.4 }, P(GATE_T.name))
       .to(g.eyebrow, { alpha: 0, duration: 0.6 }, P(GATE_T.name));
     for (let k = 0; k < 4; k++) at('bell1948', GATE_T.name + k * b, { level: 5 + k, gain: 0.4 });

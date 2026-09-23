@@ -170,6 +170,8 @@ export class Hud {
       this.el[id] = document.getElementById(id)!;
     }
     this.chamber = new ChamberDom(ov);
+    // a closed sheet is only transparent: inert keeps its buttons out of the Tab order (openMenu/openDrawer lift it)
+    this.el.menuWrap.inert = this.el.drawerWrap.inert = true;
     this.slotArc = document.getElementById('slot-arc')!;
     this.slotGrid = document.getElementById('slot-grid')!;
     this.wire();
@@ -261,7 +263,7 @@ export class Hud {
     // ceremony: a tap anywhere on the chamber skips (the Game allows it from 2,0 s)
     ch.addEventListener('pointerdown', () => { if (document.documentElement.classList.contains('ceremony')) I({ t: 'skip' }); });
     onDiePainterChange(() => this.paintDiceIcons());
-    window.addEventListener('resize', () => { this.paintDiceIcons(); this.placeHello(); this.chamber.place(); });
+    window.addEventListener('resize', () => { this.paintDiceIcons(); this.placeHello(); this.chamber.place(); this.fitPlacard(); });
     this.el.menuBody.addEventListener('input', (e) => {
       const t = e.target as HTMLInputElement;
       const k = t.dataset.k as keyof Settings | undefined;
@@ -478,24 +480,82 @@ export class Hud {
     this.el.summaryCard.className = 'card' + (tone === 'storm' ? '' : ' base') + (tone === 'relic' || tone === 'placard' ? ' relic' : '') + (tone === 'placard' ? ' placard' : '');
     this.el.summaryCard.innerHTML = html;
     this.show('summary', true);
+    this.fitPlacard();
     const card = this.el.summaryCard;
     setTimeout(() => (card.querySelector<HTMLElement>('[data-primary]') ?? card.querySelector<HTMLElement>('[data-focus]') ?? card.querySelector('button'))?.focus({ preventScroll: true }), 400);
   }
   summaryEl(): HTMLElement { return this.el.summaryCard; }
+  /** Phones (bottom-anchored placard): the claim (.pl-claim: p1 + the sanctioned sentence with its guard) never shrinks
+   *  or scrolls. Portrait keeps the card within 52 % of the screen where the claim allows it (the gate's name stays
+   *  clear): the type tightens first (data-fit 1–2; 3 only when the band between #reg and #foot is short), then p3/p4
+   *  (.pl-body) get the room left, in whole paragraphs (p3 always), and the rest scrolls under a fade.
+   *  Landscape: the card stands beside the gate, as wide as that room allows, and may use the whole band. The band ends
+   *  under a demo/replay ribbon the card would cover; a card still taller than it takes the last step (data-tight). */
+  private fitPlacard(): void {
+    const card = this.el.summaryCard, body = card.querySelector<HTMLElement>('.pl-body');
+    delete card.dataset.fit;
+    delete card.dataset.tight;
+    card.style.width = ''; // (the same card element also shows the other cards)
+    if (!body || !card.classList.contains('placard') || !this.isShown('summary')) return;
+    body.style.maxHeight = '';
+    body.classList.remove('more');
+    body.removeAttribute('tabindex');
+    if (!matchMedia('(max-width: 999px), (max-aspect-ratio: 5/4)').matches) return;
+    const box = this.el.summary.getBoundingClientRect();
+    const land = matchMedia('(max-width: 999px) and (max-height: 500px) and (orientation: landscape)').matches;
+    // landscape: as wide as the room left of the gate's slot allows (fewer lines)
+    const slot = this.chamber.gateSlot().getBoundingClientRect();
+    if (land && slot.width > 0) card.style.width = Math.round(Math.max(300, Math.min(440, slot.left - card.getBoundingClientRect().left - 12))) + 'px';
+    // the band's top: 12 px under #reg, and 6 px under the chamber's ribbon wherever the card would cover it (a demo
+    // or replay ribbon stays readable to the last frame)
+    let top = document.getElementById('reg')!.getBoundingClientRect().bottom + 12;
+    const rb = this.chamber.isShown() ? this.chamber.el.querySelector<HTMLElement>('#chRibbon') : null;
+    if (rb && !rb.hidden) {
+      const r = rb.getBoundingClientRect(), c = card.getBoundingClientRect();
+      if (r.height > 0 && r.left < c.right && r.right > c.left) top = Math.max(top, r.bottom + 6);
+    }
+    card.style.maxHeight = 'none';
+    body.style.maxHeight = '0px';
+    const band = card.offsetTop + card.offsetHeight - (top - box.top); // bottom-anchored: the bottom never moves
+    const cap = land ? band : Math.min(band, box.height * 0.52);
+    for (let f = 1; f <= 3 && card.offsetHeight > (f < 3 ? cap : band); f++) card.dataset.fit = String(f);
+    if (card.offsetHeight > band) card.dataset.tight = ''; // the last step (a short landscape band under a ribbon)
+    const fixed = card.offsetHeight;
+    const ps = Array.from(body.children) as HTMLElement[];
+    const bot = (p: HTMLElement) => p.offsetTop - body.offsetTop + p.offsetHeight + parseFloat(getComputedStyle(p).marginBottom);
+    const room = Math.min(band - fixed, Math.max(cap - fixed, ps.length ? bot(ps[0]) : 0));
+    let h = 0;
+    for (const p of ps) { if (bot(p) <= room + 0.5) h = bot(p); else break; }
+    body.style.maxHeight = h + 'px';
+    card.style.maxHeight = '';
+    body.classList.toggle('more', body.scrollHeight > h + 1);
+    if (h === 0) body.setAttribute('tabindex', '-1'); // a 0-px scroller is no tab stop
+  }
 
   /** Focus moves into the dialog on open; it is returned to the opener only for keyboard closes (Esc),
    *  otherwise a later Space would re-open the dialog instead of spinning. */
   openMenu(b: boolean, restoreFocus = false, tab?: string): void {
     if (tab) this.menuTab = tab;
-    if (b) this.renderMenu();
+    if (b) {
+      this.renderMenu();
+      const a = document.activeElement;
+      if (!this.el.menuWrap.contains(a)) this.menuFrom = a instanceof HTMLElement && a !== document.body ? a : null;
+    }
     this.el.menuWrap.classList.toggle('show', b);
+    this.el.menuWrap.inert = !b;
     this.onIntent({ t: 'menu', open: b });
     if (b) setTimeout(() => this.el.menuClose.focus(), 50);
-    else if (restoreFocus) this.el.menuBtn.focus({ preventScroll: true });
-    else (document.activeElement as HTMLElement | null)?.blur?.();
+    else if (restoreFocus) {
+      // back to the opener; else "Regler og tal ›" in the chamber (#hdr is inert there) or the menu button
+      const from = this.menuFrom, usable = (e: HTMLElement | null) => !!e && e.isConnected && !e.closest('[inert]') && e.getClientRects().length > 0;
+      (usable(from) ? from! : this.chamber.isShown() ? this.chamber.el.querySelector<HTMLElement>('#chRules')! : this.el.menuBtn).focus({ preventScroll: true });
+    } else (document.activeElement as HTMLElement | null)?.blur?.();
   }
+  /** The element that had focus when the menu opened (keyboard opens only: a pointer press drops focus first). */
+  private menuFrom: HTMLElement | null = null;
   openDrawer(b: boolean, restoreFocus = false): void {
     this.el.drawerWrap.classList.toggle('show', b);
+    this.el.drawerWrap.inert = !b;
     this.onIntent({ t: 'menu', open: b });
     if (b) setTimeout(() => this.el.drawerClose.focus(), 50);
     else if (restoreFocus) this.el.toolsBtn.focus({ preventScroll: true });
@@ -597,17 +657,30 @@ export class Hud {
   }
   hideHello(): void { this.el.hello.hidden = true; this.el.hello.classList.remove('in'); }
   helloShown(): boolean { return !this.el.hello.hidden; }
-  /** Anchored above the chip: left = max(gutter, chip.left − 12), bottom = innerHeight − chip.top + 10, caret on the icon. */
+  /** Anchored above the chip's column: left = max(gutter, chip.left − 12), the bottom 10 px above "Saldo" (the balance
+   *  stays readable), never over SPIN (it dismisses the card and spins); a short screen widens it until it clears #reg.
+   *  The caret points at the chip icon. */
   placeHello(): void {
     const el = this.el.hello;
     if (el.hidden) return;
     const host = this.root.getBoundingClientRect();
     const chip = this.el.diceBtn.getBoundingClientRect();
     const ico = this.el.diceIco.getBoundingClientRect();
+    const saldo = (this.el.bal.previousElementSibling as HTMLElement).getBoundingClientRect();
+    const spin = this.el.spinBtn.getBoundingClientRect();
+    const reg = this.el.reg.getBoundingClientRect().bottom - host.top;
     const gutter = 16;
     const left = Math.max(gutter, chip.left - 12 - host.left);
+    const bottom = Math.round(host.bottom - saldo.top + 10);
+    // SPIN's progress ring reaches 6 px past the button
+    const maxW = Math.min(host.width - left - gutter, spin.left > chip.right ? spin.left - 6 - 8 - host.left - left : Infinity);
+    let w = Math.min(320, maxW);
     el.style.left = left + 'px';
-    el.style.bottom = Math.round(host.bottom - chip.top + 10) + 'px';
+    el.style.bottom = bottom + 'px';
+    el.style.width = Math.floor(w) + 'px';
+    while (w < Math.min(maxW, 600) && host.height - bottom - el.offsetHeight < reg + 8) { w = Math.min(w + 40, maxW, 600); el.style.width = Math.floor(w) + 'px'; }
+    // the shortest landscape screens: #reg wins over the "Saldo" label (the card may come down onto it, never onto #reg)
+    el.style.bottom = Math.max(0, Math.min(bottom, host.height - reg - 8 - el.offsetHeight)) + 'px';
     (el.querySelector('.caret') as HTMLElement | null)?.style.setProperty('left', Math.max(12, ico.left + ico.width / 2 - host.left - left - 5) + 'px');
   }
 
@@ -620,7 +693,8 @@ export class Hud {
       if (b) el.setAttribute('inert', ''); else el.removeAttribute('inert');
     }
   }
-  setCeremonyMode(b: boolean): void { document.documentElement.classList.toggle('ceremony', b); }
+  /** :root.ceremony fades the chamber text; ChamberDom makes its controls inert and holds focus on the dialog (Space skips). */
+  setCeremonyMode(b: boolean): void { document.documentElement.classList.toggle('ceremony', b); this.chamber.setCeremony(b); }
 
   // ---------------- side panels (desktop) ----------------
   refreshSide(stakeOre: number, storm = false): void {

@@ -36,6 +36,8 @@ export interface DicePresenter {
   awardBirth(n: number, o: { instant: boolean; tier: number }): void;
   /** After the celebration closed: the flight to hud.diceTarget(); resolves after host.land(1, false). */
   awardFly(): Promise<void>;
+  /** "Vis terninger i spillet" turned off mid-award: a born die fades where it is (no flight, no landing). */
+  awardDrop(): void;
   /** Tap/Esc: the flight starts at once / finishes within 300 ms (contract: done ≤ skip + 300 ms + 1 frame). */
   awardSkip(): void;
   /** Real storm die: pop at the winning cluster, then hold it in slot `slot` on the frame. Resolves when it sits (≈ 0,75 s). */
@@ -76,19 +78,33 @@ export class PixiDicePresenter implements DicePresenter {
   private rebuildTimer = 0;
   private machine = { a: 1 };
   private dom = { v: 1 };
+  /** The running open/close transition (interruptible: a close during the open takes over from where it is). */
+  private tl: gsap.core.Timeline | null = null;
+  private tlEnd: (() => void) | null = null;
+  /** Bumped by every open and close: a continuation that finds a newer one does nothing. */
+  private gen = 0;
+  /** The slot (and stage) the gate was last baked for: one bake per open, and on a real resize only. */
+  private built = { x: 0, y: 0, w: 0, h: 0, sw: 0, sh: 0 };
+  /** The placard's pending lift (cardShown → clearName). */
+  private lift: gsap.core.Tween | null = null;
 
   constructor(h: DiceHost) {
     this.h = h;
     this.award = new DieAward({ hud: h.hud, w: h.w, calm: () => h.calm(), land: (add, fromHeld) => h.land(add, fromHeld) });
     h.w.stage.layers.chamber.addChild(this.gate);
     // update() only while the gate is visible, on the game clock (in step with the audio-anchored ceremony)
-    h.w.onFrame(() => { if (this.gate.visible) { this.gate.calm = h.calm(); this.gate.update(clock.dt, h.w.sky.envColors()[0]); } });
-    // rebuild on resize while open (debounced 150 ms): the slot is measured like #slot-grid
-    new ResizeObserver(() => {
-      if (!this.chamberShown) return;
-      clearTimeout(this.rebuildTimer);
-      this.rebuildTimer = window.setTimeout(() => { if (this.chamberShown) this.buildGate(); }, 150);
-    }).observe(h.hud.chamber.gateSlot());
+    h.w.onFrame(() => {
+      if (this.gate.visible) { this.gate.calm = h.calm(); this.gate.update(clock.dt, h.w.sky.envColors()[0]); }
+      // the stage resizes on a frame after the window: a bake that ran before it (a slow frame) is redone
+      if (this.chamberShown && !this.rebuildTimer && (h.w.stage.w !== this.built.sw || h.w.stage.h !== this.built.sh)) this.rebuildSoon();
+    });
+    // rebuild on resize while open (debounced 150 ms): the slot is measured like #slot-grid. Un-hiding the chamber
+    // (0×0 → its size) fires this too; openChamber has already baked for that size, so only a change rebuilds.
+    new ResizeObserver(() => { if (this.chamberShown && this.slotMoved()) this.rebuildSoon(); }).observe(h.hud.chamber.gateSlot());
+  }
+  private rebuildSoon(): void {
+    clearTimeout(this.rebuildTimer);
+    this.rebuildTimer = window.setTimeout(() => { this.rebuildTimer = 0; if (this.chamberShown && this.slotMoved()) this.buildGate(); }, 150);
   }
   inFlight(): boolean { return this.award.inFlight(); }
   held(): number { return this.award.held(); }
@@ -98,6 +114,7 @@ export class PixiDicePresenter implements DicePresenter {
   awardBirth(n: number, o: { instant: boolean; tier: number }): void { this.award.birth(n, o); }
   awardSkip(): void { this.award.skip(); }
   awardFly(): Promise<void> { return this.award.fly(); }
+  awardDrop(): void { this.award.drop(); }
   stormPop(n: number, at: Pt, slot: number): Promise<void> { void n; return this.award.stormPop(at, slot); }
   stormGhost(at: Pt): Promise<void> { return this.award.stormGhost(at); }
   restoreHeld(k: number): void { this.award.restoreHeld(k); }
@@ -107,13 +124,25 @@ export class PixiDicePresenter implements DicePresenter {
 
   // ---------------------------------------------------------------- chamber
   chamberOpen(): boolean { return this.chamberShown; }
-  private buildGate(): void {
-    const hud = this.h.hud, w = this.h.w;
+  /** The slot as seen (stage px): clipped to the chamber box (landscape phones scroll the text column; the gate stays put). */
+  private slotRect(): { x: number; y: number; w: number; h: number } | null {
+    const hud = this.h.hud;
     const host = hud.root.getBoundingClientRect(), s = hud.chamber.gateSlot().getBoundingClientRect(), box = hud.chamber.el.getBoundingClientRect();
-    // the slot as seen: clipped to the chamber box (landscape phones scroll the text column; the gate stays put)
     const top = Math.max(s.top, box.top), bottom = Math.min(s.bottom, box.bottom);
-    if (s.width < 10 || bottom - top < 10) return;
-    this.gate.build({ x: s.left - host.left, y: top - host.top, w: s.width, h: bottom - top }, { w: w.stage.w, h: w.stage.h, dpr: window.devicePixelRatio || 1 });
+    if (s.width < 10 || bottom - top < 10) return null;
+    return { x: s.left - host.left, y: top - host.top, w: s.width, h: bottom - top };
+  }
+  private buildGate(): void {
+    const w = this.h.w, r = this.slotRect();
+    if (!r) return;
+    this.built = { ...r, sw: w.stage.w, sh: w.stage.h };
+    this.gate.build(r, { w: w.stage.w, h: w.stage.h, dpr: window.devicePixelRatio || 1 });
+  }
+  /** Does the slot (or the stage) differ from the last bake (±0,5 px)? */
+  private slotMoved(): boolean {
+    const r = this.slotRect(), b = this.built, w = this.h.w;
+    if (!r) return false;
+    return Math.abs(r.x - b.x) > 0.5 || Math.abs(r.y - b.y) > 0.5 || Math.abs(r.w - b.w) > 0.5 || Math.abs(r.h - b.h) > 0.5 || w.stage.w !== b.sw || w.stage.h !== b.sh;
   }
   /** The chamber DOM fades in/out (the ribbon never: it is pinned from the first frame; in a ceremony the text stays
    *  hidden by :root.ceremony). */
@@ -125,15 +154,35 @@ export class PixiDicePresenter implements DicePresenter {
       c.style.opacity = cer || v >= 1 ? '' : String(v);
     }
   }
+  /** The machine's DOM (#hdr, #slot-arc, #winstrip, #deck, .side: what :root.chamber hides; `inert` is set at once)
+   *  follows machine.a through a transition, over the class's visibility:hidden, so the HUD never cuts out or back in
+   *  in one frame. null hands it back to the stylesheet (open: at α 0, under :root.chamber; close: at α 1). */
+  private machineDom(a: number | null): void {
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>('#hdr, #slot-arc, #winstrip, #deck, .side'))) {
+      el.style.visibility = a === null ? '' : 'visible';
+      el.style.opacity = a === null ? '' : String(a);
+      el.style.transition = a === null ? '' : 'none'; // their 0,6 s opacity transition would trail the tween
+    }
+  }
   /** Open 900 ms: the machine fades (0–600 ms, then hidden), camera 1.00 → 1.03, the gate α 0 → 1 and y +24 → 0
-   *  (200–900 ms), the DOM (400–900 ms). Calm: a 400 ms crossfade, no zoom, no move. Close 500 ms: the reverse. */
+   *  (200–900 ms), the DOM (400–900 ms). Calm: a 400 ms crossfade, no zoom, no move. Close 500 ms: the reverse.
+   *  Interruptible: a new transition stops the running one where it is (its promise resolves; the caller's gen check
+   *  skips its continuation) and tweens on from there. */
   private transition(open: boolean): Promise<void> {
     const w = this.h.w, g = this.gate, calm = this.h.calm();
+    this.tl?.kill(); this.tlEnd?.();
+    this.lift?.kill(); this.lift = null;
+    gsap.killTweensOf(g, 'y');
+    gsap.killTweensOf(w.cam, 'zoom'); // also a ceremony's 3 s settle back to 1.03 (else it outlives the close)
+    gsap.killTweensOf(w.logo, 'alpha');
     const logo = w.logo.visible; // the header logo fades with the machine (no one-frame pop: FlashBudget)
-    const mach = () => { w.setMachineAlpha(this.machine.a); if (logo) w.logo.alpha = this.machine.a; };
+    const mach = () => { w.setMachineAlpha(this.machine.a); if (logo) w.logo.alpha = this.machine.a; this.machineDom(this.machine.a); };
     const dom = () => this.domAlpha(this.dom.v);
+    mach(); // in this frame: :root.chamber is already set (open) or still set (close)
     return new Promise<void>((res) => {
-      const tl = gsap.timeline({ onComplete: () => res() });
+      const end = () => { if (this.tlEnd === end) { this.tl = null; this.tlEnd = null; } res(); };
+      this.tlEnd = end;
+      const tl = this.tl = gsap.timeline({ onComplete: end });
       if (open && calm) {
         g.alpha = 0; g.y = 0;
         tl.to(this.machine, { a: 0, duration: 0.4, ease: 'sine.inOut', onUpdate: mach }, 0).to(g, { alpha: 1, duration: 0.4, ease: 'sine.inOut' }, 0).to(this.dom, { v: 1, duration: 0.4, onUpdate: dom }, 0);
@@ -147,14 +196,14 @@ export class PixiDicePresenter implements DicePresenter {
         tl.to(this.dom, { v: 0, duration: 0.25, onUpdate: dom }, 0).to(g, { alpha: 0, duration: 0.25 }, 0).to(this.machine, { a: 1, duration: 0.25, onUpdate: mach }, 0);
       } else {
         tl.to(this.dom, { v: 0, duration: 0.25, onUpdate: dom }, 0)
-          .to(g, { alpha: 0, y: 24, duration: 0.35, ease: 'power2.in' }, 0.05)
+          .to(g, { alpha: 0, y: g.y + 24, duration: 0.35, ease: 'power2.in' }, 0.05) // from where it is (a placard lift)
           .to(this.machine, { a: 1, duration: 0.4, onUpdate: mach }, 0.1)
           .to(w.cam, { zoom: 1, duration: 0.5, ease: 'power2.inOut' }, 0);
       }
     });
   }
   async openChamber(view: DiceView, o: ChamberOpts): Promise<void> {
-    const hud = this.h.hud, w = this.h.w, el = hud.chamber.el;
+    const hud = this.h.hud, w = this.h.w, el = hud.chamber.el, gen = ++this.gen;
     hud.chamber.render(view, o.realN, o.ribbon);
     el.style.animation = 'none';
     this.domAlpha(0);
@@ -167,6 +216,8 @@ export class PixiDicePresenter implements DicePresenter {
     this.gate.visible = true;
     w.logoHold = true;
     await this.transition(true);
+    if (gen !== this.gen) return; // closed during the open: the close restores everything
+    this.machineDom(null);
     w.logo.visible = false;
     this.domAlpha(1);
   }
@@ -177,12 +228,20 @@ export class PixiDicePresenter implements DicePresenter {
     if (this.ceremonyOn) return;
     if (from === 'open' && to === 'pending') { this.gate.state = 'pending'; this.gate.closeTo(0.4, this.h.calm()); } // the replay: back to the closed, all-lit pose
     else if (!(from === 'open' && to === 'open')) this.gate.setView(view, this.h.seed()); // the open gate keeps settling
-    if (this.gate.y !== 0) gsap.to(this.gate, { y: 0, duration: 0.5, ease: 'power2.inOut' }); // back from the placard lift
+    this.unlift(0.5);
+  }
+  /** Back from the placard lift (a lift still waiting for the card's entry never starts). */
+  private unlift(dur: number): void {
+    this.lift?.kill(); this.lift = null;
+    gsap.killTweensOf(this.gate, 'y');
+    if (this.gate.y !== 0) gsap.to(this.gate, { y: 0, duration: dur, ease: 'power2.inOut' });
   }
   async closeChamber(): Promise<void> {
-    const hud = this.h.hud, w = this.h.w;
+    const hud = this.h.hud, w = this.h.w, gen = ++this.gen;
     await this.transition(false);
+    if (gen !== this.gen) return;
     hud.chamber.show(false);
+    this.machineDom(null); // at α 1; the Game drops :root.chamber next (same task, before any paint)
     this.domAlpha(1);
     hud.chamber.el.style.animation = '';
     this.gate.visible = false;
@@ -191,8 +250,9 @@ export class PixiDicePresenter implements DicePresenter {
     w.setMachineAlpha(1);
     w.cam.zoom = 1;
     w.logoHold = false;
+    const a = w.logo.visible ? w.logo.alpha : 0; // closed during the open: the logo faded back with the machine
     w.placeLogo();
-    if (w.logo.visible) { w.logo.alpha = 0; gsap.to(w.logo, { alpha: 1, duration: 0.3 }); }
+    if (w.logo.visible && a < 1) { w.logo.alpha = a; gsap.to(w.logo, { alpha: 1, duration: 0.3 }); }
   }
 
   // ---------------------------------------------------------------- ceremony (cinematics/gate.ts)
@@ -209,6 +269,7 @@ export class PixiDicePresenter implements DicePresenter {
   }
   closeGate(): Promise<void> {
     const calm = this.h.calm();
+    this.unlift(calm ? 0.5 : 0.6); // the wall settles back from the placard lift while the leaves close
     return new Promise<void>((res) => { void this.gate.closeTo(calm ? 0.5 : 1.2, calm).then(() => { this.gate.state = 'pending'; res(); }); });
   }
 
@@ -222,10 +283,12 @@ export class PixiDicePresenter implements DicePresenter {
     const left = Math.min(t.minX, c.minX), right = Math.max(t.maxX, c.maxX);
     if (r.left - host.left > right || r.right - host.left < left) return;
     const over = Math.max(t.maxY, c.maxY) + 10 - (r.top - host.top);
-    if (over > 0) gsap.to(g, { y: g.y - over, duration: 0.6, ease: 'power2.inOut' });
+    // never out of view: a card too tall to clear (landscape phones) leaves the gate where it is
+    const room = Math.min(t.minY, c.minY) - (this.h.hud.chamber.el.getBoundingClientRect().top - host.top) - 8;
+    if (over > 0 && over <= room) gsap.to(g, { y: g.y - over, duration: 0.6, ease: 'power2.inOut' });
   }
   cardShown(kind: 'hello' | 'firstDie' | 'unlock' | 'placard', el: HTMLElement): void {
-    if (kind === 'placard') gsap.delayedCall(0.45, () => this.clearName(el)); // after the card's 0,4 s entry
+    if (kind === 'placard') { this.lift?.kill(); this.lift = gsap.delayedCall(0.45, () => { this.lift = null; this.clearName(el); }); } // after the card's 0,4 s entry
     const c = el.querySelector('canvas.medal') as HTMLCanvasElement | null;
     if (!c) return;
     paintDie(c, kind === 'hello' ? 44 : 88, { state: 'die' });

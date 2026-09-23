@@ -38,6 +38,8 @@ class DieUnit extends Container {
   cap: IsText | null = null;
   size: number;
   st = { sc: 1, rot: 0, halo: 0, cap: 0, glint: -1 };
+  /** The birth tumble: killed with the unit (its .call steps target the callback, not st, so killTweensOf misses them). */
+  tl: gsap.core.Timeline | null = null;
   constructor(size: number, o: { caption?: string; muted?: boolean; capSize?: number; halo?: number; glint?: boolean } = {}) {
     super();
     this.size = size;
@@ -70,6 +72,7 @@ class DieUnit extends Container {
     this.apply();
   }
   apply = (): void => {
+    if (this.destroyed) return;
     const s = this.st, k = this.size / Math.max(1, this.sp.texture.width), phi = s.rot * Math.PI * 2;
     this.sp.rotation = phi;
     this.sp.scale.set(k * s.sc * (0.55 + 0.45 * Math.abs(Math.cos(phi))), k * s.sc);
@@ -86,7 +89,7 @@ class DieUnit extends Container {
   };
   /** Size on screen (px), for the DOM hand-off. */
   shown(): number { return this.size * this.st.sc; }
-  kill(): void { gsap.killTweensOf([this.st, this]); if (!this.destroyed) this.destroy({ children: true }); }
+  kill(): void { this.tl?.kill(); this.tl = null; gsap.killTweensOf([this.st, this]); if (!this.destroyed) this.destroy({ children: true }); }
 }
 
 /** A DOM die canvas in #overlays (pointer-events none), drawn at DPR by the registered die painter. */
@@ -162,13 +165,13 @@ export class DieAward extends Container {
   /** Scale .25 → 1 (520 ms, back.out 1.6) with −1,2 turn → the native ¾ pose; halo → .35 (400 ms); the glint sweeps
    *  top-left → bottom-right at +0,35 s in 300 ms (a specular on a small object: never exposure, never w.flash()). */
   private tumble(d: DieUnit): gsap.core.Timeline {
-    return gsap.timeline()
+    return (d.tl = gsap.timeline()
       .to(d, { alpha: 1, duration: 0.16 }, 0)
       .to(d.st, { sc: 1, rot: 0, duration: 0.52, ease: 'back.out(1.6)', onUpdate: d.apply }, 0)
       .to(d.st, { halo: 0.35, duration: 0.4, onUpdate: d.apply }, 0)
       .call(() => { d.st.glint = 0; }, [], 0.35)
       .to(d.st, { glint: 1, duration: 0.3, ease: 'power1.inOut', onUpdate: d.apply }, 0.35)
-      .call(() => { d.st.glint = -1; d.apply(); }, [], 0.66);
+      .call(() => { d.st.glint = -1; d.apply(); }, [], 0.66));
   }
   private sparkle(x: number, y: number, n: number): void {
     const p = this.h.w.particles;
@@ -183,6 +186,20 @@ export class DieAward extends Container {
     a.go?.(); // a flight waiting for its beat starts at once
     const tw = a.fly;
     if (tw && tw.isActive()) { const left = tw.duration() - tw.time(); if (left > 0.3) tw.timeScale(left / 0.3); }
+  }
+
+  /** "Vis terninger i spillet" turned off mid-award: the born die (and its caption) fades where it is in 250 ms and
+   *  the award ends here (no flight, no landing: the Game moves the hidden count itself). A flight already under way
+   *  is left to land. */
+  drop(): void {
+    const a = this.cur;
+    if (!a || a.flying || a.go) return;
+    this.cur = null;
+    const d = a.die;
+    if (!d || d.destroyed) return;
+    d.tl?.kill(); d.tl = null;
+    gsap.killTweensOf([d.st, d]);
+    gsap.to(d, { alpha: 0, duration: 0.25, onComplete: () => d.kill() });
   }
 
   /** After the celebration: the flight to hud.diceTarget(); resolves after host.land(1, false). */

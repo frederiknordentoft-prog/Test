@@ -31,6 +31,8 @@ export interface GateGeom {
 }
 
 const WALL_TOP = 0x3b4557, WALL_MID = 0x2b3345, WALL_BOT = 0x1a2030;
+/** The gate's light controls a pose writes (and a ceremony's settle tweens). */
+const SETTLE = 'lightLevel,warm,lantern,groove';
 const clamp = (a: number, v: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const mixHex = (a: number, b: number, t: number) => {
@@ -153,6 +155,11 @@ export class GateView extends Container {
   private dirtyTint = true;
   private edgesAt = -1;
   private edgesGeom: GateGeom | null = null;
+  /** The running closeTo (a hard cut to a view stops it: its onComplete would write the closed pose). */
+  private closing: gsap.core.Timeline | null = null;
+  /** The widest a gate text may be (0,94 × the slot width) and the eyebrow's cap height before that fit. */
+  private textW = Infinity;
+  private eyebrowSize = 10;
 
   constructor() {
     super();
@@ -238,14 +245,37 @@ export class GateView extends Container {
     const s = Math.min(stage.w, 720);
     this.nicheLabel.size = Math.max(9, 0.3 * nw); // IsText sizes are cap heights
     this.nicheLabel.position.set(nord.x + nw / 2, nord.y + nh + this.nicheLabel.size * 0.5 + 3); // in the gap above the next niche
-    this.title.size = clamp(16, 0.075 * s, 54);
-    this.concept.size = Math.max(9, 0.022 * s);
-    this.title.position.set(cx, oy + 0.3 * H);
-    this.concept.position.set(cx, oy + 0.3 * H + this.title.size * 1.25 + this.concept.size);
-    this.eyebrow.size = Math.max(10, 0.026 * s);
-    this.eyebrow.position.set(cx, oy - 0.32 * W - this.eyebrow.size * 1.6);
+    // the name, its label and the eyebrow never run wider than the slot (landscape phones, narrow desktops: beside the
+    // placard or the text columns, and never off the screen edge)
+    this.textW = 0.94 * S.w;
+    this.fitText(this.title, clamp(16, 0.075 * s, 54));
+    this.fitText(this.concept, Math.max(9, 0.022 * s));
+    this.placeName();
+    this.eyebrowSize = Math.max(10, 0.026 * s);
+    this.fitEyebrow();
     this.dirtyTint = true;
     this.applyOpen();
+  }
+
+  /** Cap height `size`, shrunk where the text would be wider than the slot (build() sets textW). */
+  private fitText(t: IsText, size: number): void {
+    t.size = size;
+    if (t.textWidth > this.textW) t.size = (size * this.textW) / t.textWidth;
+  }
+  /** The ceremony's eyebrow (its text is set per kind, after build()): sized to the slot and placed above the lintel. */
+  fitEyebrow(): void {
+    if (!this.geom) return;
+    const { cx, oy, W } = this.geom;
+    this.fitText(this.eyebrow, this.eyebrowSize);
+    this.eyebrow.position.set(cx, oy - 0.32 * W - this.eyebrow.size * 1.6);
+  }
+
+  /** "AUTOMAT 1948" and its concept label, from the current geometry: never apart, also after a resize mid-ceremony. */
+  private placeName(): void {
+    if (!this.geom) return;
+    const { cx, oy, H } = this.geom;
+    this.title.position.set(cx, oy + 0.3 * H);
+    this.concept.position.set(cx, oy + 0.3 * H + this.title.size * 1.25 + this.concept.size);
   }
 
   private swap(sp: Sprite, cv: HTMLCanvasElement): void {
@@ -498,6 +528,7 @@ export class GateView extends Container {
   /** Sealed (lit = count, closed, ghost key, no light, engraved lintel) · pending (all lit, closed) · open (all lit,
    *  leaves open, key seated, light .6, lit lintel, "AUTOMAT 1948" + the concept label). A hard cut. */
   setView(v: DiceView, seed: number): void {
+    this.closing?.kill(); this.closing = null;
     this.state = gateState(v);
     const n = this.state === 'sealed' ? Math.min(v.count, TILES) : TILES;
     if (seed !== this.seed || n !== this.count) {
@@ -512,6 +543,7 @@ export class GateView extends Container {
   }
   /** The static end poses (no motion): the closed, all-lit gate or the open gate. */
   setOpenPose(open: boolean): void {
+    gsap.killTweensOf(this, SETTLE); // e.g. the ceremony's 3 s settle: it would write the light back over this pose
     this.openT = open ? 1 : 0;
     this.leafFade = 1;
     this.lightLevel = open ? 0.6 : 0;
@@ -526,16 +558,19 @@ export class GateView extends Container {
     for (let i = 0; i < 4; i++) this.setDigit(i, open ? 1 : 0);
     this.title.visible = this.concept.visible = open;
     this.title.alpha = 0.9; this.title.reveal = 1; this.title.sweep = -0.2; this.concept.alpha = 1;
+    this.placeName();
     this.applyOpen();
   }
   /** From the current pose back to the closed, all-lit pose: the replay reset (400 ms) and the demo exit (1,2 s;
    *  calm: a crossfade). The light dims, the key and the name fade, the digits go back to engraved. */
   closeTo(dur: number, calm: boolean): gsap.core.Timeline {
-    const tl = gsap.timeline({ onComplete: () => this.setOpenPose(false) });
+    this.closing?.kill();
+    gsap.killTweensOf(this, SETTLE); // the ceremony's settle (light .6, lantern, groove) must not outlive the close
+    const tl = this.closing = gsap.timeline({ onComplete: () => { this.closing = null; this.setOpenPose(false); } });
     if (calm) tl.to(this, { leafFade: 0, duration: dur / 2 }, 0).call(() => { this.openT = 0; }, [], dur / 2).to(this, { leafFade: 1, duration: dur / 2 }, dur / 2);
     else tl.to(this, { openT: 0, duration: dur, ease: 'power2.inOut' }, 0);
     const lit = { v: 1 };
-    tl.to(this, { lightLevel: 0, warm: 0, duration: dur }, 0)
+    tl.to(this, { lightLevel: 0, warm: 0, lantern: 0.3, groove: 0.5, duration: dur }, 0) // lantern, groove: back to rest
       .to([this.title, this.concept, this.keyDie], { alpha: 0, duration: Math.min(dur, 0.4) }, 0)
       .to(lit, { v: 0, duration: dur, onUpdate: () => { for (let i = 0; i < 4; i++) this.setDigit(i, Math.min(this.digits[i].alpha > 0.55 ? 1 : 0, lit.v)); } }, 0)
       .call(() => { this.breathe = false; this.ghost.visible = true; this.ghost.alpha = 0; }, [], 0)

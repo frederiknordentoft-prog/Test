@@ -1,17 +1,19 @@
 // Terningen · Playwright check of the Game wiring and the visuals (SwiftShader WebGL2, deterministic advance() stepping).
-// Usage: node scripts/dice-check.mjs [baseUrl=http://127.0.0.1:4173/] [only=award,demo,suns,storm,resume,unlock,reset,visual]
+// Usage: node scripts/dice-check.mjs [baseUrl=http://127.0.0.1:4173/] [only=award,demo,suns,storm,resume,unlock,reset,perk,expiry,clean,placard,visual]
 // (each Solstorm costs many minutes under SwiftShader: 'demo' runs demo(), 'suns' adds demoSuns())
 // Instruments localStorage.setItem per key. Exit code 1 on any failure. Screenshots ('visual'): $SHOTS (default shots/dice).
 // Covers spec tests a (base award: birth, flight start, the flight lands ON the chip), b (skip ≤ 320 ms), c (next spin:
 // nothing in flight), k (first-die card), l (hello), reload mid-award, g (demo isolation: demo(), demoSuns(), dDie, dFirst,
-// the 5 previews, dGate skipped at T0+2,5 s and in full), n (ceremony: #reg/#foot stay, the demo ribbon on every frame),
-// d (real storm: dice held on the frame, released at the outro), e (reload mid-storm), m (unlock), i (reset), j (opt-out),
-// and the visual pass at 390×844, 375×667 and 1920×1080 (shots + overlap/fit assertions).
+// the 5 previews, dGate skipped at T0+2,5 s and in full), n (ceremony: #reg/#foot stay, the demo ribbon on every frame,
+// Space skips, #1948_clean keeps the ribbon), d (real storm: dice held on the frame, released at the outro), e (reload
+// mid-storm), m (unlock), i (reset), j (opt-out), f (a Ladet spin's die is judged at its LOCKED stake), h (the 365-day
+// expiry resets the meter, never the dice), the placard at 360×640, 375×667 and 844×390 (the claim whole with its guard,
+// the buttons and the ribbon clear), and the visual pass at 390×844, 375×667 and 1920×1080 (shots + overlap/fit assertions).
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 
 const [base = 'http://127.0.0.1:4173/', only = ''] = process.argv.slice(2);
-const want = new Set(only ? only.split(',') : ['award', 'demo', 'suns', 'storm', 'resume', 'unlock', 'reset', 'visual']);
+const want = new Set(only ? only.split(',') : ['award', 'demo', 'suns', 'storm', 'resume', 'unlock', 'reset', 'perk', 'expiry', 'clean', 'placard', 'visual']);
 const KEY = 'terningen.v1';
 
 const browser = await chromium.launch({
@@ -384,6 +386,116 @@ if (want.has('reset')) {
   await untilState('idle', 10000); await adv(400);
   check((await ev(() => window.__slot.dice())).count === 1 && (await state()) === 'idle', 'opt-out: the count still increments, no card');
   await ev(() => window.__slot.game.dispatch({ t: 'settings', s: { dice: true } }));
+}
+
+// ------------------------------------------------------------------ f · a Ladet spin: the die is judged at its LOCKED stake
+if (want.has('perk')) {
+  if (!['award', 'demo', 'storm', 'unlock', 'reset'].some((k) => want.has(k))) { await boot('', true); await adv(1400); }
+  // a Ladet spin pending at a locked 1 kr while the stake shown is 10 kr (written into the live save too: a save on
+  // unload writes the same), then a reload: the perk comes back from 'nordlys.v1'
+  await ev(() => { const s = window.__slot.save(); s.stakeOre = 1000; s.meter = { charge: 60, stakeSumOre: 60 * 100 }; s.perksPending = 1; localStorage.setItem('nordlys.v1', JSON.stringify(s)); });
+  await boot();
+  if (!(await ev(() => document.getElementById('hello').hidden))) await click('#hello [data-hello="close"]');
+  const pre = await ev(() => { const s = window.__slot.save(); return { perks: s.perksPending, stake: s.stakeOre, charge: s.meter.charge }; });
+  check(pre.perks === 1 && pre.stake === 1000 && pre.charge === 60, 'f · a Ladet spin is pending after the reload (locked 1 kr, stake 10 kr)', JSON.stringify(pre));
+  await ev(() => window.__slot.setSeed(20260922));
+  const q = await ev(() => window.__slot.qaNext('diePerk'));
+  const c0 = (await ev(() => window.__slot.dice())).count;
+  await ev(() => { window.__slot.spin(); });
+  const d1 = await storedDice();
+  const last = await ev(() => { const h = window.__slot.save().history; return h[h.length - 1]; });
+  check(d1?.count === c0 + 1, 'f · the Ladet spin that wins ≥ 10× its locked stake commits exactly one die at the press', `${c0} → ${d1?.count}`);
+  check(last?.mode === 'perk' && last?.die === true && last?.stakeOre === 100 && last?.winOre >= 10 * 100, 'f · history: mode perk, die === true, stake = the locked 1 kr, win ≥ 10× it', `x ${q?.x?.toFixed(2)}, win ${last?.winOre} øre at ${last?.stakeOre} øre`);
+  check(last?.winOre < 10 * 1000, 'f · the same win is < 10× the 10 kr stake shown (judged at that stake, it would give no die)', `${last?.winOre} øre`);
+  for (let t = 0; t < 20000 && (await state()) !== 'idle'; t += 100) await adv(100);
+  await adv(400);
+  if ((await state()) === 'diceCard') { await adv(1600); await click('#summaryCard [data-act="ok"]'); await adv(300); }
+  const after = await ev(() => ({ count: window.__slot.dice().count, perks: window.__slot.save().perksPending, st: window.__slot.state() }));
+  check(after.st === 'idle' && after.count === c0 + 1 && after.perks === 0, 'f · idle after the Ladet spin: exactly one die, no Ladet spin left', JSON.stringify(after));
+  check((await chip()) === String(after.count), 'f · #diceN equals the count at idle', await chip());
+  await ev(() => { window.__slot.save().stakeOre = 200; });
+}
+
+// ------------------------------------------------------------------ h · the 365-day expiry resets the meter, never the dice
+if (want.has('expiry')) {
+  if (!['award', 'demo', 'storm', 'unlock', 'reset', 'perk'].some((k) => want.has(k))) { await boot('', true); await adv(1400); }
+  if ((await ev(() => window.__slot.dice())).count === 0) await ev(() => window.__slot.qaDice(3));
+  // the last spin 400 days ago, charge on the meter and a Ladet spin pending (the live save too: see 'perk')
+  await ev(() => { const s = window.__slot.save(); s.meter = { charge: 3000, stakeSumOre: 3000 * 200 }; s.perksPending = 1; s.lastSpinAt = s.lastPlayed = Date.now() - 400 * 864e5; localStorage.setItem('nordlys.v1', JSON.stringify(s)); });
+  const dBefore = await stored(), n0 = (await ev(() => window.__slot.dice())).count;
+  await boot();
+  const s = await ev(() => ({ charge: window.__slot.save().meter.charge, perks: window.__slot.save().perksPending, kp: window.__slot.kp() }));
+  check(s.charge === 0 && s.perks === 0 && s.kp === 0, 'h · 365-day expiry: the Kp meter and the pending Ladet spin are reset on load', JSON.stringify(s));
+  check(n0 > 0 && (await ev(() => window.__slot.dice())).count === n0, 'h · the expiry never touches the dice (count unchanged)', `${n0} → ${(await ev(() => window.__slot.dice())).count}`);
+  check((await stored()) === dBefore, 'h · terningen.v1 is byte-identical after the expiry reload');
+}
+
+// ------------------------------------------------------------------ n · #1948_clean: the ribbon on every frame, Space skips
+if (want.has('clean')) {
+  await page.goto('about:blank'); // (a hash alone on the same URL would not reload the page)
+  await boot('#1948_clean');
+  const s0 = await stored();
+  await ev(() => { window.__writes = {}; });
+  check(await ev(() => getComputedStyle(document.getElementById('demoPill')).display === 'none' && getComputedStyle(document.getElementById('drawerWrap')).display === 'none'), '#clean hides #demoPill and #drawerWrap');
+  check((await untilStarted()) >= 0, '#1948_clean: the demo ceremony starts from the deep link');
+  const ribbon = () => ev(() => { const el = document.getElementById('chRibbon'), r = el.getBoundingClientRect(), c = getComputedStyle(el);
+    return !el.hidden && c.display !== 'none' && c.visibility !== 'hidden' && +c.opacity === 1 && r.width > 0 && r.top >= 0 && el.textContent.startsWith('DEMO'); });
+  let bad = 0, frames = 0;
+  for (let t = 0; t < 12000 && ((await ev(() => window.__slot.gate()?.t)) ?? -9) < 2.5; t += 100) { await adv(100); frames++; if (!(await ribbon())) bad++; }
+  check(await ev(() => document.activeElement === document.getElementById('chamber')), 'n · in the ceremony the dialog itself holds focus (its controls are inert)', await ev(() => document.activeElement?.id || document.activeElement?.tagName));
+  await page.keyboard.press('Space');
+  await adv(100);
+  check(await ev(() => window.__slot.gate()?.placard), 'n · Space at T0+2,5 s skips: the placard at once');
+  frames++; if (!(await ribbon())) bad++;
+  check(bad === 0 && frames > 10, 'n · #1948_clean: the amber DEMO ribbon is visible on every sampled frame, the placard included', `${frames} frames, ${bad} bad`);
+  await adv(1200); await new Promise((r) => setTimeout(r, 500));
+  await click('#summaryCard [data-act="endDemo"]');
+  check((await untilState('idle', 6000)) >= 0, '#1948_clean: "Afslut demo" returns to idle');
+  check((await ev((k) => window.__writes[k] ?? 0, KEY)) === 0 && (await stored()) === s0, '#1948_clean: ZERO writes to terningen.v1');
+}
+
+// ------------------------------------------------------------------ the placard on phones: the claim whole with its guard
+if (want.has('placard')) {
+  const inBox = (a, b) => !!a && !!b && a.x >= b.x - 0.5 && a.y >= b.y - 0.5 && a.x + a.w <= b.x + b.w + 0.5 && a.y + a.h <= b.y + b.h + 0.5;
+  const ovb = (a, b) => (a && b ? Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)) : 0);
+  const PL = `(() => { const box = (e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
+    // whole: nothing of it is cut away by a clipping (scrolling) ancestor or the viewport
+    const whole = (e) => { const r = e.getBoundingClientRect(); let l = Math.max(0, r.left), t = Math.max(0, r.top), rr = Math.min(innerWidth, r.right), b = Math.min(innerHeight, r.bottom);
+      for (let a = e.parentElement; a; a = a.parentElement) { const c = getComputedStyle(a); if (c.overflowX !== 'visible' || c.overflowY !== 'visible') { const q = a.getBoundingClientRect(); l = Math.max(l, q.left); t = Math.max(t, q.top); rr = Math.min(rr, q.right); b = Math.min(b, q.bottom); } }
+      return rr - l >= r.width - 0.5 && b - t >= r.height - 0.5; };
+    const card = document.getElementById('summaryCard'), rb = document.getElementById('chRibbon');
+    const g = window.__slot.world.stage.layers.chamber.children[0], h = document.getElementById('app').getBoundingClientRect();
+    const pix = (o) => { if (!o.visible || o.alpha < 0.05) return null; const b = o.getBounds(); return { x: b.minX + h.left, y: b.minY + h.top, w: b.width, h: b.height }; };
+    return { vw: innerWidth, vh: innerHeight, card: box(card), claim: [...card.querySelectorAll('.pl-claim p')].map((p) => ({ ...box(p), whole: whole(p) })),
+      guard: /ikke et tilbud.*ikke lovet/.test(card.querySelector('.pl-claim')?.textContent ?? ''),
+      btns: [...card.querySelectorAll('.btns button')].map((b) => ({ ...box(b), fits: b.scrollWidth <= b.clientWidth + 1 })),
+      ribbon: rb.hidden ? null : box(rb), foot: box(document.getElementById('foot')), reg: box(document.getElementById('reg')), title: pix(g.title), concept: pix(g.concept) }; })()`;
+  const dir = process.env.SHOTS || 'shots/dice';
+  mkdirSync(dir, { recursive: true });
+  for (const [vw, vh] of [[360, 640], [375, 667], [844, 390]]) {
+    const tag = `${vw}×${vh}`;
+    await page.setViewportSize({ width: vw, height: vh });
+    await boot('', true);
+    await ev(() => window.__slot.qaDice(1948));
+    for (const kind of ['real', 'demo']) {
+      if (kind === 'real') { await click('#diceBtn'); await adv(1200); await click('#chOpen'); } else await click('#dGate');
+      check((await untilStarted()) >= 0, `${tag} · ${kind} ceremony starts`);
+      await until(() => window.__slot.gate()?.canSkip, 8000, 50);
+      await page.keyboard.press('Escape');
+      await until(() => window.__slot.gate()?.placard, 3000, 50);
+      await adv(1200); await new Promise((r) => setTimeout(r, 500)); await adv(50); // the card's 0,4 s CSS entry runs in real time
+      const l = await ev(PL);
+      const V = { x: 0, y: 0, w: l.vw, h: l.vh };
+      await ev(() => window.__slot.advance(16, true)); await page.screenshot({ path: `${dir}/placard-${kind}-${vw}x${vh}.png` });
+      check(l.claim.length === 2 && l.guard && l.claim.every((p) => p.whole && inBox(p, l.card) && inBox(p, V)), `${tag} · ${kind} placard: p1 and the claim with its guard whole on screen (never clipped, never scrolled)`);
+      check(l.btns.length > 0 && l.btns.every((b) => b.fits && inBox(b, l.card) && inBox(b, V)), `${tag} · ${kind} placard: every button inside the card and the screen`, l.btns.map((b) => `${b.x.toFixed(0)}–${(b.x + b.w).toFixed(0)}`).join(' '));
+      check(inBox(l.card, V) && !ovb(l.card, l.reg) && !ovb(l.card, l.foot) && !ovb(l.card, l.ribbon), `${tag} · ${kind} placard: clear of #reg, #foot${l.ribbon ? ' and the ribbon' : ''}`);
+      check(!!l.title && !!l.concept && inBox(l.title, V) && inBox(l.concept, V) && !ovb(l.card, l.title) && !ovb(l.card, l.concept), `${tag} · ${kind} placard: "AUTOMAT 1948" and its label whole on screen, not under the card`);
+      await click(`#summaryCard [data-act="${kind === 'real' ? 'back' : 'endDemo'}"]`);
+      check((await untilState('idle', 6000)) >= 0, `${tag} · ${kind} placard closes to idle`);
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
 }
 
 // ------------------------------------------------------------------ visual pass: shots + layout assertions per viewport

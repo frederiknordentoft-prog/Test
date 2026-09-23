@@ -524,9 +524,14 @@ html, body {
 @keyframes diceLand { 50% { transform:scale(1.15); } }
 @keyframes diceRing { from { box-shadow:0 0 0 0 rgba(138,92,255,.7); } to { box-shadow:0 0 0 10px rgba(138,92,255,0); } }
 :root.calm .dice.land { box-shadow:0 0 0 2px rgba(138,92,255,.6); transition:box-shadow .6s; }   /* static ring, no scale */
-.dice-demo-tag { position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%); padding:2px 7px; border-radius:8px; white-space:nowrap;
+/* beside the chip, never over the balance above it (and never left of the chip, at the screen edge) */
+.dice-demo-tag { position:absolute; left:calc(100% + 6px); top:50%; transform:translateY(-50%); padding:2px 7px; border-radius:8px; white-space:nowrap;
   font:700 10.5px/1.3 system-ui,sans-serif; letter-spacing:.06em; color:#1d1203; background:#ffb547; pointer-events:none; animation: diceTag 1.5s ease-out both; }
-@keyframes diceTag { from { opacity:0; transform:translate(-50%, 6px); } 15% { opacity:1; transform:translate(-50%, 0); } 80% { opacity:1; } to { opacity:0; } }
+@keyframes diceTag { from { opacity:0; transform:translate(6px, -50%); } 15% { opacity:1; transform:translate(0, -50%); } 80% { opacity:1; } to { opacity:0; } }
+@keyframes diceTagCalm { from { opacity:0; } 15%, 80% { opacity:1; } to { opacity:0; } }
+:root.calm .dice-demo-tag { animation:diceTagCalm 1.5s linear both !important; }   /* calm: a fade, no travel (the global calm rule would end it at once, unseen) */
+/* phones: compact, so it fits between the chip and the stake's "−" */
+@media (max-width: 440px) { .dice-demo-tag { left:calc(100% + 4px); padding:1px 5px; font-size:9.5px; letter-spacing:0; } }
 @media (max-height:640px) { .dice { height:20px; font-size:11.5px; } .dice .ico { width:16px; height:16px; } }
 @media (min-width:1000px) and (min-aspect-ratio:5/4) { .dice { height:24px; font-size:12.5px; } .dice .ico { width:20px; height:20px; } .dice .w { display:inline; } }
 :root.nodice .dice, :root.nodice .dice-panel { display:none; }                /* setting "Vis terninger i spillet" off */
@@ -562,7 +567,9 @@ html, body {
 #hello .b { color:#cfe2ff; }
 #hello .m { color:#b9d9ff; }
 #hello .facts { color:#cfe2ff; }                                             /* same size as the body, never a footnote */
-#hello .btns { clear:both; display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+#hello .btns { clear:both; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; margin-top:8px; }
+#hello .btns .btn { letter-spacing:.12em; padding:0 14px; }                     /* both fit the narrower card beside SPIN */
+@media (max-height: 400px) { #hello { padding:10px 14px; } #hello p { margin-bottom:4px; } #hello .btns { margin-top:4px; } }
 
 /* relic cards (#summary): first die, unlock, placard */
 .card.relic { padding-top:56px; border-color:rgba(138,92,255,.45); box-shadow:0 0 50px rgba(138,92,255,.22),0 20px 60px rgba(0,0,0,.6); overflow:visible; }
@@ -572,18 +579,61 @@ html, body {
 .card.relic .t { font-size:20px; font-weight:700; color:var(--ice); margin:2px 0 8px; }
 .card.relic p { font-size:13.5px; line-height:1.45; color:#cfe2ff; margin:0 0 8px; text-align:left; }
 .card.relic .facts { color:#cfe2ff; }                      /* same size as the body */
-.card.relic .btns { display:flex; gap:10px; justify-content:center; margin-top:12px; }
+/* the row may use the card's side padding; narrower than that it wraps (never wider than the card) */
+.card.relic .btns { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:12px -12px 0; }
 .card.relic .big1948 { font-size:44px; font-weight:800; letter-spacing:.08em; margin:4px 0; background:linear-gradient(90deg,#19e3d6,#8a5cff,#ff2bd6); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .btn.gate { color:#f3ecff; background:linear-gradient(180deg,#b28cff,#6a3ae0 55%,#3b1a8f); box-shadow:0 0 0 1px rgba(230,214,255,.55) inset, 0 0 26px rgba(138,92,255,.45); animation:none; }
 .card.placard { padding-top:22px; }
 .card.placard .chip.concept, .ch-myth .chip.concept { margin:0 auto 10px; font-size:11.5px; color:var(--frost); border-color:var(--line-strong); }
 .card.placard .muted { color:var(--muted); }
-.card.placard .pl-body { max-height:40vh; overflow-y:auto; }
+.card.placard .pl-body { max-height:40vh; overflow-y:auto; }                   /* p3/p4 only: the claim (.pl-claim) never scrolls */
+.card.placard .pl-body.more { -webkit-mask-image:linear-gradient(#000 calc(100% - 12px), transparent); mask-image:linear-gradient(#000 calc(100% - 12px), transparent); }
+/* two buttons share a row where the card allows it; otherwise they stack full width, the primary on top */
+.card.placard .btns { flex-wrap:wrap-reverse; margin-left:0; margin-right:0; }
+.card.placard .btns .btn { letter-spacing:.12em; padding:0 14px; }
+.card.placard .btns .btn:not(:only-child) { flex:1 1 auto; }
 @media (max-width: 999px), (max-aspect-ratio: 5/4) {
-  .card.placard { top:auto; bottom:calc(var(--foot-h) + 12px + env(safe-area-inset-bottom)); transform:translate(-50%, 8px); max-height:52%; display:flex; flex-direction:column; }
+  /* bottom-anchored; Hud.fitPlacard() keeps it within 52 % where the claim allows (the gate's name stays clear), never below the claim */
+  .card.placard { top:auto; bottom:calc(var(--foot-h) + 12px + env(safe-area-inset-bottom)); transform:translate(-50%, 8px); display:flex; flex-direction:column;
+    max-height:calc(100% - var(--reg-h) - var(--foot-h) - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
   .overlay.show .card.placard { transform:translate(-50%, 0); }
+  .card.placard > * { flex:none; }
+  .card.placard .pl-body { flex:0 1 auto; min-height:0; max-height:none; }
+  /* fit steps (Hud.fitPlacard): 1 tighter header and body type · 2 smaller body type, both buttons on one row ·
+     3 (landscape demo) the tightest spacing; the amber note already says DEMO, so the eyebrow under it goes */
+  .card.placard[data-fit='1'] { padding:18px 16px 14px; }
+  .card.placard[data-fit='2'] { padding:14px 14px 12px; }
+  .card.placard[data-fit='3'] { padding:10px 14px 8px; }
+  .card.placard:is([data-fit='1'],[data-fit='2'],[data-fit='3']) h2 { margin-bottom:2px; }
+  .card.placard:is([data-fit='1'],[data-fit='2'],[data-fit='3']) .t { font-size:18px; margin:0 0 6px; }
+  .card.placard:is([data-fit='1'],[data-fit='2'],[data-fit='3']) .chip.concept { margin-bottom:8px; }
+  .card.placard:is([data-fit='1'],[data-fit='2'],[data-fit='3']) p { font-size:13px; line-height:1.4; margin-bottom:6px; }
+  .card.placard:is([data-fit='2'],[data-fit='3']) p { font-size:12.5px; line-height:1.36; }
+  .card.placard:is([data-fit='2'],[data-fit='3']) .btns .btn { font-size:11px; letter-spacing:.06em; padding:0 10px; }
+  .card.placard:is([data-fit='1'],[data-fit='2'],[data-fit='3']) .btns { margin-top:8px; gap:8px; }
+  .card.placard[data-fit='3'] .demo-note { margin-bottom:6px; padding:4px 8px; }
+  .card.placard[data-fit='3'] .demo-note + h2 { display:none; }
+  .card.placard[data-fit='3'] .t { font-size:16px; margin-bottom:4px; }
+  .card.placard[data-fit='3'] .chip.concept { margin-bottom:6px; }
+  .card.placard[data-fit='3'] p { margin-bottom:4px; }
+  .card.placard[data-fit='3'] .btns { margin-top:6px; }
+  /* last step (data-tight: still taller than the band): the concept chip goes (p2's guard and the gate's own label
+     beside the card say it) and the body type is smallest; the claim itself never shrinks away */
+  .card.placard[data-tight] .chip.concept { display:none; }
+  .card.placard[data-tight] p { font-size:12px; line-height:1.28; margin-bottom:3px; }
+  .card.placard[data-tight] .demo-note { font-size:10.5px; margin-bottom:4px; padding:3px 8px; }
+  .card.placard[data-tight] .t { font-size:15px; margin-bottom:2px; }
+  .card.placard[data-tight] .btns { margin-top:4px; }
 }
-@media (min-width: 1000px) and (min-aspect-ratio: 5/4) { .card.placard { left:auto; right:24px; transform:translate(0, -50%); } .overlay.show .card.placard { transform:translate(0, -50%); } }
+/* landscape phones: the card sits in the chamber's text column (faded out in the ceremony), beside the gate */
+@media (max-width: 999px) and (max-height: 500px) and (orientation: landscape) {
+  .card.placard { left:calc(16px + env(safe-area-inset-left)); width:340px; transform:translate(0, 8px); padding:16px 16px 14px; }
+  .overlay.show .card.placard { transform:none; }
+}
+@media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
+  .card.placard { left:auto; right:24px; width:clamp(300px, calc((100% - 48px) * .26), 400px); transform:translate(0, -50%); }   /* the chamber's right column, never over the gate's */
+  .overlay.show .card.placard { transform:translate(0, -50%); }
+}
 
 /* ---------- Terningekammeret (DOM over the gate; no backdrop-filter: the Pixi world is the backdrop) ---------- */
 #chamber { position:absolute; left:0; right:0; z-index:5; pointer-events:auto;
@@ -592,6 +642,7 @@ html, body {
   background:linear-gradient(180deg, rgba(3,7,18,.55) 0, rgba(3,7,18,0) 24%, rgba(3,7,18,0) 66%, rgba(3,7,18,.78) 82%, rgba(3,7,18,.9) 100%);
   animation: wFade .4s ease-out both; }
 #chamber[hidden] { display:none; }
+#chamber:focus { outline:none; }                                               /* the dialog holds focus in the ceremony */
 .ch-ribbon { position:sticky; top:0; margin:6px auto 0; padding:5px 10px; border-radius:10px; text-align:center; font-size:11.5px; color:#ffd79a; border:1px dashed rgba(255,181,71,.6); background:rgba(20,12,4,.72); }
 .ch-ribbon.neutral { color:var(--frost); border:1px solid var(--line-strong); background:rgba(6,14,34,.7); }
 /* a hidden ribbon keeps its (empty) grid row, so the header, myth, gate … stay on their rows */
@@ -616,7 +667,8 @@ html, body {
 .ch-facts { list-style:none; margin:6px 0 0; padding:0; display:grid; gap:4px; font-size:12px; line-height:17px; color:rgba(156,201,255,.9); }
 .ch-facts li { border-left:1px solid rgba(138,92,255,.35); padding-left:8px; }
 .ch-act { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-#chamber .btn, #chamber .iconbtn { min-height:40px; }
+#chamber .btn, #chamber .iconbtn, #chamber .linkbtn { min-height:40px; }
+#chamber .linkbtn { display:inline-flex; align-items:center; }                   /* "Regler og tal ›": a 40 px target too */
 /* fit steps (ChamberDom.place): 1 eyebrow · 2 myth line 7 · 3 condensed myth · 4 smaller facts · 5 compact count + actions */
 #chamber:is([data-fit='1'],[data-fit='2'],[data-fit='3'],[data-fit='4'],[data-fit='5']) .ch-eb { display:none; }
 #chamber:is([data-fit='2'],[data-fit='3'],[data-fit='4'],[data-fit='5']) .ch-myth .n7 { display:none; }
@@ -645,7 +697,8 @@ html, body {
   .ch-ribbon { grid-column:1 / -1; }
   .ch-hdr { grid-column:1 / -1; }
   .ch-hdr h2 { font-size:30px; }
-  .ch-myth { grid-column:1; grid-row:3 / 6; align-self:start; margin-top:12vh; font-size:18px; line-height:28px; }
+  .ch-myth { grid-column:1; grid-row:3 / 6; align-self:start; margin-top:12vh; font-size:18px; line-height:28px; max-width:430px; }   /* 344 × 18/14,5: a verse line stays one line */
+  .ch-myth .l { text-wrap:balance; }                                          /* a narrower column: no one-word orphans */
   .ch-gate { grid-column:2; grid-row:3 / 7; }
   .ch-count { grid-column:3; grid-row:4; align-self:end; justify-content:flex-start; }
   .ch-count .n { font-size:64px; }

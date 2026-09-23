@@ -35,7 +35,7 @@ function nonRulesCopy(): { where: string; s: string }[] {
   for (const n of COUNTS) {
     add(`count ${n}`, countWord(n), awardCaption(n), srAward(n), srStormPop(n), srStormOutro(n), heldOverflow(n), MENU.status(n));
     add(`count ${n}`, ...values(stormSummaryRow(n, false)), ...values(stormSummaryRow(n, true)));
-    add(`count ${n}`, firstDieDemoNote(n), text(firstDieHtml(n)), ...values(unlockCardCopy(n)), text(unlockCardHtml(n)), ...values(demoGateBanner(n)));
+    add(`count ${n}`, firstDieDemoNote(n), firstDieCopy().srDemo(n), text(firstDieHtml(n)), ...values(unlockCardCopy(n)), text(unlockCardHtml(n)), ...values(demoGateBanner(n)));
     for (const u of UNLOCKS) add(`chip ${n} ${u}`, chipAria(n, u));
     for (const mode of ['real', 'preview', 'demo'] as const) for (const u of UNLOCKS) add(`summary ${n} ${mode} ${u}`, chamberSummary({ count: n, unlock: u, mode }, 37));
     for (const N of PREVIEW_STEPS) for (const k of ['preview', 'demo', 'replay'] as const) add(`ribbon ${k} ${N}`, chamberRibbon(k, N, n));
@@ -156,5 +156,24 @@ describe('captions, myth and layout classes', () => {
   it('the first-die button is "Forstået" (never "Fortsæt" / "Spil videre")', () => {
     expect(firstDieCopy().ok).toBe('Forstået');
     expect(firstDieHtml(null)).not.toMatch(/Fortsæt|Spil videre/);
+  });
+  it('the demo first-die SR line is marked as a demo and never claims a die was added', () => {
+    for (const n of COUNTS) {
+      const s = firstDieCopy().srDemo(n);
+      expect(s).toMatch(/^Demo: /);
+      expect(s).toContain(`Tæller ikke – dit antal er uændret (${n})`);
+      expect(s).not.toMatch(/er lagt i|nummer 1|Din første terning/i);
+    }
+  });
+  it('the placard keeps p1 and the sanctioned sentence with its guard in one non-scrolling block (.pl-claim)', () => {
+    for (const k of KINDS) for (const clause of [true, false]) {
+      const html = placardHtml(k, 1948, clause);
+      const claim = html.match(/<div class="pl-claim">([\s\S]*?)<\/div>/)?.[1] ?? '';
+      const body = html.match(/<div class="pl-body">([\s\S]*?)<\/div>/)?.[1] ?? '';
+      expect(claim).toContain(placardCopy(k, 1948, clause).p1);
+      expect(claim).toContain(NOT_AN_OFFER);
+      if (clause) expect(claim).toContain(`${PAYBACK_SENTENCE} ${NOT_AN_OFFER}`);
+      expect(body).not.toMatch(/tilbagebetaling|ikke et tilbud/);
+    }
   });
 });

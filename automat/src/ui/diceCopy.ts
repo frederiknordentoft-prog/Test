@@ -103,6 +103,8 @@ export function firstDieCopy(R: MathReport = REPORT) {
     see: 'Se kammeret',
     ok: 'Forstået',
     sr: `Din første terning, nummer 1, er lagt i Terningekammeret. Du får en terning, hver gang et spin vinder mindst ${DICE_MIN_X} gange sin indsats. Ved ${G} terninger åbner porten ind til Automat 1948, et koncept i denne demo. I gennemsnit tager det ca. ${k.spins} spin.`,
+    /** The drawer demo ("Vis første terning", `n` = the real count): never claims a die was added. */
+    srDemo: (n: number) => `Demo: sådan møder man den første terning. Tæller ikke – dit antal er uændret (${fmtDice(n)}). Du får en terning, hver gang et spin vinder mindst ${DICE_MIN_X} gange sin indsats.`,
   };
 }
 export const firstDieDemoNote = (n: number) => `DEMO · Sådan møder man den første terning · dit antal er uændret (${fmtDice(n)})`;
@@ -230,12 +232,15 @@ export function placardCopy(kind: CeremonyKind, n: number, clause = AUTOMAT_PAYB
       : kind === 'replay' ? [{ act: 'close', label: 'Luk', primary: true }] : [{ act: 'endDemo', label: 'Afslut demo', primary: true }],
   };
 }
+/** p1 + p2 (the sanctioned sentence with its guard) form one block, .pl-claim, that never shrinks or scrolls: the claim
+ *  is never on screen without "ikke et tilbud … ikke lovet". Only p3/p4 (.pl-body) may scroll on a short screen. */
 export function placardHtml(kind: CeremonyKind, n: number, clause = AUTOMAT_PAYBACK_CLAUSE): string {
   const c = placardCopy(kind, n, clause);
   const btn = (b: { act: string; label: string; primary?: boolean }) => `<button class="btn small${b.primary ? '' : ' ghost'}" data-act="${b.act}"${b.primary ? ' data-primary' : ''}>${b.label}</button>`;
   return `${c.demoNote ? `<div class="demo-note">${c.demoNote}</div>` : ''}
     <h2>${c.eyebrow}</h2><div class="t" id="plTitle">${c.title}</div><span class="chip concept">${c.concept}</span>
-    <div class="pl-body"><p>${c.p1}</p><p>${c.p2}</p><p class="muted">${c.p3}</p>${c.p4 ? `<p>${c.p4}</p>` : ''}</div>
+    <div class="pl-claim"><p>${c.p1}</p><p>${c.p2}</p></div>
+    <div class="pl-body"><p class="muted">${c.p3}</p>${c.p4 ? `<p>${c.p4}</p>` : ''}</div>
     <div class="btns">${c.buttons.map(btn).join('')}</div>`;
 }
 
