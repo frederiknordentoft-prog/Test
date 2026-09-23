@@ -56,7 +56,8 @@ src/ui/        DOM-HUD: skarp tekst, a11y, regulatoriske strips, menu, regler, d
 |---|---|---|
 | Matematik (samlet RTP) | 96,035 % ± 0,055 pp (95 %-CI) | `npm run sim` |
 | Matematik (gates) | 18 af 18 bestået på friske seeds; par sheet i `sim/REPORT.md` | `npm run sim` |
-| Tests | 70/70 grønne: RNG-vektorer, klynger, kaskader, storm-replay, måler, golden hashes, 3,0 s-gulv, LDW-profiler og grænser mellem lag | `npm test` |
+| Tests | 115 grønne (+ 4 todo til portens flise-gitter): RNG-vektorer, klynger, kaskader, storm-replay, måler, golden hashes, 3,0 s-gulv, LDW-profiler, grænser mellem lag, terning-reglen, copy-lint og terningernes ene mutator | `npm test` |
+| Terningen | 101 Playwright-checks: tildeling før præsentationen, landing før idle, kort vist én gang, reload midt i en tildeling og midt i en storm, porten (rigtig og demo) og nul skrivninger til `terningen.v1` fra alle demo-værktøjer | `node scripts/dice-check.mjs` |
 | Fotosensitivitet | WCAG 2.3.1: højst 1 blink/s (grænse 3); streng 10 %-måling højst 2/s; mættet rød højst 20 % af skærmen | `node scripts/luminance.mjs` |
 | Visuel QA | Deterministisk Playwright-tur (SwiftShader WebGL2) ved 390×844, 375×667 og 1920×1080, uden page-fejl | `node scripts/tour.mjs` |
 | Artifact | Single-file ca. 2,5 MB (heraf 1,5 MB indlejret MP3) uden eksterne hosts. Kører hele Solstorm-demoen i artifact-rammen under en streng CSP (ingen `unsafe-eval`) | `npm run build:artifact` |
