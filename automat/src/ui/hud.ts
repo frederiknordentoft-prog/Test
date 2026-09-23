@@ -589,6 +589,17 @@ export class Hud {
     setTimeout(() => (card.querySelector<HTMLElement>('[data-primary]') ?? card.querySelector<HTMLElement>('[data-focus]') ?? card.querySelector('button'))?.focus({ preventScroll: true }), 400);
   }
   summaryEl(): HTMLElement { return this.el.summaryCard; }
+  /** Top edge (in #app px = stage px) of the open gamble card, so the staged die can sit centred above it.
+   *  No card open: 58 % of the height (where a bottom-anchored card would start on a phone). */
+  gambleCardTop(): number {
+    const host = this.root.getBoundingClientRect();
+    const card = this.el.summaryCard;
+    if (card.classList.contains('gamble') && this.isShown('summary')) {
+      const r = card.getBoundingClientRect();
+      if (r.height > 0) return r.top - host.top;
+    }
+    return host.height * 0.58;
+  }
   /** Phones (bottom-anchored placard): the claim (.pl-claim: p1 + the sanctioned sentence with its guard) never shrinks
    *  or scrolls. Portrait keeps the card within 52 % of the screen where the claim allows it (the gate's name stays
    *  clear): the type tightens first (data-fit 1–2; 3 only when the band between #reg and #foot is short), then p3/p4
