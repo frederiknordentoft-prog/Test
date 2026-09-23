@@ -336,8 +336,8 @@ export class Hud {
         else if (this.el.stormReady.classList.contains('show')) I({ t: 'startStorm' });
         else if (this.el.summary.classList.contains('show') || this.el.bigwin.classList.contains('show')) I({ t: 'continue' });
         else I({ t: 'spin' });
-      } else if (e.code === 'ArrowUp') I({ t: 'stakeUp' });
-      else if (e.code === 'ArrowDown') I({ t: 'stakeDown' });
+      } else if (e.code === 'ArrowUp') { if (!this.menuOpen()) I({ t: 'stakeUp' }); } // never behind a sheet (autospin limits)
+      else if (e.code === 'ArrowDown') { if (!this.menuOpen()) I({ t: 'stakeDown' }); }
       else if (e.code === 'KeyM') I({ t: 'mute' });
       else if (e.code === 'KeyE') I({ t: 'demo' });
       else if (e.code === 'KeyT') { if (!this.menuOpen()) I({ t: 'chamber', open: true }); }

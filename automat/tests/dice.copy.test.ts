@@ -54,7 +54,7 @@ function nonRulesCopy(): { where: string; s: string }[] {
   return out;
 }
 const GK = [1, 2, 3, 7, 20];
-/** Every Kvit eller dobbelt string: k ∈ GK, spin and storm, real and demo, every pip × bet, restored or not. */
+/** Every Kvit eller dobbelt string: k ∈ GK, spin and storm, real and demo, every pip × bet, restored (a reload or another tab) or not. */
 function gambleCopy(counts: number[]): { where: string; s: string }[] {
   const out: { where: string; s: string }[] = [];
   const add = (where: string, ...ss: (string | null | undefined)[]) => { for (const s of ss) if (s) out.push({ where, s }); };
@@ -67,10 +67,10 @@ function gambleCopy(counts: number[]): { where: string; s: string }[] {
       add(w, ...values(gambleOfferCopy(c)), text(gambleCardHtml(c)), srGambleKeep(k));
       for (const bet of ['double', 'triple'] as const) {
         add(w, gambleSub(bet, k), text(gambleThrowHtml(c, bet)));
-        for (let pip = 1; pip <= 6; pip++) for (const restored of [false, true]) {
+        for (let pip = 1; pip <= 6; pip++) for (const restored of [false, true, 'tab'] as const) {
           const payout = resolveGamble(bet, k, pip - 1).payout;
           const r = { ...c, bet, pip, payout, count: n + payout, restored };
-          add(`${w} ${bet} ${pip}${restored ? ' restored' : ''}`, ...values(gambleResultCopy(r)), text(gambleResultHtml(r)));
+          add(`${w} ${bet} ${pip}${restored ? ` restored ${restored}` : ''}`, ...values(gambleResultCopy(r)), text(gambleResultHtml(r)));
         }
       }
     }
@@ -282,6 +282,7 @@ describe('Kvit eller dobbelt: the card', () => {
     expect(r({ pip: 2, payout: 0, count: 38 }).lines).toEqual(['1 terning er gået tabt.', 'Du har 38 terninger.']);
     expect(r({ demoN: 7 }).lines[1]).toBe('Dit antal er uændret (7).');
     expect(r({ restored: true })).toMatchObject({ eyebrow: 'RESULTATET AF DIT VALG', restored: 'Valget blev truffet før genindlæsningen. Resultatet står fast.' });
+    expect(r({ restored: 'tab' })).toMatchObject({ eyebrow: 'RESULTATET AF DIT VALG', restored: 'Valget blev truffet i en anden fane. Resultatet står fast.' });
     expect(text(gambleResultHtml({ ...ctx(), bet: 'triple', pip: 6, payout: 3, count: 41, restored: false }))).toContain(faceGlyph(6));
     expect(srGambleKeep(1)).toBe('1 terning er lagt i Terningekammeret.');
     expect(GAMBLE_THROW).toBe('Terningen kastes …');

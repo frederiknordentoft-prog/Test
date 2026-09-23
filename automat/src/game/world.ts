@@ -387,7 +387,13 @@ export class World {
     this.uber.exposure = Math.min(0.9, amount);
     this.flashUntil = now + Math.max(0.033, ms / 1000);
   }
-  announce(text: string): void { this.sr.textContent = text; }
+  /** The live region. Lines written in the same task are joined: a reader only hears the final text, so a spin's result
+   *  is never replaced by the offer or the autospin stop announced right after it. */
+  announce(text: string): void {
+    this.sr.textContent = this.srJoin && this.sr.textContent ? `${this.sr.textContent} ${text}` : text;
+    if (!this.srJoin) { this.srJoin = true; setTimeout(() => { this.srJoin = false; }, 0); }
+  }
+  private srJoin = false;
   setCalm(b: boolean): void {
     this.calm = b;
     if (this.cellShatter) this.cellShatter.calm = b;

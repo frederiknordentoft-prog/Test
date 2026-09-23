@@ -5,7 +5,7 @@ import {
   canOffer, openGamble, settleGamble, clearSettled, cloneDice, stagedOf, GAMBLE_LOG_MAX, type DiceStore, type GambleChoice,
 } from '../src/game/dice.ts';
 import { resolveGamble, GAMBLE_SIDES } from '../src/math/gamble.ts';
-import { loadDice, DICE_KEY } from '../src/game/store.ts';
+import { loadDice, peekDice, storedGambleIdx, DICE_KEY } from '../src/game/store.ts';
 import { dieBirthAt, celebrateEndWithDie, TIER_SECS, winTier } from '../src/present/schedule.ts';
 import { spinBase } from '../src/math/engine.ts';
 import { spinRng } from '../src/math/rng.ts';
@@ -250,6 +250,34 @@ describe('loadDice: v1 stays v1, defaults fill in, malformed choices are dropped
     expect(load({ ...old, count: 16, gamble: won }).gamble).toEqual(won);
     expect(load({ ...old, count: 14, gamble: won }).gamble).toBeNull();
     expect(load({ ...old, count: 16, gamble: { ...won, settled: { ...won.settled, payout: 14 } } }).gamble).toBeNull();
+  });
+  // a second tab: the choice press re-reads what is stored NOW (its result stands; a throw index is never reused)
+  it('peekDice: the stored collection as it is now, sanitised like loadDice; null when there is nothing to trust', () => {
+    const g = { id: 'i', source: 'spin', stake: 1, at: 1, settled: { choice: 'double', face: 4, gid: 'NL-1-T000001', payout: 2 } };
+    load({ ...old, count: 7, gamble: g, gambleLog: [{ gid: 'NL-1-T000001', id: 'i', source: 'spin', choice: 'double', stake: 1, face: 4, payout: 2, at: 1 }] });
+    const p = peekDice();
+    expect(p?.count).toBe(7);
+    expect(p?.gamble).toEqual(g);
+    expect(p?.gambleLog.length).toBe(1);
+    load({ ...old, gamble: { ...g, stake: 1.5 } });
+    expect(peekDice()?.gamble).toBeNull();
+    mem.delete(DICE_KEY);
+    expect(peekDice()).toBeNull();
+    mem.set(DICE_KEY, '{nope');
+    expect(peekDice()).toBeNull();
+    mem.set(DICE_KEY, JSON.stringify({ ...old, v: 2 }));
+    expect(peekDice()).toBeNull();
+  });
+  it('storedGambleIdx: the stored throw counter, 0 when missing or malformed', () => {
+    (globalThis as unknown as { localStorage: typeof ls }).localStorage = ls;
+    mem.set('nordlys.v1', JSON.stringify({ v: 1, counters: { base: 3, gamble: 12 } }));
+    expect(storedGambleIdx()).toBe(12);
+    for (const bad of ['{nope', JSON.stringify({ v: 1, counters: { base: 3 } }), JSON.stringify({ v: 1, counters: { gamble: -2 } }), JSON.stringify({ v: 1, counters: { gamble: 'x' } }), 'null']) {
+      mem.set('nordlys.v1', bad);
+      expect(storedGambleIdx(), bad).toBe(0);
+    }
+    mem.delete('nordlys.v1');
+    expect(storedGambleIdx()).toBe(0);
   });
 });
 

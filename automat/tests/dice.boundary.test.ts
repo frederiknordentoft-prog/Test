@@ -31,6 +31,27 @@ function method(src: string, name: string): { start: number; end: number; body: 
 }
 const within = (pos: number, b: { start: number; end: number }) => pos > b.start && pos < b.end;
 const positions = (s: string, needle: string) => { const out: number[] = []; for (let i = s.indexOf(needle); i >= 0; i = s.indexOf(needle, i + 1)) out.push(i); return out; };
+const ASSIGN = String.raw`\s*(?:[-+*/]?=(?!=)|\+\+|--)`;
+/** Any write to a store's count, however it is spelled: postfix, prefix, compound, bracket, Object.assign or a spread
+ *  that sets `count`. */
+const COUNT_W = new RegExp([
+  String.raw`\b(?:dice|d)\.count` + ASSIGN,
+  String.raw`(?:\+\+|--)\s*(?:this\.)?(?:dice|d)\.count\b`,
+  String.raw`\b(?:dice|d)\s*\[\s*['"]count['"]\s*\]` + ASSIGN,
+  String.raw`(?:\+\+|--)\s*(?:this\.)?(?:dice|d)\s*\[\s*['"]count['"]\s*\]`,
+  String.raw`\bObject\.assign\(\s*(?:this\.)?(?:dice|d)\s*[,)]`,
+  String.raw`\{\s*\.\.\.(?:this\.)?(?:dice|d)\b[^}]*\bcount\s*:`,
+].join('|'), 'g');
+/** Any write to the gamble counter (or a replacement of all counters), however it is spelled. */
+const GAMBLE_W = new RegExp([
+  String.raw`\bcounters\.gamble` + ASSIGN,
+  String.raw`(?:\+\+|--)\s*(?:this\.)?(?:s\.)?counters\.gamble\b`,
+  String.raw`\bcounters\s*\[\s*['"]gamble['"]\s*\]` + ASSIGN,
+  String.raw`(?:\+\+|--)\s*(?:this\.)?(?:s\.)?counters\s*\[\s*['"]gamble['"]\s*\]`,
+  String.raw`\bcounters\s*=(?!=)`,
+  String.raw`\bObject\.assign\(\s*(?:this\.)?(?:s\.)?counters\b`,
+].join('|'), 'g');
+const hitsOf = (src: string, re: RegExp) => [...src.matchAll(re)].map((m) => m.index ?? 0);
 
 describe('Terningen boundaries', () => {
   it('addDie( appears only in Game.ts, once, inside awardDie (besides its definition in dice.ts)', () => {
@@ -102,9 +123,20 @@ describe('Terningen boundaries', () => {
     const commit = method(GAME, 'commitGamble');
     expect(within(at[0], commit)).toBe(true);
     expect(commit.body).toMatch(/if \(this\.demoMode \|\| !this\.dice\.gamble \|\| this\.dice\.gamble\.settled\) return null;[\s\S]*settleGamble\([\s\S]*this\.persist\(\)/);
+    // the stored choice is re-read at the press: made in another tab (gone, settled or another id), it is never drawn
+    // or written again here; that tab's result is shown and this one closes it in memory only
+    expect(commit.body).toMatch(/const st = peekDice\(\);\s*if \(st\) this\.dice = st;\s*if \(this\.dice\.gamble\?\.id !== id \|\| this\.dice\.gamble\.settled\) return this\.madeElsewhere\(id\);[\s\S]*settleGamble\(/);
+    expect(method(GAME, 'madeElsewhere').body.includes('settleGamble') || method(GAME, 'madeElsewhere').body.includes('persist')).toBe(false);
     const inc = positions(GAME, '++this.s.counters.gamble');
     expect(inc.length).toBe(1);
     expect(within(inc[0], commit)).toBe(true);
+    // every other write, however spelled: only the never-decreasing catch-up in commitGamble and the QA hooks in debug
+    const dbg = method(GAME, 'debug');
+    for (const f of SRC) if (!f.endsWith(join('game', 'Game.ts'))) expect(hitsOf(read(f), GAMBLE_W).length, f).toBe(0);
+    for (const h of hitsOf(GAME, GAMBLE_W)) expect(within(h, commit) || within(h, dbg), `counters.gamble write outside commitGamble/debug at ${h}`).toBe(true);
+    expect(hitsOf(commit.body, GAMBLE_W).length).toBe(2);
+    // a second tab may have thrown since this one loaded: the stored counter is caught up with first (an index is never reused)
+    expect(commit.body).toMatch(/this\.s\.counters\.gamble = Math\.max\(this\.s\.counters\.gamble, storedGambleIdx\(\)\);\s*const idx = \+\+this\.s\.counters\.gamble;/);
     // the face comes from the 'gamble' domain, drawn in the same call
     expect(commit.body).toMatch(/gambleFace\(spinRng\(this\.s\.sessionSeed, 'gamble', idx\)\)/);
     // clearSettled( only after the result was shown (finishGamble, which returns in demo mode)
@@ -113,13 +145,24 @@ describe('Terningen boundaries', () => {
     const fin = method(GAME, 'finishGamble');
     expect(within(cs[0], fin)).toBe(true);
     expect(fin.body).toMatch(/if \(this\.demoMode\) return;[\s\S]*clearSettled\(/);
+    expect(fin.body).toMatch(/if \(this\.dice\.gamble\?\.id === run\.id\) clearSettled\(this\.dice\);\s*if \(!run\.elsewhere\) this\.persist\(\);/);
+  });
+
+  it('the write detectors catch every spelling (and no read)', () => {
+    for (const w of ['this.dice.count++', '++this.dice.count', '--d.count', 'd.count += 2', 'dice.count = 0', "this.dice['count'] = 3", '++d["count"]', 'Object.assign(this.dice, x)', 'this.dice = { ...this.dice, count: 9 }'])
+      expect(hitsOf(w, COUNT_W).length, w).toBe(1);
+    for (const r of ['this.dice.count === 1', 'd.count >= 1948', 'const n = this.dice.count;', 'x = d.count - 1', '{ ...d, gamble: null }', 'Object.assign(d.st, { sc: 1 })'])
+      expect(hitsOf(r, COUNT_W).length, r).toBe(0);
+    for (const w of ['this.s.counters.gamble++', '++this.s.counters.gamble', 'this.s.counters.gamble += 1', 'counters.gamble = 7', "this.s.counters['gamble']++", '--this.s.counters["gamble"]', 'this.s.counters = { gamble: 0 }', 'Object.assign(this.s.counters, c)'])
+      expect(hitsOf(w, GAMBLE_W).length, w).toBe(1);
+    for (const r of ['this.s.counters.gamble === 1', 'idx < this.s.counters.gamble + 1000', 's?.counters?.gamble', '++this.s.counters.demo', 'counters: { ...d.counters }'])
+      expect(hitsOf(r, GAMBLE_W).length, r).toBe(0);
   });
 
   it('the count is written only by addDie and settleGamble (dice.ts), or by the QA hook in debug', () => {
-    const W = /\bdice\.count\s*(?:[-+*/]?=(?!=)|\+\+|--)|\bd\.count\s*(?:[-+*/]?=(?!=)|\+\+|--)/g;
     for (const f of SRC) {
       const src = read(f);
-      const hits = [...src.matchAll(W)].map((m) => m.index ?? 0);
+      const hits = hitsOf(src, COUNT_W);
       if (f.endsWith(join('game', 'dice.ts'))) {
         // an exported function's body: the first '{' that ends its signature line (return types may hold braces)
         const fn = (name: string) => block(src, src.indexOf(' {\n', src.indexOf(`export function ${name}(`)));

@@ -146,18 +146,34 @@ function validGamble(g: PendingGamble | null | undefined, count: number): boolea
 export function loadDice(seed: number): DiceStore {
   const d = diceDefaults(seed);
   try {
-    const raw = localStorage.getItem(DICE_KEY);
-    if (!raw) return d;
-    const s = JSON.parse(raw) as DiceStore;
-    if (!s || s.v !== 1) return d;
-    const r = { ...d, ...s };
-    if (!validGamble(r.gamble, r.count)) r.gamble = null;
-    if (!Array.isArray(r.gambleLog)) r.gambleLog = [];
-    return r;
+    return readDice(d) ?? d;
   } catch {
     storageOk = false;
     return d;
   }
+}
+function readDice(d: DiceStore): DiceStore | null {
+  const raw = localStorage.getItem(DICE_KEY);
+  if (!raw) return null;
+  const s = JSON.parse(raw) as DiceStore;
+  if (!s || s.v !== 1) return null;
+  const r = { ...d, ...s };
+  if (!validGamble(r.gamble, r.count)) r.gamble = null;
+  if (!Array.isArray(r.gambleLog)) r.gambleLog = [];
+  return r;
+}
+/** The stored collection as it is NOW (a second tab may have written it since this one loaded), sanitised like
+ *  loadDice; null when there is nothing to trust (no key, unreadable, or this tab's own last write failed). */
+export function peekDice(): DiceStore | null {
+  if (!storageOk) return null;
+  try { return readDice(diceDefaults(0)); } catch { return null; }
+}
+/** The stored throw counter (a second tab may have thrown since this one loaded); 0 when there is none to read. */
+export function storedGambleIdx(): number {
+  try {
+    const n = (JSON.parse(localStorage.getItem(KEY) ?? 'null') as SaveData | null)?.counters?.gamble;
+    return Number.isInteger(n) && n! > 0 ? n! : 0;
+  } catch { return 0; }
 }
 
 /** Honours the SAME writesEnabled flag as save(): a no-op while a demo runs. */

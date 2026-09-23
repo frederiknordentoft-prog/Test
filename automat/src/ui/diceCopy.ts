@@ -333,7 +333,7 @@ export const gambleSub = (bet: GambleBet, k: number) => `${pipList(winPips(bet))
 export const GAMBLE_FACTS = 'En terning kastes. I gennemsnit giver alle tre valg lige mange terninger. Kun de nye terninger kan sættes på spil – aldrig dem, der allerede ligger i kammeret.';
 export const GAMBLE_FIRST_DIE = 'Fra næste terning kan du vælge at beholde den eller sætte den på spil (Kvit eller dobbelt eller 3 for 1). Valget kan slås fra under Indstillinger.';
 export const GAMBLE_THROW = 'Terningen kastes …';
-export const GAMBLE_RESTORED = { eyebrow: 'RESULTATET AF DIT VALG', line: 'Valget blev truffet før genindlæsningen. Resultatet står fast.' };
+export const GAMBLE_RESTORED = { eyebrow: 'RESULTATET AF DIT VALG', line: 'Valget blev truffet før genindlæsningen. Resultatet står fast.', tab: 'Valget blev truffet i en anden fane. Resultatet står fast.' };
 export const gambleDemoNote = (n: number) => `DEMO · Sådan fungerer valget · tæller ikke · dit antal er uændret (${fmtDice(n)})`;
 export const DEMO_GAMBLE_BANNER = { t: 'DEMO · TERNING MED VALG', s: 'Sådan fungerer Kvit eller dobbelt · tæller ikke med' };
 export const demoGambleDone = (n: number) => ({ t: 'DIT ANTAL ER UÆNDRET', s: `${countWord(n)} · demo-valget talte ikke med` });
@@ -387,7 +387,8 @@ export function gambleThrowHtml(c: GambleCardCtx, bet: GambleBet): string {
     <div class="g-roll" aria-hidden="true"><span class="g-die"></span></div>
     <p class="g-body">${GAMBLE_THROW}</p>${facesRow(bet, null)}`;
 }
-export interface GambleResultCtx extends GambleCardCtx { bet: GambleBet; pip: number; payout: number; count: number; restored: boolean }
+/** restored: shown again after a reload (true), or made in another tab ('tab'). */
+export interface GambleResultCtx extends GambleCardCtx { bet: GambleBet; pip: number; payout: number; count: number; restored: boolean | 'tab' }
 export function gambleResultCopy(c: GambleResultCtx) {
   const lines = [
     c.payout > 0 ? `${countWord(c.payout)} lægges i Terningekammeret.` : `${countWord(c.k)} er gået tabt.`,
@@ -397,7 +398,7 @@ export function gambleResultCopy(c: GambleResultCtx) {
   return {
     eyebrow: c.restored ? GAMBLE_RESTORED.eyebrow : gambleEyebrow(c),
     title,
-    restored: c.restored ? GAMBLE_RESTORED.line : null,
+    restored: c.restored === 'tab' ? GAMBLE_RESTORED.tab : c.restored ? GAMBLE_RESTORED.line : null,
     lines,
     sr: `${title}. ${lines.join(' ')}`,
   };

@@ -10,9 +10,11 @@
 // expiry resets the meter, never the dice), the placard at 360×640, 375×667 and 844×390 (the claim whole with its guard,
 // the buttons and the ribbon clear), and the visual pass at 390×844, 375×667 and 1920×1080 (shots + overlap/fit assertions).
 // Kvit eller dobbelt ('gamble': no card for the first die, the choice committed at the press and shown ≥ 3,0 s later,
-// win/loss/keep, reloads mid-choice and mid-throw without a new draw, the storm's one choice, the 1948 edges, demo
-// isolation, the landing) and autospin ('auto': ≥ 3,0 s between presses, every stop, the stake locked). The older
-// sections predate the choice: award b/c run with "Tilbyd Kvit eller dobbelt" off, storm/resume/perk keep any offer.
+// win/loss/keep, reloads mid-choice and mid-throw without a new draw, a second tab's stale card, the storm's one
+// choice, the 1948 edges, demo isolation, the landing, the result never shown early: screen reader, menu) and autospin
+// ('auto': ≥ 3,0 s between presses, every stop with its banner and a true summary, the stake locked, also behind the
+// sheet). The older sections predate the choice: award b/c run with "Tilbyd Kvit eller dobbelt" off, storm/resume/perk
+// keep any offer.
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 
@@ -31,12 +33,13 @@ page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 page.on('console', (m) => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
 // a dev server's HMR client must not reload the page mid-run (the stub still injects the CSS modules; a dev
 // server is worth it: import.meta.env.DEV arms the "dice changed by demo" guard)
-await page.route('**/@vite/client', (r) => r.fulfill({
+const viteStub = (r) => r.fulfill({
   contentType: 'application/javascript',
   body: 'export const createHotContext=()=>({accept(){},dispose(){},prune(){},invalidate(){},on(){},off(){},send(){},data:{}});'
     + 'export const updateStyle=(id,css)=>{let s=document.querySelector(`style[data-vite-dev-id="${id}"]`);if(!s){s=document.createElement("style");s.setAttribute("data-vite-dev-id",id);document.head.appendChild(s);}s.textContent=css;};'
     + 'export const removeStyle=()=>{};export const injectQuery=(u)=>u;',
-}));
+});
+await page.route('**/@vite/client', viteStub);
 await ctx.addInitScript(() => {
   const orig = Storage.prototype.setItem;
   window.__writes = {};
@@ -67,6 +70,12 @@ const chip = () => ev(() => document.querySelector('#diceN .cur:last-child')?.te
 // hud.press() drops a second press within 60 ms (real time): space the clicks out
 const click = async (sel) => { await new Promise((r) => setTimeout(r, 80)); await ev((s) => document.querySelector(s).click(), sel); };
 const shown = (id) => ev((i) => document.getElementById(i).classList.contains('show'), id);
+/** The live region (a reader hears its final text): lines of one task are joined, never replaced. */
+const srText = () => ev(() => document.querySelector('body > .sr[aria-live]')?.textContent ?? '');
+const bannerNow = () => ev(() => [document.getElementById('bannerT').textContent, document.getElementById('bannerS').textContent]);
+/** fmtSignedKr (øre → "+3,40 kr" / "−2,00 kr" / "±0,00 kr"). */
+const countWord = (n) => `${n} ${n === 1 ? 'terning' : 'terninger'}`;
+const signedKr = (o) => (o === 0 ? '±' : o > 0 ? '+' : '−') + new Intl.NumberFormat('da-DK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(o) / 100) + ' kr';
 const phase = () => ev(() => window.__slot.award().phase);
 /** Bounds (viewport px) of a Pixi object when it is really on screen (visible up the chain, alpha > 1 %). */
 const PIX = `(o) => { if (!o || o.destroyed) return null; for (let v = o; v; v = v.parent) if (!v.visible) return null;
@@ -656,6 +665,8 @@ if (want.has('gamble')) {
   const d2 = await storedDice();
   check(d2?.count === c0 + 1 && d2?.gamble?.stake === 1 && d2?.gamble?.source === 'spin' && !d2?.gamble?.settled, '2nd die: count +1 and the open choice (stake 1) in terningen.v1 at the SPIN press', JSON.stringify(d2?.gamble));
   check((await untilW("window.__slot.state() === 'gambleOffer'", 20000)) >= 0, '2nd die: the Kvit eller dobbelt card after the celebration');
+  const sr2 = await srText();
+  check(/^Gevinst .+ Kp [\d,]+\. Din nye terning venter på dit valg/.test(sr2), 'the screen reader hears the win AND the offer (the offer never replaces the result)', sr2);
   check((await chip()) === String(c0), 'the chip still shows the count before the award while the card waits', await chip());
   check(!(await ev(() => window.__slot.vault())), 'the dice home is not idle-active while the card is up');
   await new Promise((r) => setTimeout(r, 450)); // showSummary focuses [data-primary] after 400 ms (real time)
@@ -683,6 +694,12 @@ if (want.has('gamble')) {
   const w1 = await storedDice();
   check(w1?.count === c0 + 2 && w1?.gamble?.settled?.payout === 2 && w1?.gamble?.settled?.face === 4 && /^NL-[0-9a-f]{8}-T\d{6}$/.test(w1?.gamble?.settled?.gid ?? ''), 'win: count and the settled result (with its T id) are in terningen.v1 AT the choice press', JSON.stringify(w1?.gamble));
   check((await ev(() => window.__slot.save().counters.gamble)) === +(w1?.gamble?.settled?.gid ?? '').slice(-6), 'win: counters.gamble moved to the throw\'s own index (one draw)');
+  // the menu during the throw: Terningen shows the count the home shows, never the result before it is revealed
+  await click('#menuBtn');
+  await click('#tabs [data-tab="dice"]');
+  const ms = await ev(() => document.querySelector('.dice-status')?.textContent ?? '');
+  check(ms === `Du har ${countWord(c0)}.` && (await ev(() => window.__slot.gambleRun()?.phase)) === 'throw', 'the menu\'s Terningen tab mid-throw shows the count before the award, not the result', ms);
+  await click('#menuClose');
   let shownAt = -1;
   for (let t = FRAME; t < 6000 && shownAt < 0; t += FRAME) { await adv(FRAME, FRAME); await watch(); if ((await cardText()).includes('Terningen viser')) shownAt = t; }
   check(shownAt >= 3000 - 0.5, 'win: the result is shown ≥ 3,0 s after the choice', `${shownAt.toFixed(0)} ms`);
@@ -753,6 +770,46 @@ if (want.has('gamble')) {
     await rebase();
     await toIdle('reload mid-throw');
     check((await storedDice())?.gamble === null && (await chip()) === String(c), 'reload mid-throw: the choice closes, the home keeps the count before the award');
+  }
+
+  // 7b · a second tab (same profile) restores the same open choice; once this tab's result is known, the stale card
+  // there cannot make the choice again: the stored result stands, that tab shows it and writes nothing
+  c = (await ev(() => window.__slot.dice())).count;
+  await ev(() => window.__slot.qaGamble(2)); // this tab's bet loses (pip 2): Behold in the other tab would undo it
+  if (await offerAfterDie('two tabs')) {
+    const B = await ctx.newPage();
+    const chipB = () => B.evaluate(() => document.querySelector('#diceN .cur:last-child')?.textContent ?? document.getElementById('diceN').textContent);
+    await B.route('**/@vite/client', viteStub);
+    B.on('pageerror', (e) => errors.push('tab B pageerror: ' + e.message));
+    const evB = (f, a) => B.evaluate(f, a);
+    const advB = (ms) => evB(async (ms) => { for (let t = 0; t < ms; t += 50) { window.__slot.advance(50, false); await new Promise((r) => setTimeout(r, 0)); } }, ms);
+    const untilB = async (src, max = 20000) => { const f = new Function(`return (${src});`); for (let t = 0; t <= max; t += 100) { if (await evB(f)) return t; await advB(100); await new Promise((r) => setTimeout(r, 15)); } return -1; };
+    await B.goto(base + '?seed=7');
+    await B.waitForFunction(() => window.__slot, null, { timeout: 60000 });
+    await evB(() => window.__slot.world.stage.app.ticker.stop());
+    await advB(300);
+    await evB(() => window.__slot.unlock());
+    const open = await storedDice();
+    check((await untilB("window.__slot.state() === 'gambleOffer'")) >= 0 && (await evB(() => window.__slot.gamble()?.id)) === open?.gamble?.id, 'two tabs: the second tab restores the same open choice');
+    await adv(1100);
+    await bet('double');
+    const a = await storedDice(), gcA = await ev(() => window.__slot.save().counters.gamble);
+    check(a?.count === c && a?.gamble?.settled?.payout === 0, 'two tabs: this tab\'s loss is committed at the press', `${c} → ${a?.count}`);
+    const wB = await evB((k) => window.__writes[k] ?? 0, KEY);
+    await advB(1100);
+    await new Promise((r) => setTimeout(r, 300));
+    await evB(() => document.querySelector('#summaryCard [data-gamble="keep"]').click());
+    const b = await storedDice();
+    check(b?.count === c && JSON.stringify(b) === JSON.stringify(a), 'two tabs: Behold on the stale card changes nothing: the committed loss stands, the log keeps its throw', `count ${b?.count}, log tail ${b?.gambleLog?.at(-1)?.gid}`);
+    await advB(200);
+    const tB = await evB(() => document.getElementById('summaryCard').innerText.replace(/\s+/g, ' '));
+    check(tB.includes('Valget blev truffet i en anden fane. Resultatet står fast.') && tB.includes('Terningen viser 2') && tB.includes(`Du har ${countWord(c)}.`), 'two tabs: the other tab shows the stored result ("i en anden fane"), no throw of its own', tB.slice(0, 160));
+    check((await untilB("window.__slot.state() === 'idle'")) >= 0, 'two tabs: the other tab reaches idle');
+    check((await evB((k) => window.__writes[k] ?? 0, KEY)) === wB && (await ev(() => JSON.parse(localStorage.getItem('nordlys.v1')).counters.gamble)) === gcA && JSON.stringify(await storedDice()) === JSON.stringify(a), 'two tabs: the other tab writes nothing (the store and counters.gamble as this tab left them)');
+    check((await chipB()) === String(c), 'two tabs: the other tab\'s home shows the stored count', await chipB());
+    await B.close();
+    await toIdle('two tabs');
+    check((await chip()) === String(c) && (await storedDice())?.gamble === null, 'two tabs: this tab closes its own choice; the home keeps the count before the award');
   }
 
   // 8 · Solstorm: ONE choice for all of its dice after the summary; a double win releases 2k in the outro
@@ -864,7 +921,14 @@ if (want.has('auto')) {
   const lim25 = await ev(() => [...document.querySelectorAll('#autoL button')].map((b) => b.textContent).join(' | '));
   check(lim10 === 1 && lim25 === '20,00 kr | 50,00 kr', 'the loss limits come from autoLimits (10 spin: 10×; 25 spin: 10× and 25×)', lim25);
   await click('#autoL button[data-l="2000"]');
-  const b0 = await base();
+  // the stake never changes behind the sheet (its limits are for the stake it shows)
+  await page.keyboard.press('ArrowUp'); await adv(50);
+  await page.keyboard.press('ArrowDown'); await adv(50);
+  await page.keyboard.press('ArrowDown'); await adv(50);
+  check((await ev(() => window.__slot.save().stakeOre)) === S && (await shown('autoWrap')), 'the arrow keys are inert while the sheet is open', String(await ev(() => window.__slot.save().stakeOre)));
+  // STOP mid-spin on a winning spin: the banner and the reader get the round's TRUE net, after that spin's result
+  await ev(() => window.__slot.qaNext('cascade'));
+  const b0 = await base(), bal0 = await ev(() => window.__slot.save().balanceOre);
   await click('#autoGo'); await adv(100);
   const a0 = await ev(() => window.__slot.auto());
   check(a0?.total === 25 && a0?.lossLimitOre === 10 * S && (await base()) === b0 + 1, '"Start autospin": a run of 25 with a 10× loss limit, the first press through spin()');
@@ -872,6 +936,9 @@ if (want.has('auto')) {
   await click('#autoBtn'); await adv(100);
   check(!(await ev(() => window.__slot.auto())) && (await ev(() => window.__slot.autoStopped())) === 'player', 'the pill stops the run');
   await untilState('idle', 10000);
+  const net0 = (await ev(() => window.__slot.save().balanceOre)) - bal0, sr0 = await srText();
+  check(net0 > 0 && JSON.stringify(await bannerNow()) === JSON.stringify(['Autospin stoppet', `1 spin · netto ${signedKr(net0)}`]), 'STOP mid-spin: the stop banner counts that spin\'s win (the round\'s true net)', `${(await bannerNow()).join(' | ')} (balance ${signedKr(net0)})`);
+  check(sr0.startsWith('Gevinst ') && sr0.endsWith(`Autospin stoppet. 1 spin, netto ${signedKr(net0)}.`), 'STOP mid-spin: the reader hears the result, then the stop with the true net', sr0);
   check((await after(5000)) === 0, 'STOP mid-spin: the spin under way finishes, no other follows');
 
   // done: 10 spins, each press ≥ 3,0 s after the last, the stake locked throughout (base 1440–1451: no wins at 2 kr)
@@ -882,6 +949,8 @@ if (want.has('auto')) {
   const at = [0, ...r.out]; // the first press is autoStart's own spin()
   const gaps = at.slice(1).map((t, i) => t - at[i]);
   check(r.reason === 'done' && (await base()) - b1 === 10 && (await banner()) === 'Autospin færdig', 'done: 10 spins, "Autospin færdig"', `${(await base()) - b1} spins, ${r.reason}`);
+  const srD = await srText();
+  check(/^(Gevinst|Retur|Indsats retur|Ingen gevinst).* Kp [\d,]+\. Autospin færdig\. 10 spin, netto /.test(srD), 'done: the reader hears the last result, then "Autospin færdig"', srD);
   check(gaps.length === 9 && gaps.every((g) => g >= 3000), 'every press ≥ 3,0 s after the last (the floor holds, no turbo)', `min ${Math.min(...gaps)} ms`);
   check(r.locked && r.vaultOff, 'the stake buttons are disabled and the dice home is not idle-active during autospin (spinning and between spins)');
   check(start - (await bal()) <= 10 * S, 'done: the round\'s loss within the limit', `${start - (await bal())} øre`);
@@ -898,15 +967,22 @@ if (want.has('auto')) {
   await ev(() => window.__slot.autoStart(10, 10));
   r = await run();
   check(r.reason === 'balance' && (await bal()) < S && (await banner()) === 'Autospin stoppet · saldoen er for lav', 'balance: stops when the balance cannot pay, and never refills', `balance ${await bal()}`);
+  await ev(() => window.__slot.game.hud.banner('—', '—'));
+  b1 = await base();
+  await ev(() => window.__slot.autoStart(10, 10));
+  check(!(await ev(() => window.__slot.auto())) && (await base()) === b1 && JSON.stringify(await bannerNow()) === JSON.stringify(['Autospin stoppet · saldoen er for lav', '0 spin · netto ±0,00 kr']), 'balance: a start that cannot pay is refused out loud (never silently)', (await bannerNow()).join(' | '));
   await ev(() => window.__slot.game.dispatch({ t: 'refill' }));
 
   // menu, hidden tab, demo tool: each stops the run; the spin under way finishes (+1 spin only)
-  for (const [name, act, why] of [
-    ['menu', () => document.getElementById('menuBtn').click(), 'menu'],
-    ['hidden', () => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); }, 'hidden'],
-    ['demo', () => document.getElementById('demoDieSeg').click(), 'demo'],
+  // (their banners: the reason and the round's true net, shown after the running spin's result; a demo press only stops)
+  for (const [name, act, why, title] of [
+    ['menu', () => document.getElementById('menuBtn').click(), 'menu', 'Autospin stoppet · menuen blev åbnet'],
+    ['hidden', () => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); }, 'hidden', 'Autospin stoppet · fanen var skjult'],
+    ['demo', () => document.getElementById('demoDieSeg').click(), 'demo', 'Autospin stoppet'],
+    ['demo (Solstorm)', () => document.getElementById('demoStorm').click(), 'demo', 'Autospin stoppet'],
   ]) {
     b1 = await base();
+    const m0 = await bal();
     await ev(() => window.__slot.autoStart(25, 10));
     await adv(1000);
     await new Promise((res) => setTimeout(res, 80));
@@ -914,9 +990,19 @@ if (want.has('auto')) {
     const stopped = await ev(() => window.__slot.autoStopped());
     if (name === 'menu') { await adv(300); await click('#menuClose'); }
     await untilState('idle', 10000);
+    const bn = await bannerNow(), net = (await bal()) - m0;
     const extra = await after(5000);
-    check(stopped === why && extra === 0 && (await base()) - b1 === 1, `${name}: stops the run (+1 spin only)`, `${stopped}, ${(await base()) - b1} spins`);
+    check(stopped === why && extra === 0 && (await base()) - b1 === 1 && (await state()) === 'idle', `${name}: stops the run (+1 spin only)`, `${stopped}, ${(await base()) - b1} spins, ${await state()}`);
+    check(JSON.stringify(bn) === JSON.stringify([title, `1 spin · netto ${signedKr(net)}`]), `${name}: the stop banner stays up with the reason and the true net`, bn.join(' | '));
   }
+  // a demo press in the gap between two autospins: the run stops (its banner stays), no demo starts
+  b1 = await base();
+  await ev(() => window.__slot.autoStart(25, 10));
+  check((await until(() => window.__slot.state() === 'idle' && !!window.__slot.auto(), 10000, 50)) >= 0, 'gap: idle between two autospins');
+  await new Promise((res) => setTimeout(res, 80));
+  await ev(() => document.getElementById('demoDieSeg').click());
+  await adv(100);
+  check((await ev(() => window.__slot.autoStopped())) === 'demo' && (await state()) === 'idle' && (await banner()) === 'Autospin stoppet' && (await after(5000)) === 0, 'gap: a demo press only stops the run (banner kept, no demo, no spin)', `${await state()} · ${(await bannerNow()).join(' | ')}`);
 
   // die: the card shows
   await ev(() => window.__slot.qaNext('die'));
