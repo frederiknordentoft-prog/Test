@@ -169,8 +169,13 @@ export class World {
     } else if (!this.baseSet) this.cellPx = px;
     this.stormCellPx = steps.find((p) => p >= (size / CONFIG.stormCols) * st.res * 1.25) ?? 192;
     this.layoutDirty = false;
-    // logo placement (header centre) unless intro owns it
+    // logo placement (header centre) unless intro owns it; on the splash it follows the stage
     if (!this.logoIntro && !this.storm) this.placeLogo();
+    else if (this.splashActive) {
+      const { y, size } = this.splashLogo();
+      this.logo.position.set(st.w / 2, y);
+      this.logo.scale.set(size / this.splashLogoSize);
+    }
     this.onLayout?.();
   }
 
@@ -378,24 +383,33 @@ export class World {
   }
 
   // ------------------------------------------------------------ intro
+  /** Splash logo geometry for the current stage size (stage px). */
+  private splashLogo(): { y: number; size: number } {
+    return { y: this.stage.h * 0.36, size: Math.max(34, Math.min(this.stage.w, 760) * 0.12) };
+  }
+  /** Bottom edge of the splash logo (stage px): the welcome text hangs under it. */
+  splashLogoBottom(): number { const { y, size } = this.splashLogo(); return y + size * 0.62; }
+  private splashActive = false;
+
   showSplash(): void {
     this.grid.alpha = 0;
     this.frame.alpha = 0.18;
     this.arc.alpha = 0;
     this.skyP.kp = Math.min(this.kpDisplay(), 1);
-    const W = this.stage.w, H = this.stage.h;
-    const size = Math.max(34, Math.min(W, 760) * 0.12);
+    const { y, size } = this.splashLogo();
     this.splashLogoSize = size;
+    this.splashActive = true;
     this.logo.destroy();
     this.logo = new IsText({ text: 'NORDLYS', size, style: 'ice', tracking: 0.14 });
     this.stage.layers.banners.addChild(this.logo);
-    this.logo.position.set(W / 2, H * 0.36);
+    this.logo.position.set(this.stage.w / 2, y);
     this.logo.reveal = 0;
     gsap.to(this.logo, { reveal: 1, duration: 1.3, ease: 'power2.inOut', delay: 0.3 });
     gsap.fromTo(this.logo, { sweep: -0.2 }, { sweep: 1.2, duration: 1.4, delay: 1.5, ease: 'power1.inOut' });
   }
 
   async ignite(kp: number): Promise<void> {
+    this.splashActive = false;
     this.skyP.glow = 1;
     this.skyManual = true;
     const o = { k: 0 };

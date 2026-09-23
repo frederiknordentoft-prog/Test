@@ -9,6 +9,7 @@ import { CONFIG, REPORT } from '../math/config.ts';
 import type { SpinResult, Sym } from '../math/types.ts';
 import { TIERS, kpFromCharge } from './tiers.ts';
 import { bus } from './bus.ts';
+import { welcomeCopy } from '../ui/welcome.ts';
 import { load, save, defaults, wipe, setPersistenceEnabled, storageOk, expiredOnLoad, START_BALANCE_ORE, type SaveData, type HistoryEntry } from './store.ts';
 import { presentSpin, idleGrid, type PresentCtx } from '../present/director.ts';
 import { profileOf, winTier } from '../present/schedule.ts';
@@ -66,18 +67,23 @@ export class Game {
     w.stage.layers.hud.addChild(this.watermark);
     w.onLayout = () => {
       this.layoutWatermark();
+      if (this.state === 'splash') hud.placeWelcome(w.splashLogoBottom());
       if (this.celebration.active) this.celebration.layout(w.stage.w, w.stage.h, w.gridCenterY());
     };
     hud.bindRefs({ history: () => this.s.history, settings: () => this.s.settings, kp: () => this.kp() });
     this.applySettings();
     this.refreshHud();
     if (!storageOk) hud.notice('<span class="chip warn">Lagring er ikke tilgængelig · fremskridt gemmes kun i denne fane</span>');
-    else if (expiredOnLoad) hud.notice('<span class="chip warn">Din ladning er udløbet (365 dage efter dit sidste spin) og er nulstillet</span>');
+    // An expired meter is told by the splash welcome (the single notice); #autostart skips the splash and uses noticeExpired().
     setInterval(() => this.tickClock(), 1000);
     this.tickClock();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) w.audio.suspend(); else w.audio.resume();
     });
+  }
+  /** Expiry notice for flows that skip the splash welcome. */
+  noticeExpired(): void {
+    if (storageOk && expiredOnLoad) this.hud.notice('<span class="chip warn">Din ladning er udløbet (365 dage efter dit sidste spin) og er nulstillet</span>');
   }
 
   // ---------------------------------------------------------------- helpers
@@ -206,6 +212,16 @@ export class Game {
     this.hud.setSplash(true);
     this.hud.show('splash', true);
     this.w.showSplash();
+    this.renderWelcome(!this.calm(), expiredOnLoad);
+  }
+  /** Splash welcome from the saved state (see ui/welcome.ts for the copy rules). */
+  private renderWelcome(reveal: boolean, expired: boolean): void {
+    const st = this.s.activeStorm;
+    this.hud.showWelcome(welcomeCopy({
+      spins: this.s.stats.spins, storms: this.s.stats.storms, kp: this.kp(), perksPending: this.s.perksPending, expired,
+      storm: st ? { spinIndex: st.spinIndex, spinsTotal: st.spinsTotal, maxMark: st.maxMark } : null,
+    }), reveal);
+    this.hud.placeWelcome(this.w.splashLogoBottom());
   }
 
   async intro(): Promise<void> {
@@ -635,6 +651,7 @@ export class Game {
     this.refreshSpinButton();
     this.persist();
     this.hud.banner('DEMO NULSTILLET', `Saldo ${fmtKr(START_BALANCE_ORE)} · Kp 0`);
+    if (this.state === 'splash') this.renderWelcome(false, false);
   }
 
   /** Debug/QA hooks. */

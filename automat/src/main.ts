@@ -47,7 +47,7 @@ async function boot(): Promise<void> {
   const dbg = { ...game.debug(), advance: (ms: number, render = true) => world.advance(ms, render), world, game };
   (window as unknown as { __slot: typeof dbg }).__slot = dbg;
   if (flag('fps')) fpsOverlay();
-  if (flag('autostart')) game.dispatch({ t: 'unlock' });
+  if (flag('autostart')) { game.noticeExpired(); game.dispatch({ t: 'unlock' }); }
 }
 
 function fpsOverlay(): void {

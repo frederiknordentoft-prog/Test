@@ -5,6 +5,7 @@ import { TIERS } from '../game/tiers.ts';
 import { CONFIG, REPORT } from '../math/config.ts';
 import { SYM_NAMES } from '../math/types.ts';
 import type { HistoryEntry, Settings } from '../game/store.ts';
+import { kpLegendSvg, stormShardsSvg, type WelcomeCopy } from './welcome.ts';
 
 export type Intent =
   | { t: 'unlock' } | { t: 'spin' } | { t: 'stakeUp' } | { t: 'stakeDown' }
@@ -100,7 +101,7 @@ export class Hud {
 
     const ov = h('div'); ov.id = 'overlays';
     ov.innerHTML = `
-      <div class="overlay" id="splash"><div class="center"><button class="btn" id="unlockBtn">Tænd himlen</button><div class="hint">Legepenge · 18+ · Lyd anbefales</div></div></div>
+      <div class="overlay" id="splash"><section id="welcome" aria-labelledby="wEyebrow"><div class="w-block"><div class="w-scrim" aria-hidden="true"></div><p id="wEyebrow" class="w-eb"></p><p id="wBody" class="w-body" aria-hidden="true"></p><div id="wLegend" class="w-legend" aria-hidden="true"></div><p id="wSum" class="sr"></p></div></section><div class="center"><button class="btn" id="unlockBtn" aria-describedby="wSum">Tænd himlen</button><div class="hint">Legepenge · 18+ · Lyd anbefales</div></div></div>
       <div class="overlay" id="stormReady"><div class="center"><button class="btn storm two" id="startStormBtn"><span>Start Solstormen</span><small class="num" id="stormInfo"></small></button></div></div>
       <div class="overlay" id="bigwin"><div class="center"><button class="btn ghost small" id="continueBtn">Fortsæt</button></div></div>
       <div class="overlay" id="summary"><div class="card" id="summaryCard"></div></div>
@@ -134,7 +135,7 @@ export class Hud {
     host.appendChild(ov);
 
     for (const id of ['toolsBtn', 'calmChip', 'calmFx', 'reg', 'clock', 'regBal', 'modeBadge', 'demoPill', 'muteBtn', 'menuBtn', 'goal', 'winstrip', 'winL', 'winR', 'bal', 'stake', 'stakeDn', 'stakeUp', 'lock', 'spinBtn', 'spinCap', 'ring', 'session',
-      'splash', 'unlockBtn', 'stormReady', 'stormInfo', 'startStormBtn', 'bigwin', 'continueBtn', 'summary', 'summaryCard', 'banner', 'bannerT', 'bannerS', 'notice',
+      'splash', 'welcome', 'wEyebrow', 'wBody', 'wLegend', 'wSum', 'unlockBtn', 'stormReady', 'stormInfo', 'startStormBtn', 'bigwin', 'continueBtn', 'summary', 'summaryCard', 'banner', 'bannerT', 'bannerS', 'notice',
       'menuWrap', 'menuClose', 'menuBody', 'tabs', 'drawerWrap', 'drawerClose', 'dTrigger', 'dSuns', 'dKp', 'dReset', 'dFx', 'ladderSide', 'payMini', 'histSide']) {
       this.el[id] = document.getElementById(id)!;
     }
@@ -326,7 +327,69 @@ export class Hud {
     this.el.notice.classList.toggle('show', !!html);
   }
 
-  show(id: 'splash' | 'stormReady' | 'bigwin' | 'summary', b: boolean): void { this.el[id].classList.toggle('show', b); }
+  show(id: 'splash' | 'stormReady' | 'bigwin' | 'summary', b: boolean): void {
+    const el = this.el[id];
+    if (id === 'splash') {
+      clearTimeout(this.splashTimer);
+      // Leaving the splash: the welcome and the button exhale for 240 ms (instantly in calm mode) instead of blinking out.
+      if (!b && el.classList.contains('show') && !document.documentElement.classList.contains('calm')) {
+        el.classList.add('leaving');
+        this.splashTimer = window.setTimeout(() => el.classList.remove('show', 'leaving'), 240);
+        return;
+      }
+      el.classList.remove('leaving');
+    }
+    el.classList.toggle('show', b);
+  }
+  private splashTimer = 0;
+
+  // ---------------- splash welcome ----------------
+  /** Fill the welcome inside the machine window. `reveal` plays the slow entrance (never in calm mode:
+   *  the base CSS is the final, fully visible state, so a skipped or failed animation still shows the text). */
+  showWelcome(c: WelcomeCopy, reveal: boolean): void {
+    const w = this.el.welcome;
+    w.dataset.state = c.state;
+    w.classList.remove('reveal');
+    const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    this.el.wEyebrow.innerHTML = `${esc(c.eyebrow.lead)} <span class="dot">·</span> <b>${esc(c.eyebrow.suffix)}</b>`;
+    // one block span per line; lines of one sentence share a .pair wrapper so no fit rule can split them
+    let html = '', open = 0, n = 0;
+    for (const l of c.lines) {
+      if (open && l.pair !== open) { html += '</span>'; open = 0; }
+      if (l.pair && l.pair !== open) { html += '<span class="pair">'; open = l.pair; }
+      html += `<span class="l ${l.tone}" style="--n:${n++}">${l.parts.map((p) => (p.b ? `<b>${esc(p.t)}</b>` : esc(p.t))).join('')}</span>`;
+    }
+    if (open) html += '</span>';
+    this.el.wBody.innerHTML = html;
+    this.el.wLegend.innerHTML = c.legend === 'storm' && c.storm ? stormShardsSvg(c.storm.played, c.storm.total) : kpLegendSvg();
+    this.el.wSum.textContent = c.summary;
+    if (c.buttonLabel) this.el.unlockBtn.setAttribute('aria-label', c.buttonLabel); else this.el.unlockBtn.removeAttribute('aria-label');
+    if (reveal) { void w.offsetWidth; w.classList.add('reveal'); }
+  }
+
+  /** Fit the welcome between the logo (canvas, stage px) and the button: anchored just under the logo,
+   *  never overlapping the button, the "Legepenge · 18+" hint or the footer. Shrinks in steps (never cuts a line). */
+  placeWelcome(logoBottom: number): void {
+    const w = this.el.welcome, sp = this.el.splash;
+    if (!sp.classList.contains('show')) return;
+    const box = sp.getBoundingClientRect();
+    const stage = this.canvasHost.getBoundingClientRect();
+    const center = sp.querySelector('.center')!.getBoundingClientRect();
+    const top = Math.round(stage.top - box.top + logoBottom + 16);
+    const bottom = Math.round(box.bottom - center.top + 20);
+    w.style.top = top + 'px';
+    w.style.bottom = bottom + 'px';
+    const band = box.height - top - bottom;
+    const block = w.firstElementChild as HTMLElement;
+    block.style.marginTop = '0px';
+    let fit = 0;
+    w.dataset.fit = '0';
+    while (fit < 4 && block.offsetHeight > band) w.dataset.fit = String(++fit);
+    const h = block.offsetHeight;
+    const desk = box.width >= 900;
+    // hang under the logo: centred in short bands, anchored at 14–16 % of taller ones
+    block.style.marginTop = Math.max(0, Math.min((band - h) / 2, band * (desk ? 0.16 : 0.14))) + 'px';
+  }
   isShown(id: 'splash' | 'stormReady' | 'bigwin' | 'summary'): boolean { return this.el[id].classList.contains('show'); }
   setStormInfo(text: string): void { this.el.stormInfo.textContent = text; }
   showSummary(html: string, tone: 'storm' | 'base' = 'storm'): void {

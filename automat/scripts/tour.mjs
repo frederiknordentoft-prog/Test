@@ -42,7 +42,10 @@ const shot = async (name) => {
 const state = () => page.evaluate(() => window.__slot.state());
 const untilState = async (s, max = 20000) => { for (let t = 0; t < max; t += 250) { if ((await state()) === s) return true; await adv(250); } console.log('timeout waiting for', s, 'now', await state()); return false; };
 
-await adv(1600); await shot('01-splash');
+await adv(1600);
+// the splash welcome animates on the wall clock (CSS): land it on its final frame so the shot is deterministic
+await page.evaluate(() => { for (const a of document.getAnimations()) if (a.effect?.target?.closest?.('#welcome')) a.finish(); });
+await shot('01-splash');
 await page.evaluate(() => window.__slot.unlock());
 await adv(900); await shot('02-ignite');
 await untilState('idle'); await adv(300); await shot('03-idle');

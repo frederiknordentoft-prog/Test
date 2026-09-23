@@ -404,3 +404,95 @@ html, body {
 /* #clean=1 — hide demo UI chrome for recordings (the canvas watermark on forced storms stays) */
 :root.clean #demoPill, :root.clean #drawerWrap { display: none !important; }
 #stagehost { position: absolute; inset: 0; }
+
+/* ---------- splash welcome (inside the machine window, under the logo) ----------
+   Base CSS = the final, fully visible state. The slow entrance runs only under .reveal (never in calm mode).
+   Only opacity / transform / blur / stroke-dashoffset move; nothing repeats, nothing flashes. */
+#welcome {
+  position: absolute; left: 0; right: 0; z-index: 1; pointer-events: none;
+  top: calc(36% + 7vmin + 16px); bottom: calc(var(--foot-h) + 150px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; align-items: center;
+  --ease-w: cubic-bezier(.22, 1, .36, 1);
+  /* first-visit timeline (ms from splash start) */
+  --t-scrim: 200ms; --d-scrim: 1000ms; --t-eb: 1100ms; --d-eb: 700ms;
+  --t-l: 1600ms; --s-l: 400ms; --d-l: 700ms;
+  --t-base: 1900ms; --d-base: 800ms; --t-dia: 2150ms; --t-dot: 2500ms; --t-glyph: 2500ms; --d-glyph: 600ms; --t-crack: 4200ms; --d-crack: 500ms;
+}
+#welcome:is([data-state='returning'], [data-state='pending'], [data-state='expired'], [data-state='storm']) {
+  --d-scrim: 800ms; --t-eb: 800ms; --d-eb: 600ms; --t-l: 1100ms; --s-l: 300ms; --d-l: 600ms;
+  --t-base: 1200ms; --d-base: 600ms; --t-dia: 1350ms; --t-dot: 1600ms; --t-glyph: 1600ms; --d-glyph: 500ms; --t-crack: 1900ms; --d-crack: 400ms;
+}
+.w-block { position: relative; isolation: isolate; width: min(318px, calc(100% - 48px)); display: flex; flex-direction: column; align-items: center; text-align: center; }
+.w-scrim { position: absolute; inset: -40px -56px; z-index: -1; pointer-events: none; background: radial-gradient(ellipse 62% 58% at 50% 50%, rgba(5, 11, 26, 0.55), transparent 72%); }
+.w-eb { margin: 0; font: 650 11px/14px system-ui, sans-serif; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(156, 201, 255, 0.8); white-space: nowrap; }
+.w-eb b { font-weight: 700; color: rgba(234, 248, 255, 0.9); }
+.w-eb .dot { opacity: 0.7; }
+#welcome[data-state='storm'] .w-eb b { color: rgba(255, 181, 71, 0.9); }
+.w-body { margin: 10px 0 0; font: 400 15px/21px system-ui, sans-serif; font-variant-numeric: tabular-nums; text-shadow: 0 1px 10px rgba(5, 11, 26, 0.85); }
+.w-body .l, .w-body .pair { display: block; white-space: nowrap; }
+.w-body .l.cool { color: #b9d9ff; }
+.w-body .l.ice { color: var(--ice); }
+.w-body .l.strong { color: var(--ice); font-weight: 500; }
+.w-body b { font-weight: 600; color: rgba(25, 227, 214, 0.95); }
+.w-legend { margin-top: 14px; width: 240px; max-width: 100%; line-height: 0; }
+.w-legend svg { width: 100%; height: auto; overflow: visible; }
+.w-legend .w-shards-svg { width: auto; max-width: 100%; }
+.lg-base, .lg-dot, .lg-tick { stroke: rgba(156, 201, 255, 0.3); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.lg-base { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.lg-dot { stroke-dasharray: 1 4; }
+.lg-dia { fill: none; stroke: rgba(25, 227, 214, 0.8); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.lg-glyph { fill: #070a14; stroke: rgba(156, 201, 255, 0.45); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.7; }
+.lg-crack { fill: none; stroke: rgba(255, 181, 71, 0.55); stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.lg-labels text { font: 600 9.5px system-ui, sans-serif; fill: var(--muted); text-anchor: middle; font-variant-numeric: tabular-nums; }
+.lg-labels .g5 { fill: rgba(255, 181, 71, 0.7); }
+.w-shards-svg .sh { fill: none; stroke: rgba(255, 106, 0, 0.6); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.w-shards-svg .sh.on { fill: rgba(255, 244, 224, 0.7); stroke: none; }
+.w-shards-svg .sh-crack { stroke: rgba(255, 181, 71, 0.3); stroke-width: 0.75; }
+
+/* fit steps (placeWelcome): 1 drop legend labels · 2 drop legend · 3 tighter body · 4 visible block off (summary stays) */
+#welcome[data-fit='1'] .w-legend, #welcome[data-fit='2'] .w-legend, #welcome[data-fit='3'] .w-legend, #welcome[data-fit='4'] .w-legend { height: 19px; overflow: hidden; }
+#welcome:is([data-fit='2'], [data-fit='3'], [data-fit='4']) .w-legend { display: none; }
+#welcome:is([data-fit='3'], [data-fit='4']) .w-body { font-size: 14px; line-height: 18px; margin-top: 8px; }
+#welcome[data-fit='4'] .w-block > :not(#wSum) { display: none; }
+
+@media (max-width: 339px) {
+  .w-body { font-size: 14px; line-height: 20px; }
+  .w-body .l, .w-body .pair { white-space: normal; text-wrap: balance; }
+}
+@media (min-height: 780px) and (max-width: 899px) {
+  .w-eb { font-size: 11.5px; line-height: 15px; }
+  .w-body { margin-top: 12px; line-height: 23px; }
+  .w-legend { margin-top: 20px; width: 252px; }
+}
+@media (min-width: 900px) and (min-height: 700px) {
+  .w-block { width: min(420px, calc(100% - 48px)); }
+  .w-eb { font-size: 12.5px; line-height: 16px; letter-spacing: 0.22em; }
+  .w-body { margin-top: 16px; font-size: 18px; line-height: 28px; }
+  .w-legend { margin-top: 28px; width: 300px; }
+  .lg-labels text { font-size: 8.4px; }
+}
+
+/* entrance */
+@keyframes wFade { from { opacity: 0; } }
+@keyframes wEb { from { opacity: 0; letter-spacing: 0.3em; } }
+@keyframes wLine { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } }
+@keyframes wLineSoft { from { opacity: 0; filter: blur(3px); } }
+@keyframes wDraw { from { stroke-dashoffset: 1; } }
+@keyframes wGlyph { from { opacity: 0; } }
+#welcome.reveal .w-scrim { animation: wFade var(--d-scrim) ease-out both var(--t-scrim); }
+#welcome.reveal .w-eb { animation: wEb var(--d-eb) var(--ease-w) both var(--t-eb); }
+#welcome.reveal .w-body .l { animation: wLine var(--d-l) var(--ease-w) both calc(var(--t-l) + var(--n) * var(--s-l)); }
+/* the machine line arrives after a held breath, slower, without travel */
+#welcome.reveal[data-state='first'] .w-body .l.strong { animation: wLineSoft 800ms var(--ease-w) both 3400ms; }
+#welcome.reveal .lg-base { animation: wDraw var(--d-base) ease-out both var(--t-base); }
+#welcome.reveal .lg-tick { animation: wFade 200ms ease-out both calc(var(--t-base) + var(--i) * 40ms); }
+#welcome.reveal .lg-dia { animation: wFade 250ms ease-out both calc(var(--t-dia) + var(--i) * 150ms); }
+#welcome.reveal .lg-dot { animation: wFade 400ms ease-out both var(--t-dot); }
+#welcome.reveal .lg-labels { animation: wFade 500ms ease-out both calc(var(--t-base) + 300ms); }
+#welcome.reveal .lg-glyph { animation: wGlyph var(--d-glyph) ease-out both var(--t-glyph); }
+#welcome.reveal .lg-crack { animation: wDraw var(--d-crack) ease-out both var(--t-crack); }
+#welcome.reveal .w-shards-svg .sh, #welcome.reveal .w-shards-svg .sh-crack { animation: wFade 300ms ease-out both calc(1300ms + var(--i, 10) * 30ms); }
+
+/* tap: the welcome and the button exhale together (hud.show adds .leaving for 240 ms) */
+#splash.leaving #welcome { opacity: 0; transform: translateY(-4px); transition: opacity 240ms ease-out, transform 240ms ease-out; }
+#splash.leaving .center { opacity: 0; transition: opacity 240ms ease-out; pointer-events: none; }
