@@ -89,11 +89,12 @@ const wcagSwings = [];
 let wcagWorst = 0;
 for (let i = 0; i < wcagSwings.length; i++) { let n = 0; for (let j = i; j < wcagSwings.length && wcagSwings[j] - wcagSwings[i] < 30; j++) n++; wcagWorst = Math.max(wcagWorst, Math.floor(n / 2)); }
 const maxRed = Math.max(...trace.map((t) => t.red));
-let maxStep = 0, maxStepRel = 0;
+let maxStep = 0, maxStepRel = 0, maxStepAt = 0;
 for (let i = 1; i < trace.length; i++) {
   const d = Math.abs(trace[i].L - trace[i - 1].L);
   maxStep = Math.max(maxStep, d);
-  maxStepRel = Math.max(maxStepRel, d / Math.max(0.02, Math.min(trace[i].L, trace[i - 1].L)));
+  const rel = d / Math.max(0.02, Math.min(trace[i].L, trace[i - 1].L));
+  if (rel > maxStepRel) { maxStepRel = rel; maxStepAt = i; }
 }
-console.log(JSON.stringify({ segment, calm: calm === '1', frames: trace.length, maxFrameStepL: +maxStep.toFixed(4), maxFrameStepRel: +maxStepRel.toFixed(3), swings: swings.length, worstFlashesPerSecond: worst, wcagFlashesPerSecond: wcagWorst, maxSaturatedRedShare: +maxRed.toFixed(3), minL: +Math.min(...trace.map((t) => t.L)).toFixed(4), maxL: +Math.max(...trace.map((t) => t.L)).toFixed(4), pass: wcagWorst <= 3 && worst <= 3 && maxRed < 0.25 }));
+console.log(JSON.stringify({ segment, calm: calm === '1', frames: trace.length, maxFrameStepL: +maxStep.toFixed(4), maxFrameStepRel: +maxStepRel.toFixed(3), maxStepAt: `${(maxStepAt / 30).toFixed(2)} s (${trace[maxStepAt].state})`, swings: swings.length, worstFlashesPerSecond: worst, wcagFlashesPerSecond: wcagWorst, maxSaturatedRedShare: +maxRed.toFixed(3), minL: +Math.min(...trace.map((t) => t.L)).toFixed(4), maxL: +Math.max(...trace.map((t) => t.L)).toFixed(4), pass: wcagWorst <= 3 && worst <= 3 && maxRed < 0.25 }));
 await browser.close();

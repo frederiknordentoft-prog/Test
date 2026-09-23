@@ -129,16 +129,17 @@ export class PixiDicePresenter implements DicePresenter {
    *  (200–900 ms), the DOM (400–900 ms). Calm: a 400 ms crossfade, no zoom, no move. Close 500 ms: the reverse. */
   private transition(open: boolean): Promise<void> {
     const w = this.h.w, g = this.gate, calm = this.h.calm();
-    const mach = () => w.setMachineAlpha(this.machine.a);
+    const logo = w.logo.visible; // the header logo fades with the machine (no one-frame pop: FlashBudget)
+    const mach = () => { w.setMachineAlpha(this.machine.a); if (logo) w.logo.alpha = this.machine.a; };
     const dom = () => this.domAlpha(this.dom.v);
     return new Promise<void>((res) => {
       const tl = gsap.timeline({ onComplete: () => res() });
       if (open && calm) {
         g.alpha = 0; g.y = 0;
-        tl.to(this.machine, { a: 0, duration: 0.4, onUpdate: mach }, 0).to(g, { alpha: 1, duration: 0.4 }, 0).to(this.dom, { v: 1, duration: 0.4, onUpdate: dom }, 0);
+        tl.to(this.machine, { a: 0, duration: 0.4, ease: 'sine.inOut', onUpdate: mach }, 0).to(g, { alpha: 1, duration: 0.4, ease: 'sine.inOut' }, 0).to(this.dom, { v: 1, duration: 0.4, onUpdate: dom }, 0);
       } else if (open) {
         g.alpha = 0; g.y = 24;
-        tl.to(this.machine, { a: 0, duration: 0.6, onUpdate: mach }, 0)
+        tl.to(this.machine, { a: 0, duration: 0.6, ease: 'sine.inOut', onUpdate: mach }, 0) // the bright machine gives way gently (no large one-frame steps)
           .to(w.cam, { zoom: 1.03, duration: 0.9, ease: 'power2.inOut' }, 0)
           .to(g, { alpha: 1, y: 0, duration: 0.7, ease: 'power2.out' }, 0.2)
           .to(this.dom, { v: 1, duration: 0.5, onUpdate: dom }, 0.4);
@@ -165,8 +166,8 @@ export class PixiDicePresenter implements DicePresenter {
     this.gate.calm = this.h.calm();
     this.gate.visible = true;
     w.logoHold = true;
-    w.logo.visible = false;
     await this.transition(true);
+    w.logo.visible = false;
     this.domAlpha(1);
   }
   setChamberView(view: DiceView, o: ChamberOpts): void {
@@ -191,6 +192,7 @@ export class PixiDicePresenter implements DicePresenter {
     w.cam.zoom = 1;
     w.logoHold = false;
     w.placeLogo();
+    if (w.logo.visible) { w.logo.alpha = 0; gsap.to(w.logo, { alpha: 1, duration: 0.3 }); }
   }
 
   // ---------------------------------------------------------------- ceremony (cinematics/gate.ts)
