@@ -7,6 +7,7 @@ import { gsap } from 'gsap';
 import type { Hud } from '../ui/hud.ts';
 import type { World } from '../game/world.ts';
 import type { DiceView } from '../game/dice.ts';
+import type { GambleBet } from '../math/gamble.ts';
 import { paintDie } from '../ui/diceIcon.ts';
 import { ceremonyEyebrow, gateState, type CeremonyKind, type RibbonKind } from '../ui/diceCopy.ts';
 import { GateView } from '../render/chamber/GateView.ts';
@@ -28,14 +29,20 @@ export interface DiceHost {
 }
 export interface Pt { x: number; y: number }
 export interface ChamberOpts { ribbon: { kind: RibbonKind; text: string } | null; realN: number }
+/** Kvit eller dobbelt: where the staged dice come from. 'award' = the die just born in the celebration, 'held' = the
+ *  storm's dice still on the molten frame, 'restore' = a choice (or its settled result) brought back after a reload. */
+export type GambleFrom = 'award' | 'held' | 'restore';
+export interface GambleShow { k: number; from: GambleFrom; demo: boolean }
+/** A COMMITTED outcome (the Game wrote it at the choice press): presentation only. */
+export interface GambleThrow { bet: GambleBet; pip: number; k: number; payout: number; demo: boolean }
 /** at(): QA only, seconds since T0 (the ceremony's first bar line; negative in the pre-roll). */
 export interface CeremonyHandle { done: Promise<void>; canSkip(): boolean; skip(): void; at?(): number }
 
 export interface DicePresenter {
   /** Base / Ladet spin, from Celebration's birth beat (dieBirthAt). instant = a skip before the beat (no tumble, no glint). */
   awardBirth(n: number, o: { instant: boolean; tier: number }): void;
-  /** After the celebration closed: the flight to hud.diceTarget(); resolves after host.land(1, false). */
-  awardFly(): Promise<void>;
+  /** After the celebration closed: the flight to hud.diceTarget(); resolves after host.land(add, false). */
+  awardFly(add?: number): Promise<void>;
   /** "Vis terninger i spillet" turned off mid-award: a born die fades where it is (no flight, no landing). */
   awardDrop(): void;
   /** Tap/Esc: the flight starts at once / finishes within 300 ms (contract: done ≤ skip + 300 ms + 1 frame). */
@@ -49,9 +56,23 @@ export interface DicePresenter {
   /** Storm outro: release the held dice to the chip (host.land(…, true) per landing). Ends ≤ 2,6 s into the outro. */
   releaseHeld(k: number): Promise<void>;
   clearHeld(): void;
-  /** Drawer "Vis en terning": award-only demo die; dissolves at the chip with the "+1 demo" tag. */
-  demoAward(): Promise<void>;
-  /** Anything of the award still in motion (never true when the next spin may start). */
+  /** Drawer "Vis en terning": award-only demo die; dissolves at the chip with the "+1 demo" tag.
+   *  hold: the die stays centre stage after its birth (the demo choice follows; gambleSettle ends it). */
+  demoAward(o?: { hold?: boolean }): Promise<void>;
+  // ---- Kvit eller dobbelt (the Game shows the card; these only stage the dice around it)
+  /** The k dice wait centre stage above the card. No timer, no countdown, no motion that pulls toward a bet. */
+  gambleStage(o: GambleShow): void;
+  /** Presentation of a committed outcome (the Game shows the result at max(this, T.floor)). No near-miss: never rest
+   *  on, pass or slow past a winning face before a losing one or the reverse; no red, no escalating pitch, flashes only
+   *  through world.allowFlash(); calm: a crossfade. */
+  gambleThrow(o: GambleThrow): Promise<void>;
+  /** 'award'/'restore': flights home (≤ 4, the rest merged) calling host.land(add, false); payout 0 → the die dissolves
+   *  in place (no burst, no sting). 'held': the fan becomes `payout` dice and the outro's releaseHeld flies them
+   *  (payout 0 → the fan fades out). demo → dissolve at the home + the "+N demo" tag. */
+  gambleSettle(payout: number, o: { from: GambleFrom; demo: boolean }): Promise<void>;
+  /** The result hold and the flights finish in ≤ 300 ms (never shortens the throw). */
+  gambleSkip(): void;
+  /** Anything of the award still in motion, gamble staging included (never true when the next spin may start). */
   inFlight(): boolean;
   held(): number;
   /** QA: 'born' (the Pixi die is on screen), 'flight' (the DOM flight), 'none'. */
@@ -65,7 +86,7 @@ export interface DicePresenter {
   /** Demo exit: the leaves close again (reverse 1,2 s; calm 0,5 s). */
   closeGate(): Promise<void>;
   /** A Terningen card entered the DOM (medallion paint; glint in the art module). */
-  cardShown(kind: 'hello' | 'firstDie' | 'unlock' | 'placard', el: HTMLElement): void;
+  cardShown(kind: 'hello' | 'firstDie' | 'unlock' | 'placard' | 'gamble', el: HTMLElement): void;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -113,14 +134,26 @@ export class PixiDicePresenter implements DicePresenter {
   // ---------------------------------------------------------------- award (DieAward)
   awardBirth(n: number, o: { instant: boolean; tier: number }): void { this.award.birth(n, o); }
   awardSkip(): void { this.award.skip(); }
-  awardFly(): Promise<void> { return this.award.fly(); }
+  awardFly(add = 1): Promise<void> { return this.award.fly(add); }
   awardDrop(): void { this.award.drop(); }
   stormPop(n: number, at: Pt, slot: number): Promise<void> { void n; return this.award.stormPop(at, slot); }
   stormGhost(at: Pt): Promise<void> { return this.award.stormGhost(at); }
   restoreHeld(k: number): void { this.award.restoreHeld(k); }
   releaseHeld(k: number): Promise<void> { return this.award.releaseHeld(k); }
   clearHeld(): void { this.award.clearHeld(); }
-  demoAward(): Promise<void> { return this.award.demo(); }
+  demoAward(o: { hold?: boolean } = {}): Promise<void> { return this.award.demo(o); }
+
+  // ---------------------------------------------------------------- Kvit eller dobbelt (core stand-ins: the DOM card
+  // carries the faces and the roll; the big die moment and the throw visuals replace these)
+  gambleStage(o: GambleShow): void { void o; }
+  gambleThrow(o: GambleThrow): Promise<void> { void o; return Promise.resolve(); }
+  gambleSettle(payout: number, o: { from: GambleFrom; demo: boolean }): Promise<void> {
+    if (o.demo) return this.award.demoSettle(payout);
+    if (o.from === 'held') { if (payout <= 0) this.award.clearHeld(); return Promise.resolve(); } // the outro releases the rest
+    if (payout <= 0) { this.award.dissolve(); return Promise.resolve(); }
+    return this.award.fly(payout);
+  }
+  gambleSkip(): void { this.award.skip(); }
 
   // ---------------------------------------------------------------- chamber
   chamberOpen(): boolean { return this.chamberShown; }
@@ -287,7 +320,7 @@ export class PixiDicePresenter implements DicePresenter {
     const room = Math.min(t.minY, c.minY) - (this.h.hud.chamber.el.getBoundingClientRect().top - host.top) - 8;
     if (over > 0 && over <= room) gsap.to(g, { y: g.y - over, duration: 0.6, ease: 'power2.inOut' });
   }
-  cardShown(kind: 'hello' | 'firstDie' | 'unlock' | 'placard', el: HTMLElement): void {
+  cardShown(kind: 'hello' | 'firstDie' | 'unlock' | 'placard' | 'gamble', el: HTMLElement): void {
     if (kind === 'placard') { this.lift?.kill(); this.lift = gsap.delayedCall(0.45, () => { this.lift = null; this.clearName(el); }); } // after the card's 0,4 s entry
     const c = el.querySelector('canvas.medal') as HTMLCanvasElement | null;
     if (!c) return;

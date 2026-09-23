@@ -7,7 +7,9 @@ import { SYM_NAMES } from '../math/types.ts';
 import type { HistoryEntry, Settings } from '../game/store.ts';
 import { kpLegendSvg, stormShardsSvg, type WelcomeCopy } from './welcome.ts';
 import { fmtDice, diceWord, PREVIEW_STEPS, type DiceView, type PreviewStep } from '../game/dice.ts';
-import { CHIP_TITLE, DEMO_TAG, PANEL, MENU, DRAWER, chipAria, diceRulesHtml } from './diceCopy.ts';
+import { CHIP_TITLE, PANEL, MENU, DRAWER, DEMO_PILL, chipAria, demoTag, diceRulesHtml } from './diceCopy.ts';
+import { AUTO } from './autoCopy.ts';
+import { AUTO_COUNTS, autoLimits, type AutoStop } from '../game/auto.ts';
 import { paintDie, onDiePainterChange } from './diceIcon.ts';
 import { ChamberDom, chamberMarkup } from './chamber.ts';
 
@@ -20,7 +22,10 @@ export type Intent =
   | { t: 'chamber'; open: boolean; key?: boolean } | { t: 'gateOpen' } | { t: 'gateReplay' }
   | { t: 'diceCard'; act: 'ok' | 'chamber' | 'gate' | 'later' } | { t: 'hello'; act: 'close' | 'chamber' }
   | { t: 'placard'; act: 'chamber' | 'back' | 'endDemo' | 'close' }
-  | { t: 'demoDie' } | { t: 'demoFirstDie' } | { t: 'demoGate' } | { t: 'demoChamber'; n: PreviewStep };
+  | { t: 'demoDie' } | { t: 'demoFirstDie' } | { t: 'demoGate' } | { t: 'demoChamber'; n: PreviewStep }
+  // Kvit eller dobbelt, autospin
+  | { t: 'gamble'; act: 'keep' | 'double' | 'triple' } | { t: 'demoGamble' }
+  | { t: 'autoSheet'; open: boolean } | { t: 'autoStart'; spins: number; lossLimitOre: number } | { t: 'autoStop' };
 
 const ICON = {
   spin: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M38 17a15 15 0 0 0-26.5-3.5"/><path d="M11 7v7h7"/><path d="M10 31a15 15 0 0 0 26.5 3.5"/><path d="M37 41v-7h-7"/><path d="M24 17l1.8 4.2L30 23l-4.2 1.8L24 29l-1.8-4.2L18 23l4.2-1.8z" fill="currentColor" stroke="none"/></svg>',
@@ -29,6 +34,7 @@ const ICON = {
   mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
   bolt: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L4 14h6.5L9 22l10-12.5h-6.6z"/></svg>',
   dots: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  die: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><g fill="currentColor" stroke="none"><circle cx="9" cy="9" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="15" cy="15" r="1.5"/></g></svg>',
 };
 
 const h = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', html = ''): HTMLElementTagNameMap[K] => {
@@ -49,7 +55,7 @@ export class Hud {
   private bannerTimer = 0;
   private menuTab = 'rules';
   private historyRef: () => HistoryEntry[] = () => [];
-  private settingsRef: () => Settings = () => ({ music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar', dice: true });
+  private settingsRef: () => Settings = () => ({ music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar', dice: true, gambleOffers: true });
   private kpRef: () => number = () => 0;
   private diceRef: () => DiceView = () => ({ count: 0, unlock: 'none', mode: 'real' });
   /** Terningekammeret DOM (text + state; the gate art is the presenter's). */
@@ -71,9 +77,11 @@ export class Hud {
         <div class="r"><span class="badge" id="modeBadge">NORDLYS</span><span class="badge demo">Demo<span class="long"> · legepenge</span></span></div>
       </header>
       <div id="hdr">
-        <button class="pill" id="demoPill" aria-label="Udløs Solstorm – demo-værktøj der springer progressionen over. Findes ikke i den rigtige version.">
-          <span class="tag">DEMO</span>${ICON.bolt}<span class="txt">Udløs Solstorm</span>
-        </button>
+        <div class="pill" id="demoPill" role="group" aria-label="Demo-værktøjer">
+          <button class="pseg" id="demoStorm" aria-label="Udløs Solstorm – demo-værktøj der springer progressionen over. Findes ikke i den rigtige version."><span class="tag">DEMO</span>${ICON.bolt}<span class="txt">Solstorm</span></button>
+          <span class="sep" aria-hidden="true"></span>
+          <button class="pseg" id="demoDieSeg" aria-label="${DEMO_PILL.dieAria}">${ICON.die}<span class="txt">${DEMO_PILL.die}</span></button>
+        </div>
         <div class="right">
           <button class="iconbtn" id="toolsBtn" aria-label="Demo-værktøjer">${ICON.dots}</button>
           <button class="iconbtn" id="muteBtn" aria-label="Lyd til/fra">${ICON.sound}</button>
@@ -113,6 +121,7 @@ export class Hud {
             <svg class="ring" viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" id="ring" cx="50" cy="50" r="46"/></svg>
             <span class="ico">${ICON.spin}</span><span class="cap" id="spinCap">SPIN</span>
           </button>
+          <button class="auto-pill" id="autoBtn" aria-label="${AUTO.pillAria}">${AUTO.pill}</button>
         </div>
       </div>
       <footer id="foot">
@@ -153,12 +162,24 @@ export class Hud {
           </div>
           <label class="setting"><span>Vis Kp (kun forhåndsvisning)</span><input type="range" min="0" max="8.9" step="0.1" id="dKp" aria-label="Vis Kp, kun forhåndsvisning"></label>
           <div class="d-dice"><h4>${DRAWER.h}</h4>
-            <div class="actions"><button class="btn ghost small" id="dDie">${DRAWER.die}</button><button class="btn ghost small" id="dFirst">${DRAWER.first}</button><button class="btn ghost small" id="dGate">${DRAWER.gate}</button></div>
+            <div class="actions"><button class="btn ghost small" id="dGamble">${DRAWER.gamble}</button><button class="btn ghost small" id="dDie">${DRAWER.die}</button><button class="btn ghost small" id="dFirst">${DRAWER.first}</button><button class="btn ghost small" id="dGate">${DRAWER.gate}</button></div>
             <p class="seg-lbl" id="dSegL">${DRAWER.segLabel}</p>
             <div class="seg" id="dSeg" role="group" aria-label="${DRAWER.segAria}">${PREVIEW_STEPS.map((n) => `<button class="btn ghost small" data-n="${n}" aria-pressed="false">${DRAWER.seg(n)}</button>`).join('')}</div>
           </div>
           <div class="actions"><button class="btn ghost small" id="dReset">Nulstil demo</button><button class="btn ghost small" id="dFx" style="display:none">Vis fuld effekt</button></div>
           <p class="hint">${DRAWER.hintHtml}</p>
+        </div>
+      </div></div>
+      <div class="sheet-wrap" id="autoWrap"><div class="sheet auto-sheet" role="dialog" aria-modal="true" aria-labelledby="autoTitle">
+        <div class="grab"></div>
+        <header><h3 id="autoTitle">${AUTO.title}</h3><button class="iconbtn" id="autoClose" aria-label="${AUTO.close}">✕</button></header>
+        <div class="body">
+          <p class="seg-lbl" id="autoNL">${AUTO.spinsLabel}</p>
+          <div class="seg" id="autoN" role="group" aria-labelledby="autoNL">${AUTO_COUNTS.map((n) => `<button class="btn ghost small" data-n="${n}" aria-pressed="false">${n}</button>`).join('')}</div>
+          <p class="seg-lbl" id="autoLL">${AUTO.limitLabel}</p>
+          <div class="seg" id="autoL" role="group" aria-labelledby="autoLL"></div>
+          <p class="hint" id="autoHint"></p>
+          <div class="actions"><button class="btn small" id="autoGo">${AUTO.start}</button></div>
         </div>
       </div></div>`;
     host.appendChild(ov);
@@ -166,12 +187,13 @@ export class Hud {
     for (const id of ['toolsBtn', 'calmChip', 'calmFx', 'reg', 'clock', 'regBal', 'modeBadge', 'demoPill', 'muteBtn', 'menuBtn', 'goal', 'winstrip', 'winL', 'winR', 'bal', 'stake', 'stakeDn', 'stakeUp', 'lock', 'spinBtn', 'spinCap', 'ring', 'session',
       'splash', 'welcome', 'wEyebrow', 'wBody', 'wLegend', 'wSum', 'unlockBtn', 'stormReady', 'stormInfo', 'startStormBtn', 'bigwin', 'continueBtn', 'summary', 'summaryCard', 'banner', 'bannerT', 'bannerS', 'notice',
       'menuWrap', 'menuClose', 'menuBody', 'tabs', 'drawerWrap', 'drawerClose', 'dTrigger', 'dSuns', 'dKp', 'dReset', 'dFx', 'ladderSide', 'payMini', 'histSide',
-      'diceBtn', 'diceIco', 'diceN', 'diceW', 'diceRow', 'diceIco2', 'diceN2', 'diceW2', 'diceLink', 'hello', 'dDie', 'dFirst', 'dGate', 'dSeg']) {
+      'diceBtn', 'diceIco', 'diceN', 'diceW', 'diceRow', 'diceIco2', 'diceN2', 'diceW2', 'diceLink', 'hello', 'dDie', 'dFirst', 'dGate', 'dSeg',
+      'demoStorm', 'demoDieSeg', 'dGamble', 'autoBtn', 'autoWrap', 'autoClose', 'autoN', 'autoL', 'autoHint', 'autoGo']) {
       this.el[id] = document.getElementById(id)!;
     }
     this.chamber = new ChamberDom(ov);
     // a closed sheet is only transparent: inert keeps its buttons out of the Tab order (openMenu/openDrawer lift it)
-    this.el.menuWrap.inert = this.el.drawerWrap.inert = true;
+    this.el.menuWrap.inert = this.el.drawerWrap.inert = this.el.autoWrap.inert = true;
     this.slotArc = document.getElementById('slot-arc')!;
     this.slotGrid = document.getElementById('slot-grid')!;
     this.wire();
@@ -194,7 +216,26 @@ export class Hud {
     this.press(this.el.spinBtn, () => I({ t: 'spin' }));
     this.press(this.el.stakeUp, () => I({ t: 'stakeUp' }));
     this.press(this.el.stakeDn, () => I({ t: 'stakeDown' }));
-    this.press(this.el.demoPill, () => I({ t: 'demo' }));
+    this.press(this.el.demoStorm, () => I({ t: 'demo' }));
+    this.press(this.el.demoDieSeg, () => I({ t: 'demoGamble' }));
+    this.press(this.el.dGamble, () => { this.openDrawer(false); I({ t: 'demoGamble' }); });
+    // autospin: the pill opens the sheet (the Game allows it from idle only) or, while a run is on, stops it
+    this.press(this.el.autoBtn, () => I(this.autoOn ? { t: 'autoStop' } : { t: 'autoSheet', open: true }));
+    this.press(this.el.autoClose, () => this.openAutoSheet(false));
+    this.el.autoWrap.addEventListener('click', (e) => { if (e.target === this.el.autoWrap) this.openAutoSheet(false); });
+    this.el.autoN.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('button');
+      if (b) { this.autoPick.n = +b.dataset.n!; this.renderAutoSheet(); }
+    });
+    this.el.autoL.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('button');
+      if (b) { this.autoPick.l = +b.dataset.l!; this.renderAutoSheet(); }
+    });
+    this.press(this.el.autoGo, () => {
+      const { n, l } = this.autoPick;
+      this.openAutoSheet(false);
+      I({ t: 'autoStart', spins: n, lossLimitOre: l });
+    });
     this.press(this.el.toolsBtn, () => this.openDrawer(true));
     this.press(this.el.calmFx, () => I({ t: 'fullFx' }));
     this.press(this.el.drawerClose, () => this.openDrawer(false));
@@ -217,11 +258,21 @@ export class Hud {
       this.menuTab = b.dataset.tab!;
       this.renderMenu();
     });
+    // Kvit eller dobbelt: a keyboard activation of Behold (Space/Enter: click.detail 0) goes the habit-key way (keep
+    // only, after 1,0 s); a tap on the card itself means nothing while choosing and skips the result hold
+    this.el.summary.addEventListener('click', (e) => {
+      if (!this.el.summaryCard.classList.contains('gamble')) return;
+      const act = (e.target as HTMLElement).closest('button')?.dataset.gamble;
+      if (act === 'keep' && e.detail === 0) I({ t: 'continue' });
+      else if (act === 'keep' || act === 'double' || act === 'triple') I({ t: 'gamble', act });
+      else if (this.el.summaryCard.contains(e.target as Node)) I({ t: 'skip' });
+    });
     this.el.summary.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest('button');
       const act = b?.dataset.act;
       if (!act) return;
       const card = this.el.summaryCard.classList;
+      if (card.contains('gamble')) return;
       if (card.contains('placard')) I({ t: 'placard', act: act as 'chamber' | 'back' | 'endDemo' | 'close' });
       else if (card.contains('relic')) I({ t: 'diceCard', act: act as 'ok' | 'chamber' | 'gate' | 'later' });
       else if (act === 'continue') I({ t: 'continue' });
@@ -290,8 +341,11 @@ export class Hud {
       else if (e.code === 'KeyM') I({ t: 'mute' });
       else if (e.code === 'KeyE') I({ t: 'demo' });
       else if (e.code === 'KeyT') { if (!this.menuOpen()) I({ t: 'chamber', open: true }); }
+      else if (e.code === 'KeyA') { if (!this.menuOpen()) I({ t: 'autoSheet', open: true }); }
+      else if (e.code === 'KeyD') { if (!this.menuOpen()) I({ t: 'demoGamble' }); }
       else if (e.code === 'Escape') {
-        if (this.el.menuWrap.classList.contains('show')) this.openMenu(false, true);
+        if (this.el.autoWrap.classList.contains('show')) this.openAutoSheet(false, true);
+        else if (this.el.menuWrap.classList.contains('show')) this.openMenu(false, true);
         else if (this.el.drawerWrap.classList.contains('show')) this.openDrawer(false, true);
         else if (this.chamber.isShown() && !document.documentElement.classList.contains('ceremony') && !this.isShown('summary')) I({ t: 'chamber', open: false, key: true });
         else if (this.helloShown()) I({ t: 'hello', act: 'close' });
@@ -328,7 +382,9 @@ export class Hud {
   }
   setMuted(m: boolean): void { this.el.muteBtn.innerHTML = m ? ICON.mute : ICON.sound; this.el.muteBtn.setAttribute('aria-pressed', String(m)); }
   setDemoEnabled(b: boolean, queued = false): void {
-    (this.el.demoPill as HTMLButtonElement).disabled = !b;
+    (this.el.demoStorm as HTMLButtonElement).disabled = !b;
+    (this.el.demoDieSeg as HTMLButtonElement).disabled = !b;
+    this.el.demoPill.classList.toggle('disabled', !b);
     this.el.demoPill.classList.toggle('queued', queued);
   }
   pulseDemo(): void { this.el.demoPill.classList.remove('pulse'); void this.el.demoPill.offsetWidth; this.el.demoPill.classList.add('pulse'); }
@@ -375,16 +431,66 @@ export class Hud {
   clearWin(text = ''): void { this.setWin(0, 1, 'none', text); }
   flashNetto(): void { const ws = this.el.winstrip; ws.classList.remove('cross'); void ws.offsetWidth; ws.classList.add('cross'); }
 
-  setSpin(state: 'idle' | 'busy' | 'perk' | 'disabled' | 'storm', cap?: string): void {
+  setSpin(state: 'idle' | 'busy' | 'perk' | 'disabled' | 'storm' | 'auto', cap?: string): void {
     const b = this.el.spinBtn as HTMLButtonElement;
     b.classList.toggle('idle', state === 'idle' || state === 'perk' || state === 'storm');
     b.classList.toggle('busy', state === 'busy');
     b.classList.toggle('perk', state === 'perk');
+    // 'auto': a run is on; the button stays pressable in every phase and means STOP
+    b.classList.toggle('auto', state === 'auto');
     // 'disabled' = balance below stake: the button stays pressable and the game answers with "Fyld op".
     b.classList.toggle('low', state === 'disabled');
-    this.el.spinCap.textContent = cap ?? (state === 'perk' ? 'LADET SPIN' : state === 'disabled' ? 'FYLD OP' : 'SPIN');
-    b.setAttribute('aria-label', state === 'perk' ? 'Ladet spin (gratis)' : state === 'disabled' ? 'Saldoen er for lav. Fyld op med legepenge' : 'Spin');
+    this.el.spinCap.textContent = cap ?? (state === 'perk' ? 'LADET SPIN' : state === 'disabled' ? 'FYLD OP' : state === 'auto' ? 'STOP' : 'SPIN');
+    b.setAttribute('aria-label', state === 'auto' ? AUTO.stopAria(this.autoLeft) : state === 'perk' ? 'Ladet spin (gratis)' : state === 'disabled' ? 'Saldoen er for lav. Fyld op med legepenge' : 'Spin');
   }
+
+  // ---------------- autospin (minimal; the HUD pass restyles the pill and the sheet) ----------------
+  private autoOn = false;
+  private autoLeft = 0;
+  private autoPick = { n: AUTO_COUNTS[0] as number, l: 0 };
+  private autoStake = 0;
+  /** A run is on (state) or has ended (null, with the reason and summary for the banner). */
+  setAuto(state: { left: number; total: number } | null, reason?: AutoStop, summary?: string): void {
+    this.autoOn = !!state;
+    this.autoLeft = state?.left ?? 0;
+    document.documentElement.classList.toggle('auto', !!state);
+    this.el.autoBtn.textContent = state ? AUTO.stopCap(state.left) : AUTO.pill;
+    this.el.autoBtn.setAttribute('aria-label', state ? AUTO.stopAria(state.left) : AUTO.pillAria);
+    if (!state && reason) this.banner(AUTO.stop(reason), summary ?? '');
+  }
+  isAutoSheetOpen(): boolean { return this.el.autoWrap.classList.contains('show'); }
+  /** The sheet: count (10/25/50/100) and a loss limit (kr) from autoLimits at this stake; the first limit is preset. */
+  openAutoSheet(b: boolean, restoreFocus = false, stakeOre = this.autoStake): void {
+    if (b) {
+      this.autoStake = stakeOre;
+      const ls = autoLimits(stakeOre, this.autoPick.n);
+      if (!ls.includes(this.autoPick.l)) this.autoPick.l = ls[0] ?? 0;
+      this.renderAutoSheet();
+    }
+    this.el.autoWrap.classList.toggle('show', b);
+    this.el.autoWrap.inert = !b;
+    this.onIntent({ t: 'menu', open: b });
+    if (b) setTimeout(() => (this.el.autoGo as HTMLElement).focus(), 50);
+    else if (restoreFocus) this.el.autoBtn.focus({ preventScroll: true });
+    else (document.activeElement as HTMLElement | null)?.blur?.();
+  }
+  private renderAutoSheet(): void {
+    const ls = autoLimits(this.autoStake, this.autoPick.n);
+    if (!ls.includes(this.autoPick.l)) this.autoPick.l = ls[ls.length - 1] ?? 0;
+    this.el.autoN.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(+x.dataset.n! === this.autoPick.n)));
+    this.el.autoL.innerHTML = ls.map((l) => `<button class="btn ghost small num" data-l="${l}" aria-pressed="${l === this.autoPick.l}">${fmtKr(l)}</button>`).join('');
+    this.el.autoHint.textContent = AUTO.limitHint(this.autoPick.l);
+  }
+
+  // ---------------- the dice home's idle life (pre-wired; the niche pass schedules its rattle on it) ----------------
+  private vaultOn = false;
+  /** True only when idle and quiet (no autospin, no card, menu or chamber): the only time the niche may rattle. */
+  setVaultActive(active: boolean): void {
+    if (active === this.vaultOn) return;
+    this.vaultOn = active;
+    document.documentElement.classList.toggle('vault-active', active);
+  }
+  vaultActive(): boolean { return this.vaultOn; }
   /** 3-second floor ring: 0..1 */
   setRing(p: number): void { (this.el.ring as unknown as SVGCircleElement).style.strokeDashoffset = String(this.spinRingLen * (1 - Math.max(0, Math.min(1, p)))); }
 
@@ -474,10 +580,11 @@ export class Hud {
   }
   isShown(id: 'splash' | 'stormReady' | 'bigwin' | 'summary'): boolean { return this.el[id].classList.contains('show'); }
   setStormInfo(text: string): void { this.el.stormInfo.textContent = text; }
-  /** 'relic' = a Terningen card (.card.base.relic), 'placard' = the gate placard (.card.base.relic.placard).
+  /** 'relic' = a Terningen card (.card.base.relic), 'placard' = the gate placard (.card.base.relic.placard),
+   *  'gamble' = the Kvit eller dobbelt card (.card.base.gamble: its buttons carry data-gamble).
    *  Focus goes to [data-primary] first (else [data-focus], else the first button). */
-  showSummary(html: string, tone: 'storm' | 'base' | 'relic' | 'placard' = 'storm'): void {
-    this.el.summaryCard.className = 'card' + (tone === 'storm' ? '' : ' base') + (tone === 'relic' || tone === 'placard' ? ' relic' : '') + (tone === 'placard' ? ' placard' : '');
+  showSummary(html: string, tone: 'storm' | 'base' | 'relic' | 'placard' | 'gamble' = 'storm'): void {
+    this.el.summaryCard.className = 'card' + (tone === 'storm' ? '' : ' base') + (tone === 'relic' || tone === 'placard' ? ' relic' : '') + (tone === 'placard' ? ' placard' : '') + (tone === 'gamble' ? ' gamble' : '');
     this.el.summaryCard.innerHTML = html;
     this.show('summary', true);
     this.fitPlacard();
@@ -568,7 +675,7 @@ export class Hud {
     clearTimeout(this.calmChipTimer);
     if (b) this.calmChipTimer = window.setTimeout(() => this.el.calmChip.classList.remove('show'), 8000);
   }
-  menuOpen(): boolean { return this.el.menuWrap.classList.contains('show') || this.el.drawerWrap.classList.contains('show'); }
+  menuOpen(): boolean { return this.el.menuWrap.classList.contains('show') || this.el.drawerWrap.classList.contains('show') || this.el.autoWrap.classList.contains('show'); }
 
   // ---------------- Terningen: chip, panel, landing ----------------
   private diceShown = -1;
@@ -636,11 +743,11 @@ export class Hud {
     this.landTimer = window.setTimeout(() => b.classList.remove('land'), calm ? 800 : 500);
     this.paintDiceIcons();
   }
-  /** Demo landing: the amber "+1 demo" floats 8 px above the chip for 1,5 s; the number is unchanged. */
-  demoDiceTag(): void {
+  /** Demo landing: the amber "+n demo" floats 8 px above the chip for 1,5 s; the number is unchanged. */
+  demoDiceTag(n = 1): void {
     const t = document.createElement('span');
     t.className = 'dice-demo-tag';
-    t.textContent = DEMO_TAG;
+    t.textContent = demoTag(n);
     this.el.diceBtn.appendChild(t);
     setTimeout(() => t.remove(), 1500);
   }
@@ -725,6 +832,8 @@ export class Hud {
         <p class="hint">Rolig tilstand fjerner rystelser, blink, kromatiske effekter og glasskår og bruger bløde overgange i stedet.</p>
         <label class="setting"><span>${MENU.setting}</span><input type="checkbox" ${st.dice !== false ? 'checked' : ''} data-k="dice" id="setDice"></label>
         <p class="hint">${MENU.settingHint}</p>
+        <label class="setting"><span>${MENU.gambleSetting}</span><input type="checkbox" ${st.gambleOffers !== false ? 'checked' : ''} data-k="gambleOffers" id="setGamble"></label>
+        <p class="hint">${MENU.gambleHint}</p>
         <div class="actions"><button class="btn ghost small" data-act="refill">Fyld op (legepenge)</button><button class="btn ghost small" data-act="reset">Nulstil demo</button></div>`; break;
       case 'rg': body.innerHTML = `
         <h4>Spil med omtanke</h4>
@@ -732,7 +841,7 @@ export class Hud {
         <p>Spil aldrig for mere, end du har råd til at tabe. Sæt grænser for tid og penge, og hold pauser.</p>
         <p>Rådgivning: <a href="https://www.stopspillet.dk" target="_blank" rel="noopener">StopSpillet 70 22 28 25</a> · Udelukkelse: <a href="https://www.spillemyndigheden.dk/rofus" target="_blank" rel="noopener">ROFUS</a>.</p>
         <h4>Designprincipper</h4>
-        <p>Mindst 3,0 s pr. spin · ingen turbo, autoplay eller køb af bonus · resultater under indsatsen fejres ikke · ingen konstruerede "næsten"-resultater · sessionstid og netto vises altid.${MENU.rgLine}</p>`; break;
+        <p>Mindst 3,0 s pr. spin – også i autospin · ingen turbo eller køb af bonus · autospin kræver en tabsgrænse og stopper ved hver terning, Ladet spin og Solstorm · resultater under indsatsen fejres ikke · ingen konstruerede "næsten"-resultater · sessionstid og netto vises altid.${MENU.rgLine}</p>`; break;
     }
   }
 
@@ -753,6 +862,8 @@ export class Hud {
       <h4>SOLSTORM · G5 EKSTREM</h4>
       <p>Udløses ved Kp 9 (ved låst indsats; måleren nulstilles) eller ved 4+ sole (ved spinnets indsats; måleren bevares). Begge på én gang giver én storm ved spinnets indsats.</p>
       <p>${C.stormSpins} gratis stormspin på ${C.stormCols}×${C.stormRows}. Stormen starter med ${C.stormStartMarks} felter på ×2. Plasmamærker bevares hele stormen og går op til ×${C.stormMarkCap}. Før hvert 4. stormspin fordobler en Stormbølge alle mærker på ×2 eller mere. 3+ sole giver +${C.retriggerSpins} stormspin (højst ${C.maxStormSpins}). <b>I Solstorm udbetaler klynger ${fmtPct(C.stormPayScale, 2)} af gevinsttabellen (før mærker)</b> – det er plasmamærkerne, der bærer gevinsten. Sole i stormen udbetaler ikke. Stormgaranti: mindst ${C.guaranteeX}× indsats, vist på en separat linje. Der optjenes ikke ladning under Solstorm.</p>
+      <h4>${AUTO.title}</h4>
+      <p>${AUTO.rules}</p>
       ${diceRulesHtml(R, C)}
       <h4>Tal</h4>
       <div class="kv num">

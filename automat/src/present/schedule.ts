@@ -38,6 +38,10 @@ export const T = {
   fallAfter: 0.74,  // survivors fall, relative to step start
 };
 
+/** Kvit eller dobbelt: Behold is armed 0,4 s after the card appears, the bets (and SPIN/Space/Enter as Behold) 1,0 s;
+ *  the result holds 1,6 s. The throw itself is never shown in under T.floor. There is no timer on the card. */
+export const GAMBLE_T = { keepArm: 0.4, arm: 1.0, hold: 1.6 };
+
 export type BeatKind =
   | 'dropOut' | 'land' | 'sun' | 'anticipation' | 'glint'
   | 'highlight' | 'shatter' | 'winPopup' | 'motes' | 'markUp' | 'fall' | 'refill'

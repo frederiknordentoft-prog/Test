@@ -83,7 +83,19 @@ describe('splitmix32 and the spinRng derivation', () => {
   });
   it('domains give independent streams', () => {
     const a = spinRng(1, 'base', 0).u32(), b = spinRng(1, 'storm', 0).u32(), c = spinRng(1, 'perk', 0).u32(), d = spinRng(1, 'demo', 0).u32();
-    expect(new Set([a, b, c, d]).size).toBe(4);
+    const e = spinRng(1, 'gamble', 0).u32();
+    expect(new Set([a, b, c, d, e]).size).toBe(5);
+  });
+  it("the 'gamble' domain: DOMAIN 'TERN', derived like every other domain", () => {
+    expect(DOMAIN_CONST.gamble).toBe(0x5445524e);
+    expect(new Set(Object.values(DOMAIN_CONST)).size).toBe(Object.keys(DOMAIN_CONST).length);
+    const stream = refSplitmix((0xdeadbeef ^ DOMAIN_CONST.gamble) >>> 0);
+    for (let idx = 0; idx < 20; idx++) {
+      const st = [stream(), stream(), stream(), stream()];
+      const ref = refXoshiro(st[0], st[1], st[2], st[3]);
+      const r = spinRng(0xdeadbeef, 'gamble', idx);
+      for (let k = 0; k < 8; k++) expect(r.u32()).toBe(ref());
+    }
   });
   it('golden spinRng outputs', () => {
     const r = spinRng(0x1a2b3c4d, 'base', 42);
@@ -125,7 +137,11 @@ describe('ids and session seeds', () => {
     expect(makeSpinId(1, 'storm', 100007)).toBe('NL-00000001-S100007');
     expect(makeSpinId(0xffffffff, 'perk', 3)).toBe('NL-ffffffff-P000003');
     expect(makeSpinId(0, 'demo', 0)).toBe('NL-00000000-D000000');
+    expect(makeSpinId(0x1a2b3c4d, 'gamble', 12)).toBe('NL-1a2b3c4d-T000012');
     expect(parseSpinId('NL-1a2b3c4d-B000042')).toEqual({ sessionSeed: 0x1a2b3c4d, domain: 'base', idx: 42 });
+    for (const d of ['base', 'storm', 'perk', 'demo', 'gamble'] as const) expect(parseSpinId(makeSpinId(7, d, 123456))).toEqual({ sessionSeed: 7, domain: d, idx: 123456 });
+    // 'G' stays the storm guarantee suffix: never a domain letter
+    expect(parseSpinId('NL-1a2b3c4d-G000001')).toBeNull();
     expect(parseSpinId('nope')).toBeNull();
   });
   it('newSessionSeed returns a uint32 from the platform CSPRNG', () => {

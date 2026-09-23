@@ -1,6 +1,11 @@
-// Terningen · the pure rule, the store's single mutator, the formatters and the award timing helpers.
+// Terningen · the pure rule, the store's two count mutators (addDie, settleGamble), the formatters and the award timing helpers.
 import { describe, it, expect } from 'vitest';
-import { DICE_GOAL, DICE_MIN_X, diceFor, diceDefaults, addDie, fmtDice, diceWord, realDiceView, previewDiceView, PREVIEW_STEPS } from '../src/game/dice.ts';
+import {
+  DICE_GOAL, DICE_MIN_X, diceFor, diceDefaults, addDie, fmtDice, diceWord, realDiceView, previewDiceView, PREVIEW_STEPS,
+  canOffer, openGamble, settleGamble, clearSettled, cloneDice, stagedOf, GAMBLE_LOG_MAX, type DiceStore, type GambleChoice,
+} from '../src/game/dice.ts';
+import { resolveGamble, GAMBLE_SIDES } from '../src/math/gamble.ts';
+import { loadDice, DICE_KEY } from '../src/game/store.ts';
 import { dieBirthAt, celebrateEndWithDie, TIER_SECS, winTier } from '../src/present/schedule.ts';
 import { spinBase } from '../src/math/engine.ts';
 import { spinRng } from '../src/math/rng.ts';
@@ -45,9 +50,9 @@ describe('formatting', () => {
   });
 });
 
-describe('DiceStore and addDie (THE only mutator)', () => {
+describe('DiceStore and addDie (the award mutator)', () => {
   it('defaults: count 0, flags false, unlock none', () => {
-    expect(diceDefaults(0xdeadbeef)).toEqual({ v: 1, count: 0, seed: 0xdeadbeef, firstAt: null, lastAt: null, helloSeen: false, introSeen: false, unlock: 'none', offered: false, unlockedAt: null });
+    expect(diceDefaults(0xdeadbeef)).toStrictEqual({ v: 1, count: 0, seed: 0xdeadbeef, firstAt: null, lastAt: null, helloSeen: false, introSeen: false, unlock: 'none', offered: false, unlockedAt: null, gamble: null, gambleLog: [] });
     expect(diceDefaults(-1).seed).toBe(0xffffffff);
   });
   it('increments and returns the accession number; firstAt is set once', () => {
@@ -75,6 +80,176 @@ describe('DiceStore and addDie (THE only mutator)', () => {
     expect(d.unlock).toBe('seen');
     expect(d.offered).toBe(false); // addDie never touches the card / ceremony flags
     expect(d.unlockedAt).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------- Kvit eller dobbelt
+/** A veteran store with `n` dice (intro seen) plus a freshly awarded die with its choice open. */
+function withOffer(n: number, stake = 1, source: 'spin' | 'storm' = 'spin'): DiceStore {
+  const d = diceDefaults(9);
+  d.count = n; d.introSeen = true; d.helloSeen = true;
+  for (let i = 0; i < stake; i++) addDie(d, 100);
+  expect(openGamble(d, { id: 'NL-00000009-B000001', source, stake, at: 100 })).toBe(true);
+  return d;
+}
+
+describe('canOffer / openGamble', () => {
+  it('canOffer: allowed, intro seen, not pending, no open choice', () => {
+    const d = diceDefaults(1);
+    d.count = 1;
+    expect(canOffer(d, true)).toBe(false); // the first-ever die: its card comes first
+    d.introSeen = true;
+    expect(canOffer(d, true)).toBe(true);
+    expect(canOffer(d, false)).toBe(false); // setting off / dice hidden
+    d.unlock = 'pending';
+    expect(canOffer(d, true)).toBe(false); // all lit, gate not opened: new dice are always kept
+    d.unlock = 'seen';
+    expect(canOffer(d, true)).toBe(true); // after the real opening the choice returns
+    openGamble(d, { id: 'x', source: 'spin', stake: 1, at: 0 });
+    expect(canOffer(d, true)).toBe(false);
+  });
+  it('openGamble refuses a second choice, a stake < 1 or a non-integer, and a stake the count does not hold', () => {
+    const d = diceDefaults(1);
+    d.count = 3;
+    expect(openGamble(d, { id: 'a', source: 'spin', stake: 0, at: 0 })).toBe(false);
+    expect(openGamble(d, { id: 'a', source: 'spin', stake: 1.5, at: 0 })).toBe(false);
+    expect(openGamble(d, { id: 'a', source: 'storm', stake: 4, at: 0 })).toBe(false);
+    expect(d.gamble).toBeNull();
+    expect(openGamble(d, { id: 'a', source: 'storm', stake: 3, at: 5 })).toBe(true);
+    expect(d.gamble).toStrictEqual({ id: 'a', source: 'storm', stake: 3, at: 5 });
+    expect(openGamble(d, { id: 'b', source: 'spin', stake: 1, at: 0 })).toBe(false);
+    expect(d.gamble!.id).toBe('a');
+  });
+});
+
+describe('settleGamble (THE other count mutator)', () => {
+  it('keep: the count stays, the choice closes, the log has no gid/face', () => {
+    const d = withOffer(10);
+    expect(d.count).toBe(11);
+    expect(stagedOf(d)).toBe(1);
+    const r = settleGamble(d, 'keep', -1, '', 500);
+    expect(r).toEqual({ payout: 1, delta: 0, count: 11 });
+    expect(d.gamble).toBeNull();
+    expect(d.lastAt).toBe(100);
+    expect(d.gambleLog).toEqual([{ gid: null, id: 'NL-00000009-B000001', source: 'spin', choice: 'keep', stake: 1, face: null, payout: 1, at: 500 }]);
+    expect(stagedOf(d)).toBe(0);
+    expect(() => settleGamble(d, 'keep', -1, '', 600)).toThrow(); // nothing open
+  });
+  it('every face × both bets × k: count = pre-award + payout, settled kept until clearSettled, lastAt only on a gain', () => {
+    for (const bet of ['double', 'triple'] as const) for (const k of [1, 2, 7]) for (let f = 0; f < GAMBLE_SIDES; f++) {
+      const d = withOffer(40, k, k > 1 ? 'storm' : 'spin');
+      const pre = 40;
+      const r = settleGamble(d, bet, f, 'NL-00000009-T000003', 900);
+      const exp = resolveGamble(bet, k, f).payout;
+      expect(r.payout).toBe(exp);
+      expect(r.delta).toBe(exp - k);
+      expect(d.count).toBe(pre + exp);
+      expect(d.count).toBeGreaterThanOrEqual(pre);
+      expect(d.lastAt).toBe(exp > k ? 900 : 100);
+      expect(d.gamble!.settled).toStrictEqual({ choice: bet, face: f, gid: 'NL-00000009-T000003', payout: exp });
+      expect(stagedOf(d)).toBe(exp);
+      expect(d.gambleLog.at(-1)).toEqual({ gid: 'NL-00000009-T000003', id: 'NL-00000009-B000001', source: k > 1 ? 'storm' : 'spin', choice: bet, stake: k, face: f, payout: exp, at: 900 });
+      expect(() => settleGamble(d, bet, f, 'x', 901)).toThrow(); // settled once
+      clearSettled(d);
+      expect(d.gamble).toBeNull();
+      expect(stagedOf(d)).toBe(0);
+    }
+  });
+  it("crossing 1948 through a win sets 'pending'; 'seen' never reverts; a bad face throws before any write", () => {
+    const d = withOffer(1946); // 1947 with the new die
+    expect(d.unlock).toBe('none');
+    settleGamble(d, 'triple', 5, 'g', 1);
+    expect(d.count).toBe(1949);
+    expect(d.unlock).toBe('pending');
+    const s = withOffer(2000);
+    s.unlock = 'seen'; s.offered = true;
+    settleGamble(s, 'double', 0, 'g', 1);
+    expect(s.count).toBe(2000);
+    expect(s.unlock).toBe('seen');
+    const b = withOffer(5);
+    expect(() => settleGamble(b, 'double', 6, 'g', 1)).toThrow();
+    expect(b.count).toBe(6);
+    expect(b.gamble!.settled).toBeUndefined();
+    expect(b.gambleLog).toEqual([]);
+  });
+  it('the log is capped at GAMBLE_LOG_MAX (oldest dropped)', () => {
+    const d = withOffer(3);
+    for (let i = 0; i < GAMBLE_LOG_MAX + 7; i++) {
+      if (!d.gamble) { addDie(d, i); openGamble(d, { id: `id${i}`, source: 'spin', stake: 1, at: i }); }
+      settleGamble(d, 'keep', -1, '', i);
+    }
+    expect(d.gambleLog.length).toBe(GAMBLE_LOG_MAX);
+    expect(d.gambleLog.at(-1)!.at).toBe(GAMBLE_LOG_MAX + 6);
+  });
+  it('cloneDice is deep (the choice, its result and the log are not shared)', () => {
+    const d = withOffer(12);
+    settleGamble(d, 'double', 4, 'g1', 7);
+    const c = cloneDice(d);
+    expect(c).toStrictEqual(d);
+    expect(c.gamble).not.toBe(d.gamble);
+    expect(c.gamble!.settled).not.toBe(d.gamble!.settled);
+    expect(c.gambleLog).not.toBe(d.gambleLog);
+    expect(c.gambleLog[0]).not.toBe(d.gambleLog[0]);
+    c.gamble!.settled!.payout = 99; c.gambleLog[0].payout = 99; c.count = 1;
+    expect(d.gamble!.settled!.payout).toBe(2);
+    expect(d.gambleLog[0].payout).toBe(2);
+    expect(JSON.stringify(cloneDice(diceDefaults(3)))).toBe(JSON.stringify(diceDefaults(3)));
+  });
+  it('seeded property test: the count never drops below its pre-award value, pending ⇒ count ≥ 1948, seen never reverts', () => {
+    let x = 0x2545f491;
+    const rnd = (n: number) => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return (x >>> 0) % n; };
+    for (let run = 0; run < 300; run++) {
+      const d = diceDefaults(run);
+      d.count = rnd(2) ? rnd(40) : 1900 + rnd(60);
+      d.introSeen = d.count > 0;
+      let seen = false;
+      for (let step = 0; step < 200; step++) {
+        const pre = d.count;
+        const k = rnd(5) === 0 ? 1 + rnd(9) : 1;
+        for (let i = 0; i < k; i++) addDie(d, step);
+        if (!d.introSeen) d.introSeen = true;
+        if (rnd(7) === 0 && d.unlock === 'pending') { d.offered = true; d.unlock = 'seen'; d.unlockedAt = step; }
+        if (canOffer(d, rnd(10) > 0)) {
+          expect(openGamble(d, { id: `s${step}`, source: k > 1 ? 'storm' : 'spin', stake: k, at: step })).toBe(true);
+          const choice = (['keep', 'double', 'triple'] as GambleChoice[])[rnd(3)];
+          settleGamble(d, choice, rnd(6), `g${step}`, step);
+          if (rnd(2)) clearSettled(d); else d.gamble = null;
+        }
+        expect(d.count).toBeGreaterThanOrEqual(pre);
+        if (d.unlock === 'pending') expect(d.count).toBeGreaterThanOrEqual(DICE_GOAL);
+        if (seen) expect(d.unlock).toBe('seen');
+        seen = d.unlock === 'seen';
+        if (d.count >= DICE_GOAL) expect(d.unlock).not.toBe('none');
+      }
+    }
+  });
+});
+
+describe('loadDice: v1 stays v1, defaults fill in, malformed choices are dropped', () => {
+  const mem = new Map<string, string>();
+  const ls = { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v), removeItem: (k: string) => void mem.delete(k) };
+  const load = (o: object) => { (globalThis as unknown as { localStorage: typeof ls }).localStorage = ls; mem.set(DICE_KEY, JSON.stringify(o)); return loadDice(1); };
+  const old = { v: 1, count: 5, seed: 3, firstAt: 1, lastAt: 2, helloSeen: true, introSeen: true, unlock: 'none', offered: false, unlockedAt: null };
+  it('an old save gets gamble null and an empty log (no migration)', () => {
+    const d = load(old);
+    expect(d.gamble).toBeNull();
+    expect(d.gambleLog).toEqual([]);
+    expect(d.count).toBe(5);
+  });
+  it('an open choice survives; a malformed one is dropped; a non-array log becomes []', () => {
+    const g = { id: 'i', source: 'spin', stake: 1, at: 1 };
+    expect(load({ ...old, gamble: g }).gamble).toEqual(g);
+    for (const bad of [{ ...g, stake: 0 }, { ...g, stake: 1.5 }, { ...g, stake: 6 }, { ...g, source: 'x' }, { ...g, id: 3 }, 'nope'])
+      expect(load({ ...old, gamble: bad }).gamble, JSON.stringify(bad)).toBeNull();
+    expect(load({ ...old, gambleLog: { a: 1 } }).gambleLog).toEqual([]);
+  });
+  it('a settled choice survives when the count holds its payout (a storm loss may leave count < stake)', () => {
+    const lost = { id: 'i', source: 'storm', stake: 5, at: 1, settled: { choice: 'double', face: 0, gid: 'g', payout: 0 } };
+    expect(load({ ...old, count: 1, gamble: lost }).gamble).toEqual(lost);
+    const won = { ...lost, settled: { choice: 'triple', face: 5, gid: 'g', payout: 15 } };
+    expect(load({ ...old, count: 16, gamble: won }).gamble).toEqual(won);
+    expect(load({ ...old, count: 14, gamble: won }).gamble).toBeNull();
+    expect(load({ ...old, count: 16, gamble: { ...won, settled: { ...won.settled, payout: 14 } } }).gamble).toBeNull();
   });
 });
 

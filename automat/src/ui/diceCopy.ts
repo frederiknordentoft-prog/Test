@@ -5,6 +5,7 @@ import { fmtInt, fmtKr, fmtPct, fmt1 } from '../core/format.ts';
 import { CONFIG, REPORT, type MathConfig, type MathReport } from '../math/config.ts';
 import { T } from '../present/schedule.ts';
 import { DICE_GOAL, DICE_MIN_X, fmtDice, diceWord, type DiceView } from '../game/dice.ts';
+import { GAMBLE_BETS, GAMBLE_SIDES, winPips, type GambleBet } from '../math/gamble.ts';
 
 /** Legal swap flag: false removes the payback idea from the rules and the placard without a redesign. */
 export const AUTOMAT_PAYBACK_CLAUSE = true;
@@ -51,7 +52,9 @@ export const countWord = (n: number) => `${fmtDice(n)} ${diceWord(n)}`;
 
 // ---------------------------------------------------------------- HUD chip + desktop panel
 export const CHIP_TITLE = 'Terningekammeret';
-export const DEMO_TAG = '+1 demo';
+/** The amber tag at the chip when a demo die dissolves there ("+1 demo", "+2 demo" after a demo double). */
+export const demoTag = (n: number) => `+${fmtDice(n)} demo`;
+export const DEMO_TAG = demoTag(1);
 export function chipAria(n: number, unlock: DiceView['unlock']): string {
   const s = unlock === 'pending' ? ' Porten kan åbnes.' : unlock === 'seen' ? ' Porten står åben.' : '';
   return `Terninger: ${fmtDice(n)}.${s} Åbn Terningekammeret.`;
@@ -100,9 +103,10 @@ export function firstDieCopy(R: MathReport = REPORT) {
     body1: `Den er lagt i Terningekammeret. Du får en terning, hver gang et spin vinder mindst ${X} sin indsats – indsatsens størrelse er ligegyldig.`,
     body2: `Ved ${G} terninger åbner porten i kammeret ind til Automat 1948 – et koncept i denne demo.`,
     facts: `I gennemsnit tager ${G} terninger ca. ${k.spins} spin. Terninger udløber ikke og har ingen pengeværdi.`,
+    choice: GAMBLE_FIRST_DIE,
     see: 'Se kammeret',
     ok: 'Forstået',
-    sr: `Din første terning, nummer 1, er lagt i Terningekammeret. Du får en terning, hver gang et spin vinder mindst ${DICE_MIN_X} gange sin indsats. Ved ${G} terninger åbner porten ind til Automat 1948, et koncept i denne demo. I gennemsnit tager det ca. ${k.spins} spin.`,
+    sr: `Din første terning, nummer 1, er lagt i Terningekammeret. Du får en terning, hver gang et spin vinder mindst ${DICE_MIN_X} gange sin indsats. Ved ${G} terninger åbner porten ind til Automat 1948, et koncept i denne demo. I gennemsnit tager det ca. ${k.spins} spin. ${GAMBLE_FIRST_DIE}`,
     /** The drawer demo ("Vis første terning", `n` = the real count): never claims a die was added. */
     srDemo: (n: number) => `Demo: sådan møder man den første terning. Tæller ikke – dit antal er uændret (${fmtDice(n)}). Du får en terning, hver gang et spin vinder mindst ${DICE_MIN_X} gange sin indsats.`,
   };
@@ -114,7 +118,7 @@ export function firstDieHtml(demoN: number | null, R: MathReport = REPORT): stri
   return `<canvas class="medal" aria-hidden="true"></canvas>
     ${demoN !== null ? `<div class="demo-note">${firstDieDemoNote(demoN)}</div>` : ''}
     <h2>${c.eyebrow}</h2><div class="t" id="dcTitle">${c.title}</div>
-    <p>${c.body1}</p><p>${c.body2}</p><p class="facts">${c.facts}</p>
+    <p>${c.body1}</p><p>${c.body2}</p><p class="facts">${c.facts}</p><p>${c.choice}</p>
     <div class="btns"><button class="btn ghost small" data-act="chamber">${c.see}</button><button class="btn small" data-act="ok" data-primary>${c.ok}</button></div>`;
 }
 
@@ -255,6 +259,8 @@ export const MENU = {
   rgLine: ' Terningerne har ingen tidsfrister, streaks, daglige belønninger eller påmindelser og udløber ikke – en pause koster ingen terninger. Terning-tælleren kan slås fra under Indstillinger.',
   setting: 'Vis terninger i spillet',
   settingHint: 'Slået fra: ingen terningtæller og ingen terning-animationer. Terningerne tælles stadig og kan ses under Terningen i menuen.',
+  gambleSetting: 'Tilbyd Kvit eller dobbelt',
+  gambleHint: 'Slået fra: nye terninger beholdes altid, og der spørges ikke.',
   storage: 'Lagring er ikke tilgængelig · fremskridt og terninger gemmes kun i denne fane',
 };
 
@@ -262,13 +268,14 @@ export const MENU = {
 export const DRAWER = {
   h: 'Terningen',
   die: 'Vis en terning',
+  gamble: 'Vis en terning med valg',
   first: 'Vis første terning',
   gate: `Åbn porten · ${G}`,
   segLabel: 'Vis kammeret med (kun visning)',
   segAria: 'Vis kammeret med et antal terninger – kun visning',
   seg: (n: number) => (n >= DICE_GOAL ? `${G} · åben` : String(n)),
   warn: 'Kun til demonstration. Findes ikke i den rigtige version. Demo-storme krediteres ikke saldoen og tæller ikke i statistikken. Demo-værktøjerne giver aldrig terninger og ændrer ikke dit antal.',
-  hintHtml: '"Vis Kp" ændrer kun himlen og buen – din rigtige måler røres ikke. Terning-værktøjerne ændrer kun visningen – dit antal terninger røres ikke. Genveje: Mellemrum = spin · E = demo · T = Terningekammeret · M = lyd · Esc = spring over. Direkte links: tilføj <code>#solstorm</code> (demo-stormen), <code>#1948</code> (portens åbning), <code>#kammer</code> (Terningekammeret) eller <code>#terning</code> (en terning) til adressen.',
+  hintHtml: '"Vis Kp" ændrer kun himlen og buen – din rigtige måler røres ikke. Terning-værktøjerne ændrer kun visningen – dit antal terninger røres ikke. Genveje: Mellemrum = spin · A = autospin · D = en terning med valg · E = demo · T = Terningekammeret · M = lyd · Esc = spring over. Direkte links: tilføj <code>#solstorm</code> (demo-stormen), <code>#1948</code> (portens åbning), <code>#kammer</code> (Terningekammeret) eller <code>#terning</code> (en terning med valg) til adressen.',
   resetBanner: (balance: string) => ({ t: 'DEMO NULSTILLET', s: `Saldo ${balance} · Kp 0 · 0 terninger` }),
 };
 
@@ -282,6 +289,9 @@ export function diceRulesHtml(R: MathReport = REPORT, C: MathConfig = CONFIG, cl
       <p>Indsatsens størrelse er ligegyldig: terningen kommer lige ofte ved alle indsatser. <b>En højere indsats giver ikke flere terninger – kun et større forventet tab.</b></p>
       <p>Stormgarantien er ikke et spin og giver ingen terning. Demo-storme og demo-værktøjer giver aldrig terninger og ændrer aldrig dit antal.</p>
       <p>Terningerne udløber ikke og nulstilles ikke, når din ladning (Kp) udløber. De har ingen pengeværdi, ændrer ikke gevinster, sandsynligheder eller tilbagebetalingen (RTP) i NORDLYS og kan ikke købes, veksles eller overføres. Spin, der gav en terning, er mærket i Historik. I denne demo gemmes terningerne i din browser, og "Nulstil demo" sletter dem.</p>
+      <h4>${GAMBLE.double}</h4>
+      <p>${gambleRulesP1()}</p>
+      <p>${gambleRulesP2()}</p>
       <h4>Terningekammeret og porten</h4>
       <p>Terningerne samles i Terningekammeret. I fortællingen ligger kammeret under Møns Klint, og porten har ${G} fliser af is. Hver terning tænder én flise. Ved ${G} terninger kan porten åbnes. Terningerne bruges ikke, og tællingen fortsætter bagefter.</p>
       <p>I konceptet samler flere automater terninger til det samme kammer. De fem mørke automater i kammeret er pladsholdere: i denne demo findes kun NORDLYS, og kun NORDLYS giver terninger.</p>
@@ -302,6 +312,111 @@ export function diceRulesHtml(R: MathReport = REPORT, C: MathConfig = CONFIG, cl
         <span>· ved ${k.stake} pr. spin</span><span>ca. ${k.kr} kr (90 %: ca. ${k.krP5}–${k.krP95} kr)</span>
         <span>Forløb med nettotab ved terning nr. ${G}</span><span>ca. ${k.lossShare}</span>
       </div>
-      <p class="hint">Tallene er gennemsnit fra simulering med spillets egen matematik (RTP ${k.rtp}, model ${k.model}, ${k.journeys} simulerede forløb til ${G} terninger). Terningerne kommer tilfældigt, uden faste mellemrum. Antallet af spin til ${G} terninger varierer kun lidt fra spiller til spiller; tabet undervejs varierer mere. Tabet er et forventet tab – ikke en pris for at åbne porten.</p>
+      <p class="hint">Tallene er gennemsnit fra simulering med spillets egen matematik (RTP ${k.rtp}, model ${k.model}, ${k.journeys} simulerede forløb til ${G} terninger). Terningerne kommer tilfældigt, uden faste mellemrum. Antallet af spin til ${G} terninger varierer kun lidt fra spiller til spiller; tabet undervejs varierer mere. Tabet er et forventet tab – ikke en pris for at åbne porten. ${GAMBLE_NUMBERS_NOTE}</p>
       <p><b>Terningerne er et minde om store gevinster – ikke en grund til at spille videre.</b> Porten er ikke noget, du skal nå: den viser, hvor sjældne de store gevinster er. Spil aldrig længere eller for mere for at samle terninger.</p>`;
 }
+
+// ---------------------------------------------------------------- Kvit eller dobbelt (one choice per award)
+// Only NEW dice can be staged, the odds are fair (every choice gives the stake on average) and the result is final.
+// Pip lists are built from winPips(), never typed. No gate, no year and no luck in any of these strings (copy-lint).
+export type GambleSource = 'spin' | 'storm';
+export const GAMBLE = { keep: 'Behold', double: 'Kvit eller dobbelt', triple: '3 for 1' } as const;
+const ALL_PIPS = Array.from({ length: GAMBLE_SIDES }, (_, i) => i + 1);
+/** "4, 5 eller 6" · "5 eller 6" · "1–4" (a run of four or more reads as a range). */
+export function pipList(ps: number[]): string {
+  if (ps.length >= 4 && ps.every((p, i) => i === 0 || p === ps[i - 1] + 1)) return `${ps[0]}–${ps[ps.length - 1]}`;
+  return ps.length === 1 ? String(ps[0]) : `${ps.slice(0, -1).join(', ')} eller ${ps[ps.length - 1]}`;
+}
+const losePips = (bet: GambleBet) => ALL_PIPS.filter((p) => !winPips(bet).includes(p));
+/** The sub-line under a bet: what each face gives, for `k` staked dice. */
+export const gambleSub = (bet: GambleBet, k: number) => `${pipList(winPips(bet))}: ${countWord(GAMBLE_BETS[bet].mult * k)} · ${pipList(losePips(bet))}: ingen`;
+export const GAMBLE_FACTS = 'En terning kastes. I gennemsnit giver alle tre valg lige mange terninger. Kun de nye terninger kan sættes på spil – aldrig dem, der allerede ligger i kammeret.';
+export const GAMBLE_FIRST_DIE = 'Fra næste terning kan du vælge at beholde den eller sætte den på spil (Kvit eller dobbelt eller 3 for 1). Valget kan slås fra under Indstillinger.';
+export const GAMBLE_THROW = 'Terningen kastes …';
+export const GAMBLE_RESTORED = { eyebrow: 'RESULTATET AF DIT VALG', line: 'Valget blev truffet før genindlæsningen. Resultatet står fast.' };
+export const gambleDemoNote = (n: number) => `DEMO · Sådan fungerer valget · tæller ikke · dit antal er uændret (${fmtDice(n)})`;
+export const DEMO_GAMBLE_BANNER = { t: 'DEMO · TERNING MED VALG', s: 'Sådan fungerer Kvit eller dobbelt · tæller ikke med' };
+export const demoGambleDone = (n: number) => ({ t: 'DIT ANTAL ER UÆNDRET', s: `${countWord(n)} · demo-valget talte ikke med` });
+/** The header pill's second segment (demo tool). */
+export const DEMO_PILL = { die: 'Terning', dieAria: 'Vis en terning og valget Behold, Kvit eller dobbelt eller 3 for 1 – demo-værktøj. Tæller ikke og ændrer ikke dit antal.' };
+
+export interface GambleCardCtx {
+  source: GambleSource;
+  k: number;
+  /** The accession number of a spin's die (the eyebrow). */
+  n: number;
+  /** Demo: the player's real count (the amber note and "uændret"); null for real play. */
+  demoN: number | null;
+}
+export const gambleEyebrow = (c: GambleCardCtx) => (c.demoN !== null ? DEMO_CAPTION : c.source === 'storm' ? 'TERNINGER FRA STORMEN' : awardCaption(c.n));
+export function gambleOfferCopy(c: GambleCardCtx) {
+  const storm = c.source === 'storm';
+  const pick = 'venter på dit valg: Behold, Kvit eller dobbelt eller 3 for 1. Behold er valgt på forhånd.';
+  return {
+    eyebrow: gambleEyebrow(c),
+    title: storm ? `${countWord(c.k)} fra stormen` : 'Din nye terning',
+    body: storm ? 'Du vælger én gang for dem alle. Resultatet er endeligt.' : 'Du vælger én gang. Resultatet er endeligt.',
+    keep: { label: GAMBLE.keep, sub: countWord(c.k) },
+    double: { label: GAMBLE.double, sub: gambleSub('double', c.k) },
+    triple: { label: GAMBLE.triple, sub: gambleSub('triple', c.k) },
+    facts: GAMBLE_FACTS,
+    demoNote: c.demoN !== null ? gambleDemoNote(c.demoN) : null,
+    sr: storm ? `${countWord(c.k)} fra stormen ${pick}` : `Din nye terning ${pick}`,
+  };
+}
+/** The choice card: Behold (primary, focused first), Kvit eller dobbelt, 3 for 1. No timer and no countdown. */
+export function gambleCardHtml(c: GambleCardCtx): string {
+  const o = gambleOfferCopy(c);
+  const b = (act: string, x: { label: string; sub: string }, primary = false) =>
+    `<button class="btn small${primary ? '' : ' ghost'} g-opt" data-gamble="${act}"${primary ? ' data-primary' : ''}><span class="g-l">${x.label}</span><small class="g-s num">${x.sub}</small></button>`;
+  return `${o.demoNote ? `<div class="demo-note">${o.demoNote}</div>` : ''}
+    <h2>${o.eyebrow}</h2><div class="t" id="gcTitle">${o.title}</div><p class="g-body">${o.body}</p>
+    <div class="g-btns" role="group" aria-labelledby="gcTitle">${b('keep', o.keep, true)}${b('double', o.double)}${b('triple', o.triple)}</div>
+    <p class="facts">${o.facts}</p>`;
+}
+/** The six faces ⚀–⚅ with the winning ones of the bet marked (the odds stay visible; nothing moves toward a face). */
+const FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+export const faceGlyph = (pip: number) => FACES[pip - 1] ?? '';
+function facesRow(bet: GambleBet, pip: number | null): string {
+  const win = winPips(bet);
+  return `<div class="g-faces" aria-hidden="true">${ALL_PIPS.map((p) => `<span class="g-face${win.includes(p) ? ' win' : ''}${p === pip ? ' hit' : ''}">${faceGlyph(p)}</span>`).join('')}</div>`;
+}
+export function gambleThrowHtml(c: GambleCardCtx, bet: GambleBet): string {
+  return `${c.demoN !== null ? `<div class="demo-note">${gambleDemoNote(c.demoN)}</div>` : ''}
+    <h2>${gambleEyebrow(c)}</h2><div class="t">${GAMBLE[bet]}</div>
+    <div class="g-roll" aria-hidden="true"><span class="g-die"></span></div>
+    <p class="g-body">${GAMBLE_THROW}</p>${facesRow(bet, null)}`;
+}
+export interface GambleResultCtx extends GambleCardCtx { bet: GambleBet; pip: number; payout: number; count: number; restored: boolean }
+export function gambleResultCopy(c: GambleResultCtx) {
+  const lines = [
+    c.payout > 0 ? `${countWord(c.payout)} lægges i Terningekammeret.` : `${countWord(c.k)} er gået tabt.`,
+    c.demoN !== null ? `Dit antal er uændret (${fmtDice(c.demoN)}).` : `Du har ${countWord(c.count)}.`,
+  ];
+  const title = `Terningen viser ${c.pip}`;
+  return {
+    eyebrow: c.restored ? GAMBLE_RESTORED.eyebrow : gambleEyebrow(c),
+    title,
+    restored: c.restored ? GAMBLE_RESTORED.line : null,
+    lines,
+    sr: `${title}. ${lines.join(' ')}`,
+  };
+}
+export function gambleResultHtml(c: GambleResultCtx): string {
+  const o = gambleResultCopy(c);
+  return `${c.demoN !== null ? `<div class="demo-note">${gambleDemoNote(c.demoN)}</div>` : ''}
+    <h2>${o.eyebrow}</h2><div class="g-roll done" aria-hidden="true"><span class="g-pip">${faceGlyph(c.pip)}</span></div>
+    <div class="t">${o.title}</div>${o.restored ? `<p class="g-body">${o.restored}</p>` : ''}
+    ${o.lines.map((l) => `<p class="g-body">${l}</p>`).join('')}${facesRow(c.bet, c.pip)}`;
+}
+export const srGambleKeep = (k: number) => `${countWord(k)} er lagt i Terningekammeret.`;
+
+/** Rules (diceRulesHtml): "Kvit eller dobbelt". */
+export function gambleRulesP1(): string {
+  const d = GAMBLE_BETS.double.mult, t = GAMBLE_BETS.triple.mult;
+  return `Når et spin har givet en terning, vælger du én gang: Behold, Kvit eller dobbelt eller 3 for 1. Ved de to sidste kastes en almindelig terning: Kvit eller dobbelt giver ${d} terninger ved ${pipList(winPips('double'))} og ingen ved ${pipList(losePips('double'))}; 3 for 1 giver ${t} terninger ved ${pipList(winPips('triple'))} og ingen ved ${pipList(losePips('triple'))}. Der er ét valg pr. tildeling, og resultatet er endeligt. Efter en Solstorm gælder ét fælles valg for alle stormens terninger.`;
+}
+export function gambleRulesP2(): string {
+  return `Chancerne er fair: i gennemsnit giver alle tre valg præcis lige så mange terninger, som du satte på spil. Kun de nye terninger kan sættes på spil – aldrig dem i kammeret og aldrig penge. Kastet bruger spillets egen tilfældighedsgenerator og har sit eget ID. Din første terning beholdes altid, og mens alle ${G} fliser lyser, og porten ikke er åbnet, beholdes nye terninger altid.`;
+}
+export const GAMBLE_NUMBERS_NOTE = 'Tallene gælder, når terningerne beholdes. Kvit eller dobbelt ændrer ikke gennemsnittet, men gør antallet mere spredt.';

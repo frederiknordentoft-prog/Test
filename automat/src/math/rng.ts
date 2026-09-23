@@ -9,7 +9,8 @@
 //   s0..s3    = the next four splitmix32 outputs       ← every spin owns 4 disjoint stream outputs
 //   (all-zero state is impossible in practice; guarded by s0 = 1)
 //
-//   DOMAIN = { base: 0x42415345 'BASE', storm: 0x53544F52 'STOR', perk: 0x5045524B 'PERK', demo: 0x44454D4F 'DEMO' }
+//   DOMAIN = { base: 0x42415345 'BASE', storm: 0x53544F52 'STOR', perk: 0x5045524B 'PERK', demo: 0x44454D4F 'DEMO',
+//              gamble: 0x5445524E 'TERN' (Kvit eller dobbelt: one throw per idx, id letter 'T'; 'G' is the storm guarantee suffix) }
 //
 // Draw primitives (all integer-exact, platform independent):
 //   u32()   raw xoshiro128** output
@@ -25,17 +26,18 @@ export interface Rng {
   int(n: number): number; // [0,n)
 }
 
-export type Domain = 'base' | 'storm' | 'perk' | 'demo';
+export type Domain = 'base' | 'storm' | 'perk' | 'demo' | 'gamble';
 
 export const DOMAIN_CONST: Readonly<Record<Domain, number>> = {
   base: 0x42415345,
   storm: 0x53544f52,
   perk: 0x5045524b,
   demo: 0x44454d4f,
+  gamble: 0x5445524e,
 };
 
 /** Letter used in spin ids. */
-export const DOMAIN_LETTER: Readonly<Record<Domain, string>> = { base: 'B', storm: 'S', perk: 'P', demo: 'D' };
+export const DOMAIN_LETTER: Readonly<Record<Domain, string>> = { base: 'B', storm: 'S', perk: 'P', demo: 'D', gamble: 'T' };
 
 const GOLDEN = 0x9e3779b9;
 const TWO32 = 4294967296;
@@ -162,9 +164,9 @@ export function makeSpinId(sessionSeed: number, domain: Domain, idx: number): st
 
 /** Inverse of makeSpinId (null if malformed). */
 export function parseSpinId(id: string): { sessionSeed: number; domain: Domain; idx: number } | null {
-  const m = /^NL-([0-9a-f]{8})-([BSPD])(\d{6,})$/.exec(id);
+  const m = /^NL-([0-9a-f]{8})-([BSPDT])(\d{6,})$/.exec(id);
   if (!m) return null;
   const letter = m[2];
-  const domain: Domain = letter === 'B' ? 'base' : letter === 'S' ? 'storm' : letter === 'P' ? 'perk' : 'demo';
+  const domain: Domain = letter === 'B' ? 'base' : letter === 'S' ? 'storm' : letter === 'P' ? 'perk' : letter === 'T' ? 'gamble' : 'demo';
   return { sessionSeed: parseInt(m[1], 16) >>> 0, domain, idx: parseInt(m[3], 10) };
 }

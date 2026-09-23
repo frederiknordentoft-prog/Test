@@ -122,6 +122,8 @@ export class DieAward extends Container {
   private moreN = 0;
   private moving = 0;
   private dim = new Sprite(softDot());
+  /** The demo die held centre stage for the demo choice (demoHold → demoSettle). */
+  private demoDie: DieUnit | null = null;
 
   constructor(h: AwardHost) {
     super();
@@ -202,13 +204,27 @@ export class DieAward extends Container {
     gsap.to(d, { alpha: 0, duration: 0.25, onComplete: () => d.kill() });
   }
 
-  /** After the celebration: the flight to hud.diceTarget(); resolves after host.land(1, false). */
-  fly(): Promise<void> {
+  /** Kvit eller dobbelt lost: the born die (and its caption) dissolves where it is in 400 ms (no burst, no sting); the
+   *  award ends here without a landing. */
+  dissolve(): void {
     const a = this.cur;
-    if (!a || !a.die) { this.cur = null; this.h.land(1, false); return Promise.resolve(); }
+    this.cur = null;
+    const d = a?.die;
+    if (!d || d.destroyed) return;
+    d.tl?.kill(); d.tl = null;
+    gsap.killTweensOf([d.st, d]);
+    this.moving++;
+    gsap.to(d, { alpha: 0, duration: 0.4, onComplete: () => { this.moving--; d.kill(); } });
+  }
+
+  /** After the celebration: the flight to hud.diceTarget(); resolves after host.land(add, false) (`add` > 1: a bright,
+   *  merged die carries a Kvit eller dobbelt payout home). */
+  fly(add = 1): Promise<void> {
+    const a = this.cur;
+    if (!a || !a.die) { this.cur = null; this.h.land(add, false); return Promise.resolve(); }
     const d = a.die, calm = this.h.calm();
     return new Promise<void>((res) => {
-      const done = () => { this.cur = null; this.h.land(1, false); res(); };
+      const done = () => { this.cur = null; this.h.land(add, false); res(); };
       if (calm) {
         // calm: the die fades out in place (250 ms) while the chip crossfades its number
         a.fly = gsap.to(d, { alpha: 0, duration: a.fast ? 0.2 : 0.25, onComplete: () => { d.kill(); done(); } });
@@ -220,7 +236,7 @@ export class DieAward extends Container {
         a.go = null;
         wait?.kill();
         a.flying = true;
-        a.fly = this.flight(d, { dur: a.fast ? 0.3 : 0.6, spin: 1.25, onDone: done });
+        a.fly = this.flight(d, { dur: a.fast ? 0.3 : 0.6, spin: 1.25, bright: add > 1, onDone: done });
       };
       if (!wait) a.go();
     });
@@ -401,7 +417,8 @@ export class DieAward extends Container {
   // ---------------------------------------------------------------- demo award ("Vis en terning")
   /** Award-only: a soft local dim, the die born at the grid centre (same size, tumble, glint), "DEMO · TÆLLER IKKE",
    *  hold 1,3 s, the 600 ms flight; at the chip it dissolves and the amber "+1 demo" tag shows. Never counts. */
-  demo(): Promise<void> {
+  demo(o: { hold?: boolean } = {}): Promise<void> {
+    if (o.hold) return this.demoHold();
     this.front();
     const w = this.h.w, W = w.stage.w, s = Math.min(W, 700), calm = this.h.calm();
     const size = clamp(56, 0.16 * s, 104);
@@ -435,6 +452,54 @@ export class DieAward extends Container {
       tl.call(() => {
         this.flight(d, { dur: 0.6, spin: 1.25, dissolve: true, onDone: () => { this.h.hud.demoDiceTag(); gsap.delayedCall(0.4, () => { this.moving--; res(); }); } });
       }, [], go);
+    });
+  }
+
+  // ---------------------------------------------------------------- demo award with the choice ("Vis en terning med valg")
+  /** Birth like demo() (soft dim, tumble, "DEMO · TÆLLER IKKE"), but the die stays centre stage: the choice follows.
+   *  Resolves once it sits in its pose (≈ 0,55 s; calm 0,3 s). */
+  private demoHold(): Promise<void> {
+    this.front();
+    const w = this.h.w, W = w.stage.w, s = Math.min(W, 700), calm = this.h.calm();
+    const size = clamp(56, 0.16 * s, 104);
+    const r = w.gridRect;
+    this.dim.position.set(r.x + r.size / 2, r.y + r.size / 2);
+    this.dim.width = this.dim.height = r.size * 1.5;
+    gsap.to(this.dim, { alpha: 0.35, duration: 0.3 });
+    if (this.demoDie) { this.demoDie.kill(); this.moving--; } // (a hold never settled)
+    const d = new DieUnit(size, { caption: DEMO_CAPTION, capSize: Math.max(10, 0.024 * s), glint: !calm });
+    d.position.set(W / 2, w.gridCenterY());
+    this.addChild(d);
+    this.demoDie = d;
+    this.moving++;
+    return new Promise<void>((res) => {
+      if (calm) {
+        d.alpha = 0; Object.assign(d.st, { sc: 1, rot: 0, cap: 0.85 }); d.apply();
+        gsap.timeline().to(d, { alpha: 1, duration: 0.3 }, 0).call(res, [], 0.3);
+        return;
+      }
+      d.alpha = 0; Object.assign(d.st, { sc: 0.25, rot: -1.2, cap: 0 }); d.apply();
+      gsap.timeline().add(this.tumble(d), 0).to(d.st, { cap: 0.85, duration: 0.25, onUpdate: d.apply }, 0.45).call(res, [], 0.55);
+      this.sparkle(d.x, d.y, 8);
+    });
+  }
+  /** The demo choice is over: payout > 0 → the flight home, where the die dissolves and the "+N demo" tag shows;
+   *  0 → it dissolves where it is (no tag). The number never changes. */
+  demoSettle(payout: number): Promise<void> {
+    const d = this.demoDie;
+    this.demoDie = null;
+    gsap.to(this.dim, { alpha: 0, duration: 0.5 });
+    if (!d) return Promise.resolve();
+    if (d.destroyed) { this.moving--; return Promise.resolve(); }
+    const calm = this.h.calm();
+    return new Promise<void>((res) => {
+      const end = () => { this.moving--; res(); };
+      if (payout <= 0 || calm) {
+        gsap.to(d.st, { cap: 0, duration: 0.15, onUpdate: d.apply });
+        gsap.to(d, { alpha: 0, duration: payout <= 0 ? 0.4 : 0.25, onComplete: () => { d.kill(); if (payout > 0) this.h.hud.demoDiceTag(payout); end(); } });
+        return;
+      }
+      this.flight(d, { dur: 0.6, spin: 1.25, bright: payout > 1, dissolve: true, onDone: () => { this.h.hud.demoDiceTag(payout); gsap.delayedCall(0.4, end); } });
     });
   }
 }

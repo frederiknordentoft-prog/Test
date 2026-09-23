@@ -1,7 +1,7 @@
 // Game store + persistence (localStorage 'nordlys.v1', in-memory fallback with a visible banner).
 // Terningen lives in its own key 'terningen.v1' (platform level, never expires, outside the 365-day meter path).
 import type { MeterState } from '../math/meter.ts';
-import { diceDefaults, type DiceStore } from './dice.ts';
+import { diceDefaults, type DiceStore, type PendingGamble } from './dice.ts';
 
 export interface HistoryEntry {
   spinId: string;
@@ -36,6 +36,7 @@ export interface Settings {
   calm: 'auto' | 'on' | 'off'; // 'auto' follows prefers-reduced-motion
   musicSource: 'polar' | 'code'; // base bed: the Polar Night recording or the procedural pad
   dice: boolean;            // "Vis terninger i spillet" (off: no chip, no award animation, no cards; dice still count)
+  gambleOffers: boolean;    // "Tilbyd Kvit eller dobbelt" (off: new dice are always kept, nothing is asked)
 }
 
 export interface Stats {
@@ -52,7 +53,7 @@ export interface SaveData {
   meter: MeterState;
   perksPending: number;
   sessionSeed: number;
-  counters: { base: number; storm: number; perk: number; demo: number };
+  counters: { base: number; storm: number; perk: number; demo: number; gamble: number };
   history: HistoryEntry[];
   settings: Settings;
   stats: Stats;
@@ -78,9 +79,9 @@ export function defaults(seed: number, stakeOre: number): SaveData {
     meter: { charge: 0, stakeSumOre: 0 },
     perksPending: 0,
     sessionSeed: seed,
-    counters: { base: 0, storm: 0, perk: 0, demo: 0 },
+    counters: { base: 0, storm: 0, perk: 0, demo: 0, gamble: 0 },
     history: [],
-    settings: { music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar', dice: true },
+    settings: { music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar', dice: true, gambleOffers: true },
     stats: { spins: 0, storms: 0, bestWinX: 0, highestKp: 0 },
     activeStorm: null,
     lastPlayed: Date.now(),
@@ -129,7 +130,19 @@ export function wipe(): void {
 // ---------------------------------------------------------------- Terningen ('terningen.v1')
 export const DICE_KEY = 'terningen.v1';
 
-/** Never expires. Missing key, another version or a parse error → defaults (an exception also clears storageOk). */
+/** An open choice that the count cannot hold is dropped (open: its stake is counted; settled: its payout is). */
+function validGamble(g: PendingGamble | null | undefined, count: number): boolean {
+  if (!g || typeof g !== 'object' || typeof g.id !== 'string' || (g.source !== 'spin' && g.source !== 'storm')) return false;
+  if (!Number.isInteger(g.stake) || g.stake < 1) return false;
+  const st = g.settled;
+  if (!st) return g.stake <= count;
+  const mult = st.choice === 'double' ? 2 : st.choice === 'triple' ? 3 : 0;
+  return mult > 0 && Number.isInteger(st.face) && st.face >= 0 && st.face < 6 && typeof st.gid === 'string'
+    && (st.payout === 0 || st.payout === g.stake * mult) && st.payout <= count;
+}
+
+/** Never expires. Missing key, another version or a parse error → defaults (an exception also clears storageOk).
+ *  v1 stays v1: the spread fills in fields added later (gamble, gambleLog); malformed ones are sanitised. */
 export function loadDice(seed: number): DiceStore {
   const d = diceDefaults(seed);
   try {
@@ -137,7 +150,10 @@ export function loadDice(seed: number): DiceStore {
     if (!raw) return d;
     const s = JSON.parse(raw) as DiceStore;
     if (!s || s.v !== 1) return d;
-    return { ...d, ...s };
+    const r = { ...d, ...s };
+    if (!validGamble(r.gamble, r.count)) r.gamble = null;
+    if (!Array.isArray(r.gambleLog)) r.gambleLog = [];
+    return r;
   } catch {
     storageOk = false;
     return d;

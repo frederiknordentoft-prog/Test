@@ -10,13 +10,21 @@ import {
   helloCopy, helloHtml, firstDieCopy, firstDieDemoNote, firstDieHtml, unlockCardCopy, unlockCardHtml, CHAMBER, GATE_LABELS,
   chamberMyth, chamberFacts, chamberSummary, chamberRibbon, gateState, ceremonyEyebrow, srCeremonyStart, SR_CEREMONY_END, demoGateBanner,
   placardCopy, placardHtml, MENU, DRAWER, diceRulesHtml, type CeremonyKind, type GateState,
+  demoTag, GAMBLE, GAMBLE_FACTS, GAMBLE_FIRST_DIE, GAMBLE_THROW, GAMBLE_RESTORED, GAMBLE_NUMBERS_NOTE, DEMO_GAMBLE_BANNER, DEMO_PILL,
+  gambleDemoNote, demoGambleDone, gambleSub, pipList, gambleOfferCopy, gambleCardHtml, gambleThrowHtml, gambleResultCopy, gambleResultHtml,
+  srGambleKeep, gambleRulesP1, gambleRulesP2, faceGlyph, type GambleCardCtx,
 } from '../src/ui/diceCopy.ts';
+import { AUTO, AUTO_STOPS } from '../src/ui/autoCopy.ts';
+import { autoLimits, AUTO_COUNTS } from '../src/game/auto.ts';
+import { winPips, GAMBLE_BETS, resolveGamble } from '../src/math/gamble.ts';
 
 const COUNTS = [0, 1, 2, 37, 1947, 1948, 2011];
 const UNLOCKS: DiceView['unlock'][] = ['none', 'pending', 'seen'];
 const STATES: GateState[] = ['sealed', 'pending', 'open'];
 const KINDS: CeremonyKind[] = ['real', 'demo', 'replay'];
 const BANNED = /snart|tæt på|næsten|mangler|skynd|i dag|sidste chance|gå ikke glip|spil videre|spil mere|vinde mere|bedre chancer|højere gevinst|bonus|gratis|jackpot|garant|vundet|optjen|købt|kun\s+\S+\s+tilbage|\d+\s+(tilbage|mere)|\baf 1948\b|\/\s?1948/i;
+/** Kvit eller dobbelt and autospin copy only: no luck, no "again", no safety claim, no gate and no year. */
+const EXTRA = /prøv igen|en gang til|næste gang|denne gang|heldig|lykke|risikofri|sikker|\bvind\b|1948|porten|Automat/i;
 const text = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ').trim();
 const values = (o: object): string[] => Object.values(o).flatMap((v) => (typeof v === 'string' ? [v] : v && typeof v === 'object' ? values(v) : []));
 
@@ -29,7 +37,8 @@ function nonRulesCopy(): { where: string; s: string }[] {
   add('firstDie', ...values(firstDieCopy()), text(firstDieHtml(null)));
   add('chamber', ...values(CHAMBER), ...values(GATE_LABELS), ...chamberFacts());
   add('menu', MENU.tab, MENU.open, MENU.kpHint, MENU.histIntro, MENU.histMark, MENU.rgLine, MENU.setting, MENU.settingHint, MENU.storage);
-  add('drawer', DRAWER.h, DRAWER.die, DRAWER.first, DRAWER.gate, DRAWER.segLabel, DRAWER.segAria, DRAWER.warn, text(DRAWER.hintHtml), ...values(DRAWER.resetBanner('1.000,00 kr')));
+  add('firstDie', GAMBLE_FIRST_DIE);
+  add('drawer', DRAWER.gamble, DRAWER.h, DRAWER.die, DRAWER.first, DRAWER.gate, DRAWER.segLabel, DRAWER.segAria, DRAWER.warn, text(DRAWER.hintHtml), ...values(DRAWER.resetBanner('1.000,00 kr')));
   for (const n of PREVIEW_STEPS) add('drawer', DRAWER.seg(n));
   for (const st of STATES) for (const c of [false, true]) add(`myth ${st}`, ...chamberMyth(st, c).map((l) => l.t));
   for (const n of COUNTS) {
@@ -41,6 +50,41 @@ function nonRulesCopy(): { where: string; s: string }[] {
     for (const N of PREVIEW_STEPS) for (const k of ['preview', 'demo', 'replay'] as const) add(`ribbon ${k} ${N}`, chamberRibbon(k, N, n));
     for (const k of KINDS) add(`ceremony ${k} ${n}`, ceremonyEyebrow(k, n), srCeremonyStart(k, n));
   }
+  out.push(...gambleCopy(COUNTS), ...autoCopy());
+  return out;
+}
+const GK = [1, 2, 3, 7, 20];
+/** Every Kvit eller dobbelt string: k ∈ GK, spin and storm, real and demo, every pip × bet, restored or not. */
+function gambleCopy(counts: number[]): { where: string; s: string }[] {
+  const out: { where: string; s: string }[] = [];
+  const add = (where: string, ...ss: (string | null | undefined)[]) => { for (const s of ss) if (s) out.push({ where, s }); };
+  add('gamble', ...values(GAMBLE), GAMBLE_FACTS, GAMBLE_THROW, ...values(GAMBLE_RESTORED), ...values(DEMO_GAMBLE_BANNER), ...values(DEMO_PILL), DRAWER.gamble, MENU.gambleSetting, MENU.gambleHint);
+  for (const n of counts) {
+    add(`gamble n ${n}`, gambleDemoNote(n), ...values(demoGambleDone(n)), demoTag(n));
+    for (const k of GK) for (const source of ['spin', 'storm'] as const) for (const demoN of [null, n]) {
+      const c: GambleCardCtx = { source, k, n, demoN };
+      const w = `gamble ${source} k${k} n${n}${demoN === null ? '' : ' demo'}`;
+      add(w, ...values(gambleOfferCopy(c)), text(gambleCardHtml(c)), srGambleKeep(k));
+      for (const bet of ['double', 'triple'] as const) {
+        add(w, gambleSub(bet, k), text(gambleThrowHtml(c, bet)));
+        for (let pip = 1; pip <= 6; pip++) for (const restored of [false, true]) {
+          const payout = resolveGamble(bet, k, pip - 1).payout;
+          const r = { ...c, bet, pip, payout, count: n + payout, restored };
+          add(`${w} ${bet} ${pip}${restored ? ' restored' : ''}`, ...values(gambleResultCopy(r)), text(gambleResultHtml(r)));
+        }
+      }
+    }
+  }
+  return out;
+}
+/** Every autospin string (stop reasons, captions, limits for every count and stake). */
+function autoCopy(): { where: string; s: string }[] {
+  const out: { where: string; s: string }[] = [];
+  const add = (where: string, ...ss: string[]) => { for (const s of ss) out.push({ where, s }); };
+  add('auto', AUTO.title, AUTO.pill, AUTO.pillAria, AUTO.spinsLabel, AUTO.limitLabel, AUTO.start, AUTO.close);
+  for (const r of AUTO_STOPS) for (const [n, net] of [[10, -2000], [25, 0], [3, 4520]]) add(`auto stop ${r}`, AUTO.stop(r), AUTO.summary(n, net), AUTO.sr(r, n, net));
+  for (const left of [0, 1, 9, 12, 99]) add(`auto left ${left}`, AUTO.stopCap(left), AUTO.stopAria(left));
+  for (const st of CONFIG.stakesOre) for (const n of AUTO_COUNTS) { add(`auto count ${n}`, AUTO.count(n)); for (const l of autoLimits(st, n)) add(`auto limit ${st}`, AUTO.limitHint(l)); }
   return out;
 }
 /** The placard for every kind/count/flag, without the sanctioned sentence (the only place it may stand besides the rules). */
@@ -58,6 +102,18 @@ describe('copy-lint (no pressure, no promise, no goal gradient)', () => {
     const all = [...nonRulesCopy(), ...placardCopyAll()];
     expect(all.length).toBeGreaterThan(500);
     for (const { where, s } of all) expect(BANNED.test(s), `${where}: ${s}`).toBe(false);
+  });
+  it('the extra lint holds for every Kvit eller dobbelt and autospin string (the player\'s own count aside)', () => {
+    // counts other than 1948 itself: "Du har 1948 terninger." is the player's count, not the gate (the general lint
+    // above runs over 1948 too)
+    const all = [...gambleCopy([0, 1, 2, 37, 1947, 2011]), ...autoCopy()];
+    expect(all.length).toBeGreaterThan(2000);
+    for (const { where, s } of all) {
+      expect(EXTRA.test(s), `${where}: ${s}`).toBe(false);
+      expect(BANNED.test(s), `${where}: ${s}`).toBe(false);
+    }
+    // the demo buttons never say "Vind"
+    for (const s of [DRAWER.gamble, DEMO_PILL.die, DEMO_PILL.dieAria]) expect(/vind/i.test(s)).toBe(false);
   });
   it("'tilbagebetaling' and 'betaler' never appear outside the rules and the placard", () => {
     for (const { where, s } of nonRulesCopy()) expect(/tilbagebetaling|betaler/i.test(s), `${where}: ${s}`).toBe(false);
@@ -175,5 +231,70 @@ describe('captions, myth and layout classes', () => {
       if (clause) expect(claim).toContain(`${PAYBACK_SENTENCE} ${NOT_AN_OFFER}`);
       expect(body).not.toMatch(/tilbagebetaling|ikke et tilbud/);
     }
+  });
+});
+
+describe('Kvit eller dobbelt: the card', () => {
+  const ctx = (o: Partial<GambleCardCtx> = {}): GambleCardCtx => ({ source: 'spin', k: 1, n: 38, demoN: null, ...o });
+  it('buttons in the order Behold, Kvit eller dobbelt, 3 for 1; data-primary on Behold only; no timer, no countdown', () => {
+    for (const k of GK) for (const source of ['spin', 'storm'] as const) for (const demoN of [null, 12]) {
+      const html = gambleCardHtml(ctx({ k, source, demoN }));
+      const acts = [...html.matchAll(/data-gamble="([a-z]+)"/g)].map((m) => m[1]);
+      expect(acts).toEqual(['keep', 'double', 'triple']);
+      const btns = html.match(/<button[^>]*>/g)!;
+      expect(btns.length).toBe(3);
+      expect(btns.filter((b) => b.includes('data-primary')).length).toBe(1);
+      expect(btns[0]).toContain('data-primary');
+      expect(html).not.toMatch(/countdown|timer|progress|data-t=|sekund|\d+\s?s\b/i);
+      expect(text(html)).toContain(GAMBLE_FACTS);
+      if (demoN !== null) expect(html.indexOf('demo-note')).toBeLessThan(html.indexOf('<h2>'));
+    }
+  });
+  it('the sub-lines are built from winPips and countWord (never typed)', () => {
+    expect(pipList([4, 5, 6])).toBe('4, 5 eller 6');
+    expect(pipList([5, 6])).toBe('5 eller 6');
+    expect(pipList([1, 2, 3, 4])).toBe('1–4');
+    expect(pipList([1, 2, 3])).toBe('1, 2 eller 3');
+    for (const k of GK) {
+      const o = gambleOfferCopy(ctx({ k }));
+      expect(o.keep).toEqual({ label: 'Behold', sub: countWord(k) });
+      expect(o.double).toEqual({ label: 'Kvit eller dobbelt', sub: `${pipList(winPips('double'))}: ${countWord(2 * k)} · 1, 2 eller 3: ingen` });
+      expect(o.triple).toEqual({ label: '3 for 1', sub: `${pipList(winPips('triple'))}: ${countWord(3 * k)} · 1–4: ingen` });
+      const html = gambleCardHtml(ctx({ k }));
+      for (const x of [o.keep, o.double, o.triple]) expect(html).toContain(`<small class="g-s num">${x.sub}</small>`);
+    }
+    expect(gambleSub('double', 1)).toBe('4, 5 eller 6: 2 terninger · 1, 2 eller 3: ingen');
+    expect(gambleSub('triple', 7)).toBe('5 eller 6: 21 terninger · 1–4: ingen');
+    expect(GAMBLE_BETS.double.mult).toBe(2);
+  });
+  it('spin / storm / demo titles, eyebrows and the screen-reader offer', () => {
+    expect(gambleOfferCopy(ctx({ n: 38 }))).toMatchObject({ eyebrow: 'TERNING NR. 38', title: 'Din nye terning', body: 'Du vælger én gang. Resultatet er endeligt.' });
+    expect(gambleOfferCopy(ctx({ source: 'storm', k: 3 }))).toMatchObject({ eyebrow: 'TERNINGER FRA STORMEN', title: '3 terninger fra stormen', body: 'Du vælger én gang for dem alle. Resultatet er endeligt.' });
+    expect(gambleOfferCopy(ctx({ demoN: 5 })).eyebrow).toBe('DEMO · TÆLLER IKKE');
+    expect(gambleOfferCopy(ctx()).sr).toBe('Din nye terning venter på dit valg: Behold, Kvit eller dobbelt eller 3 for 1. Behold er valgt på forhånd.');
+    expect(gambleOfferCopy(ctx({ source: 'storm', k: 4 })).sr).toMatch(/^4 terninger fra stormen venter på dit valg/);
+    expect(gambleDemoNote(12)).toBe('DEMO · Sådan fungerer valget · tæller ikke · dit antal er uændret (12)');
+  });
+  it('result lines: the pip, the dice laid down or lost, the count (demo: unchanged); restored says it stands', () => {
+    const r = (o: object) => gambleResultCopy({ ...ctx(), bet: 'double', pip: 5, payout: 2, count: 40, restored: false, ...o });
+    expect(r({}).lines).toEqual(['2 terninger lægges i Terningekammeret.', 'Du har 40 terninger.']);
+    expect(r({}).title).toBe('Terningen viser 5');
+    expect(r({ pip: 2, payout: 0, count: 38 }).lines).toEqual(['1 terning er gået tabt.', 'Du har 38 terninger.']);
+    expect(r({ demoN: 7 }).lines[1]).toBe('Dit antal er uændret (7).');
+    expect(r({ restored: true })).toMatchObject({ eyebrow: 'RESULTATET AF DIT VALG', restored: 'Valget blev truffet før genindlæsningen. Resultatet står fast.' });
+    expect(text(gambleResultHtml({ ...ctx(), bet: 'triple', pip: 6, payout: 3, count: 41, restored: false }))).toContain(faceGlyph(6));
+    expect(srGambleKeep(1)).toBe('1 terning er lagt i Terningekammeret.');
+    expect(GAMBLE_THROW).toBe('Terningen kastes …');
+  });
+  it('the rules: one choice per award, fair odds, only new dice, pips from winPips; the numbers note', () => {
+    const rules = diceRulesHtml();
+    expect(rules).toContain('<h4>Kvit eller dobbelt</h4>');
+    expect(gambleRulesP1()).toContain('Kvit eller dobbelt giver 2 terninger ved 4, 5 eller 6 og ingen ved 1, 2 eller 3; 3 for 1 giver 3 terninger ved 5 eller 6 og ingen ved 1–4.');
+    expect(gambleRulesP2()).toContain('Chancerne er fair');
+    expect(gambleRulesP2()).toContain('aldrig dem i kammeret og aldrig penge');
+    for (const p of [gambleRulesP1(), gambleRulesP2(), GAMBLE_NUMBERS_NOTE]) expect(rules).toContain(p);
+    expect(firstDieHtml(null)).toContain(GAMBLE_FIRST_DIE);
+    expect(MENU.gambleSetting).toBe('Tilbyd Kvit eller dobbelt');
+    expect(demoTag(2)).toBe('+2 demo');
   });
 });

@@ -80,9 +80,113 @@ describe('Terningen boundaries', () => {
   });
 
   it('demo tools and demo spins have no path to awardDie', () => {
-    for (const m of ['demo', 'demoSuns', 'demoDie', 'demoFirstDie', 'openChamber', 'runCeremony', 'demoReset']) expect(method(GAME, m).body.includes('awardDie'), m).toBe(false);
+    for (const m of ['demo', 'demoSuns', 'demoDie', 'demoFirstDie', 'demoGamble', 'openChamber', 'runCeremony', 'demoReset']) expect(method(GAME, m).body.includes('awardDie'), m).toBe(false);
     const q = method(GAME, 'debug').body;
     expect(q.includes('awardDie') || q.includes('addDie')).toBe(false);
+  });
+
+  it('demo tools and debug never reach the gamble mutators or their callers', () => {
+    for (const m of ['demo', 'demoSuns', 'demoDie', 'demoFirstDie', 'demoGamble', 'demoThrow', 'openChamber', 'runCeremony', 'demoReset', 'debug']) {
+      const b = method(GAME, m).body;
+      for (const n of ['settleGamble', 'openGamble', 'commitGamble', 'offerDice', 'clearSettled']) expect(b.includes(n), `${m} → ${n}`).toBe(false);
+    }
+  });
+
+  it('settleGamble( is called once, inside commitGamble (demo guard first, persisted in the same call); the gamble counter moves only there', () => {
+    for (const f of SRC) {
+      if (f.endsWith(join('game', 'dice.ts')) || f.endsWith(join('game', 'Game.ts'))) continue;
+      expect(read(f).includes('settleGamble('), f).toBe(false);
+    }
+    const at = positions(GAME, 'settleGamble(');
+    expect(at.length).toBe(1);
+    const commit = method(GAME, 'commitGamble');
+    expect(within(at[0], commit)).toBe(true);
+    expect(commit.body).toMatch(/if \(this\.demoMode \|\| !this\.dice\.gamble \|\| this\.dice\.gamble\.settled\) return null;[\s\S]*settleGamble\([\s\S]*this\.persist\(\)/);
+    const inc = positions(GAME, '++this.s.counters.gamble');
+    expect(inc.length).toBe(1);
+    expect(within(inc[0], commit)).toBe(true);
+    // the face comes from the 'gamble' domain, drawn in the same call
+    expect(commit.body).toMatch(/gambleFace\(spinRng\(this\.s\.sessionSeed, 'gamble', idx\)\)/);
+    // clearSettled( only after the result was shown (finishGamble, which returns in demo mode)
+    const cs = positions(GAME, 'clearSettled(');
+    expect(cs.length).toBe(1);
+    const fin = method(GAME, 'finishGamble');
+    expect(within(cs[0], fin)).toBe(true);
+    expect(fin.body).toMatch(/if \(this\.demoMode\) return;[\s\S]*clearSettled\(/);
+  });
+
+  it('the count is written only by addDie and settleGamble (dice.ts), or by the QA hook in debug', () => {
+    const W = /\bdice\.count\s*(?:[-+*/]?=(?!=)|\+\+|--)|\bd\.count\s*(?:[-+*/]?=(?!=)|\+\+|--)/g;
+    for (const f of SRC) {
+      const src = read(f);
+      const hits = [...src.matchAll(W)].map((m) => m.index ?? 0);
+      if (f.endsWith(join('game', 'dice.ts'))) {
+        // an exported function's body: the first '{' that ends its signature line (return types may hold braces)
+        const fn = (name: string) => block(src, src.indexOf(' {\n', src.indexOf(`export function ${name}(`)));
+        const ok = [fn('addDie'), fn('settleGamble')];
+        expect(hits.length).toBe(2);
+        for (const h of hits) expect(ok.some((b) => within(h, b)), `dice.ts write at ${h}`).toBe(true);
+      } else if (f.endsWith(join('game', 'Game.ts'))) {
+        const dbg = method(GAME, 'debug');
+        for (const h of hits) expect(within(h, dbg), `Game.ts write outside debug at ${h}`).toBe(true);
+      } else expect(hits.length, f).toBe(0);
+    }
+  });
+
+  it('openGamble( appears once, inside offerDice (demo + canOffer guard first); offerDice is called exactly twice, before the commit persist', () => {
+    for (const f of SRC) {
+      if (f.endsWith(join('game', 'dice.ts')) || f.endsWith(join('game', 'Game.ts'))) continue;
+      expect(read(f).includes('openGamble('), f).toBe(false);
+    }
+    const at = positions(GAME, 'openGamble(');
+    expect(at.length).toBe(1);
+    const offer = method(GAME, 'offerDice');
+    expect(within(at[0], offer)).toBe(true);
+    expect(offer.body.replace(/^\{\s*/, '')).toMatch(/^if \(this\.demoMode \|\| !canOffer\(/);
+    const calls = positions(GAME, 'this.offerDice(');
+    expect(calls.length).toBe(2);
+    // spin(): between this.awardDie(r) and this.persist() (the offer is committed with the spin)
+    const spin = method(GAME, 'spin');
+    const inSpin = calls.filter((p) => within(p, spin));
+    expect(inSpin.length).toBe(1);
+    expect(GAME.indexOf('this.awardDie(r)', spin.start)).toBeLessThan(inSpin[0]);
+    expect(inSpin[0]).toBeLessThan(GAME.indexOf('this.persist()', spin.start));
+    // runStorm: the finish block that clears activeStorm, before its persist()
+    const storm = method(GAME, 'runStorm');
+    const inStorm = calls.filter((p) => within(p, storm));
+    expect(inStorm.length).toBe(1);
+    const clear = GAME.indexOf('this.s.activeStorm = null', storm.start);
+    const fin = block(GAME, GAME.lastIndexOf('if (!demo) {', clear));
+    expect(within(clear, fin) && within(inStorm[0], fin)).toBe(true);
+    expect(clear).toBeLessThan(inStorm[0]);
+    expect(inStorm[0]).toBeLessThan(fin.body.indexOf('this.persist()') + fin.start);
+  });
+
+  it('the choice is committed before the reveal: commitGamble before pick(res), the awaited pick before gambleThrow(', () => {
+    const act = method(GAME, 'gambleAct').body;
+    expect(act.indexOf('commitGamble(')).toBeGreaterThan(0);
+    expect(act.indexOf('commitGamble(')).toBeLessThan(act.indexOf('pick(res)'));
+    const run = method(GAME, 'runGamble').body;
+    expect(run.indexOf('run.pick = r')).toBeGreaterThan(0);
+    expect(run.indexOf('run.pick = r')).toBeLessThan(run.indexOf('gambleThrow('));
+    // the reveal waits for T.floor as well as for the presentation
+    expect(run).toMatch(/Promise\.all\(\[wait\(T\.floor\), this\.award\.gambleThrow\(/);
+    // SPIN / Space / Enter mean Behold only
+    expect(method(GAME, 'gambleKey').body).toMatch(/this\.gambleAct\('keep'\)/);
+    expect(method(GAME, 'gambleKey').body).not.toMatch(/double|triple/);
+  });
+
+  it('autospin: the balance stop comes before this.refill() in spin(); autoContinue only ever calls this.spin()', () => {
+    const sb = method(GAME, 'spin').body;
+    const stop = sb.indexOf("if (this.auto) { this.stopAuto('balance'); return; }");
+    expect(stop).toBeGreaterThan(0);
+    expect(stop).toBeLessThan(sb.indexOf('this.refill()'));
+    const ac = method(GAME, 'autoContinue').body;
+    expect(ac).toContain('this.spin()');
+    expect(/presentSpin|timeScale|clock\.scale|\.scale\s*=/.test(ac)).toBe(false);
+    expect(/timeScale|clock\.scale/.test(method(GAME, 'startAuto').body)).toBe(false);
+    // autospin never refills
+    expect(method(GAME, 'refill').body).toMatch(/\|\| this\.auto\) return;/);
   });
 
   it('saveDice( appears only in store.ts and Game.persist (one write, same task as save())', () => {
@@ -123,7 +227,7 @@ describe('Terningen boundaries', () => {
       const src = read(f);
       for (const m of src.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+'([^']*game\/dice(?:\.ts)?)'/g)) {
         const names = m[1].split(',').map((s) => s.replace(/\btype\b/, '').trim()).filter(Boolean);
-        for (const n of names) expect(['addDie', 'diceDefaults', 'DiceStore', 'diceFor', 'realDiceView'].includes(n), `${f} imports ${n}`).toBe(false);
+        for (const n of names) expect(['addDie', 'diceDefaults', 'DiceStore', 'diceFor', 'realDiceView', 'openGamble', 'settleGamble', 'clearSettled', 'cloneDice', 'canOffer', 'stagedOf'].includes(n), `${f} imports ${n}`).toBe(false);
       }
       expect(/\b(loadDice|saveDice|wipeDice|DICE_KEY)\b/.test(src), `${f} touches dice persistence`).toBe(false);
       expect(/terningen\.v1/.test(src), `${f} names the dice key`).toBe(false);

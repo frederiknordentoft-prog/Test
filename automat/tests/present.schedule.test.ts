@@ -72,6 +72,8 @@ describe('schedule', () => {
       const src = readFileSync(f, 'utf8');
       expect(src.includes('math/rng'), f).toBe(false);
       expect(/Math\.random\(/.test(src) && !f.includes('cosmeticRng'), f).toBe(false);
+      // Kvit eller dobbelt: presentation shows a committed face, it never draws or resolves one
+      expect(/gambleFace\(|resolveGamble\(/.test(src), f).toBe(false);
     }
   });
 });

@@ -1,7 +1,8 @@
 // Game controller: state machine, money, meter, storms, demo. Presentation is delegated.
 import { gsap } from 'gsap';
 import { Container, Graphics, Text } from 'pixi.js';
-import { spinRng, newSessionSeed } from '../math/rng.ts';
+import { spinRng, newSessionSeed, makeSpinId } from '../math/rng.ts';
+import { gambleFace, resolveGamble, type GambleBet } from '../math/gamble.ts';
 import { spinBase } from '../math/engine.ts';
 import { createStorm, stormSpin, finishStorm, type StormState } from '../math/storm.ts';
 import { kpOf, lockedStakeOre, addCharge, resetMeter } from '../math/meter.ts';
@@ -10,18 +11,25 @@ import type { SpinResult, Sym } from '../math/types.ts';
 import { TIERS, kpFromCharge } from './tiers.ts';
 import { bus } from './bus.ts';
 import { welcomeCopy } from '../ui/welcome.ts';
-import { DICE_GOAL, diceFor, addDie, diceDefaults, realDiceView, previewDiceView, type DiceStore, type DiceView, type PreviewStep } from './dice.ts';
+import {
+  DICE_GOAL, diceFor, addDie, diceDefaults, realDiceView, previewDiceView, canOffer, openGamble, settleGamble, clearSettled, cloneDice, stagedOf,
+  type DiceStore, type DiceView, type PreviewStep, type GambleChoice,
+} from './dice.ts';
+import { AUTO_GAP, autoStopReason, validAuto, type AutoRun, type AutoStop } from './auto.ts';
 import { loadDice, saveDice, wipeDice, load, save, defaults, wipe, setPersistenceEnabled, storageOk, expiredOnLoad, START_BALANCE_ORE, type SaveData, type HistoryEntry } from './store.ts';
 import { presentSpin, idleGrid, type PresentCtx } from '../present/director.ts';
-import { profileOf, winTier } from '../present/schedule.ts';
+import { profileOf, winTier, T, GAMBLE_T } from '../present/schedule.ts';
 import { Celebration } from '../present/celebration.ts';
 import { playSolstormIntro, type CineWorld, type CineHandle } from '../present/cinematics/solstorm.ts';
-import { PixiDicePresenter, type DicePresenter, type CeremonyHandle, type Pt } from '../present/dicePresenter.ts';
+import { PixiDicePresenter, type DicePresenter, type CeremonyHandle, type Pt, type GambleFrom } from '../present/dicePresenter.ts';
 import { wait, clock } from '../present/clock.ts';
 import {
   MENU, DRAWER, DEMO_STORM_NOTE, DEMO_DIE_BANNER, SR_CEREMONY_END, srAward, srStormPop, srStormOutro, stormSummaryRow, helloHtml, helloCopy,
   firstDieHtml, firstDieCopy, unlockCardHtml, placardHtml, chamberRibbon, srCeremonyStart, demoGateBanner, type CeremonyKind, type RibbonKind,
+  gambleCardHtml, gambleOfferCopy, gambleThrowHtml, gambleResultHtml, gambleResultCopy, srGambleKeep, GAMBLE_THROW, DEMO_GAMBLE_BANNER, demoGambleDone,
+  type GambleCardCtx,
 } from '../ui/diceCopy.ts';
+import { AUTO } from '../ui/autoCopy.ts';
 import { fmtKr, fmtSignedKr, fmt1, fmtX, fmtInt } from '../core/format.ts';
 import { PAL } from '../core/palette.ts';
 import { crand, crange } from '../core/cosmeticRng.ts';
@@ -32,20 +40,39 @@ export type GameState =
   | 'boot' | 'splash' | 'intro' | 'idle' | 'spinning' | 'celebrating'
   | 'stormTransition' | 'stormReady' | 'stormSpinning' | 'stormSummary' | 'stormOutro' | 'demoLapse'
   // Terningen: the chamber is a resting state; the others lock the stake and ignore 'spin' (see dispatch)
-  | 'chamber' | 'ceremony' | 'diceCard' | 'demoDie';
+  | 'chamber' | 'ceremony' | 'diceCard' | 'demoDie'
+  // Kvit eller dobbelt: the choice card, then the throw and its result (neither is a resting state)
+  | 'gambleOffer' | 'gambleReveal';
 
 type StormSource = 'A' | 'B' | 'AB' | 'demo';
 /** The open Terningen card (#summary): the real first-die card, its demo twin, or the real 1948 card. */
 type DiceCard = { kind: 'firstDie' | 'firstDemo' | 'unlock'; at: number };
+type GambleResult = { choice: GambleChoice; pip: number; payout: number };
+/** The running Kvit eller dobbelt (one at a time). phase: 'offer' (the card waits for the pick), 'throw' (≥ T.floor),
+ *  'result' (the hold), 'settle' (the dice go home). `at` = when the card appeared (game time: the arming). */
+type GambleRun = {
+  demo: boolean; from: GambleFrom; k: number; source: 'spin' | 'storm'; n: number;
+  phase: 'offer' | 'throw' | 'result' | 'settle'; at: number;
+  bet: GambleBet | null; pip: number; payout: number;
+  pick: ((r: GambleResult) => void) | null;
+  skip: (() => void) | null;
+};
 
 export class Game {
   state: GameState = 'boot';
   s: SaveData;
   /** Terningen: a separate, never-expiring store ('terningen.v1'). Only the award rule (awardDie) adds a die. */
   private dice: DiceStore;
-  /** What the chip shows (lags the model until a die lands) and the storm dice waiting on the molten frame. */
+  /** What the chip shows (lags the model until a die lands), the storm dice waiting on the molten frame and the dice
+   *  counted but not yet home (a spin's die in the air, an open choice's stake, or its payout until it lands). */
   private shownDice = 0;
   private heldDice = 0;
+  private stagedDice = 0;
+  private gambleRun: GambleRun | null = null;
+  /** Autospin: memory only (never resumes after a reload). startNet: the session net at the start (the summary never
+   *  counts a result before it is shown). */
+  private auto: (AutoRun & { timer: gsap.core.Tween | null; startNet: number }) | null = null;
+  private autoLast: AutoStop | null = null; // QA
   private award: DicePresenter;
   hud: Hud;
   w: World;
@@ -71,9 +98,11 @@ export class Game {
     this.w = w;
     this.s = load(newSessionSeed(), CONFIG.defaultStakeOre);
     this.dice = loadDice(newSessionSeed());
-    // An interrupted storm's dice are still held on its frame (rebuilt on resume); the chip shows the rest.
+    // An interrupted storm's dice are still held on its frame (rebuilt on resume), an open choice's dice are staged
+    // (its stake, or its settled payout); the chip shows the rest.
     this.heldDice = this.s.activeStorm?.diceAwarded ?? 0;
-    this.shownDice = Math.max(0, this.dice.count - this.heldDice);
+    this.stagedDice = stagedOf(this.dice);
+    this.shownDice = this.chipDice();
     this.award = new PixiDicePresenter({
       hud, w, calm: () => this.calm(), haptic: (p) => this.haptic(p),
       land: (add, fromHeld) => this.landDice(add, fromHeld), seed: () => this.dice.seed,
@@ -102,7 +131,7 @@ export class Game {
     setInterval(() => this.tickClock(), 1000);
     this.tickClock();
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) w.audio.suspend(); else w.audio.resume();
+      if (document.hidden) { w.audio.suspend(); this.stopAuto('hidden'); } else w.audio.resume();
     });
   }
   /** Expiry notice for flows that skip the splash welcome. */
@@ -123,7 +152,7 @@ export class Game {
     bus.emit('state', { from, to });
     const idle = to === 'idle';
     this.hud.setDemoEnabled(idle || to === 'spinning' || to === 'celebrating', this.demoPending);
-    const lockStake = to !== 'idle';
+    const lockStake = to !== 'idle' || !!this.auto;
     this.hud.setStake(this.s.stakeOre, this.stakeIndex() > 0, this.stakeIndex() < CONFIG.stakesOre.length - 1, lockStake || this.s.perksPending > 0);
     // Resting states may rebuild the grid after a resize; presentations only scale it.
     const resting = to === 'idle' || to === 'splash' || to === 'stormReady' || to === 'stormSummary' || to === 'chamber';
@@ -131,12 +160,15 @@ export class Game {
     if (idle) this.refreshSpinButton();
     else if (to === 'stormReady') this.hud.setSpin('storm', 'START');
     else if (to === 'stormSpinning') this.hud.setSpin('busy', 'STORM');
+    else if (this.auto && (to === 'spinning' || to === 'celebrating')) this.hud.setSpin('auto', AUTO.stopCap(this.auto.left)); // STOP stays pressable
     else this.hud.setSpin('busy');
     this.refreshDice(); // the chip opens the chamber from idle only (aria-disabled otherwise)
+    this.refreshVault();
   }
   private stakeIndex(): number { return CONFIG.stakesOre.indexOf(this.s.stakeOre); }
   private refreshSpinButton(): void {
-    if (this.s.perksPending > 0) this.hud.setSpin('perk');
+    if (this.auto) this.hud.setSpin('auto', AUTO.stopCap(this.auto.left));
+    else if (this.s.perksPending > 0) this.hud.setSpin('perk');
     else if (this.s.balanceOre < this.s.stakeOre) this.hud.setSpin('disabled');
     else this.hud.setSpin('idle');
   }
@@ -157,7 +189,7 @@ export class Game {
   refreshHud(): void {
     const h = this.hud;
     h.setBalance(this.s.balanceOre);
-    h.setStake(this.s.stakeOre, this.stakeIndex() > 0, this.stakeIndex() < CONFIG.stakesOre.length - 1, this.state !== 'idle' && this.state !== 'splash' || this.s.perksPending > 0);
+    h.setStake(this.s.stakeOre, this.stakeIndex() > 0, this.stakeIndex() < CONFIG.stakesOre.length - 1, this.state !== 'idle' && this.state !== 'splash' || this.s.perksPending > 0 || !!this.auto);
     const locked = this.s.meter.charge > 0 ? lockedStakeOre(this.s.meter) : this.s.stakeOre;
     h.setLock(this.s.meter.charge > 0 ? `Låst indsats ${fmtKr(locked)}` : '');
     h.setGoal(this.kp(), this.displayCharge, CONFIG.K, (k) => this.avgSpinsTo(k));
@@ -194,11 +226,15 @@ export class Game {
 
   // ---------------------------------------------------------------- intents
   dispatch(i: Intent): void {
-    if (performance.now() - this.lastModalClose < 250 && (i.t === 'spin' || i.t === 'continue' || i.t === 'startStorm')) return;
+    if (performance.now() - this.lastModalClose < 250 && (i.t === 'spin' || i.t === 'continue' || i.t === 'startStorm' || (i.t === 'gamble' && i.act !== 'keep'))) return;
     switch (i.t) {
       case 'unlock': if (this.state === 'splash') void this.intro(); break;
       case 'spin':
         if (this.hud.menuOpen()) return;
+        // Autospin: SPIN means STOP (the spin under way finishes). Kvit eller dobbelt: Behold only (from 1,0 s), never a bet.
+        if (this.auto) { this.stopAuto('player'); break; }
+        if (this.state === 'gambleOffer') { this.gambleKey(); break; }
+        if (this.state === 'gambleReveal') break;
         // Terningen: SPIN skips the ceremony, means "Forstået" on the first-die card (≥ 1,5 s), else nothing.
         if (this.state === 'ceremony') { this.skipCeremony(); break; }
         if (this.state === 'diceCard') { this.cardKey('spin'); break; }
@@ -215,11 +251,15 @@ export class Game {
       case 'demoReset': if (this.state === 'idle' || this.state === 'splash') this.demoReset(); else this.toolsBusy(); break;
       case 'startStorm': this.resolveWaiter('startStorm'); break;
       case 'continue':
+        if (this.state === 'gambleOffer') { this.gambleKey(); break; }
+        if (this.state === 'gambleReveal') { this.gambleSkipHold(); break; }
         if (this.state === 'diceCard') { this.cardKey('key'); break; }
         if (this.state === 'ceremony') break; // the placard needs an explicit button
         this.hud.show('bigwin', false); if (this.celebration.active) this.celebration.continue(); else this.resolveWaiter('continue'); this.lastModalClose = performance.now(); break;
       case 'skip':
         if (this.hud.menuOpen()) return;
+        if (this.state === 'gambleOffer') break; // a tap never means anything while choosing
+        if (this.state === 'gambleReveal') { this.gambleSkipHold(); break; }
         if (this.state === 'ceremony') { this.skipCeremony(); break; }
         if (this.state === 'diceCard') { this.cardKey('esc'); break; }
         // A skip lands a die within 300 ms (born instantly if the celebration had not reached its birth beat).
@@ -229,9 +269,13 @@ export class Game {
         break;
       case 'mute': this.s.settings.muted = !this.s.settings.muted; this.applySettings(); this.hud.setMuted(this.s.settings.muted); this.persist(); break;
       case 'refill': this.refill(); break;
-      case 'settings': Object.assign(this.s.settings, i.s); this.applySettings(); this.persist(); break;
+      case 'settings':
+        Object.assign(this.s.settings, i.s); this.applySettings(); this.persist();
+        // the dice or the choice switched off while the card waits: the dice are kept
+        if (this.state === 'gambleOffer' && (i.s.dice === false || i.s.gambleOffers === false)) this.gambleAct('keep', true);
+        break;
       case 'fullFx': this.fullFx = true; this.applySettings(); break;
-      case 'menu': if (!i.open) this.lastModalClose = performance.now(); break;
+      case 'menu': if (i.open) this.stopAuto('menu'); else this.lastModalClose = performance.now(); this.refreshVault(); break;
       // ---- Terningen
       case 'chamber':
         if (i.open) { if (this.state === 'idle') void this.openChamber(); }
@@ -250,6 +294,15 @@ export class Game {
       case 'demoFirstDie': if (this.state === 'idle') this.demoFirstDie(); else this.toolsBusy(); break;
       case 'demoGate': if (this.state === 'idle') void this.runCeremony('demo'); else this.toolsBusy(); break;
       case 'demoChamber': if (this.state === 'idle') void this.openChamber(i.n); else this.toolsBusy(); break;
+      // ---- Kvit eller dobbelt, autospin
+      case 'gamble': this.gambleAct(i.act); break;
+      case 'demoGamble': this.stopAuto('demo'); if (this.state === 'idle') void this.demoGamble(); else this.toolsBusy(); break;
+      case 'autoSheet':
+        if (!i.open) this.hud.openAutoSheet(false);
+        else if (this.state === 'idle' && !this.auto && !this.demoMode && !this.dice.gamble && this.s.perksPending === 0) this.hud.openAutoSheet(true, false, this.s.stakeOre);
+        break;
+      case 'autoStart': this.startAuto(i.spins, i.lossLimitOre); break;
+      case 'autoStop': this.stopAuto('player'); break;
     }
   }
   private toolsBusy(): void { this.hud.banner('DEMO-VÆRKTØJER', 'Virker mellem spin – prøv igen, når spinnet er færdigt'); }
@@ -257,7 +310,7 @@ export class Game {
   private waitFor(k: 'startStorm' | 'continue'): Promise<void> { return new Promise((r) => { this.waiters[k] = r; }); }
 
   private changeStake(d: number): void {
-    if (this.state !== 'idle' || this.s.perksPending > 0) return;
+    if (this.state !== 'idle' || this.s.perksPending > 0 || this.auto) return;
     const i = Math.max(0, Math.min(CONFIG.stakesOre.length - 1, this.stakeIndex() + d));
     if (CONFIG.stakesOre[i] === this.s.stakeOre) return;
     this.s.stakeOre = CONFIG.stakesOre[i];
@@ -267,7 +320,7 @@ export class Game {
     this.persist();
   }
   private refill(): void {
-    if (this.state !== 'idle' && this.state !== 'splash') return;
+    if ((this.state !== 'idle' && this.state !== 'splash') || this.auto) return;
     this.s.balanceOre = Math.max(this.s.balanceOre, START_BALANCE_ORE);
     this.hud.banner('SALDO FYLDT OP', 'Legepenge · ' + fmtKr(this.s.balanceOre));
     this.refreshHud(); this.refreshSpinButton(); this.persist();
@@ -309,7 +362,12 @@ export class Game {
     this.hud.pulseDemo();
     // Any deep link (#solstorm/#1948/#kammer/#terning) or a resumed storm suppresses the one-time hello card.
     if (this.w.demoOnLoad || this.w.diceOnLoad || this.s.activeStorm) this.helloBlocked = true;
-    if (this.s.activeStorm) { await this.resumeStorm(); return; }
+    if (this.s.activeStorm) {
+      // a choice for the spin that triggered the storm (reloaded mid-choice) is made before the storm resumes
+      if (this.dice.gamble) await this.runGamble('restore');
+      await this.resumeStorm();
+      return;
+    }
     this.setState('idle');
     if (this.s.perksPending > 0) this.hud.banner('LADET SPIN KLAR', `Gratis spin ved låst indsats ${fmtKr(lockedStakeOre(this.s.meter))}`);
     if (this.w.demoOnLoad) { this.w.demoOnLoad = false; setTimeout(() => this.requestDemo(), 2000); return; }
@@ -363,15 +421,21 @@ export class Game {
 
   async spin(): Promise<void> {
     if (this.state !== 'idle') return;
+    // Kvit eller dobbelt: the game never spins with a choice open (it is shown again, the same offer or result)
+    if (this.dice.gamble && !this.demoMode) { void this.resumeGamble(); return; }
     this.endPreview();
     this.hideHello(); // the hello card is not a disclosure gate: SPIN dismisses it and the spin proceeds
     const perk = this.s.perksPending > 0;
     const stake = perk ? lockedStakeOre(this.s.meter) : this.s.stakeOre;
-    if (!perk && this.s.balanceOre < stake) { this.refill(); return; }
+    if (!perk && this.s.balanceOre < stake) {
+      if (this.auto) { this.stopAuto('balance'); return; } // autospin never refills
+      this.refill(); return;
+    }
     this.setState('spinning');
     const pre = { charge: this.s.meter.charge, stakeSumOre: this.s.meter.stakeSumOre, perksPending: this.s.perksPending };
     if (perk) this.s.perksPending--;
     else { this.s.balanceOre -= stake; this.sessionNet -= stake; }
+    if (this.auto) { this.auto.left--; this.showAuto(); }
     const paid = perk ? 0 : stake;
     const domain = perk ? 'perk' : 'base';
     const idx = ++this.s.counters[domain];
@@ -382,6 +446,8 @@ export class Game {
     this.s.balanceOre += r.totalOre;
     const dieNo = this.awardDie(r); // r.stakeOre is the locked stake for a Ladet spin
     this.record(r, perk ? 'perk' : 'base', stake, r.totalOre - paid, pre, dieNo > 0);
+    // the new die may be offered (never the first, never while 'pending'): committed with the spin, in the same write
+    if (dieNo) this.offerDice(r.spinId, 'spin', 1);
     const perks = m.tiersCrossed.filter((t) => TIERS[t]?.perk).length;
     this.s.perksPending += perks;
     this.chargeCap = m.stormA ? CONFIG.K : this.s.meter.charge;
@@ -397,6 +463,7 @@ export class Game {
     }
     this.s.lastSpinAt = Date.now();
     this.persist();
+    this.stagedDice = dieNo ? 1 : 0; // the chip moves when it lands (flyDie / landDice) or after its choice
     // ---- presentation ----
     this.hud.setBalance(shownBalance);
     this.hud.clearWin(perk ? `Ladet spin · gratis · ${fmtKr(stake)} · 4 felter ×2` : '');
@@ -413,9 +480,11 @@ export class Game {
       await this.celebrate(tier, r.totalOre, stake, false, paid, dieNo);
     } else if (tier === 1 || (profile === 'win' && perk)) this.w.audio.play('win', { level: 1 });
     this.finishSpinHud(r, profile, paid, dieNo);
-    // The die lands before idle and before a triggered storm: none is ever in the air when the next spin starts.
-    if (dieNo) await this.flyDie();
+    // The die lands (or its choice is made) before idle and before a triggered storm: none is ever in the air when
+    // the next spin starts. Autospin stops at every die and at Solstorm.
+    if (dieNo) { this.stopAuto('die'); await this.dieOutcome(); }
     if (storm) {
+      this.stopAuto('storm');
       await this.runStorm(storm.source, storm.stake, { resume: { idx: storm.idx, spinIndex: 0 } });
       return;
     }
@@ -434,7 +503,7 @@ export class Game {
     const net = fmtSignedKr(r.totalOre - paid);
     const a = profile === 'win' ? `Gevinst ${fmtKr(r.totalOre)}. Netto ${net}.` : profile === 'return' ? `Retur ${fmtKr(r.totalOre)}, netto ${net}.` : profile === 'push' ? 'Indsats retur.' : 'Ingen gevinst.';
     bus.emit('win:final', { totalOre: r.totalOre, stakeOre: r.stakeOre, profile });
-    this.w.announce(`${a} Kp ${fmt1(this.kp())}.${dieNo && this.s.settings.dice ? ' ' + srAward(dieNo) : ''}`);
+    this.w.announce(`${a} Kp ${fmt1(this.kp())}.${dieNo && this.s.settings.dice && !this.dice.gamble ? ' ' + srAward(dieNo) : ''}`);
   }
 
   // ---------------------------------------------------------------- Terningen: award
@@ -456,13 +525,22 @@ export class Game {
   private async flyDie(): Promise<void> {
     if (this.s.settings.dice) { await this.award.awardFly(); return; }
     this.award.awardDrop();
-    this.shownDice = Math.max(0, this.dice.count - this.heldDice);
+    this.stagedDice = 0;
+    this.shownDice = this.chipDice();
     this.refreshDice();
   }
-  /** DiceHost.land: the ONLY way the chip number moves (a base die, or released storm dice). */
+  /** After the celebration: this spin's open choice (the card), else the flight home. */
+  private async dieOutcome(): Promise<void> {
+    if (!this.demoMode && this.dice.gamble?.source === 'spin' && !this.dice.gamble.settled) await this.runGamble('award');
+    else await this.flyDie();
+  }
+  /** What the chip may show: the count less the dice held on a storm frame and the dice not yet home. */
+  private chipDice(): number { return Math.max(0, this.dice.count - this.heldDice - this.stagedDice); }
+  /** DiceHost.land: the ONLY way the chip number moves (a base die, a settled choice's dice, or released storm dice). */
   private landDice(add: number, fromHeld: boolean): void {
     if (fromHeld) this.heldDice = Math.max(0, this.heldDice - add);
-    this.shownDice = Math.max(0, this.dice.count - this.heldDice);
+    else this.stagedDice = Math.max(0, this.stagedDice - add);
+    this.shownDice = this.chipDice();
     this.hud.landDice(this.shownDice, this.calm());
     this.refreshDice();
     this.w.audio.play('dieLand', { gain: fromHeld ? 0.7 : 1 });
@@ -491,19 +569,22 @@ export class Game {
   }
 
   private afterIdle(): void {
+    // a choice left open (a reload mid-choice or mid-throw) is always shown first, before anything else
+    if (this.dice.gamble && !this.demoMode) { void this.resumeGamble(); return; }
     if (this.demoPending) { this.demoPending = false; void this.demo(); return; }
+    if (this.autoContinue()) return;
     if (this.diceDeepLink()) return;
     this.maybeDiceMoments();
   }
 
   // ---------------------------------------------------------------- Terningen: deep links, one-time moments, cards
-  /** #1948 (demo ceremony, 2 s), #kammer (chamber, 600 ms), #terning (demo die, 2 s): once, from the first idle. */
+  /** #1948 (demo ceremony, 2 s), #kammer (chamber, 600 ms), #terning (the demo die with its choice, 2 s): once, from the first idle. */
   private diceDeepLink(): boolean {
     const k = this.w.diceOnLoad;
     if (!k) return false;
     this.w.diceOnLoad = null;
     if (k === 'chamber') setTimeout(() => this.dispatch({ t: 'chamber', open: true }), 600);
-    else setTimeout(() => this.dispatch(k === 'gate' ? { t: 'demoGate' } : { t: 'demoDie' }), 2000);
+    else setTimeout(() => this.dispatch(k === 'gate' ? { t: 'demoGate' } : { t: 'demoGamble' }), 2000);
     return true;
   }
   private helloBlocked = false;
@@ -511,7 +592,7 @@ export class Game {
   /** At idle, real play only: the first-die card, else the 1948 card (each once, 250 ms later), else the
    *  one-time hello card 1,2 s later. None of them carries a call to play. */
   private maybeDiceMoments(): void {
-    if (!this.s.settings.dice || this.demoMode) return;
+    if (!this.s.settings.dice || this.demoMode || this.dice.gamble) return;
     const d = this.dice, gen = ++this.momentGen;
     const later = (s: number, f: () => void) => { gsap.delayedCall(s, () => { if (gen === this.momentGen && this.quietIdle()) f(); }); };
     if (d.count >= 1 && !d.introSeen) later(0.25, () => this.showFirstDieCard(false));
@@ -525,12 +606,13 @@ export class Game {
   private showHello(): void {
     if (this.dice.helloSeen || !this.s.settings.dice) return;
     const el = this.hud.showHello(helloHtml());
+    this.refreshVault();
     this.award.cardShown('hello', el);
     this.w.announce(helloCopy().sr);
     this.dice.helloSeen = true;
     this.persist();
   }
-  private hideHello(): void { if (this.hud.helloShown()) this.hud.hideHello(); }
+  private hideHello(): void { if (this.hud.helloShown()) { this.hud.hideHello(); this.refreshVault(); } }
 
   private card: DiceCard | null = null;
   private cardSnap: { snap: ReturnType<Game['snapshot']>; before: string } | null = null;
@@ -612,6 +694,21 @@ export class Game {
     this.finishDiceDemo(t);
     this.setState('idle');
   }
+  /** Drawer "Vis en terning med valg", the header pill's "Terning" and #terning: the demo die with the whole choice
+   *  (demoThrow on the 'demo' domain). No money celebration, no staged win; the number never changes. */
+  private async demoGamble(): Promise<void> {
+    this.hideHello();
+    const t = this.beginDiceDemo();
+    this.setState('demoDie');
+    this.hud.banner(DEMO_GAMBLE_BANNER.t, DEMO_GAMBLE_BANNER.s);
+    this.w.audio.play('dieBirth', { when: this.w.audio.now() + 0.05 });
+    await this.award.demoAward({ hold: true });
+    await this.runGamble('award', true);
+    this.finishDiceDemo(t);
+    this.setState('idle');
+    const b = demoGambleDone(this.dice.count);
+    this.hud.banner(b.t, b.s);
+  }
   /** Drawer "Vis første terning": the same card with the amber demo note first; introSeen is never written. */
   private demoFirstDie(): void {
     this.cardSnap = this.beginDiceDemo();
@@ -638,7 +735,8 @@ export class Game {
   }
   /** Opens from idle only. `preview` = the drawer's fixed steps (0 · 25 · 250 · 1000 · 1948 åben): view only. */
   private async openChamber(preview?: PreviewStep): Promise<void> {
-    if (this.state !== 'idle') return;
+    if (this.state !== 'idle' || this.dice.gamble) return;
+    this.stopAuto('chamber');
     this.hideHello();
     if (preview !== undefined) this.chamberDemo = this.beginDiceDemo();
     const view = preview === undefined ? realDiceView(this.dice) : previewDiceView(preview);
@@ -746,6 +844,219 @@ export class Game {
     if (run.demo) { const b = demoGateBanner(this.dice.count); this.hud.banner(b.t, b.s); }
   }
 
+  // ---------------------------------------------------------------- Terningen: Kvit eller dobbelt
+  // ONE choice per award (a spin's die, or all of a storm's dice): Behold / Kvit eller dobbelt / 3 for 1, fair odds,
+  // final. The result is drawn, written and persisted at the choice press (commitGamble), shown ≥ T.floor later; the
+  // chip never moves before it is shown. Only NEW dice are ever at stake.
+  private offersOn(): boolean { return this.s.settings.dice !== false && this.s.settings.gambleOffers !== false; }
+  /** THE only caller of openGamble: never in demo mode, never the first die, never while 'pending', one at a time. */
+  private offerDice(id: string, source: 'spin' | 'storm', k: number): boolean {
+    if (this.demoMode || !canOffer(this.dice, this.s.settings.dice !== false && this.s.settings.gambleOffers !== false)) return false;
+    return openGamble(this.dice, { id, source, stake: k, at: Date.now() });
+  }
+  /** 'award' (this spin's born die), 'held' (the storm's dice on the frame), 'restore' (after a reload). demo: the drawer
+   *  tool on a snapshot (demoThrow, nothing written). */
+  private async runGamble(from: GambleFrom, demo = false): Promise<void> {
+    if (this.gambleRun) return;
+    const g = demo ? null : this.dice.gamble;
+    if (!demo && !g) return;
+    const k = g ? g.stake : 1, source = g ? g.source : 'spin';
+    const run: GambleRun = { demo, from, k, source, n: this.dice.count, phase: 'offer', at: clock.time, bet: null, pip: 0, payout: 0, pick: null, skip: null };
+    this.gambleRun = run;
+    const ctx = (): GambleCardCtx => ({ source, k, n: run.n, demoN: demo ? this.dice.count : null });
+    // the dice or the choice switched off since the award: the dice are kept, and they fly home without a card
+    if (g && !g.settled && !this.offersOn()) {
+      const res = this.commitGamble('keep');
+      if (from === 'held') this.heldDice = res?.payout ?? k; else this.stagedDice = res?.payout ?? k;
+      run.phase = 'settle';
+      await this.settleShow(res?.payout ?? k, run);
+      this.finishGamble();
+      this.gambleRun = null;
+      return;
+    }
+    let restored = false;
+    if (g?.settled) {
+      // reloaded after the choice press: the committed result, never a new draw (the payout is already staged)
+      restored = true;
+      run.bet = g.settled.choice; run.pip = g.settled.face + 1; run.payout = g.settled.payout;
+      this.setState('gambleReveal');
+    } else {
+      this.setState('gambleOffer');
+      this.award.gambleStage({ k, from, demo });
+      this.hud.showSummary(gambleCardHtml(ctx()), 'gamble');
+      this.award.cardShown('gamble', this.hud.summaryEl());
+      this.w.announce(gambleOfferCopy(ctx()).sr);
+      run.at = clock.time;
+      const res = await new Promise<GambleResult>((r) => { run.pick = r; });
+      if (res.choice === 'keep') {
+        this.hud.show('summary', false);
+        this.lastModalClose = performance.now();
+        this.w.announce(srGambleKeep(k));
+        run.phase = 'settle';
+        await this.settleShow(res.payout, run);
+        if (!demo) this.finishGamble();
+        this.gambleRun = null;
+        return;
+      }
+      run.bet = res.choice as GambleBet; run.pip = res.pip; run.payout = res.payout;
+      this.setState('gambleReveal');
+      run.phase = 'throw';
+      this.hud.showSummary(gambleThrowHtml(ctx(), run.bet), 'gamble');
+      this.w.announce(GAMBLE_THROW);
+      // the result is never shown before T.floor after the choice, however fast the presentation is
+      await Promise.all([wait(T.floor), this.award.gambleThrow({ bet: run.bet, pip: run.pip, k, payout: run.payout, demo })]);
+    }
+    run.phase = 'result';
+    const rc = { ...ctx(), bet: run.bet!, pip: run.pip, payout: run.payout, count: this.dice.count, restored };
+    this.hud.showSummary(gambleResultHtml(rc), 'gamble');
+    this.w.announce(gambleResultCopy(rc).sr);
+    this.haptic(12);
+    await Promise.race([wait(GAMBLE_T.hold), new Promise<void>((r) => { run.skip = r; })]);
+    run.skip = null;
+    this.hud.show('summary', false);
+    this.lastModalClose = performance.now();
+    run.phase = 'settle';
+    await this.settleShow(run.payout, run);
+    if (!demo) this.finishGamble();
+    this.gambleRun = null;
+  }
+  /** The settled dice go home ('award'/'restore'), stay held for the outro ('held'), or dissolve (0). With the dice
+   *  display off the count just catches up. */
+  private async settleShow(payout: number, run: GambleRun): Promise<void> {
+    if (!run.demo && !this.s.settings.dice) {
+      if (run.from === 'award') this.award.awardDrop();
+      if (run.from !== 'held') this.stagedDice = 0;
+      this.shownDice = this.chipDice();
+      this.refreshDice();
+      return;
+    }
+    await this.award.gambleSettle(payout, { from: run.from, demo: run.demo });
+    if (!run.demo) { this.shownDice = this.chipDice(); this.refreshDice(); }
+  }
+  /** A card button (or a forced keep). Behold is armed 0,4 s after the card appeared, the bets 1,0 s. */
+  private gambleAct(act: GambleChoice, force = false): void {
+    const run = this.gambleRun;
+    if (!run || this.state !== 'gambleOffer' || run.phase !== 'offer' || !run.pick) return;
+    if (!force && clock.time - run.at < (act === 'keep' ? GAMBLE_T.keepArm : GAMBLE_T.arm)) return;
+    const res = run.demo ? this.demoThrow(act, run.k) : this.commitGamble(act);
+    if (!res) return;
+    // the chip never moves before the result is shown: the payout waits staged (or held on the storm frame)
+    if (!run.demo) { if (run.from === 'held') this.heldDice = res.payout; else this.stagedDice = res.payout; }
+    const pick = run.pick;
+    run.pick = null;
+    run.phase = act === 'keep' ? 'settle' : 'throw';
+    pick(res);
+  }
+  /** SPIN, Space and Enter on the card mean Behold only, and only from 1,0 s: never a bet, never by habit. */
+  private gambleKey(): void {
+    const run = this.gambleRun;
+    if (!run || run.phase !== 'offer' || clock.time - run.at < GAMBLE_T.arm) return;
+    this.gambleAct('keep');
+  }
+  /** THE only caller of settleGamble: the face is drawn from the 'gamble' domain (its own id) and the result is
+   *  written and persisted here, at the choice press, before any reveal (a reload shows this result, never a new draw). */
+  private commitGamble(choice: GambleChoice): GambleResult | null {
+    if (this.demoMode || !this.dice.gamble || this.dice.gamble.settled) return null;
+    let face = -1, gid = '';
+    if (choice !== 'keep') { const idx = ++this.s.counters.gamble; gid = makeSpinId(this.s.sessionSeed, 'gamble', idx); face = gambleFace(spinRng(this.s.sessionSeed, 'gamble', idx)); }
+    const r = settleGamble(this.dice, choice, face, gid, Date.now());
+    this.persist();
+    return { choice, pip: face + 1, payout: r.payout };
+  }
+  /** The demo choice: the same rule on the 'demo' domain. Writes nothing. */
+  private demoThrow(choice: GambleChoice, k: number): GambleResult {
+    if (choice === 'keep') return { choice, pip: 0, payout: k };
+    const face = gambleFace(spinRng(this.s.sessionSeed, 'demo', ++this.s.counters.demo));
+    const r = resolveGamble(choice, k, face);
+    return { choice, pip: r.pip, payout: r.payout };
+  }
+  /** After the result has been shown and the dice are home: the choice closes. */
+  private finishGamble(): void {
+    if (this.demoMode) return;
+    clearSettled(this.dice);
+    this.persist();
+  }
+  /** A choice left open at idle (a reload mid-choice or mid-throw): the same offer, or the settled result. */
+  private async resumeGamble(): Promise<void> {
+    if (this.gambleRun || this.state !== 'idle') return;
+    this.stopAuto('offer');
+    this.hideHello();
+    await this.runGamble('restore');
+    this.refreshHud();
+    this.setState('idle');
+    this.afterIdle();
+  }
+  /** Tap / Space / Enter / Esc after the choice: ends the result hold, or hurries the flights home (≤ 300 ms).
+   *  Never the throw: nothing shortens it below T.floor. */
+  private gambleSkipHold(): void {
+    const run = this.gambleRun;
+    if (!run) return;
+    if (run.phase === 'result') run.skip?.();
+    else if (run.phase === 'settle') this.award.gambleSkip();
+  }
+
+  // ---------------------------------------------------------------- autospin
+  // Always through spin() (the 3,0 s floor holds, no turbo), never a refill, never after a reload. It stops at every die,
+  // at Ladet spin, at Solstorm, before the loss limit could be passed, at a low balance, a menu, a hidden tab, a demo,
+  // the chamber and STOP.
+  private startAuto(spins: number, limitOre: number): void {
+    if (this.state !== 'idle' || this.auto || this.demoMode || this.s.perksPending > 0 || this.dice.gamble) return;
+    const stake = this.s.stakeOre;
+    if (this.s.balanceOre < stake || !validAuto(spins, limitOre, stake)) return;
+    this.hideHello();
+    this.auto = { total: spins, left: spins, stakeOre: stake, startBalanceOre: this.s.balanceOre, lossLimitOre: limitOre, timer: null, startNet: this.sessionNet };
+    this.showAuto();
+    this.lockStake();
+    this.refreshVault();
+    void this.spin();
+  }
+  private showAuto(): void {
+    const a = this.auto;
+    if (!a) return;
+    this.hud.setAuto({ left: a.left, total: a.total });
+    this.hud.setSpin('auto', AUTO.stopCap(a.left));
+  }
+  /** At idle: stop (a reason) or press again after AUTO_GAP, through spin() and only into a quiet idle. */
+  private autoContinue(): boolean {
+    const a = this.auto;
+    if (!a) return false;
+    const why = autoStopReason(a, { balanceOre: this.s.balanceOre, stakeOre: this.s.stakeOre, perksPending: this.s.perksPending, gambleOpen: !!this.dice.gamble, momentDue: this.momentDue() });
+    if (why) { this.stopAuto(why); return false; }
+    a.timer = gsap.delayedCall(AUTO_GAP, () => {
+      a.timer = null;
+      if (this.auto !== a) return;
+      if (this.state === 'idle' && this.quietIdle()) void this.spin();
+      else this.stopAuto('card');
+    });
+    return true;
+  }
+  /** A one-time Terningen card is due at this idle (the first-die card or the 1948 card). */
+  private momentDue(): boolean {
+    const d = this.dice;
+    return this.s.settings.dice !== false && !this.demoMode && ((d.count >= 1 && !d.introSeen) || (d.unlock === 'pending' && !d.offered));
+  }
+  private stopAuto(reason: AutoStop): void {
+    const a = this.auto;
+    if (!a) return;
+    a.timer?.kill();
+    this.auto = null;
+    this.autoLast = reason;
+    const spins = a.total - a.left, net = this.sessionNet - a.startNet;
+    this.hud.setAuto(null, reason, AUTO.summary(spins, net));
+    this.w.announce(AUTO.sr(reason, spins, net));
+    if (this.state === 'idle') this.refreshSpinButton();
+    else if (this.state === 'spinning' || this.state === 'celebrating') this.hud.setSpin('busy');
+    this.lockStake(); // (never refreshHud here: mid-spin it would show the committed balance before the result)
+    this.refreshVault();
+  }
+  private lockStake(): void {
+    this.hud.setStake(this.s.stakeOre, this.stakeIndex() > 0, this.stakeIndex() < CONFIG.stakesOre.length - 1, this.state !== 'idle' || this.s.perksPending > 0 || !!this.auto);
+  }
+  /** The dice home may live (glint, rattle) only when idle and quiet: no autospin, no card, menu or chamber. */
+  private refreshVault(): void {
+    this.hud.setVaultActive(this.state === 'idle' && !this.auto && !this.gambleRun && this.quietIdle() && !this.hud.helloShown());
+  }
+
   // ---------------------------------------------------------------- storm
   private async runStorm(source: StormSource, stakeOre: number, opts: { resume?: { idx: number; spinIndex: number } } = {}): Promise<void> {
     const demo = source === 'demo';
@@ -782,7 +1093,7 @@ export class Game {
     // Terningen: dice committed before a reload wait on the frame again (never re-awarded: the replay above never awards).
     if (!demo) {
       this.heldDice = this.s.activeStorm?.diceAwarded ?? 0;
-      this.shownDice = Math.max(0, this.dice.count - this.heldDice);
+      this.shownDice = this.chipDice();
       if (this.heldDice > 0 && this.s.settings.dice) this.award.restoreHeld(this.heldDice);
       this.refreshDice();
     }
@@ -839,11 +1150,15 @@ export class Game {
     }
     // Captured before activeStorm is cleared (the summary row survives a reload through diceAwarded).
     const stormDice = demo ? ghostDice : (this.s.activeStorm?.diceAwarded ?? 0);
+    const stormBaseId = this.stormId(idx, 0).slice(0, -2);
     const sum = finishStorm(st);
     const total = sum.winOre + sum.guaranteeOre;
     if (!demo) {
       if (sum.guaranteeOre > 0) this.record({ spinId: this.stormId(idx, 99) + '-G', totalOre: sum.guaranteeOre }, 'storm', stakeOre, sum.guaranteeOre, { charge: this.s.meter.charge, stakeSumOre: this.s.meter.stakeSumOre, perksPending: this.s.perksPending });
-      this.s.balanceOre += total; this.s.activeStorm = null; this.s.lastSpinAt = Date.now(); this.persist();
+      this.s.balanceOre += total; this.s.activeStorm = null; this.s.lastSpinAt = Date.now();
+      // ONE choice for all of the storm's dice, opened in the same write that ends the storm
+      if (stormDice > 0) this.offerDice(stormBaseId, 'storm', stormDice);
+      this.persist();
     }
     this.setState('stormSummary');
     const tier = winTier(total, stakeOre);
@@ -868,6 +1183,8 @@ export class Game {
     this.w.audio.play('summary');
     await this.waitFor('continue');
     this.hud.show('summary', false);
+    // the storm's dice are still held on the frame while their one choice is made; the outro releases the payout
+    if (!demo && this.dice.gamble?.source === 'storm') await this.runGamble('held');
     this.setState('stormOutro');
     this.watermark.visible = false;
     // The meter may have been reset (route A): let the sky/arc settle to the real Kp during the outro.
@@ -918,7 +1235,7 @@ export class Game {
     }
     this.award.clearHeld();
     if (!demo) this.heldDice = 0;
-    this.shownDice = Math.max(0, this.dice.count - this.heldDice);
+    this.shownDice = this.chipDice();
     this.refreshDice();
   }
 
@@ -972,6 +1289,7 @@ export class Game {
   // ---------------------------------------------------------------- demo tools
   private demoMode = false;
   requestDemo(): void {
+    this.stopAuto('demo');
     if (this.demoMode) return; // a demo is already running (e.g. "Udløs via 4 sole")
     if (this.state === 'idle') { void this.demo(); return; }
     if (this.state === 'spinning' || this.state === 'celebrating') { this.demoPending = true; this.hud.setDemoEnabled(true, true); }
@@ -979,11 +1297,11 @@ export class Game {
 
   private snapshot() {
     return { meter: { ...this.s.meter }, perks: this.s.perksPending, display: this.displayCharge, lastTier: this.lastTier, cap: this.chargeCap,
-      dice: { ...this.dice }, shown: this.shownDice, held: this.heldDice };
+      dice: cloneDice(this.dice), shown: this.shownDice, held: this.heldDice, staged: this.stagedDice };
   }
   private restore(snap: ReturnType<Game['snapshot']>): void {
     this.s.meter = snap.meter; this.s.perksPending = snap.perks; this.displayCharge = snap.display; this.lastTier = snap.lastTier; this.chargeCap = snap.cap;
-    this.dice = snap.dice; this.shownDice = snap.shown; this.heldDice = snap.held;
+    this.dice = snap.dice; this.shownDice = snap.shown; this.heldDice = snap.held; this.stagedDice = snap.staged;
     this.w.arc.setKp(this.kp());
     this.w.skyP.kp = this.kp();
     this.refreshHud();
@@ -1066,6 +1384,7 @@ export class Game {
   }
 
   private demoReset(): void {
+    this.stopAuto('reset');
     this.preview = null;
     wipe();
     const seed = newSessionSeed();
@@ -1081,7 +1400,8 @@ export class Game {
     // "Nulstil demo" is the ONLY action that changes the real collection
     wipeDice();
     this.dice = diceDefaults(newSessionSeed());
-    this.shownDice = this.heldDice = 0;
+    this.shownDice = this.heldDice = this.stagedDice = 0;
+    this.gambleRun = null;
     this.award.clearHeld();
     this.applySettings();
     this.refreshHud();
@@ -1125,24 +1445,44 @@ export class Game {
         return null;
       },
       /** Terningen QA (not reachable from the UI). */
-      dice: () => ({ ...this.dice }),
-      /** Sets the REAL count, for the unlock tests only (a veteran: the first-contact cards count as seen). */
+      dice: () => cloneDice(this.dice),
+      /** Sets the REAL count, for the unlock tests only (a veteran: the first-contact cards count as seen). Never under
+       *  an open choice. */
       qaDice: (n: number) => {
+        if (this.dice.gamble) return null;
         this.dice.count = Math.max(0, Math.floor(n));
         if (this.dice.count >= 1) { this.dice.introSeen = true; this.dice.helloSeen = true; this.dice.firstAt ??= Date.now(); }
         if (this.dice.count < DICE_GOAL) { this.dice.unlock = 'none'; this.dice.offered = false; this.dice.unlockedAt = null; }
         else if (this.dice.unlock === 'none') this.dice.unlock = 'pending';
-        this.shownDice = Math.max(0, this.dice.count - this.heldDice);
+        this.shownDice = this.chipDice();
         this.persist();
         this.refreshDice();
-        return { ...this.dice };
+        return cloneDice(this.dice);
       },
-      award: () => ({ inFlight: this.award.inFlight(), held: this.award.held(), shown: this.shownDice, heldDice: this.heldDice, phase: this.award.phase() }),
+      award: () => ({ inFlight: this.award.inFlight(), held: this.award.held(), shown: this.shownDice, heldDice: this.heldDice, staged: this.stagedDice, phase: this.award.phase() }),
+      /** Kvit eller dobbelt QA: the open choice (a copy), the running card, a press, and the next REAL throw's pip. */
+      gamble: () => (this.dice.gamble ? cloneDice(this.dice).gamble : null),
+      gambleRun: () => {
+        const r = this.gambleRun;
+        return r ? { demo: r.demo, from: r.from, k: r.k, phase: r.phase, bet: r.bet, pip: r.pip, payout: r.payout, armed: clock.time - r.at >= GAMBLE_T.arm } : null;
+      },
+      choose: (act: GambleChoice) => this.gambleAct(act),
+      /** Moves counters.gamble so the next real throw shows `pip` (counters only). */
+      qaGamble: (pip: number) => {
+        for (let idx = this.s.counters.gamble + 1; idx < this.s.counters.gamble + 1000; idx++) {
+          if (gambleFace(spinRng(this.s.sessionSeed, 'gamble', idx)) === pip - 1) { this.s.counters.gamble = idx - 1; return idx; }
+        }
+        return null;
+      },
+      auto: () => (this.auto ? { total: this.auto.total, left: this.auto.left, stakeOre: this.auto.stakeOre, startBalanceOre: this.auto.startBalanceOre, lossLimitOre: this.auto.lossLimitOre } : null),
+      autoStart: (n: number, limitX: number) => this.startAuto(n, limitX * this.s.stakeOre),
+      autoStopped: () => this.autoLast,
+      vault: () => this.hud.vaultActive(),
       ceremony: (kind: CeremonyKind) => { void this.runCeremony(kind); },
       /** The running ceremony: started = past the pre-roll (skippable 2,0 s after T0), placard = waiting for a button. */
       gate: () => { const r = this.ceremonyRun; return r ? { kind: r.kind, started: !!r.handle, canSkip: !!r.handle?.canSkip(), placard: r.placard, t: r.handle?.at?.() ?? null } : null; },
       chamber: (open: boolean) => this.dispatch({ t: 'chamber', open }),
-      setSeed: (n: number) => { this.s.sessionSeed = n >>> 0; this.s.counters = { base: 0, storm: 0, perk: 0, demo: 0 }; },
+      setSeed: (n: number) => { this.s.sessionSeed = n >>> 0; this.s.counters = { base: 0, storm: 0, perk: 0, demo: 0, gamble: 0 }; },
       rand: () => crand(),
       _unused: [gsap, PAL, crange, fmtInt, kpOf, profileOf] as unknown,
     };
