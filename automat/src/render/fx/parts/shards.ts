@@ -163,7 +163,11 @@ export class ShardBatch {
   }
 
   destroy(): void {
+    // Mesh.destroy() leaves its shader alive, and the shader's bind group keeps listening to the texture
+    // source: destroy it too, or a later destroy of the symbol atlas warns (and the listener leaks).
+    const shader = this.mesh.shader;
     this.mesh.destroy();
+    shader?.destroy();
     this.geo.destroy();
   }
 }
