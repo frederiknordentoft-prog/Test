@@ -67,7 +67,7 @@ export function welcomeState(i: WelcomeInput): WelcomeState {
 
 export function welcomeCopy(i: WelcomeInput): WelcomeCopy {
   const state = welcomeState(i);
-  const kp = fmt1(i.kp);
+  const kp = fmt1(Math.floor(i.kp * 10) / 10); // truncate: 8,96 must never read "Kp 9,0" next to "Næste: Solstorm ved Kp 9"
   const settled = i.kp < 0.05 && i.storms > 0; // right after a Solstorm emptied the sky
   const where: WelcomeLine = { parts: [{ t: settled ? 'Himlen er faldet til ro.' : 'Nordlyset står, hvor du slap det.' }], tone: 'cool' };
 

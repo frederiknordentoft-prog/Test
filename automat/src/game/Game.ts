@@ -215,7 +215,9 @@ export class Game {
     this.renderWelcome(!this.calm(), expiredOnLoad);
   }
   /** Splash welcome from the saved state (see ui/welcome.ts for the copy rules). */
+  private welcomeExpired = false;
   private renderWelcome(reveal: boolean, expired: boolean): void {
+    this.welcomeExpired = expired;
     const st = this.s.activeStorm;
     this.hud.showWelcome(welcomeCopy({
       spins: this.s.stats.spins, storms: this.s.stats.storms, kp: this.kp(), perksPending: this.s.perksPending, expired,
@@ -225,6 +227,8 @@ export class Game {
   }
 
   async intro(): Promise<void> {
+    // The expiry must be seen: keep the chip when the welcome could not show it (no room, an earlier tap, or a storm resume on top).
+    if (this.welcomeExpired && !this.hud.welcomeShowing('expired')) this.noticeExpired();
     this.hud.show('splash', false);
     this.hud.setSplash(false);
     this.setState('intro');
@@ -436,7 +440,8 @@ export class Game {
       const { result, meta } = stormSpin(st, rng, this.stormId(idx, k));
       if (!demo) {
         this.record(result, 'storm', stakeOre, result.totalOre, { charge: this.s.meter.charge, stakeSumOre: this.s.meter.stakeSumOre, perksPending: this.s.perksPending });
-        if (this.s.activeStorm) { this.s.activeStorm.spinIndex = st.spinIndex; this.s.activeStorm.spinsTotal = st.spinsTotal; }
+        // full live state (the splash welcome reads maxMark on reload; resume itself replays from the seed)
+        if (this.s.activeStorm) Object.assign(this.s.activeStorm, { spinIndex: st.spinIndex, spinsTotal: st.spinsTotal, marks: st.marks.slice(), winOre: st.winOre, maxMark: st.maxMark });
         this.persist();
       }
       this.hud.setMode('storm', `${D}SOLSTORM ${meta.index + 1}/${meta.total}`);

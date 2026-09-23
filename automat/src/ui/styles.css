@@ -443,8 +443,9 @@ html, body {
 .lg-dia { fill: none; stroke: rgba(25, 227, 214, 0.8); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .lg-glyph { fill: #070a14; stroke: rgba(156, 201, 255, 0.45); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.7; }
 .lg-crack { fill: none; stroke: rgba(255, 181, 71, 0.55); stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
-.lg-labels text { font: 600 9.5px system-ui, sans-serif; fill: var(--muted); text-anchor: middle; font-variant-numeric: tabular-nums; }
-.lg-labels .g5 { fill: rgba(255, 181, 71, 0.7); }
+/* labels carry their own dark halo so they read over the cliffs and the horizon glow */
+.lg-labels text { font: 600 9.5px system-ui, sans-serif; fill: rgba(156, 201, 255, 0.9); text-anchor: middle; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: rgba(5, 11, 26, 0.85); stroke-width: 3px; stroke-linejoin: round; }
+.lg-labels .g5 { fill: rgba(255, 181, 71, 0.9); }
 .w-shards-svg .sh { fill: none; stroke: rgba(255, 106, 0, 0.6); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .w-shards-svg .sh.on { fill: rgba(255, 244, 224, 0.7); stroke: none; }
 .w-shards-svg .sh-crack { stroke: rgba(255, 181, 71, 0.3); stroke-width: 0.75; }
@@ -492,6 +493,8 @@ html, body {
 #welcome.reveal .lg-glyph { animation: wGlyph var(--d-glyph) ease-out both var(--t-glyph); }
 #welcome.reveal .lg-crack { animation: wDraw var(--d-crack) ease-out both var(--t-crack); }
 #welcome.reveal .w-shards-svg .sh, #welcome.reveal .w-shards-svg .sh-crack { animation: wFade 300ms ease-out both calc(1300ms + var(--i, 10) * 30ms); }
+/* calm switched on mid-entrance: land on the final frame at once (:root.calm only shortens durations, not delays) */
+:root.calm #welcome.reveal * { animation: none !important; }
 
 /* tap: the welcome and the button exhale together (hud.show adds .leaving for 240 ms) */
 #splash.leaving #welcome { opacity: 0; transform: translateY(-4px); transition: opacity 240ms ease-out, transform 240ms ease-out; }

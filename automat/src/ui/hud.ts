@@ -101,7 +101,7 @@ export class Hud {
 
     const ov = h('div'); ov.id = 'overlays';
     ov.innerHTML = `
-      <div class="overlay" id="splash"><section id="welcome" aria-labelledby="wEyebrow"><div class="w-block"><div class="w-scrim" aria-hidden="true"></div><p id="wEyebrow" class="w-eb"></p><p id="wBody" class="w-body" aria-hidden="true"></p><div id="wLegend" class="w-legend" aria-hidden="true"></div><p id="wSum" class="sr"></p></div></section><div class="center"><button class="btn" id="unlockBtn" aria-describedby="wSum">Tænd himlen</button><div class="hint">Legepenge · 18+ · Lyd anbefales</div></div></div>
+      <div class="overlay" id="splash"><section id="welcome" aria-labelledby="wEyebrow"><div class="w-block"><div class="w-scrim" aria-hidden="true"></div><p id="wEyebrow" class="w-eb" aria-hidden="true"></p><p id="wBody" class="w-body" aria-hidden="true"></p><div id="wLegend" class="w-legend" aria-hidden="true"></div><p id="wSum" class="sr" aria-hidden="true"></p></div></section><div class="center"><button class="btn" id="unlockBtn" aria-describedby="wSum">Tænd himlen</button><div class="hint">Legepenge · 18+ · Lyd anbefales</div></div></div>
       <div class="overlay" id="stormReady"><div class="center"><button class="btn storm two" id="startStormBtn"><span>Start Solstormen</span><small class="num" id="stormInfo"></small></button></div></div>
       <div class="overlay" id="bigwin"><div class="center"><button class="btn ghost small" id="continueBtn">Fortsæt</button></div></div>
       <div class="overlay" id="summary"><div class="card" id="summaryCard"></div></div>
@@ -270,7 +270,7 @@ export class Hud {
     const need = Math.max(0, Math.ceil(reward.frac * K - charge));
     const what = reward.kp === 9 ? 'Solstorm' : 'Ladet spin';
     const n = avgSpinsTo(reward.kp);
-    this.el.goal.innerHTML = `<span class="in"><span class="kp">Kp ${fmt1(kp)}</span><span class="sep">·</span>${what} ved <b>Kp ${reward.kp}</b>${n ? `<span class="sep">·</span><span class="num">≈ ${fmtInt(n)} spin</span>` : ''}<span class="lab"><span class="sep">·</span><span class="num">${fmtInt(need)} ladning</span></span><span class="chev" aria-hidden="true">›</span></span>`;
+    this.el.goal.innerHTML = `<span class="in"><span class="kp">Kp ${fmt1(Math.floor(kp * 10) / 10)}</span><span class="sep">·</span>${what} ved <b>Kp ${reward.kp}</b>${n ? `<span class="sep">·</span><span class="num">≈ ${fmtInt(n)} spin</span>` : ''}<span class="lab"><span class="sep">·</span><span class="num">${fmtInt(need)} ladning</span></span><span class="chev" aria-hidden="true">›</span></span>`;
   }
 
   /** Storm status in the goal chip (replaces the Kp goal while Solstorm runs). */
@@ -364,7 +364,15 @@ export class Hud {
     this.el.wLegend.innerHTML = c.legend === 'storm' && c.storm ? stormShardsSvg(c.storm.played, c.storm.total) : kpLegendSvg();
     this.el.wSum.textContent = c.summary;
     if (c.buttonLabel) this.el.unlockBtn.setAttribute('aria-label', c.buttonLabel); else this.el.unlockBtn.removeAttribute('aria-label');
+    this.welcomeAt = performance.now();
     if (reveal) { void w.offsetWidth; w.classList.add('reveal'); }
+  }
+  private welcomeAt = 0;
+  /** Is this welcome state on screen and readable (not squeezed out, and past its line entrance)? */
+  welcomeShowing(state: WelcomeCopy['state']): boolean {
+    const w = this.el.welcome;
+    if (w.dataset.state !== state || w.dataset.fit === '4') return false;
+    return !w.classList.contains('reveal') || performance.now() - this.welcomeAt >= 2300;
   }
 
   /** Fit the welcome between the logo (canvas, stage px) and the button: anchored just under the logo,

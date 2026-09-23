@@ -94,3 +94,10 @@ describe('splash welcome copy', () => {
     expect(stormShardsSvg(3, 10).match(/class="sh"/g)).toHaveLength(7);
   });
 });
+
+describe('splash welcome Kp display', () => {
+  it('truncates instead of rounding, so the eyebrow never reaches the next threshold early', () => {
+    expect(welcomeCopy({ ...base, spins: 9, kp: 8.96 }).eyebrow.suffix).toBe('Kp 8,9');
+    expect(welcomeCopy({ ...base, spins: 9, kp: 2.99, perksPending: 1 }).eyebrow.suffix).toBe('Kp 2,9');
+  });
+});
