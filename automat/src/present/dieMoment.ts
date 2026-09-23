@@ -101,7 +101,7 @@ export class DieMoment {
   private plate = new Container();
   private plateText: IsText | null = null;
   /** Ramped levels (0..1): the FX, the corona (win: → 1), the words, the tablets, the plate, the world ramps, the fan. */
-  lv = { fx: 0, cor: 0.75, title: 0, nr: 0, tabs: 0, plate: 0, world: 0, fan: 1, shade: 0 };
+  lv = { fx: 0, cor: 0.75, title: 0, nr: 0, tabs: 0, plate: 0, world: 0, fan: 1, shade: 0, deep: 0 };
   private base = { sky: 0, bloom: 1, zoom: 1 };
   private t = 0;
   private bobOn = false;
@@ -225,11 +225,12 @@ export class DieMoment {
     const w = this.h.w, W = w.stage.w, H = w.stage.h, z = this.calm ? 1 : 1.04;
     const { top, bottom } = this.zone();
     this.zoneTop = top; this.zoneBottom = bottom;
+    const t0 = Math.min(top + (this.band ? 34 : 0), bottom - 80); // the DEMO band keeps the band's first 34 px (never under the title)
     const want = clamp(120, 0.34 * Math.min(W, H), 260);
-    const fit = (bottom - top - 16) / (1.92 * z);
+    const fit = (bottom - t0 - 16) / (1.78 * z); // the block: the title's top ≈ 0.8·S over the centre, the tablets' foot ≈ 0.88·S under it
     this.tS = Math.max(48, Math.min(want, fit, (W - 32) / 1.25));
     this.tx = W / 2;
-    this.ty = (top + bottom) / 2;
+    this.ty = (t0 + bottom) / 2;
     if (!this.placed) { this.placed = true; this.ax = this.tx; this.ay = this.ty; this.S = this.tS; }
   }
   /** Screen → layer px (the banners layer sits under the camera: zoom about the screen centre). */
@@ -303,6 +304,8 @@ export class DieMoment {
     this.phase = 'lift';
     if (this.cel) this.lv.shade = 1; // the celebration's dim hands over (constant light)
     else this.track(gsap.to(this.lv, { shade: 1, duration: calm ? 0.4 : 0.6, ease: 'sine.inOut' }));
+    // then the night deepens around the die (a slow darkening: the corona and the motes read against it)
+    this.track(gsap.to(this.lv, { deep: 1, duration: 0.9, delay: calm ? 0.2 : 0.35, ease: 'sine.inOut' }));
     this.track(gsap.to(this.lv, { fx: 1, duration: calm ? 0.35 : 0.6, ease: 'sine.inOut' }));
     this.track(gsap.to(this.lv, { title: 1, duration: 0.45, delay: calm ? 0.1 : 0.4, ease: 'sine.out' }));
     if (this.nr) this.track(gsap.to(this.lv, { nr: 1, duration: 0.4, delay: calm ? 0.2 : 0.6 }));
@@ -566,14 +569,15 @@ export class DieMoment {
     }
     // FX
     const fx = lv.fx;
-    // the stage dim: 0.55 × shade, less whatever a closing celebration still darkens (its dim is 0.55 × its alpha)
-    const L = 0.55 * lv.shade, cel = this.cel && !this.cel.destroyed && this.cel.visible ? 0.55 * this.cel.alpha : 0;
+    // the stage dim: 0.55 × shade (deepening to 0.68), less whatever a closing celebration still darkens (its dim is
+    // 0.55 × its alpha)
+    const L = (0.55 + 0.13 * lv.deep) * lv.shade, cel = this.cel && !this.cel.destroyed && this.cel.visible ? 0.55 * this.cel.alpha : 0;
     this.shade.alpha = clamp(0, 1 - (1 - L) / Math.max(0.05, 1 - cel), 1);
     this.shade.position.set(0, 0);
     this.shade.width = w.stage.w; this.shade.height = w.stage.h;
     this.dim.position.set(A.x, A.y);
     this.dim.width = this.dim.height = sl * 4.4;
-    this.dim.alpha = 0.58 * fx;
+    this.dim.alpha = 0.64 * fx;
     for (const [i, r] of this.ribbons.entries()) {
       r.width = sl * 4.2; r.height = sl * 1.25;
       r.position.set(A.x + Math.sin(this.t * 0.33 + i * 2.1) * sl * 0.2, A.y + (i ? 0.34 : -0.42) * sl);
