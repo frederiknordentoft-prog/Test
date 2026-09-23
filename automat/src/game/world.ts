@@ -5,6 +5,7 @@ import { createStage, resizeStage, captureScene, type Stage } from '../render/ap
 import { GridView } from '../render/grid/GridView.ts';
 import { Frame } from '../render/grid/Frame.ts';
 import { KpArc } from '../render/hud/KpArc.ts';
+import { loadDieArt } from '../render/art/dieImage.ts';
 import { softBand } from '../render/tex.ts';
 import {
   IsText, installIsfont, setIsfontClock, bakeSymbols, bakeSymbolsAsync, bakeCellFx, SkyLayer, UberPost, createBloom,
@@ -47,6 +48,8 @@ export class World {
   private stormBaking: Promise<SymbolSet> | null = null;
   cellFx!: CellFx;
   skyP: SkyParams = { kp: 0, storm: 0, glow: 0, cme: 0, sun: 0, time: 0 };
+  /** Terningen's gate light: a floor under skyP.glow (≤ 6 % luminance lift at 0.6; no Kp change, no red). */
+  skyGlowFloor = 0;
   /** When true, Game/cinematics drive skyP.kp directly (no smoothing to the meter). */
   skyManual = false;
   skyKpTarget = 0;
@@ -71,6 +74,7 @@ export class World {
   private perfSlow = 0;
   private perfFast = 0;
   private kpDisplay: () => number = () => 0;
+  private frameHooks: ((dt: number, t: number) => void)[] = [];
 
   constructor(hud: Hud) {
     this.hud = hud;
@@ -85,6 +89,7 @@ export class World {
     const st = await createStage(this.hud.canvasHost);
     this.stage = st;
     installIsfont(st.renderer);
+    void loadDieArt(); // Terningen: decode the die artwork once (the DOM icons repaint when it lands)
     this.grid.renderer = st.renderer;
     setIsfontClock(() => clock.real);
     this.sky = new SkyLayer(st.renderer);
@@ -285,7 +290,7 @@ export class World {
       this.skyKpTarget = this.kpDisplay();
       this.skyP.kp += (this.skyKpTarget - this.skyP.kp) * Math.min(1, dt * 2.5);
     }
-    this.skyP.glow = Math.max(0, this.skyP.glow - dt * 1.4);
+    this.skyP.glow = Math.max(this.skyGlowFloor, this.skyP.glow - dt * 1.4);
     this.skyP.time = t;
     this.sky.update(this.skyP);
     // arc / frame
@@ -300,6 +305,7 @@ export class World {
     this.motes.update(fx);
     this.cellShatter.update(fx);
     this.screenShatter.update(fx);
+    for (const f of this.frameHooks) f(dt, t);
     // camera
     const cam = this.stage.camera;
     this.cam.trauma = Math.max(0, this.cam.trauma - dt * 1.1);
@@ -363,12 +369,18 @@ export class World {
   shake(trauma: number): void { if (!this.calm) this.cam.trauma = Math.min(1, this.cam.trauma + trauma); }
   glowPulse(storm: boolean): void { this.skyP.glow = Math.max(this.skyP.glow, storm ? 0.8 : 0.55); }
   breathe(): void { this.skyP.glow = 1; }
-  flash(amount: number, ms: number): void {
-    if (this.calm) return;
+  /** FlashBudget bookkeeping (≤ 3 luminance flashes / s), shared with no exemptions by w.flash() and every other
+   *  large-area brightening (the gate's seam and resonance waves). True = the flash may happen (and is counted). */
+  allowFlash(): boolean {
     const now = clock.real;
     this.flashTimes = this.flashTimes.filter((x) => now - x < 1);
-    if (this.flashTimes.length >= 3) return; // FlashBudget: ≤ 3 luminance flashes / s
+    if (this.flashTimes.length >= 3) return false;
     this.flashTimes.push(now);
+    return true;
+  }
+  flash(amount: number, ms: number): void {
+    if (this.calm || !this.allowFlash()) return;
+    const now = clock.real;
     this.uber.exposure = Math.min(0.9, amount);
     this.flashUntil = now + Math.max(0.033, ms / 1000);
   }
@@ -379,6 +391,17 @@ export class World {
     if (this.sky && 'calm' in this.sky) (this.sky as unknown as { calm: boolean }).calm = b;
   }
   capture(): Texture { return captureScene(this.stage); }
+  /** Per-frame hook (after the fx update; also under advance()). Returns the remover. */
+  onFrame(f: (dt: number, t: number) => void): () => void {
+    this.frameHooks.push(f);
+    return () => { this.frameHooks = this.frameHooks.filter((g) => g !== f); };
+  }
+  /** Terningekammeret: fade the machine (frame, grid, cell fx, arc, motes, popups); hidden at 0. The sky, the chamber
+   *  layer, the particles and the banners are untouched. */
+  setMachineAlpha(a: number): void {
+    const L = this.stage.layers;
+    for (const c of [L.frameBack, L.grid, L.cellFx, L.frameFront, L.arc, L.motes]) { c.alpha = a; c.visible = a > 0.001; }
+  }
   hideForShatter(b: boolean): void {
     const L = this.stage.layers;
     for (const c of [L.frameBack, L.grid, L.cellFx, L.frameFront, L.arc, L.motes]) c.visible = !b;

@@ -3,7 +3,7 @@
 // It reads a DiceView (never the store) plus the player's real count for the preview ribbons.
 import type { DiceView } from '../game/dice.ts';
 import { fmtDice, diceWord } from '../game/dice.ts';
-import { CHAMBER, GATE_LABELS, chamberFacts, chamberMyth, chamberSummary, gateState, type GateState, type MythLine, type RibbonKind } from './diceCopy.ts';
+import { CHAMBER, chamberFacts, chamberMyth, chamberSummary, gateState, type GateState, type MythLine, type RibbonKind } from './diceCopy.ts';
 
 const ICON_CLOSE = '✕';
 
@@ -17,7 +17,7 @@ export function chamberMarkup(soundIcon: string): string {
       <button class="iconbtn" id="chClose" aria-label="${CHAMBER.close}">${ICON_CLOSE}</button>
     </header>
     <div class="ch-myth" id="chMyth" aria-hidden="true"></div>
-    <div class="ch-gate" id="chGate" aria-hidden="true"><div class="gate-stub" id="chStub"><span class="lintel">${GATE_LABELS.lintel}</span><span class="g-title">${GATE_LABELS.title}</span><span class="g-concept">${GATE_LABELS.concept}</span></div></div>
+    <div class="ch-gate" id="chGate" aria-hidden="true"></div>
     <p class="sr" id="chSum"></p>
     <div class="ch-count">
       <span class="n num" id="chN">0</span><span class="w" id="chW">terninger</span>

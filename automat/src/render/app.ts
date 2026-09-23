@@ -4,7 +4,7 @@
 // └─ camera (push / shake; pivot = screen centre)
 //    ├─ world  [bloom, uber]                       ← post only here
 //    │   ├─ scene (identity transform; captured for the screen shatter)
-//    │   │   sky · frameBack · grid · cellFx · frameFront · arc · banners · particles · motes
+//    │   │   sky · chamber · frameBack · grid · cellFx · frameFront · arc · particles · motes · banners
 //    │   └─ shatterLayer
 //    └─ hud (no filters: demo watermark, calm chip)
 import { Application, Container, Filter, RenderTexture, Rectangle, type Renderer } from 'pixi.js';
@@ -19,7 +19,7 @@ export interface Stage {
   world: Container;
   scene: Container;
   layers: {
-    sky: Container; frameBack: Container; grid: Container; cellFx: Container; frameFront: Container;
+    sky: Container; chamber: Container; frameBack: Container; grid: Container; cellFx: Container; frameFront: Container;
     arc: Container; banners: Container; particles: Container; motes: Container; shatter: Container; hud: Container;
   };
   res: number;
@@ -59,10 +59,11 @@ export async function createStage(host: HTMLElement): Promise<Stage> {
   const scene = new Container();
   const mk = (name: string) => { const c = new Container(); c.label = name; return c; };
   const layers = {
-    sky: mk('sky'), frameBack: mk('frameBack'), grid: mk('grid'), cellFx: mk('cellFx'), frameFront: mk('frameFront'),
+    sky: mk('sky'), chamber: mk('chamber'), frameBack: mk('frameBack'), grid: mk('grid'), cellFx: mk('cellFx'), frameFront: mk('frameFront'),
     arc: mk('arc'), banners: mk('banners'), particles: mk('particles'), motes: mk('motes'), shatter: mk('shatter'), hud: mk('hud'),
   };
-  scene.addChild(layers.sky, layers.frameBack, layers.grid, layers.cellFx, layers.frameFront, layers.arc, layers.particles, layers.motes, layers.banners);
+  // chamber: Terningen's gate (GateView) over the live sky, bloom-lit, under the machine and the particles
+  scene.addChild(layers.sky, layers.chamber, layers.frameBack, layers.grid, layers.cellFx, layers.frameFront, layers.arc, layers.particles, layers.motes, layers.banners);
   world.addChild(scene, layers.shatter);
   camera.addChild(world, layers.hud);
   app.stage.addChild(camera);

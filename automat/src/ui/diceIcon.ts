@@ -24,7 +24,8 @@ function hex(s: number): { c: [number, number]; v: [number, number][] } {
   return { c: [cx, cy], v };
 }
 
-const fallbackPainter: DiePainter = (canvas, cssPx, o) => {
+/** Procedural painter: the empty socket, the violet glyph and an isometric cube (the art's decode fallback). */
+export const fallbackPainter: DiePainter = (canvas, cssPx, o) => {
   const g = dprContext(canvas, cssPx);
   if (!g) return;
   const { c, v } = hex(cssPx);

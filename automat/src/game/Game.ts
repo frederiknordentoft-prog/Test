@@ -16,7 +16,7 @@ import { presentSpin, idleGrid, type PresentCtx } from '../present/director.ts';
 import { profileOf, winTier } from '../present/schedule.ts';
 import { Celebration } from '../present/celebration.ts';
 import { playSolstormIntro, type CineWorld, type CineHandle } from '../present/cinematics/solstorm.ts';
-import { DomDicePresenter, type DicePresenter, type CeremonyHandle, type Pt } from '../present/dicePresenter.ts';
+import { PixiDicePresenter, type DicePresenter, type CeremonyHandle, type Pt } from '../present/dicePresenter.ts';
 import { wait, clock } from '../present/clock.ts';
 import {
   MENU, DRAWER, DEMO_STORM_NOTE, DEMO_DIE_BANNER, SR_CEREMONY_END, srAward, srStormPop, srStormOutro, stormSummaryRow, helloHtml, helloCopy,
@@ -74,9 +74,9 @@ export class Game {
     // An interrupted storm's dice are still held on its frame (rebuilt on resume); the chip shows the rest.
     this.heldDice = this.s.activeStorm?.diceAwarded ?? 0;
     this.shownDice = Math.max(0, this.dice.count - this.heldDice);
-    this.award = new DomDicePresenter({
+    this.award = new PixiDicePresenter({
       hud, w, calm: () => this.calm(), haptic: (p) => this.haptic(p),
-      land: (add, fromHeld) => this.landDice(add, fromHeld),
+      land: (add, fromHeld) => this.landDice(add, fromHeld), seed: () => this.dice.seed,
     });
     if (!CONFIG.stakesOre.includes(this.s.stakeOre)) this.s.stakeOre = CONFIG.defaultStakeOre;
     this.displayCharge = this.s.meter.charge;
@@ -1126,7 +1126,7 @@ export class Game {
         this.refreshDice();
         return { ...this.dice };
       },
-      award: () => ({ inFlight: this.award.inFlight(), held: this.award.held(), shown: this.shownDice, heldDice: this.heldDice }),
+      award: () => ({ inFlight: this.award.inFlight(), held: this.award.held(), shown: this.shownDice, heldDice: this.heldDice, phase: this.award.phase() }),
       ceremony: (kind: CeremonyKind) => { void this.runCeremony(kind); },
       /** The running ceremony: started = past the pre-roll (skippable 2,0 s after T0), placard = waiting for a button. */
       gate: () => { const r = this.ceremonyRun; return r ? { kind: r.kind, started: !!r.handle, canSkip: !!r.handle?.canSkip(), placard: r.placard } : null; },

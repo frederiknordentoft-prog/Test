@@ -4,6 +4,7 @@ import { DICE_GOAL, DICE_MIN_X, diceFor, diceDefaults, addDie, fmtDice, diceWord
 import { dieBirthAt, celebrateEndWithDie, TIER_SECS, winTier } from '../src/present/schedule.ts';
 import { spinBase } from '../src/math/engine.ts';
 import { spinRng } from '../src/math/rng.ts';
+import { gateLattice, gateOrder, GATE_H, TILES, PER_LEAF } from '../src/render/chamber/gateLattice.ts';
 
 describe('diceFor: ≥ 10× the stake the spin was evaluated at (integer øre, exact)', () => {
   it('boundaries', () => {
@@ -110,10 +111,70 @@ describe('award timing (schedule helpers; schedule() itself has no dice input)',
   });
 });
 
-// src/render/chamber/gateLattice.ts (pure) belongs to the GateView build and does not exist yet.
-describe('gateLattice / gateOrder (deferred to the GateView build)', () => {
-  it.todo('gateLattice: exactly 1948 tiles, 974 per leaf, all inside the arch with the border margin; golden hash of the coordinates');
-  it.todo('gateOrder: a permutation of 0..1947, deterministic per seed, seeds differ, golden hash for seed 1');
-  it.todo('gateOrder: no predictable last tile — over 200 seeds order[1947] falls in ≥ 8 of 12 area cells');
-  it.todo('gateOrder: no front line — prefixes 500/1000/1500/1900: each of 6 bands holds n/6 ± 35 %, |left − right| ≤ 10 % of n');
+// src/render/chamber/gateLattice.ts (pure): the tiles and the per-player fill order.
+const fnv = (vals: Iterable<number>) => {
+  let h = 0x811c9dc5;
+  for (const v of vals) { let x = v | 0; for (let b = 0; b < 4; b++) { h ^= x & 255; h = Math.imul(h, 0x01000193) >>> 0; x >>>= 8; } }
+  return h.toString(16).padStart(8, '0');
+};
+/** Equal-count cells over all tiles: 6 horizontal bands (sextiles of y), optionally × the 2 leaves. */
+function bands(): Uint8Array {
+  const L = gateLattice();
+  const idx = Array.from({ length: TILES }, (_, i) => i).sort((a, b) => L.y[a] - L.y[b] || a - b);
+  const b = new Uint8Array(TILES);
+  idx.forEach((i, k) => { b[i] = Math.floor((k * 6) / TILES); });
+  return b;
+}
+
+describe('gateLattice / gateOrder', () => {
+  it('gateLattice: exactly 1948 tiles, 974 per leaf, all inside the arch with the border margin; golden hash of the coordinates', () => {
+    const L = gateLattice();
+    expect(L.x.length).toBe(TILES);
+    expect(TILES).toBe(DICE_GOAL);
+    let left = 0;
+    for (let i = 0; i < TILES; i++) {
+      const x = L.x[i], y = L.y[i], m = L.spacing / 2 - 1e-6;
+      if (L.leaf[i] === 0) left++;
+      // the leaf's own border: the arch / its jamb, the bottom and the centre seam
+      expect(L.leaf[i] === 0 ? 0.5 - x : x - 0.5).toBeGreaterThanOrEqual(m);
+      expect(GATE_H - y).toBeGreaterThanOrEqual(m);
+      if (y < 0.5) expect(0.5 - Math.hypot(x - 0.5, y - 0.5)).toBeGreaterThanOrEqual(m);
+      else expect(Math.min(x, 1 - x)).toBeGreaterThanOrEqual(m);
+    }
+    expect(left).toBe(PER_LEAF);
+    const coords: number[] = [];
+    for (let i = 0; i < TILES; i++) coords.push(Math.round(L.x[i] * 1e6), Math.round(L.y[i] * 1e6));
+    expect(fnv(coords)).toBe('dbedccce');
+  });
+
+  it('gateOrder: a permutation of 0..1947, deterministic per seed, seeds differ, golden hash for seed 1', () => {
+    const o = gateOrder(1);
+    expect(o.length).toBe(TILES);
+    expect(new Set(o).size).toBe(TILES);
+    expect(Math.max(...o)).toBe(TILES - 1);
+    expect(Array.from(gateOrder(1))).toEqual(Array.from(o));
+    expect(Array.from(gateOrder(2)).slice(0, 50)).not.toEqual(Array.from(o).slice(0, 50));
+    expect(fnv(o)).toBe('9747d555');
+  });
+
+  it('gateOrder: no predictable last tile — over 200 seeds order[1947] falls in ≥ 8 of 12 area cells', () => {
+    const L = gateLattice(), b = bands();
+    const cells = new Set<number>();
+    for (let s = 0; s < 200; s++) { const i = gateOrder(0x1000 + s * 7919)[TILES - 1]; cells.add(b[i] * 2 + L.leaf[i]); }
+    expect(cells.size).toBeGreaterThanOrEqual(8);
+  });
+
+  it('gateOrder: no front line — prefixes 500/1000/1500/1900: each of 6 bands holds n/6 ± 35 %, |left − right| ≤ 10 % of n', () => {
+    const L = gateLattice(), b = bands();
+    for (const seed of [1, 7, 0xdeadbeef]) {
+      const o = gateOrder(seed);
+      for (const n of [500, 1000, 1500, 1900]) {
+        const c = [0, 0, 0, 0, 0, 0];
+        let lr = 0;
+        for (let k = 0; k < n; k++) { c[b[o[k]]]++; lr += L.leaf[o[k]] ? 1 : -1; }
+        for (const v of c) expect(Math.abs(v - n / 6)).toBeLessThanOrEqual(0.35 * (n / 6));
+        expect(Math.abs(lr)).toBeLessThanOrEqual(0.1 * n);
+      }
+    }
+  });
 });

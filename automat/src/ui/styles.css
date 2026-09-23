@@ -605,12 +605,6 @@ html, body {
 .ch-myth .chip.concept { display:inline-flex; margin:6px auto 2px; }
 .ch-myth .cond { display:none; }
 .ch-gate { position:relative; min-height:0; display:grid; place-items:center; }
-.gate-stub { display:flex; flex-direction:column; align-items:center; gap:6px; opacity:.9; }
-.gate-stub .lintel { font:700 18px/1 system-ui,sans-serif; letter-spacing:.45em; color:rgba(234,248,255,.55); padding:6px 14px; border:1px solid var(--line-strong); border-radius:4px; }
-.gate-stub .g-title, .gate-stub .g-concept { display:none; }
-#chamber[data-state='open'] .gate-stub .lintel { color:var(--ice); text-shadow:0 0 12px rgba(25,227,214,.6); }
-#chamber[data-state='open'] .gate-stub .g-title { display:block; font:700 22px/1 system-ui,sans-serif; letter-spacing:.14em; color:var(--ice); }
-#chamber[data-state='open'] .gate-stub .g-concept { display:block; font-size:10px; letter-spacing:.3em; color:var(--muted); }
 .ch-count { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px 10px; padding-top:4px; }
 .ch-count .n { font-size:34px; font-weight:800; background:linear-gradient(90deg,#19e3d6,#8a5cff,#ff2bd6); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .ch-count.zero .n { background:none; color:var(--muted); }
