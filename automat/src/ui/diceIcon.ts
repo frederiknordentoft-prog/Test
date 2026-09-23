@@ -1,7 +1,8 @@
-// Die icon painter for DOM canvases (HUD chip, desktop panel, card medallions, flight).
-// The default is procedural (socket hexagon / isometric cube / glyph). The die artwork module
-// (render/art/dieImage.ts drawDie) replaces it via setDiePainter() once its bitmap has decoded.
-export type DieState = 'socket' | 'die' | 'glyph';
+// Die icon painter for DOM canvases (the niche, card medallions, menu/history icons, the flight).
+// The user's die artwork (render/art/dieImage.ts drawDie) is registered via setDiePainter() once its bitmap has
+// decoded; the procedural painter below (socket hexagon / isometric cube / glyph) is the decode-failure fallback only.
+// 'frozen' = the die sealed in ice (the niche at 0 dice): the art desaturated and frosted (fallback: the socket).
+export type DieState = 'socket' | 'die' | 'glyph' | 'frozen';
 export type DiePainter = (canvas: HTMLCanvasElement, cssPx: number, o: { state: DieState; ring?: boolean }) => void;
 
 /** Sizes the canvas backing store for the device pixel ratio and returns a context in CSS px. */
@@ -30,7 +31,7 @@ export const fallbackPainter: DiePainter = (canvas, cssPx, o) => {
   if (!g) return;
   const { c, v } = hex(cssPx);
   const path = () => { g.beginPath(); v.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); };
-  if (o.state === 'socket') {
+  if (o.state === 'socket' || o.state === 'frozen') {
     // empty socket: outline at 45 %, the three inner edges at 25 % (the art is saved for the first find)
     g.lineWidth = 1.2; g.strokeStyle = 'rgba(156,201,255,.45)'; path(); g.stroke();
     g.strokeStyle = 'rgba(156,201,255,.25)'; g.beginPath();
@@ -63,6 +64,36 @@ let painter: DiePainter = fallbackPainter;
 const listeners = new Set<() => void>();
 export function paintDie(canvas: HTMLCanvasElement, cssPx: number, o: { state: DieState; ring?: boolean }): void {
   try { painter(canvas, cssPx, o); } catch { fallbackPainter(canvas, cssPx, { ...o, state: o.state === 'die' ? 'glyph' : o.state }); }
+}
+/** The die with a specular band over it (a glint frame): `t` 0..1 moves the band across the die along `angle`
+ *  (radians; 0.785 = top-left → bottom-right), drawn 'source-atop' so it lights the art only, never the air around it. */
+export function paintDieLit(canvas: HTMLCanvasElement, cssPx: number, o: { state: DieState }, t: number, angle = Math.PI / 4, a = 0.55): void {
+  paintDie(canvas, cssPx, o);
+  if (t < 0 || t > 1) return;
+  const g = canvas.getContext('2d');
+  if (!g) return;
+  const dpr = canvas.width / cssPx;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const c = cssPx / 2, r = cssPx * 0.72, dx = Math.cos(angle) * r, dy = Math.sin(angle) * r;
+  const gr = g.createLinearGradient(c - dx, c - dy, c + dx, c + dy);
+  const at = (x: number) => Math.min(1, Math.max(0, x));
+  const p = -0.2 + t * 1.4, w = 0.13;
+  gr.addColorStop(at(p - w), 'rgba(255,255,255,0)');
+  gr.addColorStop(at(p - w * 0.25), `rgba(255,255,255,${a * 0.8})`);
+  gr.addColorStop(at(p), `rgba(255,255,255,${a})`);
+  gr.addColorStop(at(p + w), 'rgba(255,255,255,0)');
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = gr;
+  g.fillRect(0, 0, cssPx, cssPx);
+  g.globalCompositeOperation = 'source-over';
+}
+/** Paint every `canvas.die-ico` under `root` with the die art at its CSS size (menu, history, card rows, banner).
+ *  `data-state="frozen"` paints the sealed die. Canvases not laid out yet (0 px) are skipped. */
+export function paintDieIcons(root: ParentNode): void {
+  for (const c of Array.from(root.querySelectorAll<HTMLCanvasElement>('canvas.die-ico'))) {
+    const px = c.clientWidth;
+    if (px > 0) paintDie(c, px, { state: c.dataset.state === 'frozen' ? 'frozen' : 'die' });
+  }
 }
 /** Swap the painter (e.g. the decoded die artwork); every registered canvas repaints. */
 export function setDiePainter(p: DiePainter): void { painter = p; listeners.forEach((f) => f()); }

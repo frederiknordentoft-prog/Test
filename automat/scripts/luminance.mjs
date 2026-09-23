@@ -1,9 +1,11 @@
 // Photosensitivity check (WCAG 2.3.1-style general flash heuristic, whole-screen):
 // steps the real game at 30 fps through a segment, reads the canvas back each frame and counts opposing ≥10 %
 // relative-luminance swings per second. Segments: 'storm' (default: the demo time-lapse, the Solstorm cinematic and
-// the first storm spins), 'award' (Terningen: "Vis en terning", the die's birth, glint and flight) and 'gate' (the full
-// demo gate ceremony, no skip, to its placard).
-// Usage: node scripts/luminance.mjs [baseUrl] [calm=0|1] [segment=storm|award|gate]
+// the first storm spins), 'award' (Terningen: "Vis en terning", the die's birth, glint and flight; then a real spin's
+// die through its celebration and the big die moment: the lift, the corona, the hold and the flight home), 'gamble'
+// (the demo die with its choice: the moment, Kvit eller dobbelt, the throw, the result and the settle) and 'gate' (the
+// full demo gate ceremony, no skip, to its placard).
+// Usage: node scripts/luminance.mjs [baseUrl] [calm=0|1] [segment=storm|award|gamble|gate]
 import { chromium } from 'playwright-core';
 
 const [base = 'http://127.0.0.1:4173/', calm = '0', segment = 'storm'] = process.argv.slice(2);
@@ -50,6 +52,19 @@ if (segment === 'storm') {
 } else if (segment === 'award') {
   await page.evaluate(() => { window.__slot.setSeed(99); window.__slot.game.dispatch({ t: 'demoDie' }); });
   for (let f = 0; f < 30 * 4; f++) trace.push(await lum());
+  // a real die (the first: no offer) through the celebration and the hero beat to the landing
+  for (let f = 0; f < 30 && (await page.evaluate(() => window.__slot.state())) !== 'idle'; f++) trace.push(await lum());
+  await page.evaluate(() => { window.__slot.qaNext('die'); window.__slot.spin(); });
+  for (let f = 0; f < 30 * 16 && (f < 30 || (await page.evaluate(() => window.__slot.state())) !== 'idle'); f++) trace.push(await lum());
+  for (let f = 0; f < 30; f++) trace.push(await lum());
+} else if (segment === 'gamble') {
+  // the demo die with its choice: staged, Kvit eller dobbelt at 1,2 s, the throw, the result, the settle
+  await page.evaluate(() => { window.__slot.setSeed(99); window.__slot.game.dispatch({ t: 'demoGamble' }); });
+  for (let f = 0; f < 30 * 12 && !(await page.evaluate(() => window.__slot.gambleRun()?.armed)); f++) trace.push(await lum());
+  for (let f = 0; f < 6; f++) trace.push(await lum());
+  await page.evaluate(() => window.__slot.choose('double'));
+  for (let f = 0; f < 30 * 14 && (await page.evaluate(() => window.__slot.state())) !== 'idle'; f++) trace.push(await lum());
+  for (let f = 0; f < 30; f++) trace.push(await lum());
 } else {
   // the pre-roll races audio.prepareGate() against a real-time 2 s timeout: let real time pass until the ceremony runs
   await page.evaluate(() => window.__slot.game.dispatch({ t: 'demoGate' }));

@@ -4,7 +4,7 @@
 import { fmtInt, fmtKr, fmtPct, fmt1 } from '../core/format.ts';
 import { CONFIG, REPORT, type MathConfig, type MathReport } from '../math/config.ts';
 import { T } from '../present/schedule.ts';
-import { DICE_GOAL, DICE_MIN_X, fmtDice, diceWord, type DiceView } from '../game/dice.ts';
+import { DICE_GOAL, DICE_MIN_X, fmtDice, diceWord, type DiceView, type GambleLogEntry } from '../game/dice.ts';
 import { GAMBLE_BETS, GAMBLE_SIDES, winPips, type GambleBet } from '../math/gamble.ts';
 
 /** Legal swap flag: false removes the payback idea from the rules and the placard without a redesign. */
@@ -60,6 +60,8 @@ export function chipAria(n: number, unlock: DiceView['unlock']): string {
   return `Terninger: ${fmtDice(n)}.${s} Åbn Terningekammeret.`;
 }
 export const PANEL = { h: 'Terningekammeret', link: 'Porten under klinten ›' };
+/** Desktop tooltips (the keys come from the drawer's shortcut list). */
+export const TIPS = { vault: 'Terningekammeret (T)', link: 'Åbn Terningekammeret', demoDie: 'Terning med valg · demo (D)', demoStorm: 'Solstorm · demo (E)' };
 
 // ---------------------------------------------------------------- award
 export const awardCaption = (n: number) => `TERNING NR. ${fmtDice(n)}`;
@@ -370,7 +372,7 @@ export function gambleCardHtml(c: GambleCardCtx): string {
   const b = (act: string, x: { label: string; sub: string }, primary = false) =>
     `<button class="btn small${primary ? '' : ' ghost'} g-opt" data-gamble="${act}"${primary ? ' data-primary' : ''}><span class="g-l">${x.label}</span><small class="g-s num">${x.sub}</small></button>`;
   return `${o.demoNote ? `<div class="demo-note">${o.demoNote}</div>` : ''}
-    <h2>${o.eyebrow}</h2><div class="t" id="gcTitle">${o.title}</div><p class="g-body">${o.body}</p>
+    <div class="g-head"><canvas class="medal" aria-hidden="true"></canvas><div class="g-hd"><h2>${o.eyebrow}</h2><div class="t" id="gcTitle">${o.title}</div></div></div><p class="g-body">${o.body}</p>
     <div class="g-btns" role="group" aria-labelledby="gcTitle">${b('keep', o.keep, true)}${b('double', o.double)}${b('triple', o.triple)}</div>
     <p class="facts">${o.facts}</p>`;
 }
@@ -419,5 +421,24 @@ export function gambleRulesP1(): string {
 }
 export function gambleRulesP2(): string {
   return `Chancerne er fair: i gennemsnit giver alle tre valg præcis lige så mange terninger, som du satte på spil. Kun de nye terninger kan sættes på spil – aldrig dem i kammeret og aldrig penge. Kastet bruger spillets egen tilfældighedsgenerator og har sit eget ID. Din første terning beholdes altid, og mens alle ${G} fliser lyser, og porten ikke er åbnet, beholdes nye terninger altid.`;
+}
+/** Menu tab "Terningen" · "Dine valg": the player's own last choices as an audit trail (ID, choice, face, result). */
+export const GAMBLE_LOG = {
+  h: 'Dine valg',
+  intro: 'Dine seneste valg ved en ny terning. Hvert kast har sit eget ID.',
+  empty: 'Ingen valg endnu.',
+  head: { id: 'ID', choice: 'Valg', pip: 'Kast', result: 'Terninger' },
+  aria: (id: string, choice: string, pip: string, result: string) => `${id}: ${choice}${pip === '–' ? '' : `, kastet viste ${pip}`}, ${result}.`,
+};
+/** "1 → 2 terninger" · "1 → ingen" · "3 → 3 terninger" (a keep). */
+export const gambleLogResult = (stake: number, payout: number) => `${fmtDice(stake)} → ${payout > 0 ? countWord(payout) : 'ingen'}`;
+export interface GambleLogRow { id: string; choice: string; pip: string; result: string; aria: string }
+/** Pure: the last `max` entries, newest first. `openId` = a choice still open (its result may be committed but not yet
+ *  shown): never listed before the card has shown it and the choice has closed. */
+export function gambleLogRows(log: readonly GambleLogEntry[], openId: string | null, max = 10): GambleLogRow[] {
+  return log.filter((e) => e.id !== openId).slice(-max).reverse().map((e) => {
+    const id = e.gid ?? e.id, choice: string = GAMBLE[e.choice], pip = e.face === null ? '–' : String(e.face + 1), result = gambleLogResult(e.stake, e.payout);
+    return { id, choice, pip, result, aria: GAMBLE_LOG.aria(id, choice, pip, result) };
+  });
 }
 export const GAMBLE_NUMBERS_NOTE = 'Tallene gælder, når terningerne beholdes. Kvit eller dobbelt ændrer ikke gennemsnittet, men gør antallet mere spredt.';

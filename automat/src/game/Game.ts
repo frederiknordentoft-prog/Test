@@ -129,7 +129,7 @@ export class Game {
       if (this.state === 'splash') hud.placeWelcome(w.splashLogoBottom());
       if (this.celebration.active) this.celebration.layout(w.stage.w, w.stage.h, w.gridCenterY());
     };
-    hud.bindRefs({ history: () => this.s.history, settings: () => this.s.settings, kp: () => this.kp(), dice: () => this.shownView() });
+    hud.bindRefs({ history: () => this.s.history, settings: () => this.s.settings, kp: () => this.kp(), dice: () => this.shownView(), gambleLog: () => ({ log: this.dice.gambleLog, open: this.dice.gamble?.id ?? null }) });
     this.applySettings();
     this.refreshHud();
     if (!storageOk) hud.notice(`<span class="chip warn">${MENU.storage}</span>`);

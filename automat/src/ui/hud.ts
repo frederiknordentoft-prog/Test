@@ -6,12 +6,14 @@ import { CONFIG, REPORT } from '../math/config.ts';
 import { SYM_NAMES } from '../math/types.ts';
 import type { HistoryEntry, Settings } from '../game/store.ts';
 import { kpLegendSvg, stormShardsSvg, type WelcomeCopy } from './welcome.ts';
-import { fmtDice, diceWord, PREVIEW_STEPS, type DiceView, type PreviewStep } from '../game/dice.ts';
-import { CHIP_TITLE, PANEL, MENU, DRAWER, DEMO_PILL, chipAria, demoTag, diceRulesHtml } from './diceCopy.ts';
+import { PREVIEW_STEPS, type DiceView, type PreviewStep } from '../game/dice.ts';
+import { MENU, DRAWER, DEMO_PILL, TIPS, GAMBLE_LOG, gambleLogRows, diceRulesHtml } from './diceCopy.ts';
 import { AUTO } from './autoCopy.ts';
 import { AUTO_COUNTS, autoLimits, type AutoStop } from '../game/auto.ts';
-import { paintDie, onDiePainterChange } from './diceIcon.ts';
+import type { GambleLogEntry } from '../game/dice.ts';
+import { onDiePainterChange, paintDieIcons } from './diceIcon.ts';
 import { ChamberDom, chamberMarkup } from './chamber.ts';
+import { Vault, vaultMarkup } from './vault.ts';
 
 export type Intent =
   | { t: 'unlock' } | { t: 'spin' } | { t: 'stakeUp' } | { t: 'stakeDown' }
@@ -34,8 +36,11 @@ const ICON = {
   mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
   bolt: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L4 14h6.5L9 22l10-12.5h-6.6z"/></svg>',
   dots: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
-  die: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><g fill="currentColor" stroke="none"><circle cx="9" cy="9" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="15" cy="15" r="1.5"/></g></svg>',
+  stop: '<svg class="stop" viewBox="0 0 48 48" fill="currentColor"><rect x="14" y="14" width="20" height="20" rx="4.5"/></svg>',
+  loop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3.5l3 3-3 3"/><path d="M4 11.5v-1a4 4 0 0 1 4-4h12"/><path d="M7 20.5l-3-3 3-3"/><path d="M20 12.5v1a4 4 0 0 1-4 4H4"/></svg>',
 };
+/** A die icon canvas (painted with the user's die by paintDieIcons; the coded die only if the art cannot decode). */
+const DIE = (cls = '', frozen = false) => `<canvas class="die-ico${cls ? ' ' + cls : ''}"${frozen ? ' data-state="frozen"' : ''} aria-hidden="true"></canvas>`;
 
 const h = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', html = ''): HTMLElementTagNameMap[K] => {
   const e = document.createElement(tag);
@@ -58,8 +63,11 @@ export class Hud {
   private settingsRef: () => Settings = () => ({ music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar', dice: true, gambleOffers: true });
   private kpRef: () => number = () => 0;
   private diceRef: () => DiceView = () => ({ count: 0, unlock: 'none', mode: 'real' });
+  private gambleLogRef: () => { log: readonly GambleLogEntry[]; open: string | null } = () => ({ log: [], open: null });
   /** Terningekammeret DOM (text + state; the gate art is the presenter's). */
   chamber!: ChamberDom;
+  /** Terningenichen: the dice home (the die, its count, its idle life and the landing catch). */
+  vault!: Vault;
   private lastPress = 0;
 
   constructor(host: HTMLElement, onIntent: (i: Intent) => void) {
@@ -78,9 +86,9 @@ export class Hud {
       </header>
       <div id="hdr">
         <div class="pill" id="demoPill" role="group" aria-label="Demo-værktøjer">
-          <button class="pseg" id="demoStorm" aria-label="Udløs Solstorm – demo-værktøj der springer progressionen over. Findes ikke i den rigtige version."><span class="tag">DEMO</span>${ICON.bolt}<span class="txt">Solstorm</span></button>
+          <button class="pseg" id="demoStorm" aria-label="Udløs Solstorm – demo-værktøj der springer progressionen over. Findes ikke i den rigtige version." title="${TIPS.demoStorm}"><span class="tag">DEMO</span>${ICON.bolt}<span class="txt">Solstorm</span></button>
           <span class="sep" aria-hidden="true"></span>
-          <button class="pseg" id="demoDieSeg" aria-label="${DEMO_PILL.dieAria}">${ICON.die}<span class="txt">${DEMO_PILL.die}</span></button>
+          <button class="pseg" id="demoDieSeg" aria-label="${DEMO_PILL.dieAria}" title="${TIPS.demoDie}">${DIE('pill-die')}<span class="txt">${DEMO_PILL.die}</span></button>
         </div>
         <div class="right">
           <button class="iconbtn" id="toolsBtn" aria-label="Demo-værktøjer">${ICON.dots}</button>
@@ -92,10 +100,6 @@ export class Hud {
       <div id="slot-arc"><button id="goal" aria-label="Kp-stigen: se hvad der sker ved hvert niveau"></button></div>
       <div id="slot-grid"></div>
       <div class="side right" id="sideR">
-        <div class="panel dice-panel"><h4>${PANEL.h}</h4>
-          <button class="dp-row" id="diceRow"><canvas class="ico" id="diceIco2" aria-hidden="true"></canvas><span class="n num" id="diceN2">0</span><span class="w" id="diceW2">terninger</span></button>
-          <button class="linkbtn" id="diceLink">${PANEL.link}</button>
-        </div>
         <div class="panel"><h4>Gevinsttabel · ved indsats</h4><div id="payMini"></div></div>
         <div class="panel hist-panel"><h4>Seneste spin</h4><div class="hist" id="histSide"></div></div>
       </div>
@@ -104,24 +108,22 @@ export class Hud {
         <div class="text"><span id="winL">Held og lykke</span><span id="winR" class="num"></span></div>
       </div>
       <div id="deck">
-        <div class="cell-l"><div class="lbl">Saldo</div><div class="val num" id="bal">–</div>
-          <button class="dice zero" id="diceBtn" aria-label="${chipAria(0, 'none')}" title="${CHIP_TITLE}">
-            <canvas class="ico" id="diceIco" aria-hidden="true"></canvas>
-            <span class="n num" id="diceN"><span class="cur">0</span></span>
-            <span class="w" id="diceW"> terninger</span>
-          </button>
-        </div>
+        <div class="cell-l"><div class="lbl">Saldo</div><div class="val num" id="bal">–</div></div>
         <div class="stake">
           <div class="lbl">Indsats</div>
           <div class="row"><button class="step" id="stakeDn" aria-label="Sænk indsats">−</button><div class="val num" id="stake">–</div><button class="step" id="stakeUp" aria-label="Hæv indsats">+</button></div>
           <div class="lock num" id="lock"></div>
         </div>
         <div class="cell-r">
-          <button class="spin idle" id="spinBtn" aria-label="Spin">
-            <svg class="ring" viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" id="ring" cx="50" cy="50" r="46"/></svg>
-            <span class="ico">${ICON.spin}</span><span class="cap" id="spinCap">SPIN</span>
-          </button>
-          <button class="auto-pill" id="autoBtn" aria-label="${AUTO.pillAria}">${AUTO.pill}</button>
+          <div class="spin-col">
+            ${vaultMarkup()}
+            <button class="spin idle" id="spinBtn" aria-label="Spin" title="Spin (mellemrum)">
+              <span class="aur" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></span>
+              <svg class="ring" viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" id="ring" cx="50" cy="50" r="46"/></svg>
+              <span class="face"><span class="ico">${ICON.spin}${ICON.stop}</span><span class="cap" id="spinCap">SPIN</span></span>
+            </button>
+          </div>
+          <button class="auto-pill" id="autoBtn" aria-label="${AUTO.pillAria}" title="${AUTO.pillTitle}"><span class="ap-face"><span class="ap-ico" aria-hidden="true">${ICON.loop}${ICON.stop}</span><span class="ap-t" id="autoTxt">${AUTO.pill}</span></span></button>
         </div>
       </div>
       <footer id="foot">
@@ -136,7 +138,7 @@ export class Hud {
       <div class="overlay" id="stormReady"><div class="center"><button class="btn storm two" id="startStormBtn"><span>Start Solstormen</span><small class="num" id="stormInfo"></small></button></div></div>
       <div class="overlay" id="bigwin"><div class="center"><button class="btn ghost small" id="continueBtn">Fortsæt</button></div></div>
       <div class="overlay" id="summary"><div class="card" id="summaryCard"></div></div>
-      <div id="banner" role="status"><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>
+      <div id="banner" role="status"><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div>${DIE('b-die')}</div>
       <section id="hello" role="dialog" aria-modal="false" aria-labelledby="helloTitle" hidden></section>
       ${chamberMarkup(ICON.sound)}
       <div id="notice"></div>
@@ -146,7 +148,7 @@ export class Hud {
         <header><h3>NORDLYS</h3><button class="iconbtn" id="menuClose" aria-label="Luk">✕</button></header>
         <div class="tabs" role="tablist" id="tabs">
           <button role="tab" data-tab="rules">Regler & RTP</button><button role="tab" data-tab="pay">Gevinsttabel</button>
-          <button role="tab" data-tab="ladder">Kp-stigen</button><button role="tab" data-tab="dice">${MENU.tab}</button><button role="tab" data-tab="hist">Historik</button>
+          <button role="tab" data-tab="ladder">Kp-stigen</button><button role="tab" data-tab="dice">${DIE('tab-die')}${MENU.tab}</button><button role="tab" data-tab="hist">Historik</button>
           <button role="tab" data-tab="settings">Indstillinger</button><button role="tab" data-tab="rg">Spil ansvarligt</button>
         </div>
         <div class="body" id="menuBody"></div>
@@ -170,16 +172,15 @@ export class Hud {
           <p class="hint">${DRAWER.hintHtml}</p>
         </div>
       </div></div>
-      <div class="sheet-wrap" id="autoWrap"><div class="sheet auto-sheet" role="dialog" aria-modal="true" aria-labelledby="autoTitle">
-        <div class="grab"></div>
-        <header><h3 id="autoTitle">${AUTO.title}</h3><button class="iconbtn" id="autoClose" aria-label="${AUTO.close}">✕</button></header>
+      <div class="sheet-wrap" id="autoWrap"><div class="sheet auto-sheet" id="autoSheet" role="dialog" aria-modal="true" aria-labelledby="autoTitle">
+        <header><h3 id="autoTitle"><span class="ap-ico" aria-hidden="true">${ICON.loop}</span>${AUTO.title}</h3><button class="iconbtn" id="autoClose" aria-label="${AUTO.close}">✕</button></header>
         <div class="body">
           <p class="seg-lbl" id="autoNL">${AUTO.spinsLabel}</p>
-          <div class="seg" id="autoN" role="group" aria-labelledby="autoNL">${AUTO_COUNTS.map((n) => `<button class="btn ghost small" data-n="${n}" aria-pressed="false">${n}</button>`).join('')}</div>
+          <div class="seg segd" id="autoN" role="group" aria-labelledby="autoNL">${AUTO_COUNTS.map((n) => `<button class="sg num" data-n="${n}" aria-pressed="false">${n}</button>`).join('')}</div>
           <p class="seg-lbl" id="autoLL">${AUTO.limitLabel}</p>
-          <div class="seg" id="autoL" role="group" aria-labelledby="autoLL"></div>
+          <div class="seg segd" id="autoL" role="group" aria-labelledby="autoLL"></div>
           <p class="hint" id="autoHint"></p>
-          <div class="actions"><button class="btn small" id="autoGo">${AUTO.start}</button></div>
+          <button class="btn auto-go" id="autoGo">${AUTO.start}</button>
         </div>
       </div></div>`;
     host.appendChild(ov);
@@ -187,10 +188,12 @@ export class Hud {
     for (const id of ['toolsBtn', 'calmChip', 'calmFx', 'reg', 'clock', 'regBal', 'modeBadge', 'demoPill', 'muteBtn', 'menuBtn', 'goal', 'winstrip', 'winL', 'winR', 'bal', 'stake', 'stakeDn', 'stakeUp', 'lock', 'spinBtn', 'spinCap', 'ring', 'session',
       'splash', 'welcome', 'wEyebrow', 'wBody', 'wLegend', 'wSum', 'unlockBtn', 'stormReady', 'stormInfo', 'startStormBtn', 'bigwin', 'continueBtn', 'summary', 'summaryCard', 'banner', 'bannerT', 'bannerS', 'notice',
       'menuWrap', 'menuClose', 'menuBody', 'tabs', 'drawerWrap', 'drawerClose', 'dTrigger', 'dSuns', 'dKp', 'dReset', 'dFx', 'ladderSide', 'payMini', 'histSide',
-      'diceBtn', 'diceIco', 'diceN', 'diceW', 'diceRow', 'diceIco2', 'diceN2', 'diceW2', 'diceLink', 'hello', 'dDie', 'dFirst', 'dGate', 'dSeg',
-      'demoStorm', 'demoDieSeg', 'dGamble', 'autoBtn', 'autoWrap', 'autoClose', 'autoN', 'autoL', 'autoHint', 'autoGo']) {
+      'hello', 'dDie', 'dFirst', 'dGate', 'dSeg', 'deck',
+      'demoStorm', 'demoDieSeg', 'dGamble', 'autoBtn', 'autoTxt', 'autoWrap', 'autoSheet', 'autoClose', 'autoN', 'autoL', 'autoHint', 'autoGo']) {
       this.el[id] = document.getElementById(id)!;
     }
+    this.vault = new Vault(ui);
+    this.vault.mount();
     this.chamber = new ChamberDom(ov);
     // a closed sheet is only transparent: inert keeps its buttons out of the Tab order (openMenu/openDrawer lift it)
     this.el.menuWrap.inert = this.el.drawerWrap.inert = this.el.autoWrap.inert = true;
@@ -284,11 +287,10 @@ export class Hud {
       if (b.dataset.act === 'reset') { this.openMenu(false); I({ t: 'demoReset' }); }
       if (b.dataset.act === 'chamber') { this.openMenu(false); if (!this.chamber.isShown()) I({ t: 'chamber', open: true }); }
     });
-    // Terningen: chip, desktop panel, drawer tools, hello card, chamber buttons
+    // Terningen: the niche (and its desktop link), drawer tools, hello card, chamber buttons
     const openChamber = () => I({ t: 'chamber', open: true });
-    this.press(this.el.diceBtn, openChamber);
-    this.press(this.el.diceRow, openChamber);
-    this.press(this.el.diceLink, openChamber);
+    this.press(this.vault.btn, openChamber);
+    this.press(this.vault.link, openChamber);
     this.press(this.el.dDie, () => { this.openDrawer(false); I({ t: 'demoDie' }); });
     this.press(this.el.dFirst, () => { this.openDrawer(false); I({ t: 'demoFirstDie' }); });
     this.press(this.el.dGate, () => { this.openDrawer(false); I({ t: 'demoGate' }); });
@@ -314,7 +316,7 @@ export class Hud {
     // ceremony: a tap anywhere on the chamber skips (the Game allows it from 2,0 s)
     ch.addEventListener('pointerdown', () => { if (document.documentElement.classList.contains('ceremony')) I({ t: 'skip' }); });
     onDiePainterChange(() => this.paintDiceIcons());
-    window.addEventListener('resize', () => { this.paintDiceIcons(); this.placeHello(); this.chamber.place(); this.fitPlacard(); });
+    window.addEventListener('resize', () => { this.paintDiceIcons(); this.placeHello(); this.chamber.place(); this.fitPlacard(); this.fitGamble(); this.placeAutoSheet(); });
     this.el.menuBody.addEventListener('input', (e) => {
       const t = e.target as HTMLInputElement;
       const k = t.dataset.k as keyof Settings | undefined;
@@ -356,11 +358,12 @@ export class Hud {
     this.canvasHost.addEventListener('pointerdown', () => I({ t: 'skip' }));
   }
 
-  bindRefs(refs: { history: () => HistoryEntry[]; settings: () => Settings; kp: () => number; dice: () => DiceView }): void {
+  bindRefs(refs: { history: () => HistoryEntry[]; settings: () => Settings; kp: () => number; dice: () => DiceView; gambleLog?: () => { log: readonly GambleLogEntry[]; open: string | null } }): void {
     this.historyRef = refs.history;
     this.settingsRef = refs.settings;
     this.kpRef = refs.kp;
     this.diceRef = refs.dice;
+    if (refs.gambleLog) this.gambleLogRef = refs.gambleLog;
   }
 
   // ---------------- state setters ----------------
@@ -431,6 +434,8 @@ export class Hud {
   clearWin(text = ''): void { this.setWin(0, 1, 'none', text); }
   flashNetto(): void { const ws = this.el.winstrip; ws.classList.remove('cross'); void ws.offsetWidth; ws.classList.add('cross'); }
 
+  /** SPIN: the word lives in the button under the icon. 'auto' shows STOP (the pill under it carries "STOP · n");
+   *  the aurora inside flows at its state's pace (busy: dim and slow, auto: faster; a rate change never jumps). */
   setSpin(state: 'idle' | 'busy' | 'perk' | 'disabled' | 'storm' | 'auto', cap?: string): void {
     const b = this.el.spinBtn as HTMLButtonElement;
     b.classList.toggle('idle', state === 'idle' || state === 'perk' || state === 'storm');
@@ -440,11 +445,26 @@ export class Hud {
     b.classList.toggle('auto', state === 'auto');
     // 'disabled' = balance below stake: the button stays pressable and the game answers with "Fyld op".
     b.classList.toggle('low', state === 'disabled');
-    this.el.spinCap.textContent = cap ?? (state === 'perk' ? 'LADET SPIN' : state === 'disabled' ? 'FYLD OP' : state === 'auto' ? 'STOP' : 'SPIN');
+    const word = state === 'auto' ? AUTO.stopWord : cap ?? (state === 'perk' ? 'LADET SPIN' : state === 'disabled' ? 'FYLD OP' : 'SPIN');
+    this.el.spinCap.textContent = word;
+    b.classList.toggle('long', word.length > 7);
     b.setAttribute('aria-label', state === 'auto' ? AUTO.stopAria(this.autoLeft) : state === 'perk' ? 'Ladet spin (gratis)' : state === 'disabled' ? 'Saldoen er for lav. Fyld op med legepenge' : 'Spin');
+    this.spinState = state;
+    this.refreshAutoPill();
+    const rate = state === 'auto' ? 2.4 : state === 'busy' ? 0.45 : 1;
+    try { for (const a of b.getAnimations({ subtree: true })) if (a instanceof CSSAnimation && a.playbackRate !== rate) a.updatePlaybackRate(rate); } catch { /* no WAAPI */ }
+  }
+  private spinState: 'idle' | 'busy' | 'perk' | 'disabled' | 'storm' | 'auto' = 'idle';
+  /** The AUTO pill: "AUTO" (idle), "STOP · n" (a run is on), dimmed and aria-disabled where the sheet cannot open. */
+  private refreshAutoPill(): void {
+    const on = this.autoOn, off = !on && this.spinState !== 'idle' && this.spinState !== 'disabled';
+    const p = this.el.autoBtn;
+    p.classList.toggle('on', on);
+    p.classList.toggle('off', off);
+    p.setAttribute('aria-disabled', String(off));
   }
 
-  // ---------------- autospin (minimal; the HUD pass restyles the pill and the sheet) ----------------
+  // ---------------- autospin: the AUTO pill under SPIN and its sheet above the deck ----------------
   private autoOn = false;
   private autoLeft = 0;
   private autoPick = { n: AUTO_COUNTS[0] as number, l: 0 };
@@ -454,9 +474,10 @@ export class Hud {
     this.autoOn = !!state;
     this.autoLeft = state?.left ?? 0;
     document.documentElement.classList.toggle('auto', !!state);
-    this.el.autoBtn.textContent = state ? AUTO.stopCap(state.left) : AUTO.pill;
+    this.el.autoTxt.textContent = state ? AUTO.stopCap(state.left) : AUTO.pill;
     this.el.autoBtn.setAttribute('aria-label', state ? AUTO.stopAria(state.left) : AUTO.pillAria);
-    if (!state && reason) this.banner(AUTO.stop(reason), summary ?? '');
+    this.refreshAutoPill();
+    if (!state && reason) this.banner(AUTO.stop(reason), summary ?? '', 'aurora', reason === 'die' ? 3200 : 2600, reason === 'die');
   }
   /** The sheet: count (10/25/50/100) and a loss limit (kr) from autoLimits at this stake; the first limit is preset. */
   openAutoSheet(b: boolean, restoreFocus = false, stakeOre = this.autoStake): void {
@@ -464,6 +485,7 @@ export class Hud {
       this.autoStake = stakeOre;
       this.renderAutoSheet();
     }
+    if (b) this.placeAutoSheet(true);
     this.el.autoWrap.classList.toggle('show', b);
     this.el.autoWrap.inert = !b;
     this.onIntent({ t: 'menu', open: b });
@@ -475,8 +497,24 @@ export class Hud {
     const ls = autoLimits(this.autoStake, this.autoPick.n);
     if (!ls.includes(this.autoPick.l)) this.autoPick.l = ls[0] ?? 0; // the smallest limit is the default
     this.el.autoN.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(+x.dataset.n! === this.autoPick.n)));
-    this.el.autoL.innerHTML = ls.map((l) => `<button class="btn ghost small num" data-l="${l}" aria-pressed="${l === this.autoPick.l}">${fmtKr(l)}</button>`).join('');
+    this.el.autoL.innerHTML = ls.map((l) => `<button class="sg num" data-l="${l}" aria-pressed="${l === this.autoPick.l}">${fmtKr(l)}</button>`).join('');
+    this.el.autoL.style.setProperty('--n', String(ls.length));
     this.el.autoHint.textContent = AUTO.limitHint(this.autoPick.l);
+  }
+  /** Anchored above the deck, right-aligned with SPIN's column (never over #reg: a short landscape screen lets it come
+   *  down over the deck instead; it is a modal sheet with its own scrim). */
+  private placeAutoSheet(force = false): void {
+    if (!force && !this.el.autoWrap.classList.contains('show')) return;
+    const sh = this.el.autoSheet, host = this.root.getBoundingClientRect();
+    const deck = this.el.deck.getBoundingClientRect(), reg = this.el.reg.getBoundingClientRect(), foot = document.getElementById('foot')!.getBoundingClientRect();
+    const gut = host.width < 380 ? 8 : 12;
+    const w = Math.min(380, host.width - 2 * gut);
+    sh.style.width = w + 'px';
+    sh.style.right = Math.max(gut, Math.min(host.right - deck.right + gut, host.width - w - gut)) + 'px';
+    let bottom = host.bottom - deck.top + 8;
+    if (host.height - bottom - sh.offsetHeight < reg.bottom - host.top + 8) bottom = host.bottom - foot.top + 8;
+    sh.style.bottom = bottom + 'px';
+    sh.style.maxHeight = Math.max(160, host.height - bottom - (reg.bottom - host.top) - 8) + 'px';
   }
 
   // ---------------- the dice home's idle life (pre-wired; the niche pass schedules its rattle on it) ----------------
@@ -486,15 +524,19 @@ export class Hud {
     if (active === this.vaultOn) return;
     this.vaultOn = active;
     document.documentElement.classList.toggle('vault-active', active);
+    this.vault.setActive(active);
   }
   vaultActive(): boolean { return this.vaultOn; }
   /** 3-second floor ring: 0..1 */
   setRing(p: number): void { (this.el.ring as unknown as SVGCircleElement).style.strokeDashoffset = String(this.spinRingLen * (1 - Math.max(0, Math.min(1, p)))); }
 
-  banner(title: string, sub = '', tone: 'aurora' | 'storm' = 'aurora', ms = 2600): void {
+  /** `die`: the user's die beside the text (the autospin stop at a die). */
+  banner(title: string, sub = '', tone: 'aurora' | 'storm' = 'aurora', ms = 2600, die = false): void {
     this.el.bannerT.textContent = title;
     this.el.bannerS.textContent = sub;
     this.el.banner.classList.toggle('storm', tone === 'storm');
+    this.el.banner.classList.toggle('die', die);
+    if (die) paintDieIcons(this.el.banner);
     this.el.banner.classList.add('show');
     clearTimeout(this.bannerTimer);
     this.bannerTimer = window.setTimeout(() => this.el.banner.classList.remove('show'), ms);
@@ -581,24 +623,51 @@ export class Hud {
    *  'gamble' = the Kvit eller dobbelt card (.card.base.gamble: its buttons carry data-gamble).
    *  Focus goes to [data-primary] first (else [data-focus], else the first button). */
   showSummary(html: string, tone: 'storm' | 'base' | 'relic' | 'placard' | 'gamble' = 'storm'): void {
-    this.el.summaryCard.className = 'card' + (tone === 'storm' ? '' : ' base') + (tone === 'relic' || tone === 'placard' ? ' relic' : '') + (tone === 'placard' ? ' placard' : '') + (tone === 'gamble' ? ' gamble' : '');
-    this.el.summaryCard.innerHTML = html;
+    const card = this.el.summaryCard;
+    const wasGamble = card.classList.contains('gamble') && this.isShown('summary');
+    card.className = 'card' + (tone === 'storm' ? '' : ' base') + (tone === 'relic' || tone === 'placard' ? ' relic' : '') + (tone === 'placard' ? ' placard' : '') + (tone === 'gamble' ? ' gamble' : '');
+    card.innerHTML = html;
+    // Kvit eller dobbelt: the offer (the full card), then the throw and the result as compact text only (the tablets
+    // and the die are drawn on the stage); one card that changes in place, never a re-entry
+    delete card.dataset.g;
+    if (tone === 'gamble') {
+      card.dataset.g = card.querySelector('[data-gamble]') ? 'offer' : card.querySelector('.g-pip') ? 'result' : 'throw';
+      card.classList.toggle('stay', wasGamble);
+    }
+    // the storm summary's dice row carries the die
+    for (const row of Array.from(card.querySelectorAll('.dice-row > span:first-child'))) row.insertAdjacentHTML('afterbegin', DIE('row-die'));
     this.show('summary', true);
     this.fitPlacard();
-    const card = this.el.summaryCard;
+    this.fitGamble();
+    paintDieIcons(card);
     setTimeout(() => (card.querySelector<HTMLElement>('[data-primary]') ?? card.querySelector<HTMLElement>('[data-focus]') ?? card.querySelector('button'))?.focus({ preventScroll: true }), 400);
   }
   summaryEl(): HTMLElement { return this.el.summaryCard; }
-  /** Top edge (in #app px = stage px) of the open gamble card, so the staged die can sit centred above it.
-   *  No card open: 58 % of the height (where a bottom-anchored card would start on a phone). */
+  /** Top edge (in #app px = stage px) of the open gamble card, so the staged die can sit centred above it. The layout
+   *  box (offsetTop: the card's 8 px entry slide is left out), never the moving one. No gamble card open: where the
+   *  offer card will start (phones: ~42 % of the height above the footer; desktop: a ~300 px card above the footer). */
   gambleCardTop(): number {
     const host = this.root.getBoundingClientRect();
     const card = this.el.summaryCard;
-    if (card.classList.contains('gamble') && this.isShown('summary')) {
-      const r = card.getBoundingClientRect();
-      if (r.height > 0) return r.top - host.top;
+    if (card.classList.contains('gamble') && this.isShown('summary') && card.offsetHeight > 0) {
+      const sum = this.el.summary.getBoundingClientRect();
+      return sum.top - host.top + card.offsetTop;
     }
-    return host.height * 0.58;
+    const foot = document.getElementById('foot')!.getBoundingClientRect();
+    const desk = matchMedia('(min-width: 1000px) and (min-aspect-ratio: 5/4)').matches;
+    return foot.top - host.top - (desk ? 16 + 300 : 12 + host.height * 0.42);
+  }
+  /** Phones: the offer is a bottom sheet of at most ~42 % of the height, so the staged die stays visible above it. The
+   *  type and spacing tighten in steps (data-fit 1–3: 3 puts the two bets side by side); the facts line and the demo
+   *  note are never dropped. Desktop: a centred card under the die (no steps needed). */
+  private fitGamble(): void {
+    const card = this.el.summaryCard;
+    if (!card.classList.contains('gamble')) return; // (the placard keeps its own fit steps: Hud.fitPlacard)
+    delete card.dataset.fit;
+    if (!this.isShown('summary') || card.dataset.g !== 'offer') return;
+    const host = this.root.getBoundingClientRect();
+    const cap = host.height * (host.height < 560 ? 0.6 : 0.42);
+    for (let f = 1; f <= 3 && card.offsetHeight > cap; f++) card.dataset.fit = String(f);
   }
   /** Phones (bottom-anchored placard): the claim (.pl-claim: p1 + the sanctioned sentence with its guard) never shrinks
    *  or scrolls. Portrait keeps the card within 52 % of the screen where the claim allows it (the gate's name stays
@@ -685,81 +754,32 @@ export class Hud {
   }
   menuOpen(): boolean { return this.el.menuWrap.classList.contains('show') || this.el.drawerWrap.classList.contains('show') || this.el.autoWrap.classList.contains('show'); }
 
-  // ---------------- Terningen: chip, panel, landing ----------------
-  private diceShown = -1;
-  private diceUnlock: DiceView['unlock'] = 'none';
-  /** The chip is status only: a count, never a fraction. `enabled` = idle (tap opens the chamber); otherwise aria-disabled. */
+  // ---------------- Terningen: the niche (Vault), landing ----------------
+  private diceShow = true;
+  /** The niche is status only: a count, never a fraction. `enabled` = idle (tap opens the chamber); otherwise aria-disabled. */
   setDice(shown: number, o: { show: boolean; unlock: DiceView['unlock']; enabled: boolean }): void {
-    const b = this.el.diceBtn;
     document.documentElement.classList.toggle('nodice', !o.show);
-    b.setAttribute('aria-label', chipAria(shown, o.unlock));
-    b.setAttribute('aria-disabled', String(!o.enabled));
-    this.el.diceRow.setAttribute('aria-disabled', String(!o.enabled));
-    this.el.diceLink.setAttribute('aria-disabled', String(!o.enabled));
-    b.classList.toggle('open', o.unlock === 'seen');
-    this.el.diceRow.classList.toggle('open', o.unlock === 'seen');
-    if (shown === this.diceShown && o.unlock === this.diceUnlock) return;
-    const repaint = (shown === 0) !== (this.diceShown === 0) || this.diceShown < 0;
-    this.diceShown = shown;
-    this.diceUnlock = o.unlock;
-    this.setDiceText(shown);
-    if (repaint) this.paintDiceIcons();
+    this.vault.set(shown, { unlock: o.unlock, enabled: o.enabled });
+    if (o.show !== this.diceShow) { this.diceShow = o.show; this.vault.fit(); this.vault.repaint(true); }
   }
-  private setDiceText(n: number): void {
-    this.el.diceBtn.classList.toggle('zero', n === 0);
-    this.el.diceN.innerHTML = `<span class="cur">${fmtDice(n)}</span>`;
-    this.el.diceW.textContent = ' ' + diceWord(n);
-    this.el.diceN2.textContent = fmtDice(n);
-    this.el.diceW2.textContent = diceWord(n);
-    this.el.diceRow.classList.toggle('zero', n === 0);
-  }
+  /** Every die icon: the niche (both canvases), the demo pill, the menu tab, open cards, the banner, the chamber. */
   paintDiceIcons(): void {
-    const st = this.diceShown > 0 ? 'die' : 'socket';
-    for (const c of [this.el.diceIco, this.el.diceIco2] as HTMLCanvasElement[]) {
-      const px = c.clientWidth;
-      if (px > 0) paintDie(c, px, { state: st, ring: this.diceUnlock === 'seen' });
-    }
+    this.vault.repaint(true);
+    for (const r of [this.el.demoPill, this.el.tabs, this.el.menuBody, this.el.histSide, this.el.summaryCard, this.el.banner, this.chamber?.el]) if (r) paintDieIcons(r);
   }
-  /** Icon centre of the chip in #app coordinates (= stage px): where every flight lands, on every viewport. */
+  /** The niche die's centre and size in #app coordinates (= stage px): where every flight lands, on every viewport. */
   diceTarget(): { x: number; y: number; size: number } {
     const host = this.root.getBoundingClientRect();
-    const r = this.el.diceIco.getBoundingClientRect();
-    if (r.width > 0) return { x: r.left + r.width / 2 - host.left, y: r.top + r.height / 2 - host.top, size: r.width };
-    const d = document.getElementById('deck')!.getBoundingClientRect();
-    return { x: d.left + 40 - host.left, y: d.top + d.height / 2 - host.top, size: 18 };
+    const t = this.vault.target(host);
+    if (t) return t;
+    const d = this.el.deck.getBoundingClientRect();
+    return { x: d.right - 60 - host.left, y: d.top - 30 - host.top, size: 18 };
   }
-  private landTimer = 0;
-  /** A die lands on the chip: .land pop + ring for 500 ms and the number rolls (calm: a crossfade and a static ring). */
-  landDice(n: number, calm: boolean): void {
-    const b = this.el.diceBtn;
-    const old = this.el.diceN.querySelector('.cur');
-    this.diceShown = n;
-    b.classList.toggle('zero', n === 0);
-    this.el.diceW.textContent = ' ' + diceWord(n);
-    this.el.diceN2.textContent = fmtDice(n);
-    this.el.diceW2.textContent = diceWord(n);
-    this.el.diceRow.classList.toggle('zero', n === 0);
-    const nxt = document.createElement('span');
-    nxt.className = 'cur in';
-    nxt.textContent = fmtDice(n);
-    if (old) { old.className = 'old out'; setTimeout(() => old.remove(), calm ? 220 : 240); }
-    this.el.diceN.appendChild(nxt);
-    void nxt.offsetWidth;
-    nxt.classList.remove('in');
-    b.classList.remove('land'); void b.offsetWidth; b.classList.add('land');
-    clearTimeout(this.landTimer);
-    this.landTimer = window.setTimeout(() => b.classList.remove('land'), calm ? 800 : 500);
-    this.paintDiceIcons();
-  }
-  /** Demo landing: the amber "+n demo" floats 8 px above the chip for 1,5 s; the number is unchanged. */
-  demoDiceTag(n = 1): void {
-    const t = document.createElement('span');
-    t.className = 'dice-demo-tag';
-    t.textContent = demoTag(n);
-    this.el.diceBtn.appendChild(t);
-    setTimeout(() => t.remove(), 1500);
-  }
-  focusDiceChip(): void { this.el.diceBtn.focus({ preventScroll: true }); }
+  /** A die lands in the niche: the catch (ring, count roll, aurora puff, a 3 px dip; the first one thaws the die). */
+  landDice(n: number, calm: boolean): void { this.vault.land(n, calm); }
+  /** Demo landing: the amber "+n demo" beside the niche for 1,5 s; the number is unchanged. */
+  demoDiceTag(n = 1): void { this.vault.demoTag(n); }
+  focusDiceChip(): void { this.vault.focus(); }
 
   // ---------------- Terningen: first-visit introduction (#hello, non-modal coach card) ----------------
   showHello(html: string): HTMLElement {
@@ -772,31 +792,50 @@ export class Hud {
   }
   hideHello(): void { this.el.hello.hidden = true; this.el.hello.classList.remove('in'); }
   helloShown(): boolean { return !this.el.hello.hidden; }
-  /** Anchored above the chip's column: left = max(gutter, chip.left − 12), the bottom 10 px above "Saldo" (the balance
-   *  stays readable), never over SPIN (it dismisses the card and spins); a short screen widens it until it clears #reg.
-   *  The caret points at the chip icon. */
+  /** Anchored above the niche, right-aligned with it (phones: over the grid's lower part, never over SPIN, the niche or
+   *  the Netto line; desktop: over the right column, above the niche's panel). A short screen widens it (leftward) until
+   *  it clears #reg; where even 600 px cannot clear it (landscape phones) the card stands beside the niche instead, to
+   *  its left and above the Netto line, its buttons in a column on the right. The caret points at the die. */
   placeHello(): void {
     const el = this.el.hello;
     if (el.hidden) return;
     const host = this.root.getBoundingClientRect();
-    const chip = this.el.diceBtn.getBoundingClientRect();
-    const ico = this.el.diceIco.getBoundingClientRect();
-    const saldo = (this.el.bal.previousElementSibling as HTMLElement).getBoundingClientRect();
-    const spin = this.el.spinBtn.getBoundingClientRect();
+    const v = this.vault.nicheRect();
+    const ico = this.vault.ico.getBoundingClientRect();
     const reg = this.el.reg.getBoundingClientRect().bottom - host.top;
-    const gutter = 16;
-    const left = Math.max(gutter, chip.left - 12 - host.left);
-    const bottom = Math.round(host.bottom - saldo.top + 10);
-    // SPIN's progress ring reaches 6 px past the button
-    const maxW = Math.min(host.width - left - gutter, spin.left > chip.right ? spin.left - 6 - 8 - host.left - left : Infinity);
-    let w = Math.min(320, maxW);
-    el.style.left = left + 'px';
+    const gutter = host.width < 380 ? 8 : 16;
+    const caret = el.querySelector('.caret') as HTMLElement | null;
+    el.classList.remove('side');
+    caret?.style.removeProperty('top');
+    if (v.width < 1) { el.style.left = gutter + 'px'; el.style.right = ''; el.style.bottom = Math.round(host.bottom - this.el.deck.getBoundingClientRect().top + 10) + 'px'; return; }
+    // desktop: the whole right-column block (the card sits over the column, above the niche's panel)
+    const desk = this.vault.el.classList.contains('desk'), a = desk ? this.vault.el.getBoundingClientRect() : v;
+    const right = Math.max(gutter, Math.round(host.right - a.right - (desk ? 0 : 4)));
+    const bottom = Math.round(host.bottom - a.top + 10);
+    const maxW = host.width - right - gutter;
+    let w = Math.min(desk ? Math.max(a.width, 280) : 320, maxW);
+    el.style.left = '';
+    el.style.right = right + 'px';
     el.style.bottom = bottom + 'px';
     el.style.width = Math.floor(w) + 'px';
     while (w < Math.min(maxW, 600) && host.height - bottom - el.offsetHeight < reg + 8) { w = Math.min(w + 40, maxW, 600); el.style.width = Math.floor(w) + 'px'; }
-    // the shortest landscape screens: #reg wins over the "Saldo" label (the card may come down onto it, never onto #reg)
+    if (!desk && host.height - bottom - el.offsetHeight < reg + 8) {
+      // beside the niche: its right edge 12 px left of the niche, its foot 6 px over the Netto line
+      el.classList.add('side');
+      const win = this.el.winstrip.getBoundingClientRect();
+      const r2 = Math.round(host.right - v.left + 12), room = host.width - r2 - gutter;
+      el.style.right = r2 + 'px';
+      el.style.width = Math.floor(Math.min(680, room)) + 'px';
+      const b2 = Math.round(host.bottom - Math.min(win.top, v.bottom) + 6);
+      el.style.bottom = Math.max(0, Math.min(b2, host.height - reg - 8 - el.offsetHeight)) + 'px';
+      const top = el.getBoundingClientRect().top;
+      caret?.style.setProperty('top', Math.max(12, Math.min(el.offsetHeight - 22, ico.top + ico.height / 2 - top - 5)) + 'px');
+      return;
+    }
+    // the shortest screens: #reg wins (the card may come down beside the niche, never onto #reg)
     el.style.bottom = Math.max(0, Math.min(bottom, host.height - reg - 8 - el.offsetHeight)) + 'px';
-    (el.querySelector('.caret') as HTMLElement | null)?.style.setProperty('left', Math.max(12, ico.left + ico.width / 2 - host.left - left - 5) + 'px');
+    const left = host.width - right - el.offsetWidth;
+    caret?.style.setProperty('left', Math.max(12, Math.min(el.offsetWidth - 22, ico.left + ico.width / 2 - host.left - left - 5)) + 'px');
   }
 
   // ---------------- Terningen: chamber / ceremony mode ----------------
@@ -817,6 +856,7 @@ export class Hud {
     this.el.payMini.innerHTML = this.payMiniHtml(stakeOre, storm);
     (this.el.payMini.previousElementSibling as HTMLElement).textContent = storm ? 'Solstorm · gevinst før mærker' : 'Gevinsttabel · ved indsats';
     this.el.histSide.innerHTML = this.histHtml(8);
+    paintDieIcons(this.el.histSide);
   }
 
   // ---------------- menu content ----------------
@@ -828,7 +868,7 @@ export class Hud {
       case 'rules': body.innerHTML = this.rulesHtml(); break;
       case 'pay': body.innerHTML = this.payHtml(); break;
       case 'ladder': body.innerHTML = `<p>Nordlyset viser dit fremskridt. Knuste symboler giver ladning (lav krystal 1, høj 2, WILD 3, 3 sole +${CONFIG.sunCharge}). Ladet spin ved Kp 3, 5 og 7 · Solstorm ved Kp 9. Tallene til højre er det gennemsnitlige antal spin fra Kp 0.</p><p class="hint">Dit fremskridt gemmes i 365 dage efter dit sidste spin.</p><p class="hint">${MENU.kpHint}</p><div class="ladder">${this.ladderHtml()}</div>`; break;
-      case 'dice': body.innerHTML = `<div class="actions dice-top"><button class="btn ghost small" data-act="chamber">${MENU.open}</button><span class="dice-status num">${MENU.status(this.diceRef().count)}</span></div>${diceRulesHtml()}`; break;
+      case 'dice': body.innerHTML = this.diceTabHtml(); break;
       case 'hist': body.innerHTML = `<p>De seneste 100 spin. Hvert spin kan genskabes præcist ud fra sit Spil-ID og den gemte tilstand før spinnet.${MENU.histIntro}</p><div class="hist"><div class="h head"><span>Spil-ID</span><span>Gevinst</span><span>Netto</span></div>${this.histHtml(100)}</div>`; break;
       case 'settings': body.innerHTML = `
         <label class="setting"><span>Musik</span><select data-k="musicSource" id="setMusicSrc"><option value="polar" ${st.musicSource !== 'code' ? 'selected' : ''}>Polar Night</option><option value="code" ${st.musicSource === 'code' ? 'selected' : ''}>Kode</option></select></label>
@@ -851,6 +891,26 @@ export class Hud {
         <h4>Designprincipper</h4>
         <p>Mindst 3,0 s pr. spin – også i autospin · ingen turbo eller køb af bonus · autospin kræver en tabsgrænse og stopper ved hver terning, Ladet spin og Solstorm · resultater under indsatsen fejres ikke · ingen konstruerede "næsten"-resultater · sessionstid og netto vises altid.${MENU.rgLine}</p>`; break;
     }
+    paintDieIcons(this.el.tabs);
+    paintDieIcons(body);
+    // the selected tab in view (the row scrolls sideways on phones; never the page)
+    const sel = this.el.tabs.querySelector<HTMLElement>('[aria-selected="true"]'), row = this.el.tabs;
+    if (sel && row.clientWidth > 0) {
+      const l = sel.offsetLeft - row.offsetLeft, r = l + sel.offsetWidth;
+      if (l < row.scrollLeft || r > row.scrollLeft + row.clientWidth) row.scrollLeft = Math.max(0, l - (row.clientWidth - sel.offsetWidth) / 2);
+    }
+  }
+  /** The "Terningen" tab: the die and the count, "Dine valg" (the last 10 choices: ID, choice, face, result; a choice
+   *  whose result is not shown yet is never listed), then the rules. */
+  private diceTabHtml(): string {
+    const v = this.diceRef(), g = this.gambleLogRef();
+    const rows = gambleLogRows(g.log, g.open, 10);
+    const H = GAMBLE_LOG.head;
+    const log = rows.length
+      ? `<div class="glog num" role="table" aria-label="${GAMBLE_LOG.h}"><div class="gl head" role="row"><span role="columnheader" class="sr">${H.id}</span><span role="columnheader">${H.choice}</span><span role="columnheader">${H.pip}</span><span role="columnheader">${H.result}</span></div>${rows.map((r) => `<div class="gl" role="row" aria-label="${r.aria}"><span class="id" role="cell">${r.id}</span><span role="cell">${r.choice}</span><span role="cell">${r.pip}</span><span role="cell" class="${r.result.endsWith('ingen') ? 'neg' : 'pos'}">${r.result}</span></div>`).join('')}</div>`
+      : `<p class="hint">${GAMBLE_LOG.empty}</p>`;
+    return `<div class="dice-hdr">${DIE('hdr-die', v.count === 0)}<div class="dh-t"><h4>${MENU.tab}</h4><span class="dice-status num">${MENU.status(v.count)}</span></div><button class="btn ghost small" data-act="chamber">${MENU.open}</button></div>
+      <h4>${GAMBLE_LOG.h}</h4><p class="hint">${GAMBLE_LOG.intro}</p>${log}${diceRulesHtml()}`;
   }
 
   private rulesHtml(): string {
@@ -930,6 +990,6 @@ export class Hud {
     const hs = this.historyRef().slice(-n).reverse();
     if (!hs.length) return '<p class="hint">Ingen spin endnu.</p>';
     const modeName: Record<string, string> = { perk: 'Ladet spin', storm: 'Solstorm', demo: 'Demo' };
-    return hs.map((e) => `<div class="h"><span class="id">${e.spinId}${e.mode !== 'base' ? ' · ' + (modeName[e.mode] ?? e.mode) : ''}${e.die ? MENU.histMark : ''}${e.spinId.endsWith('-G') ? ' · garanti' : ''}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtKr(e.winOre)}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtSignedKr(e.netOre)}</span></div>`).join('');
+    return hs.map((e) => `<div class="h"><span class="id">${e.spinId}${e.mode !== 'base' ? ' · ' + (modeName[e.mode] ?? e.mode) : ''}${e.die ? ` · ${DIE('h-die')}${MENU.histMark.replace(/^ · /, '')}` : ''}${e.spinId.endsWith('-G') ? ' · garanti' : ''}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtKr(e.winOre)}</span><span class="num ${e.netOre > 0 ? 'pos' : 'neg'}">${fmtSignedKr(e.netOre)}</span></div>`).join('');
   }
 }

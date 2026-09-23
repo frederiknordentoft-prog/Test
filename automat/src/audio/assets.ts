@@ -130,7 +130,7 @@ export const RENDER_ORDER: string[] = [
   'stakeUp', 'stakeDown', 'levelUp62', 'levelUp74',
   'base1', 'base2', 'base3', 'base4',
   'bigWin3', 'bigWin4', 'bigWin5',
-  'dieLand', 'dieBirth', 'dieQuench', 'dieHold', 'bell1948a', 'bell1948b',
+  'dieLand', 'dieBirth', 'dieQuench', 'dieHold', 'bell1948a', 'bell1948b', 'diePulse',
 ];
 /**
  * Every base (non-storm, non-gate) asset for bed source `src`, in render order: 'polar' renders the

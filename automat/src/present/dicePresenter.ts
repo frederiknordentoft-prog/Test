@@ -2,7 +2,8 @@
 // interface; nothing here can change a count (the chip only moves through host.land()).
 // PixiDicePresenter: the award in Pixi (DieAward, with the DOM flight to the chip), the gate (GateView in the stage's
 // 'chamber' layer) under the chamber DOM, and the bar-anchored ceremony (cinematics/gate.ts, which owns its sounds).
-// Everything runs on the game clock (deterministic under advance()). The award sounds are the Game's.
+// Everything runs on the game clock (deterministic under advance()). The award's birth and landing sounds are the
+// Game's; the big die moment (dieMoment.ts) plays its own arrival chord, the throw's rattle and the result's tones.
 import { gsap } from 'gsap';
 import type { Hud } from '../ui/hud.ts';
 import type { World } from '../game/world.ts';
@@ -41,7 +42,8 @@ export interface CeremonyHandle { done: Promise<void>; canSkip(): boolean; skip(
 export interface DicePresenter {
   /** Base / Ladet spin, from Celebration's birth beat (dieBirthAt). instant = a skip before the beat (no tumble, no glint). */
   awardBirth(n: number, o: { instant: boolean; tier: number }): void;
-  /** After the celebration closed: the flight to hud.diceTarget(); resolves after host.land(add, false). */
+  /** After the celebration closed, no choice offered: the big die moment (the die lifts to stage centre and grows,
+   *  holds 0,9 s) and the flight to hud.diceTarget(); resolves after host.land(add, false). A skip flies at once. */
   awardFly(add?: number): Promise<void>;
   /** "Vis terninger i spillet" turned off mid-award: a born die fades where it is (no flight, no landing). */
   awardDrop(): void;
@@ -75,7 +77,8 @@ export interface DicePresenter {
   /** Anything of the award still in motion, gamble staging included (never true when the next spin may start). */
   inFlight(): boolean;
   held(): number;
-  /** QA: 'born' (the Pixi die is on screen), 'flight' (the DOM flight), 'none'. */
+  /** QA: 'born' (the Pixi die under the amount), 'hero' (the big die moment's lift and hold), 'flight' (the DOM
+   *  flight), 'stage' (a Kvit eller dobbelt staging: the offer, the throw, the result, the settle), 'none'. */
   phase(): string;
   openChamber(view: DiceView, o: ChamberOpts): Promise<void>;
   setChamberView(view: DiceView, o: ChamberOpts): void;
@@ -143,17 +146,12 @@ export class PixiDicePresenter implements DicePresenter {
   clearHeld(): void { this.award.clearHeld(); }
   demoAward(o: { hold?: boolean } = {}): Promise<void> { return this.award.demo(o); }
 
-  // ---------------------------------------------------------------- Kvit eller dobbelt (core stand-ins: the DOM card
-  // carries the faces and the roll; the big die moment and the throw visuals replace these)
-  gambleStage(o: GambleShow): void { void o; }
-  gambleThrow(o: GambleThrow): Promise<void> { void o; return Promise.resolve(); }
-  gambleSettle(payout: number, o: { from: GambleFrom; demo: boolean }): Promise<void> {
-    if (o.demo) return this.award.demoSettle(payout);
-    if (o.from === 'held') { if (payout <= 0) this.award.clearHeld(); return Promise.resolve(); } // the outro releases the rest
-    if (payout <= 0) { this.award.dissolve(); return Promise.resolve(); }
-    return this.award.fly(payout);
-  }
-  gambleSkip(): void { this.award.skip(); }
+  // ---------------------------------------------------------------- Kvit eller dobbelt: the big die moment and the throw
+  // (DieAward + dieMoment.ts; the DOM card carries the words, these stage the dice around it)
+  gambleStage(o: GambleShow): void { this.award.stage(o); }
+  gambleThrow(o: GambleThrow): Promise<void> { return this.award.throwIt(o); }
+  gambleSettle(payout: number, o: { from: GambleFrom; demo: boolean }): Promise<void> { return this.award.settle(payout, o); }
+  gambleSkip(): void { this.award.gambleSkip(); }
 
   // ---------------------------------------------------------------- chamber
   chamberOpen(): boolean { return this.chamberShown; }

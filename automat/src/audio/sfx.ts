@@ -859,6 +859,21 @@ A.dieHold = {
   build(ctx, out) { glassTick(ctx, out, 0.001, 2350, 0.6, 0.06); },
 };
 
+// the big die moment's low pulse: a D2 sine thump (D1 sub under it, a soft D3 overtone for small speakers), the
+// pitch settling 3 semitones down in 120 ms; mono at 12 kHz (≈ 50 KB): a pulse, never a boom
+A.diePulse = {
+  ch: 1, dur: 1.4, div: 4,
+  build(ctx, out) {
+    for (const [m, a, tau] of [[38, 0.8, 0.32], [26, 0.45, 0.42], [50, 0.16, 0.2]] as const) {
+      const o = osc(ctx, 'sine', mtof(m + 3), 0, 1.4);
+      glide(o.frequency, 0, mtof(m + 3), mtof(m), 0.12);
+      const g = gain(ctx, 0);
+      perc(g.gain, 0.004, a, 0.012, tau);
+      o.connect(g).connect(out);
+    }
+  },
+};
+
 for (const [z, m] of [['a', 50], ['b', 62]] as const) { // D3, D4
   A[`bell1948${z}`] = {
     ch: 2, dur: 5.0, div: 2,

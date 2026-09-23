@@ -26,7 +26,7 @@ export type Sfx = 'tap' | 'stakeUp' | 'stakeDown' | 'spin' | 'land' | 'chime' | 
   | 'markUp' | 'mote' | 'levelUp' | 'sun' | 'anticipation' | 'countTick' | 'win' | 'bigWin'
   | 'stormSwell' | 'stormRiser' | 'impact' | 'glassXL' | 'drop808' | 'letterSlam' | 'waveBoom' | 'reform' | 'summary' | 'fade'
   // Terningen: the award, the storm pop/hold, the year bells (level 1–4 = 1-9-4-8, 5–8 an octave up) …
-  | 'dieBirth' | 'dieLand' | 'dieQuench' | 'dieHold' | 'bell1948'
+  | 'dieBirth' | 'dieLand' | 'dieQuench' | 'dieHold' | 'bell1948' | 'diePulse'
   // … and the gate ceremony (lazy set: prepareGate / releaseGate)
   | 'gateDrone' | 'tileShimmer' | 'keystone' | 'sealCrack' | 'gateBreath' | 'lightPad';
 
@@ -81,6 +81,7 @@ const CFG: Record<Sfx, Cfg> = {
   dieQuench:    { db: -24, verb: 'room', cents: 0, jdb: 0, max: 2, gap: 0.05 },
   dieHold:      { db: -26, verb: 'room', cents: 0, jdb: 0, max: 3, gap: 0.05 },
   bell1948:     { db: -14, verb: 'hall', cents: 0, jdb: 0, max: 4, gap: 0.1 },
+  diePulse:     { db: -17, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.3 },
   gateDrone:    { db: -18, verb: 'room', cents: 0, jdb: 0, max: 1, gap: 0.5 },
   tileShimmer:  { db: -22, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.5 },
   keystone:     { db: -14, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.3 },
@@ -89,7 +90,7 @@ const CFG: Record<Sfx, Cfg> = {
   lightPad:     { db: -18, verb: 'hall', cents: 0, jdb: 0, max: 1, gap: 0.5 },
 };
 /** Sounds that calm mode softens (CALM_GAIN). */
-const DICE_SFX = new Set<Sfx>(['dieBirth', 'dieLand', 'dieQuench', 'dieHold', 'bell1948', 'gateDrone', 'tileShimmer', 'keystone', 'sealCrack', 'gateBreath', 'lightPad']);
+const DICE_SFX = new Set<Sfx>(['dieBirth', 'dieLand', 'dieQuench', 'dieHold', 'bell1948', 'diePulse', 'gateDrone', 'tileShimmer', 'keystone', 'sealCrack', 'gateBreath', 'lightPad']);
 
 const SEND_DB = { room: -16, hall: -9, ui: -20, music: -13 };
 const HORIZON = 0.12;   // scheduler look-ahead (s)
@@ -191,6 +192,7 @@ export class GameAudio {
   private lastWin = { level: 1, t: -9 };
   private anticip: Voice | null = null;
   private roll: Voice[] = [];
+  private rattleV: Voice[] = [];
   private gestureArmed = false;
   private tap: AnalyserNode | null = null;
   /** Scheduler decisions (for QA); null disables logging. */
@@ -783,6 +785,39 @@ export class GameAudio {
   }
 
   /** Stop the celebration count-up tick roll immediately (skipped celebration). */
+  /**
+   * Terningen's throw: a dice rattle of `count` glass ticks, `every` seconds apart from `when` (now()-domain), the
+   * existing dieLand / dieHold voices alternating at ONE constant pitch (playbackRate 1) and a constant tempo; only the
+   * level (±1 dB) and the pan move, like the count-up roll. Never escalating. Silent before unlock or before the dice
+   * set is rendered. Calm: CALM_GAIN.
+   */
+  rattle(when: number, count: number, every: number, gain = 1): void {
+    if (this.muted || !this.live()) return;
+    try {
+      const land = this.assets.get('dieLand'), hold = this.assets.get('dieHold');
+      if (!land || !hold) { this.bump(['dieLand', 'dieHold']); return; }
+      const c = this._ctx!, now = c.currentTime;
+      const t0 = Math.max(now, this.toCtxTime(when));
+      this.stopRattle();
+      const k = this.calm ? CALM_GAIN : 1;
+      for (let i = 0; i < count; i++) {
+        const odd = i % 2 === 1;
+        const cfg = odd ? CFG.dieHold : CFG.dieLand;
+        const amp = dbToGain(cfg.db) * gain * k * (odd ? 0.8 : 0.55) * this.jdb(1);
+        const v = this.voice(odd ? 'dieHold' : 'dieLand', odd ? hold : land, t0 + i * every, 1, amp, (odd ? 0.18 : -0.18) + (crand() - 0.5) * 0.2);
+        if (v) this.rattleV.push(v);
+      }
+    } catch { /* never throw */ }
+  }
+  /** Cancel a rattle's ticks that have not sounded yet. */
+  stopRattle(): void {
+    const c = this._ctx;
+    if (!c || !this.n) return;
+    const now = c.currentTime;
+    for (const v of this.rattleV) if (!v.dead && v.t > now) this.fadeVoice(v, now, 0.004);
+    this.rattleV = [];
+  }
+
   stopCount(): void {
     const c = this._ctx;
     if (!c || !this.n) return;

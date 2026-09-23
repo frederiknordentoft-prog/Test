@@ -4,6 +4,7 @@
 import type { DiceView } from '../game/dice.ts';
 import { fmtDice, diceWord } from '../game/dice.ts';
 import { CHAMBER, chamberFacts, chamberMyth, chamberSummary, gateState, type GateState, type MythLine, type RibbonKind } from './diceCopy.ts';
+import { paintDieIcons } from './diceIcon.ts';
 
 const ICON_CLOSE = '✕';
 
@@ -20,7 +21,7 @@ export function chamberMarkup(soundIcon: string): string {
     <div class="ch-gate" id="chGate" aria-hidden="true"></div>
     <p class="sr" id="chSum"></p>
     <div class="ch-count">
-      <span class="n num" id="chN">0</span><span class="w" id="chW">terninger</span>
+      <canvas class="die-ico ch-die" id="chDie" aria-hidden="true"></canvas><span class="n num" id="chN">0</span><span class="w" id="chW">terninger</span>
       <span class="tag" id="chTag" hidden>${CHAMBER.previewTag}</span>
       <button class="btn gate small" id="chOpen" hidden>${CHAMBER.open}</button>
       <span class="st" id="chSt" hidden>${CHAMBER.openStatus}</span>
@@ -73,6 +74,10 @@ export class ChamberDom {
     this.q('chN').textContent = fmtDice(v.count);
     this.q('chW').textContent = diceWord(v.count);
     this.q('chN').parentElement!.classList.toggle('zero', v.count === 0);
+    // the user's die beside the count (sealed in ice at 0, like the niche)
+    const die = this.q('chDie');
+    if (v.count === 0) die.dataset.state = 'frozen'; else delete die.dataset.state;
+    paintDieIcons(this.q('chN').parentElement!);
     this.q('chTag').hidden = v.mode !== 'preview';
     this.q('chOpen').hidden = !(st === 'pending' && v.mode === 'real');
     this.q('chSt').hidden = st !== 'open';
@@ -83,6 +88,7 @@ export class ChamberDom {
 
   show(b: boolean): void {
     this.el.hidden = !b;
+    if (b) paintDieIcons(this.q('chN').parentElement!); // laid out only now
     // in the ceremony the dialog itself holds focus (its controls are inert), so Space reaches the skip
     if (b) setTimeout(() => (this.ceremony ? this.el : this.q('chClose')).focus({ preventScroll: true }), 50);
   }

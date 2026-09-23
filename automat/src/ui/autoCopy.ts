@@ -20,6 +20,8 @@ export const AUTO = {
   title: 'Autospin',
   pill: 'AUTO',
   pillAria: 'Autospin: vælg antal spin og tabsgrænse',
+  pillTitle: 'Autospin (A)',
+  stopWord: 'STOP',
   spinsLabel: 'Antal spin',
   limitLabel: 'Tabsgrænse',
   limitHint: (limitOre: number) => `Autospin stopper, før tabet i denne runde bliver større end ${fmtKr(limitOre)}.`,

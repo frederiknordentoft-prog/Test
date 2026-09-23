@@ -136,6 +136,10 @@ export class GateView extends Container {
   private lanternDot = new Sprite(softDot());
   readonly ghost = new Sprite();
   readonly keyDie = new Sprite();
+  /** The user's die floating above the NORDLYS niche (the one machine that gives dice), with a faint violet halo. */
+  private nordDie = new Sprite();
+  private nordHalo = new Sprite(softDot());
+  private nordAt = { x: 0, y: 0, s: 0 };
   readonly digits: IsText[] = [];
   private nicheLabel: IsText;
   readonly title: IsText;
@@ -173,13 +177,15 @@ export class GateView extends Container {
     this.grooveDot.anchor.set(0.5); this.grooveDot.tint = PAL.teal; this.grooveDot.blendMode = 'add'; this.grooveDot.alpha = 0;
     this.lanternDot.anchor.set(0.5); this.lanternDot.tint = PAL.teal; this.lanternDot.blendMode = 'add';
     this.ghost.anchor.set(0.5); this.keyDie.anchor.set(0.5);
+    this.nordDie.anchor.set(0.5); this.nordDie.tint = 0xe0e0e0;
+    this.nordHalo.anchor.set(0.5); this.nordHalo.tint = PAL.violet; this.nordHalo.blendMode = 'add'; this.nordHalo.alpha = 0.22;
     for (const ch of GATE_LABELS.lintel) this.digits.push(new IsText({ text: ch, size: 20, style: 'ice', decor: false }));
     this.nicheLabel = new IsText({ text: GATE_LABELS.niche, size: 9, style: 'muted', tracking: 0.16, decor: false });
     this.title = new IsText({ text: GATE_LABELS.title, size: 24, style: 'ice', tracking: 0.14, decor: false });
     this.concept = new IsText({ text: GATE_LABELS.concept, size: 9, style: 'muted', tracking: 0.3, decor: false });
     this.eyebrow = new IsText({ text: ' ', size: 10, style: 'muted', tracking: 0.3, decor: false });
     this.addChild(this.interior, this.light, this.leafL, this.leafR, this.edges, this.seamHalo, this.seamCore, this.wall, this.grooveLit, this.grooveDot,
-      this.lanternDot, this.ghost, this.keyDie, ...this.digits, this.nicheLabel, this.title, this.concept, this.eyebrow);
+      this.lanternDot, this.nordHalo, this.nordDie, this.ghost, this.keyDie, ...this.digits, this.nicheLabel, this.title, this.concept, this.eyebrow);
     const L = gateLattice();
     for (let i = 0; i < TILES; i++) {
       this.freq[i] = 0.1 + 0.2 * hash01(0x7157, i);
@@ -233,7 +239,12 @@ export class GateView extends Container {
     this.lanternDot.position.set(screen.x, screen.y); this.lanternDot.width = this.lanternDot.height = 2.2 * nw;
     this.grooveDot.width = this.grooveDot.height = Math.max(10, 0.5 * nw);
     const tex = dieTexture();
-    this.ghost.texture = tex; this.keyDie.texture = tex;
+    this.ghost.texture = tex; this.keyDie.texture = tex; this.nordDie.texture = tex;
+    // the die above the NORDLYS niche: in the gap under the niche above it (≈ 0,1 W), never on its arch
+    const nds = clamp(12, 0.46 * nw, 34);
+    this.nordAt = { x: nord.x + nw / 2, y: nord.y - nds * 0.62 - 1, s: nds };
+    this.nordDie.width = this.nordDie.height = nds;
+    this.nordHalo.width = this.nordHalo.height = nds * 2.2;
     this.ghost.position.set(keystone.x, keystone.y); this.ghost.width = this.ghost.height = g.keySize;
     if (this.keySeated) { this.keyDie.position.set(keystone.x, keystone.y); this.keyDie.width = this.keyDie.height = g.keySize; }
     this.seamCore.position.set(cx, oy + H); this.seamHalo.position.set(cx, oy + H);
@@ -630,6 +641,10 @@ export class GateView extends Container {
     this.wall.tint = mixHex(mixHex(0xffffff, env, 0.25), PAL.whiteHot, 0.25 * this.warm);
     this.lanternDot.alpha = this.lantern;
     this.grooveLit.alpha = this.groove;
+    // the NORDLYS die floats (±1,5 px over 5 s; still in calm)
+    const bob = calm ? 0 : 1.5 * Math.sin((t * Math.PI * 2) / 5);
+    this.nordDie.position.set(this.nordAt.x, this.nordAt.y + bob);
+    this.nordHalo.position.set(this.nordAt.x, this.nordAt.y + bob * 0.5);
     // the light that travels the NORDLYS groove every 6 s over 1,8 s (a static glow in calm)
     const g = this.geom;
     if (calm) { this.grooveDot.alpha = 0; }

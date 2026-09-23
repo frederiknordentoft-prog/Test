@@ -27,7 +27,7 @@
   --hdr-h: 46px;
   --arc-h: 92px;
   --win-h: 50px;
-  --deck-h: 104px;
+  --deck-h: 116px;
   --foot-h: 26px;
   --gutter: 12px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -163,36 +163,93 @@ html, body {
 .stake .val { min-width: 74px; text-align: center; font-size: 17px; }
 .lock { font-size: 10.5px; color: var(--violet); letter-spacing: 0.04em; height: 12px; }
 
+/* ---------- SPIN with aurora ----------
+   The word lives in the button under the icon; the AUTO pill sits right under it. Inside, a masked layer holds three
+   pre-drawn aurora bands (soft gradients: no filter) that drift by transform only, in screen blend over the teal body;
+   a conic aurora rim turns once in 14 s; a halo outside the circle breathes (opacity). Hud.setSpin sets the pace
+   (busy: dim and slow, auto: faster) through the animations' playbackRate, which never jumps. Calm: a still frame. */
 .spin {
-  position: relative; width: 88px; height: 88px; border-radius: 50%; border: none; cursor: pointer; padding: 0;
+  --glow: 61, 255, 176;
+  position: relative; width: 88px; height: 88px; border-radius: 50%; border: none; cursor: pointer; padding: 0; isolation: isolate;
   background:
-    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 38%),
-    radial-gradient(circle at 50% 60%, #1be3c8 0%, #0a8f8a 42%, #07304a 78%, #041528 100%);
-  box-shadow: 0 0 0 1.5px rgba(214, 255, 244, 0.55) inset, 0 0 26px rgba(61, 255, 176, 0.38), 0 10px 30px rgba(0, 0, 0, 0.5);
+    radial-gradient(circle at 35% 26%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 36%),
+    radial-gradient(circle at 50% 62%, #13c4b2 0%, #0a7f80 38%, #072e4e 74%, #04132a 100%);
+  box-shadow: 0 0 0 1.5px rgba(214, 255, 244, 0.42) inset, 0 -6px 14px rgba(0, 0, 0, 0.35) inset, 0 0 22px rgba(61, 255, 176, 0.3), 0 10px 30px rgba(0, 0, 0, 0.5);
   transition: transform 0.12s var(--ease), filter 0.25s, box-shadow 0.3s;
 }
 .spin:active { transform: scale(0.93); }
+.spin .aur { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; mix-blend-mode: screen; pointer-events: none; transition: opacity 0.6s var(--ease); }
+.spin .aur i { position: absolute; display: block; border-radius: 50%; will-change: transform; transition: opacity 0.8s var(--ease); }
+/* teal/green curtain (folds from a striped mask), violet, magenta */
+.spin .aur .a1 { left: -40%; top: 6%; width: 180%; height: 64%;
+  background: radial-gradient(closest-side, rgba(61, 255, 176, 0.8), rgba(25, 227, 214, 0.34) 55%, rgba(25, 227, 214, 0));
+  -webkit-mask-image: repeating-linear-gradient(94deg, #000 0 6%, rgba(0, 0, 0, 0.3) 9.5%, #000 13%); mask-image: repeating-linear-gradient(94deg, #000 0 6%, rgba(0, 0, 0, 0.3) 9.5%, #000 13%);
+  animation: aurA 9s ease-in-out infinite alternate; }
+.spin .aur .a2 { left: -24%; top: 36%; width: 148%; height: 60%;
+  background: radial-gradient(closest-side, rgba(138, 92, 255, 0.85), rgba(138, 92, 255, 0.3) 55%, rgba(138, 92, 255, 0));
+  animation: aurB 11s ease-in-out infinite alternate; }
+.spin .aur .a3 { left: 8%; top: -20%; width: 112%; height: 58%;
+  background: radial-gradient(closest-side, rgba(255, 43, 214, 0.58), rgba(255, 43, 214, 0.18) 55%, rgba(255, 43, 214, 0));
+  animation: aurC 12.5s ease-in-out infinite alternate; }
+@keyframes aurA { from { transform: translate(-14%, 5%) rotate(-12deg) scaleY(0.8); } to { transform: translate(12%, -10%) rotate(14deg) scaleY(1.1); } }
+@keyframes aurB { from { transform: translate(14%, 8%) rotate(10deg); } to { transform: translate(-12%, -6%) rotate(-16deg) scaleY(0.85); } }
+@keyframes aurC { from { transform: translate(-6%, 0) rotate(-6deg) scaleX(0.9); } to { transform: translate(10%, 18%) rotate(12deg) scaleX(1.15); } }
+/* the aurora rim: a turning conic ring just inside the edge */
+.spin::before { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; z-index: 2;
+  background: conic-gradient(from 0deg, rgba(61, 255, 176, 0) 0deg, rgba(61, 255, 176, 0.95) 55deg, rgba(138, 92, 255, 0.95) 125deg, rgba(255, 43, 214, 0.75) 185deg, rgba(255, 43, 214, 0) 245deg, rgba(25, 227, 214, 0) 290deg, rgba(25, 227, 214, 0.55) 335deg, rgba(61, 255, 176, 0) 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.6px), #000 calc(100% - 2px)); mask: radial-gradient(farthest-side, transparent calc(100% - 2.6px), #000 calc(100% - 2px));
+  animation: spinRim 14s linear infinite; transition: opacity 0.6s var(--ease); }
+@keyframes spinRim { to { transform: rotate(1turn); } }
+/* the breathing halo, outside the circle only (the old box-shadow keyframes overrode the perk and storm glow) */
+.spin::after { content: ''; position: absolute; inset: -16px; border-radius: 50%; pointer-events: none; z-index: -1;
+  background: radial-gradient(closest-side, rgba(var(--glow), 0.5) 70%, rgba(var(--glow), 0) 100%);
+  -webkit-mask: radial-gradient(closest-side, transparent 72%, #000 75%); mask: radial-gradient(closest-side, transparent 72%, #000 75%);
+  opacity: 0.55; animation: spinBreath 3.2s ease-in-out infinite; transition: opacity 0.4s; }
+@keyframes spinBreath { 50% { opacity: 1; } }
 .spin .ring { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); transform: rotate(-90deg); pointer-events: none; }
 .spin .ring circle { fill: none; stroke-width: 3; }
 .spin .ring .bg { stroke: rgba(156, 201, 255, 0.14); }
 .spin .ring .fg { stroke: var(--ice); stroke-linecap: round; stroke-dasharray: 289; stroke-dashoffset: 289; filter: drop-shadow(0 0 4px rgba(234, 248, 255, 0.8)); }
-.spin .ico { position: absolute; inset: 0; display: grid; place-items: center; color: #eafffb; }
-.spin .ico svg { width: 38px; height: 38px; filter: drop-shadow(0 1px 3px rgba(0, 40, 50, 0.6)); transition: transform 0.6s var(--ease); }
-.spin .cap { position: absolute; left: 50%; bottom: -17px; transform: translateX(-50%); font-size: 10px; letter-spacing: 0.18em; color: var(--frost); font-weight: 700; white-space: nowrap; }
+.spin .face { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding-top: 5px; color: #eafffb; pointer-events: none; }
+.spin .ico { display: grid; place-items: center; }
+.spin .ico svg { width: 34px; height: 34px; filter: drop-shadow(0 1px 3px rgba(0, 40, 50, 0.6)); transition: transform 0.6s var(--ease); }
+.spin .ico svg.stop { display: none; }
+.spin .cap { font: 800 10.5px/1 system-ui, sans-serif; letter-spacing: 0.2em; margin-right: -0.2em; color: rgba(234, 255, 251, 0.94); white-space: nowrap; text-shadow: 0 1px 3px rgba(0, 30, 40, 0.75); }
+.spin.long .cap { font-size: 8.5px; letter-spacing: 0.1em; margin-right: -0.1em; }
 .spin.busy { filter: saturate(0.6) brightness(0.8); cursor: default; }
+.spin.busy .aur { opacity: 0.4; }
+.spin.busy::after { opacity: 0.25; animation: none; }
 .spin.busy .ico svg { transform: rotate(180deg); }
-.spin.perk { background:
-    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 38%),
-    radial-gradient(circle at 50% 60%, #b28cff 0%, #6a3ae0 45%, #26105a 80%, #120630 100%);
-  box-shadow: 0 0 0 1.5px rgba(230, 214, 255, 0.6) inset, 0 0 30px rgba(138, 92, 255, 0.6), 0 10px 30px rgba(0, 0, 0, 0.5); }
-.spin.perk .cap { color: #cdb8ff; }
-.spin[disabled] { filter: grayscale(0.7) brightness(0.6); cursor: default; }
-.spin.idle { animation: spinIdle 3.2s ease-in-out infinite; }
-@keyframes spinIdle { 0%, 100% { box-shadow: 0 0 0 1.5px rgba(214, 255, 244, 0.55) inset, 0 0 22px rgba(61, 255, 176, 0.3), 0 10px 30px rgba(0, 0, 0, 0.5); } 50% { box-shadow: 0 0 0 1.5px rgba(214, 255, 244, 0.7) inset, 0 0 36px rgba(61, 255, 176, 0.55), 0 10px 30px rgba(0, 0, 0, 0.5); } }
-:root[data-mode='storm'] .spin { background:
+/* Ladet spin: the violet body, the aurora weighted to violet */
+.spin.perk { --glow: 138, 92, 255; background:
+    radial-gradient(circle at 35% 26%, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0) 36%),
+    radial-gradient(circle at 50% 62%, #b28cff 0%, #6a3ae0 45%, #26105a 80%, #120630 100%);
+  box-shadow: 0 0 0 1.5px rgba(230, 214, 255, 0.6) inset, 0 -6px 14px rgba(0, 0, 0, 0.35) inset, 0 0 30px rgba(138, 92, 255, 0.6), 0 10px 30px rgba(0, 0, 0, 0.5); }
+.spin.perk .aur .a1 { opacity: 0.3; }
+.spin.perk .aur .a3 { opacity: 0.85; }
+.spin.perk .cap { color: #efe6ff; }
+/* autospin: STOP (the stop square), the aurora runs faster (playbackRate), a mint rim on the ring */
+.spin.auto .ico svg:not(.stop) { display: none; }
+.spin.auto .ico svg.stop { display: block; width: 26px; height: 26px; }
+.spin.auto .cap { color: #d8fff1; }
+.spin.auto .ring .bg { stroke: rgba(106, 255, 200, 0.28); }
+/* low balance (FYLD OP: the button refills play money): steel body, amber word, no aurora, no halo */
+.spin.low { --glow: 255, 181, 71; background:
+    radial-gradient(circle at 35% 26%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 36%),
+    radial-gradient(circle at 50% 62%, #4a5d7c 0%, #27354f 50%, #121b2e 86%);
+  box-shadow: 0 0 0 1.5px rgba(255, 181, 71, 0.5) inset, 0 10px 30px rgba(0, 0, 0, 0.5); }
+.spin.low .aur, .spin.low::before { opacity: 0; }
+.spin.low::after { opacity: 0.22; animation: none; }
+.spin.low .face { color: #cfe2ff; }
+.spin.low .cap { color: #ffd79a; }
+/* Solstorm: the molten button stays (no aurora) */
+:root[data-mode='storm'] .spin { --glow: 255, 60, 40; background:
     radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 38%),
     radial-gradient(circle at 50% 60%, #ff5a3c 0%, #c8102e 45%, #4a0010 82%, #1a0006 100%);
   box-shadow: 0 0 0 1.5px rgba(255, 214, 200, 0.55) inset, 0 0 30px rgba(255, 30, 60, 0.55), 0 10px 30px rgba(0, 0, 0, 0.5); }
+:root[data-mode='storm'] .spin .aur, :root[data-mode='storm'] .spin::before { opacity: 0; }
+/* calm: a still frame of the aurora (no drift, no turning rim, no breathing) */
+:root.calm .spin .aur i, :root.calm .spin::before, :root.calm .spin::after { animation: none !important; }
 
 /* Footer — responsible gaming + session info, always visible */
 #foot {
@@ -355,13 +412,15 @@ html, body {
 
 /* ---------- compact heights ---------- */
 @media (max-height: 740px) {
-  :root { --arc-h: 64px; --deck-h: 96px; --win-h: 44px; --hdr-h: 42px; }
-  .spin { width: 80px; height: 80px; }
+  :root { --arc-h: 64px; --deck-h: 100px; --win-h: 44px; --hdr-h: 42px; }
+  .spin { width: 72px; height: 72px; }
+  .spin .ico svg { width: 28px; height: 28px; }
 }
 @media (max-height: 640px) {
-  :root { --arc-h: 44px; --deck-h: 88px; --win-h: 40px; --hdr-h: 40px; --reg-h: 24px; --foot-h: 24px; }
-  .spin { width: 72px; height: 72px; }
-  .spin .ico svg { width: 30px; height: 30px; }
+  :root { --arc-h: 44px; --deck-h: 94px; --win-h: 40px; --hdr-h: 40px; --reg-h: 24px; --foot-h: 24px; }
+  .spin { width: 66px; height: 66px; }
+  .spin .ico svg { width: 26px; height: 26px; }
+  .spin .cap { font-size: 9.5px; }
   .val { font-size: 17px; }
 }
 @media (max-width: 400px) {
@@ -381,7 +440,7 @@ html, body {
 
 /* ---------- desktop / landscape ---------- */
 @media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
-  :root { --arc-h: 104px; --deck-h: 112px; --gutter: 20px; }
+  :root { --arc-h: 104px; --deck-h: 124px; --gutter: 20px; }
   #ui { display: grid; grid-template-columns: minmax(250px, 300px) 1fr minmax(250px, 300px);
         grid-template-rows: var(--reg-h) var(--hdr-h) var(--arc-h) 1fr var(--win-h) var(--deck-h) var(--foot-h); }
   #reg, #hdr, #foot { grid-column: 1 / -1; }
@@ -398,7 +457,7 @@ html, body {
   .panel .hist .h { padding: 4px 0; }
   .hist-panel { max-height: 40vh; overflow: auto; }
   :root { --hdr-h: 60px; }
-  .spin { width: 96px; height: 96px; }
+  .spin { width: 92px; height: 92px; }
 }
 
 /* #clean=1 — hide demo UI chrome for recordings (the canvas watermark on forced storms stays) */
@@ -500,62 +559,15 @@ html, body {
 #splash.leaving #welcome { opacity: 0; transform: translateY(-4px); transition: opacity 240ms ease-out, transform 240ms ease-out; }
 #splash.leaving .center { opacity: 0; transition: opacity 240ms ease-out; pointer-events: none; }
 
-/* ============================================================
-   Terningen — status only. Gold = money, violet = dice. The count is a quiet chip under Saldo (never in #reg),
-   no idle animation, no pulse, no glow at rest; never a fraction, bar or remaining count.
-   ============================================================ */
-.cell-l { display: flex; flex-direction: column; align-items: flex-start; }
-.dice { position:relative; display:inline-flex; align-items:center; gap:5px; height:22px; margin-top:3px; padding:0 8px 0 2px; border-radius:11px;
-  border:1px solid rgba(138,92,255,.32); background:rgba(20,10,44,.40); color:#cdb8ff; font:650 12px/1 system-ui,sans-serif; letter-spacing:.02em; cursor:pointer; pointer-events:auto; }
-.dice::before { content:''; position:absolute; inset:-11px -6px; }          /* 44 px tall hit area */
-.dice .ico { width:18px; height:18px; flex:none; }                             /* DPR canvas */
-.dice .w { display:none; color:var(--muted); font-weight:600; }
-.dice.zero { color:var(--muted); border-color:var(--line); background:transparent; }
-.dice.open .ico { border-radius:50%; box-shadow:0 0 0 1px rgba(25,227,214,.55); }   /* after the real unlock */
-.dice[aria-disabled='true'] { cursor:default; }
-.dice:focus-visible { outline:2px solid var(--teal); outline-offset:2px; }
-.dice .n { position:relative; overflow:hidden; height:14px; display:inline-grid; align-items:center; }                 /* number roll */
-.dice .n > span { grid-area: 1 / 1; line-height:14px; transition: transform .22s var(--ease), opacity .22s var(--ease); }
-.dice .n > .in { transform: translateY(100%); opacity: 0; transition: none; }
-.dice .n > .out { transform: translateY(-100%); opacity: 0; }
-:root.calm .dice .n > span { transition: opacity .2s linear; transform: none !important; }
-.dice.land .ico { animation:diceLand .26s var(--ease); }
-.dice.land { animation:diceRing .5s ease-out; }
-@keyframes diceLand { 50% { transform:scale(1.15); } }
-@keyframes diceRing { from { box-shadow:0 0 0 0 rgba(138,92,255,.7); } to { box-shadow:0 0 0 10px rgba(138,92,255,0); } }
-:root.calm .dice.land { box-shadow:0 0 0 2px rgba(138,92,255,.6); transition:box-shadow .6s; }   /* static ring, no scale */
-/* beside the chip, never over the balance above it (and never left of the chip, at the screen edge) */
-.dice-demo-tag { position:absolute; left:calc(100% + 6px); top:50%; transform:translateY(-50%); padding:2px 7px; border-radius:8px; white-space:nowrap;
-  font:700 10.5px/1.3 system-ui,sans-serif; letter-spacing:.06em; color:#1d1203; background:#ffb547; pointer-events:none; animation: diceTag 1.5s ease-out both; }
-@keyframes diceTag { from { opacity:0; transform:translate(6px, -50%); } 15% { opacity:1; transform:translate(0, -50%); } 80% { opacity:1; } to { opacity:0; } }
-@keyframes diceTagCalm { from { opacity:0; } 15%, 80% { opacity:1; } to { opacity:0; } }
-:root.calm .dice-demo-tag { animation:diceTagCalm 1.5s linear both !important; }   /* calm: a fade, no travel (the global calm rule would end it at once, unseen) */
-/* phones: compact, so it fits between the chip and the stake's "−" */
-@media (max-width: 440px) { .dice-demo-tag { left:calc(100% + 4px); padding:1px 5px; font-size:9.5px; letter-spacing:0; } }
-@media (max-height:640px) { .dice { height:20px; font-size:11.5px; } .dice .ico { width:16px; height:16px; } }
-@media (min-width:1000px) and (min-aspect-ratio:5/4) { .dice { height:24px; font-size:12.5px; } .dice .ico { width:20px; height:20px; } .dice .w { display:inline; } }
-:root.nodice .dice, :root.nodice .dice-panel { display:none; }                /* setting "Vis terninger i spillet" off */
-:root.splash .dice { visibility: hidden; }
-
-/* desktop panel: the FIRST child of #sideR */
-.dice-panel { display:flex; flex-direction:column; gap:6px; flex:none; }
-.dp-row { display:flex; align-items:center; gap:10px; background:none; border:none; padding:0; cursor:pointer; color:#cdb8ff; font:700 18px/1 system-ui,sans-serif; }
-.dp-row .ico { width:36px; height:36px; }
-.dp-row .w { font-size:13px; font-weight:600; color:var(--muted); }
-.dp-row.zero { color:var(--muted); }
-.dp-row.open .ico { border-radius:50%; box-shadow:0 0 0 1px rgba(25,227,214,.55); }
-.dice-panel .linkbtn { align-self:flex-start; color:#cdb8ff; text-decoration:none; }
-.dp-row[aria-disabled='true'], .dice-panel .linkbtn[aria-disabled='true'] { cursor:default; }
+/* Terningen: the dice home is the niche (#vault, “Terningenichen” below) */
+.cell-l { display:flex; flex-direction:column; align-items:flex-start; }
 @media (min-width: 1000px) and (min-aspect-ratio: 5/4) { .hist-panel { flex:1; min-height:0; max-height:none; } }
 
-/* menu tab "Terningen" */
-.dice-top { align-items:center; margin-top:4px; }
-.dice-status { color:#cdb8ff; font-weight:650; }
 
 /* first-visit introduction: non-modal coach card above the chip (it never takes focus) */
 #hello { position:absolute; z-index:6; width:min(320px, calc(100% - 32px)); padding:14px 16px; border-radius:16px; pointer-events:auto;
   background:var(--glass-strong); border:1px solid rgba(138,92,255,.40); box-shadow:0 12px 40px rgba(0,0,0,.5); color:#cfe2ff; }
-#hello[hidden] { display:none; }
+#hello[hidden] { display:none !important; }   /* (over the grid layout of #hello.side) */
 #hello.in { animation: helloIn .4s var(--ease) both; }
 @keyframes helloIn { from { opacity:0; transform:translateY(6px); } }
 :root.calm #hello.in { animation: wFade .4s linear both; }
@@ -570,6 +582,14 @@ html, body {
 #hello .btns { clear:both; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; margin-top:8px; }
 #hello .btns .btn { letter-spacing:.12em; padding:0 14px; }                     /* both fit the narrower card beside SPIN */
 @media (max-height: 400px) { #hello { padding:10px 14px; } #hello p { margin-bottom:4px; } #hello .btns { margin-top:4px; } }
+/* beside the niche (landscape phones, Hud.placeHello): the text on the left, the buttons in a column on the right, the
+   caret on the right edge pointing at the die */
+#hello.side { display:grid; grid-template-columns:44px minmax(0, 1fr) auto; column-gap:12px; align-items:start; }
+#hello.side .medal { float:none; grid-column:1; grid-row:1 / span 2; margin:0; }
+#hello.side .eb, #hello.side h3 { grid-column:2; }
+#hello.side .b, #hello.side .m, #hello.side .facts { grid-column:1 / 3; }
+#hello.side .btns { grid-column:3; grid-row:1 / span 5; flex-direction:column; flex-wrap:nowrap; justify-content:flex-end; align-self:stretch; margin:0; clear:none; }
+#hello.side .caret { left:auto !important; right:-6px; bottom:auto; transform:rotate(-45deg); }
 
 /* relic cards (#summary): first die, unlock, placard */
 .card.relic { padding-top:56px; border-color:rgba(138,92,255,.45); box-shadow:0 0 50px rgba(138,92,255,.22),0 20px 60px rgba(0,0,0,.6); overflow:visible; }
@@ -720,36 +740,290 @@ html, body {
 .seg .btn.small { height:36px; padding:0 12px; letter-spacing:.06em; }
 .seg .btn[aria-pressed='true'] { border-color:rgba(255,181,71,.7); color:#ffd79a; }
 
+
 /* ============================================================
-   Kvit eller dobbelt · autospin — functional core (the HUD pass restyles the pill, the sheet and the card)
+   Terningen II · HUD: the niche, the SPIN column + AUTO pill, the autospin sheet, the gamble card, the die icons
    ============================================================ */
-/* the header demo pill: ONE element, two segments (⚡ Solstorm | die Terning); below 440 px icons only */
-.pill .pseg { display:inline-flex; align-items:center; gap:6px; height:100%; padding:0 2px; border:none; background:none; color:inherit; font:inherit; letter-spacing:inherit; cursor:pointer; }
-.pill .pseg[disabled] { opacity:.45; cursor:default; }
-.pill .pseg:focus-visible { outline:2px solid var(--teal); outline-offset:2px; border-radius:6px; }
-.pill .sep { width:1px; height:16px; background:rgba(255,181,71,.5); }
-/* autospin pill at SPIN's top-right shoulder (a stand-in position) */
-.cell-r { position:relative; }
-.auto-pill { position:absolute; right:-4px; top:-6px; height:20px; padding:0 7px; border-radius:10px; cursor:pointer; pointer-events:auto;
-  font:800 9.5px/1 system-ui,sans-serif; letter-spacing:.12em; color:var(--ice); background:rgba(4,12,26,.82); border:1px solid var(--line-strong); }
-.auto-pill::before { content:''; position:absolute; inset:-12px -6px; }          /* 44 px tall hit area */
-:root.auto .auto-pill { color:#04121a; background:#6affc8; border-color:#d8fff1; }
-.spin.auto .cap { color:#6affc8; }
-.auto-sheet .seg .btn { min-width:56px; }
-.auto-sheet .seg .btn[aria-pressed='true'] { border-color:rgba(106,255,200,.8); color:#d8fff1; }
-/* the choice card: no timer, no countdown; Behold is primary and focused first */
-.card.gamble .t { font-size:20px; font-weight:700; color:var(--ice); margin:2px 0 8px; }
-.card.gamble p { font-size:13.5px; line-height:1.45; color:#cfe2ff; margin:0 0 6px; }
-.card.gamble .facts { font-size:12.5px; color:var(--frost); margin-top:10px; text-align:left; }
-.g-btns { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
-.g-opt.btn { height:auto; min-height:48px; padding:8px 14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; letter-spacing:.12em; white-space:normal; }
-.g-opt .g-s { font-size:11px; font-weight:600; letter-spacing:.02em; text-transform:none; opacity:.85; }
-.g-faces { display:flex; justify-content:center; gap:8px; margin-top:10px; font-size:26px; line-height:1; color:var(--muted); }
-.g-face.win { color:#cdb8ff; }
-.g-face.hit { color:var(--ice); text-shadow:0 0 10px rgba(138,92,255,.8); }
-.g-roll { display:grid; place-items:center; height:64px; margin:4px 0; font-size:56px; line-height:1; color:var(--ice); }
-/* the roll: all six faces at one constant tempo (no slowing, no resting on a face) and a small shake */
-.g-roll .g-die::after { content:'⚀'; display:inline-block; animation:gFaces .6s linear infinite, gShake .3s ease-in-out infinite; }
-@keyframes gFaces { 0% { content:'⚀'; } 16.66% { content:'⚁'; } 33.33% { content:'⚂'; } 50% { content:'⚃'; } 66.66% { content:'⚄'; } 83.33% { content:'⚅'; } }
-@keyframes gShake { 50% { transform:rotate(8deg) translateY(-2px); } }
-:root.calm .g-roll .g-die::after { content:''; animation:none; }
+/* ---------- SPIN's column: the niche above it (phones), the AUTO pill under it ---------- */
+.cell-r { position: relative; display: flex; flex-direction: column; align-items: center; }
+.spin-col { position: relative; display: flex; }   /* (a block would add a line box's descender under SPIN) */
+/* 44 px hit area, a 20 px pill 4 px under SPIN: the box starts 1 px over SPIN's rim and reaches 19 px under the face
+   (the footer's plain session text there, never a link) */
+.auto-pill { position: relative; display: flex; justify-content: center; align-items: flex-start; width: 56px; height: 44px; margin: -1px 0 -18px; padding: 5px 0 0;
+  border: none; background: none; color: var(--ice); cursor: pointer; pointer-events: auto; }
+.auto-pill .ap-face { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 10px 0 8px; border-radius: 10px; white-space: nowrap;
+  font: 800 9.5px/1 system-ui, sans-serif; letter-spacing: 0.16em; color: #d8fff1;
+  background: linear-gradient(180deg, rgba(10, 30, 44, 0.86), rgba(4, 14, 26, 0.9)); border: 1px solid rgba(106, 255, 200, 0.4);
+  box-shadow: 0 0 12px rgba(61, 255, 176, 0.12), 0 4px 10px rgba(0, 0, 0, 0.35); transition: background 0.25s, color 0.25s, border-color 0.25s, opacity 0.25s, transform 0.12s var(--ease); }
+.auto-pill:active .ap-face { transform: scale(0.94); }
+.auto-pill:focus-visible { outline: none; }
+.auto-pill:focus-visible .ap-face { outline: 2px solid var(--teal); outline-offset: 2px; }
+.ap-ico { display: inline-grid; place-items: center; }
+.ap-ico svg { width: 11px; height: 11px; }
+.ap-ico svg.stop { display: none; }
+.auto-pill.on .ap-face { color: #04121a; background: linear-gradient(180deg, #d8fff1, #6affc8 55%, #25d3a6); border-color: #eafff7; box-shadow: 0 0 16px rgba(61, 255, 176, 0.45), 0 4px 10px rgba(0, 0, 0, 0.35); }
+.auto-pill.on .ap-ico svg:not(.stop) { display: none; }
+.auto-pill.on .ap-ico svg.stop { display: block; width: 12px; height: 12px; }
+.auto-pill.off { cursor: default; }
+.auto-pill.off .ap-face { opacity: 0.4; }
+:root.splash .auto-pill, :root.cine .auto-pill { opacity: 0; pointer-events: none; }
+/* narrow phones: "STOP · 100" must stay on screen (the stop square is on SPIN already) */
+@media (max-width: 420px) { .auto-pill.on .ap-ico { display: none; } .auto-pill.on .ap-face { letter-spacing: 0.08em; padding: 0 9px; } }
+:root[data-mode='storm'] .auto-pill .ap-face { opacity: 0.35; }
+/* landscape phones: the pill at SPIN's left shoulder (under SPIN it would reach the footer) */
+@media (max-width: 999px) and (max-height: 500px) and (orientation: landscape) {
+  :root { --deck-h: 84px; }
+  .cell-r { flex-direction: row-reverse; align-items: flex-end; gap: 8px; }
+  .auto-pill { width: 104px; justify-content: flex-end; margin: 0 0 -6px; padding: 11px 0 0; }   /* "STOP · 100" fits; its face hugs SPIN's shoulder */
+}
+
+/* ---------- Terningenichen (#vault): the ONLY dice home ----------
+   A niche of frosted ice glass (an arched top, an inner shadow, a faint aurora rim, an ice ledge) with the user's die
+   floating over the ledge. Idle life only under :root.vault-active and never in calm; only transform/opacity move. */
+#vault { --die: 52px; --nw: calc(var(--die) + 16px); --r: calc(var(--nw) / 2); --top: 5px; --nh: calc(var(--die) + 26px);
+  position: absolute; left: 50%; bottom: calc(100% + 5px); transform: translateX(-50%); pointer-events: none; /* no z-index: the cards and sheets (#overlays) stay above it */
+  transition: opacity 0.4s var(--ease), visibility 0s linear 0s; }
+#vault .v-h { display: none; }
+.v-btn { position: relative; display: block; width: var(--nw); height: var(--nh); padding: 0; border: none; background: none; color: inherit; font: inherit; cursor: pointer; pointer-events: auto; }
+.v-btn[aria-disabled='true'] { cursor: default; }
+.v-btn:focus-visible { outline: none; }
+.v-btn:focus-visible .v-niche { outline: 2px solid var(--teal); outline-offset: 3px; }
+.v-niche { position: absolute; left: 0; top: 0; width: var(--nw); height: 100%; border-radius: var(--r) var(--r) 9px 9px; }
+.v-niche > span, .v-niche > i { position: absolute; pointer-events: none; }
+/* the frosted glass: deep night glass, a cold top light, an inner shadow, a violet floor light and a fine frost grain */
+.v-glass { inset: 0; border-radius: inherit;
+  background:
+    radial-gradient(circle at 30% 18%, rgba(234, 248, 255, 0.07) 0 0.7px, transparent 1.2px) 0 0 / 17px 13px,
+    radial-gradient(circle at 70% 60%, rgba(234, 248, 255, 0.05) 0 0.7px, transparent 1.2px) 3px 5px / 11px 19px,
+    linear-gradient(180deg, rgba(58, 96, 160, 0.34), rgba(14, 26, 56, 0.62) 46%, rgba(8, 14, 32, 0.84));
+  box-shadow: inset 0 9px 16px rgba(0, 0, 0, 0.55), inset 0 -14px 20px rgba(138, 92, 255, 0.12), inset 0 1px 0 rgba(234, 248, 255, 0.22), 0 6px 18px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+/* the faint aurora rim, drawn only along the arch and the sides (a mask ring that follows the arch) */
+.v-rim { inset: -1px; border-radius: calc(var(--r) + 1px) calc(var(--r) + 1px) 10px 10px; overflow: hidden; --rw: 1.3px;
+  background: linear-gradient(165deg, rgba(25, 227, 214, 0.6), rgba(138, 92, 255, 0.5) 50%, rgba(255, 43, 214, 0.34) 85%, rgba(255, 43, 214, 0.05));
+  -webkit-mask: radial-gradient(circle at 50% calc(var(--r) + 1px), transparent calc(var(--r) + 1px - var(--rw)), #000 calc(var(--r) + 1.6px - var(--rw))) top / 100% calc(var(--r) + 1px) no-repeat,
+    linear-gradient(90deg, #000 var(--rw), transparent var(--rw) calc(100% - var(--rw)), #000 calc(100% - var(--rw))) bottom / 100% calc(100% - var(--r) - 1px) no-repeat;
+  mask: radial-gradient(circle at 50% calc(var(--r) + 1px), transparent calc(var(--r) + 1px - var(--rw)), #000 calc(var(--r) + 1.6px - var(--rw))) top / 100% calc(var(--r) + 1px) no-repeat,
+    linear-gradient(90deg, #000 var(--rw), transparent var(--rw) calc(100% - var(--rw)), #000 calc(100% - var(--rw))) bottom / 100% calc(100% - var(--r) - 1px) no-repeat; }
+.v-rim i, .v-aura i { position: absolute; left: 50%; top: 50%; width: 220%; aspect-ratio: 1; opacity: 0; transform: translate(-50%, -50%);
+  background: conic-gradient(from 0deg, #19e3d6, #3dffb0 18%, #8a5cff 40%, #ff2bd6 60%, #8a5cff 76%, #19e3d6); }
+/* after the real unlock: a slow aurora ring (the rim turns, a soft halo around the niche) */
+.v-aura { inset: -12px -12px -4px; border-radius: calc(var(--r) + 12px) calc(var(--r) + 12px) 16px 16px; overflow: hidden; opacity: 0;
+  -webkit-mask: radial-gradient(ellipse 50% 50% at 50% 50%, transparent 58%, #000 76%, transparent 100%); mask: radial-gradient(ellipse 50% 50% at 50% 50%, transparent 58%, #000 76%, transparent 100%); }
+.vault[data-unlock='seen'] .v-rim { --rw: 2px; }
+.vault[data-unlock='seen'] .v-rim i { opacity: 0.95; animation: vTurn 16s linear infinite paused; }
+.vault[data-unlock='seen'] .v-aura { opacity: 0.4; }
+.vault[data-unlock='seen'] .v-aura i { opacity: 1; animation: vTurn 22s linear infinite reverse paused; }
+@keyframes vTurn { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(1turn); } }
+/* the light behind the die and the ice ledge it floats over */
+.v-glow { left: 50%; top: calc(var(--top) + var(--die) * 0.04); width: calc(var(--die) * 1.35); height: calc(var(--die) * 1.2); transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(138, 92, 255, 0.34), rgba(25, 227, 214, 0.12) 58%, rgba(25, 227, 214, 0)); transition: opacity 0.9s; }
+.v-ledge { left: 12%; right: 12%; top: calc(var(--top) + var(--die) + 1px); height: 7px; border-radius: 50%;
+  background: radial-gradient(ellipse 50% 60% at 50% 35%, rgba(234, 248, 255, 0.6), rgba(156, 201, 255, 0.22) 55%, rgba(156, 201, 255, 0) 72%); }
+.v-ledge::after { content: ''; position: absolute; left: 6%; right: 6%; top: 50%; height: 1px; background: linear-gradient(90deg, transparent, rgba(234, 248, 255, 0.55), transparent); }
+.v-shadow { position: absolute; left: 50%; top: calc(var(--top) + var(--die) + 1px); width: calc(var(--die) * 0.64); height: 6px; margin-left: calc(var(--die) * -0.32); border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)); animation: vShadow 5s ease-in-out infinite paused; }
+/* the die: bob (5 s, ±3 px) › dip (the catch) › rattle › hover tilt */
+.v-bob { position: absolute; left: 50%; top: var(--top); width: var(--die); height: var(--die); margin-left: calc(var(--die) / -2); animation: vBob 5s ease-in-out infinite paused; }
+.v-dip, .v-rat { position: absolute; inset: 0; }
+.v-tilt { position: absolute; inset: 0; transform: perspective(260px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.18s ease-out; }
+@keyframes vBob { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(3px); } }
+@keyframes vShadow { 0%, 100% { transform: scale(0.84); opacity: 0.7; } 50% { transform: scale(1.04); opacity: 1; } }
+:root.vault-active .v-bob, :root.vault-active .v-shadow, :root.vault-active .vault[data-unlock='seen'] .v-rim i, :root.vault-active .vault[data-unlock='seen'] .v-aura i { animation-play-state: running; }
+.v-tilt .ico { position: absolute; inset: 0; width: 100%; height: 100%; }
+.v-frozen { opacity: 0; }
+.vault.zero .v-frozen { opacity: 1; }
+/* the ice block that holds the die at 0 (a clear cube with rime; the first landing thaws it) */
+.v-ice { position: absolute; inset: -4%; border-radius: 24%; opacity: 0; pointer-events: none; transform: rotate(-6deg);
+  background: radial-gradient(ellipse 60% 45% at 30% 22%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(150deg, rgba(226, 244, 255, 0.3), rgba(160, 205, 255, 0.06) 38%, rgba(190, 225, 255, 0.14) 70%, rgba(234, 248, 255, 0.34));
+  box-shadow: inset 0 0 0 1px rgba(234, 248, 255, 0.46), inset 0 0 12px rgba(200, 230, 255, 0.3), 0 0 10px rgba(156, 201, 255, 0.18); }
+.v-ice::before { content: ''; position: absolute; left: 12%; top: 9%; width: 42%; height: 2px; border-radius: 1px; transform: rotate(-24deg); background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0)); }
+.v-ice::after { content: ''; position: absolute; right: 10%; bottom: 12%; width: 22%; height: 22%; border-right: 1px solid rgba(234, 248, 255, 0.5); border-bottom: 1px solid rgba(234, 248, 255, 0.5); border-radius: 0 0 30% 0; }
+.vault.zero .v-ice { opacity: 1; }
+/* at 0 the niche is cold: an ice rim (the aurora rim comes with the first die) */
+.vault.zero .v-rim { background: linear-gradient(165deg, rgba(234, 248, 255, 0.62), rgba(156, 201, 255, 0.34) 55%, rgba(156, 201, 255, 0.06)); }
+.vault.zero .v-glow { background: radial-gradient(closest-side, rgba(156, 214, 255, 0.34), rgba(25, 227, 214, 0.1) 60%, rgba(25, 227, 214, 0)); }
+.vault.zero .v-bob, .vault.zero .v-shadow { animation: none; }
+.vault.zero .v-count { color: var(--muted); }
+/* hover: a specular spot that follows the pointer (and the tilt) */
+.v-spec { position: absolute; inset: 0; border-radius: 30%; opacity: 0; pointer-events: none; mix-blend-mode: screen; transition: opacity 0.25s, transform 0.18s ease-out;
+  background: radial-gradient(circle at calc(50% + var(--sx, 0%)) calc(50% + var(--sy, 0%)), rgba(234, 248, 255, 0.3), rgba(234, 248, 255, 0) 38%); }
+.vault.hover .v-spec { opacity: 1; }
+.v-star { position: absolute; width: calc(var(--die) * 0.26); height: calc(var(--die) * 0.26); opacity: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 44%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0) 56%), linear-gradient(0deg, rgba(255, 255, 255, 0) 44%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0) 56%);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%); }
+.v-shard { position: absolute; left: 50%; top: 50%; width: 7px; height: 9px; pointer-events: none; clip-path: polygon(50% 0, 100% 60%, 40% 100%, 0 45%);
+  background: linear-gradient(160deg, rgba(240, 250, 255, 0.95), rgba(156, 201, 255, 0.55)); }
+/* the catch: a ring, a small aurora puff (WAAPI in vault.ts) */
+.v-catch { left: 50%; top: calc(var(--top) + var(--die) * 0.5); width: calc(var(--die) * 1.3); height: calc(var(--die) * 1.3); margin: calc(var(--die) * -0.65) 0 0 calc(var(--die) * -0.65); border-radius: 50%; opacity: 0;
+  border: 2px solid rgba(170, 130, 255, 0.9); box-shadow: 0 0 12px rgba(138, 92, 255, 0.55), inset 0 0 10px rgba(25, 227, 214, 0.3); }
+.v-puff { left: 50%; top: calc(var(--top) + var(--die) * 0.1); width: calc(var(--die) * 1.1); height: calc(var(--die) * 0.8); opacity: 0; transform: translate(-50%, 0);
+  background: radial-gradient(closest-side, rgba(61, 255, 176, 0.45), rgba(138, 92, 255, 0.26) 55%, rgba(138, 92, 255, 0)); }
+/* the count: a small plaque inside the niche's foot (phones); beside the niche on desktop */
+.v-count { position: absolute; left: 0; right: 0; bottom: 2px; display: flex; justify-content: center; align-items: baseline; gap: 4px; pointer-events: none;
+  font: 800 13px/1 system-ui, sans-serif; color: #cdb8ff; text-shadow: 0 1px 6px rgba(5, 11, 26, 0.9); }
+.v-count .w { display: none; }
+.v-count .n { position: relative; overflow: hidden; height: 15px; display: inline-grid; align-items: center; }
+.v-count .n > span { grid-area: 1 / 1; line-height: 15px; transition: transform 0.24s var(--ease), opacity 0.24s var(--ease); }
+.v-count .n > .in { transform: translateY(100%); opacity: 0; transition: none; }
+.v-count .n > .out { transform: translateY(-100%); opacity: 0; }
+:root.calm .v-count .n > span { transition: opacity 0.2s linear; transform: none !important; }
+#vault .v-link { display: none; }
+/* the demo landing: the amber "+n demo" beside the niche (phones: to its left; the number never changes) */
+.dice-demo-tag { position: absolute; right: calc(100% + 6px); top: 34%; padding: 2px 7px; border-radius: 8px; white-space: nowrap; pointer-events: none;
+  font: 700 10.5px/1.3 system-ui, sans-serif; letter-spacing: 0.06em; color: #1d1203; background: #ffb547; animation: diceTag 1.5s ease-out both; }
+@keyframes diceTag { from { opacity: 0; transform: translateX(6px); } 15% { opacity: 1; transform: translateX(0); } 80% { opacity: 1; } to { opacity: 0; } }
+@keyframes diceTagCalm { from { opacity: 0; } 15%, 80% { opacity: 1; } to { opacity: 0; } }
+:root.calm .dice-demo-tag { animation: diceTagCalm 1.5s linear both !important; }
+/* sizes: compact phones, the smallest, tall phones, landscape phones */
+@media (max-height: 740px) { #vault { --die: 46px; --top: 4px; --nh: calc(var(--die) + 24px); } }
+@media (max-height: 640px) { #vault { --die: 44px; } .v-count { font-size: 12px; } }
+@media (min-height: 780px) and (max-aspect-ratio: 3/5) { #vault { --die: 54px; } }
+@media (max-width: 999px) and (max-height: 500px) and (orientation: landscape) { #vault { --die: 44px; bottom: calc(100% + 6px); } }
+/* where it hides: the splash, the chamber and the ceremony, the storm's molten phases (back from stormOutro), cine */
+:root.vault-away #vault, :root.splash #vault, :root.cine #vault { opacity: 0; visibility: hidden; transition: opacity 0.4s var(--ease), visibility 0s linear 0.4s; }
+:root.vault-away #vault *, :root.splash #vault *, :root.cine #vault * { pointer-events: none !important; }
+:root.nodice #vault, :root.nodice #diceBtn { display: none; }
+/* calm: everything static (no bob, glint, rattle, tilt, turning ring); the landing is a static ring */
+:root.calm .v-bob, :root.calm .v-shadow, :root.calm .v-rim i, :root.calm .v-aura i { animation: none !important; }
+:root.calm .v-tilt { transform: none !important; }
+:root.calm .v-spec { display: none; }
+/* desktop: the last block of the right column, a 96 px die, the count, "terninger" and "Porten under klinten ›" */
+@media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
+  #vault { --die: 96px; --nw: 124px; --top: 12px; --nh: calc(var(--die) + 34px); position: relative; left: auto; bottom: auto; transform: none; flex: none; pointer-events: auto;
+    padding: 12px 14px 14px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #vault .v-h { display: block; margin: 0 0 8px; font-size: 11px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
+  .v-btn { display: flex; align-items: center; gap: 16px; width: 100%; height: auto; text-align: left; }
+  .v-niche { position: relative; flex: none; height: var(--nh); }
+  .v-count { position: static; flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 26px; font-size: 34px; color: #cdb8ff; text-shadow: 0 0 18px rgba(138, 92, 255, 0.35); }
+  .v-count .n { height: 36px; }
+  .v-count .n > span { line-height: 36px; }
+  .v-count .w { display: block; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; text-shadow: none; }
+  #vault .v-link { display: inline-flex; position: absolute; left: calc(14px + var(--nw) + 16px); right: 8px; bottom: 18px; color: #cdb8ff; text-decoration: none; min-height: 24px; align-items: center; text-align: left; font-size: 11.5px; line-height: 1.25; }
+  #vault .v-link[aria-disabled='true'] { cursor: default; opacity: 0.6; }
+  .dice-demo-tag { right: auto; left: calc(var(--nw) + 12px); top: 4px; }
+}
+
+/* ---------- the autospin sheet: anchored above the deck (Hud.placeAutoSheet), segmented choices ---------- */
+.sheet.auto-sheet { left: auto; right: 12px; bottom: calc(var(--foot-h) + var(--deck-h) + 8px); width: min(380px, calc(100% - 24px)); max-height: calc(100% - 120px);
+  border-radius: 20px; border: 1px solid var(--line-strong); transform: translateY(14px) scale(0.98); transform-origin: 90% 100%; opacity: 0; padding-bottom: 0;
+  transition: transform 0.35s var(--ease), opacity 0.25s var(--ease);
+  background: linear-gradient(180deg, rgba(12, 26, 54, 0.97), rgba(6, 12, 28, 0.98)); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(61, 255, 176, 0.08); }
+.sheet-wrap.show .auto-sheet { transform: none; opacity: 1; }
+.auto-sheet header { padding: 12px 12px 4px 16px; }
+.auto-sheet h3 { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.auto-sheet h3 .ap-ico svg { width: 15px; height: 15px; color: #6affc8; }
+.auto-sheet .body { padding: 0 16px 16px; }
+.auto-sheet .seg-lbl { margin: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.segd { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 3px; padding: 3px; border-radius: 13px; background: rgba(156, 201, 255, 0.06); border: 1px solid var(--line); }
+.segd .sg { height: 40px; border: none; border-radius: 10px; background: transparent; color: var(--frost); font: 700 13.5px/1 system-ui, sans-serif; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
+.segd .sg[aria-pressed='true'] { color: #eafff7; background: linear-gradient(180deg, rgba(106, 255, 200, 0.24), rgba(61, 255, 176, 0.1)); box-shadow: inset 0 0 0 1px rgba(106, 255, 200, 0.7), 0 0 14px rgba(61, 255, 176, 0.14); }
+.segd .sg:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+#autoL .sg { font-size: 12.5px; }
+.auto-sheet .hint { margin: 10px 0 0; line-height: 1.4; }
+.auto-go { display: block; width: 100%; margin-top: 12px; height: 48px; font-size: 13px; letter-spacing: 0.16em; }
+@media (max-width: 360px) { #autoL .sg { font-size: 11.5px; } }
+
+/* ---------- the stop banner can carry the die (stopped by a die) ---------- */
+#banner .b-die { display: none; position: absolute; left: 12px; top: 50%; width: 30px; height: 30px; transform: translateY(-50%); }
+#banner.die { padding-left: 52px; }
+#banner.die .b-die { display: block; }
+
+/* ---------- the header demo pill: ONE element, two segments (⚡ Solstorm | the die, Terning); below 440 px icons only ---------- */
+.pill .pseg { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 2px; border: none; background: none; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; }
+.pill .pseg[disabled] { opacity: 0.45; cursor: default; }
+.pill .pseg:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
+.pill .sep { width: 1px; height: 16px; background: rgba(255, 181, 71, 0.5); }
+
+/* ---------- the die icons (the user's image; the coded die only if it cannot decode) ---------- */
+.die-ico { display: inline-block; flex: none; }
+.pill .pill-die { width: 16px; height: 16px; }
+.tabs button { display: inline-flex; align-items: center; gap: 5px; }
+.tabs .tab-die { width: 15px; height: 15px; }
+.hist .h-die { width: 12px; height: 12px; vertical-align: -2px; margin-right: 3px; }
+.card .row-die { width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; }
+.ch-count .ch-die { width: 36px; height: 36px; align-self: center; }
+@media (min-width: 1000px) and (min-aspect-ratio: 5/4) { .ch-count .ch-die { width: 60px; height: 60px; } }
+
+/* ---------- menu tab "Terningen": the die header, "Dine valg" ---------- */
+.dice-hdr { display: flex; align-items: center; gap: 12px; margin: 6px 0 2px; padding: 10px 12px; border-radius: 14px; background: rgba(138, 92, 255, 0.08); border: 1px solid rgba(138, 92, 255, 0.28); }
+.dice-hdr .hdr-die { width: 52px; height: 52px; }
+.dice-hdr .dh-t { flex: 1; min-width: 0; }
+.sheet .body .dice-hdr h4 { margin: 0 0 2px; }
+.dice-status { color: #cdb8ff; font-weight: 650; }
+.dice-hdr .btn { flex: none; }
+@media (max-width: 400px) { .dice-hdr { flex-wrap: wrap; } .dice-hdr .btn { width: 100%; } }
+.glog { display: grid; gap: 0; font-size: 12px; margin: 4px 0 8px; }
+/* each choice: its ID on a line of its own (never cut: it is the audit key), then choice · face · result */
+.glog .gl { display: grid; grid-template-columns: minmax(0, 1.3fr) 3em minmax(0, 1.2fr); column-gap: 10px; row-gap: 2px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.glog .gl.head { color: var(--muted); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+.glog .id { grid-column: 1 / -1; color: var(--muted); font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 10.5px; overflow-wrap: anywhere; }
+.glog .pos { color: #cdb8ff; }
+
+/* ---------- Kvit eller dobbelt: the card ----------
+   Phones: a bottom sheet of at most ~42 % of the height (Hud.fitGamble), so the staged die stays in view above it.
+   Desktop: a centred card under the die. Behold is primary and focused first; no timer, no countdown. During the throw
+   and the result the card is compact text only (the die and the tablets are on the stage). */
+.card.gamble { top: auto; bottom: calc(var(--foot-h) + 12px + env(safe-area-inset-bottom)); width: min(400px, calc(100% - 24px)); padding: 16px 16px 14px; transform: translate(-50%, 10px);
+  border-color: rgba(138, 92, 255, 0.42); box-shadow: 0 0 50px rgba(138, 92, 255, 0.18), 0 20px 60px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, rgba(12, 18, 44, 0.94), rgba(5, 9, 24, 0.96)); }
+.overlay.show .card.gamble { transform: translate(-50%, 0); }
+.card.gamble.stay { transition: none; }
+.card.gamble .g-head { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 4px; }
+.card.gamble .medal { width: 38px; height: 38px; flex: none; }
+.card.gamble .g-hd { text-align: left; min-width: 0; }
+.card.gamble h2 { margin: 0 0 3px; font-size: 11px; letter-spacing: 0.26em; color: #cdb8ff; }
+.card.gamble .t { font-size: 19px; font-weight: 700; color: var(--ice); margin: 0; line-height: 1.15; }
+.card.gamble .g-body { font-size: 13px; line-height: 1.4; color: #cfe2ff; margin: 6px 0 10px; text-align: center; }
+.card.gamble .demo-note { margin-bottom: 10px; }
+.g-btns { display: grid; gap: 8px; }
+.g-opt.btn { height: auto; min-height: 50px; padding: 8px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; white-space: normal;
+  font-size: 12.5px; letter-spacing: 0.12em; line-height: 1.1; }
+.g-opt .g-s { font-size: 11px; font-weight: 600; letter-spacing: 0.01em; text-transform: none; opacity: 0.88; line-height: 1.25; text-wrap: balance; }
+.g-opt.ghost { background: rgba(22, 14, 50, 0.55); border-color: rgba(138, 92, 255, 0.42); color: #eee6ff; }
+.g-opt.ghost:hover { border-color: rgba(170, 130, 255, 0.7); }
+.card.gamble .facts { font-size: 12px; line-height: 1.45; color: var(--frost); margin: 10px 2px 0; text-align: left; }
+/* the throw and the result: compact text only (the ⚀–⚅ stand-ins stay in the markup for tests, never on screen) */
+.card.gamble .g-roll, .card.gamble .g-faces { display: none; }
+.card.gamble:is([data-g='throw'], [data-g='result']) { padding: 12px 16px 12px; }
+.card.gamble:is([data-g='throw'], [data-g='result']) .t { font-size: 18px; margin: 2px 0 4px; }
+.card.gamble:is([data-g='throw'], [data-g='result']) .g-body { margin: 2px 0 0; }
+.card.gamble[data-g='throw'] .g-body { color: var(--frost); letter-spacing: 0.04em; }
+/* fit steps on phones (Hud.fitGamble): 1 tighter · 2 each choice on one row (the name left, what each face gives
+   right) and smaller facts · 3 the tightest head */
+.card.gamble[data-fit] { padding: 12px 12px 10px; }
+.card.gamble[data-fit] .medal { width: 30px; height: 30px; }
+.card.gamble[data-fit] .t { font-size: 17px; }
+.card.gamble[data-fit] .g-body { margin: 4px 0 8px; font-size: 12.5px; }
+.card.gamble[data-fit] .g-btns { gap: 6px; }
+.card.gamble[data-fit] .g-opt.btn { min-height: 44px; padding: 6px 10px; gap: 3px; }
+.card.gamble[data-fit] .facts { font-size: 11.5px; line-height: 1.38; margin-top: 8px; }
+.card.gamble:is([data-fit='2'], [data-fit='3']) .facts { font-size: 11px; line-height: 1.32; }
+.card.gamble:is([data-fit='2'], [data-fit='3']) .g-opt .g-s { font-size: 10.5px; }
+.card.gamble:is([data-fit='2'], [data-fit='3']) .g-opt.btn { flex-direction: row; justify-content: space-between; align-items: center; gap: 10px; min-height: 42px; padding: 5px 12px; text-align: left; font-size: 12px; letter-spacing: 0.08em; }
+.card.gamble:is([data-fit='2'], [data-fit='3']) .g-opt .g-l { flex: 0 1 auto; max-width: 40%; line-height: 1.15; }
+.card.gamble:is([data-fit='2'], [data-fit='3']) .g-opt .g-s { flex: 0 1 auto; text-align: right; max-width: 60%; font-size: 10.5px; line-height: 1.22; }
+.card.gamble[data-fit='3'] .g-head { margin-bottom: 2px; }
+.card.gamble[data-fit='3'] .medal { width: 26px; height: 26px; }
+.card.gamble[data-fit='3'] .t { font-size: 16px; }
+.card.gamble[data-fit='3'] .g-body { margin: 2px 0 6px; }
+/* landscape phones: wide and low, the three choices in one row */
+@media (max-width: 999px) and (max-height: 500px) and (orientation: landscape) {
+  .card.gamble { width: min(640px, calc(100% - 24px)); padding: 10px 14px 10px; bottom: calc(var(--foot-h) + 8px); }
+  .card.gamble .g-btns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .card.gamble[data-fit] .g-opt.btn { flex-direction: column; justify-content: center; text-align: center; gap: 3px; }
+  .card.gamble[data-fit] .g-opt .g-s { text-align: center; max-width: none; }
+  .card.gamble .g-opt:not([data-gamble='keep']) { letter-spacing: 0.04em; }
+  .card.gamble .facts { font-size: 11px; line-height: 1.32; margin-top: 6px; }
+  .card.gamble .g-body { margin: 2px 0 6px; }
+  /* the head and the one-line body share a row (the staged die needs the height above the card) */
+  .card.gamble[data-g='offer'] { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 16px; align-items: center; }
+  .card.gamble[data-g='offer'] > :not(.g-head):not(.g-body) { grid-column: 1 / -1; }
+  .card.gamble[data-g='offer'] .g-head { justify-content: flex-start; margin: 0 0 6px; }
+  .card.gamble[data-g='offer'] .g-body { margin: 0 0 6px; text-align: right; }
+}
+@media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
+  .card.gamble { width: 420px; bottom: calc(var(--foot-h) + 16px); padding: 18px 20px 16px; }
+}

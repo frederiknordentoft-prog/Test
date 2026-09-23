@@ -13,10 +13,12 @@ import {
   demoTag, GAMBLE, GAMBLE_FACTS, GAMBLE_FIRST_DIE, GAMBLE_THROW, GAMBLE_RESTORED, GAMBLE_NUMBERS_NOTE, DEMO_GAMBLE_BANNER, DEMO_PILL,
   gambleDemoNote, demoGambleDone, gambleSub, pipList, gambleOfferCopy, gambleCardHtml, gambleThrowHtml, gambleResultCopy, gambleResultHtml,
   srGambleKeep, gambleRulesP1, gambleRulesP2, faceGlyph, type GambleCardCtx,
+  TIPS, GAMBLE_LOG, gambleLogResult, gambleLogRows,
 } from '../src/ui/diceCopy.ts';
 import { AUTO, AUTO_STOPS } from '../src/ui/autoCopy.ts';
 import { autoLimits, AUTO_COUNTS } from '../src/game/auto.ts';
 import { winPips, GAMBLE_BETS, resolveGamble } from '../src/math/gamble.ts';
+import { MOMENT_COPY } from '../src/present/momentCopy.ts';
 
 const COUNTS = [0, 1, 2, 37, 1947, 1948, 2011];
 const UNLOCKS: DiceView['unlock'][] = ['none', 'pending', 'seen'];
@@ -32,7 +34,7 @@ const values = (o: object): string[] => Object.values(o).flatMap((v) => (typeof 
 function nonRulesCopy(): { where: string; s: string }[] {
   const out: { where: string; s: string }[] = [];
   const add = (where: string, ...ss: (string | null | undefined)[]) => { for (const s of ss) if (s) out.push({ where, s }); };
-  add('hud', CHIP_TITLE, DEMO_TAG, PANEL.h, PANEL.link, DEMO_CAPTION, DEMO_STORM_NOTE, DEMO_DIE_BANNER.t, DEMO_DIE_BANNER.s, SR_CEREMONY_END);
+  add('hud', CHIP_TITLE, DEMO_TAG, PANEL.h, PANEL.link, DEMO_CAPTION, DEMO_STORM_NOTE, DEMO_DIE_BANNER.t, DEMO_DIE_BANNER.s, SR_CEREMONY_END, ...values(TIPS));
   add('hello', ...values(helloCopy()), text(helloHtml()));
   add('firstDie', ...values(firstDieCopy()), text(firstDieHtml(null)));
   add('chamber', ...values(CHAMBER), ...values(GATE_LABELS), ...chamberFacts());
@@ -50,6 +52,8 @@ function nonRulesCopy(): { where: string; s: string }[] {
     for (const N of PREVIEW_STEPS) for (const k of ['preview', 'demo', 'replay'] as const) add(`ribbon ${k} ${N}`, chamberRibbon(k, N, n));
     for (const k of KINDS) add(`ceremony ${k} ${n}`, ceremonyEyebrow(k, n), srCeremonyStart(k, n));
   }
+  add('moment', MOMENT_COPY.title);
+  for (const n of COUNTS) add(`moment ${n}`, MOMENT_COPY.nr(n));
   out.push(...gambleCopy(COUNTS), ...autoCopy());
   return out;
 }
@@ -59,6 +63,13 @@ function gambleCopy(counts: number[]): { where: string; s: string }[] {
   const out: { where: string; s: string }[] = [];
   const add = (where: string, ...ss: (string | null | undefined)[]) => { for (const s of ss) if (s) out.push({ where, s }); };
   add('gamble', ...values(GAMBLE), GAMBLE_FACTS, GAMBLE_THROW, ...values(GAMBLE_RESTORED), ...values(DEMO_GAMBLE_BANNER), ...values(DEMO_PILL), DRAWER.gamble, MENU.gambleSetting, MENU.gambleHint);
+  add('gamble log', GAMBLE_LOG.h, GAMBLE_LOG.intro, GAMBLE_LOG.empty, ...values(GAMBLE_LOG.head));
+  // "Dine valg": every row a log can hold (keep, both bets × every face, k ∈ GK)
+  const log = GK.flatMap((k, i) => [
+    { gid: null, id: `NL-00000001-B${String(i).padStart(6, '0')}`, source: 'spin' as const, choice: 'keep' as const, stake: k, face: null, payout: k, at: 0 },
+    ...(['double', 'triple'] as const).flatMap((bet) => Array.from({ length: 6 }, (_, f) => ({ gid: `NL-00000001-T${String(i * 12 + f).padStart(6, '0')}`, id: `NL-00000001-S${String(i).padStart(6, '0')}`, source: 'storm' as const, choice: bet, stake: k, face: f, payout: resolveGamble(bet, k, f).payout, at: 0 }))),
+  ]);
+  for (const r of gambleLogRows(log, null, log.length)) add('gamble log row', r.choice, r.pip, r.result, r.aria);
   for (const n of counts) {
     add(`gamble n ${n}`, gambleDemoNote(n), ...values(demoGambleDone(n)), demoTag(n));
     for (const k of GK) for (const source of ['spin', 'storm'] as const) for (const demoN of [null, n]) {
@@ -81,7 +92,7 @@ function gambleCopy(counts: number[]): { where: string; s: string }[] {
 function autoCopy(): { where: string; s: string }[] {
   const out: { where: string; s: string }[] = [];
   const add = (where: string, ...ss: string[]) => { for (const s of ss) out.push({ where, s }); };
-  add('auto', AUTO.title, AUTO.pill, AUTO.pillAria, AUTO.spinsLabel, AUTO.limitLabel, AUTO.start, AUTO.close);
+  add('auto', AUTO.title, AUTO.pill, AUTO.pillAria, AUTO.pillTitle, AUTO.stopWord, AUTO.spinsLabel, AUTO.limitLabel, AUTO.start, AUTO.close);
   for (const r of AUTO_STOPS) for (const [n, net] of [[10, -2000], [25, 0], [3, 4520]]) add(`auto stop ${r}`, AUTO.stop(r), AUTO.summary(n, net), AUTO.sr(r, n, net));
   for (const left of [0, 1, 9, 12, 99]) add(`auto left ${left}`, AUTO.stopCap(left), AUTO.stopAria(left));
   for (const st of CONFIG.stakesOre) for (const n of AUTO_COUNTS) { add(`auto count ${n}`, AUTO.count(n)); for (const l of autoLimits(st, n)) add(`auto limit ${st}`, AUTO.limitHint(l)); }
@@ -231,6 +242,23 @@ describe('captions, myth and layout classes', () => {
       if (clause) expect(claim).toContain(`${PAYBACK_SENTENCE} ${NOT_AN_OFFER}`);
       expect(body).not.toMatch(/tilbagebetaling|ikke et tilbud/);
     }
+  });
+});
+
+describe('Kvit eller dobbelt: "Dine valg" (the menu\'s audit trail)', () => {
+  const e = (o: object) => ({ gid: 'NL-0000000a-T000001', id: 'NL-0000000a-B000010', source: 'spin' as const, choice: 'double' as const, stake: 1, face: 4, payout: 2, at: 0, ...o });
+  it('rows: ID, choice, face, "1 → 2 terninger" / "1 → ingen"; newest first, at most 10; an open choice is never listed', () => {
+    expect(gambleLogResult(1, 2)).toBe('1 → 2 terninger');
+    expect(gambleLogResult(1, 0)).toBe('1 → ingen');
+    expect(gambleLogResult(3, 3)).toBe('3 → 3 terninger');
+    const rows = gambleLogRows([e({}), e({ gid: null, id: 'NL-0000000a-B000011', choice: 'keep', face: null, payout: 1 }), e({ gid: 'NL-0000000a-T000002', id: 'NL-0000000a-B000012', face: 1, payout: 0 })], null);
+    expect(rows.map((r) => [r.id, r.choice, r.pip, r.result])).toEqual([
+      ['NL-0000000a-T000002', 'Kvit eller dobbelt', '2', '1 → ingen'],
+      ['NL-0000000a-B000011', 'Behold', '–', '1 → 1 terning'],
+      ['NL-0000000a-T000001', 'Kvit eller dobbelt', '5', '1 → 2 terninger'],
+    ]);
+    expect(gambleLogRows([e({}), e({ id: 'OPEN' })], 'OPEN').length).toBe(1);
+    expect(gambleLogRows(Array.from({ length: 30 }, (_, i) => e({ id: String(i) })), null).length).toBe(10);
   });
 });
 

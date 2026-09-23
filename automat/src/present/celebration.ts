@@ -145,7 +145,7 @@ export class Celebration extends Container {
     this.birth(true); // "Fortsæt" before the birth beat: the die still exists before its flight
     this.active = false;
     this.tl?.kill();
-    gsap.to(this, { alpha: 0, duration: 0.3, onComplete: () => { this.visible = false; } });
+    gsap.to(this, { alpha: 0, duration: 0.3, ease: 'sine.inOut', onComplete: () => { this.visible = false; } }); // a gentle ramp (no steep first frame)
     const r = this.resolve; this.resolve = null; r?.();
   }
 

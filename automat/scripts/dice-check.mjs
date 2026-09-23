@@ -124,16 +124,23 @@ if (want.has('award')) {
   await adv(200);
   check((await phase()) === 'born' && (await dieRect()) !== null, 'the Pixi award die is on screen at R+1,6', await phase());
   check((await chip()) === '0' && (await state()) === 'celebrating', 'chip unchanged while the die is shown');
-  let landAt = -1, idleAt = -1, flyAt = -1, lastFly = null, lastTarget = null;
-  for (let t = 1600 + FRAME; t < 6000 && idleAt < 0; t += FRAME) {
+  // the hero beat (Terningens øjeblik): at the celebration's close (R+2,70) the die lifts to stage centre and grows
+  // (700 ms), holds 0,9 s (no offer: the first die), a 70 ms hit-stop on its arrival, then the 700 ms flight home
+  let landAt = -1, idleAt = -1, flyAt = -1, heroAt = -1, heroBox = null, lastFly = null, lastTarget = null;
+  for (let t = 1600 + FRAME; t < 8000 && idleAt < 0; t += FRAME) {
     await adv(FRAME, FRAME);
+    if (heroAt < 0 && (await phase()) === 'hero') heroAt = t;
+    if (!heroBox && heroAt > 0 && t >= heroAt + 1100) heroBox = { r: await dieRect(), vw: await ev(() => innerWidth), vh: await ev(() => innerHeight), ph: await phase() };
     const f = await ev(() => { const e = document.querySelector('#overlays .die-fly'); if (!e) return null; const r = e.getBoundingClientRect(); const i = document.getElementById('diceIco').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, tx: i.left + i.width / 2, ty: i.top + i.height / 2, tw: i.width }; });
     if (f) { lastFly = f; if (flyAt < 0) flyAt = t; }
     if (landAt < 0 && (await chip()) === '1') { landAt = t; lastTarget = lastFly; }
     if (idleAt < 0 && (await state()) !== 'celebrating') idleAt = t;
   }
-  check(flyAt >= 2740 && flyAt <= 2790, 'the DOM flight starts at ≈ R+2,75 (hand-off from the Pixi die)', `R+${flyAt.toFixed(0)} ms`);
-  check(landAt > 2600 && landAt <= 3500, 'die lands on the chip at ≈ R+3,35', `R+${landAt.toFixed(0)} ms`);
+  check(heroAt >= 2680 && heroAt <= 2760, 'the hero beat starts at the celebration\'s close (≈ R+2,70)', `R+${heroAt.toFixed(0)} ms`);
+  const hb = heroBox?.r, want = Math.max(120, Math.min(0.34 * Math.min(heroBox?.vw ?? 0, heroBox?.vh ?? 0), 260));
+  check(!!hb && heroBox.ph === 'hero' && Math.abs(hb.x + hb.w / 2 - heroBox.vw / 2) <= 3 && hb.w >= Math.min(want, 120) * 0.97 && hb.w <= 260 * 1.05, 'the hero die holds at stage centre, grown to clamp(120, 0.34·min(W,H), 260) px', hb ? `${hb.w.toFixed(0)} px (rule ${want.toFixed(0)}) at x ${(hb.x + hb.w / 2).toFixed(0)}` : 'no die');
+  check(flyAt >= 4330 && flyAt <= 4420, 'the DOM flight starts at ≈ R+4,37 (close + lift 0,7 + hold 0,9 + hit-stop; hand-off from the Pixi die)', `R+${flyAt.toFixed(0)} ms`);
+  check(landAt >= flyAt + 650 && landAt <= flyAt + 750, 'die lands on the chip 700 ms after the flight starts (≈ R+5,07)', `R+${landAt.toFixed(0)} ms`);
   const miss = lastTarget ? Math.hypot(lastTarget.x - lastTarget.tx, lastTarget.y - lastTarget.ty) : 99;
   check(miss <= 4 && lastTarget && Math.abs(lastTarget.w - lastTarget.tw) <= 4, 'the flight lands ON the chip icon (last frame centre and size)', lastTarget ? `Δ ${miss.toFixed(1)} px, ${lastTarget.w.toFixed(0)} vs ${lastTarget.tw.toFixed(0)} px` : 'no flight seen');
   check(!(await ev(() => !!document.querySelector('#overlays .die-fly'))), 'the flight canvas is removed at the landing');
@@ -177,6 +184,16 @@ if (want.has('award')) {
   let skipLand = -1;
   for (let t = FRAME; t <= 600 && skipLand < 0; t += FRAME) { await adv(FRAME, FRAME); if ((await chip()) === '3') skipLand = t; }
   check(skipLand > 0 && skipLand <= 300 + FRAME + 0.5, 'b · skip at R+1,2 lands the die ≤ 300 ms + 1 frame later', `${skipLand.toFixed(0)} ms`);
+  // b2 · a skip during the hero beat's hold: the flight starts at once and lands ≤ 300 ms + 1 frame later
+  for (let t = 0; t < 3000 && (await state()) !== 'idle'; t += FRAME) await adv(FRAME, FRAME);
+  await ev(() => window.__slot.qaNext('die'));
+  await ev(() => { window.__slot.spin(); });
+  check((await until(() => window.__slot.award().phase === 'hero', 15000, 50)) >= 0, 'b2 · the hero beat');
+  await adv(1000);
+  await page.keyboard.press('Escape');
+  let heroSkip = -1;
+  for (let t = FRAME; t <= 600 && heroSkip < 0; t += FRAME) { await adv(FRAME, FRAME); if ((await chip()) === '4') heroSkip = t; }
+  check(heroSkip > 0 && heroSkip <= 300 + FRAME + 0.5, 'b2 · skip during the hero hold lands the die ≤ 300 ms + 1 frame later', `${heroSkip.toFixed(0)} ms`);
   // c · SPIN at the first idle frame: nothing of the award is in flight, and no die sound starts after the press
   for (let t = 0; t < 3000 && (await state()) !== 'idle'; t += FRAME) await adv(FRAME, FRAME);
   const inFlight = (await ev(() => window.__slot.award())).inFlight;
@@ -534,7 +551,12 @@ if (want.has('visual')) {
     const b = document.getElementById('bal');
     return { vw: innerWidth, vh: innerHeight, sw: document.documentElement.scrollWidth, balOk: b.scrollWidth <= b.clientWidth,
       reg: dom(document.getElementById('reg')), foot: dom(document.getElementById('foot')), deck: dom(document.getElementById('deck')), arc: dom(document.getElementById('slot-arc')),
-      chip: dom(document.getElementById('diceBtn')), cellL: dom(document.querySelector('.cell-l')), hello: dom(document.getElementById('hello')),
+      niche: dom(document.querySelector('#vault .v-niche')), spin: dom(document.getElementById('spinBtn')), pill: dom(document.querySelector('#autoBtn .ap-face')), win: dom(document.getElementById('winstrip')),
+      frame: (() => { const q = window.__slot.world.gridRect, h = document.getElementById('app').getBoundingClientRect(); return { x: q.x - 7 + h.left, y: q.y - 7 + h.top, w: q.size + 14, h: q.size + 14 }; })(),
+      sideFits: (() => { const s = document.getElementById('sideR'); return getComputedStyle(s).display === 'none' || s.scrollHeight <= s.clientHeight + 1; })(),
+      zero: document.getElementById('vault').classList.contains('zero'), frozen: +getComputedStyle(document.querySelector('#vault .v-frozen')).opacity,
+      aurora: document.getElementById('spinBtn').getAnimations({ subtree: true }).filter((x) => x.playState === 'running').length,
+      chDie: dom(document.getElementById('chDie')), hello: dom(document.getElementById('hello')),
       die: die ? pix(die.sp) : null, cap: die && die.cap ? pix(die.cap) : null, fly: dom(document.querySelector('#overlays .die-fly')),
       chN: dom(document.getElementById('chN')), facts: [...document.querySelectorAll('#chFacts li')].map(dom),
       mythChip: [...document.querySelectorAll('#chMyth .chip.concept')].map(dom).find(Boolean) ?? null, done: dom(document.getElementById('chDone')),
@@ -548,16 +570,21 @@ if (want.has('visual')) {
     const snap = async (name) => { await ev(() => window.__slot.advance(16, true)); await page.screenshot({ path: `${dir}/${name}-${vw}x${vh}.png` }); };
     await boot('', true);
     await ev(() => window.__slot.setSeed(20260922));
-    // the chip at rest (0: the empty socket)
+    // the niche at rest (0: the die frozen in the ice) above SPIN (phones) or at the foot of #sideR (desktop)
+    await new Promise((r) => setTimeout(r, 650)); // the deck's 0,6 s fade-in after the splash runs in real time
     let l = await L();
-    await snap('dice-chip-0');
-    check(within(l.chip, l.cellL) && within(l.chip, l.deck) && l.balOk && l.sw <= l.vw, `${tag} · chip at rest: inside .cell-l and #deck, no ellipsis on #bal, no horizontal scroll`);
+    await snap('dice-niche-0');
+    const apart = (a, ...bs) => !!a && bs.every((b) => !ov(a, b));
+    check(inside(l.niche, l) && apart(l.niche, l.spin, l.pill, l.win, l.frame, l.reg, l.foot) && apart(l.pill, l.spin, l.win, l.foot) && l.balOk && l.sw <= l.vw && l.sideFits,
+      `${tag} · the niche at rest: on screen, clear of SPIN, the AUTO pill, #winstrip, the grid frame, #reg and #foot; no ellipsis on #bal, no scroll`);
+    check(l.zero && l.frozen === 1, `${tag} · the niche at 0: the die sealed in the ice`);
+    check(l.aurora >= 4, `${tag} · SPIN: the aurora bands, the rim and the halo move`, `${l.aurora} animations`);
     await adv(1400);
     await new Promise((r) => setTimeout(r, 450)); // its 0,4 s CSS entry runs in real time
     l = await L();
     await snap('dice-hello');
     check(inside(l.hello, l) && !ov(l.hello, l.reg) && !ov(l.hello, l.foot), `${tag} · hello card inside the viewport, clear of #reg and #foot`);
-    // the award: birth (R+2,0), mid-flight (R+3,0), the first-die card
+    // the award: birth (R+2,0), mid-flight (the flight home, after the big die moment), the first-die card
     await ev(() => window.__slot.qaNext('die'));
     await ev(() => { window.__slot.spin(); });
     await adv(2800);
@@ -567,17 +594,23 @@ if (want.has('visual')) {
     await snap('die-birth');
     const clear = (r) => r && inside(r, l) && !ov(r, l.deck) && !ov(r, l.arc) && !ov(r, l.reg) && !ov(r, l.foot);
     check(clear(l.die) && clear(l.cap), `${tag} · award die + caption inside the viewport, clear of the deck, the Kp arc, #reg and #foot`, JSON.stringify(l.die));
-    await adv(1000);
+    // the flight starts after the hero beat (its timing is the award section's): step to it, then 100 ms into it
+    for (let t = 0; t < 6000 && !(await ev(() => !!document.querySelector('#overlays .die-fly'))); t += FRAME) await adv(FRAME, FRAME);
+    await adv(100);
     l = await L();
     await snap('die-flight');
-    check(!!l.fly && inside(l.fly, l), `${tag} · mid-flight: the DOM die is on its way to the chip`);
+    check(!!l.fly && inside(l.fly, l), `${tag} · mid-flight: the DOM die is on its way to the niche`);
     await untilState('idle', 10000);
     await adv(400);
     l = await L();
     await snap('dice-first-card');
     check((await state()) === 'diceCard' && inside(l.card, l) && !ov(l.card, l.reg) && !ov(l.card, l.foot), `${tag} · first-die card inside the viewport, clear of #reg and #foot`);
     await adv(1600); await click('#summaryCard [data-act="ok"]'); await untilState('idle', 3000);
-    await snap('dice-chip-1');
+    await new Promise((r) => setTimeout(r, 950)); // the thaw crossfade runs in real time
+    l = await L();
+    await snap('dice-niche-1');
+    check(!l.zero && l.frozen === 0 && (await chip()) === '1', `${tag} · the first landing thawed the die (count 1)`);
+    check(await ev(() => window.__slot.vault()), `${tag} · the niche is idle-active (bob, glint, rattle) at a quiet idle`);
     // the chamber: count 0 / 250 (previews), the real one (1), the open gate (1948 preview)
     for (const n of ['0', '250', 'real', '1948']) {
       if (n === 'real') await click('#diceBtn'); else await click(`#dSeg button[data-n="${n}"]`);
@@ -592,6 +625,7 @@ if (want.has('visual')) {
       check((vh <= vw || l.slot.h >= 200 - 0.5) && l.sw <= l.vw, `${tag} · chamber ${n}: gate slot ≥ 200 px in portrait, no horizontal scroll`, `${l.slot?.h.toFixed(0)} px`);
       check(l.lintel.length === 4 && txt.every((r) => r.x >= -1 && r.x + r.w <= l.vw + 1 && !ov(r, l.reg) && !ov(r, l.foot)) && !l.lintel.some((d) => l.myth.some((m) => ov(d, m) > 4)), `${tag} · chamber ${n}: the Pixi lintel${n === '1948' ? ', "AUTOMAT 1948" and its label' : ''} on screen, clear of #reg/#foot and the myth text`);
       if (n === '1948') check(!!l.title && !!l.concept && l.concept.y > l.title.y, `${tag} · open gate: the name with its concept label directly under it`);
+      check(!l.niche && !!l.chDie && !ov(l.chDie, l.chN), `${tag} · chamber ${n}: the niche is hidden; the user's die stands beside the count`);
       await click('#chDone'); await untilState('idle', 3000);
     }
     // the ceremony (demo): key frames on T0; #reg/#foot and the ribbon stay; the placard never covers the name
@@ -689,8 +723,26 @@ if (want.has('gamble')) {
 
   // 3 · a win (qaGamble): count and settled are in the store AT the press; the result shows ≥ 3,0 s later
   await adv(600);
+  // the scene (Terningens øjeblik): the staged dice, the tablets, the band the die sits in, the card
+  const scene = () => ev(() => {
+    const a = window.__slot.world.stage.layers.banners.children.find((c) => c.label === 'dieAward'), m = a?.moment;
+    const h = document.getElementById('app').getBoundingClientRect(), cr = document.getElementById('summaryCard').getBoundingClientRect();
+    const box = (o) => { const b = o.getBounds(); return { x: b.minX + h.left, y: b.minY + h.top, w: b.width, h: b.height }; };
+    return m ? { phase: m.phase, count: m.count(), dice: m.dice().filter((d) => !d.destroyed && d.alpha > 0.01).map((d) => box(d.sp)), tabs: m.qaTabs(), top: m.zoneTop + h.top, card: { y: cr.top, h: cr.height }, vw: innerWidth } : null;
+  });
+  const sc0 = await scene(), d0 = sc0?.dice[0];
+  const mid0 = d0 ? (sc0.top + sc0.card.y) / 2 : 0;
+  check(sc0?.phase === 'wait' && sc0.dice.length === 1 && Math.abs(d0.x + d0.w / 2 - sc0.vw / 2) <= 3 && d0.y + d0.h <= sc0.card.y + 0.5 && Math.abs(d0.y + d0.h / 2 - mid0) <= 8 && !sc0.tabs.length,
+    'scene · the staged die waits centred above the card (between the arc and the card top), never overlapped by it; no tablets before a bet', d0 ? `die ${d0.w.toFixed(0)} px at (${(d0.x + d0.w / 2).toFixed(0)}, ${(d0.y + d0.h / 2).toFixed(0)}), band ${sc0.top.toFixed(0)}–${sc0.card.y.toFixed(0)}` : JSON.stringify(sc0));
   await ev(() => window.__slot.qaGamble(5));
   await bet('double');
+  const litOf = (sc) => (sc?.tabs ?? []).filter((t) => t.lit).map((t) => t.pip).join(',');
+  await adv(FRAME, FRAME);
+  const sc1 = await scene();
+  await adv(200 - FRAME, FRAME);
+  const sc2 = await scene();
+  check(sc1?.tabs.length === 6 && litOf(sc1) === '4,5,6' && litOf(sc2) === '4,5,6' && !sc1.tabs.some((t) => t.drawn) && !sc2.tabs.some((t) => t.drawn) && sc2.tabs.every((t) => t.shown),
+    'scene · six ice tablets under the die; the winning ones (winPips: 4, 5, 6) lit from the first frame, before the tumble starts; none drawn', `lit ${litOf(sc1)} / ${litOf(sc2)}`);
   const w1 = await storedDice();
   check(w1?.count === c0 + 2 && w1?.gamble?.settled?.payout === 2 && w1?.gamble?.settled?.face === 4 && /^NL-[0-9a-f]{8}-T\d{6}$/.test(w1?.gamble?.settled?.gid ?? ''), 'win: count and the settled result (with its T id) are in terningen.v1 AT the choice press', JSON.stringify(w1?.gamble));
   check((await ev(() => window.__slot.save().counters.gamble)) === +(w1?.gamble?.settled?.gid ?? '').slice(-6), 'win: counters.gamble moved to the throw\'s own index (one draw)');
@@ -700,11 +752,20 @@ if (want.has('gamble')) {
   const ms = await ev(() => document.querySelector('.dice-status')?.textContent ?? '');
   check(ms === `Du har ${countWord(c0)}.` && (await ev(() => window.__slot.gambleRun()?.phase)) === 'throw', 'the menu\'s Terningen tab mid-throw shows the count before the award, not the result', ms);
   await click('#menuClose');
-  let shownAt = -1;
-  for (let t = FRAME; t < 6000 && shownAt < 0; t += FRAME) { await adv(FRAME, FRAME); await watch(); if ((await cardText()).includes('Terningen viser')) shownAt = t; }
+  let shownAt = -1, drawnEarly = 0, drawnAtShow = null;
+  for (let t = 200 + FRAME; t < 6000 && shownAt < 0; t += FRAME) { // (the tablet samples above took the first 200 ms)
+    await adv(FRAME, FRAME); await watch();
+    const shownNow = (await cardText()).includes('Terningen viser'), tb = (await scene())?.tabs ?? [];
+    if (!shownNow && tb.some((x) => x.drawn)) drawnEarly++;
+    if (shownNow) { shownAt = t; drawnAtShow = tb.filter((x) => x.drawn).map((x) => x.pip).join(','); }
+  }
   check(shownAt >= 3000 - 0.5, 'win: the result is shown ≥ 3,0 s after the choice', `${shownAt.toFixed(0)} ms`);
+  check(drawnEarly === 0 && drawnAtShow === '5', 'scene · the drawn tablet lights only with the result (≥ 3,0 s), the one the result names', `drawn at the reveal: ${drawnAtShow}, frames drawn before it: ${drawnEarly}`);
   check((await cardText()).includes('Terningen viser 5') && (await cardText()).includes('2 terninger lægges i Terningekammeret'), 'win: "Terningen viser 5 · 2 terninger lægges i Terningekammeret"');
   check((await chip()) === String(c0), 'the chip does not move before the result is shown');
+  await stepW(1000);
+  const sc3 = await scene();
+  check(sc3?.count === 2 && sc3.dice.length === 2 && sc3.tabs.filter((t) => t.drawn).map((t) => t.pip).join(',') === '5', 'scene · a win: the die splits into the payout (2 dice) during the result hold', `${sc3?.count} staged, ${sc3?.dice.length} on screen`);
   let lastFly = null, landAt = -1;
   for (let t = FRAME; t < 6000 && landAt < 0; t += FRAME) { await adv(FRAME, FRAME); await watch(); const f = await ev(FLY); if (f) lastFly = f; if ((await chip()) === String(c0 + 2)) landAt = t; }
   const miss = lastFly ? Math.hypot(lastFly.x - lastFly.tx, lastFly.y - lastFly.ty) : 99;
@@ -723,6 +784,11 @@ if (want.has('gamble')) {
     check(l1?.count === c && l1?.gamble?.settled?.payout === 0, 'loss: count back to its value before the award, at the press', `${c} → ${l1?.count}`);
     await stepW(3100);
     check((await cardText()).includes('1 terning er gået tabt'), 'loss: "1 terning er gået tabt"');
+    const scL = await scene();
+    check(scL?.tabs.filter((t) => t.drawn).map((t) => t.pip).join(',') === '2' && litOf(scL) === '4,5,6', 'scene · a loss: the drawn tablet is 2 (not lit); the winning ones stay as they were');
+    let lossFly = 0;
+    for (let t = 0; t < 4000 && (await state()) !== 'idle'; t += 50) { await adv(50, 50); await watch(); if (await ev(FLY)) lossFly++; if ((await chip()) !== String(c)) lossFly += 100; }
+    check(lossFly === 0, 'scene · a loss: nothing flies and nothing lands (the die frosts and dissolves in place)', `${lossFly} flight frames`);
     await toIdle('loss');
     check((await chip()) === String(c) && (await storedDice())?.gamble === null, 'loss: the home keeps the count before the award');
   }
@@ -828,9 +894,15 @@ if (want.has('gamble')) {
   check(sg?.source === 'storm' && k === 2 && st1.includes(`${k} terninger fra stormen`) && st1.includes('TERNINGER FRA STORMEN'), 'storm: the card shows k (2 terninger fra stormen)', `k ${k}: ${st1.slice(0, 80)}`);
   check((await ev(() => window.__slot.award())).heldDice === k, 'storm: the dice are still held while choosing');
   await adv(1100);
+  const scS = await scene();
+  check(scS?.phase === 'wait' && scS.count === k && scS.dice.length === Math.min(k, 8) && scS.dice.every((d) => d.y + d.h <= scS.card.y + 0.5), 'scene · storm: the held dice rose into a fan above the card (k dice)', `${scS?.count} staged, ${scS?.dice.length} on screen`);
   await ev(() => window.__slot.qaGamble(6));
   if (k > 0) await bet('double'); // (after "Fortsæt": the 250 ms guard)
   check(k > 0 && (await storedDice())?.count === cK + k, 'storm: a double win is committed at the press (count + k)');
+  await untilW("window.__slot.gambleRun()?.phase === 'result'", 8000, 50);
+  await stepW(1000);
+  const scW = await scene();
+  check(scW?.count === 2 * k && scW.dice.length === Math.min(2 * k, 8), 'scene · storm: a win turns the fan into the 2k payout dice (held on for the outro\'s release)', `${scW?.count} staged, ${scW?.dice.length} on screen`);
   check((await untilW("window.__slot.state() === 'stormOutro'", 10000, 50, false, 15)) >= 0, 'storm: the outro follows the result');
   check((await ev(() => window.__slot.award())).heldDice === 2 * k, 'storm: 2k dice held for the outro', String((await ev(() => window.__slot.award())).heldDice));
   await toIdle('storm', 15);
@@ -883,6 +955,24 @@ if (want.has('gamble')) {
   check((await ev((k) => window.__writes[k] ?? 0, KEY)) === 0 && (await stored()) === s0, 'demo: ZERO setItem calls on terningen.v1, the store byte-identical');
   check((await ev(() => window.__slot.save().counters.gamble)) === gd, 'demo: counters.gamble unchanged (the demo throws on the demo domain)');
   check(drops === 0 && samples > 500, 'the dice home never shows fewer dice than before (all sampled frames)', `${samples} samples, ${drops} drops`);
+
+  // no leaks: ten demo gambles (keep / double / triple) leave the stage's display objects and textures at their baseline
+  const census = () => ev(() => {
+    const n = (o) => 1 + (o.children ?? []).reduce((a, c) => a + n(c), 0), st = window.__slot.world.stage;
+    return { objs: n(st.app.stage), tex: st.renderer.texture?.managedTextures?.length ?? -1, fly: document.querySelectorAll('#overlays .die-fly').length };
+  });
+  await adv(2000);
+  const cen0 = await census();
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 300));
+    await ev(() => window.__slot.game.dispatch({ t: 'demoGamble' }));
+    await untilW("window.__slot.state() === 'gambleOffer' && window.__slot.gambleRun()?.armed", 8000, 50);
+    await ev((a) => window.__slot.choose(a), ['keep', 'double', 'triple'][i % 3]);
+    await untilW("window.__slot.state() === 'idle'", 12000, 100);
+  }
+  await adv(2000);
+  const cen1 = await census();
+  check(cen1.objs === cen0.objs && cen1.tex === cen0.tex && cen1.fly === 0, 'scene · no leaks: ten demo gambles leave the display objects and textures at their baseline', `objects ${cen0.objs} → ${cen1.objs}, textures ${cen0.tex} → ${cen1.tex}, flyers ${cen1.fly}`);
 }
 
 // ------------------------------------------------------------------ autospin: ≥ 3,0 s per spin, every stop, stake locked
@@ -932,7 +1022,7 @@ if (want.has('auto')) {
   await click('#autoGo'); await adv(100);
   const a0 = await ev(() => window.__slot.auto());
   check(a0?.total === 25 && a0?.lossLimitOre === 10 * S && (await base()) === b0 + 1, '"Start autospin": a run of 25 with a 10× loss limit, the first press through spin()');
-  check((await ev(() => document.getElementById('spinCap').textContent)) === 'STOP · 24' && (await ev(() => document.getElementById('autoBtn').textContent)) === 'STOP · 24', 'SPIN and the pill read "STOP · 24"');
+  check((await ev(() => document.getElementById('spinCap').textContent)) === 'STOP' && (await ev(() => document.getElementById('autoBtn').textContent)) === 'STOP · 24' && (await ev(() => document.getElementById('autoBtn').classList.contains('on') && document.getElementById('spinBtn').classList.contains('auto'))), 'SPIN reads STOP, the pill under it "STOP · 24"');
   await click('#autoBtn'); await adv(100);
   check(!(await ev(() => window.__slot.auto())) && (await ev(() => window.__slot.autoStopped())) === 'player', 'the pill stops the run');
   await untilState('idle', 10000);
