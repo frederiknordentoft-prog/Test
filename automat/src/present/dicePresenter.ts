@@ -130,7 +130,7 @@ export class DomDicePresenter implements DicePresenter {
       gsap.to(d.s, { a: 1, duration: 0.16, onUpdate: d.apply });
       gsap.to(d.s, { capA: 0.85, duration: 0.25, delay: 0.45, onUpdate: d.apply });
     }
-    // TODO(audio): 'dieBirth' at birth + 50 ms (calm: gain 0.7)
+    // sound: Game.dieBirth plays 'dieBirth' at birth + 50 ms (not on an instant birth); presenters stay silent
   }
 
   awardSkip(): void {
@@ -187,7 +187,7 @@ export class DomDicePresenter implements DicePresenter {
     Object.assign(d.s, { x: at.x, y: at.y, a: calm ? 0 : 1, sc: calm ? 1 : 0 });
     d.apply();
     this.moving++;
-    // TODO(audio): 'dieQuench' at the pop, 'dieHold' when it sits (constant pitch)
+    // sound: Game plays 'dieQuench' when it calls stormPop and 'dieHold' (constant pitch) when this promise resolves
     return new Promise<void>((res) => {
       const sit = () => { this.moving--; this.hold(d, slot); res(); };
       const to = this.slotPos(Math.min(slot, 8));
@@ -296,7 +296,7 @@ export class DomDicePresenter implements DicePresenter {
             d.s.sc = from.sc + ((to.size / d.s.size) - from.sc) * t;
             d.apply();
           },
-          onComplete: () => { d.remove(); this.h.land(add, true); }, // TODO(audio): 'dieLand' at −3 dB per landing
+          onComplete: () => { d.remove(); this.h.land(add, true); }, // host.land plays 'dieLand' (−3 dB for held dice)
         }, 1.2 + f * 0.22);
       }
     });
@@ -310,7 +310,7 @@ export class DomDicePresenter implements DicePresenter {
     Object.assign(d.s, { x: W / 2, y: w.gridCenterY(), a: 0, sc: calm ? 1 : 0.25, rot: calm ? 0 : -1.2 });
     d.apply();
     this.moving++;
-    // TODO(visuals): soft local dim (softDot vignette, α .35) over the grid; TODO(audio): 'dieBirth'
+    // TODO(visuals): soft local dim (softDot vignette, α .35) over the grid (Game plays 'dieBirth' when it calls demoAward)
     return new Promise<void>((res) => {
       const tl = gsap.timeline({ onComplete: () => { d.remove(); this.moving--; res(); } });
       if (calm) tl.to(d.s, { a: 1, capA: 0.85, duration: 0.3, onUpdate: d.apply }, 0);
@@ -372,7 +372,8 @@ export class DomDicePresenter implements DicePresenter {
     eb.textContent = ceremonyEyebrow(kind, o.n);
     eb.style.cssText = 'font-size:11px;letter-spacing:.3em;color:#7f93b2;opacity:0;transition:opacity .6s';
     stub?.prepend(eb);
-    // TODO(visuals+audio): T0 = the next base-bed bar line ≥ now + 0,9 s (audio.grid()), anchorToAudio, prepareGate
+    // TODO(visuals+audio): T0 = the next base-bed bar line ≥ now + 0,9 s (audio.grid()), anchorToAudio and the bar-anchored
+    // SFX / filter / duck schedule (Game has already raced audio.prepareGate() against 2 s and does the skip audio + releaseGate)
     const B = 2.817, T0 = 0.9;
     const at = calm ? { seal: 5.6, name: 6.8, end: 8.0 } : { seal: T0 + 4 * B, name: T0 + 5 * B, end: T0 + 6 * B };
     let sealed = false;

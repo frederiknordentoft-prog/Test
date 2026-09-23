@@ -21,12 +21,15 @@ Artifacts modtager kun et rent `#anker`. Flags skrives derfor som tokens, der ka
 | Link | Effekt |
 |---|---|
 | `#solstorm` | Demo-stormen starter automatisk 2 s efter "Tænd himlen" (demo-pillen udløser den også direkte; ⋯ åbner demo-værktøjerne) |
+| `#1948` | Portens åbning (demo) starter 2 s efter "Tænd himlen". Tæller ikke og er mærket DEMO hele vejen |
+| `#kammer` | Åbner Terningekammeret efter intro |
+| `#terning` | Viser en demo-terning 2 s efter intro (tæller ikke) |
 | `#clean` | Skjuler demo-pillen til optagelser. Vandmærket "DEMO" i canvas bliver stående |
 | `#fullfx` | Fuld effekt, selvom systemet beder om reduceret bevægelse |
 | `#fps` | Viser FPS i et overlay |
 | `#autostart` | Springer splash-skærmen over. Bruges kun til QA |
 
-**Taster:** Mellemrum = spin · ↑↓ = indsats · E = demo · M = lyd · Esc = spring over.
+**Taster:** Mellemrum = spin · ↑↓ = indsats · E = demo · T = Terningekammeret · M = lyd · Esc = spring over.
 
 ## Arkitektur
 

@@ -8,6 +8,7 @@ import { CONFIG } from './math/config.ts';
 
 // Deep links: artifacts only receive a bare #anchor, so flags are plain tokens joined by '_' or '-':
 //   #solstorm  #clean  #fullfx  #fps  #autostart   (e.g. #solstorm_clean). Dev also accepts ?seed=123.
+//   Terningen: #1948 (demo gate ceremony)  #kammer (Terningekammeret)  #terning (a demo die), e.g. #1948_clean.
 const tokens = new Set(location.hash.replace(/^#/, '').toLowerCase().split(/[-_.~]+/).filter(Boolean));
 const query = new URLSearchParams(location.search);
 const flag = (t: string) => tokens.has(t) || query.get(t) === '1';
@@ -41,6 +42,7 @@ async function boot(): Promise<void> {
   }
   game = new Game(hud, world);
   world.demoOnLoad = flag('solstorm');
+  world.diceOnLoad = flag('1948') ? 'gate' : flag('kammer') ? 'chamber' : flag('terning') ? 'die' : null;
   if (flag('fullfx')) game.dispatch({ t: 'fullFx' });
   game.boot();
   for (const i of queue.splice(0)) game.dispatch(i);

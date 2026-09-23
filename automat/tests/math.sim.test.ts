@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { OUT, compileModel, simBaseSpin, spinBase } from '../src/math/engine.ts';
 import { Xoshiro128ss, spinRng } from '../src/math/rng.ts';
-import { CONFIG } from '../src/math/config.ts';
+import { CONFIG, REPORT } from '../src/math/config.ts';
 import { newMeter, addCharge, lockedStakeOre } from '../src/math/meter.ts';
 import { jobBase, jobStorm, MeterSim } from '../sim/core.ts';
 import { pAtLeast, pExactly, meterCycles } from '../sim/tune.ts';
@@ -79,6 +79,41 @@ describe('tuner closed forms and seed hygiene', () => {
     for (let i = 0; i < plan.taken.length; i++) for (let k = i + 1; k < plan.taken.length; k++) expect(disjointRanges(plan.taken[i], plan.taken[k])).toBe(true);
     expect(disjointRanges({ seed: 1, domain: 'base', from: 0, n: 10 }, { seed: 1, domain: 'base', from: 5, n: 10 })).toBe(false);
     expect(disjointRanges({ seed: 1, domain: 'base', from: 0, n: 10 }, { seed: 1, domain: 'base', from: 11, n: 10 })).toBe(true);
+  });
+});
+
+describe('REPORT · Terningen fields (sim/run.ts --dice, tied to modelHash)', () => {
+  it('has every dice field, finite, from this model', () => {
+    const R = REPORT;
+    expect(R.modelHash).toBe(CONFIG.modelHash);
+    for (const k of ['diceRate', 'diceRateBase', 'diceStormShare', 'diceP1', 'diceFirstMedian', 'dice1948Spins', 'dice1948SpinsP5', 'dice1948SpinsP95',
+      'dice1948LossX', 'dice1948LossP5X', 'dice1948LossP95X', 'dice1948LossShare', 'diceJourneys'] as const) {
+      expect(typeof R[k], k).toBe('number');
+      expect(Number.isFinite(R[k]), k).toBe(true);
+    }
+    expect(R.diceJourneys).toBeGreaterThanOrEqual(24);
+  });
+  it('dice per paid spin, storm share and the first-die median are consistent', () => {
+    const R = REPORT;
+    expect(R.diceRate).toBeGreaterThan(0.006);
+    expect(R.diceRate).toBeLessThan(0.008);
+    expect(R.diceRateBase).toBeLessThan(R.diceRate);
+    expect(R.diceStormShare).toBeGreaterThanOrEqual(0.2);
+    expect(R.diceStormShare).toBeLessThanOrEqual(0.4);
+    expect(R.diceRateBase / R.diceRate).toBeCloseTo(1 - R.diceStormShare, 2);
+    expect(R.diceP1).toBeLessThanOrEqual(R.diceRate);
+    expect(R.diceFirstMedian).toBe(Math.ceil(Math.log(0.5) / Math.log(1 - R.diceP1)));
+  });
+  it('the journey to 1948 dice: renewal cross-check, loss ≈ spins × (1 − RTP), P5 < mean < P95', () => {
+    const R = REPORT;
+    expect(Math.abs(R.dice1948Spins - 1948 / R.diceRate) / R.dice1948Spins).toBeLessThan(0.02);
+    expect(Math.abs(R.dice1948LossX - R.dice1948Spins * (1 - R.rtp)) / R.dice1948LossX).toBeLessThan(0.05);
+    expect(R.dice1948SpinsP5).toBeLessThan(R.dice1948Spins);
+    expect(R.dice1948Spins).toBeLessThan(R.dice1948SpinsP95);
+    expect(R.dice1948LossP5X).toBeLessThan(R.dice1948LossX);
+    expect(R.dice1948LossX).toBeLessThan(R.dice1948LossP95X);
+    expect(R.dice1948LossShare).toBeGreaterThan(0.5);
+    expect(R.dice1948LossShare).toBeLessThanOrEqual(1);
   });
 });
 

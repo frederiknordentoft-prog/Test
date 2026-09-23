@@ -149,6 +149,7 @@ export function saveDice(d: DiceStore): void {
   if (!writesEnabled) return;
   try {
     localStorage.setItem(DICE_KEY, JSON.stringify(d));
+    storageOk = true;
   } catch {
     storageOk = false;
   }

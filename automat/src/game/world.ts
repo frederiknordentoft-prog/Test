@@ -61,6 +61,8 @@ export class World {
   private layoutDirty = true;
   private storm = false;
   demoOnLoad = false;
+  /** Terningen deep links: #1948 → 'gate' (demo ceremony), #kammer → 'chamber', #terning → 'die' (demo die). */
+  diceOnLoad: 'gate' | 'chamber' | 'die' | null = null;
   manual = false; // headless stepping
   /** Adaptive quality: 0 = high, 1 = medium, 2 = low. */
   quality = 0;
