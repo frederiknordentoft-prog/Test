@@ -17,6 +17,10 @@ import { makeIR, dbToGain } from './dsp.ts';
 import { renderAsset, allAssetIds, baseAssetIds, isStormAsset, STORM_CORE, STORM_EXTRA } from './assets.ts';
 import { LAND_ZONES, CHIME_LADDER, CHIME_ZONES, LEVEL_SEMIS, nearestZone } from './sfx.ts';
 import { barFrames, BASE_BPM, STORM_BPM, LAND_BASE, LAND_STORM } from './music.ts';
+import { POLAR_ID } from './polar.ts';
+
+/** Base bed: the "Polar Night" recording (default) or the procedural pad (base0). */
+export type MusicSource = 'polar' | 'code';
 
 export type Sfx = 'tap' | 'stakeUp' | 'stakeDown' | 'spin' | 'land' | 'chime' | 'shatter' | 'returnTick' | 'nettoCross'
   | 'markUp' | 'mote' | 'levelUp' | 'sun' | 'anticipation' | 'countTick' | 'win' | 'bigWin'
@@ -74,6 +78,8 @@ const BASE_IDS = ['base0', 'base1', 'base2', 'base3', 'base4'];
 const STORM_IDS = ['storm0', 'storm1', 'storm2', 'storm3'];
 const STORM_AT = [0, 8, 32, 128]; // stormLevel thresholds per storm layer
 const STORM_CINE = ['storm0', 'stormSwell', 'stormRiser', 'impact', 'drop808', 'glassXL', 'reform', 'letterSlam0', 'letterSlam1', 'land74a', 'markUp'];
+const BED_TAU = 0.3;  // live bed switch: crossfade time constant (s): old bed −29 dB after 1 s, stopped after 10τ
+const BED_WAIT = 4;   // s startBase() waits for the Polar decode before starting on the procedural bed
 
 interface Voice { src: AudioBufferSourceNode; g: GainNode; name: Sfx; t: number; end: number; dead: boolean }
 interface Session {
@@ -89,6 +95,7 @@ interface Session {
   pendOn: boolean[];
   stopped: boolean;
   alive: number;      // started sources not yet ended
+  bed: { id: string; g: GainNode } | null; // base only: layer-0 asset (base0 | polar) behind its own gain
 }
 interface Nodes {
   master: GainNode; out: AudioNode;
@@ -134,6 +141,9 @@ export class GameAudio {
   private queue: string[] = [];
   private rendering = false;
   private failed = new Set<string>();
+  private bedPref: MusicSource = 'polar';
+  private bedWait = -1;       // ctx time until which startBase() waits for the Polar decode (−1 = not waiting)
+  private polarLoading = false;
   private hwRate = 48000;     // context sample rate (the bar grid is defined on it)
   private lite = false;       // low-memory device (≤ 2 GB or iOS): long stems render at reduced rates
   private stormPrepared = false;
@@ -244,6 +254,7 @@ export class GameAudio {
       this.disarmGesture();
       if (this.stormPending >= 0) this.startStorm(Math.max(this.stormPending, this.now()));
       else if (this.baseWanted && !this.baseS && !this.stormS) this.startBase();
+      this.syncBed();
     } else if (this.wantRunning && st !== 'closed') {
       // 'interrupted' (iOS call/Siri) or an OS suspend: try now, else on the next gesture.
       c.resume().catch(noop);
@@ -388,6 +399,7 @@ export class GameAudio {
       while (this.queue.length) {
         const id = this.queue.shift()!;
         if (this.assets.has(id) || this.failed.has(id)) continue;
+        if (id === POLAR_ID) { this.loadPolar(); continue; } // decodes off-thread; don't hold up the renders
         const storm = isStormAsset(id);
         if (storm && !this.stormPrepared) continue; // released while queued
         try {
@@ -422,8 +434,72 @@ export class GameAudio {
   }
 
   private onAsset(id: string): void {
-    if (id === 'base0' && this.baseWanted && !this.baseS) this.startBase();
+    if ((id === 'base0' || id === POLAR_ID) && this.baseWanted && !this.baseS) this.startBase();
+    if (id === 'base0' || id === POLAR_ID) this.syncBed();
     if (this.live()) this.tick();
+  }
+
+  /** Decode the Polar Night bed (only while it is the chosen source); failure keeps the procedural bed. */
+  private loadPolar(): void {
+    if (this.polarLoading || !this._ctx || this.bedPref !== 'polar' || this.assets.has(POLAR_ID) || this.failed.has(POLAR_ID)) return;
+    this.polarLoading = true;
+    renderAsset(POLAR_ID, this.hwRate, { lite: this.lite }).then((b) => {
+      this.polarLoading = false;
+      if (this.bedPref === 'polar') { this.assets.set(POLAR_ID, b); this.onAsset(POLAR_ID); }
+    }, () => {
+      this.polarLoading = false;
+      this.failed.add(POLAR_ID);
+      this.onAsset(POLAR_ID);
+    });
+  }
+
+  /**
+   * Asset id of the bed startBase() should start on, or null while it is not ready (its render/decode
+   * was requested). The Polar decode gets BED_WAIT seconds; after that (or if it failed) the base starts
+   * on the procedural pad and crossfades to the recording once it arrives.
+   */
+  private bedFor(now: number): string | null {
+    if (this.bedPref === 'polar' && !this.failed.has(POLAR_ID)) {
+      if (this.assets.has(POLAR_ID)) return POLAR_ID;
+      this.bump([POLAR_ID]);
+      if (this.bedWait < 0) this.bedWait = now + BED_WAIT;
+      if (now < this.bedWait) return null;
+    }
+    if (this.assets.has('base0')) return 'base0';
+    this.bump(['base0']);
+    return null;
+  }
+
+  /** Keep a running base session on the chosen bed (live crossfade); free the recording when unused. */
+  private syncBed(): void {
+    const s = this.baseS;
+    if (s && !s.stopped && s.bed && this.live()) {
+      const want = this.bedPref === 'polar' && this.assets.has(POLAR_ID) ? POLAR_ID : 'base0';
+      if (want !== s.bed.id && this.assets.has(want)) this.switchBed(s, want, this._ctx!.currentTime);
+    }
+    if (this.bedPref === 'code' && !(s && !s.stopped && s.bed?.id === POLAR_ID)) this.assets.delete(POLAR_ID);
+  }
+
+  /** Crossfade layer 0 of a base session to asset `id`, started at once but phase-locked to its grid. */
+  private switchBed(s: Session, id: string, now: number): void {
+    const c = this._ctx!, buf = this.assets.get(id);
+    if (!s.bed || !buf) return;
+    const t = Math.max(now + 0.03, s.start);
+    const old = s.src[0], og = s.bed.g;
+    og.gain.cancelScheduledValues(t);
+    og.gain.setTargetAtTime(0, t, BED_TAU);
+    if (old) {
+      try { old.stop(t + BED_TAU * 10); } catch { /* */ }
+      old.addEventListener('ended', () => { try { og.disconnect(); } catch { /* */ } });
+    } else {
+      try { og.disconnect(); } catch { /* */ }
+    }
+    const g = c.createGain();
+    g.gain.value = old ? 0 : 1;
+    g.connect(s.layers[0]);
+    if (old) g.gain.setTargetAtTime(1, t, BED_TAU);
+    s.bed = { id, g };
+    s.src[0] = this.loopSrc(s, buf, g, t);
   }
 
   // ================================================================ scheduler
@@ -433,6 +509,7 @@ export class GameAudio {
     if (!c || !this.live()) return;
     try {
       const now = c.currentTime;
+      if (this.baseWanted && !this.baseS && !this.stormS && this.bedWait >= 0 && now >= this.bedWait) this.startBase();
       if (this.baseS) this.service(this.baseS, now, (i) => i < this.baseLayers);
       if (this.stormS) this.service(this.stormS, now, (i) => this.stormX >= STORM_AT[i]);
       if (this.duckReleaseAt >= 0 && this.duckReleaseAt < now) this.duckReleaseAt = -1;
@@ -447,7 +524,7 @@ export class GameAudio {
     } catch { /* never throw from the timer */ }
   }
 
-  private newSession(kind: 'base' | 'storm', start: number): Session {
+  private newSession(kind: 'base' | 'storm', start: number, bed?: string): Session {
     const c = this._ctx!;
     const ids = kind === 'base' ? BASE_IDS : STORM_IDS;
     const bpm = kind === 'base' ? BASE_BPM : STORM_BPM;
@@ -455,38 +532,41 @@ export class GameAudio {
     group.gain.value = 0;
     group.connect(this.n!.music);
     const layers = ids.map(() => { const g = c.createGain(); g.gain.value = 0; g.connect(group); return g; });
+    let b: Session['bed'] = null;
+    if (bed) { const g = c.createGain(); g.connect(layers[0]); b = { id: bed, g }; }
     return {
       kind, ids, group, layers, src: ids.map(() => null), start,
       bar: barFrames(bpm, this.hwRate) / this.hwRate, // identical for every render divisor
       committed: ids.map(() => false), pendAt: ids.map(() => -1), pendOn: ids.map(() => false),
-      stopped: false, alive: 0,
+      stopped: false, alive: 0, bed: b,
     };
   }
 
   /** Start any rendered-but-unattached stems of a session, phase-locked, on a bar line. */
   private attach(s: Session, now: number): void {
-    const c = this._ctx!;
     for (let i = 0; i < s.ids.length; i++) {
       if (s.src[i]) continue;
-      const buf = this.assets.get(s.ids[i]);
+      const bed = i === 0 ? s.bed : null;
+      const buf = this.assets.get(bed ? bed.id : s.ids[i]);
       if (!buf) continue;
-      let t = s.start, off = 0;
-      if (now + 0.03 > s.start) {
-        const k = Math.ceil((now + 0.03 - s.start) / s.bar);
-        t = s.start + k * s.bar;
-        off = ((t - s.start) % buf.duration + buf.duration) % buf.duration;
-      }
-      const src = c.createBufferSource();
-      src.buffer = buf;
-      src.loop = true;
-      src.connect(s.layers[i]);
-      src.start(t, off);
-      s.src[i] = src;
-      s.alive++;
-      src.onended = () => {
-        if (--s.alive <= 0 && s.stopped) { try { s.group.disconnect(); } catch { /* */ } }
-      };
+      let t = s.start;
+      if (now + 0.03 > s.start) t = s.start + Math.ceil((now + 0.03 - s.start) / s.bar) * s.bar;
+      s.src[i] = this.loopSrc(s, buf, bed ? bed.g : s.layers[i], t);
     }
+  }
+
+  /** Looping source started at `t` (≥ s.start) at its phase on the session grid. */
+  private loopSrc(s: Session, buf: AudioBuffer, dest: AudioNode, t: number): AudioBufferSourceNode {
+    const src = this._ctx!.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(dest);
+    src.start(t, ((t - s.start) % buf.duration + buf.duration) % buf.duration);
+    s.alive++;
+    src.onended = () => {
+      if (--s.alive <= 0 && s.stopped) { try { s.group.disconnect(); } catch { /* */ } }
+    };
+    return src;
   }
 
   private service(s: Session, now: number, want: (i: number) => boolean): void {
@@ -615,10 +695,11 @@ export class GameAudio {
     try {
       if (this.stormS) this.stopStorm();
       if (this.baseS && !this.baseS.stopped) return;
-      if (!this.assets.has('base0')) { this.bump(['base0']); return; } // starts when the bed is rendered
       const c = this._ctx!, now = c.currentTime;
+      const bed = this.bedFor(now);
+      if (!bed) return; // starts when the bed is rendered/decoded (onAsset, or tick() after BED_WAIT)
       const S = now + 0.08;
-      const s = this.baseS = this.newSession('base', S);
+      const s = this.baseS = this.newSession('base', S, bed);
       for (let i = 0; i < s.ids.length; i++) {
         const on = i < this.baseLayers;
         s.layers[i].gain.setValueAtTime(on ? 1 : 0, S);
@@ -642,6 +723,21 @@ export class GameAudio {
     if (!this.live()) return;
     this.bump(BASE_IDS.slice(0, v));
     this.tick();
+  }
+
+  /**
+   * Base bed source (setting "Musik"): the Polar Night recording or the procedural pad. A running base
+   * crossfades (~1 s, phase-locked) as soon as the chosen bed is ready; choosing 'code' frees the decoded
+   * recording, choosing 'polar' decodes it again.
+   */
+  setMusicSource(src: MusicSource): void {
+    const v: MusicSource = src === 'code' ? 'code' : 'polar';
+    if (v === this.bedPref) return;
+    this.bedPref = v;
+    this.bedWait = -1;
+    if (!this._ctx) return;
+    this.bump([v === 'polar' ? POLAR_ID : 'base0']);
+    this.syncBed();
   }
 
   /**
@@ -980,21 +1076,29 @@ export class GameAudio {
 
   // ================================================================ QA / harness
   /** Runtime stats for harness/QA (mb = all rendered buffers; stormMb = the storm share of it). */
-  stats(): { state: string; sampleRate: number; lite: boolean; rendered: number; total: number; failed: number; mb: number; stormMb: number; stormPrepared: boolean; voices: number; base: boolean; storm: boolean; layers: number; stormX: number } {
+  stats(): { state: string; sampleRate: number; lite: boolean; rendered: number; total: number; failed: number; mb: number; stormMb: number; stormPrepared: boolean; voices: number; base: boolean; storm: boolean; layers: number; stormX: number; bed: string | null; bedMb: number } {
     let bytes = 0, storm = 0;
     for (const [id, b] of this.assets) {
       const n = b.length * b.numberOfChannels * 4;
       bytes += n;
       if (isStormAsset(id)) storm += n;
     }
-    const total = this.stormPrepared ? allAssetIds().length : baseAssetIds().length;
+    const total = (this.stormPrepared ? allAssetIds().length : baseAssetIds().length) - (this.bedPref === 'polar' ? 0 : 1); // polar only when chosen
+    const pb = this.assets.get(POLAR_ID);
     return {
       state: this._ctx ? (this.realtime ? ((this._ctx as AudioContext).state as string) : 'offline') : 'locked',
       sampleRate: this._ctx?.sampleRate ?? 0, lite: this.lite,
       rendered: this.assets.size, total, failed: this.failed.size, mb: bytes / 1048576, stormMb: storm / 1048576,
       stormPrepared: this.stormPrepared,
       voices: this.voices.length, base: !!this.baseS, storm: !!this.stormS, layers: this.baseLayers, stormX: this.stormX,
+      bed: this.baseS?.bed?.id ?? null, bedMb: pb ? (pb.length * pb.numberOfChannels * 4) / 1048576 : 0,
     };
+  }
+
+  /** QA: the running session's bar grid (ctx time of loop position 0, seconds per bar) and base bed. */
+  grid(): { kind: 'base' | 'storm'; start: number; bar: number; bed: string | null } | null {
+    const s = this.stormS ?? this.baseS;
+    return s ? { kind: s.kind, start: s.start, bar: s.bar, bed: s.bed?.id ?? null } : null;
   }
 
   /** Current bar position (for harness displays): {kind, bar, beat} or null. */

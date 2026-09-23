@@ -28,6 +28,7 @@ export interface Settings {
   muted: boolean;
   haptics: boolean;
   calm: 'auto' | 'on' | 'off'; // 'auto' follows prefers-reduced-motion
+  musicSource: 'polar' | 'code'; // base bed: the Polar Night recording or the procedural pad
 }
 
 export interface Stats {
@@ -72,7 +73,7 @@ export function defaults(seed: number, stakeOre: number): SaveData {
     sessionSeed: seed,
     counters: { base: 0, storm: 0, perk: 0, demo: 0 },
     history: [],
-    settings: { music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto' },
+    settings: { music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar' },
     stats: { spins: 0, storms: 0, bestWinX: 0, highestKp: 0 },
     activeStorm: null,
     lastPlayed: Date.now(),

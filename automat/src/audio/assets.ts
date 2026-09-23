@@ -11,13 +11,14 @@
 import { SFX_ASSETS } from './sfx.ts';
 import { STEM_BY_ID, STEMS, grid, barFrames, BASE_BPM, STORM_BPM, type StemDef } from './music.ts';
 import { finishOneShot, finishLoop } from './dsp.ts';
+import { POLAR_ID, POLAR_DIV, POLAR_MIN_RATE, decodePolar } from './polar.ts';
 
 /** One-shot normalisation peak (−1 dBFS); per-SFX mix levels are applied at play time. */
 export const SFX_PEAK = 0.891;
 
 export const isStem = (id: string): boolean => id in STEM_BY_ID;
 export const stemDef = (id: string): StemDef | undefined => STEM_BY_ID[id];
-export const allAssetIds = (): string[] => [...Object.keys(SFX_ASSETS), ...STEMS.map((s) => s.id)];
+export const allAssetIds = (): string[] => [...Object.keys(SFX_ASSETS), ...STEMS.map((s) => s.id), POLAR_ID];
 
 export function stemLoopFrames(def: StemDef, sr: number, div = 1): number {
   return barFrames(def.group === 'base' ? BASE_BPM : STORM_BPM, sr, div) * def.bars;
@@ -29,13 +30,13 @@ export function stemLoopFrames(def: StemDef, sr: number, div = 1): number {
  * render at `liteRate` (default 32 kHz). `div` = hw / sr (only meaningful for stems).
  */
 export function assetRate(id: string, hw: number, lite = false): { sr: number; div: number } {
-  const stem = STEM_BY_ID[id], sfx = SFX_ASSETS[id];
+  const stem = STEM_BY_ID[id], sfx = SFX_ASSETS[id], polar = id === POLAR_ID;
   if (sfx && !sfx.div) {
     const sr = lite ? Math.min(hw, sfx.liteRate ?? 32000) : hw;
     return { sr, div: hw / sr };
   }
-  const hint = (stem?.div ?? sfx?.div ?? 1) as number;
-  const floor = stem ? (stem.minRate ?? 11000) : sfx?.div ? (sfx.minRate ?? 11000) : Infinity;
+  const hint = (polar ? POLAR_DIV : stem?.div ?? sfx?.div ?? 1) as number;
+  const floor = polar ? POLAR_MIN_RATE : stem ? (stem.minRate ?? 11000) : sfx?.div ? (sfx.minRate ?? 11000) : Infinity;
   const want = Math.min(4, hint * (lite ? 2 : 1));
   for (const d of [4, 2] as const) if (want >= d && hw / d >= floor) return { sr: hw / d, div: d };
   return { sr: hw, div: 1 };
@@ -63,8 +64,13 @@ export async function renderAsset(id: string, hw: number, opts: { lite?: boolean
 async function renderAt(id: string, sr: number, div: number): Promise<AudioBuffer> {
   const stem = STEM_BY_ID[id];
   const a = SFX_ASSETS[id];
-  if (!stem && !a) throw new Error('unknown audio asset ' + id);
   const t0 = clock();
+  if (id === POLAR_ID) { // recorded bed: decode + fold (no offline render)
+    const b = await decodePolar(sr * div, div);
+    RENDER_STATS.set(id, { build: 0, render: clock() - t0, post: 0 });
+    return b;
+  }
+  if (!stem && !a) throw new Error('unknown audio asset ' + id);
   let ctx: OfflineAudioContext;
   if (stem) {
     const g = grid(stem.group === 'base' ? BASE_BPM : STORM_BPM, sr, stem.bars, stem.tail, div);
@@ -96,12 +102,13 @@ export const isStormAsset = (id: string): boolean => STORM_SET.has(id);
 
 /**
  * Base render order after unlock: the very first sounds (land arpeggio at grid assembly, UI), the base
- * bed, everything a base spin can trigger, the remaining base layers, then the big-win stingers.
+ * bed (procedural base0, then the Polar Night recording — its decode runs alongside the queue, see
+ * GameAudio.pump), everything a base spin can trigger, the remaining base layers, then the big-win stingers.
  * Storm assets are NOT here (see STORM_CORE / STORM_EXTRA). Callers can bump any id.
  */
 export const RENDER_ORDER: string[] = [
   'land74a', 'land79a', 'land84a', 'land69a', 'land89a', 'land94a', 'tap', 'spin0',
-  'base0',
+  'base0', POLAR_ID,
   'land74b', 'land79b', 'land84b', 'land69b', 'land89b', 'land94b', 'spin1', 'spin2',
   'returnTick0', 'returnTick1', 'chime74', 'chime81', 'chime86', 'chime93', 'shatter0', 'shatter1', 'shatter2',
   'nettoCross', 'markUp', 'mote0', 'mote1', 'sun1', 'sun2', 'sun3', 'anticipation', 'countTick', 'win1a', 'win1b', 'win2',

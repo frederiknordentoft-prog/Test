@@ -147,6 +147,7 @@ export class Game {
     const st = this.s.settings;
     this.w.audio.setMuted(st.muted);
     this.w.audio.setVolumes(st.music, st.sfx);
+    this.w.audio.setMusicSource(st.musicSource);
     document.documentElement.classList.toggle('calm', this.calm());
     const fromOs = st.calm === 'auto' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.hud.showFullFxOption(fromOs && !this.fullFx);

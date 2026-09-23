@@ -3,7 +3,9 @@
 import { GameAudio, audio, type Sfx, type PlayOpts, type SchedLog } from '../src/audio/audio.ts';
 import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, assetRate, isStormAsset, RENDER_STATS } from '../src/audio/assets.ts';
 import { barFrames, grid, BASE_BPM, STORM_BPM } from '../src/audio/music.ts';
-import { setNoiseSalt } from '../src/audio/dsp.ts';
+import { setNoiseSalt, dbToGain } from '../src/audio/dsp.ts';
+import { POLAR_ID } from '../src/audio/polar.ts';
+import { POLAR_LOOP } from '../src/audio/polarLoop.ts';
 
 const $ = (id: string) => document.getElementById(id)!;
 const out = $('out');
@@ -32,6 +34,8 @@ const P = (name: Sfx, o: PlayOpts = {}) => () => A.play(name, o);
 function buildUI(): void {
   let r = section('Music');
   btn(r, 'startBase', () => A.startBase());
+  btn(r, 'bed: Polar Night', () => A.setMusicSource('polar'));
+  btn(r, 'bed: Kode', () => A.setMusicSource('code'));
   for (let n = 1; n <= 5; n++) btn(r, `layers ${n}`, () => A.setBaseLayers(n));
   btn(r, 'time-lapse 1→5 (2.4 s)', () => {
     for (let k = 0; k <= 24; k++) setTimeout(() => A.setBaseLayers(1 + Math.floor((k / 24) * 4.999)), k * 100);
@@ -364,6 +368,177 @@ function overCount(b: AudioBuffer, thr: number): number {
   return n;
 }
 
+// ------------------------------------------------------------------ Polar Night bed
+/** BS.1770 K-weighting (48 kHz coefficients) + gated integrated loudness of a stereo window. */
+function lufs(b: AudioBuffer, t0: number, t1: number): number {
+  const i0 = Math.floor(t0 * b.sampleRate), i1 = Math.min(b.length, Math.floor(t1 * b.sampleRate));
+  const kw = (x: Float32Array): Float64Array => {
+    const y = new Float64Array(i1 - i0);
+    const st = [[1.53512485958697, -2.69169618940638, 1.19839281085285, -1.69065929318241, 0.73248077421585], [1, -2, 1, -1.99004745483398, 0.99007225036621]];
+    for (let s = 0; s < 2; s++) {
+      const [b0, b1, b2, a1, a2] = st[s];
+      let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      for (let i = 0; i < y.length; i++) { const u = s ? y[i] : x[i0 + i]; const v = b0 * u + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = u; y2 = y1; y1 = v; y[i] = v; }
+    }
+    return y;
+  };
+  const K = Array.from({ length: b.numberOfChannels }, (_, c) => kw(b.getChannelData(c)));
+  const blk = Math.round(0.4 * b.sampleRate), hop = Math.round(0.1 * b.sampleRate), z: number[] = [];
+  for (let s = 0; s + blk <= K[0].length; s += hop) { let e = 0; for (const k of K) for (let i = s; i < s + blk; i++) e += k[i] * k[i]; z.push(e / blk); }
+  const lk = (v: number) => -0.691 + 10 * Math.log10(v);
+  const abs = z.filter((v) => lk(v) > -70), m = abs.reduce((a, v) => a + v, 0) / abs.length;
+  const rel = abs.filter((v) => lk(v) > lk(m) - 10);
+  return lk(rel.reduce((a, v) => a + v, 0) / rel.length);
+}
+/** Log-magnitude spectral flux (Hann N, hop H) of the mono sum, bins in [lo, hi] Hz. */
+function fluxOf(b: AudioBuffer, N: number, H: number, lo: number, hi: number): Float64Array {
+  const L = b.getChannelData(0), R = b.getChannelData(b.numberOfChannels - 1), sr = b.sampleRate;
+  const win = new Float64Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N);
+  const k0 = Math.max(1, Math.floor((lo * N) / sr)), k1 = Math.min(N / 2, Math.ceil((hi * N) / sr));
+  const re = new Float64Array(N), im = new Float64Array(N), prev = new Float64Array(N / 2);
+  const out = new Float64Array(Math.max(0, Math.floor((b.length - N) / H) + 1));
+  for (let f = 0; f < out.length; f++) {
+    const s = f * H;
+    for (let i = 0; i < N; i++) { re[i] = (L[s + i] + R[s + i]) * 0.5 * win[i]; im[i] = 0; }
+    fftMag(re, im);
+    let fl = 0;
+    for (let k = k0; k < k1; k++) { const m = Math.log(1 + 1000 * Math.hypot(re[k], im[k])); if (f) fl += Math.max(0, m - prev[k]); prev[k] = m; }
+    out[f] = fl;
+  }
+  return out; // frame f is centred at (f·H + N/2) / sr
+}
+const median = (a: ArrayLike<number>): number => { const s = Array.from(a).sort((x, y) => x - y); return s[Math.floor(s.length / 2)] ?? 0; };
+/** Largest |x[i] − x[i−1]| (any channel) in [t0, t1). */
+function maxDelta(b: AudioBuffer, t0: number, t1: number): number {
+  let m = 0;
+  for (let c = 0; c < b.numberOfChannels; c++) {
+    const d = b.getChannelData(c);
+    for (let i = Math.max(1, Math.floor(t0 * b.sampleRate)); i < Math.min(d.length, Math.ceil(t1 * b.sampleRate)); i++) m = Math.max(m, Math.abs(d[i] - d[i - 1]));
+  }
+  return m;
+}
+/** 99.9th percentile of |Δ| over [t0, t1) (every 3rd sample, all channels). */
+function p999Delta(b: AudioBuffer, t0: number, t1: number): number {
+  const v: number[] = [];
+  for (let c = 0; c < b.numberOfChannels; c++) {
+    const d = b.getChannelData(c);
+    for (let i = Math.max(1, Math.floor(t0 * b.sampleRate)); i < Math.min(d.length, Math.floor(t1 * b.sampleRate)); i += 3) v.push(Math.abs(d[i] - d[i - 1]));
+  }
+  v.sort((x, y) => x - y);
+  return v[Math.floor(v.length * 0.999)] ?? 0;
+}
+
+/**
+ * Polar Night bed: ≥ 3 loop cycles through the engine (OfflineAudioContext, master bypassed so nothing
+ * but the music path shapes it): no click at the wraps (sample delta + short-window spectral flux), bar
+ * grid locked to the scheduler (per-bar downbeat onsets vs scheduler bar lines, drift across cycles);
+ * loudness vs the procedural bed; live source switching; decode-failure fallback.
+ */
+async function polarChecks(shared: GameAudio, res: { scen: Row[]; checks: Row[] }, check: (name: string, ok: boolean, detail: string) => void): Promise<void> {
+  const bar = barFrames(BASE_BPM, SR) / SR, loop = POLAR_LOOP.bars * bar, S = Math.round(0.08 * SR) / SR;
+  const bed = shared.asset(POLAR_ID)!;
+  check('polar: loop = whole base bars', Math.abs(bed.duration - loop) < 1e-9, `${bed.duration.toFixed(6)} s = ${POLAR_LOOP.bars} × ${bar.toFixed(6)} s (${BASE_BPM} BPM; measured ${POLAR_LOOP.bpm}) @ ${bed.sampleRate} Hz`);
+  // --- 3+ cycles through the engine
+  const secs = S + 3 * loop + 2;
+  const run = await scenario(secs, shared, (g, at) => { at(0, () => { g.setBaseLayers(1); g.startBase(); }); }, { bypassMaster: true });
+  const gr = run.g.grid();
+  check('polar: engine plays the recorded bed on the base grid', !!gr && gr.bed === POLAR_ID && Math.abs(gr.start - S) < 1e-9 && Math.abs(gr.bar - bar) < 1e-12, `bed ${gr?.bed} · start ${gr?.start.toFixed(5)} s · bar ${gr?.bar.toFixed(6)} s`);
+  const wraps = [1, 2, 3].map((k) => S + k * loop);
+  const p999 = p999Delta(run.buf, 4, secs);
+  const jumps = wraps.map((t) => maxDelta(run.buf, t - 0.003, t + 0.003));
+  check('polar: no sample jump at the loop point (3 wraps)', Math.max(...jumps) <= p999, `max |Δ| at wraps ${jumps.map((j) => j.toFixed(4)).join(' / ')} vs p99.9 of the bed ${p999.toFixed(4)} (ratio ${(Math.max(...jumps) / p999).toFixed(2)})`);
+  const N = 512, H = 128, fl = fluxOf(run.buf, N, H, 20, 16000);
+  const at = (t: number) => Math.round((t * SR - N / 2) / H);
+  const spike = (t: number) => { let m = 0; for (let f = at(t - 0.025); f <= at(t + 0.025); f++) m = Math.max(m, fl[f] ?? 0); return m / (median(fl.subarray(Math.max(0, at(t - 1)), at(t + 1))) || 1); };
+  const barSpikes: number[] = [];
+  for (let j = 1; S + j * bar < secs - 1.2; j++) if (j % POLAR_LOOP.bars) barSpikes.push(spike(S + j * bar));
+  const wrapSpikes = wraps.map(spike), barMax = Math.max(...barSpikes);
+  check('polar: no spectral-flux spike at the loop point', Math.max(...wrapSpikes) <= barMax, `flux peak/local median at wraps ${wrapSpikes.map((v) => v.toFixed(2)).join(' / ')} · at the other ${barSpikes.length} bar lines median ${median(barSpikes).toFixed(2)}, max ${barMax.toFixed(2)}`);
+  // downbeat onsets vs the scheduler's bar lines, per cycle
+  const Nf = 1024, Hf = 240, of = fluxOf(run.buf, Nf, Hf, 30, 2500), fr = (i: number) => (i * Hf + Nf / 2) / SR;
+  const offs: { j: number; d: number }[] = [];
+  for (let j = 1; S + j * bar < secs - 1.6; j++) {
+    const b = S + j * bar, m = median(of.subarray(Math.max(0, Math.round((b - 1.5) * SR / Hf)), Math.round((b + 1.5) * SR / Hf)));
+    let best = -1;
+    for (let i = Math.round(((b - 0.07) * SR - Nf / 2) / Hf); i <= Math.round(((b + 0.07) * SR - Nf / 2) / Hf); i++) if (of[i] > of[i - 1] && of[i] >= of[i + 1] && of[i] > 1.8 * m && (best < 0 || of[i] > of[best])) best = i;
+    if (best < 0) continue;
+    const y0 = of[best - 1], y1 = of[best], y2 = of[best + 1];
+    offs.push({ j, d: fr(best + (0.5 * (y0 - y2)) / (y0 - 2 * y1 + y2)) - b });
+  }
+  // (frame grid vs loop: 2163392 mod 240 ≠ 0, so a bar with two near-equal attacks may flip — medians)
+  const cyc = [0, 1, 2].map((k) => offs.filter((o) => Math.floor(o.j / POLAR_LOOP.bars) === k).map((o) => o.d));
+  const meds = cyc.map((c) => median(c));
+  const drift = Math.max(...meds.map((m) => Math.abs(m - meds[0])));
+  // waveform: each steady cycle must repeat the previous one sample-exactly (lag search ±20 ms)
+  const L = Math.round(loop * SR), d0 = run.buf.getChannelData(0);
+  // windows vs one loop earlier: cycle 2 (from 8 s in: fade-in residue of cycle 1 gone) incl. wrap 2, cycle 3 incl. wraps 2–3, cycle 4
+  const repeat = [[wraps[0] + 8, wraps[1] + 0.5], [wraps[1] - 0.5, wraps[2] + 0.5], [wraps[2] - 0.5, secs - 0.1]].map(([a, b]) => {
+    const i0 = Math.round(a * SR), i1 = Math.round(b * SR);
+    let best = { lag: 0, e: Infinity }, sig = 0;
+    for (let i = i0; i < i1; i += 7) sig += d0[i] * d0[i];
+    for (let lag = -960; lag <= 960; lag += lag > -8 && lag < 8 ? 1 : 8) {
+      let e = 0; for (let i = i0; i < i1; i += 7) { const x = d0[i] - d0[i - L + lag]; e += x * x; }
+      if (e < best.e) best = { lag, e };
+    }
+    return { lag: best.lag, db: 10 * Math.log10(best.e / sig + 1e-30) };
+  });
+  const all = offs.map((o) => o.d), mu = median(all);
+  check('polar: bar grid locked to the scheduler over 3 cycles', cyc.every((c) => c.length >= 8) && drift < 0.01 && Math.abs(mu) < 0.025 && repeat.every((r) => r.lag === 0 && r.db < -100),
+    `${all.length} downbeat onsets (${cyc.map((c) => c.length).join('/')} per cycle) vs scheduler bar lines: median ${(mu * 1000).toFixed(1)} ms (the recording's attacks), cycle medians ${meds.map((m) => (m * 1000).toFixed(1)).join(' / ')} ms → drift ${(drift * 1000).toFixed(2)} ms; cycles 2, 3, 4 repeat the previous one at lag ${repeat.map((r) => r.lag).join('/')} samples, residual ${repeat.map((r) => r.db.toFixed(0)).join('/')} dB`);
+  // --- loudness vs the procedural bed (as played: layer 0 + reverb send)
+  const T1 = Math.min(S + loop, secs);
+  const code = await scenario(T1 + 1, shared, (g, at2) => { at2(0, () => { g.setMusicSource('code'); g.setBaseLayers(1); g.startBase(); }); }, { bypassMaster: true });
+  const lp = lufs(run.buf, 4, T1), lc = lufs(code.buf, 4, T1);
+  check('polar: loudness matches the procedural bed', Math.abs(lp - lc) <= 1, `Polar ${lp.toFixed(2)} LUFS vs Kode ${lc.toFixed(2)} LUFS (Δ ${(lp - lc).toFixed(2)} LU; K-weighted, one loop)`);
+  const full = await scenario(20, shared, (g, at2) => { at2(0, () => { g.setBaseLayers(5); g.startBase(); }); });
+  const fs = stats(full.buf);
+  res.scen.push({ id: 'Polar bed + L1–L4 (all layers)', sec: 20, rmsDb: +dB(windowRms(full.buf, 4, 20)).toFixed(1), peakDb: +dB(fs.peak).toFixed(1), over088: overCount(full.buf, 0.88), renderMs: Math.round(full.ms) });
+  check('polar: full base mix keeps limiter headroom', fs.peak < dbToGain(-3) && fs.nan === 0, `peak ${dB(fs.peak).toFixed(1)} dBFS, ${overCount(full.buf, 0.88)} samples over 0.88 (all 5 layers, volume 1)`);
+  // --- live switch: phase-locked crossfade, no click, lands on the other bed exactly
+  const TS = 6.0;
+  // click test: in the crossfade window no sample step may exceed what either bed has there on its own
+  const xStep = (x: AudioBuffer) => maxDelta(x, TS - 0.05, TS + 1.5);
+  const refStep = Math.max(xStep(run.buf), xStep(code.buf));
+  const toCode = await scenario(16, shared, (g, at2) => { at2(0, () => { g.setBaseLayers(1); g.startBase(); }); at2(TS, () => g.setMusicSource('code')); }, { bypassMaster: true });
+  const jSw = xStep(toCode.buf);
+  const dCode = dB(diffRms(toCode.buf, code.buf, 13, 16) / (windowRms(code.buf, 13, 16) || 1e-9));
+  check('polar: live switch Polar → Kode', jSw <= refStep * 1.02 && dCode < -60 && toCode.g.grid()?.bed === 'base0' && !toCode.g.asset(POLAR_ID),
+    `max |Δ| in the crossfade ${jSw.toFixed(4)} vs ${refStep.toFixed(4)} for either bed alone; afterwards equal to the Kode-only render to ${dCode.toFixed(0)} dB (phase-locked); recording freed ${!toCode.g.asset(POLAR_ID)}`);
+  const toPolar = await scenario(16, shared, (g, at2) => {
+    at2(0, () => { g.setMusicSource('code'); g.setBaseLayers(1); g.startBase(); });
+    at2(TS, () => { g.adoptAssets(shared); g.setMusicSource('polar'); }); // decoded buffer handed back (a real re-decode lands whenever it finishes)
+  }, { bypassMaster: true });
+  const dPolar = dB(diffRms(toPolar.buf, run.buf, 13, 16) / (windowRms(run.buf, 13, 16) || 1e-9));
+  const jSw2 = xStep(toPolar.buf);
+  check('polar: live switch Kode → Polar', jSw2 <= refStep * 1.02 && dPolar < -60 && toPolar.g.grid()?.bed === POLAR_ID, `max |Δ| in the crossfade ${jSw2.toFixed(4)} vs ${refStep.toFixed(4)} for either bed alone; afterwards equal to the Polar-only render to ${dPolar.toFixed(0)} dB`);
+  // --- fallback: decode failed / file missing → the procedural bed, immediately
+  const fb = await scenario(8, shared, (g, at2) => {
+    at2(0, () => {
+      const gg = g as unknown as { assets: Map<string, AudioBuffer>; failed: Set<string> };
+      gg.assets.delete(POLAR_ID); gg.failed.add(POLAR_ID);
+      g.setBaseLayers(1); g.startBase();
+    });
+  }, { bypassMaster: true });
+  const dFb = dB(diffRms(fb.buf, code.buf, 0, 8) / (windowRms(code.buf, 1, 8) || 1e-9));
+  check('polar: decode failure falls back to the procedural bed', fb.g.grid()?.bed === 'base0' && dFb < -60, `bed ${fb.g.grid()?.bed}; output equals the Kode render to ${dFb.toFixed(0)} dB`);
+}
+
+async function runPolarCheck(): Promise<void> {
+  const res: { assets: Row[]; stems: Row[]; audit: Row[]; scen: Row[]; checks: Row[]; fail: string[]; done: boolean } = { assets: [], stems: [], audit: [], scen: [], checks: [], fail: [], done: false };
+  (window as unknown as { __audioCheck: typeof res }).__audioCheck = res;
+  const check = (name: string, ok: boolean, detail: string) => { res.checks.push({ name, ok, detail }); if (!ok) { res.fail.push(`${name}: ${detail}`); log('FAIL ' + name); } };
+  try {
+    const shared = new GameAudio();
+    for (const id of allAssetIds()) (shared as unknown as { assets: Map<string, AudioBuffer> }).assets.set(id, await renderAsset(id, SR));
+    const t0 = performance.now();
+    await polarChecks(shared, res, check);
+    log(`polar checks ${Math.round(performance.now() - t0)} ms`);
+  } catch (e) {
+    res.fail.push('exception ' + (e as Error).stack);
+  }
+  res.done = true;
+}
+
 async function runCheck(): Promise<void> {
   const res: { assets: Row[]; stems: Row[]; audit: Row[]; scen: Row[]; checks: Row[]; fail: string[]; done: boolean } = { assets: [], stems: [], audit: [], scen: [], checks: [], fail: [], done: false };
   (window as unknown as { __audioCheck: typeof res }).__audioCheck = res;
@@ -400,6 +575,21 @@ async function runCheck(): Promise<void> {
         if (!exact) fail(`${id} length ${b.length} not a whole number of bars (${bf})`);
         if (sm.ratio > 3 && sm.jump > 0.002) fail(`${id} loop seam jump ${sm.jump.toFixed(4)} (${sm.ratio.toFixed(1)}× p99.9)`);
         if (sp.bands[2] + sp.bands[3] + sp.bands[4] + sp.bands[5] < 10) fail(`${id} not phone-audible (${(sp.bands[2] + sp.bands[3] + sp.bands[4] + sp.bands[5]).toFixed(1)} % above 160 Hz)`);
+      } else if (id === POLAR_ID) {
+        // recorded bed: exact bars on the base grid, headroom, seam, phone audibility
+        const div = assetRate(id, SR).div, bsr = b.sampleRate, bf = barFrames(BASE_BPM, bsr, div);
+        const s = stats(b), sm = seam(b);
+        const sp = spectrum([b.getChannelData(0)], bsr);
+        const exact = b.length === POLAR_LOOP.bars * bf && Math.abs(b.length / bsr - POLAR_LOOP.bars * barFrames(BASE_BPM, SR) / SR) < 1e-9;
+        const above160 = sp.bands[2] + sp.bands[3] + sp.bands[4] + sp.bands[5];
+        const phoneDb = dB(s.rms) + 10 * Math.log10(Math.max(1e-9, above160 / 100));
+        res.stems.push({ id, phoneRmsDb: +phoneDb.toFixed(1), bars: POLAR_LOOP.bars, ch: b.numberOfChannels, rate: bsr, sec: +(b.length / bsr).toFixed(3), exactBars: exact, rmsDb: +dB(s.rms).toFixed(1), peakDb: +dB(s.peak).toFixed(1), nan: s.nan, seamJump: +sm.jump.toFixed(5), seamRatio: +sm.ratio.toFixed(2), centroid: Math.round(sp.centroid), ...Object.fromEntries(BANDS.map((bd, i) => [bd[0], +sp.bands[i].toFixed(1)])), ms: Math.round(ms), buildMs: 0, postMs: 0 });
+        if (!(s.rms > 0.003)) fail(`${id} silent (rms ${dB(s.rms).toFixed(1)} dB)`);
+        if (s.peak > dbToGain(-6)) fail(`${id} peak ${dB(s.peak).toFixed(1)} dBFS (bed must keep ≥ 6 dB headroom)`);
+        if (s.nan) fail(`${id} NaN ${s.nan}`);
+        if (!exact) fail(`${id} length ${b.length} is not ${POLAR_LOOP.bars} base bars (${bf})`);
+        if (sm.ratio > 1) fail(`${id} loop seam jump ${sm.jump.toFixed(4)} (${sm.ratio.toFixed(2)}× p99.9)`);
+        if (above160 < 10) fail(`${id} not phone-audible (${above160.toFixed(1)} % above 160 Hz)`);
       } else {
         const s = stats(b);
         const sec = b.length / b.sampleRate;
@@ -427,15 +617,18 @@ async function runCheck(): Promise<void> {
     }
     check('asset memory (all)', totalBytes < 64 * 1048576, `${(totalBytes / 1048576).toFixed(1)} MB @${SR} Hz (${ids.length} assets, ${totalMs.toFixed(0)} ms total offline render)`);
     // memory split: base (eager) vs storm (prepareStorm), normal vs lite (≤ 2 GB / iOS) rate policy
-    const mem = { base: 0, storm: 0, baseLite: 0, stormLite: 0 };
+    const mem = { base: 0, storm: 0, baseLite: 0, stormLite: 0, polar: 0, polarLite: 0 };
     for (const id of ids) {
       const b = shared.asset(id)!;
       const bytes = b.length * b.numberOfChannels * 4;
       const lite = bytes * assetRate(id, SR, true).sr / assetRate(id, SR).sr;
-      if (isStormAsset(id)) { mem.storm += bytes; mem.stormLite += lite; } else { mem.base += bytes; mem.baseLite += lite; }
+      if (id === POLAR_ID) { mem.polar += bytes; mem.polarLite += lite; } else if (isStormAsset(id)) { mem.storm += bytes; mem.stormLite += lite; } else { mem.base += bytes; mem.baseLite += lite; }
     }
     const MB = (x: number) => (x / 1048576).toFixed(1);
-    check('memory: base only (eager)', mem.base < 32 * 1048576, `${MB(mem.base)} MB normal · ${MB(mem.baseLite)} MB lite/iOS @${SR} Hz`);
+    check('memory: base only (eager)', mem.base < 32 * 1048576, `${MB(mem.base)} MB normal · ${MB(mem.baseLite)} MB lite/iOS @${SR} Hz (procedural assets)`);
+    const pb = shared.asset(POLAR_ID)!, full48 = (pb.length * (SR / pb.sampleRate)) * 2 * 4;
+    check('memory: Polar Night bed (eager when chosen)', mem.polar < 10 * 1048576 && mem.base + mem.polar < 40 * 1048576 && mem.baseLite + mem.polarLite < 32 * 1048576,
+      `${MB(mem.polar)} MB @${pb.sampleRate} Hz normal · ${MB(mem.polarLite)} MB lite (decoded at 48 kHz stereo it would be ${MB(full48)} MB); base + bed ${MB(mem.base + mem.polar)} MB normal · ${MB(mem.baseLite + mem.polarLite)} MB lite`);
     res.checks.push({ name: 'memory: with storm prepared', ok: true, detail: `${MB(mem.base + mem.storm)} MB normal (storm +${MB(mem.storm)}) · ${MB(mem.baseLite + mem.stormLite)} MB lite/iOS (storm +${MB(mem.stormLite)})` });
 
     // ---------------- 1b. reduced-rate audit: every asset rendered below hw rate (normal or lite) vs its
@@ -626,6 +819,7 @@ async function runCheck(): Promise<void> {
       at(T0 + 23.5, () => { g.startBase(); g.setBaseLayers(2); });
     });
     const cs = stats(cine.buf);
+    await polarChecks(shared, res, check);
     res.scen.push({ id: 'Solstorm cinematic → storm ×128 → outro', sec: 29, rmsDb: +dB(cs.rms).toFixed(1), peakDb: +dB(cs.peak).toFixed(1), over088: overCount(cine.buf, 0.88), renderMs: Math.round(cine.ms) });
     check('cinematic mix never clips', cs.peak <= 0.99 && cs.nan === 0, `peak ${cs.peak.toFixed(4)}`);
     const ducked = windowRms(cine.buf, 2.3, 2.9), preDuck = windowRms(cine.buf, 1.2, 1.95);
@@ -633,7 +827,8 @@ async function runCheck(): Promise<void> {
     const stormBody = windowRms(cine.buf, 2.06 + 5.7, 2.06 + 8.5);
     check('cinematic: storm music plays after downbeat', dB(stormBody) > -35, `storm rms ${dB(stormBody).toFixed(1)} dBFS`);
     const outroBase = windowRms(cine.buf, 27, 29);
-    check('outro: base returns', dB(outroBase) > -60, `base rms ${dB(outroBase).toFixed(1)} dBFS`);
+    const outroBed = cine.g.grid()?.bed ?? null;
+    check('outro: base returns', dB(outroBase) > -60 && outroBed === POLAR_ID, `base rms ${dB(outroBase).toFixed(1)} dBFS on bed ${outroBed}`);
     // loudness timeline (1 s windows)
     const tl: string[] = [];
     for (let s = 0; s < 29; s += 1) tl.push(dB(windowRms(cine.buf, s, s + 1)).toFixed(0));
@@ -672,7 +867,7 @@ async function runCheck(): Promise<void> {
     try { po = new PerformanceObserver((l) => { for (const e of l.getEntries()) longest = Math.max(longest, e.duration); }); po.observe({ type: 'longtask', buffered: false }); } catch { /* */ }
     const p0 = performance.now();
     const ready: Record<string, number> = {};
-    const watch = ['land74a', 'base0', 'base1', 'base4', 'bigWin5'];
+    const watch = ['land74a', 'base0', POLAR_ID, 'base1', 'base4', 'bigWin5'];
     while (rt.stats().rendered + rt.stats().failed < rt.stats().total && performance.now() - p0 < 60000) {
       for (const id of watch) if (ready[id] === undefined && rt.asset(id)) ready[id] = performance.now() - p0 + uMs;
       await new Promise((r) => setTimeout(r, 20));
@@ -703,6 +898,7 @@ async function runCheck(): Promise<void> {
       const a0 = rt.now();
       await new Promise((r) => setTimeout(r, 300));
       const a1 = rt.now();
+      check('realtime base starts on the Polar Night bed', rt.stats().bed === POLAR_ID, `bed ${rt.stats().bed} · ${rt.stats().bedMb.toFixed(1)} MB`);
       check('now() tracks audio clock', a1 - a0 > 0.2 && a1 - a0 < 0.45, `+${(a1 - a0).toFixed(3)} s over 300 ms`);
       rt.suspend();
       await new Promise((r) => setTimeout(r, 150));
@@ -740,6 +936,7 @@ async function runCheck(): Promise<void> {
 }
 
 if (location.hash.includes('check')) void runCheck();
+else if (location.hash.includes('polar')) void runPolarCheck();
 
 // diagnostics hook for ad-hoc QA scripts
 (window as unknown as { __audioDev: unknown }).__audioDev = { GameAudio, RENDER_STATS, renderAsset };

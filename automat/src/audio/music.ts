@@ -1,5 +1,5 @@
 // Music: pre-rendered loopable stems (OfflineAudioContext), composed in code.
-//  BASE  84 BPM, D dorian, Dm9 – Bbmaj9 – Fmaj9 – C6/9 (one chord per bar).
+//  BASE  85.2 BPM, D dorian, Dm9 – Bbmaj9 – Fmaj9 – C6/9 (one chord per bar).
 //        L0 pad + wind (4 bars) · L1 glass arp (8 bars, A/B phrase) · L2 heartbeat pulse bass (4 bars)
 //        L3 soft percussion (4 bars) · L4 tension ostinato + aurora crackle (4 bars)
 //  STORM 140 BPM, D phrygian, Dm – Eb – Dm – Cm.
@@ -16,7 +16,11 @@ import {
   type Ctx, mtof, osc, gain, filt, pan, noise, perc, swell, shaper, bell, aah, prng, eqPowerCurve, loopHz, newBuffer, yieldNow, noiseScale, noiseSeed,
 } from './dsp.ts';
 
-export const BASE_BPM = 84;
+/**
+ * Base tempo, locked to the measured tempo of the "Polar Night" bed (85.202 ± 0.008 BPM, see
+ * polarLoop.ts; the procedural base was 84) so the recording and base1–base4 share one bar grid.
+ */
+export const BASE_BPM = 85.2;
 export const STORM_BPM = 140;
 /**
  * Frames per bar for a buffer rendered at `sr = full / div` (div ∈ 1, 2, 4). The bar is quantised on a

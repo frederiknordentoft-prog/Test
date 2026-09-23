@@ -1,6 +1,6 @@
 # NORDLYS · SOLSTORM G5
 
-NORDLYS er en UI-demo af en casino-automat, der kører med legepenge. Al grafik og lyd er genereret i kode.
+NORDLYS er en UI-demo af en casino-automat, der kører med legepenge. Al grafik og lyd er genereret i kode, bortset fra musikbunden «Polar Night» (Suno, indlejret MP3-sløjfe). Den kan skiftes til den kodede bund under Indstillinger → Musik → Kode.
 
 Himlen over Møns Klint er progressionsbaren. Hver gevinst knuser iskrystaller, og ladningen fra dem flyver op i nordlyset. Når Kp når 9, eller når der lander 4 sole, rammer **SOLSTORM · G5 EKSTREM**. Skærmen knuses, og et smeltet 8×8-kabinet samler sig på beatet.
 
@@ -35,7 +35,7 @@ src/math/      Outcome-motor: ren TypeScript, seedet xoshiro128**, isomorf og RG
 src/game/      Game (state machine, penge, måler, storme, demo), World (render-ejer), store, tiers
 src/present/   schedule (ren: SpinResult → Beat[]), director (GSAP), celebration, Solstorm-cinematic, clock
 src/render/    Pixi v8: sky, symbol-art, Isfont, grid/frame, Kp-bue, post (bloom + uber), partikler/skår
-src/audio/     Rå WebAudio: FM-klokker, pre-renderede stems, adaptive lag, stormmusik
+src/audio/     Rå WebAudio: FM-klokker, pre-renderede stems, adaptive lag, stormmusik, Polar Night-bund (polarLoop.ts)
 src/ui/        DOM-HUD: skarp tekst, a11y, regulatoriske strips, menu, regler, demo-værktøjer
 ```
 
@@ -56,10 +56,11 @@ src/ui/        DOM-HUD: skarp tekst, a11y, regulatoriske strips, menu, regler, d
 | Tests | 70/70 grønne: RNG-vektorer, klynger, kaskader, storm-replay, måler, golden hashes, 3,0 s-gulv, LDW-profiler og grænser mellem lag | `npm test` |
 | Fotosensitivitet | WCAG 2.3.1: højst 1 blink/s (grænse 3); streng 10 %-måling højst 2/s; mættet rød højst 20 % af skærmen | `node scripts/luminance.mjs` |
 | Visuel QA | Deterministisk Playwright-tur (SwiftShader WebGL2) ved 390×844, 375×667 og 1920×1080, uden page-fejl | `node scripts/tour.mjs` |
-| Artifact | Single-file ca. 1 MB uden eksterne hosts. Kører hele Solstorm-demoen i artifact-rammen under en streng CSP (ingen `unsafe-eval`) | `npm run build:artifact` |
+| Artifact | Single-file ca. 2,5 MB (heraf 1,5 MB indlejret MP3) uden eksterne hosts. Kører hele Solstorm-demoen i artifact-rammen under en streng CSP (ingen `unsafe-eval`) | `npm run build:artifact` |
 
 **Lyd:**
 - Tjekket headless med 39 checks: ingen clipping, sømløse loops, storm-downbeat på 0 frames' afvigelse og bar-alignede lag.
+- Polar Night-bunden (16 takter, 85,2 BPM målt): klikfri sløjfe over 3 gennemløb, takt-grid låst til scheduleren, loudness som den kodede bund, live-skift og fallback. `node dev/polar-check.mjs` (kører også i `node dev/audio-check.mjs`).
 - Er ikke lyttetestet af et menneske.
 
 **Ydelse:**

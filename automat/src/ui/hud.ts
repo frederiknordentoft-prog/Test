@@ -40,7 +40,7 @@ export class Hud {
   private bannerTimer = 0;
   private menuTab = 'rules';
   private historyRef: () => HistoryEntry[] = () => [];
-  private settingsRef: () => Settings = () => ({ music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto' });
+  private settingsRef: () => Settings = () => ({ music: 0.7, sfx: 0.85, muted: false, haptics: true, calm: 'auto', musicSource: 'polar' });
   private kpRef: () => number = () => 0;
   private lastPress = 0;
 
@@ -452,7 +452,8 @@ export class Hud {
       case 'ladder': body.innerHTML = `<p>Nordlyset viser dit fremskridt. Knuste symboler giver ladning (lav krystal 1, høj 2, WILD 3, 3 sole +${CONFIG.sunCharge}). Ladet spin ved Kp 3, 5 og 7 · Solstorm ved Kp 9. Tallene til højre er det gennemsnitlige antal spin fra Kp 0.</p><p class="hint">Dit fremskridt gemmes i 365 dage efter dit sidste spin.</p><div class="ladder">${this.ladderHtml()}</div>`; break;
       case 'hist': body.innerHTML = `<p>De seneste 100 spin. Hvert spin kan genskabes præcist ud fra sit Spil-ID og den gemte tilstand før spinnet.</p><div class="hist"><div class="h head"><span>Spil-ID</span><span>Gevinst</span><span>Netto</span></div>${this.histHtml(100)}</div>`; break;
       case 'settings': body.innerHTML = `
-        <label class="setting"><span>Musik</span><input type="range" min="0" max="1" step="0.05" value="${st.music}" data-k="music" id="setMusic"></label>
+        <label class="setting"><span>Musik</span><select data-k="musicSource" id="setMusicSrc"><option value="polar" ${st.musicSource !== 'code' ? 'selected' : ''}>Polar Night</option><option value="code" ${st.musicSource === 'code' ? 'selected' : ''}>Kode</option></select></label>
+        <label class="setting"><span>Musikstyrke</span><input type="range" min="0" max="1" step="0.05" value="${st.music}" data-k="music" id="setMusic"></label>
         <label class="setting"><span>Lydeffekter</span><input type="range" min="0" max="1" step="0.05" value="${st.sfx}" data-k="sfx" id="setSfx"></label>
         <label class="setting"><span>Lyd slået fra</span><input type="checkbox" ${st.muted ? 'checked' : ''} data-k="muted" id="setMuted"></label>
         <label class="setting"><span>Haptik (Android)</span><input type="checkbox" ${st.haptics ? 'checked' : ''} data-k="haptics" id="setHaptics"></label>
