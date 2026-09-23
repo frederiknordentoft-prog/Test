@@ -86,14 +86,16 @@ export class ChamberDom {
     if (b) setTimeout(() => (this.q('chClose') as HTMLButtonElement).focus({ preventScroll: true }), 50);
   }
 
-  /** Fit loop (phone portrait): raise data-fit until the gate slot is ≥ 200 px. Never drops the count,
-   *  the concept chip, F1–F3 or "Luk". */
+  /** Fit loop (phone portrait): raise data-fit until the gate slot is ≥ 200 px and nothing overflows (the gate row
+   *  is minmax(200px, 1fr), so a short screen shows up as overflow). Never drops the count, the concept chip,
+   *  F1–F3 or "Luk"; everything stays above the fold. */
   place(): void {
     if (this.el.hidden) return;
     const gate = this.q('chGate');
     let fit = 0;
     this.el.dataset.fit = '0';
     const portrait = innerHeight > innerWidth && !matchMedia('(max-height: 500px)').matches;
-    while (portrait && fit < 5 && gate.getBoundingClientRect().height < 200) this.el.dataset.fit = String(++fit);
+    const tight = () => gate.getBoundingClientRect().height < 200 || this.el.scrollHeight > this.el.clientHeight + 1;
+    while (portrait && fit < 5 && tight()) this.el.dataset.fit = String(++fit);
   }
 }

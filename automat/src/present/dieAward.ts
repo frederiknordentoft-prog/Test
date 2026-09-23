@@ -172,7 +172,7 @@ export class DieAward extends Container {
   }
   private sparkle(x: number, y: number, n: number): void {
     const p = this.h.w.particles;
-    for (let i = 0; i < n; i++) p.emit('glint', x, y, 1, { color: TRAIL[i % 3], speed: 160, life: 0.5, size: 18 });
+    for (let i = 0; i < n; i++) p.emit('glint', x, y, 1, { color: TRAIL[i % 3], speed: 160, life: 0.5, size: 0.5 }); // size is × the kind's 34 px
   }
 
   /** Tap/Esc: the flight starts at once and lasts 300 ms (done ≤ skip + 300 ms + 1 frame). */
@@ -237,7 +237,7 @@ export class DieAward extends Container {
         const now = gsap.globalTimeline.time();
         if (trail && t < 0.97 && (lastTrail < 0 || now - lastTrail >= 0.04)) {
           lastTrail = now;
-          this.h.w.particles.emit('glint', f.s.x, f.s.y, 1, { color: TRAIL[k++ % 3], speed: 12, life: 0.45, size: Math.max(10, f.s.size * 0.5) });
+          this.h.w.particles.emit('glint', f.s.x, f.s.y, 1, { color: TRAIL[k++ % 3], speed: 12, life: 0.45, size: clamp(0.25, f.s.size / 110, 0.5) });
         }
       },
       onComplete: () => {

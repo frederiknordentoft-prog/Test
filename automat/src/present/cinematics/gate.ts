@@ -26,7 +26,7 @@ export interface GateWorld {
   haptic(p: number | number[]): void;
   calm: boolean;
 }
-export interface GateHandle { done: Promise<void>; canSkip(): boolean; skip(): void }
+export interface GateHandle { done: Promise<void>; canSkip(): boolean; skip(): void; at(): number }
 
 const B = 2.817, b = B / 4;
 /** Ceremony times (s from T0). */
@@ -108,7 +108,7 @@ export function playGateCeremony(w: GateWorld, o: { eyebrow: string; onSeal(): v
         const base = size / Math.max(1, kd.texture.width);
         kd.scale.set(base * Math.max(0.08, Math.abs(Math.cos(Math.PI * trip.u))), base); // one fake-3D half-flip at the midpoint
         const k = Math.floor(trip.u * 16.4);
-        if (k > lastGlint && gi < 16) { lastGlint = k; gi++; w.particles.emit('glint', p.x, p.y, 1, { color: gi % 2 ? PAL.teal : PAL.violet, speed: 18, life: 0.5, size: Math.max(10, size * 0.45) }); }
+        if (k > lastGlint && gi < 16) { lastGlint = k; gi++; w.particles.emit('glint', p.x, p.y, 1, { color: gi % 2 ? PAL.teal : PAL.violet, speed: 18, life: 0.5, size: Math.min(0.6, Math.max(0.3, size / 110)) }); }
       },
     }, P(GATE_T.travel));
     tl.call(() => { g.ghost.visible = false; g.keySeated = true; kd.position.set(G().keystone.x, G().keystone.y); w.haptic(25); }, [], P(GATE_T.seat))
@@ -186,6 +186,7 @@ export function playGateCeremony(w: GateWorld, o: { eyebrow: string; onSeal(): v
   return {
     done,
     canSkip: () => !finished && tl.time() >= lead + 2.0,
+    at: () => (finished ? (calm ? CALM_T.end : GATE_T.end) : tl.time() - lead),
     skip: () => { if (!finished && tl.time() >= lead + 2.0) finish(true); },
   };
 }

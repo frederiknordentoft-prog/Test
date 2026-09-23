@@ -28,7 +28,8 @@ export interface DiceHost {
 }
 export interface Pt { x: number; y: number }
 export interface ChamberOpts { ribbon: { kind: RibbonKind; text: string } | null; realN: number }
-export interface CeremonyHandle { done: Promise<void>; canSkip(): boolean; skip(): void }
+/** at(): QA only, seconds since T0 (the ceremony's first bar line; negative in the pre-roll). */
+export interface CeremonyHandle { done: Promise<void>; canSkip(): boolean; skip(): void; at?(): number }
 
 export interface DicePresenter {
   /** Base / Ladet spin, from Celebration's birth beat (dieBirthAt). instant = a skip before the beat (no tumble, no glint). */
@@ -108,9 +109,11 @@ export class PixiDicePresenter implements DicePresenter {
   chamberOpen(): boolean { return this.chamberShown; }
   private buildGate(): void {
     const hud = this.h.hud, w = this.h.w;
-    const host = hud.root.getBoundingClientRect(), r = hud.chamber.gateSlot().getBoundingClientRect();
-    if (r.width < 10 || r.height < 10) return;
-    this.gate.build({ x: r.left - host.left, y: r.top - host.top, w: r.width, h: r.height }, { w: w.stage.w, h: w.stage.h, dpr: window.devicePixelRatio || 1 });
+    const host = hud.root.getBoundingClientRect(), s = hud.chamber.gateSlot().getBoundingClientRect(), box = hud.chamber.el.getBoundingClientRect();
+    // the slot as seen: clipped to the chamber box (landscape phones scroll the text column; the gate stays put)
+    const top = Math.max(s.top, box.top), bottom = Math.min(s.bottom, box.bottom);
+    if (s.width < 10 || bottom - top < 10) return;
+    this.gate.build({ x: s.left - host.left, y: top - host.top, w: s.width, h: bottom - top }, { w: w.stage.w, h: w.stage.h, dpr: window.devicePixelRatio || 1 });
   }
   /** The chamber DOM fades in/out (the ribbon never: it is pinned from the first frame; in a ceremony the text stays
    *  hidden by :root.ceremony). */
@@ -172,6 +175,7 @@ export class PixiDicePresenter implements DicePresenter {
     if (this.ceremonyOn) return;
     if (from === 'open' && to === 'pending') { this.gate.state = 'pending'; this.gate.closeTo(0.4, this.h.calm()); } // the replay: back to the closed, all-lit pose
     else if (!(from === 'open' && to === 'open')) this.gate.setView(view, this.h.seed()); // the open gate keeps settling
+    if (this.gate.y !== 0) gsap.to(this.gate, { y: 0, duration: 0.5, ease: 'power2.inOut' }); // back from the placard lift
   }
   async closeChamber(): Promise<void> {
     const hud = this.h.hud, w = this.h.w;
@@ -204,7 +208,20 @@ export class PixiDicePresenter implements DicePresenter {
     return new Promise<void>((res) => { void this.gate.closeTo(calm ? 0.5 : 1.2, calm).then(() => res()); });
   }
 
+  /** Phones: the bottom-anchored placard must never cover "AUTOMAT 1948" and its concept label: the gate rises until
+   *  both clear the card (desktop: the card sits in the right column and nothing moves). */
+  private clearName(card: HTMLElement): void {
+    const g = this.gate;
+    if (!this.chamberShown || !g.title.visible || !card.isConnected) return;
+    const host = this.h.hud.root.getBoundingClientRect(), r = card.getBoundingClientRect();
+    const t = g.title.getBounds(), c = g.concept.getBounds();
+    const left = Math.min(t.minX, c.minX), right = Math.max(t.maxX, c.maxX);
+    if (r.left - host.left > right || r.right - host.left < left) return;
+    const over = Math.max(t.maxY, c.maxY) + 10 - (r.top - host.top);
+    if (over > 0) gsap.to(g, { y: g.y - over, duration: 0.6, ease: 'power2.inOut' });
+  }
   cardShown(kind: 'hello' | 'firstDie' | 'unlock' | 'placard', el: HTMLElement): void {
+    if (kind === 'placard') gsap.delayedCall(0.45, () => this.clearName(el)); // after the card's 0,4 s entry
     const c = el.querySelector('canvas.medal') as HTMLCanvasElement | null;
     if (!c) return;
     paintDie(c, kind === 'hello' ? 44 : 88, { state: 'die' });

@@ -594,10 +594,11 @@ html, body {
 #chamber[hidden] { display:none; }
 .ch-ribbon { position:sticky; top:0; margin:6px auto 0; padding:5px 10px; border-radius:10px; text-align:center; font-size:11.5px; color:#ffd79a; border:1px dashed rgba(255,181,71,.6); background:rgba(20,12,4,.72); }
 .ch-ribbon.neutral { color:var(--frost); border:1px solid var(--line-strong); background:rgba(6,14,34,.7); }
-.ch-ribbon[hidden] { display:none; }
+/* a hidden ribbon keeps its (empty) grid row, so the header, myth, gate … stay on their rows */
+.ch-ribbon[hidden] { display:block; visibility:hidden; height:0; margin:0; padding:0; border:0; overflow:hidden; }
 .ch-hdr { display:flex; align-items:center; gap:8px; }
 .ch-hdr > div { flex:1; min-width:0; }
-.ch-eb { margin:0; font-size:11px; letter-spacing:.24em; color:var(--muted); text-transform:uppercase; }
+.ch-eb { margin:0; font-size:11px; letter-spacing:.24em; color:var(--muted); text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ch-hdr h2 { margin:0; font-size:20px; font-weight:600; color:var(--ice); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ch-myth { text-align:center; font-size:14.5px; line-height:20px; max-width:344px; margin:4px auto 0; text-shadow:0 1px 10px rgba(5,11,26,.85); }
 .ch-myth .l, .ch-myth .pair { display:block; }
@@ -622,7 +623,14 @@ html, body {
 #chamber:is([data-fit='3'],[data-fit='4'],[data-fit='5']) .ch-myth .full { display:none; }
 #chamber:is([data-fit='3'],[data-fit='4'],[data-fit='5']) .ch-myth .cond { display:block; }
 #chamber:is([data-fit='4'],[data-fit='5']) .ch-facts { font-size:11.5px; line-height:15.5px; }
-#chamber[data-fit='5'] { grid-template-rows:auto 46px auto minmax(200px,1fr) auto auto 44px; }
+#chamber:is([data-fit='4'],[data-fit='5']) .ch-myth { font-size:13.5px; line-height:18px; }
+#chamber[data-fit='5'] { grid-template-rows:auto 40px auto minmax(200px,1fr) auto auto 44px; }
+/* step 5 on the smallest phones also tightens the text (a 2-line preview ribbon at 360 px): nothing is dropped */
+#chamber[data-fit='5'] .ch-myth { font-size:12.5px; line-height:15.5px; }
+#chamber[data-fit='5'] .ch-facts { font-size:11px; line-height:14.5px; gap:3px; }
+#chamber[data-fit='5'] .ch-ribbon:not([hidden]) { font-size:10.5px; line-height:13px; padding:3px 8px; margin-top:4px; }
+#chamber[data-fit='5'] .ch-myth .chip.concept { margin:3px auto 0; }
+#chamber[data-fit='5'][data-mode='preview'] #chSt { display:none; }             /* the preview ribbon already says "porten åben" */
 #chamber[data-fit='5'] .ch-count .n { font-size:26px; }
 /* ceremony: the chamber text fades out (the ribbon, #reg and #foot stay) */
 :root.ceremony #chamber > :not(.ch-ribbon):not(.ch-gate) { opacity:0; pointer-events:none; transition:opacity .6s ease-out; }
@@ -647,6 +655,8 @@ html, body {
 /* chamber and ceremony mode: the machine UI hides (inert too), the balance moves into the regulatory strip */
 :root.chamber #hdr, :root.chamber #slot-arc, :root.chamber #winstrip, :root.chamber #deck, :root.chamber .side { visibility:hidden; }
 :root.chamber #reg #regBal { display:inline !important; }
+:root.chamber #summary { z-index:6; }                                          /* the placard sits above the chamber (z 5) and its scrim */
+:root.chamber .sheet-wrap { z-index:7; }                                       /* "Regler og tal ›" opens the menu over the chamber */
 @media (max-width: 440px) { :root.chamber #reg .l b { display:none; } }
 
 /* demo drawer: Terningen block */

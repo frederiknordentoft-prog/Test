@@ -119,6 +119,7 @@ export class GateView extends Container {
   keySeated = false;    // the key die sits in the keystone (re-seated on a rebuild)
   calm = false;
   // ---- display objects ----
+  private interior = new Sprite(); // the passage behind the leaves: dark, so the opening reads as depth, not sky
   private light = new Container();
   private core = new Sprite(softDot());
   private band = new Sprite(softBand());
@@ -168,7 +169,7 @@ export class GateView extends Container {
     this.title = new IsText({ text: GATE_LABELS.title, size: 24, style: 'ice', tracking: 0.14, decor: false });
     this.concept = new IsText({ text: GATE_LABELS.concept, size: 9, style: 'muted', tracking: 0.3, decor: false });
     this.eyebrow = new IsText({ text: ' ', size: 10, style: 'muted', tracking: 0.3, decor: false });
-    this.addChild(this.light, this.leafL, this.leafR, this.edges, this.seamHalo, this.seamCore, this.wall, this.grooveLit, this.grooveDot,
+    this.addChild(this.interior, this.light, this.leafL, this.leafR, this.edges, this.seamHalo, this.seamCore, this.wall, this.grooveLit, this.grooveDot,
       this.lanternDot, this.ghost, this.keyDie, ...this.digits, this.nicheLabel, this.title, this.concept, this.eyebrow);
     const L = gateLattice();
     for (let i = 0; i < TILES; i++) {
@@ -234,7 +235,7 @@ export class GateView extends Container {
     this.digits.forEach((d, i) => d.position.set(cx + (i - 1.5) * adv, g.lintelY));
     const s = Math.min(stage.w, 720);
     this.nicheLabel.size = Math.max(9, 0.3 * nw); // IsText sizes are cap heights
-    this.nicheLabel.position.set(nord.x + nw / 2, nord.y + nh + this.nicheLabel.size * 1.3 + 3);
+    this.nicheLabel.position.set(nord.x + nw / 2, nord.y + nh + this.nicheLabel.size * 0.5 + 3); // in the gap above the next niche
     this.title.size = clamp(16, 0.075 * s, 54);
     this.concept.size = Math.max(9, 0.022 * s);
     this.title.position.set(cx, oy + 0.3 * H);
@@ -455,6 +456,18 @@ export class GateView extends Container {
     g.beginPath(); g.moveTo(0.75, H); g.lineTo(0.75, hw); g.arc(hw, hw, hw - 0.75, Math.PI, Math.PI * 1.5); g.stroke();
     g.strokeStyle = rgba(0xcfefff, 0.25); g.lineWidth = 1;
     g.beginPath(); g.moveTo(hw - 0.5, 0); g.lineTo(hw - 0.5, H); g.stroke();
+    // the passage behind the opening (under the light): deep night, a little lighter far inside
+    const ci = document.createElement('canvas');
+    ci.width = Math.max(1, Math.ceil(W * res)); ci.height = Math.max(1, Math.ceil(H * res));
+    const q = ci.getContext('2d')!;
+    q.setTransform(res, 0, 0, res, 0, 0);
+    q.beginPath(); q.moveTo(0, H); q.lineTo(0, hw); q.arc(hw, hw, hw, Math.PI, 0); q.lineTo(W, H); q.closePath();
+    const deep = q.createRadialGradient(hw, H * 0.55, 0, hw, H * 0.55, H * 0.7);
+    deep.addColorStop(0, css(0x0c1a36)); deep.addColorStop(1, css(0x02050e));
+    q.fillStyle = deep; q.fill();
+    this.swap(this.interior, ci);
+    this.interior.position.set(cx - hw, oy);
+    this.interior.scale.set(1 / res);
     this.swap(this.leafL.sprite, cv);
     this.leafR.sprite.texture = this.leafL.sprite.texture; // mirrored below (one texture, both leaves)
     this.leafL.sprite.scale.set(1 / res);
