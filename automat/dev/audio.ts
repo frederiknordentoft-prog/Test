@@ -1,7 +1,7 @@
 // Audio harness: buttons for every SFX + music transport, a post-limiter spectrum/peak meter, and an
 // automated QA suite (#check) that renders every asset and several full-mix scenarios offline.
 import { GameAudio, audio, type Sfx, type PlayOpts, type SchedLog } from '../src/audio/audio.ts';
-import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, assetRate, isStormAsset, RENDER_STATS } from '../src/audio/assets.ts';
+import { renderAsset, allAssetIds, isStem, stemDef, stemLoopFrames, assetRate, isStormAsset, isGateAsset, baseLayerIds, BED_ASSETS, RENDER_STATS } from '../src/audio/assets.ts';
 import { barFrames, grid, BASE_BPM, STORM_BPM } from '../src/audio/music.ts';
 import { setNoiseSalt, dbToGain } from '../src/audio/dsp.ts';
 import { POLAR_ID } from '../src/audio/polar.ts';
@@ -602,7 +602,8 @@ async function runCheck(): Promise<void> {
         if (!(s.rms > 0.0015)) fail(`${id} silent (rms ${dB(s.rms).toFixed(1)} dB)`);
         if (s.peak > 0.99) fail(`${id} peak ${s.peak}`);
         if (s.nan) fail(`${id} NaN`);
-        if (!(sec > 0.03 && sec < 8)) fail(`${id} duration ${sec}`);
+        // the lazy gate set holds the 12 s ceremony drone (rendered at 12 kHz); every eager one-shot stays under 8 s
+        if (!(sec > 0.03 && sec < (isGateAsset(id) ? 13 : 8))) fail(`${id} duration ${sec}`);
         if (head > 0.05) fail(`${id} starts with a click (${head})`);
         if (tailMax > 0.01) fail(`${id} ends abruptly (${tailMax})`);
         if (Math.abs(s.dc) > 0.002) fail(`${id} DC ${s.dc}`);
@@ -615,20 +616,29 @@ async function runCheck(): Promise<void> {
       }
       log(`rendered ${id} (${ms.toFixed(0)} ms)`);
     }
-    check('asset memory (all)', totalBytes < 64 * 1048576, `${(totalBytes / 1048576).toFixed(1)} MB @${SR} Hz (${ids.length} assets, ${totalMs.toFixed(0)} ms total offline render)`);
-    // memory split: base (eager) vs storm (prepareStorm), normal vs lite (≤ 2 GB / iOS) rate policy
-    const mem = { base: 0, storm: 0, baseLite: 0, stormLite: 0, polar: 0, polarLite: 0 };
+    // Memory as the engine holds it: the eager base set of ONE bed (syncBed frees the other bed's layers and, once
+    // the recording is decoded, the procedural fallback), plus the lazy storm set (prepareStorm, held from Kp 6 in
+    // idle) and the lazy gate set (prepareGate, while the Terningekammeret is open) — worst case both at once.
+    // The harness itself renders every asset once (the all-render total, both beds' layers included).
+    const mem = { base: 0, storm: 0, gate: 0, baseLite: 0, stormLite: 0, gateLite: 0, polar: 0, polarLite: 0, codeBase: 0, codeBaseLite: 0 };
+    const held = { polar: new Set(baseLayerIds(POLAR_ID)), code: new Set(baseLayerIds('base0')) };
     for (const id of ids) {
       const b = shared.asset(id)!;
       const bytes = b.length * b.numberOfChannels * 4;
       const lite = bytes * assetRate(id, SR, true).sr / assetRate(id, SR).sr;
-      if (id === POLAR_ID) { mem.polar += bytes; mem.polarLite += lite; } else if (isStormAsset(id)) { mem.storm += bytes; mem.stormLite += lite; } else { mem.base += bytes; mem.baseLite += lite; }
+      if (id === POLAR_ID) { mem.polar += bytes; mem.polarLite += lite; } else if (isStormAsset(id)) { mem.storm += bytes; mem.stormLite += lite; } else if (isGateAsset(id)) { mem.gate += bytes; mem.gateLite += lite; } else {
+        if (!BED_ASSETS.has(id) || held.polar.has(id)) { mem.base += bytes; mem.baseLite += lite; }
+        if (!BED_ASSETS.has(id) || held.code.has(id)) { mem.codeBase += bytes; mem.codeBaseLite += lite; }
+      }
     }
     const MB = (x: number) => (x / 1048576).toFixed(1);
-    check('memory: base only (eager)', mem.base < 32 * 1048576, `${MB(mem.base)} MB normal · ${MB(mem.baseLite)} MB lite/iOS @${SR} Hz (procedural assets)`);
+    const peak = Math.max(mem.base + mem.polar, mem.codeBase) + mem.storm + mem.gate;
+    check('asset memory (all)', peak < 64 * 1048576, `peak held ${MB(peak)} MB (base + bed + storm + gate) · all-render total ${(totalBytes / 1048576).toFixed(1)} MB @${SR} Hz (${ids.length} assets, ${totalMs.toFixed(0)} ms total offline render)`);
+    check('memory: base only (eager)', Math.max(mem.base, mem.codeBase) < 32 * 1048576, `${MB(mem.base)} MB normal · ${MB(mem.baseLite)} MB lite/iOS on the Polar Night bed (layers base1p/2p/4p), ${MB(mem.codeBase)} MB · ${MB(mem.codeBaseLite)} MB lite on the Kode bed @${SR} Hz (procedural assets)`);
     const pb = shared.asset(POLAR_ID)!, full48 = (pb.length * (SR / pb.sampleRate)) * 2 * 4;
     check('memory: Polar Night bed (eager when chosen)', mem.polar < 10 * 1048576 && mem.base + mem.polar < 40 * 1048576 && mem.baseLite + mem.polarLite < 32 * 1048576,
       `${MB(mem.polar)} MB @${pb.sampleRate} Hz normal · ${MB(mem.polarLite)} MB lite (decoded at 48 kHz stereo it would be ${MB(full48)} MB); base + bed ${MB(mem.base + mem.polar)} MB normal · ${MB(mem.baseLite + mem.polarLite)} MB lite`);
+    check('memory: gate set (lazy, prepareGate)', mem.gate < 8 * 1048576, `+${MB(mem.gate)} MB normal · +${MB(mem.gateLite)} MB lite/iOS while the Terningekammeret / ceremony holds it (releaseGate frees it)`);
     res.checks.push({ name: 'memory: with storm prepared', ok: true, detail: `${MB(mem.base + mem.storm)} MB normal (storm +${MB(mem.storm)}) · ${MB(mem.baseLite + mem.stormLite)} MB lite/iOS (storm +${MB(mem.stormLite)})` });
 
     // ---------------- 1b. reduced-rate audit: every asset rendered below hw rate (normal or lite) vs its

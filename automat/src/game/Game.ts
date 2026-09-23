@@ -1128,6 +1128,8 @@ export class Game {
       },
       award: () => ({ inFlight: this.award.inFlight(), held: this.award.held(), shown: this.shownDice, heldDice: this.heldDice }),
       ceremony: (kind: CeremonyKind) => { void this.runCeremony(kind); },
+      /** The running ceremony: started = past the pre-roll (skippable 2,0 s after T0), placard = waiting for a button. */
+      gate: () => { const r = this.ceremonyRun; return r ? { kind: r.kind, started: !!r.handle, canSkip: !!r.handle?.canSkip(), placard: r.placard } : null; },
       chamber: (open: boolean) => this.dispatch({ t: 'chamber', open }),
       setSeed: (n: number) => { this.s.sessionSeed = n >>> 0; this.s.counters = { base: 0, storm: 0, perk: 0, demo: 0 }; },
       rand: () => crand(),
