@@ -5,9 +5,13 @@ import type { Signal } from './types';
 export function pauserFor(sig: Signal): boolean {
   switch (sig.k) {
     case 'fase':
+      // Faseskift pauser kun, når den nye fase mangler folk (ellers ville spillet pause hvert par sekunder)
+      return sig.tomtHold === true;
+    case 'ledig':
+      // Ledige pauser kun, når der ikke er et aktivt projekt at sætte dem på
+      return sig.ingenOpgaver === true;
     case 'klar':
     case 'anmeldelse':
-    case 'ledig':
     case 'messeVarsel':
     case 'galla':
     case 'kvartal':

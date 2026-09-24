@@ -66,7 +66,7 @@ describe('Medarbejdere', () => {
     ugentligStaff(s, makeRng(s.rngState), { [m.id]: 'projekt' });
     s.signaler = [];
     ugentligStaff(s, makeRng(s.rngState), {});
-    expect(s.signaler.find((x) => x.k === 'ledig')).toEqual({ k: 'ledig', staffIds: [m.id] });
+    expect(s.signaler.find((x) => x.k === 'ledig')).toEqual({ k: 'ledig', staffIds: [m.id], ingenOpgaver: true });
   });
   it('træning koster penge og indsigt og løfter en stat', () => {
     const s = nyt();
@@ -322,5 +322,17 @@ describe('Events', () => {
     s.ventendeEvents.push({ eventId: 'headhunt', uge: 0, ctx: { staffId: 'x1', navn: m.navn } });
     act(s, { t: 'eventChoice', eventId: 'headhunt', valg: 1 });
     expect(s.staff.some((x) => x.id === 'x1')).toBe(false);
+  });
+});
+
+describe('Auto-pause', () => {
+  it('faseskift pauser kun ved tomt hold; ledige kun uden aktivt projekt', async () => {
+    const { pauserFor } = await import('../../src/sim/signals');
+    expect(pauserFor({ k: 'fase', projectId: 'p', til: 'design', tomtHold: false })).toBe(false);
+    expect(pauserFor({ k: 'fase', projectId: 'p', til: 'design', tomtHold: true })).toBe(true);
+    expect(pauserFor({ k: 'ledig', staffIds: ['a'], ingenOpgaver: false })).toBe(false);
+    expect(pauserFor({ k: 'ledig', staffIds: ['a'], ingenOpgaver: true })).toBe(true);
+    expect(pauserFor({ k: 'anmeldelse', productId: 'x' })).toBe(true);
+    expect(pauserFor({ k: 'point', projectId: 'p', staffId: 's', params: { spaending: 1, originalitet: 1, teknik: 1, tryghed: 1 }, fejl: 0, fjernet: 0 })).toBe(false);
   });
 });

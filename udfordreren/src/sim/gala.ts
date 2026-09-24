@@ -32,8 +32,8 @@ export function galaScores(s: GameState, rng: Rng): GalaKandidat[] {
   res.push({ id: 'produkt', spiller: s.aarAkk.bedsteTotal40, konkurrent: kpScore, konkurrentNavn: kpNavn, nomineret: s.aarAkk.lanceringer > 0 });
 
   // Årets innovation
-  const innov = 12 * s.aarAkk.nyeKombinationer + 10 * s.aarAkk.nyeFeatures;
-  const ki = bedsteKonk((c) => 14 + 5 * c.innovation + rng.gauss() * 4);
+  const innov = 8 * s.aarAkk.nyeKombinationer + 8 * s.aarAkk.nyeFeatures;
+  const ki = bedsteKonk((c) => 16 + 5 * c.innovation + 1.5 * (aar - 2012) + rng.gauss() * 4);
   res.push({ id: 'innovation', spiller: innov, konkurrent: ki.v, konkurrentNavn: ki.navn, nomineret: innov > 0 });
 
   // Årets ansvarlige operatør: gennemsnitlig tilsynstillid

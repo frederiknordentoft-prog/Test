@@ -215,7 +215,10 @@ export function ugentligStaff(s: GameState, rng: Rng, arbejdet: Record<string, '
   // 'ledig'-signal: dem, der arbejdede sidste uge, men nu er ledige
   const nuTravle = Object.keys(arbejdet);
   const blevLedige = s.travleSidst.filter((id) => !arbejdet[id] && s.staff.some((m) => m.id === id));
-  if (blevLedige.length > 0) signal(s, { k: 'ledig', staffIds: blevLedige });
+  if (blevLedige.length > 0) {
+    const aktivtProjekt = s.projekter.some((p) => !p.klar);
+    signal(s, { k: 'ledig', staffIds: blevLedige, ingenOpgaver: !aktivtProjekt });
+  }
   s.travleSidst = nuTravle.sort();
 }
 

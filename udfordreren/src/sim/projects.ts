@@ -279,7 +279,7 @@ export function ugentligtProjekt(s: GameState, rng: Rng, p: Project, allerede: S
       if (p.faseTildeling[naeste].length === 0) p.faseTildeling[naeste] = [...p.faseTildeling[p.fase]];
       p.fase = naeste;
       p.faseUge = 0;
-      signal(s, { k: 'fase', projectId: p.id, til: naeste });
+      signal(s, { k: 'fase', projectId: p.id, til: naeste, tomtHold: p.faseTildeling[naeste].length === 0 });
     } else {
       p.klar = true;
       signal(s, { k: 'klar', projectId: p.id });

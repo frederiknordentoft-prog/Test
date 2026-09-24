@@ -78,7 +78,6 @@ export function ugentligForskning(s: GameState): void {
     s.forskning.ulaast.push(ig.nodeId);
     s.forskning.igang = null;
     const n = RESEARCH_BY_ID[ig.nodeId];
-    if (n?.feature) s.aarAkk.nyeFeatures += 1;
     signal(s, { k: 'forskning', nodeId: ig.nodeId });
     nyhed(s, `Forskning færdig: ${n?.navn ?? ig.nodeId}.`, 'firma');
   }

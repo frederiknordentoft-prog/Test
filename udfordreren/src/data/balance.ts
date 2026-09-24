@@ -38,12 +38,12 @@ export const BALANCE = {
   xpKontrakt: 8,
   // --- Markedsstandard (anmeldelser) ---
   /** Markedsstandard pr. parameter over tid [år, point] — stejl i garage-årene, flader ud senere */
-  standardKurve: [[2012, 92], [2013, 150], [2014, 225], [2016, 350], [2018, 440], [2020, 520], [2022, 590], [2026, 740], [2030, 910], [2035, 1160]] as [number, number][],
+  standardKurve: [[2012, 92], [2013, 160], [2014, 225], [2015, 262], [2016, 300], [2018, 400], [2020, 480], [2022, 550], [2026, 680], [2030, 830], [2035, 1030]] as [number, number][],
   standardKonkurrent: 0.5, // tillæg pr. kvalitet over 0.6 hos bedste konkurrent
   /** Logistisk kurve i q-rum: score = 1 + 9 / (1 + e^(−k·(q − q0))), q = 1 − e^(−ratio) */
-  scoreK: 9,
-  scoreQ0: 0.6,
-  scoreStoej: 0.55,
+  scoreK: 7.4,
+  scoreQ0: 0.583,
+  scoreStoej: 0.45,
   // --- Kunder ---
   startKunderAndel: 0.0012,
   hypeOrganisk: 0.000004, // pr. hype-point pr. uge (andel af markedet)

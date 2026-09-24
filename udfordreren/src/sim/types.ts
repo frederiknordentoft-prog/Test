@@ -313,7 +313,7 @@ export type QuarterHistory = {
 export type Signal =
   // + kortlivede udfald fra seneste step/handling. UI bruger dem til juice og auto-pause.
   | { k: 'point'; projectId: string; staffId: string; params: Params; fejl: number; fjernet: number }
-  | { k: 'fase'; projectId: string; til: Phase }
+  | { k: 'fase'; projectId: string; til: Phase; tomtHold?: boolean } // tomtHold: ingen tildelt i den nye fase
   | { k: 'klar'; projectId: string }
   | { k: 'lanceret'; productId: string }
   | { k: 'anmeldelse'; productId: string }
@@ -321,7 +321,7 @@ export type Signal =
   | { k: 'hallOfFame'; productId: string }
   | { k: 'top10'; productId: string; marked: MarketId; placering: number }
   | { k: 'nr1'; productId: string; marked: MarketId }
-  | { k: 'ledig'; staffIds: string[] }
+  | { k: 'ledig'; staffIds: string[]; ingenOpgaver?: boolean } // ingenOpgaver: intet aktivt projekt at gå til
   | { k: 'kontraktFaerdig'; contractId: string; navn: string; betaling: MioKr; indsigt: number }
   | { k: 'licens'; marked: MarketId; vertikal: Vertical }
   | { k: 'niveauOp'; staffId: string; niveau: number }
