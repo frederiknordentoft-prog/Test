@@ -258,10 +258,12 @@ export function bsiUge(p: LiveProduct): number {
 }
 
 /** Placering i dk blandt alle aktive produkter (samme sortering som beregnTop10) */
+/** Samme rangering som hitlisten i sim-kernen: ugens nye spillere, derefter BSI */
 export function dkRangliste(s: GameState): LiveProduct[] {
+  const nye = (p: LiveProduct) => p.nyeSpillerePrUge?.dk ?? 0;
   return s.produkter
-    .filter((p) => p.aktiv && (p.bsiPrUge.dk ?? 0) > 0)
-    .sort((a, b) => (b.bsiPrUge.dk ?? 0) - (a.bsiPrUge.dk ?? 0) || (a.id < b.id ? -1 : 1));
+    .filter((p) => p.aktiv && nye(p) > 0)
+    .sort((a, b) => nye(b) - nye(a) || (b.bsiPrUge.dk ?? 0) - (a.bsiPrUge.dk ?? 0) || (a.id < b.id ? -1 : 1));
 }
 
 // ---------- Gallaen ----------

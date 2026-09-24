@@ -23,14 +23,13 @@ function lancerEt(s: GameState, total40 = 26): LiveProduct {
 }
 
 describe('Hitlisten', () => {
-  it('rangerer efter ugens BSI med pile og NY!', () => {
+  it('rangerer efter ugens nye spillere med pile og NY!', () => {
     const s = nyt();
     koer(s, 1);
     const t1 = s.markeder.dk.top10;
-    expect(t1.length).toBeGreaterThan(5);
-    expect(t1.length).toBeLessThanOrEqual(10);
-    const bsi = t1.map((e) => s.produkter.find((p) => p.id === e.productId)!.bsiPrUge.dk ?? 0);
-    for (let i = 1; i < bsi.length; i++) expect(bsi[i - 1]).toBeGreaterThanOrEqual(bsi[i]);
+    expect(t1.length).toBe(10);
+    const nye = t1.map((e) => s.produkter.find((p) => p.id === e.productId)!.nyeSpillerePrUge?.dk ?? 0);
+    for (let i = 1; i < nye.length; i++) expect(nye[i - 1]).toBeGreaterThanOrEqual(nye[i]);
     expect(t1.every((e) => e.ny)).toBe(true);
     koer(s, 1);
     expect(s.markeder.dk.top10.every((e) => !e.ny && e.forrige !== null)).toBe(true);
@@ -42,11 +41,11 @@ describe('Hitlisten', () => {
     expect(ejere.has('danskeLykke')).toBe(true);
     expect(ejere.size).toBeGreaterThanOrEqual(4);
   });
-  it('spillerens første produkt kan komme på Top 10 og giver milepæl', () => {
+  it('en stærk lancering stormer Top 10 og giver milepæl', () => {
     const s = nyt();
     koer(s, 12);
-    lancerEt(s);
-    koer(s, 2);
+    lancerEt(s, 36);
+    koer(s, 1);
     expect(s.milepaele.foersteTop10).toBeDefined();
     expect(s.markeder.dk.top10.some((e) => e.productId === 'lpX')).toBe(true);
   });
@@ -72,18 +71,38 @@ describe('Kundeøkonomi', () => {
     expect(kundeAndel(s, 'dk')).toBeGreaterThan(0.1);
     expect(effektivCac(s, 'soeg', 'dk')!).toBeGreaterThan(a);
   });
-  it('lancering giver startkunder; churn uden marketing får kunderne til at falde', () => {
+  it('lanceringsbølgen kommer ind over nogle uger; churn uden marketing får kunderne til at falde bagefter', () => {
     const s = nyt();
     koer(s, 12);
-    lancerEt(s);
-    const start = spillerKunderTotal(s);
-    expect(start).toBeGreaterThan(100);
+    const p = lancerEt(s);
+    const pulje = p.ventendeSpillere!.dk!;
+    expect(pulje).toBeGreaterThan(200);
+    expect(spillerKunderTotal(s)).toBe(0);
     s.hype = 0;
+    s.uge += 1;
+    ugentligeKunder(s, makeRng(s.rngState));
+    const uge1 = spillerKunderTotal(s);
+    expect(uge1).toBeGreaterThan(pulje * 0.4);
+    expect(p.nyeSpillerePrUge!.dk!).toBeGreaterThan(pulje * 0.45);
+    for (let i = 0; i < 8; i++) {
+      s.uge += 1;
+      ugentligeKunder(s, makeRng(s.rngState));
+    }
+    const top = spillerKunderTotal(s);
     for (let i = 0; i < 30; i++) {
       s.uge += 1;
       ugentligeKunder(s, makeRng(s.rngState));
     }
-    expect(spillerKunderTotal(s)).toBeLessThan(start);
+    expect(spillerKunderTotal(s)).toBeLessThan(top);
+  });
+  it('bedre anmeldelser giver en markant større lanceringsbølge', () => {
+    const a = nyt(3);
+    const b = nyt(3);
+    koer(a, 12);
+    koer(b, 12);
+    const svag = lancerEt(a, 18).ventendeSpillere!.dk!;
+    const staerk = lancerEt(b, 34).ventendeSpillere!.dk!;
+    expect(staerk).toBeGreaterThan(svag * 3);
   });
   it('marketing giver flere kunder end ingen marketing', () => {
     const a = nyt(9);
@@ -155,10 +174,13 @@ describe('Anden vertikal og kryds-salg', () => {
     koer(s, 12);
     expect(s.markeder.dk.vertikaler.kasino.status).toBe('aktiv');
     const betting = s.markeder.dk.spillerKunder.betting;
+    expect(betting).toBeGreaterThan(0);
     const kasino: LiveProduct = { ...s.produkter.find((p) => p.id === 'lpX')!, id: 'lpK', typeId: 'slotsAggregator', themeId: 'eventyr', margin: 0.04, lanceretUge: s.uge };
     s.produkter.push(kasino);
     lanceringsKunder(s, kasino);
-    expect(s.markeder.dk.spillerKunder.kasino).toBeGreaterThanOrEqual(betting * 0.2);
+    expect(kasino.ventendeSpillere!.dk!).toBeGreaterThanOrEqual(betting * 0.2);
     expect(s.milepaele.andenVertikal).toBe(s.uge);
+    koer(s, 3);
+    expect(s.markeder.dk.spillerKunder.kasino).toBeGreaterThan(betting * 0.15);
   });
 });

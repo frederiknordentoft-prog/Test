@@ -176,7 +176,7 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
                   <th className="px-2 py-1.5">#</th>
                   <th className="px-2 py-1.5">Produkt</th>
                   <th className="px-2 py-1.5">Ejer</th>
-                  <th className="px-2 py-1.5 text-right">BSI/uge</th>
+                  <th className="px-2 py-1.5 text-right">Nye · BSI/uge</th>
                   <th className="px-2 py-1.5 text-right">Kvalitet</th>
                   <th className="px-2 py-1.5 text-right">/40</th>
                   <th className="px-2 py-1.5 text-right">Alder</th>
@@ -197,7 +197,7 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
                           </span>
                         )}
                       </td>
-                      <td className="px-2 py-1 text-right">{Math.round((p?.bsiPrUge.dk ?? 0) * 1000).toLocaleString('da-DK')} t</td>
+                      <td className="px-2 py-1 text-right">{Math.round(p?.nyeSpillerePrUge?.dk ?? 0).toLocaleString('da-DK')} nye · {Math.round((p?.bsiPrUge.dk ?? 0) * 1000).toLocaleString('da-DK')} t</td>
                       <td className="px-2 py-1 text-right">{((p?.kvalitet ?? 0) * 100).toFixed(1)} %</td>
                       <td className="px-2 py-1 text-right">{p?.total40 ?? '–'}</td>
                       <td className="px-2 py-1 text-right">{p ? `${g.uge - p.lanceretUge} u` : '–'}</td>

@@ -10,7 +10,9 @@ import { BALANCE } from '../data/balance';
 import { aarFor, trin } from './time';
 import { clamp, nyId, nyhed } from './util';
 import { konkurrentAnmeldelser, produktVertikal } from './reviews';
-import { lanceringsBoelge, produktVaegt, VERTIKALER } from './customers';
+import { lanceringsBoelge, lanceringsBoelgeStoerrelse, frigivBoelge, markedsKunder, produktVaegt, VERTIKALER } from './customers';
+import { VERTICALS } from '../data/verticals';
+import { FIT_FAKTOR } from '../data/compatibility';
 
 export const DEF_BY_ID: Record<string, CompetitorDef> = Object.fromEntries(COMPETITORS.map((c) => [c.id, c]));
 
@@ -127,6 +129,10 @@ export function lancerKonkurrentProdukt(s: GameState, rng: Rng, c: Competitor, m
     bedstePlacering: {},
     ugerITop10: 0,
   };
+  // Lanceringsbølge (bruges af hitlisten: ugens nye spillere)
+  p.ventendeSpillere = {
+    [marked]: lanceringsBoelgeStoerrelse(s, marked, t.vertikal, total40, FIT_FAKTOR[fitFor(typeId, themeId)], 10 + 6 * c.aggressivitet, 45 + 5 * c.styrke),
+  };
   s.produkter.push(p);
   c.sidsteHandling = `Lancerede ${navn} (${t.navn}, ${THEMES[themeId].navn}).`;
   nyhed(s, `${c.navn} lancerer ${navn} — ${total40}/40 hos anmelderne.`, 'konkurrent');
@@ -155,7 +161,11 @@ export function ugentligeKonkurrenter(s: GameState, rng: Rng): void {
       c.naesteLanceringUge = s.uge + naesteLancering(rng, c.innovation);
     }
   }
-  for (const p of s.produkter) if (p.ejer !== 'spiller') p.bsiPrUge = {};
+  for (const p of s.produkter) {
+    if (p.ejer === 'spiller') continue;
+    p.bsiPrUge = {};
+    p.nyeSpillerePrUge = {};
+  }
 
   for (const m of Object.keys(s.markeder) as MarketId[]) {
     const ms = s.markeder[m];
@@ -183,15 +193,22 @@ export function ugentligeKonkurrenter(s: GameState, rng: Rng): void {
       const oevrigeVaegt = m === 'dk' ? BALANCE.oevrigeVaegt : BALANCE.oevrigeVaegt * 2;
       const sumW = vaegte.reduce((a, x) => a + x.w, 0) + oevrigeVaegt;
       andeleBsi.oevrige += (rest * oevrigeVaegt) / sumW;
+      const Nv = markedsKunder(s, m, v);
       for (const { c, prods, w } of vaegte) {
         const bsiC = (rest * w) / sumW;
         andeleBsi[c.id] = (andeleBsi[c.id] ?? 0) + bsiC;
+        // Konkurrentens kunder og ugentlige tilgang (erstatning for churn × marketingtryk)
+        const kunderC = markedBsi > 0 ? (bsiC / markedBsi) * Nv : 0;
+        // Etablerede brands har lavere churn end en udfordrer, så deres faste tilgang er mindre
+        const tilgang = kunderC * VERTICALS[v].churnPrUge * BALANCE.konkurrentTilgang * c.marketingMultiplikator;
         // Konkurrenternes brands deler mere jævnt end spillerens produkter; nye lanceringer får en bølge
         const pSum = prods.reduce((a, p) => a + produktVaegt(s, p) * lanceringsBoelge(s, p), 0) || 1;
         for (const p of prods) {
-          const b = (bsiC * produktVaegt(s, p) * lanceringsBoelge(s, p)) / pSum;
+          const andel = (produktVaegt(s, p) * lanceringsBoelge(s, p)) / pSum;
+          const b = bsiC * andel;
           p.bsiPrUge[m] = (p.bsiPrUge[m] ?? 0) + b;
           p.samletBsi += b;
+          p.nyeSpillerePrUge![m] = (p.nyeSpillerePrUge![m] ?? 0) + tilgang * andel + frigivBoelge(p, m);
         }
       }
     }

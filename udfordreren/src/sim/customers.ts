@@ -123,26 +123,43 @@ export function kanalTilgang(s: GameState, m: MarketId, andelAfBudget: number): 
   return nye * (1 + BONUS_TILGANG[s.bonusNiveau]);
 }
 
-/** Startkunder ved lancering + kryds-salg første gang en vertikal lanceres */
+/** Anmeldelsens vægt i lanceringsbølgen: stejl som salget i Game Dev Story (0,2 ved 0/40 … 2,5 ved 40/40) */
+export function lanceringsFaktor(total40: number): number {
+  return 0.2 + 2.3 * Math.pow(Math.max(0, total40) / 40, 4);
+}
+
+/** Størrelsen på en lanceringsbølge (spillere) i et marked */
+export function lanceringsBoelgeStoerrelse(s: GameState, m: MarketId, v: Vertical, total40: number, fitF: number, hype: number, omdoemme: number): number {
+  const N = markedsKunder(s, m, v);
+  return N * BALANCE.startKunderAndel * lanceringsFaktor(total40) * fitF * (1 + hype / 80) * (0.7 + omdoemme / 166);
+}
+
+/** Lanceringsbølge + kryds-salg første gang en vertikal lanceres. Spillerne kommer ind over de næste uger. */
 export function lanceringsKunder(s: GameState, p: LiveProduct): void {
   const v = PRODUCT_TYPES[p.typeId].vertikal;
   const fit = FIT_FAKTOR[fitFor(p.typeId, p.themeId)];
+  p.ventendeSpillere = {};
   for (const m of p.markeder) {
     const ms = s.markeder[m];
-    const N = markedsKunder(s, m, v);
     const foersteIVertikal = !s.produkter.some(
       (x) => x.id !== p.id && x.ejer === 'spiller' && x.markeder.includes(m) && PRODUCT_TYPES[x.typeId].vertikal === v,
     );
-    const start = N * BALANCE.startKunderAndel * (0.4 + p.total40 / 40) * (1 + s.hype / 40) * fit * (0.6 + s.omdoemme / 125);
-    ms.spillerKunder[v] += start;
+    let pulje = lanceringsBoelgeStoerrelse(s, m, v, p.total40, fit, s.hype, s.omdoemme);
     if (foersteIVertikal) {
-      const anden = ANDEN_VERTIKAL[v];
-      const kryds = ms.spillerKunder[anden] * BALANCE.krydsSalgStart;
-      ms.spillerKunder[v] += kryds;
+      pulje += ms.spillerKunder[ANDEN_VERTIKAL[v]] * BALANCE.krydsSalgStart;
       if (v !== s.startVertikal && s.milepaele.andenVertikal === undefined) s.milepaele.andenVertikal = s.uge;
     }
-    ms.spillerKunder[v] = Math.min(ms.spillerKunder[v], N * BALANCE.maksAndel);
+    p.ventendeSpillere[m] = pulje;
   }
+}
+
+/** Frigiv ca. halvdelen af en lanceringsbølge pr. uge */
+export function frigivBoelge(p: LiveProduct, m: MarketId): number {
+  const pulje = p.ventendeSpillere?.[m] ?? 0;
+  if (pulje <= 0) return 0;
+  const frigiv = pulje < 30 ? pulje : pulje * BALANCE.boelgeFrigivelse;
+  p.ventendeSpillere![m] = pulje - frigiv;
+  return frigiv;
 }
 
 /** Kampagne: engangsbeløb til hype og (for live produkter) kunder */
@@ -171,7 +188,11 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
   const totalKunder = Math.max(1, spillerKunderTotal(s));
   const crmReduktion = CRM_MAX_CHURN_REDUKTION * (1 - Math.exp(-(crmSpend * 1e6) / (totalKunder * 15)));
 
-  for (const p of s.produkter) if (p.ejer === 'spiller') p.bsiPrUge = {};
+  for (const p of s.produkter) {
+    if (p.ejer !== 'spiller') continue;
+    p.bsiPrUge = {};
+    p.nyeSpillerePrUge = {};
+  }
 
   markeder.forEach((m, mi) => {
     const ms = s.markeder[m];
@@ -204,6 +225,8 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
       }
       const mund = C * BALANCE.mundTilMund * st;
       const kryds = ms.spillerKunder[ANDEN_VERTIKAL[v]] * BALANCE.krydsSalgUge * (spillerProdukter(s, m, ANDEN_VERTIKAL[v]).length > 0 ? 1 : 0);
+      const boelger = produkter.map((p) => frigivBoelge(p, m));
+      const basisTilgang = betalte + organisk + hitliste + mund + kryds;
       // Churn
       const vaegtSumP = produkter.reduce((a, p) => a + produktVaegt(s, p), 0) || 1;
       const marginRatio = produkter.reduce((a, p) => a + (p.margin / PRODUCT_TYPES[p.typeId].marginStd) * produktVaegt(s, p), 0) / vaegtSumP;
@@ -217,7 +240,7 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
         (1 + BONUS_CHURN[s.bonusNiveau]) *
         Math.max(0.5, 1 + eff.churn + passiv.churn) *
         (1 + Math.min(0.5, fejlSnit * 0.02));
-      C = C + betalte + organisk + hitliste + mund + kryds - C * clamp(churnRate, 0.002, 0.5);
+      C = C + basisTilgang + boelger.reduce((a, b) => a + b, 0) - C * clamp(churnRate, 0.002, 0.5);
       C = clamp(C, 0, N[v] * BALANCE.maksAndel);
       ms.spillerKunder[v] = C;
 
@@ -244,6 +267,7 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
         const b = (bsi * fordel[i]) / fordelSum;
         p.bsiPrUge[m] = (p.bsiPrUge[m] ?? 0) + b;
         p.samletBsi += b;
+        p.nyeSpillerePrUge![m] = (basisTilgang * fordel[i]) / fordelSum + boelger[i];
       }
     }
     ms.kunder = ms.spillerKunder.betting + ms.spillerKunder.kasino;

@@ -122,6 +122,10 @@ export type LiveProduct = {
   bedstePlacering: Partial<Record<MarketId, number>>;
   ugerITop10: number;
   pensioneretUge?: Week;
+  /** Ugens nye spillere pr. marked — det, hitlisten rangerer efter (som ugens salg i Game Dev Story) */
+  nyeSpillerePrUge?: Partial<Record<MarketId, number>>;
+  /** Lanceringsbølge: spillere, der endnu ikke er kommet ind (frigives ca. halvdelen pr. uge) */
+  ventendeSpillere?: Partial<Record<MarketId, number>>;
 };
 
 export type ChartEntry = { productId: string; placering: number; forrige: number | null; ny: boolean };
@@ -316,10 +320,10 @@ export type Signal =
   | { k: 'fase'; projectId: string; til: Phase; tomtHold?: boolean } // tomtHold: ingen tildelt i den nye fase
   | { k: 'klar'; projectId: string }
   | { k: 'lanceret'; productId: string }
-  | { k: 'anmeldelse'; productId: string }
+  | { k: 'anmeldelse'; productId: string; foersteForsoeg?: boolean; indsigt?: number }
   | { k: 'guldkupon'; productId: string }
   | { k: 'hallOfFame'; productId: string }
-  | { k: 'top10'; productId: string; marked: MarketId; placering: number }
+  | { k: 'top10'; productId: string; marked: MarketId; placering: number; foersteGang?: boolean }
   | { k: 'nr1'; productId: string; marked: MarketId }
   | { k: 'ledig'; staffIds: string[]; ingenOpgaver?: boolean } // ingenOpgaver: intet aktivt projekt at gå til
   | { k: 'kontraktFaerdig'; contractId: string; navn: string; betaling: MioKr; indsigt: number }
@@ -396,7 +400,9 @@ export type GameState = {
   milepaele: Partial<Record<Milestone, Week>>;
   regnskab: LedgerWeek; // seneste uge
   historik: QuarterHistory[];
-  kvartalAkk: { bsi: MioKr; resultat: MioKr; lanceringer: number; bedsteTotal40: number; startKunder: number; startBsi: MioKr };
+  kvartalAkk: { bsi: MioKr; resultat: MioKr; lanceringer: number; bedsteTotal40: number; startKunder: number; startBsi: MioKr; drift?: MioKr; top10Uger?: number };
+  /** Seneste kvartalsmødes evaluerede mål (til kvartalsdialogen) */
+  forrigeKvartalsmaal?: QuarterGoal[];
   aarAkk: {
     aar: number;
     nyeKombinationer: number;

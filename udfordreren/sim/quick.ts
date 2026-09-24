@@ -16,7 +16,9 @@ const res: Record<string, number[]> = {};
 const add = (k: string, v: number | undefined) => { (res[k] ??= []).push(v ?? NaN); };
 const flags: Record<string, boolean[]> = {};
 const addF = (k: string, v: boolean) => { (flags[k] ??= []).push(v); };
-const perAar: Record<number, { kap: number[]; kunder: number[]; andel: number[]; staff: number[]; total: number[]; launches: number[]; dl1: boolean[]; pauser: number[] }> = {};
+const perAar: Record<number, { kap: number[]; kunder: number[]; andel: number[]; staff: number[]; total: number[]; launches: number[]; dl1: boolean[]; pauser: number[]; top10: number[]; alle: number[] }> = {};
+const maal: Record<string, [number, number]> = {};
+let presEvents = 0; let moeder = 0;
 
 for (let seed = 1; seed <= N; seed++) {
   const v: Vertical = seed % 2 ? 'betting' : 'kasino';
@@ -24,19 +26,25 @@ for (let seed = 1; seed <= N; seed++) {
   const slutUge = (AAR - 2012) * 52;
   let launchesAar = 0;
   let pauserAar = 0;
+  let top10Aar = 0;
   let totals: number[] = [];
   while (s.uge < slutUge && !s.slut) {
     stepMut(s, balanceretBot.beslut(s));
     { const dlg = new Set(['anmeldelse','galla','kvartal','event','messeVarsel','messe','nr1','top10']); let p = false; for (const sig of s.signaler) if (pauserFor(sig) || (dlg.has(sig.k) && !(sig.k === 'messe' && sig.stoerrelse === 0))) p = true; if (p) pauserAar++; }
+    if (s.markeder.dk.top10.some((e) => s.produkter.find((p) => p.id === e.productId)?.ejer === 'spiller')) top10Aar++;
+    for (const sig of s.signaler) if (sig.k === 'kvartal') { moeder++; for (const g of s.forrigeKvartalsmaal ?? []) { const m = (maal[g.kind] ??= [0, 0]); m[1]++; if (g.opfyldt) m[0]++; } }
+    for (const sig of s.signaler) if (sig.k === 'event' && sig.eventId === 'investorPres') presEvents++;
     for (const sig of s.signaler) if (sig.k === 'anmeldelse') { launchesAar++; totals.push(s.produkter.find((p) => p.id === sig.productId)!.total40); }
     if (s.uge % 52 === 0) {
       const a = aarFor(s.uge - 1);
-      const pa = (perAar[a] ??= { kap: [], kunder: [], andel: [], staff: [], total: [], launches: [], dl1: [], pauser: [] });
+      const pa = (perAar[a] ??= { kap: [], kunder: [], andel: [], staff: [], total: [], launches: [], dl1: [], pauser: [], top10: [], alle: [] });
       pa.kap.push(s.kapital); pa.kunder.push(spillerKunderTotal(s)); pa.andel.push((s.markeder.dk.andele.spiller ?? 0) * 100); pa.staff.push(s.staff.length);
-      pa.total.push(totals.length ? Math.max(...totals) : 0); pa.launches.push(launchesAar);
+      pa.total.push(totals.length ? Math.max(...totals) : 0); pa.alle.push(...totals); pa.launches.push(launchesAar);
       const andele = Object.entries(s.markeder.dk.andele).filter(([k]) => k !== 'offshore' && k !== 'oevrige').sort((x, y) => y[1] - x[1]);
       pa.dl1.push(andele[0]?.[0] === 'danskeLykke');
       pa.pauser.push(pauserAar);
+      pa.top10.push(top10Aar);
+      top10Aar = 0;
       launchesAar = 0; totals = []; pauserAar = 0;
     }
   }
@@ -49,5 +57,7 @@ for (let seed = 1; seed <= N; seed++) {
 }
 for (const [k, v] of Object.entries(res)) console.log(k.padEnd(22), 'median', med(v.filter((x) => !Number.isNaN(x))).toFixed(2), ' n=', v.filter((x) => !Number.isNaN(x)).length);
 for (const [k, v] of Object.entries(flags)) console.log(k.padEnd(22), pct(v), '%');
-console.log('år    kapital  kunder  dk-andel% staff bedste40 lanceringer DL#1% pauser');
-for (const [a, p] of Object.entries(perAar)) console.log(a, med(p.kap).toFixed(1).padStart(8), String(Math.round(med(p.kunder))).padStart(7), med(p.andel).toFixed(1).padStart(8), String(med(p.staff)).padStart(5), String(med(p.total)).padStart(8), String(med(p.launches)).padStart(10), String(pct(p.dl1)).padStart(6), String(med(p.pauser)).padStart(6));
+console.log('mål opfyldt:', Object.entries(maal).map(([k, [a, b]]) => `${k} ${Math.round((100 * a) / b)}% (${b})`).join(', '));
+console.log('investorPres-events pr. møde:', (presEvents / Math.max(1, moeder)).toFixed(2));
+console.log('år    kapital  kunder  dk-andel% staff bedste40 lanceringer DL#1% pauser top10uger median40');
+for (const [a, p] of Object.entries(perAar)) console.log(a, med(p.kap).toFixed(1).padStart(8), String(Math.round(med(p.kunder))).padStart(7), med(p.andel).toFixed(1).padStart(8), String(med(p.staff)).padStart(5), String(med(p.total)).padStart(8), String(med(p.launches)).padStart(10), String(pct(p.dl1)).padStart(6), String(med(p.pauser)).padStart(6), String(med(p.top10)).padStart(8), String(med(p.alle)).padStart(8));

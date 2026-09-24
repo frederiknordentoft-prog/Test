@@ -7,6 +7,7 @@ import { afvis, clamp, nyId, nyhed, signal } from './util';
 import { aarligBsi } from './economy';
 import { spillerKunderTotal } from './customers';
 import { udloesEvent } from './events';
+import { tillidsPoster } from './trust';
 
 export function vaerdiansaettelse(s: GameState): number {
   const stjerneBonus = Math.min(0.3, s.investorer.stjerner * STJERNE_VAERDI);
@@ -59,9 +60,9 @@ function maalTekst(kind: QuarterGoal['kind'], maal: number): string {
     case 'lancer': return maal === 1 ? 'Lancér et produkt' : `Lancér ${maal} produkter`;
     case 'kunder': return `Nå ${Math.round(maal).toLocaleString('da-DK')} kunder`;
     case 'bsi': return `Kvartals-BSI på ${maal.toFixed(1).replace('.', ',')} mio. kr.`;
-    case 'top10': return 'Hav et produkt på Top 10 i Danmark';
+    case 'top10': return 'Få et produkt på Top 10 i Danmark i løbet af kvartalet';
     case 'tillid': return `Tilsynstillid på mindst ${Math.round(maal)} i Danmark`;
-    case 'overskud': return 'Overskud i kvartalet';
+    case 'overskud': return 'Driftsoverskud i kvartalet';
     case 'anmeldelse': return `Lancér et produkt med mindst ${maal}/40`;
     case 'guldkupon': return 'Vind en Guldkupon';
     case 'kontrakt': return 'Tag jeres første kontraktopgave';
@@ -84,9 +85,9 @@ export function evaluerMaal(s: GameState, g: QuarterGoal): boolean {
     case 'lancer': return s.kvartalAkk.lanceringer >= g.maal;
     case 'kunder': return spillerKunderTotal(s) >= g.maal;
     case 'bsi': return s.kvartalAkk.bsi >= g.maal;
-    case 'top10': return dk.top10.some((e) => s.produkter.find((p) => p.id === e.productId)?.ejer === 'spiller');
+    case 'top10': return (s.kvartalAkk.top10Uger ?? 0) > 0 || dk.top10.some((e) => s.produkter.find((p) => p.id === e.productId)?.ejer === 'spiller');
     case 'tillid': return dk.tilsynstillid >= g.maal;
-    case 'overskud': return s.kvartalAkk.resultat >= 0;
+    case 'overskud': return (s.kvartalAkk.drift ?? s.kvartalAkk.resultat) > 0;
     case 'anmeldelse': return s.kvartalAkk.bedsteTotal40 >= g.maal;
     case 'guldkupon': return s.kvartalAkk.bedsteTotal40 >= 32;
     case 'kontrakt': return s.milepaele.foersteKontrakt !== undefined;
@@ -94,23 +95,36 @@ export function evaluerMaal(s: GameState, g: QuarterGoal): boolean {
   }
 }
 
+/** Nye mål: kun mål, spilleren har en realistisk vej til (målsat ca. 55-70 % opfyldelse for en fornuftig spiller) */
 function nyeMaal(s: GameState, rng: Rng): QuarterGoal[] {
   const krav = vaekstkrav(s);
   const kunder = spillerKunderTotal(s);
   const forrigeBsi = s.kvartalAkk.bsi;
+  const drift = s.kvartalAkk.drift ?? s.kvartalAkk.resultat;
+  const egne = s.produkter.filter((p) => p.ejer === 'spiller').sort((a, b) => b.lanceretUge - a.lanceretUge);
+  const tidligTop10 = s.milepaele.foersteTop10 !== undefined;
+  const naerLancering = s.projekter.some((p) => p.fase === 'teknik' || p.fase === 'test' || p.klar);
   const muligheder: QuarterGoal[] = [];
-  if (antalLanceringer(s) === 0 || s.projekter.some((p) => p.fase === 'test' || p.fase === 'teknik')) muligheder.push(lavMaal(s, 'lancer', 1));
-  if (kunder >= 200) muligheder.push(lavMaal(s, 'kunder', Math.max(500, Math.round((kunder * (1.08 + krav)) / 100) * 100)));
-  if (forrigeBsi > 0.2) muligheder.push(lavMaal(s, 'bsi', Math.round(forrigeBsi * (1.05 + krav) * 10) / 10));
-  const iTop10 = s.markeder.dk.top10.some((e) => s.produkter.find((p) => p.id === e.productId)?.ejer === 'spiller');
-  if (!iTop10 && antalLanceringer(s) > 0) muligheder.push(lavMaal(s, 'top10', 1));
-  if (s.markeder.dk.tilsynstillid < 75) muligheder.push(lavMaal(s, 'tillid', Math.max(60, Math.round(s.markeder.dk.tilsynstillid + 2))));
-  if (s.kvartalAkk.resultat < 0) muligheder.push(lavMaal(s, 'overskud', 0));
-  if (s.projekter.length > 0) {
-    const best = Math.max(20, ...s.produkter.filter((p) => p.ejer === 'spiller').map((p) => p.total40));
-    muligheder.push(lavMaal(s, 'anmeldelse', Math.min(34, best + 1)));
+  if (antalLanceringer(s) === 0 || naerLancering) muligheder.push(lavMaal(s, 'lancer', 1));
+  if (kunder >= 300) muligheder.push(lavMaal(s, 'kunder', Math.max(500, Math.round((kunder * (1.02 + krav * 0.4)) / 100) * 100)));
+  if (forrigeBsi > 0.2) muligheder.push(lavMaal(s, 'bsi', Math.round(forrigeBsi * (1.02 + krav * 0.5) * 10) / 10));
+  if (tidligTop10 && naerLancering) muligheder.push(lavMaal(s, 'top10', 1));
+  // Tillid kun, når der er en løftestang (compliance-folk eller ansvarsforskning)
+  const harLoeftestang = s.staff.some((m) => m.rolle === 'compliance') || s.forskning.ulaast.some((id) => id.startsWith('ansvarligtSpil'));
+  const forventet = tillidsPoster(s, 'dk').reduce((a, p) => a + p.vaerdi, 0);
+  if (harLoeftestang && forventet > 0 && s.markeder.dk.tilsynstillid < 85) {
+    muligheder.push(lavMaal(s, 'tillid', Math.floor(s.markeder.dk.tilsynstillid + forventet * 0.8)));
   }
-  if (s.milepaele.foersteGuldkupon === undefined && aarFor(s.uge) >= 2014 && s.projekter.length > 0) muligheder.push(lavMaal(s, 'guldkupon', 32));
+  // Driftsoverskud, når sidste kvartal lå tæt på break-even (tynd margin eller et lille underskud)
+  const skala = Math.max(0.05, s.regnskab.loen * 13);
+  if (drift > -skala && drift < Math.max(0.1 * forrigeBsi, 0.3 * skala)) muligheder.push(lavMaal(s, 'overskud', 0));
+  // Anmeldelse: match gennemsnittet af de seneste tre lanceringer (ikke topscoren)
+  if (naerLancering && egne.length > 0) {
+    const seneste = egne.slice(0, 3);
+    const snit = seneste.reduce((a, p) => a + p.total40, 0) / seneste.length;
+    muligheder.push(lavMaal(s, 'anmeldelse', Math.max(16, Math.min(34, Math.round(snit) + 1))));
+  }
+  if (s.milepaele.foersteGuldkupon === undefined && egne.slice(0, 3).some((p) => p.total40 >= 30) && naerLancering) muligheder.push(lavMaal(s, 'guldkupon', 32));
   rng.shuffle(muligheder);
   const antal = s.investorer.runde === 'ingen' ? 2 : 3;
   const valgte: QuarterGoal[] = [];
@@ -119,7 +133,7 @@ function nyeMaal(s: GameState, rng: Rng): QuarterGoal[] {
     valgte.push(g);
     if (valgte.length >= antal) break;
   }
-  if (valgte.length === 0) valgte.push(lavMaal(s, 'overskud', 0));
+  if (valgte.length === 0) valgte.push(lavMaal(s, antalLanceringer(s) === 0 ? 'lancer' : 'kunder', antalLanceringer(s) === 0 ? 1 : Math.max(500, Math.round(kunder / 100) * 100)));
   return valgte;
 }
 
@@ -135,9 +149,12 @@ export function kvartalsmoede(s: GameState, rng: Rng): void {
   const ialt = s.kvartalsmaal.length;
   s.investorer.stjerner += opfyldt;
   if (s.investorer.runde !== 'ingen') {
+    // Højst +1 pres pr. kvartal; et helt opfyldt kvartal sænker presset
     const mangler = ialt - opfyldt;
-    s.investorer.pres = clamp(s.investorer.pres + mangler - (mangler === 0 ? 0.5 : 0), 0, 5);
+    const delta = mangler === 0 ? -0.5 : mangler === 1 ? 0.5 : 1;
+    s.investorer.pres = clamp(s.investorer.pres + delta, 0, 5);
   }
+  s.forrigeKvartalsmaal = s.kvartalsmaal.map((g) => ({ ...g }));
   const forrigeUge = s.uge - 1;
   s.historik.push({
     aar: aarFor(forrigeUge),
@@ -155,7 +172,7 @@ export function kvartalsmoede(s: GameState, rng: Rng): void {
   signal(s, { k: 'kvartal', aar: aarFor(forrigeUge), kvartal: kvartalFor(forrigeUge) + 1, opfyldt, ialt });
   // Nye mål
   s.kvartalsmaal = nyeMaal(s, rng);
-  s.kvartalAkk = { bsi: 0, resultat: 0, lanceringer: 0, bedsteTotal40: 0, startKunder: spillerKunderTotal(s), startBsi: 0 };
+  s.kvartalAkk = { bsi: 0, resultat: 0, lanceringer: 0, bedsteTotal40: 0, startKunder: spillerKunderTotal(s), startBsi: 0, drift: 0, top10Uger: 0 };
   if (s.investorer.runde !== 'ingen' && s.investorer.pres >= PRES_EVENT_TAERSKEL) {
     udloesEvent(s, 'investorPres', {});
   }

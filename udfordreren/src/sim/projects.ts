@@ -111,7 +111,6 @@ export function startProject(
     // 2.0-version: +20 % start-params fra originalen [D]
     for (const k of Object.keys(params) as (keyof Params)[]) params[k] = original.params[k] * 0.2;
   }
-  const ledige = ledigeTilProjekt(s).map((m) => m.id);
   const p: Project = {
     id: nyId(s, 'p'),
     navn: input.navn.trim() || 'Uden navn',
@@ -122,7 +121,7 @@ export function startProject(
     intensitet: input.intensitet,
     budget: input.budget,
     fase: 'koncept',
-    faseTildeling: { koncept: [...ledige], design: [...ledige], teknik: [...ledige], test: [...ledige] },
+    faseTildeling: { koncept: [], design: [], teknik: [], test: [] },
     params,
     fejl: 0,
     boostBrugt: 0,
@@ -134,9 +133,20 @@ export function startProject(
     foersteForsoeg: !s.kombinationsbog[key]?.set,
   };
   if (input.efterfoelgerAf) p.efterfoelgerAf = input.efterfoelgerAf;
+  const ledige = ledigeTilProjekt(s);
+  for (const f of PHASES) p.faseTildeling[f] = standardHold(ledige, p, f);
   s.projekter.push(p);
   if (s.milepaele.foersteProjekt === undefined) s.milepaele.foersteProjekt = s.uge;
   return true;
+}
+
+/** Standardhold for en fase: de (op til) 3 stærkeste udhvilede til fasen — små, stærke hold (Brooks' lov) */
+export const STANDARD_HOLD = 3;
+export function standardHold(kandidater: Staff[], p: Project, fase: Phase): string[] {
+  const sorteret = [...kandidater].sort((a, b) => personPoint(b, p, fase) - personPoint(a, p, fase) || (a.id < b.id ? -1 : 1));
+  const udhvilede = sorteret.filter((m) => m.energi >= 30);
+  const valgte = (udhvilede.length ? udhvilede : sorteret.slice(0, 1)).slice(0, STANDARD_HOLD);
+  return valgte.map((m) => m.id);
 }
 
 export function assignPhase(s: GameState, projectId: string, fase: Phase, ids: string[]): boolean {
@@ -161,7 +171,7 @@ export function boostPris(p: Project): number | null {
 
 export function boostEffekt(s: GameState, p: Project): number {
   const e = forskningsEffekt(s, PRODUCT_TYPES[p.typeId].vertikal);
-  return markedsStandard(s, p.typeId, p.markeder) * BOOST.andelAfStandard * (1 + e.boost);
+  return markedsStandard(s, p.typeId, p.markeder, p.startUge) * BOOST.andelAfStandard * (1 + e.boost);
 }
 
 export function boost(s: GameState, projectId: string, param: keyof Params): boolean {
@@ -184,7 +194,7 @@ export function extendTest(s: GameState, projectId: string, uger: number): boole
   if (p.faseLaengde.test + n > BALANCE.maxTestUger) return afvis(s, `Testfasen kan højst vare ${BALANCE.maxTestUger} uger.`);
   p.faseLaengde.test += n;
   p.klar = false;
-  if (p.faseTildeling.test.length === 0) p.faseTildeling.test = ledigeTilProjekt(s, p.id).map((m) => m.id);
+  if (p.faseTildeling.test.length === 0) p.faseTildeling.test = standardHold(ledigeTilProjekt(s, p.id), p, 'test');
   return true;
 }
 
@@ -254,7 +264,8 @@ export function ugentligtProjekt(s: GameState, rng: Rng, p: Project, allerede: S
         (1.5 - 0.5 * (m.energi / 100)) *
         (0.8 + 0.1 * (p.intensitet - 1)) *
         (0.6 + type.risiko / 20) *
-        Math.max(0.3, 1 + eff.fejl + passiv.fejl);
+        Math.max(0.3, 1 + eff.fejl + passiv.fejl) *
+        (s.flags.includes('server') ? 0.9 : 1);
       fejl = Math.max(0, fejl * (0.7 + rng.next() * 0.6));
       p.fejl += fejl;
     } else if (p.fase === 'test') {
@@ -314,6 +325,7 @@ export function launch(s: GameState, rng: Rng, projectId: string): boolean {
     intensitet: p.intensitet,
     markeder: st.markeder,
     tidligEfterfoelger: tidlig,
+    standardUge: p.startUge,
   });
 
   const produkt: LiveProduct = {
@@ -364,14 +376,12 @@ export function launch(s: GameState, rng: Rng, projectId: string): boolean {
 
   // Indsigt, hype og omdømme
   const eff = forskningsEffekt(s);
-  s.indsigt += Math.round((4 + res.total40 / 5) * (res.guldkupon ? 1.5 : 1) * (1 + eff.indsigt));
+  const indsigtVundet = Math.round((4 + res.total40 / 5) * (res.guldkupon ? 1.5 : 1) * (1 + eff.indsigt)) + (res.guldkupon ? 10 : 0);
+  s.indsigt += indsigtVundet;
   s.omdoemme = clamp(s.omdoemme + (res.total40 - 22) / 6, 0, 100);
   lanceringsKunder(s, produkt);
   s.hype *= 0.6;
-  if (res.guldkupon) {
-    s.hype = clamp(s.hype + 15, 0, 100);
-    s.indsigt += 10;
-  }
+  if (res.guldkupon) s.hype = clamp(s.hype + 15, 0, 100);
 
   // Akkumulatorer og milepæle
   s.kvartalAkk.lanceringer += 1;
@@ -383,7 +393,7 @@ export function launch(s: GameState, rng: Rng, projectId: string): boolean {
   if (res.hallOfFame && s.milepaele.foersteHallOfFame === undefined) s.milepaele.foersteHallOfFame = s.uge;
 
   signal(s, { k: 'lanceret', productId: produkt.id });
-  signal(s, { k: 'anmeldelse', productId: produkt.id });
+  signal(s, { k: 'anmeldelse', productId: produkt.id, foersteForsoeg: p.foersteForsoeg, indsigt: indsigtVundet });
   if (res.guldkupon) signal(s, { k: 'guldkupon', productId: produkt.id });
   if (res.hallOfFame) signal(s, { k: 'hallOfFame', productId: produkt.id });
   nyhed(
@@ -396,11 +406,13 @@ export function launch(s: GameState, rng: Rng, projectId: string): boolean {
   if (produkt.fejl >= TRUST.fejlTaerskel) {
     for (const m of st.markeder) s.markeder[m].tilsynstillid = clamp(s.markeder[m].tilsynstillid + TRUST.lanceringMedFejl, 0, 100);
     if (rng.chance(Math.min(0.85, produkt.fejl * 0.07))) {
-      const kandidater = EVENTS.filter((e) => e.trigger === 'lanceringMedFejl').filter(
-        (e) => e.id !== 'forkerteOdds' || PRODUCT_TYPES[produkt.typeId].vertikal === 'betting',
-      );
-      const ev = rng.pick(kandidater);
-      udloesEvent(s, ev.id, { produkt: produkt.navn, fejl: produkt.fejl });
+      const kandidater = EVENTS.filter((e) => e.trigger === 'lanceringMedFejl')
+        .filter((e) => e.id !== 'forkerteOdds' || PRODUCT_TYPES[produkt.typeId].vertikal === 'betting')
+        .filter((e) => !s.eventLog.some((l) => l.eventId === e.id && s.uge - l.uge < (e.cooldownUger ?? 26)));
+      if (kandidater.length) {
+        const ev = rng.pick(kandidater);
+        udloesEvent(s, ev.id, { produkt: produkt.navn, fejl: produkt.fejl });
+      }
     }
   }
   if (!s.flags.includes('harLanceret')) saetFlag(s, 'harLanceret');

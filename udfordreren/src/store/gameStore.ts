@@ -130,6 +130,11 @@ export const useGame = create<GameStore>((set, get) => {
     for (const s of sig) {
       if (DIALOG_SIGNALER.includes(s.k)) {
         if (s.k === 'messe' && s.stoerrelse === 0) continue;
+        // Top 10: fejr første gang nogensinde og nye top 3-placeringer; ellers en toast
+        if (s.k === 'top10' && !s.foersteGang && s.placering > 3) {
+          toasts.push({ id: naesteId++, tekst: `Ind på Top 10 som nr. ${s.placering}!`, kind: 'godt' });
+          continue;
+        }
         dialoger.push({ id: naesteId++, signal: s });
       }
       const t = toastFor(s);

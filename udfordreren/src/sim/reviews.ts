@@ -22,8 +22,9 @@ export function bedsteKonkurrentKvalitet(s: GameState, markeder: MarketId[], ver
 }
 
 /** Markedets standard pr. parameter: stiger med årstallet og med konkurrenternes bedste produkter */
-export function markedsStandard(s: GameState, typeId: ProductTypeId, markeder: MarketId[] = ['dk']): number {
-  const base = kurve(BALANCE.standardKurve, aarDecimal(s.uge));
+/** `uge` = hvornår standarden måles (projekter bruges med deres startuge, så målstregen ikke flytter sig undervejs) */
+export function markedsStandard(s: GameState, typeId: ProductTypeId, markeder: MarketId[] = ['dk'], uge: number = s.uge): number {
+  const base = kurve(BALANCE.standardKurve, aarDecimal(uge));
   const komp = bedsteKonkurrentKvalitet(s, markeder, PRODUCT_TYPES[typeId].vertikal);
   return base * (1 + BALANCE.standardKonkurrent * Math.max(0, komp - 0.6));
 }
@@ -37,6 +38,7 @@ export type ReviewInput = {
   intensitet: number;
   markeder: MarketId[];
   tidligEfterfoelger: boolean;
+  standardUge?: number;
 };
 
 export type ReviewResult = { anmeldelser: Review[]; total40: number; guldkupon: boolean; hallOfFame: boolean; kvalitet: number; ratio: Params };
@@ -45,15 +47,15 @@ export type ReviewResult = { anmeldelser: Review[]; total40: number; guldkupon: 
 export const paramQ = (r: number): number => 1 - Math.exp(-Math.max(0, r));
 
 /** Fit som multiplikator i q-rum (1 = Ikke godt … 5 = Genialt) */
-export const FIT_Q: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0.8, 2: 0.92, 3: 1.0, 4: 1.06, 5: 1.12 };
+export const FIT_Q: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0.84, 2: 0.92, 3: 1.0, 4: 1.06, 5: 1.12 };
 
 /** Score 1-10 fra en sammensat q-værdi (0..1) */
 export function scoreFraQ(q: number): number {
   return 1 + 9 / (1 + Math.exp(-BALANCE.scoreK * (q - BALANCE.scoreQ0)));
 }
 
-export function ratioer(s: GameState, inp: Pick<ReviewInput, 'typeId' | 'params' | 'markeder'>): Params {
-  const std = markedsStandard(s, inp.typeId, inp.markeder);
+export function ratioer(s: GameState, inp: Pick<ReviewInput, 'typeId' | 'params' | 'markeder' | 'standardUge'>): Params {
+  const std = markedsStandard(s, inp.typeId, inp.markeder, inp.standardUge ?? s.uge);
   return {
     spaending: inp.params.spaending / std,
     originalitet: inp.params.originalitet / std,
@@ -80,11 +82,13 @@ export function anmelderQ(s: GameState, inp: ReviewInput): Record<string, number
   const efterfoelger = inp.tidligEfterfoelger ? 0.7 : 1;
   const qAvg = (q.spaending + q.originalitet + q.teknik + q.tryghed) / 4;
   const marginRatio = inp.margin / type.marginStd;
+  // Kombinationen (fit) påvirker alle anmeldere — Tilsynet kun halvt — så kombinationsbogen betyder noget
+  const fitHalv = Math.sqrt(fitQ);
   const raa: Record<string, number> = {
-    branchebladet: (0.5 * q.teknik + 0.5 * q.originalitet) * (1 - fejlLet) + niveau,
-    tilsynet: (0.7 * q.tryghed + 0.3 * q.teknik) * (1 - 0.06 * (inp.intensitet - 3)) * (1 - 0.025 * (type.risiko - 5)) - fejlStraf + niveau * 0.5,
-    forbrugerposten: (0.5 * qAvg + 0.5 * q.tryghed) * Math.pow(1 / marginRatio, 0.6) * (1 - fejlLet) + niveau * 0.5,
-    spillerforum: (0.7 * q.spaending + 0.3 * q.originalitet) * fitQ * (1 + 0.03 * (inp.intensitet - 3)) * (1 - fejlLet) + niveau,
+    branchebladet: (0.5 * q.teknik + 0.5 * q.originalitet) * fitQ * (1 - fejlLet) + niveau,
+    tilsynet: (0.7 * q.tryghed + 0.3 * q.teknik) * fitHalv * (1 - 0.06 * (inp.intensitet - 3)) * (1 - 0.025 * (type.risiko - 5)) - fejlStraf + niveau * 0.5,
+    forbrugerposten: (0.5 * qAvg + 0.5 * q.tryghed) * fitQ * Math.pow(1 / marginRatio, 0.6) * (1 - fejlLet) + niveau * 0.5,
+    spillerforum: (0.7 * q.spaending + 0.3 * q.originalitet) * fitQ * fitQ * (1 + 0.03 * (inp.intensitet - 3)) * (1 - fejlLet) + niveau,
   };
   for (const k of Object.keys(raa)) raa[k] *= efterfoelger;
   return raa;

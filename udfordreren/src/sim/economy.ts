@@ -62,6 +62,7 @@ export function ugentligOekonomi(s: GameState, kunder: KundeUge, kontraktIndtaeg
   if (s.bsiHistorik.length > 13) s.bsiHistorik.shift();
   s.kvartalAkk.bsi += r.bsi;
   s.kvartalAkk.resultat += r.resultat;
+  s.kvartalAkk.drift = (s.kvartalAkk.drift ?? 0) + driftsresultat;
 
   // Konkurs, hvis kapitalen er negativ for længe
   if (s.kapital < 0) {

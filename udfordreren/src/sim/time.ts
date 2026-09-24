@@ -23,7 +23,11 @@ export const erKvartalsSlut = (uge: Week): boolean => {
 export const aarDecimal = (uge: Week): number => START_AAR + uge / UGER_PR_AAR;
 
 export const MAANEDER = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
-export const datoTekst = (uge: Week): string => `${MAANEDER[maanedFor(uge)]}. ${aarFor(uge)}`;
+/** "jan. 2012" — maj forkortes ikke på dansk */
+export const datoTekst = (uge: Week): string => {
+  const m = MAANEDER[maanedFor(uge)];
+  return `${m}${m === 'maj' ? '' : '.'} ${aarFor(uge)}`;
+};
 export const ugeTekst = (uge: Week): string => `Uge ${ugeIAar(uge) + 1}, ${aarFor(uge)}`;
 
 /** Lineær interpolation i en kurve af [år, værdi]-punkter (konstant uden for). */

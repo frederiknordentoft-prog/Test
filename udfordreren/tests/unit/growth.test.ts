@@ -336,3 +336,30 @@ describe('Auto-pause', () => {
     expect(pauserFor({ k: 'point', projectId: 'p', staffId: 's', params: { spaending: 1, originalitet: 1, teknik: 1, tryghed: 1 }, fejl: 0, fjernet: 0 })).toBe(false);
   });
 });
+
+describe('Standardhold og events', () => {
+  it('nyt projekt får de op til 3 stærkeste udhvilede pr. fase', () => {
+    const s = nyt();
+    s.kontor = 'kaelder';
+    s.kapital = 10;
+    for (let i = 0; i < 3; i++) s.staff.push({ ...s.staff[1], id: `ex${i}`, stifter: false, energi: i === 0 ? 10 : 90 });
+    act(s, { t: 'startProject', project: { navn: 'X', typeId: 'prematch', themeId: 'fodbold', markeder: ['dk'], margin: 0.07, intensitet: 3, budget: 0.15 } });
+    const p = s.projekter[0];
+    for (const f of ['koncept', 'design', 'teknik', 'test'] as const) {
+      expect(p.faseTildeling[f].length).toBeLessThanOrEqual(3);
+      expect(p.faseTildeling[f]).not.toContain('ex0');
+    }
+  });
+  it('samme event kommer ikke igen inden for cooldown, og der er luft mellem events', async () => {
+    const { ugentligeEvents, EVENT_COOLDOWN } = await import('../../src/sim/events');
+    const s = nyt();
+    s.uge = 60;
+    s.eventLog.push({ uge: 58, eventId: 'journalist', valg: 0 });
+    for (let i = 0; i < 50; i++) ugentligeEvents(s, makeRng(s.rngState));
+    expect(s.ventendeEvents.length).toBe(0); // under 4 uger siden sidste event
+    s.uge = 58 + EVENT_COOLDOWN - 1;
+    s.markeder.dk.spillerKunder.betting = 5000;
+    for (let i = 0; i < 400 && s.ventendeEvents.length === 0; i++) ugentligeEvents(s, makeRng(s.rngState));
+    expect(s.ventendeEvents.some((e) => e.eventId === 'journalist')).toBe(false);
+  });
+});

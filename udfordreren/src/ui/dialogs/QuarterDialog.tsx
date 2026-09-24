@@ -35,6 +35,8 @@ export default function QuarterDialog({ signal, onLuk }: { signal: Signal; onLuk
 
   if (!g || !kv) return null;
   const minde = forrigeKvartal(g);
+  // Sim-kernen gemmer de evaluerede mål; hukommelsen i UI'et er kun en reserve for ældre saves
+  const gamle = g.forrigeKvartalsmaal ?? minde?.maal ?? [];
   const h = g.historik[g.historik.length - 1];
   const hFoer = g.historik[g.historik.length - 2];
   const harInvestorer = g.investorer.runde !== 'ingen';
@@ -92,11 +94,11 @@ export default function QuarterDialog({ signal, onLuk }: { signal: Signal; onLuk
         </div>
 
         {/* Forrige kvartals mål */}
-        {minde && minde.maal.length > 0 && (
+        {gamle.length > 0 && (
           <section>
             <h3 className="mb-1 font-pixel text-xs font-black uppercase text-muted">Kvartalets mål</h3>
             <ul className="flex flex-col gap-1" data-testid="kvartal-gamle-maal">
-              {minde.maal.map((m) => {
+              {gamle.map((m) => {
                 const ok = evaluerForrigeMaal(g, m, h);
                 return (
                   <li key={m.id} className="flex min-h-10 items-center gap-2 rounded border-2 border-line bg-bg2 px-2 py-1">

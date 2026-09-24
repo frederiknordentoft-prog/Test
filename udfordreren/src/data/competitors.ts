@@ -37,7 +37,7 @@ export const COMPETITORS: CompetitorDef[] = [
   },
   {
     id: 'bet356', navn: 'bet356', brands: ['bet356'], arketype: 'globalGigant', arkivId: 'global-gigant-1',
-    markeder: ['dk', 'uk', 'se', 'de', 'nl', 'on', 'us'], vertikaler: ['betting', 'kasino'], styrke: [[0, 4], [ugeFor(2019, 0), 4.5]],
+    markeder: ['dk', 'uk', 'se', 'de', 'nl', 'on', 'us'], vertikaler: ['betting', 'kasino'], styrke: [[0, 4], [ugeFor(2019, 0), 4.3]],
     aggressivitet: 4, innovation: 4, opkoebslyst: 1, compliance: 4, fraUge: 0, farve: '#126e51', monogram: '356',
     startProdukter: [
       { navn: 'bet356 Live', typeId: 'livebetting', themeId: 'fodbold', kvalitet: 0.66, markeder: ['dk'] },
@@ -59,9 +59,24 @@ export const COMPETITORS: CompetitorDef[] = [
     fraUge: 0, farve: '#f26b1d', monogram: 'NB',
     startProdukter: [{ navn: 'NordikBet', typeId: 'prematch', themeId: 'haandbold', kvalitet: 0.54, markeder: ['dk'] }],
   },
+  {
+    id: 'lionVegas', navn: 'LionVegas', brands: ['LionVegas'], arketype: 'appFirst', arkivId: 'app-first-1',
+    markeder: ['dk', 'se', 'uk'], vertikaler: ['kasino', 'betting'], styrke: [[0, 3]], aggressivitet: 4, innovation: 4, opkoebslyst: 2, compliance: 3,
+    fraUge: 0, farve: '#f5a300', monogram: 'LV',
+    startProdukter: [{ navn: 'LionVegas Kasino', typeId: 'slotsAggregator', themeId: 'rigdom', kvalitet: 0.56, markeder: ['dk'] }],
+  },
+  {
+    id: 'komNu', navn: 'KomNu', brands: ['KomNu', 'Mr Grøn', 'Bet52'], arketype: 'lokalSpecialist', arkivId: 'lokal-specialist-1',
+    markeder: ['dk', 'se'], vertikaler: ['betting', 'kasino'], styrke: [[0, 2]], aggressivitet: 3, innovation: 2, opkoebslyst: 1, compliance: 3,
+    fraUge: 0, farve: '#2fae66', monogram: 'KN',
+    startProdukter: [
+      { navn: 'Bet52', typeId: 'prematch', themeId: 'fodbold', kvalitet: 0.5, markeder: ['dk'] },
+      { navn: 'Mr Grøn', typeId: 'slotsAggregator', themeId: 'natur', kvalitet: 0.52, markeder: ['dk'] },
+    ],
+  },
 ];
 
-/** Fase 1-2: kun Danske Lykke + 3 konkurrenter i dk (spec 9, fase 1). Resten af 7.4 kommer i fase 4. */
+/** Fase 1-2: Danske Lykke + 5 konkurrenter i dk (spec 9 kræver mindst 3). Resten af 7.4 kommer i fase 4. */
 export const COMPETITOR_IDS = COMPETITORS.map((c) => c.id);
 
 /** Grå offshore-aktør i andelene */

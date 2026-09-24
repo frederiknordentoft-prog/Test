@@ -31,21 +31,24 @@ export const BALANCE = {
   testFjernTeknik: 0.05,
   testFjernAnsvar: 0.04,
   // --- Energi og erfaring ---
-  energiTabProjekt: 4.5,
+  energiTabProjekt: 3.2,
   energiTabKontrakt: 4,
   energiHvile: 18,
   xpProjekt: 10,
   xpKontrakt: 8,
   // --- Markedsstandard (anmeldelser) ---
   /** Markedsstandard pr. parameter over tid [år, point] — stejl i garage-årene, flader ud senere */
-  standardKurve: [[2012, 92], [2013, 160], [2014, 225], [2015, 262], [2016, 300], [2018, 400], [2020, 480], [2022, 550], [2026, 680], [2030, 830], [2035, 1030]] as [number, number][],
+  standardKurve: [[2012, 92], [2013, 164], [2014, 225], [2015, 258], [2016, 310], [2017, 355], [2018, 385], [2019, 400], [2020, 410], [2022, 430], [2026, 495], [2030, 575], [2035, 675]] as [number, number][],
   standardKonkurrent: 0.5, // tillæg pr. kvalitet over 0.6 hos bedste konkurrent
   /** Logistisk kurve i q-rum: score = 1 + 9 / (1 + e^(−k·(q − q0))), q = 1 − e^(−ratio) */
   scoreK: 7.4,
-  scoreQ0: 0.583,
+  scoreQ0: 0.66,
   scoreStoej: 0.45,
   // --- Kunder ---
-  startKunderAndel: 0.0012,
+  /** Lanceringsbølge: andel af markedets kunder ved en gennemsnitlig anmeldelse (før anmeldelsesfaktor) */
+  startKunderAndel: 0.0022,
+  /** Andel af den ventende bølge, der kommer ind pr. uge */
+  boelgeFrigivelse: 0.5,
   hypeOrganisk: 0.000004, // pr. hype-point pr. uge (andel af markedet)
   top10Organisk: 0.00015,
   mundTilMund: 0.0015,
@@ -61,11 +64,13 @@ export const BALANCE = {
   lanceringsBoelge: 1.5,
   lanceringsBoelgeUger: 10,
   // --- Konkurrenter ---
-  oevrigeVaegt: 25, // ikke-simulerede licenserede aktører i dk
+  oevrigeVaegt: 15, // ikke-simulerede licenserede aktører i dk
   styrkeExp: 2.2,
   konkurrentHalveringGange: 3, // konkurrenters brands fornyes løbende
   konkurrentLanceringInterval: 1.6, // år ved innovation ~ 3
   maxProdukterPrVertikal: 3,
+  /** Konkurrenters faste tilgang = kunder × churn × denne faktor (loyale kunder) */
+  konkurrentTilgang: 0.35,
   // --- Hype ---
   hypeForfald: 0.96,
 } as const;

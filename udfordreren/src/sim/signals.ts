@@ -10,6 +10,9 @@ export function pauserFor(sig: Signal): boolean {
     case 'ledig':
       // Ledige pauser kun, når der ikke er et aktivt projekt at sætte dem på
       return sig.ingenOpgaver === true;
+    case 'top10':
+      // Første gang nogensinde og nye top 3-placeringer; ellers blot en toast
+      return sig.foersteGang === true || sig.placering <= 3;
     case 'klar':
     case 'anmeldelse':
     case 'messeVarsel':
@@ -18,7 +21,6 @@ export function pauserFor(sig: Signal): boolean {
     case 'event':
     case 'licens':
     case 'nr1':
-    case 'top10':
     case 'slut':
     case 'advarsel':
       return true;

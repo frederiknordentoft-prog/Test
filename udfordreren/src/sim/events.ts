@@ -15,10 +15,15 @@ export function udloesEvent(s: GameState, eventId: string, ctx: Record<string, s
   signal(s, { k: 'event', eventId });
 }
 
+export const EVENT_COOLDOWN = 26;
+export const EVENT_MELLEMRUM = 4;
+
 function opfylderKrav(s: GameState, e: EventDef): boolean {
   const aar = aarFor(s.uge);
   if (aar < e.fraAar || aar > e.tilAar) return false;
   if (e.engang && s.eventLog.some((l) => l.eventId === e.id)) return false;
+  const cd = e.cooldownUger ?? EVENT_COOLDOWN;
+  if (s.eventLog.some((l) => l.eventId === e.id && s.uge - l.uge < cd)) return false;
   const k = e.kraever;
   if (!k) return true;
   if (k.flagIkke && k.flagIkke.some((f) => s.flags.includes(f))) return false;
@@ -42,6 +47,9 @@ export function ugentligeEvents(s: GameState, rng: Rng): void {
   }
   if (s.ventendeEvents.length > 0) return;
   if (s.uge < 6) return; // lad garagen komme i gang først
+  // Mindst fire uger mellem tilfældige events
+  const sidste = s.eventLog.length ? s.eventLog[s.eventLog.length - 1].uge : -99;
+  if (s.uge - sidste < EVENT_MELLEMRUM) return;
   for (const e of EVENTS) {
     if (e.trigger !== 'tilfaeldig' && e.trigger !== 'medarbejder') continue;
     if (!opfylderKrav(s, e)) continue;
@@ -61,7 +69,7 @@ export function ugentligeEvents(s: GameState, rng: Rng): void {
 
 export function effektTekst(eff: EventEffect): string[] {
   const t: string[] = [];
-  const fmt = (v: number) => (v > 0 ? `+${v}` : `${v}`);
+  const fmt = (v: number) => (v > 0 ? '+' : v < 0 ? '−' : '') + String(Math.abs(v)).replace('.', ',');
   if (eff.kapital) t.push(`${eff.kapital > 0 ? '+' : '−'}${Math.round(Math.abs(eff.kapital) * 1000)} t. kr.`);
   if (eff.indsigt) t.push(`${fmt(eff.indsigt)} indsigt`);
   if (eff.hype) t.push(`${fmt(eff.hype)} hype`);
@@ -71,6 +79,7 @@ export function effektTekst(eff: EventEffect): string[] {
   if (eff.kunderPct) t.push(`${fmt(Math.round(eff.kunderPct * 100))} % kunder`);
   if (eff.marketingPct) t.push(`marketing ${fmt(Math.round(eff.marketingPct * 100))} %`);
   if (eff.pres) t.push(`investorpres ${fmt(eff.pres)}`);
+  if (eff.marketingMin) t.push(`mindst ${Math.round(eff.marketingMin * 1000)} t. kr./uge i marketing`);
   if (eff.vaerdiPct) t.push(`værdiansættelse ${fmt(Math.round(eff.vaerdiPct * 100))} %`);
   if (eff.staffLoenPct) t.push(`løn ${fmt(Math.round(eff.staffLoenPct * 100))} %`);
   if (eff.staffForlader) t.push('medarbejderen forlader firmaet');
@@ -99,6 +108,10 @@ export function eventChoice(s: GameState, eventId: string, valg: number): boolea
   if (e.flag) saetFlag(s, e.flag);
   if (e.vaerdiPct) s.investorer.vaerdiBonus += e.vaerdiPct;
   if (e.marketingPct) for (const k of CHANNEL_IDS) s.marketingMix[k] = Math.max(0, Math.round(s.marketingMix[k] * (1 + e.marketingPct) * 1000) / 1000);
+  if (e.marketingMin) {
+    const total = CHANNEL_IDS.reduce((a, k) => a + s.marketingMix[k], 0);
+    if (total < e.marketingMin) s.marketingMix.soeg = Math.round((s.marketingMix.soeg + e.marketingMin - total) * 1000) / 1000;
+  }
   const staffId = typeof pending.ctx.staffId === 'string' ? pending.ctx.staffId : undefined;
   const m = staffId ? s.staff.find((x) => x.id === staffId) : undefined;
   if (m && e.staffLoenPct) {

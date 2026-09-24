@@ -9,7 +9,7 @@ import { MARKETS, MARKET_IDS } from '../../data/markets';
 import { PRODUCT_TYPES } from '../../data/productTypes';
 import { THEMES } from '../../data/themes';
 import { ugeIAar, aarFor } from '../../sim/time';
-import { mioKort } from '../format';
+import { heltal, mioKort } from '../format';
 import { dkRangliste } from '../lib/firmaHjaelp';
 
 function Bevaegelse({ e }: { e: ChartEntry }) {
@@ -83,8 +83,9 @@ function Raekke({ e, p, g }: { e: ChartEntry; p: LiveProduct | undefined; g: Gam
         </span>
       </span>
       <span className="text-right">
-        <span className="tal block font-pixel text-sm font-bold text-gold">{mioKort(p.bsiPrUge.dk ?? 0)}</span>
-        <span className="block text-[0.62rem] uppercase text-dim">BSI/uge</span>
+        <span className="tal block font-pixel text-sm font-bold text-sky" title="Nye spillere denne uge">{heltal(p.nyeSpillerePrUge?.dk ?? 0)}</span>
+        <span className="block text-[0.62rem] uppercase text-dim">nye/uge</span>
+        <span className="tal hidden text-[0.62rem] text-gold @md:block" title="BSI denne uge">{mioKort(p.bsiPrUge.dk ?? 0)} BSI</span>
       </span>
     </li>
   );
@@ -136,7 +137,7 @@ export default function ChartPanel() {
           <h3 className="font-pixel text-base font-black uppercase tracking-wide text-ink">
             Ugens Top 10 <span className="text-gold">— {MARKETS[marked].navn}</span>
           </h3>
-          <span className="hidden text-xs text-dim @md:inline">Sorteret efter BSI denne uge</span>
+          <span className="hidden text-xs text-dim @md:inline">Sorteret efter ugens nye spillere</span>
         </div>
 
         {liste.length === 0 ? (
@@ -155,7 +156,7 @@ export default function ChartPanel() {
             <span className="min-w-0">
               Jeres bedste uden for listen: <b className="text-gold">{udenfor.navn}</b> som nr. <b className="tal">{bedsteUdenfor + 1}</b>.
               {nr10 && (
-                <span className="text-muted"> Mangler {mioKort(Math.max(0, (nr10.bsiPrUge.dk ?? 0) - (udenfor.bsiPrUge.dk ?? 0)))} BSI/uge til nr. 10.</span>
+                <span className="text-muted"> Mangler {heltal(Math.max(0, (nr10.nyeSpillerePrUge?.dk ?? 0) - (udenfor.nyeSpillerePrUge?.dk ?? 0)))} nye spillere/uge til nr. 10.</span>
               )}
             </span>
           </div>
@@ -167,7 +168,7 @@ export default function ChartPanel() {
             </p>
           )
         )}
-        <p className="text-xs text-dim">Hitlisten opdateres hver uge. Friske produkter med god anmeldelse og mange kunder klatrer.</p>
+        <p className="text-xs text-dim">Listen tæller ugens nye spillere pr. produkt. En lancering med god anmeldelse og hype kan storme listen; bagefter glider den ned, medmindre marketing og kunderne holder den oppe.</p>
       </div>
     </Panel>
   );

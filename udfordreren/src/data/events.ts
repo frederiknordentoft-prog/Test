@@ -15,6 +15,7 @@ export type EventEffect = {
   staffLoenPct?: number; // ctx.staffId får lønstigning
   staffEnergi?: number;
   marketingPct?: number; // alle marketingkanaler ganges med (1 + x)
+  marketingMin?: number; // mindst så meget samlet marketing pr. uge bagefter (lægges på søgning)
   vaerdiPct?: number; // værdiansættelse
 };
 
@@ -29,6 +30,8 @@ export type EventDef = {
   tilAar: number;
   chancePrUge: number; // for 'tilfaeldig' og 'medarbejder'
   engang: boolean;
+  /** Uger før samme event kan komme igen (standard 26) */
+  cooldownUger?: number;
   kraever?: { flagIkke?: string[]; flag?: string[]; kontor?: OfficeTier[]; minKunder?: number; runde?: boolean; minStaff?: number };
   valg: { tekst: string; forklaring: string; effekt: EventEffect }[];
 };
@@ -125,7 +128,7 @@ export const EVENTS: EventDef[] = [
     id: 'investorPres', titel: 'Bestyrelsen er utålmodig', trigger: 'investorPres', fraAar: 2012, tilAar: 2035, chancePrUge: 0, engang: false,
     tekst: 'Investorerne har set kvartalstallene og kræver en plan. Stemningen på bestyrelsesmødet er kølig.',
     valg: [
-      { tekst: 'Skru op for marketing', forklaring: 'Marketing +30 %. Vækst koster.', effekt: { marketingPct: 0.3, pres: -1.5 } },
+      { tekst: 'Skru op for marketing', forklaring: 'Marketing +30 % (mindst 50 t. kr./uge). Vækst koster.', effekt: { marketingPct: 0.3, marketingMin: 0.05, pres: -1.5 } },
       { tekst: 'Skær i omkostningerne', forklaring: 'Marketing −30 % og stram styring. Holdet mærker det.', effekt: { marketingPct: -0.3, energiAlle: -15, pres: -1.5 } },
       { tekst: 'Lov bedre tal næste kvartal', forklaring: 'Køber tid. Værdiansættelsen falder lidt.', effekt: { vaerdiPct: -0.05, pres: -0.5 } },
     ],
@@ -152,7 +155,7 @@ export const EVENTS: EventDef[] = [
     id: 'serverTilbud', titel: 'Billig serverplads', trigger: 'tilfaeldig', fraAar: 2012, tilAar: 2020, chancePrUge: 0.006, engang: true,
     tekst: 'En hostingudbyder tilbyder et års serverplads til halv pris, hvis I skriver under i dag.',
     valg: [
-      { tekst: 'Skriv under', forklaring: 'Et års lavere driftsudgifter og bedre oppetid.', effekt: { kapital: -0.05, indsigt: 3, flag: 'server' } },
+      { tekst: 'Skriv under', forklaring: 'Stabil drift: 10 % færre fejl i alle fremtidige projekter.', effekt: { kapital: -0.05, indsigt: 3, flag: 'server' } },
       { tekst: 'Vi bliver hos white-label', forklaring: 'Ingen ændring.', effekt: {} },
     ],
   },

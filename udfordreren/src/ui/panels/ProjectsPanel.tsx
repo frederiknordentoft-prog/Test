@@ -149,7 +149,7 @@ function MarkedChips({ g, p }: { g: GameState; p: Project }) {
 }
 
 function Parametre({ g, p }: { g: GameState; p: Project }) {
-  const std = markedsStandard(g, p.typeId, p.markeder);
+  const std = markedsStandard(g, p.typeId, p.markeder, p.startUge);
   const hoejest = Math.max(...PARAM_KEYS.map((k) => p.params[k]));
   const skala = Math.max(std * 1.6, hoejest * 1.1, 1);
   const pris = boostPris(p);
