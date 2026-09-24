@@ -16,17 +16,22 @@ export type PanelId = 'projekter' | 'personale' | 'kontrakter' | 'hitliste' | 'p
 type UiStore = {
   panel: PanelId;
   dialog: UiDialog | null;
+  /** Knuds råd, som spilleren har lukket (id → spiluge). De vender tilbage efter et stykke tid, hvis de stadig gælder. */
+  afvisteTips: Record<string, number>;
   setPanel(p: PanelId): void;
   aabn(d: UiDialog): void;
   luk(): void;
+  afvisTip(id: string, uge: number): void;
 };
 
 export const useUi = create<UiStore>((set) => ({
   panel: 'projekter',
   dialog: null,
+  afvisteTips: {},
   setPanel: (panel) => set({ panel }),
   aabn: (dialog) => set({ dialog }),
   luk: () => set({ dialog: null }),
+  afvisTip: (id, uge) => set((s) => ({ afvisteTips: { ...s.afvisteTips, [id]: uge } })),
 }));
 
 export const erDebug = (): boolean => {

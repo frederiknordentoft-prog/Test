@@ -5,8 +5,9 @@ import type { Action, GameState, NewGameOptions, Signal } from '../sim/types';
 import { newGame } from '../sim/init';
 import { applyAction, step, stepMut } from '../sim/step';
 import { pauserFor, pauseTekst } from '../sim/signals';
-import { AI_AKT_UGE, ugeIAar } from '../sim/time';
+import { AI_AKT_UGE, aarFor, ugeIAar } from '../sim/time';
 import { autoloesEvents } from '../sim/events';
+import { spillerKunderTotal } from '../sim/customers';
 import { gem, gemSetting, hentSetting } from './persistence';
 
 export type Speed = 1 | 2 | 4;
@@ -22,7 +23,12 @@ export type Settings = {
   arkiv: boolean;
   /** Slå enkelte auto-pauser fra (nøgle = signal-kind) */
   autoPauseFra: string[];
+  /** Version af auto-pause-standarderne (til migrering af gemte indstillinger) */
+  autoPauseV?: number;
 };
+
+/** v2: "Licens godkendt" er en toast, ikke en pause (kan slås til igen under Indstillinger) */
+const AUTO_PAUSE_V = 2;
 
 export const DEFAULT_SETTINGS: Settings = {
   lyd: true,
@@ -30,11 +36,21 @@ export const DEFAULT_SETTINGS: Settings = {
   reduceretBevaegelse: typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
   tekstStoerrelse: 'normal',
   arkiv: true,
-  autoPauseFra: [],
+  autoPauseFra: ['licens'],
+  autoPauseV: AUTO_PAUSE_V,
 };
 
 /** Signaler, der åbner en dialog (spillet står stille, indtil den lukkes) */
-export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut'];
+export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor'];
+
+/** Dialoger med en afsløring (scoren tælles op, kuverterne åbnes): HUD'en fryses, til de er lukket */
+const AFSLOERING: Signal['k'][] = ['anmeldelse', 'galla'];
+
+/** HUD-tal, der fryses under en afsløring, så de ikke røber resultatet */
+export type HudTal = { kapital: number; indsigt: number; hype: number; kunder: number };
+function hudTal(g: GameState): HudTal {
+  return { kapital: g.kapital, indsigt: g.indsigt, hype: g.hype, kunder: spillerKunderTotal(g) };
+}
 
 /** Tidsur til render-interpolation (læses af canvas-loopet uden React-rerender) */
 export const clock = { sidsteTickMs: 0, ugeMs: 3000, tick: 0 };
@@ -57,6 +73,10 @@ type GameStore = {
   settings: Settings;
   /** Handlingslog (uge + handling) — til debug og replays */
   handlingslog: { uge: number; a: Action }[];
+  /** HUD-tal fra før en anmeldelse/galla (null = vis de levende tal) */
+  hudFrys: HudTal | null;
+  /** Ugen, hvor spilleren selv frigjorde holdet (lancering eller færdigtestet projekt) — så kommer der ingen "ledige"-pause */
+  frigjortUge: number | null;
 
   nytSpil(opts: NewGameOptions): void;
   indlaes(state: GameState): void;
@@ -87,8 +107,6 @@ function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
     case 'niveauOp': return { tekst: `Niveau ${sig.niveau}!`, kind: 'godt' };
     case 'kontraktFaerdig': return { tekst: `Opgave leveret: +${Math.round(sig.betaling * 1000)} t. kr., +${sig.indsigt} indsigt`, kind: 'godt' };
     case 'forskning': return { tekst: 'Forskning færdig', kind: 'godt' };
-    case 'kontor': return { tekst: 'Nyt kontor!', kind: 'godt' };
-    case 'runde': return { tekst: `Runde lukket: +${sig.kapital} mio. kr.`, kind: 'godt' };
     case 'licens': return { tekst: 'Licens godkendt!', kind: 'godt' };
     case 'klar': return { tekst: 'Et produkt er klar til lancering', kind: 'info' };
     default: return null;
@@ -104,6 +122,11 @@ export const useGame = create<GameStore>((set, get) => {
     const toasts = [...st.toasts];
     const grunde = new Set(st.pauseGrunde);
     let pause = st.paused;
+    let frigjortUge = st.frigjortUge;
+    // Holdet blev ledigt, fordi spilleren selv lancerede, eller fordi testen blev færdig
+    if (sig.some((s) => s.k === 'lanceret' || s.k === 'klar')) frigjortUge = ny.uge;
+    let hudFrys = st.hudFrys;
+    if (!hudFrys && st.game && sig.some((s) => AFSLOERING.includes(s.k))) hudFrys = hudTal(st.game);
     for (const s of sig) {
       if (DIALOG_SIGNALER.includes(s.k)) {
         if (s.k === 'messe' && s.stoerrelse === 0) continue;
@@ -112,6 +135,11 @@ export const useGame = create<GameStore>((set, get) => {
       const t = toastFor(s);
       if (t) toasts.push({ id: naesteId++, ...t });
       if (fraTick && pauserFor(s) && !st.settings.autoPauseFra.includes(s.k)) {
+        // Ledige lige efter egen lancering/færdig test: spilleren ved det godt — ingen pause, bare et nik
+        if (s.k === 'ledig' && frigjortUge !== null && ny.uge - frigjortUge <= 2) {
+          toasts.push({ id: naesteId++, tekst: 'Holdet er ledigt — start næste produkt eller tag en opgave.', kind: 'info' });
+          continue;
+        }
         pause = true;
         const g = pauseTekst(s);
         if (g) grunde.add(g);
@@ -126,13 +154,16 @@ export const useGame = create<GameStore>((set, get) => {
       paused: pause,
       pauseGrunde: [...grunde],
       tick: fraTick ? st.tick + 1 : st.tick,
+      hudFrys,
+      frigjortUge,
     });
     if (fraTick) {
       clock.tick += 1;
       clock.sidsteTickMs = performance.now();
       clock.ugeMs = ugeVarighedMs(ny.uge, st.speed);
-      // Autosave hvert kvartal
-      if (ugeIAar(ny.uge) % 13 === 0) void gem('auto', ny);
+      // Autosave hvert kvartal — og straks, når en dialog (fx et event) venter, så et reload ikke mister den
+      const dialogVenter = sig.some((s) => DIALOG_SIGNALER.includes(s.k));
+      if (!ny.slut && (dialogVenter || ugeIAar(ny.uge) % 13 === 0)) void gem('auto', ny);
     }
   }
 
@@ -147,21 +178,23 @@ export const useGame = create<GameStore>((set, get) => {
     toasts: [],
     settings: DEFAULT_SETTINGS,
     handlingslog: [],
+    hudFrys: null,
+    frigjortUge: null,
 
     nytSpil(opts) {
       const g = newGame(opts);
-      set({ game: g, paused: false, pauseGrunde: [], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], speed: 1 });
+      set({ game: g, paused: false, pauseGrunde: [], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], speed: 1, hudFrys: null, frigjortUge: null });
       clock.sidsteTickMs = performance.now();
       clock.ugeMs = ugeVarighedMs(0, 1);
     },
     indlaes(state) {
-      set({ game: { ...state, signaler: [] }, paused: true, pauseGrunde: ['Spil indlæst'], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [] });
+      set({ game: { ...state, signaler: [] }, paused: true, pauseGrunde: ['Spil indlæst'], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], hudFrys: null, frigjortUge: null });
       // Genopret ventende events som dialoger (reload midt i et event)
       const d: SignalDialog[] = state.ventendeEvents.map((e) => ({ id: naesteId++, signal: { k: 'event', eventId: e.eventId } }));
       if (d.length) set({ dialoger: d });
     },
     lukSpil() {
-      set({ game: null, paused: true, dialoger: [], toasts: [], pauseGrunde: [] });
+      set({ game: null, paused: true, dialoger: [], toasts: [], pauseGrunde: [], hudFrys: null, frigjortUge: null });
     },
     dispatch(a) {
       const g = get().game;
@@ -200,7 +233,8 @@ export const useGame = create<GameStore>((set, get) => {
     },
     lukDialog(id) {
       const rest = get().dialoger.filter((d) => d.id !== id);
-      set({ dialoger: rest });
+      const frys = rest.some((d) => AFSLOERING.includes(d.signal.k));
+      set({ dialoger: rest, hudFrys: frys ? get().hudFrys : null });
     },
     toast(tekst, kind = 'info') {
       set({ toasts: [...get().toasts, { id: naesteId++, tekst, kind }].slice(-6) });
@@ -215,7 +249,16 @@ export const useGame = create<GameStore>((set, get) => {
     },
     async indlaesSettings() {
       const s = await hentSetting<Partial<Settings>>('settings');
-      if (s) set({ settings: { ...DEFAULT_SETTINGS, ...s } });
+      if (!s) return;
+      const settings: Settings = { ...DEFAULT_SETTINGS, ...s };
+      if (!Array.isArray(settings.autoPauseFra)) settings.autoPauseFra = [...DEFAULT_SETTINGS.autoPauseFra];
+      // Ældre gemte indstillinger: indfør de nye standarder for auto-pause én gang
+      if ((s.autoPauseV ?? 1) < AUTO_PAUSE_V) {
+        settings.autoPauseFra = [...new Set([...settings.autoPauseFra, 'licens'])];
+        settings.autoPauseV = AUTO_PAUSE_V;
+        void gemSetting('settings', settings);
+      }
+      set({ settings });
     },
     debugSaet(fn) {
       const g = get().game;
@@ -230,12 +273,23 @@ export const useGame = create<GameStore>((set, get) => {
       const maal = (aar - 2012) * 52;
       g = structuredClone(g);
       while (g.uge < maal && !g.slut) {
+        // Debug-hoppet skal nå frem: hold firmaet i live (ellers går et passivt spil konkurs undervejs)
+        if (g.kapital < 1) g.kapital = 1;
+        g.negativUger = 0;
         autoloesEvents(g);
         stepMut(g, []);
       }
       autoloesEvents(g);
       g.signaler = [];
-      set({ game: g, dialoger: [], paused: true, pauseGrunde: [`Hoppet til ${aar}`] });
+      const slut = g.slut;
+      set({
+        game: g,
+        dialoger: slut ? [{ id: naesteId++, signal: { k: 'slut', id: slut.id } }] : [],
+        paused: true,
+        pauseGrunde: [slut ? `Spillet endte i ${aarFor(g.uge)}` : `Hoppet til ${aar}`],
+        hudFrys: null,
+        frigjortUge: null,
+      });
     },
   };
 });

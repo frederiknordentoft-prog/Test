@@ -45,6 +45,18 @@ const IKONER: Record<string, string[]> = {
   krone: ['........', '#..##..#', '##.##.##', '########', '#oooooo#', '########', '########', '........'],
   bille: ['.#....#.', '..#..#..', '..####..', '#.#oo#.#', '.######.', '#.#oo#.#', '.######.', '#..##..#'],
   doer: ['.######.', '.#oooo#.', '.#oooo#.', '.#oooo#.', '.#oo#o#.', '.#oooo#.', '.#oooo#.', '########'],
+  // + dev-sporet: projekter, kombinationsbog, anmeldelser
+  terning: ['.######.', '#oooooo#', '#o#oo#o#', '#oooooo#', '#oooooo#', '#o#oo#o#', '#oooooo#', '.######.'],
+  spoergsmaal: ['..####..', '.##..##.', '.....##.', '....##..', '...##...', '...##...', '........', '...##...'],
+  raket: ['...##...', '..####..', '..#oo#..', '..####..', '..####..', '.######.', '#.####.#', '...##...'],
+  plus: ['........', '...##...', '...##...', '.######.', '.######.', '...##...', '...##...', '........'],
+  streg: ['........', '........', '........', '.######.', '.######.', '........', '........', '........'],
+  // + firma-sporet: personale, marked, firma og kalender
+  kalender: ['.#....#.', '########', '########', '#oooooo#', '#o#o#oo#', '#oooooo#', '#o#oo#o#', '########'],
+  kolbe: ['..####..', '...##...', '...##...', '..#oo#..', '.#oooo#.', '#oo##oo#', '#o####o#', '########'],
+  noegle: ['..####..', '.#o##o#.', '.#o##o#.', '..####..', '...##...', '...###..', '...##...', '...###..'],
+  taske: ['..####..', '..#..#..', '########', '#oooooo#', '########', '#oooooo#', '#oooooo#', '########'],
+  stjerneTom: ['...##...', '...##...', '########', '.#oooo#.', '..#oo#..', '.##..##.', '.#....#.', '........'],
 };
 
 export type IkonNavn = keyof typeof IKONER;
@@ -91,7 +103,7 @@ export function Btn({
       aria-label={ariaLabel}
       data-testid={testId}
       className={`inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-line font-bold select-none transition-[transform,filter] duration-75 ${
-        lille ? 'min-h-9 px-2.5 text-sm' : 'min-h-11 px-3.5'
+        lille ? 'min-h-9 px-2.5 text-sm' : 'min-h-[44px] px-3.5'
       } ${BTN_FARVER[variant]} ${variant === 'ghost' ? '' : 'pixel-skygge active:translate-y-[2px] active:shadow-none'} disabled:cursor-not-allowed disabled:opacity-40 disabled:active:translate-y-0 ${className}`}
     >
       {children}
@@ -169,20 +181,65 @@ export function Monogram({ tekst, farve, str = 28 }: { tekst: string; farve: str
   );
 }
 
+const FOKUSERBAR = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** Er dette den øverste åbne dialog? (fx en signal-dialog oven på en åben menu) */
+function erOeverst(el: HTMLElement | null): boolean {
+  const alle = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+  return alle.length === 0 || alle[alle.length - 1] === el;
+}
+
 export function Modal({
   titel, onLuk, children, bredde = 560, lukbar = true, testId, fod,
 }: { titel: ReactNode; onLuk?: () => void; children: ReactNode; bredde?: number; lukbar?: boolean; testId?: string; fod?: ReactNode }) {
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
+  const lukRef = useRef<{ lukbar: boolean; onLuk?: () => void }>({ lukbar, onLuk });
+  useEffect(() => {
+    lukRef.current = { lukbar, onLuk };
+  }, [lukbar, onLuk]);
+
+  // Fokus: selve dialogen (ikke dens første knap — så mellemrum/Enter ikke vælger noget ved et uheld).
+  // Tab holdes inde i den øverste dialog, og fokus gives tilbage til det, der havde det før, når dialogen lukkes.
   useEffect(() => {
     const el = ref.current;
-    el?.querySelector<HTMLElement>('button, [href], input, select, textarea')?.focus();
+    const forrige = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    el?.focus({ preventScroll: true });
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && lukbar && onLuk) onLuk();
+      if (!el || !erOeverst(el)) return;
+      if (e.key === 'Escape') {
+        const { lukbar: kan, onLuk: luk } = lukRef.current;
+        if (kan && luk) luk();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const liste = [...el.querySelectorAll<HTMLElement>(FOKUSERBAR)].filter((x) => x.offsetParent !== null || x === document.activeElement);
+      if (liste.length === 0) {
+        e.preventDefault();
+        el.focus();
+        return;
+      }
+      const foerste = liste[0];
+      const sidste = liste[liste.length - 1];
+      const aktiv = document.activeElement;
+      const inde = aktiv instanceof Node && el.contains(aktiv);
+      if (e.shiftKey && (aktiv === foerste || aktiv === el || !inde)) {
+        e.preventDefault();
+        sidste.focus();
+      } else if (!e.shiftKey && (aktiv === sidste || !inde)) {
+        e.preventDefault();
+        foerste.focus();
+      }
     };
     window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, [lukbar, onLuk]);
+    return () => {
+      window.removeEventListener('keydown', key);
+      // Giv fokus tilbage (kun hvis elementet stadig findes og er synligt, og fokus ikke allerede er flyttet til en anden dialog)
+      const nu = document.activeElement;
+      const fokusErVaek = !nu || nu === document.body || (el?.contains(nu) ?? false);
+      if (forrige && fokusErVaek && forrige.isConnected && forrige.offsetParent !== null) forrige.focus({ preventScroll: true });
+    };
+  }, []);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-line/70 p-0 sm:items-center sm:p-4" role="presentation">
       <div
@@ -190,22 +247,27 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={id}
+        tabIndex={-1}
         data-testid={testId}
-        className="anim-pop flex max-h-[92dvh] w-full flex-col rounded-t-xl border-2 border-line bg-panel pixel-kant sm:rounded-xl"
+        className="anim-pop flex max-h-[92dvh] w-full flex-col rounded-t-xl border-2 border-line bg-panel pixel-kant outline-none sm:rounded-xl"
         style={{ maxWidth: bredde }}
       >
-        <header className="flex items-center justify-between gap-2 border-b-2 border-line bg-panel2 px-4 py-2.5 sm:rounded-t-xl">
+        <header className="flex items-center justify-between gap-2 border-b-2 border-line bg-panel2 px-4 py-1.5 sm:rounded-t-xl">
           <h2 id={id} className="font-pixel text-base font-bold uppercase tracking-wider">
             {titel}
           </h2>
           {lukbar && onLuk && (
-            <Btn variant="ghost" lille onClick={onLuk} ariaLabel="Luk" testId="modal-luk">
+            <Btn variant="ghost" onClick={onLuk} ariaLabel="Luk" testId="modal-luk" className="-mr-2 min-w-[44px] px-0">
               <Ikon navn="kryds" />
             </Btn>
           )}
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
-        {fod && <footer className="flex flex-wrap justify-end gap-2 border-t-2 border-line bg-bg2 px-4 py-3 sm:rounded-b-xl">{fod}</footer>}
+        <div className={`min-h-0 flex-1 overflow-y-auto p-4 ${fod ? '' : 'pb-[max(16px,env(safe-area-inset-bottom))] sm:pb-4'}`}>{children}</div>
+        {fod && (
+          <footer className="flex flex-wrap justify-end gap-2 border-t-2 border-line bg-bg2 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:rounded-b-xl sm:pb-3">
+            {fod}
+          </footer>
+        )}
       </div>
     </div>
   );
@@ -221,7 +283,7 @@ export function Faner<T extends string>({ valg, vaerdi, onSkift, className = '' 
           aria-selected={v.id === vaerdi}
           data-testid={`fane-${v.id}`}
           onClick={() => onSkift(v.id)}
-          className={`relative inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border-2 border-line px-3 font-pixel text-xs font-bold uppercase tracking-wide ${
+          className={`relative inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-md border-2 border-line px-3 font-pixel text-xs font-bold uppercase tracking-wide ${
             v.id === vaerdi ? 'bg-gold text-line' : 'bg-panel2 text-muted hover:text-ink'
           }`}
         >
@@ -251,7 +313,7 @@ export function Skyder({ min, max, trin = 1, vaerdi, onSkift, label, vis, testId
         step={trin}
         value={vaerdi}
         onChange={(e) => onSkift(Number(e.target.value))}
-        className="h-11 w-full cursor-pointer accent-[var(--color-gold)]"
+        className="h-[44px] w-full cursor-pointer accent-[var(--color-gold)]"
       />
     </div>
   );

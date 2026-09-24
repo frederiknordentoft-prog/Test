@@ -1,36 +1,22 @@
 // Små procedurale pixelportrætter (stiftere, mentoren) og en lille siddende figur til titelscenen.
 import { useMemo } from 'react';
+import type { Staff } from '../../sim/types';
+import { udseendeFor as spriteUdseende } from '../../render/sprites';
 
-const HUD = ['#f6d2ae', '#e8b58a', '#c98f5f', '#9d6a43', '#6b462c'];
-const HAAR = ['#2a1d16', '#5b3a1f', '#a4582c', '#d9b25f', '#1d2238', '#b8322e', '#e9e4d6'];
 type Stil = 'kort' | 'lang' | 'hanekam' | 'hue' | 'maane';
-const STILE: Stil[] = ['kort', 'lang', 'hanekam', 'hue', 'kort', 'lang'];
 
 export type Udseende = { hud: string; haar: string; stil: Stil; skjorte: string; briller: boolean; skaeg: boolean; hue: string };
 
-function rng(seed: number) {
-  let a = (seed * 2654435761) >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+/** Frisure i kontorets sprites (0 kort, 1 lang, 2 knold, 3 pjusket, 4 tyndhåret, 5 kasket) → portrættets stil */
+const STIL_FRA_FRISURE: Stil[] = ['kort', 'lang', 'kort', 'hanekam', 'maane', 'hue'];
 
-export function udseendeFor(seed: number, skjorte: string): Udseende {
-  const r = rng(seed + 17);
-  const pick = <T,>(xs: readonly T[]): T => xs[Math.floor(r() * xs.length) % xs.length];
-  return {
-    hud: pick(HUD),
-    haar: pick(HAAR.slice(0, 6)),
-    stil: pick(STILE),
-    skjorte,
-    briller: r() < 0.3,
-    skaeg: r() < 0.2,
-    hue: pick(['#ff6fae', '#5cb8ff', '#6ee07a', '#a58bff']),
-  };
+/**
+ * Portræt for en person (medarbejder eller stifter). Afledes af præcis samme udseende som figuren i
+ * pixelkontoret (src/render/sprites.ts), så en person ser ens ud overalt: titelskærm, kort, dialoger og kontor.
+ */
+export function portraetFor(m: Pick<Staff, 'navn' | 'udseende' | 'rolle'>): Udseende {
+  const u = spriteUdseende(m);
+  return { hud: u.hud, haar: u.haar, stil: STIL_FRA_FRISURE[u.frisure] ?? 'kort', skjorte: u.troeje, briller: u.briller, skaeg: u.skaeg, hue: u.kasket };
 }
 
 export const VETERAN: Udseende = { hud: '#e8b58a', haar: '#dfe2ea', stil: 'maane', skjorte: '#7b5a3c', briller: true, skaeg: true, hue: '#000' };

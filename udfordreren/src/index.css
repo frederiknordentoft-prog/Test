@@ -62,3 +62,37 @@ canvas.pixel { image-rendering: pixelated; image-rendering: crisp-edges; }
 .anim-pop { animation: pop-ind 180ms ease-out both; }
 .anim-glid { animation: glid-op 220ms ease-out both; }
 .anim-blink { animation: blink 1s steps(2) infinite; }
+
+/* ---------- Shell-sporet: layout-variant, ticker, titelscene, mentor ---------- */
+/* `bred:` = side om side (laptop/iPad landskab og telefon på langs). Samme brydepunkt som BRED_QUERY i useMedia.ts */
+@custom-variant bred {
+  @media (min-width: 1024px), (orientation: landscape) and (min-width: 640px) {
+    @slot;
+  }
+}
+
+.shell-uden-scrollbar { scrollbar-width: none; }
+.shell-uden-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes shell-marquee { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+.shell-ticker-spor { display: inline-flex; width: max-content; animation: shell-marquee var(--ticker-tid, 60s) linear infinite; will-change: transform; }
+.shell-ticker:hover .shell-ticker-spor,
+.shell-ticker:focus-within .shell-ticker-spor { animation-play-state: paused; }
+
+@keyframes shell-boble { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 1; } 70% { opacity: 1; } 100% { transform: translateY(-16px); opacity: 0; } }
+.shell-boble { animation: shell-boble 3.2s steps(16) infinite both; }
+@keyframes shell-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+.shell-stjerne { animation: shell-twinkle 3s steps(3) infinite; }
+@keyframes shell-flimmer { 0%, 44%, 50%, 100% { opacity: 1; } 46% { opacity: 0.75; } 52% { opacity: 0.85; } }
+.shell-flimmer { animation: shell-flimmer 4s steps(1) infinite; }
+@keyframes shell-neon { 0%, 80%, 84%, 88%, 100% { opacity: 1; } 82% { opacity: 0.25; } 86% { opacity: 0.4; } }
+.shell-neon { animation: shell-neon 5s steps(1) infinite; }
+@keyframes shell-tast { 50% { transform: translateY(-1px); } }
+.shell-tast { animation: shell-tast 0.7s steps(1) infinite; }
+@keyframes shell-svaev { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.shell-svaev { animation: shell-svaev 2.4s ease-in-out infinite; }
+
+/* Den globale `button { font: inherit }` ovenfor er ulagdelt og vinder derfor over Tailwinds utility-klasser
+   (font-pixel, text-sm, font-bold …) på alle knapper. revert-layer ruller tilbage til de lagdelte regler
+   (preflight arver stadig fonten), så klasserne på knapper virker som tiltænkt. */
+button { font: revert-layer; }

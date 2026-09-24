@@ -8,6 +8,7 @@ import QuarterDialog from './QuarterDialog';
 import EventDialog from './EventDialog';
 import ExpoDialog from './ExpoDialog';
 import MilestoneDialog from './MilestoneDialog';
+import FirmaMilepaelDialog from './FirmaMilepaelDialog';
 import EndDialog from './EndDialog';
 import NewProductDialog from './NewProductDialog';
 import AssignDialog from './AssignDialog';
@@ -31,6 +32,8 @@ export const SIGNAL_DIALOGER: Partial<Record<Signal['k'], ComponentType<SignalDi
   top10: MilestoneDialog,
   nr1: MilestoneDialog,
   slut: EndDialog,
+  runde: FirmaMilepaelDialog,
+  kontor: FirmaMilepaelDialog,
 };
 
 export const UI_DIALOGER: Record<UiDialog['kind'], ComponentType<UiDialogProps>> = {
