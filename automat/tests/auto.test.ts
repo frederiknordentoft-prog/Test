@@ -1,6 +1,6 @@
 // Autospin: the pure stop rules (order and boundaries), the loss-limit steps and the run validation.
 import { describe, it, expect } from 'vitest';
-import { AUTO_COUNTS, AUTO_LIMIT_X, AUTO_GAP, autoLimits, validAuto, autoStopReason, type AutoRun } from '../src/game/auto.ts';
+import { AUTO_COUNTS, AUTO_LIMIT_X, AUTO_GAP, autoLimits, autoLimitSteps, validAuto, autoStopReason, type AutoRun } from '../src/game/auto.ts';
 import { AUTO, AUTO_STOPS } from '../src/ui/autoCopy.ts';
 import { T } from '../src/present/schedule.ts';
 
@@ -49,32 +49,51 @@ describe('autoStopReason', () => {
       expect(spins).toBe(Math.min(100, x));
     }
   });
+  it('every offered limit can bind: a run of all losses stops at "loss" before its last spin', () => {
+    for (const st of [50, 200, 1000]) for (const n of AUTO_COUNTS) for (const l of autoLimits(st, n)) {
+      expect(l, `${n} spin at ${st}: ${l}`).toBeLessThan(n * st);
+      const r = run({ total: n, left: n, stakeOre: st, startBalanceOre: 1_000_000, lossLimitOre: l });
+      let bal = 1_000_000, why: string | null = null;
+      while (!(why = autoStopReason(r, ctx({ balanceOre: bal, stakeOre: st })))) { bal -= st; r.left--; }
+      expect(why, `${n} spin, limit ${l / st}×`).toBe('loss');
+      expect(r.left).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe('autoLimits / validAuto', () => {
   it('the counts, the × stake steps and the gap', () => {
     expect([...AUTO_COUNTS]).toEqual([10, 25, 50, 100]);
-    expect([...AUTO_LIMIT_X]).toEqual([10, 25, 50, 100]);
+    expect([...AUTO_LIMIT_X]).toEqual([5, 10, 25, 50]);
     expect(AUTO_GAP).toBeGreaterThan(0);
     expect(AUTO_GAP).toBeLessThan(T.floor);
   });
-  it('limits in øre: × stake, up to the run length (a limit above the whole run could never bind)', () => {
-    expect(autoLimits(200, 10)).toEqual([2000]);
-    expect(autoLimits(200, 25)).toEqual([2000, 5000]);
-    expect(autoLimits(200, 50)).toEqual([2000, 5000, 10_000]);
-    expect(autoLimits(200, 100)).toEqual([2000, 5000, 10_000, 20_000]);
-    expect(autoLimits(50, 100)).toEqual([500, 1250, 2500, 5000]);
+  it('limits in øre: × stake, below the run length (a limit of the whole run or more could never bind)', () => {
+    expect(autoLimits(200, 10)).toEqual([1000]);
+    expect(autoLimits(200, 25)).toEqual([1000, 2000]);
+    expect(autoLimits(200, 50)).toEqual([1000, 2000, 5000]);
+    expect(autoLimits(200, 100)).toEqual([1000, 2000, 5000, 10_000]);
+    expect(autoLimits(50, 100)).toEqual([250, 500, 1250, 2500]);
     expect(autoLimits(0, 100)).toEqual([]);
     for (const n of AUTO_COUNTS) expect(autoLimits(200, n).length).toBeGreaterThanOrEqual(1); // a limit always exists
   });
+  it('the sheet always has the four steps; the ones a run length cannot use are marked', () => {
+    for (const n of AUTO_COUNTS) {
+      const s = autoLimitSteps(200, n);
+      expect(s.map((l) => l.ore)).toEqual(AUTO_LIMIT_X.map((x) => x * 200));
+      expect(s.filter((l) => l.ok).map((l) => l.ore)).toEqual(autoLimits(200, n));
+    }
+    expect(autoLimitSteps(200, 10).map((l) => l.ok)).toEqual([true, false, false, false]);
+  });
   it('validAuto: a listed count and one of its limits at this stake', () => {
-    expect(validAuto(25, 5000, 200)).toBe(true);
-    expect(validAuto(10, 2000, 200)).toBe(true);
-    expect(validAuto(10, 5000, 200)).toBe(false);
-    expect(validAuto(12, 2000, 200)).toBe(false);
-    expect(validAuto(25, 4999, 200)).toBe(false);
+    expect(validAuto(25, 2000, 200)).toBe(true);
+    expect(validAuto(10, 1000, 200)).toBe(true);
+    expect(validAuto(10, 2000, 200)).toBe(false); // (10 × stake on 10 spins: could never bind)
+    expect(validAuto(25, 5000, 200)).toBe(false);
+    expect(validAuto(12, 1000, 200)).toBe(false);
+    expect(validAuto(25, 1999, 200)).toBe(false);
     expect(validAuto(25, 0, 200)).toBe(false);
-    expect(validAuto(25, 5000, 0)).toBe(false);
+    expect(validAuto(25, 1000, 0)).toBe(false);
   });
 });
 

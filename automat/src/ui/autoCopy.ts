@@ -25,6 +25,10 @@ export const AUTO = {
   spinsLabel: 'Antal spin',
   limitLabel: 'Tabsgrænse',
   limitHint: (limitOre: number) => `Autospin stopper, før tabet i denne runde bliver større end ${fmtKr(limitOre)}.`,
+  /** A limit step this run length cannot use (dimmed in the sheet; its tooltip). */
+  limitOff: (spins: number) => `Ved ${spins} spin ville denne grænse aldrig stoppe autospin`,
+  /** The stake is not the one the sheet's limits were made for: the sheet shows the limits again. */
+  recheck: 'Indsatsen er ændret · vælg en tabsgrænse for den nye indsats',
   start: 'Start autospin',
   close: 'Luk',
   count: (n: number) => `${n} spin`,

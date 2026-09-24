@@ -56,14 +56,17 @@ class DomFlyer {
   remove(): void { gsap.killTweensOf(this.s); this.el.remove(); }
 }
 
-/** The award under way (born in the celebration, then the hero beat and its flight when there is no offer). */
-interface Cur { n: number; die: DieUnit | null; fast: boolean; fly: gsap.core.Tween | null; flying: boolean; go: (() => void) | null; hero: boolean; hold: gsap.core.Tween | null }
+/** The award under way (born in the celebration, then the hero beat and its flight when there is no offer).
+ *  end: fly()'s landing, for a drop before the flight (its waiter goes on; the count lands without a flight). */
+interface Cur { n: number; die: DieUnit | null; fast: boolean; fly: gsap.core.Tween | null; flying: boolean; go: (() => void) | null; hero: boolean; hold: gsap.core.Tween | null; end?: (() => void) | null }
 /** A Kvit eller dobbelt staging: the moment around the staged dice, from gambleStage to the end of gambleSettle. */
 interface Run {
   from: From; demo: boolean; k: number; m: DieMoment; fast: boolean;
   /** The result's own beat (split / frost), scheduled after the reveal; settle waits for it. */
   outcome: { timer: gsap.core.Tween | null; run: (fast: boolean) => void; done: Promise<void>; finished: boolean } | null;
   seq: gsap.core.Timeline | null; flights: gsap.core.Tween[]; payout: number;
+  /** Waiters on this staging that its end must release (flyAll): endRun() calls them. */
+  halts: (() => void)[];
 }
 
 export class DieAward extends Container {
@@ -167,16 +170,20 @@ export class DieAward extends Container {
   }
 
   /** "Vis terninger i spillet" turned off mid-award: the born (or staged) die fades where it is in 250 ms and the award
-   *  ends here (no flight, no landing: the Game moves the hidden count itself). A flight already under way lands. */
+   *  ends here (no flight, no landing: the Game moves the hidden count itself). Flights already under way, or still to
+   *  start in a settle, land at once (the niche is hidden): everything a settle() waits on resolves, so the Game goes
+   *  on to idle (the moment's own waiters resolve at its dispose). */
   drop(): void {
     const r = this.run;
     if (r) {
       this.run = null;
-      for (const f of r.flights) f.progress(1);
-      r.seq?.kill(); r.outcome?.timer?.kill();
+      r.seq?.progress(1); // (every flight of a settle under way starts now …)
+      for (const f of r.flights) f.progress(1); // (… and lands now)
+      r.outcome?.timer?.kill();
       const { dice } = r.m.release();
       for (const d of dice) gsap.to(d, { alpha: 0, duration: 0.25, onComplete: () => d.kill() });
       void r.m.fadeFx(0.25).then(() => r.m.dispose());
+      for (const h of r.halts.splice(0)) h();
     }
     const a = this.cur;
     if (!a || a.flying) return;
@@ -187,6 +194,9 @@ export class DieAward extends Container {
     const m = this.heroMoment;
     this.heroMoment = null;
     if (m) { const { dice } = m.release(); for (const x of dice) if (x !== d) gsap.to(x, { alpha: 0, duration: 0.25, onComplete: () => x.kill() }); void m.fadeFx(0.25).then(() => m.dispose()); }
+    const end = a.end;
+    a.end = null;
+    end?.(); // (a fly() still waiting for its flight goes on: the count lands without one)
     if (!d || d.destroyed) return;
     d.tl?.kill(); d.tl = null;
     gsap.killTweensOf([d.st, d]);
@@ -234,10 +244,12 @@ export class DieAward extends Container {
     let d = a.die;
     const calm = this.h.calm();
     return new Promise<void>((res) => {
-      const done = () => { this.cur = null; this.h.land(add, false); res(); };
+      const done = () => { a.end = null; if (this.cur === a) this.cur = null; this.h.land(add, false); res(); };
+      a.end = done;
       let lifted: { m: DieMoment; arrive: gsap.core.Tween; die: DieUnit } | null = null;
       a.go = () => {
         a.go = null;
+        a.end = null;
         a.hold?.kill(); a.hold = null;
         lifted?.arrive.kill();
         const m = lifted?.m ?? null;
@@ -320,14 +332,14 @@ export class DieAward extends Container {
       if (src && !src.destroyed) {
         const { m } = this.lift(src, { demo: o.demo, n: o.demo ? 0 : a?.n ?? 0, world: true });
         if (o.demo) { this.dim.position.set(m.anchor().x, m.anchor().y); }
-        this.run = { from: o.from, demo: o.demo, k: o.k, m, fast: false, outcome: null, seq: null, flights: [], payout: o.k };
+        this.run = { from: o.from, demo: o.demo, k: o.k, m, fast: false, outcome: null, seq: null, flights: [], payout: o.k, halts: [] };
         gsap.to(this.dim, { alpha: 0, duration: 0.4 });
         return;
       }
     }
     const held = o.from === 'held';
     const m = new DieMoment(host, this, { demo: o.demo, n: 0, world: !held });
-    this.run = { from: o.from, demo: o.demo, k: o.k, m, fast: false, outcome: null, seq: null, flights: [], payout: o.k };
+    this.run = { from: o.from, demo: o.demo, k: o.k, m, fast: false, outcome: null, seq: null, flights: [], payout: o.k, halts: [] };
     m.open();
     const c = Math.min(8, Math.max(1, o.k)), to = m.fanSlots(c);
     if (held) {
@@ -397,17 +409,17 @@ export class DieAward extends Container {
     }
     const r = this.run!;
     r.payout = payout;
-    // a result made elsewhere (another tab) gets its beat here; a beat still to come (the hold was cut short) runs
-    // now and hurried, one under way is hurried: all of it within 300 ms
+    // a result made elsewhere (another tab) gets its beat here, and a beat still to come runs now, hurried (≤ 300 ms);
+    // one under way plays out (the frost's snow falls to its end), unless the player skipped (then it is hurried too)
     if (!r.outcome && payout !== r.m.count()) this.schedule(r, 0);
     if (r.outcome && !r.outcome.finished) {
       if (r.outcome.timer) r.outcome.run(true);
-      r.m.hurry(0.3);
+      if (r.fast) r.m.hurry(0.3);
       await r.outcome.done;
     }
     if (this.run !== r) return; // dropped meanwhile
     const m = r.m;
-    if (payout <= 0) { await m.fadeFx(0.3); this.endRun(); return; }
+    if (payout <= 0) { await m.fadeFx(0.3); if (this.run === r) this.endRun(); return; }
     if (o.from === 'held' && !r.demo) {
       // the fan stays on stage as the held row; the outro flies it home
       const { dice, more } = m.release();
@@ -420,14 +432,14 @@ export class DieAward extends Container {
         this.addChild(this.more);
       }
       await m.fadeFx(r.fast ? 0.3 : 0.5);
-      this.endRun();
+      if (this.run === r) this.endRun();
       return;
     }
     const { dice } = m.release();
     const fade = m.fadeFx(r.fast ? 0.3 : 0.5);
     await this.flyAll(r, dice, payout);
     await fade;
-    this.endRun();
+    if (this.run === r) this.endRun();
   }
   /** Flights home one by one, MOMENT_T.gap apart (≤ 4; the last carries the rest as a brighter die). */
   private flyAll(r: Run, dice: DieUnit[], total: number): Promise<void> {
@@ -435,6 +447,7 @@ export class DieAward extends Container {
     const calm = this.h.calm();
     return new Promise<void>((res) => {
       let left = flights;
+      r.halts.push(res); // (ended under way: the settle goes on)
       const landed = () => { if (--left === 0) { if (r.demo) this.h.hud.demoDiceTag(total); res(); } };
       const seq = (r.seq = gsap.timeline());
       for (let f = 0; f < flights; f++) {
@@ -474,6 +487,7 @@ export class DieAward extends Container {
     r.outcome?.timer?.kill();
     r.seq?.kill();
     r.m.dispose();
+    for (const h of r.halts.splice(0)) h();
   }
 
   // ---------------------------------------------------------------- storm

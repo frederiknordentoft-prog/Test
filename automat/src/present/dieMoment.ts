@@ -4,9 +4,13 @@
 // awards: every display object is its own, every texture comes from the fixed dieFx / tex caches). It puts two
 // containers into the DieAward layer: `back` (a soft dim, two aurora ribbons, the corona of 18 additive ray wedges, the
 // ice ring, the far motes) under the dice, and `front` (the near motes, TERNING / NR. n, the six ice tablets, the pip
-// plate, the DEMO band) over them. It positions the staged dice every frame from its layout: centred horizontally and,
-// vertically, in the band between the bottom of the header / Kp arc and hud.gambleCardTop() (re-read every frame: the
-// card is a bottom sheet on phones), camera-zoom compensated, eased so that a card change never makes the die jump.
+// plate, the DEMO band) over them. It positions the staged dice every frame from its layout: centred in its column (the
+// whole width; landscape phones: the room left of the card, which stands in a right-hand column there) and, vertically,
+// in the band between the bottom of the header / Kp arc and hud.gambleCardTop() (re-read every frame: the card is a
+// bottom sheet on phones; beside a side card or with no card on a short landscape screen, the footer), camera-zoom
+// compensated, eased so that a card change never makes the die jump. While a moment lives (hud.setDieMoment),
+// :root.die-moment fades the DOM win strip (and, on short landscape screens, the deck's Saldo) that would otherwise
+// stand over the die and the tablets (a 0,6 s CSS ramp; the balance stays in the top bar), and banners wait for its end.
 //
 // Honesty (hard rules): the throw only presents a result committed at the choice press. The winning tablets are lit
 // statically from their first frame; the die tumbles at ONE constant tempo (4 turns and 11 hops in 2,75 s on the game
@@ -14,7 +18,10 @@
 // face. The drawn tablet lights once, at the reveal, never before. A loss is neutral: frost, fine cracks and snow in ice
 // blue; no red, no burst, no sting. Photosensitivity: every bright change is a ramp ≥ 300 ms (corona α ≤ .22, sky glow
 // floor, bloom), no w.flash(), no exposure. Calm: no tumble, rays, ribbons, ring, motes, bob, glint, shake, zoom or
-// particles: crossfades and static tablets.
+// particles: crossfades and static tablets. Calm is read live: switched on mid-moment, the motion stops and the FX that
+// move ramp out (0,4 s), the camera eases back and a tumbling die comes to rest.
+// Lifetime: every promise a caller waits on (fadeFx, frostOut) is resolved by dispose() at the latest, and every die the
+// moment made or took over to kill later is destroyed by dispose() too (nothing is stranded, nothing leaks).
 import { gsap } from 'gsap';
 import { Container, Sprite, Texture } from 'pixi.js';
 import { IsText } from '../render/modules.ts';
@@ -64,11 +71,26 @@ export class DieMoment {
   /** QA: 'lift' → 'wait' → 'throw' → 'result' → 'settle' (dice-check reads it through the stage tree). */
   phase: 'lift' | 'wait' | 'throw' | 'result' | 'settle' = 'lift';
   readonly demo: boolean;
-  readonly calm: boolean;
+  /** Live (the setting can change mid-moment); `full` is the snapshot at the start (the FX built for motion). */
+  get calm(): boolean { return this.h.calm(); }
+  private readonly full: boolean;
   /** Screen px: the anchor (die centre) and the die size, eased toward the layout. */
   ax = 0; ay = 0; S = 120;
-  /** QA: the band the die sits in (screen px). */
-  zoneTop = 0; zoneBottom = 0;
+  /** QA: the band the die sits in (screen px) and its column. */
+  zoneTop = 0; zoneBottom = 0; zoneLeft = 0; zoneRight = 0;
+  /** No room for the TERNING title between the DEMO band and the block: it stays hidden (the band labels the moment). */
+  private noTitle = false;
+  /** Dice this moment made or took over and still has to kill (a fan's thrown die, one handed to a fade): dispose()
+   *  kills whatever is left. */
+  private owned = new Set<DieUnit>();
+  /** Resolvers of the promises callers wait on: dispose() resolves them (a killed tween never strands a waiter). */
+  private waiters = new Set<() => void>();
+  /** The ambient motion clock (stops in calm) and the moving FX's level (ramps to 0 when calm comes on). */
+  private mt = 0;
+  private motion = { v: 1 };
+  private wasCalm: boolean;
+  /** Moments alive: hud.setDieMoment(true) while at least one is. */
+  private static live = 0;
   private tx = 0; private ty = 0; private tS = 120; private placed = false;
   private h: MomentHost;
   private layer: Container;
@@ -104,6 +126,7 @@ export class DieMoment {
   lv = { fx: 0, cor: 0.75, title: 0, nr: 0, tabs: 0, plate: 0, world: 0, fan: 1, shade: 0, deep: 0 };
   private base = { sky: 0, bloom: 1, zoom: 1 };
   private t = 0;
+  private titleK = 1;
   private bobOn = false;
   private sweepAt = 0;
   /** The throw's motion clock on the GAME clock (a gsap tween): u = seconds of tumble, 0 … throwEnd − throwIn. */
@@ -116,8 +139,11 @@ export class DieMoment {
     this.h = h;
     this.layer = layer;
     this.demo = o.demo;
-    this.calm = h.calm();
+    this.full = !h.calm();
+    this.wasCalm = !this.full;
+    this.motion.v = this.full ? 1 : 0;
     this.worldFx = o.world;
+    if (DieMoment.live++ === 0) h.hud.setDieMoment(true);
     this.back.label = 'dieMomentBack';
     this.front.label = 'dieMoment';
     this.shade.tint = 0x02040c;
@@ -127,7 +153,7 @@ export class DieMoment {
     this.dim.alpha = 0;
     this.back.addChild(this.shade, this.dim);
     this.cel = (h.w.stage.layers.banners.children.find((c) => c instanceof Celebration && c.visible && c.alpha > 0.01) as Celebration | undefined) ?? null;
-    if (!this.calm) {
+    if (this.full) {
       for (const [i, tint] of [PAL.teal, PAL.violet].entries()) {
         const r = new Sprite(ribbonTex());
         r.anchor.set(0.5);
@@ -203,9 +229,13 @@ export class DieMoment {
   }
 
   // ---------------------------------------------------------------- layout
-  /** The die's band on screen: from the bottom of the header / Kp arc to the top of the card (stage px). */
-  private zone(): { top: number; bottom: number } {
-    const hud = this.h.hud, host = hud.root.getBoundingClientRect(), H = this.h.w.stage.h;
+  /** The die's band and column on screen (stage px). The band runs from the bottom of the header / Kp arc down to the
+   *  top of the card (a bottom sheet on phones); beside a side card (short landscape screens: the card stands in a
+   *  right-hand column) and on those screens without a card, down to the footer (the win strip and the deck's Saldo
+   *  are faded there by :root.die-moment); elsewhere without a card (the no-offer hero beat), to the grid's bottom edge.
+   *  The column is the whole width, or the room left of a side card. */
+  private zone(): { top: number; bottom: number; left: number; right: number } {
+    const hud = this.h.hud, host = hud.root.getBoundingClientRect(), W = this.h.w.stage.w, H = this.h.w.stage.h;
     let top = 0;
     for (const id of ['hdr', 'slot-arc']) {
       const el = document.getElementById(id);
@@ -213,24 +243,34 @@ export class DieMoment {
       const r = el.getBoundingClientRect();
       if (r.height > 0 && r.width > 0 && r.bottom - host.top < H * 0.5) top = Math.max(top, r.bottom - host.top);
     }
-    // the gamble card's top (a bottom sheet on phones); no card (the no-offer hero beat): the grid's bottom edge
-    const card = hud.isShown('summary') && hud.summaryEl().classList.contains('gamble');
-    const g = this.h.w.gridRect;
-    const bottom = clamp(Math.min(H, top + 80), card ? hud.gambleCardTop() : Math.min(H * 0.8, g.y + g.size), H);
-    return { top: Math.min(top, bottom - 80), bottom };
+    const card = hud.isShown('summary') && hud.summaryEl().classList.contains('gamble') ? hud.gambleCardBox() : null;
+    let left = 0, right = W, bottom: number;
+    if (card?.side) { right = Math.max(W * 0.32, card.left - 8); bottom = hud.footTop() - 6; }
+    else if (card) bottom = card.top;
+    else if (hud.shortLandscape()) bottom = hud.footTop() - 6;
+    else { const g = this.h.w.gridRect; bottom = Math.min(H * 0.8, g.y + g.size); }
+    bottom = clamp(Math.min(H, top + 80), bottom, H);
+    return { top: Math.min(top, bottom - 80), bottom, left, right };
   }
-  /** The largest die that fits: clamp(120, 0.34·min(W,H), 260), with the whole block (the title over it, NR or the
-   *  tablets under it) inside the band at the camera's 1.04 push. */
+  /** The largest die that fits: clamp(120, 0.34·min(W,H), 260), with the whole block inside the band at the camera's
+   *  1.04 push: the title's top ≈ 0.8·S over the centre, and under it NR (≈ 0.7·S) while the die waits, the tablets'
+   *  foot (≈ 0.88·S) from the throw on. The DEMO band keeps the band's first 34 px; where the title would push the
+   *  die under 120 px there, the title stays hidden (the band labels the moment; the title never slides under it). */
   private measure(): void {
-    const w = this.h.w, W = w.stage.w, H = w.stage.h, z = this.calm ? 1 : 1.04;
-    const { top, bottom } = this.zone();
-    this.zoneTop = top; this.zoneBottom = bottom;
-    const t0 = Math.min(top + (this.band ? 34 : 0), bottom - 80); // the DEMO band keeps the band's first 34 px (never under the title)
+    const w = this.h.w, W = w.stage.w, H = w.stage.h, z = this.full ? 1 + 0.04 * this.motion.v : 1;
+    const { top, bottom, left, right } = this.zone();
+    this.zoneTop = top; this.zoneBottom = bottom; this.zoneLeft = left; this.zoneRight = right;
+    const tabs = !(this.phase === 'lift' || this.phase === 'wait'), k = tabs ? 1.78 : 1.6;
+    const t0 = top + (this.band ? 34 : 0);
+    const room = bottom - t0 - 16;
+    this.noTitle = !!this.band && room < k * z * 120; // (the title would push the die under the 120 px floor)
+    // without the title the block is the die's top (0.53·S, its bob included) over NR or the tablets' foot
+    const below = tabs ? 0.88 : 0.7;
     const want = clamp(120, 0.34 * Math.min(W, H), 260);
-    const fit = (bottom - t0 - 16) / (1.78 * z); // the block: the title's top ≈ 0.8·S over the centre, the tablets' foot ≈ 0.88·S under it
-    this.tS = Math.max(48, Math.min(want, fit, (W - 32) / 1.25));
-    this.tx = W / 2;
-    this.ty = (t0 + bottom) / 2;
+    const fit = room / ((this.noTitle ? 0.53 + below : k) * z);
+    this.tS = Math.max(48, Math.min(want, fit, (right - left - 32) / 1.25));
+    this.tx = (left + right) / 2;
+    this.ty = this.noTitle ? t0 + 8 + Math.max(0, room - (0.53 + below) * this.tS * z) / 2 + 0.53 * this.tS * z : (t0 + bottom) / 2;
     if (!this.placed) { this.placed = true; this.ax = this.tx; this.ay = this.ty; this.S = this.tS; }
   }
   /** Screen → layer px (the banners layer sits under the camera: zoom about the screen centre). */
@@ -262,7 +302,7 @@ export class DieMoment {
   }
   /** Fan slots for c dice (from the anchor, in units of S): one = the hero; 2–3 = a payout split; more = a fan (≤ 8). */
   fanSlots(c: number): FanTo[] {
-    const S = this.S, W = this.h.w.stage.w;
+    const S = this.S, W = this.zoneRight - this.zoneLeft;
     if (c <= 1) return [{ dx: 0, dy: 0, size: 1, rot: 0 }];
     const f = c <= 3 ? 0.72 : Math.max(0.42, 0.62 - (c - 4) * 0.03);
     const sp = Math.min(c <= 3 ? 0.84 * f : 0.62 * f, (W - 48 - f * S) / (c - 1) / S);
@@ -352,6 +392,7 @@ export class DieMoment {
       const A = this.anchor();
       d.position.set(A.x, A.y);
       this.thrower = d; this.ownThrower = true;
+      this.owned.add(d);
       this.put(d);
       this.track(gsap.to(d, { alpha: 1, duration: 0.25 }));
       this.track(gsap.to(this.lv, { fan: 0.35, duration: 0.3 }));
@@ -433,20 +474,21 @@ export class DieMoment {
     this.hop.on = false;
     if (!d || !this.ownThrower) return;
     this.ownThrower = false;
-    this.track(gsap.to(d, { alpha: 0, duration: dur, onComplete: () => d.kill() }));
+    this.track(gsap.to(d, { alpha: 0, duration: dur, onComplete: () => this.drop(d) }));
     this.track(gsap.to(this.lv, { fan: 1, duration: dur }));
   }
   /** Loss: the neutral returnTick; every staged die (and a fan's thrown die) frosts over, cracks and dissolves into
-   *  drifting snow while the FX ramp out. Resolves when all of it is gone. `fast`: ≤ 300 ms. */
+   *  snow that falls away across its face while the FX ramp out. Resolves when all of it is gone (the last flake
+   *  included: nothing of the loss lives on into idle). `fast`: ≤ 300 ms. */
   frostOut(fast: boolean): Promise<void> {
-    const a = this.h.w.audio, calm = this.calm, w = this.h.w;
+    const a = this.h.w.audio, calm = this.calm;
     this.phase = 'settle';
     a.play('returnTick', { gain: calm ? 0.55 : 0.8 });
     const own = this.thrower && this.ownThrower ? this.thrower : null;
     this.thrower = null; this.ownThrower = false; this.hop.on = false;
     const k = fast ? 0.3 / 1.6 : 1;
-    return new Promise<void>((res) => {
-      const tl = this.track(gsap.timeline({ onComplete: () => res() }));
+    return this.promise((res) => {
+      const tl = this.track(gsap.timeline({ onComplete: res }));
       tl.to(this.lv, { plate: 0, duration: 0.3 * k }, 0.45 * k);
       const units: { d: DieUnit; fade: object; key: 'a' | 'alpha'; grow: object | null }[] = [
         ...this.slots.map((s) => ({ d: s.d, fade: s, key: 'a' as const, grow: s })),
@@ -461,20 +503,17 @@ export class DieMoment {
           .to(u.fade, { [u.key]: 0, duration: 0.7 * k, ease: 'sine.in' }, 0.75 * k);
         if (u.grow && !calm && !fast) tl.to(u.grow, { k: 1.05, duration: 0.7, ease: 'sine.out' }, 0.75);
       }
-      if (own) tl.call(() => own.kill(), [], 1.46 * k);
+      if (own) tl.call(() => this.drop(own), [], 1.46 * k);
       if (!calm && !fast) {
-        const snow = () => {
-          for (const u of units) {
-            const d = u.d;
-            if (d.destroyed) continue;
-            const g = d.getGlobalPosition(), s = d.shown();
-            w.particles.emit('snow', g.x, g.y, Math.round(clamp(6, s / 12, 14)), { color: PAL.ice, speed: 30, spread: Math.PI * 2, angle: Math.PI / 2, gravity: 24, life: 2.4, size: clamp(0.35, s / 110, 0.8) });
-          }
-        };
-        tl.call(snow, [], 0.75).call(snow, [], 0.95).call(snow, [], 1.15);
+        // fine flakes from across the die's face (not its centre) while it dissolves, falling away 80–150 px against
+        // the still dimmed stage (the moment's own sprites, over its dim: the world's particle layer lies under it);
+        // no burst (a slow outward speed), ice blue; each lives ≤ 1,1 s, so the last one is gone when the timeline
+        // ends (1,95 s: nothing of it lives on into idle)
+        const snow = () => { for (const u of units) if (!u.d.destroyed) this.snow(u.d.x, u.d.y, u.d.shown(), units.length); };
+        tl.call(snow, [], 0.55).call(snow, [], 0.7).call(snow, [], 0.85).call(() => {}, [], 1.95);
       }
-      // the light comes back as a ramp ≥ 300 ms, also when hurried
-      tl.to(this.lv, { fx: 0, world: 0, cor: 0.5, title: 0, nr: 0, tabs: 0, shade: 0, duration: fast ? 0.3 : 0.6, ease: 'sine.inOut' }, fast ? 0 : 0.9);
+      // the light comes back as a ramp ≥ 300 ms, also when hurried (after the snow has fallen past the die)
+      tl.to(this.lv, { fx: 0, world: 0, cor: 0.5, title: 0, nr: 0, tabs: 0, shade: 0, duration: fast ? 0.3 : 0.6, ease: 'sine.inOut' }, fast ? 0 : calm ? 0.9 : 1.25);
     });
   }
   /** The FX, the words and the world ramps out (the dice stay for their flights); never faster than 300 ms. */
@@ -482,7 +521,54 @@ export class DieMoment {
     dur = Math.max(0.3, dur);
     this.phase = 'settle';
     this.bobOn = false;
-    return new Promise<void>((res) => { this.track(gsap.to(this.lv, { fx: 0, world: 0, title: 0, nr: 0, tabs: 0, plate: 0, shade: 0, duration: dur, ease: 'sine.inOut', onComplete: () => res() })); });
+    return this.promise((res) => { this.track(gsap.to(this.lv, { fx: 0, world: 0, title: 0, nr: 0, tabs: 0, plate: 0, shade: 0, duration: dur, ease: 'sine.inOut', onComplete: res })); });
+  }
+  /** A promise that resolves when `run`'s callback fires, or at dispose() at the latest. */
+  private promise(run: (res: () => void) => void): Promise<void> {
+    if (this.destroyed) return Promise.resolve();
+    return new Promise<void>((x) => {
+      const res = () => { if (this.waiters.delete(res)) x(); };
+      this.waiters.add(res);
+      run(res);
+    });
+  }
+  /** One fall of snow from a dissolving die (layer px): flakes spread over its face (jitter 0.4·size), drifting down. */
+  private snow(x: number, y: number, size: number, dice: number): void {
+    const n = Math.round(clamp(6, size / 12, 18) / Math.sqrt(Math.max(1, dice / 2)));
+    for (let i = 0; i < n; i++) {
+      const sp = new Sprite(softDot());
+      sp.anchor.set(0.5); sp.tint = PAL.ice; sp.blendMode = 'add'; sp.alpha = 0;
+      const ja = crand() * Math.PI * 2, jr = 0.4 * size * Math.sqrt(crand()), a = crand() * Math.PI * 2, v = 36 * (0.2 + 0.8 * crand());
+      const f = { sp, x: x + Math.cos(ja) * jr, y: y + Math.sin(ja) * jr, y0: 0, vx: Math.cos(a) * v, vy: Math.sin(a) * v + 18, age: 0, life: 1.1 * (0.62 + 0.38 * crand()), size: clamp(7, size / 22, 13) * (0.7 + 0.5 * crand()), seed: crand() * 30 };
+      f.y0 = f.y;
+      sp.position.set(f.x, f.y);
+      this.flakes.push(f);
+      this.front.addChild(sp);
+    }
+  }
+  /** The loss's snow (layer px; y0: where each flake was born, for QA). */
+  private flakes: { sp: Sprite; x: number; y: number; y0: number; vx: number; vy: number; age: number; life: number; size: number; seed: number }[] = [];
+  /** The snow's step (the game clock's FX time: a hit-stop freezes it): a light sway, soft gravity, little drag. */
+  private fall(dt: number): void {
+    if (!this.flakes.length) return;
+    const drag = Math.exp(-0.6 * dt);
+    this.flakes = this.flakes.filter((f) => {
+      f.age += dt;
+      if (f.age >= f.life) { f.sp.destroy(); return false; }
+      f.vx = (f.vx + Math.sin(f.age * 5 + f.seed) * 18 * dt) * drag;
+      f.vy = (f.vy + 200 * dt) * drag;
+      f.x += f.vx * dt; f.y += f.vy * dt;
+      const a = f.age / f.life;
+      f.sp.position.set(f.x, f.y);
+      f.sp.width = f.sp.height = f.size;
+      f.sp.alpha = 0.9 * Math.min(1, f.age * 10) * (1 - a * a); // (in quickly, holds, melts away at the end)
+      return true;
+    });
+  }
+  /** Kill a die this moment owns (a fan's thrown die, one handed to a fade). */
+  private drop(d: DieUnit): void {
+    this.owned.delete(d);
+    if (!d.destroyed) d.kill();
   }
   /** Every running tween of the moment ends within `s` seconds (a skip; never used on the throw). */
   hurry(s = 0.3): void {
@@ -523,6 +609,9 @@ export class DieMoment {
     if (this.destroyed) return;
     const w = this.h.w, calm = this.calm, fdt = clock.fxDt; // ambient motion freezes in a hit-stop
     this.t += fdt;
+    if (calm !== this.wasCalm) this.calmChanged(calm);
+    if (!calm) this.mt += fdt; // the ambient motion's clock stands still in calm
+    this.fall(fdt);
     this.measure();
     const k = 1 - Math.exp(-dt / 0.12);
     this.ax += (this.tx - this.ax) * k; this.ay += (this.ty - this.ay) * k; this.S += (this.tS - this.S) * k;
@@ -531,12 +620,12 @@ export class DieMoment {
     if (this.worldFx) {
       w.skyGlowFloor = Math.max(this.base.sky, lerp(this.base.sky, 0.42, lv.world));
       w.bloomCtl.strength = this.base.bloom + 0.25 * lv.world;
-      if (!calm) w.cam.zoom = this.base.zoom + 0.04 * lv.world;
+      if (this.full) w.cam.zoom = this.base.zoom + 0.04 * lv.world * this.motion.v; // (calm mid-moment: eases back)
     }
     const z = w.cam.zoom || 1, sl = S / z;
     const A = this.loc(this.ax, this.ay);
     // the staged dice
-    const bob = this.bobOn ? Math.sin(this.t * ((Math.PI * 2) / 2.4)) * 4 : 0;
+    const bob = this.bobOn ? Math.sin(this.mt * ((Math.PI * 2) / 2.4)) * 4 * this.motion.v : 0;
     for (const s of this.slots) {
       const d = s.d;
       if (d.destroyed) continue;
@@ -567,8 +656,8 @@ export class DieMoment {
       this.sweepAt = this.t + 1.4;
       for (const s of this.slots) { s.d.enableGlint(); s.d.sweep(0.5); }
     }
-    // FX
-    const fx = lv.fx;
+    // FX (the moving ones fade with the motion level when calm comes on mid-moment)
+    const fx = lv.fx, mfx = fx * this.motion.v, mt = this.mt;
     // the stage dim: 0.55 × shade (deepening to 0.68), less whatever a closing celebration still darkens (its dim is
     // 0.55 × its alpha)
     const L = (0.55 + 0.13 * lv.deep) * lv.shade, cel = this.cel && !this.cel.destroyed && this.cel.visible ? 0.55 * this.cel.alpha : 0;
@@ -580,36 +669,36 @@ export class DieMoment {
     this.dim.alpha = 0.64 * fx;
     for (const [i, r] of this.ribbons.entries()) {
       r.width = sl * 4.2; r.height = sl * 1.25;
-      r.position.set(A.x + Math.sin(this.t * 0.33 + i * 2.1) * sl * 0.2, A.y + (i ? 0.34 : -0.42) * sl);
-      r.rotation = (i ? 0.16 : -0.2) + Math.sin(this.t * 0.21 + i) * 0.05;
-      r.alpha = fx * (0.26 + 0.07 * Math.sin(this.t * 0.7 + i * 1.7));
+      r.position.set(A.x + Math.sin(mt * 0.33 + i * 2.1) * sl * 0.2, A.y + (i ? 0.34 : -0.42) * sl);
+      r.rotation = (i ? 0.16 : -0.2) + Math.sin(mt * 0.21 + i) * 0.05;
+      r.alpha = mfx * (0.26 + 0.07 * Math.sin(mt * 0.7 + i * 1.7));
     }
     for (const [i, n] of this.neb.entries()) {
-      const a = this.t * 0.4 + (i * Math.PI * 2) / 3;
+      const a = mt * 0.4 + (i * Math.PI * 2) / 3;
       n.position.set(A.x + Math.cos(a) * sl * 0.16, A.y + Math.sin(a) * sl * 0.1);
       n.width = n.height = sl * (i === 2 ? 1.7 : 2.3);
-      n.alpha = fx * (i === 2 ? 0.16 : 0.26) * (0.85 + 0.15 * Math.sin(this.t * 0.8 + i * 2));
+      n.alpha = mfx * (i === 2 ? 0.16 : 0.26) * (0.85 + 0.15 * Math.sin(mt * 0.8 + i * 2));
     }
     if (this.rays.length) {
       this.corona.position.set(A.x, A.y);
-      this.corona.rotation += fdt * 0.055;
+      if (!calm) this.corona.rotation += fdt * 0.055;
       const cs = 1 + 0.2 * clamp(0, (lv.cor - 0.75) / 0.25, 1);
       for (const r of this.rays) {
         r.sp.width = sl * r.wid;
-        r.sp.height = sl * r.len * cs * (1 + 0.06 * Math.sin(this.t * 0.9 + r.ph));
-        r.sp.alpha = Math.min(0.22, r.a * fx * (0.62 + 0.5 * lv.cor));
+        r.sp.height = sl * r.len * cs * (1 + 0.06 * Math.sin(mt * 0.9 + r.ph));
+        r.sp.alpha = Math.min(0.22, r.a * mfx * (0.62 + 0.5 * lv.cor));
       }
       this.ring.position.set(A.x, A.y);
       this.ring.width = this.ring.height = sl * this.ringS.r;
-      this.ring.alpha = this.ringS.a;
+      this.ring.alpha = this.ringS.a * this.motion.v;
       for (const m of this.motes) {
-        m.th += fdt * m.w;
+        if (!calm) m.th += fdt * m.w;
         const ea = sl * m.r * 0.95, eb = sl * m.r * 0.34, tilt = -0.2;
         const ex = Math.cos(m.th) * ea, ey = Math.sin(m.th) * eb, depth = Math.sin(m.th); // +1: nearest
         m.sp.position.set(A.x + ex * Math.cos(tilt) - ey * Math.sin(tilt), A.y + ex * Math.sin(tilt) + ey * Math.cos(tilt));
         const vis = m.front ? clamp(0, depth * 1.4 + 0.2, 1) : clamp(0, 1 - depth, 1);
         m.sp.width = m.sp.height = sl * m.base * (0.7 + 0.25 * (depth + 1)) * (m.star ? 1.5 : 1);
-        m.sp.alpha = fx * vis * (0.55 + 0.35 * Math.sin(this.t * 2.3 + m.tw)) * 0.9;
+        m.sp.alpha = mfx * vis * (0.55 + 0.35 * Math.sin(mt * 2.3 + m.tw)) * 0.9;
       }
     }
     // the words
@@ -617,7 +706,8 @@ export class DieMoment {
     if (this.title.size !== ts) this.title.size = ts;
     this.title.scale.set(1 / z);
     this.title.position.set(A.x, A.y - (S / 2 + 0.22 * S) / z);
-    this.title.alpha = lv.title;
+    this.titleK += ((this.noTitle ? 0 : 1) - this.titleK) * (1 - Math.exp(-dt / 0.15));
+    this.title.alpha = lv.title * this.titleK;
     if (this.nr) {
       const ns = Math.round(clamp(11, 0.085 * S, 19));
       if (this.nr.size !== ns) this.nr.size = ns;
@@ -633,7 +723,8 @@ export class DieMoment {
       this.moreText.alpha = this.slots.length ? Math.max(lv.fan, 0.4) * Math.max(...this.slots.map((s) => s.a)) : 0;
     }
     if (this.band) {
-      const W = w.stage.w, bh = 26, p = this.loc(W / 2, this.zoneTop + bh / 2 + 4);
+      // across the die's column (landscape phones: the room left of the card)
+      const W = this.zoneRight - this.zoneLeft, bh = 26, p = this.loc((this.zoneLeft + this.zoneRight) / 2, this.zoneTop + bh / 2 + 4);
       const [strip, l1, l2] = this.band.children as Sprite[];
       strip.width = W; strip.height = bh * 1.35;
       l1.width = l2.width = Math.min(W, 520); l1.height = l2.height = 1;
@@ -643,7 +734,7 @@ export class DieMoment {
     }
     // the tablets: a shallow arc under the die
     if (this.tabRoot.visible) {
-      const tb = Math.max(24, Math.min(0.28 * S, 56, (w.stage.w - 32) / 6.9)), gap = tb * 0.18, y = S / 2 + 0.1 * S + tb / 2;
+      const tb = Math.max(24, Math.min(0.28 * S, 56, (this.zoneRight - this.zoneLeft - 32) / 6.9)), gap = tb * 0.18, y = S / 2 + 0.1 * S + tb / 2;
       const n = this.tabs.length, mid = (n - 1) / 2, span = tb + gap;
       for (const [i, t] of this.tabs.entries()) {
         const u = (i - mid) / mid;
@@ -681,14 +772,28 @@ export class DieMoment {
     if (this.worldFx) {
       w.skyGlowFloor = this.base.sky;
       w.bloomCtl.strength = this.base.bloom;
-      if (!this.calm) w.cam.zoom = this.base.zoom;
+      if (this.full) w.cam.zoom = this.base.zoom;
     }
     w.audio.stopRattle();
     for (const s of this.slots) { gsap.killTweensOf(s); s.d.kill(); }
     this.slots = [];
-    if (this.thrower && this.ownThrower) this.thrower.kill();
+    for (const d of this.owned) if (!d.destroyed) d.kill(); // (a fan's thrown die mid-fade included)
+    this.owned.clear();
     this.thrower = null;
     this.back.destroy({ children: true });
     this.front.destroy({ children: true });
+    if (--DieMoment.live === 0) this.h.hud.setDieMoment(false);
+    // whoever waits on this moment goes on (its killed tweens would never have resolved them)
+    for (const res of Array.from(this.waiters)) res();
+  }
+  /** Calm switched mid-moment. On: the bob and the tumble stop (a thrown die rests in its pose), the moving FX ramp
+   *  out over 0,4 s and the camera eases back with them. Off: the motion comes back (as far as it was built). */
+  private calmChanged(calm: boolean): void {
+    this.wasCalm = calm;
+    gsap.killTweensOf(this.motion);
+    this.track(gsap.to(this.motion, { v: calm || !this.full ? 0 : 1, duration: 0.4, ease: 'sine.inOut' }));
+    if (!calm) return;
+    const d = this.thrower;
+    if (d && !d.destroyed && this.hop.on) { Object.assign(d.st, { rot: 0, flipX: 0, flipY: 0 }); d.apply(); }
   }
 }

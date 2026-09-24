@@ -10,7 +10,7 @@ import {
   helloCopy, helloHtml, firstDieCopy, firstDieDemoNote, firstDieHtml, unlockCardCopy, unlockCardHtml, CHAMBER, GATE_LABELS,
   chamberMyth, chamberFacts, chamberSummary, chamberRibbon, gateState, ceremonyEyebrow, srCeremonyStart, SR_CEREMONY_END, demoGateBanner,
   placardCopy, placardHtml, MENU, DRAWER, diceRulesHtml, type CeremonyKind, type GateState,
-  demoTag, GAMBLE, GAMBLE_FACTS, GAMBLE_FIRST_DIE, GAMBLE_THROW, GAMBLE_RESTORED, GAMBLE_NUMBERS_NOTE, DEMO_GAMBLE_BANNER, DEMO_PILL,
+  demoTag, GAMBLE, GAMBLE_FACTS, GAMBLE_FIRST_DIE, GAMBLE_THROW, GAMBLE_RESTORED, GAMBLE_NUMBERS_NOTE, DEMO_GAMBLE_SR, DEMO_PILL,
   gambleDemoNote, demoGambleDone, gambleSub, pipList, gambleOfferCopy, gambleCardHtml, gambleThrowHtml, gambleResultCopy, gambleResultHtml,
   srGambleKeep, gambleRulesP1, gambleRulesP2, faceGlyph, type GambleCardCtx,
   TIPS, GAMBLE_LOG, gambleLogResult, gambleLogRows,
@@ -62,7 +62,7 @@ const GK = [1, 2, 3, 7, 20];
 function gambleCopy(counts: number[]): { where: string; s: string }[] {
   const out: { where: string; s: string }[] = [];
   const add = (where: string, ...ss: (string | null | undefined)[]) => { for (const s of ss) if (s) out.push({ where, s }); };
-  add('gamble', ...values(GAMBLE), GAMBLE_FACTS, GAMBLE_THROW, ...values(GAMBLE_RESTORED), ...values(DEMO_GAMBLE_BANNER), ...values(DEMO_PILL), DRAWER.gamble, MENU.gambleSetting, MENU.gambleHint);
+  add('gamble', ...values(GAMBLE), GAMBLE_FACTS, GAMBLE_THROW, ...values(GAMBLE_RESTORED), DEMO_GAMBLE_SR, ...values(DEMO_PILL), DRAWER.gamble, MENU.gambleSetting, MENU.gambleHint);
   add('gamble log', GAMBLE_LOG.h, GAMBLE_LOG.intro, GAMBLE_LOG.empty, ...values(GAMBLE_LOG.head));
   // "Dine valg": every row a log can hold (keep, both bets × every face, k ∈ GK)
   const log = GK.flatMap((k, i) => [
@@ -92,7 +92,8 @@ function gambleCopy(counts: number[]): { where: string; s: string }[] {
 function autoCopy(): { where: string; s: string }[] {
   const out: { where: string; s: string }[] = [];
   const add = (where: string, ...ss: string[]) => { for (const s of ss) out.push({ where, s }); };
-  add('auto', AUTO.title, AUTO.pill, AUTO.pillAria, AUTO.pillTitle, AUTO.stopWord, AUTO.spinsLabel, AUTO.limitLabel, AUTO.start, AUTO.close);
+  add('auto', AUTO.title, AUTO.pill, AUTO.pillAria, AUTO.pillTitle, AUTO.stopWord, AUTO.spinsLabel, AUTO.limitLabel, AUTO.start, AUTO.close, AUTO.recheck);
+  for (const n of AUTO_COUNTS) add(`auto limit off ${n}`, AUTO.limitOff(n));
   for (const r of AUTO_STOPS) for (const [n, net] of [[10, -2000], [25, 0], [3, 4520]]) add(`auto stop ${r}`, AUTO.stop(r), AUTO.summary(n, net), AUTO.sr(r, n, net));
   for (const left of [0, 1, 9, 12, 99]) add(`auto left ${left}`, AUTO.stopCap(left), AUTO.stopAria(left));
   for (const st of CONFIG.stakesOre) for (const n of AUTO_COUNTS) { add(`auto count ${n}`, AUTO.count(n)); for (const l of autoLimits(st, n)) add(`auto limit ${st}`, AUTO.limitHint(l)); }
@@ -275,7 +276,8 @@ describe('Kvit eller dobbelt: the card', () => {
       expect(btns[0]).toContain('data-primary');
       expect(html).not.toMatch(/countdown|timer|progress|data-t=|sekund|\d+\s?s\b/i);
       expect(text(html)).toContain(GAMBLE_FACTS);
-      if (demoN !== null) expect(html.indexOf('demo-note')).toBeLessThan(html.indexOf('<h2>'));
+      // the demo card: the demo note is its amber eyebrow (DEMO, "tæller ikke" and the unchanged count), first in the card
+      if (demoN !== null) expect(text(html).startsWith(`DEMO · TÆLLER IKKE · dit antal er uændret (${demoN})`)).toBe(true);
     }
   });
   it('the sub-lines are built from winPips and countWord (never typed)', () => {
@@ -298,9 +300,10 @@ describe('Kvit eller dobbelt: the card', () => {
   it('spin / storm / demo titles, eyebrows and the screen-reader offer', () => {
     expect(gambleOfferCopy(ctx({ n: 38 }))).toMatchObject({ eyebrow: 'TERNING NR. 38', title: 'Din nye terning', body: 'Du vælger én gang. Resultatet er endeligt.' });
     expect(gambleOfferCopy(ctx({ source: 'storm', k: 3 }))).toMatchObject({ eyebrow: 'TERNINGER FRA STORMEN', title: '3 terninger fra stormen', body: 'Du vælger én gang for dem alle. Resultatet er endeligt.' });
-    expect(gambleOfferCopy(ctx({ demoN: 5 })).eyebrow).toBe('DEMO · TÆLLER IKKE');
+    expect(gambleOfferCopy(ctx({ demoN: 5 })).eyebrow).toBe('DEMO · TÆLLER IKKE · dit antal er uændret (5)');
     expect(gambleOfferCopy(ctx()).sr).toBe('Din nye terning venter på dit valg: Behold, Kvit eller dobbelt eller 3 for 1. Behold er valgt på forhånd.');
     expect(gambleOfferCopy(ctx({ source: 'storm', k: 4 })).sr).toMatch(/^4 terninger fra stormen venter på dit valg/);
+    expect(gambleOfferCopy(ctx({ demoN: 5 })).sr).toBe('Demo: sådan fungerer Kvit eller dobbelt. Tæller ikke med. Din nye terning venter på dit valg: Behold, Kvit eller dobbelt eller 3 for 1. Behold er valgt på forhånd.');
     expect(gambleDemoNote(12)).toBe('DEMO · Sådan fungerer valget · tæller ikke · dit antal er uændret (12)');
   });
   it('result lines: the pip, the dice laid down or lost, the count (demo: unchanged); restored says it stands', () => {

@@ -26,7 +26,7 @@ import { wait, clock } from '../present/clock.ts';
 import {
   MENU, DRAWER, DEMO_STORM_NOTE, DEMO_DIE_BANNER, SR_CEREMONY_END, srAward, srStormPop, srStormOutro, stormSummaryRow, helloHtml, helloCopy,
   firstDieHtml, firstDieCopy, unlockCardHtml, placardHtml, chamberRibbon, srCeremonyStart, demoGateBanner, type CeremonyKind, type RibbonKind,
-  gambleCardHtml, gambleOfferCopy, gambleThrowHtml, gambleResultHtml, gambleResultCopy, srGambleKeep, GAMBLE_THROW, DEMO_GAMBLE_BANNER, demoGambleDone,
+  gambleCardHtml, gambleOfferCopy, gambleThrowHtml, gambleResultHtml, gambleResultCopy, srGambleKeep, GAMBLE_THROW, demoGambleDone,
   type GambleCardCtx,
 } from '../ui/diceCopy.ts';
 import { AUTO } from '../ui/autoCopy.ts';
@@ -79,6 +79,8 @@ export class Game {
    *  summary once finishSpinHud has shown that result (stopShow). */
   private resultDue = false;
   private stopShow: { reason: AutoStop; spins: number; startNet: number } | null = null;
+  /** A stop at a die: its banner and reader line wait until the die's choice is settled (finishSpin shows them). */
+  private stopHeld: { reason: AutoStop; spins: number; startNet: number } | null = null;
   private award: DicePresenter;
   hud: Hud;
   w: World;
@@ -493,7 +495,15 @@ export class Game {
     this.finishSpinHud(r, profile, paid, dieNo);
     // The die lands (or its choice is made) before idle and before a triggered storm: none is ever in the air when
     // the next spin starts. Autospin stops at every die and at Solstorm.
-    if (dieNo) { this.stopAuto('die'); await this.dieOutcome(); }
+    if (dieNo) {
+      // the stop's banner waits until the die's choice is settled and the die is home: over the big die moment it
+      // would cover the TERNING title and the die itself
+      this.stopAuto('die', true);
+      await this.dieOutcome();
+      const p = this.stopHeld;
+      this.stopHeld = null;
+      if (p) this.showStop(p.reason, p.spins, p.startNet);
+    }
     if (storm) {
       this.stopAuto('storm');
       await this.runStorm(storm.source, storm.stake, { resume: { idx: storm.idx, spinIndex: 0 } });
@@ -716,7 +726,8 @@ export class Game {
     this.hideHello();
     const t = this.beginDiceDemo();
     this.setState('demoDie');
-    this.hud.banner(DEMO_GAMBLE_BANNER.t, DEMO_GAMBLE_BANNER.s);
+    // (no start banner: over the big die moment it would cover the TERNING title, on landscape phones the card's head;
+    // the DEMO band, the card's amber eyebrow and the offer's reader line say what it is)
     this.w.audio.play('dieBirth', { when: this.w.audio.now() + 0.05 });
     await this.award.demoAward({ hold: true });
     await this.runGamble('award', true);
@@ -952,6 +963,9 @@ export class Game {
       return;
     }
     await this.award.gambleSettle(payout, { from: run.from, demo: run.demo });
+    // the dice display switched off during the settle: the moment was dropped where it stood, and the count catches up
+    // (nothing of this award is left staged)
+    if (!run.demo && !this.s.settings.dice && run.from !== 'held') this.stagedDice = 0;
     if (!run.demo) { this.shownDice = this.chipDice(); this.refreshDice(); }
   }
   /** A card button (or a forced keep). Behold is armed 0,4 s after the card appeared, the bets 1,0 s. */
@@ -1043,7 +1057,8 @@ export class Game {
     if (this.state !== 'idle' || this.auto || this.demoMode || this.s.perksPending > 0 || this.dice.gamble) return;
     const stake = this.s.stakeOre;
     if (this.s.balanceOre < stake) { this.showStop('balance', 0, this.sessionNet); return; } // said, never silent
-    if (!validAuto(spins, limitOre, stake)) return;
+    // limits made for another stake (never silent either): the sheet shows this stake's limits again
+    if (!validAuto(spins, limitOre, stake)) { this.hud.openAutoSheet(true, false, stake, AUTO.recheck); return; }
     this.hideHello();
     this.auto = { total: spins, left: spins, stakeOre: stake, startBalanceOre: this.s.balanceOre, lossLimitOre: limitOre, timer: null, startNet: this.sessionNet };
     this.showAuto();
@@ -1076,7 +1091,8 @@ export class Game {
     const d = this.dice;
     return this.s.settings.dice !== false && !this.demoMode && ((d.count >= 1 && !d.introSeen) || (d.unlock === 'pending' && !d.offered));
   }
-  private stopAuto(reason: AutoStop): void {
+  /** hold: the banner waits in stopHeld (a die: finishSpin shows it once the die's choice is settled). */
+  private stopAuto(reason: AutoStop, hold = false): void {
     const a = this.auto;
     if (!a) return;
     a.timer?.kill();
@@ -1084,6 +1100,7 @@ export class Game {
     this.autoLast = reason;
     // mid-spin (STOP, menu, hidden tab) the stake is out and the win not yet shown: the banner waits for the result
     if (this.resultDue) { this.stopShow = { reason, spins: a.total - a.left, startNet: a.startNet }; this.hud.setAuto(null); }
+    else if (hold) { this.stopHeld = { reason, spins: a.total - a.left, startNet: a.startNet }; this.hud.setAuto(null); }
     else this.showStop(reason, a.total - a.left, a.startNet);
     if (this.state === 'idle') this.refreshSpinButton();
     else if (this.state === 'spinning' || this.state === 'celebrating') this.hud.setSpin('busy');
@@ -1514,6 +1531,13 @@ export class Game {
         return r ? { demo: r.demo, from: r.from, k: r.k, phase: r.phase, bet: r.bet, pip: r.pip, payout: r.payout, armed: clock.time - r.at >= GAMBLE_T.arm } : null;
       },
       choose: (act: GambleChoice) => this.gambleAct(act),
+      /** Layout QA: an offer card of this kind in the summary at idle (DOM only: nothing is opened, drawn or written);
+       *  null hides it. */
+      qaCard: (o: { source: 'spin' | 'storm'; k: number; demo?: boolean } | null) => {
+        if (!o) { if (this.state === 'idle') this.hud.show('summary', false); return; }
+        if (this.state !== 'idle' || this.gambleRun) return;
+        this.hud.showSummary(gambleCardHtml({ source: o.source, k: o.k, n: this.dice.count, demoN: o.demo ? this.dice.count : null }), 'gamble');
+      },
       /** Moves counters.gamble so the next real throw shows `pip` (counters only). */
       qaGamble: (pip: number) => {
         for (let idx = this.s.counters.gamble + 1; idx < this.s.counters.gamble + 1000; idx++) {

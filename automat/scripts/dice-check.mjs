@@ -659,6 +659,14 @@ if (want.has('visual')) {
 // the flight canvas and the home's icon (centre and size), for the landing
 const FLY = () => { const e = document.querySelector('#overlays .die-fly'); if (!e) return null; const r = e.getBoundingClientRect(), i = document.getElementById('diceIco').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, tx: i.left + i.width / 2, ty: i.top + i.height / 2, tw: i.width }; };
 const cardText = () => ev(() => (document.getElementById('summary').classList.contains('show') ? document.getElementById('summaryCard').textContent.replace(/\s+/g, ' ').trim() : ''));
+/** SPIN's place under an offer card: how many bets reach into it (+ 6 px), and what a tap on a 5 × 5 grid over it hits. */
+const SPIN_HIT = () => { const s = document.getElementById('spinBtn').getBoundingClientRect(), pad = 6;
+  const over = [...document.querySelectorAll('#summaryCard [data-gamble="double"], #summaryCard [data-gamble="triple"]')].map((b) => b.getBoundingClientRect())
+    .filter((r) => r.right > s.left - pad && r.left < s.right + pad && r.bottom > s.top - pad && r.top < s.bottom + pad).length;
+  const hits = new Set();
+  for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) { const e = document.elementFromPoint(s.left + (s.width * (i + 0.5)) / 5, s.top + (s.height * (j + 0.5)) / 5); hits.add(e?.closest('[data-gamble]')?.dataset.gamble ?? (e?.closest('#spinBtn') ? 'spin' : 'none')); }
+  return { over, hits: [...hits].sort().join(',') }; };
+const spinSafe = (h) => h.over === 0 && !/double|triple/.test(h.hits);
 if (want.has('gamble')) {
   await boot('', true);
   await ev(() => window.__slot.setSeed(20260922));
@@ -713,6 +721,8 @@ if (want.has('gamble')) {
   check(await ev(() => document.activeElement?.dataset?.gamble === 'keep'), 'Behold is focused first');
   const btns = await ev(() => [...document.querySelectorAll('#summaryCard [data-gamble]')].map((b) => b.dataset.gamble + (b.hasAttribute('data-primary') ? '*' : '')).join(' '));
   check(btns === 'keep* double triple', 'the card: Behold (primary), Kvit eller dobbelt, 3 for 1', btns);
+  const sh2 = await ev(SPIN_HIT);
+  check(spinSafe(sh2), 'no bet covers SPIN\'s place: a tap there by habit hits Behold, SPIN or the card, never a bet', JSON.stringify(sh2));
   const txt0 = await cardText();
   check(txt0.includes('Din nye terning') && txt0.includes('4, 5 eller 6: 2 terninger') && txt0.includes('5 eller 6: 3 terninger') && !/\d+\s?s\b|sekund/.test(txt0), 'the card: title, both sub-lines, no timer', txt0.slice(0, 120));
   await adv(500); // 0,5 s: Behold is armed for a tap, the habit keys and the bets are not
@@ -792,10 +802,18 @@ if (want.has('gamble')) {
     check((await cardText()).includes('1 terning er gået tabt'), 'loss: "1 terning er gået tabt"');
     const scL = await scene();
     check(scL?.tabs.filter((t) => t.drawn).map((t) => t.pip).join(',') === '2' && litOf(scL) === '4,5,6', 'scene · a loss: the drawn tablet is 2 (not lit); the winning ones stay as they were');
-    let lossFly = 0;
-    for (let t = 0; t < 4000 && (await state()) !== 'idle'; t += 50) { await adv(50, 50); await watch(); if (await ev(FLY)) lossFly++; if ((await chip()) !== String(c)) lossFly += 100; }
+    let lossFly = 0, snowX0 = 1e9, snowX1 = -1e9, fall = 0, dieS = 0;
+    const flakes = () => ev(() => { const m = window.__slot.world.stage.layers.banners.children.find((c) => c.label === 'dieAward')?.moment;
+      return m ? { f: m['flakes'].map((f) => ({ x: f.x, dy: f.y - f.y0 })), s: m.S } : null; });
+    for (let t = 0; t < 4000 && (await state()) !== 'idle'; t += 50) {
+      await adv(50, 50); await watch(); if (await ev(FLY)) lossFly++; if ((await chip()) !== String(c)) lossFly += 100;
+      const fl = await flakes();
+      if (fl) { dieS = Math.max(dieS, fl.s); for (const f of fl.f) { snowX0 = Math.min(snowX0, f.x); snowX1 = Math.max(snowX1, f.x); fall = Math.max(fall, f.dy); } }
+    }
     check(lossFly === 0, 'scene · a loss: nothing flies and nothing lands (the die frosts and dissolves in place)', `${lossFly} flight frames`);
+    check(snowX1 - snowX0 >= 0.4 * dieS && fall >= 60, 'scene · a loss: the snow comes from across the die\'s face and falls away (not a clump at its centre)', `spread ${(snowX1 - snowX0).toFixed(0)} px of a ${dieS.toFixed(0)} px die, fall ${fall.toFixed(0)} px`);
     await toIdle('loss');
+    check((await ev(() => window.__slot.world.particles.count)) === 0 && !(await ev(() => window.__slot.world.stage.layers.banners.children.find((c) => c.label === 'dieAward')?.moment)), 'scene · a loss: nothing of it lives on into idle (no flake, no particle, no moment)');
     check((await chip()) === String(c) && (await storedDice())?.gamble === null, 'loss: the home keeps the count before the award');
   }
 
@@ -825,6 +843,24 @@ if (want.has('gamble')) {
     for (let t = FRAME; t <= 1500 && landAt < 0; t += FRAME) { await adv(FRAME, FRAME); await watch(); if ((await chip()) === String(c + 2)) landAt = t; }
     check(res >= 3000 - 0.5 && landAt > 0 && landAt <= 600 + 2 * FRAME + 0.5, 'one tap at the result (never before 3,0 s): the hold ends and both dice land ≤ 600 ms later', `result at ${res.toFixed(0)} ms, landed ${landAt.toFixed(0)} ms after the tap`);
     await toIdle('one-tap skip');
+  }
+
+  // 5c · "Vis terninger i spillet" switched off while a won payout flies home: the settle ends, idle within 1 s, the count
+  // caught up (nothing strands the game in gambleReveal)
+  c = (await ev(() => window.__slot.dice())).count;
+  await ev(() => window.__slot.qaGamble(6));
+  if (await offerAfterDie('opt-out mid-settle')) {
+    await adv(1100);
+    await bet('triple');
+    const tf = await untilW("window.__slot.gambleRun()?.phase === 'settle' && document.querySelectorAll('#overlays .die-fly').length >= 1", 12000, 17);
+    await ev(() => window.__slot.game.dispatch({ t: 'settings', s: { dice: false } }));
+    const ti = await untilW("window.__slot.state() === 'idle'", 1000, 50);
+    const aw = await ev(() => window.__slot.award());
+    check(tf >= 0 && ti >= 0 && !aw.inFlight && aw.staged === 0 && (await storedDice())?.gamble === null, 'opt-out mid-settle: the settle ends and the game is idle within 1 s (nothing staged, nothing in flight, the choice closed)', `flight at ${tf} ms, idle ${ti} ms later, ${JSON.stringify(aw)}`);
+    await ev(() => window.__slot.game.dispatch({ t: 'settings', s: { dice: true } }));
+    await adv(200);
+    check((await chip()) === String(c + 3) && (await ev(() => window.__slot.dice())).count === c + 3, 'opt-out mid-settle: the home shows the count once the display is back', await chip());
+    await rebase();
   }
 
   // 6 · reload mid-choice: the same offer again, no new draw
@@ -940,6 +976,27 @@ if (want.has('gamble')) {
   await toIdle('storm', 15);
   check((await chip()) === String(cK + k) && (await ev(() => window.__slot.dice())).count === cK + k, 'storm: 2k released in the outro; the home equals the count at idle', await chip());
 
+  // 8b · a storm's fan lost while "Vis terninger i spillet" is switched off during its frost (a storm choice restored
+  // after a reload): nothing of the fan stays behind (its own thrown die included), the game goes on to idle
+  await ev(() => window.__slot.qaDice(window.__slot.dice().count + 4));
+  await ev(() => { const g = window.__slot.game; g.dice.gamble = { id: 'NL-qa-S000001', source: 'storm', stake: 3, at: Date.now() }; g.persist(); });
+  await boot('', false, 'gambleOffer');
+  await rebase();
+  await adv(1100);
+  await ev(() => window.__slot.qaGamble(1));
+  await ev(() => window.__slot.choose('double'));
+  const MPH = "window.__slot.world.stage.layers.banners.children.find((c) => c.label === 'dieAward')?.moment?.phase";
+  const tfz = await untilW(`${MPH} === 'settle'`, 8000, 17);
+  await adv(400, 17);
+  await ev(() => window.__slot.game.dispatch({ t: 'settings', s: { dice: false } }));
+  const tfi = await untilW("window.__slot.state() === 'idle'", 5000, 50);
+  await adv(1000);
+  const left = await ev(() => { const a = window.__slot.world.stage.layers.banners.children.find((c) => c.label === 'dieAward'); return { dice: a.children.filter((c) => c.sp && !c.destroyed).length, moment: !!a.moment }; });
+  check(tfz >= 0 && tfi >= 0 && left.dice === 0 && !left.moment, 'fan frost + opt-out: no die of the fan stays behind (its thrown die included); idle', `${JSON.stringify(left)}, idle after ${tfi} ms`);
+  await ev(() => window.__slot.game.dispatch({ t: 'settings', s: { dice: true } }));
+  await adv(300);
+  await rebase();
+
   // 9 · the 1948 edges: 1946 + a triple win → the 1948 card; 1947 + a die → no card, the die is kept
   await ev(() => window.__slot.qaDice(1946)); await rebase();
   await ev(() => window.__slot.qaGamble(6));
@@ -973,7 +1030,9 @@ if (want.has('gamble')) {
     await click(sel);
     check((await untilW("window.__slot.state() === 'gambleOffer'", 5000, 50)) >= 0, `demo ${sel}: the demo die and its card`);
     const dt = await cardText();
-    check(dt.startsWith('DEMO · Sådan fungerer valget') && dt.includes('DEMO · TÆLLER IKKE') && (await ev(() => window.__slot.gambleRun()?.demo)), `demo ${sel}: the amber demo note first, the DEMO eyebrow`, dt.slice(0, 90));
+    check(dt.startsWith('DEMO · TÆLLER IKKE · dit antal er uændret') && (await ev(() => window.__slot.gambleRun()?.demo)), `demo ${sel}: the amber DEMO eyebrow first (DEMO, tæller ikke, the unchanged count)`, dt.slice(0, 90));
+    const shD = await ev(SPIN_HIT);
+    check(spinSafe(shD), `demo ${sel}: no bet covers SPIN's place`, JSON.stringify(shD));
     await adv(1100);
     if (act === 'keep') await click('#summaryCard [data-gamble="keep"]'); else await bet(act);
     const res = act === 'keep' ? '' : await (async () => { await stepW(3100); return cardText(); })();
@@ -1005,6 +1064,25 @@ if (want.has('gamble')) {
   await adv(2000);
   const cen1 = await census();
   check(cen1.objs === cen0.objs && cen1.tex === cen0.tex && cen1.fly === 0, 'scene · no leaks: ten demo gambles leave the display objects and textures at their baseline', `objects ${cen0.objs} → ${cen1.objs}, textures ${cen0.tex} → ${cen1.tex}, flyers ${cen1.fly}`);
+
+  // Rolig tilstand switched on while the staged die waits (the card has no timer): the motion stops at once (the
+  // corona stands, the moving FX ramp out, the camera eases back), and the throw that follows rests (no tumble)
+  await new Promise((r) => setTimeout(r, 300));
+  await ev(() => window.__slot.game.dispatch({ t: 'demoGamble' }));
+  await untilW("window.__slot.state() === 'gambleOffer' && window.__slot.gambleRun()?.armed", 8000, 50);
+  await adv(1500);
+  await ev(() => window.__slot.game.dispatch({ t: 'settings', s: { calm: 'on' } }));
+  await adv(600);
+  const MOM = "window.__slot.world.stage.layers.banners.children.find((c) => c.label === 'dieAward').moment";
+  const calmNow = () => ev(new Function(`const m = ${MOM}; return { rot: m['corona'].rotation, dz: Math.abs(window.__slot.world.cam.zoom - m['base'].zoom), mv: m['motion'].v, ray: Math.max(0, ...m['rays'].map((r) => r.sp.alpha)), y: m.dice()[0]?.y ?? null };`));
+  const k1 = await calmNow(); await adv(500); const k2 = await calmNow();
+  check(k1.rot === k2.rot && k2.dz < 1e-3 && k2.mv === 0 && k2.ray === 0 && Math.abs(k1.y - k2.y) < 0.5, 'calm mid-moment: the corona stands, the rays are out, the camera is back, the die no longer bobs', JSON.stringify(k2));
+  await ev(() => window.__slot.choose('triple'));
+  let tumble = 0;
+  for (let t = 0; t < 2400; t += 100) { await adv(100); tumble += await ev(new Function(`const d = ${MOM}?.['thrower']; return d && (d.st.rot !== 0 || d.st.flipX !== 0) ? 1 : 0;`)); }
+  check(tumble === 0, 'calm mid-moment: the throw rests (no tumble)', `${tumble} frames tumbling`);
+  await untilW("window.__slot.state() === 'idle'", 12000, 100);
+  await ev(() => window.__slot.game.dispatch({ t: 'settings', s: { calm: 'auto' } }));
 }
 
 // ------------------------------------------------------------------ autospin: ≥ 3,0 s per spin, every stop, stake locked
@@ -1017,13 +1095,15 @@ if (want.has('auto')) {
   const S = await ev(() => window.__slot.save().stakeOre);
   const base = () => ev(() => window.__slot.save().counters.base);
   const bal = () => ev(() => window.__slot.save().balanceOre);
-  /** Steps until the run has stopped and the game rests (idle or a card); press times in game ms. */
-  const run = async (max = 90000) => {
+  /** Steps until the run has stopped and the game rests (idle or a card); press times in game ms. even: every spin's
+   *  stake is handed back at its press (QA: a round that does not lose, so a run can reach its count: every offered
+   *  loss limit is below the run's whole stake and would stop a run of losses first). */
+  const run = async (max = 90000, even = false) => {
     const out = []; let last = await base(), t = 0, locked = true, vaultOff = true;
     for (; t < max; t += 50) {
       await adv(50);
       const b = await base();
-      if (b !== last) { out.push(t); last = b; }
+      if (b !== last) { out.push(t); last = b; if (even) await ev(() => { const s = window.__slot.save(); s.balanceOre += s.stakeOre; }); }
       if (await ev(() => !!window.__slot.auto())) {
         locked &&= await ev(() => document.getElementById('stakeUp').disabled && document.getElementById('stakeDn').disabled);
         vaultOff &&= !(await ev(() => window.__slot.vault()));
@@ -1038,10 +1118,18 @@ if (want.has('auto')) {
   // the sheet (A key): counts, limits from autoLimits, Start; the pill and SPIN read "STOP · n"
   await page.keyboard.press('KeyA'); await adv(100);
   check(await ev(() => document.getElementById('autoWrap').classList.contains('show')), 'A opens the autospin sheet at idle');
-  const lim10 = await ev(() => document.querySelectorAll('#autoL button').length);
+  const lims = () => ev(() => [...document.querySelectorAll('#autoL button')].map((b) => b.textContent + (b.getAttribute('aria-disabled') === 'true' ? '·off' : '') + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' | '));
+  const lim10 = await lims();
   await click('#autoN button[data-n="25"]');
-  const lim25 = await ev(() => [...document.querySelectorAll('#autoL button')].map((b) => b.textContent).join(' | '));
-  check(lim10 === 1 && lim25 === '20,00 kr | 50,00 kr', 'the loss limits come from autoLimits (10 spin: 10×; 25 spin: 10× and 25×)', lim25);
+  const lim25 = await lims();
+  check(lim10 === `${signedKr(5 * S).slice(1)}* | ${signedKr(10 * S).slice(1)}·off | ${signedKr(25 * S).slice(1)}·off | ${signedKr(50 * S).slice(1)}·off` && lim25 === `${signedKr(5 * S).slice(1)}* | ${signedKr(10 * S).slice(1)} | ${signedKr(25 * S).slice(1)}·off | ${signedKr(50 * S).slice(1)}·off`,
+    'the loss limits: always the four steps (5×, 10×, 25×, 50×), only those below the run\'s whole stake usable (10 spin: 5×; 25 spin: 5× and 10×), the smallest preset', `${lim10} / ${lim25}`);
+  await click('#autoL button[data-l="' + 25 * S + '"]');
+  check((await lims()) === lim25, 'a dimmed limit cannot be picked');
+  // Tab never leaves the sheet (the page behind it is inert): the stake cannot change behind it
+  const tabs = [];
+  for (let i = 0; i < 14; i++) { await page.keyboard.press('Tab'); tabs.push(await ev(() => { const a = document.activeElement; return !a || a === document.body ? 'body' : a.closest('#autoSheet') ? 'sheet' : a.id || a.className; })); }
+  check(tabs.every((x) => x === 'sheet' || x === 'body'), 'Tab stays in the autospin sheet (the page behind it is inert)', [...new Set(tabs)].join(','));
   await click('#autoL button[data-l="2000"]');
   // the stake never changes behind the sheet (its limits are for the stake it shows)
   await page.keyboard.press('ArrowUp'); await adv(50);
@@ -1063,11 +1151,12 @@ if (want.has('auto')) {
   check(sr0.startsWith('Gevinst ') && sr0.endsWith(`Autospin stoppet. 1 spin, netto ${signedKr(net0)}.`), 'STOP mid-spin: the reader hears the result, then the stop with the true net', sr0);
   check((await after(5000)) === 0, 'STOP mid-spin: the spin under way finishes, no other follows');
 
-  // done: 10 spins, each press ≥ 3,0 s after the last, the stake locked throughout (base 1440–1451: no wins at 2 kr)
+  // done: 10 spins, each press ≥ 3,0 s after the last, the stake locked throughout (base 1440–1451: no wins at 2 kr;
+  // each stake handed back: a round that does not lose)
   await ev(() => { window.__slot.save().counters.base = 1439; });
   let start = await bal(), b1 = await base();
-  await ev(() => window.__slot.autoStart(10, 10));
-  let r = await run();
+  await ev(() => window.__slot.autoStart(10, 5));
+  let r = await run(90000, true);
   const at = [0, ...r.out]; // the first press is autoStart's own spin()
   const gaps = at.slice(1).map((t, i) => t - at[i]);
   check(r.reason === 'done' && (await base()) - b1 === 10 && (await banner()) === 'Autospin færdig', 'done: 10 spins, "Autospin færdig"', `${(await base()) - b1} spins, ${r.reason}`);
@@ -1075,7 +1164,13 @@ if (want.has('auto')) {
   check(/^(Gevinst|Retur|Indsats retur|Ingen gevinst).* Kp [\d,]+\. Autospin færdig\. 10 spin, netto /.test(srD), 'done: the reader hears the last result, then "Autospin færdig"', srD);
   check(gaps.length === 9 && gaps.every((g) => g >= 3000), 'every press ≥ 3,0 s after the last (the floor holds, no turbo)', `min ${Math.min(...gaps)} ms`);
   check(r.locked && r.vaultOff, 'the stake buttons are disabled and the dice home is not idle-active during autospin (spinning and between spins)');
-  check(start - (await bal()) <= 10 * S, 'done: the round\'s loss within the limit', `${start - (await bal())} øre`);
+  check(start - (await bal()) <= 5 * S, 'done: the round\'s loss within the limit', `${start - (await bal())} øre`);
+  // every offered limit binds: 10 spins of losses with the 5× limit stop at "loss" after 5 (never all 10)
+  await ev(() => { window.__slot.save().counters.base = 1439; });
+  start = await bal(); b1 = await base();
+  await ev(() => window.__slot.autoStart(10, 5));
+  r = await run();
+  check(r.reason === 'loss' && (await base()) - b1 === 5 && start - (await bal()) === 5 * S, 'the 10-spin run\'s limit binds: a run of losses stops at the 5× limit after 5 spins', `${(await base()) - b1} spins, ${r.reason}`);
 
   // loss: 25 spins, 10× → stops BEFORE the loss could pass the limit
   await ev(() => { window.__slot.save().counters.base = 1439; });
@@ -1086,12 +1181,12 @@ if (want.has('auto')) {
 
   // balance: no refill
   await ev(() => { const s = window.__slot.save(); s.balanceOre = 3 * s.stakeOre; s.counters.base = 1439; });
-  await ev(() => window.__slot.autoStart(10, 10));
+  await ev(() => window.__slot.autoStart(10, 5));
   r = await run();
   check(r.reason === 'balance' && (await bal()) < S && (await banner()) === 'Autospin stoppet · saldoen er for lav', 'balance: stops when the balance cannot pay, and never refills', `balance ${await bal()}`);
   await ev(() => window.__slot.game.hud.banner('—', '—'));
   b1 = await base();
-  await ev(() => window.__slot.autoStart(10, 10));
+  await ev(() => window.__slot.autoStart(10, 5));
   check(!(await ev(() => window.__slot.auto())) && (await base()) === b1 && JSON.stringify(await bannerNow()) === JSON.stringify(['Autospin stoppet · saldoen er for lav', '0 spin · netto ±0,00 kr']), 'balance: a start that cannot pay is refused out loud (never silently)', (await bannerNow()).join(' | '));
   await ev(() => window.__slot.game.dispatch({ t: 'refill' }));
 
@@ -1126,12 +1221,18 @@ if (want.has('auto')) {
   await adv(100);
   check((await ev(() => window.__slot.autoStopped())) === 'demo' && (await state()) === 'idle' && (await banner()) === 'Autospin stoppet' && (await after(5000)) === 0, 'gap: a demo press only stops the run (banner kept, no demo, no spin)', `${await state()} · ${(await bannerNow()).join(' | ')}`);
 
-  // die: the card shows
+  // die: the card shows; the stop's banner waits until the die is home (over the big die moment it would cover it)
+  await ev(() => window.__slot.game.hud.banner('—', '—', 'aurora', 1));
+  await adv(100); await new Promise((res) => setTimeout(res, 50));
   await ev(() => window.__slot.qaNext('die'));
-  await ev(() => window.__slot.autoStart(10, 10));
+  await ev(() => window.__slot.autoStart(10, 5));
   r = await run();
   check(r.reason === 'die' && (await state()) === 'gambleOffer', 'die: stops at the die, its card shows', `${r.reason} ${await state()}`);
+  await adv(1200);
+  check(!(await shown('banner')), 'die: no banner over the die moment while the card waits (the stop banner, a level-up: they wait for its end)', (await bannerNow()).join(' | '));
   await keepIfOffered('idle', 20000);
+  const bd = await bannerNow();
+  check((await shown('banner')) && bd[0] === 'Autospin stoppet ved en terning' && /^1 spin · netto /.test(bd[1]), 'die: the stop banner once the die is home', bd.join(' | '));
 
   // Ladet spin: Kp just under 3, the first charging spin crosses it
   await ev(() => { const s = window.__slot.save(); s.meter = { charge: 368, stakeSumOre: 368 * s.stakeOre }; });
@@ -1142,7 +1243,7 @@ if (want.has('auto')) {
   // Solstorm: stops before the storm starts (the storm itself is not played here: a fresh boot follows)
   await ev(() => { window.__slot.save().perksPending = 0; });
   await ev(() => window.__slot.qaNext('sun4'));
-  await ev(() => window.__slot.autoStart(10, 10));
+  await ev(() => window.__slot.autoStart(10, 5));
   await keepIfOffered('stormReady', 40000);
   // (a die on the trigger spin stops the run first; its choice is kept on the way)
   const why = (await ev(() => window.__slot.save().history.at(-1)?.die)) ? 'die' : 'storm';

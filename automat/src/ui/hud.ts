@@ -9,7 +9,7 @@ import { kpLegendSvg, stormShardsSvg, type WelcomeCopy } from './welcome.ts';
 import { PREVIEW_STEPS, type DiceView, type PreviewStep } from '../game/dice.ts';
 import { MENU, DRAWER, DEMO_PILL, TIPS, GAMBLE_LOG, gambleLogRows, diceRulesHtml } from './diceCopy.ts';
 import { AUTO } from './autoCopy.ts';
-import { AUTO_COUNTS, autoLimits, type AutoStop } from '../game/auto.ts';
+import { AUTO_COUNTS, autoLimitSteps, type AutoStop } from '../game/auto.ts';
 import type { GambleLogEntry } from '../game/dice.ts';
 import { onDiePainterChange, paintDieIcons } from './diceIcon.ts';
 import { ChamberDom, chamberMarkup } from './chamber.ts';
@@ -39,6 +39,9 @@ const ICON = {
   stop: '<svg class="stop" viewBox="0 0 48 48" fill="currentColor"><rect x="14" y="14" width="20" height="20" rx="4.5"/></svg>',
   loop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3.5l3 3-3 3"/><path d="M4 11.5v-1a4 4 0 0 1 4-4h12"/><path d="M7 20.5l-3-3 3-3"/><path d="M20 12.5v1a4 4 0 0 1-4 4H4"/></svg>',
 };
+type BannerArgs = [title: string, sub: string, tone: 'aurora' | 'storm', ms: number, die: boolean];
+/** Phones on their side: the gamble card stands in a right-hand column there (styles.css uses the same query). */
+const SHORT_LAND = '(max-width: 999px) and (max-height: 500px) and (orientation: landscape)';
 /** A die icon canvas (painted with the user's die by paintDieIcons; the coded die only if the art cannot decode). */
 const DIE = (cls = '', frozen = false) => `<canvas class="die-ico${cls ? ' ' + cls : ''}"${frozen ? ' data-state="frozen"' : ''} aria-hidden="true"></canvas>`;
 
@@ -232,7 +235,7 @@ export class Hud {
     });
     this.el.autoL.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest('button');
-      if (b) { this.autoPick.l = +b.dataset.l!; this.renderAutoSheet(); }
+      if (b && b.getAttribute('aria-disabled') !== 'true') { this.autoPick.l = +b.dataset.l!; this.renderAutoSheet(); }
     });
     this.press(this.el.autoGo, () => {
       const { n, l } = this.autoPick;
@@ -479,27 +482,50 @@ export class Hud {
     this.refreshAutoPill();
     if (!state && reason) this.banner(AUTO.stop(reason), summary ?? '', 'aurora', reason === 'die' ? 3200 : 2600, reason === 'die');
   }
-  /** The sheet: count (10/25/50/100) and a loss limit (kr) from autoLimits at this stake; the first limit is preset. */
-  openAutoSheet(b: boolean, restoreFocus = false, stakeOre = this.autoStake): void {
+  /** The sheet: count (10/25/50/100) and a loss limit (kr) from autoLimitSteps at this stake; the smallest is preset.
+   *  `note`: a line over the hint (the sheet shown again because the stake changed). */
+  openAutoSheet(b: boolean, restoreFocus = false, stakeOre = this.autoStake, note = ''): void {
     if (b) {
       this.autoStake = stakeOre;
-      this.renderAutoSheet();
+      this.renderAutoSheet(note);
     }
     if (b) this.placeAutoSheet(true);
     this.el.autoWrap.classList.toggle('show', b);
     this.el.autoWrap.inert = !b;
+    this.setModal();
     this.onIntent({ t: 'menu', open: b });
     if (b) setTimeout(() => (this.el.autoGo as HTMLElement).focus(), 50);
     else if (restoreFocus) this.el.autoBtn.focus({ preventScroll: true });
     else (document.activeElement as HTMLElement | null)?.blur?.();
   }
-  private renderAutoSheet(): void {
-    const ls = autoLimits(this.autoStake, this.autoPick.n);
-    if (!ls.includes(this.autoPick.l)) this.autoPick.l = ls[0] ?? 0; // the smallest limit is the default
+  /** Always the four limit steps (the row keeps its shape): the ones this run length cannot use are dimmed and
+   *  aria-disabled, with a tooltip that says why. */
+  private renderAutoSheet(note = ''): void {
+    const steps = autoLimitSteps(this.autoStake, this.autoPick.n), ok = steps.filter((l) => l.ok).map((l) => l.ore);
+    if (!ok.includes(this.autoPick.l)) this.autoPick.l = ok[0] ?? 0; // the smallest limit is the default
     this.el.autoN.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(+x.dataset.n! === this.autoPick.n)));
-    this.el.autoL.innerHTML = ls.map((l) => `<button class="sg num" data-l="${l}" aria-pressed="${l === this.autoPick.l}">${fmtKr(l)}</button>`).join('');
-    this.el.autoL.style.setProperty('--n', String(ls.length));
-    this.el.autoHint.textContent = AUTO.limitHint(this.autoPick.l);
+    this.el.autoL.innerHTML = steps.map((l) => `<button class="sg num${l.ok ? '' : ' off'}" data-l="${l.ore}" aria-pressed="${l.ok && l.ore === this.autoPick.l}"${l.ok ? '' : ` aria-disabled="true" title="${AUTO.limitOff(this.autoPick.n)}"`}>${fmtKr(l.ore)}</button>`).join('');
+    this.el.autoL.style.setProperty('--n', String(steps.length));
+    this.el.autoHint.textContent = (note ? note + '. ' : '') + AUTO.limitHint(this.autoPick.l);
+  }
+  /** A modal sheet (the menu, the demo tools, autospin) makes everything behind it inert: out of the Tab order and out
+   *  of reach, so neither the stake nor a demo tool can change behind the scrim (aria-modal holds for real). The live
+   *  banner and notice stay out of it; what was inert already is left alone, and exactly the rest comes back when the
+   *  last sheet closes. */
+  private modalBg: HTMLElement[] = [];
+  private setModal(): void {
+    const wraps = [this.el.menuWrap, this.el.drawerWrap, this.el.autoWrap];
+    const open = wraps.some((w) => w.classList.contains('show'));
+    if (open && !this.modalBg.length) {
+      const ov = this.el.menuWrap.parentElement!;
+      const bg = [document.getElementById('ui')!, ...(Array.from(ov.children) as HTMLElement[])]
+        .filter((e) => !wraps.includes(e) && e.id !== 'banner' && e.id !== 'notice' && !e.inert);
+      for (const e of bg) e.inert = true;
+      this.modalBg = bg;
+    } else if (!open && this.modalBg.length) {
+      for (const e of this.modalBg) e.inert = false;
+      this.modalBg = [];
+    }
   }
   /** Anchored above the deck, right-aligned with SPIN's column (never over #reg: a short landscape screen lets it come
    *  down over the deck instead; it is a modal sheet with its own scrim). */
@@ -530,8 +556,12 @@ export class Hud {
   /** 3-second floor ring: 0..1 */
   setRing(p: number): void { (this.el.ring as unknown as SVGCircleElement).style.strokeDashoffset = String(this.spinRingLen * (1 - Math.max(0, Math.min(1, p)))); }
 
-  /** `die`: the user's die beside the text (the autospin stop at a die). */
+  /** `die`: the user's die beside the text (the autospin stop at a die). While the big die moment is on stage a banner
+   *  waits (over the moment it would cover the TERNING title and the die) and shows when the moment has ended. */
   banner(title: string, sub = '', tone: 'aurora' | 'storm' = 'aurora', ms = 2600, die = false): void {
+    const args: BannerArgs = [title, sub, tone, ms, die];
+    if (this.dieMomentOn) { this.bannerHeld = args; return; }
+    this.bannerArgs = args;
     this.el.bannerT.textContent = title;
     this.el.bannerS.textContent = sub;
     this.el.banner.classList.toggle('storm', tone === 'storm');
@@ -539,7 +569,26 @@ export class Hud {
     if (die) paintDieIcons(this.el.banner);
     this.el.banner.classList.add('show');
     clearTimeout(this.bannerTimer);
-    this.bannerTimer = window.setTimeout(() => this.el.banner.classList.remove('show'), ms);
+    this.bannerTimer = window.setTimeout(() => { this.el.banner.classList.remove('show'); this.bannerArgs = null; }, ms);
+  }
+  private bannerArgs: BannerArgs | null = null;
+  private bannerHeld: BannerArgs | null = null;
+  private dieMomentOn = false;
+  /** The big die moment (dieMoment.ts) is on stage: :root.die-moment fades the win strip (and on short landscape
+   *  screens the deck's Saldo) away from it, and banners wait. A banner showing when it begins steps back (a 0,35 s
+   *  fade) and comes again, in full, when it ends; the latest waiting banner shows then. */
+  setDieMoment(on: boolean): void {
+    if (on === this.dieMomentOn) return;
+    this.dieMomentOn = on;
+    document.documentElement.classList.toggle('die-moment', on);
+    if (on) {
+      if (this.bannerArgs && this.el.banner.classList.contains('show')) { this.bannerHeld = this.bannerArgs; clearTimeout(this.bannerTimer); this.el.banner.classList.remove('show'); }
+      this.bannerArgs = null;
+      return;
+    }
+    const held = this.bannerHeld;
+    this.bannerHeld = null;
+    if (held) this.banner(...held);
   }
   notice(html: string | null): void {
     this.el.notice.innerHTML = html ?? '';
@@ -657,16 +706,49 @@ export class Hud {
     const desk = matchMedia('(min-width: 1000px) and (min-aspect-ratio: 5/4)').matches;
     return foot.top - host.top - (desk ? 16 + 300 : 12 + host.height * 0.42);
   }
-  /** Phones: the offer is a bottom sheet of at most ~42 % of the height, so the staged die stays visible above it. The
-   *  type and spacing tighten in steps (data-fit 1–3: 3 puts the two bets side by side); the facts line and the demo
-   *  note are never dropped. Desktop: a centred card under the die (no steps needed). */
+  /** Short landscape screens (phones on their side): the gamble card stands in a right-hand column beside the stage. */
+  shortLandscape(): boolean { return matchMedia(SHORT_LAND).matches; }
+  /** The top edge of #foot (stage px). */
+  footTop(): number { return document.getElementById('foot')!.getBoundingClientRect().top - this.root.getBoundingClientRect().top; }
+  /** The open gamble card's box (stage px; its top is the layout box, like gambleCardTop()); side: it stands in the
+   *  right-hand column (short landscape screens), so the stage is the room left of it. */
+  gambleCardBox(): { top: number; left: number; right: number; side: boolean } | null {
+    const card = this.el.summaryCard;
+    if (!card.classList.contains('gamble') || !this.isShown('summary') || card.offsetHeight <= 0) return null;
+    const host = this.root.getBoundingClientRect(), r = card.getBoundingClientRect();
+    return { top: this.gambleCardTop(), left: r.left - host.left, right: r.right - host.left, side: card.classList.contains('g-side') };
+  }
+  /** Phones (portrait): the offer is a bottom sheet, so the staged die stays in view above it. Behold is the lowest
+   *  choice there (the bets above it), and the bets never cover SPIN: a tap on SPIN's place by habit can only keep (as
+   *  SPIN, Space and Enter do). The type and spacing tighten in steps (data-fit 1–3; from 2 the two bets stand side by
+   *  side) until the sheet leaves the die its band (≥ 120 px with the title) or at most ~42 % of the height; the facts
+   *  line is never dropped (the demo note is the eyebrow). Short landscape screens: a right-hand column left of SPIN
+   *  (.g-side), bottom-anchored over the footer and stepped down until it stays under the Kp arc; the die takes the
+   *  room left of it. Desktop: a centred card under the die (Behold first), stepped down the same way where the screen
+   *  is short (1280×720). */
   private fitGamble(): void {
     const card = this.el.summaryCard;
     card.style.left = '';
+    card.style.removeProperty('--g-lift');
+    card.classList.remove('g-side');
     if (!card.classList.contains('gamble')) return; // (the placard keeps its own fit steps: Hud.fitPlacard)
     delete card.dataset.fit;
     card.style.width = '';
     if (!this.isShown('summary')) return;
+    const host = this.root.getBoundingClientRect(), spin = this.el.spinBtn.getBoundingClientRect();
+    if (this.shortLandscape()) {
+      // the right-hand column ends 10 px before SPIN's column (the niche over SPIN and SPIN stay in view: SPIN means
+      // Behold); placed by `left` under the card's own translate(-50%), so the entry never slides sideways
+      const edge = spin.left - host.left - 10, w = Math.round(Math.min(400, host.width * 0.46, edge - 8));
+      card.classList.add('g-side');
+      card.style.width = w + 'px';
+      card.style.left = edge - w / 2 + 'px';
+      if (card.dataset.g !== 'offer') return;
+      // from under the Kp arc (its pill stays in view) down to the footer
+      const band = this.footTop() - 8 - (document.getElementById('slot-arc')!.getBoundingClientRect().bottom - host.top + 6);
+      for (let f = 1; f <= 3 && card.offsetHeight > band; f++) card.dataset.fit = String(f);
+      return;
+    }
     if (card.dataset.g !== 'offer') {
       // the throw and the result (compact text): on phones the card steps aside, left of the niche, wherever it would
       // cover it or come close under it (the result's taller body would; the throw steps aside too, so the card never
@@ -680,9 +762,26 @@ export class Hud {
       card.style.left = gut + w / 2 + 'px'; // (the card is centred on `left` by its transform)
       return;
     }
-    const host = this.root.getBoundingClientRect();
-    const cap = host.height * (host.height < 560 ? 0.6 : 0.42);
+    // the band the die needs over the card: the title, a 120 px die and NR (1,6 × 120 at the 1.04 push) + 16 px, under
+    // the Kp arc; the card steps down until it leaves that, or ~42 % of the height (a short desktop steps too)
+    const arc = document.getElementById('slot-arc')!.getBoundingClientRect().bottom - host.top;
+    const bottom = this.gambleCardTop() + card.offsetHeight; // (bottom-anchored: the bottom never moves)
+    const band = (card.querySelector('.g-demo') ? 34 : 0) + 16 + 1.6 * 1.04 * 120; // (the demo's DEMO band on top)
+    const cap = Math.max(host.height * 0.3, Math.min(host.height * 0.42, bottom - arc - band));
     for (let f = 1; f <= 3 && card.offsetHeight > cap; f++) card.dataset.fit = String(f);
+    this.clearSpin(card);
+  }
+  /** No bet button over SPIN (the ring included, + 6 px): the bets rise by the overlap (the room under them takes it,
+   *  Behold and the facts stay at the foot). */
+  private clearSpin(card: HTMLElement): void {
+    const s = this.el.spinBtn.getBoundingClientRect(), pad = 6;
+    if (s.width < 1) return;
+    let lift = 0;
+    for (const b of Array.from(card.querySelectorAll<HTMLElement>('[data-gamble="double"], [data-gamble="triple"]'))) {
+      const r = b.getBoundingClientRect();
+      if (r.right > s.left - pad && r.left < s.right + pad && r.bottom > s.top - pad && r.top < s.bottom + pad) lift = Math.max(lift, r.bottom - (s.top - pad));
+    }
+    if (lift > 0) card.style.setProperty('--g-lift', Math.ceil(lift) + 'px');
   }
   /** Phones (bottom-anchored placard): the claim (.pl-claim: p1 + the sanctioned sentence with its guard) never shrinks
    *  or scrolls. Portrait keeps the card within 52 % of the screen where the claim allows it (the gate's name stays
@@ -742,6 +841,7 @@ export class Hud {
     }
     this.el.menuWrap.classList.toggle('show', b);
     this.el.menuWrap.inert = !b;
+    this.setModal();
     this.onIntent({ t: 'menu', open: b });
     if (b) setTimeout(() => this.el.menuClose.focus(), 50);
     else if (restoreFocus) {
@@ -755,6 +855,7 @@ export class Hud {
   openDrawer(b: boolean, restoreFocus = false): void {
     this.el.drawerWrap.classList.toggle('show', b);
     this.el.drawerWrap.inert = !b;
+    this.setModal();
     this.onIntent({ t: 'menu', open: b });
     if (b) setTimeout(() => this.el.drawerClose.focus(), 50);
     else if (restoreFocus) this.el.toolsBtn.focus({ preventScroll: true });

@@ -784,7 +784,6 @@ export class GameAudio {
     for (const id of GATE_SET) { this.assets.delete(id); this.failed.delete(id); }
   }
 
-  /** Stop the celebration count-up tick roll immediately (skipped celebration). */
   /**
    * Terningen's throw: a dice rattle of `count` glass ticks, `every` seconds apart from `when` (now()-domain), the
    * existing dieLand / dieHold voices alternating at ONE constant pitch (playbackRate 1) and a constant tempo; only the
@@ -818,6 +817,7 @@ export class GameAudio {
     this.rattleV = [];
   }
 
+  /** Stop the celebration count-up tick roll immediately (skipped celebration). */
   stopCount(): void {
     const c = this._ctx;
     if (!c || !this.n) return;

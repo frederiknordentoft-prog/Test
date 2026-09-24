@@ -79,6 +79,14 @@ for (const vp of vps) {
       desk: document.getElementById('vault').classList.contains('desk'),
     };
   });
+  /** SPIN's place under an offer card: bets reaching into it (+ 6 px), what a tap on a 5 × 5 grid over it hits. */
+  const spinHit = () => ev(() => { const s = document.getElementById('spinBtn').getBoundingClientRect(), pad = 6;
+    const over = [...document.querySelectorAll('#summaryCard [data-gamble="double"], #summaryCard [data-gamble="triple"]')].map((b) => b.getBoundingClientRect())
+      .filter((r) => r.right > s.left - pad && r.left < s.right + pad && r.bottom > s.top - pad && r.top < s.bottom + pad).length;
+    const hits = new Set();
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) { const e = document.elementFromPoint(s.left + (s.width * (i + 0.5)) / 5, s.top + (s.height * (j + 0.5)) / 5); hits.add(e?.closest('[data-gamble]')?.dataset.gamble ?? (e?.closest('#spinBtn') ? 'spin' : 'none')); }
+    return { over, hits: [...hits].sort().join(','), fit: document.getElementById('summaryCard').dataset.fit ?? '0' }; });
+  const spinSafe = async (tag) => { const h = await spinHit(); check(h.over === 0 && !/double|triple/.test(h.hits), `${tag}: no bet covers SPIN's place (a tap there by habit keeps or does nothing)`, JSON.stringify(h)); };
   const ov = (a, b) => (a && b ? Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)) : 0);
   const inside = (a, L) => !!a && a.x >= -0.5 && a.y >= -0.5 && a.x + a.w <= L.vw + 0.5 && a.y + a.h <= L.vh + 0.5;
   const PAIRS = [
@@ -159,12 +167,16 @@ for (const vp of vps) {
     if (await until("window.__slot.state() === 'gambleOffer'", 30000)) {
       await real(480); await adv(100);
       const g = await ev(() => { const c = document.getElementById('summaryCard'), r = c.getBoundingClientRect(), f = document.getElementById('foot').getBoundingClientRect(), rg = document.getElementById('reg').getBoundingClientRect();
-        return { top: r.top, bottom: r.bottom, h: r.height, left: r.left, right: r.right, foot: f.top, reg: rg.bottom, cardTop: window.__slot.game.hud.gambleCardTop(), host: document.getElementById('app').getBoundingClientRect().top,
+        return { top: r.top, bottom: r.bottom, h: r.height, left: r.left, right: r.right, foot: f.top, reg: rg.bottom, cardTop: window.__slot.game.hud.gambleCardTop(), host: document.getElementById('app').getBoundingClientRect().top, spin: document.getElementById('spinBtn').getBoundingClientRect().left,
           focus: document.activeElement?.dataset?.gamble ?? null, roll: [...c.querySelectorAll('.g-roll, .g-faces')].every((e) => getComputedStyle(e).display === 'none'), medal: !!c.querySelector('canvas.medal')?.width }; });
-      const phone = !(W >= 1000 && W / H >= 1.25);
-      const cap = H < 560 ? 0.62 * H : 0.43 * H;
+      const phone = !(W >= 1000 && W / H >= 1.25), side = W <= 999 && H <= 500 && W > H;
       check(g.top >= g.reg && g.bottom <= g.foot + 0.5 && g.left >= 0 && g.right <= W + 0.5, 'gamble card inside the screen, clear of #reg and #foot', `${g.top.toFixed(0)}–${g.bottom.toFixed(0)}`);
-      if (phone) check(g.h <= cap + 0.5, `phones: the card is a bottom sheet ≤ ${H < 560 ? 62 : 43} % of the height (the staged die stays in view)`, `${g.h.toFixed(0)} px of ${H}`);
+      if (side) check(g.right <= g.spin - 9.5 && g.left >= W * 0.4, 'short landscape: the card stands in a right-hand column left of SPIN (the die beside it)', `${g.left.toFixed(0)}–${g.right.toFixed(0)}, SPIN at ${g.spin.toFixed(0)}`);
+      else if (phone) check(g.h <= 0.43 * H + 0.5, 'phones: the card is a bottom sheet ≤ 43 % of the height (the staged die stays in view)', `${g.h.toFixed(0)} px of ${H}`);
+      // the staged die keeps the brief's 120 px floor beside / above the card
+      const dieS = await ev(() => window.__slot.world.stage.layers.banners.children.find((c) => c.label === 'dieAward')?.moment?.['tS'] ?? 0);
+      check(dieS >= 120, 'the staged die is ≥ 120 px (its band clear of the card)', `${dieS.toFixed(0)} px`);
+      await spinSafe('the offer card');
       check(Math.abs(g.cardTop - (g.top - g.host)) <= 1.5, 'hud.gambleCardTop() is the card\'s top edge', `${g.cardTop.toFixed(1)} vs ${(g.top - g.host).toFixed(1)}`);
       check(g.focus === 'keep' && g.medal, 'Behold is focused first; the die medal is painted');
       // the shot once the die has risen and grown to its stage (the 0,7 s lift; the money celebration has closed)
@@ -189,6 +201,26 @@ for (const vp of vps) {
       await adv(300); await real(300);
     } else check(false, 'the Kvit eller dobbelt card after the 2nd die');
 
+    // the other offer cards (the storm's for k = 3 and k = 20, and the demo's): no bet ever covers SPIN's place
+    for (const o of [{ source: 'storm', k: 3 }, { source: 'storm', k: 20 }, { source: 'spin', k: 1, demo: true }]) {
+      await ev((o) => window.__slot.qaCard(o), o);
+      await real(450);
+      await spinSafe(`the ${o.demo ? 'demo' : `storm (k ${o.k})`} offer card`);
+      await ev(() => window.__slot.qaCard(null));
+      await real(450);
+    }
+    await real(300);
+    await ev(() => window.__slot.game.dispatch({ t: 'demoGamble' }));
+    if (await until("window.__slot.state() === 'gambleOffer' && window.__slot.gambleRun()?.armed", 15000, 100)) {
+      await real(450);
+      await spinSafe('the demo choice');
+      const dS = await ev(() => window.__slot.world.stage.layers.banners.children.find((c) => c.label === 'dieAward')?.moment?.['tS'] ?? 0);
+      check(dS >= 120, 'the demo die is ≥ 120 px (its band clear of the card and the DEMO band)', `${dS.toFixed(0)} px`);
+      await ev(() => window.__slot.choose('keep'));
+      await untilState('idle', 20000);
+      await adv(300); await real(300);
+    } else check(false, 'the demo choice card');
+
     // ---------------------------------------------------------------- the niche at n, autospin sheet and a running autospin
     await ev(() => window.__slot.qaDice(12));
     await adv(100); await real(200);
@@ -198,7 +230,7 @@ for (const vp of vps) {
     await real(450);
     const sh = await ev(() => { const s = document.getElementById('autoSheet').getBoundingClientRect(), rg = document.getElementById('reg').getBoundingClientRect(), f = document.getElementById('foot').getBoundingClientRect();
       return { top: s.top, bottom: s.bottom, left: s.left, right: s.right, reg: rg.bottom, foot: f.top, n: document.querySelectorAll('#autoN button').length, l: document.querySelectorAll('#autoL button').length }; });
-    check(sh.top >= sh.reg - 0.5 && sh.bottom <= sh.foot + 0.5 && sh.left >= -0.5 && sh.right <= W + 0.5 && sh.n === 4 && sh.l >= 1, 'autospin sheet: above the deck, inside the screen, 4 counts and the loss limits', JSON.stringify(sh));
+    check(sh.top >= sh.reg - 0.5 && sh.bottom <= sh.foot + 0.5 && sh.left >= -0.5 && sh.right <= W + 0.5 && sh.n === 4 && sh.l === 4, 'autospin sheet: above the deck, inside the screen, 4 counts and the 4 loss-limit steps', JSON.stringify(sh));
     await shot('h30-auto-sheet');
     await click('#autoGo');
     await adv(400); await real(200);

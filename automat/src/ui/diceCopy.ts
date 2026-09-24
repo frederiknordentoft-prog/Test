@@ -337,7 +337,11 @@ export const GAMBLE_FIRST_DIE = 'Fra næste terning kan du vælge at beholde den
 export const GAMBLE_THROW = 'Terningen kastes …';
 export const GAMBLE_RESTORED = { eyebrow: 'RESULTATET AF DIT VALG', line: 'Valget blev truffet før genindlæsningen. Resultatet står fast.', tab: 'Valget blev truffet i en anden fane. Resultatet står fast.' };
 export const gambleDemoNote = (n: number) => `DEMO · Sådan fungerer valget · tæller ikke · dit antal er uændret (${fmtDice(n)})`;
-export const DEMO_GAMBLE_BANNER = { t: 'DEMO · TERNING MED VALG', s: 'Sådan fungerer Kvit eller dobbelt · tæller ikke med' };
+/** The demo offer card's eyebrow: the demo note in the card's head (no boxed paragraph over it: the die keeps the room). */
+export const gambleDemoEyebrow = (n: number) => `${DEMO_CAPTION} · dit antal er uændret (${fmtDice(n)})`;
+/** The demo offer's reader line opens with it (no start banner over the die moment: the DEMO band and the card's
+ *  amber eyebrow say it on screen). */
+export const DEMO_GAMBLE_SR = 'Demo: sådan fungerer Kvit eller dobbelt. Tæller ikke med.';
 export const demoGambleDone = (n: number) => ({ t: 'DIT ANTAL ER UÆNDRET', s: `${countWord(n)} · demo-valget talte ikke med` });
 /** The header pill's second segment (demo tool). */
 export const DEMO_PILL = { die: 'Terning', dieAria: 'Vis en terning og valget Behold, Kvit eller dobbelt eller 3 for 1 – demo-værktøj. Tæller ikke og ændrer ikke dit antal.' };
@@ -355,24 +359,23 @@ export function gambleOfferCopy(c: GambleCardCtx) {
   const storm = c.source === 'storm';
   const pick = 'venter på dit valg: Behold, Kvit eller dobbelt eller 3 for 1. Behold er valgt på forhånd.';
   return {
-    eyebrow: gambleEyebrow(c),
+    eyebrow: c.demoN !== null ? gambleDemoEyebrow(c.demoN) : gambleEyebrow(c),
     title: storm ? `${countWord(c.k)} fra stormen` : 'Din nye terning',
     body: storm ? 'Du vælger én gang for dem alle. Resultatet er endeligt.' : 'Du vælger én gang. Resultatet er endeligt.',
     keep: { label: GAMBLE.keep, sub: countWord(c.k) },
     double: { label: GAMBLE.double, sub: gambleSub('double', c.k) },
     triple: { label: GAMBLE.triple, sub: gambleSub('triple', c.k) },
     facts: GAMBLE_FACTS,
-    demoNote: c.demoN !== null ? gambleDemoNote(c.demoN) : null,
-    sr: storm ? `${countWord(c.k)} fra stormen ${pick}` : `Din nye terning ${pick}`,
+    sr: (c.demoN !== null ? `${DEMO_GAMBLE_SR} ` : '') + (storm ? `${countWord(c.k)} fra stormen ${pick}` : `Din nye terning ${pick}`),
   };
 }
-/** The choice card: Behold (primary, focused first), Kvit eller dobbelt, 3 for 1. No timer and no countdown. */
+/** The choice card: Behold (primary, focused first), Kvit eller dobbelt, 3 for 1. No timer and no countdown. The demo
+ *  card says DEMO, that it does not count and the unchanged count in its amber eyebrow. */
 export function gambleCardHtml(c: GambleCardCtx): string {
   const o = gambleOfferCopy(c);
   const b = (act: string, x: { label: string; sub: string }, primary = false) =>
     `<button class="btn small${primary ? '' : ' ghost'} g-opt" data-gamble="${act}"${primary ? ' data-primary' : ''}><span class="g-l">${x.label}</span><small class="g-s num">${x.sub}</small></button>`;
-  return `${o.demoNote ? `<div class="demo-note">${o.demoNote}</div>` : ''}
-    <div class="g-head"><canvas class="medal" aria-hidden="true"></canvas><div class="g-hd"><h2>${o.eyebrow}</h2><div class="t" id="gcTitle">${o.title}</div></div></div><p class="g-body">${o.body}</p>
+  return `<div class="g-head"><canvas class="medal" aria-hidden="true"></canvas><div class="g-hd"><h2${c.demoN !== null ? ' class="g-demo"' : ''}>${o.eyebrow}</h2><div class="t" id="gcTitle">${o.title}</div></div></div><p class="g-body">${o.body}</p>
     <div class="g-btns" role="group" aria-labelledby="gcTitle">${b('keep', o.keep, true)}${b('double', o.double)}${b('triple', o.triple)}</div>
     <p class="facts">${o.facts}</p>`;
 }
