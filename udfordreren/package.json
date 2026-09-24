@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sim": "tsx sim/runner.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "artifact": "vite build --mode single && node scripts/artifact.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.6",

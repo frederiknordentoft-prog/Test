@@ -1,7 +1,7 @@
-node_modules
-dist
-dist-single
-playwright-report
-test-results
 *.local
 .DS_Store
+dist
+dist-single
+node_modules
+playwright-report
+test-results
