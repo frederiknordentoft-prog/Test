@@ -29,3 +29,7 @@
 - Kun dk kan spilles i fase 1-2; de øvrige markedskort findes i data og åbner i fase 3.
 - Pixel-ikoner er 8×8 bitmaps i kode (ingen emoji, ingen eksterne assets); UI-tekst bruger systemfonte.
 - Kontraktopgaver: kvalitet = (0,7 + bedste stat/60) × 1,15 ved rette rolle × (1 + 0,35 pr. ekstra person).
+- Auto-pause ved faseskift sker kun, når den nye fase mangler folk, og ved ledige medarbejdere kun, når der ikke er et aktivt projekt; ellers vises en toast. Ellers ville spillet pause hvert par sekunder og bryde målet på 200-450 pauser i alt.
+- Anmeldelsesscoren bruger en logistisk kurve i q-rum (k = 7,4, q0 = 0,583): Guldkupon kræver ca. 1,4× markedsstandarden på alle relevante parametre, Hall of Fame ca. 2×.
+- Årets innovation tæller nye kombinationer og nye features i lancerede produkter (8 point hver) mod konkurrenternes innovation + 1,5 pr. år.
+- Spillet kan hoppes frem med `debugHopTilAar`, som auto-vælger første valg i events.
