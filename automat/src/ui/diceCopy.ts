@@ -332,6 +332,11 @@ export function pipList(ps: number[]): string {
 const losePips = (bet: GambleBet) => ALL_PIPS.filter((p) => !winPips(bet).includes(p));
 /** The sub-line under a bet: what each face gives, for `k` staked dice. */
 export const gambleSub = (bet: GambleBet, k: number) => `${pipList(winPips(bet))}: ${countWord(GAMBLE_BETS[bet].mult * k)} · ${pipList(losePips(bet))}: ingen`;
+/** The chance of a bet in the user's own terms: "50 %" · "33,3 %" (from winPips, never typed). */
+export function gambleChance(bet: GambleBet): string {
+  const p = (winPips(bet).length / GAMBLE_SIDES) * 100;
+  return `${Number.isInteger(p) ? p : fmt1(p)} %`;
+}
 export const GAMBLE_FACTS = 'En terning kastes. I gennemsnit giver alle tre valg lige mange terninger. Kun de nye terninger kan sættes på spil – aldrig dem, der allerede ligger i kammeret.';
 export const GAMBLE_FIRST_DIE = 'Fra næste terning kan du vælge at beholde den eller sætte den på spil (Kvit eller dobbelt eller 3 for 1). Valget kan slås fra under Indstillinger.';
 export const GAMBLE_THROW = 'Terningen kastes …';
@@ -373,10 +378,10 @@ export function gambleOfferCopy(c: GambleCardCtx) {
  *  card says DEMO, that it does not count and the unchanged count in its amber eyebrow. */
 export function gambleCardHtml(c: GambleCardCtx): string {
   const o = gambleOfferCopy(c);
-  const b = (act: string, x: { label: string; sub: string }, primary = false) =>
-    `<button class="btn small${primary ? '' : ' ghost'} g-opt" data-gamble="${act}"${primary ? ' data-primary' : ''}><span class="g-l">${x.label}</span><small class="g-s num">${x.sub}</small></button>`;
+  const b = (act: string, x: { label: string; sub: string }, chance = '', primary = false) =>
+    `<button class="btn small${primary ? '' : ' ghost'} g-opt" data-gamble="${act}"${primary ? ' data-primary' : ''}><span class="g-l">${x.label}${chance ? ` <b class="g-pct num">${chance}</b>` : ''}</span><small class="g-s num">${x.sub}</small></button>`;
   return `<div class="g-head"><canvas class="medal" aria-hidden="true"></canvas><div class="g-hd"><h2${c.demoN !== null ? ' class="g-demo"' : ''}>${o.eyebrow}</h2><div class="t" id="gcTitle">${o.title}</div></div></div><p class="g-body">${o.body}</p>
-    <div class="g-btns" role="group" aria-labelledby="gcTitle">${b('keep', o.keep, true)}${b('double', o.double)}${b('triple', o.triple)}</div>
+    <div class="g-btns" role="group" aria-labelledby="gcTitle">${b('keep', o.keep, '', true)}${b('double', o.double, gambleChance('double'))}${b('triple', o.triple, gambleChance('triple'))}</div>
     <p class="facts">${o.facts}</p>`;
 }
 /** The six faces ⚀–⚅ with the winning ones of the bet marked (the odds stay visible; nothing moves toward a face). */
@@ -420,7 +425,7 @@ export const srGambleKeep = (k: number) => `${countWord(k)} er lagt i Terningeka
 /** Rules (diceRulesHtml): "Kvit eller dobbelt". */
 export function gambleRulesP1(): string {
   const d = GAMBLE_BETS.double.mult, t = GAMBLE_BETS.triple.mult;
-  return `Når et spin har givet en terning, vælger du én gang: Behold, Kvit eller dobbelt eller 3 for 1. Ved de to sidste kastes en almindelig terning: Kvit eller dobbelt giver ${d} terninger ved ${pipList(winPips('double'))} og ingen ved ${pipList(losePips('double'))}; 3 for 1 giver ${t} terninger ved ${pipList(winPips('triple'))} og ingen ved ${pipList(losePips('triple'))}. Der er ét valg pr. tildeling, og resultatet er endeligt. Efter en Solstorm gælder ét fælles valg for alle stormens terninger.`;
+  return `Når et spin har givet en terning, vælger du én gang: Behold, Kvit eller dobbelt eller 3 for 1. Ved de to sidste kastes en almindelig terning: Kvit eller dobbelt giver ${d} terninger ved ${pipList(winPips('double'))} (${gambleChance('double')}) og ingen ved ${pipList(losePips('double'))}; 3 for 1 giver ${t} terninger ved ${pipList(winPips('triple'))} (${gambleChance('triple')}) og ingen ved ${pipList(losePips('triple'))}. Der er ét valg pr. tildeling, og resultatet er endeligt. Efter en Solstorm gælder ét fælles valg for alle stormens terninger.`;
 }
 export function gambleRulesP2(): string {
   return `Chancerne er fair: i gennemsnit giver alle tre valg præcis lige så mange terninger, som du satte på spil. Kun de nye terninger kan sættes på spil – aldrig dem i kammeret og aldrig penge. Kastet bruger spillets egen tilfældighedsgenerator og har sit eget ID. Din første terning beholdes altid, og mens alle ${G} fliser lyser, og porten ikke er åbnet, beholdes nye terninger altid.`;

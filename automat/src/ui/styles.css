@@ -1014,6 +1014,7 @@ html, body {
 .g-btns { display: grid; gap: 8px; }
 .g-opt.btn { height: auto; min-height: 50px; padding: 8px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; white-space: normal;
   font-size: 12.5px; letter-spacing: 0.12em; line-height: 1.1; }
+.g-opt .g-pct { white-space: nowrap; font-weight: 700; letter-spacing: 0.04em; color: #8ff5ea; }   /* the chance, in the user's own terms */
 .g-opt .g-s { font-size: 11px; font-weight: 600; letter-spacing: 0.01em; text-transform: none; opacity: 0.88; line-height: 1.25; text-wrap: balance; }
 .g-opt.ghost { background: rgba(22, 14, 50, 0.55); border-color: rgba(138, 92, 255, 0.42); color: #eee6ff; }
 .g-opt.ghost:hover { border-color: rgba(170, 130, 255, 0.7); }

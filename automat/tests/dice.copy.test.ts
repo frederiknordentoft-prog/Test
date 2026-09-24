@@ -11,7 +11,7 @@ import {
   chamberMyth, chamberFacts, chamberSummary, chamberRibbon, gateState, ceremonyEyebrow, srCeremonyStart, SR_CEREMONY_END, demoGateBanner,
   placardCopy, placardHtml, MENU, DRAWER, diceRulesHtml, type CeremonyKind, type GateState,
   demoTag, GAMBLE, GAMBLE_FACTS, GAMBLE_FIRST_DIE, GAMBLE_THROW, GAMBLE_RESTORED, GAMBLE_NUMBERS_NOTE, DEMO_GAMBLE_SR, DEMO_PILL,
-  gambleDemoNote, demoGambleDone, gambleSub, pipList, gambleOfferCopy, gambleCardHtml, gambleThrowHtml, gambleResultCopy, gambleResultHtml,
+  gambleDemoNote, demoGambleDone, gambleSub, gambleChance, pipList, gambleOfferCopy, gambleCardHtml, gambleThrowHtml, gambleResultCopy, gambleResultHtml,
   srGambleKeep, gambleRulesP1, gambleRulesP2, faceGlyph, type GambleCardCtx,
   TIPS, GAMBLE_LOG, gambleLogResult, gambleLogRows,
 } from '../src/ui/diceCopy.ts';
@@ -294,6 +294,13 @@ describe('Kvit eller dobbelt: the card', () => {
       for (const x of [o.keep, o.double, o.triple]) expect(html).toContain(`<small class="g-s num">${x.sub}</small>`);
     }
     expect(gambleSub('double', 1)).toBe('4, 5 eller 6: 2 terninger · 1, 2 eller 3: ingen');
+    // the chances in the user's own terms, on the bet buttons only (never on Behold)
+    expect(gambleChance('double')).toBe('50 %');
+    expect(gambleChance('triple')).toBe('33,3 %');
+    const card = gambleCardHtml(ctx({ k: 1 }));
+    expect(card.match(/class="g-pct num"/g)).toHaveLength(2);
+    expect(card).toContain('Kvit eller dobbelt <b class="g-pct num">50 %</b>');
+    expect(card).toContain('3 for 1 <b class="g-pct num">33,3 %</b>');
     expect(gambleSub('triple', 7)).toBe('5 eller 6: 21 terninger · 1–4: ingen');
     expect(GAMBLE_BETS.double.mult).toBe(2);
   });
@@ -321,7 +328,7 @@ describe('Kvit eller dobbelt: the card', () => {
   it('the rules: one choice per award, fair odds, only new dice, pips from winPips; the numbers note', () => {
     const rules = diceRulesHtml();
     expect(rules).toContain('<h4>Kvit eller dobbelt</h4>');
-    expect(gambleRulesP1()).toContain('Kvit eller dobbelt giver 2 terninger ved 4, 5 eller 6 og ingen ved 1, 2 eller 3; 3 for 1 giver 3 terninger ved 5 eller 6 og ingen ved 1–4.');
+    expect(gambleRulesP1()).toContain('Kvit eller dobbelt giver 2 terninger ved 4, 5 eller 6 (50 %) og ingen ved 1, 2 eller 3; 3 for 1 giver 3 terninger ved 5 eller 6 (33,3 %) og ingen ved 1–4.');
     expect(gambleRulesP2()).toContain('Chancerne er fair');
     expect(gambleRulesP2()).toContain('aldrig dem i kammeret og aldrig penge');
     for (const p of [gambleRulesP1(), gambleRulesP2(), GAMBLE_NUMBERS_NOTE]) expect(rules).toContain(p);
