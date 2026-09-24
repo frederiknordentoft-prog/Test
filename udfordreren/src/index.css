@@ -1,0 +1,64 @@
+@import 'tailwindcss';
+
+/* Designtokens. Brug dem som Tailwind-klasser: bg-panel, text-gold, border-line osv. */
+@theme {
+  --color-bg: #171a2b;
+  --color-bg2: #1e2236;
+  --color-panel: #252a42;
+  --color-panel2: #30365a;
+  --color-line: #0b0c16;
+  --color-hi: #4a5282;
+  --color-ink: #f3efe2;
+  --color-muted: #a2a6c4;
+  --color-dim: #6d7299;
+  --color-gold: #ffd23f;
+  --color-cyan: #4ee6d8;
+  --color-pink: #ff6fae;
+  --color-good: #6ee07a;
+  --color-bad: #ff5c5c;
+  --color-warn: #ffa94d;
+  --color-violet: #a58bff;
+  --color-sky: #5cb8ff;
+  --font-pixel: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+  --tekst-skala: 1;
+}
+:root[data-tekst='stor'] { --tekst-skala: 1.12; }
+:root[data-tekst='ekstra'] { --tekst-skala: 1.25; }
+
+html, body, #root { height: 100%; }
+html { font-size: calc(15px * var(--tekst-skala)); }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; }
+.tal { font-variant-numeric: tabular-nums; }
+.pixel-kant { box-shadow: 0 0 0 2px var(--color-line), inset 0 2px 0 rgba(255,255,255,0.06); }
+.pixel-skygge { box-shadow: 0 3px 0 var(--color-line); }
+canvas.pixel { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* Reduceret bevægelse: globalt og manuelt */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+:root[data-reduceret='1'] *, :root[data-reduceret='1'] *::before, :root[data-reduceret='1'] *::after {
+  animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
+}
+
+@keyframes pop-ind { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes glid-op { 0% { transform: translateY(8px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+@keyframes blink { 50% { opacity: 0.35; } }
+.anim-pop { animation: pop-ind 180ms ease-out both; }
+.anim-glid { animation: glid-op 220ms ease-out both; }
+.anim-blink { animation: blink 1s steps(2) infinite; }

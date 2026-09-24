@@ -1,0 +1,71 @@
+// Centrale balanceringskonstanter for kerneloopet. Alt er [D] og tunes af harnesset.
+
+export const BALANCE = {
+  // --- Point og faser ---
+  /** Holdvægte: n-te person i en fase bidrager med VAEGT^(n-1) (Brooks' lov) */
+  holdVaegt: 0.5,
+  /** Point-skala pr. person-uge */
+  pointSkala: 1.0,
+  /** Tilfældig variation på point */
+  pointVariation: 0.15,
+  /** Budgetfaktor = 1 + budgetLog · log2(budget / minBudget), loftet ved budgetMax */
+  budgetLog: 0.12,
+  budgetMax: 1.4,
+  /** Minimumsbudget stiger pr. år siden 2012 */
+  budgetInflation: 0.1,
+  /** Type-/temaniveau giver +x point pr. niveau over 1 */
+  niveauBonus: 0.04,
+  koncetUger: 2,
+  testUger: 2,
+  maxTestUger: 8,
+  /** Fordeling af point på parametre pr. fase */
+  fordeling: {
+    koncept: { spaending: 0.25, originalitet: 0.75, teknik: 0, tryghed: 0 },
+    design: { spaending: 0.5, originalitet: 0.35, teknik: 0, tryghed: 0.15 },
+    teknik: { spaending: 0.1, originalitet: 0, teknik: 0.85, tryghed: 0.05 },
+    test: { spaending: 0, originalitet: 0, teknik: 0.25, tryghed: 0.75 },
+  },
+  // --- Fejl ---
+  fejlBasis: 1.6,
+  testFjernBasis: 1.5,
+  testFjernTeknik: 0.05,
+  testFjernAnsvar: 0.04,
+  // --- Energi og erfaring ---
+  energiTabProjekt: 4.5,
+  energiTabKontrakt: 4,
+  energiHvile: 18,
+  xpProjekt: 10,
+  xpKontrakt: 8,
+  // --- Markedsstandard (anmeldelser) ---
+  /** Markedsstandard pr. parameter over tid [år, point] — stejl i garage-årene, flader ud senere */
+  standardKurve: [[2012, 92], [2013, 150], [2014, 225], [2016, 350], [2018, 440], [2020, 520], [2022, 590], [2026, 740], [2030, 910], [2035, 1160]] as [number, number][],
+  standardKonkurrent: 0.5, // tillæg pr. kvalitet over 0.6 hos bedste konkurrent
+  /** Logistisk kurve i q-rum: score = 1 + 9 / (1 + e^(−k·(q − q0))), q = 1 − e^(−ratio) */
+  scoreK: 9,
+  scoreQ0: 0.6,
+  scoreStoej: 0.55,
+  // --- Kunder ---
+  startKunderAndel: 0.0012,
+  hypeOrganisk: 0.000004, // pr. hype-point pr. uge (andel af markedet)
+  top10Organisk: 0.00015,
+  mundTilMund: 0.0015,
+  /** Driftsomkostning pr. aktiv kunde pr. uge i kr. (KYC, support, hosting) */
+  driftPrKunde: 2,
+  krydsSalgStart: 0.2,
+  krydsSalgUge: 0.002,
+  maksAndel: 0.7,
+  /** Styrke af produktporteføljen: 1 − e^(−k · Σ kvalitet · friskhed) */
+  portefoeljeK: 1.3,
+  friskhedGulv: 0.1,
+  /** Lanceringsbølge: nye produkter får (1 + x·e^(−alder/uger)) af ejerens aktivitet */
+  lanceringsBoelge: 1.5,
+  lanceringsBoelgeUger: 10,
+  // --- Konkurrenter ---
+  oevrigeVaegt: 25, // ikke-simulerede licenserede aktører i dk
+  styrkeExp: 2.2,
+  konkurrentHalveringGange: 3, // konkurrenters brands fornyes løbende
+  konkurrentLanceringInterval: 1.6, // år ved innovation ~ 3
+  maxProdukterPrVertikal: 3,
+  // --- Hype ---
+  hypeForfald: 0.96,
+} as const;
