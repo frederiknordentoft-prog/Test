@@ -195,7 +195,7 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
       }
       const st = styrke[v];
       // Tilgang
-      const betalte = fordelingSum > 0 ? (betalteNye * st * N[v]) / fordelingSum : 0;
+      const betalte = fordelingSum > 0 ? (betalteNye * st * N[v]) / fordelingSum / VERTICALS[v].cacFaktor : 0;
       const organisk = N[v] * BALANCE.hypeOrganisk * s.hype * st * (0.5 + s.omdoemme / 100);
       let hitliste = 0;
       for (const e of ms.top10) {

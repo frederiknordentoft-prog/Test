@@ -12,6 +12,8 @@ export type VerticalDef = {
   holdVarians: number;
   /** Sandsynlighed pr. uge for en "favoritsejr"-uge [D] */
   favoritsejrChance: number;
+  /** Relativ pris pr. ny kunde — kasinokunder er dyrere [D] */
+  cacFaktor: number;
   farve: string;
 };
 
@@ -24,6 +26,7 @@ export const VERTICALS: Record<Vertical, VerticalDef> = {
     churnPrUge: 0.03, // [D]
     holdVarians: 0.22, // [D]
     favoritsejrChance: 0.06, // [D] ca. 3 uger om året
+    cacFaktor: 1.0,
     farve: '#3fa7d6',
   },
   kasino: {
@@ -34,6 +37,7 @@ export const VERTICALS: Record<Vertical, VerticalDef> = {
     churnPrUge: 0.025, // [D]
     holdVarians: 0.04, // [D]
     favoritsejrChance: 0,
+    cacFaktor: 1.35, // [D]
     farve: '#e8a33d',
   },
 };

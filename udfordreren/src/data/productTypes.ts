@@ -67,7 +67,7 @@ export const PRODUCT_TYPES: Record<ProductTypeId, ProductTypeDef> = {
     id: 'slotsAggregator', navn: 'Slots via aggregator', vertikal: 'kasino', fraAar: 2012,
     marginStd: 0.04, marginMin: 0.03, marginMax: 0.06, // [F/A] RTP 94-97 %
     risiko: 9, halveringstidUger: 20,
-    designUger: 3, teknikUger: 3, minBudget: 0.15, krav: {},
+    designUger: 4, teknikUger: 3, minBudget: 0.15, krav: {},
     beskrivelse: 'Et kurateret udvalg af indkøbte spilleautomater. Hurtigt, men skal fornyes ofte.',
   },
   egneSlots: {
