@@ -6,6 +6,8 @@ import { ROLES } from '../data/roles';
 import { aarFor } from './time';
 import { afvis, clamp, nyId, nyhed, signal } from './util';
 import { forskningsEffekt } from './insight';
+import { STANDARD_HOLD } from './projects';
+import { PHASES } from './types';
 
 export function lavTilbud(s: GameState, rng: Rng, efter2016: boolean): ContractOffer | null {
   const aar = aarFor(s.uge);
@@ -99,7 +101,28 @@ export function ugentligeKontrakter(s: GameState): { indtaegt: number; arbejdede
       nyhed(s, `Kontraktopgave leveret til ${c.tilbud.kunde}: +${Math.round(betaling * 1000)} t. kr. og ${indsigt} indsigt.`, 'firma');
     }
   }
+  // Folk, der kommer hjem fra en opgave, hopper på det aktive projekt, hvis holdet har plads
+  const hjemme = s.kontraktopgaver.filter((c) => faerdige.includes(c.id)).flatMap((c) => c.staff);
   s.kontraktopgaver = s.kontraktopgaver.filter((c) => !faerdige.includes(c.id));
+  const stadigUde = new Set(s.kontraktopgaver.flatMap((c) => c.staff));
+  const projekt = s.projekter.find((p) => !p.klar);
+  if (projekt) {
+    for (const id of hjemme) {
+      const m = s.staff.find((x) => x.id === id);
+      if (!m || stadigUde.has(id) || m.energi < 30) continue;
+      const iAndetProjekt = s.projekter.some((p) => p.id !== projekt.id && !p.klar && p.faseTildeling[p.fase].includes(id));
+      if (iAndetProjekt) continue;
+      let tilfoejet = false;
+      for (const f of PHASES.slice(PHASES.indexOf(projekt.fase))) {
+        const hold = projekt.faseTildeling[f];
+        if (hold.length < STANDARD_HOLD && !hold.includes(id)) {
+          hold.push(id);
+          tilfoejet = true;
+        }
+      }
+      if (tilfoejet) nyhed(s, `${m.navn} er tilbage fra opgaven og hjælper på ${projekt.navn}.`, 'firma');
+    }
+  }
   return { indtaegt, arbejdede };
 }
 

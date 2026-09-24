@@ -363,3 +363,19 @@ describe('Standardhold og events', () => {
     expect(s.ventendeEvents.some((e) => e.eventId === 'journalist')).toBe(false);
   });
 });
+
+describe('Hjem fra kontrakt', () => {
+  it('folk, der kommer hjem fra en opgave, hopper på det aktive projekt', () => {
+    const s = nyt();
+    const t = s.kontraktTilbud[0];
+    const ude = s.staff[1];
+    act(s, { t: 'takeContract', contractId: t.id, staff: [ude.id] });
+    act(s, { t: 'startProject', project: { navn: 'P', typeId: 'prematch', themeId: 'fodbold', markeder: ['dk'], margin: 0.07, intensitet: 3, budget: 0.15 } });
+    const p = s.projekter[0];
+    expect(p.faseTildeling.koncept).not.toContain(ude.id);
+    koer(s, t.uger);
+    const q = s.projekter[0];
+    expect(q.faseTildeling[q.fase]).toContain(ude.id);
+    expect(q.faseTildeling.test).toContain(ude.id);
+  });
+});
