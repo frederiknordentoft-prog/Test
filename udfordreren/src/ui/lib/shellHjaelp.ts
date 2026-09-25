@@ -11,18 +11,15 @@ import { KONKURS_UGER } from '../../data/costs';
 import { FASE_NAVN } from './devHjaelp';
 import { kassenRaekker } from './firmaHjaelp';
 
-/** Hent en fil i browseren (Blob + a[download]) */
+/** Hent en fil i browseren (data-URL + a[download]) */
 export function hentFil(filnavn: string, indhold: string, type = 'application/json'): void {
-  const blob = new Blob([indhold], { type });
-  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = `data:${type};charset=utf-8,${encodeURIComponent(indhold)}`;
   a.download = filnavn;
   a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function slug(tekst: string): string {

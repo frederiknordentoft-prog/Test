@@ -68,7 +68,7 @@ function NiveauFelt({ m }: { m: Staff }) {
 }
 
 /** De seks stats som mini-barer */
-export function StatGitter({ stats, fremhaev }: { stats: Staff['stats']; fremhaev?: StatKey }) {
+export function StatRaster({ stats, fremhaev }: { stats: Staff['stats']; fremhaev?: StatKey }) {
   return (
     <div className="grid grid-cols-2 gap-x-3 gap-y-1 @md:grid-cols-3">
       {STAT_KEYS.map((k) => (
@@ -269,7 +269,7 @@ export function MedarbejderKort({ m, status, visHandlinger = true, onFyret, uden
     >
       <MedarbejderHoved m={m} status={status} />
       <NiveauFelt m={m} />
-      <StatGitter stats={m.stats} />
+      <StatRaster stats={m.stats} />
       <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1">
         <div className="flex min-w-0 items-center gap-1.5" title={`Energi ${Math.round(m.energi)} af 100. Genoprettes, når ${m.navn.split(' ')[0]} holder pause.`}>
           <Ikon navn="lyn" farve={energiFarve(m.energi)} indre="var(--color-line)" str={14} className="shrink-0" />
@@ -345,7 +345,7 @@ export function KandidatKort({ k, fuldt, grund }: { k: Staff; fuldt: boolean; gr
           </Maengde>
         </div>
       </div>
-      <StatGitter stats={k.stats} fremhaev={r.primaer} />
+      <StatRaster stats={k.stats} fremhaev={r.primaer} />
       <Btn
         variant="god"
         disabled={fuldt}

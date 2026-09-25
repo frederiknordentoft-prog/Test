@@ -88,3 +88,17 @@ Det skal **føles som Game Dev Story**: tydeligt loop, små fejringer, klare tal
 - **Spillerbyen (6.14)** (nyt panel eller fane): `game.by` — 200 personer med `x, y` (0-1), `profil` (`rekreativ | engageret | vip | risiko | problem | churnet`), `vaerdi`, `eksponering` (−1 = forsvandt stille ved selvudelukkelse; tegn den ikke), `marked`. Ikon + farve: **VIP = guld**, **risiko = gul**, **problem = rød**, rekreativ/engageret i neutrale toner; `churnet` vises ikke (eller som svage silhuetter). `byTal(s, m?)`, `risikoAndel(s, m?)`, `byDrivere(s, m)` (skade vs. beskyttelse), `byTillid(s, m)`, `byArpuFaktor(s, m)`. Byhistorier i `game.byHistorier` (korte og respektfulde) og signal `byhistorie` → toast. Filtrér pr. marked.
 - **Ansvarsforskning:** nye noder i `RESEARCH` (Tidlig intervention, Affordability-tjek; AI-noder fra 2026 med `laaser`).
 - **Andre signaler:** `agent { agentId, funktion, handling }` (toast), `transformation { erstattet }` (toast; eventet `aiTransformationDebat` kommer som dialog).
+
+## Fase 6: slutninger, eftertanke, New Game+ og Arkivet (nyt i sim-kernen)
+
+- **Slutningen:** `game.slut = { id, vaerdi, eftermaele, stifterVaerdi, uge }`. `id` er en af `SLUT_IDS` (`src/data/endings.ts`: `SLUTNINGER[id]` har titel, tekst og tone). Signal `slut` åbner slutskærmen.
+- **Slutskærmen** (spec 6.17) skal vise:
+  - slutningens titel og tekst, selskabsværdi, stifternes værdi og eftermælet med dets seks dele (`eftermaele(s)` i `src/sim/endings.ts`: navn, point, maks, forklaring);
+  - en **tidslinje** over produkter, markeder, runder og valg: `game.tidslinje` (uge, tekst, kind: produkt | marked | firma | pris | ai | verden | krise) — gerne som en vandret tidslinje med år og ikoner;
+  - **trofæhylden**: Guldkuponer og Hall of Fame (`produkter` med `guldkupon`/`hallOfFame`), gallapriser (`game.galla`), milepæle (`game.milepaele`);
+  - **byens udvikling**: `game.byAarlig` (andele pr. år: rekreativ, engageret, vip, risiko, problem) som et lille stablet søjlediagram;
+  - **eftertanke**: tre kort fra `eftertanke(s)` (titel, tekst, arkivId), hvert med et link, der åbner Arkivets opslag.
+  - Knapper: "Nyt spil", "New Game+" (arver kombinationsbogen og niveauerne via `arvFra(s)` i `src/sim/newgameplus.ts`) og de to modes, der låses op, når man har afsluttet et spil: "2018-start i USA" (`mode: 'usa2018'`) og "AI-native fra 2026" (`mode: 'aiNative2026'`). Start dem med `nytSpil({ ...opts, mode, arv })`. Gem arven og de ulåste modes i Dexie-indstillingerne, så de huskes mellem spil.
+- **Arkivet** (spec 6.18): nyt panel eller en dialog med opslagene i `ARKIV` (`src/data/archive.ts` — det ENESTE sted med rigtige navne; UI'et må kun vise teksten derfra, aldrig skrive navnene selv). Ulåste opslag står i `game.arkiv`; låste vises som "???" med en hint. Nyheder med `arkivId` kan klikkes og åbne opslaget (`arkivId(id)` oversætter konkurrenternes id'er). Arkivet kan slås fra i indstillingerne (`settings.arkiv`).
+- **Debug-menuen** (`?debug=1`, spec 6.20) skal også kunne: vise seed, hoppe til år, sætte kapital, indsigt og tillid, udløse et event (`udloesEvent`) eller en konkurrentreaktion, åbne et marked, tvinge et verdens- eller AI-scenarie, tilføje en agent og vise sim-værdierne bag hitlisten (`hitlisteTal`, `nyeSpillerePrUge`, `hjemmebane`).
+- **Hitlisten** rangerer efter `hitlisteTal[m] × hjemmebane(s, ejer, m)` (`src/sim/charts.ts`): Danske Lykke har hjemmebane i Danmark til 2016.

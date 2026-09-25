@@ -19,10 +19,28 @@ Kort todo pr. fase (spec afsnit 9). ✅ = færdig, 🔶 = i gang, ⬜ = ikke sta
 - ✅ Messer, Branchegallaen, anden vertikal med kryds-salg, runder og kvartalsmål
 - ✅ Gate: unit tests for niveauer, efterfølgere, gala og runder; start i én vertikal og tilføj den anden
 
-## Kendte punkter til senere faser
-- Første Hall of Fame lander omkring 2017 for den balancerede bot (spec: tidligst 2018) — finjusteres i fase 6 med 200 seeds × 6 bots.
-- Danske Lykke er nr. 1 i dk-andel i ca. 85-93 % af seeds efter 2018 (spec: ≥ 90 % til 2025) — kalibreres i fase 3.
-- JSON-eksport virker lokalt; i den delte artifact-version blokerer vieweren downloads.
+## Fase 3: Markeder, regulering og offshore 🔶
+- ✅ Sim: 9 markeder med åbningsdatoer, licens pr. marked/vertikal, afgifter og strenghed over tid, offshore-model (7.8), historiske og dynamiske regler, R11, sanktionstrappe, trends og sportskalender, offshore-fristelsen
+- ✅ Gate: markedskalibrering (dk 90 %, se 87 % med kasino < betting, nl 50 %, on 89 %, dk kasino-BSI 4,7 mia., Danske Lykke nr. 1)
+- 🔶 UI: markedskort, regulering, sanktioner, trends (workflow kører)
 
-## Fase 3-8 ⬜
+## Fase 4: Levende konkurrenter og platforme 🔶
+- ✅ Sim: reaktionsregler R1-R12 med synlige effekter, historiske konkurrenttiltag, opkøb og opkøbstilbud, sponsorauktioner, platformmigrering og B2B
+- ✅ Gate: bonuskrig, kopi og opkøbstilbud før 2020 i bot-kørsler; unit test for hver regel
+- ⬜ UI: konkurrentoversigt, platformvalg, tilbuds-, sponsor- og reaktionsdialoger
+
+## Fase 5: Spillerbyen og AI-akten 🔶
+- ✅ Sim: spillerbyen, ansvarsforskning og fristelser, akt-skift 2026 med verdensscenarier, AI-laboratoriet og agenter i faser, AI-scenarier, AI-transformation, børslicens og agent-API, 80 events
+- ✅ Unit tests for agenter, verdensscenarier, AI-scenarier, transformation og byen
+- ⬜ UI: AI-laboratoriet, Verdensbilledet 2026, spillerbyen
+
+## Fase 6: Slutninger, Arkiv og balancering 🔶
+- ✅ Sim: 8 slutninger, eftermæle, tidslinje, eftertanke, Arkivet (kun 7.15), New Game+ med to modes
+- ✅ `npm run sim`: 6 bots × 200 seeds i parallelle workers, 10 assertions, `sim/report.md`
+- ⬜ UI: slutskærm, Arkiv, New Game+, debug-menuens nye værktøjer
+
+## Fase 7-8 ⬜
 Se spec afsnit 9.
+
+## Kendte punkter
+- JSON-eksport virker lokalt; i den delte artifact-version blokerer vieweren downloads.
