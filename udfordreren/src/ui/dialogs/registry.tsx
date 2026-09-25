@@ -20,6 +20,11 @@ import StaffDialog from './StaffDialog';
 import MarkedAabnerDialog from './MarkedAabnerDialog';
 import RegelDialog from './RegelDialog';
 import SanktionDialog from './SanktionDialog';
+import AktSkiftDialog from './AktSkiftDialog';
+import VerdensNyhedDialog from './VerdensNyhedDialog';
+import TilbudDialog from './TilbudDialog';
+import SponsorDialog from './SponsorDialog';
+import ReaktionDialog from './ReaktionDialog';
 
 export type SignalDialogProps = { signal: Signal; onLuk: () => void };
 export type UiDialogProps = { dialog: UiDialog; onLuk: () => void };
@@ -41,6 +46,13 @@ export const SIGNAL_DIALOGER: Partial<Record<Signal['k'], ComponentType<SignalDi
   markedAabner: MarkedAabnerDialog,
   regel: RegelDialog,
   sanktion: SanktionDialog,
+  // + fase 4 (konkurrent-sporet)
+  tilbud: TilbudDialog,
+  sponsorAuktion: SponsorDialog,
+  reaktion: ReaktionDialog,
+  // + fase 5 (AI-sporet)
+  aktSkift: AktSkiftDialog,
+  verdensNyhed: VerdensNyhedDialog,
 };
 
 export const UI_DIALOGER: Record<UiDialog['kind'], ComponentType<UiDialogProps>> = {

@@ -11,7 +11,7 @@ export type UiDialog =
   | { kind: 'produkt'; productId: string }
   | { kind: 'medarbejder'; staffId: string };
 
-export type PanelId = 'projekter' | 'personale' | 'kontrakter' | 'hitliste' | 'produkter' | 'marked' | 'kombinationer' | 'firma' | 'nyheder';
+export type PanelId = 'projekter' | 'personale' | 'kontrakter' | 'hitliste' | 'produkter' | 'marked' | 'kombinationer' | 'firma' | 'nyheder' | 'ailab' | 'konkurrenter' | 'platform';
 
 type UiStore = {
   panel: PanelId;

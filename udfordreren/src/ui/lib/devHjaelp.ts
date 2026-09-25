@@ -1,9 +1,10 @@
 // Dev-sporet: rene hjælpere til udviklingsloopet (projekter, tildeling, kombinationsbog, anmeldelser).
 // Spejler sim-kernens formler (src/sim/projects.ts) uden at ændre state — bruges kun til visning.
-import type { GameState, LiveProduct, MarketId, ParamKey, Params, Phase, Project, ProductTypeId, Review, Staff, ThemeId, Vertical } from '../../sim/types';
+import type { AiAgent, GameState, LiveProduct, MarketId, ParamKey, Params, Phase, Project, ProductTypeId, Review, Staff, ThemeId, Vertical } from '../../sim/types';
 import type { IkonNavn } from '../components/kit';
 import type { Fit } from '../../data/compatibility';
 import { personPoint, budgetFaktor, minBudgetUge } from '../../sim/projects';
+import { agentFaseVaegt, agentPoint, dataFaktor } from '../../sim/agents';
 import { niveauFaktor, NIVEAU_TAERSKLER, niveauForXp } from '../../sim/levels';
 import { forskningsEffekt } from '../../sim/insight';
 import { passiveEffekter } from '../../sim/staff';
@@ -73,16 +74,32 @@ export function holdEstimat(s: GameState, p: Project, fase: Phase, ids: readonly
   const bud = budgetFaktor(p.budget, minBudgetUge(p.typeId, p.startUge));
   const fordeling = BALANCE.fordeling[fase];
   const hold = ids.map((id) => s.staff.find((m) => m.id === id)).filter((m): m is Staff => !!m);
-  const sorteret = hold.map((m) => ({ m, raa: personPoint(m, p, fase) })).sort((a, b) => b.raa - a.raa);
+  // + AI-akten: agenter på holdet regnes med som i ugentligtProjekt (samme sortering og holdvægt)
+  const agenter = ids.map((id) => s.agenter.find((a) => a.id === id)).filter((a): a is AiAgent => !!a && agentFaseVaegt(a, p, fase) > 0);
+  const sorteret = [
+    ...hold.map((m) => ({ id: m.id, m: m as Staff | null, a: null as AiAgent | null, raa: personPoint(m, p, fase) })),
+    ...agenter.map((a) => ({ id: a.id, m: null as Staff | null, a, raa: agentPoint(s, a, p, fase) })),
+  ].sort((a, b) => b.raa - a.raa);
   const params: Params = { spaending: 0, originalitet: 0, teknik: 0, tryghed: 0 };
   let total = 0;
   let fejl = 0;
   let fjernet = 0;
-  const bidrag: HoldBidrag[] = sorteret.map(({ m, raa }, i) => {
+  const bidrag: HoldBidrag[] = sorteret.map(({ id, m, a, raa }, i) => {
     const vaegt = Math.pow(BALANCE.holdVaegt, i);
     const point = raa * vaegt * lvl * bud * BALANCE.pointSkala;
     total += point;
     for (const k of Object.keys(params) as ParamKey[]) params[k] += point * fordeling[k] * (1 + eff.paramBonus[k]);
+    if (a) {
+      // Agenter: fejl efter fejlrate (overvågning), fejlretning efter kapacitet og data
+      if (fase === 'teknik') {
+        fejl += BALANCE.fejlBasis * (a.fejlrate / 0.03) * 0.5 * (0.8 + 0.1 * (p.intensitet - 1)) * (0.6 + type.risiko / 20) * Math.max(0.3, 1 + eff.fejl);
+      } else if (fase === 'test') {
+        const d = dataFaktor(s, a.funktion);
+        fjernet += (BALANCE.testFjernBasis + 50 * BALANCE.testFjernTeknik) * (a.kapacitet / 4) * vaegt * (d > 0 ? 0.4 + 0.6 * d : 0) * agentFaseVaegt(a, p, 'test');
+      }
+      return { id, raa, vaegt, point, plads: i };
+    }
+    if (!m) return { id, raa, vaegt, point, plads: i };
     if (fase === 'teknik') {
       fejl +=
         BALANCE.fejlBasis *

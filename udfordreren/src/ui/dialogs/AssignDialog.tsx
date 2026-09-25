@@ -5,7 +5,7 @@ import type { GameState, Phase, Project, Staff } from '../../sim/types';
 import { PHASES } from '../../sim/types';
 import type { UiDialog } from '../../store/uiStore';
 import { useGame } from '../../store/gameStore';
-import { ledigeTilProjekt, opgaverFor } from '../../sim/selectors';
+import { ledigeAgenter, ledigeTilProjekt, opgaverFor } from '../../sim/selectors';
 import { personPoint } from '../../sim/projects';
 import { ROLES } from '../../data/roles';
 import { BALANCE } from '../../data/balance';
@@ -13,6 +13,9 @@ import { Btn, Faner, Ikon, Modal, Tom } from '../components/kit';
 import { DevStil, EnergiBar, StaffAvatar } from '../components/DevDele';
 import { FASE_GIVER, FASE_NAVN, FASE_STAT_TEKST, PARAM_FARVE, PARAM_KORT, PARAM_NAVN, faseStat, holdEstimat, ugerTekst } from '../lib/devHjaelp';
 import { PARAM_KEYS } from '../../sim/types';
+import { AGENTER } from '../../data/ai';
+import { AiMaerke, GloedTerminal } from '../components/AiDele';
+import { DATA_ADVARSEL, agentData, agentNavn, procentTekst } from '../lib/aiHjaelp';
 
 function statTekst(m: Staff, fase: Phase): string {
   const st = m.stats;
@@ -53,7 +56,7 @@ function Estimat({ g, p, fase, ids }: { g: GameState; p: Project; fase: Phase; i
   const sidste = est.bidrag.length >= 2 ? est.bidrag[est.bidrag.length - 1] : undefined;
   const svagest =
     sidste && sidste.point < 0.2 * est.total
-      ? { navn: g.staff.find((m) => m.id === sidste.id)?.navn.split(' ')[0] ?? 'Den sidste', point: sidste.point }
+      ? { navn: g.staff.find((m) => m.id === sidste.id)?.navn.split(' ')[0] ?? g.agenter.find((a) => a.id === sidste.id)?.navn ?? 'Den sidste', point: sidste.point }
       : undefined;
   return (
     <div className="rounded-md border-2 border-line bg-bg2 p-3" data-testid="tildel-estimat">
@@ -115,6 +118,12 @@ export default function AssignDialog({ dialog, onLuk }: { dialog: UiDialog; onLu
   );
 
   const ledige = useMemo(() => (g && p ? new Set(ledigeTilProjekt(g, p.id).map((m) => m.id)) : new Set<string>()), [g, p]);
+  // + AI-akten: agenter, der kan arbejde i hver fase (ikke optaget i et andet projekts aktive fase)
+  const agentFaser = useMemo(() => {
+    const r = { koncept: new Set<string>(), design: new Set<string>(), teknik: new Set<string>(), test: new Set<string>() } as Record<Phase, Set<string>>;
+    if (g && p) for (const f of PHASES) for (const a of ledigeAgenter(g, p, f)) r[f].add(a.id);
+    return r;
+  }, [g, p]);
   const opgaver = useMemo(() => (g ? opgaverFor(g) : {}), [g]);
 
   if (!g || !p) {
@@ -128,7 +137,8 @@ export default function AssignDialog({ dialog, onLuk }: { dialog: UiDialog; onLu
   const aktivFase = !p.klar ? p.fase : null;
   const faseIdx = PHASES.indexOf(p.fase);
   /** Dem, der faktisk kan arbejde i en fase (i den aktive fase: ikke optaget andetsteds) */
-  const effektive = (f: Phase): string[] => (f === aktivFase ? valg[f].filter((id) => ledige.has(id)) : valg[f]);
+  const erAgent = (id: string) => g.agenter.some((a) => a.id === id);
+  const effektive = (f: Phase): string[] => valg[f].filter((id) => (erAgent(id) ? agentFaser[f].has(id) : f !== aktivFase || ledige.has(id)));
 
   const toggle = (id: string) => {
     setValg((v) => ({ ...v, [fane]: v[fane].includes(id) ? v[fane].filter((x) => x !== id) : [...v[fane], id] }));
@@ -139,7 +149,7 @@ export default function AssignDialog({ dialog, onLuk }: { dialog: UiDialog; onLu
       const ny = { ...v };
       for (const f of PHASES) {
         if (PHASES.indexOf(f) < faseIdx && !p.klar) continue; // afsluttede faser røres ikke
-        ny[f] = f === aktivFase ? ids.filter((id) => ledige.has(id)) : [...ids];
+        ny[f] = ids.filter((id) => (erAgent(id) ? agentFaser[f].has(id) : f !== aktivFase || ledige.has(id)));
       }
       return ny;
     });
