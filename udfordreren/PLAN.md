@@ -19,28 +19,37 @@ Kort todo pr. fase (spec afsnit 9). ✅ = færdig, 🔶 = i gang, ⬜ = ikke sta
 - ✅ Messer, Branchegallaen, anden vertikal med kryds-salg, runder og kvartalsmål
 - ✅ Gate: unit tests for niveauer, efterfølgere, gala og runder; start i én vertikal og tilføj den anden
 
-## Fase 3: Markeder, regulering og offshore 🔶
+## Fase 3: Markeder, regulering og offshore ✅
 - ✅ Sim: 9 markeder med åbningsdatoer, licens pr. marked/vertikal, afgifter og strenghed over tid, offshore-model (7.8), historiske og dynamiske regler, R11, sanktionstrappe, trends og sportskalender, offshore-fristelsen
 - ✅ Gate: markedskalibrering (dk 90 %, se 87 % med kasino < betting, nl 50 %, on 89 %, dk kasino-BSI 4,7 mia., Danske Lykke nr. 1)
-- 🔶 UI: markedskort, regulering, sanktioner, trends (workflow kører)
+- ✅ UI: markedskort, regulering, sanktioner, trends, preslog og faste afgiftstrin
+- ✅ Insider-spiltest rettet: afgiftsstigningers størrelse, varsler, anden vertikal, offshore-brandets størrelse og risiko, 2026-kanalisering, svensk bonusregel
 
-## Fase 4: Levende konkurrenter og platforme 🔶
+## Fase 4: Levende konkurrenter og platforme ✅
 - ✅ Sim: reaktionsregler R1-R12 med synlige effekter, historiske konkurrenttiltag, opkøb og opkøbstilbud, sponsorauktioner, platformmigrering og B2B
 - ✅ Gate: bonuskrig, kopi og opkøbstilbud før 2020 i bot-kørsler; unit test for hver regel
-- ⬜ UI: konkurrentoversigt, platformvalg, tilbuds-, sponsor- og reaktionsdialoger
+- ✅ UI: konkurrentoversigt (Rivaler), platformvalg (Teknik), tilbuds-, sponsor- og reaktionsdialoger
 
-## Fase 5: Spillerbyen og AI-akten 🔶
+## Fase 5: Spillerbyen og AI-akten ✅
 - ✅ Sim: spillerbyen, ansvarsforskning og fristelser, akt-skift 2026 med verdensscenarier, AI-laboratoriet og agenter i faser, AI-scenarier, AI-transformation, børslicens og agent-API, 80 events
 - ✅ Unit tests for agenter, verdensscenarier, AI-scenarier, transformation og byen
-- ⬜ UI: AI-laboratoriet, Verdensbilledet 2026, spillerbyen
+- ✅ UI: AI-laboratoriet (agenter, fristelser, verden), Verdensbilledet 2026, verdensnyheder, spillerbyen, agenter i projektfaser
+- ✅ Spiltest rettet: byen bliver rød under hyperpersonalisering, AI-uheld med vægt, AI-øjeblikke i tidslinjen, Norges licensregime
 
-## Fase 6: Slutninger, Arkiv og balancering 🔶
+## Fase 6: Slutninger, Arkiv og balancering ✅
 - ✅ Sim: 8 slutninger, eftermæle, tidslinje, eftertanke, Arkivet (kun 7.15), New Game+ med to modes
 - ✅ `npm run sim`: 6 bots × 200 seeds i parallelle workers, 10 assertions, `sim/report.md`
-- ⬜ UI: slutskærm, Arkiv, New Game+, debug-menuens nye værktøjer
+- ✅ UI: slutskærm med eftermæle, tidslinje, trofæer og byens udvikling, eftertanke, Arkiv, New Game+ og debug-menuens værktøjer
+- ✅ Værdiansættelse med resultatmargin og negativ kasse; `npm run sim` består alle 10 assertions ved 200 seeds
 
-## Fase 7-8 ⬜
-Se spec afsnit 9.
+## Fase 7: Følelse, grafik og lyd 🔶
+- ✅ Pixelkontor i trin, trofæer, mentor-tutorial, SFX, reduceret bevægelse, tekststørrelse, pause ved visibilitychange
+- 🔶 Chiptune pr. akt (Tone.js), AI-forvandlingen af kontoret, juice-gennemgang, fps ≥ 55 ved 4x (workflow kører)
+
+## Fase 8: Hærdning og levering 🔶
+- ✅ `netlify.toml`, `docs/D-VAERDIER.md` (`npm run dliste`)
+- 🔶 PWA og offline, iOS/iPad-tjek, eksport/import-hærdning, Definition of Done-e2e (workflow kører)
+- ⬜ README og slutverifikation af hele Definition of Done
 
 ## Kendte punkter
 - JSON-eksport virker lokalt; i den delte artifact-version blokerer vieweren downloads.
