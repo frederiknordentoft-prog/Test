@@ -90,7 +90,7 @@ export default function SponsorDialog({ signal, onLuk }: { signal: Signal; onLuk
                 {a.navn} søger en ny spilsponsor
               </h3>
               <p className="mt-0.5 text-sm text-muted">
-                Jeres logo på trøjerne, i tv-pauserne og på hver eneste stadionhøjttaler. Højeste bud vinder {datoTekst(a.afgoeresUge)} (om {tilbage} uge
+                Jeres logo på trøjerne, i tv-pauserne og på hver eneste bandereklame. Højeste bud vinder {datoTekst(a.afgoeresUge)} (om {tilbage} uge
                 {tilbage === 1 ? '' : 'r'}).
               </p>
             </div>
@@ -111,7 +111,7 @@ export default function SponsorDialog({ signal, onLuk }: { signal: Signal; onLuk
         ) : (
           <p className="flex items-start gap-1.5 rounded-md border-2 border-line bg-bg2 px-2.5 py-2 text-sm text-warn" data-testid="sponsor-for-dyrt">
             <Ikon navn="laas" farve="var(--color-warn)" className="mt-0.5 shrink-0" str={14} />
-            Kassen er for tynd: I kan højst byde {mio(Math.max(0, maxKasse))} om året, og mindstebuddet er {mio(a.mindstebud)}.
+            Kassen er for tynd: I kan højst byde {mio(Math.max(0, maxKasse))} om året, mens mindstebuddet er {mio(a.mindstebud)} om året.
           </p>
         )}
 

@@ -17,7 +17,7 @@ import { mio, mioKort, pct } from '../format';
 import { featureNavn } from '../lib/devHjaelp';
 import {
   ARKETYPE, EVNER, aktiveReaktioner, andelI, antalAktiveProdukter, bedsteProdukt, bonuskrige, konkurrentStatus, rammerSpilleren,
-  reaktionEffekter, spillerensMarkeder, udloebTekst, ugerTilbage, SPONSOR_RABAT, type EffektLinje,
+  reaktionEffekter, sidsteTekst, spillerensMarkeder, tilSalg, udloebTekst, ugerTilbage, SPONSOR_RABAT, type EffektLinje,
 } from '../lib/konkurrentHjaelp';
 
 type Filter = 'jeres' | 'alle' | MarketId;
@@ -64,14 +64,12 @@ function ReaktionRaekke({ g, r, visKonkurrent }: { g: GameState; r: GameState['r
           ))}
         </div>
       )}
-      <details className="text-xs text-muted">
-        <summary className="flex min-h-[32px] cursor-pointer items-center gap-1 font-bold hover:text-ink">
-          <Ikon navn="spoergsmaal" farve="var(--color-cyan)" str={11} /> Hvorfor?
-        </summary>
-        <p className="pb-1">
+      <p className="flex items-start gap-1 text-xs text-muted">
+        <Ikon navn="spoergsmaal" farve="var(--color-cyan)" str={11} className="mt-0.5 shrink-0" />
+        <span>
           <b className="text-ink">Hvis</b> {def.hvis.charAt(0).toLowerCase() + def.hvis.slice(1)} — <b className="text-ink">så</b> {def.saa.charAt(0).toLowerCase() + def.saa.slice(1)}.
-        </p>
-      </details>
+        </span>
+      </p>
     </li>
   );
 }
@@ -108,35 +106,35 @@ function Overblik({ g, aabnTilbud, aabnSponsor }: { g: GameState; aabnTilbud: ()
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-2 @md:grid-cols-3" data-testid="konkurrence-tal">
-        <div className="rounded-md border-2 border-line bg-bg2 px-2.5 py-2" title="Tillæg på jeres kundepris (CAC) fra bonuskrige (R1)">
-          <div className="flex items-center gap-1 text-[0.68rem] uppercase tracking-wide text-muted">
+      <div className="grid grid-cols-3 gap-1.5 @md:gap-2" data-testid="konkurrence-tal">
+        <div className="min-w-0 rounded-md border-2 border-line bg-bg2 px-2 py-1.5 @md:px-2.5 @md:py-2" title="Tillæg på jeres kundepris (CAC) fra bonuskrige (R1)">
+          <div className="flex items-center gap-1 text-[0.62rem] uppercase leading-tight tracking-wide text-muted @md:text-[0.68rem]">
             <Ikon navn="svaerd" farve={krige.length ? 'var(--color-bad)' : 'var(--color-muted)'} str={12} /> Bonuskrig
           </div>
-          <div className="tal font-pixel text-base font-black" style={{ color: krige.length ? 'var(--color-bad)' : 'var(--color-good)' }} data-testid="bonuskrig-cac">
+          <div className="tal font-pixel text-sm font-black @md:text-base" style={{ color: krige.length ? 'var(--color-bad)' : 'var(--color-good)' }} data-testid="bonuskrig-cac">
             {krige.length ? `CAC +${Math.round(maxCac * 100)} %` : 'Fred og ro'}
           </div>
-          <div className="text-xs text-muted">{krige.length ? krige.map((k) => MARKETS[k.marked].kort).join(', ') : 'Ingen gigant har erklæret krig'}</div>
+          <div className="text-[0.68rem] leading-tight text-muted @md:text-xs">{krige.length ? krige.map((k) => MARKETS[k.marked].kort).join(', ') : 'Ingen gigant har erklæret krig'}</div>
         </div>
-        <div className="rounded-md border-2 border-line bg-bg2 px-2.5 py-2" title="Unikke features giver flere nye kunder og lidt højere ARPU, indtil de bliver kopieret (R3)">
-          <div className="flex items-center gap-1 text-[0.68rem] uppercase tracking-wide text-muted">
+        <div className="min-w-0 rounded-md border-2 border-line bg-bg2 px-2 py-1.5 @md:px-2.5 @md:py-2" title="Unikke features giver flere nye kunder og lidt højere ARPU, indtil de bliver kopieret (R3)">
+          <div className="flex items-center gap-1 text-[0.62rem] uppercase leading-tight tracking-wide text-muted @md:text-[0.68rem]">
             <Ikon navn="kolbe" farve="var(--color-cyan)" indre="var(--color-line)" str={12} /> Featurefordel
           </div>
-          <div className="tal font-pixel text-base font-black text-cyan" data-testid="featurefordel">
+          <div className="tal font-pixel text-sm font-black text-cyan @md:text-base" data-testid="featurefordel">
             +{pct(fordel, 1)}
           </div>
-          <div className="text-xs text-muted">nye kunder · +{pct(fordel / 2, 1)} ARPU</div>
+          <div className="text-[0.68rem] leading-tight text-muted @md:text-xs">nye kunder · +{pct(fordel / 2, 1)} ARPU</div>
         </div>
-        <div className="rounded-md border-2 border-line bg-bg2 px-2.5 py-2" title="Sponsorater giver billigere kunder i markedet (R7)">
-          <div className="flex items-center gap-1 text-[0.68rem] uppercase tracking-wide text-muted">
-            <Ikon navn="bold" farve="var(--color-good)" indre="var(--color-line)" str={12} /> Jeres sponsorater
+        <div className="min-w-0 rounded-md border-2 border-line bg-bg2 px-2 py-1.5 @md:px-2.5 @md:py-2" title="Sponsorater giver billigere kunder i markedet (R7)">
+          <div className="flex items-center gap-1 text-[0.62rem] uppercase leading-tight tracking-wide text-muted @md:text-[0.68rem]">
+            <Ikon navn="bold" farve="var(--color-good)" indre="var(--color-line)" str={12} /> Sponsorater
           </div>
-          <div className="tal font-pixel text-base font-black text-ink">{sponsorater.filter((sp) => sp.ejer === 'spiller').length}</div>
-          <div className="text-xs text-muted">{auktion ? `Auktion: ${auktion.navn}` : 'Ingen auktion lige nu'}</div>
+          <div className="tal font-pixel text-sm font-black text-ink @md:text-base">{sponsorater.filter((sp) => sp.ejer === 'spiller').length}</div>
+          <div className="text-[0.68rem] leading-tight text-muted @md:text-xs">{auktion ? `Auktion: ${auktion.navn}` : 'Ingen auktion lige nu'}</div>
         </div>
       </div>
 
-      <Afsnit titel="Reaktioner, der rammer jer" ikon="lyn" farve="var(--color-warn)" testId="reaktioner-jer" hoejre={<span className="tal font-pixel text-xs text-muted">{rammer.length}</span>}>
+      <Afsnit titel="Reaktioner, der påvirker jer" ikon="lyn" farve="var(--color-warn)" testId="reaktioner-jer" hoejre={<span className="tal font-pixel text-xs text-muted">{rammer.length}</span>}>
         {rammer.length === 0 ? (
           <p className="text-sm text-muted">Ingen lige nu. Konkurrenterne holder øje — vokser I hurtigt, skruer de op.</p>
         ) : (
@@ -259,6 +257,7 @@ function KonkurrentKort({ g, c }: { g: GameState; c: Competitor }) {
   const aggr = aggressivitet(g, c);
   const antal = antalAktiveProdukter(g, c.id);
   const bsi = konkurrentAarligBsi(g, c);
+  const salg = tilSalg(c);
 
   const koeb = () => {
     if (!bekraeft) {
@@ -270,7 +269,7 @@ function KonkurrentKort({ g, c }: { g: GameState; c: Competitor }) {
   };
 
   return (
-    <article className="flex min-w-0 flex-col gap-2 rounded-md border-2 border-line bg-bg2 p-2.5" data-testid={`konkurrent-${c.id}`}>
+    <article className="@container flex min-w-0 flex-col gap-2 rounded-md border-2 border-line bg-bg2 p-2.5" data-testid={`konkurrent-${c.id}`}>
       <header className="flex items-start gap-2.5">
         <Monogram tekst={info.monogram} farve={info.farve} str={40} />
         <div className="min-w-0 flex-1">
@@ -292,7 +291,7 @@ function KonkurrentKort({ g, c }: { g: GameState; c: Competitor }) {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-x-3 gap-y-0.5 @sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-3 gap-y-0.5 @[19rem]:grid-cols-2">
         {EVNER.map((e) => (
           <Evne
             key={e.id}
@@ -347,7 +346,7 @@ function KonkurrentKort({ g, c }: { g: GameState; c: Competitor }) {
         <Ikon navn="nyhed" farve="var(--color-warn)" indre="var(--color-line)" str={13} className="mt-0.5 shrink-0" />
         <span className="min-w-0">
           <span className="font-pixel text-[0.64rem] font-black uppercase text-muted">Sidst: </span>
-          <span className="text-ink">{c.sidsteHandling}</span>
+          <span className="text-ink">{sidsteTekst(g, c)}</span>
         </span>
       </p>
 
@@ -362,8 +361,8 @@ function KonkurrentKort({ g, c }: { g: GameState; c: Competitor }) {
       {status.kind === 'aktiv' || status.kind === 'ejet' ? (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Btn variant={bekraeft ? 'god' : 'sekundaer'} disabled={!st.ok} onClick={koeb} testId={`koeb-${c.id}`} title={st.ok ? undefined : st.grund}>
-            <Ikon navn="penge" farve={st.ok ? 'var(--color-gold)' : 'currentColor'} indre="var(--color-line)" str={14} />
-            {bekraeft ? `Ja, køb for ${mio(st.pris)}` : `Køb · ${mio(st.pris)}`}
+            <Ikon navn={salg ? 'penge' : 'laas'} farve={st.ok ? 'var(--color-gold)' : 'currentColor'} indre="var(--color-line)" str={14} />
+            {bekraeft ? `Ja, køb for ${mio(st.pris)}` : salg ? `Køb · ${mio(st.pris)}` : 'Ikke til salg'}
           </Btn>
           {bekraeft && (
             <Btn variant="ghost" onClick={() => setBekraeft(false)} testId={`koeb-fortryd-${c.id}`}>

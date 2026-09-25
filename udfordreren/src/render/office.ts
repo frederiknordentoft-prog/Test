@@ -6,6 +6,7 @@ import { opgaverFor } from '../sim/selectors';
 import { PHASES, type GameState, type MarketId, type Phase, type Signal } from '../sim/types';
 import { ROLES } from '../data/roles';
 import { MARKETS } from '../data/markets';
+import { AGENTER } from '../data/ai';
 import { aktFor, AKT_CHROME, type AktChrome } from './actChrome';
 import { BORD_W, CANVAS_H, CANVAS_W, PERSON_DX, SKAERM, layoutFor, type Felt, type Layout } from './layout';
 import { materialerFor, tegnBaggrund, tegnBord, tegnGloedLag, tegnLysOverlay, tegnStol, tegnTvRamme, tegnUrSkive, tegnVaegpynt, tvSkaerm, lavPaereGloed, type Pynt } from './decor';
@@ -16,6 +17,14 @@ import { Bobler } from './bubbles';
 import { reduceretBevaegelse } from './particles';
 
 const MAX_PLADSER = 32;
+/** + AI-akten: agenternes glødende terminaler langs væggens fod (ankre efter bordene) */
+const MAX_TERMINALER = 12;
+const MAX_ANKRE = MAX_PLADSER + MAX_TERMINALER;
+
+/** Terminal i: står på gulvet ved væggen, fra højre mod venstre. Returnerer venstre kant og bund (scene-pixels). */
+function terminalPos(L: Layout, i: number): { x: number; y: number } {
+  return { x: L.w - 12 - i * 10, y: L.vaegH + 1 };
+}
 
 // status pr. bord
 const INGEN = 0;
@@ -75,15 +84,16 @@ export class KontorRenderer {
   private dStatus = new Uint8Array(MAX_PLADSER);
   private dFase = new Uint8Array(MAX_PLADSER);
   private dSeed = new Uint32Array(MAX_PLADSER);
-  private dPuls = new Float64Array(MAX_PLADSER);
+  private dPuls = new Float64Array(MAX_ANKRE);
   private dPose = new Uint8Array(MAX_PLADSER);
   private dDy = new Int8Array(MAX_PLADSER);
   private dAtlas: (HTMLCanvasElement | null)[] = new Array(MAX_PLADSER).fill(null);
   private dHud: string[] = new Array(MAX_PLADSER).fill('#000');
   private dStaffId: string[] = new Array(MAX_PLADSER).fill('');
   private atlasCache = new Map<string, { noegle: string; atlas: HTMLCanvasElement; hud: string }>();
-  private ankerX = new Float32Array(MAX_PLADSER);
-  private ankerY = new Float32Array(MAX_PLADSER);
+  private ankerX = new Float32Array(MAX_ANKRE);
+  private ankerY = new Float32Array(MAX_ANKRE);
+  private agentIds: string[] = [];
   private bobler = new Bobler(this.ankerX, this.ankerY);
 
   // visning
@@ -166,6 +176,7 @@ export class KontorRenderer {
     const nyLayout = L !== this.layout;
     this.layout = L;
     this.akt = AKT_CHROME[aktFor(g.uge)];
+    this.agentIds = g.agenter.slice(0, MAX_TERMINALER).map((a) => a.id);
     const opg = opgaverFor(g);
     const n = Math.min(L.pladser.length, MAX_PLADSER);
     let besat = '';
@@ -245,7 +256,8 @@ export class KontorRenderer {
     this.canvas.setAttribute(
       'aria-label',
       `Pixelkontoret (${L.tier === 'kaelder' ? 'kælder' : L.tier}): ${g.staff.length} af ${L.pladser.length} pladser besat. ` +
-        `Pokaler: ${this.pynt.pokaler}. Guldkuponer: ${this.pynt.kuponer}. Hall of Fame: ${this.pynt.hof}.`,
+        `Pokaler: ${this.pynt.pokaler}. Guldkuponer: ${this.pynt.kuponer}. Hall of Fame: ${this.pynt.hof}.` +
+        (this.agentIds.length ? ` AI-agenter: ${g.agenter.length}.` : ''),
     );
     this.boks.style.background = this.akt.ramme;
   }
@@ -258,6 +270,11 @@ export class KontorRenderer {
       if (!p) continue;
       this.ankerX[i] = (p.x + PERSON_DX + 6) * z;
       this.ankerY[i] = (p.y - BORD_Y + 1) * z;
+    }
+    for (let i = 0; i < MAX_TERMINALER; i++) {
+      const t = terminalPos(L, i);
+      this.ankerX[MAX_PLADSER + i] = (t.x + 4) * z;
+      this.ankerY[MAX_PLADSER + i] = (t.y - 10) * z;
     }
   }
 
@@ -318,6 +335,10 @@ export class KontorRenderer {
     if (pk.licens === 'aktiv' || pk.licens === 'ansoegt') f(L.cert, pk.licens === 'aktiv' ? 'DANSK LICENS' : 'LICENS ANSØGT', pk.licens === 'aktiv' ? 'GODKENDT' : 'BEHANDLES', 'marked');
     const b = this.bedste;
     f(L.tv, b ? `TOP 10: NR. ${b.placering}` : 'TOP 10', b ? `${b.navn.toUpperCase()} · ${MARKETS[b.marked]?.kort ?? b.marked}` : 'IKKE PÅ LISTEN ENDNU', 'hitliste');
+    g.agenter.slice(0, MAX_TERMINALER).forEach((a, i) => {
+      const t = terminalPos(L, i);
+      h.push({ x: t.x - 1, y: t.y - 11, w: 10, h: 12, plads: -1, linje1: (a.navn ?? 'AGENT').toUpperCase(), linje2: `AI · ${AGENTER[a.funktion].navn.toUpperCase()}`, panel: 'ailab' });
+    });
     this.hotspots = h;
   }
 
@@ -332,10 +353,18 @@ export class KontorRenderer {
     for (const s of sig) {
       switch (s.k) {
         case 'point': {
-          const plads = this.pladsFor(s.staffId, g);
-          if (plads < 0) break;
-          const forskyd = ((this.dSeed[plads] % 97) / 97) * 0.8 + (personIdx++ % 3) * 0.1;
-          this.bobler.planlaegPoint(nu, plads, s.params, s.fejl, s.fjernet, clock.ugeMs, fs, forskyd);
+          let plads = this.pladsFor(s.staffId, g);
+          let agent = false;
+          if (plads < 0) {
+            // + AI-akten: agenternes point popper cyan-glødende op over deres terminal
+            const t = this.agentIds.indexOf(s.staffId);
+            if (t < 0) break;
+            plads = MAX_PLADSER + t;
+            agent = true;
+          }
+          const seed = agent ? plads * 37 : this.dSeed[plads];
+          const forskyd = ((seed % 97) / 97) * 0.8 + (personIdx++ % 3) * 0.1;
+          this.bobler.planlaegPoint(nu, plads, s.params, s.fejl, s.fjernet, clock.ugeMs, fs, forskyd, agent);
           break;
         }
         case 'niveauOp': {
@@ -405,6 +434,7 @@ export class KontorRenderer {
     ctx.drawImage(this.lys, 0, 0);
     // selvlysende: skærme, tv, neon, pære, statusikoner
     for (let k = 0; k < n; k++) this.tegnSkaerm(k, nu, red, aktivt);
+    this.tegnTerminaler(nu, red, aktivt);
     this.tegnTv(nu, red);
     if (this.akt.neon) ctx.drawImage(this.gloed, 0, 0);
     if (L.paere) this.tegnPaere(nu, red);
@@ -540,6 +570,38 @@ export class KontorRenderer {
     const y = py < SKAERM.h ? py : SKAERM.h * 2 - 2 - py;
     ctx.fillStyle = a.ledigPrik;
     ctx.fillRect(sx + Math.min(SKAERM.w - 1, x), sy + Math.min(SKAERM.h - 1, y), 1, 1);
+  }
+
+  /** + AI-akten: agenternes terminaler — små skærme med cyan glød, der blusser op, når en boble popper */
+  private tegnTerminaler(nu: number, red: boolean, aktivt: boolean): void {
+    const antal = this.agentIds.length;
+    if (antal === 0) return;
+    const ctx = this.ctx;
+    const L = this.layout;
+    for (let i = 0; i < antal; i++) {
+      const { x, y } = terminalPos(L, i);
+      const pl = nu - this.dPuls[MAX_PLADSER + i];
+      const blus = pl >= 0 && pl < 280;
+      const puls = red ? 0 : 0.08 * Math.sin(nu / 650 + i * 1.7);
+      ctx.fillStyle = rgba(T.cyan, 0.2 + puls + (blus ? 0.25 : 0));
+      ctx.fillRect(x - 2, y - 11, 12, 11);
+      ctx.fillStyle = rgba(T.cyan, 0.12 + (blus ? 0.15 : 0));
+      ctx.fillRect(x - 3, y - 9, 14, 7);
+      ctx.fillStyle = T.line;
+      ctx.fillRect(x, y - 10, 8, 7);
+      ctx.fillRect(x + 3, y - 3, 2, 1);
+      ctx.fillRect(x + 1, y - 2, 6, 2);
+      ctx.fillStyle = blus ? '#1d7c80' : '#0c3a44';
+      ctx.fillRect(x + 1, y - 9, 6, 5);
+      ctx.fillStyle = T.cyan;
+      const off = red || !aktivt ? i : ((nu / 260) | 0) + i;
+      ctx.fillRect(x + 2, y - 8, 1 + ((off + i) % 4), 1);
+      ctx.fillRect(x + 2, y - 6, 1 + ((off + 2) % 4), 1);
+      if (red || ((nu / 400) | 0) % 2 === 0) {
+        ctx.fillStyle = T.ink;
+        ctx.fillRect(x + 6, y - 5, 1, 1);
+      }
+    }
   }
 
   private tegnStatusIkon(k: number, nu: number, red: boolean): void {

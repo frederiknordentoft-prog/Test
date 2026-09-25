@@ -14,7 +14,7 @@ import { PLATFORM_KINDS } from '../../data/platforms';
 import { RESEARCH_BY_ID } from '../../data/research';
 import { aiLabAaben, boersStatus, fejlrate, maxAgenter, menneskeligtTilsyn } from '../../sim/selectors';
 import { aarFor } from '../../sim/time';
-import { mio } from '../format';
+import { fortegn, mio } from '../format';
 import {
   BOERS,
   DATA_ADVARSEL,
@@ -186,11 +186,11 @@ function Status({ g, onVerden }: { g: GameState; onVerden: () => void }) {
     <div className="ai-nat relative overflow-hidden rounded-lg border-2 border-line p-2.5" data-testid="ailab-status">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <GloedTerminal str={40} />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[180px] flex-1">
           <p className="font-pixel text-sm font-black uppercase tracking-wider text-cyan ai-tekst-gloed">Laboratoriet er åbent</p>
           <p className="text-xs text-muted">Serverne summer. Agenterne arbejder døgnet rundt, men nogen skal holde øje med dem.</p>
         </div>
-        <Btn variant="sekundaer" onClick={onVerden} testId="ailab-verdensbillede" className="shrink-0">
+        <Btn variant="sekundaer" onClick={onVerden} testId="ailab-verdensbillede" className="w-full shrink-0 sm:w-auto">
           <Ikon navn="globus" farve="var(--color-violet)" indre="var(--color-line)" /> Verdensbilledet
         </Btn>
       </div>
@@ -210,18 +210,20 @@ function Status({ g, onVerden }: { g: GameState; onVerden: () => void }) {
           <span className={g.aiUheld > 0 ? 'text-bad' : 'text-good'}>{g.aiUheld}</span>
         </Tal>
       </div>
-      <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-3" data-testid="ailab-data">
+      <div className="mt-2 grid grid-cols-1 gap-x-3 gap-y-1.5 sm:grid-cols-3" data-testid="ailab-data">
         {PLATFORM_KINDS.map((k) => {
           const v = g.platforme[k.id].dataejerskab;
           const ok = v + 1e-9 >= AI.minData;
           return (
-            <div key={k.id} className="flex items-center gap-1.5 text-[0.72rem]" title={`Dataejerskab på ${k.navn.toLowerCase()}: ${decimal(v, 1)} (agenter kræver mindst 0,3)`}>
-              <Ikon navn={ok ? 'flueben' : 'advarsel'} farve={ok ? 'var(--color-good)' : 'var(--color-warn)'} indre="var(--color-line)" str={12} className="shrink-0" />
-              <span className="w-24 shrink-0 truncate text-muted">{k.navn}</span>
-              <span className="min-w-0 flex-1">
-                <GloedBar vaerdi={v} farve={ok ? 'var(--color-cyan)' : 'var(--color-warn)'} label={`Dataejerskab ${k.navn}`} />
+            <div key={k.id} className="flex flex-col gap-0.5 text-[0.72rem]" title={`Dataejerskab på ${k.navn.toLowerCase()}: ${decimal(v, 1)} (agenter kræver mindst 0,3)`}>
+              <span className="flex items-center gap-1.5">
+                <Ikon navn={ok ? 'flueben' : 'advarsel'} farve={ok ? 'var(--color-good)' : 'var(--color-warn)'} indre="var(--color-line)" str={12} className="shrink-0" />
+                <span className="min-w-0 flex-1 truncate text-muted">Data · {k.navn}</span>
+                <span className="tal shrink-0 font-bold" style={{ color: ok ? 'var(--color-ink)' : 'var(--color-warn)' }}>
+                  {decimal(v, 1)}
+                </span>
               </span>
-              <span className="tal w-7 shrink-0 text-right font-bold text-ink">{decimal(v, 1)}</span>
+              <GloedBar vaerdi={v} farve={ok ? 'var(--color-cyan)' : 'var(--color-warn)'} label={`Dataejerskab ${k.navn}`} markoer={AI.minData} />
             </div>
           );
         })}
@@ -334,7 +336,7 @@ function NyAgent({ g }: { g: GameState }) {
   const faser = agentFaser(u.funktion);
   const deploy = () => {
     if (!u.ok) return;
-    if (send({ t: 'deployAgent', funktion: u.funktion, overvaagning: ov })) useGame.getState().toast(`${def.navn} er i drift.`, 'godt');
+    send({ t: 'deployAgent', funktion: u.funktion, overvaagning: ov });
   };
   return (
     <div className="flex flex-col gap-2.5">
@@ -494,45 +496,47 @@ function Hyper({ g }: { g: GameState }) {
   const skift = () => send({ t: 'setHyperpersonalisering', aktiv: !h.aktiv });
   return (
     <div className="flex flex-col gap-2" data-testid="ailab-hyper">
-      <div className={`rounded-md border-2 p-2.5 ${h.aktiv ? 'border-pink bg-pink/10' : 'border-line bg-[#0a1024]'}`}>
-        <p className="text-sm text-ink">Hver kunde får sine egne tilbud, sine egne beskeder og sine egne spil. Præcis dem, der virker.</p>
-        <p className="mt-1.5 flex items-center gap-2">
-          <Ikon navn="op" farve="var(--color-gold)" str={16} className="shrink-0" />
-          <span className="tal font-pixel text-lg font-black text-gold" data-testid="ailab-hyper-gevinst">
-            +{procentTekst(h.gevinst)}
-          </span>
-          <span className="text-xs text-muted">BSI pr. kunde{h.foerst && !h.kopieret ? ' (I er først!)' : ''}</span>
-        </p>
-        <p className="text-[0.7rem] text-dim">
-          +10 % for dem, der går først (senest 2027), ellers +5 %. Konkurrenterne kopierer efter 12 måneder, så er 40 % af fordelen tilbage.
-          {h.kopiOmUger !== null && ` Kopieres om ${h.kopiOmUger} uger.`}
-        </p>
-      </div>
-      <div className="rounded-md border-2 border-bad/70 bg-bad/10 p-2" data-testid="ailab-hyper-pris">
-        <p className="mb-1 flex items-center gap-1.5 font-pixel text-[0.7rem] font-black uppercase tracking-wider text-bad">
-          <Ikon navn="advarsel" farve="var(--color-bad)" indre="var(--color-line)" str={12} /> Prisen
-        </p>
-        <ul className="flex flex-col gap-1 text-[0.74rem]">
-          <li className="flex items-start gap-1.5">
-            <Ikon navn="hus" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
-            <span className="text-ink">Byen bliver rød: langt flere kunder glider over i risiko og problemspil, medmindre en risikoagent med overvågning ≥ 0,6 holder øje.</span>
-          </li>
-          <li className="flex items-start gap-1.5">
-            <Ikon navn="skjold" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
-            <span className="text-ink">
-              Op til <b className="tal text-bad">{h.tillidPrKvartal}</b> tilsynstillid pr. kvartal i hvert marked uden risikoagent.
+      <div className="grid grid-cols-1 gap-2 @2xl:grid-cols-2">
+        <div className={`flex flex-col gap-1.5 rounded-md border-2 p-2.5 ${h.aktiv ? 'border-pink bg-pink/10' : 'border-pink/60 bg-[#0a1024]'}`}>
+          <p className="text-sm text-ink">Hver kunde får sine egne tilbud, sine egne beskeder og sine egne spil. Præcis dem, der virker.</p>
+          <p className="flex flex-wrap items-center gap-x-2">
+            <Ikon navn="op" farve="var(--color-gold)" str={18} className="shrink-0" />
+            <span className="tal font-pixel text-2xl font-black text-gold" data-testid="ailab-hyper-gevinst">
+              +{procentTekst(h.gevinst)}
             </span>
-          </li>
-          <li className="flex items-start gap-1.5">
-            <Ikon navn="lyn" farve="var(--color-warn)" str={12} className="mt-0.5 shrink-0" />
-            <span className="text-ink">Konkurrenterne ser jer som mere aggressive, og tilsynet vil gerne vide, hvad den gør.</span>
-          </li>
-        </ul>
-        <ul className="mt-1.5">
-          <KravRaekke ok={h.risikoOk} testId="ailab-hyper-risiko">
-            {h.risikoOk ? 'I har en risikoagent med overvågning ≥ 0,6: byen mærker det kun lidt.' : 'Ingen risikoagent med overvågning ≥ 0,6 lige nu.'}
-          </KravRaekke>
-        </ul>
+            <span className="text-xs text-muted">BSI pr. kunde{h.foerst && !h.kopieret ? ' · I er først!' : ''}</span>
+          </p>
+          <p className="text-[0.72rem] text-muted">
+            +10 % for dem, der går først (senest 2027), ellers +5 %. Konkurrenterne kopierer efter 12 måneder, så er 40 % af fordelen tilbage.
+            {h.kopiOmUger !== null && ` Kopieres om ${h.kopiOmUger} uger.`}
+          </p>
+        </div>
+        <div className="rounded-md border-2 border-bad/70 bg-bad/10 p-2.5" data-testid="ailab-hyper-pris">
+          <p className="mb-1 flex items-center gap-1.5 font-pixel text-[0.7rem] font-black uppercase tracking-wider text-bad">
+            <Ikon navn="advarsel" farve="var(--color-bad)" indre="var(--color-line)" str={12} /> Prisen
+          </p>
+          <ul className="flex flex-col gap-1 text-[0.74rem]">
+            <li className="flex items-start gap-1.5">
+              <Ikon navn="hus" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
+              <span className="text-ink">Byen bliver rød: langt flere kunder glider over i risiko og problemspil, medmindre en risikoagent med overvågning ≥ 0,6 holder øje.</span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <Ikon navn="skjold" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
+              <span className="text-ink">
+                Op til <b className="tal text-bad">{fortegn(h.tillidPrKvartal)}</b> tilsynstillid pr. kvartal i hvert marked uden risikoagent.
+              </span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <Ikon navn="lyn" farve="var(--color-warn)" str={12} className="mt-0.5 shrink-0" />
+              <span className="text-ink">Konkurrenterne ser jer som mere aggressive, og tilsynet vil gerne vide, hvad den gør.</span>
+            </li>
+          </ul>
+          <ul className="mt-1.5">
+            <KravRaekke ok={h.risikoOk} testId="ailab-hyper-risiko">
+              {h.risikoOk ? 'I har en risikoagent med overvågning ≥ 0,6: byen mærker det kun lidt.' : 'Ingen risikoagent med overvågning ≥ 0,6 lige nu.'}
+            </KravRaekke>
+          </ul>
+        </div>
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
         {!h.aktiv && h.grund && (
@@ -556,45 +560,51 @@ function Hyper({ g }: { g: GameState }) {
 
 // ---------- AI-transformation ----------
 
+function Linje({ ikon, farve, label, children }: { ikon: IkonNavn; farve: string; label: string; children: ReactNode }) {
+  return (
+    <li className="flex items-center gap-1.5">
+      <Ikon navn={ikon} farve={farve} indre="var(--color-line)" str={12} className="shrink-0" />
+      <span className="min-w-0 flex-1 text-muted">{label}</span>
+      <b className="tal shrink-0 text-right" style={{ color: farve }}>
+        {children}
+      </b>
+    </li>
+  );
+}
+
 function Transformation({ g }: { g: GameState }) {
   const valg = [transformationInfo(g, 0.25), transformationInfo(g, 0.5)];
   const erstattet = g.transformation.reduce((a, t) => a + t.erstattet, 0);
   return (
     <div className="flex flex-col gap-2" data-testid="ailab-transformation">
       <p className="text-sm text-muted">Lad agenterne overtage stillinger. Lønningerne falder med det samme, men folk tager deres viden med sig, og avisen skriver om det.</p>
-      <div className="grid grid-cols-1 gap-2 @md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 @xl:grid-cols-2">
         {valg.map((v) => {
           const pct = v.andel === 0.25 ? 25 : 50;
           return (
             <div key={pct} className="flex flex-col gap-1.5 rounded-md border-2 border-line bg-[#0a1024] p-2" data-testid={`ailab-transformation-${pct}`}>
               <p className="font-pixel text-sm font-black text-ink">{pct} % af de mulige stillinger</p>
               <ul className="flex flex-col gap-0.5 text-[0.74rem]">
-                <li className="flex items-center gap-1.5">
-                  <Ikon navn="folk" farve="var(--color-warn)" str={12} className="shrink-0" />
-                  <span className="text-muted">Stillinger:</span> <b className="tal text-ink">{v.antal}</b>
-                  {v.navne.length > 0 && <span className="min-w-0 truncate text-dim">({v.navne.join(', ')})</span>}
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Ikon navn="penge" farve="var(--color-gold)" indre="var(--color-line)" str={12} className="shrink-0" />
-                  <span className="text-muted">Fratrædelse:</span> <b className="tal text-gold">{mio(v.pris)}</b>
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Ikon navn="op" farve="var(--color-good)" str={12} className="shrink-0" />
-                  <span className="text-muted">Løn sparet:</span> <b className="tal text-good">{kroner(v.loenSparet)}/uge</b>
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Ikon navn="chip" farve="var(--color-cyan)" indre="var(--color-line)" str={12} className="shrink-0" />
-                  <span className="text-muted">Nye agenter:</span> <b className="tal text-cyan">ca. {v.nyeAgenter}</b>
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Ikon navn="ned" farve="var(--color-bad)" str={12} className="shrink-0" />
-                  <span className="text-muted">Viden forsvinder:</span> <b className="tal text-bad">−{Math.round(v.indsigtTab)} indsigt</b>
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Ikon navn="nyhed" farve="var(--color-bad)" indre="var(--color-line)" str={12} className="shrink-0" />
-                  <span className="text-muted">Omdømme:</span> <b className="text-bad">avisen ringer (op til {TRANSFORMATION_OMDOEMME})</b>
-                </li>
+                <Linje ikon="folk" farve="var(--color-ink)" label="Stillinger">
+                  {v.antal}
+                </Linje>
+                <Linje ikon="penge" farve="var(--color-gold)" label="Fratrædelse (engang)">
+                  {mio(v.pris)}
+                </Linje>
+                <Linje ikon="op" farve="var(--color-good)" label="Løn sparet">
+                  {kroner(v.loenSparet)}/uge
+                </Linje>
+                <Linje ikon="chip" farve="var(--color-cyan)" label="Nye agenter">
+                  ca. {v.nyeAgenter}
+                </Linje>
+                <Linje ikon="ned" farve="var(--color-bad)" label="Viden, der forsvinder">
+                  {v.indsigtTab > 0 ? `−${Math.round(v.indsigtTab)} indsigt` : '–'}
+                </Linje>
+                <Linje ikon="nyhed" farve="var(--color-bad)" label="Omdømme (avisen ringer)">
+                  op til {fortegn(TRANSFORMATION_OMDOEMME)}
+                </Linje>
               </ul>
+              {v.navne.length > 0 && <p className="truncate text-[0.7rem] text-dim">Farvel til {v.navne.join(', ')}</p>}
               {!v.ok && v.grund && (
                 <Note ikon="laas" farve="var(--color-warn)" testId={`ailab-transformation-${pct}-grund`}>
                   {v.grund}
@@ -729,10 +739,10 @@ function Lab({ g }: { g: GameState }) {
         <Afsnit titel="AI-scenarier" ikon="trend" farve="var(--color-cyan)" className="@2xl:col-span-2" testId="ailab-scenarier-afsnit">
           <Scenarier g={g} />
         </Afsnit>
-        <Afsnit titel="Fristelse: hyperpersonalisering" ikon="hype" farve="var(--color-pink)" testId="ailab-hyper-afsnit">
+        <Afsnit titel="Fristelse: hyperpersonalisering" ikon="hype" farve="var(--color-pink)" className="@2xl:col-span-2" testId="ailab-hyper-afsnit">
           <Hyper g={g} />
         </Afsnit>
-        <Afsnit titel="AI-transformation" ikon="folk" farve="var(--color-warn)" testId="ailab-transformation-afsnit">
+        <Afsnit titel="AI-transformation" ikon="folk" farve="var(--color-warn)" className="@2xl:col-span-2" testId="ailab-transformation-afsnit">
           <Transformation g={g} />
         </Afsnit>
         <Afsnit titel="Agent-API" ikon="globus" farve="var(--color-cyan)" testId="ailab-agentapi-afsnit" className={g.flags.includes('boerslicensMulig') ? '' : '@2xl:col-span-2'}>

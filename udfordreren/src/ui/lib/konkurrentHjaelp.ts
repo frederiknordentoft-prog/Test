@@ -3,7 +3,8 @@
 import type {
   AktivReaktion, Competitor, CompetitorArchetype, GameState, LiveProduct, MarketId, Platform, PlatformKind, PlatformModel, SponsorAuktion,
 } from '../../sim/types';
-import type { IkonNavn } from '../components/kit';
+/** Ikonnavn fra kit.tsx (importeres ikke herfra, så hjælperne kan testes uden JSX) */
+type IkonNavn = string;
 import { COMPETITORS } from '../../data/competitors';
 import { R1, R7, R8 } from '../../data/reactionRules';
 import { CHANNELS, CHANNEL_IDS } from '../../data/acquisition';
@@ -51,6 +52,21 @@ export function konkurrentStatus(s: GameState, c: Competitor): KonkurrentStatus 
   if (!c.tilstede && (FRA_UGE[c.id] ?? 0) > s.uge) return { kind: 'kommer', tekst: `Dukker op i ${aarFor(FRA_UGE[c.id])}`, ikon: 'ur', farve: 'var(--color-muted)' };
   if (!c.tilstede) return { kind: 'forladt', tekst: 'Har forladt markedet', ikon: 'doer', farve: 'var(--color-muted)' };
   return { kind: 'aktiv', tekst: 'Aktiv', ikon: 'flueben', farve: 'var(--color-good)' };
+}
+
+/** Kan konkurrenten overhovedet købes (bortset fra prisen)? Samme regler som opkoebStatus */
+export function tilSalg(c: Competitor): boolean {
+  return c.tilstede && !c.ejetAf && c.arketype !== 'statsselskab' && c.arketype !== 'globalGigant' && c.styrke <= 3.5;
+}
+
+const START_HANDLING = 'Aktiv i Danmark fra dag ét.';
+
+/** "Hvad de gjorde sidst" — startteksten gøres præcis for konkurrenter uden for Danmark */
+export function sidsteTekst(s: GameState, c: Competitor): string {
+  if (c.sidsteHandling !== START_HANDLING || c.markeder.includes('dk')) return c.sidsteHandling;
+  const aabne = c.markeder.filter((m) => s.markeder[m].aaben);
+  const navne = (l: MarketId[]) => l.map((m) => MARKETS[m].navn).join(', ');
+  return aabne.length ? `Aktiv i ${navne(aabne)} fra dag ét.` : `Venter på, at ${navne(c.markeder)} åbner for licenser.`;
 }
 
 /** Konkurrentens bedste aktive produkt (højeste kvalitet) */

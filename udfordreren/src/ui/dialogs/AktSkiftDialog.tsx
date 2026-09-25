@@ -82,8 +82,8 @@ export default function AktSkiftDialog({ signal, onLuk, genvisning }: { signal: 
           {vb.scenarier.map((v, i) => (
             <li
               key={v.id}
-              className={`relative flex flex-col gap-1 rounded-md border-2 p-2.5 ${v.trukket ? `border-cyan bg-[#0c1f3a] ${red ? 'ai-gloed-stille' : 'ai-gloed ai-ind'}` : 'border-line bg-bg2 opacity-70'}`}
-              style={!red && v.trukket ? { animationDelay: `${120 + i * 90}ms` } : undefined}
+              className={`relative flex flex-col gap-1 rounded-md border-2 p-2.5 ${v.trukket ? `border-cyan bg-[#0c1f3a] ${red ? 'ai-gloed-stille' : 'ai-ind-gloed'}` : 'border-line bg-bg2 opacity-70'}`}
+              style={!red && v.trukket ? { animationDelay: `${120 + i * 90}ms, ${540 + i * 90}ms` } : undefined}
               data-testid={`aktSkift-scenarie-${v.id}`}
               data-trukket={v.trukket ? '1' : '0'}
             >

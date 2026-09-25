@@ -8,6 +8,7 @@ import { AiStil } from '../components/AiDele';
 import { useReduceretBevaegelse } from '../hooks/useMedia';
 import { datoTekst } from '../../sim/time';
 import { AI_EFFEKT, BOERSLICENS } from '../../data/ai';
+import { fortegn } from '../format';
 
 type Kontekst = { tekst: string; panel: PanelId; knap: string; ikon: IkonNavn };
 
@@ -29,7 +30,7 @@ function kontekst(id: string): Kontekst | null {
       };
     case 'aiKrav':
       return {
-        tekst: `En risikoagent med overvågning på mindst 0,6 opfylder kravet. Uden den koster det ${AI_EFFEKT.ansvarligAiTillid} i tilsynstillid pr. kvartal i de markeder.`,
+        tekst: `En risikoagent med overvågning på mindst 0,6 opfylder kravet. Uden den koster det ${fortegn(AI_EFFEKT.ansvarligAiTillid)} i tilsynstillid pr. kvartal i de markeder.`,
         panel: 'ailab',
         knap: 'Til AI-lab',
         ikon: 'chip',

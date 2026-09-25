@@ -2,7 +2,7 @@
 // medarbejder, svæver op og fader ud. Faste puljer (ingen allokering pr. frame) og et loft over antallet.
 import type { ParamKey, Params } from '../sim/types';
 import { PARAM_KEYS } from '../sim/types';
-import { PARAM_FARVE, T } from './palette';
+import { PARAM_FARVE, T, rgba } from './palette';
 import { tekstSprite } from './font';
 import { tegnBobleIkon, type BobleIkon } from './sprites';
 
@@ -19,6 +19,29 @@ export function bobleSprite(tekst: string, farve: string, ikon: BobleIkon, skala
     ikon: (ctx, x, y, s) => tegnBobleIkon(ctx, ikon, x, y, s, T.line),
     ikonNoegle: ikon,
   });
+}
+
+const gloedCache = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>();
+
+/** + AI-akten: glødende udgave af en boble (agenternes point) — cyan kant og en blød cyan glorie */
+export function gloedSprite(sp: HTMLCanvasElement, skala: number): HTMLCanvasElement {
+  const hit = gloedCache.get(sp);
+  if (hit) return hit;
+  const g = 2 * skala;
+  const c = document.createElement('canvas');
+  c.width = sp.width + g * 2;
+  c.height = sp.height + g * 2;
+  const ctx = c.getContext('2d');
+  if (!ctx) return sp;
+  ctx.fillStyle = rgba(T.cyan, 0.3);
+  ctx.fillRect(skala, 0, c.width - 2 * skala, c.height);
+  ctx.fillRect(0, skala, c.width, c.height - 2 * skala);
+  ctx.fillStyle = T.cyan;
+  ctx.fillRect(g, g - skala, sp.width, sp.height + 2 * skala);
+  ctx.fillRect(g - skala, g, sp.width + 2 * skala, sp.height);
+  ctx.drawImage(sp, g, g);
+  gloedCache.set(sp, c);
+  return c;
 }
 
 function easeOutBack(t: number): number {
@@ -78,7 +101,7 @@ export class Bobler {
    * Planlæg bobler for ét point-signal: én pr. parameter (≥ 1 efter afrunding) + fejl-boble.
    * Spredt over ugens varighed, så det "pibler" som i Game Dev Story.
    */
-  planlaegPoint(nu: number, plads: number, params: Params, fejl: number, fjernet: number, ugeMs: number, skala: number, forskyd: number): number {
+  planlaegPoint(nu: number, plads: number, params: Params, fejl: number, fjernet: number, ugeMs: number, skala: number, forskyd: number, gloed = false): number {
     let n = 0;
     const specs = SPEC_TMP;
     for (const k of PARAM_KEYS) {
@@ -109,7 +132,8 @@ export class Bobler {
     const start = nu + forskyd * Math.min(ugeMs * 0.2, trin);
     for (let j = 0; j < n; j++) {
       const s = specs[j];
-      const sp = bobleSprite(s.tekst, s.farve, s.ikon, skala);
+      const sp0 = bobleSprite(s.tekst, s.farve, s.ikon, skala);
+      const sp = gloed ? gloedSprite(sp0, skala) : sp0;
       // skiftevis venstre/højre for hovedet (også hen over uger), så bobler i træk ikke dækker hinanden
       const side = this.sideTael[plads & 63]++ & 1 ? 1 : -1;
       const dx = side * Math.min(60, Math.round(sp.width * 0.36));

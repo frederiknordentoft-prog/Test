@@ -515,6 +515,7 @@ const KORT_NAVN: Partial<Record<string, string>> = {
   produkter: 'Produkt',
   kombinationer: 'Kombi',
   nyheder: 'Nyt',
+  platform: 'Teknik',
 };
 
 function Fanebjaelke() {
@@ -524,6 +525,10 @@ function Fanebjaelke() {
   const tilbud = useGame((s) => s.game?.kontraktTilbud.length ?? 0);
   // Firma: en runde er klar, eller der er råd til at flytte
   const firmaKlar = useGame((s) => (s.game ? naesteRunde(s.game).ok || kontorKlar(s.game) : false));
+  // AI-lab: laboratoriet er åbnet, men ingen agenter endnu
+  const aiNy = useGame((s) => (s.game ? s.game.flags.includes('aktTo') && s.game.agenter.length === 0 : false));
+  // Rivaler: et opkøbstilbud eller en sponsorauktion venter på svar
+  const rivalSvar = useGame((s) => !!s.game && (s.game.opkoebstilbud !== null || s.game.sponsorAuktion !== null));
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current?.querySelector<HTMLElement>(`[data-testid="fane-${panel}"]`);
@@ -533,6 +538,8 @@ function Fanebjaelke() {
     if (id === 'projekter' && klar > 0) return { tekst: '!', farve: 'var(--color-good)' };
     if (id === 'kontrakter' && tilbud > 0) return { tekst: String(tilbud), farve: 'var(--color-sky)' };
     if (id === 'firma' && firmaKlar) return { tekst: '!', farve: 'var(--color-gold)' };
+    if (id === 'ailab' && aiNy) return { tekst: '!', farve: 'var(--color-cyan)' };
+    if (id === 'konkurrenter' && rivalSvar) return { tekst: '!', farve: 'var(--color-warn)' };
     return null;
   };
   return (
@@ -562,8 +569,8 @@ function Fanebjaelke() {
             <Ikon navn={p.ikon} farve="currentColor" indre={valgt ? 'var(--color-gold)' : 'var(--color-panel2)'} str={18} />
             {KORT_NAVN[p.id] ? (
               <>
-                <span className="max-w-full truncate bred:max-xl:hidden">{p.navn}</span>
-                <span className="hidden max-w-full truncate bred:max-xl:inline">{KORT_NAVN[p.id]}</span>
+                <span className="max-w-full truncate bred:max-2xl:hidden">{p.navn}</span>
+                <span className="hidden max-w-full truncate bred:max-2xl:inline">{KORT_NAVN[p.id]}</span>
               </>
             ) : (
               <span className="max-w-full truncate">{p.navn}</span>

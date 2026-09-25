@@ -26,18 +26,23 @@ function Noegletal({ g }: { g: GameState }) {
   const kval = gennemsnitligPlatformKvalitet(g);
   const data = g.platforme.kontoplatform.dataejerskab;
   const felter = [
-    { id: 'rs-betting', navn: 'Revenue share · betting', v: pct(rsBet, rsBet < 0.1 ? 1 : 0), ikon: 'bold', farve: rsBet > 0.15 ? 'var(--color-warn)' : 'var(--color-good)', titel: 'Andel af betting-BSI, der går til platformleverandørerne' },
-    { id: 'rs-kasino', navn: 'Revenue share · kasino', v: pct(rsKas, rsKas < 0.1 ? 1 : 0), ikon: 'diamant', farve: rsKas > 0.15 ? 'var(--color-warn)' : 'var(--color-good)', titel: 'Andel af kasino-BSI, der går til platformleverandørerne' },
+    { id: 'rs-betting', navn: 'Rev. share betting', v: pct(rsBet, rsBet < 0.1 ? 1 : 0), ikon: 'bold', farve: rsBet > 0.15 ? 'var(--color-warn)' : 'var(--color-good)', titel: 'Andel af betting-BSI, der går til platformleverandørerne' },
+    { id: 'rs-kasino', navn: 'Rev. share kasino', v: pct(rsKas, rsKas < 0.1 ? 1 : 0), ikon: 'diamant', farve: rsKas > 0.15 ? 'var(--color-warn)' : 'var(--color-good)', titel: 'Andel af kasino-BSI, der går til platformleverandørerne' },
     { id: 'kvalitet', navn: 'Platformkvalitet', v: `${Math.round(kval)}/100`, ikon: 'tandhjul', farve: 'var(--color-sky)', titel: 'Gennemsnit af de tre platforme (lavere under migrering)' },
     { id: 'data', navn: 'Dataejerskab', v: komma(data), ikon: 'indsigt', farve: 'var(--color-cyan)', titel: 'Fra kontoplatformen. Styrer, hvor meget AI-agenterne kan udrette fra 2026' },
     { id: 'b2b', navn: 'B2B pr. uge', v: g.b2bIndtaegtPrUge > 0 ? `+${mioKort(g.b2bIndtaegtPrUge)}` : '–', ikon: 'penge', farve: 'var(--color-gold)', titel: 'Indtægt fra operatører, der lejer jeres egen platform' },
   ];
   return (
     <div className="grid grid-cols-2 gap-1.5 @xl:grid-cols-5" data-testid="platform-noegletal">
-      {felter.map((f) => (
-        <div key={f.id} className="min-w-0 rounded-md border-2 border-line bg-bg2 px-2 py-1.5" title={f.titel} data-testid={`platform-tal-${f.id}`}>
+      {felter.map((f, i) => (
+        <div
+          key={f.id}
+          className={`min-w-0 rounded-md border-2 border-line bg-bg2 px-2 py-1.5 ${i === felter.length - 1 ? 'col-span-2 @xl:col-span-1' : ''}`}
+          title={f.titel}
+          data-testid={`platform-tal-${f.id}`}
+        >
           <div className="flex items-center gap-1 text-[0.62rem] uppercase leading-tight tracking-wide text-muted">
-            <Ikon navn={f.ikon} farve={f.farve} indre="var(--color-line)" str={11} className="shrink-0" /> <span className="truncate">{f.navn}</span>
+            <Ikon navn={f.ikon} farve={f.farve} indre="var(--color-line)" str={11} className="shrink-0" /> <span className="min-w-0">{f.navn}</span>
           </div>
           <div className="tal font-pixel text-sm font-black" style={{ color: f.farve }}>
             {f.v}
@@ -50,28 +55,37 @@ function Noegletal({ g }: { g: GameState }) {
 
 function ByggeEllerKoebe() {
   return (
-    <details className="rounded-md border-2 border-line bg-bg2" data-testid="byg-eller-koeb">
-      <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5 px-2.5 font-pixel text-xs font-black uppercase tracking-wider text-ink">
-        <Ikon navn="spoergsmaal" farve="var(--color-cyan)" str={13} /> Byg eller køb? Spillets rygrad
-      </summary>
-      <div className="flex flex-col gap-1.5 px-2.5 pb-2.5 text-sm text-muted">
-        <p>
-          <b className="text-ink">Køb</b> (white-label eller turnkey) er hurtigt og billigt at komme i gang med — men leverandøren tager en bid af hver krone, kvalitetsloftet er
-          lavt, og jeres data bor hos dem.
-        </p>
-        <p>
-          <b className="text-ink">Byg</b> (hybrid eller egen) koster capex og år af jeres udvikleres liv. Til gengæld forsvinder revenue share, kvaliteten kan nå højere op, og I ejer
-          data — det, AI-agenterne lever af fra 2026.
-        </p>
-        <p>
-          En egen sportsbook eller kasinoplatform kan endda <b className="text-gold">sælges B2B</b> til andre operatører. Sådan blev Kombi født i 2014.
-        </p>
-        <p className="text-xs">
-          Et modelskift kræver en migrering: kvaliteten er {Math.round((1 - MIGRERING.kvalitetUnder) * 100)} % lavere undervejs, og der er {Math.round(MIGRERING.nedbrudPrUge * 100)} %
-          risiko pr. uge for et nedbrud. Afbryder I, får I halvdelen af investeringen tilbage.
+    <div className="rounded-md border-2 border-line bg-bg2" data-testid="byg-eller-koeb">
+      <div className="flex items-start gap-2 px-2.5 pt-2 text-sm">
+        <Ikon navn="spoergsmaal" farve="var(--color-cyan)" str={14} className="mt-0.5 shrink-0" />
+        <p className="text-muted">
+          <b className="font-pixel text-xs font-black uppercase tracking-wider text-ink">Byg eller køb? </b>
+          <b className="text-ink">Køb</b> er hurtigt og billigt, men leverandøren tager op til 30 % af jeres BSI. <b className="text-ink">Byg</b> koster capex og år, men giver 0 %
+          revenue share, højere kvalitet og jeres egne data.
         </p>
       </div>
-    </details>
+      <details>
+        <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5 px-2.5 text-xs font-bold text-muted hover:text-ink">
+          <Ikon navn="pil" farve="currentColor" str={11} /> Mere om byg eller køb
+        </summary>
+        <div className="flex flex-col gap-1.5 px-2.5 pb-2.5 text-sm text-muted">
+          <p>
+            <b className="text-ink">White-label og turnkey</b> får jer i luften med det samme — men kvalitetsloftet er lavt, og jeres data bor hos leverandøren.
+          </p>
+          <p>
+            <b className="text-ink">Hybrid og egen platform</b> kræver udviklere, capex og tålmodighed. Til gengæld forsvinder revenue share, kvaliteten kan nå højere op, og I ejer
+            data — det, AI-agenterne lever af fra 2026.
+          </p>
+          <p>
+            En egen sportsbook eller kasinoplatform kan endda <b className="text-gold">sælges B2B</b> til andre operatører. Sådan blev Kombi født i 2014.
+          </p>
+          <p className="text-xs">
+            Et modelskift kræver en migrering: kvaliteten er {Math.round((1 - MIGRERING.kvalitetUnder) * 100)} % lavere undervejs, og der er{' '}
+            {Math.round(MIGRERING.nedbrudPrUge * 100)} % risiko pr. uge for et nedbrud. Afbryder I, får I halvdelen af investeringen tilbage.
+          </p>
+        </div>
+      </details>
+    </div>
   );
 }
 
@@ -93,7 +107,9 @@ function Migrering({ g, kind }: { g: GameState; kind: PlatformKind }) {
           Uge {f.gaaet} af {f.ialt} · færdig ca. {datoTekst(p.migreringFaerdigUge ?? g.uge)}
         </span>
       </div>
-      <Bar vaerdi={f.andel} max={1} farve="var(--color-sky)" hoejde={10} label={`Migrering ${Math.round(f.andel * 100)} %`} />
+      <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(f.andel * 100)} aria-label="Migreringens fremdrift">
+        <Bar vaerdi={f.andel} max={1} farve="var(--color-sky)" hoejde={10} />
+      </div>
       <ul className="flex flex-col gap-1 text-xs">
         <li className="flex items-start gap-1.5 text-warn">
           <Ikon navn="ned" farve="var(--color-warn)" str={11} className="mt-0.5 shrink-0" />
@@ -206,7 +222,7 @@ function B2bSalg({ g, kind }: { g: GameState; kind: PlatformKind }) {
         <span className="flex min-w-0 flex-1 basis-40 items-start gap-1 text-xs text-muted" data-testid={`b2b-grund-${kind}`}>
           <Ikon navn={st.ok ? 'flueben' : 'laas'} farve={st.ok ? 'var(--color-good)' : 'var(--color-muted)'} str={11} className="mt-0.5 shrink-0" />
           {st.ok
-            ? `Et salgsmøde pr. kvartal. Hver kunde giver op til ${mioKort(B2B.indtaegtPrKundePrUge)} om ugen (ved kvalitet 100).${st.licens > 0 ? ` Første salg kræver en B2B-licens: ${mio(st.licens)}.` : ''}`
+            ? `Et salgsmøde pr. kvartal. Hver kunde giver op til ${mioKort(B2B.indtaegtPrKundePrUge)} om ugen (ved kvalitet 100).${st.licens > 0 ? ` Første salg kræver en B2B-licens til ${mio(st.licens)}` : ''}`
             : st.grund}
         </span>
       </div>
@@ -256,7 +272,7 @@ function PlatformKort({ g, kind }: { g: GameState; kind: PlatformKind }) {
             </span>
           </div>
           <div className="relative">
-            <Bar vaerdi={kval} max={100} farve="var(--color-sky)" label={`Kvalitet ${Math.round(kval)}`} />
+            <Bar vaerdi={kval} max={100} farve="var(--color-sky)" />
             <span className="absolute top-0 bottom-0 w-0.5 bg-ink" style={{ left: `${def.kvalitetsloft}%` }} title={`Kvalitetsloft ${def.kvalitetsloft}`} aria-hidden />
           </div>
         </div>
@@ -269,7 +285,7 @@ function PlatformKort({ g, kind }: { g: GameState; kind: PlatformKind }) {
               <b className="text-ink">{komma(p.dataejerskab)}</b> / 1,0
             </span>
           </div>
-          <Bar vaerdi={p.dataejerskab} max={1} farve="var(--color-cyan)" label={`Dataejerskab ${komma(p.dataejerskab)}`} />
+          <Bar vaerdi={p.dataejerskab} max={1} farve="var(--color-cyan)" />
         </div>
       </div>
       {p.migrererTil ? <Migrering g={g} kind={kind} /> : <ModelValg g={g} kind={kind} />}
@@ -291,11 +307,11 @@ function Sammenligning({ g }: { g: GameState }) {
           const d = PLATFORM_MODELS[m];
           const bruges = PLATFORM_KINDS.filter((k) => g.platforme[k.id].model === m);
           const raekker = [
-            { navn: 'Capex', v: d.capex > 0 ? mio(d.capex) : 'Gratis', bar: d.capex / maxCapex, farve: 'var(--color-gold)', ikon: 'penge' },
-            { navn: 'Migrering', v: migreringsTid(d.uger), bar: d.uger[1] / maxUger, farve: 'var(--color-muted)', ikon: 'ur' },
-            { navn: 'Revenue share', v: pct(d.revenueShare), bar: d.revenueShare / maxRs, farve: 'var(--color-warn)', ikon: 'ned' },
-            { navn: 'Kvalitetsloft', v: String(d.kvalitetsloft), bar: d.kvalitetsloft / 100, farve: 'var(--color-sky)', ikon: 'tandhjul' },
-            { navn: 'Dataejerskab', v: komma(d.dataejerskab), bar: d.dataejerskab, farve: 'var(--color-cyan)', ikon: 'indsigt' },
+            { navn: 'Capex', v: d.capex > 0 ? mio(d.capex) : 'Gratis', bar: d.capex / maxCapex, farve: 'var(--color-gold)' },
+            { navn: 'Migrering', v: migreringsTid(d.uger), bar: d.uger[1] / maxUger, farve: 'var(--color-muted)' },
+            { navn: 'Revenue share', v: pct(d.revenueShare), bar: d.revenueShare / maxRs, farve: 'var(--color-warn)' },
+            { navn: 'Kvalitetsloft', v: String(d.kvalitetsloft), bar: d.kvalitetsloft / 100, farve: 'var(--color-sky)' },
+            { navn: 'Dataejerskab', v: komma(d.dataejerskab), bar: d.dataejerskab, farve: 'var(--color-cyan)' },
           ];
           return (
             <div key={m} className="flex min-w-0 flex-col gap-1.5 rounded-md border-2 border-line bg-panel p-2" data-testid={`model-kort-${m}`}>

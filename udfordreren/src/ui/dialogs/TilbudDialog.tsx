@@ -150,7 +150,7 @@ export default function TilbudDialog({ signal, onLuk }: { signal: Signal; onLuk:
               </li>
               <li className="flex items-start gap-1.5">
                 <Ikon navn="folk" farve="var(--color-gold)" indre="var(--color-line)" className="mt-0.5 shrink-0" str={14} />
-                <span>Stifterne går derfra med {mio(stiftere)}.</span>
+                <span>Stifterne går derfra med {mio(stiftere)} i lommen.</span>
               </li>
               <li className="flex items-start gap-1.5">
                 <Ikon navn="trofae" farve="var(--color-sky)" indre="var(--color-line)" className="mt-0.5 shrink-0" str={14} />

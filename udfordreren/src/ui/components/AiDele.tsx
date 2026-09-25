@@ -18,6 +18,7 @@ const CSS = `
 .ai-blink { animation: ai-blink 1.1s steps(2) infinite; }
 @keyframes ai-ind { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
 .ai-ind { animation: ai-ind 420ms cubic-bezier(.2,1.1,.4,1) both; }
+.ai-ind-gloed { animation: ai-ind 420ms cubic-bezier(.2,1.1,.4,1) both, ai-gloed 2.8s ease-in-out 420ms infinite; }
 .ai-tekst-gloed { text-shadow: 0 0 8px rgba(78,230,216,.7), 0 0 2px rgba(78,230,216,.9); }
 `;
 
@@ -39,6 +40,7 @@ export function GloedTerminal({ str = 36, funktion, slukket, className = '' }: {
       style={{ width: str, height: str }}
       aria-hidden
     >
+      <AiStil />
       <svg viewBox="0 0 12 12" width={str - 8} height={str - 8} shapeRendering="crispEdges">
         <rect x={0} y={0} width={12} height={9} fill="#0b0c16" />
         <rect x={1} y={1} width={10} height={7} fill={skaerm} />
@@ -71,12 +73,21 @@ export function AiMaerke({ children = 'AI', titel }: { children?: ReactNode; tit
   );
 }
 
-/** Bjælke for 0..1 med glød */
-export function GloedBar({ vaerdi, farve = 'var(--color-cyan)', label, testId }: { vaerdi: number; farve?: string; label: string; testId?: string }) {
+/** Bjælke for 0..1 med glød og valgfri markør (fx tærsklen 0,3 for dataejerskab) */
+export function GloedBar({ vaerdi, farve = 'var(--color-cyan)', label, testId, markoer }: { vaerdi: number; farve?: string; label: string; testId?: string; markoer?: number }) {
   const p = Math.max(0, Math.min(1, vaerdi));
   return (
-    <span className="block h-3 w-full overflow-hidden rounded-sm border-2 border-line bg-[#070b1a]" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(p * 100)} data-testid={testId}>
+    <span
+      className="relative block h-3 w-full overflow-hidden rounded-sm border-2 border-line bg-[#1b2447]"
+      role="meter"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(p * 100)}
+      data-testid={testId}
+    >
       <span className="block h-full transition-[width] duration-500" style={{ width: `${p * 100}%`, background: farve, boxShadow: p > 0 ? `0 0 8px ${farve}` : undefined }} />
+      {markoer !== undefined && <span className="absolute inset-y-0 w-0.5 bg-ink/80" style={{ left: `${Math.max(0, Math.min(1, markoer)) * 100}%` }} aria-hidden />}
     </span>
   );
 }

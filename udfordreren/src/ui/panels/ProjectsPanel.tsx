@@ -1,6 +1,6 @@
 // Projekter (spec 6.2): Game Dev Story-kernen. Nyt produkt, faser med hold, parametre mod markedsstandarden,
 // fejl, boost, forlænget test, lancering og skrinlægning.
-import type { GameState, ParamKey, Project, Staff } from '../../sim/types';
+import type { AiAgent, GameState, ParamKey, Project, Staff } from '../../sim/types';
 import { PARAM_KEYS } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
@@ -15,6 +15,8 @@ import { BekraeftKnap, DevStil, FaseStepper, FitMaerke, ParamRaekke, StaffAvatar
 import { FASE_GIVER, FASE_NAVN, INTENSITET_NAVN, PARAM_NAVN, holdEstimat, licensInfo, pctKort, ugerTekst, visVersion } from '../lib/devHjaelp';
 import { LICENS_STIL, lanceringsPlan, resterendeUdvikling } from '../lib/tvaersHjaelp';
 import { heltal, mio } from '../format';
+import { agentFaseVaegt } from '../../sim/agents';
+import { GloedTerminal } from '../components/AiDele';
 
 function nytProduktStatus(g: GameState): { ok: boolean; grund?: string } {
   const max = maxProjekter(g);
@@ -248,13 +250,10 @@ function Hold({ g, p }: { g: GameState; p: Project }) {
     const o = opgaver[m.id];
     return o?.type === 'projekt' && o.projectId === p.id;
   });
-  const est = holdEstimat(
-    g,
-    p,
-    p.fase,
-    arbejder.map((m) => m.id),
-  );
-  const staar = arbejder.length === 0;
+  // + AI-akten: agenter på holdet (glødende terminaler)
+  const agenter = ids.map((id) => g.agenter.find((a) => a.id === id)).filter((a): a is AiAgent => !!a && agentFaseVaegt(a, p, p.fase) > 0);
+  const est = holdEstimat(g, p, p.fase, [...arbejder.map((m) => m.id), ...agenter.map((a) => a.id)]);
+  const staar = arbejder.length === 0 && agenter.length === 0;
   const energi = arbejder.length ? arbejder.reduce((a, m) => a + m.energi, 0) / arbejder.length : 100;
   return (
     <div className={`rounded-md border-2 p-2 ${staar ? 'border-warn bg-warn/10' : 'border-line bg-bg2'}`} data-testid={`hold-${p.id}`}>
@@ -272,8 +271,14 @@ function Hold({ g, p }: { g: GameState; p: Project }) {
           <Ikon navn="folk" /> Tildel
         </Btn>
       </div>
-      {medlemmer.length > 0 && (
+      {medlemmer.length + agenter.length > 0 && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
+          {agenter.map((a) => (
+            <span key={a.id} className="flex flex-col items-center gap-0.5" title={`${a.navn ?? 'Agent'} · AI-agent`} data-testid={`hold-agent-${a.id}`}>
+              <GloedTerminal str={32} funktion={a.funktion} />
+              <span className="max-w-[64px] truncate text-[0.62rem] text-cyan">{a.navn ?? 'Agent'}</span>
+            </span>
+          ))}
           {medlemmer.map((m) => {
             const o = opgaver[m.id];
             const her = o?.type === 'projekt' && o.projectId === p.id;
