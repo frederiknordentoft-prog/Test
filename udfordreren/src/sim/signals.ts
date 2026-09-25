@@ -23,6 +23,9 @@ export function pauserFor(sig: Signal): boolean {
     case 'nr1':
     case 'slut':
     case 'advarsel':
+    case 'markedAabner':
+    case 'regel':
+    case 'sanktion':
       return true;
     case 'messe':
       return sig.stoerrelse > 0;
@@ -47,6 +50,9 @@ export function pauseTekst(sig: Signal): string | null {
     case 'top10': return 'Top 10!';
     case 'slut': return 'Spillet er slut';
     case 'advarsel': return 'Advarsel';
+    case 'markedAabner': return 'Markedsåbning';
+    case 'regel': return sig.varsel ? 'Ny regel på vej' : 'Ny regel';
+    case 'sanktion': return 'Sanktion';
     default: return null;
   }
 }

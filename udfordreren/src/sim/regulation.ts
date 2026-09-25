@@ -99,7 +99,7 @@ export function aktiverRegel(s: GameState, rng: Rng, m: MarketId, regelId: strin
   if (r.effekt.blokering === 'betaling' && ms.blokering.betaling === null) ms.blokering.betaling = s.uge;
   if (r.effekt.blokering === 'leverandoer') ms.blokering.leverandoer = true;
   nyhed(s, `${MARKETS[m].navn}: ${r.navn} træder i kraft. ${regelTekst(r)}.`, 'marked');
-  signal(s, { k: 'regel', marked: m, regelId, varsel: false });
+  if (spillerAktiv(s, m)) signal(s, { k: 'regel', marked: m, regelId, varsel: false });
 }
 
 function annoncer(s: GameState, m: MarketId, regelId: string, uge: number, dynamisk: boolean): void {

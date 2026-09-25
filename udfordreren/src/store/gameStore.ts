@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /** Signaler, der åbner en dialog (spillet står stille, indtil den lukkes) */
-export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor'];
+export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor', 'markedAabner', 'regel', 'sanktion'];
 
 /** Dialoger med en afsløring (scoren tælles op, kuverterne åbnes): HUD'en fryses, til de er lukket */
 const AFSLOERING: Signal['k'][] = ['anmeldelse', 'galla'];
@@ -109,6 +109,7 @@ function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
     case 'forskning': return { tekst: 'Forskning færdig', kind: 'godt' };
     case 'licens': return { tekst: 'Licens godkendt!', kind: 'godt' };
     case 'klar': return { tekst: 'Et produkt er klar til lancering', kind: 'info' };
+    case 'trend': return { tekst: sig.titel, kind: 'info' };
     default: return null;
   }
 }
