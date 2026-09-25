@@ -86,7 +86,11 @@ export function procent(v: number, dec = 1): string {
 
 /** Fjern kildemarkeringer som [F], [D], [F/A] fra datatekster */
 export function rensNote(note: string): string {
-  return note.replace(/\s*\[[FDA/]+\]/g, '').trim();
+  // Kildemarkeringer ud; markedskoder i data-noter ("i dk") vises som i resten af UI'et ("i DK")
+  return note
+    .replace(/\s*\[[FDA/]+\]/g, '')
+    .replace(/\bi (dk|fi|uk|se|nl|us)\b/g, (_, k: string) => `i ${k.toUpperCase()}`)
+    .trim();
 }
 
 // ---------- Kontraktopgaver ----------

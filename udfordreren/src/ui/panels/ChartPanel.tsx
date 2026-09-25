@@ -1,16 +1,22 @@
-// Hitlisten: "Ugens Top 10 — Danmark" med pile, "NY!", monogrammer og spillerens produkter fremhævet.
+// Hitlisten: "Ugens Top 10" pr. åbent marked med pile, "NY!", monogrammer og spillerens produkter fremhævet.
+// Faner for alle markeder: åbne markeder viser deres liste, uåbnede viser åbningsdatoen, og Norge er monopol.
 import { useState } from 'react';
 import type { ChartEntry, GameState, LiveProduct, MarketId } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
-import { Badge, Ikon, Monogram, Panel, Tom } from '../components/kit';
+import { useUi } from '../../store/uiStore';
+import { vaelgMarked } from '../lib/markedHjaelp';
+import { Badge, Btn, Ikon, Monogram, Panel, Tom } from '../components/kit';
 import { FlagStribe } from '../components/FirmaDele';
 import { ejerInfo } from '../../sim/competitors';
+import { hjemmebane } from '../../sim/charts';
 import { MARKETS, MARKET_IDS } from '../../data/markets';
 import { PRODUCT_TYPES } from '../../data/productTypes';
 import { THEMES } from '../../data/themes';
-import { ugeIAar, aarFor } from '../../sim/time';
+import { VERTICALS } from '../../data/verticals';
+import { ugeIAar, aarFor, datoTekst } from '../../sim/time';
 import { heltal, mioKort } from '../format';
-import { dkRangliste } from '../lib/firmaHjaelp';
+import { procent } from '../lib/firmaHjaelp';
+import { LICENS_STIL, faktorTekst, hitlisteVaerdi, licensTekst, markedAarsBsi, markedBeskrivelse, rangliste, stoerrelseTekst, ugerKort, vertikalLicens } from '../lib/tvaersHjaelp';
 
 function Bevaegelse({ e }: { e: ChartEntry }) {
   if (e.ny) {
@@ -51,11 +57,12 @@ function Bevaegelse({ e }: { e: ChartEntry }) {
   );
 }
 
-function Raekke({ e, p, g }: { e: ChartEntry; p: LiveProduct | undefined; g: GameState }) {
+function Raekke({ e, p, g, m }: { e: ChartEntry; p: LiveProduct | undefined; g: GameState; m: MarketId }) {
   if (!p) return null;
   const ejer = ejerInfo(g, p.ejer);
   const egen = p.ejer === 'spiller';
   const top3 = e.placering <= 3;
+  const hb = hjemmebane(g, p.ejer, m);
   return (
     <li
       data-testid={`top10-raekke-${e.placering}`}
@@ -76,6 +83,15 @@ function Raekke({ e, p, g }: { e: ChartEntry; p: LiveProduct | undefined; g: Gam
           {egen && <Ikon navn="krone" farve="var(--color-gold)" indre="var(--color-line)" str={13} titel="Jeres produkt" className="shrink-0" />}
           <span className={`line-clamp-2 leading-tight font-bold break-words @md:truncate ${egen ? 'text-gold' : 'text-ink'}`}>{p.navn}</span>
           {p.version > 1 && <span className="shrink-0 font-pixel text-[0.65rem] font-black text-muted">{p.version}.0</span>}
+          {hb > 1 && (
+            <span
+              className="tal shrink-0 rounded border border-line bg-panel2 px-1 font-pixel text-[0.58rem] font-black uppercase text-sky"
+              title={`Hjemmebane: statsselskabets nye spillere tæller ×${String(Math.round(hb * 10) / 10).replace('.', ',')} på hitlisten (fuldt til 2016, aftager til 2018)`}
+              data-testid="hjemmebane"
+            >
+              Hjemme ×{String(Math.round(hb * 10) / 10).replace('.', ',')}
+            </span>
+          )}
         </span>
         <span className="block truncate text-xs text-muted">
           {PRODUCT_TYPES[p.typeId].navn} × {THEMES[p.themeId].navn}
@@ -83,92 +99,246 @@ function Raekke({ e, p, g }: { e: ChartEntry; p: LiveProduct | undefined; g: Gam
         </span>
       </span>
       <span className="text-right">
-        <span className="tal block font-pixel text-sm font-bold text-sky" title="Nye spillere denne uge">{heltal(p.nyeSpillerePrUge?.dk ?? 0)}</span>
+        <span className="tal block font-pixel text-sm font-bold text-sky" title="Nye spillere denne uge">{heltal(p.nyeSpillerePrUge?.[m] ?? 0)}</span>
         <span className="block text-[0.62rem] uppercase text-dim">nye/uge</span>
-        <span className="tal hidden text-[0.62rem] text-gold @md:block" title="BSI denne uge">{mioKort(p.bsiPrUge.dk ?? 0)} BSI</span>
+        <span className="tal hidden text-[0.62rem] text-gold @md:block" title="BSI denne uge">{mioKort(p.bsiPrUge[m] ?? 0)} BSI</span>
       </span>
     </li>
   );
 }
 
+/** Er spilleren på listen i markedet? (til fane-mærket) */
+function spillerPlads(g: GameState, m: MarketId): number | null {
+  const e = g.markeder[m].top10.find((x) => g.produkter.find((p) => p.id === x.productId)?.ejer === 'spiller');
+  return e ? e.placering : null;
+}
+
+function MarkedFane({ g, m, valgt, onVaelg }: { g: GameState; m: MarketId; valgt: boolean; onVaelg: () => void }) {
+  const def = MARKETS[m];
+  const aaben = g.markeder[m].aaben;
+  const plads = aaben ? spillerPlads(g, m) : null;
+  const lic = g.markeder[m].licens;
+  const ramt = aaben && (lic === 'suspenderet' || lic === 'inddraget');
+  const under =
+    def.aabnerUge === null
+      ? 'monopol'
+      : !aaben
+        ? String(aarFor(def.aabnerUge))
+        : lic === 'suspenderet'
+          ? 'susp.'
+          : lic === 'inddraget'
+            ? 'mistet'
+            : plads !== null
+              ? `nr. ${plads}`
+              : lic === 'aktiv'
+                ? 'aktiv'
+                : 'åben';
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={valgt}
+      aria-label={aaben ? `${def.navn}${plads !== null ? `, I er nr. ${plads}` : ''}` : def.aabnerUge === null ? `${def.navn}: monopol` : `${def.navn}: åbner ${datoTekst(def.aabnerUge)}`}
+      data-testid={`hitliste-marked-${m}`}
+      data-laast={aaben ? undefined : '1'}
+      onClick={onVaelg}
+      title={aaben ? def.navn : def.aabnerUge === null ? `${def.navn} har statsmonopol` : `${def.navn} åbner ${datoTekst(def.aabnerUge)}`}
+      className={`flex min-h-[44px] min-w-[3.6rem] shrink-0 flex-col items-center justify-center gap-0.5 rounded-md border-2 border-line px-2 py-1 font-pixel ${
+        valgt ? 'bg-gold text-line pixel-skygge' : aaben ? 'bg-panel2 text-ink hover:bg-hi' : 'bg-bg2 text-dim hover:text-muted'
+      }`}
+    >
+      <span className="flex items-center gap-1 text-xs font-black uppercase leading-none">
+        <FlagStribe farver={def.farver} className={`h-2.5 w-4 ${aaben ? '' : 'opacity-50 grayscale'}`} />
+        {def.kort}
+        {!aaben && <Ikon navn="laas" farve="currentColor" str={9} />}
+        {plads !== null && <Ikon navn="krone" farve={valgt ? 'var(--color-line)' : 'var(--color-gold)'} indre={valgt ? 'var(--color-gold)' : 'var(--color-line)'} str={10} />}
+      </span>
+      <span className={`tal text-[0.58rem] font-bold uppercase leading-none ${valgt ? 'text-line/80' : ramt ? 'text-bad' : plads !== null ? 'text-gold' : 'text-dim'}`}>{under}</span>
+    </button>
+  );
+}
+
+/** Uåbnet marked eller Norge: hvornår og hvad der venter */
+function LaastMarked({ g, m }: { g: GameState; m: MarketId }) {
+  const def = MARKETS[m];
+  const ms = g.markeder[m];
+  if (def.aabnerUge === null) {
+    return (
+      <div className="flex flex-col gap-2 rounded-md border-2 border-dashed border-hi p-3" data-testid="hitliste-laast">
+        <p className="flex items-center gap-2 font-pixel text-sm font-black uppercase text-ink">
+          <Ikon navn="laas" farve="var(--color-muted)" /> Statsmonopol
+        </p>
+        <p className="text-sm text-muted">
+          {def.navn} giver ikke licenser — {def.tilsyn} holder markedet for statens eget selskab. Her findes ingen hitliste for licenserede produkter.
+        </p>
+        <p className="text-xs text-dim">
+          Spillere, der vil andet, finder udenlandske sider. Dem kan man kun nå gråt med et offshore-brand — og det har en pris hos tilsynene i alle andre markeder.
+          {g.offshoreBrand && ms.offshoreBrandBsiPrUge > 0 && (
+            <>
+              {' '}
+              Jeres offshore-brand henter <b className="tal text-gold">{mioKort(ms.offshoreBrandBsiPrUge)}</b> BSI/uge her.
+            </>
+          )}
+        </p>
+      </div>
+    );
+  }
+  const uger = Math.max(0, def.aabnerUge - g.uge);
+  return (
+    <div className="flex flex-col gap-2 rounded-md border-2 border-dashed border-hi p-3" data-testid="hitliste-laast">
+      <p className="flex flex-wrap items-center gap-2 font-pixel text-sm font-black uppercase text-ink">
+        <Ikon navn="kalender" farve="var(--color-sky)" indre="var(--color-line)" /> Åbner {datoTekst(def.aabnerUge)}
+        <span className="tal font-sans text-xs font-bold normal-case text-muted">om {ugerKort(uger)}</span>
+      </p>
+      <p className="text-sm text-muted">{markedBeskrivelse(m, g.uge)} Hitlisten starter, når markedet åbner for licenser.</p>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+        <span>
+          Tilsyn <b className="text-ink">{def.tilsyn}</b>
+        </span>
+        <span>
+          Licens <b className="tal text-gold">{String(def.licensGebyr).replace('.', ',')} mio. kr.</b> · {ugerKort(def.licensUger)}
+        </span>
+        <span>
+          CAC <b className="tal text-ink">{faktorTekst(def.cacFaktor)}</b> af DK
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Spillerens licensstatus i det valgte marked (når de ikke er på listen) */
+function LicensLinje({ g, m }: { g: GameState; m: MarketId }) {
+  const ms = g.markeder[m];
+  const def = MARKETS[m];
+  const lic = vertikalLicens(g, m, g.startVertikal);
+  if (ms.licens === 'aktiv') return null;
+  const st = LICENS_STIL[lic.tilstand];
+  const tekst =
+    lic.tilstand === 'ingen'
+      ? `I har ingen licens i ${def.navn} endnu. Markedet er ${stoerrelseTekst(markedAarsBsi(m, g.startVertikal, g.uge))} i ${VERTICALS[g.startVertikal].kort.toLowerCase()}.`
+      : lic.tilstand === 'ansoegt'
+        ? `Jeres licens i ${def.navn} er på vej: ${licensTekst(lic).toLowerCase()}.`
+        : lic.tilstand === 'suspenderet'
+          ? `Licensen i ${def.navn} er suspenderet til ${datoTekst(lic.tilUge ?? g.uge)}. Jeres produkter er ude af listen imens.`
+          : lic.tilstand === 'inddraget'
+            ? `Licensen i ${def.navn} er inddraget. Listen kører videre uden jer.`
+            : null;
+  if (!tekst) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border-2 border-line bg-bg2 p-2 text-sm" data-testid="hitliste-licens">
+      <Ikon navn={st.ikon} farve={st.farve} indre="var(--color-line)" className="shrink-0" />
+      <span className="min-w-0 flex-1 text-muted">{tekst}</span>
+      {lic.tilstand === 'ingen' && (
+        <Btn
+          lille
+          onClick={() => {
+            vaelgMarked(m);
+            useUi.getState().setPanel('marked');
+          }}
+          testId="hitliste-til-marked" className="min-h-[44px] shrink-0">
+          Søg licens <Ikon navn="pil" farve="currentColor" str={12} />
+        </Btn>
+      )}
+    </div>
+  );
+}
+
+/** Seneste valgte marked (huskes, når man skifter fane og kommer tilbage) */
+let sidsteMarked: MarketId = 'dk';
+
 export default function ChartPanel() {
-  const g = useGame((s) => s.game)!;
-  const [marked] = useState<MarketId>('dk');
+  const g = useGame((s) => s.game);
+  const [valgt, setValgtState] = useState<MarketId>(() => sidsteMarked);
+  const setValgt = (m: MarketId) => {
+    sidsteMarked = m;
+    setValgtState(m);
+  };
+  if (!g) return null;
+  const marked = valgt;
   const ms = g.markeder[marked];
+  const def = MARKETS[marked];
+  const aaben = ms.aaben;
   const liste = ms.top10;
-  const rangliste = dkRangliste(g);
+  const liste10 = rangliste(g, marked);
   const spillerIListe = liste.some((e) => g.produkter.find((p) => p.id === e.productId)?.ejer === 'spiller');
-  const bedsteUdenfor = rangliste.findIndex((p, i) => i >= 10 && p.ejer === 'spiller');
-  const udenfor = bedsteUdenfor >= 0 ? rangliste[bedsteUdenfor] : undefined;
-  const nr10 = rangliste[9];
-  const harProdukter = g.produkter.some((p) => p.ejer === 'spiller' && p.aktiv);
+  const bedsteUdenfor = liste10.findIndex((p, i) => i >= 10 && p.ejer === 'spiller');
+  const udenfor = bedsteUdenfor >= 0 ? liste10[bedsteUdenfor] : undefined;
+  const nr10 = liste10[9];
+  const harProdukter = g.produkter.some((p) => p.ejer === 'spiller' && p.aktiv && p.markeder.includes(marked));
+  // Rangtal inkl. hjemmebane, så "mangler til nr. 10" passer med den rækkefølge, sim-kernen bruger
+  const nye = (p: LiveProduct | undefined) => (p ? hitlisteVaerdi(g, p, marked) : 0);
+  const medHjemmebane = liste.some((e) => {
+    const p = g.produkter.find((x) => x.id === e.productId);
+    return p ? hjemmebane(g, p.ejer, marked) > 1 : false;
+  });
 
   return (
     <Panel titel="Top 10" ikon="hitliste" testId="panel-hitliste" hoejre={<span className="font-pixel text-xs text-muted">Uge {ugeIAar(g.uge) + 1}, {aarFor(g.uge)}</span>}>
       <div className="@container flex flex-col gap-3">
-        {/* Markedsvælger: kun Danmark er åbent i denne fase */}
-        <div className="shell-uden-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5" role="tablist" aria-label="Marked">
-          {MARKET_IDS.map((id) => {
-            const def = MARKETS[id];
-            const aaben = id === 'dk';
-            const valgt = id === marked;
-            return (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={valgt}
-                disabled={!aaben}
-                data-testid={`hitliste-marked-${id}`}
-                title={aaben ? def.navn : `${def.navn} åbner senere`}
-                className={`flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-md border-2 border-line px-2.5 font-pixel text-xs font-black uppercase ${
-                  valgt ? 'bg-gold text-line pixel-skygge' : 'bg-panel2 text-muted'
-                } disabled:cursor-not-allowed disabled:opacity-50`}
-              >
-                <FlagStribe farver={def.farver} className="h-3 w-5" />
-                {aaben ? def.navn : def.kort}
-                {!aaben && <Ikon navn="laas" farve="currentColor" str={10} />}
-              </button>
-            );
-          })}
+        {/* Markedsvælger: åbne markeder har en liste; uåbnede viser åbningsdatoen; Norge er monopol */}
+        <div className="shell-uden-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5" role="tablist" aria-label="Marked" data-testid="hitliste-markeder">
+          {MARKET_IDS.map((id) => (
+            <MarkedFane key={id} g={g} m={id} valgt={id === marked} onVaelg={() => setValgt(id)} />
+          ))}
         </div>
 
-        <div className="flex items-end justify-between gap-2">
-          <h3 className="font-pixel text-base font-black uppercase tracking-wide text-ink">
-            Ugens Top 10 <span className="text-gold">— {MARKETS[marked].navn}</span>
-          </h3>
-          <span className="hidden text-xs text-dim @md:inline">Sorteret efter ugens nye spillere</span>
-        </div>
-
-        {liste.length === 0 ? (
-          <Tom>Hitlisten er tom. Den første uge er ikke talt op endnu.</Tom>
-        ) : (
-          <ol className="flex flex-col gap-1" data-testid="top10">
-            {liste.map((e) => (
-              <Raekke key={e.productId} e={e} p={g.produkter.find((p) => p.id === e.productId)} g={g} />
-            ))}
-          </ol>
-        )}
-
-        {udenfor ? (
-          <div className="flex items-center gap-2 rounded-md border-2 border-dashed border-gold/60 bg-bg2 p-2 text-sm" data-testid="top10-udenfor">
-            <Ikon navn="krone" farve="var(--color-gold)" indre="var(--color-line)" className="shrink-0" />
-            <span className="min-w-0">
-              Jeres bedste uden for listen: <b className="text-gold">{udenfor.navn}</b> som nr. <b className="tal">{bedsteUdenfor + 1}</b>.
-              {nr10 && (
-                <span className="text-muted"> Mangler {heltal(Math.max(0, (nr10.nyeSpillerePrUge?.dk ?? 0) - (udenfor.nyeSpillerePrUge?.dk ?? 0)))} nye spillere/uge til nr. 10.</span>
-              )}
+        <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-0.5">
+          <h3 className="flex items-center gap-2 font-pixel text-base font-black uppercase tracking-wide text-ink">
+            <FlagStribe farver={def.farver} className="h-3.5 w-6 shrink-0" />
+            <span>
+              {aaben ? 'Ugens Top 10' : 'Top 10'} <span className="text-gold">— {def.navn}</span>
             </span>
-          </div>
+          </h3>
+          {aaben && (
+            <span className="text-xs text-dim">
+              {ms.kanalisering > 0 && <span title="Andel af spillet hos licenserede udbydere">{procent(ms.kanalisering, 0)} licenseret · </span>}
+              <span className="hidden @md:inline">Sorteret efter ugens nye spillere{medHjemmebane ? ' · statsselskabet har hjemmebane' : ''}</span>
+            </span>
+          )}
+        </div>
+
+        {!aaben ? (
+          <LaastMarked g={g} m={marked} />
         ) : (
-          !spillerIListe && (
-            <p className="flex items-center gap-1.5 text-sm text-muted" data-testid="top10-udenfor">
-              <Ikon navn="spoergsmaal" farve="var(--color-dim)" str={14} className="shrink-0" />
-              {harProdukter ? 'Jeres produkter har ikke nok aktivitet til at blive talt med endnu.' : 'Lancér jeres første produkt for at komme på listen.'}
-            </p>
-          )
+          <>
+            <LicensLinje g={g} m={marked} />
+            {liste.length === 0 ? (
+              <Tom>Hitlisten er tom. Den første uge er ikke talt op endnu.</Tom>
+            ) : (
+              <ol className="flex flex-col gap-1" data-testid="top10" data-marked={marked}>
+                {liste.map((e) => (
+                  <Raekke key={e.productId} e={e} p={g.produkter.find((p) => p.id === e.productId)} g={g} m={marked} />
+                ))}
+              </ol>
+            )}
+
+            {udenfor ? (
+              <div className="flex items-center gap-2 rounded-md border-2 border-dashed border-gold/60 bg-bg2 p-2 text-sm" data-testid="top10-udenfor">
+                <Ikon navn="krone" farve="var(--color-gold)" indre="var(--color-line)" className="shrink-0" />
+                <span className="min-w-0">
+                  Jeres bedste uden for listen: <b className="text-gold">{udenfor.navn}</b> som nr. <b className="tal">{bedsteUdenfor + 1}</b>.
+                  {nr10 && <span className="text-muted"> Mangler {heltal(Math.max(0, nye(nr10) - nye(udenfor)))} nye spillere/uge til nr. 10.</span>}
+                </span>
+              </div>
+            ) : (
+              !spillerIListe &&
+              ms.licens === 'aktiv' && (
+                <p className="flex items-center gap-1.5 text-sm text-muted" data-testid="top10-udenfor">
+                  <Ikon navn="spoergsmaal" farve="var(--color-dim)" str={14} className="shrink-0" />
+                  {harProdukter
+                    ? 'Jeres produkter har ikke nok aktivitet til at blive talt med endnu.'
+                    : marked === 'dk'
+                      ? 'Lancér jeres første produkt for at komme på listen.'
+                      : `Vælg ${def.kort} under Markeder, når I starter et nyt produkt, for at komme på listen her.`}
+                </p>
+              )
+            )}
+          </>
         )}
-        <p className="text-xs text-dim">Listen tæller ugens nye spillere pr. produkt. En lancering med god anmeldelse og hype kan storme listen; bagefter glider den ned, medmindre marketing og kunderne holder den oppe.</p>
+        <p className="text-xs text-dim">
+          Listen tæller ugens nye spillere pr. produkt i hvert marked. En lancering med god anmeldelse og hype kan storme listen; bagefter glider den ned, medmindre marketing og kunderne
+          holder den oppe.
+        </p>
       </div>
     </Panel>
   );

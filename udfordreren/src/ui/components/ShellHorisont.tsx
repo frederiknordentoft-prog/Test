@@ -1,21 +1,68 @@
-// "I sigte": kalender (licens, messe, kvartalsmøde, galla) og kvartalets mål — altid noget at se frem til.
-// Vises under kontoret på brede skærme.
+// "I sigte": kalender (licenser, messe, kvartalsmøde, galla, markedsåbninger, nye regler, næste slutrunde),
+// kvartalets mål og de aktive trends — altid noget at se frem til. Vises under kontoret på brede skærme.
 import { useGame } from '../../store/gameStore';
 import { naesteMesse, evaluerMaal } from '../../sim/selectors';
 import { ugeIAar, aarFor } from '../../sim/time';
 import { EXPO_BY_ID, STAND_NAVN } from '../../data/expos';
 import { GALA_UGE_I_AAR } from '../../data/galaCategories';
 import { Ikon, type IkonNavn } from './kit';
-import { licensUgerTilbage } from '../lib/shellHjaelp';
 import { maalVisning } from '../lib/firmaHjaelp';
-import type { GameState } from '../../sim/types';
+import type { GameState, Vertical } from '../../sim/types';
+import { MARKETS, MARKET_IDS } from '../../data/markets';
+import { VERTICALS } from '../../data/verticals';
+import { REGLER } from '../../data/regulationTimeline';
+import TrendBadges from './TrendBadges';
+import { naesteSport } from '../lib/tvaersHjaelp';
+import { kommendeAfgifter } from '../lib/markedHjaelp';
+
+const VERTIKALER: Vertical[] = ['betting', 'kasino'];
+const MAKS_PUNKTER = 8;
 
 type Punkt = { id: string; ikon: IkonNavn; farve: string; tekst: string; uger: number; note?: string };
 
 function punkter(s: GameState): Punkt[] {
   const ud: Punkt[] = [];
-  const lic = licensUgerTilbage(s);
-  if (lic > 0) ud.push({ id: 'licens', ikon: 'skjold', farve: 'var(--color-good)', tekst: 'Dansk licens', uger: lic });
+  // Licenser på vej — i alle markeder og vertikaler
+  for (const m of MARKET_IDS) {
+    for (const v of VERTIKALER) {
+      const vl = s.markeder[m].vertikaler[v];
+      if (vl.status !== 'ansoegt') continue;
+      const uger = Math.max(0, (vl.klarUge ?? s.uge) - s.uge);
+      const dansk = m === 'dk' && v === s.startVertikal;
+      ud.push({ id: dansk ? 'licens' : `licens-${m}-${v}`, ikon: 'skjold', farve: 'var(--color-good)', tekst: dansk ? 'Dansk licens' : `${VERTICALS[v].kort}-licens ${MARKETS[m].kort}`, uger });
+    }
+  }
+  // Markeder, der åbner inden for et år
+  for (const m of MARKET_IDS) {
+    const a = MARKETS[m].aabnerUge;
+    if (a === null || s.markeder[m].aaben || a - s.uge > 52) continue;
+    ud.push({ id: `aabner-${m}`, ikon: 'globus', farve: 'var(--color-sky)', tekst: `${MARKETS[m].navn} åbner`, uger: a - s.uge, note: 'nyt marked' });
+  }
+  // Nye regler på vej i markeder, hvor I er aktive
+  for (const p of s.planlagteRegler) {
+    const lic = s.markeder[p.marked].licens;
+    if (lic === 'ingen' || lic === 'inddraget' || p.ikrafttraedelseUge <= s.uge) continue;
+    ud.push({
+      id: `regel-${p.marked}-${p.regelId}`,
+      ikon: 'paragraf',
+      farve: 'var(--color-warn)',
+      tekst: `${REGLER[p.regelId]?.navn ?? p.regelId} (${MARKETS[p.marked].kort})`,
+      uger: p.ikrafttraedelseUge - s.uge,
+    });
+  }
+  // Vedtagne afgiftsskift inden for et år i markeder, hvor I er aktive
+  for (const m of MARKET_IDS) {
+    const lic = s.markeder[m].licens;
+    if (lic === 'ingen' || lic === 'inddraget') continue;
+    for (const a of kommendeAfgifter(s, m, 52)) {
+      ud.push({ id: `${a.id}-${m}`, ikon: 'penge', farve: 'var(--color-warn)', tekst: `${a.navn} (${MARKETS[m].kort})`, uger: a.ugerTil });
+    }
+  }
+  // Sportskalenderens næste slutrunde
+  const sport = naesteSport(s.uge);
+  if (sport && !sport.igang) {
+    ud.push({ id: 'sport', ikon: 'bold', farve: 'var(--color-good)', tekst: sport.titel, uger: sport.uger, note: sport.chips[0]?.tekst });
+  }
   const u = ugeIAar(s.uge);
   const kvartal = 13 - (u % 13);
   ud.push({ id: 'kvartal', ikon: 'firma', farve: 'var(--color-sky)', tekst: 'Kvartalsmøde', uger: kvartal });
@@ -33,7 +80,7 @@ function punkter(s: GameState): Punkt[] {
   }
   const galla = u <= GALA_UGE_I_AAR ? GALA_UGE_I_AAR - u : 52 - u + GALA_UGE_I_AAR;
   ud.push({ id: 'galla', ikon: 'trofae', farve: 'var(--color-gold)', tekst: `Branchegallaen ${u <= GALA_UGE_I_AAR ? aarFor(s.uge) : aarFor(s.uge) + 1}`, uger: galla });
-  return ud.sort((a, b) => a.uger - b.uger);
+  return ud.sort((a, b) => a.uger - b.uger).slice(0, MAKS_PUNKTER);
 }
 
 export default function Horisont() {
@@ -52,8 +99,8 @@ export default function Horisont() {
       <div className="grid gap-3 p-3 xl:grid-cols-2">
         <ul className="space-y-1.5">
           {liste.map((p) => (
-            <li key={p.id} className="flex items-center gap-2 text-sm">
-              <Ikon navn={p.ikon} farve={p.farve} indre="var(--color-line)" />
+            <li key={p.id} className="flex items-center gap-2 text-sm" data-testid={`horisont-${p.id}`}>
+              <Ikon navn={p.ikon} farve={p.farve} indre={p.ikon === 'bold' ? 'var(--color-ink)' : 'var(--color-line)'} />
               <span className="min-w-0 flex-1 truncate">
                 {p.tekst}
                 {p.note && <span className="ml-1.5 text-xs text-gold">· {p.note}</span>}
@@ -94,6 +141,11 @@ export default function Horisont() {
               })}
             </ul>
           )}
+          {/* Trends under målene: højre kolonne har plads, og så skubber de ikke "I sigte" ud over skærmen */}
+          <p className="mb-1.5 mt-3 flex items-center gap-1.5 font-pixel text-[0.65rem] font-bold uppercase tracking-wider text-muted">
+            <Ikon navn="trend" farve="var(--color-violet)" str={12} /> Trends nu
+          </p>
+          <TrendBadges />
         </div>
       </div>
     </section>

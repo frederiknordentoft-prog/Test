@@ -1,24 +1,24 @@
 // Nyt produkt (spec 6.2): type × tema × markeder, margin, intensitet, budget og navn — trin for trin på én skærm.
 // 2.0-tilstand (dialog.efterfoelgerAf): type og tema låst til originalen, +20 % forspring, −30 % ved for tidlig relancering.
 import { useMemo, useState } from 'react';
-import type { GameState, LiveProduct, MarketId, ProductTypeId, Project, ThemeId } from '../../sim/types';
+import type { GameState, LiveProduct, MarketId, ProductTypeId, Project, ThemeId, Vertical } from '../../sim/types';
 import type { UiDialog } from '../../store/uiStore';
 import { useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
-import { budgetFaktor, datoTekst, komboInfo, maxProjekter, minBudget, SPILBARE_MARKEDER, temaStatus, typeStatus } from '../../sim/selectors';
+import { budgetFaktor, datoTekst, komboInfo, markedsStandard, maxProjekter, minBudget, temaStatus, typeStatus } from '../../sim/selectors';
 import { PRODUCT_TYPES, PRODUCT_TYPE_IDS } from '../../data/productTypes';
 import { THEMES, THEME_IDS } from '../../data/themes';
 import { VERTICALS } from '../../data/verticals';
-import { MARKETS } from '../../data/markets';
+import { MARKETS, MARKET_IDS } from '../../data/markets';
 import { BALANCE } from '../../data/balance';
 import { Btn, Ikon, Modal } from '../components/kit';
 import { Afsnit, DevStil, FitMaerke, MarkeretSkyder, Segment } from '../components/DevDele';
+import { FlagStribe } from '../components/FirmaDele';
 import {
   INTENSITET_NAVN,
   efterfoelgerInfo,
   foreslaaNavn,
   levetidTekst,
-  licensInfo,
   marginInterval,
   pctKort,
   udviklingsUger,
@@ -26,6 +26,7 @@ import {
 } from '../lib/devHjaelp';
 import { fortegn, mio } from '../format';
 import { alleOptaget } from '../lib/shellHjaelp';
+import { LICENS_STIL, faktorTekst, kanVaelges, markedAarsBsi, standardMarkeder, stoerrelseTekst, valgbareMarkeder, vertikalLicens } from '../lib/tvaersHjaelp';
 
 type Intensitet = Project['intensitet'];
 
@@ -171,56 +172,135 @@ function TemaKort({ g, typeId, t, valgt, onVaelg }: { g: GameState; typeId: Prod
   );
 }
 
+function MarkedInfo({ g, m, v }: { g: GameState; m: MarketId; v: Vertical }) {
+  return (
+    <span className="flex shrink-0 flex-col items-end gap-0.5 text-right text-[0.68rem] leading-tight">
+      <span className="tal font-bold text-gold" title={`Hele markedets ${VERTICALS[v].kort.toLowerCase()}-BSI pr. år (licenseret + offshore)`}>
+        {stoerrelseTekst(markedAarsBsi(m, v, g.uge))}
+      </span>
+      <span className="tal text-muted" title={`Nye kunder koster ${faktorTekst(MARKETS[m].cacFaktor)} så meget som i Danmark`}>
+        CAC {faktorTekst(MARKETS[m].cacFaktor)}
+      </span>
+    </span>
+  );
+}
+
 function MarkedValg({ g, typeId, markeder, onSkift }: { g: GameState; typeId: ProductTypeId; markeder: MarketId[]; onSkift: (m: MarketId[]) => void }) {
   const v = PRODUCT_TYPES[typeId].vertikal;
+  const vKort = VERTICALS[v].kort.toLowerCase();
+  const udvikling = udviklingsUger(typeId);
+  const valgbare = valgbareMarkeder(g, v);
+  const utilgaengelige = MARKET_IDS.filter((m) => g.markeder[m].aaben && !kanVaelges(g, m, v));
+  const senere = MARKET_IDS.filter((m) => !g.markeder[m].aaben);
+  const std = markedsStandard(g, typeId, markeder.length ? markeder : ['dk']);
+  const stdDk = markedsStandard(g, typeId, ['dk']);
+  const stdTillaeg = stdDk > 0 ? std / stdDk - 1 : 0;
+  // Tidligste lancering: projektet er klar, og mindst ét valgt marked har aktiv licens. Markeder, hvis licens kommer
+  // senere end det, falder fra, hvis spilleren lancerer med det samme.
+  const licensUger = (m: MarketId) => {
+    const l = vertikalLicens(g, m, v);
+    return l.tilstand === 'aktiv' ? 0 : l.tilstand === 'ansoegt' || l.tilstand === 'suspenderet' ? l.uger : Infinity;
+  };
+  const foersteLancering = markeder.length ? Math.max(udvikling, Math.min(...markeder.map(licensUger))) : udvikling;
+  const naarIkke = markeder.filter((m) => licensUger(m) > foersteLancering);
   return (
-    <div className="flex flex-col gap-1.5">
-      {SPILBARE_MARKEDER.map((m) => {
-        const lic = licensInfo(g, v, m);
-        const kan = lic.status !== 'ingen';
-        const valgt = kan && markeder.includes(m);
+    <div className="flex flex-col gap-1.5" data-testid="marked-valg">
+      {valgbare.map((m) => {
+        const lic = vertikalLicens(g, m, v);
+        const valgt = markeder.includes(m);
+        const sent = lic.tilstand === 'ansoegt' && lic.uger > udvikling;
         return (
           <button
             key={m}
             type="button"
             role="checkbox"
             aria-checked={valgt}
-            disabled={!kan}
             data-testid={`marked-${m}`}
+            data-licens={lic.tilstand}
             onClick={() => onSkift(valgt ? markeder.filter((x) => x !== m) : [...markeder, m])}
-            className={`flex min-h-[44px] items-center gap-2 rounded-md border-2 border-line px-2 py-1.5 text-left ${valgt ? 'bg-hi' : 'bg-panel2'} disabled:cursor-not-allowed disabled:opacity-55`}
+            className={`flex min-h-[48px] items-center gap-2 rounded-md border-2 border-line px-2 py-1.5 text-left ${valgt ? 'bg-hi' : 'bg-panel2 hover:bg-hi/60'}`}
           >
             <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 border-line ${valgt ? 'bg-gold' : 'bg-bg'}`}>
               {valgt && <Ikon navn="flueben" farve="var(--color-line)" str={14} />}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-bold text-ink">
-                {MARKETS[m].navn} <span className="font-pixel text-xs text-muted">({MARKETS[m].kort})</span>
+              <span className="flex min-w-0 items-center gap-1.5 font-bold text-ink">
+                <FlagStribe farver={MARKETS[m].farver} className="h-3 w-5 shrink-0" />
+                <span className="truncate">{MARKETS[m].navn}</span>
+                <span className="font-pixel text-xs text-muted">({MARKETS[m].kort})</span>
               </span>
-              <span className="flex items-center gap-1 text-xs">
-                {lic.status === 'aktiv' && (
-                  <>
-                    <Ikon navn="flueben" farve="var(--color-good)" str={10} /> <span className="text-good">Licens aktiv</span>
-                  </>
+              <span className="flex items-start gap-1 text-xs" data-testid={`marked-${m}-status`}>
+                <Ikon navn={LICENS_STIL[lic.tilstand].ikon} farve={LICENS_STIL[lic.tilstand].farve} indre="var(--color-line)" str={10} className="mt-0.5 shrink-0" />
+                {lic.tilstand === 'aktiv' && <span className="text-good">Licens aktiv</span>}
+                {lic.tilstand === 'ansoegt' && (
+                  <span className="text-warn">
+                    Licens om {ugerTekst(lic.uger)} — {sent ? `${ugerTekst(lic.uger - udvikling)} efter projektet er klar` : 'klar før projektet'}
+                  </span>
                 )}
-                {lic.status === 'ansoegt' && (
-                  <>
-                    <Ikon navn="ur" farve="var(--color-warn)" indre="var(--color-line)" str={10} />
-                    <span className="text-warn">Licens klar om {ugerTekst(lic.uger)} — I kan udvikle imens</span>
-                  </>
-                )}
-                {lic.status === 'ingen' && (
-                  <>
-                    <Ikon navn="laas" farve="var(--color-dim)" str={10} />
-                    <span className="text-muted">Ingen {VERTICALS[v].kort.toLowerCase()}-licens — søg under Marked</span>
-                  </>
-                )}
+                {lic.tilstand === 'suspenderet' && <span className="text-bad">Suspenderet til {datoTekst(lic.tilUge ?? g.uge)} — kommer med, hvis den er ophævet ved lancering</span>}
               </span>
             </span>
+            <MarkedInfo g={g} m={m} v={v} />
           </button>
         );
       })}
-      <p className="text-[0.7rem] text-dim">Flere markeder åbner senere i spillet.</p>
+      {utilgaengelige.map((m) => {
+        const inddraget = g.markeder[m].licens === 'inddraget';
+        const susp = g.markeder[m].licens === 'suspenderet';
+        return (
+          <div
+            key={m}
+            role="checkbox"
+            aria-checked={false}
+            aria-disabled
+            data-testid={`marked-${m}`}
+            data-licens={inddraget ? 'inddraget' : susp ? 'suspenderet' : 'ingen'}
+            className="flex min-h-[44px] items-center gap-2 rounded-md border-2 border-dashed border-hi bg-bg2 px-2 py-1.5 opacity-75"
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 border-line bg-bg">
+              <Ikon navn="laas" farve="var(--color-dim)" str={12} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex min-w-0 items-center gap-1.5 font-bold text-muted">
+                <FlagStribe farver={MARKETS[m].farver} className="h-3 w-5 shrink-0 opacity-60" />
+                <span className="truncate">{MARKETS[m].navn}</span>
+                <span className="font-pixel text-xs text-dim">({MARKETS[m].kort})</span>
+              </span>
+              <span className={`block text-xs ${inddraget ? 'text-bad' : 'text-muted'}`}>
+                {inddraget ? 'Licensen er inddraget' : susp ? `Suspenderet til ${datoTekst(g.markeder[m].suspenderetTil ?? g.uge)}` : `Ingen ${vKort}-licens — søg licens under Marked`}
+              </span>
+            </span>
+            <MarkedInfo g={g} m={m} v={v} />
+          </div>
+        );
+      })}
+      {naarIkke.length > 0 && (
+        <p className="flex items-start gap-1.5 text-[0.7rem] text-warn" data-testid="marked-naar-ikke">
+          <Ikon navn="ur" farve="var(--color-warn)" indre="var(--color-line)" str={10} className="mt-0.5 shrink-0" />
+          {naarIkke.map((m) => MARKETS[m].kort).join(', ')} får først licens efter den tidligste lancering (om ca. {ugerTekst(foersteLancering)}). Lancerer I med det samme, kommer kun markeder med aktiv licens med — vent med at lancere, hvis {naarIkke.length > 1 ? 'de' : 'det'} skal med.
+        </p>
+      )}
+      {senere.length > 0 && (
+        <p className="flex flex-wrap items-center gap-1 text-[0.7rem] text-dim" data-testid="marked-senere">
+          <span>Senere:</span>
+          {senere.map((m) => {
+            const a = MARKETS[m].aabnerUge;
+            return (
+              <span key={m} className="inline-flex items-center gap-1 rounded border-2 border-line bg-bg2 px-1.5 py-0.5" title={a === null ? `${MARKETS[m].navn} har statsmonopol` : `${MARKETS[m].navn} åbner ${datoTekst(a)}`}>
+                <Ikon navn="laas" farve="var(--color-dim)" str={9} />
+                <b className="font-pixel text-muted">{MARKETS[m].kort}</b>
+                <span className="tal">{a === null ? 'monopol' : datoTekst(a)}</span>
+              </span>
+            );
+          })}
+        </p>
+      )}
+      {stdTillaeg > 0.005 && (
+        <p className="flex items-start gap-1.5 text-[0.7rem] text-warn" data-testid="marked-standard">
+          <Ikon navn="advarsel" farve="var(--color-warn)" indre="var(--color-line)" str={10} className="mt-0.5 shrink-0" />
+          Anmelderne måler mod den stærkeste konkurrent i de valgte markeder: standarden er {Math.round(stdTillaeg * 100)} % højere end i Danmark alene.
+        </p>
+      )}
     </div>
   );
 }
@@ -237,7 +317,15 @@ export default function NewProductDialog({ dialog, onLuk }: { dialog: UiDialog; 
   });
   const [typeId, setTypeId] = useState<ProductTypeId>(begyndelse.t);
   const [themeId, setThemeId] = useState<ThemeId>(begyndelse.th);
-  const [markeder, setMarkeder] = useState<MarketId[]>(() => ['dk']);
+  const [markeder, setMarkeder] = useState<MarketId[]>(() => {
+    if (!g) return ['dk'];
+    const v = PRODUCT_TYPES[begyndelse.t].vertikal;
+    const std = standardMarkeder(g, v);
+    // 2.0-version: originalens markeder (hvor det stadig kan lade sig gøre) plus alle aktive
+    const fraOriginal = original ? original.markeder.filter((m) => kanVaelges(g, m, v)) : [];
+    const valg = [...new Set([...fraOriginal, ...std])];
+    return valg.length ? valg : ['dk'];
+  });
   const [margin, setMargin] = useState<number>(() => original?.margin ?? PRODUCT_TYPES[begyndelse.t].marginStd);
   const [intensitet, setIntensitet] = useState<Intensitet>(() => original?.intensitet ?? 3);
   const [budgetValg, setBudgetValg] = useState(0);
@@ -264,8 +352,7 @@ export default function NewProductDialog({ dialog, onLuk }: { dialog: UiDialog; 
     setMargin(PRODUCT_TYPES[t].marginStd);
     setBudgetValg(0);
     if (!navnRoert) setNavn(foreslaaNavn(t, themeId));
-    const v = PRODUCT_TYPES[t].vertikal;
-    setMarkeder(SPILBARE_MARKEDER.filter((m) => g.markeder[m].vertikaler[v].status !== 'ingen'));
+    setMarkeder(standardMarkeder(g, PRODUCT_TYPES[t].vertikal));
   };
   const vaelgTema = (t: ThemeId) => {
     if (t === themeId) return;
@@ -321,6 +408,14 @@ export default function NewProductDialog({ dialog, onLuk }: { dialog: UiDialog; 
   const optaget = alleOptaget(g);
   const andelAfKassen = g.kapital > 0 ? budgetVist / g.kapital : 1;
   const tidligVedLancering = original ? lanceresOmkring - original.lanceretUge < 52 : false;
+  const markedSammendrag = gyldigeMarkeder
+    .map((m) => {
+      const lic = vertikalLicens(g, m, v);
+      if (lic.tilstand === 'ansoegt') return `${MARKETS[m].kort} (licens om ${lic.uger} u.)`;
+      if (lic.tilstand === 'suspenderet') return `${MARKETS[m].kort} (suspenderet)`;
+      return MARKETS[m].kort;
+    })
+    .join(', ');
 
   const sammendrag = (
     <div className="min-w-0 flex-1 basis-full text-xs text-muted sm:basis-auto" data-testid="nyt-produkt-sammendrag">
@@ -331,7 +426,7 @@ export default function NewProductDialog({ dialog, onLuk }: { dialog: UiDialog; 
         <FitMaerke fit={kombi.fit} lille />
       </div>
       <div className="tal mt-0.5">
-        {gyldigeMarkeder.map((m) => MARKETS[m].kort).join(', ') || 'Intet marked'} · {pctKort(margin)} · int. {intensitet} · {mio(budgetVist)} · ca. {uger} uger
+        <span data-testid="sammendrag-markeder">{markedSammendrag || 'Intet marked'}</span> · {pctKort(margin)} · int. {intensitet} · {mio(budgetVist)} · ca. {uger} uger
       </div>
       {grund && (
         <div className="mt-0.5 flex items-center gap-1 font-bold text-warn" data-testid="start-grund">
@@ -402,7 +497,15 @@ export default function NewProductDialog({ dialog, onLuk }: { dialog: UiDialog; 
     </>
   );
   const markedSektion = (
-    <Afsnit nr={nr.marked} titel="Markeder">
+    <Afsnit
+      nr={nr.marked}
+      titel="Markeder"
+      hoejre={
+        <span className="tal text-[0.7rem] text-dim" data-testid="marked-antal">
+          {gyldigeMarkeder.length} valgt · størrelse og kundepris pr. marked
+        </span>
+      }
+    >
       <MarkedValg g={g} typeId={typeId} markeder={gyldigeMarkeder} onSkift={setMarkeder} />
     </Afsnit>
   );

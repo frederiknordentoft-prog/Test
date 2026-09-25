@@ -13,6 +13,7 @@ import { BOOST } from '../../data/costs';
 import { Btn, Ikon, Panel } from '../components/kit';
 import { BekraeftKnap, DevStil, FaseStepper, FitMaerke, ParamRaekke, StaffAvatar } from '../components/DevDele';
 import { FASE_GIVER, FASE_NAVN, INTENSITET_NAVN, PARAM_NAVN, holdEstimat, licensInfo, pctKort, ugerTekst, visVersion } from '../lib/devHjaelp';
+import { LICENS_STIL, lanceringsPlan, resterendeUdvikling } from '../lib/tvaersHjaelp';
 import { heltal, mio } from '../format';
 
 function nytProduktStatus(g: GameState): { ok: boolean; grund?: string } {
@@ -126,25 +127,58 @@ function TomTilstand({ g }: { g: GameState }) {
 }
 
 function MarkedChips({ g, p }: { g: GameState; p: Project }) {
-  const v = PRODUCT_TYPES[p.typeId].vertikal;
+  const plan = lanceringsPlan(g, p);
   return (
-    <span className="inline-flex flex-wrap gap-1">
-      {p.markeder.map((m) => {
-        const lic = licensInfo(g, v, m);
-        const aktiv = lic.status === 'aktiv';
+    <span className="inline-flex flex-wrap gap-1" data-testid={`markedchips-${p.id}`}>
+      {plan.map(({ m, lic, tekst }) => {
+        const st = LICENS_STIL[lic.tilstand];
+        const vent = lic.tilstand === 'ansoegt' || lic.tilstand === 'suspenderet';
         return (
           <span
             key={m}
-            className="inline-flex items-center gap-1 rounded border-2 border-line bg-bg2 px-1.5 py-0.5 font-pixel text-[0.68rem] font-bold"
-            title={aktiv ? `${MARKETS[m].navn}: licens aktiv` : `${MARKETS[m].navn}: licens klar om ${ugerTekst(lic.uger)}`}
+            className={`inline-flex items-center gap-1 rounded border-2 border-line px-1.5 py-0.5 font-pixel text-[0.68rem] font-bold ${lic.tilstand === 'inddraget' ? 'bg-bad/25 line-through' : 'bg-bg2'}`}
+            title={`${MARKETS[m].navn}: ${tekst.replace(`${MARKETS[m].kort} `, '')}`}
+            data-licens={lic.tilstand}
           >
-            <Ikon navn={aktiv ? 'flueben' : 'ur'} farve={aktiv ? 'var(--color-good)' : 'var(--color-warn)'} indre="var(--color-line)" str={10} />
+            <Ikon navn={st.ikon} farve={st.farve} indre="var(--color-line)" str={10} />
             {MARKETS[m].kort}
-            {!aktiv && <span className="tal text-warn">{lic.uger}u</span>}
+            {vent && <span className="tal" style={{ color: st.farve }}>{lic.uger}u</span>}
           </span>
         );
       })}
     </span>
+  );
+}
+
+/** "DK klar · SE licens om 4 uger" — og om licensen når at blive klar før lanceringen */
+function Lanceringsplan({ g, p, fuld, centreret }: { g: GameState; p: Project; fuld?: boolean; centreret?: boolean }) {
+  const plan = lanceringsPlan(g, p);
+  const rest = resterendeUdvikling(p);
+  const venter = plan.filter((x) => !x.klar);
+  if (!fuld && venter.length === 0) return null;
+  const klar = plan.filter((x) => x.klar);
+  const falderUd = venter.filter((x) => x.lic.tilstand === 'inddraget' || x.lic.uger > rest);
+  return (
+    <div className={`flex flex-col gap-0.5 text-xs ${centreret ? 'items-center text-center' : ''}`} data-testid={`lanceringsplan-${p.id}`}>
+      <p className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 ${centreret ? 'justify-center' : ''}`}>
+        <Ikon navn="globus" farve="var(--color-sky)" indre="var(--color-line)" str={12} className="shrink-0" />
+        {plan.map((x, i) => (
+          <span key={x.m} className="inline-flex items-center gap-1">
+            {i > 0 && <span className="text-dim" aria-hidden>·</span>}
+            <span className="font-bold" style={{ color: LICENS_STIL[x.lic.tilstand].farve }}>
+              {x.tekst}
+            </span>
+          </span>
+        ))}
+      </p>
+      {falderUd.length > 0 && (
+        <p className="text-muted" data-testid={`lanceringsplan-note-${p.id}`}>
+          {p.klar
+            ? `Lancerer I nu, kommer ${klar.length ? klar.map((x) => MARKETS[x.m].kort).join(', ') : 'intet marked'} med — ${falderUd.map((x) => MARKETS[x.m].kort).join(', ')} falder fra.`
+            : `${falderUd.map((x) => MARKETS[x.m].kort).join(', ')} er ikke klar, når projektet er færdigt om ca. ${ugerTekst(rest)}.`}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -307,9 +341,17 @@ function TestForlaeng({ p }: { p: Project }) {
 
 function Lancering({ g, p }: { g: GameState; p: Project }) {
   const st = lanceringsStatus(g, p);
-  const v = PRODUCT_TYPES[p.typeId].vertikal;
-  const lic = licensInfo(g, v, p.markeder[0] ?? 'dk');
-  const grund = st.ok ? undefined : lic.status === 'ansoegt' && st.markeder.length === 0 ? `Licensen er klar om ${ugerTekst(lic.uger)}.` : st.grund;
+  const venter = lanceringsPlan(g, p).filter((x) => x.lic.tilstand === 'ansoegt' || x.lic.tilstand === 'suspenderet');
+  const foerst = venter.length ? Math.min(...venter.map((x) => x.lic.uger)) : null;
+  const grund = st.ok
+    ? undefined
+    : st.markeder.length === 0 && foerst !== null
+      ? venter.length === 1 && p.markeder.length === 1
+        ? `Licensen er klar om ${ugerTekst(foerst)}.`
+        : `Første licens er klar om ${ugerTekst(foerst)}.`
+      : st.markeder.length === 0 && p.markeder.length > 0
+        ? 'Ingen af projektets markeder har en aktiv licens.'
+        : st.grund;
   return (
     <div className="flex flex-col gap-1.5">
       <Btn
@@ -323,6 +365,7 @@ function Lancering({ g, p }: { g: GameState; p: Project }) {
         <Ikon navn="raket" farve="var(--color-line)" str={20} />
         <span className="font-pixel uppercase tracking-widest">Lancér!</span>
       </Btn>
+      <Lanceringsplan g={g} p={p} fuld centreret />
       {grund ? (
         <p className="flex items-center justify-center gap-1.5 text-center text-sm text-warn" data-testid="lancer-grund">
           <Ikon navn="ur" farve="var(--color-warn)" indre="var(--color-line)" className="shrink-0" />
@@ -346,7 +389,7 @@ function ProjektKort({ g, p }: { g: GameState; p: Project }) {
       data-testid={`projekt-${p.id}`}
     >
       <header className="mb-2 flex flex-wrap items-start gap-x-2 gap-y-1">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[11rem] flex-1">
           <h3 className="flex items-center gap-1.5 font-pixel text-base font-black text-ink">
             <span className="truncate">{p.navn}</span>
             {original && visVersion(p.navn, original.version + 1) && (
@@ -380,6 +423,11 @@ function ProjektKort({ g, p }: { g: GameState; p: Project }) {
       </header>
 
       <FaseStepper fase={p.fase} klar={p.klar} faseUge={p.faseUge} faseLaengde={p.faseLaengde[p.fase]} />
+      {!p.klar && (
+        <div className="mt-1.5">
+          <Lanceringsplan g={g} p={p} />
+        </div>
+      )}
 
       <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[0.7rem] text-dim">
         <span>

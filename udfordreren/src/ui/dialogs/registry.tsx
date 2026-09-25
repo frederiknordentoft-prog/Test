@@ -17,6 +17,9 @@ import SettingsDialog from './SettingsDialog';
 import DebugDialog from './DebugDialog';
 import ProductDialog from './ProductDialog';
 import StaffDialog from './StaffDialog';
+import MarkedAabnerDialog from './MarkedAabnerDialog';
+import RegelDialog from './RegelDialog';
+import SanktionDialog from './SanktionDialog';
 
 export type SignalDialogProps = { signal: Signal; onLuk: () => void };
 export type UiDialogProps = { dialog: UiDialog; onLuk: () => void };
@@ -34,6 +37,10 @@ export const SIGNAL_DIALOGER: Partial<Record<Signal['k'], ComponentType<SignalDi
   slut: EndDialog,
   runde: FirmaMilepaelDialog,
   kontor: FirmaMilepaelDialog,
+  // + fase 3 (tværs-sporet)
+  markedAabner: MarkedAabnerDialog,
+  regel: RegelDialog,
+  sanktion: SanktionDialog,
 };
 
 export const UI_DIALOGER: Record<UiDialog['kind'], ComponentType<UiDialogProps>> = {

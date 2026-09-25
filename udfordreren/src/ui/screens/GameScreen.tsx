@@ -13,6 +13,7 @@ import { SIGNAL_DIALOGER, UI_DIALOGER } from '../dialogs/registry';
 import OfficeCanvas from '../components/OfficeCanvas';
 import MentorGuide from '../components/MentorGuide';
 import Horisont from '../components/ShellHorisont';
+import TrendBadges from '../components/TrendBadges';
 import { Btn, Ikon, type IkonNavn } from '../components/kit';
 import { datoTekst, ugeIAar } from '../../sim/time';
 import { mioKort, heltal } from '../format';
@@ -634,6 +635,7 @@ export default function GameScreen() {
             <div className="relative mx-auto w-full max-w-[calc(34dvh*16/9)]" data-testid="kontor-ramme">
               <OfficeCanvas />
             </div>
+            <TrendBadges kompakt />
             <Ticker />
             <div ref={panelRef} className="min-w-0 pb-2" role="tabpanel" data-testid="panelomraade">
               <P.komponent />

@@ -15,7 +15,9 @@ import { BALANCE } from '../../data/balance';
 import { Btn, Ikon, Modal, Monogram, Tom } from '../components/kit';
 import { Afsnit, BekraeftKnap, DevStil, FitMaerke, MarkeretSkyder, Segment } from '../components/DevDele';
 import { INTENSITET_NAVN, efterfoelgerInfo, featureNavn, kampagneHype, levetidTekst, pctKort, scoreFarve, ugerTekst, visCitat, visVersion } from '../lib/devHjaelp';
-import { heltal, mio } from '../format';
+import { heltal, mio, mioKort } from '../format';
+import { FlagStribe } from '../components/FirmaDele';
+import { LICENS_STIL, bedstePlaceringer, licensTekst, produktMarkeder } from '../lib/tvaersHjaelp';
 
 type Intensitet = Project['intensitet'];
 const KAMPAGNER = [0.1, 0.3, 1] as const;
@@ -241,6 +243,52 @@ function Livscyklus({ g, p, onLuk }: { g: GameState; p: LiveProduct; onLuk: () =
   );
 }
 
+/** Pr. marked: BSI, nye spillere, placering nu og bedst — og licensflag (suspenderet/inddraget) */
+function Markeder({ g, p }: { g: GameState; p: LiveProduct }) {
+  const rows = produktMarkeder(g, p);
+  if (rows.length === 0) return <p className="text-xs text-muted">Produktet er ikke i nogen markeder lige nu.</p>;
+  return (
+    <div className="overflow-hidden rounded-md border-2 border-line" data-testid="produkt-markeder">
+      <div className="grid grid-cols-[minmax(0,1.4fr)_1fr_1fr_1fr] gap-x-2 border-b-2 border-line bg-panel2 px-2 py-1 font-pixel text-[0.6rem] font-bold uppercase tracking-wide text-muted">
+        <span>Marked</span>
+        <span className="text-right">BSI/uge</span>
+        <span className="text-right">Nye/uge</span>
+        <span className="text-right">Top 10</span>
+      </div>
+      <ul>
+        {rows.map((x) => {
+          const ramt = x.lic.tilstand === 'suspenderet' || x.lic.tilstand === 'inddraget';
+          return (
+            <li
+              key={x.m}
+              className={`grid min-h-10 grid-cols-[minmax(0,1.4fr)_1fr_1fr_1fr] items-center gap-x-2 border-t border-line px-2 py-1 text-xs first:border-t-0 ${ramt ? 'bg-bad/10' : 'bg-bg2'}`}
+              data-testid={`produkt-marked-${x.m}`}
+            >
+              <span className="flex min-w-0 flex-col">
+                <span className="flex min-w-0 items-center gap-1.5 font-bold text-ink">
+                  <FlagStribe farver={MARKETS[x.m].farver} className="h-3 w-5 shrink-0" />
+                  <span className="truncate">{MARKETS[x.m].navn}</span>
+                </span>
+                {ramt && (
+                  <span className="flex items-center gap-1 text-[0.66rem] font-bold text-bad">
+                    <Ikon navn={LICENS_STIL[x.lic.tilstand].ikon} farve="var(--color-bad)" str={9} /> {licensTekst(x.lic)}
+                  </span>
+                )}
+              </span>
+              <span className="tal text-right font-pixel font-bold text-gold">{p.aktiv ? mioKort(x.bsi) : '–'}</span>
+              <span className="tal text-right text-sky">{p.aktiv ? heltal(x.nye) : '–'}</span>
+              <span className="tal text-right">
+                {x.placering !== null ? <b className="font-pixel text-pink">Nr. {x.placering}</b> : <span className="text-dim">–</span>}
+                {x.bedst !== undefined && <span className="block text-[0.6rem] text-dim">bedst {x.bedst}</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export default function ProductDialog({ dialog, onLuk }: { dialog: UiDialog; onLuk: () => void }) {
   const productId = dialog.kind === 'produkt' ? dialog.productId : '';
   const g = useGame((s) => s.game);
@@ -254,9 +302,10 @@ export default function ProductDialog({ dialog, onLuk }: { dialog: UiDialog; onL
   }
   const egen = p.ejer === 'spiller';
   const fr = friskhed(p, g.uge, egen ? 1 : BALANCE.konkurrentHalveringGange);
-  const bsi = p.bsiPrUge.dk ?? 0;
-  const placering = p.bedstePlacering.dk;
-  const nu = g.markeder.dk.top10.find((e) => e.productId === p.id);
+  const bsi = Object.values(p.bsiPrUge).reduce((a: number, b) => a + (b ?? 0), 0);
+  const { nu, bedst } = bedstePlaceringer(g, p);
+  const flere = p.markeder.length > 1;
+  const mk = (m: keyof typeof MARKETS) => (flere || m !== 'dk' ? ` (${MARKETS[m].kort})` : '');
   const type = PRODUCT_TYPES[p.typeId];
 
   return (
@@ -280,13 +329,19 @@ export default function ProductDialog({ dialog, onLuk }: { dialog: UiDialog; onL
       <Hoved g={g} p={p} />
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="produkt-noegletal">
-        <Noegletal label="BSI/uge i DK" vaerdi={p.aktiv ? mio(bsi) : '–'} farve="var(--color-gold)" ikon="penge" under={egen ? `I alt ${mio(p.samletBsi)}` : undefined} />
         <Noegletal
-          label="Top 10 i DK"
-          vaerdi={nu ? `Nr. ${nu.placering}` : placering ? `Bedst nr. ${placering}` : 'Ikke endnu'}
+          label={flere ? `BSI/uge · ${p.markeder.length} markeder` : `BSI/uge i ${MARKETS[p.markeder[0] ?? 'dk'].kort}`}
+          vaerdi={p.aktiv ? mio(bsi) : '–'}
+          farve="var(--color-gold)"
+          ikon="penge"
+          under={egen ? `I alt ${mio(p.samletBsi)}` : undefined}
+        />
+        <Noegletal
+          label="Top 10"
+          vaerdi={nu ? `Nr. ${nu.placering}${mk(nu.m)}` : bedst ? `Bedst nr. ${bedst.placering}${mk(bedst.m)}` : 'Ikke endnu'}
           farve="var(--color-sky)"
           ikon="hitliste"
-          under={p.ugerITop10 > 0 ? `${ugerTekst(p.ugerITop10)} på listen${nu && placering ? ` · bedst nr. ${placering}` : ''}` : undefined}
+          under={p.ugerITop10 > 0 ? `${ugerTekst(p.ugerITop10)} på listen${nu && bedst ? ` · bedst nr. ${bedst.placering}` : ''}` : undefined}
         />
         <div className="flex min-w-0 items-start gap-2 rounded-md border-2 border-line bg-bg2 p-2" title={`Halveringstid ${levetidTekst(type.halveringstidUger)}`}>
           <Ikon navn="ur" farve="var(--color-good)" indre="var(--color-line)" className="mt-0.5 shrink-0" />
@@ -310,6 +365,10 @@ export default function ProductDialog({ dialog, onLuk }: { dialog: UiDialog; onL
           <Noegletal label="Margin" vaerdi={pctKort(p.margin)} farve="var(--color-ink)" ikon="penge" under={`Intensitet ${p.intensitet}`} />
         )}
       </div>
+
+      <Afsnit titel="Markeder" className="mt-4">
+        <Markeder g={g} p={p} />
+      </Afsnit>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <Afsnit titel="Anmeldelser">

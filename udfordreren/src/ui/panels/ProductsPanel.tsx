@@ -1,6 +1,10 @@
 // Produkter: spillerens aktive produkter med score, BSI, friskhed, margin og handlinger. Lukkede produkter nederst.
 import { useState } from 'react';
 import type { GameState, LiveProduct } from '../../sim/types';
+import { MARKETS } from '../../data/markets';
+import { datoTekst } from '../../sim/time';
+import { FlagStribe } from '../components/FirmaDele';
+import { LICENS_STIL, bedstePlaceringer, licensTekst, produktMarkeder, ramteMarkeder } from '../lib/tvaersHjaelp';
 import { useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
 import { Badge, Btn, Ikon, Panel, Tom } from '../components/kit';
@@ -8,7 +12,7 @@ import { Afsnit, Chip, Maengde } from '../components/FirmaDele';
 import { PRODUCT_TYPES } from '../../data/productTypes';
 import { THEMES } from '../../data/themes';
 import { friskhed } from '../../sim/customers';
-import { mio, mioKort } from '../format';
+import { heltal, mio, mioKort } from '../format';
 import { alderTekst, bsiUge, procent } from '../lib/firmaHjaelp';
 
 const INTENSITET = { 1: 'Rolig', 2: 'Afdæmpet', 3: 'Normal', 4: 'Intens', 5: 'Maks' } as const;
@@ -33,7 +37,8 @@ function ProduktKort({ p, g, total }: { p: LiveProduct; g: GameState; total: num
   const t = PRODUCT_TYPES[p.typeId];
   const tidlig2 = alder < 52;
   const toggle = (a: 'kampagne' | 'luk') => setAaben((x) => (x === a ? null : a));
-  const top = p.bedstePlacering.dk;
+  const { bedst } = bedstePlaceringer(g, p);
+  const pm = produktMarkeder(g, p);
 
   return (
     <article className="@container flex flex-col gap-2 rounded-md border-2 border-line bg-bg2 p-2.5" data-testid={`produkt-${p.id}`}>
@@ -69,9 +74,10 @@ function ProduktKort({ p, g, total }: { p: LiveProduct; g: GameState; total: num
                 Hall of Fame
               </Chip>
             )}
-            {top !== undefined && (
-              <Chip ikon="hitliste" farve="var(--color-pink)" titel={`${p.ugerITop10} uger i Top 10`}>
-                Bedst nr. {top}
+            {bedst && (
+              <Chip ikon="hitliste" farve="var(--color-pink)" titel={`${p.ugerITop10} uger i Top 10 · bedst nr. ${bedst.placering} i ${MARKETS[bedst.m].navn}`}>
+                Bedst nr. {bedst.placering}
+                {p.markeder.length > 1 || bedst.m !== 'dk' ? ` (${MARKETS[bedst.m].kort})` : ''}
               </Chip>
             )}
           </div>
@@ -109,6 +115,44 @@ function ProduktKort({ p, g, total }: { p: LiveProduct; g: GameState; total: num
           )}
         </div>
       </div>
+
+      <ul className="grid grid-cols-1 gap-1 @sm:grid-cols-2 @xl:grid-cols-3" data-testid={`produkt-markeder-${p.id}`}>
+        {pm.map((x) => {
+          const ramt = x.lic.tilstand === 'suspenderet' || x.lic.tilstand === 'inddraget';
+          return (
+            <li
+              key={x.m}
+              className={`flex min-h-9 min-w-0 items-center gap-2 rounded border-2 px-1.5 py-1 text-xs ${ramt ? 'border-bad bg-bad/10' : 'border-line bg-panel'}`}
+              data-testid={`produkt-marked-${p.id}-${x.m}`}
+              title={`${MARKETS[x.m].navn}: ${mio(x.bsi)} BSI og ${heltal(x.nye)} nye spillere denne uge`}
+            >
+              <FlagStribe farver={MARKETS[x.m].farver} className="h-3 w-5 shrink-0" />
+              <b className="w-6 shrink-0 font-pixel text-ink">{MARKETS[x.m].kort}</b>
+              {ramt ? (
+                <span className="flex min-w-0 items-center gap-1 font-bold leading-tight text-bad">
+                  <Ikon navn={LICENS_STIL[x.lic.tilstand].ikon} farve="var(--color-bad)" str={10} className="shrink-0" />
+                  <span className="min-w-0">{licensTekst(x.lic)}</span>
+                </span>
+              ) : (
+                <>
+                  <span className="tal font-pixel font-bold text-gold">{mioKort(x.bsi)}</span>
+                  <span className="tal flex items-center gap-0.5 text-sky">
+                    <Ikon navn="folk" farve="var(--color-sky)" str={10} />
+                    {heltal(x.nye)}
+                    <span className="text-[0.62rem] text-dim">nye</span>
+                  </span>
+                  {x.placering !== null && (
+                    <span className="tal ml-auto flex items-center gap-0.5 font-pixel font-black text-pink" title={`Nr. ${x.placering} på Top 10 i ${MARKETS[x.m].navn}`}>
+                      <Ikon navn="hitliste" farve="var(--color-pink)" str={10} />
+                      {x.placering}
+                    </span>
+                  )}
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ul>
 
       <div className="grid grid-cols-2 gap-1.5 @md:grid-cols-4">
         <Btn onClick={() => aabn({ kind: 'produkt', productId: p.id })} testId={`produkt-detaljer-${p.id}`}>
@@ -189,6 +233,7 @@ export default function ProductsPanel() {
   const aktive = egne.filter((p) => p.aktiv).sort((a, b) => bsiUge(b) - bsiUge(a));
   const lukkede = egne.filter((p) => !p.aktiv).sort((a, b) => (b.pensioneretUge ?? 0) - (a.pensioneretUge ?? 0));
   const total = aktive.reduce((a, p) => a + bsiUge(p), 0);
+  const ramte = ramteMarkeder(g);
 
   return (
     <Panel
@@ -202,6 +247,21 @@ export default function ProductsPanel() {
       }
     >
       <div className="flex flex-col gap-2">
+        {ramte.length > 0 && (
+          <div className="flex flex-col gap-1 rounded-md border-2 border-bad bg-bad/10 p-2 text-sm" data-testid="produkter-licensvarsel">
+            {ramte.map((r) => (
+              <p key={r.m} className="flex items-start gap-1.5">
+                <Ikon navn={r.tilstand === 'inddraget' ? 'kryds' : 'pause'} farve="var(--color-bad)" str={14} className="mt-0.5 shrink-0" />
+                <span>
+                  <b className="text-bad">{MARKETS[r.m].navn}:</b>{' '}
+                  {r.tilstand === 'inddraget'
+                    ? 'licensen er inddraget. Produkterne er trukket ud af markedet.'
+                    : `licensen er suspenderet til ${datoTekst(r.tilUge ?? g.uge)}. Ingen BSI derfra imens, og kunderne siver.`}
+                </span>
+              </p>
+            ))}
+          </div>
+        )}
         {aktive.length === 0 ? (
           <Tom>
             <p className="mb-2">Ingen produkter i luften endnu. Start et projekt, byg det i fire faser, og lancér.</p>
