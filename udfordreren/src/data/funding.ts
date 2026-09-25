@@ -17,8 +17,8 @@ export type RoundDef = {
 
 export const ROUNDS: RoundDef[] = [
   { id: 'angel', navn: 'Angel', kapital: 5, udvanding: 0.15, kravBsiAar: 1.5, kravLanceringer: 2, minUgerSiden: 0, vaekstkrav: 0.05 },
-  { id: 'seed', navn: 'Seed', kapital: 20, udvanding: 0.15, kravBsiAar: 10, kravLanceringer: 4, minUgerSiden: 52, vaekstkrav: 0.08 },
-  { id: 'serieA', navn: 'Serie A', kapital: 80, udvanding: 0.2, kravBsiAar: 50, kravLanceringer: 6, minUgerSiden: 52, vaekstkrav: 0.1 },
+  { id: 'seed', navn: 'Seed', kapital: 20, udvanding: 0.15, kravBsiAar: 6, kravLanceringer: 4, minUgerSiden: 52, vaekstkrav: 0.08 },
+  { id: 'serieA', navn: 'Serie A', kapital: 80, udvanding: 0.2, kravBsiAar: 40, kravLanceringer: 6, minUgerSiden: 52, vaekstkrav: 0.1 },
   { id: 'serieB', navn: 'Serie B', kapital: 250, udvanding: 0.15, kravBsiAar: 200, kravLanceringer: 10, minUgerSiden: 78, vaekstkrav: 0.12 },
   { id: 'vaekst', navn: 'Vækst', kapital: 800, udvanding: 0.1, kravBsiAar: 600, kravLanceringer: 15, minUgerSiden: 104, vaekstkrav: 0.12 },
 ];

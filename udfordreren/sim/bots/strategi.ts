@@ -71,7 +71,7 @@ export const BALANCERET: Profil = {
 };
 
 export const GRAADIG: Profil = {
-  navn: 'Grådig', intensitet: 5, bonus: 3, vip: 3, marketingAndel: 0.35,
+  navn: 'Grådig', intensitet: 5, bonus: 3, vip: 3, marketingAndel: 0.5,
   kanaler: { tv: 0.22, streamere: 0.18, affiliate: 0.28, soeg: 0.14, crm: 0.08, sponsorat: 0.1 },
   runder: true, markeder: 8, offshore: 2021, platform: true, ai: 'hensynsloes', overvaagning: 0.2, hyper: true, transformation: 0.5,
   ansvarsforskning: false, tillidsstyring: false, andenVertikal: true, sponsorater: true, b2b: false, saelg: { fra: 2021 }, maxCacFaktor: 4,

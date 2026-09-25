@@ -83,3 +83,7 @@
 - AI-transformationen erstatter ikke analytikere med risikoagenter: risikodetektion er et bevidst valg med overvågning.
 - Event-kontrakter kan lanceres (kun i USA) med børslicens, eller med en bettinglicens i USA, når prediction markets er slået igennem (styrke ≥ 0,5).
 - Botterne er profiler af én motor (sim/bots/strategi.ts). AI-hensynsløs er Balanceret indtil 2026. AI-afviseren satser på B2B-pivoten og sælger fra 2030. Den forsigtige bootstrapper sparer op og holder pause med marketing, når der ikke er råd til næste projekt.
+- Seed-runden kræver 6 mio. i årlig BSI (Serie A 40 mio.), så en bettingstart ikke fanges i kælderen (17 % konkurser for Balanceret i den første 200-seed-kørsel).
+- BSI pr. kunde stiger 9 % pr. intensitetstrin over 3; VIP niveau 3 giver +30 % og bonus niveau 3 +100 % tilgang — grådighed betaler sig på kort sigt.
+- Statsselskabets hjemmebane på hitlisten er × 5 til 2016 (en enkelt seed nåede nr. 1 i 2015 med × 3).
+- Faselængderne vokser 20 % om året (højst × 3), så akt 1 får færre lanceringspauser og AI-akten ≥ 40 % af pauserne.

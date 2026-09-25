@@ -282,7 +282,7 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
         C *
         arpuUge *
         Math.pow(marginRatio, 0.85) *
-        (1 + 0.07 * (intensitet - 3)) *
+        (1 + BALANCE.intensitetArpu * (intensitet - 3)) *
         (0.7 + 0.5 * st) *
         (1 + VIP_ARPU[effektivVip(s, m)]) *
         Math.max(0.3, 1 + regelEffekt(s, m).arpu[v]) *

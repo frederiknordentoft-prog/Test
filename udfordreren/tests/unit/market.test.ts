@@ -40,11 +40,11 @@ describe('Hitlisten', () => {
   });
   it('statsselskabets hjemmebane aftager fra 2016 til 2018', () => {
     const s = nyt();
-    expect(hjemmebane(s, 'danskeLykke', 'dk')).toBe(3);
+    expect(hjemmebane(s, 'danskeLykke', 'dk')).toBe(5);
     expect(hjemmebane(s, 'danskeLykke', 'uk')).toBe(1);
     expect(hjemmebane(s, 'bet356', 'dk')).toBe(1);
     s.uge = 52 * 5;
-    expect(hjemmebane(s, 'danskeLykke', 'dk')).toBe(2);
+    expect(hjemmebane(s, 'danskeLykke', 'dk')).toBe(3);
     s.uge = 52 * 6;
     expect(hjemmebane(s, 'danskeLykke', 'dk')).toBe(1);
   });
