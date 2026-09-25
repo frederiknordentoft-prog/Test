@@ -25,6 +25,8 @@ export type MarketDef = {
   basisOffshore: Record<Vertical, number>;
   farver: [string, string, string];
   beskrivelse: string;
+  /** Kun monopolmarkeder, der kan åbne i et verdensscenarie (Norge) */
+  beskrivelseAaben?: string;
 };
 
 export const MARKETS: Record<MarketId, MarketDef> = {
@@ -128,13 +130,15 @@ export const MARKETS: Record<MarketId, MarketDef> = {
   },
   no: {
     id: 'no', navn: 'Norge', kort: 'NO', tilsyn: 'Lotteritilsynet', aabnerUge: null, afgiftModel: 'bsi',
-    afgift: { betting: [[0, 0]], kasino: [[0, 0]] },
-    strenghed: [[0, 5]], // [F] betalingsblokering 2010, DNS 2025
-    kanaliseringMaal: 0, cacFaktor: 1.2, licensGebyr: 0, licensUger: 0,
+    // Tallene gælder først, hvis monopolet afskaffes (verdensvurderingen "Norge åbner", 25 %) [D: nordisk licensregime som i se/dk]
+    afgift: { betting: [[0, 0.22]], kasino: [[0, 0.22]] },
+    strenghed: [[0, 4]], // [F] betalingsblokering 2010, DNS 2025; [D] strengt nyt regime efter en åbning
+    kanaliseringMaal: 0.9, cacFaktor: 1.2, licensGebyr: 1.2, licensUger: 26,
     arpu: { betting: 2500, kasino: 7000 },
     basisOffshore: { betting: 1, kasino: 1 },
     farver: ['#ba0c2f', '#ffffff', '#00205b'],
     beskrivelse: 'Monopol. Kan kun spilles gråt via et offshore-brand.',
+    beskrivelseAaben: 'Monopolet er afskaffet. Spillet er i årevis foregået på udenlandske sider; nu kan det hentes hjem med en licens. Reglerne er nye, og tilsynet er strengt.',
   },
 };
 

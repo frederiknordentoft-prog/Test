@@ -10,7 +10,7 @@ import { MARKETS } from '../data/markets';
 import { forskningsEffekt } from './insight';
 import { effektivBonus, effektivVip } from './regulation';
 import { agentEffekt } from './agents';
-import { aendrPres, clamp, signal } from './util';
+import { aendrPres, clamp, saetFlag, signal, tidslinje } from './util';
 
 export const AKTIVE_PROFILER: TownProfile[] = ['rekreativ', 'engageret', 'vip', 'risiko', 'problem'];
 
@@ -68,7 +68,7 @@ export function byTillid(s: GameState, m: MarketId): number {
 
 // ---------- Drivere ----------
 
-export type ByDrivere = { skade: number; beskyttelse: number; vip: number; hyper: boolean };
+export type ByDrivere = { skade: number; beskyttelse: number; vip: number; hyper: boolean; bedring: number };
 
 export function byDrivere(s: GameState, m: MarketId): ByDrivere {
   const prods = s.produkter.filter((p) => p.aktiv && p.ejer === 'spiller' && p.markeder.includes(m));
@@ -86,7 +86,8 @@ export function byDrivere(s: GameState, m: MarketId): ByDrivere {
   const comp = Math.min(BY.beskyttelse.complianceMaks, BY.beskyttelse.compliancePrPerson * s.staff.filter((x) => x.rolle === 'compliance').length);
   const affordRegel = s.markeder[m].regler.some((id) => id === 'affordability' || id === 'ukAffordability') ? BY.beskyttelse.affordabilityRegel : 0;
   const beskyttelse = 1 + forskningsEffekt(s).by + comp + affordRegel + ae.byBeskyttelse;
-  return { skade, beskyttelse, vip, hyper };
+  const bedring = hyper && !ae.risikoOk ? BY.hyperBedring : 1;
+  return { skade, beskyttelse, vip, hyper, bedring };
 }
 
 // ---------- Ugentlig opdatering (hver 4. uge) ----------
@@ -148,7 +149,7 @@ export function ugentligBy(s: GameState, rng: Rng): void {
       case 'risiko': {
         const c = BY.churn.risiko;
         const su = BY.selvudelukkelse.risiko * selv;
-        const bedring = ned.risikoEngageret * d.beskyttelse;
+        const bedring = ned.risikoEngageret * d.beskyttelse * d.bedring;
         if (x < c) ny = 'churnet';
         else if (x < c + su) { ny = 'churnet'; stille = true; }
         else if (x < c + su + bedring) ny = 'engageret';
@@ -158,7 +159,7 @@ export function ugentligBy(s: GameState, rng: Rng): void {
       case 'problem': {
         const c = BY.churn.problem;
         const su = BY.selvudelukkelse.problem * selv;
-        const bedring = ned.problemRisiko * d.beskyttelse;
+        const bedring = ned.problemRisiko * d.beskyttelse * d.bedring;
         if (x < c) ny = 'churnet';
         else if (x < c + su) { ny = 'churnet'; stille = true; }
         else if (x < c + su + bedring) ny = 'risiko';
@@ -229,5 +230,9 @@ export function kvartalsBy(s: GameState): void {
     if (ms.licens !== 'aktiv') continue;
     const a = risikoAndel(s, m);
     if (a !== null && a > BY.presTaerskel && (ms.andele.spiller ?? 0) > BY.presAndel) aendrPres(s, m, BY.presPrKvartal, 'Jeres kunder i risiko og problem');
+    if (a !== null && a > BY.presTaerskel && !s.flags.includes('byRoed')) {
+      saetFlag(s, 'byRoed');
+      tidslinje(s, `Byen blev rød: ${Math.round(a * 100)} % af kunderne i ${MARKETS[m].navn} i risiko eller problem.`, 'krise');
+    }
   }
 }

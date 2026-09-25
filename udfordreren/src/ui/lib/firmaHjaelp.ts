@@ -154,6 +154,7 @@ export type EffektChip = { tekst: string; tone: 'god' | 'skidt' | 'neutral'; iko
 
 const EFFEKT_STIL: { k: keyof EventEffect; ikon: IkonNavn; omvendt?: boolean; neutral?: boolean }[] = [
   { k: 'kapital', ikon: 'penge' },
+  { k: 'bsiUger', ikon: 'penge' },
   { k: 'indsigt', ikon: 'indsigt' },
   { k: 'hype', ikon: 'hype' },
   { k: 'omdoemme', ikon: 'stjerne' },

@@ -20,7 +20,7 @@ import { fortegn } from '../format';
 export function markedBeskrivelse(m: MarketId, uge: number, aaben = false): string {
   const def = MARKETS[m];
   // Et monopolmarked, der er åbnet i et verdensscenarie (Norge): datafilens tekst handler om monopolet
-  if (def.aabnerUge === null && aaben) return 'Monopolet er afskaffet. Spillet er i årevis foregået på udenlandske sider; nu kan det hentes hjem med en licens. Reglerne er nye, og tilsynet er strengt.';
+  if (def.aabnerUge === null && aaben) return def.beskrivelseAaben ?? def.beskrivelse;
   if (def.aabnerUge === null) return def.beskrivelse;
   if (uge <= def.aabnerUge + 1) return def.beskrivelse.replace(/^Åbnede[^.]*\.\s*/, '');
   return def.beskrivelse.replace(/^Åbner /, 'Åbnede ');

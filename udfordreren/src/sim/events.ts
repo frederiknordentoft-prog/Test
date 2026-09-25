@@ -10,6 +10,7 @@ import { fjernFraOpgaver, beregnLoen } from './staff';
 import { risikoAndel } from './town';
 import { BY } from '../data/town';
 import { fejlrate } from './agents';
+import { aarligBsi } from './economy';
 
 export function udloesEvent(s: GameState, eventId: string, ctx: Record<string, string | number>): void {
   if (!EVENT_BY_ID[eventId]) return;
@@ -86,6 +87,7 @@ export function effektTekst(eff: EventEffect): string[] {
   const t: string[] = [];
   const fmt = (v: number) => (v > 0 ? '+' : v < 0 ? '−' : '') + String(Math.abs(v)).replace('.', ',');
   if (eff.kapital) t.push(`${eff.kapital > 0 ? '+' : '−'}${Math.round(Math.abs(eff.kapital) * 1000)} t. kr.`);
+  if (eff.bsiUger) t.push(`${eff.bsiUger > 0 ? '+' : '−'}${fmt(Math.abs(eff.bsiUger)).replace('+', '')} ${Math.abs(eff.bsiUger) === 1 ? 'uges' : 'ugers'} BSI`);
   if (eff.indsigt) t.push(`${fmt(eff.indsigt)} indsigt`);
   if (eff.hype) t.push(`${fmt(eff.hype)} hype`);
   if (eff.omdoemme) t.push(`${fmt(eff.omdoemme)} omdømme`);
@@ -120,6 +122,11 @@ export function eventChoice(s: GameState, eventId: string, valg: number): boolea
   if (e.kapital) {
     s.kapital += e.kapital;
     if (e.kapital < 0) s.engangsUge += -e.kapital;
+  }
+  if (e.bsiUger) {
+    const beloeb = (aarligBsi(s) / 52) * e.bsiUger;
+    s.kapital += beloeb;
+    if (beloeb < 0) s.engangsUge += -beloeb;
   }
   if (e.indsigt) s.indsigt = Math.max(0, s.indsigt + e.indsigt);
   if (e.hype) s.hype = clamp(s.hype + e.hype, 0, 100);

@@ -1,5 +1,5 @@
 // AI-uheld og AI-transformationen (fase 5). Udløses af sim-kernen ('system'). AI er hverken frelse eller trussel:
-// valgene viser begge sider. Tekster moraliserer aldrig; prisen er synlig.
+// valgene viser begge sider. Tekster moraliserer aldrig; prisen er synlig. Uheldenes pris følger firmaets størrelse (bsiUger).
 import type { EventDef } from './events';
 
 const uheld = (id: string, titel: string, tekst: string, valg: EventDef['valg']): EventDef => ({
@@ -10,19 +10,19 @@ export const AI_EVENTS: EventDef[] = [
   uheld('trading', 'Trading-agenten gik amok',
     '{navn} prissatte tusindvis af micro-markeder forkert i løbet af en nat. Et par hundrede kunder fandt fejlen før jer.',
     [
-      { tekst: 'Udbetal og skru op for overvågningen', forklaring: 'Dyrt, men I lærer af det. Alle agenter får +0,2 overvågning.', effekt: { kapital: -0.6, agentOvervaagning: 0.2, tillidAlle: -2 } },
+      { tekst: 'Udbetal og skru op for overvågningen', forklaring: 'Dyrt, men I lærer af det. Alle agenter får +0,2 overvågning.', effekt: { kapital: -0.6, bsiUger: -1, agentOvervaagning: 0.2, tillidAlle: -2 } },
       { tekst: 'Annullér spillene', forklaring: 'Vilkårene tillader det, men tilsynene og kunderne kigger med.', effekt: { omdoemme: -5, tillidAlle: -6, kunderPct: -0.03 } },
     ]),
   uheld('indhold', 'Indholdsagenten kopierede for meget',
     '{navn} lavede et nyt slot, der ligner en kendt spilstudies bestseller lidt for meget. Advokaterne ringer.',
     [
-      { tekst: 'Træk spillet og betal forlig', forklaring: 'Sagen lukkes stille.', effekt: { kapital: -0.4, omdoemme: -1 } },
-      { tekst: 'Kæmp i retten', forklaring: 'Billigere nu, men sagen trækker ud i medierne.', effekt: { kapital: -0.1, omdoemme: -5, hype: 4 } },
+      { tekst: 'Træk spillet og betal forlig', forklaring: 'Sagen lukkes stille.', effekt: { kapital: -0.4, bsiUger: -0.5, omdoemme: -1 } },
+      { tekst: 'Kæmp i retten', forklaring: 'Billigere nu, men sagen trækker ud i medierne.', effekt: { kapital: -0.1, bsiUger: -0.1, omdoemme: -5, hype: 4 } },
     ]),
   uheld('kundeservice', 'Chatbotten lovede for meget',
     '{navn} har lovet kunder bonusser, som ikke findes. Skærmbillederne deles flittigt.',
     [
-      { tekst: 'Indfri løfterne', forklaring: 'Kunderne er glade; tilsynet noterer, at bonusserne ikke var godkendt.', effekt: { kapital: -0.3, tillidAlle: -3, omdoemme: 1 } },
+      { tekst: 'Indfri løfterne', forklaring: 'Kunderne er glade; tilsynet noterer, at bonusserne ikke var godkendt.', effekt: { kapital: -0.3, bsiUger: -0.5, tillidAlle: -3, omdoemme: 1 } },
       { tekst: 'Undskyld og ret fejlen', forklaring: 'Billigt, men nogle kunder føler sig snydt.', effekt: { kunderPct: -0.03, omdoemme: -3, tillidAlle: -2 } },
     ]),
   uheld('crm', 'CRM-agenten skrev til de forkerte',
@@ -40,7 +40,7 @@ export const AI_EVENTS: EventDef[] = [
   uheld('compliance', 'Compliance-agenten overså noget',
     '{navn} godkendte en stribe konti uden ordentlig ID-kontrol. En revision fandt dem.',
     [
-      { tekst: 'Gennemgå alle konti manuelt', forklaring: 'Dyrt og langsomt, men revisionen lukkes.', effekt: { kapital: -0.35, tillidAlle: -2, energiAlle: -10 } },
+      { tekst: 'Gennemgå alle konti manuelt', forklaring: 'Dyrt og langsomt, men revisionen lukkes.', effekt: { kapital: -0.35, bsiUger: -0.3, tillidAlle: -2, energiAlle: -10 } },
       { tekst: 'Sluk agenten', forklaring: 'Agenten slukkes, og tilsynet noterer sagen.', effekt: { agentFra: true, tillidAlle: -4 } },
     ]),
   uheld('udvikling', 'Udviklingsagenten skubbede en fejl i drift',

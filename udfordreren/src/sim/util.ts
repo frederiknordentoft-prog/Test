@@ -1,5 +1,5 @@
 // Små fælles hjælpere til sim-kernen.
-import type { GameState, MarketId, NewsItem, Signal } from './types';
+import type { GameState, MarketId, NewsItem, Signal, TidslinjePunkt } from './types';
 import type { Rng } from './rng';
 import { arkivId as arkivOpslag } from '../data/archive';
 
@@ -73,4 +73,10 @@ export function fmtMio(v: number): string {
   if (a >= 100) return `${Math.round(v)} mio. kr.`;
   if (a >= 1) return `${v.toFixed(1).replace('.', ',')} mio. kr.`;
   return `${Math.round(v * 1000).toLocaleString('da-DK')} t. kr.`;
+}
+
+/** Et vigtigt øjeblik til slutskærmens tidslinje (højst 240 punkter) */
+export function tidslinje(s: GameState, tekst: string, kind: TidslinjePunkt['kind']): void {
+  s.tidslinje.push({ uge: s.uge, tekst, kind });
+  if (s.tidslinje.length > 240) s.tidslinje.splice(0, s.tidslinje.length - 240);
 }

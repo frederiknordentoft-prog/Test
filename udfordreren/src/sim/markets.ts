@@ -140,7 +140,7 @@ export function ugentligeMarkeder(s: GameState, rng: Rng): void {
     if (ms.aaben && !varAaben) {
       ms.aabnetUge = s.uge;
       signal(s, { k: 'markedAabner', marked: id });
-      nyhed(s, `${def.navn} åbner for licenser! ${def.beskrivelse}`, 'marked');
+      nyhed(s, `${def.navn} åbner for licenser! ${def.aabnerUge === null ? (def.beskrivelseAaben ?? def.beskrivelse) : def.beskrivelse}`, 'marked');
     }
     afgiftsTrin(s, id);
     ms.afgiftPrVertikal = { betting: trin(def.afgift.betting, s.uge), kasino: trin(def.afgift.kasino, s.uge) };

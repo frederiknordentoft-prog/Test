@@ -5,6 +5,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { EFTERTANKE } from '../../src/data/archive';
 import { COMPETITORS } from '../../src/data/competitors';
+import { R8 } from '../../src/data/reactionRules';
 import { delEftertanke } from '../../src/ui/lib/slutHjaelp';
 import { REGEL_FORKLARING, opkoebGrund } from '../../src/ui/lib/konkurrentHjaelp';
 import { opkoebStatus } from '../../src/sim/competitors';
@@ -32,8 +33,8 @@ describe('reaktionsforklaringer', () => {
       expect(`${f.hvis} ${f.saa}`).not.toMatch(/appFirst|globalGigant|nordiskLicensgruppe|lokalSpecialist|b2bBygget|predictionMarket|aiNative|≥/);
     }
   });
-  it('R8 følger sim-kernen: omdømmet falder 3 ved hvert tredje påbud', () => {
-    expect(REGEL_FORKLARING.R8.saa).toContain('omdømme falder 3');
+  it('R8 følger sim-kernen: branchens omdømme falder med R8.omdoemme ved hvert tredje påbud', () => {
+    expect(REGEL_FORKLARING.R8.saa).toContain(`omdømme (også jeres) falder ${Math.abs(R8.omdoemme)}`);
   });
 });
 

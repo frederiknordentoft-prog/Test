@@ -207,4 +207,4 @@ export const PRAEVALENSMAALINGER: { aar: number; markeder: MarketId[] }[] = [
 ];
 
 /** R11: kanaliseringsmål (spec 7.6) */
-export const KANALISERINGSMAAL: Partial<Record<MarketId, number>> = { dk: 0.9, se: 0.9, nl: 0.8 };
+export const KANALISERINGSMAAL: Partial<Record<MarketId, number>> = { dk: 0.9, se: 0.9, nl: 0.8, no: 0.9 };

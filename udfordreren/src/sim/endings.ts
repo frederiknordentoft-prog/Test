@@ -1,5 +1,5 @@
 // Slutninger, eftermæle, tidslinje, eftertanke og Arkivet (spec 6.17, 6.18).
-import type { GameState, MarketId, Signal, TidslinjePunkt } from './types';
+import type { GameState, MarketId, Signal } from './types';
 import type { Rng } from './rng';
 import { SLUTNINGER, SLUT_KRAV, EFTERMAELE, type SlutId } from '../data/endings';
 import { ARKIV_MARKED, EFTERTANKE, arkivId } from '../data/archive';
@@ -7,7 +7,7 @@ import { MARKETS } from '../data/markets';
 import { PRODUCT_TYPES } from '../data/productTypes';
 import { RESEARCH_BY_ID } from '../data/research';
 import { aarFor, datoTekst } from './time';
-import { clamp, nyhed, signal } from './util';
+import { clamp, nyhed, signal, tidslinje } from './util';
 import { vaerdiansaettelse } from './investors';
 import { byTal, risikoAndel } from './town';
 import { aarligBsi } from './economy';
@@ -138,10 +138,7 @@ export function kvartalsSlut(s: GameState, rng: Rng): void {
 
 // ---------- Tidslinje ----------
 
-export function tidslinje(s: GameState, tekst: string, kind: TidslinjePunkt['kind']): void {
-  s.tidslinje.push({ uge: s.uge, tekst, kind });
-  if (s.tidslinje.length > 240) s.tidslinje.splice(0, s.tidslinje.length - 240);
-}
+export { tidslinje };
 
 /** Registrér ugens vigtige øjeblikke fra signalerne */
 export function registrerTidslinje(s: GameState, signaler: Signal[] = s.signaler): void {
@@ -161,7 +158,8 @@ export function registrerTidslinje(s: GameState, signaler: Signal[] = s.signaler
       case 'kontor': tidslinje(s, `Nyt kontor: ${sig.tier}.`, 'firma'); break;
       case 'galla': if (sig.vundet.length) tidslinje(s, `Branchegallaen ${sig.aar}: ${sig.vundet.length} ${sig.vundet.length === 1 ? 'pris' : 'priser'}.`, 'pris'); break;
       case 'sanktion': tidslinje(s, `Sanktion i ${MARKETS[sig.marked].navn} (trin ${sig.trin}).`, 'krise'); break;
-      case 'aktSkift': tidslinje(s, 'AI-laboratoriet åbner. Verdensbilledet 2026 er trukket.', 'verden'); break;
+      case 'aktSkift': tidslinje(s, 'AI-laboratoriet åbner. Verdensbilledet 2026 er trukket.', 'ai'); break;
+      case 'aiScenarie': tidslinje(s, `${sig.titel} tager fart.`, 'ai'); break;
       case 'verdensNyhed': tidslinje(s, sig.titel, 'verden'); break;
       case 'transformation': tidslinje(s, `${sig.erstattet} stillinger overtaget af agenter.`, 'ai'); break;
       case 'agent': if (sig.handling === 'ny' && s.agenter.length === 1) tidslinje(s, 'Den første AI-agent er i drift.', 'ai'); break;
@@ -187,8 +185,8 @@ export function eftertanke(s: GameState): { id: string; titel: string; tekst: st
     vandtLiga: s.sponsorater.some((x) => x.ejer === 'spiller' && x.marked === 'dk') || s.reaktioner.some((r) => r.regel === 'R7' && !r.competitorId) ? 8 : 0,
     egenPlatform: (['kontoplatform', 'sportsbook', 'kasinoplatform'] as const).some((k) => s.platforme[k].model === 'egen') ? 7 : 0,
     offshore: s.flags.includes('haftOffshoreBrand') ? 8 : 0,
-    byRoed: risiko > 0.12 ? 7 : 0,
-    byGroen: risiko < 0.05 ? 5 : 0,
+    byRoed: risiko > 0.12 || s.flags.includes('byRoed') ? 7 : 0,
+    byGroen: risiko < 0.05 && !s.flags.includes('byRoed') ? 5 : 0,
     norgeAabnede: s.markeder.no.aaben ? 9 : 0,
     hoejesteret: s.flags.includes('boerslicensMulig') ? 8 : 0,
     usaStor: (s.markeder.us.andele.spiller ?? 0) > 0.08 ? 7 : 0,

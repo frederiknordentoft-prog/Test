@@ -5,7 +5,7 @@ import type { Rng } from './rng';
 import { VERDENSSCENARIER, VERDENSVURDERINGER, AI_SCENARIER, AI_EFFEKT, BOERSLICENS } from '../data/ai';
 import { MARKETS } from '../data/markets';
 import { AI_AKT_UGE, aarDecimal, aarFor, ugeFor } from './time';
-import { aendrPres, afvis, betal, clamp, nyhed, saetFlag, signal } from './util';
+import { aendrPres, afvis, betal, clamp, nyhed, saetFlag, signal, tidslinje } from './util';
 import { annoncer } from './regulation';
 import { startTrend } from './trends';
 import { agentEffekt } from './agents';
@@ -295,10 +295,12 @@ export function setHyperpersonalisering(s: GameState, aktiv: boolean): boolean {
     h.foersteUge ??= s.uge;
     saetFlag(s, 'hyperBrugt');
     nyhed(s, `${s.firmaNavn} slår hyperpersonalisering til: hver kunde får sine egne tilbud, beskeder og spil.`, 'firma');
+    tidslinje(s, `Hyperpersonalisering slået til${agentEffekt(s).risikoOk ? ' (med risikoagent)' : ' uden risikoagent'}.`, 'ai');
   } else {
     h.aktiv = false;
     h.startUge = null;
     nyhed(s, `${s.firmaNavn} slår hyperpersonaliseringen fra.`, 'firma');
+    tidslinje(s, 'Hyperpersonalisering slået fra.', 'ai');
   }
   return true;
 }

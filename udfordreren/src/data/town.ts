@@ -19,8 +19,9 @@ export const BY = {
   bonus: 0.15, // pr. niveau
   vipKonvertering: 0.8, // engageret → VIP pr. VIP-niveau
   vipRisiko: 0.3, // VIP → risiko pr. VIP-niveau
-  hyper: 0.6, // risikoovergange ved hyperpersonalisering uden risikoagent
-  hyperMedRisiko: 0.1,
+  hyper: 4, // risikoovergange ved hyperpersonalisering uden risikoagent (spec 6.16: "byen bliver rød")
+  hyperMedRisiko: 0.15,
+  hyperBedring: 0.4, // bedring (gul → engageret, rød → gul) ganges med dette ved hyper uden risikoagent: tilbuddene bliver ved
   aggressiv: 0.1,
   /** Beskyttelse (divisor på skade, multiplikator på bedring) */
   beskyttelse: { compliancePrPerson: 0.04, complianceMaks: 0.2, affordabilityRegel: 0.2 },

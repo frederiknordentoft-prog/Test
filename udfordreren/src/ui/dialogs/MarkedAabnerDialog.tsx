@@ -69,9 +69,8 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
   };
 
   const afgiftEns = ms.afgiftPrVertikal.betting === ms.afgiftPrVertikal.kasino;
-  // Et marked, der åbner uden for tidsplanen (Norge i et verdensscenarie): licensen er gratis og straks, og afgiften
-  // er endnu ikke fastsat — sig det, i stedet for at det ligner en fejl
-  const overgang = def.aabnerUge === null;
+  // Et monopolmarked, der åbner i et verdensscenarie (Norge), har ingen tidsplan for markedets størrelse i datafilen
+  const udenTidsplan = def.aabnerUge === null;
   const gebyrTekst = pris.gebyr <= 0 ? 'Gratis' : mio(pris.gebyr);
   const indsats = def.afgiftModel === 'indsats';
   const regler = [
@@ -120,7 +119,7 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
           <div className="grid grid-cols-2 gap-1.5 border-t-2 border-line p-2.5 sm:grid-cols-3">
             {VERTIKALER.map((x) => {
               // Norge har ingen tidsplan i datafilen: brug størrelsen i denne verden (det grå marked, der nu kan licenseres)
-              const aar = overgang ? markedStoerrelse(g, m, x) * 52 : markedAarsBsi(m, x, g.uge);
+              const aar = udenTidsplan ? markedStoerrelse(g, m, x) * 52 : markedAarsBsi(m, x, g.uge);
               return (
                 <Noegle key={x} label={`Marked · ${VERTICALS[x].kort}`} titel="Hele markedets online-BSI pr. år (licenseret + offshore)" testId={`markedAabner-stoerrelse-${x}`}>
                   <span className="tal font-pixel text-sm font-bold text-gold">{aar > 0 ? stoerrelseTekst(aar) : '–'}</span>
@@ -128,8 +127,8 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
               );
             })}
             <Noegle
-              label={overgang ? 'Afgift (overgang)' : indsats ? 'Afgift af indsats' : 'Afgift af BSI'}
-              titel={overgang ? 'Afgiften er endnu ikke fastsat for det nye licensmarked' : indsats ? 'Indsatsafgift: rammer alle spil — også dem, huset taber' : undefined}
+              label={indsats ? 'Afgift af indsats' : 'Afgift af BSI'}
+              titel={indsats ? 'Indsatsafgift: rammer alle spil — også dem, huset taber' : undefined}
             >
               <span className="tal font-pixel text-sm font-bold text-ink">
                 {afgiftEns ? procent(ms.afgiftPrVertikal.betting) : `${procent(ms.afgiftPrVertikal.betting)} / ${procent(ms.afgiftPrVertikal.kasino)}`}
@@ -156,7 +155,6 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
             </span>
             <span className="tal text-sm text-ink">
               <b className="text-gold">{gebyrTekst}</b> · {pris.uger <= 0 ? 'godkendes straks' : `behandling ${ugerKort(pris.uger)}`}
-              {overgang && <span className="text-dim"> (overgangsordning)</span>}
             </span>
             <span className="tal text-xs text-dim">Årsgebyr {mio(LICENS_AARSGEBYR)} pr. vertikal</span>
           </div>

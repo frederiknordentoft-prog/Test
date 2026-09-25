@@ -1,7 +1,7 @@
 // Finansiering og kvartalsmål (spec 6.13): runder, udvanding, stjerner og investorpres.
 import type { FundingRound, GameState, QuarterGoal } from './types';
 import type { Rng } from './rng';
-import { ROUNDS, RUNDE_NAVN, VAERDI_MULTIPEL, STJERNE_VAERDI, PRES_EVENT_TAERSKEL, type RoundDef } from '../data/funding';
+import { ROUNDS, RUNDE_NAVN, VAERDI_MULTIPEL, VAERDI_MARGIN, STJERNE_VAERDI, PRES_EVENT_MELLEMRUM, PRES_EVENT_TAERSKEL, type RoundDef } from '../data/funding';
 import { aarFor, kvartalFor, ugeIAar } from './time';
 import { afvis, clamp, nyId, nyhed, signal } from './util';
 import { aarligBsi } from './economy';
@@ -22,9 +22,22 @@ export function acceptOffer(s: GameState, competitorId: string): boolean {
   return true;
 }
 
+/** Resultatmargin over de seneste fire kvartaler (null med under to kvartaler) */
+export function resultatMargin(s: GameState): number | null {
+  const k = s.historik.slice(-4);
+  if (k.length < 2) return null;
+  const bsi = k.reduce((a, x) => a + x.bsi, 0);
+  const resultat = k.reduce((a, x) => a + x.resultat, 0);
+  if (bsi <= 0) return resultat < 0 ? -1 : 0;
+  return resultat / bsi;
+}
+
+/** Værdiansættelse: multipel × årlig BSI (justeret for resultatmargin) + kassen (også en negativ kasse) */
 export function vaerdiansaettelse(s: GameState): number {
   const stjerneBonus = Math.min(0.3, s.investorer.stjerner * STJERNE_VAERDI);
-  const v = (VAERDI_MULTIPEL * aarligBsi(s) + Math.max(0, s.kapital)) * (1 + stjerneBonus + s.investorer.vaerdiBonus);
+  const margin = resultatMargin(s) ?? 0;
+  const marginFaktor = clamp(1 + margin, VAERDI_MARGIN.min, VAERDI_MARGIN.maks);
+  const v = (VAERDI_MULTIPEL * aarligBsi(s) * marginFaktor + s.kapital) * (1 + stjerneBonus + s.investorer.vaerdiBonus);
   return Math.max(0.5, Math.round(v * 100) / 100);
 }
 
@@ -186,7 +199,8 @@ export function kvartalsmoede(s: GameState, rng: Rng): void {
   // Nye mål
   s.kvartalsmaal = nyeMaal(s, rng);
   s.kvartalAkk = { bsi: 0, resultat: 0, lanceringer: 0, bedsteTotal40: 0, startKunder: spillerKunderTotal(s), startBsi: 0, drift: 0, top10Uger: 0 };
-  if (s.investorer.runde !== 'ingen' && s.investorer.pres >= PRES_EVENT_TAERSKEL) {
+  const sidstePres = s.eventLog.reduce((u, e) => (e.eventId === 'investorPres' ? Math.max(u, e.uge) : u), -Infinity);
+  if (s.investorer.runde !== 'ingen' && s.investorer.pres >= PRES_EVENT_TAERSKEL && s.uge - sidstePres >= PRES_EVENT_MELLEMRUM) {
     udloesEvent(s, 'investorPres', {});
   }
   if (opfyldt === ialt && ialt > 0) nyhed(s, `Kvartalsmødet: alle ${ialt} mål nået. ${RUNDE_NAVN[s.investorer.runde as FundingRound] ?? ''}`.trim(), 'firma');

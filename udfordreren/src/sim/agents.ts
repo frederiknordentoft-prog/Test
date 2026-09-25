@@ -5,7 +5,7 @@ import type { Rng } from './rng';
 import { AGENTER, AI, TRANSFORMATION } from '../data/ai';
 import { RESEARCH } from '../data/research';
 import { AI_AKT_UGE } from './time';
-import { afvis, betal, clamp, nyId, nyhed, saetFlag, signal } from './util';
+import { afvis, betal, clamp, nyId, nyhed, saetFlag, signal, tidslinje } from './util';
 import { udloesEvent } from './events';
 import { PRODUCT_TYPES } from '../data/productTypes';
 
@@ -192,6 +192,7 @@ export function ugentligeAgenter(s: GameState, rng: Rng): void {
       a.uheld = (a.uheld ?? 0) + 1;
       s.aiUheld += 1;
       udloesEvent(s, `aiUheld_${a.funktion}`, { agentId: a.id, navn: a.navn ?? 'Agenten' });
+      tidslinje(s, `AI-uheld: ${a.navn ?? 'en agent'} (${AGENTER[a.funktion].navn.toLowerCase()}, overvågning ${String(a.overvaagning).replace('.', ',')}).`, 'krise');
     }
   }
 }

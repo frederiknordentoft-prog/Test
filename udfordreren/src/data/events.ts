@@ -5,6 +5,7 @@ import { FLERE_EVENTS } from './eventsMore';
 
 export type EventEffect = {
   kapital?: number;
+  bsiUger?: number; // negativ: koster så mange ugers BSI (snit af de seneste 13 uger), så prisen følger firmaets størrelse
   indsigt?: number;
   hype?: number;
   omdoemme?: number;

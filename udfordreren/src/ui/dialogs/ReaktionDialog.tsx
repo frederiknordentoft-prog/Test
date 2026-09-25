@@ -60,7 +60,7 @@ export default function ReaktionDialog({ signal: foerste, gruppe, onLuk }: { sig
     if (ms.sanktion.trin >= 1) linjer.push({ ikon: 'nyhed', farve: 'var(--color-warn)', tekst: `I står på sanktionstrappens trin ${ms.sanktion.trin} i ${marked!.navn}.` });
     linjer.push(
       antal % R8.reglerEfter === 0
-        ? { ikon: 'paragraf', farve: 'var(--color-bad)', tekst: `Det er påbud nr. ${antal}: en ny regel rammer hele branchen i ${marked!.navn}, og omdømmet falder 3.` }
+        ? { ikon: 'paragraf', farve: 'var(--color-bad)', tekst: `Det er påbud nr. ${antal}: en ny regel rammer hele branchen i ${marked!.navn}, og branchens omdømme (også jeres) falder ${Math.abs(R8.omdoemme)}.` }
         : {
             ikon: 'paragraf',
             farve: 'var(--color-warn)',

@@ -33,3 +33,7 @@ export const VAERDI_MULTIPEL = 3;
 export const STJERNE_VAERDI = 0.02;
 /** Investorpres: +1 pr. manglende mål, −0,5 pr. opfyldt kvartal. Pres ≥ 3 udløser pres-event [D] */
 export const PRES_EVENT_TAERSKEL = 3;
+/** Bestyrelsesmødet om investorpres kommer højst én gang pr. så mange uger [D] */
+export const PRES_EVENT_MELLEMRUM = 52;
+/** Værdiansættelsen: multiplen på BSI justeres med årets resultatmargin (et underskud trækker ned) [D] */
+export const VAERDI_MARGIN = { min: 0.3, maks: 1.3 };

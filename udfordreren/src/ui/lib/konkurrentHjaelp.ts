@@ -23,7 +23,7 @@ const maaneder = (uger: number) => Math.round(uger / 4.33);
 
 /**
  * "Hvis … så …" for hver reaktionsregel, skrevet til spilleren (datafilens tekster er spec-sprog med interne id'er).
- * Tallene hentes fra src/data/reactionRules.ts, og R8's konsekvens følger sim-kernen (omdømme −3 ved tredje påbud).
+ * Tallene hentes fra src/data/reactionRules.ts, og R8's konsekvens følger sim-kernen (R8.omdoemme ved hvert tredje påbud).
  */
 export const REGEL_FORKLARING: Record<ReaktionsRegel, { hvis: string; saa: string }> = {
   R1: {
@@ -47,7 +47,7 @@ export const REGEL_FORKLARING: Record<ReaktionsRegel, { hvis: string; saa: strin
   R7: { hvis: 'et stort sponsorat bliver ledigt', saa: 'kommer det på auktion. App-first-firmaerne byder typisk højest, men I kan også byde' },
   R8: {
     hvis: 'jeres bonus, reklame og VIP er for aggressive to kvartaler i træk',
-    saa: `giver tilsynet et påbud (tillid −6). Ved hvert ${R8.reglerEfter}. påbud i samme marked kommer der nye regler for alle, og jeres omdømme falder 3`,
+    saa: `giver tilsynet et påbud (tillid −6). Ved hvert ${R8.reglerEfter}. påbud i samme marked kommer der nye regler for alle, og branchens omdømme (også jeres) falder ${Math.abs(R8.omdoemme)}`,
   },
   R9: { hvis: 'en skandale rammer branchen (jeres egen eller andres)', saa: 'stiger det politiske pres i markedet' },
   R10: { hvis: 'statskassen er presset', saa: `er der ${pctTal(R10.chancePrAar)} risiko om året for en afgiftsstigning på 3-8 procentpoint` },

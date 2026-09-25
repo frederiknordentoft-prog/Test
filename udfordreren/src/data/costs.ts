@@ -11,7 +11,7 @@ export const BONUS_PCT = [0, 0.05, 0.1, 0.18] as const;
 export const BONUS_TILGANG = [0, 0.18, 0.42, 1.0] as const;
 export const BONUS_CHURN = [0, -0.05, -0.1, -0.15] as const;
 /** VIP-program: ARPU-løft og omkostning i % af BSI [D] */
-export const VIP_ARPU = [0, 0.06, 0.13, 0.3] as const;
+export const VIP_ARPU = [0, 0.06, 0.13, 0.38] as const;
 export const VIP_PCT = [0, 0.01, 0.02, 0.04] as const;
 /** Kasino-content via aggregator: 12 % af kasino-BSI [D] */
 export const AGGREGATOR_PCT = 0.12;

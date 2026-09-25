@@ -229,6 +229,8 @@ export type HyperInfo = {
   /** Hvor meget hurtigere byens kunder glider mod risiko (uden / med en risikoagent ≥ 0,6) */
   byRisikoUden: number;
   byRisikoMed: number;
+  /** Andel af den normale bedring (gul → engageret, rød → gul) uden risikoagent */
+  byBedring: number;
 };
 
 export function hyperInfo(s: GameState): HyperInfo {
@@ -251,6 +253,7 @@ export function hyperInfo(s: GameState): HyperInfo {
     kopiOmUger: h.foersteUge !== null && !kopieret ? h.foersteUge + AI_EFFEKT.hyperKopiUger - s.uge : null,
     byRisikoUden: BY.hyper,
     byRisikoMed: BY.hyperMedRisiko,
+    byBedring: BY.hyperBedring,
   };
 }
 

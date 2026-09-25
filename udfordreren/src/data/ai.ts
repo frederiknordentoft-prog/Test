@@ -61,7 +61,7 @@ export const AI = {
   /** Point pr. kapacitetsenhed pr. uge i en projektfase (før fasevægt og data) */
   pointPrKapacitet: 11,
   /** Ugentlig uheldsrisiko = fejlrate × denne faktor */
-  uheldFaktor: 0.1,
+  uheldFaktor: 0.2, // [D] ca. 0,4-0,6 uheld om året pr. agent med lav overvågning, 0,1 med fuld
   /** Overvågning koster 0,1 medarbejder pr. agent pr. 0,1 (spec 7.13) → løn = overvågning × snitløn */
   overvaagningLoen: 1,
   // Effekter pr. kapacitetsenhed ved dataejerskab 1

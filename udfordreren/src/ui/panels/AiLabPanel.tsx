@@ -536,20 +536,20 @@ function Hyper({ g }: { g: GameState }) {
           <p className="mb-1 flex items-center gap-1.5 font-pixel text-[0.7rem] font-black uppercase tracking-wider text-bad">
             <Ikon navn="advarsel" farve="var(--color-bad)" indre="var(--color-line)" str={12} /> Prisen
           </p>
-          {/* Den store regning er tilsynet; byen reagerer mere stille (spejler src/sim/trust.ts og src/sim/town.ts) */}
+          {/* Prisen spejler src/sim/trust.ts (tillid) og src/sim/town.ts (byens overgange og bedring) */}
           <ul className="flex flex-col gap-1 text-[0.74rem]">
             <li className="flex items-start gap-1.5">
               <Ikon navn="skjold" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
               <span className="text-ink">
                 Tilsynet: <b className="tal text-bad">{fortegn(h.tillidPrKvartal)}</b> tilsynstillid pr. kvartal i hvert marked, så længe ingen risikoagent med overvågning ≥ 0,6
-                holder øje. Det er den store regning — og den trækker, så længe den kører.
+                holder øje — så længe den kører.
               </span>
             </li>
             <li className="flex items-start gap-1.5">
               <Ikon navn="hus" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
               <span className="text-ink">
-                Byen: kunderne glider ca. {procentTekst(h.byRisikoUden)} hurtigere mod risiko og problemspil (med risikoagenten kun {procentTekst(h.byRisikoMed)}). Alene
-                ses det knap, men sammen med høj VIP, bonus og intensitet bliver byen gul og rød.
+                Byen bliver rød: uden risikoagent glider kunderne {String(1 + h.byRisikoUden).replace('.', ',')} gange så hurtigt mod risiko og problemspil, og kun{' '}
+                {procentTekst(h.byBedring)} så mange finder tilbage (med risikoagenten kun {procentTekst(h.byRisikoMed)} hurtigere). Med høj VIP, bonus og intensitet går det endnu stærkere.
               </span>
             </li>
             <li className="flex items-start gap-1.5">

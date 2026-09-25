@@ -1,7 +1,7 @@
 # Designestimater og afledte tal
 
 Genereret af `npm run dliste` (scripts/d-liste.mjs). Alle tal, der styrer balancen, står i `src/data/` og er markeret
-**[F]** fakta, **[A]** afledt (fx valutaomregnet) eller **[D]** designestimat. Her er de 143 linjer med [D] og 10 med [A].
+**[F]** fakta, **[A]** afledt (fx valutaomregnet) eller **[D]** designestimat. Her er de 148 linjer med [D] og 10 med [A].
 Ændr værdierne i `src/data/` og kør `npm run sim` bagefter: de ti assertions i `sim/report.md` skal stadig være OK.
 
 ## src/data/acquisition.ts
@@ -18,6 +18,7 @@ Genereret af `npm run dliste` (scripts/d-liste.mjs). Alle tal, der styrer balanc
 | Linje | Type | Kode og kommentar |
 |---:|:-:|---|
 | 1 | D | `// AI-akten 2026-2035 (spec 6.16, 7.13, 7.14). Alle tal er [D — spekulation] medmindre andet er angivet.` |
+| 64 | D | `uheldFaktor: 0.2, // [D] ca. 0,4-0,6 uheld om året pr. agent med lav overvågning, 0,1 med fuld` |
 | 126 | D | `/** Størrelser for AI-scenariernes mekanik [D] */` |
 | 145 | D | `/** AI-transformation (spec 6.16): erstat stillinger med agenter [D] */` |
 
@@ -98,6 +99,8 @@ Genereret af `npm run dliste` (scripts/d-liste.mjs). Alle tal, der styrer balanc
 | 30 | D | `/** Værdiansættelse ≈ multipel × annualiseret BSI + kapital [D] */` |
 | 32 | D | `/** Stjerner: hver opfyldt mål giver en stjerne; +2 % værdi pr. stjerne (maks 30 %) [D] */` |
 | 34 | D | `/** Investorpres: +1 pr. manglende mål, −0,5 pr. opfyldt kvartal. Pres ≥ 3 udløser pres-event [D] */` |
+| 36 | D | `/** Bestyrelsesmødet om investorpres kommer højst én gang pr. så mange uger [D] */` |
+| 38 | D | `/** Værdiansættelsen: multiplen på BSI justeres med årets resultatmargin (et underskud trækker ned) [D] */` |
 
 ## src/data/galaCategories.ts
 
@@ -128,15 +131,17 @@ Genereret af `npm run dliste` (scripts/d-liste.mjs). Alle tal, der styrer balanc
 | 2 | D | `// [F] = fakta, [A] = afledt, [D] = designestimat.` |
 | 22 | D | `/** ARPU pr. aktiv kunde pr. år i kr. [D] */` |
 | 24 | D | `/** Basis-offshoreandel før formlen i 7.8 (fase 3) [D] */` |
-| 38 | D | `kanaliseringMaal: 0.9, cacFaktor: 1.0, licensGebyr: 0.5, licensUger: 12, // [D] gebyr/tid` |
-| 39 | D | `arpu: { betting: 2500, kasino: 7000 }, // [D]` |
-| 40 | D | `basisOffshore: { betting: 0.04, kasino: 0.13 }, // [D] kalibreret til ~9 % samlet [F: 91,5 % kanalisering 2024]` |
-| 47 | A | `kasino: [[0, 0.15], [ugeFor(2019, 3), 0.21], [ugeFor(2026, 3), 0.4]], // [F/A] RGD 15 % (2014) → 21 % (2019) → 40 % (2026-04)` |
-| 48 | A | `betting: [[0, 0.15], [ugeFor(2027, 3), 0.25]], // [F/A] fjern-betting 15 % → 25 % (2027-04)` |
-| 99 | D | `strenghed: [[0, 2.5]], // [D]` |
-| 109 | A | `betting: [[0, 0.15], [ugeFor(2025, 6), 0.2], [ugeFor(2026, 0), 0.25]], // [F/A] gennemsnit 15 % → 25 %; NY 51 %` |
-| 112 | D | `strenghed: [[0, 2], [ugeFor(2025, 0), 3]], // [D]` |
-| 123 | A | `kanaliseringMaal: 0.9, cacFaktor: 1.1, licensGebyr: 0.2, licensUger: 26, // [F/A] €29.000` |
+| 40 | D | `kanaliseringMaal: 0.9, cacFaktor: 1.0, licensGebyr: 0.5, licensUger: 12, // [D] gebyr/tid` |
+| 41 | D | `arpu: { betting: 2500, kasino: 7000 }, // [D]` |
+| 42 | D | `basisOffshore: { betting: 0.04, kasino: 0.13 }, // [D] kalibreret til ~9 % samlet [F: 91,5 % kanalisering 2024]` |
+| 49 | A | `kasino: [[0, 0.15], [ugeFor(2019, 3), 0.21], [ugeFor(2026, 3), 0.4]], // [F/A] RGD 15 % (2014) → 21 % (2019) → 40 % (2026-04)` |
+| 50 | A | `betting: [[0, 0.15], [ugeFor(2027, 3), 0.25]], // [F/A] fjern-betting 15 % → 25 % (2027-04)` |
+| 101 | D | `strenghed: [[0, 2.5]], // [D]` |
+| 111 | A | `betting: [[0, 0.15], [ugeFor(2025, 6), 0.2], [ugeFor(2026, 0), 0.25]], // [F/A] gennemsnit 15 % → 25 %; NY 51 %` |
+| 114 | D | `strenghed: [[0, 2], [ugeFor(2025, 0), 3]], // [D]` |
+| 125 | A | `kanaliseringMaal: 0.9, cacFaktor: 1.1, licensGebyr: 0.2, licensUger: 26, // [F/A] €29.000` |
+| 133 | D | `// Tallene gælder først, hvis monopolet afskaffes (verdensvurderingen "Norge åbner", 25 %) [D: nordisk licensregime som i se/dk]` |
+| 135 | D | `strenghed: [[0, 4]], // [F] betalingsblokering 2010, DNS 2025; [D] strengt nyt regime efter en åbning` |
 
 ## src/data/names.ts
 

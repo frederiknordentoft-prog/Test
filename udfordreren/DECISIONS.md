@@ -96,3 +96,11 @@
 - Offshore-basis for dk og uk fra 2026 modsvarer de faste stramninger (Spilpakke 1, 40 % RGD, bonuskrav), så referencekanaliseringen går fra ca. 93 % til 88-90 % i stedet for et fald til 74-80 % på én dag. SE og NL 2024-35 er sænket, fordi R11 ikke længere trækker dem op før 2026.
 - Sverige har bonusreglen fra åbningen i 2019 (kun velkomstbonus); SE-basis er sænket 5 pp tilsvarende, så kanaliseringen er uændret.
 - Politisk pres logges med kilde (de seneste seks ændringer pr. marked), så spilleren kan se, hvorfor presset steg.
+- Hyperpersonalisering uden risikoagent (overvågning ≥ 0,6) gør byen rød, som spec 6.16 lover: risikoovergange × 5 og kun 40 % af den normale bedring (fra ca. 5 % til 12-21 % i risiko/problem; med høj VIP, bonus og intensitet 23-37 %). Med risikoagent er effekten lille (× 1,15).
+- AI-uheld er dobbelt så hyppige (uheldFaktor 0,2: ca. 0,4-0,6 om året pr. agent med lav overvågning), og uheldenes pris følger firmaets størrelse via den nye event-effekt bsiUger (0,1-1 uges BSI).
+- Værdiansættelsen er multipel × årlig BSI × (1 + resultatmargin det seneste år, 0,3-1,3) + kassen, også når kassen er negativ. Man kan ikke længere pumpe BSI med marketing de sidste uger og få en børsnotering.
+- Bestyrelsesmødet om investorpres kommer højst én gang om året.
+- Norge efter monopolet (verdensvurderingen): licens 1,2 mio. kr. og 26 uger, afgift 22 %, strenghed 4 og kanaliseringsmål 90 % [D, nordisk regime]. Nyheden bruger en tekst for det åbne marked.
+- R8's tredje påbud koster branchens omdømme −1 som i spec 7.6 (sim'en trak 3).
+- Tidslinjen får AI-øjeblikke: hyperpersonalisering til/fra, AI-uheld, AI-scenarier, der slår igennem, og den første gang byen bliver rød. Akt-skiftet hører under AI.
+- VIP niveau 3 giver +38 % BSI pr. kunde (fra +30 %), så grådighed stadig giver den højeste BSI 2012-2020, efter at investorpresset (og dets marketingløft) kommer sjældnere.

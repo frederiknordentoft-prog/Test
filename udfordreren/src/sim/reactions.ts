@@ -251,7 +251,7 @@ export function kvartalsReaktioner(s: GameState, rng: Rng): void {
         if (ms.sanktion.trin === 0) ms.sanktion.trin = 1;
         if (antal % R8.reglerEfter === 0) {
           aktiverRegel(s, rng, m, rng.chance(0.5) ? 'bonusloft' : 'reklamevindue');
-          s.omdoemme = clamp(s.omdoemme - 3, 0, 100);
+          s.omdoemme = clamp(s.omdoemme + R8.omdoemme, 0, 100); // spec 7.6: branchens omdømme −1
           reager(s, {
             regel: 'R8', marked: m, slutUge: s.uge, effekt: {},
             tekst: `${MARKETS[m].tilsyn} har givet ${s.firmaNavn} påbud for tredje gang. Nu strammes reglerne for hele branchen i ${MARKETS[m].navn}.`,
@@ -289,10 +289,12 @@ export function kvartalsReaktioner(s: GameState, rng: Rng): void {
   if (krise && aarFor(s.uge) >= 2026 && rng.chance(R10.chancePrAar / 4)) {
     const kandidater = (Object.keys(s.markeder) as MarketId[]).filter((m) => s.markeder[m].aaben && m !== 'no');
     const m = rng.pick(kandidater);
-    annoncer(s, m, 'afgiftsstigning', s.uge + rng.int(26, 52), true, rng);
+    const uge = s.uge + rng.int(26, 52);
+    annoncer(s, m, 'afgiftsstigning', uge, true, rng);
+    const pp = s.planlagteRegler.find((p) => p.marked === m && p.regelId === 'afgiftsstigning' && p.ikrafttraedelseUge === uge)?.pp;
     reager(s, {
       regel: 'R10', marked: m, slutUge: s.uge, effekt: {},
-      tekst: `Statskassen i ${MARKETS[m].navn} er presset af krisen. Politikerne vil hæve spilafgiften med 3-8 procentpoint.`,
+      tekst: `Statskassen i ${MARKETS[m].navn} er presset af krisen. Politikerne vil hæve spilafgiften med ${pp ?? '3-8'} procentpoint fra ${datoTekst(uge)}.`,
     });
   }
 
