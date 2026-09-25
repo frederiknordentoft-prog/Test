@@ -14,6 +14,7 @@ export type EventEffect = {
   staffForlader?: boolean; // ctx.staffId forlader firmaet
   staffLoenPct?: number; // ctx.staffId får lønstigning
   staffEnergi?: number;
+  revenueSharePp?: number; // midlertidig stigning i revenue share (leverandørkrise)
   marketingPct?: number; // alle marketingkanaler ganges med (1 + x)
   marketingMin?: number; // mindst så meget samlet marketing pr. uge bagefter (lægges på søgning)
   vaerdiPct?: number; // værdiansættelse
@@ -32,7 +33,7 @@ export type EventDef = {
   engang: boolean;
   /** Uger før samme event kan komme igen (standard 26) */
   cooldownUger?: number;
-  kraever?: { flagIkke?: string[]; flag?: string[]; kontor?: OfficeTier[]; minKunder?: number; runde?: boolean; minStaff?: number };
+  kraever?: { flagIkke?: string[]; flag?: string[]; kontor?: OfficeTier[]; minKunder?: number; runde?: boolean; minStaff?: number; platform?: ('whiteLabel' | 'turnkey')[] };
   valg: { tekst: string; forklaring: string; effekt: EventEffect }[];
 };
 
@@ -160,6 +161,36 @@ export const EVENTS: EventDef[] = [
     ],
   },
 ];
+
+EVENTS.push(
+  {
+    id: 'leverandoerNedbrud', titel: 'Leverandøren er nede', trigger: 'tilfaeldig', fraAar: 2012, tilAar: 2035, chancePrUge: 0.006, engang: false,
+    kraever: { minKunder: 1000, platform: ['whiteLabel', 'turnkey'] },
+    tekst: 'Jeres platformleverandør har haft nedbrud hele lørdag aften. Kunderne kunne hverken spille eller udbetale.',
+    valg: [
+      { tekst: 'Kompensér kunderne', forklaring: 'Free spins og en undskyldning. Dyrt, men kunderne bliver.', effekt: { kapital: -0.15, omdoemme: 1 } },
+      { tekst: 'Henvis til leverandøren', forklaring: 'Gratis, men nogle kunder skifter.', effekt: { kunderPct: -0.04, omdoemme: -2 } },
+    ],
+  },
+  {
+    id: 'leverandoerPris', titel: 'Leverandøren hæver prisen', trigger: 'tilfaeldig', fraAar: 2014, tilAar: 2035, chancePrUge: 0.004, engang: false,
+    kraever: { minKunder: 3000, platform: ['whiteLabel', 'turnkey'] },
+    tekst: 'Platformleverandøren er blevet købt og vil have en større bid af omsætningen.',
+    valg: [
+      { tekst: 'Accepter', forklaring: 'Revenue share stiger 3 procentpoint. Det er prisen for ikke at eje sin platform.', effekt: { flag: 'dyrLeverandoer' } },
+      { tekst: 'Forhandl hårdt', forklaring: 'Et konsulenthus forhandler. Leverandøren giver sig delvist.', effekt: { kapital: -0.3, flag: 'dyrLeverandoerHalv' } },
+    ],
+  },
+  {
+    id: 'medieskandaleEgen', titel: 'Journalisten har jeres storspillere', trigger: 'tilfaeldig', fraAar: 2013, tilAar: 2035, chancePrUge: 0.004, engang: false,
+    kraever: { minKunder: 5000 },
+    tekst: 'Et dagblad har fået fat i mails om jeres VIP-behandling af en storspiller. Historien kører i morgen.',
+    valg: [
+      { tekst: 'Stil op og tag ansvar', forklaring: 'I stopper VIP-tilbuddene til ham og fortæller åbent om det. Tilliden bevares.', effekt: { tillid: 2, omdoemme: -1 } },
+      { tekst: 'Ingen kommentarer', forklaring: 'Historien vokser, og politikerne bliver interesserede.', effekt: { omdoemme: -5, tillid: -4 } },
+    ],
+  },
+);
 
 EVENTS.push({
   id: 'offshoreAfsloeret', titel: 'Afsløret!', trigger: 'system', fraAar: 2012, tilAar: 2035, chancePrUge: 0, engang: false,

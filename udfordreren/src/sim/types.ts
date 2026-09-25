@@ -173,6 +173,24 @@ export type TrendEffect = {
   afgiftRisiko?: number; // tillæg på sandsynligheden for afgiftsstigninger (R10)
 };
 
+export type ReaktionsRegel = 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R6' | 'R7' | 'R8' | 'R9' | 'R10' | 'R11' | 'R12';
+
+/** En aktiv konkurrentreaktion (spec 7.6) med synlig effekt og udløb */
+export type AktivReaktion = {
+  id: string;
+  regel: ReaktionsRegel;
+  competitorId?: string;
+  marked?: MarketId;
+  startUge: Week;
+  slutUge: Week;
+  effekt: { marketingMult?: number; cacSpiller?: number; aggressivitet?: number };
+  tekst: string;
+};
+
+export type Opkoebstilbud = { competitorId: string; pris: MioKr; udloeberUge: Week; markedsandel: number };
+export type Sponsorat = { id: string; navn: string; marked: MarketId; ejer: string; slutUge: Week; bud: MioKr };
+export type SponsorAuktion = { id: string; navn: string; marked: MarketId; afgoeresUge: Week; mindstebud: MioKr; spillerBud: MioKr | null; varighedUger: number };
+
 export type AktivTrend = { id: string; startUge: Week; slutUge: Week; markeder: MarketId[] | 'alle'; effekt: TrendEffect; titel: string }; // +
 
 export type CompetitorArchetype =
@@ -218,6 +236,9 @@ export type Platform = {
   migreringFaerdigUge: Week | null;
   dataejerskab: number;
   b2bKunder: number;
+  migrererTil: PlatformModel | null; // + mål for igangværende migrering
+  migreringStartUge: Week | null; // +
+  sidsteB2bUge: Week | null; // +
 };
 
 export type AiAgent = {
@@ -240,7 +261,7 @@ export type TownPerson = {
   marked: MarketId;
 };
 
-export type WorldScenario = 'afgiftsvinter' | 'kanaliseringensTilbagetog' | 'pmRevolution' | 'denHaardeHaand';
+export type WorldScenario = 'afgiftsvinter' | 'kanaliseringensTilbagetog' | 'pmOmvaeltning' | 'denHaardeHaand';
 
 export type OfficeTier = 'garage' | 'kaelder' | 'kontor' | 'etage' | 'hovedkontor';
 
@@ -366,7 +387,15 @@ export type Signal =
   | { k: 'markedAabner'; marked: MarketId }
   | { k: 'regel'; marked: MarketId; regelId: string; varsel: boolean }
   | { k: 'sanktion'; marked: MarketId; trin: 1 | 2 | 3 | 4; boede?: MioKr }
-  | { k: 'trend'; id: string; titel: string };
+  | { k: 'trend'; id: string; titel: string }
+  // + fase 4
+  | { k: 'reaktion'; regel: ReaktionsRegel; tekst: string; competitorId?: string; marked?: MarketId }
+  | { k: 'tilbud'; competitorId: string; pris: MioKr }
+  | { k: 'sponsorAuktion'; navn: string; marked: MarketId }
+  | { k: 'sponsorResultat'; navn: string; marked: MarketId; vinder: string; spillerVandt: boolean }
+  | { k: 'platform'; kind: PlatformKind; model: PlatformModel; faerdig: boolean }
+  | { k: 'opkoeb'; competitorId: string; pris: MioKr }
+  | { k: 'konkurrentNyhed'; tekst: string; arkivId?: string };
 
 export type GameState = {
   version: 2;
@@ -417,6 +446,20 @@ export type GameState = {
   eventLog: { uge: Week; eventId: string; valg: number }[];
   planlagteRegler: { marked: MarketId; regelId: string; ikrafttraedelseUge: Week; annonceret?: boolean; dynamisk?: boolean }[];
   trends: AktivTrend[]; // + fase 3
+  // + fase 4: levende konkurrenter og platforme
+  reaktioner: AktivReaktion[];
+  reaktionsTaeller: Record<ReaktionsRegel, number>;
+  opkoebstilbud: Opkoebstilbud | null;
+  featureFordele: Record<string, { kopier: number; lanceretUge: Week }>;
+  planlagteKopier: { feature: string; competitorId: string; marked: MarketId; uge: Week }[];
+  andelHistorik: Partial<Record<MarketId, number[]>>; // spillerens andel pr. kvartal (seneste 5)
+  afgiftHistorik: Partial<Record<MarketId, number>>; // forrige kvartals afgift (R5)
+  aggressionKvartaler: Partial<Record<MarketId, number>>; // R8
+  r8Antal: Partial<Record<MarketId, number>>;
+  sponsorater: Sponsorat[];
+  sponsorAuktion: SponsorAuktion | null;
+  konkurrentHistorik: string[]; // udførte historiske konkurrentevents
+  b2bIndtaegtPrUge: MioKr;
   historiskeRegler: string[]; // + id'er på historiske regler, der er annonceret eller trådt i kraft
   offshoreBrandStartUge: Week | null; // + fase 3
   slut: { id: string; vaerdi: MioKr; eftermaele: number } | null;
@@ -486,7 +529,9 @@ export type Action =
   // + ikke i spec-listen, men nødvendige for fase 1-2
   | { t: 'cancelProject'; projectId: string }
   | { t: 'setMentor'; status: 'aktiv' | 'sprunget' | 'faerdig' }
-  | { t: 'setOffshoreBrand'; aktiv: boolean };
+  | { t: 'setOffshoreBrand'; aktiv: boolean }
+  | { t: 'afvisTilbud' }
+  | { t: 'bydSponsorat'; bud: MioKr };
 
 export type NewGameOptions = {
   seed: number;

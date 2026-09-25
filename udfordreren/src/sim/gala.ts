@@ -2,7 +2,7 @@
 import type { GameState, GalaResult } from './types';
 import type { Rng } from './rng';
 import { GALA_CATEGORIES, GALA_UGE_I_AAR, GALA_BELOENNING } from '../data/galaCategories';
-import { PLATFORM_MODELS } from '../data/platforms';
+import { gennemsnitligPlatformKvalitet } from './platforms';
 import { aarFor, ugeIAar } from './time';
 import { clamp, nyhed, signal } from './util';
 import { spillerKunderTotal } from './customers';
@@ -48,10 +48,10 @@ export function galaScores(s: GameState, rng: Rng): GalaKandidat[] {
   res.push({ id: 'udfordrer', spiller: vaekst, konkurrent: ku.v, konkurrentNavn: ku.navn, nomineret: nu >= 5000 });
 
   // Årets platform
-  const pk = s.platforme.kontoplatform;
-  const kvalitet = Math.min(pk.kvalitet, PLATFORM_MODELS[pk.model].kvalitetsloft);
+  const kvalitet = gennemsnitligPlatformKvalitet(s);
+  const egenModel = (['kontoplatform', 'sportsbook', 'kasinoplatform'] as const).some((k) => s.platforme[k].model !== 'whiteLabel');
   const kpl = bedsteKonk((c) => 50 + 5 * c.innovation + 0.8 * (aar - 2012) + rng.gauss() * 4);
-  res.push({ id: 'platform', spiller: kvalitet, konkurrent: kpl.v, konkurrentNavn: kpl.navn, nomineret: pk.model !== 'whiteLabel' });
+  res.push({ id: 'platform', spiller: kvalitet, konkurrent: kpl.v, konkurrentNavn: kpl.navn, nomineret: egenModel });
   return res;
 }
 

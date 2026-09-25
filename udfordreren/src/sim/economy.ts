@@ -1,7 +1,6 @@
 // Økonomi (spec 6.4): BSI minus afgift, revenue share, betalinger, bonus, indhold, marketing, løn og licenser.
 import type { GameState, LedgerWeek, MarketId } from './types';
 import { PRODUCT_TYPES } from '../data/productTypes';
-import { PLATFORM_MODELS } from '../data/platforms';
 import { AGGREGATOR_PCT, BETALINGER_PCT, BONUS_PCT, INDBETALING_PR_BSI, KONKURS_UGER, OFFICE_BY_ID, VIP_PCT } from '../data/costs';
 import { CHANNEL_IDS } from '../data/acquisition';
 import type { KundeUge } from './customers';
@@ -10,6 +9,8 @@ import { BALANCE } from '../data/balance';
 import { licensAarsgebyr } from './markets';
 import { effektivBonus, effektivVip } from './regulation';
 import { OFFSHORE_BRAND } from '../data/offshore';
+import { revenueShare } from './platforms';
+import { sponsorOmkostningPrUge } from './reactions';
 import { nyhed, signal } from './util';
 
 export const tomtRegnskab = (): LedgerWeek => ({
@@ -45,7 +46,9 @@ export function ugentligOekonomi(s: GameState, kunder: KundeUge, kontraktIndtaeg
       }
     }
   }
-  r.revenueShare = kunder.bsiIalt * PLATFORM_MODELS[s.platforme.kontoplatform.model].revenueShare;
+  for (const m of Object.keys(kunder.bsi) as MarketId[]) {
+    r.revenueShare += kunder.bsi[m].betting * revenueShare(s, 'betting') + kunder.bsi[m].kasino * revenueShare(s, 'kasino');
+  }
   r.betalinger = kunder.bsiIalt * INDBETALING_PR_BSI * BETALINGER_PCT;
   // Offshore-brandets grå BSI: licens, betalinger og hosting uden dansk afgift
   const offshoreOmk = offshoreBsi * OFFSHORE_BRAND.omkostning;
@@ -53,6 +56,7 @@ export function ugentligOekonomi(s: GameState, kunder: KundeUge, kontraktIndtaeg
   r.indhold = Math.max(0, kasinoBsi - egneSlotsBsi) * AGGREGATOR_PCT;
   for (const k of CHANNEL_IDS) if (kanalTilgaengelig(s, k)) r.marketing += s.marketingMix[k] ?? 0;
   r.loen = s.staff.reduce((a, m) => a + m.loenPrUge, 0);
+  r.marketing += sponsorOmkostningPrUge(s);
   r.licenser = licensAarsgebyr(s);
   const husleje = OFFICE_BY_ID[s.kontor].husleje + (spillerKunderTotal(s) * BALANCE.driftPrKunde) / 1e6;
   const drift = r.afgift + r.revenueShare + r.betalinger + r.bonus + r.indhold + r.marketing + r.loen + r.licenser + husleje;

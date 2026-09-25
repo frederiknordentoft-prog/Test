@@ -83,8 +83,8 @@ export const REGLER: Record<string, RegelDef> = {
     effekt: { blokering: 'dns' },
   },
   usSweepsForbud: {
-    id: 'usSweepsForbud', navn: 'Sweepstakes-forbud', kilde: '[F] flere delstater i 2025',
-    beskrivelse: 'Flere delstater forbyder sweepstakes-kasinoer.',
+    id: 'usSweepsForbud', navn: 'Sweeps-forbud', kilde: '[F] flere delstater i 2025',
+    beskrivelse: 'Flere delstater forbyder sweeps-kasinoer.',
     effekt: { offshorePp: -5 },
   },
   // --- Dynamisk pulje (spec 7.7) ---

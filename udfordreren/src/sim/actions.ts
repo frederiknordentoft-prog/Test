@@ -14,6 +14,10 @@ import { startResearch } from './insight';
 import { upgradeOffice } from './office';
 import { eventChoice } from './events';
 import { setOffshoreBrand } from './offshore';
+import { choosePlatform, sellPlatformB2B } from './platforms';
+import { acquire } from './competitors';
+import { acceptOffer } from './investors';
+import { afvisTilbud, bydSponsorat } from './reactions';
 import { kanalTilgaengelig, kampagneKunder } from './customers';
 
 export const MAX_MARKETING_PR_KANAL = 50; // mio. kr./uge
@@ -90,12 +94,14 @@ export function applyActionMut(s: GameState, rng: Rng, a: Action): boolean {
     case 'eventChoice': return eventChoice(s, a.eventId, a.valg);
     case 'setMentor': s.mentor = a.status; return true;
     case 'setOffshoreBrand': return setOffshoreBrand(s, a.aktiv);
-    case 'choosePlatform':
-    case 'sellPlatformB2B':
-    case 'acceptOffer':
-    case 'acquire':
+    case 'choosePlatform': return choosePlatform(s, rng, a.kind, a.model);
+    case 'sellPlatformB2B': return sellPlatformB2B(s, rng, a.kind);
+    case 'acquire': return acquire(s, a.competitorId);
+    case 'acceptOffer': return acceptOffer(s, a.competitorId);
+    case 'afvisTilbud': return afvisTilbud(s);
+    case 'bydSponsorat': return bydSponsorat(s, a.bud);
     case 'deployAgent':
     case 'retireAgent':
-      return afvis(s, 'Den del af spillet er ikke åbnet endnu.');
+      return afvis(s, 'AI-laboratoriet åbner i 2026.');
   }
 }

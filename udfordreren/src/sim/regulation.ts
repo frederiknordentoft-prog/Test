@@ -162,6 +162,7 @@ export function ugentligRegulering(s: GameState, rng: Rng): void {
       ms.lavKanaliseringUger = ms.kanalisering < maal ? ms.lavKanaliseringUger + 1 : 0;
       if (ms.lavKanaliseringUger >= 104) {
         ms.lavKanaliseringUger = 0;
+        s.reaktionsTaeller.R11 = (s.reaktionsTaeller.R11 ?? 0) + 1;
         const x = rng.next();
         if (x < 0.4) {
           const regel = ms.blokering.dns === null ? 'dnsBlokering' : ms.blokering.betaling === null ? 'betalingsblokering' : null;

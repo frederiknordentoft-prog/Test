@@ -32,6 +32,7 @@ function opfylderKrav(s: GameState, e: EventDef): boolean {
   if (k.minKunder !== undefined && spillerKunderTotal(s) < k.minKunder) return false;
   if (k.runde && s.investorer.runde === 'ingen') return false;
   if (k.minStaff !== undefined && s.staff.length < k.minStaff) return false;
+  if (k.platform && !k.platform.includes(s.platforme.kontoplatform.model as 'whiteLabel' | 'turnkey')) return false;
   return true;
 }
 

@@ -77,7 +77,7 @@ export function offshoreDynPp(s: GameState, m: MarketId): number {
   );
 }
 
-/** Trends (krypto, streamere, sweepstakes) lægges direkte på andelene i procentpoint (spec 7.8) */
+/** Trends (krypto, streamere, sweeps) lægges direkte på andelene i procentpoint (spec 7.8) */
 export function offshoreTrendPp(s: GameState, m: MarketId): number {
   return trendEffekt(s, m).offshorePp;
 }

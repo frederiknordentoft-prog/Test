@@ -17,6 +17,9 @@ import { bookingAabent } from '../../src/sim/expos';
 import { pladser } from '../../src/sim/staff';
 import { aarFor } from '../../src/sim/time';
 import { OFFICE_BY_ID } from '../../src/data/costs';
+import { platformStatus, b2bStatus } from '../../src/sim/platforms';
+import { PLATFORM_MODELS } from '../../src/data/platforms';
+import type { PlatformKind } from '../../src/sim/types';
 
 const ONSKEDE_ROLLER: Record<Vertical, Role[]> = {
   betting: ['oddssaetter', 'udvikler', 'analytiker', 'compliance', 'udvikler', 'marketing', 'kasinodesigner'],
@@ -190,6 +193,24 @@ export const balanceretBot: Bot = {
       const m = kandidater[0];
       if (m && s.kapital > licensPris(s, m).gebyr * 6 + 20 && MARKETS[m].cacFaktor <= 2) a.push({ t: 'applyLicense', market: m, vertical: s.startVertikal });
     }
+    // Platforme (spec 8: hybrid/egen): produktplatformen først, derefter konto og den anden vertikal
+    const kinds: PlatformKind[] = s.startVertikal === 'betting' ? ['sportsbook', 'kontoplatform', 'kasinoplatform'] : ['kasinoplatform', 'kontoplatform', 'sportsbook'];
+    for (const kind of kinds) {
+      const p = s.platforme[kind];
+      if (p.migrererTil) break;
+      const maal = p.model === 'hybrid' ? (aar >= 2018 ? 'egen' : null) : p.model === 'egen' ? null : 'hybrid';
+      if (!maal) continue;
+      if (platformStatus(s, kind, maal).ok && s.kapital > PLATFORM_MODELS[maal].capex * 2.5 + buffer) a.push({ t: 'choosePlatform', kind, model: maal });
+      break;
+    }
+    for (const kind of ['sportsbook', 'kasinoplatform'] as PlatformKind[]) {
+      const st = b2bStatus(s, kind);
+      if (st.ok && s.kapital > st.licens + buffer) a.push({ t: 'sellPlatformB2B', kind });
+    }
+    // Opkøbstilbud afvises (Balanceret bygger videre); sponsorater bydes på i egne markeder
+    if (s.opkoebstilbud) a.push({ t: 'afvisTilbud' });
+    const sa = s.sponsorAuktion;
+    if (sa && sa.spillerBud === null && s.markeder[sa.marked].licens === 'aktiv' && s.kapital > sa.mindstebud * 10 + buffer) a.push({ t: 'bydSponsorat', bud: Math.round(sa.mindstebud * 1.5 * 10) / 10 });
     // Runder
     const r = naesteRunde(s);
     if (r.ok) a.push({ t: 'raiseRound' });

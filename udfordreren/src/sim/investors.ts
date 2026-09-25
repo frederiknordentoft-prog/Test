@@ -9,6 +9,19 @@ import { spillerKunderTotal } from './customers';
 import { udloesEvent } from './events';
 import { tillidsPoster } from './trust';
 
+/** Accepter et opkøbstilbud (R2): en gyldig slutning (Exit, spec 6.13) */
+export function acceptOffer(s: GameState, competitorId: string): boolean {
+  const t = s.opkoebstilbud;
+  if (!t || t.competitorId !== competitorId) return afvis(s, 'Tilbuddet er ikke længere gyldigt.');
+  const c = s.konkurrenter.find((x) => x.id === competitorId);
+  s.opkoebstilbud = null;
+  const stifterAndel = Math.round(t.pris * s.investorer.ejerandelStiftere * 10) / 10;
+  s.slut = { id: 'exit', vaerdi: t.pris, eftermaele: 0 };
+  nyhed(s, `${c?.navn ?? 'En køber'} køber ${s.firmaNavn} for ${Math.round(t.pris)} mio. kr. Stifterne får ${Math.round(stifterAndel)} mio. kr.`, 'firma');
+  signal(s, { k: 'slut', id: 'exit' });
+  return true;
+}
+
 export function vaerdiansaettelse(s: GameState): number {
   const stjerneBonus = Math.min(0.3, s.investorer.stjerner * STJERNE_VAERDI);
   const v = (VAERDI_MULTIPEL * aarligBsi(s) + Math.max(0, s.kapital)) * (1 + stjerneBonus + s.investorer.vaerdiBonus);

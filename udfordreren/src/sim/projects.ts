@@ -18,6 +18,7 @@ import { forskningsEffekt, forskningsFeatures } from './insight';
 import { passiveEffekter } from './staff';
 import { lanceringsKunder } from './customers';
 import { udloesEvent } from './events';
+import { nyeFeatures as registrerFeatures } from './reactions';
 
 export const tomParams = (): Params => ({ spaending: 0, originalitet: 0, teknik: 0, tryghed: 0 });
 
@@ -363,6 +364,7 @@ export function launch(s: GameState, rng: Rng, projectId: string): boolean {
   }
   const nyeFeatures = produkt.features.filter((f) => !s.produkter.some((x) => x.ejer === 'spiller' && x.features.includes(f)));
   s.produkter.push(produkt);
+  registrerFeatures(s, rng, produkt);
   s.projekter = s.projekter.filter((x) => x.id !== p.id);
 
   // Kombinationsbog og niveauer

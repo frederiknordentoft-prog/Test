@@ -15,6 +15,7 @@ import { opfyldTilbud } from './contracts';
 import { startMaal } from './investors';
 import { tomtRegnskab } from './economy';
 import { nyhed } from './util';
+import { tomReaktionsTaeller } from './reactions';
 
 const platform = (kind: Platform['kind']): Platform => ({
   kind,
@@ -23,6 +24,9 @@ const platform = (kind: Platform['kind']): Platform => ({
   migreringFaerdigUge: null,
   dataejerskab: PLATFORM_MODELS.whiteLabel.dataejerskab,
   b2bKunder: 0,
+  migrererTil: null,
+  migreringStartUge: null,
+  sidsteB2bUge: null,
 });
 
 export function newGame(opts: NewGameOptions): GameState {
@@ -93,6 +97,19 @@ export function newGame(opts: NewGameOptions): GameState {
     trends: [],
     historiskeRegler: [],
     offshoreBrandStartUge: null,
+    reaktioner: [],
+    reaktionsTaeller: tomReaktionsTaeller(),
+    opkoebstilbud: null,
+    featureFordele: {},
+    planlagteKopier: [],
+    andelHistorik: {},
+    afgiftHistorik: {},
+    aggressionKvartaler: {},
+    r8Antal: {},
+    sponsorater: [],
+    sponsorAuktion: null,
+    konkurrentHistorik: [],
+    b2bIndtaegtPrUge: 0,
   };
   const rng = makeRng(s.rngState);
   s.staff = opts.stiftere.map((f) => lavStifter(s, f));

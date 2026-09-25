@@ -19,6 +19,9 @@ import { kvartalsTillid, sanktioner } from './trust';
 import { ugentligeTrends } from './trends';
 import { ugentligRegulering, kvartalsPres } from './regulation';
 import { ugentligtOffshoreBrand } from './offshore';
+import { ugentligePlatforme } from './platforms';
+import { ugentligeReaktioner, kvartalsReaktioner, r12Aktiv } from './reactions';
+import { R12 } from '../data/reactionRules';
 import { ugentligeEvents } from './events';
 import { CHANNELS, CHANNEL_IDS } from '../data/acquisition';
 import { BALANCE } from '../data/balance';
@@ -83,8 +86,10 @@ function simulerUge(s: GameState, rng: Rng): void {
   // Kunder, økonomi, konkurrenter og hitliste
   const kunder = ugentligeKunder(s, rng);
   const graa = ugentligtOffshoreBrand(s, rng);
-  ugentligOekonomi(s, kunder, k.indtaegt, graa);
+  const b2b = ugentligePlatforme(s, rng);
+  ugentligOekonomi(s, kunder, k.indtaegt + b2b, graa);
   ugentligeKonkurrenter(s, rng);
+  ugentligeReaktioner(s, rng);
   ugentligHitliste(s);
 
   // Hype: forfald + brandkendskab fra kanaler
@@ -101,8 +106,9 @@ function simulerUge(s: GameState, rng: Rng): void {
   ugentligGalla(s, rng);
   if (s.uge > 0 && ugeIAar(s.uge) % 13 === 0) {
     kvartalsTillid(s);
-    sanktioner(s, rng);
+    sanktioner(s, rng, r12Aktiv(s) ? R12.sanktionsFaktor : 1);
     kvartalsPres(s);
+    kvartalsReaktioner(s, rng);
     kvartalsmoede(s, rng);
   }
   ugentligeEvents(s, rng);

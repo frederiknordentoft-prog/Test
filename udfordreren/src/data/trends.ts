@@ -51,8 +51,8 @@ export const TRENDS: Record<string, TrendDef> = {
     id: 'streamere', titel: 'Streamer-gambling', tekst: 'Kendte streamere spiller på offshore-kasinoer for unge seere.', markeder: EUROPA,
     effekt: { offshorePp: 3 }, pres: 1, kilde: '[F-mønster] 2021-23: +3 pp (unge), pres +1',
   },
-  sweepstakes: {
-    id: 'sweepstakes', titel: 'Sweepstakes-boom', tekst: 'Sweepstakes-kasinoer udnytter et hul i lovgivningen.', markeder: ['us'],
+  sweeps: {
+    id: 'sweeps', titel: 'Sweeps-boom', tekst: 'Sweeps-kasinoer udnytter et hul i lovgivningen.', markeder: ['us'],
     effekt: { offshorePp: 8 }, kilde: '[F-mønster] 2022-25',
   },
   predictionMarkets: {
@@ -94,7 +94,7 @@ export const FASTE_TRENDS: FastTrend[] = [
   { trendId: 'covidEfter', uge: ugeFor(2020, 5) + 3, uger: 24 },
   { trendId: 'kryptoBoom', uge: ugeFor(2021, 0), uger: 52 },
   { trendId: 'streamere', uge: ugeFor(2021, 3), uger: 104 },
-  { trendId: 'sweepstakes', uge: ugeFor(2022, 0), uger: 182 },
+  { trendId: 'sweeps', uge: ugeFor(2022, 0), uger: 182 },
   { trendId: 'inflation', uge: ugeFor(2022, 3), uger: 78 },
   { trendId: 'kryptoKrak', uge: ugeFor(2022, 5), uger: 40 },
   { trendId: 'kryptoBoom', uge: ugeFor(2024, 3), uger: 60 },

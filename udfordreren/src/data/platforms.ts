@@ -24,3 +24,30 @@ export const PLATFORM_KINDS: { id: PlatformKind; navn: string }[] = [
   { id: 'sportsbook', navn: 'Sportsbook' },
   { id: 'kasinoplatform', navn: 'Kasinoplatform' },
 ];
+
+/** Migrering og drift [D] */
+export const MIGRERING = {
+  kvalitetUnder: 0.85, // kvalitet under migrering (andel)
+  nedbrudPrUge: 0.01, // risiko for nedbrud pr. uge under migrering
+  nedbrudKunder: -0.03,
+  startKvalitet: 0.8, // andel af loftet efter migrering; vokser mod loftet
+  vaekstPrUge: 0.25, // kvalitetspoint pr. uge mod loftet
+  afbrydRefusion: 0.5, // refusion af capex ved afbrudt migrering
+};
+
+/** Krav til modeller [D] */
+export const PLATFORM_KRAV: Record<'turnkey' | 'hybrid' | 'egen', { udviklere: number; flag?: Partial<Record<'sportsbook' | 'kontoplatform' | 'kasinoplatform', string>> }> = {
+  turnkey: { udviklere: 0, flag: { sportsbook: 'kombiB2B' } },
+  hybrid: { udviklere: 2 },
+  egen: { udviklere: 4 },
+};
+
+/** B2B-salg af egen platform (Kombi-vejen) [D] */
+export const B2B = {
+  minKvalitet: 70,
+  indtaegtPrKundePrUge: 0.03, // mio. kr. ved kvalitet 100
+  cooldownUger: 13,
+  maxKunder: 12,
+  licensGebyr: 0.5, // dk fra 2025 og fi fra 2028
+  salgsChance: 0.55, // pr. forsøg ved kvalitet 85 og omdømme 60
+};

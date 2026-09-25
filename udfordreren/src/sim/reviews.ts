@@ -77,6 +77,9 @@ export function anmelderQ(s: GameState, inp: ReviewInput): Record<string, number
   const type = PRODUCT_TYPES[inp.typeId];
   const fitQ = FIT_Q[fitFor(inp.typeId, inp.themeId)];
   const niveau = 0.01 * (s.niveauer.type[inp.typeId] - 1) + 0.008 * (s.niveauer.tema[inp.themeId] - 1);
+  // Platformen: en stærk egen platform løfter teknik og tryghed lidt (spec 6.12 kvalitetsloft)
+  const pk = (s.platforme.kontoplatform.kvalitet + s.platforme[type.vertikal === 'betting' ? 'sportsbook' : 'kasinoplatform'].kvalitet) / 2;
+  const platformBonus = 0.04 * ((pk - 50) / 50);
   const fejlStraf = Math.min(0.5, inp.fejl * 0.03);
   const fejlLet = Math.min(0.25, inp.fejl * 0.01);
   const efterfoelger = inp.tidligEfterfoelger ? 0.7 : 1;
@@ -85,8 +88,8 @@ export function anmelderQ(s: GameState, inp: ReviewInput): Record<string, number
   // Kombinationen (fit) påvirker alle anmeldere — Tilsynet kun halvt — så kombinationsbogen betyder noget
   const fitHalv = Math.sqrt(fitQ);
   const raa: Record<string, number> = {
-    branchebladet: (0.5 * q.teknik + 0.5 * q.originalitet) * fitQ * (1 - fejlLet) + niveau,
-    tilsynet: (0.7 * q.tryghed + 0.3 * q.teknik) * fitHalv * (1 - 0.06 * (inp.intensitet - 3)) * (1 - 0.025 * (type.risiko - 5)) - fejlStraf + niveau * 0.5,
+    branchebladet: (0.5 * q.teknik + 0.5 * q.originalitet) * fitQ * (1 - fejlLet) + niveau + platformBonus,
+    tilsynet: (0.7 * q.tryghed + 0.3 * q.teknik) * fitHalv * (1 - 0.06 * (inp.intensitet - 3)) * (1 - 0.025 * (type.risiko - 5)) - fejlStraf + niveau * 0.5 + platformBonus / 2,
     forbrugerposten: (0.5 * qAvg + 0.5 * q.tryghed) * fitQ * Math.pow(1 / marginRatio, 0.6) * (1 - fejlLet) + niveau * 0.5,
     spillerforum: (0.7 * q.spaending + 0.3 * q.originalitet) * fitQ * fitQ * (1 + 0.03 * (inp.intensitet - 3)) * (1 - fejlLet) + niveau,
   };

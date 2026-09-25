@@ -16,6 +16,7 @@ import { passiveEffekter } from './staff';
 import { markedTotalBsi } from './offshore';
 import { effektivBonus, effektivVip, regelEffekt } from './regulation';
 import { trendEffekt } from './trends';
+import { konkurrentMarketing, spillerCacTillaeg, sponsorRabat, featureFordel, r12Aktiv } from './reactions';
 
 export const VERTIKALER: Vertical[] = ['betting', 'kasino'];
 
@@ -88,8 +89,8 @@ export function kundeAndel(s: GameState, m: MarketId): number {
 export function konkurrentTryk(s: GameState, m: MarketId): number {
   const aktive = s.konkurrenter.filter((c) => c.tilstede && c.markeder.includes(m));
   if (aktive.length === 0) return 1;
-  const snit = aktive.reduce((a, c) => a + c.marketingMultiplikator, 0) / aktive.length;
-  return clamp(snit, 0.5, 3);
+  const snit = aktive.reduce((a, c) => a + konkurrentMarketing(s, c.id, m), 0) / aktive.length;
+  return clamp(snit, 0.5, 3) * (1 + spillerCacTillaeg(s, m));
 }
 
 /** Effektiv CAC for en kanal i et marked (kr.) */
@@ -108,7 +109,8 @@ export function effektivCac(s: GameState, kanal: AcqChannel, m: MarketId): numbe
       konkurrentTryk(s, m) *
       Math.max(0.5, 1 + eff.cac + passiv.cac) *
       (1 + regel.cac[kanal]) *
-      strenghedCac(s.markeder[m].strenghed)) /
+      strenghedCac(s.markeder[m].strenghed) *
+      (1 - (kanal === 'sponsorat' || kanal === 'tv' ? sponsorRabat(s, m) : sponsorRabat(s, m) / 3))) /
     effektivitet
   );
 }
@@ -138,7 +140,7 @@ export function kanalTilgang(s: GameState, m: MarketId, andelAfBudget: number): 
     const effSpend = spend / (1 + spend / CHANNELS[k].maetning);
     nye += (effSpend * 1e6) / cac;
   }
-  return nye * (1 + BONUS_TILGANG[effektivBonus(s, m)]);
+  return nye * (1 + BONUS_TILGANG[effektivBonus(s, m)]) * (1 + featureFordel(s));
 }
 
 /** Anmeldelsens vægt i lanceringsbølgen: stejl som salget i Game Dev Story (0,2 ved 0/40 … 2,5 ved 40/40) */
@@ -283,6 +285,8 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
         strenghedArpu(ms.strenghed, v) *
         (1 + (v === 'betting' ? passiv.bettingBsi : passiv.kasinoBsi)) *
         (1 + eff.arpu) *
+        (1 + featureFordel(s) / 2) *
+        (r12Aktiv(s) ? 0.97 : 1) *
         hold;
       const bsi = Math.max(0, bsiKr / 1e6);
       res.bsi[m][v] = bsi;

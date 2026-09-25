@@ -42,3 +42,14 @@
 - En aggressiv spiller (bonus + VIP + antal aggressive kanaler ≥ 4) hæver presset 0,25 pr. kvartal i sine markeder; presset falder ellers 0,1 pr. kvartal mod 1. R8 formaliseres i fase 4.
 - Konkurrenter vælger marked efter markedsstørrelse og hvor få produkter de har der; lanceringsfrekvensen skalerer med √(antal markeder).
 - Når et marked åbner, går tilstedeværende konkurrenter ind med ét produkt pr. vertikal (R4's marketingboost kommer i fase 4).
+- Grep-reglen (spec 12) er ufravigelig, så identifikatorer der indeholder forbudte ord omdøbes: WorldScenario 'pmRevolution' → 'pmOmvaeltning' (indeholder "evolution"), "sweepstakes" → "sweeps" (indeholder "stake").
+- Reaktionsreglerne R1-R12 er aktive effekter med udløb (`game.reaktioner`): marketing-multiplikator pr. konkurrent og marked, CAC-tillæg for spilleren, midlertidig aggressivitet. Tærsklerne står i `src/data/reactionRules.ts`.
+- R3: en ny feature giver +4 % (maks. 15 % i alt) på spillerens kundetilgang; op til 3 konkurrenter i samme markeder kopierer den efter arketypens tid, og fordelen halveres ved hver kopi.
+- R2: bud kommer med 20 % pr. kvartal ved andel > 8 % og hybrid/egen platform; buddet udløber efter 8 uger, og afslag (eller udløb) giver byderen +1 aggressivitet i 2 år.
+- R7: sponsorater auktioneres 6 uger før start; appFirst byder 1,1-1,6× mindstebud × 1,15. Vundet sponsorat giver 30 % CAC-rabat på sponsoratkanalen i markedet og koster buddet pr. år.
+- R8: aggressionsindeks = effektiv bonus + effektiv VIP + aggressive kanaler + høj intensitet; ≥ 5 i 2 kvartaler giver påbud (−6 tillid); hvert tredje påbud strammer reglerne for hele branchen og koster omdømme −3.
+- Platformmigrering: kvaliteten er 85 % under migrering, 1 % nedbrudsrisiko pr. uge (−3 % kunder); afbrydes den, kommer halvdelen af capex retur. Efter en opgradering starter kvaliteten på 80 % af loftet og vokser 0,25 point pr. uge.
+- Platformkvalitet giver op til ±4 % på Branchebladets anmeldelsesgrundlag (halvt hos Tilsynet); revenue share er halvt kontoplatform, halvt produktplatform.
+- B2B-salg (egen platform, kvalitet ≥ 70): ét salgsforsøg pr. kvartal pr. platform, maks. 12 kunder à 0,03 mio./uge ved kvalitet 100; B2B-licens på 0,5 mio. i dk fra 2025 og fi fra 2028.
+- Spilleren kan købe mindre konkurrenter (ikke giganter, statsselskaber eller styrke > 3,5) for 3× årlig BSI; 80 % af kunderne, produkterne og licenserne følger med.
+- Historiske konkurrenttiltag (7.5) aflyses pænt med en nyhed, hvis spilleren ejer målet eller en forudsat aktør ikke findes.
