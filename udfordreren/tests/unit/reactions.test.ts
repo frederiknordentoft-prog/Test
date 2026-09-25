@@ -398,3 +398,16 @@ describe('Opkøb af konkurrenter', () => {
     expect(act(s, { t: 'acquire', competitorId: 'danskeLykke' })).toBe(false);
   });
 });
+
+describe('Signaler i fase 4', () => {
+  it('opkøbstilbud, sponsorauktion, bonuskrig og påbud pauser; kopiering og markedsindtog gør ikke', async () => {
+    const { pauserFor } = await import('../../src/sim/signals');
+    expect(pauserFor({ k: 'tilbud', competitorId: 'betssen', pris: 10 })).toBe(true);
+    expect(pauserFor({ k: 'sponsorAuktion', navn: 'Superligaen', marked: 'dk' })).toBe(true);
+    expect(pauserFor({ k: 'reaktion', regel: 'R1', tekst: '' })).toBe(true);
+    expect(pauserFor({ k: 'reaktion', regel: 'R8', tekst: '' })).toBe(true);
+    expect(pauserFor({ k: 'reaktion', regel: 'R3', tekst: '' })).toBe(false);
+    expect(pauserFor({ k: 'reaktion', regel: 'R9', tekst: '' })).toBe(false);
+    expect(pauserFor({ k: 'konkurrentNyhed', tekst: '' })).toBe(false);
+  });
+});

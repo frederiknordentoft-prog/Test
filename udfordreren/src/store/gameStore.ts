@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import type { Action, GameState, NewGameOptions, Signal } from '../sim/types';
 import { newGame } from '../sim/init';
 import { applyAction, step, stepMut } from '../sim/step';
-import { pauserFor, pauseTekst } from '../sim/signals';
+import { pauserFor, pauseTekst, reaktionSomDialog } from '../sim/signals';
 import { AI_AKT_UGE, aarFor, ugeIAar } from '../sim/time';
 import { autoloesEvents } from '../sim/events';
 import { spillerKunderTotal } from '../sim/customers';
@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /** Signaler, der åbner en dialog (spillet står stille, indtil den lukkes) */
-export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor', 'markedAabner', 'regel', 'sanktion'];
+export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor', 'markedAabner', 'regel', 'sanktion', 'tilbud', 'sponsorAuktion', 'reaktion'];
 
 /** Dialoger med en afsløring (scoren tælles op, kuverterne åbnes): HUD'en fryses, til de er lukket */
 const AFSLOERING: Signal['k'][] = ['anmeldelse', 'galla'];
@@ -110,6 +110,11 @@ function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
     case 'licens': return { tekst: 'Licens godkendt!', kind: 'godt' };
     case 'klar': return { tekst: 'Et produkt er klar til lancering', kind: 'info' };
     case 'trend': return { tekst: sig.titel, kind: 'info' };
+    case 'reaktion': return reaktionSomDialog(sig.regel) ? null : { tekst: sig.tekst, kind: sig.regel === 'R9' || sig.regel === 'R10' ? 'skidt' : 'info' };
+    case 'sponsorResultat': return { tekst: sig.spillerVandt ? `I vandt sponsoratet af ${sig.navn}!` : `${sig.vinder} vandt sponsoratet af ${sig.navn}.`, kind: sig.spillerVandt ? 'godt' : 'info' };
+    case 'platform': return sig.faerdig ? { tekst: 'Platformmigreringen er færdig!', kind: 'godt' } : null;
+    case 'opkoeb': return { tekst: 'Opkøbet er gennemført!', kind: 'godt' };
+    case 'konkurrentNyhed': return { tekst: sig.tekst, kind: 'info' };
     default: return null;
   }
 }
@@ -132,6 +137,7 @@ export const useGame = create<GameStore>((set, get) => {
       if (DIALOG_SIGNALER.includes(s.k)) {
         if (s.k === 'messe' && s.stoerrelse === 0) continue;
         // Top 10: fejr første gang nogensinde og nye top 3-placeringer; ellers en toast
+        if (s.k === 'reaktion' && !reaktionSomDialog(s.regel)) continue;
         if (s.k === 'top10' && !s.foersteGang && s.placering > 3) {
           toasts.push({ id: naesteId++, tekst: `Ind på Top 10 som nr. ${s.placering}!`, kind: 'godt' });
           continue;

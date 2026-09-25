@@ -1,5 +1,5 @@
 // Hvilke signaler auto-pauser spillet (spec 4: events, faseskift, lancering, anmeldelse,
-// ledige medarbejdere, messe, gala, kvartalsmøde og markedsåbning).
+// ledige medarbejdere, messe, gala, kvartalsmøde, markedsåbning, opkøbstilbud, sponsorauktion og reaktioner).
 import type { Signal } from './types';
 
 export function pauserFor(sig: Signal): boolean {
@@ -29,9 +29,20 @@ export function pauserFor(sig: Signal): boolean {
       return true;
     case 'messe':
       return sig.stoerrelse > 0;
+    case 'tilbud':
+    case 'sponsorAuktion':
+      return true;
+    case 'reaktion':
+      // Kun reaktioner, der rammer spilleren direkte (bonuskrig og påbud); resten er nyheder og toasts
+      return reaktionSomDialog(sig.regel);
     default:
       return false;
   }
+}
+
+/** Reaktioner, der får en dialog (resten vises som toast og i nyhederne) */
+export function reaktionSomDialog(regel: string): boolean {
+  return regel === 'R1' || regel === 'R8';
 }
 
 export function pauseTekst(sig: Signal): string | null {
@@ -53,6 +64,9 @@ export function pauseTekst(sig: Signal): string | null {
     case 'markedAabner': return 'Markedsåbning';
     case 'regel': return sig.varsel ? 'Ny regel på vej' : 'Ny regel';
     case 'sanktion': return 'Sanktion';
+    case 'tilbud': return 'Opkøbstilbud';
+    case 'sponsorAuktion': return 'Sponsorauktion';
+    case 'reaktion': return sig.regel === 'R1' ? 'Bonuskrig' : 'Påbud';
     default: return null;
   }
 }
