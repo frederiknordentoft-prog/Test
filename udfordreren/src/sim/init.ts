@@ -16,6 +16,7 @@ import { startMaal } from './investors';
 import { tomtRegnskab } from './economy';
 import { nyhed } from './util';
 import { tomReaktionsTaeller } from './reactions';
+import { initBy } from './town';
 
 const platform = (kind: Platform['kind']): Platform => ({
   kind,
@@ -70,7 +71,20 @@ export function newGame(opts: NewGameOptions): GameState {
     kontraktopgaver: [],
     verdensscenarier: {},
     aiScenarier: {},
-    by: [],
+    by: initBy(),
+    verdensVurderinger: {},
+    verdensHaendelser: [],
+    byHistorier: [],
+    byTaeller: 0,
+    hyperpersonalisering: { aktiv: false, startUge: null, foersteUge: null },
+    boerslicens: { status: 'ingen', klarUge: null },
+    transformation: [],
+    aiUheld: 0,
+    eftermaeleAkk: { tillidSum: 0, tillidUger: 0, risikoSum: 0, risikoProever: 0, maxSanktion: 0, dkTabt: false },
+    tidslinje: [{ uge: 0, tekst: `${opts.firmaNavn} starter i en garage.`, kind: 'firma' }],
+    byAarlig: [],
+    arkiv: ['a1'],
+    mode: 'normal',
     galla: [],
     kvartalsmaal: [],
     nyheder: [],

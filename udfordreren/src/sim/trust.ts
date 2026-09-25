@@ -7,6 +7,10 @@ import type { Rng } from './rng';
 import { MARKETS } from '../data/markets';
 import { forskningsEffekt } from './insight';
 import { passiveEffekter } from './staff';
+import { byTillid, risikoAndel } from './town';
+import { agentEffekt } from './agents';
+import { regelEffekt } from './regulation';
+import { AI_EFFEKT } from '../data/ai';
 
 export type TillidsPost = { tekst: string; vaerdi: number };
 
@@ -25,6 +29,16 @@ export function tillidsPoster(s: GameState, m: MarketId): TillidsPost[] {
   const eff = forskningsEffekt(s);
   if (eff.ansvarNoder > 0) poster.push({ tekst: 'Ansvarsforskning', vaerdi: Math.min(2, eff.tillid) });
   if (s.offshoreBrand) poster.push({ tekst: 'Offshore-brand', vaerdi: TRUST.offshoreBrand });
+  // Spillerbyen: kunder i risiko og problem (spec 7.12)
+  const by = byTillid(s, m);
+  if (by < 0) poster.push({ tekst: `Kunder i risiko eller problem (${Math.round((risikoAndel(s, m) ?? 0) * 100)} %)`, vaerdi: Math.round(by * 10) / 10 });
+  // AI-akten
+  if (s.agenter.length) {
+    const ae = agentEffekt(s);
+    if (ae.risikoOk) poster.push({ tekst: 'AI-risikodetektion med overvågning', vaerdi: TRUST.aiRisikoMedOvervaagning });
+    if (ae.tillidPrKvartal > 0) poster.push({ tekst: 'Compliance-agenter', vaerdi: Math.round(ae.tillidPrKvartal * 10) / 10 });
+  }
+  if (regelEffekt(s, m).kraeverRisikoAgent && !agentEffekt(s).risikoOk) poster.push({ tekst: 'AI-risikokrav ikke opfyldt', vaerdi: AI_EFFEKT.ansvarligAiTillid });
   const sum = poster.reduce((a, p) => a + p.vaerdi, 0);
   // Langsom tilbagevenden mod startniveau, når intet andet trækker
   if (sum === 0 && ms.tilsynstillid !== TRUST.start) {

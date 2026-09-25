@@ -13,10 +13,12 @@ import { aarDecimal, aarFor, kurve } from './time';
 import { clamp } from './util';
 import { forskningsEffekt } from './insight';
 import { passiveEffekter } from './staff';
-import { markedTotalBsi } from './offshore';
+import { markedStoerrelse, markedTotalBsi } from './offshore';
 import { effektivBonus, effektivVip, regelEffekt } from './regulation';
 import { trendEffekt } from './trends';
 import { konkurrentMarketing, spillerCacTillaeg, sponsorRabat, featureFordel, r12Aktiv } from './reactions';
+import { aiMarkedsEffekt } from './world';
+import { byArpuFaktor } from './town';
 
 export const VERTIKALER: Vertical[] = ['betting', 'kasino'];
 
@@ -39,7 +41,7 @@ export const strenghedArpu = (streng: number, v: Vertical): number => 1 - 0.03 *
 
 /** Antal aktive online-kunder i markedet (licenseret + offshore) */
 export function markedsKunder(s: GameState, m: MarketId, v: Vertical): number {
-  const bsiAar = markedsBsiBasis(m, v, s.uge) * 52 * 1e6; // kr.
+  const bsiAar = markedStoerrelse(s, m, v) * 52 * 1e6; // kr.
   const arpu = MARKETS[m].arpu[v];
   return arpu > 0 ? bsiAar / arpu : 0;
 }
@@ -225,7 +227,8 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
     const ms = s.markeder[m];
     res.bsi[m] = { betting: 0, kasino: 0 };
     const andelBudget = vaegte[mi] / vaegtSum;
-    const betalteNye = kanalTilgang(s, m, andelBudget);
+    const ai = aiMarkedsEffekt(s, m);
+    const betalteNye = kanalTilgang(s, m, andelBudget) * (1 + ai.tilgang);
     const styrke: Record<Vertical, number> = {
       betting: ms.vertikaler.betting.status === 'aktiv' ? portefoeljeStyrke(s, m, 'betting') : 0,
       kasino: ms.vertikaler.kasino.status === 'aktiv' ? portefoeljeStyrke(s, m, 'kasino') : 0,
@@ -266,6 +269,7 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
         (1 - crmReduktion) *
         (1 + BONUS_CHURN[effektivBonus(s, m)]) *
         Math.max(0.5, 1 + eff.churn + passiv.churn) *
+        Math.max(0.5, 1 + ai.churn) *
         (1 + Math.min(0.5, fejlSnit * 0.02));
       C = C + basisTilgang + boelger.reduce((a, b) => a + b, 0) - C * clamp(churnRate, 0.002, 0.5);
       C = clamp(C, 0, N[v] * BALANCE.maksAndel);
@@ -287,6 +291,8 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
         (1 + eff.arpu) *
         (1 + featureFordel(s) / 2) *
         (r12Aktiv(s) ? 0.97 : 1) *
+        Math.max(0.4, 1 + (v === 'betting' ? ai.bettingArpu : ai.kasinoArpu)) *
+        byArpuFaktor(s, m) *
         hold;
       const bsi = Math.max(0, bsiKr / 1e6);
       res.bsi[m][v] = bsi;

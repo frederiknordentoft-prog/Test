@@ -78,4 +78,15 @@ describe('Save/load', () => {
     expect(validerSave(null)).toBeNull();
     expect(validerSave({ version: 2, uge: 'x' })).toBeNull();
   });
+  it('saves fra ældre builds får de nye felter udfyldt', () => {
+    const s = spil(3, 30) as unknown as Record<string, unknown>;
+    const gammel = structuredClone(s);
+    for (const k of ['by', 'verdensHaendelser', 'hyperpersonalisering', 'boerslicens', 'reaktioner', 'sponsorater']) delete gammel[k];
+    delete (gammel.markeder as Record<string, Record<string, unknown>>).dk.sanktion;
+    const g = validerSave(gammel);
+    expect(g).not.toBeNull();
+    expect(g!.by.length).toBe(200);
+    expect(g!.hyperpersonalisering.aktiv).toBe(false);
+    expect(g!.markeder.dk.sanktion.trin).toBe(0);
+  });
 });

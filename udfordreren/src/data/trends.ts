@@ -55,6 +55,14 @@ export const TRENDS: Record<string, TrendDef> = {
     id: 'sweeps', titel: 'Sweeps-boom', tekst: 'Sweeps-kasinoer udnytter et hul i lovgivningen.', markeder: ['us'],
     effekt: { offshorePp: 8 }, kilde: '[F-mønster] 2022-25',
   },
+  afgiftsvinter: {
+    id: 'afgiftsvinter', titel: 'Afgiftsvinteren', tekst: 'Højere afgifter over hele Europa sender spillere offshore.', markeder: ['dk', 'uk', 'se', 'de', 'nl', 'fi'],
+    effekt: { offshorePp: 3, afgiftRisiko: 0.2 }, kilde: '[D] spec 7.14: kanalisering −3 til −8 pp',
+  },
+  agentBoelge: {
+    id: 'agentBoelge', titel: 'Kundernes AI-agenter', tekst: 'Kunderne lader deres egne AI-agenter finde de bedste odds og bonusser.', markeder: 'alle',
+    effekt: { marketingRoi: -0.05 }, kilde: '[D] spec 6.16',
+  },
   predictionMarkets: {
     id: 'predictionMarkets', titel: 'Prediction markets', tekst: 'Event-kontrakter på sport tager omsætning fra sportsbetting.', markeder: ['us'],
     effekt: { bettingBsi: -0.08 }, kilde: '[F] $44-50 mia. i volumen i 2025; [D] −5 til −15 %',

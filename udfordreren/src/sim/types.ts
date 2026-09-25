@@ -241,13 +241,17 @@ export type Platform = {
   sidsteB2bUge: Week | null; // +
 };
 
+export type AgentFunktion = 'trading' | 'indhold' | 'kundeservice' | 'crm' | 'risiko' | 'compliance' | 'udvikling';
 export type AiAgent = {
   id: string;
-  funktion: 'trading' | 'indhold' | 'kundeservice' | 'crm' | 'risiko' | 'compliance' | 'udvikling';
+  funktion: AgentFunktion;
   kapacitet: number;
   computePrUge: MioKr;
   fejlrate: number;
   overvaagning: number;
+  navn?: string; // + visningsnavn (fx "Agent Tre")
+  startUge?: Week; // +
+  uheld?: number; // + antal AI-uheld
 };
 
 export type TownProfile = 'rekreativ' | 'engageret' | 'vip' | 'risiko' | 'problem' | 'churnet';
@@ -262,6 +266,13 @@ export type TownPerson = {
 };
 
 export type WorldScenario = 'afgiftsvinter' | 'kanaliseringensTilbagetog' | 'pmOmvaeltning' | 'denHaardeHaand';
+/** Øvrige vurderinger i verdensbilledet 2026 (spec 7.14) */
+export type WorldAssessment = 'norgeAabner' | 'euHarmonisering' | 'sverigeSaenker';
+export type AiScenarieId = 'agentOekonomi' | 'aiTrading' | 'aiIndhold' | 'hyperpersonalisering' | 'ansvarligAi' | 'predictionMarkets' | 'aiNative';
+/** Planlagt verdenshændelse (fra scenarier og vurderinger) */
+export type VerdensHaendelse = { id: string; uge: Week; udfoert: boolean };
+export type TidslinjePunkt = { uge: Week; tekst: string; kind: 'produkt' | 'marked' | 'firma' | 'pris' | 'ai' | 'verden' | 'krise' };
+export type ByHistorie = { uge: Week; tekst: string; profil: TownProfile; marked: MarketId };
 
 export type OfficeTier = 'garage' | 'kaelder' | 'kontor' | 'etage' | 'hovedkontor';
 
@@ -338,6 +349,7 @@ export type LedgerWeek = {
   marketing: MioKr;
   loen: MioKr;
   licenser: MioKr;
+  compute?: MioKr; // + AI-agenternes compute (fra 2026)
   oevrigt: MioKr;
   resultat: MioKr;
 };
@@ -395,7 +407,14 @@ export type Signal =
   | { k: 'sponsorResultat'; navn: string; marked: MarketId; vinder: string; spillerVandt: boolean }
   | { k: 'platform'; kind: PlatformKind; model: PlatformModel; faerdig: boolean }
   | { k: 'opkoeb'; competitorId: string; pris: MioKr }
-  | { k: 'konkurrentNyhed'; tekst: string; arkivId?: string };
+  | { k: 'konkurrentNyhed'; tekst: string; arkivId?: string }
+  // + fase 5
+  | { k: 'aktSkift'; scenarier: WorldScenario[]; vurderinger: WorldAssessment[] }
+  | { k: 'verdensNyhed'; id: string; titel: string; tekst: string }
+  | { k: 'agent'; agentId: string; funktion: AgentFunktion; handling: 'ny' | 'pensioneret' }
+  | { k: 'byhistorie'; tekst: string; profil: TownProfile }
+  | { k: 'aiScenarie'; id: AiScenarieId; titel: string }
+  | { k: 'transformation'; erstattet: number };
 
 export type GameState = {
   version: 2;
@@ -439,6 +458,21 @@ export type GameState = {
   verdensscenarier: Partial<Record<WorldScenario, number>>;
   aiScenarier: Record<string, number>;
   by: TownPerson[];
+  // + fase 5: spillerbyen og AI-akten
+  verdensVurderinger: Partial<Record<WorldAssessment, number>>; // uge for udfaldet
+  verdensHaendelser: VerdensHaendelse[];
+  byHistorier: ByHistorie[]; // seneste 12
+  byTaeller: number; // id-tæller for nye bypersoner
+  hyperpersonalisering: { aktiv: boolean; startUge: Week | null; foersteUge: Week | null };
+  boerslicens: { status: 'ingen' | 'ansoegt' | 'aktiv'; klarUge: Week | null };
+  transformation: { uge: Week; erstattet: number }[];
+  aiUheld: number;
+  // + fase 6: slutninger, eftermæle og Arkivet
+  eftermaeleAkk: { tillidSum: number; tillidUger: number; risikoSum: number; risikoProever: number; maxSanktion: number; dkTabt: boolean };
+  tidslinje: TidslinjePunkt[];
+  byAarlig: { aar: number; rekreativ: number; engageret: number; vip: number; risiko: number; problem: number }[];
+  arkiv: string[]; // ulåste arkivopslag
+  mode: 'normal' | 'usa2018' | 'aiNative2026';
   galla: GalaResult[];
   kvartalsmaal: QuarterGoal[];
   nyheder: NewsItem[];
@@ -462,7 +496,7 @@ export type GameState = {
   b2bIndtaegtPrUge: MioKr;
   historiskeRegler: string[]; // + id'er på historiske regler, der er annonceret eller trådt i kraft
   offshoreBrandStartUge: Week | null; // + fase 3
-  slut: { id: string; vaerdi: MioKr; eftermaele: number } | null;
+  slut: { id: string; vaerdi: MioKr; eftermaele: number; stifterVaerdi?: MioKr; uge?: Week } | null;
   // +
   kontraktTilbud: ContractOffer[];
   messeBookinger: ExpoBooking[];
@@ -531,7 +565,12 @@ export type Action =
   | { t: 'setMentor'; status: 'aktiv' | 'sprunget' | 'faerdig' }
   | { t: 'setOffshoreBrand'; aktiv: boolean }
   | { t: 'afvisTilbud' }
-  | { t: 'bydSponsorat'; bud: MioKr };
+  | { t: 'bydSponsorat'; bud: MioKr }
+  // + fase 5
+  | { t: 'setOvervaagning'; agentId: string; overvaagning: number }
+  | { t: 'setHyperpersonalisering'; aktiv: boolean }
+  | { t: 'aiTransformation'; andel: number }
+  | { t: 'applyBoersLicens' };
 
 export type NewGameOptions = {
   seed: number;
@@ -539,4 +578,14 @@ export type NewGameOptions = {
   stiftere: [string, string]; // founder-id'er
   startVertikal: Vertical;
   tutorial: boolean;
+  /** New Game+ (spec 6.17): startmode og arv fra tidligere spil */
+  mode?: 'normal' | 'usa2018' | 'aiNative2026';
+  arv?: NewGamePlusArv;
+};
+
+/** Det, der bevares i New Game+: kombinationsbogen og niveauerne */
+export type NewGamePlusArv = {
+  kombinationsbog: Record<string, { set: boolean; bedste40: number }>;
+  niveauer: { type: Record<ProductTypeId, number>; tema: Record<ThemeId, number> };
+  niveauXp: { type: Record<ProductTypeId, number>; tema: Record<ThemeId, number> };
 };

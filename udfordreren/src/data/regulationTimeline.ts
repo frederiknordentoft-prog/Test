@@ -123,6 +123,27 @@ export const REGLER: Record<string, RegelDef> = {
     beskrivelse: 'Operatører skal bruge AI-baseret risikodetektion.',
     effekt: { kraeverRisikoAgent: true },
   },
+  // --- Verdensscenarier (fase 5, spec 7.14) ---
+  reklameforbud: {
+    id: 'reklameforbud', navn: 'Totalt reklameforbud', kilde: '[D] spec 7.14: Den hårde hånd',
+    beskrivelse: 'Al spilreklame forbydes: tv, sponsorater, sociale medier og streamere.',
+    effekt: { lukKanal: ['tv', 'sponsorat', 'sociale', 'streamere'], cac: { affiliate: 0.3 }, marketingEffekt: -0.15 },
+  },
+  afgiftsdifferentiering: {
+    id: 'afgiftsdifferentiering', navn: 'Differentieret afgift', kilde: '[D] spec 7.14: Kanaliseringens tilbagetog',
+    beskrivelse: 'Lavere afgift på betting end på kasino for at trække spillerne hjem.',
+    effekt: { afgiftPp: -3, offshorePp: -1 },
+  },
+  afgiftssaenkning: {
+    id: 'afgiftssaenkning', navn: 'Afgiftssænkning', kilde: '[D] spec 7.14: Sverige efter valget',
+    beskrivelse: 'Spilafgiften sænkes efter valget.',
+    effekt: { afgiftPp: -4, offshorePp: -1 },
+  },
+  euHarmonisering: {
+    id: 'euHarmonisering', navn: 'EU-harmonisering', kilde: '[D] spec 7.14',
+    beskrivelse: 'Fælles europæiske regler for bonus, reklame og KYC.',
+    effekt: { bonusMax: 2, cac: { affiliate: 0.1, streamere: 0.2 }, offshorePp: -2 },
+  },
   // --- R11 ---
   dnsBlokering: {
     id: 'dnsBlokering', navn: 'DNS-blokering', kilde: '[D] R11',

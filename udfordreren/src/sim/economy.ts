@@ -12,15 +12,20 @@ import { OFFSHORE_BRAND } from '../data/offshore';
 import { revenueShare } from './platforms';
 import { sponsorOmkostningPrUge } from './reactions';
 import { nyhed, signal } from './util';
+import { agentEffekt } from './agents';
+import { afslut } from './endings';
+import { BOERSLICENS } from '../data/ai';
 
 export const tomtRegnskab = (): LedgerWeek => ({
   bsi: 0, kontrakter: 0, afgift: 0, revenueShare: 0, betalinger: 0, bonus: 0, indhold: 0,
-  marketing: 0, loen: 0, licenser: 0, oevrigt: 0, resultat: 0,
+  marketing: 0, loen: 0, licenser: 0, compute: 0, oevrigt: 0, resultat: 0,
 });
 
 /** Effektiv afgiftssats af BSI (indsatsmodel for de: 5,3 % af indsats ≈ sats / margin) */
 export function effektivAfgift(s: GameState, m: MarketId, v: 'betting' | 'kasino', margin: number): number {
   const ms = s.markeder[m];
+  // Børslicens i USA: føderal regulering uden delstatsafgifter (prediction market-omvæltningen)
+  if (m === 'us' && v === 'betting' && s.boerslicens?.status === 'aktiv') return BOERSLICENS.afgift;
   const sats = ms.afgiftPrVertikal[v] + ms.afgiftTillaeg / 100;
   if (m === 'de') return Math.min(0.9, sats / Math.max(0.01, margin));
   return Math.max(0, sats);
@@ -53,13 +58,15 @@ export function ugentligOekonomi(s: GameState, kunder: KundeUge, kontraktIndtaeg
   // Offshore-brandets grå BSI: licens, betalinger og hosting uden dansk afgift
   const offshoreOmk = offshoreBsi * OFFSHORE_BRAND.omkostning;
   r.betalinger += offshoreOmk;
-  r.indhold = Math.max(0, kasinoBsi - egneSlotsBsi) * AGGREGATOR_PCT;
+  const ae = agentEffekt(s);
+  r.indhold = Math.max(0, kasinoBsi - egneSlotsBsi) * Math.max(0.02, AGGREGATOR_PCT - ae.indholdPct);
   for (const k of CHANNEL_IDS) if (kanalTilgaengelig(s, k)) r.marketing += s.marketingMix[k] ?? 0;
-  r.loen = s.staff.reduce((a, m) => a + m.loenPrUge, 0);
+  r.loen = s.staff.reduce((a, m) => a + m.loenPrUge, 0) + ae.overvaagningLoen;
+  r.compute = ae.compute;
   r.marketing += sponsorOmkostningPrUge(s);
   r.licenser = licensAarsgebyr(s);
   const husleje = OFFICE_BY_ID[s.kontor].husleje + (spillerKunderTotal(s) * BALANCE.driftPrKunde) / 1e6;
-  const drift = r.afgift + r.revenueShare + r.betalinger + r.bonus + r.indhold + r.marketing + r.loen + r.licenser + husleje;
+  const drift = r.afgift + r.revenueShare + r.betalinger + r.bonus + r.indhold + r.marketing + r.loen + r.licenser + (r.compute ?? 0) + husleje;
   const driftsresultat = r.bsi + r.kontrakter - drift;
   s.kapital += driftsresultat;
   r.oevrigt = s.engangsUge + husleje;
@@ -80,10 +87,7 @@ export function ugentligOekonomi(s: GameState, kunder: KundeUge, kontraktIndtaeg
       signal(s, { k: 'advarsel', tekst: 'Kassen er tom! Skaf penge inden for otte uger — kontraktopgaver, en runde eller lavere omkostninger.' });
       nyhed(s, `${s.firmaNavn} er i minus. Banken ringer.`, 'firma');
     }
-    if (s.negativUger >= KONKURS_UGER && !s.slut) {
-      s.slut = { id: 'konkurs', vaerdi: 0, eftermaele: 0 };
-      signal(s, { k: 'slut', id: 'konkurs' });
-    }
+    if (s.negativUger >= KONKURS_UGER && !s.slut) afslut(s, 'konkurs');
   } else {
     s.negativUger = 0;
   }

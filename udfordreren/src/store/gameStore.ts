@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /** Signaler, der åbner en dialog (spillet står stille, indtil den lukkes) */
-export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor', 'markedAabner', 'regel', 'sanktion', 'tilbud', 'sponsorAuktion', 'reaktion'];
+export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor', 'markedAabner', 'regel', 'sanktion', 'tilbud', 'sponsorAuktion', 'reaktion', 'aktSkift', 'verdensNyhed'];
 
 /** Dialoger med en afsløring (scoren tælles op, kuverterne åbnes): HUD'en fryses, til de er lukket */
 const AFSLOERING: Signal['k'][] = ['anmeldelse', 'galla'];
@@ -115,6 +115,10 @@ function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
     case 'platform': return sig.faerdig ? { tekst: 'Platformmigreringen er færdig!', kind: 'godt' } : null;
     case 'opkoeb': return { tekst: 'Opkøbet er gennemført!', kind: 'godt' };
     case 'konkurrentNyhed': return { tekst: sig.tekst, kind: 'info' };
+    case 'agent': return sig.handling === 'ny' ? { tekst: 'En ny AI-agent er i drift.', kind: 'godt' } : null;
+    case 'byhistorie': return { tekst: sig.tekst, kind: sig.profil === 'problem' || sig.profil === 'risiko' ? 'skidt' : 'info' };
+    case 'aiScenarie': return { tekst: `${sig.titel} tager fart.`, kind: 'info' };
+    case 'transformation': return { tekst: `${sig.erstattet} stillinger er overtaget af agenter.`, kind: 'info' };
     default: return null;
   }
 }

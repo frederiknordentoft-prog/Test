@@ -11,7 +11,7 @@ import { afvis, betal, clamp, nyhed, saetFlag, signal } from './util';
 import { trendEffekt } from './trends';
 import { inddragLicens } from './trust';
 
-const DYNAMISKE = new Set([...DYNAMISK_PULJE.map((d) => d.regelId), 'dnsBlokering', 'betalingsblokering', 'lempelse']);
+const DYNAMISKE = new Set([...DYNAMISK_PULJE.map((d) => d.regelId), 'dnsBlokering', 'betalingsblokering', 'lempelse', 'reklameforbud', 'afgiftsdifferentiering', 'afgiftssaenkning', 'euHarmonisering']);
 
 export function erDynamiskRegel(id: string): boolean {
   return DYNAMISKE.has(id);
@@ -99,6 +99,41 @@ export function markedTotalBsi(m: MarketId, v: Vertical, uge: number): number {
   return licenseret / (1 - ref);
 }
 
+// ---------- Verdensscenarier: markedsstørrelse og Norges åbning (fase 5) ----------
+
+const NORDISKE: MarketId[] = ['dk', 'se', 'fi'];
+
+/** Faktor på markedets samlede BSI: legale markeder vokser 6,5 %/år under kanaliseringens tilbagetog; Norden −13 % under den hårde hånd */
+export function scenarieMarkedsFaktor(s: GameState, m: MarketId, uge = s.uge): number {
+  let f = 1;
+  const tilbagetog = (s.verdensscenarier.kanaliseringensTilbagetog ?? 0) > 0;
+  const fra = 780; // uge 0 i 2027
+  if (tilbagetog && m !== 'no' && uge > fra) f *= Math.pow(1.065, (uge - fra) / 52);
+  if (s.flags.includes('haardHaand') && NORDISKE.includes(m)) f *= 0.87;
+  return f;
+}
+
+/** Norge åbner kun i scenariet "Norge åbner" (25 %) */
+export function norgeAaben(s: GameState, uge = s.uge): boolean {
+  const u = s.verdensVurderinger?.norgeAabner;
+  return u !== undefined && uge >= u;
+}
+
+/** Norge efter åbningen: offshore-andelen falder fra 100 % til ca. 35 % over to år */
+export function norgeOffshore(s: GameState): number {
+  const u = s.verdensVurderinger.norgeAabner ?? s.uge;
+  return 1 - 0.65 * clamp((s.uge - u) / 104, 0, 1);
+}
+
+/** Markedets samlede online-BSI pr. uge i denne verden (før trends og hold) */
+export function markedStoerrelse(s: GameState, m: MarketId, v: Vertical): number {
+  if (m === 'no') {
+    const g = GRAA_MARKED.no;
+    return norgeAaben(s) && g ? (kurve(g[v], aarDecimal(s.uge)) * 1000) / 52 : 0;
+  }
+  return markedTotalBsi(m, v, s.uge) * scenarieMarkedsFaktor(s, m);
+}
+
 // ---------- Offshore-fristelsen (spec 6.10) ----------
 
 export function setOffshoreBrand(s: GameState, aktiv: boolean): boolean {
@@ -134,8 +169,10 @@ export function ugentligtOffshoreBrand(s: GameState, rng: Rng): number {
     const graa = GRAA_MARKED[m];
     if (graa) {
       const aar = aarDecimal(s.uge);
-      if (harKasino) b += ((kurve(graa.kasino, aar) * 1000) / 52) * OFFSHORE_BRAND.andelGraa * (0.5 + kvalitet);
-      if (harBetting) b += ((kurve(graa.betting, aar) * 1000) / 52) * OFFSHORE_BRAND.andelGraa * (0.5 + kvalitet);
+      // Når Norge åbner, skrumper det grå marked med offshore-andelen
+      const rest = m === 'no' && norgeAaben(s) ? norgeOffshore(s) : 1;
+      if (harKasino) b += ((kurve(graa.kasino, aar) * 1000) / 52) * OFFSHORE_BRAND.andelGraa * (0.5 + kvalitet) * rest;
+      if (harBetting) b += ((kurve(graa.betting, aar) * 1000) / 52) * OFFSHORE_BRAND.andelGraa * (0.5 + kvalitet) * rest;
     } else if (ms.aaben) {
       if (harKasino) b += ms.markedsBsiPrUge.kasino * ms.offshore.kasino * OFFSHORE_BRAND.andel * (0.5 + kvalitet);
       if (harBetting) b += ms.markedsBsiPrUge.betting * ms.offshore.betting * OFFSHORE_BRAND.andel * (0.5 + kvalitet);

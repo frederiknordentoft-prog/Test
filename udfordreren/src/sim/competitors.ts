@@ -301,6 +301,17 @@ export function ugentligeKonkurrenter(s: GameState, rng: Rng): void {
     p.nyeSpillerePrUge = {};
   }
 
+  // Indeks over aktive konkurrentprodukter pr. ejer (hurtigere end at filtrere hele listen pr. marked og vertikal)
+  const aktivePrEjer = new Map<string, LiveProduct[]>();
+  for (const p of s.produkter) {
+    if (!p.aktiv || p.ejer === 'spiller') continue;
+    const l = aktivePrEjer.get(p.ejer);
+    if (l) l.push(p);
+    else aktivePrEjer.set(p.ejer, [p]);
+  }
+  // Ryd op: pensionerede konkurrentprodukter ældre end fire år fjernes (spillerens egne bevares til tidslinjen)
+  if (s.uge % 13 === 0) s.produkter = s.produkter.filter((p) => p.aktiv || p.ejer === 'spiller' || s.uge - (p.pensioneretUge ?? p.lanceretUge) < 208);
+
   for (const m of Object.keys(s.markeder) as MarketId[]) {
     const ms = s.markeder[m];
     if (!ms.aaben) {
@@ -319,7 +330,7 @@ export function ugentligeKonkurrenter(s: GameState, rng: Rng): void {
       total += markedBsi + Math.max(0, spiller - (markedBsi - offshore));
       const aktoerer = s.konkurrenter.filter((c) => c.tilstede && c.markeder.includes(m) && c.vertikaler.includes(v));
       const vaegte = aktoerer.map((c) => {
-        const prods = s.produkter.filter((p) => p.aktiv && p.ejer === c.id && p.markeder.includes(m) && produktVertikal(p) === v);
+        const prods = (aktivePrEjer.get(c.id) ?? []).filter((p) => p.markeder.includes(m) && produktVertikal(p) === v);
         const portefoelje = prods.reduce((a, p) => a + produktVaegt(s, p), 0);
         const w = prods.length ? Math.pow(c.styrke, BALANCE.styrkeExp) * konkurrentMarketing(s, c.id, m) * (0.6 + 0.4 * Math.min(1.5, portefoelje)) : 0;
         return { c, prods, w };

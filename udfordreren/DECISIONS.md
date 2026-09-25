@@ -53,3 +53,16 @@
 - B2B-salg (egen platform, kvalitet ≥ 70): ét salgsforsøg pr. kvartal pr. platform, maks. 12 kunder à 0,03 mio./uge ved kvalitet 100; B2B-licens på 0,5 mio. i dk fra 2025 og fi fra 2028.
 - Spilleren kan købe mindre konkurrenter (ikke giganter, statsselskaber eller styrke > 3,5) for 3× årlig BSI; 80 % af kunderne, produkterne og licenserne følger med.
 - Historiske konkurrenttiltag (7.5) aflyses pænt med en nyhed, hvis spilleren ejer målet eller en forudsat aktør ikke findes.
+- Spillerbyen er en Markov-model med 200 personer, der opdateres hver 4. uge. Antallet af aktive personer er 40 × log10(kunder), så byen vokser med firmaet. Neutrale valg giver ca. 8 % i risiko+problem, beskyttelsesværktøjer 3-5 %, maks intensitet+bonus+VIP ca. 20 % og med hyperpersonalisering ca. 27 %.
+- Byens sammensætning giver et moderat BSI-løft (0,75 + 0,25 × gennemsnitsværdi/neutral), så de røde og gule kunder er profitable, men koster tillid: −0,8 pr. procentpoint over 8 % (spec 7.12's "−8 × (andel − 0,08)" tolket med andelen i tiendedele), højst −12 pr. kvartal.
+- Selvudelukkede forsvinder stille (markeres med eksponering −1, ingen lyd, ingen fejring). Byhistorier kommer højst hver 6. uge.
+- Agenternes overvågning koster "0,1 medarbejder pr. agent pr. 0,1": løn = overvågning × gennemsnitsløn pr. agent pr. uge. Uheldsrisiko pr. uge = fejlrate × 0,1.
+- Agenternes effekt skaleres med dataejerskab (0 under 0,3). Risiko- og compliance-agenter har kun halv effekt uden compliance-medarbejdere ved roret (fuld effekt ved én pr. agent).
+- Pladser til agenter: 3 + 2 pr. AI-ingeniør + 4 med forskningen Agent-orkestrering. Trading-, indholds- og risikoagenter kræver hver deres forskning.
+- Udviklings-, indholds- og trading-agenter kan tildeles projektfaser og giver point (kapacitet × 11 × fasevægt × data); de bliver ikke trætte, men laver fejl efter deres fejlrate.
+- Verdensscenarierne trækkes uafhængigt (kan kombineres) i uge 0 af 2026. Afgiftsvinteren planlægger afgiftsstigninger i 3-4 europæiske markeder i 2026-28, en offshore-trend og en mega-deal hvert andet år; tilbagetoget lemper nl/de og giver +6,5 % markedsvækst om året fra 2027; omvæltningen giver højesteretsdom i 2027-28, −8 pp afgift i USA og børslicens; den hårde hånd giver reklameforbud, AI-krav og affordability i Norden og −13 % marked.
+- Ansvarlig AI som krav trækkes med 70 % og rammer to nordiske markeder i 2028-29; uden en risikoagent med overvågning ≥ 0,6 koster det −5 tillid pr. kvartal i de markeder.
+- Norge åbner kun i vurderingen "Norge åbner" (25 %). Markedet er da det grå marked fra 7.8, og offshore-andelen falder fra 100 % til 35 % over to år.
+- AI-transformationen erstatter 25 % eller 50 % af de erstattelige stillinger (aldrig stiftere eller compliance) med agenter (én agent pr. 1-4 personer), koster 12 ugers løn i fratrædelse og 3 indsigt pr. person × niveau/5 og udløser et omdømme-event.
+- Tilfældige events vælges nu ligeligt blandt alle, der rammer i ugen, i stedet for efter rækkefølgen i listen.
+- Saves fra ældre builds får manglende felter udfyldt fra et nyt spil med samme seed, så en opdatering af PWA'en ikke taber spillet.

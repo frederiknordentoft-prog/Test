@@ -56,3 +56,15 @@ export { offshoreDynPp, offshoreAndele, licenseretKvalitet } from './offshore';
 export { trendEffekt, daekker as trendDaekker } from './trends';
 export { SANKTION_NAVN, sanktionsGraense, SANKTION_RISIKO } from './trust';
 export { strenghedCac, strenghedArpu, licenseretBsiKurve } from './customers';
+
+// ---------- Fase 4: konkurrenter, reaktioner og platforme ----------
+export { konkurrentMarketing, spillerCacTillaeg, aggressivitet, featureFordel, r12Aktiv, sponsorRabat, sponsorOmkostningPrUge } from './reactions';
+export { platformStatus, platformKvalitet, gennemsnitligPlatformKvalitet, b2bStatus, revenueShare, kindNavn } from './platforms';
+export { opkoebStatus, konkurrentAarligBsi } from './competitors';
+
+// ---------- Fase 5: spillerbyen og AI-akten ----------
+export { aiLabAaben, agentStatus, maxAgenter, computePris, fejlrate, dataFaktor, agentEffekt, menneskeligtTilsyn, transformationStatus, transformationsKandidater, kraevetForskning } from './agents';
+export { harScenarie, harVurdering, aiStyrke, aiMarkedsEffekt, tungOrganisation, agentApiAktiv, hyperStatus, boersStatus } from './world';
+export { byTal, risikoAndel, byArpuFaktor, byTillid, byDrivere, AKTIVE_PROFILER } from './town';
+export { scenarieMarkedsFaktor, norgeAaben, markedStoerrelse } from './offshore';
+export { ledigeAgenter } from './projects';

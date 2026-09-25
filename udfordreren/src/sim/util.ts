@@ -1,6 +1,7 @@
 // Små fælles hjælpere til sim-kernen.
 import type { GameState, NewsItem, Signal } from './types';
 import type { Rng } from './rng';
+import { arkivId as arkivOpslag } from '../data/archive';
 
 export type Ctx = { s: GameState; rng: Rng };
 
@@ -16,7 +17,11 @@ export function nyId(s: GameState, prefix: string): string {
 export function nyhed(s: GameState, tekst: string, kind?: NewsItem['kind'], arkivId?: string): void {
   const item: NewsItem = { uge: s.uge, tekst };
   if (kind) item.kind = kind;
-  if (arkivId) item.arkivId = arkivId;
+  if (arkivId) {
+    item.arkivId = arkivId;
+    const a = arkivOpslag(arkivId);
+    if (a && s.arkiv && !s.arkiv.includes(a)) s.arkiv.push(a);
+  }
   s.nyheder.unshift(item);
   if (s.nyheder.length > 80) s.nyheder.length = 80;
 }

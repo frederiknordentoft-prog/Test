@@ -10,7 +10,7 @@ import { SELVUDELUKKEDE, START_BLOKERING } from '../data/offshore';
 import { aarDecimal, kurve, trin } from './time';
 import { afvis, betal, clamp, nyhed, signal } from './util';
 import { VERTIKALER } from './customers';
-import { markedTotalBsi, offshoreAndele, offshoreDynPp, offshoreRefPp, offshoreTrendPp } from './offshore';
+import { markedStoerrelse, norgeAaben, norgeOffshore, offshoreAndele, offshoreDynPp, offshoreRefPp, offshoreTrendPp } from './offshore';
 import { trendEffekt } from './trends';
 
 /** Markeder, spilleren kan søge licens i (Norge er lukket) */
@@ -71,7 +71,7 @@ export function licensPris(s: GameState, m: MarketId): { gebyr: number; uger: nu
 export function licensStatus(s: GameState, m: MarketId): { ok: boolean; grund?: string } {
   const ms = s.markeder[m];
   const def = MARKETS[m];
-  if (def.aabnerUge === null) return { ok: false, grund: `${def.navn} har monopol og giver ikke licenser.` };
+  if (def.aabnerUge === null && !ms.aaben) return { ok: false, grund: `${def.navn} har monopol og giver ikke licenser.` };
   if (!ms.aaben) return { ok: false, grund: `${def.navn} åbner for licenser senere.` };
   if (ms.licens === 'inddraget') return { ok: false, grund: 'Licensen er inddraget.' };
   if (ms.licens === 'suspenderet') return { ok: false, grund: 'Licensen er suspenderet.' };
@@ -98,7 +98,7 @@ export function ugentligeMarkeder(s: GameState, rng: Rng): void {
     const def = MARKETS[id];
     const ms = s.markeder[id];
     const varAaben = ms.aaben;
-    ms.aaben = markedAabent(id, s.uge);
+    ms.aaben = markedAabent(id, s.uge) || (id === 'no' && norgeAaben(s));
     if (ms.aaben && !varAaben) {
       ms.aabnetUge = s.uge;
       signal(s, { k: 'markedAabner', marked: id });
@@ -126,10 +126,15 @@ export function ugentligeMarkeder(s: GameState, rng: Rng): void {
       hold[v] = h;
     }
     s.holdFaktor[id] = hold;
-    ms.offshore = offshoreAndele(offshoreDynPp(s, id), offshoreTrendPp(s, id));
+    if (id === 'no') {
+      const o = norgeOffshore(s);
+      ms.offshore = { betting: clamp(o * 0.85, 0, 1), kasino: o };
+    } else {
+      ms.offshore = offshoreAndele(offshoreDynPp(s, id), offshoreTrendPp(s, id));
+    }
     const tr = trendEffekt(s, id);
-    const totB = markedTotalBsi(id, 'betting', s.uge) * Math.max(0.1, 1 + tr.bettingBsi);
-    const totK = markedTotalBsi(id, 'kasino', s.uge) * Math.max(0.1, 1 + tr.kasinoBsi);
+    const totB = markedStoerrelse(s, id, 'betting') * Math.max(0.1, 1 + tr.bettingBsi);
+    const totK = markedStoerrelse(s, id, 'kasino') * Math.max(0.1, 1 + tr.kasinoBsi);
     ms.markedsBsiPrUge = { betting: totB * hold.betting, kasino: totK * hold.kasino };
     const tot = totB + totK || 1;
     ms.kanalisering = 1 - (ms.offshore.betting * totB + ms.offshore.kasino * totK) / tot;

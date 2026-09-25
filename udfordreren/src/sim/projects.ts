@@ -1,5 +1,5 @@
 // Kerneloopet (spec 6.2): Koncept → Design → Teknik → Test med point-bobler, fejl og boost.
-import type { GameState, LiveProduct, MarketId, Params, Phase, Project, ProductTypeId, Staff, ThemeId, Vertical } from './types';
+import type { AiAgent, GameState, LiveProduct, MarketId, Params, Phase, Project, ProductTypeId, Staff, ThemeId, Vertical } from './types';
 import { PHASES } from './types';
 import type { Rng } from './rng';
 import { PRODUCT_TYPES } from '../data/productTypes';
@@ -19,6 +19,7 @@ import { passiveEffekter } from './staff';
 import { lanceringsKunder } from './customers';
 import { udloesEvent } from './events';
 import { nyeFeatures as registrerFeatures } from './reactions';
+import { agentFaseVaegt, agentPoint, dataFaktor } from './agents';
 
 export const tomParams = (): Params => ({ spaending: 0, originalitet: 0, teknik: 0, tryghed: 0 });
 
@@ -150,14 +151,22 @@ export function standardHold(kandidater: Staff[], p: Project, fase: Phase): stri
   return valgte.map((m) => m.id);
 }
 
+/** Agenter, der kan arbejde i en fase af projektet og ikke er i gang med et andet projekts aktive fase */
+export function ledigeAgenter(s: GameState, p: Project, fase: Phase): AiAgent[] {
+  const optaget = new Set<string>();
+  for (const x of s.projekter) if (x.id !== p.id && !x.klar) for (const id of x.faseTildeling[x.fase]) optaget.add(id);
+  return s.agenter.filter((a) => !optaget.has(a.id) && agentFaseVaegt(a, p, fase) > 0);
+}
+
 export function assignPhase(s: GameState, projectId: string, fase: Phase, ids: string[]): boolean {
   const p = s.projekter.find((x) => x.id === projectId);
   if (!p) return afvis(s, 'Projektet findes ikke.');
   if (!PHASES.includes(fase)) return afvis(s, 'Ukendt fase.');
-  const gyldige = [...new Set(ids)].filter((id) => s.staff.some((m) => m.id === id));
+  const agentIds = new Set(ledigeAgenter(s, p, fase).map((a) => a.id));
+  const gyldige = [...new Set(ids)].filter((id) => s.staff.some((m) => m.id === id) || agentIds.has(id));
   if (fase === p.fase && !p.klar) {
     // I den aktive fase må man ikke tage folk fra kontrakter eller et andet projekts aktive fase
-    const ledige = new Set(ledigeTilProjekt(s, p.id).map((m) => m.id));
+    const ledige = new Set([...ledigeTilProjekt(s, p.id).map((m) => m.id), ...agentIds]);
     const optaget = gyldige.filter((id) => !ledige.has(id));
     if (optaget.length) return afvis(s, 'Nogle af de valgte er optaget på en kontrakt eller et andet projekt.');
   }
@@ -235,7 +244,10 @@ export function ugentligtProjekt(s: GameState, rng: Rng, p: Project, allerede: S
   const hold = p.faseTildeling[p.fase]
     .map((id) => s.staff.find((m) => m.id === id))
     .filter((m): m is Staff => !!m && !optagetKontrakt.has(m.id) && !allerede.has(m.id));
-  if (hold.length === 0) return { arbejdede: [] }; // fasen står stille uden tildeling
+  const agenter = p.faseTildeling[p.fase]
+    .map((id) => s.agenter.find((a) => a.id === id))
+    .filter((a): a is AiAgent => !!a && !allerede.has(a.id) && agentFaseVaegt(a, p, p.fase) > 0);
+  if (hold.length === 0 && agenter.length === 0) return { arbejdede: [] }; // fasen står stille uden tildeling
 
   const type = PRODUCT_TYPES[p.typeId];
   const eff = forskningsEffekt(s, type.vertikal);
@@ -244,11 +256,12 @@ export function ugentligtProjekt(s: GameState, rng: Rng, p: Project, allerede: S
   const bud = budgetFaktor(p.budget, minBudgetUge(p.typeId, p.startUge));
   const fordeling = BALANCE.fordeling[p.fase];
 
-  const bidrag = hold
-    .map((m) => ({ m, raa: personPoint(m, p, p.fase) * (1 + (rng.next() * 2 - 1) * BALANCE.pointVariation) }))
-    .sort((a, b) => b.raa - a.raa);
+  const bidrag = [
+    ...hold.map((m) => ({ m, a: null as AiAgent | null, raa: personPoint(m, p, p.fase) * (1 + (rng.next() * 2 - 1) * BALANCE.pointVariation) })),
+    ...agenter.map((a) => ({ m: null as Staff | null, a, raa: agentPoint(s, a, p, p.fase) * (1 + (rng.next() * 2 - 1) * BALANCE.pointVariation) })),
+  ].sort((x, y) => y.raa - x.raa);
   let fejlFjernetIalt = 0;
-  bidrag.forEach(({ m, raa }, i) => {
+  bidrag.forEach(({ m, a, raa }, i) => {
     const vaegt = Math.pow(BALANCE.holdVaegt, i);
     const point = raa * vaegt * lvl * bud * BALANCE.pointSkala;
     const delta = tomParams();
@@ -258,6 +271,22 @@ export function ugentligtProjekt(s: GameState, rng: Rng, p: Project, allerede: S
     }
     let fejl = 0;
     let fjernet = 0;
+    if (a) {
+      // Agenter: fejl efter fejlrate (overvågning), fejlretning efter kapacitet og data
+      if (p.fase === 'teknik') {
+        fejl = BALANCE.fejlBasis * (a.fejlrate / 0.03) * 0.5 * (0.8 + 0.1 * (p.intensitet - 1)) * (0.6 + type.risiko / 20) * Math.max(0.3, 1 + eff.fejl);
+        fejl = Math.max(0, fejl * (0.7 + rng.next() * 0.6));
+        p.fejl += fejl;
+      } else if (p.fase === 'test') {
+        const d = dataFaktor(s, a.funktion);
+        fjernet = Math.min(p.fejl, (BALANCE.testFjernBasis + 50 * BALANCE.testFjernTeknik) * (a.kapacitet / 4) * vaegt * (d > 0 ? 0.4 + 0.6 * d : 0) * agentFaseVaegt(a, p, 'test'));
+        p.fejl -= fjernet;
+        fejlFjernetIalt += fjernet;
+      }
+      signal(s, { k: 'point', projectId: p.id, staffId: a.id, params: delta, fejl, fjernet });
+      return;
+    }
+    if (!m) return;
     if (p.fase === 'teknik') {
       fejl =
         BALANCE.fejlBasis *
@@ -297,7 +326,7 @@ export function ugentligtProjekt(s: GameState, rng: Rng, p: Project, allerede: S
       signal(s, { k: 'klar', projectId: p.id });
     }
   }
-  return { arbejdede: hold.map((m) => m.id) };
+  return { arbejdede: [...hold.map((m) => m.id), ...agenter.map((a) => a.id)] };
 }
 
 /** Kan projektet lanceres nu? */

@@ -14,13 +14,28 @@ export type ForskningsEffekt = {
   boost: number;
   tillid: number;
   ansvarNoder: number;
+  by: number;
 };
 
-/** Samlede effekter af ulåst forskning. Param-bonusser med vertikal gælder kun den vertikal. */
+const forskningCache = new WeakMap<GameState, Map<string, { noegle: string; e: ForskningsEffekt }>>();
+
+/** Samlede effekter af ulåst forskning (cachet pr. spil; må ikke muteres af kalderen) */
 export function forskningsEffekt(s: GameState, vertikal?: Vertical): ForskningsEffekt {
+  const noegle = s.forskning.ulaast.join(',');
+  let c = forskningCache.get(s);
+  if (!c) forskningCache.set(s, (c = new Map()));
+  const v = vertikal ?? '-';
+  const hit = c.get(v);
+  if (hit && hit.noegle === noegle) return hit.e;
+  const e = beregnForskningsEffekt(s, vertikal);
+  c.set(v, { noegle, e });
+  return e;
+}
+
+function beregnForskningsEffekt(s: GameState, vertikal?: Vertical): ForskningsEffekt {
   const e: ForskningsEffekt = {
     paramBonus: { spaending: 0, originalitet: 0, teknik: 0, tryghed: 0 },
-    fejl: 0, churn: 0, cac: 0, arpu: 0, indsigt: 0, boost: 0, tillid: 0, ansvarNoder: 0,
+    fejl: 0, churn: 0, cac: 0, arpu: 0, indsigt: 0, boost: 0, tillid: 0, ansvarNoder: 0, by: 0,
   };
   for (const id of s.forskning.ulaast) {
     const n = RESEARCH_BY_ID[id];
@@ -36,6 +51,7 @@ export function forskningsEffekt(s: GameState, vertikal?: Vertical): ForskningsE
     e.indsigt += n.effekt.indsigt ?? 0;
     e.boost += n.effekt.boost ?? 0;
     e.tillid += n.effekt.tillid ?? 0;
+    e.by += n.effekt.by ?? 0;
     if (n.effekt.tillid) e.ansvarNoder += 1;
   }
   return e;

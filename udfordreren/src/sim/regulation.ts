@@ -19,8 +19,23 @@ export type RegelSum = {
   kraeverRisikoAgent: boolean;
 };
 
-/** Samlet effekt af de aktive regler i et marked */
+// Cache pr. spil og marked: reglerne ændres sjældent, men effekten slås op mange gange pr. uge
+const regelCache = new WeakMap<GameState, Map<MarketId, { noegle: string; e: RegelSum }>>();
+
+/** Samlet effekt af de aktive regler i et marked (må ikke muteres af kalderen) */
 export function regelEffekt(s: GameState, m: MarketId): RegelSum {
+  const regler = s.markeder[m].regler;
+  const noegle = regler.join(',');
+  let c = regelCache.get(s);
+  if (!c) regelCache.set(s, (c = new Map()));
+  const hit = c.get(m);
+  if (hit && hit.noegle === noegle) return hit.e;
+  const e = beregnRegelEffekt(s, m);
+  c.set(m, { noegle, e });
+  return e;
+}
+
+function beregnRegelEffekt(s: GameState, m: MarketId): RegelSum {
   const e: RegelSum = {
     cac: Object.fromEntries(CHANNEL_IDS.map((k) => [k, 0])) as Record<AcqChannel, number>,
     lukket: [],
@@ -98,11 +113,11 @@ export function aktiverRegel(s: GameState, rng: Rng, m: MarketId, regelId: strin
   if (r.effekt.blokering === 'dns' && ms.blokering.dns === null) ms.blokering.dns = s.uge;
   if (r.effekt.blokering === 'betaling' && ms.blokering.betaling === null) ms.blokering.betaling = s.uge;
   if (r.effekt.blokering === 'leverandoer') ms.blokering.leverandoer = true;
-  nyhed(s, `${MARKETS[m].navn}: ${r.navn} træder i kraft. ${regelTekst(r)}.`, 'marked');
+  nyhed(s, `${MARKETS[m].navn}: ${r.navn} træder i kraft. ${regelTekst(r)}.`, 'marked', regelId.startsWith('dkSpilpakke') ? 'a5' : undefined);
   if (spillerAktiv(s, m)) signal(s, { k: 'regel', marked: m, regelId, varsel: false });
 }
 
-function annoncer(s: GameState, m: MarketId, regelId: string, uge: number, dynamisk: boolean): void {
+export function annoncer(s: GameState, m: MarketId, regelId: string, uge: number, dynamisk: boolean): void {
   s.planlagteRegler.push({ marked: m, regelId, ikrafttraedelseUge: uge, annonceret: true, dynamisk });
   const r = REGLER[regelId];
   nyhed(s, `${MARKETS[m].navn} vedtager ${r?.navn.toLowerCase() ?? regelId} fra ${datoTekst(uge)}. ${r ? regelTekst(r) : ''}.`, 'marked');
@@ -138,7 +153,7 @@ export function ugentligRegulering(s: GameState, rng: Rng): void {
     for (const p of PRAEVALENSMAALINGER) {
       if (p.aar !== aar) continue;
       for (const m of p.markeder) s.markeder[m].politiskPres = clamp(s.markeder[m].politiskPres + 1, 0, 5);
-      nyhed(s, `Ny prævalensmåling: flere med spilproblemer. Politikerne i ${p.markeder.map((m) => MARKETS[m].navn).join(', ')} vil handle.`, 'verden');
+      nyhed(s, `Ny prævalensmåling: flere med spilproblemer. Politikerne i ${p.markeder.map((m) => MARKETS[m].navn).join(', ')} vil handle.`, 'verden', 'a17');
     }
   }
 

@@ -2,6 +2,7 @@
 import Dexie, { type Table } from 'dexie';
 import type { GameState } from '../sim/types';
 import { step } from '../sim/step';
+import { newGame } from '../sim/init';
 
 export type SlotId = 'slot1' | 'slot2' | 'slot3' | 'auto';
 export type SaveRow = { slot: SlotId; gemt: number; uge: number; firmaNavn: string; kapital: number; state: GameState };
@@ -114,12 +115,26 @@ export function validerSave(x: unknown): GameState | null {
     if (!erObj(m) || !Array.isArray(m.top10) || !erObj(m.vertikaler) || !erObj(m.spillerKunder) || !erObj(m.andele)) return null;
   }
   if (!erObj(s.investorer) || !erObj(s.regnskab) || !erObj(s.niveauer) || !erObj(s.platforme) || !erObj(s.milepaele)) return null;
-  const g = s as GameState;
+  const g = udfyldMangler(s as GameState);
   try {
     step(structuredClone(g), []);
   } catch {
     return null;
   }
+  return g;
+}
+
+/** Saves fra ældre builds mangler felter, der er kommet til siden: udfyld dem med standardværdier fra et nyt spil */
+function udfyldMangler(g: GameState): GameState {
+  const frisk = newGame({ seed: g.seed, firmaNavn: g.firmaNavn, stiftere: ['oddssaetteren', 'udvikleren'], startVertikal: g.startVertikal ?? 'betting', tutorial: false }) as unknown as Record<string, unknown>;
+  const x = g as unknown as Record<string, unknown>;
+  for (const [k, v] of Object.entries(frisk)) if (x[k] === undefined) x[k] = structuredClone(v);
+  const friskeMarkeder = frisk.markeder as Record<string, Record<string, unknown>>;
+  for (const [id, m] of Object.entries(g.markeder) as [string, unknown][]) {
+    const mm = m as Record<string, unknown>;
+    for (const [k, v] of Object.entries(friskeMarkeder[id] ?? {})) if (mm[k] === undefined) mm[k] = structuredClone(v);
+  }
+  for (const [id, m] of Object.entries(friskeMarkeder)) if (!(id in g.markeder)) (g.markeder as Record<string, unknown>)[id] = structuredClone(m);
   return g;
 }
 

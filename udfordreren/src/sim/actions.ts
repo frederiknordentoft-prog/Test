@@ -18,6 +18,8 @@ import { choosePlatform, sellPlatformB2B } from './platforms';
 import { acquire } from './competitors';
 import { acceptOffer } from './investors';
 import { afvisTilbud, bydSponsorat } from './reactions';
+import { aiTransformation, deployAgent, retireAgent, setOvervaagning } from './agents';
+import { applyBoersLicens, setHyperpersonalisering } from './world';
 import { kanalTilgaengelig, kampagneKunder } from './customers';
 
 export const MAX_MARKETING_PR_KANAL = 50; // mio. kr./uge
@@ -100,8 +102,11 @@ export function applyActionMut(s: GameState, rng: Rng, a: Action): boolean {
     case 'acceptOffer': return acceptOffer(s, a.competitorId);
     case 'afvisTilbud': return afvisTilbud(s);
     case 'bydSponsorat': return bydSponsorat(s, a.bud);
-    case 'deployAgent':
-    case 'retireAgent':
-      return afvis(s, 'AI-laboratoriet åbner i 2026.');
+    case 'deployAgent': return deployAgent(s, a.funktion, a.overvaagning);
+    case 'retireAgent': return retireAgent(s, a.agentId);
+    case 'setOvervaagning': return setOvervaagning(s, a.agentId, a.overvaagning);
+    case 'setHyperpersonalisering': return setHyperpersonalisering(s, a.aktiv);
+    case 'aiTransformation': return aiTransformation(s, a.andel);
+    case 'applyBoersLicens': return applyBoersLicens(s);
   }
 }

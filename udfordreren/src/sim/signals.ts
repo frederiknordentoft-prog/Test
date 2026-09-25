@@ -31,6 +31,8 @@ export function pauserFor(sig: Signal): boolean {
       return sig.stoerrelse > 0;
     case 'tilbud':
     case 'sponsorAuktion':
+    case 'aktSkift':
+    case 'verdensNyhed':
       return true;
     case 'reaktion':
       // Kun reaktioner, der rammer spilleren direkte (bonuskrig og påbud); resten er nyheder og toasts
@@ -67,6 +69,8 @@ export function pauseTekst(sig: Signal): string | null {
     case 'tilbud': return 'Opkøbstilbud';
     case 'sponsorAuktion': return 'Sponsorauktion';
     case 'reaktion': return sig.regel === 'R1' ? 'Bonuskrig' : 'Påbud';
+    case 'aktSkift': return 'Verdensbilledet 2026';
+    case 'verdensNyhed': return sig.titel;
     default: return null;
   }
 }

@@ -35,6 +35,10 @@ function reager(s: GameState, r: Omit<AktivReaktion, 'id' | 'startUge'>, visSign
 /** Konkurrentens marketingtryk i et marked (produkt af aktive reaktioner) */
 export function konkurrentMarketing(s: GameState, competitorId: string, m: MarketId): number {
   let f = 1;
+  // Verdensscenarier: AI-native-bølgen og statsselskaberne under den hårde hånd
+  const c = s.konkurrenter.find((x) => x.id === competitorId);
+  if (c?.arketype === 'aiNative') f *= 1 + (s.aiScenarier.aiNative ?? 0);
+  if (c?.arketype === 'statsselskab' && s.flags.includes('haardHaand')) f *= 1.5;
   for (const r of s.reaktioner) {
     if (r.competitorId !== competitorId || r.effekt.marketingMult === undefined) continue;
     if (r.marked && r.marked !== m) continue;

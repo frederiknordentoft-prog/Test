@@ -1,5 +1,7 @@
 // Events med valg. Effekter er [D]. Tekster må aldrig moralisere; prisen skal være synlig.
-import type { OfficeTier } from '../sim/types';
+import type { AgentFunktion, MarketId, OfficeTier, WorldScenario } from '../sim/types';
+import { AI_EVENTS } from './eventsAi';
+import { FLERE_EVENTS } from './eventsMore';
 
 export type EventEffect = {
   kapital?: number;
@@ -18,6 +20,15 @@ export type EventEffect = {
   marketingPct?: number; // alle marketingkanaler ganges med (1 + x)
   marketingMin?: number; // mindst så meget samlet marketing pr. uge bagefter (lægges på søgning)
   vaerdiPct?: number; // værdiansættelse
+  // + fase 5
+  tillidAlle?: number; // tilsynstillid i alle markeder med aktiv licens
+  politiskPres?: number; // politisk pres i alle markeder med aktiv licens
+  byRisiko?: number; // andel af byens engagerede/VIP, der glider til risiko (negativ: andel af risiko/problem, der kommer tilbage)
+  agentOvervaagning?: number; // læg til overvågningen på alle agenter
+  agentFra?: boolean; // ctx.agentId slukkes
+  hyperFra?: boolean; // hyperpersonaliseringen slås fra
+  vipNiveau?: 0 | 1 | 2 | 3; // sæt VIP-niveau (fristelser)
+  bonusNiveau?: 0 | 1 | 2 | 3; // sæt bonusniveau (fristelser)
 };
 
 export type EventTrigger = 'tilfaeldig' | 'lanceringMedFejl' | 'investorPres' | 'medarbejder' | 'forsteLancering' | 'system';
@@ -33,7 +44,19 @@ export type EventDef = {
   engang: boolean;
   /** Uger før samme event kan komme igen (standard 26) */
   cooldownUger?: number;
-  kraever?: { flagIkke?: string[]; flag?: string[]; kontor?: OfficeTier[]; minKunder?: number; runde?: boolean; minStaff?: number; platform?: ('whiteLabel' | 'turnkey')[] };
+  kraever?: {
+    flagIkke?: string[]; flag?: string[]; kontor?: OfficeTier[]; minKunder?: number; runde?: boolean; minStaff?: number; platform?: ('whiteLabel' | 'turnkey')[];
+    // + fase 5
+    agent?: AgentFunktion[]; // mindst én agent med en af funktionerne
+    scenarie?: WorldScenario[]; // mindst ét af verdensscenarierne er trukket
+    hyper?: boolean; // hyperpersonalisering er slået til
+    minByRisiko?: number; // andel af byen i risiko/problem
+    minVip?: number;
+    minBonus?: number;
+    licens?: MarketId; // aktiv licens i markedet
+    offshoreBrand?: boolean;
+    minKapital?: number;
+  };
   valg: { tekst: string; forklaring: string; effekt: EventEffect }[];
 };
 
@@ -197,5 +220,7 @@ EVENTS.push({
   tekst: 'En journalist har fulgt pengene fra kryptokasinoet til jeres konto. Tilsynene i alle regulerede markeder har inddraget licenserne.',
   valg: [{ tekst: 'Det var prisen', forklaring: 'Licenserne er væk. I kan søge igen, men tilliden skal genopbygges.', effekt: { omdoemme: -15 } }],
 });
+
+EVENTS.push(...AI_EVENTS, ...FLERE_EVENTS);
 
 export const EVENT_BY_ID = Object.fromEntries(EVENTS.map((e) => [e.id, e])) as Record<string, EventDef>;

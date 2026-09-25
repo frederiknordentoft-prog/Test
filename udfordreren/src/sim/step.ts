@@ -23,9 +23,13 @@ import { ugentligePlatforme } from './platforms';
 import { ugentligeReaktioner, kvartalsReaktioner, r12Aktiv } from './reactions';
 import { R12 } from '../data/reactionRules';
 import { ugentligeEvents } from './events';
+import { aktSkift, ugentligVerden, ugentligeAiScenarier, ugentligBoerslicens } from './world';
+import { ugentligeAgenter } from './agents';
+import { ugentligBy, kvartalsBy } from './town';
+import { afslut, klassificer, kvartalsArkiv, kvartalsSlut, registrerTidslinje, ugentligEftermaele, ugentligSlut } from './endings';
 import { CHANNELS, CHANNEL_IDS } from '../data/acquisition';
 import { BALANCE } from '../data/balance';
-import { clamp, signal } from './util';
+import { clamp } from './util';
 
 export function cloneState(s: GameState): GameState {
   return structuredClone(s);
@@ -37,6 +41,7 @@ export function applyAction(state: GameState, action: Action): GameState {
   s.signaler = [];
   const rng = makeRng(s.rngState);
   applyActionMut(s, rng, action);
+  registrerTidslinje(s);
   return s;
 }
 
@@ -52,8 +57,8 @@ export function stepMut(s: GameState, actions: readonly Action[] = []): void {
   s.signaler = [];
   const rng = makeRng(s.rngState);
   for (const a of actions) applyActionMut(s, rng, a);
-  if (s.slut) return;
-  simulerUge(s, rng);
+  if (!s.slut) simulerUge(s, rng);
+  registrerTidslinje(s);
 }
 
 function simulerUge(s: GameState, rng: Rng): void {
@@ -64,6 +69,10 @@ function simulerUge(s: GameState, rng: Rng): void {
   }
 
   ugentligeTrends(s, rng);
+  aktSkift(s, rng);
+  ugentligVerden(s, rng);
+  ugentligeAiScenarier(s);
+  ugentligBoerslicens(s);
   ugentligRegulering(s, rng);
   ugentligeMarkeder(s, rng);
   ugentligForskning(s);
@@ -81,6 +90,7 @@ function simulerUge(s: GameState, rng: Rng): void {
     }
   }
   ugentligStaff(s, rng, arbejdet);
+  ugentligeAgenter(s, rng);
   passivIndsigt(s, passiveEffekter(s).analytikere);
 
   // Kunder, økonomi, konkurrenter og hitliste
@@ -88,6 +98,7 @@ function simulerUge(s: GameState, rng: Rng): void {
   const graa = ugentligtOffshoreBrand(s, rng);
   const b2b = ugentligePlatforme(s, rng);
   ugentligOekonomi(s, kunder, k.indtaegt + b2b, graa);
+  ugentligBy(s, rng);
   ugentligeKonkurrenter(s, rng);
   ugentligeReaktioner(s, rng);
   ugentligHitliste(s);
@@ -108,14 +119,16 @@ function simulerUge(s: GameState, rng: Rng): void {
     kvartalsTillid(s);
     sanktioner(s, rng, r12Aktiv(s) ? R12.sanktionsFaktor : 1);
     kvartalsPres(s);
+    kvartalsBy(s);
+    kvartalsArkiv(s);
+    kvartalsSlut(s, rng);
     kvartalsReaktioner(s, rng);
     kvartalsmoede(s, rng);
   }
   ugentligeEvents(s, rng);
   opfyldTilbud(s, rng);
 
-  if (s.uge >= SIDSTE_UGE && !s.slut) {
-    s.slut = { id: 'tiden', vaerdi: s.investorer.vaerdiansaettelse, eftermaele: 0 };
-    signal(s, { k: 'slut', id: 'tiden' });
-  }
+  ugentligEftermaele(s);
+  ugentligSlut(s);
+  if (s.uge >= SIDSTE_UGE && !s.slut) afslut(s, klassificer(s));
 }
