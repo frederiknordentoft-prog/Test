@@ -10,10 +10,10 @@ import { PLATFORM_KINDS, PLATFORM_MODELS, MIGRERING, B2B } from '../../data/plat
 import { b2bStatus, datoTekst, gennemsnitligPlatformKvalitet, kindNavn, platformKvalitet, platformStatus, revenueShare } from '../../sim/selectors';
 import { mio, mioKort, pct } from '../format';
 import {
-  KIND_IKON, KIND_ROLLE, MODEL_RAEKKE, afbrydRefusion, b2bIndtaegt, migreringFremdrift, migreringsTid, skiftKonsekvenser, udviklerKrav, type EffektLinje,
+  KIND_IKON, KIND_ROLLE, MODEL_RAEKKE, afbrydRefusion, b2bIndtaegt, migreringFremdrift, migreringsTid, skiftKonsekvenser, udviklerKrav,
 } from '../lib/konkurrentHjaelp';
+import { TONE_FARVE } from '../lib/tvaersHjaelp';
 
-const TONE_FARVE: Record<EffektLinje['tone'], string> = { god: 'var(--color-good)', skidt: 'var(--color-bad)', neutral: 'var(--color-muted)' };
 const MODEL_FARVE: Record<PlatformModel, string> = { whiteLabel: 'var(--color-muted)', turnkey: 'var(--color-sky)', hybrid: 'var(--color-violet)', egen: 'var(--color-gold)' };
 const MODEL_IKON: Record<PlatformModel, string> = { whiteLabel: 'taske', turnkey: 'noegle', hybrid: 'tandhjul', egen: 'hus' };
 const komma = (v: number, d = 1) => v.toFixed(d).replace('.', ',');
@@ -97,11 +97,27 @@ function Migrering({ g, kind }: { g: GameState; kind: PlatformKind }) {
   if (!p.migrererTil || !f) return null;
   const til = PLATFORM_MODELS[p.migrererTil];
   const refusion = afbrydRefusion(p);
+  return <MigreringsVisning g={g} kind={kind} p={p} f={f} tilNavn={til.navn} refusion={refusion} />;
+}
+
+function MigreringsVisning({ g, kind, p, f, tilNavn, refusion }: {
+  g: GameState; kind: PlatformKind; p: GameState['platforme'][PlatformKind]; f: NonNullable<ReturnType<typeof migreringFremdrift>>; tilNavn: string; refusion: number;
+}) {
+  // At afbryde koster halvdelen af investeringen: kræv et ekstra tryk (ligesom at starte en migrering)
+  const [bekraeft, setBekraeft] = useState(false);
+  const afbryd = () => {
+    if (!bekraeft) {
+      setBekraeft(true);
+      return;
+    }
+    setBekraeft(false);
+    useGame.getState().dispatch({ t: 'choosePlatform', kind, model: p.model });
+  };
   return (
     <div className="flex flex-col gap-2 rounded-md border-2 border-line bg-panel p-2.5" data-testid={`migrering-${kind}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="flex items-center gap-1.5 font-pixel text-xs font-black uppercase tracking-wide text-ink">
-          <Ikon navn="pil" farve="var(--color-sky)" str={12} /> Migrerer til {til.navn.toLowerCase()}
+          <Ikon navn="pil" farve="var(--color-sky)" str={12} /> Migrerer til {tilNavn.toLowerCase()}
         </span>
         <span className="tal text-xs text-muted">
           Uge {f.gaaet} af {f.ialt} · færdig ca. {datoTekst(p.migreringFaerdigUge ?? g.uge)}
@@ -120,9 +136,22 @@ function Migrering({ g, kind }: { g: GameState; kind: PlatformKind }) {
           Nedbrudsrisiko {Math.round(MIGRERING.nedbrudPrUge * 100)} % om ugen — hvert nedbrud koster ca. {Math.round(-MIGRERING.nedbrudKunder * 100)} % af kunderne.
         </li>
       </ul>
-      <Btn variant="fare" onClick={() => useGame.getState().dispatch({ t: 'choosePlatform', kind, model: p.model })} testId={`afbryd-${kind}`} className="self-start">
-        <Ikon navn="kryds" farve="currentColor" str={13} /> Afbryd (halv refusion: {mio(refusion)})
-      </Btn>
+      <div className="flex flex-wrap items-center gap-2">
+        <Btn variant={bekraeft ? 'fare' : 'sekundaer'} onClick={afbryd} testId={`afbryd-${kind}`}>
+          <Ikon navn="kryds" farve="currentColor" str={13} /> {bekraeft ? 'Ja, afbryd migreringen' : `Afbryd (halv refusion: ${mio(refusion)})`}
+        </Btn>
+        {bekraeft && (
+          <Btn variant="ghost" onClick={() => setBekraeft(false)} testId={`afbryd-fortryd-${kind}`}>
+            Fortsæt migreringen
+          </Btn>
+        )}
+        {bekraeft && (
+          <p className="flex min-w-0 basis-full items-start gap-1.5 text-xs font-bold text-warn" data-testid={`afbryd-konsekvens-${kind}`}>
+            <Ikon navn="advarsel" farve="var(--color-warn)" indre="var(--color-line)" str={12} className="mt-0.5 shrink-0" />
+            I får {mio(refusion)} tilbage, og resten af investeringen er tabt. {kindNavn(kind)} bliver på {PLATFORM_MODELS[p.model].navn.toLowerCase()}.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -247,8 +276,8 @@ function PlatformKort({ g, kind }: { g: GameState; kind: PlatformKind }) {
               {def.navn}
             </Chip>
             {p.migrererTil && (
-              <Chip ikon="pil" farve="var(--color-sky)">
-                → {PLATFORM_MODELS[p.migrererTil].navn}
+              <Chip ikon="pil" farve="var(--color-sky)" titel="Migrering i gang">
+                {PLATFORM_MODELS[p.migrererTil].navn}
               </Chip>
             )}
           </div>
@@ -359,7 +388,7 @@ export default function PlatformPanel() {
   const migrerer = PLATFORM_KINDS.filter((k) => g.platforme[k.id].migrererTil).length;
   return (
     <Panel
-      titel="Platform"
+      titel="Teknik · platforme"
       ikon="server"
       testId="panel-platform"
       hoejre={<span className="font-pixel text-xs text-muted">{migrerer > 0 ? `${migrerer} migrering${migrerer === 1 ? '' : 'er'} i gang` : 'Stabil drift'}</span>}

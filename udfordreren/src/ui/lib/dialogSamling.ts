@@ -116,7 +116,8 @@ export function samlSignaler(foer: GameState | null, ny: GameState, sig: readonl
     if (s.k !== 'regel' || s.varsel || !foer) continue;
     const varslet = foer.planlagteRegler.some((p) => p.marked === s.marked && p.regelId === s.regelId && p.annonceret);
     if (!varslet || regelRammerValg(foer, ny, s.marked, s.regelId)) continue;
-    toasts.push({ tekst: `${MARKETS[s.marked].navn}: ${REGLER[s.regelId]?.navn ?? 'en ny regel'} gælder nu.`, kind: 'info' });
+    const pp = s.regelId === 'afgiftsstigning' && s.pp !== undefined ? ` (+${s.pp} pp)` : '';
+    toasts.push({ tekst: `${MARKETS[s.marked].navn}: ${REGLER[s.regelId]?.navn ?? 'en ny regel'}${pp} gælder nu.`, kind: 'info' });
     stille.add(s);
   }
 

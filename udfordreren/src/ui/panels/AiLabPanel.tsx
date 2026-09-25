@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import type { AgentFunktion, AiAgent, GameState, WorldAssessment, WorldScenario } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
-import { Badge, Btn, Ikon, Panel, Skyder, Tom, type IkonNavn } from '../components/kit';
+import { Badge, Btn, Faner, Ikon, Panel, Skyder, Tom, type IkonNavn } from '../components/kit';
 import { Afsnit, Chip, KravRaekke } from '../components/FirmaDele';
 import { AiMaerke, AiStil, GloedBar, GloedTerminal } from '../components/AiDele';
 import AktSkiftDialog from '../dialogs/AktSkiftDialog';
@@ -56,7 +56,7 @@ function Note({ ikon, farve, children, testId }: { ikon: IkonNavn; farve: string
 function Tal({ label, children, titel }: { label: string; children: ReactNode; titel?: string }) {
   return (
     <div className="min-w-0 rounded-md border-2 border-line bg-[#0a1024] px-2 py-1.5" title={titel}>
-      <div className="truncate text-[0.62rem] uppercase tracking-wide text-muted">{label}</div>
+      <div className="text-[0.62rem] uppercase leading-tight tracking-wide break-words text-muted">{label}</div>
       <div className="tal truncate font-pixel text-sm font-bold">{children}</div>
     </div>
   );
@@ -122,6 +122,7 @@ const FORBEREDELSE: { id: string; tekst: string }[] = [
 function Teaser({ g }: { g: GameState }) {
   const uger = ugerTilLab(g);
   const aar = Math.max(1, Math.round(uger / 52));
+  const ugeTekst = uger === 1 ? '1 uge' : `${uger} uger`;
   const red = useReduceretBevaegelse();
   return (
     <div className="flex flex-col gap-3" data-testid="ailab-teaser">
@@ -135,11 +136,11 @@ function Teaser({ g }: { g: GameState }) {
           </span>
           <h3 className="font-pixel text-base font-black uppercase tracking-widest text-cyan ai-tekst-gloed sm:text-lg">AI-laboratoriet åbner i 2026</h3>
           <p className="max-w-md text-sm text-muted">
-            Lige nu er serverrummet et kosteskab med en router, der blinker hyggeligt. Om {uger >= 52 ? `ca. ${aar} år` : `${uger} uger`} flytter agenterne ind: de sætter odds, laver
+            Lige nu er serverrummet et kosteskab med en router, der blinker hyggeligt. Om {uger >= 52 ? `ca. ${aar} år` : ugeTekst} flytter agenterne ind: de sætter odds, laver
             kasinoindhold, svarer kunderne og holder øje med dem, der spiller for meget.
           </p>
           <span className="tal rounded border-2 border-line bg-[#070b1a] px-2 py-0.5 font-pixel text-xs font-bold text-cyan" data-testid="ailab-nedtaelling">
-            {uger} uger til
+            {ugeTekst} til
           </span>
         </div>
       </div>
@@ -182,6 +183,7 @@ function Status({ g, onVerden }: { g: GameState; onVerden: () => void }) {
   const loen = g.agenter.reduce((a, x) => a + overvaagningsLoen(g, x.overvaagning), 0);
   const tilsynAgenter = g.agenter.some((a) => a.funktion === 'risiko' || a.funktion === 'compliance');
   const tilsyn = menneskeligtTilsyn(g);
+  const over = g.agenter.length - max;
   return (
     <div className="ai-nat relative overflow-hidden rounded-lg border-2 border-line p-2.5" data-testid="ailab-status">
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -196,7 +198,8 @@ function Status({ g, onVerden }: { g: GameState; onVerden: () => void }) {
       </div>
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         <Tal label="Agenter" titel={`Basis ${AI.maxAgenterBasis} pladser, +${AI.maxPrAiIngenioer} pr. AI-ingeniør (I har ${ai}), +${AI.maxMedOrkestrering} med Agent-orkestrering`}>
-          <span className="text-cyan" data-testid="ailab-antal">
+          <span className={`inline-flex items-center gap-1 ${over > 0 ? 'text-warn' : 'text-cyan'}`} data-testid="ailab-antal">
+            {over > 0 && <Ikon navn="advarsel" farve="var(--color-warn)" indre="var(--color-line)" str={12} titel="Over loftet" />}
             {g.agenter.length}/{max}
           </span>
         </Tal>
@@ -218,7 +221,9 @@ function Status({ g, onVerden }: { g: GameState; onVerden: () => void }) {
             <div key={k.id} className="flex flex-col gap-0.5 text-[0.72rem]" title={`Dataejerskab på ${k.navn.toLowerCase()}: ${decimal(v, 1)} (agenter kræver mindst 0,3)`}>
               <span className="flex items-center gap-1.5">
                 <Ikon navn={ok ? 'flueben' : 'advarsel'} farve={ok ? 'var(--color-good)' : 'var(--color-warn)'} indre="var(--color-line)" str={12} className="shrink-0" />
-                <span className="min-w-0 flex-1 truncate text-muted">Data · {k.navn}</span>
+                <span className="min-w-0 flex-1 truncate text-muted" title={`Data · ${k.navn}`}>
+                  Data · {k.navn.replace(/platform$/, '')}
+                </span>
                 <span className="tal shrink-0 font-bold" style={{ color: ok ? 'var(--color-ink)' : 'var(--color-warn)' }}>
                   {decimal(v, 1)}
                 </span>
@@ -228,6 +233,14 @@ function Status({ g, onVerden }: { g: GameState; onVerden: () => void }) {
           );
         })}
       </div>
+      {over >= 0 && g.agenter.length > 0 && (
+        <p className="mt-1.5 flex items-start gap-1.5 text-[0.72rem] font-bold text-warn" data-testid="ailab-over-loft">
+          <Ikon navn="advarsel" farve="var(--color-warn)" indre="var(--color-line)" str={12} className="mt-0.5 shrink-0" />
+          {over > 0
+            ? `${g.agenter.length} agenter på ${max} pladser: transformationen satte flere i drift, end loftet tillader. De kører videre, men en ny agent kræver, at I først slukker ${over + 1}.`
+            : 'Alle pladser er i brug. Ansæt AI-ingeniører eller forsk i orkestrering for at få flere.'}
+        </p>
+      )}
       {PLATFORM_KINDS.some((k) => g.platforme[k.id].dataejerskab + 1e-9 < AI.minData) && (
         <p className="mt-1.5 text-[0.72rem] text-muted">
           Agenter lærer af jeres egne data. White-label giver kun 0,1: skift til turnkey (0,3), hybrid (0,6) eller egen platform (1,0) for at få effekt.
@@ -299,7 +312,11 @@ function AgentRaekke({ g, a }: { g: GameState; a: AiAgent }) {
         testId={`ailab-overvaagning-${a.id}`}
       />
       <p className="text-[0.7rem] text-muted">
-        Lav overvågning er billig, men giver flere AI-uheld (ca. {decimal(uheldPrAar(a.fejlrate), 1)} om året).
+        {a.overvaagning >= 0.7
+          ? `Tæt overvågning: få AI-uheld (ca. ${decimal(uheldPrAar(a.fejlrate), 1)} om året), men menneskene koster løn.`
+          : a.overvaagning <= 0.3
+            ? `Lav overvågning er billig, men giver flere AI-uheld (ca. ${decimal(uheldPrAar(a.fejlrate), 1)} om året).`
+            : `Ca. ${decimal(uheldPrAar(a.fejlrate), 1)} AI-uheld om året. Mere overvågning giver færre uheld, men koster løn.`}
         {a.funktion === 'risiko' && a.overvaagning < 0.6 && ' Under 0,6 opfylder risikoagenten ikke AI-risikokrav.'}
       </p>
       {!data.ok && (
@@ -334,6 +351,10 @@ function NyAgent({ g }: { g: GameState }) {
   const loen = overvaagningsLoen(g, ov);
   const max = maxAgenter(g);
   const faser = agentFaser(u.funktion);
+  // Sim-kernens grund siger kun "Plads til N agenter" — også når transformationen har sat flere i drift end loftet
+  const grund = u.grund && g.agenter.length >= max
+    ? `Alle ${max} pladser er brugt (${g.agenter.length} agenter i drift). Sluk ${g.agenter.length - max + 1} agent${g.agenter.length - max + 1 === 1 ? '' : 'er'}, ansæt AI-ingeniører, eller forsk i orkestrering.`
+    : u.grund;
   const deploy = () => {
     if (!u.ok) return;
     send({ t: 'deployAgent', funktion: u.funktion, overvaagning: ov });
@@ -341,7 +362,7 @@ function NyAgent({ g }: { g: GameState }) {
   return (
     <div className="flex flex-col gap-2.5">
       <p className="text-xs text-muted">
-        <b className="tal text-cyan">
+        <b className={`tal ${g.agenter.length > max ? 'text-warn' : 'text-cyan'}`}>
           {g.agenter.length} af {max}
         </b>{' '}
         pladser i brug. Hver AI-ingeniør giver {AI.maxPrAiIngenioer} pladser mere, og forskningen "Agent-orkestrering" giver {AI.maxMedOrkestrering}.
@@ -436,13 +457,13 @@ function NyAgent({ g }: { g: GameState }) {
           </Note>
         )}
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {u.grund && (
+          {grund && (
             <p className="flex min-w-0 flex-1 basis-full items-start gap-1.5 text-xs font-bold text-warn sm:basis-auto" data-testid="deploy-agent-grund">
               <Ikon navn="laas" farve="var(--color-warn)" str={12} className="mt-0.5 shrink-0" />
-              {u.grund}
+              {grund}
             </p>
           )}
-          <Btn variant="primaer" onClick={deploy} disabled={!u.ok} title={u.grund} testId="deploy-agent" className="w-full sm:w-auto">
+          <Btn variant="primaer" onClick={deploy} disabled={!u.ok} title={grund} testId="deploy-agent" className="w-full sm:w-auto">
             <Ikon navn="chip" farve="currentColor" indre="var(--color-gold)" /> Sæt i drift · {mio(u.pris)}
           </Btn>
         </div>
@@ -515,20 +536,25 @@ function Hyper({ g }: { g: GameState }) {
           <p className="mb-1 flex items-center gap-1.5 font-pixel text-[0.7rem] font-black uppercase tracking-wider text-bad">
             <Ikon navn="advarsel" farve="var(--color-bad)" indre="var(--color-line)" str={12} /> Prisen
           </p>
+          {/* Den store regning er tilsynet; byen reagerer mere stille (spejler src/sim/trust.ts og src/sim/town.ts) */}
           <ul className="flex flex-col gap-1 text-[0.74rem]">
-            <li className="flex items-start gap-1.5">
-              <Ikon navn="hus" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
-              <span className="text-ink">Byen bliver rød: langt flere kunder glider over i risiko og problemspil, medmindre en risikoagent med overvågning ≥ 0,6 holder øje.</span>
-            </li>
             <li className="flex items-start gap-1.5">
               <Ikon navn="skjold" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
               <span className="text-ink">
-                Op til <b className="tal text-bad">{fortegn(h.tillidPrKvartal)}</b> tilsynstillid pr. kvartal i hvert marked uden risikoagent.
+                Tilsynet: <b className="tal text-bad">{fortegn(h.tillidPrKvartal)}</b> tilsynstillid pr. kvartal i hvert marked, så længe ingen risikoagent med overvågning ≥ 0,6
+                holder øje. Det er den store regning — og den trækker, så længe den kører.
+              </span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <Ikon navn="hus" farve="var(--color-bad)" str={12} className="mt-0.5 shrink-0" />
+              <span className="text-ink">
+                Byen: kunderne glider ca. {procentTekst(h.byRisikoUden)} hurtigere mod risiko og problemspil (med risikoagenten kun {procentTekst(h.byRisikoMed)}). Alene
+                ses det knap, men sammen med høj VIP, bonus og intensitet bliver byen gul og rød.
               </span>
             </li>
             <li className="flex items-start gap-1.5">
               <Ikon navn="lyn" farve="var(--color-warn)" str={12} className="mt-0.5 shrink-0" />
-              <span className="text-ink">Konkurrenterne ser jer som mere aggressive, og tilsynet vil gerne vide, hvad den gør.</span>
+              <span className="text-ink">Konkurrenterne ser jer som mere aggressive, og tilsynet vil gerne vide, hvad algoritmen gør.</span>
             </li>
           </ul>
           <ul className="mt-1.5">
@@ -604,7 +630,12 @@ function Transformation({ g }: { g: GameState }) {
                   op til {fortegn(TRANSFORMATION_OMDOEMME)}
                 </Linje>
               </ul>
-              {v.navne.length > 0 && <p className="truncate text-[0.7rem] text-dim">Farvel til {v.navne.join(', ')}</p>}
+              {v.nyeAgenter > 0 && g.agenter.length + v.nyeAgenter > maxAgenter(g) && (
+                <Note ikon="advarsel" farve="var(--color-warn)" testId={`ailab-transformation-${pct}-loft`}>
+                  Giver {g.agenter.length + v.nyeAgenter} agenter på {maxAgenter(g)} pladser. De kører, men I kan ikke sætte flere i drift (fx en risikoagent), før I har slukket nogle.
+                </Note>
+              )}
+              {v.navne.length > 0 && <p className="line-clamp-2 text-[0.7rem] text-dim">Farvel til {v.navne.join(', ')}</p>}
               {!v.ok && v.grund && (
                 <Note ikon="laas" farve="var(--color-warn)" testId={`ailab-transformation-${pct}-grund`}>
                   {v.grund}
@@ -697,14 +728,36 @@ function Boers({ g }: { g: GameState }) {
 
 // ---------- Laboratoriet ----------
 
+type LabFane = 'agenter' | 'fristelser' | 'verden';
+const LAB_FANER: { id: LabFane; navn: string; ikon: IkonNavn }[] = [
+  { id: 'agenter', navn: 'Agenter', ikon: 'terminal' },
+  { id: 'fristelser', navn: 'Fristelser', ikon: 'hype' },
+  { id: 'verden', navn: 'Verden', ikon: 'globus' },
+];
+
 function Lab({ g }: { g: GameState }) {
   const [verden, setVerden] = useState(false);
+  // Underfaner: laboratoriet er ellers flere skærmhøjder langt (især på iPad og mobil)
+  const [fane, setFane] = useState<LabFane>('agenter');
   const scenarier = (Object.keys(g.verdensscenarier) as WorldScenario[]).filter((k) => (g.verdensscenarier[k] ?? 0) > 0);
   const vurderinger = Object.keys(g.verdensVurderinger) as WorldAssessment[];
   const research = RESEARCH_BY_ID.agentOrkestrering;
   return (
     <div className="@container flex flex-col gap-3">
       <Status g={g} onVerden={() => setVerden(true)} />
+      <Faner<LabFane>
+        valg={LAB_FANER.map((f) => ({
+          ...f,
+          badge:
+            f.id === 'fristelser' && g.hyperpersonalisering.aktiv ? (
+              <span className="h-2 w-2 rounded-full bg-pink" aria-label="(hyperpersonalisering er slået til)" />
+            ) : undefined,
+        }))}
+        vaerdi={fane}
+        onSkift={setFane}
+        className="shell-uden-scrollbar"
+      />
+      {fane === 'agenter' && (
       <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
         <Afsnit
           titel="Agenter i drift"
@@ -719,7 +772,7 @@ function Lab({ g }: { g: GameState }) {
         <Afsnit titel="Sæt agent i drift" ikon="plus" farve="var(--color-cyan)" className="@2xl:col-span-2" testId="ailab-ny">
           <NyAgent g={g} />
         </Afsnit>
-        <Afsnit titel="Hvad agenterne gør" ikon="chip" farve="var(--color-cyan)" testId="ailab-effekt">
+        <Afsnit titel="Hvad agenterne gør" ikon="chip" farve="var(--color-cyan)" className="@2xl:col-span-2" testId="ailab-effekt">
           <EffektListe linjer={agentEffektLinjer(g)} testId="ailab-effekt-liste" />
           {g.agenter.some((a) => !agentData(g, a.funktion).ok) && (
             <div className="mt-1.5">
@@ -729,7 +782,11 @@ function Lab({ g }: { g: GameState }) {
             </div>
           )}
         </Afsnit>
-        <Afsnit titel="AI i Danmark lige nu" ikon="globus" farve="var(--color-violet)" testId="ailab-marked">
+      </div>
+      )}
+      {fane === 'verden' && (
+      <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
+        <Afsnit titel="AI i Danmark lige nu" ikon="globus" farve="var(--color-violet)" className="@2xl:col-span-2" testId="ailab-marked">
           <EffektListe linjer={markedsEffektLinjer(g, 'dk')} testId="ailab-marked-liste" />
           <p className="mt-1.5 text-[0.72rem] text-muted">
             Summen af jeres agenter, hyperpersonalisering og AI-scenarierne: agent-økonomien presser marginerne, AI-trading belønner egen sportsbook, og AI-native-bølgen straffer tunge
@@ -738,12 +795,6 @@ function Lab({ g }: { g: GameState }) {
         </Afsnit>
         <Afsnit titel="AI-scenarier" ikon="trend" farve="var(--color-cyan)" className="@2xl:col-span-2" testId="ailab-scenarier-afsnit">
           <Scenarier g={g} />
-        </Afsnit>
-        <Afsnit titel="Fristelse: hyperpersonalisering" ikon="hype" farve="var(--color-pink)" className="@2xl:col-span-2" testId="ailab-hyper-afsnit">
-          <Hyper g={g} />
-        </Afsnit>
-        <Afsnit titel="AI-transformation" ikon="folk" farve="var(--color-warn)" className="@2xl:col-span-2" testId="ailab-transformation-afsnit">
-          <Transformation g={g} />
         </Afsnit>
         <Afsnit titel="Agent-API" ikon="globus" farve="var(--color-cyan)" testId="ailab-agentapi-afsnit" className={g.flags.includes('boerslicensMulig') ? '' : '@2xl:col-span-2'}>
           <AgentApi g={g} />
@@ -754,6 +805,17 @@ function Lab({ g }: { g: GameState }) {
           </Afsnit>
         )}
       </div>
+      )}
+      {fane === 'fristelser' && (
+      <div className="grid grid-cols-1 gap-3">
+        <Afsnit titel="Fristelse: hyperpersonalisering" ikon="hype" farve="var(--color-pink)" testId="ailab-hyper-afsnit">
+          <Hyper g={g} />
+        </Afsnit>
+        <Afsnit titel="AI-transformation" ikon="folk" farve="var(--color-warn)" testId="ailab-transformation-afsnit">
+          <Transformation g={g} />
+        </Afsnit>
+      </div>
+      )}
       {verden && <AktSkiftDialog signal={{ k: 'aktSkift', scenarier, vurderinger }} onLuk={() => setVerden(false)} genvisning />}
     </div>
   );

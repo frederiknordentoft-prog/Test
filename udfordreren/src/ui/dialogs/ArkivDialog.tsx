@@ -8,7 +8,11 @@ import { arkivHint, arkivNr, arkivOpslag } from '../lib/arkivHjaelp';
 import { ARKIV } from '../../data/archive';
 
 /** Selve opslaget i en dialog. `visAltid`: vis teksten, selv om opslaget ikke er låst op (fx fra eftertanken). */
-export function ArkivOpslagModal({ id, onLuk, visAltid = false, visPanelLink = false }: { id: string; onLuk: () => void; visAltid?: boolean; visPanelLink?: boolean }) {
+export function ArkivOpslagModal({ id, onLuk, visAltid = false, visPanelLink = false, forspil = null }: {
+  id: string; onLuk: () => void; visAltid?: boolean; visPanelLink?: boolean;
+  /** Eftertankekortets "I virkeligheden …" (fra archive.ts) — vises over opslaget */
+  forspil?: string | null;
+}) {
   const ulaast = useGame((s) => s.game?.arkiv ?? []);
   const opslag = arkivOpslag(id);
   const laast = !!opslag && !visAltid && !ulaast.includes(opslag.id);
@@ -55,9 +59,16 @@ export function ArkivOpslagModal({ id, onLuk, visAltid = false, visPanelLink = f
               <Ikon navn="laas" farve="var(--color-dim)" className="mt-0.5 shrink-0" /> {arkivHint(opslag.id)}
             </p>
           ) : (
-            <p className="rounded-md border-2 border-line bg-bg2 p-3 text-sm leading-relaxed text-ink" data-testid="arkiv-tekst">
-              {opslag.tekst}
-            </p>
+            <>
+              {forspil && (
+                <p className="flex items-start gap-2 rounded-md border-2 border-line bg-panel2 p-3 text-sm leading-relaxed text-ink" data-testid="arkiv-forspil">
+                  <Ikon navn="spoergsmaal" farve="var(--color-cyan)" indre="var(--color-line)" className="mt-0.5 shrink-0" /> {forspil}
+                </p>
+              )}
+              <p className="rounded-md border-2 border-line bg-bg2 p-3 text-sm leading-relaxed text-ink" data-testid="arkiv-tekst">
+                {opslag.tekst}
+              </p>
+            </>
           )}
           <p className="text-xs text-dim">Arkivet bygger på virkelige tal. Resten af spillet er fri fantasi med parodinavne.</p>
         </article>

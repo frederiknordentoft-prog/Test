@@ -7,7 +7,7 @@ import { MARKETS } from '../../data/markets';
 import { VERTICALS, ANDEN_VERTIKAL } from '../../data/verticals';
 import { REGLER } from '../../data/regulationTimeline';
 import { VERTIKAL_LICENS, LICENS_AARSGEBYR } from '../../data/costs';
-import { datoTekst, licensPris, licensStatus } from '../../sim/selectors';
+import { datoTekst, licensPris, licensStatus, markedStoerrelse } from '../../sim/selectors';
 import { Btn, Ikon, Modal } from '../components/kit';
 import { Chip, FlagStribe, Pips } from '../components/FirmaDele';
 import { PixelTekst } from '../components/ShellPixelFont';
@@ -69,6 +69,10 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
   };
 
   const afgiftEns = ms.afgiftPrVertikal.betting === ms.afgiftPrVertikal.kasino;
+  // Et marked, der åbner uden for tidsplanen (Norge i et verdensscenarie): licensen er gratis og straks, og afgiften
+  // er endnu ikke fastsat — sig det, i stedet for at det ligner en fejl
+  const overgang = def.aabnerUge === null;
+  const gebyrTekst = pris.gebyr <= 0 ? 'Gratis' : mio(pris.gebyr);
   const indsats = def.afgiftModel === 'indsats';
   const regler = [
     ...ms.regler.map((id) => ({ id, navn: REGLER[id]?.navn ?? id, uge: null as number | null })),
@@ -94,7 +98,7 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
               Senere
             </Btn>
             <Btn variant="primaer" onClick={soeg} disabled={!!grund} title={grund} testId="markedAabner-soeg" className="flex-[2] sm:flex-none">
-              <Ikon navn="noegle" farve="currentColor" indre="var(--color-gold)" /> Søg licens · {(total || pris.gebyr) < 1 ? mio(total || pris.gebyr) : mioKort(total || pris.gebyr)}
+              <Ikon navn="noegle" farve="currentColor" indre="var(--color-gold)" /> Søg licens · {(total || pris.gebyr) <= 0 ? 'gratis' : (total || pris.gebyr) < 1 ? mio(total || pris.gebyr) : mioKort(total || pris.gebyr)}
             </Btn>
           </div>
         </div>
@@ -111,15 +115,22 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
             <div className="shell-svaev flex max-w-full items-center justify-center">
               <PixelTekst tekst={def.navn} dybde={1} className="h-11 w-auto max-w-full" titel={def.navn} />
             </div>
-            <p className="max-w-md text-sm text-muted">{markedBeskrivelse(m, g.uge)}</p>
+            <p className="max-w-md text-sm text-muted" data-testid="markedAabner-beskrivelse">{markedBeskrivelse(m, g.uge, ms.aaben)}</p>
           </div>
           <div className="grid grid-cols-2 gap-1.5 border-t-2 border-line p-2.5 sm:grid-cols-3">
-            {VERTIKALER.map((x) => (
-              <Noegle key={x} label={`Marked · ${VERTICALS[x].kort}`} titel="Hele markedets online-BSI pr. år (licenseret + offshore)" testId={`markedAabner-stoerrelse-${x}`}>
-                <span className="tal font-pixel text-sm font-bold text-gold">{markedAarsBsi(m, x, g.uge) > 0 ? stoerrelseTekst(markedAarsBsi(m, x, g.uge)) : '–'}</span>
-              </Noegle>
-            ))}
-            <Noegle label={indsats ? 'Afgift af indsats' : 'Afgift af BSI'} titel={indsats ? 'Indsatsafgift: rammer alle spil — også dem, huset taber' : undefined}>
+            {VERTIKALER.map((x) => {
+              // Norge har ingen tidsplan i datafilen: brug størrelsen i denne verden (det grå marked, der nu kan licenseres)
+              const aar = overgang ? markedStoerrelse(g, m, x) * 52 : markedAarsBsi(m, x, g.uge);
+              return (
+                <Noegle key={x} label={`Marked · ${VERTICALS[x].kort}`} titel="Hele markedets online-BSI pr. år (licenseret + offshore)" testId={`markedAabner-stoerrelse-${x}`}>
+                  <span className="tal font-pixel text-sm font-bold text-gold">{aar > 0 ? stoerrelseTekst(aar) : '–'}</span>
+                </Noegle>
+              );
+            })}
+            <Noegle
+              label={overgang ? 'Afgift (overgang)' : indsats ? 'Afgift af indsats' : 'Afgift af BSI'}
+              titel={overgang ? 'Afgiften er endnu ikke fastsat for det nye licensmarked' : indsats ? 'Indsatsafgift: rammer alle spil — også dem, huset taber' : undefined}
+            >
               <span className="tal font-pixel text-sm font-bold text-ink">
                 {afgiftEns ? procent(ms.afgiftPrVertikal.betting) : `${procent(ms.afgiftPrVertikal.betting)} / ${procent(ms.afgiftPrVertikal.kasino)}`}
               </span>
@@ -144,7 +155,8 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
               <Ikon navn="noegle" farve="var(--color-gold)" indre="var(--color-line)" str={14} /> Licens
             </span>
             <span className="tal text-sm text-ink">
-              <b className="text-gold">{mio(pris.gebyr)}</b> · behandling {ugerKort(pris.uger)}
+              <b className="text-gold">{gebyrTekst}</b> · {pris.uger <= 0 ? 'godkendes straks' : `behandling ${ugerKort(pris.uger)}`}
+              {overgang && <span className="text-dim"> (overgangsordning)</span>}
             </span>
             <span className="tal text-xs text-dim">Årsgebyr {mio(LICENS_AARSGEBYR)} pr. vertikal</span>
           </div>

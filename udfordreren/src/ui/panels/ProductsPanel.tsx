@@ -307,7 +307,7 @@ export default function ProductsPanel() {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted">Samlet BSI fra lukkede produkter: {mio(lukkede.reduce((a, p) => a + p.samletBsi, 0))}.</p>
+              <p className="text-sm text-muted">Samlet BSI fra lukkede produkter: {mio(lukkede.reduce((a, p) => a + p.samletBsi, 0))}</p>
             )}
           </Afsnit>
         )}

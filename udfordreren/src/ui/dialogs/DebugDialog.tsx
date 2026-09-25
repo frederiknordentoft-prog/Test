@@ -241,6 +241,23 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
     setBesked('Værdier sat.');
   };
 
+  /** Et hop fra et nyt spil giver et hult firma i 2026 (ingen produkter, white-label). AI-native-moden starter med agenter. */
+  const aiNativeStart = () => {
+    setBesked('Spoler verden frem til 2026 …');
+    setTimeout(() => {
+      useGame.getState().nytSpil({
+        seed: g.seed,
+        firmaNavn: g.firmaNavn,
+        stiftere: [g.stiftere[0] ?? 'oddssaetteren', g.stiftere[1] ?? 'udvikleren'] as [string, string],
+        startVertikal: g.startVertikal,
+        tutorial: false,
+        mode: 'aiNative2026',
+      });
+      useGame.getState().pause('Debug: AI-native 2026');
+      onLuk();
+    }, 30);
+  };
+
   const hop = () => {
     const a = Number(aar);
     if (!Number.isFinite(a) || a <= nuAar) return;
@@ -310,6 +327,12 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
           <Btn variant="primaer" onClick={hop} disabled={Number(aar) <= nuAar} testId="debug-hop">
             Hop
           </Btn>
+          <p className="text-xs text-dim sm:col-span-2">
+            Et hop kører firmaet passivt frem (tomt firma, hvis I ikke har bygget noget).{' '}
+            <button type="button" className="min-h-[44px] font-bold text-cyan underline" onClick={aiNativeStart} data-testid="debug-ainative">
+              Start i stedet &quot;AI-native fra 2026&quot; med agenter
+            </button>
+          </p>
         </section>
 
         <section className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">

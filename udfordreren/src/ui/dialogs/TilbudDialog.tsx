@@ -70,18 +70,19 @@ export default function TilbudDialog({ signal, onLuk }: { signal: Signal; onLuk:
       testId="dialog-tilbud"
       bredde={640}
       fod={
-        <>
-          <Btn variant="ghost" onClick={onLuk} testId="tilbud-senere" className="mr-auto">
+        // Mobil: knapperne stables i fuld bredde (det vigtigste valg øverst); bredt: på én række
+        <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center">
+          <Btn variant="ghost" onClick={onLuk} testId="tilbud-senere" className="w-full sm:mr-auto sm:w-auto">
             <Ikon navn="ur" farve="currentColor" str={14} /> Tænk over det
           </Btn>
-          <Btn onClick={afvis} testId="tilbud-afvis">
+          <Btn onClick={afvis} testId="tilbud-afvis" className="w-full sm:w-auto">
             <Ikon navn="kryds" farve="var(--color-bad)" str={14} /> Nej tak
           </Btn>
-          <Btn variant={bekraeft ? 'fare' : 'primaer'} onClick={saelg} testId="tilbud-accepter">
+          <Btn variant={bekraeft ? 'fare' : 'primaer'} onClick={saelg} testId="tilbud-accepter" className="w-full sm:w-auto">
             <Ikon navn="penge" farve="currentColor" indre={bekraeft ? 'var(--color-bad)' : 'var(--color-gold)'} str={14} />
             {bekraeft ? 'Ja, sælg — spillet slutter' : 'Sælg firmaet'}
           </Btn>
-        </>
+        </div>
       }
     >
       <div className="flex flex-col gap-3">

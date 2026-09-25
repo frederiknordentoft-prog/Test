@@ -17,12 +17,13 @@ import { mio, mioKort, pct } from '../format';
 import { featureNavn } from '../lib/devHjaelp';
 import {
   ARKETYPE, EVNER, aktiveReaktioner, andelI, antalAktiveProdukter, bedsteProdukt, bonuskrige, konkurrentStatus, rammerSpilleren,
-  reaktionEffekter, sidsteTekst, spillerensMarkeder, tilSalg, udloebTekst, ugerTilbage, SPONSOR_RABAT, type EffektLinje,
+  reaktionEffekter, sidsteTekst, spillerensMarkeder, tilSalg, udloebTekst, ugerTilbage, SPONSOR_RABAT, REGEL_FORKLARING, opkoebGrund, type EffektLinje,
 } from '../lib/konkurrentHjaelp';
+import { TONE_FARVE } from '../lib/tvaersHjaelp';
+import { rulleKant } from '../hooks/rulleKant';
 
 type Filter = 'jeres' | 'alle' | MarketId;
 
-const TONE_FARVE: Record<EffektLinje['tone'], string> = { god: 'var(--color-good)', skidt: 'var(--color-bad)', neutral: 'var(--color-muted)' };
 
 function EffektChip({ e }: { e: EffektLinje }) {
   return (
@@ -37,6 +38,8 @@ function EffektChip({ e }: { e: EffektLinje }) {
 
 function ReaktionRaekke({ g, r, visKonkurrent }: { g: GameState; r: GameState['reaktioner'][number]; visKonkurrent?: boolean }) {
   const def = REAKTIONS_REGLER[r.regel];
+  // Spillervenlig forklaring (datafilens hvis/så er spec-sprog med interne id'er)
+  const forkl = REGEL_FORKLARING[r.regel];
   const info = r.competitorId ? ejerInfo(g, r.competitorId) : null;
   const effekter = reaktionEffekter(r);
   return (
@@ -67,7 +70,7 @@ function ReaktionRaekke({ g, r, visKonkurrent }: { g: GameState; r: GameState['r
       <p className="flex items-start gap-1 text-xs text-muted">
         <Ikon navn="spoergsmaal" farve="var(--color-cyan)" str={11} className="mt-0.5 shrink-0" />
         <span>
-          <b className="text-ink">Hvis</b> {def.hvis.charAt(0).toLowerCase() + def.hvis.slice(1)} — <b className="text-ink">så</b> {def.saa.charAt(0).toLowerCase() + def.saa.slice(1)}.
+          <b className="text-ink">Hvis</b> {forkl.hvis} — <b className="text-ink">så</b> {forkl.saa}.
         </span>
       </p>
     </li>
@@ -127,9 +130,12 @@ function Overblik({ g, aabnTilbud, aabnSponsor }: { g: GameState; aabnTilbud: ()
         </div>
         <div className="min-w-0 rounded-md border-2 border-line bg-bg2 px-2 py-1.5 @md:px-2.5 @md:py-2" title="Sponsorater giver billigere kunder i markedet (R7)">
           <div className="flex items-center gap-1 text-[0.62rem] uppercase leading-tight tracking-wide text-muted @md:text-[0.68rem]">
-            <Ikon navn="bold" farve="var(--color-good)" indre="var(--color-line)" str={12} /> Sponsorater
+            <Ikon navn="bold" farve="var(--color-good)" indre="var(--color-line)" str={12} /> Jeres sponsorater
           </div>
-          <div className="tal font-pixel text-sm font-black text-ink @md:text-base">{sponsorater.filter((sp) => sp.ejer === 'spiller').length}</div>
+          <div className="tal font-pixel text-sm font-black text-ink @md:text-base" data-testid="jeres-sponsorater">
+            {sponsorater.filter((sp) => sp.ejer === 'spiller').length}
+            <span className="font-sans text-[0.68rem] font-normal text-muted"> af {sponsorater.length} aktive</span>
+          </div>
           <div className="text-[0.68rem] leading-tight text-muted @md:text-xs">{auktion ? `Auktion: ${auktion.navn}` : 'Ingen auktion lige nu'}</div>
         </div>
       </div>
@@ -254,6 +260,7 @@ function KonkurrentKort({ g, c }: { g: GameState; c: Competitor }) {
   const bedst = bedsteProdukt(g, c.id);
   const reaktioner = aktiveReaktioner(g, c.id);
   const st = opkoebStatus(g, c);
+  const grund = opkoebGrund(g, st);
   const aggr = aggressivitet(g, c);
   const antal = antalAktiveProdukter(g, c.id);
   const bsi = konkurrentAarligBsi(g, c);
@@ -360,7 +367,7 @@ function KonkurrentKort({ g, c }: { g: GameState; c: Competitor }) {
 
       {status.kind === 'aktiv' || status.kind === 'ejet' ? (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <Btn variant={bekraeft ? 'god' : 'sekundaer'} disabled={!st.ok} onClick={koeb} testId={`koeb-${c.id}`} title={st.ok ? undefined : st.grund}>
+          <Btn variant={bekraeft ? 'god' : 'sekundaer'} disabled={!st.ok} onClick={koeb} testId={`koeb-${c.id}`} title={grund}>
             <Ikon navn={salg ? 'penge' : 'laas'} farve={st.ok ? 'var(--color-gold)' : 'currentColor'} indre="var(--color-line)" str={14} />
             {bekraeft ? `Ja, køb for ${mio(st.pris)}` : salg ? `Køb · ${mio(st.pris)}` : 'Ikke til salg'}
           </Btn>
@@ -371,7 +378,7 @@ function KonkurrentKort({ g, c }: { g: GameState; c: Competitor }) {
           )}
           <span className="flex min-w-0 flex-1 basis-40 items-start gap-1 text-xs text-muted" data-testid={`koeb-grund-${c.id}`}>
             <Ikon navn={st.ok ? 'flueben' : 'laas'} farve={st.ok ? 'var(--color-good)' : 'var(--color-muted)'} str={11} className="mt-0.5 shrink-0" />
-            {st.ok ? 'Produkter, licenser og 80 % af kunderne følger med.' : st.grund}
+            {st.ok ? 'Produkter, licenser og 80 % af kunderne følger med.' : grund}
           </span>
         </div>
       ) : null}
@@ -410,7 +417,7 @@ export default function CompetitorPanel() {
       <div className="@container flex flex-col gap-3">
         <Overblik g={g} aabnTilbud={() => setTilbudAaben(true)} aabnSponsor={() => setSponsorAaben(true)} />
 
-        <div className="shell-uden-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5" role="radiogroup" aria-label="Filtrér konkurrenter efter marked">
+        <div ref={rulleKant} className="shell-uden-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5" role="radiogroup" aria-label="Filtrér konkurrenter efter marked">
           {filtre.map((f) => {
             const aktiv = valgt === f.id;
             return (
@@ -436,9 +443,12 @@ export default function CompetitorPanel() {
         {liste.length === 0 ? (
           <Tom>Ingen konkurrenter her. Nyd stilheden — den varer sjældent længe.</Tom>
         ) : (
-          <div className="grid grid-cols-1 gap-2 @2xl:grid-cols-2" data-testid="konkurrentliste">
+          // Spalter i stedet for et rækkejusteret grid: kortene er forskellige i højden, så rækker giver store huller
+          <div className="columns-1 gap-2 @2xl:columns-2" data-testid="konkurrentliste">
             {liste.map((c) => (
-              <KonkurrentKort key={c.id} g={g} c={c} />
+              <div key={c.id} className="mb-2 break-inside-avoid">
+                <KonkurrentKort g={g} c={c} />
+              </div>
             ))}
           </div>
         )}

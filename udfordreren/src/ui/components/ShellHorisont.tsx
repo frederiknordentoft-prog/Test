@@ -43,11 +43,13 @@ function punkter(s: GameState): Punkt[] {
     const lic = s.markeder[p.marked].licens;
     if (lic === 'ingen' || lic === 'inddraget' || p.ikrafttraedelseUge <= s.uge) continue;
     ud.push({
-      id: `regel-${p.marked}-${p.regelId}`,
+      // To dynamiske afgiftsstigninger kan være planlagt i samme marked: ugen gør nøglen entydig
+      id: `regel-${p.marked}-${p.regelId}-${p.ikrafttraedelseUge}`,
       ikon: 'paragraf',
       farve: 'var(--color-warn)',
       tekst: `${REGLER[p.regelId]?.navn ?? p.regelId} (${MARKETS[p.marked].kort})`,
       uger: p.ikrafttraedelseUge - s.uge,
+      note: p.regelId === 'afgiftsstigning' && p.pp !== undefined ? `+${p.pp} pp` : undefined,
     });
   }
   // Vedtagne afgiftsskift inden for et år i markeder, hvor I er aktive
@@ -55,7 +57,7 @@ function punkter(s: GameState): Punkt[] {
     const lic = s.markeder[m].licens;
     if (lic === 'ingen' || lic === 'inddraget') continue;
     for (const a of kommendeAfgifter(s, m, 52)) {
-      ud.push({ id: `${a.id}-${m}`, ikon: 'penge', farve: 'var(--color-warn)', tekst: `${a.navn} (${MARKETS[m].kort})`, uger: a.ugerTil });
+      ud.push({ id: `${a.id}-${m}`, ikon: 'penge', farve: 'var(--color-warn)', tekst: `${a.navn} (${MARKETS[m].kort})`, uger: a.ugerTil, note: a.tal });
     }
   }
   // Sportskalenderens næste slutrunde

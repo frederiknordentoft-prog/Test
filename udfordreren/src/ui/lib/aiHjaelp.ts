@@ -7,6 +7,7 @@ import { RESEARCH_BY_ID } from '../../data/research';
 import { PLATFORM_KINDS } from '../../data/platforms';
 import { CHANNELS } from '../../data/acquisition';
 import { TRUST } from '../../data/trust';
+import { BY } from '../../data/town';
 import { agentEffekt, agentStatus, aiMarkedsEffekt, dataFaktor, hyperStatus, kraevetForskning, transformationStatus, transformationsKandidater } from '../../sim/selectors';
 import { aarFor, AI_AKT_UGE } from '../../sim/time';
 
@@ -141,7 +142,16 @@ export function agentEffektLinjer(s: GameState): EffektLinje[] {
     { id: 'bsi', label: 'BSI pr. kunde', tekst: `Betting ${komp(e.bettingArpu)} · kasino ${komp(e.kasinoArpu)}`, ikon: 'penge', farve: 'var(--color-gold)', aktiv: e.bettingArpu > 0 || e.kasinoArpu > 0, titel: 'Fra trading- og CRM-agenter' },
     { id: 'churn', label: 'Churn', tekst: e.churn === 0 ? 'ingen' : fortegnProcent(e.churn), ikon: 'folk', farve: 'var(--color-sky)', aktiv: e.churn < 0, titel: 'Fra kundeservice- og CRM-agenter (negativ = færre forlader jer)' },
     { id: 'indhold', label: 'Indholdsudgift', tekst: e.indholdPct === 0 ? 'ingen' : `−${decimal(e.indholdPct * 100, 1)} pp aggregator`, ikon: 'terning', farve: 'var(--color-violet)', aktiv: e.indholdPct > 0, titel: 'Indholdsagenter laver kasinoindhold selv' },
-    { id: 'tillid', label: 'Tilsynstillid', tekst: e.tillidPrKvartal === 0 ? 'ingen' : `+${decimal(e.tillidPrKvartal, 1)} pr. kvartal`, ikon: 'skjold', farve: 'var(--color-good)', aktiv: e.tillidPrKvartal > 0, titel: 'Fra compliance-agenter (kræver mennesker ved roret)' },
+    {
+      id: 'tillid',
+      label: 'Tilsynstillid',
+      // Risikoagenten giver ikke tillid direkte: den beskytter byen, og en sund by giver tillid ved kvartalsmødet
+      tekst: e.tillidPrKvartal > 0 ? `+${decimal(e.tillidPrKvartal, 1)} pr. kvartal` : e.byBeskyttelse > 0 ? 'via byen' : 'ingen',
+      ikon: 'skjold',
+      farve: 'var(--color-good)',
+      aktiv: e.tillidPrKvartal > 0 || e.byBeskyttelse > 0,
+      titel: e.tillidPrKvartal > 0 ? 'Fra compliance-agenter (kræver mennesker ved roret)' : 'Compliance-agenter giver tillid direkte. Risikoagenter virker via byen: færre i gul og rød giver bedre tillid ved kvartalsmødet.',
+    },
     { id: 'by', label: 'Byens beskyttelse', tekst: e.byBeskyttelse === 0 ? 'ingen' : `+${decimal(e.byBeskyttelse, 2)}`, ikon: 'hus', farve: 'var(--color-good)', aktiv: e.byBeskyttelse > 0, titel: 'Risikoagenter fanger tidlige tegn på problemspil' },
     {
       id: 'risikokrav',
@@ -216,6 +226,9 @@ export type HyperInfo = {
   risikoOk: boolean;
   tillidPrKvartal: number;
   kopiOmUger: number | null;
+  /** Hvor meget hurtigere byens kunder glider mod risiko (uden / med en risikoagent ≥ 0,6) */
+  byRisikoUden: number;
+  byRisikoMed: number;
 };
 
 export function hyperInfo(s: GameState): HyperInfo {
@@ -236,6 +249,8 @@ export function hyperInfo(s: GameState): HyperInfo {
     risikoOk: agentEffekt(s).risikoOk,
     tillidPrKvartal: TRUST.hyperUdenRisiko,
     kopiOmUger: h.foersteUge !== null && !kopieret ? h.foersteUge + AI_EFFEKT.hyperKopiUger - s.uge : null,
+    byRisikoUden: BY.hyper,
+    byRisikoMed: BY.hyperMedRisiko,
   };
 }
 
@@ -270,7 +285,10 @@ export function transformationInfo(s: GameState, andel: 0.25 | 0.5): Transformat
     loen += m.loenPrUge;
     tab += TRANSFORMATION.indsigtTab * (m.niveau / 5);
     prF[v.funktion] = (prF[v.funktion] ?? 0) + 1;
-    navne.push(m.navn.split(' ')[0]);
+    // Fornavn — med efternavnets forbogstav, hvis to hedder det samme (fx "Sara K." og "Sara L.")
+    const [fornavn, ...rest] = m.navn.split(' ');
+    const dublet = s.staff.some((x) => x.id !== m.id && x.navn.split(' ')[0] === fornavn);
+    navne.push(dublet && rest.length > 0 ? `${fornavn} ${rest[rest.length - 1][0]}.` : fornavn);
   }
   const nye = (Object.entries(prF) as [AgentFunktion, number][]).reduce((a, [f, n]) => a + Math.ceil(n / (PR_AGENT[f] ?? 1)), 0);
   return { andel, ok: st.ok, grund: st.grund, antal: st.antal, pris: st.pris, loenSparet: loen, indsigtTab: tab, nyeAgenter: nye, navne };

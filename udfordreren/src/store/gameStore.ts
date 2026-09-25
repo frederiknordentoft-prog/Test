@@ -7,7 +7,8 @@ import { applyAction, step, stepMut } from '../sim/step';
 import { DIALOG_SIGNALER, aabnerDialog, pauserFor, pauseTekst, reaktionSomDialog } from '../sim/signals';
 import { AI_AKT_UGE, aarFor, datoTekst, ugeIAar } from '../sim/time';
 import { MARKETS } from '../data/markets';
-import { autoloesEvents } from '../sim/events';
+import { eventChoice } from '../sim/events';
+import { EVENT_BY_ID } from '../data/events';
 import { spillerKunderTotal } from '../sim/customers';
 import { gem, gemSetting, hentSetting } from './persistence';
 import { samlSignaler } from '../ui/lib/dialogSamling';
@@ -18,7 +19,7 @@ export type ToastKind = 'info' | 'godt' | 'skidt';
  * antal: samme tekst kom flere gange (vises som ×N i stedet for en stak ens toasts).
  * handling: svar på noget, spilleren lige gjorde (vises også oven på en signal-dialog); ugens nyheder venter, til dialogerne er lukket.
  */
-export type Toast = { id: number; tekst: string; kind: ToastKind; antal?: number; handling?: boolean };
+export type Toast = { id: number; tekst: string; kind: ToastKind; antal?: number; handling?: boolean; uge?: number };
 /** gruppe: flere signaler af samme slags i samme uge, samlet i én dialog (fx nr. 1 i seks markeder) */
 export type SignalDialog = { id: number; signal: Signal; gruppe?: Signal[] };
 
@@ -26,14 +27,28 @@ let naesteId = 1;
 
 /** Højst så mange toasts gemmes ad gangen */
 const MAX_TOASTS = 6;
+/** Toasts, der er ældre end så mange spiluger, er forældede (fx "klar til lancering" for et produkt, der er lanceret) */
+const TOAST_MAX_ALDER = 2;
 
 /** Tilføj en toast — er den samme tekst allerede fremme, tælles den op og flyttes frem i stedet */
-function medToast(liste: Toast[], t: { tekst: string; kind: ToastKind }, handling = false): Toast[] {
+function medToast(liste: Toast[], t: { tekst: string; kind: ToastKind }, handling = false, uge?: number): Toast[] {
   const i = liste.findIndex((x) => x.tekst === t.tekst && x.kind === t.kind);
-  if (i < 0) return [...liste, { id: naesteId++, ...t, handling }];
+  if (i < 0) return [...liste, { id: naesteId++, ...t, handling, uge }];
   const antal = (liste[i].antal ?? 1) + 1;
-  return [...liste.slice(0, i), ...liste.slice(i + 1), { id: naesteId++, ...t, antal, handling }];
+  return [...liste.slice(0, i), ...liste.slice(i + 1), { id: naesteId++, ...t, antal, handling, uge }];
 }
+
+/** Smid forældede toasts væk (de kan have ventet bag en række dialoger) */
+function friskeToasts(liste: Toast[], uge: number): Toast[] {
+  return liste.filter((t) => t.uge === undefined || uge - t.uge <= TOAST_MAX_ALDER);
+}
+
+/** Pausegrund, når hele holdet har gået ledigt i flere uger (ingen projektfase og ingen opgave) */
+export const GRUND_LEDIGT_HOLD = 'Holdet har intet at lave';
+/** Efter så mange uger, hvor ingen har arbejdet, pauses spillet … */
+export const LEDIG_PAUSE_UGER = 3;
+/** … og igen efter så mange uger, hvis holdet stadig ikke laver noget */
+const LEDIG_PAUSE_IGEN = 12;
 
 export type Settings = {
   lyd: boolean;
@@ -97,6 +112,10 @@ type GameStore = {
   hudFrys: HudTal | null;
   /** Ugen, hvor spilleren selv frigjorde holdet (lancering eller færdigtestet projekt) — så kommer der ingen "ledige"-pause */
   frigjortUge: number | null;
+  /** Uger i træk, hvor ingen medarbejder har arbejdet (projekt eller opgave) */
+  ledigeUger: number;
+  /** Ugen for seneste pause om et ledigt hold (så den ikke kommer igen hver uge) */
+  ledigPauseUge: number | null;
 
   nytSpil(opts: NewGameOptions): void;
   indlaes(state: GameState): void;
@@ -112,6 +131,8 @@ type GameStore = {
   fjernToast(id: number): void;
   opdaterSettings(p: Partial<Settings>): void;
   indlaesSettings(): Promise<void>;
+  /** Genåbn slutskærmen efter "Se firmaet" */
+  visSlut(): void;
   /** Debug: erstat state direkte (kun ?debug=1) */
   debugSaet(fn: (s: GameState) => void): void;
   /** Debug: hop frem til et år (auto-vælger events) */
@@ -149,6 +170,19 @@ function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
   }
 }
 
+/**
+ * Debug-hoppets automatiske eventvalg: som sim-kernens autoloesEvents, men uden valg, der skruer op for marketing
+ * (investorpres kommer næsten hvert kvartal, og +30 % pr. gang får marketingen til at vokse eksponentielt over mange år).
+ */
+function roligeEventValg(g: GameState): void {
+  while (g.ventendeEvents.length > 0) {
+    const e = g.ventendeEvents[0];
+    const valg = EVENT_BY_ID[e.eventId]?.valg ?? [];
+    const i = Math.max(0, valg.findIndex((v) => !((v.effekt.marketingPct ?? 0) > 0)));
+    if (!eventChoice(g, e.eventId, i)) g.ventendeEvents.shift();
+  }
+}
+
 export const useGame = create<GameStore>((set, get) => {
   /** Fælles efterbehandling af signaler efter step/handling */
   function behandl(ny: GameState, fraTick: boolean): void {
@@ -161,39 +195,62 @@ export const useGame = create<GameStore>((set, get) => {
     let frigjortUge = st.frigjortUge;
     // Holdet blev ledigt, fordi spilleren selv lancerede, eller fordi testen blev færdig
     if (sig.some((s) => s.k === 'lanceret' || s.k === 'klar')) frigjortUge = ny.uge;
+    // Ledigt hold: sim-kernens 'ledig'-signal kommer kun i ugen, hvor folk går fra travl til ledig (og springes over lige
+    // efter en lancering). Tæl derfor selv uger, hvor ingen har arbejdet, og pause efter et par uger.
+    let ledigeUger = st.ledigeUger;
+    let ledigPauseUge = st.ledigPauseUge;
+    if (fraTick) {
+      const ingenArbejder = ny.staff.length > 0 && ny.travleSidst.length === 0 && !ny.slut;
+      ledigeUger = ingenArbejder ? ledigeUger + 1 : 0;
+      if (!ingenArbejder) ledigPauseUge = null;
+    }
     let hudFrys = st.hudFrys;
     if (!hudFrys && st.game && sig.some((s) => AFSLOERING.includes(s.k))) hudFrys = hudTal(st.game);
     // Mange markeder: saml ugens fejringer, påbud, sanktioner og regler, så de ikke kommer som én dialog pr. land
     const samling = samlSignaler(st.game, ny, sig);
     for (const d of samling.dialoger) dialoger.push({ id: naesteId++, ...d });
-    for (const t of samling.toasts) toasts = medToast(toasts, t, !fraTick);
+    for (const t of samling.toasts) toasts = medToast(toasts, t, !fraTick, ny.uge);
     for (const s of sig) {
       // Foldet ind i en samlet dialog eller toast: ingen egen toast og ingen egen pause
       if (samling.stille.has(s)) continue;
       const t = toastFor(s);
-      if (t) toasts = medToast(toasts, t, !fraTick);
+      if (t) toasts = medToast(toasts, t, !fraTick, ny.uge);
       if (fraTick && pauserFor(s) && !st.settings.autoPauseFra.includes(s.k)) {
         // Ledige lige efter egen lancering/færdig test: spilleren ved det godt — ingen pause, bare et nik
         if (s.k === 'ledig' && frigjortUge !== null && ny.uge - frigjortUge <= 2) {
-          toasts = medToast(toasts, { tekst: 'Holdet er ledigt — start næste produkt eller tag en opgave.', kind: 'info' });
+          toasts = medToast(toasts, { tekst: 'Holdet er ledigt — start næste produkt eller tag en opgave.', kind: 'info' }, false, ny.uge);
           continue;
         }
         pause = true;
         const g = pauseTekst(s);
         if (g) grunde.add(g);
+        if (s.k === 'ledig' && ledigeUger > 0) ledigPauseUge = ny.uge;
       }
+    }
+    const ledigtHold =
+      fraTick &&
+      ledigeUger >= LEDIG_PAUSE_UGER &&
+      (ledigPauseUge === null || ny.uge - ledigPauseUge >= LEDIG_PAUSE_IGEN) &&
+      !st.settings.autoPauseFra.includes('ledig');
+    if (ledigtHold) {
+      ledigPauseUge = ny.uge;
+      pause = true;
+      grunde.add(GRUND_LEDIGT_HOLD);
+      toasts = medToast(toasts, { tekst: `Holdet har ikke lavet noget i ${ledigeUger} uger. Start et produkt, eller tag en opgave.`, kind: 'info' }, false, ny.uge);
     }
     if (dialoger.length > 0) pause = true;
     set({
       game: ny,
       sidsteSignaler: sig,
       dialoger,
-      toasts: toasts.slice(-MAX_TOASTS),
+      toasts: friskeToasts(toasts, ny.uge).slice(-MAX_TOASTS),
       paused: pause,
       pauseGrunde: [...grunde],
       tick: fraTick ? st.tick + 1 : st.tick,
       hudFrys,
       frigjortUge,
+      ledigeUger,
+      ledigPauseUge,
     });
     if (fraTick) {
       clock.tick += 1;
@@ -218,16 +275,18 @@ export const useGame = create<GameStore>((set, get) => {
     handlingslog: [],
     hudFrys: null,
     frigjortUge: null,
+    ledigeUger: 0,
+    ledigPauseUge: null,
 
     nytSpil(opts) {
       // New Game+ (spec 6.17): arv og startmode (2018 i USA / AI-native 2026 spoler verden frem uden spilleren)
       const g = lavNytSpil(opts);
-      set({ game: g, paused: false, pauseGrunde: [], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], speed: 1, hudFrys: null, frigjortUge: null });
+      set({ game: g, paused: false, pauseGrunde: [], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], speed: 1, hudFrys: null, frigjortUge: null, ledigeUger: 0, ledigPauseUge: null });
       clock.sidsteTickMs = performance.now();
       clock.ugeMs = ugeVarighedMs(g.uge, 1);
     },
     indlaes(state) {
-      set({ game: { ...state, signaler: [] }, paused: true, pauseGrunde: ['Spil indlæst'], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], hudFrys: null, frigjortUge: null });
+      set({ game: { ...state, signaler: [] }, paused: true, pauseGrunde: ['Spil indlæst'], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], hudFrys: null, frigjortUge: null, ledigeUger: 0, ledigPauseUge: null });
       // Genopret ventende events som dialoger (reload midt i et event)
       const d: SignalDialog[] = state.ventendeEvents.map((e) => ({ id: naesteId++, signal: { k: 'event', eventId: e.eventId } }));
       if (d.length) set({ dialoger: d });
@@ -273,10 +332,13 @@ export const useGame = create<GameStore>((set, get) => {
     lukDialog(id) {
       const rest = get().dialoger.filter((d) => d.id !== id);
       const frys = rest.some((d) => AFSLOERING.includes(d.signal.k));
-      set({ dialoger: rest, hudFrys: frys ? get().hudFrys : null });
+      // Svar på noget i den lukkede dialog (fx "Bud afgivet") skal ikke ligge oven på den næste dialog i køen:
+      // de venter, til alle dialoger er lukket
+      const toasts = rest.length > 0 ? get().toasts.map((t) => (t.handling ? { ...t, handling: false } : t)) : get().toasts;
+      set({ dialoger: rest, hudFrys: frys ? get().hudFrys : null, toasts });
     },
     toast(tekst, kind = 'info') {
-      set({ toasts: medToast(get().toasts, { tekst, kind }, true).slice(-MAX_TOASTS) });
+      set({ toasts: medToast(get().toasts, { tekst, kind }, true, get().game?.uge).slice(-MAX_TOASTS) });
     },
     fjernToast(id) {
       set({ toasts: get().toasts.filter((t) => t.id !== id) });
@@ -299,6 +361,11 @@ export const useGame = create<GameStore>((set, get) => {
       }
       set({ settings });
     },
+    visSlut() {
+      const slut = get().game?.slut;
+      if (!slut || get().dialoger.some((d) => d.signal.k === 'slut')) return;
+      set({ dialoger: [...get().dialoger, { id: naesteId++, signal: { k: 'slut', id: slut.id } }] });
+    },
     debugSaet(fn) {
       const g = get().game;
       if (!g) return;
@@ -311,15 +378,26 @@ export const useGame = create<GameStore>((set, get) => {
       if (!g) return;
       const maal = (aar - 2012) * 52;
       g = structuredClone(g);
-      while (g.uge < maal && !g.slut) {
+      // Simulér stille frem til ugen før målet; den sidste uge tages "live" (som i spillet), så fx akt-skiftet i 2026
+      // kommer som signal og dialog ("Verdensbilledet 2026")
+      while (g.uge < maal - 1 && !g.slut) {
         // Debug-hoppet skal nå frem: hold firmaet i live (ellers går et passivt spil konkurs undervejs)
         if (g.kapital < 1) g.kapital = 1;
         g.negativUger = 0;
-        autoloesEvents(g);
+        roligeEventValg(g);
         stepMut(g, []);
       }
-      autoloesEvents(g);
+      roligeEventValg(g);
       g.signaler = [];
+      if (!g.slut && g.uge < maal) {
+        if (g.kapital < 1) g.kapital = 1;
+        g.negativUger = 0;
+        set({ game: g, dialoger: [], pauseGrunde: [], toasts: [], hudFrys: null, frigjortUge: null, ledigeUger: 0, ledigPauseUge: null });
+        get().stepUge();
+        const efter = get();
+        set({ paused: true, pauseGrunde: [...new Set([...efter.pauseGrunde, efter.game?.slut ? `Spillet endte i ${aarFor(efter.game.uge)}` : `Hoppet til ${aar}`])] });
+        return;
+      }
       const slut = g.slut;
       set({
         game: g,
@@ -328,6 +406,9 @@ export const useGame = create<GameStore>((set, get) => {
         pauseGrunde: [slut ? `Spillet endte i ${aarFor(g.uge)}` : `Hoppet til ${aar}`],
         hudFrys: null,
         frigjortUge: null,
+        ledigeUger: 0,
+        ledigPauseUge: null,
+        toasts: [],
       });
     },
   };

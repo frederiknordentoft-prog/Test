@@ -13,6 +13,7 @@ import { TRUST } from '../../data/trust';
 import { PRODUCT_TYPES } from '../../data/productTypes';
 import { aarDecimal, kurve } from '../../sim/time';
 import { aktiveMarkeder, effektivCac, kanalTilgaengelig, markedsKunder, portefoeljeStyrke, spillerProdukter } from '../../sim/customers';
+import { markedAabent } from '../../sim/markets';
 import { markedTotalBsi, offshoreAndele, offshoreDynPp, licenseretKvalitet } from '../../sim/offshore';
 import { effektivBonus, effektivVip, regelBeskrivelse, regelEffekt } from '../../sim/regulation';
 import { trendEffekt, daekker } from '../../sim/trends';
@@ -225,27 +226,61 @@ export const OFFSHORE_FAKTOR: Record<Vertical, number> = { kasino: F.kasino, bet
 
 export type RegelVisning = { id: string; navn: string; beskrivelse: string };
 
-export function aktiveRegler(g: GameState, m: MarketId): RegelVisning[] {
-  return g.markeder[m].regler.map((id) => ({ id, navn: REGLER[id]?.navn ?? id, beskrivelse: regelBeskrivelse(id) }));
+/** Afgiftsstigningens størrelse trækkes, når den varsles (3-8 pp); gamle gemte spil kan mangle tallet */
+const AFGIFT_PP_INTERVAL = '3-8';
+
+/**
+ * Regelbeskrivelse med den præcise afgiftsstigning ("afgiften stiger 6 pp"), når tallet kendes fra signalet eller
+ * planlagteRegler. regelBeskrivelse() viser kun standardværdien fra REGLER.
+ */
+export function regelBeskrivelseMedPp(regelId: string, pp?: number): string {
+  const r = REGLER[regelId];
+  if (!r || regelId !== 'afgiftsstigning') return regelBeskrivelse(regelId);
+  return `${r.beskrivelse} (afgiften stiger ${pp ?? AFGIFT_PP_INTERVAL} pp)`;
 }
 
-export type KommendeRegel = RegelVisning & { uge: number; ugerTil: number; dynamisk: boolean };
+const fortegnPp = (pp: number) => `${pp > 0 ? '+' : pp < 0 ? '−' : ''}${String(Math.round(Math.abs(pp) * 10) / 10).replace('.', ',')} pp`;
+
+export function aktiveRegler(g: GameState, m: MarketId): RegelVisning[] {
+  const ms = g.markeder[m];
+  return ms.regler.map((id) => ({
+    id,
+    navn: REGLER[id]?.navn ?? id,
+    // Afgiftsstigninger kan komme flere gange: vis det samlede tillæg i stedet for standardværdien
+    beskrivelse:
+      id === 'afgiftsstigning' && ms.afgiftTillaeg > 0
+        ? `${REGLER[id].beskrivelse} (afgiftstillæg i alt ${fortegnPp(ms.afgiftTillaeg)} oven i den faste afgift)`
+        : regelBeskrivelse(id),
+  }));
+}
+
+/** tal: kort ændring til en chip ("+6 pp" eller "20 % → 28 %") */
+export type KommendeRegel = RegelVisning & { uge: number; ugerTil: number; dynamisk: boolean; tal?: string; op?: boolean };
 
 export function kommendeRegler(g: GameState, m: MarketId): KommendeRegel[] {
   const regler: KommendeRegel[] = (g.planlagteRegler ?? [])
     .filter((p) => p.marked === m)
-    .map((p, i) => ({
-      id: `${p.regelId}-${p.ikrafttraedelseUge}-${i}`,
-      navn: REGLER[p.regelId]?.navn ?? p.regelId,
-      beskrivelse: regelBeskrivelse(p.regelId),
-      uge: p.ikrafttraedelseUge,
-      ugerTil: Math.max(0, p.ikrafttraedelseUge - g.uge),
-      dynamisk: !!p.dynamisk,
-    }));
+    .map((p, i) => {
+      const pp = p.regelId === 'afgiftsstigning' ? p.pp : undefined;
+      return {
+        id: `${p.regelId}-${p.ikrafttraedelseUge}-${i}`,
+        navn: REGLER[p.regelId]?.navn ?? p.regelId,
+        beskrivelse: regelBeskrivelseMedPp(p.regelId, pp),
+        uge: p.ikrafttraedelseUge,
+        ugerTil: Math.max(0, p.ikrafttraedelseUge - g.uge),
+        dynamisk: !!p.dynamisk,
+        ...(pp !== undefined ? { tal: fortegnPp(pp), op: pp > 0 } : {}),
+      };
+    });
   return [...regler, ...kommendeAfgifter(g, m)].sort((a, b) => a.uge - b.uge);
 }
 
-/** Vedtagne afgiftsskift i markedets tidsplan (MARKETS[m].afgift), der ligger inden for horisonten */
+const afgiftPct = (x: number) => `${Math.round(x * 1000) / 10} %`.replace('.', ',');
+
+/**
+ * Faste afgiftstrin i markedets tidsplan (MARKETS[m].afgift) inden for horisonten, med dato og fra → til.
+ * Som i sim-kernen (afgiftsTrin i src/sim/markets.ts) tæller kun trin, hvor markedet er åbent.
+ */
 export function kommendeAfgifter(g: GameState, m: MarketId, horisont = 104): KommendeRegel[] {
   const def = MARKETS[m];
   const skift = new Map<number, { v: Vertical; fra: number; til: number }[]>();
@@ -253,17 +288,16 @@ export function kommendeAfgifter(g: GameState, m: MarketId, horisont = 104): Kom
     const trin = def.afgift[v];
     for (let i = 1; i < trin.length; i++) {
       const [uge, til] = trin[i];
-      if (uge <= g.uge || uge - g.uge > horisont) continue;
+      if (uge <= g.uge || uge - g.uge > horisont || !markedAabent(m, uge)) continue;
       skift.set(uge, [...(skift.get(uge) ?? []), { v, fra: trin[i - 1][1], til }]);
     }
   }
-  const pct = (x: number) => `${Math.round(x * 1000) / 10} %`.replace('.', ',');
   const grundlag = def.afgiftModel === 'indsats' ? 'af indsatsen' : 'af BSI';
   return [...skift.entries()].map(([uge, s]) => {
     const ens = s.length === VERTIKALER.length && s.every((x) => x.fra === s[0].fra && x.til === s[0].til);
     const op = s.some((x) => x.til > x.fra);
     const hvad = ens ? 'Afgiften' : s.map((x) => `${VERTICALS[x.v].kort.toLowerCase()}-afgiften`).join(' og ').replace(/^./, (c) => c.toUpperCase());
-    const tal = ens ? `fra ${pct(s[0].fra)} til ${pct(s[0].til)}` : s.map((x) => `${pct(x.fra)} → ${pct(x.til)}`).join(', ');
+    const tal = ens ? `fra ${afgiftPct(s[0].fra)} til ${afgiftPct(s[0].til)}` : s.map((x) => `${afgiftPct(x.fra)} → ${afgiftPct(x.til)}`).join(', ');
     return {
       id: `afgift-${uge}`,
       navn: op ? 'Afgiftsstigning' : 'Afgiftsændring',
@@ -271,11 +305,36 @@ export function kommendeAfgifter(g: GameState, m: MarketId, horisont = 104): Kom
       uge,
       ugerTil: uge - g.uge,
       dynamisk: false,
+      tal: ens ? `${afgiftPct(s[0].fra)} → ${afgiftPct(s[0].til)}` : s.map((x) => `${VERTICALS[x.v].kort.charAt(0)} ${afgiftPct(x.fra)} → ${afgiftPct(x.til)}`).join(' · '),
+      op,
     };
   });
 }
 
+// ---------- Politisk pres: hvor kom det fra? ----------
+
+export type PresPost = { uge: number; kilde: string; delta: number };
+
+/** De seneste ændringer i det politiske pres (ms.presLog, højst seks), nyeste først */
+export function presHistorik(g: GameState, m: MarketId): PresPost[] {
+  return [...(g.markeder[m].presLog ?? [])].sort((a, b) => b.uge - a.uge);
+}
+
+/** "Hvorfor presset steg", "Hvorfor presset faldt" eller begge dele */
+export function presOverskrift(poster: PresPost[]): string {
+  const op = poster.some((p) => p.delta > 0);
+  const ned = poster.some((p) => p.delta < 0);
+  return op && ned ? 'Hvorfor presset steg og faldt' : ned ? 'Hvorfor presset faldt' : 'Hvorfor presset steg';
+}
+
+/** "+1", "+0,25", "−0,5" */
+export function presDeltaTekst(d: number): string {
+  return `${d > 0 ? '+' : '−'}${String(Math.round(Math.abs(d) * 100) / 100).replace('.', ',')}`;
+}
+
 export const PRES_TAERSKEL = DYNAMISK.presTaerskel;
+/** Presset efter en ny regel er vedtaget */
+export const PRES_EFTER = DYNAMISK.presEfter;
 
 /** Jeres aggressivitet (samme indeks som kvartalsPres): bonus + VIP + aggressive kanaler i brug */
 export function aggressivitet(g: GameState): number {

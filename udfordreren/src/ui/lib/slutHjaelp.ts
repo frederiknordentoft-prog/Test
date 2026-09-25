@@ -110,6 +110,19 @@ export function aarTekst(aar: number[]): string {
   return `${aar[0]}-${aar[aar.length - 1]}`;
 }
 
+// ---------- Eftertanke ----------
+
+/**
+ * Et eftertankekort i to dele: jeres vej (uden rigtige navne, vises på kortet) og "I virkeligheden …"
+ * (med rigtige navne — vises kun i Arkivet, der kan slås fra).
+ */
+export function delEftertanke(tekst: string): { jeres: string; virkelighed: string | null } {
+  const i = tekst.indexOf('I virkeligheden');
+  if (i < 0) return { jeres: tekst, virkelighed: null };
+  const jeres = tekst.slice(0, i).trim();
+  return { jeres: jeres || 'Hvordan gik det egentlig i virkeligheden?', virkelighed: tekst.slice(i).trim() };
+}
+
 // ---------- Byens udvikling ----------
 
 export type ByProfil = Exclude<TownProfile, 'churnet'>;

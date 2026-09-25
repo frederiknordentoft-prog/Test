@@ -366,11 +366,13 @@ export default function NewProductDialog({ dialog, onLuk }: { dialog: UiDialog; 
   const th = temaStatus(g, themeId);
   const max = maxProjekter(g);
   const grund = (() => {
+    if (g.slut) return 'Spillet er slut. Start et nyt spil fra slutskærmen.';
     if (g.projekter.length >= max) return `Kontoret har plads til ${max} projekt${max === 1 ? '' : 'er'} ad gangen.`;
     if (!ts.ok) return ts.grund;
     if (!th.ok) return th.grund;
     if (gyldigeMarkeder.length === 0) return 'Vælg mindst ét marked.';
-    if (g.kapital < minB) return `Der er ikke råd: budgettet skal være mindst ${mio(minB)}, og kassen har ${mio(g.kapital)}.`;
+    // "kr." slutter allerede med et punktum
+    if (g.kapital < minB) return `Der er ikke råd: budgettet skal være mindst ${mio(minB)}, og kassen har ${mio(g.kapital)}`;
     return undefined;
   })();
 

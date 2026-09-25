@@ -12,7 +12,7 @@ import { MARKETS } from '../../data/markets';
 import { REAKTIONS_REGLER, R1, R8 } from '../../data/reactionRules';
 import { datoTekst, ejerInfo, spillerCacTillaeg } from '../../sim/selectors';
 import { spil } from '../../audio/sfx';
-import { aggressionsIndeks, aktiveReaktioner, udloebTekst } from '../lib/konkurrentHjaelp';
+import { REGEL_FORKLARING, aggressionsIndeks, aktiveReaktioner, udloebTekst } from '../lib/konkurrentHjaelp';
 import { GruppeListe, type GruppeRaekke } from '../components/SignalGruppe';
 
 type Linje = { ikon: IkonNavn; farve: string; tekst: string };
@@ -32,6 +32,8 @@ export default function ReaktionDialog({ signal: foerste, gruppe, onLuk }: { sig
   if (!g || signal.k !== 'reaktion') return null;
 
   const regel = REAKTIONS_REGLER[signal.regel];
+  // Spillervenlig "hvis/så" (samme tekster som i Rivaler-panelet; R8-konsekvensen følger sim-kernen)
+  const forkl = REGEL_FORKLARING[signal.regel];
   const m = signal.marked;
   const marked = m ? MARKETS[m] : null;
   const bonuskrig = signal.regel === 'R1';
@@ -151,9 +153,9 @@ export default function ReaktionDialog({ signal: foerste, gruppe, onLuk }: { sig
           </h4>
           <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-sm">
             <dt className="font-pixel text-xs font-black uppercase text-muted">Hvis</dt>
-            <dd className="text-ink">{regel.hvis}</dd>
+            <dd className="text-ink">{forkl.hvis}</dd>
             <dt className="font-pixel text-xs font-black uppercase text-muted">Så</dt>
-            <dd className="text-ink">{regel.saa}</dd>
+            <dd className="text-ink">{forkl.saa}.</dd>
           </dl>
         </section>
 

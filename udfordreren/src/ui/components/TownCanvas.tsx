@@ -479,6 +479,17 @@ export default function TownCanvas({ filter, className = '', ariaLabel }: { filt
             if (id !== null && id !== valgt) setValgt(id);
           }}
         />
+        {/* Skilt oven på lærredet: på mobil står teksten under lærredet ofte under folden */}
+        {valgtPerson && (
+          <span
+            className="pointer-events-none absolute top-1.5 left-1.5 flex max-w-[calc(100%-12px)] items-center gap-1.5 rounded border-2 border-line bg-panel/95 px-2 py-1 text-xs pixel-skygge"
+            data-testid="by-valgt-skilt"
+            aria-hidden
+          >
+            <PersonIkon profil={valgtPerson.profil} px={2} />
+            <span className="min-w-0 truncate font-bold text-ink">{personTekst(valgtPerson)}</span>
+          </span>
+        )}
       </div>
       <p className="flex min-h-6 items-center gap-1.5 text-xs text-muted" aria-live="polite" data-testid="by-valgt">
         {valgtPerson ? (

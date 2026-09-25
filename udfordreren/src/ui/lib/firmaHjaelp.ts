@@ -164,6 +164,20 @@ const EFFEKT_STIL: { k: keyof EventEffect; ikon: IkonNavn; omvendt?: boolean; ne
   { k: 'pres', ikon: 'advarsel', omvendt: true },
   { k: 'vaerdiPct', ikon: 'diamant' },
   { k: 'staffLoenPct', ikon: 'penge', omvendt: true },
+  // Fase 3-5: tilsyn i alle markeder, politisk pres, byen, agenter og minimumsmarketing
+  { k: 'tillidAlle', ikon: 'skjold' },
+  { k: 'politiskPres', ikon: 'paragraf', omvendt: true },
+  { k: 'byRisiko', ikon: 'folk', omvendt: true },
+  { k: 'agentOvervaagning', ikon: 'oeje' },
+  { k: 'marketingMin', ikon: 'hoejttaler', neutral: true },
+];
+
+/** Effekter uden fortegn (til/fra eller et bestemt niveau) — tekster fra effektTekst */
+const EFFEKT_FAST: { k: 'agentFra' | 'hyperFra' | 'vipNiveau' | 'bonusNiveau'; ikon: IkonNavn }[] = [
+  { k: 'agentFra', ikon: 'terminal' },
+  { k: 'hyperFra', ikon: 'chip' },
+  { k: 'vipNiveau', ikon: 'krone' },
+  { k: 'bonusNiveau', ikon: 'penge' },
 ];
 
 function dansk(t: string): string {
@@ -186,6 +200,12 @@ export function effektChips(eff: EventEffect, ctx: Record<string, string | numbe
     ud.push({ tekst: `${eff.staffEnergi > 0 ? '+' : '−'}${Math.abs(eff.staffEnergi)} energi til ${navn}`, tone: eff.staffEnergi > 0 ? 'god' : 'skidt', ikon: 'lyn' });
   }
   if (eff.staffForlader) ud.push({ tekst: effektTekst({ staffForlader: true })[0] ?? 'medarbejderen forlader firmaet', tone: 'skidt', ikon: 'doer' });
+  for (const st of EFFEKT_FAST) {
+    const v = eff[st.k];
+    if (v === undefined || v === false) continue;
+    const tekst = effektTekst({ [st.k]: v } as EventEffect)[0];
+    if (tekst) ud.push({ tekst: dansk(tekst), tone: 'neutral', ikon: st.ikon });
+  }
   if (ud.length === 0) ud.push({ tekst: 'Ingen ændring', tone: 'neutral', ikon: 'streg' });
   return ud;
 }

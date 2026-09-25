@@ -1,5 +1,5 @@
 // Byggeklodser til slutskærmen (spec 6.17): eftermælet, tidslinjen, trofæhylden og byens udvikling.
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { GameState } from '../../sim/types';
 import type { EftermaeleDel } from '../../sim/endings';
 import { Bar, Ikon, type IkonNavn } from './kit';
@@ -8,6 +8,7 @@ import {
   BY_PROFIL, BY_PROFILER, TIDSLINJE_KIND, TIDSLINJE_KINDS, aarTekst, antalPrKind, byRoedAndel, tidslinjePrAar,
   type ByAar, type TidslinjeKind, type Trofaeer,
 } from '../lib/slutHjaelp';
+import { rulleKant } from '../hooks/rulleKant';
 
 export function SlutSektion({ titel, ikon, hoejre, children, testId, className = '' }: { titel: string; ikon: IkonNavn; hoejre?: ReactNode; children: ReactNode; testId?: string; className?: string }) {
   return (
@@ -79,12 +80,17 @@ export function Tidslinje({ g }: { g: Pick<GameState, 'tidslinje' | 'uge' | 'slu
   const [filter, setFilter] = useState<TidslinjeKind | 'alle'>('alle');
   const [aabne, setAabne] = useState<number[]>([]);
   const aar = tidslinjePrAar(g, filter);
+  const liste = useRef<HTMLOListElement>(null);
+  // Nyt filter: rul tilbage til starten, så det første træf er synligt
+  useEffect(() => {
+    liste.current?.scrollTo?.({ left: 0 });
+  }, [filter]);
   const antal = antalPrKind(g);
   const kinds = TIDSLINJE_KINDS.filter((k) => antal[k] > 0);
   return (
     <SlutSektion titel="Tidslinjen" ikon="kalender" testId="slut-tidslinje" hoejre={<span className="tal font-pixel text-xs text-muted">{g.tidslinje.length} øjeblikke</span>}>
       {kinds.length > 1 && (
-        <div className="shell-uden-scrollbar -mx-3 mb-2 flex gap-1.5 overflow-x-auto px-3" role="radiogroup" aria-label="Filtrér tidslinjen">
+        <div ref={rulleKant} className="shell-uden-scrollbar -mx-3 mb-2 flex gap-1.5 overflow-x-auto px-3" role="radiogroup" aria-label="Filtrér tidslinjen">
           {(['alle', ...kinds] as const).map((k) => {
             const valgt = filter === k;
             const meta = k === 'alle' ? null : TIDSLINJE_KIND[k];
@@ -110,12 +116,25 @@ export function Tidslinje({ g }: { g: Pick<GameState, 'tidslinje' | 'uge' | 'slu
         <p className="text-sm text-muted">Tidslinjen er tom. Det var et stille eventyr.</p>
       ) : (
         <div className="relative">
-          <ol className="flex snap-x gap-0 overflow-x-auto pb-2" data-testid="tidslinje-aar" tabIndex={0} aria-label="Tidslinje, rul vandret">
+          <ol ref={liste} className="flex snap-x gap-0 overflow-x-auto pb-2" data-testid="tidslinje-aar" tabIndex={0} aria-label="Tidslinje, rul vandret">
             {aar.map(({ aar: a, punkter }) => {
               const udfoldet = aabne.includes(a);
               const vis = udfoldet ? punkter : punkter.slice(0, SYNLIGE);
+              // Tomme år: skjult under et filter (så det første træf står forrest), smalle under "Alle"
+              if (punkter.length === 0) {
+                if (filter !== 'alle') return null;
+                return (
+                  <li key={a} className="w-14 shrink-0 snap-start" data-testid={`tidslinje-${a}`} aria-label={`${a}: intet`}>
+                    <div className="relative mb-2 flex items-center">
+                      <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-line" aria-hidden />
+                      <span className="relative z-10 rounded border-2 border-line bg-panel px-1 font-pixel text-[0.7rem] font-black text-dim">{a}</span>
+                    </div>
+                    <span className="px-1 text-xs text-dim">–</span>
+                  </li>
+                );
+              }
               return (
-                <li key={a} className="w-40 shrink-0 snap-start sm:w-44" data-testid={`tidslinje-${a}`}>
+                <li key={a} className="w-36 shrink-0 snap-start sm:w-44" data-testid={`tidslinje-${a}`}>
                   <div className="relative mb-2 flex items-center">
                     <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-line" aria-hidden />
                     <span className={`relative z-10 rounded border-2 border-line px-1.5 font-pixel text-xs font-black ${punkter.length ? 'bg-gold text-line' : 'bg-panel text-dim'}`}>{a}</span>
@@ -142,7 +161,6 @@ export function Tidslinje({ g }: { g: Pick<GameState, 'tidslinje' | 'uge' | 'slu
                         </button>
                       </li>
                     )}
-                    {punkter.length === 0 && <li className="px-1 text-xs text-dim">–</li>}
                   </ul>
                 </li>
               );

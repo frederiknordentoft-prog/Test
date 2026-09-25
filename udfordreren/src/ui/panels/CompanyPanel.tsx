@@ -70,7 +70,7 @@ function Kontor({ g }: { g: GameState }) {
             aria-current={i === idx ? 'step' : undefined}
           >
             <Ikon navn={i < idx ? 'flueben' : i === idx ? 'hus' : 'laas'} farve="currentColor" indre={i === idx ? 'var(--color-gold)' : 'var(--color-bg)'} str={13} />
-            <span className="w-full truncate font-pixel text-[0.58rem] font-black uppercase">{o.navn}</span>
+            <span className="w-full truncate font-pixel text-[0.66rem] font-black uppercase" title={o.navn}>{o.navn}</span>
           </li>
         ))}
       </ol>
@@ -215,7 +215,7 @@ function Oekonomi({ g }: { g: GameState }) {
               <SoejleGraf soejler={resSoejler} farve="var(--color-good)" testId="graf-resultat" />
             </div>
             <details className="rounded-md border-2 border-line bg-panel px-2 py-1 text-sm">
-              <summary className="flex min-h-9 cursor-pointer items-center font-bold text-muted">Vis som tabel</summary>
+              <summary className="flex min-h-[44px] cursor-pointer items-center font-bold text-muted">Vis som tabel</summary>
               <table className="mt-1 w-full text-xs">
                 <thead>
                   <tr className="text-muted">
@@ -610,7 +610,7 @@ function Kalender({ g, onBook }: { g: GameState; onBook: (expoId: string) => voi
         <li key={p.noegle} className="flex items-start gap-2 rounded-md border-2 border-line bg-panel p-2 text-sm">
           <span className="flex w-14 shrink-0 flex-col items-center rounded border-2 border-line bg-bg px-1 py-0.5 text-center">
             <span className="tal font-pixel text-sm font-black text-gold">{p.uge - g.uge}</span>
-            <span className="text-[0.58rem] uppercase text-muted">uger</span>
+            <span className="text-[0.66rem] uppercase text-muted">uger</span>
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="text-[0.66rem] uppercase tracking-wide text-dim">{datoTekst(p.uge)}</span>

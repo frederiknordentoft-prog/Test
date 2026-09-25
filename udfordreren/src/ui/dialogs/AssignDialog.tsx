@@ -56,7 +56,12 @@ function Estimat({ g, p, fase, ids }: { g: GameState; p: Project; fase: Phase; i
   const sidste = est.bidrag.length >= 2 ? est.bidrag[est.bidrag.length - 1] : undefined;
   const svagest =
     sidste && sidste.point < 0.2 * est.total
-      ? { navn: g.staff.find((m) => m.id === sidste.id)?.navn.split(' ')[0] ?? g.agenter.find((a) => a.id === sidste.id)?.navn ?? 'Den sidste', point: sidste.point }
+      ? {
+          navn: g.staff.find((m) => m.id === sidste.id)?.navn.split(' ')[0] ?? g.agenter.find((a) => a.id === sidste.id)?.navn ?? 'Den sidste',
+          point: sidste.point,
+          // Agenter har ingen energi: tippet handler så om at spare compute til en anden fase
+          agent: !g.staff.some((m) => m.id === sidste.id),
+        }
       : undefined;
   return (
     <div className="rounded-md border-2 border-line bg-bg2 p-3" data-testid="tildel-estimat">
@@ -101,7 +106,8 @@ function Estimat({ g, p, fase, ids }: { g: GameState; p: Project; fase: Phase; i
       {svagest && (
         <p className="mt-1 flex items-start gap-1.5 text-[0.7rem] text-cyan" data-testid="tildel-tip">
           <Ikon navn="indsigt" farve="var(--color-cyan)" indre="var(--color-line)" str={12} className="mt-px shrink-0" />
-          Tip: {svagest.navn} giver kun +{Math.round(svagest.point)} her. Uden for holdet hviler vedkommende og får energi til næste fase.
+          Tip: {svagest.navn} giver kun +{Math.round(svagest.point)} her.{' '}
+          {svagest.agent ? 'Agenter bliver ikke trætte, så den må gerne blive — men den gør mest gavn i en fase, hvor den er stærk.' : 'Uden for holdet hviler vedkommende og får energi til næste fase.'}
         </p>
       )}
     </div>

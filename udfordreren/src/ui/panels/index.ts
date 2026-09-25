@@ -27,7 +27,7 @@ export const PANELER: { id: PanelId; navn: string; ikon: IkonNavn; komponent: Co
   { id: 'produkter', navn: 'Produkter', ikon: 'stjerne', komponent: ProductsPanel },
   { id: 'marked', navn: 'Marked', ikon: 'kort', komponent: MarketPanel },
   { id: 'konkurrenter', navn: 'Rivaler', ikon: 'svaerd', komponent: CompetitorPanel },
-  { id: 'platform', navn: 'Platform', ikon: 'server', komponent: PlatformPanel },
+  { id: 'platform', navn: 'Teknik', ikon: 'server', komponent: PlatformPanel },
   { id: 'by', navn: 'Byen', ikon: 'hus', komponent: TownPanel },
   { id: 'firma', navn: 'Firma', ikon: 'firma', komponent: CompanyPanel },
   // Låst med en teaser før 2026 (fanen viser en hængelås)

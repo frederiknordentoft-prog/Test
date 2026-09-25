@@ -6,13 +6,64 @@ import type {
 /** Ikonnavn fra kit.tsx (importeres ikke herfra, så hjælperne kan testes uden JSX) */
 type IkonNavn = string;
 import { COMPETITORS } from '../../data/competitors';
-import { R1, R7, R8 } from '../../data/reactionRules';
+import { R1, R2, R3_KOPI_UGER, R3_FORDEL, R4, R5, R7, R8, R10, R12 } from '../../data/reactionRules';
 import { CHANNELS, CHANNEL_IDS } from '../../data/acquisition';
 import { MARKETS } from '../../data/markets';
 import { B2B, MIGRERING, PLATFORM_KRAV, PLATFORM_MODELS } from '../../data/platforms';
 import { SLUTNINGER, type SlutId } from '../../data/endings';
 import { aarFor, datoTekst } from '../../sim/time';
 import { effektivBonus, effektivVip, ejerInfo, r12Aktiv } from '../../sim/selectors';
+import { mio } from '../format';
+import type { ReaktionsRegel } from '../../sim/types';
+
+// ---------- Reaktionsreglerne i spillersprog ----------
+
+const pctTal = (v: number) => `${Math.round(v * 100)} %`;
+const maaneder = (uger: number) => Math.round(uger / 4.33);
+
+/**
+ * "Hvis … så …" for hver reaktionsregel, skrevet til spilleren (datafilens tekster er spec-sprog med interne id'er).
+ * Tallene hentes fra src/data/reactionRules.ts, og R8's konsekvens følger sim-kernen (omdømme −3 ved tredje påbud).
+ */
+export const REGEL_FORKLARING: Record<ReaktionsRegel, { hvis: string; saa: string }> = {
+  R1: {
+    hvis: `I har mere end ${pctTal(R1.andel)} af et marked og vokser over 30 % om året`,
+    saa: `skruer den største gigant marketingen op ×${String(R1.marketing).replace('.', ',')} i et år, og jeres nye kunder bliver ${pctTal(R1.cac)} dyrere`,
+  },
+  R2: {
+    hvis: `I har mere end ${pctTal(R2.andel)} af et marked og en hybrid eller egen platform`,
+    saa: `kan en købelysten konkurrent byde ${R2.multipel[0]}-${R2.multipel[1]} gange jeres årlige BSI (ca. hvert femte kvartal). Siger I nej, bliver byderen mere aggressiv i to år`,
+  },
+  R3: {
+    hvis: 'I lancerer en feature, ingen andre har',
+    saa: `kopierer konkurrenterne den — giganterne efter ${maaneder(R3_KOPI_UGER.globalGigant![0])}-${maaneder(R3_KOPI_UGER.globalGigant![1])} måneder, statsselskabet langt senere. Forspringet er op til ${pctTal(R3_FORDEL.maks)} og halveres ved hver kopi`,
+  },
+  R4: { hvis: 'et nyt marked åbner', saa: `stormer giganterne og app-firmaerne ind med ×${R4.marketing} marketing i halvandet til to år` },
+  R5: {
+    hvis: `afgiften stiger mindst ${R5.afgiftPp} procentpoint`,
+    saa: `skærer den svageste store spiller ${pctTal(1 - R5.marketing)} i marketingen og overvejer at trække sig helt`,
+  },
+  R6: { hvis: 'en konkurrent bliver købt af et statsselskab', saa: 'trækker den sig ud af de grå markeder' },
+  R7: { hvis: 'et stort sponsorat bliver ledigt', saa: 'kommer det på auktion. App-first-firmaerne byder typisk højest, men I kan også byde' },
+  R8: {
+    hvis: 'jeres bonus, reklame og VIP er for aggressive to kvartaler i træk',
+    saa: `giver tilsynet et påbud (tillid −6). Ved hvert ${R8.reglerEfter}. påbud i samme marked kommer der nye regler for alle, og jeres omdømme falder 3`,
+  },
+  R9: { hvis: 'en skandale rammer branchen (jeres egen eller andres)', saa: 'stiger det politiske pres i markedet' },
+  R10: { hvis: 'statskassen er presset', saa: `er der ${pctTal(R10.chancePrAar)} risiko om året for en afgiftsstigning på 3-8 procentpoint` },
+  R11: { hvis: 'for meget spil går til udenlandske sider i to år', saa: 'kan politikerne indføre blokering — eller lempe reglerne' },
+  R12: {
+    hvis: `I har en risikoagent med overvågning på mindst ${String(R12.overvaagning).replace('.', ',')}`,
+    saa: `halveres risikoen for påbud, bøderne bliver mindre, og I mister ${pctTal(-R12.bsi)} BSI fra de største spillere`,
+  },
+};
+
+/** Grunden til, at et opkøb ikke kan lade sig gøre — i samme enhed og format som knappen (sim-teksten er rå) */
+export function opkoebGrund(s: GameState, st: { ok: boolean; grund?: string; pris: number }): string | undefined {
+  if (st.ok) return undefined;
+  if (s.kapital < st.pris && st.grund?.startsWith('Kræver')) return `I mangler ${mio(st.pris - Math.max(0, s.kapital))}: opkøbet koster ${mio(st.pris)}, og kassen har ${mio(s.kapital)}`; // "kr." slutter sætningen
+  return st.grund;
+}
 
 // ---------- Konkurrenter ----------
 

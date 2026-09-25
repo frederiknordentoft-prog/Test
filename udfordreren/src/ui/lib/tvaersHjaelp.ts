@@ -17,8 +17,10 @@ import { datoTekst, sanktionsGraense, tillidsPoster, trendDaekker } from '../../
 import { fortegn } from '../format';
 
 /** Markedets beskrivelse i den rigtige tid: "Åbnede i 2019." giver ingen mening, før markedet er åbnet */
-export function markedBeskrivelse(m: MarketId, uge: number): string {
+export function markedBeskrivelse(m: MarketId, uge: number, aaben = false): string {
   const def = MARKETS[m];
+  // Et monopolmarked, der er åbnet i et verdensscenarie (Norge): datafilens tekst handler om monopolet
+  if (def.aabnerUge === null && aaben) return 'Monopolet er afskaffet. Spillet er i årevis foregået på udenlandske sider; nu kan det hentes hjem med en licens. Reglerne er nye, og tilsynet er strengt.';
   if (def.aabnerUge === null) return def.beskrivelse;
   if (uge <= def.aabnerUge + 1) return def.beskrivelse.replace(/^Åbnede[^.]*\.\s*/, '');
   return def.beskrivelse.replace(/^Åbner /, 'Åbnede ');
@@ -256,8 +258,8 @@ export function naesteSport(uge: number): Sportsbegivenhed | null {
 
 export type Konsekvens = { tekst: string; tone: Tone; ikon: IkonNavn };
 
-/** Hvad betyder en regel for spillerens produkter og marketing i markedet? */
-export function regelKonsekvenser(s: GameState, m: MarketId, regelId: string): Konsekvens[] {
+/** Hvad betyder en regel for spillerens produkter og marketing i markedet? pp: afgiftsstigningens trukne størrelse */
+export function regelKonsekvenser(s: GameState, m: MarketId, regelId: string, pp?: number): Konsekvens[] {
   const r = REGLER[regelId];
   if (!r) return [];
   const f = r.effekt;
@@ -316,12 +318,15 @@ export function regelKonsekvenser(s: GameState, m: MarketId, regelId: string): K
     }
   }
   if (f.afgiftPp) {
-    const variabel = regelId === 'afgiftsstigning';
-    const nu = String(Math.round(ms.afgift * 1000) / 10).replace('.', ',');
+    // Afgiftsstigningens størrelse trækkes ved varslet (3-8 pp); gamle gemte spil kan mangle den
+    const stigning = regelId === 'afgiftsstigning' ? (pp !== undefined ? String(pp) : '3-8') : String(f.afgiftPp);
+    // Satsen pr. vertikal (UK beskatter kasino og betting forskelligt — et gennemsnit ville ikke stå nogen andre steder)
+    const sats = (v: Vertical) => String(Math.round((ms.afgiftPrVertikal[v] + ms.afgiftTillaeg / 100) * 1000) / 10).replace('.', ',');
+    const nu = sats('betting') === sats('kasino') ? `${sats('betting')} %` : `betting ${sats('betting')} %, kasino ${sats('kasino')} %`;
     ud.push({
       tekst: f.afgiftPp > 0
-        ? `Afgiften stiger ${variabel ? '3-8' : f.afgiftPp} procentpoint (i dag ${nu} %). Det tager direkte af bundlinjen.`
-        : `Afgiften falder ${Math.abs(f.afgiftPp)} procentpoint (i dag ${nu} %).`,
+        ? `Afgiften stiger ${stigning} procentpoint (i dag ${nu}). Det tager direkte af bundlinjen.`
+        : `Afgiften falder ${Math.abs(f.afgiftPp)} procentpoint (i dag ${nu}).`,
       tone: f.afgiftPp > 0 ? 'skidt' : 'god',
       ikon: 'penge',
     });
@@ -353,10 +358,11 @@ export function regelKonsekvenser(s: GameState, m: MarketId, regelId: string): K
   return ud;
 }
 
-/** Hvornår træder en planlagt regel i kraft? */
-export function regelIkraft(s: GameState, m: MarketId, regelId: string): { uge: number; dynamisk: boolean } | null {
-  const p = s.planlagteRegler.find((x) => x.marked === m && x.regelId === regelId);
-  return p ? { uge: p.ikrafttraedelseUge, dynamisk: !!p.dynamisk } : null;
+/** Hvornår træder en planlagt regel i kraft? (pp: afgiftsstigningens størrelse, hvis den er trukket) */
+export function regelIkraft(s: GameState, m: MarketId, regelId: string): { uge: number; dynamisk: boolean; pp?: number } | null {
+  // Seneste varsel først (en afgiftsstigning kan være planlagt mere end én gang)
+  const p = [...s.planlagteRegler].reverse().find((x) => x.marked === m && x.regelId === regelId);
+  return p ? { uge: p.ikrafttraedelseUge, dynamisk: !!p.dynamisk, ...(p.pp !== undefined ? { pp: p.pp } : {}) } : null;
 }
 
 // ---------- Sanktioner og tilsynstillid ----------

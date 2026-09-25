@@ -57,8 +57,8 @@ function HudStat({
 }: {
   ikon: IkonNavn; label: string; kort?: string; vaerdi: string; farve: string; titel: string; testId: string;
   delta?: { id: number; tekst: string; god: boolean } | null;
-  /** Vises i stedet for etiketten (fx "rækker ~9 uger" eller "minus 3/8 uger") — synligt, også på touch */
-  note?: { tekst: string; farve: string } | null;
+  /** Vises i stedet for etiketten (fx "rækker ~9 uger" eller "minus 3/8 uger") — synligt, også på touch. kort: på mobil */
+  note?: { tekst: string; kort?: string; farve: string } | null;
 }) {
   // Med stor tekst er der ikke plads til etiketter i HUD'en på iPad-bredde; værdien og ikonet står tilbage (etiket i title)
   const storTekst = useGame((s) => s.settings.tekstStoerrelse !== 'normal');
@@ -76,7 +76,14 @@ function HudStat({
             style={{ color: note.farve }}
             data-testid={`${testId}-note`}
           >
-            {note.tekst}
+            {note.kort ? (
+              <>
+                <span className="lg:hidden">{note.kort}</span>
+                <span className="hidden lg:inline">{note.tekst}</span>
+              </>
+            ) : (
+              note.tekst
+            )}
           </span>
         ) : (
           <span
@@ -99,7 +106,7 @@ function HudStat({
       {delta && (
         <span
           key={delta.id}
-          className="anim-glid pointer-events-none absolute -bottom-3 left-4 z-10 rounded border-2 border-line px-1 font-pixel text-[0.65rem] font-black text-line"
+          className="anim-glid pointer-events-none absolute -top-1 right-0 z-10 rounded border-2 border-line px-1 font-pixel text-[0.65rem] font-black text-line lg:top-auto lg:right-auto lg:-bottom-3 lg:left-4"
           style={{ background: delta.god ? farve : 'var(--color-bad)' }}
           aria-hidden
         >
@@ -131,12 +138,16 @@ function Hud() {
   const tillidTrin = useGame((s) => s.game?.markeder[tillidMarked].sanktion.trin ?? 0);
   const antalLicenser = useGame((s) => (s.game ? tillidsMarkeder(s.game).length : 0));
   const tillidAlle = useGame((s) => (s.game ? tillidsOversigt(s.game) : ''));
-  const minus = useGame((s) => s.game?.negativUger ?? 0);
+  // negativUger nulstilles først ved næste step (fx efter en runde): kræv også, at kassen faktisk er i minus
+  const minus = useGame((s) => (s.game && s.game.kapital < 0 ? s.game.negativUger : 0));
   const raekker = useGame((s) => (s.game ? (kassenRaekker(s.game)?.uger ?? -1) : -1));
   const tendens = useGame((s) => (s.game ? Math.round((kassenRaekker(s.game)?.tendens ?? 0) * 1000) : 0));
   const storTekst = useGame((s) => s.settings.tekstStoerrelse !== 'normal');
   const speed = useGame((s) => s.speed);
   const paused = useGame((s) => s.paused);
+  const slut = useGame((s) => !!s.game?.slut);
+  // Akt to (AI-akten fra 2026): HUD'en får en kold, glødende kant ligesom kontoret
+  const aktTo = useGame((s) => !!s.game?.flags.includes('aktTo'));
   const aabn = useUi((s) => s.aabn);
   const { setSpeed, togglePause } = useGame.getState();
   const dKapital = useDelta(kapital, 0.05, uge);
@@ -157,10 +168,11 @@ function Hud() {
 
   const kapitalNote =
     minus > 0
-      ? { tekst: `Minus ${minus}/${KONKURS_UGER} uger`, farve: 'var(--color-bad)' }
+      ? { tekst: `Minus ${minus}/${KONKURS_UGER} uger`, kort: `Minus ${minus}/${KONKURS_UGER}`, farve: 'var(--color-bad)' }
       : raekker >= 0 && raekker < 104
         ? {
             tekst: `Rækker ~${raekker} uge${raekker === 1 ? '' : 'r'}`,
+            kort: `~${raekker} uge${raekker === 1 ? '' : 'r'}`,
             farve: raekker < 12 ? 'var(--color-bad)' : raekker < 26 ? 'var(--color-warn)' : 'var(--color-muted)',
           }
         : null;
@@ -174,8 +186,11 @@ function Hud() {
   return (
     <header
       ref={ref}
-      className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b-2 border-line bg-panel px-2 pt-[max(6px,env(safe-area-inset-top))] pb-1.5 bred:px-3 lg:flex-nowrap lg:gap-x-5 lg:py-2"
+      className={`flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b-2 bg-panel px-2 pt-[max(6px,env(safe-area-inset-top))] pb-1.5 bred:px-3 lg:flex-nowrap lg:gap-x-5 lg:py-2 ${
+        aktTo ? 'border-cyan/70 shadow-[0_2px_12px_-4px_var(--color-cyan)]' : 'border-line'
+      }`}
       data-testid="hud"
+      data-akt={aktTo ? 'to' : 'en'}
     >
       <div className="order-1 min-w-0 flex-1 lg:max-w-[230px] lg:min-w-[84px] lg:flex-initial">
         <div className={`font-pixel text-sm font-black text-gold ${storTekst ? 'line-clamp-2 break-words leading-tight' : 'truncate'}`} title={firma}>
@@ -226,10 +241,11 @@ function Hud() {
 
       <div className="order-2 ml-auto flex shrink-0 items-center gap-1 lg:order-3">
         <Btn
-          variant={paused ? 'primaer' : 'sekundaer'}
+          variant={paused && !slut ? 'primaer' : 'sekundaer'}
           onClick={togglePause}
-          ariaLabel={paused ? 'Fortsæt (mellemrum)' : 'Pause (mellemrum)'}
-          title={paused ? 'Fortsæt (mellemrum)' : 'Pause (mellemrum)'}
+          disabled={slut}
+          ariaLabel={slut ? 'Spillet er slut — tiden står stille' : paused ? 'Fortsæt (mellemrum)' : 'Pause (mellemrum)'}
+          title={slut ? 'Spillet er slut — tiden står stille' : paused ? 'Fortsæt (mellemrum)' : 'Pause (mellemrum)'}
           testId="pause-knap"
           className="w-[44px] px-0"
         >
@@ -282,6 +298,7 @@ function UgeProgress() {
   const frosset = useGame((s) => s.paused || s.dialoger.length > 0);
   const menu = useUi((s) => s.dialog !== null);
   const paused = frosset || menu;
+  const aktTo = useGame((s) => !!s.game?.flags.includes('aktTo'));
   useEffect(() => {
     let raf = 0;
     const loop = () => {
@@ -300,7 +317,10 @@ function UgeProgress() {
       <div
         ref={ref}
         className="h-full origin-left"
-        style={{ transform: 'scaleX(0)', background: paused ? 'var(--color-dim)' : 'linear-gradient(90deg, var(--color-gold), #ffe98a)' }}
+        style={{
+          transform: 'scaleX(0)',
+          background: paused ? 'var(--color-dim)' : aktTo ? 'linear-gradient(90deg, var(--color-cyan), #b9fff8)' : 'linear-gradient(90deg, var(--color-gold), #ffe98a)',
+        }}
       />
     </div>
   );
@@ -321,8 +341,11 @@ function PauseBanner({ placering = 'absolute inset-x-2 top-[40px]' }: { placerin
       <div className={`anim-glid ${placering} z-10 flex items-center gap-2 rounded-md border-2 border-line bg-panel2 px-2.5 py-1.5 pixel-skygge`} data-testid="pause-banner">
         <Ikon navn="trofae" farve="var(--color-gold)" indre="var(--color-line)" />
         <span className="min-w-0 flex-1 font-pixel text-sm font-bold uppercase">Spillet er slut</span>
-        <Btn variant="primaer" onClick={() => useGame.getState().lukSpil()} testId="til-titel">
-          Til titelskærm
+        <Btn onClick={() => useGame.getState().visSlut()} testId="se-slutningen" className="shrink-0">
+          <Ikon navn="trofae" /> {smal ? 'Slutningen' : 'Se slutningen'}
+        </Btn>
+        <Btn variant="primaer" onClick={() => useGame.getState().lukSpil()} testId="til-titel" className="shrink-0">
+          {smal ? 'Titel' : 'Til titelskærm'}
         </Btn>
       </div>
     );
@@ -496,7 +519,12 @@ function Toasts() {
   // spilleren selv gør i dialogen (fx en afvist handling), vises straks. Toasts dækker aldrig dialogens titel eller
   // lukkekryds: med en dialog åben ligger de nederst til venstre (bred) eller over dialogens fod (mobil).
   // Højst tre (mobil: to), advarsler først.
-  const kandidater = signalDialog ? toasts.filter((t) => t.handling) : toasts;
+  // Toasts, der lå der, før dialogen åbnede, venter også (de hører til spillet bag den, ikke til dialogen).
+  const nyeste = toasts.reduce((a, t) => Math.max(a, t.id), 0);
+  const [graense, setGraense] = useState<number | null>(null);
+  if (dialogAaben && graense === null) setGraense(nyeste);
+  else if (!dialogAaben && graense !== null) setGraense(null);
+  const kandidater = (signalDialog ? toasts.filter((t) => t.handling) : toasts).filter((t) => !dialogAaben || graense === null || t.id > graense);
   const vis = udvaelgToasts(kandidater, smal ? 2 : 3);
   return (
     <div
@@ -552,7 +580,6 @@ const KORT_NAVN: Partial<Record<string, string>> = {
   produkter: 'Produkt',
   kombinationer: 'Kombi',
   nyheder: 'Nyt',
-  platform: 'Teknik',
 };
 
 type FaneBadge = { tekst: string; farve: string; hjaelp: string };
@@ -596,8 +623,8 @@ function FaneKnap({ p, valgt, badge, laast, onClick, kort, className, testId, ek
   kort: 'bred' | 'altid' | 'aldrig';
   /** Højde, luft og skriftstørrelse (sættes her, så klasserne ikke konkurrerer) */
   className: string; testId?: string; ekstraLabel?: string;
-  /** Mobil: panelet ligger under "Mere" — vis et lille gitter i hjørnet */
-  mereMaerke?: boolean;
+  /** Mobil: panelet ligger under "Mere" — vis et lille gitter i hjørnet (farvet, hvis en anden fane derinde har et "!") */
+  mereMaerke?: { andre: FaneBadge | null };
 }) {
   const k = KORT_NAVN[p.id];
   const label = `${p.navn}${laast ? ' (låst til 2026)' : ''}${badge ? ` — ${badge.hjaelp}` : ''}${ekstraLabel ?? ''}`;
@@ -640,8 +667,14 @@ function FaneKnap({ p, valgt, badge, laast, onClick, kort, className, testId, ek
         </span>
       ) : null}
       {mereMaerke && (
-        <span className="absolute -top-1.5 -left-1 flex h-5 w-5 items-center justify-center rounded border-2 border-line bg-panel2" aria-hidden>
-          <Ikon navn="mere" farve="var(--color-muted)" str={10} />
+        // Inde i knappen (ikke i hjørnet uden for), så det ikke støder sammen med nabofanens mærke
+        <span
+          className="absolute top-0.5 left-0.5 flex h-4 w-4 items-center justify-center rounded-sm border border-line"
+          style={{ background: mereMaerke.andre?.farve ?? 'var(--color-panel2)' }}
+          data-testid="fane-mere-maerke"
+          aria-hidden
+        >
+          <Ikon navn="mere" farve={mereMaerke.andre ? 'var(--color-line)' : 'var(--color-muted)'} str={10} />
         </span>
       )}
     </button>
@@ -699,6 +732,8 @@ function MobilFaner() {
   const valgtIMere = oevrige.find((p) => p.id === panel) ?? null;
   // "Mere" arver det første "!" fra fanerne derinde (tal-badges som ventende opgaver tæller ikke med)
   const mereBadge = oevrige.map((p) => badge(p.id)).find((b) => b?.tekst === '!') ?? null;
+  // Er et panel fra "Mere" valgt, viser knappen dets eget mærke; andre "!" derinde farver gitteret i hjørnet
+  const andreBadge = oevrige.filter((p) => p.id !== panel).map((p) => badge(p.id)).find((b) => b?.tekst === '!') ?? null;
 
   useEffect(() => {
     if (!aaben) return;
@@ -727,7 +762,7 @@ function MobilFaner() {
             className="anim-pop absolute inset-x-1.5 bottom-full z-40 mb-1.5 grid grid-cols-3 gap-1.5 rounded-lg border-2 border-line bg-panel p-2 pixel-kant"
           >
             {oevrige.map((p) => (
-              <FaneKnap key={p.id} p={p} valgt={p.id === panel} badge={badge(p.id)} laast={laast(p.id)} onClick={() => vaelg(p.id)} kort="aldrig" className="min-h-14 px-1 text-[0.62rem] tracking-wide" />
+              <FaneKnap key={p.id} p={p} valgt={p.id === panel} badge={badge(p.id)} laast={laast(p.id)} onClick={() => vaelg(p.id)} kort="aldrig" className="min-h-14 px-1 text-[0.7rem] tracking-wide" />
             ))}
           </div>
         </>
@@ -739,21 +774,21 @@ function MobilFaner() {
         className="relative z-40 grid grid-cols-6 gap-1 border-t-2 border-line bg-panel px-1.5 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))]"
       >
         {fastePaneler.map((p) => (
-          <FaneKnap key={p.id} p={p} valgt={p.id === panel} badge={badge(p.id)} laast={laast(p.id)} onClick={() => vaelg(p.id)} kort="altid" className="min-h-12 px-0.5 text-[0.6rem] tracking-tight" />
+          <FaneKnap key={p.id} p={p} valgt={p.id === panel} badge={badge(p.id)} laast={laast(p.id)} onClick={() => vaelg(p.id)} kort="altid" className="min-h-12 px-0.5 text-[0.66rem] tracking-tight" />
         ))}
         {valgtIMere ? (
           // Et panel fra "Mere" er valgt: knappen viser det, og et tryk åbner arket igen
           <FaneKnap
             p={valgtIMere}
             valgt
-            badge={mereBadge}
+            badge={badge(valgtIMere.id)}
             laast={laast(valgtIMere.id)}
             onClick={() => setAaben((a) => !a)}
             kort="altid"
-            className="min-h-12 px-0.5 text-[0.6rem] tracking-tight"
+            className="min-h-12 px-0.5 text-[0.66rem] tracking-tight"
             testId="fane-mere"
-            ekstraLabel=" (under Mere — tryk for flere)"
-            mereMaerke
+            ekstraLabel={` (under Mere — tryk for flere${andreBadge ? `; ${andreBadge.hjaelp}` : ''})`}
+            mereMaerke={{ andre: andreBadge }}
           />
         ) : (
           <button
@@ -765,7 +800,7 @@ function MobilFaner() {
             aria-label={`Mere: ${oevrige.map((p) => p.navn).join(', ')}${mereBadge ? ` — ${mereBadge.hjaelp}` : ''}`}
             data-testid="fane-mere"
             onClick={() => setAaben((a) => !a)}
-            className={`relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border-2 border-line px-1 font-pixel text-[0.6rem] font-bold uppercase leading-none tracking-tight ${
+            className={`relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border-2 border-line px-1 font-pixel text-[0.66rem] font-bold uppercase leading-none tracking-tight ${
               aaben ? 'bg-hi text-ink' : 'bg-panel2 text-muted hover:bg-hi hover:text-ink'
             }`}
           >
@@ -830,9 +865,8 @@ export default function GameScreen() {
       <div className="flex h-full flex-col overflow-hidden" data-testid="spilskaerm">
         <Hud />
         <UgeProgress />
-        <div className="relative z-20 h-0">
-          <PauseBanner placering="absolute inset-x-2 top-1.5" />
-        </div>
+        {/* I flowet (ikke oven på kolonnen), så det ikke dækker toppen af panelet, man har rullet ned til */}
+        <PauseBanner placering="relative mx-2 mt-1.5 shrink-0" />
         <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain" data-testid="spilkolonne">
           <div className="flex flex-col gap-2 p-2">
             <div className="relative mx-auto w-full max-w-[calc(34dvh*16/9)]" data-testid="kontor-ramme">

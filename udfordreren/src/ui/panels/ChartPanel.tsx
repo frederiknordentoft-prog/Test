@@ -85,7 +85,7 @@ function Raekke({ e, p, g, m }: { e: ChartEntry; p: LiveProduct | undefined; g: 
           {p.version > 1 && <span className="shrink-0 font-pixel text-[0.65rem] font-black text-muted">{p.version}.0</span>}
           {hb > 1 && (
             <span
-              className="tal shrink-0 rounded border border-line bg-panel2 px-1 font-pixel text-[0.58rem] font-black uppercase text-sky"
+              className="tal shrink-0 rounded border border-line bg-panel2 px-1 font-pixel text-[0.66rem] font-black uppercase text-sky"
               title={`Hjemmebane: statsselskabets nye spillere tæller ×${String(Math.round(hb * 10) / 10).replace('.', ',')} på hitlisten (fuldt til 2016, aftager til 2018)`}
               data-testid="hjemmebane"
             >
@@ -157,7 +157,7 @@ function MarkedFane({ g, m, valgt, onVaelg, onTast }: { g: GameState; m: MarketI
         {!aaben && <Ikon navn="laas" farve="currentColor" str={9} />}
         {plads !== null && <Ikon navn="krone" farve={valgt ? 'var(--color-line)' : 'var(--color-gold)'} indre={valgt ? 'var(--color-gold)' : 'var(--color-line)'} str={10} />}
       </span>
-      <span className={`tal text-[0.58rem] font-bold uppercase leading-none ${valgt ? 'text-line/80' : ramt ? 'text-bad' : plads !== null ? 'text-gold' : 'text-dim'}`}>{under}</span>
+      <span className={`tal text-[0.66rem] font-bold uppercase leading-none ${valgt ? 'text-line/80' : ramt ? 'text-bad' : plads !== null ? 'text-gold' : 'text-dim'}`}>{under}</span>
     </button>
   );
 }

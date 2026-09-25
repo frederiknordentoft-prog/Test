@@ -19,6 +19,7 @@ import { agentFaseVaegt } from '../../sim/agents';
 import { GloedTerminal } from '../components/AiDele';
 
 function nytProduktStatus(g: GameState): { ok: boolean; grund?: string } {
+  if (g.slut) return { ok: false, grund: 'Spillet er slut. Se slutningen, eller start et nyt spil.' };
   const max = maxProjekter(g);
   if (g.projekter.length >= max) {
     return { ok: false, grund: `Kontoret har plads til ${max} projekt${max === 1 ? '' : 'er'} ad gangen. Lancér eller skrinlæg først.` };

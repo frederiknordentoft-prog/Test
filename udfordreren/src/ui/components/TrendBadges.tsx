@@ -166,7 +166,8 @@ export default function TrendBadges({ kompakt = false }: { kompakt?: boolean }) 
     const valgt = trends.find((t) => noegle(t) === aaben);
     return (
       <section aria-label="Trends" data-testid="trends" className="min-w-0">
-        <ul className="shell-uden-scrollbar flex gap-2 overflow-x-auto pb-0.5">
+        {/* relative: skærmlæserteksterne (sr-only, absolut placeret) skal klippes af rækken, ellers gør de kolonnen bredere */}
+        <ul className="shell-uden-scrollbar relative flex gap-2 overflow-x-auto pb-0.5">
           {trends.map((t) => (
             <TrendKort
               key={noegle(t)}

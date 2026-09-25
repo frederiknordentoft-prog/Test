@@ -17,7 +17,7 @@ import { ByDiagram, Eftermaele, SlutSektion, Tidslinje, Trofaehylde } from '../c
 import { ArkivOpslagModal } from './ArkivDialog';
 import { mio, pct } from '../format';
 import { opsummering, varighedTekst } from '../lib/shellHjaelp';
-import { MODE_INFO, TONE, arvOpsummering, byUdvikling, ngPlusValg, slutInfo, trofaeer, type StartMode } from '../lib/slutHjaelp';
+import { MODE_INFO, TONE, arvOpsummering, byUdvikling, delEftertanke, ngPlusValg, slutInfo, trofaeer, type StartMode } from '../lib/slutHjaelp';
 import { spil } from '../../audio/sfx';
 
 function Fakta({ ikon, farve, label, vaerdi, under, testId }: { ikon: IkonNavn; farve: string; label: string; vaerdi: string; under?: string; testId?: string }) {
@@ -29,7 +29,7 @@ function Fakta({ ikon, farve, label, vaerdi, under, testId }: { ikon: IkonNavn; 
         <div className="tal font-pixel text-sm font-black break-words sm:text-base" style={{ color: farve }}>
           {vaerdi}
         </div>
-        {under && <div className="truncate text-[0.68rem] text-dim">{under}</div>}
+        {under && <div className="text-[0.68rem] leading-tight text-dim">{under}</div>}
       </div>
     </div>
   );
@@ -38,7 +38,7 @@ function Fakta({ ikon, farve, label, vaerdi, under, testId }: { ikon: IkonNavn; 
 export default function EndDialog({ signal, onLuk }: { signal: Signal; onLuk: () => void }) {
   const g = useGame((s) => s.game);
   const arkivTil = useGame((s) => s.settings.arkiv);
-  const [arkivOpslag, setArkivOpslag] = useState<string | null>(null);
+  const [arkivOpslag, setArkivOpslag] = useState<{ id: string; forspil: string | null } | null>(null);
   const [starter, setStarter] = useState<StartMode | null>(null);
   const [ngplus, setNgplus] = useState<NgPlusGemt | null>(null);
   const id = g?.slut?.id ?? (signal.k === 'slut' ? signal.id : 'konkurs');
@@ -163,22 +163,26 @@ export default function EndDialog({ signal, onLuk }: { signal: Signal; onLuk: ()
 
           {/* Eftertanke */}
           <SlutSektion titel="Eftertanke" ikon="spoergsmaal" testId="slut-eftertanke">
-            <p className="mb-2 text-sm text-muted">Tre steder, hvor jeres vej afveg fra den virkelige.</p>
+            <p className="mb-2 text-sm text-muted">
+              Tre steder, hvor jeres vej afveg fra den virkelige.{arkivTil ? ' Hvordan det gik i virkeligheden, står i Arkivet.' : ''}
+            </p>
             <div className="grid gap-2 md:grid-cols-3">
               {tanker.map((k, i) => {
+                // Kortet viser kun jeres del; "I virkeligheden …" (med rigtige navne) står i Arkiv-opslaget
+                const del = delEftertanke(k.tekst);
                 const indhold = (
                   <>
                     <span className="flex items-center gap-2 font-pixel text-sm font-black text-ink">
                       <Ikon navn="spoergsmaal" farve="var(--color-cyan)" indre="var(--color-line)" className="shrink-0" /> {k.titel}
                     </span>
-                    <span className="block flex-1 text-sm leading-snug text-muted">{k.tekst}</span>
+                    <span className="block flex-1 text-sm leading-snug text-muted">{del.jeres}</span>
                   </>
                 );
                 return arkivTil ? (
                   <button
                     key={k.id}
                     type="button"
-                    onClick={() => setArkivOpslag(k.arkivId)}
+                    onClick={() => setArkivOpslag({ id: k.arkivId, forspil: del.virkelighed })}
                     data-testid={`slut-eftertanke-${i}`}
                     className="flex min-h-[44px] flex-col gap-2 rounded-md border-2 border-line bg-panel p-3 text-left pixel-skygge transition-transform hover:bg-panel2 active:translate-y-[2px]"
                   >
@@ -226,7 +230,7 @@ export default function EndDialog({ signal, onLuk }: { signal: Signal; onLuk: ()
           </SlutSektion>
         </div>
       </Modal>
-      {arkivOpslag && <ArkivOpslagModal id={arkivOpslag} onLuk={() => setArkivOpslag(null)} visAltid />}
+      {arkivOpslag && arkivTil && <ArkivOpslagModal id={arkivOpslag.id} forspil={arkivOpslag.forspil} onLuk={() => setArkivOpslag(null)} visAltid />}
     </>
   );
 }

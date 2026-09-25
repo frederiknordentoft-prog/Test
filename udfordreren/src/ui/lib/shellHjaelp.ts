@@ -151,7 +151,8 @@ export type KnudTip = { id: string; titel: string; tekst: string; knap: string; 
 /** Et kort råd fra mentoren ud fra spillets tilstand (vigtigste først). null = intet at sige lige nu. */
 export function knudTip(s: GameState): KnudTip | null {
   if (s.slut) return null;
-  if (s.negativUger > 0) {
+  // negativUger nulstilles først ved næste step: efter en runde er kassen positiv igen med det samme
+  if (s.negativUger > 0 && s.kapital < 0) {
     return {
       id: 'minus',
       titel: `Kassen er i minus — ${s.negativUger}/${KONKURS_UGER} uger`,

@@ -402,7 +402,7 @@ export default function TitleScreen() {
               </p>
             )}
           </div>
-          <p className="text-center font-pixel text-[0.65rem] uppercase tracking-widest text-dim">Fase 1-2 · testversion</p>
+          <p className="text-center font-pixel text-[0.65rem] uppercase tracking-widest text-dim">2012-2035 · testversion</p>
         </div>
       </div>
       {visIndlaes && <SaveLoadDialog dialog={{ kind: 'gemIndlaes' }} onLuk={() => setVisIndlaes(false)} />}

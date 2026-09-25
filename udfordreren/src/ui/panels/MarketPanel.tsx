@@ -8,7 +8,7 @@ import { useGame } from '../../store/gameStore';
 import { Btn, Ikon, Monogram, Panel, Tip, type IkonNavn } from '../components/kit';
 import { Afsnit, Chip, Donut, FlagStribe, Maengde, Pips, Segment, type DonutDel } from '../components/FirmaDele';
 import MarkedKort from '../components/MarkedKortCanvas';
-import { DriverListe, PresMaaler, SanktionsTrappe, TillidsSkala } from '../components/MarkedKortDele';
+import { DriverListe, PresLog, PresMaaler, SanktionsTrappe, TillidsSkala } from '../components/MarkedKortDele';
 import { MARKETS, MARKET_IDS } from '../../data/markets';
 import { VERTICALS } from '../../data/verticals';
 import { CHANNELS, CHANNEL_IDS, type ChannelDef } from '../../data/acquisition';
@@ -29,10 +29,11 @@ import { aggressionsIndeks } from '../lib/konkurrentHjaelp';
 import { rulIndISyne, rulTilTop } from '../lib/rul';
 import { R8 } from '../../data/reactionRules';
 import {
-  DK_SMITTE, OFFSHORE_BRAND, OFFSHORE_FAKTOR, PRES_TAERSKEL, SANKTION_TRIN, STATUS_INFO, VERTIKALER, afgiftSats, aggressivitet, aktiveRegler, blokeringer, effektivIndsatsAfgift, erMonopol,
+  DK_SMITTE, OFFSHORE_BRAND, OFFSHORE_FAKTOR, PRES_EFTER, PRES_TAERSKEL, SANKTION_TRIN, STATUS_INFO, VERTIKALER, afgiftSats, aggressivitet, aktiveRegler, blokeringer, effektivIndsatsAfgift, erMonopol,
   graaMarkedAar, kanalKunder, kanaliseringsMaal, kommendeRegler, kortData, loftRegel, lukketAf, markedStatus, markedsStoerrelse, markedsTrends, offshoreAndel,
-  offshoreBrandEstimat, offshoreDrivere, spildtBudget, spillerMargin, useMarkedValg, type Stoerrelse,
+  offshoreBrandEstimat, offshoreDrivere, presHistorik, spildtBudget, spillerMargin, useMarkedValg, type Stoerrelse,
 } from '../lib/markedHjaelp';
+import { rulleKant } from '../hooks/rulleKant';
 
 const OEVRIGE = { navn: 'Øvrige licenserede', farve: '#4a5282', monogram: '+' };
 
@@ -107,7 +108,7 @@ function fokusSenere(testId: string) {
 function Hop() {
   const reduceret = useReduceretBevaegelse();
   return (
-    <nav className="shell-uden-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5 @2xl:flex-wrap" aria-label="Hop til afsnit">
+    <nav ref={rulleKant} className="shell-uden-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5 @2xl:flex-wrap" aria-label="Hop til afsnit">
       {SEKTIONER.map((s) => (
         <button
           key={s.id}
@@ -620,8 +621,10 @@ function Regulering({ g, m }: { g: GameState; m: MarketId }) {
           <span className="font-pixel text-xs font-black uppercase">Politisk pres</span>
           <PresMaaler pres={ms.politiskPres} />
           <p className="text-xs text-muted">
-            Ved {PRES_TAERSKEL} vedtages en ny regel, der træder i kraft efter 1-2 år. Presset falder langsomt igen (−0,1 pr. kvartal).
+            Ved {PRES_TAERSKEL} vedtages en ny regel, der træder i kraft efter 1-2 år, og presset starter forfra på {fmtTal(PRES_EFTER)}. Ellers falder
+            det langsomt (−0,1 pr. kvartal).
           </p>
+          <PresLog poster={presHistorik(g, m)} />
           <p className="flex items-start gap-1.5 text-xs" style={{ color: agg >= 4 ? 'var(--color-warn)' : 'var(--color-muted)' }} data-testid="aggressivitet">
             <Ikon navn={agg >= 4 ? 'advarsel' : 'hype'} farve={agg >= 4 ? 'var(--color-warn)' : 'var(--color-pink)'} indre="var(--color-line)" str={12} className="mt-0.5 shrink-0" />
             <span>
@@ -668,6 +671,11 @@ function Regulering({ g, m }: { g: GameState; m: MarketId }) {
                   <Chip ikon="kalender" farve="var(--color-warn)">
                     {datoTekst(r.uge)} · om {alderTekst(r.ugerTil)}
                   </Chip>
+                  {r.tal && (
+                    <Chip ikon={r.op ? 'op' : 'ned'} farve={r.op ? 'var(--color-bad)' : 'var(--color-good)'}>
+                      <span className="tal" data-testid="regel-paa-vej-tal">{r.tal}</span>
+                    </Chip>
+                  )}
                   <span className="text-[0.66rem] uppercase text-dim">{r.dynamisk ? 'Nyt politisk indgreb' : 'Vedtaget'}</span>
                 </span>
                 <span className="text-xs text-muted">{r.beskrivelse}</span>
@@ -784,7 +792,8 @@ function Tillid({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <div className="flex items-center gap-2">
+        {/* flex-wrap + min-w-0: med stor tekst skal sanktionschippen kunne gå på ny linje i stedet for at skubbe siden bredere */}
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Ikon navn={t >= 60 ? 'skjold' : 'advarsel'} farve={farve} indre="var(--color-line)" str={22} />
           <span className="tal font-pixel text-3xl font-black leading-none" style={{ color: farve }} data-testid="tillid-vaerdi">
             {Math.round(t)}
@@ -799,7 +808,7 @@ function Tillid({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
             ikon={ms.sanktion.trin === 0 ? 'flueben' : 'advarsel'}
             farve={ms.sanktion.trin === 0 ? 'var(--color-good)' : SANKTION_TRIN[ms.sanktion.trin - 1].farve}
             fyld={ms.sanktion.trin > 0}
-            className="ml-1"
+            className="max-w-full"
           >
             {ms.sanktion.trin === 0 ? 'Ingen sanktioner' : `Trin ${ms.sanktion.trin}: ${SANKTION_TRIN[ms.sanktion.trin - 1].navn}`}
           </Chip>
@@ -1079,6 +1088,18 @@ function LoftLinje({ g, m, hvad, aktive }: { g: GameState; m: MarketId; hvad: 'b
   );
 }
 
+/** Prisen står under hvert bonus-/VIP-niveau, før man vælger det (fristelsen skal have et synligt prisskilt) */
+function NiveauPris({ n, pris, tillid }: { n: number; pris: string; tillid: string }) {
+  return (
+    <span className="flex flex-col items-center gap-0.5 leading-none">
+      <span>{n}</span>
+      <span className="tal font-sans text-[0.66rem] font-bold whitespace-nowrap opacity-85">
+        {pris} · {tillid}
+      </span>
+    </span>
+  );
+}
+
 function BonusVip({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
   const b = g.bonusNiveau;
   const v = g.vipProgram;
@@ -1109,7 +1130,11 @@ function BonusVip({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
           </div>
           <Segment
             label="Bonusniveau"
-            valg={niveauer.map((n) => ({ id: n, navn: n === 0 ? 'Fra' : n, titel: `Niveau ${n}: ${procent(BONUS_PCT[n])} af BSI` }))}
+            valg={niveauer.map((n) => ({
+              id: n,
+              navn: n === 0 ? 'Fra' : <NiveauPris n={n} pris={procent(BONUS_PCT[n])} tillid={fmtTal(TRUST.bonusNiveau * n)} />,
+              titel: n === 0 ? 'Ingen bonus' : `Niveau ${n}: +${Math.round(BONUS_TILGANG[n] * 100)} % tilgang, ${procent(BONUS_PCT[n])} af BSI, ${fmtTal(TRUST.bonusNiveau * n)} tilsynstillid pr. kvartal`,
+            }))}
             vaerdi={b}
             onSkift={(n) => useGame.getState().dispatch({ t: 'setBonus', niveau: n })}
             testIdPrefix="bonus"
@@ -1140,7 +1165,11 @@ function BonusVip({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
           </div>
           <Segment
             label="VIP-niveau"
-            valg={niveauer.map((n) => ({ id: n, navn: n === 0 ? 'Fra' : n, titel: `Niveau ${n}: ${procent(VIP_PCT[n])} af BSI` }))}
+            valg={niveauer.map((n) => ({
+              id: n,
+              navn: n === 0 ? 'Fra' : <NiveauPris n={n} pris={procent(VIP_PCT[n])} tillid={fmtTal(TRUST.vipProgram * n)} />,
+              titel: n === 0 ? 'Intet VIP-program' : `Niveau ${n}: +${Math.round(VIP_ARPU[n] * 100)} % BSI pr. kunde, ${procent(VIP_PCT[n])} af BSI, ${fmtTal(TRUST.vipProgram * n)} tilsynstillid pr. kvartal`,
+            }))}
             vaerdi={v}
             onSkift={(n) => useGame.getState().dispatch({ t: 'setVip', niveau: n })}
             testIdPrefix="vip"
@@ -1161,6 +1190,9 @@ function BonusVip({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
           <LoftLinje g={g} m={m} hvad="vip" aktive={vm.aktive} />
         </div>
       </div>
+      <p className="flex items-center gap-1.5 text-[0.7rem] text-muted" data-testid="niveau-pris-forklaring">
+        <Ikon navn="penge" farve="var(--color-bad)" str={11} className="shrink-0" /> Under hvert niveau: prisen i % af BSI · tilsynstillid pr. kvartal.
+      </p>
       <PaabudsIndeks g={g} m={m} kompakt />
       {andreOver.length > 0 && (
         <p className="flex items-start gap-1.5 text-xs text-warn" data-testid="paabud-andre">
@@ -1216,6 +1248,9 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
   const visListe = erFaktisk ? faktisk : MARKET_IDS.map((m) => ({ m, b: estimat.prMarked[m] ?? 0 })).filter((x) => x.b > 0);
   const beloeb = erFaktisk ? faktiskSum : estimat.total;
   const harAktivtProdukt = g.produkter.some((p) => p.ejer === 'spiller' && p.aktiv);
+  // Afsløringsrisikoen vokser med den grå pengestrøm (grundrisiko + et tillæg pr. 10 mio. om ugen)
+  const risikoAar = offshoreRisikoPrAar(beloeb);
+  const risikoEkstra = risikoAar - OFFSHORE_BRAND.tabRisikoPrAar;
   const start = () => {
     const ok = useGame.getState().dispatch({ t: 'setOffshoreBrand', aktiv: true });
     if (ok) useGame.getState().toast('Offshore-brandet er live. Det grå kasino kører.', 'info');
@@ -1235,9 +1270,13 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
       ikon: 'advarsel',
       tekst: (
         <>
-          {Math.round(offshoreRisikoPrAar(beloeb) * 100)} % risiko pr. år for at blive afsløret, og mere jo større den grå pengestrøm bliver. Så inddrages{' '}
-          <b>alle</b> jeres licenser på én gang
-          {iRisiko.length > 0 ? ` (lige nu ${iRisiko.length}: ${iRisiko.map((m) => MARKETS[m].kort).join(', ')})` : ''}
+          Ca. <b className="tal text-ink">{fmtTal(risikoAar * 100)} %</b> risiko pr. år for at blive afsløret
+          {risikoEkstra >= 0.001
+            ? ` (${fmtTal(OFFSHORE_BRAND.tabRisikoPrAar * 100)} % grundrisiko plus ${fmtTal(risikoEkstra * 100)} %, fordi ${mioKort(beloeb)} om ugen i grå penge bliver fulgt)`
+            : ` (grundrisikoen; den stiger, jo flere grå penge der løber igennem)`}
+          . Så inddrages <b>alle</b> jeres licenser på én gang
+          {iRisiko.length > 0 ? ` (lige nu ${iRisiko.length}: ${iRisiko.map((m) => MARKETS[m].kort).join(', ')})` : ''}, og uden en licens, der bærer firmaet, er
+          spillet slut
         </>
       ),
       farve: 'var(--color-bad)',
@@ -1334,7 +1373,7 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
                 : ' — lige startet'
               : ''}
             . Risikoen tikker: ca.{' '}
-            {fmtTal((offshoreRisikoPrAar(beloeb) / 52) * 100)} % hver uge.
+            {fmtTal((risikoAar / 52) * 100)} % hver uge.
           </p>
           <Btn variant="sekundaer" testId="offshore-luk" onClick={() => setBekraeft('luk')}>
             <Ikon navn="kryds" farve="currentColor" str={13} /> Luk brandet

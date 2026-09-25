@@ -76,8 +76,12 @@ function Varsel({ expoId, onLuk }: { expoId: string; onLuk: () => void }) {
                   <Chip ikon="indsigt" farve="var(--color-cyan)">+{e.indsigt[i]} indsigt</Chip>
                   <Chip ikon="folk" farve="var(--color-sky)" titel={fuldt ? 'Kontoret er fuldt — kandidaterne kræver en ledig plads' : undefined}>
                     {e.kandidater[i]} kandidat{e.kandidater[i] === 1 ? '' : 'er'}
-                    {fuldt ? ' (kræver ledig plads)' : ''}
                   </Chip>
+                  {fuldt && (
+                    <Chip ikon="advarsel" farve="var(--color-warn)" titel="Kandidaterne kræver en ledig plads på kontoret">
+                      Kontoret er fuldt
+                    </Chip>
+                  )}
                   <Chip ikon="kontrakt" farve="var(--color-good)" titel="Chance for en B2B-opgave">
                     {procent(e.b2bChance[i], 0)} B2B
                   </Chip>
@@ -86,6 +90,11 @@ function Varsel({ expoId, onLuk }: { expoId: string; onLuk: () => void }) {
                 <Btn variant={st === 3 ? 'primaer' : 'sekundaer'} className="mt-auto" disabled={!raad} title={raad ? undefined : `Ikke råd (${mio(pris)})`} testId={`book-stand-${st}`} onClick={() => book(st)}>
                   Book {KORT_NAVN[st]}
                 </Btn>
+                {!raad && (
+                  <p className="flex items-start gap-1 text-xs font-bold text-warn" data-testid={`book-stand-${st}-grund`}>
+                    <Ikon navn="laas" farve="var(--color-warn)" str={11} className="mt-0.5 shrink-0" /> Ikke råd: kassen har {mio(g.kapital)}
+                  </p>
+                )}
               </div>
             );
           })}

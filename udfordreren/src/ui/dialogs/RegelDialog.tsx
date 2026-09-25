@@ -1,17 +1,19 @@
 // Ny regel (signal 'regel'): varsel ("på vej fra …") eller ikrafttræden ("nu gælder …"), med effekten fra
 // regelBeskrivelse og hvad den konkret betyder for spillerens produkter, bonus/VIP og marketing i markedet.
 // Flere regler af samme slags i samme uge samles i én dialog med en række pr. marked.
+// En afgiftsstigning viser det præcise tal (signal/plan pp), og et nyt politisk indgreb viser, hvad der drev presset (presLog).
 import { useState } from 'react';
 import type { Signal } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
-import { vaelgMarked } from '../lib/markedHjaelp';
+import { presHistorik, regelBeskrivelseMedPp, vaelgMarked } from '../lib/markedHjaelp';
 import { MARKETS } from '../../data/markets';
 import { REGLER } from '../../data/regulationTimeline';
-import { datoTekst, regelBeskrivelse } from '../../sim/selectors';
+import { datoTekst } from '../../sim/selectors';
 import { useSmal } from '../hooks/useMedia';
 import { Btn, Ikon, Modal } from '../components/kit';
 import { FlagStribe } from '../components/FirmaDele';
+import { PresLog } from '../components/MarkedKortDele';
 import { GruppeListe, type GruppeRaekke } from '../components/SignalGruppe';
 import { TONE_FARVE, regelIkraft, regelKonsekvenser, ugerKort } from '../lib/tvaersHjaelp';
 
@@ -30,7 +32,11 @@ export default function RegelDialog({ signal: foerste, gruppe, onLuk }: { signal
   const navn = r?.navn ?? regelId;
   const plan = regelIkraft(g, m, regelId);
   const uger = plan ? Math.max(0, plan.uge - g.uge) : 0;
-  const konsekvenser = regelKonsekvenser(g, m, regelId);
+  // Afgiftsstigningens størrelse er trukket ved varslet: samme tal i varslet og ved ikrafttræden
+  const pp = regelId === 'afgiftsstigning' ? (signal.pp ?? plan?.pp) : undefined;
+  const konsekvenser = regelKonsekvenser(g, m, regelId, pp);
+  // Et nyt politisk indgreb: vis hvad der har flyttet presset i markedet
+  const presPoster = varsel && plan?.dynamisk ? presHistorik(g, m) : [];
   const skidte = konsekvenser.filter((k) => k.tone === 'skidt').length;
   const gode = konsekvenser.filter((k) => k.tone === 'god').length;
   const tone = skidte > 0 ? 'skidt' : gode > 0 ? 'god' : 'neutral';
@@ -45,11 +51,12 @@ export default function RegelDialog({ signal: foerste, gruppe, onLuk }: { signal
     ? gruppe.flatMap((x): GruppeRaekke[] => {
         if (x.k !== 'regel') return [];
         const p = regelIkraft(g, x.marked, x.regelId);
+        const xPp = x.regelId === 'afgiftsstigning' ? (x.pp ?? p?.pp) : undefined;
         return [{
           marked: x.marked,
           ikon: x.varsel ? 'paragraf' : 'skjold',
           farve: x.varsel ? 'var(--color-warn)' : 'var(--color-sky)',
-          titel: REGLER[x.regelId]?.navn ?? x.regelId,
+          titel: `${REGLER[x.regelId]?.navn ?? x.regelId}${xPp !== undefined ? ` +${xPp} pp` : ''}`,
           under: x.varsel ? (p ? `Fra ${datoTekst(p.uge)} · om ${ugerKort(Math.max(0, p.uge - g.uge))}` : 'Vedtaget') : `Gælder nu i ${MARKETS[x.marked].navn}`,
         }];
       })
@@ -108,7 +115,16 @@ export default function RegelDialog({ signal: foerste, gruppe, onLuk }: { signal
                   </>
                 )}
               </h3>
-              {varsel && <p className="mt-0.5 font-bold text-ink">{navn}</p>}
+              {varsel && (
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-bold text-ink">
+                  {navn}
+                  {pp !== undefined && (
+                    <span className="tal inline-flex items-center gap-1 rounded border-2 border-line bg-panel px-1.5 font-pixel text-xs font-black text-bad" data-testid="regel-pp">
+                      <Ikon navn="op" farve="var(--color-bad)" str={10} /> {pp} pp
+                    </span>
+                  )}
+                </p>
+              )}
             </div>
             {varsel && plan && (
               <span
@@ -121,9 +137,15 @@ export default function RegelDialog({ signal: foerste, gruppe, onLuk }: { signal
             )}
           </div>
           <p className="border-t-2 border-line px-3 py-2 text-sm leading-snug text-ink" data-testid="regel-effekt">
-            {regelBeskrivelse(regelId)}
+            {regelBeskrivelseMedPp(regelId, pp)}
           </p>
         </section>
+
+        {presPoster.length > 0 && (
+          <section className="rounded-md border-2 border-line bg-bg2 px-2.5 py-2">
+            <PresLog poster={presPoster} overskrift={`Det politiske pres i ${def.navn}`} testId="regel-pres" />
+          </section>
+        )}
 
         <section>
           <h4 className="mb-1.5 flex items-center gap-1.5 font-pixel text-xs font-black uppercase tracking-wider text-ink">

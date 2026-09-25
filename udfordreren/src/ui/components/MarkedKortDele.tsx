@@ -2,7 +2,8 @@
 // Alt er CSS/SVG (ingen eksterne assets). Markeringer bruger altid ikon + farve.
 import type { ReactNode } from 'react';
 import { Ikon } from './kit';
-import { SANKTION_TRIN, PRES_TAERSKEL, type OffshorePost } from '../lib/markedHjaelp';
+import { SANKTION_TRIN, PRES_TAERSKEL, presDeltaTekst, presOverskrift, type OffshorePost, type PresPost } from '../lib/markedHjaelp';
+import { datoTekst } from '../../sim/time';
 import { tillidFarve } from '../lib/firmaHjaelp';
 
 const fmt = (v: number, dec = 1) => String(Math.round(v * 10 ** dec) / 10 ** dec).replace('.', ',').replace('-', '−');
@@ -112,6 +113,34 @@ export function PresMaaler({ pres }: { pres: number }) {
         {fmt(pres)}
         <span className="text-xs text-dim">/5</span>
       </span>
+    </div>
+  );
+}
+
+/** De seneste ændringer i det politiske pres (ms.presLog): dato, kilde og fortegn. Op = gul pil, ned = grøn pil. */
+export function PresLog({ poster, overskrift, testId = 'pres-log' }: { poster: PresPost[]; overskrift?: string; testId?: string }) {
+  if (poster.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-1" data-testid={testId}>
+      <span className="flex items-center gap-1.5 font-pixel text-[0.68rem] font-bold uppercase tracking-wide text-muted">
+        <Ikon navn="spoergsmaal" farve="var(--color-muted)" str={11} /> {overskrift ?? presOverskrift(poster)}
+      </span>
+      <ul className="flex flex-col gap-0.5">
+        {poster.map((p, i) => {
+          const op = p.delta > 0;
+          const farve = op ? 'var(--color-warn)' : 'var(--color-good)';
+          return (
+            <li key={`${p.uge}-${i}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-1.5 text-xs" data-testid={`${testId}-${i}`}>
+              <span className="tal pt-px font-pixel text-[0.66rem] font-bold whitespace-nowrap text-dim">{datoTekst(p.uge)}</span>
+              <span className="min-w-0 break-words text-ink">{p.kilde}</span>
+              <span className="tal flex items-center gap-0.5 font-pixel text-[0.7rem] font-black whitespace-nowrap" style={{ color: farve }}>
+                <Ikon navn={op ? 'op' : 'ned'} farve={farve} str={10} titel={op ? 'Presset steg' : 'Presset faldt'} />
+                {presDeltaTekst(p.delta)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

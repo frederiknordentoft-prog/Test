@@ -7,6 +7,7 @@ import { Ikon, Panel, Tom, type IkonNavn } from '../components/kit';
 import { synligeNyheder } from '../lib/shellHjaelp';
 import { nyhedArkivId } from '../lib/arkivHjaelp';
 import { useUi } from '../../store/uiStore';
+import { rulleKant } from '../hooks/rulleKant';
 
 type Filter = 'alle' | NonNullable<NewsItem['kind']>;
 
@@ -40,7 +41,7 @@ export default function NewsPanel() {
   let sidsteAar: number | null = null;
   return (
     <Panel titel="Nyheder" ikon="nyhed" testId="panel-nyheder" hoejre={<span className="font-pixel text-xs text-muted">{alle.length}</span>}>
-      <div className="shell-uden-scrollbar -mx-3 mb-3 flex gap-1.5 overflow-x-auto px-3" role="radiogroup" aria-label="Filtrér nyheder">
+      <div ref={rulleKant} className="shell-uden-scrollbar -mx-3 mb-3 flex gap-1.5 overflow-x-auto px-3" role="radiogroup" aria-label="Filtrér nyheder">
         {FILTRE.map((f) => {
           const valgt = filter === f.id;
           const k = f.id === 'alle' ? null : KIND[f.id];
