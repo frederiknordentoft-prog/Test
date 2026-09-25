@@ -68,7 +68,7 @@ function MarkedChips({ kort, valgt, onVaelg }: { kort: Record<MarketId, KortMark
     ref.current?.querySelector<HTMLButtonElement>(`[data-testid="marked-chip-${id}"]`)?.focus();
   };
   return (
-    <div ref={ref} role="radiogroup" aria-label="Vælg marked" className="grid grid-cols-3 gap-1.5 @md:grid-cols-5 @2xl:grid-cols-9 @2xl:gap-1" data-testid="marked-valg">
+    <div ref={ref} role="radiogroup" aria-label="Vælg marked" className="grid grid-cols-3 gap-1.5 @md:grid-cols-5 @2xl:grid-cols-9 @2xl:gap-1" data-testid="markedskort-valg">
       {MARKED_RAEKKE.map((m) => {
         const def = MARKETS[m];
         const km = kort[m];
@@ -85,7 +85,7 @@ function MarkedChips({ kort, valgt, onVaelg }: { kort: Record<MarketId, KortMark
             tabIndex={erValgt ? 0 : -1}
             onClick={() => onVaelg(m)}
             onKeyDown={(e) => tast(e, m)}
-            title={`${def.navn} · ${info.navn}${visAndel ? ` · jeres andel ${andelTekst(km.andel)}` : ''}`}
+            title={`${def.navn} · ${info.navn}${visAndel ? ` · jeres andel ${andelTekst(km.andel)}` : ''}${km.ny ? ' · nyåbnet' : ''}${km.advarsel ? ' · tilsynet holder øje' : ''}`}
             data-testid={`marked-chip-${m}`}
             className={`relative flex min-h-[48px] min-w-0 flex-col overflow-hidden rounded-md border-2 border-line text-left ${
               erValgt ? 'bg-panel2 pixel-skygge ring-2 ring-gold ring-offset-0' : 'bg-panel hover:bg-panel2'
@@ -95,7 +95,18 @@ function MarkedChips({ kort, valgt, onVaelg }: { kort: Record<MarketId, KortMark
             <span className="flex min-w-0 items-center gap-1 px-1.5 pt-0.5">
               <span className={`font-pixel text-xs font-black ${erValgt ? 'text-gold' : 'text-ink'}`}>{def.kort}</span>
               <span className="min-w-0 truncate text-xs text-muted @2xl:hidden">{def.navn}</span>
-              {km.ny && <span className="ml-auto h-2 w-2 shrink-0 rounded-full border border-line bg-sky" aria-label="Nyåbnet" />}
+              {km.ny && (
+                <>
+                  <span className="ml-auto h-2 w-2 shrink-0 rounded-full border border-line bg-sky" aria-hidden />
+                  <span className="sr-only">, nyåbnet</span>
+                </>
+              )}
+              {km.advarsel && (
+                <span className={`${km.ny ? '' : 'ml-auto'} flex shrink-0 items-center`} data-testid={`marked-advarsel-${m}`}>
+                  <Ikon navn="advarsel" farve="var(--color-bad)" indre="var(--color-line)" str={11} />
+                  <span className="sr-only">, tilsynet holder øje (lav tillid eller sanktion)</span>
+                </span>
+              )}
             </span>
             <span className="flex min-w-0 items-center gap-1 px-1.5 pb-1 text-[0.68rem] font-bold leading-tight @2xl:gap-0.5 @2xl:px-1 @2xl:text-[0.64rem]" style={{ color: visAndel ? 'var(--color-gold)' : info.farve }}>
               <Ikon navn={info.ikon} farve={info.farve} indre="var(--color-line)" str={11} className="shrink-0" />

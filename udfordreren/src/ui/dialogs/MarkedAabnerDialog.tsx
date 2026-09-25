@@ -94,7 +94,7 @@ export default function MarkedAabnerDialog({ signal, onLuk }: { signal: Signal; 
               Senere
             </Btn>
             <Btn variant="primaer" onClick={soeg} disabled={!!grund} title={grund} testId="markedAabner-soeg" className="flex-[2] sm:flex-none">
-              <Ikon navn="noegle" farve="currentColor" indre="var(--color-gold)" /> Søg licens · {mioKort(total || pris.gebyr)}
+              <Ikon navn="noegle" farve="currentColor" indre="var(--color-gold)" /> Søg licens · {(total || pris.gebyr) < 1 ? mio(total || pris.gebyr) : mioKort(total || pris.gebyr)}
             </Btn>
           </div>
         </div>

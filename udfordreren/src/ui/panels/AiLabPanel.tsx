@@ -97,10 +97,10 @@ function EffektListe({ linjer, testId }: { linjer: EffektLinje[]; testId?: strin
   return (
     <ul className="grid gap-1" data-testid={testId}>
       {linjer.map((l) => (
-        <li key={l.id} className={`flex items-center gap-2 rounded border-2 border-line px-2 py-1 text-sm ${l.aktiv ? 'bg-[#0a1024]' : 'bg-bg2 opacity-60'}`} title={l.titel}>
+        <li key={l.id} className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded border-2 border-line px-2 py-1 text-sm ${l.aktiv ? 'bg-[#0a1024]' : 'bg-bg2 opacity-60'}`} title={l.titel}>
           <Ikon navn={l.ikon} farve={l.farve} indre="var(--color-line)" str={14} className="shrink-0" />
-          <span className="min-w-0 flex-1 truncate text-muted">{l.label}</span>
-          <span className="tal shrink-0 text-right font-pixel text-xs font-bold" style={{ color: l.aktiv ? l.farve : 'var(--color-dim)' }}>
+          <span className="min-w-[7rem] flex-1 text-muted">{l.label}</span>
+          <span className="tal ml-auto text-right font-pixel text-xs font-bold" style={{ color: l.aktiv ? l.farve : 'var(--color-dim)' }}>
             {l.tekst}
           </span>
         </li>
@@ -254,9 +254,9 @@ function AgentRaekke({ g, a }: { g: GameState; a: AiAgent }) {
   const uheld = a.uheld ?? 0;
   return (
     <li className={`flex flex-col gap-1.5 rounded-md border-2 p-2 ${data.ok ? 'border-cyan/60 bg-[#0a1024]' : 'border-warn/70 bg-bg2'}`} data-testid={`ailab-agent-${a.id}`}>
-      <div className="flex items-start gap-2">
+      <div className="flex flex-wrap items-start gap-2">
         <GloedTerminal funktion={a.funktion} slukket={!data.ok} />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[150px] flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
             <span className="font-pixel text-sm font-bold text-ink">{agentNavn(a)}</span>
             <span className="text-xs font-bold text-cyan">{def.navn}</span>
@@ -277,7 +277,7 @@ function AgentRaekke({ g, a }: { g: GameState; a: AiAgent }) {
             </span>
           </div>
         </div>
-        <SikkerKnap sikkerTekst="Sluk" onJa={() => send({ t: 'retireAgent', agentId: a.id })} testId={`ailab-sluk-${a.id}`} variant="ghost" className="shrink-0">
+        <SikkerKnap sikkerTekst="Sluk" onJa={() => send({ t: 'retireAgent', agentId: a.id })} testId={`ailab-sluk-${a.id}`} variant="ghost" className="ml-auto shrink-0">
           <Ikon navn="kryds" /> Sluk
         </SikkerKnap>
       </div>

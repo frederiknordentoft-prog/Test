@@ -1,9 +1,11 @@
 // Konkurrentreaktion (signal 'reaktion'): kun R1 (bonuskrig) og R8 (påbud) får en dialog — resten er toasts.
 // Viser teksten, reglen bag (hvis → så), hvem der reagerer (monogram eller tilsynet) og konsekvensen.
-import { useEffect } from 'react';
+// Flere markeder i samme uge (fx påbud i DK, UK og SE) samles i én dialog med en række pr. marked.
+import { useEffect, useState } from 'react';
 import type { Signal } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
+import { vaelgMarked } from '../lib/markedHjaelp';
 import { Btn, Ikon, Modal, Monogram, type IkonNavn } from '../components/kit';
 import { FlagStribe } from '../components/FirmaDele';
 import { MARKETS } from '../../data/markets';
@@ -11,11 +13,15 @@ import { REAKTIONS_REGLER, R1, R8 } from '../../data/reactionRules';
 import { datoTekst, ejerInfo, spillerCacTillaeg } from '../../sim/selectors';
 import { spil } from '../../audio/sfx';
 import { aggressionsIndeks, aktiveReaktioner, udloebTekst } from '../lib/konkurrentHjaelp';
+import { GruppeListe, type GruppeRaekke } from '../components/SignalGruppe';
 
 type Linje = { ikon: IkonNavn; farve: string; tekst: string };
 
-export default function ReaktionDialog({ signal, onLuk }: { signal: Signal; onLuk: () => void }) {
+export default function ReaktionDialog({ signal: foerste, gruppe, onLuk }: { signal: Signal; gruppe?: Signal[]; onLuk: () => void }) {
   const g = useGame((s) => s.game);
+  const [valgt, setValgt] = useState(0);
+  const flere = !!gruppe && gruppe.length > 1;
+  const signal = flere ? (gruppe[valgt] ?? foerste) : foerste;
   useEffect(() => {
     try {
       spil('fejl');
@@ -63,9 +69,28 @@ export default function ReaktionDialog({ signal, onLuk }: { signal: Signal; onLu
   const indeks = !bonuskrig && m ? aggressionsIndeks(g, m) : null;
 
   const tilMarked = () => {
+    if (m) vaelgMarked(m, 'bonus');
     useUi.getState().setPanel('marked');
     onLuk();
   };
+  const raekker: GruppeRaekke[] = flere
+    ? gruppe.flatMap((x): GruppeRaekke[] => {
+        if (x.k !== 'reaktion' || !x.marked) return [];
+        const xm = x.marked;
+        if (x.regel === 'R1') {
+          const k = x.competitorId ? ejerInfo(g, x.competitorId) : null;
+          return [{ marked: xm, ikon: 'svaerd', farve: 'var(--color-bad)', titel: `${k?.navn ?? 'En gigant'} starter bonuskrig`, under: `Nye kunder +${Math.round(R1.cac * 100)} % dyrere i ${MARKETS[xm].navn}` }];
+        }
+        const idx = aggressionsIndeks(g, xm);
+        return [{
+          marked: xm,
+          ikon: 'skjold',
+          farve: 'var(--color-bad)',
+          titel: `${MARKETS[xm].tilsyn}: påbud nr. ${g.r8Antal[xm] ?? 1}`,
+          under: `Tillid ${Math.round(g.markeder[xm].tilsynstillid)} (−6) · indeks ${idx.total}/${idx.taerskel}`,
+        }];
+      })
+    : [];
   const tilRivaler = () => {
     useUi.getState().setPanel('konkurrenter');
     onLuk();
@@ -73,14 +98,14 @@ export default function ReaktionDialog({ signal, onLuk }: { signal: Signal; onLu
 
   return (
     <Modal
-      titel={bonuskrig ? 'Bonuskrig!' : 'Påbud'}
+      titel={flere ? (bonuskrig ? `Bonuskrig i ${gruppe.length} markeder!` : `Påbud i ${gruppe.length} markeder`) : bonuskrig ? 'Bonuskrig!' : 'Påbud'}
       onLuk={onLuk}
       testId="dialog-reaktion"
       bredde={620}
       fod={
         <>
           <Btn onClick={bonuskrig ? tilRivaler : tilMarked} testId="reaktion-gaa" className="mr-auto">
-            {bonuskrig ? 'Se rivalerne' : 'Til marketing'} <Ikon navn="pil" farve="currentColor" str={12} />
+            {bonuskrig ? 'Se rivalerne' : 'Til bonus og VIP'} <Ikon navn="pil" farve="currentColor" str={12} />
           </Btn>
           <Btn variant="primaer" onClick={onLuk} testId="reaktion-ok">
             Forstået
@@ -89,6 +114,15 @@ export default function ReaktionDialog({ signal, onLuk }: { signal: Signal; onLu
       }
     >
       <div className="flex flex-col gap-3" data-regel={signal.regel}>
+        {flere && (
+          <GruppeListe
+            raekker={raekker}
+            valgt={valgt}
+            onVaelg={setValgt}
+            overskrift={bonuskrig ? 'Samme uge, flere markeder' : `${gruppe.length} tilsyn på én gang`}
+            testId="reaktion-gruppe"
+          />
+        )}
         <section className="overflow-hidden rounded-lg border-2 border-line bg-bg2">
           {marked && <FlagStribe farver={marked.farver} className="h-2 rounded-none border-0 border-b-2" />}
           <div className="flex items-start gap-3 p-3">

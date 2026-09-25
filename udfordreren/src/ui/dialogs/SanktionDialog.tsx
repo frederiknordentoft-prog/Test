@@ -1,6 +1,7 @@
 // Sanktion (signal 'sanktion'): trin 1-4 på trappen (påbud → bøde → gennemgang → inddragelse) med tilsynets navn,
 // bøden, suspensionen, konsekvenserne, tillidstrappen og konkrete råd til at komme ned ad trappen igen.
-import { useEffect } from 'react';
+// Flere markeder i samme uge samles i én dialog med en række pr. marked (den alvorligste vises først).
+import { useEffect, useState } from 'react';
 import type { Signal } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
 import { useUi, type PanelId } from '../../store/uiStore';
@@ -15,7 +16,8 @@ import { Btn, Ikon, Modal, type IkonNavn } from '../components/kit';
 import { FlagStribe } from '../components/FirmaDele';
 import { TillidsTrappe } from '../components/TvaersDele';
 import { mio } from '../format';
-import { naesteTrin, sanktionsRaad, tillidsTendens, ugerKort } from '../lib/tvaersHjaelp';
+import { naesteTrin, sanktionsRaad, tillidsTendens, ugerKort, type Raad } from '../lib/tvaersHjaelp';
+import { GruppeListe, type GruppeRaekke } from '../components/SignalGruppe';
 
 type Konsekvens = { ikon: IkonNavn; tekst: string; farve: string };
 
@@ -27,9 +29,13 @@ const fmt1 = (v: number) => {
   return r > 0 ? `+${t}` : r < 0 ? `−${t}` : '±0';
 };
 
-export default function SanktionDialog({ signal, onLuk }: { signal: Signal; onLuk: () => void }) {
+export default function SanktionDialog({ signal: foerste, gruppe, onLuk }: { signal: Signal; gruppe?: Signal[]; onLuk: () => void }) {
   const g = useGame((s) => s.game);
-  const trinRaa = signal.k === 'sanktion' ? signal.trin : 1;
+  const [valgt, setValgt] = useState(0);
+  const flere = !!gruppe && gruppe.length > 1;
+  const signal = flere ? (gruppe[valgt] ?? foerste) : foerste;
+  // Rystelsen følger det alvorligste trin i ugen (gruppen er sorteret med det alvorligste først)
+  const trinRaa = foerste.k === 'sanktion' ? foerste.trin : 1;
   useEffect(() => {
     // Skærmryst og et dumpt "dunk" — ingen rystelse med reduceret bevægelse
     if (!reduceretBevaegelseNu()) rystelse(trinRaa >= 3 ? 520 : 380, trinRaa >= 3 ? 6 : 4);
@@ -82,12 +88,25 @@ export default function SanktionDialog({ signal, onLuk }: { signal: Signal; onLu
     });
   }
 
-  const gaaTil = (panel: PanelId) => {
-    if (panel === 'marked') vaelgMarked(m);
+  const gaaTil = (panel: PanelId, sektion?: Raad['sektion']) => {
+    if (panel === 'marked') vaelgMarked(m, sektion);
     useUi.getState().setPanel(panel);
     onLuk();
   };
-  const titel = `${navn} · ${def.navn}`;
+  const titel = flere ? `Sanktioner i ${gruppe.length} markeder` : `${navn} · ${def.navn}`;
+  const raekker: GruppeRaekke[] = flere
+    ? gruppe.flatMap((x): GruppeRaekke[] =>
+        x.k === 'sanktion'
+          ? [{
+              marked: x.marked,
+              ikon: TRIN_IKON[x.trin],
+              farve: TRIN_FARVE[x.trin],
+              titel: `Trin ${x.trin}: ${SANKTION_NAVN[x.trin]}${x.trin === 2 ? ` · ${mio(x.boede ?? 0.2)}` : ''}`,
+              under: `${MARKETS[x.marked].tilsyn} · tillid ${Math.round(g.markeder[x.marked].tilsynstillid)}`,
+            }]
+          : [],
+      )
+    : [];
 
   return (
     <Modal
@@ -102,6 +121,7 @@ export default function SanktionDialog({ signal, onLuk }: { signal: Signal; onLu
       }
     >
       <div className="flex flex-col gap-3" data-trin={trin}>
+        {flere && <GruppeListe raekker={raekker} valgt={valgt} onVaelg={setValgt} overskrift="Tilsynene har talt i samme uge" testId="sanktion-gruppe" />}
         <section className="overflow-hidden rounded-lg border-2 border-line bg-bg2">
           <FlagStribe farver={def.farver} className="h-2 rounded-none border-0 border-b-2" />
           <div className="flex items-start gap-3 p-3">
@@ -189,7 +209,7 @@ export default function SanktionDialog({ signal, onLuk }: { signal: Signal; onLu
                   <li key={r.id} className="flex flex-wrap items-center gap-2 rounded-md border-2 border-line bg-bg2 px-2 py-1.5" data-testid={`sanktion-raad-${r.id}`}>
                     <Ikon navn={r.ikon} farve={r.farve} indre="var(--color-line)" className="shrink-0" />
                     <span className="min-w-0 flex-1 text-sm text-ink">{r.tekst}</span>
-                    <Btn lille onClick={() => gaaTil(r.panel)} testId={`sanktion-gaa-${r.id}`} className="min-h-[44px] shrink-0">
+                    <Btn lille onClick={() => gaaTil(r.panel, r.sektion)} testId={`sanktion-gaa-${r.id}`} className="min-h-[44px] shrink-0">
                       {r.knap} <Ikon navn="pil" farve="currentColor" str={12} />
                     </Btn>
                   </li>

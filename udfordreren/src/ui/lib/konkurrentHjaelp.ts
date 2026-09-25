@@ -189,7 +189,7 @@ export function stifterAndel(s: GameState, pris: number): number {
 
 export const MODEL_RAEKKE: PlatformModel[] = ['whiteLabel', 'turnkey', 'hybrid', 'egen'];
 
-export const KIND_IKON: Record<PlatformKind, IkonNavn> = { kontoplatform: 'folk', sportsbook: 'bold', kasinoplatform: 'diamant' };
+export const KIND_IKON: Record<PlatformKind, IkonNavn> = { kontoplatform: 'folk', sportsbook: 'bold', kasinoplatform: 'terning' };
 
 export const KIND_ROLLE: Record<PlatformKind, string> = {
   kontoplatform: 'Konti, betalinger og KYC. Tæller halvt i revenue share på begge vertikaler og bestemmer dataejerskabet.',

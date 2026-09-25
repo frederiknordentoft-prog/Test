@@ -2,7 +2,7 @@
 // derunder det valgte markeds konsolkort (størrelse, afgift, strenghed, kanalisering, CAC, licenser), markedsandele,
 // offshore og hvad der driver den, regulering, tilsynstillid med sanktionstrappen, det fælles marketingmix, bonus/VIP
 // og offshore-fristelsen. Tunge udregninger samles i én useMemo pr. spilstate (dvs. pr. uge eller handling).
-import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { AcqChannel, GameState, MarketId, Vertical } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
 import { Btn, Ikon, Monogram, Panel, Tip, type IkonNavn } from '../components/kit';
@@ -24,6 +24,9 @@ import { mio, mioKort, heltal } from '../format';
 import { alderTekst, naesteKvartalsmoede, procent, rensNote, tillidFarve, uger } from '../lib/firmaHjaelp';
 import { useReduceretBevaegelse } from '../hooks/useMedia';
 import { markedBeskrivelse } from '../lib/tvaersHjaelp';
+import { aggressionsIndeks } from '../lib/konkurrentHjaelp';
+import { rulIndISyne, rulTilTop } from '../lib/rul';
+import { R8 } from '../../data/reactionRules';
 import {
   DK_SMITTE, OFFSHORE_BRAND, OFFSHORE_FAKTOR, PRES_TAERSKEL, SANKTION_TRIN, STATUS_INFO, VERTIKALER, afgiftSats, aggressivitet, aktiveRegler, blokeringer, effektivIndsatsAfgift, erMonopol,
   graaMarkedAar, kanalKunder, kanaliseringsMaal, kommendeRegler, kortData, loftRegel, lukketAf, markedStatus, markedsStoerrelse, markedsTrends, offshoreAndel,
@@ -89,8 +92,15 @@ const SEKTIONER: { id: string; navn: string; ikon: IkonNavn }[] = [
   { id: 'fristelsen', navn: 'Fristelsen', ikon: 'lyn' },
 ];
 
+/** Rul til et afsnit — under pausebanneret, som på mobil ligger oven på toppen af scroll-kolonnen */
 function hopTil(id: string, reduceret: boolean) {
-  document.getElementById(`marked-${id}`)?.scrollIntoView({ block: 'start', behavior: reduceret ? 'auto' : 'smooth' });
+  const el = document.getElementById(`marked-${id}`);
+  if (el) rulTilTop(el, reduceret);
+}
+
+/** Flyt fokus til et element efter næste render (når knappen, der havde fokus, er væk) */
+function fokusSenere(testId: string) {
+  requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-testid="${testId}"]`)?.focus({ preventScroll: true }));
 }
 
 function Hop() {
@@ -235,7 +245,9 @@ function Konsolkort({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
   const st = vedAabning && def.aabnerUge !== null ? markedsStoerrelse(g, m, def.aabnerUge) : vm.stoerrelse;
   const kanalisering = ms.aaben ? ms.kanalisering : 1 - (vm.offshore.betting + vm.offshore.kasino) / 2;
   const harVertikal = VERTIKALER.some((v) => ms.vertikaler[v].status !== 'ingen');
-  const bsiUge = ms.spillerBsiPrUge.betting + ms.spillerBsiPrUge.kasino;
+  // Suspenderet eller inddraget: ingen BSI her (sim-kernens tal er fra ugen før sanktionen)
+  const ramt = ms.licens === 'inddraget' || ms.licens === 'suspenderet';
+  const bsiUge = ramt ? 0 : ms.spillerBsiPrUge.betting + ms.spillerBsiPrUge.kasino;
   return (
     <section id="marked-konsol" className="scroll-mt-2 overflow-hidden rounded-lg border-2 border-line bg-bg2 pixel-skygge" data-testid={`konsol-${m}`}>
       <FlagStribe farver={def.farver} className={`h-2 rounded-none border-0 border-b-2 ${monopol || lukket ? 'grayscale-[60%]' : ''}`} />
@@ -299,10 +311,18 @@ function Konsolkort({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
             <Nogletal label="CAC-faktor" titel="Prisen pr. ny kunde i forhold til Danmark (før strenghed og konkurrence)" under={`strenghed ×${fmtTal(strenghedCac(ms.strenghed))}`}>
               <span className="tal font-pixel text-sm font-bold text-sky">×{fmtTal(def.cacFaktor)}</span>
             </Nogletal>
-            <Nogletal label="Licens" titel="Gebyr og behandlingstid" under={harVertikal ? 'næste vertikal' : 'første licens i markedet'}>
-              <span className="tal font-pixel text-sm font-bold text-gold">{mio(pris.gebyr)}</span>
-              <span className="text-[0.66rem] text-muted"> · {uger(pris.uger)}</span>
-            </Nogletal>
+            {ms.licens === 'inddraget' ? (
+              <Nogletal label="Licens" titel={`${def.tilsyn} har inddraget licensen for altid`} under="for altid">
+                <span className="flex items-center gap-1 font-pixel text-sm font-bold text-bad" data-testid="licens-mistet">
+                  <Ikon navn="kryds" farve="var(--color-bad)" str={12} className="shrink-0" /> Mistet
+                </span>
+              </Nogletal>
+            ) : (
+              <Nogletal label="Licens" titel="Gebyr og behandlingstid" under={harVertikal ? 'næste vertikal' : 'første licens i markedet'}>
+                <span className="tal font-pixel text-sm font-bold text-gold">{mio(pris.gebyr)}</span>
+                <span className="text-[0.66rem] text-muted"> · {uger(pris.uger)}</span>
+              </Nogletal>
+            )}
             <Nogletal label="Jeres kunder" under={`BSI ${mio(bsiUge)}/uge`}>
               <span className="flex flex-wrap gap-x-2">
                 {VERTIKALER.map((v) => (
@@ -341,6 +361,14 @@ function Licenser({ g, m }: { g: GameState; m: MarketId }) {
   const def = MARKETS[m];
   const pris = licensPris(g, m);
   const st = licensStatus(g, m);
+  const inddraget = ms.licens === 'inddraget';
+  // Tastatur: "Søg licens" forsvinder, når ansøgningen er sendt — så flyttes fokus til licenskortet (ikke til <body>)
+  const kort = useRef<Partial<Record<Vertical, HTMLDivElement | null>>>({});
+  const soeg = (v: Vertical) => {
+    if (!useGame.getState().dispatch({ t: 'applyLicense', market: m, vertical: v })) return;
+    useGame.getState().toast(`Ansøgning sendt til ${def.tilsyn}!`, 'godt');
+    requestAnimationFrame(() => kort.current[v]?.focus({ preventScroll: true }));
+  };
   return (
     <div className="flex flex-col gap-2" id="marked-licenser" data-testid="licenser">
       <div className="grid grid-cols-1 gap-2 @xl:grid-cols-2">
@@ -349,29 +377,47 @@ function Licenser({ g, m }: { g: GameState; m: MarketId }) {
           const tilbage = vl.status === 'ansoegt' && vl.klarUge !== null ? Math.max(0, vl.klarUge - g.uge) : 0;
           const raad = g.kapital >= pris.gebyr;
           const grund = !st.ok ? st.grund : !raad ? `Ikke råd (${mio(pris.gebyr)})` : undefined;
-          const suspenderet = vl.status === 'aktiv' && ms.licens === 'suspenderet';
+          const suspenderet = !inddraget && vl.status === 'aktiv' && ms.licens === 'suspenderet';
+          const status = inddraget ? 'inddraget' : suspenderet ? 'suspenderet' : vl.status;
           return (
-            <div key={v} className="flex flex-col gap-1.5 rounded-md border-2 border-line bg-panel p-2" data-testid={`licens-${m}-${v}`}>
+            <div
+              key={v}
+              ref={(el) => {
+                kort.current[v] = el;
+              }}
+              tabIndex={-1}
+              role="group"
+              aria-label={`${VERTICALS[v].navn} i ${def.navn}`}
+              onKeyDown={(e) => {
+                // Mellemrum på selve kortet (fx lige efter en ansøgning) må ikke starte tiden ved et uheld
+                if (e.key === ' ' && e.target === e.currentTarget) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
+              className="flex flex-col gap-1.5 rounded-md border-2 border-line bg-panel p-2 outline-none focus-visible:ring-2 focus-visible:ring-gold"
+              data-testid={`licens-${m}-${v}`}
+            >
               <div className="flex items-center justify-between gap-2" data-testid={m === 'dk' ? `licens-${v}` : undefined}>
                 <span className="flex items-center gap-1.5 font-pixel text-sm font-black">
                   <span className="h-3 w-3 rounded-sm border-2 border-line" style={{ background: VERTICALS[v].farve }} aria-hidden />
                   {VERTICALS[v].navn}
                 </span>
-                {suspenderet ? (
+                {status === 'inddraget' ? (
+                  <Chip ikon="kryds" farve="var(--color-bad)" fyld>
+                    Inddraget
+                  </Chip>
+                ) : status === 'suspenderet' ? (
                   <Chip ikon="pause" farve="var(--color-warn)" fyld>
                     Suspenderet
                   </Chip>
-                ) : vl.status === 'aktiv' ? (
+                ) : status === 'aktiv' ? (
                   <Chip ikon="flueben" farve="var(--color-good)" fyld>
                     Aktiv
                   </Chip>
-                ) : vl.status === 'ansoegt' ? (
+                ) : status === 'ansoegt' ? (
                   <Chip ikon="ur" farve="var(--color-warn)">
                     {uger(tilbage)} tilbage
-                  </Chip>
-                ) : ms.licens === 'inddraget' ? (
-                  <Chip ikon="kryds" farve="var(--color-bad)">
-                    Inddraget
                   </Chip>
                 ) : (
                   <Chip ikon="laas" farve="var(--color-muted)">
@@ -379,20 +425,17 @@ function Licenser({ g, m }: { g: GameState; m: MarketId }) {
                   </Chip>
                 )}
               </div>
-              {vl.status === 'ingen' && (
+              {status === 'inddraget' && (
+                <p className="flex items-start gap-1 text-xs text-bad" data-testid={`licens-mistet-${m}-${v}`}>
+                  <Ikon navn="kryds" farve="var(--color-bad)" str={11} className="mt-0.5 shrink-0" />
+                  Mistet for altid efter tilsynets gennemgang.
+                </p>
+              )}
+              {status === 'ingen' && (
                 <>
                   <p className="text-xs text-muted">{VERTICALS[v].beskrivelse}</p>
                   <div data-testid={m === 'dk' ? `soeg-licens-${v}` : undefined} className="flex">
-                    <Btn
-                      variant="primaer"
-                      disabled={!!grund}
-                      title={grund}
-                      className="w-full"
-                      testId={`soeg-licens-${m}-${v}`}
-                      onClick={() => {
-                        if (useGame.getState().dispatch({ t: 'applyLicense', market: m, vertical: v })) useGame.getState().toast(`Ansøgning sendt til ${def.tilsyn}!`, 'godt');
-                      }}
-                    >
+                    <Btn variant="primaer" disabled={!!grund} title={grund} className="w-full" testId={`soeg-licens-${m}-${v}`} onClick={() => soeg(v)}>
                       <Ikon navn="noegle" farve="currentColor" indre="var(--color-gold)" str={14} /> Søg licens · {mio(pris.gebyr)} · {uger(pris.uger)}
                     </Btn>
                   </div>
@@ -405,7 +448,7 @@ function Licenser({ g, m }: { g: GameState; m: MarketId }) {
                   )}
                 </>
               )}
-              {vl.status === 'aktiv' && !suspenderet && (
+              {status === 'aktiv' && (
                 <p className="text-xs text-muted">
                   {vl.klarUge !== null ? `Licens siden ${datoTekst(vl.klarUge)}. ` : ''}
                   {ms.spillerBsiPrUge[v] >= 0.0005 ? (
@@ -417,21 +460,21 @@ function Licenser({ g, m }: { g: GameState; m: MarketId }) {
                   )}
                 </p>
               )}
-              {vl.status === 'ansoegt' && (
+              {status === 'ansoegt' && (
                 <span className="h-2.5 overflow-hidden rounded-sm border border-line bg-bg" aria-hidden>
                   <span className="block h-full bg-warn" style={{ width: `${Math.max(4, 100 - (tilbage / Math.max(1, pris.uger)) * 100)}%` }} />
                 </span>
               )}
-              {suspenderet && ms.suspenderetTil !== null && (
+              {status === 'suspenderet' && ms.suspenderetTil !== null && (
                 <p className="text-xs text-warn">
-                  Til {datoTekst(ms.suspenderetTil)} ({uger(ms.suspenderetTil - g.uge)}). Kunderne kan ikke spille og siver væk imens.
+                  Til {datoTekst(ms.suspenderetTil)} ({uger(ms.suspenderetTil - g.uge)}). Ingen BSI her så længe — kunderne kan ikke spille og siver væk imens.
                 </p>
               )}
             </div>
           );
         })}
       </div>
-      {VERTIKALER.some((v) => ms.vertikaler[v].status !== 'aktiv') && ms.licens !== 'inddraget' && (
+      {VERTIKALER.some((v) => ms.vertikaler[v].status !== 'aktiv') && !inddraget && (
         <p className="flex items-start gap-1.5 text-xs text-muted">
           <Ikon navn="folk" farve="var(--color-sky)" indre="var(--color-line)" str={12} className="mt-0.5 shrink-0" />
           Kryds-salg: den første lancering i en ny vertikal tager {Math.round(BALANCE.krydsSalgStart * 100)} % af jeres eksisterende kunder med over. Et produkt kan
@@ -581,8 +624,8 @@ function Regulering({ g, m }: { g: GameState; m: MarketId }) {
           <p className="flex items-start gap-1.5 text-xs" style={{ color: agg >= 4 ? 'var(--color-warn)' : 'var(--color-muted)' }} data-testid="aggressivitet">
             <Ikon navn={agg >= 4 ? 'advarsel' : 'hype'} farve={agg >= 4 ? 'var(--color-warn)' : 'var(--color-pink)'} indre="var(--color-line)" str={12} className="mt-0.5 shrink-0" />
             <span>
-              Jeres aggressivitet: <b className="tal">{agg}</b> (bonus + VIP + aggressive kanaler). Ved 4 eller mere presser I politikerne med +0,25 pr. kvartal i markeder, hvor
-              I har licens.
+              Presindeks (politikerne): <b className="tal">{agg}/4</b> — bonus + VIP + aggressive kanaler. Ved 4 eller mere presser I politikerne med +0,25 pr. kvartal i
+              markeder, hvor I har licens. Tilsynets påbudsindeks (R8) er et andet tal: se Tilsynstillid.
             </span>
           </p>
         </div>
@@ -665,6 +708,59 @@ function Regulering({ g, m }: { g: GameState; m: MarketId }) {
 }
 
 // ---------- Tilsynstillid ----------
+
+/** Tilsynets påbudsindeks (R8): bonus + VIP + aggressive kanaler + høj intensitet + hyperpersonalisering, grænse 5 i 2 kvartaler */
+function PaabudsIndeks({ g, m, kompakt = false }: { g: GameState; m: MarketId; kompakt?: boolean }) {
+  const ms = g.markeder[m];
+  if (ms.licens !== 'aktiv') return null;
+  const idx = aggressionsIndeks(g, m);
+  const kv = g.aggressionKvartaler[m] ?? 0;
+  const over = idx.total >= idx.taerskel;
+  const farve = !over ? 'var(--color-good)' : kv >= R8.kvartaler - 1 ? 'var(--color-bad)' : 'var(--color-warn)';
+  const status = over
+    ? `${Math.min(kv, R8.kvartaler)} af ${R8.kvartaler} kvartaler over grænsen`
+    : kv > 0
+      ? `under grænsen igen (${kv} af ${R8.kvartaler} kvartaler talt)`
+      : 'under grænsen';
+  const naeste = over && kv >= R8.kvartaler - 1 ? `Står det stadig på ${idx.taerskel} eller mere ved næste kvartalsmøde, kommer påbuddet (tillid −6).` : null;
+  if (kompakt) {
+    return (
+      <p className="flex items-start gap-1.5 text-xs" style={{ color: over ? farve : 'var(--color-muted)' }} data-testid="paabud-indeks-kort">
+        <Ikon navn={over ? 'advarsel' : 'skjold'} farve={farve} indre="var(--color-line)" str={12} className="mt-0.5 shrink-0" />
+        <span>
+          Påbudsindeks (R8) i {MARKETS[m].kort}: <b className="tal">{idx.total}/{idx.taerskel}</b> · {status}.{naeste ? ` ${naeste}` : ''}
+        </span>
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1.5 rounded-md border-2 border-line bg-panel p-2" data-testid="paabud-indeks">
+      <p className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+        <span className="flex items-center gap-1.5 font-pixel text-xs font-black uppercase">
+          <Ikon navn={over ? 'advarsel' : 'skjold'} farve={farve} indre="var(--color-line)" str={13} className="shrink-0" /> Påbudsindeks (R8)
+        </span>
+        <span className="tal font-pixel text-sm font-black" style={{ color: farve }}>
+          {idx.total}/{idx.taerskel} · {status}
+        </span>
+      </p>
+      <ul className="flex flex-wrap gap-1">
+        {idx.dele.map((d) => (
+          <li
+            key={d.navn}
+            className={`tal inline-flex items-center gap-1 rounded border-2 border-line px-1.5 py-0.5 text-[0.7rem] font-bold ${d.v > 0 ? 'bg-bg2 text-ink' : 'bg-bg text-dim'}`}
+          >
+            <Ikon navn={d.v > 0 ? 'op' : 'streg'} farve={d.v > 0 ? 'var(--color-warn)' : 'var(--color-dim)'} str={10} />
+            {d.navn} {d.v}
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted">
+        Ligger indekset på {idx.taerskel} eller mere ved {R8.kvartaler} kvartalsmøder i træk, giver {MARKETS[m].tilsyn} påbud (tillid −6), og hvert {R8.reglerEfter}. påbud strammer
+        reglerne for hele branchen.{naeste ? <b className="text-bad"> {naeste}</b> : ''}
+      </p>
+    </div>
+  );
+}
 
 function Tillid({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
   const ms = g.markeder[m];
@@ -757,6 +853,7 @@ function Tillid({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
           ))}
         </ul>
       )}
+      <PaabudsIndeks g={g} m={m} />
       {ms.licens === 'suspenderet' ? (
         <p className="text-xs text-dim">Mens licensen er suspenderet, står tilliden stille — men falder den under {SANKTION_TRIN[3].graense}, kan licensen stadig blive inddraget.</p>
       ) : (
@@ -996,69 +1093,80 @@ function BonusVip({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
   }
   const effB = effektivBonus(g, m);
   const effV = effektivVip(g, m);
+  // Påbudsindekset (R8) i det valgte marked — og andre markeder, der allerede er over grænsen
+  const andreOver = vm.aktive.filter((x) => x !== m && g.markeder[x].licens === 'aktiv' && aggressionsIndeks(g, x).total >= R8.taerskel);
   return (
-    <div className="grid grid-cols-1 gap-3 @xl:grid-cols-2">
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <span className="font-pixel text-xs font-black uppercase">Velkomstbonus</span>
-          <span className="text-xs text-muted">
-            Niveau {b}
-            {effB < b && <span className="text-warn"> · {effB} i {MARKETS[m].kort}</span>}
-          </span>
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-3 @xl:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <span className="font-pixel text-xs font-black uppercase">Velkomstbonus</span>
+            <span className="text-xs text-muted">
+              Niveau {b}
+              {effB < b && <span className="text-warn"> · {effB} i {MARKETS[m].kort}</span>}
+            </span>
+          </div>
+          <Segment
+            label="Bonusniveau"
+            valg={niveauer.map((n) => ({ id: n, navn: n === 0 ? 'Fra' : n, titel: `Niveau ${n}: ${procent(BONUS_PCT[n])} af BSI` }))}
+            vaerdi={b}
+            onSkift={(n) => useGame.getState().dispatch({ t: 'setBonus', niveau: n })}
+            testIdPrefix="bonus"
+          />
+          <div className="flex flex-wrap gap-1" data-testid="bonus-effekt">
+            {b === 0 ? (
+              <span className="text-xs text-muted">Ingen bonus. Kunderne kommer for produkterne.</span>
+            ) : (
+              <>
+                <Chip ikon="folk" farve="var(--color-good)">+{Math.round(BONUS_TILGANG[b] * 100)} % tilgang</Chip>
+                <Chip ikon="folk" farve="var(--color-good)">{Math.round(BONUS_CHURN[b] * 100)} % churn</Chip>
+                <Chip ikon="penge" farve="var(--color-bad)">
+                  {procent(BONUS_PCT[b])} af BSI{bonusKost > 0 ? ` ≈ ${mio(bonusKost)}/uge` : ''}
+                </Chip>
+                <Chip ikon="skjold" farve="var(--color-bad)">{fmtTal(TRUST.bonusNiveau * b)} tillid/kvartal</Chip>
+              </>
+            )}
+          </div>
+          <LoftLinje g={g} m={m} hvad="bonus" aktive={vm.aktive} />
         </div>
-        <Segment
-          label="Bonusniveau"
-          valg={niveauer.map((n) => ({ id: n, navn: n === 0 ? 'Fra' : n, titel: `Niveau ${n}: ${procent(BONUS_PCT[n])} af BSI` }))}
-          vaerdi={b}
-          onSkift={(n) => useGame.getState().dispatch({ t: 'setBonus', niveau: n })}
-          testIdPrefix="bonus"
-        />
-        <div className="flex flex-wrap gap-1" data-testid="bonus-effekt">
-          {b === 0 ? (
-            <span className="text-xs text-muted">Ingen bonus. Kunderne kommer for produkterne.</span>
-          ) : (
-            <>
-              <Chip ikon="folk" farve="var(--color-good)">+{Math.round(BONUS_TILGANG[b] * 100)} % tilgang</Chip>
-              <Chip ikon="folk" farve="var(--color-good)">{Math.round(BONUS_CHURN[b] * 100)} % churn</Chip>
-              <Chip ikon="penge" farve="var(--color-bad)">
-                {procent(BONUS_PCT[b])} af BSI{bonusKost > 0 ? ` ≈ ${mio(bonusKost)}/uge` : ''}
-              </Chip>
-              <Chip ikon="skjold" farve="var(--color-bad)">{fmtTal(TRUST.bonusNiveau * b)} tillid/kvartal</Chip>
-            </>
-          )}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <span className="font-pixel text-xs font-black uppercase">VIP-program</span>
+            <span className="text-xs text-muted">
+              Niveau {v}
+              {effV < v && <span className="text-warn"> · {effV} i {MARKETS[m].kort}</span>}
+            </span>
+          </div>
+          <Segment
+            label="VIP-niveau"
+            valg={niveauer.map((n) => ({ id: n, navn: n === 0 ? 'Fra' : n, titel: `Niveau ${n}: ${procent(VIP_PCT[n])} af BSI` }))}
+            vaerdi={v}
+            onSkift={(n) => useGame.getState().dispatch({ t: 'setVip', niveau: n })}
+            testIdPrefix="vip"
+          />
+          <div className="flex flex-wrap gap-1" data-testid="vip-effekt">
+            {v === 0 ? (
+              <span className="text-xs text-muted">Intet VIP-program. Alle kunder behandles ens.</span>
+            ) : (
+              <>
+                <Chip ikon="diamant" farve="var(--color-good)">+{Math.round(VIP_ARPU[v] * 100)} % BSI pr. kunde</Chip>
+                <Chip ikon="penge" farve="var(--color-bad)">
+                  {procent(VIP_PCT[v])} af BSI{vipKost > 0 ? ` ≈ ${mio(vipKost)}/uge` : ''}
+                </Chip>
+                <Chip ikon="skjold" farve="var(--color-bad)">{fmtTal(TRUST.vipProgram * v)} tillid/kvartal</Chip>
+              </>
+            )}
+          </div>
+          <LoftLinje g={g} m={m} hvad="vip" aktive={vm.aktive} />
         </div>
-        <LoftLinje g={g} m={m} hvad="bonus" aktive={vm.aktive} />
       </div>
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <span className="font-pixel text-xs font-black uppercase">VIP-program</span>
-          <span className="text-xs text-muted">
-            Niveau {v}
-            {effV < v && <span className="text-warn"> · {effV} i {MARKETS[m].kort}</span>}
-          </span>
-        </div>
-        <Segment
-          label="VIP-niveau"
-          valg={niveauer.map((n) => ({ id: n, navn: n === 0 ? 'Fra' : n, titel: `Niveau ${n}: ${procent(VIP_PCT[n])} af BSI` }))}
-          vaerdi={v}
-          onSkift={(n) => useGame.getState().dispatch({ t: 'setVip', niveau: n })}
-          testIdPrefix="vip"
-        />
-        <div className="flex flex-wrap gap-1" data-testid="vip-effekt">
-          {v === 0 ? (
-            <span className="text-xs text-muted">Intet VIP-program. Alle kunder behandles ens.</span>
-          ) : (
-            <>
-              <Chip ikon="diamant" farve="var(--color-good)">+{Math.round(VIP_ARPU[v] * 100)} % BSI pr. kunde</Chip>
-              <Chip ikon="penge" farve="var(--color-bad)">
-                {procent(VIP_PCT[v])} af BSI{vipKost > 0 ? ` ≈ ${mio(vipKost)}/uge` : ''}
-              </Chip>
-              <Chip ikon="skjold" farve="var(--color-bad)">{fmtTal(TRUST.vipProgram * v)} tillid/kvartal</Chip>
-            </>
-          )}
-        </div>
-        <LoftLinje g={g} m={m} hvad="vip" aktive={vm.aktive} />
-      </div>
+      <PaabudsIndeks g={g} m={m} kompakt />
+      {andreOver.length > 0 && (
+        <p className="flex items-start gap-1.5 text-xs text-warn" data-testid="paabud-andre">
+          <Ikon navn="advarsel" farve="var(--color-warn)" indre="var(--color-line)" str={12} className="mt-0.5 shrink-0" />
+          Påbudsindekset står også på {R8.taerskel} eller mere i {andreOver.map((x) => `${MARKETS[x].kort} (${Math.min(g.aggressionKvartaler[x] ?? 0, R8.kvartaler)}/${R8.kvartaler} kv.)`).join(', ')}.
+        </p>
+      )}
     </div>
   );
 }
@@ -1066,7 +1174,33 @@ function BonusVip({ g, m, vm }: { g: GameState; m: MarketId; vm: Vm }) {
 // ---------- Offshore-fristelsen (spec 6.10) ----------
 
 function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
-  const [bekraeft, setBekraeft] = useState(false);
+  // Inline-bekræftelse: 'start' (2 mio. og tillid) eller 'luk' (opstarten er tabt). Fokus går til "Fortryd" (det sikre valg),
+  // boksen rulles i syne (også over fanebjælken på mobil), og Escape fortryder.
+  const [bekraeft, setBekraeft] = useState<null | 'start' | 'luk'>(null);
+  const boks = useRef<HTMLDivElement>(null);
+  const reduceret = useReduceretBevaegelse();
+  useEffect(() => {
+    if (!bekraeft || !boks.current) return;
+    const el = boks.current;
+    rulIndISyne(el, reduceret);
+    el.querySelector<HTMLElement>('[data-testid$="fortryd"]')?.focus({ preventScroll: true });
+  }, [bekraeft, reduceret]);
+  const fortryd = () => {
+    const tilbage = bekraeft === 'luk' ? 'offshore-luk' : 'offshore-start';
+    setBekraeft(null);
+    fokusSenere(tilbage);
+  };
+  const tastBoks = (e: KeyboardEvent<HTMLDivElement>) => {
+    // Mellemrum trykker på den fokuserede knap (Fortryd) — aldrig spillets pause, mens bekræftelsen står åben
+    if (e.key === ' ') {
+      e.stopPropagation();
+      return;
+    }
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    e.stopPropagation();
+    fortryd();
+  };
   const aktiv = g.offshoreBrand;
   const harProdukt = g.produkter.some((p) => p.ejer === 'spiller');
   const raad = g.kapital >= OFFSHORE_BRAND.opstart;
@@ -1082,8 +1216,16 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
   const beloeb = erFaktisk ? faktiskSum : estimat.total;
   const harAktivtProdukt = g.produkter.some((p) => p.ejer === 'spiller' && p.aktiv);
   const start = () => {
-    if (useGame.getState().dispatch({ t: 'setOffshoreBrand', aktiv: true })) useGame.getState().toast('Offshore-brandet er live. Det grå kasino kører.', 'info');
-    setBekraeft(false);
+    const ok = useGame.getState().dispatch({ t: 'setOffshoreBrand', aktiv: true });
+    if (ok) useGame.getState().toast('Offshore-brandet er live. Det grå kasino kører.', 'info');
+    setBekraeft(null);
+    fokusSenere(ok ? 'offshore-luk' : 'offshore-start');
+  };
+  const luk = () => {
+    const ok = useGame.getState().dispatch({ t: 'setOffshoreBrand', aktiv: false });
+    if (ok) useGame.getState().toast('Offshore-brandet er lukket. Tilsynene holder op med at trække tillid for det.', 'info');
+    setBekraeft(null);
+    fokusSenere(ok ? 'offshore-start' : 'offshore-luk');
   };
   const pris: { ikon: IkonNavn; tekst: ReactNode; farve: string }[] = [
     { ikon: 'penge', tekst: <>{mio(OFFSHORE_BRAND.opstart)} i opstart, og {Math.round(OFFSHORE_BRAND.omkostning * 100)} % af den grå BSI går til betalinger og hosting</>, farve: 'var(--color-bad)' },
@@ -1154,7 +1296,32 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
           ))}
         </ul>
       </div>
-      {aktiv ? (
+      {aktiv && bekraeft === 'luk' ? (
+        <div
+          ref={boks}
+          className="anim-pop flex scroll-mb-2 flex-col gap-2 rounded-md border-2 border-warn bg-bg2 p-2.5"
+          data-testid="offshore-luk-boks"
+          role="group"
+          aria-label="Bekræft lukning af offshore-brandet"
+          onKeyDown={tastBoks}
+        >
+          <p className="flex items-start gap-1.5 text-sm font-bold text-ink">
+            <Ikon navn="advarsel" farve="var(--color-warn)" indre="var(--color-line)" str={14} className="mt-0.5 shrink-0" />
+            <span>
+              Luk brandet? Opstarten på {mio(OFFSHORE_BRAND.opstart)} er tabt, og et nyt brand koster det samme igen. Historikken huskes — statsselskaber og nordiske grupper
+              holder stadig afstand.
+            </span>
+          </p>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Btn variant="ghost" testId="offshore-luk-fortryd" onClick={fortryd}>
+              Fortryd
+            </Btn>
+            <Btn variant="fare" testId="offshore-luk-bekraeft" onClick={luk}>
+              <Ikon navn="kryds" farve="currentColor" str={13} /> Luk brandet
+            </Btn>
+          </div>
+        </div>
+      ) : aktiv ? (
         <div className="flex flex-col gap-2 rounded-md border-2 border-warn bg-bg2 p-2.5 @lg:flex-row @lg:items-center" data-testid="offshore-aktiv">
           <p className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-bold text-warn">
             <Ikon navn="lyn" farve="var(--color-warn)" indre="var(--color-line)" str={14} className="shrink-0" />
@@ -1167,12 +1334,19 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
             . Risikoen tikker: ca.{' '}
             {fmtTal((OFFSHORE_BRAND.tabRisikoPrAar / 52) * 100)} % hver uge.
           </p>
-          <Btn variant="sekundaer" testId="offshore-luk" onClick={() => useGame.getState().dispatch({ t: 'setOffshoreBrand', aktiv: false })}>
+          <Btn variant="sekundaer" testId="offshore-luk" onClick={() => setBekraeft('luk')}>
             <Ikon navn="kryds" farve="currentColor" str={13} /> Luk brandet
           </Btn>
         </div>
-      ) : bekraeft ? (
-        <div className="anim-pop flex flex-col gap-2 rounded-md border-2 border-bad bg-bg2 p-2.5" data-testid="offshore-bekraeft-boks" role="group" aria-label="Bekræft offshore-brand">
+      ) : bekraeft === 'start' ? (
+        <div
+          ref={boks}
+          className="anim-pop flex flex-col gap-2 rounded-md border-2 border-bad bg-bg2 p-2.5"
+          data-testid="offshore-bekraeft-boks"
+          role="group"
+          aria-label="Bekræft offshore-brand"
+          onKeyDown={tastBoks}
+        >
           <p className="flex items-start gap-1.5 text-sm font-bold text-ink">
             <Ikon navn="advarsel" farve="var(--color-bad)" indre="var(--color-line)" str={14} className="mt-0.5 shrink-0" />
             <span>
@@ -1180,7 +1354,7 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
             </span>
           </p>
           <div className="flex flex-wrap justify-end gap-2">
-            <Btn variant="ghost" testId="offshore-fortryd" onClick={() => setBekraeft(false)}>
+            <Btn variant="ghost" testId="offshore-fortryd" onClick={fortryd}>
               Fortryd
             </Btn>
             <Btn variant="fare" testId="offshore-bekraeft" onClick={start} disabled={!!grund} title={grund}>
@@ -1190,7 +1364,7 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
         </div>
       ) : (
         <div className="flex flex-col gap-1">
-          <Btn variant="primaer" testId="offshore-start" disabled={!!grund} title={grund} onClick={() => setBekraeft(true)} className="w-full @lg:w-auto @lg:self-start">
+          <Btn variant="primaer" testId="offshore-start" disabled={!!grund} title={grund} onClick={() => setBekraeft('start')} className="w-full @lg:w-auto @lg:self-start">
             <Ikon navn="lyn" farve="currentColor" indre="var(--color-gold)" str={14} /> Start offshore-brand · {mioKort(OFFSHORE_BRAND.opstart)}
           </Btn>
           {grund && <p className="text-xs text-muted">{grund}</p>}
@@ -1212,8 +1386,19 @@ export default function MarketPanel() {
   const g = useGame((s) => s.game)!;
   const m = useMarkedValg((s) => s.valgt);
   const vaelg = useMarkedValg((s) => s.vaelg);
+  const sektion = useMarkedValg((s) => s.sektion);
   const reduceret = useReduceretBevaegelse();
   const vm = useMemo(() => beregn(g, m), [g, m]);
+  // En dialog bad om et bestemt afsnit ("Marked →" fra en sanktion eller regel): rul dertil én gang.
+  // Efter næste frame, så fanens egen "vis toppen af panelet" (forælderens effekt) ikke overskriver det.
+  useEffect(() => {
+    if (!sektion) return;
+    const raf = requestAnimationFrame(() => {
+      hopTil(sektion, reduceret);
+      useMarkedValg.getState().rydSektion();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [sektion, reduceret]);
   const navn = pr(m);
   return (
     <Panel titel="Markeder" ikon="kort" testId="panel-marked">

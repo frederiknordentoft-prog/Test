@@ -1,5 +1,7 @@
 // Ny regel (signal 'regel'): varsel ("på vej fra …") eller ikrafttræden ("nu gælder …"), med effekten fra
 // regelBeskrivelse og hvad den konkret betyder for spillerens produkter, bonus/VIP og marketing i markedet.
+// Flere regler af samme slags i samme uge samles i én dialog med en række pr. marked.
+import { useState } from 'react';
 import type { Signal } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
@@ -7,12 +9,20 @@ import { vaelgMarked } from '../lib/markedHjaelp';
 import { MARKETS } from '../../data/markets';
 import { REGLER } from '../../data/regulationTimeline';
 import { datoTekst, regelBeskrivelse } from '../../sim/selectors';
+import { useSmal } from '../hooks/useMedia';
 import { Btn, Ikon, Modal } from '../components/kit';
 import { FlagStribe } from '../components/FirmaDele';
+import { GruppeListe, type GruppeRaekke } from '../components/SignalGruppe';
 import { TONE_FARVE, regelIkraft, regelKonsekvenser, ugerKort } from '../lib/tvaersHjaelp';
 
-export default function RegelDialog({ signal, onLuk }: { signal: Signal; onLuk: () => void }) {
+export default function RegelDialog({ signal: foerste, gruppe, onLuk }: { signal: Signal; gruppe?: Signal[]; onLuk: () => void }) {
   const g = useGame((s) => s.game);
+  // Ekstra stor tekst på en smal skærm: knapperne i foden mister ikonet, så teksten kan stå på én linje
+  const smal = useSmal();
+  const ekstra = useGame((s) => s.settings.tekstStoerrelse === 'ekstra');
+  const [valgt, setValgt] = useState(0);
+  const flere = !!gruppe && gruppe.length > 1;
+  const signal = flere ? (gruppe[valgt] ?? foerste) : foerste;
   if (!g || signal.k !== 'regel') return null;
   const { marked: m, regelId, varsel } = signal;
   const def = MARKETS[m];
@@ -26,40 +36,67 @@ export default function RegelDialog({ signal, onLuk }: { signal: Signal; onLuk: 
   const tone = skidte > 0 ? 'skidt' : gode > 0 ? 'god' : 'neutral';
   const farve = varsel ? 'var(--color-warn)' : tone === 'god' ? 'var(--color-good)' : 'var(--color-sky)';
   const tilMarked = () => {
-    vaelgMarked(m);
+    vaelgMarked(m, 'regler');
     useUi.getState().setPanel('marked');
     onLuk();
   };
+  const udenIkon = smal && ekstra;
+  const raekker: GruppeRaekke[] = flere
+    ? gruppe.flatMap((x): GruppeRaekke[] => {
+        if (x.k !== 'regel') return [];
+        const p = regelIkraft(g, x.marked, x.regelId);
+        return [{
+          marked: x.marked,
+          ikon: x.varsel ? 'paragraf' : 'skjold',
+          farve: x.varsel ? 'var(--color-warn)' : 'var(--color-sky)',
+          titel: REGLER[x.regelId]?.navn ?? x.regelId,
+          under: x.varsel ? (p ? `Fra ${datoTekst(p.uge)} · om ${ugerKort(Math.max(0, p.uge - g.uge))}` : 'Vedtaget') : `Gælder nu i ${MARKETS[x.marked].navn}`,
+        }];
+      })
+    : [];
 
   return (
     <Modal
-      titel={varsel ? 'Ny regel på vej' : 'Ny regel i kraft'}
+      titel={flere ? (varsel ? `${gruppe.length} nye regler på vej` : `${gruppe.length} nye regler i kraft`) : varsel ? 'Ny regel på vej' : 'Ny regel i kraft'}
       onLuk={onLuk}
       testId="dialog-regel"
       bredde={580}
       fod={
         <div className="flex w-full gap-2 sm:w-auto">
-          <Btn onClick={tilMarked} testId="regel-til-marked" className="flex-1 sm:flex-none">
-            <Ikon navn="kort" farve="currentColor" indre="var(--color-panel2)" /> Til Marked
+          <Btn onClick={tilMarked} testId="regel-til-marked" className="flex-1 whitespace-nowrap sm:flex-none">
+            {!udenIkon && <Ikon navn="kort" farve="currentColor" indre="var(--color-panel2)" />} Til Marked
           </Btn>
-          <Btn variant="primaer" onClick={onLuk} testId="regel-ok" className="flex-1 sm:flex-none">
+          <Btn variant="primaer" onClick={onLuk} testId="regel-ok" className="flex-1 whitespace-nowrap sm:flex-none">
             Forstået
           </Btn>
         </div>
       }
     >
       <div className="flex flex-col gap-3" data-varsel={varsel ? '1' : '0'}>
-        <section className="overflow-hidden rounded-lg border-2 border-line bg-bg2">
+        {flere && (
+          <GruppeListe
+            raekker={raekker}
+            valgt={valgt}
+            onVaelg={setValgt}
+            overskrift={varsel ? 'Politikerne har travlt' : 'Gælder fra i dag'}
+            testId="regel-gruppe"
+          />
+        )}
+        <section className="@container overflow-hidden rounded-lg border-2 border-line bg-bg2">
           <FlagStribe farver={def.farver} className="h-2 rounded-none border-0 border-b-2" />
-          <div className="flex items-start gap-3 p-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border-2 border-line pixel-skygge" style={{ background: farve }}>
-              <Ikon navn={varsel ? 'paragraf' : 'skjold'} farve="var(--color-line)" str={28} />
+          {/* Smal container (fx ekstra stor tekst på mobil): nedtællingen lægger sig under titlen, og ikonet bliver mindre */}
+          <div className="flex flex-wrap items-start gap-x-3 gap-y-2 p-3 @min-[22rem]:flex-nowrap">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-2 border-line pixel-skygge @min-[22rem]:h-12 @min-[22rem]:w-12"
+              style={{ background: farve }}
+            >
+              <Ikon navn={varsel ? 'paragraf' : 'skjold'} farve="var(--color-line)" str={22} />
             </span>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-[10rem]">
               <p className="flex flex-wrap items-center gap-x-1.5 font-pixel text-[0.7rem] font-black uppercase tracking-wider text-muted">
                 {def.navn} · {def.tilsyn}
               </p>
-              <h3 className="font-pixel text-base font-black leading-snug text-ink" data-testid="regel-overskrift">
+              <h3 className="font-pixel text-base font-black leading-snug break-words text-ink" data-testid="regel-overskrift">
                 {varsel ? (
                   <>
                     Ny regel på vej i {def.navn}
@@ -74,7 +111,10 @@ export default function RegelDialog({ signal, onLuk }: { signal: Signal; onLuk: 
               {varsel && <p className="mt-0.5 font-bold text-ink">{navn}</p>}
             </div>
             {varsel && plan && (
-              <span className="flex shrink-0 flex-col items-center rounded-md border-2 border-line bg-panel px-2 py-1" data-testid="regel-nedtaelling">
+              <span
+                className="order-last flex w-full shrink-0 items-center gap-1.5 rounded-md border-2 border-line bg-panel px-2 py-1 @min-[22rem]:order-none @min-[22rem]:w-auto @min-[22rem]:flex-col @min-[22rem]:gap-0"
+                data-testid="regel-nedtaelling"
+              >
                 <span className="tal font-pixel text-lg font-black leading-none text-warn">{uger}</span>
                 <span className="text-[0.6rem] uppercase text-muted">{uger === 1 ? 'uge' : 'uger'}</span>
               </span>

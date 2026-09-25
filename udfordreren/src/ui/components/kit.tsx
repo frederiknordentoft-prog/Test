@@ -69,6 +69,11 @@ const IKONER: Record<string, string[]> = {
   chip: ['..#..#..', '.######.', '##oooo##', '.#o##o#.', '.#o##o#.', '##oooo##', '.######.', '..#..#..'],
   terminal: ['########', '#oooooo#', '#o#oooo#', '#oo#ooo#', '#o#o##o#', '#oooooo#', '########', '..####..'],
   oeje: ['........', '..####..', '.#oooo#.', '#oo##oo#', '#oo##oo#', '.#oooo#.', '..####..', '........'],
+  // + slut-sporet: Arkivet og slutskærmen
+  arkiv: ['########', '#oooooo#', '#oo##oo#', '#oooooo#', '########', '#oooooo#', '#oo##oo#', '########'],
+  flag: ['##......', '#####...', '#ooo###.', '#ooooo##', '#####...', '#.......', '#.......', '#.......'],
+  // + integration: "Mere"-fanen på mobil
+  mere: ['........', '.##..##.', '.##..##.', '........', '........', '.##..##.', '.##..##.', '........'],
 };
 
 export type IkonNavn = keyof typeof IKONER;

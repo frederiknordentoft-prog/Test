@@ -9,9 +9,10 @@ export type UiDialog =
   | { kind: 'indstillinger' }
   | { kind: 'debug' }
   | { kind: 'produkt'; productId: string }
-  | { kind: 'medarbejder'; staffId: string };
+  | { kind: 'medarbejder'; staffId: string }
+  | { kind: 'arkiv'; id: string };
 
-export type PanelId = 'projekter' | 'personale' | 'kontrakter' | 'hitliste' | 'produkter' | 'marked' | 'kombinationer' | 'firma' | 'nyheder' | 'ailab' | 'konkurrenter' | 'platform';
+export type PanelId = 'projekter' | 'personale' | 'kontrakter' | 'hitliste' | 'produkter' | 'marked' | 'kombinationer' | 'firma' | 'nyheder' | 'ailab' | 'konkurrenter' | 'platform' | 'arkiv' | 'by';
 
 type UiStore = {
   panel: PanelId;

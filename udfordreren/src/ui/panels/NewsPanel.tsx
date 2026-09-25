@@ -5,6 +5,8 @@ import type { NewsItem } from '../../sim/types';
 import { datoTekst, aarFor } from '../../sim/time';
 import { Ikon, Panel, Tom, type IkonNavn } from '../components/kit';
 import { synligeNyheder } from '../lib/shellHjaelp';
+import { nyhedArkivId } from '../lib/arkivHjaelp';
+import { useUi } from '../../store/uiStore';
 
 type Filter = 'alle' | NonNullable<NewsItem['kind']>;
 
@@ -29,6 +31,7 @@ export default function NewsPanel() {
   const uge = useGame((s) => s.game?.uge ?? 0);
   // Mens en anmeldelse/galla afsløres, holdes ugens nyheder tilbage (ingen spoilere bag dialogen)
   const dialogAaben = useGame((s) => s.dialoger.length > 0);
+  const arkivTil = useGame((s) => s.settings.arkiv);
   const [filter, setFilter] = useState<Filter>('alle');
   const alle = synligeNyheder(nyheder, uge, dialogAaben);
   const liste = filter === 'alle' ? alle : alle.filter((n) => n.kind === filter);
@@ -77,8 +80,10 @@ export default function NewsPanel() {
                   <span className="h-0.5 flex-1 bg-line" />
                 </li>,
               );
-            ud.push(
-              <li key={`${n.uge}-${i}`} className="flex gap-2.5 rounded-md border-2 border-line bg-bg2 p-2" data-testid="nyhed">
+            // Nyheder med et opslag i Arkivet kan åbnes (medmindre Arkivet er slået fra)
+            const arkiv = arkivTil ? nyhedArkivId(n) : undefined;
+            const indhold = (
+              <>
                 <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded border-2 border-line" style={{ background: k.farve }} title={k.navn}>
                   <Ikon navn={k.ikon} farve="var(--color-line)" indre={k.farve} str={14} titel={k.navn} />
                 </span>
@@ -89,7 +94,30 @@ export default function NewsPanel() {
                   </div>
                   <p className="text-sm leading-snug text-ink">{n.tekst}</p>
                 </div>
-              </li>,
+              </>
+            );
+            ud.push(
+              arkiv ? (
+                <li key={`${n.uge}-${i}`} data-testid="nyhed">
+                  <button
+                    type="button"
+                    onClick={() => useUi.getState().aabn({ kind: 'arkiv', id: arkiv })}
+                    className="flex w-full gap-2.5 rounded-md border-2 border-line bg-bg2 p-2 text-left hover:bg-panel2"
+                    data-testid={`nyhed-arkiv-${arkiv}`}
+                    aria-label={`${n.tekst} — læs i Arkivet`}
+                  >
+                    {indhold}
+                    <span className="flex shrink-0 flex-col items-center justify-center gap-0.5 self-center rounded border-2 border-line bg-panel2 px-1.5 py-1 font-pixel text-[0.55rem] font-bold uppercase text-gold">
+                      <Ikon navn="arkiv" farve="var(--color-gold)" indre="var(--color-line)" str={14} />
+                      Arkiv
+                    </span>
+                  </button>
+                </li>
+              ) : (
+                <li key={`${n.uge}-${i}`} className="flex gap-2.5 rounded-md border-2 border-line bg-bg2 p-2" data-testid="nyhed">
+                  {indhold}
+                </li>
+              ),
             );
             return ud;
           })}

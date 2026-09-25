@@ -25,8 +25,10 @@ import VerdensNyhedDialog from './VerdensNyhedDialog';
 import TilbudDialog from './TilbudDialog';
 import SponsorDialog from './SponsorDialog';
 import ReaktionDialog from './ReaktionDialog';
+import ArkivDialog from './ArkivDialog';
 
-export type SignalDialogProps = { signal: Signal; onLuk: () => void };
+/** gruppe: flere signaler af samme slags fra samme uge (en række pr. marked) — signal er det første/vigtigste */
+export type SignalDialogProps = { signal: Signal; gruppe?: Signal[]; onLuk: () => void };
 export type UiDialogProps = { dialog: UiDialog; onLuk: () => void };
 
 /** Signal-kind → dialog. 'messeVarsel' og 'messe' deler ExpoDialog; 'top10' og 'nr1' deler MilestoneDialog. */
@@ -63,4 +65,5 @@ export const UI_DIALOGER: Record<UiDialog['kind'], ComponentType<UiDialogProps>>
   debug: DebugDialog,
   produkt: ProductDialog,
   medarbejder: StaffDialog,
+  arkiv: ArkivDialog,
 };

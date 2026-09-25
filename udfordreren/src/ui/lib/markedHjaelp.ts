@@ -30,12 +30,21 @@ export const MARKED_RAEKKE: MarketId[] = [...MARKET_IDS].sort((a, b) => (MARKETS
 
 // ---------- Valgt marked (huskes mellem faneskift) ----------
 
-type MarkedValg = { valgt: MarketId; vaelg(m: MarketId): void };
-export const useMarkedValg = create<MarkedValg>((set) => ({ valgt: 'dk', vaelg: (valgt) => set({ valgt }) }));
+/** Afsnit i Marked-panelet, man kan hoppe til (id'et er `marked-<sektion>`) */
+export type MarkedSektion = 'konsol' | 'andele' | 'offshore' | 'regler' | 'tillid' | 'marketing' | 'bonus' | 'fristelsen';
 
-/** Vælg et marked i Marked-fanen (kan bruges af andre spor, fx "Se markedet" i en dialog) */
-export function vaelgMarked(m: MarketId): void {
-  useMarkedValg.getState().vaelg(m);
+/** sektion: et afsnit, panelet skal rulle til én gang (sættes af dialoger, ryddes af panelet) */
+type MarkedValg = { valgt: MarketId; sektion: MarkedSektion | null; vaelg(m: MarketId): void; rydSektion(): void };
+export const useMarkedValg = create<MarkedValg>((set) => ({
+  valgt: 'dk',
+  sektion: null,
+  vaelg: (valgt) => set({ valgt }),
+  rydSektion: () => set({ sektion: null }),
+}));
+
+/** Vælg et marked i Marked-fanen (kan bruges af andre spor, fx "Se markedet" i en dialog) — og evt. et afsnit at rulle til */
+export function vaelgMarked(m: MarketId, sektion?: MarkedSektion): void {
+  useMarkedValg.setState({ valgt: m, sektion: sektion ?? null });
 }
 
 // ---------- Status ----------
@@ -47,7 +56,7 @@ export const STATUS_INFO: Record<MarkedStatus, { navn: string; kort: string; min
   ansoegt: { navn: 'Licens behandles', kort: 'Ansøgt', mini: 'Ansøgt', farve: 'var(--color-warn)', hex: T.warn, ikon: 'ur' },
   aaben: { navn: 'Åben for licenser', kort: 'Åben', mini: 'Åben', farve: 'var(--color-sky)', hex: T.sky, ikon: 'noegle' },
   lukket: { navn: 'Lukket endnu', kort: 'Lukket', mini: 'Lukket', farve: 'var(--color-dim)', hex: T.dim, ikon: 'laas' },
-  monopol: { navn: 'Monopol', kort: 'Monopol', mini: 'Monopol', farve: 'var(--color-muted)', hex: T.muted, ikon: 'laas' },
+  monopol: { navn: 'Monopol', kort: 'Monopol', mini: 'Monopol', farve: 'var(--color-violet)', hex: T.violet, ikon: 'krone' },
   suspenderet: { navn: 'Licens suspenderet', kort: 'Suspenderet', mini: 'Pause', farve: 'var(--color-warn)', hex: T.warn, ikon: 'pause' },
   inddraget: { navn: 'Licens inddraget', kort: 'Inddraget', mini: 'Tabt', farve: 'var(--color-bad)', hex: T.bad, ikon: 'kryds' },
 };
@@ -72,6 +81,39 @@ export function markedStatus(g: GameState, m: MarketId): MarkedStatus {
 export function nyAabnet(g: GameState, m: MarketId): boolean {
   const ms = g.markeder[m];
   return ms.aaben && ms.aabnetUge !== null && ms.aabnetUge > 0 && g.uge - ms.aabnetUge < 26 && ms.licens === 'ingen';
+}
+
+// ---------- Tilsynstillid på tværs af markeder (HUD og kort) ----------
+
+/** Markeder, hvor tilsynets tillid betyder noget for jer lige nu (aktiv eller suspenderet licens) */
+export function tillidsMarkeder(g: GameState): MarketId[] {
+  return MARKET_IDS.filter((m) => g.markeder[m].licens === 'aktiv' || g.markeder[m].licens === 'suspenderet');
+}
+
+/** Tillid under 60 eller et trin på sanktionstrappen i et marked med licens */
+export function tillidsAdvarsel(g: GameState, m: MarketId): boolean {
+  const ms = g.markeder[m];
+  if (ms.licens !== 'aktiv' && ms.licens !== 'suspenderet') return false;
+  return ms.tilsynstillid < 60 || ms.sanktion.trin > 0;
+}
+
+/** Markedet, HUD'en viser tilsynstillid for: det svageste med licens (ellers hjemmemarkedet) */
+export function hudTilsynsMarked(g: GameState): MarketId {
+  const l = tillidsMarkeder(g);
+  if (l.length === 0) return g.mode === 'usa2018' ? 'us' : 'dk';
+  return l.reduce((a, b) => (g.markeder[b].tilsynstillid < g.markeder[a].tilsynstillid ? b : a));
+}
+
+/** Tooltip-tekst: tilliden i alle markeder med licens, laveste først */
+export function tillidsOversigt(g: GameState): string {
+  return tillidsMarkeder(g)
+    .sort((a, b) => g.markeder[a].tilsynstillid - g.markeder[b].tilsynstillid)
+    .map((m) => {
+      const ms = g.markeder[m];
+      const trin = ms.sanktion.trin > 0 ? ` (trin ${ms.sanktion.trin})` : '';
+      return `${MARKETS[m].kort} ${Math.round(ms.tilsynstillid)}${trin}`;
+    })
+    .join(' · ');
 }
 
 /** Spillerens andel af markedets samlede BSI (inkl. offshore) */
@@ -399,7 +441,10 @@ export { OFFSHORE_BRAND };
 export function kortData(g: GameState): Record<MarketId, KortMarked> {
   const ud = {} as Record<MarketId, KortMarked>;
   for (const m of MARKET_IDS) {
-    ud[m] = { status: markedStatus(g, m), andel: spillerAndel(g, m), ny: nyAabnet(g, m), graa: g.offshoreBrand && g.markeder[m].offshoreBrandBsiPrUge > 0 };
+    const status = markedStatus(g, m);
+    // Mistet eller suspenderet licens: ingen andel (sim-kernens andel er fra ugen før sanktionen)
+    const andel = status === 'inddraget' || status === 'suspenderet' ? 0 : spillerAndel(g, m);
+    ud[m] = { status, andel, ny: nyAabnet(g, m), graa: g.offshoreBrand && g.markeder[m].offshoreBrandBsiPrUge > 0, advarsel: tillidsAdvarsel(g, m) };
   }
   return ud;
 }

@@ -1,8 +1,10 @@
 // Persistens med Dexie: 3 slots + autosave hvert kvartal, samt settings. Eksport/import som JSON.
 import Dexie, { type Table } from 'dexie';
-import type { GameState } from '../sim/types';
+import type { GameState, NewGamePlusArv } from '../sim/types';
 import { step } from '../sim/step';
 import { newGame } from '../sim/init';
+import { arvFra } from '../sim/newgameplus';
+import { START_AAR } from '../sim/time';
 
 export type SlotId = 'slot1' | 'slot2' | 'slot3' | 'auto';
 export type SaveRow = { slot: SlotId; gemt: number; uge: number; firmaNavn: string; kapital: number; state: GameState };
@@ -149,4 +151,54 @@ export function importerJson(tekst: string): GameState | null {
   } catch {
     return null;
   }
+}
+
+// ---------- New Game+ (spec 6.17): arven og de ulåste modes huskes mellem spil ----------
+
+export type UlaasteModes = 'usa2018' | 'aiNative2026';
+export type NgPlusGemt = {
+  arv: NewGamePlusArv | null;
+  modes: UlaasteModes[];
+  afsluttede: number;
+  senesteSlut: { id: string; firmaNavn: string; aar: number; seed: number; uge: number } | null;
+};
+const NGPLUS_NOEGLE = 'ngplus';
+
+/** Flet to arve: sete kombinationer og de højeste niveauer fra begge (så en ny start aldrig mister noget) */
+export function fletArv(a: NewGamePlusArv | null | undefined, b: NewGamePlusArv): NewGamePlusArv {
+  const ud = structuredClone(b);
+  if (!a) return ud;
+  for (const [k, v] of Object.entries(a.kombinationsbog)) {
+    const n = ud.kombinationsbog[k];
+    ud.kombinationsbog[k] = n ? { set: n.set || v.set, bedste40: Math.max(n.bedste40, v.bedste40) } : { ...v };
+  }
+  for (const del of ['niveauer', 'niveauXp'] as const) {
+    for (const g of ['type', 'tema'] as const) {
+      const fra = a[del][g] as Record<string, number>;
+      const til = ud[del][g] as Record<string, number>;
+      for (const [k, v] of Object.entries(fra)) til[k] = Math.max(til[k] ?? 0, v);
+    }
+  }
+  return ud;
+}
+
+export async function hentNgPlus(): Promise<NgPlusGemt | null> {
+  const v = await hentSetting<NgPlusGemt>(NGPLUS_NOEGLE);
+  if (!v || typeof v !== 'object' || !Array.isArray(v.modes)) return null;
+  return v;
+}
+
+/** Et spil er slut: gem arven (flettet med den forrige) og lås de to modes op. Samme slutning tælles kun én gang. */
+export async function registrerSlut(state: GameState): Promise<NgPlusGemt> {
+  const foer = await hentNgPlus();
+  const uge = state.slut?.uge ?? state.uge;
+  const samme = foer?.senesteSlut?.seed === state.seed && foer?.senesteSlut?.uge === uge;
+  const ny: NgPlusGemt = {
+    arv: fletArv(foer?.arv, arvFra(state)),
+    modes: ['usa2018', 'aiNative2026'],
+    afsluttede: (foer?.afsluttede ?? 0) + (samme ? 0 : 1),
+    senesteSlut: { id: state.slut?.id ?? 'slut', firmaNavn: state.firmaNavn, aar: START_AAR + Math.floor(uge / 52), seed: state.seed, uge },
+  };
+  await gemSetting(NGPLUS_NOEGLE, ny);
+  return ny;
 }

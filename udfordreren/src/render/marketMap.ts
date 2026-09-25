@@ -12,7 +12,8 @@ export const KORT_W = 320;
 export const KORT_H = 180;
 
 export type KortStatus = 'lukket' | 'monopol' | 'aaben' | 'ansoegt' | 'aktiv' | 'suspenderet' | 'inddraget';
-export type KortMarked = { status: KortStatus; andel: number; ny: boolean; graa: boolean };
+/** advarsel: tilsynstillid under 60 eller et trin på sanktionstrappen (lille advarselsmærke på markøren) */
+export type KortMarked = { status: KortStatus; andel: number; ny: boolean; graa: boolean; advarsel?: boolean };
 export type KortData = { markeder: Record<MarketId, KortMarked>; valgt: MarketId; offshoreAktiv: boolean };
 export type KortKlik = MarketId | 'offshore';
 
@@ -295,6 +296,7 @@ const IKON: Record<string, string[]> = {
   laas: ['..####..', '.#....#.', '.#....#.', '########', '###..###', '###..###', '########', '........'],
   pause: ['........', '.##..##.', '.##..##.', '.##..##.', '.##..##.', '.##..##.', '.##..##.', '........'],
   kryds: ['#......#', '##....##', '.##..##.', '..####..', '..####..', '.##..##.', '##....##', '#......#'],
+  krone: ['........', '#..##..#', '##.##.##', '########', '#......#', '########', '########', '........'],
 };
 
 const STATUS_IKON: Record<KortStatus, keyof typeof IKON> = {
@@ -302,7 +304,7 @@ const STATUS_IKON: Record<KortStatus, keyof typeof IKON> = {
   ansoegt: 'ur',
   aaben: 'noegle',
   lukket: 'laas',
-  monopol: 'laas',
+  monopol: 'krone',
   suspenderet: 'pause',
   inddraget: 'kryds',
 };
@@ -311,7 +313,7 @@ const STATUS_FARVE: Record<KortStatus, string> = {
   ansoegt: T.warn,
   aaben: T.sky,
   lukket: T.dim,
-  monopol: '#8d91ad',
+  monopol: T.violet,
   suspenderet: T.warn,
   inddraget: T.bad,
 };
@@ -896,6 +898,18 @@ export class MarkedKortRenderer {
     ctx.fillStyle = farve;
     ctx.fillRect(r.x, r.y, r.w, r.h);
     tegnIkon(ctx, STATUS_IKON[km.status], r.x + s, r.y + s, s, T.line);
+    // Lav tillid / sanktion: et lille "!"-mærke i øverste højre hjørne (ikon + farve, ikke kun farve)
+    if (km.advarsel) {
+      const ax = bx + bw - 2 * s;
+      const ay = by - 2 * s;
+      ctx.fillStyle = T.line;
+      ctx.fillRect(ax - s, ay - s, 5 * s, 7 * s);
+      ctx.fillStyle = T.bad;
+      ctx.fillRect(ax, ay, 3 * s, 5 * s);
+      ctx.fillStyle = T.line;
+      ctx.fillRect(ax + s, ay + s, s, 2 * s);
+      ctx.fillRect(ax + s, ay + 4 * s, s, s);
+    }
     // Andelsbjælke (fuld ved 25 %)
     if (bjaelke) {
       ctx.fillStyle = '#3a3f5c';

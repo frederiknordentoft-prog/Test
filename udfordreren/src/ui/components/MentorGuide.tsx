@@ -8,17 +8,22 @@ import { useUi } from '../../store/uiStore';
 import { Btn, Ikon } from './kit';
 import { Portraet, VETERAN } from './ShellPortraet';
 import { knudTip, mentorTrin, type KnudMaal, type MentorTrin } from '../lib/shellHjaelp';
+import type { GameState } from '../../sim/types';
 
 /** Et lukket råd vender tidligst tilbage efter så mange spiluger */
 const TIP_PAUSE_UGER = 8;
 
-function indhold(t: MentorTrin): { titel: string; tekst: string; knap: string; handling: () => void } {
+function indhold(t: MentorTrin, mode: GameState['mode'] = 'normal'): { titel: string; tekst: string; knap: string; handling: () => void } {
   const ui = useUi.getState();
   switch (t.trin) {
     case 1:
       return {
-        titel: 'Velkommen i garagen!',
-        tekst: `Licensen behandles i 12 uger${t.licensUger > 0 ? ` (${t.licensUger} tilbage)` : ''} — tag en kontraktopgave imens, så kassen ikke løber tør. Lad én blive hjemme: I skal også bygge jeres første produkt.`,
+        // New Game+-modes starter senere og med licensen på plads: så passer garagen og ventetiden ikke
+        titel: mode === 'aiNative2026' ? 'Velkommen til 2026!' : mode === 'usa2018' ? 'Velkommen til 2018!' : 'Velkommen i garagen!',
+        tekst:
+          t.licensUger > 0
+            ? `Licensen behandles i 12 uger (${t.licensUger} tilbage) — tag en kontraktopgave imens, så kassen ikke løber tør. Lad én blive hjemme: I skal også bygge jeres første produkt.`
+            : 'Licensen er på plads. En kontraktopgave holder kassen varm, men lad én blive hjemme: I skal også bygge jeres første produkt.',
         knap: 'Vis opgaver',
         handling: () => ui.setPanel('kontrakter'),
       };
@@ -180,7 +185,7 @@ export default function MentorGuide({ kompakt = false }: { kompakt?: boolean }) 
   }
 
   if (!aktiv || !trin || harLanceret) return null;
-  const i = indhold(trin);
+  const i = indhold(trin, g?.mode);
   const trinNr = trin.trin;
 
   if (skjult) {

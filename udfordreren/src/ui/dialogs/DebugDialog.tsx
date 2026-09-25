@@ -1,5 +1,7 @@
 // Debug-menu (spec 6.20, kun med ?debug=1): seed, hop til år, sæt værdier, udløs events og sim-værdierne bag Top 10.
 // Fase 3: åbn et marked, aktivér licens, start trends, sæt politisk pres/tillid, tving næste sanktion og offshore-brand.
+// Fase 6: konkurrentreaktion efter regel, tving verdens- og AI-scenarier, tilføj en agent, hop til slutningen og
+// sim-værdierne bag hitlisten (nye spillere, hitlistetal og hjemmebane).
 import { useState } from 'react';
 import type { UiDialog } from '../../store/uiStore';
 import { useGame } from '../../store/gameStore';
@@ -14,8 +16,12 @@ import { startTrend } from '../../sim/trends';
 import { sanktioner } from '../../sim/trust';
 import { makeRng } from '../../sim/rng';
 import { SANKTION_NAVN, SANKTION_RISIKO, sanktionsGraense } from '../../sim/selectors';
-import type { GameState, LicenseStatus, MarketId, PendingEvent, Signal } from '../../sim/types';
+import type { AgentFunktion, AiScenarieId, GameState, LicenseStatus, MarketId, PendingEvent, ReaktionsRegel, Signal } from '../../sim/types';
+import { aabnerDialog } from '../../sim/signals';
+import { REAKTIONS_REGLER } from '../../data/reactionRules';
+import { AGENTER, AGENT_IDS, AI_SCENARIER } from '../../data/ai';
 import { Btn, Monogram, Modal } from '../components/kit';
+import { REGLER, VERDENS_VALG, debugReaktion, hitlisteRaekker, tilfoejAgent, tvingAiScenarie, tvingVerden, type VerdensValg } from '../lib/debugHjaelp';
 
 const felt = 'min-h-[44px] w-full rounded-md border-2 border-line bg-bg px-2.5 font-pixel text-sm text-ink outline-none focus:border-gold';
 
@@ -60,6 +66,15 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
   const [mTillid, setMTillid] = useState(() => String(Math.round(g?.markeder[marked].tilsynstillid ?? 70)));
   const [trendId, setTrendId] = useState(() => Object.keys(TRENDS)[0] ?? '');
   const [trendUger, setTrendUger] = useState('8');
+  const [regel, setRegel] = useState<ReaktionsRegel>('R1');
+  const [rival, setRival] = useState('');
+  const [rMarked, setRMarked] = useState<MarketId>('dk');
+  const [verden, setVerden] = useState<VerdensValg>(VERDENS_VALG[0].id);
+  const [aiId, setAiId] = useState<AiScenarieId>(AI_SCENARIER[0].id);
+  const [aiStyrke, setAiStyrke] = useState('0.6');
+  const [agentF, setAgentF] = useState<AgentFunktion>('risiko');
+  const [agentO, setAgentO] = useState('0.6');
+  const [hitMarked, setHitMarked] = useState<MarketId>('dk');
   if (!g) return null;
   const nuAar = aarFor(g.uge);
   const ms = g.markeder[marked];
@@ -75,6 +90,54 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
     if (sig.length === 0) return;
     const st = useGame.getState();
     useGame.setState({ dialoger: [...st.dialoger, ...sig.map((x, i) => ({ id: Date.now() + i, signal: x }))], paused: true });
+  };
+
+  /** Kør en debug-mutation på en kopi og vis de signaler, den giver (dialog eller toast) */
+  const mutérOgVis = (fn: (s: GameState) => void): Signal[] => {
+    useGame.getState().debugSaet((s) => {
+      s.signaler = [];
+      fn(s);
+    });
+    const sig = useGame.getState().game?.signaler ?? [];
+    visSignaler(sig.filter((x) => aabnerDialog(x)));
+    for (const x of sig) {
+      if (aabnerDialog(x)) continue;
+      if (x.k === 'reaktion') useGame.getState().toast(x.tekst, 'info');
+      if (x.k === 'agent') useGame.getState().toast('En ny AI-agent er i drift (debug).', 'godt');
+    }
+    return sig;
+  };
+
+  const udloesReaktion = () => {
+    const c = rival || undefined;
+    if (regel === 'R2' && !c) {
+      setBesked('R2 kræver en konkurrent at byde.');
+      return;
+    }
+    const sig = mutérOgVis((s) => debugReaktion(s, regel, c, rMarked));
+    setBesked(`${regel} (${REAKTIONS_REGLER[regel].navn}) udløst i ${MARKETS[rMarked].navn}.`);
+    if (sig.some((x) => aabnerDialog(x))) onLuk();
+  };
+
+  /** Tving scenariet og kør én uge, så hændelsen udføres med det samme (dialoger og toasts som i spillet) */
+  const tvingValgtVerden = () => {
+    useGame.getState().debugSaet((s) => tvingVerden(s, verden));
+    useGame.setState({ dialoger: [], pauseGrunde: [] });
+    useGame.getState().stepUge();
+    setBesked(`${VERDENS_VALG.find((v) => v.id === verden)?.navn ?? verden} er tvunget (én uge kørt).`);
+  };
+
+  const tvingAi = () => {
+    const v = Number(aiStyrke.replace(',', '.'));
+    if (!Number.isFinite(v)) return;
+    useGame.getState().debugSaet((s) => tvingAiScenarie(s, aiId, v));
+    setBesked(`${AI_SCENARIER.find((a) => a.id === aiId)?.navn}: styrke ${Math.max(0, Math.min(1, v))}.`);
+  };
+
+  const nyDebugAgent = () => {
+    const o = Number(agentO.replace(',', '.'));
+    mutérOgVis((s) => tilfoejAgent(s, agentF, Number.isFinite(o) ? o : 0.5));
+    setBesked(`${AGENTER[agentF].navn} tilføjet (uden pris og loft).`);
   };
 
   /** Simulér frem til ugen før markedet åbner, og tag den sidste uge "live", så åbningen kommer som signal og dialog */
@@ -204,8 +267,7 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
     onLuk();
   };
 
-  const tabelMarked: MarketId = ms.aaben ? marked : 'dk';
-  const top10 = g.markeder[tabelMarked].top10.map((e) => ({ e, p: g.produkter.find((x) => x.id === e.productId) }));
+  const hitRaekker = hitlisteRaekker(g, g.markeder[hitMarked].aaben ? hitMarked : 'dk');
 
   return (
     <Modal titel="Debug" onLuk={onLuk} testId="dialog-debug" bredde={720} fod={<Btn variant="primaer" onClick={onLuk}>Luk</Btn>}>
@@ -242,6 +304,7 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
                   {a}
                 </option>
               ))}
+              <option value={2036}>Slutningen (dec. 2035)</option>
             </select>
           </label>
           <Btn variant="primaer" onClick={hop} disabled={Number(aar) <= nuAar} testId="debug-hop">
@@ -352,47 +415,155 @@ export default function DebugDialog({ onLuk }: { dialog: UiDialog; onLuk: () => 
           </div>
         </section>
 
+        <section className="flex flex-col gap-2 rounded-md border-2 border-line bg-bg2 p-2.5" data-testid="debug-fase6">
+          <h3 className="font-pixel text-xs font-bold uppercase tracking-wider text-muted">Konkurrenter, verden og AI</h3>
+          <div className="grid gap-2 sm:grid-cols-[1fr_1fr_6rem_auto] sm:items-end">
+            <label className="flex flex-col gap-1 text-xs text-muted">
+              Konkurrentreaktion
+              <select value={regel} onChange={(e) => setRegel(e.target.value as ReaktionsRegel)} className={felt} data-testid="debug-regel">
+                {REGLER.map((r) => (
+                  <option key={r} value={r}>
+                    {r} — {REAKTIONS_REGLER[r].navn}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-muted">
+              Konkurrent
+              <select value={rival} onChange={(e) => setRival(e.target.value)} className={felt} data-testid="debug-rival">
+                <option value="">(ingen bestemt)</option>
+                {g.konkurrenter
+                  .filter((c) => c.tilstede)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.navn}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-muted">
+              Marked
+              <select value={rMarked} onChange={(e) => setRMarked(e.target.value as MarketId)} className={felt} data-testid="debug-reaktion-marked">
+                {MARKET_IDS.filter((m) => g.markeder[m].aaben).map((m) => (
+                  <option key={m} value={m}>
+                    {MARKETS[m].kort}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Btn onClick={udloesReaktion} testId="debug-reaktion">
+              Udløs
+            </Btn>
+          </div>
+          <p className="text-xs text-dim">
+            {REAKTIONS_REGLER[regel].hvis} → {REAKTIONS_REGLER[regel].saa}.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+            <label className="flex flex-col gap-1 text-xs text-muted">
+              Tving verdensscenarie eller vurdering (kører én uge)
+              <select value={verden} onChange={(e) => setVerden(e.target.value as VerdensValg)} className={felt} data-testid="debug-verden">
+                {VERDENS_VALG.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.navn}
+                    {(g.verdensscenarier as Record<string, number | undefined>)[v.id] || (g.verdensVurderinger as Record<string, number | undefined>)[v.id] !== undefined ? ' (aktiv)' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Btn onClick={tvingValgtVerden} testId="debug-tving-verden">
+              Tving
+            </Btn>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[1fr_6rem_auto] sm:items-end">
+            <label className="flex flex-col gap-1 text-xs text-muted">
+              AI-scenarie
+              <select value={aiId} onChange={(e) => setAiId(e.target.value as AiScenarieId)} className={felt} data-testid="debug-ai-scenarie">
+                {AI_SCENARIER.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.navn} (nu {(g.aiScenarier[a.id] ?? 0).toFixed(2).replace('.', ',')})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Tal label="Styrke 0-1" vaerdi={aiStyrke} onSkift={setAiStyrke} testId="debug-ai-styrke" trin={0.1} />
+            <Btn onClick={tvingAi} testId="debug-tving-ai">
+              Sæt
+            </Btn>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[1fr_6rem_auto] sm:items-end">
+            <label className="flex flex-col gap-1 text-xs text-muted">
+              Tilføj agent ({g.agenter.length} i drift)
+              <select value={agentF} onChange={(e) => setAgentF(e.target.value as AgentFunktion)} className={felt} data-testid="debug-agent-funktion">
+                {AGENT_IDS.map((f) => (
+                  <option key={f} value={f}>
+                    {AGENTER[f].navn}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Tal label="Overvågning" vaerdi={agentO} onSkift={setAgentO} testId="debug-agent-overvaagning" trin={0.1} />
+            <Btn onClick={nyDebugAgent} testId="debug-tilfoej-agent">
+              Tilføj
+            </Btn>
+          </div>
+        </section>
+
         <section>
-          <h3 className="mb-1.5 font-pixel text-xs font-bold uppercase tracking-wider text-muted">Top 10 {MARKETS[tabelMarked].kort} — sim-værdier</h3>
+          <div className="mb-1.5 flex flex-wrap items-end justify-between gap-2">
+            <h3 className="font-pixel text-xs font-bold uppercase tracking-wider text-muted">Hitlisten — sim-værdier</h3>
+            <label className="flex items-center gap-2 text-xs text-muted">
+              Marked
+              <select value={hitMarked} onChange={(e) => setHitMarked(e.target.value as MarketId)} className={`${felt} w-auto`} data-testid="debug-hitliste-marked">
+                {MARKET_IDS.filter((m) => g.markeder[m].aaben).map((m) => (
+                  <option key={m} value={m}>
+                    {MARKETS[m].kort} — {MARKETS[m].navn}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <p className="mb-1.5 text-xs text-dim">Rangering = hitlistetal (glidende nye spillere pr. uge) × hjemmebane. Statsselskabet har hjemmebane de første år.</p>
           <div className="overflow-x-auto rounded-md border-2 border-line">
-            <table className="w-full min-w-[520px] text-left text-xs" data-testid="debug-top10">
+            <table className="w-full min-w-[640px] whitespace-nowrap text-left text-xs" data-testid="debug-top10">
               <thead className="bg-panel2 font-pixel text-[0.65rem] uppercase text-muted">
                 <tr>
                   <th className="px-2 py-1.5">#</th>
                   <th className="px-2 py-1.5">Produkt</th>
                   <th className="px-2 py-1.5">Ejer</th>
-                  <th className="px-2 py-1.5 text-right">Nye · BSI/uge</th>
-                  <th className="px-2 py-1.5 text-right">Kvalitet</th>
+                  <th className="px-2 py-1.5 text-right">Nye/uge</th>
+                  <th className="px-2 py-1.5 text-right">Hitlistetal</th>
+                  <th className="px-2 py-1.5 text-right">Hjemmebane</th>
+                  <th className="px-2 py-1.5 text-right">Score</th>
+                  <th className="px-2 py-1.5 text-right">BSI/uge</th>
                   <th className="px-2 py-1.5 text-right">/40</th>
-                  <th className="px-2 py-1.5 text-right">Alder</th>
                 </tr>
               </thead>
               <tbody className="tal">
-                {top10.map(({ e, p }) => {
-                  const ejer = p ? ejerInfo(g, p.ejer) : null;
+                {hitRaekker.map((r) => {
+                  const ejer = ejerInfo(g, r.p.ejer);
                   return (
-                    <tr key={e.productId} className={`border-t border-line ${p?.ejer === 'spiller' ? 'bg-gold/10' : ''}`}>
-                      <td className="px-2 py-1 font-pixel font-bold">{e.placering}</td>
-                      <td className="max-w-[160px] truncate px-2 py-1">{p?.navn ?? e.productId}</td>
+                    <tr key={r.p.id} className={`border-t border-line ${r.p.ejer === 'spiller' ? 'bg-gold/10' : ''} ${r.placering === null ? 'text-dim' : ''}`} data-testid={`debug-hit-${r.p.id}`}>
+                      <td className="px-2 py-1 font-pixel font-bold">{r.placering ?? '–'}</td>
+                      <td className="max-w-[160px] truncate px-2 py-1">{r.p.navn}</td>
                       <td className="px-2 py-1">
-                        {ejer && (
-                          <span className="inline-flex items-center gap-1.5">
-                            <Monogram tekst={ejer.monogram} farve={ejer.farve} str={20} />
-                            <span className="max-w-[90px] truncate">{ejer.navn}</span>
-                          </span>
-                        )}
+                        <span className="inline-flex items-center gap-1.5">
+                          <Monogram tekst={ejer.monogram} farve={ejer.farve} str={20} />
+                          <span className="max-w-[90px] truncate">{ejer.navn}</span>
+                        </span>
                       </td>
-                      <td className="px-2 py-1 text-right">{Math.round(p?.nyeSpillerePrUge?.[tabelMarked] ?? 0).toLocaleString('da-DK')} nye · {Math.round((p?.bsiPrUge[tabelMarked] ?? 0) * 1000).toLocaleString('da-DK')} t</td>
-                      <td className="px-2 py-1 text-right">{((p?.kvalitet ?? 0) * 100).toFixed(1)} %</td>
-                      <td className="px-2 py-1 text-right">{p?.total40 ?? '–'}</td>
-                      <td className="px-2 py-1 text-right">{p ? `${g.uge - p.lanceretUge} u` : '–'}</td>
+                      <td className="px-2 py-1 text-right">{Math.round(r.nye).toLocaleString('da-DK')}</td>
+                      <td className="px-2 py-1 text-right">{r.hitlisteTal.toLocaleString('da-DK', { maximumFractionDigits: 1 })}</td>
+                      <td className={`px-2 py-1 text-right ${r.hjemmebane > 1 ? 'font-bold text-warn' : ''}`}>×{r.hjemmebane.toLocaleString('da-DK', { maximumFractionDigits: 2 })}</td>
+                      <td className="px-2 py-1 text-right font-bold">{r.score.toLocaleString('da-DK', { maximumFractionDigits: 1 })}</td>
+                      <td className="px-2 py-1 text-right">{Math.round(r.bsi * 1000).toLocaleString('da-DK')} t</td>
+                      <td className="px-2 py-1 text-right">{r.p.total40 || '–'}</td>
                     </tr>
                   );
                 })}
-                {top10.length === 0 && (
+                {hitRaekker.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-2 py-3 text-center text-muted">
-                      Hitlisten er tom.
+                    <td colSpan={9} className="px-2 py-3 text-center text-muted">
+                      Ingen aktive produkter i markedet.
                     </td>
                   </tr>
                 )}

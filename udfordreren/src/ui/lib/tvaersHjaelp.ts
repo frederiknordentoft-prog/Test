@@ -3,6 +3,7 @@
 import type { AktivTrend, GameState, LiveProduct, MarketId, Project, TrendEffect, Vertical } from '../../sim/types';
 import type { IkonNavn } from '../components/kit';
 import type { PanelId } from '../../store/uiStore';
+import type { MarkedSektion } from './markedHjaelp';
 import { MARKETS, MARKET_IDS } from '../../data/markets';
 import { PRODUCT_TYPES } from '../../data/productTypes';
 import { VERTICALS } from '../../data/verticals';
@@ -367,7 +368,8 @@ export const TRAPPE: { trin: 1 | 2 | 3 | 4; navn: string; graense: number; tekst
   { trin: 4, navn: 'Inddragelse', graense: TRUST.sanktioner.inddragelse, tekst: 'Licensen inddrages for altid' },
 ];
 
-export type Raad = { id: string; tekst: string; ikon: IkonNavn; farve: string; panel: PanelId; knap: string; vaerdi?: number };
+/** sektion: afsnittet i Marked-panelet, knappen ruller til */
+export type Raad = { id: string; tekst: string; ikon: IkonNavn; farve: string; panel: PanelId; knap: string; vaerdi?: number; sektion?: MarkedSektion };
 
 /** Konkrete råd til at få tilliden op igen — med de tal, der trækker nu */
 export function sanktionsRaad(s: GameState, m: MarketId): Raad[] {
@@ -393,10 +395,10 @@ export function sanktionsRaad(s: GameState, m: MarketId): Raad[] {
     ud.push({ id: 'forskning', tekst: 'Forsk i ansvarligt spil: grænser og adfærdsovervågning giver op til +2 pr. kvartal.', ikon: 'kolbe', farve: 'var(--color-cyan)', panel: 'firma', knap: 'Forskning' });
   }
   if (s.bonusNiveau > 0) {
-    ud.push({ id: 'bonus', tekst: `Sænk bonus (niveau ${s.bonusNiveau}): koster ${f1(post('Bonusniveau') ?? TRUST.bonusNiveau * s.bonusNiveau)} pr. kvartal.`, ikon: 'diamant', farve: 'var(--color-warn)', panel: 'marked', knap: 'Marked', vaerdi: post('Bonusniveau') });
+    ud.push({ id: 'bonus', tekst: `Sænk bonus (niveau ${s.bonusNiveau}): koster ${f1(post('Bonusniveau') ?? TRUST.bonusNiveau * s.bonusNiveau)} pr. kvartal.`, ikon: 'diamant', farve: 'var(--color-warn)', panel: 'marked', knap: 'Marked', vaerdi: post('Bonusniveau'), sektion: 'bonus' });
   }
   if (s.vipProgram > 0) {
-    ud.push({ id: 'vip', tekst: `Skru ned for VIP (niveau ${s.vipProgram}): koster ${f1(post('VIP') ?? TRUST.vipProgram * s.vipProgram)} pr. kvartal.`, ikon: 'krone', farve: 'var(--color-warn)', panel: 'marked', knap: 'Marked', vaerdi: post('VIP') });
+    ud.push({ id: 'vip', tekst: `Skru ned for VIP (niveau ${s.vipProgram}): koster ${f1(post('VIP') ?? TRUST.vipProgram * s.vipProgram)} pr. kvartal.`, ikon: 'krone', farve: 'var(--color-warn)', panel: 'marked', knap: 'Marked', vaerdi: post('VIP'), sektion: 'bonus' });
   }
   const intense = s.produkter.filter((p) => p.ejer === 'spiller' && p.aktiv && p.markeder.includes(m) && p.intensitet > 3);
   if (intense.length) {
@@ -405,10 +407,10 @@ export function sanktionsRaad(s: GameState, m: MarketId): Raad[] {
   }
   const aggressive = CHANNEL_IDS.filter((k) => CHANNELS[k].aggressiv && (s.marketingMix[k] ?? 0) > 0);
   if (aggressive.length) {
-    ud.push({ id: 'kanaler', tekst: `Drop de aggressive kanaler (${aggressive.map((k) => CHANNELS[k].navn.toLowerCase()).join(', ')}): koster ${f1(TRUST.aggressivKanal)} pr. kvartal.`, ikon: 'hoejttaler', farve: 'var(--color-warn)', panel: 'marked', knap: 'Marked' });
+    ud.push({ id: 'kanaler', tekst: `Drop de aggressive kanaler (${aggressive.map((k) => CHANNELS[k].navn.toLowerCase()).join(', ')}): koster ${f1(TRUST.aggressivKanal)} pr. kvartal.`, ikon: 'hoejttaler', farve: 'var(--color-warn)', panel: 'marked', knap: 'Marked', sektion: 'marketing' });
   }
   if (s.offshoreBrand) {
-    ud.push({ id: 'offshore', tekst: `Luk offshore-brandet: det koster ${f1(TRUST.offshoreBrand)} pr. kvartal i alle markeder.`, ikon: 'globus', farve: 'var(--color-bad)', panel: 'marked', knap: 'Marked' });
+    ud.push({ id: 'offshore', tekst: `Luk offshore-brandet: det koster ${f1(TRUST.offshoreBrand)} pr. kvartal i alle markeder.`, ikon: 'globus', farve: 'var(--color-bad)', panel: 'marked', knap: 'Marked', sektion: 'fristelsen' });
   }
   return ud;
 }

@@ -18,6 +18,74 @@ import { spil } from '../../audio/sfx';
 import { mio } from '../format';
 import { gemtTekst } from '../lib/shellHjaelp';
 import SaveLoadDialog from '../dialogs/SaveLoadDialog';
+import { hentNgPlus, type NgPlusGemt } from '../../store/persistence';
+import { MODE_INFO, arvOpsummering, type StartMode } from '../lib/slutHjaelp';
+
+const START_MODES: StartMode[] = ['normal', 'usa2018', 'aiNative2026'];
+
+/** New Game+ (spec 6.17): startpunkt og arv. Vises først, når et spil er afsluttet. */
+function StartpunktSektion({ ngplus, mode, onMode, medArv, onMedArv }: { ngplus: NgPlusGemt; mode: StartMode; onMode: (m: StartMode) => void; medArv: boolean; onMedArv: (v: boolean) => void }) {
+  const arvTal = arvOpsummering(ngplus.arv);
+  return (
+    <Sektion
+      nr={4}
+      titel="Startpunkt"
+      hoejre={
+        <span className="inline-flex items-center gap-1 font-pixel text-xs font-bold text-gold">
+          <Ikon navn="stjerne" str={12} /> New Game+
+        </span>
+      }
+    >
+      <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Startpunkt">
+        {START_MODES.map((m) => {
+          const mi = MODE_INFO[m];
+          const ulaast = m === 'normal' || ngplus.modes.includes(m);
+          const on = mode === m;
+          return (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              disabled={!ulaast}
+              data-testid={`startmode-${m}`}
+              onClick={() => {
+                spil('klik');
+                onMode(m);
+              }}
+              className={`flex min-h-[44px] flex-col gap-1.5 rounded-lg border-2 p-2.5 text-left transition-transform active:translate-y-[2px] disabled:opacity-50 ${
+                on ? 'border-gold bg-panel2 shadow-[0_3px_0_var(--color-line),0_0_0_2px_var(--color-gold)_inset]' : 'border-line bg-bg2 pixel-skygge hover:bg-panel'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-2 border-line" style={{ background: mi.farve }}>
+                  <Ikon navn={ulaast ? mi.ikon : 'laas'} farve="var(--color-line)" indre={mi.farve} str={18} />
+                </span>
+                <span className="font-pixel text-sm font-black" style={{ color: mi.farve }}>
+                  {mi.kort}
+                </span>
+                {on && <Ikon navn="flueben" farve="var(--color-gold)" className="ml-auto shrink-0" />}
+              </span>
+              <span className="text-xs leading-snug text-muted">{ulaast ? mi.start : 'Låses op, når I har afsluttet et spil.'}</span>
+            </button>
+          );
+        })}
+      </div>
+      {ngplus.arv && (
+        <div className="mt-2 rounded-lg border-2 border-line bg-bg2 px-3">
+          <Kontakt
+            til={medArv}
+            onSkift={onMedArv}
+            testId="ngplus-arv"
+            label="Tag arven med"
+            forklaring={`Kombinationsbogen (${arvTal.kombinationer} kombinationer) og ${arvTal.niveauer} niveauer${ngplus.senesteSlut ? ` fra ${ngplus.senesteSlut.firmaNavn}` : ''}.`}
+          />
+        </div>
+      )}
+      {mode === 'usa2018' && <p className="mt-2 text-xs text-dim">USA-starten er altid betting: det var sportsbetting, højesteret åbnede for.</p>}
+    </Sektion>
+  );
+}
 
 const STAT_NAVN: Record<StatKey, string> = {
   kreativitet: 'Kreativitet',
@@ -118,6 +186,18 @@ export default function TitleScreen() {
   const [saves, setSaves] = useState<SaveInfo[]>([]);
   const [visIndlaes, setVisIndlaes] = useState(false);
   const [henter, setHenter] = useState(false);
+  const [ngplus, setNgplus] = useState<NgPlusGemt | null>(null);
+  const [mode, setMode] = useState<StartMode>('normal');
+  const [medArv, setMedArv] = useState(true);
+  const [spoler, setSpoler] = useState(false);
+
+  useEffect(() => {
+    let aktiv = true;
+    void hentNgPlus().then((n) => aktiv && setNgplus(n));
+    return () => {
+      aktiv = false;
+    };
+  }, []);
 
   useEffect(() => {
     let aktiv = true;
@@ -142,11 +222,21 @@ export default function TitleScreen() {
 
   const kanStarte = valgte.length === 2;
   const start = () => {
-    if (!kanStarte) return;
+    if (!kanStarte || spoler) return;
     const p = new URLSearchParams(window.location.search).get('seed');
     const seed = p && /^\d+$/.test(p) ? Number(p) : Math.floor(Math.random() * 2 ** 31);
     spil('niveauOp');
-    nytSpil({ seed, firmaNavn: navn.trim() || 'Garagespil ApS', stiftere: [valgte[0], valgte[1]], startVertikal: vertikal, tutorial });
+    // New Game+: startmode og arv (kun når et spil er afsluttet før)
+    const m: StartMode = ngplus ? mode : 'normal';
+    const arv = ngplus?.arv && medArv ? ngplus.arv : undefined;
+    const opts = { seed, firmaNavn: navn.trim() || 'Garagespil ApS', stiftere: [valgte[0], valgte[1]] as [string, string], startVertikal: m === 'usa2018' ? ('betting' as const) : vertikal, tutorial, mode: m, arv };
+    if (m === 'normal') {
+      nytSpil(opts);
+      return;
+    }
+    // En mode-start spoler verden frem til startåret: vis en besked, før simuleringen kører
+    setSpoler(true);
+    setTimeout(() => nytSpil(opts), 40);
   };
 
   const fortsaet = async () => {
@@ -290,6 +380,8 @@ export default function TitleScreen() {
             <p className="mt-2 text-xs text-dim">Den anden vertikal kan I tilføje senere med en ekstra licens.</p>
           </Sektion>
 
+          {ngplus && <StartpunktSektion ngplus={ngplus} mode={mode} onMode={setMode} medArv={medArv} onMedArv={setMedArv} />}
+
           <div className="rounded-xl border-2 border-line bg-panel p-3 pixel-skygge">
             <Kontakt
               til={tutorial}
@@ -314,6 +406,13 @@ export default function TitleScreen() {
         </div>
       </div>
       {visIndlaes && <SaveLoadDialog dialog={{ kind: 'gemIndlaes' }} onLuk={() => setVisIndlaes(false)} />}
+      {spoler && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-line/70 p-4" role="status" data-testid="spoler-frem">
+          <p className="flex items-center gap-2 rounded-lg border-2 border-line bg-panel px-4 py-3 font-pixel text-sm font-bold text-ink pixel-kant">
+            <Ikon navn="ur" farve="var(--color-gold)" indre="var(--color-line)" /> Spoler verden frem til {MODE_INFO[mode].aar} …
+          </p>
+        </div>
+      )}
     </main>
   );
 }

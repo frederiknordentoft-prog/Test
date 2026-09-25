@@ -207,6 +207,16 @@ function rystLoop(nu: number): void {
   rystRaf = requestAnimationFrame(rystLoop);
 }
 
+/** Fjern al konfetti med det samme (fx når et nyt spil starter fra slutskærmen) */
+export function stopKonfetti(): void {
+  kliv.fill(0);
+  antalLevende = 0;
+  if (raf) cancelAnimationFrame(raf);
+  raf = 0;
+  if (cx) cx.clearRect(0, 0, cw, ch);
+  if (cv) cv.style.display = 'none';
+}
+
 /** Antal levende konfettistykker (til test/fejlfinding) */
 export function konfettiAntal(): number {
   return antalLevende;

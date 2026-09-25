@@ -2,18 +2,37 @@
 // UI sender Actions via dispatch(); tidsloopet kalder stepUge().
 import { create } from 'zustand';
 import type { Action, GameState, NewGameOptions, Signal } from '../sim/types';
-import { newGame } from '../sim/init';
+import { nytSpil as lavNytSpil } from '../sim/newgameplus';
 import { applyAction, step, stepMut } from '../sim/step';
 import { DIALOG_SIGNALER, aabnerDialog, pauserFor, pauseTekst, reaktionSomDialog } from '../sim/signals';
 import { AI_AKT_UGE, aarFor, ugeIAar } from '../sim/time';
 import { autoloesEvents } from '../sim/events';
 import { spillerKunderTotal } from '../sim/customers';
 import { gem, gemSetting, hentSetting } from './persistence';
+import { samlSignaler } from '../ui/lib/dialogSamling';
 
 export type Speed = 1 | 2 | 4;
 export type ToastKind = 'info' | 'godt' | 'skidt';
-export type Toast = { id: number; tekst: string; kind: ToastKind };
-export type SignalDialog = { id: number; signal: Signal };
+/**
+ * antal: samme tekst kom flere gange (vises som ×N i stedet for en stak ens toasts).
+ * handling: svar på noget, spilleren lige gjorde (vises også oven på en signal-dialog); ugens nyheder venter, til dialogerne er lukket.
+ */
+export type Toast = { id: number; tekst: string; kind: ToastKind; antal?: number; handling?: boolean };
+/** gruppe: flere signaler af samme slags i samme uge, samlet i én dialog (fx nr. 1 i seks markeder) */
+export type SignalDialog = { id: number; signal: Signal; gruppe?: Signal[] };
+
+let naesteId = 1;
+
+/** Højst så mange toasts gemmes ad gangen */
+const MAX_TOASTS = 6;
+
+/** Tilføj en toast — er den samme tekst allerede fremme, tælles den op og flyttes frem i stedet */
+function medToast(liste: Toast[], t: { tekst: string; kind: ToastKind }, handling = false): Toast[] {
+  const i = liste.findIndex((x) => x.tekst === t.tekst && x.kind === t.kind);
+  if (i < 0) return [...liste, { id: naesteId++, ...t, handling }];
+  const antal = (liste[i].antal ?? 1) + 1;
+  return [...liste.slice(0, i), ...liste.slice(i + 1), { id: naesteId++, ...t, antal, handling }];
+}
 
 export type Settings = {
   lyd: boolean;
@@ -98,7 +117,6 @@ type GameStore = {
   debugHopTilAar(aar: number): void;
 };
 
-let naesteId = 1;
 
 function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
   switch (sig.k) {
@@ -129,7 +147,7 @@ export const useGame = create<GameStore>((set, get) => {
     const st = get();
     const sig = ny.signaler;
     const dialoger = [...st.dialoger];
-    const toasts = [...st.toasts];
+    let toasts = [...st.toasts];
     const grunde = new Set(st.pauseGrunde);
     let pause = st.paused;
     let frigjortUge = st.frigjortUge;
@@ -137,16 +155,19 @@ export const useGame = create<GameStore>((set, get) => {
     if (sig.some((s) => s.k === 'lanceret' || s.k === 'klar')) frigjortUge = ny.uge;
     let hudFrys = st.hudFrys;
     if (!hudFrys && st.game && sig.some((s) => AFSLOERING.includes(s.k))) hudFrys = hudTal(st.game);
+    // Mange markeder: saml ugens fejringer, påbud, sanktioner og regler, så de ikke kommer som én dialog pr. land
+    const samling = samlSignaler(st.game, ny, sig);
+    for (const d of samling.dialoger) dialoger.push({ id: naesteId++, ...d });
+    for (const t of samling.toasts) toasts = medToast(toasts, t, !fraTick);
     for (const s of sig) {
-      if (aabnerDialog(s)) dialoger.push({ id: naesteId++, signal: s });
-      // Top 10 uden for top 3 (og ikke første gang): en toast i stedet for en dialog
-      else if (s.k === 'top10') toasts.push({ id: naesteId++, tekst: `Ind på Top 10 som nr. ${s.placering}!`, kind: 'godt' });
+      // Foldet ind i en samlet dialog eller toast: ingen egen toast og ingen egen pause
+      if (samling.stille.has(s)) continue;
       const t = toastFor(s);
-      if (t) toasts.push({ id: naesteId++, ...t });
+      if (t) toasts = medToast(toasts, t, !fraTick);
       if (fraTick && pauserFor(s) && !st.settings.autoPauseFra.includes(s.k)) {
         // Ledige lige efter egen lancering/færdig test: spilleren ved det godt — ingen pause, bare et nik
         if (s.k === 'ledig' && frigjortUge !== null && ny.uge - frigjortUge <= 2) {
-          toasts.push({ id: naesteId++, tekst: 'Holdet er ledigt — start næste produkt eller tag en opgave.', kind: 'info' });
+          toasts = medToast(toasts, { tekst: 'Holdet er ledigt — start næste produkt eller tag en opgave.', kind: 'info' });
           continue;
         }
         pause = true;
@@ -159,7 +180,7 @@ export const useGame = create<GameStore>((set, get) => {
       game: ny,
       sidsteSignaler: sig,
       dialoger,
-      toasts: toasts.slice(-6),
+      toasts: toasts.slice(-MAX_TOASTS),
       paused: pause,
       pauseGrunde: [...grunde],
       tick: fraTick ? st.tick + 1 : st.tick,
@@ -191,10 +212,11 @@ export const useGame = create<GameStore>((set, get) => {
     frigjortUge: null,
 
     nytSpil(opts) {
-      const g = newGame(opts);
+      // New Game+ (spec 6.17): arv og startmode (2018 i USA / AI-native 2026 spoler verden frem uden spilleren)
+      const g = lavNytSpil(opts);
       set({ game: g, paused: false, pauseGrunde: [], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], speed: 1, hudFrys: null, frigjortUge: null });
       clock.sidsteTickMs = performance.now();
-      clock.ugeMs = ugeVarighedMs(0, 1);
+      clock.ugeMs = ugeVarighedMs(g.uge, 1);
     },
     indlaes(state) {
       set({ game: { ...state, signaler: [] }, paused: true, pauseGrunde: ['Spil indlæst'], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], hudFrys: null, frigjortUge: null });
@@ -246,7 +268,7 @@ export const useGame = create<GameStore>((set, get) => {
       set({ dialoger: rest, hudFrys: frys ? get().hudFrys : null });
     },
     toast(tekst, kind = 'info') {
-      set({ toasts: [...get().toasts, { id: naesteId++, tekst, kind }].slice(-6) });
+      set({ toasts: medToast(get().toasts, { tekst, kind }, true).slice(-MAX_TOASTS) });
     },
     fjernToast(id) {
       set({ toasts: get().toasts.filter((t) => t.id !== id) });
