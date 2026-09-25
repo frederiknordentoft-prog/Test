@@ -1,0 +1,38 @@
+# Statisk hosting på Netlify (spec 4: ingen backend, login eller analytics).
+# Sæt "Base directory" til udfordreren i Netlify, hvis repoet indeholder mere end spillet.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Service workeren og manifestet må aldrig caches hårdt, ellers ser spillerne aldrig en ny version
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "no-cache"
+
+# Byggede filer har hash i navnet og kan caches for evigt
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+
+# Én side: alle stier viser spillet
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -16,7 +16,8 @@
     "sim": "tsx sim/runner.ts",
     "e2e": "playwright test",
     "artifact": "vite build --mode single && node scripts/artifact.mjs",
-    "grepcheck": "node scripts/grep-check.mjs"
+    "grepcheck": "node scripts/grep-check.mjs",
+    "dliste": "node scripts/d-liste.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.6",
