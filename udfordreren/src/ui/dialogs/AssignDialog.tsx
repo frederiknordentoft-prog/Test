@@ -303,6 +303,79 @@ export default function AssignDialog({ dialog, onLuk }: { dialog: UiDialog; onLu
           );
         })}
       </ul>
+
+      {g.agenter.length > 0 && (
+        <section className="mt-3" data-testid="tildel-agenter">
+          <p className="mb-2 flex flex-wrap items-center gap-1.5 font-pixel text-xs font-black uppercase tracking-wider text-cyan">
+            <Ikon navn="chip" farve="var(--color-cyan)" indre="var(--color-line)" str={14} /> AI-agenter
+            <span className="font-sans text-[0.68rem] font-normal normal-case tracking-normal text-muted">Arbejder uden energi, men laver fejl efter overvågningen.</span>
+          </p>
+          {g.agenter.some((a) => agentFaser[fane].has(a.id) || valg[fane].includes(a.id)) ? (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {g.agenter
+                .filter((a) => agentFaser[fane].has(a.id) || valg[fane].includes(a.id))
+                .map((a) => {
+                  const valgt = valg[fane].includes(a.id);
+                  const kan = agentFaser[fane].has(a.id);
+                  const b = bidragFor.get(a.id);
+                  const data = agentData(g, a.funktion);
+                  return (
+                    <li key={a.id}>
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={valgt}
+                        disabled={!kan && !valgt}
+                        onClick={() => toggle(a.id)}
+                        data-testid={`tildel-${a.id}`}
+                        className={`flex min-h-[44px] w-full items-center gap-2 rounded-md border-2 p-2 text-left transition-colors ${
+                          valgt && !kan ? 'border-bad bg-bad/10' : valgt ? 'border-cyan bg-[#0c1f3a]' : 'border-line bg-panel2 hover:bg-hi'
+                        } disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 border-line ${valgt ? 'bg-cyan' : 'bg-bg'}`} aria-hidden>
+                          {valgt && <Ikon navn="flueben" farve="var(--color-line)" str={14} />}
+                        </span>
+                        <GloedTerminal str={34} funktion={a.funktion} slukket={!data.ok} />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5">
+                            <span className="truncate font-bold text-ink">{agentNavn(a)}</span>
+                            <AiMaerke titel="AI-agent" />
+                          </span>
+                          <span className="tal flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.7rem]">
+                            <span className="font-bold text-cyan">{AGENTER[a.funktion].navn}</span>
+                            <span className="text-muted">Kap. {a.kapacitet}</span>
+                            <span className="text-muted" title="Fejlrate (lavere med mere overvågning)">
+                              Fejl {procentTekst(a.fejlrate, 1)}
+                            </span>
+                          </span>
+                          <span className="block truncate text-[0.68rem]" style={{ color: !kan ? 'var(--color-bad)' : data.ok ? 'var(--color-good)' : 'var(--color-warn)' }}>
+                            {!kan ? 'Optaget på et andet projekt — tælles ikke med' : data.ok ? 'Klar' : DATA_ADVARSEL}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-right" aria-live="polite">
+                          {b ? (
+                            <>
+                              <span className="tal block font-pixel text-sm font-bold text-gold">+{Math.round(b.point)}</span>
+                              <span className="tal block text-[0.62rem] text-muted">{b.plads === 0 ? 'fuld vægt' : `×${b.vaegt.toString().replace('.', ',')}`}</span>
+                            </>
+                          ) : (
+                            <span className="tal block text-[0.68rem] text-dim" title="Point pr. uge alene">
+                              {Math.round(holdEstimat(g, p, fane, [a.id]).total)} alene
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted" data-testid="tildel-agenter-ingen">
+              Ingen af jeres agenter kan arbejde i {FASE_NAVN[fane].toLowerCase()}fasen. Udviklingsagenter tager design, teknik og test; indholdsagenter koncept og design på kasino; trading-agenter design og teknik på betting.
+            </p>
+          )}
+        </section>
+      )}
     </Modal>
   );
 }
