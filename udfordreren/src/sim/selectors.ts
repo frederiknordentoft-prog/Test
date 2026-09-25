@@ -48,3 +48,11 @@ export function staffXpAndel(erfaring: number, niveau: number): number {
 export function afvisninger(s: GameState): string[] {
   return s.signaler.filter((x) => x.k === 'fejl').map((x) => (x as { tekst: string }).tekst);
 }
+
+// ---------- Fase 3: markeder, regulering, offshore, trends ----------
+export { licensStatus, markedAabent } from './markets';
+export { regelEffekt, effektivBonus, effektivVip, regelBeskrivelse } from './regulation';
+export { offshoreDynPp, offshoreAndele, licenseretKvalitet } from './offshore';
+export { trendEffekt, daekker as trendDaekker } from './trends';
+export { SANKTION_NAVN, sanktionsGraense, SANKTION_RISIKO } from './trust';
+export { strenghedCac, strenghedArpu, licenseretBsiKurve } from './customers';
