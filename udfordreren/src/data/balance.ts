@@ -17,6 +17,14 @@ export const BALANCE = {
   niveauBonus: 0.04,
   koncetUger: 2,
   testUger: 2,
+  /** Projekterne vokser med tiden (større produkter): faselængder × (1 + x pr. år efter 2012), højst `projektVaekstMaks` */
+  projektVaekstPrAar: 0.15,
+  projektVaekstMaks: 3,
+  /** Hjemmebane på hitlisten: statsselskabets produkter i hjemmemarkedet tæller × dette til og med 2015, aftagende til 1 i 2018.
+   *  Butikskunderne flytter online (33 % online i 2012, 73 % i 2025, arkiv a2), så statsselskabet topper hitlisten de første år. */
+  hjemmebane: 3,
+  hjemmebaneFuldTil: 2016,
+  hjemmebaneSlut: 2018,
   maxTestUger: 8,
   /** Fordeling af point på parametre pr. fase */
   fordeling: {
@@ -38,7 +46,7 @@ export const BALANCE = {
   xpKontrakt: 8,
   // --- Markedsstandard (anmeldelser) ---
   /** Markedsstandard pr. parameter over tid [år, point] — stejl i garage-årene, flader ud senere */
-  standardKurve: [[2012, 92], [2013, 164], [2014, 225], [2015, 258], [2016, 310], [2017, 355], [2018, 385], [2019, 400], [2020, 410], [2022, 430], [2026, 495], [2030, 575], [2035, 675]] as [number, number][],
+  standardKurve: [[2012, 92], [2013, 190], [2014, 292], [2015, 358], [2016, 385], [2017, 420], [2018, 445], [2019, 460], [2020, 470], [2022, 490], [2026, 540], [2030, 610], [2035, 700]] as [number, number][],
   standardKonkurrent: 0.5, // tillæg pr. kvalitet over 0.6 hos bedste konkurrent
   /** Logistisk kurve i q-rum: score = 1 + 9 / (1 + e^(−k·(q − q0))), q = 1 − e^(−ratio) */
   scoreK: 7.4,

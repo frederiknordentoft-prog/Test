@@ -72,11 +72,11 @@ export function eftermaele(s: GameState): { total: number; dele: EftermaeleDel[]
     EFTERMAELE.licens,
   );
   const dele: EftermaeleDel[] = [
-    { navn: 'Tilsynstillid', point: EFTERMAELE.tillid * clamp((tillid - 40) / 50, 0, 1), maks: EFTERMAELE.tillid, forklaring: `Gennemsnit ${Math.round(tillid)}` },
-    { navn: 'Byens sundhed', point: EFTERMAELE.by * clamp((0.2 - risiko) / 0.16, 0, 1), maks: EFTERMAELE.by, forklaring: `${Math.round(risiko * 100)} % i risiko eller problem i snit` },
-    { navn: 'Guldkuponer og Hall of Fame', point: Math.min(EFTERMAELE.guld, 1.5 * guld + 3 * hof), maks: EFTERMAELE.guld, forklaring: `${guld} Guldkuponer, ${hof} i Hall of Fame` },
-    { navn: 'Gallapriser', point: Math.min(EFTERMAELE.galla, 1.5 * galla), maks: EFTERMAELE.galla, forklaring: `${galla} priser` },
-    { navn: 'Innovation', point: Math.min(EFTERMAELE.innovation, 0.25 * kombinationer + 0.5 * features), maks: EFTERMAELE.innovation, forklaring: `${kombinationer} kombinationer, ${features} features` },
+    { navn: 'Tilsynstillid', point: EFTERMAELE.tillid * clamp((tillid - 50) / 45, 0, 1), maks: EFTERMAELE.tillid, forklaring: `Gennemsnit ${Math.round(tillid)}` },
+    { navn: 'Byens sundhed', point: EFTERMAELE.by * clamp((0.16 - risiko) / 0.14, 0, 1), maks: EFTERMAELE.by, forklaring: `${Math.round(risiko * 100)} % i risiko eller problem i snit` },
+    { navn: 'Guldkuponer og Hall of Fame', point: Math.min(EFTERMAELE.guld, guld + 2 * hof), maks: EFTERMAELE.guld, forklaring: `${guld} Guldkuponer, ${hof} i Hall of Fame` },
+    { navn: 'Gallapriser', point: Math.min(EFTERMAELE.galla, galla), maks: EFTERMAELE.galla, forklaring: `${galla} priser` },
+    { navn: 'Innovation', point: Math.min(EFTERMAELE.innovation, 0.15 * kombinationer + 0.3 * features), maks: EFTERMAELE.innovation, forklaring: `${kombinationer} kombinationer, ${features} features` },
     { navn: 'Licenseret status', point: licensPoint, maks: EFTERMAELE.licens, forklaring: `${licenser} aktive licenser${s.flags.includes('haftOffshoreBrand') ? ', offshore-brand' : ''}${e.maxSanktion ? `, højeste sanktion trin ${e.maxSanktion}` : ''}` },
   ];
   for (const d of dele) d.point = Math.round(d.point * 10) / 10;
@@ -100,10 +100,11 @@ export function klassificer(s: GameState): SlutId {
   const e = s.eftermaeleAkk;
   const risiko = e.risikoProever ? e.risikoSum / e.risikoProever : 0.09;
   const em = eftermaele(s).total;
-  if (em >= SLUT_KRAV.ansvarligEftermaele && risiko <= SLUT_KRAV.ansvarligRisiko && !s.flags.includes('haftOffshoreBrand')) return 'ansvarligUdfordrer';
+  // Det, der definerer firmaet mest: en agentflåde, B2B-forretningen, ansvarligheden — ellers størrelsen
   const agenter = s.agenter.length;
   if (agenter >= SLUT_KRAV.aiAgenter && agenter / (agenter + s.staff.length) >= SLUT_KRAV.aiAndel) return 'aiNativeLeder';
   if (s.platforme.sportsbook.b2bKunder + s.platforme.kasinoplatform.b2bKunder >= SLUT_KRAV.leverandoerKunder) return 'leverandoer';
+  if (em >= SLUT_KRAV.ansvarligEftermaele && risiko <= SLUT_KRAV.ansvarligRisiko && !s.flags.includes('haftOffshoreBrand')) return 'ansvarligUdfordrer';
   if (vaerdiansaettelse(s) >= SLUT_KRAV.boersVaerdi) return 'boersnotering';
   return 'danskeLykke';
 }

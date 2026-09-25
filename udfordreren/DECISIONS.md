@@ -66,3 +66,20 @@
 - AI-transformationen erstatter 25 % eller 50 % af de erstattelige stillinger (aldrig stiftere eller compliance) med agenter (én agent pr. 1-4 personer), koster 12 ugers løn i fratrædelse og 3 indsigt pr. person × niveau/5 og udløser et omdømme-event.
 - Tilfældige events vælges nu ligeligt blandt alle, der rammer i ugen, i stedet for efter rækkefølgen i listen.
 - Saves fra ældre builds får manglende felter udfyldt fra et nyt spil med samme seed, så en opdatering af PWA'en ikke taber spillet.
+- Slutninger ved tidens ende klassificeres efter det, der definerer firmaet mest: agentflåde (≥ 8 agenter og ≥ 40 % af arbejdsstyrken) → AI-native leder; ≥ 5 B2B-kunder → Leverandøren; eftermæle ≥ 88, risiko ≤ 6 % og aldrig offshore → Den ansvarlige udfordrer; værdi ≥ 1,5 mia. → Børsnotering; ellers Opkøbt af Danske Lykke. Tabt dansk licens uden andre bærende markeder slutter spillet med det samme.
+- Danske Lykke kan byde på en mindre udfordrer (0,5-12 % dk-andel) med 3 % pr. kvartal fra 2016 (2-3× årlig BSI); accepteres det, er slutningen "Opkøbt af Danske Lykke" (fakta a3: statsselskabet overtog en udfordrer).
+- Eftermælet (0-100): tilsynstillid 25 (snit 50→95), byens sundhed 20 (16 %→2 % risiko), Guldkuponer/HoF 15, gallapriser 15, innovation 10, licenseret status 15.
+- New Game+ spoler verden frem uden spilleren (markeder, konkurrenter, regler) til startugen og nulstiller derefter firmaet; kombinationsbogen og niveauerne arves.
+- Harnessets "realtid" er ugernes tid ved 1x plus 15 sek. pr. beslutningspause (et menneskes tænketid); så bliver 2012-2035 2-3 timer som i spec 8.
+- Handlinger udføres, mens spillet står stille (som i UI'et); en dialog, som en handling udløser (fx anmeldelsen ved lancering), hører til den aktuelle pause.
+- Rytme: højst ét projekt ad gangen til og med Kontor, to fra Etage; faselængderne vokser 15 % om året fra 2012 (højst × 3), fordi produkterne bliver større.
+- Markedsstandarden stiger stejlere 2013-2015, så Guldkuponen typisk kommer i 2015-2019. Hall of Fame kræver også typeniveau 7 (mesterskab i genren).
+- Hitlisten: statsselskabets produkter har hjemmebane i hjemmemarkedet (× 3 til 2016, aftagende til × 1 i 2018), fordi butikskunderne flytter online (fakta a2). Det gør nr. 1 i dk mulig, men først efter 2016.
+- Tilsynstillid: spec 7.12's bonus-, VIP-, intensitets- og kanaltal er tunet ned (−1,0/−1,2/−1,2/−1,0 ved fuldt niveau) og vejer kun 30 % for en lille udbyder (fuldt ved 5 % markedsandel). Tilliden trækkes 10 % tilbage mod 70 hvert kvartal. Efter påbud/bøde/gennemgang løftes tilliden 5/8/12, og der går mindst 26 uger mellem trinene. Uden dette kunne en grådig udbyder ikke nå 2020 (assertion 1).
+- Byens tillidspost er spec'ens −8 × (andel − 0,08) × 3, dvs. −0,24 pr. procentpoint over 8 %, højst −6.
+- Offshore-brandets rækkevidde følger firmaets størrelse (fuld ved 300.000 kunder), så en garage ikke henter 4 % af verdens grå marked.
+- Bonus og VIP betaler sig mere på kort sigt (tilgang +18/42/80 %, VIP-ARPU +6/13/25 %), så grådighed giver den højeste BSI 2012-2020, som spec 8 kræver.
+- Hyperpersonalisering uden risikoagent med overvågning ≥ 0,6 koster −6 tillid pr. kvartal og tæller 2 i aggressionsindekset (R8).
+- AI-transformationen erstatter ikke analytikere med risikoagenter: risikodetektion er et bevidst valg med overvågning.
+- Event-kontrakter kan lanceres (kun i USA) med børslicens, eller med en bettinglicens i USA, når prediction markets er slået igennem (styrke ≥ 0,5).
+- Botterne er profiler af én motor (sim/bots/strategi.ts). AI-hensynsløs er Balanceret indtil 2026. AI-afviseren satser på B2B-pivoten og sælger fra 2030. Den forsigtige bootstrapper sparer op og holder pause med marketing, når der ikke er råd til næste projekt.

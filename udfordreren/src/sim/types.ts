@@ -124,6 +124,7 @@ export type LiveProduct = {
   pensioneretUge?: Week;
   /** Ugens nye spillere pr. marked — det, hitlisten rangerer efter (som ugens salg i Game Dev Story) */
   nyeSpillerePrUge?: Partial<Record<MarketId, number>>;
+  hitlisteTal?: Partial<Record<MarketId, number>>; // + glidende gennemsnit af nye spillere (hitlistens rangering)
   /** Lanceringsbølge: spillere, der endnu ikke er kommet ind (frigives ca. halvdelen pr. uge) */
   ventendeSpillere?: Partial<Record<MarketId, number>>;
 };

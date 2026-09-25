@@ -58,3 +58,5 @@ export const REVIEWER_BY_ID = Object.fromEntries(REVIEWERS.map((r) => [r.id, r])
 /** Tærskler (spec 6.3) */
 export const GULDKUPON_TOTAL = 32;
 export const HALL_OF_FAME_TOTAL = 36;
+/** Hall of Fame kræver også mesterskab i genren: typeniveau mindst dette [D] (spec 8: tidligst i 2018) */
+export const HALL_OF_FAME_TYPENIVEAU = 7;

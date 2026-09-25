@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import type { Action, GameState, NewGameOptions, Signal } from '../sim/types';
 import { newGame } from '../sim/init';
 import { applyAction, step, stepMut } from '../sim/step';
-import { pauserFor, pauseTekst, reaktionSomDialog } from '../sim/signals';
+import { DIALOG_SIGNALER, aabnerDialog, pauserFor, pauseTekst, reaktionSomDialog } from '../sim/signals';
 import { AI_AKT_UGE, aarFor, ugeIAar } from '../sim/time';
 import { autoloesEvents } from '../sim/events';
 import { spillerKunderTotal } from '../sim/customers';
@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /** Signaler, der åbner en dialog (spillet står stille, indtil den lukkes) */
-export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor', 'markedAabner', 'regel', 'sanktion', 'tilbud', 'sponsorAuktion', 'reaktion', 'aktSkift', 'verdensNyhed'];
+export { DIALOG_SIGNALER };
 
 /** Dialoger med en afsløring (scoren tælles op, kuverterne åbnes): HUD'en fryses, til de er lukket */
 const AFSLOERING: Signal['k'][] = ['anmeldelse', 'galla'];
@@ -138,16 +138,9 @@ export const useGame = create<GameStore>((set, get) => {
     let hudFrys = st.hudFrys;
     if (!hudFrys && st.game && sig.some((s) => AFSLOERING.includes(s.k))) hudFrys = hudTal(st.game);
     for (const s of sig) {
-      if (DIALOG_SIGNALER.includes(s.k)) {
-        if (s.k === 'messe' && s.stoerrelse === 0) continue;
-        // Top 10: fejr første gang nogensinde og nye top 3-placeringer; ellers en toast
-        if (s.k === 'reaktion' && !reaktionSomDialog(s.regel)) continue;
-        if (s.k === 'top10' && !s.foersteGang && s.placering > 3) {
-          toasts.push({ id: naesteId++, tekst: `Ind på Top 10 som nr. ${s.placering}!`, kind: 'godt' });
-          continue;
-        }
-        dialoger.push({ id: naesteId++, signal: s });
-      }
+      if (aabnerDialog(s)) dialoger.push({ id: naesteId++, signal: s });
+      // Top 10 uden for top 3 (og ikke første gang): en toast i stedet for en dialog
+      else if (s.k === 'top10') toasts.push({ id: naesteId++, tekst: `Ind på Top 10 som nr. ${s.placering}!`, kind: 'godt' });
       const t = toastFor(s);
       if (t) toasts.push({ id: naesteId++, ...t });
       if (fraTick && pauserFor(s) && !st.settings.autoPauseFra.includes(s.k)) {
@@ -178,7 +171,7 @@ export const useGame = create<GameStore>((set, get) => {
       clock.sidsteTickMs = performance.now();
       clock.ugeMs = ugeVarighedMs(ny.uge, st.speed);
       // Autosave hvert kvartal — og straks, når en dialog (fx et event) venter, så et reload ikke mister den
-      const dialogVenter = sig.some((s) => DIALOG_SIGNALER.includes(s.k));
+      const dialogVenter = sig.some((s) => aabnerDialog(s));
       if (!ny.slut && (dialogVenter || ugeIAar(ny.uge) % 13 === 0)) void gem('auto', ny);
     }
   }

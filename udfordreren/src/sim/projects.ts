@@ -42,6 +42,17 @@ export function vertikalStatus(s: GameState, v: Vertical, m: MarketId = 'dk') {
   return s.markeder[m].vertikaler[v].status;
 }
 
+/** Event-kontrakter er lovlige med børslicens, eller i USA når prediction markets er slået igennem (spec 6.16) */
+export function eventKontrakterLovlige(s: GameState): boolean {
+  if (s.boerslicens?.status === 'aktiv') return true;
+  return s.markeder.us.vertikaler.betting.status === 'aktiv' && (s.aiScenarier?.predictionMarkets ?? 0) >= 0.5;
+}
+
+/** Markeder, hvor en produkttype må lanceres (event-kontrakter kun i USA) */
+export function tilladteMarkeder(typeId: ProductTypeId, markeder: MarketId[]): MarketId[] {
+  return PRODUCT_TYPES[typeId].krav.lovligMarked ? markeder.filter((m) => m === 'us') : markeder;
+}
+
 export function typeStatus(s: GameState, typeId: ProductTypeId): { ok: boolean; grund?: string } {
   const t = PRODUCT_TYPES[typeId];
   const aar = aarFor(s.uge);
@@ -59,7 +70,7 @@ export function typeStatus(s: GameState, typeId: ProductTypeId): { ok: boolean; 
   if (t.krav.dataejerskab !== undefined && s.platforme.kontoplatform.dataejerskab < t.krav.dataejerskab) {
     return { ok: false, grund: `Kræver dataejerskab ≥ ${t.krav.dataejerskab}` };
   }
-  if (t.krav.lovligMarked) return { ok: false, grund: 'Ikke lovligt i jeres markeder endnu' };
+  if (t.krav.lovligMarked && !eventKontrakterLovlige(s)) return { ok: false, grund: 'Kræver børslicens eller en bettinglicens i USA, når prediction markets er slået igennem' };
   return { ok: true };
 }
 
@@ -81,6 +92,12 @@ export function ledigeTilProjekt(s: GameState, undtagProjekt?: string): Staff[] 
   return s.staff.filter((m) => !optaget.has(m.id));
 }
 
+/** Faselængder for et nyt projekt: produkterne bliver større (og tager længere tid) år for år */
+export function faseLaengder(s: GameState, design: number, teknik: number): Record<Phase, number> {
+  const f = Math.min(BALANCE.projektVaekstMaks, 1 + BALANCE.projektVaekstPrAar * Math.max(0, aarFor(s.uge) - 2012));
+  return { koncept: Math.round(BALANCE.koncetUger * f), design: Math.round(design * f), teknik: Math.round(teknik * f), test: Math.round(BALANCE.testUger * f) };
+}
+
 export function startProject(
   s: GameState,
   input: Pick<Project, 'navn' | 'typeId' | 'themeId' | 'markeder' | 'margin' | 'intensitet' | 'budget' | 'efterfoelgerAf'>,
@@ -93,7 +110,7 @@ export function startProject(
   if (!ts.ok) return afvis(s, ts.grund ?? 'Produkttypen er ikke tilgængelig.');
   const th = temaStatus(s, input.themeId);
   if (!th.ok) return afvis(s, th.grund ?? 'Temaet er ikke tilgængeligt.');
-  const markeder = [...new Set(input.markeder)].filter((m) => s.markeder[m] && s.markeder[m].vertikaler[type.vertikal].status !== 'ingen');
+  const markeder = tilladteMarkeder(input.typeId, [...new Set(input.markeder)].filter((m) => s.markeder[m] && s.markeder[m].vertikaler[type.vertikal].status !== 'ingen'));
   if (markeder.length === 0) return afvis(s, 'Vælg mindst ét marked, hvor I har (eller søger) licens.');
   if (input.margin < type.marginMin - 1e-9 || input.margin > type.marginMax + 1e-9) return afvis(s, 'Marginen ligger uden for markedets interval.');
   if (![1, 2, 3, 4, 5].includes(input.intensitet)) return afvis(s, 'Intensitet skal være 1-5.');
@@ -129,7 +146,7 @@ export function startProject(
     boostBrugt: 0,
     startUge: s.uge,
     faseUge: 0,
-    faseLaengde: { koncept: BALANCE.koncetUger, design: type.designUger, teknik: type.teknikUger, test: BALANCE.testUger },
+    faseLaengde: faseLaengder(s, type.designUger, type.teknikUger),
     klar: false,
     features: [...new Set([...(type.feature ? [type.feature] : []), ...forskningsFeatures(s, type.vertikal)])],
     foersteForsoeg: !s.kombinationsbog[key]?.set,

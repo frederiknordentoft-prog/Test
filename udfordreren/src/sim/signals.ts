@@ -42,6 +42,23 @@ export function pauserFor(sig: Signal): boolean {
   }
 }
 
+/** Signaler, der kan åbne en dialog (UI'ets DialogHost) */
+export const DIALOG_SIGNALER: Signal['k'][] = ['anmeldelse', 'galla', 'kvartal', 'event', 'messeVarsel', 'messe', 'nr1', 'top10', 'slut', 'runde', 'kontor', 'markedAabner', 'regel', 'sanktion', 'tilbud', 'sponsorAuktion', 'reaktion', 'aktSkift', 'verdensNyhed'];
+
+/** Åbner signalet en dialog? (messer uden stand, Top 10 uden for top 3 og de fleste reaktioner bliver toasts) */
+export function aabnerDialog(sig: Signal): boolean {
+  if (!DIALOG_SIGNALER.includes(sig.k)) return false;
+  if (sig.k === 'messe' && sig.stoerrelse === 0) return false;
+  if (sig.k === 'reaktion' && !reaktionSomDialog(sig.regel)) return false;
+  if (sig.k === 'top10' && !sig.foersteGang && sig.placering > 3) return false;
+  return true;
+}
+
+/** Beslutningspause i en uge: en dialog eller et auto-pause-signal (bruges af sim-harnessets pacing-mål) */
+export function ugenPauser(signaler: readonly Signal[]): boolean {
+  return signaler.some((x) => aabnerDialog(x) || pauserFor(x));
+}
+
 /** Reaktioner, der får en dialog (resten vises som toast og i nyhederne) */
 export function reaktionSomDialog(regel: string): boolean {
   return regel === 'R1' || regel === 'R8';

@@ -188,6 +188,8 @@ describe('Tilsynstillid og sanktioner (7.12)', () => {
     const r = makeRng(seedState(1));
     for (let i = 0; i < 30 && s.markeder.dk.licens !== 'inddraget'; i++) {
       if (s.markeder.dk.licens === 'suspenderet') s.markeder.dk.licens = 'aktiv';
+      s.uge += 13;
+      s.markeder.dk.tilsynstillid = 5;
       sanktioner(s, r);
     }
     const trin = s.signaler.filter((x) => x.k === 'sanktion').map((x) => (x as { trin: number }).trin);
@@ -198,12 +200,32 @@ describe('Tilsynstillid og sanktioner (7.12)', () => {
     const s = med(1, 30);
     s.kapital = 10;
     const r = makeRng(seedState(2));
-    for (let i = 0; i < 20 && s.markeder.dk.sanktion.trin < 2; i++) sanktioner(s, r);
+    for (let i = 0; i < 20 && s.markeder.dk.sanktion.trin < 2; i++) {
+      s.uge += 13;
+      s.markeder.dk.tilsynstillid = 30;
+      sanktioner(s, r);
+    }
     expect(s.kapital).toBeLessThan(10);
-    s.markeder.dk.tilsynstillid = 20;
-    for (let i = 0; i < 20 && s.markeder.dk.sanktion.trin < 3; i++) sanktioner(s, r);
+    for (let i = 0; i < 20 && s.markeder.dk.sanktion.trin < 3; i++) {
+      s.uge += 13;
+      s.markeder.dk.tilsynstillid = 20;
+      sanktioner(s, r);
+    }
     expect(s.markeder.dk.licens).toBe('suspenderet');
     expect(s.markeder.dk.suspenderetTil).toBe(s.uge + 8);
+  });
+  it('efter en sanktion løftes tilliden lidt, og der går mindst et halvt år til næste trin', () => {
+    const s = med(0, 50);
+    const r = makeRng(seedState(4));
+    for (let i = 0; i < 20 && s.markeder.dk.sanktion.trin < 1; i++) sanktioner(s, r);
+    expect(s.markeder.dk.sanktion.trin).toBe(1);
+    expect(s.markeder.dk.tilsynstillid).toBe(55);
+    s.markeder.dk.tilsynstillid = 30;
+    for (let i = 0; i < 10; i++) sanktioner(s, r);
+    expect(s.markeder.dk.sanktion.trin).toBe(1);
+    s.uge += 26;
+    for (let i = 0; i < 10 && s.markeder.dk.sanktion.trin < 2; i++) sanktioner(s, r);
+    expect(s.markeder.dk.sanktion.trin).toBe(2);
   });
   it('ingen sanktion over grænsen, og rolige kvartaler fører trappen ned', () => {
     const s = med(2, 80);

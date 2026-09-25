@@ -199,7 +199,7 @@ export function ugentligeAgenter(s: GameState, rng: Rng): void {
 // ---------- AI-transformationen (spec 6.16) ----------
 
 /** Hvor mange medarbejdere én agent erstatter ved transformationen */
-const PR_AGENT: Partial<Record<AgentFunktion, number>> = { kundeservice: 4, crm: 2, udvikling: 2, indhold: 2, trading: 1, risiko: 1 };
+const PR_AGENT: Partial<Record<AgentFunktion, number>> = { kundeservice: 4, crm: 2, udvikling: 2, indhold: 2, trading: 1 };
 
 export function transformationsKandidater(s: GameState): { staffId: string; funktion: AgentFunktion }[] {
   const res: { staffId: string; funktion: AgentFunktion }[] = [];

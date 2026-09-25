@@ -22,7 +22,7 @@ export const OFFSHORE_BASIS: Record<MarketId, [number, number][]> = {
   // dk: afgiften stiger til 28 % og strengheden til 3 i 2021 uden at kanaliseringen falder [F: 91,5 % i 2024]
   dk: [[2012, 12.5], [2016, 11], [2020.95, 11.3], [2021.05, -1], [2024, -0.7], [2030, -1.5], [2035, 2]],
   uk: [[2012, 8.6], [2020, 3.8], [2025, -0.2], [2030, -8], [2035, -8]],
-  se: [[2019, 11.3], [2023, 12], [2025, 12.8], [2030, 12], [2035, 11]],
+  se: [[2019, 11.3], [2023, 12.2], [2025, 13.4], [2030, 12.4], [2035, 11.2]],
   de: [[2021, -12], [2023, -2], [2025, -0.6], [2030, -3.8], [2035, -4]],
   nl: [[2021, 23], [2025, 24.2], [2030, 26], [2035, 26]],
   on: [[2022, 15.9], [2024, 8.2], [2025, 10.5], [2030, 9.5], [2035, 9]],
@@ -61,6 +61,7 @@ export const OFFSHORE_BRAND = {
   opstart: 2, // mio. kr.
   andel: 0.04, // andel af offshore-puljen ved middel kvalitet
   andelGraa: 0.08, // andel af grå markeder (no)
+  fuldRaekkeviddeKunder: 300000, // brandet når sin fulde andel, når firmaet har så mange kunder
   omkostning: 0.15, // licens, betalinger og hosting i % af BSI
   tabRisikoPrAar: 0.1, // risiko for licenstab i alle regulerede markeder
 };

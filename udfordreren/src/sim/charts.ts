@@ -1,13 +1,29 @@
 // Ugentlig Top 10 pr. marked (spec 6.3) med egne og konkurrenters produkter, pile og "NY!".
 // Listen rangerer efter ugens nye spillere pr. produkt — det nærmeste, en spiludbyder kommer på
 // Game Dev Storys ugentlige salg — så en stærk lancering kan storme listen og derefter glide ned.
+import { BALANCE } from '../data/balance';
 import type { ChartEntry, GameState, MarketId } from './types';
 import { MARKETS } from '../data/markets';
 import { nyhed, signal } from './util';
+import { aarDecimal } from './time';
+
+/** Vægt på ugens nye spillere i hitlistens glidende gennemsnit */
+export const HITLISTE_GLAT = 1;
+
+/** Statsselskabets hjemmebane på hitlisten de første år (se BALANCE.hjemmebane) */
+export function hjemmebane(s: GameState, ejer: string, m: MarketId): number {
+  if (ejer === 'spiller') return 1;
+  const c = s.konkurrenter.find((x) => x.id === ejer);
+  if (!c || c.arketype !== 'statsselskab' || c.markeder[0] !== m) return 1;
+  const aar = aarDecimal(s.uge);
+  if (aar < BALANCE.hjemmebaneFuldTil) return BALANCE.hjemmebane;
+  if (aar >= BALANCE.hjemmebaneSlut) return 1;
+  return BALANCE.hjemmebane - (BALANCE.hjemmebane - 1) * ((aar - BALANCE.hjemmebaneFuldTil) / (BALANCE.hjemmebaneSlut - BALANCE.hjemmebaneFuldTil));
+}
 
 export function beregnTop10(s: GameState, m: MarketId): ChartEntry[] {
   const forrige = new Map(s.markeder[m].top10.map((e) => [e.productId, e.placering]));
-  const nye = (p: (typeof s.produkter)[number]) => p.nyeSpillerePrUge?.[m] ?? 0;
+  const nye = (p: (typeof s.produkter)[number]) => (p.hitlisteTal?.[m] ?? p.nyeSpillerePrUge?.[m] ?? 0) * hjemmebane(s, p.ejer, m);
   const kandidater = s.produkter
     .filter((p) => p.aktiv && nye(p) > 0)
     .sort((a, b) => nye(b) - nye(a) || (b.bsiPrUge[m] ?? 0) - (a.bsiPrUge[m] ?? 0) || (a.id < b.id ? -1 : 1))
@@ -21,6 +37,12 @@ export function beregnTop10(s: GameState, m: MarketId): ChartEntry[] {
 }
 
 export function ugentligHitliste(s: GameState): void {
+  // Hitlisten rangerer efter et glidende gennemsnit af nye spillere, så en enkelt lanceringsuge ikke giver førstepladsen [D]
+  for (const p of s.produkter) {
+    if (!p.aktiv) continue;
+    const t = (p.hitlisteTal ??= {});
+    for (const m of p.markeder) t[m] = HITLISTE_GLAT * (p.nyeSpillerePrUge?.[m] ?? 0) + (1 - HITLISTE_GLAT) * (t[m] ?? 0);
+  }
   for (const m of Object.keys(s.markeder) as MarketId[]) {
     if (m === 'dk' && s.markeder.dk.top10.some((e) => s.produkter.find((p) => p.id === e.productId)?.ejer === 'spiller')) {
       s.kvartalAkk.top10Uger = (s.kvartalAkk.top10Uger ?? 0) + 1;

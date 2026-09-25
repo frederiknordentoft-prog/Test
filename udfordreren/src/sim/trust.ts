@@ -9,7 +9,7 @@ import { forskningsEffekt } from './insight';
 import { passiveEffekter } from './staff';
 import { byTillid, risikoAndel } from './town';
 import { agentEffekt } from './agents';
-import { regelEffekt } from './regulation';
+import { regelEffekt, effektivBonus, effektivVip } from './regulation';
 import { AI_EFFEKT } from '../data/ai';
 
 export type TillidsPost = { tekst: string; vaerdi: number };
@@ -18,12 +18,18 @@ export type TillidsPost = { tekst: string; vaerdi: number };
 export function tillidsPoster(s: GameState, m: MarketId): TillidsPost[] {
   const ms = s.markeder[m];
   const poster: TillidsPost[] = [];
-  if (s.bonusNiveau > 0) poster.push({ tekst: `Bonusniveau ${s.bonusNiveau}`, vaerdi: TRUST.bonusNiveau * s.bonusNiveau });
-  if (s.vipProgram > 0) poster.push({ tekst: `VIP-program ${s.vipProgram}`, vaerdi: TRUST.vipProgram * s.vipProgram });
+  // Spec 7.12's tal er effekten ved fuldt niveau (3); lavere niveauer koster forholdsmæssigt.
+  // Tilsynet ser mest på de store: adfærdsposterne vejer 30 % for en lille udbyder og fuldt ved 5 % markedsandel [D]
+  const synlighed = TRUST.synlighedMin + (1 - TRUST.synlighedMin) * clamp((ms.andele.spiller ?? 0) / TRUST.synlighedAndel, 0, 1);
+  const vaegt = (v: number) => Math.round(v * synlighed * 10) / 10;
+  const bonus = effektivBonus(s, m);
+  const vip = effektivVip(s, m);
+  if (bonus > 0) poster.push({ tekst: `Bonusniveau ${bonus}`, vaerdi: vaegt((TRUST.bonusNiveau * bonus) / 3) });
+  if (vip > 0) poster.push({ tekst: `VIP-program ${vip}`, vaerdi: vaegt((TRUST.vipProgram * vip) / 3) });
   const hoejIntensitet = s.produkter.some((p) => p.aktiv && p.ejer === 'spiller' && p.markeder.includes(m) && p.intensitet > 3);
-  if (hoejIntensitet) poster.push({ tekst: 'Produkter med intensitet over 3', vaerdi: TRUST.intensitetOver3 });
+  if (hoejIntensitet) poster.push({ tekst: 'Produkter med intensitet over 3', vaerdi: vaegt(TRUST.intensitetOver3) });
   const aggressiv = CHANNEL_IDS.some((k) => CHANNELS[k].aggressiv && (s.marketingMix[k] ?? 0) > 0);
-  if (aggressiv) poster.push({ tekst: 'Aggressive kanaler (tv/streamere)', vaerdi: TRUST.aggressivKanal });
+  if (aggressiv) poster.push({ tekst: 'Aggressive kanaler (tv/streamere)', vaerdi: vaegt(TRUST.aggressivKanal) });
   const comp = passiveEffekter(s).compliance;
   if (comp > 0) poster.push({ tekst: `Compliance-medarbejdere (${comp})`, vaerdi: Math.min(3, TRUST.complianceNiveau * comp) });
   const eff = forskningsEffekt(s);
@@ -38,12 +44,13 @@ export function tillidsPoster(s: GameState, m: MarketId): TillidsPost[] {
     if (ae.risikoOk) poster.push({ tekst: 'AI-risikodetektion med overvågning', vaerdi: TRUST.aiRisikoMedOvervaagning });
     if (ae.tillidPrKvartal > 0) poster.push({ tekst: 'Compliance-agenter', vaerdi: Math.round(ae.tillidPrKvartal * 10) / 10 });
   }
+  if (s.hyperpersonalisering.aktiv && !agentEffekt(s).risikoOk) poster.push({ tekst: 'Hyperpersonalisering uden AI-risikodetektion', vaerdi: vaegt(TRUST.hyperUdenRisiko) });
   if (regelEffekt(s, m).kraeverRisikoAgent && !agentEffekt(s).risikoOk) poster.push({ tekst: 'AI-risikokrav ikke opfyldt', vaerdi: AI_EFFEKT.ansvarligAiTillid });
   const sum = poster.reduce((a, p) => a + p.vaerdi, 0);
-  // Langsom tilbagevenden mod startniveau, når intet andet trækker
-  if (sum === 0 && ms.tilsynstillid !== TRUST.start) {
-    poster.push({ tekst: 'Normalisering', vaerdi: ms.tilsynstillid < TRUST.start ? TRUST.genopretning : -TRUST.genopretning });
-  }
+  // Tilsynet ser frisk på jer hvert kvartal: tilliden trækkes en tiendedel tilbage mod 70 [D]
+  const regression = Math.round(-TRUST.genopretning * (ms.tilsynstillid - TRUST.start) * 10) / 10;
+  if (regression !== 0) poster.push({ tekst: regression > 0 ? 'Tilsynet giver jer en ny chance' : 'Tilsynet ser frisk på jer', vaerdi: regression });
+  void sum;
   return poster;
 }
 
@@ -106,9 +113,11 @@ export function sanktioner(s: GameState, rng: Rng, risikoFaktor = 1): void {
     const naeste = (ms.sanktion.trin + 1) as 1 | 2 | 3 | 4;
     if (naeste > 4) continue;
     if (ms.tilsynstillid >= sanktionsGraense(naeste)) continue;
+    if (ms.sanktion.sidsteUge !== null && s.uge - ms.sanktion.sidsteUge < TRUST.sanktionPause) continue;
     if (!rng.chance(SANKTION_RISIKO * risikoFaktor)) continue;
     ms.sanktion.trin = naeste;
     ms.sanktion.sidsteUge = s.uge;
+    if (naeste < 4) ms.tilsynstillid = clamp(ms.tilsynstillid + TRUST.sanktionLoeft[naeste as 1 | 2 | 3], 0, 100);
     const tilsyn = MARKETS[m].tilsyn;
     if (naeste === 1) {
       s.kapital -= 0.05;

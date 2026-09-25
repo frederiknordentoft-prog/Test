@@ -3,7 +3,7 @@
 import type { GameState, LiveProduct, MarketId, Params, ProductTypeId, Review, ThemeId, Vertical } from './types';
 import type { Rng } from './rng';
 import { BALANCE } from '../data/balance';
-import { REVIEWERS, GULDKUPON_TOTAL, HALL_OF_FAME_TOTAL } from '../data/reviewers';
+import { REVIEWERS, GULDKUPON_TOTAL, HALL_OF_FAME_TOTAL, HALL_OF_FAME_TYPENIVEAU } from '../data/reviewers';
 import { PRODUCT_TYPES } from '../data/productTypes';
 import { fitFor } from '../data/compatibility';
 import { aarDecimal, kurve } from './time';
@@ -110,7 +110,7 @@ export function beregnAnmeldelser(s: GameState, rng: Rng, inp: ReviewInput): Rev
     anmeldelser,
     total40,
     guldkupon: total40 >= GULDKUPON_TOTAL,
-    hallOfFame: total40 >= HALL_OF_FAME_TOTAL,
+    hallOfFame: total40 >= HALL_OF_FAME_TOTAL && (s.niveauer.type[inp.typeId] ?? 1) >= HALL_OF_FAME_TYPENIVEAU,
     kvalitet: kvalitetFra(r, fitFor(inp.typeId, inp.themeId), inp.fejl),
     ratio: r,
   };

@@ -29,10 +29,10 @@ export const BY = {
   neutralVaerdi: 2.03, // gennemsnitsværdi i ligevægt ved neutrale valg
   /** Hvor mange af de 200, der er kunder: 40 × log10(kunder) */
   aktivePrDekade: 40,
-  /** Tillid: −0,8 pr. procentpoint risiko+problem over 8 % (spec 7.12: −8 × (andel − 0,08), skaleret til pp/10) */
+  /** Tillid: spec 7.12's −8 × (andel − 0,08) × 3, dvs. −0,24 pr. procentpoint over 8 % */
   tillidTaerskel: 0.08,
-  tillidPrPp: -0.8,
-  tillidMaks: -12,
+  tillidPrPp: -0.24,
+  tillidMaks: -6,
   /** Politisk pres, når en stor udbyder har en rød by */
   presTaerskel: 0.2,
   presAndel: 0.03,

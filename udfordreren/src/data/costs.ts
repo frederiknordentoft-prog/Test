@@ -8,10 +8,10 @@ export const INDBETALING_PR_BSI = 2.0;
 /** Bonus i % af BSI pr. niveau (0-3) [D] */
 export const BONUS_PCT = [0, 0.05, 0.1, 0.18] as const;
 /** Bonus' effekt på tilgang og churn [D] */
-export const BONUS_TILGANG = [0, 0.15, 0.3, 0.5] as const;
+export const BONUS_TILGANG = [0, 0.18, 0.42, 0.8] as const;
 export const BONUS_CHURN = [0, -0.05, -0.1, -0.15] as const;
 /** VIP-program: ARPU-løft og omkostning i % af BSI [D] */
-export const VIP_ARPU = [0, 0.05, 0.1, 0.18] as const;
+export const VIP_ARPU = [0, 0.06, 0.13, 0.25] as const;
 export const VIP_PCT = [0, 0.01, 0.02, 0.04] as const;
 /** Kasino-content via aggregator: 12 % af kasino-BSI [D] */
 export const AGGREGATOR_PCT = 0.12;
@@ -24,9 +24,9 @@ export type OfficeDef = { id: OfficeTier; navn: string; pladser: number; pris: n
 export const OFFICES: OfficeDef[] = [
   { id: 'garage', navn: 'Garage', pladser: 2, pris: 0, husleje: 0.001, projekter: 1, krav: '–' },
   { id: 'kaelder', navn: 'Kælder', pladser: 5, pris: 1.2, husleje: 0.006, projekter: 1, krav: 'Kapital' },
-  { id: 'kontor', navn: 'Kontor', pladser: 10, pris: 6, husleje: 0.02, projekter: 2, krav: 'Kapital og en Guldkupon' },
-  { id: 'etage', navn: 'Etage', pladser: 18, pris: 30, husleje: 0.06, projekter: 3, krav: 'Kapital og en licens uden for Danmark' },
-  { id: 'hovedkontor', navn: 'Hovedkontor', pladser: 30, pris: 120, husleje: 0.15, projekter: 4, krav: 'Kapital' },
+  { id: 'kontor', navn: 'Kontor', pladser: 10, pris: 6, husleje: 0.02, projekter: 1, krav: 'Kapital og en Guldkupon' },
+  { id: 'etage', navn: 'Etage', pladser: 18, pris: 30, husleje: 0.06, projekter: 2, krav: 'Kapital og en licens uden for Danmark' },
+  { id: 'hovedkontor', navn: 'Hovedkontor', pladser: 30, pris: 120, husleje: 0.15, projekter: 2, krav: 'Kapital' },
 ];
 export const OFFICE_BY_ID = Object.fromEntries(OFFICES.map((o) => [o.id, o])) as Record<OfficeTier, OfficeDef>;
 

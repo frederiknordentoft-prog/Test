@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { beregnAnmeldelser, markedsStandard, paramQ, scoreFraQ, anmelderQ, kvalitetFra } from '../../src/sim/reviews';
 import { makeRng, seedState } from '../../src/sim/rng';
-import { GULDKUPON_TOTAL, HALL_OF_FAME_TOTAL, REVIEWERS } from '../../src/data/reviewers';
+import { GULDKUPON_TOTAL, HALL_OF_FAME_TOTAL, HALL_OF_FAME_TYPENIVEAU, REVIEWERS } from '../../src/data/reviewers';
 import type { Params } from '../../src/sim/types';
 import { nyt } from './helpers';
 
@@ -25,11 +25,16 @@ describe('Anmeldelser', () => {
     expect(r.total40).toBeLessThanOrEqual(32);
   });
 
-  it('Guldkupon ved ≥ 32 og Hall of Fame ved ≥ 36', () => {
+  it('Guldkupon ved ≥ 32 og Hall of Fame ved ≥ 36 (og mesterskab i genren)', () => {
     const s = nyt();
     const std = markedsStandard(s, 'prematch');
     const rng = makeRng(seedState(3));
-    const staerk = beregnAnmeldelser(s, rng, { typeId: 'livebetting', themeId: 'fodbold', params: lige(std * 4), fejl: 0, margin: 0.07, intensitet: 3, markeder: ['dk'], tidligEfterfoelger: false });
+    const input = { typeId: 'livebetting' as const, themeId: 'fodbold' as const, params: lige(std * 4), fejl: 0, margin: 0.07, intensitet: 3 as const, markeder: ['dk' as const], tidligEfterfoelger: false };
+    const nybegynder = beregnAnmeldelser(s, makeRng(seedState(3)), input);
+    expect(nybegynder.total40).toBeGreaterThanOrEqual(HALL_OF_FAME_TOTAL);
+    expect(nybegynder.hallOfFame).toBe(false);
+    s.niveauer.type.livebetting = HALL_OF_FAME_TYPENIVEAU;
+    const staerk = beregnAnmeldelser(s, rng, input);
     expect(staerk.total40).toBeGreaterThanOrEqual(HALL_OF_FAME_TOTAL);
     expect(staerk.guldkupon).toBe(true);
     expect(staerk.hallOfFame).toBe(true);

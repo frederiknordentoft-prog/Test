@@ -161,6 +161,9 @@ export function ugentligtOffshoreBrand(s: GameState, rng: Rng): number {
   if (!s.offshoreBrand) return 0;
   const egne = s.produkter.filter((p) => p.ejer === 'spiller' && p.aktiv);
   const kvalitet = egne.length ? Math.max(...egne.map((p) => p.kvalitet)) : 0.3;
+  // Brandets rækkevidde følger firmaets størrelse: en garage henter ikke 4 % af verdens grå marked [D]
+  const kunder = Object.values(s.markeder).reduce((a, m) => a + m.spillerKunder.betting + m.spillerKunder.kasino, 0);
+  const raekkevidde = clamp(kunder / OFFSHORE_BRAND.fuldRaekkeviddeKunder, 0.05, 1);
   const harKasino = egne.some((p) => PRODUCT_TYPES[p.typeId].vertikal === 'kasino');
   const harBetting = egne.some((p) => PRODUCT_TYPES[p.typeId].vertikal === 'betting');
   for (const m of Object.keys(s.markeder) as MarketId[]) {
@@ -171,11 +174,11 @@ export function ugentligtOffshoreBrand(s: GameState, rng: Rng): number {
       const aar = aarDecimal(s.uge);
       // Når Norge åbner, skrumper det grå marked med offshore-andelen
       const rest = m === 'no' && norgeAaben(s) ? norgeOffshore(s) : 1;
-      if (harKasino) b += ((kurve(graa.kasino, aar) * 1000) / 52) * OFFSHORE_BRAND.andelGraa * (0.5 + kvalitet) * rest;
-      if (harBetting) b += ((kurve(graa.betting, aar) * 1000) / 52) * OFFSHORE_BRAND.andelGraa * (0.5 + kvalitet) * rest;
+      if (harKasino) b += ((kurve(graa.kasino, aar) * 1000) / 52) * OFFSHORE_BRAND.andelGraa * (0.5 + kvalitet) * rest * raekkevidde;
+      if (harBetting) b += ((kurve(graa.betting, aar) * 1000) / 52) * OFFSHORE_BRAND.andelGraa * (0.5 + kvalitet) * rest * raekkevidde;
     } else if (ms.aaben) {
-      if (harKasino) b += ms.markedsBsiPrUge.kasino * ms.offshore.kasino * OFFSHORE_BRAND.andel * (0.5 + kvalitet);
-      if (harBetting) b += ms.markedsBsiPrUge.betting * ms.offshore.betting * OFFSHORE_BRAND.andel * (0.5 + kvalitet);
+      if (harKasino) b += ms.markedsBsiPrUge.kasino * ms.offshore.kasino * OFFSHORE_BRAND.andel * (0.5 + kvalitet) * raekkevidde;
+      if (harBetting) b += ms.markedsBsiPrUge.betting * ms.offshore.betting * OFFSHORE_BRAND.andel * (0.5 + kvalitet) * raekkevidde;
     }
     ms.offshoreBrandBsiPrUge = b;
     sum += b;

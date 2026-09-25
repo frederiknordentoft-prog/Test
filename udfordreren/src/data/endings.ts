@@ -18,10 +18,10 @@ export const SLUT_IDS = Object.keys(SLUTNINGER) as SlutId[];
 /** Grænser for slutningerne ved spillets afslutning (uge 1247) */
 export const SLUT_KRAV = {
   boersVaerdi: 1500, // mio. kr. i selskabsværdi
-  ansvarligEftermaele: 70,
-  ansvarligRisiko: 0.07,
+  ansvarligEftermaele: 88,
+  ansvarligRisiko: 0.06,
   aiAgenter: 8,
-  aiAndel: 0.3, // agenter / (agenter + medarbejdere)
+  aiAndel: 0.4, // agenter / (agenter + medarbejdere)
   leverandoerKunder: 5,
   /** Danske Lykke byder på en mindre udfordrer (kvartalsvis chance) */
   danskeLykkeChance: 0.03,

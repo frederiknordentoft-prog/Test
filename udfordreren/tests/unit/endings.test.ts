@@ -14,7 +14,7 @@ import { koer, nyt } from './helpers';
 const act = (s: GameState, a: Action) => applyActionMut(s, makeRng(s.rngState), a);
 
 function godtEftermaele(s: GameState): void {
-  s.eftermaeleAkk = { tillidSum: 90 * 500, tillidUger: 500, risikoSum: 0.04 * 100, risikoProever: 100, maxSanktion: 0, dkTabt: false };
+  s.eftermaeleAkk = { tillidSum: 96 * 500, tillidUger: 500, risikoSum: 0.02 * 100, risikoProever: 100, maxSanktion: 0, dkTabt: false };
   s.galla = [{ aar: 2020, vundet: ['produkt', 'innovation', 'ansvar', 'udfordrer', 'platform'], kategorier: [] }, { aar: 2021, vundet: ['produkt', 'ansvar', 'udfordrer', 'innovation', 'platform'], kategorier: [] }];
   for (const p of s.produkter.filter((x) => x.ejer !== 'spiller').slice(0, 6)) {
     const q = structuredClone(p);
@@ -24,7 +24,9 @@ function godtEftermaele(s: GameState): void {
     q.hallOfFame = true;
     s.produkter.push(q);
   }
-  for (let i = 0; i < 30; i++) s.kombinationsbog[`k${i}`] = { set: true, bedste40: 30 };
+  for (let i = 0; i < 60; i++) s.kombinationsbog[`k${i}`] = { set: true, bedste40: 30 };
+  s.forskning.ulaast.push('mobilApp', 'cashout', 'kasinoLobby', 'ansvarligtSpil1', 'streaming', 'gamification', 'ansvarligtSpil2', 'personalisering');
+  for (const m of ['uk', 'se', 'on'] as const) s.markeder[m].licens = 'aktiv';
 }
 
 describe('Slutninger (6.17)', () => {

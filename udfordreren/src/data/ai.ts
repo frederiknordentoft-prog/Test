@@ -37,7 +37,7 @@ export const AGENTER: Record<AgentFunktion, AgentDef> = {
   },
   risiko: {
     id: 'risiko', navn: 'Risikoagent', beskrivelse: 'Finder tidlige tegn på problemspil. Byen bliver grønnere, og tilsynet stoler mere på jer. Opfylder AI-risikokrav.',
-    kapacitet: 3, compute2026: 0.07, fejl: [0.05, 0.005], data: 'kontoplatform', erstatter: 'analytiker',
+    kapacitet: 3, compute2026: 0.07, fejl: [0.05, 0.005], data: 'kontoplatform', // erstatter ingen: risikodetektion er et bevidst valg
   },
   compliance: {
     id: 'compliance', navn: 'Compliance-agent', beskrivelse: 'Tjekker KYC og markedsføring. Bedre tilsynstillid, men kræver mennesker ved roret for fuld effekt.',

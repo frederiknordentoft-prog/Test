@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { hjemmebane } from '../../src/sim/charts';
 import { applyActionMut } from '../../src/sim/actions';
 import { makeRng } from '../../src/sim/rng';
 import { stepMut } from '../../src/sim/step';
@@ -23,16 +24,29 @@ function lancerEt(s: GameState, total40 = 26): LiveProduct {
 }
 
 describe('Hitlisten', () => {
-  it('rangerer efter ugens nye spillere med pile og NY!', () => {
+  it('rangerer efter ugens nye spillere (statsselskabet med hjemmebane til 2016) med pile og NY!', () => {
     const s = nyt();
     koer(s, 1);
     const t1 = s.markeder.dk.top10;
     expect(t1.length).toBe(10);
-    const nye = t1.map((e) => s.produkter.find((p) => p.id === e.productId)!.nyeSpillerePrUge?.dk ?? 0);
+    const nye = t1.map((e) => {
+      const p = s.produkter.find((x) => x.id === e.productId)!;
+      return (p.nyeSpillerePrUge?.dk ?? 0) * hjemmebane(s, p.ejer, 'dk');
+    });
     for (let i = 1; i < nye.length; i++) expect(nye[i - 1]).toBeGreaterThanOrEqual(nye[i]);
     expect(t1.every((e) => e.ny)).toBe(true);
     koer(s, 1);
     expect(s.markeder.dk.top10.every((e) => !e.ny && e.forrige !== null)).toBe(true);
+  });
+  it('statsselskabets hjemmebane aftager fra 2016 til 2018', () => {
+    const s = nyt();
+    expect(hjemmebane(s, 'danskeLykke', 'dk')).toBe(3);
+    expect(hjemmebane(s, 'danskeLykke', 'uk')).toBe(1);
+    expect(hjemmebane(s, 'bet356', 'dk')).toBe(1);
+    s.uge = 52 * 5;
+    expect(hjemmebane(s, 'danskeLykke', 'dk')).toBe(2);
+    s.uge = 52 * 6;
+    expect(hjemmebane(s, 'danskeLykke', 'dk')).toBe(1);
   });
   it('Danske Lykke og tre konkurrenter er med fra start', () => {
     const s = nyt();

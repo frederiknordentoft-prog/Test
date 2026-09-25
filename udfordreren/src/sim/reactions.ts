@@ -194,7 +194,8 @@ function spillerAndel(s: GameState, m: MarketId): number {
 function aggressionsIndeks(s: GameState, m: MarketId): number {
   const aggressiveKanaler = CHANNEL_IDS.filter((k) => CHANNELS[k].aggressiv && (s.marketingMix[k] ?? 0) > 0).length;
   const hoejIntensitet = s.produkter.some((p) => p.aktiv && p.ejer === 'spiller' && p.markeder.includes(m) && p.intensitet > 3) ? 1 : 0;
-  return effektivBonus(s, m) + effektivVip(s, m) + aggressiveKanaler + hoejIntensitet;
+  const hyper = s.hyperpersonalisering.aktiv && !r12Aktiv(s) ? 2 : 0;
+  return effektivBonus(s, m) + effektivVip(s, m) + aggressiveKanaler + hoejIntensitet + hyper;
 }
 
 export function kvartalsReaktioner(s: GameState, rng: Rng): void {
