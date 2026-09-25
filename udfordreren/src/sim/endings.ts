@@ -115,10 +115,11 @@ export function baerendeLicens(s: GameState): boolean {
   return (Object.keys(s.markeder) as MarketId[]).some((m) => m !== 'dk' && s.markeder[m].licens === 'aktiv' && s.markeder[m].spillerKunder.betting + s.markeder[m].spillerKunder.kasino >= 1000);
 }
 
-/** Ugentligt: tabt dansk licens uden andre bærende markeder slutter spillet */
+/** Ugentligt: en inddraget licens uden andre bærende markeder slutter spillet */
 export function ugentligSlut(s: GameState): void {
   if (s.slut) return;
-  if (s.markeder.dk.licens === 'inddraget' && !baerendeLicens(s)) afslut(s, 'tabtLicens');
+  const inddraget = (Object.keys(s.markeder) as MarketId[]).some((m) => s.markeder[m].licens === 'inddraget');
+  if (inddraget && !baerendeLicens(s)) afslut(s, 'tabtLicens');
 }
 
 /** Kvartalsvis: Danske Lykke byder på en mindre udfordrer (statsselskabet køber, fakta a3) */

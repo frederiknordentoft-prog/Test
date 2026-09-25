@@ -7,7 +7,7 @@ import { VERTICALS } from '../data/verticals';
 import { VERTIKAL_LICENS, LICENS_AARSGEBYR } from '../data/costs';
 import { TRUST } from '../data/trust';
 import { SELVUDELUKKEDE, START_BLOKERING } from '../data/offshore';
-import { aarDecimal, kurve, trin } from './time';
+import { aarDecimal, datoTekst, kurve, trin } from './time';
 import { afvis, betal, clamp, nyhed, signal } from './util';
 import { VERTIKALER } from './customers';
 import { markedStoerrelse, norgeAaben, norgeOffshore, offshoreAndele, offshoreDynPp, offshoreRefPp, offshoreTrendPp } from './offshore';
@@ -64,7 +64,11 @@ export function initMarkeder(uge: number): Record<MarketId, MarketState> {
 export function licensPris(s: GameState, m: MarketId): { gebyr: number; uger: number } {
   const ms = s.markeder[m];
   const harMarkedslicens = VERTIKALER.some((v) => ms.vertikaler[v].status !== 'ingen');
-  if (harMarkedslicens) return { gebyr: VERTIKAL_LICENS.gebyr, uger: VERTIKAL_LICENS.uger };
+  if (harMarkedslicens) {
+    // En vertikal-tilføjelse kan ikke blive godkendt før selve markedslicensen
+    const venter = VERTIKALER.filter((v) => ms.vertikaler[v].status === 'ansoegt').map((v) => (ms.vertikaler[v].klarUge ?? s.uge) - s.uge);
+    return { gebyr: VERTIKAL_LICENS.gebyr, uger: Math.max(VERTIKAL_LICENS.uger, ...venter) };
+  }
   return { gebyr: MARKETS[m].licensGebyr, uger: MARKETS[m].licensUger };
 }
 
@@ -92,6 +96,40 @@ export function applyLicense(s: GameState, m: MarketId, v: Vertical): boolean {
   return true;
 }
 
+/** Varsel om faste afgiftstrin (så mange uger før, de træder i kraft) */
+export const AFGIFT_VARSEL_UGER = 39;
+
+const pct = (x: number) => `${Math.round(x * 1000) / 10} %`.replace('.', ',');
+
+/** Faste afgiftstrin fra markedsdata: nyhed ni måneder før og igen, når trinnet træder i kraft */
+function afgiftsTrin(s: GameState, id: MarketId): void {
+  const def = MARKETS[id];
+  const fund = new Map<string, { uge: number; fra: number; til: number; varsel: boolean; vertikaler: Vertical[] }>();
+  for (const v of VERTIKALER) {
+    const punkter = def.afgift[v];
+    for (let i = 1; i < punkter.length; i++) {
+      const [u, til] = punkter[i];
+      const varsel = u === s.uge + AFGIFT_VARSEL_UGER;
+      if (!varsel && u !== s.uge) continue;
+      if (!markedAabent(id, u)) continue;
+      const fra = punkter[i - 1][1];
+      const noegle = `${u}|${fra}|${til}|${varsel}`;
+      const f = fund.get(noegle);
+      if (f) f.vertikaler.push(v);
+      else fund.set(noegle, { uge: u, fra, til, varsel, vertikaler: [v] });
+    }
+  }
+  for (const f of fund.values()) {
+    const hvad = f.vertikaler.length === VERTIKALER.length ? 'afgiften' : `afgiften på ${f.vertikaler.map((v) => VERTICALS[v].kort.toLowerCase()).join(' og ')}`;
+    const retning = f.til > f.fra ? 'stiger' : 'falder';
+    const tekst = f.varsel
+      ? `${def.navn}: ${hvad} ${retning} fra ${pct(f.fra)} til ${pct(f.til)} i ${datoTekst(f.uge)}. Vedtaget og varslet.`
+      : `${def.navn}: ${hvad} er nu ${pct(f.til)} (før ${pct(f.fra)}).`;
+    nyhed(s, tekst.charAt(0).toUpperCase() + tekst.slice(1), 'marked');
+    if (s.markeder[id].licens !== 'ingen') signal(s, { k: 'afgift', marked: id, vertikaler: f.vertikaler, fra: f.fra, til: f.til, varsel: f.varsel, uge: f.uge });
+  }
+}
+
 /** Ugentlig opdatering: åbning, afgift, strenghed, offshore, markedsstørrelse, hold-varians, licenser */
 export function ugentligeMarkeder(s: GameState, rng: Rng): void {
   for (const id of MARKET_IDS) {
@@ -104,6 +142,7 @@ export function ugentligeMarkeder(s: GameState, rng: Rng): void {
       signal(s, { k: 'markedAabner', marked: id });
       nyhed(s, `${def.navn} åbner for licenser! ${def.beskrivelse}`, 'marked');
     }
+    afgiftsTrin(s, id);
     ms.afgiftPrVertikal = { betting: trin(def.afgift.betting, s.uge), kasino: trin(def.afgift.kasino, s.uge) };
     ms.afgift = (ms.afgiftPrVertikal.betting + ms.afgiftPrVertikal.kasino) / 2 + ms.afgiftTillaeg / 100;
     ms.strenghed = trin(def.strenghed, s.uge);

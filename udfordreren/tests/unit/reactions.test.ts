@@ -8,6 +8,7 @@ import {
 import { markedsindtog, ugentligeKonkurrenter } from '../../src/sim/competitors';
 import { ugentligRegulering } from '../../src/sim/regulation';
 import { startTrend } from '../../src/sim/trends';
+import { ugeFor } from '../../src/sim/time';
 import { platformKvalitet, ugentligePlatforme } from '../../src/sim/platforms';
 import { PLATFORM_MODELS, MIGRERING } from '../../src/data/platforms';
 import { R1, R2, R3_FORDEL, R4, R5, R7 } from '../../src/data/reactionRules';
@@ -280,6 +281,7 @@ describe('R10 statskassen', () => {
   it('en krise kan give en varslet afgiftsstigning', () => {
     const s = nyt();
     koer(s, 1);
+    s.uge = ugeFor(2026, 0); // de faste afgiftsforløb følger virkeligheden til 2026
     startTrend(s, 'inflation', 520);
     expect(s.trends.some((t) => (t.effekt.afgiftRisiko ?? 0) > 0)).toBe(true);
     expect(indtil(s, (x) => x.reaktionsTaeller.R10 > 0)).toBe(true);
@@ -291,6 +293,7 @@ describe('R11 kanalisering', () => {
   it('to år under målet udløser en reaktion', () => {
     const s = nyt();
     koer(s, 1);
+    s.uge = ugeFor(2027, 0); // R11 gælder i AI-akten
     const m = (Object.keys(KANALISERINGSMAAL) as MarketId[]).find((x) => s.markeder[x].aaben)!;
     s.markeder[m].kanalisering = 0.1;
     s.markeder[m].lavKanaliseringUger = 103;

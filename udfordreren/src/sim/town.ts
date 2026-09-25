@@ -10,7 +10,7 @@ import { MARKETS } from '../data/markets';
 import { forskningsEffekt } from './insight';
 import { effektivBonus, effektivVip } from './regulation';
 import { agentEffekt } from './agents';
-import { clamp, signal } from './util';
+import { aendrPres, clamp, signal } from './util';
 
 export const AKTIVE_PROFILER: TownProfile[] = ['rekreativ', 'engageret', 'vip', 'risiko', 'problem'];
 
@@ -228,6 +228,6 @@ export function kvartalsBy(s: GameState): void {
     const ms = s.markeder[m];
     if (ms.licens !== 'aktiv') continue;
     const a = risikoAndel(s, m);
-    if (a !== null && a > BY.presTaerskel && (ms.andele.spiller ?? 0) > BY.presAndel) ms.politiskPres = clamp(ms.politiskPres + BY.presPrKvartal, 0, 5);
+    if (a !== null && a > BY.presTaerskel && (ms.andele.spiller ?? 0) > BY.presAndel) aendrPres(s, m, BY.presPrKvartal, 'Jeres kunder i risiko og problem');
   }
 }

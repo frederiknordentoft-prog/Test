@@ -9,7 +9,7 @@ import { THEMES, THEME_IDS } from '../data/themes';
 import { fitFor } from '../data/compatibility';
 import { BALANCE } from '../data/balance';
 import { aarFor, trin } from './time';
-import { afvis, betal, clamp, nyId, nyhed, signal } from './util';
+import { aendrPres, afvis, betal, clamp, nyId, nyhed, signal } from './util';
 import { konkurrentAnmeldelser, produktVertikal } from './reviews';
 import { lanceringsBoelge, lanceringsBoelgeStoerrelse, frigivBoelge, markedsKunder, produktVaegt, VERTIKALER } from './customers';
 import { konkurrentMarketing, r4Markedsindtog, r6StatsejetExit, taelReaktion } from './reactions';
@@ -92,7 +92,7 @@ function historiskeTiltag(s: GameState): void {
       continue;
     }
     if (e.flag && !s.flags.includes(e.flag)) s.flags.push(e.flag);
-    if (e.presMarked) s.markeder[e.presMarked.marked].politiskPres = clamp(s.markeder[e.presMarked.marked].politiskPres + e.presMarked.pres, 0, 5);
+    if (e.presMarked) aendrPres(s, e.presMarked.marked, e.presMarked.pres, e.tekst.replace(/\.$/, ''));
     if (e.opkoeb) {
       const maal = s.konkurrenter.find((x) => x.id === e.opkoeb!.maal);
       if (maal) {

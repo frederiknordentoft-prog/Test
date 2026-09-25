@@ -2,14 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { applyActionMut } from '../../src/sim/actions';
 import { makeRng, seedState } from '../../src/sim/rng';
 import { stepMut } from '../../src/sim/step';
-import { offshoreAndele, offshoreDynPp, offshoreRefPp, markedTotalBsi, ugentligtOffshoreBrand } from '../../src/sim/offshore';
-import { regelEffekt, effektivBonus, ugentligRegulering, aktiverRegel } from '../../src/sim/regulation';
+import { offshoreAndele, offshoreDynPp, offshoreRefPp, markedTotalBsi, offshoreRisikoPrAar, ugentligtOffshoreBrand } from '../../src/sim/offshore';
+import { regelEffekt, effektivBonus, ugentligRegulering, aktiverRegel, annoncer } from '../../src/sim/regulation';
+import { AFGIFT_VARSEL_UGER } from '../../src/sim/markets';
+import { aendrPres } from '../../src/sim/util';
 import { sanktioner, inddragLicens } from '../../src/sim/trust';
 import { trendEffekt, startTrend, ugentligeTrends } from '../../src/sim/trends';
 import { effektivCac, licenseretBsiKurve } from '../../src/sim/customers';
 import { effektivAfgift } from '../../src/sim/economy';
 import { SPORTSKALENDER } from '../../src/data/trends';
-import { OFFSHORE_FORMEL } from '../../src/data/offshore';
+import { OFFSHORE_BRAND, OFFSHORE_FORMEL } from '../../src/data/offshore';
 import { ugeFor } from '../../src/sim/time';
 import type { Action, GameState } from '../../src/sim/types';
 import { fejl, koer, nyt } from './helpers';
@@ -48,14 +50,15 @@ describe('Offshore-model (7.8)', () => {
     const sen = offshoreDynPp(s, 'dk');
     expect(sen).toBeGreaterThan(tidlig);
   });
-  it('krypto-boom lægger procentpoint på begge vertikaler', () => {
+  it('krypto-boom lægger procentpoint på begge vertikaler gennem vertikalfaktorerne', () => {
     const s = nyt();
     koer(s, 1);
     startTrend(s, 'kryptoBoom', 52);
     expect(trendEffekt(s, 'dk').offshorePp).toBe(5);
     koer(s, 1);
     const ref = offshoreAndele(offshoreDynPp(s, 'dk'));
-    expect(s.markeder.dk.offshore.betting - ref.betting).toBeCloseTo(0.05, 3);
+    expect(s.markeder.dk.offshore.betting - ref.betting).toBeCloseTo((5 * OFFSHORE_FORMEL.betting) / 100, 3);
+    expect(s.markeder.dk.offshore.kasino - ref.kasino).toBeCloseTo((5 * OFFSHORE_FORMEL.kasino) / 100, 3);
   });
   it('markedets total = licenseret kurve / (1 − reference-offshore)', () => {
     const uge = ugeFor(2024, 6);
@@ -159,7 +162,7 @@ describe('Regulering (7.7)', () => {
     let lempelse = 0;
     for (let seed = 1; seed <= 40; seed++) {
       const s = nyt(seed);
-      s.uge = 200;
+      s.uge = ugeFor(2027, 0); // R11 gælder i AI-akten
       s.markeder.dk.kanalisering = 0.8;
       s.markeder.dk.lavKanaliseringUger = 103;
       ugentligRegulering(s, makeRng(seedState(seed)));
@@ -313,5 +316,68 @@ describe('Offshore-fristelsen (6.10)', () => {
     expect(afsloeret).not.toBeNull();
     expect(afsloeret!.offshoreBrand).toBe(false);
     expect(afsloeret!.ventendeEvents.some((e) => e.eventId === 'offshoreAfsloeret')).toBe(true);
+  });
+});
+
+describe('Rettelser fra insider-spiltesten', () => {
+  it('faste afgiftstrin varsles ni måneder før og igen, når de træder i kraft', () => {
+    const s = nyt();
+    s.markeder.dk.licens = 'aktiv';
+    const trinUge = ugeFor(2021, 0);
+    s.uge = trinUge - AFGIFT_VARSEL_UGER - 1;
+    koer(s, 1);
+    const varsel = s.signaler.find((x) => x.k === 'afgift');
+    expect(varsel).toMatchObject({ k: 'afgift', marked: 'dk', fra: 0.2, til: 0.28, varsel: true, uge: trinUge });
+    expect(varsel && varsel.k === 'afgift' ? varsel.vertikaler.length : 0).toBe(2);
+    expect(s.nyheder.some((n) => /Danmark: afgiften stiger fra 20 % til 28 %/.test(n.tekst))).toBe(true);
+    s.uge = trinUge - 1;
+    koer(s, 1);
+    expect(s.signaler.some((x) => x.k === 'afgift' && !x.varsel)).toBe(true);
+    expect(s.markeder.dk.afgiftPrVertikal.kasino).toBe(0.28);
+  });
+  it('en anden vertikal kan ikke blive godkendt før markedslicensen', () => {
+    const s = nyt();
+    s.kapital = 50;
+    act(s, { t: 'applyLicense', market: 'uk', vertical: 'betting' });
+    const foerste = s.markeder.uk.vertikaler.betting.klarUge!;
+    act(s, { t: 'applyLicense', market: 'uk', vertical: 'kasino' });
+    expect(s.markeder.uk.vertikaler.kasino.klarUge).toBe(foerste);
+  });
+  it('risikoen for at blive afsløret vokser med den grå pengestrøm', () => {
+    expect(offshoreRisikoPrAar(0)).toBeCloseTo(OFFSHORE_BRAND.tabRisikoPrAar, 5);
+    expect(offshoreRisikoPrAar(20)).toBeCloseTo(OFFSHORE_BRAND.tabRisikoPrAar + 2 * OFFSHORE_BRAND.tabRisikoPr10Mio, 5);
+  });
+  it('mister man alle licenser, er spillet slut', () => {
+    const s = nyt();
+    koer(s, 1);
+    s.markeder.dk.licens = 'inddraget';
+    s.markeder.uk.licens = 'inddraget';
+    koer(s, 1);
+    expect(s.slut?.id).toBe('tabtLicens');
+  });
+  it('Sverige har bonusreglen fra åbningen i 2019', () => {
+    const s = nyt();
+    s.uge = ugeFor(2019, 0) - 1;
+    koer(s, 2);
+    expect(s.markeder.se.regler).toContain('seBonusregel');
+    expect(effektivBonus(s, 'se')).toBeLessThanOrEqual(1);
+  });
+  it('politisk pres logges med kilde', () => {
+    const s = nyt();
+    aendrPres(s, 'dk', 0.5, 'Test');
+    expect(s.markeder.dk.presLog?.[0]).toMatchObject({ kilde: 'Test', delta: 0.5 });
+    aendrPres(s, 'dk', 10, 'Loft');
+    expect(s.markeder.dk.politiskPres).toBe(5);
+    expect(s.markeder.dk.presLog?.[0].delta).toBe(3.5);
+  });
+  it('en ekstra afgiftsstigning har samme størrelse i varsel og ved ikrafttræden', () => {
+    const s = nyt();
+    s.uge = ugeFor(2027, 0);
+    annoncer(s, 'dk', 'afgiftsstigning', s.uge + 30, true, makeRng(seedState(3)));
+    const plan = s.planlagteRegler.find((p) => p.regelId === 'afgiftsstigning')!;
+    expect(plan.pp).toBeGreaterThanOrEqual(3);
+    s.uge = plan.ikrafttraedelseUge;
+    ugentligRegulering(s, makeRng(seedState(9)));
+    expect(s.markeder.dk.afgiftTillaeg).toBe(plan.pp);
   });
 });

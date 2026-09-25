@@ -163,6 +163,7 @@ export type MarketState = {
   lavKanaliseringUger: number; // uger i træk under kanaliseringsmålet (R11)
   offshoreBrandBsiPrUge: MioKr; // spillerens grå BSI via offshore-brand i markedet
   afgiftTillaeg: number; // procentpoint fra dynamiske afgiftsregler
+  presLog?: { uge: Week; kilde: string; delta: number }[]; // + hvor det politiske pres kom fra (seneste 6)
   aabnetUge: Week | null; // hvornår markedet åbnede (for spilleren)
 };
 
@@ -398,7 +399,8 @@ export type Signal =
   | { k: 'slut'; id: string }
   // + fase 3
   | { k: 'markedAabner'; marked: MarketId }
-  | { k: 'regel'; marked: MarketId; regelId: string; varsel: boolean }
+  | { k: 'regel'; marked: MarketId; regelId: string; varsel: boolean; pp?: number } // pp: afgiftsstigningens størrelse
+  | { k: 'afgift'; marked: MarketId; vertikaler: Vertical[]; fra: number; til: number; varsel: boolean; uge: Week } // faste afgiftstrin (spec 6.9); kun når spilleren har licens i markedet
   | { k: 'sanktion'; marked: MarketId; trin: 1 | 2 | 3 | 4; boede?: MioKr }
   | { k: 'trend'; id: string; titel: string }
   // + fase 4
@@ -479,7 +481,7 @@ export type GameState = {
   nyheder: NewsItem[];
   flags: string[];
   eventLog: { uge: Week; eventId: string; valg: number }[];
-  planlagteRegler: { marked: MarketId; regelId: string; ikrafttraedelseUge: Week; annonceret?: boolean; dynamisk?: boolean }[];
+  planlagteRegler: { marked: MarketId; regelId: string; ikrafttraedelseUge: Week; annonceret?: boolean; dynamisk?: boolean; pp?: number }[];
   trends: AktivTrend[]; // + fase 3
   // + fase 4: levende konkurrenter og platforme
   reaktioner: AktivReaktion[];

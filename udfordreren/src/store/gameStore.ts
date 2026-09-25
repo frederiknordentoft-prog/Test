@@ -5,7 +5,8 @@ import type { Action, GameState, NewGameOptions, Signal } from '../sim/types';
 import { nytSpil as lavNytSpil } from '../sim/newgameplus';
 import { applyAction, step, stepMut } from '../sim/step';
 import { DIALOG_SIGNALER, aabnerDialog, pauserFor, pauseTekst, reaktionSomDialog } from '../sim/signals';
-import { AI_AKT_UGE, aarFor, ugeIAar } from '../sim/time';
+import { AI_AKT_UGE, aarFor, datoTekst, ugeIAar } from '../sim/time';
+import { MARKETS } from '../data/markets';
 import { autoloesEvents } from '../sim/events';
 import { spillerKunderTotal } from '../sim/customers';
 import { gem, gemSetting, hentSetting } from './persistence';
@@ -128,6 +129,13 @@ function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
     case 'licens': return { tekst: 'Licens godkendt!', kind: 'godt' };
     case 'klar': return { tekst: 'Et produkt er klar til lancering', kind: 'info' };
     case 'trend': return { tekst: sig.titel, kind: 'info' };
+    case 'afgift': {
+      const pct = (x: number) => `${Math.round(x * 1000) / 10} %`.replace('.', ',');
+      const tekst = sig.varsel
+        ? `${MARKETS[sig.marked].navn}: afgiften går fra ${pct(sig.fra)} til ${pct(sig.til)} i ${datoTekst(sig.uge)}`
+        : `${MARKETS[sig.marked].navn}: afgiften er nu ${pct(sig.til)}`;
+      return { tekst, kind: sig.til > sig.fra ? 'skidt' : 'godt' };
+    }
     case 'reaktion': return reaktionSomDialog(sig.regel) ? null : { tekst: sig.tekst, kind: sig.regel === 'R9' || sig.regel === 'R10' ? 'skidt' : 'info' };
     case 'sponsorResultat': return { tekst: sig.spillerVandt ? `I vandt sponsoratet af ${sig.navn}!` : `${sig.vinder} vandt sponsoratet af ${sig.navn}.`, kind: sig.spillerVandt ? 'godt' : 'info' };
     case 'platform': return sig.faerdig ? { tekst: 'Platformmigreringen er færdig!', kind: 'godt' } : null;

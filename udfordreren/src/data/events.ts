@@ -217,8 +217,8 @@ EVENTS.push(
 
 EVENTS.push({
   id: 'offshoreAfsloeret', titel: 'Afsløret!', trigger: 'system', fraAar: 2012, tilAar: 2035, chancePrUge: 0, engang: false,
-  tekst: 'En journalist har fulgt pengene fra kryptokasinoet til jeres konto. Tilsynene i alle regulerede markeder har inddraget licenserne.',
-  valg: [{ tekst: 'Det var prisen', forklaring: 'Licenserne er væk. I kan søge igen, men tilliden skal genopbygges.', effekt: { omdoemme: -15 } }],
+  tekst: 'En journalist har fulgt pengene fra kryptokasinoet til jeres konto. Tilsynene i alle regulerede markeder har inddraget licenserne på én gang.',
+  valg: [{ tekst: 'Det var prisen', forklaring: 'Uden en licens i et reguleret marked er der ikke noget firma at drive videre.', effekt: { omdoemme: -15 } }],
 });
 
 EVENTS.push(...AI_EVENTS, ...FLERE_EVENTS);

@@ -52,6 +52,11 @@ export const REGLER: Record<string, RegelDef> = {
     beskrivelse: 'Klubberne fjerner spilsponsorer fra trøjernes front.',
     effekt: { cac: { sponsorat: 0.5 }, marketingEffekt: -0.1 },
   },
+  seBonusregel: {
+    id: 'seBonusregel', navn: 'Kun velkomstbonus', kilde: '[F] spellagen 2019',
+    beskrivelse: 'Bonus må kun gives første gang, en kunde spiller hos udbyderen.',
+    effekt: { bonusMax: 1 },
+  },
   seKreditforbud: {
     id: 'seKreditforbud', navn: 'Kreditforbud', kilde: '[F] 2026',
     beskrivelse: 'Forbud mod spil på kredit.',
@@ -164,6 +169,7 @@ export const REGLER: Record<string, RegelDef> = {
 
 /** Historisk tidslinje: træder i kraft `uge`, annonceres `varsel` uger før (6-12 mdr.) */
 export const HISTORISKE_REGLER: { marked: MarketId; regelId: string; uge: number; varsel: number }[] = [
+  { marked: 'se', regelId: 'seBonusregel', uge: ugeFor(2019, 0), varsel: 0 },
   { marked: 'de', regelId: 'deGraenser', uge: ugeFor(2021, 6), varsel: 0 },
   { marked: 'nl', regelId: 'nlReklameforbud', uge: ugeFor(2023, 6), varsel: 30 },
   { marked: 'nl', regelId: 'nlGraenser', uge: ugeFor(2024, 9), varsel: 30 },
@@ -185,7 +191,7 @@ export const DYNAMISK_PULJE: { regelId: string; vaegt: number; fraAar: number }[
   { regelId: 'bonusloft', vaegt: 3, fraAar: 2012 },
   { regelId: 'indsatsgraenseKasino', vaegt: 2, fraAar: 2012 },
   { regelId: 'affordability', vaegt: 2, fraAar: 2016 },
-  { regelId: 'afgiftsstigning', vaegt: 2, fraAar: 2012 },
+  { regelId: 'afgiftsstigning', vaegt: 2, fraAar: 2026 }, // de faste afgiftsforløb følger virkeligheden til 2026
   { regelId: 'streamerForbud', vaegt: 2, fraAar: 2018 },
   { regelId: 'aiRisikokrav', vaegt: 2, fraAar: 2028 },
 ];

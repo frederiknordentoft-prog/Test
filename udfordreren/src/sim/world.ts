@@ -5,7 +5,7 @@ import type { Rng } from './rng';
 import { VERDENSSCENARIER, VERDENSVURDERINGER, AI_SCENARIER, AI_EFFEKT, BOERSLICENS } from '../data/ai';
 import { MARKETS } from '../data/markets';
 import { AI_AKT_UGE, aarDecimal, aarFor, ugeFor } from './time';
-import { afvis, betal, clamp, nyhed, saetFlag, signal } from './util';
+import { aendrPres, afvis, betal, clamp, nyhed, saetFlag, signal } from './util';
 import { annoncer } from './regulation';
 import { startTrend } from './trends';
 import { agentEffekt } from './agents';
@@ -96,7 +96,7 @@ function udfoer(s: GameState, rng: Rng, id: string): void {
       if (!s.trends.some((t) => t.id === 'kryptoBoom')) startTrend(s, 'kryptoBoom', 78);
       break;
     case 'afgift':
-      if (arg && s.markeder[arg].aaben) annoncer(s, arg, 'afgiftsstigning', s.uge + rng.int(26, 52), true);
+      if (arg && s.markeder[arg].aaben) annoncer(s, arg, 'afgiftsstigning', s.uge + rng.int(26, 52), true, rng);
       break;
     case 'megadeal':
       megadeal(s, rng);
@@ -113,7 +113,7 @@ function udfoer(s: GameState, rng: Rng, id: string): void {
       us.afgiftTillaeg = clamp(us.afgiftTillaeg - 8, -30, 40);
       s.aiScenarier.predictionMarkets = 1;
       saetFlag(s, 'boerslicensMulig');
-      for (const m of ['dk', 'se', 'nl', 'de', 'fi'] as MarketId[]) s.markeder[m].politiskPres = clamp(s.markeder[m].politiskPres + 1, 0, 5);
+      for (const m of ['dk', 'se', 'nl', 'de', 'fi'] as MarketId[]) aendrPres(s, m, 1, 'EU-debat om event-kontrakter');
       break;
     }
     case 'skandale': {
@@ -124,7 +124,7 @@ function udfoer(s: GameState, rng: Rng, id: string): void {
         annoncer(s, m, 'reklameforbud', s.uge + 39, true);
         if (!s.markeder[m].regler.includes('aiRisikokrav')) annoncer(s, m, 'aiRisikokrav', s.uge + 52, true);
         if (!s.markeder[m].regler.includes('affordability')) annoncer(s, m, 'affordability', s.uge + 52, true);
-        s.markeder[m].politiskPres = clamp(s.markeder[m].politiskPres + 2, 0, 5);
+        aendrPres(s, m, 2, 'Den store skandale');
       }
       s.aiScenarier.ansvarligAi = Math.max(s.aiScenarier.ansvarligAi ?? 0, 0.6);
       break;

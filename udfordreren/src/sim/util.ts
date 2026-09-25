@@ -1,5 +1,5 @@
 // Små fælles hjælpere til sim-kernen.
-import type { GameState, NewsItem, Signal } from './types';
+import type { GameState, MarketId, NewsItem, Signal } from './types';
 import type { Rng } from './rng';
 import { arkivId as arkivOpslag } from '../data/archive';
 
@@ -12,6 +12,19 @@ export const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b,
 export function nyId(s: GameState, prefix: string): string {
   s.naesteId += 1;
   return `${prefix}${s.naesteId}`;
+}
+
+/** Ændr det politiske pres i et åbent marked og log kilden (så spilleren kan se, hvor presset kommer fra) */
+export function aendrPres(s: GameState, m: MarketId, delta: number, kilde: string): void {
+  const ms = s.markeder[m];
+  if (!ms || !ms.aaben || delta === 0) return;
+  const foer = ms.politiskPres;
+  ms.politiskPres = clamp(ms.politiskPres + delta, 0, 5);
+  const faktisk = Math.round((ms.politiskPres - foer) * 100) / 100;
+  if (faktisk === 0) return;
+  const log = (ms.presLog ??= []);
+  log.unshift({ uge: s.uge, kilde, delta: faktisk });
+  if (log.length > 6) log.length = 6;
 }
 
 export function nyhed(s: GameState, tekst: string, kind?: NewsItem['kind'], arkivId?: string): void {

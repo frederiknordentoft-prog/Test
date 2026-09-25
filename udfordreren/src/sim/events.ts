@@ -4,7 +4,7 @@ import type { Rng } from './rng';
 import { EVENTS, EVENT_BY_ID, type EventDef, type EventEffect } from '../data/events';
 import { CHANNEL_IDS } from '../data/acquisition';
 import { aarFor } from './time';
-import { afvis, clamp, nyhed, saetFlag, signal } from './util';
+import { aendrPres, afvis, clamp, nyhed, saetFlag, signal } from './util';
 import { spillerKunderTotal, justerKunder } from './customers';
 import { fjernFraOpgaver, beregnLoen } from './staff';
 import { risikoAndel } from './town';
@@ -136,7 +136,7 @@ export function eventChoice(s: GameState, eventId: string, valg: number): boolea
     if (total < e.marketingMin) s.marketingMix.soeg = Math.round((s.marketingMix.soeg + e.marketingMin - total) * 1000) / 1000;
   }
   if (e.tillidAlle) for (const m of Object.values(s.markeder)) if (m.licens === 'aktiv') m.tilsynstillid = clamp(m.tilsynstillid + e.tillidAlle, 0, 100);
-  if (e.politiskPres) for (const m of Object.values(s.markeder)) if (m.licens === 'aktiv') m.politiskPres = clamp(m.politiskPres + e.politiskPres, 0, 5);
+  if (e.politiskPres) for (const m of Object.values(s.markeder)) if (m.licens === 'aktiv') aendrPres(s, m.id, e.politiskPres, def.titel);
   if (e.byRisiko) flytBy(s, e.byRisiko);
   if (e.agentOvervaagning) for (const a of s.agenter) { a.overvaagning = clamp(Math.round((a.overvaagning + e.agentOvervaagning) * 10) / 10, 0, 1); a.fejlrate = fejlrate(a.funktion, a.overvaagning); }
   if (e.hyperFra && s.hyperpersonalisering.aktiv) { s.hyperpersonalisering.aktiv = false; s.hyperpersonalisering.startUge = null; }

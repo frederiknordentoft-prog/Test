@@ -6,9 +6,9 @@ import { MARKETS } from '../data/markets';
 import { CHANNELS, CHANNEL_IDS } from '../data/acquisition';
 import { R1, R2, R3_FORDEL, R3_KOPI_UGER, R4, R5, R7, R8, R9, R10, R12, REAKTIONS_REGLER } from '../data/reactionRules';
 import { SPONSORATER } from '../data/competitorEvents';
-import { datoTekst } from './time';
-import { afvis, clamp, nyId, nyhed, signal } from './util';
-import { effektivBonus, effektivVip, aktiverRegel } from './regulation';
+import { aarFor, datoTekst } from './time';
+import { aendrPres, afvis, clamp, nyId, nyhed, signal } from './util';
+import { effektivBonus, effektivVip, aktiverRegel, annoncer } from './regulation';
 import { aarligBsi } from './economy';
 
 export const tomReaktionsTaeller = (): Record<ReaktionsRegel, number> => ({
@@ -268,7 +268,7 @@ export function kvartalsReaktioner(s: GameState, rng: Rng): void {
     // R9: tilfældige medieskandaler (hyppigere, når tilliden er lav)
     const skandaleChance = (R9.chancePrAar / 4) * (ms.licens === 'aktiv' && ms.tilsynstillid < 50 ? 2 : 1);
     if (rng.chance(skandaleChance)) {
-      ms.politiskPres = clamp(ms.politiskPres + 1, 0, 5);
+      aendrPres(s, m, 1, 'Medieskandale');
       const egen = ms.licens === 'aktiv' && ms.tilsynstillid < 50 && rng.chance(0.5);
       const syndebuk = egen ? null : rng.pick(s.konkurrenter.filter((c) => c.tilstede && c.markeder.includes(m)).concat([] as Competitor[]));
       if (egen) {
@@ -286,10 +286,10 @@ export function kvartalsReaktioner(s: GameState, rng: Rng): void {
 
   // R10: krise → afgiftsstigning (30 %/år)
   const krise = s.trends.some((t) => (t.effekt.afgiftRisiko ?? 0) > 0);
-  if (krise && rng.chance(R10.chancePrAar / 4)) {
+  if (krise && aarFor(s.uge) >= 2026 && rng.chance(R10.chancePrAar / 4)) {
     const kandidater = (Object.keys(s.markeder) as MarketId[]).filter((m) => s.markeder[m].aaben && m !== 'no');
     const m = rng.pick(kandidater);
-    s.planlagteRegler.push({ marked: m, regelId: 'afgiftsstigning', ikrafttraedelseUge: s.uge + rng.int(26, 52), annonceret: true, dynamisk: true });
+    annoncer(s, m, 'afgiftsstigning', s.uge + rng.int(26, 52), true, rng);
     reager(s, {
       regel: 'R10', marked: m, slutUge: s.uge, effekt: {},
       tekst: `Statskassen i ${MARKETS[m].navn} er presset af krisen. Politikerne vil hæve spilafgiften med 3-8 procentpoint.`,

@@ -4,7 +4,7 @@ import type { Rng } from './rng';
 import { TRENDS, SPORTSKALENDER, FASTE_TRENDS, TILFAELDIGE_TRENDS } from '../data/trends';
 import { MARKETS } from '../data/markets';
 import { aarFor } from './time';
-import { clamp, nyhed, signal } from './util';
+import { nyhed, signal, aendrPres } from './util';
 
 export type TrendSum = Required<TrendEffect>;
 const TOM: TrendSum = { bettingBsi: 0, kasinoBsi: 0, offshorePp: 0, marketingRoi: 0, afgiftRisiko: 0 };
@@ -41,7 +41,7 @@ export function startTrend(s: GameState, trendId: string, uger: number, titel?: 
   s.trends.push(t);
   if (def.pres) {
     for (const m of Object.keys(s.markeder) as MarketId[]) {
-      if (daekker(t, m)) s.markeder[m].politiskPres = clamp(s.markeder[m].politiskPres + def.pres, 0, 5);
+      if (daekker(t, m)) aendrPres(s, m, def.pres, def.titel);
     }
   }
   const hvor = t.markeder === 'alle' ? '' : t.markeder.length <= 2 ? ` (${t.markeder.map((m) => MARKETS[m].navn).join(', ')})` : '';

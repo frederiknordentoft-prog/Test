@@ -88,3 +88,11 @@
 - Statsselskabets hjemmebane på hitlisten er × 5 til 2016 (en enkelt seed nåede nr. 1 i 2015 med × 3).
 - Faselængderne vokser 20 % om året (højst × 3), så akt 1 får færre lanceringspauser og AI-akten ≥ 40 % af pauserne.
 - Den danske offshore-basis 2021-2025 er sænket 1,2 pp, så den passive median-kanalisering i 2024 lander på ca. 90,5 % (midt i 88-93 %); der er en lav hale i seeds med dynamiske afgiftsstigninger.
+- Insider-spiltest: en ekstra afgiftsstigning trækker sin størrelse (3-8 pp), når den varsles, og samme tal bruges i nyhed, dialog og ikrafttræden. De faste afgiftstrin i markedsdata varsles som nyhed 39 uger før og igen, når de træder i kraft (toast, ingen pause).
+- Dynamiske afgiftsstigninger (R10 og puljen) kommer først fra 2026, og R11 reagerer først fra 2026: akt 1 følger de virkelige forløb. Regler i samme kategori (bonus, VIP, indsats, reklame, afgift, blokering, AI) stables ikke i den dynamiske pulje, og lempelser stables ikke.
+- En anden vertikal i et marked kan ikke blive godkendt før selve markedslicensen: ventetiden er den længste af vertikalens egen og markedslicensens.
+- Offshore-brandet er skaleret ned (1,2 % af offshore-puljen, 3 % af grå markeder), og risikoen for at blive afsløret er 10 % om året plus 5 % pr. 10 mio. kr. grå BSI om ugen. Mister man alle licenser, slutter spillet (tabtLicens) — det siger eventet nu også.
+- Trends lægges på offshore-procentpoint før vertikalfaktorerne (kasino × 1,5, betting × 0,5), så de rammer som alt andet i modellen. Gennemsnittet over de to vertikaler er uændret.
+- Offshore-basis for dk og uk fra 2026 modsvarer de faste stramninger (Spilpakke 1, 40 % RGD, bonuskrav), så referencekanaliseringen går fra ca. 93 % til 88-90 % i stedet for et fald til 74-80 % på én dag. SE og NL 2024-35 er sænket, fordi R11 ikke længere trækker dem op før 2026.
+- Sverige har bonusreglen fra åbningen i 2019 (kun velkomstbonus); SE-basis er sænket 5 pp tilsvarende, så kanaliseringen er uændret.
+- Politisk pres logges med kilde (de seneste seks ændringer pr. marked), så spilleren kan se, hvorfor presset steg.

@@ -20,11 +20,15 @@ export const OFFSHORE_FORMEL = {
 /** Strukturel basis (pp) pr. marked over tid [D-kalibreret] */
 export const OFFSHORE_BASIS: Record<MarketId, [number, number][]> = {
   // dk: afgiften stiger til 28 % og strengheden til 3 i 2021 uden at kanaliseringen falder [F: 91,5 % i 2024]
-  dk: [[2012, 12.5], [2016, 11], [2020.95, 11.3], [2021.05, -2.2], [2024, -2.8], [2030, -2.2], [2035, 1.5]],
-  uk: [[2012, 8.6], [2020, 3.8], [2025, -0.2], [2030, -8], [2035, -8]],
-  se: [[2019, 11.3], [2023, 12.4], [2025, 14.2], [2030, 12.8], [2035, 11.4]],
+  // dk/uk fra 2026: de faste stramninger (Spilpakke 1, 40 % RGD, bonuskrav) modsvares i basis, så kanaliseringen ikke styrtdykker
+  // på én dag [A: målt kanalisering holdt sig omkring 90 % efter tidligere stramninger]; resten kommer fra scenarier og trends
+  dk: [[2012, 12.5], [2016, 11], [2020.95, 11.3], [2021.05, -2.2], [2024, -2.8], [2026.49, -2.6], [2026.5, -10.1], [2027, -10.2], [2030, -9.6], [2035, -8.9]],
+  uk: [[2012, 8.6], [2020, 3.8], [2025, -0.2], [2025.99, -1.7], [2026, -6.1], [2026.24, -6.3], [2026.25, -12.7], [2027.24, -13.2], [2027.25, -14.9], [2030, -14.1], [2035, -13.4]],
+  // se: −5 pp for bonusreglen fra 2019, som formlen ellers lægger oveni [F: betting 96 %, kasino 81 %]
+  // se/nl 2024-35: sænket, efter at R11 først reagerer fra 2026 og ikke længere trækker kanaliseringen op i 2021-25
+  se: [[2019, 6.3], [2023, 7.4], [2024.5, 4.6], [2030, 4.6], [2035, 4.6]],
   de: [[2021, -12], [2023, -2], [2025, -0.6], [2030, -3.8], [2035, -4]],
-  nl: [[2021, 23], [2025, 24.2], [2030, 26], [2035, 26]],
+  nl: [[2021, 23], [2023, 22.5], [2025, 19.8], [2030, 21.5], [2035, 21.5]],
   on: [[2022, 15.9], [2024, 8.2], [2025, 10.5], [2030, 9.5], [2035, 9]],
   us: [[2018, 37.5], [2022, 31.8], [2025, 30.2], [2030, 20], [2035, 18]],
   fi: [[2027, 27], [2030, 19], [2035, 15]],
@@ -59,9 +63,10 @@ export const GRAA_MARKED: Partial<Record<MarketId, { kasino: [number, number][];
 /** Offshore-brand (spec 6.10) [D] */
 export const OFFSHORE_BRAND = {
   opstart: 2, // mio. kr.
-  andel: 0.04, // andel af offshore-puljen ved middel kvalitet
-  andelGraa: 0.08, // andel af grå markeder (no)
+  andel: 0.012, // [D] andel af offshore-puljen ved middel kvalitet (ét brand blandt mange hundrede)
+  andelGraa: 0.03, // [D] andel af grå markeder (no)
   fuldRaekkeviddeKunder: 300000, // brandet når sin fulde andel, når firmaet har så mange kunder
   omkostning: 0.15, // licens, betalinger og hosting i % af BSI
-  tabRisikoPrAar: 0.1, // risiko for licenstab i alle regulerede markeder
+  tabRisikoPrAar: 0.1, // [D] grundrisiko pr. år for licenstab i alle regulerede markeder
+  tabRisikoPr10Mio: 0.05, // [D] ekstra risiko pr. år for hver 10 mio. kr. grå BSI pr. uge (store pengestrømme bliver fulgt)
 };

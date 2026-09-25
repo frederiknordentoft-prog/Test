@@ -17,6 +17,7 @@ import { TRUST } from '../../data/trust';
 import { BALANCE } from '../../data/balance';
 import { OFFSHORE_AKTOER } from '../../data/competitors';
 import { MAX_MARKETING_PR_KANAL } from '../../sim/actions';
+import { offshoreRisikoPrAar } from '../../sim/offshore';
 import {
   aarFor, aktiveMarkeder, datoTekst, effektivBonus, effektivCac, effektivVip, ejerInfo, kanalTilgaengelig, licensPris, licensStatus, regelEffekt, SANKTION_RISIKO, strenghedCac, tillidsPoster,
 } from '../../sim/selectors';
@@ -1234,7 +1235,8 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
       ikon: 'advarsel',
       tekst: (
         <>
-          {Math.round(OFFSHORE_BRAND.tabRisikoPrAar * 100)} % risiko pr. år for at blive afsløret — så inddrages <b>alle</b> jeres licenser på én gang
+          {Math.round(offshoreRisikoPrAar(beloeb) * 100)} % risiko pr. år for at blive afsløret, og mere jo større den grå pengestrøm bliver. Så inddrages{' '}
+          <b>alle</b> jeres licenser på én gang
           {iRisiko.length > 0 ? ` (lige nu ${iRisiko.length}: ${iRisiko.map((m) => MARKETS[m].kort).join(', ')})` : ''}
         </>
       ),
@@ -1332,7 +1334,7 @@ function OffshoreFristelse({ g, vm }: { g: GameState; vm: Vm }) {
                 : ' — lige startet'
               : ''}
             . Risikoen tikker: ca.{' '}
-            {fmtTal((OFFSHORE_BRAND.tabRisikoPrAar / 52) * 100)} % hver uge.
+            {fmtTal((offshoreRisikoPrAar(beloeb) / 52) * 100)} % hver uge.
           </p>
           <Btn variant="sekundaer" testId="offshore-luk" onClick={() => setBekraeft('luk')}>
             <Ikon navn="kryds" farve="currentColor" str={13} /> Luk brandet

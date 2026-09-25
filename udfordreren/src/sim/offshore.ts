@@ -77,15 +77,15 @@ export function offshoreDynPp(s: GameState, m: MarketId): number {
   );
 }
 
-/** Trends (krypto, streamere, sweeps) lægges direkte på andelene i procentpoint (spec 7.8) */
+/** Trends (krypto, streamere, sweeps) i procentpoint (spec 7.8): går gennem samme vertikalfaktorer som resten */
 export function offshoreTrendPp(s: GameState, m: MarketId): number {
   return trendEffekt(s, m).offshorePp;
 }
 
 export function offshoreAndele(pp: number, trendPp = 0): Record<Vertical, number> {
   return {
-    kasino: clamp(pp * F.kasino + trendPp, F.min, F.max) / 100,
-    betting: clamp(pp * F.betting + trendPp, F.min, F.max) / 100,
+    kasino: clamp((pp + trendPp) * F.kasino, F.min, F.max) / 100,
+    betting: clamp((pp + trendPp) * F.betting, F.min, F.max) / 100,
   };
 }
 
@@ -154,6 +154,11 @@ export function setOffshoreBrand(s: GameState, aktiv: boolean): boolean {
   return true;
 }
 
+/** Årlig risiko for at blive afsløret ved en given grå BSI pr. uge */
+export function offshoreRisikoPrAar(graaBsiPrUge: number): number {
+  return OFFSHORE_BRAND.tabRisikoPrAar + OFFSHORE_BRAND.tabRisikoPr10Mio * (graaBsiPrUge / 10);
+}
+
 /** Ugentlig grå BSI og risiko for at blive afsløret. Returnerer samlet BSI. */
 export function ugentligtOffshoreBrand(s: GameState, rng: Rng): number {
   let sum = 0;
@@ -183,8 +188,8 @@ export function ugentligtOffshoreBrand(s: GameState, rng: Rng): number {
     ms.offshoreBrandBsiPrUge = b;
     sum += b;
   }
-  // 10 % risiko pr. år for licenstab i alle regulerede markeder
-  if (rng.chance(OFFSHORE_BRAND.tabRisikoPrAar / 52)) {
+  // Risiko for at blive afsløret: grundrisiko plus mere, jo større den grå pengestrøm er
+  if (rng.chance(offshoreRisikoPrAar(sum) / 52)) {
     for (const m of Object.keys(s.markeder) as MarketId[]) {
       const st = s.markeder[m].licens;
       if (st === 'aktiv' || st === 'suspenderet' || st === 'ansoegt') inddragLicens(s, m, 'Forbindelsen til et offshore-brand er afsløret.');

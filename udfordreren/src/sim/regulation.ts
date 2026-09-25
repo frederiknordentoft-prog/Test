@@ -6,7 +6,7 @@ import { REGLER, HISTORISKE_REGLER, DYNAMISK_PULJE, DYNAMISK, PRAEVALENSMAALINGE
 import { MARKETS } from '../data/markets';
 import { CHANNELS, CHANNEL_IDS } from '../data/acquisition';
 import { aarFor, datoTekst, ugeIAar } from './time';
-import { clamp, nyhed, signal } from './util';
+import { aendrPres, clamp, nyhed, signal } from './util';
 
 export type RegelSum = {
   cac: Record<AcqChannel, number>;
@@ -99,29 +99,51 @@ function spillerAktiv(s: GameState, m: MarketId): boolean {
 }
 
 /** Aktivér en regel i et marked (også sideeffekter som blokering og afgift) */
-export function aktiverRegel(s: GameState, rng: Rng, m: MarketId, regelId: string): void {
+export function aktiverRegel(s: GameState, rng: Rng, m: MarketId, regelId: string, ppPlanlagt?: number): void {
   const ms = s.markeder[m];
   const r = REGLER[regelId];
   if (!r) return;
-  if (!ms.regler.includes(regelId) || regelId === 'afgiftsstigning' || regelId === 'lempelse') {
-    if (!ms.regler.includes(regelId)) ms.regler.push(regelId);
-  }
+  // Kun afgiftsstigninger kan gentages; andre regler (også lempelser) virker én gang pr. marked
+  if (ms.regler.includes(regelId) && regelId !== 'afgiftsstigning') return;
+  if (!ms.regler.includes(regelId)) ms.regler.push(regelId);
+  let pp: number | undefined;
   if (r.effekt.afgiftPp) {
-    const pp = regelId === 'afgiftsstigning' ? rng.int(3, 8) : r.effekt.afgiftPp;
+    pp = regelId === 'afgiftsstigning' ? (ppPlanlagt ?? rng.int(3, 8)) : r.effekt.afgiftPp;
     ms.afgiftTillaeg = clamp(ms.afgiftTillaeg + pp, -10, 40);
   }
   if (r.effekt.blokering === 'dns' && ms.blokering.dns === null) ms.blokering.dns = s.uge;
   if (r.effekt.blokering === 'betaling' && ms.blokering.betaling === null) ms.blokering.betaling = s.uge;
   if (r.effekt.blokering === 'leverandoer') ms.blokering.leverandoer = true;
-  nyhed(s, `${MARKETS[m].navn}: ${r.navn} træder i kraft. ${regelTekst(r)}.`, 'marked', regelId.startsWith('dkSpilpakke') ? 'a5' : undefined);
-  if (spillerAktiv(s, m)) signal(s, { k: 'regel', marked: m, regelId, varsel: false });
+  const tekst = regelId === 'afgiftsstigning' && pp !== undefined ? `afgiften stiger ${pp} procentpoint` : regelTekst(r);
+  nyhed(s, `${MARKETS[m].navn}: ${r.navn} træder i kraft: ${tekst}.`, 'marked', regelId.startsWith('dkSpilpakke') ? 'a5' : undefined);
+  if (spillerAktiv(s, m)) signal(s, { k: 'regel', marked: m, regelId, varsel: false, ...(pp !== undefined && regelId === 'afgiftsstigning' ? { pp } : {}) });
 }
 
-export function annoncer(s: GameState, m: MarketId, regelId: string, uge: number, dynamisk: boolean): void {
-  s.planlagteRegler.push({ marked: m, regelId, ikrafttraedelseUge: uge, annonceret: true, dynamisk });
+/** Regelkategorier (så der ikke vedtages to regler, der gør det samme) */
+export function regelKategorier(regelId: string): string[] {
+  const f = REGLER[regelId]?.effekt;
+  if (!f) return [];
+  const k: string[] = [];
+  if (f.bonusMax !== undefined) k.push('bonus');
+  if (f.vipMax !== undefined) k.push('vip');
+  if (f.arpu?.kasino && f.arpu.kasino < 0 && f.vipMax === undefined) k.push('indsats');
+  if (f.lukKanal?.length || f.cac) k.push('reklame');
+  if (f.afgiftPp) k.push('afgift');
+  if (f.blokering) k.push('blokering');
+  if (f.kraeverRisikoAgent) k.push('ai');
+  return k;
+}
+
+/** Annoncér en regel (varsel). En afgiftsstigning får sin størrelse trukket her, så varslet og virkningen stemmer. */
+export function annoncer(s: GameState, m: MarketId, regelId: string, uge: number, dynamisk: boolean, rng?: Rng): void {
+  const ms = s.markeder[m];
+  if (regelId !== 'afgiftsstigning' && (ms.regler.includes(regelId) || s.planlagteRegler.some((p) => p.marked === m && p.regelId === regelId))) return;
+  const pp = regelId === 'afgiftsstigning' ? (rng ? rng.int(3, 8) : 5) : undefined;
+  s.planlagteRegler.push({ marked: m, regelId, ikrafttraedelseUge: uge, annonceret: true, dynamisk, ...(pp !== undefined ? { pp } : {}) });
   const r = REGLER[regelId];
-  nyhed(s, `${MARKETS[m].navn} vedtager ${r?.navn.toLowerCase() ?? regelId} fra ${datoTekst(uge)}. ${r ? regelTekst(r) : ''}.`, 'marked');
-  if (spillerAktiv(s, m)) signal(s, { k: 'regel', marked: m, regelId, varsel: true });
+  const tekst = pp !== undefined ? `Afgiften stiger ${pp} procentpoint` : r ? regelTekst(r) : '';
+  nyhed(s, `${MARKETS[m].navn} vedtager ${r?.navn.toLowerCase() ?? regelId} fra ${datoTekst(uge)}. ${tekst}.`, 'marked');
+  if (spillerAktiv(s, m)) signal(s, { k: 'regel', marked: m, regelId, varsel: true, ...(pp !== undefined ? { pp } : {}) });
 }
 
 /** Ugentlig regulering: historiske tidslinjer, planlagte dynamiske regler og R11 */
@@ -144,7 +166,7 @@ export function ugentligRegulering(s: GameState, rng: Rng): void {
   const klar = s.planlagteRegler.filter((p) => p.dynamisk && s.uge >= p.ikrafttraedelseUge);
   if (klar.length) {
     s.planlagteRegler = s.planlagteRegler.filter((p) => !(p.dynamisk && s.uge >= p.ikrafttraedelseUge));
-    for (const p of klar) aktiverRegel(s, rng, p.marked, p.regelId);
+    for (const p of klar) aktiverRegel(s, rng, p.marked, p.regelId, p.pp);
   }
 
   const aar = aarFor(s.uge);
@@ -152,7 +174,7 @@ export function ugentligRegulering(s: GameState, rng: Rng): void {
   if (ugeIAar(s.uge) === 20) {
     for (const p of PRAEVALENSMAALINGER) {
       if (p.aar !== aar) continue;
-      for (const m of p.markeder) s.markeder[m].politiskPres = clamp(s.markeder[m].politiskPres + 1, 0, 5);
+      for (const m of p.markeder) aendrPres(s, m, 1, `Prævalensmåling ${aar}`);
       nyhed(s, `Ny prævalensmåling: flere med spilproblemer. Politikerne i ${p.markeder.map((m) => MARKETS[m].navn).join(', ')} vil handle.`, 'verden', 'a17');
     }
   }
@@ -162,18 +184,23 @@ export function ugentligRegulering(s: GameState, rng: Rng): void {
     if (!ms.aaben) continue;
     // Pres ≥ 3 → ny regel efter 52-104 uger, presset nulstilles til 1
     if (ms.politiskPres >= DYNAMISK.presTaerskel) {
-      const mulige = DYNAMISK_PULJE.filter(
-        (d) => aar >= d.fraAar && (d.regelId === 'afgiftsstigning' || !ms.regler.includes(d.regelId)) && !s.planlagteRegler.some((p) => p.marked === m && p.regelId === d.regelId),
-      );
+      // Kategorier, der allerede er dækket af aktive eller planlagte regler i markedet, springes over
+      const daekket = new Set([...ms.regler, ...s.planlagteRegler.filter((p) => p.marked === m).map((p) => p.regelId)].flatMap(regelKategorier));
+      const planlagtAfgift = s.planlagteRegler.some((p) => p.marked === m && regelKategorier(p.regelId).includes('afgift'));
+      const mulige = DYNAMISK_PULJE.filter((d) => {
+        if (aar < d.fraAar) return false;
+        if (d.regelId === 'afgiftsstigning') return !planlagtAfgift;
+        return !ms.regler.includes(d.regelId) && !regelKategorier(d.regelId).some((k) => daekket.has(k));
+      });
       if (mulige.length) {
         const valgt = rng.weighted(mulige, (d) => d.vaegt);
-        annoncer(s, m, valgt.regelId, s.uge + rng.int(DYNAMISK.forsinkelse[0], DYNAMISK.forsinkelse[1]), true);
+        annoncer(s, m, valgt.regelId, s.uge + rng.int(DYNAMISK.forsinkelse[0], DYNAMISK.forsinkelse[1]), true, rng);
       }
       ms.politiskPres = DYNAMISK.presEfter;
     }
-    // R11: kanalisering under målet i 2 år → 40 % blokering, 20 % lempelse
+    // R11: kanalisering under målet i 2 år → 40 % blokering, 20 % lempelse (fra 2026: indtil da følger reguleringen virkeligheden)
     const maal = KANALISERINGSMAAL[m];
-    if (maal !== undefined) {
+    if (maal !== undefined && aar >= 2026) {
       ms.lavKanaliseringUger = ms.kanalisering < maal ? ms.lavKanaliseringUger + 1 : 0;
       if (ms.lavKanaliseringUger >= 104) {
         ms.lavKanaliseringUger = 0;
@@ -196,6 +223,6 @@ export function kvartalsPres(s: GameState): void {
   for (const m of Object.keys(s.markeder) as MarketId[]) {
     const ms = s.markeder[m];
     if (ms.politiskPres > 1) ms.politiskPres = Math.max(1, ms.politiskPres - 0.1);
-    if (ms.licens === 'aktiv' && aggressiv >= 4) ms.politiskPres = clamp(ms.politiskPres + 0.25, 0, 5);
+    if (ms.licens === 'aktiv' && aggressiv >= 4) aendrPres(s, m, 0.25, 'Jeres aggressive bonus, VIP og reklame');
   }
 }
