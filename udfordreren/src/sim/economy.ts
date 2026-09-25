@@ -8,6 +8,8 @@ import type { KundeUge } from './customers';
 import { kanalTilgaengelig, spillerKunderTotal } from './customers';
 import { BALANCE } from '../data/balance';
 import { licensAarsgebyr } from './markets';
+import { effektivBonus, effektivVip } from './regulation';
+import { OFFSHORE_BRAND } from '../data/offshore';
 import { nyhed, signal } from './util';
 
 export const tomtRegnskab = (): LedgerWeek => ({
@@ -18,15 +20,15 @@ export const tomtRegnskab = (): LedgerWeek => ({
 /** Effektiv afgiftssats af BSI (indsatsmodel for de: 5,3 % af indsats ≈ sats / margin) */
 export function effektivAfgift(s: GameState, m: MarketId, v: 'betting' | 'kasino', margin: number): number {
   const ms = s.markeder[m];
-  const sats = ms.afgiftPrVertikal[v];
+  const sats = ms.afgiftPrVertikal[v] + ms.afgiftTillaeg / 100;
   if (m === 'de') return Math.min(0.9, sats / Math.max(0.01, margin));
-  return sats;
+  return Math.max(0, sats);
 }
 
-export function ugentligOekonomi(s: GameState, kunder: KundeUge, kontraktIndtaegt: number): LedgerWeek {
+export function ugentligOekonomi(s: GameState, kunder: KundeUge, kontraktIndtaegt: number, offshoreBsi = 0): LedgerWeek {
   const r = tomtRegnskab();
   r.kontrakter = kontraktIndtaegt;
-  r.bsi = kunder.bsiIalt;
+  r.bsi = kunder.bsiIalt + offshoreBsi;
   let kasinoBsi = 0;
   let egneSlotsBsi = 0;
   for (const m of Object.keys(kunder.bsi) as MarketId[]) {
@@ -36,15 +38,18 @@ export function ugentligOekonomi(s: GameState, kunder: KundeUge, kontraktIndtaeg
       const prods = s.produkter.filter((p) => p.aktiv && p.ejer === 'spiller' && p.markeder.includes(m) && PRODUCT_TYPES[p.typeId].vertikal === v);
       const margin = prods.length ? prods.reduce((a, p) => a + p.margin, 0) / prods.length : 0.05;
       r.afgift += b * effektivAfgift(s, m, v, margin);
+      r.bonus += b * (BONUS_PCT[effektivBonus(s, m)] + VIP_PCT[effektivVip(s, m)]);
       if (v === 'kasino') {
         kasinoBsi += b;
         for (const p of prods) if (p.typeId === 'egneSlots') egneSlotsBsi += p.bsiPrUge[m] ?? 0;
       }
     }
   }
-  r.revenueShare = r.bsi * PLATFORM_MODELS[s.platforme.kontoplatform.model].revenueShare;
-  r.betalinger = r.bsi * INDBETALING_PR_BSI * BETALINGER_PCT;
-  r.bonus = r.bsi * (BONUS_PCT[s.bonusNiveau] + VIP_PCT[s.vipProgram]);
+  r.revenueShare = kunder.bsiIalt * PLATFORM_MODELS[s.platforme.kontoplatform.model].revenueShare;
+  r.betalinger = kunder.bsiIalt * INDBETALING_PR_BSI * BETALINGER_PCT;
+  // Offshore-brandets grå BSI: licens, betalinger og hosting uden dansk afgift
+  const offshoreOmk = offshoreBsi * OFFSHORE_BRAND.omkostning;
+  r.betalinger += offshoreOmk;
   r.indhold = Math.max(0, kasinoBsi - egneSlotsBsi) * AGGREGATOR_PCT;
   for (const k of CHANNEL_IDS) if (kanalTilgaengelig(s, k)) r.marketing += s.marketingMix[k] ?? 0;
   r.loen = s.staff.reduce((a, m) => a + m.loenPrUge, 0);

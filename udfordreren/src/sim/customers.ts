@@ -13,16 +13,28 @@ import { aarDecimal, aarFor, kurve } from './time';
 import { clamp } from './util';
 import { forskningsEffekt } from './insight';
 import { passiveEffekter } from './staff';
+import { markedTotalBsi } from './offshore';
+import { effektivBonus, effektivVip, regelEffekt } from './regulation';
+import { trendEffekt } from './trends';
 
 export const VERTIKALER: Vertical[] = ['betting', 'kasino'];
 
-/** Markedets licenserede online-BSI pr. uge (mio. kr.) før hold-varians */
+/** Markedets samlede online-BSI pr. uge (licenseret + offshore, mio. kr.) før trends og hold-varians */
 export function markedsBsiBasis(m: MarketId, v: Vertical, uge: number): number {
+  return markedTotalBsi(m, v, uge);
+}
+
+/** Markedets licenserede online-BSI pr. uge ifølge kurven (spec 7.3) */
+export function licenseretBsiKurve(m: MarketId, v: Vertical, uge: number): number {
   const kurvePunkter = MARKET_CURVES[m][v];
   const aar = aarDecimal(uge);
-  if (kurvePunkter.length && aar < kurvePunkter[0][0]) return 0;
+  if (kurvePunkter.length === 0 || aar < kurvePunkter[0][0]) return 0;
   return (kurve(kurvePunkter, aar) * 1000) / 52;
 }
+
+/** Strenghed over 2 gør kunderne dyrere og mindre værd (grænser, KYC, reklameregler) [D] */
+export const strenghedCac = (streng: number): number => 1 + 0.06 * Math.max(0, streng - 2);
+export const strenghedArpu = (streng: number, v: Vertical): number => 1 - 0.03 * Math.max(0, streng - 2) * (v === 'kasino' ? 1.5 : 1);
 
 /** Antal aktive online-kunder i markedet (licenseret + offshore) */
 export function markedsKunder(s: GameState, m: MarketId, v: Vertical): number {
@@ -87,12 +99,17 @@ export function effektivCac(s: GameState, kanal: AcqChannel, m: MarketId): numbe
   const andel = kundeAndel(s, m);
   const eff = forskningsEffekt(s);
   const passiv = passiveEffekter(s);
+  const regel = regelEffekt(s, m);
+  const effektivitet = Math.max(0.3, 1 + trendEffekt(s, m).marketingRoi + regel.marketingEffekt);
   return (
-    def.cac *
-    MARKETS[m].cacFaktor *
-    (1 + andel * andel * CAC_ANDEL_FAKTOR) *
-    konkurrentTryk(s, m) *
-    Math.max(0.5, 1 + eff.cac + passiv.cac)
+    (def.cac *
+      MARKETS[m].cacFaktor *
+      (1 + andel * andel * CAC_ANDEL_FAKTOR) *
+      konkurrentTryk(s, m) *
+      Math.max(0.5, 1 + eff.cac + passiv.cac) *
+      (1 + regel.cac[kanal]) *
+      strenghedCac(s.markeder[m].strenghed)) /
+    effektivitet
   );
 }
 
@@ -111,8 +128,9 @@ export function kanalTilgaengelig(s: GameState, kanal: AcqChannel): boolean {
 /** Nye kunder fra betalte kanaler denne uge i et marked, før fordeling på vertikaler */
 export function kanalTilgang(s: GameState, m: MarketId, andelAfBudget: number): number {
   let nye = 0;
+  const lukket = regelEffekt(s, m).lukket;
   for (const k of CHANNEL_IDS) {
-    if (k === 'crm') continue;
+    if (k === 'crm' || lukket.includes(k)) continue;
     const spend = (s.marketingMix[k] ?? 0) * andelAfBudget;
     if (spend <= 0 || !kanalTilgaengelig(s, k)) continue;
     const cac = effektivCac(s, k, m);
@@ -120,7 +138,7 @@ export function kanalTilgang(s: GameState, m: MarketId, andelAfBudget: number): 
     const effSpend = spend / (1 + spend / CHANNELS[k].maetning);
     nye += (effSpend * 1e6) / cac;
   }
-  return nye * (1 + BONUS_TILGANG[s.bonusNiveau]);
+  return nye * (1 + BONUS_TILGANG[effektivBonus(s, m)]);
 }
 
 /** Anmeldelsens vægt i lanceringsbølgen: stejl som salget i Game Dev Story (0,2 ved 0/40 … 2,5 ved 40/40) */
@@ -193,6 +211,13 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
     p.bsiPrUge = {};
     p.nyeSpillerePrUge = {};
   }
+  // Suspenderet licens: kunderne kan ikke spille og siver væk; inddraget: kunderne er tabt
+  for (const m of Object.keys(s.markeder) as MarketId[]) {
+    const ms = s.markeder[m];
+    if (ms.licens === 'suspenderet') for (const v of VERTIKALER) ms.spillerKunder[v] *= 0.9;
+    if (ms.licens === 'inddraget') for (const v of VERTIKALER) ms.spillerKunder[v] = 0;
+    if (ms.licens !== 'aktiv') ms.spillerBsiPrUge = { betting: 0, kasino: 0 };
+  }
 
   markeder.forEach((m, mi) => {
     const ms = s.markeder[m];
@@ -237,7 +262,7 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
         Math.max(0.5, 1 + 1.2 * (marginRatio - 1)) *
         (1.45 - 0.9 * st) *
         (1 - crmReduktion) *
-        (1 + BONUS_CHURN[s.bonusNiveau]) *
+        (1 + BONUS_CHURN[effektivBonus(s, m)]) *
         Math.max(0.5, 1 + eff.churn + passiv.churn) *
         (1 + Math.min(0.5, fejlSnit * 0.02));
       C = C + basisTilgang + boelger.reduce((a, b) => a + b, 0) - C * clamp(churnRate, 0.002, 0.5);
@@ -253,7 +278,9 @@ export function ugentligeKunder(s: GameState, rng: Rng): KundeUge {
         Math.pow(marginRatio, 0.85) *
         (1 + 0.07 * (intensitet - 3)) *
         (0.7 + 0.5 * st) *
-        (1 + VIP_ARPU[s.vipProgram]) *
+        (1 + VIP_ARPU[effektivVip(s, m)]) *
+        Math.max(0.3, 1 + regelEffekt(s, m).arpu[v]) *
+        strenghedArpu(ms.strenghed, v) *
         (1 + (v === 'betting' ? passiv.bettingBsi : passiv.kasinoBsi)) *
         (1 + eff.arpu) *
         hold;

@@ -90,6 +90,9 @@ export function newGame(opts: NewGameOptions): GameState {
     holdFaktor: {},
     naesteId: 0,
     mentor: opts.tutorial ? 'aktiv' : 'sprunget',
+    trends: [],
+    historiskeRegler: [],
+    offshoreBrandStartUge: null,
   };
   const rng = makeRng(s.rngState);
   s.staff = opts.stiftere.map((f) => lavStifter(s, f));

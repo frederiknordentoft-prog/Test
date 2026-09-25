@@ -153,7 +153,27 @@ export type MarketState = {
   spillerKunder: Record<Vertical, number>;
   markedsBsiPrUge: Record<Vertical, MioKr>; // hele markedets licenserede online-BSI denne uge
   spillerBsiPrUge: Record<Vertical, MioKr>;
+  // + fase 3: regulering, blokering, sanktioner
+  regler: string[]; // aktive regel-id'er (historiske og dynamiske)
+  blokering: { dns: Week | null; betaling: Week | null; leverandoer: boolean };
+  selvudelukkede: number; // 0..1 indeks (fx ROFUS)
+  sanktion: { trin: 0 | 1 | 2 | 3 | 4; sidsteUge: Week | null; roligeKvartaler: number };
+  suspenderetTil: Week | null;
+  lavKanaliseringUger: number; // uger i træk under kanaliseringsmålet (R11)
+  offshoreBrandBsiPrUge: MioKr; // spillerens grå BSI via offshore-brand i markedet
+  afgiftTillaeg: number; // procentpoint fra dynamiske afgiftsregler
+  aabnetUge: Week | null; // hvornår markedet åbnede (for spilleren)
 };
+
+export type TrendEffect = {
+  bettingBsi?: number; // multiplikator-tillæg på markedets betting-BSI (fx 0,25 = +25 %)
+  kasinoBsi?: number;
+  offshorePp?: number; // procentpoint på offshore-andelen
+  marketingRoi?: number; // tillæg på marketingeffekt (fx −0,1)
+  afgiftRisiko?: number; // tillæg på sandsynligheden for afgiftsstigninger (R10)
+};
+
+export type AktivTrend = { id: string; startUge: Week; slutUge: Week; markeder: MarketId[] | 'alle'; effekt: TrendEffect; titel: string }; // +
 
 export type CompetitorArchetype =
   | 'globalGigant'
@@ -341,7 +361,12 @@ export type Signal =
   | { k: 'runde'; runde: FundingRound; kapital: MioKr }
   | { k: 'advarsel'; tekst: string }
   | { k: 'fejl'; tekst: string } // afvist handling
-  | { k: 'slut'; id: string };
+  | { k: 'slut'; id: string }
+  // + fase 3
+  | { k: 'markedAabner'; marked: MarketId }
+  | { k: 'regel'; marked: MarketId; regelId: string; varsel: boolean }
+  | { k: 'sanktion'; marked: MarketId; trin: 1 | 2 | 3 | 4; boede?: MioKr }
+  | { k: 'trend'; id: string; titel: string };
 
 export type GameState = {
   version: 2;
@@ -390,7 +415,10 @@ export type GameState = {
   nyheder: NewsItem[];
   flags: string[];
   eventLog: { uge: Week; eventId: string; valg: number }[];
-  planlagteRegler: { marked: MarketId; regelId: string; ikrafttraedelseUge: Week }[];
+  planlagteRegler: { marked: MarketId; regelId: string; ikrafttraedelseUge: Week; annonceret?: boolean; dynamisk?: boolean }[];
+  trends: AktivTrend[]; // + fase 3
+  historiskeRegler: string[]; // + id'er på historiske regler, der er annonceret eller trådt i kraft
+  offshoreBrandStartUge: Week | null; // + fase 3
   slut: { id: string; vaerdi: MioKr; eftermaele: number } | null;
   // +
   kontraktTilbud: ContractOffer[];
@@ -457,7 +485,8 @@ export type Action =
   | { t: 'eventChoice'; eventId: string; valg: number }
   // + ikke i spec-listen, men nødvendige for fase 1-2
   | { t: 'cancelProject'; projectId: string }
-  | { t: 'setMentor'; status: 'aktiv' | 'sprunget' | 'faerdig' };
+  | { t: 'setMentor'; status: 'aktiv' | 'sprunget' | 'faerdig' }
+  | { t: 'setOffshoreBrand'; aktiv: boolean };
 
 export type NewGameOptions = {
   seed: number;

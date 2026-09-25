@@ -42,6 +42,8 @@ export const COMPETITORS: CompetitorDef[] = [
     startProdukter: [
       { navn: 'bet356 Live', typeId: 'livebetting', themeId: 'fodbold', kvalitet: 0.66, markeder: ['dk'] },
       { navn: 'bet356 Spil', typeId: 'slotsAggregator', themeId: 'retro', kvalitet: 0.5, markeder: ['dk'] },
+      { navn: 'bet356 In-Play', typeId: 'livebetting', themeId: 'fodbold', kvalitet: 0.68, markeder: ['uk'] },
+      { navn: 'bet356 Games', typeId: 'slotsAggregator', themeId: 'eventyr', kvalitet: 0.54, markeder: ['uk'] },
     ],
   },
   {
@@ -51,6 +53,7 @@ export const COMPETITORS: CompetitorDef[] = [
     startProdukter: [
       { navn: 'Unibit Odds', typeId: 'prematch', themeId: 'fodbold', kvalitet: 0.58, markeder: ['dk'] },
       { navn: 'Unibit Kasino', typeId: 'slotsAggregator', themeId: 'eventyr', kvalitet: 0.5, markeder: ['dk'] },
+      { navn: 'Unibit Sport', typeId: 'prematch', themeId: 'tennis', kvalitet: 0.56, markeder: ['uk'] },
     ],
   },
   {
@@ -63,7 +66,10 @@ export const COMPETITORS: CompetitorDef[] = [
     id: 'lionVegas', navn: 'LionVegas', brands: ['LionVegas'], arketype: 'appFirst', arkivId: 'app-first-1',
     markeder: ['dk', 'se', 'uk'], vertikaler: ['kasino', 'betting'], styrke: [[0, 3]], aggressivitet: 4, innovation: 4, opkoebslyst: 2, compliance: 3,
     fraUge: 0, farve: '#f5a300', monogram: 'LV',
-    startProdukter: [{ navn: 'LionVegas Kasino', typeId: 'slotsAggregator', themeId: 'rigdom', kvalitet: 0.56, markeder: ['dk'] }],
+    startProdukter: [
+      { navn: 'LionVegas Kasino', typeId: 'slotsAggregator', themeId: 'rigdom', kvalitet: 0.56, markeder: ['dk'] },
+      { navn: 'LionVegas Slots', typeId: 'slotsAggregator', themeId: 'mytologi', kvalitet: 0.57, markeder: ['uk'] },
+    ],
   },
   {
     id: 'komNu', navn: 'KomNu', brands: ['KomNu', 'Mr Grøn', 'Bet52'], arketype: 'lokalSpecialist', arkivId: 'lokal-specialist-1',

@@ -13,6 +13,7 @@ import { raiseRound } from './investors';
 import { startResearch } from './insight';
 import { upgradeOffice } from './office';
 import { eventChoice } from './events';
+import { setOffshoreBrand } from './offshore';
 import { kanalTilgaengelig, kampagneKunder } from './customers';
 
 export const MAX_MARKETING_PR_KANAL = 50; // mio. kr./uge
@@ -88,6 +89,7 @@ export function applyActionMut(s: GameState, rng: Rng, a: Action): boolean {
     case 'upgradeOffice': return upgradeOffice(s);
     case 'eventChoice': return eventChoice(s, a.eventId, a.valg);
     case 'setMentor': s.mentor = a.status; return true;
+    case 'setOffshoreBrand': return setOffshoreBrand(s, a.aktiv);
     case 'choosePlatform':
     case 'sellPlatformB2B':
     case 'acceptOffer':

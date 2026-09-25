@@ -61,7 +61,9 @@ describe('Hitlisten', () => {
 describe('Kundeøkonomi', () => {
   it('markedets kunder følger markedsstørrelse / ARPU', () => {
     const s = nyt();
-    expect(markedsKunder(s, 'dk', 'kasino')).toBeCloseTo(1.8e9 / 7000, -3);
+    // Kurven er licenseret BSI; markedet inkl. offshore er større
+    expect(markedsKunder(s, 'dk', 'kasino')).toBeGreaterThan(1.8e9 / 7000);
+    expect(markedsKunder(s, 'dk', 'kasino')).toBeLessThan((1.8e9 / 7000) * 1.3);
   });
   it('CAC følger kanalen og stiger med andel (1 + andel² · 3)', () => {
     const s = nyt();

@@ -1,5 +1,7 @@
 // "Balanceret" bot (spec 8) — fase 1-2-udgave: vokser, varierer kombinationer, ansætter, træner og holder tilliden.
-import type { Action, GameState, ProductTypeId, Role, ThemeId, Vertical } from '../../src/sim/types';
+import type { Action, GameState, MarketId, ProductTypeId, Role, ThemeId, Vertical } from '../../src/sim/types';
+import { licensStatus, licensPris } from '../../src/sim/markets';
+import { MARKETS } from '../../src/data/markets';
 import type { Bot } from './types';
 import { PRODUCT_TYPE_IDS, PRODUCT_TYPES } from '../../src/data/productTypes';
 import { THEME_IDS } from '../../src/data/themes';
@@ -100,7 +102,11 @@ export const balanceretBot: Bot = {
         if (s.kapital > budget + 0.4) {
           a.push({
             t: 'startProject',
-            project: { navn: `${t.navn} ${s.uge}`, typeId: k.typeId, themeId: k.themeId, markeder: ['dk'], margin: t.marginStd, intensitet: 3, budget: Math.round(budget * 100) / 100 },
+            project: {
+              navn: `${t.navn} ${s.uge}`, typeId: k.typeId, themeId: k.themeId,
+              markeder: (Object.keys(s.markeder) as MarketId[]).filter((m) => s.markeder[m].vertikaler[t.vertikal].status !== 'ingen' && s.markeder[m].licens !== 'inddraget'),
+              margin: t.marginStd, intensitet: 3, budget: Math.round(budget * 100) / 100,
+            },
           });
         }
       }
@@ -176,6 +182,14 @@ export const balanceretBot: Bot = {
     // Anden vertikal fra 2014
     const anden = ANDEN_VERTIKAL[s.startVertikal];
     if (aar >= 2014 && s.markeder.dk.vertikaler[anden].status === 'ingen' && s.kapital > 4) a.push({ t: 'applyLicense', market: 'dk', vertical: anden });
+    // Udvid til nye markeder efter afgift og kanalisering (spec 8: Balanceret)
+    if (s.kontor !== 'garage' && s.kapital > 25) {
+      const kandidater = (['uk', 'se', 'on', 'nl', 'de', 'us', 'fi'] as MarketId[])
+        .filter((m) => licensStatus(s, m).ok && s.markeder[m].vertikaler[s.startVertikal].status === 'ingen')
+        .sort((a, b) => s.markeder[b].kanalisering - s.markeder[a].kanalisering - (s.markeder[b].afgift - s.markeder[a].afgift));
+      const m = kandidater[0];
+      if (m && s.kapital > licensPris(s, m).gebyr * 6 + 20 && MARKETS[m].cacFaktor <= 2) a.push({ t: 'applyLicense', market: m, vertical: s.startVertikal });
+    }
     // Runder
     const r = naesteRunde(s);
     if (r.ok) a.push({ t: 'raiseRound' });

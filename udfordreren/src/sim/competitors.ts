@@ -3,6 +3,7 @@
 import type { Competitor, GameState, LiveProduct, MarketId, ProductTypeId, ThemeId, Vertical } from './types';
 import type { Rng } from './rng';
 import { COMPETITORS, PRODUKT_SUFFIKS, type CompetitorDef } from '../data/competitors';
+import { MARKETS } from '../data/markets';
 import { PRODUCT_TYPES, PRODUCT_TYPE_IDS } from '../data/productTypes';
 import { THEMES, THEME_IDS } from '../data/themes';
 import { fitFor } from '../data/compatibility';
@@ -21,9 +22,32 @@ export function konkurrentStyrke(c: Competitor, uge: number): number {
   return def ? trin(def.styrke, uge) : c.styrke;
 }
 
-function naesteLancering(rng: Rng, innovation: number): number {
-  const aar = BALANCE.konkurrentLanceringInterval * (3 / (1.2 + 0.6 * innovation));
-  return Math.round(52 * aar * rng.range(0.7, 1.3));
+function naesteLancering(rng: Rng, innovation: number, antalMarkeder = 1): number {
+  const aar = (BALANCE.konkurrentLanceringInterval * (3 / (1.2 + 0.6 * innovation))) / Math.sqrt(Math.max(1, antalMarkeder));
+  return Math.max(4, Math.round(52 * aar * rng.range(0.7, 1.3)));
+}
+
+/** Vælg marked for en lancering: store markeder og markeder, hvor konkurrenten har få produkter */
+function vaelgMarked(s: GameState, rng: Rng, c: Competitor): MarketId | null {
+  const aabne = c.markeder.filter((m) => s.markeder[m].aaben);
+  if (aabne.length === 0) return null;
+  return rng.weighted(aabne, (m) => {
+    const str = s.markeder[m].markedsBsiPrUge.betting + s.markeder[m].markedsBsiPrUge.kasino + 1;
+    const egne = s.produkter.filter((p) => p.aktiv && p.ejer === c.id && p.markeder.includes(m)).length;
+    return Math.sqrt(str) / (1 + egne);
+  });
+}
+
+/** Når et marked åbner, går de tilstedeværende konkurrenter ind med et produkt pr. vertikal */
+export function markedsindtog(s: GameState, rng: Rng, m: MarketId): void {
+  for (const c of s.konkurrenter) {
+    if (!c.tilstede || !c.markeder.includes(m)) continue;
+    for (const v of c.vertikaler) {
+      if (s.produkter.some((p) => p.aktiv && p.ejer === c.id && p.markeder.includes(m) && produktVertikal(p) === v)) continue;
+      lancerKonkurrentProdukt(s, rng, c, m, v);
+    }
+    c.sidsteHandling = `Gik ind i ${MARKETS[m].navn} ved åbningen.`;
+  }
 }
 
 export function initKonkurrenter(s: GameState, rng: Rng): void {
@@ -80,8 +104,8 @@ export function initKonkurrenter(s: GameState, rng: Rng): void {
   }
 }
 
-function vaelgTypeOgTema(rng: Rng, c: Competitor, aar: number): { typeId: ProductTypeId; themeId: ThemeId; v: Vertical } {
-  const v = rng.pick(c.vertikaler);
+function vaelgTypeOgTema(rng: Rng, c: Competitor, aar: number, fastV?: Vertical): { typeId: ProductTypeId; themeId: ThemeId; v: Vertical } {
+  const v = fastV ?? rng.pick(c.vertikaler);
   const typer = PRODUCT_TYPE_IDS.filter((t) => {
     const def = PRODUCT_TYPES[t];
     return def.vertikal === v && def.fraAar <= aar && !def.krav.lovligMarked && t !== 'aiSlots' && t !== 'egneSlots';
@@ -97,9 +121,9 @@ export function konkurrentKvalitet(rng: Rng, c: Competitor, uge: number): number
   return clamp(0.36 + 0.045 * konkurrentStyrke(c, uge) + 0.05 * c.innovation + 0.012 * aar + 0.06 * rng.gauss(), 0.2, 0.95);
 }
 
-export function lancerKonkurrentProdukt(s: GameState, rng: Rng, c: Competitor, marked: MarketId): LiveProduct {
+export function lancerKonkurrentProdukt(s: GameState, rng: Rng, c: Competitor, marked: MarketId, fastV?: Vertical): LiveProduct {
   const def = DEF_BY_ID[c.id];
-  const { typeId, themeId } = vaelgTypeOgTema(rng, c, aarFor(s.uge));
+  const { typeId, themeId } = vaelgTypeOgTema(rng, c, aarFor(s.uge), fastV);
   const kvalitet = konkurrentKvalitet(rng, c, s.uge);
   const { anmeldelser, total40 } = konkurrentAnmeldelser(rng, kvalitet);
   const brand = def ? rng.pick(def.brands) : c.navn;
@@ -135,7 +159,7 @@ export function lancerKonkurrentProdukt(s: GameState, rng: Rng, c: Competitor, m
   };
   s.produkter.push(p);
   c.sidsteHandling = `Lancerede ${navn} (${t.navn}, ${THEMES[themeId].navn}).`;
-  nyhed(s, `${c.navn} lancerer ${navn} — ${total40}/40 hos anmelderne.`, 'konkurrent');
+  nyhed(s, `${c.navn} lancerer ${navn}${marked !== 'dk' ? ` i ${MARKETS[marked].navn}` : ''} — ${total40}/40 hos anmelderne.`, 'konkurrent');
   // Ryd op: højst N aktive produkter pr. vertikal pr. marked
   const v = t.vertikal;
   const egne = s.produkter.filter((x) => x.aktiv && x.ejer === c.id && x.markeder.includes(marked) && produktVertikal(x) === v);
@@ -156,11 +180,12 @@ export function ugentligeKonkurrenter(s: GameState, rng: Rng): void {
     c.styrke = konkurrentStyrke(c, s.uge);
     if (!c.tilstede) continue;
     if (s.uge >= c.naesteLanceringUge) {
-      const marked = rng.pick(c.markeder.filter((m) => s.markeder[m].aaben));
+      const marked = vaelgMarked(s, rng, c);
       if (marked) lancerKonkurrentProdukt(s, rng, c, marked);
-      c.naesteLanceringUge = s.uge + naesteLancering(rng, c.innovation);
+      c.naesteLanceringUge = s.uge + naesteLancering(rng, c.innovation, c.markeder.filter((m) => s.markeder[m].aaben).length);
     }
   }
+  for (const m of Object.keys(s.markeder) as MarketId[]) if (s.markeder[m].aabnetUge === s.uge && s.uge > 0) markedsindtog(s, rng, m);
   for (const p of s.produkter) {
     if (p.ejer === 'spiller') continue;
     p.bsiPrUge = {};

@@ -33,3 +33,12 @@
 - Anmeldelsesscoren bruger en logistisk kurve i q-rum (k = 7,4, q0 = 0,583): Guldkupon kræver ca. 1,4× markedsstandarden på alle relevante parametre, Hall of Fame ca. 2×.
 - Årets innovation tæller nye kombinationer og nye features i lancerede produkter (8 point hver) mod konkurrenternes innovation + 1,5 pr. år.
 - Spillet kan hoppes frem med `debugHopTilAar`, som auto-vælger første valg i events.
+- Markedskurverne i 7.3 tolkes som licenseret BSI. Markedets total = kurve / (1 − reference-offshore), så dynamisk offshore flytter BSI mellem licenseret og offshore.
+- Offshore-formlen fra 7.8 bruges uændret; den strukturelle basis er en kalibreret kurve pr. marked. Danmarks basis falder i 2021, så afgiftsløftet til 28 % ikke giver et kanaliseringsfald, der ikke skete i virkeligheden.
+- Trendenes offshore-procentpoint (krypto, streamere, sweepstakes) lægges direkte på andelene, ikke gennem kasino/betting-faktoren.
+- Sanktionstrappen går ét trin op med 60 % sandsynlighed pr. kvartal, når tilliden er under grænsen, og ét trin ned efter fire kvartaler med tillid ≥ 60. Påbud koster 50 t. kr., bøden er max(0,2 mio., 4 % af årlig BSI i markedet), gennemgang suspenderer licensen i 8 uger, inddragelse koster kunderne.
+- Strenghed over 2 gør kunder 6 % dyrere pr. trin og 3 % mindre værd pr. trin (kasino 1,5×).
+- Offshore-brand: 2 mio. i opstart; henter 4 % af offshore-puljerne (8 % af Norges grå marked) × (0,5 + bedste kvalitet); 15 % i omkostninger; 10 % risiko pr. år for inddragelse af alle licenser.
+- En aggressiv spiller (bonus + VIP + antal aggressive kanaler ≥ 4) hæver presset 0,25 pr. kvartal i sine markeder; presset falder ellers 0,1 pr. kvartal mod 1. R8 formaliseres i fase 4.
+- Konkurrenter vælger marked efter markedsstørrelse og hvor få produkter de har der; lanceringsfrekvensen skalerer med √(antal markeder).
+- Når et marked åbner, går tilstedeværende konkurrenter ind med ét produkt pr. vertikal (R4's marketingboost kommer i fase 4).

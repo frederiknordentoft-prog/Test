@@ -19,7 +19,7 @@ export type EventEffect = {
   vaerdiPct?: number; // værdiansættelse
 };
 
-export type EventTrigger = 'tilfaeldig' | 'lanceringMedFejl' | 'investorPres' | 'medarbejder' | 'forsteLancering';
+export type EventTrigger = 'tilfaeldig' | 'lanceringMedFejl' | 'investorPres' | 'medarbejder' | 'forsteLancering' | 'system';
 
 export type EventDef = {
   id: string;
@@ -160,5 +160,11 @@ export const EVENTS: EventDef[] = [
     ],
   },
 ];
+
+EVENTS.push({
+  id: 'offshoreAfsloeret', titel: 'Afsløret!', trigger: 'system', fraAar: 2012, tilAar: 2035, chancePrUge: 0, engang: false,
+  tekst: 'En journalist har fulgt pengene fra kryptokasinoet til jeres konto. Tilsynene i alle regulerede markeder har inddraget licenserne.',
+  valg: [{ tekst: 'Det var prisen', forklaring: 'Licenserne er væk. I kan søge igen, men tilliden skal genopbygges.', effekt: { omdoemme: -15 } }],
+});
 
 export const EVENT_BY_ID = Object.fromEntries(EVENTS.map((e) => [e.id, e])) as Record<string, EventDef>;

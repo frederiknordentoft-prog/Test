@@ -15,7 +15,10 @@ import { ugentligHitliste } from './charts';
 import { ugentligeMesser } from './expos';
 import { ugentligGalla } from './gala';
 import { kvartalsmoede } from './investors';
-import { kvartalsTillid } from './trust';
+import { kvartalsTillid, sanktioner } from './trust';
+import { ugentligeTrends } from './trends';
+import { ugentligRegulering, kvartalsPres } from './regulation';
+import { ugentligtOffshoreBrand } from './offshore';
 import { ugentligeEvents } from './events';
 import { CHANNELS, CHANNEL_IDS } from '../data/acquisition';
 import { BALANCE } from '../data/balance';
@@ -57,6 +60,8 @@ function simulerUge(s: GameState, rng: Rng): void {
     s.aarAkk = { aar, nyeKombinationer: 0, nyeFeatures: 0, lanceringer: 0, bedsteTotal40: 0, startKunder: spillerKunderTotal(s), tillidSum: 0, tillidUger: 0 };
   }
 
+  ugentligeTrends(s, rng);
+  ugentligRegulering(s, rng);
   ugentligeMarkeder(s, rng);
   ugentligForskning(s);
 
@@ -77,7 +82,8 @@ function simulerUge(s: GameState, rng: Rng): void {
 
   // Kunder, økonomi, konkurrenter og hitliste
   const kunder = ugentligeKunder(s, rng);
-  ugentligOekonomi(s, kunder, k.indtaegt);
+  const graa = ugentligtOffshoreBrand(s, rng);
+  ugentligOekonomi(s, kunder, k.indtaegt, graa);
   ugentligeKonkurrenter(s, rng);
   ugentligHitliste(s);
 
@@ -95,6 +101,8 @@ function simulerUge(s: GameState, rng: Rng): void {
   ugentligGalla(s, rng);
   if (s.uge > 0 && ugeIAar(s.uge) % 13 === 0) {
     kvartalsTillid(s);
+    sanktioner(s, rng);
+    kvartalsPres(s);
     kvartalsmoede(s, rng);
   }
   ugentligeEvents(s, rng);
