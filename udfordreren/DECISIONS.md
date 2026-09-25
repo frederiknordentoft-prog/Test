@@ -87,3 +87,4 @@
 - BSI pr. kunde stiger 9 % pr. intensitetstrin over 3; VIP niveau 3 giver +30 % og bonus niveau 3 +100 % tilgang — grådighed betaler sig på kort sigt.
 - Statsselskabets hjemmebane på hitlisten er × 5 til 2016 (en enkelt seed nåede nr. 1 i 2015 med × 3).
 - Faselængderne vokser 20 % om året (højst × 3), så akt 1 får færre lanceringspauser og AI-akten ≥ 40 % af pauserne.
+- Den danske offshore-basis 2021-2025 er sænket 1,2 pp, så den passive median-kanalisering i 2024 lander på ca. 90,5 % (midt i 88-93 %); der er en lav hale i seeds med dynamiske afgiftsstigninger.

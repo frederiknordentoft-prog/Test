@@ -20,7 +20,7 @@ export const OFFSHORE_FORMEL = {
 /** Strukturel basis (pp) pr. marked over tid [D-kalibreret] */
 export const OFFSHORE_BASIS: Record<MarketId, [number, number][]> = {
   // dk: afgiften stiger til 28 % og strengheden til 3 i 2021 uden at kanaliseringen falder [F: 91,5 % i 2024]
-  dk: [[2012, 12.5], [2016, 11], [2020.95, 11.3], [2021.05, -1], [2024, -1.6], [2030, -1.5], [2035, 2]],
+  dk: [[2012, 12.5], [2016, 11], [2020.95, 11.3], [2021.05, -2.2], [2024, -2.8], [2030, -2.2], [2035, 1.5]],
   uk: [[2012, 8.6], [2020, 3.8], [2025, -0.2], [2030, -8], [2035, -8]],
   se: [[2019, 11.3], [2023, 12.4], [2025, 14.2], [2030, 12.8], [2035, 11.4]],
   de: [[2021, -12], [2023, -2], [2025, -0.6], [2030, -3.8], [2035, -4]],
