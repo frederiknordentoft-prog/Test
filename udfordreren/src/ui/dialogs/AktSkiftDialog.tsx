@@ -16,7 +16,7 @@ export default function AktSkiftDialog({ signal, onLuk, genvisning }: { signal: 
   useEffect(() => {
     if (genvisning) return;
     try {
-      spil('fanfareSlut');
+      spil('aktSkift');
     } catch {
       /* lyd må aldrig vælte spillet */
     }

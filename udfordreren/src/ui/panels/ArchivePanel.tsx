@@ -52,7 +52,7 @@ export default function ArchivePanel() {
         I virkeligheden … Her står det, spillet er inspireret af. Opslagene låses op, når markeder, rivaler og nyheder dukker op hos jer.
       </p>
       <div className="mb-3 h-2.5 overflow-hidden rounded-sm border-2 border-line bg-bg" aria-hidden>
-        <div className="h-full bg-gold transition-[width] duration-300" style={{ width: `${(aabne / Math.max(1, liste.length)) * 100}%` }} />
+        <div className="h-full origin-left bg-gold transition-transform duration-300" style={{ transform: `scaleX(${aabne / Math.max(1, liste.length)})` }} />
       </div>
       <div className="shell-uden-scrollbar -mx-3 mb-3 flex gap-1.5 overflow-x-auto px-3" role="radiogroup" aria-label="Filtrér Arkivet">
         {FILTRE.map((f) => {

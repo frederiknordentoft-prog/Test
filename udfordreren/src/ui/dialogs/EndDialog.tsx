@@ -17,7 +17,7 @@ import { ByDiagram, Eftermaele, SlutSektion, Tidslinje, Trofaehylde } from '../c
 import { ArkivOpslagModal } from './ArkivDialog';
 import { mio, pct } from '../format';
 import { opsummering, varighedTekst } from '../lib/shellHjaelp';
-import { MODE_INFO, TONE, arvOpsummering, byUdvikling, delEftertanke, ngPlusValg, slutInfo, trofaeer, type StartMode } from '../lib/slutHjaelp';
+import { MODE_INFO, TONE, arvOpsummering, byUdvikling, delEftertanke, eftertankeKort, ngPlusValg, slutInfo, titelForvalg, trofaeer, type StartMode } from '../lib/slutHjaelp';
 import { spil } from '../../audio/sfx';
 
 function Fakta({ ikon, farve, label, vaerdi, under, testId }: { ikon: IkonNavn; farve: string; label: string; vaerdi: string; under?: string; testId?: string }) {
@@ -66,7 +66,7 @@ export default function EndDialog({ signal, onLuk }: { signal: Signal; onLuk: ()
 
   const data = useMemo(() => {
     if (!g) return null;
-    return { em: eftermaele(g), tanker: eftertanke(g), trofae: trofaeer(g), by: byUdvikling(g), o: opsummering(g) };
+    return { em: eftermaele(g), tanker: eftertankeKort(g, eftertanke(g)), trofae: trofaeer(g), by: byUdvikling(g), o: opsummering(g) };
   }, [g]);
 
   if (!g || !data) return null;
@@ -112,7 +112,17 @@ export default function EndDialog({ signal, onLuk }: { signal: Signal; onLuk: ()
             <Btn onClick={nytSpil} testId="nyt-spil" disabled={!!starter}>
               <Ikon navn="hus" /> Nyt spil
             </Btn>
-            <Btn variant="primaer" onClick={() => start('normal')} testId="ngplus-normal" disabled={!!starter} title="Kombinationsbogen og niveauerne følger med">
+            <Btn
+              variant="primaer"
+              onClick={() => {
+                // Til titelskærmen med firmaet forvalgt: stiftere og vertikal kan vælges om, og arven er slået til
+                titelForvalg.v = { navn: g.firmaNavn, stiftere: [...g.stiftere], vertikal: g.startVertikal };
+                nytSpil();
+              }}
+              testId="ngplus-normal"
+              disabled={!!starter}
+              title="Kombinationsbogen og niveauerne følger med. Vælg stiftere og vertikal på titelskærmen."
+            >
               <Ikon navn="play" /> New Game+
             </Btn>
           </>

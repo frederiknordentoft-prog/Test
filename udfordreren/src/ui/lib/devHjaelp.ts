@@ -273,3 +273,7 @@ export function anmeldelsesDom(total: number, forrige: number | null, antal: num
   if (antal <= 1) return total >= 18 ? 'Et fint første skridt. Næste version bliver skarpere.' : 'Hårdt publikum. Men alle store starter et sted.';
   return `Anmelderne var ikke imponerede.${hint || ' Næste gang bliver skarpere.'}`;
 }
+
+// ---------- Markedsstandarden og Hall of Fame (i standardHjaelp.ts, så de kan testes uden kit.tsx) ----------
+
+export { standardSpring, standardKurve, hallOfFameMangler, HALL_OF_FAME_KRAV, type StandardSpring } from './standardHjaelp';

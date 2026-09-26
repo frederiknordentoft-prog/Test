@@ -60,3 +60,10 @@ export function nyhedArkivId(n: Pick<NewsItem, 'arkivId'>): string | undefined {
 export function arkivNr(id: string): number {
   return ARKIV.findIndex((a) => a.id === id) + 1;
 }
+
+/** Gentager eftertankens "I virkeligheden …" blot opslagets egne tal? Så vises kun opslaget (ingen dobbelt sætning).
+ *  Et forspil uden tal, eller med tal, opslaget ikke nævner, vises stadig. */
+export function forspilGentager(forspil: string, tekst: string): boolean {
+  const tal = forspil.match(/\d+(?:[.,]\d+)?/g) ?? [];
+  return tal.length > 0 && tal.every((t) => tekst.includes(t));
+}

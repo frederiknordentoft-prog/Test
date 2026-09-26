@@ -13,7 +13,12 @@ import { fitFor, FIT_NAVN } from '../../data/compatibility';
 import { Btn, Ikon, Modal, Tom } from '../components/kit';
 import { PixelTekst } from '../components/ShellPixelFont';
 import { DevStil, FitMaerke } from '../components/DevDele';
-import { anmeldelsesDom, lanceringsIndsigt, scoreFarve, svagesteParam, varFoersteForsoeg, visCitat, visVersion } from '../lib/devHjaelp';
+import {
+  anmeldelsesDom, hallOfFameMangler, lanceringsIndsigt, scoreFarve, standardKurve, standardSpring, svagesteParam, varFoersteForsoeg, visCitat, visVersion,
+  type StandardSpring,
+} from '../lib/devHjaelp';
+import { Portraet, VETERAN } from '../components/ShellPortraet';
+import { aarFor } from '../../sim/time';
 import { spil } from '../../audio/sfx';
 import { konfetti } from '../../render/particles';
 
@@ -54,12 +59,26 @@ function lavPlan(scores: number[], antalMaerker: number): Plan {
 
 function AnmelderKort({ id, score, citat, vist, taelt, citatVist }: { id: ReviewerId; score: number; citat: string; vist: boolean; taelt: number; citatVist: boolean }) {
   const r = REVIEWER_BY_ID[id];
-  if (!vist) {
-    return <div className="min-h-[104px] rounded-md border-2 border-dashed border-hi bg-bg2/50" aria-hidden />;
-  }
   const faerdig = taelt >= score;
+  // Kortet står der hele tiden (usynligt, til det afsløres), så dialogen har sin endelige højde fra start og ikke
+  // hopper, når kortene, totalen og mærkerne kommer til
   return (
-    <article className="dev-ind overflow-hidden rounded-md border-2 border-line bg-bg2 pixel-skygge" data-testid={`anmelder-${id}`}>
+    <div className="relative">
+      {!vist && <div className="absolute inset-0 rounded-md border-2 border-dashed border-hi bg-bg2/50" aria-hidden />}
+      <KortIndhold id={id} r={r} score={score} citat={citat} vist={vist} taelt={taelt} citatVist={citatVist} faerdig={faerdig} />
+    </div>
+  );
+}
+
+function KortIndhold({
+  id, r, score, citat, vist, taelt, citatVist, faerdig,
+}: { id: ReviewerId; r: (typeof REVIEWER_BY_ID)[ReviewerId]; score: number; citat: string; vist: boolean; taelt: number; citatVist: boolean; faerdig: boolean }) {
+  return (
+    <article
+      className={`overflow-hidden rounded-md border-2 border-line bg-bg2 pixel-skygge ${vist ? 'dev-ind' : 'invisible'}`}
+      data-testid={vist ? `anmelder-${id}` : undefined}
+      aria-hidden={vist ? undefined : true}
+    >
       <header
         className="flex items-center justify-between gap-2 border-b-2 border-line px-2 py-1"
         style={{ background: `repeating-linear-gradient(90deg, ${r.farve} 0 6px, color-mix(in srgb, ${r.farve} 82%, #000) 6px 8px)` }}
@@ -75,7 +94,7 @@ function AnmelderKort({ id, score, citat, vist, taelt, citatVist }: { id: Review
         <div
           className={`flex h-14 w-14 shrink-0 items-center justify-center rounded border-2 border-line bg-panel ${faerdig ? 'dev-stempel' : ''}`}
           aria-label={`${r.navn}: ${faerdig ? score : taelt} af 10`}
-          data-testid={`anmelder-score-${id}`}
+          data-testid={vist ? `anmelder-score-${id}` : undefined}
         >
           {taelt > 0 ? (
             <PixelTekst
@@ -93,6 +112,50 @@ function AnmelderKort({ id, score, citat, vist, taelt, citatVist }: { id: Review
         <p className={`min-w-0 flex-1 text-sm italic leading-snug text-ink transition-opacity duration-300 ${citatVist ? 'opacity-100' : 'opacity-0'}`}>»{citat}«</p>
       </div>
     </article>
+  );
+}
+
+/** Markedets standard steg siden sidst: vis kurven og Knuds råd (så et fald ikke føles som en straf for at gøre det rigtige) */
+function StandardBoks({ spring, kurve, aar, vist }: { spring: StandardSpring; kurve: { aar: number; v: number }[]; aar: number; vist: boolean }) {
+  const max = Math.max(1, ...kurve.map((k) => k.v));
+  const pct = Math.round(spring.pct * 100);
+  const raad =
+    aar < 2016
+      ? 'Standarden stiger stejlt i garageårene og flader ud omkring 2016. Et større budget, træning af holdet og en god kombination holder jer med — og hvert produkt løfter type- og temaniveauet.'
+      : 'Konkurrenterne hæver barren hvert år. Et større budget, træning af holdet og en stærkere platform holder jer med.';
+  return (
+    <div
+      className={`mt-2 w-full rounded-md border-2 border-line bg-bg2 p-2 text-left ${vist ? 'anim-glid' : 'invisible'}`}
+      data-testid={vist ? 'anmeldelse-standard' : undefined}
+      aria-hidden={vist ? undefined : true}
+    >
+      <div className="flex flex-wrap items-end gap-3">
+        <p className="min-w-[180px] flex-1 text-sm text-muted">
+          <Ikon navn="trend" farve="var(--color-warn)" str={14} className="mr-1 inline align-[-2px]" />
+          <b className="text-ink">Markedets standard</b> pr. parameter gik fra{' '}
+          <b className="tal font-pixel text-ink">{Math.round(spring.fra)}</b> til <b className="tal font-pixel text-warn">{Math.round(spring.til)}</b>
+          {pct > 0 && <> (+{pct} %)</>} siden {spring.forrigeNavn}.
+        </p>
+        <div className="flex h-12 shrink-0 items-end gap-1" role="img" aria-label={`Markedsstandarden ${kurve.map((k) => `${k.aar}: ${Math.round(k.v)}`).join(', ')}`}>
+          {kurve.map((k) => (
+            <div key={k.aar} className="flex h-full flex-col items-center justify-end gap-0.5">
+              <div
+                className="w-3.5 rounded-t-sm border-2 border-b-0 border-line"
+                style={{ height: `${Math.max(8, (k.v / max) * 100)}%`, background: k.aar === aar ? 'var(--color-warn)' : 'var(--color-hi)' }}
+                title={`${k.aar}: ${Math.round(k.v)}`}
+              />
+              <span className={`font-pixel text-[0.6rem] leading-none ${k.aar === aar ? 'font-black text-warn' : 'text-dim'}`}>'{String(k.aar).slice(2)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-2 flex items-start gap-2 border-t-2 border-line/60 pt-2">
+        <Portraet udseende={VETERAN} str={28} baggrund="var(--color-panel2)" className="h-7 w-7 shrink-0 rounded border-2 border-line" />
+        <p className="text-xs leading-snug text-muted">
+          <b className="text-ink">Knud:</b> {raad}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -123,6 +186,11 @@ export default function ReviewDialog({ signal, onLuk }: { signal: Signal; onLuk:
       niveauer,
       firma: g.firmaNavn,
       dom: anmeldelsesDom(p.total40, forrige?.total40 ?? null, egne.length + 1, svagesteParam(g, p)),
+      // Faldt scoren i forhold til sidst? Så vises markedsstandardens udvikling og et råd fra Knud
+      spring: forrige && p.total40 < forrige.total40 ? standardSpring(g, p, forrige) : null,
+      kurve: standardKurve(g, p, Math.max(2012, aarFor(p.lanceretUge) - 4), Math.min(2035, aarFor(p.lanceretUge) + 3)),
+      aar: aarFor(p.lanceretUge),
+      hofMangler: hallOfFameMangler(g, p),
       citater: Object.fromEntries(p.anmeldelser.map((a) => [a.anmelder, visCitat(g, p, a)])) as Partial<Record<ReviewerId, string>>,
     };
   });
@@ -164,6 +232,22 @@ export default function ReviewDialog({ signal, onLuk }: { signal: Signal; onLuk:
               <div className="font-pixel text-lg font-black uppercase tracking-wider">Hall of Fame!</div>
               <div className="text-xs font-bold">
                 {typeNavn} og {temaNavn} stiger permanent et niveau.
+              </div>
+            </div>
+          </div>
+        ),
+      });
+    }
+    if (snap.hofMangler) {
+      liste.push({
+        id: 'hof-naesten',
+        node: (
+          <div className="dev-ind flex items-center gap-3 rounded-md border-2 border-line bg-panel2 px-3 py-2" data-testid="maerke-hof-naesten">
+            <Ikon navn="krone" farve="var(--color-violet)" indre="var(--color-line)" str={24} />
+            <div className="min-w-0 text-sm">
+              <div className="font-pixel font-bold text-ink">{p.total40} point — næsten Hall of Fame!</div>
+              <div className="text-xs text-muted">
+                Hall of Fame kræver også, at {typeNavn} er på niveau {snap.hofMangler.krav}. I er på niveau {snap.hofMangler.niveau} — det stiger med hvert produkt af typen.
               </div>
             </div>
           </div>
@@ -294,9 +378,12 @@ export default function ReviewDialog({ signal, onLuk }: { signal: Signal; onLuk:
     if (maerkerVist > l.maerker) {
       for (let i = l.maerker; i < maerkerVist; i++) {
         const id = maerker[i]?.id ?? '';
-        if (id === 'guld') konfetti({ antal: 170, kraft: 1.1 });
-        else if (id === 'hof') {
+        if (id === 'guld') {
+          konfetti({ antal: 170, kraft: 1.1 });
+          spil('guldkupon');
+        } else if (id === 'hof') {
           konfetti({ antal: 220, kraft: 1.4 });
+          spil('guldkupon', 1);
           setTimeout(() => konfetti({ antal: 160, regn: true }), 300);
         } else if (id.startsWith('niv-') && !alt) {
           try {
@@ -395,17 +482,27 @@ export default function ReviewDialog({ signal, onLuk }: { signal: Signal; onLuk:
         ) : (
           <div className="flex h-16 items-center font-pixel text-sm uppercase tracking-widest text-dim sm:h-20">Total …</div>
         )}
-        {totalFaerdig && (
-          <p className="mt-1 text-center text-sm text-muted" data-testid="anmeldelse-dom">
-            {snap.dom}
-          </p>
-        )}
+        {/* Dommen og markedsstandarden står der fra start (usynligt), så dialogen ikke hopper, når de kommer */}
+        <p
+          className={`mt-1 text-center text-sm text-muted ${totalFaerdig ? 'anim-glid' : 'invisible'}`}
+          data-testid={totalFaerdig ? 'anmeldelse-dom' : undefined}
+          aria-hidden={totalFaerdig ? undefined : true}
+        >
+          {snap.dom}
+        </p>
+        {snap.spring && <StandardBoks spring={snap.spring} kurve={snap.kurve} aar={snap.aar} vist={totalFaerdig} />}
       </div>
 
       <div ref={maerkeRef} className="mt-3 flex flex-col gap-2" data-testid="anmeldelse-maerker">
-        {maerker.slice(0, maerkerVist).map((m) => (
-          <div key={m.id}>{m.node}</div>
-        ))}
+        {maerker.map((m, i) => {
+          const vist = i < maerkerVist;
+          // Nøglen skifter, når mærket afsløres: så afspilles dets animation først dér
+          return (
+            <div key={`${m.id}-${vist ? 'vist' : 'skjult'}`} className={vist ? undefined : 'invisible'} aria-hidden={vist ? undefined : true}>
+              {m.node}
+            </div>
+          );
+        })}
       </div>
     </Modal>
   );

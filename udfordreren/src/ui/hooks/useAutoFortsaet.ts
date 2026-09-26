@@ -9,7 +9,7 @@
 //   medmindre spilleren selv havde trykket pause.
 // Brugeråbnede menuer (nyt produkt, tildel, gem …) fryser blot tidsloopet (se useGameLoop) og rører ikke pausen.
 import { useEffect } from 'react';
-import { GRUND_LEDIGT_HOLD, useGame } from '../../store/gameStore';
+import { GRUND_LEDIGT_HOLD, GRUND_START, useGame } from '../../store/gameStore';
 import { pauseTekst } from '../../sim/signals';
 import type { GameState } from '../../sim/types';
 
@@ -25,6 +25,10 @@ function erLoest(grund: string, g: GameState): boolean {
       const travle = new Set(g.kontraktopgaver.flatMap((k) => k.staff));
       return g.staff.every((m) => travle.has(m.id));
     }
+    case GRUND_START:
+      // Nyt spil: tiden går i gang med det første produkt (en kontraktopgave alene starter ikke uret, så man kan nå
+      // at sætte firmaet op i ro og mag)
+      return g.projekter.some((p) => !p.klar && p.faseTildeling[p.fase].length > 0);
     case GRUND_LEDIGT_HOLD:
       // Løst, så snart nogen har noget at lave: en opgave eller en projektfase med folk på
       return g.kontraktopgaver.length > 0 || g.projekter.some((p) => !p.klar && p.faseTildeling[p.fase].length > 0);

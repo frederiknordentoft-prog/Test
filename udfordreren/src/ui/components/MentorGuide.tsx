@@ -13,6 +13,22 @@ import type { GameState } from '../../sim/types';
 /** Et lukket råd vender tidligst tilbage efter så mange spiluger */
 const TIP_PAUSE_UGER = 8;
 
+/**
+ * Skift til Projekter og rul det relevante element i syne (efter React har tegnet panelet). På mobil scroller hele
+ * kolonnen, og står man allerede på fanen, ville et fanebyt alene ikke vise noget — så ligner knappen en død knap.
+ */
+function visIProjekter(testId: string): void {
+  useUi.getState().setPanel('projekter');
+  const rul = (forsoeg: number) => {
+    const el = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+    if (el) {
+      const reduceret = document.documentElement.dataset.reduceret === '1' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView?.({ block: 'center', behavior: reduceret ? 'auto' : 'smooth' });
+    } else if (forsoeg < 5) requestAnimationFrame(() => rul(forsoeg + 1));
+  };
+  requestAnimationFrame(() => rul(0));
+}
+
 function indhold(t: MentorTrin, mode: GameState['mode'] = 'normal'): { titel: string; tekst: string; knap: string; handling: () => void } {
   const ui = useUi.getState();
   switch (t.trin) {
@@ -52,7 +68,7 @@ function indhold(t: MentorTrin, mode: GameState['mode'] = 'normal'): { titel: st
           ? `Ingen arbejder på ${t.faseNavn}-fasen endnu. Tildel folk i hver fase, så point-boblerne begynder at stige.`
           : 'Tildel folk i hver fase: Koncept, Design, Teknik og Test. Test fjerner fejl, før anmelderne finder dem.',
         knap: t.tomFase ? 'Tildel folk' : 'Vis projektet',
-        handling: () => (t.tomFase ? ui.aabn({ kind: 'tildel', projectId: t.projectId }) : ui.setPanel('projekter')),
+        handling: () => (t.tomFase ? ui.aabn({ kind: 'tildel', projectId: t.projectId }) : visIProjekter(`projekt-${t.projectId}`)),
       };
     case 3:
       return {
@@ -61,7 +77,7 @@ function indhold(t: MentorTrin, mode: GameState['mode'] = 'normal'): { titel: st
           ? 'Lancér og få jeres første anmeldelse. Fire anmeldere giver hver op til 10 point.'
           : `Produktet er færdigtestet. ${t.grund ?? ''} Lancér, så snart I kan, og få jeres første anmeldelse.`,
         knap: 'Til lancering',
-        handling: () => ui.setPanel('projekter'),
+        handling: () => visIProjekter(`lancer-${t.projectId}`),
       };
   }
 }
@@ -79,7 +95,7 @@ function Linje({ titel, knap, onHandling, onFoldUd, nr, onLuk, testId }: { titel
       <button type="button" onClick={onFoldUd} aria-label="Vis Knuds råd" data-testid="mentor-vis" className="relative flex min-h-[44px] min-w-0 flex-1 items-center gap-2 text-left">
         <Portraet udseende={VETERAN} str={32} baggrund="var(--color-panel2)" className="h-8 w-8 shrink-0 rounded border-2 border-line" />
         <span className="min-w-0 flex-1">
-          <span className="block font-pixel text-[0.6rem] font-bold uppercase tracking-wider text-muted">Knud{nr ? ` · trin ${nr}/3` : ' har et råd'}</span>
+          <span className="block font-pixel text-[0.66rem] font-bold uppercase tracking-wider text-muted">Knud{nr ? ` · trin ${nr}/3` : ' har et råd'}</span>
           <span className="block truncate text-sm font-bold text-ink">{titel}</span>
         </span>
       </button>

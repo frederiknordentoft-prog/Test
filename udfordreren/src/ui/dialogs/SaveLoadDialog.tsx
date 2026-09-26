@@ -1,13 +1,16 @@
 // Gem og indlæs: 3 pladser + autosave, eksport/import som JSON. Virker både i spillet og fra titelskærmen.
+// Hærdet til iOS/iPad og private vinduer: uden lokal lagring kan man stadig eksportere og importere, og en korrupt
+// eller fremmed fil giver en venlig forklaring i stedet for et nedbrud.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { UiDialog } from '../../store/uiStore';
 import { useGame } from '../../store/gameStore';
-import { eksporterJson, gem, hent, importerJson, listSaves, slet, type SaveRow, type SlotId } from '../../store/persistence';
+import { eksporterJson, gem, hent, importerMedGrund, lagringVirker, listSaves, slet, type SaveRow, type SlotId } from '../../store/persistence';
 import type { GameState } from '../../sim/types';
 import { datoTekst } from '../../sim/time';
 import { Btn, Ikon, Modal, Tip } from '../components/kit';
 import { mio } from '../format';
-import { gemtTekst, hentFil, slug } from '../lib/shellHjaelp';
+import { gemtTekst, slug } from '../lib/shellHjaelp';
+import { gemFil, laesFil } from '../lib/eksport';
 import { spil } from '../../audio/sfx';
 
 type Info = Omit<SaveRow, 'state'>;
@@ -31,6 +34,8 @@ export default function SaveLoadDialog({ onLuk }: { dialog: UiDialog; onLuk: () 
   const [fejl, setFejl] = useState<string | null>(null);
   const [besked, setBesked] = useState<string | null>(null);
   const [travl, setTravl] = useState(false);
+  /** null = ikke tjekket endnu; false = browseren gemmer ikke (fx et privat vindue) */
+  const [lagringOk, setLagringOk] = useState<boolean | null>(null);
   const filRef = useRef<HTMLInputElement>(null);
 
   const opdater = useCallback(async () => {
@@ -40,6 +45,7 @@ export default function SaveLoadDialog({ onLuk }: { dialog: UiDialog; onLuk: () 
   useEffect(() => {
     let aktiv = true;
     void listSaves().then((l) => aktiv && setInfo(l));
+    void lagringVirker().then((ok) => aktiv && setLagringOk(ok));
     return () => {
       aktiv = false;
     };
@@ -76,7 +82,7 @@ export default function SaveLoadDialog({ onLuk }: { dialog: UiDialog; onLuk: () 
         setBesked('Pladsen er tømt.');
       } else if (hvad === 'eksporter') {
         const s = await hent(slot);
-        if (s) hentFil(filnavn(s), eksporterJson(s));
+        if (s) await eksporter(s);
         else setFejl('Den gemte fil kunne ikke læses.');
       }
     } finally {
@@ -85,30 +91,38 @@ export default function SaveLoadDialog({ onLuk }: { dialog: UiDialog; onLuk: () 
     }
   };
 
+  const eksporter = async (s: GameState) => {
+    try {
+      const r = await gemFil(filnavn(s), eksporterJson(s));
+      if (r === 'hentet') setBesked('Filen er hentet. Gem den et sikkert sted.');
+      else if (r === 'delt') setBesked('Filen er delt. Vælg "Gem i Filer" for at have den ved hånden.');
+    } catch {
+      setFejl('Filen kunne ikke laves. Prøv igen, eller brug en anden browser.');
+    }
+  };
+
   const eksporterNu = () => {
+    setFejl(null);
+    setBesked(null);
     const g = useGame.getState().game;
-    if (!g) return;
-    hentFil(filnavn(g), eksporterJson(g));
-    setBesked('Filen er hentet. Gem den et sikkert sted.');
+    if (g) void eksporter(g);
   };
 
   const importer = async (fil: File | undefined) => {
     setFejl(null);
     setBesked(null);
     if (!fil) return;
-    if (fil.size > 20_000_000) {
-      setFejl('Filen er for stor til at være en gemt Udfordreren-fil.');
-      return;
-    }
-    const tekst = await fil.text().catch(() => '');
-    const s = importerJson(tekst);
     if (filRef.current) filRef.current.value = '';
-    if (!s) {
+    const afvis = (grund: string) => {
       spil('fejl');
-      setFejl(`"${fil.name}" kunne ikke indlæses. Filen er beskadiget eller ikke en gemt fil fra Udfordreren.`);
-      return;
-    }
-    indlaesState(s, 'Importeret');
+      setFejl(`"${fil.name}" kunne ikke indlæses. ${grund}`);
+    };
+    if (fil.size > 20_000_000) return afvis('Filen er for stor til at være en gemt fil fra Udfordreren.');
+    const tekst = await laesFil(fil);
+    if (tekst === null) return afvis('Browseren kunne ikke læse filen.');
+    const r = importerMedGrund(tekst);
+    if (!r.ok) return afvis(r.fejl);
+    indlaesState(r.state, 'Importeret');
   };
 
   const kraeverBekraeft = (slot: SlotId, hvad: 'gem' | 'indlaes' | 'slet', optaget: boolean) => {
@@ -159,6 +173,12 @@ export default function SaveLoadDialog({ onLuk }: { dialog: UiDialog; onLuk: () 
             <Ikon navn="advarsel" farve="var(--color-line)" indre="var(--color-bad)" className="mt-0.5 shrink-0" /> {fejl}
           </p>
         )}
+        {lagringOk === false && (
+          <p className="flex items-start gap-2 rounded-md border-2 border-line bg-warn px-3 py-2 text-sm font-bold text-line" role="status" data-testid="lagring-advarsel">
+            <Ikon navn="advarsel" farve="var(--color-line)" indre="var(--color-warn)" className="mt-0.5 shrink-0" />
+            <span>Browseren vil ikke gemme her (måske et privat vindue), så pladserne er tomme. Eksportér spillet til en fil i stedet — den kan importeres igen senere.</span>
+          </p>
+        )}
         {besked && !fejl && (
           <p className="flex items-center gap-2 rounded-md border-2 border-line bg-good px-3 py-2 text-sm font-bold text-line" role="status" data-testid="gem-besked">
             <Ikon navn="flueben" farve="var(--color-line)" /> {besked}
@@ -198,7 +218,13 @@ export default function SaveLoadDialog({ onLuk }: { dialog: UiDialog; onLuk: () 
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {harSpil && !auto && (
-                      <Btn variant={venter === 'gem' ? 'fare' : 'god'} onClick={() => kraeverBekraeft(slot, 'gem', !!r)} disabled={travl} testId={`gem-${slot}`}>
+                      <Btn
+                        variant={venter === 'gem' ? 'fare' : 'god'}
+                        onClick={() => kraeverBekraeft(slot, 'gem', !!r)}
+                        disabled={travl || lagringOk === false}
+                        title={lagringOk === false ? 'Browseren gemmer ikke her — brug Eksportér spillet' : undefined}
+                        testId={`gem-${slot}`}
+                      >
                         {venter === 'gem' ? 'Overskriv?' : 'Gem'}
                       </Btn>
                     )}

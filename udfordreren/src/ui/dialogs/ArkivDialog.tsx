@@ -4,7 +4,7 @@ import type { UiDialog } from '../../store/uiStore';
 import { useUi } from '../../store/uiStore';
 import { useGame } from '../../store/gameStore';
 import { Btn, Ikon, Modal } from '../components/kit';
-import { arkivHint, arkivNr, arkivOpslag } from '../lib/arkivHjaelp';
+import { arkivHint, arkivNr, arkivOpslag, forspilGentager } from '../lib/arkivHjaelp';
 import { ARKIV } from '../../data/archive';
 
 /** Selve opslaget i en dialog. `visAltid`: vis teksten, selv om opslaget ikke er låst op (fx fra eftertanken). */
@@ -60,7 +60,7 @@ export function ArkivOpslagModal({ id, onLuk, visAltid = false, visPanelLink = f
             </p>
           ) : (
             <>
-              {forspil && (
+              {forspil && !forspilGentager(forspil, opslag.tekst) && (
                 <p className="flex items-start gap-2 rounded-md border-2 border-line bg-panel2 p-3 text-sm leading-relaxed text-ink" data-testid="arkiv-forspil">
                   <Ikon navn="spoergsmaal" farve="var(--color-cyan)" indre="var(--color-line)" className="mt-0.5 shrink-0" /> {forspil}
                 </p>

@@ -86,7 +86,7 @@ export function GloedBar({ vaerdi, farve = 'var(--color-cyan)', label, testId, m
       aria-valuenow={Math.round(p * 100)}
       data-testid={testId}
     >
-      <span className="block h-full transition-[width] duration-500" style={{ width: `${p * 100}%`, background: farve, boxShadow: p > 0 ? `0 0 8px ${farve}` : undefined }} />
+      <span className="block h-full origin-left transition-transform duration-500" style={{ transform: `scaleX(${p})`, background: farve, boxShadow: p > 0 ? `0 0 8px ${farve}` : undefined }} />
       {markoer !== undefined && <span className="absolute inset-y-0 w-0.5 bg-ink/80" style={{ left: `${Math.max(0, Math.min(1, markoer)) * 100}%` }} aria-hidden />}
     </span>
   );

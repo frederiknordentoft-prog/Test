@@ -6,12 +6,15 @@
 import { useEffect } from 'react';
 import { clock, ugeVarighedMs, useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
-import { gem } from '../../store/persistence';
+import { gem, noedGem } from '../../store/persistence';
 
-/** Gem straks i autosave (fanen skjules eller lukkes — Safari på mobil dræber ofte baggrundsfaner) */
+/** Gem straks i autosave (fanen skjules eller lukkes — Safari på mobil dræber ofte baggrundsfaner).
+ *  IndexedDB er asynkron og når ofte ikke at blive færdig ved et reload, så der skrives også en synkron nødkopi. */
 function gemNu(): void {
   const g = useGame.getState().game;
-  if (g && !g.slut) void gem('auto', g);
+  if (!g || g.slut) return;
+  noedGem(g);
+  void gem('auto', g);
 }
 
 export function useGameLoop(): void {

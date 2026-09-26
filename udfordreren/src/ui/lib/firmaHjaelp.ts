@@ -20,8 +20,7 @@ import { forskningsEffekt } from '../../sim/insight';
 import { effektivCac, kanalTilgaengelig, markedsKunder, portefoeljeStyrke, spillerKunderTotal } from '../../sim/customers';
 import { effektTekst } from '../../sim/events';
 import { CHANNELS } from '../../data/acquisition';
-import { BONUS_TILGANG, OFFICE_BY_ID } from '../../data/costs';
-import { BALANCE } from '../../data/balance';
+import { BONUS_TILGANG } from '../../data/costs';
 import { VERTICALS } from '../../data/verticals';
 import { PLATFORM_MODELS } from '../../data/platforms';
 import { RESEARCH_BY_ID } from '../../data/research';
@@ -346,33 +345,9 @@ export function kortNavn(m: Pick<Staff, 'id' | 'navn'>, alle: readonly Pick<Staf
   return dublet && dele.length > 1 ? `${fornavn} ${dele[dele.length - 1][0]}.` : fornavn;
 }
 
-// ---------- Kassen: tendens og hvor længe den rækker ----------
+// ---------- Kassen: tendens og hvor længe den rækker (i kasseHjaelp.ts, så den kan testes uden kit.tsx) ----------
 
-/** Ugens faste drift: BSI minus løbende omkostninger (uden kontraktbetalinger og engangsudgifter som projektbudgetter) */
-export function fastDrift(g: GameState): number {
-  const r = g.regnskab;
-  const husleje = OFFICE_BY_ID[g.kontor].husleje + (spillerKunderTotal(g) * BALANCE.driftPrKunde) / 1e6;
-  return r.bsi - (r.afgift + r.revenueShare + r.betalinger + r.bonus + r.indhold + r.marketing + r.loen + r.licenser + husleje);
-}
-
-/** Gennemsnitligt ugentligt resultat over (ca.) de seneste 13 uger. Kontraktbetalinger og engangsudgifter tæller med,
- *  men udjævnes. I spillets første uger (for lidt historik) bruges den faste drift. */
-export function ugentligTendens(g: GameState): number {
-  const n = ugeIAar(g.uge) % 13; // uger talt med i kvartalAkk
-  const forrige = g.historik[g.historik.length - 1];
-  if (forrige) return (g.kvartalAkk.resultat + (forrige.resultat * (13 - n)) / 13) / 13;
-  if (n >= 4) return g.kvartalAkk.resultat / n;
-  return fastDrift(g);
-}
-
-export type Kassetid = { uger: number; tendens: number } | null;
-
-/** Hvor mange uger rækker kassen med det nuværende forbrug? null = kassen vokser (eller står stille). */
-export function kassenRaekker(g: GameState): Kassetid {
-  const tendens = ugentligTendens(g);
-  if (!(tendens < -0.0005) || g.kapital <= 0) return null;
-  return { uger: Math.floor(g.kapital / -tendens), tendens };
-}
+export { fastDrift, ugentligTendens, kassenRaekker, type Kassetid } from './kasseHjaelp';
 
 // ---------- Kvartalsmål: løbende mål vises som fremdrift, ikke som opfyldt ----------
 

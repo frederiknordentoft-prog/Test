@@ -19,7 +19,7 @@ import { mio } from '../format';
 import { gemtTekst } from '../lib/shellHjaelp';
 import SaveLoadDialog from '../dialogs/SaveLoadDialog';
 import { hentNgPlus, type NgPlusGemt } from '../../store/persistence';
-import { MODE_INFO, arvOpsummering, type StartMode } from '../lib/slutHjaelp';
+import { MODE_INFO, arvOpsummering, titelForvalg, type StartMode } from '../lib/slutHjaelp';
 
 const START_MODES: StartMode[] = ['normal', 'usa2018', 'aiNative2026'];
 
@@ -179,9 +179,14 @@ export default function TitleScreen() {
   const nytSpil = useGame((s) => s.nytSpil);
   const indlaes = useGame((s) => s.indlaes);
   const reduceret = useReduceretBevaegelse();
-  const [navn, setNavn] = useState('Garagespil ApS');
-  const [valgte, setValgte] = useState<string[]>([]);
-  const [vertikal, setVertikal] = useState<Vertical>('betting');
+  // New Game+ fra slutskærmen: det gamle firma er forvalgt (kan ændres)
+  const [forvalg] = useState(() => titelForvalg.v);
+  const [navn, setNavn] = useState(forvalg?.navn ?? 'Garagespil ApS');
+  const [valgte, setValgte] = useState<string[]>(forvalg?.stiftere.slice(0, 2) ?? []);
+  const [vertikal, setVertikal] = useState<Vertical>(forvalg?.vertikal ?? 'betting');
+  useEffect(() => {
+    titelForvalg.v = null;
+  }, []);
   const [tutorial, setTutorial] = useState(true);
   const [saves, setSaves] = useState<SaveInfo[]>([]);
   const [visIndlaes, setVisIndlaes] = useState(false);

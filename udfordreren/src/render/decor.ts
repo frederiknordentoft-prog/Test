@@ -2,9 +2,9 @@
 // Tegnes kun, når kontor/akt/pynt ændrer sig — aldrig pr. frame.
 import type { OfficeTier } from '../sim/types';
 import type { AktChrome } from './actChrome';
-import { BORD_W, MONITOR, PERSON_DX, hyldeKapacitet, type Felt, type Layout } from './layout';
+import { BORD_W, LICENS_W, MONITOR, PERSON_DX, hyldeKapacitet, type Felt, type Layout } from './layout';
 import { T, bland, prng, rgba, skygge } from './palette';
-import { IKON } from './sprites';
+import { IKON, licensSprite, prisIkon } from './sprites';
 import { afkort, tegnTekst, tekstBredde } from './font';
 
 type Ctx = CanvasRenderingContext2D;
@@ -34,6 +34,12 @@ export type Materialer = {
 
 export function materialerFor(tier: OfficeTier, akt: AktChrome): Materialer {
   const ai = akt.id === 'ai';
+  // AI-akten: mørke borde i sort glas og antracit (kanterne får neon i glødlaget)
+  if (ai && tier !== 'garage' && tier !== 'kaelder') {
+    return tier === 'hovedkontor'
+      ? { bordTop: '#4a4f66', bordFront: '#2a2e40', bordKant: '#141724', monitor: '#0c0e16', monitorSkygge: '#07080d', stol: '#1c1f2e', tastatur: '#7d86a3' }
+      : { bordTop: '#454b62', bordFront: '#282d40', bordKant: '#131623', monitor: '#0c0e16', monitorSkygge: '#07080d', stol: '#1e2233', tastatur: '#7d86a3' };
+  }
   switch (tier) {
     case 'garage':
       return { bordTop: '#c29460', bordFront: '#8a6440', bordKant: '#5e4229', monitor: '#cfc6ae', monitorSkygge: '#9c937c', stol: '#3d3b44', tastatur: '#e4dccb' };
@@ -109,6 +115,7 @@ function vindue(c: Ctx, x: number, y: number, w: number, h: number, akt: AktChro
 // ---------- Baggrund pr. trin ----------
 function garage(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
   const W = l.w;
+  const ai = akt.id === 'ai';
   // loftbjælke
   r(c, 0, 0, W, 4, '#2e2119');
   r(c, 0, 3, W, 1, '#1f1611');
@@ -131,7 +138,7 @@ function garage(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
     r(c, 105, y, 55, 2, '#9a8f80');
     r(c, 105, y + 2, 55, 1, '#7c7266');
   }
-  for (let i = 0; i < 4; i++) r(c, 110 + i * 12, 12, 8, 3, akt.id === 'ai' ? '#1c2556' : '#bcd0dc');
+  for (let i = 0; i < 4; i++) r(c, 110 + i * 12, 12, 8, 3, ai ? '#1c2556' : '#bcd0dc');
   // pløkbræt med værktøj
   r(c, 4, 10, 31, 21, '#a88455');
   r(c, 4, 30, 31, 1, '#7d6140');
@@ -156,36 +163,47 @@ function garage(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
   r(c, 6, 33, 5, 1, '#7a8aa8');
   r(c, 13, 34, 4, 4, '#c0392b');
   r(c, 19, 33, 6, 5, '#e4c35a');
-  // bil (sidebillede, næsen mod venstre), delvis beskåret af højre kant
-  const bil = akt.id === 'ai' ? '#3a2c5a' : '#8c3b2e';
-  const bilLys = skygge(bil, 0.2);
-  const bilMoerk = skygge(bil, -0.35);
-  r(c, 98, 62, 62, 13, bil);
-  r(c, 98, 62, 62, 1, bilLys);
-  r(c, 100, 60, 12, 2, bil);
-  r(c, 111, 52, 36, 10, bil);
-  r(c, 111, 52, 36, 1, bilLys);
-  r(c, 108, 56, 3, 6, bil);
-  r(c, 109, 54, 2, 2, bil);
-  r(c, 113, 54, 14, 7, '#9ec3d6');
-  r(c, 129, 54, 15, 7, '#9ec3d6');
-  r(c, 114, 55, 2, 3, '#d6ecf5');
-  r(c, 127, 54, 2, 8, bil);
-  r(c, 98, 70, 62, 5, bilMoerk);
-  r(c, 98, 64, 2, 3, '#ffe9a0');
-  r(c, 96, 71, 4, 3, '#55585f');
-  r(c, 132, 64, 4, 1, bilMoerk); // dørhåndtag
-  for (const hx of [104, 144]) {
-    r(c, hx - 1, 70, 13, 5, bilMoerk);
-    r(c, hx, 71, 11, 11, '#1d1d1d');
-    r(c, hx - 1, 73, 13, 7, '#1d1d1d');
-    r(c, hx + 3, 74, 5, 5, '#8a8a8a');
-    r(c, hx + 4, 75, 3, 3, '#5a5a5a');
+  if (!ai) {
+    // bil (sidebillede, næsen mod venstre), delvis beskåret af højre kant
+    const bil = '#8c3b2e';
+    const bilLys = skygge(bil, 0.2);
+    const bilMoerk = skygge(bil, -0.35);
+    r(c, 98, 62, 62, 13, bil);
+    r(c, 98, 62, 62, 1, bilLys);
+    r(c, 100, 60, 12, 2, bil);
+    r(c, 111, 52, 36, 10, bil);
+    r(c, 111, 52, 36, 1, bilLys);
+    r(c, 108, 56, 3, 6, bil);
+    r(c, 109, 54, 2, 2, bil);
+    r(c, 113, 54, 14, 7, '#9ec3d6');
+    r(c, 129, 54, 15, 7, '#9ec3d6');
+    r(c, 114, 55, 2, 3, '#d6ecf5');
+    r(c, 127, 54, 2, 8, bil);
+    r(c, 98, 70, 62, 5, bilMoerk);
+    r(c, 98, 64, 2, 3, '#ffe9a0');
+    r(c, 96, 71, 4, 3, '#55585f');
+    r(c, 132, 64, 4, 1, bilMoerk); // dørhåndtag
+    for (const hx of [104, 144]) {
+      r(c, hx - 1, 70, 13, 5, bilMoerk);
+      r(c, hx, 71, 11, 11, '#1d1d1d');
+      r(c, hx - 1, 73, 13, 7, '#1d1d1d');
+      r(c, hx + 3, 74, 5, 5, '#8a8a8a');
+      r(c, hx + 4, 75, 3, 3, '#5a5a5a');
+    }
+    r(c, 100, 82, 60, 1, '#4f4943');
+    // olieplet
+    r(c, 118, 84, 20, 3, '#524b44');
+    r(c, 122, 83, 12, 5, '#4a443e');
+  } else {
+    // AI-akten: bilen er kørt ud — serverskabene står, hvor den holdt. Tilbage er olieplet, kabler og en stikdåse.
+    r(c, 118, 84, 20, 3, '#524b44');
+    r(c, 100, 82, 60, 1, '#4f4943');
+    r(c, 96, 60, 1, 24, '#15151a');
+    r(c, 70, 83, 27, 1, '#15151a');
+    r(c, 88, 80, 8, 3, '#d8d4c8');
+    r(c, 89, 81, 1, 1, '#c0392b');
+    r(c, 91, 81, 1, 1, '#2f6fb0');
   }
-  r(c, 100, 82, 60, 1, '#4f4943');
-  // olieplet
-  r(c, 118, 84, 20, 3, '#524b44');
-  r(c, 122, 83, 12, 5, '#4a443e');
   // flyttekasser til venstre
   kasse(c, 0, 58, 13, 10);
   kasse(c, 1, 68, 12, 12);
@@ -240,20 +258,27 @@ function kaelder(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
   r(c, 7, 30, 20, 11, '#c9c3b5');
   for (let x = 8; x < 27; x += 2) r(c, x, 31, 1, 9, '#a39d90');
   r(c, 7, 30, 20, 1, '#e0dbcf');
-  // vandvarmer
-  r(c, 138, 12, 14, 30, '#b8b2a4');
-  r(c, 138, 12, 14, 1, '#d6d0c2');
-  r(c, 149, 13, 3, 29, '#9c9689');
-  r(c, 143, 9, 2, 3, '#9a6440');
-  r(c, 141, 24, 5, 3, '#d9443a');
-  r(c, 142, 25, 3, 1, '#f3efe2');
+  // vandvarmer (AI-akten: skabene står her)
+  if (!ai) {
+    r(c, 138, 12, 14, 30, '#b8b2a4');
+    r(c, 138, 12, 14, 1, '#d6d0c2');
+    r(c, 149, 13, 3, 29, '#9c9689');
+    r(c, 143, 9, 2, 3, '#9a6440');
+    r(c, 141, 24, 5, 3, '#d9443a');
+    r(c, 142, 25, 3, 1, '#f3efe2');
+  }
   // gulv: slidt linoleum
   r(c, 0, l.vaegH, W, l.h - l.vaegH, '#4d4a46');
   for (let y = l.vaegH; y < l.h; y += 6) for (let x = ((y / 6) & 1) * 6; x < W; x += 12) r(c, x, y, 6, 6, '#55514c');
   r(c, 0, l.vaegH, W, 2, '#2f2d2a');
-  // kasser og kabler
-  kasse(c, 146, 58, 12, 10);
-  kasse(c, 145, 68, 14, 12);
+  // kasser og kabler (AI-akten: to hologrammer har taget kassernes plads)
+  if (!ai) {
+    kasse(c, 146, 58, 12, 10);
+    kasse(c, 145, 68, 14, 12);
+  } else {
+    r(c, 132, 50, 1, 36, '#15151a');
+    r(c, 60, 86, 73, 1, '#15151a');
+  }
   r(c, 2, 84, 50, 1, '#1f1f24');
   r(c, 51, 80, 1, 5, '#1f1f24');
 }
@@ -297,13 +322,15 @@ function kontor(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
   dither(c, 24, 88, 272, 2, '#4f6285');
   // planter
   plante(c, 4, 158, true, rnd);
-  plante(c, 300, 116, true, rnd);
-  // kaffehjørne
-  r(c, 290, 60, 30, 20, '#8d6b4a');
-  r(c, 290, 60, 30, 2, '#a8835e');
-  r(c, 296, 48, 12, 12, '#2b2f3d');
-  r(c, 298, 50, 8, 4, '#4a5282');
-  r(c, 300, 56, 4, 3, '#f4efe4');
+  if (akt.id !== 'ai') {
+    plante(c, 300, 116, true, rnd);
+    // kaffehjørne (AI-akten: serverhjørne)
+    r(c, 290, 60, 30, 20, '#8d6b4a');
+    r(c, 290, 60, 30, 2, '#a8835e');
+    r(c, 296, 48, 12, 12, '#2b2f3d');
+    r(c, 298, 50, 8, 4, '#4a5282');
+    r(c, 300, 56, 4, 3, '#f4efe4');
+  }
 }
 
 function etage(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
@@ -327,10 +354,12 @@ function etage(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
   r(c, 0, l.vaegH, W, l.h - l.vaegH, '#5d6679');
   for (let y = l.vaegH; y < l.h; y += 16) for (let x = ((y / 16) & 1) * 16; x < W; x += 32) r(c, x, y, 16, 16, '#646d80');
   r(c, 0, l.vaegH, W, 2, '#3d4454');
-  // planter og vandkøler
-  plante(c, 300, 76, true, rnd);
-  plante(c, 300, 112, true, rnd);
-  plante(c, 300, 148, true, rnd);
+  // planter og vandkøler (AI-akten: hologrammerne står, hvor planterne stod)
+  if (akt.id !== 'ai') {
+    plante(c, 300, 76, true, rnd);
+    plante(c, 300, 112, true, rnd);
+    plante(c, 300, 148, true, rnd);
+  }
   r(c, 4, 66, 10, 14, '#d8dde3');
   r(c, 5, 58, 8, 8, '#8fc4e8');
   r(c, 5, 58, 8, 2, '#b8dcf2');
@@ -339,24 +368,47 @@ function etage(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
 
 function hovedkontor(c: Ctx, l: Layout, akt: AktChrome, rnd: () => number): void {
   const W = l.w;
+  const ai = akt.id === 'ai';
   r(c, 0, 0, W, l.vaegH, '#e6e1d6');
   // høje vinduer
   vindue(c, 4, 5, 66, l.vaegH - 14, akt, rnd, '#9a948a', 3);
   vindue(c, 250, 5, 66, l.vaegH - 14, akt, rnd, '#9a948a', 3);
-  // træpanelvæg i midten
+  // træpanelvæg i midten med messinglister og pendellamper
   r(c, 76, 0, 168, l.vaegH, '#4a3426');
   for (let x = 78; x < 244; x += 6) r(c, x, 0, 1, l.vaegH, '#553c2c');
   r(c, 76, 0, 2, l.vaegH, '#3a281c');
   r(c, 242, 0, 2, l.vaegH, '#3a281c');
   r(c, 76, l.vaegH - 2, 168, 2, '#2e2016');
-  // gulv: poleret sten med refleksion
-  r(c, 0, l.vaegH, W, l.h - l.vaegH, '#8d909c');
-  for (let y = l.vaegH; y < l.h; y += 18) r(c, 0, y, W, 1, '#80838f');
-  for (let x = 0; x < W; x += 40) r(c, x, l.vaegH, 1, l.h - l.vaegH, '#80838f');
-  dither(c, 100, l.vaegH + 2, 120, 3, '#9fa2ae');
-  r(c, 0, l.vaegH, W, 2, '#5a5d68');
-  plante(c, 2, 64, true, rnd);
-  plante(c, 308, 64, false, rnd);
+  r(c, 78, 19, 164, 1, '#b8913e');
+  r(c, 78, l.vaegH - 3, 164, 1, '#b8913e');
+  // gulv: lys marmor i skaktern med årer (et helt andet gulv end etagens tæppefliser)
+  r(c, 0, l.vaegH, W, l.h - l.vaegH, '#d3cab8');
+  for (let y = l.vaegH, row = 0; y < l.h; y += 18, row++) for (let x = (row & 1) * 20; x < W; x += 40) r(c, x, y, 20, 18, '#c4baa5');
+  for (let i = 0; i < 26; i++) {
+    let x = Math.floor(rnd() * W);
+    let y = l.vaegH + 2 + Math.floor(rnd() * (l.h - l.vaegH - 4));
+    const n = 4 + Math.floor(rnd() * 8);
+    for (let k = 0; k < n; k++) {
+      r(c, x, y, 1, 1, '#b3a78f');
+      x += rnd() < 0.6 ? 1 : 0;
+      y += rnd() < 0.5 ? 1 : -1;
+    }
+  }
+  // spejling af vinduerne i det polerede gulv
+  dither(c, 8, l.vaegH + 2, 58, 5, rgba('#ffffff', 0.35));
+  dither(c, 254, l.vaegH + 2, 58, 5, rgba('#ffffff', 0.35));
+  r(c, 0, l.vaegH, W, 2, '#7d735f');
+  // bordeauxrøde løbere i gangene mellem rækkerne
+  for (const y of [98, 134]) {
+    r(c, 2, y, W - 4, 7, '#7a2233');
+    r(c, 2, y, W - 4, 1, '#c9a64a');
+    r(c, 2, y + 6, W - 4, 1, '#c9a64a');
+    dither(c, 2, y + 2, W - 4, 3, '#6a1d2c');
+  }
+  if (!ai) {
+    plante(c, 2, 64, true, rnd);
+    plante(c, 308, 64, false, rnd);
+  }
 }
 
 // ---------- Rod (garage-akten er rodet) ----------
@@ -463,11 +515,15 @@ export function tegnBord(c: Ctx, x: number, y: number, m: Materialer, tier: Offi
 }
 
 // ---------- Vægpynt ----------
+export type LicensPynt = { farver: readonly string[]; status: 'aktiv' | 'ansoegt' | 'suspenderet' };
+
 export type Pynt = {
-  pokaler: number;
+  /** Vundne gallapriser (kategori-id), ældste først */
+  priser: string[];
   kuponer: number;
   hof: number;
-  licens: 'ingen' | 'ansoegt' | 'aktiv' | 'andet';
+  /** Licensbeviser på væggen: ét pr. marked med aktiv, ansøgt eller suspenderet licens */
+  licenser: LicensPynt[];
   firmaNavn: string;
 };
 
@@ -477,19 +533,44 @@ function korkplade(c: Ctx, f: Felt): void {
   dither(c, f.x + 1, f.y + 1, f.w - 2, f.h - 2, '#a57b4a');
 }
 
+/** Oplyst glasvitrine om pokalhylden (etage og hovedkontor) */
+function vitrine(c: Ctx, h: Felt): void {
+  const x0 = h.x - 3;
+  const y0 = h.y - 14;
+  const w = h.w + 6;
+  const hh = 16;
+  r(c, x0, y0, w, hh, '#2b2a33');
+  r(c, x0 + 1, y0 + 1, w - 2, hh - 2, '#3b3f52');
+  dither(c, x0 + 1, y0 + 2, w - 2, hh - 4, rgba('#9fd4ff', 0.12));
+  r(c, x0 + 1, y0 + 1, w - 2, 1, '#fff3c4'); // lys i loftet
+  dither(c, x0 + 2, y0 + 2, w - 4, 2, rgba('#fff3c4', 0.35));
+  r(c, x0, y0, w, 1, '#c9ccd4');
+  r(c, x0, y0, 1, hh, '#c9ccd4');
+  r(c, x0 + w - 1, y0, 1, hh, '#8d909c');
+  // refleks i glasset
+  for (let i = 0; i < 4; i++) r(c, x0 + 4 + i, y0 + 10 - i * 2, 1, 2, rgba('#ffffff', 0.3));
+  for (let i = 0; i < 3; i++) r(c, x0 + w - 12 + i, y0 + 8 - i * 2, 1, 2, rgba('#ffffff', 0.22));
+}
+
 export function tegnVaegpynt(c: Ctx, l: Layout, p: Pynt): void {
-  // pokalhylde
+  // pokalhylde (i vitrine på de største trin)
   const h = l.hylde;
+  if (l.vitrine) vitrine(c, h);
   r(c, h.x, h.y, h.w, 2, '#8a6440');
   r(c, h.x, h.y, h.w, 1, '#a88155');
   r(c, h.x + 2, h.y + 2, 2, 2, '#5e4229');
   r(c, h.x + h.w - 4, h.y + 2, 2, 2, '#5e4229');
   const kap = hyldeKapacitet(l);
-  const pokal = IKON.pokal();
-  const vis = p.pokaler > kap ? kap - 1 : p.pokaler;
-  for (let i = 0; i < vis; i++) c.drawImage(pokal, h.x + 1 + i * 8, h.y - pokal.height + 1);
-  if (p.pokaler > kap) tegnTekst(c, `+${p.pokaler - vis}`, h.x + 2 + vis * 8, h.y - 6, T.gold);
-  if (p.pokaler === 0) {
+  const n = p.priser.length;
+  // Fuld hylde: de nyeste står fremme, resten tælles som +N
+  const vis = n > kap ? kap - 1 : n;
+  const fra = n - vis;
+  for (let i = 0; i < vis; i++) {
+    const ik = prisIkon(p.priser[fra + i]);
+    c.drawImage(ik, h.x + 1 + i * 8 - Math.floor((ik.width - 9) / 2), h.y - ik.height + 1);
+  }
+  if (n > kap) tegnTekst(c, `+${n - vis}`, h.x + 2 + vis * 8, h.y - 6, T.gold);
+  if (n === 0) {
     // støvet, tom hylde — noget at se frem til
     dither(c, h.x + 3, h.y - 1, h.w - 6, 1, rgba('#ffffff', 0.18));
   }
@@ -508,6 +589,7 @@ export function tegnVaegpynt(c: Ctx, l: Layout, p: Pynt): void {
   }
   if (p.kuponer > kupKap) {
     const t = `+${p.kuponer - kupVis}`;
+    r(c, k.x + k.w - tekstBredde(t) - 3, k.y + k.h - 8, tekstBredde(t) + 2, 7, T.line);
     tegnTekst(c, t, k.x + k.w - tekstBredde(t) - 2, k.y + k.h - 7, T.gold);
   }
   if (p.kuponer === 0) {
@@ -520,12 +602,15 @@ export function tegnVaegpynt(c: Ctx, l: Layout, p: Pynt): void {
   const plVis = p.hof > plKap ? plKap - 1 : p.hof;
   for (let i = 0; i < plVis; i++) c.drawImage(plk, pl.x + i * (plk.width + 1), pl.y + Math.max(0, Math.floor((pl.h - plk.height) / 2)));
   if (p.hof > plKap) tegnTekst(c, `+${p.hof - plVis}`, pl.x + plVis * (plk.width + 1) + 1, pl.y + Math.floor((pl.h - 5) / 2), T.violet);
-  // licens
-  if (p.licens === 'aktiv') c.drawImage(IKON.certifikat(), l.cert.x, l.cert.y);
-  else if (p.licens === 'ansoegt') {
-    const kv = IKON.kuvert();
-    c.drawImage(kv, l.cert.x + 2, l.cert.y + 2);
-    r(c, l.cert.x + 5, l.cert.y + 1, 2, 2, T.bad);
+  // licensbeviser: ét pr. marked, i den rækkefølge licenserne kom
+  const lic = p.licenser;
+  const lk = l.licenser.length;
+  const licVis = lic.length > lk ? lk - 1 : lic.length;
+  for (let i = 0; i < licVis; i++) c.drawImage(licensSprite(lic[i].farver, lic[i].status), l.licenser[i].x, l.licenser[i].y);
+  if (lic.length > lk && lk > 0) {
+    const sidst = l.licenser[lk - 1];
+    const t = `+${lic.length - licVis}`;
+    tegnTekst(c, t, sidst.x + Math.floor((LICENS_W - tekstBredde(t)) / 2), sidst.y + 1, T.gold);
   }
   // firmaskilt
   if (l.skilt) {
@@ -587,7 +672,7 @@ export function tvSkaerm(l: Layout): Felt {
 export function tegnLysOverlay(c: Ctx, l: Layout, akt: AktChrome): void {
   c.clearRect(0, 0, l.w, l.h);
   if (akt.moerk > 0) {
-    c.fillStyle = rgba('#05081a', akt.moerk);
+    c.fillStyle = rgba(akt.moerkFarve, akt.moerk);
     c.fillRect(0, 0, l.w, l.h);
   }
   if (akt.lysAlpha > 0) {
@@ -601,13 +686,60 @@ export function tegnLysOverlay(c: Ctx, l: Layout, akt: AktChrome): void {
     c.fillStyle = g;
     c.fillRect(0, 0, l.w, l.h);
   }
+  if (akt.moerk > 0) {
+    // Mørket skæres væk, hvor lyset kommer fra: byens lys i vinduerne og spotlyset på trofæerne
+    c.save();
+    c.globalCompositeOperation = 'destination-out';
+    c.fillStyle = 'rgba(0,0,0,0.72)';
+    for (const v of l.vinduer) c.fillRect(v.x, v.y, v.w, v.h);
+    const h = l.hylde;
+    const top = l.vitrine ? h.y - 14 : h.y - 11;
+    // Spotlyset på pokalhylden som en blød kegle (en skarp firkant lignede et spøgelseslag, når hylden er tom)
+    const hx = h.x + h.w / 2;
+    const hy = (top + h.y + 3) / 2;
+    const rx = h.w / 2 + 4;
+    const ry = (h.y - top + 3) / 2 + 2;
+    c.save();
+    c.translate(hx, hy);
+    c.scale(1, ry / rx);
+    const spot = c.createRadialGradient(0, 0, 1, 0, 0, rx);
+    spot.addColorStop(0, 'rgba(0,0,0,0.45)');
+    spot.addColorStop(0.7, 'rgba(0,0,0,0.3)');
+    spot.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = spot;
+    c.fillRect(-rx, -rx, rx * 2, rx * 2);
+    c.restore();
+    c.fillStyle = 'rgba(0,0,0,0.3)';
+    c.fillRect(l.kuponer.x - 1, l.kuponer.y - 1, l.kuponer.w + 2, l.kuponer.h + 2);
+    c.fillRect(l.plaketter.x - 1, l.plaketter.y - 1, l.plaketter.w + 2, l.plaketter.h + 2);
+    // Skærmlyset på holdet: ved hver plads lysnes mørket, så folkene kan ses (også på en lille telefonskærm)
+    const rad = l.zoom === 2 ? 11 : 9;
+    for (const p of l.pladser) {
+      const cx = p.x + PERSON_DX + 6;
+      const cy = p.y - 9;
+      const g = c.createRadialGradient(cx, cy, 1, cx, cy, rad);
+      g.addColorStop(0, 'rgba(0,0,0,0.55)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g;
+      c.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+    }
+    c.restore();
+  }
 }
 
-/** Glødende lag (neon i AI-akten) — tegnes efter mørke-overlayet */
-export function tegnGloedLag(c: Ctx, l: Layout, akt: AktChrome): void {
+/** Glødende lag (neon i AI-akten) — tegnes efter mørke-overlayet. Borde, gulvgitter, lister og firmaskiltet i neon. */
+export function tegnGloedLag(c: Ctx, l: Layout, akt: AktChrome, firmaNavn = ''): void {
   c.clearRect(0, 0, l.w, l.h);
   if (!akt.neon) return;
   const n = akt.neon;
+  const n2 = akt.neon2 ?? n;
+  // gulvgitter (svagt, som et blueprint)
+  c.fillStyle = rgba(n, 0.06);
+  const gy = l.zoom === 2 ? 8 : 12;
+  const gx = l.zoom === 2 ? 16 : 24;
+  for (let y = l.vaegH + gy; y < l.h; y += gy) c.fillRect(0, y, l.w, 1);
+  for (let x = gx / 2; x < l.w; x += gx) c.fillRect(x, l.vaegH + 2, 1, l.h - l.vaegH - 2);
+  // lister: loft og overgangen mellem væg og gulv
   r(c, 0, l.vaegH - 1, l.w, 1, n);
   c.fillStyle = rgba(n, 0.25);
   c.fillRect(0, l.vaegH - 3, l.w, 2);
@@ -615,6 +747,43 @@ export function tegnGloedLag(c: Ctx, l: Layout, akt: AktChrome): void {
   r(c, 0, 2, l.w, 1, bland(n, '#ffffff', 0.2));
   c.fillStyle = rgba(n, 0.2);
   c.fillRect(0, 3, l.w, 2);
+  // lodrette lister i den anden neonfarve ved vinduerne
+  for (const v of l.vinduer) {
+    if (v.h < 8) continue;
+    for (const x of [v.x - 3, v.x + v.w + 2]) {
+      if (x < 0 || x >= l.w) continue;
+      r(c, x, 4, 1, l.vaegH - 6, n2);
+      c.fillStyle = rgba(n2, 0.22);
+      c.fillRect(x - 1, 4, 3, l.vaegH - 6);
+    }
+  }
+  // bordkanter i neon
+  c.fillStyle = rgba(n, 0.55);
+  for (const p of l.pladser) c.fillRect(p.x, p.y + 8, BORD_W, 1);
+  c.fillStyle = rgba(n, 0.14);
+  for (const p of l.pladser) c.fillRect(p.x, p.y + 9, BORD_W, 1);
+  // firmaskiltet lyser i neon
+  if (l.skilt && firmaNavn) {
+    const s = l.skilt;
+    const skala = s.h >= 14 ? 2 : 1;
+    const navn = afkort(firmaNavn.toUpperCase(), s.w - 6, skala);
+    const tw = tekstBredde(navn, skala);
+    const tx = s.x + Math.floor((s.w - tw) / 2);
+    const ty = s.y + Math.floor((s.h - 5 * skala) / 2);
+    const halo = rgba(n2, 0.28);
+    tegnTekst(c, navn, tx - 1, ty, halo, skala);
+    tegnTekst(c, navn, tx + 1, ty, halo, skala);
+    tegnTekst(c, navn, tx, ty - 1, halo, skala);
+    tegnTekst(c, navn, tx, ty + 1, halo, skala);
+    tegnTekst(c, navn, tx, ty, bland(n2, '#ffffff', 0.35), skala);
+  }
+}
+
+/** Scanlines (AI-akten): hver anden række en anelse mørkere — forudtegnet, ét drawImage pr. frame */
+export function tegnScanlines(c: Ctx, l: Layout): void {
+  c.clearRect(0, 0, l.w, l.h);
+  c.fillStyle = 'rgba(0,0,0,0.13)';
+  for (let y = 1; y < l.h; y += 2) c.fillRect(0, y, l.w, 1);
 }
 
 /** Glød omkring den bare pære i garagen */

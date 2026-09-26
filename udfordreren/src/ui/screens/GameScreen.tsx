@@ -1,12 +1,12 @@
 // Hovedskærmen: HUD, ugeprogress, pixelkontoret, faner med paneler, nyhedsticker, mentor, dialoger og toasts.
 // Bred (laptop/iPad landskab): kontor til venstre (~46 %), paneler til højre med fanebjælke øverst.
 // Smal (mobil portræt): kompakt HUD, kontor øverst, scrollbart panel og fanebjælke i bunden.
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { clock, useGame, type Toast } from '../../store/gameStore';
 import { useUi, erDebug, type PanelId } from '../../store/uiStore';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useAutoFortsaet } from '../hooks/useAutoFortsaet';
-import { useReduceretBevaegelse, useSmal } from '../hooks/useMedia';
+import { useMedia, useReduceretBevaegelse, useSmal } from '../hooks/useMedia';
 import { useSignalSfx } from '../../audio/sfx';
 import { PANELER } from '../panels';
 import { SIGNAL_DIALOGER, UI_DIALOGER } from '../dialogs/registry';
@@ -72,7 +72,7 @@ function HudStat({
       <div className="flex min-w-0 flex-col leading-none">
         {note ? (
           <span
-            className="order-2 mt-0.5 truncate text-[0.56rem] font-bold uppercase tracking-wide lg:order-1 lg:mt-0 lg:mb-0.5 lg:text-[0.62rem]"
+            className="order-2 mt-0.5 truncate text-[0.62rem] font-bold uppercase tracking-wide lg:order-1 lg:mt-0 lg:mb-0.5 lg:text-[0.62rem]"
             style={{ color: note.farve }}
             data-testid={`${testId}-note`}
           >
@@ -87,7 +87,7 @@ function HudStat({
           </span>
         ) : (
           <span
-            className={`order-2 mt-0.5 truncate text-[0.56rem] uppercase tracking-wide text-dim lg:order-1 lg:mt-0 lg:mb-0.5 lg:text-[0.62rem] lg:text-muted ${storTekst ? 'lg:max-xl:hidden' : ''}`}
+            className={`order-2 mt-0.5 truncate text-[0.62rem] uppercase tracking-wide text-muted lg:order-1 lg:mt-0 lg:mb-0.5 lg:text-[0.62rem] lg:text-muted ${storTekst ? 'lg:max-xl:hidden' : ''}`}
           >
             {kort ? (
               <>
@@ -99,14 +99,14 @@ function HudStat({
             )}
           </span>
         )}
-        <span className="tal order-1 truncate font-pixel text-[0.8rem] font-bold lg:order-2 lg:text-sm" style={{ color: farve }}>
+        <span className="tal order-1 truncate font-pixel text-[0.8rem] font-bold lg:order-2 lg:text-sm" style={{ color: farve }} data-testid={`${testId}-vaerdi`}>
           {vaerdi}
         </span>
       </div>
       {delta && (
         <span
           key={delta.id}
-          className="anim-glid pointer-events-none absolute -top-1 right-0 z-10 rounded border-2 border-line px-1 font-pixel text-[0.65rem] font-black text-line lg:top-auto lg:right-auto lg:-bottom-3 lg:left-4"
+          className="anim-glid pointer-events-none absolute right-0 -bottom-2.5 z-10 rounded border-2 border-line px-1 font-pixel text-[0.65rem] font-black text-line lg:right-auto lg:-bottom-3 lg:left-4"
           style={{ background: delta.god ? farve : 'var(--color-bad)' }}
           aria-hidden
         >
@@ -193,7 +193,7 @@ function Hud() {
       data-akt={aktTo ? 'to' : 'en'}
     >
       <div className="order-1 min-w-0 flex-1 lg:max-w-[230px] lg:min-w-[84px] lg:flex-initial">
-        <div className={`font-pixel text-sm font-black text-gold ${storTekst ? 'line-clamp-2 break-words leading-tight' : 'truncate'}`} title={firma}>
+        <div className={`font-pixel text-sm font-black text-gold ${storTekst ? 'line-clamp-2 break-words leading-tight' : 'truncate'}`} title={firma} data-testid="hud-firma">
           {firma}
         </div>
         <div className="tal truncate text-xs text-muted" data-testid="dato">
@@ -328,14 +328,17 @@ function UgeProgress() {
 
 // ---------- Pause, ticker og toasts ----------
 
-/** Pausebanneret ligger over toppen af kontoret (på mobil lige under HUD'en, så det altid er synligt) */
-function PauseBanner({ placering = 'absolute inset-x-2 top-[40px]' }: { placering?: string }) {
+/** Pausebanneret ligger lige under kontoret (på mobil lige under HUD'en, så det altid er synligt). Det dækker aldrig
+ *  kontoret: væggen med firmaskilt, pokaler og Guldkupon skal kunne ses, også når spillet står stille. */
+function PauseBanner({ placering = 'relative shrink-0' }: { placering?: string }) {
   const paused = useGame((s) => s.paused);
   const grunde = useGame((s) => s.pauseGrunde);
   const dialoger = useGame((s) => s.dialoger.length);
   const slut = useGame((s) => !!s.game?.slut);
   const fortsaet = useGame((s) => s.fortsaet);
   const smal = useSmal();
+  // Touch uden mus (iPad, telefon): der er ikke nødvendigvis et tastatur at trykke mellemrum på
+  const touch = useMedia('(hover: none), (pointer: coarse)');
   if (slut && dialoger === 0) {
     return (
       <div className={`anim-glid ${placering} z-10 flex items-center gap-2 rounded-md border-2 border-line bg-panel2 px-2.5 py-1.5 pixel-skygge`} data-testid="pause-banner">
@@ -361,7 +364,7 @@ function PauseBanner({ placering = 'absolute inset-x-2 top-[40px]' }: { placerin
       <div className="min-w-0 flex-1 leading-tight">
         <div className="font-pixel text-sm font-black uppercase tracking-wide">Pause</div>
         <div className="line-clamp-2 text-xs font-bold">
-          {grunde.length ? grunde.join(' · ') : smal ? 'Tiden står stille.' : 'Tiden står stille. Tryk mellemrum for at fortsætte.'}
+          {grunde.length ? grunde.join(' · ') : smal || touch ? 'Tiden står stille. Tryk Fortsæt, når I er klar.' : 'Tiden står stille. Tryk mellemrum for at fortsætte.'}
         </div>
       </div>
       <Btn variant="sekundaer" onClick={fortsaet} testId="fortsaet" className="shrink-0">
@@ -390,6 +393,7 @@ function TickerPunkt({ n }: { n: NewsItem }) {
   );
 }
 
+/** Nyhedstickeren: et tryk åbner Nyheder-fanen (hele listen, med links til Arkivet) */
 function Ticker() {
   const nyheder = useGame((s) => s.game?.nyheder);
   const uge = useGame((s) => s.game?.uge ?? 0);
@@ -401,27 +405,29 @@ function Ticker() {
   const tid = Math.max(24, (tegn * 7.2) / 55); // ca. 55 px/s
   if (liste.length === 0) return null;
   return (
-    <div
-      className="shell-ticker relative flex h-8 shrink-0 items-center overflow-hidden rounded-md border-2 border-line bg-bg2 text-sm"
+    <button
+      type="button"
+      onClick={() => useUi.getState().setPanel('nyheder')}
+      className="shell-ticker relative flex h-11 w-full shrink-0 items-center overflow-hidden rounded-md border-2 border-line bg-bg2 text-left text-sm hover:border-hi focus-visible:border-hi"
       data-testid="ticker"
-      role="marquee"
-      aria-label={`Seneste nyhed: ${liste[0].tekst}`}
+      aria-label={`Seneste nyhed: ${liste[0].tekst}. Tryk for alle nyheder.`}
+      title="Alle nyheder"
     >
       <span className="z-10 flex h-full shrink-0 items-center gap-1 border-r-2 border-line bg-pink px-2 font-pixel text-[0.65rem] font-black uppercase text-line">
         <Ikon navn="nyhed" farve="var(--color-line)" indre="var(--color-pink)" str={12} />
         <span className="hidden sm:inline">Nyt</span>
       </span>
       {reduceret ? (
-        <ul className="flex min-w-0 flex-1 gap-6 overflow-hidden whitespace-nowrap pl-2" data-testid="ticker-statisk">
+        <span className="flex min-w-0 flex-1 gap-6 overflow-hidden whitespace-nowrap pl-2" data-testid="ticker-statisk" aria-hidden>
           {liste.slice(0, 3).map((n, i) => (
-            <li key={i} className="min-w-0 truncate first:shrink-0 first:max-w-full">
+            <span key={i} className="min-w-0 truncate first:max-w-full first:shrink-0">
               <TickerPunkt n={n} />
-            </li>
+            </span>
           ))}
-        </ul>
+        </span>
       ) : (
-        <div className="min-w-0 flex-1 overflow-hidden whitespace-nowrap" aria-hidden>
-          <div key={noegle} className="shell-ticker-spor pl-3" style={{ '--ticker-tid': `${tid.toFixed(1)}s` } as CSSProperties}>
+        <span className="block min-w-0 flex-1 overflow-hidden whitespace-nowrap" aria-hidden>
+          <span key={noegle} className="shell-ticker-spor pl-3" style={{ '--ticker-tid': `${tid.toFixed(1)}s` } as CSSProperties}>
             <span className="inline-flex">
               {liste.map((n, i) => (
                 <TickerPunkt key={i} n={n} />
@@ -432,10 +438,13 @@ function Ticker() {
                 <TickerPunkt key={i} n={n} />
               ))}
             </span>
-          </div>
-        </div>
+          </span>
+        </span>
       )}
-    </div>
+      <span className="z-10 flex h-full shrink-0 items-center border-l-2 border-line bg-panel2 px-1.5" aria-hidden>
+        <Ikon navn="pil" farve="var(--color-muted)" str={12} />
+      </span>
+    </button>
   );
 }
 
@@ -457,46 +466,31 @@ function ToastKort({ t, smal, kompakt = false }: { t: Toast; smal: boolean; komp
       ×{t.antal}
     </span>
   ) : null;
-  if (smal) {
-    // Mobil: toasten fanger ikke tryk (knapperne under den virker stadig) — kun det lille kryds kan trykkes
-    return (
-      <div
-        className="anim-glid pointer-events-none flex w-full items-center gap-2 rounded-md border-2 border-line py-0.5 pr-0.5 pl-3 text-left text-sm font-bold text-line pixel-skygge"
-        style={{ background: s.bg }}
-        data-testid="toast"
-        role="status"
-      >
-        <Ikon navn={s.ikon} farve="var(--color-line)" str={14} className="shrink-0" />
-        <span className="min-w-0 flex-1 py-1.5 leading-snug">
-          {t.tekst}
-          {antal}
-        </span>
-        <button
-          type="button"
-          className="pointer-events-auto flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded"
-          onClick={() => useGame.getState().fjernToast(t.id)}
-          aria-label="Luk besked"
-          data-testid="toast-luk"
-        >
-          <Ikon navn="kryds" farve="var(--color-line)" str={12} />
-        </button>
-      </div>
-    );
-  }
+  // Toasten fanger ikke tryk (knapperne under den virker stadig) — kun det lille kryds kan trykkes
   return (
-    <button
-      type="button"
-      className={`anim-glid pointer-events-auto flex items-center gap-2 rounded-md border-2 border-line px-3 py-2 text-left text-sm font-bold text-line pixel-skygge ${
-        kompakt ? 'max-w-[min(300px,calc(100vw-24px))]' : 'max-w-[min(420px,calc(100vw-24px))]'
+    <div
+      className={`anim-glid pointer-events-none flex items-center gap-2 rounded-md border-2 border-line py-0.5 pr-0.5 pl-3 text-left text-sm font-bold text-line pixel-skygge ${
+        smal ? 'w-full' : kompakt ? 'max-w-[min(300px,calc(100vw-24px))]' : 'max-w-full'
       }`}
       style={{ background: s.bg }}
-      onClick={() => useGame.getState().fjernToast(t.id)}
       data-testid="toast"
+      role="status"
     >
       <Ikon navn={s.ikon} farve="var(--color-line)" str={14} className="shrink-0" />
-      <span>{t.tekst}</span>
-      {antal}
-    </button>
+      <span className={`min-w-0 flex-1 py-1.5 leading-snug ${smal ? 'line-clamp-2' : ''}`}>
+        {t.tekst}
+        {antal}
+      </span>
+      <button
+        type="button"
+        className="pointer-events-auto flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded hover:bg-line/15"
+        onClick={() => useGame.getState().fjernToast(t.id)}
+        aria-label="Luk besked"
+        data-testid="toast-luk"
+      >
+        <Ikon navn="kryds" farve="var(--color-line)" str={12} />
+      </button>
+    </div>
   );
 }
 
@@ -513,11 +507,11 @@ function Toasts() {
   const signalDialog = useGame((s) => s.dialoger.length > 0);
   const menu = useUi((s) => s.dialog !== null);
   const dialogAaben = signalDialog || menu;
-  // Pausebanneret ligger øverst på mobil: læg toasts under det, så Fortsæt ikke gemmes
-  const banner = useGame((s) => (s.paused || !!s.game?.slut) && s.dialoger.length === 0);
   // Mens en signal-dialog er åben, venter ugens toasts (de vises, når dialogerne er lukket) — kun svar på noget,
   // spilleren selv gør i dialogen (fx en afvist handling), vises straks. Toasts dækker aldrig dialogens titel eller
   // lukkekryds: med en dialog åben ligger de nederst til venstre (bred) eller over dialogens fod (mobil).
+  // Uden dialog ligger de nederst over kontorkolonnen (bred), så de ikke dækker panelernes knapper, og på mobil lige
+  // over Knud og fanebjælken, så de ikke dækker kontoret (point-bobler, konfetti og AI-forvandlingen).
   // Højst tre (mobil: to), advarsler først.
   // Toasts, der lå der, før dialogen åbnede, venter også (de hører til spillet bag den, ikke til dialogen).
   const nyeste = toasts.reduce((a, t) => Math.max(a, t.id), 0);
@@ -534,9 +528,11 @@ function Toasts() {
             ? 'right-3 bottom-[calc(96px+env(safe-area-inset-bottom))] left-3 z-[60] items-stretch'
             : 'bottom-4 left-3 z-[60] items-start'
           : smal
-            ? `right-3 left-3 ${banner ? 'top-[calc(var(--hud-h,96px)+72px)]' : 'top-[calc(var(--hud-h,96px)+10px)]'} z-40 items-stretch`
-            : 'right-3 bottom-[calc(80px+env(safe-area-inset-bottom))] left-3 z-40 items-end bred:left-auto bred:bottom-4'
+            ? 'right-3 bottom-[calc(var(--bund-h,112px)+8px)] left-3 z-40 items-stretch'
+            : 'bottom-4 left-3 z-40 w-[min(420px,calc(46vw-12px))] items-start'
       }`}
+      // Telefon på langs med notch: hold toasts fri af de afrundede hjørner (0 på alle andre skærme)
+      style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       aria-live="polite"
       data-testid="toasts"
     >
@@ -696,7 +692,8 @@ function BredFaner() {
       role="tablist"
       aria-label="Paneler"
       data-testid="fanebjaelke"
-      className="grid shrink-0 auto-cols-fr grid-flow-col gap-1 max-xl:grid-flow-row max-xl:grid-cols-7"
+      // Lav skærm (telefon på langs): én vandret rullende række i stedet for to, så panelet får pladsen
+      className="grid shrink-0 auto-cols-fr grid-flow-col gap-1 max-xl:grid-flow-row max-xl:grid-cols-7 [@media(max-height:500px)]:flex [@media(max-height:500px)]:overflow-x-auto"
     >
       {synlige.map((p) => (
         <FaneKnap
@@ -707,7 +704,7 @@ function BredFaner() {
           laast={laast(p.id)}
           onClick={() => setPanel(p.id)}
           kort="bred"
-          className="min-h-12 px-0 text-[0.68rem] tracking-wide max-xl:text-[0.56rem] max-xl:tracking-tighter"
+          className="min-h-12 px-0 text-[0.68rem] tracking-wide max-xl:text-[0.7rem] max-xl:tracking-normal [@media(max-height:500px)]:min-h-11 [@media(max-height:500px)]:w-[68px] [@media(max-height:500px)]:shrink-0"
         />
       ))}
     </div>
@@ -824,6 +821,25 @@ function MobilFaner() {
 
 // ---------- Skærmen ----------
 
+/** Mobil: Knud og fanebjælken i bunden. Højden gemmes som CSS-variabel, så toasts kan lægge sig lige over dem. */
+function BundZone({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const saet = () => document.documentElement.style.setProperty('--bund-h', `${Math.round(el.getBoundingClientRect().height)}px`);
+    saet();
+    const ro = new ResizeObserver(saet);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="shrink-0" data-testid="bundzone">
+      {children}
+    </div>
+  );
+}
+
 export default function GameScreen() {
   useGameLoop();
   useAutoFortsaet();
@@ -879,8 +895,10 @@ export default function GameScreen() {
             </div>
           </div>
         </div>
-        <MentorGuide kompakt />
-        <Fanebjaelke />
+        <BundZone>
+          <MentorGuide kompakt />
+          <Fanebjaelke />
+        </BundZone>
         <DialogHost />
         <Toasts />
       </div>
@@ -895,8 +913,8 @@ export default function GameScreen() {
         <div className="flex min-h-0 w-[46%] max-w-[760px] shrink-0 flex-col gap-2 overflow-y-auto">
           <div className="relative mx-auto w-full" data-testid="kontor-ramme">
             <OfficeCanvas />
-            <PauseBanner />
           </div>
+          <PauseBanner />
           <MentorGuide />
           <Ticker />
           <Horisont />

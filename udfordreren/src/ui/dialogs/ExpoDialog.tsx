@@ -56,7 +56,9 @@ function Varsel({ expoId, onLuk }: { expoId: string; onLuk: () => void }) {
         <p className="rounded-md border-2 border-line bg-bg2 p-2 text-sm text-muted">Stande kan bookes fra {e.varselUger} uger før messen.</p>
       ) : (
         <div className="grid grid-cols-1 gap-2 @md:grid-cols-3" data-testid="messe-stande">
-          {([1, 2, 3] as const).map((st) => {
+          {([1, 2, 3] as const).map((st, _i, alle) => {
+            // Guld til den største stand, I har råd til — aldrig til en deaktiveret knap
+            const stoersteMulige = Math.max(0, ...alle.filter((x) => g.kapital >= e.standPris[x - 1]));
             const i = st - 1;
             const pris = e.standPris[i];
             const raad = g.kapital >= pris;
@@ -87,7 +89,7 @@ function Varsel({ expoId, onLuk }: { expoId: string; onLuk: () => void }) {
                   </Chip>
                   <Chip ikon="stjerne" farve="var(--color-muted)">+{e.omdoemme[i]} omdømme</Chip>
                 </div>
-                <Btn variant={st === 3 ? 'primaer' : 'sekundaer'} className="mt-auto" disabled={!raad} title={raad ? undefined : `Ikke råd (${mio(pris)})`} testId={`book-stand-${st}`} onClick={() => book(st)}>
+                <Btn variant={st === stoersteMulige ? 'primaer' : 'sekundaer'} className="mt-auto" disabled={!raad} title={raad ? undefined : `Ikke råd (${mio(pris)})`} testId={`book-stand-${st}`} onClick={() => book(st)}>
                   Book {KORT_NAVN[st]}
                 </Btn>
                 {!raad && (

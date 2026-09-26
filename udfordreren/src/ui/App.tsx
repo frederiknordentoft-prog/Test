@@ -6,6 +6,8 @@ import { useGame } from '../store/gameStore';
 import { useUi } from '../store/uiStore';
 import { hent } from '../store/persistence';
 import { installerLydUnlock } from '../audio/sfx';
+import { useMusik } from '../audio/music';
+import { useAktChrome } from './hooks/useAktChrome';
 import TitleScreen from './screens/TitleScreen';
 import GameScreen from './screens/GameScreen';
 import { Btn, Ikon } from './components/kit';
@@ -78,6 +80,10 @@ export default function App() {
     void useGame.getState().indlaesSettings();
     installerLydUnlock();
   }, []);
+  // Chiptune pr. akt (Tone.js indlæses først efter første tryk, og kun hvis musikken er slået til)
+  useMusik();
+  // Skallens udtryk pr. akt: <html data-akt="garage|vaekst|ai"> (tokens i index.css)
+  useAktChrome();
 
   useEffect(() => {
     const r = document.documentElement;

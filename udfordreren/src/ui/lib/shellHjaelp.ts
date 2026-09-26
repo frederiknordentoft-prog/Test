@@ -9,18 +9,8 @@ import { opgaverFor, pladser } from '../../sim/staff';
 import { CHANNEL_IDS } from '../../data/acquisition';
 import { KONKURS_UGER } from '../../data/costs';
 import { FASE_NAVN } from './devHjaelp';
-import { kassenRaekker } from './firmaHjaelp';
-
-/** Hent en fil i browseren (data-URL + a[download]) */
-export function hentFil(filnavn: string, indhold: string, type = 'application/json'): void {
-  const a = document.createElement('a');
-  a.href = `data:${type};charset=utf-8,${encodeURIComponent(indhold)}`;
-  a.download = filnavn;
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
+import { scoreFald } from './standardHjaelp';
+import { kassenRaekker } from './kasseHjaelp';
 
 export function slug(tekst: string): string {
   return (
@@ -145,7 +135,7 @@ export function kontorKlar(s: GameState): boolean {
   return s.staff.length >= pladser(s) && s.kapital >= n.pris * 1.5 + 0.3;
 }
 
-export type KnudMaal = 'kontrakter' | 'marked' | 'firma' | 'nytProdukt';
+export type KnudMaal = 'kontrakter' | 'marked' | 'firma' | 'nytProdukt' | 'personale';
 export type KnudTip = { id: string; titel: string; tekst: string; knap: string; maal: KnudMaal };
 
 /** Et kort råd fra mentoren ud fra spillets tilstand (vigtigste først). null = intet at sige lige nu. */
@@ -173,6 +163,17 @@ export function knudTip(s: GameState): KnudTip | null {
   }
   const opg = opgaverFor(s);
   const ledige = s.staff.filter((m) => opg[m.id]?.type === 'ledig');
+  const fald = scoreFald(s);
+  if (fald) {
+    const pct = Math.round(fald.spring.pct * 100);
+    return {
+      id: `standard-${fald.produktId}`,
+      titel: 'Markedet løber stærkt',
+      tekst: `Standarden steg ${pct > 0 ? `${pct} % ` : ''}siden ${fald.spring.forrigeNavn}, så samme indsats giver færre point. Giv næste produkt et større budget, og træn holdet under Folk — det giver flere point pr. uge. Kurven flader ud omkring 2016.`,
+      knap: ledige.length > 0 && !s.projekter.some((p) => !p.klar) ? 'Nyt produkt' : 'Til Folk',
+      maal: ledige.length > 0 && !s.projekter.some((p) => !p.klar) ? 'nytProdukt' : 'personale',
+    };
+  }
   if (ledige.length > 0 && !s.projekter.some((p) => !p.klar)) {
     return {
       id: 'ledige',

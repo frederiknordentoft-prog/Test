@@ -90,7 +90,9 @@ function Tilbud({ t, g, valgt, onValg, udloebet }: { t: ContractOffer; g: GameSt
 
       <div>
         <div className="mb-1 text-xs text-muted">
-          Vælg {t.maxStaff === 1 ? 'én person' : `op til ${t.maxStaff}`} — flere folk giver bedre kvalitet, men binder dem i {uger(t.uger)}.
+          {t.maxStaff === 1
+            ? `Vælg én person — ${STAT_NAVN[t.stat].toLowerCase()} og den rigtige rolle giver bedre kvalitet. Personen er væk i ${uger(t.uger)}.`
+            : `Vælg op til ${t.maxStaff} — flere folk giver bedre kvalitet, men binder dem i ${uger(t.uger)}.`}
         </div>
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Vælg medarbejdere">
           {g.staff.map((m) => {
@@ -264,7 +266,7 @@ export default function ContractsPanel() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="h-3.5 min-w-0 flex-1 overflow-hidden rounded-sm border-2 border-line bg-bg" role="progressbar" aria-valuenow={Math.round(faerdig * 100)} aria-valuemin={0} aria-valuemax={100}>
-                        <span className="block h-full bg-sky transition-[width] duration-300" style={{ width: `${faerdig * 100}%` }} />
+                        <span className="block h-full origin-left bg-sky transition-transform duration-300" style={{ transform: `scaleX(${faerdig})` }} />
                       </span>
                       <span className="tal shrink-0 font-pixel text-xs font-bold text-sky">{uger(c.resterendeUger)} tilbage</span>
                     </div>

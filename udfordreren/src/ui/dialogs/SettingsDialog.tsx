@@ -4,10 +4,37 @@ import type { UiDialog } from '../../store/uiStore';
 import { useUi } from '../../store/uiStore';
 import { useGame, type Settings } from '../../store/gameStore';
 import { gem } from '../../store/persistence';
-import { Btn, Ikon, Modal, type IkonNavn } from '../components/kit';
+import { Btn, Ikon, Modal, Skyder, type IkonNavn } from '../components/kit';
 import { Kontakt } from '../components/ShellKontakt';
 import { spil } from '../../audio/sfx';
+import { kanalVolumen } from '../../audio/volumen';
 import { useMedia } from '../hooks/useMedia';
+
+/** Lydstyrke-skyder (0-100 %) under en kontakt; effekt-skyderen giver en lille prøvelyd undervejs */
+let sidsteProeve = 0;
+function VolumenSkyder({ vaerdi, onSkift, label, testId, proeve }: { vaerdi: number; onSkift: (v: number) => void; label: string; testId: string; proeve?: boolean }) {
+  return (
+    <div className="pb-2">
+      <Skyder
+        min={0}
+        max={100}
+        trin={5}
+        vaerdi={Math.round(vaerdi * 100)}
+        label={label}
+        vis={(v) => `${v} %`}
+        testId={testId}
+        onSkift={(v) => {
+          onSkift(v / 100);
+          const nu = performance.now();
+          if (proeve && nu - sidsteProeve > 140) {
+            sidsteProeve = nu;
+            setTimeout(() => spil('boble', Math.round(v / 20)), 0);
+          }
+        }}
+      />
+    </div>
+  );
+}
 
 // Kun pauser uden egen dialog kan slås fra. Dialoger (kvartalsmøde, messe, galla, Top 10 …) stopper altid tiden,
 // mens de er åbne, og tiden kører videre, når den sidste lukkes (se useAutoFortsaet).
@@ -72,17 +99,44 @@ export default function SettingsDialog({ onLuk }: { dialog: UiDialog; onLuk: () 
     >
       <div className="flex flex-col gap-3">
         <Gruppe titel="Lyd" ikon="hoejttaler">
-          <Kontakt
-            til={settings.lyd}
-            onSkift={(v) => {
-              opdater({ lyd: v });
-              if (v) setTimeout(() => spil('kasse'), 0);
-            }}
-            label="Lydeffekter"
-            forklaring="Bobler, kasseapparat og fanfarer."
-            testId="indstilling-lyd"
-          />
-          <Kontakt til={false} onSkift={() => {}} label="Musik" note="Snart" forklaring="Chiptune-musik kommer i en senere version." deaktiveret testId="indstilling-musik" />
+          <div>
+            <Kontakt
+              til={settings.lyd}
+              onSkift={(v) => {
+                opdater({ lyd: v });
+                if (v) setTimeout(() => spil('kasse'), 0);
+              }}
+              label="Lydeffekter"
+              forklaring="Bobler, kasseapparat og fanfarer."
+              testId="indstilling-lyd"
+            />
+            {settings.lyd && (
+              <VolumenSkyder
+                vaerdi={kanalVolumen(settings.lydVolumen, 'lyd')}
+                onSkift={(v) => opdater({ lydVolumen: v })}
+                label="Lydstyrke, effekter"
+                testId="indstilling-lyd-volumen"
+                proeve
+              />
+            )}
+          </div>
+          <div>
+            <Kontakt
+              til={settings.musik}
+              onSkift={(v) => opdater({ musik: v })}
+              label="Musik"
+              forklaring="Chiptune, der skifter med akterne: garagen, væksten og AI-akten."
+              testId="indstilling-musik"
+            />
+            {settings.musik && (
+              <VolumenSkyder
+                vaerdi={kanalVolumen(settings.musikVolumen, 'musik')}
+                onSkift={(v) => opdater({ musikVolumen: v })}
+                label="Lydstyrke, musik"
+                testId="indstilling-musik-volumen"
+              />
+            )}
+          </div>
         </Gruppe>
 
         <Gruppe titel="Visning" ikon="tekst">

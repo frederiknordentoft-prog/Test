@@ -142,16 +142,13 @@ function TemaKort({ g, typeId, t, valgt, onVaelg }: { g: GameState; typeId: Prod
       aria-pressed={valgt}
       data-testid={`tema-${t}`}
       title={st.ok ? (k.set ? `${PRODUCT_TYPES[typeId].navn} × ${def.navn}: ${k.fitNavn}` : 'Kombinationen er ikke prøvet endnu') : st.grund}
-      className={`flex min-h-[64px] min-w-0 flex-col gap-1 rounded-md border-2 border-line px-2 py-1.5 text-left ${
+      className={`flex min-h-[64px] min-w-0 flex-col gap-1 overflow-hidden rounded-md border-2 border-line px-2 pb-1.5 text-left ${
         valgt ? 'bg-hi pixel-skygge outline-2 outline-gold' : st.ok ? 'bg-panel2 hover:bg-hi' : 'cursor-not-allowed bg-bg2 opacity-55'
       }`}
     >
+      {/* Temaets farve som en stribe i toppen (som på typekortene) — ikke en prik ved vurderingen, der ligner et trafiklys */}
+      <span className="-mx-2 h-1.5 shrink-0 border-b-2 border-line" style={{ background: st.ok ? def.farve : 'var(--color-dim)' }} aria-hidden />
       <span className="flex min-w-0 items-center gap-1.5">
-        <span
-          className="inline-block h-3 w-3 shrink-0 rounded-sm border-2 border-line"
-          style={{ background: st.ok ? def.farve : 'var(--color-dim)' }}
-          aria-hidden
-        />
         {valgt && <Ikon navn="flueben" farve="var(--color-gold)" str={12} className="shrink-0" />}
         <span className="truncate font-pixel text-[0.75rem] font-bold text-ink">{def.navn}</span>
         <span className="tal ml-auto shrink-0 font-pixel text-[0.62rem] text-muted" title="Temaniveau">

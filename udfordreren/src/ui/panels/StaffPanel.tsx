@@ -157,18 +157,20 @@ export default function StaffPanel() {
                       Stats {a.statMin}-{a.statMax}
                     </Chip>
                   </div>
+                  {/* Fuldt kontor: en annonce ville koste penge uden at kunne føre til en ansættelse */}
                   <Btn
                     variant="primaer"
                     className="mt-auto"
-                    disabled={!raad}
-                    title={!raad ? `Ikke råd (${mio(a.pris)})` : g.kandidater.length ? 'Erstatter de nuværende kandidater' : undefined}
+                    disabled={!raad || fuldt}
+                    title={fuldt ? fuldtGrund : !raad ? `Ikke råd (${mio(a.pris)})` : g.kandidater.length ? 'Erstatter de nuværende kandidater' : undefined}
                     testId={`jobannonce-${a.niveau}`}
                     onClick={() => {
                       if (useGame.getState().dispatch({ t: 'postJobAd', niveau: a.niveau })) useGame.getState().toast(`Annoncen er ude — ${a.antal} har søgt!`, 'godt');
                     }}
                   >
-                    Slå op · {mio(a.pris)}
+                    {fuldt ? 'Ingen ledige pladser' : `Slå op · ${mio(a.pris)}`}
                   </Btn>
+                  {!fuldt && !raad && <span className="text-center text-[0.7rem] text-warn">Ikke råd lige nu</span>}
                 </div>
               );
             })}

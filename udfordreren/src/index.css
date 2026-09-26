@@ -47,6 +47,21 @@ button { font: inherit; }
 .pixel-skygge { box-shadow: 0 3px 0 var(--color-line); }
 canvas.pixel { image-rendering: pixelated; image-rendering: crisp-edges; }
 
+/* ---------- iOS/iPad-hærdning (fase 8) ---------- */
+/* Skallen følger den synlige højde, også når Safaris værktøjslinjer skjules eller vises */
+@supports (height: 100dvh) {
+  #root { height: 100dvh; }
+}
+/* Telefon på langs med notch: hold indholdet fri af de afrundede hjørner (top/bund klares i HUD, faner og dialoger) */
+#root { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Hurtige tryk (boost, tempo, faner) må ikke blive til dobbelttryk-zoom */
+button, a, label, input, select, textarea, summary, [role='button'], [role='tab'] { touch-action: manipulation; }
+/* iOS zoomer ind på tekstfelter under 16 px: på touch-skærme er felterne mindst 16 px */
+@media (pointer: coarse) {
+  input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea { font-size: max(16px, 1rem); }
+}
+
 /* Reduceret bevægelse: globalt og manuelt */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
@@ -96,3 +111,42 @@ canvas.pixel { image-rendering: pixelated; image-rendering: crisp-edges; }
    (font-pixel, text-sm, font-bold …) på alle knapper. revert-layer ruller tilbage til de lagdelte regler
    (preflight arver stadig fonten), så klasserne på knapper virker som tiltænkt. */
 button { font: revert-layer; }
+
+/* ---------- Akt-chrome (spec 6.19): hele skallen skifter udtryk pr. akt via <html data-akt> ----------
+   Vækst (2015-25) bruger standard-tokens ovenfor (ren startup). Garagen er varm, AI-akten mørk og glødende.
+   Alle par (ink/muted/dim og accentfarverne på bg, bg2, panel og panel2) har mindst samme kontrast som standarden (WCAG AA). */
+:root[data-akt='garage'] {
+  --color-bg: #1c1714;
+  --color-bg2: #241d19;
+  --color-panel: #2e2520;
+  --color-panel2: #3c3029;
+  --color-hi: #5c4a3e;
+  --color-ink: #f6eddc;
+  --color-muted: #c9b7a1;
+  --color-dim: #948170;
+}
+:root[data-akt='garage'] body {
+  background-image: radial-gradient(ellipse 80% 50% at 30% 0%, rgba(255, 154, 60, 0.07), transparent 70%);
+}
+:root[data-akt='ai'] {
+  --color-bg: #080a14;
+  --color-bg2: #0d111e;
+  --color-panel: #121829;
+  --color-panel2: #1a2238;
+  --color-hi: #2c3a5e;
+  --color-line: #020309;
+  --color-ink: #eaf6ff;
+  --color-muted: #9fb4d0;
+  --color-dim: #6b7fa3;
+}
+:root[data-akt='ai'] body {
+  background-image:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(58, 44, 255, 0.12), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(78, 230, 216, 0.028) 0 1px, transparent 1px 3px);
+}
+:root[data-akt='ai'] .pixel-kant {
+  box-shadow: 0 0 0 2px var(--color-line), inset 0 2px 0 rgba(78, 230, 216, 0.1), 0 0 16px -6px rgba(78, 230, 216, 0.55);
+}
+:root[data-akt='ai'] .pixel-skygge {
+  box-shadow: 0 3px 0 var(--color-line), 0 0 12px -7px rgba(78, 230, 216, 0.6);
+}

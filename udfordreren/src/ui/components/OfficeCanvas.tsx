@@ -1,14 +1,18 @@
 // Pixelkontoret: statuslinje med aktive projekter/opgaver + 320×180 canvas (nearest-neighbor, 16:9 letterbox).
 // Selve tegningen sker i src/render/office.ts i ét rAF-loop uden React-rerenders.
-import { useEffect, useMemo, useRef, useState } from 'react';
+// Et klik på trofæhylden (eller dens usynlige tastaturknap) åbner en lille oversigt over priser, kuponer og licenser.
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
 import { KontorRenderer } from '../../render/office';
 import { FASE_FARVE } from '../../render/palette';
-import { PHASES, type Phase } from '../../sim/types';
-import { Ikon } from './kit';
-import { FASE_NAVN } from '../lib/devHjaelp';
+import { PHASES, type GameState, type Phase } from '../../sim/types';
+import { Btn, Ikon, Modal, type IkonNavn } from './kit';
+import { FASE_NAVN, HALL_OF_FAME_KRAV } from '../lib/devHjaelp';
+import { trofaeOversigt, type LicensLinje } from '../lib/trofaeHjaelp';
+import { useReduceretBevaegelse } from '../hooks/useMedia';
 
 
 type Chip =
@@ -130,37 +134,153 @@ function StatusLinje() {
   );
 }
 
-/** Tastatur/skærmlæser-adgang til medarbejderne (canvas kan ikke fokuseres). Usynlige, indtil de får fokus. */
-function MedarbejderKnapper() {
+/** Tastatur/skærmlæser-adgang til medarbejderne og trofæhylden (canvas kan ikke fokuseres). Usynlige, indtil de får fokus. */
+function MedarbejderKnapper({ onTrofaeer }: { onTrofaeer: () => void }) {
   const staff = useGame(useShallow((s) => (s.game?.staff ?? []).map((m) => `${m.id}|${m.navn}`)));
   const aabn = useUi((s) => s.aabn);
+  const knap =
+    'sr-only focus:not-sr-only focus:pointer-events-auto focus:absolute focus:bottom-2 focus:left-2 focus:z-10 focus:min-h-[44px] focus:rounded-md focus:border-2 focus:border-line focus:bg-gold focus:px-3 focus:font-bold focus:text-line';
   return (
-    <ul className="pointer-events-none absolute inset-0 m-0 list-none p-0" aria-label="Medarbejdere i kontoret">
+    <ul className="pointer-events-none absolute inset-0 m-0 list-none p-0" aria-label="Medarbejdere og trofæer i kontoret">
       {staff.map((x) => {
         const [id, navn] = x.split('|');
         return (
           <li key={id}>
-            <button
-              type="button"
-              data-testid={`kontor-medarbejder-${id}`}
-              onClick={() => aabn({ kind: 'medarbejder', staffId: id })}
-              className="sr-only focus:not-sr-only focus:pointer-events-auto focus:absolute focus:bottom-2 focus:left-2 focus:z-10 focus:min-h-[44px] focus:rounded-md focus:border-2 focus:border-line focus:bg-gold focus:px-3 focus:font-bold focus:text-line"
-            >
+            <button type="button" data-testid={`kontor-medarbejder-${id}`} onClick={() => aabn({ kind: 'medarbejder', staffId: id })} className={knap}>
               Åbn {navn}
             </button>
           </li>
         );
       })}
+      <li>
+        <button type="button" data-testid="kontor-trofaehylde" onClick={onTrofaeer} className={knap}>
+          Se trofæhylden
+        </button>
+      </li>
     </ul>
+  );
+}
+
+// ---------- Trofæhylden: lille oversigt ----------
+
+function Hylde({ ikon, farve, titel, antal, tom, children, testId }: { ikon: IkonNavn; farve: string; titel: string; antal: number; tom: string; children: ReactNode; testId: string }) {
+  return (
+    <section className="rounded-md border-2 border-line bg-bg2 p-2" data-testid={testId}>
+      <h3 className="mb-1 flex items-center justify-between gap-2 font-pixel text-xs font-black uppercase">
+        <span className="flex items-center gap-1.5">
+          <Ikon navn={ikon} farve={farve} indre="var(--color-line)" str={14} /> {titel}
+        </span>
+        <span className="tal" style={{ color: farve }}>
+          {antal}
+        </span>
+      </h3>
+      {antal === 0 ? <p className="text-xs text-muted">{tom}</p> : children}
+    </section>
+  );
+}
+
+const LICENS_STIL: Record<LicensLinje['status'], { ikon: IkonNavn; farve: string; tekst: string }> = {
+  aktiv: { ikon: 'flueben', farve: 'var(--color-good)', tekst: 'Aktiv' },
+  ansoegt: { ikon: 'ur', farve: 'var(--color-sky)', tekst: 'Ansøgt' },
+  suspenderet: { ikon: 'advarsel', farve: 'var(--color-bad)', tekst: 'Suspenderet' },
+  inddraget: { ikon: 'kryds', farve: 'var(--color-bad)', tekst: 'Inddraget' },
+};
+
+function TrofaeOversigt({ g, onLuk }: { g: GameState; onLuk: () => void }) {
+  const t = useMemo(() => trofaeOversigt(g), [g]);
+  const setPanel = useUi((s) => s.setPanel);
+  const reduceret = useReduceretBevaegelse();
+  const seAlt = () => {
+    onLuk();
+    setPanel('firma');
+    // panelet skal først monteres, før der kan rulles til trofæafsnittet
+    setTimeout(() => document.getElementById('firma-trofaeer')?.scrollIntoView({ block: 'start', behavior: reduceret ? 'auto' : 'smooth' }), 60);
+  };
+  return (
+    <Modal
+      titel="Trofæhylden"
+      onLuk={onLuk}
+      bredde={520}
+      testId="dialog-trofaeer"
+      fod={
+        <>
+          <Btn variant="ghost" onClick={onLuk} testId="trofaeer-luk">
+            Luk
+          </Btn>
+          <Btn variant="primaer" onClick={seAlt} testId="trofaeer-firma">
+            <Ikon navn="firma" /> Se alt under Firma
+          </Btn>
+        </>
+      }
+    >
+      <p className="mb-2 text-sm text-muted">{t.tekst}</p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Hylde ikon="trofae" farve="var(--color-gold)" titel="Gallapriser" antal={t.priserIalt} tom="Branchegallaen er i december. Hylden er støvet af." testId="trofaeer-galla">
+          <ul className="flex flex-col gap-0.5 text-sm">
+            {t.priser.map((p) => (
+              <li key={p.aar} className="flex gap-2">
+                <span className="tal font-pixel font-black text-gold">{p.aar}</span>
+                <span className="min-w-0 text-ink">{p.navne.join(', ')}</span>
+              </li>
+            ))}
+          </ul>
+        </Hylde>
+        <Hylde ikon="stjerne" farve="var(--color-gold)" titel="Guldkuponer" antal={t.kuponerIalt} tom="32 point eller mere hos de fire anmeldere." testId="trofaeer-kuponer">
+          <ul className="flex flex-col gap-0.5 text-sm">
+            {t.kuponer.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate">{p.navn}</span>
+                <span className="tal shrink-0 font-pixel text-xs font-bold text-gold">{p.total40}/40</span>
+              </li>
+            ))}
+            {t.kuponerIalt > t.kuponer.length && <li className="text-xs text-muted">… og {t.kuponerIalt - t.kuponer.length} ældre</li>}
+          </ul>
+        </Hylde>
+        <Hylde ikon="krone" farve="var(--color-violet)" titel="Hall of Fame" antal={t.hof.length} tom={HALL_OF_FAME_KRAV} testId="trofaeer-hof">
+          <ul className="flex flex-col gap-0.5 text-sm">
+            {t.hof.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate">{p.navn}</span>
+                <span className="tal shrink-0 font-pixel text-xs font-bold text-violet">{p.total40}/40</span>
+              </li>
+            ))}
+          </ul>
+        </Hylde>
+        <Hylde ikon="paragraf" farve="var(--color-sky)" titel="Licenser" antal={t.licenser.length} tom="Ingen licenser endnu. De hænger på væggen, når tilsynet har sagt ja." testId="trofaeer-licenser">
+          <ul className="flex flex-col gap-0.5 text-sm">
+            {t.licenser.map((l) => {
+              const s = LICENS_STIL[l.status];
+              return (
+                <li key={l.marked} className="flex items-center justify-between gap-2" data-testid={`trofaeer-licens-${l.marked}`}>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="flex h-3 w-[15px] shrink-0 overflow-hidden rounded-[1px] border border-line" aria-hidden>
+                      {l.farver.map((f, i) => (
+                        <span key={i} className="h-full flex-1" style={{ background: f }} />
+                      ))}
+                    </span>
+                    <span className="truncate">{l.navn}</span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1 font-pixel text-[0.68rem] font-bold uppercase" style={{ color: s.farve }}>
+                    <Ikon navn={s.ikon} farve={s.farve} str={11} /> {s.tekst}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </Hylde>
+      </div>
+    </Modal>
   );
 }
 
 export default function OfficeCanvas() {
   const boks = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
+  const [trofaeer, setTrofaeer] = useState(false);
+  const g = useGame((s) => (trofaeer ? s.game : null));
   useEffect(() => {
     if (!boks.current || !cv.current) return;
-    const r = new KontorRenderer(cv.current, boks.current);
+    const r = new KontorRenderer(cv.current, boks.current, { onTrofaeer: () => setTrofaeer(true) });
     r.start();
     return () => r.stop();
   }, []);
@@ -176,8 +296,9 @@ export default function OfficeCanvas() {
           aria-label="Pixelkontoret"
           data-testid="kontor-canvas"
         />
-        <MedarbejderKnapper />
+        <MedarbejderKnapper onTrofaeer={() => setTrofaeer(true)} />
       </div>
+      {trofaeer && g && createPortal(<TrofaeOversigt g={g} onLuk={() => setTrofaeer(false)} />, document.body)}
     </div>
   );
 }

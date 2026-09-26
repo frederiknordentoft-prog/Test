@@ -49,10 +49,27 @@ export const GRUND_LEDIGT_HOLD = 'Holdet har intet at lave';
 export const LEDIG_PAUSE_UGER = 3;
 /** … og igen efter så mange uger, hvis holdet stadig ikke laver noget */
 const LEDIG_PAUSE_IGEN = 12;
+/** Nyt spil: tiden står stille, til spilleren er klar (løses af det første projekt eller Fortsæt) */
+export const GRUND_START = 'Tiden går i gang, når I starter et produkt';
+
+/** Autosave kort efter spillerens handlinger (lancering, ansættelse, flytning, svar på events …), samlet i ét skriv */
+const AUTOSAVE_FORSINKELSE_MS = 800;
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+function planlaegAutosave(hent: () => GameState | null): void {
+  if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    autosaveTimer = null;
+    const g = hent();
+    if (g && !g.slut) void gem('auto', g);
+  }, AUTOSAVE_FORSINKELSE_MS);
+}
 
 export type Settings = {
   lyd: boolean;
   musik: boolean;
+  /** Lydstyrke 0-1 for effekter og musik (mangler i ældre gemte indstillinger — se kanalVolumen i src/audio/volumen.ts) */
+  lydVolumen?: number;
+  musikVolumen?: number;
   reduceretBevaegelse: boolean;
   tekstStoerrelse: 'normal' | 'stor' | 'ekstra';
   arkiv: boolean;
@@ -68,6 +85,8 @@ const AUTO_PAUSE_V = 2;
 export const DEFAULT_SETTINGS: Settings = {
   lyd: true,
   musik: true,
+  lydVolumen: 1,
+  musikVolumen: 0.5,
   reduceretBevaegelse: typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
   tekstStoerrelse: 'normal',
   arkiv: true,
@@ -140,6 +159,8 @@ type GameStore = {
 };
 
 
+const TOAST_KLAR = 'Et produkt er klar til lancering';
+
 function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
   switch (sig.k) {
     case 'fejl': return { tekst: sig.tekst, kind: 'skidt' };
@@ -148,7 +169,7 @@ function toastFor(sig: Signal): { tekst: string; kind: ToastKind } | null {
     case 'kontraktFaerdig': return { tekst: `Opgave leveret: +${Math.round(sig.betaling * 1000)} t. kr., +${sig.indsigt} indsigt`, kind: 'godt' };
     case 'forskning': return { tekst: 'Forskning færdig', kind: 'godt' };
     case 'licens': return { tekst: 'Licens godkendt!', kind: 'godt' };
-    case 'klar': return { tekst: 'Et produkt er klar til lancering', kind: 'info' };
+    case 'klar': return { tekst: TOAST_KLAR, kind: 'info' };
     case 'trend': return { tekst: sig.titel, kind: 'info' };
     case 'afgift': {
       const pct = (x: number) => `${Math.round(x * 1000) / 10} %`.replace('.', ',');
@@ -239,6 +260,8 @@ export const useGame = create<GameStore>((set, get) => {
       toasts = medToast(toasts, { tekst: `Holdet har ikke lavet noget i ${ledigeUger} uger. Start et produkt, eller tag en opgave.`, kind: 'info' }, false, ny.uge);
     }
     if (dialoger.length > 0) pause = true;
+    // "Klar til lancering" er forældet, så snart intet projekt længere venter på lanceringen
+    if (!ny.projekter.some((p) => p.klar)) toasts = toasts.filter((t) => t.tekst !== TOAST_KLAR);
     set({
       game: ny,
       sidsteSignaler: sig,
@@ -281,9 +304,13 @@ export const useGame = create<GameStore>((set, get) => {
     nytSpil(opts) {
       // New Game+ (spec 6.17): arv og startmode (2018 i USA / AI-native 2026 spoler verden frem uden spilleren)
       const g = lavNytSpil(opts);
-      set({ game: g, paused: false, pauseGrunde: [], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], speed: 1, hudFrys: null, frigjortUge: null, ledigeUger: 0, ledigPauseUge: null });
+      // Tiden starter først, når spilleren er klar (første projekt eller Fortsæt): så går licensugerne og
+      // messernes bookingvinduer ikke tabt, mens man læser Knud og kigger sig omkring
+      set({ game: g, paused: true, pauseGrunde: [GRUND_START], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], speed: 1, hudFrys: null, frigjortUge: null, ledigeUger: 0, ledigPauseUge: null });
       clock.sidsteTickMs = performance.now();
       clock.ugeMs = ugeVarighedMs(g.uge, 1);
+      // Straks i autosave: et reload før første kvartal må ikke miste firmaet
+      void gem('auto', g);
     },
     indlaes(state) {
       set({ game: { ...state, signaler: [] }, paused: true, pauseGrunde: ['Spil indlæst'], dialoger: [], toasts: [], sidsteSignaler: [], tick: 0, handlingslog: [], hudFrys: null, frigjortUge: null, ledigeUger: 0, ledigPauseUge: null });
@@ -301,6 +328,7 @@ export const useGame = create<GameStore>((set, get) => {
       const ok = !ny.signaler.some((x) => x.k === 'fejl');
       set({ handlingslog: [...get().handlingslog.slice(-499), { uge: g.uge, a }] });
       behandl(ny, false);
+      if (ok) planlaegAutosave(() => get().game);
       return ok;
     },
     stepUge() {
@@ -336,6 +364,8 @@ export const useGame = create<GameStore>((set, get) => {
       // de venter, til alle dialoger er lukket
       const toasts = rest.length > 0 ? get().toasts.map((t) => (t.handling ? { ...t, handling: false } : t)) : get().toasts;
       set({ dialoger: rest, hudFrys: frys ? get().hudFrys : null, toasts });
+      // Køen er tom: gem, så et reload ikke viser de besvarede dialoger igen
+      if (rest.length === 0) planlaegAutosave(() => get().game);
     },
     toast(tekst, kind = 'info') {
       set({ toasts: medToast(get().toasts, { tekst, kind }, true, get().game?.uge).slice(-MAX_TOASTS) });

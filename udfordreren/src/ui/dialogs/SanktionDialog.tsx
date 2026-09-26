@@ -40,7 +40,7 @@ export default function SanktionDialog({ signal: foerste, gruppe, onLuk }: { sig
     // Skærmryst og et dumpt "dunk" — ingen rystelse med reduceret bevægelse
     if (!reduceretBevaegelseNu()) rystelse(trinRaa >= 3 ? 520 : 380, trinRaa >= 3 ? 6 : 4);
     try {
-      spil('fejl');
+      spil('dunk');
     } catch {
       /* lyd må aldrig vælte spillet */
     }

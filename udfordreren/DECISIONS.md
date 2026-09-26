@@ -104,3 +104,7 @@
 - R8's tredje påbud koster branchens omdømme −1 som i spec 7.6 (sim'en trak 3).
 - Tidslinjen får AI-øjeblikke: hyperpersonalisering til/fra, AI-uheld, AI-scenarier, der slår igennem, og den første gang byen bliver rød. Akt-skiftet hører under AI.
 - VIP niveau 3 giver +38 % BSI pr. kunde (fra +30 %), så grådighed stadig giver den højeste BSI 2012-2020, efter at investorpresset (og dets marketingløft) kommer sjældnere.
+- PWA: autoUpdate med skipWaiting og clientsClaim, men uden tvunget reload. En ny version tager over i baggrunden, og spilleren får beskeden "Ny version klar — den bruges næste gang", så et igangværende spil aldrig afbrydes. Ingen service worker i dev og i single-builden.
+- Uden lokal lagring (privat vindue, blokeret IndexedDB) kører spillet videre uden gem og siger det synligt. Gem-pladserne er slået fra, men eksport og import virker. En installeret app på en touch-enhed eksporterer via delearket ("Gem i Filer"), ellers er det en almindelig download.
+- App-ikonet (garagen med en guldkupon) tegnes procedural af `npm run ikoner` (scripts/ikoner.mjs) og ligger i public/.
+- E2E: Definition of Done ligger i tests/e2e/dod.spec.ts (fase1-testene er flyttet derind). Alt kører på laptop; kun røgtesten tagget `@roeg` (nyt spil + reload) kører også på iPad (1024×768, touch) og mobil (390×844, touch). `E2E_BASE_URL` kører mod en server, der allerede kører, uden build; PWA-testene kræver en produktionsbuild (preview), ikke en dev-server.

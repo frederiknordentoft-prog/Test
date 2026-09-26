@@ -217,6 +217,11 @@ export function stopKonfetti(): void {
   if (cv) cv.style.display = 'none';
 }
 
+/** Lad konfettien falme ud i løbet af et kort øjeblik (fx når spilleren begynder at rulle i en dialog) */
+export function fadeKonfetti(sek = 0.35): void {
+  for (let i = 0; i < MAX; i++) if (kliv[i] > sek) kliv[i] = sek;
+}
+
 /** Antal levende konfettistykker (til test/fejlfinding) */
 export function konfettiAntal(): number {
   return antalLevende;

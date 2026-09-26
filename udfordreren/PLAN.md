@@ -42,14 +42,17 @@ Kort todo pr. fase (spec afsnit 9). ✅ = færdig, 🔶 = i gang, ⬜ = ikke sta
 - ✅ UI: slutskærm med eftermæle, tidslinje, trofæer og byens udvikling, eftertanke, Arkiv, New Game+ og debug-menuens værktøjer
 - ✅ Værdiansættelse med resultatmargin og negativ kasse; `npm run sim` består alle 10 assertions ved 200 seeds
 
-## Fase 7: Følelse, grafik og lyd 🔶
+## Fase 7: Følelse, grafik og lyd ✅
 - ✅ Pixelkontor i trin, trofæer, mentor-tutorial, SFX, reduceret bevægelse, tekststørrelse, pause ved visibilitychange
-- 🔶 Chiptune pr. akt (Tone.js), AI-forvandlingen af kontoret, juice-gennemgang, fps ≥ 55 ved 4x (workflow kører)
+- ✅ Chiptune pr. akt (Tone.js, dovent indlæst i sin egen chunk), AI-forvandlingen af kontoret, trofæhylde, akt-chrome for hele skallen, juice-gennemgang
+- ✅ Gate: automatiseret gennemgang 2012 → første produkt → 2015 → akt-skiftet 2026 → slutskærm på 1440/1024/390, Guldkupon-juice og forvandlingen i screenshots; ≈ 60 fps ved 4x i 2030 (1440×900, hovedkontor med 30 folk og 20 agenter)
 
-## Fase 8: Hærdning og levering 🔶
+## Fase 8: Hærdning og levering ✅
 - ✅ `netlify.toml`, `docs/D-VAERDIER.md` (`npm run dliste`)
-- 🔶 PWA og offline, iOS/iPad-tjek, eksport/import-hærdning, Definition of Done-e2e (workflow kører)
-- ⬜ README og slutverifikation af hele Definition of Done
+- ✅ PWA og offline (ingen service worker i dev og single-build), iOS/iPad-tjek, eksport/import-hærdning, privat vindue
+- ✅ Definition of Done-e2e (`tests/e2e/dod.spec.ts`) plus fase 4-6 og PWA: `npm run e2e` er grøn
+- ✅ README og slutverifikation af hele Definition of Done
 
 ## Kendte punkter
 - JSON-eksport virker lokalt; i den delte artifact-version blokerer vieweren downloads.
+- Musikken er kun målt (niveau, temaskift), ikke lyttet igennem af et menneske. iOS/iPad er kode-auditeret og emuleret i Chromium, ikke testet i Safari/WebKit eller på en rigtig enhed.

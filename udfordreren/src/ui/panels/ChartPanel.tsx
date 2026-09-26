@@ -1,7 +1,7 @@
 // Hitlisten: "Ugens Top 10" pr. åbent marked med pile, "NY!", monogrammer og spillerens produkter fremhævet.
 // Faner for alle markeder: åbne markeder viser deres liste, uåbnede viser åbningsdatoen, og Norge er monopol.
 import { useRef, useState, type KeyboardEvent } from 'react';
-import type { ChartEntry, GameState, LiveProduct, MarketId } from '../../sim/types';
+import type { ChartEntry, GameState, LiveProduct, MarketId, Vertical } from '../../sim/types';
 import { useGame } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
 import { vaelgMarked } from '../lib/markedHjaelp';
@@ -214,14 +214,20 @@ function LaastMarked({ g, m }: { g: GameState; m: MarketId }) {
 function LicensLinje({ g, m }: { g: GameState; m: MarketId }) {
   const ms = g.markeder[m];
   const def = MARKETS[m];
-  const lic = vertikalLicens(g, m, g.startVertikal);
   if (ms.licens === 'aktiv') return null;
+  // Begge vertikaler tæller: en søgt kasinolicens er "på vej", selv om firmaet startede med betting
+  const andenV: Vertical = g.startVertikal === 'betting' ? 'kasino' : 'betting';
+  const start = vertikalLicens(g, m, g.startVertikal);
+  const anden = vertikalLicens(g, m, andenV);
+  const brugAnden = start.tilstand === 'ingen' && anden.tilstand === 'ansoegt';
+  const lic = brugAnden ? anden : start;
+  const v: Vertical = brugAnden ? andenV : g.startVertikal;
   const st = LICENS_STIL[lic.tilstand];
   const tekst =
     lic.tilstand === 'ingen'
       ? `I har ingen licens i ${def.navn} endnu. Markedet er ${stoerrelseTekst(markedAarsBsi(m, g.startVertikal, g.uge))} i ${VERTICALS[g.startVertikal].kort.toLowerCase()}.`
       : lic.tilstand === 'ansoegt'
-        ? `Jeres licens i ${def.navn} er på vej: ${licensTekst(lic).toLowerCase()}.`
+        ? `Jeres ${VERTICALS[v].kort.toLowerCase()}licens i ${def.navn} er søgt: ${licensTekst(lic).toLowerCase()}. Så kommer I på listen med jeres produkter.`
         : lic.tilstand === 'suspenderet'
           ? `Licensen i ${def.navn} er suspenderet til ${datoTekst(lic.tilUge ?? g.uge)}. Jeres produkter er ude af listen imens.`
           : lic.tilstand === 'inddraget'
@@ -293,6 +299,13 @@ export default function ChartPanel() {
     const p = g.produkter.find((x) => x.id === e.productId);
     return p ? hjemmebane(g, p.ejer, marked) > 1 : false;
   });
+  // Står en række over en anden med flere nye spillere i denne uge? Så forklares rækkefølgen (ellers ligner det en fejl)
+  const viste = liste.map((e) => g.produkter.find((x) => x.id === e.productId)?.nyeSpillerePrUge?.[marked] ?? 0);
+  const uordenIndex = viste.findIndex((v, i) => viste.slice(i + 1).some((w) => w > v));
+  const uordenHjemme = uordenIndex >= 0 && (() => {
+    const p = g.produkter.find((x) => x.id === liste[uordenIndex]?.productId);
+    return p ? hjemmebane(g, p.ejer, marked) > 1 : false;
+  })();
 
   return (
     <Panel titel="Top 10" ikon="hitliste" testId="panel-hitliste" hoejre={<span className="font-pixel text-xs text-muted">Uge {ugeIAar(g.uge) + 1}, {aarFor(g.uge)}</span>}>
@@ -342,6 +355,14 @@ export default function ChartPanel() {
                     <Raekke key={e.productId} e={e} p={g.produkter.find((p) => p.id === e.productId)} g={g} m={marked} />
                   ))}
                 </ol>
+              )}
+              {uordenIndex >= 0 && (
+                <p className="flex items-start gap-1.5 text-xs text-muted" data-testid="top10-raekkefoelge">
+                  <Ikon navn="spoergsmaal" farve="var(--color-sky)" str={12} className="mt-0.5 shrink-0" />
+                  {uordenHjemme
+                    ? 'Statsselskabet har hjemmebane: dets nye spillere tæller mere på listen (Hjemme ×), så det kan stå over et produkt med flere nye i denne uge.'
+                    : 'Listen følger et glidende snit af de seneste ugers nye spillere, så en række kan stå over en med flere nye i netop denne uge.'}
+                </p>
               )}
 
               {udenfor ? (

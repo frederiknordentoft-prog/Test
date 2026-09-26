@@ -13,6 +13,9 @@ import { EXPOS, STAND_NAVN } from '../../data/expos';
 import { GALA_CATEGORIES, GALA_UGE_I_AAR } from '../../data/galaCategories';
 import { VERTICALS } from '../../data/verticals';
 import { naesteKontor, kontorKrav } from '../../sim/office';
+import { minBudget, typeStatus } from '../../sim/projects';
+import { PRODUCT_TYPE_IDS } from '../../data/productTypes';
+import { HALL_OF_FAME_KRAV } from '../lib/devHjaelp';
 import { naesteRunde, vaerdiansaettelse, antalLanceringer, evaluerMaal } from '../../sim/investors';
 import { aarligBsi } from '../../sim/economy';
 import { forskningStatus } from '../../sim/insight';
@@ -35,7 +38,7 @@ const SEKTIONER = [
 function Hop() {
   const reduceret = useReduceretBevaegelse();
   return (
-    <nav className="shell-uden-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5 @2xl:flex-wrap" aria-label="Hop til afsnit">
+    <nav className="flex flex-wrap gap-1" aria-label="Hop til afsnit">
       {SEKTIONER.map((s) => (
         <button
           key={s.id}
@@ -60,6 +63,11 @@ function Kontor({ g }: { g: GameState }) {
   const krav = kontorKrav(g);
   const idx = OFFICES.findIndex((o) => o.id === g.kontor);
   const udland = (Object.keys(g.markeder) as MarketId[]).some((m) => m !== 'dk' && g.markeder[m].licens === 'aktiv');
+  // Hvad koster flytningen bagefter? Kassen efter flytningen, den nye husleje og det billigste nye produkt
+  const efter = naeste ? g.kapital - naeste.pris : g.kapital;
+  const typer = PRODUCT_TYPE_IDS.filter((t) => typeStatus(g, t).ok);
+  const billigst = typer.length ? Math.min(...typer.map((t) => minBudget(g, t))) : 0;
+  const ingenRaadTilProdukt = !!naeste && efter >= 0 && billigst > 0 && efter < billigst;
   return (
     <div className="flex flex-col gap-2.5">
       <ol className="grid grid-cols-5 gap-1" aria-label="Kontortrin">
@@ -105,6 +113,28 @@ function Kontor({ g }: { g: GameState }) {
             {naeste.id === 'kontor' && <KravRaekke ok={g.milepaele.foersteGuldkupon !== undefined}>En Guldkupon (32+ hos anmelderne)</KravRaekke>}
             {naeste.id === 'etage' && <KravRaekke ok={udland}>En aktiv licens uden for Danmark</KravRaekke>}
           </ul>
+          {g.kapital >= naeste.pris && (
+            <div className="grid grid-cols-2 gap-1.5 text-center" data-testid="flytning-efter">
+              <div className="rounded border-2 border-line bg-bg2 px-1 py-1">
+                <div className="text-[0.62rem] uppercase text-muted">Kassen bagefter</div>
+                <div className={`tal font-pixel text-sm font-black ${ingenRaadTilProdukt ? 'text-warn' : 'text-gold'}`}>{mioKort(efter)}</div>
+              </div>
+              <div className="rounded border-2 border-line bg-bg2 px-1 py-1">
+                <div className="text-[0.62rem] uppercase text-muted">Husleje pr. uge</div>
+                <div className="tal font-pixel text-sm font-black text-ink">
+                  {mioKort(nu.husleje)} <span className="text-dim">→</span> <span className="text-warn">{mioKort(naeste.husleje)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          {ingenRaadTilProdukt && (
+            <p className="flex items-start gap-1.5 rounded border-2 border-warn bg-warn/10 px-2 py-1 text-xs text-ink" data-testid="flytning-advarsel">
+              <Ikon navn="advarsel" farve="var(--color-warn)" indre="var(--color-line)" str={14} className="mt-px shrink-0" />
+              <span>
+                Efter flytningen er der ikke råd til et nyt produkt (mindst {mio(billigst)}). Tag kontraktopgaver, eller vent, til kassen er større.
+              </span>
+            </p>
+          )}
           <Btn
             variant="primaer"
             disabled={!krav.ok}
@@ -394,6 +424,15 @@ function Kvartalsmaal({ g }: { g: GameState }) {
 
 const TRIN_NAVN = ['Grundforskning', 'Næste skridt', 'Avanceret', 'Spydspids'];
 
+/** Knaptekst, der siger, hvad der mangler: "Mangler 3 indsigt", "Fra 2026", "Kræver X" eller "Optaget" */
+function forskKnapTekst(g: GameState, n: ResearchNode, st: { ok: boolean; grund?: string }): string {
+  if (st.ok) return 'Start';
+  if (st.grund === 'Der forskes allerede i noget andet') return 'Optaget';
+  if (st.grund?.startsWith('Fra')) return st.grund;
+  if (st.grund?.endsWith('indsigt')) return `Mangler ${Math.max(1, Math.ceil(n.indsigt - g.indsigt))} indsigt`;
+  return 'Kræver forskning først';
+}
+
 function ForskningsKort({ g, n }: { g: GameState; n: ResearchNode }) {
   const ulaast = g.forskning.ulaast.includes(n.id);
   const igang = g.forskning.igang?.nodeId === n.id ? g.forskning.igang : null;
@@ -471,7 +510,7 @@ function ForskningsKort({ g, n }: { g: GameState; n: ResearchNode }) {
             testId={`forsk-${n.id}`}
             onClick={() => useGame.getState().dispatch({ t: 'startResearch', nodeId: n.id })}
           >
-            {st.ok ? 'Start' : st.grund === 'Der forskes allerede i noget andet' ? 'Optaget' : st.grund?.startsWith('Fra') ? st.grund : 'Låst'}
+            {forskKnapTekst(g, n, st)}
           </Btn>
         </div>
       )}
@@ -679,7 +718,7 @@ function Trofaeer({ g }: { g: GameState }) {
           <span className="tal text-violet">{hof.length}</span>
         </div>
         {hof.length === 0 ? (
-          <p className="text-xs text-muted">36 point eller mere. Giver permanent niveaubonus.</p>
+          <p className="text-xs text-muted">{HALL_OF_FAME_KRAV}</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {hof.map((p) => (

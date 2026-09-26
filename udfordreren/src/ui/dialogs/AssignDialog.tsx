@@ -354,7 +354,7 @@ export default function AssignDialog({ dialog, onLuk }: { dialog: UiDialog; onLu
                               Fejl {procentTekst(a.fejlrate, 1)}
                             </span>
                           </span>
-                          <span className="block truncate text-[0.68rem]" style={{ color: !kan ? 'var(--color-bad)' : data.ok ? 'var(--color-good)' : 'var(--color-warn)' }}>
+                          <span className="line-clamp-2 block text-[0.68rem] leading-snug" style={{ color: !kan ? 'var(--color-bad)' : data.ok ? 'var(--color-good)' : 'var(--color-warn)' }}>
                             {!kan ? 'Optaget på et andet projekt — tælles ikke med' : data.ok ? 'Klar' : DATA_ADVARSEL}
                           </span>
                         </span>

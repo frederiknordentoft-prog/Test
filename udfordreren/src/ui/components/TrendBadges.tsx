@@ -181,8 +181,8 @@ export default function TrendBadges({ kompakt = false }: { kompakt?: boolean }) 
           ))}
           {sport && !sport.igang && (
             <li className="flex w-[212px] shrink-0 flex-col justify-center gap-1 rounded-md border-2 border-dashed border-hi px-2 py-1 text-[0.7rem] text-muted">
-              <span className="flex items-center gap-1.5 font-pixel text-[0.6rem] font-black uppercase tracking-wider text-dim">
-                <Ikon navn="kalender" farve="var(--color-dim)" indre="var(--color-line)" str={10} /> Næste slutrunde
+              <span className="flex items-center gap-1.5 font-pixel text-[0.66rem] font-black uppercase tracking-wider text-muted">
+                <Ikon navn="kalender" farve="var(--color-muted)" indre="var(--color-line)" str={10} /> Næste slutrunde
               </span>
               <NaesteSport uge={g.uge} kort />
             </li>

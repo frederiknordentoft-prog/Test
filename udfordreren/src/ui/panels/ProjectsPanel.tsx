@@ -191,7 +191,13 @@ function Parametre({ g, p }: { g: GameState; p: Project }) {
   const skala = Math.max(std * 1.6, hoejest * 1.1, 1);
   const pris = boostPris(p);
   const effekt = boostEffekt(g, p);
-  const grund = pris === null ? `Alle ${BOOST.max} boosts er brugt.` : g.indsigt < pris ? `Boost koster ${pris} indsigt — I har ${heltal(g.indsigt)}.` : undefined;
+  const grund = g.slut
+    ? SLUT_GRUND
+    : pris === null
+      ? `Alle ${BOOST.max} boosts er brugt.`
+      : g.indsigt < pris
+        ? `Boost koster ${pris} indsigt — I har ${heltal(g.indsigt)}.`
+        : undefined;
   return (
     <div className="rounded-md border-2 border-line bg-bg2 p-2">
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[0.7rem]">
@@ -234,7 +240,7 @@ function Parametre({ g, p }: { g: GameState; p: Project }) {
           />
         ))}
       </div>
-      {grund && pris !== null && (
+      {grund && pris !== null && !g.slut && (
         <p className="mt-1.5 text-[0.7rem] text-muted" data-testid="boost-grund">
           {grund} Indsigt tjenes på opgaver, lanceringer og messer.
         </p>
@@ -315,16 +321,16 @@ function Hold({ g, p }: { g: GameState; p: Project }) {
   );
 }
 
-function TestForlaeng({ p }: { p: Project }) {
+function TestForlaeng({ p, slut }: { p: Project; slut: boolean }) {
   const laengde = p.faseLaengde.test;
   const knap = (n: number) => {
-    const ok = laengde + n <= BALANCE.maxTestUger;
+    const ok = laengde + n <= BALANCE.maxTestUger && !slut;
     return (
       <Btn
         key={n}
         onClick={() => useGame.getState().dispatch({ t: 'extendTest', projectId: p.id, uger: n })}
         disabled={!ok}
-        title={ok ? `Forlæng testen med ${ugerTekst(n)}` : `Testen kan højst vare ${BALANCE.maxTestUger} uger`}
+        title={slut ? SLUT_GRUND : ok ? `Forlæng testen med ${ugerTekst(n)}` : `Testen kan højst vare ${BALANCE.maxTestUger} uger`}
         testId={`forlaeng-${n}`}
         className="flex-1 sm:flex-none"
       >
@@ -346,18 +352,20 @@ function TestForlaeng({ p }: { p: Project }) {
 }
 
 function Lancering({ g, p }: { g: GameState; p: Project }) {
-  const st = lanceringsStatus(g, p);
+  const st = g.slut ? { ok: false, grund: SLUT_GRUND, markeder: [] } : lanceringsStatus(g, p);
   const venter = lanceringsPlan(g, p).filter((x) => x.lic.tilstand === 'ansoegt' || x.lic.tilstand === 'suspenderet');
   const foerst = venter.length ? Math.min(...venter.map((x) => x.lic.uger)) : null;
   const grund = st.ok
     ? undefined
-    : st.markeder.length === 0 && foerst !== null
-      ? venter.length === 1 && p.markeder.length === 1
-        ? `Licensen er klar om ${ugerTekst(foerst)}.`
-        : `Første licens er klar om ${ugerTekst(foerst)}.`
-      : st.markeder.length === 0 && p.markeder.length > 0
-        ? 'Ingen af projektets markeder har en aktiv licens.'
-        : st.grund;
+    : g.slut
+      ? SLUT_GRUND
+      : st.markeder.length === 0 && foerst !== null
+        ? venter.length === 1 && p.markeder.length === 1
+          ? `Licensen er klar om ${ugerTekst(foerst)}.`
+          : `Første licens er klar om ${ugerTekst(foerst)}.`
+        : st.markeder.length === 0 && p.markeder.length > 0
+          ? 'Ingen af projektets markeder har en aktiv licens.'
+          : st.grund;
   return (
     <div className="flex flex-col gap-1.5">
       <Btn
@@ -456,22 +464,34 @@ function ProjektKort({ g, p }: { g: GameState; p: Project }) {
           </p>
         )}
         {!p.klar && <Hold g={g} p={p} />}
-        {p.fase === 'test' && <TestForlaeng p={p} />}
+        {p.fase === 'test' && <TestForlaeng p={p} slut={!!g.slut} />}
         {p.klar && <Lancering g={g} p={p} />}
-        <div className="flex justify-end">
-          <BekraeftKnap
-            tekst="Skrinlæg"
-            spoergsmaal={`Skrinlæg ${p.navn}? Budgettet på ${mio(p.budget)} er brugt og kommer ikke igen.`}
-            ja="Skrinlæg"
-            onJa={() => useGame.getState().dispatch({ t: 'cancelProject', projectId: p.id })}
-            testId={`skrinlaeg-${p.id}`}
-            className="text-sm"
-          />
-        </div>
+        {/* Efter slutningen: ingen handlinger (lanceringsknappen forklarer det selv, når produktet er klar) */}
+        {g.slut ? (
+          !p.klar && (
+            <p className="flex items-center gap-1.5 text-xs text-muted" data-testid="projekt-slut">
+              <Ikon navn="ur" farve="var(--color-muted)" str={12} className="shrink-0" /> {SLUT_GRUND}
+            </p>
+          )
+        ) : (
+          <div className="flex justify-end">
+            <BekraeftKnap
+              tekst="Skrinlæg"
+              spoergsmaal={`Skrinlæg ${p.navn}? Budgettet på ${mio(p.budget)} er brugt og kommer ikke igen.`}
+              ja="Skrinlæg"
+              onJa={() => useGame.getState().dispatch({ t: 'cancelProject', projectId: p.id })}
+              testId={`skrinlaeg-${p.id}`}
+              className="text-sm"
+            />
+          </div>
+        )}
       </div>
     </article>
   );
 }
+
+/** Efter slutningen kan man se firmaet, men ikke handle */
+const SLUT_GRUND = 'Spillet er slut — tiden står stille.';
 
 export default function ProjectsPanel() {
   const g = useGame((s) => s.game);

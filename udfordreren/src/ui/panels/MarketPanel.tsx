@@ -21,7 +21,7 @@ import { offshoreRisikoPrAar } from '../../sim/offshore';
 import {
   aarFor, aktiveMarkeder, datoTekst, effektivBonus, effektivCac, effektivVip, ejerInfo, kanalTilgaengelig, licensPris, licensStatus, regelEffekt, SANKTION_RISIKO, strenghedCac, tillidsPoster,
 } from '../../sim/selectors';
-import { mio, mioKort, heltal } from '../format';
+import { mio, mioKort, heltal, ugerNb } from '../format';
 import { alderTekst, naesteKvartalsmoede, procent, rensNote, tillidFarve, uger } from '../lib/firmaHjaelp';
 import { useReduceretBevaegelse } from '../hooks/useMedia';
 import { markedBeskrivelse } from '../lib/tvaersHjaelp';
@@ -438,7 +438,7 @@ function Licenser({ g, m }: { g: GameState; m: MarketId }) {
                   <p className="text-xs text-muted">{VERTICALS[v].beskrivelse}</p>
                   <div data-testid={m === 'dk' ? `soeg-licens-${v}` : undefined} className="flex">
                     <Btn variant="primaer" disabled={!!grund} title={grund} className="w-full" testId={`soeg-licens-${m}-${v}`} onClick={() => soeg(v)}>
-                      <Ikon navn="noegle" farve="currentColor" indre="var(--color-gold)" str={14} /> Søg licens · {mio(pris.gebyr)} · {uger(pris.uger)}
+                      <Ikon navn="noegle" farve="currentColor" indre="var(--color-gold)" str={14} /> Søg licens · {mio(pris.gebyr)} · {ugerNb(pris.uger)}
                     </Btn>
                   </div>
                   {grund && (

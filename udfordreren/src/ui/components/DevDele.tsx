@@ -89,7 +89,7 @@ export function ParamRaekke({
         </div>
         <div className="relative">
           <div className={`w-full overflow-hidden rounded-sm border-2 border-line bg-bg ${kompakt ? 'h-3' : 'h-4'}`}>
-            <div className="h-full transition-[width] duration-500" style={{ width: `${p * 100}%`, background: farve }} />
+            <div className="h-full origin-left transition-transform duration-500" style={{ transform: `scaleX(${p})`, background: farve }} />
           </div>
           <div
             className="pointer-events-none absolute -top-1 -bottom-1 w-[3px] -translate-x-1/2 rounded-sm border border-line bg-ink"
@@ -159,8 +159,8 @@ export function FaseStepper({ fase, klar, faseUge, faseLaengde }: { fase: Phase;
       <div className="mt-1.5 flex items-center gap-2">
         <div className="h-2.5 flex-1 overflow-hidden rounded-sm border-2 border-line bg-bg" aria-hidden>
           <div
-            className="h-full transition-[width] duration-500"
-            style={{ width: `${klar ? 100 : Math.min(100, (faseUge / Math.max(1, faseLaengde)) * 100)}%`, background: klar ? 'var(--color-good)' : 'var(--color-gold)' }}
+            className="h-full origin-left transition-transform duration-500"
+            style={{ transform: `scaleX(${klar ? 1 : Math.min(1, faseUge / Math.max(1, faseLaengde))})`, background: klar ? 'var(--color-good)' : 'var(--color-gold)' }}
           />
         </div>
         <span className="tal shrink-0 text-xs text-muted" data-testid="fase-uge">

@@ -145,6 +145,12 @@ export function MedarbejderHandlinger({ m, onFyret }: { m: Staff; onFyret?: () =
           </Btn>
         )}
       </div>
+      {skift.length === 0 && (
+        // Synlig grund (tooltips findes ikke på touch)
+        <p className="-mt-1 flex items-center gap-1 text-[0.7rem] text-muted" data-testid={`rolleskift-grund-${m.id}`}>
+          <Ikon navn="laas" farve="var(--color-dim)" str={10} className="shrink-0" /> {ROLES[m.rolle].navn} har ingen rolleskift.
+        </p>
+      )}
 
       {aaben === 'traen' && (
         <div className="anim-glid rounded-md border-2 border-line bg-panel p-2" data-testid={`traening-${m.id}`}>

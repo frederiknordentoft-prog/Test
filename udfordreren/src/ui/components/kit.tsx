@@ -111,6 +111,9 @@ export function Btn({
   children: ReactNode; onClick?: () => void; variant?: BtnVariant; disabled?: boolean; title?: string; className?: string; lille?: boolean;
   type?: 'button' | 'submit'; testId?: string; ariaLabel?: string;
 }) {
+  // Egen vandret luft i className (fx ikonknapper med "w-[44px] px-0") erstatter standarden. I Tailwind v4 afgør
+  // CSS-rækkefølgen, hvem der vinder, så standard-px må ikke stå ved siden af: så klemmes ikonet (især med stor tekst).
+  const egenPx = /(^|\s)!?px?-/.test(className);
   return (
     <button
       type={type}
@@ -119,8 +122,8 @@ export function Btn({
       title={title}
       aria-label={ariaLabel}
       data-testid={testId}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-line font-bold select-none transition-[transform,filter] duration-75 ${
-        lille ? 'min-h-9 px-2.5 text-sm' : 'min-h-[44px] px-3.5'
+      className={`inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-line font-bold select-none transition-[transform,filter] duration-75 [&>svg]:shrink-0 ${
+        lille ? `min-h-9 text-sm ${egenPx ? '' : 'px-2.5'}` : `min-h-[44px] ${egenPx ? '' : 'px-3.5'}`
       } ${BTN_FARVER[variant]} ${variant === 'ghost' ? '' : 'pixel-skygge active:translate-y-[2px] active:shadow-none'} disabled:cursor-not-allowed disabled:opacity-40 disabled:active:translate-y-0 ${className}`}
     >
       {children}
@@ -157,7 +160,7 @@ export function Bar({ vaerdi, max = 100, farve = 'var(--color-good)', hoejde = 8
         </div>
       )}
       <div className="w-full overflow-hidden rounded-sm border-2 border-line bg-bg" style={{ height: hoejde + 4 }}>
-        <div className="h-full transition-[width] duration-300" style={{ width: `${p * 100}%`, background: farve }} />
+        <div className="h-full origin-left transition-transform duration-300" style={{ transform: `scaleX(${p})`, background: farve }} />
       </div>
     </div>
   );

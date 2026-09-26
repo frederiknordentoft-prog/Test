@@ -1,7 +1,7 @@
 // Procedurale pixelfolk (ca. 10×16 synlige pixels) og små ikoner. Alt tegnes én gang til offscreen-canvas og genbruges.
 import type { ParamKey, Staff } from '../sim/types';
 import { ROLES } from '../data/roles';
-import { HAAR, HUD, OEJNE, TROEJE, T, hashTekst, skygge } from './palette';
+import { HAAR, HUD, OEJNE, TROEJE, T, hashTekst, rgba, skygge } from './palette';
 
 // ---------- Person-atlas ----------
 /** Ramme: 12×22. Bordpladen ligger ved y = BORD_Y i rammen. */
@@ -392,4 +392,260 @@ export function tegnBobleIkon(ctx: CanvasRenderingContext2D, navn: BobleIkon, x:
   const rows = PARAM_IKON[navn];
   for (let r = 0; r < rows.length; r++) for (let c = 0; c < rows[r].length; c++) if (rows[r][c] === '#') ctx.fillRect(x + c * s, y + r * s, s, s);
   return 6 * s;
+}
+
+// ---------- Gallapriser: én statuette pr. kategori (kategori-id → ikon) ----------
+const PRIS_KORT: Record<string, () => Kort> = {
+  innovation: () => ({
+    rows: ['...v...', '..vVv..', 'vvvVvvv', '.vvVvv.', '..v.v..', '...y...', '...y...', '..ddd..', '.ddddd.'],
+    farver: { v: T.violet, V: '#e2d8ff', y: T.gold, d: '#b8860b' },
+    kant: T.line,
+  }),
+  ansvarlig: () => ({
+    rows: ['ggggggg', 'gGgggGg', 'gggGggg', '.ggGgg.', '..ggg..', '...d...', '..ddd..', '.ddddd.'],
+    farver: { g: T.good, G: '#d4ffd9', d: '#b8860b' },
+    kant: T.line,
+  }),
+  udfordrer: () => ({
+    rows: ['...pp..', '..pP...', '.ppppp.', '...pp..', '..pp...', '.pp....', '...d...', '..ddd..', '.ddddd.'],
+    farver: { p: T.pink, P: '#ffd0e6', d: '#b8860b' },
+    kant: T.line,
+  }),
+  platform: () => ({
+    rows: ['...s...', '..sSs..', '..sSs..', '..sSs..', '..sSs..', '..sSs..', '.sssss.', '..ddd..', '.ddddd.'],
+    farver: { s: T.sky, S: '#d6eeff', d: '#b8860b' },
+    kant: T.line,
+  }),
+};
+
+/** Statuette for en gallakategori (ukendte kategorier får den klassiske guldpokal) */
+export function prisIkon(kategori: string): HTMLCanvasElement {
+  const def = PRIS_KORT[kategori];
+  return def ? ikon(`pris-${kategori}`, def) : IKON.pokal();
+}
+
+// ---------- Licensbevis (9×8) med markedets flagfarver ----------
+const licensCache = new Map<string, HTMLCanvasElement>();
+
+/** Lille indrammet licensbevis. status: aktiv, ansøgt (kuvert) eller suspenderet (rødt bånd hen over) */
+export function licensSprite(farver: readonly string[], status: 'aktiv' | 'ansoegt' | 'suspenderet'): HTMLCanvasElement {
+  const noegle = `${farver.join(',')}|${status}`;
+  const hit = licensCache.get(noegle);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = 9;
+  c.height = 8;
+  const x = c.getContext('2d')!;
+  const p = (px: number, py: number, w: number, h: number, f: string) => {
+    x.fillStyle = f;
+    x.fillRect(px, py, w, h);
+  };
+  if (status === 'ansoegt') {
+    // kuvert med rødt segl: ansøgningen ligger hos tilsynet
+    p(0, 1, 9, 7, T.line);
+    p(1, 2, 7, 5, '#e8e0c8');
+    p(1, 2, 1, 1, '#a39a82');
+    p(2, 3, 1, 1, '#a39a82');
+    p(3, 4, 3, 1, '#a39a82');
+    p(6, 3, 1, 1, '#a39a82');
+    p(7, 2, 1, 1, '#a39a82');
+    p(4, 5, 1, 1, T.bad);
+    p(1, 0, 3, 1, farver[0] ?? T.gold);
+    p(4, 0, 2, 1, farver[1] ?? T.ink);
+  } else {
+    p(0, 0, 9, 8, T.line);
+    p(1, 1, 7, 6, '#9a7428');
+    p(2, 2, 5, 4, '#efe8d4');
+    // flag (tre striber) øverst til venstre
+    p(2, 2, 1, 2, farver[0] ?? T.gold);
+    p(3, 2, 1, 2, farver[1] ?? T.ink);
+    p(4, 2, 1, 2, farver[2] ?? T.gold);
+    p(2, 5, 3, 1, '#9a947f');
+    p(5, 2, 2, 1, '#9a947f');
+    p(6, 4, 1, 2, '#d9443a');
+    if (status === 'suspenderet') {
+      p(1, 3, 7, 2, T.bad);
+      p(2, 3, 5, 1, '#ff9b9b');
+    }
+  }
+  licensCache.set(noegle, c);
+  return c;
+}
+
+// ---------- AI-akten: hologram-agenter ----------
+/** Hologrammets ramme: 11×18. Fødderne (midten af puden) ligger ved (HOLO_FOD_X, HOLO_FOD_Y) i rammen. */
+export const HOLO_W = 11;
+export const HOLO_H = 18;
+export const HOLO_FOD_X = 5;
+export const HOLO_FOD_Y = 16;
+/** Frames: 0-1 = står (to scanline-faser), 2-3 = arbejder (med et lille svævende datavindue) */
+export const HOLO_FRAMES = 4;
+
+// Et lille menneske af lys: hoved med visir, hals, arme fri af kroppen og tynde ben
+const HOLO_FIGUR = [
+  '..lll..',
+  '.lcccl.',
+  '.lvvvl.',
+  '..lcl..',
+  '...c...',
+  '.lllll.',
+  'l.ccc.l',
+  'l.c.c.l',
+  'l.ccc.l',
+  '..ccc..',
+  '..c.c..',
+  '..c.c..',
+  '..l.l..',
+];
+
+let holoAtlas: HTMLCanvasElement | null = null;
+
+/**
+ * Cyan hologram-figur (monokrom, gennemsigtig, med scanlines og projektorpude) — skal altid kunne skelnes fra
+ * pixelfolkene, som har hud, hår og tøj i farver.
+ */
+export function holoSprite(): HTMLCanvasElement {
+  if (holoAtlas) return holoAtlas;
+  const c = document.createElement('canvas');
+  c.width = HOLO_W * HOLO_FRAMES;
+  c.height = HOLO_H;
+  const x = c.getContext('2d')!;
+  const farve: Record<string, string> = { c: T.cyan, l: '#b9fff8', v: '#ffffff' };
+  for (let f = 0; f < HOLO_FRAMES; f++) {
+    const ox = f * HOLO_W;
+    const fase = f & 1;
+    // lyskegle fra puden
+    x.fillStyle = rgba(T.cyan, 0.13);
+    for (let y = 6; y <= 14; y++) {
+      const hw = Math.round(1 + ((y - 6) / 8) * 3);
+      x.fillRect(ox + HOLO_FOD_X - hw, y, hw * 2 + 1, 1);
+    }
+    // figuren, række for række — hver anden række svagere (scanlines, faseforskudt mellem frames)
+    HOLO_FIGUR.forEach((row, ry) => {
+      const y = 2 + ry;
+      x.globalAlpha = (ry + fase) & 1 ? 0.58 : 1;
+      [...row].forEach((ch, rx) => {
+        const f2 = farve[ch];
+        if (!f2) return;
+        x.fillStyle = f2;
+        x.fillRect(ox + 2 + rx, y, 1, 1);
+      });
+    });
+    x.globalAlpha = 1;
+    // projektorpude
+    x.fillStyle = '#b9fff8';
+    x.fillRect(ox + 2, 15, 7, 1);
+    x.fillStyle = T.cyan;
+    x.fillRect(ox + 1, 16, 9, 1);
+    x.fillStyle = '#1d7c80';
+    x.fillRect(ox + 2, 17, 7, 1);
+    // arbejder: lille svævende datavindue over skulderen
+    if (f >= 2) {
+      x.fillStyle = rgba(T.cyan, 0.35);
+      x.fillRect(ox + 7, 0, 4, 4);
+      x.fillStyle = '#b9fff8';
+      x.fillRect(ox + 8, 1, fase ? 2 : 1, 1);
+      x.fillRect(ox + 8, 2, fase ? 1 : 2, 1);
+    }
+  }
+  holoAtlas = c;
+  return c;
+}
+
+// ---------- AI-akten: serverskabe ----------
+/** Frames pr. udfyldning (LED-blink) */
+export const SKAB_FASER = 4;
+/** Udfyldning: 0 = standby, 1 = halvt, 2 = fuldt (to agenter) */
+export const SKAB_NIVEAUER = 3;
+const skabCache = new Map<number, HTMLCanvasElement>();
+
+/**
+ * Serverskab-ark for en given højde: SKAB_NIVEAUER × SKAB_FASER frames à 8 px bredde. Rammen er h + 3 høj
+ * (de tre nederste rækker er skabets cyan glød på gulvet). Tegnes selvlysende oven på mørket.
+ */
+export function skabSprite(h: number): HTMLCanvasElement {
+  const hit = skabCache.get(h);
+  if (hit) return hit;
+  const W = 8;
+  const c = document.createElement('canvas');
+  c.width = W * SKAB_NIVEAUER * SKAB_FASER;
+  c.height = h + 3;
+  const x = c.getContext('2d')!;
+  const units = Math.max(2, Math.floor((h - 5) / 3));
+  let s = 0x9e3779b9 ^ h;
+  const rnd = () => {
+    s = (Math.imul(s ^ (s >>> 15), 2246822507) + 0x6d2b79f5) >>> 0;
+    return (s % 1000) / 1000;
+  };
+  for (let niv = 0; niv < SKAB_NIVEAUER; niv++) {
+    for (let fa = 0; fa < SKAB_FASER; fa++) {
+      const ox = (niv * SKAB_FASER + fa) * W;
+      const p = (px: number, py: number, w: number, hh: number, f: string) => {
+        x.fillStyle = f;
+        x.fillRect(ox + px, py, w, hh);
+      };
+      // kabinet
+      p(0, 0, W, h, '#05070f');
+      p(1, 1, W - 2, 2, '#1b2440');
+      p(2, 1, 1, 1, '#0b0f1c');
+      p(4, 1, 1, 1, '#0b0f1c');
+      p(1, 3, W - 2, h - 4, '#101629');
+      // neonkant i venstre side
+      p(0, 1, 1, h - 2, T.cyan);
+      const taendt = niv === 0 ? 0 : niv === 1 ? Math.ceil(units / 2) : units;
+      for (let u = 0; u < units; u++) {
+        const y = 3 + u * 3;
+        p(1, y, W - 2, 2, '#172036');
+        p(2, y, 3, 1, '#0a0e1a'); // drevskakt
+        p(1, y + 2, W - 2, 1, '#0b1020');
+        if (u < taendt) {
+          const r1 = rnd();
+          const r2 = rnd();
+          p(5, y, 1, 1, r1 < 0.25 ? '#1a2a2e' : T.good);
+          p(6, y, 1, 1, r2 < 0.3 ? '#1a2a2e' : T.cyan);
+          if (rnd() < 0.5) p(2, y + 1, 2, 1, rgba(T.cyan, 0.5));
+        } else {
+          p(5, y, 1, 1, '#1a2a2e');
+          p(6, y, 1, 1, u === 0 && niv === 0 && fa % 2 === 0 ? T.warn : '#1a2a2e');
+        }
+      }
+      // glød på gulvet
+      x.fillStyle = rgba(T.cyan, niv === 0 ? 0.12 : 0.3);
+      x.fillRect(ox + 1, h, W - 2, 1);
+      x.fillStyle = rgba(T.cyan, niv === 0 ? 0.06 : 0.15);
+      x.fillRect(ox + 2, h + 1, W - 4, 2);
+    }
+  }
+  skabCache.set(h, c);
+  return c;
+}
+
+// ---------- Skærmlys (blødt, trinvist) ----------
+const lysCache = new Map<string, HTMLCanvasElement>();
+export const SKAERMLYS_W = 22;
+export const SKAERMLYS_H = 16;
+
+/** Blødt lys fra en skærm — lyser personens ansigt og bordet op i mørket. Trinvise ringe, ikke en glat gradient. */
+export function skaermLysSprite(farve: string, styrke: number): HTMLCanvasElement {
+  const noegle = `${farve}|${styrke}`;
+  const hit = lysCache.get(noegle);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = SKAERMLYS_W;
+  c.height = SKAERMLYS_H;
+  const x = c.getContext('2d')!;
+  const cx = SKAERMLYS_W / 2;
+  const cy = SKAERMLYS_H / 2;
+  for (let k = 0; k < 3; k++) {
+    const rx = (SKAERMLYS_W / 2) * (1 - k * 0.28);
+    const ry = (SKAERMLYS_H / 2) * (1 - k * 0.28);
+    x.fillStyle = rgba(farve, styrke * (0.05 + k * 0.05));
+    for (let y = -Math.floor(ry); y <= Math.floor(ry); y++) {
+      const hw = Math.floor(rx * Math.sqrt(Math.max(0, 1 - (y * y) / (ry * ry))));
+      if (k === 0) for (let xx = -hw + ((y & 1) ? 1 : 0); xx < hw; xx += 2) x.fillRect(cx + xx, cy + y, 1, 1);
+      else x.fillRect(cx - hw, cy + y, hw * 2, 1);
+    }
+  }
+  lysCache.set(noegle, c);
+  return c;
 }

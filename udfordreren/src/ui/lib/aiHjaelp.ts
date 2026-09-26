@@ -178,13 +178,18 @@ export function kroner(mio: number): string {
 /** aiMarkedsEffekt(s, m) forklaret i linjer */
 export function markedsEffektLinjer(s: GameState, m: MarketId): EffektLinje[] {
   const e = aiMarkedsEffekt(s, m);
-  const farve = (v: number, godNaarPositiv = true) => (v === 0 ? 'var(--color-muted)' : (v > 0) === godNaarPositiv ? 'var(--color-good)' : 'var(--color-bad)');
-  const ikon = (v: number, godNaarPositiv = true): IkonNavn => (v === 0 ? 'streg' : (v > 0) === godNaarPositiv ? 'op' : 'ned');
+  // Ikon, farve og "aktiv" følger det tal, der vises: en lille værdi, der rundes til "0 %", er ingen effekt (ikke et tab)
+  const vist = (v: number) => Math.round(v * 1000) / 1000;
+  const farve = (v: number, godNaarPositiv = true) => (vist(v) === 0 ? 'var(--color-muted)' : (v > 0) === godNaarPositiv ? 'var(--color-good)' : 'var(--color-bad)');
+  const ikon = (v: number, godNaarPositiv = true): IkonNavn => (vist(v) === 0 ? 'streg' : (v > 0) === godNaarPositiv ? 'op' : 'ned');
+  const linje = (id: string, label: string, v: number, godNaarPositiv = true): EffektLinje => ({
+    id, label, tekst: fortegnProcent(v), ikon: ikon(v, godNaarPositiv), farve: farve(v, godNaarPositiv), aktiv: vist(v) !== 0,
+  });
   return [
-    { id: 'betting', label: 'Betting-BSI pr. kunde', tekst: fortegnProcent(e.bettingArpu), ikon: ikon(e.bettingArpu), farve: farve(e.bettingArpu), aktiv: e.bettingArpu !== 0 },
-    { id: 'kasino', label: 'Kasino-BSI pr. kunde', tekst: fortegnProcent(e.kasinoArpu), ikon: ikon(e.kasinoArpu), farve: farve(e.kasinoArpu), aktiv: e.kasinoArpu !== 0 },
-    { id: 'churn', label: 'Churn', tekst: fortegnProcent(e.churn), ikon: ikon(e.churn, false), farve: farve(e.churn, false), aktiv: e.churn !== 0 },
-    { id: 'tilgang', label: 'Tilgang', tekst: fortegnProcent(e.tilgang), ikon: ikon(e.tilgang), farve: farve(e.tilgang), aktiv: e.tilgang !== 0 },
+    linje('betting', 'Betting-BSI pr. kunde', e.bettingArpu),
+    linje('kasino', 'Kasino-BSI pr. kunde', e.kasinoArpu),
+    linje('churn', 'Churn', e.churn, false),
+    linje('tilgang', 'Tilgang', e.tilgang),
   ];
 }
 
