@@ -29,6 +29,47 @@ function getDb(): UdfordrerDB | null {
   }
 }
 
+/** Et løfte, der giver `fallback`, hvis det ikke er afgjort inden for `ms` (en hængende IndexedDB må ikke fryse UI'et) */
+function medFrist<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(fallback), ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      () => {
+        clearTimeout(t);
+        resolve(fallback);
+      },
+    );
+  });
+}
+
+let lagringTjek: Promise<boolean> | null = null;
+/**
+ * Kan browseren gemme? Nej i fx ældre private vinduer, ved blokeret lagring eller uden IndexedDB.
+ * Spillet kører videre uden gem (med en synlig besked); eksport og import virker stadig. Resultatet huskes.
+ */
+export function lagringVirker(): Promise<boolean> {
+  if (!lagringTjek) {
+    lagringTjek = medFrist(
+      (async () => {
+        if (typeof indexedDB === 'undefined') return false;
+        const d = getDb();
+        if (!d) return false;
+        await d.open();
+        const proeve = Date.now();
+        await d.settings.put({ key: '_lagringstjek', value: proeve });
+        return (await d.settings.get('_lagringstjek'))?.value === proeve;
+      })(),
+      6000,
+      false,
+    );
+  }
+  return lagringTjek;
+}
+
 export async function gem(slot: SlotId, state: GameState): Promise<boolean> {
   const d = getDb();
   if (!d) return false;
@@ -40,10 +81,61 @@ export async function gem(slot: SlotId, state: GameState): Promise<boolean> {
   }
 }
 
+// ---------- Nødgem: synkron kopi i localStorage, når siden lukkes ----------
+// En IndexedDB-skrivning i pagehide når sjældent at blive færdig, før siden er væk (reload, lukket fane). Derfor
+// skrives autosaven også synkront i localStorage. Ved næste indlæsning flyttes kopien ind i Dexie, hvis den er nyere.
+
+const NOEDGEM_NOEGLE = 'udfordreren-noedgem';
+
+/** Skriv autosaven synkront (bruges i pagehide/visibilitychange). Fejler stille (fuld eller blokeret lagring). */
+export function noedGem(state: GameState): boolean {
+  try {
+    const row: SaveRow = { slot: 'auto', gemt: Date.now(), uge: state.uge, firmaNavn: state.firmaNavn, kapital: state.kapital, state };
+    localStorage.setItem(NOEDGEM_NOEGLE, JSON.stringify(row));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function laesNoedGem(): SaveRow | null {
+  try {
+    const raa = localStorage.getItem(NOEDGEM_NOEGLE);
+    if (!raa) return null;
+    const row = JSON.parse(raa) as Partial<SaveRow>;
+    if (row.slot !== 'auto' || typeof row.gemt !== 'number' || !row.state) return null;
+    return row as SaveRow;
+  } catch {
+    return null;
+  }
+}
+
+function fjernNoedGem(): void {
+  try {
+    localStorage.removeItem(NOEDGEM_NOEGLE);
+  } catch {
+    /* ignorer */
+  }
+}
+
+/** Flyt en nyere nødkopi ind i autosave-pladsen (en ældre smides væk). Kaldes, før gemte spil læses. */
+async function synkNoedGem(d: UdfordrerDB): Promise<void> {
+  const n = laesNoedGem();
+  if (!n) return;
+  try {
+    const row = await d.saves.get('auto');
+    if ((!row || n.gemt > row.gemt) && validerSave(n.state)) await d.saves.put(n);
+    fjernNoedGem();
+  } catch {
+    /* prøv igen næste gang */
+  }
+}
+
 export async function hent(slot: SlotId): Promise<GameState | null> {
   const d = getDb();
   if (!d) return null;
   try {
+    if (slot === 'auto') await medFrist(synkNoedGem(d), 6000, undefined);
     const row = await d.saves.get(slot);
     if (!row) return null;
     return validerSave(row.state);
@@ -56,7 +148,8 @@ export async function listSaves(): Promise<Omit<SaveRow, 'state'>[]> {
   const d = getDb();
   if (!d) return [];
   try {
-    const rows = await d.saves.toArray();
+    await medFrist(synkNoedGem(d), 6000, undefined);
+    const rows = await medFrist(d.saves.toArray(), 6000, []);
     return rows.map(({ state: _s, ...rest }) => rest);
   } catch {
     return [];
@@ -65,6 +158,7 @@ export async function listSaves(): Promise<Omit<SaveRow, 'state'>[]> {
 
 export async function slet(slot: SlotId): Promise<void> {
   const d = getDb();
+  if (slot === 'auto') fjernNoedGem();
   if (!d) return;
   try {
     await d.saves.delete(slot);
@@ -96,34 +190,53 @@ export async function hentSetting<T>(key: string): Promise<T | undefined> {
 const erObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 const harId = (x: unknown): boolean => erObj(x) && typeof x.id === 'string';
 
+/** Den save-version, denne build læser (GameState.version) */
+export const SAVE_VERSION = 2;
+
+/** Hvorfor en save blev afvist (til en venlig fejlbesked) */
+export type SaveFejl = { grund: 'ikkeSpil' } | { grund: 'version'; version: unknown } | { grund: 'mangler'; felt: string } | { grund: 'simulering' };
+
 /** Strukturel validering af en save (beskytter mod korrupte filer og saves fra ældre builds).
  *  Til sidst prøvekøres én uge på en kopi: vælter simulationen, afvises filen med den venlige fejl i stedet for at vælte spillet. */
-export function validerSave(x: unknown): GameState | null {
-  if (!erObj(x)) return null;
+export function tjekSave(x: unknown): { state: GameState } | { fejl: SaveFejl } {
+  if (!erObj(x)) return { fejl: { grund: 'ikkeSpil' } };
   const s = x as Partial<GameState>;
-  if (s.version !== 2) return null;
-  if (typeof s.uge !== 'number' || typeof s.kapital !== 'number' || typeof s.seed !== 'number') return null;
-  if (!Number.isFinite(s.uge) || !Number.isFinite(s.kapital)) return null;
-  if (!Array.isArray(s.rngState) || s.rngState.length !== 4) return null;
-  if (typeof s.firmaNavn !== 'string') return null;
-  for (const liste of [s.staff, s.produkter, s.projekter, s.kandidater]) {
-    if (!Array.isArray(liste) || !liste.every(harId)) return null;
+  if (s.version === undefined && s.uge === undefined && s.markeder === undefined) return { fejl: { grund: 'ikkeSpil' } };
+  if (s.version !== SAVE_VERSION) return { fejl: { grund: 'version', version: s.version } };
+  const mangler = (felt: string): { fejl: SaveFejl } => ({ fejl: { grund: 'mangler', felt } });
+  for (const felt of ['uge', 'kapital', 'seed'] as const) {
+    const v = s[felt];
+    if (typeof v !== 'number' || !Number.isFinite(v)) return mangler(felt);
   }
-  for (const liste of [s.nyheder, s.ventendeEvents, s.kontraktopgaver, s.kontraktTilbud, s.kvartalsmaal, s.konkurrenter, s.historik, s.galla, s.flags]) {
-    if (!Array.isArray(liste)) return null;
+  if (!Array.isArray(s.rngState) || s.rngState.length !== 4 || !s.rngState.every((n) => typeof n === 'number' && Number.isFinite(n))) return mangler('rngState');
+  if (typeof s.firmaNavn !== 'string') return mangler('firmaNavn');
+  for (const felt of ['staff', 'produkter', 'projekter', 'kandidater'] as const) {
+    const liste = s[felt];
+    if (!Array.isArray(liste) || !liste.every(harId)) return mangler(felt);
   }
-  if (!erObj(s.markeder) || !erObj(s.markeder.dk)) return null;
+  for (const felt of ['nyheder', 'ventendeEvents', 'kontraktopgaver', 'kontraktTilbud', 'kvartalsmaal', 'konkurrenter', 'historik', 'galla', 'flags'] as const) {
+    if (!Array.isArray(s[felt])) return mangler(felt);
+  }
+  if (!erObj(s.markeder) || !erObj(s.markeder.dk)) return mangler('markeder');
   for (const m of Object.values(s.markeder)) {
-    if (!erObj(m) || !Array.isArray(m.top10) || !erObj(m.vertikaler) || !erObj(m.spillerKunder) || !erObj(m.andele)) return null;
+    if (!erObj(m) || !Array.isArray(m.top10) || !erObj(m.vertikaler) || !erObj(m.spillerKunder) || !erObj(m.andele)) return mangler('markeder');
   }
-  if (!erObj(s.investorer) || !erObj(s.regnskab) || !erObj(s.niveauer) || !erObj(s.platforme) || !erObj(s.milepaele)) return null;
-  const g = udfyldMangler(s as GameState);
+  for (const felt of ['investorer', 'regnskab', 'niveauer', 'platforme', 'milepaele'] as const) {
+    if (!erObj(s[felt])) return mangler(felt);
+  }
   try {
+    const g = udfyldMangler(s as GameState);
     step(structuredClone(g), []);
+    return { state: g };
   } catch {
-    return null;
+    return { fejl: { grund: 'simulering' } };
   }
-  return g;
+}
+
+/** Som tjekSave, men giver bare null ved en afvist save */
+export function validerSave(x: unknown): GameState | null {
+  const r = tjekSave(x);
+  return 'state' in r ? r.state : null;
 }
 
 /** Saves fra ældre builds mangler felter, der er kommet til siden: udfyld dem med standardværdier fra et nyt spil */
@@ -144,13 +257,41 @@ export function eksporterJson(state: GameState): string {
   return JSON.stringify({ app: 'udfordreren', eksporteret: new Date().toISOString(), state });
 }
 
-export function importerJson(tekst: string): GameState | null {
-  try {
-    const obj = JSON.parse(tekst) as { app?: string; state?: unknown };
-    return validerSave(obj?.state ?? obj);
-  } catch {
-    return null;
+export type ImportResultat = { ok: true; state: GameState } | { ok: false; fejl: string };
+
+/** Venlig forklaring på en afvist save (vises i Gem og indlæs) */
+export function saveFejlTekst(f: SaveFejl): string {
+  switch (f.grund) {
+    case 'ikkeSpil':
+      return 'Filen er ikke en gemt fil fra Udfordreren.';
+    case 'version':
+      return typeof f.version === 'number' && f.version > SAVE_VERSION
+        ? 'Filen er fra en nyere version af spillet. Opdatér spillet, og prøv igen.'
+        : 'Filen er fra en anden version af spillet, som denne version ikke kan læse.';
+    case 'mangler':
+      return `Filen mangler dele af spillet (${f.felt}). Den er nok blevet beskadiget undervejs.`;
+    case 'simulering':
+      return 'Filen ser rigtig ud, men spillet kan ikke køre videre fra den. Den er nok blevet beskadiget undervejs.';
   }
+}
+
+/** Læs en eksporteret fil (eller en rå GameState) og forklar venligt, hvis den ikke kan bruges. Kaster aldrig. */
+export function importerMedGrund(tekst: string): ImportResultat {
+  if (!tekst.trim()) return { ok: false, fejl: 'Filen er tom.' };
+  let obj: unknown;
+  try {
+    obj = JSON.parse(tekst);
+  } catch {
+    return { ok: false, fejl: 'Filen er ikke gyldig JSON. Den er måske blevet klippet over eller redigeret undervejs.' };
+  }
+  if (erObj(obj) && typeof obj.app === 'string' && obj.app !== 'udfordreren') return { ok: false, fejl: saveFejlTekst({ grund: 'ikkeSpil' }) };
+  const r = tjekSave(erObj(obj) && obj.state !== undefined && obj.state !== null ? obj.state : obj);
+  return 'state' in r ? { ok: true, state: r.state } : { ok: false, fejl: saveFejlTekst(r.fejl) };
+}
+
+export function importerJson(tekst: string): GameState | null {
+  const r = importerMedGrund(tekst);
+  return r.ok ? r.state : null;
 }
 
 // ---------- New Game+ (spec 6.17): arven og de ulåste modes huskes mellem spil ----------

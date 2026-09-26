@@ -4,14 +4,18 @@ import './index.css';
 import App from './ui/App';
 import { useGame } from './store/gameStore';
 import { useUi, erDebug } from './store/uiStore';
+import PwaBeskeder from './ui/components/PwaBeskeder';
+import { startPwa } from './ui/lib/pwa';
 
 // Testkrog: i udvikling eller med ?debug=1 kan Playwright og debug-værktøjer nå stores.
 if (import.meta.env.DEV || erDebug()) {
   (window as unknown as { __udfordreren: unknown }).__udfordreren = { useGame, useUi };
 }
 
-// Procedural pixel-favicon (et guld "U" på mørk baggrund) — ingen eksterne filer.
+// Procedural pixel-favicon (et guld "U" på mørk baggrund) — ingen eksterne filer. Kun når siden ikke har sit eget
+// ikon (fx i den artifact-venlige single-build); den normale build bruger public/favicon.png fra `npm run ikoner`.
 (function favicon() {
+  if (document.querySelector('link[rel~="icon"]')) return;
   const U = ['#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'];
   let d = '';
   U.forEach((r, y) =>
@@ -27,8 +31,12 @@ if (import.meta.env.DEV || erDebug()) {
   document.head.appendChild(link);
 })();
 
+// Service worker (offline og opdateringer), tjek af lokal lagring og temafarve pr. akt
+startPwa();
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
+    <PwaBeskeder />
   </StrictMode>,
 );
