@@ -502,6 +502,17 @@ test('6. debug-hop til 2035 → slutskærm og eftertanke', async ({ page }) => {
   await tryk(arkiv.getByTestId('arkiv-luk'));
   await expect(arkiv).toBeHidden();
   await expect(slut).toBeVisible();
+
+  // Slutningen er gemt: efter et reload åbner "Fortsæt" det afsluttede spil, og slutskærmen kan ses igen
+  const slutUge = (await tilstand(page)).uge;
+  await expect.poll(() => autosaveUge(page)).toBe(slutUge);
+  await page.reload();
+  await tryk(page.getByTestId('fortsaet-auto'));
+  await expect(page.getByTestId('spilskaerm')).toBeVisible();
+  expect((await tilstand(page)).slut).toBeTruthy();
+  const seSlut = page.getByTestId('se-slutningen');
+  if (!(await synlig(page.getByTestId('dialog-slut')))) await tryk(seSlut);
+  await expect(page.getByTestId('dialog-slut')).toBeVisible();
 });
 
 // ---------- 7. Reload midt i spillet (røgtest på laptop, iPad og mobil) ----------

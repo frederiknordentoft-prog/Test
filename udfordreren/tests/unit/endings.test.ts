@@ -152,6 +152,17 @@ describe('Eftertanke og Arkivet (6.17, 6.18)', () => {
     expect(k.length).toBe(3);
     expect(k[0].id).toBe('offshore');
   });
+  it('der er altid tre kort, uanset byen og offshore-valget', () => {
+    for (const risiko of [0.01, 0.08, 0.2]) {
+      for (const offshore of [false, true]) {
+        const s = nyt();
+        s.eftermaeleAkk.risikoSum = risiko;
+        s.eftermaeleAkk.risikoProever = 1;
+        if (offshore) s.flags.push('haftOffshoreBrand');
+        expect(eftertanke(s)).toHaveLength(3);
+      }
+    }
+  });
   it('opslag låses op af nyheder, markeder og konkurrenter', () => {
     const s = nyt();
     expect(s.arkiv).toContain('a1');

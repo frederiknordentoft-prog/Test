@@ -131,6 +131,9 @@ export const EFTERTANKE: { id: string; titel: string; tekst: string; arkivId: st
   { id: 'ontario', titel: 'Ontario', tekst: 'I gik ind i Ontario. I virkeligheden havde provinsen C$4,0 mia. i NAGGR i 2025.', arkivId: 'a12' },
   { id: 'sverige', titel: 'Sverige', tekst: 'I gik ind i Sverige. I virkeligheden hævede Sverige afgiften fra 18 % til 22 % i 2024, og Svenska Spel lukkede sit sidste kasino i 2025.', arkivId: 'a6' },
   { id: 'kombispil', titel: 'Kombispillenes magi', tekst: 'Jeres bet builders holdt godt. I virkeligheden holder kombispil typisk 18-25 %, mens 1X2 holder 5-6 %.', arkivId: 'a18' },
+  { id: 'dlKoebte', titel: 'Statsselskabet købte jer', tekst: 'Danske Lykke købte jer til sidst. I virkeligheden havde Danske Spil sit højeste resultat nogensinde i 2025.', arkivId: 'a3' },
+  { id: 'byMidt', titel: 'Byen i balance', tekst: 'De fleste af jeres kunder spillede for sjov, men nogle endte i risiko eller problem. I virkeligheden havde 10,9 % af voksne danskere mindst et lavt problemniveau i 2021.', arkivId: 'a17' },
+  { id: 'licenseretVej', titel: 'Den licenserede vej', tekst: 'I holdt jer til licenserne hele vejen. I virkeligheden var den danske kanalisering 91,5 % i 2024.', arkivId: 'a2' },
   { id: 'opkoebt', titel: 'I blev købt', tekst: 'I solgte firmaet. I virkeligheden blev branchen samlet gennem store opkøb, fx MGM–LeoVegas og 888–William Hill International i 2022.', arkivId: 'a15' },
   { id: 'danmarkStart', titel: 'Hvor det begyndte', tekst: 'I startede i en garage i 2012. I virkeligheden åbnede Danmark for online betting og kasino den 1. januar 2012.', arkivId: 'a1' },
 ];

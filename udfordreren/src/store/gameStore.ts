@@ -64,6 +64,16 @@ function planlaegAutosave(hent: () => GameState | null): void {
   }, AUTOSAVE_FORSINKELSE_MS);
 }
 
+/** Slutningen gemmes én gang i autosave, så "Fortsæt" på titelskærmen åbner det afsluttede spil (ikke ugerne før) */
+let gemtSlutning: string | null = null;
+function gemSlutning(g: GameState): void {
+  if (!g.slut) return;
+  const noegle = `${g.seed}|${g.firmaNavn}|${g.slut.uge}|${g.slut.id}`;
+  if (noegle === gemtSlutning) return;
+  gemtSlutning = noegle;
+  void gem('auto', g);
+}
+
 export type Settings = {
   lyd: boolean;
   musik: boolean;
@@ -283,6 +293,7 @@ export const useGame = create<GameStore>((set, get) => {
       const dialogVenter = sig.some((s) => aabnerDialog(s));
       if (!ny.slut && (dialogVenter || ugeIAar(ny.uge) % 13 === 0)) void gem('auto', ny);
     }
+    gemSlutning(ny);
   }
 
   return {
@@ -429,6 +440,7 @@ export const useGame = create<GameStore>((set, get) => {
         return;
       }
       const slut = g.slut;
+      gemSlutning(g);
       set({
         game: g,
         dialoger: slut ? [{ id: naesteId++, signal: { k: 'slut', id: slut.id } }] : [],

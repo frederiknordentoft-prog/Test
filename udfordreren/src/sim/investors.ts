@@ -3,7 +3,7 @@ import type { FundingRound, GameState, QuarterGoal } from './types';
 import type { Rng } from './rng';
 import { ROUNDS, RUNDE_NAVN, VAERDI_MULTIPEL, VAERDI_MARGIN, STJERNE_VAERDI, PRES_EVENT_MELLEMRUM, PRES_EVENT_TAERSKEL, type RoundDef } from '../data/funding';
 import { aarFor, kvartalFor, ugeIAar } from './time';
-import { afvis, clamp, nyId, nyhed, signal } from './util';
+import { afvis, clamp, nyId, nyhed, saetFlag, signal } from './util';
 import { aarligBsi } from './economy';
 import { spillerKunderTotal } from './customers';
 import { udloesEvent } from './events';
@@ -18,6 +18,7 @@ export function acceptOffer(s: GameState, competitorId: string): boolean {
   s.opkoebstilbud = null;
   const stifterAndel = Math.round(t.pris * s.investorer.ejerandelStiftere * 10) / 10;
   nyhed(s, `${c?.navn ?? 'En køber'} køber ${s.firmaNavn} for ${Math.round(t.pris)} mio. kr. Stifterne får ${Math.round(stifterAndel)} mio. kr.`, 'firma');
+  saetFlag(s, 'solgte');
   afslut(s, competitorId === 'danskeLykke' ? 'danskeLykke' : 'exit', t.pris);
   return true;
 }

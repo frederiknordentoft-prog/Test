@@ -304,7 +304,9 @@ export function lavBot(profil: Profil): Bot {
 
       // Bonus og VIP (tilpasses tilliden)
       // Kassedisciplin: fuld bonus og VIP koster 22 % af BSI — det har en garage ikke råd til
-      const raad = s.kapital > buffer * 1.5;
+      // Løbetid: hvor mange uger kassen holder ved ugens underskud (et grådigt firma må også kunne regne)
+      const loebetid = s.regnskab.resultat < 0 ? s.kapital / -s.regnskab.resultat : Infinity;
+      const raad = s.kapital > buffer * 1.5 && loebetid > 26;
       const bonus = (presset ? 0 : raad ? p.bonus : Math.min(p.bonus, 1)) as 0 | 1 | 2 | 3;
       const vip = (presset ? 0 : raad ? p.vip : 0) as 0 | 1 | 2 | 3;
       if (s.bonusNiveau !== bonus && s.produkter.some((x) => x.ejer === 'spiller')) a.push({ t: 'setBonus', niveau: bonus });
@@ -314,7 +316,7 @@ export function lavBot(profil: Profil): Bot {
       const spar = !p.runder && ingenProjekt && s.kapital < billigst + 0.3;
       if (spar && s.uge % 4 === 0) for (const k of Object.keys(p.kanaler) as AcqChannel[]) if ((s.marketingMix[k] ?? 0) > 0) a.push({ t: 'setMarketing', channel: k, prUge: 0 });
       if (!spar && s.produkter.some((x) => x.ejer === 'spiller' && x.aktiv) && s.uge % 4 === 0) {
-        const kasse = s.kapital < buffer ? 0.3 : s.kapital < buffer * 2 ? 0.7 : 1;
+        const kasse = s.kapital < buffer || loebetid < 13 ? 0.3 : s.kapital < buffer * 2 || loebetid < 26 ? 0.7 : 1;
         // Et lille firma bruger et fast minimum på marketing, når der er råd (ellers vokser det aldrig ud af garagen)
         const budget = Math.max(s.kapital > 1 ? 0.02 : 0.01, s.regnskab.bsi * p.marketingAndel * kasse);
         for (const [k, andel] of Object.entries(p.kanaler) as [AcqChannel, number][]) {

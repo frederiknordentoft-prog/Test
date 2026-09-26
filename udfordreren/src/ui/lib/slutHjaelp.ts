@@ -4,7 +4,6 @@ import type { GameState, Milestone, NewGameOptions, NewGamePlusArv, TidslinjePun
 /** Ikonnavn fra kit.tsx (holdt som streng her, så filen kan testes uden JSX) */
 type IkonNavn = string;
 import { SLUTNINGER, type SlutId } from '../../data/endings';
-import { EFTERTANKE } from '../../data/archive';
 import { GALA_CATEGORIES } from '../../data/galaCategories';
 import { aarFor } from '../../sim/time';
 import { byTal } from '../../sim/town';
@@ -127,41 +126,10 @@ export function delEftertanke(tekst: string): { jeres: string; virkelighed: stri
 export type EftertankeKort = { id: string; titel: string; tekst: string; arkivId: string };
 
 /** "I virkeligheden …"-delen af et arkivkort (fra archive.ts), eller null */
-function virkelighedFra(id: string): string | null {
-  const k = EFTERTANKE.find((x) => x.id === id);
-  return k ? delEftertanke(k.tekst).virkelighed : null;
-}
 
-/**
- * Slutskærmens tre eftertankekort (spec 6.17): sim-kernens udvalg, rettet og fyldt op til tre.
- * - "I blev købt" siger "I solgte firmaet" — men statsselskabets opkøb i december 2035 kommer af sig selv.
- * - Et roligt spil (byen midt imellem, ingen offshore) rammer for få betingelser: så fyldes der op med kort, der passer
- *   på jeres spil. "I virkeligheden …"-delen tages altid ordret fra Arkivet (ingen nye virkelighedsfakta).
- */
-export function eftertankeKort(s: GameState, valgt: readonly EftertankeKort[]): EftertankeKort[] {
-  const ud: EftertankeKort[] = valgt.map((k) => {
-    if (k.id === 'opkoebt' && s.slut?.id === 'danskeLykke') {
-      const v = delEftertanke(k.tekst).virkelighed;
-      return { ...k, titel: 'Statsselskabet købte jer', tekst: `Danske Lykke købte jer til sidst.${v ? ` ${v}` : ''}` };
-    }
-    return { ...k };
-  });
-  const har = (id: string) => ud.some((k) => k.id === id || k.arkivId === EFTERTANKE.find((x) => x.id === id)?.arkivId);
-  const e = s.eftermaeleAkk;
-  const risiko = e && e.risikoProever ? e.risikoSum / e.risikoProever : null;
-  const kandidater: EftertankeKort[] = [];
-  // Byen lå midt imellem (hverken rød eller grøn)
-  const by = virkelighedFra('byRoed');
-  if (by && !har('byRoed') && risiko !== null) {
-    kandidater.push({ id: 'byMidt', titel: 'Byen i balance', tekst: `De fleste af jeres kunder spillede for sjov, men nogle endte i risiko eller problem. ${by}`, arkivId: 'a17' });
-  }
-  // Licenserne hele vejen (ingen offshore-brand)
-  const hvid = virkelighedFra('offshore');
-  if (hvid && !har('offshore') && !s.flags.includes('haftOffshoreBrand')) {
-    kandidater.push({ id: 'licenseretVej', titel: 'Den licenserede vej', tekst: `I holdt jer til licenserne hele vejen. ${hvid}`, arkivId: 'a2' });
-  }
-  for (const k of kandidater) if (ud.length < 3) ud.push(k);
-  return ud;
+/** Slutskærmens tre eftertankekort (spec 6.17): sim-kernen vælger altid tre, så UI'et viser dem som de er */
+export function eftertankeKort(_s: GameState, valgt: readonly EftertankeKort[]): EftertankeKort[] {
+  return valgt.slice(0, 3).map((k) => ({ ...k }));
 }
 
 // ---------- Byens udvikling ----------

@@ -47,8 +47,9 @@ export const BALANCE = {
   xpProjekt: 10,
   xpKontrakt: 8,
   // --- Markedsstandard (anmeldelser) ---
-  /** Markedsstandard pr. parameter over tid [år, point] — stejl i garage-årene, flader ud senere */
-  standardKurve: [[2012, 92], [2013, 198], [2014, 325], [2015, 392], [2016, 410], [2017, 420], [2018, 445], [2019, 460], [2020, 470], [2022, 490], [2026, 540], [2030, 610], [2035, 700]] as [number, number][],
+  /** Markedsstandard pr. parameter over tid [år, point] — rolig i det første garageår (næste produkt skal kunne blive bedre),
+   *  stejl i 2013-2014, flader ud senere */
+  standardKurve: [[2012, 92], [2012.5, 108], [2013, 180], [2014, 325], [2015, 392], [2016, 410], [2017, 420], [2018, 445], [2019, 460], [2020, 470], [2022, 490], [2026, 540], [2030, 610], [2035, 700]] as [number, number][],
   standardKonkurrent: 0.5, // tillæg pr. kvalitet over 0.6 hos bedste konkurrent
   /** Logistisk kurve i q-rum: score = 1 + 9 / (1 + e^(−k·(q − q0))), q = 1 − e^(−ratio) */
   scoreK: 7.4,

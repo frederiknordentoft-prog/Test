@@ -2,11 +2,11 @@
 // eftertanke fyldt op til tre, Arkivets dobbelte sætning, nyt spil på pause og Knuds råd om markedsstandarden.
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import { EFTERTANKE } from '../../src/data/archive';
 import { stepMut } from '../../src/sim/step';
 import { kassenRaekker, ugentligTendens } from '../../src/ui/lib/kasseHjaelp';
 import { forspilGentager } from '../../src/ui/lib/arkivHjaelp';
 import { delEftertanke, eftertankeKort } from '../../src/ui/lib/slutHjaelp';
+import { eftertanke } from '../../src/sim/endings';
 import { hallOfFameMangler, scoreFald } from '../../src/ui/lib/standardHjaelp';
 import { listSaves, noedGem, hent } from '../../src/store/persistence';
 import { GRUND_START, useGame } from '../../src/store/gameStore';
@@ -49,16 +49,17 @@ describe('nødgem', () => {
 });
 
 describe('eftertanke', () => {
-  it('fylder op til tre kort og siger ikke "I solgte firmaet", når statsselskabet købte af sig selv', () => {
+  it('altid tre kort, og "I solgte firmaet" kun når I selv solgte', () => {
     const s = nyt(3);
     s.slut = { id: 'danskeLykke', vaerdi: 100, eftermaele: 50, uge: 1247 };
     s.eftermaeleAkk.risikoSum = 0.08;
     s.eftermaeleAkk.risikoProever = 1;
-    const valgt = EFTERTANKE.filter((k) => k.id === 'opkoebt' || k.id === 'danmarkStart');
-    const kort = eftertankeKort(s, valgt);
+    const kort = eftertankeKort(s, eftertanke(s));
     expect(kort).toHaveLength(3);
-    const koebt = kort.find((k) => k.id === 'opkoebt');
-    expect(koebt?.tekst).not.toContain('I solgte firmaet');
+    expect(kort.some((k) => k.id === 'opkoebt')).toBe(false);
+    expect(kort.some((k) => k.id === 'dlKoebte')).toBe(true);
+    s.flags.push('solgte');
+    expect(eftertanke(s).some((k) => k.id === 'opkoebt')).toBe(true);
     for (const k of kort) {
       const d = delEftertanke(k.tekst);
       expect(d.jeres).not.toContain('I virkeligheden');

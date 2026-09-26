@@ -174,7 +174,8 @@ export function registrerTidslinje(s: GameState, signaler: Signal[] = s.signaler
 
 // ---------- Eftertanke ----------
 
-/** Tre nysgerrige kort om, hvor jeres vej afveg fra den virkelige (spec 6.17) */
+/** Tre nysgerrige kort om, hvor jeres vej afveg fra den virkelige (spec 6.17). Der er altid mindst tre: danmarkStart,
+ *  ét af byens kort (rød/midt/grøn) og ét af de to offshore-kort (offshore/licenseretVej). */
 export function eftertanke(s: GameState): { id: string; titel: string; tekst: string; arkivId: string }[] {
   const e = s.eftermaeleAkk;
   const risiko = e.risikoProever ? e.risikoSum / e.risikoProever : 0.09;
@@ -187,6 +188,8 @@ export function eftertanke(s: GameState): { id: string; titel: string; tekst: st
     offshore: s.flags.includes('haftOffshoreBrand') ? 8 : 0,
     byRoed: risiko > 0.12 || s.flags.includes('byRoed') ? 7 : 0,
     byGroen: risiko < 0.05 && !s.flags.includes('byRoed') ? 5 : 0,
+    byMidt: risiko >= 0.05 && risiko <= 0.12 && !s.flags.includes('byRoed') ? 2 : 0,
+    licenseretVej: !s.flags.includes('haftOffshoreBrand') ? 2 : 0,
     norgeAabnede: s.markeder.no.aaben ? 9 : 0,
     hoejesteret: s.flags.includes('boerslicensMulig') ? 8 : 0,
     usaStor: (s.markeder.us.andele.spiller ?? 0) > 0.08 ? 7 : 0,
@@ -194,7 +197,9 @@ export function eftertanke(s: GameState): { id: string; titel: string; tekst: st
     ontario: s.markeder.on.licens === 'aktiv' ? 3 : 0,
     sverige: s.markeder.se.licens === 'aktiv' ? 3 : 0,
     kombispil: s.produkter.some((p) => p.ejer === 'spiller' && p.typeId === 'betBuilder') ? 2 : 0,
-    opkoebt: s.slut?.id === 'exit' || s.slut?.id === 'danskeLykke' ? 6 : 0,
+    // Solgte I selv (accepteret tilbud), eller kom statsselskabets opkøb af sig selv ved tidens ende?
+    opkoebt: s.slut?.id === 'exit' || (s.slut?.id === 'danskeLykke' && s.flags.includes('solgte')) ? 6 : 0,
+    dlKoebte: s.slut?.id === 'danskeLykke' && !s.flags.includes('solgte') ? 6 : 0,
     danmarkStart: 1,
   };
   return EFTERTANKE.filter((k) => (betingelser[k.id] ?? 0) > 0)
