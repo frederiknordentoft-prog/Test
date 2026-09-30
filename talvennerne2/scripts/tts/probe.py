@@ -33,7 +33,7 @@ import soundfile as sf  # noqa: E402
 
 import post  # noqa: E402
 from da_text import expected_duration, syllables  # noqa: E402
-from probe_sets import EXPR10, SETS, expr_plan, expr_text  # noqa: E402
+from probe_sets import EXPR10, SETS, batch_sets, expr_plan, expr_text  # noqa: E402
 
 ROOT = HERE.parents[1]                       # talvennerne2/
 TAKES = ROOT / "voice" / "probe" / "takes"
@@ -204,6 +204,53 @@ def cmd_gen(a):
     print(f"[{tag}] DONE", flush=True)
 
 
+def cmd_gen_batch(a):
+    """Flere klip i ét kald (batch); align.py batch klipper dem ud bagefter."""
+    batches = batch_sets()
+    if a.only:
+        want = set(a.only.split(","))
+        batches = [b for b in batches if b[0] in want or any(b[0].startswith(w) for w in want)]
+    out = TAKES / a.tag
+    out.mkdir(parents=True, exist_ok=True)
+    meta = out / "meta.jsonl"
+    done = _done_keys(meta)
+    voices = a.voices.split(",")
+    todo = [(take, b, v) for take in range(a.take0, a.take0 + a.takes) for b in batches for v in voices
+            if (b[0], v, take) not in done]
+    if not todo:
+        print(f"[{a.tag}] intet at lave ({len(done)} batches findes)")
+        return
+    eng = Engine(a.threads)
+    for v in voices:
+        eng.use_voice(v)
+    if not a.no_warmup:
+        eng.use_voice(voices[0])
+        eng.generate("Hej.", 1)
+    print(f"[{a.tag}] {len(todo)} batch-kald, {a.threads} tråde", flush=True)
+    for n, (take, (bid, text, items), v) in enumerate(todo, 1):
+        eng.use_voice(v)
+        seed = seed_for(bid, take)
+        load = os.getloadavg()[0]
+        x, tm = eng.generate(text, seed)
+        vdir = out / v
+        vdir.mkdir(exist_ok=True)
+        raw = vdir / f"{bid}.t{take}.raw.wav"
+        sf.write(raw, x, SR, subtype="FLOAT")
+        expected = " ".join(t for _c, t, _f in items)
+        rec = {
+            "set": "batch", "id": bid, "voice": v, "take": take, "seed": seed, "text": text,
+            "expected": expected, "items": items, "k": len(items), "threads": a.threads, **tm,
+            "raw_dur": round(len(x) / SR, 3), "cpu_per_clip": round(tm["t_total"] / len(items), 3),
+            "load1": round(load, 2), "raw": str(raw.relative_to(ROOT)),
+        }
+        with open(meta, "a") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        print(f"[{a.tag}] {n}/{len(todo)} {v} {bid} t{take} (k={len(items)}): {tm['t_total']:.1f}s for "
+              f"{rec['raw_dur']:.2f}s → {rec['cpu_per_clip']:.1f}s/klip (t3 {tm.get('t_t3', 0):.1f} "
+              f"s3gen {tm.get('t_s3gen', 0):.1f}, {tm['n_tokens']} tokens)", flush=True)
+    print(f"[{a.tag}] DONE", flush=True)
+
+
 def cmd_repost(a):
     """Kør efterbehandlingen igen på rå takes (efter ændringer i post.py)."""
     for tag in a.tags.split(","):
@@ -310,12 +357,21 @@ def main():
     c.add_argument("--take0", type=int, default=0)
     r = sub.add_parser("repost")
     r.add_argument("--tags", required=True, help="kommasepareret liste af tags")
+    gb = sub.add_parser("gen-batch")
+    gb.add_argument("--voices", default="nic")
+    gb.add_argument("--only", default="", help="batch-id'er eller præfikser, kommasepareret")
+    gb.add_argument("--takes", type=int, default=1)
+    gb.add_argument("--take0", type=int, default=0)
+    gb.add_argument("--threads", type=int, default=2)
+    gb.add_argument("--tag", default="batch")
+    gb.add_argument("--no-warmup", action="store_true")
     li = sub.add_parser("listen")
     li.add_argument("--voice", required=True)
     li.add_argument("--exprs", default="e01,e05,e06,e07,e10")
     li.add_argument("--composed-tag", default="composed")
     a = ap.parse_args()
-    {"gen": cmd_gen, "compose": cmd_compose, "repost": cmd_repost, "listen": cmd_listen}[a.cmd](a)
+    {"gen": cmd_gen, "gen-batch": cmd_gen_batch, "compose": cmd_compose, "repost": cmd_repost,
+     "listen": cmd_listen}[a.cmd](a)
 
 
 if __name__ == "__main__":

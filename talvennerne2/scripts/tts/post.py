@@ -158,11 +158,16 @@ def limit(x: np.ndarray, sr: int = SR, ceiling_db: float = LIMIT_DBTP, os: int =
     return x, -worst
 
 
-def process(x: np.ndarray, sr: int, *, trim_silence: bool = True):
-    """Hele kæden. Returnerer (float32-signal ved 24 kHz, Stats)."""
+def process(x: np.ndarray, sr: int, *, trim_silence: bool = True, hp: bool = True):
+    """Hele kæden. Returnerer (float32-signal ved 24 kHz, Stats).
+
+    hp=False springer highpass over (når signalet allerede er filtreret, fx udklip
+    fra en batch der er filtreret samlet).
+    """
     x = _mono(x)
     x = resample(x, sr, SR)
-    x = highpass(x, SR)
+    if hp:
+        x = highpass(x, SR)
     # Trim-tærsklen gælder det loudness-normaliserede niveau (samme niveau som
     # masteren), så resultatet ikke afhænger af generatorens råniveau.
     pre = lufs(x)

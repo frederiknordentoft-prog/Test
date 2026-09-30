@@ -151,3 +151,59 @@ SETS = {
     "frags": expr_fragment_set,
     "carrier": carrier_set,
 }
+
+
+# --- batch-generering (flere klip pr. kald, klippes ud med forced alignment) ---
+#
+# End-form-klip står som hver sin sætning ("Syv. Otte."), så hvert får faldende
+# slutintonation. Mid-form-klip står i en kommaliste ("syv, otte,"), som giver
+# fortsættelsesintonation. Hele sætninger sættes efter hinanden med deres egne tegn.
+
+def _chunks(xs, k):
+    return [xs[i:i + k] for i in range(0, len(xs), k)]
+
+
+def _cap(s: str) -> str:
+    return s[:1].upper() + s[1:]
+
+
+def _batch(bid: str, form: str, items: list[tuple[str, str]]):
+    """items: [(clip_id, ren tekst)] → (batch_id, modeltekst, [(clip_id, tekst, form)])."""
+    if form == "end":
+        text = " ".join(_cap(t) + "." for _c, t in items)
+    elif form == "mid":
+        text = ", ".join(t for _c, t in items) + ","
+    else:  # hele sætninger med egne tegn
+        text = " ".join(t for _c, t in items)
+    return (bid, text, [(c, t, form) for c, t in items])
+
+
+def batch_sets():
+    b = []
+    words = [(f"w.{w}", w) for w in WORDS20]
+    for i, ch in enumerate(_chunks(words, 10)):
+        b.append(_batch(f"b.w10.{i}", "end", ch))
+    for i, ch in enumerate(_chunks(words, 5)):
+        b.append(_batch(f"b.w5.{i}", "end", ch))
+    # talklippene fra EXPR10 (mid og end) og fragmenterne, så regnestykkerne kan
+    # sættes sammen af batch-klip og sammenlignes med enkeltkald og hele sætninger
+    mids, ends, frags = {}, {}, {}
+    for _eid, a, op, bb in EXPR10:
+        seq, _ = expr_plan(a, op, bb)
+        for cid, text, kind in seq:
+            word = text.rstrip(",.?")
+            if kind == "mid":
+                mids.setdefault(cid, word)
+            elif kind == "end":
+                ends.setdefault(cid, word)
+            else:
+                frags.setdefault(cid, word)
+    b.append(_batch("b.nmid", "mid", list(mids.items())))
+    b.append(_batch("b.nend", "end", list(ends.items())))
+    b.append(_batch("b.frag", "mid", list(frags.items())))
+    sents = [(i, t) for i, t in PROBE12]
+    for i, ch in enumerate(_chunks(sents, 4)):
+        b.append(_batch(f"b.s4.{i}", "sent", ch))
+    for i, ch in enumerate(_chunks(sents, 6)):
+        b.append(_batch(f"b.s6.{i}", "sent", ch))
+    return b
