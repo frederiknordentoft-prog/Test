@@ -352,6 +352,11 @@ export interface Task {
   speech: SpeechPart[]
   /** Set on the re-queued task after a mistake; a retry never changes the box. */
   retryOf: string | null
+  /**
+   * Perceptual misconceptions (lengthByEnd, sizeIsWeight, unequalParts, prototypeOnly) are only
+   * concluded from contrast: 'conflict' items where perception misleads vs 'congruent' items.
+   */
+  contrast?: 'conflict' | 'congruent'
 }
 
 // ─── Mastery ────────────────────────────────────────────────────────────────
