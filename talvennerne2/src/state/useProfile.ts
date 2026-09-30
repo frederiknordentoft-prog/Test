@@ -292,11 +292,11 @@ export const useProfile = create<ProfileStore>((set, get) => ({
       set({ profile: null, status: 'empty' })
       return null
     }
-    const caches = await loadCaches(id)
+    const loaded = await loadCaches(id)
     if (token !== loadToken) return get().profile
     resetCaches()
-    recentBySkill = caches.recent
-    keySkill = caches.keys
+    recentBySkill = loaded.recent
+    keySkill = loaded.keys
     set({ profile: doc, status: 'ready' })
     return doc
   },
