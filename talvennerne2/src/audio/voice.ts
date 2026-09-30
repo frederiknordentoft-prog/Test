@@ -410,7 +410,9 @@ class Speech implements SpeakHandle {
     this.markVoice()
     lastPlan = { ctxStart, plan, sampleRate: ctx.sampleRate }
     this.planned = plan.totalMs
-    await this.wait((ctxStart + plan.totalMs / 1000 - ctx.currentTime) * 1000)
+    // The planned end is heard one output latency after the context reaches it.
+    const latency = (ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0
+    await this.wait((ctxStart + plan.totalMs / 1000 - ctx.currentTime + latency) * 1000)
     setTimeout(() => gain.disconnect(), 100)
     this.gain = null
     this.sources = []
