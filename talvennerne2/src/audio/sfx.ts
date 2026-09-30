@@ -34,7 +34,7 @@ interface FmVoice {
   freq: number
   /** Glide the pitch to this frequency over the note. */
   to?: number
-  /** Modulator frequency = freq × ratio. */
+  /** Modulator frequency = freq · ratio. */
   ratio?: number
   /** Peak modulation index (brightness). */
   index?: number

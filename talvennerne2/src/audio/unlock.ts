@@ -5,13 +5,14 @@
 // 2. Children cannot read, so speech must be heard even with the silent switch on: the audio session
 //    is set to 'playback' where `navigator.audioSession` exists (iOS 17+). Older iOS gets the same
 //    effect from a looping, silent `<audio playsinline>` started inside the gesture. Both are skipped
-//    when the device setting "Følg lydløs-knappen" is on.
+//    when the device setting "Følg lydløs-knappen" is on. The setting lives in `talvennerne2.boot`
+//    (`device.followSilentSwitch`), written only by useSession.setDevice(); it is re-read at every
+//    gesture, and setFollowSilentSwitch() applies a change at once.
 // 3. After `visibilitychange → visible` (and when iOS interrupts the context) the app must show
 //    "Tryk for at fortsætte": the next tap resumes audio. Subscribe with onResumeNeeded().
+import { readBoot } from '../data/namespace'
 import { audioGraph, existingAudioGraph } from './engine'
 import { primeDeviceTts } from './deviceTts'
-
-const FOLLOW_KEY = 'talvennerne2.audio.followSilentSwitch'
 
 type AudioSessionType = 'auto' | 'playback' | 'transient' | 'transient-solo' | 'ambient' | 'play-and-record'
 interface AudioSessionLike {
@@ -24,16 +25,6 @@ let resumeNeeded = false
 let silentLoop: HTMLAudioElement | null = null
 const listeners = new Set<(needed: boolean) => void>()
 
-function readFollow(): boolean {
-  try {
-    return localStorage.getItem(FOLLOW_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-let follow = typeof window !== 'undefined' ? readFollow() : false
-
 export function audioSession(): AudioSessionLike | null {
   if (typeof navigator === 'undefined') return null
   return (navigator as unknown as { audioSession?: AudioSessionLike }).audioSession ?? null
@@ -41,23 +32,20 @@ export function audioSession(): AudioSessionLike | null {
 
 /** Device setting "Følg lydløs-knappen": when on, the silent switch mutes the app. Default off. */
 export function followSilentSwitch(): boolean {
-  return follow
+  return readBoot().device.followSilentSwitch
 }
 
+/**
+ * Applies a new value of the setting now (call it next to useSession.setDevice, which stores it);
+ * without the call the next tap applies it.
+ */
 export function setFollowSilentSwitch(on: boolean): void {
-  follow = on
-  try {
-    if (on) localStorage.setItem(FOLLOW_KEY, '1')
-    else localStorage.removeItem(FOLLOW_KEY)
-  } catch {
-    // private mode: the setting lasts for this visit
-  }
-  applyAudioSession()
+  applyAudioSession(on)
   if (on) stopSilentLoop()
 }
 
 /** Sets the audio session type where the API exists. Returns the type in effect, or null. */
-export function applyAudioSession(): AudioSessionType | null {
+export function applyAudioSession(follow = followSilentSwitch()): AudioSessionType | null {
   const session = audioSession()
   if (!session) return null
   try {
@@ -100,7 +88,7 @@ function silentWavUri(): string {
 }
 
 /** Older iOS: a playing media element switches the session to playback, so Web Audio ignores the switch. */
-function startSilentLoop(): void {
+function startSilentLoop(follow: boolean): void {
   if (follow || audioSession() || !isAppleTouch()) return
   try {
     if (!silentLoop) {
@@ -133,8 +121,9 @@ function setResumeNeeded(needed: boolean): void {
  * tap, and "Tryk for at fortsætte" can call it directly.
  */
 export function unlockAudio(): void {
-  applyAudioSession()
-  startSilentLoop()
+  const follow = followSilentSwitch()
+  applyAudioSession(follow)
+  startSilentLoop(follow)
   primeDeviceTts()
   const g = audioGraph()
   if (!g) {

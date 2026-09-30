@@ -9,10 +9,10 @@ describe('clip catalogue', () => {
     expect(duplicateClips()).toEqual([])
   })
 
-  it('has digit-free Danish texts without × or ÷', () => {
+  it('has digit-free Danish texts without the times or division sign', () => {
     for (const c of allClips()) {
       expect(c.text, c.id).not.toMatch(/\d/)
-      expect(c.text, c.id).not.toMatch(/[×÷]/)
+      expect(c.text, c.id).not.toMatch(/[\u00d7\u00f7]/)
       expect(c.text.trim(), c.id).toBe(c.text)
       expect(c.text.length, c.id).toBeGreaterThan(0)
     }

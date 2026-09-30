@@ -7,7 +7,7 @@
 // starts a Vite dev server on port 4313 and opens src/audio/timing/timing.html in Chromium. The page
 // plays a statement through the real voice engine and records the voice bus with an AudioWorklet.
 // Every audible onset and every silence must land within ±5 ms of the plan: as WAV, as MP3 (whose
-// decoder delay the fine-tuning must absorb), as MP3 under 4× CPU throttle, and as MP3 decoded
+// decoder delay the fine-tuning must absorb), as MP3 on a CPU throttled to a quarter of its speed, and as MP3 decoded
 // before the live AudioContext exists (the app's preload before the first tap). Exit code 1 on failure.
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
@@ -127,7 +127,7 @@ try {
   const scenarios = [
     { name: 'WAV', file: 'tones.wav', throttle: 1 },
     { name: 'MP3 40 kbps', file: 'tones.mp3', throttle: 1 },
-    { name: 'MP3 40 kbps, 4× CPU-throttle', file: 'tones.mp3', throttle: 4 },
+    { name: 'MP3 40 kbps, 4 gange langsommere CPU', file: 'tones.mp3', throttle: 4 },
     { name: 'MP3 dekodet før første tryk (OfflineAudioContext)', file: 'tones.mp3', throttle: 1, preloadFirst: true },
   ]
   for (const sc of scenarios) {

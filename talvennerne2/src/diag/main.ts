@@ -1,13 +1,14 @@
 // Diagnosis page (SPEC A4, §16): what an iPad actually supports, measured on the device itself,
 // because Chromium is not iOS. Plain DOM, no React. The parent opens diag.html, runs the tests and
-// taps "Kopiér rapport". The only storage it touches besides reading is the test database
-// `talvennerne2-diag`, which it deletes again.
+// taps "Kopiér rapport". Storage is only touched through the app's own namespace: IndexedDB via
+// getDb().meta (a `diag.*` row, deleted again) and Web Storage via src/data/namespace.ts.
 import './diag.css'
 import { ttsSpeak, danishVoice, deviceVoices, initDeviceTts } from '../audio/deviceTts'
 import { audioGraph, existingAudioGraph } from '../audio/engine'
 import { applyAudioSession, audioSession, followSilentSwitch, installAudioUnlock, unlockAudio } from '../audio/unlock'
 import { debugLastPlan, speak, voiceAvailable, voiceStatus } from '../audio/voice'
 import { playSfx } from '../audio/sfx'
+import { BOOT_KEY, defaultBoot, localGet, localRemove, localSet, sessionGet, sessionRemove, sessionSet } from '../data/namespace'
 
 type Status = 'ok' | 'warn' | 'bad' | 'info'
 interface Row {
@@ -16,7 +17,8 @@ interface Row {
   status: Status
 }
 
-const DIAG_DB = 'talvennerne2-diag'
+/** The meta row the storage test writes and deletes again. */
+const DIAG_META_KEY = 'diag.test'
 
 /** Every section's latest rows, in page order, for the copied report. */
 const report = new Map<string, Row[]>()
@@ -145,8 +147,8 @@ function deviceSection(): void {
   s.set([
     row('iOS/iPadOS', v, Number.isNaN(major) ? 'info' : major >= 16.4 ? 'ok' : 'bad'),
     yes('Startet fra hjemmeskærmen', standalone(), 'ok', 'warn'),
-    row('Skærm', `${screen.width} × ${screen.height} punkter`),
-    row('Vindue', `${window.innerWidth} × ${window.innerHeight} punkter`),
+    row('Skærm', `bredde ${screen.width}, højde ${screen.height} punkter`),
+    row('Vindue', `bredde ${window.innerWidth}, højde ${window.innerHeight} punkter`),
     row('devicePixelRatio', window.devicePixelRatio),
     row('Berøringspunkter', navigator.maxTouchPoints),
     row('Sprog', navigator.language),
@@ -295,41 +297,40 @@ async function voiceSection(): Promise<void> {
 
 async function idbTest(): Promise<Row[]> {
   if (!('indexedDB' in window)) return [row('IndexedDB', 'findes ikke', 'bad')]
-  const t0 = performance.now()
-  const req = <T>(r: IDBRequest<T>) =>
-    new Promise<T>((resolve, reject) => {
-      r.onsuccess = () => resolve(r.result)
-      r.onerror = () => reject(r.error)
-    })
   try {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const open = indexedDB.open(DIAG_DB, 1)
-      open.onupgradeneeded = () => open.result.createObjectStore('test')
-      open.onsuccess = () => resolve(open.result)
-      open.onerror = () => reject(open.error)
-      open.onblocked = () => reject(new Error('blokeret'))
-    })
-    const tOpen = performance.now()
+    const t0 = performance.now()
+    const { getDb } = await import('../data/db')
+    const meta = getDb().meta
     const value = { at: 1, text: 'Talvennerne'.repeat(100) }
-    await req(db.transaction('test', 'readwrite').objectStore('test').put(value, 'k'))
+    await meta.put({ key: DIAG_META_KEY, value })
     const tWrite = performance.now()
-    const back = await req(db.transaction('test', 'readonly').objectStore('test').get('k'))
+    const back = await meta.get(DIAG_META_KEY)
     const tRead = performance.now()
-    db.close()
-    await new Promise<void>((resolve, reject) => {
-      const del = indexedDB.deleteDatabase(DIAG_DB)
-      del.onsuccess = () => resolve()
-      del.onerror = () => reject(del.error)
-      del.onblocked = () => resolve()
-    })
-    const same = JSON.stringify(back) === JSON.stringify(value)
+    await meta.delete(DIAG_META_KEY)
+    const gone = (await meta.get(DIAG_META_KEY)) === undefined
+    const same = JSON.stringify(back?.value) === JSON.stringify(value)
     return [
-      yes('Åbne, skrive, læse, slette', same),
-      row('Tider', `åbne ${(tOpen - t0).toFixed(0)} ms, skrive ${(tWrite - tOpen).toFixed(0)} ms, læse ${(tRead - tWrite).toFixed(0)} ms`),
+      yes('IndexedDB: skrive, læse, slette', same && gone),
+      row('Tider', `åbne og skrive ${(tWrite - t0).toFixed(0)} ms, læse ${(tRead - tWrite).toFixed(0)} ms`),
     ]
   } catch (err) {
     return [row('IndexedDB', `fejl: ${String(err)}`, 'bad')]
   }
+}
+
+/** Writes the boot value back unchanged (or the default, removed again) to see that writes work. */
+function localStorageWorks(): boolean {
+  const before = localGet(BOOT_KEY)
+  const probe = before ?? JSON.stringify(defaultBoot())
+  const ok = localSet(BOOT_KEY, probe) && localGet(BOOT_KEY) === probe
+  if (before === null) localRemove(BOOT_KEY)
+  return ok
+}
+
+function sessionStorageWorks(): boolean {
+  const ok = sessionSet('diag', '1') && sessionGet('diag') === '1'
+  sessionRemove('diag')
+  return ok
 }
 
 async function storageRows(extra: Row[] = []): Promise<Row[]> {
@@ -341,20 +342,12 @@ async function storageRows(extra: Row[] = []): Promise<Row[]> {
   } else rows.push(row('storage.estimate()', 'findes ikke', 'warn'))
   if (storage?.persisted) rows.push(yes('Varig lagring (persisted)', await storage.persisted(), 'ok', 'warn'))
   else rows.push(row('storage.persisted()', 'findes ikke', 'warn'))
-  let local = false
-  try {
-    localStorage.setItem('talvennerne2.diag', '1')
-    local = localStorage.getItem('talvennerne2.diag') === '1'
-    localStorage.removeItem('talvennerne2.diag')
-  } catch {
-    local = false
-  }
-  rows.push(yes('localStorage', local))
+  rows.push(yes('localStorage', localStorageWorks()), yes('sessionStorage', sessionStorageWorks()))
   return [...rows, ...extra]
 }
 
 async function storageSection(): Promise<void> {
-  const s = section('lagring', 'Lagring', `Tester IndexedDB i en separat testdatabase (${DIAG_DB}), som slettes igen.`)
+  const s = section('lagring', 'Lagring', 'Tester appens egen database (en diag-række, som slettes igen) og Web Storage i appens navnerum.')
   s.set(await storageRows())
   button(s.buttons, 'Bed om varig lagring', async () => {
     const granted = navigator.storage?.persist ? await navigator.storage.persist() : false

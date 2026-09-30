@@ -100,4 +100,4 @@ Scriptet gør følgende:
 4. Siden spiller "Hvad er otteogtredive plus tre hundrede og syvogfyrre? Find tallet tolv kroner og halvtreds øre." gennem den rigtige stemmemotor og optager voiceBus sample-præcist med en AudioWorklet.
 5. Hver hørbar start, slutning og hvert mellemrum skal ligge inden for ±5 ms af planen, og tonerne skal komme i rigtig rækkefølge.
 
-Det gælder i tre scenarier: WAV, MP3 og MP3 med 4× CPU-throttle. Exit-kode 1 ved fejl.
+Det gælder i tre scenarier: WAV, MP3 og MP3 med en CPU sat 4 gange ned. Exit-kode 1 ved fejl.
