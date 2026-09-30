@@ -138,9 +138,9 @@
 }
 @keyframes rig-paw-hop {
   0%, 82%, 100% { transform: rotate(0deg); }
-  10%, 44% { transform: rotate(40deg); }
-  22%, 58% { transform: rotate(48deg); }
-  37.5%, 75% { transform: rotate(18deg); }
+  10%, 44% { transform: rotate(36deg); }
+  22%, 58% { transform: rotate(44deg); }
+  37.5%, 75% { transform: rotate(16deg); }
 }
 @keyframes rig-wag-fast {
   0%, 100% { transform: rotate(-14deg); }
@@ -183,8 +183,8 @@
   25%, 75% { transform: translate(100px, 225px) scale(0.76, 0.76) translate(-100px, -225px); opacity: 0.7; }
 }
 @keyframes rig-paw-cheer {
-  0%, 100% { transform: rotate(150deg); }
-  50% { transform: rotate(162deg); }
+  0%, 100% { transform: rotate(104deg); }
+  50% { transform: rotate(124deg); }
 }
 @keyframes rig-ear-cheer {
   0%, 100% { transform: rotate(-9deg); }
@@ -220,8 +220,8 @@
 }
 
 @keyframes rig-think-head {
-  0%, 100% { transform: translate(0, 0) rotate(8deg); }
-  50% { transform: translate(0, -1px) rotate(10deg); }
+  0%, 100% { transform: translate(0, 3px) rotate(8deg); }
+  50% { transform: translate(0, 2px) rotate(10deg); }
 }
 @keyframes rig-think-ear-l {
   0%, 100% { transform: rotate(6deg); }
@@ -279,6 +279,15 @@
 @keyframes rig-oops-paw {
   0%, 100% { transform: rotate(8deg); }
   14% { transform: rotate(4deg); }
+}
+
+.rig .a-sweat {
+  animation: rig-sweat 2.4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+@keyframes rig-sweat {
+  0%, 100% { transform: translate(0, 0); opacity: 1; }
+  50% { transform: translate(0, 1.5px); opacity: 0.85; }
 }
 
 /* ---------------------------------------------------------------- sleep: langsom ånding, Z'er */
@@ -345,13 +354,13 @@
 }
 
 @keyframes rig-wave {
-  0%, 100% { transform: rotate(138deg); }
-  11% { transform: rotate(158deg); }
-  22% { transform: rotate(124deg); }
-  33% { transform: rotate(158deg); }
-  44% { transform: rotate(124deg); }
-  55% { transform: rotate(156deg); }
-  68% { transform: rotate(138deg); }
+  0%, 100% { transform: rotate(118deg); }
+  11% { transform: rotate(134deg); }
+  22% { transform: rotate(100deg); }
+  33% { transform: rotate(134deg); }
+  44% { transform: rotate(100deg); }
+  55% { transform: rotate(132deg); }
+  68% { transform: rotate(118deg); }
 }
 @keyframes rig-wave-head {
   0%, 100% { transform: translate(0, 0) rotate(-4deg); }
@@ -382,8 +391,22 @@
     animation-play-state: paused !important;
     animation-delay: 0s !important;
   }
+  .rig .a-z,
+  .rig .a-dot,
+  .rig .a-sweat,
+  .rig .a-twinkle,
+  .rig .a-aura {
+    animation: none !important;
+  }
 }
 .rig.rig-calm [class*='a-']:not(.a-blink) {
   animation-play-state: paused !important;
   animation-delay: 0s !important;
+}
+.rig.rig-calm .a-z,
+.rig.rig-calm .a-dot,
+.rig.rig-calm .a-sweat,
+.rig.rig-calm .a-twinkle,
+.rig.rig-calm .a-aura {
+  animation: none !important;
 }

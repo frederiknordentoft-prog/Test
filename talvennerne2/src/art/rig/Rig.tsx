@@ -10,7 +10,7 @@
 // med transform-origin 0 0. Kun transform og opacity animeres (rig.css).
 import { useEffect, useId, useRef } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, ThoughtDots, Zzz, around } from '../parts/house'
+import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, SweatDrop, ThoughtDots, Zzz, around } from '../parts/house'
 import { OUTLINE, modelAnchors, regionTransforms, worldAnchors } from './anchors'
 import { defaultHead, templateBody } from './bodies'
 import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
@@ -77,12 +77,12 @@ interface Pose {
 
 export const POSES: Record<Mood, Pose> = {
   idle: {},
-  happy: { fig: { y: -12, sx: 0.97, sy: 1.04 }, earL: -7, earR: -7, pawL: 38, pawR: 38, tail: 12, shadow: 0.78 },
-  cheer: { fig: { y: -14, rot: -4 }, earL: -9, earR: -5, pawL: 150, pawR: 150, tail: 14, shadow: 0.72 },
-  think: { head: { rot: 8 }, earL: 6, earR: -8 },
-  oops: { head: { rot: -4, y: 1.5 }, earL: -12, earR: -10, pawL: 8, pawR: 8 },
+  happy: { earL: -6, earR: -6, pawL: 34, pawR: 34, tail: 12 },
+  cheer: { fig: { rot: -3 }, head: { rot: -2, y: 1 }, earL: -9, earR: -4, pawL: 112, pawR: 112, tail: 14 },
+  think: { head: { rot: 8, y: 3 }, earL: 6, earR: -8 },
+  oops: { head: { rot: -4, y: 1.5 }, earL: -14, earR: -11, pawL: 6, pawR: 6 },
   sleep: { head: { rot: 6, y: 3 }, earL: -18, earR: -16, body: { sy: 0.985 } },
-  wave: { head: { rot: -4 }, earL: -4, earR: 4, pawR: 138 },
+  wave: { head: { rot: -4 }, earL: -4, earR: 5, pawR: 118 },
 }
 
 const G = { x: 100, y: 226 }
@@ -119,6 +119,8 @@ function useGaze(
   eyeWorld: Pt,
   scale: number,
   fallback: Pt | undefined,
+  /** Øjenformen: nye grupper i DOM'en kræver at transformen sættes igen. */
+  shapeKey: string,
 ) {
   const gazeRef = useRef<SVGGElement>(null)
   const glintRef = useRef<SVGGElement>(null)
@@ -151,7 +153,7 @@ function useGaze(
     }
     raf = requestAnimationFrame(step)
     return () => cancelAnimationFrame(raf)
-  }, [enabled, tx, ty, eyeWorld.x, eyeWorld.y, scale, fallback])
+  }, [enabled, tx, ty, eyeWorld.x, eyeWorld.y, scale, fallback, shapeKey])
   return { gazeRef, glintRef }
 }
 
@@ -178,6 +180,7 @@ export function Rig(props: RigProps) {
   const ids: RigIds = { uid, bodyClip: `${uid}b`, headClip: `${uid}h`, gradient: `${uid}g` }
   const shadowId = `${uid}s`
   const itemClipId = `${uid}i`
+  const earClipId = `${uid}e`
 
   const a = modelAnchors(def, breed)
   const R = regionTransforms(a, stage)
@@ -208,7 +211,7 @@ export function Rig(props: RigProps) {
   const bodyWorn = worn('body')
 
   const eyeMidWorld = { x: (w.eyeL.x + w.eyeR.x) / 2, y: (w.eyeL.y + w.eyeR.y) / 2 }
-  const { gazeRef, glintRef } = useGaze(animated && !silhouette, lookAt, eyeMidWorld, R.head.s, MOOD_GAZE[mood])
+  const { gazeRef, glintRef } = useGaze(animated && !silhouette, lookAt, eyeMidWorld, R.head.s, MOOD_GAZE[mood], face.eyes)
   const staticGaze = still ? gazeFor(lookAt, eyeMidWorld, R.head.s) ?? MOOD_GAZE[mood] : undefined
 
   const renderItem = (slot: Slot, layer: 'front' | 'back', region: number, clip?: string) => {
@@ -262,7 +265,7 @@ export function Rig(props: RigProps) {
 
   const ear = (side: 'L' | 'R', Part: SidePart) => {
     const at = side === 'L' ? a.earBaseL : a.earBaseR
-    const splay = (breedDef?.ears ?? def.ears)?.splay ?? 0
+    const splay = earRig?.splay ?? 0
     const rot = side === 'L' ? pose.earL : pose.earR
     return (
       <g transform={`translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}${splay ? ` rotate(${n(-splay)})` : ''}`}>
@@ -280,20 +283,24 @@ export function Rig(props: RigProps) {
   const Horn = parts.Horn
   const Wings = parts.Wings
   const Ear = parts.Ear
+  const earRig = breedDef?.ears ?? def.ears
+  const earClip = !!Ear && !hides.has('ears') && earRig?.clip !== false
   const P = parts.Pattern
   const pattern = resolveColorway(def, colorway).pattern ?? 'none'
   const shade = shading(a)
   const showFx = !silhouette
 
   // fx-positioner (verdensrum)
-  const fxHead = { x: w.headCenter.x + w.headRx * 0.72, y: w.headTop.y + w.headRy * 0.06 }
+  // Tanker, Z'er og svedperle sidder til højre for hovedet, fri af øret.
+  const fxHead = { x: w.headCenter.x + w.headRx * 0.96, y: w.headCenter.y - w.headRy * 0.5 }
+  const fxSweat = { x: w.headCenter.x + w.headRx * 0.62, y: w.headCenter.y - w.headRy * 0.55 }
   const sparkle = pal.sparkle && showFx && (colorway === 'gold' || colorway === 'starwhite' || (star && stage === 3))
 
-  const rootStyle: CSSProperties & Record<string, string> = {
+  const rootStyle = {
     ...style,
     '--rig-t': `${(freezeAt ?? seed * 3.1).toFixed(3)}s`,
     '--blink': `${(4.3 + seed * 1.6).toFixed(2)}s`,
-  }
+  } as CSSProperties
 
   return (
     <svg
@@ -318,6 +325,11 @@ export function Rig(props: RigProps) {
         <clipPath id={ids.headClip}>
           <path d={headClipD} />
         </clipPath>
+        {earClip && (
+          <clipPath id={earClipId}>
+            <path d={outside(headClipD)} clipRule="evenodd" fillRule="evenodd" />
+          </clipPath>
+        )}
         {bodyWorn && (
           <clipPath id={itemClipId}>
             <path d={(parts.body ?? templateBody(def.body))(a, 2, stage)} />
@@ -334,7 +346,7 @@ export function Rig(props: RigProps) {
       </defs>
 
       {/* Stjerneformens aura bag alt. */}
-      {star && stage === 3 && showFx && <Aura c={{ x: w.headCenter.x, y: (w.headCenter.y + w.bodyCenter.y) / 2 }} r={96} className={animated ? 'a-aura' : undefined} />}
+      {star && stage === 3 && showFx && <Aura c={{ x: w.headCenter.x, y: (w.headCenter.y + w.bodyCenter.y) / 2 }} r={86} className={animated ? 'a-aura' : undefined} />}
 
       {/* 1 · jordskygge */}
       {!silhouette && (
@@ -421,10 +433,10 @@ export function Rig(props: RigProps) {
               {renderItem('head', 'front', R.head.s)}
               {/* 16 · ører, horn */}
               {Ear && !hides.has('ears') && (
-                <>
+                <g clipPath={earClip ? `url(#${earClipId})` : undefined}>
                   {ear('L', Ear)}
                   {ear('R', Ear)}
-                </>
+                </g>
               )}
               {Horn && (
                 <g transform={`translate(${n(a.hornBase.x)} ${n(a.hornBase.y)}) scale(${fmt3(R.xf.horn)})`}>
@@ -436,8 +448,10 @@ export function Rig(props: RigProps) {
         </g>
 
         {/* 17 · fx (verdensrum) */}
+        <g data-part="fx">
         {showFx && mood === 'think' && <ThoughtDots at={fxHead} s={R.head.s} sw={OUTLINE} animated={animated} />}
-        {showFx && mood === 'sleep' && <Zzz at={{ x: fxHead.x + 4, y: fxHead.y + 6 }} s={R.head.s} sw={OUTLINE} animated={animated} />}
+        {showFx && mood === 'sleep' && <Zzz at={{ x: fxHead.x - 2, y: fxHead.y + 8 }} s={R.head.s} sw={OUTLINE} animated={animated} />}
+        {showFx && mood === 'oops' && <SweatDrop at={fxSweat} s={R.head.s} sw={OUTLINE} className={animated ? 'a-sweat' : undefined} />}
         {sparkle && (
           <Sparkles
             pts={around({ x: w.headCenter.x, y: (w.headCenter.y + w.bodyCenter.y) / 2 }, w.headRx + 28, [-150, -32, 200])}
@@ -448,6 +462,7 @@ export function Rig(props: RigProps) {
             className={animated ? 'a-twinkle' : undefined}
           />
         )}
+        </g>
       </g>
     </svg>
   )

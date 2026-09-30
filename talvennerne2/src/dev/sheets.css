@@ -1,0 +1,106 @@
+/* Kontaktarkenes layout. Kun sh-præfiks, så Tailwind-scanningen aldrig finder utility-navne her. */
+html,
+body {
+  margin: 0;
+  background: #fff8ec;
+  color: #2b2144;
+  font-family: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.sh-page {
+  padding: 28px 32px 36px;
+  width: max-content;
+}
+.sh-h1 {
+  font-size: 26px;
+  font-weight: 900;
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
+}
+.sh-sub {
+  font-size: 14px;
+  font-weight: 600;
+  color: #5e5478;
+  margin: 0 0 22px;
+}
+.sh-section {
+  margin: 0 0 26px;
+}
+.sh-h2 {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: #6c4cf5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sh-grid {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+}
+.sh-cell {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 1px 0 rgba(43, 33, 68, 0.06), 0 6px 18px rgba(43, 33, 68, 0.08);
+  padding: 8px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sh-cell.sh-bare {
+  background: transparent;
+  box-shadow: none;
+}
+.sh-cell.sh-sky {
+  background: linear-gradient(#bfe6ff, #fff3d6);
+}
+.sh-cap {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5e5478;
+  margin-top: 2px;
+  text-align: center;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.sh-head {
+  font-size: 12px;
+  font-weight: 800;
+  color: #5e5478;
+  text-align: center;
+}
+.sh-rowhead {
+  font-size: 12px;
+  font-weight: 800;
+  color: #5e5478;
+  text-align: right;
+  padding-right: 4px;
+  line-height: 1.25;
+}
+.sh-card {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(43, 33, 68, 0.08), 0 4px 10px rgba(43, 33, 68, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.sh-card.sh-gold {
+  box-shadow: 0 0 0 3px #ffc83d, 0 4px 10px rgba(43, 33, 68, 0.1);
+}
+.sh-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+}
+.sh-note {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5e5478;
+  margin: 6px 0 0;
+  max-width: 900px;
+}

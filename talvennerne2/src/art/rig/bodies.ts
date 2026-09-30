@@ -13,7 +13,7 @@ interface Template {
 
 const TEMPLATES: Record<BodyKind, Template> = {
   // Siddende bolle med flad, tung bund (kanin, kat, hamster, panda, lam, isbjørn).
-  round: { bias: 0.28, eTop: 2.05, eBottom: 2.9, taper: 0.1 },
+  round: { bias: 0.34, eTop: 2.0, eBottom: 2.45, taper: 0.2 },
   // Pære/æg: smal top, bred bund (pingvin, egern, pindsvin, ugle, Pip).
   pear: { bias: 0.36, eTop: 2.0, eBottom: 2.7, taper: 0.3 },
   // Høj og slank siddende krop (hest, enhjørning, pegasus, hvalp, ræv, drage).

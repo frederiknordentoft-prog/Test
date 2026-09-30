@@ -3,7 +3,7 @@
 // helt ansigt koster ~10 elementer.
 import type { Ref } from 'react'
 import { HOUSE, INK, SHADOW_ALPHA } from '../rig/palette'
-import { arc, circle, dMouth, ellipse, ellipseBelow, join, line, lune, n, quad, rect, spline, star, xf, zee } from '../rig/shapes'
+import { arc, circle, dMouth, drop, ellipse, ellipseBelow, join, line, lune, n, quad, rect, spline, star, xf, zee } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { AnchorSet, EyeShape, Mood, MouthShape, Palette, Pt } from '../rig/types'
 
@@ -65,11 +65,11 @@ export function Eyes({ a, shape, pal, scale, sw, gaze, animated, gazeRef, glintR
   const g = gaze ?? { x: 0, y: 0 }
   const gazeT = g.x || g.y ? `translate(${n(g.x)} ${n(g.y)})` : undefined
   const glintT = g.x || g.y ? `translate(${n(g.x * 0.45)} ${n(g.y * 0.45)})` : undefined
-  const line = { fill: 'none', stroke: pal.ink, strokeWidth: sw * 1.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const inkLine = { fill: 'none', stroke: pal.ink, strokeWidth: sw * 1.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
   let body
   if (shape === 'happy') {
-    body = <path d={join(...eyes.map(([x, y]) => quad([x - rx * 0.95, y + ry * 0.22], [x, y - ry * 0.95], [x + rx * 0.95, y + ry * 0.22])))} {...line} />
+    body = <path d={join(...eyes.map(([x, y]) => quad([x - rx * 0.95, y + ry * 0.22], [x, y - ry * 0.95], [x + rx * 0.95, y + ry * 0.22])))} {...inkLine} />
   } else if (shape === 'closed') {
     body = (
       <path
@@ -82,20 +82,31 @@ export function Eyes({ a, shape, pal, scale, sw, gaze, animated, gazeRef, glintR
             )
           }),
         )}
-        {...line}
+        {...inkLine}
       />
     )
   } else {
     const half = shape === 'half'
-    // Halvt lukkede øjne: låget skærer ovalen; ydre hjørne lidt lavere (genert, ikke vred).
-    const lid = (x: number, y: number, s: number): Vec[] => [
-      [x - s * rx * 1.12, y - ry * 0.02],
-      [x, y - ry * 0.26],
-      [x + s * rx * 1.12, y - ry * 0.12],
-    ]
+    // Genert "ups": låget skærer toppen af øjet i en let skrå linje (inderste hjørne højest),
+    // og to bekymrede bryn løfter sig mod midten. Aldrig vredt eller trist.
+    const tilt = (i: number) => (i === 0 ? -1 : 1) * ry * 0.16
+    const cut = (y: number) => y - ry * 0.18
     const eyeD = half
-      ? join(...eyes.map(([x, y], i) => ellipseBelow(x, y, rx, ry, y - ry * 0.12, (i === 0 ? -1 : 1) * ry * 0.08)))
+      ? join(...eyes.map(([x, y], i) => ellipseBelow(x, y, rx, ry, cut(y), tilt(i))))
       : join(...eyes.map(([x, y]) => ellipse(x, y, rx, ry)))
+    const lidD = join(
+      ...eyes.map(([x, y], i) => {
+        const w = rx * 1.14
+        const t = tilt(i) * 0.57
+        return line([x - w, cut(y) - t], [x + w, cut(y) + t])
+      }),
+    )
+    const browD = join(
+      ...eyes.map(([x, y], i) => {
+        const s = i === 0 ? 1 : -1
+        return quad([x - s * rx * 0.85, y - ry * 1.3], [x - s * rx * 0.05, y - ry * 1.66], [x + s * rx * 0.78, y - ry * 1.68])
+      }),
+    )
     const irisD = join(...eyes.map(([x, y]) => lune(x, y + ry * 0.06, rx * 0.78, ry * 0.8, ry * 0.3)))
     const sparkle = shape === 'sparkle'
     const glints = join(
@@ -103,20 +114,20 @@ export function Eyes({ a, shape, pal, scale, sw, gaze, animated, gazeRef, glintR
         sparkle
           ? join(star(x - rx * 0.28, y - ry * 0.3, rx * 0.62, rx * 0.12), circle(x + rx * 0.4, y + ry * 0.42, rx * 0.17))
           : half
-            ? join(circle(x - rx * 0.3, y + ry * 0.12, rx * 0.26), circle(x + rx * 0.4, y + ry * 0.5, rx * 0.14))
+            ? join(circle(x - rx * 0.32, y + ry * 0.12, rx * 0.25), circle(x + rx * 0.4, y + ry * 0.5, rx * 0.14))
             : join(ellipse(x - rx * 0.3, y - ry * 0.36, rx * 0.36, ry * 0.3, -20), circle(x + rx * 0.4, y + ry * 0.44, rx * 0.17)),
       ),
     )
     body = (
       <>
         <g ref={gazeRef} transform={gazeT}>
-          <path d={eyeD} fill={pal.ink} />
+          <path d={eyeD} fill={pal.ink} data-part="eyes" />
           <path d={irisD} fill={pal.iris} opacity={pal.silhouette ? 0 : 0.85} />
         </g>
         <g ref={glintRef} transform={glintT}>
           <path d={glints} fill={pal.silhouette ? 'none' : HOUSE.white} />
         </g>
-        {half && <path d={join(...eyes.map(([x, y], i) => spline(lid(x, y, i === 0 ? 1 : -1), 0.9)))} {...line} strokeWidth={sw * 0.9} />}
+        {half && <path d={join(lidD, browD)} {...inkLine} strokeWidth={sw * 0.9} />}
       </>
     )
   }
@@ -216,7 +227,7 @@ export function ShadowGradient({ id }: { id: string }) {
 }
 
 export function GroundShadow({ id, cx, cy, rx, className }: { id: string; cx: number; cy: number; rx: number; className?: string }) {
-  return <ellipse className={className} cx={n(cx)} cy={n(cy)} rx={n(rx)} ry={n(rx * 0.16)} fill={`url(#${id})`} />
+  return <ellipse className={className} data-part="shadow" cx={n(cx)} cy={n(cy)} rx={n(rx)} ry={n(rx * 0.13)} fill={`url(#${id})`} />
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -280,13 +291,24 @@ export function Zzz({ at, s, sw, animated }: { at: Pt; s: number; sw: number; an
   )
 }
 
-/** Stjerneformens aura: to bløde, flade glorier bag figuren (ingen filtre eller gradienter). */
-export function Aura({ c, r, className }: { c: Pt; r: number; className?: string }) {
-  const burst = (rr: number, pts: number, inner: number, rot: number) => star(c.x, c.y, rr, rr * inner, pts, rot)
+/** "Ups": en lille, venlig svedperle ved hovedet (aldrig tårer). */
+export function SweatDrop({ at, s, sw, className }: { at: Pt; s: number; sw: number; className?: string }) {
   return (
     <g className={className}>
-      <path d={burst(r, 12, 0.86, 0)} fill={HOUSE.aura} opacity={0.45} />
-      <path d={burst(r * 0.82, 12, 0.88, 15)} fill={HOUSE.aura} opacity={0.55} />
+      <path d={drop(at.x, at.y, 4.2 * s)} fill={HOUSE.sweat} stroke={HOUSE.sweatLine} strokeWidth={sw * 0.5} strokeLinejoin="round" />
+      <path d={ellipse(at.x - 1.4 * s, at.y - 0.4 * s, 1.1 * s, 1.8 * s, 20)} fill={HOUSE.white} opacity={0.8} />
+    </g>
+  )
+}
+
+/** Stjerneformens aura: en blød, flad glorie bag figuren og en krans af glimt (ingen filtre). */
+export function Aura({ c, r, className }: { c: Pt; r: number; className?: string }) {
+  const ring = around(c, r * 0.9, [-150, -110, -70, -30, 10, 170, 205, 335])
+  return (
+    <g className={className} data-part="aura">
+      <path d={circle(c.x, c.y, r)} fill={HOUSE.aura} opacity={0.32} />
+      <path d={circle(c.x, c.y, r * 0.76)} fill={HOUSE.aura} opacity={0.5} />
+      <path d={join(...ring.map((p, i) => star(p.x, p.y, i % 2 ? 4.2 : 6.4, 1.1)))} fill={HOUSE.auraRing} />
     </g>
   )
 }

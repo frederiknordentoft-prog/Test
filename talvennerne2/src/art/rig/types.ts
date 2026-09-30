@@ -277,6 +277,11 @@ export interface SpeciesParts {
 export interface EarRig {
   /** Rotation udad i grader (venstre øre roteres −splay, højre +splay). */
   splay: number
+  /**
+   * Klip ørerne til "uden for hovedet" (standard true): øret tegnes med fuld kontur, og roden
+   * forsvinder sømløst i hovedet. Hængeører (vædder) der ligger foran hovedet, sætter false.
+   */
+  clip?: boolean
 }
 
 export interface BreedDef {
@@ -370,6 +375,11 @@ export interface ItemArtProps {
   body: BodyKind
   earMode: EarMode
   ids: RigIds
+  /**
+   * Kropstøj (fit-regel 3): bærerens kropskontur tegnet igen i genstandens konturfarve, allerede
+   * transformeret til genstandens lokale ramme. Genstanden klipper den selv til sit eget område.
+   */
+  restroke: (color?: string) => ReactNode
 }
 export type ItemArt = (p: ItemArtProps) => ReactNode
 

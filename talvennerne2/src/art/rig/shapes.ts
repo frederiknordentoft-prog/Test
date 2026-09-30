@@ -256,6 +256,15 @@ export function dMouth(cx: number, top: number, w: number, depth: number, lip = 
   )
 }
 
+/** Dråbe med spids opad (svedperle). r er den runde bunds radius. */
+export function drop(cx: number, cy: number, r: number): string {
+  return (
+    `M${p([cx, cy - 1.9 * r])}C${p([cx + 0.35 * r, cy - 1.25 * r])} ${p([cx + r, cy - 0.6 * r])} ${p([cx + r, cy + 0.1 * r])}` +
+    `A${n(r)} ${n(r)} 0 0 1 ${p([cx - r, cy + 0.1 * r])}` +
+    `C${p([cx - r, cy - 0.6 * r])} ${p([cx - 0.35 * r, cy - 1.25 * r])} ${p([cx, cy - 1.9 * r])}Z`
+  )
+}
+
 /** Z-form (søvn) af rette streger. */
 export function zee(cx: number, cy: number, s: number): string {
   return poly(
@@ -286,6 +295,62 @@ export const join = (...ds: (string | false | null | undefined)[]) => ds.filter(
 
 /** Stor firkant med et hul (evenodd): bruges til cel-skygge, der klippes til en krop. */
 export const outside = (hole: string, box = 400) => `${rect(-box, -box, box * 2, box * 2)}${hole}`
+
+/**
+ * Cel-skygge uden klip: tegn formen i skyggefarven og læg denne "lyse kopi" ovenpå – formen krympet
+ * mod lyspunktet (øverst til venstre). For konvekse former ligger kopien altid inden i originalen,
+ * så skyggen bliver en halvmåne, tykkest nederst til højre.
+ */
+export function litCopy(pts: readonly Vec[], light: Vec, k = 0.9): Vec[] {
+  return xf(pts, { sx: k, about: light })
+}
+
+/**
+ * Bånd mellem to vandrette kurver (fx en strikket kant), afgrænset af x0..x1. `sag` er hvor meget
+ * midten hænger ned; underkanten kan hænge mere (`sagBottom`), fx en krave der spidser til.
+ */
+export function band(x0: number, x1: number, top: number, bottom: number, sag = 0, sagBottom = sag): string {
+  const mx = (x0 + x1) / 2
+  return (
+    `M${p([x0, top])}Q${p([mx, top + sag * 2])} ${p([x1, top])}` +
+    `L${p([x1, bottom])}Q${p([mx, bottom + sagBottom * 2])} ${p([x0, bottom])}Z`
+  )
+}
+
+/**
+ * Blødt bånd med afrundede ender (hueombuk, pandebånd): to parabler (top/bund) der følger
+ * hovedets rundning, lukket med runde ender.
+ */
+export function softBand(x0: number, x1: number, top: number, bottom: number, sag = 0, sagBottom = sag): string {
+  const mx = (x0 + x1) / 2
+  const half = (x1 - x0) / 2
+  const k = 4
+  const at = (t: number, y: number, s: number): Vec => {
+    const x = mx + half * t
+    return [x, y + s * (1 - t * t)]
+  }
+  const topPts: Vec[] = []
+  const botPts: Vec[] = []
+  for (let i = -k; i <= k; i++) topPts.push(at(i / k, top, sag))
+  for (let i = k; i >= -k; i--) botPts.push(at(i / k, bottom, sagBottom))
+  const r = (bottom - top) / 2
+  const endR: Vec = [x1 + r * 0.55, (top + bottom) / 2]
+  const endL: Vec = [x0 - r * 0.55, (top + bottom) / 2]
+  return blob([...topPts, endR, ...botPts, endL], 0.85)
+}
+
+/** Korte lodrette streger (ribkant, strik) som én path. */
+export function ribs(x0: number, x1: number, top: number, bottom: number, count: number, sag = 0): string {
+  const mx = (x0 + x1) / 2
+  const half = (x1 - x0) / 2
+  let d = ''
+  for (let i = 1; i < count; i++) {
+    const x = x0 + ((x1 - x0) * i) / count
+    const t = 1 - ((x - mx) / half) ** 2
+    d += `M${p([x, top + sag * t])}L${p([x, bottom + sag * t])}`
+  }
+  return d
+}
 
 /** Transform-streng: translate → rotate → scale (SVG-rækkefølge). */
 export function tf(o: { x?: number; y?: number; rot?: number; sx?: number; sy?: number }): string | undefined {

@@ -22,7 +22,10 @@ export const HOUSE = {
   iris: '#8663C7',
   sparkle: '#FFF3B0',
   aura: '#FFE9A8',
+  auraRing: '#FFD66B',
   thought: '#FFFFFF',
+  sweat: '#A9DEFF',
+  sweatLine: '#4A8BC2',
 } as const
 
 /** Cel-højlys: hvid med 40 % alfa. */
