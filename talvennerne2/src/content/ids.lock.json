@@ -1,0 +1,1153 @@
+{
+  "domains": [
+    "number",
+    "place",
+    "addsub",
+    "muldiv",
+    "algebra",
+    "fractions",
+    "shapes",
+    "clock",
+    "money",
+    "measure"
+  ],
+  "skills": {
+    "count10": {
+      "domain": "number",
+      "families": [
+        "scatter",
+        "flash"
+      ]
+    },
+    "count20": {
+      "domain": "number",
+      "families": [
+        "tenframe",
+        "loose"
+      ]
+    },
+    "hear20": {
+      "domain": "number",
+      "families": [
+        "small",
+        "teens"
+      ]
+    },
+    "order20": {
+      "domain": "number",
+      "families": [
+        "after",
+        "before",
+        "between",
+        "bigger"
+      ]
+    },
+    "hear100": {
+      "domain": "number",
+      "families": [
+        "d2x",
+        "d3x",
+        "d4x",
+        "d5x",
+        "d6x",
+        "d7x",
+        "d8x",
+        "d9x"
+      ]
+    },
+    "order100": {
+      "domain": "number",
+      "families": [
+        "plus1",
+        "minus1",
+        "plus10",
+        "minus10",
+        "crossTen",
+        "biggerDiffTens",
+        "biggerSwapped"
+      ]
+    },
+    "numberLine100": {
+      "domain": "number",
+      "families": [
+        "placeTens",
+        "placeAny",
+        "readArrow"
+      ]
+    },
+    "hear1000": {
+      "domain": "number",
+      "families": [
+        "hundreds",
+        "h0o",
+        "hTeen",
+        "hT0",
+        "hTO"
+      ]
+    },
+    "order1000": {
+      "domain": "number",
+      "families": [
+        "plus1",
+        "plus10",
+        "plus100",
+        "minus1",
+        "minus10",
+        "minus100",
+        "crossHundred",
+        "bigger3",
+        "biggerMixed"
+      ]
+    },
+    "numberLine1000": {
+      "domain": "number",
+      "families": [
+        "placeHundreds",
+        "placeAny",
+        "round10",
+        "round100"
+      ]
+    },
+    "tensOnes": {
+      "domain": "place",
+      "families": [
+        "build",
+        "decompose",
+        "swapped",
+        "expand"
+      ]
+    },
+    "placeValue1000": {
+      "domain": "place",
+      "families": [
+        "buildHTO",
+        "zeroPlace",
+        "digitValue",
+        "expand",
+        "regroup"
+      ]
+    },
+    "addTo10": {
+      "domain": "addsub",
+      "families": [
+        "small",
+        "big"
+      ]
+    },
+    "subTo10": {
+      "domain": "addsub",
+      "families": [
+        "small",
+        "big"
+      ]
+    },
+    "tenFriends": {
+      "domain": "addsub",
+      "families": [
+        "pairs"
+      ]
+    },
+    "doubles": {
+      "domain": "addsub",
+      "families": [
+        "to5",
+        "to10"
+      ]
+    },
+    "halves": {
+      "domain": "addsub",
+      "families": [
+        "to10",
+        "to20"
+      ]
+    },
+    "addSub20Simple": {
+      "domain": "addsub",
+      "families": [
+        "addTeen",
+        "subTeen",
+        "tenPlus"
+      ]
+    },
+    "addTo20": {
+      "domain": "addsub",
+      "families": [
+        "bridge10"
+      ]
+    },
+    "subTo20": {
+      "domain": "addsub",
+      "families": [
+        "bridge10"
+      ]
+    },
+    "tens100": {
+      "domain": "addsub",
+      "families": [
+        "addTens",
+        "subTens"
+      ]
+    },
+    "add100NoCarry": {
+      "domain": "addsub",
+      "families": [
+        "TOplusO",
+        "TOplusT0",
+        "TOplusTO"
+      ]
+    },
+    "sub100NoBorrow": {
+      "domain": "addsub",
+      "families": [
+        "TOminusO",
+        "TOminusT0",
+        "TOminusTO"
+      ]
+    },
+    "add100Carry": {
+      "domain": "addsub",
+      "families": [
+        "toNextTen",
+        "TOplusOcarry",
+        "TOplusTOcarry",
+        "nearTen",
+        "TOplusTOover100"
+      ]
+    },
+    "sub100Borrow": {
+      "domain": "addsub",
+      "families": [
+        "fromTen",
+        "TOminusOborrow",
+        "TOminusTOborrow",
+        "nearTen"
+      ]
+    },
+    "addSub1000Round": {
+      "domain": "addsub",
+      "families": [
+        "HplusH",
+        "HminusH",
+        "HTplusT",
+        "HTminusT",
+        "HplusTO",
+        "HTplusTcarry"
+      ]
+    },
+    "add1000": {
+      "domain": "addsub",
+      "families": [
+        "HTOplusOcarry",
+        "HTOplusTO",
+        "HTOplusTOcarry1",
+        "HTOplusTOcarry10",
+        "HTOplusHTO",
+        "HTOplusHTOcarry"
+      ]
+    },
+    "sub1000": {
+      "domain": "addsub",
+      "families": [
+        "HTOminusOborrow",
+        "HTOminusTO",
+        "HTOminusTOborrow",
+        "HTOminusHTO",
+        "HTOminusHTOborrow",
+        "acrossZero"
+      ]
+    },
+    "groupsOf": {
+      "domain": "muldiv",
+      "families": [
+        "groups"
+      ]
+    },
+    "mul2510": {
+      "domain": "muldiv",
+      "families": [
+        "t2",
+        "t5",
+        "t10"
+      ]
+    },
+    "shareEqually": {
+      "domain": "muldiv",
+      "families": [
+        "share"
+      ]
+    },
+    "mul34": {
+      "domain": "muldiv",
+      "families": [
+        "t3",
+        "t4"
+      ]
+    },
+    "mul6to9": {
+      "domain": "muldiv",
+      "families": [
+        "t6",
+        "t7",
+        "t8",
+        "t9"
+      ]
+    },
+    "div2510": {
+      "domain": "muldiv",
+      "families": [
+        "d2",
+        "d5",
+        "d10"
+      ]
+    },
+    "divAll": {
+      "domain": "muldiv",
+      "families": [
+        "d3",
+        "d4",
+        "d6",
+        "d7",
+        "d8",
+        "d9"
+      ]
+    },
+    "mulTens": {
+      "domain": "muldiv",
+      "families": [
+        "oneDigitTimesTens",
+        "tensTimesOneDigit"
+      ]
+    },
+    "patterns": {
+      "domain": "algebra",
+      "families": [
+        "AB",
+        "AAB",
+        "ABB",
+        "ABC",
+        "growing"
+      ]
+    },
+    "missingPart10": {
+      "domain": "algebra",
+      "families": [
+        "missing"
+      ]
+    },
+    "skipCount": {
+      "domain": "algebra",
+      "families": [
+        "step2",
+        "step5",
+        "step10",
+        "step10offset",
+        "back10",
+        "step100",
+        "step25"
+      ]
+    },
+    "missingPart100": {
+      "domain": "algebra",
+      "families": [
+        "addendCross20",
+        "toHundred",
+        "subtrahend",
+        "minuend"
+      ]
+    },
+    "inverseOps": {
+      "domain": "algebra",
+      "families": [
+        "addToSub",
+        "subToAdd",
+        "mulToDiv"
+      ]
+    },
+    "equalSides": {
+      "domain": "algebra",
+      "families": [
+        "trueFalse",
+        "balanceAdd",
+        "balanceSub",
+        "balanceMixed"
+      ]
+    },
+    "shapes2D": {
+      "domain": "shapes",
+      "families": [
+        "basic",
+        "squareRect",
+        "polygons"
+      ]
+    },
+    "sidesCorners": {
+      "domain": "shapes",
+      "families": [
+        "sides",
+        "corners"
+      ]
+    },
+    "shapes3D": {
+      "domain": "shapes",
+      "families": [
+        "names",
+        "props"
+      ]
+    },
+    "sortShapes": {
+      "domain": "shapes",
+      "families": [
+        "threeCorners",
+        "fourCorners",
+        "noCorners",
+        "fourEqualSides",
+        "rightAngle"
+      ]
+    },
+    "symmetry": {
+      "domain": "shapes",
+      "families": [
+        "isSymLine",
+        "mirrorGrid"
+      ]
+    },
+    "composeShapes": {
+      "domain": "shapes",
+      "families": [
+        "compose"
+      ]
+    },
+    "area": {
+      "domain": "shapes",
+      "families": [
+        "countSquares",
+        "rowsCols",
+        "lShape",
+        "compareArea"
+      ]
+    },
+    "gridCoords": {
+      "domain": "shapes",
+      "families": [
+        "readPoint",
+        "placePoint"
+      ]
+    },
+    "clockHour": {
+      "domain": "clock",
+      "families": [
+        "hour"
+      ]
+    },
+    "clockHalf": {
+      "domain": "clock",
+      "families": [
+        "half"
+      ]
+    },
+    "clockQuarter": {
+      "domain": "clock",
+      "families": [
+        "quarterPast",
+        "quarterTo"
+      ]
+    },
+    "clockFive": {
+      "domain": "clock",
+      "families": [
+        "over",
+        "iHalv",
+        "overHalv",
+        "i",
+        "halfForm"
+      ]
+    },
+    "clockDigital": {
+      "domain": "clock",
+      "families": [
+        "analogToDigital",
+        "digital24"
+      ]
+    },
+    "clockElapsed": {
+      "domain": "clock",
+      "families": [
+        "plusHour",
+        "plusHalf",
+        "plusQuarter",
+        "minusHalf"
+      ]
+    },
+    "coinNames": {
+      "domain": "money",
+      "families": [
+        "coins",
+        "notes"
+      ]
+    },
+    "countCoins": {
+      "domain": "money",
+      "families": [
+        "sameCoins",
+        "mixedTo20",
+        "mixedTo100",
+        "biggestFirst"
+      ]
+    },
+    "payExact": {
+      "domain": "money",
+      "families": [
+        "to20",
+        "to50",
+        "to100",
+        "fewestCoins"
+      ]
+    },
+    "change": {
+      "domain": "money",
+      "families": [
+        "from10",
+        "from20",
+        "from50",
+        "from100"
+      ]
+    },
+    "kronerOre": {
+      "domain": "money",
+      "families": [
+        "readAmount",
+        "fiftiesInKroner",
+        "addHalves"
+      ]
+    },
+    "compareLength": {
+      "domain": "measure",
+      "families": [
+        "aligned",
+        "offset"
+      ]
+    },
+    "weightCompare": {
+      "domain": "measure",
+      "families": [
+        "congruent",
+        "conflict"
+      ]
+    },
+    "measureUnits": {
+      "domain": "measure",
+      "families": [
+        "cubes",
+        "clips"
+      ]
+    },
+    "rulerRead": {
+      "domain": "measure",
+      "families": [
+        "from0",
+        "offset"
+      ]
+    },
+    "unitChoice": {
+      "domain": "measure",
+      "families": [
+        "length",
+        "weight"
+      ]
+    },
+    "readChart": {
+      "domain": "measure",
+      "families": [
+        "readPicto",
+        "readBar",
+        "mostLeast",
+        "difference"
+      ]
+    },
+    "convertCmM": {
+      "domain": "measure",
+      "families": [
+        "mToCm",
+        "mCmToCm",
+        "cmToMCm",
+        "compareMixed"
+      ]
+    },
+    "halfShape": {
+      "domain": "fractions",
+      "families": [
+        "equal",
+        "unequal"
+      ]
+    },
+    "fractionShape": {
+      "domain": "fractions",
+      "families": [
+        "basic",
+        "nonUnit"
+      ]
+    },
+    "fractionOfSet": {
+      "domain": "fractions",
+      "families": [
+        "halfOf",
+        "quarterOf",
+        "thirdOf",
+        "threeQuartersOf"
+      ]
+    },
+    "fractionCompare": {
+      "domain": "fractions",
+      "families": [
+        "pairBigger",
+        "pairSmaller",
+        "order4"
+      ]
+    }
+  },
+  "kinds": [
+    "choice",
+    "keypad",
+    "countTap",
+    "pair",
+    "numberline",
+    "trueFalse",
+    "sortOrder",
+    "multiSelect",
+    "fillSlots",
+    "buildBase",
+    "clockSet",
+    "pay",
+    "share",
+    "colorParts",
+    "grid"
+  ],
+  "reservedKinds": [
+    "rulerDraw"
+  ],
+  "misconceptions": [
+    "concatNumberWords",
+    "zeroPlaceholder",
+    "faceValue",
+    "addsPlaceParts",
+    "forgotCarry",
+    "smallerFromLarger",
+    "borrowNoDecrement",
+    "placeMisalign",
+    "mulAsAdd",
+    "equalsAsAnswer",
+    "halfPastNext",
+    "quarterDirection",
+    "handsSwapped",
+    "firstDigitCompare",
+    "coinsAsCount",
+    "rulerEnd",
+    "lengthByEnd",
+    "sizeIsWeight",
+    "unequalParts",
+    "prototypeOnly",
+    "biggerDenominator",
+    "denominatorAsAnswer",
+    "areaAsPerimeter",
+    "tensZero",
+    "digitComplement10",
+    "digitSwap",
+    "tableNeighbour",
+    "countFromFirst",
+    "hourHandMisread",
+    "skipStepOne",
+    "wrongOperation"
+  ],
+  "worlds": [
+    "eng",
+    "bakke",
+    "skov",
+    "fjeld"
+  ],
+  "chains": [
+    "tal",
+    "figurer",
+    "klokken",
+    "pengeMaal"
+  ],
+  "regions": [
+    "w0-tal10",
+    "w0-former",
+    "w0-plus10",
+    "w0-tal20",
+    "w0-minus10",
+    "w0-tiervenner",
+    "w1-tal100",
+    "w1-dobbelt",
+    "w1-tieren",
+    "w1-figurer",
+    "w1-klokken",
+    "w1-tiere",
+    "w1-maal-penge",
+    "w2-tal1000",
+    "w2-veksling",
+    "w2-gange",
+    "w2-klokken",
+    "w2-penge",
+    "w2-hundreder",
+    "w2-maal-data",
+    "w2-figurer",
+    "w3-tabellen",
+    "w3-store-tal",
+    "w3-klokken",
+    "w3-division",
+    "w3-penge-maal",
+    "w3-areal",
+    "w3-broeker"
+  ],
+  "nodes": [
+    "w0-tal10-l1",
+    "w0-tal10-l2",
+    "w0-tal10-friend",
+    "w0-tal10-l3",
+    "w0-tal10-mix",
+    "w0-tal10-trial",
+    "w0-former-l1",
+    "w0-former-l2",
+    "w0-former-chest",
+    "w0-former-l3",
+    "w0-former-mix",
+    "w0-former-trial",
+    "w0-plus10-l1",
+    "w0-plus10-l2",
+    "w0-plus10-friend",
+    "w0-plus10-l3",
+    "w0-plus10-mix",
+    "w0-plus10-trial",
+    "w0-tal20-l1",
+    "w0-tal20-l2",
+    "w0-tal20-chest",
+    "w0-tal20-l3",
+    "w0-tal20-mix",
+    "w0-tal20-trial",
+    "w0-minus10-l1",
+    "w0-minus10-l2",
+    "w0-minus10-friend",
+    "w0-minus10-l3",
+    "w0-minus10-mix",
+    "w0-minus10-trial",
+    "w0-tiervenner-l1",
+    "w0-tiervenner-l2",
+    "w0-tiervenner-friend",
+    "w0-tiervenner-l3",
+    "w0-tiervenner-mix",
+    "w0-tiervenner-trial",
+    "eng-finale",
+    "w1-tal100-l1",
+    "w1-tal100-l2",
+    "w1-tal100-friend",
+    "w1-tal100-l3",
+    "w1-tal100-mix",
+    "w1-tal100-trial",
+    "w1-dobbelt-l1",
+    "w1-dobbelt-l2",
+    "w1-dobbelt-chest",
+    "w1-dobbelt-l3",
+    "w1-dobbelt-mix",
+    "w1-dobbelt-trial",
+    "w1-tieren-l1",
+    "w1-tieren-l2",
+    "w1-tieren-friend",
+    "w1-tieren-l3",
+    "w1-tieren-mix",
+    "w1-tieren-trial",
+    "w1-figurer-l1",
+    "w1-figurer-l2",
+    "w1-figurer-chest",
+    "w1-figurer-l3",
+    "w1-figurer-mix",
+    "w1-figurer-trial",
+    "w1-klokken-l1",
+    "w1-klokken-l2",
+    "w1-klokken-friend",
+    "w1-klokken-l3",
+    "w1-klokken-mix",
+    "w1-klokken-trial",
+    "w1-tiere-l1",
+    "w1-tiere-l2",
+    "w1-tiere-chest",
+    "w1-tiere-l3",
+    "w1-tiere-mix",
+    "w1-tiere-trial",
+    "w1-maal-penge-l1",
+    "w1-maal-penge-l2",
+    "w1-maal-penge-friend",
+    "w1-maal-penge-l3",
+    "w1-maal-penge-mix",
+    "w1-maal-penge-trial",
+    "bakke-finale",
+    "w2-tal1000-l1",
+    "w2-tal1000-l2",
+    "w2-tal1000-friend",
+    "w2-tal1000-l3",
+    "w2-tal1000-mix",
+    "w2-tal1000-trial",
+    "w2-veksling-l1",
+    "w2-veksling-l2",
+    "w2-veksling-chest",
+    "w2-veksling-l3",
+    "w2-veksling-mix",
+    "w2-veksling-trial",
+    "w2-gange-l1",
+    "w2-gange-l2",
+    "w2-gange-friend",
+    "w2-gange-l3",
+    "w2-gange-mix",
+    "w2-gange-trial",
+    "w2-klokken-l1",
+    "w2-klokken-l2",
+    "w2-klokken-chest",
+    "w2-klokken-l3",
+    "w2-klokken-mix",
+    "w2-klokken-trial",
+    "w2-penge-l1",
+    "w2-penge-l2",
+    "w2-penge-friend",
+    "w2-penge-l3",
+    "w2-penge-mix",
+    "w2-penge-trial",
+    "w2-hundreder-l1",
+    "w2-hundreder-l2",
+    "w2-hundreder-chest",
+    "w2-hundreder-l3",
+    "w2-hundreder-mix",
+    "w2-hundreder-trial",
+    "w2-maal-data-l1",
+    "w2-maal-data-l2",
+    "w2-maal-data-friend",
+    "w2-maal-data-l3",
+    "w2-maal-data-mix",
+    "w2-maal-data-trial",
+    "w2-figurer-l1",
+    "w2-figurer-l2",
+    "w2-figurer-chest",
+    "w2-figurer-l3",
+    "w2-figurer-mix",
+    "w2-figurer-trial",
+    "skov-finale",
+    "w3-tabellen-l1",
+    "w3-tabellen-l2",
+    "w3-tabellen-friend",
+    "w3-tabellen-l3",
+    "w3-tabellen-mix",
+    "w3-tabellen-trial",
+    "w3-store-tal-l1",
+    "w3-store-tal-l2",
+    "w3-store-tal-chest",
+    "w3-store-tal-l3",
+    "w3-store-tal-mix",
+    "w3-store-tal-trial",
+    "w3-klokken-l1",
+    "w3-klokken-l2",
+    "w3-klokken-friend",
+    "w3-klokken-l3",
+    "w3-klokken-mix",
+    "w3-klokken-trial",
+    "w3-division-l1",
+    "w3-division-l2",
+    "w3-division-chest",
+    "w3-division-l3",
+    "w3-division-mix",
+    "w3-division-trial",
+    "w3-penge-maal-l1",
+    "w3-penge-maal-l2",
+    "w3-penge-maal-friend",
+    "w3-penge-maal-l3",
+    "w3-penge-maal-mix",
+    "w3-penge-maal-trial",
+    "w3-areal-l1",
+    "w3-areal-l2",
+    "w3-areal-chest",
+    "w3-areal-l3",
+    "w3-areal-mix",
+    "w3-areal-trial",
+    "w3-broeker-l1",
+    "w3-broeker-l2",
+    "w3-broeker-friend",
+    "w3-broeker-l3",
+    "w3-broeker-mix",
+    "w3-broeker-trial",
+    "fjeld-finale"
+  ],
+  "species": [
+    "rabbit",
+    "cat",
+    "puppy",
+    "hedgehog",
+    "horse",
+    "lamb",
+    "fox",
+    "hamster",
+    "unicorn",
+    "panda",
+    "squirrel",
+    "owl",
+    "pegasus",
+    "dragon",
+    "penguin",
+    "polarbear"
+  ],
+  "breeds": {
+    "rabbit": [
+      "upright",
+      "lop",
+      "lionhead"
+    ],
+    "cat": [
+      "domestic",
+      "longhair",
+      "mainecoon"
+    ],
+    "puppy": [
+      "std"
+    ],
+    "hedgehog": [
+      "std"
+    ],
+    "horse": [
+      "shetland",
+      "fjord",
+      "arabian"
+    ],
+    "lamb": [
+      "std"
+    ],
+    "fox": [
+      "std"
+    ],
+    "hamster": [
+      "std"
+    ],
+    "unicorn": [
+      "foal",
+      "wavy",
+      "starhorn"
+    ],
+    "panda": [
+      "std"
+    ],
+    "squirrel": [
+      "std"
+    ],
+    "owl": [
+      "std"
+    ],
+    "pegasus": [
+      "std"
+    ],
+    "dragon": [
+      "std"
+    ],
+    "penguin": [
+      "std"
+    ],
+    "polarbear": [
+      "std"
+    ]
+  },
+  "colorways": [
+    "c1",
+    "c2",
+    "c3",
+    "c4",
+    "c5",
+    "c6",
+    "gold",
+    "rainbow",
+    "starwhite"
+  ],
+  "moods": [
+    "idle",
+    "happy",
+    "cheer",
+    "think",
+    "oops",
+    "sleep",
+    "wave"
+  ],
+  "slots": [
+    "head",
+    "face",
+    "neck",
+    "body",
+    "back",
+    "hand"
+  ],
+  "sets": [
+    "hverdag",
+    "opdager",
+    "rytter",
+    "kongelig",
+    "astronaut",
+    "ridder",
+    "talmagiker",
+    "pirat",
+    "fodbold",
+    "vinter",
+    "fest"
+  ],
+  "items": [
+    "hverdag-head",
+    "hverdag-face",
+    "hverdag-neck",
+    "hverdag-body",
+    "hverdag-back",
+    "hverdag-hand",
+    "opdager-head",
+    "opdager-face",
+    "opdager-neck",
+    "opdager-body",
+    "opdager-back",
+    "opdager-hand",
+    "rytter-head",
+    "rytter-face",
+    "rytter-neck",
+    "rytter-body",
+    "rytter-back",
+    "rytter-hand",
+    "kongelig-head",
+    "kongelig-face",
+    "kongelig-neck",
+    "kongelig-body",
+    "kongelig-back",
+    "kongelig-hand",
+    "astronaut-head",
+    "astronaut-face",
+    "astronaut-neck",
+    "astronaut-body",
+    "astronaut-back",
+    "astronaut-hand",
+    "ridder-head",
+    "ridder-face",
+    "ridder-neck",
+    "ridder-body",
+    "ridder-back",
+    "ridder-hand",
+    "talmagiker-head",
+    "talmagiker-face",
+    "talmagiker-neck",
+    "talmagiker-body",
+    "talmagiker-back",
+    "talmagiker-hand",
+    "pirat-head",
+    "pirat-face",
+    "pirat-neck",
+    "pirat-body",
+    "pirat-back",
+    "pirat-hand",
+    "fodbold-head",
+    "fodbold-face",
+    "fodbold-neck",
+    "fodbold-body",
+    "fodbold-back",
+    "fodbold-hand",
+    "vinter-head",
+    "vinter-face",
+    "vinter-neck",
+    "vinter-body",
+    "vinter-back",
+    "vinter-hand",
+    "fest-head",
+    "fest-face",
+    "fest-neck",
+    "fest-body",
+    "fest-back",
+    "fest-hand",
+    "milepael-hjertebriller",
+    "milepael-regnbuehue",
+    "milepael-kappe",
+    "milepael-medalje",
+    "milepael-glimmerbluse",
+    "milepael-slikkepind",
+    "milepael-fevinger",
+    "milepael-krone"
+  ],
+  "decor": [
+    "pynt-baenk",
+    "pynt-blomsterbed",
+    "pynt-lygte",
+    "pynt-dam",
+    "pynt-gynge",
+    "pynt-traehus",
+    "pynt-springvand",
+    "pynt-regnbuebue"
+  ],
+  "trophies": [
+    "days-3",
+    "days-7",
+    "days-14",
+    "days-30",
+    "days-100",
+    "set-hverdag",
+    "set-opdager",
+    "set-rytter",
+    "set-kongelig",
+    "set-astronaut",
+    "set-ridder",
+    "set-talmagiker",
+    "set-pirat",
+    "set-fodbold",
+    "set-vinter",
+    "set-fest",
+    "world-eng",
+    "world-bakke",
+    "world-skov",
+    "world-fjeld",
+    "trials-10",
+    "first-gold",
+    "gold-10",
+    "keys5-100",
+    "keys5-500",
+    "perfect-round",
+    "trial-perfect",
+    "table-complete",
+    "animals-5",
+    "animals-15",
+    "animals-30",
+    "first-star-form",
+    "all-species",
+    "first-rainbow"
+  ],
+  "frameColors": [
+    "coral",
+    "sun",
+    "leaf",
+    "sky",
+    "grape",
+    "rose"
+  ],
+  "clipPatterns": [
+    "n.mid.<0-100|1000>",
+    "n.end.<0-100|1000>",
+    "n.mid.1.et",
+    "n.end.1.et",
+    "h.mid.<100-900>",
+    "h.end.<100-900>",
+    "hog.<100-900>",
+    "t.end.<minutes>",
+    "t.half.<minutes>",
+    "t.part.<morgen|eftermiddag|aften|…>",
+    "op.<name>",
+    "frag.<name>",
+    "noun.<name>",
+    "q.<factId>",
+    "s.<name>",
+    "hint.<name>",
+    "name.species.<id>",
+    "name.baby.<id>",
+    "name.breed.<id>",
+    "name.color.<species>.<c1-c6|gold|rainbow|starwhite>",
+    "name.item.<itemId>",
+    "name.set.<setId>",
+    "name.region.<regionId>",
+    "name.world.<worldId>",
+    "name.animal.<species>.<n>",
+    "name.trophy.<trophyId>",
+    "name.decor.<decorId>"
+  ]
+}
