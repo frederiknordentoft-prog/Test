@@ -1,5 +1,6 @@
-import type { KeyState, MasteryKey, Rng, SkillId, Task, TaskKind } from './types'
+import type { KeyState, MasteryKey, MisconceptionId, Rng, SkillId, Task, TaskKind } from './types'
 import { isDue } from './mastery'
+import type { Operation } from './tasks'
 
 /**
  * Round composition, ported from V1 (SPEC §5.4 extends it with review, targeted and new-key caps).
@@ -21,7 +22,19 @@ export interface KeyOption {
   kinds: readonly TaskKind[]
   /** The kinds among `kinds` that count as production for this skill. */
   production: readonly TaskKind[]
-  build(kind: TaskKind, rng: Rng, occurrence: number): Task
+  build(kind: TaskKind, rng: Rng, occurrence: number, extra?: BuildExtra): Task
+  family?: string
+  /** Misconceptions this key's tasks can reveal (the targeted slot looks for flagged ones). */
+  detectable?: readonly MisconceptionId[]
+  /** Arithmetic operation, for "at most three in a row" in mixed nodes. */
+  op?: Operation | null
+  /** The region only uses this skill for review: never introduced as new here. */
+  reviewOnly?: boolean
+}
+
+export interface BuildExtra {
+  /** Targeted slot: show the flagged misconception's candidate as the diagnostic card. */
+  target?: readonly MisconceptionId[]
 }
 
 export interface RoundOptions {
