@@ -50,11 +50,13 @@ export const arr = (c: Check, o: { max?: number; len?: number } = {}): Check => 
   for (let i = 0; i < v.length && e.length < MAX_ERRORS; i++) c(v[i], `${p}[${i}]`, e)
 }
 
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
 export const rec = (c: Check, key?: (k: string) => boolean): Check => (v, p, e) => {
   if (!isObj(v)) return fail(e, p, 'skal være et objekt')
   for (const [k, x] of Object.entries(v)) {
     if (e.length >= MAX_ERRORS) return
-    if (key && !key(k)) {
+    if (UNSAFE_KEYS.has(k) || (key && !key(k))) {
       fail(e, `${p}.${k}`, 'ukendt nøgle')
       continue
     }

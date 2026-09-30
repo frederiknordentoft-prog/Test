@@ -9,6 +9,7 @@ import { MAX_PROFILES } from '../content/catalog'
 import type { AnswerLogEntry, DailyAggregate, FrameColor, ProfileDoc, ProfileId } from '../engine/types'
 import { DAY_MAX, DAY_MIN, TS_MAX, TS_MIN, getDb } from './db'
 import { newId } from './ids'
+import { ANSWER_MAX_ROWS, DAILY_MAX_AGE_DAYS } from './prune'
 import { withoutSeq } from './repo/answers'
 import { ProfileLimitError, ProfileNotFoundError, freeFrameColors, requestPersistentStorage, withProfileDefaults } from './repo/profiles'
 import { answerLogEntry, dailyAggregate, isObj, profileDoc, type Check } from './validate'
@@ -17,6 +18,8 @@ export const EXPORT_FORMAT = 'talvennerne2-export'
 /** Bump with a migrate step and a new test/fixtures/export-vN.json; every older fixture must keep importing. */
 export const EXPORT_VERSION = 1
 export const EXPORT_ANSWER_DAYS = 30
+/** Sanity limits for a file from outside: 3 years of days, and the answer log's own cap. */
+const MAX_IMPORT_DAYS = DAILY_MAX_AGE_DAYS + 31
 
 const DAY_MS = 86_400_000
 
@@ -172,7 +175,9 @@ export function validateExport(raw: unknown): ValidationResult {
     }
     check(profileDoc, p.doc, `${at}.doc`, errs)
     if (!Array.isArray(p.daily)) errs.push(`${at}.daily: skal være en liste`)
+    else if (p.daily.length > MAX_IMPORT_DAYS) errs.push(`${at}.daily: har for mange dage`)
     if (!Array.isArray(p.answers)) errs.push(`${at}.answers: skal være en liste`)
+    else if (p.answers.length > ANSWER_MAX_ROWS) errs.push(`${at}.answers: har for mange svar`)
     if (errs.length > 0 || !isObj(p.doc) || !Array.isArray(p.daily) || !Array.isArray(p.answers)) return
     const id = p.doc.id
     const days = new Set<string>()

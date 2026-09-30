@@ -186,6 +186,8 @@ describe('the validator', () => {
       ['answers[2].ms', (f) => (f.profiles[0].answers[2].ms = Number.NaN)],
       ['daily[0].bySkill.addTo10.msHist', (f) => (f.profiles[0].daily[0].bySkill.addTo10!.msHist = [1, 2] as never)],
       ['daily[1].day', (f) => (f.profiles[0].daily[1].day = f.profiles[0].daily[0].day)],
+      ['doc.keys.__proto__', (f) => Object.defineProperty(f.profiles[0].doc.keys, '__proto__', { value: { box: 1 }, enumerable: true })],
+      ['answers: har for mange svar', (f) => (f.profiles[0].answers = Array(20_001).fill(f.profiles[0].answers[0]))],
     ]
     for (const [path, mutate] of cases) {
       const r = bad(mutate)
