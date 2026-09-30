@@ -133,6 +133,32 @@ describe('the write path', () => {
     expect((await getDb().daily.get([profile.id, DAY]))?.answers).toBe(2)
   })
 
+  it('keeps one waiting batch while writes fail, and can drop it for good', async () => {
+    useRound.getState().start(plan(), roundHooks({ now: () => clock }))
+    await state().flush()
+    const put = vi.spyOn(getDb().daily, 'put').mockImplementation(() => Promise.reject(new Error('disk full')) as never)
+    for (let i = 0; i < 5; i++) {
+      answer(true)
+      await state().flush()
+      expect(pendingWrites()).toBe(1)
+    }
+    put.mockRestore()
+    await state().flush()
+    expect(await answersOf()).toHaveLength(5)
+    expect((await getDb().daily.get([profile.id, DAY]))?.answers).toBe(5)
+
+    // discarding (profile deleted or replaced by an import) also drops a failed write
+    const put2 = vi.spyOn(getDb().daily, 'put').mockImplementation(() => Promise.reject(new Error('disk full')) as never)
+    answer(true)
+    await state().flush()
+    expect(pendingWrites()).toBe(1)
+    await state().unload({ discard: true })
+    expect(pendingWrites()).toBe(0)
+    put2.mockRestore()
+    await state().flush()
+    expect(await answersOf()).toHaveLength(5)
+  })
+
   it('gives the same task 5 after a reload right after answer 4', async () => {
     useRound.getState().start(plan(), roundHooks({ now: () => clock }))
     for (let i = 0; i < 3; i++) answer(true)

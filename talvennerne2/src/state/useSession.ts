@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { buildExport, importProfile as storeImport, type ExportFile, type ExportProfile, type ImportTarget } from '../data/export'
+// export/import (and its validator) is only needed by the parent dashboard: loaded on demand
+import type { ExportFile, ExportProfile, ImportTarget } from '../data/export'
 import { newId } from '../data/ids'
 import { DEFAULT_DEVICE, readBoot, writeBoot, type DeviceSettings } from '../data/namespace'
 import { schedulePrune } from '../data/prune'
@@ -16,8 +17,8 @@ import { useRound } from './useRound'
  * profiles in IndexedDB, which stays the truth. With exactly one child the app goes straight in;
  * with two or more the picker is shown at every start; with none, onboarding.
  *
- * A profile switch first pauses a running round (✕ semantics: the round is stored), writes what is
- * pending, and only then loads the other child.
+ * A profile switch first pauses a running round (like the pause button: the round is stored),
+ * writes what is pending, and only then loads the other child.
  */
 
 export interface ProfileSummary {
@@ -84,7 +85,7 @@ function summarize(doc: ProfileDoc): ProfileSummary {
   }
 }
 
-/** ✕ semantics before anything else happens: a running round is stored for the current child. */
+/** Like the pause button, before anything else happens: a running round is stored for the current child. */
 function pauseRunningRound(): void {
   const round = useRound.getState()
   if (RUNNING.has(round.status)) round.pause()
@@ -193,6 +194,7 @@ export const useSession = create<SessionStore>((set, get) => {
 
     async exportProfiles(ids) {
       await useProfile.getState().flush()
+      const { buildExport } = await import('../data/export')
       return buildExport(ids)
     },
 
@@ -203,6 +205,7 @@ export const useSession = create<SessionStore>((set, get) => {
         await useProfile.getState().unload({ discard: true })
         set({ activeId: null })
       }
+      const { importProfile: storeImport } = await import('../data/export')
       const doc = await storeImport(entry, target)
       await get().refreshProfiles()
       if (replacingActive) await get().selectProfile(doc.id)

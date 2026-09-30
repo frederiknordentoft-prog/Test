@@ -116,6 +116,8 @@ let pending: Batch | null = null
 const outbox: Batch[] = []
 let scheduled = false
 let writing: Promise<void> | null = null
+/** The batch whose transaction is running. */
+let inFlight: Batch | null = null
 let retryTimer: ReturnType<typeof setTimeout> | null = null
 
 function enqueue(profileId: ProfileId, change: { doc?: ProfileDoc; answer?: AnswerLogEntry; daily?: DailyAggregate }): void {
@@ -138,8 +140,22 @@ function enqueue(profileId: ProfileId, change: { doc?: ProfileDoc; answer?: Answ
   }
 }
 
+function mergeBatch(into: Batch, b: Batch): void {
+  if (b.doc) into.doc = b.doc
+  into.answers.push(...b.answers)
+  for (const [day, delta] of b.daily) {
+    const prev = into.daily.get(day)
+    into.daily.set(day, prev ? mergeDaily(prev, delta) : delta)
+  }
+}
+
 function detach(): void {
-  if (pending) outbox.push(pending)
+  if (!pending) return
+  const last = outbox[outbox.length - 1]
+  // join a batch of the same child that is still waiting (a failed write, or one queued behind the
+  // write in flight): one transaction later instead of a growing queue
+  if (last && last !== inFlight && last.profileId === pending.profileId) mergeBatch(last, pending)
+  else outbox.push(pending)
   pending = null
 }
 
@@ -167,6 +183,7 @@ function sanitize(b: Batch): void {
 async function drain(): Promise<void> {
   while (outbox.length > 0) {
     const b = outbox[0]
+    inFlight = b
     try {
       await writeBatch(b)
     } catch (err) {
@@ -179,11 +196,17 @@ async function drain(): Promise<void> {
         }, RETRY_MS)
       }
       return
+    } finally {
+      inFlight = null
     }
     // remove by identity: unload({ discard }) may have filtered the outbox meanwhile
     const i = outbox.indexOf(b)
     if (i >= 0) outbox.splice(i, 1)
     if (useProfile.getState().saveError !== null) useProfile.setState({ saveError: null })
+  }
+  if (retryTimer) {
+    clearTimeout(retryTimer)
+    retryTimer = null
   }
 }
 
@@ -199,10 +222,8 @@ function flushQueue(): Promise<void> {
 
 function dropQueued(profileId: ProfileId): void {
   if (pending?.profileId === profileId) pending = null
-  for (let i = outbox.length - 1; i >= 0; i--) {
-    // the batch at the front may be in flight; it is written or fails on its own
-    if (outbox[i].profileId === profileId && !(i === 0 && writing)) outbox.splice(i, 1)
-  }
+  // a batch in flight cannot be recalled; unload() waits for it and drops it if it failed
+  for (let i = outbox.length - 1; i >= 0; i--) if (outbox[i].profileId === profileId && outbox[i] !== inFlight) outbox.splice(i, 1)
 }
 
 /** Batches not yet written (for a "saving…" hint and tests). */
@@ -307,6 +328,7 @@ export const useProfile = create<ProfileStore>((set, get) => ({
     if (opts.discard && id) {
       dropQueued(id)
       await (writing ?? Promise.resolve())
+      dropQueued(id)
     } else {
       await flushQueue()
     }

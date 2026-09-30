@@ -1,5 +1,5 @@
 // Random ids for profiles and sessions. These are not game logic (that stays on the seeded Rng):
-// they only need to be unique on one device, so they use the platform CSPRNG and never Math.random.
+// they only need to be unique on one device, so they come from the platform CSPRNG.
 import { hashSeed } from '../engine/rng'
 
 let counter = 0
