@@ -13,6 +13,8 @@ export interface TimingRequest {
   parts: SpeechPart[]
   /** Expected tone frequency per clip id, to check the order. */
   freqs: Record<string, number>
+  /** Decode the sprites before the live context exists (the app's preload before the first tap). */
+  preloadFirst?: boolean
 }
 
 export interface MeasuredClip {
@@ -110,12 +112,13 @@ function audibleRuns(chunks: Chunk[], sampleRate: number): { from: number; to: n
 
 async function run(req: TimingRequest): Promise<TimingResult> {
   configureVoice({ manifest: req.manifest, resolveUrl: (file) => `/__timing/${file}` })
+  if (req.preloadFirst) await preloadSpeech([req.parts])
   const graph = audioGraph()
   if (!graph) throw new Error('Ingen Web Audio')
   const { ctx } = graph
   await ctx.resume()
   if (ctx.state !== 'running') throw new Error(`AudioContext kører ikke (${ctx.state})`)
-  await preloadSpeech([req.parts])
+  if (!req.preloadFirst) await preloadSpeech([req.parts])
   const rec = await recorder(ctx, graph.voiceBus)
   rec.start()
   // Let the recorder see a few blocks of silence first.
