@@ -1,0 +1,16 @@
+{
+  "id": "/Test/talvennerne2/",
+  "name": "Talvennerne 2",
+  "short_name": "Talvenner 2",
+  "description": "Matematik fra 0. til 3. klasse · dyr at samle, tøj at vinde, overblik til forældre.",
+  "lang": "da",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFF8EC",
+  "theme_color": "#BFE6FF",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

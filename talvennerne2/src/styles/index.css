@@ -1,0 +1,21 @@
+/* Tailwind scanner kun V2's egne kilder – aldrig V1 eller resten af repoet. */
+@import "tailwindcss" source(none);
+@source "../";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #fff8ec;
+  color: #2b2144;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+html[data-unsupported] #root {
+  display: none;
+}
