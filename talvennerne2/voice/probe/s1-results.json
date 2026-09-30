@@ -1,0 +1,60 @@
+{
+ "rtf_2threads": {
+  "mic": {
+   "n": 20,
+   "sum_compute_s": 338.0,
+   "sum_audio_raw_s": 44.2,
+   "sum_audio_final_s": 36.03,
+   "rtf_aggregate_raw": 7.647285067873305,
+   "rtf_aggregate_final": 9.381505104164935,
+   "rtf_median_per_clip": 8.119764705882353,
+   "overhead_s": 7.127378706712991,
+   "marginal_rtf": 4.422226829541634,
+   "t3_overhead_s": 0.10286224364003083,
+   "t3_marginal": 2.7854695730135606,
+   "s3gen_overhead_s": 7.020044312450969,
+   "s3gen_marginal": 1.6312921663117785,
+   "t3_tokens_per_s": 8.987417615338527,
+   "mean_t3_s": 6.25875,
+   "mean_s3gen_s": 10.6252,
+   "mean_wm_s": 0.0158,
+   "raw_over_final": 1.2267759107839709,
+   "mean_load1": 2.027
+  },
+  "nic": {
+   "n": 20,
+   "sum_compute_s": 319.2,
+   "sum_audio_raw_s": 45.28,
+   "sum_audio_final_s": 36.78,
+   "rtf_aggregate_raw": 7.049072438162545,
+   "rtf_aggregate_final": 8.677243786666958,
+   "rtf_median_per_clip": 7.119660931174089,
+   "overhead_s": 6.241165060003935,
+   "marginal_rtf": 4.2923740901042695,
+   "t3_overhead_s": 0.2466704210112125,
+   "t3_marginal": 2.7151411567971673,
+   "s3gen_overhead_s": 5.990173175290182,
+   "s3gen_marginal": 1.5719641451898485,
+   "t3_tokens_per_s": 9.008797653958947,
+   "mean_t3_s": 6.39375,
+   "mean_s3gen_s": 9.5491,
+   "mean_wm_s": 0.01555,
+   "raw_over_final": 1.2309766799515003,
+   "mean_load1": 2.08
+  }
+ },
+ "projection": {
+  "voice": "nic",
+  "clips": 2000,
+  "audio_min": 48.0,
+  "retake_share": 0.15,
+  "calls": 2300.0,
+  "avg_final_s": 1.44,
+  "avg_raw_s": 1.7726064191301603,
+  "sec_per_call_2threads": 13.849854925430744,
+  "hours_2threads": 8.848518424580753,
+  "speedup_4threads": 1.0,
+  "hours_4threads": 8.848518424580753,
+  "effective_rtf_2threads": 9.617954809326905
+ }
+}

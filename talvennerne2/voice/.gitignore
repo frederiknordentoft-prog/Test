@@ -1,0 +1,3 @@
+probe/takes/
+**/__pycache__/
+*.raw.wav
