@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import type { ExportFile, ExportProfile, ImportTarget } from '../data/export'
 import { newId } from '../data/ids'
 import { DEFAULT_DEVICE, readBoot, writeBoot, type DeviceSettings } from '../data/namespace'
-import { schedulePrune } from '../data/prune'
+import { PRUNE_DELAY_MS, schedulePrune } from '../data/prune'
 import {
   createProfile as storeCreate, deleteProfile as storeDelete, listProfiles, type CreateProfileInput,
 } from '../data/repo/profiles'
@@ -35,7 +35,7 @@ export interface ProfileSummary {
 }
 
 export interface BootOptions {
-  /** Delay of the start-up prune; null skips it (tests). Default 2000 ms. */
+  /** Delay of the start-up prune; null skips it (tests). Default PRUNE_DELAY_MS (2 s). */
   pruneDelayMs?: number | null
 }
 
@@ -97,7 +97,9 @@ let cancelPrune: (() => void) | null = null
 export const useSession = create<SessionStore>((set, get) => {
   function persistBoot(): void {
     const s = get()
-    const stored = writeBoot({ v: 1, profileIds: s.profiles.map((p) => p.id), lastProfileId: s.lastProfileId, device: s.device })
+    // without a readable database the stored index is better than an empty list
+    const profileIds = s.storageError ? readBoot().profileIds : s.profiles.map((p) => p.id)
+    const stored = writeBoot({ v: 1, profileIds, lastProfileId: s.lastProfileId, device: s.device })
     if (stored !== s.bootStored) set({ bootStored: stored })
   }
 
@@ -131,7 +133,7 @@ export const useSession = create<SessionStore>((set, get) => {
           set({ storageError: err instanceof Error ? err.message : String(err), lastProfileId: saved.lastProfileId })
         }
 
-        const delay = opts.pruneDelayMs === undefined ? 2000 : opts.pruneDelayMs
+        const delay = opts.pruneDelayMs === undefined ? PRUNE_DELAY_MS : opts.pruneDelayMs
         if (delay !== null && !get().storageError) cancelPrune = schedulePrune(delay)
         set({ phase: 'ready' })
       })()
