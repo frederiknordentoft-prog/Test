@@ -1,0 +1,1760 @@
+{
+  "format": "talvennerne2-export",
+  "version": 1,
+  "exportedAt": 1790755200000,
+  "profiles": [
+    {
+      "doc": {
+        "id": "p_muon7n8i4ojlls13qgl95",
+        "version": 1,
+        "name": "Åse Ørsted",
+        "grade": 0,
+        "frameColor": "leaf",
+        "createdAt": 1790607600000,
+        "settings": {
+          "sfx": true,
+          "speech": true,
+          "autoSpeak": true,
+          "calm": false,
+          "domainsOff": []
+        },
+        "placement": {
+          "done": true,
+          "at": 1790607600000,
+          "highest": null
+        },
+        "keys": {
+          "add:0+0": {
+            "box": 2,
+            "seen": 2,
+            "correct": 2,
+            "lastRound": 1,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697602300,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:0+3": {
+            "box": 2,
+            "seen": 2,
+            "correct": 2,
+            "lastRound": 1,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697637500,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:1+0": {
+            "box": 1,
+            "seen": 3,
+            "correct": 2,
+            "lastRound": 2,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697640700,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:0+1": {
+            "box": 0,
+            "seen": 3,
+            "correct": 1,
+            "lastRound": 2,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697647100,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:0+2": {
+            "box": 2,
+            "seen": 2,
+            "correct": 2,
+            "lastRound": 1,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697608700,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:1+2": {
+            "box": 2,
+            "seen": 2,
+            "correct": 2,
+            "lastRound": 1,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697611900,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:1+1": {
+            "box": 0,
+            "seen": 2,
+            "correct": 1,
+            "lastRound": 1,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697621500,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:2+1": {
+            "box": 1,
+            "seen": 1,
+            "correct": 1,
+            "lastRound": 0,
+            "lastDay": "2026-09-28",
+            "boxDay": "2026-09-28",
+            "boxAt": 1790607627900,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:3+0": {
+            "box": 1,
+            "seen": 1,
+            "correct": 1,
+            "lastRound": 0,
+            "lastDay": "2026-09-28",
+            "boxDay": "2026-09-28",
+            "boxAt": 1790607631100,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:2+0": {
+            "box": 2,
+            "seen": 2,
+            "correct": 2,
+            "lastRound": 2,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697643900,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:2+2": {
+            "box": 1,
+            "seen": 1,
+            "correct": 1,
+            "lastRound": 1,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697618300,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:1+3": {
+            "box": 1,
+            "seen": 1,
+            "correct": 1,
+            "lastRound": 1,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697624700,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          },
+          "add:0+4": {
+            "box": 1,
+            "seen": 1,
+            "correct": 1,
+            "lastRound": 1,
+            "lastDay": "2026-09-29",
+            "boxDay": "2026-09-29",
+            "boxAt": 1790697627900,
+            "avgMs": 2300,
+            "recent": [],
+            "pendingInstance": null,
+            "seeded": false
+          }
+        },
+        "skillStats": {
+          "addTo10": {
+            "prodCorrect": 7,
+            "prodDays": [
+              "2026-09-28",
+              "2026-09-29"
+            ]
+          }
+        },
+        "skillMedals": {},
+        "nodes": {
+          "w0-plus10-l1": {
+            "plays": 2,
+            "stars": 2,
+            "skipped": false,
+            "lastAt": 1790697648000
+          }
+        },
+        "trials": {},
+        "unlocked": {
+          "worlds": [],
+          "regions": []
+        },
+        "roundIndex": 2,
+        "newToday": {
+          "day": "2026-09-29",
+          "total": 3,
+          "perSkill": {
+            "addTo10": 3
+          }
+        },
+        "offeredTags": {},
+        "misconceptions": {},
+        "economy": {
+          "perler": 37,
+          "xp": 420,
+          "level": 3,
+          "eggWarmth": 12,
+          "eggsHatched": 1,
+          "eggSpecies": "hedgehog",
+          "wish": "hverdag-body"
+        },
+        "animals": [
+          {
+            "uid": "a_fixture1",
+            "species": "rabbit",
+            "breed": "upright",
+            "colorway": "c2",
+            "name": "Hoppe",
+            "friendship": 18,
+            "stage": 1,
+            "star": false,
+            "shown": 1,
+            "outfit": {
+              "head": {
+                "item": "hverdag-head",
+                "color": 0
+              }
+            },
+            "foundAt": 1790607660000,
+            "source": "starter"
+          },
+          {
+            "uid": "a_fixture2",
+            "species": "cat",
+            "breed": "domestic",
+            "colorway": "c4",
+            "name": "Mis",
+            "friendship": 3,
+            "stage": 1,
+            "star": false,
+            "shown": 1,
+            "outfit": {},
+            "foundAt": 1790698200000,
+            "source": "egg"
+          }
+        ],
+        "buddyUid": "a_fixture1",
+        "inventory": {
+          "hverdag-head": {
+            "at": 1790608800000,
+            "colors": [
+              0
+            ]
+          }
+        },
+        "decor": {},
+        "achievements": {},
+        "goals": {
+          "day": "2026-09-29",
+          "list": [
+            {
+              "kind": "mix",
+              "need": 1,
+              "progress": 0,
+              "done": false
+            },
+            {
+              "kind": "write10",
+              "need": 10,
+              "progress": 4,
+              "done": false
+            }
+          ]
+        },
+        "stamps": 1,
+        "daysPlayed": 2,
+        "lastLearningDay": "2026-09-29",
+        "demosSeen": {
+          "keypad": 1,
+          "choice": 1
+        },
+        "instructionsHeard": {
+          "keypad": 2
+        },
+        "recentFirstTries": [
+          true,
+          true,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "round": {
+          "v": 1,
+          "roundId": "r_fixture13",
+          "sessionId": "s_fixture2",
+          "mode": "round",
+          "nodeId": "w0-plus10-l1",
+          "seed": 13,
+          "queue": [
+            {
+              "id": "add:3+1#4",
+              "factId": "add:3+1",
+              "masteryKey": "add:3+1",
+              "skill": "addTo10",
+              "family": "big",
+              "kind": "keypad",
+              "prompt": {
+                "scene": "equation",
+                "terms": [
+                  {
+                    "n": 3
+                  },
+                  {
+                    "op": "+"
+                  },
+                  {
+                    "n": 1
+                  },
+                  {
+                    "op": "="
+                  },
+                  {
+                    "blank": true
+                  }
+                ]
+              },
+              "answer": 4,
+              "answerType": "int",
+              "accept": [],
+              "tolerance": 0,
+              "modulo": 0,
+              "options": [],
+              "optionView": "numeral",
+              "distractorTags": {},
+              "optionClips": null,
+              "unit": null,
+              "entryScale": 1,
+              "range": [
+                0,
+                12
+              ],
+              "maxDigits": 2,
+              "scaffold": false,
+              "speech": [
+                {
+                  "clip": "frag.hvad_er"
+                },
+                {
+                  "num": 3,
+                  "form": "mid"
+                },
+                {
+                  "clip": "op.plus"
+                },
+                {
+                  "num": 1,
+                  "form": "end"
+                }
+              ],
+              "retryOf": null
+            },
+            {
+              "id": "add:0+1#retry0",
+              "factId": "add:0+1",
+              "masteryKey": "add:0+1",
+              "skill": "addTo10",
+              "family": "big",
+              "kind": "choice",
+              "prompt": {
+                "scene": "equation",
+                "terms": [
+                  {
+                    "n": 0
+                  },
+                  {
+                    "op": "+"
+                  },
+                  {
+                    "n": 1
+                  },
+                  {
+                    "op": "="
+                  },
+                  {
+                    "blank": true
+                  }
+                ]
+              },
+              "answer": 1,
+              "answerType": "int",
+              "accept": [],
+              "tolerance": 0,
+              "modulo": 0,
+              "options": [
+                3,
+                2,
+                1
+              ],
+              "optionView": "numeral",
+              "distractorTags": {},
+              "optionClips": null,
+              "unit": null,
+              "entryScale": 1,
+              "range": [
+                0,
+                12
+              ],
+              "maxDigits": 2,
+              "scaffold": false,
+              "speech": [
+                {
+                  "clip": "frag.hvad_er"
+                },
+                {
+                  "num": 0,
+                  "form": "mid"
+                },
+                {
+                  "clip": "op.plus"
+                },
+                {
+                  "num": 1,
+                  "form": "end"
+                }
+              ],
+              "retryOf": "add:0+1#2"
+            },
+            {
+              "id": "add:0+4#5",
+              "factId": "add:0+4",
+              "masteryKey": "add:0+4",
+              "skill": "addTo10",
+              "family": "big",
+              "kind": "keypad",
+              "prompt": {
+                "scene": "equation",
+                "terms": [
+                  {
+                    "n": 0
+                  },
+                  {
+                    "op": "+"
+                  },
+                  {
+                    "n": 4
+                  },
+                  {
+                    "op": "="
+                  },
+                  {
+                    "blank": true
+                  }
+                ]
+              },
+              "answer": 4,
+              "answerType": "int",
+              "accept": [],
+              "tolerance": 0,
+              "modulo": 0,
+              "options": [],
+              "optionView": "numeral",
+              "distractorTags": {},
+              "optionClips": null,
+              "unit": null,
+              "entryScale": 1,
+              "range": [
+                0,
+                12
+              ],
+              "maxDigits": 2,
+              "scaffold": false,
+              "speech": [
+                {
+                  "clip": "frag.hvad_er"
+                },
+                {
+                  "num": 0,
+                  "form": "mid"
+                },
+                {
+                  "clip": "op.plus"
+                },
+                {
+                  "num": 4,
+                  "form": "end"
+                }
+              ],
+              "retryOf": null
+            },
+            {
+              "id": "add:0+5#6",
+              "factId": "add:0+5",
+              "masteryKey": "add:0+5",
+              "skill": "addTo10",
+              "family": "big",
+              "kind": "keypad",
+              "prompt": {
+                "scene": "equation",
+                "terms": [
+                  {
+                    "n": 0
+                  },
+                  {
+                    "op": "+"
+                  },
+                  {
+                    "n": 5
+                  },
+                  {
+                    "op": "="
+                  },
+                  {
+                    "blank": true
+                  }
+                ]
+              },
+              "answer": 5,
+              "answerType": "int",
+              "accept": [],
+              "tolerance": 0,
+              "modulo": 0,
+              "options": [],
+              "optionView": "numeral",
+              "distractorTags": {},
+              "optionClips": null,
+              "unit": null,
+              "entryScale": 1,
+              "range": [
+                0,
+                12
+              ],
+              "maxDigits": 2,
+              "scaffold": false,
+              "speech": [
+                {
+                  "clip": "frag.hvad_er"
+                },
+                {
+                  "num": 0,
+                  "form": "mid"
+                },
+                {
+                  "clip": "op.plus"
+                },
+                {
+                  "num": 5,
+                  "form": "end"
+                }
+              ],
+              "retryOf": null
+            },
+            {
+              "id": "add:1+1#7",
+              "factId": "add:1+1",
+              "masteryKey": "add:1+1",
+              "skill": "addTo10",
+              "family": "big",
+              "kind": "choice",
+              "prompt": {
+                "scene": "equation",
+                "terms": [
+                  {
+                    "n": 1
+                  },
+                  {
+                    "op": "+"
+                  },
+                  {
+                    "n": 1
+                  },
+                  {
+                    "op": "="
+                  },
+                  {
+                    "blank": true
+                  }
+                ]
+              },
+              "answer": 2,
+              "answerType": "int",
+              "accept": [],
+              "tolerance": 0,
+              "modulo": 0,
+              "options": [
+                3,
+                2,
+                1
+              ],
+              "optionView": "numeral",
+              "distractorTags": {},
+              "optionClips": null,
+              "unit": null,
+              "entryScale": 1,
+              "range": [
+                0,
+                12
+              ],
+              "maxDigits": 2,
+              "scaffold": false,
+              "speech": [
+                {
+                  "clip": "frag.hvad_er"
+                },
+                {
+                  "num": 1,
+                  "form": "mid"
+                },
+                {
+                  "clip": "op.plus"
+                },
+                {
+                  "num": 1,
+                  "form": "end"
+                }
+              ],
+              "retryOf": null
+            },
+            {
+              "id": "add:2+1#8",
+              "factId": "add:2+1",
+              "masteryKey": "add:2+1",
+              "skill": "addTo10",
+              "family": "big",
+              "kind": "choice",
+              "prompt": {
+                "scene": "equation",
+                "terms": [
+                  {
+                    "n": 2
+                  },
+                  {
+                    "op": "+"
+                  },
+                  {
+                    "n": 1
+                  },
+                  {
+                    "op": "="
+                  },
+                  {
+                    "blank": true
+                  }
+                ]
+              },
+              "answer": 3,
+              "answerType": "int",
+              "accept": [],
+              "tolerance": 0,
+              "modulo": 0,
+              "options": [
+                5,
+                1,
+                3
+              ],
+              "optionView": "numeral",
+              "distractorTags": {},
+              "optionClips": null,
+              "unit": null,
+              "entryScale": 1,
+              "range": [
+                0,
+                12
+              ],
+              "maxDigits": 2,
+              "scaffold": false,
+              "speech": [
+                {
+                  "clip": "frag.hvad_er"
+                },
+                {
+                  "num": 2,
+                  "form": "mid"
+                },
+                {
+                  "clip": "op.plus"
+                },
+                {
+                  "num": 1,
+                  "form": "end"
+                }
+              ],
+              "retryOf": null
+            },
+            {
+              "id": "add:4+0#9",
+              "factId": "add:4+0",
+              "masteryKey": "add:4+0",
+              "skill": "addTo10",
+              "family": "big",
+              "kind": "keypad",
+              "prompt": {
+                "scene": "equation",
+                "terms": [
+                  {
+                    "n": 4
+                  },
+                  {
+                    "op": "+"
+                  },
+                  {
+                    "n": 0
+                  },
+                  {
+                    "op": "="
+                  },
+                  {
+                    "blank": true
+                  }
+                ]
+              },
+              "answer": 4,
+              "answerType": "int",
+              "accept": [],
+              "tolerance": 0,
+              "modulo": 0,
+              "options": [],
+              "optionView": "numeral",
+              "distractorTags": {},
+              "optionClips": null,
+              "unit": null,
+              "entryScale": 1,
+              "range": [
+                0,
+                12
+              ],
+              "maxDigits": 2,
+              "scaffold": false,
+              "speech": [
+                {
+                  "clip": "frag.hvad_er"
+                },
+                {
+                  "num": 4,
+                  "form": "mid"
+                },
+                {
+                  "clip": "op.plus"
+                },
+                {
+                  "num": 0,
+                  "form": "end"
+                }
+              ],
+              "retryOf": null
+            }
+          ],
+          "current": {
+            "id": "add:3+0#3",
+            "factId": "add:3+0",
+            "masteryKey": "add:3+0",
+            "skill": "addTo10",
+            "family": "big",
+            "kind": "choice",
+            "prompt": {
+              "scene": "equation",
+              "terms": [
+                {
+                  "n": 3
+                },
+                {
+                  "op": "+"
+                },
+                {
+                  "n": 0
+                },
+                {
+                  "op": "="
+                },
+                {
+                  "blank": true
+                }
+              ]
+            },
+            "answer": 3,
+            "answerType": "int",
+            "accept": [],
+            "tolerance": 0,
+            "modulo": 0,
+            "options": [
+              0,
+              3,
+              4
+            ],
+            "optionView": "numeral",
+            "distractorTags": {},
+            "optionClips": null,
+            "unit": null,
+            "entryScale": 1,
+            "range": [
+              0,
+              12
+            ],
+            "maxDigits": 2,
+            "scaffold": false,
+            "speech": [
+              {
+                "clip": "frag.hvad_er"
+              },
+              {
+                "num": 3,
+                "form": "mid"
+              },
+              {
+                "clip": "op.plus"
+              },
+              {
+                "num": 0,
+                "form": "end"
+              }
+            ],
+            "retryOf": null
+          },
+          "phase": "asking",
+          "answered": 2,
+          "total": 10,
+          "firstTries": [
+            {
+              "key": "add:1+0",
+              "skill": "addTo10",
+              "correct": true,
+              "production": false,
+              "fast": true
+            },
+            {
+              "key": "add:2+0",
+              "skill": "addTo10",
+              "correct": true,
+              "production": true,
+              "fast": true
+            },
+            {
+              "key": "add:0+1",
+              "skill": "addTo10",
+              "correct": false,
+              "production": false,
+              "fast": true
+            }
+          ],
+          "streak": 0,
+          "bestStreak": 2,
+          "mistakes": 1,
+          "goldenUsed": false,
+          "goldenCaught": false,
+          "planks": 0,
+          "startedAt": 1790697638400
+        },
+        "rewardLog": [
+          {
+            "ts": 1790607660000,
+            "kind": "animal",
+            "what": "a_fixture1",
+            "why": "starter"
+          },
+          {
+            "ts": 1790608800000,
+            "kind": "item",
+            "what": "hverdag-head",
+            "why": "level:2"
+          },
+          {
+            "ts": 1790698200000,
+            "kind": "animal",
+            "what": "a_fixture2",
+            "why": "egg:1"
+          }
+        ]
+      },
+      "daily": [
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "day": "2026-09-28",
+          "learnMs": 34300,
+          "playMs": 240000,
+          "sessions": 1,
+          "rounds": 1,
+          "answers": 10,
+          "firstTryCorrect": 9,
+          "bySkill": {
+            "addTo10": {
+              "n": 10,
+              "correct": 9,
+              "fast": 9,
+              "nProd": 4,
+              "msHist": [
+                0,
+                4,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "errors": {}
+            }
+          },
+          "snapshot": {
+            "addTo10": {
+              "meanBox": 0.9,
+              "share2": 0,
+              "share4": 0,
+              "status": "practising"
+            }
+          },
+          "trialsPassed": []
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "day": "2026-09-29",
+          "learnMs": 46200,
+          "playMs": 0,
+          "sessions": 1,
+          "rounds": 1,
+          "answers": 13,
+          "firstTryCorrect": 10,
+          "bySkill": {
+            "addTo10": {
+              "n": 13,
+              "correct": 10,
+              "fast": 10,
+              "nProd": 5,
+              "msHist": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "errors": {}
+            }
+          },
+          "snapshot": {
+            "addTo10": {
+              "meanBox": 1.154,
+              "share2": 0.308,
+              "share4": 0,
+              "status": "practising"
+            }
+          },
+          "trialsPassed": []
+        }
+      ],
+      "answers": [
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607602300,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+0",
+          "masteryKey": "add:0+0",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 0,
+          "answer": 0,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607605500,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+3",
+          "masteryKey": "add:0+3",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 3,
+          "answer": 3,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607608700,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+0",
+          "masteryKey": "add:1+0",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 1,
+          "answer": 1,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607611900,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+1",
+          "masteryKey": "add:0+1",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 2,
+          "answer": 1,
+          "correct": false,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 0,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607615100,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+2",
+          "masteryKey": "add:0+2",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 2,
+          "answer": 2,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607618300,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+2",
+          "masteryKey": "add:1+2",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 3,
+          "answer": 3,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607621500,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "retry",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+1",
+          "masteryKey": "add:0+1",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 1,
+          "answer": 1,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 0,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": "add:0+1#3",
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607624700,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+1",
+          "masteryKey": "add:1+1",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 2,
+          "answer": 2,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607627900,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:2+1",
+          "masteryKey": "add:2+1",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 3,
+          "answer": 3,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607631100,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:3+0",
+          "masteryKey": "add:3+0",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 3,
+          "answer": 3,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790607634300,
+          "day": "2026-09-28",
+          "sessionId": "s_fixture1",
+          "roundId": "r_fixture11",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:2+0",
+          "masteryKey": "add:2+0",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 2,
+          "answer": 2,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697602300,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+0",
+          "masteryKey": "add:0+0",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 0,
+          "answer": 0,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 1,
+          "boxAfter": 2,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697605500,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+0",
+          "masteryKey": "add:1+0",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 2,
+          "answer": 1,
+          "correct": false,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 1,
+          "boxAfter": 0,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697608700,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+2",
+          "masteryKey": "add:0+2",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 2,
+          "answer": 2,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 1,
+          "boxAfter": 2,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697611900,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+2",
+          "masteryKey": "add:1+2",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 3,
+          "answer": 3,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 1,
+          "boxAfter": 2,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697615100,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "retry",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+0",
+          "masteryKey": "add:1+0",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 1,
+          "answer": 1,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 0,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": "add:1+0#1",
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697618300,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:2+2",
+          "masteryKey": "add:2+2",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 4,
+          "answer": 4,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697621500,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+1",
+          "masteryKey": "add:1+1",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 3,
+          "answer": 2,
+          "correct": false,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 1,
+          "boxAfter": 0,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697624700,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+3",
+          "masteryKey": "add:1+3",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 4,
+          "answer": 4,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697627900,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+4",
+          "masteryKey": "add:0+4",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 4,
+          "answer": 4,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697631100,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "retry",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+1",
+          "masteryKey": "add:1+1",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 2,
+          "answer": 2,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 0,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": "add:1+1#5",
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697634300,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+1",
+          "masteryKey": "add:0+1",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 1,
+          "answer": 1,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697637500,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture12",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+3",
+          "masteryKey": "add:0+3",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 3,
+          "answer": 3,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 1,
+          "boxAfter": 2,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697640700,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture13",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:1+0",
+          "masteryKey": "add:1+0",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 1,
+          "answer": 1,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 0,
+          "boxAfter": 1,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697643900,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture13",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:2+0",
+          "masteryKey": "add:2+0",
+          "kind": "keypad",
+          "optionsCount": 0,
+          "production": true,
+          "given": 2,
+          "answer": 2,
+          "correct": true,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 1,
+          "boxAfter": 2,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        },
+        {
+          "profileId": "p_muon7n8i4ojlls13qgl95",
+          "ts": 1790697647100,
+          "day": "2026-09-29",
+          "sessionId": "s_fixture2",
+          "roundId": "r_fixture13",
+          "nodeId": "w0-plus10-l1",
+          "mode": "round",
+          "skill": "addTo10",
+          "family": "big",
+          "factId": "add:0+1",
+          "masteryKey": "add:0+1",
+          "kind": "choice",
+          "optionsCount": 3,
+          "production": false,
+          "given": 2,
+          "answer": 1,
+          "correct": false,
+          "ms": 2300,
+          "fast": true,
+          "errorTag": null,
+          "detectable": [],
+          "boxBefore": 1,
+          "boxAfter": 0,
+          "scaffold": false,
+          "replays": 0,
+          "retryOf": null,
+          "assisted": false,
+          "audioUnverified": false
+        }
+      ]
+    }
+  ]
+}
