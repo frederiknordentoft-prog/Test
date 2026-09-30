@@ -213,8 +213,12 @@ export interface FaceStyle {
 /** Unikke id'er pr. rig-instans (clipPath og gradienter). */
 export interface RigIds {
   uid: string
+  /** Kroppen/hovedet (kontur/2 inde) – til skygger og mønstre. */
   bodyClip: string
   headClip: string
+  /** Alt uden for hovedet – dele, der skal "vokse ud af" hovedet uden søm (ører, totter). */
+  outsideHead: string
+  /** Regnbuens gradient (kun på regnbue-farven). */
   gradient: string
 }
 

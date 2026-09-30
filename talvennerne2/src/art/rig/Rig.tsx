@@ -227,10 +227,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const still = mode === 'static'
   const animated = !still
   const uid = env.uid
-  const ids: RigIds = { uid, bodyClip: `${uid}b`, headClip: `${uid}h`, gradient: `${uid}g` }
+  const ids: RigIds = { uid, bodyClip: `${uid}b`, headClip: `${uid}h`, outsideHead: `${uid}e`, gradient: `${uid}g` }
   const shadowId = `${uid}s`
   const itemClipId = `${uid}i`
-  const earClipId = `${uid}e`
+  const earClipId = ids.outsideHead
 
   const a = modelAnchors(def, breed)
   const R = regionTransforms(a, stage)
@@ -336,6 +336,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const Ear = parts.Ear
   const earRig = breedDef?.ears ?? def.ears
   const earClip = !!Ear && !hides.has('ears') && earRig?.clip !== false
+  // Klippet "uden for hovedet" defineres, når ører eller pandetot kan bruge det.
+  const outsideClip = earClip || (!!parts.ManeFront && !hides.has('mane-front'))
   const P = parts.Pattern
   const pattern = resolveColorway(def, colorway).pattern ?? 'none'
   const shade = shading(a)
@@ -378,7 +380,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         <clipPath id={ids.headClip}>
           <path d={headClipD} />
         </clipPath>
-        {earClip && (
+        {outsideClip && (
           <clipPath id={earClipId}>
             <path d={outside(headClipD)} clipRule="evenodd" fillRule="evenodd" />
           </clipPath>

@@ -36,12 +36,12 @@ const UprightEar: SidePart = ({ pal, sw, stage, ids }) => {
   )
 }
 
-/** Vædderøre (skitse): bredt, hænger ned langs kinden, ligger foran hovedet. */
+/** Vædderøre (skitse): langt og smalt, hænger ned langs kinden og ligger foran hovedet. */
 const LOP_EAR: Vec[] = [
-  [2, -6], [-8, -8], [-17, -2], [-21, 12], [-21, 30], [-17, 46], [-10, 54], [-2, 52], [2, 40],
-  [3, 22], [5, 6],
+  [3, -7], [-6, -9], [-13, -4], [-16.5, 10], [-17.5, 30], [-16, 50], [-11.5, 64], [-5, 68.5],
+  [0.5, 63], [2, 46], [2.5, 26], [3.5, 10],
 ]
-const LOP_INNER: Vec[] = [[-5, 4], [-12, 8], [-15, 22], [-14, 38], [-9, 47], [-5, 44], [-4, 30], [-3, 16]]
+const LOP_INNER: Vec[] = [[-4, 4], [-10, 8], [-12.5, 24], [-12, 42], [-9, 56], [-5.5, 60], [-3.4, 48], [-2.6, 30], [-2, 14]]
 
 const LopEar: SidePart = ({ pal, sw, stage, ids }) => {
   const s = stage === 1 ? { sx: 1.04, sy: 0.86 } : {}
@@ -136,6 +136,23 @@ const Muzzle: Part = ({ pal, sw, a, still }) => {
   )
 }
 
+/** Lille pandetot mellem ørerne: to lokker, klippet til "uden for hovedet", så roden er sømløs. */
+const TUFT: Vec[] = [
+  [92.5, 61], [93.2, 55.5], [95.6, 51.2], [98.2, 49.6], [100.4, 50.4], [101.8, 47.2], [104.2, 44.8],
+  [107.2, 44.2], [106.2, 46.8], [106.9, 51.4], [108, 61],
+]
+const TUFT_BIG = xf(TUFT, { sx: 1.18, about: [100, 61] })
+const Tuft: Part = ({ pal, sw, ids }) => (
+  <path
+    d={blob(TUFT_BIG, 1)}
+    fill={pal.gradient ? `url(#${ids.gradient})` : pal.mane}
+    stroke={pal.maneOutline}
+    strokeWidth={sw}
+    clipPath={`url(#${ids.outsideHead})`}
+    {...round}
+  />
+)
+
 /** Lys mave klippet til kroppen. */
 const Belly: Part = ({ pal, a, ids }) => {
   const b = a.bodyCenter
@@ -189,7 +206,7 @@ export const rabbit: SpeciesDef = {
       id: 'lop',
       name: 'vædder',
       ears: { splay: 0, clip: false },
-      anchors: { earBaseL: { x: 56, y: 70 }, earBaseR: { x: 144, y: 70 } },
+      anchors: { earBaseL: { x: 57, y: 68 }, earBaseR: { x: 143, y: 68 } },
       parts: { Ear: LopEar },
     },
     {
@@ -243,6 +260,7 @@ export const rabbit: SpeciesDef = {
     Tail,
     Muzzle,
     BodyDeco: Belly,
+    ManeFront: Tuft,
     Pattern: { head: DutchHead },
   },
 }

@@ -201,6 +201,20 @@ function CloseupSheet() {
           <R breed="upright" stage={3} colorway="c3" size={420} outfit={{ head: { item: hverdagHead }, body: { item: hverdagBody } }} />
         </Cell>
       </div>
+      <div className="sh-row" style={{ marginTop: 14 }}>
+        <Cell cap="upright · 3 · gold · stjerneform" label="closeup gold">
+          <R breed="upright" stage={3} colorway="gold" star size={300} />
+        </Cell>
+        <Cell cap="upright · 2 · rainbow · cheer" label="closeup rainbow">
+          <R breed="upright" stage={2} colorway="rainbow" mood="cheer" size={300} />
+        </Cell>
+        <Cell cap="upright · 2 · c4 · festhat" label="closeup c4" lint="safe fit">
+          <R breed="upright" stage={2} colorway="c4" size={300} outfit={{ head: { item: festHead, colorway: 1 } }} />
+        </Cell>
+        <Cell cap="upright · 1 · c2 · oops" label="closeup c2">
+          <R breed="upright" stage={1} colorway="c2" mood="oops" size={300} />
+        </Cell>
+      </div>
     </Page>
   )
 }

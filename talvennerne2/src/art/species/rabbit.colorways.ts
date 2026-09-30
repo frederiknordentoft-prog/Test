@@ -7,7 +7,7 @@ export const RABBIT_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     id: 'c1',
     name: 'hvid',
     fur: '#FFFBF7',
-    overrides: { outline: '#A08C9F', shade: '#EFE3EC', belly: '#FFFFFF', iris: '#8663C7' },
+    overrides: { outline: '#98839A', shade: '#EFE3EC', belly: '#FFFFFF', iris: '#8663C7' },
   },
   c2: {
     id: 'c2',

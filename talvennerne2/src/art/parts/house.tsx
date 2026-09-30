@@ -214,7 +214,14 @@ export function Cheeks({ a, pal, scale = 1 }: { a: AnchorSet; pal: Palette; scal
   if (pal.silhouette) return null
   const rx = 9.5 * scale
   const ry = 6 * scale
-  return <path d={join(ellipse(a.cheekL.x, a.cheekL.y, rx, ry), ellipse(a.cheekR.x, a.cheekR.y, rx, ry))} fill={pal.cheek} opacity={0.55} />
+  // Et lille glimt i hver kind (kawaii-glans) – samme lysretning som øjnenes højlys.
+  const shine = (c: Pt) => ellipse(c.x - rx * 0.36, c.y - ry * 0.3, rx * 0.2, ry * 0.2)
+  return (
+    <>
+      <path d={join(ellipse(a.cheekL.x, a.cheekL.y, rx, ry), ellipse(a.cheekR.x, a.cheekR.y, rx, ry))} fill={pal.cheek} opacity={0.55} />
+      <path d={join(shine(a.cheekL), shine(a.cheekR))} fill={HOUSE.white} opacity={0.75} />
+    </>
+  )
 }
 
 /** Jordskyggens gradient (den eneste radialGradient i riggen). */

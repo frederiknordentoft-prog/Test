@@ -44,7 +44,7 @@ export function ItemIcon({ item, colorway = 0, size = 64, title }: { item: ItemD
     sw: OUTLINE / fit.scale,
     body: 'round',
     earMode: fit.earMode,
-    ids: { uid, bodyClip: '', headClip: '', gradient: '' },
+    ids: { uid, bodyClip: '', headClip: '', outsideHead: '', gradient: '' },
     local: (p) => toLocal(fit, p),
     restroke: (color) => (
       <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={OUTLINE} strokeLinejoin="round" />
