@@ -135,7 +135,7 @@ export function natureFor(id: MisconceptionId, skill: SkillId): 'concept' | 'sli
 // ─── Evidence and flags ─────────────────────────────────────────────────────
 
 export interface ObserveContext {
-  /** First-try accuracy in this skill over the last 20 answers, 0–1 (choice evidence is ignored below 0.4). */
+  /** First-try accuracy in this skill over its last 20 first tries, this answer included, 0–1 (choice evidence is ignored below 0.4). */
   skillAccuracy20: number
   /** 'YYYY-MM-DD' learning day of the answer. */
   day: string

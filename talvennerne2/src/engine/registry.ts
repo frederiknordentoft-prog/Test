@@ -73,6 +73,16 @@ export function skillKeys(def: SkillDef): MasteryKey[] {
   return def.mode === 'recall' ? factsOf(def).map((f) => f.id) : def.families.map((f) => `${def.id}/${f.id}`)
 }
 
+/**
+ * Every mastery key per registered skill (recall: fact ids, procedure: `skill/family`), for the data
+ * layer's setSkillKeyIndex in src/data/aggregate.ts.
+ */
+export function skillKeyIndex(reg: SkillRegistry = skillRegistry()): Partial<Record<SkillId, MasteryKey[]>> {
+  const out: Partial<Record<SkillId, MasteryKey[]>> = {}
+  for (const def of reg.all) out[def.id] = skillKeys(def)
+  return out
+}
+
 export interface KeyInfo { skill: SkillId; family: string }
 
 const indexCache = new WeakMap<SkillRegistry, Map<MasteryKey, KeyInfo>>()

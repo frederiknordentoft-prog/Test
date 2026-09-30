@@ -35,10 +35,11 @@ class Child {
   answer(t: Task, given: AnswerValue, n: number, over: Partial<AnswerLogEntry> = {}) {
     this.ts = Math.max(this.ts + 60_000, DAY0 + n * 86_400_000)
     const e = logEntry(t, given, n, this.ts, over)
-    const last = this.tries.slice(-20)
-    const acc = last.length ? last.filter(Boolean).length / last.length : 1
-    this.states = updateMisconceptions(this.states, e, { skillAccuracy20: acc, day: e.day, contrast: t.contrast })
+    // like the data layer: the last 20 first tries in the skill, this one included
     this.tries.push(e.correct)
+    const last = this.tries.slice(-20)
+    const acc = last.filter(Boolean).length / last.length
+    this.states = updateMisconceptions(this.states, e, { skillAccuracy20: acc, day: e.day, contrast: t.contrast })
     return e
   }
   flagged = () => flaggedIds(this.states)

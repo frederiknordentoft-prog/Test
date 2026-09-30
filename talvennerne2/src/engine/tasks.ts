@@ -59,7 +59,10 @@ export interface TaskContext {
 
 export interface BuiltTask {
   task: Task
-  /** Misconceptions shown as a distractor: the caller adds them to profile.offeredTags. */
+  /**
+   * Misconceptions shown as a card. The data layer counts profile.offeredTags when the answer is
+   * recorded (offeredTagsOf(task)); a plan only uses this for its own rotation within the round.
+   */
   offered: MisconceptionId[]
 }
 
@@ -210,7 +213,7 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
   return { task, offered: offeredTagsOf(task) }
 }
 
-/** Misconceptions a task shows as a card (what counts towards profile.offeredTags). */
+/** Misconceptions a task shows as a card: what the data layer adds to profile.offeredTags on the first try. */
 export function offeredTagsOf(task: Task): MisconceptionId[] {
   if (!PICK_KINDS.has(task.kind)) return []
   const out = new Set<MisconceptionId>()

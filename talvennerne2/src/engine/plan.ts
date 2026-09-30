@@ -1,4 +1,4 @@
-import type { KeyState, MasteryKey, MisconceptionId, NodeId, ProfileDoc, RegionId, RoundMode, SkillId, Task } from './types'
+import type { KeyState, MasteryKey, NodeId, ProfileDoc, RegionId, RoundMode, SkillId, Task } from './types'
 import { NODE_BY_ID, REGION_BY_ID, nodesOfRegion, type NodeDef, type RegionSkill } from '../content/curriculum'
 import { SKILL_BY_ID } from '../content/skills'
 import {
@@ -48,8 +48,6 @@ export interface PlannedRound {
   tasks: Task[]
   /** Keys asked for the first time: fold them into profile.newToday with bumpNewToday. */
   newKeys: { key: MasteryKey; skill: SkillId }[]
-  /** Misconceptions shown as a card: fold them into profile.offeredTags with addOffered. */
-  offered: Partial<Record<MisconceptionId, number>>
 }
 
 /** Fatigue: under 50 % right first tries over the last 10. Warm: the last 10 all right (and quick). */
@@ -69,6 +67,9 @@ export function planRound(node: NodeDef | 'practice' | 'hut', profile: ProfileDo
   const nodeId = typeof node === 'string' ? node : node.id
   const seed = ctx.seed ?? hashSeed(`${profile.id}:${nodeId}:${profile.roundIndex}`)
   const roundId = ctx.roundId ?? `${profile.id}:${profile.roundIndex}:${nodeId}`
+  // The plan rotates the diagnostic card on a private copy of profile.offeredTags, so several card
+  // tasks in one round do not all aim at the same misconception. The profile's own count is kept by
+  // the data layer when an answer is recorded (offeredTagsOf); a plan never writes it.
   const session = newBuildSession(profile.offeredTags)
   const env: Env = { reg, session, profile, ctx, rng: makeRng(seed) }
 
@@ -95,12 +96,7 @@ export function planRound(node: NodeDef | 'practice' | 'hut', profile: ProfileDo
     seenKeys.add(t.masteryKey)
     if (!seenOrSeeded(profile.keys[t.masteryKey])) newKeys.push({ key: t.masteryKey, skill: t.skill })
   }
-  const offered: Partial<Record<MisconceptionId, number>> = {}
-  for (const id of Object.keys(session.offered) as MisconceptionId[]) {
-    const more = (session.offered[id] ?? 0) - (profile.offeredTags[id] ?? 0)
-    if (more > 0) offered[id] = more
-  }
-  return { roundId, sessionId: ctx.sessionId, mode, nodeId, seed, tasks, newKeys, offered }
+  return { roundId, sessionId: ctx.sessionId, mode, nodeId, seed, tasks, newKeys }
 }
 
 interface Env {
@@ -207,11 +203,4 @@ export function bumpNewToday(newToday: ProfileDoc['newToday'], day: string, newK
   const perSkill = { ...base.perSkill }
   for (const k of newKeys) perSkill[k.skill] = (perSkill[k.skill] ?? 0) + 1
   return { day, total: base.total + newKeys.length, perSkill }
-}
-
-/** profile.offeredTags after a plan. */
-export function addOffered(prev: ProfileDoc['offeredTags'], offered: PlannedRound['offered']): ProfileDoc['offeredTags'] {
-  const out = { ...prev }
-  for (const id of Object.keys(offered) as MisconceptionId[]) out[id] = (out[id] ?? 0) + (offered[id] ?? 0)
-  return out
 }
