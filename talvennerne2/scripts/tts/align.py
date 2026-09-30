@@ -84,7 +84,7 @@ def align_words(x16: np.ndarray, text: str):
             owner.append(wi)
     ali, scores = AF.forced_align(em[None], torch.tensor([targets], dtype=torch.int32),
                                   blank=tok.pad_token_id)
-    spans = AF.merge_tokens(ali[0], scores[0].exp())
+    spans = AF.merge_tokens(ali[0], scores[0].exp(), blank=tok.pad_token_id)
     assert len(spans) == len(targets), (len(spans), len(targets))
     off = pad / ASR_SR
     out = []
@@ -189,35 +189,45 @@ def cmd_carrier(a):
 
 
 def cmd_batch(a):
-    """Hvert klip i en batch-ytring klippes ud; hele ytringen ASR-tjekkes også."""
+    """Hvert klip i en batch-ytring klippes ud; hele ytringen ASR-tjekkes også.
+
+    Elementer med bærefrase ("tallet er X") deles i frase + klip; kun klippet gemmes.
+    """
     out, whole = [], []
     (TAKES / a.tag / a.voice).mkdir(parents=True, exist_ok=True)
+    only = tuple(a.only.split(",")) if a.only else None
     for r in _load(TAKES / a.src / "meta.jsonl"):
-        if r["voice"] != a.voice:
+        if r["voice"] != a.voice or (only and not r["id"].startswith(only)):
             continue
         raw, sr = post.read(str(ROOT / r["raw"]))
         x = prepare(raw, sr)
         x16 = to16k(x)
         items = r["items"]
-        full = " ".join(t for _c, t, _f in items)
+        full = " ".join(f"{pre} {t}" if pre else t for _c, t, _f, pre in items)
         wres = check(full, transcribe(x16))
         whole.append({"id": r["id"], "voice": a.voice, "take": r["take"], "k": r["k"],
                       "cpu_s": r["t_total"], "raw_dur": r["raw_dur"], **wres})
         words = align_words(x16, full)
-        groups = [len(normalize(t).split()) for _c, t, _f in items]
+        groups, keep = [], []
+        for _c, t, _f, pre in items:
+            if pre:
+                groups.append(len(normalize(pre).split()))
+                keep.append(False)
+            groups.append(len(normalize(t).split()))
+            keep.append(True)
         segs = segment(x, post.SR, words, groups)
-        k = 0
         n_risk = 0
-        for (cid, text, form), (s, e, info), g in zip(items, segs, groups):
+        kept = [(seg, g, k0) for seg, g, k0, kp in
+                zip(segs, groups, [sum(groups[:i]) for i in range(len(groups))], keep) if kp]
+        for (cid, text, form, pre), ((s, e, info), g, k0) in zip(items, kept):
             y, st = post.process(x[s:e], post.SR, hp=False)
             wav = TAKES / a.tag / a.voice / f"{cid}.t{r['take']}.wav"
             post.write(str(wav), y)
-            iw = words[k:k + g]
-            k += g
+            iw = words[k0:k0 + g]
             n_risk += info["cut_risk"]
             out.append({
                 "set": "batch-cut", "id": cid, "voice": a.voice, "take": r["take"], "expected": text,
-                "form": form, "batch": r["id"], "k": r["k"], "cpu_per_clip": r["cpu_per_clip"],
+                "form": form, "prefix": pre, "batch": r["id"], "k": r["k"], "cpu_per_clip": r["cpu_per_clip"],
                 "align_score": round(float(np.mean([w[3] for w in iw])), 3), **info,
                 "dur": st.dur, "speech_dur": st.speech_dur, "exp_dur": round(expected_duration(text), 3),
                 "lufs": st.lufs, "tp": st.true_peak_db, "post_ok": st.ok, "wav": str(wav.relative_to(ROOT)),
@@ -238,6 +248,7 @@ def main():
         p.add_argument("--voice", required=True)
         p.add_argument("--tag", default=tag)
         p.add_argument("--threads", type=int, default=2)
+        p.add_argument("--only", default="", help="kun batch-id'er med disse præfikser (kommasepareret)")
     a = ap.parse_args()
     load_asr(a.threads)
     {"carrier": cmd_carrier, "batch": cmd_batch}[a.cmd](a)

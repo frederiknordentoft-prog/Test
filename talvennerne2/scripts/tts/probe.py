@@ -64,6 +64,33 @@ def seed_for(clip_id: str, take: int) -> int:
     return int(hashlib.sha1(clip_id.encode("utf-8")).hexdigest()[:8], 16) + take
 
 
+def patch_short_text_bug():
+    """chatterbox-tts 0.1.7 crasher på meget korte tekster (≤ 3 teksttokens, fx "En.").
+
+    AlignmentStreamAnalyzer.step evaluerer A[..., :-5].max(dim=1), som er tom, når
+    tekstudsnittet S har ≤ 5 tokens (inkl. start/stop) → IndexError. Lappen tilføjer
+    kun vagten "S > 5" i netop den linje (der findes ingen tidligere tokens at gentage);
+    for alle længere tekster er opførslen uændret. Fejler højlydt, hvis kilden ændres.
+    """
+    import inspect
+    import textwrap
+
+    from chatterbox.models.t3.inference import alignment_stream_analyzer as asa
+
+    cls = asa.AlignmentStreamAnalyzer
+    if getattr(cls, "_tv2_patched", False):
+        return
+    src = textwrap.dedent(inspect.getsource(cls.step))
+    old = "alignment_repetition = self.complete and (A[self.completed_at:, :-5].max(dim=1).values.sum() > 5)"
+    if src.count(old) != 1:
+        raise RuntimeError("chatterbox-kilden har ændret sig; lappen i probe.py skal gennemses")
+    src = src.replace(old, old.replace("self.complete and (", "self.complete and S > 5 and ("))
+    ns: dict = {}
+    exec(compile(src, asa.__file__, "exec"), asa.__dict__, ns)
+    cls.step = ns["step"]
+    cls._tv2_patched = True
+
+
 class Engine:
     """Indlæser modellen én gang og cacher stemme-conditionals pr. stemme."""
 
@@ -74,6 +101,7 @@ class Engine:
         from download_models import fetch
 
         torch.set_num_threads(threads)
+        patch_short_text_bug()
         self.torch = torch
         self.threads = threads
         self.dir = Path(fetch("tts", local_only=True))
@@ -126,10 +154,12 @@ class Engine:
         self.torch.manual_seed(seed)
         self.timers = {}
         t0 = time.perf_counter()
+        c0 = time.process_time()
         wav = self.m.generate(text, **SETTINGS)
         total = time.perf_counter() - t0
+        cpu = time.process_time() - c0  # CPU-tid for alle tråde (mindre følsom for andres last)
         x = wav.squeeze(0).detach().cpu().numpy().astype(np.float32)
-        tm = {"t_total": round(total, 3)}
+        tm = {"t_total": round(total, 3), "cpu_s": round(cpu, 3)}
         tm.update({f"t_{k}": round(v, 3) for k, v in self.timers.items()})
         tm["n_tokens"] = self.n_tokens
         return x, tm
@@ -236,7 +266,7 @@ def cmd_gen_batch(a):
         vdir.mkdir(exist_ok=True)
         raw = vdir / f"{bid}.t{take}.raw.wav"
         sf.write(raw, x, SR, subtype="FLOAT")
-        expected = " ".join(t for _c, t, _f in items)
+        expected = " ".join(f"{pre} {t}" if pre else t for _c, t, _f, pre in items)
         rec = {
             "set": "batch", "id": bid, "voice": v, "take": take, "seed": seed, "text": text,
             "expected": expected, "items": items, "k": len(items), "threads": a.threads, **tm,
