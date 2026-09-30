@@ -3,7 +3,7 @@
 // helt ansigt koster ~10 elementer.
 import type { Ref } from 'react'
 import { HOUSE, INK, SHADOW_ALPHA } from '../rig/palette'
-import { arc, circle, dMouth, drop, ellipse, ellipseBelow, join, line, lune, n, quad, rect, spline, star, xf, zee } from '../rig/shapes'
+import { arc, circle, dMouth, drop, ellipse, ellipseAbove, join, line, lune, n, quad, rect, spline, star, xf, zee } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { AnchorSet, EyeShape, Mood, MouthShape, Palette, Pt } from '../rig/types'
 
@@ -87,34 +87,35 @@ export function Eyes({ a, shape, pal, scale, sw, gaze, animated, gazeRef, glintR
     )
   } else {
     const half = shape === 'half'
-    // Genert "ups": låget skærer toppen af øjet i en let skrå linje (inderste hjørne højest),
-    // og to bekymrede bryn løfter sig mod midten. Aldrig vredt eller trist.
-    const tilt = (i: number) => (i === 0 ? -1 : 1) * ry * 0.16
-    const cut = (y: number) => y - ry * 0.18
+    // Genert "ups" (et forlegent smil): kinderne skubber underlåget op i en blød bue, og to bekymrede bryn
+    // løfter sig mod midten. Venligt og opmuntrende – aldrig vredt eller trist.
+    const cut = (y: number) => y + ry * 0.3
+    const lift = ry * 0.24
     const eyeD = half
-      ? join(...eyes.map(([x, y], i) => ellipseBelow(x, y, rx, ry, cut(y), tilt(i))))
+      ? join(...eyes.map(([x, y]) => ellipseAbove(x, y, rx, ry, cut(y), lift)))
       : join(...eyes.map(([x, y]) => ellipse(x, y, rx, ry)))
     const lidD = join(
-      ...eyes.map(([x, y], i) => {
-        const w = rx * 1.14
-        const t = tilt(i) * 0.57
-        return line([x - w, cut(y) - t], [x + w, cut(y) + t])
+      ...eyes.map(([x, y]) => {
+        const w = rx * 1.02
+        return quad([x - w, cut(y) + ry * 0.1], [x, cut(y) - 2 * lift], [x + w, cut(y) + ry * 0.1])
       }),
     )
     const browD = join(
       ...eyes.map(([x, y], i) => {
         const s = i === 0 ? 1 : -1
-        return quad([x - s * rx * 0.85, y - ry * 1.3], [x - s * rx * 0.05, y - ry * 1.66], [x + s * rx * 0.78, y - ry * 1.68])
+        return quad([x - s * rx * 0.85, y - ry * 1.3], [x - s * rx * 0.05, y - ry * 1.62], [x + s * rx * 0.78, y - ry * 1.66])
       }),
     )
-    const irisD = join(...eyes.map(([x, y]) => lune(x, y + ry * 0.06, rx * 0.78, ry * 0.8, ry * 0.3)))
+    const irisD = half
+      ? join(...eyes.map(([x, y]) => lune(x, y - ry * 0.1, rx * 0.74, ry * 0.62, ry * 0.2, 35, 145)))
+      : join(...eyes.map(([x, y]) => lune(x, y + ry * 0.06, rx * 0.78, ry * 0.8, ry * 0.3)))
     const sparkle = shape === 'sparkle'
     const glints = join(
       ...eyes.map(([x, y]) =>
         sparkle
           ? join(star(x - rx * 0.28, y - ry * 0.3, rx * 0.62, rx * 0.12), circle(x + rx * 0.4, y + ry * 0.42, rx * 0.17))
           : half
-            ? join(circle(x - rx * 0.32, y + ry * 0.12, rx * 0.25), circle(x + rx * 0.4, y + ry * 0.5, rx * 0.14))
+            ? join(ellipse(x - rx * 0.3, y - ry * 0.38, rx * 0.34, ry * 0.27, -20), circle(x + rx * 0.42, y + ry * 0.08, rx * 0.15))
             : join(ellipse(x - rx * 0.3, y - ry * 0.36, rx * 0.36, ry * 0.3, -20), circle(x + rx * 0.4, y + ry * 0.44, rx * 0.17)),
       ),
     )

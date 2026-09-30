@@ -1,13 +1,14 @@
-// Genstandsikon til butik, garderobe og kister: genstanden alene på en usynlig mannequin
-// (standardankrene for `round`), beskåret til slottets område. Samme tegning som på dyret.
-import { useId } from 'react'
+// Genstandsikon til butik, garderobe og kister: genstanden alene (`solo`) på en usynlig mannequin
+// (standardankrene for `round`). Samme tegning og stofpalet som på dyret; kropstøj tegner sin
+// egen flade silhuet. I DOM'en beskæres ikonet automatisk til genstandens bbox.
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { DEFAULT_ANCHORS, OUTLINE } from './anchors'
 import { templateBody } from './bodies'
 import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
 import { itemPalette } from './palette'
 import type { ItemArtProps, ItemDef, Slot } from './types'
 
-/** Beskæring pr. slot (x, y, w, h) i modelrummet. Formatet er kvadratisk. */
+/** Fast beskæring pr. slot (x, y, w, h) i modelrummet, når der ikke kan måles (statisk markup). */
 export const ICON_CROP: Record<Slot, readonly [number, number, number, number]> = {
   head: [36, -8, 128, 128],
   face: [44, 58, 112, 112],
@@ -19,27 +20,41 @@ export const ICON_CROP: Record<Slot, readonly [number, number, number, number]> 
 
 export function ItemIcon({ item, colorway = 0, size = 64, title }: { item: ItemDef; colorway?: 0 | 1 | 2; size?: number; title?: string }) {
   const uid = useId().replace(/[^A-Za-z0-9_-]/g, '')
+  const content = useRef<SVGGElement>(null)
+  const [fitBox, setFitBox] = useState<string | null>(null)
+  useLayoutEffect(() => {
+    const g = content.current
+    if (!g || typeof g.getBBox !== 'function') return
+    const b = g.getBBox()
+    const side = Math.max(b.width, b.height) * 1.08 + OUTLINE * 2
+    const cx = b.x + b.width / 2
+    const cy = b.y + b.height / 2
+    setFitBox(`${(cx - side / 2).toFixed(1)} ${(cy - side / 2).toFixed(1)} ${side.toFixed(1)} ${side.toFixed(1)}`)
+  }, [item, colorway])
+
   const a = DEFAULT_ANCHORS
   const fit = fitItem(item, a, { id: 'rabbit', family: 'lagomorph' })
   const c = itemPalette(item.colorways[colorway])
-  const body = templateBody('round')
-  const bodyD = body(a, 0, 2)
+  const bodyD = templateBody('round')(a, 0, 2)
   const [x, y, w, h] = ICON_CROP[item.slot]
   const art = item.slot === 'body' ? (item.art.bodyShapes?.round ?? item.art.front) : item.art.front
-  const clip = item.slot === 'body' ? `${uid}c` : undefined
-  const sw = OUTLINE / fit.scale
   const props: ItemArtProps = {
-    c, a, sw, body: 'round', earMode: fit.earMode,
+    c,
+    a,
+    sw: OUTLINE / fit.scale,
+    body: 'round',
+    earMode: fit.earMode,
     ids: { uid, bodyClip: '', headClip: '', gradient: '' },
     local: (p) => toLocal(fit, p),
     restroke: (color) => (
       <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={OUTLINE} strokeLinejoin="round" />
     ),
+    solo: true,
   }
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={`${x} ${y} ${w} ${h}`}
+      viewBox={fitBox ?? `${x} ${y} ${w} ${h}`}
       width={size}
       height={size}
       role={title ? 'img' : undefined}
@@ -47,14 +62,7 @@ export function ItemIcon({ item, colorway = 0, size = 64, title }: { item: ItemD
       aria-hidden={title ? undefined : true}
       data-item-icon={item.id}
     >
-      {clip && (
-        <defs>
-          <clipPath id={clip}>
-            <path d={body(a, 2, 2)} />
-          </clipPath>
-        </defs>
-      )}
-      <g clipPath={clip ? `url(#${clip})` : undefined}>
+      <g ref={content}>
         <g transform={fitTransform(fit)}>
           {item.art.back?.(props)}
           {art(props)}

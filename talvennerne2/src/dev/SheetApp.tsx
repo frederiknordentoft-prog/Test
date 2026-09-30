@@ -242,23 +242,38 @@ function SizesSheet() {
           ))}
         </div>
       </Section>
-      <Section title="butikskort · 64 px">
+      <Section title="butikskort · 64 px · genstanden alene">
         <div className="sh-row">
           {ITEMS.flatMap((it) =>
             ([0, 1, 2] as const).map((cw) => (
               <div key={`${it.id}${cw}`} className="sh-card" data-label={`kort ${it.id} ${cw}`}>
-                <ItemIcon item={it} colorway={cw} size={56} />
+                <ItemIcon item={it} colorway={cw} size={54} />
+              </div>
+            )),
+          )}
+        </div>
+      </Section>
+      <Section title="butikskort · 64 px · på kaninen (beskåret)">
+        <div className="sh-row">
+          {ITEMS.flatMap((it) =>
+            ([0, 1, 2] as const).map((cw) => (
+              <div key={`${it.id}${cw}`} className="sh-card" data-label={`kort kanin ${it.id} ${cw}`}>
+                <R
+                  breed="upright"
+                  stage={2}
+                  colorway={(['c1', 'c3', 'c6'] as const)[cw]}
+                  size={60}
+                  crop={it.slot === 'head' ? 'head' : 'bust'}
+                  outfit={{ [it.slot]: { item: it, colorway: cw } } as Outfit}
+                />
               </div>
             )),
           )}
           <div className="sh-card sh-gold" data-label="kort kanin guld">
-            <R breed="upright" stage={2} colorway="gold" size={52} />
+            <R breed="upright" stage={2} colorway="gold" size={60} crop="bust" />
           </div>
-          <div className="sh-card" data-label="kort kanin hue">
-            <R breed="upright" stage={1} colorway="c3" size={52} outfit={{ head: { item: hverdagHead, colorway: 1 } }} />
-          </div>
-          <div className="sh-card" data-label="kort kanin fest">
-            <R breed="upright" stage={2} colorway="c6" size={52} outfit={{ head: { item: festHead } }} />
+          <div className="sh-card sh-gold" data-label="kort kanin regnbue">
+            <R breed="upright" stage={1} colorway="rainbow" size={60} crop="bust" />
           </div>
         </div>
       </Section>

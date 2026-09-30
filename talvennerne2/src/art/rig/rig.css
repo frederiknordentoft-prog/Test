@@ -183,8 +183,8 @@
   25%, 75% { transform: translate(100px, 225px) scale(0.76, 0.76) translate(-100px, -225px); opacity: 0.7; }
 }
 @keyframes rig-paw-cheer {
-  0%, 100% { transform: rotate(104deg); }
-  50% { transform: rotate(124deg); }
+  0%, 100% { transform: rotate(116deg); }
+  50% { transform: rotate(132deg); }
 }
 @keyframes rig-ear-cheer {
   0%, 100% { transform: rotate(-9deg); }

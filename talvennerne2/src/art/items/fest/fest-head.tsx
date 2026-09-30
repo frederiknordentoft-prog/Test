@@ -5,9 +5,9 @@ import { circle, join, poly, scallop, xf } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
 import type { ItemArt, ItemDef } from '../../rig/types'
 
-const W = 27 // halv bundbredde
+const W = 31 // halv bundbredde
 const BASE = 5 // bundens y (lidt under headTop, så hatten hviler på issen)
-const APEX = -29
+const APEX = -33
 const TILT = -9
 
 /** Keglens kant som funktion af y (lineær mellem spids og bund). */
@@ -22,8 +22,8 @@ const front: ItemArt = ({ c, sw }) => {
   const t = (pts: readonly Vec[]) => xf(pts, { rot: TILT, about: [0, BASE] })
   const cone = t([[0, APEX - 1.5], [W, BASE], [0, BASE + 3.5], [-W, BASE]])
   const shade = t([[0, APEX - 1.5], [W, BASE], [0, BASE + 3.5], [W * 0.46, BASE]])
-  const stripes = [stripe(-19, -14), stripe(-6, -0.5)].map((s) => poly(t(s)))
-  const dots = t([[-9, -9.5], [7, -10.5], [-3, 1.5], [12, 2.5], [-15, 2], [2, -21]])
+  const stripes = [stripe(-22, -16), stripe(-7, -1)].map((s) => poly(t(s)))
+  const dots = t([[-10, -11], [8, -12], [-4, 2], [14, 2.5], [-18, 2.2], [2, -24.5], [-1, -12]])
   const ruffle = t([[0, BASE + 1.5]])[0]
   const top = t([[0, APEX - 3]])[0]
   const shine = t([[-W * 0.55, BASE - 3], [-3.5, APEX + 6], [-1.8, APEX + 8], [-W * 0.34, BASE - 2]])
@@ -33,7 +33,7 @@ const front: ItemArt = ({ c, sw }) => {
       <path d={poly(cone)} fill={c.main} {...stroke} />
       <path d={poly(shade)} fill={c.mainShade} />
       <path d={join(...stripes)} fill={c.trim} />
-      <path d={join(...dots.map(([x, y]) => circle(x, y, 1.9)))} fill={c.accent} />
+      <path d={join(...dots.map(([x, y]) => circle(x, y, 2.1)))} fill={c.accent} />
       <path d={poly(shine)} fill={c.highlight} />
       <path d={poly(cone)} fill="none" {...stroke} />
       <path d={scallop(ruffle[0], ruffle[1], W + 3, 5, 12, 0.6, 0)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.8} strokeLinejoin="round" />
@@ -54,7 +54,7 @@ export const festHead: ItemDef = {
     fabric('sol', 'solgul', 'sunflower', 'coral', 'sky'),
   ],
   art: { front },
-  fit: { anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1, baseWidth: 60, earMode: 'under' },
+  fit: { anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1, baseWidth: 68, earMode: 'under' },
 }
 
 export default festHead

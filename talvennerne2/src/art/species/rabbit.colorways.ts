@@ -26,7 +26,7 @@ export const RABBIT_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     name: 'hollænder',
     fur: '#FFFBF7',
     pattern: 'dutch',
-    patternColor: '#8E7F86',
+    patternColor: '#7B7288',
     overrides: { outline: '#9A8997', shade: '#EFE5EC', belly: '#FFFFFF', iris: '#8663C7' },
   },
   c5: {

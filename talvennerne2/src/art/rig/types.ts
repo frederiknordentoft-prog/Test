@@ -157,7 +157,7 @@ export interface Palette {
   cheek: string
   /** Den subtile iris-ring i øjnene. */
   iris: string
-  /** Pupil og øjenlinjer (#2B2144, aldrig ren sort). */
+  /** Pupil og øjenlinjer (husets ink fra palette.ts, aldrig ren sort). */
   ink: string
   /** Mønsterfarve (fx hollænderens pletter) og dens afledte kontur/skygge. */
   pattern: string
@@ -380,6 +380,11 @@ export interface ItemArtProps {
    * transformeret til genstandens lokale ramme. Genstanden klipper den selv til sit eget område.
    */
   restroke: (color?: string) => ReactNode
+  /**
+   * true når genstanden tegnes alene (butiks-/garderobeikon) uden en bærer: ingen ørehuller, og
+   * kropstøj tegner sin egen flade silhuet i stedet for at blive klippet til en krop.
+   */
+  solo: boolean
 }
 export type ItemArt = (p: ItemArtProps) => ReactNode
 

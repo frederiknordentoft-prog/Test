@@ -143,16 +143,15 @@ const Belly: Part = ({ pal, a, ids }) => {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Hollænder-mønster (c4): farvede kinder/øjenpletter med hvid blis, farvede lår.
+// Hollænder-mønster (c4): farvede ører og øjenpletter med en bred hvid blis. Forfra ses den hvide
+// forpart, så kroppen forbliver hvid (bagparten er farvet, men vender væk).
 
-const DUTCH_HEAD_L: Vec[] = [[50, 62], [70, 56], [85, 62], [91, 82], [90, 104], [85, 122], [72, 133], [50, 130], [42, 104]]
-const DUTCH_BODY_L: Vec[] = [[44, 196], [62, 188], [74, 204], [76, 222], [60, 232], [40, 226]]
+const DUTCH_HEAD_L: Vec[] = [
+  [52, 70], [66, 59], [80, 61], [88, 73], [91, 91], [90, 108], [84, 119], [72, 121.5], [58, 116], [48, 101], [46, 84],
+]
 
 const DutchHead: Part = ({ pal, ids }) => (
   <path d={join(blob(DUTCH_HEAD_L), blob(mirrorX(DUTCH_HEAD_L, 100)))} fill={pal.pattern} clipPath={`url(#${ids.headClip})`} />
-)
-const DutchBody: Part = ({ pal, ids }) => (
-  <path d={join(blob(DUTCH_BODY_L), blob(mirrorX(DUTCH_BODY_L, 100)))} fill={pal.pattern} clipPath={`url(#${ids.bodyClip})`} />
 )
 
 // ---------------------------------------------------------------------------------------------
@@ -244,7 +243,7 @@ export const rabbit: SpeciesDef = {
     Tail,
     Muzzle,
     BodyDeco: Belly,
-    Pattern: { head: DutchHead, body: DutchBody },
+    Pattern: { head: DutchHead },
   },
 }
 

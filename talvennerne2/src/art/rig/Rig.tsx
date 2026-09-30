@@ -9,7 +9,7 @@
 // Animerede dele bruger pivot-mønsteret: <g transform="translate(px py)"><g class="a-…">lokalt</g></g>
 // med transform-origin 0 0. Kun transform og opacity animeres (rig.css).
 import { useEffect, useId, useRef } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react'
 import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, SweatDrop, ThoughtDots, Zzz, around } from '../parts/house'
 import { OUTLINE, modelAnchors, regionTransforms, worldAnchors } from './anchors'
 import { defaultHead, templateBody } from './bodies'
@@ -49,6 +49,21 @@ export interface RigProps {
   silhouette?: boolean
   /** Frys animationen på tidspunktet t sekunder (filmstrimler). */
   freezeAt?: number
+  /** Beskæring: 'full' (standard, 200×240), 'head' (hoved og hat, til butikskort) eller 'bust'. */
+  crop?: RigCrop
+}
+
+export type RigCrop = 'full' | 'head' | 'bust'
+/** Højde/bredde for en beskæring. */
+export function cropAspect(crop: RigCrop): number {
+  const [, , w, h] = CROPS[crop].split(' ').map(Number)
+  return h / w
+}
+/** viewBox pr. beskæring. */
+export const CROPS: Record<RigCrop, string> = {
+  full: '0 0 200 240',
+  head: '22 0 156 156',
+  bust: '10 0 180 190',
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -78,7 +93,7 @@ interface Pose {
 export const POSES: Record<Mood, Pose> = {
   idle: {},
   happy: { earL: -6, earR: -6, pawL: 34, pawR: 34, tail: 12 },
-  cheer: { fig: { rot: -3 }, head: { rot: -2, y: 1 }, earL: -9, earR: -4, pawL: 112, pawR: 112, tail: 14 },
+  cheer: { fig: { rot: -3 }, head: { rot: -2, y: 1 }, earL: -9, earR: -4, pawL: 124, pawR: 124, tail: 14 },
   think: { head: { rot: 8, y: 3 }, earL: 6, earR: -8 },
   oops: { head: { rot: -4, y: 1.5 }, earL: -14, earR: -11, pawL: 6, pawR: 6 },
   sleep: { head: { rot: 6, y: 3 }, earL: -18, earR: -16, body: { sy: 0.985 } },
@@ -168,15 +183,50 @@ export function Pivot({ at, cls, still, pose, children }: { at: Pt; cls: string;
   )
 }
 
+/** Miljøet for en render: unikt id-præfiks og (i animeret DOM) refs til pupil-tracking. */
+export interface RigEnv {
+  uid: string
+  gazeRef?: Ref<SVGGElement>
+  glintRef?: Ref<SVGGElement>
+}
+
+/** <Rig> i DOM'en: unikke id'er og pupil-tracking lægges oven på den rene render. */
 export function Rig(props: RigProps) {
+  const uid = useId().replace(/[^A-Za-z0-9_-]/g, '')
+  const g = gazeInputs(props)
+  const { gazeRef, glintRef } = useGaze(g.enabled, props.lookAt, g.eye, g.scale, g.fallback, g.shape)
+  return rigElement(props, { uid, gazeRef, glintRef })
+}
+
+function gazeInputs(props: RigProps) {
+  const def = props.species
+  const breed: BreedId = props.breed ?? def.breeds[0].id
+  const stage = props.stage ?? 2
+  const mood = props.mood ?? 'idle'
+  const a = modelAnchors(def, breed)
+  const w = worldAnchors(a, stage)
+  return {
+    enabled: props.mode !== 'static' && !props.silhouette,
+    eye: { x: (w.eyeL.x + w.eyeR.x) / 2, y: (w.eyeL.y + w.eyeR.y) / 2 },
+    scale: regionTransforms(a, stage).head.s,
+    fallback: MOOD_GAZE[mood],
+    shape: MOOD_FACE[mood].eyes,
+  }
+}
+
+/**
+ * Den rene render (ingen hooks): samme træ som <Rig>, men kan kaldes overalt – også under en
+ * anden komponents render og i Node. staticSvg.ts serialiserer den til et billede.
+ */
+export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const {
     species: def, stage = 2, colorway = 'c1', star = false, mood = 'idle', mode = 'animated',
-    outfit, lookAt, size, className, style, title, silhouette = false, freezeAt,
+    outfit, lookAt, size, className, style, title, silhouette = false, freezeAt, crop = 'full',
   } = props
   const breed: BreedId = props.breed ?? def.breeds[0].id
   const still = mode === 'static'
   const animated = !still
-  const uid = useId().replace(/[^A-Za-z0-9_-]/g, '')
+  const uid = env.uid
   const ids: RigIds = { uid, bodyClip: `${uid}b`, headClip: `${uid}h`, gradient: `${uid}g` }
   const shadowId = `${uid}s`
   const itemClipId = `${uid}i`
@@ -211,7 +261,7 @@ export function Rig(props: RigProps) {
   const bodyWorn = worn('body')
 
   const eyeMidWorld = { x: (w.eyeL.x + w.eyeR.x) / 2, y: (w.eyeL.y + w.eyeR.y) / 2 }
-  const { gazeRef, glintRef } = useGaze(animated && !silhouette, lookAt, eyeMidWorld, R.head.s, MOOD_GAZE[mood], face.eyes)
+  const { gazeRef, glintRef } = env
   const staticGaze = still ? gazeFor(lookAt, eyeMidWorld, R.head.s) ?? MOOD_GAZE[mood] : undefined
 
   const renderItem = (slot: Slot, layer: 'front' | 'back', region: number, clip?: string) => {
@@ -234,6 +284,7 @@ export function Rig(props: RigProps) {
           {art({
             c, a, sw, body: def.body, earMode: fit.earMode, ids,
             local: (p) => toLocal(fit, p),
+            solo: false,
             restroke: (color) => (
               <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
             ),
@@ -305,11 +356,13 @@ export function Rig(props: RigProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 200 240"
+      viewBox={CROPS[crop]}
       width={size}
+      height={typeof size === 'number' ? n(size * cropAspect(crop)) : undefined}
       className={['rig', className].filter(Boolean).join(' ')}
       data-mood={mood}
       data-species={def.id}
+      data-hat-top={n(w.headTop.y - w.headWidth * 0.55)}
       data-static={still ? '' : undefined}
       data-frozen={freezeAt !== undefined ? '' : undefined}
       style={rootStyle}
@@ -383,6 +436,10 @@ export function Rig(props: RigProps) {
             {parts.BodyDeco?.(ctx(swBody))}
             {!silhouette && shade.body && (
               <path d={outside(shade.body)} fill={pal.shade} fillRule="evenodd" clipPath={`url(#${ids.bodyClip})`} />
+            )}
+            {/* Hovedets kastede skygge på kroppen lige under hagen (dybde, samme regel på alle stadier). */}
+            {!silhouette && (
+              <path d={chinShadow(a, R)} fill={pal.shade} clipPath={`url(#${ids.bodyClip})`} />
             )}
             {/* 6 · body-item (klippet til kroppen +2) */}
             {renderItem('body', 'front', R.body.s, itemClipId)}
@@ -466,6 +523,18 @@ export function Rig(props: RigProps) {
       </g>
     </svg>
   )
+}
+
+/**
+ * Hovedets skygge på kroppen: hovedets underside (fra hovedregionen) ført ind i kroppens modelrum
+ * og forskudt lidt ned, så kun en smal halvmåne under hagen ses.
+ */
+function chinShadow(a: AnchorSet, R: ReturnType<typeof regionTransforms>): string {
+  const c = { x: a.headCenter.x * R.head.s + R.head.tx, y: a.headCenter.y * R.head.s + R.head.ty }
+  const k = R.head.s / R.body.s
+  const cx = (c.x - R.body.tx) / R.body.s + 2
+  const cy = (c.y - R.body.ty) / R.body.s + 6.5
+  return ellipse(cx, cy + a.headRy * k * 0.1, a.headRx * k * 0.86, a.headRy * k * 0.94)
 }
 
 /** Cel-skyggens "lyse" ellipser (skyggen = kroppen minus den lyse ellipse) og hovedets højlys. */

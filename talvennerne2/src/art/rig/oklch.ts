@@ -1,4 +1,4 @@
-// OKLCH ↔ sRGB (Björn Ottosson, OKLab). Ren talmatematik – ingen farvekonstanter her.
+// OKLCH til og fra sRGB (Björn Ottosson, OKLab). Ren talmatematik – ingen farvekonstanter her.
 
 export interface Oklch {
   L: number

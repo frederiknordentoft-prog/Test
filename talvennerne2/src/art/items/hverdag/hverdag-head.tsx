@@ -17,7 +17,7 @@ const KNIT: Vec[][] = [-30, -15, 0, 15, 30].map((x) => [
   [x * 0.22, -9],
 ])
 
-const front: ItemArt = ({ c, sw, a, local }) => {
+const front: ItemArt = ({ c, sw, a, local, solo }) => {
   const lit = litCopy(DOME, [-26, -8], 0.9)
   // Hullerne sidder hvor ørerne krydser hovedets kontur (lidt over ørebasen).
   const hole = (p: { x: number; y: number }, s: number) => {
@@ -31,7 +31,7 @@ const front: ItemArt = ({ c, sw, a, local }) => {
       <path d={blob(lit, 0.9)} fill={c.main} />
       <path d={join(...KNIT.map((k) => spline(k)))} fill="none" stroke={c.mainShade} strokeWidth={sw * 0.55} strokeLinecap="round" />
       <path d={blob(DOME, 0.9)} fill="none" {...stroke} />
-      <path d={join(hole(a.earBaseL, -1), hole(a.earBaseR, 1))} fill={c.outline} opacity={0.8} />
+      {!solo && <path d={join(hole(a.earBaseL, -1), hole(a.earBaseR, 1))} fill={c.outline} opacity={0.8} />}
       <path d={softBand(-54, 54, 12.5, 27.5, 4, 3)} fill={c.trim} {...stroke} />
       <path d={ribs(-52, 52, 15.5, 25.5, 14, 3.5)} fill="none" stroke={c.trimShade} strokeWidth={sw * 0.5} strokeLinecap="round" />
       <path d={scallop(0, -15, 10.5, 10, 8, 0.62, -90)} fill={c.accent} {...stroke} />

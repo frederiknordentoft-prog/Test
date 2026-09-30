@@ -248,6 +248,16 @@ export function ellipseBelow(cx: number, cy: number, rx: number, ry: number, cut
   return `M${p([cx - w, cut - tilt / 2])}A${n(rx)} ${n(ry)} 0 1 0 ${p([cx + w, cut + tilt / 2])}Z`
 }
 
+/**
+ * Den del af en ellipse, der ligger over et buet underlåg (genert knib: kinderne skubber op).
+ * `cut` er underlågets y i enderne, `lift` hvor meget midten buer op.
+ */
+export function ellipseAbove(cx: number, cy: number, rx: number, ry: number, cut: number, lift: number): string {
+  const dy = cut - cy
+  const w = rx * Math.sqrt(Math.max(0, 1 - (dy * dy) / (ry * ry)))
+  return `M${p([cx - w, cut])}A${n(rx)} ${n(ry)} 0 1 1 ${p([cx + w, cut])}Q${p([cx, cut - 2 * lift])} ${p([cx - w, cut])}Z`
+}
+
 /** D-formet åben mund: let buet overlæbe fra venstre til højre og en dyb, rund bund. */
 export function dMouth(cx: number, top: number, w: number, depth: number, lip = 1.6): string {
   return (

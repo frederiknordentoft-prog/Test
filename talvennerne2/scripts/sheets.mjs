@@ -92,10 +92,13 @@ try {
       continue
     }
     const lint = await page.evaluate(() => window.__lint())
-    const size = await page.evaluate(() => ({
-      w: Math.ceil(document.documentElement.scrollWidth),
-      h: Math.ceil(document.documentElement.scrollHeight),
-    }))
+    const size = await page.evaluate(() => {
+      const r = document.querySelector('.sh-page')?.getBoundingClientRect()
+      return {
+        w: Math.max(480, Math.ceil(r ? r.right : document.documentElement.scrollWidth)),
+        h: Math.ceil(document.documentElement.scrollHeight),
+      }
+    })
     await page.setViewportSize({ width: size.w, height: Math.min(size.h, 1200) })
     const file = path.join(outDir, `${route}.png`)
     await page.screenshot({ path: file, fullPage: true })

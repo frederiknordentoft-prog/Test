@@ -177,12 +177,15 @@ export function lintRig(root: SVGSVGElement, label: string, opts: { safeZone: bo
 
   if (opts.fit && itemGroups.length) {
     const body = drawn.filter((el) => !itemEls.has(el) && !el.closest('[data-part="shadow"],[data-part="aura"],[data-part="fx"]'))
-    const hull = unionOf(body, root)
+    const bodyHull = unionOf(body, root)
+    // Hovedgenstande må rage op over hovedet (hattezonen), også på arter uden høje ører.
+    const hatTop = Number(root.dataset.hatTop ?? NaN)
     const eye = root.querySelector<SVGGeometryElement>('[data-part="eyes"]')
     const samples = eye ? eyeSamples(eye) : []
     for (const g of itemGroups) {
       const els = [...g.querySelectorAll<SVGGeometryElement>(DRAWN)].filter((el) => !inDefs(el))
       const box = unionOf(els, root)
+      const hull = g.dataset.slot === 'head' && Number.isFinite(hatTop) ? { ...bodyHull, y0: Math.min(bodyHull.y0, hatTop) } : bodyHull
       checks++
       const m = HULL_MARGIN
       if (box.x0 < hull.x0 - m || box.x1 > hull.x1 + m || box.y0 < hull.y0 - m || box.y1 > hull.y1 + m)
