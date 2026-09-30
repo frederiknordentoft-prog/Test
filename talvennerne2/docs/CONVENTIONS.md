@@ -6,6 +6,7 @@ og ejes af integratoren — foreslå ændringer i din rapport i stedet for at re
 
 ## Arbejdsgang
 - Du arbejder i dit eget git-worktree (`/home/user/wt/<agent>`, branch `tv2/<agent>`), commit'er dér og pusher aldrig. Integratoren merger.
+- Containeren kan genstarte uden varsel. Lav WIP-commits i dit worktree ca. hvert 20. minut (også når noget er rødt) og altid før lange kørsler. Lange jobs skal kunne genoptages, hvor de slap.
 - `talvennerne2/node_modules` er symlinket fra hovedtræet. Installér aldrig pakker; mangler du en, så skriv det i rapporten.
 - Før hver commit: `cd talvennerne2 && npm run scope -- '<dine globs>'`, `npx tsc --noEmit`, `npx vitest run` (grønt for dine filer) og `npm run build`.
 - Commit som `git -c user.email=fnordentoft@icloud.com -c user.name="Frederik Nordentoft" commit -m "<dansk besked>"` og afslut beskeden med
