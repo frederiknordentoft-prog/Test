@@ -260,6 +260,16 @@ export function lostEarnings(prev: ProfileDoc, next: ProfileDoc): string | null 
 
 // ─── Store ──────────────────────────────────────────────────────────────────
 
+/** Diagnostics must never stop a child's round: a failing call is reported and skipped. */
+function safely<T>(fn: () => T, fallback: T): T {
+  try {
+    return fn()
+  } catch (err) {
+    console.error(err)
+    return fallback
+  }
+}
+
 function markSession(profileId: ProfileId, sessionId: string, day: string): boolean {
   const key = `${profileId}|${sessionId}|${day}`
   if (countedSessions.has(key)) return false
@@ -306,20 +316,26 @@ export const useProfile = create<ProfileStore>((set, get) => ({
     const token = ++loadToken
     await flushQueue()
     set({ status: 'loading' })
-    const doc = await getProfile(id)
-    if (token !== loadToken) return get().profile
-    if (!doc) {
+    try {
+      const doc = await getProfile(id)
+      if (token !== loadToken) return get().profile
+      if (!doc) {
+        resetCaches()
+        set({ profile: null, status: 'empty' })
+        return null
+      }
+      const loaded = await loadCaches(id)
+      if (token !== loadToken) return get().profile
       resetCaches()
-      set({ profile: null, status: 'empty' })
-      return null
+      recentBySkill = loaded.recent
+      keySkill = loaded.keys
+      set({ profile: doc, status: 'ready' })
+      return doc
+    } catch (err) {
+      // storage failed: stay with what was loaded before
+      if (token === loadToken) set({ status: get().profile ? 'ready' : 'empty' })
+      throw err
     }
-    const loaded = await loadCaches(id)
-    if (token !== loadToken) return get().profile
-    resetCaches()
-    recentBySkill = loaded.recent
-    keySkill = loaded.keys
-    set({ profile: doc, status: 'ready' })
-    return doc
   },
 
   async unload(opts = {}) {
@@ -360,7 +376,8 @@ export const useProfile = create<ProfileStore>((set, get) => ({
       skill, family: task.family, factId: task.factId, masteryKey: task.masteryKey, kind: task.kind,
       optionsCount: task.options.length, production: rec.production, given: rec.given, answer: task.answer,
       correct: rec.correct, ms: Math.min(MAX_MS, Math.max(0, Math.round(rec.ms))), fast: rec.fast,
-      errorTag: rec.correct ? null : classifyAnswer(task, rec.given), detectable: detectableOf(task),
+      errorTag: rec.correct ? null : safely(() => classifyAnswer(task, rec.given), null),
+      detectable: safely(() => detectableOf(task), []),
       boxBefore: prevKey?.box ?? 0, boxAfter: counts ? nextKey.box : prevKey?.box ?? 0, scaffold: task.scaffold,
       replays: rec.replays, retryOf: rec.retryOf, assisted: rec.assisted, audioUnverified: !get().context.audioVerified,
     }
@@ -369,7 +386,7 @@ export const useProfile = create<ProfileStore>((set, get) => ({
     const window = recentBySkill.get(skill) ?? []
     const nextWindow = firstTry ? [...window, rec.correct].slice(-ACCURACY_WINDOW) : window
     const skillAccuracy20 = nextWindow.length > 0 ? nextWindow.filter(Boolean).length / nextWindow.length : 1
-    const misconceptions = updateMisconceptions(doc.misconceptions, entry, { skillAccuracy20, day })
+    const misconceptions = safely(() => updateMisconceptions(doc.misconceptions, entry, { skillAccuracy20, day }), doc.misconceptions)
 
     // correct production answers and their learning days (medal evidence)
     let skillStats = doc.skillStats

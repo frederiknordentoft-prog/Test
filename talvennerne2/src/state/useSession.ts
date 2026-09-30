@@ -119,19 +119,17 @@ export const useSession = create<SessionStore>((set, get) => {
         set({ device: saved.device })
         useProfile.getState().setContext({ sessionId: get().sessionId, audioVerified: saved.device.audioVerified === true })
 
-        let docs: ProfileDoc[] = []
         try {
-          docs = await listProfiles()
+          const profiles = (await listProfiles()).map(summarize)
+          const ids = profiles.map((p) => p.id)
+          const last = saved.lastProfileId && ids.includes(saved.lastProfileId) ? saved.lastProfileId : null
+          set({ profiles, lastProfileId: last })
+          persistBoot()
+          if (profiles.length === 1) await get().selectProfile(profiles[0].id)
         } catch (err) {
-          set({ storageError: err instanceof Error ? err.message : String(err) })
+          // IndexedDB unusable: start empty in memory, and leave the boot index as it was
+          set({ storageError: err instanceof Error ? err.message : String(err), lastProfileId: saved.lastProfileId })
         }
-        const profiles = docs.map(summarize)
-        const ids = profiles.map((p) => p.id)
-        const last = saved.lastProfileId && ids.includes(saved.lastProfileId) ? saved.lastProfileId : null
-        set({ profiles, lastProfileId: last })
-        persistBoot()
-
-        if (profiles.length === 1) await get().selectProfile(profiles[0].id)
 
         const delay = opts.pruneDelayMs === undefined ? 2000 : opts.pruneDelayMs
         if (delay !== null && !get().storageError) cancelPrune = schedulePrune(delay)

@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDb } from '../data/db'
 import { BOOT_KEY, readBoot, writeBoot } from '../data/namespace'
 import { createProfile } from '../data/repo/profiles'
@@ -50,6 +50,7 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
+  vi.restoreAllMocks()
   restore.forEach((r) => r())
   restore = []
 })
@@ -99,6 +100,17 @@ describe('boot', () => {
     const ada = await createProfile({ name: 'Ada', grade: 0 })
     await session().boot({ pruneDelayMs: null })
     expect(session()).toMatchObject({ phase: 'ready', bootStored: false, activeId: ada.id })
+  })
+
+  it('starts empty and keeps the boot index when IndexedDB fails', async () => {
+    const ada = await createProfile({ name: 'Ada', grade: 0 })
+    writeBoot({ v: 1, profileIds: [ada.id], lastProfileId: ada.id, device: { followSilentSwitch: false, audioVerified: true, calm: false } })
+    const before = local.dump()
+    vi.spyOn(getDb().profiles, 'toArray').mockRejectedValueOnce(new Error('Connection to Indexed Database server lost'))
+    await session().boot({ pruneDelayMs: null })
+    expect(session()).toMatchObject({ phase: 'ready', profiles: [], activeId: null, lastProfileId: ada.id })
+    expect(session().storageError).toContain('Indexed Database')
+    expect(local.dump()).toEqual(before)
   })
 
   it('boots only once per app start', async () => {
