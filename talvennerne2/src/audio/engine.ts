@@ -69,6 +69,31 @@ export function existingAudioGraph(): AudioGraph | null {
   return graph
 }
 
+type OfflineCtor = new (channels: number, length: number, sampleRate: number) => OfflineAudioContext
+let decoder: BaseAudioContext | null = null
+
+/**
+ * A context for decodeAudioData. Before the first gesture there is no live context (creating one
+ * then is what iOS and Chromium refuse to start), so sprites preload through a 24 kHz
+ * OfflineAudioContext; its buffers play in any context.
+ */
+export function decodeContext(): BaseAudioContext | null {
+  if (graph) return graph.ctx
+  if (decoder || typeof window === 'undefined') return decoder
+  const w = window as unknown as { OfflineAudioContext?: OfflineCtor; webkitOfflineAudioContext?: OfflineCtor }
+  const Offline = w.OfflineAudioContext ?? w.webkitOfflineAudioContext
+  if (!Offline) return null
+  for (const rate of [24000, 44100]) {
+    try {
+      decoder = new Offline(1, 1, rate)
+      return decoder
+    } catch {
+      // try the next rate
+    }
+  }
+  return null
+}
+
 function sfxTarget(): number {
   if (!sfxOn) return 0
   return speaking > 0 ? SFX_DUCKED : SFX_GAIN

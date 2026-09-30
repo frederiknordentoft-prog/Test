@@ -16,9 +16,10 @@
 import type { ClipId, SpeechPart } from '../engine/types'
 import { GAP_MS, compile, type Compiled } from '../speech/compile'
 import { ttsCancel, ttsSpeak, type TtsHandle } from './deviceTts'
-import { audioGraph, voiceActivity } from './engine'
+import { decodeContext, existingAudioGraph, voiceActivity } from './engine'
 import { indexManifest, type ManifestIndex, type VoiceManifest } from './manifest'
 import { POST_MS, PRE_MS, findBounds, planSequence, type ClipBounds, type SequencePlan } from './sequence'
+import { installAudioUnlock } from './unlock'
 
 export interface SpeakHandle {
   /** Resolves at the scheduled end — also when the device is muted — so answer timers can start. */
@@ -147,12 +148,12 @@ function loadSprite(id: string): Promise<Sprite> {
   sprite.promise = (async () => {
     const idx = await loadIndex()
     const entry = idx?.manifest.sprites[id]
-    const graph = audioGraph()
+    const decoder = decodeContext()
     const url = entry ? resolveUrl(entry.file) : undefined
-    if (!entry || !graph || !url) throw new Error(`stemme-sprite ${id} kan ikke hentes`)
+    if (!entry || !decoder || !url) throw new Error(`stemme-sprite ${id} kan ikke hentes`)
     const res = await fetch(url)
     if (!res.ok) throw new Error(`stemme-sprite ${id}: HTTP ${res.status}`)
-    const buffer = await decode(graph.ctx, await res.arrayBuffer())
+    const buffer = await decode(decoder, await res.arrayBuffer())
     sprite.buffer = buffer
     sprite.bytes = buffer.length * buffer.numberOfChannels * 4
     sprite.pinned = !!entry.pinned && decodedBytes((s) => s.pinned) + sprite.bytes <= PINNED_LIMIT_BYTES
@@ -276,7 +277,7 @@ class Speech implements SpeakHandle {
   cancel(): void {
     if (this.done) return
     this.cancelled = true
-    const graph = audioGraph()
+    const graph = existingAudioGraph()
     if (this.gain && graph) {
       const t = graph.ctx.currentTime
       const g = this.gain.gain
@@ -382,7 +383,8 @@ class Speech implements SpeakHandle {
   }
 
   private async playClips(ids: ClipId[], gapsMs: number[], idx: ManifestIndex): Promise<void> {
-    const graph = audioGraph()
+    // Only a gesture creates the live context (unlock.ts); until then speech is silent but timed.
+    const graph = existingAudioGraph()
     const bufferOf = (id: ClipId) => sprites.get(idx.spriteOf.get(id)!)!
     const bounds = ids.map((id) => boundsFor(bufferOf(id), id, idx))
     const plan = planSequence(ids, bounds, gapsMs)
@@ -507,6 +509,8 @@ export async function voiceAvailable(): Promise<boolean> {
 }
 
 if (typeof document !== 'undefined') {
+  // speak() is the UI's only way to sound, so importing it installs the tap-to-unlock listeners.
+  installAudioUnlock()
   // Nothing should keep talking behind the home screen; the round re-speaks after "Tryk for at fortsætte".
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') hush()

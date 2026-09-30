@@ -6,7 +6,7 @@
 // A wrong answer is a soft, low "hmm" — never a buzzer. Noise comes from the seeded PRNG, so the
 // sounds are the same every time and game code never touches Math.random().
 import { hashSeed, makeRng } from '../engine/rng'
-import { audioGraph, sfxEnabled } from './engine'
+import { existingAudioGraph, sfxEnabled } from './engine'
 
 export const SFX_NAMES = [
   'tryk', 'klik', 'rigtigt', 'hmm', 'stjerne', 'perle', 'level-up', 'klaek', 'whoosh', 'pop', 'ding',
@@ -290,7 +290,8 @@ const SOUNDS: Readonly<Record<SfxName, (c: Ctx, o: SfxOptions) => void>> = {
 /** Plays a named effect on the sfx bus (quiet when effects are off or audio is locked). */
 export function playSfx(name: SfxName, opts: SfxOptions = {}): void {
   if (!sfxEnabled()) return
-  const graph = audioGraph()
+  // Never creates the context: that is the unlock gesture's job (unlock.ts).
+  const graph = existingAudioGraph()
   if (!graph || graph.ctx.state !== 'running') return
   try {
     const { ctx, sfxBus } = graph

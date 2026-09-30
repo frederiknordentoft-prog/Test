@@ -11,7 +11,7 @@
 //
 // `{ free }` text (a child's name) can never be recorded, and one statement is never spoken in two
 // voices mid-sentence, so free text becomes its own utterance for the device voice.
-import type { ClipId, SpeechPart } from '../engine/types'
+import type { ClipId, SpeechForm, SpeechPart } from '../engine/types'
 import { clipForm, clipText, hasClip } from './catalog'
 import { clockClips, clockWords } from './clock'
 import { fractionClips, fractionWords } from './fractions'
@@ -88,39 +88,43 @@ function digitFree(text: string): string {
 
 function piece(part: SpeechPart): Piece {
   if ('clip' in part) {
-    const known = hasClip(part.clip)
     return {
       clips: [part.clip],
-      words: known ? clipText(part.clip) : '',
+      words: hasClip(part.clip) ? clipText(part.clip) : '',
       startsSentence: startsSentence(part.clip),
       endsSentence: clipClass(part.clip) === 'end',
     }
   }
+  if ('free' in part) {
+    const text = digitFree(part.free.trim())
+    return { clips: [], words: text, startsSentence: false, endsSentence: /[.?!]$/.test(text), free: text }
+  }
+  const [clips, words, form] = spoken(part)
+  return { clips, words, startsSentence: false, endsSentence: form === 'end' }
+}
+
+/** Clips, words and form of the generated parts (numbers, clock, money, measure, fractions). */
+function spoken(part: Exclude<SpeechPart, { clip: ClipId } | { free: string }>): [ClipId[], string, SpeechForm] {
   if ('num' in part) {
     const gender = part.gender ?? 'c'
-    return { clips: numberClips(part.num, part.form, gender), words: numberWords(part.num, gender), startsSentence: false, endsSentence: part.form === 'end' }
+    return [numberClips(part.num, part.form, gender), numberWords(part.num, gender), part.form]
   }
   if ('clock' in part) {
     const { minutes, style, form } = part.clock
-    return { clips: clockClips(minutes, style, form), words: clockWords(minutes, style), startsSentence: false, endsSentence: form === 'end' }
+    return [clockClips(minutes, style, form), clockWords(minutes, style), form]
   }
   if ('money' in part) {
     const { ore, form } = part.money
-    return { clips: moneyClips(ore, form), words: moneyWords(ore), startsSentence: false, endsSentence: form === 'end' }
+    return [moneyClips(ore, form), moneyWords(ore), form]
   }
   if ('measure' in part) {
     const { value, unit, form } = part.measure
-    return { clips: measureClips(value, unit, form), words: measureWords(value, unit), startsSentence: false, endsSentence: form === 'end' }
+    return [measureClips(value, unit, form), measureWords(value, unit), form]
   }
-  if ('frac' in part) {
-    const { n, d, form } = part.frac
-    return { clips: fractionClips(n, d, form), words: fractionWords(n, d), startsSentence: false, endsSentence: form === 'end' }
-  }
-  const text = digitFree(part.free.trim())
-  return { clips: [], words: text, startsSentence: false, endsSentence: /[.?!]$/.test(text), free: text }
+  const { n, d, form } = part.frac
+  return [fractionClips(n, d, form), fractionWords(n, d), form]
 }
 
-// hv-words (hvad, hvor, hvilket, hvornår …) except "hvis", or a verb first ("Er tre større end fire?").
 const QUESTION_START = /^(hv(?!is(?=[\s,]|$))[a-zæøå]*|er|kan|har|passer|bliver|giver|tæller|skal|vil|må)(?=[\s,]|$)/
 const HAS_HVAD = /(^|\s)hvad(?=[\s,?]|$)/
 
