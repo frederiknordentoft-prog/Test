@@ -1,6 +1,8 @@
 /* Tailwind scanner kun V2's egne kilder – aldrig V1 eller resten af repoet. */
 @import "tailwindcss" source(none);
 @source "../";
+@import "../ui/design/tokens.css";
+@import "../ui/design/design.css";
 
 html,
 body,
@@ -8,12 +10,23 @@ body,
   height: 100%;
 }
 
+html {
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
 body {
   margin: 0;
-  background: #fff8ec;
-  color: #2b2144;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: 600;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
 }
 
 html[data-unsupported] #root {
