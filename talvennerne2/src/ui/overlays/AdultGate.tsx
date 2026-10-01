@@ -15,10 +15,17 @@
 // `onPass` runs once, after a right answer, as the gate closes. The sheet renders in a portal, so it
 // does not matter where `gate.element` sits in the screen, only that it is rendered.
 //
+// Outside a component (a plain handler such as the map's map/adult.ts), one call does it all: the gate
+// mounts itself above everything and removes itself again when it closes.
+//
+//   import { openAdultGate } from '../../../overlays/AdultGate'
+//   export const openAdult = () => openAdultGate(() => useNav.getState().go({ id: 'parent' }))
+//
 // A screen that wants to hold the state itself renders the component directly:
 //   <AdultGate open={open} onPass={() => …} onClose={() => setOpen(false)} />
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { createRoot } from 'react-dom/client'
 import { playSfx } from '../../audio/sfx'
 import { hashSeed, makeRng } from '../../engine/rng'
 import type { Rng } from '../../engine/rng'
@@ -177,4 +184,35 @@ export function useAdultGate(opts: { seed?: number } = {}): AdultGateHandle {
     run?.()
   }, [])
   return { open, close, isOpen, element: <AdultGate open={isOpen} onPass={pass} onClose={close} seed={opts.seed} /> }
+}
+
+/** The gate as it slides away, before its own root is removed. */
+const UNMOUNT_AFTER_MS = 450
+let standalone = false
+
+/**
+ * The gate without a hook: renders itself in its own small root above the app. `onPass` runs after
+ * a right answer; closing does nothing. A second call while the gate is open is ignored.
+ */
+export function openAdultGate(onPass: () => void): void {
+  if (standalone || typeof document === 'undefined') return
+  standalone = true
+  const host = document.createElement('div')
+  host.setAttribute('data-adult-gate', '')
+  document.body.appendChild(host)
+  const root = createRoot(host)
+  let done = false
+  const end = (passed: boolean) => {
+    if (done) return
+    done = true
+    show(false)
+    window.setTimeout(() => {
+      root.unmount()
+      host.remove()
+      standalone = false
+    }, UNMOUNT_AFTER_MS)
+    if (passed) onPass()
+  }
+  const show = (open: boolean) => root.render(<AdultGate open={open} onPass={() => end(true)} onClose={() => end(false)} />)
+  show(true)
 }

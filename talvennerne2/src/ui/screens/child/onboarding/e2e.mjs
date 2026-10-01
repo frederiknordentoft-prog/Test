@@ -361,6 +361,24 @@ try {
     await page.waitForTimeout(700)
     await shot(page, 'phone-12-puppy')
 
+    // the gate without a hook (as a plain handler like the map's grown-ups' button would call it)
+    await page.evaluate(async () => {
+      const { openAdultGate } = await import('/src/ui/overlays/AdultGate.tsx')
+      window.__gatePassed = 0
+      openAdultGate(() => window.__gatePassed++)
+      openAdultGate(() => window.__gatePassed++)
+    })
+    await page.waitForSelector('.tv-sheet .tv-gate')
+    check((await page.locator('.tv-gate').count()) === 1, 'port: openAdultGate åbner én port, også ved dobbelttryk')
+    {
+      const [x, y] = (await page.locator('.tv-gate').getAttribute('data-gate')).split('x').map(Number)
+      for (const d of String(x * y)) await page.locator(`.tv-gate [data-key="${d}"]`).click()
+      await page.locator('.tv-gate [data-key="ok"]').click()
+    }
+    await page.clock.fastForward(1_000)
+    await until(page, () => window.__gatePassed === 1 && !document.querySelector('[data-adult-gate]'))
+    check(true, 'port: openAdultGate kalder onPass én gang og fjerner sig selv')
+
     // the sound check from elsewhere (profiles exist): "Næste" goes back
     await page.evaluate(async () => {
       const { useNav } = await import('/src/app/nav.ts')
