@@ -66,6 +66,8 @@ function SkillDetails({ r, today }: { r: SkillRow; today: string }) {
 }
 
 function DomainPanel({ c, today }: { c: DomainCard; today: string }) {
+  const started = c.rows.filter((r) => r.dot !== 'notStarted')
+  const waiting = c.rows.filter((r) => r.dot === 'notStarted')
   return (
     <article className="tv-ddomain" style={domainStyle(c.domain)}>
       <header className="tv-ddomain__head">
@@ -81,9 +83,16 @@ function DomainPanel({ c, today }: { c: DomainCard; today: string }) {
         <Fact label="Tid brugt" value={fmtMinutes(c.learnMs)} />
       </dl>
       {c.ahead.length > 0 && <p className="tv-dmuted">Desuden i gang med {c.ahead.length} {plural(c.ahead.length, 'færdighed', 'færdigheder')} fra et højere klassetrin.</p>}
-      <div className="tv-ddomain__rows">
-        {c.rows.map((r) => <SkillDetails key={r.skill} r={r} today={today} />)}
-      </div>
+      {started.length > 0 && (
+        <div className="tv-ddomain__rows">
+          {started.map((r) => <SkillDetails key={r.skill} r={r} today={today} />)}
+        </div>
+      )}
+      {waiting.length > 0 && (
+        <p className="tv-ddomain__waiting">
+          <StatusDot kind="notStarted" size={14} label={null} /> Ikke startet: {waiting.map((r) => r.label).join(', ')}
+        </p>
+      )}
     </article>
   )
 }

@@ -36,9 +36,9 @@ export function DayBars({ days, today }: { days: readonly DayBar[]; today: strin
   const slot = 26
   const left = 34
   const W = left + days.length * slot
-  const H = 132
+  const H = 140
   const base = H - 24
-  const top = 10
+  const top = 18
   const maxMin = Math.max(...days.map((d) => Math.max(d.learnMs, d.playMs) / 60_000), 1)
   const scale = NICE.find((n) => n >= maxMin) ?? Math.ceil(maxMin / 60) * 60
   const y = (min: number) => base - ((base - top) * min) / scale
@@ -48,10 +48,10 @@ export function DayBars({ days, today }: { days: readonly DayBar[]; today: strin
       {[0, scale / 2, scale].map((m) => (
         <g key={m}>
           <line className="tv-bars__grid" x1={left} x2={W} y1={y(m)} y2={y(m)} />
-          <text className="tv-bars__tick" x={left - 5} y={y(m) + 3.5} textAnchor="end">{m === 0 ? '0' : `${m}`}</text>
+          <text className="tv-bars__tick" x={left - 5} y={y(m) + 3.5} textAnchor="end">{m}</text>
         </g>
       ))}
-      <text className="tv-bars__tick" x={left - 5} y={top - 1} textAnchor="end">min</text>
+      <text className="tv-bars__tick" x={left - 5} y={y(scale) - 9} textAnchor="end">min</text>
       {days.map((d, i) => {
         const cx = left + i * slot + slot / 2
         const learn = d.learnMs / 60_000

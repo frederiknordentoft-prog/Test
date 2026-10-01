@@ -99,11 +99,11 @@ export function SettingsTab({ profile, onImported, onDeleted }: SettingsTabProps
   const entry = incoming?.profiles[pick] ?? null
   return (
     <>
-      <Section title="Lyd og bevægelse">
+      <Section title="Lyd og bevægelse" sub={`Lydløs-knappen gælder hele enheden. Resten gælder for ${name}.`}>
         <Panel className="tv-dsettings">
           <Toggle
             label="Følg lydløs-knappen" checked={device.followSilentSwitch} onChange={(v) => useSession.getState().setDevice({ followSilentSwitch: v })}
-            hint="Gælder hele enheden. Slået fra kan oplæsningen høres, selv om enheden står på lydløs – børn ved sjældent, at kontakten er slået til."
+            hint="Slået fra kan oplæsningen høres, selv om enheden står på lydløs – børn ved sjældent, at kontakten er slået til."
           />
           <Toggle label="Lydeffekter" checked={st.sfx} onChange={(v) => set({ sfx: v })} hint="Små lyde ved knapper, rigtige svar og belønninger." />
           <Toggle label="Oplæsning" checked={st.speech} onChange={(v) => set({ speech: v })} hint="Pip læser opgaver, knapper og forklaringer op. Børn, der ikke kan læse endnu, har brug for den." />

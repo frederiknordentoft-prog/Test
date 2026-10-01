@@ -11,7 +11,8 @@ import { FRAME_HEX } from '../../../content/catalog'
 import { buildDashboard } from '../../../parent/dashboard'
 import { genitive, nameOf } from '../../../parent/format'
 import { loadDashboard } from '../../../parent/load'
-import type { DashSource } from '../../../parent/types'
+import type { ProfileDoc } from '../../../engine/types'
+import type { DashSource, Dashboard } from '../../../parent/types'
 import { useProfile } from '../../../state/useProfile'
 import { useSession } from '../../../state/useSession'
 import { TopBar } from '../../shell/TopBar'
@@ -41,7 +42,7 @@ export default function DashboardScreen({ route }: ScreenProps<RouteOf<'parent'>
   const profiles = useSession((s) => s.profiles)
   const lastProfileId = useSession((s) => s.lastProfileId)
   const [tab, setTab] = useState<ParentTab>(route.tab ?? 'overview')
-  const [loaded, setLoaded] = useState<{ id: string; source: DashSource } | null>(null)
+  const [loaded, setLoaded] = useState<{ profile: ProfileDoc; source: DashSource; dashboard: Dashboard } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
   /** The child who was playing when the dashboard opened; looking at a sibling never changes that. */
@@ -64,17 +65,18 @@ export default function DashboardScreen({ route }: ScreenProps<RouteOf<'parent'>
     let live = true
     setError(null)
     loadDashboard(p)
-      .then(({ source }) => live && setLoaded({ id, source }))
+      .then(({ source, dashboard }) => live && setLoaded({ profile: p, source, dashboard }))
       .catch((err: unknown) => live && setError(err instanceof Error ? err.message : String(err)))
     return () => {
       live = false
     }
   }, [id, reload])
 
-  const dash = useMemo(
-    () => (profile && loaded?.id === profile.id ? buildDashboard(profile, loaded.source) : null),
-    [profile, loaded],
-  )
+  // a changed setting rebuilds from the data already read
+  const dash = useMemo(() => {
+    if (!profile || loaded?.profile.id !== profile.id) return null
+    return loaded.profile === profile ? loaded.dashboard : buildDashboard(profile, loaded.source)
+  }, [profile, loaded])
 
   const choose = (next: ParentTab) => {
     setTab(next)
@@ -82,13 +84,16 @@ export default function DashboardScreen({ route }: ScreenProps<RouteOf<'parent'>
     body.current?.scrollTo({ top: 0 })
   }
 
+  // Back to where the dashboard was opened from, with the child who was playing then.
   const back = () => {
+    if (leaving.current) return
     leaving.current = true
     const start = origin.current
-    useNav.getState().back()
     const now = useProfile.getState().profile?.id ?? null
-    if (start && now !== start) void useSession.getState().selectProfile(start)
-    else if (!start && now) void useSession.getState().leaveProfile()
+    const session = useSession.getState()
+    const restore = start && now !== start ? session.selectProfile(start) : !start && now ? session.leaveProfile() : null
+    if (restore) void restore.catch(() => undefined).finally(() => useNav.getState().back())
+    else useNav.getState().back()
   }
 
   const onDeleted = () => {

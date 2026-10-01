@@ -20,6 +20,15 @@
 .tv-dash p {
   margin: 0;
 }
+/* One row on narrow phones too: the title sits between ← and the empty other side. */
+.tv-dash > .tv-topbar {
+  flex-wrap: nowrap;
+}
+.tv-dash > .tv-topbar .tv-topbar__center {
+  order: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .tv-dash__title {
   margin: 0;
   overflow: hidden;
@@ -62,6 +71,12 @@
 }
 .tv-dash__kids {
   padding-bottom: 10px;
+}
+.tv-dash__tabs {
+  gap: 2px;
+  padding-right: 44px;
+  -webkit-mask-image: linear-gradient(90deg, var(--color-ink) calc(100% - 36px), transparent);
+  mask-image: linear-gradient(90deg, var(--color-ink) calc(100% - 36px), transparent);
 }
 .tv-dash__body {
   flex: 1;
@@ -117,7 +132,7 @@
 .tv-dtab {
   flex: none;
   min-height: 60px;
-  padding: 0 18px;
+  padding: 0 15px;
   border: 0;
   border-radius: var(--radius-pill);
   background: none;
@@ -568,6 +583,14 @@
   margin-top: 12px;
   border-top: 1px solid var(--color-line);
 }
+.tv-dash .tv-ddomain__waiting {
+  margin: 12px 0 10px;
+  color: var(--color-ink-2);
+  font-size: 14px;
+}
+.tv-ddomain__waiting .tv-dot {
+  margin: -2px 4px 0 0;
+}
 .tv-dskill + .tv-dskill {
   border-top: 1px solid var(--color-line);
 }
@@ -896,10 +919,46 @@
   margin: 8px 0 0;
 }
 
-/* iPad: larger type, four stats in a row. */
+/* iPad: a sidebar with the children and the tabs, larger type, four stats in a row. */
 @media (min-width: 700px) and (min-height: 700px) {
   .tv-dash {
     font-size: 16.5px;
+  }
+  .tv-dash__sheet {
+    flex-direction: row;
+  }
+  .tv-dash__head {
+    width: 232px;
+    overflow-y: auto;
+    padding: 22px 14px calc(var(--safe-b) + 22px) calc(14px + var(--safe-l));
+    border-right: 1.5px solid var(--color-line);
+    border-bottom: 0;
+  }
+  .tv-dash__kids,
+  .tv-dash__tabs {
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .tv-dash__kids {
+    gap: 6px;
+    padding-bottom: 16px;
+    margin-bottom: 14px;
+    border-bottom: 1.5px solid var(--color-line);
+  }
+  .tv-dkid {
+    padding-right: 14px;
+  }
+  .tv-dtab {
+    padding: 0 18px;
+    text-align: left;
+  }
+  .tv-dash__content {
+    padding-left: 28px;
+    padding-right: calc(28px + var(--safe-r));
   }
   .tv-dash__title {
     font-size: 24px;

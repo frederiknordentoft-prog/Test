@@ -17,6 +17,7 @@ import { SkillsTab } from './SkillsTab'
 import { TablesTab } from './TablesTab'
 import { tableGrid } from '../../../../parent/metrics'
 import { tableIndex } from '../../../../parent/fixtures'
+import DashboardScreen from '../DashboardScreen'
 
 const index = keyIndexOf(skillRegistry())
 
@@ -77,6 +78,13 @@ describe('dashboard views', () => {
     expect(new Set(shapes).size).toBe(5)
     expect(shapes[4]).toContain('stroke-dasharray')
     expect(shapes[3]).toContain('aria-label="Kan selv"')
+  })
+
+  it('render the screen with its tabs before any child exists', () => {
+    const html = renderToStaticMarkup(<DashboardScreen route={{ id: 'parent' }} />)
+    for (const t of ['Overblik', 'Pensumkort', 'Færdigheder', 'Tabeller', 'Misforståelser', 'Belønninger', 'Indstillinger']) expect(html).toContain(`>${t}</button>`)
+    expect(html).toContain('Der er ingen spillere på denne enhed endnu.')
+    expect(html).toContain('aria-current="page"')
   })
 
   it('draw the 10 · 10 table with the products in its titles', () => {

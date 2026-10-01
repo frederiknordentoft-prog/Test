@@ -1,7 +1,8 @@
 // Screenshots of the parent dashboard with the demo household (src/parent/testing/demo.ts).
 // Start the dev server first (npx vite --port 4311 --strictPort), then:
 //   flock /tmp/tv2-chromium.lock node src/parent/testing/shoot.mjs [tab …]
-// Writes artifacts/dash/<width>-<tab>.png. FULL=1 grows the window to the whole tab.
+// Writes artifacts/dash/<width>-<tab>.png. FULL=1 grows the window to the whole tab, DPR=1 keeps it small,
+// SIZES=393x852 picks the windows, OPEN='<selector>' clicks every match first (e.g. 'summary').
 import { mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { launch } from '../../../scripts/browser.mjs'
@@ -16,7 +17,7 @@ mkdirSync(OUT, { recursive: true })
 const browser = await launch()
 try {
   for (const [width, height] of SIZES) {
-    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 })
+    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: Number(process.env.DPR ?? 2) })
     page.on('pageerror', (e) => console.error('pageerror', e.message))
     page.on('console', (m) => m.type() === 'error' && console.error('console', m.text()))
     await page.goto(BASE)
@@ -45,9 +46,9 @@ try {
         await page.setViewportSize(size)
         await page.waitForTimeout(250)
       }
-      await page.screenshot({ path: `${OUT}${width}-${tab}.png` })
+      await page.screenshot({ path: `${OUT}${width}-${tab}${process.env.FULL ? '-full' : ''}.png` })
       if (process.env.FULL) await page.setViewportSize({ width, height })
-      console.log(`${width}-${tab}.png`)
+      console.log(`${width}-${tab}${process.env.FULL ? '-full' : ''}.png`)
     }
     await page.close()
   }

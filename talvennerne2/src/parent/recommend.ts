@@ -49,7 +49,7 @@ function r1(x: RecommendInput, name: string): Recommendation[] {
   return x.signs.concepts.map((s) => ({
     rule: 'R1',
     title: `Vi har set tegn på, at ${name} ${s.title}`,
-    text: `${personal(s.parent, name)} ${s.homeTip}`,
+    text: `${personal(s.parent, name)} Prøv derhjemme: ${s.homeTip}`,
     misconception: s.id,
     ...(s.skills[0] ? { skill: s.skills[0] } : {}),
   }))
