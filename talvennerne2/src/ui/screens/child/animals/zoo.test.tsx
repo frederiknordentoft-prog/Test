@@ -16,6 +16,7 @@ import { ArtContext } from './art'
 import { MAX_ANIMATED } from './model'
 import { DEMO_NOW, zooDemoProfile, zooNewProfile } from './testing/demo'
 import { ZooView } from './ZooView'
+import { AVAILABLE_SPECIES } from '../../../../art/species/registry'
 
 const species: SpeciesDefs = { rabbit, cat, horse, unicorn }
 const items = { 'hverdag-head': hverdagHead, 'hverdag-body': hverdagBody }
@@ -44,9 +45,13 @@ describe('Dyrehaven', () => {
     const animatedCells = [...html.matchAll(/data-uid="([^"]+)" data-animated=""/g)].map((m) => m[1])
     // the fox (not drawn yet) cannot move its parts, so the slot goes to the next drawn animal
     expect(animatedCells).toEqual(['starter-rabbit', 'egg-6', 'rainbow-rabbit'])
-    // the eleven other drawn animals are <img> pictures (blob URLs), the four undrawn ones shadows
-    expect((html.match(/<img class="zoo-fig__img"/g) ?? []).length).toBeGreaterThanOrEqual(ida.animals.length - 3 - 4)
-    for (const sp of ['puppy', 'hedgehog', 'fox']) expect(html).toContain(`data-standin="${sp}"`)
+    // the other drawn animals are <img> pictures (blob URLs), the undrawn ones shadows — which
+    // species those are changes as the art lands, so it is read from the art registry
+    const drawn = new Set<string>(AVAILABLE_SPECIES)
+    const undrawn = ida.animals.filter((a) => !drawn.has(a.species))
+    expect((html.match(/<img class="zoo-fig__img"/g) ?? []).length).toBeGreaterThanOrEqual(ida.animals.length - 3 - undrawn.length)
+    for (const sp of new Set(undrawn.map((a) => a.species))) expect(html).toContain(`data-standin="${sp}"`)
+    for (const sp of drawn) expect(html).not.toContain(`data-standin="${sp}"`)
   })
 
   it('stays far inside the DOM budget of 1 500 SVG elements', () => {

@@ -36,7 +36,7 @@ const ORDER = ['rabbit', 'cat', 'puppy', 'hedgehog', 'horse', 'lamb', 'fox', 'ha
 const present = new Set(readdirSync(path.join(root, 'src/art/species')).filter((f) => /^[a-z]+\.tsx$/.test(f)).map((f) => f.slice(0, -4)))
 const SPECIES = ORDER.filter((id) => present.has(id))
 const PER_SPECIES = ['species', 'moods', 'closeup', 'sizes', 'fit', 'filmstrip']
-const GLOBAL = ['silhouettes', 'lineup', 'fitmatrix']
+const GLOBAL = ['silhouettes', 'lineup', 'fitmatrix', 'scene']
 
 /** Udvid argumenter: `closeup` → closeup:<hver art>, `closeup:cat` → én. */
 function expand(args) {
