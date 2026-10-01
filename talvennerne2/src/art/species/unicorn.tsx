@@ -86,6 +86,12 @@ const Lashes: Part = ({ pal, sw, a, stage, mood }) => {
 // Stjernefølets stjernemærker: gyldne stjerner på kroppens side.
 
 const STARS: [number, number, number][] = [[-0.6, 0.12, 6.2], [-0.36, 0.42, 4.2], [-0.74, 0.5, 3.4], [0.58, 0.36, 4.4]]
+/** Stjernefølets gyldne stjerne i panden, mellem pandelokken og øjnene. */
+const StarHead: Part = ({ pal, a, colorway, sw }) =>
+  colorway === 'starwhite' ? (
+    <path d={star(a.headCenter.x, a.headCenter.y - a.headRy * 0.36, 6.4, 2.4, 4)} fill={pal.pattern} stroke={pal.outline} strokeWidth={sw * 0.3} strokeLinejoin="round" />
+  ) : null
+
 const StarsBody: Part = ({ pal, a, ids, colorway }) =>
   colorway === 'starwhite' ? (
     <path
@@ -106,7 +112,7 @@ const FOAL_MANE: Vec[][] = [
   [[106, 41], [121, 41], [134, 48], [144, 60], [149, 75], [148, 88], [142, 80], [139, 90], [135, 76], [128, 62], [116, 53], [108, 50]],
 ]
 const FOAL_MANE_STRIPE: Vec[] = [[62, 50], [53, 61], [48.5, 76], [47.6, 92], [50.6, 100], [52.6, 88], [54.4, 74], [60, 62], [68, 54]]
-const FOAL_TAIL: Vec[] = [[0, -4], [9, -8], [18, -7], [24, -1], [26, 6], [24, 11], [21, 6], [18, 10], [15, 4], [9, 1], [2, 3]]
+const FOAL_TAIL: Vec[] = [[-3, -2], [3, -9], [11, -12], [19, -10], [24, -3], [26, 6], [25, 14], [22, 17], [20, 12], [17, 15], [15, 8], [13, 1], [8, -3]]
 
 /** Bølgemanke: lange, bølgede lokker på begge sider, en fejende pandelok og en lang bølget hale. */
 const WAVY_FORELOCK: Vec[] = [[100, 39], [91.5, 41], [86.5, 47], [86, 55], [89, 62], [94, 66.5], [96.5, 72], [100, 66.6], [103.4, 60], [108.6, 56], [113.4, 51.6], [115, 45.6], [110, 40.6]]
@@ -123,7 +129,7 @@ const WAVY_MANE: Vec[][] = [
   ],
 ]
 const WAVY_MANE_STRIPE: Vec[] = [[64, 48], [54, 62], [49, 80], [51, 96], [48, 112], [50, 128], [53, 124], [53.4, 110], [55.6, 96], [54.6, 80], [58.6, 64], [67, 52]]
-const WAVY_TAIL: Vec[] = [[0, -5], [10, -11], [21, -11], [29, -5], [33, 4], [30, 12], [33, 14], [27, 15], [22, 10], [24, 4], [19, -1], [12, -1], [5, 2]]
+const WAVY_TAIL: Vec[] = [[-3, -2], [3, -11], [13, -15], [23, -12], [29, -4], [30, 6], [27, 13], [31, 20], [29, 26], [25, 22], [22, 26], [20, 17], [23, 10], [20, 2], [13, -4], [5, -4]]
 
 /** Stjernehorn: mellemlang manke på højre side, en lille tot til venstre, skilt pandelok. */
 const MANE_MED_L: Vec[] = [
@@ -134,7 +140,7 @@ const MANE_TUFT_L: Vec[] = [[94, 46], [80, 46], [68, 52], [60, 62], [57, 74], [6
 const STAR_MANE: Vec[][] = [mirrorX(MANE_MED_L, 100), MANE_TUFT_L]
 const STAR_MANE_STRIPE: Vec[] = mirrorX([[66, 56], [56, 68], [51, 84], [50.5, 100], [53, 116], [55.4, 112], [55, 98], [56.4, 84], [60.6, 70], [69, 59]], 100)
 const STAR_FORELOCK: Vec[] = [[100, 40], [92, 41], [86, 47], [84, 55], [88, 61], [92, 56], [96, 50], [100, 47], [104, 50], [108, 56], [112, 61], [116, 55], [114, 47], [108, 41]]
-const STAR_TAIL: Vec[] = [[0, -5], [10, -9], [20, -9], [27, -3], [30, 5], [30, 12], [27, 15], [24, 9], [21, 13], [18, 6], [12, 2], [3, 3]]
+const STAR_TAIL: Vec[] = [[-3, -2], [3, -10], [12, -14], [21, -12], [27, -4], [29, 6], [28, 16], [25, 23], [22, 19], [19, 23], [17, 14], [16, 5], [11, -2], [4, -4]]
 
 // ---------------------------------------------------------------------------------------------
 
@@ -163,7 +169,7 @@ export const unicorn: SpeciesDef = {
       magic: ['gold', 'rainbow', 'starwhite'],
       parts: {
         Paw: makeLeg(0.86),
-        Horn: makeHorn(28, 6),
+        Horn: makeHorn(33, 7),
         ManeBack: hairShape(FOAL_MANE, { stripe: FOAL_MANE_STRIPE }),
         ManeFront: hairShape(FOAL_FORELOCK, { stripe: FOAL_FORELOCK_STRIPE }),
         Tail: hairShape(FOAL_TAIL),
@@ -174,7 +180,7 @@ export const unicorn: SpeciesDef = {
       id: 'wavy',
       name: 'bølgemanke',
       parts: {
-        Horn: makeHorn(34, 6.5),
+        Horn: makeHorn(38, 7.4),
         ManeBack: hairShape(WAVY_MANE, { stripe: WAVY_MANE_STRIPE }),
         ManeFront: hairShape(WAVY_FORELOCK, { stripe: WAVY_FORELOCK_STRIPE }),
         Tail: hairShape(WAVY_TAIL),
@@ -185,7 +191,7 @@ export const unicorn: SpeciesDef = {
       id: 'starhorn',
       name: 'stjernehorn',
       parts: {
-        Horn: makeHorn(24, 6.2, true),
+        Horn: makeHorn(23.5, 7, true),
         ManeBack: hairShape(STAR_MANE, { stripe: STAR_MANE_STRIPE }),
         ManeFront: hairShape(STAR_FORELOCK),
         Tail: hairShape(STAR_TAIL),
@@ -224,10 +230,10 @@ export const unicorn: SpeciesDef = {
     Tail: hairShape(FOAL_TAIL),
     Muzzle: makeMuzzle(),
     HeadDeco: Lashes,
-    Horn: makeHorn(30, 6.2),
+    Horn: makeHorn(33, 7),
     ManeBack: hairShape(FOAL_MANE),
     ManeFront: hairShape(FOAL_FORELOCK),
-    Pattern: { body: StarsBody },
+    Pattern: { head: StarHead, body: StarsBody },
   },
 }
 

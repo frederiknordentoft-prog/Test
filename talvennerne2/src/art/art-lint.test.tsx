@@ -66,7 +66,7 @@ describe('kildescanninger', () => {
   })
 
   it('ingen emoji (\\p{Extended_Pictographic}) og ingen gange-/divisionstegn', () => {
-    const bad = sources.filter((f) => /\p{Extended_Pictographic}|[×÷]/u.test(read(f))).map(rel)
+    const bad = sources.filter((f) => /\p{Extended_Pictographic}|[\u00D7\u00F7]/u.test(read(f))).map(rel)
     expect(bad).toEqual([])
   })
 

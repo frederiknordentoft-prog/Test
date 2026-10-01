@@ -72,9 +72,9 @@ const UprightEar: SidePart = ({ pal, sw, stage, side, hat }) => {
  * så spidsen når under hagen. Tegnes foran hovedet (ingen klip); indersiden ses som en lyserød
  * stribe nederst, hvor øret drejer let fremad.
  */
-const LOP_SPINE: Vec[] = [[3, -7], [-6, -6.5], [-14, -1], [-20, 11], [-23, 28], [-24, 47], [-22.5, 66], [-19.5, 82]]
-const LOP_EAR = limbLoop(LOP_SPINE, 16, 21, 7)
-const LOP_INNER = ribbon([[-17.4, 36], [-17.8, 52], [-16.6, 68], [-14.4, 82], [-13.4, 88]], [0, 6.5, 8, 7, 0])
+const LOP_SPINE: Vec[] = [[3, -8], [-6, -7.5], [-14, -2], [-20, 10], [-23.5, 27], [-24.5, 46], [-23.5, 65], [-21, 82], [-18, 96]]
+const LOP_EAR = limbLoop(LOP_SPINE, 14, 17.5, 7)
+const LOP_INNER = ribbon([[-19.4, 40], [-19.8, 56], [-18.8, 72], [-16.6, 86], [-15.6, 94]], [0, 5.5, 7, 6, 0])
 
 const LopEar: SidePart = ({ pal, sw, stage }) => {
   const s = stage === 1 ? { sx: 1.04, sy: 0.86 } : {}
@@ -298,7 +298,7 @@ export const rabbit: SpeciesDef = {
         happy: { earL: 0, earR: 0 }, cheer: { earL: 0, earR: 0 }, think: { earL: 0, earR: 0 },
         oops: { earL: 0, earR: 0 }, sleep: { earL: 0, earR: 0 }, wave: { earL: 0, earR: 0 },
       },
-      bounds: { head: { x0: 30, y0: 49, x1: 170, y1: 172 } },
+      bounds: { head: { x0: 30, y0: 46, x1: 170, y1: 178 } },
     },
     {
       id: 'lionhead',

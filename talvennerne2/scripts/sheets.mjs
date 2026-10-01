@@ -1,5 +1,5 @@
 // Kontaktark: serverer det byggede sheets-app (artifacts/sheets-app, fra `vite build --mode sheets`)
-// på en lille node:http-server, tager PNG i 2× af hver rute til artifacts/sheets/<rute>[-<art>].png og
+// på en lille node:http-server, tager PNG i 2x af hver rute til artifacts/sheets/<rute>[-<art>].png og
 // kører geometri-lints i siden (getBBox/isPointInFill): sikker zone, elementbudget, pasform og
 // butikskortenes fyld. Fejl i lints eller konsolfejl giver exit-kode ≠ 0.
 //

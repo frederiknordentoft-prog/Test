@@ -67,7 +67,7 @@ export const UNICORN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { starw
     pattern: 'stars',
     patternColor: '#FFD24D',
     overrides: {
-      outline: '#7A80C6', shade: '#E2E5FA', belly: '#FFFFFF', mane: '#D3DEFF', mane2: '#F6C4EC', horn: '#FFD24D',
+      outline: '#7A80C6', shade: '#E2E5FA', belly: '#FFFFFF', mane: '#BFD0FF', mane2: '#F5B3E6', horn: '#FFD24D',
       hornShade: '#F2B32E', hoof: '#FFE08A', muzzle: '#F4F1FF', inner: '#F8C6E4', iris: '#5B6FD6', nose: '#F08CB4',
     },
     sparkle: '#FFFFFF',

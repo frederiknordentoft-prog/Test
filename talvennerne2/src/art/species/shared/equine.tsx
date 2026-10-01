@@ -24,7 +24,7 @@ export const EQUINE_ANCHORS: Partial<AnchorSet> = {
   headWidth: 96,
   earBaseL: { x: 71, y: 54 },
   earBaseR: { x: 129, y: 54 },
-  hornBase: { x: 100, y: 58 },
+  hornBase: { x: 100, y: 55 },
   eyeL: { x: 76.5, y: 92 },
   eyeR: { x: 123.5, y: 92 },
   eyeRx: 10.4,
@@ -47,7 +47,7 @@ export const EQUINE_ANCHORS: Partial<AnchorSet> = {
   pawR: { x: 112, y: 220 },
   footL: { x: 60, y: 220 },
   footR: { x: 140, y: 220 },
-  tailBase: { x: 132, y: 208 },
+  tailBase: { x: 140, y: 190 },
 }
 
 // ---------------------------------------------------------------------------------------------
