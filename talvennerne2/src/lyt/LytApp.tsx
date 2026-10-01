@@ -1,5 +1,5 @@
 // The listening page (SPEC §10.4 "Lytteside"): every recorded clip per sprite with its text, what
-// the speech recogniser heard, CER and loudness; "Byg en sætning" (skill × fact × kind); sliders for
+// the speech recogniser heard, CER and loudness; "Byg en sætning" (skill, fact og kind); sliders for
 // numbers 0–1000 and clock times; and a flag per clip with an export of the flagged list. For adults
 // reviewing the voice, so plain Danish text is fine here (no child screen).
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'

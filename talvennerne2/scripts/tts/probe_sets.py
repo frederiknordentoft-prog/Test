@@ -24,7 +24,7 @@ PROBE12 = [
 ]
 
 # 8 ekstra klip af varierende længde, så 12 + 8 = 20 probeklip til RTF og
-# overhead pr. kald (lineær model: tid = overhead + marginal-RTF × varighed).
+# overhead pr. kald (lineær model: tid = overhead + marginal-RTF · varighed).
 RTF_EXTRA8 = [
     ("r01", "syv."),
     ("r02", "Hvad er,"),

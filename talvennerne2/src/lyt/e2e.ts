@@ -5,6 +5,7 @@
 import { audioGraph } from '../audio/engine'
 import { debugLastPlan, preloadSpeech, speak, voiceAvailable, voiceStatus } from '../audio/voice'
 import type { SpeechPart } from '../engine/types'
+import { clipText } from '../speech/catalog'
 import { compile } from '../speech/compile'
 
 const RECORDER = `
@@ -30,6 +31,8 @@ registerProcessor('lyt-recorder', LytRecorder)
 export interface SpokenResult {
   text: string
   clips: string[]
+  /** Catalogue text of every clip (for blaming a clip when ASR mishears). */
+  texts: string[]
   /** Clip ids of the plan the engine actually scheduled (empty: it fell back to the device voice). */
   planned: string[]
   plannedMs: number
@@ -53,7 +56,7 @@ async function say(parts: SpeechPart[]): Promise<SpokenResult> {
   await h.ended
   const plan = debugLastPlan()
   const fresh = plan && plan !== before ? plan : null
-  return { text: c.text, clips: c.clips, planned: fresh ? fresh.plan.clips.map((x) => x.id) : [], plannedMs: fresh ? fresh.plan.totalMs : 0 }
+  return { text: c.text, clips: c.clips, texts: c.clips.map(clipText), planned: fresh ? fresh.plan.clips.map((x) => x.id) : [], plannedMs: fresh ? fresh.plan.totalMs : 0 }
 }
 
 async function running() {

@@ -21,8 +21,8 @@ import { fileURLToPath } from 'node:url'
 import ffmpegPath from 'ffmpeg-static'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
-const MASTERS = path.join(ROOT, process.env.TV2_VOICE_MASTERS ?? 'voice/masters')
-const OUT = path.join(ROOT, process.env.TV2_VOICE_ASSETS ?? 'src/assets/voice')
+const MASTERS = path.resolve(ROOT, process.env.TV2_VOICE_MASTERS ?? 'voice/masters')
+const OUT = path.resolve(ROOT, process.env.TV2_VOICE_ASSETS ?? 'src/assets/voice')
 const SR = 24000
 const LEAD_PAD_MS = 100
 const GAP_MS = 120

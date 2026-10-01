@@ -97,7 +97,7 @@ Kæden følger SPEC §10.3:
 3. Fade 5/10 ms (raised cosine).
 4. Loudness efter BS.1770-4 med pyloudnorm. Klip under 0,4 s polstres med stilhed, kun til målingen.
 5. Gain til −18 LUFS.
-6. True-peak-limiter ved −1,5 dBTP (4× oversampling, 1,5 ms look-ahead, 60 ms release).
+6. True-peak-limiter ved −1,5 dBTP (4 gange oversampling, 1,5 ms look-ahead, 60 ms release).
 
 To præciseringer:
 
@@ -125,7 +125,7 @@ Resultat:
 
 ## 7. Stemmevalg
 
-12 probesætninger × 2 takes × 2 stemmer (48 takes). CER er samlet over alle takes (redigeringer ÷ tegn).
+12 probesætninger · 2 takes · 2 stemmer (48 takes). CER er samlet over alle takes (redigeringer : tegn).
 
 | Stemme | CER wav2vec2 (24 takes) | take 0 | take 1 | bedste take pr. sætning | bestået | CER whisper | ingen ASR godkender |
 |---|---|---|---|---|---|---|---|
@@ -166,20 +166,20 @@ Fejlbilledet er ellers domineret af ASR-artefakter på sjældne ord ("tiervenner
 | Mic | 338 s | 44,2 s | **7,65** | 8,1 | 7,1 s | 4,42 | 9,0 tokens/s |
 | Nic | 319 s | 45,3 s | **7,05** | 7,1 | 6,2 s | 4,29 | 9,0 tokens/s |
 
-- **Lineær model:** tid ≈ overhead + marginal-RTF × rå varighed. Rå lyd er i snit 1,23 × færdig lyd (stilhed, der trimmes).
+- **Lineær model:** tid ≈ overhead + marginal-RTF · rå varighed. Rå lyd er i snit 1,23 · færdig lyd (stilhed, der trimmes).
 - **T3** (0,5B Llama, CFG med batch 2) koster ca. 2,8 s pr. lydsekund og næsten intet fast.
 - **S3Gen** (flow matching, 10 trin med CFG, plus HiFiGAN) koster 6,0–7,0 s fast og 1,6 s pr. lydsekund.
   - Det faste beløb skyldes, at referenceprompten (op til 10 s) gennemregnes ved hvert kald.
   - Mic's længere prompt (8,3 s mod 7,5 s) giver tilsvarende større fast omkostning.
 - **Vandmærket** koster 0,02 s.
 - **Korte klip:** ét ord koster ca. 11–13 s, altså RTF 13–19.
-- **4 tråde:** 10 klip (5 × Mic/Nic) giver RTF 5,07 mod 7,13 ved 2 tråde (faktor 1,41, median 1,58) med identisk lyd.
+- **4 tråde:** 10 klip (5 · Mic/Nic) giver RTF 5,07 mod 7,13 ved 2 tråde (faktor 1,41, median 1,58) med identisk lyd.
 
 ## 9. Svære enkeltord og beslutning om bæresætning
 
-20 ord × 3 takes med Mic, ét kald pr. ord i end-form ("tolv."). Forventet varighed er stavelser ÷ 3,2/s. Varigheden er det færdige klip inkl. 20/40 ms marginer.
+20 ord · 3 takes med Mic, ét kald pr. ord i end-form ("tolv."). Forventet varighed er stavelser : 3,2/s. Varigheden er det færdige klip inkl. 20/40 ms marginer.
 
-- **Uden for vinduet [0,5; 2,0] × forventet:** 3 af 60 = **5,0 %**. Med kun talevarighed er det 10 %. "elleve" ligger ved 0,46–0,50 og "hundrede" ved 0,47–0,54, fordi de udtales "elve" og "hunnede".
+- **Uden for vinduet [0,5; 2,0] · forventet:** 3 af 60 = **5,0 %**. Med kun talevarighed er det 10 %. "elleve" ligger ved 0,46–0,50 og "hundrede" ved 0,47–0,54, fordi de udtales "elve" og "hunnede".
 - **ASR ikke bestået:** 21 af 60 = **35 %** (samlet CER 16 %).
   - Mange fejl er ASR-artefakter på isolerede ord: "1" for "et", "t000n" for "tusind", "jor/jyre/yre" for "øre", "550" for "halvtreds".
   - Enkelte er ægte. "tolv" blev hørt som "tøj" i én take, og "en" blev trimmet til 0,22 s ("i").
@@ -324,7 +324,7 @@ Tidsfraser og hint-led på mindst 3 stavelser kan sandsynligvis også køre som 
 **Antagelser:**
 
 - 1 take pr. klip plus 15 % nye takes.
-- Grundmodellen er Nic's: 6,24 s fast + 4,29 × rå lyd, hvor rå lyd = 1,23 × færdig lyd.
+- Grundmodellen er Nic's: 6,24 s fast + 4,29 · rå lyd, hvor rå lyd = 1,23 · færdig lyd.
 - Bæresætninger koster 0,94 s ekstra rå lyd pr. klip.
 - Batch-tiderne er målt under samme last som enkeltkald og omregnet til lav last med faktor 0,88. De skaleres til kategoriens varighed med modellen.
 - 4 tråde er faktor 1,41 hurtigere (målt i §8).
@@ -368,7 +368,7 @@ Begge er 24 kHz mono 16-bit, −18,4 LUFS og true peak ≤ −1,6 dBTP. De er co
 | Fil | Indhold | Længde |
 |---|---|---|
 | `stemmeproeve-nic.wav` | De 12 probesætninger med Nic, bedste af take 0–1 pr. sætning (ASR), 400 ms pause imellem | 31,2 s |
-| `sammensat-vs-hel.wav` | 5 regnestykker (347 + 28, 6 × 7, 56 + 39, 83 − 19, 604 − 71). Først hel sætning (bedste take), 400 ms pause, så sammensat (fragmenter + tal og hundrede-hoveder klippet ud af bæresætninger). 0,9 s mellem parrene. | 34,7 s |
+| `sammensat-vs-hel.wav` | 5 regnestykker (347 + 28, 6 · 7, 56 + 39, 83 − 19, 604 − 71). Først hel sætning (bedste take), 400 ms pause, så sammensat (fragmenter + tal og hundrede-hoveder klippet ud af bæresætninger). 0,9 s mellem parrene. | 34,7 s |
 
 De to sammensætninger, der fejlede ASR (100 − 45 og 250 + 125), er ikke med. I produktionen ville gaten generere dem igen.
 
@@ -406,7 +406,7 @@ ASR-modellerne (wav2vec2 og whisper) har ifølge deres modelkort en tilsvarende 
 
 1. **Stemmevalget afviger fra reglens bogstav** (Nic i stedet for Mic). Begrundelsen står i §7. Alle Mic-data er bevaret.
 2. **ASR på isolerede korte ord er upålidelig.** Eksempler: "1" for "et", "t000n" for "tusind", "jor" for "øre" og "t vonedet" for "tre hundrede og". Som SPEC siger, tjekkes klip under 3 stavelser kun i bæresætning eller sammensætning.
-3. **Varighedsvinduet passer dårligt til sætninger.** Stavelser tælles som vokalbogstaver, men talt dansk sluger mange ("lige", "hundrede"). 4 % af sætningerne fra enkeltkald og 25 % fra batch ligger under 0,5 × forventet, selv om ASR er fin. Vinduet bør gælde enkeltklip; for sætninger foreslås en nedre grænse på ca. 0,35.
+3. **Varighedsvinduet passer dårligt til sætninger.** Stavelser tælles som vokalbogstaver, men talt dansk sluger mange ("lige", "hundrede"). 4 % af sætningerne fra enkeltkald og 25 % fra batch ligger under 0,5 · forventet, selv om ASR er fin. Vinduet bør gælde enkeltklip; for sætninger foreslås en nedre grænse på ca. 0,35.
 4. **Hundrede-hoveder må ikke genereres alene.** Det dinglende "og," får modellen til at fortsætte ("… og forskeller"). De skal genereres i bæresætning (§9).
 5. **Delte fragmenter er et enkelt fejlpunkt.** Én dårlig take af "Hvad er," ødelægger alle sammensætninger, der bruger den. Generér flere takes, og vælg ud fra ASR i sammensætning.
 6. **chatterbox-tts 0.1.7 crasher på tekster med ≤ 3 teksttokens.** `probe.py` lapper det (§4). `generate.py` skal genbruge `patch_short_text_bug`.
@@ -440,3 +440,109 @@ ASR-modellerne (wav2vec2 og whisper) har ifølge deres modelkort en tilsvarende 
 | `voice/LICENSE-CoRal.txt` | Modellens licens, ordret |
 | `voice/probe/stemmeproeve-nic.wav`, `voice/probe/sammensat-vs-hel.wav` | Lytteprøver |
 | `voice/probe/s1-results.json` | Alle målinger (fra `report.py`) |
+
+## 18. Produktionspipeline (W6)
+
+Kæden fra klip-katalog til færdige sprites. Den følger beslutningerne ovenfor: stemmen Nic, strategi D, bæresætning for talord og hundrede-hoveder, efterbehandling til −18 LUFS og ASR-tjek pr. klip.
+
+### Kommandoer
+
+```
+bash talvennerne2/scripts/voice/run-wave.sh 1                 # hele bølge 1 (2 tråde, bidder à 100 min)
+TV2_THREADS=4 bash talvennerne2/scripts/voice/run-wave.sh 1   # 4 tråde, når containeren er ledig
+```
+
+`run-wave.sh <bølge>` kører:
+
+1. `scripts/tts/setup.sh`, hvis en venv mangler (efter en ny container).
+2. `node scripts/voice/run-vite.mjs scripts/voice/inventory.ts`: inventaret fra koden.
+3. `nice -n 19 /opt/tv2-tts/bin/python scripts/tts/generate.py --wave N --threads 2 --max-minutes 100` i bidder, til alt er færdigt. Efter hver bid committes nye mastere i commits på højst 10 MB.
+4. `node scripts/voice/run-vite.mjs scripts/voice/render.ts`: sammensætningstesten. Peger den på klip, får de nye takes (`generate.py --retake-from voice/qa.json`), højst 2 runder.
+5. `node scripts/voice/pack.mjs`: sprites, manifest og QA-data til lyttesiden. Commit.
+6. En kort status: klip bestået, ikke bestået og manglende, genereringstid og sammensætningstestens tal.
+
+Enkeltdele kan køres alene:
+
+| Kommando | Gør |
+|---|---|
+| `generate.py --pack core,n0-20` / `--ids n.end.7,op.plus` / `--ids-file fil` | kun de klip |
+| `generate.py --status --wave 1` | status uden at generere |
+| `generate.py --dry-run --wave 1` | viser kaldene (batches) uden at indlæse modellen |
+| `generate.py --no-whisper` | ingen second opinion |
+| `render.ts --no-asr` / `--templates 30` | kun WAV-filerne / antal skabelonsætninger pr. skill |
+| `pack.mjs --dry-run` | kun budgetterne |
+| `flock /tmp/tv2-chromium.lock node scripts/voice/e2e.mjs [--dist]` | afspilning i Chromium (se nedenfor) |
+
+### Genoptagelse
+
+Kør den samme kommando igen. Intet arbejde går tabt:
+
+- `generate.py` er idempotent på klippets hash. Et klip er færdigt, når `voice/masters/index.json` har den hash, inventaret giver det.
+- Tilstanden (`state.jsonl`), de rå takes og kandidaterne ligger i `voice/probe/takes/pipeline/` (uden for git, på disken). En take, der allerede er genereret og tjekket, genereres ikke igen. Rå lyd fra et kald, der blev afbrudt under udklipningen, bruges igen (samme seed giver samme lyd).
+- Exitkoder: 0 færdig, 3 tidsbudgettet er brugt (run-wave.sh starter næste bid), 4 ingen fremdrift (klip venter på partnere, der aldrig kommer), 1 fejl.
+- Efter en genstart af containeren tager første modelindlæsning ca. 5 min (kold disk), ellers ca. 15 s.
+
+### Inventar og hash
+
+`voice/inventory.json` skrives af `inventory.ts` (via Vites `ssrLoadModule`, så `import.meta.glob` virker som i appen) og må aldrig rettes i hånden. Hvert klip har `{id, text, genText, pack, wave, hash}` og desuden `form`, `cls` og `opens`, som Python-siden bruger til at sætte klip sammen som `compile()` (mellemrum).
+
+- `genText` er `generationText(id)`.
+- `hash = sha1(genText|voice|settings|modelRev)`. `settings` er generatorindstillingerne plus pipeline-versionen (`"pipeline": "D1"`) som kanonisk JSON fra `voice/config.json`. Ændres stemme, model, indstillinger eller pipeline-version, genereres de berørte klip igen.
+
+### Generering (strategi D)
+
+| Klip | Metode | Tekst til modellen | Udklip |
+|---|---|---|---|
+| Talord og runde hundreder (`n.*`, `h.*`) | `carrier`, ca. 10 pr. kald, mid- og slutform hver for sig | "Tallet er syv, tallet er otte, …," / "Tallet er syv. Tallet er otte. …" | ordet efter "tallet er" |
+| Hundrede-hoveder (`hog.*`) | `head`, ca. 10 pr. kald | "Tallet er tre hundrede og otteogtredive." (en hale pr. hoved) | de tre ord efter "tallet er" |
+| Hele sætninger (≥ 4 stavelser, slutter med . ? !) | `sentence`, 4 pr. kald (højst 56 stavelser), fordelt round-robin i pakken | sætningerne efter hinanden | hver sætning |
+| Alt andet | `single`, ét kald pr. klip; `frag.*` og `op.*` får 2 takes fra start | `genText`; uden tegn får den "," (se under) | hele ytringen, højst 0,2 s før og 0,25 s efter de alignede tegn |
+
+- Alle udklip laves med forced alignment (`align.py`, roest-wav2vec2) og efterbehandles enkeltvis (`post.py`).
+- **Komma efter sætningsstykker.** Chatterbox sætter punktum efter en tekst uden tegn (`punc_norm`), og den faldende slutintonation ødelægger sammensatte sætninger ("Hvad er. tre, plus. fire."). Stykker uden tegn ("Hvad er", "plus", "i kurven", "æbler") genereres derfor med komma, som spiken målte fragmenterne. Navne (`name.*`) og knaptekster (`s.ui.*`) siges alene og beholder punktummet.
+- **Seed:** `int(sha1(nøgle)[:8], 16) + take`, hvor nøglen er klippets id (ét kald) eller kaldets klip-liste (batch).
+- **Takes:** take 0 (og take 1 for delte fragmenter). Fejler et klip, får det en ny take som ét kald, højst take 4 (4 nye takes). Klip, der stadig fejler, får den bedste take som master og `"pass": false` i indekset.
+- Lappen for tekster med ≤ 3 teksttokens (`probe.patch_short_text_bug`) bruges via `probe.Engine`.
+
+### Tjek
+
+| Klip | Tjek |
+|---|---|
+| Alle | efterbehandling (−18 ± 1 LU, true peak ≤ −1 dBTP, ingen clipping); varighed i [0,4; 2,2] gange forventet (sætninger [0,35; 2,0], hoveder [0,3; 2,2]) |
+| ≥ 3 stavelser | ASR på klippet alene: CER ≤ 0,05 og samme talfølge (`da_numbers.py`) |
+| Talord og hoveder | ASR på bæresætningen ("tallet er syv"): talfølgen skal være rigtig, og ordets egne tegn skal være rigtige (CER ≤ 0,05 på ordet; "tallet af" er ligegyldigt) |
+| Under 3 stavelser, talord, hoveder og alle `frag.*`/`op.*` | i sammensætning (se under) |
+| Grænsetilfælde (CER ≤ 0,20) | whisper-1.5b som second opinion |
+
+**Sammensætning i `generate.py`.** Når alle takes er lavet, sættes hvert af disse klip sammen med andre klip, som appen gør (`scripts/tts/sequence.py` er en Python-udgave af `src/audio/sequence.ts` og mellemrummene i `compile.ts`), og ASR-tjekkes:
+
+| Klip | Sammensætninger |
+|---|---|
+| `n.mid.N`, `h.mid.H` | Hvad er + N + plus + 5 |
+| `n.end.N`, `h.end.H` | Hvad er + 7 + plus + N |
+| `hog.H` | H + 47; Hvad er + 7 + plus + H + 25 |
+| `op.*` | 7 + op + 5 (plus og minus også: Hvad er + 3 + op + 4) |
+| `frag.hvad_er` | Hvad er + 7 + plus + 5; Hvad er + 3 + minus + 4 |
+| andre `frag.*` | frag + 5 og frag + 4 (åbner en sætning) eller 7 + frag + 5 |
+| andre korte klip | Det er + klip |
+
+Partnerne er de første brugbare klip i en fast liste (7, 3, 12 …; 5, 4, 9 …). Fejler en sammensætning, finder en tegnvis alignment af ASR-teksten mod klippenes tekster det klip, hvis tegn blev hørt forkert. Det får en ny take. En partner, der allerede er færdig fra en tidligere kørsel, udskiftes med en anden partner. Hvert fejlet tjek markerer altså en take, så løkken ender, når alt er bestået, eller takes er brugt. Et delt fragment ødelægger derfor ikke de sammensætninger, der bruger det.
+
+### Sammensætningstest (`render.ts`, SPEC §10.4)
+
+- Bruger appens egen kode: `compile()` → `findBounds` → `planSequence` → `renderSequence` på FLAC-masterne (afkodet med ffmpeg-static).
+- **Tal:** alle 899 tal 101–999 i slutform. ASR + `da_numbers.py` skal give n i 100 %. Kun tal, hvis klip alle har mastere, kan bygges. Hundrederne er bølge 2, så en ren bølge 1 bygger 0 af 899.
+- **Skabeloner:** 30 tilfældige udsagn pr. skill (fact og kind, seed `hashSeed('qa:<skill>')`), hvis klip alle har mastere. Kriteriet er ordret: ASR-teksten er lig `toDanishText()` efter normalisering. Mål ≥ 97 %.
+- Fejl går til whisper som second opinion. Resultatet står i `voice/qa.json` (tal, skabeloner pr. skill, klip-statistik og `retake`: de klip, fejlene peger på).
+
+### Pakning (`pack.mjs`)
+
+- Én sprite pr. pakke (kataloget), delt i `<pakke>.1`, `<pakke>.2` … over 60 s. Klip i id-orden med 120 ms stilhed, 100 ms før første klip og 200 ms efter sidste.
+- `-c:a libmp3lame -b:a 40k -ar 24000 -ac 1` (ffmpeg-static). Filnavn `<sprite>-<sha1 af mp3>[:8].mp3`, så uændret lyd giver uændrede filer.
+- `src/assets/voice/voice-manifest.json` i formatet fra `docs/voice-manifest.md`. Kun mastere, hvis hash svarer til inventaret, pakkes.
+- `src/assets/voice/voice-qa.json`: ASR-tekst, CER, LUFS og take pr. klip til lyttesiden (ikke en del af manifestet).
+- Budgetterne tjekkes, før noget skrives: n0-20, core og ui ≤ 1,2 MB tilsammen, hver sprite ≤ 300 KB, alt ≤ 16 MB. Ved overskridelse fejler scriptet.
+
+### Lyttesiden (`lyt.html`)
+
+`src/lyt/`: alle klip pr. sprite med id, tekst, hvad ASR hørte (og i hvilken sammenhæng), CER, LUFS og take; "Byg en sætning" (skill, fact og opgavetype, med hjælpen); skydere for tal 0–1000 og klokkeslæt (analog, analog med halv-form, digital); et flag pr. klip i `talvennerne2.lyt-flags` (via `localGetJson`/`localSetJson`) med note, og eksport af listen som JSON. Med `?e2e=1` får Chromium testkroge (`window.__lyt`), som `scripts/voice/e2e.mjs` bruger.

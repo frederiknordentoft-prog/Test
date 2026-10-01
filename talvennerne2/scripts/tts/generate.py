@@ -22,7 +22,7 @@ Alle udklip laves med forced alignment (align.py) og efterbehandles (post.py, �
 
 Tjek pr. take (asr_check.py, roest-wav2vec2, talfølge med da_numbers.py):
   - efterbehandling: −18 ± 1 LU, true peak ≤ −1 dBTP, ingen clipping
-  - varighed: [0,4; 2,2] × forventet (sætninger [0,35; 2,0], hoveder [0,3; 2,2])
+  - varighed: [0,4; 2,2] gange forventet (sætninger [0,35; 2,0], hoveder [0,3; 2,2])
   - klip med ≥ 3 stavelser: ASR alene, CER ≤ 0,05 og eksakte talord
   - talord og hoveder: ASR på bæresætningen; talfølgen og selve ordet skal være rigtige
   - whisper-1.5b som second opinion i grænsetilfælde (CER ≤ 0,20)
@@ -466,7 +466,7 @@ class Generator:
             self.state.add(t)
             self.stats["takes"] += 1
             out.append(t)
-            log.info(f"  {c['id']} t{t.take}: {t.dur:.2f} s ({t.dur / max(t.exp_dur, 1e-3):.2f}× forventet) "
+            log.info(f"  {c['id']} t{t.take}: {t.dur:.2f} s (forhold {t.dur / max(t.exp_dur, 1e-3):.2f}) "
                      f"{t.lufs} LUFS, {t.check}: '{t.asr}' CER {t.cer} ({t.engine}) → {'ok' if t.pass_a else 'FEJL ' + t.reason}")
         return out
 
@@ -714,7 +714,9 @@ class Generator:
         pending = {c["id"]: c for c in subjects}
         verdict: dict[str, tuple[Take, dict]] = {}
         for rnd in range(1, MAX_COMP_ROUNDS + 1):
-            self.choice = {cid: self.best(self.by_id[cid]) for cid in self.sel_ids if self.takes(self.by_id[cid])}
+            # partners play the take their own check chose (verdict), otherwise their best take
+            self.choice = {cid: verdict[cid][0] if cid in verdict else self.best(self.by_id[cid])
+                           for cid in self.sel_ids if self.takes(self.by_id[cid])}
             changed = False
             for cid, clip in sorted(pending.items()):
                 if cid in verdict:
@@ -731,6 +733,7 @@ class Generator:
                 scored.sort(key=lambda x: x[:4], reverse=True)
                 if scored[0][0]:
                     verdict[cid] = (scored[0][4], self.comp_summary(scored[0][5]))
+                    self.choice[cid] = scored[0][4]
                     continue
                 for rank, (_ok, _n, _c, _t, tk, results) in enumerate(scored):
                     own_fault = False

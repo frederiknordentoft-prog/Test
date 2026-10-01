@@ -19,7 +19,7 @@ TAKES = ROOT / "voice" / "probe" / "takes"
 OUT = ROOT / "voice" / "probe" / "s1-results.json"
 
 TIE_PP = 0.5            # stemmevalg: lighed inden for ±0,5 procentpoint → Nic
-WINDOW = (0.5, 2.0)     # varighedsvindue × forventet
+WINDOW = (0.5, 2.0)     # varighedsvindue · forventet
 RULE_SHARE = 0.20       # > 20 % uden for vinduet → bæresætning
 INVENTORY_CLIPS = 2000
 INVENTORY_MIN = 48.0
@@ -139,7 +139,7 @@ def voices_section(res: dict):
                       "22 målte sætninger, og Mic's \"Hvad er\" høres som \"hver er\" i de fleste regnestykker")
         res["voice_winner"] = final
         res["voice_reason"] = reason
-    print("\n### Stemmevalg (12 probesætninger × 2 takes)\n")
+    print("\n### Stemmevalg (12 probesætninger · 2 takes)\n")
     print("| Stemme | CER wav2vec2 (alle takes) | take 0 | take 1 | bedste take pr. sætning | bestået | "
           "CER whisper (second opinion) | ingen ASR godkender |")
     print("|---|---|---|---|---|---|---|---|")
@@ -152,7 +152,7 @@ def voices_section(res: dict):
     for v, d in vs.items():
         print(f"{v}: bedste af {d['takes_max']} takes pr. sætning: CER {pct(d['cer_best_of_all_takes'])}")
     if res.get("voice_extended"):
-        print("\n| Stemme | 10 regnestykker × 2: CER | bestået | \"Hvad er\" hørt | alle 22 sætninger: CER | bestået |")
+        print("\n| Stemme | 10 regnestykker · 2: CER | bestået | \"Hvad er\" hørt | alle 22 sætninger: CER | bestået |")
         print("|---|---|---|---|---|---|")
         for v, e in res["voice_extended"].items():
             print(f"| {v} | {pct(e['whole10_cer'])} | {e['whole10_pass']}/{e['n']} | {e['hvad_er_ok']}/{e['n']} | "
@@ -251,10 +251,10 @@ def words_section(res: dict):
         "per_word": per_word,
     }
     print(f"\n### Svære enkeltord ({n} takes, {rows[0]['voice']}, ét kald pr. ord)\n")
-    print(f"Uden for [{WINDOW[0]}; {WINDOW[1]}] × forventet: {pct(out_share)} (kun tale: {pct(out_sp)}); "
+    print(f"Uden for [{WINDOW[0]}; {WINDOW[1]}] · forventet: {pct(out_share)} (kun tale: {pct(out_sp)}); "
           f"ASR ikke bestået: {pct(fail)}" + (f" (whisper: {pct(fail_wh)})" if fail_wh is not None else "")
           + f"; samlet CER {pct(agg_cer(rows))}")
-    print("\n| Ord | forventet | varighed (3 takes) | × forventet | wav2vec2 | whisper |")
+    print("\n| Ord | forventet | varighed (3 takes) | · forventet | wav2vec2 | whisper |")
     print("|---|---|---|---|---|---|")
     for w, d in per_word.items():
         print(f"| {w[2:]} | {d['exp']:.2f} s | {' / '.join(f'{x:.2f}' for x in d['durs'])} | "
@@ -325,7 +325,7 @@ def compose_section(res: dict):
     if not out:
         return
     res["compose"] = out
-    print("\n### Sammensat vs. hel sætning (10 regnestykker × 2 takes)\n")
+    print("\n### Sammensat vs. hel sætning (10 regnestykker · 2 takes)\n")
     print("| Variant | CER wav2vec2 | bestået | talfølge rigtig | CER whisper |")
     print("|---|---|---|---|---|")
     for tag, d in out.items():
@@ -423,7 +423,7 @@ def batch_section(res: dict):
 def projection_section(res: dict):
     """CPU-tid for hele inventaret pr. strategi (2 tråde; 4 tråde via målt faktor).
 
-    Grundmodel (lav last, probe12 + rtf8): tid pr. kald = a + b × rå lyd.
+    Grundmodel (lav last, probe12 + rtf8): tid pr. kald = a + b · rå lyd.
     Batch-familier: målt tid pr. klip, korrigeret for samtidig last med forholdet
     mellem enkeltkald i probe12/rtf8 og de samme enkeltkald genkørt under batch-
     kørslen (calib-single), og skaleret til kategoriens klipvarighed med modellen.

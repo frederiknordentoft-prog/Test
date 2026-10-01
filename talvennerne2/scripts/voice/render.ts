@@ -5,7 +5,7 @@
 //   node scripts/voice/run-vite.mjs scripts/voice/render.ts [--templates 30] [--no-asr] [--no-whisper]
 //
 //   numbers    all 899 numbers 101–999 in end form; ASR + da_numbers.py must give n back (100 %)
-//   templates  30 random statements per skill (fact × kind, seeded) whose clips all have masters;
+//   templates  30 random statements per skill (fact and kind, seeded) whose clips all have masters;
 //              ASR must match toDanishText() word for word (≥ 97 %)
 //
 // Only statements whose clips all have an up-to-date master are rendered, so a wave-1 run reports
@@ -25,9 +25,9 @@ import { compile } from '../../src/speech/compile'
 import { APP_ROOT, buildInventory, readConfig } from './inventory'
 
 export const SR = 24000
-const MASTERS = path.join(APP_ROOT, process.env.TV2_VOICE_MASTERS ?? 'voice/masters')
-const QA_DIR = path.join(APP_ROOT, process.env.TV2_VOICE_QA ?? 'voice/probe/takes/qa')
-const QA_JSON = path.join(APP_ROOT, 'voice/qa.json')
+const MASTERS = path.resolve(APP_ROOT, process.env.TV2_VOICE_MASTERS ?? 'voice/masters')
+const QA_DIR = path.resolve(APP_ROOT, process.env.TV2_VOICE_QA ?? 'voice/probe/takes/qa')
+const QA_JSON = path.resolve(APP_ROOT, process.env.TV2_VOICE_QA_JSON ?? 'voice/qa.json')
 const ASR_PY = process.env.TV2_ASR_PYTHON ?? '/opt/tv2-asr/bin/python'
 
 export interface MasterEntry {
@@ -120,7 +120,7 @@ export function numberItems(): Item[] {
   return out
 }
 
-/** Every distinct statement a skill can say (facts × kinds), whose clips pass `has`. */
+/** Every distinct statement a skill can say (every fact in every kind), whose clips pass `has`. */
 export function skillStatements(has: (id: string) => boolean): Map<string, Item[]> {
   const out = new Map<string, Item[]>()
   for (const def of registeredSkills()) {

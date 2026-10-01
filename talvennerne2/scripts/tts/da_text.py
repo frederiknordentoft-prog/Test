@@ -55,9 +55,9 @@ def _digits(s: str) -> str:
 
 
 _SYMBOLS = [
-    (re.compile(r"(\d)\s*[x×*·]\s*(\d)"), r"\1 gange \2"),
+    (re.compile("(\\d)\\s*[x\u00d7*\u00b7]\\s*(\\d)"), r"\1 gange \2"),
     (re.compile(r"(\d)\s*[-−–]\s*(\d)"), r"\1 minus \2"),
-    (re.compile(r"(\d)\s*÷\s*(\d)"), r"\1 divideret med \2"),
+    (re.compile("(\\d)\\s*\u00f7\\s*(\\d)"), r"\1 divideret med \2"),
     (re.compile(r"\+"), " plus "),
     (re.compile(r"="), " er lig med "),
     (re.compile(r"½"), " en halv "),
@@ -215,7 +215,7 @@ def syllables(text: str) -> int:
 
 
 def expected_duration(text: str, rate: float = 3.2) -> float:
-    """Forventet varighed i sekunder: stavelser ÷ 3,2/s (SPEC §10.3)."""
+    """Forventet varighed i sekunder: stavelser : 3,2/s (SPEC §10.3)."""
     return syllables(text) / rate
 
 
