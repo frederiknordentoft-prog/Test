@@ -13,7 +13,7 @@
 import { useEffect, useId, useRef } from 'react'
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react'
 import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, SweatDrop, ThoughtDots, Zzz, around } from '../parts/house'
-import { OUTLINE, apply, modelAnchors, regionTransforms, worldAnchors } from './anchors'
+import { OUTLINE, SAFE, apply, modelAnchors, regionTransforms, worldAnchors } from './anchors'
 import type { Affine } from './anchors'
 import { defaultHead, templateBody } from './bodies'
 import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
@@ -63,7 +63,9 @@ export interface RigProps {
   /**
    * Beskæring (beregnet ud fra stadiets ankre, så den følger figuren):
    * 'full' (200x240), 'fit' (hele figuren, 5:6), 'head' (hoved og hat), 'torso' (mund til hofte),
-   * 'bust' (hoved og overkrop), 'crown' (hele hovedet med ører og horn). Kvadratiske undtagen full/fit.
+   * 'bust' (hoved og overkrop), 'crown' (hele hovedet med ører og horn), 'wide' (hoved og overkrop i
+   * hele den sikre zones bredde: til genstande, der rækker ud, som ballon og net). Kvadratiske undtagen
+   * full/fit.
    * Små ikoner bruger 'fit' som standard.
    */
   crop?: RigCrop
@@ -71,7 +73,7 @@ export interface RigProps {
   lod?: RigLod | 'auto'
 }
 
-export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust' | 'crown'
+export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust' | 'crown' | 'wide'
 
 /** Højde/bredde for en beskæring. */
 export function cropAspect(crop: RigCrop): number {
@@ -253,6 +255,12 @@ export function cropViewBox(def: SpeciesDef, breed: BreedId, stage: Stage, crop:
     const bottom = w.bodyCenter.y + w.bodyRy * 0.82
     const side = Math.max(w.bodyRx * 2.6, bottom - top) * 1.06
     return `${n(w.bodyCenter.x - side / 2)} ${n(top - side * 0.02)} ${n(side)} ${n(side)}`
+  }
+  if (crop === 'wide') {
+    // Hoved og overkrop i hele den sikre zones bredde: genstande, der rækker ud (ballonen ved skulderen,
+    // nettets bøjle ved hovedet), kommer med på et kvadratisk kort.
+    const b = box(SAFE.x0, w.headTop.y - w.headRy * 0.5, SAFE.x1, w.bodyCenter.y + w.bodyRy * 0.5)
+    return viewBoxAround(b, 0.02, 1)
   }
   // bust: hoved (uden de højeste ører) og overkrop
   const b = box(w.headCenter.x - w.headRx * 1.15, w.headTop.y - w.headRy * 0.35, w.headCenter.x + w.headRx * 1.15, w.bodyCenter.y + w.bodyRy * 0.4)

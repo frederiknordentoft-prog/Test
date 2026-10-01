@@ -10,9 +10,9 @@ import { hverdagHead } from '../art/items/hverdag/hverdag-head'
 import { ItemIcon } from '../art/rig/ItemIcon'
 import { MAGIC } from '../art/rig/palette'
 import { Rig, magicOf, resolveColorway } from '../art/rig/Rig'
-import type { RigProps } from '../art/rig/Rig'
-import { MOODS, NATURAL_COLORWAYS, SPECIES_IDS, STAGES } from '../art/rig/types'
-import type { BreedId, ColorwayId, ItemDef, Mood, Outfit, SpeciesDef, Stage } from '../art/rig/types'
+import type { RigCrop, RigProps } from '../art/rig/Rig'
+import { MOODS, NATURAL_COLORWAYS, SET_IDS, SPECIES_IDS, STAGES } from '../art/rig/types'
+import type { BreedId, ColorwayId, ItemDef, Mood, Outfit, SetId, Slot, SpeciesDef, Stage } from '../art/rig/types'
 import { mannequins } from './mannequin'
 import { runLints } from './lints'
 
@@ -29,7 +29,21 @@ export const SPECIES: SpeciesDef[] = SPECIES_IDS.flatMap((id) => {
 })
 const speciesById = (id: string | null) => SPECIES.find((s) => s.id === id) ?? SPECIES[0]
 
-const ITEMS: readonly ItemDef[] = [hverdagHead, festHead, hverdagBody]
+// Genstandene findes som filer i src/art/items (samme glob som registry.ts, men ivrig: kun i dev), i
+// katalogets rækkefølge: sæt for sæt (milepæle til sidst), og i hvert sæt slot for slot.
+const ITEM_MODULES = import.meta.glob<{ default: ItemDef }>(['../art/items/*/*.tsx', '!../art/items/*/*.test.tsx'], { eager: true })
+const SLOT_ORDER: readonly Slot[] = ['head', 'face', 'neck', 'body', 'back', 'hand']
+const setRank = (set: SetId) => ((SET_IDS as readonly string[]).includes(set) ? (SET_IDS as readonly string[]).indexOf(set) : SET_IDS.length)
+const ITEMS: readonly ItemDef[] = Object.values(ITEM_MODULES)
+  .map((m) => m.default)
+  .sort((a, b) => setRank(a.set) - setRank(b.set) || SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot) || a.id.localeCompare(b.id))
+/** Hele sæt på én gang (alle sættets slots), fx hverdag og opdager. */
+const SETS = [...new Set(ITEMS.map((it) => it.set))].map((set) => ({ set, items: ITEMS.filter((it) => it.set === set) }))
+const setOutfit = (items: readonly ItemDef[], cw: 0 | 1 | 2 = 0): Outfit =>
+  Object.fromEntries(items.map((it) => [it.slot, { item: it, colorway: cw }])) as Outfit
+const FULL_SETS = SETS.filter((x) => x.items.length === SLOT_ORDER.length)
+/** Butikskortet på dyret beskæres efter slot: hoved og ansigt om hovedet, hals og krop fra mund til hofte, ryg og hånd i hele bredden (ballon og net rækker ud). */
+const CARD_CROP: Record<Slot, RigCrop> = { head: 'head', face: 'head', neck: 'torso', body: 'torso', back: 'wide', hand: 'wide' }
 
 const MOOD_DA: Record<Mood, string> = {
   idle: 'idle · hvile',
@@ -292,40 +306,48 @@ function SizesSheet({ def }: { def: SpeciesDef }) {
           ))}
         </div>
       </Section>
-      <Section title="butikskort · 64 px · genstanden alene">
-        <div className="sh-row">
-          {ITEMS.flatMap((it) =>
-            ([0, 1, 2] as const).map((cw) => (
-              <div key={`${it.id}${cw}`} className="sh-card" data-card="item" data-label={`kort ${it.id} ${cw}`}>
-                <ItemIcon item={it} colorway={cw} size={62} />
-              </div>
-            )),
-          )}
-        </div>
+      <Section title="butikskort · 64 px · genstanden alene (ét sæt pr. række)">
+        {SETS.map(({ set, items }) => (
+          <div key={set} className="sh-row" style={{ marginBottom: 12 }}>
+            {items.flatMap((it) =>
+              ([0, 1, 2] as const).map((cw) => (
+                <div key={`${it.id}${cw}`} className="sh-card" data-card="item" data-label={`kort ${it.id} ${cw}`}>
+                  <ItemIcon item={it} colorway={cw} size={62} />
+                </div>
+              )),
+            )}
+          </div>
+        ))}
       </Section>
       <Section title={`butikskort · 64 px · på ${def.name.toLowerCase()} (beskåret efter slot)`}>
-        <div className="sh-row">
-          {ITEMS.flatMap((it) =>
-            ([0, 1, 2] as const).map((cw) => (
-              <div key={`${it.id}${cw}`} className="sh-card" data-label={`kort ${def.id} ${it.id} ${cw}`}>
-                <R
-                  breed={br(cw)}
-                  stage={2}
-                  colorway={(['c1', 'c3', 'c6'] as const)[cw]}
-                  size={64}
-                  crop={it.slot === 'head' ? 'head' : 'torso'}
-                  outfit={{ [it.slot]: { item: it, colorway: cw } } as Outfit}
-                />
-              </div>
-            )),
-          )}
-          <div className="sh-card sh-gold" data-label={`kort ${def.id} guld`}>
-            <R breed={br(0)} stage={2} colorway="gold" size={64} crop="bust" />
+        {SETS.map(({ set, items }, si) => (
+          <div key={set} className="sh-row" style={{ marginBottom: 12 }}>
+            {items.flatMap((it) =>
+              ([0, 1, 2] as const).map((cw) => (
+                <div key={`${it.id}${cw}`} className="sh-card" data-label={`kort ${def.id} ${it.id} ${cw}`}>
+                  <R
+                    breed={br(cw)}
+                    stage={2}
+                    colorway={(['c1', 'c3', 'c6'] as const)[cw]}
+                    size={64}
+                    crop={CARD_CROP[it.slot]}
+                    outfit={{ [it.slot]: { item: it, colorway: cw } } as Outfit}
+                  />
+                </div>
+              )),
+            )}
+            {si === SETS.length - 1 && (
+              <>
+                <div className="sh-card sh-gold" data-label={`kort ${def.id} guld`}>
+                  <R breed={br(0)} stage={2} colorway="gold" size={64} crop="bust" />
+                </div>
+                <div className="sh-card sh-gold" data-label={`kort ${def.id} regnbue`}>
+                  <R breed={br(1)} stage={1} colorway="rainbow" size={64} crop="bust" />
+                </div>
+              </>
+            )}
           </div>
-          <div className="sh-card sh-gold" data-label={`kort ${def.id} regnbue`}>
-            <R breed={br(1)} stage={1} colorway="rainbow" size={64} crop="bust" />
-          </div>
-        </div>
+        ))}
       </Section>
     </Page>
   )
@@ -360,6 +382,7 @@ function FitSheet({ def }: { def: SpeciesDef }) {
     ...ITEMS.map((it) => ({ name: `${it.id}${it.fit.earMode ? ` · ${it.fit.earMode}` : ''}`, outfit: (cw: 0 | 1 | 2) => ({ [it.slot]: { item: it, colorway: cw } }) as Outfit })),
     { name: 'hue + trøje', outfit: (cw) => ({ head: { item: hverdagHead, colorway: cw }, body: { item: hverdagBody, colorway: cw } }) },
     { name: 'festhat + trøje', outfit: (cw) => ({ head: { item: festHead, colorway: cw }, body: { item: hverdagBody, colorway: ((cw + 1) % 3) as 0 | 1 | 2 } }) },
+    ...FULL_SETS.map(({ set, items }) => ({ name: `${set} · hele sættet`, outfit: (cw: 0 | 1 | 2) => setOutfit(items, cw) })),
   ]
   const cols: { s: Stage; cw: 0 | 1 | 2; c: ColorwayId; b: BreedId }[] = []
   for (const s of STAGES) for (const cw of [0, 1, 2] as const) cols.push({ s, cw, c: (['c1', 'c3', 'c6'] as const)[cw], b: def.breeds[cw % def.breeds.length].id })
@@ -368,6 +391,15 @@ function FitSheet({ def }: { def: SpeciesDef }) {
     { s: 1, b: def.breeds[1 % def.breeds.length].id, c: 'c2', outfit: { body: { item: hverdagBody, colorway: 1 }, head: { item: festHead } } },
     { s: 2, b: def.breeds[0].id, c: 'c1', outfit: { body: { item: hverdagBody }, head: { item: hverdagHead } } },
     { s: 3, b: def.breeds[2 % def.breeds.length].id, c: 'c4', outfit: { body: { item: hverdagBody, colorway: 2 } } },
+    // Hele sæt i alle humør: håndgenstande følger poten, vestens ærmegab og rygsækkens stropper følger armene.
+    ...FULL_SETS.flatMap(({ items }, i) =>
+      ([1, 3] as const).map((st, j) => ({
+        s: st as Stage,
+        b: def.breeds[(i + j + 1) % def.breeds.length].id,
+        c: (['c5', 'c3', 'c6', 'c2'] as const)[(2 * i + j) % 4],
+        outfit: setOutfit(items, ((i + j) % 3) as 0 | 1 | 2),
+      })),
+    ),
   ]
   return (
     <Page title={`Pasform · ${def.name.toLowerCase()}`} sub="Genstandene i 3 stadier · genstandens 3 farvesæt (racerne på skift). Lints: øjne dækkes ikke, bbox inden for artens hull + 6, ≤ 25 elementer pr. genstand.">
@@ -388,7 +420,7 @@ function FitSheet({ def }: { def: SpeciesDef }) {
           colW={118}
           cols={MOODS.map((m) => MOOD_DA[m])}
           rows={moodRows.map((r) => ({
-            head: `${r.b} · ${STAGE_DA[r.s]}`,
+            head: `${r.b} · ${STAGE_DA[r.s]}${Object.keys(r.outfit).length === SLOT_ORDER.length ? ` · ${Object.values(r.outfit)[0]?.item.set}` : ''}`,
             cells: MOODS.map((m) => (
               <Cell key={m} lint="safe fit" label={`fit ${def.id} humør ${m} ${r.s}`}>
                 <Rig species={def} mode="static" breed={r.b} stage={r.s} colorway={r.c} mood={m} outfit={r.outfit} size={104} />
@@ -411,6 +443,8 @@ function FitMatrixSheet() {
     { name: 'trøje', outfit: { body: { item: hverdagBody } } },
     { name: 'hue + trøje', outfit: { head: { item: hverdagHead, colorway: 1 }, body: { item: hverdagBody, colorway: 2 } } },
     { name: 'festhat + trøje', outfit: { head: { item: festHead, colorway: 2 }, body: { item: hverdagBody, colorway: 1 } } },
+    ...ITEMS.filter((it) => it !== hverdagHead && it !== festHead && it !== hverdagBody).map((it) => ({ name: it.id, outfit: { [it.slot]: { item: it } } as Outfit })),
+    ...FULL_SETS.map(({ set, items }, i) => ({ name: `${set} · sæt`, outfit: setOutfit(items, ((i + 1) % 3) as 0 | 1 | 2) })),
   ]
   const rows: { def: SpeciesDef; s: Stage; b: BreedId }[] = []
   for (const def of SPECIES) for (const s of STAGES) rows.push({ def, s, b: def.breeds[(s - 1) % def.breeds.length].id })
@@ -423,7 +457,7 @@ function FitMatrixSheet() {
           head: `${r.def.name} · ${r.b} · ${STAGE_DA[r.s]}`,
           cells: cols.map((c, i) => (
             <Cell key={i} lint="safe fit" label={`matrix ${r.def.id} ${r.b} ${r.s} ${c.name}`}>
-              <Rig species={r.def} mode="static" breed={r.b} stage={r.s} colorway={(['c1', 'c3', 'c5', 'c2', 'c6'] as const)[i]} outfit={c.outfit} size={100} />
+              <Rig species={r.def} mode="static" breed={r.b} stage={r.s} colorway={(['c1', 'c3', 'c5', 'c2', 'c6'] as const)[i % 5]} outfit={c.outfit} size={100} />
             </Cell>
           )),
         }))}

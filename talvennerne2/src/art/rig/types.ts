@@ -620,8 +620,12 @@ export interface SleeveUpProps {
   /** Striber på tværs af ærmet (inden for ærmets kant; tegnes før konturen) og ribmanchetten ved poten. */
   bands: string
   cuff: string
-  /** Et bånd på tværs af armen ved roden (ærmegabets kant på ærmeløst tøj som en vest). */
+  /**
+   * Ærmegabet på ærmeløst tøj (en vest): `root` dækker armens åbne rod på brystet (stof uden kontur), og
+   * `rootEdge` er kantbåndet på tværs af armen, hvor den kommer ud.
+   */
   root?: string
+  rootEdge?: string
 }
 export type SleeveUpArt = (p: SleeveUpProps) => ReactNode
 
