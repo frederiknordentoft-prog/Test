@@ -15,9 +15,10 @@ for (const form of ['mid', 'end'] as const) {
 
 export const clips = table
 
-/** The four basic shapes are 0. klasse (shapes2D); the rest and all units arrive in wave 2. */
+/** Circle, triangle and "firkant" are 0. klasse (shapes2D basic); square, rectangle, the polygons and
+ *  all units arrive in wave 2. */
 export function wave(id: ClipId): Wave {
-  return /^noun\.shape\.(circle|triangle|square|rectangle)\./.test(id) ? 1 : 2
+  return /^noun\.shape\.(circle|triangle|quadrilateral)\./.test(id) ? 1 : 2
 }
 
 export function pack(id: ClipId): string {

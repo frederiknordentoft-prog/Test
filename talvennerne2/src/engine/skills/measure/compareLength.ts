@@ -29,7 +29,7 @@ interface Lineup {
   starts: readonly number[]
 }
 
-/** The compareObjects scene with the starts the frozen type does not carry yet (proposed). */
+/** The compareObjects scene; offset lineups always carry their starts. */
 export type CompareScene = Extract<Prompt, { scene: 'compareObjects' }> & { starts: number[] }
 
 const L = (q: Question, objects: ObjectId[], sizes: number[], starts: number[] = [0, 0, 0, 0]): Lineup => ({ q, objects, sizes, starts })

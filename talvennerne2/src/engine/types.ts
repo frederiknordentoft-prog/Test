@@ -207,6 +207,15 @@ export type ShapeId =
 export type SolidId = 'sphere' | 'cube' | 'cuboid' | 'cylinder' | 'cone' | 'pyramid'
 export type StoryId = string
 
+/**
+ * Conventions skills and task views share (SK1, Engdalen):
+ * - `objects` in a countTap task is the pile to take from (always more than the target); the target
+ *   is `task.answer` and is read aloud. `thing: 'ball'` is a placeholder for the dice, fingers and
+ *   tenframe layouts, which draw their own dots.
+ * - Shape cards are tokens `shape:<ShapeId>:<variant>`; a shapes2D choice task asks with
+ *   `{scene: 'hear'}` (the shape's name is read aloud).
+ * - Pattern beads are tokens `pat:<name>`; a fillSlots answer joins the slots with '|'.
+ */
 export type Prompt =
   | { scene: 'equation'; terms: Term[] }
   | { scene: 'objects'; n: number; layout: 'scatter' | 'dice' | 'fingers' | 'tenframe' | 'row' | 'beads'; thing: ThingId; flashMs?: number }
@@ -229,7 +238,8 @@ export type Prompt =
   | { scene: 'shop'; thing: ThingId; priceOre: number; paidOre?: number; purse: number[] }
   | { scene: 'ruler'; object: ObjectId; startCm: number; lengthCm: number | null }
   | { scene: 'unitsRow'; object: ObjectId; unit: 'cube' | 'clip'; length: number }
-  | { scene: 'compareObjects'; objects: ObjectId[]; sizes: number[]; aligned: boolean; mode: 'length' | 'weight' }
+  /** `starts`: where each object begins (offset items, so the longest need not reach furthest). */
+  | { scene: 'compareObjects'; objects: ObjectId[]; sizes: number[]; aligned: boolean; mode: 'length' | 'weight'; starts?: number[] }
   | { scene: 'chart'; kind: 'picto' | 'bar'; data: { cat: SpeciesId; n: number }[] }
   | { scene: 'fraction'; shape: 'circle' | 'rect' | 'bar'; parts: number; colored: number; equal: boolean }
   | { scene: 'fractionBars'; fracs: string[] }
@@ -316,7 +326,8 @@ export interface SkillDef {
   speech(fact: Fact, kind: TaskKind): SpeechPart[]
   /** Tagged wrong answers used as distractors and for error classification. */
   candidates(fact: Fact): Candidate[]
-  hint(fact: Fact, tag: ErrorTag | null): HintSpec
+  /** `kind`: the presentation the child just answered, so the strategy can match it (optional). */
+  hint(fact: Fact, tag: ErrorTag | null, kind?: TaskKind): HintSpec
   fastMs?(fact: Fact, kind: TaskKind): number | undefined
 }
 

@@ -196,7 +196,7 @@ export function updateMisconceptions(prev: MisconceptionStates, entry: AnswerLog
     let state: MisconceptionState = { ...s, hits, opps: [...s.opps, opp].slice(-MAX_OPPS) }
 
     if (state.status === 'flagged') {
-      if (isResolved(state)) state = { ...state, status: 'resolved', resolvedAt: entry.ts, hits: [], opps: [] }
+      if (isResolved(id, state)) state = { ...state, status: 'resolved', resolvedAt: entry.ts, hits: [], opps: [] }
     } else if (meetsFlag(id, state)) {
       state = { ...state, status: 'flagged', flaggedAt: entry.ts, resolvedAt: null }
     }
@@ -249,12 +249,15 @@ function contrastHolds(opps: readonly Opp[]): boolean {
 }
 
 /** After a flag: ≥ 6 new opportunities, ≥ 5 of them right, and no evidence in the last 6. */
-function isResolved(s: MisconceptionState): boolean {
+function isResolved(id: MisconceptionId, s: MisconceptionState): boolean {
   const since = s.flaggedAt ?? 0
-  const after = (s.opps as readonly Opp[]).filter((o) => (o.ts ?? 0) > since)
+  // A perceptual misconception is only lifted by the items where the eye misleads: right answers on
+  // congruent items say nothing about it (a child can ace those while still failing every conflict).
+  const counts = (o: Opp) => (o.ts ?? 0) > since && (!PERCEPTUAL.has(id) || o.contrast === 'conflict')
+  const after = (s.opps as readonly Opp[]).filter(counts)
   if (after.length < 6) return false
   if (after.filter((o) => o.correct).length < 5) return false
-  return !s.opps.slice(-6).some((o) => o.hit)
+  return !after.slice(-6).some((o) => o.hit)
 }
 
 /** Misconceptions currently flagged (they steer the targeted slot in roundBuilder). */

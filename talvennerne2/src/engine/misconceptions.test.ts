@@ -363,3 +363,34 @@ describe('parent texts for all 31 misconceptions', () => {
     expect(all.toLowerCase()).not.toMatch(/savner|ked af det|venter på dig|glem ikke|kom tilbage|din ven bliver|kun \d+ til/)
   })
 })
+
+describe('resolving a perceptual flag', () => {
+  it('is only lifted by conflict items, never by congruent ones alone', async () => {
+    const { updateMisconceptions } = await import('./misconceptions')
+    type States = Parameters<typeof updateMisconceptions>[0]
+    const base = {
+      profileId: 'p', sessionId: 's', roundId: 'r', nodeId: 'n', mode: 'round' as const, skill: 'weightCompare' as const,
+      family: 'conflict', masteryKey: 'k', kind: 'keypad' as const, optionsCount: 0, production: true, answer: 1, ms: 3000,
+      fast: true, boxBefore: 0 as const, boxAfter: 0 as const, scaffold: false, replays: 0, retryOf: null, assisted: false,
+      audioUnverified: false, detectable: ['sizeIsWeight' as const],
+    }
+    const flagged: States = {
+      sizeIsWeight: { status: 'flagged', hits: [], opps: [], flaggedAt: 1_000, resolvedAt: null },
+    }
+    let states = flagged
+    // ten right answers on congruent items after the flag: still flagged
+    for (let i = 0; i < 10; i++) {
+      states = updateMisconceptions(states, { ...base, ts: 2_000 + i, day: '2026-09-02', factId: `w${i}`, given: 1, correct: true, errorTag: null }, {
+        skillAccuracy20: 0.8, day: '2026-09-02', contrast: 'congruent',
+      })
+    }
+    expect(states.sizeIsWeight?.status).toBe('flagged')
+    // six right answers on conflict items lift it
+    for (let i = 0; i < 6; i++) {
+      states = updateMisconceptions(states, { ...base, ts: 3_000 + i, day: '2026-09-03', factId: `c${i}`, given: 1, correct: true, errorTag: null }, {
+        skillAccuracy20: 0.8, day: '2026-09-03', contrast: 'conflict',
+      })
+    }
+    expect(states.sizeIsWeight?.status).toBe('resolved')
+  })
+})
