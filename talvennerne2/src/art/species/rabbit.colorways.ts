@@ -7,7 +7,7 @@ export const RABBIT_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     id: 'c1',
     name: 'hvid',
     fur: '#FFFBF7',
-    overrides: { outline: '#98839A', shade: '#EFE3EC', belly: '#FFFFFF', iris: '#8663C7' },
+    overrides: { outline: '#8C7790', shade: '#EEE1EB', belly: '#FFFFFF', iris: '#8663C7' },
   },
   c2: {
     id: 'c2',
@@ -27,7 +27,8 @@ export const RABBIT_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     fur: '#FFFBF7',
     pattern: 'dutch',
     patternColor: '#7B7288',
-    overrides: { outline: '#9A8997', shade: '#EFE5EC', belly: '#FFFFFF', iris: '#8663C7' },
+    // Én konturfarve for hele figuren: mellemmørk plomme, der bærer både hvid pels og grå plader.
+    overrides: { outline: '#6A5670', shade: '#EEE3EB', belly: '#FFFFFF', iris: '#8663C7' },
   },
   c5: {
     id: 'c5',
@@ -39,6 +40,7 @@ export const RABBIT_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     id: 'c6',
     name: 'rosa',
     fur: '#FBC6DA',
-    overrides: { belly: '#FFF0F6', inner: '#FF9DBB', nose: '#F0628E', cheek: '#FF7FA4' },
+    // Næse og kinder med tydelig kontrast på den lyserøde pels (review G0-r1, fund 11).
+    overrides: { belly: '#FFF0F6', inner: '#FF9DBB', nose: '#E8628C', cheek: '#E8628C' },
   },
 }

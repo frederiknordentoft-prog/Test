@@ -1,12 +1,19 @@
-// Kaninen – guldstandarden for stilen (bølge 1). Racen `upright` er færdig; `lop` og `lionhead`
-// er skitser. Alle former beskrives med punkter og husets primitiver (ingen path-literaler).
+// Kaninen – guldstandarden for stilen (bølge 1). Tre racer:
+// - upright: stående ører; det højre øre har et lille knæk (kaninens ejerbare særpræg).
+// - lop: vædderen med lange, smalle hængeører forbi kinderne og en synlig ørebase (krone).
+// - lionhead: løvehoved med en manke af strøgne totter, skæg under hagen og korte ører.
+// Fælles: armene forsvinder ind under hovedet (åben skulder, når de løftes), lårbule, lange
+// fremadrettede bagfødder, en stor halekvast med luft til foden og brystfnug under hagen.
+// Alle former beskrives med punkter og husets primitiver (ingen path-literaler).
+import { OpenLimb, ROUND, hatted, limbLoop, padsPath } from '../parts/kit'
 import { Pivot } from '../rig/Rig'
-import { blob, ellipse, join, lune, mirrorX, scallop, spline, xf } from '../rig/shapes'
+import { blob, ellipse, join, mirrorX, ribbon, scallop, spline, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
-import type { Part, SidePart, SpeciesDef } from '../rig/types'
+import type { Part, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { RABBIT_COLORWAYS } from './rabbit.colorways'
 
-const round = { strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
+const round = ROUND
+const hair = (pal: { gradient?: readonly string[]; mane: string }, gradientId: string) => (pal.gradient ? `url(#${gradientId})` : pal.mane)
 
 // ---------------------------------------------------------------------------------------------
 // Ører (lokalt: basen i (0,0), peger op). Venstre øre tegnes; riggen spejler det højre.
@@ -21,104 +28,184 @@ const UPRIGHT_INNER: Vec[] = [
   [5.6, -21], [4.4, -8],
 ]
 
-const earScale = (stage: number) => (stage === 1 ? { sx: 1.08, sy: 0.84 } : stage === 3 ? { sx: 1, sy: 0.97 } : {})
+/**
+ * Knækket: punkter over knækket drejes om (0, KINK) – blødt over et par enheder, så konturen
+ * bøjer i stedet for at knække skarpt. Negativ vinkel = udad for det (spejlede) højre øre.
+ */
+const KINK = -31
+const KINK_ROT = -40
+function kink(pts: readonly Vec[]): Vec[] {
+  return pts.map(([x, y]) => {
+    const w = Math.min(1, Math.max(0, (KINK + 2 - y) / 8))
+    if (w === 0) return [x, y] as Vec
+    return xf([[x, y]], { rot: KINK_ROT * w, about: [0, KINK] })[0]
+  })
+}
+const KINKED_EAR = kink(UPRIGHT_EAR)
+const KINKED_INNER = kink(UPRIGHT_INNER)
+/** Folden ved knækket (en kort, buet streg tværs over øret). */
+const CREASE: Vec[] = [[-9.4, KINK - 0.5], [-2, KINK - 3.2], [6.4, KINK - 2.2]]
 
-const UprightEar: SidePart = ({ pal, sw, stage, ids }) => {
+const earScale = (stage: Stage) => (stage === 1 ? { sx: 1.08, sy: 0.84 } : stage === 3 ? { sy: 0.97 } : {})
+
+const UPRIGHT_HATTED = hatted(UPRIGHT_EAR, -4, 5)
+const KINKED_HATTED = hatted(KINKED_EAR, -4, 5)
+
+const UprightEar: SidePart = ({ pal, sw, stage, side, hat }) => {
   const s = earScale(stage)
-  const outer = xf(UPRIGHT_EAR, s)
-  const inner = xf(UPRIGHT_INNER, s)
-  const fill = pal.gradient ? `url(#${ids.gradient})` : pal.inner
+  const kinked = side === 'R'
+  // Under en hue med ørehuller ender øret i en blød bund nede i hullet.
+  const shape = hat === 'through' ? (kinked ? KINKED_HATTED : UPRIGHT_HATTED) : kinked ? KINKED_EAR : UPRIGHT_EAR
+  const outer = xf(shape, s)
+  const inner = xf(kinked ? KINKED_INNER : UPRIGHT_INNER, s)
   return (
     <>
       <path d={blob(outer)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
-      <path d={blob(inner)} fill={fill} />
+      <path d={blob(inner)} fill={pal.inner} />
+      {kinked && !pal.silhouette && <path d={spline(xf(CREASE, s))} fill="none" stroke={pal.earOutline} strokeWidth={sw * 0.5} {...round} />}
     </>
   )
 }
 
-/** Vædderøre (skitse): langt og smalt, hænger ned langs kinden og ligger foran hovedet. */
-const LOP_EAR: Vec[] = [
-  [3, -7], [-6, -9], [-13, -4], [-16.5, 10], [-17.5, 30], [-16, 50], [-11.5, 64], [-5, 68.5],
-  [0.5, 63], [2, 46], [2.5, 26], [3.5, 10],
-]
-const LOP_INNER: Vec[] = [[-4, 4], [-10, 8], [-12.5, 24], [-12, 42], [-9, 56], [-5.5, 60], [-3.4, 48], [-2.6, 30], [-2, 14]]
+/**
+ * Vædderøre: ørebasen rejser sig som en krone over issen, og øret hænger smalt ned forbi kinden,
+ * så spidsen når under hagen. Tegnes foran hovedet (ingen klip); indersiden ses som en lyserød
+ * stribe nederst, hvor øret drejer let fremad.
+ */
+const LOP_SPINE: Vec[] = [[3, -8], [-6, -7.5], [-14, -2], [-20, 10], [-23.5, 27], [-24.5, 46], [-23.5, 65], [-21, 82], [-18, 96]]
+const LOP_EAR = limbLoop(LOP_SPINE, 14, 17.5, 7)
+const LOP_INNER = ribbon([[-19.4, 40], [-19.8, 56], [-18.8, 72], [-16.6, 86], [-15.6, 94]], [0, 5.5, 7, 6, 0])
 
-const LopEar: SidePart = ({ pal, sw, stage, ids }) => {
+const LopEar: SidePart = ({ pal, sw, stage }) => {
   const s = stage === 1 ? { sx: 1.04, sy: 0.86 } : {}
-  const fill = pal.gradient ? `url(#${ids.gradient})` : pal.inner
   return (
     <>
       <path d={blob(xf(LOP_EAR, s))} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
-      <path d={blob(xf(LOP_INNER, s))} fill={fill} opacity={0.9} />
+      <path d={blob(xf(LOP_INNER, s), 0.8)} fill={pal.inner} opacity={0.9} />
     </>
   )
 }
 
-/** Løvehovedets korte ører (skitse). */
-const SHORT_EAR = xf(UPRIGHT_EAR, { sy: 0.68, sx: 1.04 })
-const SHORT_INNER = xf(UPRIGHT_INNER, { sy: 0.66, sx: 1.02 })
-const ShortEar: SidePart = ({ pal, sw, ids }) => (
+/** Løvehovedets korte, runde ører. */
+const SHORT_EAR = xf(UPRIGHT_EAR, { sy: 0.62, sx: 1.06 })
+const SHORT_HATTED = hatted(SHORT_EAR, -4, 4.5)
+const SHORT_INNER = xf(UPRIGHT_INNER, { sy: 0.6, sx: 1.04 })
+const ShortEar: SidePart = ({ pal, sw, hat }) => (
   <>
-    <path d={blob(SHORT_EAR)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
-    <path d={blob(SHORT_INNER)} fill={pal.gradient ? `url(#${ids.gradient})` : pal.inner} />
+    <path d={blob(hat === 'through' ? SHORT_HATTED : SHORT_EAR)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
+    <path d={blob(SHORT_INNER)} fill={pal.inner} />
   </>
 )
 
 // ---------------------------------------------------------------------------------------------
-// Poter, fødder, hale
+// Arme. Hvilende: kort, buttet arm hvis top forsvinder ind under hovedet (skulderen er skjult).
+// Løftet (jubel, vink, tænker): tegnes foran hovedet med åben kontur, hvor armen vokser ud af brystet.
 
-/** Venstre forpote fra skulderen: kort og buttet, vinklet ind så poterne hviler på maven. */
-const PAW_ROT = -14
-const PAW: Vec[] = xf(
-  [[-6.4, -4], [-8, 6], [-8.6, 15.5], [-7, 22.5], [-2.2, 26.2], [3.4, 25.8], [7, 21], [7.4, 12], [6, 2], [0, -6.2]],
-  { rot: PAW_ROT },
-)
+const PAW_ROT = -26
+/** Hvilende arm (lodret, før drejningen): kort og buttet med en rund pote, der hviler mod brystet. */
+const PAW_RAW: Vec[] = [
+  [-7.6, -13], [-9.2, -3], [-9.8, 6], [-10.8, 13.5], [-10.6, 20], [-7.6, 25.2], [-2.2, 27.4], [3.4, 27.2],
+  [8.4, 24.6], [10.8, 19], [10.2, 11], [9, 2], [8, -6], [0, -15],
+]
+const PAW: Vec[] = xf(PAW_RAW, { rot: PAW_ROT })
+/** Ærmet: armen fra skulderen til manchetten, en anelse løsere end armen (lodret ramme). */
+const SLEEVE: Vec[] = [
+  [0, -17], [-9, -14.5], [-10.8, -3.5], [-11.4, 5], [-12, 12.5], [-6, 13.8], [0, 14.2], [6, 13.8], [11.8, 12.5],
+  [11, 3], [9.8, -5], [9, -14],
+]
 const PAW_TOE_LINES: Vec[][] = [
-  [[-3, 25.4], [-2.6, 21.6]],
-  [[2, 25.6], [1.8, 21.8]],
+  [[-3.4, 26.6], [-3, 22]],
+  [[2.4, 26.8], [2.2, 22.2]],
 ]
 const PAW_TOES = PAW_TOE_LINES.map((t) => xf(t, { rot: PAW_ROT }))
 
-const Paw: SidePart = ({ pal, sw }) => (
+const Paw: SidePart = ({ pal, sw, lod }) => (
   <>
     <path d={blob(PAW)} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
-    <path d={join(...PAW_TOES.map((t) => spline(t)))} fill="none" stroke={pal.outline} strokeWidth={sw * 0.5} {...round} />
+    {lod === 'full' && <path d={join(...PAW_TOES.map((t) => spline(t)))} fill="none" stroke={pal.outline} strokeWidth={sw * 0.5} {...round} />}
   </>
 )
 
-/** Bagfødderne stikker frem på hver side under kroppen; ydertæerne har tålinjer. */
-const FOOT: Vec[] = [[-4, -10], [-17, -9.5], [-23.5, -3.5], [-24, 4.5], [-17.5, 9.6], [-2, 10.2], [11, 7.6], [15, 0], [10, -8]]
-const TOES: Vec[][] = [
-  [[-19.8, 8.4], [-18.6, 3.8]],
-  [[-13.8, 9.9], [-13, 5.2]],
-]
+/** Løftede arme (lokalt om skulderen). Roden ligger på brystet; konturen er åben dér. */
+const UP_SPINES = {
+  cheer: [[7.5, 20], [-1.5, 10], [-11.5, 0], [-20.5, -10], [-27.5, -20]] as Vec[],
+  wave: [[8.5, 19], [-3.5, 14], [-16.5, 11], [-26.5, 4], [-31.5, -7], [-33.5, -21]] as Vec[],
+  think: [[5.5, 20], [11.5, 12], [17.5, 5], [21.5, -1]] as Vec[],
+  // Ups: albuen ud til siden og poten op bag nakken (tegnes bag hovedet, så spidsen skjules).
+  oops: [[3, 12], [-8, 7], [-19, 3], [-27, -4], [-29.5, -15], [-26, -27], [-20, -37], [-14.5, -45]] as Vec[],
+}
+const UP_LOOPS = {
+  cheer: limbLoop(UP_SPINES.cheer, 15, 18.5),
+  wave: limbLoop(UP_SPINES.wave, 15, 18.5),
+  think: limbLoop(UP_SPINES.think, 15, 18),
+  oops: limbLoop(UP_SPINES.oops, 15, 17),
+}
+const tipOf = (s: readonly Vec[]) => s[s.length - 1]
 
-const Feet: Part = ({ pal, sw, a }) => {
-  const place = (pts: readonly Vec[], side: 'L' | 'R') =>
-    side === 'L'
-      ? xf(pts, { dx: a.footL.x, dy: a.footL.y, rot: -3 })
-      : mirrorX(xf(pts, { dx: 200 - a.footR.x, dy: a.footR.y, rot: -3 }), 100)
-  const toes = TOES.flatMap((t) => [spline(place(t, 'L')), spline(place(t, 'R'))])
+const PawUp: SidePart = ({ pal, sw, mood, lod }) => {
+  const kind = mood === 'wave' ? 'wave' : mood === 'think' ? 'think' : mood === 'oops' ? 'oops' : 'cheer'
+  const [tx, ty] = tipOf(UP_SPINES[kind])
+  // Poten vender håndfladen mod os ved jubel og vink (puder), og ses fra siden ved tænker (tålinjer);
+  // bag nakken (ups) er poten skjult af hovedet.
+  const detail =
+    kind === 'oops'
+      ? null
+      : kind === 'think'
+      ? lod === 'full' && <path d={join(spline([[tx + 1.5, ty - 6], [tx + 5, ty - 3.5]]), spline([[tx + 3, ty - 1], [tx + 6.6, ty + 1.6]]))} fill="none" stroke={pal.outline} strokeWidth={sw * 0.5} {...round} />
+      : !pal.silhouette && <path d={padsPath(tx, ty + 0.5, 8.2, kind === 'wave' ? -4 : -38)} fill={pal.inner} />
+  return (
+    <OpenLimb loop={UP_LOOPS[kind]} fill={pal.fur} stroke={pal.outline} sw={sw}>
+      {detail}
+    </OpenLimb>
+  )
+}
+
+// ---------------------------------------------------------------------------------------------
+// Bagben: lårbule og lange, fremadrettede bagfødder med tæer forrest. Stor (stadie 3) har større fødder.
+
+/** Lårbulen (venstre), modelrum. */
+const HAUNCH_L = { cx: 67, cy: 203, rx: 19.5, ry: 18, rot: -12 }
+/** Bagfoden (venstre): hælen gemt under låret, tæerne frem og ud mod beskueren. */
+const FOOT_L: Vec[] = [
+  [71, 207], [61, 208.5], [51, 211.5], [43, 215.5], [38.5, 220.5], [40.5, 225], [48, 226.3], [59, 225.4],
+  [69, 222.6], [75.5, 217], [75.5, 210],
+]
+const FOOT_TOES_L: Vec[][] = [
+  [[44, 225.2], [45.6, 221]],
+  [[49.8, 226], [51, 221.6]],
+]
+const HEEL: Vec = [70, 215]
+const footScale = (stage: Stage) => (stage === 3 ? 1.12 : 1)
+
+const Feet: Part = ({ pal, sw, stage, lod }) => {
+  const k = footScale(stage)
+  const big = (pts: readonly Vec[]) => (k === 1 ? [...pts] : xf(pts, { sx: k, about: HEEL }))
+  const pair = (pts: readonly Vec[]) => [big(pts), mirrorX(big(pts), 100)]
+  const h = HAUNCH_L
+  const haunches = join(ellipse(h.cx, h.cy, h.rx, h.ry, h.rot), ellipse(200 - h.cx, h.cy, h.rx, h.ry, -h.rot))
+  const [fl, fr] = pair(FOOT_L)
+  const toes = FOOT_TOES_L.flatMap((t) => pair(t).map((p) => spline(p)))
   return (
     <>
-      <path d={join(blob(place(FOOT, 'L')), blob(place(FOOT, 'R')))} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
-      <path d={join(...toes)} fill="none" stroke={pal.outline} strokeWidth={sw * 0.5} {...round} />
+      <path d={haunches} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
+      <path d={join(blob(fl), blob(fr))} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
+      {lod === 'full' && <path d={join(...toes)} fill="none" stroke={pal.outline} strokeWidth={sw * 0.5} {...round} />}
     </>
   )
 }
 
-/** Bomuldshalen: en fnugget kvast, lysere end pelsen. */
+/** Bomuldshalen: en stor, fnugget kvast, lysere end pelsen, med luft ned til foden. */
 const Tail: Part = ({ pal, sw, ids }) => {
   const fill = pal.gradient ? `url(#${ids.gradient})` : pal.belly
-  return <path d={scallop(6, -6, 12.5, 11.5, 8, 0.64, -100)} fill={fill} stroke={pal.outline} strokeWidth={sw} {...round} />
+  return <path d={scallop(6, -3, 13.5, 12.5, 9, 0.64, -100)} fill={fill} stroke={pal.outline} strokeWidth={sw} {...round} />
 }
 
 // ---------------------------------------------------------------------------------------------
-// Ansigt: næse (med næse-vip), knurhår, snudepuder
+// Ansigt: næse (med næse-vip), knurhår
 
 const NOSE: Vec[] = [[0, 3.4], [-3.2, 1.2], [-4.6, -1.6], [-3, -3.2], [0, -3.4], [3, -3.2], [4.6, -1.6], [3.2, 1.2]]
 
-const Muzzle: Part = ({ pal, sw, a, still }) => {
+const Muzzle: Part = ({ pal, sw, a, still, lod }) => {
   const m = a.muzzle
   const whisk = (s: number): string =>
     join(
@@ -127,7 +214,7 @@ const Muzzle: Part = ({ pal, sw, a, still }) => {
     )
   return (
     <>
-      {!pal.silhouette && <path d={join(whisk(-1), whisk(1))} fill="none" stroke={pal.outline} strokeOpacity={0.45} strokeWidth={sw * 0.42} {...round} />}
+      {!pal.silhouette && lod === 'full' && <path d={join(whisk(-1), whisk(1))} fill="none" stroke={pal.outline} strokeOpacity={0.45} strokeWidth={sw * 0.42} {...round} />}
       <Pivot at={m} cls="a-sig" still={still}>
         <path d={blob(NOSE)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
         {!pal.silhouette && <path d={ellipse(-1.3, -1.6, 1.4, 0.9, -15)} fill={pal.highlight} />}
@@ -143,20 +230,20 @@ const TUFT: Vec[] = [
 ]
 const TUFT_BIG = xf(TUFT, { sx: 1.18, about: [100, 61] })
 const Tuft: Part = ({ pal, sw, ids }) => (
-  <path
-    d={blob(TUFT_BIG, 1)}
-    fill={pal.gradient ? `url(#${ids.gradient})` : pal.mane}
-    stroke={pal.maneOutline}
-    strokeWidth={sw}
-    clipPath={`url(#${ids.outsideHead})`}
-    {...round}
-  />
+  <path d={blob(TUFT_BIG, 1)} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} clipPath={`url(#${ids.outsideHead})`} {...round} />
 )
 
-/** Lys mave klippet til kroppen. */
-const Belly: Part = ({ pal, a, ids }) => {
+/** Lys mave klippet til kroppen og et fnug af brystpels lige under hagen (større på stor). */
+const BodyDeco: Part = ({ pal, a, ids, sw, stage }) => {
   const b = a.bodyCenter
-  return <path d={ellipse(b.x, b.y + 16, a.bodyRx * 0.6, a.bodyRy * 0.66)} fill={pal.belly} clipPath={`url(#${ids.bodyClip})`} />
+  const k = stage === 3 ? 1.3 : 1
+  const fluff = scallop(100, 151, 13 * k, 7.5 * k, 7, 0.62, 0)
+  return (
+    <>
+      <path d={ellipse(b.x, b.y + 16, a.bodyRx * 0.6, a.bodyRy * 0.66)} fill={pal.belly} clipPath={`url(#${ids.bodyClip})`} />
+      <path d={fluff} fill={pal.belly} stroke={pal.outline} strokeWidth={sw * 0.6} strokeLinejoin="round" />
+    </>
+  )
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -172,32 +259,41 @@ const DutchHead: Part = ({ pal, ids }) => (
 )
 
 // ---------------------------------------------------------------------------------------------
-// Løvehovedets manke (skitse): fnugget krave bag hovedet.
+// Halsflæse: regnbuen får en flæse i regnbuens farver (gradienten er tilladt i manke og hale);
+// løvehovedet får en blød uldkrans med en mørkere inderkrans og en lille uldsky i panden.
 
-const LionMane: Part = ({ pal, sw, a, ids }) => {
-  const c = a.headCenter
-  const fill = pal.gradient ? `url(#${ids.gradient})` : pal.mane
-  return (
-    <>
-      <path d={scallop(c.x, c.y + 14, a.headRx + 14, a.headRy + 8, 14, 0.62, -90)} fill={fill} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
-      <path d={lune(c.x, c.y + 14, a.headRx + 10, a.headRy + 4, 7, 20, 160)} fill={pal.shade} opacity={0.6} />
-    </>
-  )
+/** Regnbuens halsflæse (i kroppens lag under trøjen; løvehovedet har sin manke i stedet). */
+const RainbowRuff: Part = ({ pal, sw, ids, colorway, breed, stage }) => {
+  if (colorway !== 'rainbow' || pal.silhouette || breed === 'lionhead') return null
+  const k = stage === 3 ? 1.12 : stage === 1 ? 1.1 : 1
+  return <path d={scallop(100, 151 + 1 * k, 38 * k, 12.5 * k, 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" />
 }
 
-/** Løvehovedets pandetot (skitse). */
-const LionTuft: Part = ({ pal, sw, a, ids }) => {
-  const t = a.headTop
-  const fill = pal.gradient ? `url(#${ids.gradient})` : pal.mane
-  return <path d={scallop(t.x, t.y + 4, 17, 9, 7, 0.6, 180)} fill={fill} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
-}
+// Manken er en blød krans af runde totter (samme bueslag som halen) med en mørkere inderkrans:
+// uld, ikke pigge, så løvehovedet læses som fluffy og ikke som et pindsvin. Den rammer ansigtet ind
+// og slutter lige under hagen, så de hvilende poter stadig ses foran brystet.
+const LION_MANE = scallop(100, 104, 65, 52, 17, 0.6, -90)
+const LION_INNER = scallop(100, 107, 57, 44, 15, 0.58, -78)
+
+const LionMane: Part = ({ pal, sw, ids }) => (
+  <>
+    <path d={LION_MANE} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
+    {!pal.silhouette && <path d={LION_INNER} fill={pal.shade} opacity={0.55} />}
+  </>
+)
+
+/** Løvehovedets runde pandetot: en lille uldsky mellem ørerne (kun det, der stikker op over hovedet). */
+const LION_TUFT = scallop(100, 57, 19, 11, 7, 0.64, -90)
+const LionTuft: Part = ({ pal, sw, ids }) => (
+  <path d={LION_TUFT} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} clipPath={`url(#${ids.outsideHead})`} {...round} />
+)
 
 // ---------------------------------------------------------------------------------------------
 
 export const rabbit: SpeciesDef = {
   id: 'rabbit',
   name: 'Kanin',
-  nameClip: 'species.rabbit',
+  nameClip: 'name.species.rabbit',
   family: 'lagomorph',
   body: 'round',
   breeds: [
@@ -205,16 +301,25 @@ export const rabbit: SpeciesDef = {
     {
       id: 'lop',
       name: 'vædder',
-      ears: { splay: 0, clip: false },
-      anchors: { earBaseL: { x: 57, y: 68 }, earBaseR: { x: 143, y: 68 } },
+      ears: { splay: 0, clip: false, hang: true },
+      anchors: { earBaseL: { x: 66, y: 62 }, earBaseR: { x: 134, y: 62 }, earGap: 60 },
       parts: { Ear: LopEar },
+      // Hængeørerne bevæger sig ikke med humøret (de svajer blidt i alle humør).
+      poses: {
+        happy: { earL: 0, earR: 0 }, cheer: { earL: 0, earR: 0 }, think: { earL: 0, earR: 0 },
+        oops: { earL: 0, earR: 0 }, sleep: { earL: 0, earR: 0 }, wave: { earL: 0, earR: 0 },
+      },
+      bounds: { head: { x0: 30, y0: 46, x1: 170, y1: 178 } },
     },
     {
       id: 'lionhead',
       name: 'løvehoved',
       ears: { splay: 12 },
-      anchors: { earBaseL: { x: 74, y: 56 }, earBaseR: { x: 126, y: 56 } },
+      anchors: { earBaseL: { x: 74, y: 57 }, earBaseR: { x: 126, y: 57 } },
       parts: { Ear: ShortEar, ManeBack: LionMane, ManeFront: LionTuft },
+      maneGrowth: 1.1,
+      bounds: { head: { x0: 28, y0: 18, x1: 172, y1: 168 } },
+      fx: { x: 172, y: 70 },
     },
   ],
   colorways: RABBIT_COLORWAYS,
@@ -242,24 +347,40 @@ export const rabbit: SpeciesDef = {
     bodyRx: 49,
     bodyRy: 43,
     bodyWidth: 98,
-    shoulderL: { x: 82, y: 161 },
-    shoulderR: { x: 118, y: 161 },
-    pawL: { x: 87, y: 186 },
-    pawR: { x: 113, y: 186 },
-    footL: { x: 62, y: 216 },
-    footR: { x: 138, y: 216 },
-    tailBase: { x: 146, y: 204 },
+    shoulderL: { x: 72.5, y: 147 },
+    shoulderR: { x: 127.5, y: 147 },
+    pawL: { x: 84, y: 171 },
+    pawR: { x: 116, y: 171 },
+    footL: { x: 58, y: 218 },
+    footR: { x: 142, y: 218 },
+    tailBase: { x: 152, y: 176 },
   },
+  bounds: {
+    head: { x0: 38, y0: 6, x1: 162, y1: 150 },
+    body: { x0: 36, y0: 138, x1: 176, y1: 228 },
+  },
+  // Tankeprikker og Z'er ud for kinden, under det knækkede øre.
+  fx: { x: 166, y: 98 },
   face: { idleMouth: 'cat-w', buckTeeth: true, cheeks: true },
   ears: { splay: 10 },
   signature: 'nose-wiggle',
   parts: {
     Ear: UprightEar,
     Paw,
+    PawUp,
+    pawUpTip: { cheer: { x: -27.5, y: -20 }, wave: { x: -33.5, y: -21 }, think: { x: 21.5, y: -1 }, oops: { x: -14.5, y: -45 } },
+    upArms: {
+      cheer: { spine: UP_SPINES.cheer, w0: 15, w1: 18.5, tip: 10 },
+      wave: { spine: UP_SPINES.wave, w0: 15, w1: 18.5, tip: 10 },
+      think: { spine: UP_SPINES.think, w0: 15, w1: 18, tip: 9.5 },
+      oops: { spine: UP_SPINES.oops, w0: 15, w1: 17, tip: 9 },
+    },
+    limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 13, half: 11.6 } },
     Feet,
     Tail,
     Muzzle,
-    BodyDeco: Belly,
+    BodyDeco,
+    Ruff: RainbowRuff,
     ManeFront: Tuft,
     Pattern: { head: DutchHead },
   },

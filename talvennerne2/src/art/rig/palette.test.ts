@@ -42,11 +42,13 @@ describe('afledning fra fur (SPEC §6.4)', () => {
     // 8-bit afrunding kan løfte L en anelse over 0,97.
     expect(hexToOklch(bellyOf('#FFF8F0')).L).toBeLessThanOrEqual(0.972)
   })
-  it('colorway-overskrivninger vinder, og hollænderens ører får mønsterfarven', () => {
+  it('colorway-overskrivninger vinder, og hollænderens ører får mønsterfarven med figurens kontur', () => {
     const p = derivePalette(RABBIT_COLORWAYS.c4)
     expect(p.outline).toBe(RABBIT_COLORWAYS.c4.overrides!.outline)
     expect(p.earFur).toBe(RABBIT_COLORWAYS.c4.patternColor)
-    expect(p.earOutline).toBe(outlineOf(RABBIT_COLORWAYS.c4.patternColor!))
+    // Én konturfarve for hele figuren (review G0-r1, fund 5).
+    expect(p.earOutline).toBe(p.outline)
+    expect(p.maneOutline).toBe(p.outline)
     const brown = derivePalette(RABBIT_COLORWAYS.c3)
     expect(brown.outline).toBe(outlineOf(RABBIT_COLORWAYS.c3.fur))
     expect(brown.earFur).toBe(RABBIT_COLORWAYS.c3.fur)

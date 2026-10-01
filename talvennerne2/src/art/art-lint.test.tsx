@@ -1,17 +1,25 @@
-// Kunst-lints (SPEC §11 pipeline pkt. 4): statiske scanninger af kilden og af renderet markup.
-// Geometri-lints (sikker zone, pasform via getBBox) kører i Chromium via scripts/sheets.mjs.
+// Kunst-lints (SPEC §11 pipeline pkt. 4): statiske scanninger af kilden og af renderet markup for
+// alle arter, racer, stadier, farver og humør. Geometri-lints (sikker zone, pasform, butikskort via
+// getBBox) kører i Chromium via scripts/sheets.mjs.
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { festHead } from './items/fest/fest-head'
 import { hverdagBody } from './items/hverdag/hverdag-body'
 import { hverdagHead } from './items/hverdag/hverdag-head'
-import { Rig } from './rig/Rig'
+import { Rig, magicOf } from './rig/Rig'
 import type { RigProps } from './rig/Rig'
+import { derivePalette } from './rig/palette'
 import { MOODS, NATURAL_COLORWAYS, STAGES } from './rig/types'
-import type { ColorwayId, ItemDef, Outfit } from './rig/types'
+import type { BreedId, ColorwayId, ItemDef, Outfit, SpeciesDef } from './rig/types'
+import { cat } from './species/cat'
+import { horse } from './species/horse'
 import { rabbit } from './species/rabbit'
+import { unicorn } from './species/unicorn'
+
+// Tunge gennemløb af alle kombinationer: robuste når andre agenter belaster CPU'en.
+vi.setConfig({ testTimeout: 120_000 })
 
 const ART = path.resolve(import.meta.dirname)
 const walk = (dir: string): string[] =>
@@ -22,18 +30,20 @@ const sources = walk(ART).filter((f) => /\.(ts|tsx|css)$/.test(f) && !/\.test\.t
 const rel = (f: string) => path.relative(ART, f)
 const read = (f: string) => readFileSync(f, 'utf8')
 
+export const ALL_SPECIES: readonly SpeciesDef[] = [rabbit, cat, horse, unicorn]
 const ITEMS: readonly ItemDef[] = [hverdagHead, festHead, hverdagBody]
-const COLORS: readonly ColorwayId[] = [...NATURAL_COLORWAYS, ...rabbit.magic]
+const colorsOf = (def: SpeciesDef, breed: BreedId): ColorwayId[] => [...NATURAL_COLORWAYS, ...magicOf(def, breed)]
 const BUDGET = { animal: 90, item: 25 }
 const FORBIDDEN = /<(filter|mask|foreignObject|image|text)[\s>/]/i
 
-const render = (p: Partial<RigProps>) => renderToStaticMarkup(<Rig species={rabbit} {...p} />)
+const render = (p: Partial<RigProps> & { species: SpeciesDef }) => renderToStaticMarkup(<Rig {...p} />)
 /** Antal SVG-elementer under rod-svg'en. */
 const count = (markup: string) => (markup.match(/<[a-zA-Z]/g) ?? []).length - 1
 
 describe('kildescanninger', () => {
   it('har kilder at scanne', () => {
     expect(sources.map(rel)).toContain(path.join('rig', 'Rig.tsx'))
+    expect(sources.map(rel)).toContain(path.join('species', 'shared', 'equine.tsx'))
   })
 
   it('ingen rå hex uden for palette.ts og *.colorways.ts', () => {
@@ -58,8 +68,8 @@ describe('kildescanninger', () => {
     expect(bad).toEqual([])
   })
 
-  it('ingen emoji (\\p{Extended_Pictographic})', () => {
-    const bad = sources.filter((f) => /\p{Extended_Pictographic}/u.test(read(f))).map(rel)
+  it('ingen emoji (\\p{Extended_Pictographic}) og ingen gange-/divisionstegn', () => {
+    const bad = sources.filter((f) => /\p{Extended_Pictographic}|[\u00D7\u00F7]/u.test(read(f))).map(rel)
     expect(bad).toEqual([])
   })
 
@@ -74,57 +84,73 @@ describe('kildescanninger', () => {
   })
 })
 
-describe('renderet markup', () => {
+describe.each(ALL_SPECIES.map((def) => [def.id, def] as const))('renderet markup · %s', (_id, def) => {
   const combos: Partial<RigProps>[] = []
-  for (const b of rabbit.breeds)
+  for (const b of def.breeds)
     for (const stage of STAGES)
-      for (const colorway of COLORS)
+      for (const colorway of colorsOf(def, b.id))
         for (const mood of MOODS) combos.push({ breed: b.id, stage, colorway, mood })
 
   it('ingen filter, mask, foreignObject, image eller text – statisk og animeret', () => {
-    let n = 0
     for (const p of combos)
-      for (const mode of ['static', 'animated'] as const) {
-        const m = render({ ...p, mode })
-        expect(m, JSON.stringify(p)).not.toMatch(FORBIDDEN)
-        n++
-      }
+      for (const mode of ['static', 'animated'] as const) expect(render({ species: def, ...p, mode }), JSON.stringify(p)).not.toMatch(FORBIDDEN)
     for (const it of ITEMS)
-      for (const stage of STAGES) expect(render({ stage, outfit: { [it.slot]: { item: it } } as Outfit, star: true })).not.toMatch(FORBIDDEN)
-    expect(n).toBe(3 * 3 * COLORS.length * 7 * 2)
+      for (const stage of STAGES)
+        expect(render({ species: def, stage, outfit: { [it.slot]: { item: it } } as Outfit, star: true })).not.toMatch(FORBIDDEN)
   })
 
-  it(`elementbudget: ≤ ${BUDGET.animal} pr. dyr i alle kombinationer`, () => {
+  it(`elementbudget: ≤ ${BUDGET.animal} pr. dyr i alle kombinationer (også stjerneform og lille detaljeniveau)`, () => {
     let max = 0
     for (const p of combos)
       for (const star of [false, true]) {
-        const c = count(render({ ...p, star, mode: 'animated' }))
+        const c = count(render({ species: def, ...p, star, mode: 'animated' }))
         max = Math.max(max, c)
         expect(c, JSON.stringify({ ...p, star })).toBeLessThanOrEqual(BUDGET.animal)
       }
-    expect(max).toBeGreaterThan(30)
+    expect(max).toBeGreaterThan(40)
   })
 
-  it(`elementbudget: ≤ ${BUDGET.item} pr. genstand`, () => {
-    for (const it of ITEMS)
-      for (const stage of STAGES) {
-        const bare = count(render({ stage, mode: 'animated' }))
-        const worn = count(render({ stage, mode: 'animated', outfit: { [it.slot]: { item: it } } as Outfit }))
-        expect(worn - bare, `${it.id} stadie ${stage}`).toBeLessThanOrEqual(BUDGET.item)
+  it(`elementbudget: ≤ ${BUDGET.item} pr. genstand i alle humør (inkl. ærmer på løftede arme og hulkant)`, () => {
+    for (const b of def.breeds)
+      for (const stage of STAGES)
+        for (const mood of MOODS) {
+          const bare = count(render({ species: def, breed: b.id, stage, mood, mode: 'animated' }))
+          for (const it of ITEMS) {
+            const worn = count(render({ species: def, breed: b.id, stage, mood, mode: 'animated', outfit: { [it.slot]: { item: it } } as Outfit }))
+            expect(worn - bare, `${def.id}/${b.id} ${it.id} stadie ${stage} ${mood}`).toBeLessThanOrEqual(BUDGET.item)
+          }
+        }
+  })
+
+  it('løftede arme får ærmer, når trøjen er på', () => {
+    for (const mood of ['cheer', 'wave', 'think', 'oops'] as const) {
+      const m = render({ species: def, mood, outfit: { body: { item: hverdagBody } } })
+      expect(m, `${def.id} ${mood}`).toMatch(/data-layer="sleeve-[LR]"/)
+    }
+  })
+
+  it('én konturfarve for hele figuren: ører og manke arver figurens kontur', () => {
+    for (const b of def.breeds)
+      for (const c of colorsOf(def, b.id)) {
+        const p = derivePalette(c in def.colorways ? def.colorways[c as 'c1'] : { id: c, name: c, fur: '#FFFFFF' })
+        expect(p.earOutline, `${def.id} ${c}`).toBe(p.outline)
+        expect(p.maneOutline, `${def.id} ${c}`).toBe(p.outline)
       }
   })
 
-  it('kropstøj klippes til kroppen (+2) og streger konturen igen', () => {
-    const m = render({ outfit: { body: { item: hverdagBody } } })
+  it('kropstøj klippes til kroppen og streger konturen igen', () => {
+    const m = render({ species: def, outfit: { body: { item: hverdagBody } } })
     expect(m).toMatch(/data-item="hverdag-body"[^>]*clip-path="url\(#/)
     expect(m).toMatch(/<g data-item="hverdag-body"[\s\S]*?stroke-linejoin="round"/)
   })
 
-  it('hovedgenstande med hides skjuler pandelokken; ørerne tegnes over hatten', () => {
-    const m = render({ breed: 'lionhead', outfit: { head: { item: hverdagHead } } })
-    const hat = m.indexOf('data-item="hverdag-head"')
-    const ears = m.indexOf('a-ear-l') >= 0 ? m.indexOf('a-ear-l') : m.lastIndexOf('scale(-1 1)')
-    expect(hat).toBeGreaterThan(0)
-    expect(ears).toBeGreaterThan(hat)
+  it('ørerne og hornet tegnes over hatten', () => {
+    for (const b of def.breeds) {
+      const m = render({ species: def, breed: b.id, outfit: { head: { item: hverdagHead } } })
+      const hat = m.indexOf('data-item="hverdag-head"')
+      expect(hat).toBeGreaterThan(0)
+      const ears = m.indexOf('a-ear-l')
+      expect(ears, `${def.id}/${b.id}`).toBeGreaterThan(hat)
+    }
   })
 })

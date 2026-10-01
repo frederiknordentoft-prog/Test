@@ -7,50 +7,39 @@
 // hoved om halsleddet), så tøj og dele aldrig skal justeres pr. stadie. `computeAnchors` giver de
 // endelige ankre i verdensrummet (viewBox) til UI, øjne der følger fingeren og lints.
 import type { ReactNode } from 'react'
+import type { Vec } from './shapes'
 
 // ---------------------------------------------------------------------------------------------
-// Id'er (bindende for resten af spillet)
+// Id'er (bindende for resten af spillet). Kontrakten ejes af motoren (`src/engine/types.ts`, låst i
+// `src/content/ids.lock.json`); kunsten genbruger dens lister og typer i stedet for at duplikere dem.
 
-export const SPECIES_IDS = [
-  'rabbit', 'cat', 'puppy', 'hedgehog', 'horse', 'lamb', 'fox', 'hamster',
-  'unicorn', 'panda', 'squirrel', 'owl', 'pegasus', 'dragon', 'penguin', 'polarbear',
-] as const
-export type SpeciesId = (typeof SPECIES_IDS)[number]
+import {
+  BREEDS, MAGIC_COLORWAYS, MOODS, NATURAL_COLORWAYS, SET_IDS, SLOTS, SPECIES_IDS,
+} from '../../engine/types'
+import type {
+  BreedId, ClipId, ColorwayId, ItemId, ItemSource, Mood, NodeId, RigCharacterId, SetId as OutfitSetId,
+  Slot, SpeciesId, Stage, WorldId,
+} from '../../engine/types'
+
+export { BREEDS, MAGIC_COLORWAYS, MOODS, NATURAL_COLORWAYS, SET_IDS, SLOTS, SPECIES_IDS }
+export type { BreedId, ClipId, ColorwayId, ItemId, ItemSource, Mood, NodeId, OutfitSetId, Slot, SpeciesId, Stage, WorldId }
+
 /** Fortælleren Pip (spurv, krop `pear`) bruger samme rig, men er ikke et samleobjekt. */
-export type NarratorId = 'pip'
-export type CreatureId = SpeciesId | NarratorId
+export type NarratorId = Exclude<RigCharacterId, SpeciesId>
+export type CreatureId = RigCharacterId
 
-export const BREEDS = {
-  rabbit: ['upright', 'lop', 'lionhead'],
-  cat: ['domestic', 'longhair', 'mainecoon'],
-  horse: ['shetland', 'fjord', 'arabian'],
-  unicorn: ['foal', 'wavy', 'starhorn'],
-} as const
 type BreedTable = typeof BREEDS
 export type BreedOf<S extends CreatureId> = S extends keyof BreedTable ? BreedTable[S][number] : 'std'
-export type BreedId = BreedOf<CreatureId>
 
 export function breedsOf(id: CreatureId): readonly BreedId[] {
   return id in BREEDS ? BREEDS[id as keyof BreedTable] : ['std']
 }
 
-/** c1–c6 = artens 6 naturlige farver i rækkefølgen fra spildesign §3.1. */
-export const NATURAL_COLORWAYS = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'] as const
-export const MAGIC_COLORWAYS = ['gold', 'rainbow', 'starwhite'] as const
 export type NaturalColorwayId = (typeof NATURAL_COLORWAYS)[number]
 export type MagicColorwayId = (typeof MAGIC_COLORWAYS)[number]
-export type ColorwayId = NaturalColorwayId | MagicColorwayId
 
-export const STAGES = [1, 2, 3] as const
 /** 1 = baby, 2 = ung, 3 = stor. Stjerneformen er et flag (`star`) oven på stadie 3. */
-export type Stage = (typeof STAGES)[number]
-
-/** Der findes ingen `sad` (SPEC §6.4, etik-kritikken). Blink og earTwitch kører altid. */
-export const MOODS = ['idle', 'happy', 'cheer', 'think', 'oops', 'sleep', 'wave'] as const
-export type Mood = (typeof MOODS)[number]
-
-export const SLOTS = ['head', 'face', 'neck', 'body', 'back', 'hand'] as const
-export type Slot = (typeof SLOTS)[number]
+export const STAGES = [1, 2, 3] as const satisfies readonly Stage[]
 
 export const BODY_KINDS = ['round', 'pear', 'tall'] as const
 export type BodyKind = (typeof BODY_KINDS)[number]
@@ -59,17 +48,20 @@ export type Family =
   | 'lagomorph' | 'feline' | 'equine' | 'canine' | 'bear' | 'rodent'
   | 'bird' | 'ovine' | 'reptile' | 'insectivore'
 
-export type WorldId = 'eng' | 'bakke' | 'skov' | 'fjeld'
-/** Klip-, node-id'er ejes af motoren (`src/engine/types.ts`, `ids.lock.json`); her kun som strenge. */
-export type ClipId = string
-export type NodeId = string
-
 // ---------------------------------------------------------------------------------------------
 // Geometri og ankre
 
 export interface Pt {
   x: number
   y: number
+}
+
+/** Akseparallel boks (modelrum eller verdensrum). */
+export interface Box {
+  x0: number
+  y0: number
+  x1: number
+  y1: number
 }
 
 export interface AnchorSet {
@@ -170,13 +162,34 @@ export interface Palette {
   mane: string
   maneOutline: string
   gradient?: readonly string[]
+  /** Anden hårfarve: enhjørningens striber i manken, fjordhestens mørke midterstribe. */
+  mane2?: string
+  /** Anden mønsterfarve (calico: de mørke pletter). */
+  pattern2?: string
+  pattern2Outline?: string
+  /** Mulen (hest, enhjørning): den lyse oval forneden på hovedet. */
+  muzzle?: string
+  /** Hove (hest, enhjørning). Afledes af arten, hvis farven ikke sætter dem. */
+  hoof?: string
+  hoofOutline?: string
+  /** Horn (enhjørning). */
+  horn?: string
+  hornShade?: string
+  hornOutline?: string
   /** Magiske farver: glimmer i fx-laget. */
   sparkle?: string
   /** Sort silhuet (silhuet-arket). */
   silhouette?: boolean
 }
 
-export type PatternKind = 'dutch' | 'none'
+/**
+ * Mønstre klippet til hoved/krop (kunst-forslaget §2.3). Arten tegner selv mønstret i sine
+ * `Pattern`-dele og kan læse det fra colorway'et.
+ * - dutch: kaninens hollænder · tabby: striber (kat) · calico: to slags pletter (kat)
+ * - dapple: skimlens æbleskimmel · pinto: brogede plader · blaze: blis og hvide sokker (hest)
+ * - stars: Stjernefølets stjernemærker
+ */
+export type PatternKind = 'dutch' | 'none' | 'tabby' | 'calico' | 'dapple' | 'pinto' | 'blaze' | 'stars'
 
 export interface ColorwayDef {
   id: ColorwayId
@@ -187,6 +200,8 @@ export interface ColorwayDef {
   overrides?: Partial<Omit<Palette, 'gradient' | 'silhouette'>>
   pattern?: PatternKind
   patternColor?: string
+  /** Anden mønsterfarve (calico). */
+  patternColor2?: string
   /** Regnbue: stop til den eneste tilladte statiske gradient på et væsen. */
   gradient?: readonly string[]
   sparkle?: string
@@ -195,8 +210,10 @@ export interface ColorwayDef {
 // ---------------------------------------------------------------------------------------------
 // Ansigt
 
-export type EyeShape = 'open' | 'happy' | 'closed' | 'half' | 'sparkle'
-export type MouthShape = 'smile' | 'cat-w' | 'open-D' | 'o' | 'wobble'
+/** 'wink': venstre øje åbent, højre lukket som et smil (legende "ups"). */
+export type EyeShape = 'open' | 'happy' | 'closed' | 'half' | 'sparkle' | 'wink'
+/** 'tongue': lille grin med tungespidsen ude (legende "ups"). */
+export type MouthShape = 'smile' | 'cat-w' | 'open-D' | 'o' | 'wobble' | 'tongue'
 
 export interface FaceStyle {
   /** Mund i hvile (idle). */
@@ -235,6 +252,12 @@ export interface PartCtx {
   ids: RigIds
   /** true i statisk tilstand (billeder, album): ingen animationsklasser. */
   still: boolean
+  /** Detaljeniveau: 'small' (≤ 64 px) dropper knurhår, tålinjer og andre hårfine streger. */
+  lod: 'full' | 'small'
+  /** Humørets nøglepose (samme i statisk og animeret tilstand; animationen svinger om den). */
+  pose: Pose
+  /** Hovedgenstand på: 'through' (ørerne gennem huller), 'under' (mellem ørerne) eller ingen. */
+  hat: 'through' | 'under' | null
 }
 
 export type Part = (p: PartCtx) => ReactNode
@@ -248,6 +271,18 @@ export type SidePart = (p: SidePartCtx) => ReactNode
 /** Konturfunktion: modelrummets ankre → path. `inflate` udvider formen (tøj-klip = +2). */
 export type OutlineFn = (a: AnchorSet, inflate: number, stage: Stage) => string
 
+/**
+ * Armen til ærmer: tegnet lodret (skulder øverst, poten nedad) i sin egen ramme, som riggen drejer
+ * `rot` grader ind i potens lokale ramme (venstre side; højre spejles). `sleeve` er ærmets lukkede
+ * form (armen fra skulderen til manchetten, en anelse løsere end armen), og manchetten ligger på
+ * tværs ved y = `cuff.y` med halv bredde `cuff.half`.
+ */
+export interface Limb {
+  rot: number
+  sleeve: (stage: Stage) => string
+  cuff: { y: number; half: number }
+}
+
 export interface SpeciesParts {
   /** Hovedets kontur (modelrum). Standard: husets bolle-form fra headCenter/headRx/headRy. */
   head?: OutlineFn
@@ -257,6 +292,18 @@ export interface SpeciesParts {
   Ear?: SidePart
   /** Én pote (venstre) i lokale koordinater: skulderen i (0,0), hænger ned (+y). */
   Paw: SidePart
+  /**
+   * Løftet pote (venstre) til jubel, vink og tænker: tegnes foran hovedet med åben kontur ved
+   * skulderen (roden ligger på brystet). Arten vælger form efter `mood` (bøjet albue ved vink,
+   * poten på hagen ved tænker). Mangler den, roteres `Paw` i stedet.
+   */
+  PawUp?: SidePart
+  /** Hvor den løftede pote holder en håndgenstand (lokalt, venstre side) pr. humør. */
+  pawUpTip?: Partial<Record<Mood, Pt>>
+  /** Den løftede arms rygrad pr. humør (samme som `PawUp` tegner); riggen trækker trøjens ærme på den. */
+  upArms?: Partial<Record<Mood, UpArm>>
+  /** Arm/forben til ærmer på kropstøj (se `Limb`). */
+  limb?: Limb
   /** Begge fødder i modelrummet (bag kroppen). */
   Feet: Part
   /** Halen i lokale koordinater om tailBase (bag kroppen). */
@@ -267,6 +314,11 @@ export interface SpeciesParts {
   HeadDeco?: Part
   /** Ekstra på kroppen efter grundform (mave-tot osv.). */
   BodyDeco?: Part
+  /**
+   * Krave/halsflæse på brystet: tegnes i kroppens lag efter skyggen og før kropstøjet, så en trøje
+   * dækker den (en krave i `ManeBack` ville ligge oven på trøjen).
+   */
+  Ruff?: Part
   ManeBack?: Part
   ManeFront?: Part
   /** Horn i lokale koordinater om hornBase. */
@@ -286,6 +338,8 @@ export interface EarRig {
    * forsvinder sømløst i hovedet. Hængeører (vædder) der ligger foran hovedet, sætter false.
    */
   clip?: boolean
+  /** Hængeører: svajer blidt i alle humør (klassen `a-hang`) i stedet for at rejse og sænke sig. */
+  hang?: boolean
 }
 
 export interface BreedDef {
@@ -295,9 +349,77 @@ export interface BreedDef {
   anchors?: Partial<AnchorSet>
   parts?: Partial<SpeciesParts>
   ears?: EarRig
+  /** Racens ansigt (fx hvilemund), lagt oven på artens. */
+  face?: Partial<FaceStyle>
+  /** Racens poser, lagt oven på artens (fx kortere ben, der løftes mindre). */
+  poses?: Partial<Record<Mood, Pose>>
+  /**
+   * Racens farvetone oven på colorway'ets afledte palet (fx fjordhestens blakkede pels og
+   * tofarvede manke). Silhuetten afledes bagefter, så den altid er sort.
+   */
+  palette?: (p: Palette, colorway: ColorwayId) => Palette
+  /** Magiske farver for netop denne race (standard: artens `magic`). Stjernefølet: kun `foal`. */
+  magic?: readonly MagicColorwayId[]
+  /** Racens grænsebokse (overskriver artens). */
+  bounds?: Partial<FigureBounds>
+  /** Racens anker for tankeprikker og Z'er (overskriver artens). */
+  fx?: Pt
+  /** Hvor manken (ManeBack) skaleres fra på stadie 3 (overskriver artens). */
+  maneOrigin?: 'headCenter' | 'headTop'
+  /** Mankens vækst på stadie 3 (standard SPEC'ens 1,3); løvehovedets krave vokser mindre. */
+  maneGrowth?: number
 }
 
-/** Signatur-idle (SPEC §6.1) – kører på gruppen med klassen `a-sig`. */
+/**
+ * Figurens grænsebokse i modelrummet (stadie 2-rammen), delt i hovedregionen (hoved, ører, manke,
+ * horn) og kroppens region (krop, poter, fødder, hale). Riggen fører dem gennem stadiets
+ * transformationer til beskæringer (butikskort, små ikoner); kontaktarkets lint tjekker, at den
+ * tegnede figur ligger inden for dem.
+ */
+export interface FigureBounds {
+  head: Box
+  body: Box
+}
+
+/**
+ * En statisk nøglepose pr. humør (keyframe 0 % i rig.css). Grader i delens lokale ramme
+ * (+ = indad for ører, + = udad/op for poter).
+ */
+export interface PoseXf {
+  x?: number
+  y?: number
+  rot?: number
+  sx?: number
+  sy?: number
+}
+/** En potes stilling: rotation om skulderen, evt. flyttet pivot og løftet form foran hovedet. */
+export interface PawPose {
+  /** Grader om skulderen (+ = udad/op). */
+  rot?: number
+  /** Brug artens løftede pote (`PawUp`) foran hovedet. */
+  up?: boolean
+  /** Den løftede pote tegnes bag hovedet (kroppens lag), fx poten bag nakken ved "ups". */
+  behind?: boolean
+}
+export interface Pose {
+  fig?: PoseXf
+  body?: PoseXf
+  head?: PoseXf
+  earL?: number
+  earR?: number
+  /** Et tal er en rotation (hvilende pote); et objekt kan løfte poten op foran hovedet. */
+  pawL?: number | PawPose
+  pawR?: number | PawPose
+  tail?: number
+  /** Skyggens skala (hop). */
+  shadow?: number
+}
+
+/**
+ * Signatur-idle (SPEC §6.1). Riggen sætter ingen klasse selv; arten pakker delen i en pivot med
+ * signaturens klasse: nose-wiggle → `a-sig` (kaninens næse), tail-curl → `a-curl` (kattens
+ * halespids), mane-toss → `a-toss` (hestens manke), horn-glint → `a-glint` (hornets glimt).
+ */
 export type Signature =
   | 'nose-wiggle' | 'tail-curl' | 'head-tilt' | 'spikes' | 'mane-toss' | 'ear-flop'
   | 'tail-swish' | 'cheek-puff' | 'horn-glint' | 'paw-wave' | 'tail-flick' | 'head-turn'
@@ -321,27 +443,29 @@ export interface SpeciesDef {
   face: FaceStyle
   ears?: EarRig
   signature?: Signature
+  /** Artens nøgleposer pr. humør, lagt oven på riggens standard (fx hovene løftes mindre). */
+  poses?: Partial<Record<Mood, Pose>>
+  /** Grænsebokse (modelrum); standard er et skøn ud fra ankrene. */
+  bounds?: Partial<FigureBounds>
+  /**
+   * Ankeret (modelrum, hovedregionen) for tankeprikker og Z'er: uden for hoved og ører med ca. 8
+   * enheders luft. Standard: til højre for hovedet, under øret.
+   */
+  fx?: Pt
+  /**
+   * Hvor manken (ManeBack) skaleres fra på stadie 3: hovedets centrum (krave, løvemanke) eller
+   * issen (hestens manke vokser nedad fra issen).
+   */
+  maneOrigin?: 'headCenter' | 'headTop'
   parts: SpeciesParts
 }
 
 // ---------------------------------------------------------------------------------------------
 // Garderobe (SPEC §7.1)
 
-export const SET_IDS = [
-  'hverdag', 'opdager', 'rytter', 'kongelig', 'astronaut', 'ridder',
-  'talmagiker', 'pirat', 'fodbold', 'vinter', 'fest',
-] as const
-export type OutfitSetId = (typeof SET_IDS)[number]
+/** Sættene (motorens `SetId`) og milepælene. Sæt-genstande hedder `<sæt>-<slot>` (præcis én pr. slot),
+ * milepæle `milepael-<navn>` (motorens `ItemId`). */
 export type SetId = OutfitSetId | 'milepael'
-/** Sæt-genstande hedder `<sæt>-<slot>` (præcis én pr. slot); milepæle `milepael-<navn>`. */
-export type ItemId = `${OutfitSetId}-${Slot}` | `milepael-${string}`
-
-export type ItemSource =
-  | { kind: 'level'; level: number }
-  | { kind: 'chest'; nodeId: NodeId }
-  | { kind: 'finale'; world: WorldId }
-  | { kind: 'medal'; tier: 'silver' | 'gold'; count: number }
-  | { kind: 'shop'; price: 80 | 120 | 180 }
 
 /** En genstands farvesæt. Værdierne kommer fra stofpaletten i palette.ts (ingen hex i genstandsfiler). */
 export interface Colorway {
@@ -389,8 +513,28 @@ export interface ItemArtProps {
    * kropstøj tegner sin egen flade silhuet i stedet for at blive klippet til en krop.
    */
   solo: boolean
+  /**
+   * Bæreren har ører, der stikker op gennem hatten (`earMode: 'through'`): hatten tegner hullerne, og
+   * riggen klipper ørerne ved hullet; `rim` lægger hullets forkant over ørets rod.
+   */
+  holes: boolean
+  /** Bærerens stadie (kropstøj sidder lidt anderledes på babyens korte torso). */
+  stage: Stage
 }
 export type ItemArt = (p: ItemArtProps) => ReactNode
+
+/** Ærmet på én arm (venstre; riggen spejler det højre) i armens lodrette ramme (se `Limb`). */
+export interface SleeveProps {
+  c: ItemPalette
+  sw: number
+  /** Ærmets lukkede form og manchetten. */
+  sleeve: string
+  cuff: { y: number; half: number }
+  /** Id på klippet med ærmets form (defineret én gang pr. rig; begge ærmer deler det). */
+  clipId: string
+  stage: Stage
+}
+export type SleeveArt = (p: SleeveProps) => ReactNode
 
 export type EarMode = 'through' | 'under'
 
@@ -421,10 +565,38 @@ export interface ItemFit {
  *   neck → lag 2 bag kroppen).
  * - `bodyShapes`: kropsgenstande har én grundform pr. kropsskabelon (fit-regel 4).
  */
+/** Løftet arm (lokalt om skulderen, venstre side) som rygrad og bredder fra rod til spids. */
+export interface UpArm {
+  spine: readonly Vec[]
+  w0: number
+  w1: number
+  /** Længden af enden (pote eller hov), som ærmet ikke dækker. */
+  tip: number
+}
+
+/** Ærme på en løftet arm: riggen regner formen ud langs armens rygrad; genstanden maler den. */
+export interface SleeveUpProps {
+  c: ItemPalette
+  sw: number
+  /** Ærmets lukkede fyld og dets kontur (åben ved roden, hvor ærmet går ind i trøjen). */
+  fill: string
+  edge: string
+  /** Striber på tværs af ærmet (inden for ærmets kant; tegnes før konturen) og ribmanchetten ved poten. */
+  bands: string
+  cuff: string
+}
+export type SleeveUpArt = (p: SleeveUpProps) => ReactNode
+
 export interface ItemArtSet {
   front: ItemArt
   back?: ItemArt
   bodyShapes?: Record<BodyKind, ItemArt>
+  /** Hovedgenstande med ørehuller: hullernes forkant, tegnet oven på ørerne (lag 16b). */
+  rim?: ItemArt
+  /** Kropstøj med ærmer: tegnes på hver arm (kun arter med `limb`). */
+  sleeve?: SleeveArt
+  /** Ærmet på en løftet arm (kun arter med `upArms`). */
+  sleeveUp?: SleeveUpArt
 }
 
 export interface ItemDef {
@@ -438,6 +610,11 @@ export interface ItemDef {
   art: ItemArtSet
   fit: ItemFit
   hides?: readonly ('mane-front' | 'ears')[]
+  /**
+   * Genstandens tegnede bbox i egne koordinater (x, y, w, h) ved skala 1, når den tegnes alene.
+   * Butikskortet beskæres efter den, så genstanden fylder 75–80 % af kortet.
+   */
+  icon?: { box: readonly [number, number, number, number] }
 }
 
 /** Ét stykke tøj på dyret: genstanden og valgt farvesæt (0–2). */

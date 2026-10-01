@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { hverdagBody } from '../items/hverdag/hverdag-body'
 import { hverdagHead } from '../items/hverdag/hverdag-head'
 import { festHead } from '../items/fest/fest-head'
+import { cat } from '../species/cat'
+import { horse } from '../species/horse'
 import { rabbit } from '../species/rabbit'
+import { unicorn } from '../species/unicorn'
 import { DEFAULT_ANCHORS, modelAnchors, worldAnchors } from './anchors'
 import { EAR_GAP_FACTOR, FIT_REFERENCE, MAX_OVERRIDE_SHARE, fitItem, inverseTransform, overrideShare, toLocal } from './fit'
 import type { ItemDef, ItemFit, Slot } from './types'
@@ -94,12 +97,13 @@ describe('fitItem (SPEC §7.1)', () => {
     expect(inverseTransform(r)).toMatch(/^scale\(0\.769\) rotate\(-25\) translate\(-100 -48\)$/)
   })
 
-  it('7. højst 10 % af (genstand, art)-par har en overskrivning', () => {
-    const wearers = [{ ...who, anchors: modelAnchors(rabbit, 'upright') }]
+  it('7. højst 10 % af (genstand, art)-par har en overskrivning (alle arter og racer)', () => {
+    const wearers = [rabbit, cat, horse, unicorn].flatMap((d) => d.breeds.map((b) => ({ id: d.id, family: d.family, anchors: modelAnchors(d, b.id) })))
     const items = [hverdagHead, festHead, hverdagBody]
     expect(overrideShare(items, wearers)).toBeLessThanOrEqual(MAX_OVERRIDE_SHARE)
+    const one = [{ ...who, anchors: modelAnchors(rabbit, 'upright') }]
     const withOverride = [...items, item({ overrides: { rabbit: { dy: 1 } } })]
-    expect(overrideShare(withOverride, wearers)).toBeCloseTo(0.25)
+    expect(overrideShare(withOverride, one)).toBeCloseTo(0.25)
   })
 
   it('pasformen afhænger ikke af stadiet (stadier ligger i region-transformationerne)', () => {

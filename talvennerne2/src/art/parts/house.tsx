@@ -3,7 +3,7 @@
 // helt ansigt koster ~10 elementer.
 import type { Ref } from 'react'
 import { HOUSE, INK, SHADOW_ALPHA } from '../rig/palette'
-import { arc, circle, dMouth, drop, ellipse, ellipseAbove, join, line, lune, n, quad, rect, spline, star, xf, zee } from '../rig/shapes'
+import { arc, circle, dMouth, drop, ellipse, ellipseAbove, join, line, lune, n, quad, spline, star, xf, zee } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { AnchorSet, EyeShape, Mood, MouthShape, Palette, Pt } from '../rig/types'
 
@@ -21,7 +21,8 @@ export const MOOD_FACE: Record<Mood, MoodFace> = {
   happy: { eyes: 'happy', mouth: 'open-D' },
   cheer: { eyes: 'sparkle', mouth: 'open-D' },
   think: { eyes: 'open', mouth: 'o' },
-  oops: { eyes: 'half', mouth: 'smile' },
+  // Ups er legende (review G0-r1, fund 12): et blink og tungespidsen ude – aldrig bekymret eller skyldig.
+  oops: { eyes: 'wink', mouth: 'tongue' },
   sleep: { eyes: 'closed', mouth: 'o' },
   wave: { eyes: 'open', mouth: 'open-D' },
 }
@@ -68,8 +69,27 @@ export function Eyes({ a, shape, pal, scale, sw, gaze, animated, gazeRef, glintR
   const inkLine = { fill: 'none', stroke: pal.ink, strokeWidth: sw * 1.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
   let body
-  if (shape === 'happy') {
-    body = <path d={join(...eyes.map(([x, y]) => quad([x - rx * 0.95, y + ry * 0.22], [x, y - ry * 0.95], [x + rx * 0.95, y + ry * 0.22])))} {...inkLine} />
+  if (shape === 'wink') {
+    // Venstre øje åbent (med iris og glimt), højre lukket som et lille smil – en legende blinken.
+    const [lx, ly] = eyes[0]
+    const [rx2, ry2] = eyes[1]
+    body = (
+      <>
+        <g ref={gazeRef} transform={gazeT}>
+          <path d={ellipse(lx, ly, rx, ry)} fill={pal.ink} data-part="eyes" />
+          <path d={lune(lx, ly + ry * 0.06, rx * 0.78, ry * 0.8, ry * 0.3)} fill={pal.iris} opacity={pal.silhouette ? 0 : 0.85} />
+        </g>
+        <g ref={glintRef} transform={glintT}>
+          <path
+            d={join(ellipse(lx - rx * 0.3, ly - ry * 0.36, rx * 0.36, ry * 0.3, -20), circle(lx + rx * 0.4, ly + ry * 0.44, rx * 0.17))}
+            fill={pal.silhouette ? 'none' : HOUSE.white}
+          />
+        </g>
+        <path d={quad([rx2 - rx * 0.95, ry2 + ry * 0.12], [rx2 - rx * 0.1, ry2 - ry * 0.95], [rx2 + rx * 0.95, ry2 + ry * 0.12])} {...inkLine} />
+      </>
+    )
+  } else if (shape === 'happy') {
+    body = <path d={join(...eyes.map(([x, y]) => quad([x - rx * 0.95, y + ry * 0.22], [x, y - ry * 0.95], [x + rx * 0.95, y + ry * 0.22])))} {...inkLine} data-part="eyes" />
   } else if (shape === 'closed') {
     body = (
       <path
@@ -83,6 +103,7 @@ export function Eyes({ a, shape, pal, scale, sw, gaze, animated, gazeRef, glintR
           }),
         )}
         {...inkLine}
+        data-part="eyes"
       />
     )
   } else {
@@ -160,6 +181,16 @@ export function Mouth({ at, shape, pal, sw, scale = 1, buckTeeth }: MouthProps) 
   switch (shape) {
     case 'smile':
       return <path d={quad([x - 6 * k, y - 1.5 * k], [x, y + 5 * k], [x + 6 * k, y - 1.5 * k])} fill="none" {...stroke} />
+    case 'tongue': {
+      // Lille skævt grin med tungespidsen ude til højre ("hov!").
+      const tongue = dMouth(x + 2.6 * k, y + 0.9 * k, 3.3 * k, 8.4 * k, 0.4 * k)
+      return (
+        <>
+          <path d={tongue} fill={pal.silhouette ? pal.ink : HOUSE.tongue} stroke={pal.ink} strokeWidth={sw * 0.5} strokeLinejoin="round" />
+          <path d={join(quad([x - 6.5 * k, y - 1.8 * k], [x - 0.5 * k, y + 4.6 * k], [x + 6.5 * k, y - 0.6 * k]), line([x + 2.6 * k, y + 2.2 * k], [x + 2.6 * k, y + 4.4 * k]))} fill="none" {...stroke} />
+        </>
+      )
+    }
     case 'cat-w':
       return (
         <path
@@ -188,16 +219,17 @@ export function Mouth({ at, shape, pal, sw, scale = 1, buckTeeth }: MouthProps) 
       const w = 8.5 * k
       const mouthD = dMouth(x, top, w, 12 * k, 1.6 * k)
       const tongue = ellipse(x + 0.6 * k, y + 5.1 * k, 4.6 * k, 2.6 * k)
-      const teeth = buckTeeth
-        ? join(rect(x - 3.9 * k, top - 1 * k, 3.4 * k, 5.6 * k, 1.1 * k), rect(x + 0.5 * k, top - 1 * k, 3.4 * k, 5.6 * k, 1.1 * k))
-        : null
+      // Fortænder (review G0-r1, fund 13): ét sæt, der hænger fra overlæben, med en midterstreg.
+      const tw = 3.9 * k
+      const th = 6.6 * k
+      const teeth = buckTeeth ? join(toothBlock(x, top - 0.4 * k, tw, th), line([x, top + 0.8 * k], [x, top + th - 1.4 * k])) : null
       return (
         <>
           <path d={mouthD} fill={pal.silhouette ? pal.ink : HOUSE.mouth} {...stroke} />
           <path d={tongue} fill={pal.silhouette ? pal.ink : HOUSE.tongue} />
           {teeth && (
             <>
-              <path d={teeth} fill={pal.silhouette ? pal.ink : HOUSE.teeth} stroke={pal.ink} strokeWidth={sw * 0.32} strokeLinejoin="round" />
+              <path d={teeth} fill={pal.silhouette ? pal.ink : HOUSE.teeth} stroke={pal.ink} strokeWidth={sw * 0.38} strokeLinejoin="round" strokeLinecap="round" />
               <path d={quad([x - w, top], [x, top + 1.6 * k], [x + w, top])} fill="none" {...stroke} />
             </>
           )}
@@ -205,6 +237,18 @@ export function Mouth({ at, shape, pal, sw, scale = 1, buckTeeth }: MouthProps) 
       )
     }
   }
+}
+
+/** Fortændernes blok: flad top (skjult under læben), afrundet bund. Halv bredde `hw`, højde `h`. */
+function toothBlock(cx: number, top: number, hw: number, h: number): string {
+  const r = hw * 0.55
+  return spline(
+    [
+      [cx - hw, top], [cx - hw, top + h - r], [cx - hw + r * 0.3, top + h - r * 0.2], [cx - hw * 0.4, top + h],
+      [cx + hw * 0.4, top + h], [cx + hw - r * 0.3, top + h - r * 0.2], [cx + hw, top + h - r], [cx + hw, top],
+    ],
+    0.6,
+  ) + 'Z'
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -244,7 +288,7 @@ export function GroundShadow({ id, cx, cy, rx, className }: { id: string; cx: nu
 /** Statisk glimmer på magiske farver: tre glimt i én path. */
 export function Sparkles({ pts, size, fill, stroke, sw, className }: { pts: readonly Pt[]; size: number; fill: string; stroke: string; sw: number; className?: string }) {
   const d = join(...pts.map((p, i) => star(p.x, p.y, size * (i === 1 ? 0.7 : 1), size * 0.2)))
-  return <path className={className} d={d} fill={fill} stroke={stroke} strokeWidth={sw * 0.45} strokeLinejoin="round" />
+  return <path className={className} data-part="fx" d={d} fill={fill} stroke={stroke} strokeWidth={sw * 0.45} strokeLinejoin="round" />
 }
 
 /** Tankeprikker (think): tre cirkler, der tændes på skift. */
@@ -255,10 +299,11 @@ export function ThoughtDots({ at, s, sw, animated }: { at: Pt; s: number; sw: nu
     [16, -15, 6],
   ]
   return (
-    <g>
+    <>
       {dots.map(([dx, dy, r], i) => (
         <circle
           key={i}
+          data-part="fx"
           className={animated ? `a-dot a-dot${i + 1}` : undefined}
           cx={n(at.x + dx * s)}
           cy={n(at.y + dy * s)}
@@ -269,7 +314,7 @@ export function ThoughtDots({ at, s, sw, animated }: { at: Pt; s: number; sw: nu
           strokeWidth={sw * 0.5}
         />
       ))}
-    </g>
+    </>
   )
 }
 
@@ -281,10 +326,11 @@ export function Zzz({ at, s, sw, animated }: { at: Pt; s: number; sw: number; an
     [18, -22, 5.2],
   ]
   return (
-    <g>
+    <>
       {zs.map(([dx, dy, r], i) => (
         <path
           key={i}
+          data-part="fx"
           className={animated ? `a-z a-z${i + 1}` : undefined}
           d={zee(at.x + dx * s, at.y + dy * s, r * s)}
           fill="none"
@@ -295,14 +341,14 @@ export function Zzz({ at, s, sw, animated }: { at: Pt; s: number; sw: number; an
           strokeLinejoin="round"
         />
       ))}
-    </g>
+    </>
   )
 }
 
 /** "Ups": en lille, venlig svedperle ved hovedet (aldrig tårer). */
 export function SweatDrop({ at, s, sw, className }: { at: Pt; s: number; sw: number; className?: string }) {
   return (
-    <g className={className}>
+    <g className={className} data-part="fx">
       <path d={drop(at.x, at.y, 4.2 * s)} fill={HOUSE.sweat} stroke={HOUSE.sweatLine} strokeWidth={sw * 0.5} strokeLinejoin="round" />
       <path d={ellipse(at.x - 1.4 * s, at.y - 0.4 * s, 1.1 * s, 1.8 * s, 20)} fill={HOUSE.white} opacity={0.8} />
     </g>

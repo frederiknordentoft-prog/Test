@@ -193,8 +193,9 @@ export function ring(cx: number, cy: number, rx: number, ry: number, count: numb
  * Fnugget "sky"-kontur (halekvast, uld, manke): buer mellem punkter på en ellipse, der buler udad.
  * `puff` er buernes radius relativt til korden (0,5 = halvcirkler).
  */
-export function scallop(cx: number, cy: number, rx: number, ry: number, lobes: number, puff = 0.62, phase = -90): string {
-  const pts = ring(cx, cy, rx, ry, lobes, phase)
+export function scallop(cx: number, cy: number, rx: number, ry: number, lobes: number, puff = 0.62, phase = -90, rot = 0): string {
+  const base = ring(cx, cy, rx, ry, lobes, phase)
+  const pts = rot ? xf(base, { rot, about: [cx, cy] }) : base
   let d = `M${p(pts[0])}`
   for (let i = 0; i < lobes; i++) {
     const a = pts[i]
@@ -378,3 +379,82 @@ export function fmt3(v: number): string {
   const r = Math.round(v * 1000) / 1000
   return Object.is(r, -0) ? '0' : String(r)
 }
+
+// ---------------------------------------------------------------------------------------------
+// Hår og pels (kat, hest, enhjørning): lokker, totter og forskudte konturer.
+
+/** Enhedsnormalen (mod venstre i løberetningen) i hvert punkt af en polyline. */
+function normalsOf(pts: readonly Vec[], closed: boolean): Vec[] {
+  const len = pts.length
+  return pts.map((_, i) => {
+    const prev = pts[closed ? (i - 1 + len) % len : Math.max(0, i - 1)]
+    const next = pts[closed ? (i + 1) % len : Math.min(len - 1, i + 1)]
+    const dx = next[0] - prev[0]
+    const dy = next[1] - prev[1]
+    const l = Math.hypot(dx, dy) || 1
+    return [dy / l, -dx / l] as Vec
+  })
+}
+
+/**
+ * Forskyd en lukket kontur `d` enheder udad (negativ = indad). Punkterne skal gå med uret i
+ * skærmkoordinater (y nedad), som alle former fra `symmetric` gør. Bruges til OutlineFn's `inflate`.
+ */
+export function offsetLoop(pts: readonly Vec[], d: number): Vec[] {
+  if (!d) return [...pts]
+  const nn = normalsOf(pts, true)
+  return pts.map(([x, y], i) => [x - nn[i][0] * d, y - nn[i][1] * d] as Vec)
+}
+
+/**
+ * Bånd langs en rygrad (lok, hale, manke): lukket kontur, hvor `widths` er den fulde bredde i hvert
+ * punkt (et tal = samme bredde hele vejen). Bredde 0 i enden giver en spids lok.
+ */
+export function ribbon(spine: readonly Vec[], widths: readonly number[] | number): Vec[] {
+  const nn = normalsOf(spine, false)
+  const w = (i: number) => (typeof widths === 'number' ? widths : widths[Math.min(i, widths.length - 1)]) / 2
+  const left = spine.map(([x, y], i) => [x + nn[i][0] * w(i), y + nn[i][1] * w(i)] as Vec)
+  const right = spine.map(([x, y], i) => [x - nn[i][0] * w(i), y - nn[i][1] * w(i)] as Vec)
+  // Spidse ender (bredde 0) giver to ens punkter; det ene fjernes, så splinen ikke får et knæk.
+  const tail = w(spine.length - 1) < 0.05 ? right.slice(0, -1) : right
+  return [...left, ...tail.reverse()]
+}
+
+/**
+ * Pelstotter rundt om en ellipse (krave, pjusket hale, kindtotter): skiftevis spidser og dale.
+ * `depth` er dalenes dybde, `swirl` drejer spidserne (grader) så totterne ser strøgne ud, og
+ * `jitter` gør dybderne en anelse uens (deterministisk).
+ */
+export function tufts(
+  cx: number, cy: number, rx: number, ry: number, count: number,
+  o: { depth?: number; swirl?: number; jitter?: number; phase?: number; from?: number; to?: number } = {},
+): Vec[] {
+  const depth = o.depth ?? 0.16
+  const swirl = o.swirl ?? 0
+  const jitter = o.jitter ?? 0
+  const phase = o.phase ?? -90
+  const from = o.from ?? 0
+  const to = o.to ?? 360
+  const full = to - from >= 360
+  const steps = full ? count * 2 : count * 2 + 1
+  const pts: Vec[] = []
+  for (let i = 0; i < steps; i++) {
+    const tip = i % 2 === 0
+    const a = ((phase + from + ((to - from) * i) / (count * 2) + (tip ? swirl : 0)) * Math.PI) / 180
+    const k = tip ? 1 - jitter * (0.5 + 0.5 * Math.sin(i * 2.7 + 1.3)) : 1 - depth
+    pts.push([cx + rx * k * Math.cos(a), cy + ry * k * Math.sin(a)])
+  }
+  return pts
+}
+
+/** Punkter på en ellipse-bue fra vinkel a0 til a1 (grader, 0 = højre, 90 = ned), inkl. enderne. */
+export function arcPts(cx: number, cy: number, rx: number, ry: number, a0: number, a1: number, count: number): Vec[] {
+  return Array.from({ length: count }, (_, i) => {
+    const a = ((a0 + ((a1 - a0) * i) / (count - 1)) * Math.PI) / 180
+    return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)] as Vec
+  })
+}
+
+/** Skalér normaliserede punkter (u, v ∈ ca. −1…1) ind i en ellipse-ramme. */
+export const frame = (pts: readonly Vec[], cx: number, cy: number, rx: number, ry: number): Vec[] =>
+  pts.map(([u, v]) => [cx + u * rx, cy + v * ry] as Vec)
