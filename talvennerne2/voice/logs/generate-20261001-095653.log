@@ -1,0 +1,327 @@
+09:56:53 generate.py --ids-file scripts/voice/validation-ids.txt --threads 2 --max-minutes 100 (log: /home/user/wt/w6/talvennerne2/voice/logs/generate-20261001-095653.log)
+09:56:56 64 klip valgt, 0 færdige, 64 at lave
+10:01:14 input frame rate=25
+10:02:45 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+10:02:54 model indlæst på 330 s (2 tråde)
+10:03:35 ✅ EOS token detected! Stopping generation at step 261
+10:04:10 kald carrier k=8 t0 'Tallet er seks hundrede, tallet er nul, tallet er en, tallet er ti, ta': 76.5 s for 10.40 s lyd
+10:05:01   h.mid.600 t0: 1.09 s (0.88× forventet) -18.0 LUFS, carrier: 'tallet er 600' CER 0.0 (wav2vec2) → ok
+10:05:01   n.mid.0 t0: 0.40 s (1.29× forventet) -18.0 LUFS, carrier: 'tallet er 0' CER 0.0 (wav2vec2) → ok
+10:05:01   n.mid.1 t0: 0.35 s (1.14× forventet) -18.0 LUFS, carrier: 'tallet af 1n' CER 0.5 (wav2vec2) → FEJL asr
+10:05:02   n.mid.10 t0: 0.42 s (1.35× forventet) -18.1 LUFS, carrier: 'tallet af 10' CER 0.0 (wav2vec2) → ok
+10:05:02   n.mid.11 t0: 0.60 s (0.64× forventet) -18.0 LUFS, carrier: 'tallet er 11' CER 0.0 (wav2vec2) → ok
+10:05:02   n.mid.12 t0: 0.33 s (1.05× forventet) -18.0 LUFS, carrier: 'tallet er 12' CER 0.0 (wav2vec2) → ok
+10:05:03   n.mid.13 t0: 0.67 s (1.07× forventet) -18.4 LUFS, carrier: 'tallet er 13' CER 0.0 (wav2vec2) → ok
+10:05:03   n.mid.14 t0: 0.62 s (0.99× forventet) -18.0 LUFS, carrier: 'tallet er 14' CER 0.0 (wav2vec2) → ok
+10:05:30 ✅ EOS token detected! Stopping generation at step 214
+10:06:10 kald carrier k=7 t0 'Tallet er femten, tallet er seksten, tallet er sytten, tallet er atten': 66.7 s for 8.52 s lyd
+10:06:13   n.mid.15 t0: 0.71 s (1.13× forventet) -18.0 LUFS, carrier: 'tallet af 15' CER 0.0 (wav2vec2) → ok
+10:06:13   n.mid.16 t0: 0.81 s (1.29× forventet) -18.0 LUFS, carrier: 'tallet er 16' CER 0.0 (wav2vec2) → ok
+10:06:14   n.mid.17 t0: 0.54 s (0.86× forventet) -18.0 LUFS, carrier: 'tallet er 17' CER 0.0 (wav2vec2) → ok
+10:06:14   n.mid.18 t0: 0.41 s (0.66× forventet) -18.0 LUFS, carrier: 'tallet er 18' CER 0.0 (wav2vec2) → ok
+10:06:14   n.mid.19 t0: 0.47 s (0.75× forventet) -18.0 LUFS, carrier: 'tallet er 19' CER 0.0 (wav2vec2) → ok
+10:06:15   n.mid.2 t0: 0.42 s (1.35× forventet) -18.0 LUFS, carrier: 'tallet af 2' CER 0.0 (wav2vec2) → ok
+10:06:15   n.mid.20 t0: 0.51 s (0.82× forventet) -18.0 LUFS, carrier: 'tallet er 20' CER 0.0 (wav2vec2) → ok
+10:07:26 ✅ EOS token detected! Stopping generation at step 208
+10:07:48 kald carrier k=7 t0 'Tallet er tre, tallet er fire, tallet er fem, tallet er seks, tallet e': 92.4 s for 8.28 s lyd
+10:07:51   n.mid.3 t0: 0.39 s (1.26× forventet) -18.0 LUFS, carrier: 'tallet er 3' CER 0.0 (wav2vec2) → ok
+10:07:51   n.mid.4 t0: 0.58 s (0.93× forventet) -18.0 LUFS, carrier: 'tallet er 4' CER 0.0 (wav2vec2) → ok
+10:07:51   n.mid.5 t0: 0.38 s (1.20× forventet) -18.17 LUFS, carrier: 'tallet er 5' CER 0.0 (wav2vec2) → ok
+10:07:52   n.mid.6 t0: 0.59 s (1.89× forventet) -18.0 LUFS, carrier: 'tallet af 6' CER 0.0 (wav2vec2) → ok
+10:07:52   n.mid.7 t0: 0.53 s (1.69× forventet) -18.0 LUFS, carrier: 'tallet er 7' CER 0.0 (wav2vec2) → ok
+10:07:52   n.mid.8 t0: 0.48 s (0.77× forventet) -18.0 LUFS, carrier: 'tallet er oe' CER 0.5 (wav2vec2) → FEJL asr
+10:07:53   n.mid.9 t0: 0.44 s (1.40× forventet) -18.0 LUFS, carrier: 'tallet er 9' CER 0.0 (wav2vec2) → ok
+10:08:42 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+10:08:42 ✅ EOS token detected! Stopping generation at step 279
+10:09:08 kald carrier k=8 t0 'Tallet er tre hundrede. Tallet er nul. Tallet er en. Tallet er ti. Tal': 74.8 s for 11.12 s lyd
+10:09:11   h.end.300 t0: 0.92 s (0.73× forventet) -18.08 LUFS, carrier: 'tallet er 300' CER 0.0 (wav2vec2) → ok
+10:09:11   n.end.0 t0: 0.33 s (1.05× forventet) -18.0 LUFS, carrier: 'tallet er n0' CER 0.0 (wav2vec2) → ok
+10:09:11   n.end.1 t0: 0.45 s (1.44× forventet) -18.0 LUFS, carrier: 'tallet af en' CER 0.0 (wav2vec2) → ok
+10:09:12   n.end.10 t0: 0.41 s (1.31× forventet) -18.0 LUFS, carrier: 'tallet af 10' CER 0.0 (wav2vec2) → ok
+10:09:12   n.end.11 t0: 0.56 s (0.60× forventet) -18.0 LUFS, carrier: 'tallet af 1' CER 0.8333 (wav2vec2) → FEJL asr
+10:09:12   n.end.12 t0: 0.52 s (1.67× forventet) -18.2 LUFS, carrier: 'tallet af tø' CER 0.75 (wav2vec2) → FEJL asr
+10:09:13   n.end.13 t0: 0.56 s (0.89× forventet) -18.22 LUFS, carrier: 'tallet er 13' CER 0.0 (wav2vec2) → ok
+10:09:13   n.end.14 t0: 0.67 s (1.07× forventet) -18.0 LUFS, carrier: 'og tallet er 14' CER 0.0 (wav2vec2) → ok
+10:09:43 ✅ EOS token detected! Stopping generation at step 210
+10:10:05 kald carrier k=7 t0 'Tallet er femten. Tallet er seksten. Tallet er sytten. Tallet er atten': 51.6 s for 8.36 s lyd
+10:10:07   n.end.15 t0: 0.49 s (0.79× forventet) -18.06 LUFS, carrier: 'tallet er 15' CER 0.0 (wav2vec2) → ok
+10:10:07   n.end.16 t0: 0.67 s (1.08× forventet) -18.0 LUFS, carrier: 'tallet er 16' CER 0.0 (wav2vec2) → ok
+10:10:08   n.end.17 t0: 0.47 s (0.75× forventet) -18.0 LUFS, carrier: 'tallet ar 17' CER 0.0 (wav2vec2) → ok
+10:10:08   n.end.18 t0: 0.53 s (0.85× forventet) -18.0 LUFS, carrier: 'tallet er 18' CER 0.0 (wav2vec2) → ok
+10:10:08   n.end.19 t0: 0.57 s (0.92× forventet) -18.0 LUFS, carrier: 'tallet ar 19en' CER 0.3333 (wav2vec2) → FEJL asr
+10:10:08   n.end.2 t0: 0.27 s (0.87× forventet) -18.0 LUFS, carrier: 'tallet er 2' CER 0.0 (wav2vec2) → ok
+10:10:09   n.end.20 t0: 0.61 s (0.98× forventet) -18.0 LUFS, carrier: 'tallet er 20' CER 0.0 (wav2vec2) → ok
+10:10:37 ✅ EOS token detected! Stopping generation at step 210
+10:10:58 kald carrier k=7 t0 'Tallet er tre. Tallet er fire. Tallet er fem. Tallet er seks. Tallet e': 48.9 s for 8.36 s lyd
+10:11:00   n.end.3 t0: 0.42 s (1.35× forventet) -18.11 LUFS, carrier: 'tallet af 3' CER 0.0 (wav2vec2) → ok
+10:11:00   n.end.4 t0: 0.43 s (0.69× forventet) -18.07 LUFS, carrier: 'tallet er f' CER 0.75 (wav2vec2) → FEJL asr
+10:11:01   n.end.5 t0: 0.22 s (0.72× forventet) -18.0 LUFS, carrier: 'tallet er 5' CER 0.0 (wav2vec2) → ok
+10:11:01   n.end.6 t0: 0.61 s (1.95× forventet) -18.0 LUFS, carrier: 'tallet er sik' CER 0.5 (wav2vec2) → FEJL asr
+10:11:02   n.end.7 t0: 0.43 s (1.38× forventet) -18.0 LUFS, carrier: 'tallet er 7' CER 0.0 (wav2vec2) → ok
+10:11:02   n.end.8 t0: 0.49 s (0.78× forventet) -18.0 LUFS, carrier: 'tallet er 8' CER 0.0 (wav2vec2) → ok
+10:11:02   n.end.9 t0: 0.24 s (0.78× forventet) -18.91 LUFS, carrier: 'tallet er 9' CER 0.0 (wav2vec2) → ok
+10:11:26 ✅ EOS token detected! Stopping generation at step 179
+10:11:46 kald head k=3 t0 'Tallet er et hundrede og syvogfyrre. Tallet er tre hundrede og otteogt': 43.4 s for 7.12 s lyd
+10:11:48   hog.100 t0: 0.54 s (0.43× forventet) -18.0 LUFS, carrier: 'tallet er 147' CER 0.0 (wav2vec2) → ok
+10:11:48   hog.300 t0: 0.62 s (0.40× forventet) -18.1 LUFS, carrier: 'tallet er 338' CER 0.0 (wav2vec2) → ok
+10:11:49   hog.600 t0: 0.69 s (0.44× forventet) -18.0 LUFS, carrier: 'tallet er 684' CER 0.0 (wav2vec2) → ok
+10:11:53 ✅ EOS token detected! Stopping generation at step 34
+10:12:02 kald single k=1 t0 'Find tallet,': 13.2 s for 1.32 s lyd
+10:12:03   frag.find_tallet t0: 0.75 s (0.80× forventet) -18.14 LUFS, alone: 'find tallet' CER 0.0 (wav2vec2) → ok
+10:12:07 ✅ EOS token detected! Stopping generation at step 34
+10:12:16 kald single k=1 t1 'Find tallet,': 13.2 s for 1.32 s lyd
+10:12:16   frag.find_tallet t1: 0.81 s (0.87× forventet) -18.1 LUFS, alone: 'find tallet' CER 0.0 (wav2vec2) → ok
+10:12:21 ✅ EOS token detected! Stopping generation at step 32
+10:12:29 kald single k=1 t0 'Hvad er,': 12.8 s for 1.24 s lyd
+10:12:30   frag.hvad_er t0: 0.78 s (1.25× forventet) -18.19 LUFS, none: 'None' CER None (None) → ok
+10:12:34 ✅ EOS token detected! Stopping generation at step 36
+10:12:43 kald single k=1 t1 'Hvad er,': 13.6 s for 1.40 s lyd
+10:12:44   frag.hvad_er t1: 0.78 s (1.25× forventet) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:12:48 ✅ EOS token detected! Stopping generation at step 33
+10:12:56 kald single k=1 t0 'hvad giver,': 12.5 s for 1.28 s lyd
+10:12:57   frag.hvad_giver t0: 0.59 s (0.63× forventet) -18.15 LUFS, alone: 'hvad giver' CER 0.0 (wav2vec2) → ok
+10:13:01 ✅ EOS token detected! Stopping generation at step 30
+10:13:09 kald single k=1 t1 'hvad giver,': 12.4 s for 1.16 s lyd
+10:13:10   frag.hvad_giver t1: 0.64 s (0.68× forventet) -18.18 LUFS, alone: 'hvad giver' CER 0.0 (wav2vec2) → ok
+10:13:16 ✅ EOS token detected! Stopping generation at step 49
+10:13:25 kald single k=1 t0 'Hvilket tal kommer efter,': 15.1 s for 1.92 s lyd
+10:13:26   frag.hvilket_tal_kommer_efter t0: 1.48 s (0.67× forventet) -18.0 LUFS, alone: 'hvilket tal kommer efter' CER 0.0 (wav2vec2) → ok
+10:13:32 ✅ EOS token detected! Stopping generation at step 50
+10:13:43 kald single k=1 t1 'Hvilket tal kommer efter,': 16.8 s for 1.96 s lyd
+10:13:43   frag.hvilket_tal_kommer_efter t1: 1.51 s (0.69× forventet) -18.0 LUFS, alone: 'hvilket tal kommer efter' CER 0.0 (wav2vec2) → ok
+10:13:50 ✅ EOS token detected! Stopping generation at step 48
+10:13:59 kald single k=1 t0 'Hvilket tal kommer før,': 15.6 s for 1.88 s lyd
+10:14:00   frag.hvilket_tal_kommer_foer t0: 1.43 s (0.76× forventet) -18.0 LUFS, alone: 'hvilket tal kommer før' CER 0.0 (wav2vec2) → ok
+10:14:06 ✅ EOS token detected! Stopping generation at step 41
+10:14:16 kald single k=1 t1 'Hvilket tal kommer før,': 16.3 s for 1.60 s lyd
+10:14:17   frag.hvilket_tal_kommer_foer t1: 1.28 s (0.69× forventet) -18.0 LUFS, alone: 'hvilket tal kommer før' CER 0.0 (wav2vec2) → ok
+10:14:22 ✅ EOS token detected! Stopping generation at step 31
+10:14:34 kald single k=1 t0 'minus,': 17.0 s for 1.20 s lyd
+10:14:35   op.minus t0: 0.67 s (1.07× forventet) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:14:39 ✅ EOS token detected! Stopping generation at step 27
+10:14:49 kald single k=1 t1 'minus,': 14.8 s for 1.04 s lyd
+10:14:50   op.minus t1: 0.76 s (1.22× forventet) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:14:54 ✅ EOS token detected! Stopping generation at step 31
+10:15:02 kald single k=1 t0 'plus,': 12.4 s for 1.20 s lyd
+10:15:02   op.plus t0: 0.51 s (1.64× forventet) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:15:05 ✅ EOS token detected! Stopping generation at step 19
+10:15:13 kald single k=1 t1 'plus,': 10.6 s for 0.72 s lyd
+10:15:13   op.plus t1: 0.48 s (1.55× forventet) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:15:37 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+10:15:37 ✅ EOS token detected! Stopping generation at step 184
+10:15:59 kald sentence k=4 t0 'Hvad er nul plus nul? Hvad er seks plus fire? Hvad er otte minus otte?': 45.7 s for 7.32 s lyd
+10:16:01   q.add:0+0 t0: 1.94 s (1.24× forventet) -18.13 LUFS, alone: 'hvad er 0 plus 0' CER 0.0 (wav2vec2) → ok
+10:20:27   q.add:6+4 t0: 1.79 s (0.96× forventet) -18.0 LUFS, alone: 'Hvad er 6 plus 4?' CER 0.0 (whisper) → ok
+10:20:27   q.sub:8-8 t0: 1.58 s (0.63× forventet) -18.03 LUFS, alone: 'hvad er 8 minus 8' CER 0.0 (wav2vec2) → ok
+10:20:32   q.ten:7 t0: 1.26 s (0.67× forventet) -18.0 LUFS, alone: '7 plus hvad giver 10?' CER 0.0 (whisper) → ok
+10:20:32   ✓ master q.add:0+0 t0 (bestået)
+10:20:32   ✓ master q.add:6+4 t0 (bestået)
+10:20:32   ✓ master q.sub:8-8 t0 (bestået)
+10:20:32   ✓ master q.ten:7 t0 (bestået)
+10:20:49 ✅ EOS token detected! Stopping generation at step 138
+10:21:04 kald sentence k=3 t0 'Hvad er to plus fem? Hvad er ti minus tre? Hvad er ni minus fem?': 32.0 s for 5.48 s lyd
+10:21:05   q.add:2+5 t0: 1.18 s (0.75× forventet) -18.0 LUFS, alone: 'hvad er 2 plus 5' CER 0.0 (wav2vec2) → ok
+10:21:10   q.sub:10-3 t0: 1.66 s (0.89× forventet) -18.0 LUFS, alone: 'Hvad er 10 minus 3?' CER 0.0 (whisper) → ok
+10:21:16   q.sub:9-5 t0: 1.35 s (0.72× forventet) -18.09 LUFS, alone: 'Hvad er 9 minus 5?' CER 0.0 (whisper) → ok
+10:21:16   ✓ master q.add:2+5 t0 (bestået)
+10:21:16   ✓ master q.sub:10-3 t0 (bestået)
+10:21:16   ✓ master q.sub:9-5 t0 (bestået)
+10:21:33 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+10:21:33 ✅ EOS token detected! Stopping generation at step 145
+10:21:48 kald sentence k=3 t0 'Hvad er tre plus fire? Hvad er syv minus to? Fire plus hvad giver ti?': 32.5 s for 5.76 s lyd
+10:21:50   q.add:3+4 t0: 2.01 s (1.07× forventet) -18.2 LUFS, alone: 'hvad er 3 plus 4' CER 0.0 (wav2vec2) → ok
+10:21:50   q.sub:7-2 t0: 1.50 s (0.80× forventet) -18.0 LUFS, alone: 'hvad er 7 minus 2' CER 0.0 (wav2vec2) → ok
+10:21:54   q.ten:4 t0: 1.37 s (0.63× forventet) -18.0 LUFS, alone: '4 plus hvad giver 10?' CER 0.0 (whisper) → ok
+10:21:54   ✓ master q.add:3+4 t0 (bestået)
+10:21:54   ✓ master q.sub:7-2 t0 (bestået)
+10:21:54   ✓ master q.ten:4 t0 (bestået)
+10:21:59 ✅ EOS token detected! Stopping generation at step 38
+10:22:08 kald carrier k=1 t1 'Tallet er en,': 13.5 s for 1.48 s lyd
+10:22:09   n.mid.1 t1: 0.41 s (1.31× forventet) -18.0 LUFS, carrier: 'tallet af 1n' CER 0.5 (wav2vec2) → FEJL asr
+10:22:13 ✅ EOS token detected! Stopping generation at step 41
+10:22:22 kald carrier k=1 t1 'Tallet er otte,': 13.6 s for 1.60 s lyd
+10:22:23   n.mid.8 t1: 0.41 s (0.66× forventet) -18.0 LUFS, carrier: 'tallet er 8' CER 0.0 (wav2vec2) → ok
+10:22:29 ✅ EOS token detected! Stopping generation at step 46
+10:22:43 kald carrier k=1 t1 'Tallet er elleve.': 19.6 s for 1.80 s lyd
+10:22:43   n.end.11 t1: 0.42 s (0.45× forventet) -18.0 LUFS, carrier: 'tallet er 11' CER 0.0 (wav2vec2) → ok
+10:22:49 ✅ EOS token detected! Stopping generation at step 40
+10:22:58 kald carrier k=1 t1 'Tallet er tolv.': 14.6 s for 1.56 s lyd
+10:22:59   n.end.12 t1: 0.44 s (1.40× forventet) -18.09 LUFS, carrier: 'tallet af 12' CER 0.0 (wav2vec2) → ok
+10:23:04 ✅ EOS token detected! Stopping generation at step 41
+10:23:14 kald carrier k=1 t1 'Tallet er nitten.': 15.3 s for 1.60 s lyd
+10:23:15   n.end.19 t1: 0.42 s (0.68× forventet) -18.0 LUFS, carrier: 'tallet ar 19' CER 0.0 (wav2vec2) → ok
+10:23:19 ✅ EOS token detected! Stopping generation at step 40
+10:23:29 kald carrier k=1 t1 'Tallet er fire.': 14.2 s for 1.56 s lyd
+10:23:30   n.end.4 t1: 0.42 s (0.67× forventet) -18.0 LUFS, carrier: 'tallet er 4' CER 0.0 (wav2vec2) → ok
+10:23:35 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+10:23:35 ✅ EOS token detected! Stopping generation at step 44
+10:23:44 kald carrier k=1 t1 'Tallet er seks.': 14.8 s for 1.72 s lyd
+10:23:45   n.end.6 t1: 0.59 s (1.88× forventet) -18.0 LUFS, carrier: 'tallet af 6' CER 0.0 (wav2vec2) → ok
+10:23:50 ✅ EOS token detected! Stopping generation at step 38
+10:23:58 kald carrier k=1 t2 'Tallet er en,': 12.9 s for 1.48 s lyd
+10:23:59   n.mid.1 t2: 0.41 s (1.31× forventet) -18.0 LUFS, carrier: 'tallet er 1' CER 0.0 (wav2vec2) → ok
+10:24:03   sammensat frag.find_tallet + n.end.5: 'Find tallet 5' CER 0.000 (whisper) → ok
+10:24:08   sammensat frag.find_tallet + n.end.4: 'Find tallet 4' CER 0.000 (whisper) → ok
+10:24:13   sammensat frag.find_tallet + n.end.5: 'Find tallet 5' CER 0.000 (whisper) → ok
+10:24:17   sammensat frag.find_tallet + n.end.4: 'Find tallet 4' CER 0.000 (whisper) → ok
+10:24:17   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.5: 'hvad er 7 plus 5' CER 0.000 (wav2vec2) → ok
+10:24:18   sammensat frag.hvad_er + n.mid.3 + op.minus + n.end.4: 'hvad er 3 minus 4' CER 0.000 (wav2vec2) → ok
+10:24:23   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.5: 'Hvad er 7 plus 5?' CER 0.000 (whisper) → ok
+10:24:28   sammensat frag.hvad_er + n.mid.3 + op.minus + n.end.4: 'Hvad er 3 minus 4?' CER 0.000 (whisper) → ok
+10:24:32   sammensat n.mid.7 + frag.hvad_giver + n.end.5: '7 hvad giver 5' CER 0.000 (whisper) → ok
+10:24:37   sammensat n.mid.7 + frag.hvad_giver + n.end.5: '7 hvad giver 5' CER 0.000 (whisper) → ok
+10:24:37   sammensat frag.hvilket_tal_kommer_efter + n.end.5: 'hvilket tal kommer efter 5' CER 0.000 (wav2vec2) → ok
+10:24:37   sammensat frag.hvilket_tal_kommer_efter + n.end.4: 'hvilket tal kommer efter 4' CER 0.000 (wav2vec2) → ok
+10:24:38   sammensat frag.hvilket_tal_kommer_efter + n.end.5: 'hvilket tal kommer efter 5' CER 0.000 (wav2vec2) → ok
+10:24:38   sammensat frag.hvilket_tal_kommer_efter + n.end.4: 'hvilket tal kommer efter 4' CER 0.000 (wav2vec2) → ok
+10:24:44   sammensat frag.hvilket_tal_kommer_foer + n.end.5: 'Hvilket tal kommer før 5' CER 0.000 (whisper) → ok
+10:24:50   sammensat frag.hvilket_tal_kommer_foer + n.end.4: 'Hvilket tal kommer før 4?' CER 0.000 (whisper) → ok
+10:24:50   sammensat frag.hvilket_tal_kommer_foer + n.end.5: 'hvilket tal kommer før 5' CER 0.000 (wav2vec2) → ok
+10:24:55   sammensat frag.hvilket_tal_kommer_foer + n.end.4: 'Hvilket tal kommer før 4?' CER 0.000 (whisper) → ok
+10:24:56   sammensat frag.hvad_er + n.mid.7 + op.plus + h.end.300: 'hvad er 7 plus 300' CER 0.000 (wav2vec2) → ok
+10:24:56   sammensat frag.hvad_er + h.mid.600 + op.plus + n.end.5: 'hvad er 600 plus 5' CER 0.000 (wav2vec2) → ok
+10:24:57   sammensat hog.100 + n.end.19: '119' CER 0.000 (wav2vec2) → ok
+10:24:57   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.100 + n.end.5: 'hvad er 7 plus 105' CER 0.000 (wav2vec2) → ok
+10:24:57   sammensat hog.300 + n.end.19: '300 1' CER 0.316 (wav2vec2) → FEJL
+10:24:58   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.300 + n.end.5: 'hvad er 7 plus 305' CER 0.000 (wav2vec2) → ok
+10:24:58   sammensat hog.600 + n.end.19: '600 9' CER 0.300 (wav2vec2) → FEJL
+10:24:59   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'hvad er 7 plus 605' CER 0.000 (wav2vec2) → ok
+10:24:59   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.0: 'hvad er 7 plus0' CER 0.000 (wav2vec2) → ok
+10:25:00   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.1: 'hvad er 7 plus 1' CER 0.000 (wav2vec2) → ok
+10:25:00   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.10: 'hvad er 7 plus 10' CER 0.000 (wav2vec2) → ok
+10:25:01   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.11: 'hvad er 7 plus 11' CER 0.000 (wav2vec2) → ok
+10:25:01   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.12: 'hvad er 7 plus 12' CER 0.000 (wav2vec2) → ok
+10:25:02   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.13: 'hvad er 7 plus 13' CER 0.000 (wav2vec2) → ok
+10:25:02   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.14: 'hvad er 7 plus 14' CER 0.000 (wav2vec2) → ok
+10:25:03   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.15: 'hvad er 7 plus 15' CER 0.000 (wav2vec2) → ok
+10:25:03   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.16: 'hvad er 7 plus 16' CER 0.000 (wav2vec2) → ok
+10:25:04   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.17: 'hvad er 7 plus 17' CER 0.000 (wav2vec2) → ok
+10:25:04   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.18: 'hvad er 7 plus 18' CER 0.000 (wav2vec2) → ok
+10:25:05   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.19: 'hvad er 7 plus 19' CER 0.000 (wav2vec2) → ok
+10:25:05   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.2: 'hvad er 7 plus 2' CER 0.000 (wav2vec2) → ok
+10:25:06   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.20: 'hvad er 7 plus 20' CER 0.000 (wav2vec2) → ok
+10:25:07   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.3: 'hvad er 7 plus 3' CER 0.000 (wav2vec2) → ok
+10:25:07   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.4: 'hvad er 7 plus 4' CER 0.000 (wav2vec2) → ok
+10:25:08   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.6: 'hvad er 7 plus 6' CER 0.000 (wav2vec2) → ok
+10:25:08   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.7: 'hvad er 7 plus 7' CER 0.000 (wav2vec2) → ok
+10:25:09   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.8: 'hvad er 7 plus 8' CER 0.000 (wav2vec2) → ok
+10:25:13   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.9: 'hvad er 7 plus' CER 0.133 (wav2vec2) → FEJL
+10:25:14   sammensat frag.hvad_er + n.mid.0 + op.plus + n.end.5: 'hvad er 0 plus5' CER 0.000 (wav2vec2) → ok
+10:25:18   sammensat frag.hvad_er + n.mid.1 + op.plus + n.end.5: 'Hvad er 1 plus 5?' CER 0.000 (whisper) → ok
+10:25:19   sammensat frag.hvad_er + n.mid.10 + op.plus + n.end.5: 'hvad er 10 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:19   sammensat frag.hvad_er + n.mid.11 + op.plus + n.end.5: 'hvad er 11 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:20   sammensat frag.hvad_er + n.mid.12 + op.plus + n.end.5: 'hvad er 12 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:20   sammensat frag.hvad_er + n.mid.13 + op.plus + n.end.5: 'hvad er 13 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:21   sammensat frag.hvad_er + n.mid.14 + op.plus + n.end.5: 'hvad er 14 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:21   sammensat frag.hvad_er + n.mid.15 + op.plus + n.end.5: 'hvad er 15 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:22   sammensat frag.hvad_er + n.mid.16 + op.plus + n.end.5: 'hvad er 16 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:22   sammensat frag.hvad_er + n.mid.17 + op.plus + n.end.5: 'hvad er 17 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:22   sammensat frag.hvad_er + n.mid.18 + op.plus + n.end.5: 'hvad er 18 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:23   sammensat frag.hvad_er + n.mid.19 + op.plus + n.end.5: 'hvad er 19 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:23   sammensat frag.hvad_er + n.mid.2 + op.plus + n.end.5: 'hvad er 2 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:24   sammensat frag.hvad_er + n.mid.20 + op.plus + n.end.5: 'hvad er 20 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:24   sammensat frag.hvad_er + n.mid.3 + op.plus + n.end.5: 'hvad er 3 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:25   sammensat frag.hvad_er + n.mid.4 + op.plus + n.end.5: 'hvad er 4 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:25   sammensat frag.hvad_er + n.mid.5 + op.plus + n.end.5: 'hvad er 5 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:25   sammensat frag.hvad_er + n.mid.6 + op.plus + n.end.5: 'hvad er 6 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:26   sammensat frag.hvad_er + n.mid.8 + op.plus + n.end.5: 'hvad er 8 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:26   sammensat frag.hvad_er + n.mid.9 + op.plus + n.end.5: 'hvad er 9 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:27   sammensat n.mid.7 + op.minus + n.end.5: '7 minus 5' CER 0.000 (wav2vec2) → ok
+10:25:27   sammensat n.mid.7 + op.minus + n.end.5: '7 minus 5' CER 0.000 (wav2vec2) → ok
+10:25:28   sammensat frag.hvad_er + n.mid.3 + op.minus + n.end.4: 'hvad er 3 minus 4' CER 0.000 (wav2vec2) → ok
+10:25:28   sammensat n.mid.7 + op.plus + n.end.5: '7 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:28   sammensat frag.hvad_er + n.mid.3 + op.plus + n.end.4: 'hvad er 3 plus 4' CER 0.000 (wav2vec2) → ok
+10:25:29   sammensat n.mid.7 + op.plus + n.end.5: '7 plus 5' CER 0.000 (wav2vec2) → ok
+10:25:29   sammensat frag.hvad_er + n.mid.3 + op.plus + n.end.4: 'hvad er 3 plus 4' CER 0.000 (wav2vec2) → ok
+10:25:37 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+10:25:37 ✅ EOS token detected! Stopping generation at step 61
+10:25:47 kald head k=1 t1 'Tallet er tre hundrede og toogtres.': 17.7 s for 2.40 s lyd
+10:25:48   hog.300 t1: 0.61 s (0.39× forventet) -18.06 LUFS, carrier: 'tallet er f 362' CER 0.0 (wav2vec2) → ok
+10:25:56 ✅ EOS token detected! Stopping generation at step 68
+10:26:07 kald head k=1 t1 'Tallet er seks hundrede og seksoghalvtreds.': 19.2 s for 2.68 s lyd
+10:26:08   hog.600 t1: 0.70 s (0.45× forventet) -18.0 LUFS, carrier: 'tallet er 656' CER 0.0 (wav2vec2) → ok
+10:26:13 ✅ EOS token detected! Stopping generation at step 37
+10:26:22 kald carrier k=1 t1 'Tallet er ni.': 13.5 s for 1.44 s lyd
+10:26:22   n.end.9 t1: 0.36 s (1.14× forventet) -18.0 LUFS, carrier: 'tallet af 9' CER 0.0 (wav2vec2) → ok
+10:26:22 sammensætning runde 1: 51 af 54 bestået
+10:26:26   sammensat hog.300 + n.end.19: '319' CER 0.000 (whisper) → ok
+10:26:27   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.300 + n.end.5: 'hvad eir 7 plus 305' CER 0.035 (wav2vec2) → ok
+10:26:27   sammensat hog.600 + n.end.19: '600 af seten' CER 0.250 (wav2vec2) → FEJL
+10:26:32   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'hvad er 7 plus 600 5' CER 0.067 (wav2vec2) → FEJL
+10:26:32   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.9: 'hvad er 7 plus 9' CER 0.000 (wav2vec2) → ok
+10:26:42 ✅ EOS token detected! Stopping generation at step 76
+10:26:54 kald head k=1 t2 'Tallet er seks hundrede og treoghalvfjerds.': 21.3 s for 3.00 s lyd
+10:26:55   hog.600 t2: 0.94 s (0.60× forventet) -18.0 LUFS, carrier: 'tallet er 673' CER 0.0 (wav2vec2) → ok
+10:26:55 sammensætning runde 2: 53 af 54 bestået
+10:26:59   sammensat hog.600 + n.end.19: 'er er 619' CER 0.200 (wav2vec2) → FEJL
+10:27:04   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'hvader 7 plus er 605' CER 0.067 (wav2vec2) → FEJL
+10:27:04   op.plus t0 får skylden i frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5
+10:27:13 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+10:27:13 ✅ EOS token detected! Stopping generation at step 72
+10:27:24 kald head k=1 t3 'Tallet er seks hundrede og enoghalvfems.': 20.5 s for 2.84 s lyd
+10:27:26   hog.600 t3: 0.73 s (0.47× forventet) -18.0 LUFS, carrier: 'tallet er 691' CER 0.0 (wav2vec2) → ok
+10:27:26 sammensætning runde 3: 53 af 54 bestået
+10:27:26   sammensat hog.600 + n.end.19: '6001' CER 0.600 (wav2vec2) → FEJL
+10:27:31   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'Hvad er 7 plus 605?' CER 0.000 (whisper) → ok
+10:27:38 ✅ EOS token detected! Stopping generation at step 63
+10:27:49 kald head k=1 t4 'Tallet er seks hundrede og syvogfyrre.': 18.5 s for 2.48 s lyd
+10:27:50   hog.600 t4: 0.60 s (0.39× forventet) -18.0 LUFS, carrier: 'tallet er 647' CER 0.0 (wav2vec2) → ok
+10:27:50 sammensætning runde 4: 53 af 54 bestået
+10:27:54   sammensat hog.600 + n.end.19: '619' CER 0.000 (whisper) → ok
+10:27:55   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'hvad er 7 plus 605' CER 0.000 (wav2vec2) → ok
+10:27:55 sammensætning runde 5: 54 af 54 bestået
+10:27:55   ✓ master frag.find_tallet t0 (bestået)
+10:27:55   ✓ master frag.hvad_er t0 (bestået)
+10:27:55   ✓ master frag.hvad_giver t0 (bestået)
+10:27:55   ✓ master frag.hvilket_tal_kommer_efter t0 (bestået)
+10:27:55   ✓ master frag.hvilket_tal_kommer_foer t0 (bestået)
+10:27:55   ✓ master h.end.300 t0 (bestået)
+10:27:55   ✓ master h.mid.600 t0 (bestået)
+10:27:55   ✓ master hog.100 t0 (bestået)
+10:27:55   ✓ master hog.300 t1 (bestået)
+10:27:55   ✓ master hog.600 t4 (bestået)
+10:27:55   ✓ master n.end.0 t0 (bestået)
+10:27:55   ✓ master n.end.1 t0 (bestået)
+10:27:55   ✓ master n.end.10 t0 (bestået)
+10:27:55   ✓ master n.end.11 t1 (bestået)
+10:27:55   ✓ master n.end.12 t1 (bestået)
+10:27:55   ✓ master n.end.13 t0 (bestået)
+10:27:55   ✓ master n.end.14 t0 (bestået)
+10:27:55   ✓ master n.end.15 t0 (bestået)
+10:27:55   ✓ master n.end.16 t0 (bestået)
+10:27:55   ✓ master n.end.17 t0 (bestået)
+10:27:55   ✓ master n.end.18 t0 (bestået)
+10:27:55   ✓ master n.end.19 t1 (bestået)
+10:27:55   ✓ master n.end.2 t0 (bestået)
+10:27:55   ✓ master n.end.20 t0 (bestået)
+10:27:55   ✓ master n.end.3 t0 (bestået)
+10:27:55   ✓ master n.end.4 t1 (bestået)
+10:27:55   ✓ master n.end.5 t0 (bestået)
+10:27:55   ✓ master n.end.6 t1 (bestået)
+10:27:55   ✓ master n.end.7 t0 (bestået)
+10:27:55   ✓ master n.end.8 t0 (bestået)
+10:27:55   ✓ master n.end.9 t1 (bestået)
+10:27:55   ✓ master n.mid.0 t0 (bestået)
+10:27:55   ✓ master n.mid.1 t2 (bestået)
+10:27:55   ✓ master n.mid.10 t0 (bestået)
+10:27:55   ✓ master n.mid.11 t0 (bestået)
+10:27:55   ✓ master n.mid.12 t0 (bestået)
+10:27:55   ✓ master n.mid.13 t0 (bestået)
+10:27:55   ✓ master n.mid.14 t0 (bestået)
+10:27:55   ✓ master n.mid.15 t0 (bestået)
+10:27:55   ✓ master n.mid.16 t0 (bestået)
+10:27:55   ✓ master n.mid.17 t0 (bestået)
+10:27:55   ✓ master n.mid.18 t0 (bestået)
+10:27:55   ✓ master n.mid.19 t0 (bestået)
+10:27:55   ✓ master n.mid.2 t0 (bestået)
+10:27:55   ✓ master n.mid.20 t0 (bestået)
+10:27:55   ✓ master n.mid.3 t0 (bestået)
+10:27:55   ✓ master n.mid.4 t0 (bestået)
+10:27:55   ✓ master n.mid.5 t0 (bestået)
+10:27:55   ✓ master n.mid.6 t0 (bestået)
+10:27:55   ✓ master n.mid.7 t0 (bestået)
+10:27:55   ✓ master n.mid.8 t1 (bestået)
+10:27:55   ✓ master n.mid.9 t0 (bestået)
+10:27:55   ✓ master op.minus t0 (bestået)
+10:27:55   ✓ master op.plus t1 (bestået)
+10:27:55 færdig: 64 nye mastere (0 ikke bestået), 38 modelkald, 16.5 min generering (CPU 0.49 t), 0 klip mangler

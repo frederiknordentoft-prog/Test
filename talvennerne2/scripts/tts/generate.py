@@ -88,6 +88,7 @@ class Take:
     cer: float | None = None
     nums_ok: bool | None = None
     engine: str | None = None
+    asr_w2v: str | None = None     # wav2vec2's transcript when whisper decided
     pass_a: bool = False
     reason: str = ""
     cpu_s: float = 0.0
@@ -467,7 +468,8 @@ class Generator:
             self.stats["takes"] += 1
             out.append(t)
             log.info(f"  {c['id']} t{t.take}: {t.dur:.2f} s (forhold {t.dur / max(t.exp_dur, 1e-3):.2f}) "
-                     f"{t.lufs} LUFS, {t.check}: '{t.asr}' CER {t.cer} ({t.engine}) → {'ok' if t.pass_a else 'FEJL ' + t.reason}")
+                     f"{t.lufs} LUFS, {t.check}: '{t.asr}' CER {t.cer} ({t.engine}"
+                     + (f", wav2vec2: '{t.asr_w2v}'" if t.asr_w2v else "") + f") → {'ok' if t.pass_a else 'FEJL ' + t.reason}")
         return out
 
     def _judge(self, expected: str, asr: str, parts=None) -> tuple[float, bool, dict]:
@@ -489,6 +491,7 @@ class Generator:
             if w is not None:
                 cer, ok, _ = self._judge(text, w)
                 if ok and cer <= P.CER_MAX:
+                    t.asr_w2v = t.asr
                     t.cer, t.nums_ok, t.asr, t.engine = cer, ok, w, "whisper"
 
     def check_carrier(self, t: Take, seg, parts) -> None:
@@ -502,6 +505,7 @@ class Generator:
             if w is not None:
                 cer, ok, _ = self._judge(expected, w, parts)
                 if ok and cer <= P.CER_MAX:
+                    t.asr_w2v = t.asr
                     t.cer, t.nums_ok, t.asr, t.engine = cer, ok, w, "whisper"
 
     # --- finalizing ---
@@ -523,7 +527,8 @@ class Generator:
         entry = {
             "file": rel, "hash": clip["hash"], "pack": clip["pack"], "wave": clip["wave"], "take": t.take,
             "method": t.method, "dur": round(t.dur, 3), "lufs": t.lufs, "tp": t.tp, "check": t.check,
-            "asr": t.asr, "asrExpected": t.asr_expected, "cer": t.cer, "engine": t.engine, "pass": passed,
+            "asr": t.asr, "asrExpected": t.asr_expected, "cer": t.cer, "engine": t.engine, "asrWav2vec2": t.asr_w2v,
+            "pass": passed,
             "takes": len(takes), "cpuS": round(sum(x.cpu_s for x in takes), 1),
             "wallS": round(sum(x.wall_s for x in takes), 1),
         }
@@ -531,7 +536,7 @@ class Generator:
             entry["comp"] = comp
             if t.check == "none" and comp.get("asr") is not None:
                 entry.update(check="comp", asr=comp["asr"], asrExpected=comp["expected"], cer=comp["cer"],
-                             engine=comp.get("engine"))
+                             engine=comp.get("engine"), asrWav2vec2=comp.get("asrWav2vec2"))
         if not passed:
             entry["reason"] = reason or t.reason or "sammensætning"
         self.index["clips"][clip["id"]] = entry
@@ -667,7 +672,7 @@ class Generator:
         y = sequence.compose(ids, self.by_id, audio, P.SR)
         expected = " ".join(self.by_id[i]["text"] for i in ids)
         parts = [(i, self.by_id[i]["text"]) for i in ids]
-        asr = self.eng.asr(y)
+        asr = w2v = self.eng.asr(y)
         res = asr_check.check(expected, asr)
         engine = "wav2vec2"
         if not res["pass"] and res["cer"] <= WHISPER_MAX_CER:
@@ -678,9 +683,10 @@ class Generator:
                     res, asr, engine = rw, w, "whisper"
         att = asr_check.attribute(parts, asr)
         out = {"ids": ids, "expected": expected, "asr": asr, "cer": res["cer"], "pass": res["pass"],
-               "nums_ok": res["nums_ok"], "att": att, "engine": engine}
+               "nums_ok": res["nums_ok"], "att": att, "engine": engine, "asr_w2v": w2v}
         self.comp_cache[key] = out
-        log.info(f"  sammensat {' + '.join(ids)}: '{asr}' CER {res['cer']:.3f} ({engine}) → {'ok' if res['pass'] else 'FEJL'}")
+        log.info(f"  sammensat {' + '.join(ids)}: '{asr}' CER {res['cer']:.3f} ({engine}"
+                 + (f", wav2vec2: '{w2v}'" if engine != "wav2vec2" else "") + f") → {'ok' if res['pass'] else 'FEJL'}")
         return out
 
     @staticmethod
@@ -810,7 +816,7 @@ class Generator:
         return {"n": len(results), "pass": sum(r["pass"] for r in results),
                 "cer": round(sum(r["cer"] for r in results) / len(results), 4),
                 "asr": first["asr"], "expected": first["expected"], "ids": first["ids"],
-                "engine": first["engine"]}
+                "engine": first["engine"], "asrWav2vec2": first["asr_w2v"] if first["engine"] != "wav2vec2" else None}
 
     # --- main loop ---
     def run(self) -> int:

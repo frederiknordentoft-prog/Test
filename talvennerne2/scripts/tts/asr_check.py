@@ -36,7 +36,7 @@ import numpy as np  # noqa: E402
 import soundfile as sf  # noqa: E402
 
 from da_numbers import parse_numbers  # noqa: E402
-from da_text import cer_counts, levenshtein, normalize, squash  # noqa: E402
+from da_text import cer_counts, normalize, squash  # noqa: E402
 
 ROOT = HERE.parents[1]
 ASR_SR = 16000
@@ -168,7 +168,9 @@ def attribute(parts: list[tuple[str, str]], asr: str) -> dict[str, dict]:
     parts = [(owner, text)] in speaking order (one per clip of a composition). Both sides are compared
     on squash form (normalized, no spaces) with a Levenshtein alignment; a substituted or deleted
     expected character counts against its owner, an inserted character against the owner of the
-    neighbouring expected character. Returns {owner: {"chars": n, "errors": e}}.
+    neighbouring expected character; at a boundary between two owners it counts against both, since
+    either clip may carry it (a carrier's "er" left at the start of the next clip, or a tail
+    trailing after the previous one). Returns {owner: {"chars": n, "errors": e}}.
     """
     ref: list[str] = []
     own: list[str] = []
@@ -199,11 +201,11 @@ def attribute(parts: list[tuple[str, str]], asr: str) -> dict[str, dict]:
             out[own[i - 1]]["errors"] += 1
             i -= 1
         else:
-            k = i - 1 if i > 0 else 0
             if own:
-                out[own[min(k, n - 1)]]["errors"] += 1
+                near = {own[min(max(i - 1, 0), n - 1)], own[min(i, n - 1)]}
+                for o in near:
+                    out[o]["errors"] += 1
             j -= 1
-    assert levenshtein("".join(ref), hyp) == sum(o["errors"] for o in out.values()) or not own
     return out
 
 
