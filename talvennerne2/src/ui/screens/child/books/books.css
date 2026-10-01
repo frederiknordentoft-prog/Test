@@ -11,10 +11,18 @@
 }
 .bk__title {
   margin: 0;
+  overflow: hidden;
   font-size: var(--text-title);
   font-weight: 900;
   line-height: 1.1;
-  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bk-lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 .bk__scroll {
   flex: 1;
@@ -40,6 +48,10 @@
   color: var(--color-ink-2);
   font-size: 17px;
   font-weight: 900;
+}
+.bk-h3::first-letter,
+.bk-card__label::first-letter {
+  text-transform: uppercase;
 }
 .bk-count {
   display: block;
@@ -296,6 +308,7 @@
   max-width: 96px;
 }
 .bk-card__label {
+  display: block;
   max-width: 100%;
   overflow: hidden;
   font-size: 15px;

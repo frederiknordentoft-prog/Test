@@ -1,8 +1,18 @@
 /*
  * Animal pictures for Dyrehaven and the books (animals/art.tsx): a box in the rig's 200 by 240 format
  * (square for head crops) holding an animated rig, a still <img> or the neutral shadow of a species
- * that is not drawn yet. Colours from tokens; nothing here animates.
+ * that is not drawn yet. Also the title bar both screens share: the title on the left, the ear on the
+ * right, one row even on a narrow phone. Colours from tokens; nothing here animates.
  */
+.zoo-bar {
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+.zoo-bar .tv-topbar__side:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .zoo-fig {
   position: relative;
   display: block;

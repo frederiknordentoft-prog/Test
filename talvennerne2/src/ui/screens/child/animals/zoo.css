@@ -11,9 +11,20 @@
 }
 .zoo__title {
   margin: 0;
+  overflow: hidden;
   font-size: var(--text-title);
   font-weight: 900;
   line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zoo-meter-wide {
+  width: 100%;
+}
+.zoo-meter-wide .tv-meter__track {
+  flex: 1;
+  width: auto;
+  min-width: 48px;
 }
 .zoo__scroll {
   flex: 1;
@@ -30,6 +41,18 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 2px var(--gutter) 28px;
+}
+/* Golden or rainbow picks and the egg: stacked on a phone, side by side when there is room. */
+.zoo__top {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: start;
+  gap: 14px;
+}
+@media (max-width: 400px) {
+  .zoo__top {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .zoo-h2 {
   margin: 0;
@@ -61,11 +84,13 @@
   padding: 18px 8px 22px;
   border-radius: var(--radius-card);
   background:
-    radial-gradient(circle at 18% 30%, color-mix(in srgb, var(--color-heart) 45%, transparent) 0 3px, transparent 4px) 0 0 / 92px 74px,
-    radial-gradient(circle at 64% 70%, color-mix(in srgb, var(--color-star) 70%, transparent) 0 3px, transparent 4px) 0 0 / 118px 86px,
-    radial-gradient(circle at 40% 52%, color-mix(in srgb, var(--color-card) 80%, transparent) 0 2.5px, transparent 3.5px) 0 0 / 70px 62px,
+    radial-gradient(circle at 22% 34%, color-mix(in srgb, var(--color-heart) 40%, transparent) 0 3px, transparent 3.5px) 0 0 / 164px 128px,
+    radial-gradient(circle at 70% 76%, color-mix(in srgb, var(--color-star) 65%, transparent) 0 3px, transparent 3.5px) 0 0 / 196px 150px,
+    radial-gradient(circle at 46% 12%, color-mix(in srgb, var(--color-card) 85%, transparent) 0 2.5px, transparent 3px) 0 0 / 132px 172px,
+    radial-gradient(90% 34% at 12% 100%, color-mix(in srgb, var(--color-good) 18%, transparent), transparent 70%),
+    radial-gradient(80% 30% at 92% 62%, color-mix(in srgb, var(--color-good) 14%, transparent), transparent 70%),
     radial-gradient(140% 60% at 50% -12%, color-mix(in srgb, var(--color-card) 75%, transparent), transparent 62%),
-    linear-gradient(180deg, color-mix(in srgb, var(--color-good) 20%, var(--color-card)) 0%, color-mix(in srgb, var(--color-good) 40%, var(--color-card)) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--color-good) 18%, var(--color-card)) 0%, color-mix(in srgb, var(--color-good) 36%, var(--color-card)) 100%);
   box-shadow: var(--shadow-card);
 }
 .zoo-meadow__grid {
@@ -121,6 +146,7 @@
   grid-column: span 2;
 }
 .zoo-cell__stage {
+  position: relative;
   display: block;
   width: 100%;
   max-width: 132px;
@@ -195,8 +221,8 @@
 }
 .zoo-cell__new {
   position: absolute;
-  top: 2px;
-  right: 6px;
+  top: 18%;
+  right: 0;
   padding: 2px 9px;
   border-radius: var(--radius-pill);
   background: var(--color-star);
@@ -366,8 +392,8 @@
 }
 .zoo-eggcard {
   display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
-  align-items: center;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: start;
   gap: 10px 14px;
 }
 .zoo-eggcard.is-ready {
@@ -375,7 +401,7 @@
 }
 .zoo-eggcard__egg {
   display: block;
-  width: 104px;
+  width: 96px;
   min-height: 112px;
   margin: 0;
   padding: 0;
@@ -394,9 +420,6 @@
   gap: 8px;
   min-width: 0;
 }
-.zoo-eggcard__meter {
-  width: 100%;
-}
 .zoo-eggcard__prompt {
   font-size: 18px;
   font-weight: 900;
@@ -408,9 +431,12 @@
 }
 .zoo-eggcard__species {
   display: flex;
+  grid-column: 1 / -1;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
+  gap: 6px 10px;
+  padding-top: 10px;
+  border-top: 2px solid var(--color-line);
 }
 .zoo-eggcard__becomes {
   font-size: 16px;
@@ -437,9 +463,9 @@
 }
 .zoo-eggcard__options,
 .zoo-choice__options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  gap: 8px;
 }
 
 .zoo-option {
@@ -447,7 +473,7 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  width: 92px;
+  min-width: 0;
   min-height: 96px;
   margin: 0;
   padding: 8px 6px;
@@ -471,11 +497,8 @@
 .zoo-option__fig {
   width: 62px;
 }
-.zoo-option--magic {
-  width: 104px;
-}
 .zoo-option--magic .zoo-option__fig {
-  width: 78px;
+  width: 64px;
 }
 .zoo-option__label {
   font-size: 15px;
@@ -624,7 +647,8 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding-bottom: 8px;
+  /* room above the figure for its hop and cheer */
+  padding: 20px 0 8px;
 }
 .zoo-card__head {
   display: grid;
@@ -636,7 +660,7 @@
   position: relative;
   justify-self: center;
   width: 100%;
-  max-width: 220px;
+  max-width: 190px;
 }
 .zoo-card__name {
   margin: 0;
@@ -683,9 +707,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-.zoo-card__meter {
-  width: 100%;
 }
 .zoo-hearts {
   display: flex;
@@ -879,7 +900,8 @@
   line-height: 1.15;
 }
 .zoo-born__stage {
-  width: min(52vw, 210px);
+  width: min(44vw, 176px);
+  margin: 18px 0 4px;
 }
 .zoo-born__kind {
   margin-top: -6px;

@@ -104,32 +104,17 @@ function AnimalCard({ animal, live, isBuddy, def, outfit, onDress }: {
     <div className="zoo-card" data-animal-card={animal.uid}>
       <header className="zoo-card__head">
         <div className={cx('zoo-card__stage', show?.move && !isCalm() && `is-${show.move}`)} data-trick={trick ?? undefined}>
-          <Figure look={lookOf(animal)} def={def} outfit={outfit} animated={live} mood={show?.mood ?? 'happy'} seed={seedOf(animal.uid)} px={220} />
+          <Figure look={lookOf(animal)} def={def} outfit={outfit} animated={live} mood={show?.mood ?? 'happy'} seed={seedOf(animal.uid)} px={220} crop="fit" />
         </div>
         <div className="zoo-card__who">
           <SpokenText as="h2" parts={nameParts(animal.name)} text={animal.name} className="zoo-card__name" />
           <SpokenText parts={kind} text={lineText(kind, speech.text, ', ')} className="zoo-card__kind" />
           <div className="zoo-card__badges">
-            {isBuddy ? (
+            {isBuddy && (
               <span className="zoo-badge zoo-badge--buddy" data-buddy="">
                 <Icon name="heart" solid size={22} />
                 <SpokenText clip="s.zoo.buddy.is" />
               </span>
-            ) : (
-              <Button
-                clip="s.zoo.buddy.choose"
-                icon="heart"
-                size="md"
-                variant="good"
-                silent
-                onClick={() => {
-                  if (useMeta.getState().setBuddy(animal.uid)) {
-                    speech.speak([{ clip: 's.zoo.buddy.now' }])
-                    playSfx('ven')
-                  }
-                }}
-                data-set-buddy=""
-              />
             )}
             {animal.star && (
               <span className="zoo-badge zoo-badge--star">
@@ -140,6 +125,23 @@ function AnimalCard({ animal, live, isBuddy, def, outfit, onDress }: {
           </div>
         </div>
       </header>
+      {!isBuddy && (
+        <Button
+          clip="s.zoo.buddy.choose"
+          icon="heart"
+          size="md"
+          variant="good"
+          block
+          silent
+          onClick={() => {
+            if (useMeta.getState().setBuddy(animal.uid)) {
+              speech.speak([{ clip: 's.zoo.buddy.now' }])
+              playSfx('ven')
+            }
+          }}
+          data-set-buddy=""
+        />
+      )}
 
       <section className="zoo-card__sec" aria-label={speech.text('s.zoo.friendship')}>
         <SpokenText as="h3" clip="s.zoo.friendship" className="zoo-h3" />
@@ -150,7 +152,7 @@ function AnimalCard({ animal, live, isBuddy, def, outfit, onDress }: {
             </span>
           ))}
         </button>
-        <Meter kind="heart" value={facts.progress} clip="s.zoo.friendship.how" size="sm" className="zoo-card__meter" />
+        <Meter kind="heart" value={facts.progress} clip="s.zoo.friendship.how" size="md" className="zoo-meter-wide" />
       </section>
 
       <section className="zoo-card__sec">

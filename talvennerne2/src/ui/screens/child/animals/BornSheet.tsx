@@ -46,7 +46,7 @@ function Born({ animal, live: open, title, def, outfit, onClose }: { animal: Ani
     <div className="zoo-born" data-born={animal.uid}>
       <SpokenText as="h2" clip={title} className="zoo-born__title" />
       <div className="zoo-born__stage">
-        <Figure look={lookOf(live)} def={def} outfit={outfit} animated={open} mood="cheer" seed={seedOf(animal.uid)} px={210} />
+        <Figure look={lookOf(live)} def={def} outfit={outfit} animated={open} mood="cheer" seed={seedOf(animal.uid)} px={210} crop="fit" />
       </div>
       <SpokenText parts={kind} text={lineText(kind, speech.text, ', ')} className="zoo-card__kind zoo-born__kind" />
       <Naming animal={live} />

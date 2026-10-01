@@ -87,16 +87,16 @@ function AnimalCell({ animal, buddy, animated, def, outfit, isNew, hopN, onTap }
     >
       <span className="zoo-cell__stage" key={hopN} data-hop={hopN > 0 ? '' : undefined}>
         <Figure look={lookOf(animal)} def={def} outfit={outfit} animated={animated} mood={buddy ? 'happy' : 'idle'} seed={seedOf(animal.uid)} px={buddy ? 192 : 128} className="zoo-cell__fig" />
+        {isNew && (
+          <span className="zoo-cell__new">
+            <SpokenText clip="s.zoo.new" silent />
+          </span>
+        )}
       </span>
       <span className="zoo-tag">
         {buddy && <Icon name="heart" solid size={18} className="zoo-tag__heart" />}
         <SpokenText parts={nameParts(animal.name)} text={animal.name} silent className="zoo-tag__name" />
       </span>
-      {isNew && (
-        <span className="zoo-cell__new">
-          <SpokenText clip="s.zoo.new" silent />
-        </span>
-      )}
     </button>
   )
 }

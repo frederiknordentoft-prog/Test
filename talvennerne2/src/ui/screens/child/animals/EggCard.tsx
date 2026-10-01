@@ -80,20 +80,20 @@ export function EggCard({ egg, defs, onHatched }: EggCardProps) {
       </button>
       <div className="zoo-eggcard__info">
         <SpokenText as="h2" clip="s.zoo.egg" className="zoo-h2" />
-        <Meter kind="egg" value={egg.warmth} size="md" className="zoo-eggcard__meter" />
+        <Meter kind="egg" value={egg.warmth} size="md" className="zoo-meter-wide" />
         {prompt && <SpokenText clip={prompt} className="zoo-eggcard__prompt" />}
         {egg.allFound && <SpokenText clip="s.zoo.egg.allFound" className="zoo-eggcard__note" />}
-        {egg.species && !picking && (
-          <div className="zoo-eggcard__species">
-            <SpokenText clip="s.zoo.egg.becomes" className="zoo-eggcard__becomes" />
-            <span className="zoo-eggcard__chip">
-              <Figure look={{ species: egg.species }} def={defs[egg.species]} crop="head" px={56} className="zoo-eggcard__chipfig" />
-              <SpokenText clip={`name.species.${egg.species}`} />
-            </span>
-            {egg.options.length > 1 && <Button clip="s.zoo.egg.change" size="md" variant="quiet" onClick={() => setPicking(true)} data-egg-change="" />}
-          </div>
-        )}
       </div>
+      {egg.species && !picking && (
+        <div className="zoo-eggcard__species">
+          <SpokenText clip="s.zoo.egg.becomes" className="zoo-eggcard__becomes" />
+          <span className="zoo-eggcard__chip">
+            <Figure look={{ species: egg.species }} def={defs[egg.species]} crop="head" px={56} className="zoo-eggcard__chipfig" />
+            <SpokenText clip={`name.species.${egg.species}`} />
+          </span>
+          {egg.options.length > 1 && <Button clip="s.zoo.egg.change" size="md" variant="quiet" onClick={() => setPicking(true)} data-egg-change="" />}
+        </div>
+      )}
       {(choosing || picking) && egg.options.length > 0 && (
         <div className="zoo-eggcard__pick" data-egg-pick="">
           <SpokenText as="h3" clip="s.reward.egg.choose" className="zoo-h3" />

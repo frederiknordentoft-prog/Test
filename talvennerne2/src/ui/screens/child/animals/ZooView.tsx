@@ -78,13 +78,17 @@ export function ZooView({ profile, openUid = null, now, onDress }: ZooViewProps)
 
   return (
     <div className="zoo" data-zoo="">
-      <TopBar center={<SpokenText as="h1" clip="s.zoo.title" className="zoo__title" />} onReplay={() => speech.speak([{ clip: 's.zoo.intro' }])} />
+      <TopBar className="zoo-bar" leading={<SpokenText as="h1" clip="s.zoo.title" className="zoo__title" />} onReplay={() => speech.speak([{ clip: 's.zoo.intro' }])} />
       <div className="zoo__scroll" ref={scroller}>
         <div className="zoo__inner">
-          {pending.map((c) => (
-            <ChoiceCard key={`${c.kind}-${c.world}`} choice={c} defs={defs} onChosen={(a) => welcome(a, 's.reward.animal.magic')} />
-          ))}
-          {(egg.options.length > 0 || egg.allFound) && <EggCard egg={egg} defs={defs} onHatched={(a) => welcome(a, 's.reward.egg.hatched')} />}
+          {(pending.length > 0 || egg.options.length > 0 || egg.allFound) && (
+            <div className="zoo__top">
+              {pending.map((c) => (
+                <ChoiceCard key={`${c.kind}-${c.world}`} choice={c} defs={defs} onChosen={(a) => welcome(a, 's.reward.animal.magic')} />
+              ))}
+              {(egg.options.length > 0 || egg.allFound) && <EggCard egg={egg} defs={defs} onHatched={(a) => welcome(a, 's.reward.egg.hatched')} />}
+            </div>
+          )}
           {cells.length > 0 ? (
             <Meadow
               cells={cells}

@@ -81,7 +81,7 @@ function MagicOption({ species, kind, on, defs, onPick }: { species: SpeciesId; 
       data-magic-option={species}
       {...pressProps}
     >
-      <Figure look={{ species, colorway: kind }} def={defs[species]} crop="fit" px={96} mood="happy" className="zoo-option__fig" />
+      <Figure look={{ species, colorway: kind }} def={defs[species]} crop="fit" px={80} mood="happy" className="zoo-option__fig" />
       <SpokenText clip={`name.species.${species}`} silent className="zoo-option__label" />
     </button>
   )

@@ -179,7 +179,7 @@ export function Figure({ look, def, outfit, animated = false, mood = 'idle', sil
   if (animated) {
     return (
       <span className={cx('zoo-fig', className)} style={style} aria-hidden>
-        <Rig {...props} mode="animated" size="100%" className={isCalm() ? 'rig-calm' : undefined} />
+        <Rig {...props} mode="animated" size="100%" className={isCalm() ? 'rig-calm' : undefined} style={crop === 'fit' ? FIT_FREE : undefined} />
       </span>
     )
   }
@@ -190,6 +190,9 @@ export function Figure({ look, def, outfit, animated = false, mood = 'idle', sil
     </span>
   )
 }
+
+/** A fitted animated rig may hop and cheer beyond its tight frame. */
+const FIT_FREE: CSSProperties = { overflow: 'visible' }
 
 /** rigBlobUrl where blobs exist (not in a server render without URL.createObjectURL). */
 function blobUrlFor(props: Parameters<typeof rigBlobUrl>[0]): string | null {

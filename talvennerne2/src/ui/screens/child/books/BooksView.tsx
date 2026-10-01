@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react'
 import type { BookId } from '../../../../app/routes'
 import type { ProfileDoc } from '../../../../engine/types'
+import { IconButton } from '../../../design/Button'
 import { Icon } from '../../../design/Icon'
 import type { IconName } from '../../../design/icons'
 import { SpokenText } from '../../../design/SpokenText'
@@ -37,7 +38,7 @@ export function BooksView({ profile, book, onOpen, onBack, onVisit }: BooksViewP
   if (!book) {
     return (
       <div className="bk" data-books="shelf">
-        <TopBar center={<SpokenText as="h1" clip="s.books.title" className="bk__title" />} onReplay={() => speech.speak([{ clip: 's.books.shelf' }])} />
+        <TopBar className="zoo-bar" leading={<SpokenText as="h1" clip="s.books.title" className="bk__title" />} onReplay={() => speech.speak([{ clip: 's.books.shelf' }])} />
         <div className="bk__scroll">
           <div className="bk-shelf">
             {shelfModel(profile).map((b) => (
@@ -51,7 +52,15 @@ export function BooksView({ profile, book, onOpen, onBack, onVisit }: BooksViewP
   const title = `s.books.${book}`
   return (
     <div className={cx('bk', `bk--${book}`)} data-books={book}>
-      <TopBar leading="back" onLeading={onBack} center={<SpokenText as="h1" clip={title} className="bk__title" />} />
+      <TopBar
+        className="zoo-bar"
+        leading={
+          <span className="bk-lead">
+            <IconButton icon="back" clip="s.ui.back" variant="glass" onClick={onBack} />
+            <SpokenText as="h1" clip={title} className="bk__title" />
+          </span>
+        }
+      />
       <div className="bk__scroll">
         <div className="bk__inner">
           {book === 'collection' && <CollectionBook profile={profile} onVisit={onVisit} />}

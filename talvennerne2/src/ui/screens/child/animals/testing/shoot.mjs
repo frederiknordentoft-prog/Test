@@ -13,7 +13,7 @@ const OUT = fileURLToPath(new URL('../../../../../../artifacts/zoo/', import.met
 const SIZES = (process.env.SIZES ?? '393x852,820x1180').split(',').map((s) => s.split('x').map(Number))
 const PLAY = process.env.PLAY !== '0'
 /** The pictures kept (SHOTS=all keeps every one, also the card and the hatch). */
-const SHOTS = process.env.SHOTS ?? '393-dyrehaven,393-samlebogen,820-dyrehaven,820-trofaeer'
+const SHOTS = process.env.SHOTS ?? '393-eng,393-samlebogen,820-dyrehaven,820-trofaeer'
 const shot = async (page, name) => {
   if (SHOTS === 'all' || SHOTS.split(',').includes(name)) await page.screenshot({ path: `${OUT}${name}.png` })
 }
@@ -67,6 +67,15 @@ try {
     if (zoo.svg > 1500) problems.push(`${zoo.label}: ${zoo.svg} SVG elements`)
     if (zoo.animated > 3) problems.push(`${zoo.label}: ${zoo.animated} animated rigs`)
     await shot(page, `${width}-dyrehaven`)
+    // the meadow itself, scrolled up under the title bar
+    await page.evaluate(() => {
+      const scroller = document.querySelector('.zoo__scroll')
+      const meadow = document.querySelector('[data-meadow]')
+      if (scroller && meadow) scroller.scrollTop = meadow.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 8
+    })
+    await settle(page, 500)
+    await shot(page, `${width}-eng`)
+    await page.evaluate(() => document.querySelector('.zoo__scroll')?.scrollTo(0, 0))
 
     // an animal's card (the cat Misse): open, measure, look
     await page.click('[data-uid^="friend-w0-plus10"]')
@@ -118,6 +127,8 @@ try {
         useNav.getState().root({ id: 'animals' })
       })
       await page.waitForSelector('[data-choice="gold-eng"]', { timeout: 10_000 })
+      // let the screen finish sliding in: a click during the slide makes Playwright scroll the frame
+      await settle(page, 600)
       await page.click('[data-magic-option="rabbit"]')
       await page.click('[data-choice-take]')
       await page.waitForSelector('[data-born="gold-rabbit"]', { timeout: 10_000 })
@@ -153,6 +164,8 @@ try {
       if (end.animated > 3) problems.push(`${end.label}: ${end.animated} animated rigs`)
     }
 
+    const sideways = await page.evaluate(() => document.querySelector('.tv-shell')?.scrollLeft ?? 0)
+    if (sideways) problems.push(`${width}: the frame is scrolled ${sideways}px sideways`)
     if (errors.length) problems.push(...errors.map((e) => `${width}: ${e}`))
     await page.close()
   }
