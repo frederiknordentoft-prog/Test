@@ -65,3 +65,17 @@
   stroke: var(--color-primary-tint);
   stroke-dasharray: none;
 }
+
+/* Calm mode switched on while a rig is on screen: its loops rest in the mood's pose, blinking stays
+   (the rig's own .rig-calm class covers a rig drawn in calm mode). */
+:root[data-calm] .zoo-fig .rig [class*='a-']:not(.a-blink) {
+  animation-play-state: paused !important;
+  animation-delay: 0s !important;
+}
+:root[data-calm] .zoo-fig .rig .a-z,
+:root[data-calm] .zoo-fig .rig .a-dot,
+:root[data-calm] .zoo-fig .rig .a-sweat,
+:root[data-calm] .zoo-fig .rig .a-twinkle,
+:root[data-calm] .zoo-fig .rig .a-aura {
+  animation: none !important;
+}

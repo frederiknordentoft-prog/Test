@@ -454,6 +454,9 @@
 .zoo-eggcard__chipfig {
   flex: none;
   width: 44px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--color-card);
 }
 .zoo-eggcard__pick {
   display: flex;

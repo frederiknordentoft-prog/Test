@@ -32,7 +32,7 @@ export function CanBook({ profile }: { profile: ProfileDoc }) {
           <section key={medal} className={cx('bk-tier', `bk-tier--${medal}`)} data-tier={medal}>
             <header className="bk-tier__head">
               <span className={cx('bk-medal', `bk-medal--${medal}`)} aria-hidden>
-                <Icon name="medal" solid size={30} />
+                <Icon name="medal" size={30} strokeWidth={2.4} />
               </span>
               <SpokenText as="h2" clip={title} className="bk-h2" />
             </header>
@@ -52,7 +52,7 @@ function CanLine({ entry }: { entry: CanEntry }) {
   return (
     <li className="bk-can__line" style={{ '--c': `var(--color-d-${entry.domain})`, '--c-soft': `var(--color-d-${entry.domain}-soft)` } as CSSProperties} data-skill={entry.skill}>
       <span className={cx('bk-medal bk-medal--sm', `bk-medal--${entry.medal}`)} aria-hidden>
-        <Icon name="medal" solid size={22} />
+        <Icon name="medal" size={22} strokeWidth={2.4} />
       </span>
       <SpokenText clip={entry.clip} className="bk-can__text" />
     </li>
