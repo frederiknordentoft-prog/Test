@@ -16,6 +16,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import * as catalog from '../../src/speech/catalog'
 import { allClips, clipForm, generationText, type ClipInfo } from '../../src/speech/catalog'
 import { clipClass, startsSentence, type ClipClass } from '../../src/speech/compile'
 
@@ -61,6 +62,15 @@ export interface Inventory {
 }
 
 const sha1 = (s: string | Buffer) => createHash('sha1').update(s).digest('hex')
+
+/**
+ * The catalogue may load lazily (`loadAllClips()` before the first lookup); call this before using
+ * it outside the app and the test setup. Works with both the eager and the lazy catalogue.
+ */
+export async function ensureCatalog(): Promise<void> {
+  const load = Reflect.get(catalog, 'loadAllClips') as (() => Promise<void>) | undefined
+  if (typeof load === 'function') await load()
+}
 
 export function readConfig(file = CONFIG_PATH): { config: VoiceConfig; sha1: string } {
   const raw = readFileSync(file)
@@ -115,9 +125,11 @@ export function formatInventory(inv: Inventory): string {
 }
 
 export async function main(args: string[]): Promise<number> {
+  await ensureCatalog()
   const out = args[0] ? path.resolve(APP_ROOT, args[0]) : INVENTORY_PATH
   const { config, sha1: configSha1 } = readConfig()
   const inv = buildInventory(allClips(), config, configSha1)
+  if (inv.count === 0) throw new Error('klip-kataloget er tomt (blev det indlæst?)')
   writeFileSync(out, formatInventory(inv))
   const waves = new Map<number, number>()
   const packs = new Map<string, number>()

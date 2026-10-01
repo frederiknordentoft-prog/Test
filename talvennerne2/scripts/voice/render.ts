@@ -22,7 +22,7 @@ import { hashSeed, makeRng } from '../../src/engine/rng'
 import type { SpeechPart } from '../../src/engine/types'
 import { allClips, clipText } from '../../src/speech/catalog'
 import { compile } from '../../src/speech/compile'
-import { APP_ROOT, buildInventory, readConfig } from './inventory'
+import { APP_ROOT, buildInventory, ensureCatalog, readConfig } from './inventory'
 
 export const SR = 24000
 const MASTERS = path.resolve(APP_ROOT, process.env.TV2_VOICE_MASTERS ?? 'voice/masters')
@@ -163,6 +163,7 @@ export async function main(args: string[]): Promise<number> {
     const i = args.indexOf(name)
     return i >= 0 ? args[i + 1] : dflt
   }
+  await ensureCatalog()
   const perSkill = Number(opt('--templates', '30'))
   const noAsr = args.includes('--no-asr')
   const masters = availableMasters()
