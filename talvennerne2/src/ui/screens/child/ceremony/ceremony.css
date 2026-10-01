@@ -68,6 +68,10 @@
   margin: 0 auto;
   padding: 6px var(--gutter) 14px;
 }
+.tv-cer__actions .tv-btn__face {
+  padding: 0 0.6em;
+  white-space: nowrap;
+}
 
 .tv-cer__title {
   margin: 10px 0 4px;

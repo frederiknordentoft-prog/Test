@@ -195,6 +195,9 @@
     overflow-y: auto;
     overscroll-behavior: contain;
   }
+  .tv-side__tiles {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Side panel ────────────────────────────────────────────────────────── */
