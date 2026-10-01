@@ -1,0 +1,85 @@
+/*
+ * Overlays shared by several screens (src/ui/overlays): the grown-ups' gate. Colours only from
+ * tokens.css; only transform and opacity move; calm mode and reduced motion keep everything still.
+ */
+
+.tv-gate {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 2px 0 6px;
+}
+.tv-gate__task {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.tv-gate__ask {
+  margin: 0;
+  color: var(--color-ink-2);
+  font-size: var(--text-body);
+  font-weight: 700;
+  text-align: center;
+}
+.tv-gate__sum.is-shaking {
+  animation: tv-gate-shake 380ms var(--ease-out);
+}
+.tv-gate__keys {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+}
+.tv-gate__keys .tv-answer__face {
+  min-height: 78px;
+  padding: 6px;
+}
+
+/* Short screens (a phone held sideways): the sum beside a two-row keypad. */
+@media (max-height: 500px) {
+  .tv-gate-sheet {
+    padding-bottom: calc(10px + var(--safe-b));
+  }
+  .tv-gate-sheet .tv-sheet__head {
+    padding-bottom: 4px;
+  }
+  .tv-gate {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 20px;
+  }
+  .tv-gate__keys {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    max-width: 520px;
+  }
+  .tv-gate__keys .tv-answer__face {
+    min-height: 58px;
+  }
+}
+
+@keyframes tv-gate-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-10px);
+  }
+  45% {
+    transform: translateX(8px);
+  }
+  70% {
+    transform: translateX(-5px);
+  }
+}
+
+:root[data-calm] .tv-gate__sum.is-shaking {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-gate__sum.is-shaking {
+    animation: none;
+  }
+}
