@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { REGIONS } from '../../content/curriculum'
-import type { RegionTier } from '../../meta/rewards'
-import EngScene, { ENG_REGIONS, EngArt, layoutOf } from './eng'
+import { REGIONS } from '../../../content/curriculum'
+import type { RegionTier } from '../../../meta/rewards'
+import EngScene, { ENG_REGIONS, EngArt, layoutOf } from '../eng'
 
 const SIZES: readonly [number, number][] = [[393, 852], [375, 667], [852, 393], [820, 1180], [1180, 820], [1366, 1024], [1920, 1080]]
 const TIERS: readonly RegionTier[] = ['start', 'bronze', 'silver', 'gold']
@@ -63,7 +63,7 @@ describe('Engdalen · scene', () => {
   })
 
   it('kun skyer og blade animerer, og kun transform; rolig tilstand og reduceret bevægelse stopper dem', () => {
-    const css = readFileSync(path.join(import.meta.dirname, 'eng.css'), 'utf8')
+    const css = readFileSync(path.join(import.meta.dirname, '..', 'eng.css'), 'utf8')
     const frames = [...css.matchAll(/@keyframes\s+([\w-]+)[^{]*\{([\s\S]*?)\n\}/g)]
     expect(frames.map((f) => f[1]).sort()).toEqual(['eng-drift', 'eng-sway'])
     for (const f of frames) {
