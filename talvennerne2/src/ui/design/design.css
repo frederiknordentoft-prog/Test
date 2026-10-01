@@ -753,6 +753,10 @@
   .tv-eq--answer {
     font-size: var(--text-answer);
   }
+  .tv-eq--nowrap {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
   .tv-eq__op {
     color: var(--color-primary);
     min-width: 0.55em;

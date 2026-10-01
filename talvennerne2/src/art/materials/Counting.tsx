@@ -126,7 +126,7 @@ export function Hand({ n: count, side = 'right', skin = 'b', size, ...rest }: Ha
   const thumbUp = k >= 5
   const thumb = thumbUp
     ? blob([[46, 98], [34, 112], [22, 98], [12, 82], [18, 72], [27, 76], [38, 88]], 0.9)
-    : blob([[36, 116], [34, 106], [46, 98], [60, 97], [68, 104], [62, 111], [48, 112]], 0.9)
+    : blob([[33, 112], [35, 101], [44, 96], [55, 99], [58, 105], [52, 109], [42, 114]], 0.9)
   const cuff = roundRect(34, 138, 62, 22, 10)
   return (
     <MatSvg w={116} h={162} size={size ?? 96} {...rest}>

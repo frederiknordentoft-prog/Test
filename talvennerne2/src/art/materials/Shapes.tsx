@@ -104,18 +104,30 @@ function geometry(shape: ShapeId, variant: number): Geo {
 function geoPath(g: Geo): string {
   if (g.kind === 'circle') return circle(50, 50, g.r)
   if (g.kind === 'semi') {
-    const a = g.rot
-    const [x1, y1] = polar(50, 58, g.r, 180 + a)
-    const [x2, y2] = polar(50, 58, g.r, a)
-    // Centre the half-disc: its centroid sits 4r/3π above the diameter.
+    const [cx, cy] = semiCentre(g)
+    const [x1, y1] = polar(cx, cy, g.r, 180 + g.rot)
+    const [x2, y2] = polar(cx, cy, g.r, g.rot)
     return `M${n(x1)} ${n(y1)}A${n(g.r)} ${n(g.r)} 0 0 1 ${n(x2)} ${n(y2)}z`
   }
   return roundPoly(g.pts, 3.5)
 }
 
+/** Centre of the full circle such that the half-disc's bounding box is centred on (50, 50). */
+function semiCentre(g: { r: number; rot: number }): V2 {
+  // Sample the boundary (diameter ends + the arc) in a frame centred at the origin.
+  const pts: V2[] = [polar(0, 0, g.r, 180 + g.rot), polar(0, 0, g.r, g.rot)]
+  for (let a = 180; a <= 360; a += 5) pts.push(polar(0, 0, g.r, a + g.rot))
+  const xs = pts.map((p) => p[0])
+  const ys = pts.map((p) => p[1])
+  return [50 - (Math.min(...xs) + Math.max(...xs)) / 2, 50 - (Math.min(...ys) + Math.max(...ys)) / 2]
+}
+
 function corners(g: Geo): V2[] {
   if (g.kind === 'poly') return g.pts
-  if (g.kind === 'semi') return [polar(50, 58, g.r, 180 + g.rot), polar(50, 58, g.r, g.rot)]
+  if (g.kind === 'semi') {
+    const [cx, cy] = semiCentre(g)
+    return [polar(cx, cy, g.r, 180 + g.rot), polar(cx, cy, g.r, g.rot)]
+  }
   return []
 }
 

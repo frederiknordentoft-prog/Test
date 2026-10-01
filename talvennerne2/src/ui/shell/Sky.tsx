@@ -1,4 +1,4 @@
-// The default backdrop: the sky gradient (SPEC himmel #BFE6FF → #FFF3D6) with a few soft clouds and
+// The default backdrop: the sky gradient (tokens sky-from → sky-to) with a few soft clouds and
 // distant hills. Clouds drift slowly (transform only) and stand still in calm mode.
 import { blob, join } from '../../art/materials/geom'
 import type { V2 } from '../../art/materials/geom'

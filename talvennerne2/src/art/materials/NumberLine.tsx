@@ -25,12 +25,16 @@ export interface NumberLineProps extends MatBase {
 
 export const NL = { W: 640, PAD: 34, Y: 118, H: 176 } as const
 
-export function niceStep(span: number): number {
-  if (span <= 20) return 1
-  const raw = span / 20
-  const pow = 10 ** Math.floor(Math.log10(raw))
-  for (const m of [1, 2, 5, 10]) if (m * pow >= raw) return m * pow
+/** The smallest 1, 2 or 5 · 10^k that is at least x. */
+function niceAtLeast(x: number): number {
+  const pow = 10 ** Math.floor(Math.log10(x))
+  for (const m of [1, 2, 5, 10]) if (m * pow >= x - 1e-9) return m * pow
   return 10 * pow
+}
+
+/** Tick step: every whole number up to a span of 20, otherwise about 20 ticks. */
+export function niceStep(span: number): number {
+  return span <= 20 ? 1 : niceAtLeast(span / 20)
 }
 
 /** x coordinate (in NL units) of a value. */
@@ -41,7 +45,8 @@ export function xOf(v: number, min: number, max: number): number {
 export function NumberLine({ min, max, step, labelEvery, endsOnly, arrowAt, target, hops, hopLabels = true, size, ...rest }: NumberLineProps) {
   const s = step ?? niceStep(max - min)
   const ticks = Math.round((max - min) / s)
-  const every = labelEvery ?? (ticks <= 20 ? s : s * 5 >= (max - min) / 4 ? s * 2 : s * 5)
+  // Up to 0–20 every tick is labelled; beyond that a tenth of the span (10s on 0–100, 100s on 0–1000).
+  const every = labelEvery ?? (max - min <= 20 ? s : Math.max(s, niceAtLeast((max - min) / 10)))
   const X = (v: number) => xOf(v, min, max)
   const { W, Y, H } = NL
   const major: [number, number, number, number][] = []
@@ -62,7 +67,7 @@ export function NumberLine({ min, max, step, labelEvery, endsOnly, arrowAt, targ
       const b = hops[i + 1]
       const xa = X(a)
       const xb = X(b)
-      const lift = Math.min(64, 22 + Math.abs(xb - xa) * 0.42)
+      const lift = Math.max(14, Math.min(64, Math.abs(xb - xa) * 0.45))
       const y0 = Y - 15
       const top = y0 - lift * 1.33
       const d = `M${n(xa)} ${y0}C${n(xa)} ${n(top)} ${n(xb)} ${n(top)} ${n(xb)} ${y0 - 6}`

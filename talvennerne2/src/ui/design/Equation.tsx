@@ -15,17 +15,19 @@ export interface EquationProps {
   /** Visual state of the blank slot. */
   slot?: 'empty' | 'active' | 'good' | 'oops'
   size?: 'task' | 'answer'
+  /** Keep the equation on one line (it wraps by default so long prompts never overflow). */
+  nowrap?: boolean
   className?: string
 }
 
 /** Minus in numbers is always U+2212, never a hyphen. */
 export const formatNumber = (n: number) => (n < 0 ? `−${Math.abs(n)}` : String(n))
 
-export function Equation({ terms, entry, slot = 'empty', size = 'task', className }: EquationProps) {
+export function Equation({ terms, entry, slot = 'empty', size = 'task', nowrap, className }: EquationProps) {
   const speech = useSpeech()
   let blankSeen = false
   return (
-    <span className={cx('tv-eq', `tv-eq--${size}`, className)} role="math">
+    <span className={cx('tv-eq', `tv-eq--${size}`, nowrap && 'tv-eq--nowrap', className)} role="math">
       {terms.map((t, i) => {
         if ('n' in t) return <span key={i} className="tv-eq__n">{formatNumber(t.n)}</span>
         if ('op' in t) return <span key={i} className={cx('tv-eq__op', t.op === '·' && 'tv-eq__op--dot')}>{OP_GLYPH[t.op]}</span>

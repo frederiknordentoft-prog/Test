@@ -33,6 +33,7 @@ export function Seesaw({ tilt, left, right, width = 320, label, className }: See
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'flex-end',
+    whiteSpace: 'nowrap',
   }
   return (
     <div className={className} style={box} role={label ? 'img' : undefined} aria-label={label}>

@@ -52,8 +52,8 @@ export function Coin({ ore, mm = 3.2, size, ...rest }: CoinProps) {
   return (
     <MatSvg w={100} h={100 + edge + 2} size={size ?? COIN_MM[ore] * mm} {...rest}>
       <path d={ellipse(cx, cy + edge + 2, R * 0.92, 5)} fill={GROUND} />
-      <path d={edgeD} fill={t.shade} stroke={t.outline} strokeWidth={SW} fillRule="evenodd" />
-      <path d={faceD} fill={t.fill} fillRule="evenodd" />
+      <path d={edgeD} fill={t.shade} stroke={t.outline} strokeWidth={SW} fillRule={holed ? 'evenodd' : undefined} />
+      <path d={faceD} fill={t.fill} fillRule={holed ? 'evenodd' : undefined} />
       {/* raised rim */}
       <path d={circle(cx, cy, R - 6)} fill="none" stroke={t.shade} strokeWidth={2.2} />
       {beads && <path d={beads} fill={t.shade} />}
@@ -102,32 +102,32 @@ export function Banknote({ kr, mm = 1.25, size, ...rest }: BanknoteProps) {
   const W = NOTE_MM[kr] * 2
   const H = 144
   const pad = 10
-  // Guilloche-style waves (one path) and the medallion.
+  // Guilloche-style waves (one path) under the value, and the medallion.
   const waves = Array.from({ length: 3 }, (_, k) => {
-    const y0 = H - 34 + k * 7
+    const y0 = 104 + k * 6
     let d = `M${pad + 6} ${n(y0)}`
-    for (let x = pad + 6; x <= W - pad - 6; x += 12) d += `Q${n(x + 6)} ${n(y0 + (k % 2 ? 5 : -5))} ${n(x + 12)} ${n(y0)}`
+    for (let x = pad + 6; x <= W - pad - 18; x += 12) d += `Q${n(x + 6)} ${n(y0 + (k % 2 ? 4 : -4))} ${n(x + 12)} ${n(y0)}`
     return d
   }).join('')
   const mx = W - 62
-  const my = 62
+  const my = 58
   return (
     <MatSvg w={W} h={H + 6} size={size ?? NOTE_MM[kr] * mm} {...rest}>
       <path d={roundRect(4, 8, W - 4, H - 4, 12)} fill={GROUND} />
       <path d={roundRect(1.5, 1.5, W - 3, H - 3, 12)} fill={t.fill} />
       <path d={roundRect(pad, pad, W - 2 * pad, H - 2 * pad, 7)} fill="none" stroke={t.light} strokeWidth={2.5} />
       <path d={waves} fill="none" stroke={t.shade} strokeWidth={2} strokeLinecap="round" />
-      <path d={circle(mx, my, 38)} fill={t.light} />
-      <path d={circle(mx, my, 38)} fill="none" stroke={t.shade} strokeWidth={3} strokeDasharray="1 5.5" strokeLinecap="round" />
+      <path d={circle(mx, my, 36)} fill={t.light} />
+      <path d={circle(mx, my, 36)} fill="none" stroke={t.shade} strokeWidth={3} strokeDasharray="1 5.5" strokeLinecap="round" />
       <path d={pawPath(mx, my + 2, 2.3)} fill={t.shade} />
       <path d={`M${pad + 8} ${pad + 10}h${n(W * 0.3)}`} stroke={HIGHLIGHT} strokeWidth={5} strokeLinecap="round" />
-      <Num x={pad + 16} y={60} size={62} fill={WHITE} anchor="start" stroke={t.outline} strokeWidth={7}>
+      <Num x={pad + 14} y={50} size={56} fill={WHITE} anchor="start" stroke={t.outline} strokeWidth={6}>
         {kr}
       </Num>
-      <Num x={pad + 18} y={H - 60} size={16} fill={t.outline} anchor="start" letterSpacing={2}>
+      <Num x={pad + 16} y={88} size={14} fill={t.outline} anchor="start" letterSpacing={2.5}>
         KRONER
       </Num>
-      <Num x={W / 2} y={H - 20} size={14} fill={t.outline} weight={800} letterSpacing={2}>
+      <Num x={W / 2} y={H - 17} size={13} fill={t.outline} weight={800} letterSpacing={2}>
         legepenge
       </Num>
       <path d={roundRect(1.5, 1.5, W - 3, H - 3, 12)} fill="none" stroke={t.outline} strokeWidth={SW} />

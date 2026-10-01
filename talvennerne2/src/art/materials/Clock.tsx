@@ -82,9 +82,9 @@ export function AnalogClock({ minutes, numbers = true, sweep, hands = 'both', si
       {numbers &&
         Array.from({ length: 12 }, (_, i) => {
           const h = i + 1
-          const [x, y] = polar(C, C, 55.5, h * 30 - 90)
+          const [x, y] = polar(C, C, 54, h * 30 - 90)
           return (
-            <Num key={h} x={x} y={y} size={21} fill={INK}>
+            <Num key={h} x={x} y={y} size={19} fill={INK}>
               {h}
             </Num>
           )

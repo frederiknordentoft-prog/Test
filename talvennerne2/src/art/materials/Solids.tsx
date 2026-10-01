@@ -84,7 +84,7 @@ function art(solid: SolidId, t: Tone) {
           <path d={shade} fill={t.shade} />
           <path d={`M${cx - rx + 8} ${yt + 16}V${yb - 4}`} stroke={HIGHLIGHT} strokeWidth={5} strokeLinecap="round" />
           <path d={ellipse(cx, yt, rx, ry)} fill={t.light} />
-          <path d={join(body, ellipse(cx, yt, rx, ry))} fill="none" stroke={t.outline} strokeWidth={SWS} strokeLinejoin="round" />
+          <path d={join(`M${cx - rx} ${yt}V${yb}A${rx} ${ry} 0 0 0 ${cx + rx} ${yb}V${yt}`, ellipse(cx, yt, rx, ry))} fill="none" stroke={t.outline} strokeWidth={SWS} strokeLinejoin="round" />
         </>
       )
     }
