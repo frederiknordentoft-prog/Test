@@ -18,7 +18,7 @@ it('probe4', () => {
     }
     const s1 = sim.sessions[0]
     const l10 = sim.sessions.find((s) => s.level >= 10)?.session, l20 = sim.sessions.find((s) => s.level >= 20)?.session
-    out.push(`seed ${seed}: s1 earned ${s1.earned} L${s1.level} animals ${s1.animals} items ${s1.items} | zeroBig ${zero.join(',')} | few ${few.join(',')} | maxGap ${maxGap} | L10 ${l10} L20 ${l20} | earned s99 ${sim.sessions[98].earned} L${sim.sessions[98].level}`)
+    out.push(`seed ${seed}: s1 earned ${s1.earned} L${s1.level} animals ${s1.animals} items ${s1.items} | zeroBig ${zero.join(',')} | few ${few.join(',')} | maxGap ${maxGap} | L10 ${l10} L20 ${l20} | earned s99 ${sim.sessions[98].earned} L${sim.sessions[98].level} emptied ${sim.shopEmptied()} shopItemsOwned ${Object.keys(sim.profile.inventory).length}`)
   }
   for (const seed of [1, 2, 3]) {
     const a = new Sim(CHILD_85, seed).playSessions(40), b = new Sim(CHILD_50, seed + 100).playSessions(40)

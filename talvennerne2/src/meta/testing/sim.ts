@@ -17,11 +17,11 @@ import { learningEventsFor } from '../../engine/status'
 import { canAttemptTrial, helpBridgeOpen } from '../../engine/trial'
 import {
   WORLD_IDS,
-  type FirstTry, type ItemColor, type KeyState, type MasteryKey, type ProfileDoc, type RegionId, type RoundMode,
+  type FirstTry, type ItemColor, type ItemId, type KeyState, type MasteryKey, type ProfileDoc, type RegionId, type RoundMode,
   type SkillDef, type SkillId, type SpeciesId,
 } from '../../engine/types'
 import { newProfile } from '../../engine/testing/profile'
-import { buyDecor, buyItem, buyRecolor, chooseMagic, chooseStarter, openEgg, chooseEggSpecies } from '../actions'
+import { buyDecor, buyItem, buyRecolor, chooseEggSpecies, chooseMagic, chooseStarter, openEgg, setWish } from '../actions'
 import { eggIsReady, eggOptions, pendingChoices } from '../animals'
 import { applyRoundResult, type MetaRound } from '../progression'
 import type { Reward } from '../rewards'
@@ -38,11 +38,14 @@ export interface ChildModel {
   fast: number
   /** Chance to pass a trial or finale; without it each answer is drawn on its own. */
   trialPass?: number
-  /** Buys the cheapest thing it can afford after every round. */
-  spender?: boolean
+  /**
+   * How the child spends: 'wish' pins a shop item and buys it when the perler are there (then decor,
+   * then recolours); 'cheapest' buys the cheapest thing it can afford; none saves everything.
+   */
+  shopper?: 'wish' | 'cheapest'
 }
 
-export const CHILD_85: ChildModel = { choice: 0.85, production: 0.85, fast: 0.8, trialPass: 0.7 }
+export const CHILD_85: ChildModel = { choice: 0.85, production: 0.85, fast: 0.8, trialPass: 0.7, shopper: 'wish' }
 /** SPEC §5.7: both children pass 70 % of their trials; only their answers differ. */
 export const CHILD_50: ChildModel = { choice: 0.5, production: 0.5, fast: 0.6, trialPass: 0.7 }
 /** Taps a card at random (one in three) and cannot type an answer it does not know. */
@@ -285,12 +288,34 @@ export class Sim {
     }
     const actionPerler = out.reduce((s, r) => s + ('perler' in r ? r.perler : 0), 0)
     this.earned += actionPerler
-    if (this.child.spender) this.shop(now)
+    if (this.child.shopper === 'wish') out.push(...this.shopWish(now))
+    if (this.child.shopper === 'cheapest') this.shopCheapest(now)
+    return out
+  }
+
+  /** The order the child wishes for the shop's things (its own taste, fixed by the seed). */
+  private wishes: ItemId[] | null = null
+
+  /** Pin a shop item, buy it when it can; with the shop bought out, decor and then recolours. */
+  private shopWish(now: number): Reward[] {
+    const out: Reward[] = []
+    this.wishes ??= this.rng.shuffle(ITEMS.filter((i) => i.source.kind === 'shop').map((i) => i.id))
+    const wish = this.wishes.find((id) => !this.profile.inventory[id]) ?? null
+    if (wish) {
+      if (this.profile.economy.wish !== wish) this.profile = setWish(this.profile, wish)?.profile ?? this.profile
+      const bought = buyItem(this.profile, wish, { now })
+      if (bought) {
+        this.profile = bought.profile
+        out.push(...bought.rewards)
+      }
+      return out
+    }
+    this.shopCheapest(now)
     return out
   }
 
   /** Buy the cheapest thing on the shelf while the perler last. */
-  private shop(now: number): void {
+  private shopCheapest(now: number): void {
     for (;;) {
       const p = this.profile
       const offers: { price: number; buy: () => ProfileDoc | null }[] = []

@@ -224,11 +224,15 @@ export function applyRoundResult(profile: ProfileDoc, result: MetaRound, ctx: Ro
     }
   }
 
-  // mastery sparks and medals
+  // mastery sparks and medals. A node that already had three stars pays the base rate only — one
+  // perle per right answer and the golden egg (spildesign §4.5): learning there still brings XP,
+  // friendship and its ceremony, but replaying a finished node is never worth more than playing.
+  const baseRateOnly = !!node && result.mode === 'round' && (profile.nodes[node.id]?.stars ?? 0) === 3
+  const paid = (perler: number) => (baseRateOnly ? 0 : perler)
   const sparks: Reward[] = []
   for (const e of ctx.events) {
     if (e.t !== 'keyPromoted' || (e.box !== 3 && e.box !== 5)) continue
-    const perler = e.box === 3 ? PERLER.spark3 : PERLER.spark5
+    const perler = paid(e.box === 3 ? PERLER.spark3 : PERLER.spark5)
     const xp = e.box === 3 ? XP.spark3 : XP.spark5
     earn(perler, xp)
     friendship += FRIENDSHIP.perSpark
@@ -241,11 +245,11 @@ export function applyRoundResult(profile: ProfileDoc, result: MetaRound, ctx: Ro
     if (medalRank(e.medal) <= medalRank(had)) continue
     // a skill that jumps a tier still gets every medal on the way
     for (const tier of MEDAL_ORDER.slice(medalRank(had), medalRank(e.medal))) {
-      earn(PERLER.medal[tier], XP.medal[tier])
-      rewards.push({ t: 'medal', skill: e.skill, medal: tier, perler: PERLER.medal[tier], xp: XP.medal[tier] })
+      earn(paid(PERLER.medal[tier]), XP.medal[tier])
+      rewards.push({ t: 'medal', skill: e.skill, medal: tier, perler: paid(PERLER.medal[tier]), xp: XP.medal[tier] })
     }
     p.skillMedals = { ...p.skillMedals, [e.skill]: e.medal }
-    if (e.medal === 'gold') rewards.push(...goldAnimal(p, e.skill, now, (next) => (p = next)))
+    if (e.medal === 'gold') rewards.push(...goldAnimal(p, e.skill, now, (next) => (p = next), paid(PERLER.allGolden)))
   }
 
   // friend node: the species for eggs and a first animal (or a new colour or breed)
@@ -355,7 +359,7 @@ function learned(events: readonly LearningEvent[], result: MetaRound, next: Retu
  * A gold medal: the first ever brings the Stjernefølet; later ones let the child pick a golden animal
  * of the medal's world, and once all four of that world are found (or waiting) it gives perler.
  */
-function goldAnimal(p: ProfileDoc, skill: SkillId, now: number, set: (p: ProfileDoc) => void): Reward[] {
+function goldAnimal(p: ProfileDoc, skill: SkillId, now: number, set: (p: ProfileDoc) => void, allGolden: number): Reward[] {
   if (!p.animals.some((a) => a.source === 'starFoal')) {
     const foal = starFoal(p, skill, now)
     set({ ...p, animals: [...p.animals, foal] })
@@ -364,8 +368,8 @@ function goldAnimal(p: ProfileDoc, skill: SkillId, now: number, set: (p: Profile
   const world = worldOfSkill(skill)
   if (!world) return []
   if (goldMedalsOfWorld(p, world) > MAGIC_PER_WORLD) {
-    set({ ...p, economy: { ...p.economy, perler: p.economy.perler + PERLER.allGolden } })
-    return [{ t: 'allGolden', skill, world, perler: PERLER.allGolden }]
+    set({ ...p, economy: { ...p.economy, perler: p.economy.perler + allGolden } })
+    return [{ t: 'allGolden', skill, world, perler: allGolden }]
   }
   const owned = new Set(p.animals.filter((a) => a.source === 'gold').map((a) => a.species))
   return [{ t: 'choice', kind: 'gold', world, options: speciesOfWorld(world).filter((s) => !owned.has(s)) }]

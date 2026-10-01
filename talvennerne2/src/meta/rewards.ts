@@ -76,10 +76,13 @@ export function isRewardEvent(r: Reward): boolean {
   }
 }
 
-/** The big moments: a hatch, a new animal, growth, a medal, a new thing, a passed trial or a finale. */
+/**
+ * The big moments — the full-screen ceremonies of SPEC §5.8: a hatch or a new animal, growth, a
+ * medal, a new thing (earned or bought), a level-up, a passed trial or finale.
+ */
 export function isBigCeremony(r: Reward): boolean {
   switch (r.t) {
-    case 'hatch': case 'animal': case 'growth': case 'medal': case 'item': case 'choice':
+    case 'hatch': case 'animal': case 'growth': case 'medal': case 'item': case 'choice': case 'levelUp':
       return true
     case 'trial':
       return r.passed
