@@ -16,7 +16,7 @@ import { cx } from '../../../design/cx'
 import { DecorGlyph, Glyph, PALETTE_GLYPH } from '../wardrobe/glyphs'
 import { ItemThumb } from '../wardrobe/ItemThumb'
 import { shownText } from '../wardrobe/model'
-import { Tap } from '../wardrobe/Tap'
+import { Tap, useLastShown } from '../wardrobe/Tap'
 import { DECOR_TONE, toneStyle } from '../wardrobe/tones'
 import {
   costSpeech, perlerSpeech, priceOf, type ColorRow, type DecorRow, type Purchase, type SetShelf, type Shelf, type SheetStage, type WishView,
@@ -299,13 +299,14 @@ function PurchasePic({ x, done }: { x: Purchase; done: boolean }) {
   )
 }
 
-export function BuySheet({ purchase, stage, setDone, wished, canWish, onYes, onNo, onWish, onGo, onClose }: BuySheetProps) {
+export function BuySheet({ purchase: current, stage, setDone, wished, canWish, onYes, onNo, onWish, onGo, onClose }: BuySheetProps) {
   const speech = useSpeech()
+  const purchase = useLastShown(current)
   const title = purchase ? (purchase.kind === 'decor' ? `name.decor.${purchase.id}` : ITEM_BY_ID[purchase.item].nameClip) : undefined
   const cost: SpeechPart[] = purchase ? costSpeech(purchase) : []
   const said = (clip: string) => <SpokenText as="p" clip={clip} className="tv-store-sheet__line" />
   return (
-    <Sheet open={!!purchase} onClose={onClose} title={title} className="tv-store-sheet">
+    <Sheet open={!!current} onClose={onClose} title={title} className="tv-store-sheet">
       {purchase && (
         <div className={cx('tv-store-sheet__body', `is-${stage}`)} data-sheet={stage}>
           <PurchasePic x={purchase} done={stage === 'done'} />

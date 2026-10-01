@@ -406,6 +406,7 @@
 .tv-wr-card__source.is-medal {
   background: var(--color-star-soft);
   color: var(--color-star-deep);
+  --icon-fill-o: 0.45;
 }
 .tv-wr-card__source.is-shop {
   background: var(--color-d-money-soft);
@@ -473,6 +474,7 @@
 .tv-wr-how__badge.is-medal {
   background: var(--color-star-soft);
   color: var(--color-star-deep);
+  --icon-fill-o: 0.45;
 }
 .tv-wr-how__badge.is-shop {
   background: var(--color-d-money-soft);
@@ -557,6 +559,7 @@
   .tv-wr__tabs {
     grid-row: 2;
     grid-column: 2;
+    padding-right: var(--gutter);
   }
   .tv-wr__panel {
     grid-row: 3;

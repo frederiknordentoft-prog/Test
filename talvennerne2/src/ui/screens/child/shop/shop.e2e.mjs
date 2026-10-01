@@ -73,6 +73,16 @@ async function targets(page, selector) {
   }, selector)
 }
 
+/** Nothing on the screen reaches past its edges (cards, tiles, buttons). */
+async function overflow(page) {
+  return page.evaluate(() => {
+    const w = window.innerWidth
+    return [...document.querySelectorAll('.tv-screen:not([data-leaving]) button, .tv-store-card, .tv-wr-card')]
+      .map((el) => el.getBoundingClientRect())
+      .filter((b) => b.width > 0 && (b.left < -0.5 || b.right > w + 0.5)).length
+  })
+}
+
 async function newChild(page) {
   await page.goto(`${BASE}${QUERY}`, { waitUntil: 'networkidle' })
   await ready(page)
@@ -114,6 +124,7 @@ try {
   check(await page.$('[data-item="hverdag-head"][data-guide]'), 'Hverdag-huen er fremhævet første gang')
   check(await page.$('.tv-wr-hand'), 'en hånd viser, hvor man trykker')
   check((await targets(page, '.tv-wr-tab, .tv-wr-animal, .tv-wr-color, .tv-wr-card, .tv-wr-off, .tv-topbar .tv-ibtn')).length === 0, 'alle trykmål i garderoben er mindst 60 px')
+  check((await overflow(page)) === 0, 'garderoben holder sig inden for skærmen')
   const cardSize = await page.evaluate(() => Math.min(...[...document.querySelectorAll('.tv-wr-card')].map((e) => e.getBoundingClientRect().width)))
   check(cardSize >= 96, `tingkortene er mindst 96 px (${Math.round(cardSize)})`)
   await shot(page, 'wardrobe-phone')
@@ -156,13 +167,16 @@ try {
   await page.waitForTimeout(700)
 
   // a new colour, decor and the wish
+  check((await overflow(page)) === 0, 'tøjhylden holder sig inden for skærmen')
   await tap(page, '[data-shelf="colors"]', 400)
+  check((await overflow(page)) === 0, 'farvehylden holder sig inden for skærmen')
   await tap(page, '[data-recolor="hverdag-head"] [data-color="1"]', 700)
   await tap(page, '[data-buy-yes]', 600)
   check((await profile(page)).inventory['hverdag-head'].colors.join() === '0,1', 'en ny farve er købt')
   await page.keyboard.press('Escape')
   await page.waitForTimeout(400)
   await tap(page, '[data-shelf="decor"]', 400)
+  check((await overflow(page)) === 0, 'pynthylden holder sig inden for skærmen')
   await tap(page, '[data-decor="pynt-lygte"]', 700)
   await tap(page, '[data-buy-yes]', 600)
   p = await profile(page)
@@ -250,8 +264,8 @@ try {
   await ipad.waitForTimeout(900)
   await tap(ipad, '[data-buy="fest-head"]', 800)
   await shot(ipad, 'shop-ipad')
-  const overflow = await ipad.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
-  check(!overflow, 'iPad: intet vandret overløb')
+  const wide = await ipad.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
+  check(!wide && (await overflow(ipad)) === 0, 'iPad: intet vandret overløb')
   await ipad.close()
 } catch (err) {
   check(false, `undtagelse: ${err.message}`)

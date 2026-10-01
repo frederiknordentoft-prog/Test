@@ -17,6 +17,7 @@ import { SpokenText } from '../../design/SpokenText'
 import { useSpeech } from '../../design/speech'
 import { TopBar } from '../../shell/TopBar'
 import { markGuided, wasGuided } from './wardrobe/guided'
+import { useLastShown } from './wardrobe/Tap'
 import {
   SLOTS, animalsInOrder, canWishFor, cardAction, colorAction, guideItem, howToGetColor, howToGetItem, itemNameSpeech,
   pickAnimal, slotLocked, slotModel, startSlot, type TapAction,
@@ -47,6 +48,7 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
   const [slot, setSlot] = useState<Slot>(() => startSlot(route.item))
   const [guide, setGuide] = useState<ItemId | null>(() => guideItem(profile, route.item, wasGuided(profile.id)))
   const [how, setHow] = useState<HowTarget | null>(null)
+  const howShown = useLastShown(how)
   const [mood, setMood] = useState<Mood>('happy')
   const [picked, setPicked] = useState<Partial<Record<ItemId, ItemColor>>>({})
   const cheer = useRef(0)
@@ -97,10 +99,9 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
   }
 
   const run = (action: TapAction) => {
-    if (!animal) return
     switch (action.kind) {
       case 'wear': {
-        if (!useMeta.getState().wear(animal.uid, action.item, action.color)) return
+        if (!animal || !useMeta.getState().wear(animal.uid, action.item, action.color)) return
         setPicked((p) => ({ ...p, [action.item]: action.color }))
         const guided = action.item === guide
         speech.speak([...itemNameSpeech(action.item), ...(guided ? [{ clip: 's.wardrobe.guide.on' }] : [])])
@@ -109,7 +110,7 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
         return
       }
       case 'takeOff':
-        if (useMeta.getState().takeOff(animal.uid, action.slot)) speech.speak([{ clip: 's.wardrobe.off' }])
+        if (animal && useMeta.getState().takeOff(animal.uid, action.slot)) speech.speak([{ clip: 's.wardrobe.off' }])
         return
       case 'how':
         showHow(action.item, action.color)
@@ -164,8 +165,8 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
       </div>
       <HowSheet
         target={how}
-        wished={!!how && profile.economy.wish === how.item}
-        canWish={!!how && canWishFor(profile, how.item)}
+        wished={!!howShown && profile.economy.wish === howShown.item}
+        canWish={!!howShown && canWishFor(profile, howShown.item)}
         onClose={() => setHow(null)}
         onShop={() => {
           setHow(null)

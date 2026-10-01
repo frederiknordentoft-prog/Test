@@ -16,7 +16,7 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.shop.tab.colors': 'Farver',
   's.shop.tab.decor': 'Pynt',
   's.shop.clothes.about': 'Tøj til dine dyr. Prisen står under hver ting.',
-  's.shop.colors.about': 'Køb en ny farve til dit tøj.',
+  's.shop.colors.about': 'Her kan du købe nye farver til dit tøj.',
   's.shop.colors.none': 'Når du har fået tøj, kan du købe nye farver til det her.',
   's.shop.decor.about': 'Pynt til Dyrehaven.',
   's.shop.set.done': 'Hele sættet er dit!',

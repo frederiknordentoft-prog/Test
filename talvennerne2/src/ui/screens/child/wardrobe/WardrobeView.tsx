@@ -18,7 +18,7 @@ import { AnimalPicture, useOutfit, useSpeciesDef } from '../map/art'
 import { SlotGlyph } from './glyphs'
 import { ItemThumb } from './ItemThumb'
 import { COLORS, SLOTS, SLOT_CLIP, animalNameSpeech, shownText, sourceBadge, type SlotModel } from './model'
-import { Tap } from './Tap'
+import { Tap, useLastShown } from './Tap'
 
 // ─── Animals ────────────────────────────────────────────────────────────────
 
@@ -265,7 +265,7 @@ export function SlotPanel({ model, guide, colorOf, onCard, onOther }: SlotPanelP
                   <ItemThumb item={meta.id} ghost className="tv-wr-card__pic" />
                 </span>
                 <span className={cx('tv-wr-card__source', `is-${meta.source.kind}`)} aria-hidden>
-                  <Icon name={sourceBadge(meta.source)} size={16} strokeWidth={2.4} solid={meta.source.kind === 'medal'} />
+                  <Icon name={sourceBadge(meta.source)} size={16} strokeWidth={2.4} />
                   {meta.source.kind === 'level' && <span className="tv-wr-card__n">{meta.source.level}</span>}
                 </span>
               </Tap>
@@ -286,7 +286,7 @@ export interface HowTarget {
   speech: SpeechPart[]
 }
 
-export function HowSheet({ target, wished, canWish, onClose, onShop, onWish }: {
+export function HowSheet({ target: current, wished, canWish, onClose, onShop, onWish }: {
   target: HowTarget | null
   wished: boolean
   canWish: boolean
@@ -295,10 +295,11 @@ export function HowSheet({ target, wished, canWish, onClose, onShop, onWish }: {
   onWish(): void
 }) {
   const speech = useSpeech()
+  const target = useLastShown(current)
   const meta = target ? ITEM_BY_ID[target.item] : null
   const toShop = !!target && (target.color !== null || meta?.source.kind === 'shop')
   return (
-    <Sheet open={!!target} onClose={onClose} title={meta?.nameClip} className="tv-wr-how">
+    <Sheet open={!!current} onClose={onClose} title={meta?.nameClip} className="tv-wr-how">
       {target && meta && (
         <div className="tv-wr-how__body" data-how-sheet={target.item}>
           <div className={cx('tv-wr-how__pic', meta.source.kind === 'medal' && target.color === null && 'is-gold')}>
@@ -306,7 +307,7 @@ export function HowSheet({ target, wished, canWish, onClose, onShop, onWish }: {
           </div>
           <div className="tv-wr-how__line">
             <span className={cx('tv-wr-how__badge', `is-${target.color === null ? meta.source.kind : 'shop'}`)} aria-hidden>
-              <Icon name={target.color === null ? sourceBadge(meta.source) : 'shop'} size={26} strokeWidth={2.2} solid={meta.source.kind === 'medal' && target.color === null} />
+              <Icon name={target.color === null ? sourceBadge(meta.source) : 'shop'} size={28} strokeWidth={2.2} />
             </span>
             <div className="tv-wr-how__text">
               <SpokenText clip="s.wardrobe.how" className="tv-wr-how__label" />

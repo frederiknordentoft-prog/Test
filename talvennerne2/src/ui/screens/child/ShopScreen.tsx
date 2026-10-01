@@ -19,6 +19,7 @@ import {
   type Purchase, type Shelf, type SheetStage,
 } from './shop/model'
 import { buy } from './shop/buy'
+import { useLastShown } from './wardrobe/Tap'
 import { BuySheet, ClothesShelf, ColorsShelf, DecorShelf, PerlerBadge, ShelfTabs, WishCard } from './shop/ShopView'
 import './shop/shop.css'
 
@@ -35,6 +36,7 @@ export function Shop({ profile }: { profile: ProfileDoc }) {
   const speech = useSpeech()
   const [shelf, setShelf] = useState<Shelf>('clothes')
   const [open, setOpen] = useState<{ x: Purchase; stage: SheetStage; setDone?: boolean } | null>(null)
+  const sheet = useLastShown(open)
 
   const show = (x: Purchase) => {
     const p = useProfile.getState().profile ?? profile
@@ -72,7 +74,8 @@ export function Shop({ profile }: { profile: ProfileDoc }) {
 
   const wish = wishView(profile)
   const x = open?.x ?? null
-  const wishItem = x && x.kind === 'item' ? x.item : null
+  const shownX = sheet?.x ?? null
+  const wishItem = shownX && shownX.kind === 'item' ? shownX.item : null
 
   return (
     <div className="tv-store" data-shop="">
@@ -100,8 +103,8 @@ export function Shop({ profile }: { profile: ProfileDoc }) {
       </div>
       <BuySheet
         purchase={x}
-        stage={open?.stage ?? 'ask'}
-        setDone={!!open?.setDone}
+        stage={sheet?.stage ?? 'ask'}
+        setDone={!!sheet?.setDone}
         wished={!!wishItem && profile.economy.wish === wishItem}
         canWish={!!wishItem && canWishInShop(profile, wishItem)}
         onYes={yes}

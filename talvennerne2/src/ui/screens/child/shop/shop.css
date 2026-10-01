@@ -260,9 +260,14 @@
 .tv-store-set .tv-store-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-/* Eight pieces of decor: two rows of four. */
+/* Eight pieces of decor: three to a row on a phone, two rows of four when there is room. */
 .tv-store-grid.is-decor {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (min-width: 520px) {
+  .tv-store-grid.is-decor {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 @media (min-width: 640px) {
   .tv-store-set .tv-store-grid {
@@ -271,9 +276,10 @@
 }
 
 /* A thing on the shelf: its picture and its price (or a check when it is the child's). */
+/* Width comes from the grid (at least 100 px in every layout), height from the ratio. */
 .tv-store-card {
   display: block;
-  min-height: 112px;
+  min-width: 0;
   aspect-ratio: 0.9;
   border-radius: var(--radius-tile);
 }
@@ -352,9 +358,6 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-}
-.tv-store-card.is-color {
-  min-height: 100px;
 }
 
 /* Decor: its glyph on a soft round tile in its own colour. */
