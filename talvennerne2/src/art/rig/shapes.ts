@@ -81,6 +81,13 @@ export function spline(pts: readonly Vec[], tension = 1): string {
   return d
 }
 
+/** Bakkekam (scener): en blød, åben kurve gennem punkterne (venstre → højre), lukket lodret ned til `bottom`. */
+export function ridge(pts: readonly Vec[], bottom: number, tension = 1): string {
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  return `${spline(pts, tension)}L${p([last[0], bottom])}L${p([first[0], bottom])}Z`
+}
+
 /** Rette linjestykker. */
 export function poly(pts: readonly Vec[], closed = true): string {
   return `M${pts.map(p).join('L')}${closed ? 'Z' : ''}`
@@ -445,6 +452,43 @@ export function tufts(
     pts.push([cx + rx * k * Math.cos(a), cy + ry * k * Math.sin(a)])
   }
   return pts
+}
+
+/**
+ * Pigkant af buer (pindsvinets pigkappe): `count` bløde pigge rundt om en ellipse fra vinkel `from` til
+ * `to` (grader, 0 = højre, 90 = ned; med uret). Hver pig er to konvekse buer, der mødes i en blød spids
+ * på ellipsen; dalene ligger `depth` (andel af radius) inde. `swirl` drejer spidserne (grader), så
+ * piggene ser strøgne ud, og `bulge` er buernes krumning (0,5 = kvartcirkel, 1 = halvcirkel). En åben
+ * bue (to − from < 360) lukkes med en ret linje mellem endedalene (den skjules bag hoved eller krop).
+ */
+export function spikes(
+  cx: number, cy: number, rx: number, ry: number, count: number,
+  o: { depth?: number; swirl?: number; bulge?: number; from?: number; to?: number } = {},
+): string {
+  const depth = o.depth ?? 0.18
+  const swirl = o.swirl ?? 0
+  const half = (Math.min(1, Math.max(0.05, o.bulge ?? 0.5)) * Math.PI) / 2
+  const from = o.from ?? 0
+  const to = o.to ?? 360
+  const at = (deg: number, k: number): Vec => {
+    const t = (deg * Math.PI) / 180
+    return [cx + rx * k * Math.cos(t), cy + ry * k * Math.sin(t)]
+  }
+  // Buen fra a til b buler udad (med uret rundt om ellipsen); radius ud fra korden og buens vinkel.
+  const arcTo = (a: Vec, b: Vec) => {
+    const r = Math.hypot(b[0] - a[0], b[1] - a[1]) / (2 * Math.sin(half))
+    return `A${n(r)} ${n(r)} 0 0 1 ${p(b)}`
+  }
+  const step = (to - from) / count
+  let prev = at(from, 1 - depth)
+  let d = `M${p(prev)}`
+  for (let i = 0; i < count; i++) {
+    const tip = at(from + step * (i + 0.5) + swirl, 1)
+    const next = at(from + step * (i + 1), 1 - depth)
+    d += arcTo(prev, tip) + arcTo(tip, next)
+    prev = next
+  }
+  return `${d}Z`
 }
 
 /** Punkter på en ellipse-bue fra vinkel a0 til a1 (grader, 0 = højre, 90 = ned), inkl. enderne. */

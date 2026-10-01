@@ -564,6 +564,88 @@
   65% { transform: rotate(-3deg); }
 }
 
+/* ---------------------------------------------------------------- hvalpen og pindsvinet (Engdalen) */
+
+/* Hvalpens forben står på jorden: glad vipper dem kun lidt (som kattens). */
+.rig[data-species='puppy'][data-mood='happy'] .a-paw {
+  animation-name: rig-leg-hop;
+}
+/* Hvalpens signatur (logren): halen logrer fire gange hurtigt med stort udsving om roden, ét overshoot og
+   en pause. Hændelsen ligger i 0,3–1,7 s, så filmstrimlens signaturrække fanger den. */
+.rig[data-mood='idle'] .a-wag {
+  animation: rig-tail-wag 4.4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+@keyframes rig-tail-wag {
+  0%, 6%, 44%, 100% { transform: rotate(0deg); }
+  10.2% { transform: rotate(-24deg); }
+  15.9% { transform: rotate(20deg); }
+  21.6% { transform: rotate(-22deg); }
+  27.3% { transform: rotate(16deg); }
+  33% { transform: rotate(-8deg); }
+  38.6% { transform: rotate(3deg); }
+}
+/* Pindsvinets signatur (ruller sig halvt sammen og ud igen): hovedet dukker sig ned i kroppen, kroppen
+   trykker sig sammen, ørerne lægger sig, og pigkappen puster sig op (`a-roll` om hætten, `a-puff` om
+   kappen); så ruller det ud med ét overshoot og en pause. Hændelsen ligger i 0,3–1,7 s. */
+.rig[data-mood='idle'][data-species='hedgehog'] .a-head {
+  animation: rig-curl-head 6s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='idle'][data-species='hedgehog'] .a-body {
+  animation: rig-curl-body 6s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='idle'][data-species='hedgehog'] .a-ear {
+  animation: rig-curl-ear 6s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='idle'] .a-roll {
+  animation: rig-curl-hood 6s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='idle'] .a-puff {
+  animation: rig-curl-puff 6s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+@keyframes rig-curl-head {
+  0%, 4%, 30%, 100% { transform: translate(0, 0) scale(1); }
+  8.3% { transform: translate(0, 4px) scale(0.97); }
+  12.5% { transform: translate(0, 8px) scale(0.93); }
+  16.7% { transform: translate(0, 8.5px) scale(0.93); }
+  20.8% { transform: translate(0, -2.5px) scale(1.01); }
+  25% { transform: translate(0, 1px) scale(1); }
+  62% { transform: translate(0, -1.6px) scale(1); }
+}
+@keyframes rig-curl-body {
+  0%, 4%, 30%, 100% { transform: translate(100px, 226px) scale(1, 1) translate(-100px, -226px); }
+  8.3% { transform: translate(100px, 226px) scale(1.03, 0.96) translate(-100px, -226px); }
+  12.5%, 16.7% { transform: translate(100px, 226px) scale(1.05, 0.92) translate(-100px, -226px); }
+  20.8% { transform: translate(100px, 226px) scale(0.98, 1.03) translate(-100px, -226px); }
+  25% { transform: translate(100px, 226px) scale(1.01, 0.99) translate(-100px, -226px); }
+  62% { transform: translate(100px, 226px) scale(1.01, 1.02) translate(-100px, -226px); }
+}
+@keyframes rig-curl-ear {
+  0%, 4%, 30%, 100% { transform: rotate(0deg); }
+  12.5%, 16.7% { transform: rotate(-36deg); }
+  20.8% { transform: rotate(8deg); }
+  25% { transform: rotate(-2deg); }
+}
+@keyframes rig-curl-hood {
+  0%, 4%, 30%, 100% { transform: translate(0, 0) scale(1); }
+  8.3% { transform: translate(0, 2px) scale(1.04); }
+  12.5%, 16.7% { transform: translate(0, 4px) scale(1.09); }
+  20.8% { transform: translate(0, -1.5px) scale(0.98); }
+  25% { transform: translate(0, 0.5px) scale(1.01); }
+}
+@keyframes rig-curl-puff {
+  0%, 4%, 30%, 100% { transform: scale(1); }
+  8.3% { transform: scale(1.03); }
+  12.5%, 16.7% { transform: scale(1.08); }
+  20.8% { transform: scale(0.98); }
+  25% { transform: scale(1.01); }
+}
+
 /* ---------------------------------------------------------------- tilstande */
 
 /* Statisk render (album, butik): ingen loops. */

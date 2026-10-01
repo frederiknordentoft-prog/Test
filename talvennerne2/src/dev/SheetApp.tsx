@@ -11,12 +11,15 @@ import { ItemIcon } from '../art/rig/ItemIcon'
 import { MAGIC } from '../art/rig/palette'
 import { Rig, magicOf, resolveColorway } from '../art/rig/Rig'
 import type { RigProps } from '../art/rig/Rig'
+import EngScene, { ENG_REGIONS } from '../art/scenes/eng'
+import type { RegionTier } from '../meta/rewards'
+import type { MapSceneProps } from '../ui/screens/child/map/Backdrop'
 import { MOODS, NATURAL_COLORWAYS, SPECIES_IDS, STAGES } from '../art/rig/types'
 import type { BreedId, ColorwayId, ItemDef, Mood, Outfit, SpeciesDef, Stage } from '../art/rig/types'
 import { mannequins } from './mannequin'
 import { runLints } from './lints'
 
-export const ROUTES = ['species', 'moods', 'closeup', 'sizes', 'silhouettes', 'fit', 'fitmatrix', 'filmstrip', 'lineup'] as const
+export const ROUTES = ['species', 'moods', 'closeup', 'sizes', 'silhouettes', 'fit', 'fitmatrix', 'filmstrip', 'lineup', 'scene'] as const
 export type Route = (typeof ROUTES)[number]
 /** Ruter, der tegnes pr. art (?id=<art>). */
 export const PER_SPECIES: readonly Route[] = ['species', 'moods', 'closeup', 'sizes', 'fit', 'filmstrip']
@@ -553,6 +556,80 @@ function Index() {
   )
 }
 
+// ---------------------------------------------------------------------------------------------
+// scene: Engdalen bag kortet i 393·852 (telefon) og 1180·820 (iPad på tværs) for tier start, bronze og guld,
+// og én ramme pr. format med en skitse af kortets lag ovenpå (topbjælke, regionens kort med sti og
+// trædesten, sidepanel og dok), så man kan se, at scenen ikke konkurrerer med stien.
+
+const SCENE_TIERS: readonly RegionTier[] = ['start', 'bronze', 'gold']
+const allAt = (t: RegionTier): MapSceneProps['tiers'] => Object.fromEntries(Object.values(ENG_REGIONS).map((r) => [r, t]))
+/** Blandet fremgang: de første regioner er nået længst. */
+const MIXED: MapSceneProps['tiers'] = {
+  [ENG_REGIONS.grove]: 'gold', [ENG_REGIONS.garden]: 'silver', [ENG_REGIONS.meadow]: 'silver',
+  [ENG_REGIONS.trail]: 'bronze', [ENG_REGIONS.brook]: 'bronze', [ENG_REGIONS.den]: 'start',
+}
+
+type Box = readonly [number, number, number, number, number?]
+/** Kortets lag som skitse (x, y, b, h, radius) pr. format: hvide flader og trædesten. */
+const UI: Record<'phone' | 'ipad', { boxes: Box[]; card: Box; stones: [number, number][] }> = {
+  phone: {
+    boxes: [[16, 12, 64, 64, 32], [226, 14, 92, 56, 28], [324, 10, 60, 60, 20], [16, 84, 176, 52, 26], [200, 84, 176, 52, 26], [42, 158, 230, 58, 29], [264, 158, 88, 58, 29], [20, 762, 353, 80, 30]],
+    card: [12, 196, 369, 600, 44],
+    stones: [[196, 250], [281, 362], [204, 474], [100, 586], [185, 698]],
+  },
+  ipad: {
+    boxes: [[24, 12, 64, 64, 32], [230, 18, 440, 54, 27], [960, 14, 110, 58, 29], [1092, 10, 62, 62, 20], [186, 96, 240, 58, 29], [418, 96, 92, 58, 29],
+      [868, 92, 200, 40, 10], [868, 140, 300, 64, 20], [868, 220, 146, 92, 20], [1022, 220, 146, 92, 20], [868, 326, 300, 250, 28], [340, 736, 500, 76, 30]],
+    card: [157, 136, 536, 700, 44],
+    stones: [[425, 196], [548, 308], [436, 420], [302, 532], [409, 644], [425, 756]],
+  },
+}
+
+function MapSketch({ kind }: { kind: 'phone' | 'ipad' }) {
+  const ui = UI[kind]
+  const box = ([x, y, w, h, r = 16]: Box, bg: string) => ({ position: 'absolute', left: x, top: y, width: w, height: h, borderRadius: r, background: bg, boxShadow: '0 6px 18px rgba(43,33,68,0.12)' }) as CSSProperties
+  return (
+    <>
+      <div style={box(ui.card, 'rgba(222,246,226,0.86)')} />
+      {ui.stones.map(([x, y], i) => (
+        <div key={i} style={{ ...box([x - 38, y - 38, 76, 76, 38], i < 2 ? 'rgba(39,174,96,0.95)' : 'rgba(255,255,255,0.95)'), border: '4px solid rgba(39,174,96,0.95)' }} />
+      ))}
+      {ui.boxes.map((b, i) => <div key={i} style={box(b, 'rgba(255,255,255,0.9)')} />)}
+    </>
+  )
+}
+
+function SceneFrame({ w, h, tiers, cap, sketch }: { w: number; h: number; tiers: MapSceneProps['tiers']; cap: string; sketch?: 'phone' | 'ipad' }) {
+  return (
+    <Cell cap={cap} lint="" label={`scene ${cap}`}>
+      <div style={{ position: 'relative', width: w, height: h, overflow: 'hidden', borderRadius: 12 }}>
+        <EngScene world="eng" tiers={tiers} className="sh-scene-art" />
+        {sketch && <MapSketch kind={sketch} />}
+      </div>
+    </Cell>
+  )
+}
+
+function SceneSheet() {
+  return (
+    <Page title="Engdalen · scene" sub="Kortets baggrund for Engdalen i 393·852 (telefon) og 1180·820 (iPad på tværs) for tier start, bronze og guld (alle regioner), og med en skitse af kortets lag ovenpå (blandet fremgang). Kun skyer og blade bevæger sig.">
+      <style>{'.sh-scene-art{position:absolute;inset:0;width:100%;height:100%}'}</style>
+      <Section title="telefon · 393·852">
+        <div className="sh-row" style={{ alignItems: 'flex-start' }}>
+          {SCENE_TIERS.map((t) => <SceneFrame key={t} w={393} h={852} tiers={allAt(t)} cap={`393·852 · ${t}`} />)}
+          <SceneFrame w={393} h={852} tiers={MIXED} cap="393·852 · blandet · med kortet" sketch="phone" />
+        </div>
+      </Section>
+      <Section title="iPad på tværs · 1180·820">
+        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 2420 }}>
+          {SCENE_TIERS.map((t) => <SceneFrame key={t} w={1180} h={820} tiers={allAt(t)} cap={`1180·820 · ${t}`} />)}
+          <SceneFrame w={1180} h={820} tiers={MIXED} cap="1180·820 · blandet · med kortet" sketch="ipad" />
+        </div>
+      </Section>
+    </Page>
+  )
+}
+
 const SHEETS: Record<Route, (p: { def: SpeciesDef }) => ReactNode> = {
   species: SpeciesSheet,
   moods: MoodsSheet,
@@ -563,6 +640,7 @@ const SHEETS: Record<Route, (p: { def: SpeciesDef }) => ReactNode> = {
   fitmatrix: FitMatrixSheet,
   filmstrip: FilmstripSheet,
   lineup: LineupSheet,
+  scene: SceneSheet,
 }
 
 declare global {

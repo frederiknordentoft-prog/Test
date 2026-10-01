@@ -25,6 +25,8 @@ export interface LintResult {
   maxItem: number
   /** Mindste andel af butikskortet, en genstand alene fylder (største led), hvis arket har kort. */
   minCardFill?: number
+  /** Største elementtal i en verdensscene (kortets baggrund), hvis arket har scener. */
+  maxScene?: number
 }
 
 /** Tankebobler og Zzz holder mindst så mange enheder fri af hoved, ører, manke og horn (review G1-r2, pkt. 5.2). */
@@ -276,11 +278,28 @@ function lintCards(res: LintResult) {
   }
 }
 
+/** En verdensscene (kortets baggrund) må højst have så mange SVG-elementer, så kortskærmen holder sig under 1.500. */
+export const SCENE_BUDGET = 400
+
+/** Verdensscener (svg[data-scene]): elementbudget og ingen forbudte elementer. */
+function lintScenes(res: LintResult) {
+  for (const svg of document.querySelectorAll<SVGSVGElement>('svg[data-scene]')) {
+    const label = svg.closest<HTMLElement>('[data-label]')?.dataset.label ?? `scene ${svg.dataset.scene}`
+    const total = svg.querySelectorAll('*').length + 1
+    res.checks += 2
+    res.maxScene = Math.max(res.maxScene ?? 0, total)
+    if (total > SCENE_BUDGET) res.errors.push(`${label}: ${total} SVG-elementer i scenen (> ${SCENE_BUDGET})`)
+    const bad = svg.querySelector('filter,mask,image,text,foreignObject')
+    if (bad) res.errors.push(`${label}: forbudt element <${bad.tagName}> i scenen`)
+  }
+}
+
 /** Kør alle lints på siden. Hver rig kan slå tjek til med data-lint="safe fit". */
 export function runLints(): LintResult {
   const rigs = [...document.querySelectorAll<SVGSVGElement>('svg.rig')]
   const res: LintResult = { rigs: rigs.length, items: 0, checks: 0, errors: [], maxAnimal: 0, maxItem: 0 }
   lintCards(res)
+  lintScenes(res)
   rigs.forEach((svg, i) => {
     const mode = svg.closest<HTMLElement>('[data-lint]')?.dataset.lint ?? ''
     const label = svg.closest<HTMLElement>('[data-label]')?.dataset.label ?? `rig ${i + 1}`
