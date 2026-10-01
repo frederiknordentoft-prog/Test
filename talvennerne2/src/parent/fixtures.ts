@@ -27,11 +27,6 @@ export function key(box: number, over: Partial<KeyState> = {}): KeyState {
   return { ...emptyKey(), box: box as Box, seen: box > 0 ? 3 : 1, correct: box > 0 ? 3 : 0, lastDay: TODAY, boxDay: TODAY, ...over }
 }
 
-/** `n` recall keys `<prefix><i>` in one family. */
-export function refs(prefix: string, n: number, family = 'all'): KeyRef[] {
-  return Array.from({ length: n }, (_, i) => ({ key: `${prefix}${i}`, family }))
-}
-
 /** All keys of the given refs at one box (or per ref with a function). */
 export function keysAt(list: readonly KeyRef[], box: number | ((i: number) => number), over: Partial<KeyState> = {}): Record<string, KeyState> {
   return Object.fromEntries(list.map((r, i) => [r.key, key(typeof box === 'number' ? box : box(i), over)]))
@@ -106,11 +101,6 @@ export function misconception(status: MisconceptionState['status'], hits = 3, at
     flaggedAt: status === 'watching' ? null : at,
     resolvedAt: status === 'resolved' ? at : null,
   }
-}
-
-/** A synthetic key index for skills the register does not have yet (procedure skills need none). */
-export function index(entries: Partial<Record<SkillId, readonly KeyRef[]>>): SkillKeyIndex {
-  return entries
 }
 
 /** The times tables' keys by the CONVENTIONS fact ids (`mul:<a>x<b>`, smallest factor first). */

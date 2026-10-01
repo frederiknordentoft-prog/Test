@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { launch } from '../../../scripts/browser.mjs'
 
 const BASE = process.env.BASE ?? 'http://localhost:4311/'
-const OUT = fileURLToPath(new URL('../../../artifacts/dash/', import.meta.url))
+const OUT = fileURLToPath(new URL('../../../artifacts/dash/e2e/', import.meta.url))
 mkdirSync(OUT, { recursive: true })
 
 const fails = []
