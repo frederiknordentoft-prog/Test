@@ -73,22 +73,32 @@ const UprightEar: SidePart = ({ pal, sw, stage, side, hat }) => {
  * stribe nederst, hvor øret drejer let fremad.
  */
 /**
- * Vædderøret: roden fortsætter 6 enheder ind over hovedet (kun fyld, ingen kontur ved roden), så der
- * aldrig er en sprække mellem ørets bund og hovedet (review G1-r2, K1). Babyen har lige så lange, men
- * smallere ører, der når ned til skulderen (K6), så den ikke læses som en hvalp.
+ * Vædderøret tegnes bag hovedet (`ears.behind`), så hovedets kontur løber ubrudt hen over ørebasen.
+ * Ørets inderside er trukket ind under hovedet øverst, så der aldrig er en sprække med baggrund mellem
+ * øre og hoved (review G1-r3, K1): øre og hoved er én samlet fyldflade under konturerne. Babyen har lige
+ * så lange, men smallere ører, der når ned til skulderen (K6).
  */
 const LOP_SPINE: Vec[] = [[10, 5], [3, -8], [-6, -7.5], [-14, -2], [-20, 10], [-23.5, 27], [-24.5, 46], [-23.5, 65], [-21, 82], [-18, 96]]
-const LOP_EAR = limbLoop(LOP_SPINE, 15, 17.5, 7)
+/**
+ * Indersidens punkter (de første i limbLoop) skubbes ind mod hovedet: 8 enheder øverst (under hovedet)
+ * og 6 enheder resten af vejen, så øret ligger ind over skulder og arm uden en sprække imellem.
+ */
+const tuckInner = (loop: readonly Vec[], n: number): Vec[] =>
+  loop.map(([x, y], i) => {
+    if (i >= n) return [x, y] as Vec
+    const k = y <= 16 ? 1 : y >= 38 ? 0 : (38 - y) / 22
+    return [x + 6 + 2 * k, y] as Vec
+  })
+const LOP_EAR = tuckInner(limbLoop(LOP_SPINE, 15, 17.5, 7), LOP_SPINE.length)
 const LOP_INNER = ribbon([[-19.4, 40], [-19.8, 56], [-18.8, 72], [-16.6, 86], [-15.6, 94]], [0, 5.5, 7, 6, 0])
-/** Kilen mellem ørets inderkant og hovedets kontur (inden for øre ∪ hoved), kun fyld. */
-const LOP_WEDGE: Vec[] = [[8, 0], [0, -1], [-8, 1.5], [-13, 6], [-17, 13], [-20, 21], [-15, 22], [-9, 14], [-3, 9], [4, 6]]
 
 const LopEar: SidePart = ({ pal, sw, stage }) => {
-  const s = stage === 1 ? { sx: 0.88, sy: 1.02 } : {}
+  const s = stage === 1 ? { sx: 0.88, sy: 0.9 } : {}
   return (
-    <OpenLimb loop={xf(LOP_EAR, s)} fill={pal.earFur} stroke={pal.earOutline} sw={sw} trim={2} trimEnd={1} extra={blob(xf(LOP_WEDGE, s), 0.5)}>
+    <>
+      <path d={blob(xf(LOP_EAR, s))} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
       <path d={blob(xf(LOP_INNER, s), 0.8)} fill={pal.inner} opacity={0.9} />
-    </OpenLimb>
+    </>
   )
 }
 
@@ -309,8 +319,9 @@ export const rabbit: SpeciesDef = {
       id: 'lop',
       name: 'vædder',
       fx: { x: 177, y: 54 },
-      ears: { splay: 0, clip: false, hang: true },
-      anchors: { earBaseL: { x: 66, y: 62 }, earBaseR: { x: 134, y: 62 }, earGap: 60 },
+      ears: { splay: 0, clip: false, hang: true, behind: true },
+      // Halen sidder lidt lavere, så den aldrig rører det hængende øre og lukker en sprække inde.
+      anchors: { earBaseL: { x: 66, y: 62 }, earBaseR: { x: 134, y: 62 }, earGap: 60, tailBase: { x: 153, y: 190 } },
       parts: { Ear: LopEar },
       // Hængeørerne bevæger sig ikke med humøret (de svajer blidt i alle humør).
       poses: {

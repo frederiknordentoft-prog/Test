@@ -16,7 +16,7 @@ import type { BreedId, ColorwayId, ItemDef, Mood, Outfit, SpeciesDef, Stage } fr
 import { mannequins } from './mannequin'
 import { runLints } from './lints'
 
-export const ROUTES = ['species', 'moods', 'closeup', 'sizes', 'silhouettes', 'fit', 'fitmatrix', 'filmstrip', 'lineup'] as const
+export const ROUTES = ['species', 'moods', 'closeup', 'sizes', 'silhouettes', 'fit', 'fitmatrix', 'filmstrip', 'lineup', 'holes'] as const
 export type Route = (typeof ROUTES)[number]
 /** Ruter, der tegnes pr. art (?id=<art>). */
 export const PER_SPECIES: readonly Route[] = ['species', 'moods', 'closeup', 'sizes', 'fit', 'filmstrip']
@@ -353,6 +353,32 @@ function SilhouettesSheet() {
 }
 
 // ---------------------------------------------------------------------------------------------
+// holes: alle arter, racer, stadier, farver og humør på magenta. Lint'en rasteriserer hver figur og
+// fejler ved lukkede, smalle områder med baggrund inden for yderkonturen (sømme og sprækker, review
+// G1-r3 forbedring 1). Alle farver i hvile; alle humør i c1 og c4 (mønster).
+
+function HolesSheet() {
+  const cells: { def: SpeciesDef; b: BreedId; s: Stage; c: ColorwayId; m: Mood }[] = []
+  for (const def of SPECIES)
+    for (const b of def.breeds)
+      for (const s of STAGES) {
+        for (const c of [...NATURAL_COLORWAYS, ...magicOf(def, b.id)] as ColorwayId[]) cells.push({ def, b: b.id, s, c, m: 'idle' })
+        for (const c of ['c1', 'c4'] as const) for (const m of MOODS) if (m !== 'idle') cells.push({ def, b: b.id, s, c, m })
+      }
+  return (
+    <Page title="Huller og sømme" sub="Alle arter, racer, stadier, farver og humør på magenta. Lint'en fejler ved lukket baggrund inden for yderkonturen (sømme, sprækker), som ikke er bevidst negativt rum.">
+      <div className="sh-grid" style={{ gridTemplateColumns: 'repeat(28, 64px)', gap: 4 }}>
+        {cells.map((x, i) => (
+          <div key={i} data-holes={`${x.def.id} ${x.b} ${x.s} ${x.c} ${x.m}`} style={{ background: '#FF00FF', borderRadius: 6, lineHeight: 0 }}>
+            <Rig species={x.def} breed={x.b} stage={x.s} colorway={x.c} mood={x.m} mode="static" size={64} lod="full" crop="full" />
+          </div>
+        ))}
+      </div>
+    </Page>
+  )
+}
+
+// ---------------------------------------------------------------------------------------------
 // fit: genstande på én art i 3 stadier · 3 farvesæt (alle racer)
 
 function FitSheet({ def }: { def: SpeciesDef }) {
@@ -563,6 +589,7 @@ const SHEETS: Record<Route, (p: { def: SpeciesDef }) => ReactNode> = {
   fitmatrix: FitMatrixSheet,
   filmstrip: FilmstripSheet,
   lineup: LineupSheet,
+  holes: HolesSheet,
 }
 
 declare global {

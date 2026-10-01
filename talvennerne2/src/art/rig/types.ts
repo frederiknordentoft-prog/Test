@@ -340,6 +340,11 @@ export interface EarRig {
   clip?: boolean
   /** Hængeører: svajer blidt i alle humør (klassen `a-hang`) i stedet for at rejse og sænke sig. */
   hang?: boolean
+  /**
+   * Ørerne tegnes bag hovedet (lag 10): hovedets kontur løber ubrudt hen over ørebasen, og ørets
+   * inderside gemmer sig under hovedet, så der aldrig er en sprække mellem øre og hoved (vædderen).
+   */
+  behind?: boolean
 }
 
 export interface BreedDef {

@@ -397,6 +397,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const Ear = parts.Ear
   const earRig = breedDef?.ears ?? def.ears
   const earsShown = !!Ear && !hides.has('ears')
+  const earsBehind = !!earRig?.behind
   // Hatte med ørehuller: ørerne klippes ved hullet, og hullets forkant lægges oven på roden.
   const holes = hat === 'through' && earsShown && earRig?.clip !== false && !!headWorn?.item.art.rim
   // Arter tegner selv en afrundet ørebund i hullet (ctx.hat); klippet er kun et værn for andre.
@@ -425,9 +426,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const headFn = parts.head ?? defaultHead
   const bodyD = bodyFn(a, 0, stage)
   const headD = headFn(a, 0, stage)
-  // Indvendige klip (kontur/2 inde), så skygger og mønstre aldrig dækker konturen.
-  const bodyClipD = bodyFn(a, -swBody / 2, stage)
-  const headClipD = headFn(a, -swHead / 2, stage)
+  // Indvendige klip (kontur/2 inde), så skygger og mønstre aldrig dækker konturen; de ligger 0,4
+  // enheder ind under stregen, så antialiasing ikke efterlader en hårfin lys søm langs konturen.
+  const bodyClipD = bodyFn(a, -swBody / 2 + 0.4, stage)
+  const headClipD = headFn(a, -swHead / 2 + 0.4, stage)
 
   const eyeMidWorld = { x: (w.eyeL.x + w.eyeR.x) / 2, y: (w.eyeL.y + w.eyeR.y) / 2 }
   const { gazeRef, glintRef } = env
@@ -720,8 +722,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         <g data-part="head" transform={`translate(${n(R.neckWorld.x)} ${n(R.neckWorld.y)}) scale(${fmt3(R.head.s)})`}>
           <g className={animated ? 'a-head' : undefined} transform={tf(pose.head ?? {})}>
             <g transform={`translate(${n(-a.neck.x)} ${n(-a.neck.y)})`}>
-              {/* 10 · mane-back (+ hattens bagdel) */}
+              {/* 10 · mane-back (+ hattens bagdel) og ører bag hovedet (vædderen) */}
               {parts.ManeBack && scaled((breedDef?.maneOrigin ?? def.maneOrigin) === 'headTop' ? a.headTop : a.headCenter, maneK, parts.ManeBack(ctx(swHead / maneK)))}
+              {earsShown && earsBehind && ear('L', Ear!)}
+              {earsShown && earsBehind && ear('R', Ear!)}
               {renderItem('head', 'back', R.head.s)}
               {/* 11 · hoved + mønster + skygge */}
               <path d={headD} fill={pal.fur} stroke={pal.outline} strokeWidth={n(swHead)} strokeLinejoin="round" />
@@ -754,7 +758,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                   hornet og tegnes foran øret, se festhattens overskrivning) */}
               {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
               {/* 16 · ører, horn (+ hattens hulkant over ørernes rod) */}
-              {earsShown && (
+              {earsShown && !earsBehind && (
                 <g clipPath={earClip ? `url(#${earClipId})` : holes ? `url(#${holeClipId})` : undefined}>
                   {ear('L', Ear!)}
                   {ear('R', Ear!)}

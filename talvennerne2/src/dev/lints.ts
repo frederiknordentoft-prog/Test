@@ -276,8 +276,145 @@ function lintCards(res: LintResult) {
   }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Huller og sømme (review G1-r3, forbedring 1): figuren rasteriseres på magenta; baggrund, der ikke
+// hænger sammen med billedets kant, er lukket inden for yderkonturen. Smalle lukkede områder
+// (tykkelse under HOLE_THICK enheder) er sømme eller sprækker – bredere er bevidst negativt rum.
+
+/** Pixel pr. enhed ved rasteriseringen. */
+const HOLE_SCALE = 2
+/** Lukkede områder, der er tyndere end dette (enheder), tæller som søm/sprække. */
+export const HOLE_THICK = 4
+/** Mindste areal (enheder²), der tæller (antialiasing i samlinger giver enkelte pixel). */
+export const HOLE_MIN_AREA = 1.5
+
+const isMagenta = (d: Uint8ClampedArray, i: number) => d[i] > 200 && d[i + 1] < 90 && d[i + 2] > 200
+
+async function holesIn(svg: SVGSVGElement): Promise<{ area: number; thick: number; x: number; y: number }[]> {
+  const vb = svg.viewBox.baseVal
+  const W = Math.round(vb.width * HOLE_SCALE)
+  const H = Math.round(vb.height * HOLE_SCALE)
+  const clone = svg.cloneNode(true) as SVGSVGElement
+  clone.setAttribute('width', String(W))
+  clone.setAttribute('height', String(H))
+  // Kun figuren: glimt, aura, skygge og andre fx svæver frit og er ikke en del af yderkonturen.
+  for (const el of clone.querySelectorAll('[data-part="fx"],[data-part="aura"],[data-part="shadow"]')) el.remove()
+  const img = new Image()
+  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(clone))}`
+  await img.decode()
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const g = canvas.getContext('2d', { willReadFrequently: true })!
+  g.fillStyle = '#FF00FF'
+  g.fillRect(0, 0, W, H)
+  g.drawImage(img, 0, 0, W, H)
+  const d = g.getImageData(0, 0, W, H).data
+  const N = W * H
+  // 1 = magenta (baggrund), 2 = baggrund nået fra kanten.
+  const m = new Uint8Array(N)
+  for (let p = 0; p < N; p++) if (isMagenta(d, p * 4)) m[p] = 1
+  const stack: number[] = []
+  const push = (p: number) => {
+    if (m[p] === 1) {
+      m[p] = 2
+      stack.push(p)
+    }
+  }
+  for (let x = 0; x < W; x++) {
+    push(x)
+    push((H - 1) * W + x)
+  }
+  for (let y = 0; y < H; y++) {
+    push(y * W)
+    push(y * W + W - 1)
+  }
+  while (stack.length) {
+    const p = stack.pop()!
+    const x = p % W
+    if (x > 0) push(p - 1)
+    if (x < W - 1) push(p + 1)
+    if (p >= W) push(p - W)
+    if (p < N - W) push(p + W)
+  }
+  // Afstand (chamfer) fra hver lukket pixel til nærmeste ikke-lukkede pixel: tykkelsen er 2 · maks.
+  const dist = new Float32Array(N)
+  for (let p = 0; p < N; p++) dist[p] = m[p] === 1 ? 1e9 : 0
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const p = y * W + x
+      if (!dist[p]) continue
+      let v = dist[p]
+      if (x > 0) v = Math.min(v, dist[p - 1] + 1)
+      if (y > 0) v = Math.min(v, dist[p - W] + 1)
+      if (x > 0 && y > 0) v = Math.min(v, dist[p - W - 1] + 1.414)
+      if (x < W - 1 && y > 0) v = Math.min(v, dist[p - W + 1] + 1.414)
+      dist[p] = v
+    }
+  for (let y = H - 1; y >= 0; y--)
+    for (let x = W - 1; x >= 0; x--) {
+      const p = y * W + x
+      if (!dist[p]) continue
+      let v = dist[p]
+      if (x < W - 1) v = Math.min(v, dist[p + 1] + 1)
+      if (y < H - 1) v = Math.min(v, dist[p + W] + 1)
+      if (x < W - 1 && y < H - 1) v = Math.min(v, dist[p + W + 1] + 1.414)
+      if (x > 0 && y < H - 1) v = Math.min(v, dist[p + W - 1] + 1.414)
+      dist[p] = v
+    }
+  // Sammenhængende lukkede områder.
+  const out: { area: number; thick: number; x: number; y: number }[] = []
+  for (let p0 = 0; p0 < N; p0++) {
+    if (m[p0] !== 1) continue
+    let area = 0
+    let maxD = 0
+    let sx = 0
+    let sy = 0
+    m[p0] = 3
+    stack.push(p0)
+    while (stack.length) {
+      const p = stack.pop()!
+      area++
+      maxD = Math.max(maxD, dist[p])
+      const x = p % W
+      sx += x
+      sy += (p - x) / W
+      const visit = (q: number) => {
+        if (m[q] === 1) {
+          m[q] = 3
+          stack.push(q)
+        }
+      }
+      if (x > 0) visit(p - 1)
+      if (x < W - 1) visit(p + 1)
+      if (p >= W) visit(p - W)
+      if (p < N - W) visit(p + W)
+    }
+    out.push({ area: area / HOLE_SCALE ** 2, thick: (2 * maxD) / HOLE_SCALE, x: vb.x + sx / area / HOLE_SCALE, y: vb.y + sy / area / HOLE_SCALE })
+  }
+  return out
+}
+
+/** Lint for `holes`-arket: ingen sømme eller sprækker med baggrund inden for figurernes yderkontur. */
+async function lintHoles(res: LintResult): Promise<void> {
+  for (const cell of document.querySelectorAll<HTMLElement>('[data-holes]')) {
+    const svg = cell.querySelector<SVGSVGElement>('svg.rig')
+    if (!svg) continue
+    res.checks++
+    const bad = (await holesIn(svg)).filter((h) => h.area >= HOLE_MIN_AREA && h.thick < HOLE_THICK)
+    for (const h of bad)
+      res.errors.push(`${cell.dataset.holes}: lukket søm/sprække med baggrund (${h.area.toFixed(1)} enh², ${h.thick.toFixed(1)} enh tyk) ved (${h.x.toFixed(0)},${h.y.toFixed(0)})`)
+  }
+}
+
 /** Kør alle lints på siden. Hver rig kan slå tjek til med data-lint="safe fit". */
-export function runLints(): LintResult {
+export async function runLints(): Promise<LintResult> {
+  const res = runSyncLints()
+  await lintHoles(res)
+  return res
+}
+
+function runSyncLints(): LintResult {
   const rigs = [...document.querySelectorAll<SVGSVGElement>('svg.rig')]
   const res: LintResult = { rigs: rigs.length, items: 0, checks: 0, errors: [], maxAnimal: 0, maxItem: 0 }
   lintCards(res)
