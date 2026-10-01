@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import addTo10Module from './addTo10'
 import subTo10Module from './subTo10'
 import tenFriendsModule from './tenFriends'
-import { skillContract, tasksUnderTest } from '../number/testing/harness'
+import { flagsRaised, skillContract, tasksUnderTest } from '../number/testing/harness'
 import { buildTask } from '../../tasks'
 import { classifyAnswer, detectableOf } from '../../misconceptions'
 import { keysForNode } from '../../registry'
@@ -10,7 +10,7 @@ import { NODE_BY_ID } from '../../../content/curriculum'
 import { makeRng } from '../../rng'
 import { compile } from '../../../speech/compile'
 import { questionClip } from '../../../speech/recallQuestions'
-import type { Fact, SkillDef } from '../../types'
+import type { AnswerValue, Fact, SkillDef, Task } from '../../types'
 
 const addTo10: SkillDef = addTo10Module
 const subTo10: SkillDef = subTo10Module
@@ -178,5 +178,40 @@ describe('tenFriends', () => {
     expect(hintText(tenFriends, 'ten:4', 'near')).toBe('Tæl de tomme felter i ti-rammen.')
     expect(hintText(tenFriends, 'ten:10', null)).toBe('Ti-rammen er allerede fuld.')
     expect(tenFriends.hint(factOf(tenFriends, 'ten:4'), null).visual).toEqual({ scene: 'objects', n: 4, layout: 'tenframe', thing: 'ball' })
+  })
+})
+
+describe('diagnostics on the real facts (SPEC §4.3)', () => {
+  const ctx = { states: {}, audioVerified: true }
+  const plusKeys = keysForNode(NODE_BY_ID['w0-plus10-l3'], ctx)
+  const minusKeys = keysForNode(NODE_BY_ID['w0-minus10-l3'], ctx).filter((k) => k.skill === 'subTo10')
+  const build = (keys: typeof plusKeys) => (i: number) => keys[(i * 5) % keys.length].build(i % 3 === 0 ? 'choice' : 'keypad', makeRng(i), i)
+  const off = (t: Task, d: number): AnswerValue => {
+    const v = (t.answer as number) + d
+    return t.kind === 'choice' && !t.options.includes(v) ? t.answer : v
+  }
+
+  it('flags a child who counts the first number along, in plus and in minus', () => {
+    expect([...flagsRaised(build(plusKeys), 80, (t) => (t.factId.includes('+0') || t.factId.startsWith('add:0') ? t.answer : off(t, -1)))]).toContain('countFromFirst')
+    expect([...flagsRaised(build(minusKeys), 80, (t) => (t.factId.endsWith('-0') ? t.answer : off(t, +1)))]).toContain('countFromFirst')
+  })
+
+  it('never reads random slips of one as counting from the first number', () => {
+    const rng = makeRng(17)
+    const slips = (t: Task): AnswerValue => (rng.next() < 0.5 ? off(t, rng.pick([-1, 1])) : t.answer)
+    for (let run = 0; run < 5; run++) {
+      expect([...flagsRaised(build(plusKeys), 120, slips)]).not.toContain('countFromFirst')
+      expect([...flagsRaised(build(minusKeys), 120, slips)]).not.toContain('countFromFirst')
+    }
+  })
+
+  it('flags plus-instead-of-minus, and flags nothing for a child who answers right', () => {
+    const plusInstead = (t: Task): AnswerValue => {
+      const [a, b] = t.factId.slice(4).split('-').map(Number)
+      return b === 0 || (t.kind === 'choice' && !t.options.includes(a + b)) ? t.answer : a + b
+    }
+    expect([...flagsRaised(build(minusKeys), 80, plusInstead)]).toContain('wrongOperation')
+    expect([...flagsRaised(build(plusKeys), 80, (t) => t.answer)]).toEqual([])
+    expect([...flagsRaised(build(minusKeys), 80, (t) => t.answer)]).toEqual([])
   })
 })

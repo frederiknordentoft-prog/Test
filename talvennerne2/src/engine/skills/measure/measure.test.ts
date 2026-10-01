@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import compareLengthModule, { type CompareScene } from './compareLength'
-import { skillContract, tasksUnderTest } from '../number/testing/harness'
-import { classifyAnswer, detectableOf, flaggedIds, updateMisconceptions, type MisconceptionStates } from '../../misconceptions'
+import { flagsRaised, skillContract, tasksUnderTest } from '../number/testing/harness'
+import { classifyAnswer, detectableOf } from '../../misconceptions'
 import { isProduction } from '../../kinds'
 import { keysForNode } from '../../registry'
 import { NODE_BY_ID } from '../../../content/curriculum'
 import { makeRng } from '../../rng'
 import { compile } from '../../../speech/compile'
-import type { AnswerLogEntry, AnswerValue, SkillDef, Task } from '../../types'
+import type { AnswerValue, SkillDef, Task } from '../../types'
 
 const compareLength: SkillDef = compareLengthModule
 
@@ -112,28 +112,8 @@ describe('compareLength', () => {
   it('lets a child who only looks at one end be flagged, and a child who compares well not', () => {
     const keys = keysForNode(NODE_BY_ID['w0-former-l3'], { states: {}, audioVerified: true }).filter((k) => k.skill === 'compareLength')
     expect(keys).toHaveLength(16)
-    /** Every misconception flagged at some point (a flag may later lift: see the report on isResolved). */
-    const run = (answer: (t: Task) => AnswerValue): Set<string> => {
-      let states: MisconceptionStates = {}
-      const flagged = new Set<string>()
-      for (let i = 0; i < 64; i++) {
-        const k = keys[i % keys.length]
-        const t = k.build(i % 2 === 0 ? 'sortOrder' : 'choice', makeRng(i), i)
-        const given = answer(t)
-        const correct = given === t.answer
-        const day = `2026-10-${String(1 + Math.floor(i / 16)).padStart(2, '0')}`
-        const entry = {
-          profileId: 'p', ts: i + 1, day, sessionId: 's', roundId: 'r', nodeId: 'n', mode: 'round', skill: t.skill,
-          family: t.family, factId: t.factId, masteryKey: t.masteryKey, kind: t.kind, optionsCount: t.options.length,
-          production: isProduction(t), given, answer: t.answer, correct, ms: 3000, fast: true,
-          errorTag: correct ? null : classifyAnswer(t, given), detectable: detectableOf(t), boxBefore: 0, boxAfter: 0,
-          scaffold: false, replays: 0, retryOf: null, assisted: false, audioUnverified: false, contrast: t.contrast,
-        } satisfies AnswerLogEntry
-        states = updateMisconceptions(states, entry, { skillAccuracy20: 0.7, day, contrast: t.contrast })
-        for (const id of flaggedIds(states)) flagged.add(id)
-      }
-      return flagged
-    }
+    const run = (answer: (t: Task) => AnswerValue) =>
+      flagsRaised((i) => keys[i % keys.length].build(i % 2 === 0 ? 'sortOrder' : 'choice', makeRng(i), i), 64, answer)
     // looks only at the right-hand ends: right on congruent lineups, misled on the others
     const oneEnd = (t: Task): AnswerValue => {
       if (t.contrast !== 'conflict') return t.answer

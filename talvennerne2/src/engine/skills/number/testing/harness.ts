@@ -5,14 +5,14 @@
 import { describe, expect, it } from 'vitest'
 import { SKILL_BY_ID } from '../../../../content/skills'
 import { buildTask } from '../../../tasks'
-import { classifyAnswer } from '../../../misconceptions'
+import { classifyAnswer, detectableOf, flaggedIds, updateMisconceptions, type MisconceptionStates } from '../../../misconceptions'
 import { isCorrect } from '../../../answer'
 import { isProduction } from '../../../kinds'
 import { registeredSkills, validateSkill } from '../../../registry'
 import { hashSeed, makeRng } from '../../../rng'
 import { compile } from '../../../../speech/compile'
 import { hasClip } from '../../../../speech/catalog'
-import type { AnswerValue, ErrorTag, Fact, HintSpec, SkillDef, SpeechPart, Task, TaskKind } from '../../../types'
+import type { AnswerLogEntry, AnswerValue, ErrorTag, Fact, HintSpec, MisconceptionId, SkillDef, SpeechPart, Task, TaskKind } from '../../../types'
 import { isMisconception } from '../kit'
 
 export const INSTANCES_PER_FAMILY = 200
@@ -221,4 +221,30 @@ export function globalIdCheck(): void {
       }
     }
   })
+}
+
+/**
+ * A simulated child: `n` first-try answers on the tasks `build(i)` gives, `perDay` a learning day, run
+ * through the real diagnostics (classifyAnswer, detectableOf, updateMisconceptions). Returns every
+ * misconception flagged at some point — a flag can lift again later in the run.
+ */
+export function flagsRaised(build: (i: number) => Task, n: number, answer: (t: Task, i: number) => AnswerValue, perDay = 16): Set<MisconceptionId> {
+  let states: MisconceptionStates = {}
+  const flagged = new Set<MisconceptionId>()
+  for (let i = 0; i < n; i++) {
+    const t = build(i)
+    const given = answer(t, i)
+    const correct = isCorrect(t, given)
+    const day = `2026-10-${String(1 + Math.floor(i / perDay)).padStart(2, '0')}`
+    const entry = {
+      profileId: 'p', ts: i + 1, day, sessionId: 's', roundId: 'r', nodeId: 'n', mode: 'round', skill: t.skill,
+      family: t.family, factId: t.factId, masteryKey: t.masteryKey, kind: t.kind, optionsCount: t.options.length,
+      production: isProduction(t), given, answer: t.answer, correct, ms: 3000, fast: true,
+      errorTag: classifyAnswer(t, given), detectable: detectableOf(t), boxBefore: 0, boxAfter: 0,
+      scaffold: false, replays: 0, retryOf: null, assisted: false, audioUnverified: false, ...(t.contrast ? { contrast: t.contrast } : {}),
+    } satisfies AnswerLogEntry
+    states = updateMisconceptions(states, entry, { skillAccuracy20: 0.7, day, ...(t.contrast ? { contrast: t.contrast } : {}) })
+    for (const id of flaggedIds(states)) flagged.add(id)
+  }
+  return flagged
 }
