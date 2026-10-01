@@ -30,7 +30,7 @@ function ghostOf(def: ItemDef): ItemDef {
 export interface ItemThumbProps {
   item: ItemId
   color?: ItemColor
-  /** CSS px; without it the picture fills the box the stylesheet gives `.tv-thumb`. */
+  /** CSS px; without it the picture fills the box the stylesheet gives `.tv-wr-thumb`. */
   size?: number
   /** An outline: the child does not have it yet. */
   ghost?: boolean
@@ -44,7 +44,7 @@ export function ItemThumb({ item, color = 0, size, ghost = false, className }: I
   const style: CSSProperties = { ...toneStyle(SET_TONE[meta.set]), ...(size ? { width: size, height: size } : {}) }
   return (
     <span
-      className={cx('tv-thumb', ghost && 'is-ghost', !shown && 'is-placeholder', `is-c${color}`, className)}
+      className={cx('tv-wr-thumb', ghost && 'is-ghost', !shown && 'is-placeholder', `is-c${color}`, className)}
       style={style}
       aria-hidden
       data-thumb={item}
@@ -53,8 +53,8 @@ export function ItemThumb({ item, color = 0, size, ghost = false, className }: I
       {shown ? (
         <ItemIcon item={shown} colorway={ghost ? 0 : color} size={size ?? 96} />
       ) : (
-        <span className="tv-thumb__stand">
-          <SlotGlyph slot={meta.slot} size="62%" strokeWidth={ghost ? 1.8 : 2.1} hollow={ghost} className="tv-thumb__glyph" />
+        <span className="tv-wr-thumb__stand">
+          <SlotGlyph slot={meta.slot} size="62%" strokeWidth={ghost ? 1.8 : 2.1} hollow={ghost} className="tv-wr-thumb__glyph" />
         </span>
       )}
     </span>

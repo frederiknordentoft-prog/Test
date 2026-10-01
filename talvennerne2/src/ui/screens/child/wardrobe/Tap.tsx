@@ -15,7 +15,7 @@ export interface TapProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
 export function Tap({ label, onTap, className, disabled, children, ...rest }: TapProps) {
   const { pressProps } = usePress(disabled)
   return (
-    <button type="button" aria-label={label} className={cx('tv-tap', 'tv-touch', className)} disabled={disabled} onClick={onTap} {...pressProps} {...rest}>
+    <button type="button" aria-label={label} className={cx('tv-wr-tap', 'tv-touch', className)} disabled={disabled} onClick={onTap} {...pressProps} {...rest}>
       {children}
     </button>
   )

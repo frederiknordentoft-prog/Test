@@ -28,11 +28,11 @@ export function PerlerBadge({ perler }: { perler: number }) {
   const speech = useSpeech()
   const parts = perlerSpeech(perler)
   return (
-    <Tap label={shownText(parts, speech.text)} className="tv-shop-perler" onTap={() => speech.speak(parts)} data-perler={perler}>
-      <span className="tv-shop-perler__icon" aria-hidden>
+    <Tap label={shownText(parts, speech.text)} className="tv-store-perler" onTap={() => speech.speak(parts)} data-perler={perler}>
+      <span className="tv-store-perler__icon" aria-hidden>
         <Icon name="pearl" size="100%" strokeWidth={2.2} />
       </span>
-      <span className="tv-shop-perler__n">{perler}</span>
+      <span className="tv-store-perler__n">{perler}</span>
     </Tap>
   )
 }
@@ -40,9 +40,9 @@ export function PerlerBadge({ perler }: { perler: number }) {
 /** A price tag: a pearl and the number (read aloud by the sheet the tag opens). */
 export function Price({ price }: { price: number }) {
   return (
-    <span className="tv-price" aria-hidden>
-      <Icon name="pearl" size={19} strokeWidth={2.4} className="tv-price__pearl" />
-      <span className="tv-price__n">{price}</span>
+    <span className="tv-store-price" aria-hidden>
+      <Icon name="pearl" size={19} strokeWidth={2.4} className="tv-store-price__pearl" />
+      <span className="tv-store-price__n">{price}</span>
     </span>
   )
 }
@@ -53,32 +53,32 @@ export function WishCard({ wish, onOpen, onRemove }: { wish: WishView | null; on
   const speech = useSpeech()
   if (!wish) {
     return (
-      <div className="tv-shop-wish is-empty" data-wish="">
-        <span className="tv-shop-wish__pin" aria-hidden>
+      <div className="tv-store-wish is-empty" data-wish="">
+        <span className="tv-store-wish__pin" aria-hidden>
           <Icon name="pin" size={28} strokeWidth={2.2} />
         </span>
-        <SpokenText clip="s.shop.wish.none" className="tv-shop-wish__text" />
+        <SpokenText clip="s.shop.wish.none" className="tv-store-wish__text" />
       </div>
     )
   }
   const meta = ITEM_BY_ID[wish.item]
   return (
-    <div className={cx('tv-shop-wish', wish.buyable && 'is-ready')} data-wish={wish.item}>
-      <Tap label={speech.text(meta.nameClip)} className="tv-shop-wish__thing" onTap={onOpen} data-wish-open="">
-        <ItemThumb item={wish.item} className="tv-shop-wish__pic" />
-        <span className="tv-shop-wish__pinned" aria-hidden>
+    <div className={cx('tv-store-wish', wish.buyable && 'is-ready')} data-wish={wish.item}>
+      <Tap label={speech.text(meta.nameClip)} className="tv-store-wish__thing" onTap={onOpen} data-wish-open="">
+        <ItemThumb item={wish.item} className="tv-store-wish__pic" />
+        <span className="tv-store-wish__pinned" aria-hidden>
           <Icon name="pin" size={14} strokeWidth={2.6} />
         </span>
       </Tap>
-      <div className="tv-shop-wish__mid">
-        <span className="tv-shop-wish__names">
-          <SpokenText clip="s.shop.wish.title" className="tv-shop-wish__label" />
-          <SpokenText clip={meta.nameClip} className="tv-shop-wish__name" />
+      <div className="tv-store-wish__mid">
+        <span className="tv-store-wish__names">
+          <SpokenText clip="s.shop.wish.title" className="tv-store-wish__label" />
+          <SpokenText clip={meta.nameClip} className="tv-store-wish__name" />
         </span>
         {wish.buyable ? (
-          <SpokenText clip="s.shop.wish.ready" className="tv-shop-wish__ready" />
+          <SpokenText clip="s.shop.wish.ready" className="tv-store-wish__ready" />
         ) : (
-          <Meter kind="wish" value={wish.progress} size="sm" clip="s.shop.wish.meter" className="tv-shop-wish__meter" />
+          <Meter kind="wish" value={wish.progress} size="sm" clip="s.shop.wish.meter" className="tv-store-wish__meter" />
         )}
       </div>
       <IconButton icon="close" clip="s.shop.wish.remove" variant="quiet" sayLabel onClick={onRemove} data-wish-remove="" />
@@ -97,7 +97,7 @@ const SHELF: Record<Shelf, { clip: string; icon: 'shirt' | 'palette' | 'sparkle'
 export function ShelfTabs({ active, onPick }: { active: Shelf; onPick(shelf: Shelf): void }) {
   const speech = useSpeech()
   return (
-    <div className="tv-shop-tabs" role="tablist" aria-label={speech.text('s.shop.title')}>
+    <div className="tv-store-tabs" role="tablist" aria-label={speech.text('s.shop.title')}>
       {(Object.keys(SHELF) as Shelf[]).map((shelf) => {
         const s = SHELF[shelf]
         return (
@@ -106,7 +106,7 @@ export function ShelfTabs({ active, onPick }: { active: Shelf; onPick(shelf: She
             role="tab"
             aria-selected={shelf === active}
             label={speech.text(s.clip)}
-            className={cx('tv-shop-tab', shelf === active && 'is-on')}
+            className={cx('tv-store-tab', shelf === active && 'is-on')}
             onTap={() => {
               speech.speak([{ clip: s.clip }])
               onPick(shelf)
@@ -116,7 +116,7 @@ export function ShelfTabs({ active, onPick }: { active: Shelf; onPick(shelf: She
             {s.icon === 'shirt' && <Icon name="shirt" size={28} strokeWidth={2.2} />}
             {s.icon === 'palette' && <Glyph def={PALETTE_GLYPH} size={28} strokeWidth={2.2} />}
             {s.icon === 'sparkle' && <Icon name="sparkle" size={28} strokeWidth={2.2} />}
-            <SpokenText clip={s.clip} silent className="tv-shop-tab__label" />
+            <SpokenText clip={s.clip} silent className="tv-store-tab__label" />
           </Tap>
         )
       })}
@@ -127,32 +127,32 @@ export function ShelfTabs({ active, onPick }: { active: Shelf; onPick(shelf: She
 export function ClothesShelf({ shelves, onPick }: { shelves: readonly SetShelf[]; onPick(x: Purchase): void }) {
   const speech = useSpeech()
   return (
-    <div className="tv-shop-shelf" data-shelf-body="clothes">
-      <SpokenText as="p" clip="s.shop.clothes.about" className="tv-shop-about" />
+    <div className="tv-store-shelf" data-shelf-body="clothes">
+      <SpokenText as="p" clip="s.shop.clothes.about" className="tv-store-about" />
       {shelves.map((s) => (
-        <section key={s.set} className="tv-shop-set" data-set={s.set}>
-          <div className="tv-shop-set__head">
-            <SpokenText as="h2" clip={`name.set.${s.set}`} className="tv-shop-h" />
+        <section key={s.set} className="tv-store-set" data-set={s.set}>
+          <div className="tv-store-set__head">
+            <SpokenText as="h2" clip={`name.set.${s.set}`} className="tv-store-h" />
             {s.complete && (
               <Pill tone="star" icon="trophy" size="sm">
                 <SpokenText clip="s.shop.set.done" silent />
               </Pill>
             )}
           </div>
-          <div className="tv-shop-grid">
+          <div className="tv-store-grid">
             {s.items.map((it) => (
               <Tap
                 key={it.meta.id}
-                label={speech.text(it.meta.nameClip)}
-                className={cx('tv-shop-card', it.owned && 'is-owned')}
+                label={it.owned ? `${speech.text(it.meta.nameClip)}, ${speech.text('s.shop.owned')}` : speech.text(it.meta.nameClip)}
+                className={cx('tv-store-card', it.owned && 'is-owned')}
                 onTap={() => onPick({ kind: 'item', item: it.meta.id })}
                 data-buy={it.meta.id}
                 data-owned={it.owned ? '' : undefined}
               >
-                <span className="tv-shop-card__face">
-                  <ItemThumb item={it.meta.id} className="tv-shop-card__pic" />
+                <span className="tv-store-card__face">
+                  <ItemThumb item={it.meta.id} className="tv-store-card__pic" />
                   {it.owned ? (
-                    <span className="tv-shop-card__mine" aria-hidden>
+                    <span className="tv-store-card__mine" aria-hidden>
                       <Icon name="check" size={16} strokeWidth={3} />
                     </span>
                   ) : (
@@ -160,7 +160,7 @@ export function ClothesShelf({ shelves, onPick }: { shelves: readonly SetShelf[]
                   )}
                 </span>
                 {it.wished && (
-                  <span className="tv-shop-card__wish" aria-hidden>
+                  <span className="tv-store-card__wish" aria-hidden>
                     <Icon name="pin" size={15} strokeWidth={2.6} />
                   </span>
                 )}
@@ -177,32 +177,39 @@ export function ColorsShelf({ rows, onPick }: { rows: readonly ColorRow[]; onPic
   const speech = useSpeech()
   if (rows.length === 0) {
     return (
-      <div className="tv-shop-shelf" data-shelf-body="colors">
-        <SpokenText as="p" clip="s.shop.colors.none" className="tv-shop-about is-note" />
+      <div className="tv-store-shelf" data-shelf-body="colors">
+        <SpokenText as="p" clip="s.shop.colors.none" className="tv-store-about is-note" />
       </div>
     )
   }
   return (
-    <div className="tv-shop-shelf" data-shelf-body="colors">
-      <SpokenText as="p" clip="s.shop.colors.about" className="tv-shop-about" />
-      <div className="tv-shop-rows">
+    <div className="tv-store-shelf" data-shelf-body="colors">
+      <SpokenText as="p" clip="s.shop.colors.about" className="tv-store-about" />
+      <div className="tv-store-rows">
         {rows.map((r) => (
-          <div key={r.meta.id} className="tv-shop-row" data-recolor={r.meta.id}>
-            <SpokenText clip={r.meta.nameClip} className="tv-shop-row__name" />
-            <div className="tv-shop-row__colors">
+          <div key={r.meta.id} className="tv-store-row" data-recolor={r.meta.id}>
+            <div className="tv-store-row__head">
+              <SpokenText clip={r.meta.nameClip} className="tv-store-row__name" />
+              {r.all && (
+                <Pill tone="good" icon="check" size="sm">
+                  <SpokenText clip="s.shop.colors.all" silent />
+                </Pill>
+              )}
+            </div>
+            <div className="tv-store-row__colors">
               {r.colors.map(({ color, owned }) => (
                 <Tap
                   key={color}
                   label={`${speech.text(r.meta.nameClip)} ${color + 1}`}
-                  className={cx('tv-shop-card', 'is-color', owned && 'is-owned')}
+                  className={cx('tv-store-card', 'is-color', owned && 'is-owned')}
                   onTap={() => onPick({ kind: 'color', item: r.meta.id, color })}
                   data-color={color}
                   data-owned={owned ? '' : undefined}
                 >
-                  <span className="tv-shop-card__face">
-                    <ItemThumb item={r.meta.id} color={color} className="tv-shop-card__pic" />
+                  <span className="tv-store-card__face">
+                    <ItemThumb item={r.meta.id} color={color} className="tv-store-card__pic" />
                     {owned ? (
-                      <span className="tv-shop-card__mine" aria-hidden>
+                      <span className="tv-store-card__mine" aria-hidden>
                         <Icon name="check" size={16} strokeWidth={3} />
                       </span>
                     ) : (
@@ -222,22 +229,22 @@ export function ColorsShelf({ rows, onPick }: { rows: readonly ColorRow[]; onPic
 export function DecorShelf({ rows, onPick }: { rows: readonly DecorRow[]; onPick(x: Purchase): void }) {
   const speech = useSpeech()
   return (
-    <div className="tv-shop-shelf" data-shelf-body="decor">
-      <SpokenText as="p" clip="s.shop.decor.about" className="tv-shop-about" />
-      <div className="tv-shop-grid">
+    <div className="tv-store-shelf" data-shelf-body="decor">
+      <SpokenText as="p" clip="s.shop.decor.about" className="tv-store-about" />
+      <div className="tv-store-grid is-decor">
         {rows.map((r) => (
           <Tap
             key={r.meta.id}
             label={speech.text(`name.decor.${r.meta.id}`)}
-            className={cx('tv-shop-card', 'is-decor', r.owned && 'is-owned')}
+            className={cx('tv-store-card', 'is-decor', r.owned && 'is-owned')}
             onTap={() => onPick({ kind: 'decor', id: r.meta.id })}
             data-decor={r.meta.id}
             data-owned={r.owned ? '' : undefined}
           >
-            <span className="tv-shop-card__face">
-              <DecorTile id={r.meta.id} className="tv-shop-card__pic" />
+            <span className="tv-store-card__face">
+              <DecorTile id={r.meta.id} className="tv-store-card__pic" />
               {r.owned ? (
-                <span className="tv-shop-card__mine" aria-hidden>
+                <span className="tv-store-card__mine" aria-hidden>
                   <Icon name="check" size={16} strokeWidth={3} />
                 </span>
               ) : (
@@ -254,7 +261,7 @@ export function DecorShelf({ rows, onPick }: { rows: readonly DecorRow[]; onPick
 /** Decor as a picture: its glyph in its own colour on a soft round tile. */
 export function DecorTile({ id, className }: { id: DecorId; className?: string }) {
   return (
-    <span className={cx('tv-decor', className)} style={toneStyle(DECOR_TONE[id])} aria-hidden data-decor-pic={id}>
+    <span className={cx('tv-store-decor', className)} style={toneStyle(DECOR_TONE[id])} aria-hidden data-decor-pic={id}>
       <DecorGlyph id={id} size="64%" strokeWidth={2} />
     </span>
   )
@@ -265,6 +272,8 @@ export function DecorTile({ id, className }: { id: DecorId; className?: string }
 export interface BuySheetProps {
   purchase: Purchase | null
   stage: SheetStage
+  /** The purchase completed a set (and brought its trophy). */
+  setDone?: boolean
   /** The purchase's thing is the wish. */
   wished: boolean
   /** The purchase's thing can be wished for (a shop thing the child does not have). */
@@ -284,48 +293,53 @@ function PurchasePic({ x, done }: { x: Purchase; done: boolean }) {
   }, [done])
   const color: ItemColor = x.kind === 'color' ? x.color : 0
   return (
-    <span ref={box} className={cx('tv-shop-sheet__pic', done && 'is-done')}>
+    <span ref={box} className={cx('tv-store-sheet__pic', done && 'is-done')}>
       {x.kind === 'decor' ? <DecorTile id={x.id} /> : <ItemThumb item={x.item} color={color} />}
     </span>
   )
 }
 
-export function BuySheet({ purchase, stage, wished, canWish, onYes, onNo, onWish, onGo, onClose }: BuySheetProps) {
+export function BuySheet({ purchase, stage, setDone, wished, canWish, onYes, onNo, onWish, onGo, onClose }: BuySheetProps) {
   const speech = useSpeech()
   const title = purchase ? (purchase.kind === 'decor' ? `name.decor.${purchase.id}` : ITEM_BY_ID[purchase.item].nameClip) : undefined
   const cost: SpeechPart[] = purchase ? costSpeech(purchase) : []
-  const said = (clip: string) => <SpokenText as="p" clip={clip} className="tv-shop-sheet__line" />
+  const said = (clip: string) => <SpokenText as="p" clip={clip} className="tv-store-sheet__line" />
   return (
-    <Sheet open={!!purchase} onClose={onClose} title={title} className="tv-shop-sheet">
+    <Sheet open={!!purchase} onClose={onClose} title={title} className="tv-store-sheet">
       {purchase && (
-        <div className={cx('tv-shop-sheet__body', `is-${stage}`)} data-sheet={stage}>
+        <div className={cx('tv-store-sheet__body', `is-${stage}`)} data-sheet={stage}>
           <PurchasePic x={purchase} done={stage === 'done'} />
           {(stage === 'ask' || stage === 'later') && (
-            <Tap label={shownText(cost, speech.text)} className="tv-shop-sheet__cost" onTap={() => speech.speak(cost)} data-cost={priceOf(purchase) ?? 0}>
+            <Tap label={shownText(cost, speech.text)} className="tv-store-sheet__cost" onTap={() => speech.speak(cost)} data-cost={priceOf(purchase) ?? 0}>
               <Price price={priceOf(purchase) ?? 0} />
             </Tap>
           )}
           {stage === 'ask' && (
             <>
               {said('s.shop.buy.ask')}
-              <div className="tv-shop-sheet__yesno">
+              <div className="tv-store-sheet__yesno">
                 <Button clip="s.shop.buy.yes" icon="check" variant="good" size="lg" silent onClick={onYes} data-buy-yes="" />
                 <Button clip="s.shop.buy.no" variant="quiet" size="lg" onClick={onNo} data-buy-no="" />
               </div>
             </>
           )}
           {stage === 'later' && (
-            <div className="tv-shop-sheet__later">
+            <div className="tv-store-sheet__later">
               {said('s.shop.later')}
-              <div className="tv-shop-sheet__earn">
-                <span className="tv-shop-sheet__earnicon" aria-hidden>
+              <div className="tv-store-sheet__earn">
+                <span className="tv-store-sheet__earnicon" aria-hidden>
                   <Icon name="pearl" size={32} strokeWidth={2.2} />
                 </span>
-                <SpokenText as="p" clip="s.shop.earn" className="tv-shop-sheet__line" />
+                <SpokenText as="p" clip="s.shop.earn" className="tv-store-sheet__line" />
               </div>
             </div>
           )}
           {stage === 'done' && said(purchase.kind === 'decor' ? 's.shop.decor.bought' : purchase.kind === 'color' ? 's.shop.color.bought' : 's.shop.bought')}
+          {stage === 'done' && setDone && (
+            <Pill tone="star" icon="trophy" className="tv-store-sheet__trophy">
+              <SpokenText clip="s.shop.set.done" silent />
+            </Pill>
+          )}
           {stage === 'owned' && said(purchase.kind === 'decor' ? 's.shop.decor.owned' : purchase.kind === 'color' ? 's.shop.color.owned' : 's.shop.owned.about')}
           {(stage === 'done' || stage === 'owned') && (
             <Button
@@ -340,7 +354,7 @@ export function BuySheet({ purchase, stage, wished, canWish, onYes, onNo, onWish
           )}
           {purchase.kind === 'item' && stage !== 'owned' && stage !== 'done' && (
             wished ? (
-              <Pill tone="primary" icon="pin" className="tv-shop-sheet__wished">
+              <Pill tone="primary" icon="pin" className="tv-store-sheet__wished">
                 <SpokenText clip="s.shop.wish.title" silent />
               </Pill>
             ) : canWish ? (

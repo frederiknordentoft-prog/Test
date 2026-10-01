@@ -205,7 +205,8 @@ export function sourceBadge(source: ItemSource): 'star' | 'chest' | 'flag' | 'me
 
 /**
  * What a spoken line shows: clip texts and numbers in digits, joined by spaces, with a full stop
- * after an end-form part (the voice reads the numbers as words).
+ * after an end-form part and at the end, as compile() closes its sentences (the voice reads the
+ * numbers as words).
  */
 export function shownText(parts: readonly SpeechPart[], text: (id: ClipId) => string): string {
   let out = ''
@@ -216,5 +217,5 @@ export function shownText(parts: readonly SpeechPart[], text: (id: ClipId) => st
     const end = ('clip' in p && clipForm(p.clip) === 'end') || ('num' in p && p.form === 'end')
     if (end && !/[.?!]$/.test(out)) out += '.'
   }
-  return out
+  return out && !/[.?!]$/.test(out) ? `${out}.` : out
 }

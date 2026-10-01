@@ -2,7 +2,7 @@
    and opacity move. Prices sit on a pearl, never a coin. Every tap target is at least 60 px; the
    thing cards are at least 100 px. One scroll on a phone, a wider grid on the iPad. */
 
-.tv-shop {
+.tv-store {
   --shop-card: 104px;
   display: flex;
   flex: 1;
@@ -10,15 +10,15 @@
   min-height: 0;
 }
 /* One row on every phone: ←, the title, the perler. */
-.tv-shop__top.tv-topbar {
+.tv-store__top.tv-topbar {
   flex-wrap: nowrap;
 }
-.tv-shop__top .tv-topbar__center {
+.tv-store__top .tv-topbar__center {
   order: 0;
   flex: 1 1 auto;
   min-width: 0;
 }
-.tv-shop-title {
+.tv-store-title {
   margin: 0;
   overflow: hidden;
   font-size: var(--text-title);
@@ -31,7 +31,7 @@
 }
 
 /* ── Perler ───────────────────────────────────────────────────────────── */
-.tv-shop-perler {
+.tv-store-perler {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -45,14 +45,14 @@
   font-variant-numeric: tabular-nums;
   color: var(--color-ink);
 }
-.tv-shop-perler__icon {
+.tv-store-perler__icon {
   display: block;
   width: 32px;
   height: 32px;
   color: var(--color-primary);
   --icon-fill-o: 0.32;
 }
-.tv-price {
+.tv-store-price {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -66,13 +66,13 @@
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
-.tv-price__pearl {
+.tv-store-price__pearl {
   color: var(--color-primary);
   --icon-fill-o: 0.32;
 }
 
 /* ── The page ─────────────────────────────────────────────────────────── */
-.tv-shop__body {
+.tv-store__body {
   flex: 1;
   min-height: 0;
   overflow-x: hidden;
@@ -80,7 +80,7 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
-.tv-shop__inner {
+.tv-store__inner {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -90,7 +90,7 @@
 }
 
 /* ── The wish ─────────────────────────────────────────────────────────── */
-.tv-shop-wish {
+.tv-store-wish {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -100,15 +100,15 @@
   background: var(--color-card);
   box-shadow: var(--shadow-card);
 }
-.tv-shop-wish.is-empty {
+.tv-store-wish.is-empty {
   padding: 14px 16px;
   background: rgba(255, 255, 255, 0.78);
   box-shadow: inset 0 0 0 2px var(--color-line);
 }
-.tv-shop-wish.is-ready {
+.tv-store-wish.is-ready {
   box-shadow: inset 0 0 0 3px var(--color-star), var(--shadow-card);
 }
-.tv-shop-wish__pin {
+.tv-store-wish__pin {
   display: grid;
   flex: none;
   place-items: center;
@@ -118,12 +118,12 @@
   background: var(--color-primary-soft);
   color: var(--color-primary-deep);
 }
-.tv-shop-wish__text {
+.tv-store-wish__text {
   font-size: var(--text-body);
   font-weight: 700;
   color: var(--color-ink-2);
 }
-.tv-shop-wish__thing {
+.tv-store-wish__thing {
   flex: none;
   width: 68px;
   height: 68px;
@@ -131,7 +131,7 @@
   border-radius: 20px;
   background: var(--color-primary-soft);
 }
-.tv-shop-wish__pinned {
+.tv-store-wish__pinned {
   position: absolute;
   top: -6px;
   right: -6px;
@@ -144,24 +144,24 @@
   background: var(--color-primary);
   color: var(--color-card);
 }
-.tv-shop-wish__mid {
+.tv-store-wish__mid {
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
 }
-.tv-shop-wish__names {
+.tv-store-wish__names {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-.tv-shop-wish__label {
+.tv-store-wish__label {
   font-size: var(--text-label);
   font-weight: 800;
   color: var(--color-ink-2);
 }
-.tv-shop-wish__name {
+.tv-store-wish__name {
   overflow: hidden;
   font-size: calc(var(--text-body) + 1px);
   font-weight: 900;
@@ -169,23 +169,23 @@
   white-space: nowrap;
   color: var(--color-ink);
 }
-.tv-shop-wish__ready {
+.tv-store-wish__ready {
   font-size: var(--text-body);
   font-weight: 800;
   color: var(--color-star-deep);
 }
-.tv-shop-wish__meter {
+.tv-store-wish__meter {
   width: 100%;
 }
 
 /* ── The three shelves ────────────────────────────────────────────────── */
-.tv-shop__tabs {
+.tv-store__tabs {
   position: sticky;
   top: 0;
   z-index: 2;
   padding: 2px 0 4px;
 }
-.tv-shop-tabs {
+.tv-store-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
@@ -193,10 +193,10 @@
   margin: 0 auto;
   padding: 4px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--color-card);
   box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(43, 33, 68, 0.1);
 }
-.tv-shop-tab {
+.tv-store-tab {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -205,66 +205,79 @@
   border-radius: 20px;
   color: var(--color-ink-2);
 }
-.tv-shop-tab.is-on {
+.tv-store-tab.is-on {
   background: var(--color-d-money);
   color: var(--color-ink);
   box-shadow: 0 4px 0 var(--color-d-money-deep);
   --icon-fill-o: 0.35;
 }
-.tv-shop-tab__label {
+.tv-store-tab__label {
   font-size: 17px;
   font-weight: 900;
 }
 
-.tv-shop-shelf {
+.tv-store-shelf {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-.tv-shop-about {
+.tv-store-about {
   margin: 0;
   padding: 0 4px;
   font-size: var(--text-body);
   font-weight: 700;
   color: var(--color-ink-2);
 }
-.tv-shop-about.is-note {
+.tv-store-about.is-note {
   padding: 16px 18px;
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.78);
 }
-.tv-shop-set {
+.tv-store-set {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.tv-shop-set__head {
+.tv-store-set__head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
-.tv-shop-h {
+.tv-store-h {
   margin: 0;
   padding: 0 4px;
   font-size: calc(var(--text-body) + 3px);
   font-weight: 900;
   color: var(--color-ink);
 }
-.tv-shop-grid {
+.tv-store-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--shop-card), 1fr));
   gap: 10px;
 }
+/* A set has six things: two rows of three on a phone, one row of six when there is room. */
+.tv-store-set .tv-store-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+/* Eight pieces of decor: two rows of four. */
+.tv-store-grid.is-decor {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (min-width: 640px) {
+  .tv-store-set .tv-store-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
 
 /* A thing on the shelf: its picture and its price (or a check when it is the child's). */
-.tv-shop-card {
+.tv-store-card {
   display: block;
   min-height: 112px;
   aspect-ratio: 0.9;
   border-radius: var(--radius-tile);
 }
-.tv-shop-card__face {
+.tv-store-card__face {
   position: absolute;
   inset: 0;
   display: flex;
@@ -276,16 +289,16 @@
   background: var(--color-card);
   box-shadow: inset 0 0 0 2px var(--color-line), 0 6px 16px rgba(43, 33, 68, 0.08);
 }
-.tv-shop-card__pic {
+.tv-store-card__pic {
   flex: 1;
   width: 100%;
   min-height: 0;
 }
-.tv-shop-card.is-owned .tv-shop-card__face {
+.tv-store-card.is-owned .tv-store-card__face {
   background: var(--color-good-soft);
   box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--color-good) 40%, transparent);
 }
-.tv-shop-card__mine {
+.tv-store-card__mine {
   display: grid;
   flex: none;
   place-items: center;
@@ -295,7 +308,7 @@
   background: var(--color-good-strong);
   color: var(--color-card);
 }
-.tv-shop-card__wish {
+.tv-store-card__wish {
   position: absolute;
   top: -6px;
   right: -6px;
@@ -310,12 +323,12 @@
 }
 
 /* New colours: one row per thing, its three colours side by side. */
-.tv-shop-rows {
+.tv-store-rows {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
   gap: 10px;
 }
-.tv-shop-row {
+.tv-store-row {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -323,23 +336,29 @@
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.7);
 }
-.tv-shop-row__name {
+.tv-store-row__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.tv-store-row__name {
   padding: 0 2px;
   font-size: var(--text-body);
   font-weight: 900;
   color: var(--color-ink);
 }
-.tv-shop-row__colors {
+.tv-store-row__colors {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
-.tv-shop-card.is-color {
+.tv-store-card.is-color {
   min-height: 100px;
 }
 
 /* Decor: its glyph on a soft round tile in its own colour. */
-.tv-decor {
+.tv-store-decor {
   display: grid;
   place-items: center;
   width: 100%;
@@ -348,20 +367,20 @@
   background: var(--tone-soft);
   color: var(--tone-deep);
 }
-.tv-shop-card.is-decor .tv-decor {
+.tv-store-card.is-decor .tv-store-decor {
   width: auto;
   aspect-ratio: 1;
 }
 
 /* ── The sheet ────────────────────────────────────────────────────────── */
-.tv-shop-sheet__body {
+.tv-store-sheet__body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 14px;
   padding-bottom: 6px;
 }
-.tv-shop-sheet__pic {
+.tv-store-sheet__pic {
   display: block;
   align-self: center;
   width: 150px;
@@ -371,16 +390,16 @@
   background: var(--color-paper-2);
   box-shadow: inset 0 0 0 2px var(--color-line);
 }
-.tv-shop-sheet__pic:has(.is-placeholder) {
+.tv-store-sheet__pic:has(.is-placeholder) {
   padding: 0;
   background: none;
   box-shadow: none;
 }
-.tv-shop-sheet__pic.is-done {
+.tv-store-sheet__pic.is-done {
   background: var(--color-good-soft);
   box-shadow: inset 0 0 0 3px var(--color-good);
 }
-.tv-shop-sheet__cost {
+.tv-store-sheet__cost {
   display: flex;
   align-self: center;
   align-items: center;
@@ -388,17 +407,17 @@
   min-width: 60px;
   min-height: 60px;
 }
-.tv-shop-sheet__cost .tv-price {
+.tv-store-sheet__cost .tv-store-price {
   height: 52px;
   padding: 0 18px 0 12px;
   gap: 6px;
   font-size: 30px;
 }
-.tv-shop-sheet__cost .tv-price__pearl {
+.tv-store-sheet__cost .tv-store-price__pearl {
   width: 30px;
   height: 30px;
 }
-.tv-shop-sheet__line {
+.tv-store-sheet__line {
   margin: 0;
   font-size: calc(var(--text-body) + 2px);
   font-weight: 800;
@@ -406,20 +425,20 @@
   text-align: center;
   color: var(--color-ink);
 }
-.tv-shop-sheet__yesno {
+.tv-store-sheet__yesno {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-.tv-shop-sheet__yesno .tv-btn {
+.tv-store-sheet__yesno .tv-btn {
   width: 100%;
 }
-.tv-shop-sheet__later {
+.tv-store-sheet__later {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.tv-shop-sheet__earn {
+.tv-store-sheet__earn {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -427,33 +446,38 @@
   border-radius: var(--radius-tile);
   background: var(--color-primary-soft);
 }
-.tv-shop-sheet__earn .tv-shop-sheet__line {
+.tv-store-sheet__earn .tv-store-sheet__line {
   font-size: var(--text-body);
   font-weight: 700;
   text-align: left;
 }
-.tv-shop-sheet__earnicon {
+.tv-store-sheet__earnicon {
   flex: none;
   color: var(--color-primary);
   --icon-fill-o: 0.32;
 }
-.tv-shop-sheet__wished {
+.tv-store-sheet__trophy {
+  align-self: center;
+  min-height: 44px;
+  font-size: 17px;
+}
+.tv-store-sheet__wished {
   align-self: center;
   min-height: 44px;
 }
 
 /* ── iPad ─────────────────────────────────────────────────────────────── */
 @media (min-width: 700px) and (min-height: 700px) {
-  .tv-shop {
+  .tv-store {
     --shop-card: 124px;
   }
-  .tv-shop-sheet__yesno {
+  .tv-store-sheet__yesno {
     flex-direction: row;
   }
-  .tv-shop-sheet__yesno .tv-btn {
+  .tv-store-sheet__yesno .tv-btn {
     flex: 1 1 0;
   }
-  .tv-shop-sheet__pic {
+  .tv-store-sheet__pic {
     width: 180px;
     height: 180px;
   }

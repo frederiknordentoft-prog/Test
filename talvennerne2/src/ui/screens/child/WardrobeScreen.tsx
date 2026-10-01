@@ -9,7 +9,7 @@ import { useNav } from '../../../app/nav'
 import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
 import { ITEM_BY_ID } from '../../../content/catalog'
-import type { ItemColor, ItemId, Mood, Slot, SpeechPart } from '../../../engine/types'
+import type { ItemColor, ItemId, Mood, ProfileDoc, Slot, SpeechPart } from '../../../engine/types'
 import { AVAILABLE_ITEMS, loadItem } from '../../../art/items/registry'
 import { useMeta } from '../../../state/useMeta'
 import { useProfile } from '../../../state/useProfile'
@@ -29,10 +29,23 @@ const CHEER_MS = 1400
 
 export default function WardrobeScreen({ route }: ScreenProps<RouteOf<'wardrobe'>>) {
   const profile = useProfile((s) => s.profile)
+  useEffect(() => {
+    if (!profile) useNav.getState().root({ id: 'profiles' }, 'back')
+  }, [profile])
+  return profile ? <Wardrobe profile={profile} route={route} /> : null
+}
+
+export interface WardrobeProps {
+  profile: ProfileDoc
+  route: RouteOf<'wardrobe'>
+}
+
+/** The wardrobe of one child (the screen hands it the loaded profile). */
+export function Wardrobe({ profile, route }: WardrobeProps) {
   const speech = useSpeech()
   const [uid, setUid] = useState<string | null>(route.uid ?? null)
   const [slot, setSlot] = useState<Slot>(() => startSlot(route.item))
-  const [guide, setGuide] = useState<ItemId | null>(() => (profile ? guideItem(profile, route.item, wasGuided(profile.id)) : null))
+  const [guide, setGuide] = useState<ItemId | null>(() => guideItem(profile, route.item, wasGuided(profile.id)))
   const [how, setHow] = useState<HowTarget | null>(null)
   const [mood, setMood] = useState<Mood>('happy')
   const [picked, setPicked] = useState<Partial<Record<ItemId, ItemColor>>>({})
@@ -46,13 +59,9 @@ export default function WardrobeScreen({ route }: ScreenProps<RouteOf<'wardrobe'
     if (route.uid) setUid(route.uid)
     if (route.item) {
       setSlot(startSlot(route.item))
-      setGuide(profile ? guideItem(profile, route.item, true) : null)
+      setGuide(guideItem(profile, route.item, true))
     }
   }
-
-  useEffect(() => {
-    if (!profile) useNav.getState().root({ id: 'profiles' }, 'back')
-  }, [profile])
 
   // The drawings of the things that exist, so a tap dresses the animal without a wait.
   useEffect(() => {
@@ -61,21 +70,19 @@ export default function WardrobeScreen({ route }: ScreenProps<RouteOf<'wardrobe'
 
   useEffect(() => () => window.clearTimeout(cheer.current), [])
 
-  const animal = profile ? pickAnimal(profile, uid) : null
-  const animals = useMemo(() => (profile ? animalsInOrder(profile) : []), [profile])
-  const model = profile ? slotModel(profile, animal, slot) : null
+  const animal = pickAnimal(profile, uid)
+  const animals = useMemo(() => animalsInOrder(profile), [profile])
+  const model = slotModel(profile, animal, slot)
 
   // The pointed-at thing: in view, said once (when the child likes things read aloud), remembered.
   const guideOn = !!(guide && animal?.outfit[ITEM_BY_ID[guide].slot]?.item === guide)
   useEffect(() => {
-    if (!guide || !profile) return
+    if (!guide) return
     markGuided(profile.id)
     panel.current?.querySelector(`[data-item="${guide}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     if (profile.settings.autoSpeak) speech.speak([{ clip: guideOn ? 's.wardrobe.guide.on' : 's.wardrobe.guide' }])
     // once per pointed-at thing
   }, [guide])
-
-  if (!profile || !model) return null
 
   const celebrate = () => {
     setMood('cheer')

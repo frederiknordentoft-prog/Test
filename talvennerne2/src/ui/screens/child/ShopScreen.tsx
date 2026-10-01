@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { useNav } from '../../../app/nav'
 import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
+import type { ProfileDoc } from '../../../engine/types'
 import { useMeta } from '../../../state/useMeta'
 import { useProfile } from '../../../state/useProfile'
 import { SpokenText } from '../../design/SpokenText'
@@ -23,15 +24,17 @@ import './shop/shop.css'
 
 export default function ShopScreen(_props: ScreenProps<RouteOf<'shop'>>) {
   const profile = useProfile((s) => s.profile)
-  const speech = useSpeech()
-  const [shelf, setShelf] = useState<Shelf>('clothes')
-  const [open, setOpen] = useState<{ x: Purchase; stage: SheetStage } | null>(null)
-
   useEffect(() => {
     if (!profile) useNav.getState().root({ id: 'profiles' }, 'back')
   }, [profile])
+  return profile ? <Shop profile={profile} /> : null
+}
 
-  if (!profile) return null
+/** The shop of one child (the screen hands it the loaded profile). */
+export function Shop({ profile }: { profile: ProfileDoc }) {
+  const speech = useSpeech()
+  const [shelf, setShelf] = useState<Shelf>('clothes')
+  const [open, setOpen] = useState<{ x: Purchase; stage: SheetStage; setDone?: boolean } | null>(null)
 
   const show = (x: Purchase) => {
     const p = useProfile.getState().profile ?? profile
@@ -44,8 +47,10 @@ export default function ShopScreen(_props: ScreenProps<RouteOf<'shop'>>) {
     if (!open || open.stage !== 'ask') return
     const { x } = open
     if (buy(x)) {
-      speech.speak([{ clip: doneClip(x) }])
-      setOpen({ x, stage: 'done' })
+      // the last thing of a set completes it: its trophy comes with the purchase
+      const setDone = useMeta.getState().lastAction.some((r) => r.t === 'trophy' && r.id.startsWith('set-'))
+      speech.speak([{ clip: doneClip(x) }, ...(setDone ? [{ clip: 's.shop.set.done' }] : [])])
+      setOpen({ x, stage: 'done', setDone })
     } else {
       // something changed under the sheet (perler, a purchase elsewhere): say how it stands now
       show(x)
@@ -70,22 +75,22 @@ export default function ShopScreen(_props: ScreenProps<RouteOf<'shop'>>) {
   const wishItem = x && x.kind === 'item' ? x.item : null
 
   return (
-    <div className="tv-shop" data-shop="">
+    <div className="tv-store" data-shop="">
       <TopBar
         leading="back"
         onLeading={() => useNav.getState().back()}
-        center={<SpokenText as="h1" clip="s.shop.title" className="tv-shop-title" />}
+        center={<SpokenText as="h1" clip="s.shop.title" className="tv-store-title" />}
         extra={<PerlerBadge perler={profile.economy.perler} />}
-        className="tv-shop__top"
+        className="tv-store__top"
       />
-      <div className="tv-shop__body">
-        <div className="tv-shop__inner">
+      <div className="tv-store__body">
+        <div className="tv-store__inner">
           <WishCard
             wish={wish}
             onOpen={() => wish && show({ kind: 'item', item: wish.item })}
             onRemove={() => useMeta.getState().setWish(null)}
           />
-          <div className="tv-shop__tabs">
+          <div className="tv-store__tabs">
             <ShelfTabs active={shelf} onPick={setShelf} />
           </div>
           {shelf === 'clothes' && <ClothesShelf shelves={setShelves(profile)} onPick={show} />}
@@ -96,6 +101,7 @@ export default function ShopScreen(_props: ScreenProps<RouteOf<'shop'>>) {
       <BuySheet
         purchase={x}
         stage={open?.stage ?? 'ask'}
+        setDone={!!open?.setDone}
         wished={!!wishItem && profile.economy.wish === wishItem}
         canWish={!!wishItem && canWishInShop(profile, wishItem)}
         onYes={yes}

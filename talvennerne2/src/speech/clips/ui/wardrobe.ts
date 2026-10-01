@@ -23,7 +23,6 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.wardrobe.empty': 'Her har du ikke noget endnu. Tryk på en ting, så hører du, hvordan du får den.',
   's.wardrobe.off': 'Tag af',
   's.wardrobe.colors': 'Farver',
-  's.wardrobe.color.pick': 'Tryk på en farve.',
   's.wardrobe.wings': 'Den har sine egne vinger. Der er ikke plads til noget på ryggen.',
   's.wardrobe.new': 'Ny',
 
@@ -44,7 +43,6 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.wardrobe.how.gold.end': 'guldmedaljer',
   's.wardrobe.how.shop': 'Den kan du købe i butikken for',
   's.wardrobe.how.color': 'Den farve kan du købe i butikken for',
-  's.wardrobe.how.earned': 'Den har du fået. Du kan tage den på.',
 
   // Buttons in the sheet
   's.wardrobe.toShop': 'Til butikken',
