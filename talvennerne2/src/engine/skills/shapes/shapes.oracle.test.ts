@@ -41,13 +41,13 @@ describe('shapes2D oracle', () => {
       expect(isMember(drawn('rhombus', v), 'rectangle'), `rhombus ${v}`).toBe(false)
       expect(isMember(drawn('trapezoid', v), 'rectangle'), `trapezoid ${v}`).toBe(false)
     }
-    // the generic firkant: a 66 × 56 rectangle, a turned square, and one skew figure
+    // the generic firkant: a 66 by 56 rectangle, a turned square, and one skew figure
     expect(isMember(drawn('quadrilateral', 1), 'square')).toBe(true)
     expect(isMember(drawn('quadrilateral', 0), 'rectangle') && !isMember(drawn('quadrilateral', 0), 'square')).toBe(true)
     expect(isMember(drawn('quadrilateral', 2), 'rectangle')).toBe(false)
   })
 
-  it('has SPEC §2.2’s 42 facts: 3 figures × 6 variants, kvadrat and rektangel × 6, 5-, 6- and 8-kant × 4', () => {
+  it('has SPEC §2.2’s 42 facts: 3 figures in 6 variants, kvadrat and rektangel in 6, 5-, 6- and 8-kant in 4', () => {
     const byFamily = (fam: string) => facts.filter((f) => f.family === fam).map((f) => factFigure(f.id))
     const shapes = (fam: string) => [...new Set(byFamily(fam).map((f) => f.shape))].sort()
     expect(shapes('basic')).toEqual(['circle', 'quadrilateral', 'triangle'])
