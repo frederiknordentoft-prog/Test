@@ -1,0 +1,37 @@
+10:45:31 generate.py --ids-file scripts/voice/validation-ids.txt --threads 2 --max-minutes 100 --retake-from voice/qa.json (log: /home/user/wt/w6/talvennerne2/voice/logs/generate-20261001-104531.log)
+10:45:31 hog.600: take 0 afvist af sammensætningstesten, genereres igen
+10:45:31 n.end.16: take 0 afvist af sammensætningstesten, genereres igen
+10:45:31 n.end.5: take 0 afvist af sammensætningstesten, genereres igen
+10:45:31 64 klip valgt, 61 færdige, 3 at lave
+10:45:32 kald head k=1 t1 'Tallet er seks hundrede og seksoghalvtreds.': 19.2 s for 2.68 s lyd
+10:45:37   hog.600 t1: 0.70 s (forhold 0.45) -18.0 LUFS, carrier: 'tallet er 656' CER 0.0 (wav2vec2) → ok
+10:45:51 input frame rate=25
+10:45:54 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+10:45:55 model indlæst på 18 s (2 tråde)
+10:46:00 ✅ EOS token detected! Stopping generation at step 45
+10:46:10 kald carrier k=1 t1 'Tallet er seksten.': 15.0 s for 1.76 s lyd
+10:46:11   n.end.16 t1: 0.51 s (forhold 0.82) -18.18 LUFS, carrier: 'tallet er 16' CER 0.0 (wav2vec2) → ok
+10:46:16 ✅ EOS token detected! Stopping generation at step 38
+10:46:25 kald carrier k=1 t1 'Tallet er fem.': 13.9 s for 1.48 s lyd
+10:46:25   n.end.5 t1: 0.27 s (forhold 0.87) -18.0 LUFS, carrier: 'tallet er 5' CER 0.0 (wav2vec2) → ok
+10:46:31   sammensat hog.600 + n.end.19: '619' CER 0.000 (whisper, wav2vec2: '600a sn9ben') → ok
+10:46:36   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'hvader 7 pus 600s 5' CER 0.100 (wav2vec2) → FEJL
+10:46:36   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.16: 'hvad er 7 plus 16' CER 0.000 (wav2vec2) → ok
+10:46:41   sammensat frag.find_tallet + n.end.16: 'Find tallet 16' CER 0.000 (whisper, wav2vec2: 'finn tallet 1eien') → ok
+10:46:41   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.5: 'hvad er 7 plus 5' CER 0.000 (wav2vec2) → ok
+10:46:45   sammensat frag.find_tallet + n.end.5: 'Find tallet 5' CER 0.000 (whisper, wav2vec2: 'finn tallet 5') → ok
+10:46:45 kald head k=1 t2 'Tallet er seks hundrede og treoghalvfjerds.': 21.3 s for 3.00 s lyd
+10:46:46   hog.600 t2: 0.94 s (forhold 0.60) -18.0 LUFS, carrier: 'tallet er 673' CER 0.0 (wav2vec2) → ok
+10:46:46 sammensætning runde 1: 2 af 3 bestået
+10:46:51   sammensat hog.600 + n.end.19: 'der er 6190' CER 0.800 (wav2vec2) → FEJL
+10:46:56   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'hvadr 7 plus er 6005' CER 0.400 (wav2vec2) → FEJL
+10:46:56 kald head k=1 t3 'Tallet er seks hundrede og enoghalvfems.': 20.5 s for 2.84 s lyd
+10:46:57   hog.600 t3: 0.73 s (forhold 0.47) -18.0 LUFS, carrier: 'tallet er 691' CER 0.0 (wav2vec2) → ok
+10:46:57 sammensætning runde 2: 2 af 3 bestået
+10:47:01   sammensat hog.600 + n.end.19: '619' CER 0.000 (whisper, wav2vec2: '600 9n') → ok
+10:47:07   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'Hvad er 7 plus 605?' CER 0.000 (whisper, wav2vec2: 'hvad er 7 plus 600 5') → ok
+10:47:07 sammensætning runde 3: 3 af 3 bestået
+10:47:07   ✓ master hog.600 t3 (bestået)
+10:47:07   ✓ master n.end.16 t1 (bestået)
+10:47:07   ✓ master n.end.5 t1 (bestået)
+10:47:07 færdig: 3 nye mastere (0 ikke bestået), 2 modelkald, 0.5 min generering (CPU 0.02 t), 0 klip mangler

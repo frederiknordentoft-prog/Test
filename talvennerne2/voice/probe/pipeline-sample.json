@@ -1,0 +1,161 @@
+{
+ "logChecks": [
+  {
+   "text": "Hvad er tre plus fire?",
+   "clips": [
+    "q.add:3+4"
+   ],
+   "logged": [
+    "q.add:3+4"
+   ],
+   "planned": [
+    "q.add:3+4"
+   ],
+   "ok": true
+  },
+  {
+   "text": "Find tallet tretten.",
+   "clips": [
+    "frag.find_tallet",
+    "n.end.13"
+   ],
+   "logged": [
+    "frag.find_tallet",
+    "n.end.13"
+   ],
+   "planned": [
+    "frag.find_tallet",
+    "n.end.13"
+   ],
+   "ok": true
+  },
+  {
+   "text": "Hvilket tal kommer efter seksten?",
+   "clips": [
+    "frag.hvilket_tal_kommer_efter",
+    "n.end.16"
+   ],
+   "logged": [
+    "frag.hvilket_tal_kommer_efter",
+    "n.end.16"
+   ],
+   "planned": [
+    "frag.hvilket_tal_kommer_efter",
+    "n.end.16"
+   ],
+   "ok": true
+  },
+  {
+   "text": "Nul.",
+   "clips": [
+    "n.end.0"
+   ],
+   "logged": [
+    "n.end.0"
+   ],
+   "planned": [
+    "n.end.0"
+   ],
+   "ok": true
+  }
+ ],
+ "sums": [
+  {
+   "text": "Hvad er syv plus fem?",
+   "clips": [
+    "frag.hvad_er",
+    "n.mid.7",
+    "op.plus",
+    "n.end.5"
+   ],
+   "played": true,
+   "audibleMs": 1748.375,
+   "longestMs": 120,
+   "plannedMs": 1760.3750000000023,
+   "asr": "hvad er 7 plus 5",
+   "asrWhisper": null,
+   "cer": 0,
+   "verbatim": true,
+   "engine": "wav2vec2"
+  },
+  {
+   "text": "Hvad er tre hundrede og tolv minus atten?",
+   "clips": [
+    "frag.hvad_er",
+    "hog.300",
+    "n.mid.12",
+    "op.minus",
+    "n.end.18"
+   ],
+   "played": true,
+   "audibleMs": 2624.8333333333335,
+   "longestMs": 120,
+   "plannedMs": 2636.833333333334,
+   "asr": "hvad er 312 minus 8",
+   "asrWhisper": "Hvad er 312 minus 18?",
+   "cer": 0,
+   "verbatim": true,
+   "engine": "whisper"
+  },
+  {
+   "text": "Hvad er seks hundrede plus tyve?",
+   "clips": [
+    "frag.hvad_er",
+    "h.mid.600",
+    "op.plus",
+    "n.end.20"
+   ],
+   "played": true,
+   "audibleMs": 2670.4166666666665,
+   "longestMs": 120,
+   "plannedMs": 2682.416666666667,
+   "asr": "hvad er 600 plus 20",
+   "asrWhisper": null,
+   "cer": 0,
+   "verbatim": true,
+   "engine": "wav2vec2"
+  },
+  {
+   "text": "Hvad er et hundrede og fire plus ni?",
+   "clips": [
+    "frag.hvad_er",
+    "hog.100",
+    "n.mid.4",
+    "op.plus",
+    "n.end.9"
+   ],
+   "played": true,
+   "audibleMs": 2335.5833333333335,
+   "longestMs": 120,
+   "plannedMs": 2347.5833333333335,
+   "asr": "hvad er 104 plus 9",
+   "asrWhisper": null,
+   "cer": 0,
+   "verbatim": true,
+   "engine": "wav2vec2"
+  },
+  {
+   "text": "Hvad er nitten minus elleve?",
+   "clips": [
+    "frag.hvad_er",
+    "n.mid.19",
+    "op.minus",
+    "n.end.11"
+   ],
+   "played": true,
+   "audibleMs": 2107.125,
+   "longestMs": 120,
+   "plannedMs": 2119.1250000000005,
+   "asr": "hvad er 19 minus 11",
+   "asrWhisper": null,
+   "cer": 0,
+   "verbatim": true,
+   "engine": "wav2vec2"
+  }
+ ],
+ "sampleRate": 24000,
+ "seconds": 15.6,
+ "bytes": 747564,
+ "consoleErrors": [],
+ "failures": []
+}

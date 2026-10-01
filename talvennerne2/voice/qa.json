@@ -1,0 +1,112 @@
+{
+ "version": 1,
+ "generated": "2026-10-01T11:13:45.560Z",
+ "clips": {
+  "masters": 64,
+  "pass": 64,
+  "notPassed": [],
+  "cerMean": 0,
+  "lufsMin": -18.23,
+  "lufsMax": -18,
+  "seconds": 39.4,
+  "takes": 77,
+  "generationHours": 0.24
+ },
+ "numbers": {
+  "range": [
+   101,
+   999
+  ],
+  "total": 899,
+  "rendered": 61,
+  "correct": 61,
+  "correctWav2vec2": 21,
+  "rate": 100,
+  "failures": []
+ },
+ "templates": {
+  "perSkill": {
+   "addTo10": {
+    "statements": 4,
+    "sampled": 4,
+    "verbatim": 4,
+    "verbatimW2v": 4,
+    "rate": 100
+   },
+   "subTo10": {
+    "statements": 4,
+    "sampled": 4,
+    "verbatim": 4,
+    "verbatimW2v": 2,
+    "rate": 100
+   },
+   "tenFriends": {
+    "statements": 2,
+    "sampled": 2,
+    "verbatim": 2,
+    "verbatimW2v": 0,
+    "rate": 100
+   },
+   "patterns": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "compareLength": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "count10": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "count20": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "hear20": {
+    "statements": 21,
+    "sampled": 21,
+    "verbatim": 21,
+    "verbatimW2v": 2,
+    "rate": 100
+   },
+   "order20": {
+    "statements": 40,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 29,
+    "rate": 100
+   },
+   "shapes2D": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   }
+  },
+  "rendered": 61,
+  "verbatim": 61,
+  "verbatimWav2vec2": 37,
+  "rate": 100,
+  "failures": []
+ },
+ "gates": {
+  "numbersAllCorrect": true,
+  "numbersComplete": false,
+  "templates97": true
+ },
+ "retake": []
+}

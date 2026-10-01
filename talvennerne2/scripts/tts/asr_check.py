@@ -9,7 +9,9 @@ med grådig CTC-afkodning (ingen sprogmodel), begge sider normaliseres (små bog
 tal som danske ord, ingen tegnsætning, ingen mellemrum), og CER beregnes.
 Resultatet skrives som asr.jsonl ved siden af meta.jsonl.
 
-Bestået = CER ≤ 0,05 og samme talfølge i forventet tekst og ASR (eksakt talord-match).
+Bestået = CER ≤ 0,05 og samme talfølge i forventet tekst og ASR (eksakt talord-match). Talfølgen
+findes med den uafhængige parser da_numbers.py. Et sammensat ord med bindestreg ("ti-rammen") er
+ikke et tal, heller ikke når ASR skriver det i to ord.
 
 Second opinion (valgfri, kræver setup.sh --whisper): --engine whisper bruger
 CoRal roest-v3-whisper-1.5b og skriver asr-whisper.jsonl.
@@ -19,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -32,7 +35,8 @@ sys.path.insert(0, str(HERE))
 import numpy as np  # noqa: E402
 import soundfile as sf  # noqa: E402
 
-from da_text import cer_counts, normalize, parse_numbers  # noqa: E402
+from da_numbers import parse_numbers  # noqa: E402
+from da_text import cer_counts, normalize, squash  # noqa: E402
 
 ROOT = HERE.parents[1]
 ASR_SR = 16000
@@ -126,9 +130,23 @@ def transcribe(x16: np.ndarray) -> str:
     return tok.decode(ids).strip()
 
 
+_HYPHENATED = re.compile(r"\b[\wæøå]+(?:-[\wæøå]+)+\b", re.UNICODE)
+
+
+def number_lists(expected: str, asr: str) -> tuple[list[int], list[int]]:
+    """Number sequences of both sides. A hyphenated compound of the expected text ("ti-rammen") is
+    one word on both sides, whether ASR writes it "tirammen" or "ti rammen"."""
+    exp, hyp = expected.lower(), asr.lower()
+    for comp in set(_HYPHENATED.findall(exp)):
+        joined = comp.replace("-", "")
+        exp = exp.replace(comp, joined)
+        hyp = re.sub(r"\b" + r"\s+".join(map(re.escape, comp.split("-"))) + r"\b", joined, hyp)
+    return parse_numbers(exp), parse_numbers(hyp)
+
+
 def check(expected: str, asr: str) -> dict:
     edits, n = cer_counts(expected, asr)
-    ne, na = parse_numbers(expected), parse_numbers(asr)
+    ne, na = number_lists(expected, asr)
     c = edits / n
     return {
         "asr": asr,
@@ -142,6 +160,53 @@ def check(expected: str, asr: str) -> dict:
         "nums_ok": ne == na,
         "pass": c <= CER_MAX and ne == na,
     }
+
+
+def attribute(parts: list[tuple[str, str]], asr: str) -> dict[str, dict]:
+    """Per-owner character errors of an ASR transcript against expected text made of parts.
+
+    parts = [(owner, text)] in speaking order (one per clip of a composition). Both sides are compared
+    on squash form (normalized, no spaces) with a Levenshtein alignment; a substituted or deleted
+    expected character counts against its owner, an inserted character against the owner of the
+    neighbouring expected character; at a boundary between two owners it counts against both, since
+    either clip may carry it (a carrier's "er" left at the start of the next clip, or a tail
+    trailing after the previous one). Returns {owner: {"chars": n, "errors": e}}.
+    """
+    ref: list[str] = []
+    own: list[str] = []
+    for owner, text in parts:
+        sq = squash(text)
+        ref.extend(sq)
+        own.extend([owner] * len(sq))
+    hyp = squash(asr)
+    n, m = len(ref), len(hyp)
+    d = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(n + 1):
+        d[i][0] = i
+    for j in range(m + 1):
+        d[0][j] = j
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (ref[i - 1] != hyp[j - 1]))
+    out = {owner: {"chars": 0, "errors": 0} for owner, _t in parts}
+    for o in own:
+        out[o]["chars"] += 1
+    i, j = n, m
+    while i > 0 or j > 0:
+        if i > 0 and j > 0 and d[i][j] == d[i - 1][j - 1] + (ref[i - 1] != hyp[j - 1]):
+            if ref[i - 1] != hyp[j - 1]:
+                out[own[i - 1]]["errors"] += 1
+            i, j = i - 1, j - 1
+        elif i > 0 and d[i][j] == d[i - 1][j] + 1:
+            out[own[i - 1]]["errors"] += 1
+            i -= 1
+        else:
+            if own:
+                near = {own[min(max(i - 1, 0), n - 1)], own[min(i, n - 1)]}
+                for o in near:
+                    out[o]["errors"] += 1
+            j -= 1
+    return out
 
 
 def run_meta(meta: Path, out_name: str = "asr.jsonl", engine: str = "wav2vec2") -> list[dict]:
