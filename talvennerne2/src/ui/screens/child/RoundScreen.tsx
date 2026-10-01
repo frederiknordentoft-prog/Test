@@ -19,7 +19,7 @@ import { playSfx } from '../../../audio/sfx'
 import { onResumeNeeded } from '../../../audio/unlock'
 import { OOPS_CLIPS, PRAISE_CLIPS } from '../../../speech/clips/ui/round'
 import { instructionClip } from '../../../speech/clips/ui/kinds'
-import { Button, IconButton } from '../../design/Button'
+import { IconButton } from '../../design/Button'
 import { ProgressStones } from '../../design/ProgressStones'
 import { SpokenText } from '../../design/SpokenText'
 import { useSpeech } from '../../design/speech'
@@ -646,13 +646,15 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     if (compact || (beat !== 'intro' && beat !== 'asking' && beat !== 'teaching')) return
     const stage = stageRef.current
     const ask = askRef.current
-    if (!stage || !ask) return
-    // measured once the entrance animations have settled (transforms count as overflow)
+    const answer = answerRef.current
+    if (!stage || !ask || !answer) return
+    // measured once the entrance animations have settled; only the boxes count, not what they
+    // draw outside themselves (the buddy's ears, a button's lip, the egg's wings)
     let timer = 0
     const check = () => {
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
-        if (ask.scrollHeight > ask.clientHeight + 2 || stage.scrollHeight > stage.clientHeight + 2) setCompact(true)
+        if (spill(ask) > 8 || spill(answer) > 8 || spill(stage) > 8) setCompact(true)
       }, 650)
     }
     check()
@@ -758,7 +760,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
             )}
             {!compact && bulb}
             {golden && (beat === 'intro' || beat === 'asking') && (
-              <Button clip="s.ui.skip" icon="next" variant="secondary" size="md" onClick={skipEgg} className="tv-round__skip" data-skip-egg="" />
+              <IconButton icon="next" clip="s.ui.skip" variant="glass" sayLabel onClick={skipEgg} className="tv-round__bulb tv-round__skip" data-skip-egg="" />
             )}
           </div>
         </div>
@@ -778,6 +780,19 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
       {away && !paused && <ContinueOverlay onContinue={onContinue} />}
     </div>
   )
+}
+
+/** How far the in-flow children of `el` reach below its content box, in px. */
+function spill(el: HTMLElement): number {
+  const box = el.getBoundingClientRect()
+  const limit = box.bottom - (parseFloat(getComputedStyle(el).paddingBottom) || 0)
+  let bottom = limit
+  for (const child of Array.from(el.children)) {
+    const cs = getComputedStyle(child)
+    if (cs.position === 'absolute' || cs.position === 'fixed' || cs.display === 'none') continue
+    bottom = Math.max(bottom, child.getBoundingClientRect().bottom + (parseFloat(cs.marginBottom) || 0))
+  }
+  return bottom - limit
 }
 
 export default RoundScreen

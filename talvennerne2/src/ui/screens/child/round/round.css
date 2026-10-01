@@ -110,7 +110,7 @@
   gap: 8px;
   width: 100%;
   max-width: 720px;
-  height: var(--companion-h);
+  min-height: var(--companion-h);
   margin: 6px auto 0;
 }
 .tv-round__buddy {
@@ -203,7 +203,8 @@
   pointer-events: none;
 }
 .tv-round__skip {
-  margin: 0 0 6px auto;
+  flex: none;
+  opacity: 1;
 }
 
 /* The answer area */
@@ -796,12 +797,33 @@
   .tv-round__stage.is-owned .tv-round__bulb {
     margin-left: 0;
   }
+  /* the golden egg hovers in a strip of sky above the card, clear of the stones */
+  .tv-round.is-golden .tv-round__stage {
+    padding-top: 56px;
+  }
   /* too tall with the buddy beside it: the task gets the whole width */
   .tv-round.is-compact .tv-round__stage.is-owned {
     grid-template-columns: minmax(0, 1fr);
   }
   .tv-round.is-compact .tv-round__stage.is-owned .tv-round__ask {
     display: none;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Pause on a sideways phone: the two choices side by side, so the card fits under the badge */
+  .tv-pause__card {
+    width: min(480px, 100%);
+    gap: 6px;
+    padding: 30px 20px 18px;
+  }
+  .tv-pause__title {
+    margin-top: 4px;
+  }
+  .tv-pause__body {
+    margin-bottom: 6px;
+  }
+  .tv-pause__actions {
+    grid-template-columns: 1fr 1fr;
   }
 }
 @media (orientation: landscape) and (max-height: 500px) {
@@ -902,7 +924,14 @@
     min-height: 60px;
   }
   .tv-egg {
-    width: 120px;
+    width: 100px;
+  }
+  .tv-round__egg {
+    top: -46px;
+    right: -10px;
+  }
+  .tv-round.is-golden .tv-round__stage {
+    padding-top: 40px;
   }
 }
 @media (orientation: landscape) and (min-height: 700px) {
