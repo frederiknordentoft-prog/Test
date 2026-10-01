@@ -112,8 +112,10 @@ describe('compareLength', () => {
   it('lets a child who only looks at one end be flagged, and a child who compares well not', () => {
     const keys = keysForNode(NODE_BY_ID['w0-former-l3'], { states: {}, audioVerified: true }).filter((k) => k.skill === 'compareLength')
     expect(keys).toHaveLength(16)
-    const run = (answer: (t: Task) => AnswerValue): MisconceptionStates => {
+    /** Every misconception flagged at some point (a flag may later lift: see the report on isResolved). */
+    const run = (answer: (t: Task) => AnswerValue): Set<string> => {
       let states: MisconceptionStates = {}
+      const flagged = new Set<string>()
       for (let i = 0; i < 64; i++) {
         const k = keys[i % keys.length]
         const t = k.build(i % 2 === 0 ? 'sortOrder' : 'choice', makeRng(i), i)
@@ -128,8 +130,9 @@ describe('compareLength', () => {
           scaffold: false, replays: 0, retryOf: null, assisted: false, audioUnverified: false, contrast: t.contrast,
         } satisfies AnswerLogEntry
         states = updateMisconceptions(states, entry, { skillAccuracy20: 0.7, day, contrast: t.contrast })
+        for (const id of flaggedIds(states)) flagged.add(id)
       }
-      return states
+      return flagged
     }
     // looks only at the right-hand ends: right on congruent lineups, misled on the others
     const oneEnd = (t: Task): AnswerValue => {
@@ -138,11 +141,11 @@ describe('compareLength', () => {
       const order = ordered(ends(s), isLong(t))
       return t.kind === 'sortOrder' ? tokens(s, order).join('|') : tokens(s, [order[0]])[0]
     }
-    expect(flaggedIds(run(oneEnd))).toContain('lengthByEnd')
-    expect(flaggedIds(run((t) => t.answer))).toEqual([])
+    expect([...run(oneEnd)]).toContain('lengthByEnd')
+    expect([...run((t) => t.answer)]).toEqual([])
     // a child who guesses gets the congruent lineups wrong too: no flag
     const rng = makeRng(99)
     const guess = (t: Task): AnswerValue => (t.kind === 'sortOrder' ? rng.shuffle(t.options).join('|') : rng.pick(t.options))
-    expect(flaggedIds(run(guess))).toEqual([])
+    expect([...run(guess)]).toEqual([])
   })
 })

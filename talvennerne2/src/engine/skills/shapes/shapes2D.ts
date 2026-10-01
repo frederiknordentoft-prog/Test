@@ -14,7 +14,8 @@
 // Perceptual contrast (prototypeOnly, "genkender kun figurer, der står pænt"): a fact in a turned,
 // stretched or small variant is 'conflict', the others 'congruent' (a circle looks the same any way).
 // On a conflict fact the answer set holds two prototypical members beside the fact's own figure, and
-// selecting only those is the prototypeOnly candidate. Choice distractors are plain wrong figures.
+// selecting only those is the prototypeOnly candidate; on the cards, any other figure is (the turned
+// triangle was not seen as a triangle). On congruent facts the wrong cards are plain 'other'.
 // isA (isA.ts): a distractor is never a member of the answer, every member is in the answer set.
 import type { AnswerValue, Candidate, Fact, HintSpec, Prompt, Rng, ShapeId, TaskKind } from '../../types'
 import type { SkillModule } from '../types'
@@ -130,10 +131,15 @@ function memberSet(f: Fact, keep: (i: Item) => boolean = () => true): string {
 
 function candidates(f: Fact): Candidate[] {
   const { shape, variant } = dataOf(f)
-  const wrong = othersFor(shape).map((o): readonly [AnswerValue, 'other'] => [token(o), 'other'])
-  // only the figures that stand "nicely": the turned, stretched or small member left out
-  const proto = isPrototypical(shape, variant) ? [] : ([[memberSet(f, (i) => isPrototypical(i.shape, i.variant)), 'prototypeOnly']] as const)
-  return tagged(f.answer, [...proto, ...wrong])
+  if (isPrototypical(shape, variant)) return tagged(f.answer, othersFor(shape).map((o) => [token(o), 'other'] as const))
+  // A conflict fact: the asked figure is turned, stretched or small. A child who only knows figures that
+  // stand "nicely" does not find it among the cards — whichever other card they tap — and in the
+  // multiSelect leaves exactly that member out. The contrast rule (right on congruent facts) keeps a
+  // child who simply does not know the figures from being read as this.
+  return tagged(f.answer, [
+    [memberSet(f, (i) => isPrototypical(i.shape, i.variant)), 'prototypeOnly'],
+    ...othersFor(shape).map((o) => [token(o), 'prototypeOnly'] as const),
+  ])
 }
 
 function hint(f: Fact, tag: string | null): HintSpec {

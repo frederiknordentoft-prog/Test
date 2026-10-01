@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import shapes2DModule from './shapes2D'
 import { drawnClass, isA, type Figure } from './isA'
 import { skillContract, tasksUnderTest } from '../number/testing/harness'
-import { classifyAnswer, detectableOf } from '../../misconceptions'
+import { classifyAnswer, detectableOf, flaggedIds, updateMisconceptions, type MisconceptionStates } from '../../misconceptions'
+import { isProduction } from '../../kinds'
 import { keysForNode } from '../../registry'
 import { NODE_BY_ID } from '../../../content/curriculum'
+import { makeRng } from '../../rng'
 import { compile } from '../../../speech/compile'
-import type { Fact, Prompt, ShapeId, SkillDef, Task } from '../../types'
+import type { AnswerLogEntry, AnswerValue, Fact, Prompt, ShapeId, SkillDef, Task } from '../../types'
 
 const shapes2D: SkillDef = shapes2DModule
 
@@ -120,8 +122,12 @@ describe('shapes2D', () => {
       const [shape, variant] = targetOf(fact)
       const conflict = shape !== 'circle' && [1, 2, 3].includes(variant)
       expect(task.contrast).toBe(conflict ? 'conflict' : 'congruent')
-      if (task.kind !== 'multiSelect') continue
-      const proto = Object.entries(task.distractorTags).filter(([, tag]) => tag === 'prototypeOnly').map(([k]) => k)
+      if (task.kind === 'choice') {
+        // on a conflict fact every other card means the turned/stretched/small figure was not recognised
+        for (const o of task.options) if (o !== task.answer) expect(task.distractorTags[String(o)]).toBe(conflict ? 'prototypeOnly' : 'other')
+        continue
+      }
+      const proto = Object.entries(task.distractorTags).filter(([k, tag]) => tag === 'prototypeOnly' && !k.startsWith('shape:')).map(([k]) => k)
       expect(proto.length, fact.id).toBe(conflict ? 1 : 0)
       if (!conflict) continue
       const picked = proto[0].split('|')
@@ -163,5 +169,44 @@ describe('shapes2D', () => {
     const keys = keysForNode(NODE_BY_ID['w0-former-l1'], { states: {}, audioVerified: true }).filter((k) => k.skill === 'shapes2D')
     expect(keys).toHaveLength(18)
     expect(keys.every((k) => k.family === 'basic')).toBe(true)
+  })
+
+  it('flags a child who only knows figures that stand nicely, and not one who knows them or guesses', () => {
+    const keys = keysForNode(NODE_BY_ID['w0-former-l3'], { states: {}, audioVerified: true }).filter((k) => k.skill === 'shapes2D')
+    /** Every misconception flagged at some point (a flag may later lift: see the report on isResolved). */
+    const run = (answer: (t: Task) => AnswerValue): Set<string> => {
+      let states: MisconceptionStates = {}
+      const flagged = new Set<string>()
+      for (let i = 0; i < 72; i++) {
+        const k = keys[(i * 7) % keys.length]
+        const t = k.build(i % 2 === 0 ? 'multiSelect' : 'choice', makeRng(i), i)
+        const given = answer(t)
+        const correct = given === t.answer
+        const day = `2026-10-${String(1 + Math.floor(i / 18)).padStart(2, '0')}`
+        const entry = {
+          profileId: 'p', ts: i + 1, day, sessionId: 's', roundId: 'r', nodeId: 'n', mode: 'round', skill: t.skill,
+          family: t.family, factId: t.factId, masteryKey: t.masteryKey, kind: t.kind, optionsCount: t.options.length,
+          production: isProduction(t), given, answer: t.answer, correct, ms: 3000, fast: true,
+          errorTag: correct ? null : classifyAnswer(t, given), detectable: detectableOf(t), boxBefore: 0, boxAfter: 0,
+          scaffold: false, replays: 0, retryOf: null, assisted: false, audioUnverified: false, contrast: t.contrast,
+        } satisfies AnswerLogEntry
+        states = updateMisconceptions(states, entry, { skillAccuracy20: 0.7, day, contrast: t.contrast })
+        for (const id of flaggedIds(states)) flagged.add(id)
+      }
+      return flagged
+    }
+    // sees only the figures that stand nicely: misses the turned, stretched or small one
+    const nicelyOnly = (t: Task): AnswerValue => {
+      if (t.contrast !== 'conflict') return t.answer
+      if (t.kind === 'choice') return t.options.find((o) => o !== t.answer)!
+      const [shape] = parseToken(t.factId.replace(/^shp:/, 'shape:'))
+      return items(t).filter((i) => member(i.shape, i.variant, shape) && ![1, 2, 3].includes(i.variant)).map((i) => i.id).sort().join('|')
+    }
+    expect([...run(nicelyOnly)]).toContain('prototypeOnly')
+    expect([...run((t) => t.answer)]).toEqual([])
+    const rng = makeRng(42)
+    const guess = (t: Task): AnswerValue =>
+      t.kind === 'choice' ? rng.pick(t.options) : t.options.filter(() => rng.next() < 0.5).map(String).sort().join('|') || String(t.options[0])
+    expect([...run(guess)]).toEqual([])
   })
 })
