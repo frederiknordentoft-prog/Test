@@ -11,12 +11,12 @@
 // bredformat i venstre strimmel, mellem stien og sidepanelet og under sidepanelet; i højformat i højre side og
 // forneden. Kun skyerne driver og bladene svajer (transform); begge står stille i rolig tilstand og ved
 // reduceret bevægelse. Alle former er husets parametriske primitiver; farverne kommer fra scenes/palette.ts.
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode, Ref } from 'react'
 import type { RegionId } from '../../engine/types'
 import type { RegionTier } from '../../meta/rewards'
 import type { MapSceneProps } from '../../ui/screens/child/map/Backdrop'
-import { blob, circle, ellipse, fmt3, join, lune, n, poly, rect, ribbon, ridge, scallop, spline, star, xf } from '../rig/shapes'
+import { arc, blob, circle, ellipse, fmt3, join, lune, n, poly, rect, ribbon, ridge, scallop, spline, star, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import { ENG, TIER_CHROMA, tint, tintBy } from './palette'
 import type { EngColor } from './palette'
@@ -422,6 +422,7 @@ export interface EngArtProps {
 
 /** Den rene tegning for en given plads (CSS-px). */
 export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
+  const sky = `${useId().replace(/[^A-Za-z0-9_-]/g, '')}sky`
   const L = layoutOf(w, h)
   const T = Object.fromEntries((Object.keys(ENG_REGIONS) as Mark[]).map((m) => [m, tierOf(tiers, m)])) as Record<Mark, RegionTier>
   // Bakkerne, himlen og møllen følger hele dalens fremgang (gennemsnittet af regionernes krom).
@@ -459,6 +460,12 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
     const top = ridgeY(L.near, w, x) + 14 * K
     return [x, top + hash01(i + 97) * Math.max(10, h - top - 40 * K), (1.6 + hash01(i + 31) * 1.2) * K] as const
   })
+  // Tusindfryd på mellembakken (flere med Plusengen).
+  const daisies = Array.from({ length: Math.round(dots * 0.5) }, (_, i) => {
+    const x = hash01(i + 211) * w
+    const top = ridgeY(L.mid, w, x) + 10 * K
+    return [x, top + hash01(i + 307) * Math.max(8, ridgeY(L.near, w, x) - top - 14 * K), (1.3 + hash01(i + 401)) * K] as const
+  })
   const tb = T.brook
   const tt = T.trail
   const brookW = L.brook.map((_, i) => (4 + i * 6.5) * K)
@@ -487,12 +494,12 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
       data-scene="eng"
     >
       <defs>
-        <linearGradient id="eng-sky" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={sky} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={ENG.skyTop} />
           <stop offset="0.6" stopColor={ENG.skyBottom} />
         </linearGradient>
       </defs>
-      <path d={rect(0, 0, w, h)} fill="url(#eng-sky)" />
+      <path d={rect(0, 0, w, h)} fill={`url(#${sky})`} />
       {/* sol (strålerne kommer igen med lyset) og skyer */}
       {at(L.sun, (
         <>
@@ -501,6 +508,14 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
           <path d={circle(0, 0, 27)} fill={g('sun')} />
         </>
       ))}
+      {/* regnbuen over dalen, når hele dalen er guld (fire flade striber) */}
+      {valley >= 1 && (
+        <g opacity={0.55}>
+          {(['rainbow1', 'rainbow2', 'rainbow3', 'rainbow4'] as const).map((c, i) => (
+            <path key={c} d={arc(L.wide ? w * 0.5 : w * 0.5, h * (L.wide ? 0.42 : 0.4), (L.wide ? w * 0.36 : w * 0.62) - i * 9 * K, h * (L.wide ? 0.3 : 0.2) - i * 9 * K, 180, 360)} fill="none" stroke={ENG[c]} strokeWidth={9 * K} />
+          ))}
+        </g>
+      )}
       {L.clouds.map((c, i) => (
         <g key={i} className={`eng-drift eng-drift-${i % 3}`}>
           {at(c, (
@@ -519,8 +534,9 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
       {layer(R.fields, 'fieldHill')}
       <path d={join(...fieldBands)} fill="none" stroke={g('field')} strokeWidth={12 * K} opacity={0.8} {...ROUND} />
       <path d={hedgerows} fill={tint('hedgerow', T.garden)} />
-      {/* lag 3: mellembakken med huset, de bageste træer og buske */}
+      {/* lag 3: mellembakken med tusindfryd, huset, de bageste træer og buske */}
       {layer(R.mid, 'midHill')}
+      <path d={join(...daisies.map(([x, y, r]) => circle(x, y, r)))} fill={ENG.flowerWhite} opacity={0.85} />
       {at(L.house, <House t={tt} />)}
       {L.trees.filter((p) => !p.front).map((p, i) => <g key={i}>{at(p, <Tree t={T.grove} seed={i} />)}</g>)}
       {L.bushes.filter((p) => !p.front).map((p, i) => <g key={i}>{at(p, <Bush t={T.grove} seed={i} />)}</g>)}
@@ -534,6 +550,15 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
       <path d={join(...fence.map(([x, y]) => rect(x - 2 * K, y - postH, 4 * K, postH, 1.5 * K)))} fill={tint('wood', tt)} stroke={tint('woodDark', tt)} strokeWidth={1.3 * K} {...ROUND} />
       <path d={join(spline(fence.map(([x, y]) => [x, y - postH * 0.78] as Vec)), spline(fence.map(([x, y]) => [x, y - postH * 0.38] as Vec)))} fill="none" stroke={tint('woodDark', tt)} strokeWidth={1.8 * K} {...ROUND} />
       {lit(tt) && <g>{fence.filter((_, i) => i % 2 === 0).map(([x, y], i) => <g key={i}>{lantern(x, y - postH - 9 * K, true, K * 0.85)}</g>)}</g>}
+      {bloom(tt) && (() => {
+        const fl = flowerPaths(fence.slice(0, -1).flatMap(([x, y], i) => [[x + 6 * K, y + 1, 3.4 * K], [x - 5 * K, y + 2, 3 * K + (i % 2) * 0.6 * K]] as [number, number, number][]))
+        return (
+          <>
+            <path d={fl.petals} fill={tint('flowerPink', tt)} />
+            <path d={fl.hearts} fill={tint('flowerHeart', tt)} />
+          </>
+        )
+      })()}
       {/* Minusbækken med sten og broen */}
       <path d={blob(ribbon(L.brook, brookW), 0.9)} fill={tint('water', tb)} stroke={tint('waterEdge', tb)} strokeWidth={1.6 * K} {...ROUND} />
       <path d={spline(xf(L.brook.slice(1), { dx: -3 * K }))} fill="none" stroke={ENG.waterLight} strokeWidth={2.6 * K} opacity={bloom(tb) ? 0.9 : 0.55} {...ROUND} />

@@ -67,12 +67,17 @@ export const ENG = {
   butterfly2: '#B49BFF',
   bird: '#5E5478',
   outline: '#5E5478',
+  /** Regnbuen over dalen (fire flade pastelstriber, som dyrenes regnbue). */
+  rainbow1: '#FF9FB2',
+  rainbow2: '#FFDC85',
+  rainbow3: '#A6E8A4',
+  rainbow4: '#9CC8FF',
 } as const
 export type EngColor = keyof typeof ENG
 
 /** Krom pr. tier (andel af grundfarvens krom) og et lille løft i lyshed for de dæmpede trin. */
-export const TIER_CHROMA: Record<RegionTier, number> = { start: 0.46, bronze: 0.66, silver: 0.85, gold: 1 }
-const TIER_LIGHT: Record<RegionTier, number> = { start: 0.04, bronze: 0.022, silver: 0.008, gold: 0 }
+export const TIER_CHROMA: Record<RegionTier, number> = { start: 0.55, bronze: 0.72, silver: 0.87, gold: 1 }
+const TIER_LIGHT: Record<RegionTier, number> = { start: 0.06, bronze: 0.035, silver: 0.012, gold: 0 }
 
 /** Grundfarven tonet til en tier (start er pastel, aldrig grå: kromen skaleres, tonen bevares). */
 export function tint(color: EngColor, tier: RegionTier): string {

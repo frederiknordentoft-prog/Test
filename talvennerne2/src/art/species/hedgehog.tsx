@@ -1,11 +1,13 @@
 // Pindsvinet (Engdalen, bølge 2): skabelonen `pear`, én race (std). Et blødt, venligt barnedyr.
-// Artstrækket i silhuetten er pigkappen: en rund, takket hætte af bløde pigge (husets parametriske buer,
-// aldrig spidse nåle) om hovedet og ned bag kroppen, i to lag, så kappen får dybde. Ansigtet er en lys,
-// let ægformet maske med en lille snude og en knapnæse; en takket pandekant af pigge rammer det ind, og
-// små runde ører titter frem af piggene. Korte arme hviler på den lyse mave, og fødderne er små.
-// Signaturen er at rulle sig halvt sammen og ud igen: hovedet dukker sig, kroppen trykker sig sammen,
-// pandekanten ruller ned (`a-roll`), og piggene puster sig op (`a-puff`); så ruller det ud med ét
-// overshoot og en pause (rig.css). Alle former er punkter og husets primitiver.
+// Artstrækket i silhuetten er pigkappen: en rund, takket hætte af bløde pigge (husets parametriske buer via
+// `spikes`, aldrig spidse nåle), der går fra issen ned over skuldrene og fortsætter som en kappe bag kroppen,
+// så hele dyret er én pigget pære med små fødder forneden. Piggene ligger i to lag (et mørkere bagved) og har
+// lyse spidser som et rigtigt pindsvins båndede pigge. Ansigtet er en lys, let ægformet maske med en takket
+// hårgrænse (en spids i midten), en lille snude og en knapnæse; små runde ører titter frem af piggene.
+// Korte arme kommer frem under hætten og hviler på den lyse mave.
+// Signaturen er at rulle sig halvt sammen og ud igen: hovedet dukker sig, kroppen trykker sig sammen, ørerne
+// lægger sig, hætten ruller ned om ansigtet (`a-roll`), og kappen puster sig op (`a-puff`); så ruller det ud
+// med ét overshoot og en pause (rig.css). Alle former er punkter og husets primitiver.
 import { OpenLimb, ROUND, hatted, limbLoop, padsPath } from '../parts/kit'
 import { mixHex } from '../rig/oklch'
 import { shadeOf } from '../rig/palette'
@@ -36,9 +38,9 @@ const face: OutlineFn = (a: AnchorSet, inflate: number) =>
   blob(offsetLoop(frame(FACE_UNIT, a.headCenter.x, a.headCenter.y, a.headRx, a.headRy), inflate), 0.75)
 
 // ---------------------------------------------------------------------------------------------
-// Pigkappen. Hætten om hovedet (bag ansigtet) og kappen bag kroppen er hver to lag pigge: et bageste,
-// mørkere lag forskudt en halv pig og et forreste i kappens farve. Piggene peger ud fra centrum og er
-// strøget en anelse bagud (swirl). Hætten slutter ved kinderne; kappen fortsætter ned langs kroppen.
+// Pigkappen. Hætten om hovedet (bag ansigtet, ned over skuldrene) og kappen bag kroppen er hver to lag pigge:
+// et bageste, mørkere lag forskudt en halv pig og et forreste i kappens farve med lyse spidser. Piggene peger
+// ud fra centrum og er strøget en anelse nedad væk fra issen (swirl).
 
 interface Ring {
   cx: number

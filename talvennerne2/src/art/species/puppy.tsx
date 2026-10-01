@@ -22,7 +22,7 @@ const hair = (pal: { gradient?: readonly string[] }, fill: string, gradientId: s
 // ud under kinderne, så den også ses i sort).
 
 const HEAD_HALF: Vec[] = [
-  [0, -1.0], [-0.4, -0.97], [-0.7, -0.84], [-0.9, -0.6], [-1.0, -0.28], [-1.02, 0.04], [-0.97, 0.32],
+  [0, -1.0], [-0.37, -0.95], [-0.67, -0.8], [-0.88, -0.57], [-0.99, -0.27], [-1.02, 0.04], [-0.97, 0.32],
   [-0.86, 0.55], [-0.7, 0.71], [-0.54, 0.78], [-0.45, 0.9], [-0.3, 1.02], [0, 1.08],
 ]
 const HEAD_UNIT = symmetric(HEAD_HALF)
