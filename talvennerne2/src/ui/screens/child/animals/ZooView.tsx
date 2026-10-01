@@ -9,7 +9,7 @@ import { SpokenText } from '../../../design/SpokenText'
 import { useSpeech } from '../../../design/speech'
 import { TopBar } from '../../../shell/TopBar'
 import { AnimalSheet } from './AnimalSheet'
-import { outfitOf, useItemDefs, useSpeciesDefs } from './art'
+import { isDrawn, outfitOf, useItemDefs, useSpeciesDefs } from './art'
 import { BornSheet } from './BornSheet'
 import { ChoiceCard } from './ChoiceCard'
 import { EggCard } from './EggCard'
@@ -42,7 +42,8 @@ export function ZooView({ profile, openUid = null, now, onDress }: ZooViewProps)
   }, [openUid])
 
   const cells = useMemo(() => meadowCells(profile), [profile.animals, profile.buddyUid, profile.decor])
-  const order = useMemo(() => cells.flatMap((c) => (c.kind === 'animal' ? [c.animal.uid] : [])), [cells])
+  // only drawn species can move their parts; the others never take an animation slot
+  const order = useMemo(() => cells.flatMap((c) => (c.kind === 'animal' && isDrawn(c.animal.species) ? [c.animal.uid] : [])), [cells])
   const egg = useMemo(() => eggModel(profile), [profile.animals, profile.economy])
   const pending = useMemo(() => pendingChoices(profile), [profile.animals, profile.skillMedals, profile.nodes])
 

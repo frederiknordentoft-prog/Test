@@ -77,6 +77,7 @@ const table: Record<ClipId, string> = {
   's.books.how.breed.starhorn': 'Når du har to enhjørninger med bølgemanke, kan stjernehornet komme ud af ægget.',
   's.books.starfoal': 'Stjernefølet',
   's.books.magic': 'Magiske dyr',
+  's.books.visit': 'Se den i Dyrehaven',
 
   // the Kan-bog
   's.books.can.gold': 'Det kan jeg selv',

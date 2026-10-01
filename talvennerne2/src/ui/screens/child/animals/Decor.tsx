@@ -92,7 +92,7 @@ const SHAPES: Readonly<Record<DecorId, () => ReactElement>> = {
   ),
 }
 
-/** One decor piece, 120 × 104 units; decorative (the cell around it speaks its name). */
+/** One decor piece, 120 by 104 units; decorative (the cell around it speaks its name). */
 export function DecorArt({ id, className }: { id: DecorId; className?: string }) {
   const draw = SHAPES[id]
   return (
