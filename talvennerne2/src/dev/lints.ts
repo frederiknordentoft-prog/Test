@@ -23,7 +23,12 @@ export interface LintResult {
   /** Største elementtal pr. dyr og pr. genstand (til rapporten). */
   maxAnimal: number
   maxItem: number
+  /** Mindste andel af butikskortet, en genstand alene fylder (største led), hvis arket har kort. */
+  minCardFill?: number
 }
+
+/** Genstanden alene skal fylde mindst halvdelen af butikskortet (review G0-r1, fund 1; mål 75–80 %). */
+export const CARD_FILL_MIN = 0.5
 
 const DRAWN = 'path,ellipse,circle,rect,polygon,polyline,line'
 const EMPTY: Box = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity }
@@ -208,10 +213,29 @@ export function lintRig(root: SVGSVGElement, label: string, opts: { safeZone: bo
   return { errors, checks, animal, items: itemCounts }
 }
 
+/** Butikskort med genstanden alene: den synlige tegning (klip medregnet) skal fylde kortet. */
+function lintCards(res: LintResult) {
+  const cards = [...document.querySelectorAll<HTMLElement>('.sh-card[data-card="item"]')]
+  for (const card of cards) {
+    const svg = card.querySelector<SVGSVGElement>('svg[data-item-icon]')
+    if (!svg) continue
+    const els = [...svg.querySelectorAll<SVGGeometryElement>(DRAWN)].filter((el) => !inDefs(el))
+    const box = unionOf(els, svg)
+    const vb = svg.viewBox.baseVal
+    const rect = svg.getBoundingClientRect()
+    const cardRect = card.getBoundingClientRect()
+    const fill = Math.max(((box.x1 - box.x0) / vb.width) * rect.width, ((box.y1 - box.y0) / vb.height) * rect.height) / Math.min(cardRect.width, cardRect.height)
+    res.checks++
+    res.minCardFill = Math.min(res.minCardFill ?? 1, fill)
+    if (!(fill >= CARD_FILL_MIN)) res.errors.push(`${card.dataset.label}: genstanden fylder kun ${(fill * 100).toFixed(0)} % af kortet (< ${CARD_FILL_MIN * 100} %)`)
+  }
+}
+
 /** Kør alle lints på siden. Hver rig kan slå tjek til med data-lint="safe fit". */
 export function runLints(): LintResult {
   const rigs = [...document.querySelectorAll<SVGSVGElement>('svg.rig')]
   const res: LintResult = { rigs: rigs.length, items: 0, checks: 0, errors: [], maxAnimal: 0, maxItem: 0 }
+  lintCards(res)
   rigs.forEach((svg, i) => {
     const mode = svg.closest<HTMLElement>('[data-lint]')?.dataset.lint ?? ''
     const label = svg.closest<HTMLElement>('[data-label]')?.dataset.label ?? `rig ${i + 1}`

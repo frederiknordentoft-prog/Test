@@ -1,8 +1,8 @@
 // Genstandsikon til butik, garderobe og kister: genstanden alene (`solo`) på en usynlig mannequin
 // (standardankrene for `round`). Samme tegning og stofpalet som på dyret; kropstøj tegner sin
-// egen flade silhuet. Ikonet beskæres efter genstandens egen boks (`icon.box`), så den fylder ca.
-// 78 % af kortet (review G0-r1, fund 1). Mangler boksen, måles den synlige tegning i DOM'en
-// (klip medregnet), og indtil da bruges en fast beskæring pr. slot.
+// egen flade silhuet. Ikonet beskæres efter genstandens synlige tegning (klip medregnet), så den
+// fylder ca. 80 % af kortet (review G0-r1, fund 1). Uden DOM (statisk markup) bruges genstandens
+// erklærede boks (`icon.box`) og ellers en fast beskæring pr. slot.
 import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { DEFAULT_ANCHORS, OUTLINE } from './anchors'
 import { templateBody } from './bodies'
@@ -11,7 +11,7 @@ import { itemPalette } from './palette'
 import type { FitResult, ItemArtProps, ItemDef, Slot } from './types'
 
 /** Andel af kortet, genstanden fylder (største led). */
-export const ICON_FILL = 0.78
+export const ICON_FILL = 0.8
 
 /** Fast beskæring pr. slot (x, y, w, h) i modelrummet, når genstanden hverken har boks eller kan måles. */
 export const ICON_CROP: Record<Slot, readonly [number, number, number, number]> = {
@@ -77,14 +77,15 @@ export function ItemIcon({ item, colorway = 0, size = 64, title }: { item: ItemD
   const fit = fitItem(item, a, { id: 'rabbit', family: 'lagomorph' })
   const declared = iconViewBox(item, fit)
   const [measured, setMeasured] = useState<string | null>(null)
+  // I DOM'en måles den synlige tegning altid (før maling, så intet blinker); den erklærede boks er
+  // beskæringen i statisk markup og første render.
   useLayoutEffect(() => {
-    if (declared) return
     const root = svg.current
     const g = content.current
     if (!root || !g || typeof g.getBBox !== 'function') return
     const b = visibleBox(root, g)
     if (b) setMeasured(squareBox(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0))
-  }, [item, colorway, declared])
+  }, [item, colorway])
 
   const c = itemPalette(item.colorways[colorway])
   const bodyD = templateBody('round')(a, 0, 2)
@@ -109,7 +110,7 @@ export function ItemIcon({ item, colorway = 0, size = 64, title }: { item: ItemD
     <svg
       ref={svg}
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={declared ?? measured ?? `${x} ${y} ${w} ${h}`}
+      viewBox={measured ?? declared ?? `${x} ${y} ${w} ${h}`}
       width={size}
       height={size}
       role={title ? 'img' : undefined}

@@ -484,6 +484,27 @@
   66% { transform: rotate(8deg); }
 }
 
+/* ---------------------------------------------------------------- arter med lange haler svinger dem mindre */
+
+.rig[data-species='cat'][data-mood='happy'] .a-tail,
+.rig[data-species='cat'][data-mood='cheer'] .a-tail,
+.rig[data-species='cat'][data-mood='wave'] .a-tail {
+  animation: rig-wag-soft 0.6s ease-in-out infinite;
+}
+.rig[data-species='cat'][data-mood='happy'] .a-paw {
+  animation-name: rig-leg-hop;
+}
+@keyframes rig-wag-soft {
+  0%, 100% { transform: rotate(4deg); }
+  50% { transform: rotate(-3deg); }
+}
+@keyframes rig-leg-hop {
+  0%, 82%, 100% { transform: rotate(14deg); }
+  10%, 44% { transform: rotate(20deg); }
+  22%, 58% { transform: rotate(24deg); }
+  37.5%, 75% { transform: rotate(4deg); }
+}
+
 /* ---------------------------------------------------------------- hængeører svajer i alle humør */
 
 .rig[data-mood] .a-ear.a-hang {

@@ -12,11 +12,14 @@ export const ROUND = { strokeLinejoin: 'round' as const, strokeLinecap: 'round' 
  * rodens ene hjørne og slutter i det andet. Fyldet lukkes, konturen stryges åben, så lemmet ser ud til
  * at vokse ud af kroppen. `detail` (tålinjer, puder) tegnes ovenpå.
  */
-export function OpenLimb({ loop, fill, stroke, sw, children }: { loop: readonly Vec[]; fill: string; stroke: string; sw: number; children?: ReactNode }) {
+export function OpenLimb({ loop, fill, stroke, sw, trim = 0, children }: { loop: readonly Vec[]; fill: string; stroke: string; sw: number; trim?: number; children?: ReactNode }) {
+  // `trim` springer konturens første og sidste punkter over, så stregen slutter et stykke nede
+  // på lemmet, og roden glider blødt ind i kroppen.
+  const open = trim ? loop.slice(trim, loop.length - trim) : loop
   return (
     <>
       <path d={blob(loop)} fill={fill} />
-      <path d={spline(loop)} fill="none" stroke={stroke} strokeWidth={sw} {...ROUND} />
+      <path d={spline(open)} fill="none" stroke={stroke} strokeWidth={sw} {...ROUND} />
       {children}
     </>
   )
