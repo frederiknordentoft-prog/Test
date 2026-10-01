@@ -495,6 +495,8 @@ export interface TrialState {
   passedAt: number | null
   /** profile.roundIndex at the last attempt; a retry needs one normal round since. */
   lastAttemptRound: number
+  /** Keys missed in the last failed attempt: the Træningshytte's round (survives a reload). */
+  missed?: MasteryKey[]
 }
 
 export interface MisconceptionState {

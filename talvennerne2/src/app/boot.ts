@@ -49,6 +49,9 @@ export function startApp(): Promise<void> {
       const index = skillKeyIndex()
       setSkillKeyIndex((skill) => index[skill])
     })
+    // The game layer (rewards, ceremonies, unlocks) listens for finished rounds and notes what a
+    // round started from. It needs the registry too, so it loads beside it, long before a first tap.
+    void import('../state/useMeta').then(({ installMeta }) => installMeta())
 
     await useSession.getState().boot()
 
