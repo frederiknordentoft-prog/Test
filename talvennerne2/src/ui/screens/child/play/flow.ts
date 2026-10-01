@@ -2,7 +2,7 @@
 // entered from the map or the ceremonies, and where it leaves to. Kept apart from the screens so the
 // tests can follow the whole loop without a DOM.
 import { useNav } from '../../../../app/nav'
-import type { Route } from '../../../../app/routes'
+import type { Route, RouteOf } from '../../../../app/routes'
 import { NODE_BY_ID, REGION_BY_ID } from '../../../../content/curriculum'
 import type { ProfileDoc, RegionId, WorldId } from '../../../../engine/types'
 import type { Reward } from '../../../../meta/rewards'
@@ -15,7 +15,7 @@ import type { PlayTarget } from '../map/nodes'
  * failed trial without it.
  */
 export function roundRoute(target: PlayTarget, opts: { resume?: boolean; region?: RegionId | null } = {}): Route {
-  const route: Route & { region?: RegionId } = { id: 'round', node: target }
+  const route: RouteOf<'round'> = { id: 'round', node: target }
   if (opts.resume) route.resume = true
   if (target === 'hut' && opts.region) route.region = opts.region
   return route

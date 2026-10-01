@@ -2,7 +2,7 @@
 // screen is a default-exported component in src/ui/screens/<area>/<Name>Screen.tsx that receives
 // `{ route }` and navigates with useNav. A screen file that does not exist yet shows a placeholder,
 // so screens can be built in parallel without touching the frame.
-import type { NodeId, RegionId, WorldId } from '../engine/types'
+import type { ItemId, NodeId, RegionId, WorldId } from '../engine/types'
 import type { DockId } from '../ui/shell/Dock'
 
 export const BOOK_IDS = ['collection', 'can', 'stamps', 'trophies'] as const
@@ -22,12 +22,16 @@ export type Route =
   | { id: 'onboarding' }
   /** The world map; `world`/`region` zoom in. */
   | { id: 'map'; world?: WorldId; region?: RegionId }
-  /** A round at a node (or Blandet øvelse / Træningshytten); `resume` continues profile.round. */
-  | { id: 'round'; node: NodeId | 'practice' | 'hut'; resume?: boolean }
+  /**
+   * A round at a node (or Blandet øvelse / Træningshytten); `resume` continues profile.round.
+   * `region`: the hut's region (the trial whose missed keys it practises).
+   */
+  | { id: 'round'; node: NodeId | 'practice' | 'hut'; resume?: boolean; region?: RegionId }
   /** The ceremony queue after a round (SPEC §5.8). */
   | { id: 'ceremonies' }
   | { id: 'animals'; uid?: string }
-  | { id: 'wardrobe'; uid?: string }
+  /** `item`: a newly earned item to show first (guided dressing after a level-up). */
+  | { id: 'wardrobe'; uid?: string; item?: ItemId }
   | { id: 'shop' }
   | { id: 'books'; book?: BookId }
   /** Behind the grown-ups' gate. */

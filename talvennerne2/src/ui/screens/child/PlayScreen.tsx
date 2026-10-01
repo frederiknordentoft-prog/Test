@@ -25,8 +25,6 @@ const INTRO_MS = 1200
 /** Sprites still missing after this are read by the device voice instead (voice.ts). */
 const PRELOAD_MAX_MS = 2500
 
-/** The round route may name the hut's region (proposed contract: `region?: RegionId`). */
-type PlayRoute = RouteOf<'round'> & { region?: RegionId }
 
 type Loaded =
   | { kind: 'ready'; start: Extract<Start, { kind: 'plan' | 'resume' }>; hooks: RoundHooks; Round: ComponentType<RoundScreenProps> }
@@ -53,7 +51,7 @@ async function load(target: PlayTarget, hutRegion: RegionId | null): Promise<Loa
 
 export default function PlayScreen({ route }: ScreenProps<RouteOf<'round'>>) {
   const target = route.node
-  const hutRegion = (route as PlayRoute).region ?? null
+  const hutRegion = route.region ?? null
   const profile = useProfile((s) => s.profile)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [tapped, setTapped] = useState(false)

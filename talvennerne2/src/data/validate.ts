@@ -127,7 +127,7 @@ export const task = obj(
     optionClips: nullable(arr(str())), unit: oneOf([null, 'kr', 'cm', 'm']), entryScale: oneOf([1, 100]),
     range: arr(num(), { len: 2 }), maxDigits: count, scaffold: bool, speech: arr(obj({})), retryOf: nullable(str()),
   },
-  { contrast: oneOf(['conflict', 'congruent']) },
+  { contrast: oneOf(['conflict', 'congruent']), guessFloor: num({ min: 0, max: 1 }) },
 )
 
 export const roundSnapshot = obj({
@@ -166,7 +166,10 @@ export const profileDoc = obj({
   skillStats: rec(obj({ prodCorrect: count, prodDays: arr(day) }), isSkillKey),
   skillMedals: rec(oneOf(['bronze', 'silver', 'gold']), isSkillKey),
   nodes: rec(obj({ plays: count, stars: oneOf([0, 1, 2, 3]), skipped: bool, lastAt: time }), (k) => NODE_RE.test(k)),
-  trials: rec(obj({ attempts: count, failed: count, best: count, passedAt: nullable(time), lastAttemptRound: num({ int: true }) }), isTrialKey),
+  trials: rec(obj(
+    { attempts: count, failed: count, best: count, passedAt: nullable(time), lastAttemptRound: num({ int: true }) },
+    { missed: arr(str({ min: 1, max: 200 }), { max: 200 }) },
+  ), isTrialKey),
   unlocked: obj({ worlds: arr(oneOf(WORLD_IDS)), regions: arr(str({ re: REGION_RE })) }),
   roundIndex: count,
   newToday: obj({ day: dayOrEmpty, total: count, perSkill: rec(count, isSkillKey) }),
