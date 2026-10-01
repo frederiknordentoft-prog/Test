@@ -166,8 +166,31 @@ function MoodsSheet() {
     { stage: 1, c: 'c6' },
     { stage: 3, c: 'c3' },
   ]
+  // Blik: pupillerne følger et punkt (højst 3 enheder). Første række er statisk, anden er den
+  // animerede rig, hvor rAF-lerp'en (0,2 pr. frame) har nået målet, før arket tages.
+  const dirs: { name: string; at: { x: number; y: number } }[] = [
+    { name: 'op-venstre', at: { x: 10, y: 20 } }, { name: 'op', at: { x: 100, y: -40 } }, { name: 'op-højre', at: { x: 190, y: 20 } },
+    { name: 'venstre', at: { x: -60, y: 106 } }, { name: 'midt', at: { x: 100, y: 106 } }, { name: 'højre', at: { x: 260, y: 106 } },
+    { name: 'ned-venstre', at: { x: 10, y: 230 } }, { name: 'ned', at: { x: 100, y: 300 } }, { name: 'ned-højre', at: { x: 190, y: 230 } },
+  ]
   return (
     <Page title="Kanin · humør" sub="Alle 7 humør (statiske nøgleposer). Der findes ingen sad; blink og ørevip kører altid i animeret tilstand.">
+      <Section title="øjne der følger et punkt (buddyen følger fingeren)">
+        <div className="sh-row">
+          {dirs.map((d, i) => (
+            <Cell key={i} cap={`${d.name} · statisk`} label={`blik statisk ${i}`}>
+              <R breed="upright" stage={2} colorway="c3" lookAt={d.at} size={104} crop="head" />
+            </Cell>
+          ))}
+        </div>
+        <div className="sh-row" style={{ marginTop: 10 }}>
+          {dirs.map((d, i) => (
+            <Cell key={i} cap={`${d.name} · animeret`} label={`blik animeret ${i}`} lint="">
+              <Rig species={rabbit} breed="upright" stage={1} colorway="c6" lookAt={d.at} size={104} crop="head" freezeAt={0} />
+            </Cell>
+          ))}
+        </div>
+      </Section>
       <Grid
         colW={176}
         cols={MOODS.map((m) => MOOD_DA[m])}

@@ -349,7 +349,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const fxSweat = { x: w.headCenter.x + w.headRx * 0.62, y: w.headCenter.y - w.headRy * 0.55 }
   const sparkle = pal.sparkle && showFx && (colorway === 'gold' || colorway === 'starwhite' || (star && stage === 3))
 
+  // Hop må gerne gå uden for kanvasset (overflow synlig); en beskåret rig (butikskort) klipper.
   const rootStyle = {
+    ...(crop !== 'full' ? { overflow: 'hidden' } : null),
     ...style,
     '--rig-t': `${(freezeAt ?? seed * 3.1).toFixed(3)}s`,
     '--blink': `${(4.3 + seed * 1.6).toFixed(2)}s`,
@@ -371,7 +373,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
-      overflow="visible"
+      overflow={crop === 'full' ? 'visible' : 'hidden'}
     >
       <defs>
         <clipPath id={ids.bodyClip}>
