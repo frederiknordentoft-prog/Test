@@ -61,15 +61,16 @@ export interface RigProps {
   freezeAt?: number
   /**
    * Beskæring (beregnet ud fra stadiets ankre, så den følger figuren):
-   * 'full' (200x240), 'fit' (hele figuren, 5:6), 'head' (hoved og hat), 'torso' (hage til hofte),
-   * 'bust' (hoved og overkrop). Kvadratiske undtagen full/fit. Små ikoner bruger 'fit' som standard.
+   * 'full' (200x240), 'fit' (hele figuren, 5:6), 'head' (hoved og hat), 'torso' (mund til hofte),
+   * 'bust' (hoved og overkrop), 'crown' (hele hovedet med ører og horn). Kvadratiske undtagen full/fit.
+   * Små ikoner bruger 'fit' som standard.
    */
   crop?: RigCrop
   /** 'auto' (standard): 'small' når size ≤ 64 px. */
   lod?: RigLod | 'auto'
 }
 
-export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust'
+export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust' | 'crown'
 
 /** Højde/bredde for en beskæring. */
 export function cropAspect(crop: RigCrop): number {
@@ -238,11 +239,16 @@ export function cropViewBox(def: SpeciesDef, breed: BreedId, stage: Stage, crop:
     if (ib) b = unionBox(b, mapBox(R.head, ib))
     return viewBoxAround(b, 0.08, 1)
   }
+  if (crop === 'crown') {
+    // Hele hovedet med ører og horn (racens hovedboks) ned til hagen: til hornets glimt i nærbilleder.
+    const b = box(wb.head.x0, wb.head.y0, wb.head.x1, w.headCenter.y + w.headRy * 1.04)
+    return viewBoxAround(b, 0.08, 1)
+  }
   if (crop === 'torso') {
     // Kropsslottet: fra mund og hage til hoften – aldrig gennem øjnene (review G1-r2, E4). Kvadratet
     // vokser nedad og til siderne, aldrig op i ansigtet.
     const eyeBottom = Math.max(w.eyeL.y, w.eyeR.y) + w.eyeRy
-    const top = Math.max(w.mouth.y - 2, eyeBottom + 4)
+    const top = Math.max(w.mouth.y + 2, eyeBottom + 4)
     const bottom = w.bodyCenter.y + w.bodyRy * 0.82
     const side = Math.max(w.bodyRx * 2.6, bottom - top) * 1.06
     return `${n(w.bodyCenter.x - side / 2)} ${n(top - side * 0.02)} ${n(side)} ${n(side)}`
@@ -527,7 +533,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
 
   // Hornet om sin rod; gennem et hornhul klippes det (i hornets egen ramme) under hullets nederste kant.
   const horn = (hole: typeof hornHole) => {
-    const k = R.xf.horn
+    const k = stage === 3 ? (breedDef?.hornGrowth ?? R.xf.horn) : R.xf.horn
     const b = a.hornBase
     const clip = hole && (() => {
       const lx = (x: number) => n((x - b.x) / k)

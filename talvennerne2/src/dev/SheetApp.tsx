@@ -465,7 +465,7 @@ function FilmstripSheet({ def }: { def: SpeciesDef }) {
           )),
         }))}
       />
-      <Section title={`signatur i nærbillede (${sigCrop === 'head' ? 'hovedet' : 'hele figuren'}): hændelsen 0,3–1,7 s, overshoot og pause`}>
+      <Section title={`signatur i nærbillede (${sigCrop === 'full' ? 'hele figuren' : 'hovedet'}): hændelsen 0,3–1,7 s, overshoot og pause`}>
         <div className="sh-row">
           {SIG_TIMES.map((t, i) => (
             <Cell key={i} lint="" cap={`${t.toFixed(2)} s`} label={`film signatur stor ${i}`}>
@@ -481,11 +481,11 @@ function FilmstripSheet({ def }: { def: SpeciesDef }) {
 /** Signaturrækkens tider (s, ved seed 0): alle fire signaturer har hændelsen i 0,3–1,7 s. */
 const SIG_TIMES = [0.2, 0.45, 0.7, 0.95, 1.2, 1.45, 1.8, 2.4]
 /** Nærbilledets beskæring pr. signatur (næse og horn sidder i hovedet; hale og manke kræver hele figuren). */
-const SIG_CROP: Partial<Record<NonNullable<SpeciesDef['signature']>, 'head' | 'full'>> = {
+const SIG_CROP: Partial<Record<NonNullable<SpeciesDef['signature']>, 'head' | 'full' | 'crown'>> = {
   'nose-wiggle': 'head',
   'tail-curl': 'full',
   'mane-toss': 'full',
-  'horn-glint': 'head',
+  'horn-glint': 'crown',
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -484,13 +484,14 @@
   animation: rig-wag-fast 0.45s ease-in-out infinite;
 }
 
+/* Vinket: to tydelige sving (review G1-r2, H4: hoven må ikke stå stille). */
 @keyframes rig-wave {
   0%, 100% { transform: rotate(0deg); }
-  11% { transform: rotate(14deg); }
-  22% { transform: rotate(-8deg); }
-  33% { transform: rotate(14deg); }
-  44% { transform: rotate(-8deg); }
-  55% { transform: rotate(10deg); }
+  11% { transform: rotate(19deg); }
+  22% { transform: rotate(-10deg); }
+  33% { transform: rotate(19deg); }
+  44% { transform: rotate(-10deg); }
+  55% { transform: rotate(12deg); }
   68% { transform: rotate(0deg); }
 }
 @keyframes rig-wave-head {

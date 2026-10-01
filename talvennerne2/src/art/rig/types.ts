@@ -368,6 +368,8 @@ export interface BreedDef {
   maneOrigin?: 'headCenter' | 'headTop'
   /** Mankens vækst på stadie 3 (standard SPEC'ens 1,3); løvehovedets krave vokser mindre. */
   maneGrowth?: number
+  /** Hornets vækst på stadie 3 (standard SPEC'ens 1,25); stjernehornet vokser mindre, så stjernen bliver i zonen. */
+  hornGrowth?: number
 }
 
 /**

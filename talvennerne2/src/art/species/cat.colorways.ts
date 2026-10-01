@@ -18,8 +18,9 @@ export const CAT_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     id: 'c2',
     name: 'sort',
     fur: '#54506A',
+    // Lysere lilla-grå kontur end pelsen (review G1-r2, C5), så ben, krop og hale skilles ad.
     overrides: {
-      outline: '#2B2540', shade: '#47425C', belly: '#6E6987', inner: '#C995B4', iris: '#F4C430',
+      outline: '#8B83A8', shade: '#47425C', belly: '#6E6987', inner: '#C995B4', iris: '#F4C430',
       nose: '#D98AAA', cheek: '#FF8AA8',
     },
   },
@@ -27,10 +28,11 @@ export const CAT_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
   c3: {
     id: 'c3',
     name: 'grå-stribet',
-    fur: '#B4B2C4',
+    // Varm grå med kraftige striber, tydeligt forskellig fra c6 blå-grå (review G1-r2, C4).
+    fur: '#BDB4AC',
     pattern: 'tabby',
-    patternColor: '#6F6B84',
-    overrides: { belly: '#F2F1F7', inner: '#F6B3C4', iris: '#7DB547', outline: '#4F4A63' },
+    patternColor: '#5E554F',
+    overrides: { belly: '#F5F1EC', inner: '#F6B3C4', iris: '#7DB547', outline: '#4E4640' },
   },
   // Calico: hvid med orange og mørke plader.
   c4: {
@@ -53,7 +55,7 @@ export const CAT_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
   c6: {
     id: 'c6',
     name: 'blå-grå',
-    fur: '#9EA7C4',
-    overrides: { belly: '#E6E9F4', inner: '#F2B3C6', iris: '#E39A3B', outline: '#4A5274' },
+    fur: '#93A5D2',
+    overrides: { belly: '#E4EAF8', inner: '#F2B3C6', iris: '#E39A3B', outline: '#3F5285' },
   },
 }

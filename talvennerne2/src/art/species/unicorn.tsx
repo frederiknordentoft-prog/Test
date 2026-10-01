@@ -48,14 +48,14 @@ function hornBands(L: number, hw: number): string {
 
 /**
  * Hornet: en slank kegle (smal bund, skarp spids) med spiralbånd, så højt at spidsen når ørespidserne.
- * Stjernehornet bærer en lille stjerne på spidsen (lig hornets bundbredde, så skaftet læses som et horn). Signaturen: et
+ * Stjernehornet bærer en lille stjerne på spidsen (0,9 gange hornets bundbredde, så skaftet læses som et horn). Signaturen: et
  * firtakket glimt ved spidsen, der tænder og slukker, efterfulgt af en hvid højlysstribe langs hornet
  * (kun opacity, SPEC §6.1).
  */
 function makeHorn(L: number, hw: number, withStar = false): Part {
   const cone = blob(hornShape(L, hw), 0.6)
   const bands = hornBands(L, hw)
-  const starR = hw
+  const starR = hw * 0.9
   const starD = withStar ? star(0, -L - starR * 0.35, starR, starR * 0.45, 5) : null
   // Højlysstriben: en smal linse langs keglens venstre side.
   const stripe = blob(
@@ -220,12 +220,14 @@ export const unicorn: SpeciesDef = {
       name: 'stjernehorn',
       fx: { x: 176, y: 68 },
       parts: {
-        Horn: makeHorn(28, 6.6, true),
+        Horn: makeHorn(34, 6.6, true),
         ManeBack: hairShape(STAR_MANE, { stripe: STAR_MANE_STRIPE }),
         ManeFront: hairShape(STAR_FORELOCK),
         Tail: hairShape(STAR_TAIL),
       },
       maneGrowth: 1.15,
+      // Stjernen sidder oven på et fuldt horn; på stor vokser hornet lidt mindre, så stjernen bliver i zonen.
+      hornGrowth: 1.1,
       bounds: { head: { x0: 40, y0: 6, x1: 162, y1: 152 } },
     },
   ],

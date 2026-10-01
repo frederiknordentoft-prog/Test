@@ -276,16 +276,15 @@ const RainbowRuff: Part = ({ pal, sw, ids, colorway, breed, stage }) => {
 
 // Manken: fyldige kindtotter på begge sider og en lille krave under hagen – ikke en jævn uldring om hele
 // hovedet, som læses som et lam (review G1-r2, K6). Toppen af hovedet er fri, så ørerne rejser sig klart.
-const LION_MANE = join(
-  scallop(53, 121, 19, 30, 7, 0.62, -90),
-  scallop(147, 121, 19, 30, 7, 0.62, -90),
-  scallop(100, 147, 36, 11, 9, 0.6, 0),
-)
+const LION_CHEEKS = join(scallop(53, 121, 19, 30, 7, 0.62, -90), scallop(147, 121, 19, 30, 7, 0.62, -90))
+const LION_MANE = join(LION_CHEEKS, scallop(100, 147, 36, 11, 9, 0.6, 0))
+/** Babyen (stort hoved på en lille krop) får en kortere krave, så trøjen ses under den (review G1-r2, K8). */
+const LION_MANE_BABY = join(LION_CHEEKS, scallop(100, 144, 33, 8, 9, 0.6, 0))
 const LION_INNER = join(scallop(57, 125, 13, 22, 6, 0.58, -75), scallop(143, 125, 13, 22, 6, 0.58, -105))
 
-const LionMane: Part = ({ pal, sw, ids }) => (
+const LionMane: Part = ({ pal, sw, ids, stage }) => (
   <>
-    <path d={LION_MANE} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
+    <path d={stage === 1 ? LION_MANE_BABY : LION_MANE} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
     {!pal.silhouette && <path d={LION_INNER} fill={pal.shade} opacity={0.55} />}
   </>
 )
