@@ -1,13 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import * as catalog from '../speech/catalog'
+import { loadAllClips } from '../speech/catalog'
 import './lyt.css'
 import { LytApp } from './LytApp'
 
-// The clip catalogue may load lazily (loadAllClips() before the first lookup); render once it has.
-const loadAllClips = Reflect.get(catalog, 'loadAllClips') as (() => Promise<void>) | undefined
-
-void (typeof loadAllClips === 'function' ? loadAllClips() : Promise.resolve()).then(() => {
+// The clip catalogue loads lazily (loadAllClips() before the first lookup); render once it has.
+void loadAllClips().then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <LytApp />

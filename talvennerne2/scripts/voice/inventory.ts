@@ -63,13 +63,9 @@ export interface Inventory {
 
 const sha1 = (s: string | Buffer) => createHash('sha1').update(s).digest('hex')
 
-/**
- * The catalogue may load lazily (`loadAllClips()` before the first lookup); call this before using
- * it outside the app and the test setup. Works with both the eager and the lazy catalogue.
- */
+/** The catalogue loads lazily: call this before using it outside the app and the test setup. */
 export async function ensureCatalog(): Promise<void> {
-  const load = Reflect.get(catalog, 'loadAllClips') as (() => Promise<void>) | undefined
-  if (typeof load === 'function') await load()
+  await catalog.loadAllClips()
 }
 
 export function readConfig(file = CONFIG_PATH): { config: VoiceConfig; sha1: string } {
