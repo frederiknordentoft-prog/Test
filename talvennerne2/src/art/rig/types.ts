@@ -546,8 +546,14 @@ export type ItemArt = (p: ItemArtProps) => ReactNode
 export interface HandHold {
   /** Verdensrummet (viewBox, humørets nøglepose) → genstandens lokale koordinater. */
   local: (p: Pt) => Pt
-  /** Bærerens hoved i verdensrummet i nøgleposen: centrum, halvakser og hovedregionens skala. */
-  head: { x: number; y: number; rx: number; ry: number; s: number }
+  /** Genstandens ankerpunkt (grebet i poten) i verdensrummet. */
+  grip: Pt
+  /**
+   * Bærerens hoved i verdensrummet i nøgleposen: centrum, halvakser, hovedregionens skala, munden
+   * (mulen på heste og enhjørninger rækker under hovedets ellipse) og hovedregionens grænseboks
+   * (ører, manke og hængeører med).
+   */
+  head: { x: number; y: number; rx: number; ry: number; s: number; mouth: Pt; box: Box }
   /** Tankeprikkernes eller Z'ernes anker i verdensrummet, når humøret viser dem; ellers null. */
   fx: Pt | null
   /** Poten er løftet og tegnes foran hovedet (jubel, vink, tænker); hvilende og bag hovedet: false. */

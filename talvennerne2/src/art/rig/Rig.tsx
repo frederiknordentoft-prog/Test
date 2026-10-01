@@ -520,11 +520,15 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     const fromWorld = invert(toWorld)
     const headM = chain(figM, moveMat(R.neckWorld.x, R.neckWorld.y), scaleMat(R.head.s), xfMat(pose.head), moveMat(-a.neck.x, -a.neck.y))
     const hc = applyMat(headM, a.headCenter)
+    const hb = figureBounds(def, breed).head
+    const corners = [applyMat(headM, { x: hb.x0, y: hb.y0 }), applyMat(headM, { x: hb.x1, y: hb.y0 }), applyMat(headM, { x: hb.x0, y: hb.y1 }), applyMat(headM, { x: hb.x1, y: hb.y1 })]
+    const hbox = box(Math.min(...corners.map((q) => q.x)), Math.min(...corners.map((q) => q.y)), Math.max(...corners.map((q) => q.x)), Math.max(...corners.map((q) => q.y)))
     const hs = R.head.s * (pose.head?.sx ?? 1)
     const fxOn = showFx && (mood === 'think' || mood === 'sleep')
     return {
       local: (p) => applyMat(fromWorld, p),
-      head: { x: hc.x, y: hc.y, rx: a.headRx * hs, ry: a.headRy * R.head.s * (pose.head?.sy ?? pose.head?.sx ?? 1), s: hs },
+      grip: applyMat(toWorld, { x: 0, y: 0 }),
+      head: { x: hc.x, y: hc.y, rx: a.headRx * hs, ry: a.headRy * R.head.s * (pose.head?.sy ?? pose.head?.sx ?? 1), s: hs, mouth: applyMat(headM, a.mouth), box: hbox },
       fx: fxOn ? applyMat(figM, fxHead) : null,
       front,
     }
