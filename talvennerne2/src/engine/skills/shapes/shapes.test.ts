@@ -12,7 +12,7 @@ const shapes2D: SkillDef = shapes2DModule
 
 /**
  * What each materials variant draws, read off src/art/materials/Shapes.tsx by hand (independent of
- * isA.ts): the generic firkant is a 66 × 56 rectangle, a square turned 45° (variant 1) or a skew
+ * isA.ts): the generic firkant is a 66 x 56 rectangle, a square turned 45° (variant 1) or a skew
  * four-sided figure (variant 2); small, patterned and outline reuse variant 0's geometry.
  */
 const DRAWN: Partial<Record<ShapeId, Record<number, ShapeId>>> = {

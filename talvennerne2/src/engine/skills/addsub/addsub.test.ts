@@ -123,9 +123,27 @@ describe('subTo10', () => {
     expect(hintText(subTo10, 'sub:9-3', null)).toBe('Start på ni. Hop tre gange tilbage.')
     expect(hintText(subTo10, 'sub:9-3', 'countFromFirst')).toBe('Start på ni. Hop tre gange tilbage. Det første hop lander på otte.')
     expect(hintText(subTo10, 'sub:9-3', 'wrongOperation')).toBe('Minus betyder, at nogle bliver taget væk. Start på ni. Hop tre gange tilbage.')
-    expect(hintText(subTo10, 'sub:10-10', null)).toBe('Start på ti. Hop ti gange tilbage.')
+    expect(hintText(subTo10, 'sub:10-10', null)).toBe('Når man tager det hele væk, er der nul tilbage.')
     expect(hintText(subTo10, 'sub:4-0', null)).toBe('Minus nul giver det samme tal.')
     expect(subTo10.hint(factOf(subTo10, 'sub:9-3'), null).visual).toEqual({ scene: 'line', min: 0, max: 10, hops: [9, 8, 7, 6] })
+  })
+
+  it('counts up when most of it is taken away, and hops back for plus-instead-of-minus', () => {
+    expect(hintText(subTo10, 'sub:10-8', null)).toBe('Start på otte. Hop op til ti og tæl hoppene.')
+    expect(subTo10.hint(factOf(subTo10, 'sub:10-8'), null).visual).toEqual({ scene: 'line', min: 0, max: 10, hops: [8, 9, 10] })
+    expect(hintText(subTo10, 'sub:10-8', 'countFromFirst')).toBe('Start på otte. Hop op til ti og tæl hoppene. Det første hop lander på ni.')
+    expect(hintText(subTo10, 'sub:10-8', 'wrongOperation')).toBe('Minus betyder, at nogle bliver taget væk. Start på ti. Hop otte gange tilbage.')
+    // half or less: back
+    expect(hintText(subTo10, 'sub:8-4', null)).toBe('Start på otte. Hop fire gange tilbage.')
+  })
+
+  it('introduces small, meaningful differences first', () => {
+    const order = [...subTo10.enumerate()].sort((x, y) => x.rank - y.rank).map((f) => f.id)
+    expect(order[0]).toBe('sub:1-1')
+    expect(order.indexOf('sub:0-0')).toBeGreaterThan(order.indexOf('sub:2-1'))
+    const plus = [...addTo10.enumerate()].sort((x, y) => x.rank - y.rank).map((f) => f.id)
+    expect(plus[0]).toBe('add:1+1')
+    expect(plus.indexOf('add:3+0')).toBeGreaterThan(plus.indexOf('add:2+1'))
   })
 })
 
@@ -152,7 +170,8 @@ describe('tenFriends', () => {
 
   it('introduces the easy partners first', () => {
     const order = [...tenFriends.enumerate()].sort((x, y) => x.rank - y.rank).map((f) => f.id)
-    expect(order.slice(0, 3)).toEqual(['ten:10', 'ten:0', 'ten:5'])
+    expect(order.slice(0, 3)).toEqual(['ten:9', 'ten:1', 'ten:5'])
+    expect(order.slice(-2)).toEqual(['ten:10', 'ten:0'])
   })
 
   it('points at the empty cells', () => {

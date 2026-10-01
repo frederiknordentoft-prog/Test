@@ -1,7 +1,7 @@
 // shapes2D — Flade figurer (SPEC §2.2–2.3, pædagogik-forslaget §1.3). Recall, 42 facts `shp:<shape>:<v>`.
-//   basic       circle, triangle, quadrilateral ("firkant") × variants 0–5          18   0. kl.
-//   squareRect  square, rectangle × variants 0–5                                     12   1. kl.
-//   polygons    pentagon, hexagon, octagon × variants 0, 5, 1, 2                     12   1. kl.
+//   basic       circle, triangle, quadrilateral ("firkant"); variants 0–5      18   0. kl.
+//   squareRect  square, rectangle; variants 0–5                                 12   1. kl.
+//   polygons    pentagon, hexagon, octagon; variants 0, 5, 1, 2                 12   1. kl.
 // Variants are the materials' (Shapes.tsx): 0 standard, 1 turned, 2 stretched/skew, 3 small,
 // 4 patterned, 5 outline. A fact is "this figure in this variant".
 //

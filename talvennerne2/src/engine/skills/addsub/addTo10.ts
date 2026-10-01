@@ -8,12 +8,14 @@
 // Hint: count on from the bigger number on the number line; the countFromFirst hint says where the
 // first hop lands, the wrongOperation hint says what plus means first.
 import type { Fact, SkillModule } from '../types'
-import { metaOf, say, tagged } from '../number/kit'
+import { hintOf, metaOf, say, tagged } from '../number/kit'
 import { equation, frameOf, hopHint } from './within10'
 
 function rank(a: number, b: number): number {
-  // by sum; within a sum + 0, + 1, doubles, then bigger number first (easier to count on from)
-  const easy = a === 0 || b === 0 ? 0 : a === 1 || b === 1 ? 1 : a === b ? 2 : a > b ? 3 : 4
+  // by sum; within a sum + 1, doubles, then the bigger number first (easier to count on from);
+  // + 0 (and 0 + 0) a little later: adding nothing is an odd first question
+  if (a === 0 || b === 0) return (a + b + 2) * 5 + 4
+  const easy = a === 1 || b === 1 ? 0 : a === b ? 1 : a > b ? 2 : 3
   return (a + b) * 5 + easy
 }
 
@@ -47,7 +49,7 @@ export default {
   },
   hint(f, tag) {
     const [a, b] = f.operands
-    if (a === 0 || b === 0) return { speech: [say('hint.addsub.plusZero')], visual: frameOf(a + b) }
+    if (a === 0 || b === 0) return hintOf([say('hint.addsub.plusZero')], frameOf(a + b))
     const big = Math.max(a, b)
     const small = Math.min(a, b)
     if (tag === 'countFromFirst') return hopHint(big, small, 1, { firstHop: true, misconception: 'countFromFirst' })

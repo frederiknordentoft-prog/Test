@@ -29,5 +29,21 @@ export function hopHint(start: number, steps: number, dir: 1 | -1, o: HopOptions
   return hintOf(speech, { scene: 'line', min: 0, max: 10, hops: walk(start, start + dir * steps) }, o.misconception)
 }
 
+/**
+ * "Start på otte. Hop op til ti og tæl hoppene." — the difference counted up from the smaller number,
+ * for a − b where b is more than half of a: two hops instead of eight back.
+ */
+export function countUpHint(from: number, to: number, o: Omit<HopOptions, 'lead'> = {}): HintSpec {
+  const speech: SpeechPart[] = [
+    say('hint.addsub.startOn'),
+    num(from),
+    say('hint.addsub.hopUpTo'),
+    num(to, 'mid'),
+    say('hint.addsub.countHops'),
+    ...(o.firstHop ? [say('hint.addsub.firstHop'), num(from + 1)] : []),
+  ]
+  return hintOf(speech, { scene: 'line', min: 0, max: 10, hops: walk(from, to) }, o.misconception)
+}
+
 /** The answer as counters in a ten-frame (for + 0 and − 0, where there is nothing to hop). */
 export const frameOf = (n: number): Prompt => ({ scene: 'objects', n, layout: 'tenframe', thing: 'ball' })

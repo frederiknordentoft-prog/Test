@@ -3,7 +3,8 @@
 // (clips/questions.ts). All wave 1 (Engdalen).
 //
 // The hop hints walk the number line: "Start på fem. Hop tre gange frem." One whole sentence per
-// number of hops keeps the voice natural (no comma between "tre" and "gange").
+// number of hops keeps the voice natural (no comma between "tre" and "gange"). Minus close to the
+// whole counts up instead: "Start på otte. Hop op til ti og tæl hoppene." (two hops, not eight).
 import type { ClipId } from '../../../engine/types'
 import { numberWords } from '../../numberWords'
 
@@ -16,6 +17,9 @@ const table: Record<ClipId, string> = {
   // Hops on the number line
   'hint.addsub.startOn': 'Start på',
   'hint.addsub.firstHop': 'Det første hop lander på',
+  'hint.addsub.hopUpTo': 'Hop op til',
+  'hint.addsub.countHops': 'og tæl hoppene.',
+  'hint.addsub.allGone': 'Når man tager det hele væk, er der nul tilbage.',
   'hint.addsub.plusMeansMore': 'Plus betyder, at der kommer flere til.',
   'hint.addsub.minusMeansLess': 'Minus betyder, at nogle bliver taget væk.',
   'hint.addsub.plusZero': 'Plus nul giver det samme tal.',

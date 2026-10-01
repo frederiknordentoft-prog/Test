@@ -35,7 +35,7 @@ export function isA(x: Figure, y: Figure): boolean {
 
 /**
  * The most specific class a materials variant actually draws (src/art/materials/Shapes.tsx): the
- * generic 'quadrilateral' is a 66 × 56 rectangle in variants 0, 3, 4 and 5, a square turned 45° in
+ * generic 'quadrilateral' is a 66 x 56 rectangle in variants 0, 3, 4 and 5, a square turned 45° in
  * variant 1, and only variant 2 is a general four-sided figure. Every other shape draws itself (the
  * stretched square is a turned square, the rectangles are never square, the rhombi never square).
  */
