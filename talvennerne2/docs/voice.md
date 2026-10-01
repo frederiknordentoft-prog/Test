@@ -499,6 +499,7 @@ Kør den samme kommando igen. Intet arbejde går tabt:
 | Alt andet | `single`, ét kald pr. klip; `frag.*` og `op.*` får 2 takes fra start | `genText`; uden tegn får den "," (se under) | hele ytringen, højst 0,2 s før og 0,25 s efter de alignede tegn |
 
 - Alle udklip laves med forced alignment (`align.py`, roest-wav2vec2) og efterbehandles enkeltvis (`post.py`).
+- **Stramning af snittet** (`tighten` i `generate.py`, pipeline D2). Snittet mellem to naboer ligger i deres stilleste punkt, men når næste frase følger tæt ("… seksten. Tallet er …"), kunne halen få starten af næste ord med (målt på `n.end.16` i D1). Klippet slutter derfor i den første pause på 25 ms under −42 dB efter sit sidste alignede tegn (+30 ms til udklingning) og starter efter den sidste pause på 20 ms før sit første tegn. Uden en pause bliver snittet, hvor det var.
 - **Komma efter sætningsstykker.** Chatterbox sætter punktum efter en tekst uden tegn (`punc_norm`), og den faldende slutintonation ødelægger sammensatte sætninger ("Hvad er. tre, plus. fire."). Stykker uden tegn ("Hvad er", "plus", "i kurven", "æbler") genereres derfor med komma, som spiken målte fragmenterne. Navne (`name.*`) og knaptekster (`s.ui.*`) siges alene og beholder punktummet.
 - **Seed:** `int(sha1(nøgle)[:8], 16) + take`, hvor nøglen er klippets id (ét kald) eller kaldets klip-liste (batch).
 - **Takes:** take 0 (og take 1 for delte fragmenter). Fejler et klip, får det en ny take som ét kald, højst take 4 (4 nye takes). Klip, der stadig fejler, får den bedste take som master og `"pass": false` i indekset.
@@ -512,21 +513,23 @@ Kør den samme kommando igen. Intet arbejde går tabt:
 | ≥ 3 stavelser | ASR på klippet alene: CER ≤ 0,05 og samme talfølge (`da_numbers.py`) |
 | Talord og hoveder | ASR på bæresætningen ("tallet er syv"): talfølgen skal være rigtig, og ordets egne tegn skal være rigtige (CER ≤ 0,05 på ordet; "tallet af" er ligegyldigt) |
 | Under 3 stavelser, talord, hoveder og alle `frag.*`/`op.*` | i sammensætning (se under) |
-| Grænsetilfælde (CER ≤ 0,20) | whisper-1.5b som second opinion |
+| Alle, der fejler hos wav2vec2 | whisper-1.5b som second opinion (se under) |
+
+**Hvorfor whisper får alle fejl.** roest-wav2vec2 uden sprogmodel skriver tal over 100 som sammenklistrede cifre ("1104" for "et hundrede og fire", "11006" for "et hundrede og seks") og staver talesprog fonetisk ("finn tallet", "va er", "hvagiver"). Det er rigtig udtale, men ikke ordret. I valideringens første QA-runde bestod 34 af 61 hundredetal hos wav2vec2 og 60 af 61 med whisper. En CER-grænse for second opinion ville netop holde de tal ude, så hver fejl går til whisper. Skylden for en fejl fordeles efter den transskription, der hørte mest.
 
 **Sammensætning i `generate.py`.** Når alle takes er lavet, sættes hvert af disse klip sammen med andre klip, som appen gør (`scripts/tts/sequence.py` er en Python-udgave af `src/audio/sequence.ts` og mellemrummene i `compile.ts`), og ASR-tjekkes:
 
 | Klip | Sammensætninger |
 |---|---|
 | `n.mid.N`, `h.mid.H` | Hvad er + N + plus + 5 |
-| `n.end.N`, `h.end.H` | Hvad er + 7 + plus + N |
+| `n.end.N`, `h.end.H` | Hvad er + 7 + plus + N; Find tallet + N ("plus" ender på s og kan skjule et svagt s i "[s]eksten") |
 | `hog.H` | H + 47; Hvad er + 7 + plus + H + 25 |
 | `op.*` | 7 + op + 5 (plus og minus også: Hvad er + 3 + op + 4) |
 | `frag.hvad_er` | Hvad er + 7 + plus + 5; Hvad er + 3 + minus + 4 |
 | andre `frag.*` | frag + 5 og frag + 4 (åbner en sætning) eller 7 + frag + 5 |
 | andre korte klip | Det er + klip |
 
-Partnerne er de første brugbare klip i en fast liste (7, 3, 12 …; 5, 4, 9 …). Fejler en sammensætning, finder en tegnvis alignment af ASR-teksten mod klippenes tekster det klip, hvis tegn blev hørt forkert. Det får en ny take. En partner, der allerede er færdig fra en tidligere kørsel, udskiftes med en anden partner. Hvert fejlet tjek markerer altså en take, så løkken ender, når alt er bestået, eller takes er brugt. Et delt fragment ødelægger derfor ikke de sammensætninger, der bruger det.
+Partnerne er de første brugbare klip i en fast liste (7, 3, 12 …; 5, 4, 9 …). Fejler en sammensætning, finder en tegnvis alignment af ASR-teksten mod klippenes tekster det klip, hvis tegn blev hørt forkert (mindst 2 tegn eller 15 %; et indskudt tegn ved en klipgrænse tæller for begge naboer). Det får en ny take. En partner, der allerede er færdig fra en tidligere kørsel, udskiftes med en anden partner. Hvert fejlet tjek markerer altså en take, så løkken ender, når alt er bestået, eller takes er brugt. Et delt fragment ødelægger derfor ikke de sammensætninger, der bruger det.
 
 ### Sammensætningstest (`render.ts`, SPEC §10.4)
 

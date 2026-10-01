@@ -1,0 +1,238 @@
+10:36:52 generate.py --ids-file scripts/voice/validation-ids.txt --threads 2 --max-minutes 100 (log: /home/user/wt/w6/talvennerne2/voice/logs/generate-20261001-103652.log)
+10:36:52 64 klip valgt, 0 færdige, 64 at lave
+10:36:53 kald carrier k=8 t0 'Tallet er seks hundrede, tallet er nul, tallet er en, tallet er ti, ta': 76.5 s for 10.40 s lyd
+10:36:59   h.mid.600 t0: 1.09 s (forhold 0.88) -18.0 LUFS, carrier: 'tallet er 600' CER 0.0 (wav2vec2) → ok
+10:36:59   n.mid.0 t0: 0.37 s (forhold 1.19) -18.0 LUFS, carrier: 'tallet er 0' CER 0.0 (wav2vec2) → ok
+10:37:06   n.mid.1 t0: 0.28 s (forhold 0.90) -18.0 LUFS, carrier: 'Tallet er 1' CER 0.0 (whisper, wav2vec2: 'tallet af 1n') → ok
+10:37:06   n.mid.10 t0: 0.26 s (forhold 0.82) -18.1 LUFS, carrier: 'tallet af 10' CER 0.0 (wav2vec2) → ok
+10:37:07   n.mid.11 t0: 0.42 s (forhold 0.45) -18.0 LUFS, carrier: 'tallet er 11' CER 0.0 (wav2vec2) → ok
+10:37:07   n.mid.12 t0: 0.33 s (forhold 1.05) -18.0 LUFS, carrier: 'tallet er 12' CER 0.0 (wav2vec2) → ok
+10:37:07   n.mid.13 t0: 0.47 s (forhold 0.74) -18.23 LUFS, carrier: 'tallet er 13' CER 0.0 (wav2vec2) → ok
+10:37:08   n.mid.14 t0: 0.56 s (forhold 0.90) -18.0 LUFS, carrier: 'tallet er 14' CER 0.0 (wav2vec2) → ok
+10:37:08 kald carrier k=7 t0 'Tallet er femten, tallet er seksten, tallet er sytten, tallet er atten': 66.7 s for 8.52 s lyd
+10:37:10   n.mid.15 t0: 0.51 s (forhold 0.82) -18.0 LUFS, carrier: 'tallet af 15' CER 0.0 (wav2vec2) → ok
+10:37:10   n.mid.16 t0: 0.65 s (forhold 1.03) -18.0 LUFS, carrier: 'tallet er 16' CER 0.0 (wav2vec2) → ok
+10:37:11   n.mid.17 t0: 0.48 s (forhold 0.77) -18.0 LUFS, carrier: 'tallet er 17' CER 0.0 (wav2vec2) → ok
+10:37:11   n.mid.18 t0: 0.39 s (forhold 0.62) -18.0 LUFS, carrier: 'tallet er 18' CER 0.0 (wav2vec2) → ok
+10:37:11   n.mid.19 t0: 0.40 s (forhold 0.64) -18.0 LUFS, carrier: 'tallet er 19' CER 0.0 (wav2vec2) → ok
+10:37:12   n.mid.2 t0: 0.21 s (forhold 0.69) -18.0 LUFS, carrier: 'tallet af 2' CER 0.0 (wav2vec2) → ok
+10:37:12   n.mid.20 t0: 0.43 s (forhold 0.70) -18.0 LUFS, carrier: 'tallet er 20' CER 0.0 (wav2vec2) → ok
+10:37:12 kald carrier k=7 t0 'Tallet er tre, tallet er fire, tallet er fem, tallet er seks, tallet e': 92.4 s for 8.28 s lyd
+10:37:14   n.mid.3 t0: 0.29 s (forhold 0.95) -18.0 LUFS, carrier: 'tallet er 3' CER 0.0 (wav2vec2) → ok
+10:37:14   n.mid.4 t0: 0.39 s (forhold 0.63) -18.0 LUFS, carrier: 'tallet er 4' CER 0.0 (wav2vec2) → ok
+10:37:14   n.mid.5 t0: 0.18 s (forhold 0.57) -18.17 LUFS, carrier: 'tallet er 5' CER 0.0 (wav2vec2) → ok
+10:37:15   n.mid.6 t0: 0.48 s (forhold 1.55) -18.0 LUFS, carrier: 'tallet af 6' CER 0.0 (wav2vec2) → ok
+10:37:15   n.mid.7 t0: 0.32 s (forhold 1.03) -18.0 LUFS, carrier: 'tallet er 7' CER 0.0 (wav2vec2) → ok
+10:37:20   n.mid.8 t0: 0.38 s (forhold 0.60) -18.0 LUFS, carrier: 'Tallet er 8' CER 0.0 (whisper, wav2vec2: 'tallet er oe') → ok
+10:37:20   n.mid.9 t0: 0.24 s (forhold 0.78) -18.0 LUFS, carrier: 'tallet er 9' CER 0.0 (wav2vec2) → ok
+10:37:20 kald carrier k=8 t0 'Tallet er tre hundrede. Tallet er nul. Tallet er en. Tallet er ti. Tal': 74.8 s for 11.12 s lyd
+10:37:23   h.end.300 t0: 0.82 s (forhold 0.65) -18.08 LUFS, carrier: 'tallet er 300' CER 0.0 (wav2vec2) → ok
+10:37:26   n.end.0 t0: 0.28 s (forhold 0.89) -18.0 LUFS, carrier: 'Tallet er 0' CER 0.0 (whisper, wav2vec2: 'tallet er n0') → ok
+10:37:27   n.end.1 t0: 0.27 s (forhold 0.87) -18.0 LUFS, carrier: 'tallet af en' CER 0.0 (wav2vec2) → ok
+10:37:27   n.end.10 t0: 0.24 s (forhold 0.78) -18.0 LUFS, carrier: 'tallet af 10' CER 0.0 (wav2vec2) → ok
+10:37:31   n.end.11 t0: 0.39 s (forhold 0.42) -18.0 LUFS, carrier: 'Tallet er 11' CER 0.0 (whisper, wav2vec2: 'tallet af 1') → ok
+10:37:35   n.end.12 t0: 0.32 s (forhold 1.03) -18.1 LUFS, carrier: 'Tallet er 12' CER 0.0 (whisper, wav2vec2: 'tallet af tø') → ok
+10:37:36   n.end.13 t0: 0.45 s (forhold 0.71) -18.19 LUFS, carrier: 'tallet er 13' CER 0.0 (wav2vec2) → ok
+10:37:36   n.end.14 t0: 0.50 s (forhold 0.80) -18.0 LUFS, carrier: 'og tallet er 14' CER 0.0 (wav2vec2) → ok
+10:37:36 kald carrier k=7 t0 'Tallet er femten. Tallet er seksten. Tallet er sytten. Tallet er atten': 51.6 s for 8.36 s lyd
+10:37:38   n.end.15 t0: 0.46 s (forhold 0.73) -18.06 LUFS, carrier: 'tallet er 15' CER 0.0 (wav2vec2) → ok
+10:37:38   n.end.16 t0: 0.49 s (forhold 0.78) -18.0 LUFS, carrier: 'tallet er 16' CER 0.0 (wav2vec2) → ok
+10:37:39   n.end.17 t0: 0.43 s (forhold 0.69) -18.0 LUFS, carrier: 'tallet ar 17' CER 0.0 (wav2vec2) → ok
+10:37:39   n.end.18 t0: 0.39 s (forhold 0.62) -18.0 LUFS, carrier: 'tallet er 18' CER 0.0 (wav2vec2) → ok
+10:37:43   n.end.19 t0: 0.40 s (forhold 0.63) -18.0 LUFS, carrier: 'Tallet er 19' CER 0.0 (whisper, wav2vec2: 'tallet ar 19en') → ok
+10:37:44   n.end.2 t0: 0.23 s (forhold 0.75) -18.0 LUFS, carrier: 'tallet er 2' CER 0.0 (wav2vec2) → ok
+10:37:44   n.end.20 t0: 0.43 s (forhold 0.70) -18.0 LUFS, carrier: 'tallet er 20' CER 0.0 (wav2vec2) → ok
+10:37:44 kald carrier k=7 t0 'Tallet er tre. Tallet er fire. Tallet er fem. Tallet er seks. Tallet e': 48.9 s for 8.36 s lyd
+10:37:46   n.end.3 t0: 0.28 s (forhold 0.91) -18.11 LUFS, carrier: 'tallet af 3' CER 0.0 (wav2vec2) → ok
+10:37:50   n.end.4 t0: 0.40 s (forhold 0.63) -18.07 LUFS, carrier: 'Tallet er 4' CER 0.0 (whisper, wav2vec2: 'tallet er f') → ok
+10:37:51   n.end.5 t0: 0.21 s (forhold 0.67) -18.0 LUFS, carrier: 'tallet er 5' CER 0.0 (wav2vec2) → ok
+10:37:55   n.end.6 t0: 0.45 s (forhold 1.43) -18.0 LUFS, carrier: 'Tallet er 6' CER 0.0 (whisper, wav2vec2: 'tallet er sik') → ok
+10:37:55   n.end.7 t0: 0.33 s (forhold 1.04) -18.0 LUFS, carrier: 'tallet er 7' CER 0.0 (wav2vec2) → ok
+10:37:56   n.end.8 t0: 0.40 s (forhold 0.64) -18.0 LUFS, carrier: 'tallet er 8' CER 0.0 (wav2vec2) → ok
+10:37:56   n.end.9 t0: 0.09 s (forhold 0.28) -19.28 LUFS, carrier: 'tallet er 9' CER 0.0 (wav2vec2) → FEJL efterbehandling,varighed
+10:37:56 kald head k=3 t0 'Tallet er et hundrede og syvogfyrre. Tallet er tre hundrede og otteogt': 43.4 s for 7.12 s lyd
+10:37:58   hog.100 t0: 0.54 s (forhold 0.43) -18.0 LUFS, carrier: 'tallet er 147' CER 0.0 (wav2vec2) → ok
+10:37:58   hog.300 t0: 0.62 s (forhold 0.40) -18.1 LUFS, carrier: 'tallet er 338' CER 0.0 (wav2vec2) → ok
+10:37:59   hog.600 t0: 0.69 s (forhold 0.44) -18.0 LUFS, carrier: 'tallet er 684' CER 0.0 (wav2vec2) → ok
+10:37:59 kald single k=1 t0 'Find tallet,': 13.2 s for 1.32 s lyd
+10:37:59   frag.find_tallet t0: 0.68 s (forhold 0.72) -18.12 LUFS, alone: 'find tallet' CER 0.0 (wav2vec2) → ok
+10:37:59 kald single k=1 t1 'Find tallet,': 13.2 s for 1.32 s lyd
+10:38:00   frag.find_tallet t1: 0.74 s (forhold 0.79) -18.11 LUFS, alone: 'find tallet' CER 0.0 (wav2vec2) → ok
+10:38:00 kald single k=1 t0 'Hvad er,': 12.8 s for 1.24 s lyd
+10:38:00   frag.hvad_er t0: 0.55 s (forhold 0.87) -18.12 LUFS, none: 'None' CER None (None) → ok
+10:38:00 kald single k=1 t1 'Hvad er,': 13.6 s for 1.40 s lyd
+10:38:01   frag.hvad_er t1: 0.58 s (forhold 0.92) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:38:01 kald single k=1 t0 'hvad giver,': 12.5 s for 1.28 s lyd
+10:38:01   frag.hvad_giver t0: 0.58 s (forhold 0.62) -18.15 LUFS, alone: 'hvad giver' CER 0.0 (wav2vec2) → ok
+10:38:01 kald single k=1 t1 'hvad giver,': 12.4 s for 1.16 s lyd
+10:38:02   frag.hvad_giver t1: 0.43 s (forhold 0.46) -18.13 LUFS, alone: 'hvad giver' CER 0.0 (wav2vec2) → ok
+10:38:02 kald single k=1 t0 'Hvilket tal kommer efter,': 15.1 s for 1.92 s lyd
+10:38:03   frag.hvilket_tal_kommer_efter t0: 1.26 s (forhold 0.57) -18.0 LUFS, alone: 'hvilket tal kommer efter' CER 0.0 (wav2vec2) → ok
+10:38:03 kald single k=1 t1 'Hvilket tal kommer efter,': 16.8 s for 1.96 s lyd
+10:38:03   frag.hvilket_tal_kommer_efter t1: 1.28 s (forhold 0.59) -18.0 LUFS, alone: 'hvilket tal kommer efter' CER 0.0 (wav2vec2) → ok
+10:38:03 kald single k=1 t0 'Hvilket tal kommer før,': 15.6 s for 1.88 s lyd
+10:38:04   frag.hvilket_tal_kommer_foer t0: 1.14 s (forhold 0.61) -18.0 LUFS, alone: 'hvilket tal kommer før' CER 0.0 (wav2vec2) → ok
+10:38:04 kald single k=1 t1 'Hvilket tal kommer før,': 16.3 s for 1.60 s lyd
+10:38:05   frag.hvilket_tal_kommer_foer t1: 1.23 s (forhold 0.65) -18.0 LUFS, alone: 'hvilket tal kommer før' CER 0.0 (wav2vec2) → ok
+10:38:05 kald single k=1 t0 'minus,': 17.0 s for 1.20 s lyd
+10:38:05   op.minus t0: 0.62 s (forhold 1.00) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:38:05 kald single k=1 t1 'minus,': 14.8 s for 1.04 s lyd
+10:38:05   op.minus t1: 0.59 s (forhold 0.95) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:38:05 kald single k=1 t0 'plus,': 12.4 s for 1.20 s lyd
+10:38:06   op.plus t0: 0.47 s (forhold 1.51) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:38:06 kald single k=1 t1 'plus,': 10.6 s for 0.72 s lyd
+10:38:06   op.plus t1: 0.44 s (forhold 1.41) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:38:06 kald sentence k=4 t0 'Hvad er nul plus nul? Hvad er seks plus fire? Hvad er otte minus otte?': 45.7 s for 7.32 s lyd
+10:38:08   q.add:0+0 t0: 1.88 s (forhold 1.21) -18.13 LUFS, alone: 'hvad er 0 plus 0' CER 0.0 (wav2vec2) → ok
+10:38:13   q.add:6+4 t0: 1.62 s (forhold 0.86) -18.0 LUFS, alone: 'Hvad er 6 plus 4?' CER 0.0 (whisper, wav2vec2: 'hvad er 6 blus 4') → ok
+10:38:13   q.sub:8-8 t0: 1.55 s (forhold 0.62) -18.01 LUFS, alone: 'hvad er 8 minus 8' CER 0.0 (wav2vec2) → ok
+10:38:17   q.ten:7 t0: 1.21 s (forhold 0.64) -18.0 LUFS, alone: '7 plus hvad giver 10?' CER 0.0 (whisper, wav2vec2: 'syplus var giver 10') → ok
+10:38:17   ✓ master q.add:0+0 t0 (bestået)
+10:38:17   ✓ master q.add:6+4 t0 (bestået)
+10:38:17   ✓ master q.sub:8-8 t0 (bestået)
+10:38:17   ✓ master q.ten:7 t0 (bestået)
+10:38:17 kald sentence k=3 t0 'Hvad er to plus fem? Hvad er ti minus tre? Hvad er ni minus fem?': 32.0 s for 5.48 s lyd
+10:38:19   q.add:2+5 t0: 1.17 s (forhold 0.75) -18.0 LUFS, alone: 'hvad er 2 plus 5' CER 0.0 (wav2vec2) → ok
+10:38:23   q.sub:10-3 t0: 1.45 s (forhold 0.77) -18.0 LUFS, alone: 'Hvad er 10 minus 3?' CER 0.0 (whisper, wav2vec2: 'hvadet er 10 minus 3') → ok
+10:38:24   q.sub:9-5 t0: 1.17 s (forhold 0.62) -18.17 LUFS, alone: 'hvad er 9 minus 5' CER 0.0 (wav2vec2) → ok
+10:38:24   ✓ master q.add:2+5 t0 (bestået)
+10:38:24   ✓ master q.sub:10-3 t0 (bestået)
+10:38:24   ✓ master q.sub:9-5 t0 (bestået)
+10:38:24 kald sentence k=3 t0 'Hvad er tre plus fire? Hvad er syv minus to? Fire plus hvad giver ti?': 32.5 s for 5.76 s lyd
+10:38:26   q.add:3+4 t0: 1.80 s (forhold 0.96) -18.19 LUFS, alone: 'hvad er 3 plus 4' CER 0.0 (wav2vec2) → ok
+10:38:26   q.sub:7-2 t0: 1.47 s (forhold 0.78) -18.0 LUFS, alone: 'hvad er 7 minus 2' CER 0.0 (wav2vec2) → ok
+10:38:31   q.ten:4 t0: 1.23 s (forhold 0.56) -18.0 LUFS, alone: '4 plus hvad giver 10?' CER 0.0 (whisper, wav2vec2: 'firplus hvad giver 10') → ok
+10:38:31   ✓ master q.add:3+4 t0 (bestået)
+10:38:31   ✓ master q.sub:7-2 t0 (bestået)
+10:38:31   ✓ master q.ten:4 t0 (bestået)
+10:38:31 kald carrier k=1 t1 'Tallet er ni.': 13.4 s for 1.44 s lyd
+10:38:31   n.end.9 t1: 0.23 s (forhold 0.72) -18.0 LUFS, carrier: 'tallet af 9' CER 0.0 (wav2vec2) → ok
+10:38:36   sammensat frag.find_tallet + n.end.5: 'Find tallet 5' CER 0.000 (whisper, wav2vec2: 'finn tallet 5') → ok
+10:38:40   sammensat frag.find_tallet + n.end.4: 'Find tallet 4' CER 0.000 (whisper, wav2vec2: 'finn tallet 4') → ok
+10:38:45   sammensat frag.find_tallet + n.end.5: 'Find tallet 5' CER 0.000 (whisper, wav2vec2: 'finn tallet 5') → ok
+10:38:50   sammensat frag.find_tallet + n.end.4: 'Find tallet 4' CER 0.000 (whisper, wav2vec2: 'finn tallet 4') → ok
+10:38:55   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.5: 'Hvad er 7 plus 5?' CER 0.000 (whisper, wav2vec2: 'hvad eir 7 plus 5') → ok
+10:38:55   sammensat frag.hvad_er + n.mid.3 + op.minus + n.end.4: 'hvad er 3 minus 4' CER 0.000 (wav2vec2) → ok
+10:38:56   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.5: 'hvad er 7 plus 5' CER 0.000 (wav2vec2) → ok
+10:38:56   sammensat frag.hvad_er + n.mid.3 + op.minus + n.end.4: 'hvad er 3 minus 4' CER 0.000 (wav2vec2) → ok
+10:39:01   sammensat n.mid.7 + frag.hvad_giver + n.end.5: '7 hvad giver 5' CER 0.000 (whisper, wav2vec2: '7v hvadgiver 5') → ok
+10:39:05   sammensat n.mid.7 + frag.hvad_giver + n.end.5: '7 hvad giver 5' CER 0.000 (whisper, wav2vec2: '7 hvagerer 5') → ok
+10:39:05   sammensat frag.hvilket_tal_kommer_efter + n.end.5: 'hvilket tal kommer efter 5' CER 0.000 (wav2vec2) → ok
+10:39:06   sammensat frag.hvilket_tal_kommer_efter + n.end.4: 'hvilket tal kommer efter 4' CER 0.000 (wav2vec2) → ok
+10:39:06   sammensat frag.hvilket_tal_kommer_efter + n.end.5: 'hvilket tal kommer efter 5' CER 0.000 (wav2vec2) → ok
+10:39:07   sammensat frag.hvilket_tal_kommer_efter + n.end.4: 'hvilket tal kommer efter 4' CER 0.000 (wav2vec2) → ok
+10:39:07   sammensat frag.hvilket_tal_kommer_foer + n.end.5: 'hvilket tal kommer før 5' CER 0.000 (wav2vec2) → ok
+10:39:07   sammensat frag.hvilket_tal_kommer_foer + n.end.4: 'hvilket tal kommer fø 4' CER 0.043 (wav2vec2) → ok
+10:39:08   sammensat frag.hvilket_tal_kommer_foer + n.end.5: 'hvilket tal kommer før 5' CER 0.000 (wav2vec2) → ok
+10:39:08   sammensat frag.hvilket_tal_kommer_foer + n.end.4: 'hvilket tal kommer fø4' CER 0.043 (wav2vec2) → ok
+10:39:09   sammensat frag.hvad_er + n.mid.7 + op.plus + h.end.300: 'hvader 7 plus 300' CER 0.000 (wav2vec2) → ok
+10:39:09   sammensat frag.hvad_er + h.mid.600 + op.plus + n.end.5: 'hvad er 600 plus5' CER 0.000 (wav2vec2) → ok
+10:39:10   sammensat hog.100 + n.end.19: '119' CER 0.000 (wav2vec2) → ok
+10:39:10   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.100 + n.end.5: 'hvad er 7 plus 105' CER 0.000 (wav2vec2) → ok
+10:39:14   sammensat hog.300 + n.end.19: '319' CER 0.000 (whisper, wav2vec2: '300 9ots') → ok
+10:39:15   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.300 + n.end.5: 'hvad eir 7 plus 305' CER 0.035 (wav2vec2) → ok
+10:39:19   sammensat hog.600 + n.end.19: '619' CER 0.000 (whisper, wav2vec2: '600 9en') → ok
+10:39:24   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.600 + n.end.5: 'Hvad er 7 plus 605?' CER 0.000 (whisper, wav2vec2: 'hvad er 7 plus 6005') → ok
+10:39:24   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.0: 'hvad er 7 plus0' CER 0.000 (wav2vec2) → ok
+10:39:29   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.1: 'Hvad er 7 plus 1?' CER 0.000 (whisper, wav2vec2: 'hvad er 7 plus 1n') → ok
+10:39:30   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.10: 'hvad er 7 plus10' CER 0.000 (wav2vec2) → ok
+10:39:30   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.11: 'hvad er 7 plus 11' CER 0.000 (wav2vec2) → ok
+10:39:35   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.12: 'Hvad er 7 plus 12?' CER 0.000 (whisper, wav2vec2: 'hvad eir 7 plus 12') → ok
+10:39:35   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.13: 'hvad er 7 plus 13' CER 0.000 (wav2vec2) → ok
+10:39:35   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.14: 'hvad er 7 plus 14' CER 0.000 (wav2vec2) → ok
+10:39:36   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.15: 'hvad er 7 plus 15' CER 0.000 (wav2vec2) → ok
+10:39:36   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.16: 'hvad er 7 plus 16' CER 0.000 (wav2vec2) → ok
+10:39:37   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.17: 'hvad er 7 plus 17' CER 0.000 (wav2vec2) → ok
+10:39:37   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.18: 'hvad er 7 plus 18' CER 0.000 (wav2vec2) → ok
+10:39:38   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.19: 'hvad er 7 plus 19' CER 0.000 (wav2vec2) → ok
+10:39:43   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.2: 'Hvad er 7 plus 2?' CER 0.000 (whisper, wav2vec2: 'hvad eir 7 plus 2') → ok
+10:39:43   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.20: 'hvad er 7 plus 20' CER 0.000 (wav2vec2) → ok
+10:39:43   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.3: 'hvad er 7 plus 3' CER 0.000 (wav2vec2) → ok
+10:39:44   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.4: 'hvad er 7 plus 4' CER 0.000 (wav2vec2) → ok
+10:39:44   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.6: 'hvad er 7 plus 6' CER 0.000 (wav2vec2) → ok
+10:39:45   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.7: 'hvad er 7 plus 7' CER 0.000 (wav2vec2) → ok
+10:39:45   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.8: 'hvad er 7 plus 8' CER 0.000 (wav2vec2) → ok
+10:39:45   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.9: 'hvad er 7 plus 9' CER 0.000 (wav2vec2) → ok
+10:39:46   sammensat frag.hvad_er + n.mid.0 + op.plus + n.end.5: 'hvad er 0 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:51   sammensat frag.hvad_er + n.mid.1 + op.plus + n.end.5: 'Hvad er 1 plus 5?' CER 0.000 (whisper, wav2vec2: 'hvad er é plus 5') → ok
+10:39:51   sammensat frag.hvad_er + n.mid.10 + op.plus + n.end.5: 'hvad er 10 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:51   sammensat frag.hvad_er + n.mid.11 + op.plus + n.end.5: 'hvad er 11 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:52   sammensat frag.hvad_er + n.mid.12 + op.plus + n.end.5: 'hvad er 12 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:52   sammensat frag.hvad_er + n.mid.13 + op.plus + n.end.5: 'hvad er 13 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:53   sammensat frag.hvad_er + n.mid.14 + op.plus + n.end.5: 'hvad er 14 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:53   sammensat frag.hvad_er + n.mid.15 + op.plus + n.end.5: 'hvad er 15plus 5' CER 0.000 (wav2vec2) → ok
+10:39:53   sammensat frag.hvad_er + n.mid.16 + op.plus + n.end.5: 'hvad er 16 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:54   sammensat frag.hvad_er + n.mid.17 + op.plus + n.end.5: 'hvad er 17 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:54   sammensat frag.hvad_er + n.mid.18 + op.plus + n.end.5: 'hvad er 18 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:55   sammensat frag.hvad_er + n.mid.19 + op.plus + n.end.5: 'hvad er 19 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:55   sammensat frag.hvad_er + n.mid.2 + op.plus + n.end.5: 'hvad er 2 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:55   sammensat frag.hvad_er + n.mid.20 + op.plus + n.end.5: 'hvad er 20 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:56   sammensat frag.hvad_er + n.mid.3 + op.plus + n.end.5: 'hvad er 3 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:56   sammensat frag.hvad_er + n.mid.4 + op.plus + n.end.5: 'hvad er 4 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:56   sammensat frag.hvad_er + n.mid.5 + op.plus + n.end.5: 'hvad er 5 plus 5' CER 0.000 (wav2vec2) → ok
+10:39:57   sammensat frag.hvad_er + n.mid.6 + op.plus + n.end.5: 'hvad er 6 plus 5' CER 0.000 (wav2vec2) → ok
+10:40:01   sammensat frag.hvad_er + n.mid.8 + op.plus + n.end.5: 'Hvad er 8 plus 5?' CER 0.000 (whisper, wav2vec2: 'hvad er o plus 5') → ok
+10:40:02   sammensat frag.hvad_er + n.mid.9 + op.plus + n.end.5: 'hvad er 9 plus 5' CER 0.000 (wav2vec2) → ok
+10:40:02   sammensat n.mid.7 + op.minus + n.end.5: '7 minus 5' CER 0.000 (wav2vec2) → ok
+10:40:02   sammensat n.mid.7 + op.minus + n.end.5: '7 minus 5' CER 0.000 (wav2vec2) → ok
+10:40:03   sammensat frag.hvad_er + n.mid.3 + op.minus + n.end.4: 'hvad er 3 minus 4' CER 0.000 (wav2vec2) → ok
+10:40:03   sammensat n.mid.7 + op.plus + n.end.5: '7 plus 5' CER 0.000 (wav2vec2) → ok
+10:40:04   sammensat frag.hvad_er + n.mid.3 + op.plus + n.end.4: 'hvad er 3 plus 4' CER 0.000 (wav2vec2) → ok
+10:40:04   sammensat n.mid.7 + op.plus + n.end.5: '7 plus 5' CER 0.000 (wav2vec2) → ok
+10:40:04   sammensat frag.hvad_er + n.mid.3 + op.plus + n.end.4: 'hvad er 3 plus 4' CER 0.000 (wav2vec2) → ok
+10:40:04 sammensætning runde 1: 54 af 54 bestået
+10:40:04   ✓ master frag.find_tallet t0 (bestået)
+10:40:04   ✓ master frag.hvad_er t0 (bestået)
+10:40:04   ✓ master frag.hvad_giver t0 (bestået)
+10:40:04   ✓ master frag.hvilket_tal_kommer_efter t0 (bestået)
+10:40:04   ✓ master frag.hvilket_tal_kommer_foer t0 (bestået)
+10:40:04   ✓ master h.end.300 t0 (bestået)
+10:40:04   ✓ master h.mid.600 t0 (bestået)
+10:40:04   ✓ master hog.100 t0 (bestået)
+10:40:04   ✓ master hog.300 t0 (bestået)
+10:40:04   ✓ master hog.600 t0 (bestået)
+10:40:04   ✓ master n.end.0 t0 (bestået)
+10:40:04   ✓ master n.end.1 t0 (bestået)
+10:40:04   ✓ master n.end.10 t0 (bestået)
+10:40:04   ✓ master n.end.11 t0 (bestået)
+10:40:04   ✓ master n.end.12 t0 (bestået)
+10:40:04   ✓ master n.end.13 t0 (bestået)
+10:40:04   ✓ master n.end.14 t0 (bestået)
+10:40:04   ✓ master n.end.15 t0 (bestået)
+10:40:04   ✓ master n.end.16 t0 (bestået)
+10:40:04   ✓ master n.end.17 t0 (bestået)
+10:40:04   ✓ master n.end.18 t0 (bestået)
+10:40:04   ✓ master n.end.19 t0 (bestået)
+10:40:04   ✓ master n.end.2 t0 (bestået)
+10:40:04   ✓ master n.end.20 t0 (bestået)
+10:40:04   ✓ master n.end.3 t0 (bestået)
+10:40:04   ✓ master n.end.4 t0 (bestået)
+10:40:04   ✓ master n.end.5 t0 (bestået)
+10:40:04   ✓ master n.end.6 t0 (bestået)
+10:40:04   ✓ master n.end.7 t0 (bestået)
+10:40:04   ✓ master n.end.8 t0 (bestået)
+10:40:04   ✓ master n.end.9 t1 (bestået)
+10:40:04   ✓ master n.mid.0 t0 (bestået)
+10:40:04   ✓ master n.mid.1 t0 (bestået)
+10:40:04   ✓ master n.mid.10 t0 (bestået)
+10:40:04   ✓ master n.mid.11 t0 (bestået)
+10:40:04   ✓ master n.mid.12 t0 (bestået)
+10:40:04   ✓ master n.mid.13 t0 (bestået)
+10:40:04   ✓ master n.mid.14 t0 (bestået)
+10:40:04   ✓ master n.mid.15 t0 (bestået)
+10:40:04   ✓ master n.mid.16 t0 (bestået)
+10:40:04   ✓ master n.mid.17 t0 (bestået)
+10:40:04   ✓ master n.mid.18 t0 (bestået)
+10:40:04   ✓ master n.mid.19 t0 (bestået)
+10:40:04   ✓ master n.mid.2 t0 (bestået)
+10:40:04   ✓ master n.mid.20 t0 (bestået)
+10:40:04   ✓ master n.mid.3 t0 (bestået)
+10:40:04   ✓ master n.mid.4 t0 (bestået)
+10:40:04   ✓ master n.mid.5 t0 (bestået)
+10:40:04   ✓ master n.mid.6 t0 (bestået)
+10:40:04   ✓ master n.mid.7 t0 (bestået)
+10:40:04   ✓ master n.mid.8 t0 (bestået)
+10:40:04   ✓ master n.mid.9 t0 (bestået)
+10:40:04   ✓ master op.minus t0 (bestået)
+10:40:04   ✓ master op.plus t0 (bestået)
+10:40:04 færdig: 64 nye mastere (0 ikke bestået), 0 modelkald, 0.0 min generering (CPU 0.00 t), 0 klip mangler

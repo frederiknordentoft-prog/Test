@@ -84,7 +84,10 @@ def main() -> int:
                 print(f"whisper kan ikke bruges ({err}); ingen second opinion", flush=True)
                 use_whisper = False
         if not r["ok"]:
-            r["blamed"] = blamed(item["parts"], w2v)
+            # blame from the transcript that heard the most (wav2vec2 spells "find" as "finn")
+            w = r.get("asr_whisper")
+            heard = w if w is not None and judge(item, w)["cer"] < judge(item, w2v)["cer"] else w2v
+            r["blamed"] = blamed(item["parts"], heard)
         out.append(r)
         if k % 100 == 0 or k == len(items):
             print(f"qa_asr: {k}/{len(items)} ({time.perf_counter() - t0:.0f} s)", flush=True)

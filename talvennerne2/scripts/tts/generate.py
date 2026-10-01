@@ -55,7 +55,13 @@ from da_text import expected_duration, number_words, syllables  # noqa: E402
 
 log = logging.getLogger("generate")
 
-WHISPER_MAX_CER = 0.20         # grænsetilfælde, der går til second opinion
+# Every failed ASR check goes to whisper as second opinion: wav2vec2 without a language model writes
+# numbers ≥ 100 as glued digits ("1104" for "et hundrede og fire") and spells colloquial forms
+# phonetically ("finn tallet", "va er"), so a CER threshold would keep exactly those from whisper.
+WHISPER_MAX_CER = 1.0
+QUIET_DB = -42.0               # a pause at the normalised level (prepare(): −18 LUFS)
+QUIET_END_MS = 25              # the clip ends in the first pause this long after its last character …
+QUIET_START_MS = 20            # … and starts after the last pause this long before its first one
 BLAME_RATE = 0.15              # andel forkerte tegn, der giver et klip skylden for en sammensætning
 MAX_COMP_ROUNDS = 8
 DUR_WINDOW = {"sentence": (0.35, 2.0), "head": (0.3, 2.2), "default": (0.4, 2.2)}
@@ -274,6 +280,47 @@ def initial_jobs(clips: list[dict]) -> list[Job]:
     return jobs
 
 
+def tighten(x, s: int, e: int, first_s: float, last_e: float, sr: int = P.SR) -> tuple[int, int]:
+    """Move a cut into the nearest pause around the clip's aligned characters.
+
+    The cut between two neighbours lies in their quietest point, but when the next phrase follows
+    closely ("… seksten. Tallet er …") the tail can keep the onset of the next word, and a number can
+    start with the end of "er". The clip therefore ends in the first stretch of QUIET_END_MS below
+    QUIET_DB after its last character (+30 ms for the decay CTC does not see) and starts after the
+    last stretch of QUIET_START_MS before its first character (−20 ms for the onset). Without such a
+    pause the cut stays where it was.
+    """
+    import numpy as np
+
+    hop = max(1, int(0.0025 * sr))
+    win = 2 * hop
+    seg = np.asarray(x[s:e], dtype=np.float64)
+    if len(seg) < 2 * win:
+        return s, e
+    c = np.concatenate([[0.0], np.cumsum(seg * seg)])
+    starts = np.arange(0, len(seg) - win, hop)
+    db = 10 * np.log10((c[starts + win] - c[starts]) / win + 1e-12)
+    quiet = db < QUIET_DB
+    n_end, n_start = max(1, QUIET_END_MS * sr // 1000 // hop), max(1, QUIET_START_MS * sr // 1000 // hop)
+    f_last = max(0, int(((last_e + 0.03) * sr - s) // hop))
+    f_first = int(((first_s - 0.02) * sr - s) // hop)
+    new_e, new_s = e, s
+    run = 0
+    for k in range(f_last, len(quiet)):
+        run = run + 1 if quiet[k] else 0
+        if run >= n_end:
+            new_e = s + (k - run + 1) * hop + win + int(0.01 * sr)
+            break
+    run = 0
+    for k in range(min(f_first, len(quiet) - 1), -1, -1):
+        run = run + 1 if quiet[k] else 0
+        if run >= n_start:
+            new_s = s + (k + run) * hop - int(0.005 * sr)
+            break
+    new_s, new_e = max(s, new_s), min(e, new_e)
+    return (new_s, new_e) if new_e - new_s > int(0.05 * sr) else (s, e)
+
+
 # ─── Engines (loaded lazily) ─────────────────────────────────────────────────
 
 class Engines:
@@ -444,6 +491,8 @@ class Generator:
                 return max(0, s), min(len(x), max(e, s + 1))
 
             s, e = span(it.clip_group, it.clip_group)
+            g = it.clip_group
+            s, e = tighten(x, s, e, words[starts[g]][1], words[starts[g] + job.groups[g] - 1][2])
             y, st = post.process(x[s:e], P.SR, hp=False)
             cand = P.WORK / t.cand
             cand.parent.mkdir(parents=True, exist_ok=True)
@@ -618,6 +667,11 @@ class Generator:
                 a = need(*mid)
                 if a:
                     out.append([x for x in (hv, a, op, cid) if x])
+                # "plus" ends in s and can hide a weak s at the start of the number ("[s]eksten"):
+                # end forms are also heard after "Find tallet" (or "Det er").
+                lead = need("frag.find_tallet", "frag.det_er")
+                if lead:
+                    out.append([lead, cid])
         elif m == "head":
             hv, op, a = need("frag.hvad_er"), need("op.plus"), need(*mid)
             t1 = need(*[f"n.end.{n}" for n in TAIL_PARTNERS])
@@ -675,13 +729,16 @@ class Generator:
         asr = w2v = self.eng.asr(y)
         res = asr_check.check(expected, asr)
         engine = "wav2vec2"
+        blame_text = w2v
         if not res["pass"] and res["cer"] <= WHISPER_MAX_CER:
             w = self.eng.whisper(y)
             if w is not None:
                 rw = asr_check.check(expected, w)
                 if rw["pass"]:
                     res, asr, engine = rw, w, "whisper"
-        att = asr_check.attribute(parts, asr)
+                elif rw["cer"] < res["cer"]:
+                    blame_text = w  # blame from the transcript that heard the most
+        att = asr_check.attribute(parts, asr if res["pass"] else blame_text)
         out = {"ids": ids, "expected": expected, "asr": asr, "cer": res["cer"], "pass": res["pass"],
                "nums_ok": res["nums_ok"], "att": att, "engine": engine, "asr_w2v": w2v}
         self.comp_cache[key] = out

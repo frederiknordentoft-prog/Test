@@ -82,7 +82,8 @@ try {
   const page = await browser.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
+  page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errors.push(m.text()))
+  page.on('response', (r) => r.status() >= 400 && errors.push(`HTTP ${r.status()}: ${r.url()}`))
   await page.goto(`http://127.0.0.1:${PORT}/lyt.html?e2e=1`)
   await page.waitForFunction(() => window.__lyt !== undefined, null, { timeout: 60000 })
   if (!(await page.evaluate(() => window.__lyt.ready()))) throw new Error('Ingen voice-manifest.json: kør pack.mjs først')
@@ -126,7 +127,8 @@ try {
     rows.forEach((r, i) => Object.assign(result.sums[i], { asr: r.asr_w2v, asrWhisper: r.asr_whisper ?? null, cer: r.cer, verbatim: r.ok, engine: r.engine }))
   } else failures.push('qa_asr.py fejlede')
   for (const s of result.sums) {
-    console.log(`${s.played && s.verbatim ? 'OK  ' : 'FEJL'} ${s.text}  ASR: '${s.asr}' CER ${s.cer}  længste stille stykke ${s.longestMs?.toFixed(0)} ms`)
+    const heard = s.engine === 'whisper' ? `wav2vec2 '${s.asr}', whisper '${s.asrWhisper}'` : `'${s.asr}'`
+    console.log(`${s.played && s.verbatim ? 'OK  ' : 'FEJL'} ${s.text}  ASR: ${heard} CER ${s.cer}  længste stille stykke ${s.longestMs?.toFixed(0)} ms`)
     if (!s.verbatim) failures.push(`ASR hørte "${s.asr}" for "${s.text}"`)
   }
   result.sampleRate = rec.sampleRate
