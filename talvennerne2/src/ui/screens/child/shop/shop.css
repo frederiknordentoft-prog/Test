@@ -1,0 +1,460 @@
+/* The shop (ShopScreen, shop/**). Colours from tokens and the sets' and decor's tones; only transform
+   and opacity move. Prices sit on a pearl, never a coin. Every tap target is at least 60 px; the
+   thing cards are at least 100 px. One scroll on a phone, a wider grid on the iPad. */
+
+.tv-shop {
+  --shop-card: 104px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+/* One row on every phone: ←, the title, the perler. */
+.tv-shop__top.tv-topbar {
+  flex-wrap: nowrap;
+}
+.tv-shop__top .tv-topbar__center {
+  order: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tv-shop-title {
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  font-weight: 900;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+
+/* ── Perler ───────────────────────────────────────────────────────────── */
+.tv-shop-perler {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 60px;
+  padding: 0 16px 0 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(43, 33, 68, 0.1);
+  font-size: 22px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+.tv-shop-perler__icon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  color: var(--color-primary);
+  --icon-fill-o: 0.32;
+}
+.tv-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+  padding: 0 9px 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.tv-price__pearl {
+  color: var(--color-primary);
+  --icon-fill-o: 0.32;
+}
+
+/* ── The page ─────────────────────────────────────────────────────────── */
+.tv-shop__body {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.tv-shop__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4px var(--gutter) 24px;
+}
+
+/* ── The wish ─────────────────────────────────────────────────────────── */
+.tv-shop-wish {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 88px;
+  padding: 10px 10px 10px 12px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.tv-shop-wish.is-empty {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 2px var(--color-line);
+}
+.tv-shop-wish.is-ready {
+  box-shadow: inset 0 0 0 3px var(--color-star), var(--shadow-card);
+}
+.tv-shop-wish__pin {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+}
+.tv-shop-wish__text {
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--color-ink-2);
+}
+.tv-shop-wish__thing {
+  flex: none;
+  width: 68px;
+  height: 68px;
+  padding: 6px;
+  border-radius: 20px;
+  background: var(--color-primary-soft);
+}
+.tv-shop-wish__pinned {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2.5px solid var(--color-card);
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-card);
+}
+.tv-shop-wish__mid {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.tv-shop-wish__names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tv-shop-wish__label {
+  font-size: var(--text-label);
+  font-weight: 800;
+  color: var(--color-ink-2);
+}
+.tv-shop-wish__name {
+  overflow: hidden;
+  font-size: calc(var(--text-body) + 1px);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+.tv-shop-wish__ready {
+  font-size: var(--text-body);
+  font-weight: 800;
+  color: var(--color-star-deep);
+}
+.tv-shop-wish__meter {
+  width: 100%;
+}
+
+/* ── The three shelves ────────────────────────────────────────────────── */
+.tv-shop__tabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 2px 0 4px;
+}
+.tv-shop-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 4px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(43, 33, 68, 0.1);
+}
+.tv-shop-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 60px;
+  border-radius: 20px;
+  color: var(--color-ink-2);
+}
+.tv-shop-tab.is-on {
+  background: var(--color-d-money);
+  color: var(--color-ink);
+  box-shadow: 0 4px 0 var(--color-d-money-deep);
+  --icon-fill-o: 0.35;
+}
+.tv-shop-tab__label {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.tv-shop-shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tv-shop-about {
+  margin: 0;
+  padding: 0 4px;
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--color-ink-2);
+}
+.tv-shop-about.is-note {
+  padding: 16px 18px;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.78);
+}
+.tv-shop-set {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-shop-set__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.tv-shop-h {
+  margin: 0;
+  padding: 0 4px;
+  font-size: calc(var(--text-body) + 3px);
+  font-weight: 900;
+  color: var(--color-ink);
+}
+.tv-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--shop-card), 1fr));
+  gap: 10px;
+}
+
+/* A thing on the shelf: its picture and its price (or a check when it is the child's). */
+.tv-shop-card {
+  display: block;
+  min-height: 112px;
+  aspect-ratio: 0.9;
+  border-radius: var(--radius-tile);
+}
+.tv-shop-card__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px 9px;
+  border-radius: inherit;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 2px var(--color-line), 0 6px 16px rgba(43, 33, 68, 0.08);
+}
+.tv-shop-card__pic {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+.tv-shop-card.is-owned .tv-shop-card__face {
+  background: var(--color-good-soft);
+  box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--color-good) 40%, transparent);
+}
+.tv-shop-card__mine {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-good-strong);
+  color: var(--color-card);
+}
+.tv-shop-card__wish {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid var(--color-card);
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-card);
+}
+
+/* New colours: one row per thing, its three colours side by side. */
+.tv-shop-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 10px;
+}
+.tv-shop-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.7);
+}
+.tv-shop-row__name {
+  padding: 0 2px;
+  font-size: var(--text-body);
+  font-weight: 900;
+  color: var(--color-ink);
+}
+.tv-shop-row__colors {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.tv-shop-card.is-color {
+  min-height: 100px;
+}
+
+/* Decor: its glyph on a soft round tile in its own colour. */
+.tv-decor {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--tone-soft);
+  color: var(--tone-deep);
+}
+.tv-shop-card.is-decor .tv-decor {
+  width: auto;
+  aspect-ratio: 1;
+}
+
+/* ── The sheet ────────────────────────────────────────────────────────── */
+.tv-shop-sheet__body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  padding-bottom: 6px;
+}
+.tv-shop-sheet__pic {
+  display: block;
+  align-self: center;
+  width: 150px;
+  height: 150px;
+  padding: 12px;
+  border-radius: 40px;
+  background: var(--color-paper-2);
+  box-shadow: inset 0 0 0 2px var(--color-line);
+}
+.tv-shop-sheet__pic:has(.is-placeholder) {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.tv-shop-sheet__pic.is-done {
+  background: var(--color-good-soft);
+  box-shadow: inset 0 0 0 3px var(--color-good);
+}
+.tv-shop-sheet__cost {
+  display: flex;
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  min-height: 60px;
+}
+.tv-shop-sheet__cost .tv-price {
+  height: 52px;
+  padding: 0 18px 0 12px;
+  gap: 6px;
+  font-size: 30px;
+}
+.tv-shop-sheet__cost .tv-price__pearl {
+  width: 30px;
+  height: 30px;
+}
+.tv-shop-sheet__line {
+  margin: 0;
+  font-size: calc(var(--text-body) + 2px);
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--color-ink);
+}
+.tv-shop-sheet__yesno {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tv-shop-sheet__yesno .tv-btn {
+  width: 100%;
+}
+.tv-shop-sheet__later {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tv-shop-sheet__earn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  background: var(--color-primary-soft);
+}
+.tv-shop-sheet__earn .tv-shop-sheet__line {
+  font-size: var(--text-body);
+  font-weight: 700;
+  text-align: left;
+}
+.tv-shop-sheet__earnicon {
+  flex: none;
+  color: var(--color-primary);
+  --icon-fill-o: 0.32;
+}
+.tv-shop-sheet__wished {
+  align-self: center;
+  min-height: 44px;
+}
+
+/* ── iPad ─────────────────────────────────────────────────────────────── */
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-shop {
+    --shop-card: 124px;
+  }
+  .tv-shop-sheet__yesno {
+    flex-direction: row;
+  }
+  .tv-shop-sheet__yesno .tv-btn {
+    flex: 1 1 0;
+  }
+  .tv-shop-sheet__pic {
+    width: 180px;
+    height: 180px;
+  }
+}

@@ -1,0 +1,69 @@
+/* Shared by the wardrobe and the shop (ItemThumb, Tap): a thing as a picture and a plain tap target.
+   Colours from tokens and the set's tone (--tone, --tone-deep, --tone-soft); only transform moves. */
+
+.tv-tap {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.tv-tap:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 2px;
+}
+.tv-tap[data-pressed] {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.tv-tap:disabled {
+  cursor: default;
+}
+
+/* ── A thing as a picture ─────────────────────────────────────────────── */
+.tv-thumb {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+.tv-thumb > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* Not drawn yet: the slot's glyph on a soft tile in the set's colour. */
+.tv-thumb__stand {
+  display: grid;
+  place-items: center;
+  width: 84%;
+  height: 84%;
+  border-radius: 28%;
+  background: var(--tone-soft, var(--color-primary-soft));
+  color: var(--tone-deep, var(--color-primary-deep));
+  box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--tone, var(--color-primary)) 30%, transparent);
+}
+.tv-thumb.is-c1 .tv-thumb__stand {
+  background: color-mix(in oklch, var(--tone-soft, var(--color-primary-soft)) 50%, var(--color-heart-soft));
+  color: color-mix(in oklch, var(--tone-deep, var(--color-primary-deep)) 45%, var(--color-heart));
+}
+.tv-thumb.is-c2 .tv-thumb__stand {
+  background: color-mix(in oklch, var(--tone-soft, var(--color-primary-soft)) 50%, var(--color-d-measure-soft));
+  color: color-mix(in oklch, var(--tone-deep, var(--color-primary-deep)) 45%, var(--color-d-measure-deep));
+}
+.tv-thumb__glyph {
+  display: block;
+}
+/* An outline: the child does not have it yet. */
+.tv-thumb.is-ghost .tv-thumb__stand {
+  background: transparent;
+  color: var(--color-ink-3);
+  box-shadow: none;
+  border: 2px dashed var(--color-line-2);
+}
