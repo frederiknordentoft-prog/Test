@@ -6,7 +6,7 @@
 // Danish says the teens ones first (fjor-ten), so 41 for "fjorten" is the classic reversal: digitSwap,
 // a concept in this skill (misconceptions.ts). For 13–19 the reversed number is shown as the
 // diagnostic card, so the card range is 0–99 there; 12 → 21 is only classified, never shown. The
-// forgotten ten (14 → 4) is a near miss (±10).
+// forgotten ten (14 → 4) is a near miss (±10), and 6 for 9 or 9 for 6 (the numeral upside down) a plain wrong card.
 import type { Fact, HintSpec, SkillModule } from '../types'
 import { digitSwapOf } from '../../misconceptions'
 import { hintOf, metaOf, num, say, tagged } from './kit'
@@ -61,6 +61,8 @@ export default {
       ...(swap !== null ? ([[swap, 'digitSwap']] as const) : []),
       [n - 1, 'near'], [n + 1, 'near'], [n - 2, 'near'], [n + 2, 'near'],
       ...(n > 10 ? ([[n - 10, 'near']] as const) : []),
+      // the numeral turned upside down: 6 and 9 are the classic pair at five or six
+      ...(n === 6 || n === 9 ? ([[15 - n, 'other']] as const) : []),
     ])
   },
   hint: (f, tag) => hint(f, tag === 'digitSwap'),
