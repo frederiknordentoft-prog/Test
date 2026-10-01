@@ -12,7 +12,7 @@ ligger i `artifacts/sheets/` (taget i 2x). Ark pr. art hedder `<ark>-<art>.png` 
 | `closeup-<art>.png` | Store renders (420/300 px) af alle racer: kontur, cel-skygge, øjne, finish, guld/stjernehvid, regnbue og tøj. |
 | `sizes-<art>.png` | 48, 96 og 256 px (≤ 64 px tegnes med tykkere, mørkere kontur, uden hårfine streger og tæt beskåret) samt butikskort ved 64 px (genstanden alene og på dyret, beskåret efter slot). |
 | `silhouettes.png` | Alle arter og racer i 3 stadier, sort fyld uden navne, nummereret i fast blandet rækkefølge. |
-| `fit-<art>.png` | Genstandene på arten i 3 stadier · genstandens 3 farvesæt (racerne på skift). |
+| `fit-<art>.png` | Genstandene på arten i 3 stadier · genstandens 3 farvesæt (racerne på skift), og tøj i alle 7 humør (ærmerne følger de løftede arme). |
 | `fitmatrix.png` | Art · stadie · genstand for alle arter (racerne skifter pr. stadie). |
 | `filmstrip-<art>.png` | 8 frames pr. humør (frosset animation), blink/ørevip tæt samplet og artens signatur. |
 | `lineup.png` | Alle arter og racer side om side i stadie 2 på samme jordlinje, stadierne pr. art og kropsskabelonerne. |
