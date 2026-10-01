@@ -26,7 +26,7 @@ import { useProfile, roundHooks } from '../../state/useProfile'
 import { useRound } from '../../state/useRound'
 import type { AnswerRecord, RoundHooks, RoundPlan, RoundResult } from '../../state/useRound'
 import { speak as realSpeak } from '../../audio/voice'
-import { clipText, hasClip } from '../../speech/catalog'
+import { clipText, hasClip, loadAllClips } from '../../speech/catalog'
 import { SpeechProvider } from '../../ui/design/speech'
 import { setCalm } from '../../ui/design/motion'
 import { AppShell } from '../../ui/shell/AppShell'
@@ -386,10 +386,13 @@ function Harness() {
   return <KindView />
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <HarnessSpeech>
-      <Harness />
-    </HarnessSpeech>
-  </StrictMode>,
+// clip texts load lazily (src/speech/catalog.ts): render once they are known
+void loadAllClips().then(() =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <HarnessSpeech>
+        <Harness />
+      </HarnessSpeech>
+    </StrictMode>,
+  ),
 )

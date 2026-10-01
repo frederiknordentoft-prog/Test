@@ -5,6 +5,7 @@
 // calm mode, ?shot=1 hides the harness navigation for screenshots.
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { loadAllClips } from '../../speech/catalog'
 import '../../styles/index.css'
 import './harness.css'
 import { setCalm } from '../../ui/design/motion'
@@ -72,10 +73,13 @@ function Harness() {
   )
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <HarnessSpeech>
-      <Harness />
-    </HarnessSpeech>
-  </StrictMode>,
+// clip texts load lazily (src/speech/catalog.ts): render once they are known
+void loadAllClips().then(() =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <HarnessSpeech>
+        <Harness />
+      </HarnessSpeech>
+    </StrictMode>,
+  ),
 )

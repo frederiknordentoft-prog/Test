@@ -8,6 +8,7 @@ import { audioGraph, existingAudioGraph } from '../audio/engine'
 import { applyAudioSession, audioSession, followSilentSwitch, installAudioUnlock, unlockAudio } from '../audio/unlock'
 import { debugLastPlan, speak, voiceAvailable, voiceStatus } from '../audio/voice'
 import { playSfx } from '../audio/sfx'
+import { loadAllClips } from '../speech/catalog'
 import { BOOT_KEY, defaultBoot, localGet, localRemove, localSet, sessionGet, sessionRemove, sessionSet } from '../data/namespace'
 
 type Status = 'ok' | 'warn' | 'bad' | 'info'
@@ -495,6 +496,8 @@ main.append(
   el('p', { class: 'lead' }, 'Tjekker lyd, oplæsning, lagring og ydelse på denne enhed. Intet sendes nogen steder hen.'),
 )
 root.replaceChildren(main)
+// the voice compiles statements against the clip catalogue, which loads lazily
+void loadAllClips()
 installAudioUnlock()
 deviceSection()
 audioSection()

@@ -1,7 +1,7 @@
 // The clip catalogue: every fixed spoken sentence has a clip id and its Danish text (SPEC §10.2).
 // It doubles as the string table for the child's screens — SpokenText shows clipText(id) and
 // speaks the clip. Signatures frozen by the integrator; W3 (speech) implements the catalogue by
-// collecting src/speech/clips/**/*.ts.
+// collecting src/speech/clips/**/*.ts (lazily: call loadAllClips() before the first lookup).
 //
 // A catalogue file is one area (numbers, time, ui/<screen>, skills/<domain> …) owned by one agent:
 //
@@ -38,7 +38,28 @@ export interface ClipInfo {
   file: string
 }
 
-const modules = import.meta.glob<ClipModule>(['./clips/**/*.ts', '!./clips/**/*.test.ts'], { eager: true })
+// Every catalogue file loads lazily, so thousands of sentences and names stay out of the first
+// load. loadAllClips() fetches them all: the app awaits it during boot (beside the database), the
+// other pages before their first render, and the test setup once. Lookups stay synchronous; before
+// the load they know no clip at all.
+const loaders = import.meta.glob<ClipModule>(['./clips/**/*.ts', '!./clips/**/*.test.ts'])
+
+let modules: Readonly<Record<string, ClipModule>> | null = null
+let loading: Promise<void> | null = null
+
+/** Loads every catalogue file once; resolves when clipText() and friends know all clips. */
+export function loadAllClips(): Promise<void> {
+  loading ??= Promise.all(Object.entries(loaders).map(async ([path, load]) => [path, await load()] as const)).then((entries) => {
+    modules = Object.fromEntries(entries)
+    catalogue = null
+  })
+  return loading
+}
+
+/** True once loadAllClips() has finished. */
+export function clipsLoaded(): boolean {
+  return modules !== null
+}
 
 interface Catalogue {
   byId: Map<ClipId, ClipInfo>
@@ -46,6 +67,7 @@ interface Catalogue {
 }
 
 let catalogue: Catalogue | null = null
+const EMPTY: Catalogue = { byId: new Map(), duplicates: [] }
 
 function defaultPack(file: string, wave: Wave): string {
   const stem = file.replace(/\.ts$/, '')
@@ -58,6 +80,7 @@ function defaultPack(file: string, wave: Wave): string {
 
 function load(): Catalogue {
   if (catalogue) return catalogue
+  if (!modules) return EMPTY
   const byId = new Map<ClipId, ClipInfo>()
   const duplicates: Catalogue['duplicates'] = []
   for (const path of Object.keys(modules).sort()) {

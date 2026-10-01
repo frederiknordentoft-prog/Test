@@ -7,6 +7,7 @@ import { setFollowSilentSwitch } from '../audio/unlock'
 import { setSfxEnabled } from '../audio/engine'
 import { preloadVoice, setSpeechEnabled } from '../audio/voice'
 import { setSkillKeyIndex } from '../data/aggregate'
+import { loadAllClips } from '../speech/catalog'
 import type { DeviceSettings } from '../data/namespace'
 import type { ProfileDoc } from '../engine/types'
 import { useProfile } from '../state/useProfile'
@@ -53,7 +54,8 @@ export function startApp(): Promise<void> {
     // round started from. It needs the registry too, so it loads beside it, long before a first tap.
     void import('../state/useMeta').then(({ installMeta }) => installMeta())
 
-    await useSession.getState().boot()
+    // the clip texts (screens show them, the voice speaks them) load beside the database
+    await Promise.all([useSession.getState().boot(), loadAllClips()])
 
     let device = useSession.getState().device
     let profile = useProfile.getState().profile
