@@ -81,7 +81,9 @@ export function kindOf(r: Reward): CeremonyKind | null {
  */
 export function weightOf(r: Reward): number {
   switch (r.t) {
-    case 'eggReady': case 'hatch': return 100
+    // an egg the child left for later waits on a card (and on the map), it is not shown again
+    case 'eggReady': return r.fresh ? 100 : 0
+    case 'hatch': return 100
     case 'trial': return r.passed ? 90 : 80
     case 'animal': return 85
     case 'choice': return 84

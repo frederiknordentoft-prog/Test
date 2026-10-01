@@ -93,6 +93,13 @@ describe('the end of a round (SPEC §5.8)', () => {
     expect(fail.alsoToday.map((c) => c.reward)).toEqual([R.hut])
   })
 
+  it('shows a warm egg once; an egg left for later waits on a card', () => {
+    const stale = { ...R.egg, fresh: false }
+    const plan = planCeremonies([R.learned, R.answers, stale])
+    expect(plan.steps.map((s) => s.kind)).toEqual(['learned', 'tally'])
+    expect(plan.alsoToday.map((c) => c.reward)).toEqual([stale])
+  })
+
   it('can skip everything with one tap, blocks input at most 1 s and never starts by itself', () => {
     const plan = planCeremonies([R.learned, R.answers, R.stars, R.medal, R.levelUp, R.egg])
     for (const s of plan.steps) {

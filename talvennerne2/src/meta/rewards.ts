@@ -71,6 +71,9 @@ export function isRewardEvent(r: Reward): boolean {
       return false
     case 'trial':
       return r.passed
+    case 'eggReady':
+      // a warm egg the child has not opened yet is a reminder, not news
+      return r.fresh
     default:
       return true
   }

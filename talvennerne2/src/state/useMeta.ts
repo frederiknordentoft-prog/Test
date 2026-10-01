@@ -203,6 +203,11 @@ interface RoundStart {
 
 let roundStart: RoundStart | null = null
 
+/** Forget the in-memory copy, as a page reload does (tests use it to reach the sessionStorage copy). */
+export function dropRoundStartMemory(): void {
+  roundStart = null
+}
+
 function storage(): Storage | null {
   try {
     return typeof sessionStorage === 'undefined' ? null : sessionStorage
@@ -287,7 +292,11 @@ export function handleRoundFinished(result: RoundResult, reg: SkillRegistry = sk
   const events = safely(() => learningEventsFor(before, after, reg), [])
   events.push(...safely(() => medalCatchUp(after, result.firstTries.map((f) => f.skill), events, reg), []))
   const { profile, rewards } = applyRoundResult(after, result, { events, day: learningDay(result.endedAt), now: result.endedAt })
-  useProfile.getState().update(() => profile)
+  if (!useProfile.getState().update(() => profile)) {
+    // the store refused (it never lets anything earned go): celebrate nothing that was not saved
+    useMeta.setState({ ceremony: null, rewards: [] })
+    return []
+  }
 
   const hutKeys = { ...useMeta.getState().hutKeys }
   const region = NODE_BY_ID[result.nodeId]?.region
