@@ -368,6 +368,8 @@ export interface BreedDef {
   maneOrigin?: 'headCenter' | 'headTop'
   /** Mankens vækst på stadie 3 (standard SPEC'ens 1,3); løvehovedets krave vokser mindre. */
   maneGrowth?: number
+  /** Hornets vækst på stadie 3 (standard SPEC'ens 1,25); stjernehornet vokser mindre, så stjernen bliver i zonen. */
+  hornGrowth?: number
 }
 
 /**
@@ -443,6 +445,11 @@ export interface SpeciesDef {
   face: FaceStyle
   ears?: EarRig
   signature?: Signature
+  /**
+   * Guldets glansbånd på kroppen som bue på kropsellipsen (grader, 0 = højre, 90 = ned). Standard
+   * [196, 244] (øverst til venstre); arter, hvis arme dækker dér, lægger det lavere.
+   */
+  goldBand?: readonly [number, number]
   /** Artens nøgleposer pr. humør, lagt oven på riggens standard (fx hovene løftes mindre). */
   poses?: Partial<Record<Mood, Pose>>
   /** Grænsebokse (modelrum); standard er et skøn ud fra ankrene. */
@@ -520,8 +527,20 @@ export interface ItemArtProps {
   holes: boolean
   /** Bærerens stadie (kropstøj sidder lidt anderledes på babyens korte torso). */
   stage: Stage
+  /**
+   * Hornhullets centrum i genstandens lokale koordinater, når bæreren har horn og hatten har et
+   * hornhul (`ItemDef.hornHole`); ellers null. Hatten tegner hullet (og i `rim` dets forkant).
+   */
+  horn?: Pt | null
 }
 export type ItemArt = (p: ItemArtProps) => ReactNode
+
+/** Hornhul i en hat (lokale enheder): centrum `lift` over hornets rod; riggen skjuler hornet under hullet. */
+export interface HornHole {
+  lift: number
+  rx: number
+  ry: number
+}
 
 /** Ærmet på én arm (venstre; riggen spejler det højre) i armens lodrette ramme (se `Limb`). */
 export interface SleeveProps {
@@ -557,14 +576,6 @@ export interface ItemFit {
   overrides?: Partial<Record<CreatureId | Family, FitOverride>>
 }
 
-/**
- * Genstandens tegning. Tegnes om (0,0) = ankeret, ved referencebredderne (headWidth 104,
- * bodyWidth 100, neckWidth 58).
- * - `front`: hovedlaget for slottet (head → lag 15, face → 13, neck → 9, body → 6, hand → 7, back → 2).
- * - `back`: valgfri bagdel (head → lag 10 bag hovedet, back → foran i lag 9 som spænder/stropper,
- *   neck → lag 2 bag kroppen).
- * - `bodyShapes`: kropsgenstande har én grundform pr. kropsskabelon (fit-regel 4).
- */
 /** Løftet arm (lokalt om skulderen, venstre side) som rygrad og bredder fra rod til spids. */
 export interface UpArm {
   spine: readonly Vec[]
@@ -587,6 +598,14 @@ export interface SleeveUpProps {
 }
 export type SleeveUpArt = (p: SleeveUpProps) => ReactNode
 
+/**
+ * Genstandens tegning. Tegnes om (0,0) = ankeret, ved referencebredderne (headWidth 104,
+ * bodyWidth 100, neckWidth 58).
+ * - `front`: hovedlaget for slottet (head → lag 15, face → 13, neck → 9, body → 6, hand → 7, back → 2).
+ * - `back`: valgfri bagdel (head → lag 10 bag hovedet, back → foran i lag 9 som spænder/stropper,
+ *   neck → lag 2 bag kroppen).
+ * - `bodyShapes`: kropsgenstande har én grundform pr. kropsskabelon (fit-regel 4).
+ */
 export interface ItemArtSet {
   front: ItemArt
   back?: ItemArt
@@ -610,6 +629,8 @@ export interface ItemDef {
   art: ItemArtSet
   fit: ItemFit
   hides?: readonly ('mane-front' | 'ears')[]
+  /** Hatte med hul til hornet (enhjørningen): hornet går op gennem hullet, og forkanten ligger over roden. */
+  hornHole?: HornHole
   /**
    * Genstandens tegnede bbox i egne koordinater (x, y, w, h) ved skala 1, når den tegnes alene.
    * Butikskortet beskæres efter den, så genstanden fylder 75–80 % af kortet.

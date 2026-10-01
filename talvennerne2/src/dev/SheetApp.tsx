@@ -181,6 +181,19 @@ function MoodsSheet({ def }: { def: SpeciesDef }) {
           )),
         }))}
       />
+      <Section title={`tankebobler og Zzz · alle racer og stadier (mindst 8 enheder fri af hoved, ører og manke)`}>
+        <div className="sh-row">
+          {def.breeds.flatMap((b) =>
+            STAGES.flatMap((st) =>
+              (['think', 'sleep'] as const).map((m) => (
+                <Cell key={`${b.id}${st}${m}`} cap={`${b.id} · ${st} · ${MOOD_DA[m]}`} label={`fx ${def.id} ${b.id} ${st} ${m}`}>
+                  <Rig species={def} mode="static" breed={b.id} stage={st} colorway={st === 2 ? 'c5' : 'c2'} mood={m} size={104} />
+                </Cell>
+              )),
+            ),
+          )}
+        </div>
+      </Section>
       <Section title="øjne der følger et punkt (buddyen følger fingeren) · statisk og animeret">
         <div className="sh-row">
           {dirs.map((d, i) => (
@@ -434,10 +447,10 @@ function FilmstripSheet({ def }: { def: SpeciesDef }) {
     b: def.breeds[i % def.breeds.length].id,
   }))
   // Blink (periode 4,3 s ved seed 0) og ørevip tæt samplet, og signaturen (næse-vip, halekrølle,
-  // manke-kast eller hornets glimt) over dens cyklus.
+  // manke-kast eller hornets glimt) hen over hændelsen.
   rows.push({ head: 'blink + ørevip', mood: 'idle', times: [4.02, 4.08, 4.12, 4.14, 4.17, 6.37, 6.45, 6.55], c: 'c3', s: 2, b: first })
-  const sigAt = SIG_AT[def.signature ?? 'nose-wiggle'] ?? 0
-  rows.push({ head: 'signatur', mood: 'idle', times: [0.2, 0.55, 0.9, 1.2, 1.5, 1.8, 2.1, 2.5].map((t) => t + sigAt), c: 'c1', s: 2, b: first })
+  rows.push({ head: 'signatur', mood: 'idle', times: SIG_TIMES, c: 'c1', s: 2, b: first })
+  const sigCrop = SIG_CROP[def.signature ?? 'nose-wiggle'] ?? 'full'
   return (
     <Page title={`${def.name} · filmstrimmel`} sub="8 frames pr. humør, samplet med animation-play-state: paused og negative animation-delay. Kun transform og opacity animeres.">
       <Grid
@@ -452,16 +465,27 @@ function FilmstripSheet({ def }: { def: SpeciesDef }) {
           )),
         }))}
       />
+      <Section title={`signatur i nærbillede (${sigCrop === 'full' ? 'hele figuren' : 'hovedet'}): hændelsen 0,3–1,7 s, overshoot og pause`}>
+        <div className="sh-row">
+          {SIG_TIMES.map((t, i) => (
+            <Cell key={i} lint="" cap={`${t.toFixed(2)} s`} label={`film signatur stor ${i}`}>
+              <Rig species={def} breed={first} stage={2} colorway="c1" mood="idle" mode="animated" seed={0} freezeAt={t} size={150} crop={sigCrop} />
+            </Cell>
+          ))}
+        </div>
+      </Section>
     </Page>
   )
 }
 
-/** Hvor i tiden (s, ved seed 0) signaturen sker – så filmstrimlen rammer den. */
-const SIG_AT: Partial<Record<NonNullable<SpeciesDef['signature']>, number>> & Record<'nose-wiggle', number> = {
-  'nose-wiggle': 3.4,
-  'tail-curl': 4.6,
-  'mane-toss': 6.6,
-  'horn-glint': 0.6,
+/** Signaturrækkens tider (s, ved seed 0): alle fire signaturer har hændelsen i 0,3–1,7 s. */
+const SIG_TIMES = [0.2, 0.45, 0.7, 0.95, 1.2, 1.45, 1.8, 2.4]
+/** Nærbilledets beskæring pr. signatur (næse og horn sidder i hovedet; hale og manke kræver hele figuren). */
+const SIG_CROP: Partial<Record<NonNullable<SpeciesDef['signature']>, 'head' | 'full' | 'crown'>> = {
+  'nose-wiggle': 'head',
+  'tail-curl': 'full',
+  'mane-toss': 'full',
+  'horn-glint': 'crown',
 }
 
 // ---------------------------------------------------------------------------------------------

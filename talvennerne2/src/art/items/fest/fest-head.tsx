@@ -55,8 +55,13 @@ export const festHead: ItemDef = {
     fabric('sol', 'solgul', 'sunflower', 'coral', 'sky'),
   ],
   art: { front },
-  // baseWidth er keglens bund (flæsen må gerne række ind under ørerne, som ligger ovenpå).
-  fit: { anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1.06, baseWidth: 60, earMode: 'under' },
+  // baseWidth er keglens bund (flæsen må gerne række ind under ørerne, som ligger ovenpå). På
+  // enhjørningen sidder hatten mindre og skævt mellem venstre øre og hornet, så hornet står helt frit
+  // (review G1-r2, E2; den eneste overskrivning: 1 af 12 par).
+  fit: {
+    anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1.06, baseWidth: 60, earMode: 'under',
+    overrides: { unicorn: { dx: -30.5, dy: 7.5, scale: 0.54, rot: -11 } },
+  },
   icon: { box: [-40, -38, 80, 56] },
 }
 

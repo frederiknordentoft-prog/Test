@@ -72,24 +72,30 @@ const UprightEar: SidePart = ({ pal, sw, stage, side, hat }) => {
  * så spidsen når under hagen. Tegnes foran hovedet (ingen klip); indersiden ses som en lyserød
  * stribe nederst, hvor øret drejer let fremad.
  */
-const LOP_SPINE: Vec[] = [[3, -8], [-6, -7.5], [-14, -2], [-20, 10], [-23.5, 27], [-24.5, 46], [-23.5, 65], [-21, 82], [-18, 96]]
-const LOP_EAR = limbLoop(LOP_SPINE, 14, 17.5, 7)
+/**
+ * Vædderøret: roden fortsætter 6 enheder ind over hovedet (kun fyld, ingen kontur ved roden), så der
+ * aldrig er en sprække mellem ørets bund og hovedet (review G1-r2, K1). Babyen har lige så lange, men
+ * smallere ører, der når ned til skulderen (K6), så den ikke læses som en hvalp.
+ */
+const LOP_SPINE: Vec[] = [[10, 5], [3, -8], [-6, -7.5], [-14, -2], [-20, 10], [-23.5, 27], [-24.5, 46], [-23.5, 65], [-21, 82], [-18, 96]]
+const LOP_EAR = limbLoop(LOP_SPINE, 15, 17.5, 7)
 const LOP_INNER = ribbon([[-19.4, 40], [-19.8, 56], [-18.8, 72], [-16.6, 86], [-15.6, 94]], [0, 5.5, 7, 6, 0])
+/** Kilen mellem ørets inderkant og hovedets kontur (inden for øre ∪ hoved), kun fyld. */
+const LOP_WEDGE: Vec[] = [[8, 0], [0, -1], [-8, 1.5], [-13, 6], [-17, 13], [-20, 21], [-15, 22], [-9, 14], [-3, 9], [4, 6]]
 
 const LopEar: SidePart = ({ pal, sw, stage }) => {
-  const s = stage === 1 ? { sx: 1.04, sy: 0.86 } : {}
+  const s = stage === 1 ? { sx: 0.88, sy: 1.02 } : {}
   return (
-    <>
-      <path d={blob(xf(LOP_EAR, s))} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
+    <OpenLimb loop={xf(LOP_EAR, s)} fill={pal.earFur} stroke={pal.earOutline} sw={sw} trim={2} trimEnd={1} extra={blob(xf(LOP_WEDGE, s), 0.5)}>
       <path d={blob(xf(LOP_INNER, s), 0.8)} fill={pal.inner} opacity={0.9} />
-    </>
+    </OpenLimb>
   )
 }
 
-/** Løvehovedets korte, runde ører. */
-const SHORT_EAR = xf(UPRIGHT_EAR, { sy: 0.62, sx: 1.06 })
+/** Løvehovedets ører: kortere end den oprette kanins, men lange nok til at rejse sig klart over manken (K6). */
+const SHORT_EAR = xf(UPRIGHT_EAR, { sy: 0.84, sx: 1.04 })
 const SHORT_HATTED = hatted(SHORT_EAR, -4, 4.5)
-const SHORT_INNER = xf(UPRIGHT_INNER, { sy: 0.6, sx: 1.04 })
+const SHORT_INNER = xf(UPRIGHT_INNER, { sy: 0.82, sx: 1.02 })
 const ShortEar: SidePart = ({ pal, sw, hat }) => (
   <>
     <path d={blob(hat === 'through' ? SHORT_HATTED : SHORT_EAR)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
@@ -205,23 +211,21 @@ const Tail: Part = ({ pal, sw, ids }) => {
 
 const NOSE: Vec[] = [[0, 3.4], [-3.2, 1.2], [-4.6, -1.6], [-3, -3.2], [0, -3.4], [3, -3.2], [4.6, -1.6], [3.2, 1.2]]
 
-const Muzzle: Part = ({ pal, sw, a, still, lod }) => {
-  const m = a.muzzle
-  const whisk = (s: number): string =>
-    join(
-      spline([[m.x + s * 14, m.y + 1], [m.x + s * 23, m.y - 1], [m.x + s * 30, m.y - 0.5]]),
-      spline([[m.x + s * 14, m.y + 5], [m.x + s * 23, m.y + 6], [m.x + s * 29, m.y + 8.5]]),
-    )
-  return (
-    <>
-      {!pal.silhouette && lod === 'full' && <path d={join(whisk(-1), whisk(1))} fill="none" stroke={pal.outline} strokeOpacity={0.45} strokeWidth={sw * 0.42} {...round} />}
-      <Pivot at={m} cls="a-sig" still={still}>
-        <path d={blob(NOSE)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
-        {!pal.silhouette && <path d={ellipse(-1.3, -1.6, 1.4, 0.9, -15)} fill={pal.highlight} />}
-      </Pivot>
-    </>
+/** Knurhår (lokalt om næsen): rødderne sidder ved næsen, så de følger med i næsevippet. */
+const whisk = (s: number): string =>
+  join(
+    spline([[s * 14, 1], [s * 23, -1], [s * 30, -0.5]]),
+    spline([[s * 14, 5], [s * 23, 6], [s * 29, 8.5]]),
   )
-}
+const WHISKERS = join(whisk(-1), whisk(1))
+
+const Muzzle: Part = ({ pal, sw, a, still, lod }) => (
+  <Pivot at={a.muzzle} cls="a-sig" still={still}>
+    {!pal.silhouette && lod === 'full' && <path d={WHISKERS} fill="none" stroke={pal.outline} strokeOpacity={0.45} strokeWidth={sw * 0.42} {...round} />}
+    <path d={blob(NOSE)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
+    {!pal.silhouette && <path d={ellipse(-1.3, -1.6, 1.4, 0.9, -15)} fill={pal.highlight} />}
+  </Pivot>
+)
 
 /** Lille pandetot mellem ørerne: to lokker, klippet til "uden for hovedet", så roden er sømløs. */
 const TUFT: Vec[] = [
@@ -266,18 +270,21 @@ const DutchHead: Part = ({ pal, ids }) => (
 const RainbowRuff: Part = ({ pal, sw, ids, colorway, breed, stage }) => {
   if (colorway !== 'rainbow' || pal.silhouette || breed === 'lionhead') return null
   const k = stage === 3 ? 1.12 : stage === 1 ? 1.1 : 1
-  return <path d={scallop(100, 151 + 1 * k, 38 * k, 12.5 * k, 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" />
+  // Klippet til kroppen, så flæsens ender aldrig stikker ud over kropskonturen som spidser.
+  return <path d={scallop(100, 151 + 1 * k, 38 * k, 12.5 * k, 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" clipPath={`url(#${ids.bodyClip})`} />
 }
 
-// Manken er en blød krans af runde totter (samme bueslag som halen) med en mørkere inderkrans:
-// uld, ikke pigge, så løvehovedet læses som fluffy og ikke som et pindsvin. Den rammer ansigtet ind
-// og slutter lige under hagen, så de hvilende poter stadig ses foran brystet.
-const LION_MANE = scallop(100, 104, 65, 52, 17, 0.6, -90)
-const LION_INNER = scallop(100, 107, 57, 44, 15, 0.58, -78)
+// Manken: fyldige kindtotter på begge sider og en lille krave under hagen – ikke en jævn uldring om hele
+// hovedet, som læses som et lam (review G1-r2, K6). Toppen af hovedet er fri, så ørerne rejser sig klart.
+const LION_CHEEKS = join(scallop(53, 121, 19, 30, 7, 0.62, -90), scallop(147, 121, 19, 30, 7, 0.62, -90))
+const LION_MANE = join(LION_CHEEKS, scallop(100, 147, 36, 11, 9, 0.6, 0))
+/** Babyen (stort hoved på en lille krop) får en kortere krave, så trøjen ses under den (review G1-r2, K8). */
+const LION_MANE_BABY = join(LION_CHEEKS, scallop(100, 144, 33, 8, 9, 0.6, 0))
+const LION_INNER = join(scallop(57, 125, 13, 22, 6, 0.58, -75), scallop(143, 125, 13, 22, 6, 0.58, -105))
 
-const LionMane: Part = ({ pal, sw, ids }) => (
+const LionMane: Part = ({ pal, sw, ids, stage }) => (
   <>
-    <path d={LION_MANE} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
+    <path d={stage === 1 ? LION_MANE_BABY : LION_MANE} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
     {!pal.silhouette && <path d={LION_INNER} fill={pal.shade} opacity={0.55} />}
   </>
 )
@@ -297,10 +304,11 @@ export const rabbit: SpeciesDef = {
   family: 'lagomorph',
   body: 'round',
   breeds: [
-    { id: 'upright', name: 'stående ører', ears: { splay: 10 } },
+    { id: 'upright', name: 'stående ører', fx: { x: 177, y: 92 }, ears: { splay: 10 } },
     {
       id: 'lop',
       name: 'vædder',
+      fx: { x: 177, y: 54 },
       ears: { splay: 0, clip: false, hang: true },
       anchors: { earBaseL: { x: 66, y: 62 }, earBaseR: { x: 134, y: 62 }, earGap: 60 },
       parts: { Ear: LopEar },
@@ -314,12 +322,12 @@ export const rabbit: SpeciesDef = {
     {
       id: 'lionhead',
       name: 'løvehoved',
+      fx: { x: 171, y: 78 },
       ears: { splay: 12 },
       anchors: { earBaseL: { x: 74, y: 57 }, earBaseR: { x: 126, y: 57 } },
       parts: { Ear: ShortEar, ManeBack: LionMane, ManeFront: LionTuft },
       maneGrowth: 1.1,
       bounds: { head: { x0: 28, y0: 18, x1: 172, y1: 168 } },
-      fx: { x: 172, y: 70 },
     },
   ],
   colorways: RABBIT_COLORWAYS,
@@ -359,11 +367,15 @@ export const rabbit: SpeciesDef = {
     head: { x0: 38, y0: 6, x1: 162, y1: 150 },
     body: { x0: 36, y0: 138, x1: 176, y1: 228 },
   },
-  // Tankeprikker og Z'er ud for kinden, under det knækkede øre.
-  fx: { x: 166, y: 98 },
+  // Tankebobler og Zzz (fælles regel, review G1-r2 pkt. 5.2): hver race har sit anker i fri luft med
+  // mindst 8 enheder til hoved, ører, manke og horn i alle stadier og inden for den sikre zone; moods-
+  // arkets lint tjekker alle racer og stadier.
+  fx: { x: 172, y: 72 },
   face: { idleMouth: 'cat-w', buckTeeth: true, cheeks: true },
   ears: { splay: 10 },
   signature: 'nose-wiggle',
+  // Guldets glansbånd på venstre flanke under armen (armene dækker standardbuen øverst til venstre).
+  goldBand: [148, 196],
   parts: {
     Ear: UprightEar,
     Paw,

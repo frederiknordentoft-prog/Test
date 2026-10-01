@@ -126,8 +126,11 @@ export function silhouettePalette(p: Palette): Palette {
 // ---------------------------------------------------------------------------------------------
 // Fælles magiske farver (kan overskrives pr. art i artens colorway-fil)
 
-/** Pastel-regnbuen: den eneste tilladte statiske gradient på et væsen (manke/hale/tot). */
-export const RAINBOW_STOPS = ['#FF9FB2', '#FFC38A', '#FFEB8A', '#A6E8A4', '#95D2FF', '#C6A6FF'] as const
+/**
+ * Pastel-regnbuen som fire flade striber (review G1-r2: ingen bløde gradienter på kroppen). Riggen
+ * tegner den som en gradient med hårde stop, så hver form får vandrette, skarpe bånd uden ekstra elementer.
+ */
+export const RAINBOW_STOPS = ['#FF9FB2', '#FFDC85', '#A6E8A4', '#9CC8FF'] as const
 
 export const MAGIC: Record<MagicColorwayId, ColorwayDef> = {
   // Guld: ravbrun kontur og ravskygge (review G0-r1, fund 11), så den ikke læses som almindelig gul.
@@ -141,7 +144,7 @@ export const MAGIC: Record<MagicColorwayId, ColorwayDef> = {
     },
     sparkle: '#FFF7CF',
   },
-  // Regnbue: flade pasteller på inderører; gradienten kun på manke, hale og halsflæse.
+  // Regnbue: flade pasteller på inderører; de fire regnbuestriber på manke, hale og halsflæse.
   rainbow: {
     id: 'rainbow',
     name: 'regnbue',
@@ -191,6 +194,12 @@ export function fabric(id: string, name: string, main: FabricName, trim: FabricN
   return { id, name, main: FABRIC[main], trim: FABRIC[trim], accent: FABRIC[accent] }
 }
 
+/** Tøjets kontur er tydeligt mørkere end pelsens (L·0,44 mod pelsens L·0,55), så trøje og hue skiller sig ud på pels i samme farve. */
+export function fabricOutlineOf(hex: string): string {
+  const c = lch(hex)
+  return oklchToHex({ L: c.L * 0.44, C: c.C * 1.15, h: c.h })
+}
+
 export function itemPalette(cw: Colorway, silhouette = false): ItemPalette {
   if (silhouette) {
     const k = SILHOUETTE_FILL
@@ -202,13 +211,13 @@ export function itemPalette(cw: Colorway, silhouette = false): ItemPalette {
   return {
     main: cw.main,
     mainShade: shadeOf(cw.main),
-    outline: outlineOf(cw.main),
+    outline: fabricOutlineOf(cw.main),
     trim: cw.trim,
     trimShade: shadeOf(cw.trim),
-    trimOutline: outlineOf(cw.trim),
+    trimOutline: fabricOutlineOf(cw.trim),
     accent: cw.accent,
     accentShade: shadeOf(cw.accent),
-    accentOutline: outlineOf(cw.accent),
+    accentOutline: fabricOutlineOf(cw.accent),
     highlight: HIGHLIGHT,
     ink: INK,
   }

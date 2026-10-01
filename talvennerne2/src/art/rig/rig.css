@@ -41,8 +41,8 @@
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
 .rig .a-sig {
-  animation: rig-nose 4.6s ease-in-out infinite;
-  animation-delay: calc(-1.2s - var(--rig-t, 0s));
+  animation: rig-nose 4.4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
 }
 .rig .a-twinkle {
   animation: rig-twinkle 2.2s ease-in-out infinite;
@@ -77,61 +77,81 @@
   0%, 94.5%, 97.5%, 100% { transform: scale(1, 1); }
   96% { transform: scale(1, 0.1); }
 }
+/* Næsevippet: tre hurtige løft på 3–3,6 enheder (knurhårene følger med), en pause, og igen. */
 @keyframes rig-nose {
-  0%, 72%, 100% { transform: translate(0, 0) scale(1, 1); }
-  75% { transform: translate(0, -0.8px) scale(1.14, 0.9); }
-  78% { transform: translate(0, 0.3px) scale(0.93, 1.08); }
-  81% { transform: translate(0, -0.6px) scale(1.1, 0.92); }
-  85% { transform: translate(0, 0) scale(1, 1); }
+  0%, 6%, 38%, 58%, 82%, 100% { transform: translate(0, 0) scale(1, 1); }
+  10.2% { transform: translate(0, -3.6px) scale(1.08, 0.94); }
+  15.9% { transform: translate(0, 0.8px) scale(0.96, 1.04); }
+  21.6% { transform: translate(0, -3.2px) scale(1.08, 0.94); }
+  27.3% { transform: translate(0, 0.6px) scale(0.97, 1.03); }
+  33% { transform: translate(0, -2.6px) scale(1.06, 0.95); }
+  63% { transform: translate(0, -3.4px) scale(1.08, 0.94); }
+  68% { transform: translate(0, 0.6px) scale(0.97, 1.03); }
+  73% { transform: translate(0, -3px) scale(1.06, 0.95); }
+  78% { transform: translate(0, 0.4px) scale(1, 1); }
 }
-/* Signaturer: kattens halekrølle, hestens manke-kast og hornets glimt (arterne pakker delen i en
-   pivot med klassen). Hestens hoved kaster med i hvile, så manken svinger mod bevægelsen. */
+/* Signaturer (review G1-r2, pkt. 5.1): tydelige ved 100 % og 48 px – mindst 3 enheders bevægelse
+   (enhjørningen: et glimt på 16 enheder), 3 frames ud, ét overshoot og så en pause. Hændelsen ligger
+   i animationstiden 0,3–1,7 s, så filmstrimlens signaturrække (0,2–2,4 s) fanger den. Arterne pakker
+   delen i en pivot med klassen; hestens og enhjørningens hoved kaster med i hvile. */
 .rig .a-curl {
-  animation: rig-curl 5.4s ease-in-out infinite;
-  animation-delay: calc(-2.1s - var(--rig-t, 0s));
+  animation: rig-curl 5s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
 }
 .rig .a-toss {
-  animation: rig-toss 6.2s ease-in-out infinite;
-  animation-delay: calc(-3s - var(--rig-t, 0s));
+  animation: rig-toss 6s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
 }
-.rig .a-glint {
-  animation: rig-glint 3.4s ease-in-out infinite;
-  animation-delay: calc(-1s - var(--rig-t, 0s));
+.rig .a-glint-star {
+  animation: rig-glint-star 4s linear infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig .a-glint-stripe {
+  animation: rig-glint-stripe 4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
 }
 .rig[data-mood='idle'][data-species='horse'] .a-head,
 .rig[data-mood='idle'][data-species='unicorn'] .a-head {
-  animation: rig-head-toss 6.2s ease-in-out infinite;
-  animation-delay: calc(-3s - var(--rig-t, 0s));
+  animation: rig-head-toss 6s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
 }
+/* Halekrøllen: spidsen krøller kraftigt ind, slår et overshoot ud og falder til ro. */
 @keyframes rig-curl {
-  0%, 62%, 100% { transform: rotate(0deg); }
-  68% { transform: rotate(-24deg); }
-  74% { transform: rotate(9deg); }
-  80% { transform: rotate(-11deg); }
-  87% { transform: rotate(0deg); }
+  0%, 5%, 36%, 100% { transform: rotate(0deg); }
+  9% { transform: rotate(-20deg); }
+  14% { transform: rotate(-38deg); }
+  19% { transform: rotate(12deg); }
+  24% { transform: rotate(-8deg); }
+  29% { transform: rotate(3deg); }
 }
+/* Mankekastet: manken slår ud mod hovedets kast, overshooter og svinger ud. */
 @keyframes rig-toss {
-  0%, 70%, 100% { transform: rotate(0deg); }
-  74% { transform: rotate(5deg); }
-  79% { transform: rotate(-10deg); }
-  85% { transform: rotate(5deg); }
-  91% { transform: rotate(-2deg); }
-  95% { transform: rotate(0deg); }
+  0%, 4%, 30%, 100% { transform: rotate(0deg); }
+  7.5% { transform: rotate(9deg); }
+  11.7% { transform: rotate(-18deg); }
+  15.8% { transform: rotate(10deg); }
+  20% { transform: rotate(-5deg); }
+  24.2% { transform: rotate(2deg); }
 }
 @keyframes rig-head-toss {
-  0%, 35%, 70%, 100% { transform: translate(0, 0) rotate(0deg); }
-  17% { transform: translate(0, -1.6px) rotate(0deg); }
-  52% { transform: translate(0, -1.6px) rotate(0deg); }
-  75% { transform: translate(0, -2px) rotate(-6deg); }
-  81% { transform: translate(0, -1px) rotate(4deg); }
-  88% { transform: translate(0, 0) rotate(-1deg); }
+  0%, 4%, 30%, 70%, 100% { transform: translate(0, 0) rotate(0deg); }
+  7.5% { transform: translate(0, -2.5px) rotate(-7deg); }
+  11.7% { transform: translate(0, -1px) rotate(6deg); }
+  15.8% { transform: translate(0, 0) rotate(-2.5deg); }
+  20% { transform: translate(0, 0) rotate(1deg); }
+  50% { transform: translate(0, -1.4px) rotate(0deg); }
 }
-@keyframes rig-glint {
-  0%, 30%, 100% { opacity: 1; }
-  45%, 60% { opacity: 0.1; }
-  72% { opacity: 1; }
-  80% { opacity: 0.55; }
-  88% { opacity: 1; }
+/* Hornets glimt: glimtet ved spidsen tænder og slukker over tre frames, så løber højlysstriben op. */
+@keyframes rig-glint-star {
+  0%, 7%, 30%, 100% { opacity: 0; }
+  11.25% { opacity: 0.7; }
+  17.5% { opacity: 1; }
+  23.75% { opacity: 0.6; }
+}
+@keyframes rig-glint-stripe {
+  0%, 20%, 50%, 100% { opacity: 0.4; }
+  30% { opacity: 1; }
+  36.25% { opacity: 0.85; }
 }
 @keyframes rig-twinkle {
   0%, 100% { opacity: 1; }
@@ -404,6 +424,7 @@
 .rig[data-mood='sleep'] .a-sig,
 .rig[data-mood='sleep'] .a-curl,
 .rig[data-mood='sleep'] .a-toss,
+.rig[data-mood='sleep'] .a-glint-star,
 .rig[data-mood='sleep'] .a-paw {
   animation: none;
 }
@@ -463,13 +484,14 @@
   animation: rig-wag-fast 0.45s ease-in-out infinite;
 }
 
+/* Vinket: to tydelige sving (review G1-r2, H4: hoven må ikke stå stille). */
 @keyframes rig-wave {
   0%, 100% { transform: rotate(0deg); }
-  11% { transform: rotate(14deg); }
-  22% { transform: rotate(-8deg); }
-  33% { transform: rotate(14deg); }
-  44% { transform: rotate(-8deg); }
-  55% { transform: rotate(10deg); }
+  11% { transform: rotate(19deg); }
+  22% { transform: rotate(-10deg); }
+  33% { transform: rotate(19deg); }
+  44% { transform: rotate(-10deg); }
+  55% { transform: rotate(12deg); }
   68% { transform: rotate(0deg); }
 }
 @keyframes rig-wave-head {

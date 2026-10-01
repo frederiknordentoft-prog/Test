@@ -105,8 +105,9 @@ export function hoof(cx: number, top: number, w: number, h: number, rot = 0): st
 const LEG_SPINE: Vec[] = [[0, -6], [0.2, 9], [0.4, 24], [0.6, 38], [0.8, 46]]
 const LEG = limbLoop(LEG_SPINE, 15.5, 14.5, 6)
 /** Ærmet: forbenet fra brystet til manchetten over knæet (lodret ramme). */
-const LEG_SLEEVE: Vec[] = [[-9, -8], [-9.2, 6], [-9, 20], [0, 21.4], [9, 20], [9.2, 6], [9, -8], [0, -10]]
-export const EQUINE_LIMB = { rot: 0, sleeve: () => blob(LEG_SLEEVE), cuff: { y: 20, half: 10.2 } }
+/** Ærmet følger benet ned til lige over hoven og bliver smallere nedad (review G1-r2, H6). */
+const LEG_SLEEVE: Vec[] = [[-9.8, -10], [-9.5, 4], [-8.9, 17], [-8.4, 27], [0, 29], [8.4, 27], [8.9, 17], [9.5, 4], [9.8, -10], [0, -12]]
+export const EQUINE_LIMB = { rot: 0, sleeve: () => blob(LEG_SLEEVE), cuff: { y: 26.6, half: 9.6 } }
 
 /** Benets længde pr. race (shetlands korte ben er en kortere søjle; skulderen flyttes ned). */
 export function makeLeg(k = 1): SidePart {
@@ -268,8 +269,8 @@ const BLAZE: Vec[] = [[0, -0.86], [-0.12, -0.7], [-0.1, -0.2], [-0.08, 0.4], [-0
 
 export const BlazeHead: Part = ({ pal, a, ids, colorway }) => {
   const c = a.headCenter
-  // Sort: kun en lille stjerne i panden; fuks: en hel blis.
-  const d = colorway === 'c3' ? star(c.x, c.y - a.headRy * 0.5, 8, 3.4, 4) : blob(frame(BLAZE, c.x, c.y, a.headRx, a.headRy), 0.9)
+  // Sort: kun en lille hel stjerne midt i panden, helt under pandelokken (review G1-r2, H2); fuks: en hel blis.
+  const d = colorway === 'c3' ? star(c.x, c.y - a.headRy * 0.22, 6.2, 2.7, 4) : blob(frame(BLAZE, c.x, c.y, a.headRx, a.headRy), 0.9)
   return <path d={d} fill={pal.pattern} clipPath={`url(#${ids.headClip})`} />
 }
 

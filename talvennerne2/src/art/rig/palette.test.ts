@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { RABBIT_COLORWAYS } from '../species/rabbit.colorways'
 import { hexToOklch, mixHex, oklchToHex } from './oklch'
-import { FABRIC, INK, MAGIC, bellyOf, derivePalette, itemPalette, outlineOf, shadeOf, silhouettePalette } from './palette'
+import { FABRIC, INK, MAGIC, bellyOf, derivePalette, fabricOutlineOf, itemPalette, outlineOf, shadeOf, silhouettePalette } from './palette'
 import { MAGIC_COLORWAYS, NATURAL_COLORWAYS } from './types'
 
 describe('OKLCH', () => {
@@ -72,13 +72,16 @@ describe('magiske farver og stofpaletten', () => {
   it('magiske farver er gold, rainbow og starwhite – ikke stardust', () => {
     expect([...MAGIC_COLORWAYS]).toEqual(['gold', 'rainbow', 'starwhite'])
     expect(Object.keys(MAGIC).sort()).toEqual(['gold', 'rainbow', 'starwhite'])
-    expect(MAGIC.rainbow.gradient?.length).toBeGreaterThanOrEqual(5)
+    // Regnbuen er fire flade striber (review G1-r2: ingen bløde gradienter på kroppen).
+    expect(MAGIC.rainbow.gradient?.length).toBe(4)
     expect(MAGIC.gold.sparkle).toBeTruthy()
   })
-  it('genstandes farver afledes med samme regel som dyrene', () => {
+  it('genstandes skygger afledes som dyrenes, og tøjets kontur er tydeligt mørkere end pelsens', () => {
     const c = itemPalette({ id: 'x', name: 'x', main: FABRIC.tomato, trim: FABRIC.cream, accent: FABRIC.navy })
-    expect(c.outline).toBe(outlineOf(FABRIC.tomato))
     expect(c.mainShade).toBe(shadeOf(FABRIC.tomato))
-    expect(c.trimOutline).toBe(outlineOf(FABRIC.cream))
+    expect(c.outline).toBe(fabricOutlineOf(FABRIC.tomato))
+    expect(c.trimOutline).toBe(fabricOutlineOf(FABRIC.cream))
+    // Samme farve på pels og stof: stoffets kontur er mørkere end pelsens (review G1-r2, E6).
+    for (const hex of Object.values(FABRIC)) expect(hexToOklch(fabricOutlineOf(hex)).L).toBeLessThan(hexToOklch(outlineOf(hex)).L * 0.85)
   })
 })

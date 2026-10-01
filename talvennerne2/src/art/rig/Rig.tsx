@@ -61,15 +61,16 @@ export interface RigProps {
   freezeAt?: number
   /**
    * Beskæring (beregnet ud fra stadiets ankre, så den følger figuren):
-   * 'full' (200x240), 'fit' (hele figuren, 5:6), 'head' (hoved og hat), 'torso' (hage til hofte),
-   * 'bust' (hoved og overkrop). Kvadratiske undtagen full/fit. Små ikoner bruger 'fit' som standard.
+   * 'full' (200x240), 'fit' (hele figuren, 5:6), 'head' (hoved og hat), 'torso' (mund til hofte),
+   * 'bust' (hoved og overkrop), 'crown' (hele hovedet med ører og horn). Kvadratiske undtagen full/fit.
+   * Små ikoner bruger 'fit' som standard.
    */
   crop?: RigCrop
   /** 'auto' (standard): 'small' når size ≤ 64 px. */
   lod?: RigLod | 'auto'
 }
 
-export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust'
+export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust' | 'crown'
 
 /** Højde/bredde for en beskæring. */
 export function cropAspect(crop: RigCrop): number {
@@ -238,9 +239,19 @@ export function cropViewBox(def: SpeciesDef, breed: BreedId, stage: Stage, crop:
     if (ib) b = unionBox(b, mapBox(R.head, ib))
     return viewBoxAround(b, 0.08, 1)
   }
+  if (crop === 'crown') {
+    // Hele hovedet med ører og horn (racens hovedboks) ned til hagen: til hornets glimt i nærbilleder.
+    const b = box(wb.head.x0, wb.head.y0, wb.head.x1, w.headCenter.y + w.headRy * 1.04)
+    return viewBoxAround(b, 0.08, 1)
+  }
   if (crop === 'torso') {
-    const b = box(w.bodyCenter.x - w.bodyRx * 1.3, w.headCenter.y + w.headRy * 0.42, w.bodyCenter.x + w.bodyRx * 1.3, w.bodyCenter.y + w.bodyRy * 0.82)
-    return viewBoxAround(b, 0.06, 1)
+    // Kropsslottet: fra mund og hage til hoften – aldrig gennem øjnene (review G1-r2, E4). Kvadratet
+    // vokser nedad og til siderne, aldrig op i ansigtet.
+    const eyeBottom = Math.max(w.eyeL.y, w.eyeR.y) + w.eyeRy
+    const top = Math.max(w.mouth.y + 2, eyeBottom + 4)
+    const bottom = w.bodyCenter.y + w.bodyRy * 0.82
+    const side = Math.max(w.bodyRx * 2.6, bottom - top) * 1.06
+    return `${n(w.bodyCenter.x - side / 2)} ${n(top - side * 0.02)} ${n(side)} ${n(side)}`
   }
   // bust: hoved (uden de højeste ører) og overkrop
   const b = box(w.headCenter.x - w.headRx * 1.15, w.headTop.y - w.headRy * 0.35, w.headCenter.x + w.headRx * 1.15, w.bodyCenter.y + w.bodyRy * 0.4)
@@ -355,6 +366,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const itemClipId = `${uid}i`
   const earClipId = ids.outsideHead
   const holeClipId = `${uid}o`
+  const hornClipId = `${uid}n`
   const sleeveClipId = `${uid}v`
 
   const a = modelAnchors(def, breed)
@@ -389,6 +401,21 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const holes = hat === 'through' && earsShown && earRig?.clip !== false && !!headWorn?.item.art.rim
   // Arter tegner selv en afrundet ørebund i hullet (ctx.hat); klippet er kun et værn for andre.
   const holeY = Math.min(a.earBaseL.y, a.earBaseR.y) + 3
+  // Hornhul (review G1-r2, E1): hatten tegner et hul over hornets rod, og hornet skjules under hullets
+  // nederste kant (forkanten i `rim` ligger ovenpå), så hornet går op gennem huen og aldrig over kanten.
+  const hornHat = parts.Horn && holes && headWorn?.item.hornHole ? headWorn : undefined
+  // En hat mellem ørerne ('under') på en art med horn flyttes ud ved siden af hornet (fit-overskrivning)
+  // og tegnes foran øret, så den ikke forsvinder bag det.
+  const hatBesideHorn = !!parts.Horn && hat === 'under'
+  const hornHole = (() => {
+    if (!hornHat) return null
+    const h = hornHat.item.hornHole!
+    const fit = fitItem(hornHat.item, a, def)
+    const base = toLocal(fit, a.hornBase)
+    const local = { x: base.x, y: base.y - h.lift }
+    // Hatte med hornhul drejes ikke; centrum i modelrummet og hullets halvakser.
+    return { local, cx: fit.x + local.x * fit.scale, cy: fit.y + local.y * fit.scale, rx: h.rx * fit.scale, ry: h.ry * fit.scale }
+  })()
 
   // Arterne ser 'through' kun, når ørerne faktisk går gennem huller (og tegner da en afrundet ørebund).
   const hatCtx = holes ? 'through' : hat === 'under' ? 'under' : null
@@ -431,6 +458,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             local: (p) => toLocal(fit, p),
             solo: false,
             holes,
+            horn: slot === 'head' ? (hornHole?.local ?? null) : null,
             restroke: (color) => (
               <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
             ),
@@ -503,6 +531,28 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     )
   }
 
+  // Hornet om sin rod; gennem et hornhul klippes det (i hornets egen ramme) under hullets nederste kant.
+  const horn = (hole: typeof hornHole) => {
+    const k = stage === 3 ? (breedDef?.hornGrowth ?? R.xf.horn) : R.xf.horn
+    const b = a.hornBase
+    const clip = hole && (() => {
+      const lx = (x: number) => n((x - b.x) / k)
+      const ly = (y: number) => n((y - b.y) / k)
+      const r = (v: number) => n(v / k)
+      return `M-400 -400H400V${ly(hole.cy)}H${lx(hole.cx + hole.rx)}A${r(hole.rx)} ${r(hole.ry)} 0 0 1 ${lx(hole.cx - hole.rx)} ${ly(hole.cy)}H-400Z`
+    })()
+    return (
+      <g transform={`translate(${n(b.x)} ${n(b.y)}) scale(${fmt3(k)})`} clipPath={clip ? `url(#${hornClipId})` : undefined}>
+        {clip && (
+          <clipPath id={hornClipId}>
+            <path d={clip} />
+          </clipPath>
+        )}
+        {Horn!(ctx(swHead / k))}
+      </g>
+    )
+  }
+
   const ear = (side: 'L' | 'R', Part: NonNullable<SpeciesParts['Ear']>) => {
     const at = side === 'L' ? a.earBaseL : a.earBaseR
     const splay = earRig?.splay ?? 0
@@ -529,7 +579,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const outsideClip = earClip || (!!parts.ManeFront && !hides.has('mane-front'))
   const P = parts.Pattern
   const pattern = resolveColorway(def, colorway).pattern ?? 'none'
-  const shade = shading(a, colorway === 'gold' && !silhouette)
+  const shade = shading(a, colorway === 'gold' && !silhouette, def.goldBand)
   const showFx = !silhouette
 
   // fx-positioner (verdensrum). Tanker og Z'er sidder til højre for hovedet, fri af øret.
@@ -598,9 +648,11 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         {!silhouette && <ShadowGradient id={shadowId} />}
         {pal.gradient && (
           <linearGradient id={ids.gradient} x1="0" y1="0" x2="0" y2="1">
-            {pal.gradient.map((c, i) => (
-              <stop key={i} offset={fmt3(i / (pal.gradient!.length - 1))} stopColor={c} />
-            ))}
+            {/* Flade striber: hårde stop ved båndgrænserne (første og sidste farve forlænges af gradienten). */}
+            {pal.gradient.slice(0, -1).flatMap((c, i) => {
+              const at = fmt3((i + 1) / pal.gradient!.length)
+              return [<stop key={`${i}a`} offset={at} stopColor={c} />, <stop key={`${i}b`} offset={at} stopColor={pal.gradient![i + 1]} />]
+            })}
           </linearGradient>
         )}
       </defs>
@@ -664,8 +716,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           </g>
         </g>
 
-        {/* Hoved (lag 10–16) om halsleddet */}
-        <g transform={`translate(${n(R.neckWorld.x)} ${n(R.neckWorld.y)}) scale(${fmt3(R.head.s)})`}>
+        {/* Hoved (lag 10–16) om halsleddet; data-part="head" bruges af bobleklaringens lint. */}
+        <g data-part="head" transform={`translate(${n(R.neckWorld.x)} ${n(R.neckWorld.y)}) scale(${fmt3(R.head.s)})`}>
           <g className={animated ? 'a-head' : undefined} transform={tf(pose.head ?? {})}>
             <g transform={`translate(${n(-a.neck.x)} ${n(-a.neck.y)})`}>
               {/* 10 · mane-back (+ hattens bagdel) */}
@@ -698,8 +750,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {renderItem('face', 'front', R.head.s)}
               {/* 14 · mane-front */}
               {parts.ManeFront && !hides.has('mane-front') && scaled(a.headTop, R.xf.mane, parts.ManeFront(ctx(swHead / R.xf.mane)))}
-              {/* 15 · head-item */}
-              {renderItem('head', 'front', R.head.s)}
+              {/* 15 · head-item (en hat mellem ørerne på en art med horn sidder skævt ved siden af
+                  hornet og tegnes foran øret, se festhattens overskrivning) */}
+              {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
               {/* 16 · ører, horn (+ hattens hulkant over ørernes rod) */}
               {earsShown && (
                 <g clipPath={earClip ? `url(#${earClipId})` : holes ? `url(#${holeClipId})` : undefined}>
@@ -707,12 +760,11 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                   {ear('R', Ear!)}
                 </g>
               )}
+              {hatBesideHorn && renderItem('head', 'front', R.head.s)}
+              {/* Hornet gennem et hornhul: under hullets forkant (rim); ellers øverst. */}
+              {Horn && hornHole && horn(hornHole)}
               {renderItem('head', 'rim', R.head.s)}
-              {Horn && (
-                <g transform={`translate(${n(a.hornBase.x)} ${n(a.hornBase.y)}) scale(${fmt3(R.xf.horn)})`}>
-                  <g className={animated ? 'a-horn' : undefined}>{Horn(ctx(swHead / R.xf.horn))}</g>
-                </g>
-              )}
+              {Horn && !hornHole && horn(null)}
             </g>
           </g>
         </g>
@@ -757,7 +809,7 @@ function chinShadow(a: AnchorSet, R: ReturnType<typeof regionTransforms>): strin
  * Cel-skyggens "lyse" ellipser (skyggen = kroppen minus den lyse ellipse) og hovedets højlys.
  * Guld får desuden et smalt glansbånd på hoved og krop (metallisk, uden gradient).
  */
-function shading(a: AnchorSet, goldBand: boolean) {
+function shading(a: AnchorSet, goldBand: boolean, arc: readonly [number, number] = [196, 244]) {
   const h = a.headCenter
   const b = a.bodyCenter
   return {
@@ -768,7 +820,7 @@ function shading(a: AnchorSet, goldBand: boolean) {
       ellipse(h.x - a.headRx * 0.2, h.y - a.headRy * 0.8, a.headRx * 0.055, a.headRy * 0.055),
       goldBand && lune(h.x + 4, h.y + 2, a.headRx * 0.86, a.headRy * 0.86, 2.6, 200, 250),
     ),
-    bodyBand: goldBand ? lune(b.x + 6, b.y + 4, a.bodyRx * 0.82, a.bodyRy * 0.86, 3, 196, 244) : null,
+    bodyBand: goldBand ? lune(b.x + 6, b.y + 4, a.bodyRx * 0.82, a.bodyRy * 0.86, 3, arc[0], arc[1]) : null,
   }
 }
 

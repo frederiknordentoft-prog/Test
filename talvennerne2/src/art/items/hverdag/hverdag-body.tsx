@@ -86,7 +86,8 @@ const sleeve: SleeveArt = ({ c, sw, sleeve: d, cuff, clipId }) => {
     <>
       <path d={d} fill={c.main} {...stroke} />
       <path d={join(rect(-20, y0 - 15, 40, 3.6), rect(-20, y0 - 7.6, 40, 3.6))} fill={c.trim} clipPath={`url(#${clipId})`} />
-      <path d={softBand(-cuff.half + 2.6, cuff.half - 2.6, y0 - 2.6, y0 + 2.8, 0.6, 0.6)} fill={c.accent} {...stroke} />
+      {/* Manchetten buer med armens rundning (review G1-r2, H6). */}
+      <path d={softBand(-cuff.half + 2.6, cuff.half - 2.6, y0 - 2.6, y0 + 2.8, 1.8, 1.8)} fill={c.accent} {...stroke} />
     </>
   )
 }
