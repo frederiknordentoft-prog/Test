@@ -7,7 +7,7 @@
 //   40 ms  between words inside a phrase ("Hvad er | tre")
 //  120 ms  after a mid-form clip (`.mid` ids, generated with a trailing comma)
 //  250 ms  after an end-form clip or a sentence (`.end`, `t.half.*`, `q.*`, text ending in . ? !),
-//          and before a clip that starts a sentence (its text starts with a capital letter)
+//          and before a clip that starts a sentence (capitalised text, names excepted)
 //
 // `{ free }` text (a child's name) can never be recorded, and one statement is never spoken in two
 // voices mid-sentence, so free text becomes its own utterance for the device voice.
@@ -53,9 +53,12 @@ export function clipClass(id: ClipId): ClipClass {
   return 'phrase'
 }
 
-/** True for clips whose text opens a sentence ("Hvad er", "Tryk på fluebenet …"). */
+/**
+ * True for clips whose text opens a sentence ("Hvad er", "Tryk på fluebenet …"). Names (`name.*`:
+ * Trine, Plusengen) are capitalised mid-sentence too, so they never open one.
+ */
 export function startsSentence(id: ClipId): boolean {
-  return hasClip(id) && /^[A-ZÆØÅ]/.test(clipText(id))
+  return !id.startsWith('name.') && hasClip(id) && /^[A-ZÆØÅ]/.test(clipText(id))
 }
 
 /** Silence between two consecutive clips of one utterance. */

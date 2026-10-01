@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SpeechPart } from '../engine/types'
 import { allClips, clipText, hasClip } from './catalog'
-import { GAP_MS, compile, isQuestion, toDanishText } from './compile'
+import { GAP_MS, compile, isQuestion, startsSentence, toDanishText } from './compile'
 import { DENOMINATORS } from './fractions'
 
 describe('compile', () => {
@@ -58,6 +58,12 @@ describe('compile', () => {
     const c = compile([{ clip: 's.findes.ikke' }, { num: 5000, form: 'end' }])
     expect(c.missing).toEqual(['s.findes.ikke', 'n.end.5000'])
     expect(c.text).toBe('Fem tusind.')
+  })
+
+  it('lets capitalised sentence clips open a sentence, but never names', () => {
+    expect(startsSentence('frag.hvad_er')).toBe(true)
+    expect(startsSentence('op.plus')).toBe(false)
+    expect(startsSentence('name.animal.rabbit.1')).toBe(false)
   })
 
   it('detects questions', () => {
