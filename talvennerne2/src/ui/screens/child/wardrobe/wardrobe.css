@@ -1,0 +1,602 @@
+/* The wardrobe (WardrobeScreen, wardrobe/**). Colours from tokens and the sets' tones; only
+   transform and opacity move, and calm mode and reduced motion stop every loop. Every tap target is
+   at least 60 px; the thing cards are at least 96 px. Phone: animal, tabs and the things under each
+   other. Wide screens (iPad held sideways, phone held sideways): the animal left, the rest right. */
+
+.tv-wr {
+  --wr-stage: clamp(176px, 31vh, 440px);
+  --wr-card: 100px;
+  --wr-swatch: 60px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.tv-wr__top {
+  flex: none;
+}
+/* With one animal the title shares the row with ← on every phone. */
+.tv-wr__top--title.tv-topbar {
+  flex-wrap: nowrap;
+}
+.tv-wr__top--title .tv-topbar__center {
+  order: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tv-wr-title {
+  margin: 0;
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  font-weight: 900;
+  color: var(--color-ink);
+  text-align: center;
+}
+
+/* ── The animal picker (in the top bar) ───────────────────────────────── */
+.tv-wr-animals {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 2px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.tv-wr-animals::-webkit-scrollbar {
+  display: none;
+}
+.tv-wr-animal {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 2px var(--color-line), 0 4px 12px rgba(43, 33, 68, 0.08);
+}
+.tv-wr-animal.is-on {
+  background: var(--color-primary-soft);
+  box-shadow: inset 0 0 0 3px var(--color-primary), 0 4px 0 var(--color-primary-tint);
+}
+.tv-wr-animal__pic {
+  display: grid;
+  place-items: center;
+  color: var(--color-ink-3);
+}
+.tv-wr-animal__heart {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-card);
+  border-radius: 50%;
+  background: var(--color-heart);
+  color: var(--color-card);
+}
+
+/* ── The animal on its spot ───────────────────────────────────────────── */
+.tv-wr__stage {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: var(--wr-stage);
+  padding: 0 var(--gutter);
+}
+.tv-wr-figure {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 200 / 240;
+}
+.tv-wr-figure__light {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 118%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 0 0 14px rgba(255, 255, 255, 0.28);
+  transform: translate(-50%, -46%);
+}
+.tv-wr-figure__floor {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  width: 86%;
+  height: 12%;
+  border-radius: 50%;
+  background: var(--color-paper-2);
+  box-shadow: inset 0 -3px 0 var(--color-line);
+  transform: translateX(-50%);
+}
+.tv-wr-figure__rig {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.tv-wr-figure__stand {
+  position: absolute;
+  inset: 12% 8% 16%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+/* The three colours of the thing that is on (right) and "Tag af" (left). */
+.tv-wr-colors {
+  position: absolute;
+  top: 50%;
+  right: var(--gutter);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: translateY(-50%);
+}
+.tv-wr-color {
+  display: grid;
+  place-items: center;
+  width: var(--wr-swatch);
+  height: var(--wr-swatch);
+  padding: 6px;
+  border-radius: 18px;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 2px var(--color-line), 0 4px 12px rgba(43, 33, 68, 0.1);
+}
+.tv-wr-color.is-on {
+  box-shadow: inset 0 0 0 3px var(--color-primary), 0 4px 0 var(--color-primary-tint);
+}
+.tv-wr-color.is-shop {
+  background: var(--color-paper-2);
+  box-shadow: inset 0 0 0 2px var(--color-line);
+}
+.tv-wr-color.is-shop .tv-wr-color__pic {
+  opacity: 0.55;
+}
+.tv-wr-color__badge {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--color-card);
+  border-radius: 50%;
+  background: var(--color-d-money-soft);
+  color: var(--color-d-money-deep);
+}
+.tv-wr-off {
+  position: absolute;
+  top: 50%;
+  left: var(--gutter);
+  transform: translateY(-50%);
+}
+
+/* ── The six slots ────────────────────────────────────────────────────── */
+.tv-wr__tabs {
+  flex: none;
+  padding: 6px 4px 4px;
+}
+.tv-wr-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 4px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(43, 33, 68, 0.1);
+}
+.tv-wr-tab {
+  min-width: 0;
+  min-height: 64px;
+  border-radius: 20px;
+  color: var(--color-ink-2);
+}
+.tv-wr-tab__face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 100%;
+  min-height: 64px;
+  padding: 4px 0 5px;
+}
+.tv-wr-tab.is-on {
+  background: var(--color-d-fractions);
+  color: var(--color-card);
+  box-shadow: 0 4px 0 var(--color-d-fractions-deep);
+  --icon-fill-o: 0.3;
+}
+.tv-wr-tab__glyph {
+  width: 30px;
+  height: 30px;
+}
+.tv-wr-tab__label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tv-wr-tab__dot {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 22px);
+  width: 12px;
+  height: 12px;
+  border: 2.5px solid var(--color-card);
+  border-radius: 50%;
+  background: var(--color-good);
+}
+.tv-wr-tab__lock {
+  position: absolute;
+  top: 5px;
+  right: calc(50% - 24px);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-stone);
+  color: var(--color-ink-2);
+}
+
+/* ── The things of a slot ─────────────────────────────────────────────── */
+.tv-wr__panel {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.tv-wr-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 8px var(--gutter) 20px;
+}
+.tv-wr-shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-wr-h {
+  align-self: flex-start;
+  margin: 0;
+  padding: 2px 4px;
+  font-size: var(--text-body);
+  font-weight: 900;
+  color: var(--color-ink-2);
+}
+.tv-wr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--wr-card), 1fr));
+  gap: 10px;
+}
+.tv-wr-card {
+  display: block;
+  min-height: 96px;
+  aspect-ratio: 1;
+  border-radius: var(--radius-tile);
+}
+.tv-wr-card__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10% 10% 16%;
+  border-radius: inherit;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 2px var(--color-line), 0 6px 16px rgba(43, 33, 68, 0.08);
+}
+.tv-wr-card__pic {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.tv-wr-card__dots {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  display: flex;
+  gap: 5px;
+  transform: translateX(-50%);
+}
+.tv-wr-card__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-line-2);
+}
+.tv-wr-card__dot.is-owned {
+  background: var(--color-primary);
+}
+.tv-wr-card.is-on .tv-wr-card__face {
+  background: var(--color-primary-soft);
+  box-shadow: inset 0 0 0 3px var(--color-primary), 0 6px 0 var(--color-primary-tint);
+}
+.tv-wr-card__check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-card);
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-card);
+}
+.tv-wr-card__new {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+/* Pointed at: a soft ring that breathes, and a hand that taps (never more than that). */
+.tv-wr-card.is-guide::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border: 4px solid var(--color-star);
+  border-radius: calc(var(--radius-tile) + 7px);
+  pointer-events: none;
+  animation: tv-wr-breathe 1.8s var(--ease-out) infinite;
+}
+.tv-wr-hand {
+  position: absolute;
+  right: -8px;
+  bottom: -12px;
+  color: var(--color-ink);
+  pointer-events: none;
+  animation: tv-wr-tap 1.8s var(--ease-out) infinite;
+}
+.tv-wr-hand .tv-icon__fill {
+  fill: var(--color-card);
+  opacity: 1;
+}
+/* Things the child does not have yet: a sunken tile with an outline and its source. */
+.tv-wr-card.is-other .tv-wr-card__face {
+  padding: 12%;
+  background: var(--color-paper-2);
+  box-shadow: inset 0 0 0 2px var(--color-line);
+}
+.tv-wr-card.is-gold .tv-wr-card__face {
+  box-shadow: inset 0 0 0 3px var(--color-star), inset 0 0 0 5px var(--color-star-soft);
+}
+.tv-wr-card__source {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 6px 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-card);
+  color: var(--color-ink-2);
+  box-shadow: 0 2px 6px rgba(43, 33, 68, 0.1);
+  font-size: 14px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.tv-wr-card__source.is-medal {
+  background: var(--color-star-soft);
+  color: var(--color-star-deep);
+  --icon-fill-o: 0.45;
+}
+.tv-wr-card__source.is-shop {
+  background: var(--color-d-money-soft);
+  color: var(--color-d-money-deep);
+}
+.tv-wr-empty,
+.tv-wr-note__text {
+  margin: 0;
+  font-size: var(--text-body);
+  color: var(--color-ink-2);
+}
+.tv-wr-empty {
+  padding: 10px 14px;
+  border-radius: var(--radius-tile);
+  background: rgba(255, 255, 255, 0.7);
+}
+.tv-wr-note {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.tv-wr-note__icon {
+  flex: none;
+  color: var(--color-ink-2);
+}
+
+/* ── "Sådan får du den" ───────────────────────────────────────────────── */
+.tv-wr-how__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 6px;
+}
+.tv-wr-how__pic {
+  align-self: center;
+  width: 148px;
+  height: 148px;
+  padding: 12px;
+  border-radius: 40px;
+  background: var(--color-paper-2);
+  box-shadow: inset 0 0 0 2px var(--color-line);
+}
+.tv-wr-how__pic.is-gold {
+  box-shadow: inset 0 0 0 4px var(--color-star), inset 0 0 0 7px var(--color-star-soft);
+}
+.tv-wr-how__line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.tv-wr-how__badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+}
+.tv-wr-how__badge.is-medal {
+  background: var(--color-star-soft);
+  color: var(--color-star-deep);
+  --icon-fill-o: 0.45;
+}
+.tv-wr-how__badge.is-shop {
+  background: var(--color-d-money-soft);
+  color: var(--color-d-money-deep);
+}
+.tv-wr-how__badge.is-chest,
+.tv-wr-how__badge.is-finale {
+  background: var(--color-d-place-soft);
+  color: var(--color-d-place-deep);
+}
+.tv-wr-how__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.tv-wr-how__label {
+  font-size: var(--text-label);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--color-ink-2);
+}
+.tv-wr-how__say {
+  font-size: calc(var(--text-body) + 2px);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+.tv-wr-how__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.tv-wr-how__wished {
+  align-self: center;
+  min-height: 44px;
+}
+
+/* ── Wider screens ────────────────────────────────────────────────────── */
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-wr {
+    --wr-stage: clamp(260px, 34vh, 460px);
+    --wr-card: 116px;
+    --wr-swatch: 72px;
+  }
+  .tv-wr-tab,
+  .tv-wr-tab__face {
+    min-height: 76px;
+  }
+  .tv-wr-tab__label {
+    font-size: 15px;
+  }
+  .tv-wr-tab__glyph {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* Sideways: the animal on the left half, tabs and things on the right. */
+@media (min-aspect-ratio: 5/4) {
+  .tv-wr {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+  .tv-wr__top {
+    grid-column: 1 / -1;
+  }
+  .tv-wr__stage {
+    grid-row: 2 / 4;
+    grid-column: 1;
+    height: auto;
+    min-height: 0;
+    padding-bottom: 12px;
+  }
+  .tv-wr-figure {
+    height: auto;
+    width: min(100%, 62vh);
+    max-height: 100%;
+  }
+  .tv-wr__tabs {
+    grid-row: 2;
+    grid-column: 2;
+    padding-right: var(--gutter);
+  }
+  .tv-wr__panel {
+    grid-row: 3;
+    grid-column: 2;
+  }
+}
+
+/* ── Calm mode and reduced motion: still, but still pointed at ────────── */
+:root[data-calm] .tv-wr-card.is-guide::after,
+:root[data-calm] .tv-wr-hand {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-wr-card.is-guide::after,
+  .tv-wr-hand {
+    animation: none;
+  }
+}
+
+@keyframes tv-wr-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.04);
+  }
+}
+@keyframes tv-wr-tap {
+  0%,
+  55%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-5px, -7px);
+  }
+}

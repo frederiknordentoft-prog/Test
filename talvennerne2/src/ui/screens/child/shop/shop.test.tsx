@@ -1,0 +1,77 @@
+import { readFileSync, readdirSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it } from 'vitest'
+import { PRICE_BY_SLOT } from '../../../../content/catalog'
+import { clipText, hasClip } from '../../../../speech/catalog'
+import { clips as shopClips } from '../../../../speech/clips/ui/shop'
+import { clips as wardrobeClips } from '../../../../speech/clips/ui/wardrobe'
+import { Shop } from '../ShopScreen'
+import { child } from '../wardrobe/fixtures'
+
+/**
+ * The shop as the child sees it (SPEC §5.7, §13): the perler at the top, fixed prices, the child's own
+ * things marked, and none of the tricks — no countdown, no "today only", no rarity, no money.
+ */
+
+type Attrs = Record<string, string>
+function tags(html: string, tag: string): Attrs[] {
+  return [...html.matchAll(new RegExp(`<${tag}\\b([^>]*)>`, 'g'))].map((m) =>
+    Object.fromEntries([...m[1].matchAll(/([\w-]+)(?:="([^"]*)")?/g)].map((a) => [a[1], a[2] ?? ''])),
+  )
+}
+
+describe('the shop', () => {
+  it('shows the child\'s perler at the top', () => {
+    const html = renderToStaticMarkup(<Shop profile={child()} />)
+    const top = html.slice(0, html.indexOf('</header>'))
+    expect(top).toContain('data-perler="300"')
+    expect(top).toMatch(/tv-store-perler__n">300</)
+  })
+
+  it('lists four sets with the fixed price of every slot, and marks what the child has', () => {
+    const p = child({ 'pirat-head': [0] })
+    const html = renderToStaticMarkup(<Shop profile={p} />)
+    const cards = tags(html, 'button').filter((b) => 'data-buy' in b)
+    expect(cards).toHaveLength(24)
+    expect(cards.filter((b) => 'data-owned' in b).map((b) => b['data-buy'])).toEqual(['pirat-head'])
+    // every price on the shelf is a fixed price of a slot; the child's own thing shows none
+    const prices = [...html.matchAll(/tv-store-price__n">(\d+)</g)].map((m) => Number(m[1]))
+    expect(prices).toHaveLength(23)
+    for (const n of prices) expect(Object.values(PRICE_BY_SLOT)).toContain(n)
+  })
+
+  it('shows the wish with a bar and no numbers', () => {
+    const p = child()
+    const html = renderToStaticMarkup(<Shop profile={{ ...p, economy: { ...p.economy, wish: 'pirat-body', perler: 90 } }} />)
+    const meter = tags(html, 'button').find((b) => b.role === 'meter')!
+    expect(meter['aria-valuenow']).toBe('0.5')
+    const wish = html.slice(html.indexOf('data-wish="pirat-body"'), html.indexOf('tv-store__tabs'))
+    expect(wish).not.toMatch(/>\s*\d+\s*</)
+  })
+})
+
+describe('guardrails (SPEC §13)', () => {
+  const words = [...Object.values(shopClips), ...Object.values(wardrobeClips)]
+
+  it('has no countdown, no time-limited offer, no rarity, no money and no guilt in what the screens say', () => {
+    const banned = /\bkun\b|i dag|tilbud|udsalg|rabat|sjælden|eksklusiv|skynd|nedtælling|udløber|snart væk|sidste chance|kr\.|kroner|penge|betal|savner|ked af det|venter på dig|glem ikke|kom tilbage|din ven bliver/i
+    for (const w of words) expect(w).not.toMatch(banned)
+    const html = renderToStaticMarkup(<Shop profile={child()} />)
+    expect(html.replace(/<[^>]+>/g, ' ')).not.toMatch(banned)
+  })
+
+  it('uses only recorded clips in the wardrobe and the shop, and every clip of theirs is used', () => {
+    const here = path.dirname(fileURLToPath(import.meta.url))
+    const files = [
+      ...['../WardrobeScreen.tsx', '../ShopScreen.tsx'].map((f) => path.join(here, f)),
+      ...['../wardrobe', '.'].flatMap((d) => readdirSync(path.join(here, d)).filter((f) => /\.tsx?$/.test(f) && !/\.test\./.test(f)).map((f) => path.join(here, d, f))),
+    ]
+    const source = files.map((f) => readFileSync(f, 'utf8')).join('\n')
+    const used = new Set([...source.matchAll(/['"](s\.(?:wardrobe|shop)\.[\w.]+)['"]/g)].map((m) => m[1]))
+    for (const id of used) expect(hasClip(id), id).toBe(true)
+    for (const id of [...Object.keys(shopClips), ...Object.keys(wardrobeClips)]) expect(used.has(id), `${id} is not used`).toBe(true)
+    expect(clipText('s.shop.buy.ask')).toBe('Vil du købe den?')
+  })
+})
