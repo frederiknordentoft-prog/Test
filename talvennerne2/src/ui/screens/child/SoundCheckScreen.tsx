@@ -98,15 +98,15 @@ export default function SoundCheckScreen(_: ScreenProps<RouteOf<'soundCheck'>>) 
   return (
     <div className="tv-first tv-sound" data-phase={check.phase}>
       <TopBar leading={canBack ? 'back' : null} onLeading={() => useNav.getState().back()} onReplay={() => say(prompt())} />
-      <div className="tv-first__body">
+      <div className="tv-first__body tv-first__body--talk">
         <div className="tv-say">
           <PipFigure talking={talking} className="tv-say__pip" />
           <div className={cx('tv-say__bubble', talking && 'is-talking')}>
             {passed ? (
               <SpokenText clip="s.sound.good" className="tv-say__text" />
             ) : (
-              <span className="tv-sound__waves" aria-label={speech.text('s.ui.replay')}>
-                <Icon name="soundOn" size={44} />
+              <span className="tv-sound__waves" role="img" aria-label={speech.text(failed ? 's.ui.soundOff' : 's.ui.replay')}>
+                <Icon name={failed ? 'soundOff' : 'soundOn'} size={44} />
               </span>
             )}
           </div>

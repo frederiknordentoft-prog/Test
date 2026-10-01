@@ -40,6 +40,16 @@
   flex: 1 1 0;
   min-width: 0;
 }
+.tv-first__actions > .tv-btn .tv-btn__face {
+  padding: 0 0.7em;
+  white-space: nowrap;
+}
+
+/* The top bar's right-hand buttons stay on the right also without a centre (it collapses when
+   empty, and nothing else pushes the end side over on a wide screen). */
+.tv-first > .tv-topbar > .tv-topbar__side--end {
+  margin-left: auto;
+}
 
 /* ── Pip and the speech bubble ─────────────────────────────────────── */
 .tv-say {
@@ -50,7 +60,7 @@
   width: 100%;
   max-width: 560px;
 }
-.tv-say__pip {
+.tv-say > .tv-say__pip {
   flex: none;
   width: 84px;
 }
@@ -88,7 +98,7 @@
   .tv-say {
     max-width: 640px;
   }
-  .tv-say__pip {
+  .tv-say > .tv-say__pip {
     width: 112px;
   }
   .tv-say__bubble {
@@ -178,6 +188,9 @@
   width: 100%;
   height: auto;
 }
+.tv-art > svg {
+  overflow: visible;
+}
 .tv-art__img {
   -webkit-user-drag: none;
   pointer-events: none;
@@ -186,7 +199,6 @@
   display: block;
   width: 100%;
   height: auto;
-  overflow: visible;
 }
 .tv-critter__shadow {
   fill: var(--color-line);
@@ -319,9 +331,9 @@
 }
 .tv-hatch__baby {
   position: absolute;
-  left: -6%;
-  right: -6%;
-  bottom: 30%;
+  left: 10%;
+  right: 10%;
+  bottom: 35%;
 }
 .tv-hatch.is-split .tv-hatch__baby > * {
   animation: tv-baby-rise 760ms var(--ease-spring) both;
@@ -487,12 +499,13 @@
 .tv-eggs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
   gap: 12px 14px;
 }
-@media (orientation: landscape), (min-width: 700px) and (min-height: 700px) {
+@media (orientation: landscape) {
   .tv-eggs {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    max-width: 760px;
+    max-width: 860px;
   }
 }
 .tv-eggbtn {
@@ -517,7 +530,7 @@
 }
 .tv-eggbtn__egg {
   display: block;
-  width: min(100%, 132px, calc((100dvh - 420px) / 2.6));
+  width: min(100%, 150px, calc((100dvh - 400px) / 2.7));
   min-width: 84px;
   transform-origin: 50% 94%;
   animation: tv-egg-rock 3.4s ease-in-out infinite;
@@ -533,6 +546,16 @@
 }
 .tv-eggbtn[data-pressed] {
   transform: scale(0.96);
+}
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-eggbtn__egg {
+    width: min(100%, 210px, calc((100dvh - 470px) / 2.7));
+  }
+}
+@media (orientation: landscape) {
+  .tv-eggbtn__egg {
+    width: min(100%, 150px, calc((100dvh - 250px) * 0.6));
+  }
 }
 .tv-eggbtn__label {
   font-size: var(--text-button);
@@ -691,7 +714,7 @@
   color: var(--color-primary-deep);
 }
 .tv-grade__label {
-  font-size: 19px;
+  font-size: clamp(15px, 4.6vw, 19px);
   font-weight: 800;
 }
 
@@ -700,6 +723,182 @@
   display: grid;
   gap: 14px;
   padding-bottom: 4px;
+}
+
+/* ── iPad: the same screens, bigger ─────────────────────────────────── */
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-first__body {
+    gap: 22px;
+  }
+  .tv-onb__stage,
+  .tv-first__actions {
+    max-width: 660px;
+  }
+  .tv-onb__input {
+    min-height: 92px;
+    font-size: 36px;
+  }
+  .tv-choice__face {
+    min-height: 80px;
+    font-size: 27px;
+  }
+  .tv-names {
+    gap: 14px;
+  }
+  .tv-grades {
+    gap: 18px;
+  }
+  .tv-grade .tv-choice__face {
+    min-height: 180px;
+  }
+  .tv-grade__n {
+    font-size: 72px;
+  }
+  .tv-grade__label {
+    font-size: 23px;
+  }
+  .tv-onb__friend {
+    width: min(30vw, 230px, calc((100dvh - 700px) * 0.83));
+  }
+  .tv-hatchbtn {
+    width: min(56vw, 340px, calc((100dvh - 380px) * 0.75));
+  }
+  .tv-sound__cards {
+    max-width: 700px;
+    gap: 22px;
+  }
+  .tv-sound__card .tv-answer__face {
+    min-height: 320px;
+  }
+  .tv-sound__animal {
+    width: min(100%, 260px);
+  }
+  .tv-sound__off {
+    max-width: 640px;
+    padding: 32px;
+  }
+  .tv-sound__switch {
+    width: min(100%, 300px);
+  }
+}
+
+/* ── Short screens ─────────────────────────────────────────────────── */
+/* A short phone standing up: a little tighter everywhere. */
+@media (max-height: 700px) and (orientation: portrait) {
+  .tv-first__body {
+    gap: 10px;
+  }
+  .tv-say > .tv-say__pip {
+    width: 66px;
+  }
+  .tv-say__bubble {
+    min-height: 60px;
+    padding: 10px 14px;
+  }
+  .tv-say__text {
+    font-size: 19px;
+  }
+  .tv-choice__face {
+    min-height: 56px;
+    font-size: 20px;
+  }
+  .tv-names {
+    gap: 8px;
+  }
+  .tv-onb__friend {
+    width: 84px;
+    min-width: 0;
+  }
+  .tv-sound__card .tv-answer__face {
+    min-height: 180px;
+  }
+}
+
+/* A phone held sideways: Pip and the bubble on the left, the task and the buttons on the right. */
+@media (max-height: 500px) {
+  .tv-first__body--talk {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 20px;
+    row-gap: 10px;
+  }
+  .tv-first__body--talk > * {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+  }
+  .tv-first__body--talk > .tv-say {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: start;
+    margin-top: 12px;
+  }
+  .tv-first__body--talk > .tv-first__actions {
+    grid-row: 2;
+  }
+  .tv-say > .tv-say__pip {
+    width: 64px;
+  }
+  .tv-say__bubble {
+    min-height: 56px;
+    padding: 10px 14px;
+  }
+  .tv-say__text {
+    font-size: 18px;
+  }
+  .tv-onb__stage {
+    gap: 8px;
+  }
+  /* the friend stands under the bubble, the names take the right */
+  .tv-first__body--talk > .tv-onb__stage--friend {
+    display: contents;
+  }
+  .tv-first__body--talk .tv-onb__friend {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+    width: 80px;
+    min-width: 0;
+  }
+  .tv-first__body--talk .tv-names {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .tv-choice__face {
+    min-height: 56px;
+    font-size: 19px;
+  }
+  .tv-grade .tv-choice__face {
+    min-height: 96px;
+  }
+  .tv-grade__n {
+    font-size: 40px;
+  }
+  .tv-sound__cards {
+    gap: 12px;
+  }
+  .tv-sound__card .tv-answer__face {
+    min-height: 0;
+    padding: 8px;
+  }
+  .tv-sound__animal {
+    width: auto;
+    height: min(176px, calc(100dvh - 190px));
+    aspect-ratio: 5 / 6;
+  }
+  .tv-sound__off {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    column-gap: 16px;
+    text-align: left;
+  }
+  .tv-sound__switch {
+    grid-row: 1 / span 2;
+    width: 150px;
+  }
 }
 
 /* ── The grown-ups' intro ─────────────────────────────────────────── */
@@ -714,6 +913,8 @@
 .tv-intro__scroll {
   flex: 1;
   min-height: 0;
+  -webkit-mask-image: linear-gradient(180deg, var(--color-ink) calc(100% - 22px), transparent);
+  mask-image: linear-gradient(180deg, var(--color-ink) calc(100% - 22px), transparent);
   padding: 18px calc(var(--gutter) + var(--safe-r)) 12px calc(var(--gutter) + var(--safe-l));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -731,7 +932,7 @@
   gap: 14px;
   margin-bottom: 16px;
 }
-.tv-intro__pip {
+.tv-intro__hello > .tv-intro__pip {
   flex: none;
   width: 76px;
 }
@@ -807,8 +1008,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 10px;
   border-radius: 20px;
   background: var(--color-paper-2);
 }
@@ -816,8 +1017,8 @@
   display: grid;
   flex: none;
   place-items: center;
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 14px;
   background: var(--color-card);
   box-shadow: inset 0 0 0 2px var(--color-d-number);
@@ -832,14 +1033,15 @@
   flex: 1;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  min-width: 190px;
-  min-height: 50px;
-  padding: 0 14px;
+  gap: 10px;
+  min-width: 180px;
+  min-height: 48px;
+  padding: 0 10px 0 14px;
   border-radius: 14px;
   background: var(--color-card);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
+  white-space: nowrap;
 }
 .tv-intro__plus {
   display: grid;
@@ -861,7 +1063,7 @@
   .tv-intro__scroll {
     padding-top: 48px;
   }
-  .tv-intro__pip {
+  .tv-intro__hello > .tv-intro__pip {
     width: 104px;
   }
   .tv-intro__card {

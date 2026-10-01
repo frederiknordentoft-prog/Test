@@ -206,8 +206,10 @@ export interface CritterProps {
  */
 export function Critter({ mood = 'idle', className, viewBox = '0 0 200 240', ...place }: CritterProps) {
   const happy = mood === 'happy' || mood === 'cheer' || mood === 'wave'
+  // Nested in another SVG it keeps the given box (a CSS width would override the attributes).
+  const nested = place.width !== undefined
   return (
-    <svg viewBox={viewBox} className={cx('tv-critter', className)} aria-hidden {...place}>
+    <svg viewBox={viewBox} className={cx(nested ? 'tv-critter-in' : 'tv-critter', className)} aria-hidden overflow="hidden" {...place}>
       <ellipse cx="100" cy="228" rx="52" ry="7" className="tv-critter__shadow" />
       <path d={blob(CRITTER, 0.9)} className="tv-critter__body" />
       <path d={ellipse(100, 186, 34, 30)} className="tv-critter__belly" />

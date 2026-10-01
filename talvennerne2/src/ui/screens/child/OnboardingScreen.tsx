@@ -275,7 +275,7 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
           if (step === 'friend') void readNames(h)
         }}
       />
-      <div className="tv-first__body">
+      <div className="tv-first__body tv-first__body--talk">
         <div className="tv-say">
           <PipFigure talking={talking} className="tv-say__pip" />
           <div className={cx('tv-say__bubble', talking && 'is-talking')}>

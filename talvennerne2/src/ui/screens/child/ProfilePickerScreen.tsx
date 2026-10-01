@@ -68,6 +68,8 @@ export default function ProfilePickerScreen(_: ScreenProps<RouteOf<'profiles'>>)
   }
 
   const count = profiles.length
+  // Nobody to pick: the intro takes over (boot may render the picker for a moment before it does).
+  if (count === 0) return <div className="tv-first tv-picker" data-empty="" />
   return (
     <div className="tv-first tv-picker" data-deleting={deleting ? '' : undefined}>
       <TopBar
@@ -81,12 +83,14 @@ export default function ProfilePickerScreen(_: ScreenProps<RouteOf<'profiles'>>)
         onAdult={actions.adult}
       />
       <div className="tv-first__body tv-picker__body">
-        <SpokenText as="h1" clip={deleting ? 's.profiles.delete.pick' : 's.profiles.title'} className="tv-picker__title" />
-        <div className="tv-picker__grid" data-count={count + (canAddProfile(count) && !deleting ? 1 : 0)}>
-          {profiles.map((p) => (
-            <ProfileCard key={p.id} profile={p} deleting={deleting} onTap={() => tap(p)} />
-          ))}
-          {!deleting && canAddProfile(count) && <AddPlayerCard label={speech.text('s.profiles.add')} onTap={() => actions.add()} />}
+        <div className="tv-picker__group">
+          <SpokenText as="h1" clip={deleting ? 's.profiles.delete.pick' : 's.profiles.title'} className="tv-picker__title" />
+          <div className="tv-picker__grid" data-count={count + (canAddProfile(count) && !deleting ? 1 : 0)}>
+            {profiles.map((p) => (
+              <ProfileCard key={p.id} profile={p} deleting={deleting} onTap={() => tap(p)} />
+            ))}
+            {!deleting && canAddProfile(count) && <AddPlayerCard label={speech.text('s.profiles.add')} onTap={() => actions.add()} />}
+          </div>
         </div>
       </div>
 
