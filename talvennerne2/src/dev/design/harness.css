@@ -399,3 +399,22 @@
   width: 100%;
   max-width: 360px;
 }
+@media (max-height: 700px) {
+  .h-gate__keys .tv-answer__face {
+    min-height: 68px;
+  }
+}
+@media (max-height: 500px) {
+  .h-gate {
+    --answer-min: 60px;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+  .h-gate__keys {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    max-width: 560px;
+  }
+  .h-gate__keys .tv-answer__face {
+    min-height: 64px;
+  }
+}
