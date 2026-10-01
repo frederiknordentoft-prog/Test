@@ -87,6 +87,14 @@ describe('shapes2D', () => {
     }
   })
 
+  it('never deals two wrong cards that look the same (a turned circle is a circle)', () => {
+    for (const { task } of tasks) {
+      if (task.kind !== 'choice') continue
+      const looks = task.options.map((o) => String(o).replace(/^shape:circle:1$/, 'shape:circle:0'))
+      expect(new Set(looks).size).toBe(3)
+    }
+  })
+
   it('never deals a card that is also the asked figure', () => {
     for (const { fact, task } of tasks) {
       if (task.kind !== 'choice') continue

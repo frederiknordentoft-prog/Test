@@ -49,6 +49,9 @@ export const isPrototypical = (shape: ShapeId, variant: number): boolean => shap
 const variantsOf = (shape: ShapeId): readonly number[] => (FAMILIES.polygons.shapes.includes(shape) ? POLYGON_VARIANTS : ALL_VARIANTS)
 const each = (shape: ShapeId, variants: readonly number[] = variantsOf(shape)): Figure[] => variants.map((variant) => ({ shape, variant }))
 
+/** A turned circle (variant 1) looks exactly like the standard one: never two of them as wrong cards. */
+const CIRCLES = [0, 2, 3, 4, 5] as const
+
 /** Figures that are not the target, for the wrong cards and the non-members of a multiSelect. */
 function othersFor(target: ShapeId): Figure[] {
   const pool = ((): Figure[] => {
@@ -56,9 +59,9 @@ function othersFor(target: ShapeId): Figure[] {
       case 'circle':
         return [...each('triangle'), ...each('quadrilateral')]
       case 'triangle':
-        return [...each('circle'), ...each('quadrilateral')]
+        return [...each('circle', CIRCLES), ...each('quadrilateral')]
       case 'quadrilateral':
-        return [...each('circle'), ...each('triangle')]
+        return [...each('circle', CIRCLES), ...each('triangle')]
       case 'square':
         // the other four-sided figures: rectangles, rhombi, trapezia and a skew one
         return [...each('rectangle'), ...each('rhombus', [0, 1, 2]), ...each('trapezoid', [0, 1, 2]), ...each('quadrilateral', [2])]
