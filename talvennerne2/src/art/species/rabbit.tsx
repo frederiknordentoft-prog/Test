@@ -306,6 +306,7 @@ export const rabbit: SpeciesDef = {
       ears: { splay: 12 },
       anchors: { earBaseL: { x: 74, y: 57 }, earBaseR: { x: 126, y: 57 } },
       parts: { Ear: ShortEar, ManeBack: LionMane, ManeFront: LionTuft },
+      maneGrowth: 1.1,
       bounds: { head: { x0: 32, y0: 18, x1: 168, y1: 172 } },
       fx: { x: 172, y: 70 },
     },

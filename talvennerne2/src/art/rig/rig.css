@@ -127,9 +127,11 @@
   88% { transform: translate(0, 0) rotate(-1deg); }
 }
 @keyframes rig-glint {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  45%, 55% { opacity: 0.15; transform: scale(0.55); }
-  70% { opacity: 1; transform: scale(1.15); }
+  0%, 30%, 100% { opacity: 1; }
+  45%, 60% { opacity: 0.1; }
+  72% { opacity: 1; }
+  80% { opacity: 0.55; }
+  88% { opacity: 1; }
 }
 @keyframes rig-twinkle {
   0%, 100% { opacity: 1; }
@@ -488,11 +490,23 @@
 
 .rig[data-species='cat'][data-mood='happy'] .a-tail,
 .rig[data-species='cat'][data-mood='cheer'] .a-tail,
-.rig[data-species='cat'][data-mood='wave'] .a-tail {
+.rig[data-species='cat'][data-mood='wave'] .a-tail,
+.rig[data-species='horse'][data-mood]:not([data-mood='sleep']) .a-tail,
+.rig[data-species='unicorn'][data-mood]:not([data-mood='sleep']) .a-tail {
   animation: rig-wag-soft 0.6s ease-in-out infinite;
 }
 .rig[data-species='cat'][data-mood='happy'] .a-paw {
   animation-name: rig-leg-hop;
+}
+.rig[data-species='horse'][data-mood='happy'] .a-paw,
+.rig[data-species='unicorn'][data-mood='happy'] .a-paw {
+  animation-name: rig-hoof-hop;
+}
+@keyframes rig-hoof-hop {
+  0%, 82%, 100% { transform: rotate(10deg); }
+  10%, 44% { transform: rotate(14deg); }
+  22%, 58% { transform: rotate(18deg); }
+  37.5%, 75% { transform: rotate(3deg); }
 }
 @keyframes rig-wag-soft {
   0%, 100% { transform: rotate(4deg); }

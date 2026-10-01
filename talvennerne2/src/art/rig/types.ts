@@ -166,6 +166,8 @@ export interface Palette {
   /** Anden mønsterfarve (calico: de mørke pletter). */
   pattern2?: string
   pattern2Outline?: string
+  /** Mulen (hest, enhjørning): den lyse oval forneden på hovedet. */
+  muzzle?: string
   /** Hove (hest, enhjørning). Afledes af arten, hvis farven ikke sætter dem. */
   hoof?: string
   hoofOutline?: string
@@ -354,6 +356,10 @@ export interface BreedDef {
   bounds?: Partial<FigureBounds>
   /** Racens anker for tankeprikker og Z'er (overskriver artens). */
   fx?: Pt
+  /** Hvor manken (ManeBack) skaleres fra på stadie 3 (overskriver artens). */
+  maneOrigin?: 'headCenter' | 'headTop'
+  /** Mankens vækst på stadie 3 (standard SPEC'ens 1,3); løvehovedets krave vokser mindre. */
+  maneGrowth?: number
 }
 
 /**
@@ -436,6 +442,11 @@ export interface SpeciesDef {
    * enheders luft. Standard: til højre for hovedet, under øret.
    */
   fx?: Pt
+  /**
+   * Hvor manken (ManeBack) skaleres fra på stadie 3: hovedets centrum (krave, løvemanke) eller
+   * issen (hestens manke vokser nedad fra issen).
+   */
+  maneOrigin?: 'headCenter' | 'headTop'
   parts: SpeciesParts
 }
 

@@ -71,6 +71,7 @@ export function derivePalette(cw: ColorwayDef): Palette {
   const pattern2 = o.pattern2 ?? cw.patternColor2
   const optional: Partial<Palette> = {}
   if (o.mane2) optional.mane2 = o.mane2
+  if (o.muzzle) optional.muzzle = o.muzzle
   if (pattern2) {
     optional.pattern2 = pattern2
     optional.pattern2Outline = o.pattern2Outline ?? outlineOf(pattern2)
@@ -118,7 +119,7 @@ export function silhouettePalette(p: Palette): Palette {
     fur: k, outline: k, shade: k, belly: k, highlight: 'none', inner: k, innerShade: k, nose: k,
     cheek: 'none', iris: k, ink: k, pattern: k, patternOutline: k, patternShade: k, earFur: k,
     earOutline: k, mane: k, maneOutline: k, gradient: undefined, sparkle: undefined, silhouette: true,
-    mane2: k, pattern2: k, pattern2Outline: k, hoof: k, hoofOutline: k, horn: k, hornShade: k, hornOutline: k,
+    mane2: k, pattern2: k, pattern2Outline: k, hoof: k, hoofOutline: k, horn: k, hornShade: k, hornOutline: k, muzzle: k,
   }
 }
 

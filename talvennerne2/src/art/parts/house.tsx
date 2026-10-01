@@ -287,7 +287,7 @@ export function GroundShadow({ id, cx, cy, rx, className }: { id: string; cx: nu
 /** Statisk glimmer på magiske farver: tre glimt i én path. */
 export function Sparkles({ pts, size, fill, stroke, sw, className }: { pts: readonly Pt[]; size: number; fill: string; stroke: string; sw: number; className?: string }) {
   const d = join(...pts.map((p, i) => star(p.x, p.y, size * (i === 1 ? 0.7 : 1), size * 0.2)))
-  return <path className={className} d={d} fill={fill} stroke={stroke} strokeWidth={sw * 0.45} strokeLinejoin="round" />
+  return <path className={className} data-part="fx" d={d} fill={fill} stroke={stroke} strokeWidth={sw * 0.45} strokeLinejoin="round" />
 }
 
 /** Tankeprikker (think): tre cirkler, der tændes på skift. */
@@ -298,10 +298,11 @@ export function ThoughtDots({ at, s, sw, animated }: { at: Pt; s: number; sw: nu
     [16, -15, 6],
   ]
   return (
-    <g>
+    <>
       {dots.map(([dx, dy, r], i) => (
         <circle
           key={i}
+          data-part="fx"
           className={animated ? `a-dot a-dot${i + 1}` : undefined}
           cx={n(at.x + dx * s)}
           cy={n(at.y + dy * s)}
@@ -312,7 +313,7 @@ export function ThoughtDots({ at, s, sw, animated }: { at: Pt; s: number; sw: nu
           strokeWidth={sw * 0.5}
         />
       ))}
-    </g>
+    </>
   )
 }
 
@@ -324,10 +325,11 @@ export function Zzz({ at, s, sw, animated }: { at: Pt; s: number; sw: number; an
     [18, -22, 5.2],
   ]
   return (
-    <g>
+    <>
       {zs.map(([dx, dy, r], i) => (
         <path
           key={i}
+          data-part="fx"
           className={animated ? `a-z a-z${i + 1}` : undefined}
           d={zee(at.x + dx * s, at.y + dy * s, r * s)}
           fill="none"
@@ -338,14 +340,14 @@ export function Zzz({ at, s, sw, animated }: { at: Pt; s: number; sw: number; an
           strokeLinejoin="round"
         />
       ))}
-    </g>
+    </>
   )
 }
 
 /** "Ups": en lille, venlig svedperle ved hovedet (aldrig tårer). */
 export function SweatDrop({ at, s, sw, className }: { at: Pt; s: number; sw: number; className?: string }) {
   return (
-    <g className={className}>
+    <g className={className} data-part="fx">
       <path d={drop(at.x, at.y, 4.2 * s)} fill={HOUSE.sweat} stroke={HOUSE.sweatLine} strokeWidth={sw * 0.5} strokeLinejoin="round" />
       <path d={ellipse(at.x - 1.4 * s, at.y - 0.4 * s, 1.1 * s, 1.8 * s, 20)} fill={HOUSE.white} opacity={0.8} />
     </g>

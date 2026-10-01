@@ -501,6 +501,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
 
   const Tail = parts.Tail
   const Horn = parts.Horn
+  // Mankens vækst på stadie 3 (racen kan dæmpe den, fx løvehovedets krave).
+  const maneK = stage === 3 ? (breedDef?.maneGrowth ?? R.xf.mane) : R.xf.mane
   const Wings = parts.Wings
   const earClip = earsShown && earRig?.clip !== false && !holes
   // Klippet "uden for hovedet" (lidt inden for konturen, så roden er sømløs) til ører og pandelok.
@@ -586,12 +588,15 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
       {/* Stjerneformens aura bag alt. */}
       {star && stage === 3 && showFx && <Aura c={{ x: w.headCenter.x, y: (w.headCenter.y + w.bodyCenter.y) / 2 }} r={86} className={animated ? 'a-aura' : undefined} />}
 
-      {/* 1 · jordskygge */}
-      {!silhouette && (
-        <g transform={pose.shadow ? aboutGround({ sx: pose.shadow }) : undefined}>
+      {/* 1 · jordskygge (gruppen kun når posen skalerer skyggen) */}
+      {!silhouette &&
+        (pose.shadow ? (
+          <g transform={aboutGround({ sx: pose.shadow })}>
+            <GroundShadow id={shadowId} cx={G.x} cy={G.y - 1} rx={w.bodyRx * 1.18} className={animated ? 'a-shadow' : undefined} />
+          </g>
+        ) : (
           <GroundShadow id={shadowId} cx={G.x} cy={G.y - 1} rx={w.bodyRx * 1.18} className={animated ? 'a-shadow' : undefined} />
-        </g>
-      )}
+        ))}
 
       <g className={animated ? 'a-fig' : undefined} transform={aboutGround(pose.fig)}>
         {/* Krop (lag 2–9) */}
@@ -642,7 +647,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           <g className={animated ? 'a-head' : undefined} transform={tf(pose.head ?? {})}>
             <g transform={`translate(${n(-a.neck.x)} ${n(-a.neck.y)})`}>
               {/* 10 · mane-back (+ hattens bagdel) */}
-              {parts.ManeBack && scaled(a.headCenter, R.xf.mane, parts.ManeBack(ctx(swHead / R.xf.mane)))}
+              {parts.ManeBack && scaled((breedDef?.maneOrigin ?? def.maneOrigin) === 'headTop' ? a.headTop : a.headCenter, maneK, parts.ManeBack(ctx(swHead / maneK)))}
               {renderItem('head', 'back', R.head.s)}
               {/* 11 · hoved + mønster + skygge */}
               <path d={headD} fill={pal.fur} stroke={pal.outline} strokeWidth={n(swHead)} strokeLinejoin="round" />
@@ -700,22 +705,20 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           </g>
         )}
 
-        {/* 17 · fx (verdensrum) */}
-        <g data-part="fx">
-          {showFx && mood === 'think' && <ThoughtDots at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}
-          {showFx && mood === 'sleep' && <Zzz at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}
-          {showFx && mood === 'oops' && <SweatDrop at={fxSweat} s={R.head.s} sw={OUT} className={animated ? 'a-sweat' : undefined} />}
-          {sparkle && (
-            <Sparkles
-              pts={around({ x: w.headCenter.x, y: (w.headCenter.y + w.bodyCenter.y) / 2 }, w.headRx + 28 * R.head.s, [-150, -32, 200])}
-              size={9 * R.head.s}
-              fill={pal.sparkle!}
-              stroke={pal.outline}
-              sw={OUT}
-              className={animated ? 'a-twinkle' : undefined}
-            />
-          )}
-        </g>
+        {/* 17 · fx (verdensrum; hvert fx-element bærer data-part="fx") */}
+        {showFx && mood === 'think' && <ThoughtDots at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}
+        {showFx && mood === 'sleep' && <Zzz at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}
+        {showFx && mood === 'oops' && <SweatDrop at={fxSweat} s={R.head.s} sw={OUT} className={animated ? 'a-sweat' : undefined} />}
+        {sparkle && (
+          <Sparkles
+            pts={around({ x: w.headCenter.x, y: (w.headCenter.y + w.bodyCenter.y) / 2 }, w.headRx + 28 * R.head.s, [-150, -32, 200])}
+            size={9 * R.head.s}
+            fill={pal.sparkle!}
+            stroke={pal.outline}
+            sw={OUT}
+            className={animated ? 'a-twinkle' : undefined}
+          />
+        )}
       </g>
     </svg>
   )
