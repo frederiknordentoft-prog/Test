@@ -382,6 +382,8 @@ export interface KeyState {
   pendingInstance: string | null
   /** Set by placement; the dashboard shows "Sprunget over ved start" until confirmed. */
   seeded: boolean
+  /** Procedure: the last 10 instance ids asked, so a new instance avoids them (SPEC §5.1). */
+  drawn?: string[]
 }
 
 export type SkillStatus = 'notStarted' | 'practising' | 'support' | 'silver' | 'independent'
@@ -489,7 +491,7 @@ export interface MisconceptionState {
   /** Evidence inside the 30-learning-day window, newest last (max 40). */
   hits: { day: string; factId: string; w: number; production: boolean }[]
   /** Opportunities inside the window, newest last (max 80). */
-  opps: { day: string; pGuess: number; hit: boolean; correct: boolean }[]
+  opps: { day: string; pGuess: number; hit: boolean; correct: boolean; ts?: number; contrast?: 'conflict' | 'congruent' }[]
   flaggedAt: number | null
   resolvedAt: number | null
 }
@@ -563,6 +565,8 @@ export interface ProfileDoc {
   instructionsHeard: Partial<Record<TaskKind, number>>
   /** Last first-try results across rounds (newest last, max 10) for fatigue/warm mode. */
   recentFirstTries: boolean[]
+  /** Parallel to recentFirstTries: right and fast. 10/10 makes the next round a warm one. */
+  recentFast?: boolean[]
   round: RoundSnapshot | null
   /** The last 200 rewards, newest last. */
   rewardLog: RewardLogEntry[]
@@ -603,6 +607,8 @@ export interface AnswerLogEntry {
   retryOf: string | null
   assisted: boolean
   audioUnverified: boolean
+  /** Task.contrast: perceptual misconceptions are only concluded from contrast items. */
+  contrast?: 'conflict' | 'congruent'
 }
 
 export type MsHistogram = [number, number, number, number, number, number, number]

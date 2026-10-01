@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { SKILL_BY_ID } from '../content/skills'
 import {
-  answerDelta, emptyDaily, isFirstTry, isMisconceptionId, learnDelta, mergeDaily, passedTrialOf, playDelta, roundDelta,
+  answerDelta, emptyDaily, isFirstTry, learnDelta, mergeDaily, passedTrialOf, playDelta, roundDelta,
   snapshotFor,
 } from '../data/aggregate'
 import { getDb } from '../data/db'
@@ -11,9 +11,10 @@ import { getProfile } from '../data/repo/profiles'
 import { learningDay } from '../engine/learningDay'
 import { countsForMastery, updateKey } from '../engine/mastery'
 import { classifyAnswer, detectableOf, updateMisconceptions } from '../engine/misconceptions'
+import { offeredTagsOf } from '../engine/tasks'
 import {
   SKILL_IDS,
-  type AnswerLogEntry, type DailyAggregate, type MasteryKey, type Medal, type MisconceptionId, type ProfileDoc,
+  type AnswerLogEntry, type DailyAggregate, type MasteryKey, type Medal, type ProfileDoc,
   type ProfileId, type ProfileSettings, type RoundSnapshot, type SkillId,
 } from '../engine/types'
 import type { AnswerRecord, RoundHooks, RoundResult } from './useRound'
@@ -368,7 +369,12 @@ export const useProfile = create<ProfileStore>((set, get) => ({
       roundIndex: doc.roundIndex, mode: rec.mode, assisted: rec.assisted, retryOf: rec.retryOf,
       procedure: SKILL_BY_ID[skill]?.mode === 'procedure', instanceId: task.factId,
     })
-    const keys = counts ? { ...doc.keys, [task.masteryKey]: nextKey } : doc.keys
+    // procedure families remember the last 10 instances asked, so the next one is fresh
+    const procedure = SKILL_BY_ID[skill]?.mode === 'procedure'
+    const drawnKey = procedure && !rec.retryOf
+      ? { ...nextKey, drawn: [...(nextKey.drawn ?? []).filter((id) => id !== task.factId), task.factId].slice(-10) }
+      : nextKey
+    const keys = counts ? { ...doc.keys, [task.masteryKey]: drawnKey } : doc.keys
 
     // the log row
     const entry: AnswerLogEntry = {
@@ -380,13 +386,14 @@ export const useProfile = create<ProfileStore>((set, get) => ({
       detectable: safely(() => detectableOf(task), []),
       boxBefore: prevKey?.box ?? 0, boxAfter: counts ? nextKey.box : prevKey?.box ?? 0, scaffold: task.scaffold,
       replays: rec.replays, retryOf: rec.retryOf, assisted: rec.assisted, audioUnverified: !get().context.audioVerified,
+      ...(task.contrast ? { contrast: task.contrast } : {}),
     }
 
     // misconceptions, with this skill's first-try accuracy over the last 20 (this answer included)
     const window = recentBySkill.get(skill) ?? []
     const nextWindow = firstTry ? [...window, rec.correct].slice(-ACCURACY_WINDOW) : window
     const skillAccuracy20 = nextWindow.length > 0 ? nextWindow.filter(Boolean).length / nextWindow.length : 1
-    const misconceptions = safely(() => updateMisconceptions(doc.misconceptions, entry, { skillAccuracy20, day }), doc.misconceptions)
+    const misconceptions = safely(() => updateMisconceptions(doc.misconceptions, entry, { skillAccuracy20, day, contrast: task.contrast }), doc.misconceptions)
 
     // correct production answers and their learning days (medal evidence)
     let skillStats = doc.skillStats
@@ -404,11 +411,12 @@ export const useProfile = create<ProfileStore>((set, get) => ({
 
     // diagnostic distractors shown to the child (rotation, SPEC §4.1)
     let offeredTags = doc.offeredTags
+    // only the cards actually shown count: distractorTags also holds every tagged candidate
     if (!rec.retryOf) {
-      const tags = new Set(Object.values(task.distractorTags).filter(isMisconceptionId))
-      if (tags.size > 0) {
+      const tags = offeredTagsOf(task)
+      if (tags.length > 0) {
         offeredTags = { ...doc.offeredTags }
-        for (const tag of tags as Set<MisconceptionId>) offeredTags[tag] = (offeredTags[tag] ?? 0) + 1
+        for (const tag of tags) offeredTags[tag] = (offeredTags[tag] ?? 0) + 1
       }
     }
 
@@ -423,6 +431,9 @@ export const useProfile = create<ProfileStore>((set, get) => ({
       recentFirstTries: firstTry && rec.mode !== 'placement'
         ? [...doc.recentFirstTries, rec.correct].slice(-RECENT_FIRST_TRIES)
         : doc.recentFirstTries,
+      recentFast: firstTry && rec.mode !== 'placement'
+        ? [...(doc.recentFast ?? []), rec.correct && rec.fast].slice(-RECENT_FIRST_TRIES)
+        : doc.recentFast,
       daysPlayed: newDay ? doc.daysPlayed + 1 : doc.daysPlayed,
       lastLearningDay: newDay ? day : doc.lastLearningDay,
     }

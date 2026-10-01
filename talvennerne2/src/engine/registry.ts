@@ -265,7 +265,7 @@ export function keysForSkills(entries: readonly RegionSkill[], ctx: KeyContext):
         build(kind, rng, occurrence, extra) {
           const used = session.used.get(key) ?? new Set<string>()
           session.used.set(key, used)
-          const avoid = new Set([...(ctx.states[key]?.recent ?? []), ...used])
+          const avoid = new Set([...(ctx.states[key]?.recent ?? []), ...(ctx.states[key]?.drawn ?? []), ...used])
           const fact = drawInstance(def, fam, rng, avoid, fits, pool)
           used.add(fact.id)
           return make(fact, kind, rng, occurrence, extra)

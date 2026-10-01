@@ -54,10 +54,11 @@ function answer(correct = true) {
   useRound.getState().next()
 }
 
-function record(over: Partial<AnswerRecord> & { fact?: AddFact; kind?: TaskKind; distractorTags?: Record<string, string> } = {}): AnswerRecord {
-  const { fact = { id: 'add:3+4', a: 3, b: 4, answer: 7, rank: 7 }, kind = 'keypad', distractorTags, ...rest } = over
+function record(over: Partial<AnswerRecord> & { fact?: AddFact; kind?: TaskKind; distractorTags?: Record<string, string>; options?: number[] } = {}): AnswerRecord {
+  const { fact = { id: 'add:3+4', a: 3, b: 4, answer: 7, rank: 7 }, kind = 'keypad', distractorTags, options, ...rest } = over
   const t = buildAddTask(fact, kind, makeRng(1), 0)
   if (distractorTags) Object.assign(t.distractorTags, distractorTags)
+  if (options) t.options = options
   return {
     task: t, given: fact.answer, correct: true, ms: 3000, fast: true, production: isProduction(t), ceiling: ceilingFor(t),
     mode: 'round', assisted: false, retryOf: null, replays: 0, ts: clock, roundId: 'r1', sessionId: 'sess-1',
@@ -251,11 +252,13 @@ describe('recording an answer', () => {
     expect(state().recordAnswer(record())?.audioUnverified).toBe(true)
   })
 
-  it('counts the diagnostic distractors a child was shown (not again on a retry)', () => {
+  it('counts only the diagnostic distractors on the cards the child was shown (not again on a retry)', () => {
+    // distractorTags holds every tagged candidate (so typed answers can be classified); only the
+    // options on screen were offered — 1 (wrongOperation) was not a card here
     const tags = { '8': 'countFromFirst', '6': 'near', '9': 'countFromFirst', '1': 'wrongOperation' }
-    state().recordAnswer(record({ kind: 'choice', distractorTags: tags }))
-    state().recordAnswer(record({ kind: 'choice', distractorTags: tags, mode: 'retry', retryOf: 'x' }))
-    expect(state().profile!.offeredTags).toEqual({ countFromFirst: 1, wrongOperation: 1 })
+    state().recordAnswer(record({ kind: 'choice', options: [6, 7, 8], distractorTags: tags }))
+    state().recordAnswer(record({ kind: 'choice', options: [6, 7, 8], distractorTags: tags, mode: 'retry', retryOf: 'x' }))
+    expect(state().profile!.offeredTags).toEqual({ countFromFirst: 1 })
   })
 
   it('keeps the last ten first tries across rounds', () => {
