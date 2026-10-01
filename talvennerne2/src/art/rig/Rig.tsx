@@ -17,8 +17,8 @@ import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
 import { MAGIC, derivePalette, itemPalette, silhouettePalette } from './palette'
 import { ellipse, fmt3, join, n, outside, tf } from './shapes'
 import type {
-  AnchorSet, BreedId, ColorwayDef, ColorwayId, Mood, Outfit, Palette, PartCtx, Pt, RigIds,
-  SidePart, Slot, SpeciesDef, SpeciesParts, Stage, Worn,
+  AnchorSet, BreedDef, BreedId, ColorwayDef, ColorwayId, FaceStyle, MagicColorwayId, Mood, Outfit, Palette, PartCtx,
+  Pose, PoseXf, Pt, RigIds, SidePart, Slot, SpeciesDef, SpeciesParts, Stage, Worn,
 } from './types'
 import './rig.css'
 
@@ -69,26 +69,7 @@ export const CROPS: Record<RigCrop, string> = {
 // ---------------------------------------------------------------------------------------------
 // Poser: statisk nøgleramme pr. humør (animeret tilstand bruger keyframes i rig.css).
 
-interface Xf {
-  x?: number
-  y?: number
-  rot?: number
-  sx?: number
-  sy?: number
-}
-interface Pose {
-  fig?: Xf
-  body?: Xf
-  head?: Xf
-  /** Grader i delens lokale ramme (+ = indad for ører, + = udad/op for poter). */
-  earL?: number
-  earR?: number
-  pawL?: number
-  pawR?: number
-  tail?: number
-  /** Skyggens skala (hop). */
-  shadow?: number
-}
+type Xf = PoseXf
 
 export const POSES: Record<Mood, Pose> = {
   idle: {},
@@ -125,6 +106,32 @@ export function resolveColorway(def: SpeciesDef, id: ColorwayId): ColorwayDef {
 export function resolveParts(def: SpeciesDef, breed: BreedId): SpeciesParts {
   const b = def.breeds.find((x) => x.id === breed)
   return { ...def.parts, ...b?.parts }
+}
+
+export function resolveBreed(def: SpeciesDef, breed: BreedId): BreedDef | undefined {
+  return def.breeds.find((x) => x.id === breed)
+}
+
+/** Racens ansigt oven på artens. */
+export function resolveFace(def: SpeciesDef, breed: BreedId): FaceStyle {
+  return { ...def.face, ...resolveBreed(def, breed)?.face }
+}
+
+/** Den statiske nøglepose: riggens standard ← artens ← racens (pr. felt). */
+export function resolvePose(def: SpeciesDef, breed: BreedId, mood: Mood): Pose {
+  return { ...POSES[mood], ...def.poses?.[mood], ...resolveBreed(def, breed)?.poses?.[mood] }
+}
+
+/** Den afledte palet for (art, race, farve) – før en evt. silhuet. */
+export function resolvePalette(def: SpeciesDef, breed: BreedId, colorway: ColorwayId): Palette {
+  const base = derivePalette(resolveColorway(def, colorway))
+  const tint = resolveBreed(def, breed)?.palette
+  return tint ? tint(base, colorway) : base
+}
+
+/** De magiske farver, som (art, race) findes i. Stjernehvid findes kun som enhjørningeføllet. */
+export function magicOf(def: SpeciesDef, breed: BreedId): readonly MagicColorwayId[] {
+  return resolveBreed(def, breed)?.magic ?? def.magic
 }
 
 /** Pupil-tracking: lerp 0,2 pr. rAF mod målet, højst 3 enheder. Stopper når den er i ro. */
@@ -236,12 +243,13 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const R = regionTransforms(a, stage)
   const w = worldAnchors(a, stage)
   const parts = resolveParts(def, breed)
-  const breedDef = def.breeds.find((b) => b.id === breed)
-  const base = derivePalette(resolveColorway(def, colorway))
+  const breedDef = resolveBreed(def, breed)
+  const base = resolvePalette(def, breed, colorway)
   const pal: Palette = silhouette ? silhouettePalette(base) : base
   const face = MOOD_FACE[mood]
-  const mouth = face.mouth === 'idle' ? def.face.idleMouth : face.mouth
-  const pose = still ? POSES[mood] : {}
+  const faceStyle = resolveFace(def, breed)
+  const mouth = face.mouth === 'idle' ? faceStyle.idleMouth : face.mouth
+  const pose: Pose = still ? resolvePose(def, breed, mood) : {}
   const seed = props.seed ?? hashSeed(`${def.id}${breed}${colorway}${stage}`)
 
   // Stregbredder kompenseres, så konturen er 3,2 i verdensrummet på alle stadier.
@@ -472,9 +480,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {parts.HeadDeco?.(ctx(swHead))}
               {!silhouette && <path d={shade.gloss} fill={pal.highlight} />}
               {/* 12 · ansigt */}
-              {def.face.cheeks !== false && <Cheeks a={a} pal={pal} />}
+              {faceStyle.cheeks !== false && <Cheeks a={a} pal={pal} />}
               {parts.Muzzle?.(ctx(swHead))}
-              <Mouth at={a.mouth} shape={mouth} pal={pal} sw={swHead} buckTeeth={def.face.buckTeeth} />
+              <Mouth at={a.mouth} shape={mouth} pal={pal} sw={swHead} buckTeeth={faceStyle.buckTeeth} />
               <Eyes
                 a={a}
                 shape={face.eyes}

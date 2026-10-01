@@ -9,48 +9,36 @@
 import type { ReactNode } from 'react'
 
 // ---------------------------------------------------------------------------------------------
-// Id'er (bindende for resten af spillet)
+// Id'er (bindende for resten af spillet). Kontrakten ejes af motoren (`src/engine/types.ts`, låst i
+// `src/content/ids.lock.json`); kunsten genbruger dens lister og typer i stedet for at duplikere dem.
 
-export const SPECIES_IDS = [
-  'rabbit', 'cat', 'puppy', 'hedgehog', 'horse', 'lamb', 'fox', 'hamster',
-  'unicorn', 'panda', 'squirrel', 'owl', 'pegasus', 'dragon', 'penguin', 'polarbear',
-] as const
-export type SpeciesId = (typeof SPECIES_IDS)[number]
+import {
+  BREEDS, MAGIC_COLORWAYS, MOODS, NATURAL_COLORWAYS, SET_IDS, SLOTS, SPECIES_IDS,
+} from '../../engine/types'
+import type {
+  BreedId, ClipId, ColorwayId, ItemId, ItemSource, Mood, NodeId, RigCharacterId, SetId as OutfitSetId,
+  Slot, SpeciesId, Stage, WorldId,
+} from '../../engine/types'
+
+export { BREEDS, MAGIC_COLORWAYS, MOODS, NATURAL_COLORWAYS, SET_IDS, SLOTS, SPECIES_IDS }
+export type { BreedId, ClipId, ColorwayId, ItemId, ItemSource, Mood, NodeId, OutfitSetId, Slot, SpeciesId, Stage, WorldId }
+
 /** Fortælleren Pip (spurv, krop `pear`) bruger samme rig, men er ikke et samleobjekt. */
-export type NarratorId = 'pip'
-export type CreatureId = SpeciesId | NarratorId
+export type NarratorId = Exclude<RigCharacterId, SpeciesId>
+export type CreatureId = RigCharacterId
 
-export const BREEDS = {
-  rabbit: ['upright', 'lop', 'lionhead'],
-  cat: ['domestic', 'longhair', 'mainecoon'],
-  horse: ['shetland', 'fjord', 'arabian'],
-  unicorn: ['foal', 'wavy', 'starhorn'],
-} as const
 type BreedTable = typeof BREEDS
 export type BreedOf<S extends CreatureId> = S extends keyof BreedTable ? BreedTable[S][number] : 'std'
-export type BreedId = BreedOf<CreatureId>
 
 export function breedsOf(id: CreatureId): readonly BreedId[] {
   return id in BREEDS ? BREEDS[id as keyof BreedTable] : ['std']
 }
 
-/** c1–c6 = artens 6 naturlige farver i rækkefølgen fra spildesign §3.1. */
-export const NATURAL_COLORWAYS = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'] as const
-export const MAGIC_COLORWAYS = ['gold', 'rainbow', 'starwhite'] as const
 export type NaturalColorwayId = (typeof NATURAL_COLORWAYS)[number]
 export type MagicColorwayId = (typeof MAGIC_COLORWAYS)[number]
-export type ColorwayId = NaturalColorwayId | MagicColorwayId
 
-export const STAGES = [1, 2, 3] as const
 /** 1 = baby, 2 = ung, 3 = stor. Stjerneformen er et flag (`star`) oven på stadie 3. */
-export type Stage = (typeof STAGES)[number]
-
-/** Der findes ingen `sad` (SPEC §6.4, etik-kritikken). Blink og earTwitch kører altid. */
-export const MOODS = ['idle', 'happy', 'cheer', 'think', 'oops', 'sleep', 'wave'] as const
-export type Mood = (typeof MOODS)[number]
-
-export const SLOTS = ['head', 'face', 'neck', 'body', 'back', 'hand'] as const
-export type Slot = (typeof SLOTS)[number]
+export const STAGES = [1, 2, 3] as const satisfies readonly Stage[]
 
 export const BODY_KINDS = ['round', 'pear', 'tall'] as const
 export type BodyKind = (typeof BODY_KINDS)[number]
@@ -58,11 +46,6 @@ export type BodyKind = (typeof BODY_KINDS)[number]
 export type Family =
   | 'lagomorph' | 'feline' | 'equine' | 'canine' | 'bear' | 'rodent'
   | 'bird' | 'ovine' | 'reptile' | 'insectivore'
-
-export type WorldId = 'eng' | 'bakke' | 'skov' | 'fjeld'
-/** Klip-, node-id'er ejes af motoren (`src/engine/types.ts`, `ids.lock.json`); her kun som strenge. */
-export type ClipId = string
-export type NodeId = string
 
 // ---------------------------------------------------------------------------------------------
 // Geometri og ankre
@@ -170,13 +153,32 @@ export interface Palette {
   mane: string
   maneOutline: string
   gradient?: readonly string[]
+  /** Anden hårfarve: enhjørningens striber i manken, fjordhestens mørke midterstribe. */
+  mane2?: string
+  /** Anden mønsterfarve (calico: de mørke pletter). */
+  pattern2?: string
+  pattern2Outline?: string
+  /** Hove (hest, enhjørning). Afledes af arten, hvis farven ikke sætter dem. */
+  hoof?: string
+  hoofOutline?: string
+  /** Horn (enhjørning). */
+  horn?: string
+  hornShade?: string
+  hornOutline?: string
   /** Magiske farver: glimmer i fx-laget. */
   sparkle?: string
   /** Sort silhuet (silhuet-arket). */
   silhouette?: boolean
 }
 
-export type PatternKind = 'dutch' | 'none'
+/**
+ * Mønstre klippet til hoved/krop (kunst-forslaget §2.3). Arten tegner selv mønstret i sine
+ * `Pattern`-dele og kan læse det fra colorway'et.
+ * - dutch: kaninens hollænder · tabby: striber (kat) · calico: to slags pletter (kat)
+ * - dapple: skimlens æbleskimmel · pinto: brogede plader · blaze: blis og hvide sokker (hest)
+ * - stars: Stjernefølets stjernemærker
+ */
+export type PatternKind = 'dutch' | 'none' | 'tabby' | 'calico' | 'dapple' | 'pinto' | 'blaze' | 'stars'
 
 export interface ColorwayDef {
   id: ColorwayId
@@ -187,6 +189,8 @@ export interface ColorwayDef {
   overrides?: Partial<Omit<Palette, 'gradient' | 'silhouette'>>
   pattern?: PatternKind
   patternColor?: string
+  /** Anden mønsterfarve (calico). */
+  patternColor2?: string
   /** Regnbue: stop til den eneste tilladte statiske gradient på et væsen. */
   gradient?: readonly string[]
   sparkle?: string
@@ -295,9 +299,48 @@ export interface BreedDef {
   anchors?: Partial<AnchorSet>
   parts?: Partial<SpeciesParts>
   ears?: EarRig
+  /** Racens ansigt (fx hvilemund), lagt oven på artens. */
+  face?: Partial<FaceStyle>
+  /** Racens poser, lagt oven på artens (fx kortere ben, der løftes mindre). */
+  poses?: Partial<Record<Mood, Pose>>
+  /**
+   * Racens farvetone oven på colorway'ets afledte palet (fx fjordhestens blakkede pels og
+   * tofarvede manke). Silhuetten afledes bagefter, så den altid er sort.
+   */
+  palette?: (p: Palette, colorway: ColorwayId) => Palette
+  /** Magiske farver for netop denne race (standard: artens `magic`). Stjernefølet: kun `foal`. */
+  magic?: readonly MagicColorwayId[]
 }
 
-/** Signatur-idle (SPEC §6.1) – kører på gruppen med klassen `a-sig`. */
+/**
+ * En statisk nøglepose pr. humør (keyframe 0 % i rig.css). Grader i delens lokale ramme
+ * (+ = indad for ører, + = udad/op for poter).
+ */
+export interface PoseXf {
+  x?: number
+  y?: number
+  rot?: number
+  sx?: number
+  sy?: number
+}
+export interface Pose {
+  fig?: PoseXf
+  body?: PoseXf
+  head?: PoseXf
+  earL?: number
+  earR?: number
+  pawL?: number
+  pawR?: number
+  tail?: number
+  /** Skyggens skala (hop). */
+  shadow?: number
+}
+
+/**
+ * Signatur-idle (SPEC §6.1). Riggen sætter ingen klasse selv; arten pakker delen i en pivot med
+ * signaturens klasse: nose-wiggle → `a-sig` (kaninens næse), tail-curl → `a-curl` (kattens
+ * halespids), mane-toss → `a-toss` (hestens manke), horn-glint → `a-glint` (hornets glimt).
+ */
 export type Signature =
   | 'nose-wiggle' | 'tail-curl' | 'head-tilt' | 'spikes' | 'mane-toss' | 'ear-flop'
   | 'tail-swish' | 'cheek-puff' | 'horn-glint' | 'paw-wave' | 'tail-flick' | 'head-turn'
@@ -321,27 +364,17 @@ export interface SpeciesDef {
   face: FaceStyle
   ears?: EarRig
   signature?: Signature
+  /** Artens nøgleposer pr. humør, lagt oven på riggens standard (fx hovene løftes mindre). */
+  poses?: Partial<Record<Mood, Pose>>
   parts: SpeciesParts
 }
 
 // ---------------------------------------------------------------------------------------------
 // Garderobe (SPEC §7.1)
 
-export const SET_IDS = [
-  'hverdag', 'opdager', 'rytter', 'kongelig', 'astronaut', 'ridder',
-  'talmagiker', 'pirat', 'fodbold', 'vinter', 'fest',
-] as const
-export type OutfitSetId = (typeof SET_IDS)[number]
+/** Sættene (motorens `SetId`) og milepælene. Sæt-genstande hedder `<sæt>-<slot>` (præcis én pr. slot),
+ * milepæle `milepael-<navn>` (motorens `ItemId`). */
 export type SetId = OutfitSetId | 'milepael'
-/** Sæt-genstande hedder `<sæt>-<slot>` (præcis én pr. slot); milepæle `milepael-<navn>`. */
-export type ItemId = `${OutfitSetId}-${Slot}` | `milepael-${string}`
-
-export type ItemSource =
-  | { kind: 'level'; level: number }
-  | { kind: 'chest'; nodeId: NodeId }
-  | { kind: 'finale'; world: WorldId }
-  | { kind: 'medal'; tier: 'silver' | 'gold'; count: number }
-  | { kind: 'shop'; price: 80 | 120 | 180 }
 
 /** En genstands farvesæt. Værdierne kommer fra stofpaletten i palette.ts (ingen hex i genstandsfiler). */
 export interface Colorway {

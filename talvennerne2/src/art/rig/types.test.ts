@@ -7,8 +7,8 @@ type NoSad = 'sad' extends Mood ? false : true
 type NoTier = 'tier' extends keyof ItemDef ? false : true
 const noSad: NoSad = true
 const noTier: NoTier = true
-// Genstands-id'er: `<sæt>-<slot>` og `milepael-<navn>`.
-const ids: ItemId[] = ['hverdag-head', 'fest-head', 'hverdag-body', 'milepael-legendekronen']
+// Genstands-id'er: `<sæt>-<slot>` og de låste milepæle (motorens ItemId).
+const ids: ItemId[] = ['hverdag-head', 'fest-head', 'hverdag-body', 'milepael-krone']
 
 describe('kontrakten', () => {
   it('der findes ingen sad-mood (etik: aldrig skyld)', () => {
