@@ -81,6 +81,13 @@ export function spline(pts: readonly Vec[], tension = 1): string {
   return d
 }
 
+/** Bakkekam (scener): en blød, åben kurve gennem punkterne (venstre → højre), lukket lodret ned til `bottom`. */
+export function ridge(pts: readonly Vec[], bottom: number, tension = 1): string {
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  return `${spline(pts, tension)}L${p([last[0], bottom])}L${p([first[0], bottom])}Z`
+}
+
 /** Rette linjestykker. */
 export function poly(pts: readonly Vec[], closed = true): string {
   return `M${pts.map(p).join('L')}${closed ? 'Z' : ''}`

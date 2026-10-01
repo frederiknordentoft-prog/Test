@@ -1,0 +1,56 @@
+/*
+ * Engdalens scene (kortets baggrund). Kun skyerne driver og bladene svajer, og kun med transform; rolig
+ * tilstand ([data-calm] på <html>) og reduceret bevægelse stopper begge i hvilestillingen. Keyframe 0 % er
+ * hvilestillingen, så en frossen scene (kontaktark) står pænt.
+ */
+.eng-scene {
+  display: block;
+  overflow: hidden;
+}
+.eng-scene .eng-drift {
+  animation: eng-drift 56s ease-in-out infinite;
+}
+.eng-scene .eng-drift-1 {
+  animation-duration: 72s;
+  animation-delay: -24s;
+}
+.eng-scene .eng-drift-2 {
+  animation-duration: 90s;
+  animation-delay: -47s;
+}
+.eng-scene .eng-sway {
+  transform-origin: 0 0;
+  animation: eng-sway 6s ease-in-out infinite;
+}
+@keyframes eng-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(26px);
+  }
+}
+@keyframes eng-sway {
+  0%,
+  50%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-1.2deg);
+  }
+  75% {
+    transform: rotate(1.2deg);
+  }
+}
+:root[data-calm] .eng-scene .eng-drift,
+:root[data-calm] .eng-scene .eng-sway {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .eng-scene .eng-drift,
+  .eng-scene .eng-sway {
+    animation: none !important;
+  }
+}
