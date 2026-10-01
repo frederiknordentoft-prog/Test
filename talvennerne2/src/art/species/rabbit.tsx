@@ -305,10 +305,11 @@ export const rabbit: SpeciesDef = {
   family: 'lagomorph',
   body: 'round',
   breeds: [
-    { id: 'upright', name: 'stående ører', ears: { splay: 10 } },
+    { id: 'upright', name: 'stående ører', fx: { x: 177, y: 92 }, ears: { splay: 10 } },
     {
       id: 'lop',
       name: 'vædder',
+      fx: { x: 177, y: 54 },
       ears: { splay: 0, clip: false, hang: true },
       anchors: { earBaseL: { x: 66, y: 62 }, earBaseR: { x: 134, y: 62 }, earGap: 60 },
       parts: { Ear: LopEar },
@@ -322,12 +323,12 @@ export const rabbit: SpeciesDef = {
     {
       id: 'lionhead',
       name: 'løvehoved',
+      fx: { x: 171, y: 78 },
       ears: { splay: 12 },
       anchors: { earBaseL: { x: 74, y: 57 }, earBaseR: { x: 126, y: 57 } },
       parts: { Ear: ShortEar, ManeBack: LionMane, ManeFront: LionTuft },
       maneGrowth: 1.1,
       bounds: { head: { x0: 28, y0: 18, x1: 172, y1: 168 } },
-      fx: { x: 172, y: 70 },
     },
   ],
   colorways: RABBIT_COLORWAYS,
@@ -367,8 +368,10 @@ export const rabbit: SpeciesDef = {
     head: { x0: 38, y0: 6, x1: 162, y1: 150 },
     body: { x0: 36, y0: 138, x1: 176, y1: 228 },
   },
-  // Tankeprikker og Z'er ud for kinden, under det knækkede øre.
-  fx: { x: 166, y: 98 },
+  // Tankebobler og Zzz (fælles regel, review G1-r2 pkt. 5.2): hver race har sit anker i fri luft med
+  // mindst 8 enheder til hoved, ører, manke og horn i alle stadier og inden for den sikre zone; moods-
+  // arkets lint tjekker alle racer og stadier.
+  fx: { x: 172, y: 72 },
   face: { idleMouth: 'cat-w', buckTeeth: true, cheeks: true },
   ears: { splay: 10 },
   signature: 'nose-wiggle',

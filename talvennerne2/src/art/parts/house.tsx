@@ -293,10 +293,12 @@ export function Sparkles({ pts, size, fill, stroke, sw, className }: { pts: read
 
 /** Tankeprikker (think): tre cirkler, der tændes på skift. */
 export function ThoughtDots({ at, s, sw, animated }: { at: Pt; s: number; sw: number; animated: boolean }) {
+  // Prikkerne stiger stejlt op (smal søjle), så de kan holde 8 enheder fri af ører og manke og stadig
+  // ligge i den sikre zone (review G1-r2, pkt. 5.2).
   const dots: [number, number, number][] = [
-    [0, 0, 3.2],
-    [7, -7, 4.4],
-    [16, -15, 6],
+    [0, 0, 3],
+    [5, -8, 4.1],
+    [12, -17.5, 5.6],
   ]
   return (
     <>
@@ -304,6 +306,7 @@ export function ThoughtDots({ at, s, sw, animated }: { at: Pt; s: number; sw: nu
         <circle
           key={i}
           data-part="fx"
+          data-fx="think"
           className={animated ? `a-dot a-dot${i + 1}` : undefined}
           cx={n(at.x + dx * s)}
           cy={n(at.y + dy * s)}
@@ -321,9 +324,9 @@ export function ThoughtDots({ at, s, sw, animated }: { at: Pt; s: number; sw: nu
 /** Søvn: tre små Z'er, der stiger og fader (ingen <text>). */
 export function Zzz({ at, s, sw, animated }: { at: Pt; s: number; sw: number; animated: boolean }) {
   const zs: [number, number, number][] = [
-    [0, 0, 3],
-    [8, -10, 4],
-    [18, -22, 5.2],
+    [0, 0, 2.8],
+    [6, -10, 3.7],
+    [13, -21, 4.8],
   ]
   return (
     <>
@@ -331,6 +334,7 @@ export function Zzz({ at, s, sw, animated }: { at: Pt; s: number; sw: number; an
         <path
           key={i}
           data-part="fx"
+          data-fx="sleep"
           className={animated ? `a-z a-z${i + 1}` : undefined}
           d={zee(at.x + dx * s, at.y + dy * s, r * s)}
           fill="none"

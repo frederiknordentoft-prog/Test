@@ -8,17 +8,27 @@ ligger i `artifacts/sheets/` (taget i 2x). Ark pr. art hedder `<ark>-<art>.png` 
 | Ark | Viser |
 |---|---|
 | `species-<art>.png` | Pr. race: stadie · farve (idle) med stjerneformen nederst, og humør · stadie for første race. |
-| `moods-<art>.png` | De 7 humør (idle, happy, cheer, think, oops, sleep, wave) store, én race pr. række, og øjne der følger et punkt. |
+| `moods-<art>.png` | De 7 humør (idle, happy, cheer, think, oops, sleep, wave) store, én race pr. række, tankebobler og Zzz for alle racer og stadier, og øjne der følger et punkt. |
 | `closeup-<art>.png` | Store renders (420/300 px) af alle racer: kontur, cel-skygge, øjne, finish, guld/stjernehvid, regnbue og tøj. |
 | `sizes-<art>.png` | 48, 96 og 256 px (≤ 64 px tegnes med tykkere, mørkere kontur, uden hårfine streger og tæt beskåret) samt butikskort ved 64 px (genstanden alene og på dyret, beskåret efter slot). |
 | `silhouettes.png` | Alle arter og racer i 3 stadier, sort fyld uden navne, nummereret i fast blandet rækkefølge. |
 | `fit-<art>.png` | Genstandene på arten i 3 stadier · genstandens 3 farvesæt (racerne på skift), og tøj i alle 7 humør (ærmerne følger de løftede arme). |
 | `fitmatrix.png` | Art · stadie · genstand for alle arter (racerne skifter pr. stadie). |
-| `filmstrip-<art>.png` | 8 frames pr. humør (frosset animation), blink/ørevip tæt samplet og artens signatur. |
+| `filmstrip-<art>.png` | 8 frames pr. humør (frosset animation), blink/ørevip tæt samplet og artens signatur (også i et stort nærbillede). |
 | `lineup.png` | Alle arter og racer side om side i stadie 2 på samme jordlinje, stadierne pr. art og kropsskabelonerne. |
 
 Arternes signaturer (SPEC §6.1): kaninen vipper med næsen, katten krøller halespidsen, hesten kaster
-med manken, og enhjørningens horn glimter (kun opacity).
+med manken, og enhjørningens horn glimter (kun opacity). Alle fire har hændelsen i 0,3–1,7 s af
+animationen: mindst 3 enheders bevægelse (glimtet er 16 enheder), 3 frames ud, ét overshoot og så en
+pause, så den ses i filmstrimlen ved 100 % og i spillet ved 48 px.
+
+Fælles regler, som arkenes lints håndhæver:
+- **Tankebobler og Zzz** holder mindst 8 enheder fri af hoved, ører, manke og horn og ligger i den
+  sikre zone i alle racer og stadier (moods-arkets sektion "tankebobler og Zzz").
+- **Kort med kropstøj på dyret** beskæres fra mund og hage til hoften, aldrig gennem øjnene.
+- **Regnbue** er fire flade pastelstriber (manke, hale, krave og smæk), aldrig en blød gradient.
+- **Guld** har ravkontur, ravskygge og et smalt glansbånd på hoved og krop på alle arter.
+- **Tøj** har en tydeligt mørkere kontur end pelsen, så en trøje i pelsens farve stadig ses.
 
 ## Stilen, der bedømmes imod
 

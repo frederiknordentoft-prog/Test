@@ -86,8 +86,11 @@ const LEG_TOES: Vec[][] = [
   [[-4, 28], [-3.6, 23.4]],
   [[4, 28], [3.6, 23.4]],
 ]
-/** Ærmet: forbenet fra brystet til manchetten (lodret ramme), en anelse løsere. */
-const LEG_SLEEVE: Vec[] = [[-11.4, -6], [-11.8, 1], [-12.2, 7], [0, 8.6], [12.2, 7], [11.8, 1], [11.4, -6], [0, -8]]
+/**
+ * Ærmet: forbenet fra brystet helt ned til lige over poten (lodret ramme), en anelse løsere, så det
+ * læses som et ærme og ikke som en lomme på ribkanten (review G1-r2, C2).
+ */
+const LEG_SLEEVE: Vec[] = [[-11.6, -9], [-12, 0], [-12.4, 8], [-12.6, 13.6], [0, 15.4], [12.6, 13.6], [12.4, 8], [12, 0], [11.6, -9], [0, -11]]
 
 const Leg: SidePart = ({ pal, sw, lod }) => (
   <OpenLimb loop={LEG} fill={pal.fur} stroke={pal.outline} sw={sw} trim={1}>
@@ -454,10 +457,11 @@ export const cat: SpeciesDef = {
   family: 'feline',
   body: 'round',
   breeds: [
-    { id: 'domestic', name: 'huskat' },
+    { id: 'domestic', name: 'huskat', fx: { x: 177, y: 34 } },
     {
       id: 'longhair',
       name: 'langhåret kat',
+      fx: { x: 177, y: 44 },
       anchors: { bodyRx: 47, bodyWidth: 94, eyeL: { x: 77, y: 106 }, eyeR: { x: 123, y: 106 }, muzzle: { x: 100, y: 121 }, mouth: { x: 100, y: 128.5 } },
       parts: {
         Ear: makeEar(SMALL_EAR, SMALL_INNER, true),
@@ -471,6 +475,7 @@ export const cat: SpeciesDef = {
     {
       id: 'mainecoon',
       name: 'maine coon',
+      fx: { x: 129, y: 34 },
       anchors: COON_ANCHORS,
       ears: { splay: 9 },
       parts: {
@@ -520,7 +525,10 @@ export const cat: SpeciesDef = {
     head: { x0: 36, y0: 18, x1: 164, y1: 150 },
     body: { x0: 38, y0: 140, x1: 176, y1: 228 },
   },
-  fx: { x: 168, y: 96 },
+  // Tankebobler og Zzz (fælles regel, review G1-r2 pkt. 5.2): hver race har sit anker i fri luft med
+  // mindst 8 enheder til hoved, ører, manke og horn i alle stadier og inden for den sikre zone; moods-
+  // arkets lint tjekker alle racer og stadier.
+  fx: { x: 172, y: 72 },
   face: { idleMouth: 'cat-w', cheeks: true },
   ears: { splay: 13 },
   signature: 'tail-curl',
@@ -546,7 +554,7 @@ export const cat: SpeciesDef = {
       think: { spine: UP_SPINES.think, w0: 15, w1: 18, tip: 9.5 },
       oops: { spine: UP_SPINES.oops, w0: 15, w1: 18, tip: 9.5 },
     },
-    limb: { rot: 0, sleeve: () => blob(LEG_SLEEVE), cuff: { y: 7, half: 12.6 } },
+    limb: { rot: 0, sleeve: () => blob(LEG_SLEEVE), cuff: { y: 13.4, half: 12.9 } },
     Feet,
     Tail: makeTail(TAILS.domestic),
     Muzzle: makeMuzzle(1),

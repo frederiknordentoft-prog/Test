@@ -239,8 +239,13 @@ export function cropViewBox(def: SpeciesDef, breed: BreedId, stage: Stage, crop:
     return viewBoxAround(b, 0.08, 1)
   }
   if (crop === 'torso') {
-    const b = box(w.bodyCenter.x - w.bodyRx * 1.3, w.headCenter.y + w.headRy * 0.42, w.bodyCenter.x + w.bodyRx * 1.3, w.bodyCenter.y + w.bodyRy * 0.82)
-    return viewBoxAround(b, 0.06, 1)
+    // Kropsslottet: fra mund og hage til hoften – aldrig gennem øjnene (review G1-r2, E4). Kvadratet
+    // vokser nedad og til siderne, aldrig op i ansigtet.
+    const eyeBottom = Math.max(w.eyeL.y, w.eyeR.y) + w.eyeRy
+    const top = Math.max(w.mouth.y - 2, eyeBottom + 4)
+    const bottom = w.bodyCenter.y + w.bodyRy * 0.82
+    const side = Math.max(w.bodyRx * 2.6, bottom - top) * 1.06
+    return `${n(w.bodyCenter.x - side / 2)} ${n(top - side * 0.02)} ${n(side)} ${n(side)}`
   }
   // bust: hoved (uden de højeste ører) og overkrop
   const b = box(w.headCenter.x - w.headRx * 1.15, w.headTop.y - w.headRy * 0.35, w.headCenter.x + w.headRx * 1.15, w.bodyCenter.y + w.bodyRy * 0.4)
@@ -705,8 +710,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           </g>
         </g>
 
-        {/* Hoved (lag 10–16) om halsleddet */}
-        <g transform={`translate(${n(R.neckWorld.x)} ${n(R.neckWorld.y)}) scale(${fmt3(R.head.s)})`}>
+        {/* Hoved (lag 10–16) om halsleddet; data-part="head" bruges af bobleklaringens lint. */}
+        <g data-part="head" transform={`translate(${n(R.neckWorld.x)} ${n(R.neckWorld.y)}) scale(${fmt3(R.head.s)})`}>
           <g className={animated ? 'a-head' : undefined} transform={tf(pose.head ?? {})}>
             <g transform={`translate(${n(-a.neck.x)} ${n(-a.neck.y)})`}>
               {/* 10 · mane-back (+ hattens bagdel) */}

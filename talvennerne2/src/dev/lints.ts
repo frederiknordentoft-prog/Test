@@ -27,6 +27,9 @@ export interface LintResult {
   minCardFill?: number
 }
 
+/** Tankebobler og Zzz holder mindst så mange enheder fri af hoved, ører, manke og horn (review G1-r2, pkt. 5.2). */
+export const FX_CLEAR = 8
+
 /** Genstanden alene skal fylde mindst halvdelen af butikskortet (review G0-r1, fund 1; mål 75–80 %). */
 export const CARD_FILL_MIN = 0.5
 
@@ -178,6 +181,48 @@ export function lintRig(root: SVGSVGElement, label: string, opts: { safeZone: bo
     const all = unionOf(drawn, root)
     if (all.x0 < SAFE.x0 - 0.05 || all.x1 > SAFE.x1 + 0.05 || all.y0 < SAFE.y0 - 0.05 || all.y1 > SAFE.y1 + 0.05)
       errors.push(`${label}: uden for sikker zone x ${SAFE.x0}–${SAFE.x1}, y ${SAFE.y0}–${SAFE.y1}: ${fmt(all)}`)
+  }
+
+  // Bobler og Zzz (statiske kort): ingen del af hovedgruppen (hoved, ører, manke, horn) inden for
+  // FX_CLEAR enheder af hvert fx-elements bbox. Samples på et gitter med 2 enheders afstand.
+  const fx = opts.safeZone ? [...root.querySelectorAll<SVGGeometryElement>('[data-fx]')] : []
+  const headGroup = root.querySelector<SVGGElement>('[data-part="head"]')
+  if (fx.length && headGroup) {
+    checks++
+    const rootM = root.getScreenCTM()!
+    // Kun dyrets egne dele (hoved, ører, manke, horn); hatte tæller ikke med.
+    const shapes = [...headGroup.querySelectorAll<SVGGeometryElement>(DRAWN)]
+      .filter((el) => !inDefs(el) && !el.closest('[data-item]'))
+      .map((el) => ({ el, v: visible(el), inv: el.getScreenCTM()!.inverse(), clips: clipsOf(el, root).map((c) => ({ shape: c.shape, inv: c.ref.getScreenCTM()!.inverse() })) }))
+      .filter((s) => (s.v.fill || s.v.stroke) && s.v.opacity > 0.001)
+    let hit: string | null = null
+    for (const f of fx) {
+      // Afstand til fx-formen: prikker er cirkler (centrum ± r), Z'er er deres bbox; punkter højst
+      // FX_CLEAR enheder fra formen samples.
+      const b = boxIn(f, root, 0)
+      const circle = f.tagName === 'circle'
+      const cx = (b.x0 + b.x1) / 2
+      const cy = (b.y0 + b.y1) / 2
+      const r = (b.x1 - b.x0) / 2
+      const near = (x: number, y: number) =>
+        circle
+          ? Math.hypot(x - cx, y - cy) <= r + FX_CLEAR
+          : Math.hypot(Math.max(b.x0 - x, 0, x - b.x1), Math.max(b.y0 - y, 0, y - b.y1)) <= FX_CLEAR
+      for (let x = b.x0 - FX_CLEAR; x <= b.x1 + FX_CLEAR && !hit; x += 2)
+        for (let y = b.y0 - FX_CLEAR; y <= b.y1 + FX_CLEAR && !hit; y += 2) {
+          if (!near(x, y)) continue
+          const scr = new DOMPoint(x, y).matrixTransform(rootM)
+          for (const s of shapes) {
+            const p = scr.matrixTransform(s.inv)
+            if (!((s.v.fill && s.el.isPointInFill(p)) || (s.v.stroke && s.el.isPointInStroke(p)))) continue
+            if (s.clips.some((c) => !c.shape.isPointInFill(scr.matrixTransform(c.inv)))) continue
+            hit = `(${x.toFixed(0)},${y.toFixed(0)})`
+            break
+          }
+        }
+      if (hit) break
+    }
+    if (hit) errors.push(`${label}: tankeboble/Zzz er tættere end ${FX_CLEAR} enheder på hoved, ører eller manke ved ${hit}`)
   }
 
   if (opts.fit && itemGroups.length) {

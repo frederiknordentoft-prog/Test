@@ -152,7 +152,7 @@ const WAVY_MANE: Vec[][] = [
   ],
 ]
 const WAVY_MANE_STRIPE: Vec[] = [[64, 48], [54, 62], [49, 80], [51, 96], [48, 112], [50, 128], [53, 124], [53.4, 110], [55.6, 96], [54.6, 80], [58.6, 64], [67, 52]]
-const WAVY_TAIL = curlTail([[-2, -1], [7, -11], [18, -13], [27, -6], [30, 5], [28, 15], [31, 24], [29, 32], [23, 35], [18, 31], [19, 26]], 12, 5)
+const WAVY_TAIL = curlTail([[-2, -1], [7, -11], [17, -13], [25, -7], [28, 3], [26.5, 12], [28.5, 19], [25.5, 24.5], [20, 26.5], [16.5, 23], [18, 18.5]], 12, 5)
 
 /** Stjernehorn: mellemlang manke på højre side, en lille tot til venstre, skilt pandelok. */
 const MANE_MED_L: Vec[] = [
@@ -188,37 +188,44 @@ export const unicorn: SpeciesDef = {
     {
       id: 'foal',
       name: 'enhjørningeføl',
+      fx: { x: 175, y: 68 },
       anchors: FOAL_ANCHORS,
       magic: ['gold', 'rainbow', 'starwhite'],
       parts: {
         Paw: makeLeg(0.86),
-        Horn: makeHorn(37, 6.4),
+        Horn: makeHorn(36, 6.4),
         ManeBack: hairShape(FOAL_MANE, { stripe: FOAL_MANE_STRIPE }),
         ManeFront: hairShape(FOAL_FORELOCK, { stripe: FOAL_FORELOCK_STRIPE }),
         Tail: hairShape(FOAL_TAIL),
       },
+      maneGrowth: 1.15,
       bounds: { head: { x0: 40, y0: 14, x1: 160, y1: 152 } },
     },
     {
       id: 'wavy',
       name: 'bølgemanke',
+      fx: { x: 176, y: 66 },
       parts: {
-        Horn: makeHorn(38.5, 6.8),
+        Horn: makeHorn(37, 6.8),
         ManeBack: hairShape(WAVY_MANE, { stripe: WAVY_MANE_STRIPE }),
         ManeFront: hairShape(WAVY_FORELOCK, { stripe: WAVY_FORELOCK_STRIPE }),
         Tail: hairShape(WAVY_TAIL),
       },
+      // Manken vokser lidt mindre på stor, så tankebobler og Zzz har plads ved siden af hovedet.
+      maneGrowth: 1.12,
       bounds: { head: { x0: 34, y0: 8, x1: 162, y1: 182 } },
     },
     {
       id: 'starhorn',
       name: 'stjernehorn',
+      fx: { x: 176, y: 68 },
       parts: {
-        Horn: makeHorn(30, 6.6, true),
+        Horn: makeHorn(28, 6.6, true),
         ManeBack: hairShape(STAR_MANE, { stripe: STAR_MANE_STRIPE }),
         ManeFront: hairShape(STAR_FORELOCK),
         Tail: hairShape(STAR_TAIL),
       },
+      maneGrowth: 1.15,
       bounds: { head: { x0: 40, y0: 6, x1: 162, y1: 152 } },
     },
   ],
@@ -230,7 +237,10 @@ export const unicorn: SpeciesDef = {
     body: { x0: 36, y0: 134, x1: 172, y1: 228 },
   },
   maneOrigin: 'headTop',
-  fx: { x: 162, y: 82 },
+  // Tankebobler og Zzz (fælles regel, review G1-r2 pkt. 5.2): hver race har sit anker i fri luft med
+  // mindst 8 enheder til hoved, ører, manke og horn i alle stadier og inden for den sikre zone; moods-
+  // arkets lint tjekker alle racer og stadier.
+  fx: { x: 172, y: 72 },
   face: { idleMouth: 'smile', cheeks: true },
   ears: { splay: 16 },
   signature: 'horn-glint',
@@ -254,7 +264,7 @@ export const unicorn: SpeciesDef = {
     Tail: hairShape(FOAL_TAIL),
     Muzzle: makeMuzzle(),
     HeadDeco: Lashes,
-    Horn: makeHorn(37, 6.4),
+    Horn: makeHorn(36, 6.4),
     ManeBack: hairShape(FOAL_MANE),
     ManeFront: hairShape(FOAL_FORELOCK),
     Pattern: { head: StarHead, body: StarsBody },

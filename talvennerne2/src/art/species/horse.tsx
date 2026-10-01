@@ -48,20 +48,15 @@ const TAIL_THICK: Vec[] = [
 const TAIL_THICK_STRANDS: Vec[][] = [[[6, -9], [16, -11], [23, -5], [26, 5], [26.6, 15]]]
 
 /**
- * Fjordhestens stående manke: en bred, flad børstekam bag issen med mørk midte og børstestrå (ikke
- * en spids kegle, så den aldrig læses som et horn – heller ikke i regnbuens farver), og en kort pandelok.
+ * Fjordhestens stående manke (review G1-r2, H1): en kort, opretstående, børstet manestribe med seks
+ * korte totter og en mørk midterstribe, klippet lavt som på en fjordhest. Ingen rund pandelok (den
+ * læstes som et tredje øje).
  */
 const FJORD_CREST: Vec[] = [
-  [87, 52], [85, 42], [85.5, 33], [87.5, 27.5], [91.5, 25], [95.5, 26.2], [100, 24], [104.5, 26.2], [108.5, 25], [112.5, 27.5],
-  [114.5, 33], [115, 42], [113, 52],
+  [86, 52], [85, 43], [85.5, 36], [86.6, 31.6], [89, 29.4], [91.2, 32.4], [93.5, 28.8], [96, 32.2], [98.5, 28.4], [101, 32.2],
+  [103.5, 28.8], [106, 32.4], [108.5, 29.2], [111, 31.6], [113.6, 33.4], [114.5, 37], [115, 43], [113, 52],
 ]
-const FJORD_CREST_STRIPE: Vec[] = [[96.6, 52], [96.2, 40], [96.5, 31], [97.6, 26.8], [100, 25.8], [102.4, 26.8], [103.5, 31], [103.8, 40], [103.4, 52]]
-const FJORD_CREST_STRANDS: Vec[][] = [
-  [[91.2, 29.5], [90.6, 37.5]],
-  [[108.8, 29.5], [109.4, 37.5]],
-]
-const FJORD_FORELOCK: Vec[] = [[100, 40], [93, 42], [90.5, 48], [92, 54], [96, 57], [100, 58], [104, 57], [108, 54], [109.5, 48], [107, 42]]
-const FJORD_FORELOCK_STRIPE: Vec[] = [[100, 41], [98.4, 44], [98.2, 50], [99.4, 55], [100, 56], [100.6, 55], [101.8, 50], [101.6, 44]]
+const FJORD_CREST_STRIPE: Vec[] = [[96.8, 52], [96.5, 41], [96.8, 34], [97.9, 30.6], [99.6, 29.6], [101.6, 31], [103.2, 34.6], [103.5, 41], [103.2, 52]]
 const FJORD_TAIL: Vec[] = [[-3, -2], [3, -10], [12, -14], [21, -12], [26, -5], [28, 4], [28, 14], [26, 22], [23, 25], [20, 20], [17, 24], [16, 15], [15, 6], [11, -2], [4, -4]]
 const FJORD_TAIL_STRIPE: Vec[] = [[3, -6], [11, -10], [18, -9], [22, -3], [23.6, 5], [23.4, 14], [21.6, 19], [20.4, 14], [20.6, 5], [18, -2], [11, -5]]
 
@@ -142,6 +137,7 @@ export const horse: SpeciesDef = {
     {
       id: 'shetland',
       name: 'shetlandspony',
+      fx: { x: 177, y: 69 },
       anchors: SHETLAND_ANCHORS,
       parts: {
         Paw: makeLeg(0.82),
@@ -158,11 +154,13 @@ export const horse: SpeciesDef = {
     {
       id: 'fjord',
       name: 'fjordhest',
+      fx: { x: 172, y: 74 },
       anchors: { bodyRx: 43, bodyWidth: 86 },
       palette: dunPalette(mixHex, FJORD_CREAM, FJORD_DARK),
       parts: {
-        ManeBack: hairShape(FJORD_CREST, { stripe: FJORD_CREST_STRIPE, strands: FJORD_CREST_STRANDS, pivot: { at: [100, 46], cls: TOSS } }),
-        ManeFront: hairShape(FJORD_FORELOCK, { stripe: FJORD_FORELOCK_STRIPE }),
+        ManeBack: hairShape(FJORD_CREST, { stripe: FJORD_CREST_STRIPE, pivot: { at: [100, 46], cls: TOSS } }),
+        // Ingen pandelok: den korte børstemanke står alene bag issen.
+        ManeFront: undefined,
         Tail: hairShape(FJORD_TAIL, { stripe: FJORD_TAIL_STRIPE }),
       },
       bounds: { head: { x0: 40, y0: 6, x1: 160, y1: 152 } },
@@ -170,6 +168,7 @@ export const horse: SpeciesDef = {
     {
       id: 'arabian',
       name: 'araber',
+      fx: { x: 175, y: 66 },
       anchors: ARABIAN_ANCHORS,
       parts: {
         Paw: makeLeg(1.04),
@@ -192,7 +191,10 @@ export const horse: SpeciesDef = {
     body: { x0: 36, y0: 134, x1: 172, y1: 228 },
   },
   maneOrigin: 'headTop',
-  fx: { x: 160, y: 80 },
+  // Tankebobler og Zzz (fælles regel, review G1-r2 pkt. 5.2): hver race har sit anker i fri luft med
+  // mindst 8 enheder til hoved, ører, manke og horn i alle stadier og inden for den sikre zone; moods-
+  // arkets lint tjekker alle racer og stadier.
+  fx: { x: 172, y: 72 },
   face: { idleMouth: 'smile', cheeks: true },
   ears: { splay: 16 },
   signature: 'mane-toss',

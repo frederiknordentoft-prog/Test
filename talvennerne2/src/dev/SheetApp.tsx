@@ -181,6 +181,19 @@ function MoodsSheet({ def }: { def: SpeciesDef }) {
           )),
         }))}
       />
+      <Section title={`tankebobler og Zzz · alle racer og stadier (mindst 8 enheder fri af hoved, ører og manke)`}>
+        <div className="sh-row">
+          {def.breeds.flatMap((b) =>
+            STAGES.flatMap((st) =>
+              (['think', 'sleep'] as const).map((m) => (
+                <Cell key={`${b.id}${st}${m}`} cap={`${b.id} · ${st} · ${MOOD_DA[m]}`} label={`fx ${def.id} ${b.id} ${st} ${m}`}>
+                  <Rig species={def} mode="static" breed={b.id} stage={st} colorway={st === 2 ? 'c5' : 'c2'} mood={m} size={104} />
+                </Cell>
+              )),
+            ),
+          )}
+        </div>
+      </Section>
       <Section title="øjne der følger et punkt (buddyen følger fingeren) · statisk og animeret">
         <div className="sh-row">
           {dirs.map((d, i) => (
