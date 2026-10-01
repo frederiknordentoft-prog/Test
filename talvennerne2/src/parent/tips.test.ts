@@ -25,7 +25,7 @@ describe('home tips', () => {
 
   it('stays off the screen and keeps the house rules', () => {
     for (const tip of [...ALL_TIPS, tableTip(7), productionTip('Ada')]) {
-      expect(tip).not.toMatch(/[×÷]/)
+      expect(tip).not.toMatch(/[\u00d7\u00f7]/)
       expect(tip).not.toMatch(/\bapp(en)?\b|skærm|tablet|ipad|telefon|\bspillet\b/i)
       expect(tip).not.toMatch(/savner|ked af det|venter på dig|glem ikke|kom tilbage|lektie|streak|i træk/i)
     }
@@ -39,7 +39,7 @@ describe('family labels', () => {
         const label = familyLabel(m.id, f.id)
         expect(label, `${m.id}/${f.id}`).not.toMatch(/^Del \d+$/)
         if (f.id.length > 3) expect(label, `${m.id}/${f.id}`).not.toBe(f.id)
-        expect(label).not.toMatch(/[×÷]/)
+        expect(label).not.toMatch(/[\u00d7\u00f7]/)
       }
     }
   })

@@ -10,7 +10,7 @@ import { isFirstTry } from '../data/aggregate'
 import type { AnswerLogEntry, DailyAggregate, Medal, ProfileDoc, SkillId } from '../engine/types'
 import { isRegionOpen, nodeDone, playedNodes, trialPassed } from '../meta/unlock'
 import { addDays, inWindow, nameOf, windowEnding } from './format'
-import { DASH_RANK, WINDOW_DAYS, dashStatus, keysOfSkill, snapshotsBefore, trendOf } from './metrics'
+import { DASH_RANK, WINDOW_DAYS, currentPlace, dashStatus, keysOfSkill, snapshotsBefore, trendOf } from './metrics'
 import { afterAt, personal } from './signs'
 import { productionTip, tableTip, tipFor } from './tips'
 import type { DashStatus, Recommendation, RuleId, SkillKeyIndex, SkillRow, SkillState, Signs } from './types'
@@ -122,7 +122,8 @@ export function forgotten(x: Pick<RecommendInput, 'states' | 'daily' | 'today'>)
   const all = Object.keys(x.states) as SkillId[]
   const fell = new Set(trendOf(all, x.states, snapshotsBefore(x.daily, w.from)).down)
   for (const s of Object.values(x.states)) {
-    if (s.medal && DASH_RANK[s.dash] < DASH_RANK[MEDAL_FLOOR[s.medal]]) fell.add(s.skill)
+    // a skill this version cannot enumerate has no live status to compare with its medal
+    if (s.keys > 0 && s.medal && DASH_RANK[s.dash] < DASH_RANK[MEDAL_FLOOR[s.medal]]) fell.add(s.skill)
   }
   const rank = (s: SkillId) => (x.states[s].medal === 'gold' ? 0 : x.states[s].medal ? 1 : 2)
   return [...fell].sort((a, b) => rank(a) - rank(b))
@@ -156,7 +157,12 @@ function r5(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recom
 }
 
 function r6(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recommendation[] {
-  const regions = REGIONS.filter((r) => r.skills.some((s) => on(s.skill)) && isRegionOpen(x.profile, r.id))
+  // nothing far below the child: from the grade before theirs, or the world they play in now
+  const here = currentPlace(x.profile)
+  const floor = Math.min(x.profile.grade - 1, here ? WORLD_BY_ID[here.world].grade : 0)
+  const regions = REGIONS.filter(
+    (r) => WORLD_BY_ID[r.world].grade >= floor && r.skills.some((s) => on(s.skill)) && isRegionOpen(x.profile, r.id),
+  )
   const trials: Recommendation[] = regions
     .filter((r) => !trialPassed(x.profile, r.id) && nodesOfRegion(r.id).every((n) => n.slot === 'trial' || nodeDone(x.profile, n.id)))
     .map((r) => ({

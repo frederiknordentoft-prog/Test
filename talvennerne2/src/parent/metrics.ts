@@ -290,7 +290,7 @@ export function domainCards(input: DashInput, states: Readonly<Record<SkillId, S
 
 // ─── Times table ────────────────────────────────────────────────────────────
 
-/** 10 × 10 products coloured by box. Empty until a multiplication skill is registered or played. */
+/** 10 · 10 products coloured by box. Empty until a multiplication skill is registered or played. */
 export function tableGrid(profile: Pick<ProfileDoc, 'keys'>, index: SkillKeyIndex): TableGrid {
   const owner = new Map<string, SkillId>()
   for (const s of TABLE_SKILLS) for (const r of index[s] ?? []) owner.set(r.key, s)

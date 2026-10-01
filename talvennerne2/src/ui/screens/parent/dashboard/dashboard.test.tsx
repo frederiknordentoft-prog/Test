@@ -68,7 +68,7 @@ describe('dashboard views', () => {
 
   it('never show × or ÷, a score or a streak', () => {
     for (const html of all(demo())) {
-      expect(html).not.toMatch(/[×÷]/)
+      expect(html).not.toMatch(/[\u00d7\u00f7]/)
       expect(html).not.toMatch(/score|point|streak|i træk|i streg/i)
     }
   })

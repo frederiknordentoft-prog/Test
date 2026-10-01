@@ -32,7 +32,7 @@ function SkillDetails({ r, today }: { r: SkillRow; today: string }) {
         <span className="tv-dskill__status">{DOT_LABEL[r.dot]}</span>
         <span className="tv-dskill__bar">
           <ShareBar value={r.share4} />
-          <span className="tv-dskill__share">{r.keys > 0 ? `${fmtPercent(r.share4)} sikre` : 'kommer senere'}</span>
+          <span className="tv-dskill__share">{r.keys === 0 ? 'kommer senere' : r.skipped ? 'ikke prøvet endnu' : `${fmtPercent(r.share4)} sikre`}</span>
         </span>
       </summary>
       <div className="tv-dskill__body">

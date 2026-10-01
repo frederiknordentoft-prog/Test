@@ -117,7 +117,7 @@ export function ShareBar({ value }: { value: number }) {
   )
 }
 
-/** The 10 × 10 table, each product shaded by its box (one hue, light to dark). */
+/** The 10 · 10 table, each product shaded by its box (one hue, light to dark). */
 export function TableGridView({ grid }: { grid: TableGrid }) {
   const cell = 20
   const pad = 18

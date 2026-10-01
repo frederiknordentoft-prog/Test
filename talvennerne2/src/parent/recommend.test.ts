@@ -117,6 +117,8 @@ describe('R4: forgotten', () => {
     expect(recs(p).find((x) => x.rule === 'R4')?.skill).toBe('addTo10')
     const kept = profile({ keys: keysAt(addKeys, 3), skillMedals: { addTo10: 'bronze' } })
     expect(recs(kept).some((x) => x.rule === 'R4')).toBe(false)
+    // a medal in a skill this version cannot enumerate says nothing about now
+    expect(recs(profile({ skillMedals: { mul34: 'gold' } })).some((x) => x.rule === 'R4')).toBe(false)
   })
 })
 
@@ -145,6 +147,13 @@ describe('R6: "Klar til"', () => {
     const r = recs(profile())
     expect(r).toHaveLength(1)
     expect(r[0]).toMatchObject({ rule: 'R6', title: 'Klar til: Tællelunden', region: 'w0-tal10' })
+  })
+
+  it('never sends an older child back to a world far below', () => {
+    const p = profile({ grade: 3, unlocked: { worlds: ['eng', 'bakke', 'skov', 'fjeld'], regions: [] }, nodes: { 'w3-tabellen-l1': { plays: 1, stars: 2, skipped: false, lastAt: 9 } } })
+    const r6 = recs(p).filter((x) => x.rule === 'R6')
+    expect(r6).toHaveLength(1)
+    expect(r6[0].region?.startsWith('w2') || r6[0].region?.startsWith('w3')).toBe(true)
   })
 
   it('puts a trial whose rounds are all played first', () => {
