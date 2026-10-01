@@ -370,19 +370,32 @@ const PatternHead: Part = (p) => (p.colorway === 'c4' ? CalicoHead(p) : TabbyHea
 const PatternBody: Part = (p) => (p.colorway === 'c4' ? CalicoBody(p) : TabbyBody(p))
 
 // ---------------------------------------------------------------------------------------------
-// Krave og kindtotter (langhår, maine coon) og regnbuens halsflæse (huskat).
+// Krave og kindtotter (langhår, maine coon) og regnbuens halsflæse (huskat). Kraverne ligger i
+// kroppens lag (`Ruff`), så kropstøj dækker dem.
 
-/** Krave af bløde pelstotter i brystets lyse farve (bag hovedet, over brystet). */
+/** Kravens vækst pr. stadie (om halsen): babyen har en lille krave, den store en fyldig. */
+const ruffK = (stage: number) => (stage === 3 ? 1.18 : stage === 1 ? 1.08 : 1)
+
+/** Krave af bløde pelstotter i brystets lyse farve (i kroppens lag, så en trøje dækker den). */
 function makeRuff(rx: number, ry: number, dy: number, count: number, depth = 0.1): Part {
   const loop = tufts(100, 0, rx, ry, count, { depth, swirl: 4, jitter: 0.05 })
-  return ({ pal, sw, a, ids }) => (
-    <path d={blob(xf(loop, { dy: a.neck.y + dy }), 1)} fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
-  )
+  return ({ pal, sw, a, ids, stage }) => {
+    const k = ruffK(stage)
+    return (
+      <path
+        d={blob(xf(loop, { sx: k, about: [100, 0], dy: a.neck.y + dy * k }), 1)}
+        fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly}
+        stroke={pal.maneOutline}
+        strokeWidth={sw}
+        {...round}
+      />
+    )
+  }
 }
 
-const RainbowCollar: Part = ({ pal, sw, ids, colorway, a }) =>
+const RainbowCollar: Part = ({ pal, sw, ids, colorway, a, stage }) =>
   colorway === 'rainbow' && !pal.silhouette ? (
-    <path d={scallop(100, a.neck.y + 6, 36, 12, 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" />
+    <path d={scallop(100, a.neck.y + 6 * ruffK(stage), 36 * ruffK(stage), 12 * ruffK(stage), 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" />
   ) : null
 
 /** Kindtotter: strøgne spidser ud fra kinderne, klippet "uden for hovedet" (sømløse). */
@@ -449,7 +462,7 @@ export const cat: SpeciesDef = {
       parts: {
         Ear: makeEar(SMALL_EAR, SMALL_INNER, true),
         Tail: makeTail(TAILS.longhair),
-        ManeBack: makeRuff(56, 28, 0, 19, 0.16),
+        Ruff: makeRuff(56, 28, 0, 19, 0.16),
         HeadDeco: makeCheekTufts(14),
         Muzzle: makeMuzzle(0.9),
       },
@@ -463,7 +476,7 @@ export const cat: SpeciesDef = {
       parts: {
         Ear: makeEar(COON_EAR, COON_INNER, true),
         Tail: makeTail(TAILS.mainecoon),
-        ManeBack: makeRuff(26, 12, 6, 9, 0.12),
+        Ruff: makeRuff(26, 12, 6, 9, 0.12),
         Muzzle: makeMuzzle(1.12),
       },
       bounds: { head: { x0: 32, y0: -2, x1: 168, y1: 168 }, body: { x0: 36, y0: 136, x1: 178, y1: 228 } },
@@ -532,7 +545,7 @@ export const cat: SpeciesDef = {
     Tail: makeTail(TAILS.domestic),
     Muzzle: makeMuzzle(1),
     BodyDeco,
-    ManeBack: RainbowCollar,
+    Ruff: RainbowCollar,
     Pattern: { head: PatternHead, body: PatternBody },
   },
 }

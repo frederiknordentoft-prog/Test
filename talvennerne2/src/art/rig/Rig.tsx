@@ -632,6 +632,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             {!silhouette && shade.body && (
               <path d={outside(shade.body)} fill={pal.shade} fillRule="evenodd" clipPath={`url(#${ids.bodyClip})`} />
             )}
+            {/* Krave/halsflæse: under kropstøjet og hagens skygge. */}
+            {parts.Ruff?.(ctx(swBody))}
             {/* Hovedets kastede skygge på kroppen lige under hagen (dybde, samme regel på alle stadier). */}
             {!silhouette && <path d={chinShadow(a, R)} fill={pal.shade} clipPath={`url(#${ids.bodyClip})`} />}
             {/* Guld: et smalt glansbånd på kroppen. */}

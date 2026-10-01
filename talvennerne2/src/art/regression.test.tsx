@@ -3,7 +3,7 @@
 // opdateres snapshottet med `npx vitest run -u` – og kontaktarkene gennemses igen.
 import { createHash } from 'node:crypto'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { festHead } from './items/fest/fest-head'
 import { hverdagBody } from './items/hverdag/hverdag-body'
 import { hverdagHead } from './items/hverdag/hverdag-head'
@@ -14,6 +14,9 @@ import { cat } from './species/cat'
 import { horse } from './species/horse'
 import { rabbit } from './species/rabbit'
 import { unicorn } from './species/unicorn'
+
+// Tunge gennemløb af alle kombinationer: robuste når andre agenter belaster CPU'en.
+vi.setConfig({ testTimeout: 120_000 })
 
 const hash = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 16)
 const SPECIES: readonly SpeciesDef[] = [rabbit, cat, horse, unicorn]

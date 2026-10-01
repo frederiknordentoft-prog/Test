@@ -4,7 +4,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { festHead } from './items/fest/fest-head'
 import { hverdagBody } from './items/hverdag/hverdag-body'
 import { hverdagHead } from './items/hverdag/hverdag-head'
@@ -17,6 +17,9 @@ import { cat } from './species/cat'
 import { horse } from './species/horse'
 import { rabbit } from './species/rabbit'
 import { unicorn } from './species/unicorn'
+
+// Tunge gennemløb af alle kombinationer: robuste når andre agenter belaster CPU'en.
+vi.setConfig({ testTimeout: 120_000 })
 
 const ART = path.resolve(import.meta.dirname)
 const walk = (dir: string): string[] =>

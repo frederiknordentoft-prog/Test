@@ -262,10 +262,12 @@ const DutchHead: Part = ({ pal, ids }) => (
 // Halsflæse: regnbuen får en flæse i regnbuens farver (gradienten er tilladt i manke og hale);
 // løvehovedet får en blød uldkrans med en mørkere inderkrans og en lille uldsky i panden.
 
-const RainbowRuff: Part = ({ pal, sw, ids, colorway }) =>
-  colorway === 'rainbow' && !pal.silhouette ? (
-    <path d={scallop(100, 152, 38, 12.5, 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" />
-  ) : null
+/** Regnbuens halsflæse (i kroppens lag under trøjen; løvehovedet har sin manke i stedet). */
+const RainbowRuff: Part = ({ pal, sw, ids, colorway, breed, stage }) => {
+  if (colorway !== 'rainbow' || pal.silhouette || breed === 'lionhead') return null
+  const k = stage === 3 ? 1.12 : stage === 1 ? 1.1 : 1
+  return <path d={scallop(100, 151 + 1 * k, 38 * k, 12.5 * k, 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" />
+}
 
 // Manken er en blød krans af runde totter (samme bueslag som halen) med en mørkere inderkrans:
 // uld, ikke pigge, så løvehovedet læses som fluffy og ikke som et pindsvin. Den rammer ansigtet ind
@@ -372,7 +374,7 @@ export const rabbit: SpeciesDef = {
     Tail,
     Muzzle,
     BodyDeco,
-    ManeBack: RainbowRuff,
+    Ruff: RainbowRuff,
     ManeFront: Tuft,
     Pattern: { head: DutchHead },
   },

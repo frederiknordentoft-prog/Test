@@ -47,9 +47,19 @@ const TAIL_THICK: Vec[] = [
 ]
 const TAIL_THICK_STRANDS: Vec[][] = [[[6, -9], [16, -11], [23, -5], [26, 5], [26.6, 15]]]
 
-/** Fjordhestens stående manke: en høj kam bag issen med mørk midte, og en kort pandelok. */
-const FJORD_CREST: Vec[] = [[90.5, 54], [89.5, 42], [90.5, 31], [93.5, 22.5], [100, 18], [106.5, 22.5], [109.5, 31], [110.5, 42], [109.5, 54]]
-const FJORD_CREST_STRIPE: Vec[] = [[97.4, 54], [96.8, 40], [97.4, 28], [100, 22.6], [102.6, 28], [103.2, 40], [102.6, 54]]
+/**
+ * Fjordhestens stående manke: en bred, flad børstekam bag issen med mørk midte og børstestrå (ikke
+ * en spids kegle, så den aldrig læses som et horn – heller ikke i regnbuens farver), og en kort pandelok.
+ */
+const FJORD_CREST: Vec[] = [
+  [87, 52], [85, 42], [85.5, 33], [87.5, 27.5], [91.5, 25], [95.5, 26.2], [100, 24], [104.5, 26.2], [108.5, 25], [112.5, 27.5],
+  [114.5, 33], [115, 42], [113, 52],
+]
+const FJORD_CREST_STRIPE: Vec[] = [[96.6, 52], [96.2, 40], [96.5, 31], [97.6, 26.8], [100, 25.8], [102.4, 26.8], [103.5, 31], [103.8, 40], [103.4, 52]]
+const FJORD_CREST_STRANDS: Vec[][] = [
+  [[91.2, 29.5], [90.6, 37.5]],
+  [[108.8, 29.5], [109.4, 37.5]],
+]
 const FJORD_FORELOCK: Vec[] = [[100, 40], [93, 42], [90.5, 48], [92, 54], [96, 57], [100, 58], [104, 57], [108, 54], [109.5, 48], [107, 42]]
 const FJORD_FORELOCK_STRIPE: Vec[] = [[100, 41], [98.4, 44], [98.2, 50], [99.4, 55], [100, 56], [100.6, 55], [101.8, 50], [101.6, 44]]
 const FJORD_TAIL: Vec[] = [[-3, -2], [3, -10], [12, -14], [21, -12], [26, -5], [28, 4], [28, 14], [26, 22], [23, 25], [20, 20], [17, 24], [16, 15], [15, 6], [11, -2], [4, -4]]
@@ -151,7 +161,7 @@ export const horse: SpeciesDef = {
       anchors: { bodyRx: 43, bodyWidth: 86 },
       palette: dunPalette(mixHex, FJORD_CREAM, FJORD_DARK),
       parts: {
-        ManeBack: hairShape(FJORD_CREST, { stripe: FJORD_CREST_STRIPE, pivot: { at: [100, 46], cls: TOSS } }),
+        ManeBack: hairShape(FJORD_CREST, { stripe: FJORD_CREST_STRIPE, strands: FJORD_CREST_STRANDS, pivot: { at: [100, 46], cls: TOSS } }),
         ManeFront: hairShape(FJORD_FORELOCK, { stripe: FJORD_FORELOCK_STRIPE }),
         Tail: hairShape(FJORD_TAIL, { stripe: FJORD_TAIL_STRIPE }),
       },

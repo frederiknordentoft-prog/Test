@@ -311,6 +311,11 @@ export interface SpeciesParts {
   HeadDeco?: Part
   /** Ekstra på kroppen efter grundform (mave-tot osv.). */
   BodyDeco?: Part
+  /**
+   * Krave/halsflæse på brystet: tegnes i kroppens lag efter skyggen og før kropstøjet, så en trøje
+   * dækker den (en krave i `ManeBack` ville ligge oven på trøjen).
+   */
+  Ruff?: Part
   ManeBack?: Part
   ManeFront?: Part
   /** Horn i lokale koordinater om hornBase. */
