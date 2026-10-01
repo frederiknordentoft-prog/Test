@@ -94,8 +94,9 @@ export const POSES: Record<Mood, Pose> = {
   cheer: { fig: { rot: -2 }, body: { sy: 1.02 }, head: { rot: -3, y: -1 }, earL: 7, earR: 7, pawL: { up: true }, pawR: { up: true }, tail: 14 },
   // Tænker: hovedet på skrå, poten på hagen.
   think: { head: { rot: 8, y: 2 }, earL: 6, earR: -8, pawR: { up: true }, tail: -6 },
-  // Ups: et legende skuldertræk (begge poter ud til siden), hovedet på skrå, et blink.
-  oops: { head: { rot: -7, y: 1 }, earL: -12, earR: -2, pawL: 58, pawR: 58, tail: 8 },
+  // Ups (legende "tehepero"): blink og tunge, hovedet på skrå, og poten kradser bag nakken
+  // (kat, hest og enhjørning løfter i stedet poten op til munden).
+  oops: { head: { rot: -7, y: 1 }, earL: -12, earR: -2, pawL: 0, pawR: { up: true, behind: true }, tail: 8 },
   // Sover: sammensunket, hovedet tungt, ørerne nede.
   sleep: { body: { sy: 0.965 }, head: { rot: 7, y: 6 }, earL: -26, earR: -22, pawL: -4, pawR: -4 },
   // Vinker: poten løftet ved siden af hovedet med bøjet albue, hovedet vippet mod den.
@@ -453,6 +454,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
 
   const upL = !!pawPose(pose.pawL).up && !!parts.PawUp
   const upR = !!pawPose(pose.pawR).up && !!parts.PawUp
+  // En løftet pote "bag hovedet" tegnes i kroppens lag, så hovedet dækker spidsen.
+  const behindL = upL && !!pawPose(pose.pawL).behind
+  const behindR = upR && !!pawPose(pose.pawR).behind
 
   // Poter (venstre tegnes, højre spejles). Håndgenstanden ligger i højre pote under selve poten.
   // `outer` lægger kroppens region foran (løftede poter tegnes uden for kroppens gruppe).
@@ -635,8 +639,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             {/* 6 · body-item (klippet til kroppen +2) */}
             {renderItem('body', 'front', R.body.s, itemClipId)}
             {/* 7–8 · hånd + poter (hvilende) */}
-            {!upL && paw('L')}
-            {!upR && paw('R')}
+            {(!upL || behindL) && paw('L')}
+            {(!upR || behindR) && paw('R')}
             {/* 9 · neck-item */}
             {renderItem('neck', 'front', R.body.s)}
             {renderItem('back', 'back', R.body.s)}
@@ -698,8 +702,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
 
         {/* Løftede poter foran hovedet (jubel, vink, tænker, ups): kroppens region og nøglepose lagt ind i
             potens egen transform (ingen ekstra grupper; de ånder ikke med, hvad ingen kan se på en løftet pote). */}
-        {upL && paw('L', `${bodyRegion} ${aboutGround(pose.body) ?? ''} `)}
-        {upR && paw('R', `${bodyRegion} ${aboutGround(pose.body) ?? ''} `)}
+        {upL && !behindL && paw('L', `${bodyRegion} ${aboutGround(pose.body) ?? ''} `)}
+        {upR && !behindR && paw('R', `${bodyRegion} ${aboutGround(pose.body) ?? ''} `)}
 
         {/* 17 · fx (verdensrum; hvert fx-element bærer data-part="fx") */}
         {showFx && mood === 'think' && <ThoughtDots at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}

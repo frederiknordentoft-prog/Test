@@ -390,6 +390,8 @@ export interface PawPose {
   rot?: number
   /** Brug artens løftede pote (`PawUp`) foran hovedet. */
   up?: boolean
+  /** Den løftede pote tegnes bag hovedet (kroppens lag), fx poten bag nakken ved "ups". */
+  behind?: boolean
 }
 export interface Pose {
   fig?: PoseXf

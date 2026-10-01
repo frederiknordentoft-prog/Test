@@ -320,7 +320,7 @@
   50% { transform: translate(0, -1.5px); }
 }
 
-/* ---------------------------------------------------------------- oops: legende skuldertræk, blink */
+/* ---------------------------------------------------------------- oops: legende tehepero (blink, tunge, kradsepote) */
 
 .rig[data-mood='oops'] .a-head {
   animation: rig-oops-head 2.4s ease-in-out infinite;
@@ -334,8 +334,9 @@
   animation: rig-oops-ear-r 2.4s ease-in-out infinite;
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
-.rig[data-mood='oops'] .a-paw {
-  animation: rig-oops-paw 2.4s ease-in-out infinite;
+/* Den løftede pote kradser (bag nakken eller ved munden); 0 % er den statiske pose (0 grader). */
+.rig[data-mood='oops'] .a-paw-r {
+  animation: rig-oops-scratch 2.4s ease-in-out infinite;
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
 .rig[data-mood='oops'] .a-tail {
@@ -359,11 +360,12 @@
   12% { transform: rotate(-6deg); }
   24% { transform: rotate(0deg); }
 }
-@keyframes rig-oops-paw {
-  0%, 100% { transform: rotate(58deg); }
-  12% { transform: rotate(68deg); }
-  24% { transform: rotate(54deg); }
-  40% { transform: rotate(60deg); }
+@keyframes rig-oops-scratch {
+  0%, 52%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(-5deg); }
+  20% { transform: rotate(2deg); }
+  30% { transform: rotate(-4deg); }
+  40% { transform: rotate(1deg); }
 }
 @keyframes rig-oops-tail {
   0%, 100% { transform: rotate(8deg); }

@@ -131,20 +131,26 @@ const UP_SPINES = {
   cheer: [[7.5, 20], [-1.5, 10], [-11.5, 0], [-20.5, -10], [-27.5, -20]] as Vec[],
   wave: [[8.5, 19], [-3.5, 14], [-16.5, 11], [-26.5, 4], [-31.5, -7], [-33.5, -21]] as Vec[],
   think: [[5.5, 20], [11.5, 12], [17.5, 5], [21.5, -1]] as Vec[],
+  // Ups: albuen ud til siden og poten op bag nakken (tegnes bag hovedet, så spidsen skjules).
+  oops: [[3, 12], [-8, 7], [-19, 3], [-27, -4], [-29.5, -15], [-26, -27], [-20, -37], [-14.5, -45]] as Vec[],
 }
 const UP_LOOPS = {
   cheer: limbLoop(UP_SPINES.cheer, 15, 18.5),
   wave: limbLoop(UP_SPINES.wave, 15, 18.5),
   think: limbLoop(UP_SPINES.think, 15, 18),
+  oops: limbLoop(UP_SPINES.oops, 15, 17),
 }
 const tipOf = (s: readonly Vec[]) => s[s.length - 1]
 
 const PawUp: SidePart = ({ pal, sw, mood, lod }) => {
-  const kind = mood === 'wave' ? 'wave' : mood === 'think' ? 'think' : 'cheer'
+  const kind = mood === 'wave' ? 'wave' : mood === 'think' ? 'think' : mood === 'oops' ? 'oops' : 'cheer'
   const [tx, ty] = tipOf(UP_SPINES[kind])
-  // Poten vender håndfladen mod os ved jubel og vink (puder), og ses fra siden ved tænker (tålinjer).
+  // Poten vender håndfladen mod os ved jubel og vink (puder), og ses fra siden ved tænker (tålinjer);
+  // bag nakken (ups) er poten skjult af hovedet.
   const detail =
-    kind === 'think'
+    kind === 'oops'
+      ? null
+      : kind === 'think'
       ? lod === 'full' && <path d={join(spline([[tx + 1.5, ty - 6], [tx + 5, ty - 3.5]]), spline([[tx + 3, ty - 1], [tx + 6.6, ty + 1.6]]))} fill="none" stroke={pal.outline} strokeWidth={sw * 0.5} {...round} />
       : !pal.silhouette && <path d={padsPath(tx, ty + 0.5, 8.2, kind === 'wave' ? -4 : -38)} fill={pal.inner} />
   return (
@@ -360,7 +366,7 @@ export const rabbit: SpeciesDef = {
     Ear: UprightEar,
     Paw,
     PawUp,
-    pawUpTip: { cheer: { x: -27.5, y: -20 }, wave: { x: -33.5, y: -21 }, think: { x: 21.5, y: -1 } },
+    pawUpTip: { cheer: { x: -27.5, y: -20 }, wave: { x: -33.5, y: -21 }, think: { x: 21.5, y: -1 }, oops: { x: -14.5, y: -45 } },
     limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 13, half: 11.6 } },
     Feet,
     Tail,
