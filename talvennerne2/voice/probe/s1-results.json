@@ -8,6 +8,8 @@
     "1": 0.0572289156626506
    },
    "cer_best_of_takes": 0.03614457831325301,
+   "takes_max": 2,
+   "cer_best_of_all_takes": 0.03614457831325301,
    "pass_rate": 0.5,
    "whisper_cer_all": 0.04066265060240964,
    "whisper_pass_rate": 0.6666666666666666,
@@ -71,6 +73,8 @@
     "1": 0.08734939759036145
    },
    "cer_best_of_takes": 0.05120481927710843,
+   "takes_max": 4,
+   "cer_best_of_all_takes": 0.030120481927710843,
    "pass_rate": 0.5833333333333334,
    "whisper_cer_all": 0.03162650602409638,
    "whisper_pass_rate": 0.7916666666666666,

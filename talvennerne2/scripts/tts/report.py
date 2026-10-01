@@ -86,8 +86,13 @@ def voices_section(res: dict):
         return
     wh = {(r["id"], r["voice"], r["take"]): r for r in load("probe12", "asr-whisper.jsonl")}
     vs = {}
+    all_rows = rows
+    rows = [r for r in rows if r["take"] in (0, 1)]  # stemmevalget: samme 2 takes for begge stemmer
     for v in sorted({r["voice"] for r in rows}):
         rv = [r for r in rows if r["voice"] == v]
+        rv_all = [r for r in all_rows if r["voice"] == v]
+        best_all = [min((r for r in rv_all if r["id"] == sid), key=lambda r: r["cer"])
+                    for sid in sorted({r["id"] for r in rv_all})]
         takes = sorted({r["take"] for r in rv})
         best = [min((r for r in rv if r["id"] == sid), key=lambda r: r["cer"])
                 for sid in sorted({r["id"] for r in rv})]
@@ -98,6 +103,8 @@ def voices_section(res: dict):
             "cer_all": agg_cer(rv),
             "cer_per_take": {t: agg_cer([r for r in rv if r["take"] == t]) for t in takes},
             "cer_best_of_takes": agg_cer(best),
+            "takes_max": 1 + max(r["take"] for r in rv_all),
+            "cer_best_of_all_takes": agg_cer(best_all),
             "pass_rate": sum(r["pass"] for r in rv) / len(rv),
             "whisper_cer_all": agg_cer(rw) if rw else None,
             "whisper_pass_rate": sum(r["pass"] for r in rw) / len(rw) if rw else None,
@@ -142,6 +149,8 @@ def voices_section(res: dict):
               f"{pct(d['cer_best_of_takes'])} | {d['pass_rate'] * 100:.0f} % | "
               f"{pct(d['whisper_cer_all']) if d['whisper_cer_all'] is not None else '–'} | "
               f"{d['fail_both_asr_rate'] * 100:.0f} % |" if d["fail_both_asr_rate"] is not None else "")
+    for v, d in vs.items():
+        print(f"{v}: bedste af {d['takes_max']} takes pr. sætning: CER {pct(d['cer_best_of_all_takes'])}")
     if res.get("voice_extended"):
         print("\n| Stemme | 10 regnestykker × 2: CER | bestået | \"Hvad er\" hørt | alle 22 sætninger: CER | bestået |")
         print("|---|---|---|---|---|---|")

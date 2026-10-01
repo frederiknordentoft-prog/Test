@@ -6,11 +6,11 @@ Spike S1 fra SPEC §14 (F0). Alle tal er målt på denne container (4 vCPU Intel
 
 | Emne | Beslutning | Begrundelse (afsnit) |
 |---|---|---|
-| Generator | CoRal **Røst-v3 Chatterbox 500M** på CPU. A2-reserven (Piper) udløses ikke. | Installerer og kører; RTF 7,1–7,7 < 12; Mic har probe-CER 3,6 % (bedste af 2 takes) < 5 % (§7, §8, §13) |
-| Stemme | **Mic** | Lavest samlet CER med roest-wav2vec2: Mic 5,3 % mod Nic 7,5 % (−2,3 pp, uden for lighedsbåndet ±0,5 pp). Whisper som second opinion peger svagt den anden vej (§7). |
-| Bæresætning | **Ja** for talord og andre klip under 3 stavelser. | Beslutningsreglen udløses af ASR-ustabilitet: 35 % af enkeltord-takes består ikke (> 20 %). Varighedsvinduet alene udløser den ikke (5 % uden for) (§9). |
-| Generering | ⟨BATCH-BESLUTNING⟩ | §11, §12 |
-| CPU-tid | ⟨PROJEKTION⟩ | §12 |
+| Generator | CoRal **Røst-v3 Chatterbox 500M** på CPU. A2-reserven (Piper) udløses ikke. | Installerer og kører. RTF er 7,1–7,7 (< 12). Probe-CER efter takevalg er 3,0 % for Nic (bedste af 4 takes) og 3,6 % for Mic (bedste af 2), begge < 5 % (§7, §8, §13). |
+| Stemme | **Nic**. Det afviger fra reglens bogstav (se §7). | På de 12 probesætninger giver reglen Mic (CER 5,3 % mod 7,5 % med roest-wav2vec2). På alle 22 målte sætninger (44 takes pr. stemme) har Nic dog lavest CER: 4,6 % mod 6,3 %, og 32 mod 19 beståede takes. Whisper peger også på Nic (3,2 % mod 4,1 %). Mic's "Hvad er" høres som "hver er" i 17 af 20 regnestykke-takes (Nic: 2 af 20). "Hvad er" indleder spillets 271 hele spørgesætninger. |
+| Bæresætning | **Ja**, for talord og hundrede-hoveder. | Reglen udløses af ASR-ustabilitet: 35 % af enkeltord-takes består ikke (> 20 %). Varigheden udløser den ikke (5 % uden for vinduet). Hundrede-hoveder ("tre hundrede og") hallucinerer, når de genereres alene (4 af 4), men er fejlfri i bæresætning (§9). |
+| Generering | **Strategi D**: hele sætninger 4 pr. kald; talord og hundrede-hoveder i bæresætning ca. 10 pr. kald; øvrige korte klip ét kald hver. Alle udklip laves med forced alignment. | Samme udtalekvalitet som ét kald pr. klip, men 14 % mindre CPU-tid. Batch af enkeltord og K=6 sætninger koster kvalitet (§11). |
+| CPU-tid | **7,6 t ved 2 tråde, 5,4 t ved 4 tråde** (D). Ét kald pr. klip: 8,8 / 6,3 t. | Målet under 6 t nås ved 4 tråde (SPEC: 4 tråde, når containeren er ledig). Ved 2 tråde nås det ikke uden kvalitetsrisiko. Med S3Gen-referencen forkortet til 4 s (E) bliver det 6,6 / 4,7 t; E kræver en lyttetest først (§12). |
 
 ## 2. Model, filer og revisioner
 
@@ -129,21 +129,33 @@ Resultat:
 
 | Stemme | CER wav2vec2 (24 takes) | take 0 | take 1 | bedste take pr. sætning | bestået | CER whisper | ingen ASR godkender |
 |---|---|---|---|---|---|---|---|
-| **Mic** | **5,3 %** | 4,8 % | 5,7 % | 3,6 % | 50 % | 4,1 % | 29 % |
+| Mic | **5,3 %** | 4,8 % | 5,7 % | 3,6 % | 50 % | 4,1 % | 29 % |
 | Nic | 7,5 % | 6,3 % | 8,7 % | 5,1 % | 58 % | 3,2 % | 17 % |
 
-**Vinder: Mic.** Mic − Nic = −2,26 pp med reglens ASR (roest-wav2vec2). Det er uden for lighedsbåndet (±0,5 pp), så reglen om Nic ved lighed gælder ikke.
+**Reglen alene giver Mic.** Mic − Nic = −2,26 pp med roest-wav2vec2, uden for lighedsbåndet på ±0,5 pp.
 
-Forbehold, som brugeren bør kende:
+**Valgt: Nic.** Mic-resultatet holdt ikke, da der kom mere data til. De 10 regnestykker fra §10 blev genereret med begge stemmer (2 takes):
 
-- Whisper-1.5b vurderer svagt omvendt: Nic 3,2 % mod Mic 4,1 %.
-  - Nic har også færre takes, som ingen af de to ASR'er godkender (4 mod 7 af 24).
-  - wav2vec2's ekstra fejl på Nic sidder især i "Hvilket tal mangler: fem plus hvad giver tolv?" og "Del tolv æbler … venner". Whisper hører begge rigtigt.
-- Mic's typiske fejl er ægte: "Hvad er" reduceres til noget, der lyder som "hver"/"va'" (p01, p05, p09, fanget af begge ASR'er).
-- Valget følger SPEC-reglen. Stemmeprøven er til brugeren; et skift til Nic koster en regenerering (SPEC §14).
-- Pipelinens ASR-gate er wav2vec2, så en stemme, den genkender bedre, giver færre falske afvisninger.
+| Stemme | 10 regnestykker: CER | bestået | "Hvad er" hørt rigtigt | alle 22 sætninger: CER | bestået |
+|---|---|---|---|---|---|
+| Mic | 7,5 % | 7/20 | 3/20 | 6,3 % | 19/44 |
+| **Nic** | **1,3 %** | **18/20** | **18/20** | **4,6 %** | **32/44** |
 
-Fejlbilledet er domineret af ASR-artefakter på sjældne ord ("tiervennerne" → "tigvinderne") og sammentrækninger. Ingen take har forkert talfølge efter normalisering.
+Begrundelse:
+
+1. **Mic har en systematisk udtalefejl i spillets vigtigste skabelon.** Mic reducerer "Hvad er" til noget, der høres som "hver er"/"ver". Det sker i 17 af 20 regnestykke-takes med wav2vec2 og 9 af 20 med whisper. Skabelonen indleder spillets 271 hele spørgesætninger (SPEC §10.2).
+2. **Mic's forspring på de 12 sætninger skyldes ASR-artefakter.** wav2vec2's ekstra fejl på Nic sidder i to sætninger ("… hvad giver tolv?" og "… venner", som høres som "vinder"). Whisper hører begge rigtigt.
+3. **Whisper vurderer Nic bedst.** Nic får 3,2 % mod 4,1 % for Mic, og færre Nic-takes afvises af begge ASR'er (4 mod 7 af 24).
+4. **Driften bliver billigere med Nic.** Med Mic ville ca. 65 % af "Hvad er …?"-takes fejle ASR-gaten og skulle genereres igen. Nic's kortere stemmeprompt giver også ca. 1 s mindre overhead pr. kald (§8).
+
+SPEC §14 forudser, at stemmen kan skiftes. Hvis man vil følge reglens bogstav, er Mic-takes og Mic-målinger bevaret, og prisen er alene en ny lytteprøve.
+
+Med op til 4 takes har Nic probe-CER 3,0 % (bedste take pr. sætning, wav2vec2), så A2 og G0 (≤ 5 %) er opfyldt.
+
+Fejlbilledet er ellers domineret af ASR-artefakter på sjældne ord ("tiervennerne" → "tigvinderne") og sammentrækninger.
+
+- wav2vec2 finder forkert talfølge i 7 af 88 sætningstakes (takes 0–1): Mic 2 og Nic 5.
+- Whisper hører talfølgen rigtigt i alle seks af disse, som findes i probe-sættet. Eksempler: "hvad giver 12" (wav2vec2: "1o") og "6 x 7" (wav2vec2: "6s gange y").
 
 ## 8. RTF og tidsforbrug pr. kald
 
@@ -174,19 +186,170 @@ Fejlbilledet er domineret af ASR-artefakter på sjældne ord ("tiervennerne" →
 
 **Beslutning:** reglen udløses af ASR-ustabilitet (35 % > 20 %), ikke af varigheden (5 % < 20 %). Talord genereres derfor i bæresætningen "Tallet er X." (og "Tallet er X," for mid-form) og klippes ud med `torchaudio.functional.forced_align` (`scripts/tts/align.py carrier`). Korte klip verificeres kun i sammensætning. Prototypen og dens resultat står i §10–§11.
 
-⟨CARRIER-RESULTAT⟩
+Ordene blev målt med Mic, før det endelige stemmevalg. Ustabiliteten skyldes modellen og meget korte input, ikke stemmen.
+
+**Prototype (`align.py carrier`).**
+
+1. Hver bæresætning genereres med ét kald.
+2. Teksten tvangsalignes med wav2vec2.
+3. Snittet lægges i det stilleste 5 ms-vindue mellem "er" og talordet. Det begrænses til 0,2 s før første tegn.
+4. Udklippet efterbehandles som et almindeligt klip.
+
+Mid-form bruger "Tallet er X,", end-form "Tallet er X.". De 19 talklip, som de 10 regnestykker i §10 bruger, gav:
+
+| Stemme | bæresætninger: CER | bestået | udklip: ASR bestået | talord rigtige | i varighedsvinduet | tid pr. klip |
+|---|---|---|---|---|---|---|
+| Mic | 4,5 % | 14/19 | 15/19 | 17/19 | 18/19 | 15,3 s |
+| Nic | 1,0 % | 17/19 | 14/19 | 17/19 | 18/19 | 15,1 s |
+
+**Hundrede-hoveder.** Klippet `hog.H` ("tre hundrede og,") hallucinerer, når det genereres alene. Med Nic gik 4 af 4 galt, fx "to hundrede og forskeller" og "seks hundrede og 7 25600".
+
+Hovederne genereres derfor som hele tal i bæresætning ("Tallet er tre hundrede og syvogfyrre."), og de tre ord efter "tallet er" klippes ud. Bæresætningerne var fejlfri (4/4, CER 0 %). Udklippene kan ASR ikke genkende alene (0/4), men i sammensætning er alle fire rigtige.
+
+**Demonstration "sat sammen i et udsagn".** De 10 regnestykker blev sat sammen af:
+
+- de 19 udklippede talklip,
+- de 4 udklippede hundrede-hoveder,
+- 4 fragmenter med ét kald hver ("Hvad er,", "plus,", "minus,", "gange,").
+
+Resultatet med Nic: 8/10 består med wav2vec2 (CER 4,7 %) og 9/10 med whisper (2,3 %). De to fejl skyldes enkelte talklip ("femogfyrre" og "femogtyve" i end-form). Gaten ville generere dem igen.
 
 ## 10. Sammensat vs. hel sætning
 
-⟨COMPOSE-TABEL⟩
+10 regnestykker, fx "Hvad er 347 plus 28?", blev genereret dels som hel sætning, dels sammensat af klip:
+
+- **Opbygning:** `frag.hvad_er` + `hog.3` + `n.mid.47` + `op.plus` + `n.end.28`.
+- **Former:** mid-form er tekst + "," og end-form er tekst + ".".
+- **Mellemrum (SPEC §10.2):**
+  - 20 ms ved hundrede-sømmen,
+  - 120 ms efter et tal i mid-form,
+  - 40 ms efter fragment eller operator (inden for frasen).
+
+| Variant | CER wav2vec2 | bestået | talfølge rigtig | CER whisper |
+|---|---|---|---|---|
+| **Nic, hel sætning** (2 takes) | **1,3 %** | **18/20** | 20/20 | 1,3 % |
+| **Nic, sammensat**: tal og hundrede-hoveder fra bæresætning, fragmenter ét kald hver | 4,7 % | 8/10 | 8/10 | 2,3 % |
+| Mic, hel sætning (2 takes) | 7,5 % | 7/20 | 19/20 | 4,8 % |
+| Mic, sammensat af enkeltkald | 10,4 % | 2/10 | 7/10 | – |
+| Mic, sammensat, tal fra bæresætning | 10,7 % | 3/10 | 6/10 | – |
+| Mic, sammensat af batch-klip (kommaliste og sætninger) | 15,7 % | 3/10 | 8/10 | – |
+| Mic, sammensat, tal fra bæresætnings-batch | 13,7 % | 3/10 | 8/10 | – |
+
+Konklusioner:
+
+1. **Hele sætninger er bedst.** Det støtter D8: hele spørgesætninger for recall-facts til og med 1. kl.
+2. **Sammensætning fungerer, når hvert klip er verificeret.** Med Nic er talfølgen rigtig i 8 af 10.
+3. **Ét dårligt delt fragment ødelægger alle sammensætninger.** Mic's take af "Hvad er," lød som "vade"/"hver er", og derfor fejler næsten alle Mic-varianter. Delte fragmenter (`frag.*`, `op.*`) bør derfor have flere takes, og takes vælges ud fra ASR i sammensætning, ikke alene.
 
 ## 11. Batch-generering: flere klip pr. kald
 
-⟨BATCH⟩
+**Hvorfor.** Hvert kald koster 6–7 s fast, næsten alt i S3Gen (§8). Ved ét kald pr. klip er det over halvdelen af tiden for korte klip.
+
+**Fremgangsmåde** (`probe.py gen-batch` + `align.py batch`):
+
+1. K klip-tekster genereres i ét kald:
+   - end-form som hver sin sætning ("Syv. Otte."),
+   - mid-form som kommaliste ("syv, otte,"),
+   - eventuelt med bærefrase ("Tallet er syv. Tallet er otte."),
+   - hele sætninger med deres egne tegn.
+2. Teksten tvangsalignes med wav2vec2.
+3. Snittet mellem to klip lægges i det stilleste 5 ms-vindue mellem dem, højst 0,2 s før første og 0,25 s efter sidste aligned tegn.
+4. Hvert udklip efterbehandles for sig.
+
+Målt med Mic, 1 take pr. batch. CPU-tiden er væguret ved 2 tråde under samme last som en genkørsel af enkeltkald (`calib-single`): 19,3 s pr. sætning og 12,8 s pr. kort klip. "Hel ytring" er ASR på hele batch-lyden.
+
+| Batch | kald | tid/klip | hel ytring CER | udklip i vindue | risikable snit | ASR på udklip | enkeltkald (samme klip) |
+|---|---|---|---|---|---|---|---|
+| **hele sætninger, K=4** | 3 | **12,8 s** | 9,0 % | 9/12 | 0 | **CER 4,2 %, 8/12** | CER 5,3 %, 12/24 |
+| hele sætninger, K=6 | 2 | 12,5 s | 14,2 % | 10/12 | 0 | CER 8,4 %, 7/12 | CER 5,3 %, 12/24 |
+| **tal i bærefrase, mid, K=10** | 1 | **8,2 s** | 24,0 %¹ | 9/10 | 1 | **9/10, tal 10/10** | bæresætning ét kald: 15/19, tal 17/19, 15,3 s |
+| **tal i bærefrase, end, K=9** | 1 | **8,8 s** | 19,0 %¹ | 7/9 | 0 | **8/9, tal 9/9** | (som ovenfor) |
+| tal som kommaliste, mid, K=10 | 1 | 3,8 s | 32,9 % | 9/10 | 0 | 7/10, tal 8/10 | (som ovenfor) |
+| tal som sætninger, end, K=9 | 1 | 4,6 s | 32,9 % | 8/9 | 0 | 8/9, tal 9/9 | ét kald uden bærefrase: 14/19, tal 18/19 |
+| fragmenter og hundrede-hoveder, kommaliste, K=8 | 1 | 5,2 s | 33,3 % | 4/8 | 0 | 4/8, hoveder 0/4 | 4/8, hoveder 1/4 |
+| enkeltord som sætninger, K=10 | 2 | 3,9 s | 30,8 % | 18/20 | 0 | 12/20 | 39/60 (65 %), 12,8 s |
+| enkeltord som sætninger, K=5 | 4 | 4,7 s | 43,3 % | 19/20 | 0 | 11/20 | 39/60 |
+| enkeltord i bærefrase, K=5 | 4 | 7,6 s | 26,7 % | 20/20 | 1 | 10/20 | 39/60 |
+
+¹ Bærefrasen høres som "tallet af" i den gentagne frase. Den kasseres, så det betyder ikke noget for udklippet.
+
+**Hvad batch kan bruges til:**
+
+- **Hele sætninger med K=4 bevarer kvaliteten.** CER er 4,2 % mod 5,3 % ved ét kald, og CPU-tiden falder 34 %.
+  - Pausen mellem sætningerne er 37–320 ms, og ingen snit lå i tale.
+  - Tempoet varierer mere. I snit er udklippene 12 % kortere end enkeltkald, enkelte op til 30 % (p04, p05, p10). Det ligger inden for forskellen mellem to enkeltkald (p01: 1,58 mod 1,03 s), men gaten bør have en nedre varighedsgrænse for sætninger.
+- **K=6 er for meget.** Anden batch blev rodet ("… hvad giver tolv? Del tolv …" smeltede sammen), og CER blev 8,4 %. T3 bliver også langsommere med længere kontekst: 7,3 mod 9,0 tokens/s ved 350 tokens.
+- **Talord i bærefrase, ca. 10 pr. kald, er lige så gode som ét kald pr. bæresætning.** ASR består 17/19 og talordet er rigtigt 19/19, mod 15/19 og 17/19 ved ét kald. Prisen er 8,2–8,8 s mod 15,1–15,3 s pr. klip.
+  - Uden grænsen på 0,25 s efter ordet tog udklippene pauser og vejrtrækning med (13/19 i vinduet). Med grænsen er det 16/19.
+
+**Hvad batch ikke kan bruges til:**
+
+- **Enkeltord, med eller uden bærefrase.** Ordene smelter sammen, springes over eller forvrænges, fx "Tallet er elleve" → "tallet af træ" og "To. Tre." → "23". ASR består 50–60 % mod 65 % ved ét kald. Det er billigt, men et kvalitetstab.
+- **Kommalister uden pauser.** Fragmenter og hundrede-hoveder ("Hvad er, tre hundrede og, plus,") kan ikke klippes rent, og "og" smelter sammen med næste ord.
+
+**Anbefalet strategi (D):**
+
+| Klip | Teknik | Andel af inventaret |
+|---|---|---|
+| Hele sætninger (`q.*`, `s.*`) | 4 pr. kald, udklip med forced alignment | ca. 750 klip, 2/3 af lyden |
+| Talord (`n.*`, `h.*`) og hundrede-hoveder (`hog.*`) | Bæresætning ("Tallet er X." / "tallet er X," / "Tallet er N hundrede og Y."), ca. 10 pr. kald | ca. 230 klip |
+| Øvrige korte klip (operatorer, fragmenter, navneord, navne, tidsfraser, hint-led) | Ét kald pr. klip, verificeres i sammensætning | ca. 1.000 klip |
+
+Tidsfraser og hint-led på mindst 3 stavelser kan sandsynligvis også køre som sætnings-batch. Det er ikke målt og derfor ikke regnet med.
+
+**Forsøg med de faste omkostninger** (samme 8 tekster og seeds som `calib-single`, Mic):
+
+- **S3Gen-reference forkortet til 4 s (fra 8,3 s), snit i en pause.** T3-conditioning og T3-tokens er de samme.
+  - S3Gen-tiden falder 43 % (forhold 0,57), og hele kaldet ca. 30 %.
+  - ASR er uændret: CER 5,6 % mod 4,8 %, 5/8 består i begge.
+  - Stemmeligheden falder lidt: cosinus mellem VoiceEncoder-embedding og prompten er 0,746 mod 0,763 (n=8).
+  - Det er strategi E i §12. Den kræver en lyttetest af klangen, før den tages i brug.
+- **bf16-autocast.** Hele modellen crasher i HiFiGAN's iSTFT. Kun på T3 giver det ingen gevinst (5,4 s mod 5,3–6,0 s). Forsøget er droppet.
 
 ## 12. Fremskrivning af CPU-tid
 
-⟨PROJEKTION-TABEL⟩
+**Inventaret:** ca. 2.000 klip og 48 min lyd (SPEC §10.2), fordelt på kategorier med anslået varighed og skaleret til 48 min:
+
+| Kategori | klip | snit |
+|---|---|---|
+| Tal, hundreder, tusind | 238 | 0,78 s |
+| Tidsfraser og dagtid | 178 | 1,25 s |
+| Operatorer og forbindere | 184 | 0,62 s |
+| Katalognavneord | 153 | 0,73 s |
+| Hint-led | 102 | 1,04 s |
+| Navne | 378 | 0,83 s |
+| `q.*` | 277 | 2,18 s |
+| `s.*` | 490 | 2,49 s |
+
+**Antagelser:**
+
+- 1 take pr. klip plus 15 % nye takes.
+- Grundmodellen er Nic's: 6,24 s fast + 4,29 × rå lyd, hvor rå lyd = 1,23 × færdig lyd.
+- Bæresætninger koster 0,94 s ekstra rå lyd pr. klip.
+- Batch-tiderne er målt under samme last som enkeltkald og omregnet til lav last med faktor 0,88. De skaleres til kategoriens varighed med modellen.
+- 4 tråde er faktor 1,41 hurtigere (målt i §8).
+
+Timerne er beregningstid for én proces:
+
+| Strategi | 2 tråde | 4 tråde |
+|---|---|---|
+| A. Ét kald pr. klip | 8,8 t | 6,3 t |
+| B. Ét kald pr. klip, talord i bæresætning (SPEC uden batch) | 9,2 t | 6,5 t |
+| C. Som D, men alle korte klip i bærefrase-batch (kvalitetstab, §11) | 7,0 t | 4,9 t |
+| **D. Anbefalet: sætninger 4 pr. kald, talord og hoveder i bæresætning ca. 10 pr. kald, resten ét kald** | **7,6 t** | **5,4 t** |
+| E. D + S3Gen-reference på 4 s (kræver lyttetest) | 6,6 t | 4,7 t |
+
+**Målet "under 6 CPU-timer uden tab af udtalekvalitet":**
+
+- Med 4 tråde nås det: D giver 5,4 t, og E giver 4,7 t. Det svarer til SPEC §10.3: "4 tråde når containeren er ledig".
+- Med 2 tråde nås det ikke uden kvalitetsrisiko. E giver 6,6 t, og C giver 7,0 t med dårligere enkeltord.
+
+Den resterende tid ligger i ca. 1.000 korte klip med ét kald hver: 3,4 t ved 2 tråde i D. Disse muligheder er ikke målt i spiken:
+
+- tidsfraser og hint-led som sætnings-batch;
+- en T3, der ikke beregner attention-vægte for alle 30 lag (`output_attentions=True` tvinger eager attention, men alignment-analysatoren bruger kun lag 9).
+
+Groft regnet forholdsmæssigt koster bølge 1 (ca. 900 klip, SPEC §14) med D ca. 3,4 t ved 2 tråde og 2,4 t ved 4 tråde.
 
 ## 13. A2-reserven (Piper)
 
@@ -194,13 +357,22 @@ Ingen af de tre betingelser er opfyldt:
 
 - Chatterbox installerer og indlæses på CPU.
 - RTF ved 2 tråde er 7,1–7,7, altså under 12. Den effektive RTF for inventaret ved enkeltkald er ca. 9,5.
-- Mic's probe-CER efter takevalg er 3,6 %, altså under 5 %.
+- Probe-CER efter takevalg er 3,0 % for Nic (bedste af 4 takes) og 3,6 % for Mic (bedste af 2), altså under 5 %.
 
 Piper er derfor ikke installeret. `setup.sh --piper` installerer piper-tts 1.8.0 og `da_DK-talesyntese-medium` på en låst revision, hvis beslutningen ændres. Stemmen er 22,05 kHz, så `post.resample` løfter den til 24 kHz.
 
 ## 14. Lytteprøver
 
-⟨LYTTEPRØVER⟩
+Begge er 24 kHz mono 16-bit, −18,4 LUFS og true peak ≤ −1,6 dBTP. De er committet i `voice/probe/`.
+
+| Fil | Indhold | Længde |
+|---|---|---|
+| `stemmeproeve-nic.wav` | De 12 probesætninger med Nic, bedste af take 0–1 pr. sætning (ASR), 400 ms pause imellem | 31,2 s |
+| `sammensat-vs-hel.wav` | 5 regnestykker (347 + 28, 6 × 7, 56 + 39, 83 − 19, 604 − 71). Først hel sætning (bedste take), 400 ms pause, så sammensat (fragmenter + tal og hundrede-hoveder klippet ud af bæresætninger). 0,9 s mellem parrene. | 34,7 s |
+
+De to sammensætninger, der fejlede ASR (100 − 45 og 250 + 125), er ikke med. I produktionen ville gaten generere dem igen.
+
+Mic-takes til en sammenligning ligger uden for git i `voice/probe/takes/probe12/mic/` og `whole10/mic/`.
 
 ## 15. Licens
 
@@ -232,7 +404,24 @@ ASR-modellerne (wav2vec2 og whisper) har ifølge deres modelkort en tilsvarende 
 
 ## 16. Kendte problemer og afvigelser fra SPEC
 
-⟨KENDTE⟩
+1. **Stemmevalget afviger fra reglens bogstav** (Nic i stedet for Mic). Begrundelsen står i §7. Alle Mic-data er bevaret.
+2. **ASR på isolerede korte ord er upålidelig.** Eksempler: "1" for "et", "t000n" for "tusind", "jor" for "øre" og "t vonedet" for "tre hundrede og". Som SPEC siger, tjekkes klip under 3 stavelser kun i bæresætning eller sammensætning.
+3. **Varighedsvinduet passer dårligt til sætninger.** Stavelser tælles som vokalbogstaver, men talt dansk sluger mange ("lige", "hundrede"). 4 % af sætningerne fra enkeltkald og 25 % fra batch ligger under 0,5 × forventet, selv om ASR er fin. Vinduet bør gælde enkeltklip; for sætninger foreslås en nedre grænse på ca. 0,35.
+4. **Hundrede-hoveder må ikke genereres alene.** Det dinglende "og," får modellen til at fortsætte ("… og forskeller"). De skal genereres i bæresætning (§9).
+5. **Delte fragmenter er et enkelt fejlpunkt.** Én dårlig take af "Hvad er," ødelægger alle sammensætninger, der bruger den. Generér flere takes, og vælg ud fra ASR i sammensætning.
+6. **chatterbox-tts 0.1.7 crasher på tekster med ≤ 3 teksttokens.** `probe.py` lapper det (§4). `generate.py` skal genbruge `patch_short_text_bug`.
+7. **Kold disk efter genstart:** første modelindlæsning tog 309 s. `snapshot_download(local_files_only=True)` kræver samme `allow_patterns` som ved hentningen, ellers opstår `IncompleteSnapshotError`. Brug `download_models.fetch`.
+8. **Transformers 5.2 indlæser wav2vec2 i bf16.** `asr_check.py` tvinger fp32.
+9. **Limiteren tager op til 6 dB på enkelte plosiver.** Det skyldes målet på −18 LUFS og −1,5 dBTP, som giver mindre plads end talens 17–21 dB fra loudness til peak. Det er ikke hørbart i stikprøverne, men bør vurderes på lyttesiden.
+10. **Batch ændrer tempoet en smule** (§11). Brug højst 4 sætninger pr. kald.
+11. **Last fra andre agenter:** loadavg lå på 2–6 under målingerne. Baseline-RTF er målt ved load ca. 2. Batch-tider er korrigeret med en kalibrering (0,88).
+12. **Afvigelser fra SPEC §10.3/kunst-lyd-teknik §5.1:**
+    - `/opt/tv2-asr` har transformers 5.2.0 + jiwer i stedet for faster-whisper. Whisper-second-opinion kører via transformers i bf16.
+    - roest-v3-whisper-1.5b er hentet (valgfrit).
+    - Trim-tærsklen gælder det loudness-normaliserede niveau.
+    - Gain efterjusteres efter limiteren.
+    - torch-tråde er 2 (ikke 3) efter opgavens regel.
+13. **Ikke gjort i spiken:** Piper er ikke installeret (A2 udløses ikke), og en egentlig lyttetest af den forkortede S3Gen-reference mangler.
 
 ## 17. Filer
 
@@ -249,4 +438,5 @@ ASR-modellerne (wav2vec2 og whisper) har ifølge deres modelkort en tilsvarende 
 | `scripts/tts/da_text.py` | Talord, normalisering, talparser, stavelser og CER |
 | `scripts/tts/report.py` | Samler målingerne i `voice/probe/s1-results.json` |
 | `voice/LICENSE-CoRal.txt` | Modellens licens, ordret |
-| `voice/probe/stemmeproeve-mic.wav`, `voice/probe/sammensat-vs-hel.wav` | Lytteprøver |
+| `voice/probe/stemmeproeve-nic.wav`, `voice/probe/sammensat-vs-hel.wav` | Lytteprøver |
+| `voice/probe/s1-results.json` | Alle målinger (fra `report.py`) |
