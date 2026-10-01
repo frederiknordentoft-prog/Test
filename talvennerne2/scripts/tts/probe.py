@@ -94,7 +94,7 @@ def patch_short_text_bug():
 class Engine:
     """Indlæser modellen én gang og cacher stemme-conditionals pr. stemme."""
 
-    def __init__(self, threads: int):
+    def __init__(self, threads: int, bf16: bool = False, s3_prompt_s: float = 0.0):
         import torch
         from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
@@ -104,6 +104,8 @@ class Engine:
         patch_short_text_bug()
         self.torch = torch
         self.threads = threads
+        self.bf16 = bf16                # forsøg: bf16-autocast (AMX) – ikke standard
+        self.s3_prompt_s = s3_prompt_s  # forsøg: kortere S3Gen-reference – ikke standard
         self.dir = Path(fetch("tts", local_only=True))
         t0 = time.perf_counter()
         self.m = ChatterboxMultilingualTTS.from_local(self.dir, device="cpu")
@@ -144,9 +146,28 @@ class Engine:
                 self.m.prepare_conditionals(str(self.dir / PROMPTS[voice]), exaggeration=0.5)
                 conds = self.m.conds
                 conds.save(cache)
+            if self.s3_prompt_s:
+                conds = self._short_s3_prompt(voice, conds)
             self.cond_s[voice] = time.perf_counter() - t0
             self.conds[voice] = conds
         self.m.conds = self.conds[voice]
+
+    def _short_s3_prompt(self, voice: str, conds):
+        """Erstat S3Gen-referencen med de første ca. s3_prompt_s sekunder af prompten
+        (snit i en pause); T3-conditioning og speaker-embedding til T3 er uændrede."""
+        import librosa
+        from chatterbox.models.s3gen import S3GEN_SR
+
+        from chatterbox.mtl_tts import Conditionals
+
+        wav, _ = librosa.load(str(self.dir / PROMPTS[voice]), sr=S3GEN_SR)
+        n = int(self.s3_prompt_s * S3GEN_SR)
+        lo, hi = max(1, n - S3GEN_SR // 2), min(len(wav), n + S3GEN_SR // 2)
+        win = int(0.02 * S3GEN_SR)
+        e = np.convolve(wav[lo - 1:hi] ** 2, np.ones(win), mode="same")
+        cut = lo + int(np.argmin(e))
+        gen = self.m.s3gen.embed_ref(wav[:cut], S3GEN_SR, device="cpu")
+        return Conditionals(conds.t3, gen)
 
     def generate(self, text: str, seed: int):
         random.seed(seed)
@@ -155,7 +176,11 @@ class Engine:
         self.timers = {}
         t0 = time.perf_counter()
         c0 = time.process_time()
-        wav = self.m.generate(text, **SETTINGS)
+        if self.bf16:
+            with self.torch.autocast("cpu", dtype=self.torch.bfloat16):
+                wav = self.m.generate(text, **SETTINGS)
+        else:
+            wav = self.m.generate(text, **SETTINGS)
         total = time.perf_counter() - t0
         cpu = time.process_time() - c0  # CPU-tid for alle tråde (mindre følsom for andres last)
         x = wav.squeeze(0).detach().cpu().numpy().astype(np.float32)
@@ -193,7 +218,7 @@ def cmd_gen(a):
     if not todo:
         print(f"[{tag}] intet at lave ({len(done)} takes findes)")
         return
-    eng = Engine(a.threads)
+    eng = Engine(a.threads, a.bf16, a.s3_prompt_s)
     sess = {"tag": tag, "threads": a.threads, "load_s": round(eng.load_s, 2), "time": time.time()}
     for v in voices:
         eng.use_voice(v)
@@ -219,7 +244,7 @@ def cmd_gen(a):
         post.write(str(wav), y)
         rec = {
             "set": a.set, "id": cid, "voice": v, "take": take, "seed": seed, "text": text,
-            "expected": expected, "threads": a.threads, **tm,
+            "expected": expected, "threads": a.threads, "bf16": a.bf16, "s3_prompt_s": a.s3_prompt_s, **tm,
             "raw_dur": round(len(x) / SR, 3), "dur": st.dur, "speech_dur": st.speech_dur,
             "syll": syllables(expected), "exp_dur": round(expected_duration(expected), 3),
             "lufs": st.lufs, "tp": st.true_peak_db, "limited_db": st.limited_db, "post_ok": st.ok,
@@ -250,7 +275,7 @@ def cmd_gen_batch(a):
     if not todo:
         print(f"[{a.tag}] intet at lave ({len(done)} batches findes)")
         return
-    eng = Engine(a.threads)
+    eng = Engine(a.threads, a.bf16, a.s3_prompt_s)
     for v in voices:
         eng.use_voice(v)
     if not a.no_warmup:
@@ -269,7 +294,8 @@ def cmd_gen_batch(a):
         expected = " ".join(f"{pre} {t}" if pre else t for _c, t, _f, pre in items)
         rec = {
             "set": "batch", "id": bid, "voice": v, "take": take, "seed": seed, "text": text,
-            "expected": expected, "items": items, "k": len(items), "threads": a.threads, **tm,
+            "expected": expected, "items": items, "k": len(items), "threads": a.threads,
+            "bf16": a.bf16, "s3_prompt_s": a.s3_prompt_s, **tm,
             "raw_dur": round(len(x) / SR, 3), "cpu_per_clip": round(tm["t_total"] / len(items), 3),
             "load1": round(load, 2), "raw": str(raw.relative_to(ROOT)),
         }
@@ -378,6 +404,8 @@ def main():
     g.add_argument("--only", default="")
     g.add_argument("--tag", default="")
     g.add_argument("--no-warmup", action="store_true")
+    g.add_argument("--bf16", action="store_true", help="forsøg: bf16-autocast")
+    g.add_argument("--s3-prompt-s", type=float, default=0.0, help="forsøg: kortere S3Gen-reference (s)")
     c = sub.add_parser("compose")
     c.add_argument("--voice", required=True)
     c.add_argument("--frags-tag", default="frags")
@@ -395,6 +423,8 @@ def main():
     gb.add_argument("--threads", type=int, default=2)
     gb.add_argument("--tag", default="batch")
     gb.add_argument("--no-warmup", action="store_true")
+    gb.add_argument("--bf16", action="store_true", help="forsøg: bf16-autocast")
+    gb.add_argument("--s3-prompt-s", type=float, default=0.0, help="forsøg: kortere S3Gen-reference (s)")
     li = sub.add_parser("listen")
     li.add_argument("--voice", required=True)
     li.add_argument("--exprs", default="e01,e05,e06,e07,e10")

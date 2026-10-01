@@ -173,7 +173,18 @@ def main():
     ap.add_argument("--out", default="")
     ap.add_argument("--threads", type=int, default=2)
     ap.add_argument("--engine", choices=["wav2vec2", "whisper"], default="wav2vec2")
+    ap.add_argument("--rescore", action="store_true",
+                    help="genberegn CER fra gemte ASR-tekster (asr*.jsonl) efter ændret normalisering")
     a = ap.parse_args()
+    if a.rescore:
+        for m in a.meta:
+            p = Path(m)
+            rows = [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+            rows = [{k: r[k] for k in ("id", "voice", "take", "wav", "expected") if k in r}
+                    | check(r["expected"], r["asr"]) for r in rows]
+            p.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
+            print(f"{p}: {len(rows)} genberegnet")
+        return
     if a.engine == "whisper":
         load_whisper(a.threads)
     else:

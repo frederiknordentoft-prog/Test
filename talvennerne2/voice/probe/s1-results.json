@@ -1,4 +1,135 @@
 {
+ "voices": {
+  "mic": {
+   "n": 24,
+   "cer_all": 0.05271084337349398,
+   "cer_per_take": {
+    "0": 0.04819277108433735,
+    "1": 0.0572289156626506
+   },
+   "cer_best_of_takes": 0.03614457831325301,
+   "pass_rate": 0.5,
+   "whisper_cer_all": 0.04066265060240964,
+   "whisper_pass_rate": 0.6666666666666666,
+   "fail_both_asr_rate": 0.2916666666666667,
+   "per_sentence": {
+    "p01": [
+     0.0625,
+     0.0
+    ],
+    "p02": [
+     0.0,
+     0.0
+    ],
+    "p03": [
+     0.0,
+     0.0
+    ],
+    "p04": [
+     0.0,
+     0.0263
+    ],
+    "p05": [
+     0.0714,
+     0.0476
+    ],
+    "p06": [
+     0.069,
+     0.1724
+    ],
+    "p07": [
+     0.1081,
+     0.0811
+    ],
+    "p08": [
+     0.0571,
+     0.0571
+    ],
+    "p09": [
+     0.1111,
+     0.1667
+    ],
+    "p10": [
+     0.0357,
+     0.1071
+    ],
+    "p11": [
+     0.0,
+     0.0
+    ],
+    "p12": [
+     0.0625,
+     0.0
+    ]
+   }
+  },
+  "nic": {
+   "n": 24,
+   "cer_all": 0.07530120481927711,
+   "cer_per_take": {
+    "0": 0.06325301204819277,
+    "1": 0.08734939759036145
+   },
+   "cer_best_of_takes": 0.05120481927710843,
+   "pass_rate": 0.5833333333333334,
+   "whisper_cer_all": 0.03162650602409638,
+   "whisper_pass_rate": 0.7916666666666666,
+   "fail_both_asr_rate": 0.16666666666666666,
+   "per_sentence": {
+    "p01": [
+     0.0,
+     0.0
+    ],
+    "p02": [
+     0.0,
+     0.0
+    ],
+    "p03": [
+     0.0,
+     0.0
+    ],
+    "p04": [
+     0.0,
+     0.1842
+    ],
+    "p05": [
+     0.0,
+     0.0238
+    ],
+    "p06": [
+     0.1379,
+     0.069
+    ],
+    "p07": [
+     0.1892,
+     0.2432
+    ],
+    "p08": [
+     0.1429,
+     0.1714
+    ],
+    "p09": [
+     0.1667,
+     0.1111
+    ],
+    "p10": [
+     0.0,
+     0.0357
+    ],
+    "p11": [
+     0.0714,
+     0.0357
+    ],
+    "p12": [
+     0.0,
+     0.0
+    ]
+   }
+  }
+ },
+ "voice_winner": "mic",
+ "voice_delta_pp_mic_minus_nic": -2.26,
+ "voice_reason": "lavest samlet CER med roest-wav2vec2 (mic)",
  "rtf_2threads": {
   "mic": {
    "n": 20,
@@ -43,18 +174,572 @@
    "mean_load1": 2.08
   }
  },
+ "rtf_4threads": {
+  "n": 10,
+  "rtf_2": 7.128783382789318,
+  "rtf_4": 5.069028189910979,
+  "speedup_sum": 1.406341238539159,
+  "speedup_median": 1.576242777024683,
+  "same_audio": true
+ },
+ "words": {
+  "n_takes": 60,
+  "voice": "mic",
+  "outside_window_share": 0.05,
+  "outside_window_share_speech_only": 0.1,
+  "asr_fail_share": 0.35,
+  "whisper_fail_share": null,
+  "cer_aggregate": 0.16025641025641027,
+  "rule_triggered_duration": false,
+  "rule_triggered_asr": true,
+  "carrier_decision": true,
+  "per_word": {
+   "w.en": {
+    "exp": 0.312,
+    "durs": [
+     0.216,
+     0.4225,
+     0.4077
+    ],
+    "ratios": [
+     0.69,
+     1.35,
+     1.31
+    ],
+    "asr": [
+     "i",
+     "1n",
+     "1n"
+    ],
+    "pass": [
+     false,
+     false,
+     false
+    ],
+    "whisper": []
+   },
+   "w.et": {
+    "exp": 0.312,
+    "durs": [
+     0.4785,
+     0.354,
+     0.5915
+    ],
+    "ratios": [
+     1.53,
+     1.13,
+     1.9
+    ],
+    "asr": [
+     "1",
+     "1",
+     "1t"
+    ],
+    "pass": [
+     true,
+     true,
+     false
+    ],
+    "whisper": []
+   },
+   "w.to": {
+    "exp": 0.312,
+    "durs": [
+     0.3588,
+     0.3862,
+     0.3582
+    ],
+    "ratios": [
+     1.15,
+     1.24,
+     1.15
+    ],
+    "asr": [
+     "2",
+     "2",
+     "2"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.tre": {
+    "exp": 0.312,
+    "durs": [
+     0.4155,
+     0.3765,
+     0.4447
+    ],
+    "ratios": [
+     1.33,
+     1.21,
+     1.43
+    ],
+    "asr": [
+     "3",
+     "3",
+     "3"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.elleve": {
+    "exp": 0.938,
+    "durs": [
+     0.4645,
+     0.4698,
+     0.434
+    ],
+    "ratios": [
+     0.5,
+     0.5,
+     0.46
+    ],
+    "asr": [
+     "elve",
+     "elv",
+     "11"
+    ],
+    "pass": [
+     false,
+     false,
+     true
+    ],
+    "whisper": []
+   },
+   "w.tolv": {
+    "exp": 0.312,
+    "durs": [
+     0.3767,
+     0.4855,
+     0.3575
+    ],
+    "ratios": [
+     1.21,
+     1.56,
+     1.15
+    ],
+    "asr": [
+     "12",
+     "tøj",
+     "12"
+    ],
+    "pass": [
+     true,
+     false,
+     true
+    ],
+    "whisper": []
+   },
+   "w.tyve": {
+    "exp": 0.625,
+    "durs": [
+     0.4542,
+     0.4737,
+     0.4322
+    ],
+    "ratios": [
+     0.73,
+     0.76,
+     0.69
+    ],
+    "asr": [
+     "20e",
+     "20",
+     "20"
+    ],
+    "pass": [
+     false,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.halvtreds": {
+    "exp": 0.625,
+    "durs": [
+     0.6513,
+     0.9442,
+     0.6875
+    ],
+    "ratios": [
+     1.04,
+     1.51,
+     1.1
+    ],
+    "asr": [
+     "550",
+     "50",
+     "af 60"
+    ],
+    "pass": [
+     false,
+     true,
+     false
+    ],
+    "whisper": []
+   },
+   "w.halvfems": {
+    "exp": 0.625,
+    "durs": [
+     0.6295,
+     0.7051,
+     0.7217
+    ],
+    "ratios": [
+     1.01,
+     1.13,
+     1.15
+    ],
+    "asr": [
+     "90",
+     "90",
+     "90"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.syvogtyve": {
+    "exp": 1.25,
+    "durs": [
+     0.8666,
+     0.7895,
+     0.8559
+    ],
+    "ratios": [
+     0.69,
+     0.63,
+     0.68
+    ],
+    "asr": [
+     "27",
+     "27",
+     "27"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.nioghalvfems": {
+    "exp": 1.25,
+    "durs": [
+     0.9017,
+     0.8881,
+     0.8958
+    ],
+    "ratios": [
+     0.72,
+     0.71,
+     0.72
+    ],
+    "asr": [
+     "99",
+     "99",
+     "99"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.hundrede": {
+    "exp": 0.938,
+    "durs": [
+     0.5097,
+     0.4652,
+     0.4899
+    ],
+    "ratios": [
+     0.54,
+     0.5,
+     0.52
+    ],
+    "asr": [
+     "100",
+     "100",
+     "100"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.tusind": {
+    "exp": 0.625,
+    "durs": [
+     0.4697,
+     0.4917,
+     0.9278
+    ],
+    "ratios": [
+     0.75,
+     0.79,
+     1.48
+    ],
+    "asr": [
+     "t000n",
+     "t00ind",
+     "t00ind"
+    ],
+    "pass": [
+     false,
+     false,
+     false
+    ],
+    "whisper": []
+   },
+   "w.kvart": {
+    "exp": 0.312,
+    "durs": [
+     0.5135,
+     0.4993,
+     0.5209
+    ],
+    "ratios": [
+     1.65,
+     1.6,
+     1.67
+    ],
+    "asr": [
+     "kvart",
+     "kvart",
+     "kvart"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.halv": {
+    "exp": 0.312,
+    "durs": [
+     0.3569,
+     0.448,
+     0.382
+    ],
+    "ratios": [
+     1.14,
+     1.44,
+     1.22
+    ],
+    "asr": [
+     "hal",
+     "halv",
+     "halp"
+    ],
+    "pass": [
+     false,
+     true,
+     false
+    ],
+    "whisper": []
+   },
+   "w.plus": {
+    "exp": 0.312,
+    "durs": [
+     0.4701,
+     0.4463,
+     0.5311
+    ],
+    "ratios": [
+     1.51,
+     1.43,
+     1.7
+    ],
+    "asr": [
+     "plus",
+     "plus",
+     "plus"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.minus": {
+    "exp": 0.625,
+    "durs": [
+     0.6034,
+     0.5509,
+     0.6097
+    ],
+    "ratios": [
+     0.97,
+     0.88,
+     0.98
+    ],
+    "asr": [
+     "vinus",
+     "minus",
+     "minus"
+    ],
+    "pass": [
+     false,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.gange": {
+    "exp": 0.625,
+    "durs": [
+     0.5238,
+     0.4095,
+     0.463
+    ],
+    "ratios": [
+     0.84,
+     0.66,
+     0.74
+    ],
+    "asr": [
+     "gange",
+     "gange",
+     "gange"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.nul": {
+    "exp": 0.312,
+    "durs": [
+     0.3089,
+     0.3362,
+     0.36
+    ],
+    "ratios": [
+     0.99,
+     1.08,
+     1.15
+    ],
+    "asr": [
+     "nul",
+     "nu",
+     "n0"
+    ],
+    "pass": [
+     true,
+     false,
+     false
+    ],
+    "whisper": []
+   },
+   "w.øre": {
+    "exp": 0.625,
+    "durs": [
+     0.447,
+     0.6975,
+     0.489
+    ],
+    "ratios": [
+     0.72,
+     1.12,
+     0.78
+    ],
+    "asr": [
+     "jor",
+     "jyre",
+     "yre"
+    ],
+    "pass": [
+     false,
+     false,
+     false
+    ],
+    "whisper": []
+   }
+  }
+ },
  "projection": {
-  "voice": "nic",
+  "voice": "mic",
   "clips": 2000,
   "audio_min": 48.0,
   "retake_share": 0.15,
-  "calls": 2300.0,
-  "avg_final_s": 1.44,
-  "avg_raw_s": 1.7726064191301603,
-  "sec_per_call_2threads": 13.849854925430744,
-  "hours_2threads": 8.848518424580753,
-  "speedup_4threads": 1.0,
-  "hours_4threads": 8.848518424580753,
-  "effective_rtf_2threads": 9.617954809326905
+  "overhead_s": 7.127378706712991,
+  "marginal_rtf": 4.422226829541634,
+  "raw_over_final": 1.2267759107839709,
+  "speedup_4threads": 1.406341238539159,
+  "mix": [
+   {
+    "category": "tal, hundreder, tusind",
+    "clips": 238,
+    "avg_s": 0.78,
+    "kind": "short"
+   },
+   {
+    "category": "tidsfraser og dagtid",
+    "clips": 178,
+    "avg_s": 1.25,
+    "kind": "short"
+   },
+   {
+    "category": "operatorer og forbindere",
+    "clips": 184,
+    "avg_s": 0.62,
+    "kind": "short"
+   },
+   {
+    "category": "katalognavneord",
+    "clips": 153,
+    "avg_s": 0.73,
+    "kind": "short"
+   },
+   {
+    "category": "hint-skabelonled",
+    "clips": 102,
+    "avg_s": 1.04,
+    "kind": "short"
+   },
+   {
+    "category": "navne",
+    "clips": 378,
+    "avg_s": 0.83,
+    "kind": "short"
+   },
+   {
+    "category": "hele spørgesætninger q.*",
+    "clips": 277,
+    "avg_s": 2.18,
+    "kind": "sentence"
+   },
+   {
+    "category": "faste sætninger s.*",
+    "clips": 490,
+    "avg_s": 2.49,
+    "kind": "sentence"
+   }
+  ],
+  "hours_2threads": {
+   "enkeltkald": 9.54
+  },
+  "hours_4threads": {
+   "enkeltkald": 6.79
+  }
  }
 }

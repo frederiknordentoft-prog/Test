@@ -79,7 +79,12 @@ def normalize(text: str) -> str:
     t = digits_to_words(t)
     t = t.replace("-", " ").replace("_", " ")
     t = _PUNCT.sub(" ", t)
-    return " ".join(t.split())
+    t = " ".join(t.split())
+    # ASR skriver tal som cifre og kan derfor ikke skelne "en"/"et" eller høre, om
+    # "et" blev sagt foran "hundrede". Begge sider foldes ens, så det ikke tæller som fejl.
+    t = re.sub(r"\bet hundrede\b", "hundrede", t)
+    t = re.sub(r"\bet\b", "en", t)
+    return t
 
 
 def squash(text: str) -> str:

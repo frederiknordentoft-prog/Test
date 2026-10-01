@@ -251,8 +251,9 @@ def carrier_section(res: dict):
 COMPOSE_VARIANTS = [
     ("whole10", "hel sætning (1 kald pr. sætning)"),
     ("composed", "sammensat, klip fra enkeltkald"),
-    ("composed-batch", "sammensat, klip fra batch-kald"),
-    ("composed-carrier", "sammensat, tal fra bæresætning"),
+    ("composed-batch", "sammensat, klip fra batch-kald (kommaliste/sætninger)"),
+    ("composed-cbatch", "sammensat, tal fra batch med bærefrase"),
+    ("composed-carrier", "sammensat, tal fra bæresætning (ét kald pr. tal)"),
 ]
 
 
@@ -280,13 +281,17 @@ def compose_section(res: dict):
 # --- batch-generering -------------------------------------------------------
 
 BATCH_FAMILIES = [
-    ("b.w10", "enkeltord, end-form, K=10"),
-    ("b.w5", "enkeltord, end-form, K=5"),
-    ("b.nmid", "tal, mid-form, K=10"),
-    ("b.nend", "tal, end-form, K=9"),
-    ("b.frag", "fragmenter/hundrede-hoveder, mid-form, K=8"),
-    ("b.s4", "hele sætninger, K=4"),
-    ("b.s6", "hele sætninger, K=6"),
+    # (batch-id-præfiks, udklip-tag, beskrivelse, sammenligning med enkeltkald: tag)
+    ("b.w10", "bw10-cut", "enkeltord som sætninger (\"Syv. Otte.\"), K=10", "words20"),
+    ("b.w5", "bw5-cut", "enkeltord som sætninger, K=5", "words20"),
+    ("b.cw5", "bcw5-cut", "enkeltord i bærefrase (\"Tallet er syv.\"), K=5", "words20"),
+    ("b.nmid", "batch-cut", "tal, mid-form kommaliste, K=10", "frags"),
+    ("b.nend", "batch-cut", "tal, end-form som sætninger, K=9", "frags"),
+    ("b.cmid", "cbatch-cut", "tal, mid-form i bærefrase, K=10", "frags"),
+    ("b.cend", "cbatch-cut", "tal, end-form i bærefrase, K=9", "frags"),
+    ("b.frag", "batch-cut", "fragmenter og hundrede-hoveder, kommaliste, K=8", "frags"),
+    ("b.s4", "bs4-cut", "hele sætninger, K=4", "probe12"),
+    ("b.s6", "bs6-cut", "hele sætninger, K=6", "probe12"),
 ]
 
 
@@ -294,50 +299,68 @@ def batch_section(res: dict):
     calls = load("batch")
     if not calls:
         return
-    items = joined("batch-cut")
-    whole = load("batch-cut", "whole.jsonl")
+    single_cpu = {}
+    for c in load("calib-single"):
+        single_cpu.setdefault("sent" if c["id"].startswith("p") else "short", []).append(c)
     out = {}
-    for fam, label in BATCH_FAMILIES:
-        fc = [c for c in calls if c["id"].startswith(fam + ".") or c["id"] == fam]
+    for fam, cut_tag, label, ref_tag in BATCH_FAMILIES:
+        fc = [c for c in calls if c["id"] == fam or c["id"].startswith(fam + ".")]
         if not fc:
             continue
         ids = {c["id"] for c in fc}
-        fi = [r for r in items if r.get("batch") in ids]
-        fw = [w for w in whole if w["id"] in ids]
-        alone = [r for r in fi if syll(r["expected"]) >= MIN_SYLL_ALONE]
+        fi = [r for r in joined(cut_tag) if r.get("batch") in ids]
+        if not fi:  # udklip uden ASR endnu
+            fi = [r for r in load(cut_tag) if r.get("batch") in ids]
+        fw = [w for w in load(cut_tag, "whole.jsonl") if w["id"] in ids]
+        alone = [r for r in fi if "pass" in r and syll(r["expected"]) >= MIN_SYLL_ALONE]
+        ref = [r for r in joined(ref_tag) if r["voice"] == fc[0]["voice"]]
+        ref_ids = {r["id"] for r in fi}
+        ref = [r for r in ref if r["id"] in ref_ids]
+        ref_alone = [r for r in ref if syll(r["expected"]) >= MIN_SYLL_ALONE]
         out[fam] = {
-            "label": label, "calls": len(fc), "k": fc[0]["k"],
-            "cpu_per_clip": stats.fmean(c["cpu_per_clip"] for c in fc),
+            "label": label, "calls": len(fc), "k": fc[0]["k"], "voice": fc[0]["voice"],
+            "cpu_per_clip": stats.fmean(c["t_total"] / c["k"] for c in fc),
+            "proc_cpu_per_clip": stats.fmean(c.get("cpu_s", 0) / c["k"] for c in fc),
             "cpu_per_call": stats.fmean(c["t_total"] for c in fc),
             "raw_per_clip": stats.fmean(c["raw_dur"] / c["k"] for c in fc),
             "tokens_per_call": stats.fmean(c["n_tokens"] for c in fc),
+            "load1": stats.fmean(c["load1"] for c in fc),
             "whole_cer": agg_cer(fw) if fw else None,
             "whole_pass": sum(w["pass"] for w in fw) if fw else None,
             "items": len(fi),
             "in_window_share": sum(in_window(r) for r in fi) / len(fi) if fi else None,
             "cut_risk": sum(r["cut_risk"] for r in fi),
-            "sil_ms_min_median": stats.median([r["sil_ms_min"] for r in fi if r["sil_ms_min"] is not None])
-            if fi else None,
+            "sil_ms_min_median": stats.median([r["sil_ms_min"] for r in fi if r["sil_ms_min"] is not None] or [0]),
             "align_score_mean": stats.fmean(r["align_score"] for r in fi) if fi else None,
-            "align_score_min": min((r["align_score"] for r in fi), default=None),
+            "align_low": sum(r["align_score"] < 0.2 for r in fi),
             "item_cer_3syll": agg_cer(alone) if alone else None,
-            "item_pass_3syll": (sum(r["pass"] for r in alone), len(alone)) if alone else None,
-            "item_cer_all": agg_cer(fi) if fi else None,
-            "item_pass_all": (sum(r["pass"] for r in fi), len(fi)) if fi else None,
+            "item_pass_3syll": [sum(r["pass"] for r in alone), len(alone)] if alone else None,
+            "ref_cer_3syll": agg_cer(ref_alone) if ref_alone else None,
+            "ref_pass_3syll": [sum(r["pass"] for r in ref_alone), len(ref_alone)] if ref_alone else None,
+            "ref_in_window_share": sum(in_window(r) for r in ref) / len(ref) if ref and "exp_dur" in ref[0] else None,
             "final_dur_per_clip": stats.fmean(r["dur"] for r in fi) if fi else None,
         }
     res["batch"] = out
+    if single_cpu:
+        res["calib_single"] = {k: {"n": len(v), "cpu_per_clip": stats.fmean(c["t_total"] for c in v),
+                                   "proc_cpu_per_clip": stats.fmean(c.get("cpu_s", 0) for c in v),
+                                   "raw_per_clip": stats.fmean(c["raw_dur"] for c in v),
+                                   "load1": stats.fmean(c["load1"] for c in v)} for k, v in single_cpu.items()}
     print("\n### Batch-generering (flere klip pr. kald, udklip med forced alignment)\n")
-    print("| Batch | kald | CPU/klip | hel ytring CER | udklip | i vindue | risikable snit | "
-          "min. stilhed (median) | align-score | CER udklip ≥3 stavelser | bestået |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|")
+    print("| Batch | kald | tid/klip | hel ytring CER | udklip | i vindue | risikable snit | lav align (<0,2) | "
+          "CER udklip ≥3 stavelser | enkeltkald CER ≥3 stavelser |")
+    print("|---|---|---|---|---|---|---|---|---|---|")
     for fam, d in out.items():
+        def f(x):
+            return pct(x) if x is not None else "–"
         p3 = f"{d['item_pass_3syll'][0]}/{d['item_pass_3syll'][1]}" if d["item_pass_3syll"] else "–"
-        c3 = pct(d["item_cer_3syll"]) if d["item_cer_3syll"] is not None else "–"
-        wc = pct(d["whole_cer"]) if d["whole_cer"] is not None else "–"
-        iw = pct(d["in_window_share"]) if d["in_window_share"] is not None else "–"
-        print(f"| {d['label']} | {d['calls']} | {d['cpu_per_clip']:.1f} s | {wc} | {d['items']} | {iw} | "
-              f"{d['cut_risk']} | {d['sil_ms_min_median']:.0f} ms | {d['align_score_mean']:.2f} | {c3} | {p3} |")
+        r3 = f"{d['ref_pass_3syll'][0]}/{d['ref_pass_3syll'][1]}" if d["ref_pass_3syll"] else "–"
+        print(f"| {d['label']} | {d['calls']} | {d['cpu_per_clip']:.1f} s | {f(d['whole_cer'])} | {d['items']} | "
+              f"{f(d['in_window_share'])} | {d['cut_risk']} | {d['align_low']} | {f(d['item_cer_3syll'])} ({p3}) | "
+              f"{f(d['ref_cer_3syll'])} ({r3}) |")
+    if "calib_single" in res:
+        print("\nKalibrering, enkeltkald under samme last: " + ", ".join(
+            f"{k}: {v['cpu_per_clip']:.1f} s/klip (load {v['load1']:.1f})" for k, v in res["calib_single"].items()))
 
 
 # --- fremskrivning ----------------------------------------------------------
