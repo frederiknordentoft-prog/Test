@@ -1,0 +1,16 @@
+{
+  "voice": "nic",
+  "modelRepo": "CoRal-project/roest-v3-chatterbox-500m",
+  "modelRev": "7ce205cea6b3b36d9f60f18abb88ff21fa04ea0d",
+  "prompt": "audio_samples/00_nic_01_t0.8_p0.95_e0.5_c0.5_m0.05_r2.0.wav",
+  "settings": {
+    "language_id": "da",
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "min_p": 0.05,
+    "repetition_penalty": 2.0,
+    "cfg_weight": 0.3,
+    "exaggeration": 0.5
+  },
+  "pipeline": "D1"
+}
