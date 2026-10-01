@@ -455,7 +455,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const upR = !!pawPose(pose.pawR).up && !!parts.PawUp
 
   // Poter (venstre tegnes, højre spejles). Håndgenstanden ligger i højre pote under selve poten.
-  const paw = (side: 'L' | 'R') => {
+  // `outer` lægger kroppens region foran (løftede poter tegnes uden for kroppens gruppe).
+  const paw = (side: 'L' | 'R', outer = '') => {
     const at = side === 'L' ? a.shoulderL : a.shoulderR
     const pp = pawPose(side === 'L' ? pose.pawL : pose.pawR)
     const up = side === 'L' ? upL : upR
@@ -473,7 +474,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
       )
     }
     return (
-      <g transform={`translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
+      <g transform={`${outer}translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
         <g className={animated ? `a-paw a-paw-${side.toLowerCase()}${up ? ' a-up' : ''}` : undefined} transform={pp.rot ? `rotate(${n(pp.rot)})` : undefined}>
           {hand}
           <Part {...ctx(swBody)} side={side} />
@@ -695,15 +696,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           </g>
         </g>
 
-        {/* Løftede poter foran hovedet (jubel, vink, tænker): samme kropsregion og ånding. */}
-        {(upL || upR) && (
-          <g transform={bodyRegion}>
-            <g className={animated ? 'a-body' : undefined} transform={aboutGround(pose.body)}>
-              {upL && paw('L')}
-              {upR && paw('R')}
-            </g>
-          </g>
-        )}
+        {/* Løftede poter foran hovedet (jubel, vink, tænker, ups): kroppens region og nøglepose lagt ind i
+            potens egen transform (ingen ekstra grupper; de ånder ikke med, hvad ingen kan se på en løftet pote). */}
+        {upL && paw('L', `${bodyRegion} ${aboutGround(pose.body) ?? ''} `)}
+        {upR && paw('R', `${bodyRegion} ${aboutGround(pose.body) ?? ''} `)}
 
         {/* 17 · fx (verdensrum; hvert fx-element bærer data-part="fx") */}
         {showFx && mood === 'think' && <ThoughtDots at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}

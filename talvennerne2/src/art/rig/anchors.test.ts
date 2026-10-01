@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { cat } from '../species/cat'
+import { horse } from '../species/horse'
 import { rabbit } from '../species/rabbit'
+import { unicorn } from '../species/unicorn'
 import { DEFAULT_ANCHORS, GROUND_Y, SAFE, STAGE_FIG, STAGE_XF, anchorsFinite, apply, computeAnchors, modelAnchors, regionTransforms, templateAnchors, worldAnchors } from './anchors'
 import { BODY_KINDS, STAGES } from './types'
 
@@ -20,9 +23,10 @@ describe('ankre (SPEC §6.4)', () => {
 
   it('alle skabeloner, racer og stadier giver endelige ankre (ingen NaN)', () => {
     for (const k of BODY_KINDS) expect(anchorsFinite(templateAnchors(k))).toBe(true)
-    for (const b of rabbit.breeds)
+    for (const def of [rabbit, cat, horse, unicorn])
+    for (const b of def.breeds)
       for (const s of STAGES) {
-        const w = computeAnchors(rabbit, b.id, s)
+        const w = computeAnchors(def, b.id, s)
         expect(anchorsFinite(w)).toBe(true)
         // Ankrene ligger i den sikre zone.
         for (const v of Object.values(w))
@@ -72,6 +76,12 @@ describe('ankre (SPEC §6.4)', () => {
     const grow = (GROUND_Y - w3.headTop.y) / (GROUND_Y - w2.headTop.y)
     expect(grow).toBeGreaterThan(1.1)
     expect(grow).toBeLessThan(1.15)
+  })
+
+  it('alle arter står på samme jordlinje i alle stadier', () => {
+    for (const def of [rabbit, cat, horse, unicorn])
+      for (const b of def.breeds)
+        for (const s of STAGES) expect(computeAnchors(def, b.id, s).ground.y).toBe(GROUND_Y)
   })
 
   it('hovedet sidder altid på halsen: hovedregionens hals = kroppens hals', () => {
