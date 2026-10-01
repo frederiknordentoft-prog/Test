@@ -47,7 +47,7 @@ export function MultiSelectView({ task, mode, given, onSubmit, onActivity }: Tas
 
   const n = task.options.length
   return (
-    <div className={cx('tv-multi', `tv-multi--n${n}`, `is-${mode}`)} data-kind="multiSelect">
+    <div className={cx('tv-multi', `tv-multi--n${n}`, refs.length > 0 && 'tv-multi--ref', `is-${mode}`)} data-kind="multiSelect">
       {refs.length > 0 && (
         <div className="tv-multi__ref">
           {refs.map((id) => (

@@ -1708,15 +1708,44 @@
     height: 65px;
     font-size: 28px;
   }
-  .tv-multi__item .tv-answer__face {
-    min-height: 74px;
-  }
+  /* multiSelect: the things in rows of three or four, the tick beside them */
   .tv-multi {
-    --cols: 6;
+    --cols: 3;
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      'ref ref'
+      'grid foot';
+    align-items: center;
+    justify-content: center;
+    gap: 8px 14px;
   }
+  .tv-multi--n4,
   .tv-multi--n7,
   .tv-multi--n8 {
     --cols: 4;
+  }
+  /* compared with something: the reference stands to the left of the things */
+  .tv-multi--ref {
+    grid-template-columns: auto auto auto;
+    grid-template-areas: 'ref grid foot';
+  }
+  .tv-multi__ref {
+    grid-area: ref;
+    justify-self: center;
+    padding: 10px;
+  }
+  .tv-multi__grid {
+    grid-area: grid;
+    grid-template-columns: repeat(var(--cols), 82px);
+    gap: 8px;
+    width: auto;
+  }
+  .tv-multi__foot {
+    grid-area: foot;
+  }
+  .tv-multi__item .tv-answer__face {
+    min-height: 74px;
   }
   .tv-base__mat {
     min-height: 110px;

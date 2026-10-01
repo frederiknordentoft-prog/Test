@@ -12,7 +12,7 @@ import { factsOf, skillRegistry } from '../../engine/registry'
 import type { SkillRegistry } from '../../engine/registry'
 import { isMisconceptionId } from '../../engine/tasks'
 import { compile } from '../../speech/compile'
-import { promptNums } from '../task/answers'
+import { lineRange, promptNums } from '../task/answers'
 
 /** Misconceptions with an animated film in this module (SPEC §4.3 lists eight; these three first). */
 export const ANIMATED_HINTS = ['digitSwap', 'forgotCarry', 'smallerFromLarger'] as const
@@ -101,6 +101,16 @@ export function defaultVisual(task: Task): AnyVisual {
       return { scene: 'line', min: 0, max, hops: nums }
     }
   }
+  // a place on the number line: hop to the ten (or hundred) first, then the rest of the way
+  if (task.kind === 'numberline' && typeof task.answer === 'number') {
+    const [min, max] = lineRange(task)
+    const n = task.answer
+    if (max > min && n >= min && n <= max) {
+      const step = max - min > 100 ? 100 : max - min > 20 ? 10 : 0
+      const base = step ? min + Math.floor((n - min) / step) * step : min
+      return { scene: 'line', min, max, hops: [...new Set([min, base, n])] }
+    }
+  }
   const s = sumOf(p)
   if (s) {
     const { a, b, op } = s
@@ -184,8 +194,13 @@ export function speechFor(visual: AnyVisual, task: Task): SpeechPart[] {
       return [clip('s.round.hint.coinsSum'), clip('frag.det_er'), { money: { ore: visual.ore.reduce((x, y) => x + y, 0), form: 'end' } }]
     case 'clockMove':
       return [clip('s.round.hint.clockMove')]
-    case 'line':
-      return [clip(task.kind === 'sortOrder' ? 's.round.hint.orderLine' : 's.round.hint.line')]
+    case 'line': {
+      if (task.kind === 'sortOrder') return [clip('s.round.hint.orderLine')]
+      const n = task.answer
+      if (task.kind !== 'numberline' || typeof n !== 'number') return [clip('s.round.hint.line')]
+      if (n > 10 && n < 100 && n % 10 !== 0) return [clip('s.round.hint.line'), ...tensOnesWords(n)]
+      return [clip('s.round.hint.line'), clip('s.round.hint.answerIs'), num(n, 'end')]
+    }
     default:
       return typeof task.answer === 'number' && task.answerType === 'int' ? [clip('s.round.hint.look'), clip('s.round.hint.answerIs'), num(task.answer, 'end')] : [clip('s.round.hint.look')]
   }

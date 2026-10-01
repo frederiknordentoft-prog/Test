@@ -98,6 +98,13 @@ describe('pictures drawn from the prompt', () => {
     expect(defaultVisual(ex('sort-numbers'))).toEqual({ scene: 'line', min: 0, max: 20, hops: [5, 8, 12, 19] })
   })
 
+  it('hops to the ten, then the ones, to find a place on the number line', () => {
+    const t = ex('line-37')
+    expect(defaultVisual(t)).toEqual({ scene: 'line', min: 0, max: 100, hops: [0, 30, 37] })
+    expect(toDanishText(speechFor(defaultVisual(t), t))).toBe('Se på tallinjen. Tre tiere og syv enere giver syvogtredive.')
+    expect(defaultVisual(ex('line-600'))).toEqual({ scene: 'line', min: 0, max: 1000, hops: [0, 600] })
+  })
+
   it('goes back to ten for 13 − 5 and uses columns for two-digit sums', () => {
     const sub = { ...ex('choice-8+5'), prompt: { scene: 'equation' as const, terms: [{ n: 13 }, { op: '−' as const }, { n: 5 }, { op: '=' as const }, { blank: true as const }] }, answer: 8 }
     expect(defaultVisual(sub)).toEqual({ scene: 'backToTen', a: 13, b: 5 })
