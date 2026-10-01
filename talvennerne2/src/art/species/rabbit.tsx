@@ -7,7 +7,7 @@
 // Alle former beskrives med punkter og husets primitiver (ingen path-literaler).
 import { OpenLimb, ROUND, hatted, limbLoop, padsPath } from '../parts/kit'
 import { Pivot } from '../rig/Rig'
-import { blob, ellipse, join, mirrorX, ribbon, scallop, spline, tufts, xf } from '../rig/shapes'
+import { blob, ellipse, join, mirrorX, ribbon, scallop, spline, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { Part, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { RABBIT_COLORWAYS } from './rabbit.colorways'
@@ -101,7 +101,7 @@ const ShortEar: SidePart = ({ pal, sw, hat }) => (
 // Arme. Hvilende: kort, buttet arm hvis top forsvinder ind under hovedet (skulderen er skjult).
 // Løftet (jubel, vink, tænker): tegnes foran hovedet med åben kontur, hvor armen vokser ud af brystet.
 
-const PAW_ROT = -16
+const PAW_ROT = -26
 /** Hvilende arm (lodret, før drejningen): kort og buttet med en rund pote, der hviler mod brystet. */
 const PAW_RAW: Vec[] = [
   [-7.6, -13], [-9.2, -3], [-9.8, 6], [-10.8, 13.5], [-10.6, 20], [-7.6, 25.2], [-2.2, 27.4], [3.4, 27.2],
@@ -128,9 +128,9 @@ const Paw: SidePart = ({ pal, sw, lod }) => (
 
 /** Løftede arme (lokalt om skulderen). Roden ligger på brystet; konturen er åben dér. */
 const UP_SPINES = {
-  cheer: [[1, 17], [-8, 7], [-18, -3], [-27, -13], [-34, -23]] as Vec[],
-  wave: [[2, 16], [-10, 11], [-23, 8], [-33, 1], [-38, -10], [-40, -24]] as Vec[],
-  think: [[-1, 17], [5, 9], [11, 2], [15, -4]] as Vec[],
+  cheer: [[7.5, 20], [-1.5, 10], [-11.5, 0], [-20.5, -10], [-27.5, -20]] as Vec[],
+  wave: [[8.5, 19], [-3.5, 14], [-16.5, 11], [-26.5, 4], [-31.5, -7], [-33.5, -21]] as Vec[],
+  think: [[5.5, 20], [11.5, 12], [17.5, 5], [21.5, -1]] as Vec[],
 }
 const UP_LOOPS = {
   cheer: limbLoop(UP_SPINES.cheer, 15, 18.5),
@@ -254,27 +254,30 @@ const DutchHead: Part = ({ pal, ids }) => (
 
 // ---------------------------------------------------------------------------------------------
 // Halsflæse: regnbuen får en flæse i regnbuens farver (gradienten er tilladt i manke og hale);
-// løvehovedet får sin manke af strøgne totter med en mørkere inderring og skæg under hagen.
+// løvehovedet får en blød uldkrans med en mørkere inderkrans og en lille uldsky i panden.
 
 const RainbowRuff: Part = ({ pal, sw, ids, colorway }) =>
   colorway === 'rainbow' && !pal.silhouette ? (
     <path d={scallop(100, 152, 38, 12.5, 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" />
   ) : null
 
-const LION_MANE = tufts(100, 112, 66, 58, 16, { depth: 0.17, swirl: 7, jitter: 0.1 })
-const LION_INNER = tufts(100, 114, 56, 47, 14, { depth: 0.13, swirl: 7, jitter: 0.08, phase: -80 })
+// Manken er en blød krans af runde totter (samme bueslag som halen) med en mørkere inderkrans:
+// uld, ikke pigge, så løvehovedet læses som fluffy og ikke som et pindsvin. Den rammer ansigtet ind
+// og slutter lige under hagen, så de hvilende poter stadig ses foran brystet.
+const LION_MANE = scallop(100, 104, 65, 52, 17, 0.6, -90)
+const LION_INNER = scallop(100, 107, 57, 44, 15, 0.58, -78)
 
 const LionMane: Part = ({ pal, sw, ids }) => (
   <>
-    <path d={blob(LION_MANE, 0.75)} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
-    {!pal.silhouette && <path d={blob(LION_INNER, 0.75)} fill={pal.shade} opacity={0.55} />}
+    <path d={LION_MANE} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
+    {!pal.silhouette && <path d={LION_INNER} fill={pal.shade} opacity={0.55} />}
   </>
 )
 
-/** Løvehovedets fyldige pandetot (strøgne totter mellem ørerne). */
-const LION_TUFT = tufts(100, 58, 21, 12.5, 6, { depth: 0.3, swirl: 10, jitter: 0.12, from: 160, to: 380 })
+/** Løvehovedets runde pandetot: en lille uldsky mellem ørerne (kun det, der stikker op over hovedet). */
+const LION_TUFT = scallop(100, 57, 19, 11, 7, 0.64, -90)
 const LionTuft: Part = ({ pal, sw, ids }) => (
-  <path d={blob(LION_TUFT, 0.8)} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} clipPath={`url(#${ids.outsideHead})`} {...round} />
+  <path d={LION_TUFT} fill={hair(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} clipPath={`url(#${ids.outsideHead})`} {...round} />
 )
 
 // ---------------------------------------------------------------------------------------------
@@ -307,7 +310,7 @@ export const rabbit: SpeciesDef = {
       anchors: { earBaseL: { x: 74, y: 57 }, earBaseR: { x: 126, y: 57 } },
       parts: { Ear: ShortEar, ManeBack: LionMane, ManeFront: LionTuft },
       maneGrowth: 1.1,
-      bounds: { head: { x0: 32, y0: 18, x1: 168, y1: 172 } },
+      bounds: { head: { x0: 28, y0: 18, x1: 172, y1: 168 } },
       fx: { x: 172, y: 70 },
     },
   ],
@@ -336,10 +339,10 @@ export const rabbit: SpeciesDef = {
     bodyRx: 49,
     bodyRy: 43,
     bodyWidth: 98,
-    shoulderL: { x: 79, y: 150 },
-    shoulderR: { x: 121, y: 150 },
-    pawL: { x: 86, y: 175 },
-    pawR: { x: 114, y: 175 },
+    shoulderL: { x: 72.5, y: 147 },
+    shoulderR: { x: 127.5, y: 147 },
+    pawL: { x: 84, y: 171 },
+    pawR: { x: 116, y: 171 },
     footL: { x: 58, y: 218 },
     footR: { x: 142, y: 218 },
     tailBase: { x: 152, y: 176 },
@@ -357,7 +360,7 @@ export const rabbit: SpeciesDef = {
     Ear: UprightEar,
     Paw,
     PawUp,
-    pawUpTip: { cheer: { x: -34, y: -23 }, wave: { x: -40, y: -24 }, think: { x: 15, y: -4 } },
+    pawUpTip: { cheer: { x: -27.5, y: -20 }, wave: { x: -33.5, y: -21 }, think: { x: 21.5, y: -1 } },
     limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 13, half: 11.6 } },
     Feet,
     Tail,
