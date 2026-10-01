@@ -1,0 +1,350 @@
+/*
+ * Strategy hints (src/ui/hint). Films animate *into* the drawn state with backwards-filled
+ * keyframes, so calm mode (no animation) shows the finished picture.
+ */
+.tv-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.tv-hint__visual {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 0;
+}
+.tv-hint__visual svg {
+  max-height: var(--hint-h, 170px);
+  max-width: 100%;
+  width: auto;
+  height: auto;
+}
+.tv-hint__text {
+  max-width: 34em;
+  color: var(--color-ink);
+  font-size: var(--text-body);
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+.tv-hint.is-words .tv-hint__text {
+  font-size: calc(var(--text-body) * 1.15);
+}
+
+/* Pictures */
+.tv-hv {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 100%;
+}
+.tv-hv--frames {
+  flex-wrap: wrap;
+}
+.tv-hv__frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.tv-hv__plus {
+  color: var(--color-primary);
+  font-size: 30px;
+  font-weight: 900;
+}
+.tv-hv__chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 40px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  font-size: 20px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.tv-hv__chip--total {
+  background: var(--color-star-soft);
+  color: var(--color-star-deep);
+  font-size: 24px;
+}
+.tv-hv--split {
+  flex-direction: column;
+}
+.tv-hv__eqs {
+  display: flex;
+  gap: 18px;
+}
+.tv-hv__eqs .tv-eq {
+  font-size: 28px;
+}
+.tv-hv--coins {
+  flex-direction: column;
+}
+.tv-hv__coins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+.tv-hv--prompt {
+  width: 100%;
+}
+.tv-hv__scene {
+  --scene-h: var(--hint-h, 170px);
+}
+.tv-frame {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Counters */
+.tv-counter.is-arriving {
+  animation: tv-counter-in 420ms var(--ease-spring) backwards;
+}
+.tv-counter.is-struck {
+  opacity: 0.35;
+  animation: tv-counter-out 360ms var(--ease-out) backwards;
+  animation-delay: var(--leave, 0ms);
+}
+.tv-counter__x {
+  stroke: var(--color-oops-lip);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.tv-counter__ghost {
+  fill: none;
+  stroke: var(--color-ink-3);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+@keyframes tv-counter-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.4);
+  }
+}
+@keyframes tv-counter-out {
+  from {
+    opacity: 1;
+  }
+}
+
+/* Any element that waits for its turn in a film */
+.tv-step {
+  animation: tv-step-in 380ms var(--ease-spring) backwards;
+}
+@keyframes tv-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
+  }
+}
+
+/* Column arithmetic */
+.tv-cols {
+  --cw: 40px;
+  display: grid;
+  grid-template-columns: 30px repeat(var(--places), var(--cw));
+  align-items: center;
+  justify-items: center;
+  row-gap: 0;
+  padding: 4px 12px 6px 4px;
+  border-radius: 18px;
+  background: var(--color-paper);
+  box-shadow: inset 0 0 0 2px var(--color-line);
+  font-size: 30px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.tv-cols__head {
+  display: grid;
+  place-items: end center;
+  height: 30px;
+}
+.tv-cols__head svg {
+  max-height: 28px;
+  width: auto;
+}
+.tv-cols__op {
+  color: var(--color-primary);
+}
+.tv-cols__carry {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 24px;
+  font-size: 18px;
+}
+.tv-cols__carried {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-warm);
+  color: var(--color-card);
+  font-size: 16px;
+}
+.tv-cols__carried.tv-step {
+  animation: tv-carry 700ms var(--ease-out) backwards;
+}
+.tv-cols__lent,
+.tv-cols__plus10 {
+  color: var(--color-warm);
+  font-size: 20px;
+  font-weight: 900;
+}
+.tv-cols__d {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--cw);
+}
+.tv-cols__d.is-changed::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  top: 52%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-warm);
+  transform: rotate(-20deg);
+}
+.tv-cols__d.is-changed.is-film::after {
+  animation: tv-strike-in 300ms var(--ease-out) backwards;
+  animation-delay: var(--at, 0ms);
+}
+.tv-cols__rule {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  height: 4px;
+  margin: 2px 0 4px;
+  border-radius: 2px;
+  background: var(--color-ink);
+}
+.tv-cols__res {
+  color: var(--color-good-deep);
+}
+@keyframes tv-carry {
+  from {
+    opacity: 0;
+    transform: translate(46px, 70px) scale(1.4);
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+/* digitSwap */
+.tv-swap {
+  align-items: flex-end;
+  gap: 18px;
+}
+.tv-swap__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.tv-swap__group svg {
+  max-height: 120px;
+  width: auto;
+}
+.tv-swap__digit {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  font-size: 34px;
+  font-weight: 900;
+}
+.tv-swap__digit.is-tens {
+  background: var(--color-d-place-soft);
+  box-shadow: inset 0 0 0 3px var(--color-d-place);
+}
+.tv-swap__digit.is-ones {
+  background: var(--color-warm-soft);
+  box-shadow: inset 0 0 0 3px var(--color-warm);
+}
+.tv-swap.is-film .tv-swap__digit--from-right {
+  animation: tv-swap-r 1400ms var(--ease-out) backwards;
+  animation-delay: 500ms;
+}
+.tv-swap.is-film .tv-swap__digit--from-left {
+  animation: tv-swap-l 1400ms var(--ease-out) backwards;
+  animation-delay: 500ms;
+}
+@keyframes tv-swap-r {
+  0%,
+  30% {
+    transform: translateX(var(--swap-d, 110px));
+  }
+  60% {
+    transform: translate(calc(var(--swap-d, 110px) / 2), -34px);
+  }
+}
+@keyframes tv-swap-l {
+  0%,
+  30% {
+    transform: translateX(calc(var(--swap-d, 110px) * -1));
+  }
+  60% {
+    transform: translate(calc(var(--swap-d, 110px) / -2), 34px);
+  }
+}
+
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-hint__visual,
+  .tv-hint__visual svg {
+    --hint-h: 240px;
+  }
+  .tv-cols {
+    --cw: 60px;
+    font-size: 46px;
+  }
+  .tv-hv__chip {
+    font-size: 24px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .tv-hint {
+    --hint-h: 110px;
+    gap: 6px;
+  }
+  .tv-cols {
+    --cw: 36px;
+    font-size: 26px;
+  }
+  .tv-cols__head {
+    height: 28px;
+  }
+  .tv-cols__head svg {
+    max-height: 26px;
+  }
+}
+
+:root[data-calm] .tv-counter,
+:root[data-calm] .tv-step,
+:root[data-calm] .tv-cols__carried,
+:root[data-calm] .tv-cols__d::after,
+:root[data-calm] .tv-swap__digit {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-counter,
+  .tv-step,
+  .tv-cols__carried,
+  .tv-cols__d::after,
+  .tv-swap__digit {
+    animation: none !important;
+  }
+}

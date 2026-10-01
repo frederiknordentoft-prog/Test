@@ -1,0 +1,117 @@
+/* Task harness chrome (dev only). Colours from tokens. */
+.dv-bar {
+  position: fixed;
+  left: 8px;
+  bottom: calc(8px + var(--safe-b));
+  z-index: 90;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(43, 33, 68, 0.82);
+  font-size: 13px;
+}
+.dv-bar:not([open]) {
+  padding: 0;
+  background: none;
+}
+.dv-bar summary {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(43, 33, 68, 0.82);
+  color: var(--color-card);
+  font-weight: 800;
+  line-height: 30px;
+  list-style: none;
+  cursor: pointer;
+}
+.dv-bar summary::-webkit-details-marker {
+  display: none;
+}
+.dv-bar[open] {
+  display: flex;
+}
+.dv-bar select,
+.dv-bar button {
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 800;
+}
+.dv-caption {
+  position: fixed;
+  left: 50%;
+  top: 8px;
+  z-index: 95;
+  max-width: 90vw;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: var(--color-card);
+  font-size: 14px;
+  font-weight: 800;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.dv-done {
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+}
+.dv-done h1 {
+  margin: 0;
+  font-size: var(--text-title);
+}
+.dv-done__actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.dv-done button {
+  min-height: 60px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--color-primary);
+  color: var(--color-card);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 900;
+}
+.dv-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+  padding: 14px;
+  background: var(--color-paper);
+  min-height: 100%;
+}
+.dv-tile {
+  padding: 12px;
+  border-radius: 20px;
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.dv-tile h3 {
+  margin: 0 0 8px;
+  color: var(--color-ink-2);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dv-card {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+}

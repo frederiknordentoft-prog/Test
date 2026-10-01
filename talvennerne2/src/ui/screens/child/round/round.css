@@ -1,0 +1,969 @@
+/*
+ * The round screen (src/ui/screens/child/RoundScreen.tsx). Portrait: prompt card, the companion
+ * strip (buddy, speech bubble, lightbulb, golden egg) and the answer area stacked; the card takes
+ * what the answer area leaves. Sideways: prompt and buddy on the left, the answer on the right.
+ * Colours from tokens; only transform and opacity animate.
+ */
+.tv-round {
+  --card-max: 360px;
+  --companion-h: 84px;
+  --buddy-w: 74px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.tv-round .tv-topbar {
+  padding-bottom: 2px;
+}
+.tv-round .tv-topbar .tv-stones {
+  width: auto;
+  height: 54px;
+  max-width: 100%;
+}
+
+.tv-round__stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 4px var(--gutter) 14px;
+  animation: tv-stage-in 360ms var(--ease-out) both;
+}
+@keyframes tv-stage-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+.tv-round__ask {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: safe center;
+  min-height: 0;
+}
+.tv-round__card {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 720px;
+  min-height: 108px;
+  max-height: var(--card-max);
+  margin: 0 auto;
+  padding: 18px 16px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  contain: size;
+  --ch: 200px;
+  --cw: 320px;
+}
+.tv-round__scene {
+  --scene-h: min(var(--scene-max, 300px), calc(var(--ch) * 0.94));
+  --eq-size: min(calc(var(--text-task) * 1.45), calc(var(--ch) * 0.5), calc((var(--cw) - 4px) / var(--eq-em, 6)));
+  --hear: clamp(64px, calc(var(--ch) * 0.86), 150px);
+  flex: 0 1 auto;
+}
+.tv-round__card .tv-chip {
+  font-size: min(calc(var(--text-task) * 1.3), calc(var(--ch) * 0.36));
+}
+.tv-round__card .tv-row {
+  font-size: min(26px, calc(var(--ch) * 0.2), calc(var(--cw) / var(--row-n, 6) / 3.6));
+}
+.tv-round__card.has-scaffold .tv-round__scene {
+  --scene-h: calc(var(--ch) * 0.4);
+  --eq-size: min(var(--text-task), calc(var(--ch) * 0.3), calc((var(--cw) - 4px) / var(--eq-em, 6)));
+  --hear: max(64px, calc(var(--ch) * 0.38));
+}
+.tv-round__scaffold {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 2px dashed var(--color-line-2);
+  --hint-h: calc(var(--ch) * 0.46);
+  --scene-h: calc(var(--ch) * 0.46);
+  animation: tv-stage-in 360ms var(--ease-out) both;
+}
+.tv-round__scaffold svg {
+  max-height: calc(var(--ch) * 0.46);
+  width: auto;
+  max-width: 100%;
+}
+.tv-round__scaffold .tv-cols {
+  font-size: min(26px, calc(var(--ch) * 0.09));
+}
+
+/* The companion strip */
+.tv-round__companion {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+  max-width: 720px;
+  min-height: var(--companion-h);
+  margin: 6px auto 0;
+}
+.tv-round__buddy {
+  flex: none;
+  width: var(--buddy-w);
+  margin-bottom: -4px;
+}
+.tv-buddy {
+  position: relative;
+}
+.tv-buddy svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.tv-buddy.is-dancing {
+  animation: tv-dance 1.1s var(--ease-out) 2;
+}
+@keyframes tv-dance {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  20% {
+    transform: translateY(-16px) rotate(-10deg);
+  }
+  40% {
+    transform: translateY(0) rotate(0) scale(1.05, 0.95);
+  }
+  60% {
+    transform: translateY(-16px) rotate(10deg);
+  }
+  80% {
+    transform: translateY(0) rotate(0) scale(1.05, 0.95);
+  }
+}
+.tv-round__bubble {
+  position: relative;
+  flex: 0 1 auto;
+  align-self: center;
+  min-width: 0;
+  max-width: 440px;
+  margin-bottom: 6px;
+  padding: 10px 14px;
+  border-radius: 20px 20px 20px 6px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(43, 33, 68, 0.1);
+  animation: tv-bubble-in 300ms var(--ease-spring) both;
+}
+.tv-round__bubble::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  bottom: 8px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+.tv-round__bubbletext {
+  display: block;
+  color: var(--color-ink);
+  font-size: var(--text-body);
+  font-weight: 800;
+  line-height: 1.25;
+}
+@keyframes tv-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.92);
+  }
+}
+.tv-round__bulb {
+  margin-left: auto;
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+.tv-round__bulb.is-on {
+  --face: var(--color-star-soft);
+  --edge: var(--color-star);
+  --fg: var(--color-star-deep);
+  opacity: 1;
+}
+.tv-round__egg {
+  position: absolute;
+  top: -58px;
+  right: -18px;
+  z-index: 4;
+  pointer-events: none;
+}
+.tv-round__skip {
+  flex: none;
+  opacity: 1;
+}
+
+/* The answer area */
+.tv-round__answer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+.tv-round__stage.is-owned .tv-round__ask {
+  flex: 0 0 auto;
+}
+.tv-round__stage.is-owned .tv-round__answer {
+  position: relative;
+  order: -1;
+  flex: 1 1 auto;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 12px;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 10px 30px rgba(43, 33, 68, 0.08);
+}
+.tv-round .tv-topbar [data-showme]:disabled {
+  --face: rgba(255, 255, 255, 0.55);
+  --edge: rgba(255, 255, 255, 0.7);
+  --lip-c: rgba(43, 33, 68, 0.08);
+  --fg: var(--color-ink-3);
+}
+
+/* Compact (a tall task on a short screen): the strip goes, the lightbulb moves to the top bar */
+.tv-round.is-compact .tv-round__companion {
+  display: none;
+}
+
+/* Teaching: struck answer, strategy, the big confirm button */
+.tv-teach {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 640px;
+  padding: 14px 14px 16px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card), inset 0 0 0 3px var(--color-star-soft);
+}
+.tv-teach__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+}
+.tv-teach__row.is-wide {
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-teach__row.is-wide .tv-confirm {
+  width: 100%;
+}
+.tv-teach__row.is-wide .tv-face__row {
+  flex-wrap: nowrap;
+}
+.tv-teach__given {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 6px 10px;
+  border-radius: 18px;
+  background: var(--color-paper-2);
+  box-shadow: inset 0 0 0 3px var(--color-oops);
+  color: var(--color-ink-3);
+}
+.tv-confirm {
+  position: relative;
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 200px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 0 7px;
+  border: 0;
+  border-radius: 26px;
+  background: none;
+  color: var(--color-card);
+  font: inherit;
+  cursor: pointer;
+}
+.tv-confirm::before {
+  content: '';
+  position: absolute;
+  inset: 7px 0 0;
+  border-radius: inherit;
+  background: var(--color-good-deep);
+}
+.tv-confirm__face {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 88px;
+  padding: 8px 22px 8px 26px;
+  border-radius: inherit;
+  background: var(--color-good-strong);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.2);
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.tv-confirm[data-pressed] .tv-confirm__face {
+  transform: translateY(5px);
+  transition-duration: var(--dur-press);
+}
+.tv-confirm__label {
+  font-size: var(--text-button);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.tv-confirm__answer {
+  display: grid;
+  place-items: center;
+  min-width: 72px;
+  min-height: 72px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  font-size: var(--text-answer);
+}
+.tv-confirm.tv-pulse {
+  animation: tv-confirm-pulse 1.5s var(--ease-out) infinite;
+}
+@keyframes tv-confirm-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+/* Golden egg */
+.tv-egg {
+  width: 150px;
+}
+.tv-egg__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.tv-egg.is-arrive {
+  animation: tv-egg-arrive 950ms var(--ease-out) both;
+}
+.tv-egg.is-wait .tv-egg__svg {
+  animation: tv-egg-hover 1.8s ease-in-out infinite;
+}
+.tv-egg.is-caught {
+  animation: tv-egg-caught 1200ms var(--ease-out) both;
+}
+.tv-egg.is-gone {
+  animation: tv-egg-gone 1100ms var(--ease-out) both;
+}
+.tv-egg__wing {
+  animation: tv-wing 0.32s ease-in-out infinite alternate;
+}
+.tv-egg__wing--r {
+  animation-delay: -0.16s;
+}
+.tv-egg.is-caught .tv-egg__wing {
+  animation: none;
+}
+.tv-egg__feather {
+  fill: var(--color-card);
+  stroke: var(--color-ink-2);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+}
+.tv-egg__shell {
+  fill: var(--color-star);
+}
+.tv-egg__shade {
+  fill: var(--color-star-lip);
+}
+.tv-egg__shine {
+  fill: rgba(255, 255, 255, 0.7);
+}
+.tv-egg__line {
+  fill: none;
+  stroke: var(--color-star-deep);
+  stroke-width: 3.2;
+}
+.tv-egg__zig {
+  fill: none;
+  stroke: var(--color-card);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+.tv-egg__sparkle {
+  fill: var(--color-star);
+  stroke: var(--color-card);
+  stroke-width: 1.5;
+  animation: tv-twinkle 1.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes tv-egg-arrive {
+  from {
+    opacity: 0;
+    transform: translate(140px, -260px) rotate(20deg) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(-16px, 10px) rotate(-6deg) scale(1.05);
+  }
+}
+@keyframes tv-egg-hover {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(3deg);
+  }
+}
+@keyframes tv-egg-caught {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.35) rotate(-8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-220px, 30px) scale(0.3);
+  }
+}
+@keyframes tv-egg-gone {
+  to {
+    opacity: 0;
+    transform: translate(160px, -320px) rotate(18deg) scale(0.7);
+  }
+}
+@keyframes tv-wing {
+  from {
+    transform: rotate(-16deg);
+  }
+  to {
+    transform: rotate(22deg);
+  }
+}
+@keyframes tv-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+.tv-round.is-golden .tv-round__card {
+  box-shadow: var(--shadow-card), 0 0 0 4px var(--color-star);
+}
+
+/* Overlays */
+.tv-roundlayer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+.tv-pause {
+  display: grid;
+  place-items: center;
+  padding: calc(16px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
+}
+.tv-pause__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--color-scrim);
+}
+.tv-pause__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(400px, 100%);
+  padding: 30px 22px 22px;
+  border-radius: 32px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-float);
+  text-align: center;
+}
+.tv-pause__badge {
+  position: absolute;
+  top: -30px;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border: 4px solid var(--color-paper);
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-card);
+}
+.tv-pause__title {
+  margin: 8px 0 0;
+  font-size: var(--text-title);
+  font-weight: 900;
+}
+.tv-pause__body {
+  margin: 0 0 8px;
+  color: var(--color-ink-2);
+  font-size: var(--text-body);
+}
+.tv-pause__actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+}
+.tv-continue {
+  display: grid;
+  place-items: stretch;
+  background: color-mix(in srgb, var(--color-scrim) 70%, transparent);
+}
+.tv-continue__hit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-card);
+  font: inherit;
+  cursor: pointer;
+}
+.tv-continue__btn {
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 8px 0 var(--color-primary-deep), 0 0 0 10px rgba(255, 255, 255, 0.25);
+  animation: tv-confirm-pulse 1.6s var(--ease-out) infinite;
+}
+.tv-continue__text {
+  font-size: var(--text-title);
+  font-weight: 900;
+}
+.tv-perfect {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.tv-perfect__ribbon {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 34px;
+  border-radius: 999px;
+  background: var(--color-star);
+  box-shadow: 0 8px 0 var(--color-star-lip), var(--shadow-float);
+  color: var(--color-ink);
+  animation: tv-perfect 2600ms var(--ease-spring) both;
+}
+.tv-perfect__text {
+  font-size: var(--text-title);
+  font-weight: 900;
+  white-space: nowrap;
+}
+.tv-perfect__star {
+  color: var(--color-card);
+}
+@keyframes tv-perfect {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-6deg);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.08) rotate(2deg);
+  }
+  28% {
+    transform: scale(1) rotate(0);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+}
+
+/* Effects layer (burst.ts) */
+.tv-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  pointer-events: none;
+}
+.tv-fx__p {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+}
+.tv-fx__p--star {
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 0;
+  background: none;
+}
+.tv-fx__p--star svg {
+  display: block;
+}
+.tv-fx__p--confetti {
+  width: 10px;
+  height: 16px;
+  border-radius: 3px;
+}
+.tv-fx__p--t0 {
+  background: var(--color-star);
+  fill: var(--color-star);
+}
+.tv-fx__p--t1 {
+  background: var(--color-primary);
+  fill: var(--color-primary);
+}
+.tv-fx__p--t2 {
+  background: var(--color-good);
+  fill: var(--color-good);
+}
+.tv-fx__p--t3 {
+  background: var(--color-heart);
+  fill: var(--color-heart);
+}
+.tv-fx__p--star.tv-fx__p--t0,
+.tv-fx__p--star.tv-fx__p--t1,
+.tv-fx__p--star.tv-fx__p--t2,
+.tv-fx__p--star.tv-fx__p--t3 {
+  background: none;
+}
+
+/* ── Sizes ────────────────────────────────────────────────────────── */
+/* Short phones (SE) in portrait */
+@media (orientation: portrait) and (max-height: 700px) {
+  .tv-round {
+    --card-max: 250px;
+    --companion-h: 70px;
+    --buddy-w: 60px;
+  }
+  .tv-round.is-teaching .tv-round__companion {
+    display: none;
+  }
+  .tv-round.is-teaching .tv-round__card {
+    min-height: 84px;
+    padding: 10px 12px;
+  }
+  .tv-teach .tv-cols {
+    --cw: 34px;
+    font-size: 24px;
+  }
+  .tv-teach .tv-cols__head {
+    height: 24px;
+  }
+  .tv-teach .tv-cols__head svg {
+    max-height: 22px;
+  }
+  .tv-teach .tv-hint__text {
+    font-size: 15px;
+  }
+  .tv-round__card {
+    min-height: 96px;
+    padding: 16px 12px;
+  }
+  .tv-round__scene {
+    --scene-h: 130px;
+  }
+  .tv-round__stage {
+    gap: 8px;
+  }
+  .tv-round__bubbletext {
+    font-size: 15px;
+  }
+  .tv-round__bubble {
+    padding: 8px 12px;
+  }
+  .tv-hint {
+    --hint-h: 112px;
+  }
+  .tv-confirm__face {
+    min-height: 80px;
+  }
+}
+
+/* iPad */
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-round {
+    --card-max: 560px;
+    --companion-h: 128px;
+    --buddy-w: 116px;
+  }
+  .tv-round .tv-topbar .tv-stones {
+    height: 68px;
+  }
+  .tv-round__stage {
+    gap: 16px;
+    padding: 8px var(--gutter) 28px;
+  }
+  .tv-round__card {
+    min-height: 180px;
+    padding: 40px 28px;
+  }
+  .tv-round__scene {
+    --scene-h: 280px;
+  }
+  .tv-round__bubble {
+    max-width: 520px;
+    padding: 14px 20px;
+    border-radius: 26px 26px 26px 8px;
+  }
+  .tv-teach {
+    gap: 16px;
+    padding: 24px;
+  }
+  .tv-confirm__face {
+    min-height: 104px;
+  }
+  .tv-egg {
+    width: 210px;
+  }
+}
+
+/* Sideways: prompt and buddy left, answer right */
+@media (orientation: landscape) {
+  .tv-round__stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+    gap: 20px;
+  }
+  .tv-round__ask {
+    height: 100%;
+  }
+  .tv-round__answer {
+    height: 100%;
+    align-items: safe center;
+  }
+  .tv-round__stage.is-owned {
+    grid-template-columns: minmax(0, 0.5fr) minmax(0, 1.5fr);
+  }
+  .tv-round__stage.is-owned .tv-round__ask {
+    justify-content: flex-end;
+  }
+  .tv-round__stage.is-owned .tv-round__answer {
+    order: 0;
+    height: 100%;
+  }
+  .tv-round__stage.is-owned .tv-round__companion {
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+  }
+  .tv-round__stage.is-owned .tv-round__bulb {
+    margin-left: 0;
+  }
+  /* the golden egg hovers in a strip of sky above the card, clear of the stones */
+  .tv-round.is-golden .tv-round__stage {
+    padding-top: 56px;
+  }
+  /* too tall with the buddy beside it: the task gets the whole width */
+  .tv-round.is-compact .tv-round__stage.is-owned {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tv-round.is-compact .tv-round__stage.is-owned .tv-round__ask {
+    display: none;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Pause on a sideways phone: the two choices side by side, so the card fits under the badge */
+  .tv-pause__card {
+    width: min(480px, 100%);
+    gap: 6px;
+    padding: 30px 20px 18px;
+  }
+  .tv-pause__title {
+    margin-top: 4px;
+  }
+  .tv-pause__body {
+    margin-bottom: 6px;
+  }
+  .tv-pause__actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  /* The error flow on a sideways phone: the strategy gets the whole width, the picture on top,
+     the words beside the struck answer and the confirm button below it. */
+  .tv-round.is-teaching .tv-round__stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tv-round.is-teaching .tv-round__ask {
+    display: none;
+  }
+  .tv-teach {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) auto;
+    grid-template-areas:
+      'visual visual'
+      'text row';
+    align-items: center;
+    gap: 8px 18px;
+    max-width: 760px;
+    padding: 10px 16px 12px;
+  }
+  .tv-teach .tv-hint {
+    display: contents;
+  }
+  .tv-teach .tv-hint__visual {
+    grid-area: visual;
+  }
+  .tv-teach .tv-hint__text {
+    grid-area: text;
+    justify-self: end;
+    max-width: 22em;
+    font-size: 15px;
+    text-align: right;
+  }
+  .tv-teach .tv-hint.is-words .tv-hint__text {
+    font-size: 17px;
+  }
+  .tv-teach__row {
+    grid-area: row;
+    justify-content: flex-start;
+    width: auto;
+  }
+  .tv-teach__given {
+    min-width: 58px;
+    min-height: 58px;
+    padding: 4px 8px;
+  }
+  .tv-teach__row.is-wide {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .tv-teach__row.is-wide .tv-confirm {
+    width: auto;
+  }
+  .tv-teach .tv-confirm__face {
+    min-height: 74px;
+    padding: 6px 16px 6px 20px;
+  }
+  .tv-teach .tv-confirm__answer {
+    min-width: 62px;
+    min-height: 62px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .tv-round {
+    --card-max: 230px;
+    --companion-h: 66px;
+    --buddy-w: 54px;
+  }
+  .tv-round__stage {
+    gap: 14px;
+    padding: 0 var(--gutter) 8px;
+  }
+  .tv-round__card {
+    min-height: 90px;
+    padding: 14px 12px;
+  }
+  .tv-round__scene {
+    --scene-h: 120px;
+    --eq-size: 48px;
+  }
+  .tv-round__bubbletext {
+    font-size: 14px;
+  }
+  .tv-round__bubble {
+    padding: 6px 10px;
+  }
+  .tv-teach {
+    gap: 6px;
+    padding: 8px 10px 10px;
+  }
+  .tv-confirm__face {
+    min-height: 72px;
+  }
+  .tv-confirm__answer {
+    min-height: 60px;
+  }
+  .tv-egg {
+    width: 100px;
+  }
+  .tv-round__egg {
+    top: -46px;
+    right: -10px;
+  }
+  .tv-round.is-golden .tv-round__stage {
+    padding-top: 40px;
+  }
+}
+@media (orientation: landscape) and (min-height: 700px) {
+  .tv-round__stage {
+    gap: 40px;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+
+/* Calm mode and reduced motion */
+:root[data-calm] .tv-round__stage,
+:root[data-calm] .tv-round__bubble,
+:root[data-calm] .tv-round__scaffold,
+:root[data-calm] .tv-buddy,
+:root[data-calm] .tv-egg,
+:root[data-calm] .tv-egg *,
+:root[data-calm] .tv-confirm,
+:root[data-calm] .tv-continue__btn,
+:root[data-calm] .tv-perfect__ribbon {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-round__stage,
+  .tv-round__bubble,
+  .tv-round__scaffold,
+  .tv-buddy,
+  .tv-egg,
+  .tv-egg *,
+  .tv-confirm,
+  .tv-continue__btn,
+  .tv-perfect__ribbon {
+    animation: none !important;
+  }
+}
