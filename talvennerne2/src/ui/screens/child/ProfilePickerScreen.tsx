@@ -77,7 +77,7 @@ export default function ProfilePickerScreen(_: ScreenProps<RouteOf<'profiles'>>)
           deleting ? (
             <IconButton icon="check" clip="s.ui.check" variant="good" sayLabel onClick={() => setDeleting(false)} data-done-delete="" />
           ) : (
-            count > 0 && <IconButton icon="trash" clip="s.profiles.delete" variant="glass" onClick={() => actions.unlockDelete(() => setDeleting(true))} data-delete="" />
+            <IconButton icon="trash" clip="s.profiles.delete" variant="glass" onClick={() => actions.unlockDelete(() => setDeleting(true))} data-delete="" />
           )
         }
         onAdult={actions.adult}

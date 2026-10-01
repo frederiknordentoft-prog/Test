@@ -163,7 +163,7 @@ export function AnimalArt({ look, mode = 'animated', mood, crop = 'fit', title, 
   if (!isDrawn(look.species)) {
     return (
       <span className={box} style={style} role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true}>
-        <Critter mood={mood} />
+        <Critter mood={mood} viewBox={crop === 'full' ? undefined : CRITTER_FIT} />
       </span>
     )
   }
@@ -184,6 +184,9 @@ export function AnimalArt({ look, mode = 'animated', mood, crop = 'fit', title, 
 }
 
 // ─── The stand-in for a species without a drawing ────────────────────────────
+
+/** The stand-in framed like the rig's 'fit' crop (5:6 around the figure). */
+const CRITTER_FIT = '28 68 144 172'
 
 /** viewBox 0 0 200 240 like the rig, standing on the same ground line (y = 226). */
 const CRITTER: V2[] = [[100, 70], [138, 86], [158, 134], [154, 188], [128, 222], [100, 228], [72, 222], [46, 188], [42, 134], [62, 86]]

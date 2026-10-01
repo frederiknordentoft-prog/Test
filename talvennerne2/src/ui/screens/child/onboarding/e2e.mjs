@@ -358,6 +358,7 @@ try {
     await page.clock.fastForward(1_000)
     await page.waitForSelector('.tv-hatchbtn[data-hatch="done"]')
     check((await page.locator('.tv-hatch .tv-critter').count()) === 1, 'hjælp: hvalpen (ikke tegnet endnu) klækkes som den neutrale ægform')
+    await page.waitForTimeout(700)
     await shot(page, 'phone-12-puppy')
 
     // the sound check from elsewhere (profiles exist): "Næste" goes back

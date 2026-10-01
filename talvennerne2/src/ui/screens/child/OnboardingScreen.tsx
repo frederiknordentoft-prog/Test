@@ -33,7 +33,7 @@ type Step = 'name' | 'egg' | 'friend' | 'grade'
 const STEPS: readonly Step[] = ['name', 'egg', 'friend', 'grade']
 
 /** No hatch after this long: a gentle hand and Pip's hint (SPEC §8: "klæk inden for 60 s"). */
-export const HATCH_HELP_MS = 60_000
+const HATCH_HELP_MS = 60_000
 /** The third tap: the egg rocks a moment before it opens. */
 const HATCH_MIN_MS = 420
 const NAME_GAP_MS = 260
@@ -128,13 +128,17 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
     if (readToken.current === token) setReading(null)
   }
 
-  // Pip speaks whenever the step (or the egg's state) changes.
-  const lineKey = `${step}|${picked ?? ''}|${friend ? 1 : 0}|${help ? 1 : 0}|${error ?? ''}|${names.length}`
+  // Pip speaks whenever the step (or the egg's state) changes, and once when the help appears; the
+  // tap that ends the help is quiet.
+  const lineKey = `${step}|${picked ?? ''}|${friend ? 1 : 0}|${error ?? ''}|${names.length}`
   useEffect(() => {
     if (step !== 'name') leftName.current = true
     const h = speakLine()
     if (step === 'friend' && names.length > 0) void readNames(h)
   }, [lineKey])
+  useEffect(() => {
+    if (help) say(clips(line()[0]))
+  }, [help])
 
   useEffect(
     () => () => {
