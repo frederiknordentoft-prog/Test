@@ -420,12 +420,14 @@ export interface Pose {
 /**
  * Signatur-idle (SPEC §6.1). Riggen sætter ingen klasse selv; arten pakker delen i en pivot med
  * signaturens klasse: nose-wiggle → `a-sig` (kaninens næse), tail-curl → `a-curl` (kattens
- * halespids), mane-toss → `a-toss` (hestens manke), horn-glint → `a-glint` (hornets glimt).
+ * halespids), mane-toss → `a-toss` (hestens manke), horn-glint → `a-glint` (hornets glimt),
+ * tail-wag → `a-wag` (hvalpens hale), curl-up → `a-roll` og `a-puff` (pindsvinets pigkappe; hoved og
+ * krop dukker sig med i hvile).
  */
 export type Signature =
   | 'nose-wiggle' | 'tail-curl' | 'head-tilt' | 'spikes' | 'mane-toss' | 'ear-flop'
   | 'tail-swish' | 'cheek-puff' | 'horn-glint' | 'paw-wave' | 'tail-flick' | 'head-turn'
-  | 'wing-flap' | 'smoke-puff' | 'wing-clap' | 'sniff'
+  | 'wing-flap' | 'smoke-puff' | 'wing-clap' | 'sniff' | 'tail-wag' | 'curl-up'
 
 export interface SpeciesDef {
   id: CreatureId
