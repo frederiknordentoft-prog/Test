@@ -1,0 +1,1425 @@
+{
+ "voices": {
+  "mic": {
+   "n": 24,
+   "cer_all": 0.05271084337349398,
+   "cer_per_take": {
+    "0": 0.04819277108433735,
+    "1": 0.0572289156626506
+   },
+   "cer_best_of_takes": 0.03614457831325301,
+   "takes_max": 2,
+   "cer_best_of_all_takes": 0.03614457831325301,
+   "pass_rate": 0.5,
+   "whisper_cer_all": 0.04066265060240964,
+   "whisper_pass_rate": 0.6666666666666666,
+   "fail_both_asr_rate": 0.2916666666666667,
+   "per_sentence": {
+    "p01": [
+     0.0625,
+     0.0
+    ],
+    "p02": [
+     0.0,
+     0.0
+    ],
+    "p03": [
+     0.0,
+     0.0
+    ],
+    "p04": [
+     0.0,
+     0.0263
+    ],
+    "p05": [
+     0.0714,
+     0.0476
+    ],
+    "p06": [
+     0.069,
+     0.1724
+    ],
+    "p07": [
+     0.1081,
+     0.0811
+    ],
+    "p08": [
+     0.0571,
+     0.0571
+    ],
+    "p09": [
+     0.1111,
+     0.1667
+    ],
+    "p10": [
+     0.0357,
+     0.1071
+    ],
+    "p11": [
+     0.0,
+     0.0
+    ],
+    "p12": [
+     0.0625,
+     0.0
+    ]
+   }
+  },
+  "nic": {
+   "n": 24,
+   "cer_all": 0.07530120481927711,
+   "cer_per_take": {
+    "0": 0.06325301204819277,
+    "1": 0.08734939759036145
+   },
+   "cer_best_of_takes": 0.05120481927710843,
+   "takes_max": 4,
+   "cer_best_of_all_takes": 0.030120481927710843,
+   "pass_rate": 0.5833333333333334,
+   "whisper_cer_all": 0.03162650602409638,
+   "whisper_pass_rate": 0.7916666666666666,
+   "fail_both_asr_rate": 0.16666666666666666,
+   "per_sentence": {
+    "p01": [
+     0.0,
+     0.0
+    ],
+    "p02": [
+     0.0,
+     0.0
+    ],
+    "p03": [
+     0.0,
+     0.0
+    ],
+    "p04": [
+     0.0,
+     0.1842
+    ],
+    "p05": [
+     0.0,
+     0.0238
+    ],
+    "p06": [
+     0.1379,
+     0.069
+    ],
+    "p07": [
+     0.1892,
+     0.2432
+    ],
+    "p08": [
+     0.1429,
+     0.1714
+    ],
+    "p09": [
+     0.1667,
+     0.1111
+    ],
+    "p10": [
+     0.0,
+     0.0357
+    ],
+    "p11": [
+     0.0714,
+     0.0357
+    ],
+    "p12": [
+     0.0,
+     0.0
+    ]
+   }
+  }
+ },
+ "voice_rule_winner": "mic",
+ "voice_delta_pp_mic_minus_nic": -2.26,
+ "voice_extended": {
+  "mic": {
+   "whole10_cer": 0.07525083612040134,
+   "whole10_pass": 7,
+   "n": 20,
+   "hvad_er_ok": 3,
+   "all22_cer": 0.06339144215530904,
+   "all22_pass": 19,
+   "all22_n": 44
+  },
+  "nic": {
+   "whole10_cer": 0.013377926421404682,
+   "whole10_pass": 18,
+   "n": 20,
+   "hvad_er_ok": 18,
+   "all22_cer": 0.04595879556259905,
+   "all22_pass": 32,
+   "all22_n": 44
+  }
+ },
+ "voice_winner": "nic",
+ "voice_reason": "afvigelse fra reglen: Mic vinder de 12 probesætninger, men Nic har lavest CER på alle 22 målte sætninger, og Mic's \"Hvad er\" høres som \"hver er\" i de fleste regnestykker",
+ "rtf_2threads": {
+  "mic": {
+   "n": 20,
+   "sum_compute_s": 338.0,
+   "sum_audio_raw_s": 44.2,
+   "sum_audio_final_s": 36.03,
+   "rtf_aggregate_raw": 7.647285067873305,
+   "rtf_aggregate_final": 9.381505104164935,
+   "rtf_median_per_clip": 8.119764705882353,
+   "overhead_s": 7.127378706712991,
+   "marginal_rtf": 4.422226829541634,
+   "t3_overhead_s": 0.10286224364003083,
+   "t3_marginal": 2.7854695730135606,
+   "s3gen_overhead_s": 7.020044312450969,
+   "s3gen_marginal": 1.6312921663117785,
+   "t3_tokens_per_s": 8.987417615338527,
+   "mean_t3_s": 6.25875,
+   "mean_s3gen_s": 10.6252,
+   "mean_wm_s": 0.0158,
+   "raw_over_final": 1.2267759107839709,
+   "mean_load1": 2.027
+  },
+  "nic": {
+   "n": 20,
+   "sum_compute_s": 319.2,
+   "sum_audio_raw_s": 45.28,
+   "sum_audio_final_s": 36.78,
+   "rtf_aggregate_raw": 7.049072438162545,
+   "rtf_aggregate_final": 8.677243786666958,
+   "rtf_median_per_clip": 7.119660931174089,
+   "overhead_s": 6.241165060003935,
+   "marginal_rtf": 4.2923740901042695,
+   "t3_overhead_s": 0.2466704210112125,
+   "t3_marginal": 2.7151411567971673,
+   "s3gen_overhead_s": 5.990173175290182,
+   "s3gen_marginal": 1.5719641451898485,
+   "t3_tokens_per_s": 9.008797653958947,
+   "mean_t3_s": 6.39375,
+   "mean_s3gen_s": 9.5491,
+   "mean_wm_s": 0.01555,
+   "raw_over_final": 1.2309766799515003,
+   "mean_load1": 2.08
+  }
+ },
+ "rtf_4threads": {
+  "n": 10,
+  "rtf_2": 7.128783382789318,
+  "rtf_4": 5.069028189910979,
+  "speedup_sum": 1.406341238539159,
+  "speedup_median": 1.576242777024683,
+  "same_audio": true
+ },
+ "words": {
+  "n_takes": 60,
+  "voice": "mic",
+  "outside_window_share": 0.05,
+  "outside_window_share_speech_only": 0.1,
+  "asr_fail_share": 0.35,
+  "whisper_fail_share": null,
+  "cer_aggregate": 0.16025641025641027,
+  "rule_triggered_duration": false,
+  "rule_triggered_asr": true,
+  "carrier_decision": true,
+  "per_word": {
+   "w.en": {
+    "exp": 0.312,
+    "durs": [
+     0.216,
+     0.4225,
+     0.4077
+    ],
+    "ratios": [
+     0.69,
+     1.35,
+     1.31
+    ],
+    "asr": [
+     "i",
+     "1n",
+     "1n"
+    ],
+    "pass": [
+     false,
+     false,
+     false
+    ],
+    "whisper": []
+   },
+   "w.et": {
+    "exp": 0.312,
+    "durs": [
+     0.4785,
+     0.354,
+     0.5915
+    ],
+    "ratios": [
+     1.53,
+     1.13,
+     1.9
+    ],
+    "asr": [
+     "1",
+     "1",
+     "1t"
+    ],
+    "pass": [
+     true,
+     true,
+     false
+    ],
+    "whisper": []
+   },
+   "w.to": {
+    "exp": 0.312,
+    "durs": [
+     0.3588,
+     0.3862,
+     0.3582
+    ],
+    "ratios": [
+     1.15,
+     1.24,
+     1.15
+    ],
+    "asr": [
+     "2",
+     "2",
+     "2"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.tre": {
+    "exp": 0.312,
+    "durs": [
+     0.4155,
+     0.3765,
+     0.4447
+    ],
+    "ratios": [
+     1.33,
+     1.21,
+     1.43
+    ],
+    "asr": [
+     "3",
+     "3",
+     "3"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.elleve": {
+    "exp": 0.938,
+    "durs": [
+     0.4645,
+     0.4698,
+     0.434
+    ],
+    "ratios": [
+     0.5,
+     0.5,
+     0.46
+    ],
+    "asr": [
+     "elve",
+     "elv",
+     "11"
+    ],
+    "pass": [
+     false,
+     false,
+     true
+    ],
+    "whisper": []
+   },
+   "w.tolv": {
+    "exp": 0.312,
+    "durs": [
+     0.3767,
+     0.4855,
+     0.3575
+    ],
+    "ratios": [
+     1.21,
+     1.56,
+     1.15
+    ],
+    "asr": [
+     "12",
+     "tøj",
+     "12"
+    ],
+    "pass": [
+     true,
+     false,
+     true
+    ],
+    "whisper": []
+   },
+   "w.tyve": {
+    "exp": 0.625,
+    "durs": [
+     0.4542,
+     0.4737,
+     0.4322
+    ],
+    "ratios": [
+     0.73,
+     0.76,
+     0.69
+    ],
+    "asr": [
+     "20e",
+     "20",
+     "20"
+    ],
+    "pass": [
+     false,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.halvtreds": {
+    "exp": 0.625,
+    "durs": [
+     0.6513,
+     0.9442,
+     0.6875
+    ],
+    "ratios": [
+     1.04,
+     1.51,
+     1.1
+    ],
+    "asr": [
+     "550",
+     "50",
+     "af 60"
+    ],
+    "pass": [
+     false,
+     true,
+     false
+    ],
+    "whisper": []
+   },
+   "w.halvfems": {
+    "exp": 0.625,
+    "durs": [
+     0.6295,
+     0.7051,
+     0.7217
+    ],
+    "ratios": [
+     1.01,
+     1.13,
+     1.15
+    ],
+    "asr": [
+     "90",
+     "90",
+     "90"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.syvogtyve": {
+    "exp": 1.25,
+    "durs": [
+     0.8666,
+     0.7895,
+     0.8559
+    ],
+    "ratios": [
+     0.69,
+     0.63,
+     0.68
+    ],
+    "asr": [
+     "27",
+     "27",
+     "27"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.nioghalvfems": {
+    "exp": 1.25,
+    "durs": [
+     0.9017,
+     0.8881,
+     0.8958
+    ],
+    "ratios": [
+     0.72,
+     0.71,
+     0.72
+    ],
+    "asr": [
+     "99",
+     "99",
+     "99"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.hundrede": {
+    "exp": 0.938,
+    "durs": [
+     0.5097,
+     0.4652,
+     0.4899
+    ],
+    "ratios": [
+     0.54,
+     0.5,
+     0.52
+    ],
+    "asr": [
+     "100",
+     "100",
+     "100"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.tusind": {
+    "exp": 0.625,
+    "durs": [
+     0.4697,
+     0.4917,
+     0.9278
+    ],
+    "ratios": [
+     0.75,
+     0.79,
+     1.48
+    ],
+    "asr": [
+     "t000n",
+     "t00ind",
+     "t00ind"
+    ],
+    "pass": [
+     false,
+     false,
+     false
+    ],
+    "whisper": []
+   },
+   "w.kvart": {
+    "exp": 0.312,
+    "durs": [
+     0.5135,
+     0.4993,
+     0.5209
+    ],
+    "ratios": [
+     1.65,
+     1.6,
+     1.67
+    ],
+    "asr": [
+     "kvart",
+     "kvart",
+     "kvart"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.halv": {
+    "exp": 0.312,
+    "durs": [
+     0.3569,
+     0.448,
+     0.382
+    ],
+    "ratios": [
+     1.14,
+     1.44,
+     1.22
+    ],
+    "asr": [
+     "hal",
+     "halv",
+     "halp"
+    ],
+    "pass": [
+     false,
+     true,
+     false
+    ],
+    "whisper": []
+   },
+   "w.plus": {
+    "exp": 0.312,
+    "durs": [
+     0.4701,
+     0.4463,
+     0.5311
+    ],
+    "ratios": [
+     1.51,
+     1.43,
+     1.7
+    ],
+    "asr": [
+     "plus",
+     "plus",
+     "plus"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.minus": {
+    "exp": 0.625,
+    "durs": [
+     0.6034,
+     0.5509,
+     0.6097
+    ],
+    "ratios": [
+     0.97,
+     0.88,
+     0.98
+    ],
+    "asr": [
+     "vinus",
+     "minus",
+     "minus"
+    ],
+    "pass": [
+     false,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.gange": {
+    "exp": 0.625,
+    "durs": [
+     0.5238,
+     0.4095,
+     0.463
+    ],
+    "ratios": [
+     0.84,
+     0.66,
+     0.74
+    ],
+    "asr": [
+     "gange",
+     "gange",
+     "gange"
+    ],
+    "pass": [
+     true,
+     true,
+     true
+    ],
+    "whisper": []
+   },
+   "w.nul": {
+    "exp": 0.312,
+    "durs": [
+     0.3089,
+     0.3362,
+     0.36
+    ],
+    "ratios": [
+     0.99,
+     1.08,
+     1.15
+    ],
+    "asr": [
+     "nul",
+     "nu",
+     "n0"
+    ],
+    "pass": [
+     true,
+     false,
+     false
+    ],
+    "whisper": []
+   },
+   "w.øre": {
+    "exp": 0.625,
+    "durs": [
+     0.447,
+     0.6975,
+     0.489
+    ],
+    "ratios": [
+     0.72,
+     1.12,
+     0.78
+    ],
+    "asr": [
+     "jor",
+     "jyre",
+     "yre"
+    ],
+    "pass": [
+     false,
+     false,
+     false
+    ],
+    "whisper": []
+   }
+  }
+ },
+ "carrier": {
+  "mic": {
+   "n": 19,
+   "carrier_cer": 0.04452054794520548,
+   "carrier_pass": 14,
+   "cut_pass": 15,
+   "cut_nums_ok": 17,
+   "cut_in_window": 18,
+   "cut_risk": 1,
+   "cpu_per_clip": 15.265473684210525
+  },
+  "nic": {
+   "n": 19,
+   "carrier_cer": 0.010273972602739725,
+   "carrier_pass": 17,
+   "cut_pass": 14,
+   "cut_nums_ok": 17,
+   "cut_in_window": 18,
+   "cut_risk": 6,
+   "cpu_per_clip": 15.138263157894738
+  },
+  "nic-hog": {
+   "n": 4,
+   "carrier_cer": 0.0,
+   "carrier_pass": 4,
+   "cut_pass": 0,
+   "cut_nums_ok": 1,
+   "cut_in_window": 0,
+   "cut_risk": 2,
+   "cpu_per_clip": 18.73225
+  }
+ },
+ "compose": {
+  "whole10-mic": {
+   "label": "mic: hel sætning (1 kald pr. sætning)",
+   "cer": 0.07525083612040134,
+   "pass": 7,
+   "n": 20,
+   "nums_ok": 19,
+   "whisper_cer": 0.048494983277591976,
+   "per_expression": {}
+  },
+  "whole10-nic": {
+   "label": "nic: hel sætning (1 kald pr. sætning)",
+   "cer": 0.013377926421404682,
+   "pass": 18,
+   "n": 20,
+   "nums_ok": 20,
+   "whisper_cer": 0.013377926421404682,
+   "per_expression": {}
+  },
+  "composed": {
+   "label": "sammensat, klip fra enkeltkald",
+   "cer": 0.10367892976588629,
+   "pass": 2,
+   "n": 10,
+   "nums_ok": 7,
+   "whisper_cer": null,
+   "per_expression": {
+    "q.e01.t0": [
+     0.0233,
+     "vader 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.125,
+     "vade 7 plus 5"
+    ],
+    "q.e03.t0": [
+     0.0952,
+     "vade 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.1667,
+     "vade ses gange 7"
+    ],
+    "q.e05.t0": [
+     0.0556,
+     "vade 56 plus 39"
+    ],
+    "q.e06.t0": [
+     0.069,
+     "vade 100 minus 45"
+    ],
+    "q.e07.t0": [
+     0.24,
+     "vadde 22 50 plus 125"
+    ],
+    "q.e08.t0": [
+     0.0769,
+     "vade 83 minus 19"
+    ],
+    "q.e09.t0": [
+     0.1765,
+     "vade i gange 8"
+    ],
+    "q.e10.t0": [
+     0.0465,
+     "vade 604 minus 71"
+    ]
+   }
+  },
+  "composed-batch": {
+   "label": "sammensat, klip fra batch-kald (kommaliste/sætninger)",
+   "cer": 0.15719063545150502,
+   "pass": 3,
+   "n": 10,
+   "nums_ok": 8,
+   "whisper_cer": null,
+   "per_expression": {
+    "q.e01.t0": [
+     0.0465,
+     "hver er 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.0,
+     "hvad er 7 plus 5"
+    ],
+    "q.e03.t0": [
+     0.0952,
+     "hver er 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.2778,
+     "hver er s6ks gange 7"
+    ],
+    "q.e05.t0": [
+     0.0833,
+     "hver er 56 plus 39 e"
+    ],
+    "q.e06.t0": [
+     0.2759,
+     "hver er et minus 45"
+    ],
+    "q.e07.t0": [
+     0.4,
+     "hver er 250 plus 100665"
+    ],
+    "q.e08.t0": [
+     0.1154,
+     "hver er 83 minusk nitten"
+    ],
+    "q.e09.t0": [
+     0.1176,
+     "hver er 9 gange 8"
+    ],
+    "q.e10.t0": [
+     0.0465,
+     "hver er 604 minus 71"
+    ]
+   }
+  },
+  "composed-cbatch": {
+   "label": "sammensat, tal fra batch med bærefrase",
+   "cer": 0.13712374581939799,
+   "pass": 3,
+   "n": 10,
+   "nums_ok": 8,
+   "whisper_cer": null,
+   "per_expression": {
+    "q.e01.t0": [
+     0.0465,
+     "hver er 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.0,
+     "hvad er 7 plus 5"
+    ],
+    "q.e03.t0": [
+     0.0952,
+     "hver er 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.1667,
+     "hver er 6s gange 7"
+    ],
+    "q.e05.t0": [
+     0.0556,
+     "hver er 56 plus 39"
+    ],
+    "q.e06.t0": [
+     0.069,
+     "hver er 100 minus 45"
+    ],
+    "q.e07.t0": [
+     0.38,
+     "hver er 250 plus 100605"
+    ],
+    "q.e08.t0": [
+     0.2692,
+     "hver er 83 minus n9"
+    ],
+    "q.e09.t0": [
+     0.1176,
+     "hver er 9 gange 8"
+    ],
+    "q.e10.t0": [
+     0.0465,
+     "hver er 604 minus 71"
+    ]
+   }
+  },
+  "composed-carrier": {
+   "label": "sammensat, tal fra bæresætning (ét kald pr. tal)",
+   "cer": 0.10702341137123746,
+   "pass": 3,
+   "n": 10,
+   "nums_ok": 6,
+   "whisper_cer": null,
+   "per_expression": {
+    "q.e01.t0": [
+     0.0465,
+     "vade 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.25,
+     "vade sy plus f5"
+    ],
+    "q.e03.t0": [
+     0.0952,
+     "vade 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.1667,
+     "vade ses gange 7"
+    ],
+    "q.e05.t0": [
+     0.0556,
+     "vade 56 plus 39"
+    ],
+    "q.e06.t0": [
+     0.0345,
+     "hvade 100 minus 45"
+    ],
+    "q.e07.t0": [
+     0.18,
+     "vade 250 plus 155"
+    ],
+    "q.e08.t0": [
+     0.0769,
+     "vade 83 minus 19"
+    ],
+    "q.e09.t0": [
+     0.2941,
+     "vadet har i gange 8"
+    ],
+    "q.e10.t0": [
+     0.0465,
+     "vade 604 minus 71"
+    ]
+   }
+  },
+  "composed-carrier-nic": {
+   "label": "Nic: sammensat, tal fra bæresætning (ét kald pr. tal)",
+   "cer": 0.046822742474916385,
+   "pass": 8,
+   "n": 10,
+   "nums_ok": 8,
+   "whisper_cer": 0.023411371237458192,
+   "per_expression": {
+    "q.e01.t0": [
+     0.0,
+     "hvad er 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.0,
+     "hvad er 7 plus 5"
+    ],
+    "q.e03.t0": [
+     0.0,
+     "hvad er 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.0,
+     "hvad er 6 gange 7"
+    ],
+    "q.e05.t0": [
+     0.0,
+     "hvad er 56 plus 39"
+    ],
+    "q.e06.t0": [
+     0.2414,
+     "hvad er 100 minus 5"
+    ],
+    "q.e07.t0": [
+     0.14,
+     "hvad er 250 plus 155"
+    ],
+    "q.e08.t0": [
+     0.0,
+     "hvad er 83 minus 19"
+    ],
+    "q.e09.t0": [
+     0.0,
+     "hvad er 9 gange 8"
+    ],
+    "q.e10.t0": [
+     0.0,
+     "hvad er 604 minus 71"
+    ]
+   }
+  }
+ },
+ "batch": {
+  "b.w10": {
+   "label": "enkeltord som sætninger (\"Syv. Otte.\"), K=10",
+   "calls": 2,
+   "k": 10,
+   "voice": "mic",
+   "cpu_per_clip": 3.8670999999999998,
+   "proc_cpu_per_clip": 7.6606,
+   "cpu_per_call": 38.671,
+   "raw_per_clip": 0.6519999999999999,
+   "tokens_per_call": 164.0,
+   "load1": 2.7350000000000003,
+   "whole_cer": 0.3076923076923077,
+   "whole_pass": 0,
+   "items": 20,
+   "in_window_share": 0.9,
+   "cut_risk": 0,
+   "sil_ms_min_median": 80.0,
+   "align_score_mean": 0.36135,
+   "align_low": 12,
+   "item_cer_3syll": 0.0,
+   "item_pass_3syll": [
+    4,
+    4
+   ],
+   "ref_cer_3syll": 0.047619047619047616,
+   "ref_pass_3syll": [
+    10,
+    12
+   ],
+   "ref_in_window_share": 0.95,
+   "final_dur_per_clip": 0.492265
+  },
+  "b.w5": {
+   "label": "enkeltord som sætninger, K=5",
+   "calls": 4,
+   "k": 5,
+   "voice": "mic",
+   "cpu_per_clip": 4.6735500000000005,
+   "proc_cpu_per_clip": 9.1838,
+   "cpu_per_call": 23.36775,
+   "raw_per_clip": 0.656,
+   "tokens_per_call": 83.0,
+   "load1": 2.5275,
+   "whole_cer": 0.4326923076923077,
+   "whole_pass": 0,
+   "items": 20,
+   "in_window_share": 0.95,
+   "cut_risk": 0,
+   "sil_ms_min_median": 84.6,
+   "align_score_mean": 0.38375,
+   "align_low": 9,
+   "item_cer_3syll": 0.08571428571428572,
+   "item_pass_3syll": [
+    3,
+    4
+   ],
+   "ref_cer_3syll": 0.047619047619047616,
+   "ref_pass_3syll": [
+    10,
+    12
+   ],
+   "ref_in_window_share": 0.95,
+   "final_dur_per_clip": 0.475035
+  },
+  "b.cw5": {
+   "label": "enkeltord i bærefrase (\"Tallet er syv.\"), K=5",
+   "calls": 4,
+   "k": 5,
+   "voice": "mic",
+   "cpu_per_clip": 7.60285,
+   "proc_cpu_per_clip": 15.05815,
+   "cpu_per_call": 38.014250000000004,
+   "raw_per_clip": 1.312,
+   "tokens_per_call": 165.0,
+   "load1": 2.2075,
+   "whole_cer": 0.26744186046511625,
+   "whole_pass": 0,
+   "items": 20,
+   "in_window_share": 1.0,
+   "cut_risk": 1,
+   "sil_ms_min_median": 20.0,
+   "align_score_mean": 0.45665000000000006,
+   "align_low": 8,
+   "item_cer_3syll": 0.17142857142857143,
+   "item_pass_3syll": [
+    2,
+    4
+   ],
+   "ref_cer_3syll": 0.047619047619047616,
+   "ref_pass_3syll": [
+    10,
+    12
+   ],
+   "ref_in_window_share": 0.95,
+   "final_dur_per_clip": 0.45858999999999994
+  },
+  "b.nmid": {
+   "label": "tal, mid-form kommaliste, K=10",
+   "calls": 1,
+   "k": 10,
+   "voice": "mic",
+   "cpu_per_clip": 3.8342,
+   "proc_cpu_per_clip": 7.603400000000001,
+   "cpu_per_call": 38.342,
+   "raw_per_clip": 0.6679999999999999,
+   "tokens_per_call": 168.0,
+   "load1": 2.43,
+   "whole_cer": 0.32857142857142857,
+   "whole_pass": 0,
+   "items": 10,
+   "in_window_share": 0.9,
+   "cut_risk": 0,
+   "sil_ms_min_median": 107.85,
+   "align_score_mean": 0.0931,
+   "align_low": 7,
+   "item_cer_3syll": 0.23809523809523808,
+   "item_pass_3syll": [
+    2,
+    4
+   ],
+   "ref_cer_3syll": 0.047619047619047616,
+   "ref_pass_3syll": [
+    3,
+    4
+   ],
+   "ref_in_window_share": 1.0,
+   "final_dur_per_clip": 0.58495
+  },
+  "b.nend": {
+   "label": "tal, end-form som sætninger, K=9",
+   "calls": 1,
+   "k": 9,
+   "voice": "mic",
+   "cpu_per_clip": 4.5568888888888885,
+   "proc_cpu_per_clip": 9.026111111111112,
+   "cpu_per_call": 41.012,
+   "raw_per_clip": 0.8355555555555555,
+   "tokens_per_call": 189.0,
+   "load1": 2.24,
+   "whole_cer": 0.32857142857142857,
+   "whole_pass": 0,
+   "items": 9,
+   "in_window_share": 0.8888888888888888,
+   "cut_risk": 0,
+   "sil_ms_min_median": 131.3,
+   "align_score_mean": 0.21333333333333332,
+   "align_low": 5,
+   "item_cer_3syll": 0.07407407407407407,
+   "item_pass_3syll": [
+    4,
+    5
+   ],
+   "ref_cer_3syll": 0.018518518518518517,
+   "ref_pass_3syll": [
+    4,
+    5
+   ],
+   "ref_in_window_share": 0.8888888888888888,
+   "final_dur_per_clip": 0.6887
+  },
+  "b.cmid": {
+   "label": "tal, mid-form i bærefrase, K=10",
+   "calls": 1,
+   "k": 10,
+   "voice": "mic",
+   "cpu_per_clip": 8.1943,
+   "proc_cpu_per_clip": 15.750499999999999,
+   "cpu_per_call": 81.943,
+   "raw_per_clip": 1.3960000000000001,
+   "tokens_per_call": 350.0,
+   "load1": 2.11,
+   "whole_cer": 0.24,
+   "whole_pass": 0,
+   "items": 10,
+   "in_window_share": 0.9,
+   "cut_risk": 1,
+   "sil_ms_min_median": 0.0,
+   "align_score_mean": 0.0874,
+   "align_low": 8,
+   "item_cer_3syll": 0.047619047619047616,
+   "item_pass_3syll": [
+    3,
+    4
+   ],
+   "ref_cer_3syll": 0.047619047619047616,
+   "ref_pass_3syll": [
+    3,
+    4
+   ],
+   "ref_in_window_share": 1.0,
+   "final_dur_per_clip": 0.7448699999999999
+  },
+  "b.cend": {
+   "label": "tal, end-form i bærefrase, K=9",
+   "calls": 1,
+   "k": 9,
+   "voice": "mic",
+   "cpu_per_clip": 8.790222222222221,
+   "proc_cpu_per_clip": 17.13611111111111,
+   "cpu_per_call": 79.112,
+   "raw_per_clip": 1.551111111111111,
+   "tokens_per_call": 350.0,
+   "load1": 3.02,
+   "whole_cer": 0.19014084507042253,
+   "whole_pass": 0,
+   "items": 9,
+   "in_window_share": 0.7777777777777778,
+   "cut_risk": 0,
+   "sil_ms_min_median": 0.0,
+   "align_score_mean": 0.2581111111111111,
+   "align_low": 5,
+   "item_cer_3syll": 0.0,
+   "item_pass_3syll": [
+    5,
+    5
+   ],
+   "ref_cer_3syll": 0.018518518518518517,
+   "ref_pass_3syll": [
+    4,
+    5
+   ],
+   "ref_in_window_share": 0.8888888888888888,
+   "final_dur_per_clip": 0.6875222222222223
+  },
+  "b.frag": {
+   "label": "fragmenter og hundrede-hoveder, kommaliste, K=8",
+   "calls": 1,
+   "k": 8,
+   "voice": "mic",
+   "cpu_per_clip": 5.21825,
+   "proc_cpu_per_clip": 10.285125,
+   "cpu_per_call": 41.746,
+   "raw_per_clip": 0.915,
+   "tokens_per_call": 184.0,
+   "load1": 3.65,
+   "whole_cer": 0.3333333333333333,
+   "whole_pass": 0,
+   "items": 8,
+   "in_window_share": 0.5,
+   "cut_risk": 0,
+   "sil_ms_min_median": 58.55,
+   "align_score_mean": 0.504125,
+   "align_low": 4,
+   "item_cer_3syll": 0.3673469387755102,
+   "item_pass_3syll": [
+    0,
+    4
+   ],
+   "ref_cer_3syll": 0.2857142857142857,
+   "ref_pass_3syll": [
+    1,
+    4
+   ],
+   "ref_in_window_share": 1.0,
+   "final_dur_per_clip": 0.8178375
+  },
+  "b.s4": {
+   "label": "hele sætninger, K=4",
+   "calls": 3,
+   "k": 4,
+   "voice": "mic",
+   "cpu_per_clip": 12.773916666666667,
+   "proc_cpu_per_clip": 24.499583333333334,
+   "cpu_per_call": 51.095666666666666,
+   "raw_per_clip": 2.1666666666666665,
+   "tokens_per_call": 217.66666666666666,
+   "load1": 3.4499999999999997,
+   "whole_cer": 0.09036144578313253,
+   "whole_pass": 0,
+   "items": 12,
+   "in_window_share": 0.75,
+   "cut_risk": 0,
+   "sil_ms_min_median": 155.8,
+   "align_score_mean": 0.7308333333333333,
+   "align_low": 1,
+   "item_cer_3syll": 0.04216867469879518,
+   "item_pass_3syll": [
+    8,
+    12
+   ],
+   "ref_cer_3syll": 0.05271084337349398,
+   "ref_pass_3syll": [
+    12,
+    24
+   ],
+   "ref_in_window_share": 0.9583333333333334,
+   "final_dur_per_clip": 1.8911
+  },
+  "b.s6": {
+   "label": "hele sætninger, K=6",
+   "calls": 2,
+   "k": 6,
+   "voice": "mic",
+   "cpu_per_clip": 12.548333333333332,
+   "proc_cpu_per_clip": 24.895833333333332,
+   "cpu_per_call": 75.28999999999999,
+   "raw_per_clip": 2.206666666666667,
+   "tokens_per_call": 332.0,
+   "load1": 2.09,
+   "whole_cer": 0.14156626506024098,
+   "whole_pass": 0,
+   "items": 12,
+   "in_window_share": 0.8333333333333334,
+   "cut_risk": 0,
+   "sil_ms_min_median": 119.35,
+   "align_score_mean": 0.681,
+   "align_low": 1,
+   "item_cer_3syll": 0.08433734939759036,
+   "item_pass_3syll": [
+    7,
+    12
+   ],
+   "ref_cer_3syll": 0.05271084337349398,
+   "ref_pass_3syll": [
+    12,
+    24
+   ],
+   "ref_in_window_share": 0.9583333333333334,
+   "final_dur_per_clip": 1.8355583333333334
+  }
+ },
+ "calib_single": {
+  "sent": {
+   "n": 4,
+   "cpu_per_clip": 19.299,
+   "proc_cpu_per_clip": 37.064750000000004,
+   "raw_per_clip": 2.41,
+   "load1": 4.475
+  },
+  "short": {
+   "n": 4,
+   "cpu_per_clip": 12.8085,
+   "proc_cpu_per_clip": 25.1605,
+   "raw_per_clip": 1.1,
+   "load1": 2.715
+  }
+ },
+ "s3_short_prompt": {
+  "s3gen_ratio": 0.5656156718672581,
+  "saving_per_call_s": 2.6020373501471985,
+  "calls_d": 1211.7224880382776
+ },
+ "projection": {
+  "voice": "nic",
+  "clips": 2000,
+  "audio_min": 48.0,
+  "retake_share": 0.15,
+  "overhead_s": 6.241165060003935,
+  "marginal_rtf": 4.2923740901042695,
+  "raw_over_final": 1.2309766799515003,
+  "speedup_4threads": 1.406341238539159,
+  "load_factor": 0.8761893638557969,
+  "carrier_extra_s": 0.9383787084760713,
+  "mix": [
+   {
+    "category": "tal, hundreder, tusind",
+    "clips": 238,
+    "avg_s": 0.78,
+    "kind": "short"
+   },
+   {
+    "category": "tidsfraser og dagtid",
+    "clips": 178,
+    "avg_s": 1.25,
+    "kind": "short"
+   },
+   {
+    "category": "operatorer og forbindere",
+    "clips": 184,
+    "avg_s": 0.62,
+    "kind": "short"
+   },
+   {
+    "category": "katalognavneord",
+    "clips": 153,
+    "avg_s": 0.73,
+    "kind": "short"
+   },
+   {
+    "category": "hint-skabelonled",
+    "clips": 102,
+    "avg_s": 1.04,
+    "kind": "short"
+   },
+   {
+    "category": "navne",
+    "clips": 378,
+    "avg_s": 0.83,
+    "kind": "short"
+   },
+   {
+    "category": "hele spørgesætninger q.*",
+    "clips": 277,
+    "avg_s": 2.18,
+    "kind": "sentence"
+   },
+   {
+    "category": "faste sætninger s.*",
+    "clips": 490,
+    "avg_s": 2.49,
+    "kind": "sentence"
+   }
+  ],
+  "hours_2threads": {
+   "A. ét kald pr. klip": 8.85,
+   "B. ét kald pr. klip, talord i bæresætning": 9.15,
+   "C. batch: sætninger K=4, talord og korte klip i bærefrase-batch": 6.95,
+   "D. batch kun for sætninger og talord, øvrige korte klip ét kald": 7.61,
+   "E. som D + S3Gen-reference forkortet til 4 s": 6.61
+  },
+  "hours_4threads": {
+   "A. ét kald pr. klip": 6.29,
+   "B. ét kald pr. klip, talord i bæresætning": 6.51,
+   "C. batch: sætninger K=4, talord og korte klip i bærefrase-batch": 4.94,
+   "D. batch kun for sætninger og talord, øvrige korte klip ét kald": 5.41,
+   "E. som D + S3Gen-reference forkortet til 4 s": 4.7
+  }
+ }
+}
