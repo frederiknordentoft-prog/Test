@@ -366,58 +366,93 @@ def batch_section(res: dict):
 # --- fremskrivning ----------------------------------------------------------
 
 def projection_section(res: dict):
+    """CPU-tid for hele inventaret pr. strategi (2 tråde; 4 tråde via målt faktor).
+
+    Grundmodel (lav last, probe12 + rtf8): tid pr. kald = a + b × rå lyd.
+    Batch-familier: målt tid pr. klip, korrigeret for samtidig last med forholdet
+    mellem enkeltkald i probe12/rtf8 og de samme enkeltkald genkørt under batch-
+    kørslen (calib-single), og skaleret til kategoriens klipvarighed med modellen.
+    """
     r2 = res.get("rtf_2threads")
     if not r2:
         return
     v = res.get("voice_winner", "nic")
     d = r2.get(v) or next(iter(r2.values()))
     a, b, k_raw = d["overhead_s"], d["marginal_rtf"], d["raw_over_final"]
-    scale = INVENTORY_MIN * 60 / sum(n * s for _c, n, s, _k in INVENTORY_MIX)
+    scale = INVENTORY_MIN * 60 / sum(n * s_ for _c, n, s_, _k in INVENTORY_MIX)
     n_mix = sum(n for _c, n, _s, _k in INVENTORY_MIX)
-    mix = [(c, n * INVENTORY_CLIPS / n_mix, s * scale * n_mix / INVENTORY_CLIPS, k) for c, n, s, k in INVENTORY_MIX]
+    mix = [(c, n * INVENTORY_CLIPS / n_mix, s_ * scale * n_mix / INVENTORY_CLIPS, k)
+           for c, n, s_, k in INVENTORY_MIX]
     speed4 = res.get("rtf_4threads", {}).get("speedup_sum") or 1.0
     retake = 1 + RETAKE_SHARE
+    # lastkorrektion: samme enkeltkald nu vs. ved baseline-målingen
+    base = {(r["id"]): r["t_total"] for r in load("probe12") if r["take"] == 0 and r["voice"] == v}
+    base.update({r["id"]: r["t_total"] for r in load("rtf8") if r["voice"] == v})
+    cal = [(base[c["id"]], c["t_total"]) for c in load("calib-single") if c["id"] in base]
+    load_factor = sum(x for x, _ in cal) / sum(y for _, y in cal) if cal else 1.0
 
-    def per_call_cost(dur):
-        return a + b * dur * k_raw
+    def single(dur, extra=0.0):
+        return a + b * (dur * k_raw + extra)
+
+    bt = res.get("batch", {})
+
+    def fam_cost(fam_keys, dur):
+        fams = [bt[f] for f in fam_keys if f in bt]
+        if not fams:
+            return None
+        meas = stats.fmean(f["cpu_per_clip"] for f in fams) * load_factor
+        k = stats.fmean(f["k"] for f in fams)
+        raw = stats.fmean(f["raw_per_clip"] for f in fams)
+        fin = stats.fmean(f["final_dur_per_clip"] for f in fams)
+        extra = max(0.0, raw - fin * k_raw)          # bærefrase + pause pr. klip
+        model_here = a / k + b * raw
+        calib = meas / model_here if model_here else 1.0  # længere kontekst i T3 m.m.
+        return calib * (a / k + b * (dur * k_raw + extra))
+
+    carrier_extra = 0.0
+    car = load("carrier")
+    if car:
+        cut = {r["id"]: r for r in load("carrier-cut")}
+        ex = [c["raw_dur"] - cut[c["id"][2:]]["dur"] * k_raw for c in car if c["id"][2:] in cut]
+        carrier_extra = max(0.0, stats.fmean(ex)) if ex else 0.0
 
     strategies = {}
-    single = sum(n * per_call_cost(s) for _c, n, s, _k in mix) * retake
-    strategies["enkeltkald"] = single
-    bt = res.get("batch", {})
-    # batch: overhead delt på K + marginal × (klip + pause), målt som rå batchlyd pr. klip
-    # relativt til udklippenes færdige varighed.
-    fam_short = bt.get("b.w10") or bt.get("b.nmid")
-    fam_sent = bt.get("b.s4")
-    if fam_short and fam_sent:
-        def batch_cost(dur, fam):
-            ratio = fam["raw_per_clip"] / fam["final_dur_per_clip"]
-            return a / fam["k"] + b * dur * ratio
-        total = 0.0
-        for _c, n, s, kind in mix:
-            fam = fam_short if kind == "short" else fam_sent
-            total += n * batch_cost(s, fam)
-        strategies["batch"] = total * retake
-        # kontrol: modellen mod de målte CPU-tider pr. klip
-        res["batch_model_check"] = {
-            fam: {"measured": dd["cpu_per_clip"],
-                  "model": a / dd["k"] + b * dd["raw_per_clip"]} for fam, dd in bt.items()}
+    strategies["A. ét kald pr. klip"] = sum(n * single(s_) for _c, n, s_, _k in mix)
+    if carrier_extra:
+        strategies["B. ét kald pr. klip, talord i bæresætning"] = sum(
+            n * single(s_, carrier_extra if c.startswith("tal") else 0.0) for c, n, s_, _k in mix)
+    plan_c = {"sentence": ["b.s4"], "number": ["b.cmid", "b.cend"], "short": ["b.cw5"]}
+    costs = []
+    for c, n, s_, kind in mix:
+        key = "number" if c.startswith("tal") else kind
+        fc = fam_cost(plan_c[key], s_)
+        costs.append(n * (fc if fc is not None else single(s_)))
+    if bt:
+        strategies["C. batch: sætninger K=4, talord og korte klip i bærefrase-batch"] = sum(costs)
+        costs_d = []
+        for c, n, s_, kind in mix:
+            if c.startswith("tal"):
+                fc = fam_cost(["b.cmid", "b.cend"], s_)
+            elif kind == "sentence":
+                fc = fam_cost(["b.s4"], s_)
+            else:
+                fc = None
+            costs_d.append(n * (fc if fc is not None else single(s_)))
+        strategies["D. batch kun for sætninger og talord, øvrige korte klip ét kald"] = sum(costs_d)
     res["projection"] = {
         "voice": v, "clips": INVENTORY_CLIPS, "audio_min": INVENTORY_MIN, "retake_share": RETAKE_SHARE,
         "overhead_s": a, "marginal_rtf": b, "raw_over_final": k_raw, "speedup_4threads": speed4,
-        "mix": [{"category": c, "clips": round(n), "avg_s": round(s, 2), "kind": k} for c, n, s, k in mix],
-        "hours_2threads": {k: round(v_ / 3600, 2) for k, v_ in strategies.items()},
-        "hours_4threads": {k: round(v_ / 3600 / speed4, 2) for k, v_ in strategies.items()},
+        "load_factor": load_factor, "carrier_extra_s": carrier_extra,
+        "mix": [{"category": c, "clips": round(n), "avg_s": round(s_, 2), "kind": k} for c, n, s_, k in mix],
+        "hours_2threads": {k: round(v_ * retake / 3600, 2) for k, v_ in strategies.items()},
+        "hours_4threads": {k: round(v_ * retake / 3600 / speed4, 2) for k, v_ in strategies.items()},
     }
     print(f"\n### Fremskrivning ({INVENTORY_CLIPS} klip, {INVENTORY_MIN:.0f} min lyd, 1 take + "
-          f"{RETAKE_SHARE:.0%} gentagelser)\n")
+          f"{RETAKE_SHARE:.0%} gentagelser; lastfaktor {load_factor:.2f})\n")
     print("| Strategi | 2 tråde | 4 tråde |")
     print("|---|---|---|")
     for k, sec in strategies.items():
-        print(f"| {k} | {sec / 3600:.1f} t | {sec / 3600 / speed4:.1f} t |")
-    if "batch_model_check" in res:
-        print("\nModel mod måling (CPU pr. klip): " + ", ".join(
-            f"{f}: {m['measured']:.1f} s målt / {m['model']:.1f} s model" for f, m in res["batch_model_check"].items()))
+        print(f"| {k} | {sec * retake / 3600:.1f} t | {sec * retake / 3600 / speed4:.1f} t |")
 
 
 def main():

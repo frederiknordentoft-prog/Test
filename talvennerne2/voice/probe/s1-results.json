@@ -676,6 +676,443 @@
    }
   }
  },
+ "compose": {
+  "whole10": {
+   "label": "hel sætning (1 kald pr. sætning)",
+   "cer": 0.07525083612040134,
+   "pass": 7,
+   "n": 20,
+   "nums_ok": 19,
+   "whisper_cer": 0.048494983277591976,
+   "per_expression": {
+    "q.e01.t0": [
+     0.093,
+     "ved 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.125,
+     "hver er 7 plus 5"
+    ],
+    "q.e03.t0": [
+     0.0952,
+     "hver er 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.1111,
+     "hver er 6 gange 7"
+    ],
+    "q.e05.t0": [
+     0.0278,
+     "hved er 56 plus 39"
+    ],
+    "q.e06.t0": [
+     0.0345,
+     "hvar er 100 minus 45"
+    ],
+    "q.e07.t0": [
+     0.06,
+     "hvere 250 plus 125"
+    ],
+    "q.e08.t0": [
+     0.0769,
+     "hverer 83 minus 19"
+    ],
+    "q.e09.t0": [
+     0.2353,
+     "hver er 9 xang 8"
+    ],
+    "q.e10.t0": [
+     0.0465,
+     "hver er 604 minus 71"
+    ],
+    "q.e01.t1": [
+     0.0698,
+     "ver er 347 plus 28"
+    ],
+    "q.e02.t1": [
+     0.0,
+     "hvad er 7 plus 5"
+    ],
+    "q.e03.t1": [
+     0.0476,
+     "hved er 15 minus 8"
+    ],
+    "q.e04.t1": [
+     0.1111,
+     "hver er 6 gange 7"
+    ],
+    "q.e05.t1": [
+     0.0556,
+     "hver er 56 plus 39"
+    ],
+    "q.e06.t1": [
+     0.0,
+     "hvad er 100 minus 45"
+    ],
+    "q.e07.t1": [
+     0.04,
+     "hver er 250 plus 125"
+    ],
+    "q.e08.t1": [
+     0.1923,
+     "hver er 83 minus iden"
+    ],
+    "q.e09.t1": [
+     0.1765,
+     "hvad er 9 xan 8"
+    ],
+    "q.e10.t1": [
+     0.093,
+     "hvere 604 minus i 71"
+    ]
+   }
+  },
+  "composed": {
+   "label": "sammensat, klip fra enkeltkald",
+   "cer": 0.10367892976588629,
+   "pass": 2,
+   "n": 10,
+   "nums_ok": 7,
+   "whisper_cer": null,
+   "per_expression": {
+    "q.e01.t0": [
+     0.0233,
+     "vader 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.125,
+     "vade 7 plus 5"
+    ],
+    "q.e03.t0": [
+     0.0952,
+     "vade 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.1667,
+     "vade ses gange 7"
+    ],
+    "q.e05.t0": [
+     0.0556,
+     "vade 56 plus 39"
+    ],
+    "q.e06.t0": [
+     0.069,
+     "vade 100 minus 45"
+    ],
+    "q.e07.t0": [
+     0.24,
+     "vadde 22 50 plus 125"
+    ],
+    "q.e08.t0": [
+     0.0769,
+     "vade 83 minus 19"
+    ],
+    "q.e09.t0": [
+     0.1765,
+     "vade i gange 8"
+    ],
+    "q.e10.t0": [
+     0.0465,
+     "vade 604 minus 71"
+    ]
+   }
+  },
+  "composed-batch": {
+   "label": "sammensat, klip fra batch-kald (kommaliste/sætninger)",
+   "cer": 0.21070234113712374,
+   "pass": 3,
+   "n": 10,
+   "nums_ok": 8,
+   "whisper_cer": null,
+   "per_expression": {
+    "q.e01.t0": [
+     0.0465,
+     "hver er 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.0,
+     "hvad er 7 plus 5"
+    ],
+    "q.e03.t0": [
+     0.0952,
+     "hver er 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.2778,
+     "hver er s6ks gange 7"
+    ],
+    "q.e05.t0": [
+     0.1111,
+     "hver er 56 i plus 39 e"
+    ],
+    "q.e06.t0": [
+     0.2759,
+     "hver er et minus 45"
+    ],
+    "q.e07.t0": [
+     0.7,
+     "hver er 2550 plus 10065"
+    ],
+    "q.e08.t0": [
+     0.1154,
+     "hver er 83 minusk nitten"
+    ],
+    "q.e09.t0": [
+     0.1176,
+     "hver er 9 gange 8"
+    ],
+    "q.e10.t0": [
+     0.0465,
+     "hver er 604 minus 71"
+    ]
+   }
+  },
+  "composed-cbatch": {
+   "label": "sammensat, tal fra batch med bærefrase",
+   "cer": 0.11371237458193979,
+   "pass": 3,
+   "n": 10,
+   "nums_ok": 9,
+   "whisper_cer": null,
+   "per_expression": {
+    "q.e01.t0": [
+     0.0465,
+     "hver er 347 plus 28"
+    ],
+    "q.e02.t0": [
+     0.0,
+     "hvad er 7 plus 5"
+    ],
+    "q.e03.t0": [
+     0.0952,
+     "hver er 15 minus 8"
+    ],
+    "q.e04.t0": [
+     0.1667,
+     "hver er 6s gange 7"
+    ],
+    "q.e05.t0": [
+     0.0556,
+     "hver er 56 plus 39"
+    ],
+    "q.e06.t0": [
+     0.069,
+     "hver er 100 minus 45"
+    ],
+    "q.e07.t0": [
+     0.34,
+     "hver er 250 plus 10625"
+    ],
+    "q.e08.t0": [
+     0.0769,
+     "hver er 83 minus 19"
+    ],
+    "q.e09.t0": [
+     0.1176,
+     "hver er 9 gange 8"
+    ],
+    "q.e10.t0": [
+     0.0465,
+     "hver er 604 minus 71"
+    ]
+   }
+  }
+ },
+ "batch": {
+  "b.nmid": {
+   "label": "tal, mid-form kommaliste, K=10",
+   "calls": 1,
+   "k": 10,
+   "voice": "mic",
+   "cpu_per_clip": 3.8342,
+   "proc_cpu_per_clip": 7.603400000000001,
+   "cpu_per_call": 38.342,
+   "raw_per_clip": 0.6679999999999999,
+   "tokens_per_call": 168.0,
+   "load1": 2.43,
+   "whole_cer": 0.32857142857142857,
+   "whole_pass": 0,
+   "items": 10,
+   "in_window_share": 0.9,
+   "cut_risk": 0,
+   "sil_ms_min_median": 107.85,
+   "align_score_mean": 0.0931,
+   "align_low": 7,
+   "item_cer_3syll": 0.2619047619047619,
+   "item_pass_3syll": [
+    2,
+    4
+   ],
+   "ref_cer_3syll": null,
+   "ref_pass_3syll": null,
+   "ref_in_window_share": null,
+   "final_dur_per_clip": 0.5849599999999999
+  },
+  "b.nend": {
+   "label": "tal, end-form som sætninger, K=9",
+   "calls": 1,
+   "k": 9,
+   "voice": "mic",
+   "cpu_per_clip": 4.5568888888888885,
+   "proc_cpu_per_clip": 9.026111111111112,
+   "cpu_per_call": 41.012,
+   "raw_per_clip": 0.8355555555555555,
+   "tokens_per_call": 189.0,
+   "load1": 2.24,
+   "whole_cer": 0.32857142857142857,
+   "whole_pass": 0,
+   "items": 9,
+   "in_window_share": 0.8888888888888888,
+   "cut_risk": 0,
+   "sil_ms_min_median": 131.3,
+   "align_score_mean": 0.21333333333333332,
+   "align_low": 5,
+   "item_cer_3syll": 0.07407407407407407,
+   "item_pass_3syll": [
+    4,
+    5
+   ],
+   "ref_cer_3syll": null,
+   "ref_pass_3syll": null,
+   "ref_in_window_share": null,
+   "final_dur_per_clip": 0.6887333333333333
+  },
+  "b.cmid": {
+   "label": "tal, mid-form i bærefrase, K=10",
+   "calls": 1,
+   "k": 10,
+   "voice": "mic",
+   "cpu_per_clip": 8.1943,
+   "proc_cpu_per_clip": 15.750499999999999,
+   "cpu_per_call": 81.943,
+   "raw_per_clip": 1.3960000000000001,
+   "tokens_per_call": 350.0,
+   "load1": 2.11,
+   "whole_cer": 0.24,
+   "whole_pass": 0,
+   "items": 10,
+   "in_window_share": 0.8,
+   "cut_risk": 1,
+   "sil_ms_min_median": 0.0,
+   "align_score_mean": 0.0872,
+   "align_low": 8,
+   "item_cer_3syll": 0.047619047619047616,
+   "item_pass_3syll": [
+    3,
+    4
+   ],
+   "ref_cer_3syll": null,
+   "ref_pass_3syll": null,
+   "ref_in_window_share": null,
+   "final_dur_per_clip": 0.75097
+  },
+  "b.cend": {
+   "label": "tal, end-form i bærefrase, K=9",
+   "calls": 1,
+   "k": 9,
+   "voice": "mic",
+   "cpu_per_clip": 8.790222222222221,
+   "proc_cpu_per_clip": 17.13611111111111,
+   "cpu_per_call": 79.112,
+   "raw_per_clip": 1.551111111111111,
+   "tokens_per_call": 350.0,
+   "load1": 3.02,
+   "whole_cer": 0.19014084507042253,
+   "whole_pass": 0,
+   "items": 9,
+   "in_window_share": 0.5555555555555556,
+   "cut_risk": 0,
+   "sil_ms_min_median": 0.0,
+   "align_score_mean": 0.2581111111111111,
+   "align_low": 5,
+   "item_cer_3syll": 0.0,
+   "item_pass_3syll": [
+    5,
+    5
+   ],
+   "ref_cer_3syll": null,
+   "ref_pass_3syll": null,
+   "ref_in_window_share": null,
+   "final_dur_per_clip": 0.7985444444444444
+  },
+  "b.frag": {
+   "label": "fragmenter og hundrede-hoveder, kommaliste, K=8",
+   "calls": 1,
+   "k": 8,
+   "voice": "mic",
+   "cpu_per_clip": 5.21825,
+   "proc_cpu_per_clip": 10.285125,
+   "cpu_per_call": 41.746,
+   "raw_per_clip": 0.915,
+   "tokens_per_call": 184.0,
+   "load1": 3.65,
+   "whole_cer": 0.3333333333333333,
+   "whole_pass": 0,
+   "items": 8,
+   "in_window_share": 0.625,
+   "cut_risk": 0,
+   "sil_ms_min_median": 58.55,
+   "align_score_mean": 0.51175,
+   "align_low": 4,
+   "item_cer_3syll": 0.3673469387755102,
+   "item_pass_3syll": [
+    0,
+    4
+   ],
+   "ref_cer_3syll": null,
+   "ref_pass_3syll": null,
+   "ref_in_window_share": null,
+   "final_dur_per_clip": 0.8195625
+  },
+  "b.s4": {
+   "label": "hele sætninger, K=4",
+   "calls": 3,
+   "k": 4,
+   "voice": "mic",
+   "cpu_per_clip": 12.773916666666667,
+   "proc_cpu_per_clip": 24.499583333333334,
+   "cpu_per_call": 51.095666666666666,
+   "raw_per_clip": 2.1666666666666665,
+   "tokens_per_call": 217.66666666666666,
+   "load1": 3.4499999999999997,
+   "whole_cer": 0.09036144578313253,
+   "whole_pass": 0,
+   "items": 12,
+   "in_window_share": 0.75,
+   "cut_risk": 0,
+   "sil_ms_min_median": 155.8,
+   "align_score_mean": 0.7245833333333334,
+   "align_low": 1,
+   "item_cer_3syll": 0.04216867469879518,
+   "item_pass_3syll": [
+    8,
+    12
+   ],
+   "ref_cer_3syll": 0.05271084337349398,
+   "ref_pass_3syll": [
+    12,
+    24
+   ],
+   "ref_in_window_share": 0.9583333333333334,
+   "final_dur_per_clip": 1.9397583333333335
+  }
+ },
+ "calib_single": {
+  "sent": {
+   "n": 4,
+   "cpu_per_clip": 19.299,
+   "proc_cpu_per_clip": 37.064750000000004,
+   "raw_per_clip": 2.41,
+   "load1": 4.475
+  },
+  "short": {
+   "n": 4,
+   "cpu_per_clip": 12.8085,
+   "proc_cpu_per_clip": 25.1605,
+   "raw_per_clip": 1.1,
+   "load1": 2.715
+  }
+ },
  "projection": {
   "voice": "mic",
   "clips": 2000,
@@ -685,6 +1122,8 @@
   "marginal_rtf": 4.422226829541634,
   "raw_over_final": 1.2267759107839709,
   "speedup_4threads": 1.406341238539159,
+  "load_factor": 0.9503231332243244,
+  "carrier_extra_s": 0.0,
   "mix": [
    {
     "category": "tal, hundreder, tusind",
@@ -736,10 +1175,14 @@
    }
   ],
   "hours_2threads": {
-   "enkeltkald": 9.54
+   "A. ét kald pr. klip": 9.54,
+   "C. batch: sætninger K=4, talord og korte klip i bærefrase-batch": 8.23,
+   "D. batch kun for sætninger og talord, øvrige korte klip ét kald": 8.23
   },
   "hours_4threads": {
-   "enkeltkald": 6.79
+   "A. ét kald pr. klip": 6.79,
+   "C. batch: sætninger K=4, talord og korte klip i bærefrase-batch": 5.85,
+   "D. batch kun for sætninger og talord, øvrige korte klip ét kald": 5.85
   }
  }
 }

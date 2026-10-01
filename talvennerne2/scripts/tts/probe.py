@@ -129,7 +129,14 @@ class Engine:
                 return r
             return wrapper
 
-        m.t3.inference = timed("t3", m.t3.inference)
+        t3_inf = m.t3.inference
+        if self.bf16:  # kun T3 (Llama); HiFiGAN's iSTFT tåler ikke bf16
+            torch = self.torch
+
+            def t3_inf(*a, _f=m.t3.inference, **k):
+                with torch.autocast("cpu", dtype=torch.bfloat16):
+                    return _f(*a, **k)
+        m.t3.inference = timed("t3", t3_inf)
         m.s3gen.inference = timed("s3gen", m.s3gen.inference)
         m.watermarker.apply_watermark = timed("wm", m.watermarker.apply_watermark)
 
@@ -176,11 +183,7 @@ class Engine:
         self.timers = {}
         t0 = time.perf_counter()
         c0 = time.process_time()
-        if self.bf16:
-            with self.torch.autocast("cpu", dtype=self.torch.bfloat16):
-                wav = self.m.generate(text, **SETTINGS)
-        else:
-            wav = self.m.generate(text, **SETTINGS)
+        wav = self.m.generate(text, **SETTINGS)
         total = time.perf_counter() - t0
         cpu = time.process_time() - c0  # CPU-tid for alle tråde (mindre følsom for andres last)
         x = wav.squeeze(0).detach().cpu().numpy().astype(np.float32)
