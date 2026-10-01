@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Animal, ClipId, ProfileDoc, SpeciesId } from '../../../../engine/types'
 import { pendingChoices } from '../../../../meta/animals'
 import { SpokenText } from '../../../design/SpokenText'
+import { isCalm } from '../../../design/motion'
 import { useSpeech } from '../../../design/speech'
 import { TopBar } from '../../../shell/TopBar'
 import { AnimalSheet } from './AnimalSheet'
@@ -57,7 +58,10 @@ export function ZooView({ profile, openUid = null, now, onDress }: ZooViewProps)
   const items = useItemDefs(profile.animals)
   const outfits = useMemo(() => Object.fromEntries(profile.animals.map((a) => [a.uid, outfitOf(a, items)])), [profile.animals, items])
 
-  const plan = planAnimation(order, profile.buddyUid, { focus, sheet: born?.animal.uid ?? sheetUid })
+  // the animal in front (a new friend, or an open card) animates there; a shadow of a species not
+  // drawn yet takes no slot
+  const front = born?.animal ?? profile.animals.find((a) => a.uid === sheetUid) ?? null
+  const plan = planAnimation(order, profile.buddyUid, { focus, sheet: front && isDrawn(front.species) ? front.uid : null })
   const clock = now ?? Date.now()
   const newest = profile.animals.reduce<Animal | null>((best, a) => (!best || a.foundAt > best.foundAt ? a : best), null)
   const newUid = newest && clock - newest.foundAt < NEW_FOR_MS && profile.animals.length > 1 ? newest.uid : null
@@ -70,7 +74,15 @@ export function ZooView({ profile, openUid = null, now, onDress }: ZooViewProps)
   const welcome = (animal: Animal, title: ClipId) => {
     touch(animal.uid)
     setBorn({ animal, title })
-    scroller.current?.scrollTo?.({ top: 0, behavior: 'smooth' })
+  }
+
+  /** After the welcome: bring the new friend's place on the meadow into view (only this list scrolls). */
+  const showOnMeadow = (uid: string) => {
+    const box = scroller.current
+    const cell = box?.querySelector<HTMLElement>(`[data-uid="${uid}"]`)
+    if (!box || !cell) return
+    const top = cell.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - box.clientHeight / 4
+    box.scrollTo?.({ top: Math.max(0, top), behavior: isCalm() ? 'auto' : 'smooth' })
   }
 
   const sheetAnimal = sheetUid ? (profile.animals.find((a) => a.uid === sheetUid) ?? null) : null
@@ -123,7 +135,11 @@ export function ZooView({ profile, openUid = null, now, onDress }: ZooViewProps)
         title={born?.title ?? 's.reward.egg.hatched'}
         def={bornAnimal ? defs[bornAnimal.species] : undefined}
         outfit={bornAnimal ? outfits[bornAnimal.uid] : undefined}
-        onClose={() => setBorn(null)}
+        onClose={() => {
+          const uid = born?.animal.uid
+          setBorn(null)
+          if (uid) requestAnimationFrame(() => showOnMeadow(uid))
+        }}
       />
     </div>
   )
