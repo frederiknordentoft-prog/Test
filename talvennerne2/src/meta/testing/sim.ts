@@ -11,7 +11,7 @@ import { SKILLS, SKILL_BY_ID } from '../../content/skills'
 import { DECOR, ITEMS } from '../../content/catalog'
 import { RECOLOR_PRICE, RECOLORS_PER_ITEM } from '../../content/economy'
 import { emptyKey, isDue, updateKey } from '../../engine/mastery'
-import { factsOf, makeRegistry, skillRegistry, type SkillRegistry } from '../../engine/registry'
+import { factsOf, makeRegistry, type SkillRegistry } from '../../engine/registry'
 import { hashSeed, makeRng, type Rng } from '../../engine/rng'
 import { learningEventsFor } from '../../engine/status'
 import { canAttemptTrial, helpBridgeOpen } from '../../engine/trial'
@@ -53,8 +53,13 @@ export const GUESSER: ChildModel = { choice: 1 / 3, production: 0.05, fast: 0.5 
 
 // ─── Stand-in skills ────────────────────────────────────────────────────────
 
-/** Fact counts for recall skills that are not registered yet (estimates from the skill tables). */
+/**
+ * Keys per recall skill: the registered Engdalen skills as they are, the rest estimated from the
+ * skill tables. Procedure skills have one key per family (from src/content/skills.ts). The simulation
+ * keeps its own copy so its numbers do not move when more skills are registered.
+ */
 const RECALL_KEYS: Partial<Record<SkillId, number>> = {
+  count10: 28, count20: 20, hear20: 21, addTo10: 66, subTo10: 66, tenFriends: 11, compareLength: 16, shapes2D: 42,
   doubles: 10, halves: 10, addTo20: 36, subTo20: 36, groupsOf: 20, mul2510: 27, shareEqually: 16, mul34: 18,
   mul6to9: 30, div2510: 27, divAll: 48, missingPart10: 36, sidesCorners: 12, shapes3D: 12, composeShapes: 10,
   clockHour: 12, clockHalf: 12, clockQuarter: 24, coinNames: 9, weightCompare: 10, unitChoice: 12, halfShape: 8,
@@ -74,12 +79,9 @@ function standIn(id: SkillId): SkillDef {
 }
 
 let simReg: SkillRegistry | null = null
-/** The registered skills, plus stand-ins for every skill not built yet. */
+/** Stand-ins for all 72 skills (enough for mastery, status and medals). */
 export function simRegistry(): SkillRegistry {
-  if (simReg) return simReg
-  const real = skillRegistry()
-  simReg = makeRegistry(SKILLS.map((m) => real.get(m.id) ?? standIn(m.id)))
-  return simReg
+  return (simReg ??= makeRegistry(SKILLS.map((m) => standIn(m.id))))
 }
 
 interface SimKey { key: MasteryKey; skill: SkillId; family: string; procedure: boolean }
@@ -135,6 +137,8 @@ export interface SessionLog {
   earned: number
   animals: number
   items: number
+  /** Shop, every recolour and the decor all bought (SPEC §5.7 acceptance 5). */
+  emptied: boolean
 }
 
 interface Task { k: SimKey; production: boolean; review: boolean }
@@ -169,7 +173,7 @@ export class Sim {
   playSession(): SessionLog {
     this.session += 1
     this.ts = DAY0 + (this.session - 1) * DAY_MS
-    const log: SessionLog = { session: this.session, rounds: [], actions: [], level: 0, perler: 0, earned: 0, animals: 0, items: 0 }
+    const log: SessionLog = { session: this.session, rounds: [], actions: [], level: 0, perler: 0, earned: 0, animals: 0, items: 0, emptied: false }
     if (this.session === 1) {
       const start = chooseStarter(this.profile, this.starter, { now: this.ts })!
       this.profile = start.profile
@@ -190,6 +194,7 @@ export class Sim {
     log.earned = this.earned
     log.animals = this.profile.animals.length
     log.items = Object.keys(this.profile.inventory).length
+    log.emptied = this.shopEmptied()
     this.sessions.push(log)
     return log
   }

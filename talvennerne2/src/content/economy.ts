@@ -126,14 +126,14 @@ export const TOTAL_SINK = SHOP_TOTAL + RECOLOR_TOTAL + DECOR_TOTAL
 // ─── The egg ────────────────────────────────────────────────────────────────
 
 /**
- * Warmth (right answers) egg number n needs: 15, 40, 60, then 75 up to egg 9, then 100 (SPEC 90 and
- * 120, −17 %: a hatch is the steady big moment that keeps at least one ceremony in every session).
+ * Warmth (right answers) egg number n needs: 15, 40, 60, then 72 up to egg 9, then 96 (SPEC 90 and
+ * 120, −20 %: the hatch is the steady big moment that keeps a ceremony in every session).
  */
 export function eggWarmthFor(eggNumber: number): number {
   if (eggNumber <= 1) return 15
   if (eggNumber === 2) return 40
   if (eggNumber === 3) return 60
-  return eggNumber <= 9 ? 75 : 100
+  return eggNumber <= 9 ? 72 : 96
 }
 
 export const EGG = {
