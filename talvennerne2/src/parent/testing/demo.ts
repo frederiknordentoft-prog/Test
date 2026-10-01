@@ -1,6 +1,7 @@
 // A demo household for looking at the parent dashboard (screenshots, manual checks on the dev
-// server): Ada in 1. klasse with three weeks of Engdalen behind her, and Bo in 0. klasse who has
-// just started. Writes straight into IndexedDB. Never imported by the app.
+// server): Ada in 1. klasse with three weeks of Engdalen behind her, Bo in 0. klasse who has just
+// started, and Cille in 3. klasse in the middle of the times tables (an import from a fuller app: the
+// table skills are not registered yet). Writes straight into IndexedDB. Never imported by the app.
 import { answerDelta, emptyDaily, mergeDaily, snapshotFor } from '../../data/aggregate'
 import { getDb } from '../../data/db'
 import { newProfileDoc } from '../../data/repo/profiles'
@@ -82,8 +83,8 @@ const flag = (status: MisconceptionState['status'], at: number, day: string): Mi
   resolvedAt: status === 'resolved' ? at - 2 * DAY_MS : null,
 })
 
-/** Build Ada and Bo and store them. Returns their ids. */
-export async function seedDemo(now: number = Date.now()): Promise<{ ada: string; bo: string }> {
+/** Build Ada, Bo and Cille and store them. Returns their ids. */
+export async function seedDemo(now: number = Date.now()): Promise<{ ada: string; bo: string; cille: string }> {
   const rng = makeRng(20261001)
   const index = keyIndexOf(skillRegistry())
   const refsOf = (s: SkillId) => index[s] ?? []
@@ -216,15 +217,60 @@ export async function seedDemo(now: number = Date.now()): Promise<{ ada: string;
     nodes: { 'w0-tal10-l1': { plays: 2, stars: 2, skipped: false, lastAt: now - 3_600_000 } },
   }
 
+  // ── Cille (3. klasse), well into the times tables ──
+  const cille = newProfileDoc('Cille', 3, { frameColor: 'grape', now: now - 40 * DAY_MS })
+  const tableBox = (a: number, b: number): number => {
+    const t = [a, b]
+    if (t.some((n) => n === 1 || n === 2 || n === 10)) return 5
+    if (t.includes(5)) return 4
+    if (t.includes(7)) return t.includes(3) ? 2 : 1
+    if (t.some((n) => n === 3 || n === 4)) return 3
+    return t.includes(9) ? 2 : 3
+  }
+  const mulKeys: Record<string, KeyState> = {}
+  for (let a = 1; a <= 10; a++) {
+    for (let b = a; b <= 10; b++) {
+      if (a === 1 && b === 1) continue
+      const box = tableBox(a, b)
+      mulKeys[`mul:${a}x${b}`] = { ...emptyKey(), box: box as Box, seen: 5, correct: 4, lastDay: dayAt(1), boxDay: dayAt(2), boxAt: 0 }
+    }
+  }
+  const cilleLog: AnswerLogEntry[] = []
+  const tableRefs = (t: number[]): KeyRef[] => Object.keys(mulKeys)
+    .filter((k) => { const [x, y] = k.slice(4).split('x').map(Number); return t.includes(x) || t.includes(y) })
+    .map((key) => ({ key, family: `t${Math.max(...key.slice(4).split('x').map(Number).filter((n) => t.includes(n)))}` }))
+  HABITS.mul2510 = { p: 0.95, fast: 0.8, prod: 0.9, node: 'w2-gange-l3' }
+  HABITS.mul6to9 = { p: 0.8, fast: 0.45, prod: 0.9, error: 'tableNeighbour', node: 'w3-tabellen-l2' }
+  for (const n of [0, 1, 3, 4, 6, 8, 9]) {
+    cilleLog.push(...answersFor(cille.id, 'mul6to9', dayAt(n), 10, rng, `c-${n}`, tableRefs([6, 7, 8, 9]), tsAt(n)))
+    if (n % 3 === 0) cilleLog.push(...answersFor(cille.id, 'mul2510', dayAt(n), 10, rng, `c2-${n}`, tableRefs([2, 5, 10]), tsAt(n) + 600_000))
+  }
+  const cilleDaily = new Map<string, DailyAggregate>()
+  for (const a of cilleLog) {
+    const d = answerDelta(a, { learnMs: a.ms + 2500, newSession: false })
+    cilleDaily.set(a.day, cilleDaily.has(a.day) ? mergeDaily(cilleDaily.get(a.day)!, d) : { ...d, rounds: 1 })
+  }
+  const cilleDoc: ProfileDoc = {
+    ...cille,
+    daysPlayed: 31,
+    lastLearningDay: today,
+    keys: mulKeys,
+    skillStats: { mul2510: { prodCorrect: 70, prodDays: days(4) } },
+    skillMedals: { mul2510: 'gold' },
+    unlocked: { worlds: ['eng', 'bakke', 'skov', 'fjeld'], regions: [] },
+    nodes: { 'w3-tabellen-l1': { plays: 3, stars: 3, skipped: false, lastAt: now - DAY_MS }, 'w3-tabellen-l2': { plays: 2, stars: 2, skipped: false, lastAt: now - 3_600_000 } },
+    misconceptions: { tableNeighbour: flag('flagged', now, today) },
+  }
+
   const db = getDb()
   await db.transaction('rw', [db.profiles, db.answers, db.daily], async () => {
-    for (const id of [ada.id, bo.id]) {
+    for (const id of [ada.id, bo.id, cille.id]) {
       await db.answers.where('[profileId+ts]').between([id, -Infinity], [id, Infinity]).delete()
       await db.daily.where('profileId').equals(id).delete()
     }
-    await db.profiles.bulkPut([adaDoc, boDoc])
-    await db.answers.bulkAdd([...log, ...boLog])
-    await db.daily.bulkPut([...daily.values(), ...boDaily.values()])
+    await db.profiles.bulkPut([adaDoc, boDoc, cilleDoc])
+    await db.answers.bulkAdd([...log, ...boLog, ...cilleLog])
+    await db.daily.bulkPut([...daily.values(), ...boDaily.values(), ...cilleDaily.values()])
   })
-  return { ada: ada.id, bo: bo.id }
+  return { ada: ada.id, bo: bo.id, cille: cille.id }
 }

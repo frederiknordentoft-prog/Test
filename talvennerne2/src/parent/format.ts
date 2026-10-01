@@ -106,6 +106,15 @@ export function trendText(up: number, down: number): string {
   return parts.length > 0 ? parts.join(' · ') : 'Ingen ændringer de sidste 14 dage'
 }
 
+/** A full stop, unless the text already ends a sentence ("29. sep." needs none). */
+export const sentence = (text: string): string => (/[.!?]$/.test(text.trim()) ? text.trim() : `${text.trim()}.`)
+
+/** The last sentence of a text (the calm remark that ends every slip's parent text). */
+export function lastSentence(text: string): string {
+  const parts = text.trim().split(/(?<=[.!?])\s+(?=[A-ZÆØÅ])/)
+  return parts[parts.length - 1]
+}
+
 /** The child's name, or a neutral word when it is empty. */
 export const nameOf = (name: string): string => name.trim() || 'Barnet'
 

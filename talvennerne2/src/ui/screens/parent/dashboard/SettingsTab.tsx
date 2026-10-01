@@ -19,11 +19,11 @@ export interface SettingsTabProps {
   profile: ProfileDoc
   /** After an import: read the data again. */
   onImported: () => void
-  /** After the profile was deleted. */
-  onDeleted: () => void
+  /** Delete the profile (the screen leaves afterwards). */
+  onDelete: (id: string) => Promise<void>
 }
 
-export function SettingsTab({ profile, onImported, onDeleted }: SettingsTabProps) {
+export function SettingsTab({ profile, onImported, onDelete }: SettingsTabProps) {
   const device = useSession((s) => s.device)
   const count = useSession((s) => s.profiles.length)
   const name = nameOf(profile.name)
@@ -32,7 +32,8 @@ export function SettingsTab({ profile, onImported, onDeleted }: SettingsTabProps
   const toggleDomain = (id: DomainId, on: boolean) =>
     set({ domainsOff: on ? st.domainsOff.filter((d) => d !== id) : [...new Set([...st.domainsOff, id])] })
 
-  // The copy is built before the tap: Safari only opens the share sheet straight from a gesture.
+  // The copy is built before the tap (and again after a change): Safari only opens the share sheet
+  // straight from a gesture, so nothing may be awaited between the tap and navigator.share().
   const [built, setBuilt] = useState<{ id: string; file: ExportFile } | null>(null)
   const [version, setVersion] = useState(0)
   const [exportMsg, setExportMsg] = useState<string | null>(null)
@@ -44,7 +45,7 @@ export function SettingsTab({ profile, onImported, onDeleted }: SettingsTabProps
     return () => {
       live = false
     }
-  }, [profile.id, version])
+  }, [profile, version])
   const file = built?.id === profile.id ? built.file : null
   const save = () => {
     if (!file) return
@@ -85,13 +86,13 @@ export function SettingsTab({ profile, onImported, onDeleted }: SettingsTabProps
   }
 
   const [confirm, setConfirm] = useState(false)
+  const [deleteMsg, setDeleteMsg] = useState<string | null>(null)
   const doDelete = async () => {
     setBusy(true)
     try {
-      await useSession.getState().deleteProfile(profile.id)
-      setConfirm(false)
-      onDeleted()
-    } finally {
+      await onDelete(profile.id)
+    } catch {
+      setDeleteMsg('Profilen kunne ikke slettes. Prøv igen.')
       setBusy(false)
     }
   }
@@ -176,6 +177,7 @@ export function SettingsTab({ profile, onImported, onDeleted }: SettingsTabProps
             <DashButton tone="primary" onClick={() => setConfirm(false)}>Behold {name}</DashButton>
             <DashButton disabled={busy} onClick={() => void doDelete()}>Slet</DashButton>
           </div>
+          {deleteMsg && <p className="tv-dmsg" role="alert">{deleteMsg}</p>}
         </div>
       </Sheet>
     </>

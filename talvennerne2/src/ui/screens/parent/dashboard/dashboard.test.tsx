@@ -57,7 +57,7 @@ describe('dashboard views', () => {
   })
 
   it('render the settings with export, import, delete and the voice credit', () => {
-    const html = renderToStaticMarkup(<SettingsTab profile={profile()} onImported={() => {}} onDeleted={() => {}} />)
+    const html = renderToStaticMarkup(<SettingsTab profile={profile()} onImported={() => {}} onDelete={async () => {}} />)
     expect(html).toContain('Følg lydløs-knappen')
     expect(html).toContain('Gør kopien klar')
     expect(html).toContain('Hent fra en fil')

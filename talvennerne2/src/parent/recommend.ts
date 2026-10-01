@@ -11,7 +11,7 @@ import type { AnswerLogEntry, DailyAggregate, Medal, ProfileDoc, SkillId } from 
 import { isRegionOpen, nodeDone, playedNodes, trialPassed } from '../meta/unlock'
 import { addDays, inWindow, nameOf, windowEnding } from './format'
 import { DASH_RANK, WINDOW_DAYS, dashStatus, keysOfSkill, snapshotsBefore, trendOf } from './metrics'
-import { personal } from './signs'
+import { afterAt, personal } from './signs'
 import { productionTip, tableTip, tipFor } from './tips'
 import type { DashStatus, Recommendation, RuleId, SkillKeyIndex, SkillRow, SkillState, Signs } from './types'
 
@@ -48,7 +48,7 @@ const quote = (skill: SkillId) => `»${SKILL_BY_ID[skill].label}«`
 function r1(x: RecommendInput, name: string): Recommendation[] {
   return x.signs.concepts.map((s) => ({
     rule: 'R1',
-    title: `Vi har set tegn på, at ${name} ${s.title}`,
+    title: `Vi har set tegn på, at ${name} ${afterAt(s.title)}`,
     text: `${personal(s.parent, name)} Prøv derhjemme: ${s.homeTip}`,
     misconception: s.id,
     ...(s.skills[0] ? { skill: s.skills[0] } : {}),

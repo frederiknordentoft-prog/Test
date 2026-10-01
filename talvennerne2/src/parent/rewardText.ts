@@ -9,6 +9,13 @@ import { MEDAL_LABEL, plural } from './format'
 import { nodeName } from './metrics'
 import type { RewardDay, RewardRow } from './types'
 
+/** What a medal says the child did (the status it marks, SPEC §5.2). */
+const MEDAL_REASON: Readonly<Record<string, string>> = {
+  bronze: 'Nåede »Med støtte«',
+  silver: 'Over halvdelen sidder fast',
+  gold: 'Nåede »Kan selv«',
+}
+
 const MAGIC: Readonly<Record<string, string>> = { gold: 'gylden', rainbow: 'regnbuefarvet', starwhite: 'stjernehvid' }
 
 function animalText(what: string): string {
@@ -63,7 +70,8 @@ export function rewardWhy(why: string): string {
     case 'level': return `Nyt niveau (${tail})`
     case 'medal': {
       const [medal, x] = rest
-      return /^\d+$/.test(x) ? `${x} ${medalWord(medal)}r i alt` : `${capital(medalWord(medal))} i ${skillLabel(x)}`
+      if (/^\d+$/.test(x)) return `${x} ${medalWord(medal)}r i alt`
+      return MEDAL_REASON[medal] ?? 'Optjent ved at regne'
     }
     case 'shop': return 'Købt for perler'
     case 'starter': return 'Den første ven'

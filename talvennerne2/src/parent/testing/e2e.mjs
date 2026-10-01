@@ -10,6 +10,16 @@ const OUT = fileURLToPath(new URL('../../../artifacts/dash/', import.meta.url))
 mkdirSync(OUT, { recursive: true })
 
 const fails = []
+/** Poll a page function (it may be async) until it returns something truthy. */
+async function until(page, fn, arg, timeout = 10_000) {
+  const end = Date.now() + timeout
+  for (;;) {
+    const v = await page.evaluate(fn, arg)
+    if (v) return v
+    if (Date.now() > end) throw new Error(`timeout: ${fn.toString().slice(0, 80)}`)
+    await page.waitForTimeout(100)
+  }
+}
 const check = (ok, what) => {
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`)
   if (!ok) fails.push(what)
@@ -49,7 +59,7 @@ try {
   // the curriculum row opens to name its skills
   await page.getByRole('button', { name: 'Pensumkort', exact: true }).click()
   await page.locator('.tv-dmap__row').first().click()
-  check(await page.getByText('Tælle til 10').first().isVisible(), 'pensumkortets række viser færdighedernes navne')
+  check(await page.locator('.tv-dmap__list').getByText('Tælle til 10', { exact: true }).isVisible(), 'pensumkortets række viser færdighedernes navne')
 
   // looking at a sibling and going back restores the child who was playing
   await page.getByRole('radio', { name: /Bo/ }).click()
@@ -57,7 +67,7 @@ try {
   check((await active()) === 'Bo', 'profilskift viser Bo')
   await page.getByRole('button', { name: 'Overblik', exact: true }).click()
   await page.waitForSelector('.tv-dstats')
-  check(await page.getByText('Vi ved endnu for lidt').isVisible(), 'Bo: niveau "Vi ved endnu for lidt"')
+  check(await page.locator('.tv-dash').getByText('Vi ved endnu for lidt', { exact: true }).isVisible(), 'Bo: niveau "Vi ved endnu for lidt"')
   await page.getByRole('radio', { name: /Ada/ }).click()
   await page.waitForFunction(() => document.querySelector('.tv-dash__title')?.textContent?.startsWith('Adas'))
 
@@ -76,10 +86,11 @@ try {
   const json = JSON.parse(readFileSync(file, 'utf8'))
   check(json.format === 'talvennerne2-export' && json.profiles[0].doc.name === 'Ada', `eksporten er en talvennerne2-fil (${download.suggestedFilename()})`)
   await page.locator('input[type=file]').setInputFiles(file)
-  await page.getByText('Filen indeholder Ada').waitFor({ timeout: 10_000 })
+  await page.locator('.tv-dash').getByText('Filen indeholder Ada').waitFor({ timeout: 10_000 })
   await page.getByRole('button', { name: 'Tilføj som ny spiller' }).click()
-  await page.getByText('er tilføjet som ny spiller').waitFor({ timeout: 10_000 })
-  check((await page.getByRole('radio').count()) === 3, 'importen tilføjer en tredje spiller')
+  await page.locator('.tv-dash').getByText('er tilføjet som ny spiller').waitFor({ timeout: 10_000 })
+  const kids = await page.getByRole('radio').count()
+  check(kids === 4, `importen tilføjer en spiller (${kids} i alt)`)
 
   // the print report: alone, grouped by Fælles Mål, without perler or animals
   await page.emulateMedia({ media: 'print' })
@@ -91,14 +102,20 @@ try {
   await page.emulateMedia({ media: 'screen' })
 
   // delete the imported child: confirmation first, then the picker
-  await page.getByRole('radio').nth(2).click()
+  const imported = await page.evaluate(async (ada) => {
+    const { useSession } = await import('/src/state/useSession.ts')
+    const p = useSession.getState().profiles.find((x) => x.name === 'Ada' && x.id !== ada)
+    await useSession.getState().selectProfile(p.id)
+    return p.id
+  }, ids.ada)
   await page.waitForTimeout(300)
   await page.getByRole('button', { name: 'Indstillinger', exact: true }).click()
   await page.getByRole('button', { name: /^Slet .* profil$/ }).click()
   await page.getByRole('button', { name: 'Slet', exact: true }).click()
-  await page.waitForFunction(async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'profiles', null, { timeout: 10_000 })
-  const left = await page.evaluate(async () => (await import('/src/state/useSession.ts')).useSession.getState().profiles.map((p) => p.name))
-  check(left.length === 2 && left.includes('Ada') && left.includes('Bo'), `slet fjerner kun den valgte (${left.join(', ')})`)
+  await until(page, async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'profiles')
+  const left = await page.evaluate(async () => (await import('/src/state/useSession.ts')).useSession.getState().profiles.map((p) => p.id))
+  check(left.length === 3 && !left.includes(imported) && [ids.ada, ids.bo, ids.cille].every((id) => left.includes(id)), 'slet fjerner kun den valgte profil')
+  check((await active()) === null, 'efter sletning er ingen spiller indlæst (vælgeren)')
 
   // back from the dashboard returns to the map with Ada
   await page.evaluate(async (ada) => {
@@ -112,7 +129,7 @@ try {
   await page.getByRole('radio', { name: /Bo/ }).click()
   await page.waitForFunction(() => document.querySelector('.tv-dash__title')?.textContent?.startsWith('Bos'))
   await page.getByRole('button', { name: 'Tilbage' }).click()
-  await page.waitForFunction(async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'map', null, { timeout: 10_000 })
+  await until(page, async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'map')
   check((await active()) === 'Ada', 'tilbage-knappen giver kortet med Ada igen')
 
   check(errors.length === 0, `ingen sidefejl${errors.length ? `: ${errors.join(' | ')}` : ''}`)

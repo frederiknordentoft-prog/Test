@@ -75,6 +75,14 @@ export function signs(input: { profile: Pick<ProfileDoc, 'misconceptions'>; answ
   }
 }
 
+/**
+ * A title after "at {navn}": Danish puts a sentence adverb before the verb in a subordinate clause
+ * ("Ada ser kun på …" but "tegn på, at Ada kun ser på …").
+ */
+export function afterAt(title: string): string {
+  return title.replace(/^(\S+) (kun|ikke|altid|aldrig|tit|ofte|stadig) /, '$2 $1 ')
+}
+
 /** "Barnet …" in the parent texts, with the child's name instead. */
 export function personal(text: string, name: string): string {
   const n = name.trim()

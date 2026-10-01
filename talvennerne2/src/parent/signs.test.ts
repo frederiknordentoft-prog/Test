@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { MISCONCEPTION_TEXTS } from '../content/misconceptionTexts'
 import { ago, answers, dailyFrom, misconception, NOW, profile, TODAY } from './fixtures'
-import { evidenceOf, personal, signs } from './signs'
+import { lastSentence } from './format'
+import { afterAt, evidenceOf, personal, signs } from './signs'
 
 describe('misconceptions for parents', () => {
   it('shows flagged concepts as signs (at most two) and slips apart', () => {
@@ -46,6 +48,21 @@ describe('misconceptions for parents', () => {
     expect(signs({ profile: p, answers: heard, daily: [], today: TODAY }).concepts.map((x) => x.id)).toEqual(['digitSwap'])
     const typed = answers('add100Carry', ago(1), 4, { correct: 0, errorTag: 'digitSwap' })
     expect(signs({ profile: p, answers: typed, daily: [], today: TODAY }).slips.map((x) => x.id)).toEqual(['digitSwap'])
+  })
+
+  it('ends every slip with a calm remark of its own (shown under "Typiske fejl lige nu")', () => {
+    for (const t of Object.values(MISCONCEPTION_TEXTS).filter((x) => x.nature !== 'concept')) {
+      const last = lastSentence(t.parent)
+      expect(last.length).toBeGreaterThan(15)
+      expect(last).not.toBe(t.parent)
+    }
+  })
+
+  it('moves "kun" before the verb after "at …" (Danish word order in a subordinate clause)', () => {
+    expect(afterAt('ser kun på den ene ende, når ting sammenlignes')).toBe('kun ser på den ene ende, når ting sammenlignes')
+    expect(afterAt('sammenligner kun det første ciffer')).toBe('kun sammenligner det første ciffer')
+    expect(afterAt('tror, at store ting altid er tungest')).toBe('tror, at store ting altid er tungest')
+    expect(afterAt('glemmer tieren, der skal med')).toBe('glemmer tieren, der skal med')
   })
 
   it('puts the child\'s name into the parent text where a sentence starts with "Barnet"', () => {

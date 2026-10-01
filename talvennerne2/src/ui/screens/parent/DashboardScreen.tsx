@@ -78,10 +78,12 @@ export default function DashboardScreen({ route }: ScreenProps<RouteOf<'parent'>
     return loaded.profile === profile ? loaded.dashboard : buildDashboard(profile, loaded.source)
   }, [profile, loaded])
 
-  const choose = (next: ParentTab) => {
+  const choose = (next: ParentTab, el?: HTMLElement) => {
     setTab(next)
     useNav.getState().replace({ id: 'parent', tab: next }, 'none')
     body.current?.scrollTo({ top: 0 })
+    // a tab half under the strip's fade comes fully into view
+    el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
   }
 
   // Back to where the dashboard was opened from, with the child who was playing then.
@@ -96,8 +98,16 @@ export default function DashboardScreen({ route }: ScreenProps<RouteOf<'parent'>
     else useNav.getState().back()
   }
 
-  const onDeleted = () => {
+  // Deleting the child on screen: nothing may load a child while it goes, then the picker (or,
+  // with no child left, the grown-ups' intro).
+  const deleteChild = async (childId: string) => {
     leaving.current = true
+    try {
+      await useSession.getState().deleteProfile(childId)
+    } catch (err) {
+      leaving.current = false
+      throw err
+    }
     origin.current = null
     const left = useSession.getState().profiles.length
     useNav.getState().root(left > 0 ? { id: 'profiles' } : { id: 'parentIntro' }, 'back')
@@ -125,7 +135,7 @@ export default function DashboardScreen({ route }: ScreenProps<RouteOf<'parent'>
           )}
           <nav className="tv-dash__tabs" aria-label="Dashboardets dele">
             {PARENT_TABS.map((t) => (
-              <button key={t} type="button" className="tv-dtab" aria-current={t === tab ? 'page' : undefined} onClick={() => choose(t)}>
+              <button key={t} type="button" className="tv-dtab" aria-current={t === tab ? 'page' : undefined} onClick={(e) => choose(t, e.currentTarget)}>
                 {TAB_LABEL[t]}
               </button>
             ))}
@@ -137,7 +147,7 @@ export default function DashboardScreen({ route }: ScreenProps<RouteOf<'parent'>
             {error && <p className="tv-dnote" role="alert">Dataene kunne ikke læses: {error}</p>}
             {profile && !dash && !error && <p className="tv-dnote">Henter …</p>}
             {profile && tab === 'settings' && (
-              <SettingsTab profile={profile} onImported={() => setReload((n) => n + 1)} onDeleted={onDeleted} />
+              <SettingsTab profile={profile} onImported={() => setReload((n) => n + 1)} onDelete={deleteChild} />
             )}
             {dash && tab === 'overview' && <OverviewTab d={dash} onPrint={() => window.print()} />}
             {dash && tab === 'curriculum' && <CurriculumTab d={dash} />}

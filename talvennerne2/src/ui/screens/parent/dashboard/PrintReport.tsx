@@ -5,6 +5,7 @@ import { DOMAINS } from '../../../../content/skills'
 import {
   countsText, DOT_LABEL, fmtDate, fmtMinutes, fmtPercent, fmtRelativeDay, nameOf, plural, trendText,
 } from '../../../../parent/format'
+import { afterAt } from '../../../../parent/signs'
 import type { Dashboard } from '../../../../parent/types'
 import { StatusDot } from './charts'
 import { KAN_SELV_NOTE } from './parts'
@@ -59,7 +60,7 @@ function Report({ d }: { d: Dashboard }) {
                       <td>{r.label}</td>
                       <td>{r.grade}. kl.</td>
                       <td>{DOT_LABEL[r.dot]}</td>
-                      <td>{r.keys > 0 ? `${fmtPercent(r.share4)} sikre` : ''}</td>
+                      <td>{r.keys > 0 && r.dot !== 'notStarted' && r.dot !== 'skipped' ? `${fmtPercent(r.share4)} sikre` : ''}</td>
                       <td>{r.lastPractised ? `øvet ${fmtRelativeDay(r.lastPractised, d.today)}` : ''}</td>
                     </tr>
                   ))}
@@ -75,7 +76,7 @@ function Report({ d }: { d: Dashboard }) {
           <h2>Misforståelser</h2>
           {d.signs.concepts.map((s) => (
             <div key={s.id} className="tv-print__rec">
-              <h3>Vi har set tegn på, at {name} {s.title}</h3>
+              <h3>Vi har set tegn på, at {name} {afterAt(s.title)}</h3>
               <p>Fx {s.example}. Prøv derhjemme: {s.homeTip}</p>
             </div>
           ))}

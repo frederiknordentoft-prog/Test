@@ -1,5 +1,7 @@
 // Hand-built SVG graphics for the parent dashboard (SPEC §9.1: no chart library, ≤ 8 KB). Status is
 // always shape + colour + a label nearby, never colour alone. Colours come from tokens via classes.
+import { useLayoutEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import type { Box } from '../../../../engine/types'
 import type { DayBar, DotKind, TableGrid } from '../../../../parent/types'
 import { DOT_LABEL, fmtDate, fmtLongDate, fmtMinutes, fmtWeekday } from '../../../../parent/format'
@@ -31,20 +33,35 @@ function barPath(x: number, y: number, w: number, h: number): string {
 
 const NICE = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240]
 
+/** The element's width in CSS pixels, so a chart draws in real pixels with real font sizes. */
+function useWidth<T extends Element>(fallback: number): [RefObject<T | null>, number] {
+  const ref = useRef<T>(null)
+  const [width, setWidth] = useState(fallback)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(([e]) => e && e.contentRect.width > 0 && setWidth(Math.round(e.contentRect.width)))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, width]
+}
+
 /** Learning and play minutes per day as two separate bars (no judgement, no target line). */
 export function DayBars({ days, today }: { days: readonly DayBar[]; today: string }) {
-  const slot = 26
-  const left = 34
-  const W = left + days.length * slot
-  const H = 140
+  const [ref, W] = useWidth<HTMLDivElement>(340)
+  const left = 30
+  const slot = (W - left) / days.length
+  const H = 150
   const base = H - 24
-  const top = 18
+  const top = 22
   const maxMin = Math.max(...days.map((d) => Math.max(d.learnMs, d.playMs) / 60_000), 1)
   const scale = NICE.find((n) => n >= maxMin) ?? Math.ceil(maxMin / 60) * 60
   const y = (min: number) => base - ((base - top) * min) / scale
-  const bw = 8
+  const bw = Math.max(4, Math.min(12, slot * 0.34))
   return (
-    <svg className="tv-bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Læringstid og legetid pr. dag, de sidste 14 dage">
+    <div ref={ref} className="tv-bars-box">
+    <svg className="tv-bars" width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Læringstid og legetid pr. dag, de sidste 14 dage">
       {[0, scale / 2, scale].map((m) => (
         <g key={m}>
           <line className="tv-bars__grid" x1={left} x2={W} y1={y(m)} y2={y(m)} />
@@ -69,6 +86,7 @@ export function DayBars({ days, today }: { days: readonly DayBar[]; today: strin
         )
       })}
     </svg>
+    </div>
   )
 }
 

@@ -1,7 +1,7 @@
 // Misforståelser (SPEC §4.3, §9.1 point 7): "Vi har set tegn på …" (concepts, at most two, with a
 // home tip), "Typiske fejl lige nu" (slips, in a neutral tone) and "Ser ud til at være på plads".
-import { fmtTsDate, nameOf } from '../../../../parent/format'
-import { personal } from '../../../../parent/signs'
+import { fmtTsDate, lastSentence, nameOf, sentence } from '../../../../parent/format'
+import { afterAt, personal } from '../../../../parent/signs'
 import type { Dashboard } from '../../../../parent/types'
 import { Note, Panel, Section } from './parts'
 
@@ -15,7 +15,7 @@ export function MisconceptionsTab({ d }: { d: Dashboard }) {
         {concepts.length > 0 ? (
           concepts.map((s) => (
             <Panel key={s.id} className="tv-dsign">
-              <h3 className="tv-dh3">… at {name} {s.title}</h3>
+              <h3 className="tv-dh3">… at {name} {afterAt(s.title)}</h3>
               <p className="tv-dsign__example">Fx: {s.example}</p>
               <p>{personal(s.parent, name)}</p>
               {s.where.length > 0 && <p className="tv-dmuted">Set i: {s.where.join(', ')}</p>}
@@ -36,8 +36,8 @@ export function MisconceptionsTab({ d }: { d: Dashboard }) {
             <ul className="tv-dslips">
               {slips.map((s) => (
                 <li key={s.id}>
-                  <b>{s.where.length > 0 ? `${s.where[0]}: ` : ''}</b>
-                  {name} {s.title} (fx {s.example}). {personal(s.parent, name)}
+                  {s.where.length > 0 && <b>{s.where[0]}: </b>}
+                  {name} {s.title} (fx {s.example}). {lastSentence(s.parent)}
                 </li>
               ))}
             </ul>
@@ -53,7 +53,7 @@ export function MisconceptionsTab({ d }: { d: Dashboard }) {
             <ul className="tv-dslips">
               {resolved.map((s) => (
                 <li key={s.id}>
-                  Tidligere tegn på, at {name} {s.title}. {s.resolvedAt ? `På plads siden ${fmtTsDate(s.resolvedAt)}.` : ''}
+                  Tidligere tegn på, at {name} {afterAt(s.title)}. {s.resolvedAt ? sentence(`På plads siden ${fmtTsDate(s.resolvedAt)}`) : ''}
                 </li>
               ))}
             </ul>

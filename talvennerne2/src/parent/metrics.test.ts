@@ -4,7 +4,7 @@ import { skillRegistry } from '../engine/registry'
 import type { SkillId } from '../engine/types'
 import { buildDashboard } from './dashboard'
 import { ago, answer, answers, dailyFrom, key, keysAt, NOW, profile, snap, source, tableIndex, TODAY, tsOf } from './fixtures'
-import { countsText, fmtMinutes, fmtPercent, fmtRelativeDay, fmtSeconds, genitive, trendText } from './format'
+import { countsText, fmtMinutes, fmtPercent, fmtRelativeDay, fmtSeconds, genitive, lastSentence, sentence, trendText } from './format'
 import { keyIndexOf } from './load'
 import {
   currentPlace, domainCards, domainScope, learnByDomain, medianPair, nodeName, overview, recentRounds, skillState,
@@ -237,6 +237,10 @@ describe('skill rows', () => {
     expect(fmtRelativeDay('2026-09-01', TODAY)).toBe('1. sep.')
     expect(genitive('Ada')).toBe('Adas')
     expect(genitive('Mads')).toBe("Mads'")
+    expect(sentence('På plads siden 29. sep.')).toBe('På plads siden 29. sep.')
+    expect(sentence('Bestået')).toBe('Bestået.')
+    expect(lastSentence('Svaret ligger lige ved siden af, fx fra 6- eller 8-tabellen. Det er helt normalt, mens tabellen sætter sig.'))
+      .toBe('Det er helt normalt, mens tabellen sætter sig.')
   })
 
   it('tallies first tries per skill from the daily aggregates', () => {
@@ -302,6 +306,7 @@ describe('trials, rounds and the reward log', () => {
     expect(rewardWhy('egg:3')).toBe('Klækket af æg nr. 3')
     expect(rewardWhy('shop')).toBe('Købt for perler')
     expect(rewardWhy('medal:silver:5')).toBe('5 sølvmedaljer i alt')
+    expect(rewardWhy('medal:gold:addTo10')).toBe('Nåede »Kan selv«')
   })
 
   it('sums the perler per day and lists the rest newest first', () => {
