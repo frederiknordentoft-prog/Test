@@ -224,13 +224,16 @@ function RoundView() {
     const doc0 = await testProfile('Tur', 0)
     useProfile.getState().update(seedKeys)
     const doc = useProfile.getState().profile ?? doc0
+    // the screen and the exit change together: showing the old screen first would start its plan again
     if (resume && doc.round) {
       setState((s) => ({ plan: null, snapshot: doc.round, key: (s?.key ?? 0) + 1 }))
+      setExit(null)
       return
     }
     const ctx = { skills: FIXTURES, day: learningDay(Date.now()), sessionId: 'dev', audioVerified: true }
     const planned = planRound(FIXTURE_NODE, doc, ctx)
     setState((s) => ({ plan: planned, snapshot: null, key: (s?.key ?? 0) + 1 }))
+    setExit(null)
   }, [])
   useEffect(() => {
     void start(params.get('resume') !== '0')
@@ -238,13 +241,25 @@ function RoundView() {
   const hooks = useMemo(() => {
     if (!state) return null
     const plan = state.plan
-    return roundHooks({
+    const base = roundHooks({
       golden: () => {
         const doc = useProfile.getState().profile
         const p = { roundId: plan?.roundId ?? state.snapshot?.roundId ?? 'r', nodeId: 'w0-plus10-l1' as const, tasks: plan?.tasks ?? [] }
         return doc ? goldenFor(p, doc, { skills: FIXTURES, audioVerified: true }) : null
       },
     })
+    // The play script (play.mjs) reads what the profile was told through window.__harness.
+    return {
+      ...base,
+      answer(rec: AnswerRecord) {
+        H.answers.push({ given: rec.given, correct: rec.correct, mode: rec.mode })
+        base.answer(rec)
+      },
+      finish(r: RoundResult) {
+        H.log.push(`finish:${r.cleared}/${r.total}`)
+        base.finish(r)
+      },
+    } satisfies RoundHooks
   }, [state])
   const onExit = useCallback((outcome: 'paused' | 'finished') => {
     H.exits.push(outcome)
@@ -257,8 +272,8 @@ function RoundView() {
         {exit ? (
           <DevDone
             outcome={exit}
-            onAgain={() => { setExit(null); void start(false) }}
-            onResume={exit === 'paused' ? () => { setExit(null); void start(true) } : undefined}
+            onAgain={() => void start(false)}
+            onResume={exit === 'paused' ? () => void start(true) : undefined}
           />
         ) : (
           <RoundScreen key={state.key} plan={state.plan} snapshot={state.snapshot} hooks={hooks} skills={FIXTURES} onExit={onExit} />
@@ -298,7 +313,8 @@ function DevBar({ current }: { current: string }) {
     location.search = p.toString()
   }
   return (
-    <div className="dv-bar">
+    <details className="dv-bar">
+      <summary>dev</summary>
       <select value={current} onChange={(e) => (e.target.value === 'round' ? go({ view: 'round' }) : go({ view: 'kind', ex: e.target.value }))}>
         {EXAMPLE_KINDS.map((k) => (
           <optgroup key={k} label={k}>
@@ -320,7 +336,7 @@ function DevBar({ current }: { current: string }) {
       <button type="button" onClick={() => go({ view: 'scenes' })}>
         Scener
       </button>
-    </div>
+    </details>
   )
 }
 

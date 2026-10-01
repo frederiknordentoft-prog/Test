@@ -13,6 +13,27 @@
   background: rgba(43, 33, 68, 0.82);
   font-size: 13px;
 }
+.dv-bar:not([open]) {
+  padding: 0;
+  background: none;
+}
+.dv-bar summary {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(43, 33, 68, 0.82);
+  color: var(--color-card);
+  font-weight: 800;
+  line-height: 30px;
+  list-style: none;
+  cursor: pointer;
+}
+.dv-bar summary::-webkit-details-marker {
+  display: none;
+}
+.dv-bar[open] {
+  display: flex;
+}
 .dv-bar select,
 .dv-bar button {
   height: 30px;

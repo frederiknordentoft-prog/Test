@@ -134,4 +134,39 @@ export async function until(beat: string, timeoutMs = 8000): Promise<void> {
   throw new Error(`drive: venter forgæves på ${beat} (nu ${$('.tv-round')?.getAttribute('data-beat')})`)
 }
 
-export const drive = { answer, confirmRight, until, currentTask, $$ }
+/** The round's bookkeeping, for play.mjs to check progress across a pause. */
+export function roundState() {
+  const s = useRound.getState()
+  return {
+    status: s.status, cleared: s.cleared, total: s.total, streak: s.streak, mistakes: s.mistakes,
+    current: s.current?.id ?? null, golden: s.goldenTask?.id ?? null, goldenUsed: s.goldenUsed, goldenCaught: s.goldenCaught,
+  }
+}
+
+/** A wrong answer the task's own view can give (another card, one more, the far end of the line, …). */
+export function wrongFor(task: Task): AnswerValue | null {
+  const a = task.answer
+  switch (task.kind) {
+    case 'choice':
+    case 'trueFalse':
+      return task.options?.find((o) => String(o) !== String(a)) ?? null
+    case 'keypad':
+      return typeof a === 'number' ? a + task.entryScale : null
+    case 'countTap':
+    case 'buildBase':
+      return typeof a === 'number' ? a + 1 : null
+    case 'numberline': {
+      const [min, max] = lineRange(task)
+      return Number(a) - min > (max - min) / 2 ? min : max
+    }
+    case 'multiSelect': {
+      const right = new Set(splitTokens(a).map(String))
+      const other = task.options?.find((o) => !right.has(String(o)))
+      return other === undefined ? null : other
+    }
+    default:
+      return null
+  }
+}
+
+export const drive = { answer, confirmRight, until, currentTask, roundState, wrongFor, $$ }
