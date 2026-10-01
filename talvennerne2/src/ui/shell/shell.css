@@ -1,0 +1,283 @@
+/* App shell, top bar and dock (src/ui/shell). Colours from tokens; transform/opacity motion only. */
+
+@layer components {
+  .tv-shell {
+    --dock-h: 84px;
+    --dock-w: 0px;
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+  .tv-shell__bg {
+    position: absolute;
+    inset: 0;
+  }
+  .tv-shell__paper {
+    position: absolute;
+    inset: 0;
+    background: var(--color-paper);
+  }
+
+  /* Sky backdrop */
+  .tv-sky {
+    position: absolute;
+    inset: 0;
+    background: var(--sky);
+  }
+  .tv-sky__clouds {
+    position: absolute;
+    left: -4%;
+    top: calc(var(--safe-t) + 4px);
+    width: 108%;
+    height: 46%;
+    animation: tv-drift 26s ease-in-out infinite;
+  }
+  .tv-sky__cloud {
+    fill: rgba(255, 255, 255, 0.85);
+  }
+  .tv-sky__cloud--far {
+    fill: rgba(255, 255, 255, 0.6);
+  }
+  .tv-sky__hills {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 22%;
+  }
+  .tv-sky__hill {
+    fill: var(--color-d-shapes-soft);
+  }
+  .tv-sky__hill--far {
+    fill: color-mix(in srgb, var(--color-d-shapes-soft) 60%, transparent);
+  }
+
+  /* Screens */
+  .tv-stage {
+    position: absolute;
+    inset: 0;
+  }
+  .tv-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+    overflow: hidden;
+  }
+  .tv-screen[data-leaving] {
+    pointer-events: none;
+  }
+  .tv-shell[data-dock] .tv-screen {
+    padding-bottom: calc(var(--safe-b) + var(--dock-h) + 16px);
+  }
+
+  /* Dock placement: floating bar at the bottom, rail on the left on a sideways phone. */
+  .tv-shell__dock {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--safe-b) + 10px);
+    z-index: 10;
+    transform: translateX(-50%);
+  }
+
+  /* ── Top bar ───────────────────────────────────────────────────── */
+  .tv-topbar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 12px;
+    min-height: 76px;
+    padding: 8px var(--gutter) 6px;
+  }
+  .tv-topbar__side {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 10px;
+    min-width: 60px;
+  }
+  .tv-topbar__side--end {
+    justify-content: flex-end;
+  }
+  .tv-topbar__center {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .tv-topbar__center:empty {
+    display: none;
+  }
+  /* Narrow phones: the centre (stone path, meters) gets its own full-width row under the buttons. */
+  @media (max-width: 520px) and (orientation: portrait) {
+    .tv-topbar {
+      flex-wrap: wrap;
+      justify-content: space-between;
+      row-gap: 4px;
+    }
+    .tv-topbar__center {
+      order: 3;
+      flex: 1 0 100%;
+    }
+  }
+
+  /* ── Dock ──────────────────────────────────────────────────────── */
+  .tv-dock {
+    display: flex;
+    gap: 4px;
+    padding: 7px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95), var(--shadow-float);
+  }
+  .tv-dock__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    width: 64px;
+    min-height: 66px;
+    margin: 0;
+    padding: 4px 0 3px;
+    border: 0;
+    border-radius: 22px;
+    background: none;
+    color: var(--c-deep);
+    font: inherit;
+    cursor: pointer;
+    outline: none;
+  }
+  .tv-dock__item:focus-visible {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 1px;
+  }
+  .tv-dock__tile {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    background: var(--c-soft);
+    color: var(--c-deep);
+    transition: transform var(--dur-release) var(--ease-spring);
+  }
+  .tv-dock__icon {
+    width: 30px;
+    height: 30px;
+  }
+  .tv-dock__item[data-pressed] .tv-dock__tile {
+    transform: scale(0.9);
+    transition-duration: var(--dur-press);
+  }
+  .tv-dock__item.is-active .tv-dock__tile {
+    background: var(--c);
+    color: var(--color-card);
+    box-shadow: 0 4px 0 var(--c-deep);
+    --icon-fill-o: 0.3;
+  }
+  .tv-dock__label {
+    font-size: 12.5px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    color: var(--color-ink-2);
+    white-space: nowrap;
+  }
+  .tv-dock__item.is-active .tv-dock__label {
+    color: var(--c-deep);
+  }
+  .tv-dock__news {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    border: 3px solid var(--color-card);
+    border-radius: 50%;
+    background: var(--color-star);
+  }
+
+  @media (min-width: 700px) and (min-height: 700px) {
+    .tv-shell {
+      --dock-h: 104px;
+    }
+    .tv-dock {
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 34px;
+    }
+    .tv-dock__item {
+      width: 88px;
+      min-height: 84px;
+    }
+    .tv-dock__tile {
+      width: 60px;
+      height: 60px;
+      border-radius: 20px;
+    }
+    .tv-dock__icon {
+      width: 36px;
+      height: 36px;
+    }
+    .tv-dock__label {
+      font-size: 15px;
+    }
+  }
+
+  /* Phone held sideways: the dock becomes a rail on the left, icons only. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .tv-shell {
+      --dock-h: 0px;
+      --dock-w: 84px;
+    }
+    .tv-shell[data-dock] .tv-screen {
+      padding-bottom: var(--safe-b);
+      padding-left: calc(var(--safe-l) + var(--dock-w) + 8px);
+    }
+    .tv-shell__dock {
+      left: calc(var(--safe-l) + 8px);
+      top: 50%;
+      bottom: auto;
+      transform: translateY(-50%);
+    }
+    .tv-dock {
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px;
+      border-radius: 28px;
+    }
+    .tv-dock__item {
+      width: 64px;
+      min-height: 60px;
+      justify-content: center;
+      padding: 0;
+    }
+    .tv-dock__label {
+      display: none;
+    }
+    .tv-topbar {
+      min-height: 70px;
+      padding-top: 6px;
+    }
+  }
+}
+
+:root[data-calm] .tv-sky__clouds,
+:root[data-calm] .tv-mat-motion {
+  animation: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-sky__clouds,
+  .tv-mat-motion {
+    animation: none !important;
+    transition: none !important;
+  }
+}

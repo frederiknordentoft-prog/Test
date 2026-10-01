@@ -1,0 +1,187 @@
+/*
+ * Talvennerne 2 — design tokens (SPEC §11, kunst-lyd-teknik §1.2–1.5).
+ * Light theme only ("papir og himmel"). This file and src/art/materials/palette.ts are the only
+ * places in src/ui and src/art/materials with raw colours. Components use the Tailwind utilities
+ * these generate (bg-primary, text-ink, rounded-card, text-task …) or the CSS variables directly.
+ *
+ * Contrast (WCAG, checked in design.test.ts): ink on paper 14.2:1, ink-2 on paper 6.6:1,
+ * white on primary 5.3:1, every *-deep ≥ 4.5:1 on white, paper and its own *-soft tint.
+ * Red is never an error colour: "not quite" is oops (amber) with ink text.
+ */
+
+/*
+ * Nunito Variable, latin subset only: fonts/ holds an unmodified copy of @fontsource-variable/nunito
+ * 5.3.0 files/nunito-latin-wght-normal.woff2 (39 KB, budget 80 KB; OFL.txt beside it). It covers
+ * Latin-1 plus · − – and all of U+2000–206F, and its digits are tabular at every weight. A copy
+ * rather than a node_modules path, because worktrees symlink node_modules and Vite's dev server
+ * refuses files outside the project. Preload it from the HTML entry:
+ * <link rel="preload" href="/src/ui/design/fonts/nunito-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+ */
+@font-face {
+  font-family: 'Nunito Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src:
+    url('./fonts/nunito-latin-wght-normal.woff2') format('woff2-variations'),
+    url('./fonts/nunito-latin-wght-normal.woff2') format('woff2');
+}
+
+@theme static {
+  /* ── Colour: core ─────────────────────────────────────────────── */
+  --color-ink: #2b2144;
+  --color-ink-2: #5e5478;
+  --color-ink-3: #8a82a0; /* placeholders, disabled glyphs – never body text */
+  --color-paper: #fff8ec;
+  --color-paper-2: #fdf0dc; /* sunken paper, wells */
+  --color-card: #ffffff;
+  --color-line: rgba(43, 33, 68, 0.1);
+  --color-line-2: rgba(43, 33, 68, 0.16);
+  --color-scrim: rgba(43, 33, 68, 0.42);
+
+  --color-primary: #6c4cf5;
+  --color-primary-deep: #4a2fc9;
+  --color-primary-soft: #efebff;
+  --color-primary-tint: #dcd3ff;
+
+  --color-sky-from: #bfe6ff;
+  --color-sky-to: #fff3d6;
+
+  --color-good: #22b573;
+  --color-good-strong: #1c9e62; /* filled buttons with a white glyph (3.4:1) */
+  --color-good-deep: #007a49;
+  --color-good-soft: #daf9e5;
+
+  --color-oops: #ffb020;
+  --color-oops-deep: #906000;
+  --color-oops-lip: #d98f00;
+  --color-oops-soft: #ffedd6;
+
+  --color-star: #ffc83d;
+  --color-star-deep: #866400;
+  --color-star-lip: #e0a21a;
+  --color-star-soft: #feefcf;
+
+  /* ── Colour: game UI (stone path, planks, HUD meters) ───────────── */
+  --color-stone: #ebe5f3;
+  --color-stone-edge: #c9bfdc;
+  --color-stone-done: #ffe29b;
+  --color-stone-done-edge: #e2a525;
+  --color-paw: #c47a00;
+  --color-wood: #efbe80;
+  --color-wood-edge: #a86f35;
+  --color-wood-grain: #cf9459;
+  --color-rope: #b8905f;
+  --color-heart: #f4568a;
+  --color-heart-soft: #ffe3ec;
+  --color-warm: #ff9d45;
+  --color-warm-soft: #ffead6;
+
+  /* ── Colour: domains (must equal DOMAINS[].color in src/content/skills.ts – test) ── */
+  --color-d-number: #2f7df6;
+  --color-d-number-deep: #0362e0;
+  --color-d-number-soft: #e8f1ff;
+  --color-d-place: #8d6e63;
+  --color-d-place-deep: #826257;
+  --color-d-place-soft: #f8eeea;
+  --color-d-addsub: #f2994a;
+  --color-d-addsub-deep: #9f5700;
+  --color-d-addsub-soft: #ffecde;
+  --color-d-muldiv: #9b51e0;
+  --color-d-muldiv-deep: #903fd7;
+  --color-d-muldiv-soft: #f4ecff;
+  --color-d-algebra: #5c6bc0;
+  --color-d-algebra-deep: #5463bb;
+  --color-d-algebra-soft: #ebf0ff;
+  --color-d-fractions: #e056a0;
+  --color-d-fractions-deep: #be2c81;
+  --color-d-fractions-soft: #ffe9f2;
+  --color-d-shapes: #27ae60;
+  --color-d-shapes-deep: #007a3d;
+  --color-d-shapes-soft: #dbf9e2;
+  --color-d-clock: #eb5757;
+  --color-d-clock-deep: #c72a33;
+  --color-d-clock-soft: #ffebe9;
+  --color-d-money: #e0b020;
+  --color-d-money-deep: #846500;
+  --color-d-money-soft: #fcefd0;
+  --color-d-measure: #2db7b0;
+  --color-d-measure-deep: #007772;
+  --color-d-measure-soft: #d9f7f5;
+
+  /* ── Type (phone values; the tablet block below raises them) ─────── */
+  --font-sans: 'Nunito Variable', 'Nunito', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --text-task: 56px;
+  --text-task--line-height: 1;
+  --text-task--font-weight: 900;
+  --text-answer: 44px;
+  --text-answer--line-height: 1;
+  --text-answer--font-weight: 900;
+  --text-title: 28px;
+  --text-title--line-height: 1.15;
+  --text-title--font-weight: 900;
+  --text-button: 22px;
+  --text-button--line-height: 1.1;
+  --text-button--font-weight: 800;
+  --text-body: 17px;
+  --text-body--line-height: 1.45;
+  --text-body--font-weight: 600;
+  --text-dash: 15px;
+  --text-dash--line-height: 1.45;
+  --text-dash--font-weight: 600;
+  --text-label: 13px;
+  --text-label--line-height: 1.15;
+  --text-label--font-weight: 800;
+
+  /* ── Shape and depth ─────────────────────────────────────────────── */
+  --radius-card: 28px;
+  --radius-btn: 24px;
+  --radius-tile: 20px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 2px 0 rgba(43, 33, 68, 0.06), 0 12px 32px rgba(43, 33, 68, 0.1);
+  --shadow-float: 0 3px 0 rgba(43, 33, 68, 0.05), 0 16px 40px rgba(43, 33, 68, 0.16);
+  --shadow-sheet: 0 -8px 40px rgba(43, 33, 68, 0.18);
+
+  /* ── Motion (SPEC §11: 120/220/400 ms, one curve) ───────────────── */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.3, 1.45, 0.5, 1);
+}
+
+:root {
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 400ms;
+  --dur-press: 80ms;
+  --dur-release: 180ms;
+  --lip: 6px;
+  --lip-pressed: 2px;
+  --tap: 60px; /* minimum tap target */
+  --gutter: 16px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --btn-h: 72px;
+  --answer-min: 80px;
+  --sky: linear-gradient(180deg, var(--color-sky-from) 0%, #dff1fb 42%, var(--color-sky-to) 100%);
+}
+
+/* iPad: both sides ≥ 700 px. iPhone landscape stays on the phone scale. */
+@media (min-width: 700px) and (min-height: 700px) {
+  :root {
+    --text-task: 72px;
+    --text-answer: 56px;
+    --text-title: 34px;
+    --text-button: 26px;
+    --text-body: 19px;
+    --text-label: 15px;
+    --btn-h: 88px;
+    --gutter: 28px;
+  }
+}
+
+@custom-variant tablet (@media (min-width: 700px) and (min-height: 700px));
+@custom-variant short (@media (max-height: 500px));
+@custom-variant calm (&:where([data-calm], [data-calm] *));

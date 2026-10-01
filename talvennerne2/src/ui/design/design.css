@@ -1,0 +1,861 @@
+/*
+ * Component styles for src/ui/design (tv-*). Colours come only from tokens.css. Only transform and
+ * opacity are animated or transitioned. Calm mode ([data-calm] on <html>) and reduced motion stop
+ * every loop; presses still give their 4 px feedback.
+ */
+
+@layer components {
+  /* ── Child surfaces ─────────────────────────────────────────────── */
+  .tv-touch {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  .tv-icon {
+    display: block;
+    flex: none;
+  }
+  .tv-icon__fill {
+    fill: var(--icon-fill, currentColor);
+    opacity: var(--icon-fill-o, 0.18);
+  }
+  .tv-icon--solid .tv-icon__fill {
+    opacity: 1;
+  }
+
+  /* ── Type scale as classes (also available as Tailwind text-task, text-title …) ── */
+  .tv-t-task {
+    font-size: var(--text-task);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .tv-t-answer {
+    font-size: var(--text-answer);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .tv-t-title {
+    font-size: var(--text-title);
+    font-weight: 900;
+    line-height: var(--text-title--line-height);
+    letter-spacing: -0.005em;
+  }
+  .tv-t-button {
+    font-size: var(--text-button);
+    font-weight: 800;
+    line-height: var(--text-button--line-height);
+  }
+  .tv-t-body {
+    font-size: var(--text-body);
+    font-weight: 600;
+    line-height: var(--text-body--line-height);
+  }
+  .tv-t-dash {
+    font-size: var(--text-dash);
+    font-weight: 600;
+    line-height: var(--text-dash--line-height);
+  }
+  .tv-t-label {
+    font-size: var(--text-label);
+    font-weight: 800;
+    line-height: var(--text-label--line-height);
+  }
+
+  /* ── Spoken text ────────────────────────────────────────────────── */
+  .tv-spoken--tap {
+    position: relative;
+    isolation: isolate;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  .tv-spoken--tap::after {
+    content: '';
+    position: absolute;
+    inset: -0.08em -0.28em;
+    z-index: -1;
+    border-radius: 0.4em;
+    background: var(--color-primary-soft);
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+  .tv-spoken.is-speaking::after {
+    opacity: 1;
+  }
+
+  /* ── Buttons: a face on a lip. Only the face moves. ─────────────── */
+  .tv-btn {
+    --face: var(--color-primary);
+    --lip-c: var(--color-primary-deep);
+    --fg: var(--color-card);
+    --edge: transparent;
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    min-width: var(--tap);
+    margin: 0;
+    padding: 0 0 var(--lip);
+    border: 0;
+    border-radius: var(--radius-btn);
+    background: none;
+    color: var(--fg);
+    font: inherit;
+    font-size: var(--text-button);
+    font-weight: 800;
+    line-height: var(--text-button--line-height);
+    letter-spacing: 0.005em;
+    cursor: pointer;
+    outline: none;
+    vertical-align: top;
+  }
+  .tv-btn::before {
+    content: '';
+    position: absolute;
+    inset: var(--lip) 0 0;
+    border-radius: inherit;
+    background: var(--lip-c);
+  }
+  .tv-btn__face {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    min-height: var(--btn-h);
+    padding: 0 1.3em;
+    border: 2px solid var(--edge);
+    border-radius: inherit;
+    background: var(--face);
+    box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.2);
+    transition: transform var(--dur-release) var(--ease-spring);
+  }
+  .tv-btn__icon {
+    width: 1.25em;
+    height: 1.25em;
+  }
+  .tv-btn[data-pressed] .tv-btn__face,
+  .tv-btn:active:not(:disabled) .tv-btn__face {
+    transform: translateY(calc(var(--lip) - var(--lip-pressed)));
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-out);
+  }
+  .tv-btn:focus-visible .tv-btn__face {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+  .tv-btn--md {
+    --btn-h: 60px;
+    font-size: calc(var(--text-button) * 0.86);
+  }
+  .tv-btn--block {
+    display: flex;
+    width: 100%;
+  }
+  .tv-btn--secondary {
+    --face: var(--color-card);
+    --lip-c: var(--color-primary-tint);
+    --fg: var(--color-primary-deep);
+    --edge: var(--color-primary-tint);
+  }
+  .tv-btn--good {
+    --face: var(--color-good-strong);
+    --lip-c: var(--color-good-deep);
+  }
+  .tv-btn--star {
+    --face: var(--color-star);
+    --lip-c: var(--color-star-lip);
+    --fg: var(--color-ink);
+  }
+  .tv-btn--quiet {
+    --face: transparent;
+    --lip-c: transparent;
+    --fg: var(--color-ink-2);
+  }
+  .tv-btn--quiet .tv-btn__face {
+    box-shadow: none;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+    text-decoration-color: var(--color-line-2);
+  }
+  .tv-btn:disabled {
+    --face: var(--color-paper-2);
+    --lip-c: var(--color-line);
+    --fg: var(--color-ink-3);
+    --edge: transparent;
+    cursor: default;
+  }
+  .tv-btn:disabled .tv-btn__face {
+    box-shadow: none;
+  }
+
+  /* ── Icon buttons (≥ 60 px) ─────────────────────────────────────── */
+  .tv-ibtn {
+    --ib: 60px;
+    --ib-lip: 5px;
+    --face: var(--color-card);
+    --lip-c: var(--color-line-2);
+    --fg: var(--color-ink);
+    --edge: var(--color-line);
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    width: var(--ib);
+    height: calc(var(--ib) + var(--ib-lip));
+    margin: 0;
+    padding: 0 0 var(--ib-lip);
+    border: 0;
+    border-radius: calc(var(--ib) * 0.36);
+    background: none;
+    color: var(--fg);
+    cursor: pointer;
+    outline: none;
+  }
+  .tv-ibtn::before {
+    content: '';
+    position: absolute;
+    inset: var(--ib-lip) 0 0;
+    border-radius: inherit;
+    background: var(--lip-c);
+  }
+  .tv-ibtn__face {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: var(--ib);
+    border: 2px solid var(--edge);
+    border-radius: inherit;
+    background: var(--face);
+    transition: transform var(--dur-release) var(--ease-spring);
+  }
+  .tv-ibtn__icon {
+    width: 52%;
+    height: 52%;
+  }
+  .tv-ibtn[data-pressed] .tv-ibtn__face,
+  .tv-ibtn:active:not(:disabled) .tv-ibtn__face {
+    transform: translateY(calc(var(--ib-lip) - 1px));
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-out);
+  }
+  .tv-ibtn:focus-visible .tv-ibtn__face {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+  .tv-ibtn--lg {
+    --ib: 72px;
+  }
+  .tv-ibtn--glass {
+    --face: rgba(255, 255, 255, 0.82);
+    --edge: rgba(255, 255, 255, 0.9);
+    --lip-c: rgba(43, 33, 68, 0.12);
+  }
+  .tv-ibtn--primary {
+    --face: var(--color-primary);
+    --lip-c: var(--color-primary-deep);
+    --fg: var(--color-card);
+    --edge: transparent;
+  }
+  .tv-ibtn--good {
+    --face: var(--color-good-strong);
+    --lip-c: var(--color-good-deep);
+    --fg: var(--color-card);
+    --edge: transparent;
+  }
+  .tv-ibtn--quiet {
+    --face: transparent;
+    --lip-c: transparent;
+    --edge: transparent;
+    --fg: var(--color-ink-2);
+  }
+  .tv-ibtn:disabled {
+    --face: var(--color-paper-2);
+    --lip-c: var(--color-line);
+    --fg: var(--color-ink-3);
+    --edge: transparent;
+    cursor: default;
+  }
+
+  /* ── Answer cards (≥ 80 x 80) ───────────────────────────────────── */
+  .tv-answer {
+    --face: var(--color-card);
+    --edge: var(--color-line);
+    --lip-c: var(--color-line-2);
+    --fg: var(--color-ink);
+    --a-lip: 6px;
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-width: var(--answer-min);
+    margin: 0;
+    padding: 0 0 var(--a-lip);
+    border: 0;
+    border-radius: var(--radius-btn);
+    background: none;
+    color: var(--fg);
+    font: inherit;
+    font-size: var(--text-answer);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    outline: none;
+  }
+  .tv-answer::before {
+    content: '';
+    position: absolute;
+    inset: var(--a-lip) 0 0;
+    border-radius: inherit;
+    background: var(--lip-c);
+  }
+  .tv-answer__face {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: calc(var(--answer-min) + 16px);
+    padding: 10px;
+    border: 3px solid var(--edge);
+    border-radius: inherit;
+    background: var(--face);
+    transition: transform var(--dur-release) var(--ease-spring);
+  }
+  .tv-answer--lg .tv-answer__face {
+    min-height: 136px;
+  }
+  .tv-answer__content {
+    display: grid;
+    place-items: center;
+    max-width: 100%;
+  }
+  .tv-answer[data-pressed] .tv-answer__face {
+    transform: translateY(4px);
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-out);
+  }
+  .tv-answer:focus-visible .tv-answer__face {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+  .tv-answer__badge {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 3px solid var(--color-card);
+    border-radius: 50%;
+    background: var(--badge, var(--color-primary));
+    color: var(--color-card);
+  }
+  .tv-answer.is-selected {
+    --face: var(--color-primary-soft);
+    --edge: var(--color-primary);
+    --lip-c: var(--color-primary-tint);
+  }
+  .tv-answer.is-correct {
+    --face: var(--color-good-soft);
+    --edge: var(--color-good);
+    --lip-c: var(--color-good);
+    --fg: var(--color-good-deep);
+    --badge: var(--color-good-strong);
+    cursor: default;
+  }
+  .tv-answer.is-wrong {
+    --face: var(--color-paper-2);
+    --edge: var(--color-oops);
+    --lip-c: transparent;
+    --fg: var(--color-ink-3);
+    cursor: default;
+  }
+  .tv-answer.is-wrong .tv-answer__face {
+    transform: translateY(4px);
+    border-style: dashed;
+  }
+  .tv-answer__strike {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    top: 50%;
+    height: 5px;
+    margin-top: -2.5px;
+    border-radius: 3px;
+    background: var(--color-oops-lip);
+    transform: rotate(-24deg);
+  }
+  .tv-answer.is-target {
+    --edge: var(--color-good);
+    --lip-c: var(--color-good);
+  }
+  .tv-answer.is-target .tv-answer__face,
+  .tv-answer.is-speaking .tv-answer__face {
+    animation: tv-pulse 1.3s var(--ease-out) infinite;
+  }
+  .tv-answer.is-speaking {
+    --edge: var(--color-primary);
+    --lip-c: var(--color-primary-tint);
+  }
+  .tv-answer.is-dim {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  /* ── Cards ──────────────────────────────────────────────────────── */
+  .tv-card {
+    position: relative;
+    border-radius: var(--radius-card);
+    background: var(--color-card);
+    box-shadow: var(--shadow-card);
+  }
+  .tv-card--paper {
+    background: var(--color-paper);
+  }
+  .tv-card--glass {
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.9), var(--shadow-card);
+  }
+  .tv-card--soft {
+    background: var(--color-primary-soft);
+  }
+  .tv-card--flat {
+    box-shadow: inset 0 0 0 2px var(--color-line);
+  }
+  .tv-card--pad-sm {
+    padding: 14px;
+  }
+  .tv-card--pad-md {
+    padding: 20px;
+  }
+  .tv-card--pad-lg {
+    padding: 28px;
+  }
+  @media (min-width: 700px) and (min-height: 700px) {
+    .tv-card--pad-md {
+      padding: 28px;
+    }
+    .tv-card--pad-lg {
+      padding: 36px;
+    }
+  }
+
+  /* ── Pills ──────────────────────────────────────────────────────── */
+  .tv-pill {
+    --pill-bg: var(--color-card);
+    --pill-fg: var(--color-ink-2);
+    --pill-edge: var(--color-line);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    height: 32px;
+    padding: 0 12px;
+    border: 1.5px solid var(--pill-edge);
+    border-radius: var(--radius-pill);
+    background: var(--pill-bg);
+    color: var(--pill-fg);
+    font-size: var(--text-label);
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .tv-pill--sm {
+    height: 26px;
+    padding: 0 9px;
+  }
+  .tv-pill--primary {
+    --pill-bg: var(--color-primary-soft);
+    --pill-fg: var(--color-primary-deep);
+    --pill-edge: transparent;
+  }
+  .tv-pill--good {
+    --pill-bg: var(--color-good-soft);
+    --pill-fg: var(--color-good-deep);
+    --pill-edge: transparent;
+  }
+  .tv-pill--oops {
+    --pill-bg: var(--color-oops-soft);
+    --pill-fg: var(--color-oops-deep);
+    --pill-edge: transparent;
+  }
+  .tv-pill--star {
+    --pill-bg: var(--color-star-soft);
+    --pill-fg: var(--color-star-deep);
+    --pill-edge: transparent;
+  }
+  .tv-pill--glass {
+    --pill-bg: rgba(255, 255, 255, 0.8);
+    --pill-fg: var(--color-ink);
+    --pill-edge: rgba(255, 255, 255, 0.95);
+  }
+
+  /* ── Sheet ──────────────────────────────────────────────────────── */
+  .tv-sheet-root {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+  }
+  .tv-sheet-scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--color-scrim);
+  }
+  .tv-sheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: 720px;
+    max-height: 88%;
+    margin: 0 auto;
+    padding: 6px calc(20px + var(--safe-r)) calc(20px + var(--safe-b)) calc(20px + var(--safe-l));
+    border-radius: 32px 32px 0 0;
+    background: var(--color-paper);
+    box-shadow: var(--shadow-sheet);
+  }
+  .tv-sheet--tall {
+    height: 88%;
+  }
+  .tv-sheet__grabber {
+    flex: none;
+    width: 44px;
+    height: 5px;
+    margin: 4px auto 6px;
+    border-radius: 3px;
+    background: var(--color-line-2);
+  }
+  .tv-sheet__head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  .tv-sheet__title {
+    margin: 0;
+    font-size: var(--text-title);
+    font-weight: 900;
+    line-height: var(--text-title--line-height);
+  }
+  .tv-sheet__body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* ── Stone path ─────────────────────────────────────────────────── */
+  .tv-stones {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 0 auto;
+    overflow: visible;
+  }
+  .tv-stones__trail {
+    fill: none;
+    stroke: rgba(43, 33, 68, 0.2);
+    stroke-width: 3.2;
+    stroke-linecap: round;
+    stroke-dasharray: 0.1 7;
+  }
+  .tv-stone__shadow {
+    fill: rgba(43, 33, 68, 0.1);
+  }
+  .tv-stone__body {
+    fill: var(--color-stone);
+    stroke: var(--color-stone-edge);
+    stroke-width: 2.4;
+  }
+  .tv-stone__hi {
+    fill: rgba(255, 255, 255, 0.75);
+  }
+  .tv-stone.is-done .tv-stone__body {
+    fill: var(--color-stone-done);
+    stroke: var(--color-stone-done-edge);
+  }
+  .tv-stone__paw {
+    fill: var(--color-paw);
+  }
+  .tv-stones.is-glowing .tv-stone.is-done .tv-stone__paw {
+    animation: tv-glow 1.4s var(--ease-out) infinite;
+  }
+  .tv-stone.is-current .tv-stone__body {
+    fill: var(--color-card);
+    stroke: var(--color-primary);
+    stroke-width: 3;
+  }
+  .tv-stone__body--goal {
+    fill: var(--color-primary-soft);
+    stroke: var(--color-primary-tint);
+  }
+  .tv-stones__goal.is-reached .tv-stone__body--goal {
+    fill: var(--color-stone-done);
+    stroke: var(--color-stone-done-edge);
+  }
+  .tv-stones__flag {
+    fill: var(--color-primary);
+  }
+  .tv-stones__ring {
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: 3;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: tv-ring 1.8s var(--ease-out) infinite;
+  }
+  .tv-stones__marker {
+    transition: transform var(--dur-slow) var(--ease-out);
+  }
+  .tv-planks__rope {
+    fill: none;
+    stroke: var(--color-rope);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  .tv-plank.is-laid path {
+    fill: var(--color-wood);
+    stroke: var(--color-wood-edge);
+    stroke-width: 2.4;
+  }
+  .tv-plank.is-laid .tv-plank__grain {
+    fill: none;
+    stroke: var(--color-wood-grain);
+    stroke-linecap: round;
+  }
+  .tv-plank.is-gap {
+    fill: rgba(255, 255, 255, 0.35);
+    stroke: rgba(43, 33, 68, 0.22);
+    stroke-width: 2;
+    stroke-dasharray: 5 5;
+  }
+
+  /* ── Meters without numbers ─────────────────────────────────────── */
+  .tv-meter {
+    --m: var(--color-primary);
+    --m-soft: var(--color-primary-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--tap);
+    margin: 0;
+    padding: 6px 16px 6px 6px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(43, 33, 68, 0.1);
+    color: var(--m);
+    font: inherit;
+    cursor: pointer;
+  }
+  .tv-meter--egg {
+    --m: var(--color-warm);
+    --m-soft: var(--color-warm-soft);
+  }
+  .tv-meter--heart {
+    --m: var(--color-heart);
+    --m-soft: var(--color-heart-soft);
+  }
+  .tv-meter__badge {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--m-soft);
+  }
+  .tv-meter__icon {
+    width: 28px;
+    height: 28px;
+  }
+  .tv-meter__track {
+    position: relative;
+    display: block;
+    width: 84px;
+    height: 16px;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background: rgba(43, 33, 68, 0.1);
+  }
+  .tv-meter--sm {
+    gap: 6px;
+    padding: 6px 12px 6px 6px;
+  }
+  .tv-meter--sm .tv-meter__badge {
+    width: 38px;
+    height: 38px;
+  }
+  .tv-meter--sm .tv-meter__icon {
+    width: 24px;
+    height: 24px;
+  }
+  .tv-meter--sm .tv-meter__track {
+    flex: 1;
+    width: auto;
+    min-width: 36px;
+    height: 14px;
+  }
+  .tv-meter--lg .tv-meter__track {
+    width: 140px;
+    height: 18px;
+  }
+  .tv-meter__fill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--m);
+    transform: translateX(calc((var(--v) - 1) * 100%));
+    transition: transform var(--dur-slow) var(--ease-out);
+  }
+  .tv-meter__fill::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 8px;
+    right: 8px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.45);
+  }
+  .tv-meter__shine {
+    display: none;
+  }
+  .tv-meter.is-full .tv-meter__badge {
+    animation: tv-pulse 1.6s var(--ease-out) infinite;
+  }
+
+  /* ── Equation (task type) ───────────────────────────────────────── */
+  .tv-eq {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.16em;
+    color: var(--color-ink);
+    font-size: var(--text-task);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .tv-eq--answer {
+    font-size: var(--text-answer);
+  }
+  .tv-eq--nowrap {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .tv-eq__op {
+    color: var(--color-primary);
+    min-width: 0.55em;
+    text-align: center;
+  }
+  .tv-eq__op--dot {
+    min-width: 0.4em;
+  }
+  .tv-eq__blank {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.3em;
+    height: 1.24em;
+    padding: 0 0.12em;
+    border: 0.055em dashed var(--color-primary);
+    border-radius: 0.24em;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+  }
+  .tv-eq__blank.is-active {
+    border-style: solid;
+  }
+  .tv-eq__blank.has-entry {
+    color: var(--color-ink);
+  }
+  .tv-eq__blank.is-good {
+    border: 0.055em solid var(--color-good);
+    background: var(--color-good-soft);
+    color: var(--color-good-deep);
+  }
+  .tv-eq__blank.is-oops {
+    border: 0.055em solid var(--color-oops);
+    background: var(--color-oops-soft);
+    color: var(--color-ink);
+  }
+  .tv-eq__text {
+    font-size: 0.5em;
+    font-weight: 800;
+  }
+
+  .tv-pulse {
+    animation: tv-pulse 1.4s var(--ease-out) infinite;
+  }
+}
+
+@keyframes tv-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+@keyframes tv-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+@keyframes tv-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes tv-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(14px);
+  }
+}
+
+/* Calm mode and reduced motion: no loops, no travel. */
+:root[data-calm] .tv-pulse,
+:root[data-calm] .tv-answer .tv-answer__face,
+:root[data-calm] .tv-stones__ring,
+:root[data-calm] .tv-stone__paw,
+:root[data-calm] .tv-meter__badge,
+:root[data-calm] .tv-drift {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-pulse,
+  .tv-answer .tv-answer__face,
+  .tv-stones__ring,
+  .tv-stone__paw,
+  .tv-meter__badge,
+  .tv-drift {
+    animation: none !important;
+  }
+}
