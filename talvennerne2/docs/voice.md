@@ -495,6 +495,7 @@ Kør den samme kommando igen. Intet arbejde går tabt:
 - `generate.py` er idempotent på klippets hash. Et klip er færdigt, når `voice/masters/index.json` har den hash, inventaret giver det.
 - Tilstanden (`state.jsonl`), de rå takes og kandidaterne ligger i `voice/probe/takes/pipeline/` (uden for git, på disken). En take, der allerede er genereret og tjekket, genereres ikke igen. Rå lyd fra et kald, der blev afbrudt under udklipningen, bruges igen (samme seed giver samme lyd).
 - Exitkoder: 0 færdig, 3 tidsbudgettet er brugt (run-wave.sh starter næste bid), 4 ingen fremdrift (klip venter på partnere, der aldrig kommer), 1 fejl.
+- Kun én `run-wave.sh` ad gangen pr. checkout (lås i `voice/probe/takes/run-wave.lock`).
 - Efter en genstart af containeren tager første modelindlæsning ca. 5 min (kold disk), ellers ca. 15 s.
 
 ### Inventar og hash
@@ -580,6 +581,7 @@ Partnerne er de første brugbare klip i en fast liste (7, 3, 12 …; 5, 4, 9 …
 | Modelkald | 40 i alt: 24 første takes (6 talbatches à 7–8, 1 hovedbatch à 3, 3 sætningsbatches à 3–4, 14 fragmentkald) og 16 nye takes som enkeltkald. D2-kørslen genbrugte de rå takes og kostede kun ASR. |
 | Genereringstid | 15–17 min væguret for de 64 klip (CPU-tid 0,43 t), dertil modelindlæsning 330 s med kold disk (18 s varm) og whisper-indlæsning ca. 4,5 min med kold disk |
 | Tid pr. klip | talord i batch 9,3 s, sætninger 11 s, hoveder 14,5 s, ét kald 12–17 s |
+| Hukommelse | Chatterbox 4,5 GB, med wav2vec2 og whisper 5,4 GB RSS (top 6,7 GB) i én proces |
 | Sammensætning i `generate.py` | 54 klip, alle bestået i første runde (D2) |
 | **Tal 101–999** (`render.ts`) | **61/61** af dem, der kunne bygges (101–120, 300, 301–320, 601–620); wav2vec2 alene 21/61 |
 | **Skabeloner** | **61/61 ordret** (addTo10 4/4, subTo10 4/4, tenFriends 2/2, hear20 21/21, order20 30/30); wav2vec2 alene 37/61 |
@@ -597,22 +599,23 @@ Den første QA-runde med D2 fandt 2 fejl (105 hørt som 115, 616 som "seks hundr
 
 ### Forventet tid for bølge 1
 
-Bølge 1 har 650 klip (59 er lavet i valideringen). Kaldplanen (`generate.py --wave 1 --dry-run`): 22 talbatches, 62 sætningsbatches og 223 enkeltkald. Med de målte tider:
+Session-branchen har nu 926 klip i bølge 1 (1.717 i alt), og 59 af dem er lavet i valideringen. Kaldplanen (`generate.py --wave 1 --dry-run`) er 18 talbatches, 88 sætningsbatches og 342 enkeltkald. 37 klip er kopier af et andet klip med samme tekst. Med de målte tider:
 
 | Del | Tid ved 2 tråde |
 |---|---|
-| talord (162 klip) | 25 min |
-| delte fragmenter (10 · 2 takes) | 5 min |
-| andre enkeltkald (ca. 190) | 45 min |
-| sætninger (ca. 220) | 40 min |
-| nye takes (ca. 10 %) | 15 min |
-| ASR, whisper og sammensætninger | 30 min |
-| sammensætningstest (ca. 300 tal og 300 skabeloner) | 20 min |
-| modelindlæsning | 1–10 min |
+| talord (162 klip, 9,3 s pr. klip) | 25 min |
+| sætninger (ca. 336, 11 s pr. klip) | 60 min |
+| enkeltkald (ca. 330, 13,5 s pr. kald) | 75 min |
+| nye takes (ca. 10 %) | 20 min |
+| ASR, whisper og sammensætninger (ca. 520 klip i sammensætning) | 35 min |
+| sammensætningstest (ca. 300 tal og 30 pr. skill) | 25 min |
+| modelindlæsning (3 bidder) | 1–15 min |
 
-Det giver **ca. 3 timer væguret ved 2 tråde (ca. 5,5 CPU-timer) og ca. 2,3 timer ved 4 tråde**, i 2 bidder à 100 min. Hele inventaret (1.441 klip) skønnes til ca. 7 timer ved 2 tråde.
+Det giver **ca. 4,2 timer væguret ved 2 tråde (CPU-tid ca. 7,5 timer for processen) og ca. 3,1 timer ved 4 tråde**, i 3 bidder à 100 min. Hele inventaret på 1.717 klip skønnes til ca. 7,5 timer ved 2 tråde (16 s pr. klip).
 
 Med bølge 1 kan sammensætningstesten bygge ca. 300 af de 899 tal: 101–199, 300–399 og 601–699 med valideringens hoveder. Alle 899 kræver bølge 2.
+
+**Dovent katalog.** `inventory.ts`, `render.ts` og lyttesiden kalder `loadAllClips()`, når kataloget har den (`Reflect.get`, så koden virker med både det tidlige og det dovne katalog). Det er afprøvet på en sammenfletning med session-branchen: inventaret, sammensætningstesten, mine tests, buildet og `e2e.mjs --dist` er grønne, og valideringens 64 hashes er uændrede.
 
 ### Kendte problemer (pipeline)
 

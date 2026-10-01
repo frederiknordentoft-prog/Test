@@ -27,6 +27,11 @@ TRAILER="${TV2_COMMIT_TRAILER:-Co-Authored-By: Claude Opus 5.5 <noreply@anthropi
 Claude-Session: https://claude.ai/code/session_01NkKeG1vom4pEx42VmVeg8D}"
 START=$(date +%s)
 
+# One pipeline run at a time per checkout (generate.py writes voice/masters/index.json).
+mkdir -p voice/probe/takes
+exec 9>voice/probe/takes/run-wave.lock
+flock -n 9 || { echo "run-wave.sh kører allerede i denne checkout"; exit 1; }
+
 say() { printf '\n== %s  %s\n' "$(date +%H:%M:%S)" "$*"; }
 
 git_commit() {  # $1 = besked; resten = stier
