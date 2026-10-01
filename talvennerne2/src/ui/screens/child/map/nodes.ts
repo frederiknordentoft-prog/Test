@@ -33,7 +33,7 @@ export const SLOT_ABOUT: Readonly<Record<NodeSlot, ClipId>> = {
 }
 
 const DOMAIN_ICON: Readonly<Record<DomainId, IconName>> = {
-  number: 'numberline', place: 'board', addsub: 'plus', muldiv: 'times', algebra: 'equals',
+  number: 'board', place: 'numberline', addsub: 'plus', muldiv: 'times', algebra: 'equals',
   fractions: 'fraction', shapes: 'shapes', clock: 'clock', money: 'coin', measure: 'ruler',
 }
 

@@ -16,7 +16,7 @@ import type { RoundHooks } from '../../../state/useRound'
 import type { RoundScreenProps } from './RoundScreen'
 import { NODE_BY_ID } from '../../../content/curriculum'
 import { PlayIntro } from './play/PlayIntro'
-import { exitRound } from './play/flow'
+import { exitRound, noteRound } from './play/flow'
 import type { Start } from './play/prepare'
 import type { PlayTarget } from './map/nodes'
 
@@ -87,6 +87,10 @@ export default function PlayScreen({ route }: ScreenProps<RouteOf<'round'>>) {
   const buddy = profile?.animals.find((a) => a.uid === profile.buddyUid) ?? null
   // after a reload nothing has woken the sound yet: the intro waits for one tap
   const needTap = loaded?.kind === 'ready' && !tapped && !isAudioUnlocked()
+
+  useEffect(() => {
+    if (loaded?.kind === 'ready') noteRound(target)
+  }, [loaded, target])
 
   if (loaded?.kind === 'ready' && !needTap) {
     const { Round, start, hooks } = loaded

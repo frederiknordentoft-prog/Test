@@ -28,6 +28,18 @@ export function playNext(target: PlayTarget): void {
   useNav.getState().replace(roundRoute(target))
 }
 
+let last: PlayTarget | null = null
+
+/** PlayScreen notes the round it starts, so the end of the round knows where the child was. */
+export function noteRound(target: PlayTarget): void {
+  last = target
+}
+
+/** The target of the last round started on this page (null after a reload into the map). */
+export function lastRound(): PlayTarget | null {
+  return last
+}
+
 /** The round is over (rewards next) or paused (stored, back to where the child came from). */
 export function exitRound(outcome: 'paused' | 'finished'): void {
   if (outcome === 'finished') useNav.getState().replace({ id: 'ceremonies' })
