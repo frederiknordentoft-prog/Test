@@ -369,6 +369,11 @@ export interface Task {
    * concluded from contrast: 'conflict' items where perception misleads vs 'congruent' items.
    */
   contrast?: 'conflict' | 'congruent'
+  /**
+   * Lowest guess probability of this task when the prompt itself narrows the answer: "Hvilket tal er
+   * størst, seks eller otte?" on a keypad is a coin flip (0.5), not 1 in 21. Raises guessP (kinds.ts).
+   */
+  guessFloor?: number
 }
 
 // ─── Mastery ────────────────────────────────────────────────────────────────

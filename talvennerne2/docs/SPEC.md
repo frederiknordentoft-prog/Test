@@ -37,6 +37,7 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
   - Forsiden har 9 kort. V1-kortet `.ta` står sidst, og teksten er "Ni web-apps".
   - Verify-stierne er "", vm/, elpriser/, kuglebanen/, vaegtskaalen/, vindtunnel/, surdej/, element-sandbox/, traeningslog/, talvennerne/ og talvennerne2/.
   - Andre sessioner kan have deployet siden, så alle tree-SHA'er på oversigts-branchen registreres lige før hver deploy.
+- **A9 – Misforståelse mod operand (1/10, integrator).** Er en misforståelses-værdi også et tal fra spørgsmålet (5 + 1 skrevet som 5, 4 + 2 skrevet som 2), klassificeres den som `ambiguous` og tæller aldrig som tegn. At skrive et tal fra spørgsmålet er en mere sandsynlig forklaring, og forældre skal ikke se falske tegn. Det afviger fra koden i §4.1, hvor misforståelsen vinder over `operand`.
 
 ---
 

@@ -213,4 +213,7 @@ export default {
   speech,
   candidates,
   hint,
+  // "Hvilket tal er størst, seks eller otte?" names both numbers: on a keypad or a line it is a
+  // coin flip, so it never counts as production (sortOrder is this family's production kind)
+  guessFloor: (f: Fact, kind: TaskKind) => (f.family === 'bigger' && (kind === 'keypad' || kind === 'numberline') ? 0.5 : 0),
 } satisfies SkillModule

@@ -59,7 +59,8 @@ export default {
     const swap = digitSwapOf(n)
     return tagged(n, [
       ...(swap !== null ? ([[swap, 'digitSwap']] as const) : []),
-      [n - 1, 'near'], [n + 1, 'near'], [n - 2, 'near'], [n + 2, 'near'],
+      // near misses stay within the skill's 0–20, even where the card range opens to 99 for the swap
+      ...[n - 1, n + 1, n - 2, n + 2].filter((v) => v <= 20).map((v) => [v, 'near'] as const),
       ...(n > 10 ? ([[n - 10, 'near']] as const) : []),
       // the numeral turned upside down: 6 and 9 are the classic pair at five or six
       ...(n === 6 || n === 9 ? ([[15 - n, 'other']] as const) : []),

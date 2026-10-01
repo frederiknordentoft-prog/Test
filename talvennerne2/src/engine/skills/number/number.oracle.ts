@@ -83,6 +83,18 @@ const factorial = (n: number): number => (n <= 1 ? 1 : n * factorial(n - 1))
  * the cards, the pile, the line, the slots — wherever the screen says it.
  */
 export function oracleGuessP(t: Task): number {
+  return Math.max(shownGuessP(t), heardGuessP(t))
+}
+
+/**
+ * What the question itself gives away: "Hvilket tal er størst, seks eller otte?" names both
+ * candidates, so on a keypad or a line the child picks one of two (SPEC §3.3: a coin flip).
+ */
+function heardGuessP(t: Task): number {
+  return t.factId.startsWith('o20:bigger:') && (t.kind === 'keypad' || t.kind === 'numberline') ? 0.5 : 0
+}
+
+function shownGuessP(t: Task): number {
   switch (t.kind) {
     case 'choice':
     case 'pair':
@@ -304,10 +316,16 @@ export function diagnosticProblems(built: readonly Built[], explain: (b: Built, 
 }
 
 /**
- * SPEC §4.1 on the typed values where one misconception meets a number from the question
- * (5 + 1 → 5): the misconception wins. Returns the values classified otherwise.
+ * The typed values where one misconception meets a number from the question (5 + 1 → 5). SPEC A9
+ * (integrator, 1/10): such a value is 'ambiguous' and never evidence, because typing a number from
+ * the question is a likelier reading than the misconception. `rule: 'misconception'` checks the
+ * original §4.1 wording instead (the misconception wins). Returns the values classified otherwise.
  */
-export function operandClashProblems(built: readonly Built[], explain: (b: Built, value: number) => Explanation): string[] {
+export function operandClashProblems(
+  built: readonly Built[],
+  explain: (b: Built, value: number) => Explanation,
+  rule: 'ambiguous' | 'misconception' = 'ambiguous',
+): string[] {
   const out: string[] = []
   for (const b of built) {
     const { task } = b
@@ -316,7 +334,8 @@ export function operandClashProblems(built: readonly Built[], explain: (b: Built
       const e = explain(b, v)
       if (v === task.answer || !isOperandClash(e)) continue
       const got = classifyAnswer(task, v)
-      if (got !== specTag(e)) out.push(`${task.factId} ${v}: ${String(got)}, SPEC §4.1 says ${specTag(e)}`)
+      const want = rule === 'ambiguous' ? 'ambiguous' : specTag(e)
+      if (got !== want) out.push(`${task.factId} ${v}: ${String(got)}, expected ${want}`)
     }
   }
   return out
@@ -418,7 +437,9 @@ export function specKindProblems(def: SkillDef, built: readonly Built[]): string
   const out: string[] = []
   if ([...def.kinds].sort().join(',') !== [...spec.kinds].sort().join(',')) out.push(`${def.id}: kinds ${def.kinds}, SPEC ${spec.kinds}`)
   for (const kind of def.kinds) {
-    const own = built.filter((b) => b.kind === kind)
+    // a question that names its candidates is a coin flip on any kind (order20 'bigger'); that family
+    // proves itself on sortOrder, so it is left out of the kind's production share
+    const own = built.filter((b) => b.kind === kind && heardGuessP(b.task) === 0)
     if (own.length === 0) continue
     const share = own.filter((b) => oracleProduction(b.task)).length / own.length
     if (spec.production.includes(kind) && share < 0.9) out.push(`${def.id} ${kind}: production for ${(share * 100).toFixed(1)} %, SPEC wants ≥ 90 %`)

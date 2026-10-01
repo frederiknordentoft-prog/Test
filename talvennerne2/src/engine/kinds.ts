@@ -24,6 +24,10 @@ function promptOf<S extends Prompt['scene']>(t: Task, scene: S): Extract<Prompt,
 }
 
 export function guessP(t: Task): number {
+  return Math.max(kindGuessP(t), t.guessFloor ?? 0)
+}
+
+function kindGuessP(t: Task): number {
   switch (t.kind) {
     case 'choice':
     case 'pair':

@@ -198,6 +198,7 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
 
   const rawContrast = ext.contrast ? ext.contrast(fact) : fact.data?.contrast
   const contrast = rawContrast === 'conflict' || rawContrast === 'congruent' ? rawContrast : undefined
+  const guessFloor = ext.guessFloor ? ext.guessFloor(fact, kind) : 0
   const scaffold = (ctx.box ?? 0) === 0 && !NO_SCAFFOLD.has(ctx.mode ?? 'round')
 
   const task: Task = {
@@ -209,6 +210,7 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
     optionClips,
     scaffold,
     ...(contrast ? { contrast } : {}),
+    ...(guessFloor > 0 ? { guessFloor } : {}),
   }
   return { task, offered: offeredTagsOf(task) }
 }

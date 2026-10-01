@@ -55,6 +55,11 @@ export interface SkillExtras {
    * when it is 'conflict' or 'congruent'.
    */
   contrast?(fact: Fact): 'conflict' | 'congruent' | undefined
+  /**
+   * The guess probability the prompt leaves, when it names the possible answers (Task.guessFloor).
+   * Default 0: guessP follows from the kind alone.
+   */
+  guessFloor?(fact: Fact, kind: TaskKind): number
 }
 
 /** What a file in src/engine/skills/<domain>/<skillId>.ts default-exports. */

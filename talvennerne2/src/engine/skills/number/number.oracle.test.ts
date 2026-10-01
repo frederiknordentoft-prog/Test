@@ -201,7 +201,7 @@ describe('hear20 oracle', () => {
   // GENERATOR BUG (hear20.ts, range()): the card range 0–99 that lets the reversed teen through
   // (19 → 91) also lets the near miss n + 2 through, so "Find tallet nitten" can deal 21 — a number
   // outside the skill's 0–20. Expected: cards ≤ 20 except the reversed number.
-  it.fails('never deals a card above 20 except the reversed teen (h20:19 deals 21)', () => {
+  it('never deals a card above 20 except the reversed teen', () => {
     const problems = built.flatMap((b) => cardProblems(b.task, (c) => c <= 20 || c === reversed(idNumber(b.fact.id))))
     expect(first(problems)).toEqual([])
   })
@@ -354,7 +354,7 @@ describe('order20 oracle', () => {
   // the time — the generator's own header calls it a coin flip — yet by SPEC §3.2's formula (1/range)
   // it counts as production, ceiling box 5. pickKind asks sortOrder first from box 3, but a repeat slot
   // (roundBuilder kindFor) can pick keypad or numberline, so order20/bigger can reach box 4–5 on guesses.
-  it.fails('never lets a coin flip count as production (keypad and number-line "bigger" name both numbers)', () => {
+  it('never lets a coin flip count as production (keypad and number-line "bigger" name both numbers)', () => {
     const problems: string[] = []
     for (const { fact, kind, task } of built) {
       if (kind !== 'keypad' && kind !== 'numberline') continue

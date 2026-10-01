@@ -84,12 +84,10 @@ for (const { id, maxCard } of SKILLS) {
     })
 
     if (id !== 'tenFriends') {
-      // SPEC §4.1 DEVIATION (number/kit.ts tagged()): when the one misconception value is also a number
-      // from the question (5 + 1 → 5, 4 + 2 → 2, 5 − 1 → 5, 5 − 3 → 3) the generator tags it
-      // 'ambiguous', so it is never evidence. SPEC §4.1, tasks.ts resolveTag and its test say the
-      // misconception wins over 'operand'. Possibly deliberate; the integrator decides.
-      it.fails('SPEC §4.1: one misconception wins over a number from the question (5 + 1 typed as 5 is countFromFirst)', () => {
-        expect(first(operandClashProblems(built, explain))).toEqual([])
+      // SPEC A9: when the one misconception value is also a number from the question (5 + 1 → 5,
+      // 4 + 2 → 2, 5 − 1 → 5, 5 − 3 → 3) it is 'ambiguous' and never evidence (number/kit.ts tagged()).
+      it('SPEC A9: a misconception value that is also a number from the question is ambiguous', () => {
+        expect(first(operandClashProblems(built, explain, 'ambiguous'))).toEqual([])
       })
     }
 
