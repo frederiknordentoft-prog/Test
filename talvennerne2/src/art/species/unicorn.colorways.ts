@@ -3,15 +3,18 @@
 // Stjernehvid (Stjernefølet, kun racen `foal`) er spillets mest eftertragtede dyr: perlehvid pels,
 // manke i blålilla og rosa, gyldent horn og gyldne hove, gyldne stjernemærker og glimmer.
 // Colorway-filer er, sammen med palette.ts, de eneste steder med rå hex (lint).
+import { RAINBOW_STOPS } from '../rig/palette'
 import type { ColorwayDef, NaturalColorwayId } from '../rig/types'
 
-export const UNICORN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { starwhite: ColorwayDef } = {
+// De tre næsten hvide har hver sin kropstone (review G1-r2, E6): hvid er varm elfenben, regnbuen er
+// lys lilla, og stjernehvid er kold sølvhvid med blå skygge og gyldne hove.
+export const UNICORN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { starwhite: ColorwayDef; rainbow: ColorwayDef } = {
   c1: {
     id: 'c1',
     name: 'hvid',
-    fur: '#FFFDFB',
+    fur: '#FFF6E6',
     overrides: {
-      outline: '#8E7BA6', shade: '#EEE6F2', belly: '#FFFFFF', mane: '#F6A9D2', mane2: '#C7A8F4', horn: '#F7CC58',
+      outline: '#937A98', shade: '#F0E2CC', belly: '#FFFCF5', mane: '#F6A9D2', mane2: '#C7A8F4', horn: '#F7CC58',
       hoof: '#EBC0D8', muzzle: '#FCE6EF', inner: '#FFC1DA', iris: '#8663C7',
     },
   },
@@ -63,13 +66,23 @@ export const UNICORN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { starw
   starwhite: {
     id: 'starwhite',
     name: 'stjernehvid',
-    fur: '#FBFAFF',
+    fur: '#EEF3FF',
     pattern: 'stars',
     patternColor: '#FFD24D',
     overrides: {
-      outline: '#7A80C6', shade: '#E2E5FA', belly: '#FFFFFF', mane: '#BFD0FF', mane2: '#F5B3E6', horn: '#FFD24D',
-      hornShade: '#F2B32E', hoof: '#FFE08A', muzzle: '#F4F1FF', inner: '#F8C6E4', iris: '#5B6FD6', nose: '#F08CB4',
+      outline: '#6A76BE', shade: '#C9D5F4', belly: '#F9FBFF', mane: '#BFD0FF', mane2: '#F5B3E6', horn: '#FFD24D',
+      hornShade: '#F2B32E', hoof: '#F5C33F', muzzle: '#E6EDFF', inner: '#F8C6E4', iris: '#5B6FD6', nose: '#F08CB4',
     },
     sparkle: '#FFFFFF',
+  },
+  rainbow: {
+    id: 'rainbow',
+    name: 'regnbue',
+    fur: '#E9DCFF',
+    overrides: {
+      outline: '#6C56A8', shade: '#D4C2F4', belly: '#F7F1FF', iris: '#7A62C9', inner: '#FFC4DC', hoof: '#BCA6EA', horn: '#FFE38A',
+      muzzle: '#F3ECFF',
+    },
+    gradient: RAINBOW_STOPS,
   },
 }

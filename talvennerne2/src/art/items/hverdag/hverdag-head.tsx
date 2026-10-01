@@ -28,7 +28,7 @@ const holeAt = (local: ItemArtProps['local'], p: Pt, side: 1 | -1) => {
 }
 
 /** Hornhullet (enhjørningen): en flad ellipse lidt bredere end hornets rod (se `hornHole`). */
-const HORN_HOLE = { lift: 12, rx: 9.2, ry: 3.6 }
+const HORN_HOLE = { lift: 9, rx: 9.2, ry: 3.6 }
 
 /** Hullets forkant: en halvmåne under hullets nederste kant (strikkens tykkelse), spidse ender. */
 function lip(h: { x: number; y: number; rot: number }, rx = HOLE.rx, ry = HOLE.ry, th = 2.8): string {

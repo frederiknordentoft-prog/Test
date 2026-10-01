@@ -443,6 +443,11 @@ export interface SpeciesDef {
   face: FaceStyle
   ears?: EarRig
   signature?: Signature
+  /**
+   * Guldets glansbånd på kroppen som bue på kropsellipsen (grader, 0 = højre, 90 = ned). Standard
+   * [196, 244] (øverst til venstre); arter, hvis arme dækker dér, lægger det lavere.
+   */
+  goldBand?: readonly [number, number]
   /** Artens nøgleposer pr. humør, lagt oven på riggens standard (fx hovene løftes mindre). */
   poses?: Partial<Record<Mood, Pose>>
   /** Grænsebokse (modelrum); standard er et skøn ud fra ankrene. */

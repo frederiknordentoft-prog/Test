@@ -393,6 +393,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   // Hornhul (review G1-r2, E1): hatten tegner et hul over hornets rod, og hornet skjules under hullets
   // nederste kant (forkanten i `rim` ligger ovenpå), så hornet går op gennem huen og aldrig over kanten.
   const hornHat = parts.Horn && holes && headWorn?.item.hornHole ? headWorn : undefined
+  // En hat mellem ørerne ('under') på en art med horn flyttes ud ved siden af hornet (fit-overskrivning)
+  // og tegnes foran øret, så den ikke forsvinder bag det.
+  const hatBesideHorn = !!parts.Horn && hat === 'under'
   const hornHole = (() => {
     if (!hornHat) return null
     const h = hornHat.item.hornHole!
@@ -565,7 +568,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const outsideClip = earClip || (!!parts.ManeFront && !hides.has('mane-front'))
   const P = parts.Pattern
   const pattern = resolveColorway(def, colorway).pattern ?? 'none'
-  const shade = shading(a, colorway === 'gold' && !silhouette)
+  const shade = shading(a, colorway === 'gold' && !silhouette, def.goldBand)
   const showFx = !silhouette
 
   // fx-positioner (verdensrum). Tanker og Z'er sidder til højre for hovedet, fri af øret.
@@ -634,9 +637,11 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         {!silhouette && <ShadowGradient id={shadowId} />}
         {pal.gradient && (
           <linearGradient id={ids.gradient} x1="0" y1="0" x2="0" y2="1">
-            {pal.gradient.map((c, i) => (
-              <stop key={i} offset={fmt3(i / (pal.gradient!.length - 1))} stopColor={c} />
-            ))}
+            {/* Flade striber: hårde stop ved båndgrænserne (første og sidste farve forlænges af gradienten). */}
+            {pal.gradient.slice(0, -1).flatMap((c, i) => {
+              const at = fmt3((i + 1) / pal.gradient!.length)
+              return [<stop key={`${i}a`} offset={at} stopColor={c} />, <stop key={`${i}b`} offset={at} stopColor={pal.gradient![i + 1]} />]
+            })}
           </linearGradient>
         )}
       </defs>
@@ -734,8 +739,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {renderItem('face', 'front', R.head.s)}
               {/* 14 · mane-front */}
               {parts.ManeFront && !hides.has('mane-front') && scaled(a.headTop, R.xf.mane, parts.ManeFront(ctx(swHead / R.xf.mane)))}
-              {/* 15 · head-item */}
-              {renderItem('head', 'front', R.head.s)}
+              {/* 15 · head-item (en hat mellem ørerne på en art med horn sidder skævt ved siden af
+                  hornet og tegnes foran øret, se festhattens overskrivning) */}
+              {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
               {/* 16 · ører, horn (+ hattens hulkant over ørernes rod) */}
               {earsShown && (
                 <g clipPath={earClip ? `url(#${earClipId})` : holes ? `url(#${holeClipId})` : undefined}>
@@ -743,6 +749,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                   {ear('R', Ear!)}
                 </g>
               )}
+              {hatBesideHorn && renderItem('head', 'front', R.head.s)}
               {/* Hornet gennem et hornhul: under hullets forkant (rim); ellers øverst. */}
               {Horn && hornHole && horn(hornHole)}
               {renderItem('head', 'rim', R.head.s)}
@@ -791,7 +798,7 @@ function chinShadow(a: AnchorSet, R: ReturnType<typeof regionTransforms>): strin
  * Cel-skyggens "lyse" ellipser (skyggen = kroppen minus den lyse ellipse) og hovedets højlys.
  * Guld får desuden et smalt glansbånd på hoved og krop (metallisk, uden gradient).
  */
-function shading(a: AnchorSet, goldBand: boolean) {
+function shading(a: AnchorSet, goldBand: boolean, arc: readonly [number, number] = [196, 244]) {
   const h = a.headCenter
   const b = a.bodyCenter
   return {
@@ -802,7 +809,7 @@ function shading(a: AnchorSet, goldBand: boolean) {
       ellipse(h.x - a.headRx * 0.2, h.y - a.headRy * 0.8, a.headRx * 0.055, a.headRy * 0.055),
       goldBand && lune(h.x + 4, h.y + 2, a.headRx * 0.86, a.headRy * 0.86, 2.6, 200, 250),
     ),
-    bodyBand: goldBand ? lune(b.x + 6, b.y + 4, a.bodyRx * 0.82, a.bodyRy * 0.86, 3, 196, 244) : null,
+    bodyBand: goldBand ? lune(b.x + 6, b.y + 4, a.bodyRx * 0.82, a.bodyRy * 0.86, 3, arc[0], arc[1]) : null,
   }
 }
 
