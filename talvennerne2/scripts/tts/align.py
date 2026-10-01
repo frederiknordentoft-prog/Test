@@ -47,6 +47,8 @@ FRAME_S = 0.02            # wav2vec2: 320 samples ved 16 kHz
 SIL_DB = -45.0            # samme tærskel som trim
 RISK_CUT_DB = -30.0       # snit i tale, hvis niveauet er højere end dette …
 RISK_SIL_MS = 10.0        # … og der er mindre stilhed end dette om snittet
+MAX_HEAD_S = 0.20         # højst så meget før klippets første aligned tegn
+MAX_TAIL_S = 0.25         # højst så meget efter klippets sidste aligned tegn
 
 
 def prepare(raw: np.ndarray, sr: int) -> np.ndarray:
@@ -135,8 +137,17 @@ def segment(x: np.ndarray, sr: int, words, groups: list[int]):
         cut_info.append({"cut_s": round(c / sr, 3), "cut_db": round(float(env[c]), 1),
                          "sil_ms": round(sil_ms, 1), "gap_align_ms": round((start_next - end_prev) * 1000)})
     cuts.append(len(x))
-    segs = []
+    # Klip ikke pauser og vejrtrækning med: højst MAX_TAIL_S efter sidste tegn og
+    # MAX_HEAD_S før første tegn (CTC-spidser kommer lidt efter lydens start).
+    starts, ends = [], []
     for n, (s, e) in enumerate(zip(cuts, cuts[1:])):
+        a0, a1 = bounds[n]
+        s2 = max(s, int((words[a0][1] - MAX_HEAD_S) * sr)) if n > 0 else s
+        e2 = min(e, int((words[a1][2] + MAX_TAIL_S) * sr)) if n < len(bounds) - 1 else e
+        starts.append(s2 if s2 < e2 else s)
+        ends.append(e2 if s2 < e2 else e)
+    segs = []
+    for n, (s, e) in enumerate(zip(starts, ends)):
         before = cut_info[n - 1] if n > 0 else None
         after = cut_info[n] if n < len(cut_info) else None
         near = [ci for ci in (before, after) if ci]

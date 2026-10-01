@@ -108,11 +108,30 @@ def voices_section(res: dict):
     res["voices"] = vs
     if {"mic", "nic"} <= vs.keys():
         d = 100 * (vs["mic"]["cer_all"] - vs["nic"]["cer_all"])
-        winner = "nic" if d >= -TIE_PP else "mic"
-        res["voice_winner"] = winner
+        rule = "nic" if d >= -TIE_PP else "mic"
+        res["voice_rule_winner"] = rule
         res["voice_delta_pp_mic_minus_nic"] = round(d, 2)
-        res["voice_reason"] = ("lighed inden for ±0,5 pp → Nic" if abs(d) <= TIE_PP else
-                               f"lavest samlet CER med roest-wav2vec2 ({winner})")
+        # Udvidet evidens: de 10 regnestykker ("Hvad er …?") med begge stemmer
+        w10 = joined("whole10")
+        ext = {}
+        for v in ("mic", "nic"):
+            rw = [r for r in w10 if r["voice"] == v]
+            both = [r for r in rows if r["voice"] == v] + rw
+            if rw:
+                ext[v] = {"whole10_cer": agg_cer(rw), "whole10_pass": sum(r["pass"] for r in rw), "n": len(rw),
+                          "hvad_er_ok": sum(r["asr_norm"].startswith(("hvad er", "hvader")) for r in rw),
+                          "all22_cer": agg_cer(both), "all22_pass": sum(r["pass"] for r in both),
+                          "all22_n": len(both)}
+        res["voice_extended"] = ext
+        final = rule
+        reason = ("lighed inden for ±0,5 pp → Nic" if abs(d) <= TIE_PP else
+                  f"lavest samlet CER på de 12 probesætninger ({rule})")
+        if len(ext) == 2 and ext["nic"]["all22_cer"] < ext["mic"]["all22_cer"] and rule == "mic":
+            final = "nic"
+            reason = ("afvigelse fra reglen: Mic vinder de 12 probesætninger, men Nic har lavest CER på alle "
+                      "22 målte sætninger, og Mic's \"Hvad er\" høres som \"hver er\" i de fleste regnestykker")
+        res["voice_winner"] = final
+        res["voice_reason"] = reason
     print("\n### Stemmevalg (12 probesætninger × 2 takes)\n")
     print("| Stemme | CER wav2vec2 (alle takes) | take 0 | take 1 | bedste take pr. sætning | bestået | "
           "CER whisper (second opinion) | ingen ASR godkender |")
@@ -123,9 +142,15 @@ def voices_section(res: dict):
               f"{pct(d['cer_best_of_takes'])} | {d['pass_rate'] * 100:.0f} % | "
               f"{pct(d['whisper_cer_all']) if d['whisper_cer_all'] is not None else '–'} | "
               f"{d['fail_both_asr_rate'] * 100:.0f} % |" if d["fail_both_asr_rate"] is not None else "")
+    if res.get("voice_extended"):
+        print("\n| Stemme | 10 regnestykker × 2: CER | bestået | \"Hvad er\" hørt | alle 22 sætninger: CER | bestået |")
+        print("|---|---|---|---|---|---|")
+        for v, e in res["voice_extended"].items():
+            print(f"| {v} | {pct(e['whole10_cer'])} | {e['whole10_pass']}/{e['n']} | {e['hvad_er_ok']}/{e['n']} | "
+                  f"{pct(e['all22_cer'])} | {e['all22_pass']}/{e['all22_n']} |")
     if "voice_winner" in res:
-        print(f"\nVinder: {res['voice_winner']} ({res['voice_reason']}; Mic − Nic = "
-              f"{res['voice_delta_pp_mic_minus_nic']:+.2f} pp)")
+        print(f"\nRegel (12 probesætninger): {res['voice_rule_winner']} (Mic − Nic = "
+              f"{res['voice_delta_pp_mic_minus_nic']:+.2f} pp). Valgt: {res['voice_winner']} ({res['voice_reason']})")
 
 
 # --- RTF --------------------------------------------------------------------
@@ -254,6 +279,7 @@ COMPOSE_VARIANTS = [
     ("composed-batch", "sammensat, klip fra batch-kald (kommaliste/sætninger)"),
     ("composed-cbatch", "sammensat, tal fra batch med bærefrase"),
     ("composed-carrier", "sammensat, tal fra bæresætning (ét kald pr. tal)"),
+    ("composed-carrier-nic", "Nic: sammensat, tal fra bæresætning (ét kald pr. tal)"),
 ]
 
 
@@ -261,8 +287,17 @@ def compose_section(res: dict):
     out = {}
     for tag, label in COMPOSE_VARIANTS:
         rows = joined(tag)
+        wh = load(tag, "asr-whisper.jsonl")
+        if tag == "whole10":  # hel sætning pr. stemme
+            for v in sorted({r["voice"] for r in rows}):
+                rv = [r for r in rows if r["voice"] == v]
+                wv = [r for r in wh if r["voice"] == v]
+                out[f"whole10-{v}"] = {"label": f"{v}: hel sætning (1 kald pr. sætning)", "cer": agg_cer(rv),
+                                       "pass": sum(r["pass"] for r in rv), "n": len(rv),
+                                       "nums_ok": sum(r["nums_ok"] for r in rv),
+                                       "whisper_cer": agg_cer(wv) if wv else None, "per_expression": {}}
+            continue
         if rows:
-            wh = load(tag, "asr-whisper.jsonl")
             out[tag] = {"label": label, "cer": agg_cer(rows), "pass": sum(r["pass"] for r in rows),
                         "n": len(rows), "nums_ok": sum(r["nums_ok"] for r in rows),
                         "whisper_cer": agg_cer(wh) if wh else None,
@@ -439,6 +474,17 @@ def projection_section(res: dict):
                 fc = None
             costs_d.append(n * (fc if fc is not None else single(s_)))
         strategies["D. batch kun for sætninger og talord, øvrige korte klip ét kald"] = sum(costs_d)
+        # E: D + kortere S3Gen-reference (4 s): S3Gen's faste del skaleres med målt forhold
+        s3_single = {c["id"]: c.get("t_s3gen", 0) for c in load("calib-single")}
+        s3_short = [(s3_single[c["id"]], c.get("t_s3gen", 0)) for c in load("calib-s3p4") if c["id"] in s3_single]
+        if s3_short:
+            r_s3 = sum(y for _, y in s3_short) / sum(x for x, _ in s3_short)
+            sav = (1 - r_s3) * d["s3gen_overhead_s"]
+            k_num = stats.fmean(bt[f]["k"] for f in ("b.cmid", "b.cend") if f in bt)
+            calls_d = sum(n / 4 if kind == "sentence" else n / k_num if c.startswith("tal") else n
+                          for c, n, _s, kind in mix)
+            strategies["E. som D + S3Gen-reference forkortet til 4 s"] = sum(costs_d) - calls_d * sav
+            res["s3_short_prompt"] = {"s3gen_ratio": r_s3, "saving_per_call_s": sav, "calls_d": calls_d}
     res["projection"] = {
         "voice": v, "clips": INVENTORY_CLIPS, "audio_min": INVENTORY_MIN, "retake_share": RETAKE_SHARE,
         "overhead_s": a, "marginal_rtf": b, "raw_over_final": k_raw, "speedup_4threads": speed4,

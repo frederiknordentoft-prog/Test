@@ -394,6 +394,34 @@ def cmd_listen(a):
         print(f"{p.relative_to(ROOT)}: {len(x) / SR:.1f} s, {p.stat().st_size / 1e6:.2f} MB")
 
 
+def cmd_sim(a):
+    """Stemmelighed: cosinus mellem VoiceEncoder-embeddings af takes og stemmeprompten."""
+    import librosa
+    import torch
+    from chatterbox.models.voice_encoder import VoiceEncoder
+
+    from download_models import fetch
+
+    d = Path(fetch("tts", local_only=True))
+    ve = VoiceEncoder()
+    ve.load_state_dict(torch.load(d / "ve.pt", map_location="cpu", weights_only=True))
+    ve.eval()
+
+    def emb(path):
+        w, _ = librosa.load(str(path), sr=16000)
+        e = ve.embeds_from_wavs([w], sample_rate=16000)
+        return e[0] / np.linalg.norm(e[0])
+
+    ref = emb(d / PROMPTS[a.voice])
+    out = {}
+    for tag in a.tags.split(","):
+        rows = [json.loads(line) for line in (TAKES / tag / "meta.jsonl").read_text().splitlines() if line.strip()]
+        sims = [float(np.dot(ref, emb(ROOT / r["wav"]))) for r in rows if r["voice"] == a.voice]
+        out[tag] = {"n": len(sims), "mean": round(float(np.mean(sims)), 4), "min": round(float(np.min(sims)), 4)}
+        print(f"{tag}: lighed med {a.voice}-prompten {out[tag]['mean']:.3f} (min {out[tag]['min']:.3f}, n={len(sims)})")
+    (TAKES / "voice-sim.json").write_text(json.dumps(out, indent=1))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -428,13 +456,16 @@ def main():
     gb.add_argument("--no-warmup", action="store_true")
     gb.add_argument("--bf16", action="store_true", help="forsøg: bf16-autocast")
     gb.add_argument("--s3-prompt-s", type=float, default=0.0, help="forsøg: kortere S3Gen-reference (s)")
+    si = sub.add_parser("sim")
+    si.add_argument("--voice", default="mic")
+    si.add_argument("--tags", required=True)
     li = sub.add_parser("listen")
     li.add_argument("--voice", required=True)
     li.add_argument("--exprs", default="e01,e05,e06,e07,e10")
     li.add_argument("--composed-tag", default="composed")
     a = ap.parse_args()
     {"gen": cmd_gen, "gen-batch": cmd_gen_batch, "compose": cmd_compose, "repost": cmd_repost,
-     "listen": cmd_listen}[a.cmd](a)
+     "listen": cmd_listen, "sim": cmd_sim}[a.cmd](a)
 
 
 if __name__ == "__main__":
