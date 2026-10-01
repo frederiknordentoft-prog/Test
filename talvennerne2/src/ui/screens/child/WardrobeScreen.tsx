@@ -20,7 +20,7 @@ import { markGuided, wasGuided } from './wardrobe/guided'
 import { useLastShown } from './wardrobe/Tap'
 import {
   SLOTS, animalsInOrder, canWishFor, cardAction, colorAction, guideItem, howToGetColor, howToGetItem, itemNameSpeech,
-  pickAnimal, slotLocked, slotModel, startSlot, type TapAction,
+  pickAnimal, pickAnimalFor, slotLocked, slotModel, startSlot, type TapAction,
 } from './wardrobe/model'
 import { AnimalPicker, ColorBar, DressedAnimal, HowSheet, OffButton, SlotPanel, SlotTabs, type HowTarget } from './wardrobe/WardrobeView'
 import './wardrobe/wardrobe.css'
@@ -44,7 +44,7 @@ export interface WardrobeProps {
 /** The wardrobe of one child (the screen hands it the loaded profile). */
 export function Wardrobe({ profile, route }: WardrobeProps) {
   const speech = useSpeech()
-  const [uid, setUid] = useState<string | null>(route.uid ?? null)
+  const [uid, setUid] = useState<string | null>(() => pickAnimalFor(profile, route.uid, route.item)?.uid ?? null)
   const [slot, setSlot] = useState<Slot>(() => startSlot(route.item))
   const [guide, setGuide] = useState<ItemId | null>(() => guideItem(profile, route.item, wasGuided(profile.id)))
   const [how, setHow] = useState<HowTarget | null>(null)
@@ -58,7 +58,7 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
   const [seen, setSeen] = useState({ uid: route.uid, item: route.item })
   if (seen.uid !== route.uid || seen.item !== route.item) {
     setSeen({ uid: route.uid, item: route.item })
-    if (route.uid) setUid(route.uid)
+    if (route.uid || route.item) setUid(pickAnimalFor(profile, route.uid, route.item)?.uid ?? null)
     if (route.item) {
       setSlot(startSlot(route.item))
       setGuide(guideItem(profile, route.item, true))

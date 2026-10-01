@@ -53,6 +53,17 @@ export function pickAnimal(p: Pick<ProfileDoc, 'animals' | 'buddyUid'>, uid?: st
   return (uid ? p.animals.find((a) => a.uid === uid) : undefined) ?? p.animals.find((a) => a.uid === p.buddyUid) ?? p.animals[0] ?? null
 }
 
+/**
+ * Who is dressed when the route brings a thing: the route's animal, else the buddy — unless the
+ * buddy's own wings fill that slot, then the first of the child's animals that can wear it.
+ */
+export function pickAnimalFor(p: Pick<ProfileDoc, 'animals' | 'buddyUid'>, uid: string | null | undefined, item: ItemId | null | undefined): Animal | null {
+  const chosen = pickAnimal(p, uid)
+  const slot = item ? ITEM_BY_ID[item]?.slot : undefined
+  if (!slot || (uid && chosen?.uid === uid) || !slotLocked(chosen, slot)) return chosen
+  return animalsInOrder(p).find((a) => !slotLocked(a, slot)) ?? chosen
+}
+
 /** Pegasus, dragon and owl keep their back for their own wings. */
 export function slotLocked(animal: Pick<Animal, 'species'> | null | undefined, slot: Slot): boolean {
   return !!animal && !!SPECIES_BY_ID[animal.species]?.occupies?.includes(slot)

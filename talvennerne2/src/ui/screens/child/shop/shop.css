@@ -459,6 +459,22 @@
   color: var(--color-primary);
   --icon-fill-o: 0.32;
 }
+.tv-store-sheet__how {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  background: var(--color-star-soft);
+}
+.tv-store-sheet__how .tv-store-sheet__line {
+  text-align: left;
+}
+.tv-store-sheet__howicon {
+  flex: none;
+  color: var(--color-star-deep);
+  --icon-fill-o: 0.4;
+}
 .tv-store-sheet__trophy {
   align-self: center;
   min-height: 44px;

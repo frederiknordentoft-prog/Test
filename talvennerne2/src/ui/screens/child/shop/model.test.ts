@@ -74,6 +74,13 @@ describe('what the sheet says', () => {
     expect(sheetStage({ ...p, economy: { ...p.economy, perler: 0 } }, { kind: 'decor', id: 'pynt-lygte' })).toBe('later')
   })
 
+  it('says how to get a wished thing that is earned, never a price for it', () => {
+    expect(sheetStage(p, { kind: 'item', item: 'milepael-regnbuehue' })).toBe('how')
+    expect(sheetStage(p, { kind: 'item', item: 'ridder-head' })).toBe('how')
+    expect(sheetStage(p, { kind: 'item', item: 'hverdag-head' })).toBe('owned')
+    expect(compile(openingSpeech('how', { kind: 'item', item: 'milepael-regnbuehue' })).text).toBe('Regnbuehue. Den får du på niveau ti.')
+  })
+
   it('never offers what cannot be bought', () => {
     expect(canBuy(p, { kind: 'item', item: 'hverdag-neck' })).toBe(false)
     expect(canBuy(p, { kind: 'item', item: 'pirat-face' })).toBe(false)
@@ -88,7 +95,7 @@ describe('what the sheet says', () => {
       ...DECOR.map((d): Purchase => ({ kind: 'decor', id: d.id })),
     ]
     for (const x of all) {
-      for (const stage of ['ask', 'later', 'owned', 'done'] as SheetStage[]) {
+      for (const stage of ['ask', 'later', 'owned', 'done', 'how'] as SheetStage[]) {
         const c = compile(openingSpeech(stage, x))
         expect(c.missing, `${JSON.stringify(x)} ${stage}`).toEqual([])
         expect(c.text).not.toMatch(/\d/)

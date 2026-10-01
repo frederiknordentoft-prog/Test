@@ -8,7 +8,7 @@ import { compile } from '../../../../speech/compile'
 import { child, wearing, withAnimal } from './fixtures'
 import {
   animalsInOrder, canWishFor, cardAction, colorAction, guideItem, howToGet, howToGetColor, itemsOfSlot, pickAnimal,
-  shownText, slotModel, startSlot,
+  pickAnimalFor, shownText, slotModel, startSlot,
 } from './model'
 
 /**
@@ -145,6 +145,17 @@ describe('where the wardrobe starts', () => {
     expect(pickAnimal(p, 'egg-1')?.uid).toBe('egg-1')
     expect(pickAnimal(p, 'nobody')?.uid).toBe('starter-rabbit')
     expect(animalsInOrder({ ...p, buddyUid: 'egg-1' }).map((a) => a.uid)).toEqual(['egg-1', 'starter-rabbit'])
+  })
+
+  it('brings a back thing to an animal without wings of its own when the buddy is a pegasus', () => {
+    const p = withAnimal(withAnimal(child(), 'pegasus', 'peg'), 'cat', 'kat')
+    const q = { ...p, buddyUid: 'peg' }
+    expect(pickAnimalFor(q, null, 'hverdag-back')?.uid).toBe('starter-rabbit')
+    expect(pickAnimalFor(q, null, 'hverdag-head')?.uid).toBe('peg')
+    expect(pickAnimalFor(q, null, null)?.uid).toBe('peg')
+    // the route's own choice of animal is kept
+    expect(pickAnimalFor(q, 'peg', 'hverdag-back')?.uid).toBe('peg')
+    expect(pickAnimalFor(q, 'kat', 'hverdag-back')?.uid).toBe('kat')
   })
 })
 

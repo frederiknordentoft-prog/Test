@@ -7,7 +7,7 @@ import { RECOLOR_PRICE } from '../../../../content/economy'
 import { SET_IDS } from '../../../../engine/types'
 import type { DecorId, ItemColor, ItemId, ProfileDoc, SetId, SpeechPart } from '../../../../engine/types'
 import { wishProgress } from '../../../../meta/actions'
-import { COLORS, ownedColors, owns } from '../wardrobe/model'
+import { COLORS, howToGetItem, ownedColors, owns } from '../wardrobe/model'
 
 type Shopper = Pick<ProfileDoc, 'inventory' | 'decor' | 'economy'>
 
@@ -137,11 +137,16 @@ export function nameSpeech(x: Purchase): SpeechPart[] {
   return [{ clip: x.kind === 'decor' ? `name.decor.${x.id}` : ITEM_BY_ID[x.item].nameClip }]
 }
 
-export type SheetStage = 'ask' | 'later' | 'owned' | 'done'
+/** ask: the question · later: not enough perler yet · owned: the child's · done: just bought · how: earned, not sold. */
+export type SheetStage = 'ask' | 'later' | 'owned' | 'done' | 'how'
 
-/** What the sheet says first: the question, the friendly "later", or that it is the child's. */
+/**
+ * What the sheet says first: the question, the friendly "later", that it is the child's — or, for a
+ * wish that is earned and not sold (a level or a medal thing), how to get it.
+ */
 export function sheetStage(p: Shopper, x: Purchase): Exclude<SheetStage, 'done'> {
   if (isOwned(p, x)) return 'owned'
+  if (priceOf(x) === null) return 'how'
   return canBuy(p, x) ? 'ask' : 'later'
 }
 
@@ -151,6 +156,7 @@ export function openingSpeech(stage: SheetStage, x: Purchase): SpeechPart[] {
   if (stage === 'owned') return [...name, { clip: x.kind === 'decor' ? 's.shop.decor.owned' : x.kind === 'color' ? 's.shop.color.owned' : 's.shop.owned.about' }]
   if (stage === 'ask') return [...name, ...costSpeech(x), { clip: 's.shop.buy.ask' }]
   if (stage === 'later') return [...name, ...costSpeech(x), { clip: 's.shop.later' }, { clip: 's.shop.earn' }]
+  if (stage === 'how') return x.kind === 'item' ? [...name, ...howToGetItem(x.item)] : name
   return [{ clip: doneClip(x) }]
 }
 

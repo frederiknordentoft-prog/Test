@@ -3,7 +3,7 @@
 // before anything is bought — or says, warmly, that perler come from doing sums. Props in, taps out.
 import { useEffect, useRef } from 'react'
 import { ITEM_BY_ID } from '../../../../content/catalog'
-import type { DecorId, ItemColor, SpeechPart } from '../../../../engine/types'
+import type { DecorId, ItemColor, ItemId, SpeechPart } from '../../../../engine/types'
 import { Button, IconButton } from '../../../design/Button'
 import { Icon } from '../../../design/Icon'
 import { Meter } from '../../../design/Meter'
@@ -15,7 +15,7 @@ import { useSpeech } from '../../../design/speech'
 import { cx } from '../../../design/cx'
 import { DecorGlyph, Glyph, PALETTE_GLYPH } from '../wardrobe/glyphs'
 import { ItemThumb } from '../wardrobe/ItemThumb'
-import { shownText } from '../wardrobe/model'
+import { howToGetItem, shownText, sourceBadge } from '../wardrobe/model'
 import { Tap, useLastShown } from '../wardrobe/Tap'
 import { DECOR_TONE, toneStyle } from '../wardrobe/tones'
 import {
@@ -299,6 +299,20 @@ function PurchasePic({ x, done }: { x: Purchase; done: boolean }) {
   )
 }
 
+/** "Sådan får du den" for a wished thing that is earned, not sold (a level or a medal thing). */
+function HowLine({ item }: { item: ItemId }) {
+  const speech = useSpeech()
+  const parts = howToGetItem(item)
+  return (
+    <div className="tv-store-sheet__how">
+      <span className="tv-store-sheet__howicon" aria-hidden>
+        <Icon name={sourceBadge(ITEM_BY_ID[item].source)} size={28} strokeWidth={2.2} />
+      </span>
+      <SpokenText parts={parts} text={shownText(parts, speech.text)} className="tv-store-sheet__line" />
+    </div>
+  )
+}
+
 export function BuySheet({ purchase: current, stage, setDone, wished, canWish, onYes, onNo, onWish, onGo, onClose }: BuySheetProps) {
   const speech = useSpeech()
   const purchase = useLastShown(current)
@@ -335,6 +349,7 @@ export function BuySheet({ purchase: current, stage, setDone, wished, canWish, o
               </div>
             </div>
           )}
+          {stage === 'how' && purchase.kind === 'item' && <HowLine item={purchase.item} />}
           {stage === 'done' && said(purchase.kind === 'decor' ? 's.shop.decor.bought' : purchase.kind === 'color' ? 's.shop.color.bought' : 's.shop.bought')}
           {stage === 'done' && setDone && (
             <Pill tone="star" icon="trophy" className="tv-store-sheet__trophy">
