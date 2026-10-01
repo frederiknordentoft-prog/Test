@@ -5,7 +5,7 @@
 // og en ribmanchet over poten. Én parametrisk tegning giver de 3 grundformer (round/pear/tall).
 import { fabric } from '../../rig/palette'
 import { band, blob, ellipse, join, outside, rect, ribs, softBand, symmetric } from '../../rig/shapes'
-import type { BodyKind, ItemArt, ItemDef, SleeveArt } from '../../rig/types'
+import type { BodyKind, ItemArt, ItemDef, SleeveArt, SleeveUpArt } from '../../rig/types'
 
 interface Cut {
   /** Kravens y (lokalt, (0,0) = bodyCenter) og ribkantens top/bund. */
@@ -41,11 +41,9 @@ const sweater = (kind: BodyKind): ItemArt => ({ c, sw, ids, restroke, solo, stag
     const flat = `${ids.uid}-hv-flat`
     return (
       <>
-        <defs>
-          <clipPath id={flat}>
-            <path d={FLAT} />
-          </clipPath>
-        </defs>
+        <clipPath id={flat}>
+          <path d={FLAT} />
+        </clipPath>
         <g clipPath={`url(#${flat})`}>
           <path d={rect(-80, -80, 160, 160)} fill={c.main} />
           <path d={join(...k.stripes.map((y) => band(-80, 80, y, y + 5.5, SAG)))} fill={c.trim} />
@@ -64,11 +62,9 @@ const sweater = (kind: BodyKind): ItemArt => ({ c, sw, ids, restroke, solo, stag
   const clip = `${ids.uid}-hv-${kind}`
   return (
     <>
-      <defs>
-        <clipPath id={clip}>
-          <path d={band(-90, 90, -90, hemBottom + sw / 2 + 0.2, 0, SAG)} />
-        </clipPath>
-      </defs>
+      <clipPath id={clip}>
+        <path d={band(-90, 90, -90, hemBottom + sw / 2 + 0.2, 0, SAG)} />
+      </clipPath>
       <g clipPath={`url(#${clip})`}>
         <path d={rect(-80, -80, 160, 120)} fill={c.main} />
         <path d={join(...k.stripes.map((y) => band(-80, 80, y - lift, y - lift + 5.5, SAG)))} fill={c.trim} />
@@ -95,6 +91,19 @@ const sleeve: SleeveArt = ({ c, sw, sleeve: d, cuff, clipId }) => {
   )
 }
 
+/** Ærmet på en løftet arm (riggen regner formen ud langs armen): samme stof, striber og manchet. */
+const sleeveUp: SleeveUpArt = ({ c, sw, fill, edge, bands, cuff }) => {
+  const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
+  return (
+    <>
+      <path d={fill} fill={c.main} />
+      {bands && <path d={bands} fill={c.trim} />}
+      <path d={edge} fill="none" {...stroke} />
+      <path d={cuff} fill={c.accent} {...stroke} />
+    </>
+  )
+}
+
 export const hverdagBody: ItemDef = {
   id: 'hverdag-body',
   set: 'hverdag',
@@ -110,6 +119,7 @@ export const hverdagBody: ItemDef = {
     front: sweater('round'),
     bodyShapes: { round: sweater('round'), pear: sweater('pear'), tall: sweater('tall') },
     sleeve,
+    sleeveUp,
   },
   fit: { anchor: 'bodyCenter', scaleBy: 'bodyWidth', baseScale: 1, baseWidth: 100 },
   icon: { box: [-60, -42, 120, 64] },

@@ -369,6 +369,12 @@ export const rabbit: SpeciesDef = {
     Paw,
     PawUp,
     pawUpTip: { cheer: { x: -27.5, y: -20 }, wave: { x: -33.5, y: -21 }, think: { x: 21.5, y: -1 }, oops: { x: -14.5, y: -45 } },
+    upArms: {
+      cheer: { spine: UP_SPINES.cheer, w0: 15, w1: 18.5, tip: 10 },
+      wave: { spine: UP_SPINES.wave, w0: 15, w1: 18.5, tip: 10 },
+      think: { spine: UP_SPINES.think, w0: 15, w1: 18, tip: 9.5 },
+      oops: { spine: UP_SPINES.oops, w0: 15, w1: 17, tip: 9 },
+    },
     limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 13, half: 11.6 } },
     Feet,
     Tail,

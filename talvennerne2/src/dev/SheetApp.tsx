@@ -350,6 +350,12 @@ function FitSheet({ def }: { def: SpeciesDef }) {
   ]
   const cols: { s: Stage; cw: 0 | 1 | 2; c: ColorwayId; b: BreedId }[] = []
   for (const s of STAGES) for (const cw of [0, 1, 2] as const) cols.push({ s, cw, c: (['c1', 'c3', 'c6'] as const)[cw], b: def.breeds[cw % def.breeds.length].id })
+  // Tøj i alle humør: ærmerne følger de løftede arme (jubel, vink, tænker, ups).
+  const moodRows: { s: Stage; b: BreedId; c: ColorwayId; outfit: Outfit }[] = [
+    { s: 1, b: def.breeds[1 % def.breeds.length].id, c: 'c2', outfit: { body: { item: hverdagBody, colorway: 1 }, head: { item: festHead } } },
+    { s: 2, b: def.breeds[0].id, c: 'c1', outfit: { body: { item: hverdagBody }, head: { item: hverdagHead } } },
+    { s: 3, b: def.breeds[2 % def.breeds.length].id, c: 'c4', outfit: { body: { item: hverdagBody, colorway: 2 } } },
+  ]
   return (
     <Page title={`Pasform · ${def.name.toLowerCase()}`} sub="Genstandene i 3 stadier · genstandens 3 farvesæt (racerne på skift). Lints: øjne dækkes ikke, bbox inden for artens hull + 6, ≤ 25 elementer pr. genstand.">
       <Grid
@@ -364,6 +370,20 @@ function FitSheet({ def }: { def: SpeciesDef }) {
           )),
         }))}
       />
+      <Section title="tøj i alle humør (ærmerne følger de løftede arme)">
+        <Grid
+          colW={118}
+          cols={MOODS.map((m) => MOOD_DA[m])}
+          rows={moodRows.map((r) => ({
+            head: `${r.b} · ${STAGE_DA[r.s]}`,
+            cells: MOODS.map((m) => (
+              <Cell key={m} lint="safe fit" label={`fit ${def.id} humør ${m} ${r.s}`}>
+                <Rig species={def} mode="static" breed={r.b} stage={r.s} colorway={r.c} mood={m} outfit={r.outfit} size={104} />
+              </Cell>
+            )),
+          }))}
+        />
+      </Section>
     </Page>
   )
 }

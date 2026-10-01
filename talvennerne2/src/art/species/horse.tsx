@@ -10,7 +10,7 @@ import type { Vec } from '../rig/shapes'
 import type { AnchorSet, SpeciesDef } from '../rig/types'
 import { FJORD_CREAM, FJORD_DARK, HORSE_COLORWAYS } from './horse.colorways'
 import {
-  EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_TIP, EquineEar, EquineLegUp, HorsePatternBody, HorsePatternHead,
+  EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, HorsePatternBody, HorsePatternHead,
   dunPalette, dy, equineHead, hairShape, makeFeet, makeLeg, makeMuzzle,
 } from './shared/equine'
 
@@ -211,6 +211,7 @@ export const horse: SpeciesDef = {
     Paw: makeLeg(),
     PawUp: EquineLegUp,
     pawUpTip: EQUINE_UP_TIP,
+    upArms: EQUINE_UP_ARMS,
     limb: EQUINE_LIMB,
     Feet: makeFeet(),
     Tail: hairShape(TAIL_THICK, { strands: TAIL_THICK_STRANDS }),

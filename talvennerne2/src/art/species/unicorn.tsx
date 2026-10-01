@@ -13,7 +13,7 @@ import { blob, circle, join, mirrorX, poly, quad, star } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { AnchorSet, Part, SpeciesDef } from '../rig/types'
 import {
-  EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_TIP, EquineEar, EquineLegUp, equineHead, hairShape, makeFeet, makeLeg,
+  EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, equineHead, hairShape, makeFeet, makeLeg,
   makeMuzzle, round,
 } from './shared/equine'
 import { UNICORN_COLORWAYS } from './unicorn.colorways'
@@ -225,6 +225,7 @@ export const unicorn: SpeciesDef = {
     Paw: makeLeg(),
     PawUp: EquineLegUp,
     pawUpTip: EQUINE_UP_TIP,
+    upArms: EQUINE_UP_ARMS,
     limb: EQUINE_LIMB,
     Feet: makeFeet(),
     Tail: hairShape(FOAL_TAIL),

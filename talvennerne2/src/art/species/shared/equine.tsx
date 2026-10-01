@@ -9,7 +9,7 @@ import { Pivot } from '../../rig/Rig'
 import { outlineOf, shadeOf } from '../../rig/palette'
 import { blob, ellipse, frame, join, mirrorX, offsetLoop, ribbon, spline, star, symmetric, xf } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
-import type { AnchorSet, OutlineFn, Palette, Part, SidePart, Stage } from '../../rig/types'
+import type { AnchorSet, OutlineFn, Palette, Part, SidePart, Stage, UpArm } from '../../rig/types'
 
 export const round = ROUND
 
@@ -129,6 +129,14 @@ const UP_SPINES = {
 }
 const UP_LOOPS = Object.fromEntries(Object.entries(UP_SPINES).map(([k, v]) => [k, limbLoop(v, 15, 15, 6)])) as Record<keyof typeof UP_SPINES, Vec[]>
 export const EQUINE_UP_TIP = { cheer: { x: -28, y: -46 }, wave: { x: -33, y: -45 }, think: { x: 13, y: -28 }, oops: { x: -6.5, y: -33 } }
+/** Forbenenes rygrad til ærmer på løftede ben (manchetten ender over hoven). */
+const upArm = (spine: readonly Vec[]): UpArm => ({ spine, w0: 15, w1: 15, tip: 13 })
+export const EQUINE_UP_ARMS = {
+  cheer: upArm(UP_SPINES.cheer),
+  wave: upArm(UP_SPINES.wave),
+  think: upArm(UP_SPINES.think),
+  oops: upArm(UP_SPINES.oops),
+}
 
 export const EquineLegUp: SidePart = ({ pal, sw, mood }) => {
   const kind = mood === 'wave' ? 'wave' : mood === 'think' ? 'think' : mood === 'oops' ? 'oops' : 'cheer'

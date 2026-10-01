@@ -540,6 +540,12 @@ export const cat: SpeciesDef = {
     Paw: Leg,
     PawUp,
     pawUpTip: { cheer: { x: -31, y: -67 }, wave: { x: -36, y: -73 }, think: { x: 13, y: -50 }, oops: { x: 10, y: -55 } },
+    upArms: {
+      cheer: { spine: UP_SPINES.cheer, w0: 15, w1: 18.5, tip: 10 },
+      wave: { spine: UP_SPINES.wave, w0: 15, w1: 18.5, tip: 10 },
+      think: { spine: UP_SPINES.think, w0: 15, w1: 18, tip: 9.5 },
+      oops: { spine: UP_SPINES.oops, w0: 15, w1: 18, tip: 9.5 },
+    },
     limb: { rot: 0, sleeve: () => blob(LEG_SLEEVE), cuff: { y: 7, half: 12.6 } },
     Feet,
     Tail: makeTail(TAILS.domestic),

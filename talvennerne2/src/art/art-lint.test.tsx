@@ -110,14 +110,23 @@ describe.each(ALL_SPECIES.map((def) => [def.id, def] as const))('renderet markup
     expect(max).toBeGreaterThan(40)
   })
 
-  it(`elementbudget: ≤ ${BUDGET.item} pr. genstand (inkl. ærmer og hulkant)`, () => {
+  it(`elementbudget: ≤ ${BUDGET.item} pr. genstand i alle humør (inkl. ærmer på løftede arme og hulkant)`, () => {
     for (const b of def.breeds)
-      for (const it of ITEMS)
-        for (const stage of STAGES) {
-          const bare = count(render({ species: def, breed: b.id, stage, mode: 'animated' }))
-          const worn = count(render({ species: def, breed: b.id, stage, mode: 'animated', outfit: { [it.slot]: { item: it } } as Outfit }))
-          expect(worn - bare, `${def.id}/${b.id} ${it.id} stadie ${stage}`).toBeLessThanOrEqual(BUDGET.item)
+      for (const stage of STAGES)
+        for (const mood of MOODS) {
+          const bare = count(render({ species: def, breed: b.id, stage, mood, mode: 'animated' }))
+          for (const it of ITEMS) {
+            const worn = count(render({ species: def, breed: b.id, stage, mood, mode: 'animated', outfit: { [it.slot]: { item: it } } as Outfit }))
+            expect(worn - bare, `${def.id}/${b.id} ${it.id} stadie ${stage} ${mood}`).toBeLessThanOrEqual(BUDGET.item)
+          }
         }
+  })
+
+  it('løftede arme får ærmer, når trøjen er på', () => {
+    for (const mood of ['cheer', 'wave', 'think', 'oops'] as const) {
+      const m = render({ species: def, mood, outfit: { body: { item: hverdagBody } } })
+      expect(m, `${def.id} ${mood}`).toMatch(/data-layer="sleeve-[LR]"/)
+    }
   })
 
   it('én konturfarve for hele figuren: ører og manke arver figurens kontur', () => {

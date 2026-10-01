@@ -7,6 +7,7 @@
 // hoved om halsleddet), så tøj og dele aldrig skal justeres pr. stadie. `computeAnchors` giver de
 // endelige ankre i verdensrummet (viewBox) til UI, øjne der følger fingeren og lints.
 import type { ReactNode } from 'react'
+import type { Vec } from './shapes'
 
 // ---------------------------------------------------------------------------------------------
 // Id'er (bindende for resten af spillet). Kontrakten ejes af motoren (`src/engine/types.ts`, låst i
@@ -299,6 +300,8 @@ export interface SpeciesParts {
   PawUp?: SidePart
   /** Hvor den løftede pote holder en håndgenstand (lokalt, venstre side) pr. humør. */
   pawUpTip?: Partial<Record<Mood, Pt>>
+  /** Den løftede arms rygrad pr. humør (samme som `PawUp` tegner); riggen trækker trøjens ærme på den. */
+  upArms?: Partial<Record<Mood, UpArm>>
   /** Arm/forben til ærmer på kropstøj (se `Limb`). */
   limb?: Limb
   /** Begge fødder i modelrummet (bag kroppen). */
@@ -562,6 +565,28 @@ export interface ItemFit {
  *   neck → lag 2 bag kroppen).
  * - `bodyShapes`: kropsgenstande har én grundform pr. kropsskabelon (fit-regel 4).
  */
+/** Løftet arm (lokalt om skulderen, venstre side) som rygrad og bredder fra rod til spids. */
+export interface UpArm {
+  spine: readonly Vec[]
+  w0: number
+  w1: number
+  /** Længden af enden (pote eller hov), som ærmet ikke dækker. */
+  tip: number
+}
+
+/** Ærme på en løftet arm: riggen regner formen ud langs armens rygrad; genstanden maler den. */
+export interface SleeveUpProps {
+  c: ItemPalette
+  sw: number
+  /** Ærmets lukkede fyld og dets kontur (åben ved roden, hvor ærmet går ind i trøjen). */
+  fill: string
+  edge: string
+  /** Striber på tværs af ærmet (inden for ærmets kant; tegnes før konturen) og ribmanchetten ved poten. */
+  bands: string
+  cuff: string
+}
+export type SleeveUpArt = (p: SleeveUpProps) => ReactNode
+
 export interface ItemArtSet {
   front: ItemArt
   back?: ItemArt
@@ -570,6 +595,8 @@ export interface ItemArtSet {
   rim?: ItemArt
   /** Kropstøj med ærmer: tegnes på hver arm (kun arter med `limb`). */
   sleeve?: SleeveArt
+  /** Ærmet på en løftet arm (kun arter med `upArms`). */
+  sleeveUp?: SleeveUpArt
 }
 
 export interface ItemDef {

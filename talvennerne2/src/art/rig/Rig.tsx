@@ -20,6 +20,7 @@ import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
 import { mixHex } from './oklch'
 import { INK, MAGIC, derivePalette, itemPalette, silhouettePalette } from './palette'
 import { ellipse, fmt3, join, lune, n, outside, rect, tf } from './shapes'
+import { bentSleeve } from './sleeve'
 import type {
   AnchorSet, BreedDef, BreedId, Box, ColorwayDef, ColorwayId, FaceStyle, FigureBounds, FitResult, ItemDef,
   MagicColorwayId, Mood, Outfit, Palette, PartCtx, PawPose, Pose, PoseXf, Pt, RigIds, SidePart, Slot,
@@ -458,6 +459,20 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const behindL = upL && !!pawPose(pose.pawL).behind
   const behindR = upR && !!pawPose(pose.pawR).behind
 
+  // Ærmet på en løftet arm følger armens rygrad (samme form på begge sider; højre spejles).
+  const sleeveUpArt = bodyWorn?.item.art.sleeveUp
+  const upArm = parts.upArms?.[mood]
+  const bent = bodyWorn && sleeveUpArt && upArm && (upL || upR) ? bentSleeve(upArm) : null
+  const sleeveUp = (side: 'L' | 'R') => {
+    if (!bent || !sleeveUpArt || !bodyWorn) return null
+    const c = itemPalette(bodyWorn.item.colorways[bodyWorn.colorway ?? 0], silhouette)
+    return (
+      <g data-item={bodyWorn.item.id} data-slot="body" data-layer={`sleeve-${side}`}>
+        {sleeveUpArt({ c, sw: swBody, ...bent })}
+      </g>
+    )
+  }
+
   // Poter (venstre tegnes, højre spejles). Håndgenstanden ligger i højre pote under selve poten.
   // `outer` lægger kroppens region foran (løftede poter tegnes uden for kroppens gruppe).
   const paw = (side: 'L' | 'R', outer = '') => {
@@ -482,7 +497,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         <g className={animated ? `a-paw a-paw-${side.toLowerCase()}${up ? ' a-up' : ''}` : undefined} transform={pp.rot ? `rotate(${n(pp.rot)})` : undefined}>
           {hand}
           <Part {...ctx(swBody)} side={side} />
-          {!up && sleeve(side)}
+          {up ? sleeveUp(side) : sleeve(side)}
         </g>
       </g>
     )

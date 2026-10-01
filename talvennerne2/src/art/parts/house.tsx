@@ -89,7 +89,7 @@ export function Eyes({ a, shape, pal, scale, sw, gaze, animated, gazeRef, glintR
       </>
     )
   } else if (shape === 'happy') {
-    body = <path d={join(...eyes.map(([x, y]) => quad([x - rx * 0.95, y + ry * 0.22], [x, y - ry * 0.95], [x + rx * 0.95, y + ry * 0.22])))} {...inkLine} />
+    body = <path d={join(...eyes.map(([x, y]) => quad([x - rx * 0.95, y + ry * 0.22], [x, y - ry * 0.95], [x + rx * 0.95, y + ry * 0.22])))} {...inkLine} data-part="eyes" />
   } else if (shape === 'closed') {
     body = (
       <path
@@ -103,6 +103,7 @@ export function Eyes({ a, shape, pal, scale, sw, gaze, animated, gazeRef, glintR
           }),
         )}
         {...inkLine}
+        data-part="eyes"
       />
     )
   } else {
