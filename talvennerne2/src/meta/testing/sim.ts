@@ -141,7 +141,7 @@ export interface SessionLog {
   emptied: boolean
 }
 
-interface Task { k: SimKey; production: boolean; review: boolean }
+interface Task { k: SimKey; production: boolean }
 
 export class Sim {
   profile: ProfileDoc
@@ -369,7 +369,7 @@ export class Sim {
       const size = mode === 'finale' ? 12 : 10
       return Array.from({ length: size }, (_, i) => {
         const ks = bySkill.get(skills[i % skills.length])!
-        return { k: ks[rng.int(ks.length)], production: true, review: false }
+        return { k: ks[rng.int(ks.length)], production: true }
       })
     }
 
@@ -419,11 +419,10 @@ export class Sim {
 
     return rng.shuffle(chosen.slice(0, size)).map((k) => {
       const box = state(k)?.box ?? 0
-      const isReview = !pool.includes(k)
       let production = box >= 3
       if (!production && node?.production === 'fromBox1' && box >= 1) production = true
       if (!production && node?.houseKind !== 'choice' && rng.next() < 0.35) production = true
-      return { k, production, review: isReview }
+      return { k, production }
     })
   }
 
