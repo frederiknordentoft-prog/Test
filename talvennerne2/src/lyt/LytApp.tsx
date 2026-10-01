@@ -7,7 +7,7 @@ import type { VoiceManifest } from '../audio/manifest'
 import { allClips, clipText } from '../speech/catalog'
 import { Icon } from '../ui/design/Icon'
 import { exportFlags, loadManifest, loadQa, readFlags, setNote, toggleFlag, type FlagStore, type VoiceQa } from './data'
-import { PlayButton, SpeechLine } from './parts'
+import { PlayButton, RecordedContext, SpeechLine } from './parts'
 
 const BuildSentence = lazy(() => import('./BuildSentence'))
 
@@ -231,6 +231,7 @@ export function LytApp() {
   const onNote = (id: string, note: string) => setFlags((f) => setNote(f, id, note))
 
   return (
+    <RecordedContext.Provider value={manifest ? recorded : null}>
     <div className="lyt">
       <header className="lyt-head">
         <h1>Lyt til stemmen</h1>
@@ -261,5 +262,6 @@ export function LytApp() {
       <FlagPanel flags={flags} voice={manifest?.voice ?? null} onNote={onNote} onFlag={onFlag} />
       {manifest ? <ClipList manifest={manifest} qa={qa} flags={flags} onFlag={onFlag} /> : null}
     </div>
+    </RecordedContext.Provider>
   )
 }

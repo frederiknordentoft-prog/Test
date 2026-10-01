@@ -10,6 +10,7 @@
 #   TV2_MAX_MINUTES=100    længden af én genereringsbid (minutter)
 #   TV2_COMMIT=0           ingen commits (standard: mastere i bidder ≤ 10 MB, derefter sprites)
 #   TV2_QA_ROUNDS=2        runder med nye takes for klip, som sammensætningstesten peger på
+#   TV2_GENERATE_ARGS=…    ekstra argumenter til generate.py, fx "--pack core" eller "--ids-file fil"
 set -uo pipefail
 
 WAVE="${1:?brug: run-wave.sh <bølge 1|2|3>}"
@@ -83,7 +84,9 @@ gen_until_done() {  # ekstra argumenter går til generate.py
   local rc
   while :; do
     say "generering, bølge $WAVE ($THREADS tråde, bidder à $MAX_MIN min)"
-    nice -n 19 "$TTS_PY" scripts/tts/generate.py --wave "$WAVE" --threads "$THREADS" --max-minutes "$MAX_MIN" "$@"
+    # shellcheck disable=SC2086 # TV2_GENERATE_ARGS is a word list on purpose
+    nice -n 19 "$TTS_PY" scripts/tts/generate.py --wave "$WAVE" --threads "$THREADS" --max-minutes "$MAX_MIN" \
+      ${TV2_GENERATE_ARGS:-} "$@"
     rc=$?
     set --  # retakes only in the first chunk
     commit_masters
