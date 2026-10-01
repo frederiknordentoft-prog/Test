@@ -21,15 +21,16 @@ export const PERLER = {
   spark5: 2,
   /** The golden egg caught. */
   golden: 2,
-  /** A mastery trial passed for the first time. */
-  trial: 10,
-  /** A world finale passed. */
-  finale: 25,
+  /** A mastery trial passed for the first time (SPEC 10, −20 %: the shop must last past session 100). */
+  trial: 8,
+  /** A world finale passed (SPEC 25, −20 %). */
+  finale: 20,
   /** Every level-up. */
   levelUp: 5,
-  medal: { bronze: 3, silver: 5, gold: 10 } as Readonly<Record<Medal, number>>,
-  /** A gold medal when the four golden animals of its world are already owned or waiting. */
-  allGolden: 10,
+  /** Bronze 3, silver 4, gold 8 (SPEC 3 / 5 / 10; silver and gold −20 %). */
+  medal: { bronze: 3, silver: 4, gold: 8 } as Readonly<Record<Medal, number>>,
+  /** A gold medal when the four golden animals of its world are already owned or waiting (SPEC 10, −20 %). */
+  allGolden: 8,
 } as const
 
 /** XP per event. Level-ups and trophies give no XP. */
@@ -124,12 +125,15 @@ export const TOTAL_SINK = SHOP_TOTAL + RECOLOR_TOTAL + DECOR_TOTAL
 
 // ─── The egg ────────────────────────────────────────────────────────────────
 
-/** Warmth (right answers) egg number n needs: 15, 40, 60, then 90 up to egg 9, then 120. */
+/**
+ * Warmth (right answers) egg number n needs: 15, 40, 60, then 75 up to egg 9, then 100 (SPEC 90 and
+ * 120, −17 %: a hatch is the steady big moment that keeps at least one ceremony in every session).
+ */
 export function eggWarmthFor(eggNumber: number): number {
   if (eggNumber <= 1) return 15
   if (eggNumber === 2) return 40
   if (eggNumber === 3) return 60
-  return eggNumber <= 9 ? 90 : 120
+  return eggNumber <= 9 ? 75 : 100
 }
 
 export const EGG = {
