@@ -12,9 +12,9 @@ import {
 import { goldCount, newTrophies, silverCount, trophyPerler, type AchievementRound } from '../content/achievements'
 import { nextGoal, progressGoals, refreshGoals, REVISIT_AFTER_DAYS, type GoalRound } from '../content/goals'
 import { daysBetween, learningDay } from '../engine/learningDay'
-import { helpBridgeOpen, nextTrialState, skipRegionNodes, trialOutcome } from '../engine/trial'
+import { helpBridgeOpen, nextTrialState, skipRegionNodes, trialOutcome, type TrialOutcome } from '../engine/trial'
 import type {
-  Box, ItemId, ItemSource, LearningEvent, Medal, NodeId, NodeProgress, ProfileDoc, RegionId, SkillId,
+  Box, ItemId, ItemSource, LearningEvent, Medal, NodeId, NodeProgress, ProfileDoc, RegionId, SkillId, TrialState,
 } from '../engine/types'
 import type { RoundResult } from '../state/useRound'
 import {
@@ -59,6 +59,17 @@ export function roundStars(r: Pick<MetaRound, 'total' | 'cleared' | 'firstTries'
   const typed = r.firstTries.filter((f) => f.production).length
   if (wrong <= STAR_RULES.maxMistakesFor3 && typed >= STAR_RULES.minProductionFor3) return 3
   return wrong <= STAR_RULES.maxMistakesFor2 ? 2 : 1
+}
+
+/**
+ * The trial state with the Træningshytte's keys (SPEC §5.3): a failed region trial that lights the
+ * hut keeps the keys it missed, so the hut's round survives a reload; a pass (or any attempt that
+ * lights no hut) clears them.
+ */
+export function withHutKeys(state: TrialState, mode: MetaRound['mode'], outcome: TrialOutcome, wasPassed: boolean): TrialState {
+  const { missed: _old, ...rest } = state
+  if (mode === 'trial' && !outcome.passed && !wasPassed && outcome.missed.length > 0) return { ...rest, missed: [...outcome.missed] }
+  return rest
 }
 
 // ─── Items ──────────────────────────────────────────────────────────────────
@@ -200,7 +211,7 @@ export function applyRoundResult(profile: ProfileDoc, result: MetaRound, ctx: Ro
       const before = p.trials[id]
       const wasPassed = (before?.passedAt ?? null) !== null
       // finishRound has already moved roundIndex past this round; the attempt belongs to the one before
-      const after = nextTrialState(before, outcome, p.roundIndex - 1, now)
+      const after = withHutKeys(nextTrialState(before, outcome, p.roundIndex - 1, now), result.mode, outcome, wasPassed)
       p.trials = { ...p.trials, [id]: after }
       const first = outcome.passed && !wasPassed
       const perler = first ? (result.mode === 'finale' ? PERLER.finale : PERLER.trial) : 0

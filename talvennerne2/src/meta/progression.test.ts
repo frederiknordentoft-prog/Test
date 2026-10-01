@@ -241,6 +241,22 @@ describe('trials and the finale (SPEC §5.4)', () => {
     expect(of(results[0], 'answers')[0].perler).toBe(7)
   })
 
+  it('keeps the training hut keys with the failed trial, and clears them when the trial is passed', () => {
+    const missedTries = (right: number): FirstTry[] =>
+      Array.from({ length: 10 }, (_, i) => ({ key: `add:${i}+1`, skill: 'addTo10', correct: i < right, production: true, fast: true }))
+    const failed = play(child({ nodes: tal10 }), round({ mode: 'trial', nodeId: 'w0-plus10-trial', firstTries: missedTries(6), cleared: 10 }))
+    expect(failed.profile.trials['w0-plus10']?.missed).toEqual(['add:6+1', 'add:7+1', 'add:8+1', 'add:9+1'])
+    // a second failed attempt replaces the keys with its own
+    const again = play(failed.profile, round({ mode: 'trial', nodeId: 'w0-plus10-trial', firstTries: missedTries(7), cleared: 10 }))
+    expect(again.profile.trials['w0-plus10']?.missed).toEqual(['add:7+1', 'add:8+1', 'add:9+1'])
+    const passed = play(again.profile, round({ mode: 'trial', nodeId: 'w0-plus10-trial', firstTries: missedTries(9), cleared: 10 }))
+    expect(passed.profile.trials['w0-plus10']).toMatchObject({ passedAt: T, failed: 2 })
+    expect(passed.profile.trials['w0-plus10']).not.toHaveProperty('missed')
+    // a finale lights no hut
+    const finale = play(child(), round({ mode: 'finale', nodeId: 'eng-finale', firstTries: tries(5, 7, 12, 'addTo10'), cleared: 12 }))
+    expect(finale.profile.trials.eng).not.toHaveProperty('missed')
+  })
+
   it('pays the finale, its items and the world trophy', () => {
     const p = child()
     const finale = round({ mode: 'finale', nodeId: 'eng-finale', firstTries: tries(11, 1, 12, 'addTo10'), cleared: 12 })

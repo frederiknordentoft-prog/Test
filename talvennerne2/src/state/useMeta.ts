@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { learningDay } from '../engine/learningDay'
 import { statusOf, upgradeMedal, learningEventsFor } from '../engine/status'
 import { skillRegistry, type SkillRegistry } from '../engine/registry'
-import { trialOutcome } from '../engine/trial'
 import type {
   DecorId, ItemColor, ItemId, KeyState, LearningEvent, MasteryKey, ProfileDoc, RegionId, Slot, SkillId, SpeciesId, Stage,
 } from '../engine/types'
@@ -14,7 +13,7 @@ import { eggOptions, pendingChoices, type PendingChoice } from '../meta/animals'
 import { planCeremonies, type CeremonyPlan } from '../meta/ceremonyQueue'
 import { applyRoundResult, goalsFor } from '../meta/progression'
 import type { Reward } from '../meta/rewards'
-import { unlockView, type UnlockView } from '../meta/unlock'
+import { hutRegions, unlockView, type UnlockView } from '../meta/unlock'
 import { onRoundFinished, useProfile } from './useProfile'
 import type { RoundResult } from './useRound'
 
@@ -36,7 +35,11 @@ export interface MetaState {
   rewards: Reward[]
   /** Rewards of the last action (a hatch, a purchase …), for its overlay. */
   lastAction: Reward[]
-  /** Keys missed in the last failed trial per region: the training hut's round (PlanContext.hutKeys). */
+  /**
+   * Keys missed in the last failed trial per region: the training hut's round (PlanContext.hutKeys).
+   * A cache of TrialState.missed, rebuilt from the saved trials when a profile is loaded; read it
+   * through hutKeysFor().
+   */
   hutKeys: Partial<Record<RegionId, MasteryKey[]>>
 
   dismissCeremony(): void
@@ -151,6 +154,24 @@ export const useMeta = create<MetaState>((set) => ({
     })
   },
 }))
+
+// ─── The training hut ───────────────────────────────────────────────────────
+
+/** The hut keys saved with each lit hut's failed trial (what survives a reload). */
+export function savedHutKeys(p: Pick<ProfileDoc, 'trials'>): Partial<Record<RegionId, MasteryKey[]>> {
+  const out: Partial<Record<RegionId, MasteryKey[]>> = {}
+  for (const region of hutRegions(p)) {
+    const missed = p.trials[region]?.missed
+    if (missed && missed.length > 0) out[region] = [...missed]
+  }
+  return out
+}
+
+/** The keys the training hut of `region` asks (PlanContext.hutKeys): the cache, else the saved trial. */
+export function hutKeysFor(p: Pick<ProfileDoc, 'trials'>, region: RegionId): MasteryKey[] {
+  if (!hutRegions(p).includes(region)) return []
+  return useMeta.getState().hutKeys[region] ?? p.trials[region]?.missed ?? []
+}
 
 // ─── What the map and the HUD read ──────────────────────────────────────────
 
@@ -298,14 +319,15 @@ export function handleRoundFinished(result: RoundResult, reg: SkillRegistry = sk
     return []
   }
 
+  const saved = useProfile.getState().profile ?? profile
+  // the hut's keys are saved with the trial (TrialState.missed); the store keeps a copy as a cache
   const hutKeys = { ...useMeta.getState().hutKeys }
   const region = NODE_BY_ID[result.nodeId]?.region
   if (result.mode === 'trial' && region) {
-    const outcome = trialOutcome(result.firstTries, 'trial')
-    if (outcome.passed) delete hutKeys[region]
-    else hutKeys[region] = outcome.missed
+    const missed = saved.trials[region]?.missed
+    if (missed && missed.length > 0) hutKeys[region] = missed
+    else delete hutKeys[region]
   }
-  const saved = useProfile.getState().profile ?? profile
   useMeta.setState({ ceremony: planCeremonies(rewards, { nextGoal: nextGoal(saved.goals) }), rewards, hutKeys })
   if (roundStart?.roundId === result.roundId) roundStart = null
   try {
@@ -336,6 +358,7 @@ export function installMeta(opts: MetaOptions = {}): () => void {
   const unsub = useProfile.subscribe((state) => {
     const p = state.profile
     if (!p) {
+      if (lastProfile !== null) useMeta.setState({ hutKeys: {} })
       lastProfile = null
       return
     }
@@ -344,6 +367,8 @@ export function installMeta(opts: MetaOptions = {}): () => void {
     if (snap && snap.answered === 0 && snap.firstTries.length === 0 && (roundStart?.roundId !== snap.roundId || roundStart.profileId !== p.id)) capture(p)
     if (p.id !== lastProfile) {
       lastProfile = p.id
+      // another child (or the same one after a reload): the hut cache comes from the saved trials
+      useMeta.setState({ hutKeys: savedHutKeys(p) })
       queueMicrotask(() => useMeta.getState().refreshGoals())
     }
   })

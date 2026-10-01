@@ -1,0 +1,239 @@
+/* The round's intro (play/PlayIntro.tsx) and the round's frame in PlayScreen. Colours from tokens and
+   the stone's tone (--tone, --tone-deep, --tone-soft); only transform and opacity move. */
+
+.tv-play-round {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  animation: tv-play-fade var(--dur-base) var(--ease-out) both;
+}
+
+.tv-play {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.tv-play::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(120% 70% at 50% 34%, var(--tone-soft) 0%, transparent 70%);
+  opacity: 0.9;
+}
+
+.tv-play__stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 0;
+  padding: 0 var(--gutter) 24px;
+}
+
+.tv-play__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 420px);
+  padding: 26px 22px 22px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+  animation: tv-play-rise var(--dur-slow) var(--ease-out) both;
+}
+
+.tv-play__badge {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  margin-top: -64px;
+  border-radius: 50%;
+  background: var(--tone);
+  color: var(--color-card);
+  box-shadow: 0 6px 0 var(--tone-deep), var(--shadow-card);
+  --icon-fill-o: 0.32;
+}
+
+.tv-play__title {
+  margin: 4px 0 0;
+  font-size: var(--text-title);
+  font-weight: 900;
+  line-height: var(--text-title--line-height);
+  color: var(--color-ink);
+}
+.tv-play__label {
+  margin: 0;
+  font-size: var(--text-button);
+  font-weight: 800;
+  color: var(--tone-deep);
+}
+.tv-play__planks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.tv-play__planks .tv-stones {
+  width: min(100%, 320px);
+  height: auto;
+}
+.tv-play__best {
+  font-size: var(--text-body);
+  font-weight: 800;
+  color: var(--color-ink-2);
+}
+
+.tv-play__buddy {
+  width: 150px;
+  animation: tv-play-hop var(--dur-slow) var(--ease-spring) 120ms both;
+}
+.tv-play__buddy .tv-buddy svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tv-play__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 88px;
+  text-align: center;
+}
+.tv-play__go {
+  min-width: 220px;
+}
+.tv-play__note {
+  max-width: 28ch;
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--color-ink-2);
+}
+
+.tv-play__dots {
+  display: flex;
+  gap: 10px;
+  padding-top: 30px;
+}
+.tv-play__dots span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tone);
+  animation: tv-play-dot 1.1s var(--ease-out) infinite;
+}
+.tv-play__dots span:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.tv-play__dots span:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-play__buddy {
+    width: 210px;
+  }
+  .tv-play__badge {
+    width: 112px;
+    height: 112px;
+    margin-top: -76px;
+  }
+}
+
+/* A phone held sideways: card and buddy side by side. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .tv-play__stage {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 10px 28px;
+    padding-bottom: 8px;
+  }
+  .tv-play__card {
+    width: min(46vw, 380px);
+    padding: 16px 18px 16px;
+  }
+  .tv-play__badge {
+    width: 72px;
+    height: 72px;
+    margin-top: 0;
+  }
+  .tv-play__buddy {
+    width: 120px;
+  }
+  .tv-play__foot {
+    flex-basis: 100%;
+    min-height: 0;
+  }
+  .tv-play__dots {
+    padding-top: 4px;
+  }
+}
+
+@keyframes tv-play-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes tv-play-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tv-play-hop {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tv-play-dot {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+:root[data-calm] .tv-play-round,
+:root[data-calm] .tv-play__card,
+:root[data-calm] .tv-play__buddy,
+:root[data-calm] .tv-play__dots span {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-play-round,
+  .tv-play__card,
+  .tv-play__buddy,
+  .tv-play__dots span {
+    animation: none !important;
+  }
+}
