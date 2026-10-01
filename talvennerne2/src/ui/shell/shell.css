@@ -102,6 +102,8 @@
   }
   .tv-topbar__side--end {
     justify-content: flex-end;
+    /* stays at the right edge when there is no centre */
+    margin-left: auto;
   }
   .tv-topbar__center {
     display: flex;
