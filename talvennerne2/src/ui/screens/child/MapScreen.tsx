@@ -56,6 +56,7 @@ export default function MapScreen({ route }: ScreenProps<RouteOf<'map'>>) {
       model={model}
       frame={profile.frameColor}
       highlight={route.region ?? null}
+      first={profile.roundIndex === 0 && !profile.round}
       onWorld={setWorld}
       onPlay={playFromMap}
       onBuddy={() => useNav.getState().go({ id: 'wardrobe', ...(profile.buddyUid ? { uid: profile.buddyUid } : {}) })}

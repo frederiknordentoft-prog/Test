@@ -3,7 +3,10 @@
 // tests can follow the whole loop without a DOM.
 import { useNav } from '../../../../app/nav'
 import type { Route } from '../../../../app/routes'
-import type { RegionId } from '../../../../engine/types'
+import { NODE_BY_ID, REGION_BY_ID } from '../../../../content/curriculum'
+import type { ProfileDoc, RegionId, WorldId } from '../../../../engine/types'
+import type { Reward } from '../../../../meta/rewards'
+import { homeWorld, mapModel } from '../map/model'
 import type { PlayTarget } from '../map/nodes'
 
 /**
@@ -44,4 +47,24 @@ export function lastRound(): PlayTarget | null {
 export function exitRound(outcome: 'paused' | 'finished'): void {
   if (outcome === 'finished') useNav.getState().replace({ id: 'ceremonies' })
   else useNav.getState().back()
+}
+
+const worldOf = (target: PlayTarget | null): WorldId | null => (target && NODE_BY_ID[target] ? NODE_BY_ID[target].world : null)
+
+/**
+ * "Til kortet" after a round: the map of the region whose fog just lifted (it is brought into view
+ * and lit), else of the world the round was played in.
+ */
+export function mapAfterRound(rewards: readonly Reward[], last: PlayTarget | null): Route {
+  const opened = rewards.find((r): r is Extract<Reward, { t: 'opened' }> => r.t === 'opened')
+  const region = opened?.regions[0]
+  const world = (region ? REGION_BY_ID[region]?.world : null) ?? opened?.worlds[0] ?? worldOf(last)
+  return { id: 'map', ...(world ? { world } : {}), ...(region ? { region } : {}) }
+}
+
+/** "Næste" after a round: the next stone of the world the round was played in, else Blandet øvelse. */
+export function nextAfterRound(profile: ProfileDoc | null, last: PlayTarget | null): PlayTarget {
+  if (!profile) return 'practice'
+  const world = worldOf(last) ?? homeWorld(profile)
+  return mapModel(profile, world).next ?? 'practice'
 }

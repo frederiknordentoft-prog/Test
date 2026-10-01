@@ -22,7 +22,7 @@ import { usePress } from '../../../design/usePress'
 import { cx } from '../../../design/cx'
 import { Buddy } from '../round/Buddy'
 import { AnimalPicture, ItemPicture } from '../map/art'
-import { lineText } from '../map/words'
+import { goalSpeech, lineText } from '../map/words'
 import { canDoClip, learnedItems } from './describe'
 import { NameAnimal } from './NameAnimal'
 
@@ -84,7 +84,7 @@ export function SummaryScreen({ steps, rewards }: { steps: readonly CeremonyStep
           </li>
         ))}
       </ul>
-      {r?.next && <NextGoal parts={r.next ? goalParts(r.next) : []} />}
+      {r?.next && <NextGoal parts={goalSpeech(r.next)} />}
       {stars && <StarBurst from={stars.from} to={stars.stars} />}
       {showTally && (
         <div className="tv-tally" data-tally="">
@@ -108,20 +108,6 @@ export function SummaryScreen({ steps, rewards }: { steps: readonly CeremonyStep
       )}
     </div>
   )
-}
-
-function goalParts(goal: NonNullable<Of<'learned'>['next']>): SpeechPart[] {
-  const parts: SpeechPart[] = [{ clip: GOAL_TEXT[goal.kind] }]
-  if (goal.kind === 'revisit' && goal.region && REGION_BY_ID[goal.region]) parts.push({ clip: REGION_BY_ID[goal.region].nameClip })
-  return parts
-}
-
-const GOAL_TEXT: Readonly<Record<string, ClipId>> = {
-  mix: 's.reward.goal.mix',
-  revisit: 's.reward.goal.revisit',
-  streak5: 's.reward.goal.streak5',
-  write10: 's.reward.goal.write10',
-  stars3: 's.reward.goal.stars3',
 }
 
 function NextGoal({ parts }: { parts: SpeechPart[] }) {

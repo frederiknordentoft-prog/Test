@@ -223,7 +223,8 @@ async function run(browser) {
   check(map0.stones === 37 && map0.locked > 20, `alle sten vises, de låste som låste (${map0.locked} af ${map0.stones})`)
   check(map0.worlds.join(',') === 'eng:open,bakke:locked,skov:locked,fjeld:locked', `fire verdener, tre låste (${map0.worlds})`)
   check(map0.tiles.includes('next') && map0.tiles.includes('practice'), `"Næste sted" og "Blandet øvelse" (${map0.tiles})`)
-  await shot(page, 'map-phone-new', true)
+  await page.waitForTimeout(1000)
+  await shot(page, 'map-phone-new')
 
   // a locked stone says what opens it
   await tap(page, '[data-stone="w0-tal10-l2"]')

@@ -1103,6 +1103,22 @@
   }
 }
 
+/* The first look at the map (onboarding's last step): the path zooms in towards the first stone. */
+.tv-map.is-first .tv-map__path {
+  transform-origin: 50% 0;
+  animation: tv-map-zoom 900ms var(--ease-out) both;
+}
+
+@keyframes tv-map-zoom {
+  from {
+    opacity: 0.2;
+    transform: scale(1.18) translateY(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 @keyframes tv-map-halo {
   0% {
     opacity: 0.75;
@@ -1144,6 +1160,7 @@
   }
 }
 
+:root[data-calm] .tv-map.is-first .tv-map__path,
 :root[data-calm] .tv-stone__halo,
 :root[data-calm] .tv-hut__glow,
 :root[data-calm] .tv-decor__lamp,
@@ -1155,6 +1172,7 @@
   animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
+  .tv-map.is-first .tv-map__path,
   .tv-stone__halo,
   .tv-hut__glow,
   .tv-decor__lamp,

@@ -29,13 +29,15 @@ export interface MapViewProps {
   highlight?: RegionId | null
   /** Drawn behind the map instead of the world's scene or placeholder. */
   background?: ReactNode
+  /** The child's first look at the map (onboarding's last step): the path zooms in. */
+  first?: boolean
   onWorld(world: WorldId): void
   onPlay(target: PlayTarget, opts?: { resume?: boolean; region?: RegionId }): void
   onBuddy(): void
   onAdult(): void
 }
 
-export function MapView({ model, frame, highlight, background, onWorld, onPlay, onBuddy, onAdult }: MapViewProps) {
+export function MapView({ model, frame, highlight, background, first, onWorld, onPlay, onBuddy, onAdult }: MapViewProps) {
   const speech = useSpeech()
   const [open, setOpen] = useState<{ stone: StoneView; region: RegionView | null } | null>(null)
   const pathRef = useRef<HTMLDivElement>(null)
@@ -63,7 +65,7 @@ export function MapView({ model, frame, highlight, background, onWorld, onPlay, 
   }
 
   return (
-    <div className="tv-map" data-world={model.world}>
+    <div className={cx('tv-map', first && 'is-first')} data-world={model.world}>
       {background ?? <Backdrop world={model.world} tiers={tiers} />}
       <TopBar
         className="tv-map__top"

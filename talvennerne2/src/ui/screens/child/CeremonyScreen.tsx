@@ -12,8 +12,7 @@ import { useNav } from '../../../app/nav'
 import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
 import { playSfx, type SfxName } from '../../../audio/sfx'
-import { NODE_BY_ID, REGION_BY_ID } from '../../../content/curriculum'
-import type { ItemId, SpeechPart, WorldId } from '../../../engine/types'
+import type { ItemId, SpeechPart } from '../../../engine/types'
 import type { CeremonyPlan } from '../../../meta/ceremonyQueue'
 import type { Reward } from '../../../meta/rewards'
 import { useMeta } from '../../../state/useMeta'
@@ -28,9 +27,7 @@ import {
   GrowthScreen, LevelUpScreen, MedalScreen, SummaryScreen, ThingScreen, TrialScreen, levelSpeech, medalSpeech,
   summarySpeech, thingSpeech, trialSpeech,
 } from './ceremony/Steps'
-import { homeWorld, mapModel } from './map/model'
-import type { PlayTarget } from './map/nodes'
-import { lastRound, playNext } from './play/flow'
+import { lastRound, mapAfterRound, nextAfterRound, playNext } from './play/flow'
 import './ceremony/ceremony.css'
 
 /** A screen's words may run this much past its planned time before it moves on anyway. */
@@ -67,8 +64,6 @@ function soundOf(screen: Screen): SfxName | null {
     default: return null
   }
 }
-
-const worldOf = (target: PlayTarget | null): WorldId | null => (target && NODE_BY_ID[target] ? NODE_BY_ID[target].world : null)
 
 export default function CeremonyScreen(_props: ScreenProps<RouteOf<'ceremonies'>>) {
   const live = useMeta((s) => s.ceremony)
@@ -149,19 +144,15 @@ export default function CeremonyScreen(_props: ScreenProps<RouteOf<'ceremonies'>
   const leave = () => {
     if (leaving.current) return
     leaving.current = true
-    const opened = all.find((r): r is Extract<Reward, { t: 'opened' }> => r.t === 'opened')
-    const region = opened?.regions[0]
-    const world = (region ? REGION_BY_ID[region].world : null) ?? opened?.worlds[0] ?? worldOf(lastRound())
+    const to = mapAfterRound(all, lastRound())
     useMeta.getState().dismissCeremony()
-    useNav.getState().root({ id: 'map', ...(world ? { world } : {}), ...(region ? { region } : {}) }, 'back')
+    useNav.getState().root(to, 'back')
   }
 
   const playOn = () => {
     if (leaving.current) return
     leaving.current = true
-    const p = useProfile.getState().profile
-    const world = worldOf(lastRound()) ?? (p ? homeWorld(p) : 'eng')
-    const next: PlayTarget = (p ? mapModel(p, world).next : null) ?? 'practice'
+    const next = nextAfterRound(useProfile.getState().profile, lastRound())
     useMeta.getState().dismissCeremony()
     playNext(next)
   }

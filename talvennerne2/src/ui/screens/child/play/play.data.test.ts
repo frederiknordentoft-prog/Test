@@ -14,7 +14,7 @@ import { dropRoundStartMemory, installMeta, useMeta } from '../../../../state/us
 import { useProfile } from '../../../../state/useProfile'
 import { useRound } from '../../../../state/useRound'
 import { playable } from '../map/model'
-import { exitRound, playFromMap, playNext, roundRoute } from './flow'
+import { exitRound, mapAfterRound, nextAfterRound, playFromMap, playNext, roundRoute } from './flow'
 import { chooseStart, fastMsOf, hooksFor, roundStatements, type Start, type StartContext } from './prepare'
 
 /**
@@ -234,6 +234,26 @@ describe('PlayScreen: the training hut', () => {
     // without a region the hut of the latest failed trial is played
     const any = chooseStart('hut', p, ctx())
     expect(any.kind === 'plan' && any.hutRegion).toBe('w0-tal10')
+  })
+})
+
+describe('after the ceremonies', () => {
+  it('"Til kortet" lights the region whose fog lifted, else returns to the round\'s world', () => {
+    expect(mapAfterRound([{ t: 'opened', worlds: [], regions: ['w0-minus10'] }], 'w0-plus10-trial'))
+      .toEqual({ id: 'map', world: 'eng', region: 'w0-minus10' })
+    expect(mapAfterRound([{ t: 'opened', worlds: ['bakke'], regions: [] }], 'eng-finale')).toEqual({ id: 'map', world: 'bakke' })
+    expect(mapAfterRound([], 'w0-tal10-l1')).toEqual({ id: 'map', world: 'eng' })
+    expect(mapAfterRound([], 'practice')).toEqual({ id: 'map' })
+  })
+
+  it('"Næste" plays the next stone of the same world, or Blandet øvelse', async () => {
+    await newChild()
+    startRound(chooseStart('w0-tal10-l1', useProfile.getState().profile!, ctx()))
+    answerAll()
+    const p = useProfile.getState().profile!
+    expect(nextAfterRound(p, 'w0-tal10-l1')).toBe('w0-tal10-l2')
+    expect(nextAfterRound(p, 'practice')).toBe('w0-tal10-l2')
+    expect(nextAfterRound(null, 'w0-tal10-l1')).toBe('practice')
   })
 })
 
