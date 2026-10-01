@@ -62,8 +62,9 @@
   50% { transform: translate(0, -1.8px); }
 }
 @keyframes rig-wag {
-  0%, 100% { transform: rotate(-6deg); }
-  50% { transform: rotate(6deg); }
+  0%, 50%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(6deg); }
+  75% { transform: rotate(-6deg); }
 }
 @keyframes rig-twitch {
   0%, 89%, 100% { transform: rotate(0deg); }
@@ -82,6 +83,53 @@
   78% { transform: translate(0, 0.3px) scale(0.93, 1.08); }
   81% { transform: translate(0, -0.6px) scale(1.1, 0.92); }
   85% { transform: translate(0, 0) scale(1, 1); }
+}
+/* Signaturer: kattens halekrølle, hestens manke-kast og hornets glimt (arterne pakker delen i en
+   pivot med klassen). Hestens hoved kaster med i hvile, så manken svinger mod bevægelsen. */
+.rig .a-curl {
+  animation: rig-curl 5.4s ease-in-out infinite;
+  animation-delay: calc(-2.1s - var(--rig-t, 0s));
+}
+.rig .a-toss {
+  animation: rig-toss 6.2s ease-in-out infinite;
+  animation-delay: calc(-3s - var(--rig-t, 0s));
+}
+.rig .a-glint {
+  animation: rig-glint 3.4s ease-in-out infinite;
+  animation-delay: calc(-1s - var(--rig-t, 0s));
+}
+.rig[data-mood='idle'][data-species='horse'] .a-head,
+.rig[data-mood='idle'][data-species='unicorn'] .a-head {
+  animation: rig-head-toss 6.2s ease-in-out infinite;
+  animation-delay: calc(-3s - var(--rig-t, 0s));
+}
+@keyframes rig-curl {
+  0%, 62%, 100% { transform: rotate(0deg); }
+  68% { transform: rotate(-24deg); }
+  74% { transform: rotate(9deg); }
+  80% { transform: rotate(-11deg); }
+  87% { transform: rotate(0deg); }
+}
+@keyframes rig-toss {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  74% { transform: rotate(5deg); }
+  79% { transform: rotate(-10deg); }
+  85% { transform: rotate(5deg); }
+  91% { transform: rotate(-2deg); }
+  95% { transform: rotate(0deg); }
+}
+@keyframes rig-head-toss {
+  0%, 35%, 70%, 100% { transform: translate(0, 0) rotate(0deg); }
+  17% { transform: translate(0, -1.6px) rotate(0deg); }
+  52% { transform: translate(0, -1.6px) rotate(0deg); }
+  75% { transform: translate(0, -2px) rotate(-6deg); }
+  81% { transform: translate(0, -1px) rotate(4deg); }
+  88% { transform: translate(0, 0) rotate(-1deg); }
+}
+@keyframes rig-glint {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  45%, 55% { opacity: 0.15; transform: scale(0.55); }
+  70% { opacity: 1; transform: scale(1.15); }
 }
 @keyframes rig-twinkle {
   0%, 100% { opacity: 1; }
@@ -131,15 +179,15 @@
   19%, 56% { transform: translate(100px, 225px) scale(0.74, 0.74) translate(-100px, -225px); opacity: 0.65; }
 }
 @keyframes rig-ear-hop {
-  0%, 82%, 100% { transform: rotate(0deg); }
-  10%, 44% { transform: rotate(5deg); }
-  22%, 58% { transform: rotate(0deg); }
-  37.5%, 75% { transform: rotate(-12deg); }
+  0%, 82%, 100% { transform: rotate(-6deg); }
+  10%, 44% { transform: rotate(3deg); }
+  22%, 58% { transform: rotate(-4deg); }
+  37.5%, 75% { transform: rotate(-14deg); }
 }
 @keyframes rig-paw-hop {
-  0%, 82%, 100% { transform: rotate(0deg); }
-  10%, 44% { transform: rotate(36deg); }
-  22%, 58% { transform: rotate(44deg); }
+  0%, 82%, 100% { transform: rotate(30deg); }
+  10%, 44% { transform: rotate(40deg); }
+  22%, 58% { transform: rotate(48deg); }
   37.5%, 75% { transform: rotate(16deg); }
 }
 @keyframes rig-wag-fast {
@@ -147,7 +195,7 @@
   50% { transform: rotate(14deg); }
 }
 
-/* ---------------------------------------------------------------- cheer: jubel med poterne i vejret */
+/* ---------------------------------------------------------------- cheer: jubel med armene op i et V */
 
 .rig[data-mood='cheer'] .a-fig {
   animation: rig-cheer 1s ease-in-out infinite;
@@ -155,6 +203,14 @@
 }
 .rig[data-mood='cheer'] .a-shadow {
   animation: rig-shadow-cheer 1s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='cheer'] .a-body {
+  animation: rig-cheer-body 1s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='cheer'] .a-head {
+  animation: rig-cheer-head 1s ease-in-out infinite;
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
 .rig[data-mood='cheer'] .a-paw {
@@ -170,25 +226,33 @@
 }
 
 @keyframes rig-cheer {
-  0%, 100% { transform: translate(100px, 226px) translate(0, 0) rotate(0deg) scale(1, 1) translate(-100px, -226px); }
-  6% { transform: translate(100px, 226px) translate(0, 0) rotate(0deg) scale(1.05, 0.94) translate(-100px, -226px); }
+  0%, 100% { transform: translate(100px, 226px) translate(0, 0) rotate(-2deg) scale(1, 1) translate(-100px, -226px); }
+  6% { transform: translate(100px, 226px) translate(0, 0) rotate(-2deg) scale(1.05, 0.94) translate(-100px, -226px); }
   25% { transform: translate(100px, 226px) translate(0, -16px) rotate(-4deg) scale(0.98, 1.03) translate(-100px, -226px); }
   44% { transform: translate(100px, 226px) translate(0, -3px) rotate(0deg) scale(0.98, 1.03) translate(-100px, -226px); }
   50% { transform: translate(100px, 226px) translate(0, 0) rotate(0deg) scale(1.05, 0.94) translate(-100px, -226px); }
   75% { transform: translate(100px, 226px) translate(0, -16px) rotate(4deg) scale(0.98, 1.03) translate(-100px, -226px); }
-  94% { transform: translate(100px, 226px) translate(0, -3px) rotate(0deg) scale(0.98, 1.03) translate(-100px, -226px); }
+  94% { transform: translate(100px, 226px) translate(0, -3px) rotate(-1deg) scale(0.98, 1.03) translate(-100px, -226px); }
 }
 @keyframes rig-shadow-cheer {
   0%, 6%, 50%, 100% { transform: translate(100px, 225px) scale(1, 1) translate(-100px, -225px); opacity: 1; }
   25%, 75% { transform: translate(100px, 225px) scale(0.76, 0.76) translate(-100px, -225px); opacity: 0.7; }
 }
+@keyframes rig-cheer-body {
+  0%, 100% { transform: translate(100px, 226px) scale(1, 1.02) translate(-100px, -226px); }
+  50% { transform: translate(100px, 226px) scale(1.01, 1.04) translate(-100px, -226px); }
+}
+@keyframes rig-cheer-head {
+  0%, 100% { transform: translate(0, -1px) rotate(-3deg); }
+  50% { transform: translate(0, -2px) rotate(3deg); }
+}
 @keyframes rig-paw-cheer {
-  0%, 100% { transform: rotate(116deg); }
-  50% { transform: rotate(132deg); }
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(10deg); }
 }
 @keyframes rig-ear-cheer {
-  0%, 100% { transform: rotate(-9deg); }
-  50% { transform: rotate(-3deg); }
+  0%, 100% { transform: rotate(7deg); }
+  50% { transform: rotate(2deg); }
 }
 
 /* ---------------------------------------------------------------- think: hovedet på skrå, prikker */
@@ -206,7 +270,11 @@
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
 .rig[data-mood='think'] .a-tail {
-  animation: rig-wag 3.6s ease-in-out infinite;
+  animation: rig-think-tail 3.6s ease-in-out infinite;
+}
+@keyframes rig-think-tail {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(2deg); }
 }
 .rig .a-dot {
   animation: rig-dot 3s ease-in-out infinite;
@@ -220,8 +288,8 @@
 }
 
 @keyframes rig-think-head {
-  0%, 100% { transform: translate(0, 3px) rotate(8deg); }
-  50% { transform: translate(0, 2px) rotate(10deg); }
+  0%, 100% { transform: translate(0, 2px) rotate(8deg); }
+  50% { transform: translate(0, 1px) rotate(10deg); }
 }
 @keyframes rig-think-ear-l {
   0%, 100% { transform: rotate(6deg); }
@@ -250,35 +318,55 @@
   50% { transform: translate(0, -1.5px); }
 }
 
-/* ---------------------------------------------------------------- oops: genert nik, ører ned */
+/* ---------------------------------------------------------------- oops: legende skuldertræk, blink */
 
 .rig[data-mood='oops'] .a-head {
   animation: rig-oops-head 2.4s ease-in-out infinite;
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
-.rig[data-mood='oops'] .a-ear {
-  animation: rig-oops-ear 2.4s ease-in-out infinite;
+.rig[data-mood='oops'] .a-ear-l {
+  animation: rig-oops-ear-l 2.4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='oops'] .a-ear-r {
+  animation: rig-oops-ear-r 2.4s ease-in-out infinite;
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
 .rig[data-mood='oops'] .a-paw {
   animation: rig-oops-paw 2.4s ease-in-out infinite;
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
+.rig[data-mood='oops'] .a-tail {
+  animation: rig-oops-tail 2.4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
 
 @keyframes rig-oops-head {
-  0%, 100% { transform: translate(0, 1.5px) rotate(-4deg); }
-  14% { transform: translate(0, 3.5px) rotate(-2deg); }
-  28% { transform: translate(0, 1.5px) rotate(-4deg); }
-  60% { transform: translate(0, 1px) rotate(-5deg); }
+  0%, 100% { transform: translate(0, 1px) rotate(-7deg); }
+  12% { transform: translate(0, -1px) rotate(-9deg); }
+  24% { transform: translate(0, 1px) rotate(-6deg); }
+  60% { transform: translate(0, 0.5px) rotate(-8deg); }
 }
-@keyframes rig-oops-ear {
+@keyframes rig-oops-ear-l {
   0%, 100% { transform: rotate(-12deg); }
-  14% { transform: rotate(-15deg); }
-  28% { transform: rotate(-11deg); }
+  12% { transform: rotate(-16deg); }
+  24% { transform: rotate(-10deg); }
+}
+@keyframes rig-oops-ear-r {
+  0%, 100% { transform: rotate(-2deg); }
+  12% { transform: rotate(-6deg); }
+  24% { transform: rotate(0deg); }
 }
 @keyframes rig-oops-paw {
+  0%, 100% { transform: rotate(58deg); }
+  12% { transform: rotate(68deg); }
+  24% { transform: rotate(54deg); }
+  40% { transform: rotate(60deg); }
+}
+@keyframes rig-oops-tail {
   0%, 100% { transform: rotate(8deg); }
-  14% { transform: rotate(4deg); }
+  12% { transform: rotate(16deg); }
+  24% { transform: rotate(4deg); }
 }
 
 .rig .a-sweat {
@@ -300,12 +388,19 @@
   animation: rig-sleep-head 5s ease-in-out infinite;
   animation-delay: calc(0.3s - var(--rig-t, 0s));
 }
-.rig[data-mood='sleep'] .a-ear {
-  animation: rig-sleep-ear 5s ease-in-out infinite;
+.rig[data-mood='sleep'] .a-ear-l {
+  animation: rig-sleep-ear-l 5s ease-in-out infinite;
+  animation-delay: calc(0.3s - var(--rig-t, 0s));
+}
+.rig[data-mood='sleep'] .a-ear-r {
+  animation: rig-sleep-ear-r 5s ease-in-out infinite;
   animation-delay: calc(0.3s - var(--rig-t, 0s));
 }
 .rig[data-mood='sleep'] .a-tail,
-.rig[data-mood='sleep'] .a-sig {
+.rig[data-mood='sleep'] .a-sig,
+.rig[data-mood='sleep'] .a-curl,
+.rig[data-mood='sleep'] .a-toss,
+.rig[data-mood='sleep'] .a-paw {
   animation: none;
 }
 .rig .a-z {
@@ -320,16 +415,20 @@
 }
 
 @keyframes rig-sleep-breathe {
-  0%, 100% { transform: translate(100px, 226px) scale(1, 0.985) translate(-100px, -226px); }
-  50% { transform: translate(100px, 226px) scale(1.015, 1.02) translate(-100px, -226px); }
+  0%, 100% { transform: translate(100px, 226px) scale(1, 0.965) translate(-100px, -226px); }
+  50% { transform: translate(100px, 226px) scale(1.015, 0.99) translate(-100px, -226px); }
 }
 @keyframes rig-sleep-head {
-  0%, 100% { transform: translate(0, 3px) rotate(6deg); }
-  50% { transform: translate(0, 1px) rotate(5deg); }
+  0%, 100% { transform: translate(0, 6px) rotate(7deg); }
+  50% { transform: translate(0, 4.5px) rotate(6deg); }
 }
-@keyframes rig-sleep-ear {
-  0%, 100% { transform: rotate(-17deg); }
-  50% { transform: rotate(-14deg); }
+@keyframes rig-sleep-ear-l {
+  0%, 100% { transform: rotate(-26deg); }
+  50% { transform: rotate(-23deg); }
+}
+@keyframes rig-sleep-ear-r {
+  0%, 100% { transform: rotate(-22deg); }
+  50% { transform: rotate(-19deg); }
 }
 @keyframes rig-z {
   0% { opacity: 0; transform: translate(-3px, 6px); }
@@ -338,7 +437,7 @@
   100% { opacity: 0; transform: translate(3px, -8px); }
 }
 
-/* ---------------------------------------------------------------- wave: tre vink og hvil */
+/* ---------------------------------------------------------------- wave: løftet pote med bøjet albue vinker */
 
 .rig[data-mood='wave'] .a-paw-r {
   animation: rig-wave 1.8s ease-in-out infinite;
@@ -348,29 +447,62 @@
   animation: rig-wave-head 1.8s ease-in-out infinite;
   animation-delay: calc(0s - var(--rig-t, 0s));
 }
-.rig[data-mood='wave'] .a-ear {
-  animation: rig-wave-ear 1.8s ease-in-out infinite;
+.rig[data-mood='wave'] .a-ear-l {
+  animation: rig-wave-ear-l 1.8s ease-in-out infinite;
   animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='wave'] .a-ear-r {
+  animation: rig-wave-ear-r 1.8s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='wave'] .a-tail {
+  animation: rig-wag-fast 0.45s ease-in-out infinite;
 }
 
 @keyframes rig-wave {
-  0%, 100% { transform: rotate(118deg); }
-  11% { transform: rotate(134deg); }
-  22% { transform: rotate(100deg); }
-  33% { transform: rotate(134deg); }
-  44% { transform: rotate(100deg); }
-  55% { transform: rotate(132deg); }
-  68% { transform: rotate(118deg); }
+  0%, 100% { transform: rotate(0deg); }
+  11% { transform: rotate(14deg); }
+  22% { transform: rotate(-8deg); }
+  33% { transform: rotate(14deg); }
+  44% { transform: rotate(-8deg); }
+  55% { transform: rotate(10deg); }
+  68% { transform: rotate(0deg); }
 }
 @keyframes rig-wave-head {
-  0%, 100% { transform: translate(0, 0) rotate(-4deg); }
-  33% { transform: translate(0, -1px) rotate(-6deg); }
-  66% { transform: translate(0, 0) rotate(-3deg); }
+  0%, 100% { transform: translate(0, 1px) rotate(-7deg); }
+  33% { transform: translate(0, 0) rotate(-9deg); }
+  66% { transform: translate(0, 1px) rotate(-6deg); }
 }
-@keyframes rig-wave-ear {
+@keyframes rig-wave-ear-l {
   0%, 100% { transform: rotate(-4deg); }
   33% { transform: rotate(-9deg); }
   66% { transform: rotate(-2deg); }
+}
+@keyframes rig-wave-ear-r {
+  0%, 100% { transform: rotate(6deg); }
+  33% { transform: rotate(2deg); }
+  66% { transform: rotate(8deg); }
+}
+
+/* ---------------------------------------------------------------- hængeører svajer i alle humør */
+
+.rig[data-mood] .a-ear.a-hang {
+  animation: rig-hang 3.2s ease-in-out infinite;
+  animation-delay: calc(-0.4s - var(--rig-t, 0s));
+}
+.rig[data-mood='happy'] .a-ear.a-hang,
+.rig[data-mood='cheer'] .a-ear.a-hang {
+  animation: rig-hang-hop 0.8s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+@keyframes rig-hang {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(2.5deg); }
+}
+@keyframes rig-hang-hop {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(6deg); }
+  65% { transform: rotate(-3deg); }
 }
 
 /* ---------------------------------------------------------------- tilstande */

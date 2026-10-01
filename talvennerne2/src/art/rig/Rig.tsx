@@ -5,24 +5,33 @@
 //   g.a-fig                                  hop/jubel (pivot = fodpunktet, indlejret i keyframes)
 //     g[krop: stadie]  g.a-body              lag 2–9 i modelrummet (ånding om fodpunktet)
 //     g[translate(hals) scale]  g.a-head  g[translate(−hals)]   lag 10–16 i modelrummet
+//     g[krop: stadie]  g.a-body              løftede poter foran hovedet (jubel, vink, tænker)
 //     fx                                     lag 17 i verdensrummet
 // Animerede dele bruger pivot-mønsteret: <g transform="translate(px py)"><g class="a-…">lokalt</g></g>
-// med transform-origin 0 0. Kun transform og opacity animeres (rig.css).
+// med transform-origin 0 0. Kun transform og opacity animeres (rig.css). Humørets nøglepose sættes
+// som attribut i begge tilstande; i animeret tilstand svinger keyframes (0 % = posen) om den.
 import { useEffect, useId, useRef } from 'react'
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react'
 import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, SweatDrop, ThoughtDots, Zzz, around } from '../parts/house'
-import { OUTLINE, modelAnchors, regionTransforms, worldAnchors } from './anchors'
+import { OUTLINE, apply, modelAnchors, regionTransforms, worldAnchors } from './anchors'
+import type { Affine } from './anchors'
 import { defaultHead, templateBody } from './bodies'
 import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
-import { MAGIC, derivePalette, itemPalette, silhouettePalette } from './palette'
-import { ellipse, fmt3, join, n, outside, tf } from './shapes'
+import { mixHex } from './oklch'
+import { INK, MAGIC, derivePalette, itemPalette, silhouettePalette } from './palette'
+import { ellipse, fmt3, join, lune, n, outside, rect, tf } from './shapes'
 import type {
-  AnchorSet, BreedDef, BreedId, ColorwayDef, ColorwayId, FaceStyle, MagicColorwayId, Mood, Outfit, Palette, PartCtx,
-  Pose, PoseXf, Pt, RigIds, SidePart, Slot, SpeciesDef, SpeciesParts, Stage, Worn,
+  AnchorSet, BreedDef, BreedId, Box, ColorwayDef, ColorwayId, FaceStyle, FigureBounds, FitResult, ItemDef,
+  MagicColorwayId, Mood, Outfit, Palette, PartCtx, PawPose, Pose, PoseXf, Pt, RigIds, SidePart, Slot,
+  SpeciesDef, SpeciesParts, Stage, Worn,
 } from './types'
 import './rig.css'
 
 export type RigMode = 'animated' | 'static'
+/** Detaljeniveau. 'small' (≤ 64 px): tykkere og mørkere kontur, ingen hårfine streger, figuren fylder rammen. */
+export type RigLod = 'full' | 'small'
+/** Små ikoner (≤ 64 CSS-px) får automatisk det lille detaljeniveau. */
+export const SMALL_LOD_PX = 64
 
 export interface RigProps {
   species: SpeciesDef
@@ -39,7 +48,7 @@ export interface RigProps {
   lookAt?: Pt | null
   /** Fase og blinkperiode pr. instans (deterministisk). */
   seed?: number
-  /** CSS-bredde; højden følger formatet 5:6. */
+  /** CSS-bredde; højden følger beskæringens format. */
   size?: number | string
   className?: string
   style?: CSSProperties
@@ -49,39 +58,53 @@ export interface RigProps {
   silhouette?: boolean
   /** Frys animationen på tidspunktet t sekunder (filmstrimler). */
   freezeAt?: number
-  /** Beskæring: 'full' (standard, 200x240), 'head' (hoved og hat, til butikskort) eller 'bust'. */
+  /**
+   * Beskæring (beregnet ud fra stadiets ankre, så den følger figuren):
+   * 'full' (200x240), 'fit' (hele figuren, 5:6), 'head' (hoved og hat), 'torso' (hage til hofte),
+   * 'bust' (hoved og overkrop). Kvadratiske undtagen full/fit. Små ikoner bruger 'fit' som standard.
+   */
   crop?: RigCrop
+  /** 'auto' (standard): 'small' når size ≤ 64 px. */
+  lod?: RigLod | 'auto'
 }
 
-export type RigCrop = 'full' | 'head' | 'bust'
+export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust'
+
 /** Højde/bredde for en beskæring. */
 export function cropAspect(crop: RigCrop): number {
-  const [, , w, h] = CROPS[crop].split(' ').map(Number)
-  return h / w
+  return crop === 'full' || crop === 'fit' ? 1.2 : 1
 }
-/** viewBox pr. beskæring. */
-export const CROPS: Record<RigCrop, string> = {
-  full: '0 0 200 240',
-  head: '22 0 156 156',
-  bust: '10 0 180 190',
+
+export function lodFor(size: RigProps['size'], lod: RigProps['lod']): RigLod {
+  if (lod && lod !== 'auto') return lod
+  return typeof size === 'number' && size <= SMALL_LOD_PX ? 'small' : 'full'
 }
 
 // ---------------------------------------------------------------------------------------------
-// Poser: statisk nøgleramme pr. humør (animeret tilstand bruger keyframes i rig.css).
+// Poser: nøglepose pr. humør (animeret tilstand svinger om den med keyframes i rig.css).
+// Poter: et tal er en hvilende pote roteret om skulderen; { up: true } bruger artens løftede pote
+// (PawUp) foran hovedet. Arterne finjusterer via SpeciesDef.poses / BreedDef.poses.
 
 type Xf = PoseXf
 
 export const POSES: Record<Mood, Pose> = {
   idle: {},
-  happy: { earL: -6, earR: -6, pawL: 34, pawR: 34, tail: 12 },
-  cheer: { fig: { rot: -3 }, head: { rot: -2, y: 1 }, earL: -9, earR: -4, pawL: 124, pawR: 124, tail: 14 },
-  think: { head: { rot: 8, y: 3 }, earL: 6, earR: -8 },
-  oops: { head: { rot: -4, y: 1.5 }, earL: -14, earR: -11, pawL: 6, pawR: 6 },
-  sleep: { head: { rot: 6, y: 3 }, earL: -18, earR: -16, body: { sy: 0.985 } },
-  wave: { head: { rot: -4 }, earL: -4, earR: 5, pawR: 118 },
+  happy: { earL: -6, earR: -6, pawL: 30, pawR: 30, tail: 12 },
+  // Jubel: begge arme op i et V, ørerne rejst, figuren strækker sig.
+  cheer: { fig: { rot: -2 }, body: { sy: 1.02 }, head: { rot: -3, y: -1 }, earL: 7, earR: 7, pawL: { up: true }, pawR: { up: true }, tail: 14 },
+  // Tænker: hovedet på skrå, poten på hagen.
+  think: { head: { rot: 8, y: 2 }, earL: 6, earR: -8, pawR: { up: true }, tail: -6 },
+  // Ups: et legende skuldertræk (begge poter ud til siden), hovedet på skrå, et blink.
+  oops: { head: { rot: -7, y: 1 }, earL: -12, earR: -2, pawL: 58, pawR: 58, tail: 8 },
+  // Sover: sammensunket, hovedet tungt, ørerne nede.
+  sleep: { body: { sy: 0.965 }, head: { rot: 7, y: 6 }, earL: -26, earR: -22, pawL: -4, pawR: -4 },
+  // Vinker: poten løftet ved siden af hovedet med bøjet albue, hovedet vippet mod den.
+  wave: { head: { rot: -7, y: 1 }, earL: -4, earR: 6, pawR: { up: true }, tail: 10 },
 }
 
 const G = { x: 100, y: 226 }
+/** Ørerne klippes en anelse inden for hovedets kontur, så ørets fyld dækker konturen helt (ingen søm). */
+export const EAR_SEAM = 0.9
 
 /** Transform om fodpunktet (hop, ånding): translate(G) · xf · translate(−G). */
 function aboutGround(x: Xf | undefined): string | undefined {
@@ -89,6 +112,8 @@ function aboutGround(x: Xf | undefined): string | undefined {
   const inner = tf({ x: x.x, y: x.y, rot: x.rot, sx: x.sx, sy: x.sy })
   return inner ? `translate(${G.x} ${G.y}) ${inner} translate(${-G.x} ${-G.y})` : undefined
 }
+
+const pawPose = (p: number | PawPose | undefined): PawPose => (typeof p === 'number' ? { rot: p } : (p ?? {}))
 
 // ---------------------------------------------------------------------------------------------
 
@@ -117,7 +142,7 @@ export function resolveFace(def: SpeciesDef, breed: BreedId): FaceStyle {
   return { ...def.face, ...resolveBreed(def, breed)?.face }
 }
 
-/** Den statiske nøglepose: riggens standard ← artens ← racens (pr. felt). */
+/** Nøgleposen: riggens standard ← artens ← racens (pr. felt). */
 export function resolvePose(def: SpeciesDef, breed: BreedId, mood: Mood): Pose {
   return { ...POSES[mood], ...def.poses?.[mood], ...resolveBreed(def, breed)?.poses?.[mood] }
 }
@@ -132,6 +157,92 @@ export function resolvePalette(def: SpeciesDef, breed: BreedId, colorway: Colorw
 /** De magiske farver, som (art, race) findes i. Stjernehvid findes kun som enhjørningeføllet. */
 export function magicOf(def: SpeciesDef, breed: BreedId): readonly MagicColorwayId[] {
   return resolveBreed(def, breed)?.magic ?? def.magic
+}
+
+/** Små størrelser: konturen ca. 35 % mørkere mod husets ink (læsbar på hvid pels ved 48 px). */
+function lodPalette(p: Palette): Palette {
+  const dk = (c: string) => mixHex(c, INK, 0.35)
+  return { ...p, outline: dk(p.outline), earOutline: dk(p.earOutline), maneOutline: dk(p.maneOutline), patternOutline: dk(p.patternOutline) }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Grænsebokse og beskæring
+
+const box = (x0: number, y0: number, x1: number, y1: number): Box => ({ x0, y0, x1, y1 })
+const mapBox = (m: Affine, b: Box): Box => box(m.s * b.x0 + m.tx, m.s * b.y0 + m.ty, m.s * b.x1 + m.tx, m.s * b.y1 + m.ty)
+const unionBox = (a: Box, b: Box): Box => box(Math.min(a.x0, b.x0), Math.min(a.y0, b.y0), Math.max(a.x1, b.x1), Math.max(a.y1, b.y1))
+
+/** Figurens grænsebokse i modelrummet: race ← art ← skøn ud fra ankrene. */
+export function figureBounds(def: SpeciesDef, breed: BreedId): FigureBounds {
+  const a = modelAnchors(def, breed)
+  const b = resolveBreed(def, breed)
+  const h = a.headCenter
+  const est: FigureBounds = {
+    head: box(h.x - a.headRx * 1.06, a.headTop.y - 10, h.x + a.headRx * 1.06, h.y + a.headRy * 1.02),
+    body: box(a.bodyCenter.x - a.bodyRx - 16, a.neck.y - 4, a.bodyCenter.x + a.bodyRx + 22, a.ground.y),
+  }
+  return {
+    head: b?.bounds?.head ?? def.bounds?.head ?? est.head,
+    body: b?.bounds?.body ?? def.bounds?.body ?? est.body,
+  }
+}
+
+/** Grænseboksene i verdensrummet (viewBox) for (art, race, stadie). */
+export function worldBounds(def: SpeciesDef, breed: BreedId, stage: Stage): FigureBounds & { all: Box } {
+  const a = modelAnchors(def, breed)
+  const R = regionTransforms(a, stage)
+  const fb = figureBounds(def, breed)
+  const head = mapBox(R.head, fb.head)
+  const body = mapBox(R.body, fb.body)
+  return { head, body, all: unionBox(head, body) }
+}
+
+/** Boks → viewBox med luft `pad` (andel) og formatet h/w = aspect, centreret. */
+function viewBoxAround(b: Box, pad: number, aspect: number): string {
+  const cx = (b.x0 + b.x1) / 2
+  const cy = (b.y0 + b.y1) / 2
+  let W = (b.x1 - b.x0) * (1 + pad)
+  let H = (b.y1 - b.y0) * (1 + pad)
+  if (H / W < aspect) H = W * aspect
+  else W = H / aspect
+  return `${n(cx - W / 2)} ${n(cy - H / 2)} ${n(W)} ${n(H)}`
+}
+
+/** En genstands tegnede boks (fra `icon.box`) i modelrummet. */
+function itemModelBox(item: ItemDef, fit: FitResult): Box | null {
+  const ib = item.icon?.box
+  if (!ib) return null
+  const [x, y, w, h] = ib
+  const t = (fit.rot * Math.PI) / 180
+  const pts = [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].map(([px, py]) => ({
+    x: fit.x + (px * Math.cos(t) - py * Math.sin(t)) * fit.scale,
+    y: fit.y + (px * Math.sin(t) + py * Math.cos(t)) * fit.scale,
+  }))
+  return box(Math.min(...pts.map((p) => p.x)), Math.min(...pts.map((p) => p.y)), Math.max(...pts.map((p) => p.x)), Math.max(...pts.map((p) => p.y)))
+}
+
+/** viewBox for en beskæring, beregnet ud fra stadiets ankre (og hatten, hvis den bæres). */
+export function cropViewBox(def: SpeciesDef, breed: BreedId, stage: Stage, crop: RigCrop, outfit?: Outfit): string {
+  if (crop === 'full') return '0 0 200 240'
+  const a = modelAnchors(def, breed)
+  const R = regionTransforms(a, stage)
+  const w = worldAnchors(a, stage)
+  const wb = worldBounds(def, breed, stage)
+  if (crop === 'fit') return viewBoxAround(wb.all, 0.06, 1.2)
+  if (crop === 'head') {
+    let b = box(w.headCenter.x - w.headRx * 1.12, w.headTop.y - w.headRy * 0.3, w.headCenter.x + w.headRx * 1.12, w.headCenter.y + w.headRy * 1.04)
+    const hat = outfit?.head && !def.occupies?.includes('head') ? outfit.head.item : null
+    const ib = hat ? itemModelBox(hat, fitItem(hat, a, def)) : null
+    if (ib) b = unionBox(b, mapBox(R.head, ib))
+    return viewBoxAround(b, 0.08, 1)
+  }
+  if (crop === 'torso') {
+    const b = box(w.bodyCenter.x - w.bodyRx * 1.3, w.headCenter.y + w.headRy * 0.42, w.bodyCenter.x + w.bodyRx * 1.3, w.bodyCenter.y + w.bodyRy * 0.82)
+    return viewBoxAround(b, 0.06, 1)
+  }
+  // bust: hoved (uden de højeste ører) og overkrop
+  const b = box(w.headCenter.x - w.headRx * 1.15, w.headTop.y - w.headRy * 0.35, w.headCenter.x + w.headRx * 1.15, w.bodyCenter.y + w.bodyRy * 0.4)
+  return viewBoxAround(b, 0.04, 1)
 }
 
 /** Pupil-tracking: lerp 0,2 pr. rAF mod målet, højst 3 enheder. Stopper når den er i ro. */
@@ -183,7 +294,7 @@ function useGaze(
 export function Pivot({ at, cls, still, pose, children }: { at: Pt; cls: string; still: boolean; pose?: Xf; children: ReactNode }) {
   return (
     <g transform={`translate(${n(at.x)} ${n(at.y)})`}>
-      <g className={still ? undefined : cls} transform={still ? tf(pose ?? {}) : undefined}>
+      <g className={still ? undefined : cls} transform={tf(pose ?? {})}>
         {children}
       </g>
     </g>
@@ -228,9 +339,12 @@ function gazeInputs(props: RigProps) {
 export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const {
     species: def, stage = 2, colorway = 'c1', star = false, mood = 'idle', mode = 'animated',
-    outfit, lookAt, size, className, style, title, silhouette = false, freezeAt, crop = 'full',
+    outfit, lookAt, size, className, style, title, silhouette = false, freezeAt,
   } = props
   const breed: BreedId = props.breed ?? def.breeds[0].id
+  const lod = lodFor(size, props.lod)
+  // Små ikoner viser hele figuren tæt beskåret (babyen fylder rammen som de andre stadier).
+  const crop: RigCrop = props.crop ?? (lod === 'small' ? 'fit' : 'full')
   const still = mode === 'static'
   const animated = !still
   const uid = env.uid
@@ -238,6 +352,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const shadowId = `${uid}s`
   const itemClipId = `${uid}i`
   const earClipId = ids.outsideHead
+  const holeClipId = `${uid}o`
+  const sleeveClipId = `${uid}v`
 
   const a = modelAnchors(def, breed)
   const R = regionTransforms(a, stage)
@@ -245,54 +361,74 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const parts = resolveParts(def, breed)
   const breedDef = resolveBreed(def, breed)
   const base = resolvePalette(def, breed, colorway)
-  const pal: Palette = silhouette ? silhouettePalette(base) : base
+  const pal: Palette = silhouette ? silhouettePalette(base) : lod === 'small' ? lodPalette(base) : base
   const face = MOOD_FACE[mood]
   const faceStyle = resolveFace(def, breed)
   const mouth = face.mouth === 'idle' ? faceStyle.idleMouth : face.mouth
-  const pose: Pose = still ? resolvePose(def, breed, mood) : {}
+  const pose = resolvePose(def, breed, mood)
   const seed = props.seed ?? hashSeed(`${def.id}${breed}${colorway}${stage}`)
 
-  // Stregbredder kompenseres, så konturen er 3,2 i verdensrummet på alle stadier.
-  const swBody = OUTLINE / R.body.s
-  const swHead = OUTLINE / R.head.s
-  const ctx = (sw: number): PartCtx => ({ pal, a, stage, mood, breed, colorway, sw, ids, still })
-
-  const bodyD = (parts.body ?? templateBody(def.body))(a, 0, stage)
-  const headD = (parts.head ?? defaultHead)(a, 0, stage)
-  // Indvendige klip (kontur/2 inde), så skygger og mønstre aldrig dækker konturen.
-  const bodyClipD = (parts.body ?? templateBody(def.body))(a, -swBody / 2, stage)
-  const headClipD = (parts.head ?? defaultHead)(a, -swHead / 2, stage)
+  // Stregbredder kompenseres, så konturen er 3,2 i verdensrummet på alle stadier (·1,3 i små ikoner).
+  const OUT = OUTLINE * (lod === 'small' ? 1.3 : 1)
+  const swBody = OUT / R.body.s
+  const swHead = OUT / R.head.s
 
   // Tøj
   const worn = (slot: Slot): Worn | undefined => (def.occupies?.includes(slot) ? undefined : outfit?.[slot])
   const hides = new Set(Object.values(outfit ?? {}).flatMap((x) => x?.item.hides ?? []))
   const bodyWorn = worn('body')
+  const headWorn = worn('head')
+  const hat = headWorn ? fitItem(headWorn.item, a, def).earMode : null
+
+  const Ear = parts.Ear
+  const earRig = breedDef?.ears ?? def.ears
+  const earsShown = !!Ear && !hides.has('ears')
+  // Hatte med ørehuller: ørerne klippes ved hullet, og hullets forkant lægges oven på roden.
+  const holes = hat === 'through' && earsShown && earRig?.clip !== false && !!headWorn?.item.art.rim
+  // Arter tegner selv en afrundet ørebund i hullet (ctx.hat); klippet er kun et værn for andre.
+  const holeY = Math.min(a.earBaseL.y, a.earBaseR.y) + 3
+
+  // Arterne ser 'through' kun, når ørerne faktisk går gennem huller (og tegner da en afrundet ørebund).
+  const hatCtx = holes ? 'through' : hat === 'under' ? 'under' : null
+  const ctx = (sw: number): PartCtx => ({ pal, a, stage, mood, breed, colorway, sw, ids, still, lod, pose, hat: hatCtx })
+
+  const bodyFn = parts.body ?? templateBody(def.body)
+  const headFn = parts.head ?? defaultHead
+  const bodyD = bodyFn(a, 0, stage)
+  const headD = headFn(a, 0, stage)
+  // Indvendige klip (kontur/2 inde), så skygger og mønstre aldrig dækker konturen.
+  const bodyClipD = bodyFn(a, -swBody / 2, stage)
+  const headClipD = headFn(a, -swHead / 2, stage)
 
   const eyeMidWorld = { x: (w.eyeL.x + w.eyeR.x) / 2, y: (w.eyeL.y + w.eyeR.y) / 2 }
   const { gazeRef, glintRef } = env
   const staticGaze = still ? gazeFor(lookAt, eyeMidWorld, R.head.s) ?? MOOD_GAZE[mood] : undefined
 
-  const renderItem = (slot: Slot, layer: 'front' | 'back', region: number, clip?: string) => {
+  const renderItem = (slot: Slot, layer: 'front' | 'back' | 'rim', region: number, clip?: string) => {
     const wItem = worn(slot)
     if (!wItem) return null
+    if (layer === 'rim' && !holes) return null
     const item = wItem.item
     const art =
       layer === 'back'
         ? item.art.back
-        : slot === 'body'
-          ? (item.art.bodyShapes?.[def.body] ?? item.art.front)
-          : item.art.front
+        : layer === 'rim'
+          ? item.art.rim
+          : slot === 'body'
+            ? (item.art.bodyShapes?.[def.body] ?? item.art.front)
+            : item.art.front
     if (!art) return null
     const fit = fitItem(item, a, def)
     const c = itemPalette(item.colorways[wItem.colorway ?? 0], silhouette)
-    const sw = OUTLINE / (region * fit.scale)
+    const sw = OUT / (region * fit.scale)
     return (
       <g data-item={item.id} data-slot={slot} data-layer={layer} clipPath={clip ? `url(#${clip})` : undefined}>
         <g transform={fitTransform(fit)}>
           {art({
-            c, a, sw, body: def.body, earMode: fit.earMode, ids,
+            c, a, sw, body: def.body, earMode: fit.earMode, ids, stage,
             local: (p) => toLocal(fit, p),
             solo: false,
+            holes,
             restroke: (color) => (
               <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
             ),
@@ -302,33 +438,58 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     )
   }
 
+  // Ærmer (kropstøj med ærmer på arter, der har en armkontur). Tegnes på hvilende poter.
+  const sleeveArt = bodyWorn?.item.art.sleeve
+  const limb = parts.limb
+  const sleeve = (side: 'L' | 'R') => {
+    if (!sleeveArt || !limb || !bodyWorn) return null
+    const c = itemPalette(bodyWorn.item.colorways[bodyWorn.colorway ?? 0], silhouette)
+    return (
+      <g data-item={bodyWorn.item.id} data-slot="body" data-layer={`sleeve-${side}`} transform={limb.rot ? `rotate(${n(limb.rot)})` : undefined}>
+        {sleeveArt({ c, sw: swBody, sleeve: limb.sleeve(stage), cuff: limb.cuff, clipId: sleeveClipId, stage })}
+      </g>
+    )
+  }
+
+  const upL = !!pawPose(pose.pawL).up && !!parts.PawUp
+  const upR = !!pawPose(pose.pawR).up && !!parts.PawUp
+
   // Poter (venstre tegnes, højre spejles). Håndgenstanden ligger i højre pote under selve poten.
-  const paw = (side: 'L' | 'R', Part: SidePart) => {
+  const paw = (side: 'L' | 'R') => {
     const at = side === 'L' ? a.shoulderL : a.shoulderR
-    const rot = side === 'L' ? pose.pawL : pose.pawR
+    const pp = pawPose(side === 'L' ? pose.pawL : pose.pawR)
+    const up = side === 'L' ? upL : upR
+    const Part: SidePart = up ? parts.PawUp! : parts.Paw
     const handItem = side === 'R' ? worn('hand') : undefined
     let hand: ReactNode = null
     if (handItem) {
-      // Håndgenstanden placeres ved pawR i modelrummet og føres ind i potens lokale (spejlede) ramme.
-      hand = <g transform={`scale(-1 1) translate(${n(-at.x)} ${n(-at.y)})`}>{renderItem('hand', 'front', R.body.s)}</g>
+      const tip = up ? parts.pawUpTip?.[mood] : undefined
+      // Håndgenstanden placeres ved pawR i modelrummet og føres ind i potens lokale (spejlede) ramme;
+      // en løftet pote bærer den ved sin spids.
+      hand = tip ? (
+        <g transform={`translate(${n(tip.x)} ${n(tip.y)}) scale(-1 1) translate(${n(-a.pawR.x)} ${n(-a.pawR.y)})`}>{renderItem('hand', 'front', R.body.s)}</g>
+      ) : (
+        <g transform={`scale(-1 1) translate(${n(-at.x)} ${n(-at.y)})`}>{renderItem('hand', 'front', R.body.s)}</g>
+      )
     }
     return (
       <g transform={`translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
-        <g className={animated ? `a-paw a-paw-${side.toLowerCase()}` : undefined} transform={rot ? `rotate(${n(rot)})` : undefined}>
+        <g className={animated ? `a-paw a-paw-${side.toLowerCase()}${up ? ' a-up' : ''}` : undefined} transform={pp.rot ? `rotate(${n(pp.rot)})` : undefined}>
           {hand}
           <Part {...ctx(swBody)} side={side} />
+          {!up && sleeve(side)}
         </g>
       </g>
     )
   }
 
-  const ear = (side: 'L' | 'R', Part: SidePart) => {
+  const ear = (side: 'L' | 'R', Part: NonNullable<SpeciesParts['Ear']>) => {
     const at = side === 'L' ? a.earBaseL : a.earBaseR
     const splay = earRig?.splay ?? 0
     const rot = side === 'L' ? pose.earL : pose.earR
     return (
       <g transform={`translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}${splay ? ` rotate(${n(-splay)})` : ''}`}>
-        <g className={animated ? `a-ear a-ear-${side.toLowerCase()}` : undefined} transform={rot ? `rotate(${n(rot)})` : undefined}>
+        <g className={animated ? `a-ear a-ear-${side.toLowerCase()}${earRig?.hang ? ' a-hang' : ''}` : undefined} transform={rot ? `rotate(${n(rot)})` : undefined}>
           <Part {...ctx(swHead)} side={side} />
         </g>
       </g>
@@ -341,22 +502,21 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const Tail = parts.Tail
   const Horn = parts.Horn
   const Wings = parts.Wings
-  const Ear = parts.Ear
-  const earRig = breedDef?.ears ?? def.ears
-  const earClip = !!Ear && !hides.has('ears') && earRig?.clip !== false
-  // Klippet "uden for hovedet" defineres, når ører eller pandetot kan bruge det.
+  const earClip = earsShown && earRig?.clip !== false && !holes
+  // Klippet "uden for hovedet" (lidt inden for konturen, så roden er sømløs) til ører og pandelok.
   const outsideClip = earClip || (!!parts.ManeFront && !hides.has('mane-front'))
   const P = parts.Pattern
   const pattern = resolveColorway(def, colorway).pattern ?? 'none'
-  const shade = shading(a)
+  const shade = shading(a, colorway === 'gold' && !silhouette)
   const showFx = !silhouette
 
-  // fx-positioner (verdensrum)
-  // Tanker, Z'er og svedperle sidder til højre for hovedet, fri af øret.
-  const fxHead = { x: w.headCenter.x + w.headRx * 0.96, y: w.headCenter.y - w.headRy * 0.5 }
+  // fx-positioner (verdensrum). Tanker og Z'er sidder til højre for hovedet, fri af øret.
+  const fxModel = breedDef?.fx ?? def.fx ?? { x: a.headCenter.x + a.headRx + 10, y: a.headCenter.y - a.headRy * 0.32 }
+  const fxHead = apply(R.head, fxModel)
   const fxSweat = { x: w.headCenter.x + w.headRx * 0.62, y: w.headCenter.y - w.headRy * 0.55 }
   const sparkle = pal.sparkle && showFx && (colorway === 'gold' || colorway === 'starwhite' || (star && stage === 3))
 
+  const viewBox = cropViewBox(def, breed, stage, crop, outfit)
   // Hop må gerne gå uden for kanvasset (overflow synlig); en beskåret rig (butikskort) klipper.
   const rootStyle = {
     ...(crop !== 'full' ? { overflow: 'hidden' } : null),
@@ -365,10 +525,13 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     '--blink': `${(4.3 + seed * 1.6).toFixed(2)}s`,
   } as CSSProperties
 
+  const bodyRegion = `translate(${n(R.body.tx)} ${n(R.body.ty)}) scale(${fmt3(R.body.s)})`
+  const sleeveClip = bodyWorn && sleeveArt && limb && (!upL || !upR)
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={CROPS[crop]}
+      viewBox={viewBox}
       width={size}
       height={typeof size === 'number' ? n(size * cropAspect(crop)) : undefined}
       className={['rig', className].filter(Boolean).join(' ')}
@@ -392,12 +555,22 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         </clipPath>
         {outsideClip && (
           <clipPath id={earClipId}>
-            <path d={outside(headClipD)} clipRule="evenodd" fillRule="evenodd" />
+            <path d={outside(headFn(a, -swHead / 2 - EAR_SEAM, stage))} clipRule="evenodd" fillRule="evenodd" />
+          </clipPath>
+        )}
+        {holes && (
+          <clipPath id={holeClipId}>
+            <path d={rect(-200, -200, 600, 200 + holeY)} />
           </clipPath>
         )}
         {bodyWorn && (
           <clipPath id={itemClipId}>
-            <path d={(parts.body ?? templateBody(def.body))(a, 2, stage)} />
+            <path d={bodyFn(a, swBody / 2 - 0.1, stage)} />
+          </clipPath>
+        )}
+        {sleeveClip && (
+          <clipPath id={sleeveClipId}>
+            <path d={limb!.sleeve(stage)} />
           </clipPath>
         )}
         {!silhouette && <ShadowGradient id={shadowId} />}
@@ -415,14 +588,14 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
 
       {/* 1 · jordskygge */}
       {!silhouette && (
-        <g transform={still && pose.shadow ? aboutGround({ sx: pose.shadow }) : undefined}>
+        <g transform={pose.shadow ? aboutGround({ sx: pose.shadow }) : undefined}>
           <GroundShadow id={shadowId} cx={G.x} cy={G.y - 1} rx={w.bodyRx * 1.18} className={animated ? 'a-shadow' : undefined} />
         </g>
       )}
 
       <g className={animated ? 'a-fig' : undefined} transform={aboutGround(pose.fig)}>
         {/* Krop (lag 2–9) */}
-        <g transform={`translate(${n(R.body.tx)} ${n(R.body.ty)}) scale(${fmt3(R.body.s)})`}>
+        <g transform={bodyRegion}>
           <g className={animated ? 'a-body' : undefined} transform={aboutGround(pose.body)}>
             {/* 2 · back-item */}
             {renderItem('back', 'front', R.body.s)}
@@ -450,14 +623,14 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               <path d={outside(shade.body)} fill={pal.shade} fillRule="evenodd" clipPath={`url(#${ids.bodyClip})`} />
             )}
             {/* Hovedets kastede skygge på kroppen lige under hagen (dybde, samme regel på alle stadier). */}
-            {!silhouette && (
-              <path d={chinShadow(a, R)} fill={pal.shade} clipPath={`url(#${ids.bodyClip})`} />
-            )}
+            {!silhouette && <path d={chinShadow(a, R)} fill={pal.shade} clipPath={`url(#${ids.bodyClip})`} />}
+            {/* Guld: et smalt glansbånd på kroppen. */}
+            {shade.bodyBand && <path d={shade.bodyBand} fill={pal.highlight} clipPath={`url(#${ids.bodyClip})`} />}
             {/* 6 · body-item (klippet til kroppen +2) */}
             {renderItem('body', 'front', R.body.s, itemClipId)}
-            {/* 7–8 · hånd + poter */}
-            {paw('L', parts.Paw)}
-            {paw('R', parts.Paw)}
+            {/* 7–8 · hånd + poter (hvilende) */}
+            {!upL && paw('L')}
+            {!upR && paw('R')}
             {/* 9 · neck-item */}
             {renderItem('neck', 'front', R.body.s)}
             {renderItem('back', 'back', R.body.s)}
@@ -500,13 +673,14 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {parts.ManeFront && !hides.has('mane-front') && scaled(a.headTop, R.xf.mane, parts.ManeFront(ctx(swHead / R.xf.mane)))}
               {/* 15 · head-item */}
               {renderItem('head', 'front', R.head.s)}
-              {/* 16 · ører, horn */}
-              {Ear && !hides.has('ears') && (
-                <g clipPath={earClip ? `url(#${earClipId})` : undefined}>
-                  {ear('L', Ear)}
-                  {ear('R', Ear)}
+              {/* 16 · ører, horn (+ hattens hulkant over ørernes rod) */}
+              {earsShown && (
+                <g clipPath={earClip ? `url(#${earClipId})` : holes ? `url(#${holeClipId})` : undefined}>
+                  {ear('L', Ear!)}
+                  {ear('R', Ear!)}
                 </g>
               )}
+              {renderItem('head', 'rim', R.head.s)}
               {Horn && (
                 <g transform={`translate(${n(a.hornBase.x)} ${n(a.hornBase.y)}) scale(${fmt3(R.xf.horn)})`}>
                   <g className={animated ? 'a-horn' : undefined}>{Horn(ctx(swHead / R.xf.horn))}</g>
@@ -516,21 +690,31 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           </g>
         </g>
 
+        {/* Løftede poter foran hovedet (jubel, vink, tænker): samme kropsregion og ånding. */}
+        {(upL || upR) && (
+          <g transform={bodyRegion}>
+            <g className={animated ? 'a-body' : undefined} transform={aboutGround(pose.body)}>
+              {upL && paw('L')}
+              {upR && paw('R')}
+            </g>
+          </g>
+        )}
+
         {/* 17 · fx (verdensrum) */}
         <g data-part="fx">
-        {showFx && mood === 'think' && <ThoughtDots at={fxHead} s={R.head.s} sw={OUTLINE} animated={animated} />}
-        {showFx && mood === 'sleep' && <Zzz at={{ x: fxHead.x - 2, y: fxHead.y + 8 }} s={R.head.s} sw={OUTLINE} animated={animated} />}
-        {showFx && mood === 'oops' && <SweatDrop at={fxSweat} s={R.head.s} sw={OUTLINE} className={animated ? 'a-sweat' : undefined} />}
-        {sparkle && (
-          <Sparkles
-            pts={around({ x: w.headCenter.x, y: (w.headCenter.y + w.bodyCenter.y) / 2 }, w.headRx + 28, [-150, -32, 200])}
-            size={9 * R.head.s}
-            fill={pal.sparkle!}
-            stroke={pal.outline}
-            sw={OUTLINE}
-            className={animated ? 'a-twinkle' : undefined}
-          />
-        )}
+          {showFx && mood === 'think' && <ThoughtDots at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}
+          {showFx && mood === 'sleep' && <Zzz at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}
+          {showFx && mood === 'oops' && <SweatDrop at={fxSweat} s={R.head.s} sw={OUT} className={animated ? 'a-sweat' : undefined} />}
+          {sparkle && (
+            <Sparkles
+              pts={around({ x: w.headCenter.x, y: (w.headCenter.y + w.bodyCenter.y) / 2 }, w.headRx + 28 * R.head.s, [-150, -32, 200])}
+              size={9 * R.head.s}
+              fill={pal.sparkle!}
+              stroke={pal.outline}
+              sw={OUT}
+              className={animated ? 'a-twinkle' : undefined}
+            />
+          )}
         </g>
       </g>
     </svg>
@@ -549,8 +733,11 @@ function chinShadow(a: AnchorSet, R: ReturnType<typeof regionTransforms>): strin
   return ellipse(cx, cy + a.headRy * k * 0.1, a.headRx * k * 0.86, a.headRy * k * 0.94)
 }
 
-/** Cel-skyggens "lyse" ellipser (skyggen = kroppen minus den lyse ellipse) og hovedets højlys. */
-function shading(a: AnchorSet) {
+/**
+ * Cel-skyggens "lyse" ellipser (skyggen = kroppen minus den lyse ellipse) og hovedets højlys.
+ * Guld får desuden et smalt glansbånd på hoved og krop (metallisk, uden gradient).
+ */
+function shading(a: AnchorSet, goldBand: boolean) {
   const h = a.headCenter
   const b = a.bodyCenter
   return {
@@ -559,7 +746,9 @@ function shading(a: AnchorSet) {
     gloss: join(
       ellipse(h.x - a.headRx * 0.5, h.y - a.headRy * 0.6, a.headRx * 0.2, a.headRy * 0.12, -32),
       ellipse(h.x - a.headRx * 0.2, h.y - a.headRy * 0.8, a.headRx * 0.055, a.headRy * 0.055),
+      goldBand && lune(h.x + 4, h.y + 2, a.headRx * 0.86, a.headRy * 0.86, 2.6, 200, 250),
     ),
+    bodyBand: goldBand ? lune(b.x + 6, b.y + 4, a.bodyRx * 0.82, a.bodyRy * 0.86, 3, 196, 244) : null,
   }
 }
 

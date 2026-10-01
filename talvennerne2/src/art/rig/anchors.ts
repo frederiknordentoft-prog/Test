@@ -103,11 +103,18 @@ const TEMPLATE_DELTA: Record<BodyKind, Partial<AnchorSet>> = {
   },
 }
 
-/** Stadiernes transformationer (SPEC §6.4). */
+/**
+ * Stadiernes transformationer (SPEC §6.4). Faktorerne for hoved, krop, øjne, manke, hale, horn og
+ * vinger er SPEC'ens (relativt til stadie 2). Figurskalaen er ændret efter review G0-r1 (fund 7:
+ * "stor" skal være 10–15 % højere og mere moden): stadie 2 tegnes i 0,9 af modelrummet, så stadie 3
+ * kan vokse til fuld størrelse uden at forlade kanvasset, og babyen er stadig 0,86 af stadie 2.
+ * Stadie 3 har desuden lidt mindre øjne i forhold til hovedet og en kraftigere krop.
+ */
+export const STAGE_FIG = 0.9
 export const STAGE_XF: Record<Stage, StageTransform> = {
-  1: { fig: 0.86, body: 0.85, head: 1.08, eye: 1.15, mane: 1, tail: 1, horn: 1, wings: 1 },
-  2: { fig: 1, body: 1, head: 1, eye: 1, mane: 1, tail: 1, horn: 1, wings: 1 },
-  3: { fig: 1, body: 1.08, head: 0.96, eye: 1, mane: 1.3, tail: 1.3, horn: 1.25, wings: 1.2 },
+  1: { fig: 0.86 * STAGE_FIG, body: 0.85, head: 1.08, eye: 1.15, mane: 1, tail: 1, horn: 1, wings: 1 },
+  2: { fig: STAGE_FIG, body: 1, head: 1, eye: 1, mane: 1, tail: 1, horn: 1, wings: 1 },
+  3: { fig: 1, body: 1.08, head: 0.96, eye: 0.92, mane: 1.3, tail: 1.3, horn: 1.25, wings: 1.2 },
 }
 
 export const HEAD_POINTS = [

@@ -193,8 +193,9 @@ export function ring(cx: number, cy: number, rx: number, ry: number, count: numb
  * Fnugget "sky"-kontur (halekvast, uld, manke): buer mellem punkter på en ellipse, der buler udad.
  * `puff` er buernes radius relativt til korden (0,5 = halvcirkler).
  */
-export function scallop(cx: number, cy: number, rx: number, ry: number, lobes: number, puff = 0.62, phase = -90): string {
-  const pts = ring(cx, cy, rx, ry, lobes, phase)
+export function scallop(cx: number, cy: number, rx: number, ry: number, lobes: number, puff = 0.62, phase = -90, rot = 0): string {
+  const base = ring(cx, cy, rx, ry, lobes, phase)
+  const pts = rot ? xf(base, { rot, about: [cx, cy] }) : base
   let d = `M${p(pts[0])}`
   for (let i = 0; i < lobes; i++) {
     const a = pts[i]

@@ -101,9 +101,10 @@ export function derivePalette(cw: ColorwayDef): Palette {
     patternOutline: o.patternOutline ?? outlineOf(pattern),
     patternShade: o.patternShade ?? shadeOf(pattern),
     earFur: o.earFur ?? (dutch ? pattern : fur),
-    earOutline: o.earOutline ?? (dutch ? outlineOf(pattern) : outline),
+    // Én konturfarve for hele figuren (review G0-r1, fund 5): ører og manke arver figurens kontur.
+    earOutline: o.earOutline ?? outline,
     mane,
-    maneOutline: o.maneOutline ?? (o.mane ? outlineOf(mane) : outline),
+    maneOutline: o.maneOutline ?? outline,
     gradient: cw.gradient,
     sparkle: cw.sparkle,
   }
@@ -128,18 +129,23 @@ export function silhouettePalette(p: Palette): Palette {
 export const RAINBOW_STOPS = ['#FF9FB2', '#FFC38A', '#FFEB8A', '#A6E8A4', '#95D2FF', '#C6A6FF'] as const
 
 export const MAGIC: Record<MagicColorwayId, ColorwayDef> = {
+  // Guld: ravbrun kontur og ravskygge (review G0-r1, fund 11), så den ikke læses som almindelig gul.
   gold: {
     id: 'gold',
     name: 'guld',
     fur: '#F7C948',
-    overrides: { belly: '#FFF0B8', inner: '#FFD3A1', nose: '#F08A5D', iris: '#A0561B', mane: '#FFE07A' },
+    overrides: {
+      outline: '#7A4A10', shade: '#E2A42F', belly: '#FFF0B8', inner: '#FFC98F', nose: '#E8744A',
+      iris: '#A0561B', mane: '#FFE07A', hoof: '#C98A1E', horn: '#FFF4C4',
+    },
     sparkle: '#FFF7CF',
   },
+  // Regnbue: flade pasteller på inderører; gradienten kun på manke, hale og halsflæse.
   rainbow: {
     id: 'rainbow',
     name: 'regnbue',
     fur: '#F6F0FF',
-    overrides: { outline: '#8D78B8', shade: '#E4DAF7', belly: '#FFFFFF', iris: '#7A62C9' },
+    overrides: { outline: '#7E68B0', shade: '#E2D6F7', belly: '#FFFFFF', iris: '#7A62C9', inner: '#FFC4DC', hoof: '#B7A6E0', horn: '#FFE9A6' },
     gradient: RAINBOW_STOPS,
   },
   starwhite: {

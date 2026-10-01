@@ -27,7 +27,7 @@ const { launch } = await import('./browser.mjs')
 const root = path.resolve(import.meta.dirname, '..')
 const appDir = path.join(root, 'artifacts/sheets-app')
 const outDir = path.join(root, 'artifacts/sheets')
-const PORT = Number(process.env.SHEETS_PORT ?? 4302)
+const PORT = Number(process.env.SHEETS_PORT ?? 4314)
 const ALL = ['species', 'moods', 'closeup', 'sizes', 'silhouettes', 'fit', 'filmstrip', 'lineup']
 const routes = process.argv.slice(2).length ? process.argv.slice(2) : ALL
 
