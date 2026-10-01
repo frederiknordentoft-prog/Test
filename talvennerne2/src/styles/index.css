@@ -1,8 +1,13 @@
 /* Tailwind scanner kun V2's egne kilder – aldrig V1 eller resten af repoet. */
 @import "tailwindcss" source(none);
-@source "../";
 @import "../ui/design/tokens.css";
 @import "../ui/design/design.css";
+@import "../ui/shell/shell.css";
+@source "../";
+/* Dev-only contact sheets and the design harness, and the SVG art (own class names), never feed
+   utilities into the production CSS. */
+@source not "../dev";
+@source not "../art";
 
 html,
 body,

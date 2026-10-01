@@ -1,10 +1,6 @@
-// Danish text for the fixed UI clips used by src/ui/design and src/ui/shell (SPEC §10.2, "UI"). The
-// clip catalogue is the string table; this map is written in the catalogue's shape (id → text) so the
-// speech owner can register it as-is (proposed home: src/speech/clips/ui/design.ts). Until then the
-// design harness shows these texts through SpeechProvider; production shows clipText(id).
-import type { ClipId } from '../../engine/types'
-
-export const UI_CLIPS = {
+// Fixed UI clips for the design system and the app shell (W5: src/ui/design, src/ui/shell). Labels are
+// fragments without punctuation; the meter explanations are whole sentences. Read aloud on tap.
+export const clips = {
   // Round and task chrome
   's.ui.replay': 'Hør igen',
   's.ui.showMe': 'Vis mig',
@@ -33,6 +29,4 @@ export const UI_CLIPS = {
   's.ui.meter.egg': 'Dit æg bliver varmere, hver gang du regner rigtigt.',
   's.ui.meter.wish': 'Sådan kommer du tættere på dit ønske.',
   's.ui.meter.heart': 'Hjertet fyldes, når I regner sammen.',
-} as const satisfies Record<ClipId, string>
-
-export type UiClipId = keyof typeof UI_CLIPS
+}

@@ -1,4 +1,4 @@
-// Answer card (svarkort): at least 80 × 80 px, white with a 3 px ink/10 edge and a lip. States follow
+// Answer card (svarkort): at least 80 x 80 px, white with a 3 px ink/10 edge and a lip. States follow
 // the locked error flow (SPEC §3.5): a wrong answer stays, struck through and untappable; the right
 // one is then the "target" the child taps. Red is never used – "not quite" is amber.
 import { useEffect, useRef } from 'react'

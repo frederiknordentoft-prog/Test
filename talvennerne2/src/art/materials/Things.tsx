@@ -1,9 +1,9 @@
 // Countable things (ThingId): carrots on the meadow, apples, strawberries, chestnuts, flowers, fish …
-// Each is drawn in a 48 × 48 box in the animals' style: flat fill, darker shade on the lower right,
+// Each is drawn in a 48 x 48 box in the animals' style: flat fill, darker shade on the lower right,
 // a 45 % highlight and a coloured contour. `ThingArt` returns SVG content for scenes that place
 // many things in one svg; `Thing` wraps one in its own svg.
 import type { ReactNode } from 'react'
-import { blob, circle, ellipse, join, lune, n, poly, roundPoly, roundRect, starPoints } from './geom'
+import { blob, circle, ellipse, join, lune, n, poly, roundPoly, roundRect, segments, starPoints } from './geom'
 import type { V2 } from './geom'
 import { MatSvg } from './kit'
 import type { MatBase } from './kit'
@@ -137,7 +137,7 @@ function art(id: string): ReactNode {
       return (
         <>
           <Body d={blob(leaf, 0.75)} tone={MAT.leafGreen} shade={blob(shift(leaf, 3, 3, 0.62), 0.75)} />
-          <path d="M8 40Q22 26 38 8M17 30l-1-7M24 23l-1.5-7M24 23l7 1M17 30l6 1" fill="none" stroke={MAT.leafGreen.outline} strokeWidth={2} strokeLinecap="round" />
+          <path d={join('M8 40Q22 26 38 8', segments([[17, 30, 16, 23], [24, 23, 22.5, 16], [24, 23, 31, 24], [17, 30, 23, 31]]))} fill="none" stroke={MAT.leafGreen.outline} strokeWidth={2} strokeLinecap="round" />
         </>
       )
     }
@@ -171,7 +171,8 @@ function art(id: string): ReactNode {
     }
     case 'clip': {
       const t = MAT.clip
-      const d = 'M17 34V13a5 5 0 0 1 10 0v23a8 8 0 0 1-16 0V17M21 16v17a2 2 0 0 0 4 0V19'
+      // A paperclip: outer loop and inner loop as one open path.
+      const d = join(`M17 34V13a5 5 0 0 1 ${10} 0v23`, 'a8 8 0 0 1-16 0V17', 'M21 16v17a2 2 0 0 0 4 0V19')
       return (
         <>
           <path d={d} fill="none" stroke={t.outline} strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" transform="rotate(35 24 24)" />
@@ -184,7 +185,7 @@ function art(id: string): ReactNode {
   }
 }
 
-/** SVG content for a thing in a 48 × 48 box at (x, y), scaled by `k`. For many things in one svg. */
+/** SVG content for a thing in a 48 x 48 box at (x, y), scaled by `k`. For many things in one svg. */
 export function ThingArt({ id, x = 0, y = 0, k = 1 }: { id: string; x?: number; y?: number; k?: number }) {
   return <g transform={`translate(${n(x)} ${n(y)}) scale(${n(k)})`}>{art(id)}</g>
 }

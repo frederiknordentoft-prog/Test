@@ -10,7 +10,7 @@ import type { Tone } from './palette'
 
 export type Base10Kind = 'unit' | 'rod' | 'flat'
 
-const DEPTH = 0.5 // oblique depth factor (×s along 45°)
+const DEPTH = 0.5 // oblique depth factor (xs along 45°)
 
 interface BlockGeo {
   front: string

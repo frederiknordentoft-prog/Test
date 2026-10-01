@@ -81,7 +81,7 @@ export function ComponentsPage({ sub }: { sub: string }) {
       <div className="h-section">Kort og piller</div>
       <div className="h-row" style={{ alignItems: 'stretch' }}>
         <Card style={{ width: 220 }}>
-          <SpokenText as="div" clip="name.region.w0-plus10" className="text-title" />
+          <SpokenText as="div" clip="name.region.w0-plus10" className="tv-t-title" />
           <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
             <Pill domain="addsub" icon="plus">
               Plus
@@ -92,7 +92,7 @@ export function ComponentsPage({ sub }: { sub: string }) {
           </div>
         </Card>
         <Card tone="soft" style={{ width: 220 }}>
-          <SpokenText as="p" clip="s.demo.hello" className="text-body" style={{ margin: 0 }} />
+          <SpokenText as="p" clip="s.demo.hello" className="tv-t-body" style={{ margin: 0 }} />
         </Card>
         <Card tone="glass" style={{ width: 220, background: 'var(--sky)' }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -135,7 +135,7 @@ export function ComponentsPage({ sub }: { sub: string }) {
       <div className="h-section">Bundark</div>
       <Button clip="s.demo.sheetTitle" variant="secondary" size="md" icon="chevronUp" onClick={() => setSheet(true)} />
       <Sheet open={sheet} onClose={() => setSheet(false)} title="s.demo.sheetTitle">
-        <SpokenText as="p" clip="s.demo.sheetBody" className="text-body" style={{ marginTop: 0 }} />
+        <SpokenText as="p" clip="s.demo.sheetBody" className="tv-t-body" style={{ marginTop: 0 }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
           {[1, 2, 3].map((k) => (
             <AnswerCard key={k} size="lg" state={k === 2 ? 'selected' : 'idle'}>

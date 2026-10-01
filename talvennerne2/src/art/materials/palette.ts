@@ -1,6 +1,6 @@
 // Material colours (SPEC §11, kunst-lyd-teknik §1.6). With src/ui/design/tokens.css this is the only
 // place in src/art/materials with raw colours. Every tone is derived with the rig's formulas so the
-// materials sit next to the animals: shade = L−0.08, h−5; outline = L×0.55, C×1.1 (OKLCH); light is
+// materials sit next to the animals: shade = L−0.08, h−5; outline = Lx0.55, Cx1.1 (OKLCH); light is
 // the lit face of 3D forms. White objects use the ink family for their contour instead of grey.
 
 export interface Tone {

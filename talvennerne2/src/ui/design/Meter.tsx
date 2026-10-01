@@ -20,7 +20,8 @@ export interface MeterProps {
   kind: MeterKind
   /** 0…1. Values are clamped; nothing about the number is ever shown. */
   value: number
-  size?: 'md' | 'lg'
+  /** sm: compact HUD (badge 38 px, track fills the space), md, lg. Always ≥ 60 px tall to tap. */
+  size?: 'sm' | 'md' | 'lg'
   /** Override the spoken explanation. */
   clip?: ClipId
   className?: string

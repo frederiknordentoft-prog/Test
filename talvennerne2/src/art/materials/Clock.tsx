@@ -1,5 +1,5 @@
 // Clocks (SPEC §11): analog face with 12 numbers and 60 minute ticks (one path), a short thick hour
-// hand in ink and a long minute hand in #EB5757; and a digital display in Nunito tabular digits.
+// hand in ink and a long minute hand in coral red (MINUTE_HAND); and a digital display in Nunito tabular digits.
 // Minutes follow the answer model: 0–719 after 12:00 (analog), 0–1439 (24 h digital).
 import { circle, ellipse, join, lune, n, polar, roundRect, sector, segments } from './geom'
 import { MatSvg, Num } from './kit'

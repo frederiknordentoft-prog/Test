@@ -2,7 +2,7 @@
 //   npx vite --port 4315 --strictPort &
 //   flock /tmp/tv2-chromium.lock node src/dev/design/shoot.mjs [filter…]
 // Writes artifacts/design/*.png (gitignored) and prints an audit per shell screen: horizontal
-// overflow and interactive elements smaller than 60 × 60 px.
+// overflow and interactive elements smaller than 60 x 60 px.
 import { mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { launch } from '../../../scripts/browser.mjs'

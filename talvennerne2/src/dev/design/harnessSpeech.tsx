@@ -1,16 +1,14 @@
-// Harness-only speech: resolves UI and demo clip texts before the real catalogue exists, and shows
-// what would be spoken as a caption (voice.ts is still a stub). Never imported by the app.
+// Harness-only speech: resolves demo clip texts that other areas own, and shows what is spoken as a
+// caption (the voice itself plays through the real speak()). Never imported by the app.
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { SpeechProvider } from '../../ui/design/speech'
-import { UI_CLIPS } from '../../ui/design/clips'
-import { clipText } from '../../speech/catalog'
+import { clipText, hasClip } from '../../speech/catalog'
 import { speak as realSpeak } from '../../audio/voice'
 import type { ClipId, SpeechPart } from '../../engine/types'
 import { DEMO_CLIPS } from './demoClips'
 
-const TABLE: Record<string, string> = { ...UI_CLIPS, ...DEMO_CLIPS }
-export const harnessText = (id: ClipId) => TABLE[id] ?? clipText(id)
+export const harnessText = (id: ClipId) => (hasClip(id) ? clipText(id) : (DEMO_CLIPS[id] ?? id))
 
 type Listener = (text: string) => void
 const listeners = new Set<Listener>()

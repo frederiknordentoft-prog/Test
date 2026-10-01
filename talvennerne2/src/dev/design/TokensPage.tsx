@@ -93,17 +93,17 @@ export function TokensPage() {
 
       <div className="h-section">Typografi · Nunito Variable</div>
       <div style={{ display: 'grid', gap: 14 }}>
-        <div className="text-task tabular-nums">8 + 5 = 13</div>
-        <div className="text-answer tabular-nums">47 · 3 : 12 − 9</div>
-        <div className="text-title">Overskrift til skærme</div>
-        <div className="text-button">Knaptekst til en stor knap</div>
-        <div className="text-body" style={{ maxWidth: 560 }}>
+        <div className="tv-t-task">8 + 5 = 13</div>
+        <div className="tv-t-answer">47 · 3 : 12 − 9</div>
+        <div className="tv-t-title">Overskrift til skærme</div>
+        <div className="tv-t-button">Knaptekst til en stor knap</div>
+        <div className="tv-t-body" style={{ maxWidth: 560 }}>
           Brødtekst til forklaringer og kort. Alt, et barn ser, kan læses op. Æ, ø og å, “citater” og tankestreg – også minus −.
         </div>
-        <div className="text-dash" style={{ maxWidth: 560, color: 'var(--color-ink-2)' }}>
+        <div className="tv-t-dash" style={{ maxWidth: 560, color: 'var(--color-ink-2)' }}>
           Dashboard 15 px: Kan selv 3 · Med støtte 2 · Øver 1 · Ikke startet 4. Nøjagtighed 86 %.
         </div>
-        <div className="text-label" style={{ color: 'var(--color-ink-2)' }}>
+        <div className="tv-t-label" style={{ color: 'var(--color-ink-2)' }}>
           LABEL 13 PX · DOCK OG PILLER
         </div>
       </div>
@@ -127,7 +127,7 @@ export function TokensPage() {
       </div>
 
       <div className="h-section">Bevægelse</div>
-      <p className="text-dash" style={{ color: 'var(--color-ink-2)', maxWidth: 620 }}>
+      <p className="tv-t-dash" style={{ color: 'var(--color-ink-2)', maxWidth: 620 }}>
         120 / 220 / 400 ms med cubic-bezier(.2,.8,.2,1). Skærmskift: skub 24 px + fade 220 ms. Tryk: 4 px på 80 ms, fjeder tilbage på
         180 ms. Rolig tilstand og reduceret bevægelse: kun crossfade, ingen løkker. Kun transform og opacity animeres.
       </p>

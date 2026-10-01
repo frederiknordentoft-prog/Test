@@ -1,4 +1,4 @@
-// Talvennerne 2 icon set (SPEC §11, kunst-lyd-teknik §1.4). Own drawings on a 24 × 24 grid, stroke 2,
+// Talvennerne 2 icon set (SPEC §11, kunst-lyd-teknik §1.4). Own drawings on a 24 x 24 grid, stroke 2,
 // round caps and joins, content inside 2…22. Each icon is data: `stroke` paths are outlined in
 // currentColor, `fill` paths are the duotone body (currentColor at 18 % unless the Icon is solid) and
 // `solid` paths are small details that are always fully filled (dots, pips). No emoji anywhere:
@@ -301,9 +301,9 @@ export const ICONS = {
   // ── Mathematics ──────────────────────────────────────────────────────────
   plus: { stroke: ['M12 5v14M5 12h14'] },
   minus: { stroke: ['M5 12h14'] },
-  /** Gange is written ·, never ×. */
+  /** Gange is written as a centred dot. */
   times: { stroke: [], solid: [circle(12, 12, 2.6)] },
-  /** Division is written :, never ÷. */
+  /** Division is written as a colon. */
   divide: { stroke: [], solid: [circle(12, 7.4, 2.3), circle(12, 16.6, 2.3)] },
   equals: { stroke: ['M5 9h14M5 15h14'] },
   less: { stroke: ['M17 5.4L7 12l10 6.6'] },

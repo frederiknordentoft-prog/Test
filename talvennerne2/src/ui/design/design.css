@@ -25,6 +25,46 @@
     opacity: 1;
   }
 
+  /* ── Type scale as classes (also available as Tailwind text-task, text-title …) ── */
+  .tv-t-task {
+    font-size: var(--text-task);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .tv-t-answer {
+    font-size: var(--text-answer);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .tv-t-title {
+    font-size: var(--text-title);
+    font-weight: 900;
+    line-height: var(--text-title--line-height);
+    letter-spacing: -0.005em;
+  }
+  .tv-t-button {
+    font-size: var(--text-button);
+    font-weight: 800;
+    line-height: var(--text-button--line-height);
+  }
+  .tv-t-body {
+    font-size: var(--text-body);
+    font-weight: 600;
+    line-height: var(--text-body--line-height);
+  }
+  .tv-t-dash {
+    font-size: var(--text-dash);
+    font-weight: 600;
+    line-height: var(--text-dash--line-height);
+  }
+  .tv-t-label {
+    font-size: var(--text-label);
+    font-weight: 800;
+    line-height: var(--text-label--line-height);
+  }
+
   /* ── Spoken text ────────────────────────────────────────────────── */
   .tv-spoken--tap {
     position: relative;
@@ -243,7 +283,7 @@
     cursor: default;
   }
 
-  /* ── Answer cards (≥ 80 × 80) ───────────────────────────────────── */
+  /* ── Answer cards (≥ 80 x 80) ───────────────────────────────────── */
   .tv-answer {
     --face: var(--color-card);
     --edge: var(--color-line);
@@ -518,7 +558,9 @@
   .tv-stones {
     display: block;
     width: 100%;
+    max-width: 640px;
     height: auto;
+    margin: 0 auto;
     overflow: visible;
   }
   .tv-stones__trail {
@@ -646,6 +688,24 @@
     overflow: hidden;
     border-radius: var(--radius-pill);
     background: rgba(43, 33, 68, 0.1);
+  }
+  .tv-meter--sm {
+    gap: 6px;
+    padding: 6px 12px 6px 6px;
+  }
+  .tv-meter--sm .tv-meter__badge {
+    width: 38px;
+    height: 38px;
+  }
+  .tv-meter--sm .tv-meter__icon {
+    width: 24px;
+    height: 24px;
+  }
+  .tv-meter--sm .tv-meter__track {
+    flex: 1;
+    width: auto;
+    min-width: 36px;
+    height: 14px;
   }
   .tv-meter--lg .tv-meter__track {
     width: 140px;

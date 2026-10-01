@@ -1,5 +1,5 @@
 // Data displays for readChart (SPEC §2.2): a bar chart with a numbered axis and a pictogram. The
-// categories are usually species; pass `renderCat` to draw them (SVG content in a size×size box at
+// categories are usually species; pass `renderCat` to draw them (SVG content in a sizexsize box at
 // x, y). Without it each category gets a coloured token with a paw.
 import type { ReactNode } from 'react'
 import { circle, ellipse, join, n, roundRect, segments } from './geom'

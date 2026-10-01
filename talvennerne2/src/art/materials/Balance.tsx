@@ -89,6 +89,8 @@ export function PanScale({ tilt, left, right, width = 320, label, className }: P
   const beamY = 40
   const dx = L * (1 - Math.cos(theta)) * k
   const dy = L * Math.sin(theta) * k
+  // The pan's shaded underside: the outer bowl arc back along a smaller inner arc.
+  const panShade = `M${20} 54.5a33 14 0 0 0 47-10.5h-8a26 10 0 0 1-39 10.5z`
   const pan = (side: -1 | 1, content: ReactNode) => {
     const tx = side === 1 ? -dx : dx
     const ty = side === 1 ? dy : -dy
@@ -107,7 +109,7 @@ export function PanScale({ tilt, left, right, width = 320, label, className }: P
         <MatSvg w={72} h={62} size={72 * k}>
           <path d="M36 2L8 44M36 2L64 44" stroke={MAT.pan.outline} strokeWidth={1.6} />
           <path d="M3 44h66a33 14 0 0 1-66 0z" fill={MAT.pan.fill} />
-          <path d="M20 54.5a33 14 0 0 0 47-10.5h-8a26 10 0 0 1-39 10.5z" fill={MAT.pan.shade} />
+          <path d={panShade} fill={MAT.pan.shade} />
           <path d="M3 44h66a33 14 0 0 1-66 0z" fill="none" stroke={MAT.pan.outline} strokeWidth={2.4} strokeLinejoin="round" />
           <path d={circle(36, 2.5, 3)} fill={MAT.pan.outline} />
         </MatSvg>
