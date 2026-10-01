@@ -46,6 +46,18 @@ const FOLD: Vec[] = xf([[2.5, -3], [-4, -4], [-10.5, -1.5], [-15.5, 3.5]], { rot
 /** Babyen har kortere, rundere ører; den store lidt længere. */
 const earScale = (stage: Stage) => (stage === 1 ? { sx: 0.96, sy: 0.88 } : stage === 3 ? { sx: 1.03, sy: 1.06 } : {})
 
+/**
+ * Ørernes bløde skygge på hovedet: et smalt bånd lige inden for hvert øres inderkant (klippet til hovedet),
+ * så de hængende ører ligger oven på kinderne med dybde. Ørerne svajer kun ±2,5°, så skyggen følger med.
+ */
+const EAR_INNER_EDGE: Vec[] = [[-12.5, 60], [-9.2, 52], [-8.2, 41], [-6.2, 29], [-3.2, 17], [1.2, 6], [6, -3.5]]
+const EarShadow: Part = ({ pal, a, ids, stage }) => {
+  if (pal.silhouette) return null
+  const band = xf([...EAR_INNER_EDGE, ...xf(EAR_INNER_EDGE, { dx: 6 }).reverse()], { rot: EAR_ROT })
+  const left = xf(xf(band, earScale(stage)), { dx: a.earBaseL.x, dy: a.earBaseL.y })
+  return <path d={join(blob(left, 0.7), blob(mirrorX(left, 100), 0.7))} fill={pal.shade} opacity={0.6} clipPath={`url(#${ids.headClip})`} />
+}
+
 const Ear: SidePart = ({ pal, sw, stage, ids, lod }) => {
   const s = earScale(stage)
   return (
@@ -308,6 +320,7 @@ export const puppy: SpeciesDef = {
     Feet,
     Tail,
     Muzzle,
+    HeadDeco: EarShadow,
     BodyDeco,
     Ruff: RainbowCollar,
     Pattern: { head: PatternHead, body: PatternBody },

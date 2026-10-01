@@ -7,6 +7,7 @@
 // pandekanten ruller ned (`a-roll`), og piggene puster sig op (`a-puff`); så ruller det ud med ét
 // overshoot og en pause (rig.css). Alle former er punkter og husets primitiver.
 import { OpenLimb, ROUND, hatted, limbLoop, padsPath } from '../parts/kit'
+import { mixHex } from '../rig/oklch'
 import { shadeOf } from '../rig/palette'
 import { Pivot } from '../rig/Rig'
 import { blob, ellipse, frame, join, mirrorX, offsetLoop, spikes, spline, symmetric, xf } from '../rig/shapes'
@@ -54,44 +55,57 @@ const CAPE: Ring = { cx: 100, cy: 166, rx: 64, ry: 60, count: 12, from: 150, to:
 /**
  * Ét piglag: spidse, let buede pigge (fladere buer og dybere dale end uldens bløde buler), der strøges
  * nedad væk fra issen på begge sider, så hætten er symmetrisk. Det bageste lag er forskudt en halv pig.
+ * `core` er det forreste lag med kortere spidser og samme dale: tegnet oven på det forreste lag i
+ * kappens farve giver det lyse spidser (båndede pigge som et rigtigt pindsvins).
  */
-function quillRing(r: Ring, back: boolean): string {
+const DEPTH = 0.25
+const TIP = 0.86
+function quillRing(r: Ring, layer: 'back' | 'front' | 'core'): string {
   const step = (r.to - r.from) / r.count
   const mid = 270
+  const back = layer === 'back'
   const k = back ? 3.5 : 0
-  const o = { depth: back ? 0.22 : 0.25, bulge: 0.3 }
+  const f = layer === 'core' ? TIP : 1
+  const o = { depth: back ? 0.22 : layer === 'core' ? 1 - (1 - DEPTH) / TIP : DEPTH, bulge: 0.3 }
   const shift = back ? step / 2 : 0
+  const rx = (r.rx + k) * f
+  const ry = (r.ry + k) * f
   // Venstre halvdel (fra kinden op til issen) strøges mod uret, højre halvdel med uret.
   const nL = Math.round((mid - r.from) / step)
   const nR = r.count - nL
   return join(
-    spikes(r.cx, r.cy - k / 3, r.rx + k, r.ry + k, nL, { ...o, from: r.from - shift, to: mid - shift, swirl: -5 }),
-    spikes(r.cx, r.cy - k / 3, r.rx + k, r.ry + k, nR, { ...o, from: mid - shift, to: r.to - shift, swirl: 5 }),
+    spikes(r.cx, r.cy - k / 3, rx, ry, nL, { ...o, from: r.from - shift, to: mid - shift, swirl: -5 }),
+    spikes(r.cx, r.cy - k / 3, rx, ry, nR, { ...o, from: mid - shift, to: r.to - shift, swirl: 5 }),
     // Fyld mellem de to halvdele (bag ansigtet eller kroppen), så der aldrig er en kile uden pigge.
     ellipse(r.cx, r.cy, r.rx * 0.74, r.ry * 0.74),
   )
 }
 
-const HOOD_BACK = quillRing(HOOD, true)
-const HOOD_FRONT = quillRing(HOOD, false)
-const CAPE_BACK = quillRing(CAPE, true)
-const CAPE_FRONT = quillRing(CAPE, false)
+const ring = (r: Ring) => ({ back: quillRing(r, 'back'), front: quillRing(r, 'front'), core: quillRing(r, 'core') })
+const HOOD_Q = ring(HOOD)
+const CAPE_Q = ring(CAPE)
 /** Hætten under en hue: piggene øverst trykkes flade (kun siderne stikker frem under huen). */
-const HOOD_HAT: Ring = { ...HOOD, cy: 104, ry: 52, rx: 61 }
-const HOOD_HAT_BACK = quillRing(HOOD_HAT, true)
-const HOOD_HAT_FRONT = quillRing(HOOD_HAT, false)
+const HOOD_HAT_Q = ring({ ...HOOD, cy: 104, ry: 52, rx: 61 })
 
-const Hood: Part = ({ pal, sw, ids, still, hat }) => {
-  const flat = hat === 'through'
+/** Et helt piglag: det bageste lag, det forreste med lyse spidser (ikke i regnbue og silhuet) og konturen. */
+function Quills({ q, pal, sw, gradientId }: { q: ReturnType<typeof ring>; pal: Palette; sw: number; gradientId: string }) {
+  const tipped = !pal.silhouette && !pal.gradient
   return (
-    <Pivot at={{ x: 100, y: 104 }} cls="a-roll" still={still}>
-      <g transform="translate(-100 -104)">
-        <path d={flat ? HOOD_HAT_BACK : HOOD_BACK} fill={quillsBack(pal)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
-        <path d={flat ? HOOD_HAT_FRONT : HOOD_FRONT} fill={quills(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
-      </g>
-    </Pivot>
+    <>
+      <path d={q.back} fill={quillsBack(pal)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
+      <path d={q.front} fill={tipped ? mixHex(pal.mane, pal.belly, 0.62) : quills(pal, gradientId)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
+      {tipped && <path d={q.core} fill={pal.mane} />}
+    </>
   )
 }
+
+const Hood: Part = ({ pal, sw, ids, still, hat }) => (
+  <Pivot at={{ x: 100, y: 104 }} cls="a-roll" still={still}>
+    <g transform="translate(-100 -104)">
+      <Quills q={hat === 'through' ? HOOD_HAT_Q : HOOD_Q} pal={pal} sw={sw} gradientId={ids.gradient} />
+    </g>
+  </Pivot>
+)
 
 // ---------------------------------------------------------------------------------------------
 // Ører: små, runde ører, der titter frem af piggene (lokalt: roden i (0,0), peger op).
@@ -171,8 +185,7 @@ const PawUp: SidePart = ({ pal, sw, mood, lod }) => {
 const CapeLayer: Part = ({ pal, sw, ids, still }) => (
   <Pivot at={{ x: 100, y: 176 }} cls="a-puff" still={still}>
     <g transform="translate(-100 -176)">
-      <path d={CAPE_BACK} fill={quillsBack(pal)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
-      <path d={CAPE_FRONT} fill={quills(pal, ids.gradient)} stroke={pal.maneOutline} strokeWidth={sw} {...round} />
+      <Quills q={CAPE_Q} pal={pal} sw={sw} gradientId={ids.gradient} />
     </g>
   </Pivot>
 )
