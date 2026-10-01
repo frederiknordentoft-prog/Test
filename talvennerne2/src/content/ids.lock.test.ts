@@ -11,6 +11,7 @@ import {
 import { NODES, REGIONS, WORLDS } from './curriculum'
 import { DECOR, ITEMS, SPECIES, TROPHIES } from './catalog'
 import { SKILLS } from './skills'
+import { THING_IDS } from '../art/materials/Things'
 
 const LOCK = fileURLToPath(new URL('./ids.lock.json', import.meta.url))
 
@@ -45,6 +46,7 @@ function snapshot() {
     decor: DECOR_IDS,
     trophies: TROPHY_IDS,
     frameColors: FRAME_COLORS,
+    things: THING_IDS,
     clipPatterns: CLIP_PATTERNS,
   }
 }

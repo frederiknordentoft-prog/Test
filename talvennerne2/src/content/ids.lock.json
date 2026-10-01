@@ -1121,6 +1121,20 @@
     "grape",
     "rose"
   ],
+  "things": [
+    "carrot",
+    "apple",
+    "strawberry",
+    "chestnut",
+    "flower",
+    "fish",
+    "mushroom",
+    "leaf",
+    "star",
+    "ball",
+    "cube",
+    "clip"
+  ],
   "clipPatterns": [
     "n.mid.<0-100|1000>",
     "n.end.<0-100|1000>",
