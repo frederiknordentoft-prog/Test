@@ -7,12 +7,16 @@
     position: fixed;
     inset: 0;
     overflow: hidden;
+    /* clip, not just hide: a programmatic scroll (focus, a tap during a screen change) must never
+       shift the whole app sideways */
+    overflow: clip;
     background: var(--color-paper);
     color: var(--color-ink);
   }
   .tv-shell__bg {
     position: absolute;
     inset: 0;
+    overflow: clip;
   }
   .tv-shell__paper {
     position: absolute;
