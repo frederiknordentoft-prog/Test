@@ -220,11 +220,15 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   const first = (a: KeyOption, b: KeyOption) => Number(focus.has(b.key)) - Number(focus.has(a.key))
   const dueFirst = (a: KeyOption, b: KeyOption) => Number(due(b)) - Number(due(a))
 
-  const secure = keys.filter((k) => seen(k) && box(k) >= 3)
-    .sort((a, b) => first(a, b) || dueFirst(a, b) || box(b) - box(a) || st(a).lastRound - st(b).lastRound)
-  const shaky = keys.filter((k) => seen(k) && box(k) < 3)
-    .sort((a, b) => first(a, b) || dueFirst(a, b) || box(a) - box(b) || st(a).lastRound - st(b).lastRound)
-  const fresh = keys.filter((k) => !seen(k) && !k.reviewOnly).sort((a, b) => first(a, b) || a.rank - b.rank)
+  // In a node that mixes operations, each bucket alternates plus and minus within its priority tier,
+  // so the round is mixed in what it asks, not only in the order it asks it.
+  const tierOf = (k: KeyOption) => `${Number(focus.has(k.key))}${Number(due(k))}`
+  const secure = alternateOps(keys.filter((k) => seen(k) && box(k) >= 3)
+    .sort((a, b) => first(a, b) || dueFirst(a, b) || box(b) - box(a) || st(a).lastRound - st(b).lastRound), tierOf)
+  const shaky = alternateOps(keys.filter((k) => seen(k) && box(k) < 3)
+    .sort((a, b) => first(a, b) || dueFirst(a, b) || box(a) - box(b) || st(a).lastRound - st(b).lastRound), tierOf)
+  const fresh = alternateOps(keys.filter((k) => !seen(k) && !k.reviewOnly).sort((a, b) => first(a, b) || a.rank - b.rank),
+    (k) => String(Number(focus.has(k.key))))
   const dueSecure = secure.filter(due)
 
   // today's allowance of new keys
@@ -310,8 +314,9 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
     if (!firstKind.has(p.opt.key)) firstKind.set(p.opt.key, p.kind)
   }
 
-  const seq = arrange(picks, box)
-  repair(seq, new Set(seq.map((p) => p.opt.op).filter(Boolean)).size >= 2)
+  const mixed = new Set(picks.map((p) => p.opt.op).filter(Boolean)).size >= 2
+  const seq = interleave(arrange(picks, box), mixed)
+  repair(seq, mixed)
 
   const tasks = seq.map((p, i) => p.opt.build(p.kind, rng, i, p.slot === 'targeted' ? { target: o.flagged ?? [] } : undefined))
   return balanceAnswerPositions(tasks, rng)
@@ -363,6 +368,97 @@ function arrange(picks: readonly Pick[], box: (k: KeyOption) => number): Pick[] 
   }
   seq.push(last)
   return seq
+}
+
+/**
+ * Reorder a sorted list so that, inside each run of equal `tier`, the operations take turns
+ * (+, −, +, − …) while each operation keeps its own order. Lists with one operation are unchanged.
+ */
+function alternateOps(sorted: readonly KeyOption[], tier: (k: KeyOption) => string): KeyOption[] {
+  if (new Set(sorted.map((k) => k.op ?? null)).size < 2) return [...sorted]
+  const out: KeyOption[] = []
+  for (let i = 0; i < sorted.length;) {
+    let j = i
+    while (j < sorted.length && tier(sorted[j]) === tier(sorted[i])) j++
+    const groups = new Map<string, KeyOption[]>()
+    for (const k of sorted.slice(i, j)) {
+      const g = groups.get(k.op ?? '')
+      if (g) g.push(k)
+      else groups.set(k.op ?? '', [k])
+    }
+    const queues = [...groups.values()]
+    for (let taken = 0; taken < j - i;) {
+      for (const q of queues) {
+        const k = q.shift()
+        if (k) {
+          out.push(k)
+          taken++
+        }
+      }
+    }
+    i = j
+  }
+  return out
+}
+
+const opOf = (p: Pick): Operation | null => p.opt.op ?? null
+
+/** Length of the run of `p`'s operation if it followed `list` (0 when it has none). */
+function runWith(list: readonly Pick[], p: Pick): number {
+  const op = opOf(p)
+  if (op === null) return 0
+  let run = 1
+  for (let i = list.length - 1; i >= 0 && opOf(list[i]) === op; i--) run++
+  return run
+}
+
+/**
+ * Can `rest` still follow `list` with at most three of an operation in a row? Each other item is a
+ * gap that holds up to three, and the gap right after `list` holds less if `list` already ends on a run.
+ */
+function canFinish(list: readonly Pick[], rest: readonly Pick[]): boolean {
+  const tailOp = list.length > 0 ? opOf(list[list.length - 1]) : null
+  let tail = 0
+  for (let i = list.length - 1; i >= 0 && tailOp !== null && opOf(list[i]) === tailOp; i--) tail++
+  const counts = new Map<Operation, number>()
+  for (const p of rest) {
+    const op = opOf(p)
+    if (op !== null) counts.set(op, (counts.get(op) ?? 0) + 1)
+  }
+  for (const [op, m] of counts) {
+    if (m > 3 * (rest.length - m) + (op === tailOp ? 3 - tail : 3)) return false
+  }
+  return true
+}
+
+/**
+ * Lay the middle of the arc out again, in its own order, taking at each place the first item that
+ * keeps the key from repeating, keeps an operation to three in a row, and still leaves a way to place
+ * the rest (the opener and the closer stay where they are). Stepping through in order keeps the arc;
+ * looking ahead is what a swap-by-swap repair cannot do.
+ */
+function interleave(seq: readonly Pick[], mixed: boolean): Pick[] {
+  const n = seq.length
+  if (n <= 2) return [...seq]
+  const last = seq[n - 1]
+  const pool = seq.slice(1, n - 1)
+  const out: Pick[] = [seq[0]]
+  while (pool.length > 0) {
+    const prev = out[out.length - 1]
+    const fine = (p: Pick, i: number, strict: boolean): boolean => {
+      if (p.opt.key === prev.opt.key) return false
+      if (!strict) return true
+      if (mixed && runWith(out, p) > 3) return false
+      if (pool.length === 1) return p.opt.key !== last.opt.key && (!mixed || runWith([...out, p], last) <= 3)
+      return !mixed || canFinish([...out, p], [...pool.filter((_, j) => j !== i), last])
+    }
+    let idx = pool.findIndex((p, i) => fine(p, i, true))
+    if (idx < 0) idx = pool.findIndex((p, i) => fine(p, i, false) && (!mixed || runWith(out, p) <= 3))
+    if (idx < 0) idx = pool.findIndex((p, i) => fine(p, i, false))
+    out.push(pool.splice(Math.max(0, idx), 1)[0])
+  }
+  out.push(last)
+  return out
 }
 
 /** Same key back to back reads as a glitch; four sums of one kind in a row invite wrongOperation. */

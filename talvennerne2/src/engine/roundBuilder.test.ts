@@ -103,15 +103,16 @@ describe('round building (ported from V1)', () => {
 
 // ─── V2: slots and the arc (SPEC §5.4, §15.1) ───────────────────────────────
 
-import { newCapsFor, slotPlan, type KeyOption, type NewCaps, type RoundOptions, type SlotPlan } from './roundBuilder'
-import { sumKeys, sums } from './testing/keys'
-import type { MisconceptionId, Task } from './types'
+import { newCapsFor, slotPlan, type BuildExtra, type KeyOption, type NewCaps, type RoundOptions, type SlotPlan } from './roundBuilder'
+import { productKeys, sumKeys, sums } from './testing/keys'
+import type { MisconceptionId, Task, TaskKind } from './types'
+import type { Rng } from './rng'
 
 const V2_DAY = '2026-09-10'
 const plus = sumKeys(sums('+'), 'addTo10')
 const minus = sumKeys(sums('−'), 'subTo10')
 const nodeKeys = [...plus, ...minus]
-const reviewPool = sumKeys(sums('+', 6), 'mul2510', { op: '·' }).map((k) => ({ ...k, key: `r:${k.key}` }))
+const reviewPool = productKeys('mul2510')
 const V2_SKILLS = new Set(['addTo10', 'subTo10'])
 
 /** A random but plausible profile: some keys new, some shaky, some sure; review keys sure and due. */
@@ -192,7 +193,7 @@ describe('round building V2 over 1000 seeds (SPEC §5.4)', () => {
       checked++
       expect(maxRun(tasks)).toBeLessThanOrEqual(3)
     }
-    expect(checked).toBeGreaterThan(950)
+    expect(checked).toBe(1000)
   })
 
   it('never ends on a first meeting', () => {
@@ -208,7 +209,7 @@ describe('round building V2 over 1000 seeds (SPEC §5.4)', () => {
       const reviewable = reviewPool.some((k) => isSeen(states[k.key]) && states[k.key].box >= 3)
       const others = tasks.filter((t) => !V2_SKILLS.has(t.skill))
       expect(others.length).toBe(reviewable ? 1 : 0)
-      for (const t of others) expect(states[`r:${t.factId}`]?.box ?? states[t.masteryKey]?.box ?? 3).toBeGreaterThanOrEqual(3)
+      for (const t of others) expect(states[t.masteryKey].box).toBeGreaterThanOrEqual(3)
     }
   })
 
@@ -276,14 +277,20 @@ describe('round building V2: tones, slots and small pools', () => {
 
   it('aims the targeted slot at a flagged misconception', () => {
     const states = seeded(10, 20)
-    const flagged: MisconceptionId[] = ['countFromFirst']
     for (let seed = 0; seed < 50; seed++) {
-      const tasks = v2(seed, { states, keys: plus, flagged })
-      const aimed = tasks.filter((t) => Object.values(t.distractorTags).includes('countFromFirst'))
-      expect(aimed.length).toBeGreaterThanOrEqual(tasks.filter((t) => t.kind === 'choice').length > 0 ? 0 : 0)
-      const target = tasks.find((t) => t.kind === 'choice' && Object.values(t.distractorTags).includes('countFromFirst'))
-      const targetedKey = plus.find((k) => k.key === target?.masteryKey)
-      if (target) expect(targetedKey?.detectable).toContain('countFromFirst')
+      const aimed: { key: string; target: readonly MisconceptionId[] }[] = []
+      const spied = plus.map((k) => ({
+        ...k,
+        build: (kind: TaskKind, rng: Rng, i: number, extra?: BuildExtra) => {
+          if (extra?.target) aimed.push({ key: k.key, target: extra.target })
+          return k.build(kind, rng, i, extra)
+        },
+      }))
+      v2(seed, { states, keys: spied, flagged: ['countFromFirst'] })
+      expect(aimed).toHaveLength(1)
+      expect(aimed[0].target).toEqual(['countFromFirst'])
+      expect(plus.find((k) => k.key === aimed[0].key)?.detectable).toContain('countFromFirst')
+      expect(isSeen(states[aimed[0].key])).toBe(true)
     }
     // no key can show the flagged idea: the slot goes to one more shaky key
     const plain = v2(3, { states, keys: plus, flagged: ['sizeIsWeight'] })

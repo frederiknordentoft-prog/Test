@@ -37,3 +37,23 @@ export function sumKeys(facts: readonly SumFact[], skill: SkillId, over: Partial
     ...over,
   }))
 }
+
+/** Multiplication keys ('mul:axb', op ·) from another skill: the review pool in round tests. */
+export function productKeys(skill: SkillId, max = 5): KeyOption[] {
+  const out: KeyOption[] = []
+  for (let a = 1; a <= max; a++) {
+    for (let b = a; b <= max; b++) {
+      const id = `mul:${a}x${b}`
+      const f: SumFact = { id, a, b, op: '+', answer: a * b, rank: a * b }
+      out.push({
+        key: id, skill, family: 'all', rank: a * b, kinds: ['choice', 'keypad'], production: ['keypad'], op: '·',
+        detectable: ['tableNeighbour'],
+        build: (kind, rng, occurrence) => ({
+          ...sumTask(f, kind, rng, occurrence, skill),
+          prompt: { scene: 'equation', terms: [{ n: a }, { op: '·' }, { n: b }, { op: '=' }, { blank: true }] },
+        }),
+      })
+    }
+  }
+  return out
+}
