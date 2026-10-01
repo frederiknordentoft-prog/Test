@@ -95,6 +95,7 @@ class Take:
     nums_ok: bool | None = None
     engine: str | None = None
     asr_w2v: str | None = None     # wav2vec2's transcript when whisper decided
+    asr_whisper: str | None = None # whisper's transcript when it was asked
     pass_a: bool = False
     reason: str = ""
     cpu_s: float = 0.0
@@ -403,7 +404,11 @@ class Generator:
         self.comp_cache: dict[tuple, dict] = {}
         self.avoid: dict[str, set[str]] = {}
         self.choice: dict[str, Take | None] = {}
-        self.stats = {"calls": 0, "cpu_s": 0.0, "wall_s": 0.0, "takes": 0, "final": 0, "failed": 0}
+        self.stats = {"calls": 0, "cpu_s": 0.0, "wall_s": 0.0, "takes": 0, "final": 0, "failed": 0, "copied": 0}
+        self.by_hash: dict[str, list[str]] = {}
+        for c in inv["clips"]:
+            self.by_hash.setdefault(c["hash"], []).append(c["id"])
+        self.followers: dict[str, str] = {}
 
     # --- helpers ---
     def time_left(self) -> bool:
@@ -504,7 +509,7 @@ class Generator:
             if job.method in ("carrier", "head"):
                 cs, ce = span(*it.ctx)
                 self.check_carrier(t, x[cs:ce], it.parts)
-            elif syllables(c["text"]) >= P.MIN_SYLL_ALONE:
+            elif P.checked_alone(c):
                 self.check_alone(t, y, c["text"])
             t.pass_a = t.post_ok and t.dur_ok and (t.check == "none" or bool(t.nums_ok and t.cer is not None
                                                                               and t.cer <= P.CER_MAX))
@@ -518,7 +523,9 @@ class Generator:
             out.append(t)
             log.info(f"  {c['id']} t{t.take}: {t.dur:.2f} s (forhold {t.dur / max(t.exp_dur, 1e-3):.2f}) "
                      f"{t.lufs} LUFS, {t.check}: '{t.asr}' CER {t.cer} ({t.engine}"
-                     + (f", wav2vec2: '{t.asr_w2v}'" if t.asr_w2v else "") + f") → {'ok' if t.pass_a else 'FEJL ' + t.reason}")
+                     + (f", wav2vec2: '{t.asr_w2v}'" if t.asr_w2v else "")
+                     + (f", whisper: '{t.asr_whisper}'" if t.asr_whisper and t.engine != "whisper" else "")
+                     + f") → {'ok' if t.pass_a else 'FEJL ' + t.reason}")
         return out
 
     def _judge(self, expected: str, asr: str, parts=None) -> tuple[float, bool, dict]:
@@ -538,6 +545,7 @@ class Generator:
         if not (t.nums_ok and t.cer <= P.CER_MAX) and t.cer <= WHISPER_MAX_CER:
             w = self.eng.whisper(y)
             if w is not None:
+                t.asr_whisper = w
                 cer, ok, _ = self._judge(text, w)
                 if ok and cer <= P.CER_MAX:
                     t.asr_w2v = t.asr
@@ -552,6 +560,7 @@ class Generator:
         if not (t.nums_ok and t.cer <= P.CER_MAX) and t.cer <= WHISPER_MAX_CER:
             w = self.eng.whisper(seg)
             if w is not None:
+                t.asr_whisper = w
                 cer, ok, _ = self._judge(expected, w, parts)
                 if ok and cer <= P.CER_MAX:
                     t.asr_w2v = t.asr
@@ -593,6 +602,29 @@ class Generator:
         self.stats["final"] += 1
         self.stats["failed"] += not passed
         log.info(f"  ✓ master {clip['id']} t{t.take} ({'bestået' if passed else 'IKKE bestået: ' + entry['reason']})")
+
+    def master_for_hash(self, h: str, not_id: str) -> str | None:
+        """Another clip with the same hash (same generator text) that already has a master."""
+        for cid in self.by_hash.get(h, []):
+            e = self.final(cid)
+            if cid != not_id and e is not None and e.get("file") and not e.get("copyOf"):
+                return cid
+        return None
+
+    def copy_master(self, clip: dict, src: str) -> None:
+        """Same text, same voice, same settings: reuse the master of `src` instead of generating."""
+        import shutil
+        e = dict(self.index["clips"][src])
+        rel = P.master_rel(clip)
+        (P.MASTERS / rel).parent.mkdir(parents=True, exist_ok=True)
+        if (P.MASTERS / e["file"]).resolve() != (P.MASTERS / rel).resolve():
+            shutil.copyfile(P.MASTERS / e["file"], P.MASTERS / rel)
+        e.update(file=rel, pack=clip["pack"], wave=clip["wave"], copyOf=src, cpuS=0.0, wallS=0.0)
+        self.index["clips"][clip["id"]] = e
+        P.save_index(self.index)
+        self.stats["final"] += 1
+        self.stats["copied"] += 1
+        log.info(f"  ✓ master {clip['id']} = kopi af {src} (samme tekst)")
 
     def finalize_missing(self, clip: dict) -> None:
         """No take could even be cut (alignment failed every time): recorded without a master."""
@@ -730,6 +762,7 @@ class Generator:
         res = asr_check.check(expected, asr)
         engine = "wav2vec2"
         blame_text = w2v
+        w = None
         if not res["pass"] and res["cer"] <= WHISPER_MAX_CER:
             w = self.eng.whisper(y)
             if w is not None:
@@ -743,7 +776,9 @@ class Generator:
                "nums_ok": res["nums_ok"], "att": att, "engine": engine, "asr_w2v": w2v}
         self.comp_cache[key] = out
         log.info(f"  sammensat {' + '.join(ids)}: '{asr}' CER {res['cer']:.3f} ({engine}"
-                 + (f", wav2vec2: '{w2v}'" if engine != "wav2vec2" else "") + f") → {'ok' if res['pass'] else 'FEJL'}")
+                 + (f", wav2vec2: '{w2v}'" if engine != "wav2vec2" else "")
+                 + (f", whisper: '{w}'" if w is not None and engine != "whisper" else "")
+                 + f") → {'ok' if res['pass'] else 'FEJL'}")
         return out
 
     @staticmethod
@@ -878,8 +913,21 @@ class Generator:
     # --- main loop ---
     def run(self) -> int:
         todo = [c for c in self.selected if self.final(c["id"]) is None]
-        self.pending_ids = {c["id"] for c in todo}
         log.info(f"{len(self.selected)} klip valgt, {len(self.selected) - len(todo)} færdige, {len(todo)} at lave")
+        # Clips with the same generator text share one master ("guld" is the gold colour of 17 species).
+        rest, leaders = [], {}
+        for c in todo:
+            src = self.master_for_hash(c["hash"], c["id"])
+            if src is not None:
+                if not self.args.dry_run:
+                    self.copy_master(c, src)
+            elif c["hash"] in leaders:
+                self.followers[c["id"]] = leaders[c["hash"]]
+            else:
+                leaders[c["hash"]] = c["id"]
+                rest.append(c)
+        todo = rest
+        self.pending_ids = {c["id"] for c in todo}
         fresh = [c for c in todo if not self.takes(c)]
         queue = initial_jobs(fresh)
         # resume: clips with takes but no usable one get their next take
@@ -922,9 +970,14 @@ class Generator:
         subjects = [self.by_id[cid] for cid in sorted(self.pending_ids) if P.needs_composition(self.by_id[cid])]
         if subjects and not queue:
             self.composition_stage(subjects)
+        for cid, leader in sorted(self.followers.items()):
+            if self.final(leader) is not None and self.final(leader).get("file"):
+                self.copy_master(self.by_id[cid], leader)
+            else:
+                self.pending_ids.add(cid)
         left = len(self.pending_ids)
         s = self.stats
-        log.info(f"færdig: {s['final']} nye mastere ({s['failed']} ikke bestået), {s['calls']} modelkald, "
+        log.info(f"færdig: {s['final']} nye mastere ({s['failed']} ikke bestået, {s['copied']} kopier), {s['calls']} modelkald, "
                  f"{s['wall_s'] / 60:.1f} min generering (CPU {s['cpu_s'] / 3600:.2f} t), {left} klip mangler")
         if left == 0:
             return 0
@@ -963,6 +1016,13 @@ def apply_retakes(inv: dict, path: str) -> list[str]:
     state = State(P.WORK / "state.jsonl")
     index = P.load_index()
     retaken: list[str] = []
+    # a copy is retaken through the clip it copies; every copy of a retaken master is made again
+    ids = list(dict.fromkeys(index["clips"].get(i, {}).get("copyOf") or i for i in ids))
+    for cid in ids:
+        for other, oe in list(index["clips"].items()):
+            if oe.get("copyOf") == cid:
+                del index["clips"][other]
+                retaken.append(other)
     for cid in ids:
         clip, e = by_id.get(cid), index["clips"].get(cid)
         if clip is None or e is None or e.get("hash") != clip["hash"]:

@@ -1,0 +1,3 @@
+11:08:37 generate.py --wave 1 --threads 2 --max-minutes 100 --ids-file scripts/voice/validation-ids.txt (log: /home/user/wt/w6/talvennerne2/voice/logs/generate-20261001-110837.log)
+11:08:37 59 klip valgt, 59 færdige, 0 at lave
+11:08:37 færdig: 0 nye mastere (0 ikke bestået), 0 modelkald, 0.0 min generering (CPU 0.00 t), 0 klip mangler

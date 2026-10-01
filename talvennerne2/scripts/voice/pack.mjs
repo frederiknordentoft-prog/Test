@@ -7,8 +7,9 @@
 //   node scripts/voice/pack.mjs --dry-run  → budgets only, nothing written
 //
 // One sprite per pack (catalogue `pack`), split into `<pack>.1`, `<pack>.2` … when longer than 60 s.
-// Clips are laid out in id order with 120 ms of silence between them (100 ms before the first) and
-// encoded with ffmpeg-static: -c:a libmp3lame -b:a 40k -ar 24000 -ac 1. A clip's [start, dur] is its
+// Clips are laid out in id order with 120 ms of silence between them (100 ms before the first);
+// clips with identical audio (one master shared by several ids, e.g. "guld") share one span. They are
+// then encoded with ffmpeg-static: -c:a libmp3lame -b:a 40k -ar 24000 -ac 1. A clip's [start, dur] is its
 // master's span on the unencoded timeline, lead and tail included; the runtime absorbs the MP3 delay.
 // Only masters whose hash matches voice/inventory.json are packed. Budgets (SPEC §10.3) fail the
 // script before anything is written: preloaded sprites (n0-20, core, ui) ≤ 1.2 MB together, every
@@ -102,9 +103,16 @@ export function main(args) {
     for (const sprite of layout(pack, clips)) {
       let length = samplesOf(LEAD_PAD_MS)
       const spans = {}
-      for (const [i, c] of sprite.clips.entries()) {
-        if (i > 0) length += samplesOf(GAP_MS)
+      const placed = new Map() // identical audio (one master copied to several ids) is stored once
+      for (const c of sprite.clips) {
+        const key = createHash('sha1').update(Buffer.from(c.audio.buffer, c.audio.byteOffset, c.audio.byteLength)).digest('hex')
+        if (placed.has(key)) {
+          spans[c.id] = placed.get(key)
+          continue
+        }
+        if (placed.size > 0) length += samplesOf(GAP_MS)
         spans[c.id] = [length, c.samples]
+        placed.set(key, spans[c.id])
         length += c.samples
       }
       length += samplesOf(TAIL_PAD_MS)

@@ -152,12 +152,29 @@ def head_parts(clip: dict, take: int = 0) -> tuple[str, int]:
     return bare(clip["genText"]), HEAD_TAILS[(h - 1 + take) % len(HEAD_TAILS)]
 
 
+def is_label(clip: dict) -> bool:
+    """Names, button labels, nouns and other pieces of at most 3 words that are not sentences.
+
+    Speech recognition is unreliable on an isolated word ("regnbue" was heard as "heienbå",
+    "reinbo" and "heinburg" in five takes, also by whisper), so these are checked in the sentence
+    frame "Det er X" instead of alone, like the short clips.
+    """
+    if clip["id"].startswith(("frag.", "op.")) or method_of(clip) != "single":
+        return False
+    return len(words_of(bare(clip["genText"]))) <= 3
+
+
 def needs_composition(clip: dict) -> bool:
-    """Short clips, number clips and the shared fragments are checked in compositions too."""
+    """Short clips, number clips, labels and the shared fragments are checked in compositions."""
     cid = clip["id"]
-    if cid.startswith(("frag.", "op.")) or method_of(clip) in ("carrier", "head"):
+    if cid.startswith(("frag.", "op.")) or method_of(clip) in ("carrier", "head") or is_label(clip):
         return True
     return syllables(clip["text"]) < MIN_SYLL_ALONE
+
+
+def checked_alone(clip: dict) -> bool:
+    """Clips with at least 3 syllables are ASR-checked on their own (labels only in a sentence frame)."""
+    return syllables(clip["text"]) >= MIN_SYLL_ALONE and not is_label(clip)
 
 
 def setup_logging(name: str, to_file: bool = True) -> Path | None:
