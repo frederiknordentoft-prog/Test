@@ -146,6 +146,8 @@ export function useAnimalImage(look: AnimalLook | null, o: ArtOptions = {}): str
   return imageUrl(def, look, outfit, o)
 }
 
+const UNCLIPPED: CSSProperties = { overflow: 'visible' }
+
 export interface AnimalArtProps extends ArtOptions {
   look: AnimalLook
   /** animated: a live <Rig> (the buddy and at most two others per screen); static: an <img>. */
@@ -178,7 +180,15 @@ export function AnimalArt({ look, mode = 'animated', mood, crop = 'fit', title, 
   }
   return (
     <span className={box} style={style}>
-      <Rig {...rigProps(def, look, outfit, { mood, crop })} size="100%" title={title} seed={7} className={isCalm() ? 'rig-calm' : undefined} />
+      <Rig
+        {...rigProps(def, look, outfit, { mood, crop })}
+        size="100%"
+        title={title}
+        seed={7}
+        className={isCalm() ? 'rig-calm' : undefined}
+        // a cropped rig clips by default (shop cards); a cheering animal may reach past its crop
+        style={UNCLIPPED}
+      />
     </span>
   )
 }

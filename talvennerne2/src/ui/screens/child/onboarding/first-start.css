@@ -188,9 +188,6 @@
   width: 100%;
   height: auto;
 }
-.tv-art > svg {
-  overflow: visible;
-}
 .tv-art__img {
   -webkit-user-drag: none;
   pointer-events: none;
