@@ -1,0 +1,973 @@
+/*
+ * Dyrehaven (src/ui/screens/child/AnimalsScreen.tsx, animals/**): golden and rainbow picks, the egg
+ * and the meadow, plus an animal's card and the naming. Colours from tokens only. Only transform
+ * and opacity animate; calm mode and reduced motion stop every loop (blinking rigs keep blinking).
+ */
+.zoo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.zoo__title {
+  margin: 0;
+  font-size: var(--text-title);
+  font-weight: 900;
+  line-height: 1.1;
+}
+.zoo__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.zoo__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2px var(--gutter) 28px;
+}
+.zoo-h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+.zoo-h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+  color: var(--color-ink-2);
+}
+.zoo-empty {
+  padding: 28px 20px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  font-size: 19px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ── The meadow ─────────────────────────────────────────────────── */
+.zoo-meadow {
+  position: relative;
+  overflow: hidden;
+  padding: 18px 8px 22px;
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(circle at 18% 30%, color-mix(in srgb, var(--color-heart) 45%, transparent) 0 3px, transparent 4px) 0 0 / 92px 74px,
+    radial-gradient(circle at 64% 70%, color-mix(in srgb, var(--color-star) 70%, transparent) 0 3px, transparent 4px) 0 0 / 118px 86px,
+    radial-gradient(circle at 40% 52%, color-mix(in srgb, var(--color-card) 80%, transparent) 0 2.5px, transparent 3.5px) 0 0 / 70px 62px,
+    radial-gradient(140% 60% at 50% -12%, color-mix(in srgb, var(--color-card) 75%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-good) 20%, var(--color-card)) 0%, color-mix(in srgb, var(--color-good) 40%, var(--color-card)) 100%);
+  box-shadow: var(--shadow-card);
+}
+.zoo-meadow__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 6px 2px;
+}
+@media (min-width: 560px) {
+  .zoo-meadow__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 720px) {
+  .zoo-meadow {
+    padding: 24px 16px 28px;
+  }
+  .zoo-meadow__grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px 6px;
+  }
+}
+@media (min-width: 1000px) {
+  .zoo-meadow__grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.zoo-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  min-height: 60px;
+  margin: 0;
+  padding: 4px 2px 6px;
+  border: 0;
+  border-radius: 24px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+  transform: translateY(var(--dy, 0));
+  -webkit-tap-highlight-color: transparent;
+}
+.zoo-cell:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: -2px;
+}
+.zoo-cell--buddy {
+  grid-column: span 2;
+}
+.zoo-cell__stage {
+  display: block;
+  width: 100%;
+  max-width: 132px;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.zoo-cell--buddy .zoo-cell__stage {
+  max-width: 200px;
+}
+.zoo-cell[data-pressed] .zoo-cell__stage {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.zoo-cell__stage[data-hop] {
+  animation: zoo-hop 560ms var(--ease-out);
+}
+@keyframes zoo-hop {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-16px) scale(1.02);
+  }
+  70% {
+    transform: translateY(0) scale(1.04, 0.96);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+/* Still pictures breathe as a whole; each cell has its own phase. */
+.zoo-cell.is-still .zoo-fig__img {
+  transform-origin: 50% 94%;
+  animation: zoo-breathe 4.4s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes zoo-breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.012, 1.03);
+  }
+}
+
+.zoo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  margin-top: -8px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-card) 94%, transparent);
+  box-shadow: 0 2px 0 var(--color-line);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.zoo-cell--buddy .zoo-tag {
+  padding: 4px 14px;
+  font-size: 18px;
+}
+.zoo-tag__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zoo-tag__heart {
+  flex: none;
+  color: var(--color-heart);
+}
+.zoo-cell__new {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--color-star);
+  box-shadow: 0 2px 0 var(--color-star-lip);
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+.zoo-cell--decor {
+  justify-content: flex-end;
+  cursor: default;
+}
+.zoo-cell__decor {
+  display: block;
+  width: 100%;
+  max-width: 124px;
+  height: auto;
+}
+
+/* ── Decor (animals/Decor.tsx) ──────────────────────────────────── */
+.zoo-decor {
+  overflow: visible;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+.zd-shadow {
+  fill: var(--color-ink);
+  stroke: none;
+  opacity: 0.1;
+}
+.zd-soil {
+  fill: var(--color-wood-grain);
+  stroke: var(--color-wood-edge);
+}
+.zd-stem {
+  fill: none;
+  stroke: var(--color-d-shapes-deep);
+  stroke-width: 3.5;
+}
+.zd-pink {
+  fill: var(--color-heart);
+  stroke: color-mix(in srgb, var(--color-heart) 62%, var(--color-ink));
+}
+.zd-sun {
+  fill: var(--color-star);
+  stroke: var(--color-star-lip);
+}
+.zd-lilac {
+  fill: var(--color-primary-tint);
+  stroke: var(--color-primary);
+}
+.zd-glow {
+  fill: var(--color-star);
+  stroke: none;
+  opacity: 0.28;
+  transform-origin: 60px 34px;
+  animation: zd-glow 3.4s ease-in-out infinite;
+}
+@keyframes zd-glow {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.06);
+  }
+}
+.zd-wood {
+  fill: var(--color-wood);
+  stroke: var(--color-wood-edge);
+}
+.zd-wood-dark {
+  fill: none;
+  stroke: var(--color-wood-edge);
+  stroke-width: 6;
+}
+.zd-trunk {
+  fill: var(--color-wood-edge);
+  stroke: color-mix(in srgb, var(--color-wood-edge) 70%, var(--color-ink));
+}
+.zd-door {
+  fill: var(--color-wood-edge);
+  stroke: none;
+}
+.zd-rope {
+  fill: none;
+  stroke: var(--color-rope);
+}
+.zd-stone {
+  fill: var(--color-stone);
+  stroke: var(--color-stone-edge);
+}
+.zd-roof {
+  fill: var(--color-d-clock);
+  stroke: var(--color-d-clock-deep);
+}
+.zd-water {
+  fill: color-mix(in srgb, var(--color-d-number) 30%, var(--color-card));
+  stroke: var(--color-d-number);
+}
+.zd-duck {
+  fill: var(--color-star);
+  stroke: var(--color-star-lip);
+}
+.zd-beak {
+  fill: var(--color-warm);
+  stroke: var(--color-oops-lip);
+}
+.zd-leaf {
+  fill: var(--color-d-shapes);
+  stroke: var(--color-d-shapes-deep);
+}
+.zd-spray {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-d-number) 55%, var(--color-card));
+  stroke-width: 4;
+}
+.zd-drop {
+  fill: color-mix(in srgb, var(--color-d-number) 60%, var(--color-card));
+  stroke: none;
+}
+.zd-drops {
+  animation: zd-drops 1.8s ease-in-out infinite;
+}
+@keyframes zd-drops {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(4px);
+  }
+}
+.zd-band {
+  fill: none;
+  stroke-width: 8;
+}
+.zd-band--1 {
+  stroke: var(--color-d-clock);
+}
+.zd-band--2 {
+  stroke: var(--color-d-money);
+}
+.zd-band--3 {
+  stroke: var(--color-d-shapes);
+}
+.zd-band--4 {
+  stroke: var(--color-d-number);
+}
+.zd-cloud {
+  fill: var(--color-card);
+  stroke: var(--color-line-2);
+}
+
+/* ── Cards above the meadow ─────────────────────────────────────── */
+.zoo-eggcard,
+.zoo-choice {
+  padding: 16px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.zoo-eggcard {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 14px;
+}
+.zoo-eggcard.is-ready {
+  box-shadow: 0 0 0 3px var(--color-star), var(--shadow-card);
+}
+.zoo-eggcard__egg {
+  display: block;
+  width: 104px;
+  min-height: 112px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.zoo-eggcard__egg:focus-visible {
+  outline: 3px solid var(--color-ink);
+  border-radius: 24px;
+}
+.zoo-eggcard__info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.zoo-eggcard__meter {
+  width: 100%;
+}
+.zoo-eggcard__prompt {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-star-deep);
+}
+.zoo-eggcard__note {
+  font-size: 16px;
+  color: var(--color-ink-2);
+}
+.zoo-eggcard__species {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.zoo-eggcard__becomes {
+  font-size: 16px;
+  color: var(--color-ink-2);
+}
+.zoo-eggcard__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 14px 3px 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-2);
+  font-weight: 800;
+}
+.zoo-eggcard__chipfig {
+  flex: none;
+  width: 44px;
+}
+.zoo-eggcard__pick {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-direction: column;
+  gap: 10px;
+}
+.zoo-eggcard__options,
+.zoo-choice__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.zoo-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 92px;
+  min-height: 96px;
+  margin: 0;
+  padding: 8px 6px;
+  border: 2.5px solid var(--color-line-2);
+  border-radius: 22px;
+  background: var(--color-card);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.zoo-option[data-pressed] {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.zoo-option.is-on {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  box-shadow: 0 4px 0 var(--color-primary-tint);
+}
+.zoo-option__fig {
+  width: 62px;
+}
+.zoo-option--magic {
+  width: 104px;
+}
+.zoo-option--magic .zoo-option__fig {
+  width: 78px;
+}
+.zoo-option__label {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.zoo-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.zoo-choice--gold {
+  background: linear-gradient(160deg, var(--color-star-soft), var(--color-card) 72%);
+  box-shadow: 0 0 0 3px var(--color-star), var(--shadow-card);
+}
+.zoo-choice--rainbow {
+  background: linear-gradient(160deg, var(--color-d-fractions-soft), var(--color-d-number-soft) 48%, var(--color-card) 88%);
+  box-shadow: 0 0 0 3px var(--color-d-fractions), var(--shadow-card);
+}
+.zoo-choice__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.zoo-choice__badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-star);
+  color: var(--color-star-deep);
+  box-shadow: 0 3px 0 var(--color-star-lip);
+}
+.zoo-choice--rainbow .zoo-choice__badge {
+  background: var(--color-d-fractions);
+  color: var(--color-card);
+  box-shadow: 0 3px 0 var(--color-d-fractions-deep);
+}
+.zoo-choice__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.zoo-choice__about {
+  font-size: 16px;
+  color: var(--color-ink-2);
+}
+
+/* ── The egg (animals/EggArt.tsx) ───────────────────────────────── */
+.zoo-egg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.zoo-egg__glow {
+  fill: var(--color-star);
+  opacity: 0.32;
+  transform-origin: 60px 86px;
+  animation: zoo-egg-glow 1.8s ease-in-out infinite;
+}
+@keyframes zoo-egg-glow {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.04);
+  }
+}
+.zoo-egg__nest {
+  fill: var(--color-wood);
+  stroke: var(--color-wood-edge);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.zoo-egg__shell {
+  fill: color-mix(in srgb, var(--color-star) 16%, var(--color-card));
+  stroke: var(--color-wood-edge);
+  stroke-width: 3.2;
+}
+.zoo-egg__speckle {
+  fill: color-mix(in srgb, var(--color-primary) 28%, var(--color-card));
+}
+.zoo-egg__shine {
+  fill: none;
+  stroke: var(--color-card);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.zoo-egg__crack {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.zoo-egg__body {
+  transform-origin: 60px 140px;
+}
+.zoo-egg.is-ready .zoo-egg__body {
+  animation: zoo-egg-wobble 2.6s ease-in-out infinite;
+}
+.zoo-egg.is-tapped .zoo-egg__body {
+  animation: zoo-egg-shake 440ms ease-in-out;
+}
+@keyframes zoo-egg-wobble {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg);
+  }
+  78% {
+    transform: rotate(-5deg);
+  }
+  86% {
+    transform: rotate(4deg);
+  }
+  93% {
+    transform: rotate(-2deg);
+  }
+}
+@keyframes zoo-egg-shake {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-9deg) scale(1.04);
+  }
+  55% {
+    transform: rotate(8deg) scale(1.04);
+  }
+  80% {
+    transform: rotate(-3deg) scale(1.01);
+  }
+}
+
+/* ── An animal's card (animals/AnimalSheet.tsx) ─────────────────── */
+.zoo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 8px;
+}
+.zoo-card__head {
+  display: grid;
+  grid-template-columns: minmax(120px, 42%) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.zoo-card__stage {
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  max-width: 220px;
+}
+.zoo-card__name {
+  margin: 0;
+  font-size: var(--text-title);
+  font-weight: 900;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.zoo-card__kind {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-ink-2);
+  font-size: 16px;
+  font-weight: 700;
+}
+.zoo-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.zoo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 16px;
+  font-weight: 900;
+}
+.zoo-badge--buddy {
+  background: var(--color-heart-soft);
+  color: var(--color-ink);
+}
+.zoo-badge--buddy .tv-icon {
+  color: var(--color-heart);
+}
+.zoo-badge--star {
+  background: var(--color-star-soft);
+  color: var(--color-star-deep);
+}
+.zoo-card__sec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.zoo-card__meter {
+  width: 100%;
+}
+.zoo-hearts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  min-height: 60px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--color-heart-soft);
+  font: inherit;
+  cursor: pointer;
+}
+.zoo-hearts__h {
+  display: inline-flex;
+  color: color-mix(in srgb, var(--color-heart) 40%, var(--color-card));
+}
+.zoo-hearts__h.is-on {
+  color: var(--color-heart);
+}
+.zoo-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (min-width: 640px) {
+  .zoo-chips {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+.zoo-chip,
+.zoo-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  border: 2.5px solid var(--color-line-2);
+  border-radius: 20px;
+  background: var(--color-card);
+  color: var(--color-primary-deep);
+  font: inherit;
+  cursor: pointer;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.zoo-chip {
+  min-height: 72px;
+  padding: 8px 4px;
+}
+.zoo-chip[data-pressed],
+.zoo-form[data-pressed] {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.zoo-chip.is-on {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.zoo-chip.is-locked,
+.zoo-form.is-locked {
+  border-style: dashed;
+  background: var(--color-paper-2);
+  color: var(--color-ink-2);
+}
+.zoo-chip__label,
+.zoo-form__label {
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+}
+.zoo-forms {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.zoo-form {
+  min-height: 100px;
+  padding: 6px 4px 8px;
+}
+.zoo-form.is-on {
+  border-color: var(--color-good);
+  background: var(--color-good-soft);
+}
+.zoo-form__fig {
+  max-width: 72px;
+}
+.zoo-form.is-locked .zoo-form__fig {
+  opacity: 0.3;
+}
+.zoo-form__lock {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: var(--color-ink-2);
+}
+.zoo-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.zoo-card__actions > * {
+  flex: 1 1 140px;
+}
+
+/* Tricks: moves of the whole figure on top of the rig's own mood. */
+.zoo-card__stage.is-spin {
+  animation: zoo-spin 1.2s var(--ease-out);
+}
+.zoo-card__stage.is-dance {
+  animation: zoo-dance 0.6s ease-in-out 4;
+}
+.zoo-card__stage.is-call {
+  animation: zoo-call 0.7s ease-in-out 2;
+}
+.zoo-card__stage.is-shine::after {
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-star) 55%, transparent), transparent 66%);
+  content: '';
+  pointer-events: none;
+  animation: zoo-shine 2s ease-in-out both;
+}
+@keyframes zoo-spin {
+  0%,
+  50%,
+  100% {
+    transform: scaleX(1);
+  }
+  25%,
+  75% {
+    transform: scaleX(-1);
+  }
+}
+@keyframes zoo-dance {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: rotate(-6deg) translateY(-6px);
+  }
+  75% {
+    transform: rotate(6deg) translateY(-6px);
+  }
+}
+@keyframes zoo-call {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06, 1.04);
+  }
+}
+@keyframes zoo-shine {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+/* ── A new friend and naming (BornSheet.tsx, Naming.tsx) ────────── */
+.zoo-born {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 6px;
+  text-align: center;
+}
+.zoo-born__title {
+  margin: 0;
+  font-size: var(--text-title);
+  font-weight: 900;
+  line-height: 1.15;
+}
+.zoo-born__stage {
+  width: min(52vw, 210px);
+}
+.zoo-born__kind {
+  margin-top: -6px;
+}
+.zoo-name {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+}
+.zoo-name__title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 900;
+}
+.zoo-name__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.zoo-name__opt {
+  min-width: 0;
+  min-height: 60px;
+  margin: 0;
+  padding: 8px 6px;
+  border: 2.5px solid var(--color-line-2);
+  border-radius: 20px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 19px;
+  font-weight: 800;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.zoo-name__opt[data-pressed] {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.zoo-name__opt.is-on {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+}
+.zoo-name__own {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.zoo-name__input {
+  flex: 1;
+  min-width: 0;
+  min-height: 60px;
+  padding: 0 16px;
+  border: 2.5px solid var(--color-primary);
+  border-radius: 20px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 800;
+}
+.zoo-name__input::placeholder {
+  color: var(--color-ink-3);
+}
+
+/* ── Calm mode and reduced motion: no loops, no travel ──────────── */
+:root[data-calm] .zoo-cell .zoo-fig__img,
+:root[data-calm] .zoo-cell__stage,
+:root[data-calm] .zd-glow,
+:root[data-calm] .zd-drops,
+:root[data-calm] .zoo-egg__glow,
+:root[data-calm] .zoo-egg__body,
+:root[data-calm] .zoo-card__stage,
+:root[data-calm] .zoo-card__stage::after {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zoo-cell .zoo-fig__img,
+  .zoo-cell__stage,
+  .zd-glow,
+  .zd-drops,
+  .zoo-egg__glow,
+  .zoo-egg__body,
+  .zoo-card__stage,
+  .zoo-card__stage::after {
+    animation: none !important;
+  }
+}
