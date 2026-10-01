@@ -4,13 +4,14 @@
 import { describe, expect, it } from 'vitest'
 import { registeredSkills } from '../../registry'
 import { masteryKeyOf } from '../../tasks'
+import { ceilingFor } from '../../kinds'
 import { hashSeed, makeRng } from '../../rng'
 import { THING_IDS } from '../../../art/materials/Things'
 import type { Fact } from '../../types'
 import {
   answerProblems, cardProblems, classificationProblems, countOutSentence, diagnosticProblems, explainCount, explainHeard,
   explainOrder20, first, globalIdProblems, heardNumber, hintProblems, howManyQuestion, idNumber, instancesOf, optionProblems,
-  order20Answer, order20FromSpeech, order20Numbers, order20SortFromSpeech, productionProblems, registeredSkill as skill,
+  orderings, order20Answer, order20FromSpeech, order20Numbers, order20SortFromSpeech, productionProblems, registeredSkill as skill,
   reversed, rowNumbers, sceneOf, specKindProblems, specTag, spokenNumbers, spokenText, tagProblem, tagsToHint,
   taskSpeechProblems, tasksOf, type Built,
 } from './number.oracle'
@@ -165,6 +166,8 @@ describe('hear20 oracle', () => {
     for (const f of facts) {
       expect(f.id, f.id).toMatch(/^h20:\d+$/)
       expect(f.answer).toBe(idNumber(f.id))
+      // the metadata's families: "Tal 0–10" and "Tal 11–20"
+      expect(f.family, f.id).toBe(idNumber(f.id) <= 10 ? 'small' : 'teens')
     }
     const rank = (n: number) => facts.find((f) => idNumber(f.id) === n)!.rank
     const teens = Array.from({ length: 9 }, (_, i) => rank(11 + i))
@@ -332,6 +335,38 @@ describe('order20 oracle', () => {
     expect(first(classificationProblems(built.filter((b) => b.kind !== 'sortOrder'), explain))).toEqual([])
   })
 
+  it('takes only the asked order as right: every other order of the four cards is a plain error', () => {
+    const problems: string[] = []
+    for (const { task } of built) {
+      if (task.kind !== 'sortOrder') continue
+      for (const order of orderings(task.options.map(String))) {
+        const given = order.join('|')
+        if (given === task.answer) continue
+        const p = tagProblem(task, given, { mis: [] }, true)
+        if (p) problems.push(p)
+      }
+    }
+    expect(first(problems)).toEqual([])
+  })
+
+  // SPEC §3.3 IN SPIRIT (order20.ts, family 'bigger' on keypad and number line): "Hvilket tal er
+  // størst, seks eller otte?" names both candidates, so typing or tapping one of them is right half
+  // the time — the generator's own header calls it a coin flip — yet by SPEC §3.2's formula (1/range)
+  // it counts as production, ceiling box 5. pickKind asks sortOrder first from box 3, but a repeat slot
+  // (roundBuilder kindFor) can pick keypad or numberline, so order20/bigger can reach box 4–5 on guesses.
+  it.fails('never lets a coin flip count as production (keypad and number-line "bigger" name both numbers)', () => {
+    const problems: string[] = []
+    for (const { fact, kind, task } of built) {
+      if (kind !== 'keypad' && kind !== 'numberline') continue
+      const named = spokenNumbers(spokenText(task.speech))
+      if (named.length < 2 || !named.includes(task.answer as number)) continue
+      // a guess among the numbers the question names: 1 in named.length
+      const ceiling = 1 / named.length >= 0.5 ? 2 : 3
+      if (ceilingFor(task) > ceiling) problems.push(`${fact.id} ${kind}: ceiling ${ceilingFor(task)} for a 1-in-${named.length} guess`)
+    }
+    expect(first(problems)).toEqual([])
+  })
+
   it('makes the 0–10 and 0–20 lines exact, and has SPEC’s production kinds and ceilings', () => {
     const lines = built.filter((b) => b.kind === 'numberline')
     expect(lines.filter((b) => b.task.tolerance !== 0).map((b) => b.fact.id)).toEqual([])
@@ -349,6 +384,16 @@ describe('order20 oracle', () => {
 describe('fact ids across every registered skill', () => {
   it('are unique, in the CONVENTIONS format, one prefix per skill', () => {
     expect(first(globalIdProblems(registeredSkills()))).toEqual([])
+  })
+
+  it('are stable: the same facts every time, and the same instances from the same seed', () => {
+    for (const def of registeredSkills()) {
+      const facts = (d: typeof def) => d.enumerate().map((f) => `${f.id}=${String(f.answer)}`)
+      expect(facts(def), def.id).toEqual(facts(def))
+      if (def.mode !== 'procedure') continue
+      const drawn = () => [...instancesOf(def, 30).values()].flat().map((f) => f.id)
+      expect(drawn(), def.id).toEqual(drawn())
+    }
   })
 
   it('reads Danish number words the way the oracles need them', () => {

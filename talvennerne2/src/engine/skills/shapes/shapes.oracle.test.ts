@@ -160,6 +160,15 @@ describe('shapes2D oracle', () => {
     expect(first(problems.filter((p) => p !== ''))).toEqual([])
   })
 
+  it('has at least six conflict and six congruent facts (SPEC §4.3), also in 0. klasse’s basic family alone', () => {
+    const conflict = (fam?: string) => facts.filter((f) => (!fam || f.family === fam) && !isPrototypical(factFigure(f.id).shape, factFigure(f.id).variant)).length
+    const all = (fam?: string) => facts.filter((f) => !fam || f.family === fam).length
+    for (const fam of [undefined, 'basic']) {
+      expect(conflict(fam), fam ?? 'all').toBeGreaterThanOrEqual(6)
+      expect(all(fam) - conflict(fam), fam ?? 'all').toBeGreaterThanOrEqual(6)
+    }
+  })
+
   it('has SPEC’s production kinds and ceilings (six items to choose among: 1 in 63)', () => {
     expect(first([...productionProblems(built), ...specKindProblems(def, built)])).toEqual([])
   })

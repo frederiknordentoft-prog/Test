@@ -4,7 +4,7 @@
 // the fact id, the picture, the stones, the spoken question — and never from the generator code, so
 // one mistake cannot hide in both. The kit lives in number/ because each agent owns only its own
 // folders (like number/kit.ts); the registry skips *.oracle.ts files, so none of this reaches the app.
-import { MISCONCEPTION_IDS } from '../../types'
+import { MISCONCEPTION_IDS, SPOKEN_OPTION_VIEWS } from '../../types'
 import type {
   AnswerValue, ErrorTag, Fact, MisconceptionId, Prompt, SkillDef, SkillId, SpeechPart, Task, TaskKind,
 } from '../../types'
@@ -234,6 +234,12 @@ export function tasksOf(def: SkillDef, facts: readonly Fact[], seeds: number): B
   return out
 }
 
+/** Every order of the given cards (sortOrder: what the child can lay down). */
+export function orderings<T>(items: readonly T[]): T[][] {
+  if (items.length <= 1) return [[...items]]
+  return items.flatMap((x, i) => orderings([...items.slice(0, i), ...items.slice(i + 1)]).map((rest) => [x, ...rest]))
+}
+
 /** Every value a keypad, line or basket answer can take (0 up to what the keys or the pile allow). */
 export function typeableValues(t: Task): number[] {
   const top = t.kind === 'keypad' ? 10 ** t.maxDigits - 1 : t.range[1]
@@ -327,6 +333,9 @@ export function answerProblems(t: Task): string[] {
     const flipped = t.answer.split('|').reverse().join('|')
     if (classifyAnswer(t, flipped) !== null) out.push(`${where}: the right set tapped in another order is an error`)
   }
+  // SPEC §3.1: a number answer lies inside the task's range, and the keypad takes digits(range max) digits
+  if (typeof t.answer === 'number' && (t.answer < t.range[0] || t.answer > t.range[1])) out.push(`${where}: answer ${t.answer} outside ${t.range.join('–')}`)
+  if (t.kind === 'keypad' && t.maxDigits !== String(t.range[1]).length) out.push(`${where}: ${t.maxDigits} digits for the range ${t.range.join('–')}`)
   return out
 }
 
@@ -418,10 +427,21 @@ export function specKindProblems(def: SkillDef, built: readonly Built[]): string
   return out
 }
 
-/** Spoken scripts of every task (SPEC §10.1): recorded clips only, no digits in the text. */
+/**
+ * Spoken scripts of every task (SPEC §10.1): recorded clips only, no digits in the text. Cards that
+ * are read aloud (SPEC §3.4: unit words, relations, tokens) carry one recorded clip each; number,
+ * figure, bead and picture cards are what the task tests and are never read aloud.
+ */
 export function taskSpeechProblems(built: readonly Built[]): string[] {
   const out = new Set<string>()
-  for (const { fact, kind, task } of built) for (const p of speechProblems(task.speech)) out.add(`${fact.id} ${kind}: ${p}`)
+  for (const { fact, kind, task } of built) {
+    const where = `${fact.id} ${kind}`
+    for (const p of speechProblems(task.speech)) out.add(`${where}: ${p}`)
+    const spoken = SPOKEN_OPTION_VIEWS.includes(task.optionView) && task.options.length > 0
+    if (spoken !== (task.optionClips !== null)) out.add(`${where}: ${task.optionView} cards with optionClips ${JSON.stringify(task.optionClips)}`)
+    if (task.optionClips && task.optionClips.length !== task.options.length) out.add(`${where}: ${task.optionClips.length} clips for ${task.options.length} cards`)
+    for (const clip of task.optionClips ?? []) for (const p of speechProblems([{ clip }])) out.add(`${where} card clip: ${p}`)
+  }
   return [...out]
 }
 

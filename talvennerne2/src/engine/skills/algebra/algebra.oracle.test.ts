@@ -21,6 +21,16 @@ describe('patterns oracle', () => {
   const all: Fact[] = [...canon, ...drawn]
   const built = [...tasksOf(def, canon, 4), ...tasksOf(def, drawn, 1)]
 
+  it('reads rows the way a child does (a check of the oracle itself)', () => {
+    expect(continueRow(['a', 'b', 'a', 'b'], 2)).toEqual({ rule: 'repeat:2', next: ['a', 'b'] })
+    expect(continueRow(['a', 'a', 'b', 'a', 'a', 'b', 'a'], 3)).toEqual({ rule: 'repeat:3', next: ['a', 'b', 'a'] })
+    expect(continueRow(['a', 'b', 'a', 'b', 'b', 'a', 'b', 'b'], 2)).toEqual({ rule: 'growing', next: ['b', 'a'] })
+    // one repeat is not yet a pattern, and a row that is neither has no next bead
+    expect(continueRow(['a', 'b', 'c', 'a'], 1)).toBeNull()
+    expect(continueRow(['a', 'b', 'b', 'a', 'a', 'b'], 1)).toBeNull()
+    expect(patternRow('growing', ['x', 'y'], 9)).toEqual(['x', 'y', 'x', 'y', 'y', 'x', 'y', 'y', 'y'])
+  })
+
   it('has SPEC §2.2’s five families, 20 canonical instances each', () => {
     expect(def.families.map((f) => f.id)).toEqual([...PATTERN_FAMILIES])
     for (const fam of PATTERN_FAMILIES) expect(canon.filter((f) => f.family === fam).length, fam).toBe(20)

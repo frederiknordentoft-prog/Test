@@ -6,16 +6,10 @@ import { masteryKeyOf } from '../../tasks'
 import { makeRng } from '../../rng'
 import { LONG_IDS } from '../../../ui/scenes/objects'
 import {
-  answerProblems, cardProblems, first, hintProblems, optionProblems, productionProblems, registeredSkill, specKindProblems,
-  spokenText, tagProblem, tagsToHint, taskSpeechProblems, tasksOf,
+  answerProblems, cardProblems, first, hintProblems, optionProblems, orderings, productionProblems, registeredSkill,
+  specKindProblems, spokenText, tagProblem, tagsToHint, taskSpeechProblems, tasksOf,
 } from '../number/number.oracle'
 import { byLength, endsAnswer, explainLength, lineupOf, misleads, objToken, questionOf, rightAnswer } from './measure.oracle'
-
-/** Every order of the given cards. */
-function orderings(items: readonly string[]): string[][] {
-  if (items.length <= 1) return [[...items]]
-  return items.flatMap((x, i) => orderings([...items.slice(0, i), ...items.slice(i + 1)]).map((rest) => [x, ...rest]))
-}
 
 describe('compareLength oracle', () => {
   const def = registeredSkill('compareLength')

@@ -19,6 +19,22 @@ const SKILLS: readonly { id: AddSubSkill; maxCard: number }[] = [
   { id: 'tenFriends', maxCard: 10 },
 ]
 
+describe('addsub oracle helpers', () => {
+  it('read the recorded questions and the equations the way a child does (a check of the oracle itself)', () => {
+    expect(answerFromQuestion('Hvad er tre plus fire?')).toBe(7)
+    expect(answerFromQuestion('Hvad er ni minus fem?')).toBe(4)
+    expect(answerFromQuestion('Fire plus hvad giver ti?')).toBe(6)
+    expect(answerFromQuestion('Hvad er en minus to?')).toBeNull()
+    expect(answerFromEquation({ scene: 'equation', terms: [{ n: 9 }, { op: '−' }, { n: 5 }, { op: '=' }, { blank: true }] })).toBe(4)
+    expect(answerFromEquation({ scene: 'equation', terms: [{ n: 4 }, { op: '+' }, { blank: true }, { op: '=' }, { n: 10 }] })).toBe(6)
+    expect(explainAddSub('add:5+3', 7).mis).toEqual(['countFromFirst'])
+    expect(explainAddSub('add:5+3', 2).mis).toEqual(['wrongOperation'])
+    expect(explainAddSub('sub:9-3', 7).mis).toEqual(['countFromFirst'])
+    expect(explainAddSub('sub:9-3', 12).mis).toEqual(['wrongOperation'])
+    expect(explainAddSub('ten:4', 14).mis).toEqual([])
+  })
+})
+
 for (const { id, maxCard } of SKILLS) {
   describe(`${id} oracle`, () => {
     const def = registeredSkill(id)
