@@ -21,7 +21,7 @@ import { makeRegistry } from '../../engine/registry'
 import { goldenFor, planRound } from '../../engine/plan'
 import { learningDay } from '../../engine/learningDay'
 import { emptyKey } from '../../engine/mastery'
-import { createProfile, getProfile } from '../../data/repo/profiles'
+import { createProfile, listProfiles } from '../../data/repo/profiles'
 import { useProfile, roundHooks } from '../../state/useProfile'
 import { useRound } from '../../state/useRound'
 import type { AnswerRecord, RoundHooks, RoundPlan, RoundResult } from '../../state/useRound'
@@ -110,24 +110,10 @@ function HarnessSpeech({ children }: { children: ReactNode }) {
 
 // ─── A test profile in IndexedDB ─────────────────────────────────────────────
 
-const PROFILE_KEY = (name: string) => `talvennerne2.dev.tasks.${name}`
-
+/** The harness's own test child, found by name (no extra storage keys). */
 async function testProfile(name: string, grade: 0 | 1 | 2 | 3): Promise<ProfileDoc> {
-  let id: string | null = null
-  try {
-    id = localStorage.getItem(PROFILE_KEY(name))
-  } catch {
-    id = null
-  }
-  let doc = id ? await getProfile(id) : undefined
-  if (!doc) {
-    doc = await createProfile({ name, grade })
-    try {
-      localStorage.setItem(PROFILE_KEY(name), doc.id)
-    } catch {
-      // private mode: a new test profile next time
-    }
-  }
+  const existing = (await listProfiles()).find((p) => p.name === name)
+  const doc = existing ?? (await createProfile({ name, grade }))
   await useProfile.getState().loadProfile(doc.id)
   return useProfile.getState().profile ?? doc
 }

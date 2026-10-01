@@ -32,9 +32,9 @@ export const KIND_MODULES: Partial<Record<TaskKind, KindModule>> = {
   pair: { View: PairView, Demo: PairDemo, Face: PairFace, ownsPrompt: pairOwnsPrompt },
   numberline: { View: NumberlineView, Demo: NumberlineDemo, Face: NumberlineFace, ownsPrompt: numberlineOwnsPrompt },
   trueFalse: { View: TrueFalseView, Demo: TrueFalseDemo, Face: TrueFalseFace },
-  sortOrder: { View: SortOrderView, Demo: SortOrderDemo, Face: SortOrderFace },
-  multiSelect: { View: MultiSelectView, Demo: MultiSelectDemo, Face: MultiSelectFace, ownsPrompt: multiSelectOwnsPrompt },
-  fillSlots: { View: FillSlotsView, Demo: FillSlotsDemo, Face: FillSlotsFace, ownsPrompt: fillSlotsOwnsPrompt },
+  sortOrder: { View: SortOrderView, Demo: SortOrderDemo, Face: SortOrderFace, wideFace: true },
+  multiSelect: { View: MultiSelectView, Demo: MultiSelectDemo, Face: MultiSelectFace, ownsPrompt: multiSelectOwnsPrompt, wideFace: true },
+  fillSlots: { View: FillSlotsView, Demo: FillSlotsDemo, Face: FillSlotsFace, ownsPrompt: fillSlotsOwnsPrompt, wideFace: true },
   buildBase: { View: BuildBaseView, Demo: BuildBaseDemo, Face: BuildBaseFace },
 }
 

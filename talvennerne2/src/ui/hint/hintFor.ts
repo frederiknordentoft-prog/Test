@@ -88,6 +88,19 @@ function safely<T>(fn: () => T): T | null {
 /** A standard picture for a task whose skill gave none (also the lightbulb's scaffold). */
 export function defaultVisual(task: Task): AnyVisual {
   const p = task.prompt
+  // countTap's prompt is the pile, not the amount: the picture is the target, in a ten-frame
+  if (task.kind === 'countTap' && typeof task.answer === 'number' && task.answer <= 20) {
+    return { scene: 'objects', n: task.answer, layout: 'tenframe', thing: p.scene === 'objects' ? p.thing : 'ball' }
+  }
+  // numbers to put in order: where they lie on a number line, hop by hop
+  if (task.kind === 'sortOrder' && typeof task.answer === 'string') {
+    const nums = task.answer.split('|').map(Number)
+    if (nums.length > 1 && nums.every((v) => Number.isFinite(v) && v >= 0)) {
+      const top = Math.max(...nums)
+      const max = top <= 10 ? 10 : top <= 20 ? 20 : top <= 100 ? Math.ceil(top / 10) * 10 : Math.ceil(top / 100) * 100
+      return { scene: 'line', min: 0, max, hops: nums }
+    }
+  }
   const s = sumOf(p)
   if (s) {
     const { a, b, op } = s
@@ -161,6 +174,7 @@ export function speechFor(visual: AnyVisual, task: Task): SpeechPart[] {
     case 'tensOnes':
       return [clip('s.round.hint.tensFirst'), ...tensOnesWords(visual.n)]
     case 'objects':
+      if (task.kind === 'countTap') return [clip('s.round.hint.countOut'), clip('s.round.hint.shouldBe'), num(visual.n, 'end')]
       return [clip('s.round.hint.count'), clip('s.round.hint.thereAre'), num(visual.n, 'end')]
     case 'array':
       return [clip('s.round.hint.array')]
@@ -171,7 +185,7 @@ export function speechFor(visual: AnyVisual, task: Task): SpeechPart[] {
     case 'clockMove':
       return [clip('s.round.hint.clockMove')]
     case 'line':
-      return [clip('s.round.hint.line')]
+      return [clip(task.kind === 'sortOrder' ? 's.round.hint.orderLine' : 's.round.hint.line')]
     default:
       return typeof task.answer === 'number' && task.answerType === 'int' ? [clip('s.round.hint.look'), clip('s.round.hint.answerIs'), num(task.answer, 'end')] : [clip('s.round.hint.look')]
   }

@@ -972,7 +972,7 @@
   display: grid;
   place-items: center;
   width: 100%;
-  padding: 12px 10px;
+  padding: 12px 6px;
   border-radius: var(--radius-card);
   background: var(--color-card);
   box-shadow: var(--shadow-card);
@@ -987,9 +987,10 @@
 .tv-fill__cell {
   display: grid;
   place-items: center;
-  min-width: 46px;
-  height: 72px;
-  padding: 0 4px;
+  box-sizing: border-box;
+  min-width: 38px;
+  height: 66px;
+  padding: 0 2px;
   border-radius: 18px;
   background: var(--color-paper);
   box-shadow: inset 0 0 0 2px var(--color-line);
@@ -1001,7 +1002,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .tv-fill__bar {
   width: 96px;
@@ -1015,8 +1016,8 @@
   --edge: var(--color-primary);
   position: relative;
   display: flex;
-  min-width: 64px;
-  height: 77px;
+  min-width: 60px;
+  height: 71px;
   margin: 0;
   padding: 0 0 5px;
   border: 0;
@@ -1038,8 +1039,8 @@
   display: grid;
   place-items: center;
   width: 100%;
-  min-width: 64px;
-  height: 72px;
+  min-width: 60px;
+  height: 66px;
   padding: 0 6px;
   border: 3px dashed var(--edge);
   border-radius: inherit;
@@ -1083,15 +1084,19 @@
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: center;
-  gap: 10px;
+  gap: 8px 6px;
+  max-width: 400px;
+}
+.tv-fill__palette .tv-check.tv-ibtn {
+  --ib: 65px;
 }
 .tv-token {
   --face: var(--color-card);
   --lip-c: var(--color-line-2);
   position: relative;
   display: flex;
-  min-width: 68px;
-  height: 77px;
+  min-width: 60px;
+  height: 70px;
   margin: 0;
   padding: 0 0 5px;
   border: 0;
@@ -1113,7 +1118,7 @@
   display: grid;
   place-items: center;
   width: 100%;
-  height: 72px;
+  height: 65px;
   padding: 0 8px;
   border: 2px solid var(--color-line);
   border-radius: inherit;
@@ -1265,12 +1270,7 @@
 
 /* ── Count, mini faces ────────────────────────────────────────────── */
 .tv-countface {
-  flex-direction: column;
-  gap: 2px;
-}
-.tv-countface__row {
-  display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 
 /* ── Demo film ────────────────────────────────────────────────────── */
@@ -1736,6 +1736,13 @@
   }
   .tv-multi__item .tv-answer__face {
     min-height: 74px;
+  }
+  .tv-multi {
+    --cols: 6;
+  }
+  .tv-multi--n7,
+  .tv-multi--n8 {
+    --cols: 4;
   }
   .tv-base__mat {
     min-height: 110px;

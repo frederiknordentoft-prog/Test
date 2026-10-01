@@ -56,4 +56,6 @@ export interface KindModule {
    * the round screen leaves the prompt card out instead of showing the same thing twice.
    */
   ownsPrompt?(task: Task): boolean
+  /** Its Face is a row of several things (an order, a set): the error flow stacks it. */
+  wideFace?: boolean
 }

@@ -117,19 +117,13 @@ export function CountTapView({ task, mode, onSubmit, onActivity }: TaskViewProps
   )
 }
 
-/** A number of things in a small basket, in rows of five (struck answer, confirm button). */
+/** "7" and the thing (the struck answer, the confirm button): the count was heard as a number. */
 export function CountTapFace({ task, value, size }: FaceProps) {
-  const n = typeof value === 'number' ? Math.max(0, Math.min(20, value)) : 0
-  const thing = thingOf(task)
+  const n = typeof value === 'number' ? value : 0
   return (
     <span className={cx('tv-face', `tv-face--${size}`, 'tv-countface')}>
-      {Array.from({ length: Math.ceil(n / 5) }, (_, r) => (
-        <span key={r} className="tv-countface__row">
-          {Array.from({ length: Math.min(5, n - r * 5) }, (_, i) => (
-            <Thing key={i} id={thing} size={size === 'lg' ? 26 : size === 'md' ? 22 : 16} />
-          ))}
-        </span>
-      ))}
+      <span className="tv-face__num">{n}</span>
+      <Thing id={thingOf(task)} size={size === 'lg' ? 44 : size === 'md' ? 38 : 26} />
     </span>
   )
 }

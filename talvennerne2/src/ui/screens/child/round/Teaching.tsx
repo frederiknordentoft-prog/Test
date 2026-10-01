@@ -29,7 +29,7 @@ export function Teaching({ task, module, given, hint, onConfirm }: TeachingProps
   return (
     <div ref={ref} className="tv-teach" data-teaching="">
       <StrategyHint hint={hint} />
-      <div className="tv-teach__row">
+      <div className={cx('tv-teach__row', module.wideFace && 'is-wide')}>
         <div className="tv-teach__given" aria-disabled data-given={String(given)}>
           <Face task={task} value={given} size="sm" />
           <span className="tv-strike" aria-hidden />

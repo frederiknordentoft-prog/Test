@@ -65,13 +65,13 @@ export async function answer(value: AnswerValue): Promise<void> {
     }
     case 'numberline': {
       const surface = $('.tv-nline__surface', area)
-      const svg = $('.tv-nline__overlay', area)
-      if (!surface || !svg) throw new Error('drive: tallinjen findes ikke')
+      if (!surface) throw new Error('drive: tallinjen findes ikke')
       const [min, max] = lineRange(task)
-      const r = svg.getBoundingClientRect()
+      const r = surface.getBoundingClientRect()
+      const pad = Number(surface.dataset.linePad ?? 24)
       const ratio = (Number(value) - min) / (max - min)
-      const x = r.left + (r.width * (34 + ratio * (640 - 68))) / 640
-      const y = r.top + r.height * 0.67
+      const x = r.left + pad + ratio * (r.width - 2 * pad)
+      const y = r.top + r.height * 0.7
       pointer(surface, 'pointerdown', x, y)
       pointer(surface, 'pointerup', x, y)
       await wait(40)

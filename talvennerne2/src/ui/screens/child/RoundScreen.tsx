@@ -8,7 +8,7 @@
 // Usage:
 //   <RoundScreen plan={planRound(...)} hooks={roundHooks({ golden, fastMs })} onExit={...} />
 //   <RoundScreen snapshot={profile.round} hooks={...} onExit={...} />      // resume
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { AnswerValue, Animal, Mood, RoundSnapshot, SpeechPart, Task, TaskKind } from '../../../engine/types'
 import type { RoundHooks, RoundPlan } from '../../../state/useRound'
@@ -164,7 +164,10 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
   const localSeen = useRef<Onboarding>({ demosSeen: {}, instructionsHeard: {} })
   const praiseAt = useRef(0)
   const answerRef = useRef<HTMLDivElement>(null)
+  const askRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const cardRef = useSizeVars()
+  const [compact, setCompact] = useState(false)
   const exitRef = useRef(onExit)
   exitRef.current = onExit
   const beatRef = useRef(beat)
@@ -634,6 +637,29 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     if (!paused) thaw()
   }, [paused, thaw])
 
+  // ─── Fitting: a task too tall for a short screen drops the companion strip ─
+
+  useLayoutEffect(() => {
+    setCompact(false)
+  }, [taskKey])
+  useEffect(() => {
+    if (compact) return
+    const stage = stageRef.current
+    const ask = askRef.current
+    if (!stage || !ask) return
+    const check = () => {
+      if (ask.scrollHeight > ask.clientHeight + 2 || stage.scrollHeight > stage.clientHeight + 2) setCompact(true)
+    }
+    const raf = requestAnimationFrame(check)
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(check)
+    ro?.observe(stage)
+    ro?.observe(ask)
+    return () => {
+      cancelAnimationFrame(raf)
+      ro?.disconnect()
+    }
+  }, [compact, taskKey, beat])
+
   // ─── Render ─────────────────────────────────────────────────────────────
 
   const viewMode: ViewMode =
@@ -670,22 +696,32 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
   )
 
   const canShowMe = !!task && (beat === 'intro' || beat === 'asking') && !golden
+  const showBulb = helpAllowed && (beat === 'intro' || beat === 'asking')
+  const bulb = showBulb && (
+    <IconButton icon="bulb" clip="s.ui.hint" variant="glass" pulse={bulbPulse} onClick={openHelp} className={cx('tv-round__bulb', bulbPulse && 'is-on')} data-bulb="" />
+  )
   return (
-    <div className={cx('tv-round', `is-${beat}`, golden && 'is-golden')} data-beat={beat} data-status={round.status}>
+    <div className={cx('tv-round', `is-${beat}`, golden && 'is-golden', compact && 'is-compact')} data-beat={beat} data-status={round.status}>
       <TopBar
         leading="close"
         onLeading={onClose}
         center={stones}
         onReplay={replay}
-        extra={<IconButton icon="hand" clip="s.ui.showMe" variant="glass" onClick={showMe} disabled={!canShowMe} data-showme="" />}
+        extra={
+          <>
+            {compact && bulb}
+            <IconButton icon="hand" clip="s.ui.showMe" variant="glass" onClick={showMe} disabled={!canShowMe} data-showme="" />
+          </>
+        }
       />
       <div
+        ref={stageRef}
         className={cx('tv-round__stage', ownsPrompt && 'is-owned')}
         data-kind={task?.kind}
         onPointerDown={onActivity}
         key={taskKey ?? 'none'}
       >
-        <div className="tv-round__ask">
+        <div ref={askRef} className="tv-round__ask">
           {task && !ownsPrompt && (
             <div ref={cardRef} className={cx('tv-round__card', scaffold && 'has-scaffold')} data-prompt={task.prompt.scene}>
               <PromptScene
@@ -712,9 +748,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
                 <SpokenText parts={bubble ?? []} text={bubbleText} className="tv-round__bubbletext" />
               </div>
             )}
-            {helpAllowed && (beat === 'intro' || beat === 'asking') && (
-              <IconButton icon="bulb" clip="s.ui.hint" variant="glass" pulse={bulbPulse} onClick={openHelp} className={cx('tv-round__bulb', bulbPulse && 'is-on')} data-bulb="" />
-            )}
+            {!compact && bulb}
             {egg && (
               <div className="tv-round__egg">
                 <GoldenEgg state={egg} />

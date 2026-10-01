@@ -23,8 +23,8 @@ const ALL = Object.keys(VP)
 
 /** [example id, wrong answer state?] — every kind's first example, plus the strategy films. */
 const KIND_SHOTS = [
-  'choice-8+5', 'choice-unit', 'choice-clock', 'choice-weight', 'keypad-38+45', 'keypad-hear53', 'keypad-kr', 'count-7', 'count-14', 'pair-3',
-  'line-37', 'line-after7', 'tf-balance', 'sort-numbers', 'sort-lengths', 'multi-triangles', 'multi-heavier', 'fill-pattern',
+  'choice-8+5', 'choice-unit', 'choice-shape', 'choice-clock', 'choice-weight', 'keypad-38+45', 'keypad-hear53', 'keypad-kr', 'count-7', 'count-14', 'pair-3',
+  'line-37', 'line-after7', 'line-600', 'tf-balance', 'tf-half', 'sort-numbers', 'sort-lengths', 'multi-triangles', 'multi-heavier', 'fill-pattern',
   'fill-skip', 'fill-fraction', 'base-34', 'base-205',
 ]
 const TEACH_SHOTS = ['choice-8+5', 'keypad-38+45', 'keypad-hear53', 'keypad-52-37', 'count-7', 'line-37', 'sort-numbers', 'multi-heavier', 'fill-fraction', 'base-34', 'pair-3', 'tf-half']

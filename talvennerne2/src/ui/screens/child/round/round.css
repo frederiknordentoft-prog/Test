@@ -237,6 +237,11 @@
   --fg: var(--color-ink-3);
 }
 
+/* Compact (a tall task on a short screen): the strip goes, the lightbulb moves to the top bar */
+.tv-round.is-compact .tv-round__companion {
+  display: none;
+}
+
 /* Teaching: struck answer, strategy, the big confirm button */
 .tv-teach {
   display: flex;
@@ -256,6 +261,16 @@
   justify-content: center;
   gap: 14px;
   width: 100%;
+}
+.tv-teach__row.is-wide {
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-teach__row.is-wide .tv-confirm {
+  width: 100%;
+}
+.tv-teach__row.is-wide .tv-face__row {
+  flex-wrap: nowrap;
 }
 .tv-teach__given {
   position: relative;
@@ -762,13 +777,25 @@
   }
   .tv-round__answer {
     height: 100%;
-    align-items: center;
+    align-items: safe center;
   }
   .tv-round__stage.is-owned {
-    grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr);
+    grid-template-columns: minmax(0, 0.5fr) minmax(0, 1.5fr);
   }
   .tv-round__stage.is-owned .tv-round__ask {
     justify-content: flex-end;
+  }
+  .tv-round__stage.is-owned .tv-round__answer {
+    order: 0;
+    height: 100%;
+  }
+  .tv-round__stage.is-owned .tv-round__companion {
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+  }
+  .tv-round__stage.is-owned .tv-round__bulb {
+    margin-left: 0;
   }
 }
 @media (orientation: landscape) and (max-height: 500px) {
