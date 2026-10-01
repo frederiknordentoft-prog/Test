@@ -9,6 +9,7 @@ import type {
   AnswerValue, ErrorTag, Fact, MisconceptionId, Prompt, SkillDef, SkillId, SpeechPart, Task, TaskKind,
 } from '../../types'
 import { buildTask } from '../../tasks'
+import { getSkill } from '../../registry'
 import { classifyAnswer } from '../../misconceptions'
 import { isCorrect } from '../../answer'
 import { ceilingFor, guessP, isProduction } from '../../kinds'
@@ -240,6 +241,80 @@ export function typeableValues(t: Task): number[] {
 }
 
 // ─── Generic checks: each returns its problems (none is good) ──────────────
+
+/** The registered SkillDef of a skill (the oracles test what the app uses, through the frozen contract). */
+export function registeredSkill(id: SkillId): SkillDef {
+  const def = getSkill(id)
+  if (!def) throw new Error(`${id} is not registered`)
+  return def
+}
+
+/** Problems as a short list, so a failure shows the first few instead of thousands. */
+export const first = (problems: Iterable<string>, n = 12): string[] => [...new Set(problems)].slice(0, n)
+
+/**
+ * Classification of every numeric card and every value a keypad, number line or basket can give,
+ * against the oracle's explanation (tagProblem).
+ */
+export function classificationProblems(built: readonly Built[], explain: (b: Built, value: number) => Explanation): string[] {
+  const out: string[] = []
+  for (const b of built) {
+    const { task } = b
+    for (const o of task.options) {
+      if (o === task.answer || typeof o !== 'number') continue
+      const p = tagProblem(task, o, explain(b, o), true)
+      if (p) out.push(p)
+    }
+    if (task.kind === 'keypad' || task.kind === 'countTap' || task.kind === 'numberline') {
+      for (const v of typeableValues(task)) {
+        if (v === task.answer) continue
+        const p = tagProblem(task, v, explain(b, v), false)
+        if (p) out.push(p)
+      }
+    }
+  }
+  return out
+}
+
+/** A value only one misconception explains, and no number from the question: real evidence. */
+export const isDiagnostic = (e: Explanation): boolean => new Set(e.mis).size === 1 && !e.operand
+
+/**
+ * SPEC §4.1: a card set shows a diagnostic card whenever the oracle knows a misconception value
+ * inside the card range (the rotation decides which one).
+ */
+export function diagnosticProblems(built: readonly Built[], explain: (b: Built, value: number) => Explanation): string[] {
+  const out: string[] = []
+  for (const b of built) {
+    const { task } = b
+    if ((task.kind !== 'choice' && task.kind !== 'pair') || typeof task.answer !== 'number') continue
+    const answer = task.answer
+    const available: number[] = []
+    for (let v = Math.max(0, task.range[0]); v <= task.range[1]; v++) if (v !== answer && isDiagnostic(explain(b, v))) available.push(v)
+    const dealt = task.options.filter((o) => typeof o === 'number' && o !== answer && isDiagnostic(explain(b, o)))
+    if (available.length > 0 && dealt.length === 0) out.push(`${task.factId} ${task.kind}: no diagnostic card among [${task.options}] (could be ${available})`)
+  }
+  return out
+}
+
+/**
+ * SPEC §4.1 on the typed values where one misconception meets a number from the question
+ * (5 + 1 → 5): the misconception wins. Returns the values classified otherwise.
+ */
+export function operandClashProblems(built: readonly Built[], explain: (b: Built, value: number) => Explanation): string[] {
+  const out: string[] = []
+  for (const b of built) {
+    const { task } = b
+    if (task.kind !== 'keypad') continue
+    for (const v of typeableValues(task)) {
+      const e = explain(b, v)
+      if (v === task.answer || !isOperandClash(e)) continue
+      const got = classifyAnswer(task, v)
+      if (got !== specTag(e)) out.push(`${task.factId} ${v}: ${String(got)}, SPEC §4.1 says ${specTag(e)}`)
+    }
+  }
+  return out
+}
 
 /** A task's own answer is right and never an error; a set answer stays right in any tapping order. */
 export function answerProblems(t: Task): string[] {

@@ -2,65 +2,18 @@
 // every registered skill. The right answers come from number.oracle.ts — the id, the picture and
 // the spoken question — and are compared with the tasks the real task builder deals.
 import { describe, expect, it } from 'vitest'
-import { getSkill, registeredSkills } from '../../registry'
+import { registeredSkills } from '../../registry'
 import { masteryKeyOf } from '../../tasks'
 import { hashSeed, makeRng } from '../../rng'
 import { THING_IDS } from '../../../art/materials/Things'
-import type { Fact, SkillDef, SkillId } from '../../types'
+import type { Fact } from '../../types'
 import {
-  answerProblems, cardProblems, countOutSentence, explainCount, explainHeard, explainOrder20, globalIdProblems, heardNumber,
-  hintProblems, howManyQuestion, idNumber, instancesOf, optionProblems, order20Answer, order20FromSpeech, order20Numbers,
-  order20SortFromSpeech, productionProblems, reversed, rowNumbers, sceneOf, specKindProblems, specTag, spokenNumbers, spokenText,
-  tagProblem, tagsToHint, taskSpeechProblems, tasksOf, typeableValues, type Built, type Explanation,
+  answerProblems, cardProblems, classificationProblems, countOutSentence, diagnosticProblems, explainCount, explainHeard,
+  explainOrder20, first, globalIdProblems, heardNumber, hintProblems, howManyQuestion, idNumber, instancesOf, optionProblems,
+  order20Answer, order20FromSpeech, order20Numbers, order20SortFromSpeech, productionProblems, registeredSkill as skill,
+  reversed, rowNumbers, sceneOf, specKindProblems, specTag, spokenNumbers, spokenText, tagProblem, tagsToHint,
+  taskSpeechProblems, tasksOf, type Built,
 } from './number.oracle'
-
-const skill = (id: SkillId): SkillDef => {
-  const def = getSkill(id)
-  if (!def) throw new Error(`${id} is not registered`)
-  return def
-}
-
-/** Problems as a short list, so a failure shows the first few instead of thousands. */
-const first = (problems: Iterable<string>, n = 12) => [...new Set(problems)].slice(0, n)
-
-/** Classification of every card and every typed value against the oracle's explanation. */
-function classificationProblems(built: readonly Built[], explain: (b: Built, value: number) => Explanation): string[] {
-  const out: string[] = []
-  for (const b of built) {
-    const { task } = b
-    for (const o of task.options) {
-      if (o === task.answer || typeof o !== 'number') continue
-      const p = tagProblem(task, o, explain(b, o), true)
-      if (p) out.push(p)
-    }
-    if (task.kind === 'keypad' || task.kind === 'countTap' || task.kind === 'numberline') {
-      for (const v of typeableValues(task)) {
-        if (v === task.answer) continue
-        const p = tagProblem(task, v, explain(b, v), false)
-        if (p) out.push(p)
-      }
-    }
-  }
-  return out
-}
-
-/** Every misconception value the oracle expects inside the card range: one such card must be dealt. */
-function diagnosticProblems(built: readonly Built[], explain: (b: Built, value: number) => Explanation): string[] {
-  const out: string[] = []
-  for (const b of built) {
-    const { task } = b
-    if (task.kind !== 'choice' && task.kind !== 'pair') continue
-    const answer = task.answer as number
-    const available = []
-    for (let v = Math.max(0, task.range[0]); v <= task.range[1]; v++) {
-      if (v !== answer && specTagIsMisconception(explain(b, v))) available.push(v)
-    }
-    const dealt = task.options.filter((o) => typeof o === 'number' && o !== answer && specTagIsMisconception(explain(b, o)))
-    if (available.length > 0 && dealt.length === 0) out.push(`${task.factId} ${task.kind}: no diagnostic card among [${task.options}] (could be ${available})`)
-  }
-  return out
-}
-const specTagIsMisconception = (e: Explanation) => e.mis.length === 1 && !e.operand
 
 // ─── count10 ────────────────────────────────────────────────────────────────
 
