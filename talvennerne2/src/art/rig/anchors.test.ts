@@ -45,7 +45,7 @@ describe('ankre (SPEC §6.4)', () => {
     expect(worldAnchors(a, 2)).toEqual(a)
   })
 
-  it('stadie 1: hoved ×1,08, krop ×0,85, øjne ×1,15, figur ×0,86 – og fødderne bliver på jorden', () => {
+  it('stadie 1: hoved ·1,08, krop ·0,85, øjne ·1,15, figur ·0,86 – og fødderne bliver på jorden', () => {
     const a = modelAnchors(rabbit, 'upright')
     const w = worldAnchors(a, 1)
     expect(w.headRx / a.headRx).toBeCloseTo(0.86 * 1.08)
@@ -54,7 +54,7 @@ describe('ankre (SPEC §6.4)', () => {
     expect(w.ground).toEqual(a.ground)
   })
 
-  it('stadie 3: hoved ×0,96, krop ×1,08, hale/manke ×1,3, horn ×1,25, vinger ×1,2', () => {
+  it('stadie 3: hoved ·0,96, krop ·1,08, hale/manke ·1,3, horn ·1,25, vinger ·1,2', () => {
     expect(STAGE_XF[3]).toMatchObject({ head: 0.96, body: 1.08, mane: 1.3, tail: 1.3, horn: 1.25, wings: 1.2 })
     const a = modelAnchors(rabbit, 'upright')
     const w = worldAnchors(a, 3)

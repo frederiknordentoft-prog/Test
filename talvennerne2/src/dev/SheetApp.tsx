@@ -90,7 +90,7 @@ function Grid({ cols, head, rows, colW }: { cols: readonly ReactNode[]; head?: s
 const R = (p: Partial<RigProps> & { size: number }) => <Rig species={rabbit} mode="static" {...p} />
 
 // ---------------------------------------------------------------------------------------------
-// species: art × race × stadie × farve × humør
+// species: art · race · stadie · farve · humør
 
 function SpeciesSheet() {
   const breeds: { id: BreedId; name: string }[] = rabbit.breeds.map((b) => ({ id: b.id, name: b.name }))
@@ -102,8 +102,8 @@ function SpeciesSheet() {
   ]
   const moodColors: Record<Stage, ColorwayId> = { 1: 'c1', 2: 'c3', 3: 'c5' }
   return (
-    <Page title="Kanin · rabbit" sub="Art × race × stadie × farve × humør. Racen upright er færdig; lop og lionhead er skitser.">
-      <Section title="upright · farver × stadier (idle)">
+    <Page title="Kanin · rabbit" sub="Art · race · stadie · farve · humør. Racen upright er færdig; lop og lionhead er skitser.">
+      <Section title="upright · farver · stadier (idle)">
         <Grid
           colW={128}
           cols={COLORS.map((c) => `${c} · ${colorName(rabbit, c)}`)}
@@ -117,7 +117,7 @@ function SpeciesSheet() {
           }))}
         />
       </Section>
-      <Section title="upright · humør × stadier">
+      <Section title="upright · humør · stadier">
         <Grid
           colW={128}
           cols={MOODS.map((m) => MOOD_DA[m])}
@@ -251,7 +251,7 @@ function SizesSheet() {
     { s: 2, c: 'c6' }, { s: 3, c: 'gold' }, { s: 2, c: 'rainbow' }, { s: 2, c: 'c3', m: 'happy' }, { s: 2, c: 'c1', m: 'sleep' },
   ]
   return (
-    <Page title="Kanin · størrelser" sub="Genkendelighed ved 48 px, læsbarhed ved 96 og 256 px, og butikskort ved 64 px (CSS-px; arket er taget i 2×).">
+    <Page title="Kanin · størrelser" sub="Genkendelighed ved 48 px, læsbarhed ved 96 og 256 px, og butikskort ved 64 px (CSS-px; arket er taget i 2·).">
       <Section title="48 px">
         <div className="sh-row">
           {small.map((x, i) => (
@@ -340,7 +340,7 @@ function SilhouettesSheet() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// fit: genstande på kaninen i 3 stadier × 3 farvesæt
+// fit: genstande på kaninen i 3 stadier · 3 farvesæt
 
 function FitSheet() {
   const outfits: { name: string; outfit: (cw: 0 | 1 | 2) => Outfit }[] = [
@@ -351,7 +351,7 @@ function FitSheet() {
   const cols: { s: Stage; cw: 0 | 1 | 2; c: ColorwayId }[] = []
   for (const s of STAGES) for (const cw of [0, 1, 2] as const) cols.push({ s, cw, c: (['c1', 'c3', 'c6'] as const)[cw] })
   return (
-    <Page title="Pasform · kanin" sub="Genstande på kaninen (upright) i 3 stadier × genstandens 3 farvesæt. Lints: øjne dækkes ikke, bbox inden for artens hull + 6, ≤ 25 elementer pr. genstand.">
+    <Page title="Pasform · kanin" sub="Genstande på kaninen (upright) i 3 stadier · genstandens 3 farvesæt. Lints: øjne dækkes ikke, bbox inden for artens hull + 6, ≤ 25 elementer pr. genstand.">
       <Grid
         colW={118}
         cols={cols.map((x) => `st. ${x.s} · farve ${x.cw}`)}

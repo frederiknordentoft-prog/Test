@@ -29,7 +29,7 @@ describe('hash-regression', () => {
     expect(out).toMatchSnapshot()
   })
 
-  it('pr. genstands-fit (kanin, 3 stadier × 3 farvesæt)', () => {
+  it('pr. genstands-fit (kanin, 3 stadier · 3 farvesæt)', () => {
     const out: Record<string, string> = {}
     for (const it of [hverdagHead, festHead, hverdagBody])
       for (const stage of STAGES)

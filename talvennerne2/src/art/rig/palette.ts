@@ -35,7 +35,7 @@ export const SHADOW_ALPHA = 0.2
 
 const lch = (hex: string) => hexToOklch(hex)
 
-/** kontur = L×0,55, C×1,1 */
+/** kontur = L·0,55, C·1,1 */
 export function outlineOf(hex: string): string {
   const c = lch(hex)
   return oklchToHex({ L: c.L * 0.55, C: c.C * 1.1, h: c.h })
@@ -47,7 +47,7 @@ export function shadeOf(hex: string): string {
   return oklchToHex({ L: c.L - 0.08, C: c.C, h: c.h - 5 })
 }
 
-/** mave = L+0,12 (maks 0,97), C×0,4 */
+/** mave = L+0,12 (maks 0,97), C·0,4 */
 export function bellyOf(hex: string): string {
   const c = lch(hex)
   return oklchToHex({ L: Math.min(0.97, c.L + 0.12), C: c.C * 0.4, h: c.h })

@@ -38,7 +38,7 @@ export interface EyesProps {
   a: AnchorSet
   shape: EyeShape
   pal: Palette
-  /** Stadiets øjenskala (baby ×1,15). */
+  /** Stadiets øjenskala (baby ·1,15). */
   scale: number
   sw: number
   /** Pupil-forskydning i modelenheder (højst 3). */

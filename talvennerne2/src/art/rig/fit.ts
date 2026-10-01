@@ -11,7 +11,7 @@ export const FIT_REFERENCE: Record<Exclude<ScaleBy, 'fixed'>, number> = {
   neckWidth: 58,
 }
 
-/** Hatte med `earMode: 'under'` må højst være earGap × 1,15 brede. */
+/** Hatte med `earMode: 'under'` må højst være earGap · 1,15 brede. */
 export const EAR_GAP_FACTOR = 1.15
 /** Højst 10 % af (genstand, art)-par må have en overskrivning. */
 export const MAX_OVERRIDE_SHARE = 0.1
@@ -27,7 +27,7 @@ export function fitItem(item: FitItem, a: AnchorSet, who: Wearer): FitResult {
   const f = item.fit
   // 1. Skalér efter ankermålet.
   let scale = f.scaleBy === 'fixed' ? f.baseScale : (f.baseScale * a[f.scaleBy]) / FIT_REFERENCE[f.scaleBy]
-  // 2. Hatte mellem ørerne klemmes til earGap × 1,15.
+  // 2. Hatte mellem ørerne klemmes til earGap · 1,15.
   const earMode = item.slot === 'head' ? (f.earMode ?? 'through') : 'through'
   if (item.slot === 'head' && earMode === 'under') scale = Math.min(scale, (a.earGap * EAR_GAP_FACTOR) / f.baseWidth)
   // 5. Håndgenstande følger potens vinkel.

@@ -83,7 +83,7 @@ export interface AnchorSet {
   headWidth: number
   earBaseL: Pt
   earBaseR: Pt
-  /** Afstand mellem ørebaserne; hatte med `earMode: 'under'` klemmes til earGap × 1,15. */
+  /** Afstand mellem ørebaserne; hatte med `earMode: 'under'` klemmes til earGap · 1,15. */
   earGap: number
   hornBase: Pt
   eyeL: Pt
@@ -353,7 +353,7 @@ export interface Colorway {
   accent: string
 }
 
-/** Afledte stoffarver (samme regel som dyrene: kontur = L×0,55, C×1,1 osv.). */
+/** Afledte stoffarver (samme regel som dyrene: kontur = L·0,55, C·1,1 osv.). */
 export interface ItemPalette {
   main: string
   mainShade: string

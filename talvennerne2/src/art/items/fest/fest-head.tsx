@@ -1,5 +1,5 @@
 // Fest · hoved: festhat med striber, konfetti-prikker, flæsekant og kvast. earMode 'under':
-// hatten sidder mellem ørerne (klemmes til earGap × 1,15), og ørerne ligger ovenpå hattens kant.
+// hatten sidder mellem ørerne (klemmes til earGap · 1,15), og ørerne ligger ovenpå hattens kant.
 import { fabric } from '../../rig/palette'
 import { circle, join, poly, scallop, xf } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'

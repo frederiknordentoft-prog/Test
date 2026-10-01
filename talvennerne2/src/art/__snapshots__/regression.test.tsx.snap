@@ -80,7 +80,7 @@ exports[`hash-regression > pr. (art, race, stadie, farve) 1`] = `
 }
 `;
 
-exports[`hash-regression > pr. genstands-fit (kanin, 3 stadier × 3 farvesæt) 1`] = `
+exports[`hash-regression > pr. genstands-fit (kanin, 3 stadier · 3 farvesæt) 1`] = `
 {
   "fest-head/rabbit/1/0": "be21dc504c53d852",
   "fest-head/rabbit/1/1": "2dc007d6962abbde",

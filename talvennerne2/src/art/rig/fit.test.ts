@@ -14,7 +14,7 @@ const item = (fit: Partial<ItemFit>, slot: Slot = 'head'): Pick<ItemDef, 'slot' 
 })
 
 describe('fitItem (SPEC §7.1)', () => {
-  it('1. skalerer med baseScale × anker / reference', () => {
+  it('1. skalerer med baseScale · anker / reference', () => {
     const a = { ...DEFAULT_ANCHORS, headWidth: 130 }
     expect(fitItem(item({ baseScale: 1.2 }), a, who).scale).toBeCloseTo((1.2 * 130) / FIT_REFERENCE.headWidth)
     const b = { ...DEFAULT_ANCHORS, bodyWidth: 80 }
@@ -28,7 +28,7 @@ describe('fitItem (SPEC §7.1)', () => {
     expect([r.x, r.y]).toEqual([DEFAULT_ANCHORS.chest.x, DEFAULT_ANCHORS.chest.y])
   })
 
-  it("2. earMode 'under' klemmes til earGap × 1,15 / baseWidth", () => {
+  it("2. earMode 'under' klemmes til earGap · 1,15 / baseWidth", () => {
     const a = { ...DEFAULT_ANCHORS, earGap: 40 }
     const r = fitItem(item({ earMode: 'under', baseWidth: 60 }), a, who)
     expect(r.scale).toBeCloseTo((40 * EAR_GAP_FACTOR) / 60)

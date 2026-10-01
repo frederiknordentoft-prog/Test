@@ -49,7 +49,7 @@ export interface RigProps {
   silhouette?: boolean
   /** Frys animationen på tidspunktet t sekunder (filmstrimler). */
   freezeAt?: number
-  /** Beskæring: 'full' (standard, 200×240), 'head' (hoved og hat, til butikskort) eller 'bust'. */
+  /** Beskæring: 'full' (standard, 200x240), 'head' (hoved og hat, til butikskort) eller 'bust'. */
   crop?: RigCrop
 }
 

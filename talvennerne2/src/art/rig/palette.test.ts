@@ -24,7 +24,7 @@ describe('OKLCH', () => {
 describe('afledning fra fur (SPEC §6.4)', () => {
   const fur = '#B98363'
   const f = hexToOklch(fur)
-  it('kontur = L×0,55, C×1,1', () => {
+  it('kontur = L·0,55, C·1,1', () => {
     const o = hexToOklch(outlineOf(fur))
     expect(o.L).toBeCloseTo(f.L * 0.55, 2)
     expect(o.C).toBeCloseTo(f.C * 1.1, 2)
@@ -35,7 +35,7 @@ describe('afledning fra fur (SPEC §6.4)', () => {
     expect(s.L).toBeCloseTo(f.L - 0.08, 2)
     expect(s.h).toBeCloseTo(f.h - 5, 0)
   })
-  it('mave = L+0,12 (maks 0,97), C×0,4', () => {
+  it('mave = L+0,12 (maks 0,97), C·0,4', () => {
     const b = hexToOklch(bellyOf(fur))
     expect(b.L).toBeCloseTo(Math.min(0.97, f.L + 0.12), 2)
     expect(b.C).toBeCloseTo(f.C * 0.4, 2)
