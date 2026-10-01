@@ -1280,7 +1280,7 @@
   z-index: 60;
   display: grid;
   place-items: center;
-  padding: calc(16px + var(--safe-t)) 16px calc(16px + var(--safe-b));
+  padding: calc(16px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
 }
 .tv-demo-scrim {
   position: absolute;
@@ -1656,50 +1656,24 @@
 
 /* ── Phone held sideways: everything in one row where it can ─────── */
 @media (orientation: landscape) and (max-height: 500px) {
+  /* four columns, three rows: 1–4, 5–8, 9 0 delete tick — every key at least 60 px wide */
   .tv-keypad {
-    --key-h: 58px;
-    max-width: 420px;
+    --key-h: 56px;
+    max-width: 316px;
     gap: 8px;
   }
   .tv-keypad__keys {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(60px, 1fr));
     gap: 6px;
   }
-  .tv-keypad__keys > :nth-child(1) {
+  .tv-keypad__keys > :nth-child(11) {
     order: 1;
   }
-  .tv-keypad__keys > :nth-child(2) {
+  .tv-keypad__keys > :nth-child(10) {
     order: 2;
   }
-  .tv-keypad__keys > :nth-child(3) {
-    order: 3;
-  }
-  .tv-keypad__keys > :nth-child(4) {
-    order: 4;
-  }
-  .tv-keypad__keys > :nth-child(5) {
-    order: 5;
-  }
-  .tv-keypad__keys > :nth-child(10) {
-    order: 6;
-  }
-  .tv-keypad__keys > :nth-child(6) {
-    order: 7;
-  }
-  .tv-keypad__keys > :nth-child(7) {
-    order: 8;
-  }
-  .tv-keypad__keys > :nth-child(8) {
-    order: 9;
-  }
-  .tv-keypad__keys > :nth-child(9) {
-    order: 10;
-  }
-  .tv-keypad__keys > :nth-child(11) {
-    order: 11;
-  }
   .tv-keypad__keys > :nth-child(12) {
-    order: 12;
+    order: 3;
   }
   .tv-keypad__display {
     min-height: 60px;
@@ -1752,6 +1726,62 @@
   }
   .tv-fill {
     gap: 8px;
+  }
+  /* a fraction: the two places beside a three-column palette */
+  .tv-fill--frac {
+    flex-direction: row;
+    justify-content: center;
+    gap: 12px;
+  }
+  .tv-fill--frac .tv-fill__places {
+    width: auto;
+    padding: 10px 12px;
+  }
+  .tv-fill--frac .tv-fill__palette {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    align-items: center;
+    justify-items: center;
+    max-width: none;
+  }
+  .tv-fill--frac .tv-token {
+    height: 64px;
+  }
+  .tv-fill--frac .tv-fill__palette .tv-check.tv-ibtn {
+    --ib: 60px;
+  }
+  /* countTap: the pile beside the basket */
+  .tv-count {
+    flex-direction: row;
+    align-items: center;
+    max-width: none;
+  }
+  .tv-count__pile {
+    flex: 1 1 auto;
+    min-width: 196px;
+  }
+  .tv-count .tv-basket {
+    --cell: 30px;
+  }
+  .tv-count__foot {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* buildBase: three sources and the tick in one row */
+  .tv-base__tray {
+    gap: 8px;
+  }
+  .tv-base__src {
+    width: 70px;
+    height: 75px;
+  }
+  .tv-base__srcface {
+    height: 70px;
+  }
+  .tv-base__srcface svg {
+    max-width: 52px;
+    max-height: 52px;
   }
 }
 

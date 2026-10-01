@@ -28,7 +28,7 @@
   flex-direction: column;
   gap: 10px;
   min-height: 0;
-  padding: 4px var(--gutter) calc(14px + var(--safe-b) * 0.3);
+  padding: 4px var(--gutter) 14px;
   animation: tv-stage-in 360ms var(--ease-out) both;
 }
 @keyframes tv-stage-in {
@@ -219,6 +219,7 @@
   flex: 0 0 auto;
 }
 .tv-round__stage.is-owned .tv-round__answer {
+  position: relative;
   order: -1;
   flex: 1 1 auto;
   max-width: 720px;
@@ -488,7 +489,7 @@
 .tv-pause {
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: calc(16px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
 }
 .tv-pause__scrim {
   position: absolute;
@@ -735,7 +736,7 @@
   }
   .tv-round__stage {
     gap: 16px;
-    padding: 8px var(--gutter) calc(28px + var(--safe-b) * 0.4);
+    padding: 8px var(--gutter) 28px;
   }
   .tv-round__card {
     min-height: 180px;
@@ -795,6 +796,76 @@
   .tv-round__stage.is-owned .tv-round__bulb {
     margin-left: 0;
   }
+  /* too tall with the buddy beside it: the task gets the whole width */
+  .tv-round.is-compact .tv-round__stage.is-owned {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tv-round.is-compact .tv-round__stage.is-owned .tv-round__ask {
+    display: none;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  /* The error flow on a sideways phone: the strategy gets the whole width, the picture on top,
+     the words beside the struck answer and the confirm button below it. */
+  .tv-round.is-teaching .tv-round__stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tv-round.is-teaching .tv-round__ask {
+    display: none;
+  }
+  .tv-teach {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) auto;
+    grid-template-areas:
+      'visual visual'
+      'text row';
+    align-items: center;
+    gap: 8px 18px;
+    max-width: 760px;
+    padding: 10px 16px 12px;
+  }
+  .tv-teach .tv-hint {
+    display: contents;
+  }
+  .tv-teach .tv-hint__visual {
+    grid-area: visual;
+  }
+  .tv-teach .tv-hint__text {
+    grid-area: text;
+    justify-self: end;
+    max-width: 22em;
+    font-size: 15px;
+    text-align: right;
+  }
+  .tv-teach .tv-hint.is-words .tv-hint__text {
+    font-size: 17px;
+  }
+  .tv-teach__row {
+    grid-area: row;
+    justify-content: flex-start;
+    width: auto;
+  }
+  .tv-teach__given {
+    min-width: 58px;
+    min-height: 58px;
+    padding: 4px 8px;
+  }
+  .tv-teach__row.is-wide {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .tv-teach__row.is-wide .tv-confirm {
+    width: auto;
+  }
+  .tv-teach .tv-confirm__face {
+    min-height: 74px;
+    padding: 6px 16px 6px 20px;
+  }
+  .tv-teach .tv-confirm__answer {
+    min-width: 62px;
+    min-height: 62px;
+  }
 }
 @media (orientation: landscape) and (max-height: 500px) {
   .tv-round {
@@ -804,7 +875,7 @@
   }
   .tv-round__stage {
     gap: 14px;
-    padding: 0 calc(var(--gutter) + var(--safe-r)) calc(8px + var(--safe-b)) calc(var(--gutter) + var(--safe-l));
+    padding: 0 var(--gutter) 8px;
   }
   .tv-round__card {
     min-height: 90px;

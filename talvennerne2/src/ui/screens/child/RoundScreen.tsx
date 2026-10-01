@@ -763,6 +763,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
           </div>
         </div>
         <div ref={answerRef} className="tv-round__answer">
+          {egg && ownsPrompt && <GoldenEgg state={egg} className="tv-round__egg" />}
           {task && module && View && beat !== 'teaching' && (
             <View task={task} mode={viewMode} given={given} onSubmit={onSubmit} onActivity={onActivity} onDraft={onDraft} speaking={speakingOption} />
           )}

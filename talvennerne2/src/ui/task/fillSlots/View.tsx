@@ -74,7 +74,7 @@ export function FillSlotsView({ task, mode, given, onSubmit, onActivity }: TaskV
   }
 
   return (
-    <div className={cx('tv-fill', `is-${mode}`)} data-kind="fillSlots">
+    <div className={cx('tv-fill', `is-${mode}`, fractionSlots(task) && 'tv-fill--frac')} data-kind="fillSlots">
       <div className="tv-fill__places">
         {places}
         {mode === 'wrong' && <span className="tv-strike" aria-hidden />}
