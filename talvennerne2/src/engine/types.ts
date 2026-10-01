@@ -155,9 +155,10 @@ export const FRAME_COLORS = ['coral', 'sun', 'leaf', 'sky', 'grape', 'rose'] as 
 export type FrameColor = (typeof FRAME_COLORS)[number]
 
 /**
- * Pre-recorded voice clip id. Patterns (SPEC §10.2):
- * `n.mid.N` / `n.end.N` (0–100, 1000), `n.mid.1.et` / `n.end.1.et`, `h.mid.H` / `h.end.H` / `hog.H`,
- * `t.end.M` / `t.half.M` / `t.part.*`, `op.*`, `frag.*`, `noun.*`, `q.<factId>`, `s.*`, `hint.*`, `name.*`.
+ * Pre-recorded voice clip id. Patterns (SPEC §10.2, src/speech/clips/**):
+ * `n.mid.N` / `n.end.N` (0–100, 1000), `n.mid.1.et` / `n.end.1.et`, `h.mid.H` / `h.end.H` / `hog.H` (H = 100–900),
+ * `t.end.M` / `t.half.M` / `t.part.<lead>`, `op.*`, `frag.*`, `noun.<unit|coin|frac|digit|shape|solid>.*`,
+ * `q.<factId>`, `s.*`, `hint.*`, `name.*`.
  */
 export type ClipId = string
 export type MasteryKey = string
