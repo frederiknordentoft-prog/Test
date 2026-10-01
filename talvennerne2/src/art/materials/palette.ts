@@ -21,6 +21,8 @@ export const HIGHLIGHT = 'rgba(255,255,255,0.45)'
 export const GROUND = 'rgba(43,33,68,0.12)'
 /** Thin guide lines (grids, ticks on light backgrounds). */
 export const GUIDE = 'rgba(43,33,68,0.16)'
+/** Zebra tint for alternate rows. */
+export const ROW_TINT = 'rgba(43,33,68,0.04)'
 /** The long minute hand (SPEC §11). */
 export const MINUTE_HAND = '#EB5757'
 export const PRIMARY = '#6C4CF5'
