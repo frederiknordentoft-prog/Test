@@ -15,7 +15,8 @@ const SUMMARY: ReadonlySet<CeremonyKind> = new Set(['learned', 'stars', 'tally']
 
 /** A step the child takes part in (a hatch, a new animal to name, an animal to pick): it waits for them. */
 export function isInteractive(step: CeremonyStep): boolean {
-  return step.kind === 'hatch' || (step.kind === 'thing' && step.rewards.some((r) => r.t === 'animal' || r.t === 'choice'))
+  if (step.kind === 'hatch') return step.rewards.some((r) => r.t === 'eggReady')
+  return step.kind === 'thing' && (step.rewards[0]?.t === 'animal' || step.rewards[0]?.t === 'choice')
 }
 
 export function screensOf(plan: CeremonyPlan): Screen[] {

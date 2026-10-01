@@ -80,15 +80,7 @@ export function SummaryScreen({ steps, rewards }: { steps: readonly CeremonyStep
       <ul className="tv-learned">
         {items.map((item, i) => (
           <li key={item.key} className="tv-learned__item" style={{ '--i': i } as CSSProperties}>
-            <SpokenText
-              parts={item.speech}
-              text={lineText(item.speech, speech.text)}
-              className="tv-learned__tap"
-              as="div"
-              silent
-            />
-            <LearnedFace terms={item.terms} canDo={item.canDo} />
-            <SpokenText clip={item.badge} className="tv-learned__badge" />
+            <LearnedCard item={item} />
           </li>
         ))}
       </ul>
@@ -140,6 +132,28 @@ function NextGoal({ parts }: { parts: SpeechPart[] }) {
       <Icon name="flag" size={26} strokeWidth={2.4} />
       <SpokenText parts={said} text={`${speech.text('s.reward.nextGoal')}: ${lineText(parts, speech.text)}`} className="tv-cer-goal__text" />
     </div>
+  )
+}
+
+/** One thing learned: the fact (or what the child can now) and how well it sits; a tap reads it. */
+function LearnedCard({ item }: { item: ReturnType<typeof learnedItems>[number] }) {
+  const speech = useSpeech()
+  const { pressProps } = usePress()
+  return (
+    <button
+      type="button"
+      className="tv-learned__card tv-touch"
+      aria-label={lineText(item.speech, speech.text)}
+      onClick={(e) => {
+        e.stopPropagation()
+        speech.speak(item.speech)
+      }}
+      data-learned={item.key}
+      {...pressProps}
+    >
+      <LearnedFace terms={item.terms} canDo={item.canDo} />
+      <SpokenText clip={item.badge} silent className="tv-learned__badge" />
+    </button>
   )
 }
 
