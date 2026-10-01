@@ -238,8 +238,13 @@ export function lintRig(root: SVGSVGElement, label: string, opts: { safeZone: bo
       const hull = g.dataset.slot === 'head' && Number.isFinite(hatTop) ? { ...bodyHull, y0: Math.min(bodyHull.y0, hatTop) } : bodyHull
       checks++
       const m = HULL_MARGIN
-      if (box.x0 < hull.x0 - m || box.x1 > hull.x1 + m || box.y0 < hull.y0 - m || box.y1 > hull.y1 + m)
-        errors.push(`${label}: ${g.dataset.item} ${fmt(box)} går ud over artens hull ${fmt(hull)} + ${m}`)
+      // Genstande, der med vilje rækker ud over silhuetten (ItemDef.reach: ballon, net), holdes i den
+      // sikre zone i stedet for artens hull.
+      const reach = g.dataset.reach !== undefined
+      const out = reach
+        ? box.x0 < SAFE.x0 - 0.05 || box.x1 > SAFE.x1 + 0.05 || box.y0 < SAFE.y0 - 0.05 || box.y1 > SAFE.y1 + 0.05
+        : box.x0 < hull.x0 - m || box.x1 > hull.x1 + m || box.y0 < hull.y0 - m || box.y1 > hull.y1 + m
+      if (out) errors.push(`${label}: ${g.dataset.item} ${fmt(box)} går ud over ${reach ? 'den sikre zone' : `artens hull ${fmt(hull)} + ${m}`}`)
       checks++
       if (!eye) {
         errors.push(`${label}: fandt ingen øjne at tjekke mod`)

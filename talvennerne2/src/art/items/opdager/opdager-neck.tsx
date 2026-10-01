@@ -28,7 +28,8 @@ const needleHalf = (north: boolean): string => {
   const t = (NEEDLE_ROT * Math.PI) / 180
   const rot = ([x, y]: Vec): Vec => [C[0] + x * Math.cos(t) - y * Math.sin(t), C[1] + x * Math.sin(t) + y * Math.cos(t)]
   const tip = north ? -7.4 : 7.4
-  return poly([[-2.6, 0], [0, tip], [2.6, 0]].map(rot))
+  const pts: Vec[] = [[-2.6, 0], [0, tip], [2.6, 0]]
+  return poly(pts.map(rot))
 }
 /** Skivens fire streger (nord, øst, syd, vest). */
 const TICKS = join(

@@ -532,8 +532,27 @@ export interface ItemArtProps {
    * hornhul (`ItemDef.hornHole`); ellers null. Hatten tegner hullet (og i `rim` dets forkant).
    */
   horn?: Pt | null
+  /** Kun håndgenstande i et dyrs pote: hvor genstanden sidder i humørets nøglepose (mangler i ikoner). */
+  hold?: HandHold
 }
 export type ItemArt = (p: ItemArtProps) => ReactNode
+
+/**
+ * En håndgenstand i den aktuelle pose: riggen fører genstandens ramme gennem hele kæden (figurens og
+ * kroppens nøglepose, kroppens region, potens drejning eller løftede spids og pasformen), så genstanden
+ * kan placere dele i forhold til hovedet – fx en ballon, der svæver ved skulderen, eller en lup, der
+ * peger væk fra ansigtet – i alle humør.
+ */
+export interface HandHold {
+  /** Verdensrummet (viewBox, humørets nøglepose) → genstandens lokale koordinater. */
+  local: (p: Pt) => Pt
+  /** Bærerens hoved i verdensrummet i nøgleposen: centrum, halvakser og hovedregionens skala. */
+  head: { x: number; y: number; rx: number; ry: number; s: number }
+  /** Tankeprikkernes eller Z'ernes anker i verdensrummet, når humøret viser dem; ellers null. */
+  fx: Pt | null
+  /** Poten er løftet og tegnes foran hovedet (jubel, vink, tænker); hvilende og bag hovedet: false. */
+  front: boolean
+}
 
 /** Hornhul i en hat (lokale enheder): centrum `lift` over hornets rod; riggen skjuler hornet under hullet. */
 export interface HornHole {
@@ -595,6 +614,8 @@ export interface SleeveUpProps {
   /** Striber på tværs af ærmet (inden for ærmets kant; tegnes før konturen) og ribmanchetten ved poten. */
   bands: string
   cuff: string
+  /** Et bånd på tværs af armen ved roden (ærmegabets kant på ærmeløst tøj som en vest). */
+  root?: string
 }
 export type SleeveUpArt = (p: SleeveUpProps) => ReactNode
 
@@ -616,6 +637,11 @@ export interface ItemArtSet {
   sleeve?: SleeveArt
   /** Ærmet på en løftet arm (kun arter med `upArms`). */
   sleeveUp?: SleeveUpArt
+  /**
+   * Ryggenstandes stropper og seler (lag 6b): over kroppen og kropstøjet, men under poterne og
+   * halsgenstanden, så en rygsæks stropper går ind under armene.
+   */
+  straps?: ItemArt
 }
 
 export interface ItemDef {
@@ -631,6 +657,11 @@ export interface ItemDef {
   hides?: readonly ('mane-front' | 'ears')[]
   /** Hatte med hul til hornet (enhjørningen): hornet går op gennem hullet, og forkanten ligger over roden. */
   hornHole?: HornHole
+  /**
+   * Genstanden rækker med vilje ud over dyrets silhuet (ballonen ved skulderen, nettets bøjle ved
+   * hovedet). Kontaktarkenes pasforms-lint holder den inden for den sikre zone i stedet for artens hull.
+   */
+  reach?: boolean
   /**
    * Genstandens tegnede bbox i egne koordinater (x, y, w, h) ved skala 1, når den tegnes alene.
    * Butikskortet beskæres efter den, så genstanden fylder 75–80 % af kortet.

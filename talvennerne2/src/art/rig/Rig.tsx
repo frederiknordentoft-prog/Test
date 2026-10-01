@@ -17,12 +17,13 @@ import { OUTLINE, apply, modelAnchors, regionTransforms, worldAnchors } from './
 import type { Affine } from './anchors'
 import { defaultHead, templateBody } from './bodies'
 import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
+import { about, applyMat, chain, invert, rotate as rotMat, scale as scaleMat, translate as moveMat, xfMat } from './hold'
 import { mixHex } from './oklch'
 import { INK, MAGIC, derivePalette, itemPalette, silhouettePalette } from './palette'
 import { ellipse, fmt3, join, lune, n, outside, rect, tf } from './shapes'
 import { bentSleeve } from './sleeve'
 import type {
-  AnchorSet, BreedDef, BreedId, Box, ColorwayDef, ColorwayId, FaceStyle, FigureBounds, FitResult, ItemDef,
+  AnchorSet, BreedDef, BreedId, Box, ColorwayDef, ColorwayId, FaceStyle, FigureBounds, FitResult, HandHold, ItemDef,
   MagicColorwayId, Mood, Outfit, Palette, PartCtx, PawPose, Pose, PoseXf, Pt, RigIds, SidePart, Slot,
   SpeciesDef, SpeciesParts, Stage, Worn,
 } from './types'
@@ -433,7 +434,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const { gazeRef, glintRef } = env
   const staticGaze = still ? gazeFor(lookAt, eyeMidWorld, R.head.s) ?? MOOD_GAZE[mood] : undefined
 
-  const renderItem = (slot: Slot, layer: 'front' | 'back' | 'rim', region: number, clip?: string) => {
+  const renderItem = (slot: Slot, layer: 'front' | 'back' | 'rim' | 'straps', region: number, clip?: string, hold?: HandHold) => {
     const wItem = worn(slot)
     if (!wItem) return null
     if (layer === 'rim' && !holes) return null
@@ -443,21 +444,24 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         ? item.art.back
         : layer === 'rim'
           ? item.art.rim
-          : slot === 'body'
-            ? (item.art.bodyShapes?.[def.body] ?? item.art.front)
-            : item.art.front
+          : layer === 'straps'
+            ? item.art.straps
+            : slot === 'body'
+              ? (item.art.bodyShapes?.[def.body] ?? item.art.front)
+              : item.art.front
     if (!art) return null
     const fit = fitItem(item, a, def)
     const c = itemPalette(item.colorways[wItem.colorway ?? 0], silhouette)
     const sw = OUT / (region * fit.scale)
     return (
-      <g data-item={item.id} data-slot={slot} data-layer={layer} clipPath={clip ? `url(#${clip})` : undefined}>
+      <g data-item={item.id} data-slot={slot} data-layer={layer} data-reach={item.reach ? '' : undefined} clipPath={clip ? `url(#${clip})` : undefined}>
         <g transform={fitTransform(fit)}>
           {art({
             c, a, sw, body: def.body, earMode: fit.earMode, ids, stage,
             local: (p) => toLocal(fit, p),
             solo: false,
             holes,
+            hold,
             horn: slot === 'head' ? (hornHole?.local ?? null) : null,
             restroke: (color) => (
               <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
@@ -501,6 +505,31 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     )
   }
 
+  // Håndgenstanden i nøgleposen (HandHold): hele kæden fra genstandens ramme til verdensrummet
+  // (figur, kroppens region og ånding, potens drejning eller løftede spids, pasformen) og hovedet med
+  // sin region og hældning, så genstanden kan placere sig i forhold til hovedet i alle humør.
+  const figM = about(G, pose.fig)
+  const handHold = (item: ItemDef, at: Pt, rot: number, tip: Pt | undefined, front: boolean): HandHold => {
+    const fit = fitItem(item, a, def)
+    const pawM = chain(moveMat(at.x, at.y), scaleMat(-1, 1), rotMat(rot))
+    const gripM = tip ? chain(moveMat(tip.x, tip.y), scaleMat(-1, 1), moveMat(-a.pawR.x, -a.pawR.y)) : chain(scaleMat(-1, 1), moveMat(-at.x, -at.y))
+    const toWorld = chain(
+      figM, moveMat(R.body.tx, R.body.ty), scaleMat(R.body.s), about(G, pose.body), pawM, gripM,
+      moveMat(fit.x, fit.y), rotMat(fit.rot), scaleMat(fit.scale),
+    )
+    const fromWorld = invert(toWorld)
+    const headM = chain(figM, moveMat(R.neckWorld.x, R.neckWorld.y), scaleMat(R.head.s), xfMat(pose.head), moveMat(-a.neck.x, -a.neck.y))
+    const hc = applyMat(headM, a.headCenter)
+    const hs = R.head.s * (pose.head?.sx ?? 1)
+    const fxOn = showFx && (mood === 'think' || mood === 'sleep')
+    return {
+      local: (p) => applyMat(fromWorld, p),
+      head: { x: hc.x, y: hc.y, rx: a.headRx * hs, ry: a.headRy * R.head.s * (pose.head?.sy ?? pose.head?.sx ?? 1), s: hs },
+      fx: fxOn ? applyMat(figM, fxHead) : null,
+      front,
+    }
+  }
+
   // Poter (venstre tegnes, højre spejles). Håndgenstanden ligger i højre pote under selve poten.
   // `outer` lægger kroppens region foran (løftede poter tegnes uden for kroppens gruppe).
   const paw = (side: 'L' | 'R', outer = '') => {
@@ -514,10 +543,11 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
       const tip = up ? parts.pawUpTip?.[mood] : undefined
       // Håndgenstanden placeres ved pawR i modelrummet og føres ind i potens lokale (spejlede) ramme;
       // en løftet pote bærer den ved sin spids.
+      const hold = handHold(handItem.item, at, pp.rot ?? 0, tip, up && !(side === 'L' ? behindL : behindR))
       hand = tip ? (
-        <g transform={`translate(${n(tip.x)} ${n(tip.y)}) scale(-1 1) translate(${n(-a.pawR.x)} ${n(-a.pawR.y)})`}>{renderItem('hand', 'front', R.body.s)}</g>
+        <g transform={`translate(${n(tip.x)} ${n(tip.y)}) scale(-1 1) translate(${n(-a.pawR.x)} ${n(-a.pawR.y)})`}>{renderItem('hand', 'front', R.body.s, undefined, hold)}</g>
       ) : (
-        <g transform={`scale(-1 1) translate(${n(-at.x)} ${n(-at.y)})`}>{renderItem('hand', 'front', R.body.s)}</g>
+        <g transform={`scale(-1 1) translate(${n(-at.x)} ${n(-at.y)})`}>{renderItem('hand', 'front', R.body.s, undefined, hold)}</g>
       )
     }
     return (
@@ -707,6 +737,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             {shade.bodyBand && <path d={shade.bodyBand} fill={pal.highlight} clipPath={`url(#${ids.bodyClip})`} />}
             {/* 6 · body-item (klippet til kroppen +2) */}
             {renderItem('body', 'front', R.body.s, itemClipId)}
+            {/* 6b · ryggenstandens stropper (over kropstøjet, under poterne) */}
+            {renderItem('back', 'straps', R.body.s)}
             {/* 7–8 · hånd + poter (hvilende) */}
             {(!upL || behindL) && paw('L')}
             {(!upR || behindR) && paw('R')}
