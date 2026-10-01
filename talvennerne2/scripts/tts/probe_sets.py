@@ -143,6 +143,20 @@ def carrier_set():
     return list(out.values())
 
 
+def carrier_hog_set():
+    """Hundrede-hoveder ("tre hundrede og") klippet ud af hele tal i bæresætning:
+    "Tallet er tre hundrede og syvogfyrre." → de tre ord efter "tallet er"."""
+    out = {}
+    for _eid, a, _op, b in EXPR10:
+        for n in (a, b):
+            if n > 100 and n % 100:
+                h, rest = divmod(n, 100)
+                head = ("et" if h == 1 else number_words(h)) + " hundrede og"
+                out.setdefault(f"c.hog.{h}", (f"c.hog.{h}", f"Tallet er {head} {number_words(rest)}.",
+                                              f"Tallet er {head} {number_words(rest)}"))
+    return list(out.values())
+
+
 SETS = {
     "probe12": probe_set,
     "rtf8": rtf_extra_set,
@@ -150,6 +164,7 @@ SETS = {
     "whole10": expr_whole_set,
     "frags": expr_fragment_set,
     "carrier": carrier_set,
+    "carrier-hog": carrier_hog_set,
 }
 
 

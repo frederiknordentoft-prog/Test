@@ -66,7 +66,7 @@ _SYMBOLS = [
 ]
 
 
-def normalize(text: str) -> str:
+def normalize(text: str, fold: bool = True) -> str:
     """Små bogstaver, tal som danske ord, ingen tegnsætning, enkelte mellemrum.
 
     Regnetegn og symboler, som ASR (især whisper) skriver, bliver til ord
@@ -80,6 +80,8 @@ def normalize(text: str) -> str:
     t = t.replace("-", " ").replace("_", " ")
     t = _PUNCT.sub(" ", t)
     t = " ".join(t.split())
+    if not fold:  # fx til forced alignment, hvor teksten skal svare til det sagte
+        return t
     # ASR skriver tal som cifre og kan derfor ikke skelne "en"/"et" eller høre, om
     # "et" blev sagt foran "hundrede". Begge sider foldes ens, så det ikke tæller som fejl.
     t = re.sub(r"\bet hundrede\b", "hundrede", t)

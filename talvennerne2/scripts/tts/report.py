@@ -253,22 +253,33 @@ def words_section(res: dict):
 
 
 def carrier_section(res: dict):
-    cut = load("carrier-cut")
-    if not cut:
+    out = {}
+    for v, src, cut_tag in (("mic", "carrier", "carrier-cut"), ("nic", "carrier-nic", "carrier-cut-nic"),
+                            ("nic-hog", "carrier-hog-nic", "carrier-hog-cut-nic")):
+        cut = joined(cut_tag) or load(cut_tag)
+        if not cut:
+            continue
+        car = joined(src)
+        out[v] = {
+            "n": len(cut),
+            "carrier_cer": agg_cer(car) if car else None,
+            "carrier_pass": sum(r["pass"] for r in car) if car else None,
+            "cut_pass": sum(r.get("pass", False) for r in cut),
+            "cut_nums_ok": sum(r.get("nums_ok", False) for r in cut),
+            "cut_in_window": sum(in_window(r) for r in cut),
+            "cut_risk": sum(r["cut_risk"] for r in cut),
+            "cpu_per_clip": stats.fmean(r["cpu_per_clip"] for r in cut if r.get("cpu_per_clip")),
+        }
+    if not out:
         return
-    car = joined("carrier")
-    res["carrier"] = {
-        "n": len(cut),
-        "carrier_cer": agg_cer(car) if car else None,
-        "carrier_pass": sum(r["pass"] for r in car) if car else None,
-        "cut_in_window_share": sum(in_window(r) for r in cut) / len(cut),
-        "cut_risk": sum(r["cut_risk"] for r in cut),
-        "align_score_mean": stats.fmean(r["align_score"] for r in cut),
-    }
-    d = res["carrier"]
-    print(f"\n### Bæresætning \"Tallet er X.\" ({d['n']} talklip)\n")
-    print(f"Bæresætninger: CER {pct(d['carrier_cer'])}, bestået {d['carrier_pass']}/{len(car)}; "
-          f"udklip i varighedsvinduet: {pct(d['cut_in_window_share'])}; risikable snit: {d['cut_risk']}")
+    res["carrier"] = out
+    print("\n### Bæresætning \"Tallet er X.\" (ét kald pr. bæresætning, udklip med forced alignment)\n")
+    print("| Stemme | bæresætninger: CER | bestået | udklip | ASR bestået | talord rigtige | i vindue | tid/klip |")
+    print("|---|---|---|---|---|---|---|---|")
+    for v, d in out.items():
+        print(f"| {v} | {pct(d['carrier_cer']) if d['carrier_cer'] is not None else '–'} | {d['carrier_pass']}/{d['n']} | "
+              f"{d['n']} | {d['cut_pass']}/{d['n']} | {d['cut_nums_ok']}/{d['n']} | {d['cut_in_window']}/{d['n']} | "
+              f"{d['cpu_per_clip']:.1f} s |")
 
 
 # --- sammensat vs. hel ------------------------------------------------------

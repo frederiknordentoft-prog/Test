@@ -340,9 +340,11 @@ def cmd_compose(a):
             seq, gaps = expr_plan(x, op, y)
             clips = []
             for cid, _text, _kind in seq:
-                p = src / a.voice / f"{cid}.t{take}.wav"
-                if a.numbers_from and cid.startswith(("n.", "h.")):
-                    p = TAKES / a.numbers_from / a.voice / f"{cid}.t{take}.wav"
+                tag = a.numbers_from if a.numbers_from and cid.startswith(("n.", "h.")) else a.frags_tag
+                if a.heads_from and cid.startswith("hog."):
+                    tag = a.heads_from
+                p = (_best_take(tag, a.voice, cid) if a.best else
+                     TAKES / tag / a.voice / f"{cid}.t{take}.wav")
                 clips.append(post.read(str(p))[0])
             comp = post.concat(clips, gaps)
             vdir = out / a.voice
@@ -444,6 +446,8 @@ def main():
     c.add_argument("--tag", default="composed")
     c.add_argument("--takes", type=int, default=1)
     c.add_argument("--take0", type=int, default=0)
+    c.add_argument("--heads-from", default="", help="tag med udklippede hundrede-hoveder")
+    c.add_argument("--best", action="store_true", help="brug take med lavest CER pr. klip (som generate.py)")
     r = sub.add_parser("repost")
     r.add_argument("--tags", required=True, help="kommasepareret liste af tags")
     gb = sub.add_parser("gen-batch")

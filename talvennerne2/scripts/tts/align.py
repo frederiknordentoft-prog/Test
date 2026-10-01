@@ -74,7 +74,7 @@ def align_words(x16: np.ndarray, text: str):
 
     _model, _fe, tok = load_asr()
     em, pad = emissions(x16)
-    words = normalize(text).split()
+    words = normalize(text, fold=False).split()
     delim = tok.convert_tokens_to_ids("|")
     targets, owner = [], []
     for wi, w in enumerate(words):
@@ -179,7 +179,12 @@ def cmd_carrier(a):
         raw, sr = post.read(str(ROOT / r["raw"]))
         x = prepare(raw, sr)
         words = align_words(to16k(x), r["expected"])
-        s, e, info = segment(x, post.SR, words, [2, len(words) - 2])[1]
+        cid0 = r["id"][2:] if r["id"].startswith("c.") else r["id"]
+        if cid0.startswith("hog."):  # hundrede-hoved: de 3 ord efter "tallet er"
+            s, e, info = segment(x, post.SR, words, [2, 3, len(words) - 5])[1]
+            words = words[:5]
+        else:
+            s, e, info = segment(x, post.SR, words, [2, len(words) - 2])[1]
         y, st = post.process(x[s:e], post.SR, hp=False)
         cid = r["id"][2:] if r["id"].startswith("c.") else r["id"]
         wav = TAKES / a.tag / a.voice / f"{cid}.t{r['take']}.wav"
@@ -222,9 +227,9 @@ def cmd_batch(a):
         groups, keep = [], []
         for _c, t, _f, pre in items:
             if pre:
-                groups.append(len(normalize(pre).split()))
+                groups.append(len(normalize(pre, fold=False).split()))
                 keep.append(False)
-            groups.append(len(normalize(t).split()))
+            groups.append(len(normalize(t, fold=False).split()))
             keep.append(True)
         segs = segment(x, post.SR, words, groups)
         n_risk = 0
