@@ -31,6 +31,26 @@ function capacity(t: Tree): number {
   return t.kids.reduce((sum, k) => sum + capacity(k), 0)
 }
 
+/**
+ * Never the same key twice in a row: take the key with the most left (ties in dealt order) that is
+ * not the one just asked. This always succeeds when any order can.
+ */
+function spreadKeys(dealt: readonly KeyOption[]): KeyOption[] {
+  const left = [...dealt]
+  const out: KeyOption[] = []
+  while (left.length > 0) {
+    const prev = out[out.length - 1]?.key
+    const count = (key: string) => left.filter((k) => k.key === key).length
+    let best = -1
+    for (let i = 0; i < left.length; i++) {
+      if (left[i].key === prev) continue
+      if (best < 0 || count(left[i].key) > count(left[best].key)) best = i
+    }
+    out.push(left.splice(Math.max(0, best), 1)[0])
+  }
+  return out
+}
+
 function groupBy<T>(items: readonly T[], by: (x: T) => string): T[][] {
   const out = new Map<string, T[]>()
   for (const x of items) {
@@ -82,14 +102,7 @@ export function trialTasks(node: NodeDef, ctx: TrialContext): Task[] {
     kids: groupBy(ks, (k) => k.skill).map((skillKeys) => ({ kids: groupBy(skillKeys, (k) => k.family ?? k.key).map((leaf) => ({ leaf })) })),
   })
   const tree: Tree = finale ? { kids: groupBy(keys, (k) => regionOf(k, node.world)).map(bySkill) } : bySkill(keys)
-  const chosen = rng.shuffle(sample(tree, size, rng))
-
-  // never the same key twice in a row
-  for (let i = 1; i < chosen.length; i++) {
-    if (chosen[i].key !== chosen[i - 1].key) continue
-    const j = chosen.findIndex((k, x) => x > i && k.key !== chosen[i - 1].key && k.key !== chosen[x - 1]?.key && k.key !== chosen[x + 1]?.key)
-    if (j > 0) [chosen[i], chosen[j]] = [chosen[j], chosen[i]]
-  }
+  const chosen = spreadKeys(rng.shuffle(sample(tree, size, rng)))
 
   return chosen.map((k, i) => {
     let task: Task | null = null
