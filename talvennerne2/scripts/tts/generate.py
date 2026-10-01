@@ -31,7 +31,8 @@ med andre klip præcis som appen gør (sequence.py) og ASR-tjekkes. Fejler en sa
 klip skylden, hvis tegn ASR hørte forkert. Det får en ny take (højst 4 nye takes i alt).
 Klip, der stadig fejler, får den bedste take som master og markeres "pass": false.
 
-Exitkoder: 0 alt valgt er færdigt, 3 tidsbudgettet er brugt (kør igen), 1 fejl.
+Exitkoder: 0 alt valgt er færdigt, 3 tidsbudgettet er brugt (kør igen), 4 ingen fremdrift (klip venter
+på partnere, der ikke kommer), 1 fejl.
 """
 from __future__ import annotations
 
@@ -466,7 +467,7 @@ class Generator:
             self.stats["takes"] += 1
             out.append(t)
             log.info(f"  {c['id']} t{t.take}: {t.dur:.2f} s ({t.dur / max(t.exp_dur, 1e-3):.2f}× forventet) "
-                     f"{t.lufs} LUFS, {t.check}: '{t.asr}' CER {t.cer} → {'ok' if t.pass_a else 'FEJL ' + t.reason}")
+                     f"{t.lufs} LUFS, {t.check}: '{t.asr}' CER {t.cer} ({t.engine}) → {'ok' if t.pass_a else 'FEJL ' + t.reason}")
         return out
 
     def _judge(self, expected: str, asr: str, parts=None) -> tuple[float, bool, dict]:
@@ -679,7 +680,7 @@ class Generator:
         out = {"ids": ids, "expected": expected, "asr": asr, "cer": res["cer"], "pass": res["pass"],
                "nums_ok": res["nums_ok"], "att": att, "engine": engine}
         self.comp_cache[key] = out
-        log.info(f"  sammensat {' + '.join(ids)}: '{asr}' CER {res['cer']:.3f} → {'ok' if res['pass'] else 'FEJL'}")
+        log.info(f"  sammensat {' + '.join(ids)}: '{asr}' CER {res['cer']:.3f} ({engine}) → {'ok' if res['pass'] else 'FEJL'}")
         return out
 
     @staticmethod
@@ -859,7 +860,9 @@ class Generator:
         s = self.stats
         log.info(f"færdig: {s['final']} nye mastere ({s['failed']} ikke bestået), {s['calls']} modelkald, "
                  f"{s['wall_s'] / 60:.1f} min generering (CPU {s['cpu_s'] / 3600:.2f} t), {left} klip mangler")
-        return 0 if left == 0 else 3
+        if left == 0:
+            return 0
+        return 3 if (s["takes"] or s["final"]) else 4
 
 
 # ─── Selection, retakes and status ───────────────────────────────────────────
@@ -885,7 +888,7 @@ def select(inv: dict, args) -> list[dict]:
     return clips
 
 
-def apply_retakes(inv: dict, path: str) -> None:
+def apply_retakes(inv: dict, path: str) -> list[str]:
     """Clips the composition test (voice/qa.json "retake") blamed: their master take is marked and
     the clip is generated again, while takes remain."""
     qa = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -893,6 +896,7 @@ def apply_retakes(inv: dict, path: str) -> None:
     by_id = {c["id"]: c for c in inv["clips"]}
     state = State(P.WORK / "state.jsonl")
     index = P.load_index()
+    retaken: list[str] = []
     for cid in ids:
         clip, e = by_id.get(cid), index["clips"].get(cid)
         if clip is None or e is None or e.get("hash") != clip["hash"]:
@@ -904,8 +908,10 @@ def apply_retakes(inv: dict, path: str) -> None:
             continue
         state.mark(cur, "qa_fail")
         del index["clips"][cid]
+        retaken.append(cid)
         log.info(f"{cid}: take {cur.take} afvist af sammensætningstesten, genereres igen")
     P.save_index(index)
+    return retaken
 
 
 def status(inv: dict, clips: list[dict]) -> None:
@@ -959,7 +965,9 @@ def main() -> int:
     logfile = P.setup_logging("generate", to_file=not args.dry_run)
     log.info(f"generate.py {' '.join(sys.argv[1:])}" + (f" (log: {logfile})" if logfile else ""))
     if args.retake_from:
-        apply_retakes(inv, args.retake_from)
+        retaken = set(apply_retakes(inv, args.retake_from))
+        # a blamed clip may belong to an earlier wave: it is generated again in this run
+        clips += [c for c in inv["clips"] if c["id"] in retaken and c not in clips]
     if not clips:
         log.info("ingen klip valgt")
         return 0

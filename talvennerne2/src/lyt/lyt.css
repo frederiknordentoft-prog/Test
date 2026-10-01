@@ -1,0 +1,277 @@
+/* Listening page (lyt.html): the app's tokens and font, a plain reading layout for adults. */
+@import "tailwindcss" source(none);
+@import "../ui/design/tokens.css";
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--text-dash);
+  line-height: var(--text-dash--line-height);
+  font-weight: 600;
+}
+
+.lyt {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: calc(var(--safe-t) + 20px) calc(var(--safe-r) + 16px) calc(var(--safe-b) + 48px) calc(var(--safe-l) + 16px);
+  display: grid;
+  gap: 16px;
+}
+
+.lyt h1 {
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  font-weight: 900;
+  margin: 0 0 8px;
+}
+
+.lyt h2 {
+  font-size: 20px;
+  font-weight: 900;
+  margin: 0 0 12px;
+}
+
+.lyt-head p {
+  margin: 0 0 8px;
+  color: var(--color-ink-2);
+  max-width: 70ch;
+}
+
+.lyt-stats {
+  font-weight: 800;
+  color: var(--color-ink) !important;
+}
+
+.lyt-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lyt-nav a {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.lyt-card {
+  background: var(--color-card);
+  border-radius: var(--radius-tile);
+  box-shadow: var(--shadow-card);
+  padding: 18px 20px;
+  scroll-margin-top: 12px;
+}
+
+.lyt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.lyt-row input[type='range'] {
+  flex: 1 1 240px;
+  accent-color: var(--color-primary);
+}
+
+.lyt-row select,
+.lyt-row input[type='search'],
+.lyt-row input[type='number'],
+.lyt-flags input[type='text'] {
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid var(--color-line-2);
+  border-radius: 10px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  min-height: 36px;
+}
+
+.lyt-row input[type='search'] {
+  flex: 1 1 220px;
+}
+
+.lyt-num {
+  width: 5.5em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.lyt-line {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.lyt-line__text {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.lyt-line__clips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: 4px;
+}
+
+.lyt code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12.5px;
+  background: var(--color-paper-2);
+  border-radius: 6px;
+  padding: 1px 6px;
+  color: var(--color-ink-2);
+}
+
+.lyt code.lyt-missing {
+  background: var(--color-oops-soft);
+  color: var(--color-oops-deep);
+}
+
+.lyt-play,
+.lyt-flag {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  flex: none;
+}
+
+.lyt-play {
+  background: var(--color-primary);
+  color: var(--color-card);
+}
+
+.lyt-play:active,
+.lyt-flag:active,
+.lyt-btn:active {
+  transform: translateY(1px);
+}
+
+.lyt-flag {
+  background: transparent;
+  color: var(--color-ink-3);
+}
+
+.lyt-flag--on {
+  color: var(--color-oops-deep);
+  background: var(--color-oops-soft);
+}
+
+.lyt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-weight: 800;
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  background: var(--color-primary);
+  color: var(--color-card);
+  cursor: pointer;
+}
+
+.lyt-btn--quiet {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+}
+
+.lyt-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.lyt details {
+  border-top: 1px solid var(--color-line);
+  padding: 8px 0;
+}
+
+.lyt summary {
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.lyt-table-wrap {
+  overflow-x: auto;
+}
+
+.lyt-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+
+.lyt-table th {
+  text-align: left;
+  font-size: var(--text-label);
+  color: var(--color-ink-2);
+  font-weight: 800;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-line-2);
+}
+
+.lyt-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: middle;
+}
+
+.lyt-table tr.lyt-fail td {
+  background: var(--color-oops-soft);
+}
+
+.lyt-n {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.lyt-asr {
+  color: var(--color-ink-2);
+}
+
+.lyt-sub {
+  font-size: 12px;
+  color: var(--color-ink-3);
+}
+
+.lyt-muted {
+  color: var(--color-ink-2);
+}
+
+.lyt-flags {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.lyt-flags li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.lyt-flags input[type='text'] {
+  flex: 1 1 220px;
+}
