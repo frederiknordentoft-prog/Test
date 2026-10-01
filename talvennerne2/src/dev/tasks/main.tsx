@@ -110,12 +110,21 @@ function HarnessSpeech({ children }: { children: ReactNode }) {
 
 // ─── A test profile in IndexedDB ─────────────────────────────────────────────
 
-/** The harness's own test child, found by name (no extra storage keys). */
-async function testProfile(name: string, grade: 0 | 1 | 2 | 3): Promise<ProfileDoc> {
-  const existing = (await listProfiles()).find((p) => p.name === name)
-  const doc = existing ?? (await createProfile({ name, grade }))
-  await useProfile.getState().loadProfile(doc.id)
-  return useProfile.getState().profile ?? doc
+/** The harness's own test child, found by name (no extra storage keys); one load per page. */
+const loading = new Map<string, Promise<ProfileDoc>>()
+function testProfile(name: string, grade: 0 | 1 | 2 | 3): Promise<ProfileDoc> {
+  let p = loading.get(name)
+  if (!p) {
+    p = (async () => {
+      const existing = (await listProfiles()).find((d) => d.name === name)
+      const doc = existing ?? (await createProfile({ name, grade }))
+      await useProfile.getState().loadProfile(doc.id)
+      applyDemoFlag()
+      return useProfile.getState().profile ?? doc
+    })()
+    loading.set(name, p)
+  }
+  return p
 }
 
 /** demo=1 plays the films again; demo=0 marks every kind as seen and heard. */
@@ -158,10 +167,7 @@ function KindView() {
   const [ready, setReady] = useState(false)
   const [exit, setExit] = useState<string | null>(null)
   useEffect(() => {
-    void testProfile('Opgaver', 1).then(() => {
-      applyDemoFlag()
-      setReady(true)
-    })
+    void testProfile('Opgaver', 1).then(() => setReady(true))
   }, [])
   const plan = useMemo<RoundPlan>(() => {
     const others = EXAMPLES[ex.task.kind].filter((e) => e.id !== ex.id).map((e) => e.task)
@@ -217,7 +223,6 @@ function RoundView() {
   const start = useCallback(async (resume: boolean) => {
     const doc0 = await testProfile('Tur', 0)
     useProfile.getState().update(seedKeys)
-    applyDemoFlag()
     const doc = useProfile.getState().profile ?? doc0
     if (resume && doc.round) {
       setState((s) => ({ plan: null, snapshot: doc.round, key: (s?.key ?? 0) + 1 }))

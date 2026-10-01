@@ -1,0 +1,112 @@
+import { describe, expect, it } from 'vitest'
+import type { ErrorTag, Fact, HintSpec, SkillDef, Task, TaskKind } from '../../engine/types'
+import { makeRegistry } from '../../engine/registry'
+import { FIXTURE_SKILLS, addTo10Fixture, add100CarryFixture, hear20Fixture } from '../../engine/testing/fixtureSkills'
+import { buildTask } from '../../engine/tasks'
+import { makeRng } from '../../engine/rng'
+import { compile, toDanishText } from '../../speech/compile'
+import { EXAMPLES } from '../../dev/tasks/examples'
+import { defaultVisual, hintFor, scaffoldFor, speechFor } from './hintFor'
+
+const FIX = makeRegistry(FIXTURE_SKILLS)
+const fact = (def: SkillDef, id: string): Fact => def.enumerate().find((f) => f.id === id)!
+const task = (def: SkillDef, id: string, kind: TaskKind): Task => buildTask(def, fact(def, id), kind, makeRng(7), 1).task
+const ex = (id: string): Task => Object.values(EXAMPLES).flat().find((e) => e.id === id)!.task
+
+describe('hintFor', () => {
+  it('uses the round’s own words when a skill’s clips are not recorded, with the task’s numbers', () => {
+    const t = task(addTo10Fixture, 'add:3+4', 'keypad')
+    const h = hintFor(t, 6, FIX)
+    expect(h.fromSkill).toBe(false)
+    expect(h.visual).toEqual({ scene: 'dotsAdd', a: 3, b: 4 })
+    expect(compile(h.speech).missing).toEqual([])
+    expect(toDanishText(h.speech)).toBe('Læg dem sammen. Tre og fire giver syv.')
+  })
+
+  it('plays the forgotCarry film for 38 + 45 = 73', () => {
+    const t = task(add100CarryFixture, add100CarryFixture.enumerate().find((f) => f.family === 'TOplusTOcarry')!.id, 'keypad')
+    const [a, b] = (t.prompt as { terms: { n?: number }[] }).terms.filter((x) => 'n' in x).map((x) => x.n!)
+    const h = hintFor(t, a + b - 10, FIX)
+    expect(h.tag).toBe('forgotCarry')
+    expect(h.misconception).toBe('forgotCarry')
+    expect(h.animated).toBe(true)
+    expect(h.visual).toEqual({ scene: 'anim.forgotCarry', a, b })
+    expect(compile(h.speech).missing).toEqual([])
+  })
+
+  it('plays the digitSwap film for a reversed number', () => {
+    const t = task(hear20Fixture, 'hear:13', 'keypad')
+    const h = hintFor(t, 31, FIX)
+    expect(h.misconception).toBe('digitSwap')
+    expect(h.visual).toEqual({ scene: 'anim.digitSwap', n: 13, given: 31 })
+    expect(toDanishText(h.speech)).toContain('En tier og tre enere giver tretten.')
+  })
+
+  it('plays the smallerFromLarger film from the task’s own tags when no skill is registered', () => {
+    const h = hintFor(ex('keypad-52-37'), 25, FIX)
+    expect(h.animated).toBe(true)
+    expect(h.visual).toEqual({ scene: 'anim.smallerFromLarger', a: 52, b: 37 })
+  })
+
+  it('shows the standard strategy for a near miss', () => {
+    const h = hintFor(ex('choice-8+5'), 14, FIX)
+    expect(h.misconception).toBeNull()
+    expect(h.animated).toBe(false)
+    expect(h.visual).toEqual({ scene: 'makeTen', a: 8, b: 5 })
+    expect(toDanishText(h.speech)).toBe('Fyld tieren op først. Otte og to giver ti. Ti og tre giver tretten.')
+  })
+
+  it('keeps a skill’s own words and picture, and passes the kind (SkillDef.hint third argument)', () => {
+    let seenKind: TaskKind | undefined
+    const own: SkillDef = {
+      ...addTo10Fixture,
+      hint(_f: Fact, tag: ErrorTag | null, kind?: TaskKind): HintSpec {
+        seenKind = kind
+        return { speech: [{ clip: 's.round.hint.makeTen' }], visual: { scene: 'makeTen', a: 6, b: 4 }, ...(tag === 'countFromFirst' ? { misconception: 'countFromFirst' } : {}) }
+      },
+    } as SkillDef
+    const reg = makeRegistry([own])
+    const t = task(own, 'add:6+4', 'choice')
+    const h = hintFor(t, 9, reg)
+    expect(seenKind).toBe('choice')
+    expect(h.fromSkill).toBe(true)
+    expect(h.visual).toEqual({ scene: 'makeTen', a: 6, b: 4 })
+    expect(h.misconception).toBe('countFromFirst')
+  })
+
+  it('never breaks a round: a throwing skill falls back to the round’s strategy', () => {
+    const broken = { ...addTo10Fixture, hint: () => { throw new Error('boom') } } as unknown as SkillDef
+    const t = task(addTo10Fixture, 'add:2+5', 'choice')
+    const errors = console.error
+    console.error = () => {}
+    try {
+      const h = hintFor(t, 6, makeRegistry([broken]))
+      expect(h.visual).toEqual({ scene: 'dotsAdd', a: 2, b: 5 })
+    } finally {
+      console.error = errors
+    }
+  })
+})
+
+describe('pictures drawn from the prompt', () => {
+  it('pictures the target for countTap, not the pile', () => {
+    expect(defaultVisual(ex('count-7'))).toEqual({ scene: 'objects', n: 7, layout: 'tenframe', thing: 'carrot' })
+    expect(toDanishText(speechFor(defaultVisual(ex('count-7')), ex('count-7')))).toBe('Sig tallene højt, mens du lægger dem i kurven. Der skal være syv.')
+  })
+
+  it('puts numbers to order on a number line', () => {
+    expect(defaultVisual(ex('sort-numbers'))).toEqual({ scene: 'line', min: 0, max: 20, hops: [5, 8, 12, 19] })
+  })
+
+  it('goes back to ten for 13 − 5 and uses columns for two-digit sums', () => {
+    const sub = { ...ex('choice-8+5'), prompt: { scene: 'equation' as const, terms: [{ n: 13 }, { op: '−' as const }, { n: 5 }, { op: '=' as const }, { blank: true as const }] }, answer: 8 }
+    expect(defaultVisual(sub)).toEqual({ scene: 'backToTen', a: 13, b: 5 })
+    expect(toDanishText(speechFor(defaultVisual(sub), sub))).toBe('Gå tilbage til ti først. Tretten minus tre giver ti. Ti minus to giver otte.')
+    expect(defaultVisual(ex('keypad-38+45'))).toEqual({ scene: 'columns', a: 38, b: 45, op: '+', carry: true })
+  })
+
+  it('opens the standard picture behind the lightbulb, never a film', () => {
+    expect(scaffoldFor(ex('choice-8+5'), FIX)).toEqual({ scene: 'makeTen', a: 8, b: 5 })
+    expect(scaffoldFor(ex('keypad-52-37'), FIX)).toEqual({ scene: 'columns', a: 52, b: 37, op: '−', carry: true })
+  })
+})

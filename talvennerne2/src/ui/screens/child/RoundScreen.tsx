@@ -19,7 +19,7 @@ import { playSfx } from '../../../audio/sfx'
 import { onResumeNeeded } from '../../../audio/unlock'
 import { OOPS_CLIPS, PRAISE_CLIPS } from '../../../speech/clips/ui/round'
 import { instructionClip } from '../../../speech/clips/ui/kinds'
-import { IconButton } from '../../design/Button'
+import { Button, IconButton } from '../../design/Button'
 import { ProgressStones } from '../../design/ProgressStones'
 import { SpokenText } from '../../design/SpokenText'
 import { useSpeech } from '../../design/speech'
@@ -643,19 +643,23 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     setCompact(false)
   }, [taskKey])
   useEffect(() => {
-    if (compact) return
+    if (compact || (beat !== 'intro' && beat !== 'asking' && beat !== 'teaching')) return
     const stage = stageRef.current
     const ask = askRef.current
     if (!stage || !ask) return
+    // measured once the entrance animations have settled (transforms count as overflow)
+    let timer = 0
     const check = () => {
-      if (ask.scrollHeight > ask.clientHeight + 2 || stage.scrollHeight > stage.clientHeight + 2) setCompact(true)
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        if (ask.scrollHeight > ask.clientHeight + 2 || stage.scrollHeight > stage.clientHeight + 2) setCompact(true)
+      }, 650)
     }
-    const raf = requestAnimationFrame(check)
+    check()
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(check)
     ro?.observe(stage)
-    ro?.observe(ask)
     return () => {
-      cancelAnimationFrame(raf)
+      window.clearTimeout(timer)
       ro?.disconnect()
     }
   }, [compact, taskKey, beat])
@@ -710,6 +714,9 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
         extra={
           <>
             {compact && bulb}
+            {compact && golden && (beat === 'intro' || beat === 'asking') && (
+              <IconButton icon="next" clip="s.ui.skip" variant="glass" sayLabel onClick={skipEgg} data-skip-egg="" />
+            )}
             <IconButton icon="hand" clip="s.ui.showMe" variant="glass" onClick={showMe} disabled={!canShowMe} data-showme="" />
           </>
         }
@@ -724,6 +731,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
         <div ref={askRef} className="tv-round__ask">
           {task && !ownsPrompt && (
             <div ref={cardRef} className={cx('tv-round__card', scaffold && 'has-scaffold')} data-prompt={task.prompt.scene}>
+              {egg && <GoldenEgg state={egg} className="tv-round__egg" />}
               <PromptScene
                 prompt={task.prompt}
                 task={task}
@@ -749,13 +757,8 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
               </div>
             )}
             {!compact && bulb}
-            {egg && (
-              <div className="tv-round__egg">
-                <GoldenEgg state={egg} />
-                {golden && (beat === 'intro' || beat === 'asking') && (
-                  <IconButton icon="next" clip="s.ui.skip" variant="glass" sayLabel onClick={skipEgg} className="tv-round__skip" data-skip-egg="" />
-                )}
-              </div>
+            {golden && (beat === 'intro' || beat === 'asking') && (
+              <Button clip="s.ui.skip" icon="next" variant="secondary" size="md" onClick={skipEgg} className="tv-round__skip" data-skip-egg="" />
             )}
           </div>
         </div>
