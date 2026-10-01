@@ -81,6 +81,29 @@ interface Token {
   handle: SpeakHandle | null
 }
 
+/**
+ * The prompt card is sized by the layout, never by its content (CSS size containment); its inner
+ * size goes to --cw/--ch so the picture can scale to fit. (Container query units are not used:
+ * Chromium resolves cqh to 0 when a flex item's height comes from min-height.)
+ */
+function useSizeVars() {
+  const ro = useRef<ResizeObserver | null>(null)
+  return useCallback((el: HTMLElement | null) => {
+    ro.current?.disconnect()
+    ro.current = null
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const set = (w: number, h: number) => {
+      el.style.setProperty('--cw', `${Math.round(w)}px`)
+      el.style.setProperty('--ch', `${Math.round(h)}px`)
+    }
+    const r = el.getBoundingClientRect()
+    const cs = getComputedStyle(el)
+    set(r.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), r.height - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))
+    ro.current = new ResizeObserver(([e]) => set(e.contentRect.width, e.contentRect.height))
+    ro.current.observe(el)
+  }, [])
+}
+
 /** What the prompt's answer blank shows for a value. */
 function blankFace(task: Task, value: AnswerValue): ReactNode {
   if (typeof value === 'number') {
@@ -141,6 +164,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
   const localSeen = useRef<Onboarding>({ demosSeen: {}, instructionsHeard: {} })
   const praiseAt = useRef(0)
   const answerRef = useRef<HTMLDivElement>(null)
+  const cardRef = useSizeVars()
   const exitRef = useRef(onExit)
   exitRef.current = onExit
   const beatRef = useRef(beat)
@@ -663,7 +687,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
       >
         <div className="tv-round__ask">
           {task && !ownsPrompt && (
-            <div className={cx('tv-round__card', scaffold && 'has-scaffold')} data-prompt={task.prompt.scene}>
+            <div ref={cardRef} className={cx('tv-round__card', scaffold && 'has-scaffold')} data-prompt={task.prompt.scene}>
               <PromptScene
                 prompt={task.prompt}
                 task={task}

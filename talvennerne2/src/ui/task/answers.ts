@@ -144,11 +144,16 @@ export function pairSum(task: Task): { anchor: number | null; total: number } {
   return { anchor, total: 10 }
 }
 
-/** countTap: how many things lie in the pile (always more than the answer, at most 20). */
+/**
+ * countTap: how many things lie in the pile. The skills draw the pile as the prompt's `objects`
+ * (always more than the target, SK1 convention); without one, a pile a few larger than the answer.
+ */
 export function supplyCount(task: Task): number {
+  const p = task.prompt
+  if (p.scene === 'objects' && p.n > 0) return Math.min(30, p.n)
   const want = typeof task.answer === 'number' ? task.answer : 0
   const top = Math.max(task.range[1], want)
-  return Math.min(20, Math.max(want + 3, Math.min(top, want + 5), 6))
+  return Math.min(24, Math.max(want + 3, Math.min(top, want + 5), 6))
 }
 
 /** countTap: the thing to count (the prompt's, else carrots on the meadow). */
@@ -186,8 +191,9 @@ export function answerSpeech(task: Task, value: AnswerValue): SpeechPart[] | nul
     const [n, d] = body.split('/').map(Number)
     if (Number.isInteger(n) && isDenominator(d)) return [{ frac: { n, d, form: 'end' } }]
   }
-  if (prefix === 'shape' && (SHAPE_IDS as readonly string[]).includes(body)) {
-    return [{ clip: shapeClip(body as (typeof SHAPE_IDS)[number], 'indef', 'end') }]
+  const shape = body.split(':')[0]
+  if (prefix === 'shape' && (SHAPE_IDS as readonly string[]).includes(shape)) {
+    return [{ clip: shapeClip(shape as (typeof SHAPE_IDS)[number], 'indef', 'end') }]
   }
   if (prefix === 'solid' && (SOLID_IDS as readonly string[]).includes(body)) {
     return [{ clip: solidClip(body as (typeof SOLID_IDS)[number], 'indef', 'end') }]

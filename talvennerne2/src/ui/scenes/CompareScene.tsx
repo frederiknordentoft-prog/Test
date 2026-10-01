@@ -11,24 +11,28 @@ type Compare = Extract<Prompt, { scene: 'compareObjects' }>
 
 export function CompareScene({ prompt, seed }: { prompt: Compare; seed: string }) {
   const { objects, sizes, aligned, mode } = prompt
-  if (mode === 'length' || objects.every(isLong)) return <Lengths objects={objects} sizes={sizes} aligned={aligned} seed={seed} />
+  // `starts` (where each thing begins, same units as sizes) is the SK1 addition to the contract
+  const starts = (prompt as Compare & { starts?: number[] }).starts
+  if (mode === 'length' || objects.every(isLong)) return <Lengths objects={objects} sizes={sizes} aligned={aligned} starts={starts} seed={seed} />
   return <Weights objects={objects} sizes={sizes} />
 }
 
-function Lengths({ objects, sizes, aligned, seed }: { objects: string[]; sizes: number[]; aligned: boolean; seed: string }) {
+function Lengths({ objects, sizes, aligned, starts, seed }: { objects: string[]; sizes: number[]; aligned: boolean; starts?: number[]; seed: string }) {
   const W = 330
   const rowH = 40
   const H = objects.length * rowH + 16
-  const max = Math.max(...sizes, 1)
   const x0 = 26
   const span = W - x0 - 18
+  const reach = Math.max(1, ...sizes.map((s, i) => s + (starts?.[i] ?? 0)))
+  const max = Math.max(...sizes, 1)
   const rng = makeRng(hashSeed(`len:${seed}`))
   return (
     <svg className="tv-scene__svg tv-compare" viewBox={`0 0 ${W} ${H}`} role="img" aria-hidden>
-      {aligned && <path className="tv-compare__start" d={`M${x0} 4V${H - 4}`} />}
+      {aligned && !starts?.some((v) => v > 0) && <path className="tv-compare__start" d={`M${x0} 4V${H - 4}`} />}
       {objects.map((id, i) => {
-        const len = (sizes[i] / max) * span * 0.94
-        const shift = aligned ? 0 : rng.between(0, Math.max(0, Math.round(span - len)))
+        const unit = starts ? span / reach : (span * 0.94) / max
+        const len = sizes[i] * unit
+        const shift = starts ? (starts[i] ?? 0) * unit : aligned ? 0 : rng.between(0, Math.max(0, Math.round(span - len)))
         const y = 8 + i * rowH + rowH / 2
         return (
           <g key={i}>

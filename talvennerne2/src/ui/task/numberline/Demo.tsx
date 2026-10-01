@@ -1,18 +1,18 @@
 // numberline demo: "where is 6?" The hand taps the line, slides the pin to 6 and taps the tick.
 import { useState } from 'react'
-import { NL, NumberLine, xOf } from '../../../art/materials'
 import { Icon } from '../../design/Icon'
 import { cx } from '../../design/cx'
 import { DemoStage } from '../demo/DemoStage'
 import type { DemoProps } from '../types'
-import { Pin } from './View'
+import { LineArt, Pin, lineGeometry } from './View'
 
-const fx = (v: number) => xOf(v, 0, 10) / NL.W
-const fy = NL.Y / NL.H
+const W = 320
+const G = lineGeometry(0, 10, W)
 
 export function NumberlineDemo({ onDone }: DemoProps) {
   const [at, setAt] = useState<number | null>(null)
   const [done, setDone] = useState(false)
+  const spot = (v: number) => ({ left: `${(G.x(v) / W) * 100}%`, top: `${(G.y / G.h) * 100}%` })
   return (
     <DemoStage
       duration={4700}
@@ -29,12 +29,12 @@ export function NumberlineDemo({ onDone }: DemoProps) {
       <div className="tv-demo__mini">
         <span className="tv-chip tv-chip--demo">6</span>
         <div className="tv-demo__line">
-          <NumberLine min={0} max={10} className="tv-nline__line" />
-          <svg className="tv-nline__overlay" viewBox={`0 0 ${NL.W} ${NL.H}`} aria-hidden overflow="visible">
-            {at !== null && <Pin x={xOf(at, 0, 10)} state={done ? 'good' : 'idle'} />}
+          <svg viewBox={`0 0 ${W} ${G.h}`} width="100%" aria-hidden overflow="visible">
+            <LineArt g={G} />
+            {at !== null && <Pin x={G.x(at)} y={G.y} state={done ? 'good' : 'idle'} />}
           </svg>
-          <span className="tv-demo__spot" data-demo="p3" style={{ left: `${fx(3) * 100}%`, top: `${fy * 100}%` }} />
-          <span className="tv-demo__spot" data-demo="p6" style={{ left: `${fx(6) * 100}%`, top: `${fy * 100}%` }} />
+          <span className="tv-demo__spot" data-demo="p3" style={spot(3)} />
+          <span className="tv-demo__spot" data-demo="p6" style={spot(6)} />
         </div>
         <span className={cx('tv-demo__key is-ok', at !== null && 'is-on')} data-demo="ok">
           <Icon name="check" size={24} strokeWidth={3} />

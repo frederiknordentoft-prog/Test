@@ -178,7 +178,7 @@ export function ObjectIcon({ id, size = 64, className }: { id: string; size?: nu
 
 // ─── Long objects (drawn along x, any length) ──────────────────────────────
 
-export const LONG_IDS = ['pencil', 'crayon', 'rope', 'ribbon', 'stick', 'straw', 'worm', 'scarf'] as const
+export const LONG_IDS = ['pencil', 'crayon', 'brush', 'rope', 'ribbon', 'stick', 'straw', 'worm', 'scarf'] as const
 
 /** A long object from (x, y − h/2) to (x + length, y + h/2), lying on its side. */
 export function LongArt({ id, length, x, y, h = 14 }: { id: string; length: number; x: number; y: number; h?: number }) {
@@ -199,6 +199,22 @@ export function LongArt({ id, length, x, y, h = 14 }: { id: string; length: numb
           <path d={`M${n(x + L - tip)} ${n(top)}L${n(x + L)} ${n(y)}L${n(x + L - tip)} ${n(top + h)}Z`} fill={id === 'crayon' ? body.shade : MAT.wood.fill} stroke={MAT.wood.outline} strokeWidth={2.2} strokeLinejoin="round" />
           <path d={`M${n(x + L - tip * 0.36)} ${n(y - h * 0.18)}L${n(x + L)} ${n(y)}L${n(x + L - tip * 0.36)} ${n(y + h * 0.18)}Z`} fill={id === 'crayon' ? body.outline : INK} />
           <path d={`M${n(x + end + 8)} ${n(top + h * 0.26)}H${n(x + L - tip - 4)}`} stroke={HIGHLIGHT} strokeWidth={2.4} strokeLinecap="round" />
+        </g>
+      )
+    }
+    case 'brush': {
+      // a paintbrush: a long handle, a metal ferrule and a dipped tip
+      const handle = MAT.counterB
+      const hair = Math.min(L * 0.2, h * 1.8)
+      const ferrule = Math.min(L * 0.1, h * 0.9)
+      const stem = L - hair - ferrule
+      return (
+        <g>
+          <Body d={roundRect(x, top + h * 0.18, stem, h * 0.64, h * 0.32)} tone={handle} sw={2.2} />
+          <Body d={roundRect(x + stem - 2, top + h * 0.06, ferrule + 3, h * 0.88, 2)} tone={MAT.silver} sw={2.2} />
+          <Body d={`M${n(x + stem + ferrule)} ${n(top + h * 0.1)}Q${n(x + L)} ${n(y - h * 0.15)} ${n(x + L)} ${n(y)}Q${n(x + L)} ${n(y + h * 0.15)} ${n(x + stem + ferrule)} ${n(top + h * 0.9)}Z`} tone={MAT.chestnut} sw={2.2} />
+          <path d={`M${n(x + L - hair * 0.38)} ${n(y - h * 0.22)}Q${n(x + L)} ${n(y)} ${n(x + L - hair * 0.38)} ${n(y + h * 0.22)}Z`} fill={MAT.counterA.fill} />
+          <path d={`M${n(x + 5)} ${n(top + h * 0.32)}H${n(x + stem - 6)}`} stroke={HIGHLIGHT} strokeWidth={2.2} strokeLinecap="round" />
         </g>
       )
     }

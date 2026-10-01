@@ -8,7 +8,7 @@ import { BuildBaseFace, BuildBaseView } from './buildBase/View'
 import { ChoiceDemo } from './choice/Demo'
 import { ChoiceFace, ChoiceView } from './choice/View'
 import { CountTapDemo } from './countTap/Demo'
-import { CountTapFace, CountTapView } from './countTap/View'
+import { CountTapFace, CountTapView, countTapOwnsPrompt } from './countTap/View'
 import { FillSlotsDemo } from './fillSlots/Demo'
 import { FillSlotsFace, FillSlotsView, fillSlotsOwnsPrompt } from './fillSlots/View'
 import { KeypadDemo } from './keypad/Demo'
@@ -16,7 +16,7 @@ import { KeypadFace, KeypadView } from './keypad/View'
 import { MultiSelectDemo } from './multiSelect/Demo'
 import { MultiSelectFace, MultiSelectView, multiSelectOwnsPrompt } from './multiSelect/View'
 import { NumberlineDemo } from './numberline/Demo'
-import { NumberlineFace, NumberlineView } from './numberline/View'
+import { NumberlineFace, NumberlineView, numberlineOwnsPrompt } from './numberline/View'
 import { PairDemo } from './pair/Demo'
 import { PairFace, PairView, pairOwnsPrompt } from './pair/View'
 import { SortOrderDemo } from './sortOrder/Demo'
@@ -28,9 +28,9 @@ import type { KindModule } from './types'
 export const KIND_MODULES: Partial<Record<TaskKind, KindModule>> = {
   choice: { View: ChoiceView, Demo: ChoiceDemo, Face: ChoiceFace },
   keypad: { View: KeypadView, Demo: KeypadDemo, Face: KeypadFace },
-  countTap: { View: CountTapView, Demo: CountTapDemo, Face: CountTapFace },
+  countTap: { View: CountTapView, Demo: CountTapDemo, Face: CountTapFace, ownsPrompt: countTapOwnsPrompt },
   pair: { View: PairView, Demo: PairDemo, Face: PairFace, ownsPrompt: pairOwnsPrompt },
-  numberline: { View: NumberlineView, Demo: NumberlineDemo, Face: NumberlineFace },
+  numberline: { View: NumberlineView, Demo: NumberlineDemo, Face: NumberlineFace, ownsPrompt: numberlineOwnsPrompt },
   trueFalse: { View: TrueFalseView, Demo: TrueFalseDemo, Face: TrueFalseFace },
   sortOrder: { View: SortOrderView, Demo: SortOrderDemo, Face: SortOrderFace },
   multiSelect: { View: MultiSelectView, Demo: MultiSelectDemo, Face: MultiSelectFace, ownsPrompt: multiSelectOwnsPrompt },

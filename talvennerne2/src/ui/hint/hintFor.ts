@@ -5,7 +5,7 @@
 // with the task's numbers, a skill without a picture gets one drawn from the prompt, and the three
 // animated misconceptions (digitSwap, forgotCarry, smallerFromLarger) get their film.
 import type {
-  AnswerValue, ErrorTag, Fact, HintSpec, HintVisual, MisconceptionId, Prompt, SkillDef, SpeechPart, Task,
+  AnswerValue, ErrorTag, Fact, HintSpec, HintVisual, MisconceptionId, Prompt, SkillDef, SpeechPart, Task, TaskKind,
 } from '../../engine/types'
 import { classifyAnswer } from '../../engine/misconceptions'
 import { factsOf, skillRegistry } from '../../engine/registry'
@@ -66,6 +66,12 @@ export function factFor(def: SkillDef, task: Task): Fact {
   const known = factsOf(def).find((f) => f.id === task.factId)
   if (known) return known
   return { id: task.factId, skill: task.skill, family: task.family, operands: promptNums(task.prompt), answer: task.answer, rank: 0 }
+}
+
+/** SkillDef.hint(fact, tag, kind?) — the kind is the SK1 addition; older skills ignore it. */
+function skillHint(def: SkillDef, task: Task, tag: ErrorTag | null): HintSpec {
+  const hint = def.hint as (fact: Fact, tag: ErrorTag | null, kind?: TaskKind) => HintSpec
+  return hint.call(def, factFor(def, task), tag, task.kind)
 }
 
 function safely<T>(fn: () => T): T | null {
@@ -182,7 +188,7 @@ const speakable = (parts: readonly SpeechPart[]) => parts.length > 0 && compile(
 export function hintFor(task: Task, given: AnswerValue | null, skills?: SkillRegistry): ResolvedHint {
   const tag = given === null ? null : safely(() => classifyAnswer(task, given))
   const def = (skills ?? skillRegistry()).get(task.skill)
-  const spec: HintSpec | null = def ? safely(() => def.hint(factFor(def, task), tag)) : null
+  const spec: HintSpec | null = def ? safely(() => skillHint(def, task, tag)) : null
   const misconception = spec?.misconception ?? (isMisconceptionId(tag) ? tag : null)
 
   let visual: AnyVisual = spec && spec.visual.scene !== 'none' ? spec.visual : defaultVisual(task)
@@ -208,7 +214,7 @@ export function hintFor(task: Task, given: AnswerValue | null, skills?: SkillReg
 /** What the lightbulb shows (SPEC §3.5): the skill's standard picture, never a film. */
 export function scaffoldFor(task: Task, skills?: SkillRegistry): AnyVisual {
   const def = (skills ?? skillRegistry()).get(task.skill)
-  const spec = def ? safely(() => def.hint(factFor(def, task), null)) : null
+  const spec = def ? safely(() => skillHint(def, task, null)) : null
   if (spec && spec.visual.scene !== 'none') return spec.visual
   return defaultVisual(task)
 }

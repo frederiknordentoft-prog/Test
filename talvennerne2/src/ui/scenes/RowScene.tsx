@@ -18,7 +18,7 @@ export function RowScene({ prompt, entry, slot = 'empty' }: { prompt: Row; entry
   let firstGap = true
   const many = prompt.cells.length > 6
   return (
-    <div className={cx('tv-row', many && 'tv-row--many')} role="img">
+    <div className={cx('tv-row', many && 'tv-row--many')} role="img" style={{ ['--row-n' as string]: prompt.cells.length }}>
       {prompt.cells.map((c, i) => {
         const gap = c === null
         const mine = gap && firstGap

@@ -39,9 +39,17 @@ export function OptionFace({ task, value, size, className }: OptionFaceProps) {
   return <span className={cx('tv-face', `tv-face--${size}`, className)}>{face(task, value, size)}</span>
 }
 
+/** Word cards (SPEC §3.4: unitWord, relation, token) show the option's word; the voice reads it. */
+const WORD_VIEWS = new Set(['token', 'relation'])
+
 function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
   const px = FACE_PX[size]
   const view = task.optionView
+  if (typeof value === 'string' && WORD_VIEWS.has(view) && !value.startsWith('cmp:')) {
+    const i = task.options.indexOf(value)
+    const clip = i >= 0 ? task.optionClips?.[i] : undefined
+    if (clip) return <SpokenText clip={clip} silent className={cx('tv-face__word', 'tv-face__word--card')} />
+  }
   if (typeof value === 'number') {
     if (view === 'clock' || (task.answerType === 'minutes' && view !== 'clockDigital')) return <AnalogClock minutes={value} size={px * 1.05} />
     if (view === 'clockDigital') return <DigitalClock minutes={value} h24={task.modulo === 1440} size={px * 1.5} />
@@ -68,9 +76,12 @@ function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
   const prefix = cut > 0 ? value.slice(0, cut) : ''
   const body = cut > 0 ? value.slice(cut + 1) : value
   switch (prefix) {
-    case 'shape':
-      if (isShape(body)) return <Shape2D shape={body} size={px} />
+    case 'shape': {
+      // 'shape:triangle:3' — the figure in its variant (SK1 convention)
+      const [id, variant] = body.split(':')
+      if (isShape(id)) return <Shape2D shape={id} variant={Number(variant) || 0} size={px} />
       break
+    }
     case 'solid':
       if (isSolid(body)) return <Solid3D solid={body} size={px} />
       break
@@ -190,11 +201,15 @@ const PATTERN_TONES: Record<string, Tone> = {
   orange: MAT.counterB, pink: MAT.petal, white: MAT.frame, brown: MAT.chestnut,
 }
 
-/** Pattern tokens: 'pat:red' is a bead; 'pat:red-triangle' a coloured shape; 'pat:apple' a thing. */
+/**
+ * Pattern tokens `pat:<name>` (SK1): a colour is a glass bead (red, blue, yellow …), a shape is a
+ * figure (circle, triangle, square), anything else a countable thing; 'red-triangle' is both.
+ */
 export function PatternToken({ token, px }: { token: string; px: number }) {
   const [color, shape] = token.split('-')
   const tone = PATTERN_TONES[color]
   if (!tone) {
+    if (isShape(token)) return <Shape2D shape={token} tone={MAT.shapeB} size={px * 0.72} />
     if ((THING_IDS as readonly string[]).includes(token)) return <Thing id={token} size={px * 0.8} />
     return <ObjectIcon id={token} size={px * 0.8} />
   }

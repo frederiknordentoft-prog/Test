@@ -2,6 +2,7 @@
 // a tap on the basket sends the last one back. The basket keeps them in rows of five, so 7 reads as
 // five and two — but it never shows a number: counting is the task. Then the tick.
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import type { Task } from '../../../engine/types'
 import { hashSeed, makeRng } from '../../../engine/rng'
 import { playSfx } from '../../../audio/sfx'
 import { Thing } from '../../../art/materials'
@@ -22,6 +23,9 @@ function pileOf(taskId: string, thing: string, count: number): Pile {
   const rng = makeRng(hashSeed(`count:${taskId}`))
   return { thing, items: Array.from({ length: count }, () => ({ tilt: rng.between(-14, 14), nudge: rng.between(-5, 5) })) }
 }
+
+/** The pile is the prompt (`objects`, SK1 convention): the view draws it, the card is left out. */
+export const countTapOwnsPrompt = (t: Task) => t.prompt.scene === 'objects'
 
 export function CountTapView({ task, mode, onSubmit, onActivity }: TaskViewProps) {
   const speech = useSpeech()

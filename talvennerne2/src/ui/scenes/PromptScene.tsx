@@ -1,7 +1,7 @@
 // The prompt card's picture: one renderer per Prompt.scene (src/engine/types.ts), drawn with the
 // materials library. Wave 1 scenes are complete; the rest are simple, faithful pictures of their
 // data that later waves can deepen (skills may also bring their own Prompt.tsx, SPEC §12.3).
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { Prompt, Task, Term } from '../../engine/types'
 import {
   AnalogClock, BarChart, Base10Group, COIN_VALUES, Coin, CoordGrid, DigitalClock, FractionBars, FractionShape,
@@ -38,9 +38,32 @@ export interface PromptSceneProps {
   className?: string
 }
 
+/** Width of an equation in em (digits ≈ 0.6 em, signs 0.6 em, the blank at least 1.3 em). */
+export function equationEm(terms: readonly Term[], entryChars = 1): number {
+  let em = 0
+  for (const t of terms) {
+    if ('n' in t) em += formatNumber(t.n).length * 0.6
+    else if ('op' in t) em += 0.62
+    else if ('blank' in t) em += Math.max(1.35, entryChars * 0.6 + 0.4)
+    else em += 2.2
+    em += 0.16
+  }
+  return em
+}
+
 export function PromptScene(props: PromptSceneProps) {
-  const { prompt, className } = props
-  return <div className={cx('tv-scene', `tv-scene--${prompt.scene}`, className)}>{scene(props)}</div>
+  const { prompt, className, entry } = props
+  let style: CSSProperties | undefined
+  if (prompt.scene === 'equation' || prompt.scene === 'balance') {
+    const terms = prompt.scene === 'equation' ? prompt.terms : [...prompt.left, { op: '=' as const }, ...prompt.right]
+    const chars = typeof entry === 'string' || typeof entry === 'number' ? String(entry).length : entry ? 3 : 1
+    style = { ['--eq-em' as string]: equationEm(terms, chars).toFixed(2) }
+  }
+  return (
+    <div className={cx('tv-scene', `tv-scene--${prompt.scene}`, className)} style={style}>
+      {scene(props)}
+    </div>
+  )
 }
 
 const isCoin = (v: number): v is CoinOre => (COIN_VALUES as readonly number[]).includes(v)
@@ -49,7 +72,7 @@ function scene({ prompt: p, task, entry, slot = 'empty', replay = 0, speaking = 
   const seed = task?.id ?? p.scene
   switch (p.scene) {
     case 'equation':
-      return <Equation terms={p.terms} entry={entry} slot={slot} />
+      return <Equation terms={p.terms} entry={entry} slot={slot} nowrap />
     case 'objects':
       return <ObjectsScene prompt={p} replay={replay} seed={seed} />
     case 'hear':
@@ -57,7 +80,6 @@ function scene({ prompt: p, task, entry, slot = 'empty', replay = 0, speaking = 
     case 'row':
       return <RowScene prompt={p} entry={entry} slot={slot} />
     case 'line':
-      if (task?.kind === 'numberline') return <PlaceChip prompt={p} task={task} />
       return <NumberLine min={p.min} max={p.max} arrowAt={p.arrowAt} target={p.target} hops={p.hops} className="tv-scene__line" />
     case 'board':
       return (
@@ -145,26 +167,6 @@ function scene({ prompt: p, task, entry, slot = 'empty', replay = 0, speaking = 
 }
 
 // ─── Small scenes ───────────────────────────────────────────────────────────
-
-/** numberline tasks on a 'line' prompt: the line is the answer, so the card shows what to place. */
-function PlaceChip({ prompt, task }: { prompt: Extract<Prompt, { scene: 'line' }>; task: Task }) {
-  if (prompt.hops && prompt.hops.length >= 2) {
-    const terms: Term[] = []
-    prompt.hops.forEach((h, i) => {
-      if (i > 0) terms.push({ op: '+' })
-      terms.push({ n: h })
-    })
-    terms.push({ op: '=' }, { blank: true })
-    return <Equation terms={terms} />
-  }
-  const target = prompt.target ?? (typeof task.answer === 'number' ? task.answer : null)
-  return (
-    <span className="tv-chip">
-      <Icon name="pin" size={34} strokeWidth={2.4} className="tv-chip__icon" />
-      {target !== null ? formatNumber(target) : '?'}
-    </span>
-  )
-}
 
 function TermsChip({ terms, entry, slot }: { terms: Term[]; entry?: ReactNode; slot: BlankSlot }) {
   return (
