@@ -23,7 +23,8 @@ beforeAll(() => {
   main = new Sim(CHILD_85, seedOf('85')).playSessions(150)
 }, 120_000)
 
-describe('economy simulation (SPEC §5.7)', () => {
+// generous per-test timeout: some checks replay extra children, and the container is often busy
+describe('economy simulation (SPEC §5.7)', { timeout: 60_000 }, () => {
   it('1: session 1 brings the starter, a hatch, two things, level 3 and 50 perler', () => {
     const s1 = main.sessions[0]
     const all = allOf(s1)

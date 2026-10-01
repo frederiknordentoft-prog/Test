@@ -168,7 +168,7 @@ export default function CeremonyScreen(_props: ScreenProps<RouteOf<'ceremonies'>
     const uid = useProfile.getState().profile?.buddyUid ?? null
     if (uid) useMeta.getState().wear(uid, item)
     if (plan) setProgress(plan, index + 1)
-    useNav.getState().go({ id: 'wardrobe', ...(uid ? { uid } : {}) })
+    useNav.getState().go({ id: 'wardrobe', item, ...(uid ? { uid } : {}) })
   }
 
   if (!plan || !screen) return null
