@@ -9,7 +9,7 @@ import { addFacts, buildAddTask } from '../engine/testing/addFacts'
 import type { NodeId, RoundMode, Task } from '../engine/types'
 import { roundHooks, useProfile } from '../state/useProfile'
 import { MemoryStorage } from '../data/testing/memoryStorage'
-import { ROUND_START_KEY, dropRoundStartMemory, installMeta, metaView, progressBefore, useMeta } from '../state/useMeta'
+import { ROUND_START_KEY, dropRoundStartMemory, hutKeysFor, installMeta, metaView, progressBefore, useMeta } from '../state/useMeta'
 import { useRound } from '../state/useRound'
 
 /**
@@ -129,6 +129,49 @@ describe('useMeta', () => {
     expect(useMeta.getState().hutKeys['w0-plus10']).toEqual(list.slice(0, 4).map((t) => t.masteryKey))
     expect(useMeta.getState().rewards.some((r) => r.t === 'hut')).toBe(true)
     expect(metaView(useProfile.getState().profile!).unlock.huts).toEqual(['w0-plus10'])
+  })
+
+  it('keeps the training hut keys through a reload: they are saved with the trial', async () => {
+    const id = await newChild()
+    useMeta.getState().chooseStarter('rabbit')
+    const list = tasks(10)
+    playRound('w0-plus10-trial', 'trial', list, [1, 3, 5])
+    const missed = [1, 3, 5].map((i) => list[i].masteryKey)
+    await useProfile.getState().flush()
+    expect((await getDb().profiles.get(id))?.trials['w0-plus10']?.missed).toEqual(missed)
+
+    // the page reloads: the store starts empty and the profile comes back from the database
+    await useProfile.getState().unload()
+    expect(useMeta.getState().hutKeys).toEqual({})
+    await useProfile.getState().loadProfile(id)
+    expect(useMeta.getState().hutKeys).toEqual({ 'w0-plus10': missed })
+    const p = useProfile.getState().profile!
+    expect(hutKeysFor(p, 'w0-plus10')).toEqual(missed)
+    useMeta.setState({ hutKeys: {} })
+    expect(hutKeysFor(p, 'w0-plus10')).toEqual(missed)
+    expect(hutKeysFor(p, 'w0-tal10')).toEqual([])
+
+    // passing the trial puts the hut out
+    clock += 60_000
+    playRound('w0-plus10-l1', 'round', tasks(10))
+    playRound('w0-plus10-trial', 'trial', tasks(10))
+    const after = useProfile.getState().profile!
+    expect(after.trials['w0-plus10']?.passedAt).not.toBeNull()
+    expect(after.trials['w0-plus10']).not.toHaveProperty('missed')
+    expect(useMeta.getState().hutKeys['w0-plus10']).toBeUndefined()
+    expect(hutKeysFor(after, 'w0-plus10')).toEqual([])
+  })
+
+  it('never lends one child the training hut of another', async () => {
+    const a = await newChild()
+    useMeta.getState().chooseStarter('rabbit')
+    playRound('w0-plus10-trial', 'trial', tasks(10), [0, 1, 2])
+    expect(Object.keys(useMeta.getState().hutKeys)).toEqual(['w0-plus10'])
+    const b = await createProfile({ name: 'Bo', grade: 0, now: T0 })
+    await useProfile.getState().loadProfile(b.id)
+    expect(useMeta.getState().hutKeys).toEqual({})
+    await useProfile.getState().loadProfile(a)
+    expect(Object.keys(useMeta.getState().hutKeys)).toEqual(['w0-plus10'])
   })
 
   it('saves every action through the profile store, and refuses what is not allowed', async () => {
