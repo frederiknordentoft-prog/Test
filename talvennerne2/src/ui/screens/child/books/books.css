@@ -1,0 +1,711 @@
+/*
+ * The books (src/ui/screens/child/BooksScreen.tsx, books/**): the shelf, Samlebogen, Kan-bogen,
+ * Stempelbogen and Trofæerne. Colours from tokens only; only transform and opacity change, and
+ * nothing loops.
+ */
+.bk {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.bk__title {
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--text-title);
+  font-weight: 900;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bk-lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.bk__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.bk__inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2px var(--gutter) 28px;
+}
+.bk-h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+.bk-h3 {
+  margin: 0;
+  color: var(--color-ink-2);
+  font-size: 17px;
+  font-weight: 900;
+}
+.bk-h3::first-letter,
+.bk-card__label::first-letter {
+  text-transform: uppercase;
+}
+.bk-count {
+  display: block;
+  margin: 0 0 10px;
+  color: var(--color-ink-2);
+  font-size: 17px;
+  font-weight: 800;
+}
+.bk-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 20px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  font-size: 19px;
+  font-weight: 700;
+  text-align: center;
+}
+.bk-empty--inline {
+  box-shadow: none;
+  background: var(--color-paper-2);
+}
+.bk-empty__icon {
+  color: var(--color-primary);
+}
+
+/* ── The shelf ──────────────────────────────────────────────────── */
+.bk-shelf {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px var(--gutter) 28px;
+}
+@media (min-width: 900px) {
+  .bk-shelf {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 1000px;
+  }
+}
+.bk-cover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 200px;
+  margin: 0;
+  padding: 18px 14px 16px 26px;
+  border: 0;
+  border-radius: 12px 26px 26px 12px;
+  background: linear-gradient(160deg, var(--c-soft), var(--color-card) 80%);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c) 35%, transparent), 0 6px 0 var(--c-deep), var(--shadow-card);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.bk-cover[data-pressed] {
+  transform: translateY(4px);
+  transition-duration: var(--dur-press);
+}
+.bk-cover:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 2px;
+}
+.bk-cover__spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 14px;
+  border-radius: 12px 0 0 12px;
+  background: var(--c);
+}
+.bk-cover__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--c);
+  color: var(--color-card);
+  box-shadow: 0 4px 0 var(--c-deep);
+}
+.bk-cover__title {
+  margin-top: 4px;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+.bk-cover__about {
+  color: var(--color-ink-2);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.bk-cover__count {
+  position: absolute;
+  top: 16px;
+  right: 14px;
+  min-width: 44px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-card);
+  box-shadow: 0 2px 0 var(--color-line-2);
+  color: var(--c-deep);
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Samlebogen ─────────────────────────────────────────────────── */
+.bk-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 calc(-1 * var(--gutter)) 14px;
+  padding: 4px var(--gutter) 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.bk-tabs::-webkit-scrollbar {
+  display: none;
+}
+.bk-tab {
+  position: relative;
+  flex: none;
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  padding: 6px;
+  border: 2.5px solid var(--color-line-2);
+  border-radius: 22px;
+  background: var(--color-card);
+  cursor: pointer;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.bk-tab[data-pressed] {
+  transform: scale(0.94);
+  transition-duration: var(--dur-press);
+}
+.bk-tab.is-on {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  box-shadow: 0 4px 0 var(--color-primary-tint);
+}
+.bk-tab__fig {
+  width: 100%;
+}
+.is-missing .zoo-fig__img,
+.zoo-fig.is-missing .zoo-fig__img {
+  opacity: 0.22;
+}
+.bk-tab__n {
+  position: absolute;
+  right: -4px;
+  bottom: -6px;
+  min-width: 26px;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  color: var(--color-card);
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bk-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.bk-page__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+.bk-page__count {
+  color: var(--color-ink-2);
+  font-size: 17px;
+  font-weight: 800;
+}
+.bk-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bk-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 560px) {
+  .bk-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 760px) {
+  .bk-cards {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+.bk-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 120px;
+  margin: 0;
+  padding: 8px 6px 8px;
+  border: 2.5px solid var(--color-line);
+  border-radius: 22px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.bk-card[data-pressed] {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.bk-card.is-missing {
+  border-style: dashed;
+  border-color: var(--color-line-2);
+  background: var(--color-paper-2);
+}
+.bk-card--gold.is-found {
+  border-color: var(--color-star);
+  background: linear-gradient(170deg, var(--color-star-soft), var(--color-card) 70%);
+}
+.bk-card--rainbow.is-found {
+  border-color: var(--color-d-fractions);
+  background: linear-gradient(170deg, var(--color-d-fractions-soft), var(--color-d-number-soft) 60%, var(--color-card));
+}
+.bk-card--starwhite.is-found {
+  border-color: var(--color-primary-tint);
+  background: linear-gradient(170deg, var(--color-primary-soft), var(--color-card) 70%);
+}
+.bk-card__fig {
+  width: 100%;
+  max-width: 96px;
+}
+.bk-card__label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bk-card.is-missing .bk-card__label {
+  color: var(--color-ink-2);
+}
+.bk-card__q {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-card);
+  color: var(--color-ink-2);
+}
+
+.bk-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  text-align: center;
+}
+.bk-detail__stage {
+  width: min(48vw, 190px);
+}
+.bk-detail__name {
+  margin: 0;
+  font-size: var(--text-title);
+  font-weight: 900;
+}
+.bk-detail__kind {
+  color: var(--color-ink-2);
+  font-size: 17px;
+  font-weight: 700;
+}
+.bk-detail__how {
+  max-width: 34ch;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.bk-steps {
+  display: flex;
+  gap: 10px;
+}
+.bk-steps__dot {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2.5px dashed var(--color-line-2);
+  border-radius: 50%;
+  color: var(--color-ink-3);
+}
+.bk-steps__dot.is-on {
+  border: 2.5px solid var(--color-good);
+  background: var(--color-good-soft);
+  color: var(--color-good-deep);
+}
+
+/* ── Kan-bogen ──────────────────────────────────────────────────── */
+.bk-can {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.bk-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.bk-tier--gold {
+  background: linear-gradient(165deg, var(--color-star-soft), var(--color-card) 60%);
+  box-shadow: 0 0 0 3px var(--color-star), var(--shadow-card);
+}
+.bk-tier__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bk-medal {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+.bk-medal--sm {
+  width: 38px;
+  height: 38px;
+}
+.bk-medal--gold {
+  background: var(--color-star);
+  color: var(--color-star-deep);
+  box-shadow: 0 3px 0 var(--color-star-lip);
+}
+.bk-medal--silver {
+  background: var(--color-stone);
+  color: var(--color-ink-2);
+  box-shadow: 0 3px 0 var(--color-stone-edge);
+}
+.bk-medal--bronze {
+  background: var(--color-wood);
+  color: color-mix(in srgb, var(--color-wood-edge) 75%, var(--color-ink));
+  box-shadow: 0 3px 0 var(--color-wood-edge);
+}
+.bk-can__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bk-can__line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 8px 12px;
+  border-left: 6px solid var(--c);
+  border-radius: 16px;
+  background: var(--c-soft);
+}
+.bk-can__text {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+/* ── Stempelbogen ───────────────────────────────────────────────── */
+.bk-stamps {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.bk-days {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.bk-days__icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.bk-days__label {
+  font-size: 19px;
+  font-weight: 900;
+}
+.bk-days__n {
+  min-width: 64px;
+  color: var(--color-primary-deep);
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.bk-goals {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bk-goals__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bk-goal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: var(--color-card);
+  box-shadow: 0 2px 0 var(--color-line);
+}
+.bk-goal.is-done {
+  background: var(--color-good-soft);
+}
+.bk-goal__mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.bk-goal.is-done .bk-goal__mark {
+  background: var(--color-good-strong);
+  color: var(--color-card);
+}
+.bk-goal__text {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.bk-goal__done {
+  color: var(--color-good-deep);
+  font-size: 15px;
+  font-weight: 900;
+}
+.bk-stampgrid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bk-stampgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  list-style: none;
+}
+.bk-stamp {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 4px var(--color-card), inset 0 0 0 6px var(--ink);
+  color: var(--ink);
+  transform: rotate(var(--rot, 0deg));
+}
+.bk-stamp__n {
+  font-size: 22px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Trofæerne ──────────────────────────────────────────────────── */
+.bk-trophies {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.bk-tgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  --tc: var(--color-d-number);
+  --tc-deep: var(--color-d-number-deep);
+  --tc-soft: var(--color-d-number-soft);
+}
+.bk-tgroup--stil {
+  --tc: var(--color-d-fractions);
+  --tc-deep: var(--color-d-fractions-deep);
+  --tc-soft: var(--color-d-fractions-soft);
+}
+.bk-tgroup--rejse {
+  --tc: var(--color-d-shapes);
+  --tc-deep: var(--color-d-shapes-deep);
+  --tc-soft: var(--color-d-shapes-soft);
+}
+.bk-tgroup--laering {
+  --tc: var(--color-star);
+  --tc-deep: var(--color-star-deep);
+  --tc-soft: var(--color-star-soft);
+}
+.bk-tgroup--venner {
+  --tc: var(--color-heart);
+  --tc-deep: color-mix(in srgb, var(--color-heart) 55%, var(--color-ink));
+  --tc-soft: var(--color-heart-soft);
+}
+.bk-tgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 560px) {
+  .bk-tgrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 900px) {
+  .bk-tgrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.bk-tcell {
+  display: flex;
+}
+.bk-trophy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 132px;
+  margin: 0;
+  padding: 12px 10px;
+  border: 2.5px solid transparent;
+  border-radius: 22px;
+  background: var(--color-card);
+  box-shadow: 0 2px 0 var(--color-line);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.bk-trophy[data-pressed] {
+  transform: scale(0.96);
+  transition-duration: var(--dur-press);
+}
+.bk-trophy.is-earned {
+  border-color: var(--tc);
+  background: linear-gradient(170deg, var(--tc-soft), var(--color-card) 75%);
+}
+.bk-trophy.is-locked {
+  border-style: dashed;
+  border-color: var(--color-line-2);
+  background: var(--color-paper-2);
+  box-shadow: none;
+}
+.bk-trophy__cup {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  color: var(--tc-deep);
+}
+.bk-trophy.is-earned .bk-trophy__cup {
+  background: var(--tc);
+  color: var(--color-card);
+  box-shadow: 0 4px 0 var(--tc-deep);
+}
+.bk-trophy.is-locked .bk-trophy__cup {
+  border: 2.5px dashed var(--color-ink-3);
+  color: var(--color-ink-3);
+}
+.bk-trophy__name {
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+.bk-trophy__how {
+  color: var(--color-ink-2);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.bk-bar {
+  display: block;
+  width: 80%;
+  height: 8px;
+  margin-top: 2px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-line-2);
+}
+.bk-bar__fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--tc);
+  transform: scaleX(var(--v, 0));
+  transform-origin: left center;
+}

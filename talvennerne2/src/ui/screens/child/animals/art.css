@@ -1,0 +1,81 @@
+/*
+ * Animal pictures for Dyrehaven and the books (animals/art.tsx): a box in the rig's 200 by 240 format
+ * (square for head crops) holding an animated rig, a still <img> or the neutral shadow of a species
+ * that is not drawn yet. Also the title bar both screens share: the title on the left, the ear on the
+ * right, one row even on a narrow phone. Colours from tokens; nothing here animates.
+ */
+.zoo-bar {
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+.zoo-bar .tv-topbar__side:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.zoo-fig {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 200 / 240;
+}
+.zoo-fig--square {
+  aspect-ratio: 1;
+}
+.zoo-fig > svg,
+.zoo-fig__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.zoo-fig__img {
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* A species not drawn yet: a soft shadow of its body shape with a dashed edge. */
+.zoo-standin {
+  overflow: visible;
+}
+.zoo-standin__ground {
+  fill: var(--color-ink);
+  opacity: 0.1;
+}
+.zoo-standin__shape {
+  fill: color-mix(in srgb, var(--color-ink) 16%, var(--color-card));
+  stroke: color-mix(in srgb, var(--color-ink) 34%, var(--color-card));
+  stroke-width: 4;
+  stroke-dasharray: 10 8;
+  stroke-linecap: round;
+}
+.zoo-standin--gold .zoo-standin__shape {
+  fill: var(--color-star);
+  stroke: var(--color-star-lip);
+  stroke-dasharray: none;
+}
+.zoo-standin--rainbow .zoo-standin__shape {
+  fill: var(--color-d-fractions-soft);
+  stroke: var(--color-d-fractions);
+  stroke-dasharray: none;
+}
+.zoo-standin--starwhite .zoo-standin__shape {
+  fill: var(--color-card);
+  stroke: var(--color-primary-tint);
+  stroke-dasharray: none;
+}
+
+/* Calm mode switched on while a rig is on screen: its loops rest in the mood's pose, blinking stays
+   (the rig's own .rig-calm class covers a rig drawn in calm mode). */
+:root[data-calm] .zoo-fig .rig [class*='a-']:not(.a-blink) {
+  animation-play-state: paused !important;
+  animation-delay: 0s !important;
+}
+:root[data-calm] .zoo-fig .rig .a-z,
+:root[data-calm] .zoo-fig .rig .a-dot,
+:root[data-calm] .zoo-fig .rig .a-sweat,
+:root[data-calm] .zoo-fig .rig .a-twinkle,
+:root[data-calm] .zoo-fig .rig .a-aura {
+  animation: none !important;
+}
