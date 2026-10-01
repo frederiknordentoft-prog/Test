@@ -91,6 +91,26 @@ try {
     await page.keyboard.press('Escape')
     await settle(page, 500)
 
+    // calm mode: every loop rests, only blinking goes on
+    const running = () =>
+      page.evaluate(() => [...new Set(document.getAnimations().filter((a) => a.playState === 'running').map((a) => a.animationName ?? 'waapi'))].sort())
+    await page.evaluate(async () => (await import('/src/ui/design/motion.ts')).setCalm(true))
+    await settle(page, 300)
+    const calm = (await running()).filter((n) => n !== 'rig-blink')
+    console.log(JSON.stringify({ label: `calm-${width}`, running: calm }))
+    if (calm.length) problems.push(`${width}: still moving in calm mode: ${calm.join(', ')}`)
+    await page.evaluate(async () => (await import('/src/ui/design/motion.ts')).setCalm(false))
+
+    // the route's uid opens that animal's card at once
+    await page.evaluate(async () => {
+      const { useNav } = await import('/src/app/nav.ts')
+      useNav.getState().root({ id: 'animals', uid: 'egg-2' })
+    })
+    await page.waitForSelector('[data-animal-card="egg-2"]', { timeout: 10_000 })
+    await settle(page, 400)
+    await page.keyboard.press('Escape')
+    await settle(page, 500)
+
     // the books
     await page.evaluate(async () => {
       const { useNav } = await import('/src/app/nav.ts')

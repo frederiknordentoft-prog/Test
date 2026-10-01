@@ -146,6 +146,8 @@ export interface FigureProps {
   px?: number
   /** Phase of the idle loops. */
   seed?: number
+  /** A point in the rig's viewBox the pupils follow (the buddy's eyes follow the finger). */
+  lookAt?: { x: number; y: number } | null
   className?: string
   style?: CSSProperties
 }
@@ -154,7 +156,7 @@ export interface FigureProps {
  * One animal as a picture. While its species loads, an empty box of the same size holds the place;
  * a species that is not drawn yet shows its neutral shadow.
  */
-export function Figure({ look, def, outfit, animated = false, mood = 'idle', silhouette = false, crop = 'full', px = 128, seed, className, style }: FigureProps) {
+export function Figure({ look, def, outfit, animated = false, mood = 'idle', silhouette = false, crop = 'full', px = 128, seed, lookAt, className, style }: FigureProps) {
   const drawn = isDrawn(look.species)
   const props = useMemo(() => {
     if (!def) return null
@@ -179,7 +181,7 @@ export function Figure({ look, def, outfit, animated = false, mood = 'idle', sil
   if (animated) {
     return (
       <span className={cx('zoo-fig', className)} style={style} aria-hidden>
-        <Rig {...props} mode="animated" size="100%" className={isCalm() ? 'rig-calm' : undefined} style={crop === 'fit' ? FIT_FREE : undefined} />
+        <Rig {...props} mode="animated" size="100%" lookAt={lookAt} className={isCalm() ? 'rig-calm' : undefined} style={crop === 'fit' ? FIT_FREE : undefined} />
       </span>
     )
   }
