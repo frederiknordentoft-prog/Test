@@ -205,23 +205,21 @@ const Tail: Part = ({ pal, sw, ids }) => {
 
 const NOSE: Vec[] = [[0, 3.4], [-3.2, 1.2], [-4.6, -1.6], [-3, -3.2], [0, -3.4], [3, -3.2], [4.6, -1.6], [3.2, 1.2]]
 
-const Muzzle: Part = ({ pal, sw, a, still, lod }) => {
-  const m = a.muzzle
-  const whisk = (s: number): string =>
-    join(
-      spline([[m.x + s * 14, m.y + 1], [m.x + s * 23, m.y - 1], [m.x + s * 30, m.y - 0.5]]),
-      spline([[m.x + s * 14, m.y + 5], [m.x + s * 23, m.y + 6], [m.x + s * 29, m.y + 8.5]]),
-    )
-  return (
-    <>
-      {!pal.silhouette && lod === 'full' && <path d={join(whisk(-1), whisk(1))} fill="none" stroke={pal.outline} strokeOpacity={0.45} strokeWidth={sw * 0.42} {...round} />}
-      <Pivot at={m} cls="a-sig" still={still}>
-        <path d={blob(NOSE)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
-        {!pal.silhouette && <path d={ellipse(-1.3, -1.6, 1.4, 0.9, -15)} fill={pal.highlight} />}
-      </Pivot>
-    </>
+/** Knurhår (lokalt om næsen): rødderne sidder ved næsen, så de følger med i næsevippet. */
+const whisk = (s: number): string =>
+  join(
+    spline([[s * 14, 1], [s * 23, -1], [s * 30, -0.5]]),
+    spline([[s * 14, 5], [s * 23, 6], [s * 29, 8.5]]),
   )
-}
+const WHISKERS = join(whisk(-1), whisk(1))
+
+const Muzzle: Part = ({ pal, sw, a, still, lod }) => (
+  <Pivot at={a.muzzle} cls="a-sig" still={still}>
+    {!pal.silhouette && lod === 'full' && <path d={WHISKERS} fill="none" stroke={pal.outline} strokeOpacity={0.45} strokeWidth={sw * 0.42} {...round} />}
+    <path d={blob(NOSE)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
+    {!pal.silhouette && <path d={ellipse(-1.3, -1.6, 1.4, 0.9, -15)} fill={pal.highlight} />}
+  </Pivot>
+)
 
 /** Lille pandetot mellem ørerne: to lokker, klippet til "uden for hovedet", så roden er sømløs. */
 const TUFT: Vec[] = [

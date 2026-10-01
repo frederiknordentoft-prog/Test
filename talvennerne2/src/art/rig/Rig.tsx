@@ -355,6 +355,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const itemClipId = `${uid}i`
   const earClipId = ids.outsideHead
   const holeClipId = `${uid}o`
+  const hornClipId = `${uid}n`
   const sleeveClipId = `${uid}v`
 
   const a = modelAnchors(def, breed)
@@ -389,6 +390,18 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const holes = hat === 'through' && earsShown && earRig?.clip !== false && !!headWorn?.item.art.rim
   // Arter tegner selv en afrundet ørebund i hullet (ctx.hat); klippet er kun et værn for andre.
   const holeY = Math.min(a.earBaseL.y, a.earBaseR.y) + 3
+  // Hornhul (review G1-r2, E1): hatten tegner et hul over hornets rod, og hornet skjules under hullets
+  // nederste kant (forkanten i `rim` ligger ovenpå), så hornet går op gennem huen og aldrig over kanten.
+  const hornHat = parts.Horn && holes && headWorn?.item.hornHole ? headWorn : undefined
+  const hornHole = (() => {
+    if (!hornHat) return null
+    const h = hornHat.item.hornHole!
+    const fit = fitItem(hornHat.item, a, def)
+    const base = toLocal(fit, a.hornBase)
+    const local = { x: base.x, y: base.y - h.lift }
+    // Hatte med hornhul drejes ikke; centrum i modelrummet og hullets halvakser.
+    return { local, cx: fit.x + local.x * fit.scale, cy: fit.y + local.y * fit.scale, rx: h.rx * fit.scale, ry: h.ry * fit.scale }
+  })()
 
   // Arterne ser 'through' kun, når ørerne faktisk går gennem huller (og tegner da en afrundet ørebund).
   const hatCtx = holes ? 'through' : hat === 'under' ? 'under' : null
@@ -431,6 +444,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             local: (p) => toLocal(fit, p),
             solo: false,
             holes,
+            horn: slot === 'head' ? (hornHole?.local ?? null) : null,
             restroke: (color) => (
               <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
             ),
@@ -499,6 +513,28 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           <Part {...ctx(swBody)} side={side} />
           {up ? sleeveUp(side) : sleeve(side)}
         </g>
+      </g>
+    )
+  }
+
+  // Hornet om sin rod; gennem et hornhul klippes det (i hornets egen ramme) under hullets nederste kant.
+  const horn = (hole: typeof hornHole) => {
+    const k = R.xf.horn
+    const b = a.hornBase
+    const clip = hole && (() => {
+      const lx = (x: number) => n((x - b.x) / k)
+      const ly = (y: number) => n((y - b.y) / k)
+      const r = (v: number) => n(v / k)
+      return `M-400 -400H400V${ly(hole.cy)}H${lx(hole.cx + hole.rx)}A${r(hole.rx)} ${r(hole.ry)} 0 0 1 ${lx(hole.cx - hole.rx)} ${ly(hole.cy)}H-400Z`
+    })()
+    return (
+      <g transform={`translate(${n(b.x)} ${n(b.y)}) scale(${fmt3(k)})`} clipPath={clip ? `url(#${hornClipId})` : undefined}>
+        {clip && (
+          <clipPath id={hornClipId}>
+            <path d={clip} />
+          </clipPath>
+        )}
+        {Horn!(ctx(swHead / k))}
       </g>
     )
   }
@@ -707,12 +743,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                   {ear('R', Ear!)}
                 </g>
               )}
+              {/* Hornet gennem et hornhul: under hullets forkant (rim); ellers øverst. */}
+              {Horn && hornHole && horn(hornHole)}
               {renderItem('head', 'rim', R.head.s)}
-              {Horn && (
-                <g transform={`translate(${n(a.hornBase.x)} ${n(a.hornBase.y)}) scale(${fmt3(R.xf.horn)})`}>
-                  <g className={animated ? 'a-horn' : undefined}>{Horn(ctx(swHead / R.xf.horn))}</g>
-                </g>
-              )}
+              {Horn && !hornHole && horn(null)}
             </g>
           </g>
         </g>
