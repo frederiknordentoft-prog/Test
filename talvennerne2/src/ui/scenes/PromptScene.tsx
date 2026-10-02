@@ -4,15 +4,16 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { Prompt, Task, Term } from '../../engine/types'
 import {
-  AnalogClock, BarChart, Base10Group, COIN_VALUES, Coin, CoordGrid, DigitalClock, FractionBars, FractionShape,
+  AnalogClock, BarChart, Base10Group, CoordGrid, DigitalClock, FractionBars, FractionShape,
   HundredBoard, NumberLine, Pictogram, Ruler, RULER, Seesaw, Shape2D, Solid3D, SquareGrid, Thing,
 } from '../../art/materials'
-import type { CoinOre } from '../../art/materials'
 import { Rig } from '../../art/rig/Rig'
 import { Equation } from '../design/Equation'
 import { Icon } from '../design/Icon'
 import { cx } from '../design/cx'
 import { formatMoney, formatNumber } from '../task/answers'
+import { isPiece } from '../task/pay/logic'
+import { PieceArt, piecesForAmount } from '../task/faces'
 import { CompareScene } from './CompareScene'
 import { HearScene } from './HearScene'
 import { MarkedLine } from './MarkedLine'
@@ -68,8 +69,6 @@ export function PromptScene(props: PromptSceneProps) {
     </div>
   )
 }
-
-const isCoin = (v: number): v is CoinOre => (COIN_VALUES as readonly number[]).includes(v)
 
 function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, speaking = false, onHear }: PromptSceneProps): ReactNode {
   const seed = task?.id ?? p.scene
@@ -149,7 +148,7 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
             <Thing id={p.thing} size={96} />
             <span className="tv-shop__tag">{formatMoney(p.priceOre)}</span>
           </span>
-          {p.paidOre !== undefined && <CoinRow ore={splitCoins(p.paidOre)} small />}
+          {p.paidOre !== undefined && <CoinRow ore={piecesForAmount(p.paidOre)} small />}
         </div>
       )
     case 'ruler':
@@ -241,25 +240,11 @@ function ShareScene({ total, recipients, thing }: { total: number; recipients: n
   )
 }
 
-/** A whole amount as the fewest coins and notes (used to picture paid money). */
-function splitCoins(ore: number): number[] {
-  const out: number[] = []
-  let left = ore
-  for (const d of [2000, 1000, 500, 200, 100, 50]) {
-    while (left >= d && out.length < 12) {
-      out.push(d)
-      left -= d
-    }
-  }
-  return out
-}
-
+/** Coins and notes as they lie (a note is drawn as one note: the 100-krone paid is never five 20-krone coins). */
 function CoinRow({ ore, small }: { ore: number[]; small?: boolean }) {
   return (
-    <div className={cx('tv-coins', small && 'tv-coins--small')}>
-      {ore.map((v, i) =>
-        isCoin(v) ? <Coin key={i} ore={v} mm={small ? 2 : ore.length > 6 ? 2.3 : 2.9} /> : <span key={i} className="tv-coins__note">{formatMoney(v)}</span>,
-      )}
+    <div className={cx('tv-coins', small ? 'tv-coins--small' : ore.length > 6 && 'tv-coins--many')}>
+      {ore.map((v, i) => (isPiece(v) ? <PieceArt key={i} piece={v} /> : <span key={i} className="tv-coins__amount">{formatMoney(v)}</span>))}
     </div>
   )
 }

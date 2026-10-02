@@ -6,6 +6,7 @@ import { DENOMINATORS, type Denominator } from '../../speech/fractions'
 import { shapeClip, solidClip } from '../../speech/nouns'
 import { SHAPE_IDS } from '../../art/materials/Shapes'
 import { SOLID_IDS } from '../../art/materials/Solids'
+import { pieceOfToken } from './pay/logic'
 
 // ─── Tokens ─────────────────────────────────────────────────────────────────
 
@@ -212,6 +213,18 @@ export function confirmSpeech(task: Task): SpeechPart[] {
 }
 
 // ─── Money and numbers on screen ────────────────────────────────────────────
+
+/**
+ * A card's label for assistive tech (never shown): money as amounts ('c5000' and 'c010000' are
+ * "50 kr." and "100 kr.", a coin set lists its pieces), numbers as on screen, the rest as it is.
+ */
+export function optionLabel(task: Pick<Task, 'answerType' | 'optionView'>, value: AnswerValue): string {
+  if (typeof value === 'number') return task.answerType === 'ore' || task.optionView === 'coin' ? formatMoney(value) : formatNumber(value)
+  const tokens = value.split('|')
+  const pieces = tokens.map(pieceOfToken)
+  if (pieces.every((p): p is number => p !== null)) return pieces.map(formatMoney).join(', ')
+  return value
+}
 
 /** Minus is always U+2212; numbers up to 9999 have no thousands separator (SPEC §3.1). */
 export function formatNumber(n: number): string {

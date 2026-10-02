@@ -9,7 +9,7 @@ import type { AnswerState } from '../../design/AnswerCard'
 import { useSpeech } from '../../design/speech'
 import { cx } from '../../design/cx'
 import { ObjectIcon } from '../../scenes/objects'
-import { setValue, splitTokens } from '../answers'
+import { optionLabel, setValue, splitTokens } from '../answers'
 import { CheckButton } from '../CheckButton'
 import { OptionFace } from '../faces'
 import type { FaceProps, TaskViewProps } from '../types'
@@ -63,7 +63,7 @@ export function MultiSelectView({ task, mode, given, onSubmit, onActivity }: Tas
             className="tv-multi__item"
             state={stateOf(o)}
             disabled={!input}
-            label={task.optionClips?.[i] ? speech.text(task.optionClips[i]) : String(o)}
+            label={task.optionClips?.[i] ? speech.text(task.optionClips[i]) : optionLabel(task, o)}
             data-option={String(o)}
             onClick={() => toggle(o)}
           >

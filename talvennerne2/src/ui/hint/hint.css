@@ -86,7 +86,9 @@
   flex-direction: column;
 }
 .tv-hv__coins {
+  --mm-note: 0.62px;
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   justify-content: center;
   gap: 4px;

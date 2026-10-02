@@ -152,6 +152,15 @@
 .tv-face__unitword.is-lg .tv-face__unittext {
   font-size: 36px;
 }
+/* A coin or note on a card (faces.tsx MoneyFace): scaled by pieceScale, never wider than the card */
+.tv-face__money {
+  display: inline-grid;
+  place-items: center;
+  max-width: 100%;
+}
+.tv-face__money .tv-piece {
+  max-width: 100%;
+}
 .tv-face__row {
   display: inline-flex;
   flex-wrap: wrap;

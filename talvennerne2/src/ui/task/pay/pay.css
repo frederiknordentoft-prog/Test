@@ -16,18 +16,8 @@
   max-width: 620px;
   margin: 0 auto;
 }
-.tv-piece {
-  display: block;
-  flex: none;
-}
-.tv-piece--coin {
-  width: calc(var(--d) * var(--mm));
-  height: auto;
-}
-.tv-piece--note {
-  width: calc(var(--d) * var(--mm-note));
-  height: auto;
-}
+/* .tv-piece (one coin or note in its real size) lives in src/ui/scenes/scenes.css: cards and the
+   shop scene draw pieces too, without this chunk. */
 
 /* The purse: one row when it fits, else two even rows (a phone has room for five 60 px coins) */
 .tv-pay__purse {

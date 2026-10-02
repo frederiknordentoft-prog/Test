@@ -6,7 +6,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { playSfx } from '../../../audio/sfx'
-import { Banknote, COIN_MM, Coin, NOTE_MM } from '../../../art/materials'
+import { COIN_MM, NOTE_MM } from '../../../art/materials'
 import type { CoinOre, NoteKr } from '../../../art/materials'
 import { coinClip, isDenomination } from '../../../speech/money'
 import { SpokenText } from '../../design/SpokenText'
@@ -20,16 +20,10 @@ import { inside, usePointerDrag } from '../usePointerDrag'
 import type { FaceProps, FaceSize, TaskViewProps } from '../types'
 import { MAX_TRAY, groupPieces, isCoinPiece, payValue, piecesOf, purseOf, rememberTray, rememberedTray } from './logic'
 import type { Piece } from './logic'
+import { PieceArt } from '../faces'
 import './pay.css'
 
-/** A coin or a note, sized in CSS from its real millimetres (--d) and the layout's scale. */
-export function PieceArt({ piece, className }: { piece: Piece; className?: string }) {
-  if (isCoinPiece(piece)) {
-    return <Coin ore={piece as CoinOre} className={cx('tv-piece tv-piece--coin', className)} style={{ '--d': COIN_MM[piece as CoinOre] } as CSSProperties} />
-  }
-  const kr = (piece / 100) as NoteKr
-  return <Banknote kr={kr} className={cx('tv-piece tv-piece--note', className)} style={{ '--d': NOTE_MM[kr] } as CSSProperties} />
-}
+export { PieceArt }
 
 /** The pieces in the tray (or on a face): one pile per kind, largest first, the coins overlapping. */
 export function Piles({ pieces, dragging }: { pieces: readonly Piece[]; dragging?: { piece: Piece; dx: number; dy: number } | null }) {

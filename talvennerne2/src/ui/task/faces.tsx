@@ -5,8 +5,8 @@
 // Task.optionClips.
 import type { CSSProperties, ReactNode } from 'react'
 import type { AnswerValue, ShapeId, SolidId, Task } from '../../engine/types'
-import { AnalogClock, COIN_VALUES, Coin, DigitalClock, Shape2D, Solid3D, Thing, THING_IDS } from '../../art/materials'
-import type { CoinOre } from '../../art/materials'
+import { AnalogClock, Banknote, COIN_MM, Coin, DigitalClock, NOTE_MM, Shape2D, Solid3D, Thing, THING_IDS } from '../../art/materials'
+import type { CoinOre, NoteKr } from '../../art/materials'
 import { SHAPE_IDS } from '../../art/materials/Shapes'
 import { SOLID_IDS } from '../../art/materials/Solids'
 import { HIGHLIGHT, MAT } from '../../art/materials/palette'
@@ -19,6 +19,8 @@ import { cx } from '../design/cx'
 import { ObjectIcon, LongArt, isLong } from '../scenes/objects'
 import type { FaceSize } from './types'
 import { formatMoney, formatNumber, splitTokens } from './answers'
+import { COIN_PIECES, NOTE_PIECES, fewestPieces, isCoinPiece, isPiece, pieceOfToken } from './pay/logic'
+import type { Piece } from './pay/logic'
 
 /** Picture size per face size, in CSS px. */
 export const FACE_PX: Record<FaceSize, number> = { sm: 46, md: 78, lg: 104 }
@@ -32,7 +34,6 @@ export interface OptionFaceProps {
 
 const isShape = (s: string): s is ShapeId => (SHAPE_IDS as readonly string[]).includes(s)
 const isSolid = (s: string): s is SolidId => (SOLID_IDS as readonly string[]).includes(s)
-const isCoin = (v: number): v is CoinOre => (COIN_VALUES as readonly number[]).includes(v)
 
 /** One answer value drawn the way the task's option view says. */
 export function OptionFace({ task, value, size, className }: OptionFaceProps) {
@@ -53,7 +54,7 @@ function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
   if (typeof value === 'number') {
     if (view === 'clock' || (task.answerType === 'minutes' && view !== 'clockDigital')) return <AnalogClock minutes={value} size={px * 1.05} />
     if (view === 'clockDigital') return <DigitalClock minutes={value} h24={task.modulo === 1440} size={px * 1.5} />
-    if (view === 'coin' && isCoin(value)) return <Coin ore={value} size={px * 0.95} />
+    if (view === 'coin' && isPiece(value)) return <MoneyFace piece={value} px={px} />
     if (task.answerType === 'ore' || view === 'amount') return <NumText small>{task.answerType === 'ore' ? formatMoney(value) : formatNumber(value)}</NumText>
     return (
       <NumText>
@@ -97,16 +98,12 @@ function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
       return <ObjectFace id={body} px={px} />
     case 'pat':
       return <PatternToken token={body} px={px} />
-    case 'c': {
-      const ore = Number(body)
-      if (isCoin(ore)) return <Coin ore={ore} size={px * 0.9} />
-      break
-    }
   }
   const ref = promptItem(task, value, px)
   if (ref) return ref
-  const coin = /^c(\d+)$/.exec(value)
-  if (coin && isCoin(Number(coin[1]))) return <Coin ore={Number(coin[1]) as CoinOre} size={px * 0.9} />
+  // a coin or note token ('c500', 'c5000', and repeats with leading zeros: 'c010000' is a 100-krone note)
+  const piece = pieceOfToken(value)
+  if (piece !== null) return <MoneyFace piece={piece} px={px} />
   const i = task.options.indexOf(value)
   const clip = i >= 0 ? task.optionClips?.[i] : undefined
   if (clip) return <SpokenText clip={clip} silent className="tv-face__word" />
@@ -135,6 +132,52 @@ function promptItem(task: Task, value: string, px: number): ReactNode | null {
     }
   }
   return null
+}
+
+// ─── Money ──────────────────────────────────────────────────────────────────
+// One coin or note in its real relative size (SPEC §11), shared by the pay view, the answer cards
+// (coinNames, payExact's coin sets), the coin-sum hint and the shop scene (the note the child paid
+// with). It lives here, not in the pay chunk, so a card draws a note without loading the purse.
+// Sizing is CSS: the piece's real millimetres (--d) times the scale of where it lies (--mm for
+// coins, --mm-note for notes; .tv-piece in task.css).
+
+/** A coin or a note, sized in CSS from its real millimetres (--d) and the layout's scale. */
+export function PieceArt({ piece, className }: { piece: Piece; className?: string }) {
+  if (isCoinPiece(piece)) {
+    return <Coin ore={piece as CoinOre} className={cx('tv-piece tv-piece--coin', className)} style={{ '--d': COIN_MM[piece as CoinOre] } as CSSProperties} />
+  }
+  const kr = (piece / 100) as NoteKr
+  return <Banknote kr={kr} className={cx('tv-piece tv-piece--note', className)} style={{ '--d': NOTE_MM[kr] } as CSSProperties} />
+}
+
+/** The largest coin (5 kr, 28.5 mm) and the largest note (500 kr, 155 mm). */
+const BIGGEST_COIN_MM = 28.5
+const BIGGEST_NOTE_MM = 155
+
+/**
+ * The scale for pieces on a face of `px` (FACE_PX): the 5-krone is 0.9 px across and the 500-krone
+ * note 0.95 px long, so a card's coins keep their real sizes among themselves (the 5-krone is the
+ * biggest silver coin, as the hint says), and so do its notes.
+ */
+export function pieceScale(px: number): CSSProperties {
+  return {
+    '--mm': `${((px * 0.9) / BIGGEST_COIN_MM).toFixed(3)}px`,
+    '--mm-note': `${((px * 0.95) / BIGGEST_NOTE_MM).toFixed(3)}px`,
+  } as CSSProperties
+}
+
+/** An amount as it lies on the counter: one note or coin when there is one, else the fewest pieces. */
+export function piecesForAmount(ore: number): Piece[] {
+  return fewestPieces(ore, [...COIN_PIECES, ...NOTE_PIECES]) ?? []
+}
+
+/** A coin or note on a card, in its real size among the card's other coins or notes. */
+function MoneyFace({ piece, px }: { piece: number; px: number }) {
+  return (
+    <span className="tv-face__money" style={pieceScale(px)}>
+      <PieceArt piece={piece} />
+    </span>
+  )
 }
 
 function ObjectFace({ id, px }: { id: string; px: number }) {

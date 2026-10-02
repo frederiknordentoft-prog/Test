@@ -7,6 +7,7 @@ import { AnswerCard } from '../../design/AnswerCard'
 import type { AnswerState } from '../../design/AnswerCard'
 import { useSpeech } from '../../design/speech'
 import { cx } from '../../design/cx'
+import { optionLabel } from '../answers'
 import { OptionFace } from '../faces'
 import type { FaceProps, TaskViewProps, ViewMode } from '../types'
 
@@ -38,7 +39,7 @@ export function ChoiceView({ task, mode, given, onSubmit, onActivity, speaking }
             state={cardState(mode, option, given)}
             speaking={speaking === i}
             disabled={mode === 'idle'}
-            label={clip ? speech.text(clip) : String(option)}
+            label={clip ? speech.text(clip) : optionLabel(task, option)}
             data-option={String(option)}
             onClick={() => {
               if (mode !== 'input') return
