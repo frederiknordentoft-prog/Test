@@ -287,6 +287,8 @@ const HOLE_SCALE = 2
 export const HOLE_THICK = 4
 /** Mindste areal (enheder²), der tæller (antialiasing i samlinger giver enkelte pixel). */
 export const HOLE_MIN_AREA = 1.5
+/** Streng tilstand: én lukket magenta-pixel er nok (review G1-r3, K1-tjekket). */
+export const HOLE_MIN_AREA_STRICT = 1 / HOLE_SCALE ** 2
 
 const isMagenta = (d: Uint8ClampedArray, i: number) => d[i] > 200 && d[i + 1] < 90 && d[i + 2] > 200
 
@@ -395,15 +397,19 @@ async function holesIn(svg: SVGSVGElement): Promise<{ area: number; thick: numbe
   return out
 }
 
-/** Lint for `holes`-arket: ingen sømme eller sprækker med baggrund inden for figurernes yderkontur. */
+/**
+ * Lint for `holes`-arket: ingen sømme eller sprækker med baggrund inden for figurernes yderkontur.
+ * En celle med data-holes-mode="strict" må slet ikke have lukket baggrund (kaninen, K1-beviset).
+ */
 async function lintHoles(res: LintResult): Promise<void> {
   for (const cell of document.querySelectorAll<HTMLElement>('[data-holes]')) {
     const svg = cell.querySelector<SVGSVGElement>('svg.rig')
     if (!svg) continue
     res.checks++
-    const bad = (await holesIn(svg)).filter((h) => h.area >= HOLE_MIN_AREA && h.thick < HOLE_THICK)
+    const strict = cell.dataset.holesMode === 'strict'
+    const bad = (await holesIn(svg)).filter((h) => (strict ? h.area >= HOLE_MIN_AREA_STRICT : h.area >= HOLE_MIN_AREA && h.thick < HOLE_THICK))
     for (const h of bad)
-      res.errors.push(`${cell.dataset.holes}: lukket søm/sprække med baggrund (${h.area.toFixed(1)} enh², ${h.thick.toFixed(1)} enh tyk) ved (${h.x.toFixed(0)},${h.y.toFixed(0)})`)
+      res.errors.push(`${cell.dataset.holes}: lukket ${h.thick < HOLE_THICK ? 'søm/sprække' : 'område'} med baggrund (${h.area.toFixed(1)} enh², ${h.thick.toFixed(1)} enh tyk) ved (${h.x.toFixed(0)},${h.y.toFixed(0)})`)
   }
 }
 

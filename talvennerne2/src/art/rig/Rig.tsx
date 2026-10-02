@@ -10,7 +10,7 @@
 // Animerede dele bruger pivot-mønsteret: <g transform="translate(px py)"><g class="a-…">lokalt</g></g>
 // med transform-origin 0 0. Kun transform og opacity animeres (rig.css). Humørets nøglepose sættes
 // som attribut i begge tilstande; i animeret tilstand svinger keyframes (0 % = posen) om den.
-import { useEffect, useId, useRef } from 'react'
+import { Fragment, cloneElement, isValidElement, useEffect, useId, useRef } from 'react'
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react'
 import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, SweatDrop, ThoughtDots, Zzz, around } from '../parts/house'
 import { OUTLINE, apply, modelAnchors, regionTransforms, worldAnchors } from './anchors'
@@ -315,6 +315,13 @@ export function Pivot({ at, cls, still, pose, children }: { at: Pt; cls: string;
 }
 
 /** Miljøet for en render: unikt id-præfiks og (i animeret DOM) refs til pupil-tracking. */
+/** Klipper en del til kroppens indre (uden ekstra element, når delen er ét element). */
+function clipToBody(el: ReactNode, on: boolean, id?: string): ReactNode {
+  if (!on || !el || !id) return el
+  const clip = `url(#${id})`
+  return isValidElement(el) && el.type !== Fragment ? cloneElement(el as ReactElement<{ clipPath?: string }>, { clipPath: clip }) : <g clipPath={clip}>{el}</g>
+}
+
 export interface RigEnv {
   uid: string
   gazeRef?: Ref<SVGGElement>
@@ -717,7 +724,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             )}
             {/* Krave/halsflæse: under kropstøjet og hagens skygge. Med kropstøj klippes den til kroppen, så
                 kravens buer aldrig titter frem over trøjens skuldre (review G1-r3, C1). */}
-            {parts.Ruff && (bodyWorn ? <g clipPath={`url(#${ids.bodyClip})`}>{parts.Ruff(ctx(swBody))}</g> : parts.Ruff(ctx(swBody)))}
+            {clipToBody(parts.Ruff?.(ctx(swBody)), !!bodyWorn, ids.bodyClip)}
             {/* Hovedets kastede skygge på kroppen lige under hagen (dybde, samme regel på alle stadier). */}
             {!silhouette && <path d={chinShadow(a, R)} fill={pal.shade} clipPath={`url(#${ids.bodyClip})`} />}
             {/* Guld: et smalt glansbånd på kroppen. */}

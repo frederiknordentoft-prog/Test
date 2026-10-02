@@ -100,12 +100,12 @@ const polys = (w: readonly Vec[] | readonly (readonly Vec[])[]): (readonly Vec[]
 /**
  * Artens `PawBack`: fylder lommerne mellem arm, hoved, øre, manke, hale og krop i pelsens farve, så der
  * aldrig ses baggrund inde i figuren (huller-lint, review G1-r3). `all` gælder alle racer og stadier,
- * `byBreed` pr. race og stadie. Polygonerne er lommernes udvidede hylstre over alle animationsbilleder,
+ * `byBreed` (en eller flere tabeller) pr. race og stadie. Polygonerne er lommernes udvidede hylstre over alle animationsbilleder,
  * kontrolleret så fyldet aldrig ses mod baggrunden.
  */
-export function pawWebs(all: PawWebs, byBreed: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {}): SidePart {
+export function pawWebs(all: PawWebs, ...byBreed: Partial<Record<string, Partial<Record<Stage, PawWebs>>>>[]): SidePart {
   return ({ pal, mood, side, breed, stage }) => {
-    const webs = [all[mood]?.[side], byBreed[breed]?.[stage]?.[mood]?.[side]].flatMap((w) => (w ? polys(w) : []))
+    const webs = [all[mood]?.[side], ...byBreed.map((t) => t[breed]?.[stage]?.[mood]?.[side])].flatMap((w) => (w ? polys(w) : []))
     return webs.length ? <path d={join(...webs.map((w) => poly(w)))} fill={pal.fur} /> : null
   }
 }

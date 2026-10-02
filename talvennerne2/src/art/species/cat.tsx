@@ -399,9 +399,10 @@ function makeRuff(rx: number, ry: number, dy: number, count: number, depth = 0.1
   }
 }
 
+/** Regnbuekraven ligger på brystfladen inden for armene (klippet til kroppen; review G1-r3, C3). */
 const RainbowCollar: Part = ({ pal, sw, ids, colorway, a, stage }) =>
   colorway === 'rainbow' && !pal.silhouette ? (
-    <path d={scallop(100, a.neck.y + 6 * ruffK(stage), 36 * ruffK(stage), 12 * ruffK(stage), 11, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" />
+    <path d={scallop(100, a.neck.y + 6 * ruffK(stage), 25 * ruffK(stage), 12 * ruffK(stage), 8, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" clipPath={`url(#${ids.bodyClip})`} />
   ) : null
 
 /** Kindtotter: strøgne spidser ud fra kinderne, klippet "uden for hovedet" (sømløse). */
