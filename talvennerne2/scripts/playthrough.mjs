@@ -10,6 +10,7 @@
 //    parent dashboard and a whole round of every task kind.
 //
 //   npm run build && npm run playthrough          (PLAYTHROUGH_ONLY=prod|flows runs one part)
+//   PLAYTHROUGH_ONLY=prod PLAYTHROUGH_DIST=<dir> node scripts/playthrough.mjs   (a fetched live copy)
 import { spawn } from 'node:child_process'
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
@@ -18,7 +19,8 @@ import { fileURLToPath } from 'node:url'
 import { launch } from './browser.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
-const DIST = join(ROOT, 'dist')
+// PLAYTHROUGH_DIST: another copy of the build, e.g. the files fetched back from the live site (A7)
+const DIST = process.env.PLAYTHROUGH_DIST ?? join(ROOT, 'dist')
 const PREFIX = '/Test/talvennerne2/'
 const PROD_PORT = 4321
 const DEV_PORT = 4322
