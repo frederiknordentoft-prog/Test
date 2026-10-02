@@ -714,8 +714,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             {!silhouette && shade.body && (
               <path d={outside(shade.body)} fill={pal.shade} fillRule="evenodd" clipPath={`url(#${ids.bodyClip})`} />
             )}
-            {/* Krave/halsflæse: under kropstøjet og hagens skygge. */}
-            {parts.Ruff?.(ctx(swBody))}
+            {/* Krave/halsflæse: under kropstøjet og hagens skygge. Med kropstøj klippes den til kroppen, så
+                kravens buer aldrig titter frem over trøjens skuldre (review G1-r3, C1). */}
+            {parts.Ruff && (bodyWorn ? <g clipPath={`url(#${ids.bodyClip})`}>{parts.Ruff(ctx(swBody))}</g> : parts.Ruff(ctx(swBody)))}
             {/* Hovedets kastede skygge på kroppen lige under hagen (dybde, samme regel på alle stadier). */}
             {!silhouette && <path d={chinShadow(a, R)} fill={pal.shade} clipPath={`url(#${ids.bodyClip})`} />}
             {/* Guld: et smalt glansbånd på kroppen. */}
