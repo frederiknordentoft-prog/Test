@@ -1,9 +1,11 @@
 // Milepæl · ansigt (niveau 5): hjertebriller. To store hjerter med farvet stel sidder om øjnene, og
-// glasset er kun tonet (≤ 25 % opacitet, fit-regel 6), så øjnene altid ses igennem. Hjerterne regnes ud
-// fra bærerens øjenankre og stadiets øjenskala (babyens øjne er større): de omslutter øjet med luft til,
-// at pupillerne kan kigge en anelse rundt, så stellet aldrig dækker øjnene. Højlysene sidder i hjerternes
-// øverste ydre bue uden for øjnene, og et lille glimt på venstre hjerte gør dem til en belønning. Broen
-// hviler på næseryggen, og stængerne forsvinder mod hovedets sider. I butikken er glassene fyldt.
+// glasset er klart med kun 15 % tone (review G1-r4, T2), så pupiller og højlys ses lige så tydeligt som
+// uden briller, også på den mørkeste pels. Hjerterne regnes ud fra bærerens øjenankre og stadiets
+// øjenskala (babyens øjne er større): de omslutter øjet med luft til, at pupillerne kan kigge en anelse
+// rundt, så stellet aldrig dækker vipper og pupiller. På stadie 1 er hjerterne 13 % mindre, så spidserne
+// ikke når ned til munden. Højlysene sidder i hjerternes øverste ydre bue uden for øjnene, og et lille
+// glimt på venstre hjerte gør dem til en belønning. Broen hviler på næseryggen, og stængerne forsvinder
+// mod hovedets sider. I butikken er glassene fyldt.
 import { STAGE_XF } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'
 import { blob, ellipse, join, outside, quad, spline, star, symmetric } from '../../rig/shapes'
@@ -21,8 +23,10 @@ const HEART = symmetric([
 ])
 /** Luft (modelenheder) mellem øjet og glassets kant: blikket flytter pupillen op til 3 enheder. */
 const GAZE = 2.9
-/** Det tonede glas over øjnene (fit-reglen tillader højst 25 %). */
-const TINT = 0.24
+/** Det klare glas over øjnene (review G1-r4, T2: højst 20 % tone; fit-reglen tillader 25 %). */
+const TINT = 0.15
+/** Babyens hjerter er mindre (review G1-r4, T2), så spidsen ikke når munden. */
+const BABY = 0.87
 
 const front: ItemArt = ({ c, sw, a, local, stage, solo, ids }) => {
   const es = STAGE_XF[stage].eye
@@ -32,12 +36,15 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo, ids }) => {
   const k = Math.hypot(R.x - L.x, R.y - L.y) / Math.hypot(a.eyeR.x - a.eyeL.x, a.eyeR.y - a.eyeL.y)
   // Hjertets enheder: øjet plus blikkets luft plus en halv stelbredde.
   const half = sw * 0.85
-  const ux = a.eyeRx * es * k + GAZE * k + half
-  const uy = a.eyeRy * es * k + GAZE * k + half
+  const baby = stage === 1 ? BABY : 1
+  const ux = (a.eyeRx * es * k + GAZE * k + half) * baby
+  const uy = (a.eyeRy * es * k + GAZE * k + half) * baby
   // Hjerterne må højst røre hinanden midtpå (tætsiddende øjne): så bliver broen et lille knudepunkt.
-  // De klemmes aldrig mere, end at de lukkede øjnes vipper (1,35 · øjets bredde) stadig går fri.
+  // De klemmes aldrig mere, end at de lukkede øjnes vipper (1,35 · øjets bredde) stadig går fri – heller
+  // ikke babyens mindre hjerter.
   const gap = Math.abs(R.x - L.x)
-  const sx = Math.min(ux, Math.max(gap / 2 / 1.22, (a.eyeRx * es * k * 1.35 + sw * 1.6) / 1.18))
+  const lashes = (a.eyeRx * es * k * 1.35 + sw * 1.6) / 1.18
+  const sx = Math.max(lashes, Math.min(ux, Math.max(gap / 2 / 1.22, lashes)))
   const heart = (cx: number, cy: number): Vec[] => HEART.map(([x, y]) => [cx + x * sx, cy + y * uy] as Vec)
   const hl = heart(L.x, L.y)
   const hr = heart(R.x, R.y)

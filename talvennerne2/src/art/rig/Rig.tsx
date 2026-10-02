@@ -20,8 +20,9 @@ import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
 import { about, applyMat, chain, invert, rotate as rotMat, scale as scaleMat, translate as moveMat, xfMat } from './hold'
 import { mixHex } from './oklch'
 import { INK, MAGIC, derivePalette, itemPalette, silhouettePalette } from './palette'
-import { ellipse, fmt3, join, lune, n, outside, rect, tf } from './shapes'
-import { bentSleeve } from './sleeve'
+import { ellipse, fmt3, join, lune, n, outside, rect, spline, tf } from './shapes'
+import type { Vec } from './shapes'
+import { bentSleeve, longArm } from './sleeve'
 import type {
   AnchorSet, BreedDef, BreedId, Box, ColorwayDef, ColorwayId, FaceStyle, FigureBounds, FitResult, HandHold, ItemDef,
   MagicColorwayId, Mood, Outfit, Palette, PartCtx, PawPose, Pose, PoseXf, Pt, RigIds, SidePart, Slot,
@@ -377,6 +378,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const holeClipId = `${uid}o`
   const hornClipId = `${uid}n`
   const sleeveClipId = `${uid}v`
+  const scarfClipId = `${uid}k`
 
   const a = modelAnchors(def, breed)
   const R = regionTransforms(a, stage)
@@ -477,7 +479,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             hat,
             horn: slot === 'head' ? (hornHole?.local ?? null) : null,
             restroke: (color) => (
-              <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
+              <path d={slot === 'body' && sleeveSeams ? join(bodyD, sleeveSeams) : bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" strokeLinecap={slot === 'body' && sleeveSeams ? 'round' : undefined} />
             ),
           })}
         </g>
@@ -485,21 +487,50 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     )
   }
 
+  const upL = !!pawPose(pose.pawL).up && !!parts.PawUp
+  const upR = !!pawPose(pose.pawR).up && !!parts.PawUp
+
   // Ærmer (kropstøj med ærmer på arter, der har en armkontur). Tegnes på hvilende poter.
   const sleeveArt = bodyWorn?.item.art.sleeve
   const limb = parts.limb
+  // Lodrette forben med skulderleddet langt under hovedet (kat, hvalp, hest, enhjørning; review G1-r4, T5):
+  // ærmet trækkes op til skulderen under hovedets kant (se sleeve.ts). Hestens ærme er ca. 20 % smallere
+  // forneden.
+  const bodyFit = bodyWorn ? fitItem(bodyWorn.item, a, def) : null
+  const longTop = a.neck.y - a.shoulderL.y - 4
+  const long = sleeveArt && limb && limb.rot === 0 && longTop < -20
+    ? longArm(longTop, limb.cuff.y, (limb.cuff.half - 0.4) * (def.family === 'equine' ? 1.25 : 1.06), limb.cuff.half - 0.4)
+    : null
+  // Skulderleddet i trøjens lokale koordinater, så ærmets striber ligger i trøjens højde.
+  const armOrigin = (side: 'L' | 'R'): Pt => {
+    const at = side === 'L' ? a.shoulderL : a.shoulderR
+    return { x: (at.x - bodyFit!.x) / bodyFit!.scale, y: (at.y - bodyFit!.y) / bodyFit!.scale }
+  }
+  // Overdelens sidelinjer (modelrummet, kun på hvilende arme): de streges sammen med kropskonturen i
+  // trøjens `restroke`, så de ligger i trøjens eget stof (under halsudskæringen) og koster ingen elementer.
+  const sleeveSeams = long
+    ? join(
+        ...(['L', 'R'] as const)
+          .filter((side) => !(side === 'L' ? upL : upR))
+          .flatMap((side) => {
+            const at = side === 'L' ? a.shoulderL : a.shoulderR
+            const m = side === 'L' ? 1 : -1
+            return long.seams.map((line) => spline(line.map(([x, y]) => [at.x + m * x, at.y + y] as Vec)))
+          }),
+      )
+    : ''
   const sleeve = (side: 'L' | 'R') => {
     if (!sleeveArt || !limb || !bodyWorn) return null
     const c = itemPalette(bodyWorn.item.colorways[bodyWorn.colorway ?? 0], silhouette)
     return (
       <g data-item={bodyWorn.item.id} data-slot="body" data-layer={`sleeve-${side}`} transform={limb.rot ? `rotate(${n(limb.rot)})` : undefined}>
-        {sleeveArt({ c, sw: swBody, sleeve: limb.sleeve(stage), cuff: limb.cuff, clipId: sleeveClipId, stage })}
+        {sleeveArt({
+          c, sw: swBody, sleeve: limb.sleeve(stage), cuff: limb.cuff, clipId: sleeveClipId, stage, body: def.body,
+          long: long ? { d: long.d, s: bodyFit!.scale, origin: armOrigin(side) } : undefined,
+        })}
       </g>
     )
   }
-
-  const upL = !!pawPose(pose.pawL).up && !!parts.PawUp
-  const upR = !!pawPose(pose.pawR).up && !!parts.PawUp
   // En løftet pote "bag hovedet" tegnes i kroppens lag, så hovedet dækker spidsen.
   const behindL = upL && !!pawPose(pose.pawL).behind
   const behindR = upR && !!pawPose(pose.pawR).behind
@@ -541,9 +572,14 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     return {
       local: (p) => applyMat(fromWorld, p),
       grip: applyMat(toWorld, { x: 0, y: 0 }),
-      head: { x: hc.x, y: hc.y, rx: a.headRx * hs, ry: a.headRy * R.head.s * (pose.head?.sy ?? pose.head?.sx ?? 1), s: hs, mouth: applyMat(headM, a.mouth), box: hbox },
+      head: {
+        x: hc.x, y: hc.y, rx: a.headRx * hs, ry: a.headRy * R.head.s * (pose.head?.sy ?? pose.head?.sx ?? 1), s: hs, mouth: applyMat(headM, a.mouth), box: hbox,
+        eyes: [applyMat(headM, a.eyeL), applyMat(headM, a.eyeR)],
+        eye: { rx: a.eyeRx * R.xf.eye * hs, ry: a.eyeRy * R.xf.eye * hs },
+      },
       fx: fxOn ? applyMat(figM, fxHead) : null,
       front,
+      mood,
     }
   }
 
@@ -656,6 +692,17 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   } as CSSProperties
 
   const bodyRegion = `translate(${n(R.body.tx)} ${n(R.body.ty)}) scale(${fmt3(R.body.s)})`
+  // Jubel: halsgenstanden tegnes efter de løftede arme og klippes til "uden for hovedet" (hovedets kontur
+  // ført fra hovedets ramme ind i kroppens), så den ligger under hagen som ellers, men oven på armenes rod.
+  const scarfOver =
+    mood === 'cheer' && upL && upR && !behindL && !behindR && worn('neck')
+      ? {
+          head:
+            `${aboutGround({ sx: 1 / (pose.body?.sx ?? 1), sy: 1 / (pose.body?.sy ?? pose.body?.sx ?? 1) }) ?? ''} ` +
+            `scale(${fmt3(1 / R.body.s)}) translate(${n(R.neckWorld.x - R.body.tx)} ${n(R.neckWorld.y - R.body.ty)}) ` +
+            `scale(${fmt3(R.head.s)}) ${tf(pose.head ?? {}) ?? ''} translate(${n(-a.neck.x)} ${n(-a.neck.y)})`,
+        }
+      : null
   const sleeveClip = bodyWorn && sleeveArt && limb && (!upL || !upR)
 
   return (
@@ -700,7 +747,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         )}
         {sleeveClip && (
           <clipPath id={sleeveClipId}>
-            <path d={limb!.sleeve(stage)} />
+            <path d={long ? long.d : limb!.sleeve(stage)} />
           </clipPath>
         )}
         {!silhouette && <ShadowGradient id={shadowId} />}
@@ -774,8 +821,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             {/* 7–8 · hånd + poter (hvilende) */}
             {(!upL || behindL) && paw('L')}
             {(!upR || behindR) && paw('R')}
-            {/* 9 · neck-item */}
-            {renderItem('neck', 'front', R.body.s)}
+            {/* 9 · neck-item (i jubel først efter de løftede arme, se nedenfor) */}
+            {!scarfOver && renderItem('neck', 'front', R.body.s)}
             {renderItem('back', 'back', R.body.s)}
           </g>
         </g>
@@ -840,6 +887,16 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             potens egen transform (ingen ekstra grupper; de ånder ikke med, hvad ingen kan se på en løftet pote). */}
         {upL && !behindL && paw('L', `${bodyRegion} ${aboutGround(pose.body) ?? ''} `)}
         {upR && !behindR && paw('R', `${bodyRegion} ${aboutGround(pose.body) ?? ''} `)}
+        {/* Jubel: halsgenstanden (tørklædet) ligger oven på de løftede armes rod under hagen, så ærmerne
+            og rygsækkens stropper ikke danner et X over brystet (review G1-r4, T10). */}
+        {scarfOver && (
+          <g transform={`${bodyRegion} ${aboutGround(pose.body) ?? ''}`}>
+            <clipPath id={scarfClipId}>
+              <path d={outside(headD)} transform={scarfOver.head} clipRule="evenodd" />
+            </clipPath>
+            {renderItem('neck', 'front', R.body.s, scarfClipId)}
+          </g>
+        )}
 
         {/* 17 · fx (verdensrum; hvert fx-element bærer data-part="fx") */}
         {showFx && mood === 'think' && <ThoughtDots at={fxHead} s={R.head.s} sw={OUT} animated={animated} />}

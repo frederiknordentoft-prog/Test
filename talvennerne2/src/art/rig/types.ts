@@ -531,7 +531,9 @@ export interface ItemArtProps {
   ids: RigIds
   /**
    * Kropstøj (fit-regel 3): bærerens kropskontur tegnet igen i genstandens konturfarve, allerede
-   * transformeret til genstandens lokale ramme. Genstanden klipper den selv til sit eget område.
+   * transformeret til genstandens lokale ramme. Genstanden klipper den selv til sit eget område. På lodrette
+   * forben med ærmer følger ærmernes sidelinjer fra skulderen ned til skulderleddet med (review G1-r4, T5),
+   * så de ligger i trøjens eget stof, og striberne fortsætter hen over ærmet.
    */
   restroke: (color?: string) => ReactNode
   /**
@@ -574,11 +576,24 @@ export interface HandHold {
    * (mulen på heste og enhjørninger rækker under hovedets ellipse) og hovedregionens grænseboks
    * (ører, manke og hængeører med).
    */
-  head: { x: number; y: number; rx: number; ry: number; s: number; mouth: Pt; box: Box }
+  head: {
+    x: number
+    y: number
+    rx: number
+    ry: number
+    s: number
+    mouth: Pt
+    box: Box
+    /** Øjnenes centre (venstre, højre) og halvakser i verdensrummet, så en genstand kan gå fri af dem. */
+    eyes: readonly [Pt, Pt]
+    eye: { rx: number; ry: number }
+  }
   /** Tankeprikkernes eller Z'ernes anker i verdensrummet, når humøret viser dem; ellers null. */
   fx: Pt | null
   /** Poten er løftet og tegnes foran hovedet (jubel, vink, tænker); hvilende og bag hovedet: false. */
   front: boolean
+  /** Humøret, så en genstand kan holdes særligt (slikkepinden ved kinden i "tænker", review G1-r4, T3). */
+  mood: Mood
 }
 
 /** Hornhul i en hat (lokale enheder): centrum `lift` over hornets rod; riggen skjuler hornet under hullet. */
@@ -598,6 +613,15 @@ export interface SleeveProps {
   /** Id på klippet med ærmets form (defineret én gang pr. rig; begge ærmer deler det). */
   clipId: string
   stage: Stage
+  body: BodyKind
+  /**
+   * Langt ærme på et lodret forben (review G1-r4, T5): underdelen fra skulderleddet til manchetten som én
+   * åben path (fyldet lukkes implicit, konturen er åben foroven; klippet `clipId` har samme form), samt
+   * skulderleddet i genstandens lokale koordinater (`origin`) og genstandens skala (`s`), så striberne
+   * kan lægges i samme højde som på trøjen: armens y = s · (genstandens y − origin.y). Overdelen er
+   * `sleeveSeams` i trøjens eget lag.
+   */
+  long?: { d: string; s: number; origin: Pt }
 }
 export type SleeveArt = (p: SleeveProps) => ReactNode
 

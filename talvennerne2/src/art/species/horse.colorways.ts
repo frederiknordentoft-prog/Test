@@ -60,15 +60,16 @@ export const HORSE_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { rainbow
     fur: '#E2A246',
     overrides: { mane: '#FFF6E6', muzzle: '#F4D29C', hoof: '#9E7448', inner: '#F2A99A', outline: '#87561C', iris: '#8A5420' },
   },
-  // Regnbuehesten (review G1-r2, H3 og G1-r3): lys mynte med grøn kontur – langt fra isabel, fjordens
-  // creme og enhjørningens lilla-hvide palet; regnbuen ligger kun i manke og hale som fire flade striber.
+  // Regnbuehesten (review G1-r2, H3; G1-r4, H3-regression): varm creme med brun kontur, så den aldrig
+  // låner enhjørningens mintgrønne eller lilla-hvide palet (lysere og varmere end isabels sand og fjordens
+  // creme); regnbuen ligger kun i manke og hale som fire flade striber.
   rainbow: {
     id: 'rainbow',
     name: 'regnbue',
-    fur: '#D6F1E4',
+    fur: '#FFEFD8',
     overrides: {
-      outline: '#3E7A69', shade: '#BCE3D1', belly: '#F0FBF6', muzzle: '#E8F8F0', hoof: '#6E9C8B', inner: '#F4B5B0',
-      iris: '#2F7563', nose: '#E07F86',
+      outline: '#8A5636', shade: '#F1DABB', belly: '#FFF8EC', muzzle: '#F9DDC2', hoof: '#A7774F', inner: '#F2B6A4',
+      iris: '#7A4A2A', nose: '#D9826A',
     },
     gradient: RAINBOW_STOPS,
   },

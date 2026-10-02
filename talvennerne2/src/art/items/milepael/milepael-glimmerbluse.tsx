@@ -70,9 +70,10 @@ const blouse = (kind: BodyKind): ItemArt => ({ c, sw, ids, restroke, solo, stage
 }
 
 /** Ærmet: blusens stof og en flæsemanchet over poten. */
-const sleeve: SleeveArt = ({ c, sw, sleeve: d, cuff }) => (
+const sleeve: SleeveArt = ({ c, sw, sleeve: d, cuff, long }) => (
   <>
-    <path d={d} fill={c.main} stroke={c.outline} strokeWidth={sw} strokeLinejoin="round" />
+    {/* Langt ærme (lodrette forben, review G1-r4, T5): åbent foroven, så det går op i blusen. */}
+    <path d={long ? long.d : d} fill={c.main} stroke={c.outline} strokeWidth={sw} strokeLinejoin="round" strokeLinecap={long ? "round" : undefined} />
     <path d={scallop(0, cuff.y, cuff.half + 0.6, 3.2, 8, 0.62, 0)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.8} strokeLinejoin="round" />
   </>
 )
