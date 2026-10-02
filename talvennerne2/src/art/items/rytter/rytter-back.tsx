@@ -19,6 +19,8 @@ interface Bags {
   h: number
 }
 const WORN: Bags = { x: 60, y: -1, w: 28, h: 36 }
+/** Taskernes højde pr. kropsform: på de runde kroppe lidt lavere, så de hænger ved hoften og ikke ved armene. */
+const WORN_Y: Record<BodyKind, number> = { round: 4, pear: 4, tall: -1 }
 const SOLO: Bags = { x: 19.5, y: 6, w: 30, h: 38 }
 
 /** Begge tasker (venstre og højre) som samlede stier: krop, skygge, klap, rem, spænde og syning. */
@@ -66,9 +68,9 @@ function safeHalf(p: Pick<ItemArtProps, 'a' | 'local' | 'stage'>): number {
   return Math.min(-l.x, r.x)
 }
 
-const front: ItemArt = ({ c, sw, solo, a, local, stage }) => {
+const front: ItemArt = ({ c, sw, solo, a, local, stage, body }) => {
   // Mindst halvdelen af hver taske ses ved siden af kroppen (review G1-r4, B1), men aldrig uden for zonen.
-  const b = bags(solo ? SOLO : { ...WORN, x: Math.min(WORN.x, safeHalf({ a, local, stage }) - WORN.w / 2 - 1.2 - sw) })
+  const b = bags(solo ? SOLO : { ...WORN, y: WORN_Y[body], x: Math.min(WORN.x, safeHalf({ a, local, stage }) - WORN.w / 2 - 1.2 - sw) })
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
   return (
     <>

@@ -48,18 +48,22 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   const hc = local(a.headCenter)
   const hw = a.headRx * 0.93 * k
   const ty = (L.y + R.y) / 2 - 0.22 * ry
-  // Båndet starter under stellets yderkant, så dets runde ende aldrig rækker ind mod de lukkede øjnes vipper.
-  // Båndet går altid udad: sidder glasset helt ude ved hovedets side (babyens store øjne), bliver det en
-  // kort stump, der aldrig bøjer tilbage hen over glasset.
+  // Båndet starter under stellets yderkant, så dets runde ende aldrig rækker ind mod de lukkede øjnes vipper,
+  // og løber altid udad til hovedets side. Sidder glasset helt ude ved siden (babyens store øjne), er der
+  // ikke plads: så ses kun nitterne på stellet, og båndet bøjer aldrig tilbage hen over glasset.
   const sx = rx + sw * 0.9
   const x0 = lx - sx
-  const x1 = Math.min(hc.x - hw * 0.93, x0 - 3 * k)
-  const x2 = Math.min(hc.x - hw, x1 - 2.4 * k)
-  const strap = join(
-    spline([[x0, ty], [x1, ty - 2.6 * k], [x2, ty - 4.8 * k]]),
-    // Højre side spejlet om midten mellem glassene.
-    spline([[lx + rcx - x0, ty], [lx + rcx - x1, ty - 2.6 * k], [lx + rcx - x2, ty - 4.8 * k]]),
-  )
+  const xEnd = hc.x - hw
+  const room = x0 - xEnd
+  const strapOn = room > 4 * k
+  const x1 = x0 - room * 0.55
+  const mirror = (x: number) => lx + rcx - x
+  const strap = strapOn
+    ? join(
+        spline([[x0, ty], [x1, ty - 2.6 * k], [xEnd, ty - 4.8 * k]]),
+        spline([[mirror(x0), ty], [mirror(x1), ty - 2.6 * k], [mirror(xEnd), ty - 4.8 * k]]),
+      )
+    : ''
   // Hvidt højlys: en skrå stribe i glassets øverste ydre hjørne og en prik forneden mod næsen, begge uden
   // for øjet.
   const glare = join(
@@ -75,12 +79,12 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
       ),
     ),
   )
-  const studs = join(...[lx - sx, rcx + sx].map((x) => circle(x, ty, 2.2 * k)))
+  const studs = join(...(strapOn ? [x0, mirror(x0)] : [lx - rx, rcx + rx]).map((x) => circle(x, ty, 2.2 * k)))
   const round = { strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <>
-      <path d={strap} fill="none" stroke={c.accentOutline} strokeWidth={sw * 2.7} {...round} />
-      <path d={strap} fill="none" stroke={c.accent} strokeWidth={sw * 1.5} {...round} />
+      {strapOn && <path d={strap} fill="none" stroke={c.accentOutline} strokeWidth={sw * 2.7} {...round} />}
+      {strapOn && <path d={strap} fill="none" stroke={c.accent} strokeWidth={sw * 1.5} {...round} />}
       <path d={rings} fill={c.trim} opacity={solo ? SOLO_TINT : TINT} />
       <path d={glare} fill={c.highlight === 'none' ? 'none' : WHITE} opacity={0.85} />
       <path d={join(rings, bridge)} fill="none" stroke={c.outline} strokeWidth={sw * 2.2} {...round} />

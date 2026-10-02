@@ -12,7 +12,7 @@ import type { Vec } from '../../rig/shapes'
 import type { AnchorSet, ItemArt, ItemArtProps, ItemDef, Stage } from '../../rig/types'
 
 /** Kåbens halve bredde ved skuldrene og forneden (højre side breder sig en anelse mere). */
-const TOP_W = 30
+const TOP_W = 40
 const LEFT_W = 82
 const RIGHT_W = 86
 /** Hermelinskantens bredde uden om fløjlet. */
@@ -42,15 +42,15 @@ function outline(top: number, bot: number, lift: number, inset = 0, sx = 1): Vec
   return [
     [0, top + inset],
     [TOP_W - inset * 0.6, top + 2 + inset],
-    [R * 0.66, top + h * 0.34],
-    [R * 0.92, top + h * 0.7 - lift * 0.4],
+    [R * 0.84, top + h * 0.3],
+    [R * 0.97, top + h * 0.66 - lift * 0.4],
     [R + 1 - inset * 0.3, bot - lift - inset * 0.6],
     [R * 0.6, bot - lift * 0.3 - inset * 0.8],
     [0, bot - inset],
     [-L * 0.6, bot - inset * 0.8],
     [-L - inset * 0.3, bot - lift * 0.3 - inset * 0.6],
-    [-L * 0.92, top + h * 0.7],
-    [-L * 0.66, top + h * 0.34],
+    [-L * 0.97, top + h * 0.66],
+    [-L * 0.84, top + h * 0.3],
     [-TOP_W + inset * 0.6, top + 2 + inset],
   ]
 }
