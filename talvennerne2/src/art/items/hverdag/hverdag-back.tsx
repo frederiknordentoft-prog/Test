@@ -10,13 +10,13 @@ import type { Vec } from '../../rig/shapes'
 import type { BodyKind, ItemArt, ItemDef } from '../../rig/types'
 
 /** Sækken bag kroppen (venstre halvdel, top → bund på midterlinjen). */
-const BAG = symmetric([[0, -44], [-30, -43], [-51, -38], [-58.5, -24], [-59.5, 6], [-57, 22], [-44, 28], [0, 29]])
+const BAG = symmetric([[0, -44], [-30, -43], [-50, -38], [-57, -24], [-58, 6], [-55.5, 22], [-43, 28], [0, 29]])
 /** Sidelommerne: buttede lommer ud over sækkens sider forneden (inden for silhuetten + 6 på alle arter). */
 const SIDE_POCKETS = join(
-  blob([[-55, -4], [-63.5, -2], [-66.5, 10], [-63.5, 21], [-55, 23], [-51, 10]], 0.9),
-  blob([[55, -4], [63.5, -2], [66.5, 10], [63.5, 21], [55, 23], [51, 10]], 0.9),
+  blob([[-53.5, -4], [-61, -2], [-63.5, 10], [-61, 21], [-53.5, 23], [-50, 10]], 0.9),
+  blob([[53.5, -4], [61, -2], [63.5, 10], [61, 21], [53.5, 23], [50, 10]], 0.9),
 )
-const POCKET_SEAMS = join(spline([[-59, 4], [-64, 5.5]]), spline([[59, 4], [64, 5.5]]))
+const POCKET_SEAMS = join(spline([[-57, 4], [-61.5, 5.5]]), spline([[57, 4], [61.5, 5.5]]))
 
 /** Alene (butik): en højere sæk forfra med hank, sidelommer og stropperne, der buer ud i siderne. */
 const SOLO_BAG = symmetric([[0, -48], [-22, -47], [-35, -39], [-40, -20], [-40, 18], [-36, 29], [-22, 33], [0, 33.5]])
@@ -77,7 +77,7 @@ const bag: ItemArt = ({ c, sw, solo }) => {
       <path d={SIDE_POCKETS} fill={c.trim} {...stroke} />
       <path d={POCKET_SEAMS} fill="none" stroke={c.trimOutline} strokeWidth={sw * 0.55} strokeLinecap="round" />
       <path d={blob(BAG, 0.55)} fill={c.main} {...stroke} />
-      <path d={lune(0, -7, 60, 35, 4.5, -5, 100)} fill={c.mainShade} />
+      <path d={lune(0, -7, 58, 35, 4.5, -5, 100)} fill={c.mainShade} />
       <path d={ellipse(-50, -30, 4.5, 2.6, -30)} fill={c.highlight} />
     </>
   )

@@ -38,8 +38,8 @@ function place(hold: HandHold): Place {
   const fc = { x: H.x, y: (top + bottom) / 2 }
   const fr = { x: H.rx + 2 * u, y: (bottom - top) / 2 + 2 * u }
   const reach = L.handle + L.collar + L.ring
-  // Ringens boks i verdensrummet, som kontaktarkets lint måler den i den drejede ramme (√2 · r).
-  const box = L.ring * u * 1.42 + 2
+  // Ringens boks i verdensrummet (luppen tegnes i en ramme, der er drejet tilbage til verdensrummet).
+  const box = L.ring * u + 2.6
   const clear = (deg: number) => {
     const t = (deg * Math.PI) / 180
     const lens = { x: g.x + Math.cos(t) * reach * u, y: g.y + Math.sin(t) * reach * u }
@@ -70,36 +70,37 @@ function solo(handRot: number): Place {
 const front: ItemArt = ({ c, sw, a, hold }) => {
   const P = hold ? place(hold) : solo(a.handRot)
   const { at, k, g, d, u } = P
-  // Punkter langs luppens akse (verdensrummet) ført ind i den lokale ramme.
-  const along = (s: number): Vec => {
-    const q = at({ x: g.x + d.x * s * u, y: g.y + d.y * s * u })
-    return [q.x, q.y]
+  // Alt tegnes i en gruppe, der drejer genstandens ramme tilbage til verdensrummet (`rotate(rot)`), så
+  // lyset kommer oppefra til venstre, og hvert elements boks ligger langs verdensakserne (kontaktarkets
+  // lint måler boksene i elementets egen ramme).
+  const o = at({ x: 0, y: 0 })
+  const e = at({ x: 1, y: 0 })
+  const rot = (Math.atan2(e.y - o.y, e.x - o.x) * 180) / Math.PI
+  const t = (-rot * Math.PI) / 180
+  const pt = (p: Pt): Vec => {
+    const q = at(p)
+    return [q.x * Math.cos(t) - q.y * Math.sin(t), q.x * Math.sin(t) + q.y * Math.cos(t)]
   }
-  const lensC = along(L.handle + L.collar + L.ring)
-  const ring = circle(lensC[0], lensC[1], L.ring * u * k)
-  const glass = circle(lensC[0], lensC[1], L.glass * u * k)
-  // Ringens skygge nederst til højre og glassets glans øverst til venstre (verdensrummets lys).
-  const rot = hold ? (Math.atan2(at({ x: 1, y: 0 }).y - at({ x: 0, y: 0 }).y, at({ x: 1, y: 0 }).x - at({ x: 0, y: 0 }).x) * 180) / Math.PI : -a.handRot
-  const shadeR = (L.ring - 0.6) * u * k - sw / 2
+  // Punkter langs luppens akse (verdensrummet) i den tilbagedrejede ramme.
+  const along = (s: number): Vec => pt({ x: g.x + d.x * s * u, y: g.y + d.y * s * u })
+  const [lx, ly] = along(L.handle + L.collar + L.ring)
+  const r = L.ring * u * k
+  const gr = L.glass * u * k
   const handle = capsule(along(-L.butt), along(L.handle), L.hr * u * k, L.hr * 1.08 * u * k)
   const collar = capsule(along(L.handle - 0.6), along(L.handle + L.collar + 0.8), L.hr * 1.32 * u * k)
   const grain = capsule(along(1.5), along(L.handle - 2), L.hr * 0.3 * u * k)
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
   return (
-    <>
+    <g transform={`rotate(${rot.toFixed(2)})`}>
       <path d={handle} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw} strokeLinejoin="round" />
       <path d={grain} fill={c.accentShade} />
       <path d={collar} fill={c.main} {...stroke} strokeWidth={sw * 0.85} />
-      <path d={ring} fill={c.main} {...stroke} />
-      <g transform={`translate(${lensC[0].toFixed(1)} ${lensC[1].toFixed(1)}) rotate(${(-rot).toFixed(1)})`}>
-        <path d={lune(0, 0, shadeR, shadeR, 2.4 * u * k, -15, 110)} fill={c.mainShade} />
-      </g>
-      <path d={glass} fill={c.trim} stroke={c.outline} strokeWidth={sw * 0.6} />
-      <g transform={`translate(${lensC[0].toFixed(1)} ${lensC[1].toFixed(1)}) rotate(${(-rot).toFixed(1)})`}>
-        <path d={arc(0, 0, L.glass * 0.62 * u * k, L.glass * 0.62 * u * k, 196, 258)} fill="none" stroke={c.highlight} strokeWidth={sw * 0.8} strokeLinecap="round" />
-        <path d={circle(L.glass * 0.4 * u * k, L.glass * 0.38 * u * k, L.glass * 0.11 * u * k)} fill={c.highlight} />
-      </g>
-    </>
+      <path d={circle(lx, ly, r)} fill={c.main} {...stroke} />
+      <path d={lune(lx, ly, r - 0.6 * u * k - sw / 2, r - 0.6 * u * k - sw / 2, 2.4 * u * k, -15, 110)} fill={c.mainShade} />
+      <path d={circle(lx, ly, gr)} fill={c.trim} stroke={c.outline} strokeWidth={sw * 0.6} />
+      <path d={arc(lx, ly, gr * 0.62, gr * 0.62, 196, 258)} fill="none" stroke={c.highlight} strokeWidth={sw * 0.8} strokeLinecap="round" />
+      <path d={circle(lx + gr * 0.4, ly + gr * 0.38, gr * 0.11)} fill={c.highlight} />
+    </g>
   )
 }
 

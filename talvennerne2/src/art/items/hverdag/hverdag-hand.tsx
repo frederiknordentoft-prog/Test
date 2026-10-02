@@ -50,16 +50,9 @@ function place(hold: HandHold): Place {
   let cx = Math.max(H.x + H.rx + 6 * u, H.box.x1 - 1 * u) + rx
   let cy = Math.min(H.y - 0.12 * H.ry, g.y - ry - 26 * u)
   if (hold.fx && cx + rx > hold.fx.x - 8 * u) cy = Math.max(cy, hold.fx.y + 7 * u + ry)
-  // Den sikre zone: kontaktarkets lint måler hvert element i genstandens (drejede) ramme, så ballonens
-  // boks regnes som den drejede ellipses boks ført tilbage til verdensrummet (plus konturen).
-  const t = (rot * Math.PI) / 180
-  const [cs, sn] = [Math.abs(Math.cos(t)), Math.abs(Math.sin(t))]
-  const hx = Math.hypot(rx * cs, ry * sn)
-  const hy = Math.hypot(rx * sn, ry * cs)
-  const W = hx * cs + hy * sn + 2.4
-  const Hh = hx * sn + hy * cs + 2.4
-  cx = Math.min(cx, SAFE.x1 - W)
-  cy = Math.max(cy, SAFE.y0 + Hh)
+  // Den sikre zone (ballonen tegnes i en ramme, der er drejet tilbage til verdensrummet; plus konturen).
+  cx = Math.min(cx, SAFE.x1 - rx - 2.6)
+  cy = Math.max(cy, SAFE.y0 + ry + 2.6)
   const knot = { x: cx, y: cy + ry + B.knot * u }
   // Snoren: en blød kurve, der går lodret op i knuden.
   const rise = Math.max(18 * u, (g.y - knot.y) * 0.45)
@@ -103,30 +96,32 @@ function solo(handRot: number): Place {
 const front: ItemArt = ({ c, sw, a, hold }) => {
   const P = hold ? place(hold) : solo(a.handRot)
   const { at, rot, k } = P
+  // Alt tegnes i en gruppe, der drejer genstandens ramme tilbage til verdensrummet (`rotate(rot)`), så
+  // ballonen står lodret, og hvert elements boks ligger langs verdensakserne (kontaktarkets lint måler
+  // boksene i elementets egen ramme).
+  const t = (-rot * Math.PI) / 180
   const pt = (p: Pt): Vec => {
     const q = at(p)
-    return [q.x, q.y]
+    return [q.x * Math.cos(t) - q.y * Math.sin(t), q.x * Math.sin(t) + q.y * Math.cos(t)]
   }
-  // Ballonens dele i verdensrummet om centrum (i ballonens egne mål), ført ind i den lokale ramme.
   const off = (dx: number, dy: number): Pt => ({ x: P.c.x + dx * P.rx, y: P.c.y + dy * P.ry })
-  const ctr = at(P.c)
-  const body = ellipse(ctr.x, ctr.y, P.rx * k, P.ry * k, rot)
-  const shade = lune(0, 0, P.rx * k - sw / 2, P.ry * k - sw / 2, P.rx * k * 0.2, -20, 105)
-  const hl = at(off(-0.42, -0.42))
-  const dot = at(off(-0.12, -0.72))
+  const [cx, cy] = pt(P.c)
+  const [rx, ry] = [P.rx * k, P.ry * k]
+  const body = ellipse(cx, cy, rx, ry)
+  const shade = lune(cx, cy, rx - sw / 2, ry - sw / 2, rx * 0.2, -20, 105)
+  const hl = pt(off(-0.42, -0.42))
+  const dot = pt(off(-0.12, -0.72))
   const knot = poly([pt(off(0, 1)), pt(off(-0.22, 1 + (B.knot * 1.1) / B.ry)), pt(off(0.22, 1 + (B.knot * 1.1) / B.ry))])
   const [s0, s1, s2, s3] = P.string.map(pt)
   return (
-    <>
+    <g transform={`rotate(${rot.toFixed(2)})`}>
       <path d={hold ? cubic(s0, s1, s2, s3) : spline([s0, pt({ x: 5, y: -6 }), pt({ x: -5, y: -14 }), pt({ x: 2, y: -20 }), s3])} fill="none" stroke={c.outline} strokeWidth={sw * 0.5} strokeLinecap="round" />
       <path d={body} fill={c.main} />
-      <g transform={`translate(${ctr.x.toFixed(1)} ${ctr.y.toFixed(1)}) rotate(${rot.toFixed(1)})`}>
-        <path d={shade} fill={c.mainShade} />
-      </g>
+      <path d={shade} fill={c.mainShade} />
       <path d={body} fill="none" stroke={c.outline} strokeWidth={sw} strokeLinejoin="round" />
       <path d={knot} fill={c.main} stroke={c.outline} strokeWidth={sw * 0.7} strokeLinejoin="round" />
-      <path d={join(ellipse(hl.x, hl.y, P.rx * k * 0.2, P.ry * k * 0.3, rot + 30), ellipse(dot.x, dot.y, P.rx * k * 0.08, P.ry * k * 0.07, rot))} fill={c.highlight} />
-    </>
+      <path d={join(ellipse(hl[0], hl[1], rx * 0.2, ry * 0.3, 30), ellipse(dot[0], dot[1], rx * 0.08, ry * 0.07))} fill={c.highlight} />
+    </g>
   )
 }
 
