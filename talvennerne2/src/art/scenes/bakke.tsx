@@ -111,6 +111,8 @@ export interface Layout {
   path: Vec[]
   /** Stiens bredde pr. punkt (smal langt væk, bredere forrest), i k. */
   pathW: number[]
+  /** Stien ligger på forgrundens bakke (højformat) i stedet for mellembakken (bredformat). */
+  pathOnNear: boolean
   bridge: Place & { rot: number }
   /** Foldens hegn: fra den tørre ende mod åen (det stopper på brinken). */
   fence: [Vec, Vec]
@@ -177,6 +179,7 @@ export function layoutOf(w: number, h: number): Layout {
       // vejen fra landsbyen ned over bakken til Tyvebroen og videre til boden
       path: [[w * 0.135, h * 0.632], [w * 0.25, h * 0.672], [w * 0.4, h * 0.705], [w * 0.52, h * 0.695], [w * 0.6, h * 0.676], [bridge.x, bridge.y], [w * 0.7, h * 0.69], [w * 0.79, h * 0.745], [w * 0.875, h * 0.79]],
       pathW: [4, 6, 8, 9, 9.5, 10, 11, 13, 15],
+      pathOnNear: false,
       bridge,
       fence: [[w * 0.885, h * 0.832], [w * 0.66, h * 0.81]],
       horses: [
@@ -231,8 +234,10 @@ export function layoutOf(w: number, h: number): Layout {
     stall: { x: w * 0.915, y: h * 0.99, s: k * 0.95 },
     spring,
     stream,
-    path: [[w * 0.66, h * 0.74], [w * 0.73, h * 0.752], [bridge.x, bridge.y], [w * 0.87, h * 0.795], [w * 0.95, h * 0.83]],
-    pathW: [8, 9, 10, 11.5, 13],
+    // stien fra værkstedets port over Tyvebroen til folden
+    path: [[w * 0.625, h * 0.85], [w * 0.68, h * 0.805], [w * 0.735, h * 0.782], [bridge.x, bridge.y], [w * 0.87, h * 0.797], [w * 0.95, h * 0.83]],
+    pathW: [12, 11, 10, 10, 11, 12],
+    pathOnNear: true,
     bridge,
     fence: [[w * 1.02, h * 0.838], [w * 0.7, h * 0.85]],
     horses: [
@@ -943,6 +948,13 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
   const bow = { x: w * 0.5, y: h * (L.wide ? 0.43 : 0.41), rx: L.wide ? w * 0.38 : w * 0.62, ry: h * (L.wide ? 0.31 : 0.2) }
   const air = (L.wide ? [[0.3, 0.16, 7], [0.58, 0.12, 5], [0.7, 0.27, 6], [0.16, 0.33, 5]] : [[0.3, 0.2, 6], [0.72, 0.27, 7], [0.12, 0.34, 5], [0.86, 0.36, 5]]).map(([u, v, r]) => [w * u, h * v, r * K] as const)
   const wet = L.stream.slice(1, 6).map(([x, y], i) => [x + (i % 2 ? 4 : -5) * K, y + 6 * K, (4 + i) * K] as const)
+  // Stien over Tyvebroen (lyser fra bronze, SPEC §5.6).
+  const road = (
+    <>
+      <path d={blob(ribbon(L.path, pw), 0.9)} fill={tb('trail', T.bridge)} stroke={tb('trailEdge', T.bridge)} strokeWidth={1.5 * K} {...ROUND} />
+      {lit(T.bridge) && <path d={spline(L.path)} fill="none" stroke={BAKKE.lanternGlow} strokeWidth={3.6 * K} opacity={0.75} {...ROUND} />}
+    </>
+  )
   // hestene bagfra og frem (de fjerneste først)
   const horses = L.horses.filter((p) => p.from <= rank(T.field)).sort((a, b) => a.y - b.y)
   return (
@@ -1003,8 +1015,7 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
       <path d={join(...daisies.map(([x, y, r]) => circle(x, y, r)))} fill={BAKKE.flowerWhite} opacity={0.85} />
       <path d={castMid} fill={BAKKE.castShadow} opacity={0.2} />
       {/* vejen fra landsbyen over Tyvebroen (forgrundens bakke dækker dens ende ved boden) */}
-      <path d={blob(ribbon(L.path, pw), 0.9)} fill={tb('trail', T.bridge)} stroke={tb('trailEdge', T.bridge)} strokeWidth={1.5 * K} {...ROUND} />
-      {lit(T.bridge) && <path d={spline(L.path)} fill="none" stroke={BAKKE.lanternGlow} strokeWidth={3.6 * K} opacity={0.75} {...ROUND} />}
+      {!L.pathOnNear && road}
       <path d={scrub} fill={tb('leaf', T.twins)} stroke={tb('leafDark', T.twins)} strokeWidth={1.2 * K} opacity={0.92} {...ROUND} />
       <path d={scrubShade} fill={BAKKE.castShadow} opacity={0.2} />
       <path d={join(...flock.map(([x, y, s]) => scallop(x, y - 7 * s, 9 * s, 6 * s, 7, 0.62, -90)))} fill={BAKKE.wool} stroke={tb('greyDark', T.bridge)} strokeWidth={1.1 * K} {...ROUND} />
@@ -1034,6 +1045,7 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
       <path d={join(...spots.filter((_, i) => i % 2 === 0).map(([x, y, r]) => circle(x, y, r)))} fill={BAKKE.flowerWhite} opacity={0.9} />
       <path d={join(...spots.filter((_, i) => i % 2 === 1).map(([x, y, r]) => circle(x, y, r)))} fill={g('flowerYellow')} />
       <path d={castNear} fill={BAKKE.castShadow} opacity={0.22} />
+      {L.pathOnNear && road}
       {/* åen fra kilden (bredere nedstrøms) og broen */}
       <path d={blob(ribbon(L.stream, sw.map((b) => b + 9 * K)), 0.9)} fill={tb('bank', T.bridge)} />
       <path d={blob(ribbon(L.stream, sw), 0.9)} fill={tb('water', T.bridge)} stroke={tb('waterEdge', T.bridge)} strokeWidth={1.5 * K} {...ROUND} />
