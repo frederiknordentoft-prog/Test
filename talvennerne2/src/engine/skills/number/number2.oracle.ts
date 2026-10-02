@@ -344,7 +344,8 @@ export function classifyProblems2(
         const p = tagIssue(task, o, explain(b, o), true)
         if (p) out.push(p)
       }
-    } else if (task.kind === 'keypad') {
+    } else if (task.kind === 'keypad' || task.kind === 'buildBase') {
+      // a built answer is a value like a typed one: what the blocks are worth
       for (const v of typedValues(task, opts.upTo ?? 1000, opts.extra?.(b) ?? [])) {
         if (v === task.answer) continue
         const p = tagIssue(task, v, explain(b, v), false)
