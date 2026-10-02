@@ -91,3 +91,36 @@ export function bentSleeve(arm: UpArm): BentSleeve {
     rootEdge: poly(across(arm.spine, r0, (width(r0) + EASE) / 2 + 0.9, -1.5, 1.7, 1.1)),
   }
 }
+
+// ---------------------------------------------------------------------------------------------
+// Lange ærmer på lodrette forben (review G1-r4, T5): kat, hvalp, hest og enhjørning har forben, der
+// hænger lodret foran kroppen fra et skulderled midt på maven. Ærmet må ikke være en kasse, der starter
+// dér: det starter ved skulderen under hovedets kant, følger forbenet og ender i en manchet lige over
+// poten eller hoven. Overdelen (skulder til skulderled) er kun ærmets to sidelinjer, som trøjen selv
+// tegner i sit lag (stoffet og striberne er trøjens egne, så de fortsætter i samme højde); underdelen
+// (skulderleddet til manchetten) følger potens drejning med fyld, striber i trøjens højde og manchet.
+
+export interface LongArm {
+  /** Underdelen i armens ramme som én åben path: fyldet lukkes implicit, men konturen er åben foroven. */
+  d: string
+  /** Overdelens to sidelinjer (armens ramme) fra skulderen ned til skulderleddet. */
+  seams: readonly (readonly Vec[])[]
+}
+
+/**
+ * Ærmet som et rør langs den lodrette arm (armens ramme: skulderleddet i (0,0), poten nedad): halv bredde
+ * `wTop` ved `top` (skulderen under hovedet) og `wBottom` ved manchetten `cuffY`; underdelen starter
+ * `overlap` over skulderleddet, så pelsens rod aldrig titter frem.
+ */
+export function longArm(top: number, cuffY: number, wTop: number, wBottom: number, overlap = 12): LongArm {
+  const w = (y: number) => wBottom + ((wTop - wBottom) * (cuffY - y)) / (cuffY - top)
+  const y0 = -overlap
+  const yb = cuffY + 2.2
+  const r = Math.min(3, wBottom * 0.3)
+  const left: Vec[] = [[-w(y0), y0], [-w((y0 + cuffY) / 2), (y0 + cuffY) / 2], [-w(yb - r), yb - r]]
+  const bottom: Vec[] = [[-w(yb) + r * 0.3, yb - r * 0.15], [0, yb + 0.4], [w(yb) - r * 0.3, yb - r * 0.15]]
+  const right: Vec[] = [[w(yb - r), yb - r], [w((y0 + cuffY) / 2), (y0 + cuffY) / 2], [w(y0), y0]]
+  const loop = [...left, ...bottom, ...right]
+  const seam = (side: 1 | -1): Vec[] => [[side * w(top), top], [side * w((top + 2) / 2), (top + 2) / 2], [side * w(2), 2]]
+  return { d: spline(loop, 0.5), seams: [seam(-1), seam(1)] }
+}

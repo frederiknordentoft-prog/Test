@@ -66,9 +66,23 @@ const shirt = (kind: BodyKind): ItemArt => ({ c, sw, ids, restroke, solo, stage 
 }
 
 /** Ærmet: stribet hele vejen ned (striberne klippes til ærmets form) og en glat manchet over poten. */
-const sleeve: SleeveArt = ({ c, sw, sleeve: d, cuff, clipId }) => {
+const sleeve: SleeveArt = ({ c, sw, sleeve: d, cuff, clipId, long, stage }) => {
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
   const y0 = cuff.y
+  // Langt ærme (lodrette forben, review G1-r4, T5): trøjens striber i samme højde og åbent foroven.
+  if (long) {
+    const lift = stage === 1 ? BABY_LIFT : 0
+    // Trøjens striber i armens ramme: samme højde som på kroppen (med kroppens bue ved skulderleddet).
+    const t = Math.min(1, Math.max(0, (long.origin.x + 80) / 160))
+    const y = (v: number) => long.s * (v + 4 * SAG * t * (1 - t) - long.origin.y)
+    return (
+      <>
+        <path d={long.d} fill={c.main} {...stroke} />
+        <path d={join(...STRIPES.map((v) => rect(-30, y(v - lift), 60, STRIPE_H * long.s)))} fill={c.trim} clipPath={`url(#${clipId})`} />
+        <path d={softBand(-cuff.half + 2.6, cuff.half - 2.6, y0 - 2.6, y0 + 2.8, 1.8, 1.8)} fill={c.main} {...stroke} />
+      </>
+    )
+  }
   return (
     <>
       <path d={d} fill={c.main} {...stroke} />

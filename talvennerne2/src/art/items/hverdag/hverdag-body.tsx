@@ -23,6 +23,11 @@ const CUTS: Record<BodyKind, Cut> = {
 }
 /** Hvor meget striber og ribkant buer nedad midtpå (kroppens rundning set forfra). */
 const SAG = 2.6
+/** Hvor meget en stribe (`band` fra x −80 til 80) hænger ned ved x. */
+const sagAt = (x: number) => {
+  const t = Math.min(1, Math.max(0, (x + 80) / 160))
+  return 4 * SAG * t * (1 - t)
+}
 /** Babyens torso er kortere: ribkanten sidder højere. */
 const BABY_LIFT = 7
 
@@ -78,10 +83,26 @@ const sweater = (kind: BodyKind): ItemArt => ({ c, sw, ids, restroke, solo, stag
   )
 }
 
-/** Ærmet: trøjens farve med to striber og en ribmanchet over poten. */
-const sleeve: SleeveArt = ({ c, sw, sleeve: d, cuff, clipId }) => {
+/**
+ * Ærmet: trøjens farve med to striber og en ribmanchet over poten. Et langt ærme (lodrette forben, review
+ * G1-r4, T5) har trøjens striber i samme højde som på kroppen og er åbent foroven.
+ */
+const sleeve: SleeveArt = ({ c, sw, sleeve: d, cuff, clipId, long, body, stage }) => {
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
   const y0 = cuff.y
+  if (long) {
+    const lift = stage === 1 ? BABY_LIFT : 0
+    // Trøjens striber i armens ramme: samme højde som på kroppen (med kroppens bue ved skulderleddet).
+    const y = (v: number) => long.s * (v + sagAt(long.origin.x) - long.origin.y)
+    const stripes = join(...CUTS[body].stripes.map((t) => rect(-30, y(t - lift), 60, 5.5 * long.s)))
+    return (
+      <>
+        <path d={long.d} fill={c.main} {...stroke} />
+        <path d={stripes} fill={c.trim} clipPath={`url(#${clipId})`} />
+        <path d={softBand(-cuff.half + 2.6, cuff.half - 2.6, y0 - 2.6, y0 + 2.8, 1.8, 1.8)} fill={c.accent} {...stroke} />
+      </>
+    )
+  }
   return (
     <>
       <path d={d} fill={c.main} {...stroke} />
