@@ -1,0 +1,26 @@
+19:53:01 generate.py --wave 1 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261002-195301.log)
+19:53:05 1220 klip valgt, 1215 færdige, 5 at lave
+19:57:43 input frame rate=25
+19:59:15 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+19:59:24 model indlæst på 352 s (2 tråde)
+19:59:54 ✅ EOS token detected! Stopping generation at step 71
+20:00:14 kald sentence k=1 t0 'Den verden er ved at blive bygget. Den kommer snart.': 50.0 s for 2.80 s lyd
+20:01:03   s.map.soon.world t0: 2.51 s (forhold 0.57) -18.2 LUFS, alone: 'den verden er ved at blive byttet den kommer snart' CER 0.0488 (wav2vec2) → ok
+20:01:03   ✓ master s.map.soon.world t0 (bestået)
+20:01:28 ✅ EOS token detected! Stopping generation at step 169
+20:01:47 kald sentence k=1 t0 'Træk i viserne for at stille uret. Når du drejer den lange viser, følg': 44.8 s for 6.72 s lyd
+20:07:22   s.kind.clockSet.long t0: 5.94 s (forhold 0.58) -18.14 LUFS, alone: 'Træk i viserne for at stille uret. Når du drejer den lange viser følger den lille med. Tryk sig på fluebenet' CER 0.0235 (whisper, wav2vec2: 'trække viserne for at stille urdet når du drejer den lange viser følger den lille mid trycer på flobenet') → ok
+20:07:22   ✓ master s.kind.clockSet.long t0 (bestået)
+20:07:41 ✅ EOS token detected! Stopping generation at step 147
+20:08:02 kald sentence k=1 t0 'Tryk på delene for at farve dem. Tryk igen for at fjerne farven. Tryk ': 40.1 s for 5.84 s lyd
+20:08:15   s.kind.colorParts.long t0: 5.28 s (forhold 0.65) -18.18 LUFS, alone: 'Tryk på delene for at farve dem. Tryk igen for at fjerne farven. Tryk så på fluebenet' CER 0.0 (whisper, wav2vec2: 'tryk på delene for at farve dem tryk igen for at fjerne faen tryk sig på fluebenet') → ok
+20:08:15   ✓ master s.kind.colorParts.long t0 (bestået)
+20:08:44 ✅ EOS token detected! Stopping generation at step 175
+20:09:05 kald sentence k=1 t0 'Tryk på en mønt, så hopper den ned i bakken. Tryk på mønterne i bakken': 49.7 s for 6.96 s lyd
+20:09:09   s.kind.pay.long t0: 6.32 s (forhold 0.58) -18.17 LUFS, alone: 'tryk på en mønt så hopper den ned i barken tryk på mønterne i barken for at lægge dem tilbage tryk sig på fluebenet' CER 0.044 (wav2vec2) → ok
+20:09:09   ✓ master s.kind.pay.long t0 (bestået)
+20:09:38 ✅ EOS token detected! Stopping generation at step 194
+20:10:01 kald sentence k=1 t0 'Tryk på en tallerken for at give den en ting fra bunken. Bliv ved, til': 51.7 s for 7.72 s lyd
+20:10:18   s.kind.share.long t0: 7.13 s (forhold 0.67) -18.12 LUFS, alone: 'Tryk på en tallerken for at give den én ting fra bunken. Bliv ved til bunken er tom. Træk en ting tilbage hvis du fortryder' CER 0.0 (whisper, wav2vec2: 'tryk på intalerken for at give den en ting fra bunken blive ved til bunken at tom trækk en ting tilbage hvis du fortryder') → ok
+20:10:19   ✓ master s.kind.share.long t0 (bestået)
+20:10:19 færdig: 5 nye mastere (0 ikke bestået, 0 kopier), 5 modelkald, 3.9 min generering (CPU 0.12 t), 0 klip mangler
