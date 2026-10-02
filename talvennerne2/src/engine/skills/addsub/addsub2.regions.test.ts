@@ -39,10 +39,13 @@ describe('the plus and minus regions of 1.–2. klasse', () => {
     it(`plans a playable round on ${node.id}`, () => {
       const keys = keysForNode(node, { states: {}, audioVerified: true }).filter((k) => MINE.has(k.skill))
       expect(keys.length).toBeGreaterThan(0)
+      let seen = 0
       for (const seed of [1, 2, 3]) {
         const plan = planRound(node, newProfile({ grade: node.world === 'skov' ? 2 : 1 }), { ...ctx, seed })
         const mine = plan.tasks.filter((t) => MINE.has(t.skill))
-        expect(mine.length, `${node.id} seed ${seed}`).toBeGreaterThan(0)
+        // a world finale spreads its twelve tasks over every region: one seed may hold none of these
+        if (node.slot !== 'finale') expect(mine.length, `${node.id} seed ${seed}`).toBeGreaterThan(0)
+        seen += mine.length
         for (const t of mine) {
           const where = `${node.id} ${t.factId} ${t.kind}`
           const c = compile(t.speech)
@@ -53,6 +56,7 @@ describe('the plus and minus regions of 1.–2. klasse', () => {
           if (node.production === 'only') expect(isProduction(t), where).toBe(true)
         }
       }
+      expect(seen, node.id).toBeGreaterThan(0)
     })
   }
 
