@@ -1,5 +1,5 @@
 // Kongelig · hånd: et scepter. Et guldskaft med to ringe og en knop forneden ligger i højre pote (poten
-// tegnes over grebet), og øverst sidder en rund ædelsten med et guldbånd om livet og en stjerne på toppen.
+// tegnes over grebet og knoppen), og øverst sidder en rund ædelsten med et guldbånd om livet og en stjerne på toppen.
 // Riggen giver genstanden posen (`hold`): scepteret drejes væk fra ansigtet og hovedets omrids, til det går
 // fri, og holdes i den sikre zone (fælles `aimAway`, som luppen). Alt tegnes i en ramme, der er drejet
 // tilbage til verdensrummet, så lys og skygge står ens i alle poser. Alene (butik) står det skråt som et
@@ -12,7 +12,7 @@ import type { Vec } from '../../rig/shapes'
 import type { ItemArt, ItemDef, Pt } from '../../rig/types'
 
 /** Scepteret langs aksen fra grebet (hovedets modelenheder): skaft, ringe, stenen og stjernen. */
-const S = { butt: -6.5, top: 33, r: 2.9, rings: [-2.5, 24.5] as const, orb: 40, orbR: 8.4, star: 52.5, starR: 6.2 }
+const S = { butt: -1.5, top: 33, r: 2.9, rings: [3.5, 24.5] as const, orb: 40, orbR: 8.4, star: 52.5, starR: 6.2 }
 /** Foretrukken retning (grader; −90 = op) og trin, når ansigtet er i vejen. */
 const AIM = -64
 const STEP = 18
@@ -20,7 +20,8 @@ const STEP = 18
 const SIZE = 1.15
 
 const front: ItemArt = ({ c, sw, a, hold }) => {
-  // Knoppen forneden er med, så den heller aldrig går ud over den sikre zone (poten hviler tæt på jorden).
+  // Knoppen sidder i poten, så scepteret kan stå opret, også når poten hviler tæt på jorden; den er med i
+  // prøvepunkterne, så den aldrig går ud over den sikre zone.
   const samples = [{ at: S.butt - 1, r: S.r * 1.5 }, { at: 14, r: 4 }, { at: S.orb, r: S.orbR + 1 }, { at: S.star, r: S.starR }].map((p) => ({ at: p.at * SIZE, r: p.r * SIZE }))
   const P = hold ? aimAway(hold, samples, AIM, STEP) : aimSolo(a.handRot, -62)
   const { at, k, g, d, u, rot } = P
