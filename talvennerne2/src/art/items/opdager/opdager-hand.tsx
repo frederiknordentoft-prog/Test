@@ -44,20 +44,26 @@ function place(hold: HandHold): Place {
   // løvehoved), skjuler luppen der, så glasset skal også fri af hovedboksens nederste del.
   const hb = H.box
   const hang = !hold.front && hb.y1 > H.y + H.ry + 4 * u
-  const clear = (deg: number) => {
+  const clear = (deg: number, ears: boolean, face: boolean) => {
     const t = (deg * Math.PI) / 180
     const lens = { x: g.x + Math.cos(t) * reach * u, y: g.y + Math.sin(t) * reach * u }
     // Hele ringen skal ligge uden for ansigtet (centrum og randen mod den udvidede ellipse) og i den sikre zone.
     const rx = fr.x + L.ring * u
     const ry = fr.y + L.ring * u
-    const face = ((lens.x - fc.x) / rx) ** 2 + ((lens.y - fc.y) / ry) ** 2 >= 1
-    const ears = !hang || lens.y - box > hb.y1 || lens.x - box > hb.x1 || lens.x + box < hb.x0 || lens.y + box < H.y
+    const free = !face || ((lens.x - fc.x) / rx) ** 2 + ((lens.y - fc.y) / ry) ** 2 >= 1
+    const open = !ears || !hang || lens.y - box > hb.y1 || lens.x - box > hb.x1 || lens.x + box < hb.x0 || lens.y + box < H.y
     const safe = lens.x + box <= SAFE.x1 && lens.x - box >= SAFE.x0 && lens.y - box >= SAFE.y0 && lens.y + box <= SAFE.y1
-    return face && ears && safe
+    return free && open && safe
   }
-  // Foretrukken retning først, derefter skiftevis med og mod uret, til glasset går fri.
+  // Foretrukken retning først, derefter skiftevis med og mod uret, til glasset går fri. Den sikre zone
+  // gælder altid; findes ingen fri retning (babyens store hoved, lang manke), slækkes først kravet om
+  // hængeører og manke og derefter (kun bag hovedet) om ansigtet.
   const tries = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6].map((i) => AIM + i * STEP)
-  const deg = tries.find(clear) ?? AIM + 4 * STEP
+  const deg =
+    tries.find((d) => clear(d, true, true)) ??
+    tries.find((d) => clear(d, false, true)) ??
+    tries.find((d) => clear(d, false, hold.front)) ??
+    AIM
   const t = (deg * Math.PI) / 180
   return { at: hold.local, k, g, d: { x: Math.cos(t), y: Math.sin(t) }, u }
 }
