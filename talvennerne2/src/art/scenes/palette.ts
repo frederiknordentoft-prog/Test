@@ -186,13 +186,15 @@ export const BAKKE = {
   ruler: '#FFD24A',
   rulerEdge: '#C99A1E',
   apple: '#FF6B5E',
-  /** Heste på folden: en fuks, en skimmel og et isabelfarvet føl. */
+  /** Heste på folden: en fuks, en skimmel, en brun og et isabelfarvet føl. */
   chestnut: '#D27E45',
   chestnutDark: '#99522A',
   grey: '#F1ECF6',
   greyDark: '#B9AFC9',
   foal: '#F2C98E',
   foalDark: '#C98F4E',
+  bay: '#A8643F',
+  bayDark: '#6B3D26',
   mane: '#6A4634',
   muzzle: '#F6D9C4',
   /** Lam på bakken (lyst uld, mørkt hoved). */

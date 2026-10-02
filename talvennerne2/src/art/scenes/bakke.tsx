@@ -25,7 +25,7 @@ import type { ReactNode, Ref } from 'react'
 import type { RegionId } from '../../engine/types'
 import type { RegionTier } from '../../meta/rewards'
 import type { MapSceneProps } from '../../ui/screens/child/map/Backdrop'
-import { arc, blob, capsule, circle, ellipse, fmt3, join, lune, n, poly, rect, ribbon, ridge, scallop, spline, star, xf } from '../rig/shapes'
+import { arc, blob, capsule, circle, ellipse, ellipseBelow, fmt3, join, lune, n, poly, rect, ribbon, ridge, scallop, spline, star, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import { BAKKE, TIER_CHROMA, tintBakke, tintBakkeBy } from './palette'
 import type { BakkeColor } from './palette'
@@ -78,7 +78,7 @@ interface Ridge {
   waves: number
   phase: number
 }
-export type Coat = 'chestnut' | 'grey' | 'foal'
+export type Coat = 'chestnut' | 'grey' | 'foal' | 'bay'
 export interface HorseSpot extends Place {
   coat: Coat
   graze: boolean
@@ -109,12 +109,15 @@ export interface Layout {
   spring: Place
   stream: Vec[]
   path: Vec[]
+  /** Stiens bredde pr. punkt (smal langt væk, bredere forrest), i k. */
+  pathW: number[]
   bridge: Place & { rot: number }
   /** Foldens hegn: fra den tørre ende mod åen (det stopper på brinken). */
   fence: [Vec, Vec]
   horses: HorseSpot[]
-  /** Lam på bakken (mellemgrunden). */
+  /** Lam på bakken (mellemgrunden) og deres folds hegn (langs bakken, langt fra åen). */
   sheep: Vec[]
+  sheepFence: Vec[]
   hop: Place
   trees: (Place & { front: boolean })[]
   bales: Place[]
@@ -161,6 +164,7 @@ export function layoutOf(w: number, h: number): Layout {
       cottages: [
         { ...on(mid, 0.012, 0.05, k * 0.9), slate: false },
         { ...on(mid, 0.118, 0.056, k * 0.85), slate: true },
+        { ...on(mid, 0.094, 0.088, k * 0.72), slate: false },
       ],
       field: { x: w * 0.064, y: h * 0.775, s: k * 0.95 },
       workshop: { x: w * 0.613, y: h * 0.828, s: k * 0.85 },
@@ -170,16 +174,20 @@ export function layoutOf(w: number, h: number): Layout {
         [spring.x, spring.y + 3 * k], [w * 0.642, h * 0.605], [bridge.x, bridge.y], [w * 0.674, h * 0.752],
         [w * 0.72, h * 0.842], [w * 0.744, h * 0.93], [w * 0.736, h * 1.03],
       ],
-      path: [[w * 0.55, h * 0.69], [w * 0.6, h * 0.676], [bridge.x, bridge.y], [w * 0.7, h * 0.69], [w * 0.79, h * 0.745], [w * 0.875, h * 0.79]],
+      // vejen fra landsbyen ned over bakken til Tyvebroen og videre til boden
+      path: [[w * 0.135, h * 0.632], [w * 0.25, h * 0.672], [w * 0.4, h * 0.705], [w * 0.52, h * 0.695], [w * 0.6, h * 0.676], [bridge.x, bridge.y], [w * 0.7, h * 0.69], [w * 0.79, h * 0.745], [w * 0.875, h * 0.79]],
+      pathW: [4, 6, 8, 9, 9.5, 10, 11, 13, 15],
       bridge,
       fence: [[w * 0.885, h * 0.832], [w * 0.66, h * 0.81]],
       horses: [
-        { x: w * 0.79, y: h * 0.888, s: k * 0.95, coat: 'chestnut', graze: true, flip: false, from: 0 },
-        { x: w * 0.875, y: h * 0.905, s: k, coat: 'grey', graze: false, flip: true, from: 0 },
-        { x: w * 0.838, y: h * 0.868, s: k * 0.62, coat: 'foal', graze: false, flip: false, from: 2 },
-        { x: w * 0.96, y: h * 0.868, s: k * 0.85, coat: 'chestnut', graze: false, flip: true, from: 3 },
+        { x: w * 0.8, y: h * 0.893, s: k * 0.95, coat: 'chestnut', graze: true, flip: false, from: 0 },
+        { x: w * 0.888, y: h * 0.9, s: k, coat: 'grey', graze: false, flip: true, from: 0 },
+        { x: w * 0.846, y: h * 0.866, s: k * 0.62, coat: 'foal', graze: false, flip: false, from: 2 },
+        // drikker ved åen
+        { x: w * 0.768, y: h * 0.882, s: k * 0.85, coat: 'bay', graze: true, flip: true, from: 3 },
       ],
-      sheep: [[w * 0.2, h * 0.62], [w * 0.235, h * 0.635], [w * 0.265, h * 0.615], [w * 0.47, h * 0.66], [w * 0.5, h * 0.645]],
+      sheep: [[w * 0.215, h * 0.6], [w * 0.25, h * 0.615], [w * 0.285, h * 0.597], [w * 0.43, h * 0.64], [w * 0.47, h * 0.628]],
+      sheepFence: [[w * 0.17, h * 0.618], [w * 0.3, h * 0.645], [w * 0.42, h * 0.668], [w * 0.53, h * 0.664]],
       hop: { x: w * 0.83, y: h * 0.968, s: k },
       trees: [
         { ...on(mid, 0.165, 0.06, k * 0.85), front: false },
@@ -213,27 +221,30 @@ export function layoutOf(w: number, h: number): Layout {
       { x: w * 0.85, y: h * 0.17, s: k * 0.8 },
       { x: w * 0.33, y: h * 0.235, s: k * 0.6 },
     ],
-    twins: tall ? { ...on(fields, 0.72, 0.032, k * 0.9), onMid: false } : { ...on(mid, 0.79, 0.012, k * 0.85), onMid: true },
+    twins: tall ? { ...on(fields, 0.72, 0.032, k * 0.9), onMid: false } : { ...on(mid, 0.79, 0.04, k * 0.85), onMid: true },
     tower: tall ? on(mid, 0.9, -0.004, k) : on(mid, 0.935, 0.118, k * 0.95),
     cottages: tall
       ? [{ ...on(mid, 0.77, 0.004, k * 0.85), slate: false }, { ...on(mid, 1.0, 0.008, k * 0.8), slate: true }]
-      : [{ ...on(mid, 0.855, 0.13, k * 0.85), slate: false }, { ...on(mid, 1.0, 0.134, k * 0.8), slate: true }],
-    field: { x: w * 0.69, y: h * 0.64, s: k * 0.9 },
+      : [{ ...on(mid, 0.855, 0.13, k * 0.85), slate: false }, { ...on(mid, 1.0, 0.134, k * 0.8), slate: true }, { ...on(mid, 0.895, 0.162, k * 0.68), slate: false }],
+    field: { x: w * 0.69, y: h * (tall ? 0.64 : 0.658), s: k * 0.9 },
     workshop: { x: w * 0.6, y: h * 0.865, s: k * 0.88 },
-    stall: { x: w * 0.915, y: h * 0.975, s: k * 0.95 },
+    stall: { x: w * 0.915, y: h * 0.99, s: k * 0.95 },
     spring,
     stream,
     path: [[w * 0.66, h * 0.74], [w * 0.73, h * 0.752], [bridge.x, bridge.y], [w * 0.87, h * 0.795], [w * 0.95, h * 0.83]],
+    pathW: [8, 9, 10, 11.5, 13],
     bridge,
     fence: [[w * 1.02, h * 0.838], [w * 0.7, h * 0.85]],
     horses: [
-      { x: w * 0.86, y: h * 0.885, s: k * 0.9, coat: 'chestnut', graze: true, flip: false, from: 0 },
-      { x: w * 0.955, y: h * 0.9, s: k * 0.92, coat: 'grey', graze: false, flip: true, from: 0 },
-      { x: w * 0.905, y: h * 0.872, s: k * 0.56, coat: 'foal', graze: false, flip: false, from: 2 },
-      { x: w * 0.82, y: h * 0.868, s: k * 0.75, coat: 'chestnut', graze: false, flip: true, from: 3 },
+      { x: w * 0.868, y: h * 0.877, s: k * 0.85, coat: 'chestnut', graze: true, flip: false, from: 0 },
+      { x: w * 0.962, y: h * 0.879, s: k * 0.88, coat: 'grey', graze: false, flip: true, from: 0 },
+      { x: w * 0.918, y: h * 0.856, s: k * 0.55, coat: 'foal', graze: false, flip: false, from: 2 },
+      // drikker ved åen
+      { x: w * 0.79, y: h * 0.858, s: k * 0.72, coat: 'bay', graze: true, flip: true, from: 3 },
     ],
-    sheep: [[w * 0.2, h * 0.6], [w * 0.25, h * 0.615], [w * 0.3, h * 0.598], [w * 0.4, h * 0.64], [w * 0.45, h * 0.63]],
-    hop: { x: w * 0.13, y: h * 0.935, s: k * 0.8 },
+    sheep: [[w * 0.2, h * 0.585], [w * 0.25, h * 0.6], [w * 0.3, h * 0.583], [w * 0.4, h * 0.622], [w * 0.45, h * 0.612]],
+    sheepFence: [[w * 0.1, h * 0.605], [w * 0.25, h * 0.622], [w * 0.38, h * 0.648], [w * 0.5, h * 0.645]],
+    hop: { x: w * 0.165, y: h * 0.885, s: k * 0.8 },
     trees: [
       { ...on(mid, 0.06, 0.03, k), front: false },
       { ...on(mid, 0.53, 0.05, k * 0.8), front: false },
@@ -378,19 +389,21 @@ function Tree({ t, seed }: { t: RegionTier; seed: number }) {
  * Dobbeltdalen: to ens, runde bakker side om side med hvert sit træ og en busk – spejlet om midten (som et
  * dobbelt). Lanterner i træerne fra bronze, blomster og frugt fra sølv, et par fugle i guld.
  */
-function Twins({ t }: { t: RegionTier }) {
+function Twins({ t, onMid }: { t: RegionTier; onMid: boolean }) {
   const c = paint(t)
   const half: Vec[] = [[-84, 4], [-76, -14], [-60, -32], [-40, -39], [-20, -32], [-8, -17], [0, -10]]
-  const hills = ridge([...half, ...half.slice(0, -1).reverse().map(([x, y]) => [-x, y] as Vec)], 14, 0.9)
+  const top = [...half, ...half.slice(0, -1).reverse().map(([x, y]) => [-x, y] as Vec)]
+  const hills = ridge(top, 16, 0.9)
   // de to træer står på toppene og hælder hver sin vej (spejlet)
   const crown = (sx: number) => scallop(sx * 41, -78, 19, 17, 7, 0.62, sx > 0 ? -90 : -90 + 360 / 14)
   const fruit = [[-6, -84], [5, -88], [9, -74], [-9, -72]]
   const fl = flowerPaths([[-62, -18, 3.2], [-50, -26, 3], [-30, -30, 3], [62, -18, 3.2], [50, -26, 3], [30, -30, 3]])
   return (
     <>
-      <path d={hills} fill={c('midHill')} stroke={c('paperShadow')} strokeWidth={SW * 0.8} {...ROUND} />
-      {/* solen fra venstre: skygge på højre skrænt af begge bakker, højlys på venstre */}
-      <path d={join(lune(-40, -12, 40, 26, 9, -40, 50), lune(40, -12, 40, 26, 9, -40, 50))} fill={c('shade')} opacity={0.2} />
+      <path d={hills} fill={c(onMid ? 'nearHill' : 'midHill')} />
+      {/* solen fra venstre: skygge på højre skrænt af begge bakker, højlys på venstre; kontur kun langs toppen */}
+      <path d={join(blob([[-40, -39], [-20, -32], [-8, -17], [-2, 2], [-22, 6], [-30, -20]], 0.8), blob([[40, -39], [60, -32], [76, -14], [84, 4], [60, 6], [50, -20]], 0.8))} fill={c('shade')} opacity={0.16} />
+      <path d={spline(top.slice(1, -1), 0.9)} fill="none" stroke={c('paperShadow')} strokeWidth={SW * 0.8} opacity={0.7} {...ROUND} />
       <path d={join(spline([[-74, -16], [-60, -31], [-44, -38]]), spline([[6, -14], [20, -31], [36, -38]]))} fill="none" stroke={BAKKE.sunlit} strokeWidth={3} opacity={0.85} {...ROUND} />
       <path d={join(...[-1, 1].map((sx) => blob([[sx * 41 - 3.4, -37], [sx * 41 - 2.6, -52], [sx * 42.5, -62], [sx * 41 + 2.6, -52], [sx * 41 + 3.4, -37]], 0.6)))} fill={c('trunk')} stroke={c('woodDark')} strokeWidth={SW * 0.8} {...ROUND} />
       <g className="bakke-sway" style={{ animationDelay: '-1.3s' }}>
@@ -542,7 +555,7 @@ function Stall({ t }: { t: RegionTier }) {
   const c = paint(t)
   const ticks = join(...Array.from({ length: 11 }, (_, i) => poly([[-30 + i * 6, -19], [-30 + i * 6, i % 5 === 0 ? -14 : -16.5]], false)))
   const stripes = join(...[-30, -10, 10, 30].map((x) => blob([[x - 5, -90], [x + 5, -90], [x + 6.2, -72], [x - 6.2, -72]], 0.1)))
-  const scallops = (odd: boolean) => join(...Array.from({ length: 6 }, (_, i) => i).filter((i) => i % 2 === (odd ? 1 : 0)).map((i) => circle(-40 + i * 16, -72, 8)))
+  const scallops = (odd: boolean) => join(...Array.from({ length: 6 }, (_, i) => i).filter((i) => i % 2 === (odd ? 1 : 0)).map((i) => ellipseBelow(-40 + i * 16, -73, 8, 7.5, -73)))
   // vægten hælder mod æblet (det tunge)
   const beam: Vec[] = xf([[-13, 0], [13, 0]], { rot: -8, dx: -20, dy: -50 })
   const pan = ([x, y]: Vec) => blob([[x - 6.5, y + 9], [x + 6.5, y + 9], [x + 4, y + 13], [x - 4, y + 13]], 0.5)
@@ -628,13 +641,13 @@ function HopStones({ t }: { t: RegionTier }) {
   const c = paint(t)
   const row = (y: number, pitch: number, rx: number) =>
     Array.from({ length: 10 }, (_, i) => [(i - 4.5) * pitch + (i >= 5 ? pitch * 0.35 : -pitch * 0.35), y, rx] as const)
-  const stones = [...row(-11, 12.2, 4.6), ...row(0, 13.4, 5.2)]
-  const top = (pick: (i: number) => boolean) => join(...stones.filter((_, i) => pick(i % 10)).map(([x, y, rx]) => ellipse(x, y, rx, rx * 0.52)))
+  const stones = [...row(-13, 12.4, 5.4), ...row(0, 13.6, 6.1)]
+  const top = (pick: (i: number) => boolean) => join(...stones.filter((_, i) => pick(i % 10)).map(([x, y, rx]) => ellipse(x, y, rx, rx * 0.6)))
   const fl = flowerPaths([[-40, -5.5, 2.2], [-12, -5.5, 2.2], [17, -5.5, 2.2], [46, -5.5, 2.2]])
   const f = flag(76, 1, 26)
   return (
     <>
-      <path d={join(...stones.map(([x, y, rx]) => ellipse(x + 1.2, y + 1.6, rx, rx * 0.55)))} fill={c('stoneShade')} />
+      <path d={join(...stones.map(([x, y, rx]) => ellipse(x + 1.2, y + 2, rx, rx * 0.62)))} fill={c('stoneShade')} />
       {full(t) ? (
         <>
           <path d={top((i) => i < 5)} fill={c('hopA')} stroke={c('stoneShade')} strokeWidth={1} />
@@ -643,8 +656,9 @@ function HopStones({ t }: { t: RegionTier }) {
       ) : (
         <path d={top(() => true)} fill={c('stone')} stroke={c('stoneShade')} strokeWidth={1} />
       )}
-      {lit(t) && <>{lantern(-76, -22, true, 0.8)}</>}
-      {lit(t) && <path d={rect(-77.2, -20, 2.4, 22, 1)} fill={c('woodDark')} />}
+      <path d={join(...stones.map(([x, y, rx]) => ellipse(x - rx * 0.25, y - rx * 0.2, rx * 0.45, rx * 0.16)))} fill={BAKKE.flowerWhite} opacity={0.55} />
+      {lit(t) && <>{lantern(-78, -24, true, 0.8)}</>}
+      {lit(t) && <path d={rect(-79.2, -22, 2.4, 24, 1)} fill={c('woodDark')} />}
       {bloom(t) && <path d={fl.petals} fill={c('flowerViolet')} />}
       {full(t) && (
         <>
@@ -704,8 +718,8 @@ function Spring({ t }: { t: RegionTier }) {
 /** En forenklet hest i scenens stil (lokalt, vender mod højre, hovene på y = 0): græssende eller stående. */
 function Horse({ t, coat, graze }: { t: RegionTier; coat: Coat; graze: boolean }) {
   const c = paint(t)
-  const [body, dark] = ({ chestnut: ['chestnut', 'chestnutDark'], grey: ['grey', 'greyDark'], foal: ['foal', 'foalDark'] } as const)[coat]
-  const mane = coat === 'chestnut' ? c('mane') : c(dark)
+  const [body, dark] = ({ chestnut: ['chestnut', 'chestnutDark'], grey: ['grey', 'greyDark'], foal: ['foal', 'foalDark'], bay: ['bay', 'bayDark'] } as const)[coat]
+  const mane = coat === 'chestnut' || coat === 'bay' ? c('mane') : c(dark)
   const torso = blob([[-19, -26], [-6, -31], [10, -30.5], [19, -26], [20.5, -18], [12, -13.5], [-8, -13.5], [-19.5, -17.5]], 0.8)
   const head = graze
     ? blob([[11, -28], [20, -25], [27, -16], [31, -8], [34, -3], [30, -0.5], [25, -4], [19, -12], [13, -19]], 0.75)
@@ -772,7 +786,7 @@ const CLOUD = {
 
 /** Åen bliver bredere nedstrøms (fuld bredde pr. punkt); stien ligeså. */
 export const streamWidths = (L: Layout) => L.stream.map((_, i) => (4 + i * 6.5) * L.k)
-export const pathWidths = (L: Layout) => L.path.map((_, i) => (8 + i * 2.6) * L.k)
+export const pathWidths = (L: Layout) => L.pathW.map((v) => v * L.k)
 
 /** Afstanden fra (x, y) til åens vandkant (negativ i vandet), med åens bredde lagt lineært ud. */
 export function streamGap(stream: readonly Vec[], widths: readonly number[], x: number, y: number): number {
@@ -905,7 +919,6 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
     ...L.cottages.map((p) => cast(p, 9, 22, 4.5)),
     ...L.trees.filter((p) => !p.front).map((p) => cast(p, 14, 30, 6)),
     ...bales.map((b) => b.shadow),
-    cast(L.field, 6, 72, 6),
   )
   const castNear = join(
     cast(L.workshop, 12, 70, 7),
@@ -930,7 +943,8 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
   const bow = { x: w * 0.5, y: h * (L.wide ? 0.43 : 0.41), rx: L.wide ? w * 0.38 : w * 0.62, ry: h * (L.wide ? 0.31 : 0.2) }
   const air = (L.wide ? [[0.3, 0.16, 7], [0.58, 0.12, 5], [0.7, 0.27, 6], [0.16, 0.33, 5]] : [[0.3, 0.2, 6], [0.72, 0.27, 7], [0.12, 0.34, 5], [0.86, 0.36, 5]]).map(([u, v, r]) => [w * u, h * v, r * K] as const)
   const wet = L.stream.slice(1, 6).map(([x, y], i) => [x + (i % 2 ? 4 : -5) * K, y + 6 * K, (4 + i) * K] as const)
-  const horses = L.horses.filter((p) => p.from <= rank(T.field))
+  // hestene bagfra og frem (de fjerneste først)
+  const horses = L.horses.filter((p) => p.from <= rank(T.field)).sort((a, b) => a.y - b.y)
   return (
     <svg
       ref={svgRef}
@@ -982,16 +996,35 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
       <path d={poplars} fill={tb('leafDark', T.twins)} opacity={0.85} />
       <path d={join(...bales.map((b) => b.body))} fill={g('hay')} stroke={g('hayShade')} strokeWidth={1.2 * K} {...ROUND} />
       <path d={join(...bales.map((b) => b.spiral))} fill="none" stroke={g('hayShade')} strokeWidth={1.1 * K} />
-      {!L.twins.onMid && at(L.twins, <Twins t={T.twins} />)}
+      {!L.twins.onMid && at(L.twins, <Twins t={T.twins} onMid={false} />)}
       {/* lag 3: mellembakken med landsbyen, tårnet, marken, lammene og de bageste træer */}
       {layer(L.mid, R.mid, 'midHill', h * 0.11, 0.13)}
-      {L.twins.onMid && at(L.twins, <Twins t={T.twins} />)}
+      {L.twins.onMid && at(L.twins, <Twins t={T.twins} onMid />)}
       <path d={join(...daisies.map(([x, y, r]) => circle(x, y, r)))} fill={BAKKE.flowerWhite} opacity={0.85} />
       <path d={castMid} fill={BAKKE.castShadow} opacity={0.2} />
+      {/* vejen fra landsbyen over Tyvebroen (forgrundens bakke dækker dens ende ved boden) */}
+      <path d={blob(ribbon(L.path, pw), 0.9)} fill={tb('trail', T.bridge)} stroke={tb('trailEdge', T.bridge)} strokeWidth={1.5 * K} {...ROUND} />
+      {lit(T.bridge) && <path d={spline(L.path)} fill="none" stroke={BAKKE.lanternGlow} strokeWidth={3.6 * K} opacity={0.75} {...ROUND} />}
       <path d={scrub} fill={tb('leaf', T.twins)} stroke={tb('leafDark', T.twins)} strokeWidth={1.2 * K} opacity={0.92} {...ROUND} />
       <path d={scrubShade} fill={BAKKE.castShadow} opacity={0.2} />
       <path d={join(...flock.map(([x, y, s]) => scallop(x, y - 7 * s, 9 * s, 6 * s, 7, 0.62, -90)))} fill={BAKKE.wool} stroke={tb('greyDark', T.bridge)} strokeWidth={1.1 * K} {...ROUND} />
       <path d={join(...flock.map(([x, y, s]) => join(ellipse(x + 9 * s, y - 8 * s, 3.2 * s, 2.6 * s, 20), capsule([x - 4 * s, y - 3 * s], [x - 4 * s, y + 1 * s], 1 * s), capsule([x + 4 * s, y - 3 * s], [x + 4 * s, y + 1 * s], 1 * s))))} fill={BAKKE.sheepFace} />
+      {(() => {
+        // lammenes fold: stolper med jævn afstand langs bakken
+        const fp = L.sheepFence.flatMap((a, i, all) => {
+          if (i === all.length - 1) return [a]
+          const b = all[i + 1]
+          const m = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / (26 * K)))
+          return Array.from({ length: m }, (_, j) => [a[0] + ((b[0] - a[0]) * j) / m, a[1] + ((b[1] - a[1]) * j) / m] as Vec)
+        })
+        const ph = 12 * K
+        return (
+          <>
+            <path d={join(...fp.map(([x, y]) => rect(x - 1.6 * K, y - ph, 3.2 * K, ph, 1.2 * K)))} fill={tb('wood', T.bridge)} />
+            <path d={join(spline(L.sheepFence.map(([x, y]) => [x, y - ph * 0.8] as Vec)), spline(L.sheepFence.map(([x, y]) => [x, y - ph * 0.4] as Vec)))} fill="none" stroke={tb('woodDark', T.bridge)} strokeWidth={1.4 * K} {...ROUND} />
+          </>
+        )
+      })()}
       {L.trees.filter((p) => !p.front).map((p, i) => <g key={i}>{at(p, <Tree t={T.twins} seed={i} />)}</g>)}
       <Cottages spots={L.cottages} t={T.tower} />
       {at(L.tower, <Tower t={T.tower} />)}
@@ -1001,8 +1034,7 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
       <path d={join(...spots.filter((_, i) => i % 2 === 0).map(([x, y, r]) => circle(x, y, r)))} fill={BAKKE.flowerWhite} opacity={0.9} />
       <path d={join(...spots.filter((_, i) => i % 2 === 1).map(([x, y, r]) => circle(x, y, r)))} fill={g('flowerYellow')} />
       <path d={castNear} fill={BAKKE.castShadow} opacity={0.22} />
-      {/* stien over Tyvebroen, åen fra kilden (bredere nedstrøms) og broen */}
-      <path d={blob(ribbon(L.path, pw), 0.9)} fill={tb('trail', T.bridge)} stroke={tb('trailEdge', T.bridge)} strokeWidth={1.5 * K} {...ROUND} />
+      {/* åen fra kilden (bredere nedstrøms) og broen */}
       <path d={blob(ribbon(L.stream, sw.map((b) => b + 9 * K)), 0.9)} fill={tb('bank', T.bridge)} />
       <path d={blob(ribbon(L.stream, sw), 0.9)} fill={tb('water', T.bridge)} stroke={tb('waterEdge', T.bridge)} strokeWidth={1.5 * K} {...ROUND} />
       <path d={spline(xf(L.stream.slice(1), { dx: -2.5 * K }))} fill="none" stroke={BAKKE.waterLight} strokeWidth={2.4 * K} opacity={bloom(T.bridge) ? 0.9 : 0.55} {...ROUND} />
