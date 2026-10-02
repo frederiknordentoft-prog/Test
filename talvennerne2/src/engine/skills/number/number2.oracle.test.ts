@@ -375,12 +375,12 @@ for (const l of LINES) {
     })
 
     if (l.id === 'numberLine1000') {
-      // GENERATOR BUG (numberLine1000.ts, tolerance() for round10/round100 on the numberline): the needle
-      // put on the number itself counts as the rounded answer. "Sæt nålen ved den tier, der ligger
-      // tættest på fire hundrede og treogtres" (nl1000:round10:463, answer 460, ±4) takes 463 as right —
-      // as does every round10 instance whose ones digit is not 5 — and round100 takes 320 for 300 (±25).
-      // Not rounding at all then counts as production evidence toward box 4–5.
-      it.fails('rounding on the line: the unrounded number itself is never right', () => {
+      // Rettet (GENFIX). Was a generator bug (numberLine1000.ts, tolerance() for round10/round100 on the
+      // numberline): the needle put on the number itself counted as the rounded answer. "Sæt nålen ved
+      // den tier, der ligger tættest på fire hundrede og treogtres" (nl1000:round10:463, answer 460, ±4)
+      // took 463 as right — as did every round10 instance whose ones digit is not 5 — and round100 took
+      // 320 for 300 (±25). Not rounding at all then counted as production evidence toward box 4–5.
+      it('rounding on the line: the unrounded number itself is never right', () => {
         const problems = built
           .filter((b) => b.kind === 'numberline' && q(b.fact).family.startsWith('round') && isCorrect(b.task, q(b.fact).n))
           .map((b) => `${b.fact.id}: ${q(b.fact).n} is right (answer ${String(b.task.answer)}, ±${b.task.tolerance})`)

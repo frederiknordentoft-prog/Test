@@ -421,12 +421,22 @@ describe('numberLine100 and numberLine1000', () => {
   const t100 = tasksUnderTest(numberLine100, 2)
   const t1000 = tasksUnderTest(numberLine1000)
 
-  it('places with ±5 on 0–100 and ±50 on 0–1000, the ticks of readArrow exactly, and is always production', () => {
+  it('places with ±5 on 0–100 and ±50 on 0–1000, the ticks of readArrow exactly, rounds closer than the number, and is always production', () => {
     for (const { fact, task } of [...t100, ...t1000]) {
       if (task.kind !== 'numberline') continue
-      const want = { placeTens: 5, placeAny: 5, readArrow: 2, placeHundreds: 50, round10: 4, round100: 25 }[fact.family as 'placeTens']
-      const tol = fact.skill === 'numberLine1000' && fact.family === 'placeAny' ? 50 : want
-      expect(task.tolerance, fact.id).toBe(tol)
+      if (fact.family.startsWith('round')) {
+        // one less than the number's distance to its rounding (at most ±2 for tens, ±25 for hundreds):
+        // the unrounded number is never right, and the window is never narrower than a 0–20 line's tap
+        const n = lastNumber(fact.id)
+        const cap = fact.family === 'round10' ? 2 : 25
+        expect(task.tolerance, fact.id).toBe(Math.min(cap, Math.abs((task.answer as number) - n) - 1))
+        expect(isCorrect(task, n), fact.id).toBe(false)
+        expect((2 * task.tolerance + 1) / (task.range[1] - task.range[0] + 1), fact.id).toBeGreaterThanOrEqual(1 / 21)
+      } else {
+        const want = { placeTens: 5, placeAny: 5, readArrow: 2, placeHundreds: 50 }[fact.family as 'placeTens']
+        const tol = fact.skill === 'numberLine1000' && fact.family === 'placeAny' ? 50 : want
+        expect(task.tolerance, fact.id).toBe(tol)
+      }
       expect(isProduction(task), fact.id).toBe(true)
       expect(guessP(task)).toBeLessThanOrEqual(0.12)
       // nothing tagged lies inside the tolerance: a wrong answer is never a right one
@@ -434,14 +444,15 @@ describe('numberLine100 and numberLine1000', () => {
     }
   })
 
-  it('puts the rounding line on the hundred’s own stretch, and counts the guess there', () => {
+  it('puts the rounding line on the half stretch the number lies in, and counts the guess there', () => {
     for (const { fact, task } of t1000) {
-      if (fact.family !== 'round10' || task.kind !== 'numberline') continue
+      if (!fact.family.startsWith('round') || task.kind !== 'numberline') continue
       const n = lastNumber(fact.id)
-      const lo = Math.floor(n / 100) * 100
-      expect(task.prompt).toEqual({ scene: 'line', min: lo, max: lo + 100 })
-      expect(task.range).toEqual([lo, lo + 100])
-      expect(guessP(task)).toBeCloseTo(9 / 101)
+      const span = fact.family === 'round10' ? 50 : 500
+      const lo = Math.floor(n / span) * span
+      expect(task.prompt).toEqual({ scene: 'line', min: lo, max: lo + span })
+      expect(task.range).toEqual([lo, lo + span])
+      expect(guessP(task)).toBeCloseTo((2 * task.tolerance + 1) / (span + 1))
     }
   })
 
