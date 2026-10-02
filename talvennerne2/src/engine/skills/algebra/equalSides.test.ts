@@ -102,3 +102,11 @@ describe('equalSides', () => {
     expect(h).toMatchObject({ misconception: 'equalsAsAnswer', animated: true, visual: { scene: 'balance', right: [{ n: 7 }, { op: '+' }, { n: 5 }] } })
   })
 })
+
+describe('equalSides speech', () => {
+  it('reads a plain sum as a question, and a blank first or last as "hvad"', () => {
+    expect(textOf(taskOf(def, 'eqs:tf:7+2=_:9', 'keypad'))).toBe('Hvad er syv plus to?')
+    expect(textOf(taskOf(def, 'eqs:tf:_=7+2:9', 'keypad'))).toBe('Hvad er lig med syv plus to?')
+    expect(textOf(taskOf(def, 'eqs:add:_+5=8+4:7', 'keypad'))).toBe('Hvad plus fem er lig med otte plus fire?')
+  })
+})

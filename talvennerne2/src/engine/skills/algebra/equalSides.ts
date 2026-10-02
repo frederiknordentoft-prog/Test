@@ -248,10 +248,13 @@ function solveSays(e: Eq): SpeechPart[] {
 /**
  * "Otte plus fire er lig med hvad plus fem?" — read term by term (equation.ts would close the sentence
  * on the last number of "7 + 2 = 9 + □"); the last number is in end form only when nothing follows it.
+ * A plain sum ("7 + 2 = □") is read as equation.ts reads it.
  */
 function askSays(e: Eq): SpeechPart[] {
   const b = balance(e, { blank: true })
   const terms: Term[] = [...b.left, { op: '=' }, ...b.right]
+  // "7 + 2 = □" is a plain sum: "Hvad er syv plus to?"
+  if (b.right.length === 1 && 'blank' in b.right[0]) return equationSpeech(terms)
   const last = terms.length - 1
   return terms.map((t, i): SpeechPart => {
     if ('n' in t) return num(t.n, i === last ? 'end' : 'mid')

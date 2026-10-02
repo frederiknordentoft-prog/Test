@@ -10,7 +10,7 @@ import type { ClipId } from '../../../engine/types'
 
 const table: Record<ClipId, string> = {
   // Kan-bogen
-  's.cando.missingPart10': 'Jeg kan finde det tal, der mangler, når der er under ti.',
+  's.cando.missingPart10': 'Jeg kan finde det tal, der mangler, i plusstykker til ti.',
   's.cando.skipCount': 'Jeg kan tælle i spring.',
   's.cando.missingPart100': 'Jeg kan finde det tal, der mangler, op til hundrede.',
   's.cando.inverseOps': 'Jeg kan bruge et regnestykke, jeg kender, til at regne et nyt.',
