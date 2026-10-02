@@ -1,16 +1,19 @@
-// Indstillinger (SPEC §9.1 point 12, §9.2): sound and motion, topics, a copy of the child's data
-// (export/import per profile), deleting the profile, and "Om oplæsningen".
-import { useEffect, useRef, useState } from 'react'
+// Indstillinger (SPEC §9.1 point 12, §9.2): the grade and the worlds and places a grown-up opens
+// (GradeAndPlaces.tsx), sound and motion, topics, a copy of the child's data (export/import per
+// profile), deleting the profile, and "Om oplæsningen".
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MAX_PROFILES } from '../../../../content/catalog'
 import { DOMAINS } from '../../../../content/skills'
 import {
   exportFileName, readImportFile, shareExport, type ExportFile, type ExportProfile, type ImportTarget,
 } from '../../../../data/export'
+import { registeredSkills } from '../../../../engine/registry'
 import type { DomainId, ProfileDoc, ProfileSettings } from '../../../../engine/types'
 import { fmtTsDate, genitive, nameOf } from '../../../../parent/format'
 import { useProfile } from '../../../../state/useProfile'
 import { useSession } from '../../../../state/useSession'
 import { Sheet } from '../../../design/Sheet'
+import { GradeSection, PlacesSection } from './GradeAndPlaces'
 import { DashButton, Panel, Section, Toggle } from './parts'
 
 const VOICE_CREDIT = 'Stemme: Røst-v3 Chatterbox fra CoRal-projektet (Alexandra Instituttet), OpenRAIL-licens'
@@ -97,9 +100,15 @@ export function SettingsTab({ profile, onImported, onDelete }: SettingsTabProps)
     }
   }
 
+  // the skills with a module: places without one have nothing to play yet and cannot be opened
+  const registered = useMemo(() => new Set(registeredSkills().map((d) => d.id)), [])
+
   const entry = incoming?.profiles[pick] ?? null
   return (
     <>
+      <GradeSection profile={profile} registered={registered} />
+      <PlacesSection profile={profile} registered={registered} />
+
       <Section title="Lyd og bevægelse" sub={`Lydløs-knappen gælder hele enheden. Resten gælder for ${name}.`}>
         <Panel className="tv-dsettings">
           <Toggle

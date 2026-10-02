@@ -19,6 +19,7 @@ import {
   OPEN_REGIONS_PER_WORLD, hutRegions, isFinaleOpen, isNodeOpen, isRegionOpen, isWorldOpen, nodeDone, playedNodes,
   regionTier, requirementMet, trialPassed,
 } from '../../../../meta/unlock'
+import { isItemDrawn } from '../wardrobe/drawn'
 import type { PlayTarget } from './nodes'
 
 export type StoneState = 'locked' | 'open' | 'done'
@@ -266,7 +267,8 @@ export function mapModel(p: ProfileDoc, world: WorldId): MapModel {
       egg: Math.min(1, p.economy.eggWarmth / need),
       eggReady: p.economy.eggWarmth >= need,
       heart: heartOf(buddy),
-      wish: wishProgress(p),
+      // a wish for a thing that is not drawn yet waits out of sight, like in the shop
+      wish: p.economy.wish && isItemDrawn(p.economy.wish) ? wishProgress(p) : null,
     },
   }
 }

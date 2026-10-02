@@ -7,7 +7,9 @@ import { PRICE_BY_SLOT } from '../../../../content/catalog'
 import { clipText, hasClip } from '../../../../speech/catalog'
 import { clips as shopClips } from '../../../../speech/clips/ui/shop'
 import { clips as wardrobeClips } from '../../../../speech/clips/ui/wardrobe'
+import { AVAILABLE_ITEMS } from '../../../../art/items/registry'
 import { Shop } from '../ShopScreen'
+import { everyItemDrawn } from '../wardrobe/drawn'
 import { child } from '../wardrobe/fixtures'
 
 /**
@@ -32,7 +34,7 @@ describe('the shop', () => {
 
   it('lists four sets with the fixed price of every slot, and marks what the child has', () => {
     const p = child({ 'pirat-head': [0] })
-    const html = renderToStaticMarkup(<Shop profile={p} />)
+    const html = renderToStaticMarkup(<Shop profile={p} drawn={everyItemDrawn} />)
     const cards = tags(html, 'button').filter((b) => 'data-buy' in b)
     expect(cards).toHaveLength(24)
     expect(cards.filter((b) => 'data-owned' in b).map((b) => b['data-buy'])).toEqual(['pirat-head'])
@@ -44,11 +46,37 @@ describe('the shop', () => {
 
   it('shows the wish with a bar and no numbers', () => {
     const p = child()
-    const html = renderToStaticMarkup(<Shop profile={{ ...p, economy: { ...p.economy, wish: 'pirat-body', perler: 90 } }} />)
+    const html = renderToStaticMarkup(<Shop profile={{ ...p, economy: { ...p.economy, wish: 'pirat-body', perler: 90 } }} drawn={everyItemDrawn} />)
     const meter = tags(html, 'button').find((b) => b.role === 'meter')!
     expect(meter['aria-valuenow']).toBe('0.5')
     const wish = html.slice(html.indexOf('data-wish="pirat-body"'), html.indexOf('tv-store__tabs'))
     expect(wish).not.toMatch(/>\s*\d+\s*</)
+  })
+})
+
+describe('only drawn things in the shop (review P1-3)', () => {
+  it('sells only things whose drawing exists, and keeps the child\'s own in view', () => {
+    const p = child({ 'pirat-face': [0], 'fest-head': [0] })
+    const html = renderToStaticMarkup(<Shop profile={p} />)
+    const cards = tags(html, 'button').filter((b) => 'data-buy' in b)
+    expect(cards.length).toBeGreaterThan(0)
+    for (const b of cards) {
+      const item = b['data-buy'] as never
+      // for sale only when drawn; an undrawn thing on the shelf is the child's own, never with a price
+      if (!AVAILABLE_ITEMS.includes(item)) expect('data-owned' in b, b['data-buy']).toBe(true)
+    }
+    // a set with no drawn thing is not on the shelf at all
+    const sets = [...html.matchAll(/data-set="(\w+)"/g)].map((m) => m[1])
+    for (const set of sets) expect(AVAILABLE_ITEMS.some((id) => id.startsWith(`${set}-`)), set).toBe(true)
+  })
+
+  it('hides a wish for a thing that is not drawn yet', () => {
+    const p = child()
+    const undrawn = (['pirat-body', 'vinter-back', 'fodbold-hand'] as const).find((id) => !AVAILABLE_ITEMS.includes(id))
+    if (!undrawn) return
+    const html = renderToStaticMarkup(<Shop profile={{ ...p, economy: { ...p.economy, wish: undrawn, perler: 90 } }} />)
+    expect(html).not.toContain(`data-wish="${undrawn}"`)
+    expect(html).toContain('data-wish=""')
   })
 })
 

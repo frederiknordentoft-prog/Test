@@ -8,6 +8,7 @@ import type { ItemColor, ItemId, ProfileDoc, ProfileId } from '../../../../engin
 import { totalPerler } from '../../../../meta/rewards'
 import { installMeta, metaView, useMeta } from '../../../../state/useMeta'
 import { pendingWrites, useProfile } from '../../../../state/useProfile'
+import { everyItemDrawn } from '../wardrobe/drawn'
 import { buy } from './buy'
 import { priceOf, wishView, type Purchase } from './model'
 
@@ -195,15 +196,16 @@ describe('the wish', () => {
   it('is pinned, fills with perler, is fulfilled and unpinned by buying it, and survives a reload', async () => {
     const id = await childWith(60)
     expect(useMeta.getState().setWish('pirat-body')).toBe(true)
-    expect(wishView(profile())).toEqual({ item: 'pirat-body', progress: 60 / 180, buyable: false })
+    // the wish's own rules (the pirate set is not drawn yet; the shop hides it until it is)
+    expect(wishView(profile(), everyItemDrawn)).toEqual({ item: 'pirat-body', progress: 60 / 180, buyable: false })
     expect(metaView(profile()).wish).toBeCloseTo(1 / 3)
     expect((await reload(id)).economy.wish).toBe('pirat-body')
 
     state().update((q) => ({ ...q, economy: { ...q.economy, perler: 200 } }))
-    expect(wishView(profile())).toMatchObject({ progress: 1, buyable: true })
+    expect(wishView(profile(), everyItemDrawn)).toMatchObject({ progress: 1, buyable: true })
     expect(buy({ kind: 'item', item: 'pirat-body' })).toBe(true)
     expect(profile().economy).toMatchObject({ perler: 20, wish: null })
-    expect(wishView(profile())).toBeNull()
+    expect(wishView(profile(), everyItemDrawn)).toBeNull()
     const back = await reload(id)
     expect(back.economy.wish).toBeNull()
     expect(back.inventory['pirat-body']).toBeDefined()

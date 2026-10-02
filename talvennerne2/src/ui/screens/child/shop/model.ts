@@ -2,11 +2,16 @@
 // child's own things, the decor, and the wish. Pure functions over the profile; buying itself goes
 // through useMeta (the only place perler go down), so nothing here can take anything away.
 // Fixed integer prices only — no rotation, no sale, no countdown, no rarity, no real money.
+//
+// Only drawn things are sold (wardrobe/drawn.ts, review P1-3): a set is on the shelf once one of its
+// things is drawn, new colours are sold for drawn things only, and a wish for a thing without a
+// drawing is not shown. The filter goes away by itself as the drawings land.
 import { DECOR, ITEMS, ITEM_BY_ID, type DecorMeta, type ItemMeta } from '../../../../content/catalog'
 import { RECOLOR_PRICE } from '../../../../content/economy'
 import { SET_IDS } from '../../../../engine/types'
 import type { DecorId, ItemColor, ItemId, ProfileDoc, SetId, SpeechPart } from '../../../../engine/types'
 import { wishProgress } from '../../../../meta/actions'
+import { isItemDrawn, type DrawnItem } from '../wardrobe/drawn'
 import { COLORS, howToGetItem, ownedColors, owns } from '../wardrobe/model'
 
 type Shopper = Pick<ProfileDoc, 'inventory' | 'decor' | 'economy'>
@@ -65,15 +70,24 @@ export interface SetShelf {
   complete: boolean
 }
 
-export function setShelves(p: Shopper): SetShelf[] {
-  return SHOP_SETS.map((set) => {
-    const items = ITEMS.filter((i) => i.set === set).map((meta) => ({
-      meta,
-      price: priceOf({ kind: 'item', item: meta.id }) ?? 0,
-      owned: owns(p, meta.id),
-      wished: p.economy.wish === meta.id,
-    }))
-    return { set, items, complete: items.every((i) => i.owned) }
+/**
+ * The shop sets with what is for sale: the drawn things, and the child's own things of the set
+ * (shown as the child's, never sold again). A set with no drawn thing is not on the shelf.
+ */
+export function setShelves(p: Shopper, drawn: DrawnItem = isItemDrawn): SetShelf[] {
+  return SHOP_SETS.flatMap((set) => {
+    const all = ITEMS.filter((i) => i.set === set)
+    if (!all.some((i) => drawn(i.id))) return []
+    const items = all
+      .filter((meta) => drawn(meta.id) || owns(p, meta.id))
+      .map((meta) => ({
+        meta,
+        price: priceOf({ kind: 'item', item: meta.id }) ?? 0,
+        owned: owns(p, meta.id),
+        wished: p.economy.wish === meta.id,
+      }))
+    // the set's trophy needs all six, drawn or not
+    return [{ set, items, complete: all.every((i) => owns(p, i.id)) }]
   })
 }
 
@@ -84,9 +98,9 @@ export interface ColorRow {
   all: boolean
 }
 
-/** New colours for every thing the child has (any source), in catalogue order. */
-export function colorRows(p: Shopper): ColorRow[] {
-  return ITEMS.filter((meta) => owns(p, meta.id)).map((meta) => {
+/** New colours for every drawn thing the child has (any source), in catalogue order. */
+export function colorRows(p: Shopper, drawn: DrawnItem = isItemDrawn): ColorRow[] {
+  return ITEMS.filter((meta) => owns(p, meta.id) && drawn(meta.id)).map((meta) => {
     const have = ownedColors(p, meta.id)
     const colors = COLORS.map((color) => ({ color, owned: have.includes(color) }))
     return { meta, colors, all: colors.every((c) => c.owned) }
@@ -112,15 +126,16 @@ export interface WishView {
   buyable: boolean
 }
 
-export function wishView(p: ProfileDoc): WishView | null {
+/** The pinned wish with its bar; a wish for a thing that is not drawn yet waits out of sight. */
+export function wishView(p: ProfileDoc, drawn: DrawnItem = isItemDrawn): WishView | null {
   const item = p.economy.wish
-  if (!item || !ITEM_BY_ID[item]) return null
+  if (!item || !ITEM_BY_ID[item] || !drawn(item)) return null
   return { item, progress: wishProgress(p) ?? 0, buyable: canBuy(p, { kind: 'item', item }) }
 }
 
-/** Only things for sale are wished for in the shop (the wardrobe also offers level and medal things). */
-export function canWishInShop(p: Shopper, item: ItemId): boolean {
-  return ITEM_BY_ID[item]?.source.kind === 'shop' && !owns(p, item) && p.economy.wish !== item
+/** Only drawn things for sale are wished for in the shop (the wardrobe also offers level and medal things). */
+export function canWishInShop(p: Shopper, item: ItemId, drawn: DrawnItem = isItemDrawn): boolean {
+  return ITEM_BY_ID[item]?.source.kind === 'shop' && drawn(item) && !owns(p, item) && p.economy.wish !== item
 }
 
 // ─── Spoken lines ───────────────────────────────────────────────────────────

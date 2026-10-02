@@ -8,6 +8,7 @@ import { nameClip } from '../../../../content/names'
 import { SLOTS } from '../../../../engine/types'
 import type { Animal, ClipId, ItemColor, ItemId, ItemSource, ProfileDoc, Slot, SpeechPart } from '../../../../engine/types'
 import { clipForm } from '../../../../speech/catalog'
+import { isItemDrawn, type DrawnItem } from './drawn'
 
 export { SLOTS }
 
@@ -88,19 +89,20 @@ export interface SlotModel {
   /** The animal's own wings fill the slot. */
   locked: boolean
   worn: { item: ItemId; color: ItemColor } | null
-  /** Things the child has: only these can be chosen. */
+  /** Things the child has (drawn or not, nothing owned is hidden): only these can be chosen. */
   owned: OwnedItem[]
-  /** Everything else, shown as an outline with "Sådan får du den". */
+  /** "Det kan du få": the drawn things the child does not have yet, as outlines with "Sådan får du den". */
   others: ItemMeta[]
 }
 
-export function slotModel(p: Owner, animal: Pick<Animal, 'species' | 'outfit'> | null | undefined, slot: Slot): SlotModel {
+/** One slot of the wardrobe. `drawn` (wardrobe/drawn.ts) keeps things without a drawing out of "Det kan du få". */
+export function slotModel(p: Owner, animal: Pick<Animal, 'species' | 'outfit'> | null | undefined, slot: Slot, drawn: DrawnItem = isItemDrawn): SlotModel {
   const owned: OwnedItem[] = []
   const others: ItemMeta[] = []
   for (const meta of itemsOfSlot(slot)) {
     const colors = ownedColors(p, meta.id)
     if (colors.length > 0) owned.push({ meta, colors })
-    else others.push(meta)
+    else if (drawn(meta.id)) others.push(meta)
   }
   const w = animal?.outfit[slot]
   return { slot, locked: slotLocked(animal, slot), worn: w ? { item: w.item, color: w.color } : null, owned, others }
@@ -201,10 +203,10 @@ export const howToGetColor = (): SpeechPart[] => [{ clip: 's.wardrobe.how.color'
 
 export const itemNameSpeech = (item: ItemId): SpeechPart[] => [{ clip: ITEM_BY_ID[item].nameClip }]
 
-/** Things whose wish bar can move (perler, XP or medals); a chest or a finale is just reached. */
-export function canWishFor(p: Pick<ProfileDoc, 'inventory' | 'economy'>, item: ItemId): boolean {
+/** Drawn things whose wish bar can move (perler, XP or medals); a chest or a finale is just reached. */
+export function canWishFor(p: Pick<ProfileDoc, 'inventory' | 'economy'>, item: ItemId, drawn: DrawnItem = isItemDrawn): boolean {
   const kind = ITEM_BY_ID[item]?.source.kind
-  return !owns(p, item) && p.economy.wish !== item && (kind === 'shop' || kind === 'level' || kind === 'medal')
+  return drawn(item) && !owns(p, item) && p.economy.wish !== item && (kind === 'shop' || kind === 'level' || kind === 'medal')
 }
 
 /** The icon badge of a source on a thing's card (mastery gets the gold frame). */

@@ -16,6 +16,7 @@ import { useProfile } from '../../../state/useProfile'
 import { SpokenText } from '../../design/SpokenText'
 import { useSpeech } from '../../design/speech'
 import { TopBar } from '../../shell/TopBar'
+import { isItemDrawn, type DrawnItem } from './wardrobe/drawn'
 import { markGuided, wasGuided } from './wardrobe/guided'
 import { useLastShown } from './wardrobe/Tap'
 import {
@@ -39,10 +40,12 @@ export default function WardrobeScreen({ route }: ScreenProps<RouteOf<'wardrobe'
 export interface WardrobeProps {
   profile: ProfileDoc
   route: RouteOf<'wardrobe'>
+  /** Which things are drawn (wardrobe/drawn.ts); tests hand in their own. */
+  drawn?: DrawnItem
 }
 
 /** The wardrobe of one child (the screen hands it the loaded profile). */
-export function Wardrobe({ profile, route }: WardrobeProps) {
+export function Wardrobe({ profile, route, drawn = isItemDrawn }: WardrobeProps) {
   const speech = useSpeech()
   const [uid, setUid] = useState<string | null>(() => pickAnimalFor(profile, route.uid, route.item)?.uid ?? null)
   const [slot, setSlot] = useState<Slot>(() => startSlot(route.item))
@@ -74,7 +77,7 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
 
   const animal = pickAnimal(profile, uid)
   const animals = useMemo(() => animalsInOrder(profile), [profile])
-  const model = slotModel(profile, animal, slot)
+  const model = slotModel(profile, animal, slot, drawn)
 
   // The pointed-at thing: in view, said once (when the child likes things read aloud), remembered.
   const guideOn = !!(guide && animal?.outfit[ITEM_BY_ID[guide].slot]?.item === guide)
@@ -131,6 +134,8 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
   }
   const on = model.worn
   const onColors = on ? (model.owned.find((o) => o.meta.id === on.item)?.colors ?? [0 as ItemColor]) : []
+  // New colours are sold for drawn things only: a thing without a drawing has no colour bar.
+  const onDrawn = !!on && drawn(on.item)
 
   return (
     <div className="tv-wr" data-wardrobe={animal?.uid ?? ''} data-slot={slot}>
@@ -149,7 +154,7 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
       <div className="tv-wr__stage">
         <DressedAnimal animal={animal} mood={mood} />
         {on && <OffButton item={on.item} onOff={() => run({ kind: 'takeOff', slot })} />}
-        {on && <ColorBar item={on.item} owned={onColors} on={on.color} onPick={(c) => run(colorAction(profile, animal, on.item, c))} />}
+        {on && onDrawn && <ColorBar item={on.item} owned={onColors} on={on.color} onPick={(c) => run(colorAction(profile, animal, on.item, c))} />}
       </div>
       <div className="tv-wr__tabs">
         <SlotTabs active={slot} worn={worn} locked={locked} onPick={setSlot} />
@@ -166,7 +171,7 @@ export function Wardrobe({ profile, route }: WardrobeProps) {
       <HowSheet
         target={how}
         wished={!!howShown && profile.economy.wish === howShown.item}
-        canWish={!!howShown && canWishFor(profile, howShown.item)}
+        canWish={!!howShown && canWishFor(profile, howShown.item, drawn)}
         onClose={() => setHow(null)}
         onShop={() => {
           setHow(null)

@@ -875,6 +875,96 @@
 .tv-dsettings {
   padding-block: 2px;
 }
+
+/* The grade: four buttons, the chosen one filled (GradeAndPlaces.tsx). */
+.tv-dgrades {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 420px) {
+  .tv-dgrades {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.tv-dgrade {
+  min-height: 60px;
+  padding: 0 10px;
+  border: 2px solid var(--color-primary-tint);
+  border-radius: var(--radius-pill);
+  background: var(--color-card);
+  color: var(--color-primary-deep);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.tv-dgrade[aria-pressed='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-card);
+}
+.tv-dgrade:active {
+  transform: scale(0.97);
+}
+.tv-dgrade:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+/* Worlds and places: one panel per world, a row per region with its state or "Åbn". */
+.tv-dworld__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tv-dworld__name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+.tv-dworld__grade {
+  color: var(--color-ink-2);
+  font-size: 14px;
+}
+.tv-dplaces {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tv-dplace {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--color-line);
+}
+.tv-dplace:last-child {
+  border-bottom: 0;
+}
+.tv-dplace__name {
+  min-width: 0;
+  font-weight: 800;
+}
+.tv-dplace__state {
+  flex: none;
+  color: var(--color-good-deep, var(--color-ink-2));
+  font-size: 15px;
+  font-weight: 800;
+}
+.tv-dplace__state.is-later {
+  color: var(--color-ink-2);
+  font-weight: 700;
+}
+.tv-dplace .tv-dbtn {
+  flex: none;
+}
 .tv-dtoggle {
   display: flex;
   align-items: center;

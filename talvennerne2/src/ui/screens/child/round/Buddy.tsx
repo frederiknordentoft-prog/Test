@@ -20,6 +20,12 @@ export const isDrawnSpecies = (id: SpeciesId): boolean => AVAILABLE_SPECIES.incl
 
 const loaded = new Map<SpeciesId, SpeciesDef>()
 
+/** Load a drawn species ahead, so the buddy appears at once (a species without a drawing is skipped). */
+export async function preloadBuddy(id: SpeciesId): Promise<void> {
+  if (!isDrawnSpecies(id) || loaded.has(id)) return
+  loaded.set(id, await loadSpecies(id as CreatureId))
+}
+
 /** The species' drawing, loaded on demand: null while it loads and for a species without one. */
 function useDrawnSpecies(id: SpeciesId | null): SpeciesDef | null {
   const want = id && isDrawnSpecies(id) ? id : null

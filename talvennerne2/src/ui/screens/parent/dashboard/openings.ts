@@ -4,10 +4,12 @@
 //
 // Until the placement exists, every child starts in Engdalen. The grade still matters:
 //   - a child in 1.–3. class gets every place of the worlds below its grade opened, and its own
-//     world when that has something to play (gradeOpenings);
-//   - a grown-up can open any world or region with something to play from the dashboard.
-// A world or region whose skills have no module in the registry yet is never opened: its stones
-// would lead nowhere. As skills are registered, those places become openable by themselves.
+//     world when that is ready (gradeOpenings);
+//   - a grown-up can open any region or whole world that is ready from the dashboard.
+// A world is ready when every one of its regions has a registered skill: an open world opens its
+// first regions by itself, and a stone whose skills have no module would lead nowhere (the round
+// would have no tasks). As the skills are registered, the worlds become ready by themselves — today
+// that is Engdalen only.
 import { REGIONS, WORLDS, WORLD_BY_ID, regionsOfWorld, type RegionDef } from '../../../../content/curriculum'
 import type { Grade, ProfileDoc, RegionId, SkillId, WorldId } from '../../../../engine/types'
 import { isRegionOpen, isWorldOpen } from '../../../../meta/unlock'
@@ -21,8 +23,10 @@ export function regionHasContent(region: RegionDef, registered: ReadonlySet<Skil
   return region.skills.some((s) => !s.reviewOnly && registered.has(s.skill))
 }
 
-export function worldHasContent(world: WorldId, registered: ReadonlySet<SkillId>): boolean {
-  return regionsOfWorld(world).some((r) => regionHasContent(r, registered))
+/** Every region of the world has something to play, so the world can be opened. */
+export function worldReady(world: WorldId, registered: ReadonlySet<SkillId>): boolean {
+  const regions = regionsOfWorld(world)
+  return regions.length > 0 && regions.every((r) => regionHasContent(r, registered))
 }
 
 export interface Openings {
@@ -31,13 +35,14 @@ export interface Openings {
 }
 
 /**
- * What a grade opens (a stand-in for the placement): every region with something to play in the
- * worlds below the child's grade, and the worlds up to the child's own grade that have something to
- * play. Grade 0 opens nothing; so does a grade whose worlds are still empty.
+ * What a grade opens (a stand-in for the placement): every region of the ready worlds below the
+ * child's grade, and the ready worlds up to the child's own grade. Grade 0 opens nothing, and a world
+ * that is not ready is never opened.
  */
 export function gradeOpenings(grade: Grade, registered: ReadonlySet<SkillId>): Openings {
-  const worlds = WORLDS.filter((w) => w.grade > 0 && w.grade <= grade && worldHasContent(w.id, registered)).map((w) => w.id)
-  const regions = REGIONS.filter((r) => WORLD_BY_ID[r.world].grade < grade && regionHasContent(r, registered)).map((r) => r.id)
+  const ready = WORLDS.filter((w) => worldReady(w.id, registered))
+  const worlds = ready.filter((w) => w.grade > 0 && w.grade <= grade).map((w) => w.id)
+  const regions = REGIONS.filter((r) => WORLD_BY_ID[r.world].grade < grade && ready.some((w) => w.id === r.world)).map((r) => r.id)
   return { worlds, regions }
 }
 
@@ -64,7 +69,7 @@ export interface RegionRow {
   id: RegionId
   name: string
   open: boolean
-  /** Can be opened now: closed, and something to play there. */
+  /** Can be opened now: closed, in a ready world. */
   openable: boolean
 }
 
@@ -73,7 +78,7 @@ export interface WorldRow {
   name: string
   grade: Grade
   open: boolean
-  /** Something to play in the world (else: "kommer senere"). */
+  /** Every region has something to play (else: "kommer i en senere version"). */
   ready: boolean
   regions: RegionRow[]
   /** Regions that can be opened now. */
@@ -83,10 +88,10 @@ export interface WorldRow {
 /** Every world with its regions: open or not, and what a grown-up can open now. */
 export function openingRows(p: Unlocked, registered: ReadonlySet<SkillId>): WorldRow[] {
   return WORLDS.map((w) => {
-    const ready = worldHasContent(w.id, registered)
+    const ready = worldReady(w.id, registered)
     const regions = regionsOfWorld(w.id).map((r) => {
       const open = isRegionOpen(p, r.id)
-      return { id: r.id, name: r.name, open, openable: !open && regionHasContent(r, registered) }
+      return { id: r.id, name: r.name, open, openable: ready && !open }
     })
     return {
       id: w.id,
@@ -106,15 +111,12 @@ export function openingRows(p: Unlocked, registered: ReadonlySet<SkillId>): Worl
  */
 export function regionOpenings(region: RegionId, registered: ReadonlySet<SkillId>): Openings {
   const def = REGIONS.find((r) => r.id === region)
-  if (!def || !regionHasContent(def, registered)) return { worlds: [], regions: [] }
+  if (!def || !worldReady(def.world, registered)) return { worlds: [], regions: [] }
   return { worlds: [def.world], regions: [region] }
 }
 
-/** Open a whole world: the world itself and every region in it with something to play. */
+/** Open a whole ready world: the world itself and every region in it. */
 export function worldOpenings(world: WorldId, registered: ReadonlySet<SkillId>): Openings {
-  if (!worldHasContent(world, registered)) return { worlds: [], regions: [] }
-  return {
-    worlds: [world],
-    regions: regionsOfWorld(world).filter((r) => regionHasContent(r, registered)).map((r) => r.id),
-  }
+  if (!worldReady(world, registered)) return { worlds: [], regions: [] }
+  return { worlds: [world], regions: regionsOfWorld(world).map((r) => r.id) }
 }
