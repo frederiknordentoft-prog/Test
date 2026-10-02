@@ -455,12 +455,25 @@ export function hush(): void {
 
 // ─── Preloading and status ─────────────────────────────────────────────────
 
-/** Loads the manifest and the pinned sprites (call in idle after the first render). */
+/** The order the UI's other sprites are fetched in after the pinned ones: a round's lines first. */
+const LATER_UI = (id: string): number => (id.startsWith('ui-play') ? 0 : id.startsWith('rewards') ? 1 : id.startsWith('ui-') ? 2 : -1)
+
+/**
+ * Loads the manifest and the pinned sprites (call in idle after the first render), then the rest of
+ * the UI's voice in the background, one sprite at a time, so the screens a child opens later speak in
+ * the recorded voice from the first line (catalog.ts, uiPack).
+ */
 export async function preloadVoice(): Promise<void> {
   const idx = await loadIndex()
   if (!idx) return
-  const pinned = Object.entries(idx.manifest.sprites).filter(([, e]) => e.pinned).map(([id]) => id)
+  const entries = Object.entries(idx.manifest.sprites)
+  const pinned = entries.filter(([, e]) => e.pinned).map(([id]) => id)
   await Promise.all(pinned.map((id) => loadSprite(id).catch(() => undefined)))
+  const later = entries
+    .filter(([id, e]) => !e.pinned && LATER_UI(id) >= 0)
+    .map(([id]) => id)
+    .sort((a, b) => LATER_UI(a) - LATER_UI(b) || a.localeCompare(b))
+  for (const id of later) await loadSprite(id).catch(() => undefined)
 }
 
 /** Loads every sprite the given statements need (a round's tasks, during the 1.2 s intro). */

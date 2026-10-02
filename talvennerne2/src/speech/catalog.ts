@@ -13,7 +13,7 @@
 // `export default { … }` works as well as `export const clips`. Texts are what the screen shows and
 // what the voice says. Sentences carry their own final punctuation; fragments carry none — the
 // generator adds "," to `.mid` clips and "." to `.end` clips (see generationText()).
-// Default packs: files under ui/ → 'ui' (preloaded), names/ → 'names-<wave>',
+// Default packs: files under ui/ → by screen (uiPack below), names/ → 'names-<wave>',
 // skills/<domain>… → '<domain>-<wave>', any other file → '<file>-<wave>'.
 import type { ClipId } from '../engine/types'
 
@@ -69,10 +69,25 @@ interface Catalogue {
 let catalogue: Catalogue | null = null
 const EMPTY: Catalogue = { byId: new Map(), duplicates: [] }
 
+/**
+ * The UI's voice in three steps, for the 1.2 MB of sprites preloaded at start (SPEC §10.4): the first
+ * launch, the profiles and the map are preloaded ('ui'); a round's instructions and feedback follow
+ * right after in the background ('ui-play'); the books, the shop, the wardrobe and the meadow load on
+ * their own, last ('ui-<screen>'). preloadVoice() fetches them in that order.
+ */
+const UI_PINNED: ReadonlySet<string> = new Set(['soundcheck', 'onboarding', 'profiles', 'gate', 'play', 'ceremony', 'map'])
+const UI_PLAY: ReadonlySet<string> = new Set(['round', 'kinds', 'kinds2'])
+
+export function uiPack(screen: string): string {
+  if (UI_PINNED.has(screen)) return 'ui'
+  if (UI_PLAY.has(screen)) return 'ui-play'
+  return `ui-${screen}`
+}
+
 function defaultPack(file: string, wave: Wave): string {
   const stem = file.replace(/\.ts$/, '')
   const [top, second] = stem.split('/')
-  if (top === 'ui') return 'ui'
+  if (top === 'ui') return uiPack(second ?? '')
   if (top === 'names') return `names-${wave}`
   if (top === 'skills' && second) return `${second}-${wave}`
   return `${stem.replaceAll('/', '-')}-${wave}`

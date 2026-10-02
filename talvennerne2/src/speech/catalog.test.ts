@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { allClips, clipInfo, clipText, duplicateClips, generationText, hasClip } from './catalog'
+import { allClips, clipInfo, clipText, duplicateClips, generationText, hasClip, uiPack } from './catalog'
 import { compile, toDanishText } from './compile'
 import { equationSpeech } from './equation'
 import { RECALL_QUESTIONS, questionClip } from './recallQuestions'
@@ -122,5 +122,20 @@ describe('equationSpeech', () => {
     const c = compile(equationSpeech([{ n: 38 }, { op: '−' }, { blank: true }, { op: '=' }, { n: 12 }]))
     expect(c.missing).toEqual([])
     expect(c.clips).toEqual(['n.mid.38', 'op.minus', 'frag.hvad_giver', 'n.end.12'])
+  })
+})
+
+describe('the UI voice in three steps (SPEC §10.4, 1.2 MB preloaded)', () => {
+  it('preloads the first launch and the map, then a round, then the other screens', () => {
+    expect(['soundcheck', 'onboarding', 'profiles', 'gate', 'play', 'ceremony', 'map'].map(uiPack)).toEqual(Array(7).fill('ui'))
+    expect(['round', 'kinds', 'kinds2'].map(uiPack)).toEqual(['ui-play', 'ui-play', 'ui-play'])
+    expect(uiPack('books')).toBe('ui-books')
+    expect(clipInfo('s.map.soon.world')?.pack).toBe('ui')
+  })
+
+  it('keeps the preloaded UI text small: under a third of all UI text', () => {
+    const ui = allClips().filter((c) => c.file.startsWith('ui/'))
+    const chars = (cs: typeof ui) => cs.reduce((n, c) => n + c.text.length, 0)
+    expect(chars(ui.filter((c) => c.pack === 'ui')) / chars(ui)).toBeLessThan(1 / 3)
   })
 })
