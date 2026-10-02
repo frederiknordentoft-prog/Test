@@ -85,6 +85,23 @@ describe('dashboard views', () => {
     for (const t of ['Overblik', 'Pensumkort', 'Færdigheder', 'Tabeller', 'Misforståelser', 'Belønninger', 'Indstillinger']) expect(html).toContain(`>${t}</button>`)
     expect(html).toContain('Der er ingen spillere på denne enhed endnu.')
     expect(html).toContain('aria-current="page"')
+    // "Skift spiller" and "Ny spiller" are always at the top, also with a single child (review P1-1)
+    expect(html).toMatch(/<button[^>]*data-switch-player=""[^>]*>.*Skift spiller<\/button>/)
+    expect(html).toMatch(/<button[^>]*data-new-player=""[^>]*>.*Ny spiller<\/button>/)
+  })
+
+  it('render the grade and the places a grown-up can open (review P2-10)', () => {
+    const html = renderToStaticMarkup(<SettingsTab profile={profile({ grade: 1 })} onImported={() => {}} onDelete={async () => {}} />)
+    expect(html).toContain('Klassetrin')
+    expect(html.match(/data-set-grade="/g)).toHaveLength(4)
+    expect(html).toMatch(/aria-pressed="true"[^>]*data-set-grade="1"/)
+    expect(html).toContain('Alle børn starter i Engdalen')
+    expect(html).toContain('Verdener og steder')
+    expect(html).toContain('data-world-row="eng"')
+    expect(html).toContain('Tiervennernes hule')
+    // Hestebakkerne and the rest have nothing to play yet: no button opens them
+    expect(html).toContain('Verdenen kommer i en senere version.')
+    expect(html).not.toContain('Åbn hele Hestebakkerne')
   })
 
   it('draw the 10 · 10 table with the products in its titles', () => {

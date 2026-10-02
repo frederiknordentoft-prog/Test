@@ -243,7 +243,9 @@ export function GradeStep({ grade, onGrade }: { grade: Grade | null; onGrade: (g
           </Choice>
         ))}
       </div>
-      <SpokenText as="p" clip="s.onb.grade.start" className="tv-onb__hint" data-grade-start="" />
+      <div className="tv-onb__start" data-grade-start="">
+        <SpokenText as="p" clip="s.onb.grade.start" className="tv-onb__hint" />
+      </div>
     </div>
   )
 }

@@ -93,3 +93,21 @@ describe('profile picker rules (SPEC §8)', () => {
     expect(await t.actions.choose('gone')).toBe(false)
   })
 })
+
+describe('the picker with a single child (review P1-1)', () => {
+  it('shows the one child and "+ Ny spiller" behind the gate', () => {
+    const t = setup(1)
+    expect(canAddProfile(1)).toBe(true)
+    expect(t.actions.add()).toBe(true)
+    expect(t.routes).toEqual([])
+    t.pass()
+    expect(t.routes).toEqual([{ how: 'go', route: { id: 'onboarding' } }])
+  })
+
+  it('plays as the one child without a gate', async () => {
+    const t = setup(1)
+    expect(await t.actions.choose(t.ids[0])).toBe(true)
+    expect(t.routes).toEqual([{ how: 'root', route: { id: 'map' } }])
+    expect(t.gate.open).not.toHaveBeenCalled()
+  })
+})

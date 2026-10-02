@@ -8,7 +8,13 @@ import { MemoryStorage, installStorage } from '../../../../data/testing/memorySt
 import { readBoot } from '../../../../data/namespace'
 import { useProfile } from '../../../../state/useProfile'
 import { resetSessionForTests, useSession } from '../../../../state/useSession'
-import { finishOnboarding, firstNode, hatchFirstFriend, nameFriend, resetOnboardingForTests } from './flow'
+import { AVAILABLE_SPECIES } from '../../../../art/species/registry'
+import { STARTERS } from '../../../../content/catalog'
+import { regionsOfWorld } from '../../../../content/curriculum'
+import { isRegionOpen } from '../../../../meta/unlock'
+import {
+  finishOnboarding, firstNode, hatchFirstFriend, nameFriend, newProfileId, offeredStarters, resetOnboardingForTests, starterLooks,
+} from './flow'
 
 /** Onboarding against a real (fake) IndexedDB: profile → starter → name → grade → first round. */
 
@@ -94,5 +100,54 @@ describe('onboarding flow (SPEC §8)', () => {
     await useSession.getState().refreshProfiles()
     await expect(hatchFirstFriend({ name: 'Syv', species: 'cat' })).rejects.toBeInstanceOf(ProfileLimitError)
     expect(useSession.getState().profiles).toHaveLength(6)
+  })
+})
+
+describe('the eggs (review P1-2, P2-9)', () => {
+  it('offers only the starters that are drawn, all four once they are', () => {
+    expect(offeredStarters()).toEqual(STARTERS.filter((s) => (AVAILABLE_SPECIES as readonly string[]).includes(s)))
+    expect(offeredStarters(() => true)).toEqual(['rabbit', 'cat', 'puppy', 'horse'])
+    expect(offeredStarters((s) => s !== 'puppy')).toEqual(['rabbit', 'cat', 'horse'])
+  })
+
+  it('shows each baby in the breed and colour it hatches with', async () => {
+    let i = 0
+    for (const species of STARTERS) {
+      const id = newProfileId()
+      const looks = starterLooks(id)
+      expect(Object.keys(looks).sort()).toEqual([...STARTERS].sort())
+      const friend = await hatchFirstFriend({ name: `Barn ${++i}`, species, id })
+      expect(useProfile.getState().profile?.id).toBe(id)
+      expect(friend, species).toMatchObject({ species, breed: looks[species]!.breed, colorway: looks[species]!.colorway, stage: 1 })
+      await useProfile.getState().flush()
+      expect((await getProfile(id))?.animals[0]).toMatchObject({ breed: looks[species]!.breed, colorway: looks[species]!.colorway })
+    }
+  })
+
+  it('draws different colours for different children, as before', () => {
+    const colours = new Set(Array.from({ length: 24 }, () => starterLooks(newProfileId()).cat!.colorway))
+    expect(colours.size).toBeGreaterThan(1)
+  })
+})
+
+describe('the grade (review P2-10)', () => {
+  it('opens all of Engdalen from 1. class, and nothing more in 0. class', async () => {
+    await hatchFirstFriend({ name: 'Bo', species: 'cat', id: newProfileId() })
+    await finishOnboarding(2)
+    const p = useProfile.getState().profile!
+    expect(p.grade).toBe(2)
+    for (const r of regionsOfWorld('eng')) expect(isRegionOpen(p, r.id), r.id).toBe(true)
+    // Hestebakkerne has nothing to play yet: it stays closed
+    expect(p.unlocked.worlds).toEqual([])
+    const stored = await getProfile(p.id)
+    expect(stored?.unlocked.regions).toEqual(p.unlocked.regions)
+  })
+
+  it('keeps the first two places of Engdalen in 0. class', async () => {
+    await hatchFirstFriend({ name: 'Liv', species: 'rabbit' })
+    await finishOnboarding(0)
+    const p = useProfile.getState().profile!
+    expect(p.unlocked).toEqual({ worlds: [], regions: [] })
+    expect(regionsOfWorld('eng').filter((r) => isRegionOpen(p, r.id)).map((r) => r.id)).toEqual(['w0-tal10', 'w0-former'])
   })
 })
