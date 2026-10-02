@@ -183,7 +183,7 @@ export function layoutOf(w: number, h: number): Layout {
       ducks: { x: w * 0.81, y: h * 0.862, s: k * 0.95, kids: [[-13, -8], [-22, -15], [-30, -22]] },
       stones: { x: w * 0.818, y: h * 0.95, s: k, rot: across(brook[4], brook[5]) },
       sign: { ...on(near, 0.872, 0.012, k * 0.95) },
-      corners: [{ x: 0, y: h, s: k * 1.1 }, { x: w, y: h, s: k * 1.05 }],
+      corners: [{ x: 0, y: h, s: k * 1.35 }, { x: w, y: h, s: k * 1.3 }],
     }
   }
   const k = clamp(Math.max(w / 560, (h / 1250) * 0.9), 0.7, 1.3)
@@ -194,7 +194,7 @@ export function layoutOf(w: number, h: number): Layout {
   const house = on(mid, 0.79, 0.012, k * 0.95)
   const den = on(near, 0.83, 0.072, k)
   const bridge = { x: w * 0.68, y: h * 0.665, s: k * 0.9, rot: -24 }
-  const pond = on(mid, 0.5, 0.042, k * 0.85)
+  const pond = on(mid, 0.5, 0.042, k * 1.0)
   const brook: Vec[] = [
     [pond.x + FALL[0] * pond.s, pond.y + FALL[1] * pond.s], [w * 0.585, h * 0.605], [bridge.x, bridge.y],
     [w * 0.69, h * 0.76], [w * 0.63, h * 0.88], [w * 0.7, h * 1.03],
@@ -238,7 +238,7 @@ export function layoutOf(w: number, h: number): Layout {
     ducks: { x: pond.x + 6 * pond.s, y: pond.y + 4 * pond.s, s: pond.s * 0.72, kids: [[-15, 1], [-26, 2], [-36, 2.5]] },
     stones: { x: w * 0.668, y: h * 0.952, s: k, rot: across(brook[4], brook[5]) },
     sign: { ...on(near, 0.47, 0.036, k * 0.9) },
-    corners: [{ x: 0, y: h, s: k * 1.05 }, { x: w, y: h, s: k }],
+    corners: [{ x: 0, y: h, s: k * 1.5 }, { x: w, y: h, s: k * 1.45 }],
   }
 }
 
@@ -323,7 +323,7 @@ function ridgeLight(r: Ridge, w: number, depth: number) {
     const toward = clamp(f * 1.5 - 0.1, 0, 1)
     top.push([x, y])
     shade.push([x, y + depth * away * away * (3 - 2 * away)])
-    glow.push([x, y + depth * 0.55 * toward * toward * (3 - 2 * toward)])
+    glow.push([x, y + depth * 0.4 * toward * toward * (3 - 2 * toward)])
     if (f > 0.05) run.push([x, y + 1])
     else {
       if (run.length > 1) crests.push(run)
@@ -569,22 +569,22 @@ function SteppingStones({ t }: { t: RegionTier }) {
 function Corner({ t, mirror }: { t: RegionTier; mirror: boolean }) {
   const c = paint(t)
   const leaves = mirror
-    ? [leaf(-8, 12, 96, 21, -70), leaf(-12, 4, 78, 17, -30), leaf(30, 16, 64, 14, -96)]
-    : [leaf(-8, 10, 104, 22, -58), leaf(-14, 2, 86, 18, -24), leaf(24, 16, 70, 15, -92)]
+    ? [leaf(-6, 14, 104, 21, -76), leaf(-14, 8, 80, 17, -40), leaf(16, 18, 66, 14, -98)]
+    : [leaf(-6, 12, 112, 22, -68), leaf(-16, 6, 84, 18, -36), leaf(14, 18, 72, 15, -96)]
   const fl: [number, number, number][] = (mirror
-    ? [[52, -30, 10], [30, -62, 8.5], [74, -12, 8], [62, -56, 7]]
-    : [[50, -36, 11], [76, -16, 9], [28, -66, 8.5], [84, -50, 7.5]]).slice(0, 1 + rank(t)) as [number, number, number][]
+    ? [[40, -26, 10], [24, -70, 8.5], [58, -8, 8], [50, -50, 7]]
+    : [[42, -30, 11], [60, -8, 9], [26, -76, 8.5], [56, -54, 7.5]]).slice(0, 1 + rank(t)) as [number, number, number][]
   const flowers = flowerPaths(fl)
   return (
     <g transform={mirror ? 'scale(-1 1)' : undefined}>
-      <path d={grass([[12, 4, 2.3], [46, 6, 1.9], [80, 8, 1.4], [104, 8, 1.1]])} fill={c('front')} stroke={c('frontDark')} strokeWidth={1.3} {...ROUND} />
+      <path d={grass([[10, 4, 2.4], [36, 6, 1.9], [62, 8, 1.4], [82, 8, 1.1]])} fill={c('front')} stroke={c('frontDark')} strokeWidth={1.3} {...ROUND} />
       <g className="eng-sway" style={{ animationDelay: mirror ? '-2.4s' : '-0.8s' }}>
         <path d={join(...leaves.map((l) => l.blade))} fill={c('fgLeaf')} stroke={c('fgLeafDark')} strokeWidth={1.8} {...ROUND} />
         <path d={join(...leaves.map((l) => l.rib))} fill="none" stroke={c('fgLeafLight')} strokeWidth={1.6} opacity={0.9} {...ROUND} />
       </g>
       <path d={flowers.petals} fill={mirror ? c('flowerViolet') : c('flowerPink')} stroke={ENG.outline} strokeWidth={1.1} {...ROUND} />
       <path d={flowers.hearts} fill={c('flowerYellow')} />
-      {lit(t) && <path d={butterflies(([[96, -84, 1.1], [58, -104, 0.9]] as const).slice(0, rank(t) > 1 ? 2 : 1))} fill={mirror ? c('butterfly') : c('butterfly2')} stroke={ENG.outline} strokeWidth={1} {...ROUND} />}
+      {lit(t) && <path d={butterflies(([[78, -92, 1.1], [44, -112, 0.9]] as const).slice(0, rank(t) > 1 ? 2 : 1))} fill={mirror ? c('butterfly') : c('butterfly2')} stroke={ENG.outline} strokeWidth={1} {...ROUND} />}
     </g>
   )
 }
@@ -613,61 +613,76 @@ function brookGap(brook: readonly Vec[], widths: readonly number[], x: number, y
   return best
 }
 
-/** Hegnets stolper i løb på land: stien fra punkt 1 til broen og et kort stykke på den anden bred. */
+/**
+ * Hegnets stolper i løb på land: langs stien fra punkt 1 hen til bækken (løbets sidste stolpe står på brinken)
+ * og et kort stykke på den anden bred (en stolpe på brinken og én til), på den side af stien, der er tør.
+ */
 function fenceRuns(L: Layout, trailW: readonly number[], brookW: readonly number[]): Vec[][] {
   const K = L.k
   const side = L.wide ? -1 : 1
-  // hegnets linje: stiens punkter 1–4, forskudt til stiens ene side
-  const line: Vec[] = L.trail.slice(1, 5).map((p, i, a) => {
-    const q = a[Math.min(i + 1, a.length - 1)]
+  const dry = (p: Vec) => brookGap(L.brook, brookW, p[0], p[1]) >= 7 * K
+  const offsetOf = (i: number, sd: number) => (trailW[i] / 2 + 9 * K) * sd
+  // hegnets linje: stiens punkter 1–3 (broen), forskudt til stiens ene side
+  const line: Vec[] = L.trail.slice(1, 4).map((p, i, a) => {
+    const q = L.trail[Math.min(i + 2, L.trail.length - 1)]
     const o = a[Math.max(i - 1, 0)]
     const dx = q[0] - o[0]
     const dy = q[1] - o[1]
     const l = Math.hypot(dx, dy) || 1
-    const off = (trailW[i + 1] / 2 + 9 * K) * side
+    const off = offsetOf(i + 1, side)
     return [p[0] + (-dy / l) * off, p[1] + (dx / l) * off] as Vec
   })
-  // tæt prøvetagning langs linjen: land eller vand (med en lille margen til brinken)
-  const pts: { p: Vec; wet: boolean }[] = []
-  for (let i = 0; i < line.length - 1; i++) {
+  // tæt prøvetagning langs linjen frem til det første vand
+  const run: Vec[] = []
+  outer: for (let i = 0; i < line.length - 1; i++) {
     const [ax, ay] = line[i]
     const [bx, by] = line[i + 1]
     const steps = Math.max(2, Math.ceil(Math.hypot(bx - ax, by - ay) / (2 * K)))
-    for (let j = 0; j < steps; j++) {
-      const u = j / steps
-      const p: Vec = [ax + (bx - ax) * u, ay + (by - ay) * u]
-      pts.push({ p, wet: brookGap(L.brook, brookW, p[0], p[1]) < 7 * K })
+    for (let j = 0; j <= steps; j++) {
+      const p: Vec = [ax + ((bx - ax) * j) / steps, ay + ((by - ay) * j) / steps]
+      if (!dry(p)) break outer
+      run.push(p)
     }
   }
-  const runs: Vec[][] = []
-  let cur: Vec[] = []
-  for (const s of pts) {
-    if (s.wet) {
-      if (cur.length) runs.push(cur)
-      cur = []
-    } else cur.push(s.p)
-  }
-  if (cur.length) runs.push(cur)
-  // stolper med jævn afstand i hvert løb; løbets ender (ved bækken) får altid en stolpe
+  // stolper med jævn afstand; den sidste står altid ved brinken
   const spacing = 24 * K
-  const posts = runs.map((run) => {
-    const out: Vec[] = [run[0]]
-    let acc = 0
-    for (let i = 1; i < run.length; i++) {
-      acc += Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1])
-      if (acc >= spacing) {
-        out.push(run[i])
-        acc = 0
-      }
+  const near: Vec[] = run.length ? [run[0]] : []
+  let acc = 0
+  for (let i = 1; i < run.length; i++) {
+    acc += Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1])
+    if (acc >= spacing) {
+      near.push(run[i])
+      acc = 0
     }
+  }
+  if (run.length > 1) {
     const last = run[run.length - 1]
-    const tail = out[out.length - 1]
-    if (Math.hypot(last[0] - tail[0], last[1] - tail[1]) > spacing * 0.45) out.push(last)
-    else out[out.length - 1] = last
-    return out
-  })
-  // første løb: hegnet op til bækken; andet løb: stolpen på den anden bred og én mere
-  return [posts[0] ?? [], ...(posts[1] ? [posts[1].slice(0, 2)] : [])].filter((r) => r.length > 0)
+    const tail = near[near.length - 1]
+    if (Math.hypot(last[0] - tail[0], last[1] - tail[1]) > spacing * 0.45) near.push(last)
+    else near[near.length - 1] = last
+  }
+  // den anden bred: fra broen langs stien, først på hegnets egen side, ellers på den anden
+  const [b, q] = [L.trail[3], L.trail[4]]
+  const l = Math.hypot(q[0] - b[0], q[1] - b[1]) || 1
+  const [ux, uy] = [(q[0] - b[0]) / l, (q[1] - b[1]) / l]
+  // bækkens retning ved broen: den anden bred er den side, stiens næste punkt ligger på
+  const bi = L.brook.findIndex(([x, y]) => x === b[0] && y === b[1])
+  const [p0, p1] = [L.brook[Math.max(0, bi - 1)], L.brook[Math.min(L.brook.length - 1, bi + 1)]]
+  const sideOf = (p: Vec) => Math.sign((p1[0] - p0[0]) * (p[1] - b[1]) - (p1[1] - p0[1]) * (p[0] - b[0]))
+  const farSide = sideOf(q)
+  let far: Vec[] = []
+  for (const sd of [side, -side]) {
+    const off = offsetOf(3, sd)
+    for (let t = 0; t < Math.min(l, 60 * K); t += 2 * K) {
+      const p: Vec = [b[0] + ux * t - uy * off, b[1] + uy * t + ux * off]
+      if (!dry(p) || sideOf(p) !== farSide) continue
+      const next: Vec = [p[0] + ux * spacing, p[1] + uy * spacing]
+      far = dry(next) ? [p, next] : [p]
+      break
+    }
+    if (far.length) break
+  }
+  return [near, far].filter((r) => r.length > 0)
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -699,7 +714,7 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
         <path d={ridge(xf(pts, { dy: -5 }), h + 40)} fill={ENG.paperShadow} opacity={0.13} />
         <path d={ridge(pts, h + 40)} fill={g(color)} />
         <path d={light.shade} fill={ENG.shade} opacity={shadeO} />
-        <path d={light.glow} fill={ENG.sunlit} opacity={0.38} />
+        <path d={light.glow} fill={ENG.sunlit} opacity={0.2} />
         <path d={spline(pts)} fill="none" stroke={ENG.rim} strokeWidth={2} opacity={0.5} {...ROUND} />
         <path d={light.crest} fill="none" stroke={ENG.sunlit} strokeWidth={3.2 * K} opacity={0.95} {...ROUND} />
       </>
