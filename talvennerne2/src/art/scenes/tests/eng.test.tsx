@@ -1,12 +1,15 @@
 // Engdalens scene: elementbudget (≤ 400, så kortskærmen holder sig under 1.500), ingen forbudte elementer,
-// tiers bringer farven tilbage, og layoutet holder kendetegnene i kanterne i både høj- og bredformat.
+// tiers bringer farven tilbage (og kan ses fra hinanden), layoutet holder kendetegnene og seværdighederne i
+// kanterne i både høj- og bredformat, og verdenslogikken holder: bækken springer fra dammen og bliver bredere
+// nedstrøms, og hegnet stopper ved bækken med en stolpe på hver bred.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { REGIONS } from '../../../content/curriculum'
 import type { RegionTier } from '../../../meta/rewards'
-import EngScene, { ENG_REGIONS, EngArt, layoutOf } from '../eng'
+import EngScene, { ENG_REGIONS, EngArt, brookGap, brookWidths, fenceRuns, layoutOf, trailWidths } from '../eng'
+import { ENG } from '../palette'
 
 const SIZES: readonly [number, number][] = [[393, 852], [375, 667], [852, 393], [820, 1180], [1180, 820], [1366, 1024], [1920, 1080]]
 const TIERS: readonly RegionTier[] = ['start', 'bronze', 'silver', 'gold']
@@ -60,6 +63,54 @@ describe('Engdalen · scene', () => {
       if (L.wide) for (const u of xs) expect(u < 0.14 || u > 0.55, `${w}·${h} ${u.toFixed(2)}`).toBe(true)
       expect(L.k).toBeGreaterThan(0.5)
     }
+  })
+
+  it('seværdighederne (dam, ænder, trædesten, skilt) ligger uden for kortets rute i bredformat', () => {
+    for (const [w, h] of [[1180, 820], [1366, 1024], [1920, 1080]] as const) {
+      const L = layoutOf(w, h)
+      for (const p of [L.pond, L.ducks, L.stones, L.sign]) expect(p.x / w, `${w}·${h}`).toBeGreaterThan(0.55)
+    }
+  })
+
+  it('bækken springer fra dammens vandfald og bliver bredere nedstrøms', () => {
+    for (const [w, h] of SIZES) {
+      const L = layoutOf(w, h)
+      const bw = brookWidths(L)
+      for (let i = 1; i < bw.length; i++) expect(bw[i]).toBeGreaterThan(bw[i - 1])
+      // første punkt er vandfaldets fod lige under dammen; bækken løber ud forneden
+      expect(L.brook[0][1]).toBeGreaterThan(L.pond.y)
+      expect(L.brook[0][1] - L.pond.y).toBeLessThan(60 * L.pond.s)
+      expect(Math.abs(L.brook[0][0] - L.pond.x)).toBeLessThan(20 * L.pond.s)
+      expect(L.brook[L.brook.length - 1][1]).toBeGreaterThan(h)
+    }
+  })
+
+  it('hegnet stopper ved bækken: ingen stolpe i vandet og en stolpe på hver bred', () => {
+    for (const [w, h] of SIZES) {
+      const L = layoutOf(w, h)
+      const bw = brookWidths(L)
+      const runs = fenceRuns(L, trailWidths(L), bw)
+      expect(runs.length, `${w}·${h}`).toBe(2)
+      for (const [x, y] of runs.flat()) expect(brookGap(L.brook, bw, x, y), `${w}·${h}`).toBeGreaterThan(0)
+      expect(runs[0].length).toBeGreaterThanOrEqual(3)
+      const bank = runs[0][runs[0].length - 1]
+      const other = runs[1][0]
+      expect(brookGap(L.brook, bw, bank[0], bank[1]), `${w}·${h} denne bred`).toBeLessThan(14 * L.k)
+      expect(brookGap(L.brook, bw, other[0], other[1]), `${w}·${h} anden bred`).toBeLessThan(14 * L.k)
+    }
+  })
+
+  it('hvert tier kan ses: røg og sommerfugle fra bronze, flere ællinger pr. trin, regnbue og glimt i guld', () => {
+    const [start, bronze, silver, gold] = TIERS.map((t) => render(1180, 820, t))
+    expect(start).not.toContain(ENG.smoke)
+    expect(bronze).toContain(ENG.smoke)
+    expect(start).not.toContain(ENG.butterfly)
+    expect(bronze).toContain(ENG.butterfly)
+    for (const m of [start, bronze, silver]) expect(m).not.toContain(ENG.rainbow1)
+    expect(gold).toContain(ENG.rainbow1)
+    expect(count(start)).toBeLessThan(count(bronze))
+    expect(count(bronze)).toBeLessThan(count(silver))
+    expect(count(silver)).toBeLessThan(count(gold))
   })
 
   it('kun skyer og blade animerer, og kun transform; rolig tilstand og reduceret bevægelse stopper dem', () => {

@@ -398,7 +398,7 @@ function Garden({ t }: { t: RegionTier }) {
 }
 
 /** Plusengen: en klynge engblomster og græs; flere blomster og sommerfugle jo længere regionen er nået. */
-function Meadow({ t, seed }: { t: RegionTier; seed: number }) {
+function Meadow({ t, seed, flutter }: { t: RegionTier; seed: number; flutter: boolean }) {
   const c = paint(t)
   const all: [number, number, number][] = [
     [-22, -6, 5.2], [-8, -14, 4.6], [6, -4, 5.4], [20, -12, 4.4], [32, -2, 4.8], [-34, -1, 4.2], [-14, 2, 4],
@@ -413,7 +413,7 @@ function Meadow({ t, seed }: { t: RegionTier; seed: number }) {
       <path d={yellow.petals} fill={c('flowerYellow')} stroke={c('flowerHeart')} strokeWidth={0.9} {...ROUND} />
       <path d={white.petals} fill={ENG.flowerWhite} stroke={c('flowerViolet')} strokeWidth={0.9} {...ROUND} />
       <path d={join(yellow.hearts, white.hearts)} fill={c('flowerHeart')} />
-      {lit(t) && <path d={butterflies(([[-10, -44, 1.1], [24, -52, 0.85], [6, -66, 0.75]] as const).slice(0, rank(t)))} fill={c('butterfly')} stroke={ENG.outline} strokeWidth={1} {...ROUND} />}
+      {flutter && lit(t) && <path d={butterflies(([[-10, -44, 1.1], [24, -52, 0.85], [6, -66, 0.75]] as const).slice(0, rank(t)))} fill={c('butterfly')} stroke={ENG.outline} strokeWidth={1} {...ROUND} />}
     </>
   )
 }
@@ -599,8 +599,12 @@ const CLOUD = {
 // ---------------------------------------------------------------------------------------------
 // Hegnet: stolper langs stiens ene side, der stopper ved bækken (en stolpe på hver bred)
 
+/** Bækken bliver bredere nedstrøms (fuld bredde pr. punkt); stien ligeså. */
+export const brookWidths = (L: Layout) => L.brook.map((_, i) => (5 + i * 7.5) * L.k)
+export const trailWidths = (L: Layout) => L.trail.map((_, i) => (7 + i * 3.4) * L.k)
+
 /** Afstanden fra (x, y) til bækkens vandkant (negativ i vandet), med bækkens bredde lagt lineært ud. */
-function brookGap(brook: readonly Vec[], widths: readonly number[], x: number, y: number): number {
+export function brookGap(brook: readonly Vec[], widths: readonly number[], x: number, y: number): number {
   let best = Infinity
   for (let i = 0; i < brook.length - 1; i++) {
     const [ax, ay] = brook[i]
@@ -618,7 +622,7 @@ function brookGap(brook: readonly Vec[], widths: readonly number[], x: number, y
  * Hegnets stolper i løb på land: langs stien fra punkt 1 hen til bækken (løbets sidste stolpe står på brinken)
  * og et kort stykke på den anden bred (en stolpe på brinken og én til), på den side af stien, der er tør.
  */
-function fenceRuns(L: Layout, trailW: readonly number[], brookW: readonly number[]): Vec[][] {
+export function fenceRuns(L: Layout, trailW: readonly number[], brookW: readonly number[]): Vec[][] {
   const K = L.k
   const side = L.wide ? -1 : 1
   const dry = (p: Vec) => brookGap(L.brook, brookW, p[0], p[1]) >= 7 * K
@@ -753,8 +757,8 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
   const tb = T.brook
   const tt = T.trail
   // Bækken bliver bredere nedstrøms; brinken er et mørkere bånd under vandet.
-  const brookW = L.brook.map((_, i) => (5 + i * 7.5) * K)
-  const trailW = L.trail.map((_, i) => (7 + i * 3.4) * K)
+  const brookW = brookWidths(L)
+  const trailW = trailWidths(L)
   const fence = fenceRuns(L, trailW, brookW)
   const postH = 16 * K
   const posts = fence.flat()
@@ -882,7 +886,8 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
       {at(L.sign, <Sign t={T.den} />)}
       {at(L.den, <Den t={T.den} />)}
       {at(L.garden, <Garden t={T.garden} />)}
-      {L.meadow.map((p, i) => <g key={i}>{at(p, <Meadow t={T.meadow} seed={i} />)}</g>)}
+      {/* (klyngen ved hulen og det højre hjørne har ingen sommerfugle: hjørnet har sine egne) */}
+      {L.meadow.map((p, i) => <g key={i}>{at(p, <Meadow t={T.meadow} seed={i} flutter={i !== (L.wide ? 2 : 0)} />)}</g>)}
       <path d={grass(tufts)} fill={tint('front', T.meadow)} stroke={tint('frontDark', T.meadow)} strokeWidth={1.2 * K} {...ROUND} />
       {at(L.corners[0], <Corner t={T.meadow} mirror={false} />)}
       {at(L.corners[1], <Corner t={T.grove} mirror />)}
