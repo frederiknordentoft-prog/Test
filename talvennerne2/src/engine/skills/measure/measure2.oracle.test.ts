@@ -10,6 +10,9 @@ import { masteryKeyOf } from '../../tasks'
 import { makeRng } from '../../rng'
 import type { AnswerValue, Fact, SkillId, Task } from '../../types'
 import { setValue } from '../../../ui/task/answers'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { PromptScene } from '../../../ui/scenes/PromptScene'
 import { clipText } from '../../../speech/catalog'
 import {
   answerProblems, cardProblems, first, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
@@ -99,6 +102,19 @@ describe('measureUnits oracle', () => {
     expect(first(problems)).toEqual([])
   })
 
+  it('draws as many units under the thing as the answer (the scene rendered)', () => {
+    const problems: string[] = []
+    const seen = new Set<string>()
+    for (const { fact, task } of built) {
+      if (seen.has(fact.id)) continue
+      seen.add(fact.id)
+      const html = renderToStaticMarkup(createElement(PromptScene, { prompt: task.prompt, task }))
+      const units = (html.match(/<g transform="translate\(-?[\d.]+ 52\) scale\(1\)">/g) ?? []).length
+      if (units !== task.answer) problems.push(`${fact.id}: draws ${units} units, answer ${String(task.answer)}`)
+    }
+    expect(first(problems)).toEqual([])
+  })
+
   it('classifies every card and typed number as a plain error (SPEC §4.2 has no misconception for measuring with units)', () => {
     expect(first(numberClassification(built, (b, v) => ({ mis: [], swap: typedSwap(b.task, v, []) })))).toEqual([])
   })
@@ -156,6 +172,20 @@ describe('rulerRead oracle', () => {
       if (spokenText(task.speech) !== 'Hvor mange centimeter lang er tingen?') problems.push(`${where}: "${spokenText(task.speech)}"`)
       if (kind === 'keypad' && task.unit !== 'cm') problems.push(`${where}: keypad suffix ${task.unit}`)
       problems.push(...answerProblems(task), ...cardProblems(task, (c) => c >= 1 && c <= 20))
+    }
+    expect(first(problems)).toEqual([])
+  })
+
+  it('draws a ruler long enough to read the end mark (the scene rendered)', () => {
+    const problems: string[] = []
+    const seen = new Set<string>()
+    for (const { fact, task } of built) {
+      if (seen.has(fact.id)) continue
+      seen.add(fact.id)
+      const html = renderToStaticMarkup(createElement(PromptScene, { prompt: task.prompt, task }))
+      const marks = (html.replace(/<[^>]*>/g, ' ').match(/\d+/g) ?? []).map(Number)
+      const l = lay(fact)
+      if (!marks.includes(l.start) || !marks.includes(l.start + l.len)) problems.push(`${fact.id}: the ruler shows [${[...new Set(marks)]}]`)
     }
     expect(first(problems)).toEqual([])
   })

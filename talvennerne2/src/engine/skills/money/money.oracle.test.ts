@@ -2,6 +2,10 @@
 // instances per family, every kind, compared with money.oracle.ts — the amount read from the coins in
 // the picture and the spoken question, the fewest pieces counted out, wrong amounts by pædagogik §3.2.
 import { describe, expect, it, vi } from 'vitest'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { OptionFace } from '../../../ui/task/faces'
+import { PromptScene } from '../../../ui/scenes/PromptScene'
 import { isCorrect } from '../../answer'
 import { classifyAnswer } from '../../misconceptions'
 import { registeredSkills } from '../../registry'
@@ -434,6 +438,88 @@ describe('change oracle', () => {
   it('speaks every task and hint with recorded clips, no digits, every amount as SPEC §10.1 says it', () => {
     const tags = tagsToHint(def, canon)
     expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...specificHintProblems(def, canon), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
+  })
+})
+
+// ─── The money on the cards ─────────────────────────────────────────────────
+
+/**
+ * What a coin or note card shows (src/ui/task/faces.tsx OptionFace, rendered to markup): one picture
+ * per piece — never the token's text ('c5000') or the amount in digits ('50 kr.'), which would turn
+ * "find the note" into reading a number.
+ */
+function drawnPieceProblems(built: readonly Built[], cardWanted: (pieces: readonly number[]) => boolean): string[] {
+  const out = new Set<string>()
+  for (const { fact, task } of built) {
+    if (task.optionView !== 'coin' && task.optionView !== 'coins') continue
+    for (const o of task.options) {
+      const pieces = typeof o === 'number' ? [o] : (setPieces(o) ?? [tokenPiece(o) ?? NaN])
+      if (!cardWanted(pieces)) continue
+      const html = renderToStaticMarkup(createElement(OptionFace, { task, value: o, size: 'md' }))
+      const svgs = (html.match(/<svg/g) ?? []).length
+      if (/>c\d+</.test(html) || /tv-face__num/.test(html) || svgs < pieces.length) out.add(`${fact.skill} ${fact.id} ${task.kind}: the card ${String(o)} is drawn as ${html.replace(/<(path|text|g|circle|rect|ellipse)[^>]*>|<\/(path|text|g)>/g, '').slice(0, 140)}`)
+    }
+  }
+  return [...out]
+}
+
+/** The coins a picture draws, read off each coin's own label ("20 KR", "50 ØRE"), in øre. */
+function drawnCoins(html: string): number[] {
+  return html.split('<svg').slice(1).flatMap((chunk) => {
+    const label = /(\d+) (KR|ØRE)/.exec(chunk.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' '))
+    return label ? [Number(label[1]) * (label[2] === 'KR' ? 100 : 1)] : []
+  })
+}
+const sceneHtml = (t: Task): string => renderToStaticMarkup(createElement(PromptScene, { prompt: t.prompt, task: t }))
+
+describe('the money in the pictures', () => {
+  it('countCoins draws the coins of the id, and their labels add up to the answer', () => {
+    const problems: string[] = []
+    const seen = new Set<string>()
+    for (const { fact, task } of sweepB(registeredSkill('countCoins'), 1).built) {
+      if (seen.has(fact.id)) continue
+      seen.add(fact.id)
+      const drawn = drawnCoins(sceneHtml(task))
+      const coins = parsePile(fact.id)!.coins.map((c) => c * 100)
+      if (drawn.join() !== coins.join() || sum(drawn) !== task.answer) problems.push(`${fact.id}: draws [${drawn}] for ${String(task.answer)}`)
+    }
+    expect(first(problems)).toEqual([])
+  })
+
+  const changeTasks = sweepB(registeredSkill('change'), 1).built.filter((b, i, all) => all.findIndex((x) => x.fact.id === b.fact.id) === i)
+  it('change draws money worth what was paid in the shop', () => {
+    const problems = changeTasks.flatMap(({ fact, task }) => {
+      const s = parseSale(fact.id)!
+      const drawn = drawnCoins(sceneHtml(task))
+      return sum(drawn) === s.paid ? [] : [`${fact.id}: draws [${drawn}], paid ${s.paid}`]
+    })
+    expect(first(problems)).toEqual([])
+  })
+  // ORK2b finding: "Du betaler med en halvtredskroneseddel." (from50) and "… en hundredkroneseddel." (from100)
+  // name one note, but the shop (src/ui/scenes/PromptScene.tsx, splitCoins for paidOre) draws the paid money
+  // as coins: 20 + 20 + 10 kr for byt:from50:*, five 20-krone coins for byt:from100:*. The words and the picture disagree.
+  it.fails('change draws what was paid as the one coin or note the question names', () => {
+    const problems = changeTasks.flatMap(({ fact, task }) => {
+      const drawn = drawnCoins(sceneHtml(task))
+      const notes = (sceneHtml(task).match(/tv-coins__note/g) ?? []).length
+      return drawn.length + notes === 1 ? [] : [`${fact.id} "${spokenText(task.speech)}": draws [${drawn}]`]
+    })
+    expect(first(problems)).toEqual([])
+  })
+})
+
+describe('coins and notes on the cards are drawn as money (the pieces give the amount)', () => {
+  const coinNames = sweepB(registeredSkill('coinNames'), 2).built
+  const payCards = sweepB(registeredSkill('payExact'), 1).built.filter((b) => b.kind === 'choice')
+  it('draws every card of coins as the coins', () => {
+    expect(first(drawnPieceProblems([...coinNames, ...payCards], (ps) => ps.every(isCoin)))).toEqual([])
+  })
+  // ORK2b finding: OptionFace (src/ui/task/faces.tsx face()) only knows coins (COIN_VALUES 50–2000). A note
+  // on a 'coin' card is drawn as the amount in digits ("50 kr." for mnt:5000 choice), a note token as its
+  // raw text ("c05000" for mnt:5000 multiSelect, "c5000" in the payExact to100/fewestCoins set
+  // 'c5000|c2000|c200'). The generators deal notes on these cards; the Banknote material exists but no card draws it.
+  it.fails('draws every note card as the note (coinNames notes, payExact to100 and fewestCoins)', () => {
+    expect(first(drawnPieceProblems([...coinNames, ...payCards], (ps) => !ps.every(isCoin)))).toEqual([])
   })
 })
 
