@@ -124,9 +124,6 @@ export const around = (answer: number, steps: readonly number[]): number[] => st
 
 // ─── Strategy hints ─────────────────────────────────────────────────────────
 
-/** "Hop to frem til" / "Hop tyve tilbage til": recorded for 1–9 and the whole tens 10–90 (clips/skills/addsub2.ts). */
-export const hopClip = (d: number): string => `hint.addsub2.${d > 0 ? 'fwd' : 'back'}.${Math.abs(d)}`
-
 /**
  * Stops on the empty number line for a + b, from a (2. klasse): up to the next ten first when the ones
  * cross it, then the whole tens, then the rest — 38 + 45: 38, 40, 80, 83. Without a crossing: the tens,
@@ -170,7 +167,10 @@ export function minusStops(a: number, b: number, compensate = false): number[] {
 /** "Start på otteogtredive. Hop to frem til fyrre. Hop fyrre frem til firs. Hop tre frem til treogfirs." */
 export function hopSpeech(stops: readonly number[]): SpeechPart[] {
   const out: SpeechPart[] = [say('hint.addsub2.startOn'), num(stops[0])]
-  for (let i = 1; i < stops.length; i++) out.push(say(hopClip(stops[i] - stops[i - 1])), num(stops[i]))
+  for (let i = 1; i < stops.length; i++) {
+    const d = stops[i] - stops[i - 1]
+    out.push(say('hint.addsub2.hop'), num(Math.abs(d), 'mid'), say(d > 0 ? 'hint.addsub2.forwardTo' : 'hint.addsub2.backTo'), num(stops[i]))
+  }
   return out
 }
 
@@ -181,12 +181,12 @@ export function hopLine(stops: readonly number[]): HintVisual {
   return { scene: 'line', min, max, hops: [...stops] }
 }
 
-/** "tre tiere" (whole clips, so the number and the noun are said as one phrase). */
-export const tensWords = (n: number): SpeechPart => say(`hint.addsub2.tens.${n}`)
+/** "tre tiere": the number, then the noun bound to it (as "syv gulerødder" in count10). */
+export const tensWords = (n: number): SpeechPart[] => [num(n, 'mid'), say(n === 1 ? 'noun.addsub2.tier' : 'noun.addsub2.tiere')]
 
-/** "Tre tiere og fire tiere giver syv tiere." for whole tens (a, b and the result in tens). */
+/** "Tre tiere plus fire tiere giver syv tiere." for whole tens (a, b and the result in tens). */
 export function tensSum(a: number, op: Sign, b: number): SpeechPart[] {
-  return [tensWords(a), say(op === '+' ? 'op.plus' : 'op.minus'), tensWords(b), say('op.giver'), tensWords(result(a, op, b))]
+  return [...tensWords(a), say(op === '+' ? 'op.plus' : 'op.minus'), ...tensWords(b), say('op.giver'), ...tensWords(result(a, op, b))]
 }
 
 /** "Fire plus fem giver ni." */

@@ -56,7 +56,7 @@ function strategy(f: Fact): SpeechPart[] {
     case 'subTeen':
       return [say('hint.addSub20Simple.takeOnes'), num(a - 10, 'mid'), say('op.minus'), num(b, 'mid'), say('op.giver'), num(a - 10 - b), ...ten(a - 10 - b)]
     default:
-      return [say('hint.addSub20Simple.fullFrame'), ...ten(a === 10 ? b : a)]
+      return [say('hint.addSub20Simple.fullFrame'), num(10), ...ten(a === 10 ? b : a)]
   }
 }
 

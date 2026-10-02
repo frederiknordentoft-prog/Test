@@ -23,7 +23,7 @@ function hint(f: Fact, tag: string | null): HintSpec {
   const sum = (x: number) => [num(x, 'mid'), say('op.og'), num(x, 'mid'), say('op.giver'), num(2 * x)]
   const strategy = [
     say('hint.doubles.twoRows'),
-    ...(a >= 6 && a <= 9 ? [say('hint.doubles.fiveFive'), ...sum(a - 5), num(10, 'mid'), say('op.og'), num(2 * (a - 5), 'mid'), say('op.giver'), num(2 * a)] : sum(a)),
+    ...(a >= 6 && a <= 9 ? [...sum(5), ...sum(a - 5), num(10, 'mid'), say('op.og'), num(2 * (a - 5), 'mid'), say('op.giver'), num(2 * a)] : sum(a)),
   ]
   const visual = { scene: 'array', rows: 2, cols: a } as const
   if (tag === 'wrongOperation') return hintOf([say('hint.doubles.more'), ...strategy], visual, 'wrongOperation')

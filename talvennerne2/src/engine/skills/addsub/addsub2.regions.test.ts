@@ -9,7 +9,9 @@ import { isCorrect } from '../../answer'
 import { isProduction } from '../../kinds'
 import { newProfile } from '../../testing/profile'
 import { compile } from '../../../speech/compile'
-import type { SkillId } from '../../types'
+import { allClips } from '../../../speech/catalog'
+import { factsUnderTest, tasksUnderTest } from '../number/testing/harness'
+import type { ErrorTag, SkillDef, SkillId } from '../../types'
 
 const MINE: ReadonlySet<SkillId> = new Set<SkillId>([
   'doubles', 'halves', 'addSub20Simple', 'addTo20', 'subTo20', 'tens100', 'add100NoCarry', 'sub100NoBorrow',
@@ -60,5 +62,21 @@ describe('the plus and minus regions of 1.–2. klasse', () => {
       const plan = planRound(node, newProfile(), { ...ctx, seed: 7 })
       expect(plan.tasks.length, node.id).toBe(node.size)
     }
+  })
+
+  it('records only clips that are spoken: every clip of clips/skills/addsub2.ts is used', () => {
+    const used = new Set<string>()
+    const defs = registeredSkills().filter((d) => MINE.has(d.id)) as SkillDef[]
+    const tags: (ErrorTag | null)[] = [null, 'near', 'operand', 'other', 'ambiguous', 'forgotCarry', 'smallerFromLarger', 'borrowNoDecrement',
+      'placeMisalign', 'wrongOperation', 'countFromFirst', 'tensZero', 'digitComplement10']
+    for (const def of defs) {
+      used.add(def.canDo)
+      for (const { task } of tasksUnderTest(def, 1)) for (const c of compile(task.speech).clips) used.add(c)
+      for (const f of factsUnderTest(def, 40)) for (const tag of tags) for (const c of compile(def.hint(f, tag).speech).clips) used.add(c)
+    }
+    const mine = allClips().filter((c) => c.file === 'skills/addsub2.ts')
+    expect(mine.length).toBeGreaterThan(40)
+    expect(mine.filter((c) => !used.has(c.id)).map((c) => c.id)).toEqual([])
+    for (const c of mine) expect([c.wave, c.pack], c.id).toEqual([2, 'addsub-2'])
   })
 })

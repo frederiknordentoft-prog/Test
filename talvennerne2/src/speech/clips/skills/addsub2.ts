@@ -4,11 +4,9 @@
 // (clips/questions.ts); the procedure questions are composed ("Hvad er" 38 "plus" 45, speech/equation.ts).
 // All wave 2, in the plus-and-minus sprite of wave 2.
 //
-// Hops on the empty number line are whole phrases per hop size, so the number and the words around it
-// are one breath: "Hop to frem til" + fyrre, "Hop tyve tilbage til" + tredive. Counted tens are whole
-// phrases too ("tre tiere"), never a number in mid form followed by a noun.
+// Every number of a task is a { num } part (SPEC §10.1): "Hop" 2 "frem til" 40, 3 "tiere" — the tens
+// nouns are `noun.*` clips, so the voice binds them to the number before them like "syv gulerødder".
 import type { ClipId } from '../../../engine/types'
-import { numberWords } from '../../numberWords'
 
 const table: Record<ClipId, string> = {
   // Kan-bogen
@@ -26,6 +24,11 @@ const table: Record<ClipId, string> = {
 
   // Shared strategy words
   'hint.addsub2.startOn': 'Start på',
+  'hint.addsub2.hop': 'Hop',
+  'hint.addsub2.forwardTo': 'frem til',
+  'hint.addsub2.backTo': 'tilbage til',
+  'noun.addsub2.tier': 'tier',
+  'noun.addsub2.tiere': 'tiere',
   'hint.addsub2.firstHop': 'Det første hop lander på',
   'hint.addsub2.firstHopBack': 'Det første hop tilbage lander på',
   'hint.addsub2.answerIs': 'Svaret er',
@@ -49,7 +52,6 @@ const table: Record<ClipId, string> = {
 
   // doubles and halves: two equal rows
   'hint.doubles.twoRows': 'Det dobbelte er to lige store rækker.',
-  'hint.doubles.fiveFive': 'Fem og fem giver ti.',
   'hint.doubles.more': 'Det dobbelte er mere end tallet. Der kommer lige så mange til.',
   'hint.halves.twoRows': 'Del i to lige store rækker.',
   'hint.halves.soHalfOf': 'Så halvdelen af',
@@ -66,7 +68,7 @@ const table: Record<ClipId, string> = {
   // addSub20Simple: the ten stays
   'hint.addSub20Simple.addOnes': 'Læg enerne sammen.',
   'hint.addSub20Simple.takeOnes': 'Tag enerne væk.',
-  'hint.addSub20Simple.fullFrame': 'En fuld ti-ramme er ti.',
+  'hint.addSub20Simple.fullFrame': 'En fuld ti-ramme er',
 
   // addSub1000Round: whole hundreds and tens
   'hint.addSub1000Round.hundreds': 'Regn med hele hundreder.',
@@ -77,14 +79,6 @@ const table: Record<ClipId, string> = {
   'hint.addSub1000Round.keepHundred': 'Når tierne giver ti tiere eller mere, kommer der et hundrede mere.',
   'hint.addSub1000Round.zeroHundreds': 'Hele hundreder skrives med to nuller til sidst.',
 }
-
-/** "Hop to frem til" / "Hop tyve tilbage til": 1–9 and the whole tens 10–90 (calc.ts hopClip). */
-for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90]) {
-  table[`hint.addsub2.fwd.${n}`] = `Hop ${numberWords(n)} frem til`
-  table[`hint.addsub2.back.${n}`] = `Hop ${numberWords(n)} tilbage til`
-}
-/** "en tier", "to tiere" … "ti tiere". */
-for (let n = 1; n <= 10; n++) table[`hint.addsub2.tens.${n}`] = `${numberWords(n)} ${n === 1 ? 'tier' : 'tiere'}`
 
 export const clips: Readonly<Record<ClipId, string>> = table
 
