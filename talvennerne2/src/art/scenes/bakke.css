@@ -1,0 +1,75 @@
+/*
+ * Hestebakkernes scene (kortets baggrund). Kun skyerne driver, bladene svajer og hestenes haler svinger, og kun
+ * med transform; rolig tilstand ([data-calm] på <html>) og reduceret bevægelse stopper dem i hvilestillingen.
+ * Keyframe 0 % er hvilestillingen, så en frossen scene (kontaktark) står pænt.
+ */
+.bakke-scene {
+  display: block;
+  overflow: hidden;
+}
+.bakke-scene .bakke-drift {
+  animation: bakke-drift 60s ease-in-out infinite;
+}
+.bakke-scene .bakke-drift-1 {
+  animation-duration: 76s;
+  animation-delay: -26s;
+}
+.bakke-scene .bakke-drift-2 {
+  animation-duration: 94s;
+  animation-delay: -51s;
+}
+.bakke-scene .bakke-sway {
+  transform-origin: 0 0;
+  animation: bakke-sway 6.5s ease-in-out infinite;
+}
+.bakke-scene .bakke-swish {
+  transform-origin: 0 0;
+  animation: bakke-swish 3.8s ease-in-out infinite;
+}
+@keyframes bakke-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(28px);
+  }
+}
+@keyframes bakke-sway {
+  0%,
+  50%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-1.2deg);
+  }
+  75% {
+    transform: rotate(1.2deg);
+  }
+}
+@keyframes bakke-swish {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+  72% {
+    transform: rotate(9deg);
+  }
+  84% {
+    transform: rotate(-5deg);
+  }
+}
+:root[data-calm] .bakke-scene .bakke-drift,
+:root[data-calm] .bakke-scene .bakke-sway,
+:root[data-calm] .bakke-scene .bakke-swish {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bakke-scene .bakke-drift,
+  .bakke-scene .bakke-sway,
+  .bakke-scene .bakke-swish {
+    animation: none !important;
+  }
+}
