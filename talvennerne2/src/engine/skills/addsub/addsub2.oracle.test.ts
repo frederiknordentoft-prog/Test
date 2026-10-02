@@ -193,13 +193,13 @@ for (const skill of SKILLS) {
         .filter((b) => b.kind === 'numberline')
         .flatMap((b) => givenNumbers(sum(b.fact)).filter((v) => v !== sum(b.fact).answer && isCorrect(b.task, v)).map((v) => `${b.fact.id}: the given ${v} is right (answer ${sum(b.fact).answer}, ±${b.task.tolerance})`))
       if (skill === 'add100Carry') {
-        // GENERATOR BUG (add100Carry.ts, numberline with SPEC's ±5 on 0–100): when the number added is 5 or
-        // less, the first number of the sum is itself within the tolerance, so putting the needle on the
-        // number from the question counts as right — production evidence without adding anything.
-        // "Hvad er syvogtredive plus tre?" (a100c:37+3, answer 40): 37 is right; likewise every toNextTen
-        // instance with ones ≥ 5 and TOplusOcarry with b ≤ 5 (38 + 5 → 38). A line task needs a tolerance
-        // below the smallest addend, or these instances should not be asked on the line.
-        it.fails('a number from the question is never right on the line', () => {
+        // Rettet (GENFIX). Was a generator bug (add100Carry.ts, numberline with SPEC's ±5 on 0–100): when the
+        // number added was 5 or less, the first number of the sum was itself within the tolerance, so putting
+        // the needle on the number from the question counted as right — production evidence without adding
+        // anything. "Hvad er syvogtredive plus tre?" (a100c:37+3, answer 40): 37 was right; likewise every
+        // toNextTen instance with ones ≥ 5 and TOplusOcarry with b ≤ 5 (38 + 5 → 38). These instances are no
+        // longer drawn (a one-digit b is 6 or more).
+        it('a number from the question is never right on the line', () => {
           expect(first(operandsRight)).toEqual([])
         })
       } else {

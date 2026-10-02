@@ -1,8 +1,8 @@
 // add100Carry — Plus til 100 med tierovergang (SPEC §2.2, pædagogik-forslaget §1.3). Procedure, prefix
 // `a100c:`, five families (disjoint, so an instance id names one family; SPEC §4.1's add:38+45 is
 // a100c:38+45 here):
-//   toNextTen        a100c:<a>+<b>   a = 21–99 with ones o ≥ 1, b = 10 − o (37 + 3)
-//   TOplusOcarry     a100c:<a>+<b>   a = 23–89, b = 2–8, the ones make 11 or more (38 + 5)
+//   toNextTen        a100c:<a>+<b>   a = 21–94 with ones o = 1–4, b = 10 − o (34 + 6)
+//   TOplusOcarry     a100c:<a>+<b>   a = 23–89, b = 6–8, the ones make 11 or more (38 + 6)
 //   TOplusTOcarry    a100c:<a>+<b>   a, b two-digit with ones ≥ 1, the ones make ten or more, a + b ≤ 100,
 //                                    b ≠ 19 (38 + 45, 37 + 23)
 //   nearTen          a100c:<a>+<b>   b = 9 or 19, a's ones 2–9, a + b ≤ 100 (46 + 9, 46 + 19)
@@ -10,6 +10,10 @@
 // enumerate() gives 20 seeded instances per family. "Hvad er otteogtredive plus femogfyrre?" over
 // 38 + 45 = □. Kinds: choice, keypad (production), numberline (production: the equation stays on the
 // card, the pin goes on the task's line, 0–100 ±5 or 0–200 ±10 for TOplusTOover100, SPEC §3.3).
+// A one-digit b is at least 6: on the line (±5) the first number of a sum like 37 + 3 or 38 + 5 lies
+// within the tolerance of the answer, so the needle left on the number from the question would count
+// as right — production evidence without adding. The instance is drawn before its kind is chosen, so
+// such sums cannot be kept for the cards and the keypad alone.
 // Card range 0–100 (0–200 for TOplusTOover100). Speed (SPEC §3.2): keypad 15 s (kinds.ts), and per
 // family choice 10 s and numberline 18 s — a sum with a carry takes longer than reading a card.
 // Wrong answers (pædagogik §3.2): forgotCarry (a + b − 10 when the ones make ten or more: 38 + 45 → 73,
@@ -36,6 +40,9 @@ const make = (family: string, a: number, b: number): Fact => ({
   id: sumId('a100c', a, '+', b), skill: 'add100Carry', family, operands: [a, b], answer: a + b, rank: RANK[family],
 })
 
+/** The line's tolerance on 0–100 (SPEC §3.3): a one-digit b must be bigger, so the first number is never right. */
+const LINE_TOLERANCE = 5
+
 /** A two-digit number with ones ≥ 1. */
 const twoDigit = (rng: Rng, minTens = 1, maxTens = 9) => 10 * rng.between(minTens, maxTens) + rng.between(1, 9)
 
@@ -43,12 +50,12 @@ const drawer: Drawer = {
   draw(family: string, rng: Rng) {
     switch (family) {
       case 'toNextTen': {
-        const o = rng.between(1, 9)
+        const o = rng.between(1, 9 - LINE_TOLERANCE)
         return make('toNextTen', 10 * rng.between(2, 9) + o, 10 - o)
       }
       case 'TOplusOcarry': {
         const o = rng.between(3, 9)
-        return make('TOplusOcarry', 10 * rng.between(2, 8) + o, rng.between(11 - o, 8))
+        return make('TOplusOcarry', 10 * rng.between(2, 8) + o, rng.between(Math.max(11 - o, LINE_TOLERANCE + 1), 8))
       }
       case 'TOplusTOcarry': {
         const a = twoDigit(rng, 1, 8)

@@ -55,18 +55,25 @@ describe('add100Carry', () => {
     }
   })
 
-  it('SPEC §4.1: 38 + 45 answered 38 is an operand, 73 forgotCarry; 38 + 5 → 88 placeMisalign', () => {
+  it('SPEC §4.1: 38 + 45 answered 38 is an operand, 73 forgotCarry; 38 + 6 → 98 placeMisalign', () => {
     const t = buildTask(def, findFact(def, 'a100c:38+45'), 'keypad', makeRng(1), 0).task
     expect(classifyAnswer(t, 38)).toBe('operand')
     expect(classifyAnswer(t, 73)).toBe('forgotCarry')
     expect(classifyAnswer(t, 7)).toBe('wrongOperation')
     expect(classifyAnswer(t, 84)).toBe('near')
     expect([...detectableOf(t)].sort()).toEqual(['forgotCarry', 'wrongOperation'])
-    expect(tagOf(def, 'a100c:38+5', 88)).toBe('placeMisalign')
-    expect(tagOf(def, 'a100c:38+5', 33)).toBe('ambiguous') // forgot the ten, or 38 − 5
-    expect(tagOf(def, 'a100c:37+3', 30)).toBe('forgotCarry')
+    expect(tagOf(def, 'a100c:38+6', 98)).toBe('placeMisalign')
+    expect(tagOf(def, 'a100c:34+6', 30)).toBe('forgotCarry')
     expect(tagOf(def, 'a100c:67+58', 115)).toBe('forgotCarry')
     expect(tagOf(def, 'a100c:46+9', 136)).toBe('placeMisalign')
+  })
+
+  it('never takes a number from the question as right on the line (a one-digit b is 6 or more)', () => {
+    for (const { fact, kind, task } of tasks) {
+      if (kind !== 'numberline') continue
+      for (const v of fact.operands) expect(isCorrect(task, v), `${fact.id}: ${v}`).toBe(false)
+      if (fact.operands[1] < 10) expect(fact.operands[1], fact.id).toBeGreaterThanOrEqual(6)
+    }
   })
 
   it('counts a pin within ±5 as right on the number line, and a forgotten ten as forgotCarry', () => {
@@ -87,8 +94,8 @@ describe('add100Carry', () => {
   it('hops on the empty number line: up to the ten, the tens, the rest; a ten and one back near a ten', () => {
     expect(hintText(def, 'a100c:38+45', null)).toBe('Start på otteogtredive. Hop to frem til fyrre. Hop fyrre frem til firs. Hop tre frem til treogfirs.')
     expect(def.hint(findFact(def, 'a100c:38+45'), null).visual).toEqual({ scene: 'line', min: 30, max: 90, hops: [38, 40, 80, 83] })
-    expect(hintText(def, 'a100c:37+3', 'near')).toBe('Start på syvogtredive. Hop tre frem til fyrre.')
-    expect(hintText(def, 'a100c:38+5', null)).toBe('Start på otteogtredive. Hop to frem til fyrre. Hop tre frem til treogfyrre.')
+    expect(hintText(def, 'a100c:34+6', 'near')).toBe('Start på fireogtredive. Hop seks frem til fyrre.')
+    expect(hintText(def, 'a100c:38+6', null)).toBe('Start på otteogtredive. Hop to frem til fyrre. Hop fire frem til fireogfyrre.')
     expect(hintText(def, 'a100c:46+9', null)).toBe('Start på seksogfyrre. Hop ti frem til seksoghalvtreds. Hop en tilbage til femoghalvtreds.')
     expect(hintText(def, 'a100c:46+19', null)).toBe('Start på seksogfyrre. Hop tyve frem til seksogtres. Hop en tilbage til femogtres.')
     expect(hintText(def, 'a100c:67+58', null))
@@ -100,7 +107,7 @@ describe('add100Carry', () => {
     expect(hintText(def, 'a100c:38+45', 'forgotCarry'))
       .toBe('Når enerne giver ti eller mere, skal tieren med over til tierne. Otte plus fem giver tretten. Svaret er treogfirs.')
     expect(h).toMatchObject({ misconception: 'forgotCarry', animated: true, visual: { scene: 'columns', a: 38, b: 45, op: '+', carry: true } })
-    expect(hintText(def, 'a100c:38+5', 'placeMisalign')).toMatch(/^Det lille tal er enere\. Læg det til enerne, ikke til tierne\. Start på/)
+    expect(hintText(def, 'a100c:38+6', 'placeMisalign')).toMatch(/^Det lille tal er enere\. Læg det til enerne, ikke til tierne\. Start på/)
     expect(hintText(def, 'a100c:38+45', 'wrongOperation')).toMatch(/^Plus betyder, at der kommer flere til\. Start på/)
   })
 })
