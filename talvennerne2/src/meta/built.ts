@@ -9,13 +9,22 @@ import { WORLDS, WORLD_BY_ID, regionsOfWorld, type RegionDef } from '../content/
 import { registeredSkills } from '../engine/registry'
 import type { SkillId, WorldId } from '../engine/types'
 
-/** The species and things whose drawings exist. */
+/**
+ * Worlds released to children. A built world also waits for its art review (rubric and blind
+ * silhouettes), its recorded voice and a play-through: the integrator adds it here then. Until
+ * that, the map shows it as "Kommer snart" like a world that is not built.
+ */
+export const RELEASED_WORLDS: ReadonlySet<WorldId> = new Set<WorldId>(['eng'])
+
+/** The species and things whose drawings exist, and the worlds released. */
 export interface Drawn {
   species: ReadonlySet<string>
   items: ReadonlySet<string>
+  /** Worlds released to children (left out: every world). */
+  released?: ReadonlySet<WorldId>
 }
 
-export const DRAWN: Drawn = { species: new Set(AVAILABLE_SPECIES), items: new Set(AVAILABLE_ITEMS) }
+export const DRAWN: Drawn = { species: new Set(AVAILABLE_SPECIES), items: new Set(AVAILABLE_ITEMS), released: RELEASED_WORLDS }
 
 /** Something to play: one of the region's own skills (not only its reviews) is registered. */
 export function regionHasContent(region: RegionDef, registered: ReadonlySet<SkillId>): boolean {
@@ -38,10 +47,11 @@ export function regionDrawn(region: RegionDef, drawn: Drawn = DRAWN): boolean {
   return true
 }
 
-/** Every region of the world is complete and its rewards are drawn. */
+/** The world is released, every region of it is complete and its rewards are drawn. */
 export function worldReady(world: WorldId, registered: ReadonlySet<SkillId>, drawn: Drawn = DRAWN): boolean {
   const regions = regionsOfWorld(world)
-  return regions.length > 0
+  return (drawn.released?.has(world) ?? true)
+    && regions.length > 0
     && regions.every((r) => regionComplete(r, registered) && regionDrawn(r, drawn))
     && WORLD_BY_ID[world].finaleItems.every((i) => drawn.items.has(i))
 }
