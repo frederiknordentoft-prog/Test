@@ -1,8 +1,8 @@
-import type { KeyState, MasteryKey, NodeId, ProfileDoc, RegionId, RoundMode, SkillId, Task } from './types'
+import type { Fact, KeyState, MasteryKey, NodeId, ProfileDoc, RegionId, RoundMode, SkillId, Task } from './types'
 import { NODE_BY_ID, REGION_BY_ID, nodesOfRegion, type NodeDef, type RegionSkill } from '../content/curriculum'
 import { SKILL_BY_ID } from '../content/skills'
 import {
-  goldenTask, keyInfo, keysForNode, keysForSkills, newBuildSession, skillRegistry,
+  factsOf, goldenTask, keyInfo, keysForNode, keysForSkills, newBuildSession, skillRegistry,
   type BuildSession, type SkillRegistry,
 } from './registry'
 import { buildRound, newCapsFor, slotPlan, type KeyOption, type RoundTone, type SlotPlan } from './roundBuilder'
@@ -109,11 +109,30 @@ interface Env {
 
 const keyCtx = (env: Env) => ({ skills: env.reg, states: env.profile.keys, audioVerified: env.ctx.audioVerified, session: env.session, mode: 'round' as const })
 
+const answerCache = new WeakMap<SkillRegistry, Map<string, Fact['answer']>>()
+
+/**
+ * Recall keys carry their fact's answer, so the round builder can spread a round over different
+ * numbers (review r1 P2-11). A family key (`skill/family`) has no single answer and is left as it is.
+ */
+export function withAnswers(keys: readonly KeyOption[], reg: SkillRegistry): KeyOption[] {
+  let answers = answerCache.get(reg)
+  if (!answers) {
+    answers = new Map()
+    for (const def of reg.all) if (def.mode === 'recall') for (const f of factsOf(def)) answers.set(f.id, f.answer)
+    answerCache.set(reg, answers)
+  }
+  return keys.map((k) => {
+    const answer = k.key.includes('/') ? undefined : answers.get(k.key)
+    return answer === undefined ? k : { ...k, answer }
+  })
+}
+
 function nodeTasks(node: NodeDef, env: Env): Task[] {
   const { profile, ctx } = env
   const tone = roundTone(profile.recentFirstTries, ctx.recentFast)
   return buildRound({
-    keys: keysForNode(node, keyCtx(env)),
+    keys: withAnswers(keysForNode(node, keyCtx(env)), env.reg),
     states: profile.keys,
     roundIndex: profile.roundIndex,
     day: ctx.day,
@@ -122,7 +141,7 @@ function nodeTasks(node: NodeDef, env: Env): Task[] {
     production: node.production,
     slots: slotPlan(node.size, tone, node.review > 0 ? node.review : 1),
     tone,
-    reviewKeys: reviewKeys(node.skills, env),
+    reviewKeys: withAnswers(reviewKeys(node.skills, env), env.reg),
     flagged: flaggedIds(profile.misconceptions),
     newCaps: newCapsFor(profile.newToday, ctx.day),
   })
@@ -157,8 +176,8 @@ const practicePlan = (size: number, tone: RoundTone): SlotPlan =>
 function practiceTasks(env: Env): Task[] {
   const { profile, ctx } = env
   const size = 10
-  const keys = keysForSkills(startedSkills(env).map((skill) => ({ skill })), keyCtx(env))
-    .filter((k) => seenOrSeeded(profile.keys[k.key]))
+  const keys = withAnswers(keysForSkills(startedSkills(env).map((skill) => ({ skill })), keyCtx(env))
+    .filter((k) => seenOrSeeded(profile.keys[k.key])), env.reg)
   if (keys.length === 0) {
     const first = NODE_BY_ID['w0-tal10-l1']
     return first ? nodeTasks(first, env) : []
@@ -178,7 +197,7 @@ function hutTasks(env: Env): Task[] {
   if (!region || !trial) return practiceTasks(env)
   const size = region.roundSize
   return buildRound({
-    keys: keysForNode({ skills: trial.skills, houseKind: null }, keyCtx(env)),
+    keys: withAnswers(keysForNode({ skills: trial.skills, houseKind: null }, keyCtx(env)), env.reg),
     states: profile.keys, roundIndex: profile.roundIndex, day: ctx.day, size, rng: env.rng,
     slots: { secure: 1, shaky: size - 1, fresh: 0, review: 0, targeted: 0 },
     focus: new Set(ctx.hutKeys ?? []), newCaps: { total: 0, perSkill: {} },

@@ -1,4 +1,4 @@
-import type { KeyState, MasteryKey, MisconceptionId, ProfileDoc, Rng, SkillId, Task, TaskKind } from './types'
+import type { AnswerValue, KeyState, MasteryKey, MisconceptionId, ProfileDoc, Rng, SkillId, Task, TaskKind } from './types'
 import { isDue } from './mastery'
 import type { Operation } from './tasks'
 
@@ -10,6 +10,15 @@ import type { Operation } from './tasks'
  * roughly 2 solid / 5 shaky / 3 new in shuffled order; V2 fills named slots (opener, shaky, new,
  * review from another skill, a task aimed at a flagged misconception) and lays them out as an arc:
  * easy warm-up, new material and typed answers in the middle, and a likely success to finish on.
+ *
+ * Variety (review r1 P2-11: the first rounds asked "1" four or five times, mostly on cards). Inside
+ * the slots and caps of SPEC §5.4 a round is spread three ways, all from the plan's seed:
+ * - new keys take turns between the node's skills, each skill in its own rank order (Fact.rank is
+ *   "easy → hard within the skill"), and a new key whose answer the round already has twice waits
+ *   for a later round while another one can come;
+ * - "35 % of the time one of the other kinds" is a share of each round, not a coin per task: of the
+ *   tasks free to vary, that share is asked another way, the other kinds taking turns;
+ * - the same answer is not asked twice in a row, and repeats go to the answers asked least.
  */
 
 /** Asked "the hard way" (production) once guessable tasks have carried a key this far. */
@@ -18,6 +27,11 @@ export const GUESSABLE_CEILING = 3
 /** New keys per skill and per learning day: long sessions turn to consolidation, not more new material. */
 export const NEW_PER_SKILL = 8
 export const NEW_PER_DAY = 20
+
+/** At most this many tasks of a round share an answer while another key can be asked instead. */
+export const SAME_ANSWER_MAX = 2
+/** Share of the tasks free to vary that are asked in another kind than the node's house kind (SPEC §5.4). */
+export const OTHER_KIND_SHARE = 0.35
 
 /** One mastery key the round may ask, with how to present it. */
 export interface KeyOption {
@@ -36,6 +50,8 @@ export interface KeyOption {
   op?: Operation | null
   /** The region only uses this skill for review: never introduced as new here. */
   reviewOnly?: boolean
+  /** The answer every task of this key has (a recall fact), so a round can spread over numbers. */
+  answer?: AnswerValue
 }
 
 export interface BuildExtra {
@@ -227,8 +243,13 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
     .sort((a, b) => first(a, b) || dueFirst(a, b) || box(b) - box(a) || st(a).lastRound - st(b).lastRound), tierOf)
   const shaky = alternateOps(keys.filter((k) => seen(k) && box(k) < 3)
     .sort((a, b) => first(a, b) || dueFirst(a, b) || box(a) - box(b) || st(a).lastRound - st(b).lastRound), tierOf)
-  const fresh = alternateOps(keys.filter((k) => !seen(k) && !k.reviewOnly).sort((a, b) => first(a, b) || a.rank - b.rank),
-    (k) => String(Number(focus.has(k.key))))
+  // New keys in rank order within their skill (Fact.rank is "easy → hard within the skill"); the
+  // node's skills take turns (takeFresh), and plus and minus alternate inside a skill.
+  const freshTier = (k: KeyOption) => String(Number(focus.has(k.key)))
+  const freshSorted = keys.filter((k) => !seen(k) && !k.reviewOnly).sort((a, b) => first(a, b) || a.rank - b.rank)
+  const fresh = alternateOps(alternateBy(freshSorted, freshTier, (k) => k.skill), freshTier)
+  const freshBySkill = [...new Set(freshSorted.map((k) => k.skill))]
+    .map((skill) => alternateOps(freshSorted.filter((k) => k.skill === skill), freshTier))
   const dueSecure = secure.filter(due)
 
   // today's allowance of new keys
@@ -239,6 +260,9 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
 
   const picks: Pick[] = []
   const taken = new Set<MasteryKey>()
+  // how many tasks of the round have each answer so far
+  const answers = new Map<AnswerValue, number>()
+  const uses = (k: KeyOption) => (k.answer === undefined ? 0 : answers.get(k.answer) ?? 0)
   const take = (k: KeyOption | undefined, slot: Slot, ignoreCaps = false): boolean => {
     if (!k || taken.has(k.key)) return false
     if (!seen(k)) {
@@ -250,13 +274,39 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
     }
     taken.add(k.key)
     picks.push({ opt: k, slot, kind: 'choice' })
+    if (k.answer !== undefined) answers.set(k.answer, uses(k) + 1)
     return true
   }
+  // Keys in the pool's order, but one whose answer the round already has twice waits while another
+  // key of the pool can come instead.
   const takeN = (pool: readonly KeyOption[], n: number, slot: Slot): number => {
     let got = 0
-    for (const k of pool) {
-      if (got >= n) break
-      if (take(k, slot)) got++
+    for (const spread of [true, false]) {
+      for (const k of pool) {
+        if (got >= n) break
+        if (spread && uses(k) >= SAME_ANSWER_MAX) continue
+        if (take(k, slot)) got++
+      }
+    }
+    return got
+  }
+  // New keys: the skills take turns, each with its next key in order — but a key whose answer the
+  // round already has twice waits for a later round while another new key can come (the first
+  // rounds asked "1" four or five times).
+  const takeFresh = (n: number): number => {
+    let got = 0
+    for (const spread of [true, false]) {
+      for (let moved = true; moved && got < n;) {
+        moved = false
+        for (const queue of freshBySkill) {
+          if (got >= n) break
+          const k = queue.find((x) => !taken.has(x.key) && (!spread || uses(x) < SAME_ANSWER_MAX))
+          if (k && take(k, 'fresh')) {
+            got++
+            moved = true
+          }
+        }
+      }
     }
     return got
   }
@@ -266,6 +316,10 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
     ? [...secure].sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct || a.rank - b.rank)[0]
     : [...keys].filter((k) => seen(k) || (!k.reviewOnly && totalLeft > 0 && capOf(k.skill) > 0)).sort((a, b) => a.rank - b.rank)[0]
   take(opener, 'opener')
+  // A child who has met nothing here yet ends the round on the opener again (the last task is never
+  // a first meeting): its answer is asked twice.
+  const nothingSeen = !keys.some(seen) && !(o.reviewKeys ?? []).some(seen)
+  if (nothingSeen && opener?.answer !== undefined) answers.set(opener.answer, uses(opener) + 1)
 
   // the keys the round is for (the hut's missed families) come first, weakest first
   let shakyWant = plan.shaky
@@ -280,7 +334,7 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
 
   const got = takeN(shaky, shakyWant, 'shaky')
   takeN(dueSecure, shakyWant - got, 'secure')
-  takeN(fresh, plan.fresh, 'fresh')
+  takeFresh(plan.fresh)
 
   // review: a due key the child is sure of, from another skill — spacing across the curriculum
   const nodeSkills = new Set(keys.filter((k) => !k.reviewOnly).map((k) => k.skill))
@@ -293,7 +347,10 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   const backfill: [readonly KeyOption[], Slot][] = o.tone === 'fatigue'
     ? [[secure, 'secure'], [shaky, 'shaky'], [fresh, 'fresh']]
     : [[shaky, 'shaky'], [fresh, 'fresh'], [dueSecure, 'secure'], [secure, 'secure']]
-  for (const [pool, slot] of backfill) takeN(pool, size - picks.length, slot)
+  for (const [pool, slot] of backfill) {
+    if (pool === fresh) takeFresh(size - picks.length)
+    else takeN(pool, size - picks.length, slot)
+  }
   takeN([...others].sort((a, b) => Number(due(b)) - Number(due(a)) || box(b) - box(a)), size - picks.length, 'review')
 
   // A round is never empty: with today's allowance used up and nothing else to ask, the node's
@@ -302,17 +359,44 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   if (picks.length === 0) return []
 
   // Early nodes hold only a handful of keys. Repeating them inside one round is the practice, not
-  // padding; a repeat is shown another way where the key allows it.
+  // padding; a repeat is shown another way where the key allows it, and the answers asked least
+  // are repeated first. (A round with repeats ends on one of them, not on the opener again.)
+  if (nothingSeen && picks.length < size && opener?.answer !== undefined) answers.set(opener.answer, uses(opener) - 1)
   const originals = rng.shuffle(picks.filter((p) => p.slot !== 'opener'))
   const cycle = originals.length > 0 ? [...originals, picks[0]] : [picks[0]]
-  for (let i = 0; picks.length < size; i++) picks.push({ opt: cycle[i % cycle.length].opt, slot: 'repeat', kind: 'choice' })
-
-  // kinds
-  const firstKind = new Map<MasteryKey, TaskKind>()
-  for (const p of picks) {
-    p.kind = kindFor(p, st(p.opt), firstKind.get(p.opt.key))
-    if (!firstKind.has(p.opt.key)) firstKind.set(p.opt.key, p.kind)
+  const repeated = new Map<MasteryKey, number>()
+  const again = (p: Pick) => repeated.get(p.opt.key) ?? 0
+  while (picks.length < size) {
+    // the answer asked least so far, then the key repeated least, then the cycle's order
+    const opt = cycle.reduce((best, p) => (uses(p.opt) < uses(best.opt) || (uses(p.opt) === uses(best.opt) && again(p) < again(best)) ? p : best)).opt
+    picks.push({ opt, slot: 'repeat', kind: 'choice' })
+    repeated.set(opt.key, (repeated.get(opt.key) ?? 0) + 1)
+    if (opt.answer !== undefined) answers.set(opt.answer, uses(opt) + 1)
   }
+
+  // Kinds. Some are given: trials and the opener on cards, a tired child on cards, a key far enough
+  // asked the hard way. Of the rest, OTHER_KIND_SHARE are asked in one of the node's other kinds,
+  // which take turns; a repeat is asked another way than the key's first task.
+  const threshold = production === 'fromBox1' ? 1 : GUESSABLE_CEILING
+  const usedKinds = new Map<TaskKind, number>()
+  const firstKind = new Map<MasteryKey, TaskKind>()
+  const settle = (p: Pick, kind: TaskKind) => {
+    p.kind = kind
+    usedKinds.set(kind, (usedKinds.get(kind) ?? 0) + 1)
+    if (!firstKind.has(p.opt.key)) firstKind.set(p.opt.key, kind)
+  }
+  const leastUsed = (kinds: readonly TaskKind[]): TaskKind =>
+    rng.shuffle(kinds).reduce((best, k) => ((usedKinds.get(k) ?? 0) < (usedKinds.get(best) ?? 0) ? k : best))
+  const varying: Pick[] = []
+  for (const p of picks) {
+    if (p.slot === 'repeat') continue
+    const given = givenKind(p)
+    if (given) settle(p, given)
+    else varying.push(p)
+  }
+  const other = new Set(rng.shuffle(varying).slice(0, Math.round(varying.length * OTHER_KIND_SHARE)))
+  for (const p of varying) settle(p, other.has(p) ? leastUsed(p.opt.kinds.slice(1)) : p.opt.kinds[0])
+  for (const p of picks) if (p.slot === 'repeat') settle(p, repeatKind(p))
 
   const mixed = new Set(picks.map((p) => p.opt.op).filter(Boolean)).size >= 2
   const seq = interleave(arrange(picks, box), mixed)
@@ -321,17 +405,29 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   const tasks = seq.map((p, i) => p.opt.build(p.kind, rng, i, p.slot === 'targeted' ? { target: o.flagged ?? [] } : undefined))
   return balanceAnswerPositions(tasks, rng)
 
-  function kindFor(p: Pick, state: KeyState | undefined, earlier: TaskKind | undefined): TaskKind {
+  /** The kind a task must have, or null when it is free to vary. */
+  function givenKind(p: Pick): TaskKind | null {
     const kinds = p.opt.kinds
-    if (production === 'only') return pickKind(p.opt, state, rng, 'only')
+    if (kinds.length === 0) return 'choice'
+    if (production === 'only') return pickKind(p.opt, st(p.opt), rng, 'only')
     if (p.slot === 'opener' && kinds.includes('choice')) return 'choice'
     if (o.tone === 'fatigue' && kinds.includes('choice')) return 'choice'
-    const kind = pickKind(p.opt, state, rng, production)
-    if (p.slot !== 'repeat' || kind !== earlier) return kind
-    const threshold = production === 'fromBox1' ? 1 : GUESSABLE_CEILING
-    const allowed = (state?.box ?? 0) >= threshold ? kinds.filter((k) => p.opt.production.includes(k)) : kinds
-    const other = allowed.filter((k) => k !== earlier)
-    return other.length > 0 ? rng.pick(other) : kind
+    const hard = kinds.filter((k) => p.opt.production.includes(k))
+    if (box(p.opt) >= threshold && hard.length > 0) return hard[0]
+    return kinds.length === 1 ? kinds[0] : null
+  }
+
+  /** A repeat is shown another way than the key's first task (the least used way that is allowed). */
+  function repeatKind(p: Pick): TaskKind {
+    const kinds = p.opt.kinds
+    if (kinds.length === 0) return 'choice'
+    if (production === 'only') return pickKind(p.opt, st(p.opt), rng, 'only')
+    if (o.tone === 'fatigue' && kinds.includes('choice')) return 'choice'
+    const hard = kinds.filter((k) => p.opt.production.includes(k))
+    const allowed = box(p.opt) >= threshold && hard.length > 0 ? hard : kinds
+    const earlier = firstKind.get(p.opt.key)
+    const others = allowed.filter((k) => k !== earlier)
+    return others.length > 0 ? leastUsed(others) : allowed[0]
   }
 }
 
@@ -350,8 +446,11 @@ function arrange(picks: readonly Pick[], box: (k: KeyOption) => number): Pick[] 
   const last = closers[0] ?? { ...opener, slot: 'repeat' as const }
   const middle = closers[0] ? rest.filter((p) => p !== last) : rest.slice(0, -1)
 
+  // new keys keep the order they were taken in (each skill in rank order, the skills taking turns)
+  const taken = (p: Pick) => picks.indexOf(p)
   const isTop = (p: Pick) => p.slot === 'fresh' || p.slot === 'targeted' || p.opt.production.includes(p.kind)
-  const top = middle.filter(isTop).sort((a, b) => Number(b.slot === 'fresh') - Number(a.slot === 'fresh') || a.opt.rank - b.opt.rank)
+  const top = middle.filter(isTop).sort((a, b) => Number(b.slot === 'fresh') - Number(a.slot === 'fresh') ||
+    (a.slot === 'fresh' && b.slot === 'fresh' ? taken(a) - taken(b) : a.opt.rank - b.opt.rank))
   const warm = middle.filter((p) => !isTop(p)).sort((a, b) => box(b.opt) - box(a.opt))
   const m = middle.length
   const warmN = Math.round((m * 3) / 8)
@@ -375,16 +474,24 @@ function arrange(picks: readonly Pick[], box: (k: KeyOption) => number): Pick[] 
  * (+, −, +, − …) while each operation keeps its own order. Lists with one operation are unchanged.
  */
 function alternateOps(sorted: readonly KeyOption[], tier: (k: KeyOption) => string): KeyOption[] {
-  if (new Set(sorted.map((k) => k.op ?? null)).size < 2) return [...sorted]
+  return alternateBy(sorted, tier, (k) => k.op ?? '')
+}
+
+/**
+ * Reorder a sorted list so that, inside each run of equal `tier`, the groups take turns (+, −, +, −
+ * …; one skill, the next skill …) while each group keeps its own order. One group: unchanged.
+ */
+function alternateBy(sorted: readonly KeyOption[], tier: (k: KeyOption) => string, groupOf: (k: KeyOption) => string): KeyOption[] {
+  if (new Set(sorted.map(groupOf)).size < 2) return [...sorted]
   const out: KeyOption[] = []
   for (let i = 0; i < sorted.length;) {
     let j = i
     while (j < sorted.length && tier(sorted[j]) === tier(sorted[i])) j++
     const groups = new Map<string, KeyOption[]>()
     for (const k of sorted.slice(i, j)) {
-      const g = groups.get(k.op ?? '')
+      const g = groups.get(groupOf(k))
       if (g) g.push(k)
-      else groups.set(k.op ?? '', [k])
+      else groups.set(groupOf(k), [k])
     }
     const queues = [...groups.values()]
     for (let taken = 0; taken < j - i;) {
@@ -452,7 +559,11 @@ function interleave(seq: readonly Pick[], mixed: boolean): Pick[] {
       if (pool.length === 1) return p.opt.key !== last.opt.key && (!mixed || runWith([...out, p], last) <= 3)
       return !mixed || canFinish([...out, p], [...pool.filter((_, j) => j !== i), last])
     }
-    let idx = pool.findIndex((p, i) => fine(p, i, true))
+    // a different answer from the task before (and, for the last place, the one after) where it can be
+    const varied = (p: Pick, i: number) =>
+      fine(p, i, true) && !sameAnswer(p, prev) && (pool.length > 1 || !sameAnswer(p, last))
+    let idx = pool.findIndex(varied)
+    if (idx < 0) idx = pool.findIndex((p, i) => fine(p, i, true))
     if (idx < 0) idx = pool.findIndex((p, i) => fine(p, i, false) && (!mixed || runWith(out, p) <= 3))
     if (idx < 0) idx = pool.findIndex((p, i) => fine(p, i, false))
     out.push(pool.splice(Math.max(0, idx), 1)[0])
@@ -461,17 +572,24 @@ function interleave(seq: readonly Pick[], mixed: boolean): Pick[] {
   return out
 }
 
-/** Same key back to back reads as a glitch; four sums of one kind in a row invite wrongOperation. */
+/** Two tasks with the same answer (keys with a fixed answer only). */
+const sameAnswer = (a: Pick, b: Pick) => a.opt.answer !== undefined && a.opt.answer === b.opt.answer
+
+/**
+ * Same key back to back reads as a glitch; four sums of one kind in a row invite wrongOperation; the
+ * same answer twice in a row reads as a repeat (the lightest of the three).
+ */
 function badness(seq: readonly Pick[], mixed: boolean): number {
   let bad = 0
   let run = 0
   let prev: Operation | null | undefined
   for (let i = 0; i < seq.length; i++) {
-    if (i > 0 && seq[i].opt.key === seq[i - 1].opt.key) bad += 10
+    if (i > 0 && seq[i].opt.key === seq[i - 1].opt.key) bad += 20
+    if (i > 0 && sameAnswer(seq[i], seq[i - 1])) bad += 1
     const op = seq[i].opt.op ?? null
     run = op !== null && op === prev ? run + 1 : 1
     prev = op
-    if (mixed && op !== null && run > 3) bad += 1
+    if (mixed && op !== null && run > 3) bad += 2
   }
   return bad
 }

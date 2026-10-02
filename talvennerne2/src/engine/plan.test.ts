@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { bumpNewToday, goldenFor, planRound, roundTone, type PlanContext } from './plan'
-import { makeRegistry, skillKeys } from './registry'
+import { factsOf, makeRegistry, skillKeys, skillRegistry } from './registry'
 import { FIXTURE_SKILLS, addTo10Fixture, hear20Fixture } from './testing/fixtureSkills'
 import { keyAt, newProfile } from './testing/profile'
 import { NODE_BY_ID } from '../content/curriculum'
 import { isProduction } from './kinds'
-import type { KeyState, ProfileDoc } from './types'
+import type { KeyState, ProfileDoc, Task } from './types'
 
 const reg = makeRegistry(FIXTURE_SKILLS)
 const DAY = '2026-09-10'
@@ -122,5 +122,94 @@ describe('other plans', () => {
       expect(egg?.kind).toBe('choice')
       expect(goldenFor(plan, midway(), ctx())).toEqual(egg)
     }
+  })
+})
+
+// ─── The first rounds vary (review r1 P2-11) ────────────────────────────────
+
+describe('a new child\'s first rounds vary, inside the rules of SPEC §5.4', () => {
+  const real = skillRegistry()
+  const SEEDS = 300
+  const play = (seed: number, nodeId: string, audioVerified: boolean, profile = newProfile({ grade: 0 })) =>
+    planRound(node(nodeId), profile, { skills: real, day: DAY, sessionId: 's1', audioVerified, seed })
+  const answerOf = (t: Task) => String(t.answer)
+  const firstRounds = [true, false].flatMap((audio) => ['w0-tal10-l1', 'w0-tal10-l2', 'w0-plus10-l1'].flatMap((id) =>
+    Array.from({ length: SEEDS }, (_, seed) => ({ id, audio, seed, plan: play(seed, id, audio) }))))
+
+  it('asks no answer more than twice in a round where the node has enough different keys', () => {
+    for (const { id, plan } of firstRounds) {
+      if (id === 'w0-tal10-l2') continue // order20 keys are families: their answers are drawn fresh each time
+      const counts = new Map<string, number>()
+      for (const t of plan.tasks) counts.set(answerOf(t), (counts.get(answerOf(t)) ?? 0) + 1)
+      expect(Math.max(...counts.values()), `${id}: ${plan.tasks.map(answerOf).join(' ')}`).toBeLessThanOrEqual(2)
+    }
+  })
+
+  it('does not ask the same answer twice in a row', () => {
+    for (const { plan } of firstRounds) {
+      const answers = plan.tasks.map((t) => t.masteryKey.includes('/') ? null : answerOf(t))
+      for (let i = 1; i < answers.length; i++) if (answers[i] !== null) expect(answers[i], plan.tasks.map(answerOf).join(' ')).not.toBe(answers[i - 1])
+    }
+  })
+
+  it('asks a share of the free tasks in the node\'s other kinds, and always more than one kind', () => {
+    let free = 0
+    let other = 0
+    for (const { plan } of firstRounds) {
+      const kinds = new Set(plan.tasks.map((t) => t.kind))
+      expect(kinds.size, plan.tasks.map((t) => t.kind).join(' ')).toBeGreaterThanOrEqual(2)
+      expect(plan.tasks[0].kind).toBe('choice')
+      // the opener is on cards and a repeat is asked another way on purpose; the first meeting of
+      // every other key is free to vary (a first round has every key in box 0)
+      const met = new Set([plan.tasks[0].masteryKey])
+      for (const t of plan.tasks.slice(1)) {
+        if (met.has(t.masteryKey)) continue
+        met.add(t.masteryKey)
+        if ((real.get(t.skill)?.kinds.length ?? 0) < 2) continue
+        free++
+        if (t.kind !== 'choice') other++
+      }
+    }
+    // SPEC §5.4: the house kind, and 35 % of the time one of the others
+    expect(other / free).toBeGreaterThan(0.25)
+    expect(other / free).toBeLessThan(0.45)
+  })
+
+  it('lets the skills of a node take turns with new keys, each in its own rank order', () => {
+    for (const { id, audio, plan } of firstRounds) {
+      if (id !== 'w0-tal10-l1' || !audio) continue
+      const fresh = plan.newKeys.map((k) => k.skill)
+      const count = (skill: string) => fresh.filter((s) => s === skill).length
+      // both skills come, about as often (the opener and the closer are the first hear20 key)
+      expect(Math.abs(count('count10') - count('hear20'))).toBeLessThanOrEqual(1)
+      // and the tasks alternate between them after the opener
+      const order = plan.tasks.slice(1, -1).map((t) => t.skill)
+      const switches = order.filter((s, i) => i > 0 && s !== order[i - 1]).length
+      expect(switches, order.join(' ')).toBeGreaterThanOrEqual(3)
+      for (const skill of new Set(fresh)) {
+        const def = real.get(skill)!
+        const rank = new Map(factsOf(def).map((f) => [f.id, f.rank]))
+        const ranks = plan.newKeys.filter((k) => k.skill === skill).map((k) => rank.get(k.key)!)
+        const lowest = [...rank.values()].sort((a, b) => a - b)
+        // a key is only passed over while its answer is in the round twice: never far down the list
+        expect(Math.max(...ranks)).toBeLessThanOrEqual(lowest[ranks.length * 4])
+      }
+    }
+  })
+
+  it('introduces count10 in its own rank order, two ways of seeing each number at a time', () => {
+    for (const { id, audio, plan } of firstRounds) {
+      if (id !== 'w0-tal10-l1' || audio) continue
+      expect(plan.tasks[0].masteryKey).toBe('c10:scatter:1')
+      // the first numbers spread out and on a die, no number more than twice; their fingers and
+      // ten-frames wait for a later round (the cap of eight new keys per skill and day holds)
+      expect(new Set(plan.newKeys.map((k) => k.key))).toEqual(new Set([
+        'c10:scatter:1', 'c10:scatter:2', 'c10:dice:2', 'c10:scatter:3', 'c10:dice:3', 'c10:scatter:4', 'c10:dice:4', 'c10:scatter:5',
+      ]))
+    }
+  })
+
+  it('is the same round for the same seed', () => {
+    expect(play(5, 'w0-tal10-l1', true)).toEqual(play(5, 'w0-tal10-l1', true))
   })
 })

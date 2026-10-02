@@ -69,13 +69,60 @@ describe('the end of a round (SPEC §5.8)', () => {
     for (const r of [R.trophy, R.stamp, R.trick, R.tier, R.hut]) expect(plan.alsoToday.map((c) => c.reward)).toContain(r)
   })
 
-  it('lasts at most 6 s, or 12 s with a hatch', () => {
+  it('weighs everything but the hatch and a new level against 6 s, or 12 s with a hatch', () => {
     const many = [R.learned, R.answers, R.stars, R.trialPass, R.gold, R.levelUp, R.growth, R.chest, R.animal]
+    const timed = (p: ReturnType<typeof planCeremonies>) => p.steps.filter((s) => s.kind !== 'levelUp').reduce((sum, s) => sum + s.ms, 0)
     const plan = planCeremonies(many)
-    expect(plan.totalMs).toBeLessThanOrEqual(MAX_END_MS)
+    expect(timed(plan)).toBeLessThanOrEqual(MAX_END_MS)
     const withEgg = planCeremonies([...many, R.egg])
-    expect(withEgg.totalMs).toBeLessThanOrEqual(MAX_END_MS_WITH_HATCH)
+    expect(timed(withEgg)).toBeLessThanOrEqual(MAX_END_MS_WITH_HATCH)
     expect(withEgg.steps.at(-1)?.kind).toBe('hatch')
+  })
+
+  it('always gives a new level its own screen, however much else happened (review r1 P2-1)', () => {
+    const crowded = [R.learned, R.answers, R.stars, R.gold, R.medal, R.levelUp, R.animal, R.growth, R.trophy]
+    for (const rewards of [crowded, [...crowded, R.egg], [...crowded, R.trialPass, R.opened]]) {
+      const plan = planCeremonies(rewards)
+      const ceremonies = plan.steps.filter((s) => !['learned', 'stars', 'tally'].includes(s.kind))
+      expect(ceremonies.map((s) => s.kind)).toContain('levelUp')
+      expect(ceremonies.length).toBeLessThanOrEqual(MAX_FULL_SCREEN)
+      expect(plan.alsoToday.some((c) => c.reward.t === 'levelUp')).toBe(false)
+      expect(isSorted(order(plan.steps.map((s) => s.kind)))).toBe(true)
+    }
+    // with a hatch the climax and the level both stay, and the hatch is still last
+    const kinds = planCeremonies([...crowded, R.egg]).steps.map((s) => s.kind)
+    expect(kinds).toContain('levelUp')
+    expect(kinds.at(-1)).toBe('hatch')
+  })
+
+  it('shows the thing a level brings on the level\'s screen, and only there', () => {
+    const up: Reward = { t: 'levelUp', level: 2, title: null, perler: 5 }
+    const plan = planCeremonies([R.learned, R.answers, up, R.item, R.medal, R.chest])
+    const level = plan.steps.find((s) => s.kind === 'levelUp')!
+    expect(level.rewards).toEqual([up, R.item])
+    const elsewhere = [...plan.steps.filter((s) => s !== level).flatMap((s) => s.rewards), ...plan.alsoToday.map((c) => c.reward)]
+    expect(elsewhere).not.toContain(R.item)
+    // a chest's thing is its own news
+    expect(elsewhere).toContain(R.chest)
+  })
+
+  it('makes one screen of two levels at once, with the things of both', () => {
+    const l2: Reward = { t: 'levelUp', level: 2, title: null, perler: 5 }
+    const l3: Reward = { t: 'levelUp', level: 3, title: null, perler: 5 }
+    const neck: Reward = { t: 'item', item: 'hverdag-neck', source: { kind: 'level', level: 3 } }
+    const plan = planCeremonies([R.learned, R.answers, l2, l3, R.item, neck])
+    const levels = plan.steps.filter((s) => s.kind === 'levelUp')
+    expect(levels).toHaveLength(1)
+    expect(levels[0].rewards).toEqual([l3, l2, R.item, neck])
+    expect(plan.alsoToday).toEqual([])
+  })
+
+  it('says "Nye steder" when the fog lets several places through', () => {
+    const one: Reward = { t: 'opened', worlds: [], regions: ['w0-minus10'] }
+    const three: Reward = { t: 'opened', worlds: [], regions: ['w0-tal20', 'w0-minus10', 'w0-tiervenner'] }
+    expect(speechFor('trial', [one])).toEqual([{ clip: 's.reward.region.open' }])
+    expect(speechFor('trial', [three])).toEqual([{ clip: 's.reward.regions.open' }])
+    expect(hasClip('s.reward.regions.open')).toBe(true)
   })
 
   it('gives the screen to the biggest news: a passed trial and a new friend before a level item', () => {

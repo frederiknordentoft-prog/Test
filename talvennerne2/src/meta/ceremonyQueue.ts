@@ -1,9 +1,11 @@
 // The end of a round (SPEC §5.8): learning first, then the things. The order is fixed —
 // "Det lærte du" (keys that moved and one next goal) → stars → perler/XP → trial and fog → medal →
 // level-up → growth → things → the hatch, always last. At most three ceremonies take the full
-// screen, and the whole end takes at most 6 s (12 s with a hatch); the rest wait as small
-// "Også i dag" cards. Everything can be skipped with one tap, nothing blocks input for more than
-// 1 s, and nothing starts the next round by itself.
+// screen; the rest wait as small "Også i dag" cards. The hatch and a new level always get their
+// screen (review r1 P2-1: a level-up is never a small card), and the things a level brings are
+// shown on its screen, never a second time. The other ceremonies share a time budget of 6 s (12 s
+// with a hatch). Everything can be skipped with one tap, nothing blocks input for more than 1 s,
+// and nothing starts the next round by itself.
 import type { Goal, SpeechPart } from '../engine/types'
 import { totalPerler, totalXp, type Reward } from './rewards'
 
@@ -14,7 +16,10 @@ export const CEREMONY_ORDER: readonly CeremonyKind[] = [
   'learned', 'stars', 'tally', 'trial', 'medal', 'levelUp', 'growth', 'thing', 'hatch',
 ]
 
-/** Planned duration of each full-screen step (ms). The summary (learned, stars, tally) is one screen of 2 s. */
+/**
+ * Planned duration of each full-screen step (ms), for the time budget. The summary (learned, stars,
+ * tally) is one screen of at least 2 s; the screen itself waits for the child's tap (review r1 P2-3).
+ */
 export const CEREMONY_MS: Readonly<Record<CeremonyKind, number>> = {
   learned: 1000, stars: 500, tally: 500,
   trial: 2000, medal: 2000, levelUp: 2500, growth: 3000, thing: 1500, hatch: 5000,
@@ -23,6 +28,7 @@ export const CEREMONY_MS: Readonly<Record<CeremonyKind, number>> = {
 export const ANIMAL_MS = 2000
 
 export const MAX_FULL_SCREEN = 3
+/** Time budget for the summary and the ceremonies besides the hatch and the level-up. */
 export const MAX_END_MS = 6000
 export const MAX_END_MS_WITH_HATCH = 12000
 /** Input is never blocked for longer than this. */
@@ -103,6 +109,12 @@ function msOf(kind: CeremonyKind, rs: readonly Reward[]): number {
 
 const clip = (id: string): SpeechPart => ({ clip: id })
 
+/** "En ny verden …", "Nye steder …" or "Et nyt sted …": as many as the fog let through. */
+export function openedClip(r: Extract<Reward, { t: 'opened' }>): string {
+  if (r.worlds.length > 0) return 's.reward.world.open'
+  return r.regions.length > 1 ? 's.reward.regions.open' : 's.reward.region.open'
+}
+
 /** What the step says (the screens add names, numbers and the next goal's own words). */
 export function speechFor(kind: CeremonyKind, rs: readonly Reward[]): SpeechPart[] {
   const r = rs[0]
@@ -122,7 +134,7 @@ export function speechFor(kind: CeremonyKind, rs: readonly Reward[]): SpeechPart
       if (r.t === 'helpBridge') return [clip('s.reward.helpBridge')]
       if (r.t === 'hut') return [clip('s.reward.hut')]
       if (r.t === 'regionTier') return [clip('s.reward.regionTier')]
-      return [clip(r.t === 'opened' && r.worlds.length > 0 ? 's.reward.world.open' : 's.reward.region.open')]
+      return [clip(r.t === 'opened' ? openedClip(r) : 's.reward.region.open')]
     case 'medal':
       if (r.t === 'medal') return [clip(`s.reward.medal.${r.medal}`)]
       return [clip('s.reward.allGolden')]
@@ -176,11 +188,26 @@ export function planCeremonies(rewards: readonly Reward[], opts: { nextGoal?: Go
   if (totalPerler(tally) > 0 || totalXp(tally) > 0) summary.push(['tally', tally])
   for (const [kind, rs] of summary) steps.push(step(kind, rs))
 
+  // A new level is one screen, however many levels the round crossed, and it shows the things those
+  // levels bring (with "Prøv den på"): they are not shown again as a thing of their own or a card.
+  const ups = (byKind.get('levelUp') ?? []).filter((r): r is Extract<Reward, { t: 'levelUp' }> => r.t === 'levelUp')
+  const levels = new Set(ups.map((r) => r.level))
+  const levelThings = (byKind.get('thing') ?? []).filter((r) => r.t === 'item' && r.source.kind === 'level' && levels.has(r.source.level))
+
   // ceremonies: one group per kind and per big reward; each reward's weight decides who gets the screen
   const groups: Group[] = []
   const cards: CeremonyCard[] = []
+  let levelUp: Group | null = null
   for (const kind of CEREMONY_ORDER.slice(3)) {
+    if (kind === 'levelUp') {
+      if (ups.length > 0) {
+        levelUp = { kind, rewards: [...[...ups].sort((a, b) => b.level - a.level), ...levelThings], weight: weightOf(ups[0]) }
+        groups.push(levelUp)
+      }
+      continue
+    }
     for (const r of byKind.get(kind) ?? []) {
+      if (levelThings.includes(r)) continue
       const weight = weightOf(r)
       if (weight <= 0) cards.push({ kind, reward: r, speech: speechFor(kind, [r]) })
       else groups.push({ kind, rewards: [r], weight })
@@ -194,7 +221,8 @@ export function planCeremonies(rewards: readonly Reward[], opts: { nextGoal?: Go
     groups.splice(groups.indexOf(fog), 1)
   }
 
-  // the hatch is the climax and always gets its screen; then the weightiest that fit the time
+  // The hatch is the climax and a new level the child's own news: both always get their screen, and
+  // neither is weighed against the clock. Then the weightiest others that fit the time.
   const hatch = groups.find((g) => g.kind === 'hatch')
   const budget = hatch ? MAX_END_MS_WITH_HATCH : MAX_END_MS
   let used = steps.reduce((s, x) => s + x.ms, 0)
@@ -203,6 +231,7 @@ export function planCeremonies(rewards: readonly Reward[], opts: { nextGoal?: Go
     chosen.add(hatch)
     used += msOf('hatch', hatch.rewards)
   }
+  if (levelUp) chosen.add(levelUp)
   const ranked = [...groups].sort((a, b) => b.weight - a.weight || CEREMONY_ORDER.indexOf(a.kind) - CEREMONY_ORDER.indexOf(b.kind))
   for (const g of ranked) {
     if (chosen.size >= MAX_FULL_SCREEN) break

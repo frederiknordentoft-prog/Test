@@ -5,14 +5,23 @@
 import type { ClipId } from '../../../engine/types'
 
 export const clips: Readonly<Record<ClipId, string>> = {
-  // "Det lærte du" — learning comes first
+  // "Det lærte du" — learning comes first: the facts and numbers that moved, and how well each sits
+  // (only box 5 "sits"; review r1 P2-2)
   's.reward.learned': 'Det lærte du',
-  's.reward.learned.box3': 'Det sidder fast nu!',
-  's.reward.learned.box5': 'Det sidder helt fast nu!',
+  's.reward.learned.started': 'Godt begyndt!',
   's.reward.learned.moved': 'Du er blevet bedre til det her.',
+  's.reward.learned.box3': 'Det går rigtig godt med det her!',
+  's.reward.learned.box5': 'Det sidder helt fast nu!',
   's.reward.learned.first': 'Første gang rigtigt!',
   's.reward.learned.status': 'Du er rykket et trin op.',
   's.reward.learned.practiced': 'Du har øvet dig godt.',
+  's.reward.learned.number': 'Tallet',
+  's.reward.learned.after': 'Tallet efter',
+  's.reward.learned.before': 'Tallet før',
+  's.reward.learned.between': 'Tallet imellem',
+  's.reward.learned.bigger': 'Det største tal',
+  's.reward.learned.pattern': 'Et mønster',
+  's.reward.learned.compareLength': 'Længst og kortest',
   's.reward.nextGoal': 'Næste mål',
 
   // stars, perler and points
@@ -31,6 +40,7 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.reward.hut': 'Træningshytten er tændt.',
   's.reward.helpBridge': 'Hjælpebroen er klar. Du kan gå videre.',
   's.reward.region.open': 'Et nyt sted er dukket op på kortet!',
+  's.reward.regions.open': 'Nye steder er dukket op på kortet!',
   's.reward.world.open': 'En ny verden er dukket op!',
   's.reward.regionTier': 'Farverne kommer tilbage!',
 

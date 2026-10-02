@@ -6,7 +6,7 @@ import type { TaskKind } from '../../../engine/types'
 export const KIND_INSTRUCTIONS: Record<TaskKind, { long: string; short: string }> = {
   choice: { long: 'Tryk på det kort, der passer.', short: 'Tryk på svaret.' },
   keypad: { long: 'Skriv svaret med tallene. Tryk på fluebenet, når du er færdig.', short: 'Skriv svaret.' },
-  countTap: { long: 'Tryk på tingene, så hopper de i kurven. Tryk på kurven for at tage en op igen.', short: 'Læg dem i kurven.' },
+  countTap: { long: 'Tryk på tingene, så hopper de i kurven. Tryk på kurven for at tage en op igen.', short: 'Læg det rigtige antal i kurven.' },
   pair: { long: 'Træk den boble, der passer, over i den tomme boble.', short: 'Træk boblen på plads.' },
   numberline: { long: 'Tryk på tallinjen, der hvor tallet hører til. Du kan flytte nålen. Tryk så på fluebenet.', short: 'Sæt nålen på tallinjen.' },
   trueFalse: { long: 'Passer det? Tryk på det grønne flueben for ja eller på det røde kryds for nej.', short: 'Ja eller nej?' },

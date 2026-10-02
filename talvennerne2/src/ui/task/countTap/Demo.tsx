@@ -1,4 +1,5 @@
-// countTap demo: three apples hop into the basket, one at a time, then the tick.
+// countTap demo: three apples hop into the basket, one at a time, then the tick (4,4 s with the
+// close: SPEC §3.4 asks for 3–5 s, review r1 P3-15).
 import { useState } from 'react'
 import { Thing } from '../../../art/materials'
 import { Icon } from '../../design/Icon'
@@ -13,14 +14,14 @@ export function CountTapDemo({ onDone }: DemoProps) {
   const take = () => setTaken((t) => t + 1)
   return (
     <DemoStage
-      duration={4600}
+      duration={3900}
       onDone={onDone}
       steps={[
-        { at: 500, to: 'a0', tap: true, run: take },
-        { at: 1250, to: 'a1', tap: true, run: take },
-        { at: 2000, to: 'a2', tap: true, run: take },
-        { at: 2900, to: 'ok', tap: true, run: () => setChecked(true) },
-        { at: 3900, to: [0.9, 1.2] },
+        { at: 400, to: 'a0', tap: true, run: take },
+        { at: 1050, to: 'a1', tap: true, run: take },
+        { at: 1700, to: 'a2', tap: true, run: take },
+        { at: 2500, to: 'ok', tap: true, run: () => setChecked(true) },
+        { at: 3300, to: [0.9, 1.2] },
       ]}
     >
       <div className="tv-demo__mini">

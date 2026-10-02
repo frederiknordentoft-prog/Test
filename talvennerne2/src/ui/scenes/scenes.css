@@ -475,3 +475,29 @@
     animation: none !important;
   }
 }
+
+/* A number line with the cards' numbers marked (MarkedLine, review r1 P2-7): the marks are a second
+   svg in the same grid cell, in the line's own coordinates. */
+.tv-markedline {
+  display: grid;
+  width: 100%;
+  max-width: 640px;
+}
+.tv-markedline > svg {
+  grid-area: 1 / 1;
+  place-self: center;
+  max-width: 100%;
+  max-height: var(--scene-h);
+  width: auto;
+  height: auto;
+}
+.tv-markedline__ring {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 3.5;
+}
+.tv-markedline__dot {
+  fill: var(--color-primary);
+  stroke: var(--color-card);
+  stroke-width: 3;
+}

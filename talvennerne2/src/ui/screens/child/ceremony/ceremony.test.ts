@@ -1,25 +1,30 @@
 import { describe, expect, it } from 'vitest'
 import { CEREMONY_MS, MAX_BLOCK_MS, planCeremonies } from '../../../../meta/ceremonyQueue'
 import type { Reward } from '../../../../meta/rewards'
-import type { Animal } from '../../../../engine/types'
+import type { Animal, SpeechPart } from '../../../../engine/types'
+import { hasClip } from '../../../../speech/catalog'
 import { toDanishText } from '../../../../speech/compile'
 import { autoAdvanceMs, isInteractive, progressOf, screensOf, setProgress } from './flow'
-import { cardSpeech, factTerms, learnedItems } from './describe'
-import { levelItems } from './Steps'
+import { boxBadge, cardSpeech, factTerms, keyFace, learnedItems } from './describe'
+import { endReadout } from './End'
+import { animalTitle, levelItems, summarySpeech, thingSpeech } from './Steps'
 
 /**
- * The end of a round as screens (SPEC §5.8): learning first as one summary screen, at most three
- * full-screen ceremonies in the queue's order with the hatch last, then "Også i dag"; screens move on
- * by themselves after their planned time except the ones the child takes part in.
+ * The end of a round as screens (SPEC §5.8): learning first as one summary screen that waits for the
+ * child, at most three full-screen ceremonies in the queue's order with the hatch last, then "Også i
+ * dag" read aloud card by card; screens with something to look at or do wait for a tap, the others
+ * move on by themselves after their planned time.
  */
 
-const learned = (over: Partial<Extract<Reward, { t: 'learned' }>> = {}): Reward => ({
+type Learned = Extract<Reward, { t: 'learned' }>
+const learned = (over: Partial<Learned> = {}): Learned => ({
   t: 'learned', promoted: [], firsts: [], statuses: [], practiced: ['addTo10'], next: null, ...over,
 })
-const animal = (uid: string): Animal => ({
+const animal = (uid: string, over: Partial<Animal> = {}): Animal => ({
   uid, species: 'cat', breed: 'domestic', colorway: 'c1', name: 'Misse', friendship: 0, stage: 1, star: false, shown: 1,
-  outfit: {}, foundAt: 0, source: 'friend',
+  outfit: {}, foundAt: 0, source: 'friend', ...over,
 })
+const clips = (parts: readonly SpeechPart[]) => parts.flatMap((p) => ('clip' in p ? [p.clip] : []))
 
 const ROUND: Reward[] = [
   learned({ promoted: [{ key: 'add:3+5', skill: 'addTo10', box: 3 }, { key: 'add:2+2', skill: 'addTo10', box: 1 }] }),
@@ -51,19 +56,36 @@ describe('the screens of the end of a round', () => {
     for (const s of screens) expect(s.blockMs).toBeLessThanOrEqual(MAX_BLOCK_MS)
   })
 
-  it('moves on by itself except where the child takes part: the hatch, a new friend to name', () => {
+  it('waits for the child on the summary, on "Prøv den på" and where the child takes part', () => {
     const waits = screens.map((s) => autoAdvanceMs(s))
-    expect(waits[0]).toBe(2000)
-    expect(waits[1]).toBe(CEREMONY_MS.levelUp)
-    expect(waits.slice(2)).toEqual([null, null, null])
+    // the summary stays until the tap (review r1 P2-3), the level-up with its hat too
+    expect(waits).toEqual([null, null, null, null, null])
     const thing = screens[2]
     expect(thing.kind === 'step' && isInteractive(thing.step)).toBe(true)
+  })
+
+  it('moves on by itself only where there is nothing to do, after its planned time', () => {
+    const medal: Reward = { t: 'medal', skill: 'addTo10', medal: 'bronze', perler: 3, xp: 50 }
+    const growth: Reward = { t: 'growth', uid: 'starter-rabbit', stage: 2, star: false }
+    const s = screensOf(planCeremonies([learned(), medal, growth]))
+    expect(s.map((x) => autoAdvanceMs(x))).toEqual([null, CEREMONY_MS.medal, CEREMONY_MS.growth, null])
+    // a level-up without a thing has nothing to try on: it moves on by itself
+    const bare = screensOf(planCeremonies([learned(), { t: 'levelUp', level: 4, title: null, perler: 5 }]))
+    expect(bare.map((x) => autoAdvanceMs(x))).toEqual([null, CEREMONY_MS.levelUp, null])
   })
 
   it('lists what did not get the full screen as cards, with what each is about', () => {
     expect(plan.alsoToday.map((c) => c.reward.t)).toEqual(expect.arrayContaining(['friendship', 'trophy']))
     const trophy = plan.alsoToday.find((c) => c.reward.t === 'trophy')!
     expect(toDanishText(cardSpeech(trophy))).toBe('Et nyt trofæ! En perfekt tur.')
+  })
+
+  it('reads "Også i dag" aloud: the heading, then every card in turn (review r1 P2-4)', () => {
+    const steps = endReadout(plan.alsoToday)
+    expect(steps[0]).toEqual({ card: null, parts: [{ clip: 's.reward.alsoToday' }] })
+    expect(steps.slice(1).map((s) => s.card)).toEqual(plan.alsoToday.map((_, i) => i))
+    for (const [i, c] of plan.alsoToday.entries()) expect(steps[i + 1].parts).toEqual(cardSpeech(c))
+    expect(endReadout([])).toEqual([])
   })
 
   it('remembers where the child got to (the wardrobe visit comes back to the next screen)', () => {
@@ -73,13 +95,26 @@ describe('the screens of the end of a round', () => {
     expect(progressOf(planCeremonies(ROUND))).toBe(0)
   })
 
-  it('finds the things that came with a level', () => {
-    expect(levelItems(2, ROUND)).toEqual(['hverdag-head'])
-    expect(levelItems(1, ROUND)).toEqual([])
+  it('shows the things of a level on the level-up screen and says them there', () => {
+    const up = plan.steps.find((s) => s.kind === 'levelUp')!
+    expect(levelItems(up)).toEqual(['hverdag-head'])
+    expect(plan.steps.filter((s) => s.kind === 'thing').flatMap((s) => s.rewards).some((r) => r.t === 'item')).toBe(false)
+    expect(plan.alsoToday.some((c) => c.reward.t === 'item')).toBe(false)
+  })
+
+  it('calls a friend in a breed the child has not met "En ny race!"', () => {
+    const lop = animal('friend-w0-tal10-friend', { species: 'rabbit', breed: 'lop' })
+    const step = planCeremonies([learned(), { t: 'animal', animal: lop, newSpecies: false }]).steps.find((s) => s.kind === 'thing')!
+    const starter = animal('starter-rabbit', { species: 'rabbit', breed: 'upright', source: 'starter' })
+    expect(animalTitle(step, [starter, lop])).toBe('s.reward.animal.breed')
+    expect(clips(thingSpeech(step, [starter, lop]))[0]).toBe('s.reward.animal.breed')
+    // the same breed again in a new colour is a new colour
+    const twin = animal('egg-1', { species: 'rabbit', breed: 'lop', source: 'egg' })
+    expect(animalTitle(step, [starter, twin, lop])).toBe('s.reward.animal.color')
   })
 })
 
-describe('"Det lærte du"', () => {
+describe('"Det lærte du" (review r1 P2-2: concrete and true)', () => {
   it('reads the facts that moved as sums with their answers', () => {
     expect(factTerms('add:3+5')).toEqual([{ n: 3 }, { op: '+' }, { n: 5 }, { op: '=' }, { n: 8 }])
     expect(factTerms('sub:9-4')).toEqual([{ n: 9 }, { op: '−' }, { n: 4 }, { op: '=' }, { n: 5 }])
@@ -92,7 +127,7 @@ describe('"Det lærte du"', () => {
     expect(factTerms('skipCount/step2')).toBeNull()
   })
 
-  it('shows at most three, the best first, with how well each sits', () => {
+  it('shows at most three, the best first, and only box 5 "sits"', () => {
     const items = learnedItems(learned({
       promoted: [
         { key: 'add:3+5', skill: 'addTo10', box: 5 },
@@ -100,20 +135,79 @@ describe('"Det lærte du"', () => {
         { key: 'add:1+1', skill: 'addTo10', box: 2 },
         { key: 'add:4+1', skill: 'addTo10', box: 1 },
       ],
-    }) as Extract<Reward, { t: 'learned' }>)
+    }))
     expect(items.map((i) => i.key)).toEqual(['add:3+5', 'add:2+2', 'add:1+1'])
     expect(items.map((i) => i.badge)).toEqual(['s.reward.learned.box5', 's.reward.learned.box3', 's.reward.learned.moved'])
     expect(toDanishText(items[0].speech)).toBe('Tre plus fem er lig med otte. Det sidder helt fast nu!')
+    expect(toDanishText(items[1].speech)).not.toMatch(/sidder/)
+    expect([1, 2, 3, 4].map((b) => boxBadge(b as 1 | 2 | 3 | 4))).toEqual([
+      's.reward.learned.started', 's.reward.learned.moved', 's.reward.learned.box3', 's.reward.learned.box3',
+    ])
   })
 
-  it('names a skill without sums once, and praises the practice when nothing moved', () => {
-    const items = learnedItems(learned({
-      promoted: [{ key: 'cnt:7', skill: 'count10', box: 3 }, { key: 'cnt:8', skill: 'count10', box: 3 }],
-    }) as Extract<Reward, { t: 'learned' }>)
+  it('never says that something sits right after a failed trial', () => {
+    const r = learned({ promoted: [{ key: 'add:3+5', skill: 'addTo10', box: 5 }, { key: 'h20:7', skill: 'hear20', box: 3 }] })
+    const items = learnedItems(r, { failedTrial: true })
+    expect(items.map((i) => i.badge)).not.toContain('s.reward.learned.box5')
+    for (const i of items) expect(toDanishText(i.speech)).not.toMatch(/sidder/)
+  })
+
+  it('shows the numbers that moved, the way the child counted or heard them', () => {
+    const [dice, heard, scatter] = learnedItems(learned({
+      promoted: [
+        { key: 'c10:dice:4', skill: 'count10', box: 1 },
+        { key: 'h20:7', skill: 'hear20', box: 1 },
+        { key: 'c10:scatter:3', skill: 'count10', box: 1 },
+      ],
+    }))
+    expect(dice.face).toMatchObject({ t: 'number', n: 4, picture: { scene: 'objects', layout: 'dice', n: 4 } })
+    // a flashed picture stays on in the summary
+    expect(dice.face.t === 'number' && dice.face.picture && 'flashMs' in dice.face.picture).toBe(false)
+    expect(heard.face).toEqual({ t: 'number', n: 7, picture: null })
+    expect(scatter.face).toMatchObject({ t: 'number', n: 3, picture: { scene: 'objects', layout: 'row', n: 3 } })
+    expect(toDanishText(dice.speech)).toBe('Tallet fire. Godt begyndt!')
+  })
+
+  it('names a family, a figure and a pattern by what they are', () => {
+    expect(keyFace('order20/after', 'order20')?.face).toEqual({ t: 'label', clip: 's.reward.learned.after' })
+    expect(keyFace('order20/bigger', 'order20')?.face).toEqual({ t: 'label', clip: 's.reward.learned.bigger' })
+    expect(keyFace('patterns/AB', 'patterns')?.face).toEqual({ t: 'beads', beads: ['red', 'blue', 'red', 'blue'] })
+    expect(keyFace('shp:triangle:0', 'shapes2D')?.face).toEqual({ t: 'shape', shape: 'triangle', variant: 0 })
+    expect(keyFace('lng:a1', 'compareLength')?.face).toEqual({ t: 'label', clip: 's.reward.learned.compareLength' })
+  })
+
+  it('never claims a whole skill ("Jeg kan …"), and every word is a recorded clip', () => {
+    const r = learned({
+      promoted: [
+        { key: 'c10:scatter:1', skill: 'count10', box: 1 },
+        { key: 'h20:1', skill: 'hear20', box: 1 },
+        { key: 'order20/after', skill: 'order20', box: 2 },
+      ],
+      firsts: [{ skill: 'count10', family: 'flash' }],
+      practiced: ['count10', 'hear20', 'order20'],
+    })
+    const items = learnedItems(r, { correct: [{ key: 'c10:dice:2', skill: 'count10' }] }, 5)
+    expect(items).toHaveLength(4)
+    for (const i of items) {
+      for (const c of clips(i.speech)) {
+        expect(c.startsWith('s.cando.'), c).toBe(false)
+        expect(hasClip(c), c).toBe(true)
+      }
+    }
+    expect(summarySpeech(planCeremonies([r]).steps).some((p) => 'clip' in p && p.clip.startsWith('s.cando.'))).toBe(false)
+  })
+
+  it('makes a family\'s first right answer concrete with the key it was answered on', () => {
+    const r = learned({ firsts: [{ skill: 'count10', family: 'scatter' }], practiced: ['count10'] })
+    const items = learnedItems(r, { correct: [{ key: 'h20:2', skill: 'hear20' }, { key: 'c10:scatter:2', skill: 'count10' }] })
     expect(items).toHaveLength(1)
-    expect(items[0]).toMatchObject({ terms: null, canDo: 's.cando.count10' })
-    const none = learnedItems(learned() as Extract<Reward, { t: 'learned' }>)
-    expect(none).toHaveLength(1)
-    expect(none[0]).toMatchObject({ canDo: 's.cando.addTo10', badge: 's.reward.learned.practiced' })
+    expect(items[0]).toMatchObject({ key: 'c10:scatter:2', badge: 's.reward.learned.first', face: { t: 'number', n: 2 } })
+  })
+
+  it('praises the practice with something the child got right when nothing moved', () => {
+    const some = learnedItems(learned({ practiced: ['count10'] }), { correct: [{ key: 'c10:fingers:3', skill: 'count10' }] })
+    expect(some).toEqual([expect.objectContaining({ key: 'c10:fingers:3', badge: 's.reward.learned.practiced', face: expect.objectContaining({ t: 'number', n: 3 }) })])
+    const none = learnedItems(learned())
+    expect(none).toEqual([{ key: 'practiced', face: { t: 'none' }, badge: 's.reward.learned.practiced', speech: [{ clip: 's.reward.learned.practiced' }] }])
   })
 })

@@ -19,7 +19,7 @@ import { playSfx } from '../../../audio/sfx'
 import { onResumeNeeded } from '../../../audio/unlock'
 import { OOPS_CLIPS, PRAISE_CLIPS } from '../../../speech/clips/ui/round'
 import { instructionClip } from '../../../speech/clips/ui/kinds'
-import { IconButton } from '../../design/Button'
+import { Button, IconButton } from '../../design/Button'
 import { ProgressStones } from '../../design/ProgressStones'
 import { SpokenText } from '../../design/SpokenText'
 import { useSpeech } from '../../design/speech'
@@ -30,11 +30,11 @@ import { PromptScene } from '../../scenes/PromptScene'
 import type { BlankSlot } from '../../scenes/PromptScene'
 import { HintVisual } from '../../hint/HintVisual'
 import { displayText } from '../../hint/displayText'
-import { hintFor, scaffoldFor } from '../../hint/hintFor'
+import { addsToPrompt, hintFor, scaffoldFor, supportFor } from '../../hint/hintFor'
 import type { AnyVisual, ResolvedHint } from '../../hint/hintFor'
 import { moduleFor } from '../../task/registry'
 import type { Draft, ViewMode } from '../../task/types'
-import { confirmSpeech, formatMoney, formatNumber } from '../../task/answers'
+import { confirmSpeech, formatMoney, formatNumber, splitTokens } from '../../task/answers'
 import { OptionFace, UnitSuffix } from '../../task/faces'
 import { keypadUnit } from '../../task/keypad/View'
 import { Buddy } from './round/Buddy'
@@ -122,6 +122,12 @@ function blankFace(task: Task, value: AnswerValue): ReactNode {
   return <OptionFace task={task} value={value} size="sm" />
 }
 
+/** An order or a pattern handed in on a row of stones: each part in its own stone (review r1 P2-6). */
+function blankFaces(task: Task, value: AnswerValue): ReactNode[] | null {
+  if (task.prompt.scene !== 'row' || typeof value !== 'string' || !value.includes('|')) return null
+  return splitTokens(value).map((v, i) => <OptionFace key={i} task={task} value={v} size="sm" />)
+}
+
 export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: RoundScreenProps) {
   const speech = useSpeech()
   const round = useRound()
@@ -139,6 +145,8 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
   const [draft, setDraft] = useState<Draft | null>(null)
   const [hint, setHint] = useState<ResolvedHint | null>(null)
   const [scaffold, setScaffold] = useState<AnyVisual | null>(null)
+  /** What the lightbulb would show on top of the support already on screen (null: nothing more). */
+  const [help, setHelp] = useState<AnyVisual | null>(null)
   const [bulbPulse, setBulbPulse] = useState(false)
   const [speakingOption, setSpeakingOption] = useState<number | null>(null)
   const [reading, setReading] = useState(false)
@@ -280,7 +288,17 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     setGiven(null)
     setDraft(null)
     setHint(null)
-    setScaffold(task.scaffold && !golden ? scaffoldFor(task, skills) : null)
+    // A new key shows support that leaves the answer to the child; the full strategy, which may show
+    // it, stays behind the lightbulb and makes the answer an assisted one (review r1 P2-5).
+    // A view that draws its own question (countTap, the number line …) has no card to show a picture
+    // on, so it gets neither the support nor a lightbulb that would show nothing.
+    const card = !module.ownsPrompt?.(task)
+    const support = card && task.scaffold && !golden ? supportFor(task, skills) : null
+    const full = card && !golden ? scaffoldFor(task, skills) : null
+    setScaffold(support)
+    // the lightbulb adds the full strategy only where it shows more than the support already does
+    const same = !!support && !!full && JSON.stringify(full) === JSON.stringify(support)
+    setHelp(full && !same && addsToPrompt(full, task) ? full : null)
     setBulbPulse(false)
     setSpeakingOption(null)
     setDemoKind(null)
@@ -535,15 +553,17 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     void sayAll([{ parts: [{ clip: instructionClip(task.kind, 'long') }], option: null }], token.current)
   }, [task, newToken, sayAll])
 
-  const helpAllowed = !!task && !golden && !NO_HELP.has(mode) && scaffold === null && !task.scaffold
+  const helpAllowed = !!task && !golden && !NO_HELP.has(mode) && help !== null
   const openHelp = useCallback(() => {
-    if (!task || !helpAllowed) return
+    if (!task || !helpAllowed || !help) return
+    // the answer after the lightbulb is assisted: perler and warmth, but the box stays (SPEC §3.5)
     useRound.getState().help()
     onActivity()
     playSfx('lyspaere')
-    setScaffold(scaffoldFor(task, skills))
+    setScaffold(help)
+    setHelp(null)
     void sayAll([{ parts: [{ clip: 's.round.help' }], option: null }], newToken())
-  }, [task, helpAllowed, onActivity, skills, sayAll, newToken])
+  }, [task, helpAllowed, help, onActivity, sayAll, newToken])
 
   useEffect(() => {
     if (!helpAllowed) return
@@ -672,9 +692,13 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     paused || away || demoKind || beat === 'end' ? 'idle' : beat === 'correct' ? 'correct' : beat === 'wrong' ? 'wrong' : beat === 'demo' ? 'idle' : 'input'
 
   let entry: ReactNode = undefined
+  let entries: ReactNode[] | undefined
   let slot: BlankSlot = 'empty'
   if (task && (beat === 'correct' || beat === 'wrong' || beat === 'teaching') && given !== null) {
-    entry = beat === 'correct' ? blankFace(task, given) : <span className="tv-struck">{blankFace(task, given)}</span>
+    const struck = (face: ReactNode, key?: number) => (beat === 'correct' ? face : <span key={key} className="tv-struck">{face}</span>)
+    const parts = blankFaces(task, given)
+    if (parts) entries = parts.map((face, i) => struck(face, i))
+    else entry = struck(blankFace(task, given))
     slot = beat === 'correct' ? 'good' : 'oops'
   } else if (draft) {
     entry = (
@@ -717,7 +741,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
           <>
             {compact && bulb}
             {compact && golden && (beat === 'intro' || beat === 'asking') && (
-              <IconButton icon="next" clip="s.ui.skip" variant="glass" sayLabel onClick={skipEgg} data-skip-egg="" />
+              <Button clip="s.ui.skip" variant="secondary" size="md" onClick={skipEgg} className="tv-round__skipword" data-skip-egg="" />
             )}
             <IconButton icon="hand" clip="s.ui.showMe" variant="glass" onClick={showMe} disabled={!canShowMe} data-showme="" />
           </>
@@ -738,6 +762,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
                 prompt={task.prompt}
                 task={task}
                 entry={entry}
+                entries={entries}
                 slot={slot}
                 replay={replayCount}
                 speaking={reading}
@@ -759,8 +784,8 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
               </div>
             )}
             {!compact && bulb}
-            {golden && (beat === 'intro' || beat === 'asking') && (
-              <IconButton icon="next" clip="s.ui.skip" variant="glass" sayLabel onClick={skipEgg} className="tv-round__bulb tv-round__skip" data-skip-egg="" />
+            {!compact && golden && (beat === 'intro' || beat === 'asking') && (
+              <Button clip="s.ui.skip" variant="secondary" size="md" onClick={skipEgg} className="tv-round__skip" data-skip-egg="" />
             )}
           </div>
         </div>
@@ -774,7 +799,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
           )}
         </div>
       </div>
-      {Demo && <Demo onDone={demoDone} />}
+      {Demo && <Demo onDone={demoDone} task={task} />}
       {perfect && <PerfectBanner />}
       {paused && <PauseOverlay onResume={onResume} onLeave={onLeave} />}
       {away && !paused && <ContinueOverlay onContinue={onContinue} />}
