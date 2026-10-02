@@ -165,7 +165,7 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
   // Every tagged wrong answer goes into distractorTags — also the ones never shown — so that a
   // typed keypad answer can be classified as well as a tapped card.
   const groups = new Map<string, { value: AnswerValue; tags: ErrorTag[] }>()
-  for (const c of def.candidates(fact) as readonly Candidate[]) {
+  for (const c of (ext.candidatesFor ? ext.candidatesFor(fact, kind) : def.candidates(fact)) as readonly Candidate[]) {
     if (!fits(c.value) || isRight(c.value)) continue
     const k = keyOf(c.value)
     const g = groups.get(k)
