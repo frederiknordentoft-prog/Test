@@ -1,0 +1,1901 @@
+07:38:54 generate.py --wave 1 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261002-073854.log)
+07:38:57 926 klip valgt, 385 færdige, 541 at lave
+07:43:14 input frame rate=25
+07:44:38 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+07:44:46 model indlæst på 322 s (2 tråde)
+07:44:54 ✅ EOS token detected! Stopping generation at step 59
+07:45:07 kald sentence k=1 t4 'Tæl prikkerne i ti-rammen.': 21.2 s for 2.32 s lyd
+07:50:17   hint.count.framePoints t4: 1.66 s (forhold 0.66) -18.18 LUFS, alone: 'selv prikkerne i tirammen' CER 0.1429 (wav2vec2, whisper: 'Telt prikkerne i Tirammen') → FEJL asr
+07:50:17   ✓ master hint.count.framePoints t2 (IKKE bestået: asr)
+07:50:23 ✅ EOS token detected! Stopping generation at step 46
+07:50:33 kald sentence k=1 t4 'Tæl videre fra ti.': 15.8 s for 1.80 s lyd
+07:50:39   hint.count20.countOn t4: 1.02 s (forhold 0.54) -18.0 LUFS, alone: 'tal lydere fra 10' CER 0.2143 (wav2vec2, whisper: 'Tal videre fra 10') → FEJL asr
+07:50:39   ✓ master hint.count20.countOn t2 (IKKE bestået: asr)
+07:50:46 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+07:50:46 ✅ EOS token detected! Stopping generation at step 57
+07:50:58 kald sentence k=1 t4 'En fuld ti-ramme er ti.': 18.7 s for 2.24 s lyd
+07:50:59   hint.count20.fullFrame t4: 1.64 s (forhold 0.75) -18.06 LUFS, alone: 'en fuld tiramme er 10' CER 0.0 (wav2vec2) → ok
+07:50:59   ✓ master hint.count20.fullFrame t4 (bestået)
+07:51:10 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+07:51:10 ✅ EOS token detected! Stopping generation at step 78
+07:51:22 kald sentence k=1 t4 'Find ti først, og tæl så videre fra ti.': 22.4 s for 3.08 s lyd
+07:51:29   hint.count20.tenFirst t4: 2.31 s (forhold 0.67) -18.13 LUFS, alone: 'findn 10 først og tale sig videre fra 10' CER 0.1724 (wav2vec2, whisper: 'Find 10 først og tæl sig videre fra 10') → FEJL asr
+07:51:29   ✓ master hint.count20.tenFirst t3 (IKKE bestået: asr)
+07:51:36 ✅ EOS token detected! Stopping generation at step 56
+07:51:47 kald sentence k=1 t4 'Vi skriver ettallet først.': 18.7 s for 2.20 s lyd
+07:51:54   hint.hear20.oneFirst t4: 1.49 s (forhold 0.68) -18.03 LUFS, alone: 'vi skriver i tallet først' CER 0.0909 (wav2vec2, whisper: 'Vi skriver et tallet først') → FEJL asr
+07:51:54   ✓ master hint.hear20.oneFirst t2 (IKKE bestået: asr)
+07:51:58 ✅ EOS token detected! Stopping generation at step 32
+07:52:06 kald sentence k=1 t4 'Farv delene.': 12.1 s for 1.24 s lyd
+07:52:11   s.kind.colorParts.short t4: 0.86 s (forhold 0.69) -18.14 LUFS, alone: 'farve det ene' CER 0.2 (wav2vec2, whisper: 'Far og døende') → FEJL asr
+07:52:11   ✓ master s.kind.colorParts.short t0 (IKKE bestået: asr)
+07:52:17 ✅ EOS token detected! Stopping generation at step 46
+07:52:27 kald sentence k=1 t4 'Fyld de tomme pladser.': 15.4 s for 1.80 s lyd
+07:52:32   s.kind.fillSlots.short t4: 1.14 s (forhold 0.61) -18.0 LUFS, alone: 'fyldt i tomme pladser' CER 0.1111 (wav2vec2, whisper: 'Fyldt i tomme pladser') → FEJL asr
+07:52:32   ✓ master s.kind.fillSlots.short t3 (IKKE bestået: asr)
+07:52:38 ✅ EOS token detected! Stopping generation at step 47
+07:52:48 kald sentence k=1 t4 'Fortsæt mønstret.': 15.3 s for 1.84 s lyd
+07:52:52   s.patterns.continue t4: 1.26 s (forhold 1.01) -18.0 LUFS, alone: 'fortsæt ved en strød' CER 0.4 (wav2vec2, whisper: 'Fortsat venstret') → FEJL asr
+07:52:52   ✓ master s.patterns.continue t2 (IKKE bestået: asr)
+07:53:01 ✅ EOS token detected! Stopping generation at step 52
+07:53:11 kald sentence k=1 t2 'Din ven har lært at snurre!': 19.1 s for 2.04 s lyd
+07:53:18   s.reward.friendship.spin t2: 1.40 s (forhold 0.64) -18.17 LUFS, alone: 'dine ven har lært at snore' CER 0.1429 (wav2vec2, whisper: 'Din ven har lært at snore') → FEJL asr
+07:53:23 ✅ EOS token detected! Stopping generation at step 41
+07:53:35 kald single k=1 t3 'Tag en tur forbi,': 17.6 s for 1.60 s lyd
+07:53:41   s.reward.goal.revisit t3: 0.81 s (forhold 0.52) -18.1 LUFS, alone: 'tage en tur forbi' CER 0.0769 (wav2vec2, whisper: 'Tage en tur forbi') → FEJL asr
+07:53:56 ✅ EOS token detected! Stopping generation at step 46
+07:54:09 kald sentence k=1 t2 'Vælg et gyldent dyr.': 28.8 s for 1.80 s lyd
+07:54:15   s.reward.gold.choose t2: 1.15 s (forhold 0.73) -18.16 LUFS, alone: 'vælgi et gyldent dyr' CER 0.0625 (wav2vec2, whisper: 'Hvad i et gyldent dyr') → FEJL asr
+07:54:20 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+07:54:20 ✅ EOS token detected! Stopping generation at step 46
+07:54:29 kald sentence k=1 t2 'Du er rykket et trin op.': 14.5 s for 1.80 s lyd
+07:54:35   s.reward.learned.status t2: 1.24 s (forhold 0.57) -18.02 LUFS, alone: 'du er rykket i et trine op' CER 0.1111 (wav2vec2, whisper: 'Du er rykket i trin op') → FEJL asr
+07:54:40 ✅ EOS token detected! Stopping generation at step 47
+07:54:49 kald sentence k=1 t2 'Vælg et regnbuedyr.': 14.8 s for 1.84 s lyd
+07:54:55   s.reward.rainbow.choose t2: 1.25 s (forhold 0.67) -18.19 LUFS, alone: 'vel er det regn buedyr' CER 0.3125 (wav2vec2, whisper: 'Hvad er det der har ingen boede dyr?') → FEJL asr
+07:55:00 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+07:55:00 ✅ EOS token detected! Stopping generation at step 37
+07:55:10 kald single k=1 t3 'Tag en op af kurven,': 14.8 s for 1.44 s lyd
+07:55:15   s.round.count.back t3: 0.86 s (forhold 0.46) -18.11 LUFS, alone: 'tag en op af col' CER 0.4 (wav2vec2, whisper: 'Tag en op af koret') → FEJL asr
+07:55:21 ✅ EOS token detected! Stopping generation at step 49
+07:55:32 kald sentence k=1 t2 'Tæl dem en ad gangen.': 16.6 s for 1.92 s lyd
+07:55:37   s.round.hint.count t2: 1.24 s (forhold 0.66) -18.0 LUFS, alone: 'tel dem en ad gangen' CER 0.0625 (wav2vec2, whisper: 'Tæl dem en af gangen') → FEJL asr
+07:55:46 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+07:55:46 ✅ EOS token detected! Stopping generation at step 71
+07:55:57 kald sentence k=1 t2 'Sig tallene højt, mens du lægger dem i kurven.': 19.7 s for 2.80 s lyd
+07:56:04   s.round.hint.countOut t2: 2.19 s (forhold 0.54) -18.18 LUFS, alone: 'citallener højt mens du ligger dem i kurvu' CER 0.1667 (wav2vec2, whisper: 'Se tallene højt mens du lægger dem i kurve') → FEJL asr
+07:56:11 ✅ EOS token detected! Stopping generation at step 56
+07:56:21 kald sentence k=1 t2 'Fyld tieren op først.': 17.2 s for 2.20 s lyd
+07:56:27   s.round.hint.makeTen t2: 1.58 s (forhold 0.85) -18.02 LUFS, alone: 'fyltireren op først' CER 0.1176 (wav2vec2, whisper: 'Følg tieren op først') → FEJL asr
+07:56:40 ✅ EOS token detected! Stopping generation at step 116
+07:56:54 kald sentence k=1 t2 'Der er ikke enere nok. Lån en tier, og byt den til ti enere.': 27.7 s for 4.60 s lyd
+07:56:57   s.round.hint.smallerFromLarger t2: 4.11 s (forhold 0.66) -18.16 LUFS, alone: 'der er ikke enere nok lån en tier og bit den til ti enere' CER 0.0227 (wav2vec2) → ok
+07:56:57   ✓ master s.round.hint.smallerFromLarger t2 (bestået)
+07:57:02 ✅ EOS token detected! Stopping generation at step 49
+07:57:11 kald sentence k=1 t2 'Tæl tierne først.': 14.7 s for 1.92 s lyd
+07:57:17   s.round.hint.tensFirst t2: 1.15 s (forhold 0.73) -18.12 LUFS, alone: 'tal tierne først' CER 0.0714 (wav2vec2, whisper: 'Tal tiende først') → FEJL asr
+07:57:23 ✅ EOS token detected! Stopping generation at step 50
+07:57:32 kald sentence k=1 t3 'Din ven har lært at snurre!': 15.5 s for 1.96 s lyd
+07:57:38   s.reward.friendship.spin t3: 1.31 s (forhold 0.60) -18.07 LUFS, alone: 'dine ven har lært at snore' CER 0.1429 (wav2vec2, whisper: 'Din ven har lært at snore') → FEJL asr
+07:57:43 ✅ EOS token detected! Stopping generation at step 43
+07:57:52 kald single k=1 t4 'Tag en tur forbi,': 14.3 s for 1.68 s lyd
+07:57:57   s.reward.goal.revisit t4: 0.86 s (forhold 0.55) -18.06 LUFS, alone: 'tage en tur forbi' CER 0.0769 (wav2vec2, whisper: 'Tage en tur forbi') → FEJL asr
+07:57:57   ✓ master s.reward.goal.revisit t2 (IKKE bestået: asr)
+07:58:03 ✅ EOS token detected! Stopping generation at step 52
+07:58:13 kald sentence k=1 t3 'Vælg et gyldent dyr.': 15.6 s for 2.04 s lyd
+07:58:20   s.reward.gold.choose t3: 1.43 s (forhold 0.92) -18.05 LUFS, alone: 'vel et gyldent dyr' CER 0.125 (wav2vec2, whisper: 'Vel et gyldent dyr') → FEJL asr
+07:58:27 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+07:58:27 ✅ EOS token detected! Stopping generation at step 54
+07:58:36 kald sentence k=1 t3 'Du er rykket et trin op.': 16.7 s for 2.12 s lyd
+07:58:42   s.reward.learned.status t3: 1.49 s (forhold 0.68) -18.01 LUFS, alone: 'Du er rykket et trin op' CER 0.0 (whisper, wav2vec2: 'du er rykket et trine op') → ok
+07:58:42   ✓ master s.reward.learned.status t3 (bestået)
+07:58:50 ✅ EOS token detected! Stopping generation at step 53
+07:59:20 kald sentence k=1 t3 'Vælg et regnbuedyr.': 37.9 s for 2.08 s lyd
+07:59:34   s.reward.rainbow.choose t3: 1.29 s (forhold 0.69) -18.07 LUFS, alone: 'vælge et heinboedyr' CER 0.25 (wav2vec2, whisper: 'Vælg et hegnboedyr') → FEJL asr
+07:59:48 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+07:59:48 ✅ EOS token detected! Stopping generation at step 36
+08:00:03 kald single k=1 t4 'Tag en op af kurven,': 29.9 s for 1.40 s lyd
+08:00:10   s.round.count.back t4: 0.88 s (forhold 0.47) -18.16 LUFS, alone: 'tage en op af curven' CER 0.1333 (wav2vec2, whisper: 'Tag nok af kurven') → FEJL asr
+08:00:10   ✓ master s.round.count.back t0 (IKKE bestået: asr)
+08:00:18 ✅ EOS token detected! Stopping generation at step 44
+08:00:28 kald sentence k=1 t3 'Tæl dem en ad gangen.': 18.0 s for 1.72 s lyd
+08:00:29   s.round.hint.count t3: 1.14 s (forhold 0.61) -18.02 LUFS, alone: 'tæl dem en ad gangen' CER 0.0 (wav2vec2) → ok
+08:00:29   ✓ master s.round.hint.count t3 (bestået)
+08:00:38 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:00:38 ✅ EOS token detected! Stopping generation at step 70
+08:00:48 kald sentence k=1 t3 'Sig tallene højt, mens du lægger dem i kurven.': 19.2 s for 2.76 s lyd
+08:00:56   s.round.hint.countOut t3: 2.18 s (forhold 0.54) -18.07 LUFS, alone: 'sitallen er højt mens du ligger dem i curvu' CER 0.1667 (wav2vec2, whisper: 'Se tallene højt mens du lægger dem i kurve') → FEJL asr
+08:01:08 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:01:08 ✅ EOS token detected! Stopping generation at step 59
+08:01:24 kald sentence k=1 t3 'Fyld tieren op først.': 27.6 s for 2.32 s lyd
+08:01:33   s.round.hint.makeTen t3: 1.62 s (forhold 0.86) -18.1 LUFS, alone: 'fyleteeren op først' CER 0.1176 (wav2vec2, whisper: 'Følg tieren op først') → FEJL asr
+08:01:41 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:01:41 ✅ EOS token detected! Stopping generation at step 48
+08:01:53 kald sentence k=1 t3 'Tæl tierne først.': 19.3 s for 1.88 s lyd
+08:01:58   s.round.hint.tensFirst t3: 1.17 s (forhold 0.75) -18.13 LUFS, alone: 'til tierne først' CER 0.0714 (wav2vec2, whisper: 'Til tiende først') → FEJL asr
+08:02:04 ✅ EOS token detected! Stopping generation at step 53
+08:02:15 kald sentence k=1 t4 'Din ven har lært at snurre!': 17.4 s for 2.08 s lyd
+08:02:21   s.reward.friendship.spin t4: 1.44 s (forhold 0.66) -18.19 LUFS, alone: 'din ven har lært at snore' CER 0.0952 (wav2vec2, whisper: 'Din ven har lært at snore') → FEJL asr
+08:02:21   ✓ master s.reward.friendship.spin t0 (IKKE bestået: asr)
+08:02:27 ✅ EOS token detected! Stopping generation at step 46
+08:02:37 kald sentence k=1 t4 'Vælg et gyldent dyr.': 15.5 s for 1.80 s lyd
+08:02:43   s.reward.gold.choose t4: 1.22 s (forhold 0.78) -18.2 LUFS, alone: 'Vælg et gyldent dyr' CER 0.0 (whisper, wav2vec2: 'vælget gylden dyr') → ok
+08:02:43   ✓ master s.reward.gold.choose t4 (bestået)
+08:02:49 ✅ EOS token detected! Stopping generation at step 47
+08:02:59 kald sentence k=1 t4 'Vælg et regnbuedyr.': 16.8 s for 1.84 s lyd
+08:03:06   s.reward.rainbow.choose t4: 1.17 s (forhold 0.62) -18.14 LUFS, alone: 'vel er et regnbrue dyr' CER 0.25 (wav2vec2, whisper: 'Hvad er et regnbuedyr?') → FEJL asr
+08:03:06   ✓ master s.reward.rainbow.choose t0 (IKKE bestået: asr)
+08:03:14 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:03:14 ✅ EOS token detected! Stopping generation at step 72
+08:03:27 kald sentence k=1 t4 'Sig tallene højt, mens du lægger dem i kurven.': 21.1 s for 2.84 s lyd
+08:03:35   s.round.hint.countOut t4: 2.25 s (forhold 0.55) -18.12 LUFS, alone: 'Sig tallene højt mens du lægger dem i kurven' CER 0.0 (whisper, wav2vec2: 'citallener højt mens du ligger dem i kurven') → ok
+08:03:35   ✓ master s.round.hint.countOut t4 (bestået)
+08:03:43 ✅ EOS token detected! Stopping generation at step 60
+08:03:57 kald sentence k=1 t4 'Fyld tieren op først.': 21.5 s for 2.36 s lyd
+08:04:03   s.round.hint.makeTen t4: 1.67 s (forhold 0.89) -18.16 LUFS, alone: 'fyliptieren op først' CER 0.1176 (wav2vec2, whisper: 'Følte tieren op først') → FEJL asr
+08:04:03   ✓ master s.round.hint.makeTen t1 (IKKE bestået: asr)
+08:04:08 ✅ EOS token detected! Stopping generation at step 49
+08:04:18 kald sentence k=1 t4 'Tæl tierne først.': 15.5 s for 1.92 s lyd
+08:04:23   s.round.hint.tensFirst t4: 1.26 s (forhold 0.81) -18.04 LUFS, alone: 'teletierne først' CER 0.1429 (wav2vec2, whisper: 'Til tiende først') → FEJL asr
+08:04:23   ✓ master s.round.hint.tensFirst t0 (IKKE bestået: asr)
+08:04:27   sammensat frag.det_er + n.end.5: 'Det er 5' CER 0.000 (whisper, wav2vec2: 'dt r 5') → ok
+08:04:28   sammensat frag.det_er + n.end.4: 'det er 4' CER 0.000 (wav2vec2) → ok
+08:04:28   sammensat frag.det_er + n.end.5: 'det er 5' CER 0.000 (wav2vec2) → ok
+08:04:28   sammensat frag.det_er + n.end.4: 'det er 4' CER 0.000 (wav2vec2) → ok
+08:04:29   sammensat n.mid.7 + frag.hvad + n.end.5: '7 hvad 5' CER 0.000 (wav2vec2) → ok
+08:04:29   sammensat n.mid.7 + frag.hvad + n.end.5: '7 hvad 5' CER 0.000 (wav2vec2) → ok
+08:04:33   sammensat n.mid.7 + frag.i_kurven + n.end.5: '7 i kurven 5' CER 0.000 (whisper, wav2vec2: '7 i korven 5') → ok
+08:04:37   sammensat frag.laeg + n.end.5: 'Læg 5' CER 0.000 (whisper, wav2vec2: 'læk 5') → ok
+08:04:41   sammensat frag.laeg + n.end.4: 'Læg 4' CER 0.000 (whisper, wav2vec2: 'læk 4') → ok
+08:04:45   sammensat frag.laeg + n.end.5: 'Læg 5' CER 0.000 (whisper, wav2vec2: 'lik 5') → ok
+08:04:49   sammensat frag.laeg + n.end.4: 'Læg 4' CER 0.000 (whisper, wav2vec2: 'lik 4') → ok
+08:04:49   sammensat frag.tryk_paa + n.end.5: 'tryk på 5' CER 0.000 (wav2vec2) → ok
+08:04:49   sammensat frag.tryk_paa + n.end.4: 'tryk på 4' CER 0.000 (wav2vec2) → ok
+08:04:50   sammensat frag.tryk_paa + n.end.5: 'tryk på 5' CER 0.000 (wav2vec2) → ok
+08:04:50   sammensat frag.tryk_paa + n.end.4: 'tryk på 4' CER 0.000 (wav2vec2) → ok
+08:04:54   sammensat frag.det_er + hint.addsub.hopUpTo: 'Det er hop op til' CER 0.000 (whisper, wav2vec2: 'dr hop op til') → ok
+08:04:54   sammensat frag.det_er + hint.addsub.startOn: 'det er start på' CER 0.000 (wav2vec2) → ok
+08:04:54   sammensat frag.det_er + hint.hear20.tenAnd: 'det er er 10 og' CER 0.000 (wav2vec2) → ok
+08:04:59   sammensat frag.det_er + hint.hear20.thisMany: 'Det er så mange er' CER 0.000 (whisper, wav2vec2: 'det er så mange r') → ok
+08:04:59   sammensat frag.det_er + hint.hear20.weSay: 'det er vi siger' CER 0.000 (wav2vec2) → ok
+08:04:59   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.1.et: 'hvad er 7 plus 1' CER 0.000 (wav2vec2) → ok
+08:05:04   sammensat frag.find_tallet + n.end.1.et: 'Find tallet 1' CER 0.000 (whisper, wav2vec2: 'finn tallet 1') → ok
+08:05:05   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.100: 'hvad er 7 plus 100' CER 0.000 (wav2vec2) → ok
+08:05:10   sammensat frag.find_tallet + n.end.100: 'Find tallet 100' CER 0.000 (whisper, wav2vec2: 'finn tallet 1100') → ok
+08:05:10   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.21: 'hvad er 7 plus 21' CER 0.000 (wav2vec2) → ok
+08:05:15   sammensat frag.find_tallet + n.end.21: 'Find tallet 21' CER 0.000 (whisper, wav2vec2: 'fin tallet 21') → ok
+08:05:15   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.22: 'hvad er 7 plus 22' CER 0.000 (wav2vec2) → ok
+08:05:20   sammensat frag.find_tallet + n.end.22: 'Find tallet 22' CER 0.000 (whisper, wav2vec2: 'fin tallet 22') → ok
+08:05:21   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.23: 'hvad er 7 plus 23' CER 0.000 (wav2vec2) → ok
+08:05:25   sammensat frag.find_tallet + n.end.23: 'Find tallet 23' CER 0.000 (whisper, wav2vec2: 'finn tallet 23') → ok
+08:05:25   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.24: 'hvad r 7 plus 24' CER 0.043 (wav2vec2) → ok
+08:05:26   sammensat frag.find_tallet + n.end.24: 'finn tallet 24' CER 0.050 (wav2vec2) → ok
+08:05:26   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.25: 'hvad er 7 plus 25' CER 0.000 (wav2vec2) → ok
+08:05:27   sammensat frag.find_tallet + n.end.25: 'find tallet 25' CER 0.000 (wav2vec2) → ok
+08:05:27   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.26: 'hvad er 7 plus 26' CER 0.000 (wav2vec2) → ok
+08:05:28   sammensat frag.find_tallet + n.end.26: 'finn tallet 26' CER 0.050 (wav2vec2) → ok
+08:05:28   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.27: 'hvad er 7 plus 27' CER 0.000 (wav2vec2) → ok
+08:05:33   sammensat frag.find_tallet + n.end.27: 'Find tallet 27' CER 0.000 (whisper, wav2vec2: 'fin tallet 27') → ok
+08:05:33   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.28: 'hvad r 7 plus 28' CER 0.043 (wav2vec2) → ok
+08:05:33   sammensat frag.find_tallet + n.end.28: 'fin tallet 28' CER 0.050 (wav2vec2) → ok
+08:05:34   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.29: 'hvad er 7 plus 29' CER 0.000 (wav2vec2) → ok
+08:05:38   sammensat frag.find_tallet + n.end.29: 'Find tallet 29' CER 0.000 (whisper, wav2vec2: 'fin tallet 29') → ok
+08:05:39   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.30: 'hvad er 7 plus 30' CER 0.000 (wav2vec2) → ok
+08:05:43   sammensat frag.find_tallet + n.end.30: 'Find tallet 30' CER 0.000 (whisper, wav2vec2: 'finn tallet 30') → ok
+08:05:44   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.31: 'hvad er 7 plus 31' CER 0.000 (wav2vec2) → ok
+08:05:45   sammensat frag.find_tallet + n.end.31: 'finn tallet 31' CER 0.048 (wav2vec2) → ok
+08:05:45   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.32: 'hvad er 7 plus 32' CER 0.000 (wav2vec2) → ok
+08:05:46   sammensat frag.find_tallet + n.end.32: 'finn tallet 32' CER 0.048 (wav2vec2) → ok
+08:05:47   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.33: 'hvad er 7 plus 33' CER 0.000 (wav2vec2) → ok
+08:05:51   sammensat frag.find_tallet + n.end.33: 'Find tallet 33' CER 0.000 (whisper, wav2vec2: 'finn tallet 33b') → ok
+08:05:57   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.34: 'hvad r 7 plus er 34' CER 0.115 (wav2vec2, whisper: 'Hvad er 7 plus er 34') → FEJL
+08:06:02   sammensat frag.find_tallet + n.end.34: 'finntallet er 34' CER 0.130 (wav2vec2, whisper: 'Find tallet er 34') → FEJL
+08:06:02   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.35: 'hvad er 7 plus 35' CER 0.000 (wav2vec2) → ok
+08:06:02   sammensat frag.find_tallet + n.end.35: 'finn tallet 35' CER 0.045 (wav2vec2) → ok
+08:06:03   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.36: 'hvad er 7 plus 36' CER 0.000 (wav2vec2) → ok
+08:06:03   sammensat frag.find_tallet + n.end.36: 'finn tallet 36' CER 0.043 (wav2vec2) → ok
+08:06:08   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.37: 'Hvad er 7 plus 37?' CER 0.000 (whisper, wav2vec2: 'hvad r pus 37') → ok
+08:06:09   sammensat frag.find_tallet + n.end.37: 'finn tallet 37' CER 0.045 (wav2vec2) → ok
+08:06:10   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.38: 'hvad r 7 plus 38' CER 0.038 (wav2vec2) → ok
+08:06:10   sammensat frag.find_tallet + n.end.38: 'finn tallet 38' CER 0.043 (wav2vec2) → ok
+08:06:11   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.39: 'hvad r 7 plus 39' CER 0.042 (wav2vec2) → ok
+08:06:11   sammensat frag.find_tallet + n.end.39: 'finn tallet 39' CER 0.048 (wav2vec2) → ok
+08:06:12   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.40: 'hvad er 7 plus 40' CER 0.000 (wav2vec2) → ok
+08:06:12   sammensat frag.find_tallet + n.end.40: 'find tallet 40' CER 0.000 (wav2vec2) → ok
+08:06:13   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.41: 'hvad er 7 plus 41' CER 0.000 (wav2vec2) → ok
+08:06:13   sammensat frag.find_tallet + n.end.41: 'find tallet 41' CER 0.000 (wav2vec2) → ok
+08:06:14   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.42: 'hvad er 7 plus 42' CER 0.000 (wav2vec2) → ok
+08:06:15   sammensat frag.find_tallet + n.end.42: 'find tallet 42' CER 0.000 (wav2vec2) → ok
+08:06:16   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.43: 'hvad er 7 plus 43' CER 0.000 (wav2vec2) → ok
+08:06:17   sammensat frag.find_tallet + n.end.43: 'finn tallet 43' CER 0.050 (wav2vec2) → ok
+08:06:17   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.44: 'hvad er 7 plus 44' CER 0.000 (wav2vec2) → ok
+08:06:18   sammensat frag.find_tallet + n.end.44: 'find tallet 44' CER 0.000 (wav2vec2) → ok
+08:06:18   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.45: 'hvad er 7 plus 45' CER 0.000 (wav2vec2) → ok
+08:06:19   sammensat frag.find_tallet + n.end.45: 'find tallet 45' CER 0.000 (wav2vec2) → ok
+08:06:20   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.46: 'hvad er 7 plus 46' CER 0.000 (wav2vec2) → ok
+08:06:25   sammensat frag.find_tallet + n.end.46: 'Find tallet 46' CER 0.000 (whisper, wav2vec2: 'finn tallet 46e') → ok
+08:06:31   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.47: 'Hvad er 7 plus 47?' CER 0.000 (whisper, wav2vec2: 'hvad er plus 47') → ok
+08:06:31   sammensat frag.find_tallet + n.end.47: 'finn tallet 47' CER 0.050 (wav2vec2) → ok
+08:06:31   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.48: 'hvad r 7 plus 48' CER 0.042 (wav2vec2) → ok
+08:06:32   sammensat frag.find_tallet + n.end.48: 'finn tallet 48' CER 0.048 (wav2vec2) → ok
+08:06:32   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.49: 'hvad r 7 plus 49' CER 0.045 (wav2vec2) → ok
+08:06:37   sammensat frag.find_tallet + n.end.49: 'Find tallet 49' CER 0.000 (whisper, wav2vec2: 'finn tallet 49') → ok
+08:06:37   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.50: 'hvad er 7 plus 50' CER 0.000 (wav2vec2) → ok
+08:06:44   sammensat frag.find_tallet + n.end.50: 'Find tallet 50' CER 0.000 (whisper, wav2vec2: 'finm tallet 50') → ok
+08:06:44   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.51: 'hvad er 7 plus 51' CER 0.000 (wav2vec2) → ok
+08:06:45   sammensat frag.find_tallet + n.end.51: 'finn tallet 51' CER 0.043 (wav2vec2) → ok
+08:06:45   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.52: 'hvad er 7 plus 52' CER 0.000 (wav2vec2) → ok
+08:06:46   sammensat frag.find_tallet + n.end.52: 'finn tallet 52' CER 0.043 (wav2vec2) → ok
+08:06:46   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.53: 'hvad er 7 plus 53' CER 0.000 (wav2vec2) → ok
+08:06:46   sammensat frag.find_tallet + n.end.53: 'finn tallet 53' CER 0.042 (wav2vec2) → ok
+08:06:47   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.54: 'hvad er 7 plus 54' CER 0.000 (wav2vec2) → ok
+08:06:47   sammensat frag.find_tallet + n.end.54: 'finn tallet 54' CER 0.040 (wav2vec2) → ok
+08:06:48   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.55: 'hvad er 7 plus 55' CER 0.000 (wav2vec2) → ok
+08:06:48   sammensat frag.find_tallet + n.end.55: 'finn tallet 55' CER 0.042 (wav2vec2) → ok
+08:06:49   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.56: 'hvad er 7 plus 56' CER 0.000 (wav2vec2) → ok
+08:06:50   sammensat frag.find_tallet + n.end.56: 'finn tallet 56' CER 0.040 (wav2vec2) → ok
+08:06:55   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.57: 'Hvad er 7 plus 57' CER 0.000 (whisper, wav2vec2: 'hvad er plus 57') → ok
+08:06:55   sammensat frag.find_tallet + n.end.57: 'finn tallet 57' CER 0.042 (wav2vec2) → ok
+08:06:56   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.58: 'hvad er 7 plus 58' CER 0.000 (wav2vec2) → ok
+08:07:01   sammensat frag.find_tallet + n.end.58: 'finn tallet og 58' CER 0.120 (wav2vec2, whisper: 'Find tallet og 58') → FEJL
+08:07:01   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.59: 'hvad er 7 plus 59' CER 0.000 (wav2vec2) → ok
+08:07:01   sammensat frag.find_tallet + n.end.59: 'finn tallet 59' CER 0.043 (wav2vec2) → ok
+08:07:02   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.60: 'hvad er 7 plus 60' CER 0.000 (wav2vec2) → ok
+08:07:06   sammensat frag.find_tallet + n.end.60: 'Find tallet 60' CER 0.000 (whisper, wav2vec2: 'finn tallet 60') → ok
+08:07:07   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.61: 'hvad er 7 plus 61' CER 0.000 (wav2vec2) → ok
+08:07:11   sammensat frag.find_tallet + n.end.61: 'Find tallet 61' CER 0.000 (whisper, wav2vec2: 'finn tallet 61') → ok
+08:07:11   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.62: 'hvad er 7 plus 62' CER 0.000 (wav2vec2) → ok
+08:07:16   sammensat frag.find_tallet + n.end.62: 'Find tallet 62' CER 0.000 (whisper, wav2vec2: 'finn tallet 62') → ok
+08:07:17   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.63: 'hvad er 7 plus 63' CER 0.000 (wav2vec2) → ok
+08:07:21   sammensat frag.find_tallet + n.end.63: 'Find tallet 63' CER 0.000 (whisper, wav2vec2: 'finn tallet 63') → ok
+08:07:22   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.64: 'hvad er 7 plus 64' CER 0.000 (wav2vec2) → ok
+08:07:22   sammensat frag.find_tallet + n.end.64: 'find tallet 64' CER 0.000 (wav2vec2) → ok
+08:07:23   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.65: 'hvad er 7 plus 65' CER 0.000 (wav2vec2) → ok
+08:07:23   sammensat frag.find_tallet + n.end.65: 'find tallet 65' CER 0.000 (wav2vec2) → ok
+08:07:24   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.66: 'hvad er 7 plus 66' CER 0.000 (wav2vec2) → ok
+08:07:24   sammensat frag.find_tallet + n.end.66: 'finn tallet 66' CER 0.050 (wav2vec2) → ok
+08:07:25   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.67: 'hvad er 7plus 67' CER 0.000 (wav2vec2) → ok
+08:07:29   sammensat frag.find_tallet + n.end.67: 'Find tallet 67' CER 0.000 (whisper, wav2vec2: 'finn tallet 67') → ok
+08:07:30   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.68: 'hvad er 7 plus 68' CER 0.000 (wav2vec2) → ok
+08:07:30   sammensat frag.find_tallet + n.end.68: 'finn tallet 68' CER 0.050 (wav2vec2) → ok
+08:07:31   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.69: 'hvad er 7 plus 69' CER 0.000 (wav2vec2) → ok
+08:07:35   sammensat frag.find_tallet + n.end.69: 'Find tallet 69' CER 0.000 (whisper, wav2vec2: 'finn tallet 69') → ok
+08:07:36   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.70: 'hvader 7 plus 70' CER 0.000 (wav2vec2) → ok
+08:07:36   sammensat frag.find_tallet + n.end.70: 'finn tallet 70' CER 0.050 (wav2vec2) → ok
+08:07:37   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.71: 'hvad er 7 plus 71' CER 0.000 (wav2vec2) → ok
+08:07:37   sammensat frag.find_tallet + n.end.71: 'finn tallet 71' CER 0.042 (wav2vec2) → ok
+08:07:37   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.72: 'hvader 7 plus 72' CER 0.000 (wav2vec2) → ok
+08:07:38   sammensat frag.find_tallet + n.end.72: 'finn tallet 72' CER 0.042 (wav2vec2) → ok
+08:07:38   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.73: 'hvad er 7 plus 73' CER 0.000 (wav2vec2) → ok
+08:07:39   sammensat frag.find_tallet + n.end.73: 'finn tallet 73' CER 0.040 (wav2vec2) → ok
+08:07:39   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.74: 'hvad er 7 plus 74' CER 0.000 (wav2vec2) → ok
+08:07:40   sammensat frag.find_tallet + n.end.74: 'finn tallet 74' CER 0.038 (wav2vec2) → ok
+08:07:40   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.75: 'hvad er 7 plus 75' CER 0.000 (wav2vec2) → ok
+08:07:41   sammensat frag.find_tallet + n.end.75: 'finn tallet 75' CER 0.040 (wav2vec2) → ok
+08:07:41   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.76: 'hvad er 7 plus 76' CER 0.000 (wav2vec2) → ok
+08:07:42   sammensat frag.find_tallet + n.end.76: 'finn tallet 76' CER 0.038 (wav2vec2) → ok
+08:07:47   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.77: 'Hvad er 7 plus 77' CER 0.000 (whisper, wav2vec2: 'hvad er plus 77') → ok
+08:07:47   sammensat frag.find_tallet + n.end.77: 'fin tallet 77' CER 0.040 (wav2vec2) → ok
+08:07:48   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.78: 'hvad er 7 plus 78' CER 0.000 (wav2vec2) → ok
+08:07:52   sammensat frag.find_tallet + n.end.78: 'Find tallet 78' CER 0.000 (whisper, wav2vec2: 'finn tallet 78  e') → ok
+08:07:53   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.79: 'hvader 7 plus 79' CER 0.000 (wav2vec2) → ok
+08:07:53   sammensat frag.find_tallet + n.end.79: 'finn tallet 79' CER 0.042 (wav2vec2) → ok
+08:07:54   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.80: 'hvad er 7 plus80' CER 0.000 (wav2vec2) → ok
+08:07:58   sammensat frag.find_tallet + n.end.80: 'Find tallet 80' CER 0.000 (whisper, wav2vec2: 'finn tallet 80') → ok
+08:07:59   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.81: 'hvad er 7 plus 81' CER 0.000 (wav2vec2) → ok
+08:08:03   sammensat frag.find_tallet + n.end.81: 'Find tallet 81' CER 0.000 (whisper, wav2vec2: 'finn tallet 81') → ok
+08:08:04   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.82: 'hvad er 7 plus 82' CER 0.000 (wav2vec2) → ok
+08:08:08   sammensat frag.find_tallet + n.end.82: 'Find tallet 82' CER 0.000 (whisper, wav2vec2: 'finn tallet 82') → ok
+08:08:09   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.83: 'hvad er 7 plus 83' CER 0.000 (wav2vec2) → ok
+08:08:13   sammensat frag.find_tallet + n.end.83: 'Find tallet 83' CER 0.000 (whisper, wav2vec2: 'finn tallet 83') → ok
+08:08:14   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.84: 'hvad er 7 plus 84' CER 0.000 (wav2vec2) → ok
+08:08:14   sammensat frag.find_tallet + n.end.84: 'find tallet 84' CER 0.000 (wav2vec2) → ok
+08:08:14   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.85: 'hvad er 7 plus 85' CER 0.000 (wav2vec2) → ok
+08:08:15   sammensat frag.find_tallet + n.end.85: 'find tallet 85' CER 0.000 (wav2vec2) → ok
+08:08:16   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.86: 'hvad er 7 plus 86' CER 0.000 (wav2vec2) → ok
+08:08:16   sammensat frag.find_tallet + n.end.86: 'finn tallet 86' CER 0.050 (wav2vec2) → ok
+08:08:21   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.87: 'Hvad er 7 plus 87?' CER 0.000 (whisper, wav2vec2: 'hvad er pus 87') → ok
+08:08:22   sammensat frag.find_tallet + n.end.87: 'find tallet 87' CER 0.000 (wav2vec2) → ok
+08:08:22   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.88: 'hvad er 7 plus 88' CER 0.000 (wav2vec2) → ok
+08:08:23   sammensat frag.find_tallet + n.end.88: 'finn tallet 88' CER 0.050 (wav2vec2) → ok
+08:08:23   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.89: 'hvad er 7 plus 89' CER 0.000 (wav2vec2) → ok
+08:08:28   sammensat frag.find_tallet + n.end.89: 'Find tallet 89' CER 0.000 (whisper, wav2vec2: 'fin tallet 89') → ok
+08:08:28   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.90: 'hvad er 7 plus 90' CER 0.000 (wav2vec2) → ok
+08:08:33   sammensat frag.find_tallet + n.end.90: 'Find tallet 90' CER 0.000 (whisper, wav2vec2: 'finn tallet 90') → ok
+08:08:33   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.91: 'hvad er 7 plus 91' CER 0.000 (wav2vec2) → ok
+08:08:34   sammensat frag.find_tallet + n.end.91: 'finn tallet 91' CER 0.045 (wav2vec2) → ok
+08:08:34   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.92: 'hvad er 7 plus 92' CER 0.000 (wav2vec2) → ok
+08:08:34   sammensat frag.find_tallet + n.end.92: 'finn tallet 92' CER 0.045 (wav2vec2) → ok
+08:08:35   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.93: 'hvad er 7 plus 93' CER 0.000 (wav2vec2) → ok
+08:08:35   sammensat frag.find_tallet + n.end.93: 'finn tallet 93' CER 0.043 (wav2vec2) → ok
+08:08:36   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.94: 'hvad er 7 plus 94' CER 0.000 (wav2vec2) → ok
+08:08:36   sammensat frag.find_tallet + n.end.94: 'finn tallet 94' CER 0.042 (wav2vec2) → ok
+08:08:37   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.95: 'hvad er 7 plus 95' CER 0.000 (wav2vec2) → ok
+08:08:37   sammensat frag.find_tallet + n.end.95: 'finn tallet 95' CER 0.043 (wav2vec2) → ok
+08:08:38   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.96: 'hvad er 7 plus 96' CER 0.000 (wav2vec2) → ok
+08:08:38   sammensat frag.find_tallet + n.end.96: 'finn tallet 96' CER 0.042 (wav2vec2) → ok
+08:08:43   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.97: 'Hvad er 7 plus 97?' CER 0.000 (whisper, wav2vec2: 'hvad er plus 97') → ok
+08:08:44   sammensat frag.find_tallet + n.end.97: 'finn tallet 97' CER 0.043 (wav2vec2) → ok
+08:08:44   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.98: 'hvad er 7 plus 98' CER 0.000 (wav2vec2) → ok
+08:08:45   sammensat frag.find_tallet + n.end.98: 'finn tallet 98' CER 0.042 (wav2vec2) → ok
+08:08:45   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.99: 'hvad er 7 plus 99' CER 0.000 (wav2vec2) → ok
+08:08:46   sammensat frag.find_tallet + n.end.99: 'finn tallet 99' CER 0.045 (wav2vec2) → ok
+08:08:46   sammensat frag.hvad_er + n.mid.1.et + op.plus + n.end.5: 'hvad er 1 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:47   sammensat frag.hvad_er + n.mid.100 + op.plus + n.end.5: 'hvad er 100 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:48   sammensat frag.hvad_er + n.mid.21 + op.plus + n.end.5: 'hvad er 21 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:48   sammensat frag.hvad_er + n.mid.22 + op.plus + n.end.5: 'hvad er 22 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:49   sammensat frag.hvad_er + n.mid.23 + op.plus + n.end.5: 'hvad er 23 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:49   sammensat frag.hvad_er + n.mid.24 + op.plus + n.end.5: 'hvad er 24 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:50   sammensat frag.hvad_er + n.mid.25 + op.plus + n.end.5: 'hvad er 25 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:50   sammensat frag.hvad_er + n.mid.26 + op.plus + n.end.5: 'hvad er 26 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:51   sammensat frag.hvad_er + n.mid.27 + op.plus + n.end.5: 'hvad er 27 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:52   sammensat frag.hvad_er + n.mid.28 + op.plus + n.end.5: 'hvad er 28 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:52   sammensat frag.hvad_er + n.mid.29 + op.plus + n.end.5: 'hvad er 29 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:52   sammensat frag.hvad_er + n.mid.30 + op.plus + n.end.5: 'hvad er 30 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:53   sammensat frag.hvad_er + n.mid.31 + op.plus + n.end.5: 'hvad er 31 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:53   sammensat frag.hvad_er + n.mid.32 + op.plus + n.end.5: 'hvad er 32 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:54   sammensat frag.hvad_er + n.mid.33 + op.plus + n.end.5: 'hvad er 33 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:55   sammensat frag.hvad_er + n.mid.34 + op.plus + n.end.5: 'hvad er 34 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:56   sammensat frag.hvad_er + n.mid.35 + op.plus + n.end.5: 'hvad er 35 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:57   sammensat frag.hvad_er + n.mid.36 + op.plus + n.end.5: 'hvad er 36 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:58   sammensat frag.hvad_er + n.mid.37 + op.plus + n.end.5: 'hvad er 37 plus 5' CER 0.000 (wav2vec2) → ok
+08:08:59   sammensat frag.hvad_er + n.mid.38 + op.plus + n.end.5: 'hvad er 38 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:01   sammensat frag.hvad_er + n.mid.39 + op.plus + n.end.5: 'hvad er 39 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:03   sammensat frag.hvad_er + n.mid.40 + op.plus + n.end.5: 'hvad er 40 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:04   sammensat frag.hvad_er + n.mid.41 + op.plus + n.end.5: 'hvad er 41 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:06   sammensat frag.hvad_er + n.mid.42 + op.plus + n.end.5: 'hvad er 42 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:07   sammensat frag.hvad_er + n.mid.43 + op.plus + n.end.5: 'hvad er 43 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:09   sammensat frag.hvad_er + n.mid.44 + op.plus + n.end.5: 'hvad er 44 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:11   sammensat frag.hvad_er + n.mid.45 + op.plus + n.end.5: 'hvad er 45 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:12   sammensat frag.hvad_er + n.mid.46 + op.plus + n.end.5: 'hvad er 46 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:13   sammensat frag.hvad_er + n.mid.47 + op.plus + n.end.5: 'hvad er 47 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:14   sammensat frag.hvad_er + n.mid.48 + op.plus + n.end.5: 'hvad er 48 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:16   sammensat frag.hvad_er + n.mid.49 + op.plus + n.end.5: 'hvad er 49 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:21   sammensat frag.hvad_er + n.mid.50 + op.plus + n.end.5: 'hvad er60 plus 5' CER 0.227 (wav2vec2, whisper: 'Hvad er 60 plus 5?') → FEJL
+08:09:22   sammensat frag.hvad_er + n.mid.51 + op.plus + n.end.5: 'hvad er 51 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:23   sammensat frag.hvad_er + n.mid.52 + op.plus + n.end.5: 'hvad er 52 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:23   sammensat frag.hvad_er + n.mid.53 + op.plus + n.end.5: 'hvad er 53 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:24   sammensat frag.hvad_er + n.mid.54 + op.plus + n.end.5: 'hvad er 54 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:24   sammensat frag.hvad_er + n.mid.55 + op.plus + n.end.5: 'hvad er 55 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:25   sammensat frag.hvad_er + n.mid.56 + op.plus + n.end.5: 'hvad er 56 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:26   sammensat frag.hvad_er + n.mid.57 + op.plus + n.end.5: 'hvad er 57 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:27   sammensat frag.hvad_er + n.mid.58 + op.plus + n.end.5: 'hvad er 58 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:28   sammensat frag.hvad_er + n.mid.59 + op.plus + n.end.5: 'hvad er 59 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:34   sammensat frag.hvad_er + n.mid.60 + op.plus + n.end.5: 'hvad er treplus 5' CER 0.059 (wav2vec2, whisper: 'Hvad er 3 plus 5?') → FEJL
+08:09:34   sammensat frag.hvad_er + n.mid.61 + op.plus + n.end.5: 'hvad er 61 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:35   sammensat frag.hvad_er + n.mid.62 + op.plus + n.end.5: 'hvad er 62 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:36   sammensat frag.hvad_er + n.mid.63 + op.plus + n.end.5: 'hvad er 63 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:36   sammensat frag.hvad_er + n.mid.64 + op.plus + n.end.5: 'hvad er 64 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:37   sammensat frag.hvad_er + n.mid.65 + op.plus + n.end.5: 'hvad er 65 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:42   sammensat frag.hvad_er + n.mid.66 + op.plus + n.end.5: 'Hvad er 66 plus 5?' CER 0.000 (whisper, wav2vec2: 'hvad er 6660 plus 5') → ok
+08:09:42   sammensat frag.hvad_er + n.mid.67 + op.plus + n.end.5: 'hvad er 67 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:43   sammensat frag.hvad_er + n.mid.68 + op.plus + n.end.5: 'hvad er 68 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:43   sammensat frag.hvad_er + n.mid.69 + op.plus + n.end.5: 'hvad er 69 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:44   sammensat frag.hvad_er + n.mid.70 + op.plus + n.end.5: 'hvad er 70 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:44   sammensat frag.hvad_er + n.mid.71 + op.plus + n.end.5: 'hvad er 71 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:45   sammensat frag.hvad_er + n.mid.72 + op.plus + n.end.5: 'hvad er 72 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:46   sammensat frag.hvad_er + n.mid.73 + op.plus + n.end.5: 'hvad er 73 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:46   sammensat frag.hvad_er + n.mid.74 + op.plus + n.end.5: 'hvad er 74 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:47   sammensat frag.hvad_er + n.mid.75 + op.plus + n.end.5: 'hvad er 75 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:55   sammensat frag.hvad_er + n.mid.76 + op.plus + n.end.5: 'Hvad er 76 plus 5?' CER 0.000 (whisper, wav2vec2: 'hvad er d70 plus 5') → ok
+08:09:56   sammensat frag.hvad_er + n.mid.77 + op.plus + n.end.5: 'hvad er 77 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:57   sammensat frag.hvad_er + n.mid.78 + op.plus + n.end.5: 'hvad er 78 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:58   sammensat frag.hvad_er + n.mid.79 + op.plus + n.end.5: 'hvad er 79 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:58   sammensat frag.hvad_er + n.mid.80 + op.plus + n.end.5: 'hvad er 80 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:59   sammensat frag.hvad_er + n.mid.81 + op.plus + n.end.5: 'hvad er 81 plus 5' CER 0.000 (wav2vec2) → ok
+08:09:59   sammensat frag.hvad_er + n.mid.82 + op.plus + n.end.5: 'hvad er 82 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:00   sammensat frag.hvad_er + n.mid.83 + op.plus + n.end.5: 'hvad er 83 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:02   sammensat frag.hvad_er + n.mid.84 + op.plus + n.end.5: 'hvad er 84 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:05   sammensat frag.hvad_er + n.mid.85 + op.plus + n.end.5: 'hvad er 85 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:06   sammensat frag.hvad_er + n.mid.86 + op.plus + n.end.5: 'hvad er 86 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:07   sammensat frag.hvad_er + n.mid.87 + op.plus + n.end.5: 'hvad er 87 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:07   sammensat frag.hvad_er + n.mid.88 + op.plus + n.end.5: 'hvad er 88 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:08   sammensat frag.hvad_er + n.mid.89 + op.plus + n.end.5: 'hvad er 89 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:09   sammensat frag.hvad_er + n.mid.90 + op.plus + n.end.5: 'hvad r 90 plus 5' CER 0.048 (wav2vec2) → ok
+08:10:09   sammensat frag.hvad_er + n.mid.91 + op.plus + n.end.5: 'hvad er 91 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:10   sammensat frag.hvad_er + n.mid.92 + op.plus + n.end.5: 'hvad er 92 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:11   sammensat frag.hvad_er + n.mid.93 + op.plus + n.end.5: 'hvad er 93 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:11   sammensat frag.hvad_er + n.mid.94 + op.plus + n.end.5: 'hvad er 94 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:12   sammensat frag.hvad_er + n.mid.95 + op.plus + n.end.5: 'hvad er 95 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:12   sammensat frag.hvad_er + n.mid.96 + op.plus + n.end.5: 'hvad er 96plus 5' CER 0.000 (wav2vec2) → ok
+08:10:13   sammensat frag.hvad_er + n.mid.97 + op.plus + n.end.5: 'hvad er 97 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:14   sammensat frag.hvad_er + n.mid.98 + op.plus + n.end.5: 'hvad er 98 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:15   sammensat frag.hvad_er + n.mid.99 + op.plus + n.end.5: 'hvad er 99 plus 5' CER 0.000 (wav2vec2) → ok
+08:10:15   sammensat frag.det_er + name.animal.cat.1: 'det er misse' CER 0.000 (wav2vec2) → ok
+08:10:21   sammensat frag.det_er + name.animal.cat.2: 'det er spændende' CER 0.364 (wav2vec2, whisper: 'Det er spændende') → FEJL
+08:10:25   sammensat frag.det_er + name.animal.cat.3: 'dr kané' CER 0.400 (wav2vec2, whisper: 'Det er kanin') → FEJL
+08:10:25   sammensat frag.det_er + name.animal.cat.4: 'det er silke' CER 0.000 (wav2vec2) → ok
+08:10:26   sammensat frag.det_er + name.animal.cat.5: 'det er mimi' CER 0.000 (wav2vec2) → ok
+08:10:30   sammensat frag.det_er + name.animal.cat.6: 'Det er stribe' CER 0.000 (whisper, wav2vec2: 'det er stribet') → ok
+08:10:31   sammensat frag.det_er + name.animal.cat.7: 'det er smut' CER 0.000 (wav2vec2) → ok
+08:10:35   sammensat frag.det_er + name.animal.cat.8: 'det er inge færd' CER 0.083 (wav2vec2, whisper: 'Det er ikke fair') → FEJL
+08:10:42   sammensat frag.det_er + name.animal.dragon.1: 'det er i fred' CER 0.167 (wav2vec2, whisper: 'Det er i høj fred') → FEJL
+08:10:47   sammensat frag.det_er + name.animal.dragon.2: 'det er smarhat' CER 0.250 (wav2vec2, whisper: 'Det er smart') → FEJL
+08:10:52   sammensat frag.det_er + name.animal.dragon.3: 'Det er gnist' CER 0.000 (whisper, wav2vec2: 'det er genist') → ok
+08:10:52   sammensat frag.det_er + name.animal.dragon.4: 'det er flamme' CER 0.000 (wav2vec2) → ok
+08:10:52   sammensat frag.det_er + name.animal.dragon.5: 'det er glo' CER 0.000 (wav2vec2) → ok
+08:10:57   sammensat frag.det_er + name.animal.dragon.6: 'Det er torden' CER 0.000 (whisper, wav2vec2: 'deter torten') → ok
+08:10:58   sammensat frag.det_er + name.animal.dragon.7: 'det er rubin' CER 0.000 (wav2vec2) → ok
+08:11:04   sammensat frag.det_er + name.animal.fox.1: 'det er middy' CER 0.364 (wav2vec2, whisper: 'Det er midtø') → FEJL
+08:11:11   sammensat frag.det_er + name.animal.fox.2: 'det er lyd' CER 0.222 (wav2vec2, whisper: 'Det er lød') → FEJL
+08:11:11   sammensat frag.det_er + name.animal.fox.3: 'det er kvik' CER 0.000 (wav2vec2) → ok
+08:11:12   sammensat frag.det_er + name.animal.fox.4: 'det er snip' CER 0.000 (wav2vec2) → ok
+08:11:12   sammensat frag.det_er + name.animal.fox.5: 'det er rosin' CER 0.000 (wav2vec2) → ok
+08:11:12   sammensat frag.det_er + name.animal.fox.6: 'det er høst' CER 0.000 (wav2vec2) → ok
+08:11:13   sammensat frag.det_er + name.animal.fox.7: 'det er kobber' CER 0.000 (wav2vec2) → ok
+08:11:22   sammensat frag.det_er + name.animal.hamster.1: 'det er kinde' CER 0.100 (wav2vec2, whisper: 'Det er kinde') → FEJL
+08:11:36   sammensat frag.det_er + name.animal.hamster.2: 'Det er bolle' CER 0.000 (whisper, wav2vec2: 'det er bolly') → ok
+08:12:01   sammensat frag.det_er + name.animal.hamster.3: 'det er nøddig' CER 0.100 (wav2vec2, whisper: 'Det er nøddygtigt') → FEJL
+08:12:11   sammensat frag.det_er + name.animal.hamster.4: 'det er pus' CER 0.200 (wav2vec2, whisper: 'Det er push') → FEJL
+08:12:16   sammensat frag.det_er + name.animal.hamster.5: 'Det er muffin' CER 0.000 (whisper, wav2vec2: 'det er moufin') → ok
+08:12:16   sammensat frag.det_er + name.animal.hamster.6: 'det er frø' CER 0.000 (wav2vec2) → ok
+08:12:17   sammensat frag.det_er + name.animal.hamster.7: 'det er tut' CER 0.000 (wav2vec2) → ok
+08:12:22   sammensat frag.det_er + name.animal.hamster.8: 'Det er grynet' CER 0.000 (whisper, wav2vec2: 'det er goinet') → ok
+08:12:22   sammensat frag.det_er + name.animal.hedgehog.1: 'det er pigge' CER 0.000 (wav2vec2) → ok
+08:12:23   sammensat frag.det_er + name.animal.hedgehog.2: 'det er pjusk' CER 0.000 (wav2vec2) → ok
+08:12:28   sammensat frag.det_er + name.animal.hedgehog.3: 'Det er kastanje' CER 0.000 (whisper, wav2vec2: 'dr kastagne') → ok
+08:12:32   sammensat frag.det_er + name.animal.hedgehog.4: 'det er snuet' CER 0.200 (wav2vec2, whisper: 'Det er snoet') → FEJL
+08:12:33   sammensat frag.det_er + name.animal.hedgehog.5: 'det er mos' CER 0.000 (wav2vec2) → ok
+08:12:33   sammensat frag.det_er + name.animal.hedgehog.6: 'det er hassel' CER 0.000 (wav2vec2) → ok
+08:12:37   sammensat frag.det_er + name.animal.hedgehog.7: 'Det er tot' CER 0.000 (whisper, wav2vec2: 'det er 2') → ok
+08:12:42   sammensat frag.det_er + name.animal.hedgehog.8: 'dtr trofø' CER 0.500 (wav2vec2, whisper: 'Det er trøffet') → FEJL
+08:12:46   sammensat frag.det_er + name.animal.horse.1: 'Det er brise' CER 0.000 (whisper, wav2vec2: 'd er briset') → ok
+08:12:46   sammensat frag.det_er + name.animal.horse.2: 'det er stella' CER 0.000 (wav2vec2) → ok
+08:12:47   sammensat frag.det_er + name.animal.horse.3: 'det er saga' CER 0.000 (wav2vec2) → ok
+08:12:47   sammensat frag.det_er + name.animal.horse.4: 'det er freja' CER 0.000 (wav2vec2) → ok
+08:12:52   sammensat frag.det_er + name.animal.horse.5: 'dt r car mild' CER 0.500 (wav2vec2, whisper: 'Det er Carmel') → FEJL
+08:12:57   sammensat frag.det_er + name.animal.horse.6: 'Det er Valde' CER 0.000 (whisper, wav2vec2: 'det er valte') → ok
+08:12:57   sammensat frag.det_er + name.animal.horse.7: 'det er trine' CER 0.000 (wav2vec2) → ok
+08:12:57   sammensat frag.det_er + name.animal.horse.8: 'det er hjalte' CER 0.000 (wav2vec2) → ok
+08:13:02   sammensat frag.det_er + name.animal.lamb.1: 'det er wity' CER 0.444 (wav2vec2, whisper: 'Det er Wordy') → FEJL
+08:13:06   sammensat frag.det_er + name.animal.lamb.2: 'Det er krølle' CER 0.000 (whisper, wav2vec2: 'det er krøli') → ok
+08:13:11   sammensat frag.det_er + name.animal.lamb.3: 'dr f nu' CER 0.444 (wav2vec2, whisper: 'Det er F nu') → FEJL
+08:13:11   sammensat frag.det_er + name.animal.lamb.4: 'det er lise' CER 0.000 (wav2vec2) → ok
+08:13:12   sammensat frag.det_er + name.animal.lamb.5: 'det er sky' CER 0.000 (wav2vec2) → ok
+08:13:17   sammensat frag.det_er + name.animal.lamb.6: 'det er hvader det' CER 0.600 (wav2vec2, whisper: 'Det er hvad det') → FEJL
+08:13:22   sammensat frag.det_er + name.animal.lamb.7: 'Det er Dunne' CER 0.000 (whisper, wav2vec2: 'det er duné') → ok
+08:13:22   sammensat frag.det_er + name.animal.lamb.8: 'det er engel' CER 0.000 (wav2vec2) → ok
+08:13:27   sammensat frag.det_er + name.animal.owl.1: 'det er boum' CER 0.273 (wav2vec2, whisper: 'Det er bogom') → FEJL
+08:13:27   sammensat frag.det_er + name.animal.owl.2: 'det er skumring' CER 0.000 (wav2vec2) → ok
+08:13:27   sammensat frag.det_er + name.animal.owl.3: 'det er hugo' CER 0.000 (wav2vec2) → ok
+08:13:32   sammensat frag.det_er + name.animal.owl.4: 'Det er orla' CER 0.000 (whisper, wav2vec2: 'det er oge lad') → ok
+08:13:37   sammensat frag.det_er + name.animal.owl.5: 'Det er Agnes' CER 0.000 (whisper, wav2vec2: 'det er agnis') → ok
+08:13:37   sammensat frag.det_er + name.animal.owl.6: 'det er prik' CER 0.000 (wav2vec2) → ok
+08:13:41   sammensat frag.det_er + name.animal.owl.7: 'Det er måne' CER 0.000 (whisper, wav2vec2: 'det r måne') → ok
+08:13:46   sammensat frag.det_er + name.animal.panda.1: 'det er bambush' CER 0.091 (wav2vec2, whisper: 'Det er bambush') → FEJL
+08:13:50   sammensat frag.det_er + name.animal.panda.2: 'det er tummele' CER 0.200 (wav2vec2, whisper: 'Det er Tommel') → FEJL
+08:13:55   sammensat frag.det_er + name.animal.panda.3: 'Det er Kiki' CER 0.000 (whisper, wav2vec2: 'det er kicki') → ok
+08:14:00   sammensat frag.det_er + name.animal.panda.4: 'Det er pompom' CER 0.000 (whisper, wav2vec2: 'd er pomtroen') → ok
+08:14:00   sammensat frag.det_er + name.animal.panda.5: 'det er mumle' CER 0.000 (wav2vec2) → ok
+08:14:05   sammensat frag.det_er + name.animal.panda.6: 'deter beusche' CER 0.364 (wav2vec2, whisper: 'Det er Beuch') → FEJL
+08:14:09   sammensat frag.det_er + name.animal.panda.7: 'Det er søde' CER 0.000 (whisper, wav2vec2: 'det er sødet') → ok
+08:14:14   sammensat frag.det_er + name.animal.pegasus.1: 'det er linge' CER 0.100 (wav2vec2, whisper: 'Det er længe') → FEJL
+08:14:19   sammensat frag.det_er + name.animal.pegasus.2: 'Det er svæve' CER 0.000 (whisper, wav2vec2: 'det er sveve') → ok
+08:14:24   sammensat frag.det_er + name.animal.pegasus.3: 'Det er Himla' CER 0.000 (whisper, wav2vec2: 'dr himila') → ok
+08:14:25   sammensat frag.det_er + name.animal.pegasus.4: 'det er fjer' CER 0.000 (wav2vec2) → ok
+08:14:30   sammensat frag.det_er + name.animal.pegasus.5: 'det er sholestrålig' CER 0.286 (wav2vec2, whisper: 'Det er shorts tror jeg') → FEJL
+08:14:35   sammensat frag.det_er + name.animal.pegasus.6: 'dtr cfyr' CER 0.400 (wav2vec2, whisper: 'Det er se fyr') → FEJL
+08:14:42   sammensat frag.det_er + name.animal.pegasus.7: 'Det er blæst' CER 0.000 (whisper, wav2vec2: 'det er blest') → ok
+08:14:50   sammensat frag.det_er + name.animal.penguin.1: 'det er rele det' CER 0.455 (wav2vec2, whisper: 'Det er vrede') → FEJL
+08:14:51   sammensat frag.det_er + name.animal.penguin.2: 'det er smoking' CER 0.000 (wav2vec2) → ok
+08:14:52   sammensat frag.det_er + name.animal.penguin.3: 'det er plask' CER 0.000 (wav2vec2) → ok
+08:14:59   sammensat frag.det_er + name.animal.penguin.4: 'Det er snebold' CER 0.000 (whisper, wav2vec2: 'dr snebold') → ok
+08:15:10   sammensat frag.det_er + name.animal.penguin.5: 'det r til fy' CER 0.455 (wav2vec2, whisper: 'Det er Tøffø') → FEJL
+08:15:10   sammensat frag.det_er + name.animal.penguin.6: 'det er glid' CER 0.000 (wav2vec2) → ok
+08:15:10   sammensat frag.det_er + name.animal.penguin.7: 'det er fløde' CER 0.000 (wav2vec2) → ok
+08:15:11   sammensat frag.det_er + name.animal.polarbear.1: 'det er nanok' CER 0.000 (wav2vec2) → ok
+08:15:20   sammensat frag.det_er + name.animal.polarbear.2: 'det er på mig' CER 0.500 (wav2vec2, whisper: 'Det er på mig') → FEJL
+08:15:21   sammensat frag.det_er + name.animal.polarbear.3: 'det er frost' CER 0.000 (wav2vec2) → ok
+08:15:27   sammensat frag.det_er + name.animal.polarbear.4: 'det er sne heldt' CER 0.167 (wav2vec2, whisper: 'Det er snehelt') → FEJL
+08:15:36   sammensat frag.det_er + name.animal.polarbear.5: 'Det er Isa' CER 0.000 (whisper, wav2vec2: 'd r isa') → ok
+08:15:44   sammensat frag.det_er + name.animal.polarbear.6: 'Det er vinter' CER 0.000 (whisper, wav2vec2: 'dt r vinter') → ok
+08:15:50   sammensat frag.det_er + name.animal.polarbear.7: 'det er vide' CER 0.100 (wav2vec2, whisper: 'Det er hvede') → FEJL
+08:15:55   sammensat frag.det_er + name.animal.puppy.1: 'der lokre' CER 0.300 (wav2vec2, whisper: 'Det er lokker') → FEJL
+08:16:00   sammensat frag.det_er + name.animal.puppy.2: 'Det er Bobo' CER 0.000 (whisper, wav2vec2: 'deer bobo') → ok
+08:16:05   sammensat frag.det_er + name.animal.puppy.3: 'det er fix' CER 0.222 (wav2vec2, whisper: 'Det er fix') → FEJL
+08:16:09   sammensat frag.det_er + name.animal.puppy.4: 'det er base' CER 0.100 (wav2vec2, whisper: 'Det er base') → FEJL
+08:16:13   sammensat frag.det_er + name.animal.puppy.5: 'Det er tuller' CER 0.000 (whisper, wav2vec2: 'deter tulder') → ok
+08:16:14   sammensat frag.det_er + name.animal.puppy.6: 'det er sjuske' CER 0.000 (wav2vec2) → ok
+08:16:18   sammensat frag.det_er + name.animal.puppy.7: 'Det er rappe' CER 0.000 (whisper, wav2vec2: 'det er rabbet') → ok
+08:16:19   sammensat frag.det_er + name.animal.puppy.8: 'det er vaks' CER 0.000 (wav2vec2) → ok
+08:16:19   sammensat frag.det_er + name.animal.rabbit.1: 'det er kløver' CER 0.000 (wav2vec2) → ok
+08:16:23   sammensat frag.det_er + name.animal.rabbit.2: 'det er hobpet' CER 0.200 (wav2vec2, whisper: 'Det er hoppet') → FEJL
+08:16:23   sammensat frag.det_er + name.animal.rabbit.3: 'det er mille' CER 0.000 (wav2vec2) → ok
+08:16:28   sammensat frag.det_er + name.animal.rabbit.4: 'det er bormu' CER 0.273 (wav2vec2, whisper: 'Det er bormodt') → FEJL
+08:16:28   sammensat frag.det_er + name.animal.rabbit.5: 'det er trille' CER 0.000 (wav2vec2) → ok
+08:16:33   sammensat frag.det_er + name.animal.rabbit.6: 'Det er nusse' CER 0.000 (whisper, wav2vec2: 'det er nose') → ok
+08:16:33   sammensat frag.det_er + name.animal.rabbit.7: 'det er dusk' CER 0.000 (wav2vec2) → ok
+08:16:34   sammensat frag.det_er + name.animal.rabbit.8: 'det er lotte' CER 0.000 (wav2vec2) → ok
+08:16:38   sammensat frag.det_er + name.animal.squirrel.1: 'dter agen' CER 0.200 (wav2vec2, whisper: 'Det er ageren') → FEJL
+08:16:38   sammensat frag.det_er + name.animal.squirrel.2: 'det er kogle' CER 0.000 (wav2vec2) → ok
+08:16:38   sammensat frag.det_er + name.animal.squirrel.3: 'det er kvist' CER 0.000 (wav2vec2) → ok
+08:16:43   sammensat frag.det_er + name.animal.squirrel.4: 'dtr swirp' CER 0.300 (wav2vec2, whisper: 'Det er svært') → FEJL
+08:16:43   sammensat frag.det_er + name.animal.squirrel.5: 'det er spurt' CER 0.000 (wav2vec2) → ok
+08:16:43   sammensat frag.det_er + name.animal.squirrel.6: 'det er rasle' CER 0.000 (wav2vec2) → ok
+08:16:43   sammensat frag.det_er + name.animal.squirrel.7: 'det er birk' CER 0.000 (wav2vec2) → ok
+08:16:48   sammensat frag.det_er + name.animal.unicorn.1: 'Det er glimmer' CER 0.000 (whisper, wav2vec2: 'det r glimmer') → ok
+08:16:52   sammensat frag.det_er + name.animal.unicorn.2: 'det er søllock' CER 0.167 (wav2vec2, whisper: 'Det er Sherlock') → FEJL
+08:16:57   sammensat frag.det_er + name.animal.unicorn.3: 'det er lona' CER 0.111 (wav2vec2, whisper: 'Det er Lona') → FEJL
+08:17:01   sammensat frag.det_er + name.animal.unicorn.4: 'Det er Perle' CER 0.000 (whisper, wav2vec2: 'det er perleg') → ok
+08:17:01   sammensat frag.det_er + name.animal.unicorn.5: 'det er stjernelys' CER 0.000 (wav2vec2) → ok
+08:17:06   sammensat frag.det_er + name.animal.unicorn.6: 'det er snefnuk' CER 0.083 (wav2vec2, whisper: 'Det er Snefnuk') → FEJL
+08:17:10   sammensat frag.det_er + name.animal.unicorn.7: 'dr faja' CER 0.444 (wav2vec2, whisper: 'Det er fire') → FEJL
+08:17:10   sammensat frag.det_er + name.animal.unicorn.8: 'det er rosa' CER 0.000 (wav2vec2) → ok
+08:17:18   sammensat frag.det_er + name.baby.cat: 'Det er Killing' CER 0.000 (whisper, wav2vec2: 'det er kilding') → ok
+08:17:26   sammensat frag.det_er + name.baby.hedgehog: 'Det er Pindsvineunge' CER 0.000 (whisper, wav2vec2: 'det er pinsvine unge') → ok
+08:17:35   sammensat frag.det_er + name.baby.puppy: 'Det er Hvalp' CER 0.000 (whisper, wav2vec2: 'det er valp') → ok
+08:17:36   sammensat frag.det_er + name.baby.rabbit: 'det er kaninunge' CER 0.000 (wav2vec2) → ok
+08:17:42   sammensat frag.det_er + name.breed.domestic: 'Det er huskat' CER 0.000 (whisper, wav2vec2: 'det r huskat') → ok
+08:17:42   sammensat frag.det_er + name.breed.lionhead: 'det er løvehoved' CER 0.000 (wav2vec2) → ok
+08:17:42   sammensat frag.det_er + name.breed.longhair: 'det er langhåret kat' CER 0.000 (wav2vec2) → ok
+08:17:50   sammensat frag.det_er + name.breed.lop: 'Det er Vædderkanin' CER 0.000 (whisper, wav2vec2: 'det er vedder kanin') → ok
+08:17:56   sammensat frag.det_er + name.breed.mainecoon: 'Det er Maine Coon' CER 0.000 (whisper, wav2vec2: 'det er me en kone') → ok
+08:18:01   sammensat frag.det_er + name.breed.upright: 'Det er stående ører' CER 0.000 (whisper, wav2vec2: 'det er stående yre') → ok
+08:18:02   sammensat frag.det_er + name.color.cat.c1: 'det er rød' CER 0.000 (wav2vec2) → ok
+08:18:02   sammensat frag.det_er + name.color.cat.c2: 'det er sort' CER 0.000 (wav2vec2) → ok
+08:18:07   sammensat frag.det_er + name.color.cat.c3: 'Det er gråstribet' CER 0.000 (whisper, wav2vec2: 'det er gråsstribet') → ok
+08:18:11   sammensat frag.det_er + name.color.cat.c4: 'Det er Calico' CER 0.000 (whisper, wav2vec2: 'dr calico') → ok
+08:18:12   sammensat frag.det_er + name.color.cat.c5: 'det er hvid' CER 0.000 (wav2vec2) → ok
+08:18:17   sammensat frag.det_er + name.color.cat.c6: 'det er blå krå' CER 0.091 (wav2vec2, whisper: 'Det er blå krog') → FEJL
+08:18:22   sammensat frag.det_er + name.color.cat.gold: 'Det er guld' CER 0.000 (whisper, wav2vec2: 'det r gulv') → ok
+08:18:27   sammensat frag.det_er + name.color.cat.rainbow: 'dr heienbå' CER 0.583 (wav2vec2, whisper: 'DR har en bog') → FEJL
+08:18:37   sammensat frag.det_er + name.color.hedgehog.c1: 'Det er brun' CER 0.000 (whisper, wav2vec2: 'det er proen') → ok
+08:18:37   sammensat frag.det_er + name.color.hedgehog.c2: 'det er lys' CER 0.000 (wav2vec2) → ok
+08:18:38   sammensat frag.det_er + name.color.hedgehog.c3: 'det er mørk' CER 0.000 (wav2vec2) → ok
+08:18:49   sammensat frag.det_er + name.color.hedgehog.c4: 'Det er rustrød' CER 0.000 (whisper, wav2vec2: 'det r rostrød') → ok
+08:18:50   sammensat frag.det_er + name.color.hedgehog.c5: 'det er mandel' CER 0.000 (wav2vec2) → ok
+08:18:50   sammensat frag.det_er + name.color.hedgehog.c6: 'det er frost' CER 0.000 (wav2vec2) → ok
+08:18:58   sammensat frag.det_er + name.color.puppy.c1: 'deter gøuspen' CER 0.364 (wav2vec2, whisper: 'Det er køjten') → FEJL
+08:18:58   sammensat frag.det_er + name.color.puppy.c2: 'det er sort hvid' CER 0.000 (wav2vec2) → ok
+08:18:59   sammensat frag.det_er + name.color.puppy.c4: 'det er plettet' CER 0.000 (wav2vec2) → ok
+08:18:59   sammensat frag.det_er + name.color.puppy.c5: 'det er creme' CER 0.000 (wav2vec2) → ok
+08:19:05   sammensat frag.det_er + name.color.puppy.c6: 'Det er rødbrun' CER 0.000 (whisper, wav2vec2: 'det er rød bron') → ok
+08:19:12   sammensat frag.det_er + name.color.rabbit.c2: 'detr kro' CER 0.375 (wav2vec2, whisper: 'Det er K') → FEJL
+08:19:18   sammensat frag.det_er + name.color.rabbit.c4: 'Det er hollænder' CER 0.000 (whisper, wav2vec2: 'dr hollinder') → ok
+08:19:24   sammensat frag.det_er + name.color.rabbit.c5: 'dr kar meld' CER 0.417 (wav2vec2, whisper: 'Det er Carmel') → FEJL
+08:19:25   sammensat frag.det_er + name.color.rabbit.c6: 'det er rosa' CER 0.000 (wav2vec2) → ok
+08:19:25   sammensat frag.det_er + name.color.unicorn.starwhite: 'det er stjernehvid' CER 0.000 (wav2vec2) → ok
+08:19:30   sammensat frag.det_er + name.item.hverdag-back: 'det er reut ze' CER 0.455 (wav2vec2, whisper: 'Det er rødt sæk') → FEJL
+08:19:31   sammensat frag.det_er + name.item.hverdag-body: 'det er stribet trøje' CER 0.000 (wav2vec2) → ok
+08:19:35   sammensat frag.det_er + name.item.hverdag-face: 'Det er solbriller' CER 0.000 (whisper, wav2vec2: 'det er solpriller') → ok
+08:19:39   sammensat frag.det_er + name.item.hverdag-hand: 'Det er ballon' CER 0.000 (whisper, wav2vec2: 'd er ballon') → ok
+08:19:43   sammensat frag.det_er + name.item.hverdag-head: 'det er hoved' CER 0.375 (wav2vec2, whisper: 'Det er hoved') → FEJL
+08:19:48   sammensat frag.det_er + name.item.hverdag-neck: 'det er halt størklæde' CER 0.059 (wav2vec2, whisper: 'Det er halvstørklæde') → FEJL
+08:19:53   sammensat frag.det_er + name.item.milepael-fevinger: 'dt r fe vinger' CER 0.154 (wav2vec2, whisper: 'Det er Fævinger') → FEJL
+08:19:58   sammensat frag.det_er + name.item.milepael-glimmerbluse: 'det er glimmerplose' CER 0.118 (wav2vec2, whisper: 'Det er glemmerblåse') → FEJL
+08:20:03   sammensat frag.det_er + name.item.milepael-hjertebriller: 'Det er hjertebriller' CER 0.000 (whisper, wav2vec2: 'det r hjertebriller') → ok
+08:20:04   sammensat frag.det_er + name.item.milepael-kappe: 'det er superhelte kappe' CER 0.000 (wav2vec2) → ok
+08:20:09   sammensat frag.det_er + name.item.milepael-krone: 'det er letekronen' CER 0.222 (wav2vec2, whisper: 'Det er ledekronen') → FEJL
+08:20:09   sammensat frag.det_er + name.item.milepael-medalje: 'det er medaljehalskede' CER 0.050 (wav2vec2) → ok
+08:20:14   sammensat frag.det_er + name.item.milepael-regnbuehue: 'det er regnbuehoved' CER 0.200 (wav2vec2, whisper: 'Det er Heimbuehoved') → FEJL
+08:20:15   sammensat frag.det_er + name.item.milepael-slikkepind: 'det er kæmpe slikkepind' CER 0.000 (wav2vec2) → ok
+08:20:15   sammensat frag.det_er + name.item.opdager-back: 'det er sommerfuglenet' CER 0.000 (wav2vec2) → ok
+08:20:22   sammensat frag.det_er + name.item.opdager-body: 'Det er opdager Vest' CER 0.000 (whisper, wav2vec2: 'det er opdager vist') → ok
+08:20:27   sammensat frag.det_er + name.item.opdager-face: 'Det er eventyrbriller' CER 0.000 (whisper, wav2vec2: 'det er eventyrpejler') → ok
+08:20:32   sammensat frag.det_er + name.item.opdager-hand: 'det er jugt' CER 0.375 (wav2vec2, whisper: 'Det er lugt') → FEJL
+08:20:37   sammensat frag.det_er + name.item.opdager-head: 'Det er opdager Hat' CER 0.000 (whisper, wav2vec2: 'dtr opdager hat') → ok
+08:20:37   sammensat frag.det_er + name.item.opdager-neck: 'det er kompas' CER 0.000 (wav2vec2) → ok
+08:20:41   sammensat frag.det_er + name.item.pirat-back: 'Det er skattekort' CER 0.000 (whisper, wav2vec2: 'det r skattekort') → ok
+08:20:47   sammensat frag.det_er + name.item.pirat-body: 'det er piratrøje' CER 0.067 (wav2vec2, whisper: 'Det er pirat tøj') → FEJL
+08:20:52   sammensat frag.det_er + name.item.pirat-face: 'det er pihart skæg' CER 0.143 (wav2vec2, whisper: 'Det er Pirharts Gæg') → FEJL
+08:20:53   sammensat frag.det_er + name.item.pirat-hand: 'det er kikkert' CER 0.000 (wav2vec2) → ok
+08:20:53   sammensat frag.det_er + name.item.pirat-head: 'det er pirathat' CER 0.000 (wav2vec2) → ok
+08:20:53   sammensat frag.det_er + name.item.pirat-neck: 'det er bandana' CER 0.000 (wav2vec2) → ok
+08:20:58   sammensat frag.det_er + name.region.w0-former: 'det er formhæven' CER 0.071 (wav2vec2, whisper: 'Det er formhæven') → FEJL
+08:21:04   sammensat frag.det_er + name.region.w0-minus10: 'Det er minus bækken' CER 0.000 (whisper, wav2vec2: 'det er minuspækken') → ok
+08:21:09   sammensat frag.det_er + name.region.w0-plus10: 'Det er plusengen' CER 0.000 (whisper, wav2vec2: 'det er plus ingen') → ok
+08:21:14   sammensat frag.det_er + name.region.w0-tal10: 'det er tellelunden' CER 0.062 (wav2vec2, whisper: 'Det er Tellelunden') → FEJL
+08:21:20   sammensat frag.det_er + name.region.w0-tal20: 'det er 20 stin' CER 0.071 (wav2vec2, whisper: 'Det er 20 Stien') → FEJL
+08:21:27   sammensat frag.det_er + name.region.w0-tiervenner: 'Det er tigervennernes hule' CER 0.045 (whisper, wav2vec2: 'det er tigervennernes hole') → ok
+08:21:32   sammensat frag.det_er + name.set.hverdag: 'Det er hver dag' CER 0.000 (whisper, wav2vec2: 'dtr hver dag') → ok
+08:21:36   sammensat frag.det_er + name.set.opdager: 'dr opdager' CER 0.250 (wav2vec2, whisper: 'DR opdager') → FEJL
+08:21:36   frag.det_er t0 får skylden i frag.det_er + name.set.opdager
+08:21:40   sammensat frag.det_er + name.set.pirat: 'Det er pirat' CER 0.000 (whisper, wav2vec2: 'det er pira') → ok
+08:21:40   sammensat frag.det_er + name.species.cat: 'deter kat' CER 0.000 (wav2vec2) → ok
+08:21:46   sammensat frag.det_er + name.species.hedgehog: 'Det er Pindsvin' CER 0.000 (whisper, wav2vec2: 'det er piensvin') → ok
+08:21:50   sammensat frag.det_er + name.species.puppy: 'Det er hvalp' CER 0.000 (whisper, wav2vec2: 'dr valp') → ok
+08:21:50   sammensat frag.det_er + name.species.rabbit: 'det er kanin' CER 0.000 (wav2vec2) → ok
+08:21:51   sammensat frag.det_er + name.world.bakke: 'det er hestebakkerne' CER 0.000 (wav2vec2) → ok
+08:21:55   sammensat frag.det_er + name.world.eng: 'Det er Engdalen' CER 0.000 (whisper, wav2vec2: 'det er endagen') → ok
+08:21:55   sammensat frag.det_er + name.world.fjeld: 'det er stjernefjeldet' CER 0.000 (wav2vec2) → ok
+08:22:00   sammensat frag.det_er + name.world.skov: 'det er heinboskoven' CER 0.222 (wav2vec2, whisper: 'Det er Heimboeskoven') → FEJL
+08:22:05   sammensat frag.det_er + noun.shape.circle.def.end: 'dr serdian' CER 0.583 (wav2vec2, whisper: 'Det er Shetland') → FEJL
+08:22:12   sammensat frag.det_er + noun.shape.circle.def.mid: 'Det er cirklen' CER 0.000 (whisper, wav2vec2: 'dt er cirklen') → ok
+08:22:17   sammensat frag.det_er + noun.shape.circle.indef.end: 'det er en sirdy' CER 0.308 (wav2vec2, whisper: 'Det er en cirke') → FEJL
+08:22:18   sammensat frag.det_er + noun.shape.circle.indef.mid: 'det er en cirkel' CER 0.000 (wav2vec2) → ok
+08:22:18   sammensat frag.det_er + noun.shape.circle.pl.end: 'det er cirkler' CER 0.000 (wav2vec2) → ok
+08:22:18   sammensat frag.det_er + noun.shape.circle.pl.mid: 'det er cirkler' CER 0.000 (wav2vec2) → ok
+08:22:23   sammensat frag.det_er + noun.shape.quadrilateral.def.end: 'Det er firkanten' CER 0.000 (whisper, wav2vec2: 'dt r firkanten') → ok
+08:22:27   sammensat frag.det_er + noun.shape.quadrilateral.def.mid: 'Det er firkanten' CER 0.000 (whisper, wav2vec2: 'dtr firkanten') → ok
+08:22:27   sammensat frag.det_er + noun.shape.quadrilateral.indef.end: 'det er en firkant' CER 0.000 (wav2vec2) → ok
+08:22:28   sammensat frag.det_er + noun.shape.quadrilateral.indef.mid: 'det er en firkant' CER 0.000 (wav2vec2) → ok
+08:22:32   sammensat frag.det_er + noun.shape.quadrilateral.pl.end: 'Det er firkanter' CER 0.000 (whisper, wav2vec2: 'det r firkanter') → ok
+08:22:32   sammensat frag.det_er + noun.shape.quadrilateral.pl.mid: 'det er firkanter' CER 0.000 (wav2vec2) → ok
+08:22:36   sammensat frag.det_er + noun.shape.triangle.def.end: 'Det er trekanten' CER 0.000 (whisper, wav2vec2: 'detr trekanten') → ok
+08:22:37   sammensat frag.det_er + noun.shape.triangle.def.mid: 'det er trekanten' CER 0.000 (wav2vec2) → ok
+08:22:37   sammensat frag.det_er + noun.shape.triangle.indef.end: 'det er en trekant' CER 0.000 (wav2vec2) → ok
+08:22:37   sammensat frag.det_er + noun.shape.triangle.indef.mid: 'det er en trekant' CER 0.000 (wav2vec2) → ok
+08:22:38   sammensat frag.det_er + noun.shape.triangle.pl.end: 'deter trekanter' CER 0.000 (wav2vec2) → ok
+08:22:38   sammensat frag.det_er + noun.shape.triangle.pl.mid: 'det er trekanter' CER 0.000 (wav2vec2) → ok
+08:22:38   sammensat frag.det_er + noun.thing.apple.pl: 'det er æbler' CER 0.000 (wav2vec2) → ok
+08:22:39   sammensat frag.det_er + noun.thing.apple.sg: 'det er æble' CER 0.000 (wav2vec2) → ok
+08:22:43   sammensat frag.det_er + noun.thing.ball.pl: 'Det er bolde' CER 0.000 (whisper, wav2vec2: 'det er volde') → ok
+08:22:47   sammensat frag.det_er + noun.thing.ball.sg: 'det er bøjt' CER 0.333 (wav2vec2, whisper: 'Det er bøjt') → FEJL
+08:22:52   sammensat frag.det_er + noun.thing.carrot.pl: 'Det er gulerødder' CER 0.000 (whisper, wav2vec2: 'det er gulderødder') → ok
+08:22:57   sammensat frag.det_er + noun.thing.carrot.sg: 'det er gulderod' CER 0.083 (wav2vec2, whisper: 'Det er Gullerud') → FEJL
+08:23:02   sammensat frag.det_er + noun.thing.chestnut.pl: 'Det er kastanjer' CER 0.000 (whisper, wav2vec2: 'dr kastanner') → ok
+08:23:06   sammensat frag.det_er + noun.thing.chestnut.sg: 'Det er kastanje' CER 0.000 (whisper, wav2vec2: 'dtr kastanje') → ok
+08:23:12   sammensat frag.det_er + noun.thing.clip.pl: 'Det er clips' CER 0.000 (whisper, wav2vec2: 'dt r klips') → ok
+08:23:12   sammensat frag.det_er + noun.thing.cube.pl: 'det er klodser' CER 0.000 (wav2vec2) → ok
+08:23:24   sammensat frag.det_er + noun.thing.cube.sg: 'det er clods' CER 0.100 (wav2vec2, whisper: 'Det er klos') → FEJL
+08:23:25   sammensat frag.det_er + noun.thing.fish.pl: 'det er fisk' CER 0.000 (wav2vec2) → ok
+08:23:26   sammensat frag.det_er + noun.thing.flower.pl: 'det er blomster' CER 0.000 (wav2vec2) → ok
+08:23:27   sammensat frag.det_er + noun.thing.flower.sg: 'det er blomst' CER 0.000 (wav2vec2) → ok
+08:23:28   sammensat frag.det_er + noun.thing.leaf.pl: 'det er blade' CER 0.000 (wav2vec2) → ok
+08:23:29   sammensat frag.det_er + noun.thing.leaf.sg: 'det er blad' CER 0.000 (wav2vec2) → ok
+08:23:30   sammensat frag.det_er + noun.thing.mushroom.pl: 'det er svampe' CER 0.000 (wav2vec2) → ok
+08:23:31   sammensat frag.det_er + noun.thing.mushroom.sg: 'det er svamp' CER 0.000 (wav2vec2) → ok
+08:23:32   sammensat frag.det_er + noun.thing.star.pl: 'det er stjerner' CER 0.000 (wav2vec2) → ok
+08:23:32   sammensat frag.det_er + noun.thing.star.sg: 'det er stjerne' CER 0.000 (wav2vec2) → ok
+08:23:43   sammensat frag.det_er + noun.thing.strawberry.pl: 'Det er jordbær' CER 0.000 (whisper, wav2vec2: 'dr jordbær') → ok
+08:23:55   sammensat n.mid.7 + op.er_lig_med + n.end.5: '7 er lig med 5' CER 0.000 (whisper, wav2vec2: '7 er lige med 5') → ok
+08:23:56   sammensat n.mid.7 + op.giver + n.end.5: '7 giver 5' CER 0.000 (wav2vec2) → ok
+08:23:56   sammensat n.mid.7 + op.giver + n.end.5: '7 giver 5' CER 0.000 (wav2vec2) → ok
+08:24:11   sammensat n.mid.7 + op.mindre_end + n.end.5: '7 mindre end 5' CER 0.000 (whisper, wav2vec2: 'sy mindre end 5') → ok
+08:24:12   sammensat n.mid.7 + op.mindre_end + n.end.5: 'syv mindre end 5' CER 0.000 (wav2vec2) → ok
+08:24:12   sammensat n.mid.7 + op.og + n.end.5: '7 og 5' CER 0.000 (wav2vec2) → ok
+08:24:13   sammensat n.mid.7 + op.og + n.end.5: '7 og 5' CER 0.000 (wav2vec2) → ok
+08:24:14   sammensat n.mid.7 + op.stoerre_end + n.end.5: '7 større end 5' CER 0.000 (wav2vec2) → ok
+08:24:14   sammensat n.mid.7 + op.stoerre_end + n.end.5: '7 større end 5' CER 0.000 (wav2vec2) → ok
+08:24:24   sammensat frag.det_er + s.hear20.write: 'Det er skriv tallet' CER 0.000 (whisper, wav2vec2: 'dr skrivtallet') → ok
+08:24:34   sammensat frag.det_er + s.kind.buildBase.flat: 'Det er plade' CER 0.000 (whisper, wav2vec2: 'det er plaget') → ok
+08:24:34   sammensat frag.det_er + s.kind.buildBase.rod: 'det er stang' CER 0.000 (wav2vec2) → ok
+08:24:34   sammensat frag.det_er + s.kind.buildBase.short: 'det er bygtallet' CER 0.000 (wav2vec2) → ok
+08:24:35   sammensat frag.det_er + s.kind.buildBase.unit: 'det er terning' CER 0.000 (wav2vec2) → ok
+08:24:35   sammensat frag.det_er + s.kind.clockSet.short: 'det er stil uret' CER 0.000 (wav2vec2) → ok
+08:24:40   sammensat frag.det_er + s.kind.keypad.short: 'Det er skriv svaret' CER 0.000 (whisper, wav2vec2: 'dr skriv svaret') → ok
+08:24:40   sammensat frag.det_er + s.kind.share.short: 'det er del lige' CER 0.000 (wav2vec2) → ok
+08:24:45   sammensat frag.det_er + s.order20.countBack: 'det er til baglins fra' CER 0.111 (wav2vec2, whisper: 'Det er til baglæns fra') → FEJL
+08:24:50   sammensat frag.det_er + s.order20.countOn: 'det er til viderefra' CER 0.059 (wav2vec2, whisper: 'Det er til videre fra') → FEJL
+08:24:54   sammensat frag.det_er + s.order20.or: 'Det er eller' CER 0.000 (whisper, wav2vec2: 'det r eller') → ok
+08:24:55   sammensat frag.det_er + s.reward.alsoToday: 'det er også i dag' CER 0.000 (wav2vec2) → ok
+08:24:55   sammensat frag.det_er + s.reward.animal.friend: 'det er en ny ven' CER 0.000 (wav2vec2) → ok
+08:25:00   sammensat frag.det_er + s.reward.egg.tap: 'Det er tryk igen' CER 0.000 (whisper, wav2vec2: 'det r tryk igen') → ok
+08:25:00   sammensat frag.det_er + s.reward.item.new: 'det er en ny ting' CER 0.000 (wav2vec2) → ok
+08:25:01   sammensat frag.det_er + s.reward.item.try: 'det er prøv den' CER 0.000 (wav2vec2) → ok
+08:25:01   sammensat frag.det_er + s.reward.learned: 'det er det lærte du' CER 0.000 (wav2vec2) → ok
+08:25:02   sammensat frag.det_er + s.reward.medal.bronze: 'det er bronzemedalje' CER 0.000 (wav2vec2) → ok
+08:25:02   sammensat frag.det_er + s.reward.medal.silver: 'det er sølvmedalje' CER 0.000 (wav2vec2) → ok
+08:25:04   sammensat frag.det_er + s.reward.nextGoal: 'det er næste mål' CER 0.000 (wav2vec2) → ok
+08:25:15   sammensat frag.det_er + s.reward.title.1: 'Det er Nybegynder' CER 0.000 (whisper, wav2vec2: 'dr nybegynder') → ok
+08:25:19   sammensat frag.det_er + s.reward.title.10: 'det er eventyre' CER 0.071 (wav2vec2, whisper: 'Det er eventyr') → FEJL
+08:25:23   sammensat frag.det_er + s.reward.title.15: 'dtr talespejder' CER 0.200 (wav2vec2, whisper: 'Det er Tate Spider') → FEJL
+08:25:28   sammensat frag.det_er + s.reward.title.20: 'det er egnemester' CER 0.062 (wav2vec2, whisper: 'Det er Hegnemester') → FEJL
+08:25:32   sammensat frag.det_er + s.reward.title.30: 'Det er Talmagiker' CER 0.000 (whisper, wav2vec2: 'det r talmagiker') → ok
+08:25:33   sammensat frag.det_er + s.reward.title.40: 'det er stjerneregner' CER 0.000 (wav2vec2) → ok
+08:25:37   sammensat frag.det_er + s.reward.title.50: 'det er talvinde legende' CER 0.100 (wav2vec2, whisper: 'Det er talvænget legende') → FEJL
+08:25:42   sammensat frag.det_er + s.reward.title.new: 'Det er ny titel' CER 0.000 (whisper, wav2vec2: 'det er ny titte') → ok
+08:25:42   sammensat frag.det_er + s.reward.trial.best: 'det er bedst' CER 0.000 (wav2vec2) → ok
+08:25:42   sammensat frag.det_er + s.reward.trial.planks: 'det er planker' CER 0.000 (wav2vec2) → ok
+08:25:47   sammensat frag.det_er + s.round.count.take: 'Det er Læg i kurven' CER 0.000 (whisper, wav2vec2: 'det er læk i korven') → ok
+08:25:51   sammensat frag.det_er + s.round.hint.answerIs: 'Det er Svaret er' CER 0.000 (whisper, wav2vec2: 'det r svaret r') → ok
+08:25:52   sammensat frag.det_er + s.round.hint.shouldBe: 'det er der skal være' CER 0.000 (wav2vec2) → ok
+08:25:56   sammensat frag.det_er + s.round.hint.thereAre: 'Det er der er' CER 0.000 (whisper, wav2vec2: 'det r der er') → ok
+08:26:01   sammensat frag.det_er + s.round.pause.resume: 'Det er spil videre' CER 0.000 (whisper, wav2vec2: 'dt r spil videre') → ok
+08:26:01   sammensat frag.det_er + s.round.pause.title: 'det er pause' CER 0.000 (wav2vec2) → ok
+08:26:02   sammensat frag.det_er + s.round.perfect: 'det er perfekt tur' CER 0.000 (wav2vec2) → ok
+08:26:02   sammensat frag.det_er + s.round.praise.1: 'det er flot' CER 0.000 (wav2vec2) → ok
+08:26:02   sammensat frag.det_er + s.round.praise.2: 'det er rigtigt' CER 0.000 (wav2vec2) → ok
+08:26:07   sammensat frag.det_er + s.round.praise.3: 'Det er godt regnet' CER 0.000 (whisper, wav2vec2: 'det er godt hegnet') → ok
+08:26:10   sammensat frag.det_er + s.round.praise.4: 'Det er super' CER 0.000 (whisper, wav2vec2: 'det er 7') → ok
+08:26:10   sammensat frag.det_er + s.round.praise.5: 'det er sådan' CER 0.000 (wav2vec2) → ok
+08:26:15   sammensat frag.det_er + s.round.praise.7: 'Det er du fandt det' CER 0.000 (whisper, wav2vec2: 'det r dufandy') → ok
+08:26:16   sammensat frag.det_er + s.round.praise.8: 'det er godt klaret' CER 0.000 (wav2vec2) → ok
+08:26:16   sammensat frag.det_er + s.round.tapHere: 'det er trykher' CER 0.000 (wav2vec2) → ok
+08:26:16   sammensat frag.det_er + s.round.word.one: 'det er ener' CER 0.000 (wav2vec2) → ok
+08:26:20   sammensat frag.det_er + s.round.word.ones: 'det er indere' CER 0.200 (wav2vec2, whisper: 'Det er i Norge') → FEJL
+08:26:21   sammensat frag.det_er + s.round.word.ten: 'det er tier' CER 0.000 (wav2vec2) → ok
+08:26:25   sammensat frag.det_er + s.round.word.tens: 'det er til hjøret' CER 0.500 (wav2vec2, whisper: 'Det er tiår') → FEJL
+08:26:25   sammensat frag.det_er + s.shapes2D.all: 'det er alle' CER 0.000 (wav2vec2) → ok
+08:26:26   sammensat frag.det_er + s.ui.adult: 'det er for voksne' CER 0.000 (wav2vec2) → ok
+08:26:26   sammensat frag.det_er + s.ui.back: 'det er tilbage' CER 0.000 (wav2vec2) → ok
+08:26:26   sammensat frag.det_er + s.ui.check: 'det er færdig' CER 0.000 (wav2vec2) → ok
+08:26:30   sammensat frag.det_er + s.ui.close: 'det er luh' CER 0.125 (wav2vec2, whisper: 'Det er look') → FEJL
+08:26:30   sammensat frag.det_er + s.ui.delete: 'det er slet' CER 0.000 (wav2vec2) → ok
+08:26:31   sammensat frag.det_er + s.ui.dock.animals: 'det er dyr' CER 0.000 (wav2vec2) → ok
+08:26:35   sammensat frag.det_er + s.ui.dock.books: 'det er døger' CER 0.100 (wav2vec2, whisper: 'DR dør') → FEJL
+08:26:35   sammensat frag.det_er + s.ui.dock.map: 'det er kort' CER 0.000 (wav2vec2) → ok
+08:26:36   sammensat frag.det_er + s.ui.dock.shop: 'det er butik' CER 0.000 (wav2vec2) → ok
+08:26:40   sammensat frag.det_er + s.ui.dock.wardrobe: 'det er gadorobe' CER 0.143 (wav2vec2, whisper: 'Det er garderobet') → FEJL
+08:26:45   sammensat frag.det_er + s.ui.hint: 'dtr for hjælp' CER 0.333 (wav2vec2, whisper: 'Det er for hjælp') → FEJL
+08:26:45   sammensat frag.det_er + s.ui.next: 'det er næste' CER 0.000 (wav2vec2) → ok
+08:26:49   sammensat frag.det_er + s.ui.no: 'Det er nej' CER 0.000 (whisper, wav2vec2: 'dr nej') → ok
+08:26:53   sammensat frag.det_er + s.ui.play: 'Det er spil' CER 0.000 (whisper, wav2vec2: 'dt er spil') → ok
+08:26:58   sammensat frag.det_er + s.ui.replay: 'Det er Hør igen' CER 0.000 (whisper, wav2vec2: 'dr hør igen') → ok
+08:27:02   sammensat frag.det_er + s.ui.showMe: 'Det er Vis mig' CER 0.000 (whisper, wav2vec2: 'det er vismar') → ok
+08:27:05   sammensat frag.det_er + s.ui.skip: 'Det er spring over' CER 0.000 (whisper, wav2vec2: 'dr spring over') → ok
+08:27:06   sammensat frag.det_er + s.ui.soundOff: 'det er lyd fra' CER 0.000 (wav2vec2) → ok
+08:27:06   sammensat frag.det_er + s.ui.soundOn: 'det er lyd til' CER 0.000 (wav2vec2) → ok
+08:27:06   sammensat frag.det_er + s.ui.stones: 'det er turen' CER 0.000 (wav2vec2) → ok
+08:27:07   sammensat frag.det_er + s.ui.toMap: 'det er til kortet' CER 0.000 (wav2vec2) → ok
+08:27:07   sammensat frag.det_er + s.ui.yes: 'det er ja' CER 0.000 (wav2vec2) → ok
+08:27:14 ✅ EOS token detected! Stopping generation at step 55
+08:27:24 kald carrier k=1 t2 'Tallet er fireogtredive.': 16.6 s for 2.16 s lyd
+08:27:25   n.end.34 t2: 0.94 s (forhold 0.50) -18.2 LUFS, carrier: 'tallet er 34' CER 0.0 (wav2vec2) → ok
+08:27:31 ✅ EOS token detected! Stopping generation at step 58
+08:27:41 kald carrier k=1 t1 'Tallet er otteoghalvtreds.': 16.9 s for 2.28 s lyd
+08:27:42   n.end.58 t1: 0.94 s (forhold 0.60) -18.0 LUFS, carrier: 'tallet er 58' CER 0.0 (wav2vec2) → ok
+08:27:49 ✅ EOS token detected! Stopping generation at step 44
+08:27:59 kald carrier k=1 t1 'Tallet er halvtreds,': 16.9 s for 1.72 s lyd
+08:28:00   n.mid.50 t1: 0.64 s (forhold 1.03) -18.0 LUFS, carrier: 'tallet er 50' CER 0.0 (wav2vec2) → ok
+08:28:05 ✅ EOS token detected! Stopping generation at step 41
+08:28:15 kald carrier k=1 t1 'Tallet er tres,': 14.5 s for 1.60 s lyd
+08:28:15   n.mid.60 t1: 0.50 s (forhold 1.59) -18.0 LUFS, carrier: 'tallet ar 60' CER 0.0 (wav2vec2) → ok
+08:28:18 ✅ EOS token detected! Stopping generation at step 21
+08:28:27 kald single k=1 t1 'Spinne': 11.3 s for 0.80 s lyd
+08:28:27   name.animal.cat.2 t1: 0.55 s (forhold 0.87) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:28:32 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:28:32 ✅ EOS token detected! Stopping generation at step 25
+08:28:41 kald single k=1 t1 'Kanel': 13.8 s for 0.96 s lyd
+08:28:41   name.animal.cat.3 t1: 0.34 s (forhold 0.55) -18.13 LUFS, none: 'None' CER None (None) → ok
+08:28:45 ✅ EOS token detected! Stopping generation at step 30
+08:28:56 kald single k=1 t1 'Ingefær': 14.6 s for 1.16 s lyd
+08:28:56   name.animal.cat.8 t1: 0.57 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:28:59 ✅ EOS token detected! Stopping generation at step 24
+08:29:07 kald single k=1 t1 'Ildfred': 11.5 s for 0.92 s lyd
+08:29:08   name.animal.dragon.1 t1: 0.55 s (forhold 0.87) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:29:12 ✅ EOS token detected! Stopping generation at step 33
+08:29:23 kald single k=1 t1 'Smaragd': 15.5 s for 1.28 s lyd
+08:29:24   name.animal.dragon.2 t1: 0.61 s (forhold 0.98) -18.13 LUFS, none: 'None' CER None (None) → ok
+08:29:29 ✅ EOS token detected! Stopping generation at step 27
+08:29:38 kald single k=1 t1 'Mikkel': 14.6 s for 1.04 s lyd
+08:29:39   name.animal.fox.1 t1: 0.43 s (forhold 0.69) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:29:41 ✅ EOS token detected! Stopping generation at step 21
+08:29:49 kald single k=1 t1 'Glød': 10.5 s for 0.80 s lyd
+08:29:49   name.animal.fox.2 t1: 0.29 s (forhold 0.92) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:29:53 ✅ EOS token detected! Stopping generation at step 33
+08:30:04 kald single k=1 t1 'Kinne': 14.7 s for 1.28 s lyd
+08:30:05   name.animal.hamster.1 t1: 0.32 s (forhold 0.52) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:30:08 ✅ EOS token detected! Stopping generation at step 31
+08:30:17 kald single k=1 t1 'Nøddi': 12.7 s for 1.20 s lyd
+08:30:18   name.animal.hamster.3 t1: 0.49 s (forhold 0.79) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:30:21 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:30:21 ✅ EOS token detected! Stopping generation at step 23
+08:30:29 kald single k=1 t1 'Pusle': 11.8 s for 0.88 s lyd
+08:30:30   name.animal.hamster.4 t1: 0.22 s (forhold 0.36) -18.0 LUFS, none: 'None' CER None (None) → FEJL varighed
+08:30:33 ✅ EOS token detected! Stopping generation at step 24
+08:30:42 kald single k=1 t1 'Snude': 11.9 s for 0.92 s lyd
+08:30:42   name.animal.hedgehog.4 t1: 0.63 s (forhold 1.02) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:30:45 ✅ EOS token detected! Stopping generation at step 25
+08:30:56 kald single k=1 t1 'Trøffel': 13.9 s for 0.96 s lyd
+08:30:56   name.animal.hedgehog.8 t1: 0.47 s (forhold 0.75) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:30:59 ✅ EOS token detected! Stopping generation at step 26
+08:31:10 kald single k=1 t1 'Karamel': 13.7 s for 1.00 s lyd
+08:31:10   name.animal.horse.5 t1: 0.49 s (forhold 0.52) -18.17 LUFS, none: 'None' CER None (None) → ok
+08:31:16 ✅ EOS token detected! Stopping generation at step 25
+08:31:30 kald single k=1 t1 'Uldi': 19.4 s for 0.96 s lyd
+08:31:30   name.animal.lamb.1 t1: 0.41 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:31:34 ✅ EOS token detected! Stopping generation at step 28
+08:31:49 kald single k=1 t1 'Fnug': 18.7 s for 1.08 s lyd
+08:31:49   name.animal.lamb.3 t1: 0.73 s (forhold 2.34) -18.04 LUFS, none: 'None' CER None (None) → FEJL varighed
+08:31:53 ✅ EOS token detected! Stopping generation at step 26
+08:32:02 kald single k=1 t1 'Vatte': 12.9 s for 1.00 s lyd
+08:32:03   name.animal.lamb.6 t1: 0.39 s (forhold 0.62) -18.07 LUFS, none: 'None' CER None (None) → ok
+08:32:07 ✅ EOS token detected! Stopping generation at step 36
+08:32:17 kald single k=1 t1 'Bogorm': 14.1 s for 1.40 s lyd
+08:32:17   name.animal.owl.1 t1: 0.57 s (forhold 0.92) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:32:21 ✅ EOS token detected! Stopping generation at step 34
+08:32:30 kald single k=1 t1 'Bambus': 13.3 s for 1.32 s lyd
+08:32:31   name.animal.panda.1 t1: 0.58 s (forhold 0.93) -18.06 LUFS, none: 'None' CER None (None) → ok
+08:32:34 ✅ EOS token detected! Stopping generation at step 22
+08:32:42 kald single k=1 t1 'Tumle': 11.5 s for 0.84 s lyd
+08:32:43   name.animal.panda.2 t1: 0.43 s (forhold 0.68) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:32:49 ✅ EOS token detected! Stopping generation at step 36
+08:32:58 kald single k=1 t1 'Bolsje': 15.4 s for 1.40 s lyd
+08:32:59   name.animal.panda.6 t1: 0.46 s (forhold 0.74) -18.12 LUFS, none: 'None' CER None (None) → ok
+08:33:02 ✅ EOS token detected! Stopping generation at step 22
+08:33:10 kald single k=1 t1 'Vinge': 11.6 s for 0.84 s lyd
+08:33:10   name.animal.pegasus.1 t1: 0.41 s (forhold 0.65) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:33:15 ✅ EOS token detected! Stopping generation at step 39
+08:33:27 kald single k=1 t1 'Solstråle': 16.9 s for 1.52 s lyd
+08:33:28   name.animal.pegasus.5 t1: 0.87 s (forhold 0.93) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:33:31 ✅ EOS token detected! Stopping generation at step 26
+08:33:40 kald single k=1 t1 'Zefyr': 12.0 s for 1.00 s lyd
+08:33:40   name.animal.pegasus.6 t1: 0.61 s (forhold 0.98) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:33:44 ✅ EOS token detected! Stopping generation at step 29
+08:33:55 kald single k=1 t1 'Vralte': 14.9 s for 1.12 s lyd
+08:33:55   name.animal.penguin.1 t1: 0.52 s (forhold 0.84) -18.19 LUFS, none: 'None' CER None (None) → ok
+08:34:00 ✅ EOS token detected! Stopping generation at step 27
+08:34:08 kald single k=1 t1 'Tøffel': 12.8 s for 1.04 s lyd
+08:34:09   name.animal.penguin.5 t1: 0.52 s (forhold 0.82) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:34:12 ✅ EOS token detected! Stopping generation at step 29
+08:34:21 kald single k=1 t1 'Brummer': 12.1 s for 1.12 s lyd
+08:34:21   name.animal.polarbear.2 t1: 0.41 s (forhold 0.65) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:34:25 ✅ EOS token detected! Stopping generation at step 30
+08:34:34 kald single k=1 t1 'Snehild': 12.9 s for 1.16 s lyd
+08:34:34   name.animal.polarbear.4 t1: 0.62 s (forhold 0.99) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:34:37 ✅ EOS token detected! Stopping generation at step 24
+08:34:46 kald single k=1 t1 'Hvide': 11.8 s for 0.92 s lyd
+08:34:46   name.animal.polarbear.7 t1: 0.46 s (forhold 0.74) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:34:49 ✅ EOS token detected! Stopping generation at step 26
+08:34:58 kald single k=1 t1 'Logre': 12.0 s for 1.00 s lyd
+08:34:59   name.animal.puppy.1 t1: 0.47 s (forhold 0.76) -18.05 LUFS, none: 'None' CER None (None) → ok
+08:35:03 ✅ EOS token detected! Stopping generation at step 26
+08:35:12 kald single k=1 t1 'Fiks': 12.6 s for 1.00 s lyd
+08:35:12   name.animal.puppy.3 t1: 0.51 s (forhold 1.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:35:16 ✅ EOS token detected! Stopping generation at step 33
+08:35:26 kald single k=1 t1 'Basse': 14.0 s for 1.28 s lyd
+08:35:26   name.animal.puppy.4 t1: 0.40 s (forhold 0.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:35:29 ✅ EOS token detected! Stopping generation at step 26
+08:35:38 kald single k=1 t1 'Hoppe': 11.7 s for 1.00 s lyd
+08:35:38   name.animal.rabbit.2 t1: 0.37 s (forhold 0.59) -18.12 LUFS, none: 'None' CER None (None) → ok
+08:35:42 ✅ EOS token detected! Stopping generation at step 27
+08:35:50 kald single k=1 t1 'Bomuld': 12.1 s for 1.04 s lyd
+08:35:51   name.animal.rabbit.4 t1: 0.43 s (forhold 0.69) -18.16 LUFS, none: 'None' CER None (None) → ok
+08:35:54 ✅ EOS token detected! Stopping generation at step 22
+08:36:01 kald single k=1 t1 'Agern': 10.8 s for 0.84 s lyd
+08:36:02   name.animal.squirrel.1 t1: 0.45 s (forhold 0.71) -18.08 LUFS, none: 'None' CER None (None) → ok
+08:36:04 ✅ EOS token detected! Stopping generation at step 19
+08:36:12 kald single k=1 t1 'Svirp': 10.5 s for 0.72 s lyd
+08:36:13   name.animal.squirrel.4 t1: 0.46 s (forhold 1.48) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:36:16 ✅ EOS token detected! Stopping generation at step 26
+08:36:24 kald single k=1 t1 'Sølvlok': 11.9 s for 1.00 s lyd
+08:36:25   name.animal.unicorn.2 t1: 0.63 s (forhold 1.00) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:36:28 ✅ EOS token detected! Stopping generation at step 24
+08:36:36 kald single k=1 t1 'Luna': 11.4 s for 0.92 s lyd
+08:36:36   name.animal.unicorn.3 t1: 0.46 s (forhold 0.74) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:36:40 ✅ EOS token detected! Stopping generation at step 26
+08:36:49 kald single k=1 t1 'Snefnug': 12.9 s for 1.00 s lyd
+08:36:50   name.animal.unicorn.6 t1: 0.69 s (forhold 1.10) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:36:53 ✅ EOS token detected! Stopping generation at step 29
+08:37:04 kald single k=1 t1 'Feja': 14.2 s for 1.12 s lyd
+08:37:04   name.animal.unicorn.7 t1: 0.45 s (forhold 0.71) -18.15 LUFS, none: 'None' CER None (None) → ok
+08:37:08 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:37:08 ✅ EOS token detected! Stopping generation at step 30
+08:37:16 kald single k=1 t1 'blå-grå': 12.3 s for 1.16 s lyd
+08:37:17   name.color.cat.c6 t1: 0.59 s (forhold 0.95) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:37:21 ✅ EOS token detected! Stopping generation at step 31
+08:37:31 kald single k=1 t1 'regnbue': 14.1 s for 1.20 s lyd
+08:37:31   name.color.cat.rainbow t1: 0.63 s (forhold 0.67) -18.14 LUFS, none: 'None' CER None (None) → ok
+08:37:34 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:37:34 ✅ EOS token detected! Stopping generation at step 23
+08:37:43 kald single k=1 t1 'golden': 11.3 s for 0.88 s lyd
+08:37:43   name.color.puppy.c1 t1: 0.48 s (forhold 0.77) -18.05 LUFS, none: 'None' CER None (None) → ok
+08:37:46 ✅ EOS token detected! Stopping generation at step 19
+08:37:54 kald single k=1 t1 'grå': 11.3 s for 0.72 s lyd
+08:37:55   name.color.rabbit.c2 t1: 0.24 s (forhold 0.79) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:37:59 ✅ EOS token detected! Stopping generation at step 36
+08:38:08 kald single k=1 t1 'karamel': 13.1 s for 1.40 s lyd
+08:38:08   name.color.rabbit.c5 t1: 0.47 s (forhold 0.50) -18.14 LUFS, none: 'None' CER None (None) → ok
+08:38:12 ✅ EOS token detected! Stopping generation at step 31
+08:38:21 kald single k=1 t1 'Rygsæk': 12.3 s for 1.20 s lyd
+08:38:21   name.item.hverdag-back t1: 0.55 s (forhold 0.88) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:38:24 ✅ EOS token detected! Stopping generation at step 23
+08:38:32 kald single k=1 t1 'Hue': 11.3 s for 0.88 s lyd
+08:38:32   name.item.hverdag-head t1: 0.45 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:38:37 ✅ EOS token detected! Stopping generation at step 33
+08:38:46 kald single k=1 t1 'Halstørklæde': 13.3 s for 1.28 s lyd
+08:38:46   name.item.hverdag-neck t1: 0.90 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:38:51 ✅ EOS token detected! Stopping generation at step 32
+08:39:00 kald single k=1 t1 'Fe-vinger': 13.6 s for 1.24 s lyd
+08:39:00   name.item.milepael-fevinger t1: 0.59 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:39:04 ✅ EOS token detected! Stopping generation at step 36
+08:39:13 kald single k=1 t1 'Glimmerbluse': 13.1 s for 1.40 s lyd
+08:39:14   name.item.milepael-glimmerbluse t1: 0.78 s (forhold 0.62) -18.17 LUFS, none: 'None' CER None (None) → ok
+08:39:19 ✅ EOS token detected! Stopping generation at step 48
+08:39:30 kald single k=1 t1 'Legendekronen': 16.1 s for 1.88 s lyd
+08:39:30   name.item.milepael-krone t1: 1.24 s (forhold 0.79) -18.04 LUFS, none: 'None' CER None (None) → ok
+08:39:35 ✅ EOS token detected! Stopping generation at step 36
+08:39:46 kald single k=1 t1 'Regnbuehue': 15.3 s for 1.40 s lyd
+08:39:46   name.item.milepael-regnbuehue t1: 0.98 s (forhold 0.63) -18.04 LUFS, none: 'None' CER None (None) → ok
+08:39:49 ✅ EOS token detected! Stopping generation at step 20
+08:39:57 kald single k=1 t1 'Lup': 11.2 s for 0.76 s lyd
+08:39:58   name.item.opdager-hand t1: 0.34 s (forhold 1.11) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:40:02 ✅ EOS token detected! Stopping generation at step 38
+08:40:12 kald single k=1 t1 'Pirattrøje': 13.9 s for 1.48 s lyd
+08:40:12   name.item.pirat-body t1: 0.81 s (forhold 0.65) -18.1 LUFS, none: 'None' CER None (None) → ok
+08:40:17 ✅ EOS token detected! Stopping generation at step 41
+08:40:26 kald single k=1 t1 'Piratskæg': 14.2 s for 1.60 s lyd
+08:40:27   name.item.pirat-face t1: 0.75 s (forhold 0.80) -18.08 LUFS, none: 'None' CER None (None) → ok
+08:40:31 ✅ EOS token detected! Stopping generation at step 31
+08:40:39 kald single k=1 t1 'Formhaven': 12.2 s for 1.20 s lyd
+08:40:39   name.region.w0-former t1: 0.70 s (forhold 0.74) -18.17 LUFS, none: 'None' CER None (None) → ok
+08:40:44 ✅ EOS token detected! Stopping generation at step 40
+08:40:54 kald single k=1 t1 'Tællelunden': 14.4 s for 1.56 s lyd
+08:40:54   name.region.w0-tal10 t1: 0.78 s (forhold 0.62) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:40:59 ✅ EOS token detected! Stopping generation at step 37
+08:41:07 kald single k=1 t1 'Tyvestien': 12.9 s for 1.44 s lyd
+08:41:07   name.region.w0-tal20 t1: 0.79 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:41:12 ✅ EOS token detected! Stopping generation at step 35
+08:41:22 kald single k=1 t1 'Regnbueskoven': 15.0 s for 1.36 s lyd
+08:41:23   name.world.skov t1: 0.95 s (forhold 0.61) -18.09 LUFS, none: 'None' CER None (None) → ok
+08:41:26 ✅ EOS token detected! Stopping generation at step 25
+08:41:35 kald single k=1 t1 'cirklen.': 11.7 s for 0.96 s lyd
+08:41:35   noun.shape.circle.def.end t1: 0.63 s (forhold 1.01) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:41:39 ✅ EOS token detected! Stopping generation at step 33
+08:41:48 kald single k=1 t1 'en cirkel.': 12.5 s for 1.28 s lyd
+08:41:48   noun.shape.circle.indef.end t1: 0.69 s (forhold 0.73) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:41:52 ✅ EOS token detected! Stopping generation at step 29
+08:42:00 kald single k=1 t1 'bold,': 12.1 s for 1.12 s lyd
+08:42:00   noun.thing.ball.sg t1: 0.38 s (forhold 1.22) -18.2 LUFS, none: 'None' CER None (None) → ok
+08:42:04 ✅ EOS token detected! Stopping generation at step 23
+08:42:25 kald single k=1 t1 'gulerod,': 25.0 s for 0.88 s lyd
+08:42:26   noun.thing.carrot.sg t1: 0.52 s (forhold 0.56) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:42:30 ✅ EOS token detected! Stopping generation at step 24
+08:42:38 kald single k=1 t1 'klods,': 12.4 s for 0.92 s lyd
+08:42:39   noun.thing.cube.sg t1: 0.54 s (forhold 1.73) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:42:46 ✅ EOS token detected! Stopping generation at step 43
+08:42:55 kald single k=1 t1 'Tæl baglæns fra,': 16.6 s for 1.68 s lyd
+08:42:56   s.order20.countBack t1: 0.98 s (forhold 0.79) -18.13 LUFS, none: 'None' CER None (None) → ok
+08:43:01 ✅ EOS token detected! Stopping generation at step 40
+08:43:09 kald single k=1 t1 'Tæl videre fra,': 13.4 s for 1.56 s lyd
+08:43:10   s.order20.countOn t1: 0.85 s (forhold 0.54) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:43:15 ✅ EOS token detected! Stopping generation at step 38
+08:43:24 kald single k=1 t1 'Eventyrer,': 14.0 s for 1.48 s lyd
+08:43:24   s.reward.title.10 t1: 0.79 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:43:30 ✅ EOS token detected! Stopping generation at step 48
+08:43:43 kald single k=1 t1 'Talvenne-legende,': 18.6 s for 1.88 s lyd
+08:43:43   s.reward.title.50 t1: 1.11 s (forhold 0.59) -18.18 LUFS, none: 'None' CER None (None) → ok
+08:43:47 ✅ EOS token detected! Stopping generation at step 24
+08:43:55 kald single k=1 t1 'enere,': 11.6 s for 0.92 s lyd
+08:43:55   s.round.word.ones t1: 0.59 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:43:58 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:43:58 ✅ EOS token detected! Stopping generation at step 18
+08:44:06 kald single k=1 t1 'tiere,': 10.3 s for 0.68 s lyd
+08:44:06   s.round.word.tens t1: 0.41 s (forhold 0.43) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:44:08 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:44:08 ✅ EOS token detected! Stopping generation at step 20
+08:44:17 kald single k=1 t1 'Luk': 11.0 s for 0.76 s lyd
+08:44:17   s.ui.close t1: 0.34 s (forhold 1.07) -18.2 LUFS, none: 'None' CER None (None) → ok
+08:44:20 ✅ EOS token detected! Stopping generation at step 22
+08:44:28 kald single k=1 t1 'Bøger': 11.1 s for 0.84 s lyd
+08:44:28   s.ui.dock.books t1: 0.38 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:44:32 ✅ EOS token detected! Stopping generation at step 33
+08:44:41 kald single k=1 t1 'Garderobe': 12.4 s for 1.28 s lyd
+08:44:41   s.ui.dock.wardrobe t1: 0.63 s (forhold 0.50) -18.08 LUFS, none: 'None' CER None (None) → ok
+08:44:45 ✅ EOS token detected! Stopping generation at step 26
+08:44:53 kald single k=1 t1 'Få hjælp': 12.1 s for 1.00 s lyd
+08:44:54   s.ui.hint t1: 0.53 s (forhold 0.84) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:44:54 sammensætning runde 1: 404 af 485 bestået
+08:44:54   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.34: 'hvad er 7 plus 34' CER 0.000 (wav2vec2) → ok
+08:44:59   sammensat frag.find_tallet + n.end.34: 'finn tallet er 34' CER 0.130 (wav2vec2, whisper: 'Find tallet fra 34') → FEJL
+08:44:59   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.58: 'hvad er 7 plus 58' CER 0.000 (wav2vec2) → ok
+08:44:59   sammensat frag.find_tallet + n.end.58: 'finn tallet 58' CER 0.040 (wav2vec2) → ok
+08:45:00   sammensat frag.hvad_er + n.mid.50 + op.plus + n.end.5: 'hvad er 50 plus 5' CER 0.000 (wav2vec2) → ok
+08:45:04   sammensat frag.hvad_er + n.mid.60 + op.plus + n.end.5: 'Hvad er 60 plus 5?' CER 0.000 (whisper, wav2vec2: 'hvad eir 6 plus 5') → ok
+08:45:09   sammensat frag.det_er + name.animal.cat.2: 'det er spænende' CER 0.273 (wav2vec2, whisper: 'Det er spændende') → FEJL
+08:45:13   sammensat frag.det_er + name.animal.cat.3: 'det er kané' CER 0.100 (wav2vec2, whisper: 'Det er kanin') → FEJL
+08:45:18   sammensat frag.det_er + name.animal.cat.8: 'Det er ingefær' CER 0.000 (whisper, wav2vec2: 'det er inge færd') → ok
+08:45:22   sammensat frag.det_er + name.animal.dragon.1: 'det er i det frede' CER 0.333 (wav2vec2, whisper: 'Det er i det fred') → FEJL
+08:45:27   sammensat frag.det_er + name.animal.dragon.2: 'det er smarehart' CER 0.333 (wav2vec2, whisper: 'Det er smart') → FEJL
+08:45:28   sammensat frag.det_er + name.animal.fox.1: 'det er mikkel' CER 0.000 (wav2vec2) → ok
+08:45:28   sammensat frag.det_er + name.animal.fox.2: 'det er glød' CER 0.000 (wav2vec2) → ok
+08:45:33   sammensat frag.det_er + name.animal.hamster.1: 'det er kinde' CER 0.100 (wav2vec2, whisper: 'Det er Kinde') → FEJL
+08:45:39   sammensat frag.det_er + name.animal.hamster.3: 'det er nøddig' CER 0.100 (wav2vec2, whisper: 'Det er nøddygtigt') → FEJL
+08:45:46   sammensat frag.det_er + name.animal.hedgehog.4: 'det er snud' CER 0.100 (wav2vec2, whisper: 'Det er snoet') → FEJL
+08:45:55   sammensat frag.det_er + name.animal.hedgehog.8: 'det er trosø' CER 0.417 (wav2vec2, whisper: 'Det er trods alt') → FEJL
+08:46:00   sammensat frag.det_er + name.animal.horse.5: 'det er karmild' CER 0.250 (wav2vec2, whisper: 'Det er Carmel') → FEJL
+08:46:12   sammensat frag.det_er + name.animal.lamb.1: 'det er oliti' CER 0.333 (wav2vec2, whisper: 'Det er rigtigt') → FEJL
+08:46:21   sammensat frag.det_er + name.animal.lamb.6: 'det er vad det' CER 0.300 (wav2vec2, whisper: 'Det er hvad det') → FEJL
+08:46:25   sammensat frag.det_er + name.animal.owl.1: 'det er bogeovn' CER 0.273 (wav2vec2, whisper: 'Det er Borgeorm') → FEJL
+08:46:30   sammensat frag.det_er + name.animal.panda.1: 'Det er bambus' CER 0.000 (whisper, wav2vec2: 'det er bambush') → ok
+08:46:34   sammensat frag.det_er + name.animal.panda.2: 'det er tummle' CER 0.100 (wav2vec2, whisper: 'Det er tomle') → FEJL
+08:46:39   sammensat frag.det_er + name.animal.panda.6: 'det er beusche' CER 0.364 (wav2vec2, whisper: 'Det er Beugel') → FEJL
+08:46:46   sammensat frag.det_er + name.animal.pegasus.1: 'det er linge' CER 0.100 (wav2vec2, whisper: 'Det er længe') → FEJL
+08:46:51   sammensat frag.det_er + name.animal.pegasus.5: 'Det er solstråle' CER 0.000 (whisper, wav2vec2: 'det er solestrolig') → ok
+08:46:56   sammensat frag.det_er + name.animal.pegasus.6: 'det er cefyr' CER 0.100 (wav2vec2, whisper: 'Det er se fyr') → FEJL
+08:47:01   sammensat frag.det_er + name.animal.penguin.1: 'det er vraldig' CER 0.273 (wav2vec2, whisper: 'Det er Vralde') → FEJL
+08:47:05   sammensat frag.det_er + name.animal.penguin.5: 'det er tefø' CER 0.364 (wav2vec2, whisper: 'Det er Tøffe') → FEJL
+08:47:10   sammensat frag.det_er + name.animal.polarbear.2: 'det er pråmir' CER 0.333 (wav2vec2, whisper: 'Det er på mig') → FEJL
+08:47:14   sammensat frag.det_er + name.animal.polarbear.4: 'det er snehilt' CER 0.083 (wav2vec2, whisper: 'Det er snehelt') → FEJL
+08:47:14   sammensat frag.det_er + name.animal.polarbear.7: 'det er hvide' CER 0.000 (wav2vec2) → ok
+08:47:18   sammensat frag.det_er + name.animal.puppy.1: 'det er lokra' CER 0.200 (wav2vec2, whisper: 'Det er lokre') → FEJL
+08:47:22   sammensat frag.det_er + name.animal.puppy.3: 'det er fixs' CER 0.111 (wav2vec2, whisper: 'Det er fix') → FEJL
+08:47:22   sammensat frag.det_er + name.animal.puppy.4: 'det er basse' CER 0.000 (wav2vec2) → ok
+08:47:26   sammensat frag.det_er + name.animal.rabbit.2: 'Det er hoppe' CER 0.000 (whisper, wav2vec2: 'det er hobpe') → ok
+08:47:31   sammensat frag.det_er + name.animal.rabbit.4: 'det er barmul' CER 0.273 (wav2vec2, whisper: 'Det er bare muld') → FEJL
+08:47:31   sammensat frag.det_er + name.animal.squirrel.1: 'det er agern' CER 0.000 (wav2vec2) → ok
+08:47:31   sammensat frag.det_er + name.animal.squirrel.4: 'det er svirp' CER 0.000 (wav2vec2) → ok
+08:47:36   sammensat frag.det_er + name.animal.unicorn.2: 'det er synd lock' CER 0.333 (wav2vec2, whisper: 'Det er Sølok') → FEJL
+08:47:40   sammensat frag.det_er + name.animal.unicorn.3: 'det er lona' CER 0.111 (wav2vec2, whisper: 'Det er Lona') → FEJL
+08:47:44   sammensat frag.det_er + name.animal.unicorn.6: 'det er snefnok' CER 0.167 (wav2vec2, whisper: 'Det er Snefnok') → FEJL
+08:47:49   sammensat frag.det_er + name.animal.unicorn.7: 'det er faja' CER 0.111 (wav2vec2, whisper: 'Det er fejre') → FEJL
+08:47:54   sammensat frag.det_er + name.color.cat.c6: 'Det er blå grå' CER 0.000 (whisper, wav2vec2: 'det er blå kro') → ok
+08:47:58   sammensat frag.det_er + name.color.cat.rainbow: 'Det er regnbue' CER 0.000 (whisper, wav2vec2: 'det er heimbo') → ok
+08:48:03   sammensat frag.det_er + name.color.puppy.c1: 'det er golken' CER 0.091 (wav2vec2, whisper: 'Det er gulvten') → FEJL
+08:48:03   sammensat frag.det_er + name.color.rabbit.c2: 'det er grå' CER 0.000 (wav2vec2) → ok
+08:48:08   sammensat frag.det_er + name.color.rabbit.c5: 'det er karmild' CER 0.250 (wav2vec2, whisper: 'Det er Carmel') → FEJL
+08:48:08   sammensat frag.det_er + name.item.hverdag-back: 'det er rygsæk' CER 0.000 (wav2vec2) → ok
+08:48:12   sammensat frag.det_er + name.item.hverdag-head: 'det er hoved' CER 0.375 (wav2vec2, whisper: 'Det er hoved') → FEJL
+08:48:13   sammensat frag.det_er + name.item.hverdag-neck: 'det er hal størklæde' CER 0.000 (wav2vec2) → ok
+08:48:17   sammensat frag.det_er + name.item.milepael-fevinger: 'det er e vinger' CER 0.077 (wav2vec2, whisper: 'Det er Evinger') → FEJL
+08:48:22   sammensat frag.det_er + name.item.milepael-glimmerbluse: 'det er glimmerblose' CER 0.059 (wav2vec2, whisper: 'Det er glemmerblodse') → FEJL
+08:48:28   sammensat frag.det_er + name.item.milepael-krone: 'det er lige end del kronen' CER 0.222 (wav2vec2, whisper: 'Det er lige indekronen') → FEJL
+08:48:33   sammensat frag.det_er + name.item.milepael-regnbuehue: 'det er heinbuhoved' CER 0.400 (wav2vec2, whisper: 'Det er Heimboehoved') → FEJL
+08:48:33   sammensat frag.det_er + name.item.opdager-hand: 'det er lup' CER 0.000 (wav2vec2) → ok
+08:48:38   sammensat frag.det_er + name.item.pirat-body: 'det er pirattøj' CER 0.133 (wav2vec2, whisper: 'Det er pirattøj') → FEJL
+08:48:38   sammensat frag.det_er + name.item.pirat-face: 'det er piratskæg' CER 0.000 (wav2vec2) → ok
+08:48:42   sammensat frag.det_er + name.region.w0-former: 'Det er formhaven' CER 0.000 (whisper, wav2vec2: 'det er formhæven') → ok
+08:48:43   sammensat frag.det_er + name.region.w0-tal10: 'det er tællelunden' CER 0.000 (wav2vec2) → ok
+08:48:48   sammensat frag.det_er + name.region.w0-tal20: 'det er 20 stin' CER 0.071 (wav2vec2, whisper: 'Det er 20 Stien') → FEJL
+08:48:48   sammensat frag.det_er + name.set.opdager: 'det er opdager' CER 0.000 (wav2vec2) → ok
+08:48:53   sammensat frag.det_er + name.world.skov: 'Det er regnbueskoven' CER 0.000 (whisper, wav2vec2: 'det er regnboskoven') → ok
+08:48:53   sammensat frag.det_er + noun.shape.circle.def.end: 'det er cirklen' CER 0.000 (wav2vec2) → ok
+08:48:58   sammensat frag.det_er + noun.shape.circle.indef.end: 'det er en sirdy' CER 0.308 (wav2vec2, whisper: 'Det er en sirdø') → FEJL
+08:49:03   sammensat frag.det_er + noun.thing.ball.sg: 'det er bøjt' CER 0.333 (wav2vec2, whisper: 'Det er bøjt') → FEJL
+08:49:07   sammensat frag.det_er + noun.thing.carrot.sg: 'det er gulderød' CER 0.167 (wav2vec2, whisper: 'Det er Gullerud') → FEJL
+08:49:12   sammensat frag.det_er + noun.thing.cube.sg: 'det er closs' CER 0.200 (wav2vec2, whisper: 'Det er klos') → FEJL
+08:49:17   sammensat frag.det_er + s.order20.countBack: 'det er telbaulins fra' CER 0.167 (wav2vec2, whisper: 'Det er til baglæns fra') → FEJL
+08:49:22   sammensat frag.det_er + s.order20.countOn: 'det er til lidere fra' CER 0.118 (wav2vec2, whisper: 'Det er til videre fra') → FEJL
+08:49:26   sammensat frag.det_er + s.reward.title.10: 'det er eventyret' CER 0.071 (wav2vec2, whisper: 'Det er eventyr') → FEJL
+08:49:32   sammensat frag.det_er + s.reward.title.15: 'det er talespejder' CER 0.067 (wav2vec2, whisper: 'Det er Tate Spider') → FEJL
+08:49:37   sammensat frag.det_er + s.reward.title.20: 'det er egnemester' CER 0.062 (wav2vec2, whisper: 'Det er Hegnemester') → FEJL
+08:49:37   frag.det_er t1 får skylden i frag.det_er + s.reward.title.20
+08:49:42   sammensat n.mid.7 + s.reward.title.50: 'syv tal vindelegende' CER 0.111 (wav2vec2, whisper: '7. Talvvindelegende') → FEJL
+08:49:48   sammensat n.mid.7 + s.round.word.ones: 's7v enere' CER 0.250 (wav2vec2, whisper: 'Syv i en år') → FEJL
+08:49:48   master n.mid.7 får skylden i n.mid.7 + s.round.word.ones; s.round.word.ones prøver en anden partner
+08:49:52   sammensat n.mid.7 + s.round.word.tens: '7 tirer' CER 0.250 (wav2vec2, whisper: '7 til J') → FEJL
+08:49:52   sammensat n.mid.7 + s.ui.close: '7 luk' CER 0.000 (wav2vec2) → ok
+08:49:56   sammensat n.mid.7 + s.ui.dock.books: '7 bøger' CER 0.000 (whisper, wav2vec2: 's7v bøger') → ok
+08:50:01   sammensat n.mid.7 + s.ui.dock.wardrobe: 'syv garteråbe' CER 0.167 (wav2vec2, whisper: 'Syv gaderobet') → FEJL
+08:50:06   sammensat n.mid.7 + s.ui.hint: '7 Få hjælp' CER 0.000 (whisper, wav2vec2: 'sy få hjælp') → ok
+08:50:09 ✅ EOS token detected! Stopping generation at step 20
+08:50:18 kald single k=1 t2 'Det er,': 11.5 s for 0.76 s lyd
+08:50:18   frag.det_er t2: 0.47 s (forhold 0.76) -18.04 LUFS, none: 'None' CER None (None) → ok
+08:50:24 ✅ EOS token detected! Stopping generation at step 50
+08:50:34 kald carrier k=1 t3 'Tallet er fireogtredive.': 15.9 s for 1.96 s lyd
+08:50:35   n.end.34 t3: 0.82 s (forhold 0.43) -18.08 LUFS, carrier: 'tallet er 34' CER 0.0 (wav2vec2) → ok
+08:50:40 ✅ EOS token detected! Stopping generation at step 26
+08:50:49 kald single k=1 t2 'Spinne': 14.3 s for 1.00 s lyd
+08:50:50   name.animal.cat.2 t2: 0.50 s (forhold 0.80) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:50:52 ✅ EOS token detected! Stopping generation at step 22
+08:51:10 kald single k=1 t2 'Kanel': 20.8 s for 0.84 s lyd
+08:51:11   name.animal.cat.3 t2: 0.45 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:51:19 ✅ EOS token detected! Stopping generation at step 28
+08:51:49 kald single k=1 t2 'Ildfred': 37.7 s for 1.08 s lyd
+08:51:50   name.animal.dragon.1 t2: 0.53 s (forhold 0.84) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:52:00 ✅ EOS token detected! Stopping generation at step 33
+08:52:25 kald single k=1 t2 'Smaragd': 35.6 s for 1.28 s lyd
+08:52:26   name.animal.dragon.2 t2: 0.63 s (forhold 1.01) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:52:30 ✅ EOS token detected! Stopping generation at step 27
+08:52:40 kald single k=1 t2 'Kinne': 13.8 s for 1.04 s lyd
+08:52:40   name.animal.hamster.1 t2: 0.35 s (forhold 0.56) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:52:43 ✅ EOS token detected! Stopping generation at step 22
+08:52:52 kald single k=1 t2 'Nøddi': 11.9 s for 0.84 s lyd
+08:52:52   name.animal.hamster.3 t2: 0.47 s (forhold 0.76) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:52:56 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:52:56 ✅ EOS token detected! Stopping generation at step 24
+08:53:07 kald single k=1 t2 'Pusle': 14.5 s for 0.92 s lyd
+08:53:07   name.animal.hamster.4 t2: 0.25 s (forhold 0.40) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:53:12 ✅ EOS token detected! Stopping generation at step 26
+08:53:22 kald single k=1 t2 'Snude': 14.3 s for 1.00 s lyd
+08:53:22   name.animal.hedgehog.4 t2: 0.64 s (forhold 1.02) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:53:26 ✅ EOS token detected! Stopping generation at step 29
+08:53:35 kald single k=1 t2 'Trøffel': 13.0 s for 1.12 s lyd
+08:53:35   name.animal.hedgehog.8 t2: 0.53 s (forhold 0.85) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:53:38 ✅ EOS token detected! Stopping generation at step 26
+08:53:47 kald single k=1 t2 'Karamel': 12.3 s for 1.00 s lyd
+08:53:48   name.animal.horse.5 t2: 0.47 s (forhold 0.50) -18.12 LUFS, none: 'None' CER None (None) → ok
+08:53:52 ✅ EOS token detected! Stopping generation at step 25
+08:54:02 kald single k=1 t2 'Uldi': 13.7 s for 0.96 s lyd
+08:54:02   name.animal.lamb.1 t2: 0.41 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:54:06 ✅ EOS token detected! Stopping generation at step 27
+08:54:14 kald single k=1 t2 'Fnug': 12.3 s for 1.04 s lyd
+08:54:15   name.animal.lamb.3 t2: 0.49 s (forhold 1.59) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:54:18 ✅ EOS token detected! Stopping generation at step 26
+08:54:26 kald single k=1 t2 'Vatte': 11.9 s for 1.00 s lyd
+08:54:27   name.animal.lamb.6 t2: 0.41 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:54:31 ✅ EOS token detected! Stopping generation at step 28
+08:54:39 kald single k=1 t2 'Bogorm': 12.5 s for 1.08 s lyd
+08:54:40   name.animal.owl.1 t2: 0.47 s (forhold 0.75) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:54:43 ✅ EOS token detected! Stopping generation at step 27
+08:54:52 kald single k=1 t2 'Tumle': 12.6 s for 1.04 s lyd
+08:54:53   name.animal.panda.2 t2: 0.41 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:54:56 ✅ EOS token detected! Stopping generation at step 25
+08:55:04 kald single k=1 t2 'Bolsje': 11.9 s for 0.96 s lyd
+08:55:05   name.animal.panda.6 t2: 0.48 s (forhold 0.77) -18.06 LUFS, none: 'None' CER None (None) → ok
+08:55:08 ✅ EOS token detected! Stopping generation at step 23
+08:55:17 kald single k=1 t2 'Vinge': 12.4 s for 0.88 s lyd
+08:55:18   name.animal.pegasus.1 t2: 0.35 s (forhold 0.56) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:55:21 ✅ EOS token detected! Stopping generation at step 30
+08:55:30 kald single k=1 t2 'Zefyr': 12.4 s for 1.16 s lyd
+08:55:30   name.animal.pegasus.6 t2: 0.60 s (forhold 0.96) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:55:34 ✅ EOS token detected! Stopping generation at step 28
+08:55:43 kald single k=1 t2 'Vralte': 12.3 s for 1.08 s lyd
+08:55:43   name.animal.penguin.1 t2: 0.53 s (forhold 0.84) -18.16 LUFS, none: 'None' CER None (None) → ok
+08:55:47 ✅ EOS token detected! Stopping generation at step 29
+08:55:55 kald single k=1 t2 'Tøffel': 12.1 s for 1.12 s lyd
+08:55:55   name.animal.penguin.5 t2: 0.49 s (forhold 0.78) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:55:59 ✅ EOS token detected! Stopping generation at step 26
+08:56:07 kald single k=1 t2 'Brummer': 11.6 s for 1.00 s lyd
+08:56:07   name.animal.polarbear.2 t2: 0.41 s (forhold 0.65) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:56:11 ✅ EOS token detected! Stopping generation at step 26
+08:56:19 kald single k=1 t2 'Snehild': 12.1 s for 1.00 s lyd
+08:56:20   name.animal.polarbear.4 t2: 0.65 s (forhold 1.03) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:56:23 ✅ EOS token detected! Stopping generation at step 24
+08:56:32 kald single k=1 t2 'Logre': 12.2 s for 0.92 s lyd
+08:56:32   name.animal.puppy.1 t2: 0.42 s (forhold 0.68) -18.07 LUFS, none: 'None' CER None (None) → ok
+08:56:36 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:56:36 ✅ EOS token detected! Stopping generation at step 29
+08:56:45 kald single k=1 t2 'Fiks': 12.8 s for 1.12 s lyd
+08:56:45   name.animal.puppy.3 t2: 0.48 s (forhold 1.55) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:56:49 ✅ EOS token detected! Stopping generation at step 26
+08:56:57 kald single k=1 t2 'Bomuld': 11.9 s for 1.00 s lyd
+08:56:58   name.animal.rabbit.4 t2: 0.45 s (forhold 0.72) -18.07 LUFS, none: 'None' CER None (None) → ok
+08:57:02 ✅ EOS token detected! Stopping generation at step 30
+08:57:10 kald single k=1 t2 'Sølvlok': 12.4 s for 1.16 s lyd
+08:57:10   name.animal.unicorn.2 t2: 0.64 s (forhold 1.02) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:57:16 ✅ EOS token detected! Stopping generation at step 30
+08:57:25 kald single k=1 t2 'Luna': 14.7 s for 1.16 s lyd
+08:57:25   name.animal.unicorn.3 t2: 0.50 s (forhold 0.80) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:57:29 ✅ EOS token detected! Stopping generation at step 29
+08:57:37 kald single k=1 t2 'Snefnug': 11.3 s for 1.12 s lyd
+08:57:37   name.animal.unicorn.6 t2: 0.76 s (forhold 1.21) -18.04 LUFS, none: 'None' CER None (None) → ok
+08:57:41 ✅ EOS token detected! Stopping generation at step 33
+08:57:50 kald single k=1 t2 'Feja': 12.7 s for 1.28 s lyd
+08:57:50   name.animal.unicorn.7 t2: 0.47 s (forhold 0.76) -18.1 LUFS, none: 'None' CER None (None) → ok
+08:57:53 ✅ EOS token detected! Stopping generation at step 25
+08:58:01 kald single k=1 t2 'golden': 11.4 s for 0.96 s lyd
+08:58:02   name.color.puppy.c1 t2: 0.56 s (forhold 0.89) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:58:06 ✅ EOS token detected! Stopping generation at step 33
+08:58:15 kald single k=1 t2 'karamel': 13.5 s for 1.28 s lyd
+08:58:16   name.color.rabbit.c5 t2: 0.46 s (forhold 0.49) -18.13 LUFS, none: 'None' CER None (None) → ok
+08:58:19 ✅ EOS token detected! Stopping generation at step 21
+08:58:27 kald single k=1 t2 'Hue': 10.7 s for 0.80 s lyd
+08:58:27   name.item.hverdag-head t2: 0.41 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:58:31 ✅ EOS token detected! Stopping generation at step 34
+08:58:40 kald single k=1 t2 'Fe-vinger': 12.8 s for 1.32 s lyd
+08:58:40   name.item.milepael-fevinger t2: 0.73 s (forhold 0.78) -18.08 LUFS, none: 'None' CER None (None) → ok
+08:58:45 ✅ EOS token detected! Stopping generation at step 38
+08:58:54 kald single k=1 t2 'Glimmerbluse': 13.8 s for 1.48 s lyd
+08:58:54   name.item.milepael-glimmerbluse t2: 0.75 s (forhold 0.60) -18.13 LUFS, none: 'None' CER None (None) → ok
+08:59:00 ✅ EOS token detected! Stopping generation at step 41
+08:59:08 kald single k=1 t2 'Legendekronen': 14.1 s for 1.60 s lyd
+08:59:09   name.item.milepael-krone t2: 1.05 s (forhold 0.67) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:59:14 ✅ EOS token detected! Stopping generation at step 39
+08:59:23 kald single k=1 t2 'Regnbuehue': 14.2 s for 1.52 s lyd
+08:59:24   name.item.milepael-regnbuehue t2: 0.94 s (forhold 0.60) -18.04 LUFS, none: 'None' CER None (None) → ok
+08:59:29 ✅ EOS token detected! Stopping generation at step 41
+08:59:38 kald single k=1 t2 'Pirattrøje': 14.0 s for 1.60 s lyd
+08:59:38   name.item.pirat-body t2: 0.91 s (forhold 0.73) -18.2 LUFS, none: 'None' CER None (None) → ok
+08:59:43 ✅ EOS token detected! Stopping generation at step 39
+08:59:52 kald single k=1 t2 'Tyvestien': 14.2 s for 1.52 s lyd
+08:59:53   name.region.w0-tal20 t2: 0.84 s (forhold 0.67) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:59:56 ✅ EOS token detected! Stopping generation at step 26
+09:00:05 kald single k=1 t2 'en cirkel.': 12.2 s for 1.00 s lyd
+09:00:05   noun.shape.circle.indef.end t2: 0.62 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:00:09 ✅ EOS token detected! Stopping generation at step 29
+09:00:17 kald single k=1 t2 'bold,': 11.8 s for 1.12 s lyd
+09:00:17   noun.thing.ball.sg t2: 0.38 s (forhold 1.21) -18.14 LUFS, none: 'None' CER None (None) → ok
+09:00:20 ✅ EOS token detected! Stopping generation at step 23
+09:00:28 kald single k=1 t2 'gulerod,': 11.0 s for 0.88 s lyd
+09:00:29   noun.thing.carrot.sg t2: 0.50 s (forhold 0.54) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:00:32 ✅ EOS token detected! Stopping generation at step 26
+09:00:41 kald single k=1 t2 'klods,': 12.0 s for 1.00 s lyd
+09:00:41   noun.thing.cube.sg t2: 0.56 s (forhold 1.79) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:00:46 ✅ EOS token detected! Stopping generation at step 44
+09:00:57 kald single k=1 t2 'Tæl baglæns fra,': 16.0 s for 1.72 s lyd
+09:00:58   s.order20.countBack t2: 0.94 s (forhold 0.75) -18.08 LUFS, none: 'None' CER None (None) → ok
+09:01:04 ✅ EOS token detected! Stopping generation at step 41
+09:01:14 kald single k=1 t2 'Tæl videre fra,': 16.0 s for 1.60 s lyd
+09:01:14   s.order20.countOn t2: 0.85 s (forhold 0.55) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:01:19 ✅ EOS token detected! Stopping generation at step 37
+09:01:28 kald single k=1 t2 'Eventyrer,': 13.7 s for 1.44 s lyd
+09:01:28   s.reward.title.10 t2: 0.73 s (forhold 0.59) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:01:32 ✅ EOS token detected! Stopping generation at step 31
+09:01:41 kald single k=1 t1 'Talspejder,': 12.3 s for 1.20 s lyd
+09:01:41   s.reward.title.15 t1: 0.77 s (forhold 0.82) -18.15 LUFS, none: 'None' CER None (None) → ok
+09:01:47 ✅ EOS token detected! Stopping generation at step 44
+09:01:56 kald single k=1 t2 'Talvenne-legende,': 14.7 s for 1.72 s lyd
+09:01:56   s.reward.title.50 t2: 1.07 s (forhold 0.57) -18.19 LUFS, none: 'None' CER None (None) → ok
+09:01:59 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+09:01:59 ✅ EOS token detected! Stopping generation at step 20
+09:02:45 kald single k=1 t2 'tiere,': 49.1 s for 0.76 s lyd
+09:02:48   s.round.word.tens t2: 0.13 s (forhold 0.14) -18.02 LUFS, none: 'None' CER None (None) → FEJL varighed
+09:02:58 ✅ EOS token detected! Stopping generation at step 32
+09:03:19 kald single k=1 t2 'Garderobe': 30.5 s for 1.24 s lyd
+09:03:19   s.ui.dock.wardrobe t2: 0.64 s (forhold 0.51) -18.13 LUFS, none: 'None' CER None (None) → ok
+09:03:19 sammensætning runde 2: 432 af 485 bestået
+09:03:20   sammensat frag.det_er + n.end.5: 'det er 5' CER 0.000 (wav2vec2) → ok
+09:03:20   sammensat frag.det_er + n.end.4: 'det er 4' CER 0.000 (wav2vec2) → ok
+09:03:21   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.34: 'hvad er 7 plus 34' CER 0.000 (wav2vec2) → ok
+09:03:22   sammensat frag.find_tallet + n.end.34: 'finn tallet 34' CER 0.043 (wav2vec2) → ok
+09:03:35   sammensat frag.det_er + name.animal.cat.2: 'det er spændende' CER 0.364 (wav2vec2, whisper: 'Det er spændende') → FEJL
+09:03:35   sammensat frag.det_er + name.animal.cat.3: 'det er kanel' CER 0.000 (wav2vec2) → ok
+09:03:41   sammensat frag.det_er + name.animal.dragon.1: 'det er i fred' CER 0.167 (wav2vec2, whisper: 'Det er Erik Fred') → FEJL
+09:03:46   sammensat frag.det_er + name.animal.dragon.2: 'det er smaret' CER 0.250 (wav2vec2, whisper: 'Det er smart') → FEJL
+09:03:50   sammensat frag.det_er + name.animal.hamster.1: 'det er kine' CER 0.100 (wav2vec2, whisper: 'Det er Kina') → FEJL
+09:03:57   sammensat frag.det_er + name.animal.hamster.3: 'det er nøe d' CER 0.200 (wav2vec2, whisper: 'Det er nøddygtigt') → FEJL
+09:04:04   sammensat frag.det_er + name.animal.hamster.4: 'det er poi' CER 0.400 (wav2vec2, whisper: 'Det er på skødet') → FEJL
+09:04:09   sammensat frag.det_er + name.animal.hedgehog.4: 'det er snuet' CER 0.200 (wav2vec2, whisper: 'Det er snoet') → FEJL
+09:04:15   sammensat frag.det_er + name.animal.hedgehog.8: 'det er trefy' CER 0.333 (wav2vec2, whisper: 'Det er trøffet') → FEJL
+09:04:20   sammensat frag.det_er + name.animal.horse.5: 'Det er karamel' CER 0.000 (whisper, wav2vec2: 'det er karamild') → ok
+09:04:24   sammensat frag.det_er + name.animal.lamb.1: 'det er olid' CER 0.333 (wav2vec2, whisper: 'Det er HLG') → FEJL
+09:04:29   sammensat frag.det_er + name.animal.lamb.3: 'det er fno' CER 0.222 (wav2vec2, whisper: 'Det er fnog') → FEJL
+09:04:34   sammensat frag.det_er + name.animal.lamb.6: 'det er vad det' CER 0.300 (wav2vec2, whisper: 'Det er hvad det') → FEJL
+09:04:34   sammensat frag.det_er + name.animal.owl.1: 'det er bogorm' CER 0.000 (wav2vec2) → ok
+09:04:34   sammensat frag.det_er + name.animal.panda.2: 'det er tumle' CER 0.000 (wav2vec2) → ok
+09:04:39   sammensat frag.det_er + name.animal.panda.6: 'det er beusche' CER 0.364 (wav2vec2, whisper: 'Det er Beusche') → FEJL
+09:04:44   sammensat frag.det_er + name.animal.pegasus.1: 'det er linge' CER 0.100 (wav2vec2, whisper: 'Det er længe') → FEJL
+09:04:49   sammensat frag.det_er + name.animal.pegasus.6: 'det er cefyr' CER 0.100 (wav2vec2, whisper: 'Det er se fyr') → FEJL
+09:04:53   sammensat frag.det_er + name.animal.penguin.1: 'det er fraldrig' CER 0.455 (wav2vec2, whisper: 'Det er vreddet') → FEJL
+09:04:58   sammensat frag.det_er + name.animal.penguin.5: 'det er tøfy' CER 0.273 (wav2vec2, whisper: 'Det er tøffet') → FEJL
+09:05:03   sammensat frag.det_er + name.animal.polarbear.2: 'det er prommer' CER 0.167 (wav2vec2, whisper: 'Det er prohmer') → FEJL
+09:05:07   sammensat frag.det_er + name.animal.polarbear.4: 'det er sne helt' CER 0.167 (wav2vec2, whisper: 'Det er snehelt') → FEJL
+09:05:11   sammensat frag.det_er + name.animal.puppy.1: 'det er lockre' CER 0.200 (wav2vec2, whisper: 'Det er lokker') → FEJL
+09:05:15   sammensat frag.det_er + name.animal.puppy.3: 'det er fixs' CER 0.111 (wav2vec2, whisper: 'Det er fix') → FEJL
+09:05:21   sammensat frag.det_er + name.animal.rabbit.4: 'det er bormol' CER 0.273 (wav2vec2, whisper: 'Det er bare mål') → FEJL
+09:05:26   sammensat frag.det_er + name.animal.unicorn.2: 'det er sellock' CER 0.250 (wav2vec2, whisper: 'Det er Søllok') → FEJL
+09:05:30   sammensat frag.det_er + name.animal.unicorn.3: 'det er lona' CER 0.111 (wav2vec2, whisper: 'Det er Lona') → FEJL
+09:05:35   sammensat frag.det_er + name.animal.unicorn.6: 'det er sne fnok' CER 0.167 (wav2vec2, whisper: 'Det er Snefnok') → FEJL
+09:05:39   sammensat frag.det_er + name.animal.unicorn.7: 'det er faja' CER 0.111 (wav2vec2, whisper: 'Det er far ja') → FEJL
+09:05:43   sammensat frag.det_er + name.color.puppy.c1: 'Det er Golden' CER 0.000 (whisper, wav2vec2: 'det er gulgen') → ok
+09:05:47   sammensat frag.det_er + name.color.rabbit.c5: 'det er kar mæld' CER 0.250 (wav2vec2, whisper: 'Det er Carmel') → FEJL
+09:05:52   sammensat frag.det_er + name.item.hverdag-head: 'det er phovede' CER 0.625 (wav2vec2, whisper: 'Det er hoved') → FEJL
+09:05:57   sammensat frag.det_er + name.item.milepael-fevinger: 'Det er fevinger' CER 0.000 (whisper, wav2vec2: 'det er f vinger') → ok
+09:06:02   sammensat frag.det_er + name.item.milepael-glimmerbluse: 'det er glimmerblose' CER 0.059 (wav2vec2, whisper: 'Det er glemmerbluse') → FEJL
+09:06:08   sammensat frag.det_er + name.item.milepael-krone: 'det er len de kronen' CER 0.111 (wav2vec2, whisper: 'Det er legemmekronen') → FEJL
+09:06:13   sammensat frag.det_er + name.item.milepael-regnbuehue: 'det er reinbo hoved' CER 0.400 (wav2vec2, whisper: 'Det er har en bog i hovedet') → FEJL
+09:06:13   sammensat frag.det_er + name.item.pirat-body: 'det er pirattrøje' CER 0.000 (wav2vec2) → ok
+09:06:18   sammensat frag.det_er + name.region.w0-tal20: 'det er 20 stien' CER 0.000 (wav2vec2, whisper: 'Det er 20 stien') → FEJL
+09:06:23   sammensat frag.det_er + noun.shape.circle.indef.end: 'Det er en cirkel' CER 0.000 (whisper, wav2vec2: 'det er en cirke') → ok
+09:06:27   sammensat frag.det_er + noun.thing.ball.sg: 'Det er bold' CER 0.000 (whisper, wav2vec2: 'det er voldt') → ok
+09:06:31   sammensat frag.det_er + noun.thing.carrot.sg: 'det er gullerød' CER 0.167 (wav2vec2, whisper: 'Det er Gullerød') → FEJL
+09:06:36   sammensat frag.det_er + noun.thing.cube.sg: 'det er clos' CER 0.200 (wav2vec2, whisper: 'Det er kiosk') → FEJL
+09:06:41   sammensat frag.det_er + s.order20.countBack: 'det er talbarolins fra' CER 0.222 (wav2vec2, whisper: 'Det er tal baglæns fra') → FEJL
+09:06:46   sammensat frag.det_er + s.order20.countOn: 'det er til viderefra' CER 0.059 (wav2vec2, whisper: 'Det er tal videre fra') → FEJL
+09:06:50   sammensat frag.det_er + s.reward.title.10: 'det er eventyre' CER 0.071 (wav2vec2, whisper: 'Det er eventyr') → FEJL
+09:06:51   sammensat frag.det_er + s.reward.title.15: 'det er talspejder' CER 0.000 (wav2vec2) → ok
+09:06:56   sammensat frag.det_er + s.reward.title.20: 'det er egnemster' CER 0.125 (wav2vec2, whisper: 'Det er Hegnemester') → FEJL
+09:06:56   sammensat frag.det_er + s.reward.title.50: 'det er talvendelegende' CER 0.050 (wav2vec2) → ok
+09:06:57   sammensat frag.det_er + s.round.word.ones: 'det er enere' CER 0.000 (wav2vec2) → ok
+09:07:01   sammensat frag.det_er + s.ui.dock.wardrobe: 'det er gaderobe' CER 0.071 (wav2vec2, whisper: 'Det er garderobet') → FEJL
+09:07:05 ✅ EOS token detected! Stopping generation at step 25
+09:07:13 kald single k=1 t3 'Spinne': 11.7 s for 0.96 s lyd
+09:07:13   name.animal.cat.2 t3: 0.49 s (forhold 0.78) -18.11 LUFS, none: 'None' CER None (None) → ok
+09:07:17 ✅ EOS token detected! Stopping generation at step 25
+09:07:25 kald single k=1 t3 'Ildfred': 11.9 s for 0.96 s lyd
+09:07:26   name.animal.dragon.1 t3: 0.54 s (forhold 0.86) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:07:30 ✅ EOS token detected! Stopping generation at step 33
+09:07:39 kald single k=1 t3 'Smaragd': 13.1 s for 1.28 s lyd
+09:07:39   name.animal.dragon.2 t3: 0.61 s (forhold 0.97) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:07:41 ✅ EOS token detected! Stopping generation at step 18
+09:07:50 kald single k=1 t3 'Kinne': 11.0 s for 0.68 s lyd
+09:07:50   name.animal.hamster.1 t3: 0.40 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:07:55 ✅ EOS token detected! Stopping generation at step 25
+09:08:03 kald single k=1 t3 'Nøddi': 13.1 s for 0.96 s lyd
+09:08:04   name.animal.hamster.3 t3: 0.52 s (forhold 0.84) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:08:06 ✅ EOS token detected! Stopping generation at step 20
+09:08:16 kald single k=1 t3 'Pusle': 12.4 s for 0.76 s lyd
+09:08:17   name.animal.hamster.4 t3: 0.47 s (forhold 0.75) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:08:20 ✅ EOS token detected! Stopping generation at step 24
+09:08:29 kald single k=1 t3 'Snude': 12.4 s for 0.92 s lyd
+09:08:29   name.animal.hedgehog.4 t3: 0.62 s (forhold 1.00) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:08:33 ✅ EOS token detected! Stopping generation at step 25
+09:08:41 kald single k=1 t3 'Trøffel': 11.5 s for 0.96 s lyd
+09:08:41   name.animal.hedgehog.8 t3: 0.45 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:08:44 ✅ EOS token detected! Stopping generation at step 24
+09:08:53 kald single k=1 t3 'Uldi': 11.7 s for 0.92 s lyd
+09:08:53   name.animal.lamb.1 t3: 0.41 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:08:56 ✅ EOS token detected! Stopping generation at step 22
+09:09:04 kald single k=1 t3 'Fnug': 11.2 s for 0.84 s lyd
+09:09:05   name.animal.lamb.3 t3: 0.36 s (forhold 1.17) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:09:08 ✅ EOS token detected! Stopping generation at step 24
+09:09:16 kald single k=1 t3 'Vatte': 11.7 s for 0.92 s lyd
+09:09:17   name.animal.lamb.6 t3: 0.40 s (forhold 0.63) -18.15 LUFS, none: 'None' CER None (None) → ok
+09:09:20 ✅ EOS token detected! Stopping generation at step 28
+09:09:29 kald single k=1 t3 'Bolsje': 12.3 s for 1.08 s lyd
+09:09:29   name.animal.panda.6 t3: 0.46 s (forhold 0.73) -18.15 LUFS, none: 'None' CER None (None) → ok
+09:09:32 ✅ EOS token detected! Stopping generation at step 22
+09:09:40 kald single k=1 t3 'Vinge': 11.2 s for 0.84 s lyd
+09:09:41   name.animal.pegasus.1 t3: 0.38 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:09:45 ✅ EOS token detected! Stopping generation at step 32
+09:09:54 kald single k=1 t3 'Zefyr': 13.1 s for 1.24 s lyd
+09:09:54   name.animal.pegasus.6 t3: 0.62 s (forhold 1.00) -18.09 LUFS, none: 'None' CER None (None) → ok
+09:09:59 ✅ EOS token detected! Stopping generation at step 36
+09:10:08 kald single k=1 t3 'Vralte': 13.8 s for 1.40 s lyd
+09:10:08   name.animal.penguin.1 t3: 0.53 s (forhold 0.85) -18.14 LUFS, none: 'None' CER None (None) → ok
+09:10:11 ✅ EOS token detected! Stopping generation at step 21
+09:10:19 kald single k=1 t3 'Tøffel': 11.0 s for 0.80 s lyd
+09:10:20   name.animal.penguin.5 t3: 0.47 s (forhold 0.76) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:10:23 ✅ EOS token detected! Stopping generation at step 23
+09:10:31 kald single k=1 t3 'Brummer': 11.2 s for 0.88 s lyd
+09:10:31   name.animal.polarbear.2 t3: 0.43 s (forhold 0.69) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:10:35 ✅ EOS token detected! Stopping generation at step 28
+09:10:44 kald single k=1 t3 'Snehild': 12.6 s for 1.08 s lyd
+09:10:44   name.animal.polarbear.4 t3: 0.62 s (forhold 0.99) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:10:48 ✅ EOS token detected! Stopping generation at step 29
+09:10:56 kald single k=1 t3 'Logre': 11.6 s for 1.12 s lyd
+09:10:56   name.animal.puppy.1 t3: 0.46 s (forhold 0.74) -18.05 LUFS, none: 'None' CER None (None) → ok
+09:11:00 ✅ EOS token detected! Stopping generation at step 30
+09:11:10 kald single k=1 t3 'Fiks': 13.3 s for 1.16 s lyd
+09:11:10   name.animal.puppy.3 t3: 0.44 s (forhold 1.42) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:11:14 ✅ EOS token detected! Stopping generation at step 28
+09:11:23 kald single k=1 t3 'Bomuld': 12.8 s for 1.08 s lyd
+09:11:23   name.animal.rabbit.4 t3: 0.42 s (forhold 0.68) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:11:27 ✅ EOS token detected! Stopping generation at step 27
+09:11:38 kald single k=1 t3 'Sølvlok': 14.3 s for 1.04 s lyd
+09:11:38   name.animal.unicorn.2 t3: 0.66 s (forhold 1.05) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:11:41 ✅ EOS token detected! Stopping generation at step 22
+09:11:49 kald single k=1 t3 'Luna': 11.0 s for 0.84 s lyd
+09:11:49   name.animal.unicorn.3 t3: 0.49 s (forhold 0.78) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:11:53 ✅ EOS token detected! Stopping generation at step 28
+09:12:01 kald single k=1 t3 'Snefnug': 12.1 s for 1.08 s lyd
+09:12:02   name.animal.unicorn.6 t3: 0.72 s (forhold 1.15) -18.05 LUFS, none: 'None' CER None (None) → ok
+09:12:05 ✅ EOS token detected! Stopping generation at step 30
+09:12:14 kald single k=1 t3 'Feja': 12.1 s for 1.16 s lyd
+09:12:14   name.animal.unicorn.7 t3: 0.48 s (forhold 0.77) -18.14 LUFS, none: 'None' CER None (None) → ok
+09:12:18 ✅ EOS token detected! Stopping generation at step 26
+09:12:27 kald single k=1 t3 'karamel': 12.9 s for 1.00 s lyd
+09:12:27   name.color.rabbit.c5 t3: 0.50 s (forhold 0.54) -18.08 LUFS, none: 'None' CER None (None) → ok
+09:12:31 ✅ EOS token detected! Stopping generation at step 24
+09:12:39 kald single k=1 t3 'Hue': 11.6 s for 0.92 s lyd
+09:12:39   name.item.hverdag-head t3: 0.42 s (forhold 0.68) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:12:44 ✅ EOS token detected! Stopping generation at step 36
+09:12:53 kald single k=1 t3 'Glimmerbluse': 13.8 s for 1.40 s lyd
+09:12:54   name.item.milepael-glimmerbluse t3: 0.84 s (forhold 0.67) -18.03 LUFS, none: 'None' CER None (None) → ok
+09:12:59 ✅ EOS token detected! Stopping generation at step 41
+09:13:08 kald single k=1 t3 'Legendekronen': 14.1 s for 1.60 s lyd
+09:13:08   name.item.milepael-krone t3: 0.97 s (forhold 0.62) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:13:13 ✅ EOS token detected! Stopping generation at step 40
+09:13:22 kald single k=1 t3 'Regnbuehue': 14.3 s for 1.56 s lyd
+09:13:23   name.item.milepael-regnbuehue t3: 0.96 s (forhold 0.61) -18.1 LUFS, none: 'None' CER None (None) → ok
+09:13:27 ✅ EOS token detected! Stopping generation at step 38
+09:13:36 kald single k=1 t3 'Tyvestien': 13.5 s for 1.48 s lyd
+09:13:37   name.region.w0-tal20 t3: 0.79 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:13:41 ✅ EOS token detected! Stopping generation at step 29
+09:13:49 kald single k=1 t3 'gulerod,': 12.5 s for 1.12 s lyd
+09:13:50   noun.thing.carrot.sg t3: 0.45 s (forhold 0.48) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:13:54 ✅ EOS token detected! Stopping generation at step 31
+09:14:03 kald single k=1 t3 'klods,': 13.6 s for 1.20 s lyd
+09:14:04   noun.thing.cube.sg t3: 0.55 s (forhold 1.77) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:14:10 ✅ EOS token detected! Stopping generation at step 43
+09:14:20 kald single k=1 t3 'Tæl baglæns fra,': 16.6 s for 1.68 s lyd
+09:14:21   s.order20.countBack t3: 0.99 s (forhold 0.79) -18.05 LUFS, none: 'None' CER None (None) → ok
+09:14:27 ✅ EOS token detected! Stopping generation at step 41
+09:14:37 kald single k=1 t3 'Tæl videre fra,': 16.0 s for 1.60 s lyd
+09:14:37   s.order20.countOn t3: 0.98 s (forhold 0.63) -18.09 LUFS, none: 'None' CER None (None) → ok
+09:14:41 ✅ EOS token detected! Stopping generation at step 29
+09:14:51 kald single k=1 t3 'Eventyrer,': 14.1 s for 1.12 s lyd
+09:14:52   s.reward.title.10 t3: 0.68 s (forhold 0.55) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:14:56 ✅ EOS token detected! Stopping generation at step 31
+09:15:06 kald single k=1 t1 'Regnemester,': 13.8 s for 1.20 s lyd
+09:15:06   s.reward.title.20 t1: 0.75 s (forhold 0.60) -18.15 LUFS, none: 'None' CER None (None) → ok
+09:15:08 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+09:15:08 ✅ EOS token detected! Stopping generation at step 16
+09:15:17 kald single k=1 t3 'tiere,': 10.7 s for 0.60 s lyd
+09:15:17   s.round.word.tens t3: 0.29 s (forhold 0.31) -18.0 LUFS, none: 'None' CER None (None) → FEJL varighed
+09:15:21 ✅ EOS token detected! Stopping generation at step 32
+09:15:31 kald single k=1 t3 'Garderobe': 13.6 s for 1.24 s lyd
+09:15:31   s.ui.dock.wardrobe t3: 0.63 s (forhold 0.51) -18.08 LUFS, none: 'None' CER None (None) → ok
+09:15:31 sammensætning runde 3: 446 af 485 bestået
+09:15:36   sammensat frag.det_er + name.animal.cat.2: 'det er spændende' CER 0.364 (wav2vec2, whisper: 'Det er spændende') → FEJL
+09:15:42   sammensat frag.det_er + name.animal.dragon.1: 'det er illi fred' CER 0.167 (wav2vec2, whisper: 'Det er Ild i fred') → FEJL
+09:15:47   sammensat frag.det_er + name.animal.dragon.2: 'det er smare hart' CER 0.333 (wav2vec2, whisper: 'Det er smart hat') → FEJL
+09:15:51   sammensat frag.det_er + name.animal.hamster.1: 'det er kinde' CER 0.100 (wav2vec2, whisper: 'Det er kinde') → FEJL
+09:15:55   sammensat frag.det_er + name.animal.hamster.3: 'det er nødig' CER 0.200 (wav2vec2, whisper: 'Det er nødig') → FEJL
+09:16:00   sammensat frag.det_er + name.animal.hamster.4: 'Det er pusle' CER 0.000 (whisper, wav2vec2: 'det er puschele') → ok
+09:16:01   sammensat frag.det_er + name.animal.hedgehog.4: 'det er snude' CER 0.000 (wav2vec2) → ok
+09:16:06   sammensat frag.det_er + name.animal.hedgehog.8: 'det er trefø' CER 0.333 (wav2vec2, whisper: 'Det er trøje fødder') → FEJL
+09:16:26   sammensat frag.det_er + name.animal.lamb.1: 'det er olid' CER 0.333 (wav2vec2, whisper: 'Det er hurtigt det') → FEJL
+09:16:48   sammensat frag.det_er + name.animal.lamb.3: 'det er fno' CER 0.222 (wav2vec2, whisper: 'Det er fnok') → FEJL
+09:16:59   sammensat frag.det_er + name.animal.lamb.6: 'det er vadde' CER 0.200 (wav2vec2, whisper: 'Det er vattet') → FEJL
+09:17:12   sammensat frag.det_er + name.animal.panda.6: 'det er beusche' CER 0.364 (wav2vec2, whisper: 'Det er Beusche') → FEJL
+09:17:22   sammensat frag.det_er + name.animal.pegasus.1: 'Det er vinge' CER 0.000 (whisper, wav2vec2: 'det er line') → ok
+09:17:32   sammensat frag.det_er + name.animal.pegasus.6: 'det er cfyr' CER 0.200 (wav2vec2, whisper: 'Det er se fyr') → FEJL
+09:17:40   sammensat frag.det_er + name.animal.penguin.1: 'det er vldig' CER 0.455 (wav2vec2, whisper: 'Det er Vrede') → FEJL
+09:17:49   sammensat frag.det_er + name.animal.penguin.5: 'det er t fy' CER 0.364 (wav2vec2, whisper: 'Det er Te Fø') → FEJL
+09:17:56   sammensat frag.det_er + name.animal.polarbear.2: 'Det er brummer' CER 0.000 (whisper, wav2vec2: 'det er brommer') → ok
+09:18:02   sammensat frag.det_er + name.animal.polarbear.4: 'det er sne helt' CER 0.167 (wav2vec2, whisper: 'Det er snehelt') → FEJL
+09:18:07   sammensat frag.det_er + name.animal.puppy.1: 'det er lockre' CER 0.200 (wav2vec2, whisper: 'Det er lokre') → FEJL
+09:18:15   sammensat frag.det_er + name.animal.puppy.3: 'det er vixs' CER 0.222 (wav2vec2, whisper: 'Det er Vix') → FEJL
+09:18:23   sammensat frag.det_er + name.animal.rabbit.4: 'det er bare måj' CER 0.545 (wav2vec2, whisper: 'Det er bare mod') → FEJL
+09:18:28   sammensat frag.det_er + name.animal.unicorn.2: 'det er sølock' CER 0.250 (wav2vec2, whisper: 'Det er Sherlock') → FEJL
+09:18:32   sammensat frag.det_er + name.animal.unicorn.3: 'det er lona' CER 0.111 (wav2vec2, whisper: 'Det er Lona') → FEJL
+09:18:37   sammensat frag.det_er + name.animal.unicorn.6: 'det er sne fnok' CER 0.167 (wav2vec2, whisper: 'Det er Snefnok') → FEJL
+09:18:41   sammensat frag.det_er + name.animal.unicorn.7: 'det er faja' CER 0.111 (wav2vec2, whisper: 'Det er Faya') → FEJL
+09:18:46   sammensat frag.det_er + name.color.rabbit.c5: 'det er karameld' CER 0.083 (wav2vec2, whisper: 'Det er Carmel') → FEJL
+09:18:50   sammensat frag.det_er + name.item.hverdag-head: 'det er hoe' CER 0.125 (wav2vec2, whisper: 'Det er hoved') → FEJL
+09:18:56   sammensat frag.det_er + name.item.milepael-glimmerbluse: 'det er glimerblose' CER 0.118 (wav2vec2, whisper: 'Det er glemmerbluse') → FEJL
+09:19:03   sammensat frag.det_er + name.item.milepael-krone: 'det er lene de kronen' CER 0.111 (wav2vec2, whisper: 'Det er legemmekronen') → FEJL
+09:19:09   sammensat frag.det_er + name.item.milepael-regnbuehue: 'det er reinbuhoved' CER 0.333 (wav2vec2, whisper: 'Det er regnbuehoved') → FEJL
+09:19:16   sammensat frag.det_er + name.region.w0-tal20: 'Det er tyvestien' CER 0.000 (whisper, wav2vec2: 'det er t0sten') → ok
+09:19:22   sammensat frag.det_er + noun.thing.carrot.sg: 'det er golerød' CER 0.167 (wav2vec2, whisper: 'Det er Gulerød') → FEJL
+09:19:27   sammensat frag.det_er + noun.thing.cube.sg: 'det er closs' CER 0.200 (wav2vec2, whisper: 'Det er klos') → FEJL
+09:19:32   sammensat frag.det_er + s.order20.countBack: 'det er til baglæns fra' CER 0.056 (wav2vec2, whisper: 'Det er til baglands fra') → FEJL
+09:19:37   sammensat frag.det_er + s.order20.countOn: 'det er til videre fra' CER 0.059 (wav2vec2, whisper: 'Det er til videre fra') → FEJL
+09:19:43   sammensat frag.det_er + s.reward.title.10: 'det er eventyre' CER 0.071 (wav2vec2, whisper: 'Det er eventyr') → FEJL
+09:19:44   sammensat frag.det_er + s.reward.title.20: 'det er regnemester' CER 0.000 (wav2vec2) → ok
+09:19:54   sammensat frag.det_er + s.ui.dock.wardrobe: 'det er garterobe' CER 0.071 (wav2vec2, whisper: 'Det er garderobet') → FEJL
+09:19:54 sammensætning runde 4: 452 af 485 bestået
+09:19:54 sammensætning runde 5: 452 af 485 bestået
+09:19:54   ✓ master frag.det_er t2 (bestået)
+09:19:54   ✓ master frag.hvad t0 (bestået)
+09:19:54   ✓ master frag.i_kurven t0 (bestået)
+09:19:54   ✓ master frag.laeg t0 (bestået)
+09:19:54   ✓ master frag.tryk_paa t0 (bestået)
+09:19:54   ✓ master hint.addsub.hopUpTo t0 (bestået)
+09:19:54   ✓ master hint.addsub.startOn t0 (bestået)
+09:19:54   ✓ master hint.hear20.tenAnd t0 (bestået)
+09:19:54   ✓ master hint.hear20.thisMany t0 (bestået)
+09:19:54   ✓ master hint.hear20.weSay t0 (bestået)
+09:19:54   ✓ master n.end.1.et t0 (bestået)
+09:19:54   ✓ master n.end.100 t0 (bestået)
+09:19:54   ✓ master n.end.21 t0 (bestået)
+09:19:54   ✓ master n.end.22 t0 (bestået)
+09:19:54   ✓ master n.end.23 t0 (bestået)
+09:19:54   ✓ master n.end.24 t0 (bestået)
+09:19:54   ✓ master n.end.25 t0 (bestået)
+09:19:54   ✓ master n.end.26 t0 (bestået)
+09:19:54   ✓ master n.end.27 t0 (bestået)
+09:19:54   ✓ master n.end.28 t0 (bestået)
+09:19:54   ✓ master n.end.29 t0 (bestået)
+09:19:54   ✓ master n.end.30 t1 (bestået)
+09:19:54   ✓ master n.end.31 t1 (bestået)
+09:19:54   ✓ master n.end.32 t1 (bestået)
+09:19:54   ✓ master n.end.33 t1 (bestået)
+09:19:54   ✓ master n.end.34 t3 (bestået)
+09:19:54   ✓ master n.end.35 t1 (bestået)
+09:19:54   ✓ master n.end.36 t1 (bestået)
+09:19:54   ✓ master n.end.37 t0 (bestået)
+09:19:54   ✓ master n.end.38 t0 (bestået)
+09:19:54   ✓ master n.end.39 t0 (bestået)
+09:19:54   ✓ master n.end.40 t0 (bestået)
+09:19:54   ✓ master n.end.41 t0 (bestået)
+09:19:54   ✓ master n.end.42 t0 (bestået)
+09:19:54   ✓ master n.end.43 t0 (bestået)
+09:19:54   ✓ master n.end.44 t0 (bestået)
+09:19:54   ✓ master n.end.45 t0 (bestået)
+09:19:54   ✓ master n.end.46 t0 (bestået)
+09:19:54   ✓ master n.end.47 t0 (bestået)
+09:19:54   ✓ master n.end.48 t0 (bestået)
+09:19:54   ✓ master n.end.49 t0 (bestået)
+09:19:54   ✓ master n.end.50 t0 (bestået)
+09:19:54   ✓ master n.end.51 t0 (bestået)
+09:19:54   ✓ master n.end.52 t0 (bestået)
+09:19:54   ✓ master n.end.53 t1 (bestået)
+09:19:54   ✓ master n.end.54 t1 (bestået)
+09:19:54   ✓ master n.end.55 t0 (bestået)
+09:19:54   ✓ master n.end.56 t0 (bestået)
+09:19:54   ✓ master n.end.57 t0 (bestået)
+09:19:54   ✓ master n.end.58 t1 (bestået)
+09:19:55   ✓ master n.end.59 t0 (bestået)
+09:19:55   ✓ master n.end.60 t0 (bestået)
+09:19:55   ✓ master n.end.61 t1 (bestået)
+09:19:55   ✓ master n.end.62 t0 (bestået)
+09:19:55   ✓ master n.end.63 t0 (bestået)
+09:19:55   ✓ master n.end.64 t0 (bestået)
+09:19:55   ✓ master n.end.65 t0 (bestået)
+09:19:55   ✓ master n.end.66 t0 (bestået)
+09:19:55   ✓ master n.end.67 t0 (bestået)
+09:19:55   ✓ master n.end.68 t1 (bestået)
+09:19:55   ✓ master n.end.69 t0 (bestået)
+09:19:55   ✓ master n.end.70 t0 (bestået)
+09:19:55   ✓ master n.end.71 t0 (bestået)
+09:19:55   ✓ master n.end.72 t0 (bestået)
+09:19:55   ✓ master n.end.73 t0 (bestået)
+09:19:55   ✓ master n.end.74 t0 (bestået)
+09:19:55   ✓ master n.end.75 t0 (bestået)
+09:19:55   ✓ master n.end.76 t0 (bestået)
+09:19:55   ✓ master n.end.77 t0 (bestået)
+09:19:55   ✓ master n.end.78 t0 (bestået)
+09:19:55   ✓ master n.end.79 t0 (bestået)
+09:19:55   ✓ master n.end.80 t1 (bestået)
+09:19:55   ✓ master n.end.81 t0 (bestået)
+09:19:55   ✓ master n.end.82 t0 (bestået)
+09:19:55   ✓ master n.end.83 t0 (bestået)
+09:19:55   ✓ master n.end.84 t0 (bestået)
+09:19:55   ✓ master n.end.85 t0 (bestået)
+09:19:55   ✓ master n.end.86 t0 (bestået)
+09:19:55   ✓ master n.end.87 t0 (bestået)
+09:19:55   ✓ master n.end.88 t0 (bestået)
+09:19:55   ✓ master n.end.89 t0 (bestået)
+09:19:55   ✓ master n.end.90 t0 (bestået)
+09:19:55   ✓ master n.end.91 t0 (bestået)
+09:19:55   ✓ master n.end.92 t0 (bestået)
+09:19:55   ✓ master n.end.93 t0 (bestået)
+09:19:55   ✓ master n.end.94 t0 (bestået)
+09:19:55   ✓ master n.end.95 t0 (bestået)
+09:19:55   ✓ master n.end.96 t0 (bestået)
+09:19:55   ✓ master n.end.97 t0 (bestået)
+09:19:55   ✓ master n.end.98 t0 (bestået)
+09:19:55   ✓ master n.end.99 t0 (bestået)
+09:19:55   ✓ master n.mid.1.et t0 (bestået)
+09:19:55   ✓ master n.mid.100 t0 (bestået)
+09:19:55   ✓ master n.mid.21 t0 (bestået)
+09:19:55   ✓ master n.mid.22 t0 (bestået)
+09:19:55   ✓ master n.mid.23 t0 (bestået)
+09:19:55   ✓ master n.mid.24 t0 (bestået)
+09:19:55   ✓ master n.mid.25 t0 (bestået)
+09:19:55   ✓ master n.mid.26 t0 (bestået)
+09:19:55   ✓ master n.mid.27 t0 (bestået)
+09:19:55   ✓ master n.mid.28 t0 (bestået)
+09:19:55   ✓ master n.mid.29 t0 (bestået)
+09:19:55   ✓ master n.mid.30 t1 (bestået)
+09:19:55   ✓ master n.mid.31 t1 (bestået)
+09:19:55   ✓ master n.mid.32 t1 (bestået)
+09:19:55   ✓ master n.mid.33 t1 (bestået)
+09:19:55   ✓ master n.mid.34 t1 (bestået)
+09:19:55   ✓ master n.mid.35 t1 (bestået)
+09:19:55   ✓ master n.mid.36 t1 (bestået)
+09:19:55   ✓ master n.mid.37 t0 (bestået)
+09:19:55   ✓ master n.mid.38 t0 (bestået)
+09:19:55   ✓ master n.mid.39 t0 (bestået)
+09:19:55   ✓ master n.mid.40 t0 (bestået)
+09:19:55   ✓ master n.mid.41 t0 (bestået)
+09:19:55   ✓ master n.mid.42 t0 (bestået)
+09:19:55   ✓ master n.mid.43 t0 (bestået)
+09:19:55   ✓ master n.mid.44 t0 (bestået)
+09:19:55   ✓ master n.mid.45 t0 (bestået)
+09:19:55   ✓ master n.mid.46 t0 (bestået)
+09:19:55   ✓ master n.mid.47 t0 (bestået)
+09:19:55   ✓ master n.mid.48 t0 (bestået)
+09:19:55   ✓ master n.mid.49 t0 (bestået)
+09:19:56   ✓ master n.mid.50 t1 (bestået)
+09:19:56   ✓ master n.mid.51 t0 (bestået)
+09:19:56   ✓ master n.mid.52 t1 (bestået)
+09:19:56   ✓ master n.mid.53 t1 (bestået)
+09:19:56   ✓ master n.mid.54 t1 (bestået)
+09:19:56   ✓ master n.mid.55 t0 (bestået)
+09:19:56   ✓ master n.mid.56 t0 (bestået)
+09:19:56   ✓ master n.mid.57 t0 (bestået)
+09:19:56   ✓ master n.mid.58 t0 (bestået)
+09:19:56   ✓ master n.mid.59 t0 (bestået)
+09:19:56   ✓ master n.mid.60 t1 (bestået)
+09:19:56   ✓ master n.mid.61 t1 (bestået)
+09:19:56   ✓ master n.mid.62 t1 (bestået)
+09:19:56   ✓ master n.mid.63 t1 (bestået)
+09:19:56   ✓ master n.mid.64 t0 (bestået)
+09:19:56   ✓ master n.mid.65 t0 (bestået)
+09:19:56   ✓ master n.mid.66 t0 (bestået)
+09:19:56   ✓ master n.mid.67 t0 (bestået)
+09:19:56   ✓ master n.mid.68 t0 (bestået)
+09:19:56   ✓ master n.mid.69 t0 (bestået)
+09:19:56   ✓ master n.mid.70 t0 (bestået)
+09:19:56   ✓ master n.mid.71 t0 (bestået)
+09:19:56   ✓ master n.mid.72 t0 (bestået)
+09:19:56   ✓ master n.mid.73 t0 (bestået)
+09:19:56   ✓ master n.mid.74 t0 (bestået)
+09:19:56   ✓ master n.mid.75 t0 (bestået)
+09:19:56   ✓ master n.mid.76 t1 (bestået)
+09:19:56   ✓ master n.mid.77 t0 (bestået)
+09:19:56   ✓ master n.mid.78 t1 (bestået)
+09:19:56   ✓ master n.mid.79 t0 (bestået)
+09:19:56   ✓ master n.mid.80 t1 (bestået)
+09:19:56   ✓ master n.mid.81 t0 (bestået)
+09:19:56   ✓ master n.mid.82 t0 (bestået)
+09:19:56   ✓ master n.mid.83 t0 (bestået)
+09:19:56   ✓ master n.mid.84 t0 (bestået)
+09:19:56   ✓ master n.mid.85 t0 (bestået)
+09:19:56   ✓ master n.mid.86 t0 (bestået)
+09:19:56   ✓ master n.mid.87 t0 (bestået)
+09:19:56   ✓ master n.mid.88 t0 (bestået)
+09:19:56   ✓ master n.mid.89 t0 (bestået)
+09:19:56   ✓ master n.mid.90 t0 (bestået)
+09:19:56   ✓ master n.mid.91 t0 (bestået)
+09:19:56   ✓ master n.mid.92 t0 (bestået)
+09:19:56   ✓ master n.mid.93 t0 (bestået)
+09:19:56   ✓ master n.mid.94 t0 (bestået)
+09:19:56   ✓ master n.mid.95 t0 (bestået)
+09:19:56   ✓ master n.mid.96 t0 (bestået)
+09:19:56   ✓ master n.mid.97 t1 (bestået)
+09:19:56   ✓ master n.mid.98 t1 (bestået)
+09:19:56   ✓ master n.mid.99 t1 (bestået)
+09:19:56   ✓ master name.animal.cat.1 t0 (bestået)
+09:19:56   ✓ master name.animal.cat.3 t2 (bestået)
+09:19:56   ✓ master name.animal.cat.4 t0 (bestået)
+09:19:56   ✓ master name.animal.cat.5 t0 (bestået)
+09:19:56   ✓ master name.animal.cat.6 t0 (bestået)
+09:19:56   ✓ master name.animal.cat.7 t0 (bestået)
+09:19:56   ✓ master name.animal.cat.8 t1 (bestået)
+09:19:56   ✓ master name.animal.dragon.3 t0 (bestået)
+09:19:56   ✓ master name.animal.dragon.4 t0 (bestået)
+09:19:56   ✓ master name.animal.dragon.5 t0 (bestået)
+09:19:56   ✓ master name.animal.dragon.6 t0 (bestået)
+09:19:56   ✓ master name.animal.dragon.7 t0 (bestået)
+09:19:56   ✓ master name.animal.fox.1 t1 (bestået)
+09:19:56   ✓ master name.animal.fox.2 t1 (bestået)
+09:19:56   ✓ master name.animal.fox.3 t0 (bestået)
+09:19:56   ✓ master name.animal.fox.4 t0 (bestået)
+09:19:56   ✓ master name.animal.fox.5 t0 (bestået)
+09:19:57   ✓ master name.animal.fox.6 t0 (bestået)
+09:19:57   ✓ master name.animal.fox.7 t0 (bestået)
+09:19:57   ✓ master name.animal.hamster.2 t0 (bestået)
+09:19:57   ✓ master name.animal.hamster.4 t3 (bestået)
+09:19:57   ✓ master name.animal.hamster.5 t0 (bestået)
+09:19:57   ✓ master name.animal.hamster.6 t0 (bestået)
+09:19:57   ✓ master name.animal.hamster.7 t0 (bestået)
+09:19:57   ✓ master name.animal.hamster.8 t0 (bestået)
+09:19:57   ✓ master name.animal.hedgehog.1 t0 (bestået)
+09:19:57   ✓ master name.animal.hedgehog.2 t0 (bestået)
+09:19:57   ✓ master name.animal.hedgehog.3 t0 (bestået)
+09:19:57   ✓ master name.animal.hedgehog.4 t3 (bestået)
+09:19:57   ✓ master name.animal.hedgehog.5 t0 (bestået)
+09:19:57   ✓ master name.animal.hedgehog.6 t0 (bestået)
+09:19:57   ✓ master name.animal.hedgehog.7 t0 (bestået)
+09:19:57   ✓ master name.animal.horse.1 t0 (bestået)
+09:19:57   ✓ master name.animal.horse.2 t0 (bestået)
+09:19:57   ✓ master name.animal.horse.3 t0 (bestået)
+09:19:57   ✓ master name.animal.horse.4 t0 (bestået)
+09:19:57   ✓ master name.animal.horse.5 t2 (bestået)
+09:19:57   ✓ master name.animal.horse.6 t0 (bestået)
+09:19:57   ✓ master name.animal.horse.7 t0 (bestået)
+09:19:57   ✓ master name.animal.horse.8 t0 (bestået)
+09:19:57   ✓ master name.animal.lamb.2 t0 (bestået)
+09:19:57   ✓ master name.animal.lamb.4 t0 (bestået)
+09:19:57   ✓ master name.animal.lamb.5 t0 (bestået)
+09:19:57   ✓ master name.animal.lamb.7 t0 (bestået)
+09:19:57   ✓ master name.animal.lamb.8 t0 (bestået)
+09:19:57   ✓ master name.animal.owl.1 t2 (bestået)
+09:19:57   ✓ master name.animal.owl.2 t0 (bestået)
+09:19:57   ✓ master name.animal.owl.3 t0 (bestået)
+09:19:57   ✓ master name.animal.owl.4 t0 (bestået)
+09:19:57   ✓ master name.animal.owl.5 t0 (bestået)
+09:19:57   ✓ master name.animal.owl.6 t0 (bestået)
+09:19:57   ✓ master name.animal.owl.7 t0 (bestået)
+09:19:57   ✓ master name.animal.panda.1 t1 (bestået)
+09:19:57   ✓ master name.animal.panda.2 t2 (bestået)
+09:19:57   ✓ master name.animal.panda.3 t0 (bestået)
+09:19:57   ✓ master name.animal.panda.4 t0 (bestået)
+09:19:57   ✓ master name.animal.panda.5 t0 (bestået)
+09:19:57   ✓ master name.animal.panda.7 t0 (bestået)
+09:19:57   ✓ master name.animal.pegasus.1 t3 (bestået)
+09:19:57   ✓ master name.animal.pegasus.2 t0 (bestået)
+09:19:57   ✓ master name.animal.pegasus.3 t0 (bestået)
+09:19:57   ✓ master name.animal.pegasus.4 t0 (bestået)
+09:19:57   ✓ master name.animal.pegasus.5 t1 (bestået)
+09:19:57   ✓ master name.animal.pegasus.7 t0 (bestået)
+09:19:57   ✓ master name.animal.penguin.2 t0 (bestået)
+09:19:57   ✓ master name.animal.penguin.3 t0 (bestået)
+09:19:57   ✓ master name.animal.penguin.4 t0 (bestået)
+09:19:57   ✓ master name.animal.penguin.6 t0 (bestået)
+09:19:57   ✓ master name.animal.penguin.7 t0 (bestået)
+09:19:57   ✓ master name.animal.polarbear.1 t0 (bestået)
+09:19:57   ✓ master name.animal.polarbear.2 t3 (bestået)
+09:19:57   ✓ master name.animal.polarbear.3 t0 (bestået)
+09:19:57   ✓ master name.animal.polarbear.5 t0 (bestået)
+09:19:57   ✓ master name.animal.polarbear.6 t0 (bestået)
+09:19:57   ✓ master name.animal.polarbear.7 t1 (bestået)
+09:19:57   ✓ master name.animal.puppy.2 t0 (bestået)
+09:19:58   ✓ master name.animal.puppy.4 t1 (bestået)
+09:19:58   ✓ master name.animal.puppy.5 t0 (bestået)
+09:19:58   ✓ master name.animal.puppy.6 t0 (bestået)
+09:19:58   ✓ master name.animal.puppy.7 t0 (bestået)
+09:19:58   ✓ master name.animal.puppy.8 t0 (bestået)
+09:19:58   ✓ master name.animal.rabbit.1 t0 (bestået)
+09:19:58   ✓ master name.animal.rabbit.2 t1 (bestået)
+09:19:58   ✓ master name.animal.rabbit.3 t0 (bestået)
+09:19:58   ✓ master name.animal.rabbit.5 t0 (bestået)
+09:19:58   ✓ master name.animal.rabbit.6 t0 (bestået)
+09:19:58   ✓ master name.animal.rabbit.7 t0 (bestået)
+09:19:58   ✓ master name.animal.rabbit.8 t0 (bestået)
+09:19:58   ✓ master name.animal.squirrel.1 t1 (bestået)
+09:19:58   ✓ master name.animal.squirrel.2 t0 (bestået)
+09:19:58   ✓ master name.animal.squirrel.3 t0 (bestået)
+09:19:58   ✓ master name.animal.squirrel.4 t1 (bestået)
+09:19:58   ✓ master name.animal.squirrel.5 t0 (bestået)
+09:19:58   ✓ master name.animal.squirrel.6 t0 (bestået)
+09:19:58   ✓ master name.animal.squirrel.7 t0 (bestået)
+09:19:58   ✓ master name.animal.unicorn.1 t0 (bestået)
+09:19:58   ✓ master name.animal.unicorn.4 t0 (bestået)
+09:19:58   ✓ master name.animal.unicorn.5 t0 (bestået)
+09:19:58   ✓ master name.animal.unicorn.8 t0 (bestået)
+09:19:58   ✓ master name.baby.cat t0 (bestået)
+09:19:58   ✓ master name.baby.hedgehog t0 (bestået)
+09:19:58   ✓ master name.baby.puppy t0 (bestået)
+09:19:58   ✓ master name.baby.rabbit t0 (bestået)
+09:19:58   ✓ master name.breed.domestic t0 (bestået)
+09:19:58   ✓ master name.breed.lionhead t0 (bestået)
+09:19:58   ✓ master name.breed.longhair t0 (bestået)
+09:19:58   ✓ master name.breed.lop t0 (bestået)
+09:19:58   ✓ master name.breed.mainecoon t0 (bestået)
+09:19:58   ✓ master name.breed.upright t0 (bestået)
+09:19:58   ✓ master name.color.cat.c1 t0 (bestået)
+09:19:58   ✓ master name.color.cat.c2 t0 (bestået)
+09:19:58   ✓ master name.color.cat.c3 t0 (bestået)
+09:19:58   ✓ master name.color.cat.c4 t0 (bestået)
+09:19:58   ✓ master name.color.cat.c5 t0 (bestået)
+09:19:58   ✓ master name.color.cat.c6 t1 (bestået)
+09:19:58   ✓ master name.color.cat.gold t0 (bestået)
+09:19:58   ✓ master name.color.cat.rainbow t1 (bestået)
+09:19:58   ✓ master name.color.hedgehog.c1 t0 (bestået)
+09:19:58   ✓ master name.color.hedgehog.c2 t0 (bestået)
+09:19:58   ✓ master name.color.hedgehog.c3 t0 (bestået)
+09:19:58   ✓ master name.color.hedgehog.c4 t0 (bestået)
+09:19:58   ✓ master name.color.hedgehog.c5 t0 (bestået)
+09:19:58   ✓ master name.color.hedgehog.c6 t0 (bestået)
+09:19:58   ✓ master name.color.puppy.c1 t2 (bestået)
+09:19:58   ✓ master name.color.puppy.c2 t0 (bestået)
+09:19:58   ✓ master name.color.puppy.c4 t0 (bestået)
+09:19:58   ✓ master name.color.puppy.c5 t0 (bestået)
+09:19:58   ✓ master name.color.puppy.c6 t0 (bestået)
+09:19:58   ✓ master name.color.rabbit.c2 t1 (bestået)
+09:19:58   ✓ master name.color.rabbit.c4 t0 (bestået)
+09:19:58   ✓ master name.color.rabbit.c6 t0 (bestået)
+09:19:58   ✓ master name.color.unicorn.starwhite t0 (bestået)
+09:19:58   ✓ master name.item.hverdag-back t1 (bestået)
+09:19:59   ✓ master name.item.hverdag-body t0 (bestået)
+09:19:59   ✓ master name.item.hverdag-face t0 (bestået)
+09:19:59   ✓ master name.item.hverdag-hand t0 (bestået)
+09:19:59   ✓ master name.item.hverdag-neck t1 (bestået)
+09:19:59   ✓ master name.item.milepael-fevinger t2 (bestået)
+09:19:59   ✓ master name.item.milepael-hjertebriller t0 (bestået)
+09:19:59   ✓ master name.item.milepael-kappe t0 (bestået)
+09:19:59   ✓ master name.item.milepael-medalje t0 (bestået)
+09:19:59   ✓ master name.item.milepael-slikkepind t0 (bestået)
+09:19:59   ✓ master name.item.opdager-back t0 (bestået)
+09:19:59   ✓ master name.item.opdager-body t0 (bestået)
+09:19:59   ✓ master name.item.opdager-face t0 (bestået)
+09:19:59   ✓ master name.item.opdager-hand t1 (bestået)
+09:19:59   ✓ master name.item.opdager-head t0 (bestået)
+09:19:59   ✓ master name.item.opdager-neck t0 (bestået)
+09:19:59   ✓ master name.item.pirat-back t0 (bestået)
+09:19:59   ✓ master name.item.pirat-body t2 (bestået)
+09:19:59   ✓ master name.item.pirat-face t1 (bestået)
+09:19:59   ✓ master name.item.pirat-hand t0 (bestået)
+09:19:59   ✓ master name.item.pirat-head t0 (bestået)
+09:19:59   ✓ master name.item.pirat-neck t0 (bestået)
+09:19:59   ✓ master name.region.w0-former t1 (bestået)
+09:19:59   ✓ master name.region.w0-minus10 t0 (bestået)
+09:19:59   ✓ master name.region.w0-plus10 t0 (bestået)
+09:19:59   ✓ master name.region.w0-tal10 t1 (bestået)
+09:19:59   ✓ master name.region.w0-tal20 t3 (bestået)
+09:19:59   ✓ master name.region.w0-tiervenner t0 (bestået)
+09:19:59   ✓ master name.set.hverdag t0 (bestået)
+09:19:59   ✓ master name.set.opdager t0 (bestået)
+09:19:59   ✓ master name.set.pirat t0 (bestået)
+09:19:59   ✓ master name.species.cat t0 (bestået)
+09:19:59   ✓ master name.species.hedgehog t0 (bestået)
+09:19:59   ✓ master name.species.puppy t0 (bestået)
+09:19:59   ✓ master name.species.rabbit t0 (bestået)
+09:19:59   ✓ master name.world.bakke t0 (bestået)
+09:19:59   ✓ master name.world.eng t0 (bestået)
+09:19:59   ✓ master name.world.fjeld t0 (bestået)
+09:19:59   ✓ master name.world.skov t1 (bestået)
+09:19:59   ✓ master noun.shape.circle.def.end t1 (bestået)
+09:19:59   ✓ master noun.shape.circle.def.mid t0 (bestået)
+09:19:59   ✓ master noun.shape.circle.indef.end t2 (bestået)
+09:19:59   ✓ master noun.shape.circle.indef.mid t0 (bestået)
+09:19:59   ✓ master noun.shape.circle.pl.end t0 (bestået)
+09:19:59   ✓ master noun.shape.circle.pl.mid t0 (bestået)
+09:19:59   ✓ master noun.shape.quadrilateral.def.end t0 (bestået)
+09:19:59   ✓ master noun.shape.quadrilateral.def.mid t0 (bestået)
+09:19:59   ✓ master noun.shape.quadrilateral.indef.end t0 (bestået)
+09:19:59   ✓ master noun.shape.quadrilateral.indef.mid t0 (bestået)
+09:19:59   ✓ master noun.shape.quadrilateral.pl.end t0 (bestået)
+09:19:59   ✓ master noun.shape.quadrilateral.pl.mid t0 (bestået)
+09:19:59   ✓ master noun.shape.triangle.def.end t0 (bestået)
+09:19:59   ✓ master noun.shape.triangle.def.mid t0 (bestået)
+09:19:59   ✓ master noun.shape.triangle.indef.end t0 (bestået)
+09:20:00   ✓ master noun.shape.triangle.indef.mid t0 (bestået)
+09:20:00   ✓ master noun.shape.triangle.pl.end t0 (bestået)
+09:20:00   ✓ master noun.shape.triangle.pl.mid t0 (bestået)
+09:20:00   ✓ master noun.thing.apple.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.apple.sg t0 (bestået)
+09:20:00   ✓ master noun.thing.ball.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.ball.sg t2 (bestået)
+09:20:00   ✓ master noun.thing.carrot.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.chestnut.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.chestnut.sg t0 (bestået)
+09:20:00   ✓ master noun.thing.clip.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.cube.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.fish.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.flower.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.flower.sg t0 (bestået)
+09:20:00   ✓ master noun.thing.leaf.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.leaf.sg t0 (bestået)
+09:20:00   ✓ master noun.thing.mushroom.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.mushroom.sg t0 (bestået)
+09:20:00   ✓ master noun.thing.star.pl t0 (bestået)
+09:20:00   ✓ master noun.thing.star.sg t0 (bestået)
+09:20:00   ✓ master noun.thing.strawberry.pl t0 (bestået)
+09:20:00   ✓ master op.er_lig_med t1 (bestået)
+09:20:00   ✓ master op.giver t0 (bestået)
+09:20:00   ✓ master op.mindre_end t0 (bestået)
+09:20:00   ✓ master op.og t0 (bestået)
+09:20:00   ✓ master op.stoerre_end t0 (bestået)
+09:20:00   ✓ master s.hear20.write t0 (bestået)
+09:20:00   ✓ master s.kind.buildBase.flat t0 (bestået)
+09:20:00   ✓ master s.kind.buildBase.rod t0 (bestået)
+09:20:00   ✓ master s.kind.buildBase.short t0 (bestået)
+09:20:00   ✓ master s.kind.buildBase.unit t0 (bestået)
+09:20:00   ✓ master s.kind.clockSet.short t0 (bestået)
+09:20:00   ✓ master s.kind.keypad.short t0 (bestået)
+09:20:00   ✓ master s.kind.share.short t0 (bestået)
+09:20:00   ✓ master s.order20.or t0 (bestået)
+09:20:00   ✓ master s.reward.alsoToday t0 (bestået)
+09:20:00   ✓ master s.reward.animal.friend t0 (bestået)
+09:20:00   ✓ master s.reward.egg.tap t0 (bestået)
+09:20:00   ✓ master s.reward.item.new t0 (bestået)
+09:20:00   ✓ master s.reward.item.try t0 (bestået)
+09:20:00   ✓ master s.reward.learned t0 (bestået)
+09:20:00   ✓ master s.reward.medal.bronze t0 (bestået)
+09:20:00   ✓ master s.reward.medal.silver t0 (bestået)
+09:20:00   ✓ master s.reward.nextGoal t0 (bestået)
+09:20:00   ✓ master s.reward.title.1 t0 (bestået)
+09:20:00   ✓ master s.reward.title.15 t1 (bestået)
+09:20:00   ✓ master s.reward.title.20 t1 (bestået)
+09:20:00   ✓ master s.reward.title.30 t0 (bestået)
+09:20:00   ✓ master s.reward.title.40 t0 (bestået)
+09:20:01   ✓ master s.reward.title.50 t2 (bestået)
+09:20:01   ✓ master s.reward.title.new t0 (bestået)
+09:20:01   ✓ master s.reward.trial.best t0 (bestået)
+09:20:01   ✓ master s.reward.trial.planks t0 (bestået)
+09:20:01   ✓ master s.round.count.take t0 (bestået)
+09:20:01   ✓ master s.round.hint.answerIs t0 (bestået)
+09:20:01   ✓ master s.round.hint.shouldBe t0 (bestået)
+09:20:01   ✓ master s.round.hint.thereAre t0 (bestået)
+09:20:01   ✓ master s.round.pause.resume t0 (bestået)
+09:20:01   ✓ master s.round.pause.title t0 (bestået)
+09:20:01   ✓ master s.round.perfect t0 (bestået)
+09:20:01   ✓ master s.round.praise.1 t0 (bestået)
+09:20:01   ✓ master s.round.praise.2 t0 (bestået)
+09:20:01   ✓ master s.round.praise.3 t0 (bestået)
+09:20:01   ✓ master s.round.praise.4 t0 (bestået)
+09:20:01   ✓ master s.round.praise.5 t0 (bestået)
+09:20:01   ✓ master s.round.praise.7 t0 (bestået)
+09:20:01   ✓ master s.round.praise.8 t0 (bestået)
+09:20:01   ✓ master s.round.tapHere t0 (bestået)
+09:20:01   ✓ master s.round.word.one t0 (bestået)
+09:20:01   ✓ master s.round.word.ones t1 (bestået)
+09:20:01   ✓ master s.round.word.ten t0 (bestået)
+09:20:01   ✓ master s.shapes2D.all t0 (bestået)
+09:20:01   ✓ master s.ui.adult t0 (bestået)
+09:20:01   ✓ master s.ui.back t0 (bestået)
+09:20:01   ✓ master s.ui.check t0 (bestået)
+09:20:01   ✓ master s.ui.close t1 (bestået)
+09:20:01   ✓ master s.ui.delete t0 (bestået)
+09:20:01   ✓ master s.ui.dock.animals t0 (bestået)
+09:20:01   ✓ master s.ui.dock.books t1 (bestået)
+09:20:01   ✓ master s.ui.dock.map t0 (bestået)
+09:20:01   ✓ master s.ui.dock.shop t0 (bestået)
+09:20:01   ✓ master s.ui.hint t1 (bestået)
+09:20:01   ✓ master s.ui.next t0 (bestået)
+09:20:01   ✓ master s.ui.no t0 (bestået)
+09:20:01   ✓ master s.ui.play t0 (bestået)
+09:20:01   ✓ master s.ui.replay t0 (bestået)
+09:20:01   ✓ master s.ui.showMe t0 (bestået)
+09:20:01   ✓ master s.ui.skip t0 (bestået)
+09:20:01   ✓ master s.ui.soundOff t0 (bestået)
+09:20:01   ✓ master s.ui.soundOn t0 (bestået)
+09:20:01   ✓ master s.ui.stones t0 (bestået)
+09:20:01   ✓ master s.ui.toMap t0 (bestået)
+09:20:01   ✓ master s.ui.yes t0 (bestået)
+09:20:01   ✓ master name.color.dragon.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:01   ✓ master name.color.dragon.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.fox.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.fox.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.hamster.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.hamster.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.hedgehog.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.hedgehog.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.horse.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.horse.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.lamb.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.lamb.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.owl.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.owl.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.panda.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.panda.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.pegasus.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.pegasus.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.penguin.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.penguin.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.polarbear.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.polarbear.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.puppy.c3 = kopi af name.color.hedgehog.c1 (samme tekst)
+09:20:02   ✓ master name.color.puppy.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.puppy.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.rabbit.c1 = kopi af name.color.cat.c5 (samme tekst)
+09:20:02   ✓ master name.color.rabbit.c3 = kopi af name.color.hedgehog.c1 (samme tekst)
+09:20:02   ✓ master name.color.rabbit.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.rabbit.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.squirrel.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.squirrel.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master name.color.unicorn.gold = kopi af name.color.cat.gold (samme tekst)
+09:20:02   ✓ master name.color.unicorn.rainbow = kopi af name.color.cat.rainbow (samme tekst)
+09:20:02   ✓ master noun.thing.clip.sg = kopi af noun.thing.clip.pl (samme tekst)
+09:20:02   ✓ master noun.thing.fish.sg = kopi af noun.thing.fish.pl (samme tekst)
+09:20:02   ✓ master noun.thing.strawberry.sg = kopi af noun.thing.strawberry.pl (samme tekst)
+09:20:02   ✓ master s.reward.title.5 = kopi af name.set.opdager (samme tekst)
+09:20:02 færdig: 508 nye mastere (13 ikke bestået, 37 kopier), 202 modelkald, 49.5 min generering (CPU 1.52 t), 33 klip mangler

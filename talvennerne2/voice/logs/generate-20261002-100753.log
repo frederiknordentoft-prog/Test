@@ -1,0 +1,38 @@
+10:07:53 generate.py --wave 1 --threads 2 --max-minutes 100 --retake-from voice/qa.json (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261002-100753.log)
+10:07:53 hog.300: ingen takes tilbage til en ny take
+10:07:53 noun.thing.ball.pl: take 0 afvist af sammensætningstesten, genereres igen
+10:07:53 noun.thing.cube.sg: ingen takes tilbage til en ny take
+10:07:53 q.sub:10-7: take 0 afvist af sammensætningstesten, genereres igen
+10:07:53 q.sub:4-1: take 0 afvist af sammensætningstesten, genereres igen
+10:07:53 q.sub:4-3: take 0 afvist af sammensætningstesten, genereres igen
+10:07:53 s.order20.countBack: ingen takes tilbage til en ny take
+10:07:53 s.order20.countOn: ingen takes tilbage til en ny take
+10:07:53 s.order20.whichBigger: take 0 afvist af sammensætningstesten, genereres igen
+10:07:53 s.patterns.continue: ingen takes tilbage til en ny take
+10:07:53 926 klip valgt, 921 færdige, 5 at lave
+10:08:07 input frame rate=25
+10:08:15 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+10:08:17 model indlæst på 22 s (2 tråde)
+10:08:21 ✅ EOS token detected! Stopping generation at step 30
+10:08:30 kald single k=1 t1 'bolde,': 13.0 s for 1.16 s lyd
+10:08:31   noun.thing.ball.pl t1: 0.38 s (forhold 0.60) -18.0 LUFS, none: 'None' CER None (None) → ok
+10:08:38 ✅ EOS token detected! Stopping generation at step 55
+10:08:48 kald sentence k=1 t1 'Hvad er ti minus syv?': 16.8 s for 2.16 s lyd
+10:08:49   q.sub:10-7 t1: 1.49 s (forhold 0.79) -18.0 LUFS, alone: 'hvad er 10 minus 7' CER 0.0 (wav2vec2) → ok
+10:08:49   ✓ master q.sub:10-7 t1 (bestået)
+10:08:56 ✅ EOS token detected! Stopping generation at step 61
+10:09:06 kald sentence k=1 t1 'Hvad er fire minus en?': 17.5 s for 2.40 s lyd
+10:09:07   q.sub:4-1 t1: 1.67 s (forhold 0.76) -18.05 LUFS, alone: 'hvad er 4 minus 1' CER 0.0 (wav2vec2) → ok
+10:09:07   ✓ master q.sub:4-1 t1 (bestået)
+10:09:14 ✅ EOS token detected! Stopping generation at step 57
+10:09:24 kald sentence k=1 t1 'Hvad er fire minus tre?': 17.0 s for 2.24 s lyd
+10:09:25   q.sub:4-3 t1: 1.46 s (forhold 0.67) -18.18 LUFS, alone: 'hvad er 4 minus3' CER 0.0 (wav2vec2) → ok
+10:09:25   ✓ master q.sub:4-3 t1 (bestået)
+10:09:32 ✅ EOS token detected! Stopping generation at step 54
+10:09:42 kald single k=1 t1 'Hvilket tal er størst,': 16.2 s for 2.12 s lyd
+10:09:42   s.order20.whichBigger t1: 1.45 s (forhold 0.93) -18.0 LUFS, alone: 'hvilket tal er størst' CER 0.0 (wav2vec2) → ok
+10:09:42   ✓ master s.order20.whichBigger t1 (bestået)
+10:09:43   sammensat frag.det_er + noun.thing.ball.pl: 'det er bolde' CER 0.000 (wav2vec2) → ok
+10:09:43 sammensætning runde 1: 1 af 1 bestået
+10:09:43   ✓ master noun.thing.ball.pl t1 (bestået)
+10:09:43 færdig: 5 nye mastere (0 ikke bestået, 0 kopier), 5 modelkald, 1.3 min generering (CPU 0.04 t), 0 klip mangler

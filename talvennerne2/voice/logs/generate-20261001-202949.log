@@ -1,0 +1,165 @@
+20:29:49 generate.py --wave 1 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261001-202949.log)
+20:29:52 926 klip valgt, 369 færdige, 557 at lave
+20:33:58 input frame rate=25
+20:35:14 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+20:35:21 model indlæst på 293 s (2 tråde)
+20:35:31 ✅ EOS token detected! Stopping generation at step 72
+20:35:47 kald sentence k=1 t3 'Når man tager det hele væk, er der nul tilbage.': 25.8 s for 2.84 s lyd
+20:41:07   hint.addsub.allGone t3: 2.12 s (forhold 0.49) -18.08 LUFS, alone: 'Når man tager det hele væk er der 0 tilbage' CER 0.0 (whisper, wav2vec2: 'når man tager det hele væk er der nuet tilbage') → ok
+20:41:07   ✓ master hint.addsub.allGone t3 (bestået)
+20:41:20 ✅ EOS token detected! Stopping generation at step 102
+20:41:35 kald sentence k=1 t2 'Et øje i hvert hjørne og et i midten. Det er fem.': 28.0 s for 4.04 s lyd
+20:41:37   hint.count.dice.5 t2: 3.22 s (forhold 0.69) -18.18 LUFS, alone: 'et øje i hvert hjørne og 1t i midten det er 5' CER 0.0278 (wav2vec2) → ok
+20:41:37   ✓ master hint.count.dice.5 t2 (bestået)
+20:41:45 ✅ EOS token detected! Stopping generation at step 58
+20:42:02 kald sentence k=1 t2 'Tæl prikkerne i ti-rammen.': 24.9 s for 2.28 s lyd
+20:42:09   hint.count.framePoints t2: 1.69 s (forhold 0.68) -18.16 LUFS, alone: 'tel prikkerne i 10rammen' CER 0.0476 (wav2vec2, whisper: 'Telt prikkerne i tihammen') → FEJL asr
+20:42:19 ✅ EOS token detected! Stopping generation at step 83
+20:42:35 kald sentence k=1 t2 'En fuld række og en prik mere er seks.': 26.0 s for 3.28 s lyd
+20:42:37   hint.count.rowAndOne t2: 2.62 s (forhold 0.76) -18.03 LUFS, alone: 'en fuld række og en prik mere er 6' CER 0.0 (wav2vec2) → ok
+20:42:37   ✓ master hint.count.rowAndOne t2 (bestået)
+20:42:43 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:42:43 ✅ EOS token detected! Stopping generation at step 47
+20:42:54 kald sentence k=1 t2 'Tæl videre fra ti.': 17.0 s for 1.84 s lyd
+20:42:59   hint.count20.countOn t2: 1.04 s (forhold 0.56) -18.0 LUFS, alone: 'tal videre fra 10' CER 0.0714 (wav2vec2, whisper: 'Tal videre fra 10') → FEJL asr
+20:43:06 ✅ EOS token detected! Stopping generation at step 52
+20:43:17 kald sentence k=1 t2 'En fuld ti-ramme er ti.': 17.5 s for 2.04 s lyd
+20:43:23   hint.count20.fullFrame t2: 1.36 s (forhold 0.62) -18.14 LUFS, alone: 'en fuld tidharme er 10' CER 0.1765 (wav2vec2, whisper: 'En fuld tiarme er 10') → FEJL asr
+20:43:33 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:43:33 ✅ EOS token detected! Stopping generation at step 81
+20:43:45 kald sentence k=1 t2 'Find ti først, og tæl så videre fra ti.': 22.8 s for 3.20 s lyd
+20:43:53   hint.count20.tenFirst t2: 2.46 s (forhold 0.72) -18.05 LUFS, alone: 'fin 10 først og tem sig videre fra 10' CER 0.1724 (wav2vec2, whisper: 'Find 10 først og tæm sig videre fra 10') → FEJL asr
+20:44:00 ✅ EOS token detected! Stopping generation at step 59
+20:44:11 kald sentence k=1 t2 'Vi skriver ettallet først.': 18.2 s for 2.32 s lyd
+20:44:17   hint.hear20.oneFirst t2: 1.60 s (forhold 0.73) -18.09 LUFS, alone: 'vi skriver et tallet først' CER 0.0455 (wav2vec2, whisper: 'Vi skriver et tallet først') → FEJL asr
+20:44:27 ✅ EOS token detected! Stopping generation at step 86
+20:44:41 kald sentence k=1 t2 'Sig mønstret højt, og hør, hvad der kommer igen.': 23.9 s for 3.40 s lyd
+20:44:50   hint.patterns.sayIt t2: 2.71 s (forhold 0.72) -18.09 LUFS, alone: 'Sig mønstret højt og hør hvad der kommer igen' CER 0.0 (whisper, wav2vec2: 'si mønstreter højt og hør hvad der kommer igen') → ok
+20:44:50   ✓ master hint.patterns.sayIt t2 (bestået)
+20:44:56 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:44:56 ✅ EOS token detected! Stopping generation at step 48
+20:45:07 kald sentence k=1 t3 'Hvad er en minus nul?': 16.4 s for 1.88 s lyd
+20:45:12   q.sub:1-0 t3: 1.31 s (forhold 0.70) -18.0 LUFS, alone: 'hvad er en minusn0l' CER 0.125 (wav2vec2, whisper: 'Hvad er en minusnul?') → FEJL asr
+20:45:17 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:45:17 ✅ EOS token detected! Stopping generation at step 40
+20:45:28 kald sentence k=1 t2 'Jeg kan tælle til ti.': 15.5 s for 1.56 s lyd
+20:45:28   s.cando.count10 t2: 0.99 s (forhold 0.53) -18.01 LUFS, alone: 'jeg kan tælle til 10' CER 0.0 (wav2vec2) → ok
+20:45:28   ✓ master s.cando.count10 t2 (bestået)
+20:45:35 ✅ EOS token detected! Stopping generation at step 44
+20:45:48 kald sentence k=1 t2 'Hvor mange bolde er der?': 19.3 s for 1.72 s lyd
+20:45:54   s.count.howMany.ball t2: 1.09 s (forhold 0.50) -18.13 LUFS, alone: 'hvor mange bolda er der' CER 0.0526 (wav2vec2, whisper: 'Hvor mange bolte er der?') → FEJL asr
+20:46:01 ✅ EOS token detected! Stopping generation at step 46
+20:46:14 kald sentence k=1 t2 'Farv delene.': 19.8 s for 1.80 s lyd
+20:46:19   s.kind.colorParts.short t2: 1.05 s (forhold 0.84) -18.16 LUFS, alone: 'farvo delende' CER 0.2 (wav2vec2, whisper: 'Fagdelene') → FEJL asr
+20:46:25 ✅ EOS token detected! Stopping generation at step 46
+20:46:35 kald sentence k=1 t2 'Fyld de tomme pladser.': 15.6 s for 1.80 s lyd
+20:46:41   s.kind.fillSlots.short t2: 1.10 s (forhold 0.59) -18.09 LUFS, alone: 'følde de tomme pladser' CER 0.1111 (wav2vec2, whisper: 'Følte de tomme pladser') → FEJL asr
+20:46:49 ✅ EOS token detected! Stopping generation at step 33
+20:47:15 kald sentence k=1 t2 'Tryk i nettet.': 33.8 s for 1.28 s lyd
+20:47:16   s.kind.grid.short t2: 0.71 s (forhold 0.57) -18.08 LUFS, alone: 'tryk i nettet' CER 0.0 (wav2vec2) → ok
+20:47:16   ✓ master s.kind.grid.short t2 (bestået)
+20:47:25 ✅ EOS token detected! Stopping generation at step 49
+20:47:36 kald sentence k=1 t2 'Fortsæt mønstret.': 20.0 s for 1.92 s lyd
+20:47:42   s.patterns.continue t2: 1.30 s (forhold 1.04) -18.11 LUFS, alone: 'fortsæt minstret' CER 0.0667 (wav2vec2, whisper: 'Fortsat mønstret') → FEJL asr
+20:47:52 ✅ EOS token detected! Stopping generation at step 86
+20:48:05 kald sentence k=1 t2 'Alle de gyldne dyr er fundet. Her er perler.': 22.5 s for 3.40 s lyd
+20:48:07   s.reward.allGolden t2: 2.75 s (forhold 0.68) -18.11 LUFS, alone: 'alle de gyldne dyr er fundet her er perler' CER 0.0 (wav2vec2) → ok
+20:48:07   ✓ master s.reward.allGolden t2 (bestået)
+20:48:07 kald sentence k=1 t1 'Hvilket dyr skal ægget være?': 17.9 s for 2.20 s lyd
+20:48:13   s.reward.egg.choose t1: 1.46 s (forhold 0.58) -18.0 LUFS, alone: 'Hvilket dyr skal ægget være?' CER 0.0 (whisper, wav2vec2: 'hvilket dyr skal ikket være') → ok
+20:48:13   ✓ master s.reward.egg.choose t1 (bestået)
+20:48:20 ✅ EOS token detected! Stopping generation at step 53
+20:48:31 kald sentence k=1 t1 'Din ven har lært at snurre!': 17.6 s for 2.08 s lyd
+20:48:37   s.reward.friendship.spin t1: 1.40 s (forhold 0.64) -18.16 LUFS, alone: 'din ven har lært at snore' CER 0.0952 (wav2vec2, whisper: 'Din ven har lært at snore') → FEJL asr
+20:48:50 ✅ EOS token detected! Stopping generation at step 89
+20:49:03 kald sentence k=1 t1 'Mål klaret! Et stempel til stempelbogen.': 26.1 s for 3.52 s lyd
+20:49:10   s.reward.goal.done t1: 3.00 s (forhold 0.87) -18.03 LUFS, alone: 'Mål klaret et stempel til stempelbogen' CER 0.0 (whisper, wav2vec2: 'mål klarede et stemble til stempelbogen') → ok
+20:49:10   ✓ master s.reward.goal.done t1 (bestået)
+20:49:15 ✅ EOS token detected! Stopping generation at step 40
+20:49:26 kald single k=1 t2 'Tag en tur forbi,': 15.5 s for 1.56 s lyd
+20:49:31   s.reward.goal.revisit t2: 0.80 s (forhold 0.51) -18.07 LUFS, alone: 'tage en tur forbi' CER 0.0769 (wav2vec2, whisper: 'Tage en tur forbi') → FEJL asr
+20:49:40 ✅ EOS token detected! Stopping generation at step 67
+20:49:53 kald sentence k=1 t1 'Svar rigtigt fem gange i træk.': 21.6 s for 2.64 s lyd
+20:49:54   s.reward.goal.streak5 t1: 1.83 s (forhold 0.73) -18.15 LUFS, alone: 'svar rigtigt 5 gange i træk' CER 0.0 (wav2vec2) → ok
+20:49:54   ✓ master s.reward.goal.streak5 t1 (bestået)
+20:50:03 ✅ EOS token detected! Stopping generation at step 51
+20:50:24 kald sentence k=1 t1 'Vælg et gyldent dyr.': 30.2 s for 2.00 s lyd
+20:50:34   s.reward.gold.choose t1: 1.38 s (forhold 0.88) -18.05 LUFS, alone: 'vel er et gyldent dyr' CER 0.1875 (wav2vec2, whisper: 'Vel et gyldent dyr') → FEJL asr
+20:50:40 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:50:40 ✅ EOS token detected! Stopping generation at step 50
+20:50:51 kald sentence k=1 t1 'Du er rykket et trin op.': 17.5 s for 1.96 s lyd
+20:50:57   s.reward.learned.status t1: 1.31 s (forhold 0.60) -18.0 LUFS, alone: 'du er ryttet et trin op' CER 0.1111 (wav2vec2, whisper: 'Du er højtet et trin op') → FEJL asr
+20:51:02 ✅ EOS token detected! Stopping generation at step 48
+20:51:12 kald sentence k=1 t1 'Vælg et regnbuedyr.': 15.3 s for 1.88 s lyd
+20:51:18   s.reward.rainbow.choose t1: 1.19 s (forhold 0.64) -18.04 LUFS, alone: 'hvel er et hegnboe dyr' CER 0.375 (wav2vec2, whisper: 'Hvert æg har en boende dyr') → FEJL asr
+20:51:23 ✅ EOS token detected! Stopping generation at step 43
+20:51:33 kald single k=1 t2 'Tag en op af kurven,': 14.8 s for 1.68 s lyd
+20:51:38   s.round.count.back t2: 0.99 s (forhold 0.53) -18.0 LUFS, alone: 'tage han op af kurven' CER 0.1333 (wav2vec2, whisper: 'Tage den op af kurven') → FEJL asr
+20:51:56 ✅ EOS token detected! Stopping generation at step 60
+20:52:19 kald sentence k=1 t1 'Tæl rækkerne, og læg dem sammen.': 40.6 s for 2.36 s lyd
+20:52:30   s.round.hint.array t1: 1.71 s (forhold 0.61) -18.19 LUFS, alone: 'Tæl rækkerne og læg dem sammen' CER 0.0 (whisper, wav2vec2: 'tall rækkerne og lægge dem sammen') → ok
+20:52:30   ✓ master s.round.hint.array t1 (bestået)
+20:52:36 ✅ EOS token detected! Stopping generation at step 50
+20:52:48 kald sentence k=1 t1 'Tæl dem en ad gangen.': 18.9 s for 1.96 s lyd
+20:52:54   s.round.hint.count t1: 1.25 s (forhold 0.67) -18.08 LUFS, alone: 'til dem en af gangen' CER 0.125 (wav2vec2, whisper: 'Tel dem en af gangen') → FEJL asr
+20:53:02 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:53:02 ✅ EOS token detected! Stopping generation at step 70
+20:53:16 kald sentence k=1 t1 'Sig tallene højt, mens du lægger dem i kurven.': 21.8 s for 2.76 s lyd
+20:53:24   s.round.hint.countOut t1: 2.26 s (forhold 0.56) -18.1 LUFS, alone: 'citallen er højt mens du ligger dem i kur' CER 0.1944 (wav2vec2, whisper: 'Se tallene højt mens du lægger dem i kurv') → FEJL asr
+20:53:47 ✅ EOS token detected! Stopping generation at step 103
+20:54:04 kald sentence k=1 t1 'Ti enere bliver til en tier. Den skal med over til tierne.': 41.0 s for 4.08 s lyd
+20:54:13   s.round.hint.forgotCarry t1: 3.48 s (forhold 0.59) -18.04 LUFS, alone: 'Ti enere bliver til en tiger den skal med over til tigerne' CER 0.0444 (whisper, wav2vec2: 'ti enere bliver ti entier den skal med over til tierne') → ok
+20:54:13   ✓ master s.round.hint.forgotCarry t1 (bestået)
+20:54:20 ✅ EOS token detected! Stopping generation at step 57
+20:54:31 kald sentence k=1 t1 'Fyld tieren op først.': 18.1 s for 2.24 s lyd
+20:54:38   s.round.hint.makeTen t1: 1.49 s (forhold 0.79) -18.15 LUFS, alone: 'fylitieren op først' CER 0.0588 (wav2vec2, whisper: 'Følte tiderne op først') → FEJL asr
+20:54:52 ✅ EOS token detected! Stopping generation at step 123
+20:55:07 kald sentence k=1 t1 'Der er ikke enere nok. Lån en tier, og byt den til ti enere.': 29.8 s for 4.88 s lyd
+20:55:19   s.round.hint.smallerFromLarger t1: 4.06 s (forhold 0.65) -18.07 LUFS, alone: 'der er ikke enere nok lån en tier og bytte den til 1i enere' CER 0.0909 (wav2vec2, whisper: 'Der er ikke enere nok lånen 10'er og bytte den til 10 enere') → FEJL asr
+20:55:27 ✅ EOS token detected! Stopping generation at step 70
+20:55:42 kald sentence k=1 t1 'Tag dem væk, og tæl dem, der er tilbage.': 22.8 s for 2.76 s lyd
+20:55:49   s.round.hint.sub t1: 1.97 s (forhold 0.57) -18.0 LUFS, alone: 'Tag dem væk og tal dem der er tilbage' CER 0.0345 (whisper, wav2vec2: 'tage dem væk og tale dem der er tilbage') → ok
+20:55:49   ✓ master s.round.hint.sub t1 (bestået)
+20:55:56 ✅ EOS token detected! Stopping generation at step 51
+20:56:08 kald sentence k=1 t1 'Tæl tierne først.': 18.7 s for 2.00 s lyd
+20:56:14   s.round.hint.tensFirst t1: 1.25 s (forhold 0.80) -18.05 LUFS, alone: 'tal tierne først' CER 0.0714 (wav2vec2, whisper: 'Til tiende først') → FEJL asr
+20:56:21 ✅ EOS token detected! Stopping generation at step 48
+20:56:31 kald sentence k=1 t1 'Lad os se på det sammen.': 17.6 s for 1.88 s lyd
+20:56:37   s.round.oops.1 t1: 1.19 s (forhold 0.54) -18.02 LUFS, alone: 'Lad os se på det sammen' CER 0.0 (whisper, wav2vec2: 'lade se på det sammen') → ok
+20:56:37   ✓ master s.round.oops.1 t1 (bestået)
+20:56:45 ✅ EOS token detected! Stopping generation at step 68
+20:56:57 kald sentence k=1 t3 'Tæl prikkerne i ti-rammen.': 20.5 s for 2.68 s lyd
+20:57:10   hint.count.framePoints t3: 2.02 s (forhold 0.81) -18.1 LUFS, alone: 'tel prikkerne i chihammen' CER 0.1905 (wav2vec2, whisper: 'Til prikkerne i Chihamen') → FEJL asr
+20:57:26 ✅ EOS token detected! Stopping generation at step 47
+20:57:51 kald sentence k=1 t3 'Tæl videre fra ti.': 40.6 s for 1.84 s lyd
+20:57:59   hint.count20.countOn t3: 1.08 s (forhold 0.57) -18.17 LUFS, alone: 'tal videre fra 10' CER 0.0714 (wav2vec2, whisper: 'Til videre fra 10') → FEJL asr
+20:58:08 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:58:08 ✅ EOS token detected! Stopping generation at step 54
+20:58:23 kald sentence k=1 t3 'En fuld ti-ramme er ti.': 23.5 s for 2.12 s lyd
+20:58:30   hint.count20.fullFrame t3: 1.48 s (forhold 0.67) -18.0 LUFS, alone: 'en fuld tidhamme er 10' CER 0.1176 (wav2vec2, whisper: 'En fuld tiarme er 10') → FEJL asr
+20:58:46 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:58:46 ✅ EOS token detected! Stopping generation at step 76
+20:59:02 kald sentence k=1 t3 'Find ti først, og tæl så videre fra ti.': 32.3 s for 3.00 s lyd
+20:59:10   hint.count20.tenFirst t3: 2.36 s (forhold 0.69) -18.06 LUFS, alone: 'fin 10 først og tæl sig videre fra 10' CER 0.1034 (wav2vec2, whisper: 'Find 10 først og tæl sig videre fra 10') → FEJL asr
+20:59:16 ✅ EOS token detected! Stopping generation at step 55
+20:59:27 kald sentence k=1 t3 'Vi skriver ettallet først.': 17.2 s for 2.16 s lyd
+20:59:32   hint.hear20.oneFirst t3: 1.52 s (forhold 0.69) -18.06 LUFS, alone: 'vi skriver i tallet først' CER 0.0909 (wav2vec2, whisper: 'Vi skriver i tallet først') → FEJL asr
+20:59:39 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+20:59:39 ✅ EOS token detected! Stopping generation at step 53
+20:59:49 kald sentence k=1 t4 'Hvad er en minus nul?': 16.1 s for 2.08 s lyd
+20:59:54   q.sub:1-0 t4: 1.42 s (forhold 0.76) -18.0 LUFS, alone: 'hvad er en minusn0l' CER 0.125 (wav2vec2, whisper: 'Hvad er en minusnul?') → FEJL asr
+20:59:54   ✓ master q.sub:1-0 t0 (IKKE bestået: asr)
+21:00:00 ✅ EOS token detected! Stopping generation at step 48
+21:00:12 kald sentence k=1 t3 'Hvor mange bolde er der?': 18.1 s for 1.88 s lyd
+21:00:18   s.count.howMany.ball t3: 1.21 s (forhold 0.55) -18.1 LUFS, alone: 'Hvor mange bolde er der?' CER 0.0 (whisper, wav2vec2: 'hvor mange bolda er der') → ok
+21:00:18   ✓ master s.count.howMany.ball t3 (bestået)
+21:00:22 ✅ EOS token detected! Stopping generation at step 33
+21:00:31 kald sentence k=1 t3 'Farv delene.': 13.0 s for 1.28 s lyd
+21:00:36   s.kind.colorParts.short t3: 0.83 s (forhold 0.66) -18.1 LUFS, alone: 'farvor deene' CER 0.3 (wav2vec2, whisper: 'Far og det ene') → FEJL asr
+21:00:42 ✅ EOS token detected! Stopping generation at step 49
+21:00:52 kald sentence k=1 t3 'Fyld de tomme pladser.': 16.0 s for 1.92 s lyd
+21:00:59   s.kind.fillSlots.short t3: 1.19 s (forhold 0.64) -18.17 LUFS, alone: 'fyldt de tom me pladser' CER 0.0556 (wav2vec2, whisper: 'Født i tomme pladser') → FEJL asr
+21:01:04 ✅ EOS token detected! Stopping generation at step 46
+21:01:15 kald sentence k=1 t3 'Fortsæt mønstret.': 16.0 s for 1.80 s lyd
+21:01:20   s.patterns.continue t3: 1.17 s (forhold 0.93) -18.09 LUFS, alone: 'fortsæt vindstred' CER 0.2667 (wav2vec2, whisper: 'Fortsat mønstret') → FEJL asr
+21:01:27 ✅ EOS token detected! Stopping generation at step 52
