@@ -65,7 +65,8 @@ function outline(top: number, bot: number, lift: number, inset = 0, sx = 1): Vec
 const front: ItemArt = ({ c, sw, a, local, solo, stage }) => {
   const { top, bot, lift } = capeOf({ a, local, solo })
   // Kappen klemmes vandret, så hjørnerne bliver i den sikre zone (stor har en bredere krop).
-  const sx = Math.min(1, (safeHalf({ a, local, stage, solo }) - 2) / RIGHT_W)
+  // (Det højre hjørne flagrer 2 enheder ud over bredden, og konturen og splinen lægger lidt til.)
+  const sx = Math.min(1, (safeHalf({ a, local, stage, solo }) - 5.5) / RIGHT_W)
   const LW = LEFT_W * sx
   const RW = RIGHT_W * sx
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }

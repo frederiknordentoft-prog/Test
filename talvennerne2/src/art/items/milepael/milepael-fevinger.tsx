@@ -29,12 +29,13 @@ const SPAN = 90
 
 /**
  * Hvor bredt vingerne må være (lokale enheder fra ryggen) for at holde sig i den sikre zone i stadiet
- * (kroppen og dermed vingerne vokser på stor).
+ * (kroppen og dermed vingerne vokser på stor). Venstre side har ekstra luft, fordi jubel vipper hele
+ * figuren 2° om fodpunktet, så de øverste vingespidser flytter mod venstre.
  */
 function safeSpan(a: AnchorSet, stage: Stage, local: (p: Pt) => Pt): number {
   const k = STAGE_XF[stage].fig * STAGE_XF[stage].body
   const model = (wx: number) => a.ground.x + (wx - a.ground.x) / k
-  const l = local({ x: model(SAFE.x0 + 2.5), y: a.back.y })
+  const l = local({ x: model(SAFE.x0 + 7.5), y: a.back.y })
   const r = local({ x: model(SAFE.x1 - 2.5), y: a.back.y })
   return Math.min(-l.x, r.x)
 }

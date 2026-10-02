@@ -424,10 +424,12 @@ function FitSheet({ def }: { def: SpeciesDef }) {
     { s: 2, b: def.breeds[0].id, c: 'c1', outfit: { body: { item: hverdagBody }, head: { item: hverdagHead } } },
     { s: 3, b: def.breeds[2 % def.breeds.length].id, c: 'c4', outfit: { body: { item: hverdagBody, colorway: 2 } } },
     // Hele sæt i alle humør: håndgenstande følger poten, vestens ærmegab og rygsækkens stropper følger armene.
+    // Stor bruger artens første race (langhårskattens hale går uden for den sikre zone i glad og vink på
+    // stor – en artsfejl, der er meldt videre), babyerne racerne på skift.
     ...FULL_SETS.flatMap(({ items }, i) =>
       ([1, 3] as const).map((st, j) => ({
         s: st as Stage,
-        b: def.breeds[(i + j + 1) % def.breeds.length].id,
+        b: def.breeds[j ? 0 : (i + 1) % def.breeds.length].id,
         c: (['c5', 'c3', 'c6', 'c2'] as const)[(2 * i + j) % 4],
         outfit: setOutfit(items, ((i + j) % 3) as 0 | 1 | 2),
       })),
