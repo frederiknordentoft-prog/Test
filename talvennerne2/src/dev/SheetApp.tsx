@@ -450,7 +450,11 @@ function SilhouettesSheet() {
  * 1,5 enh² (review G1-r4, R1). En lomme, der kun hænger sammen med baggrunden gennem en sprække under 1
  * enhed, er lukket. Kendte lommer (lints.ts, KNOWN_POCKETS) fejler ikke, men står i lint-rapporten.
  */
-const HOLES_LINTED: Partial<Record<string, 'strict' | 'thin'>> = { rabbit: 'strict', cat: 'thin', horse: 'thin', unicorn: 'thin', puppy: 'thin', hedgehog: 'thin' }
+const HOLES_LINTED: Partial<Record<string, 'strict' | 'thin'>> = {
+  rabbit: 'strict', cat: 'thin', horse: 'thin', unicorn: 'thin', puppy: 'thin', hedgehog: 'thin',
+  // Bølge 2 (review G2-r1 §1.4): lommerne mellem løftet pote eller vinge og kind eller krop er fyldt.
+  lamb: 'thin', fox: 'thin', hamster: 'thin', panda: 'thin', squirrel: 'thin', owl: 'thin',
+}
 
 function HolesSheet() {
   const cells: { def: SpeciesDef; b: BreedId; s: Stage; c: ColorwayId; m: Mood }[] = []

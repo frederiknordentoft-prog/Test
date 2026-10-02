@@ -144,10 +144,43 @@ const PawUp: SidePart = ({ pal, sw, mood }) => {
  * hagen og uldkroppen, så der aldrig ses baggrund inde i figuren (huller-lint).
  */
 const CHEER_WEB: Vec[] = [[7.5, 20], [-1.5, 10], [-11.5, 0], [-19, -9], [-10, -15], [4, -12], [22, -2], [20, 14]]
-const WEBS: PawWebs = {
-  cheer: { L: CHEER_WEB, R: CHEER_WEB },
+const WEBS: PawWebs = {}
+/**
+ * Pr. stadie: på stor stikker fyldet ud mellem hagen og det højre ben og ses mod baggrunden (lækage-tjekket, review
+ * G2-r1), så dér fylder nøgleposens egen lomme (`KEY_WEBS`) i stedet.
+ */
+const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  std: { 1: { cheer: { L: CHEER_WEB, R: CHEER_WEB } }, 2: { cheer: { L: CHEER_WEB, R: CHEER_WEB } }, 3: { cheer: { L: CHEER_WEB } } },
 }
-const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {}
+
+/**
+ * Lommerne i nøgleposerne (review G2-r1 §1.4 og §5): pels i skyggetone bag alt mellem løftet pote eller vinge og kind
+ * eller krop, så der aldrig ses baggrund inde i figuren. Kun i stillbilleder (album, butik og kontaktark): i animationen
+ * åbner og lukker lommerne, mens poten bevæger sig, så et fast fyld ville ses mod baggrunden dér. Hylstrene er målt på
+ * magenta (4 px pr. enhed, udvidet 1,2 enheder) i skulderens ramme (højre side spejlet) pr. race, stadie, humør og side.
+ */
+const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  std: {
+    1: {
+      wave: { R: [[-21.3, -23.7], [-22.8, -23.4], [-23.2, -22.6], [-22.1, -11.2], [-20.5, -5.5], [-19, -2.5], [-16.7, -0.2], [-12.6, 2.1], [-9.9, 2.5], [-5.7, -1.7], [-3.1, -3.2], [-0.4, -4], [5.7, -3.6], [7.2, -4.7], [7.2, -7.4], [0, -9.7], [-8, -13.5], [-14.8, -18]] },
+    },
+    3: {
+      cheer: { R: [[-13.9, -21.9], [-15.7, -20.9], [-15.2, -19.5], [-4.5, -6.7], [-1.2, -3.7], [3.5, -3.8], [5.8, -3], [7.6, -5.3], [6.1, -6.6], [-1.4, -9.6], [-7.5, -13.9]] },
+    },
+  },
+}
+const KeyWebs = pawWebs({}, KEY_WEBS)
+/** Armenes faste fyld og, i stillbilleder, nøgleposernes lommer i skyggetone (se `KEY_WEBS`). */
+const withKeyWebs = (webs: SidePart): SidePart => (p) => {
+  const key = p.still ? KeyWebs({ ...p, pal: { ...p.pal, fur: p.pal.silhouette ? p.pal.fur : p.pal.shade } }) : null
+  const web = webs(p)
+  return key && web ? (
+    <>
+      {web}
+      {key}
+    </>
+  ) : (key ?? web)
+}
 
 // ---------------------------------------------------------------------------------------------
 // Bagben: små, mørke klove, der titter frem under uldskyen.
@@ -258,7 +291,7 @@ export const lamb: SpeciesDef = {
     Ear,
     Paw,
     PawUp,
-    PawBack: pawWebs(WEBS, PAW_WEBS),
+    PawBack: withKeyWebs(pawWebs(WEBS, PAW_WEBS)),
     pawUpTip: Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k, { x: tipOf(s)[0], y: tipOf(s)[1] }])),
     upArms: Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k, { spine: s, w0: UP_W[k as UpKind][0], w1: UP_W[k as UpKind][1], tip: 8 }])),
     limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 12.5, half: 12.8 } },
