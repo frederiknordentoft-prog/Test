@@ -353,8 +353,11 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   const nodeKeySet = new Set(keys.map((k) => k.key))
   const byNeed = (a: KeyOption, b: KeyOption) => Number(due(b)) - Number(due(a)) || box(a) - box(b) || st(a).lastRound - st(b).lastRound
   const seenOf = (pool: readonly KeyOption[] | undefined) => (pool ?? []).filter((k) => seen(k) && !nodeKeySet.has(k.key)).sort(byNeed)
-  const regionSeen = seenOf(o.regionKeys)
-  const chainSeen = seenOf(o.chainKeys)
+  // read only when the allowance is used up (plan.ts builds these pools on demand)
+  let regionSeen: KeyOption[] | null = null
+  let chainSeen: KeyOption[] | null = null
+  const fromRegion = () => (regionSeen ??= seenOf(o.regionKeys))
+  const fromChain = () => (chainSeen ??= seenOf(o.chainKeys))
   // A node never played, reached with the allowance used up, is not a round of other regions'
   // review only: it gets a taste of its first keys (TASTE_KEYS, within the day's TASTE_PER_DAY)
   const tasteLeft = o.newCaps?.taste ?? TASTE_PER_DAY
@@ -365,7 +368,7 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   const opener = secure.length > 0
     ? [...secure].sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct || a.rank - b.rank)[0]
     : [...keys].filter((k) => seen(k) || (!k.reviewOnly && totalLeft > 0 && capOf(k.skill) > 0)).sort((a, b) => a.rank - b.rank)[0]
-      ?? (tasting ? [...regionSeen, ...chainSeen, ...others].filter((k) => box(k) >= 3).sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct)[0] ?? taste[0] : undefined)
+      ?? (tasting ? [...fromRegion(), ...fromChain(), ...others].filter((k) => box(k) >= 3).sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct)[0] ?? taste[0] : undefined)
   take(opener, 'opener', !!opener && taste.includes(opener))
   for (const k of taste) take(k, 'fresh', true)
   // A child who has met nothing here yet ends the round on the opener again (the last task is never
@@ -405,9 +408,9 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   // them, and last every seen key of the started skills (consolidation, shaky ones too).
   const capped = isCapped()
   if (capped) {
-    takeN(regionSeen.filter((k) => box(k) < 3), size - picks.length, 'shaky')
-    takeN(regionSeen.filter((k) => box(k) >= 3), size - picks.length, 'secure')
-    takeN(chainSeen, size - picks.length, 'review')
+    takeN(fromRegion().filter((k) => box(k) < 3), size - picks.length, 'shaky')
+    takeN(fromRegion().filter((k) => box(k) >= 3), size - picks.length, 'secure')
+    takeN(fromChain(), size - picks.length, 'review')
   }
   takeN([...others].sort((a, b) => Number(due(b)) - Number(due(a)) || box(b) - box(a)), size - picks.length, 'review')
   if (capped) takeN(seenOf(o.startedKeys), size - picks.length, 'review')

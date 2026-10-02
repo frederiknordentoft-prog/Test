@@ -133,6 +133,14 @@ function nodeTasks(node: NodeDef, env: Env): Task[] {
   const tone = roundTone(profile.recentFirstTries, ctx.recentFast)
   const started = startedKeys(node.skills, env)
   const region = node.region ? REGION_BY_ID[node.region] : undefined
+  // the fill for a day whose allowance is used up is built only when the round builder asks for it
+  const lazy = <T>(make: () => T) => {
+    let value: T | undefined
+    return () => (value ??= make())
+  }
+  const regionKeys = lazy(() => (region ? withAnswers(onKeys(region.skills, env), env.reg) : []))
+  const chainKeys = lazy(() => (region ? withAnswers(onKeys(chainSkills(region), env), env.reg) : []))
+  const startedAll = lazy(() => withAnswers(started, env.reg))
   return buildRound({
     keys: withAnswers(keysForNode(node, keyCtx(env)), env.reg),
     states: profile.keys,
@@ -146,9 +154,15 @@ function nodeTasks(node: NodeDef, env: Env): Task[] {
     reviewKeys: withAnswers(started.filter((k) => (profile.keys[k.key]?.box ?? 0) >= 3), env.reg),
     // with today's allowance used up, the round is filled from the region, the chain, then review
     // (roundBuilder: CAPPED_REPEAT_MAX, UI-fund 10 and 16)
-    regionKeys: region ? withAnswers(onKeys(region.skills, env), env.reg) : [],
-    chainKeys: region ? withAnswers(onKeys(chainSkills(region), env), env.reg) : [],
-    startedKeys: withAnswers(started, env.reg),
+    get regionKeys() {
+      return regionKeys()
+    },
+    get chainKeys() {
+      return chainKeys()
+    },
+    get startedKeys() {
+      return startedAll()
+    },
     flagged: flaggedIds(profile.misconceptions),
     newCaps: newCapsFor(profile.newToday, ctx.day),
   })
