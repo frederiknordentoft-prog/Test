@@ -11,7 +11,7 @@ import {
 import { registeredSkills } from '../../registry'
 import { numberWordProblems, numbersIn } from '../number/number2.oracle'
 import {
-  animationChecks, answerComesNowSays, avoidChecks, hintArithmetic, balanceTokens, cardAnswer, cardNumbers, classifyAll, continueStones, diagnosticCards, distinctIds,
+  animationChecks, answerComesNowSays, avoidChecks, detectableChecks, hintArithmetic, balanceTokens, cardAnswer, cardNumbers, classifyAll, continueStones, diagnosticCards, distinctIds,
   equalSidesAnswer, equalSidesOf, equalSidesShapeOk, equalsAsAnswerValues, explainMissingPart10, explainSkip, idChecks, instancesOf3,
   inverseAnswer, inverseOf, inverseWrongOps, missing100Mis, missing100Numbers, missing100Of, missing100Tokens, missingPart10Of,
   productionChecks, sentences, skipNext, skipRowOf, solveTokens, specKindChecks, spokenAnswer, spokenTokens, statementTrue, swapped,
@@ -121,10 +121,13 @@ describe('missingPart10 oracle', () => {
   })
 
   it('classifies every card and typed value by pædagogik §3.2 (a + c is equalsAsAnswer, never a number of the question)', () => {
-    expect(first(classifyAll(built, (b, v) => {
+    const explain = (b: Built, v: AnswerValue) => {
       const q = missingPart10Of(b.fact.id)!
       return explainMissingPart10(q.a, q.c, v)
-    }))).toEqual([])
+    }
+    expect(first(classifyAll(built, explain))).toEqual([])
+    // SPEC §4.3: the opportunities are what the cards or keys can show
+    expect(first(detectableChecks(built, explain))).toEqual([])
   })
 
   it('has SPEC’s production kinds and ceilings (keypad 0–20: 1 in 21, box 5; cards box 3)', () => {
@@ -232,6 +235,7 @@ describe('skipCount oracle', () => {
 
   it('classifies cards, typed values and every filling: skipStepOne on in ones, the stones as operands, A11 on a typed swap', () => {
     expect(first(classifyAll(built, (b, v) => explainSkip(rowOf(b.fact), v)))).toEqual([])
+    expect(first(detectableChecks(built, (b, v) => explainSkip(rowOf(b.fact), v)))).toEqual([])
   })
 
   it('has SPEC’s production kinds and ceilings (keypad and fillSlots box 5, cards box 3)', () => {
@@ -319,6 +323,7 @@ describe('equalSides oracle', () => {
 
   it('classifies cards and typed values by pædagogik §3.2; a whole-side value that is on the card is ambiguous (A9)', () => {
     expect(first(classifyAll(built, (b, v) => explainBalance(b.task, v)))).toEqual([])
+    expect(first(detectableChecks(built, (b, v) => explainBalance(b.task, v)))).toEqual([])
     // the trap "7 + 2 = 9 + □": 9 is the side's value and on the card
     const traps = built.filter((b) => b.kind === 'keypad' && equalsAsAnswerValues(balanceTokens(b.task.prompt)!).some((v) => cardNumbers(b.task.prompt).includes(v) && v !== b.task.answer))
     expect(traps.length).toBeGreaterThan(0)
@@ -414,6 +419,7 @@ describe('inverseOps oracle', () => {
 
   it('classifies cards and typed values: wrongOperation; on a number of the card it is ambiguous (A9), on the reversed answer too (A11)', () => {
     expect(first(classifyAll(built, (b, v) => explainInverse(b.task, v)))).toEqual([])
+    expect(first(detectableChecks(built, (b, v) => explainInverse(b.task, v)))).toEqual([])
   })
 
   it('has SPEC’s production kinds and ceilings (keypad box 5, cards box 3)', () => {
@@ -502,6 +508,7 @@ describe('missingPart100 oracle', () => {
 
   it('classifies cards and typed values (137 can be typed): equalsAsAnswer, digitComplement10, wrongOperation, with A9 and A11', () => {
     expect(first(classifyAll(built, (b, v) => explainMissing100(b.task, v)))).toEqual([])
+    expect(first(detectableChecks(built, (b, v) => explainMissing100(b.task, v)))).toEqual([])
     // 55 + ? = 100 → 55 is digitComplement10 and the number of the question: ambiguous, never evidence
     const fifty5 = built.filter((b) => b.kind === 'keypad' && /^mp100:(55\+\?=100|100-55=\?)$/.test(b.fact.id))
     for (const b of fifty5) expect(wantTag(b.task, 55, explainMissing100(b.task, 55))).toBe('ambiguous')

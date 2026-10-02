@@ -7,7 +7,7 @@
 // skips *.oracle.ts files, so none of this reaches the app.
 import { MISCONCEPTION_IDS } from '../../types'
 import type { AnswerValue, ErrorTag, Fact, MisconceptionId, Prompt, SkillDef, SkillId, Task, TaskKind, Term } from '../../types'
-import { classifyAnswer } from '../../misconceptions'
+import { classifyAnswer, detectableOf } from '../../misconceptions'
 import { isCorrect } from '../../answer'
 import { ceilingFor, guessP, isProduction } from '../../kinds'
 import { hashSeed, makeRng } from '../../rng'
@@ -265,6 +265,81 @@ export function diagnosticCards(built: readonly Built[], known: (b: Built) => re
     if (could.length > 0 && !t.options.some(counts)) out.push(`${t.factId}: no diagnostic card among [${t.options.join(', ')}] (could be ${could.join(', ')})`)
   }
   return out
+}
+
+/** Every non-empty choice of options, as the sorted ids a multiSelect answer is compared on. */
+export function selectionsOf(ids: readonly string[]): string[] {
+  const out: string[] = []
+  for (let mask = 1; mask < 2 ** ids.length; mask++) out.push(ids.filter((_, i) => mask & (2 ** i)).sort().join('|'))
+  return out
+}
+
+/**
+ * What the child can hand in on this task (SPEC §3.2): the cards; any number the keys take (at most
+ * 0–999); every filling of the slots; every selection; a deal of the whole pile (the even share, or
+ * −1); every colouring (frac:k/parts). A 'grid' count is typed.
+ */
+export function producible(t: Task): AnswerValue[] {
+  switch (t.kind) {
+    case 'choice':
+    case 'pair':
+    case 'trueFalse':
+      return [...t.options]
+    case 'keypad':
+    case 'grid':
+      return Array.from({ length: Math.min(1000, 10 ** t.maxDigits) }, (_, v) => v)
+    case 'fillSlots': {
+      let fills: string[] = ['']
+      for (let i = 0; i < String(t.answer).split('|').length; i++) fills = fills.flatMap((f) => t.options.map((o) => (f === '' ? String(o) : `${f}|${String(o)}`)))
+      return fills
+    }
+    case 'multiSelect':
+      return selectionsOf(t.options.map(String))
+    case 'share': {
+      if (t.prompt.scene !== 'share') return []
+      const each = t.prompt.total / t.prompt.recipients
+      return Number.isInteger(each) ? [each, -1] : [-1]
+    }
+    case 'colorParts': {
+      const parts = t.prompt.scene === 'fraction' ? t.prompt.parts : 0
+      return Array.from({ length: parts + 1 }, (_, k) => `frac:${k}/${parts}`)
+    }
+    default:
+      throw new Error(`no producible values for ${t.kind}`)
+  }
+}
+
+/** The perceptual misconception a contrast task in each skill tests (SPEC §4.3, pædagogik §3.2). */
+const PERCEPTUAL3: Readonly<Partial<Record<SkillId, MisconceptionId>>> = {
+  halfShape: 'unequalParts', fractionShape: 'unequalParts', sortShapes: 'prototypeOnly', shapes2D: 'prototypeOnly',
+}
+
+/**
+ * SPEC §4.3 "Mulighed": the misconceptions a task gives the child the chance to show — those the oracle
+ * finds among the values the task can actually be answered with (a card shown, a number typed, a deal,
+ * a selection), a typed digit swap where one can happen, and a contrast task's perceptual misconception.
+ * detectableOf must agree: an opportunity that no answer can hit dilutes the flag rate and lets right
+ * answers lift a flag they say nothing about (isResolved).
+ */
+export function detectableChecks(built: readonly Built[], explain: (b: Built, v: AnswerValue) => Expl): string[] {
+  const out = new Set<string>()
+  for (const b of built) {
+    const t = b.task
+    const want = new Set<MisconceptionId>()
+    for (const v of producible(t)) {
+      if (isCorrect(t, v)) continue
+      const tag = wantTag(t, v, explain(b, v))
+      if (isMis(tag)) want.add(tag)
+    }
+    const swap = typedSwapOf(t)
+    if (swap !== null && wantTag(t, swap, explain(b, swap)) === 'plain' && !explain(b, swap).operand) want.add('digitSwap')
+    const perceptual = PERCEPTUAL3[t.skill]
+    if (t.contrast && perceptual) want.add(perceptual)
+    const got = new Set(detectableOf(t))
+    const show = (s: Set<MisconceptionId>) => [...s].sort().join(',') || '∅'
+    if (show(got) !== show(want)) out.add(`${t.factId} ${t.kind}: detectable ${show(got)}, the answers it takes can show ${show(want)}`)
+  }
+  return [...out]
 }
 
 // ─── SPEC §3.2–3.3: guess rate, production and ceiling ─────────────────────
@@ -693,7 +768,28 @@ export function hintArithmetic(def: SkillDef, facts: readonly Fact[], tags: read
       for (const kind of [undefined, ...def.kinds]) {
         const h = def.hint(f, tag, kind)
         const where = `${f.id} hint(${String(tag)}${kind ? `, ${kind}` : ''})`
+        // the hops on the empty number line: "Start på 38. Hop to frem til 40. Hop fem frem til 45."
+        let at: number | null = null
+        let start: number | null = null
         for (const s of sentences(spokenText(h.speech))) {
+          const st = /^Start på (.+)\.$/.exec(s)
+          if (st) {
+            const n = spokenTokens(st[1])
+            at = start = n.length === 1 && typeof n[0] === 'number' ? n[0] : null
+          }
+          const hop = /^Hop (\S+) (frem|tilbage) til (.+)\.$/.exec(s)
+          if (hop) {
+            const d = spokenTokens(hop[1])[0]
+            const to = spokenTokens(hop[3])
+            const lands = at !== null && typeof d === 'number' ? at + (hop[2] === 'frem' ? d : -d) : null
+            if (lands === null || to.length !== 1 || to[0] !== lands) out.add(`${where}: "${s}" from ${at}`)
+            at = to.length === 1 && typeof to[0] === 'number' ? to[0] : null
+          }
+          const together = /^Hoppene giver tilsammen (.+)\.$/.exec(s)
+          if (together && at !== null && start !== null) {
+            const n = spokenTokens(together[1])
+            if (n.length !== 1 || n[0] !== Math.abs(at - start)) out.add(`${where}: "${s}", the hops go from ${start} to ${at}`)
+          }
           const toks = spokenTokens(s)
           if (toks.includes('=') && !toks.includes('?') && statementTrue(toks) === false) out.add(`${where}: "${s}" is not true`)
           // "Svaret er …" and "Hoppene giver tilsammen …" name the answer

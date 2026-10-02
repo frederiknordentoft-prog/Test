@@ -14,7 +14,7 @@ import {
 import { numberWordProblems, numbersIn, word99 } from '../number/number2.oracle'
 import { isPrototypical } from './shapes.oracle'
 import {
-  avoidChecks, classifyAll, distinctIds, idChecks, instancesOf3, productionChecks, specKindChecks,
+  avoidChecks, classifyAll, detectableChecks, distinctIds, idChecks, instancesOf3, productionChecks, specKindChecks,
 } from '../algebra/algebra2.oracle'
 import {
   cardSolid, composeAsk, cornerCount, cutX, figure, fitsAsk, hasSymmetryLine, mirroredAbout, piecesPer, sortRule, solidAsk,
@@ -115,6 +115,7 @@ describe('sidesCorners oracle', () => {
   it('deals valid cards (0–12), classifies every wrong value as plain, and has SPEC’s production kinds and ceilings', () => {
     expect(first(generic(built))).toEqual([])
     expect(first(classifyAll(built, nothing))).toEqual([])
+    expect(first(detectableChecks(built, nothing))).toEqual([])
     expect(first(productionChecks(built))).toEqual([])
     expect(first(specKindChecks(def, built))).toEqual([])
   })
@@ -214,6 +215,7 @@ describe('shapes3D oracle', () => {
   it('deals valid cards and classifies every card, typed value and selection as plain (no misconception fits)', () => {
     expect(first(generic(built))).toEqual([])
     expect(first(classifyAll(built, nothing))).toEqual([])
+    expect(first(detectableChecks(built, nothing))).toEqual([])
     expect(first(built.filter((b) => b.kind === 'multiSelect').flatMap((b) => selectionProblems(b.task, String(b.task.answer))))).toEqual([])
   })
 
@@ -278,6 +280,13 @@ describe('sortShapes oracle', () => {
       problems.push(...selectionProblems(task, String(task.answer), mis))
     }
     expect(first(problems)).toEqual([])
+    // the opportunities: prototypeOnly on every plate (a contrast task counts on both sides, SPEC §4.3)
+    expect(first(detectableChecks(built, (b, v) => {
+      const rule = sortRule(said(b.task))!
+      const members = items(b.task).filter((i) => rule(figure(i.shape, i.variant)))
+      const nice = members.filter((i) => isPrototypical(i.shape, i.variant))
+      return { mis: nice.length > 0 && nice.length < members.length && v === nice.map((i) => i.id).sort().join('|') ? ['prototypeOnly'] : [] }
+    }))).toEqual([])
     // SPEC §4.3: at least six of each, so the contrast rule can conclude
     const contrasts = canon.map((f) => built.find((b) => b.fact.id === f.id)!.task.contrast)
     expect(contrasts.filter((c) => c === 'conflict').length).toBeGreaterThanOrEqual(6)
@@ -367,6 +376,7 @@ describe('symmetry oracle', () => {
   it('classifies every judgment, count and selection as plain (no misconception fits)', () => {
     expect(first(generic(built))).toEqual([])
     expect(first(classifyAll(built, nothing))).toEqual([])
+    expect(first(detectableChecks(built, nothing))).toEqual([])
     expect(first(built.filter((b) => b.kind === 'multiSelect').flatMap((b) => selectionProblems(b.task, String(b.task.answer))))).toEqual([])
     // a count answered on the keys (the grid kind until wave 3): every value 0–99 but the count is wrong and plain
     const problems: string[] = []
@@ -451,6 +461,7 @@ describe('composeShapes oracle', () => {
   it('deals valid cards (0–12), classifies every wrong value as plain, and has SPEC’s production kinds and ceilings', () => {
     expect(first(generic(built))).toEqual([])
     expect(first(classifyAll(built, nothing))).toEqual([])
+    expect(first(detectableChecks(built, nothing))).toEqual([])
     expect(first(productionChecks(built))).toEqual([])
     expect(first(specKindChecks(def, built))).toEqual([])
   })

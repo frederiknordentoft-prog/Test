@@ -1,17 +1,18 @@
 // Oracle tests for groupsOf, mul2510 and shareEqually (SPEC §2.2, §3, §4.1 with A9/A11, §10.1, §15.1),
 // compared with muldiv.oracle.ts and the wave-2 kit in algebra2.oracle.ts.
 import { describe, expect, it } from 'vitest'
-import { classifyAnswer } from '../../misconceptions'
+import { classifyAnswer, detectableOf, updateMisconceptions, type MisconceptionStates } from '../../misconceptions'
 import { isCorrect } from '../../answer'
+import { isProduction } from '../../kinds'
 import { masteryKeyOf } from '../../tasks'
-import type { AnswerValue } from '../../types'
+import type { AnswerLogEntry, AnswerValue, Task } from '../../types'
 import {
   answerProblems, cardProblems, first, hintProblems, registeredSkill, sceneOf, spokenText, tagsToHint, taskSpeechProblems, tasksOf,
   type Built,
 } from '../number/number.oracle'
 import { numberWordProblems, numbersIn } from '../number/number2.oracle'
 import {
-  animationChecks, cardAnswer, classifyAll, diagnosticCards, hintArithmetic, idChecks, instancesOf3, productionChecks, sentences, specKindChecks, spokenAnswer, typedSwapOf, wantTag,
+  animationChecks, cardAnswer, classifyAll, detectableChecks, diagnosticCards, hintArithmetic, idChecks, instancesOf3, productionChecks, sentences, specKindChecks, spokenAnswer, typedSwapOf, wantTag,
 } from '../algebra/algebra2.oracle'
 import {
   explainGroups, explainMul, explainShare, groupsOfId, mul2510Ids, mulId, mulMis, shareId, shareOutcomes,
@@ -68,6 +69,10 @@ describe('groupsOf oracle', () => {
 
   it('classifies cards and typed values: mulAsAdd, the numbers of the question, everything else plain', () => {
     expect(first(classifyAll(built, (b, v) => { const q = groupsOfId(b.fact.id)!; return explainGroups(q.g, q.s, v) }))).toEqual([])
+  })
+
+  it('counts as an opportunity (detectableOf) exactly the misconceptions its cards or keys can show', () => {
+    expect(first(detectableChecks(built, (b, v) => { const q = groupsOfId(b.fact.id)!; return explainGroups(q.g, q.s, v) }))).toEqual([])
   })
 
   it('has SPEC’s production kinds and ceilings (keypad 0–30 box 5, cards box 3)', () => {
@@ -140,6 +145,7 @@ describe('mul2510 oracle', () => {
 
   it('classifies cards and typed values by pædagogik §3.2 with A9 (1 · 5 → 1) and A11 (9 · 2 → 81, 9 · 5 → 54)', () => {
     expect(first(classifyAll(built, (b, v) => { const q = mulId(b.fact.id)!; return explainMul(q.a, q.b, v) }))).toEqual([])
+    expect(first(detectableChecks(built, (b, v) => { const q = mulId(b.fact.id)!; return explainMul(q.a, q.b, v) }))).toEqual([])
     const typed = (id: string) => built.find((b) => b.fact.id === id && b.kind === 'keypad')!.task
     expect(classifyAnswer(typed('mul:1x5'), 1)).toBe('ambiguous')
     for (const [id, v] of [['mul:2x9', 81], ['mul:5x9', 54]] as const) {
@@ -237,6 +243,45 @@ describe('shareEqually oracle', () => {
     expect(first(classifyAll(built, (b, v) => { const q = shareId(b.fact.id)!; return explainShare(q.total, q.g, v) }))).toEqual([])
     const t = built.find((b) => b.fact.id === 'shr:6:3' && b.kind === 'keypad')!.task
     expect(classifyAnswer(t, 3)).toBe('ambiguous')
+  })
+
+  it('counts as an opportunity on cards and keys exactly the misconceptions they can show', () => {
+    const explain = (b: Built, v: AnswerValue) => { const q = shareId(b.fact.id)!; return explainShare(q.total, q.g, v) }
+    expect(first(detectableChecks(built.filter((b) => b.kind !== 'share'), explain))).toEqual([])
+  })
+
+  it.fails('share: a deal hands in the share or −1 (shareUnequal), so it is no wrongOperation opportunity', () => {
+    // GENERATOR BUG (shareEqually.ts, no candidatesFor): the share task inherits the card/keypad candidates
+    // (total ± animals → wrongOperation), so detectableOf(shr:12:3 share) = [wrongOperation], although the
+    // share view can only hand in 4 or −1. SkillExtras.candidatesFor(fact, 'share') → [] would fix it.
+    const explain = (b: Built, v: AnswerValue) => { const q = shareId(b.fact.id)!; return explainShare(q.total, q.g, v) }
+    expect(first(detectableChecks(built.filter((b) => b.kind === 'share'), explain))).toEqual([])
+  })
+
+  it.fails('a flagged wrongOperation is not lifted by right deals alone, which cannot show it (SPEC §4.3 "Løst")', () => {
+    // The consequence of the bug above: after a flag from typed 12 − 3 → 9 style answers, six even deals are
+    // six "right opportunities" and isResolved (misconceptions.ts) lifts the flag.
+    const task = (id: string, kind: Task['kind']) => built.find((b) => b.fact.id === id && b.kind === kind)!.task
+    let ts = 1_000
+    const log = (t: Task, given: AnswerValue, day: string): AnswerLogEntry => ({
+      profileId: 'p', ts: ts++, day, sessionId: 's', roundId: 'r', nodeId: 'n', mode: 'round', skill: t.skill, family: t.family,
+      factId: t.factId, masteryKey: t.masteryKey, kind: t.kind, optionsCount: t.options.length, production: isProduction(t), given,
+      answer: t.answer, correct: isCorrect(t, given), ms: 4_000, fast: true, errorTag: classifyAnswer(t, given), detectable: detectableOf(t),
+      boxBefore: 2, boxAfter: 2, scaffold: false, replays: 0, retryOf: null, assisted: false, audioUnverified: false,
+    })
+    let s: MisconceptionStates = {}
+    const feed = (e: AnswerLogEntry) => { s = updateMisconceptions(s, e, { skillAccuracy20: 0.8, day: e.day }) }
+    // typed wrongOperation on four facts over two days: flagged
+    for (const [id, day] of [['shr:12:3', '2026-10-01'], ['shr:15:3', '2026-10-01'], ['shr:20:4', '2026-10-02'], ['shr:16:4', '2026-10-02']] as const) {
+      const t = task(id, 'keypad')
+      const q = shareId(id)!
+      expect(classifyAnswer(t, q.total - q.g), id).toBe('wrongOperation')
+      feed(log(t, q.total - q.g, day))
+    }
+    expect(s.wrongOperation?.status).toBe('flagged')
+    // six right deals the next day
+    for (const id of ['shr:6:2', 'shr:8:2', 'shr:9:3', 'shr:12:4', 'shr:10:5', 'shr:15:5']) feed(log(task(id, 'share'), shareId(id)!.answer, '2026-10-03'))
+    expect(s.wrongOperation?.status).toBe('flagged')
   })
 
   it('has SPEC’s production kinds and ceilings (share and keypad box 5, cards box 3)', () => {

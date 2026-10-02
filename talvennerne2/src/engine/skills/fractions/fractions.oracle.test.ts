@@ -11,7 +11,7 @@ import {
   answerProblems, cardProblems, first, hintProblems, optionProblems, registeredSkill, sceneOf, spokenText, tagsToHint,
   taskSpeechProblems, tasksOf, type Built,
 } from '../number/number.oracle'
-import { classifyAll, productionChecks, specKindChecks } from '../algebra/algebra2.oracle'
+import { classifyAll, detectableChecks, productionChecks, specKindChecks } from '../algebra/algebra2.oracle'
 import { cutX, figure, partsAt } from '../shapes/shapes2.oracle'
 import { cutIntoHalves, fracSlots, fracToken, fractionShapeId, halfShapeId, sameValue, spokenFraction, type Frac } from './fractions.oracle'
 
@@ -115,6 +115,15 @@ describe('halfShape oracle', () => {
       }
     }
     expect(first(problems)).toEqual([])
+  })
+
+  it('counts unequalParts as an opportunity where an answer can show it, and on every contrast task (SPEC §4.3)', () => {
+    expect(first(detectableChecks(built, (b, v) => {
+      const t = b.task
+      if (t.kind === 'trueFalse') return { mis: v === 'yes' && t.answer === 'no' ? ['unequalParts'] : [] }
+      const cut = items(t).filter((i) => i.cut).map((i) => i.id).sort().join('|')
+      return { mis: v === cut && cut !== t.answer ? ['unequalParts'] : [] }
+    }))).toEqual([])
   })
 
   it('marks a task conflict exactly when an unequal cut is shown (SPEC §4.3), with six or more of each', () => {
@@ -250,6 +259,7 @@ describe('fractionShape oracle', () => {
   })
 
   it('classifies every wrong card, colouring and filling as plain (no catalogue misconception fits equal parts)', () => {
+    expect(first(detectableChecks(built, () => ({ mis: [] })))).toEqual([])
     expect(first(classifyAll(built.filter((b) => b.kind !== 'colorParts'), () => ({ mis: [] }), (b, v) => {
       const q = fractionShapeId(b.fact.id)!.frac
       const f = b.kind === 'fillSlots' ? fracSlots(v) : fracToken(v)
