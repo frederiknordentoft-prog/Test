@@ -413,8 +413,9 @@ function SilhouettesSheet() {
 
 /**
  * Arter, hvis lommer er lukket, og hvordan de lintes (andre arter vises, men lintes ikke endnu):
- * 'strict' = intet lukket område overhovedet, 'thin' = ingen smalle sømme eller sprækker (bredere
- * lukkede områder er bevidst negativt rum, fx en hale i en løkke).
+ * 'strict' = intet lukket område overhovedet, 'thin' = ingen sømme, sprækker eller lukkede områder fra
+ * 1,5 enh² (review G1-r4, R1). En lomme, der kun hænger sammen med baggrunden gennem en sprække under 1
+ * enhed, er lukket. Kendte lommer (lints.ts, KNOWN_POCKETS) fejler ikke, men står i lint-rapporten.
  */
 const HOLES_LINTED: Partial<Record<string, 'strict' | 'thin'>> = { rabbit: 'strict', cat: 'thin', horse: 'thin', unicorn: 'thin', puppy: 'thin', hedgehog: 'thin' }
 
@@ -429,7 +430,7 @@ function HolesSheet() {
         for (const c of all ? colors : (['c1', 'c4'] as const)) for (const m of MOODS) if (m !== 'idle') cells.push({ def, b: b.id, s, c, m })
       }
   return (
-    <Page title="Huller og sømme" sub="Alle arter, racer, stadier og farver i hvile, alle humør i c1 og c4, vædderen i alle 8 farver · 7 humør · 3 stadier – på magenta. Kaninen må intet lukket område have; de andre arter ingen smalle sømme eller sprækker (bredere lukkede områder er bevidst negativt rum).">
+    <Page title="Huller og sømme" sub="Alle arter, racer, stadier og farver i hvile, alle humør i c1 og c4, vædderen i alle 8 farver · 7 humør · 3 stadier – på magenta. Kaninen må intet lukket område have; de andre arter ingen sømme, sprækker eller lukkede områder (en lomme bag en sprække under 1 enhed er lukket). Kendte lommer står i lint-rapporten.">
       <div className="sh-grid" style={{ gridTemplateColumns: 'repeat(28, 64px)', gap: 4 }}>
         {cells.map((x, i) => (
           <div key={i} data-holes={HOLES_LINTED[x.def.id] ? `${x.def.id} ${x.b} ${x.s} ${x.c} ${x.m}` : undefined} data-holes-mode={HOLES_LINTED[x.def.id]} style={{ background: '#FF00FF', borderRadius: 6, lineHeight: 0 }}>

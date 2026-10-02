@@ -3,13 +3,15 @@
 // (V-hals, dybe ærmegab ved skuldrene og en kort kant ved hoften), så pelsen ses i halsen, ved
 // skuldrene og under kanten, og streger kroppens kontur igen inden for den. Armene tegnes oven på
 // vesten uden ærmer; en løftet arm (jubel, vink, tænker, ups) får et kantbånd ved roden, så den ser ud
-// til at komme ud af ærmegabet i alle poser. Lommerne sidder ud mod siderne, så de ses ved siden af
+// til at komme ud af ærmegabet i alle poser. Et hvilende, lodret forben (kat, hvalp, hest, enhjørning)
+// kommer ud af et ærmegab med kantbånd lige under skulderleddet, og riggen klipper benet over båndet, så
+// det ikke ligger som en kasse oven på vesten (review G1-r4, punkt 2). Lommerne sidder ud mod siderne, så de ses ved siden af
 // poter og forben på alle arter. Babyens korte torso får kanten og lommerne højere oppe. Én parametrisk
 // tegning giver de 3 grundformer (round/pear/tall). (0,0) = bodyCenter, tegnet ved bodyWidth 100.
 import { fabric } from '../../rig/palette'
-import { circle, ellipse, join, outside, poly, rect, spline } from '../../rig/shapes'
+import { blob, circle, ellipse, join, outside, poly, rect, ribbon, spline } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
-import type { BodyKind, ItemArt, ItemDef, SleeveUpArt } from '../../rig/types'
+import type { ArmholeArt, BodyKind, ItemArt, ItemDef, SleeveUpArt } from '../../rig/types'
 
 interface Cut {
   /** V-halsens bund og halve bredde foroven, ærmegabets bund og stroppens bredde, kanten og lommerne. */
@@ -119,6 +121,18 @@ const sleeveUp: SleeveUpArt = ({ c, sw, root, rootEdge }) =>
     </>
   ) : null
 
+/**
+ * Ærmegabet på et hvilende, lodret forben (armens ramme): et kantbånd, der buer hen over benets rod, hvor
+ * benet kommer ud af vesten. Kun når roden ligger inden for vesten et stykke over kanten (ellers hænger
+ * benet under vesten og tegnes som før).
+ */
+const armhole: ArmholeArt = ({ c, sw, edge, y, origin, s, stage, body: kind }) => {
+  const hem = CUTS[kind].hem - (stage === 1 ? BABY_LIFT : 0)
+  if (origin.y + y / s > hem - 2) return null
+  // Samme kantbånd som vestens egne kanter (V-hals, ærmegab og kant): 2 · sw bredt med en lys midte på 0,9 · sw.
+  return <path d={blob(ribbon(edge, sw * 1.45), 0.8)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.55} strokeLinejoin="round" />
+}
+
 export const opdagerBody: ItemDef = {
   id: 'opdager-body',
   set: 'opdager',
@@ -134,6 +148,7 @@ export const opdagerBody: ItemDef = {
     front: vest('round'),
     bodyShapes: { round: vest('round'), pear: vest('pear'), tall: vest('tall') },
     sleeveUp,
+    armhole,
   },
   fit: { anchor: 'bodyCenter', scaleBy: 'bodyWidth', baseScale: 1, baseWidth: 100 },
   icon: { box: [-43, -42, 86, 70] },

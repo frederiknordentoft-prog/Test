@@ -10,19 +10,20 @@
 // Animerede dele bruger pivot-mønsteret: <g transform="translate(px py)"><g class="a-…">lokalt</g></g>
 // med transform-origin 0 0. Kun transform og opacity animeres (rig.css). Humørets nøglepose sættes
 // som attribut i begge tilstande; i animeret tilstand svinger keyframes (0 % = posen) om den.
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react'
 import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, SweatDrop, ThoughtDots, Zzz, around } from '../parts/house'
 import { OUTLINE, SAFE, apply, modelAnchors, regionTransforms, worldAnchors } from './anchors'
 import type { Affine } from './anchors'
 import { defaultHead, templateBody } from './bodies'
 import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
+import { visibleBox } from './ItemIcon'
 import { about, applyMat, chain, invert, rotate as rotMat, scale as scaleMat, translate as moveMat, xfMat } from './hold'
 import { mixHex } from './oklch'
 import { INK, MAGIC, derivePalette, itemPalette, silhouettePalette } from './palette'
 import { ellipse, fmt3, join, lune, n, outside, rect, spline, tf } from './shapes'
 import type { Vec } from './shapes'
-import { bentSleeve, longArm } from './sleeve'
+import { armholeArch, bentSleeve, longArm } from './sleeve'
 import type {
   AnchorSet, BreedDef, BreedId, Box, ColorwayDef, ColorwayId, FaceStyle, FigureBounds, FitResult, HandHold, ItemDef,
   MagicColorwayId, Mood, Outfit, Palette, PartCtx, PawPose, Pose, PoseXf, Pt, RigIds, SidePart, Slot,
@@ -112,6 +113,8 @@ export const POSES: Record<Mood, Pose> = {
 const G = { x: 100, y: 226 }
 /** Ørerne klippes en anelse inden for hovedets kontur, så ørets fyld dækker konturen helt (ingen søm). */
 export const EAR_SEAM = 0.9
+/** Ærmegabet på ærmeløst kropstøj: buens top under skulderleddet (armens ramme), hvor benet kommer ud. */
+export const ARMHOLE_Y = 2
 
 /** Transform om fodpunktet (hop, ånding): translate(G) · xf · translate(−G). */
 function aboutGround(x: Xf | undefined): string | undefined {
@@ -324,11 +327,40 @@ export function Pivot({ at, cls, still, pose, children }: { at: Pt; cls: string;
   )
 }
 
+/** Hovedets nik (næsevippets overshoot): en ekstra gruppe om hovedets indhold, kun når den animeres. */
+function Nod({ on, children }: { on: boolean; children: ReactNode }) {
+  return on ? <g className="a-nod">{children}</g> : <>{children}</>
+}
+
 /** Miljøet for en render: unikt id-præfiks og (i animeret DOM) refs til pupil-tracking. */
 export interface RigEnv {
   uid: string
   gazeRef?: Ref<SVGGElement>
   glintRef?: Ref<SVGGElement>
+  rootRef?: Ref<SVGSVGElement>
+}
+
+/**
+ * Butikskortet med en håndgenstand på dyret (beskæringen 'wide', review G1-r4, B2): kortet beskæres om poten
+ * og genstanden, så genstanden fylder mindst 1/3 af kortet. Genstandens retning regnes ud under tegningen,
+ * så boksen måles i DOM'en (uden DOM bruges den brede beskæring). Siden er poten med genstanden plus luft,
+ * dog mindst `min` og højst `max` gange genstandens største led.
+ */
+export const HAND_CARD = { pad: 1.3, min: 1.8, max: 2.7 } as const
+
+function handCardBox(root: SVGSVGElement): string | null {
+  const item = root.querySelector<SVGGElement>('[data-slot="hand"]')
+  const paw = item?.closest<SVGGElement>('[data-part^="paw-"]')
+  if (!item || !paw || typeof item.getBBox !== 'function') return null
+  const ib = visibleBox(root, item)
+  const pb = visibleBox(root, paw)
+  if (!ib || !pb) return null
+  const big = Math.max(ib.x1 - ib.x0, ib.y1 - ib.y0)
+  const side = Math.min(Math.max(Math.max(pb.x1 - pb.x0, pb.y1 - pb.y0) * HAND_CARD.pad, big * HAND_CARD.min), big * HAND_CARD.max)
+  // Midten trækkes mod genstanden, så den står midt på kortet med poten, der holder den, ved siden af.
+  const cx = 0.6 * (ib.x0 + ib.x1) / 2 + 0.4 * (pb.x0 + pb.x1) / 2
+  const cy = 0.6 * (ib.y0 + ib.y1) / 2 + 0.4 * (pb.y0 + pb.y1) / 2
+  return `${n(cx - side / 2)} ${n(cy - side / 2)} ${n(side)} ${n(side)}`
 }
 
 /** <Rig> i DOM'en: unikke id'er og pupil-tracking lægges oven på den rene render. */
@@ -336,7 +368,17 @@ export function Rig(props: RigProps) {
   const uid = useId().replace(/[^A-Za-z0-9_-]/g, '')
   const g = gazeInputs(props)
   const { gazeRef, glintRef } = useGaze(g.enabled, props.lookAt, g.eye, g.scale, g.fallback, g.shape)
-  return rigElement(props, { uid, gazeRef, glintRef })
+  const rootRef = useRef<SVGSVGElement>(null)
+  const handCard = props.crop === 'wide' && !!props.outfit?.hand
+  // Efter hver render (før maling, så intet blinker): React rører ikke viewBox igen, så længe den beregnede
+  // beskæring er uændret.
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!handCard || !root) return
+    const vb = handCardBox(root)
+    if (vb) root.setAttribute('viewBox', vb)
+  })
+  return rigElement(props, { uid, gazeRef, glintRef, rootRef: handCard ? rootRef : undefined })
 }
 
 function gazeInputs(props: RigProps) {
@@ -379,6 +421,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const hornClipId = `${uid}n`
   const sleeveClipId = `${uid}v`
   const scarfClipId = `${uid}k`
+  const armholeClipId = `${uid}a`
 
   const a = modelAnchors(def, breed)
   const R = regionTransforms(a, stage)
@@ -390,6 +433,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const face = MOOD_FACE[mood]
   const faceStyle = resolveFace(def, breed)
   const mouth = face.mouth === 'idle' ? faceStyle.idleMouth : face.mouth
+  // Næsevippet (kaninens signatur, review G1-r4, K2): i animeret tilstand løftes overlæben (hvilemundens
+  // 'cat-w') med næsen, og hovedet nikker på overshoot-framen (rig.css: a-lip og a-nod, kun i hvile).
+  const nod = animated && def.signature === 'nose-wiggle'
+  const lip = nod && mouth === 'cat-w'
   const pose = resolvePose(def, breed, mood)
   const seed = props.seed ?? hashSeed(`${def.id}${breed}${colorway}${stage}`)
 
@@ -431,6 +478,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
 
   // Ansigtsgenstande i panden (eventyrbriller) flytter op om en hat med ørehuller og tegnes efter den.
   const faceOnHat = hat === 'through' && !!worn('face')?.item.onHat
+  // Uden hat ligger de oven på pandelokken, så en stor lok (shetlandføllet) ikke skjuler dem (review G1-r4, T11).
+  const faceOverMane = !faceOnHat && !!worn('face')?.item.onHat && !!parts.ManeFront && !hides.has('mane-front')
   // Arterne ser 'through' kun, når ørerne faktisk går gennem huller (og tegner da en afrundet ørebund).
   const hatCtx = holes ? 'through' : hat === 'under' ? 'under' : null
   const ctx = (sw: number): PartCtx => ({ pal, a, stage, mood, breed, colorway, sw, ids, still, lod, pose, hat: hatCtx, clothed: !!bodyWorn })
@@ -478,6 +527,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             hold,
             hat,
             horn: slot === 'head' ? (hornHole?.local ?? null) : null,
+            showcase: crop === 'wide' || undefined,
             restroke: (color) => (
               <path d={slot === 'body' && sleeveSeams ? join(bodyD, sleeveSeams) : bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" strokeLinecap={slot === 'body' && sleeveSeams ? 'round' : undefined} />
             ),
@@ -498,7 +548,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   // forneden.
   const bodyFit = bodyWorn ? fitItem(bodyWorn.item, a, def) : null
   const longTop = a.neck.y - a.shoulderL.y - 4
-  const long = sleeveArt && limb && limb.rot === 0 && longTop < -20
+  const longLimb = !!limb && limb.rot === 0 && longTop < -20
+  const long = sleeveArt && limb && longLimb
     ? longArm(longTop, limb.cuff.y, (limb.cuff.half - 0.4) * (def.family === 'equine' ? 1.25 : 1.06), limb.cuff.half - 0.4)
     : null
   // Skulderleddet i trøjens lokale koordinater, så ærmets striber ligger i trøjens højde.
@@ -519,6 +570,26 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           }),
       )
     : ''
+  // Ærmeløst kropstøj (vesten) på lodrette forben (review G1-r4, punkt 2): benet kommer ud af et ærmegab lige
+  // under skulderleddet. Genstanden tegner kantbåndet; riggen klipper benet over det, så vesten ses dér, og
+  // benet ikke ligger som en kasse oven på vesten.
+  const armholeArt = bodyWorn?.item.art.armhole
+  // Buen er lidt bredere end benet (manchettens halve bredde er benet plus ærmets luft).
+  const arch = armholeArt && limb && longLimb ? armholeArch(limb.cuff.half * (def.family === 'equine' ? 1.04 : 0.9), ARMHOLE_Y) : null
+  const armhole = (side: 'L' | 'R') => {
+    if (!armholeArt || !arch || !bodyWorn || !bodyFit) return null
+    const c = itemPalette(bodyWorn.item.colorways[bodyWorn.colorway ?? 0], silhouette)
+    const node = armholeArt({
+      c, sw: swBody, edge: arch.edge, y: ARMHOLE_Y + 5.2, origin: armOrigin(side), s: bodyFit.scale, stage, body: def.body,
+    })
+    return node ? (
+      <g data-item={bodyWorn.item.id} data-slot="body" data-layer={`armhole-${side}`}>
+        {node}
+      </g>
+    ) : null
+  }
+  // Ærmegabet på de hvilende forben (en løftet arm har ærmeløst tøjs rod i `sleeveUp`).
+  const legHoles = { L: upL ? null : armhole('L'), R: upR ? null : armhole('R') }
   const sleeve = (side: 'L' | 'R') => {
     if (!sleeveArt || !limb || !bodyWorn) return null
     const c = itemPalette(bodyWorn.item.colorways[bodyWorn.colorway ?? 0], silhouette)
@@ -603,12 +674,19 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         <g transform={`scale(-1 1) translate(${n(-at.x)} ${n(-at.y)})`}>{renderItem('hand', 'front', R.body.s, undefined, hold)}</g>
       )
     }
+    const hole = up ? null : legHoles[side]
     return (
       <g data-part={`paw-${side.toLowerCase()}`} transform={`${outer}translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
         <g className={animated ? `a-paw a-paw-${side.toLowerCase()}${up ? ' a-up' : ''}` : undefined} transform={pp.rot ? `rotate(${n(pp.rot)})` : undefined}>
           {hand}
-          <Part {...ctx(swBody)} side={side} />
-          {up ? sleeveUp(side) : sleeve(side)}
+          {hole ? (
+            <g clipPath={`url(#${armholeClipId})`}>
+              <Part {...ctx(swBody)} side={side} />
+            </g>
+          ) : (
+            <Part {...ctx(swBody)} side={side} />
+          )}
+          {up ? sleeveUp(side) : (sleeve(side) ?? hole)}
         </g>
       </g>
     )
@@ -694,8 +772,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const bodyRegion = `translate(${n(R.body.tx)} ${n(R.body.ty)}) scale(${fmt3(R.body.s)})`
   // Jubel: halsgenstanden tegnes efter de løftede arme og klippes til "uden for hovedet" (hovedets kontur
   // ført fra hovedets ramme ind i kroppens), så den ligger under hagen som ellers, men oven på armenes rod.
+  // Løvehovedets krave (review G1-r4, B4): halsgenstanden ligger på samme måde oven på manken under hagen.
   const scarfOver =
-    mood === 'cheer' && upL && upR && !behindL && !behindR && worn('neck')
+    worn('neck') && ((mood === 'cheer' && upL && upR && !behindL && !behindR) || !!breedDef?.neckOverMane)
       ? {
           head:
             `${aboutGround({ sx: 1 / (pose.body?.sx ?? 1), sy: 1 / (pose.body?.sy ?? pose.body?.sx ?? 1) }) ?? ''} ` +
@@ -707,6 +786,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
 
   return (
     <svg
+      ref={env.rootRef}
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}
@@ -743,6 +823,11 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         {bodyWorn && (
           <clipPath id={itemClipId}>
             <path d={bodyFn(a, swBody / 2 - 0.1, stage)} />
+          </clipPath>
+        )}
+        {arch && (legHoles.L || legHoles.R) && (
+          <clipPath id={armholeClipId}>
+            <path d={arch.clip} />
           </clipPath>
         )}
         {sleeveClip && (
@@ -830,6 +915,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         {/* Hoved (lag 10–16) om halsleddet; data-part="head" bruges af bobleklaringens lint. */}
         <g data-part="head" transform={`translate(${n(R.neckWorld.x)} ${n(R.neckWorld.y)}) scale(${fmt3(R.head.s)})`}>
           <g className={animated ? 'a-head' : undefined} transform={tf(pose.head ?? {})}>
+            <Nod on={nod}>
             <g transform={`translate(${n(-a.neck.x)} ${n(-a.neck.y)})`}>
               {/* 10 · mane-back (+ hattens bagdel) og ører bag hovedet (vædderen) */}
               {parts.ManeBack && scaled((breedDef?.maneOrigin ?? def.maneOrigin) === 'headTop' ? a.headTop : a.headCenter, maneK, parts.ManeBack(ctx(swHead / maneK)))}
@@ -847,7 +933,13 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {/* 12 · ansigt */}
               {faceStyle.cheeks !== false && <Cheeks a={a} pal={pal} />}
               {parts.Muzzle?.(ctx(swHead))}
-              <Mouth at={a.mouth} shape={mouth} pal={pal} sw={swHead} buckTeeth={faceStyle.buckTeeth} />
+              {lip ? (
+                <g className="a-lip">
+                  <Mouth at={a.mouth} shape={mouth} pal={pal} sw={swHead} buckTeeth={faceStyle.buckTeeth} />
+                </g>
+              ) : (
+                <Mouth at={a.mouth} shape={mouth} pal={pal} sw={swHead} buckTeeth={faceStyle.buckTeeth} />
+              )}
               <Eyes
                 a={a}
                 shape={face.eyes}
@@ -860,9 +952,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                 glintRef={glintRef}
               />
               {/* 13 · face-item (eventyrbriller på en hat tegnes efter hatten, se faceOnHat) */}
-              {!faceOnHat && renderItem('face', 'front', R.head.s)}
-              {/* 14 · mane-front */}
+              {!faceOnHat && !faceOverMane && renderItem('face', 'front', R.head.s)}
+              {/* 14 · mane-front (eventyrbriller i panden ligger oven på pandelokken) */}
               {parts.ManeFront && !hides.has('mane-front') && scaled(a.headTop, R.xf.mane, parts.ManeFront(ctx(swHead / R.xf.mane)))}
+              {faceOverMane && renderItem('face', 'front', R.head.s)}
               {/* 15 · head-item (en hat mellem ørerne på en art med horn sidder skævt ved siden af
                   hornet og tegnes foran øret, se festhattens overskrivning) */}
               {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
@@ -880,6 +973,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {renderItem('head', 'rim', R.head.s)}
               {Horn && !hornHole && horn(null)}
             </g>
+            </Nod>
           </g>
         </g>
 

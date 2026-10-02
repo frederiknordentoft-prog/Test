@@ -8,7 +8,7 @@
 import { OpenLimb, ROUND, hatted, limbLoop, padsPath, pawWebs } from '../parts/kit'
 import type { PawWebs } from '../parts/kit'
 import { Pivot } from '../rig/Rig'
-import { blob, ellipse, join, mirrorX, ribbon, scallop, spline, xf } from '../rig/shapes'
+import { blob, ellipse, join, mirrorX, poly, ribbon, scallop, spline, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { Part, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { RABBIT_COLORWAYS } from './rabbit.colorways'
@@ -234,6 +234,8 @@ const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
     2: {
       think: { L: [[24.9, -99.9], [25.3, -101], [26.4, -101.4], [27.5, -101], [27.9, -99.9], [27.5, -98.8], [26.4, -98.4], [25.3, -98.8]] },
       wave: { R: [[23.8, -101], [24.2, -102.1], [25.3, -102.5], [26.4, -102.1], [26.8, -101], [26.4, -99.9], [25.3, -99.5], [24.2, -99.9]] },
+      // Sprækken mellem armen og kroppen, som den udvidede huller-lint fandt (review G1-r4, R1).
+      sleep: { R: [[-8.3, 12.2], [-8.9, 13.6], [-10.3, 14.2], [-11.7, 13.6], [-12.3, 12.2], [-11.7, 10.8], [-10.3, 10.2], [-8.9, 10.8]] },
     },
     3: {
       oops: { L: [[-13.4, 15.1], [-13, 14], [-12.5, 13.6], [-11.4, 13.2], [-10.3, 13.6], [-9.9, 14.7], [-10.3, 15.8], [-10.8, 16.2], [-11.9, 16.6], [-13, 16.2]] },
@@ -273,7 +275,29 @@ const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
   },
 }
 
-const PawBack = pawWebs(WEBS, { upright: UPRIGHT_WEBS, lop: LOP_WEBS, lionhead: LION_WEBS }, PAW_WEBS)
+const WebBack = pawWebs(WEBS, { upright: UPRIGHT_WEBS, lop: LOP_WEBS, lionhead: LION_WEBS }, PAW_WEBS)
+
+/**
+ * Opret · stadie 2 · vinker (review G1-r4, R1): lommen mellem den løftede arm og kinden fyldes med pels bag
+ * armen i nøgleposen, dvs. i alle stillbilleder (album, butik og kontaktark). Lommens hylster i nøgleposen,
+ * målt på magenta i 4 px pr. enhed (skulderens ramme, højre side spejlet). I animationen åbner og lukker
+ * lommen, mens poten vinker (den er åben, når poten svinger ud), så en fast fyldning ville ses mod baggrunden
+ * dér; den er derfor kun med i stillbilleder.
+ */
+const UPRIGHT_WAVE_KEY: Vec[] = [
+  [-23, -13], [-24.5, -25.5], [-21.2, -26.8], [4.5, -2.5], [6, -1], [4.2, 0.8], [-2, 5.5], [-7.2, 4.5],
+  [-14.2, 2.2], [-19, -1.8], [-21.5, -6.5],
+]
+const PawBack: SidePart = (p) => {
+  const web = WebBack(p)
+  if (!(p.still && p.breed === 'upright' && p.stage === 2 && p.mood === 'wave' && p.side === 'R')) return web
+  return (
+    <>
+      {web}
+      <path d={poly(UPRIGHT_WAVE_KEY)} fill={p.pal.fur} />
+    </>
+  )
+}
 
 // ---------------------------------------------------------------------------------------------
 // Bagben: lårbule og lange, fremadrettede bagfødder med tæer forrest. Stor (stadie 3) har større fødder.
@@ -438,6 +462,8 @@ export const rabbit: SpeciesDef = {
       anchors: { earBaseL: { x: 74, y: 57 }, earBaseR: { x: 126, y: 57 } },
       parts: { Ear: ShortEar, ManeBack: LionMane, ManeFront: LionTuft },
       maneGrowth: 1.1,
+      // Halsgenstanden (tørklæde, bandana, kompas) ligger oven på kraven under hagen (review G1-r4, B4).
+      neckOverMane: true,
       bounds: { head: { x0: 28, y0: 18, x1: 172, y1: 168 } },
     },
   ],

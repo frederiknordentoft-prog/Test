@@ -42,7 +42,7 @@ export function iconViewBox(item: ItemDef, fit: FitResult): string | null {
 type Bounds = { x0: number; y0: number; x1: number; y1: number }
 
 /** Den synlige bbox i rodens brugerrum: elementernes bbox snævret ind af deres klip (getBBox ignorerer klip). */
-function visibleBox(root: SVGSVGElement, g: SVGGElement): Bounds | null {
+export function visibleBox(root: SVGSVGElement, g: SVGGElement): Bounds | null {
   const toRoot = (el: SVGGraphicsElement) => root.getScreenCTM()!.inverse().multiply(el.getScreenCTM()!)
   const boxOf = (el: SVGGraphicsElement, b: DOMRect): Bounds => {
     const m = toRoot(el)

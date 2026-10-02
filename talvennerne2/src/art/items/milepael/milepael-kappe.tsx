@@ -4,7 +4,9 @@
 // smal kant af yderstoffet og en guldbort forneden. Halen, manken og pindsvinets pigge ligger foran den.
 // Foran halsen (lag 9b, under hovedet) samles kappen af en krave og et rundt spænde med en stjerne. Højden
 // regnes ud fra halsleddet og jordlinjen, så kappen passer alle tre kropsformer og stadier, og på stor
-// (bredere krop) klemmes den vandret, så hjørnerne bliver i den sikre zone.
+// (bredere krop) klemmes den vandret, så hjørnerne bliver i den sikre zone. På butikskortet på dyret
+// (`showcase`) bølger højre side ud til siden helt oppe fra skulderen i to store flige, så kappen ses ved
+// siden af kroppen og ikke kun i kortets hjørner (review G1-r4, B3).
 // (0,0) = bodyCenter, tegnet ved bodyWidth 100.
 import { SAFE, STAGE_XF } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'
@@ -39,16 +41,30 @@ function safeHalf(p: Pick<ItemArtProps, 'a' | 'local' | 'stage' | 'solo'>): numb
   return Math.min(-l.x, r.x)
 }
 
-/** Kappens omrids: skuldrene, siderne der breder sig ud, og en blød bue forneden med flagrende hjørner. */
-function outline(top: number, bot: number, lift: number, inset = 0, sx = 1): Vec[] {
+/**
+ * Kappens omrids: skuldrene, siderne der breder sig ud, og en blød bue forneden med flagrende hjørner. Med
+ * `wave` (butikskortet) bølger højre side ud til siden fra skulderen i to flige.
+ */
+function outline(top: number, bot: number, lift: number, inset = 0, sx = 1, wave = false): Vec[] {
   const h = bot - top
   const L = LEFT_W * sx - inset
   const R = RIGHT_W * sx - inset
+  const right: Vec[] = wave
+    ? [
+        [R * 0.74, top + h * 0.06 + inset * 0.4],
+        [R + 6 - inset * 0.6, top + h * 0.14 - lift * 0.5 + inset * 0.3],
+        [R * 0.9, top + h * 0.34],
+        [R + 5 - inset * 0.6, top + h * 0.5 - lift * 0.3],
+        [R * 0.92, top + h * 0.72 - lift * 0.4],
+      ]
+    : [
+        [R * 0.68, top + h * 0.36],
+        [R * 0.9, top + h * 0.72 - lift * 0.4],
+      ]
   return [
     [0, top + inset],
     [TOP_W - inset * 0.6, top + 2 + inset],
-    [R * 0.68, top + h * 0.36],
-    [R * 0.9, top + h * 0.72 - lift * 0.4],
+    ...right,
     [R + 2 - inset * 0.4, bot - lift - inset * 0.5],
     [R * 0.62, bot - lift * 0.3 - inset * 0.8],
     [0, bot - inset],
@@ -60,16 +76,18 @@ function outline(top: number, bot: number, lift: number, inset = 0, sx = 1): Vec
   ]
 }
 
-const front: ItemArt = ({ c, sw, a, local, solo, stage, ids }) => {
+const front: ItemArt = ({ c, sw, a, local, solo, stage, ids, showcase }) => {
   if (solo) return <SoloCape c={c} sw={sw} uid={ids.uid} />
   const { top, bot, lift } = capeOf({ a, local })
+  const wave = !!showcase
   // Kappen klemmes vandret, så hjørnerne bliver i den sikre zone (stor har en bredere krop).
-  // (Det højre hjørne flagrer 2 enheder ud over bredden, og konturen og splinen lægger lidt til.)
-  const sx = Math.min(1, (safeHalf({ a, local, stage, solo }) - 5.5) / RIGHT_W)
+  // (Det højre hjørne flagrer 2 enheder ud over bredden – fligene på butikskortet 6 – og konturen og
+  // splinen lægger lidt til.)
+  const sx = Math.min(1, (safeHalf({ a, local, stage, solo }) - (wave ? 9.5 : 5.5)) / RIGHT_W)
   const LW = LEFT_W * sx
   const RW = RIGHT_W * sx
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
-  const shape = blob(outline(top, bot, lift, 0, sx), 0.8)
+  const shape = blob(outline(top, bot, lift, 0, sx, wave), 0.8)
   // Guldborten langs kanten forneden (mellem kappens bund og en lidt højere bue).
   const hem = blob(
     [
@@ -82,7 +100,7 @@ const front: ItemArt = ({ c, sw, a, local, solo, stage, ids }) => {
   return (
     <>
       <path d={shape} fill={c.main} {...stroke} />
-      <path d={blob(outline(top, bot - 5, lift, 7, sx), 0.8)} fill={c.mainShade} />
+      <path d={blob(outline(top, bot - 5, lift, 7, sx, wave), 0.8)} fill={c.mainShade} />
       <path d={hem} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.7} strokeLinejoin="round" />
       <path d={join(spline([[-LW * 0.22, top + 12], [-LW * 0.3, (top + bot) / 2], [-LW * 0.36, bot - 8]]), spline([[RW * 0.26, top + 12], [RW * 0.36, (top + bot) / 2], [RW * 0.44, bot - lift * 0.3 - 8]]))} fill="none" stroke={c.mainShade} strokeWidth={sw * 0.7} strokeLinecap="round" />
       <path d={shape} fill="none" {...stroke} />

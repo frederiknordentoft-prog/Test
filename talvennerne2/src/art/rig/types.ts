@@ -383,6 +383,11 @@ export interface BreedDef {
   maneGrowth?: number
   /** Hornets vækst på stadie 3 (standard SPEC'ens 1,25); stjernehornet vokser mindre, så stjernen bliver i zonen. */
   hornGrowth?: number
+  /**
+   * Racen har en krave af manke under hagen (løvehovedet): halsgenstanden tegnes oven på manken (efter
+   * hovedet, klippet uden for hovedets kontur), så den ikke forsvinder i kraven (review G1-r4, B4).
+   */
+  neckOverMane?: boolean
 }
 
 /**
@@ -557,6 +562,11 @@ export interface ItemArtProps {
   hold?: HandHold
   /** Bærerens hovedgenstand, hvis der er en: 'through' (ørerne gennem huller) eller 'under'; ellers null. */
   hat?: EarMode | null
+  /**
+   * Butikskortet på dyret (beskæringen 'wide' til ryg- og håndgenstande, review G1-r4, B1 og B3): genstanden
+   * viser sig frem, fx rygsækken forskudt ud ved siden af kroppen og kappen, der bølger ud til siden.
+   */
+  showcase?: boolean
 }
 export type ItemArt = (p: ItemArtProps) => ReactNode
 
@@ -625,6 +635,28 @@ export interface SleeveProps {
 }
 export type SleeveArt = (p: SleeveProps) => ReactNode
 
+/**
+ * Ærmeløst kropstøj (vesten) på et hvilende, lodret forben (kat, hvalp, hest, enhjørning; review G1-r4,
+ * punkt 2): benet kommer ud af et ærmegab. Riggen klipper benet til området under buen `edge`, så vesten
+ * ses over den, og genstanden streger buen som sit kantbånd. Armens ramme: skulderleddet i (0,0), benet
+ * nedad (højre side spejlet).
+ */
+export interface ArmholeProps {
+  c: ItemPalette
+  sw: number
+  /** Buen over benets rod (armens ramme, punkter fra venstre over toppen til højre), som benet kommer ud under; riggen klipper benet til området under buens midterlinje. */
+  edge: readonly Vec[]
+  /** Buens laveste punkt (armens ramme): genstanden tegner kun ærmegabet, når det ligger inden for tøjet. */
+  y: number
+  /** Skulderleddet i genstandens lokale koordinater og genstandens skala (genstandens ramme → armens). */
+  origin: Pt
+  s: number
+  stage: Stage
+  body: BodyKind
+}
+/** Kantbåndet, eller null når benet ikke kommer ud inden for tøjet (riggen klipper så ikke benet). */
+export type ArmholeArt = (p: ArmholeProps) => ReactNode
+
 export type EarMode = 'through' | 'under'
 
 export interface FitOverride {
@@ -692,6 +724,8 @@ export interface ItemArtSet {
   sleeve?: SleeveArt
   /** Ærmet på en løftet arm (kun arter med `upArms`). */
   sleeveUp?: SleeveUpArt
+  /** Ærmeløst kropstøj: ærmegabet på et hvilende, lodret forben (kun arter med lodret `limb`). */
+  armhole?: ArmholeArt
   /**
    * Ryggenstandes stropper og seler (lag 6b): over kroppen og kropstøjet, men under poterne og
    * halsgenstanden, så en rygsæks stropper går ind under armene.
