@@ -78,7 +78,7 @@
   - egern #40, #36 og #35,
   - ugle #16, #59 og #22.
 - **Forbehold om samspil med senere arter:**
-  - Pandaens hoved alene (runde ører) er en generisk bjørn. Det er bambussen, der bærer arten, så den skal blive i poten ved alle håndgenstande, hvilket den gør i dag. Når isbjørnen kommer, skal hovederne skilles.
+  - Pandaens hoved alene (runde ører) er en generisk bjørn. Det er bambussen, der bærer arten. Den bliver i poten ved alle håndgenstande, men forsvinder i "jubel" i alle tre stadier (`moods-panda.png`, kolonnen jubel (998–1348, 264–1530)). Når isbjørnen kommer, skal hovederne skilles.
   - Uglens kløvede fjerører (#16, #22, #59) kan læses som horn. Når dragen kommer, bør dens horn være glatte og sidde bag ørerne.
 
 **3. Proportioner** (`species-<art>.png` stadierækker y0 ≈ 320, 608 og 896, og `lineup.png`)
@@ -327,6 +327,7 @@ Butikskortene er 128 × 128 med x0 = 64 + 156 · (k − 1).
 - **Panda:**
   - Lommerne i ups og vinker.
   - Skil c2 brun fra c5 creme og c6 lilla fra regnbuen.
+  - Lad bambussen blive synlig i "jubel", fx i den ene løftede pote eller stukket ind under armen.
 - **Egern:**
   - Sprækkerne i stadie 2's humør og stadie 3 · jubel.
   - Skil c1 rød fra c6 orange.
