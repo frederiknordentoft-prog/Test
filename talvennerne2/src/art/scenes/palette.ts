@@ -12,9 +12,9 @@ export const ENG = {
   sunHalo: '#FFF1C4',
   cloud: '#FFFFFF',
   cloudShade: '#E4F1FB',
-  /** Bakkerne i luftperspektiv: kølige og lyse langt væk, varme og mættede forrest (OKLCH L 0,905 → 0,72, C 0,045 → 0,165). */
-  farHill: '#BFEAE6',
-  farTree: '#A5D7CA',
+  /** Bakkerne i luftperspektiv: kølige og lyse langt væk, varme og mættede forrest (OKLCH L 0,9 → 0,72, C 0,042 → 0,165, tone fra blågrøn mod gulgrøn). */
+  farHill: '#C4E7D9',
+  farTree: '#AAD4C1',
   fieldHill: '#B5E6C0',
   field: '#CCEEB8',
   hedgerow: '#7FBB93',
