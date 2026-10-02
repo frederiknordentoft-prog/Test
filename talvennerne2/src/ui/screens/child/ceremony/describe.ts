@@ -117,8 +117,10 @@ export function keyFace(key: MasteryKey, skill: SkillId, skills: SkillRegistry =
     const prompt = safely(() => def.prompt(fact, kind, makeRng(hashSeed(key))))
     let picture: Prompt | null = null
     if (prompt?.scene === 'objects') {
+      // things spread out are lined up (one apple in a wide field reads as nothing); a die, fingers
+      // and a ten-frame stay as they are — they are what the child learned to see
       const { flashMs: _flash, ...still } = prompt
-      picture = still
+      picture = still.layout === 'scatter' ? { ...still, layout: 'row' } : still
     }
     return { face: { t: 'number', n: fact.answer, picture }, speech: [{ clip: 's.reward.learned.number' }, { num: fact.answer, form: 'end' }] }
   }

@@ -92,6 +92,8 @@ export default function CeremonyScreen(_props: ScreenProps<RouteOf<'ceremonies'>
     if (live) setPlan(live)
   }, [live])
   const leaving = useRef(false)
+  // stops the reading of "Også i dag" the moment the child leaves (before the next card starts)
+  const endHalt = useRef(false)
 
   const screens = useMemo(() => (plan ? screensOf(plan) : []), [plan])
   const [index, setIndex] = useState(() => (live ? Math.min(progressOf(live), screensOf(live).length - 1) : 0))
@@ -169,6 +171,7 @@ export default function CeremonyScreen(_props: ScreenProps<RouteOf<'ceremonies'>
   }
 
   const leave = () => {
+    endHalt.current = true
     if (leaving.current) return
     leaving.current = true
     const to = mapAfterRound(all, lastRound())
@@ -177,6 +180,7 @@ export default function CeremonyScreen(_props: ScreenProps<RouteOf<'ceremonies'>
   }
 
   const playOn = () => {
+    endHalt.current = true
     if (leaving.current) return
     leaving.current = true
     const next = nextAfterRound(useProfile.getState().profile, lastRound())
@@ -220,7 +224,7 @@ export default function CeremonyScreen(_props: ScreenProps<RouteOf<'ceremonies'>
           {screen.kind === 'step' && screen.step.kind === 'hatch' && screen.step.rewards[0]?.t === 'eggReady' && (
             <HatchScreen reward={screen.step.rewards[0]} nextSignal={signal} onAdvance={advance} />
           )}
-          {screen.kind === 'end' && <EndScreen cards={plan.alsoToday} buddy={buddy} />}
+          {screen.kind === 'end' && <EndScreen cards={plan.alsoToday} buddy={buddy} halt={endHalt} />}
         </div>
       </div>
       <div className="tv-cer__actions">

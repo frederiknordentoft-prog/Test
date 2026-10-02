@@ -336,6 +336,10 @@ export function countingLine(task: Task): AnyVisual | null {
   if (task.answerType !== 'int' && task.answerType !== 'set') return null
   if (answer.some((n) => !Number.isInteger(n) || n < 0)) return null
   const given = p.scene === 'row' ? p.cells.filter((c): c is number => typeof c === 'number') : []
+  // a sum is counted on from its bigger number (a difference back from its first): that one is marked
+  const sum = sumOf(p)
+  const start = sum && (sum.op === '+' || sum.op === '−') ? (sum.op === '+' ? Math.max(sum.a, sum.b) : sum.a) : null
+  if (start !== null) given.push(start)
   const top = Math.max(...answer, ...given)
   if (top > 20) return null
   const line: Extract<AnyVisual, { scene: 'line' }> = { scene: 'line', min: 0, max: top <= 10 ? 10 : 20 }

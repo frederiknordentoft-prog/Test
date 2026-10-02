@@ -296,7 +296,9 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     const support = card && task.scaffold && !golden ? supportFor(task, skills) : null
     const full = card && !golden ? scaffoldFor(task, skills) : null
     setScaffold(support)
-    setHelp(full && full !== support && addsToPrompt(full, task) ? full : null)
+    // the lightbulb adds the full strategy only where it shows more than the support already does
+    const same = !!support && !!full && JSON.stringify(full) === JSON.stringify(support)
+    setHelp(full && !same && addsToPrompt(full, task) ? full : null)
     setBulbPulse(false)
     setSpeakingOption(null)
     setDemoKind(null)

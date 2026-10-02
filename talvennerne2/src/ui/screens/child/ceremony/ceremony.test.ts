@@ -164,7 +164,7 @@ describe('"Det lærte du" (review r1 P2-2: concrete and true)', () => {
     // a flashed picture stays on in the summary
     expect(dice.face.t === 'number' && dice.face.picture && 'flashMs' in dice.face.picture).toBe(false)
     expect(heard.face).toEqual({ t: 'number', n: 7, picture: null })
-    expect(scatter.face).toMatchObject({ t: 'number', n: 3, picture: { scene: 'objects', layout: 'scatter' } })
+    expect(scatter.face).toMatchObject({ t: 'number', n: 3, picture: { scene: 'objects', layout: 'row', n: 3 } })
     expect(toDanishText(dice.speech)).toBe('Tallet fire. Godt begyndt!')
   })
 

@@ -173,8 +173,8 @@
 .tv-learned__pic {
   display: grid;
   place-items: center;
-  max-width: 132px;
-  height: 64px;
+  max-width: 140px;
+  min-height: 52px;
 }
 .tv-learned__pic .tv-scene,
 .tv-learned__pic .tv-objects {
@@ -187,8 +187,18 @@
   height: 58px;
 }
 .tv-learned__pic .tv-objects__row {
-  flex-wrap: nowrap;
-  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+}
+.tv-learned__pic .tv-objects__five {
+  padding: 3px 5px;
+  border-radius: 10px;
+}
+.tv-learned__pic .tv-objects__five svg {
+  width: auto;
+  max-width: none;
+  height: 22px;
 }
 .tv-learned__heard {
   display: grid;
@@ -838,7 +848,9 @@
   }
   .tv-cer-friend > .tv-name {
     grid-area: name;
+    gap: 8px;
     margin-top: 0;
+    padding: 10px 12px;
   }
   .tv-cer-end.has-cards {
     display: grid;
@@ -909,9 +921,6 @@
   }
   .tv-learned__card {
     padding: 10px 10px 8px;
-  }
-  .tv-learned__pic {
-    height: 52px;
   }
   .tv-learned__pic svg {
     height: 48px;

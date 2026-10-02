@@ -240,6 +240,13 @@
 .tv-round__stage.is-owned[data-kind='sortOrder'] .tv-round__answer {
   padding-inline: 4px;
 }
+/* the number line is one band: its card hugs it in the middle instead of a big empty sheet
+   (review r1 P3-9) */
+.tv-round__stage.is-owned[data-kind='numberline'] .tv-round__answer {
+  flex: 0 1 auto;
+  width: 100%;
+  margin-block: auto;
+}
 .tv-round .tv-topbar [data-showme]:disabled {
   --face: rgba(255, 255, 255, 0.55);
   --edge: rgba(255, 255, 255, 0.7);

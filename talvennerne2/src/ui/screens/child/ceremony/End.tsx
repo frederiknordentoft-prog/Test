@@ -22,7 +22,14 @@ export function endReadout(cards: readonly CeremonyCard[]): { card: number | nul
   return [{ card: null, parts: [{ clip: 's.reward.alsoToday' }] }, ...cards.map((c, i) => ({ card: i, parts: cardSpeech(c) }))]
 }
 
-export function EndScreen({ cards, buddy }: { cards: readonly CeremonyCard[]; buddy: Animal | null }) {
+export interface EndScreenProps {
+  cards: readonly CeremonyCard[]
+  buddy: Animal | null
+  /** Set the moment the child leaves ("Næste", "Til kortet"): the reading stops before the next card. */
+  halt?: { readonly current: boolean }
+}
+
+export function EndScreen({ cards, buddy, halt }: EndScreenProps) {
   const speech = useSpeech()
   const [speaking, setSpeaking] = useState<number | null>(null)
   // bumps when the reading is taken over (a tap on a card) or the screen goes
@@ -33,7 +40,7 @@ export function EndScreen({ cards, buddy }: { cards: readonly CeremonyCard[]; bu
     const steps = endReadout(cards)
     void (async () => {
       for (const step of steps) {
-        if (run.current !== me) return
+        if (run.current !== me || halt?.current) return
         setSpeaking(step.card)
         await speech.speak(step.parts).ended
       }
