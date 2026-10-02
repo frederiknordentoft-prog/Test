@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { ReactElement } from 'react'
 import { cat } from '../../../../art/species/cat'
+import { fox } from '../../../../art/species/fox'
 import { horse } from '../../../../art/species/horse'
 import { rabbit } from '../../../../art/species/rabbit'
 import { unicorn } from '../../../../art/species/unicorn'
@@ -18,7 +19,7 @@ import { DEMO_NOW, zooDemoProfile, zooNewProfile } from './testing/demo'
 import { ZooView } from './ZooView'
 import { AVAILABLE_SPECIES } from '../../../../art/species/registry'
 
-const species: SpeciesDefs = { rabbit, cat, horse, unicorn }
+const species: SpeciesDefs = { rabbit, cat, horse, unicorn, fox }
 const items = { 'hverdag-head': hverdagHead, 'hverdag-body': hverdagBody }
 
 function render(el: ReactElement): string {
@@ -43,8 +44,8 @@ describe('Dyrehaven', () => {
     expect(live.length).toBeLessThanOrEqual(MAX_ANIMATED)
     expect(live).toHaveLength(3)
     const animatedCells = [...html.matchAll(/data-uid="([^"]+)" data-animated=""/g)].map((m) => m[1])
-    // the fox (not drawn yet) cannot move its parts, so the slot goes to the next drawn animal
-    expect(animatedCells).toEqual(['starter-rabbit', 'egg-6', 'rainbow-rabbit'])
+    // the buddy, then the next animals in the meadow's order that are drawn (the fox from Urtårnet)
+    expect(animatedCells).toEqual(['starter-rabbit', 'egg-6', 'friend-w1-klokken-friend'])
     // the other drawn animals are <img> pictures (blob URLs), the undrawn ones shadows — which
     // species those are changes as the art lands, so it is read from the art registry
     const drawn = new Set<string>(AVAILABLE_SPECIES)
