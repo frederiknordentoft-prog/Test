@@ -1,14 +1,15 @@
-// Rytter · ryg: en dobbelt sadeltaske. De to lædertasker hænger bag kroppen (lag 2) på hver sin side,
-// så deres ydre halvdel med klap, rem og spænde ses tydeligt ved siden af kroppen på butikskortet og i
-// spillet (review G1-r4, B1: ryggenstande skal kunne ses forfra). Taskerne hænger i hoftehøjde, hvor
-// kroppen er smallest. En brystrem (stroplaget 6b: over kroppen og kropstøjet, under poterne og
+// Rytter · ryg: en dobbelt sadeltaske. De to lædertasker hænger bag kroppen (lag 2) på hver sin side
+// af flanken, så mindst halvdelen af hver taske med klap, rem og spænde ses ved siden af kroppen på
+// butikskortet og i spillet (review G1-r4, B1: ryggenstande skal kunne ses forfra). På stor klemmes de
+// ind, så de bliver i den sikre zone. En brystrem (stroplaget 6b: over kroppen og kropstøjet, under poterne og
 // halsgenstanden) går hen over brystet med et spænde og forsvinder rundt om kroppens sider, så taskerne
 // ser fastspændte ud. Alene (butik) ligger de to tasker side om side, samlet af et læderstykke foroven.
 // Taskerne rækker med vilje ud over silhuetten (`reach`). (0,0) = bodyCenter, tegnet ved bodyWidth 100.
+import { SAFE, STAGE_XF } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'
 import { blob, ellipse, join, poly, rect, softBand } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
-import type { BodyKind, ItemArt, ItemDef } from '../../rig/types'
+import type { BodyKind, ItemArt, ItemArtProps, ItemDef } from '../../rig/types'
 
 /** Taskernes centrum (x til hver side), bredde og højde: på dyret og alene. */
 interface Bags {
@@ -17,7 +18,7 @@ interface Bags {
   w: number
   h: number
 }
-const WORN: Bags = { x: 54, y: 9, w: 27, h: 36 }
+const WORN: Bags = { x: 60, y: -1, w: 28, h: 36 }
 const SOLO: Bags = { x: 19.5, y: 6, w: 30, h: 38 }
 
 /** Begge tasker (venstre og højre) som samlede stier: krop, skygge, klap, rem, spænde og syning. */
@@ -53,8 +54,21 @@ function bags(b: Bags) {
   }
 }
 
-const front: ItemArt = ({ c, sw, solo }) => {
-  const b = bags(solo ? SOLO : WORN)
+/**
+ * Hvor langt ud taskerne må sidde (lokale enheder fra midten) for at holde sig i den sikre zone i stadiet
+ * (kroppen og dermed taskerne vokser på stor), som kappen.
+ */
+function safeHalf(p: Pick<ItemArtProps, 'a' | 'local' | 'stage'>): number {
+  const k = STAGE_XF[p.stage].fig * STAGE_XF[p.stage].body
+  const model = (wx: number) => p.a.ground.x + (wx - p.a.ground.x) / k
+  const l = p.local({ x: model(SAFE.x0 + 2.5), y: p.a.bodyCenter.y })
+  const r = p.local({ x: model(SAFE.x1 - 2.5), y: p.a.bodyCenter.y })
+  return Math.min(-l.x, r.x)
+}
+
+const front: ItemArt = ({ c, sw, solo, a, local, stage }) => {
+  // Mindst halvdelen af hver taske ses ved siden af kroppen (review G1-r4, B1), men aldrig uden for zonen.
+  const b = bags(solo ? SOLO : { ...WORN, x: Math.min(WORN.x, safeHalf({ a, local, stage }) - WORN.w / 2 - 1.2 - sw) })
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
   return (
     <>

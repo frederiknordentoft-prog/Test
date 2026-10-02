@@ -15,7 +15,7 @@ const DOME = symmetric([
 ])
 /** Skyggen fortil: en flad halvmåne under kuplens forkant (oversiden gemmer sig under båndet). */
 const PEAK: Vec[] = [
-  [-37, 19.5], [-18, 21.5], [0, 22], [18, 21.5], [37, 19.5], [31.5, 25.4], [17, 29.6], [0, 31], [-17, 29.6], [-31.5, 25.4],
+  [-39, 19.5], [-18, 21.5], [0, 22], [18, 21.5], [39, 19.5], [33.5, 26.6], [18, 31.6], [0, 33.2], [-18, 31.6], [-33.5, 26.6],
 ]
 /** Fløjlets syninger: to meridianer fra knappen ned mod båndet. */
 const SEAMS: Vec[][] = [-1, 1].map((s) => [
@@ -59,7 +59,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn }) => {
   const shine = horn ? { x: horn.x + 21, y: -3 } : { x: -12, y: -7 }
   return (
     <>
-      <path d={blob(PEAK, 0.8)} fill={c.mainShade} {...stroke} />
+      <path d={blob(PEAK, 0.8)} fill={c.main} {...stroke} />
       <path d={blob(DOME, 0.9)} fill={c.mainShade} />
       <path d={blob(lit, 0.9)} fill={c.main} />
       <path d={join(...SEAMS.map((s) => spline(s)))} fill="none" stroke={c.mainShade} strokeWidth={sw * 0.55} strokeLinecap="round" />
@@ -79,7 +79,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn }) => {
       <path d={circle(btn.x, btn.y, 4.6)} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.8} />
       {/* Fløjlets matte højlys på kuplen, en glans på skyggen og et lille på knappen. */}
       <path
-        d={join(ellipse(shine.x, shine.y, 4.8, 2.3, -24), ellipse(-14, 25.2, 7, 1.3, 4), ellipse(btn.x - 1.5, btn.y - 1.6, 1.6, 1.1, -20))}
+        d={join(ellipse(shine.x, shine.y, 4.8, 2.3, -24), ellipse(-15, 27.4, 8, 1.4, 5), ellipse(btn.x - 1.5, btn.y - 1.6, 1.6, 1.1, -20))}
         fill={c.highlight}
       />
     </>
@@ -116,7 +116,7 @@ export const rytterHead: ItemDef = {
   fit: { anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1, baseWidth: 96, earMode: 'through' },
   hides: ['mane-front'],
   hornHole: HORN_HOLE,
-  icon: { box: [-48, -25, 96, 57.5] },
+  icon: { box: [-48, -25, 96, 60] },
 }
 
 export default rytterHead

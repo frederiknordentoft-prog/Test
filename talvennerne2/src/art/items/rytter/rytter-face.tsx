@@ -41,9 +41,11 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   const hc = local(a.headCenter)
   const hw = a.headRx * 0.93 * k
   const ty = (L.y + R.y) / 2 - 0.22 * ry
+  // Båndet starter under stellets yderkant, så dets runde ende aldrig rækker ind mod de lukkede øjnes vipper.
+  const sx = rx + sw * 0.9
   const strap = join(
-    spline([[L.x - rx, ty], [hc.x - hw * 0.93, ty - 2.6 * k], [hc.x - hw, ty - 4.8 * k]]),
-    spline([[R.x + rx, ty], [hc.x + hw * 0.93, ty - 2.6 * k], [hc.x + hw, ty - 4.8 * k]]),
+    spline([[L.x - sx, ty], [hc.x - hw * 0.93, ty - 2.6 * k], [hc.x - hw, ty - 4.8 * k]]),
+    spline([[R.x + sx, ty], [hc.x + hw * 0.93, ty - 2.6 * k], [hc.x + hw, ty - 4.8 * k]]),
   )
   // Hvidt højlys: en skrå stribe i glassets øverste ydre hjørne og en prik forneden mod næsen, begge uden
   // for øjet.
@@ -60,7 +62,7 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
       ),
     ),
   )
-  const studs = join(...[L.x - rx, R.x + rx].map((x) => circle(x, ty, 2.2 * k)))
+  const studs = join(...[L.x - sx, R.x + sx].map((x) => circle(x, ty, 2.2 * k)))
   const round = { strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <>

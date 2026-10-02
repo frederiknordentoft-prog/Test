@@ -20,9 +20,11 @@ const LEAVES: readonly (readonly [number, number])[] = [[-30, 14], [0, 18], [30,
 /** Foretrukken retning (grader; −90 = op) og trin, når ansigtet er i vejen. */
 const AIM = -62
 const STEP = 18
+/** Guleroden er stor (en godbid til en hest), så den kan ses i butikskortet på dyret. */
+const SIZE = 1.2
 
 const front: ItemArt = ({ c, sw, a, hold }) => {
-  const samples = [{ at: 12, r: 7 }, { at: TOP + 10, r: 11 }]
+  const samples = [{ at: 12 * SIZE, r: 7 * SIZE }, { at: (TOP + 10) * SIZE, r: 11 * SIZE }]
   const P = hold ? aimAway(hold, samples, AIM, STEP) : aimSolo(a.handRot, -58)
   const { at, k, g, d, u, rot } = P
   // Tegnes i en ramme drejet tilbage til verdensrummet (lyset oppefra til venstre, bokse langs akserne).
@@ -31,14 +33,14 @@ const front: ItemArt = ({ c, sw, a, hold }) => {
     const q = at(p)
     return [q.x * Math.cos(t) - q.y * Math.sin(t), q.x * Math.sin(t) + q.y * Math.cos(t)]
   }
-  const along = (s: number): Vec => pt({ x: g.x + d.x * s * u, y: g.y + d.y * s * u })
+  const along = (s: number): Vec => pt({ x: g.x + d.x * s * SIZE * u, y: g.y + d.y * s * SIZE * u })
   // Aksens retning og normal i den tilbagedrejede ramme.
   const o = along(0)
   const e = along(10)
   const len = Math.hypot(e[0] - o[0], e[1] - o[1])
   const ax: Vec = [(e[0] - o[0]) / len, (e[1] - o[1]) / len]
   const nx: Vec = [-ax[1], ax[0]]
-  const m = u * k
+  const m = u * k * SIZE
   const off = (s: number, w: number): Vec => {
     const p = along(s)
     return [p[0] + nx[0] * w * m, p[1] + nx[1] * w * m]
@@ -89,7 +91,7 @@ export const rytterHand: ItemDef = {
   art: { front },
   fit: { anchor: 'pawR', scaleBy: 'fixed', baseScale: 1, baseWidth: 30 },
   reach: true,
-  icon: { box: [-8, -42, 48, 56] },
+  icon: { box: [-10, -50, 58, 66] },
 }
 
 export default rytterHand
