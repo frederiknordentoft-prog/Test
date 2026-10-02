@@ -125,8 +125,6 @@ function candidates(f: Fact) {
     ...[n - 100, n + 100].filter((v) => ok(v) && (v < lo || v > hi)).map((v) => [v, 'near'] as const),
     ...[n - 200, n + 200].filter(ok).map((v) => [v, 'other'] as const),
     ...(middle ? [n - 50, n + 50].filter((v) => ok(v) && v > lo && v < hi).map((v) => [v, 'near'] as const) : []),
-    // the hop's own label (+45) typed as the answer
-    ...(family === 'placeAny' && n > 100 && n % 100 > 0 ? ([[n % 100, 'operand']] as const) : []),
   ]
   return tagged(n, entries)
 }

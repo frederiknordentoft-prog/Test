@@ -65,17 +65,17 @@ const FACTS: readonly Fact[] = meta.families.flatMap((fam) => {
 })
 
 /** The widest wrong answer: 345 → 30045, so the cards and the keypad go to five digits. */
-export const HEAR1000_MAX = 99_999
+const HEAR1000_MAX = 99_999
 
 /** "tre hundrede og femogfyrre" written word by word: 300 then 45 → 30045 (null for round hundreds). */
-export function concatOf(n: number): number | null {
+function concatOf(n: number): number | null {
   if (n >= 1000 || n % 100 === 0) return null
   const rest = n % 100
   return hundredsOf(n) * 10 ** (String(rest).length + 2) + rest
 }
 
 /** The zero left out or put in the wrong place. */
-export function zeroSlipsOf(n: number): number[] {
+function zeroSlipsOf(n: number): number[] {
   const h = hundredsOf(n)
   const t = tensOf(n)
   const o = onesOf(n)

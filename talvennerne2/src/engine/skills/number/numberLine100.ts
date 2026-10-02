@@ -49,7 +49,7 @@ const FACTS: readonly Fact[] = meta.families.flatMap((fam) => {
 const LINE = { scene: 'line', min: 0, max: 100 } as const
 
 /** How the stretch around a number is asked on cards: "mellem a og b", or "midt mellem a og b". */
-export function stretchOf(family: Family, n: number): { lo: number; hi: number; middle: boolean } {
+function stretchOf(family: Family, n: number): { lo: number; hi: number; middle: boolean } {
   const o = onesOf(n)
   if (family !== 'placeAny' || o === 5 || o === 0) {
     const half = o === 5 ? 5 : 10
@@ -89,8 +89,6 @@ function candidates(f: Fact) {
     ...[n - 20, n + 20].filter(ok).map((v) => [v, 'other'] as const),
     // inside a "midt mellem" stretch, the halfway points are wrong too
     ...(middle ? [n - 5, n + 5].filter((v) => ok(v) && v > lo && v < hi).map((v) => [v, 'near'] as const) : []),
-    // the hop's own label (+7) typed as the answer
-    ...(!readsArrow(family) && n >= 10 && onesOf(n) > 0 ? ([[onesOf(n), 'operand']] as const) : []),
   ]
   return tagged(n, entries)
 }

@@ -122,7 +122,7 @@ function draw(family: Family, rng: Rng): Fact {
 const FACTS: readonly Fact[] = meta.families.flatMap((fam) => canonical('placeValue1000', fam.id, (rng) => draw(fam.id as Family, rng)))
 
 /** The widest wrong answer: "tre hundreder og to tiere" → 30020; five digits on the keypad. */
-export const PLACE_VALUE_MAX = 99_999
+const PLACE_VALUE_MAX = 99_999
 
 // ─── Per kind ───────────────────────────────────────────────────────────────
 

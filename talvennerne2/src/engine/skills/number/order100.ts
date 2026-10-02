@@ -44,7 +44,7 @@ function idOf(q: Order100): string {
   }
 }
 
-export function parseOrder100(id: string): Order100 {
+function parseOrder100(id: string): Order100 {
   const [, family, a, b] = id.split(':')
   switch (family) {
     case 'crossTen':
