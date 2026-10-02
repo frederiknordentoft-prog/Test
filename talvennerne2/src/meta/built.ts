@@ -48,8 +48,13 @@ export function worldReady(world: WorldId, registered: ReadonlySet<SkillId>, dra
 
 let built: ReadonlyMap<WorldId, boolean> | null = null
 
+/** Dev servers only: `?worlds=all` lets a skill be play-tested in its world before the drawings land. */
+const devAllWorlds = (): boolean =>
+  import.meta.env.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).get('worlds') === 'all'
+
 /** worldReady for the skills and drawings of this build. */
 export function worldBuilt(world: WorldId): boolean {
+  if (devAllWorlds()) return true
   if (!built) {
     const registered = new Set(registeredSkills().map((d) => d.id))
     built = new Map(WORLDS.map((w) => [w.id, worldReady(w.id, registered)]))
