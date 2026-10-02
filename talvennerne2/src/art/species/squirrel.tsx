@@ -10,7 +10,7 @@ import { ROUND, hatted, limbLoop, padsPath, pawWebs } from '../parts/kit'
 import type { PawWebs } from '../parts/kit'
 import { mixHex } from '../rig/oklch'
 import { Pivot } from '../rig/Rig'
-import { blob, ellipse, join, mirrorX, ribbon, spline, xf } from '../rig/shapes'
+import { blob, ellipse, join, mirrorX, poly, ribbon, spline, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { Part, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { SQUIRREL_COLORWAYS } from './squirrel.colorways'
@@ -58,12 +58,19 @@ const UPPER_CORE = blob(toPivot(part(JOINT - 1, TAIL_SPINE.length, 0.5)), 0.9)
  * halevift (op til ±14°) ville svinge toppen uden for den sikre zone. Den lever i stedet med kroppens ånding og
  * sit eget svirp i krøllen, og den vokser med kroppen (ikke riggens ekstra ·1,3 på stor).
  */
+/**
+ * Lommen mellem hagen, skulderen og halens inderside (huller-reglen): pels i skyggetone bag alt, så der aldrig ses
+ * baggrund inde i figuren. Hjørnerne ligger inde i hoved, hale eller krop på alle stadier, så fyldet kun ses i lommen.
+ */
+const POCKET: Vec[] = [[110, 160], [112, 132], [128, 126], [141, 124], [143, 150], [142, 176], [128, 180]]
+
 const Tail: Part = ({ pal, sw, still, ids }) => {
   const stripes = !!pal.gradient
   const fringe = pal.silhouette ? pal.mane : stripes ? `url(#${ids.gradient})` : mixHex(pal.mane, pal.belly, 0.38)
   const core = !pal.silhouette && !stripes
   return (
     <>
+      <path d={poly(POCKET)} fill={pal.shade} />
       <path d={LOWER} fill="none" stroke={pal.maneOutline} strokeWidth={sw} {...round} />
       <Pivot at={{ x: PIVOT[0], y: PIVOT[1] }} cls="a-curl" still={still}>
         <path d={UPPER} fill={fringe} stroke={pal.maneOutline} strokeWidth={sw} {...round} />

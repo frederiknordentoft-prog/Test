@@ -161,14 +161,19 @@ const Bamboo = ({ pal, sw }: { pal: Palette; sw: number }) => {
   )
 }
 
-const Paw: SidePart = ({ pal, sw, side, mood, still, clothed }) => {
+const Paw: SidePart = ({ pal, sw, side, mood, still, clothed, stage }) => {
   // Bambussen og pote-vinket kun i venstre pote og kun uden kropstøj (ærmet tegnes af riggen uden for armen).
   const bamboo = side === 'L' && !clothed
   const wag = bamboo && !still && mood === 'idle'
   return (
     <g className={wag ? 'a-wag' : undefined}>
       <g transform={`rotate(${PAW_ROT})`}>
-        {bamboo && <Bamboo pal={pal} sw={sw} />}
+        {/* Babyens store hoved: bambussen hælder lidt mere ud, så der ikke lukkes en lomme mellem stængel og kind. */}
+        {bamboo && (
+          <g transform={stage === 1 ? 'rotate(-10 0 29)' : undefined}>
+            <Bamboo pal={pal} sw={sw} />
+          </g>
+        )}
         <path d={blob(ARM)} fill={ink(pal)} />
         <path d={spline(ARM.slice(1, -1))} fill="none" stroke={pal.outline} strokeWidth={sw} {...round} />
       </g>
