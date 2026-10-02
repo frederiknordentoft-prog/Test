@@ -56,9 +56,12 @@ function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
     if (view === 'clockDigital') return <DigitalClock minutes={value} h24={task.modulo === 1440} size={px * 1.5} />
     if (view === 'coin' && isPiece(value)) return <MoneyFace piece={value} px={px} />
     if (task.answerType === 'ore' || view === 'amount') return <NumText small>{task.answerType === 'ore' ? formatMoney(value) : formatNumber(value)}</NumText>
+    const text = formatNumber(value)
+    // every card of a task gets the size of its longest number: a smaller 30045 must not stand out
+    const chars = Math.max(text.length, ...task.options.map((o) => (typeof o === 'number' ? formatNumber(o).length : 0)))
     return (
-      <NumText>
-        {formatNumber(value)}
+      <NumText chars={chars + (task.unit ? 1 : 0)}>
+        {text}
         {task.unit && <UnitSuffix unit={task.unit} />}
       </NumText>
     )
@@ -192,8 +195,12 @@ function ObjectFace({ id, px }: { id: string; px: number }) {
   return <ObjectIcon id={id} size={px} />
 }
 
-export function NumText({ children, small }: { children: ReactNode; small?: boolean }) {
-  return <span className={cx('tv-face__num', small && 'tv-face__num--small')}>{children}</span>
+/**
+ * A number on a card. `chars`: how long it is written — four and five digits (1004, 30045: what a
+ * child wrote, UI-fund 6) get a smaller size, so the whole number stays on a phone's card.
+ */
+export function NumText({ children, small, chars = 0 }: { children: ReactNode; small?: boolean; chars?: number }) {
+  return <span className={cx('tv-face__num', small && 'tv-face__num--small', chars >= 5 ? 'tv-face__num--xlong' : chars === 4 && 'tv-face__num--long')}>{children}</span>
 }
 
 const UNIT_CLIP: Record<string, string> = {

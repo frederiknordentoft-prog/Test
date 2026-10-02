@@ -103,6 +103,25 @@
 .tv-face__num--small {
   font-size: 0.66em;
 }
+/* four and five digits on a card (1004, 30045): smaller, so the whole number fits */
+.tv-face__num--long {
+  font-size: 0.8em;
+}
+.tv-face__num--xlong {
+  font-size: 0.62em;
+}
+.tv-face--lg .tv-face__num--long {
+  font-size: calc(var(--text-answer) * 0.85);
+}
+.tv-face--lg .tv-face__num--xlong {
+  font-size: calc(var(--text-answer) * 0.68);
+}
+.tv-face--sm .tv-face__num--long {
+  font-size: 23px;
+}
+.tv-face--sm .tv-face__num--xlong {
+  font-size: 19px;
+}
 .tv-face--sm .tv-face__num--small {
   font-size: 20px;
 }
