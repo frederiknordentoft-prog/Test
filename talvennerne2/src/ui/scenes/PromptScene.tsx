@@ -101,7 +101,7 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
       return (
         <div className={cx('tv-shapes', p.items.length > 4 && 'tv-shapes--many')}>
           {p.items.map((it) => (
-            <Shape2D key={it.id} shape={it.shape} variant={it.variant} size={p.items.length > 4 ? 72 : 96} />
+            <Shape2D key={it.id} shape={it.shape} variant={it.variant} cut={it.cut} size={p.items.length > 4 ? 72 : 96} />
           ))}
         </div>
       )

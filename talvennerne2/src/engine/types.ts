@@ -229,7 +229,7 @@ export type Prompt =
   | { scene: 'share'; total: number; recipients: number; thing: ThingId }
   | { scene: 'balance'; left: Term[]; right: Term[] }
   | { scene: 'shape'; shape: ShapeId; variant: number; mark?: 'corners' | 'sides'; cut?: 'equal' | 'unequal' }
-  | { scene: 'shapes'; items: { id: string; shape: ShapeId; variant: number }[] }
+  | { scene: 'shapes'; items: { id: string; shape: ShapeId; variant: number; cut?: 'equal' | 'unequal' }[] }
   | { scene: 'solid'; solid: SolidId; asObject?: ObjectId }
   | { scene: 'symmetry'; picture: string; line: 'v' | 'h' | 'd' }
   | { scene: 'grid'; w: number; h: number; filled: number[]; axis?: 'v' | 'h'; coords?: boolean; point?: [number, number] }

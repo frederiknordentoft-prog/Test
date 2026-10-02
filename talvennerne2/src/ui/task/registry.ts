@@ -107,14 +107,24 @@ export const BUILT_KINDS = Object.keys(KIND_MODULES) as TaskKind[]
 
 /** The module that shows a task: its own kind, or the closest built one. */
 export function moduleFor(task: Task): KindModule {
-  const own = KIND_MODULES[task.kind]
-  if (own && (PLAYABLE[task.kind]?.(task) ?? true)) return own
-  return fallbackFor(task)
+  return KIND_MODULES[shownKind(task)]!
 }
 
-/** The closest wave-1 kind for a task its own kind cannot show. */
-function fallbackFor(task: Task): KindModule {
-  if (task.options.length > 0 && task.answerType !== 'set') return KIND_MODULES.choice!
-  if (typeof task.answer === 'number' && (task.answerType === 'int' || task.answerType === 'ore')) return KIND_MODULES.keypad!
-  return KIND_MODULES.choice!
+/**
+ * The kind whose view the child sees: the task's own, or the closest wave-1 kind when its own cannot
+ * show it. Instructions and demo films follow this kind, not the task's ("Tryk i nettet" over a keypad).
+ */
+export function shownKind(task: Task): TaskKind {
+  const own = KIND_MODULES[task.kind]
+  if (own && (PLAYABLE[task.kind]?.(task) ?? true)) return task.kind
+  return fallbackKind(task)
 }
+
+/** The closest wave-1 kind for a task its own kind cannot show (or whose chunk did not load). */
+function fallbackKind(task: Task): 'choice' | 'keypad' {
+  if (task.options.length > 0 && task.answerType !== 'set') return 'choice'
+  if (typeof task.answer === 'number' && (task.answerType === 'int' || task.answerType === 'ore')) return 'keypad'
+  return 'choice'
+}
+
+const fallbackFor = (task: Task): KindModule => KIND_MODULES[fallbackKind(task)]!

@@ -32,7 +32,7 @@ import { HintVisual } from '../../hint/HintVisual'
 import { displayText } from '../../hint/displayText'
 import { addsToPrompt, hintFor, scaffoldFor, supportFor } from '../../hint/hintFor'
 import type { AnyVisual, ResolvedHint } from '../../hint/hintFor'
-import { moduleFor } from '../../task/registry'
+import { moduleFor, shownKind } from '../../task/registry'
 import type { Draft, ViewMode } from '../../task/types'
 import { confirmSpeech, formatMoney, formatNumber, splitTokens } from '../../task/answers'
 import { OptionFace, UnitSuffix } from '../../task/faces'
@@ -259,8 +259,8 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
 
   const readTask = useCallback(
     async (t: Task, intro: TaskIntro, tok: Token) => {
-      const steps = readout(t, intro)
-      const shortClip = instructionClip(t.kind, 'short')
+      const steps = readout({ ...t, kind: shownKind(t) }, intro)
+      const shortClip = instructionClip(shownKind(t), 'short')
       setBubble([{ clip: shortClip }])
       await sayAll(steps, tok, (st, i) => {
         setReading(i === 0 && !st.instruction && st.option === null)
@@ -326,17 +326,18 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     setEgg(null)
     let intro = intros.current.get(taskKey)
     if (!intro) {
-      intro = taskIntro(task, prevKind.current, seen(), { hasDemo: true })
+      intro = taskIntro({ ...task, kind: shownKind(task) }, prevKind.current, seen(), { hasDemo: true })
       intros.current.set(taskKey, intro)
-      prevKind.current = task.kind
+      prevKind.current = shownKind(task)
     }
-    recordIntro(taskKey, task.kind, intro)
+    const kind = shownKind(task)
+    recordIntro(taskKey, kind, intro)
     if (intro.demo) {
       setBeat('demo')
-      setDemoKind(task.kind)
+      setDemoKind(kind)
       const ins = intro.instruction ?? 'long'
-      setBubble([{ clip: instructionClip(task.kind, ins) }])
-      void sayAll([{ parts: [{ clip: instructionClip(task.kind, ins) }], option: null, instruction: true }], tok)
+      setBubble([{ clip: instructionClip(kind, ins) }])
+      void sayAll([{ parts: [{ clip: instructionClip(kind, ins) }], option: null, instruction: true }], tok)
     } else {
       void readTask(task, intro, tok)
     }
@@ -549,8 +550,8 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     newToken()
     setReading(false)
     setSpeakingOption(null)
-    setDemoKind(task.kind)
-    void sayAll([{ parts: [{ clip: instructionClip(task.kind, 'long') }], option: null }], token.current)
+    setDemoKind(shownKind(task))
+    void sayAll([{ parts: [{ clip: instructionClip(shownKind(task), 'long') }], option: null }], token.current)
   }, [task, newToken, sayAll])
 
   const helpAllowed = !!task && !golden && !NO_HELP.has(mode) && help !== null

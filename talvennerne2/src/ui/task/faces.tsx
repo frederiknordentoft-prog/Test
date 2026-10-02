@@ -118,7 +118,7 @@ function promptItem(task: Task, value: string, px: number): ReactNode | null {
   const p = task.prompt
   if (p.scene === 'shapes') {
     const item = p.items.find((it) => it.id === value)
-    if (item) return <Shape2D shape={item.shape} variant={item.variant} size={px} />
+    if (item) return <Shape2D shape={item.shape} variant={item.variant} cut={item.cut} size={px} />
   }
   if (p.scene === 'compareObjects') {
     const m = /^o(\d+)$/.exec(value)

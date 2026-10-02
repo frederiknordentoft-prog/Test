@@ -99,8 +99,12 @@ describe('the grade', () => {
   })
 
   it('opens the child\'s own world once it has something to play', () => {
-    expect(gradeOpenings(1, withBakke, everything)).toEqual({ worlds: ['bakke'], regions: engRegions })
-    const two = gradeOpenings(2, withBakke, everything)
+    // as if only Engdalen and Hestebakkerne had their modules: Regnbueskoven is not ready
+    const toBakke: ReadonlySet<SkillId> = new Set(
+      [...regionsOfWorld('eng'), ...regionsOfWorld('bakke')].flatMap((r) => r.skills.map((s) => s.skill)),
+    )
+    expect(gradeOpenings(1, toBakke, everything)).toEqual({ worlds: ['bakke'], regions: engRegions })
+    const two = gradeOpenings(2, toBakke, everything)
     expect(two.worlds).toEqual(['bakke'])
     expect(two.regions).toEqual([...engRegions, ...regionsOfWorld('bakke').map((r) => r.id)])
   })
