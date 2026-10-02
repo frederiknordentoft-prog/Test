@@ -472,7 +472,7 @@ export const rabbit: SpeciesDef = {
     pawR: { x: 116, y: 171 },
     footL: { x: 58, y: 218 },
     footR: { x: 142, y: 218 },
-    tailBase: { x: 155, y: 192 },
+    tailBase: { x: 153, y: 192 },
   },
   bounds: {
     head: { x0: 38, y0: 6, x1: 162, y1: 150 },
