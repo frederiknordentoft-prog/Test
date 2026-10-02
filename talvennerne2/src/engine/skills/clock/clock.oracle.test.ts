@@ -182,6 +182,15 @@ for (const c of CLOCKS) {
     // snaps to whole (60) or half (30) hours can never show the swapped clock (12:15, 6:13). Every clockSet
     // task is a fake opportunity, and since a flag needs ≥ 2 production hits (SPEC §4.3), handsSwapped can
     // never be flagged in these skills. candidatesFor(fact, 'clockSet') could leave it out.
+    // ORK2b finding (clockHour): the clockSet dial starts at 12:00 (SPEC §3.2, src/ui/task/clockSet/View.tsx
+    // useState(0)), so "Stil uret, så klokken er tolv." (hel:0) is answered by touching the minute hand and
+    // ticking: the answer is free, yet the task counts as production (guessP 1/12) and can lift hel:0 to box 5.
+    const startTest = c.id === 'clockHour' ? it.fails : it
+    startTest('never asks to set the time the dial starts at (12:00): that answer would be free', () => {
+      const free = built.filter((b) => b.kind === 'clockSet' && onDial(Number(b.task.answer)) === 0).map((b) => b.fact.id)
+      expect([...new Set(free)]).toEqual([])
+    })
+
     const reachTest = c.id === 'clockQuarter' ? it : it.fails
     reachTest('lists only misconceptions the dial can set as clockSet opportunities (SPEC §4.3)', () => {
       expect(first(detectableReachProblems(built.filter((b) => b.kind === 'clockSet'), reach))).toEqual([])
