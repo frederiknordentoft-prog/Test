@@ -192,9 +192,10 @@ export const FABRIC = {
 } as const
 export type FabricName = keyof typeof FABRIC
 
-/** Genvej til et farvesæt ud fra stofnavne. */
-export function fabric(id: string, name: string, main: FabricName, trim: FabricName, accent: FabricName): Colorway {
-  return { id, name, main: FABRIC[main], trim: FABRIC[trim], accent: FABRIC[accent] }
+/** Genvej til et farvesæt ud fra stofnavne (evt. med ekstra striber, fx regnbuehuen). */
+export function fabric(id: string, name: string, main: FabricName, trim: FabricName, accent: FabricName, ...stripes: FabricName[]): Colorway {
+  const cw: Colorway = { id, name, main: FABRIC[main], trim: FABRIC[trim], accent: FABRIC[accent] }
+  return stripes.length ? { ...cw, stripes: stripes.map((s) => FABRIC[s]) } : cw
 }
 
 /** Tøjets kontur er tydeligt mørkere end pelsens (L·0,44 mod pelsens L·0,55), så trøje og hue skiller sig ud på pels i samme farve. */
@@ -209,9 +210,11 @@ export function itemPalette(cw: Colorway, silhouette = false): ItemPalette {
     return {
       main: k, mainShade: k, outline: k, trim: k, trimShade: k, trimOutline: k,
       accent: k, accentShade: k, accentOutline: k, highlight: 'none', ink: k,
+      ...(cw.stripes ? { stripes: cw.stripes.map(() => k) } : null),
     }
   }
   return {
+    ...(cw.stripes ? { stripes: cw.stripes } : null),
     main: cw.main,
     mainShade: shadeOf(cw.main),
     outline: fabricOutlineOf(cw.main),
