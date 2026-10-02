@@ -7,6 +7,7 @@ import { isCorrect } from '../../answer'
 import { classifyAnswer, detectableOf } from '../../misconceptions'
 import { registeredSkills } from '../../registry'
 import { masteryKeyOf } from '../../tasks'
+import { makeRng } from '../../rng'
 import type { AnswerValue, Fact, SkillId, Task } from '../../types'
 import { setValue } from '../../../ui/task/answers'
 import { clipText } from '../../../speech/catalog'
@@ -14,11 +15,11 @@ import {
   answerProblems, cardProblems, first, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
 } from '../number/number.oracle'
 import {
-  cardMisconceptions, detectableReachProblems, expectB, instanceIdProblems, normalisationProblems, productionProblemsB,
-  specKindProblemsB, sweepB, tagCheck, typedSwap, type WhyB,
+  avoidProblemsB, cardMisconceptions, detectableReachProblems, expectB, instanceIdProblems, normalisationProblems,
+  prefixProblems, productionProblemsB, specKindProblemsB, sweepB, tagCheck, typedSwap, type WhyB,
 } from '../clock/clock.oracle'
 import {
-  THING_UNIT, UNIT_KIND, UNIT_NAME, biggerThanTeddy, chartAnswer, chartAsked, chartFamily, drawnBiggest, explainChart,
+  HEAVY_THINGS, THING_UNIT, UNIT_KIND, UNIT_NAME, biggerThanTeddy, chartAnswer, chartAsked, chartFamily, drawnBiggest, explainChart,
   explainLay, explainWeigh, heavierThanTeddy, heaviest, parseChartId, parseLay, parseUnitsRow, rulerMarks, scaleOf,
   thingOfNoun, unitAskedAll, unitQuestion, unitsAsked, weighContrast,
 } from './measure2.oracle'
@@ -70,15 +71,17 @@ const ids = (skill: SkillId) => registeredSkill(skill)
 
 describe('measureUnits oracle', () => {
   const def = ids('measureUnits')
-  const { canon, all, built } = sweepB(def)
+  const { canon, instances, all, built } = sweepB(def)
   const row = (f: Fact) => parseUnitsRow(f.id)!
 
   it('has the families cubes (2–12) and clips (2–10), ids naming the row, the number of units as answer', () => {
     expect(def.families.map((f) => f.id)).toEqual(['cubes', 'clips'])
-    expect(first(idChecks(def, all, (f) => {
+    expect(first([...idChecks(def, all, (f) => {
       const r = parseUnitsRow(f.id)
       return r ? { family: r.family, answer: r.n } : null
-    }))).toEqual([])
+    }), ...prefixProblems(def, all, 'maal'), ...avoidProblemsB(def, instances)])).toEqual([])
+    // the strategy picture is the same row of units
+    for (const f of all) for (const tag of [null, 'near', 'other'] as const) expect(def.hint(f, tag).visual, f.id).toEqual(def.prompt(f, 'keypad', makeRng(1)))
   })
 
   it('lies the thing over as many units as the answer, of the unit the question names', () => {
@@ -114,16 +117,32 @@ describe('measureUnits oracle', () => {
 
 describe('rulerRead oracle', () => {
   const def = ids('rulerRead')
-  const { canon, all, built } = sweepB(def)
+  const { canon, instances, all, built } = sweepB(def)
   const lay = (f: Fact) => parseLay(f.id)!
   const explain = (b: Built, v: number) => explainLay(lay(b.fact), b.task, v)
 
   it('has the families from0 and offset (2. kl.), ids naming where the thing lies, its length as answer', () => {
     expect(def.families.map((f) => [f.id, f.grade ?? def.grade])).toEqual([['from0', 1], ['offset', 2]])
-    expect(first(idChecks(def, all, (f) => {
+    expect(first([...idChecks(def, all, (f) => {
       const l = parseLay(f.id)
       return l ? { family: l.family, answer: l.len } : null
-    }))).toEqual([])
+    }), ...prefixProblems(def, all, 'lin'), ...avoidProblemsB(def, instances)])).toEqual([])
+  })
+
+  it('counts every centimetre from start to end in the strategy picture; rulerEnd moves the thing to nul', () => {
+    const problems: string[] = []
+    for (const f of all) {
+      const l = lay(f)
+      for (const tag of [null, 'rulerEnd', 'operand', 'near', 'other'] as const) {
+        const v = def.hint(f, tag).visual
+        const where = `${f.id} hint(${String(tag)}): ${JSON.stringify(v)}`
+        if (tag === 'rulerEnd') {
+          const m = rulerMarks(v as Task['prompt'])
+          if (!m || m.start !== 0 || m.end !== l.len) problems.push(where)
+        } else if (v.scene !== 'line' || !v.hops || v.hops[0] !== l.start || v.hops[v.hops.length - 1] !== l.start + l.len || v.hops.length !== l.len + 1 || v.max < l.start + l.len) problems.push(where)
+      }
+    }
+    expect(first(problems)).toEqual([])
   })
 
   it('reads the length off the ruler: from the mark where the thing starts to the mark where it ends', () => {
@@ -181,6 +200,23 @@ describe('weightCompare oracle', () => {
       expect(f.family, f.id).toBe(f.id.startsWith('vgt:g') ? 'congruent' : 'conflict')
       expect(masteryKeyOf(def, f), f.id).toBe(f.id)
     }
+    expect(prefixProblems(def, facts, 'vgt')).toEqual([])
+  })
+
+  it('weighs the things on the pan scale (prompt.weights) as a child knows them: the heavy thing over the rest, heavy over the teddy and light under it', () => {
+    const problems: string[] = []
+    for (const { fact, kind, task } of built) {
+      const p = task.prompt as Task['prompt'] & { weights?: number[] }
+      if (p.scene !== 'compareObjects' || !p.weights) continue
+      const w = (thing: string) => p.weights![p.objects.indexOf(thing)]
+      if (kind === 'multiSelect') {
+        for (const o of p.objects.slice(1)) if (HEAVY_THINGS.has(o) !== w(o) > w(p.objects[0])) problems.push(`${fact.id} ${kind}: ${o} weighs ${w(o)} g, the teddy ${w(p.objects[0])} g`)
+      } else {
+        const heavy = p.objects.find((o) => HEAVY_THINGS.has(o))!
+        for (const o of p.objects) if (o !== heavy && w(o) >= w(heavy)) problems.push(`${fact.id} ${kind}: ${o} weighs ${w(o)} g, ${heavy} ${w(heavy)} g`)
+      }
+    }
+    expect(first(problems)).toEqual([])
   })
 
   it('answers the heaviest thing (one heavy among light ones) and all things heavier than the teddy, with the contrast the picture has', () => {
@@ -244,17 +280,33 @@ describe('weightCompare oracle', () => {
 
 describe('readChart oracle', () => {
   const def = ids('readChart')
-  const { canon, all, built } = sweepB(def)
+  const { canon, instances, all, built } = sweepB(def)
   const valuesOf = (t: Task) => (t.prompt.scene === 'chart' ? t.prompt.data.map((d) => d.n) : [])
   const explain = (b: Built, v: number) => explainChart(valuesOf(b.task), chartAsked(spokenText(b.task.speech))!.q, b.task, v)
 
   it('has the families readPicto, readBar, mostLeast and difference, ids naming the chart and the question', () => {
     expect(def.families.map((f) => f.id)).toEqual(['readPicto', 'readBar', 'mostLeast', 'difference'])
-    expect(first(idChecks(def, all, (f) => {
+    expect(first([...idChecks(def, all, (f) => {
       const c = parseChartId(f.id)
       const a = c ? chartAnswer(c.values, c.q) : null
       return c && a !== null ? { family: c.family, answer: a } : null
-    }))).toEqual([])
+    }), ...prefixProblems(def, all, 'diag'), ...avoidProblemsB(def, instances)])).toEqual([])
+  })
+
+  it('shows the same chart in the strategy picture, or the difference as a hop from the lowest to the highest number', () => {
+    const problems: string[] = []
+    for (const f of all) {
+      const c = parseChartId(f.id)!
+      const chart = def.prompt(f, 'keypad', makeRng(1))
+      for (const tag of [null, 'operand', 'near', 'wrongOperation'] as const) {
+        const v = def.hint(f, tag).visual
+        const where = `${f.id} hint(${String(tag)}): ${JSON.stringify(v)}`
+        if (c.q === 'diff') {
+          if (v.scene !== 'line' || !v.hops || v.hops[0] !== Math.min(...c.values) || v.hops[v.hops.length - 1] !== Math.max(...c.values) || v.max < Math.max(...c.values)) problems.push(where)
+        } else if (JSON.stringify(v) !== JSON.stringify(chart)) problems.push(where)
+      }
+    }
+    expect(first(problems)).toEqual([])
   })
 
   it('answers what the question asks of the chart’s own data: a row or bar by place, an extreme, or the difference', () => {
@@ -325,6 +377,7 @@ describe('unitChoice oracle', () => {
       if (masteryKeyOf(def, f) !== f.id) problems.push(`${f.id}: mastery key`)
     }
     expect(facts.filter((f) => f.family === 'length').length).toBe(16)
+    problems.push(...prefixProblems(def, facts, 'enh'))
     expect(first(problems)).toEqual([])
   })
 

@@ -6,13 +6,14 @@ import { isCorrect } from '../../answer'
 import { classifyAnswer } from '../../misconceptions'
 import { registeredSkills } from '../../registry'
 import { masteryKeyOf } from '../../tasks'
+import { makeRng } from '../../rng'
 import type { AnswerValue, Fact, SkillId, Task } from '../../types'
 import {
   answerProblems, cardProblems, first, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
 } from '../number/number.oracle'
 import {
-  cardMisconceptions, detectableReachProblems, expectB, instanceIdProblems, normalisationProblems, productionProblemsB,
-  specKindProblemsB, sweepB, tagCheck, typedSwap, type WhyB,
+  avoidProblemsB, cardMisconceptions, detectableReachProblems, expectB, instanceIdProblems, normalisationProblems,
+  prefixProblems, productionProblemsB, specKindProblemsB, sweepB, tagCheck, typedSwap, type WhyB,
 } from '../clock/clock.oracle'
 import {
   amountsIn, askedPiece, coinNamesOracle, coinWord, digitComplementKr, exactTrays, explainChange, explainPile, fewestWays,
@@ -136,7 +137,9 @@ describe('coinNames oracle', () => {
 
   it('has SPEC §2.2’s 10 facts mnt:<øre>, the six coins and the four notes', () => {
     expect(canon.map((f) => f.id).sort()).toEqual([50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000].map((o) => `mnt:${o}`).sort())
-    expect(first(idChecks(def, canon, (f) => coinNamesOracle(f.id)))).toEqual([])
+    expect(first([...idChecks(def, canon, (f) => coinNamesOracle(f.id)), ...prefixProblems(def, canon, 'mnt')])).toEqual([])
+    // the strategy shows the piece itself
+    for (const f of canon) for (const kind of def.kinds) expect(def.hint(f, null, kind).visual, f.id).toEqual({ scene: 'coins', ore: [f.answer] })
   })
 
   it('asks for the piece the sentence names: one on the cards, all of them among the things', () => {
@@ -153,7 +156,7 @@ describe('coinNames oracle', () => {
       } else {
         // "Tryk på alle femkroner.": the answer is every card showing the piece, and only those
         const pieces = task.options.map(tokenPiece)
-        const want = task.options.filter((o, i) => pieces[i] === ore).map(String)
+        const want = task.options.filter((_, i) => pieces[i] === ore).map(String)
         if (pieces.some((p) => p === null)) problems.push(`${where}: options [${task.options}] are not all pieces`)
         if (task.options.length < 5 || task.options.length > 8) problems.push(`${where}: ${task.options.length} things (SPEC §3.2: 5–8)`)
         if (new Set(task.options.map(String)).size !== task.options.length) problems.push(`${where}: the same token twice`)
@@ -210,6 +213,7 @@ describe('countCoins oracle', () => {
     }
     expect(canon.filter((f) => f.family === 'sameCoins').length).toBeGreaterThanOrEqual(12)
     for (const fam of def.families) expect(new Set(instances.get(fam.id)!.map((f) => f.id)).size, fam.id).toBeGreaterThan(5)
+    problems.push(...prefixProblems(def, all, 'tael'), ...avoidProblemsB(def, instances))
     expect(first(problems)).toEqual([])
   })
 
@@ -224,6 +228,18 @@ describe('countCoins oracle', () => {
       if (spokenText(task.speech) !== 'Hvor mange penge er der?') problems.push(`${where}: "${spokenText(task.speech)}"`)
       if (task.answerType !== 'ore') problems.push(`${where}: ${task.answerType}`)
       problems.push(...answerChecks(task), ...cardProblems(task, (c) => c % 100 === 0))
+    }
+    expect(first(problems)).toEqual([])
+  })
+
+  it('counts the same coins in every strategy picture, and they add up to the answer', () => {
+    const problems: string[] = []
+    for (const f of canon) {
+      for (const tag of [null, 'coinsAsCount', 'operand', 'near'] as const) {
+        const v = def.hint(f, tag).visual
+        const coins = pile(f).coins.map((c) => c * 100).sort((a, b) => b - a)
+        if (v.scene !== 'coinsSum' || [...v.ore].sort((a, b) => b - a).join() !== coins.join() || sum(v.ore) !== f.answer) problems.push(`${f.id} hint(${String(tag)}): ${JSON.stringify(v)}`)
+      }
     }
     expect(first(problems)).toEqual([])
   })
@@ -251,16 +267,30 @@ describe('countCoins oracle', () => {
 
 describe('payExact oracle', () => {
   const def = registeredSkill('payExact')
-  const { canon, all, built } = sweepB(def)
+  const { canon, instances, all, built } = sweepB(def)
   const purchase = (f: Fact) => parsePurchase(f.id)!
   const purseOf = (t: Task) => shopOf(t.prompt)?.purse ?? []
 
   it('has the four families of pædagogik §1.3 and ids naming the price', () => {
     expect(def.families.map((f) => f.id)).toEqual(['to20', 'to50', 'to100', 'fewestCoins'])
-    expect(first(idChecks(def, all, (f) => {
+    expect(first([...idChecks(def, all, (f) => {
       const p = parsePurchase(f.id)
       return p ? { family: p.family, answer: p.price } : null
-    }))).toEqual([])
+    }), ...prefixProblems(def, all, 'pay'), ...avoidProblemsB(def, instances)])).toEqual([])
+  })
+
+  it('shows the fewest pieces from the purse that pay the price in every strategy picture', () => {
+    const problems: string[] = []
+    for (const f of all) {
+      const p = purchase(f)
+      const shop = shopOf(def.prompt(f, 'pay', makeRng(1)))
+      const fewest = fewestWays(p.price, shop?.purse ?? [])[0] ?? []
+      for (const tag of [null, 'near', 'other'] as const) {
+        const v = def.hint(f, tag).visual
+        if (v.scene !== 'coinsSum' || setToken(v.ore) !== setToken(fewest)) problems.push(`${f.id} hint(${String(tag)}): ${JSON.stringify(v)}, oracle ${fewest}`)
+      }
+    }
+    expect(first(problems)).toEqual([])
   })
 
   it('asks for the price in the shop, from a purse that can pay it; any exact payment is right, fewestCoins wants the fewest pieces', () => {
@@ -336,16 +366,33 @@ const amountOfSet = (v: AnswerValue): number => sum(setPieces(v) ?? [])
 
 describe('change oracle', () => {
   const def = registeredSkill('change')
-  const { canon, all, built } = sweepB(def)
+  const { canon, instances, all, built } = sweepB(def)
   const sale = (f: Fact) => parseSale(f.id)!
   const explain = (b: Built, v: number) => explainChange(sale(b.fact), b.task, v)
 
   it('has the four families of pædagogik §1.3 and ids naming the price; the change is what was paid minus the price', () => {
     expect(def.families.map((f) => f.id)).toEqual(['from10', 'from20', 'from50', 'from100'])
-    expect(first(idChecks(def, all, (f) => {
+    expect(first([...idChecks(def, all, (f) => {
       const s = parseSale(f.id)
       return s ? { family: s.family, answer: s.paid - s.price } : null
-    }))).toEqual([])
+    }), ...prefixProblems(def, all, 'byt'), ...avoidProblemsB(def, instances)])).toEqual([])
+  })
+
+  it('counts up from the price to what was paid in the strategy picture, and never gives the change away before a mistake', () => {
+    const problems: string[] = []
+    for (const f of all) {
+      const s = sale(f)
+      const [price, paid] = [s.price / 100, s.paid / 100]
+      for (const tag of [null, 'wrongOperation', 'digitComplement10', 'operand', 'near'] as const) {
+        const v = def.hint(f, tag).visual
+        const where = `${f.id} hint(${String(tag)}): ${JSON.stringify(v)}`
+        if (v.scene !== 'line' || v.min !== 0 || v.max !== paid) problems.push(where)
+        else if (tag === null) {
+          if (v.arrowAt !== price || v.target !== paid || v.hops !== undefined) problems.push(where)
+        } else if (!v.hops || v.hops[0] !== price || v.hops[v.hops.length - 1] !== paid) problems.push(where)
+      }
+    }
+    expect(first(problems)).toEqual([])
   })
 
   it('works the change out from the question and the shop: what it costs, what is paid, a purse to give it from', () => {

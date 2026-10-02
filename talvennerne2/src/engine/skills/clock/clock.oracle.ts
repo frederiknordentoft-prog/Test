@@ -4,6 +4,7 @@
 // the fact id, the spoken time, the hands on the cards — and never from the generator code. Wrong
 // clocks are explained with pædagogik §3.2's formulas, worked out here for "find the clock" and
 // "set the clock" tasks. The registry skips *.oracle.ts files, so none of this reaches the app.
+import { readFileSync } from 'node:fs'
 import type { AnswerValue, ErrorTag, Fact, MisconceptionId, SkillDef, SkillId, SpeechPart, Task, TaskKind } from '../../types'
 import { classifyAnswer, detectableOf } from '../../misconceptions'
 import { ceilingFor, guessP, isProduction } from '../../kinds'
@@ -47,6 +48,34 @@ export function instanceIdProblems(def: SkillDef, facts: readonly Fact[]): strin
     if (prev !== undefined && prev !== key) out.push(`${def.id} ${f.id}: two different instances share the id`)
     seen.set(f.id, key)
   }
+  return out
+}
+
+/** Avoided instances are avoided while the family has others left (SPEC §5.1: a new instance avoids the recent ones). */
+export function avoidProblemsB(def: SkillDef, instances: ReadonlyMap<string, readonly Fact[]>): string[] {
+  const out: string[] = []
+  for (const fam of def.families) {
+    const pool = [...new Set((instances.get(fam.id) ?? []).map((f) => f.id))]
+    if (pool.length < 4) continue
+    const avoid = new Set(pool.slice(0, Math.floor(pool.length / 2)))
+    const rng = makeRng(hashSeed(`ork2b-avoid:${def.id}/${fam.id}`))
+    for (let i = 0; i < 40; i++) {
+      const f = def.instance!(fam, rng, avoid)
+      if (avoid.has(f.id)) out.push(`${def.id}/${fam.id}: drew avoided ${f.id}`)
+    }
+  }
+  return out
+}
+
+/**
+ * CONVENTIONS "Fact-id'er": a skill outside the table picks one short prefix and documents it in its
+ * module. The skill's facts all carry `prefix`, and the module's source names it (`prefix:` in backticks).
+ */
+export function prefixProblems(def: SkillDef, facts: readonly Fact[], prefix: string): string[] {
+  const out: string[] = []
+  for (const f of facts) if (!f.id.startsWith(`${prefix}:`)) out.push(`${def.id} ${f.id}: not under the prefix ${prefix}:`)
+  const source = readFileSync(new URL(`../${def.domain}/${def.id}.ts`, import.meta.url), 'utf8')
+  if (!source.includes(`\`${prefix}:`)) out.push(`${def.id}: the module does not document its prefix ${prefix}:`)
   return out
 }
 

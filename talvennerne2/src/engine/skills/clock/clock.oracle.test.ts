@@ -14,16 +14,16 @@ import {
 import {
   CLOCK_IDS, CLOCK_STEP, angleGap, askedTime, cardMisconceptions, clockIdOracle, clockMisValues, detectableReachProblems,
   explainClock, expectB, handsAt, handsOfPhrase, isSwappedClock, lookDifferent, normalisationProblems, onDial,
-  productionProblemsB, settable, spec101Clock, specKindProblemsB, sweepB, tagCheck, timeOfPhrase,
+  prefixProblems, productionProblemsB, settable, spec101Clock, specKindProblemsB, sweepB, tagCheck, timeOfPhrase,
 } from './clock.oracle'
 
 vi.setConfig({ testTimeout: 240_000 })
 
 const CLOCKS = [
-  { id: 'clockHour', facts: 12, families: { hour: 12 } },
-  { id: 'clockHalf', facts: 12, families: { half: 12 } },
-  { id: 'clockQuarter', facts: 24, families: { quarterPast: 12, quarterTo: 12 } },
-] as const satisfies readonly { id: SkillId; facts: number; families: Record<string, number> }[]
+  { id: 'clockHour', prefix: 'hel', facts: 12, families: { hour: 12 } },
+  { id: 'clockHalf', prefix: 'halv', facts: 12, families: { half: 12 } },
+  { id: 'clockQuarter', prefix: 'kvart', facts: 24, families: { quarterPast: 12, quarterTo: 12 } },
+] as const satisfies readonly { id: SkillId; prefix: string; facts: number; families: Record<string, number> }[]
 
 describe('the clock oracle itself', () => {
   it('reads the Danish half form and the quarters as SPEC §10.1 says them', () => {
@@ -80,6 +80,7 @@ for (const c of CLOCKS) {
         const hours = new Set(own.map((f) => spec101Clock(Number(f.answer)).split(' ').pop()))
         if (hours.size !== 12) problems.push(`${family}: names ${hours.size} hours`)
       }
+      problems.push(...prefixProblems(def, canon, c.prefix))
       expect(first(problems)).toEqual([])
     })
 
