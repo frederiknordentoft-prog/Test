@@ -4,6 +4,9 @@
 import type { AnswerValue, Task } from '../../engine/types'
 import { lineRange, splitTokens } from '../../ui/task/answers'
 import { useRound } from '../../state/useRound'
+import { CENTRE, DIAL, KNOB, VIEW_W, dialValue, hourAngle, minuteAngle, mod, turn } from '../../ui/task/clockSet/logic'
+import { fewestPieces, piecesOfSet } from '../../ui/task/pay/logic'
+import { fracOf, partsOfValue } from '../../ui/task/colorParts/logic'
 
 const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel)
 const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => [...root.querySelectorAll<T>(sel)]
@@ -17,6 +20,65 @@ function click(el: Element | null, what: string): void {
 
 function pointer(el: Element, type: string, x: number, y: number): void {
   el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1 }))
+}
+
+/** A press that does not move (a tap) on an element, at its centre. */
+function tapOn(el: Element | null, what: string): void {
+  if (!el) throw new Error(`drive: ${what} findes ikke`)
+  const r = el.getBoundingClientRect()
+  pointer(el, 'pointerdown', r.left + r.width / 2, r.top + r.height / 2)
+  pointer(el, 'pointerup', r.left + r.width / 2, r.top + r.height / 2)
+}
+
+/** Waits for a lazily loaded view to be on screen. */
+async function viewOf(kind: string, area: ParentNode): Promise<HTMLElement> {
+  for (let i = 0; i < 100; i++) {
+    const el = $(`[data-kind="${kind}"]`, area)
+    if (el) return el
+    await wait(30)
+  }
+  throw new Error(`drive: ${kind} kom aldrig frem`)
+}
+
+/** A point on the clock face: `angle` degrees clockwise from 12, `r` clock units from the centre. */
+function clockPoint(dial: HTMLElement, angle: number, r: number): { x: number; y: number } {
+  const svg = $('.tv-clockset__clock', dial)!
+  const box = svg.getBoundingClientRect()
+  const k = box.width / VIEW_W
+  const a = (angle * Math.PI) / 180
+  return { x: box.left + (CENTRE + r * Math.sin(a)) * k, y: box.top + (CENTRE - r * Math.cos(a)) * k }
+}
+
+/** Drags on the dial from one angle to another along the circle at radius r (in 15° steps). */
+async function turnOn(dial: HTMLElement, from: number, to: number, r: number): Promise<void> {
+  const d = turn(from, to)
+  const steps = Math.max(1, Math.ceil(Math.abs(d) / 15))
+  const p0 = clockPoint(dial, from, r)
+  pointer(dial, 'pointerdown', p0.x, p0.y)
+  for (let i = 1; i <= steps; i++) {
+    const p = clockPoint(dial, from + (d * i) / steps, r)
+    pointer(dial, 'pointermove', p.x, p.y)
+    await wait(8)
+  }
+  const p1 = clockPoint(dial, to, r)
+  pointer(dial, 'pointerup', p1.x, p1.y)
+  await wait(220)
+}
+
+/** Sets the clock to `value` minutes: the minute hand round to its place, then the hour hand. */
+async function setClock(task: Task, area: ParentNode, value: number): Promise<void> {
+  const dial = $('.tv-clockset__dial', await viewOf('clockSet', area))
+  if (!dial) throw new Error('drive: uret findes ikke')
+  const target = mod(value, DIAL)
+  const m = target % 60
+  const h = Math.floor(target / 60)
+  let now = Number(dial.dataset.minutes ?? 0)
+  await turnOn(dial, minuteAngle(now), m * 6, KNOB.minute)
+  now = Number(dial.dataset.minutes ?? 0)
+  await turnOn(dial, hourAngle(now), h * 30 + m * 0.5, KNOB.hour)
+  if (dialValue(task, Number(dial.dataset.minutes)) !== dialValue(task, target)) {
+    throw new Error(`drive: uret viser ${dial.dataset.minutes}, ikke ${target}`)
+  }
 }
 
 /** The task the round is asking (the golden egg's when it flies). */
@@ -114,6 +176,45 @@ export async function answer(value: AnswerValue): Promise<void> {
       check()
       return
     }
+    case 'clockSet': {
+      await setClock(task, area, Number(value))
+      check()
+      return
+    }
+    case 'pay': {
+      const view = await viewOf('pay', area)
+      const purse = $$('[data-source]', view).map((el) => Number(el.dataset.source))
+      const pieces = typeof value === 'string' ? piecesOfSet(value) : (fewestPieces(Number(value), purse) ?? [])
+      if (pieces.length === 0) throw new Error(`drive: pungen kan ikke betale ${value}`)
+      for (const p of pieces) {
+        tapOn($(`[data-source="${p}"]`, view), `mønten ${p}`)
+        await wait(30)
+      }
+      check()
+      return
+    }
+    case 'share': {
+      const view = await viewOf('share', area)
+      const plates = $$('[data-plate]', view)
+      const things = $$('[data-pile] [data-thing]', view).length
+      for (let i = 0; i < things; i++) {
+        // −1 (an uneven deal): everything on the first plate; else round the plates in turn
+        tapOn(Number(value) < 0 ? plates[0] : plates[i % plates.length], 'en tallerken')
+        await wait(30)
+      }
+      check()
+      return
+    }
+    case 'colorParts': {
+      const view = await viewOf('colorParts', area)
+      const parts = Number($('[data-parts]', view)?.getAttribute('data-parts') ?? 0)
+      for (const i of partsOfValue(value, parts)) {
+        tapOn($(`path[data-part="${i}"]`, view), `delen ${i}`)
+        await wait(30)
+      }
+      check()
+      return
+    }
     default:
       throw new Error(`drive: ${task.kind} kan ikke besvares endnu`)
   }
@@ -163,6 +264,16 @@ export function wrongFor(task: Task): AnswerValue | null {
       const right = new Set(splitTokens(a).map(String))
       const other = task.options?.find((o) => !right.has(String(o)))
       return other === undefined ? null : other
+    }
+    case 'clockSet':
+      return typeof a === 'number' ? dialValue(task, mod(a, DIAL) + 60) : null
+    case 'pay':
+      return typeof a === 'number' ? a + 100 : `${a}|c100`
+    case 'share':
+      return -1
+    case 'colorParts': {
+      const f = fracOf(a)
+      return f ? `frac:${f.n > 1 ? f.n - 1 : f.n + 1}/${f.d}` : null
     }
     default:
       return null

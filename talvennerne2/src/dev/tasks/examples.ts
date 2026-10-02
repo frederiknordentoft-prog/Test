@@ -265,10 +265,130 @@ export const EXAMPLES: Record<TaskKind, Example[]> = {
       }),
     },
   ],
-  clockSet: [],
-  pay: [],
-  share: [],
-  colorParts: [],
+  clockSet: [
+    {
+      id: 'clock-half', title: 'Halv tre ("halv" ved næste time)', wrong: 210,
+      task: mk('clk:150', {
+        skill: 'clockHalf', kind: 'clockSet', prompt: { scene: 'clock', minutes: null, step: 30 }, answer: 150, answerType: 'minutes',
+        modulo: 720, range: [0, 719], maxDigits: 3, distractorTags: tags({ '210': 'halfPastNext', '330': 'handsSwapped' }),
+        speech: [{ clip: 'frag.stil_uret_saa_klokken_er' }, { clock: { minutes: 150, style: 'analog', form: 'end' } }],
+      }),
+    },
+    {
+      id: 'clock-hour', title: 'Klokken fire (hele timer)', wrong: 300,
+      task: mk('clk:240', {
+        skill: 'clockHour', kind: 'clockSet', prompt: { scene: 'clock', minutes: null, step: 60 }, answer: 240, answerType: 'minutes',
+        modulo: 720, range: [0, 719], maxDigits: 3, distractorTags: tags({ '300': 'near', '180': 'near' }),
+        speech: [{ clip: 'frag.stil_uret_saa_klokken_er' }, { clock: { minutes: 240, style: 'analog', form: 'end' } }],
+      }),
+    },
+    {
+      id: 'clock-quarter', title: 'Kvart i tre (kvarter)', wrong: 195,
+      task: mk('clk:165', {
+        skill: 'clockQuarter', kind: 'clockSet', prompt: { scene: 'clock', minutes: null, step: 15 }, answer: 165, answerType: 'minutes',
+        modulo: 720, range: [0, 719], maxDigits: 3, distractorTags: tags({ '195': 'quarterDirection' }),
+        speech: [{ clip: 'frag.stil_uret_saa_klokken_er' }, { clock: { minutes: 165, style: 'analog', form: 'end' } }],
+      }),
+    },
+    {
+      id: 'clock-digital', title: '14:30 fra det digitale ur (5 min)', wrong: 890,
+      task: mk('cdig:870', {
+        skill: 'clockDigital', kind: 'clockSet', family: 'digital24', masteryKey: 'clockDigital/digital24',
+        prompt: { scene: 'clock', minutes: 870, digital: true, h24: true, step: 5 }, answer: 870, answerType: 'minutes',
+        modulo: 1440, range: [0, 1439], maxDigits: 4, speech: [{ free: 'Stil uret, så det viser det samme som det digitale ur.' }],
+      }),
+    },
+  ],
+  pay: [
+    {
+      id: 'pay-17', title: 'Betal 17 kr', wrong: 1600,
+      task: mk('pay:1700', {
+        skill: 'payExact', kind: 'pay', family: 'to20', masteryKey: 'payExact/to20',
+        prompt: { scene: 'shop', thing: 'apple', priceOre: 1700, purse: [2000, 1000, 500, 200, 100] }, answer: 1700, answerType: 'ore',
+        unit: 'kr', range: [0, 2000], maxDigits: 2, distractorTags: tags({ '1600': 'near', '1800': 'near' }),
+        speech: [{ clip: 'frag.betal' }, { money: { ore: 1700, form: 'end' } }],
+      }),
+    },
+    {
+      id: 'pay-fewest', title: 'Færrest mønter: 27 kr (mønt-sæt)', wrong: 'c1000|c1000|c500|c200',
+      task: mk('pay:few:2700', {
+        skill: 'payExact', kind: 'pay', family: 'fewestCoins', masteryKey: 'payExact/fewestCoins',
+        prompt: { scene: 'shop', thing: 'ball', priceOre: 2700, purse: [2000, 1000, 500, 200, 100] }, answer: 'c2000|c500|c200', answerType: 'set',
+        unit: 'kr', range: [0, 5000], speech: [{ clip: 'frag.betal' }, { money: { ore: 2700, form: 'end' } }, { free: 'med så få mønter som muligt.' }],
+      }),
+    },
+    {
+      id: 'pay-1250', title: 'Kroner og øre: 12,50 kr (sum som støtte)', wrong: 1200,
+      task: mk('kro:1250', {
+        skill: 'kronerOre', kind: 'pay', family: 'readAmount', masteryKey: 'kronerOre/readAmount', scaffold: true,
+        prompt: { scene: 'shop', thing: 'strawberry', priceOre: 1250, purse: [2000, 1000, 500, 200, 100, 50] }, answer: 1250, answerType: 'ore',
+        unit: 'kr', range: [0, 2000], speech: [{ clip: 'frag.betal' }, { money: { ore: 1250, form: 'end' } }],
+      }),
+    },
+    {
+      id: 'pay-75', title: 'Med sedler: 75 kr', wrong: 7000,
+      task: mk('pay:7500', {
+        skill: 'payExact', kind: 'pay', family: 'to100', masteryKey: 'payExact/to100',
+        prompt: { scene: 'shop', thing: 'fish', priceOre: 7500, purse: [10000, 5000, 2000, 1000, 500, 200, 100] }, answer: 7500, answerType: 'ore',
+        unit: 'kr', range: [0, 10000], speech: [{ clip: 'frag.betal' }, { money: { ore: 7500, form: 'end' } }],
+      }),
+    },
+  ],
+  share: [
+    {
+      id: 'share-12-3', title: 'Del 12 gulerødder på 3', wrong: -1,
+      task: mk('div:12/3', {
+        skill: 'shareEqually', kind: 'share', prompt: { scene: 'share', total: 12, recipients: 3, thing: 'carrot' }, answer: 4,
+        range: [0, 12], speech: [{ free: 'Del gulerødderne lige mellem de tre tallerkener.' }],
+      }),
+    },
+    {
+      id: 'share-half-10', title: 'Halvdelen af 10 jordbær', wrong: -1,
+      task: mk('fos:half:10', {
+        skill: 'fractionOfSet', kind: 'share', family: 'halfOf', masteryKey: 'fractionOfSet/halfOf',
+        prompt: { scene: 'share', total: 10, recipients: 2, thing: 'strawberry' }, answer: 5, range: [0, 10],
+        speech: [{ clip: 'frag.halvdelen_af' }, { num: 10, form: 'end' }],
+      }),
+    },
+    {
+      id: 'share-20-4', title: 'Del 20 æbler på 4', wrong: -1,
+      task: mk('div:20/4', {
+        skill: 'shareEqually', kind: 'share', prompt: { scene: 'share', total: 20, recipients: 4, thing: 'apple' }, answer: 5,
+        range: [0, 20], speech: [{ free: 'Del æblerne lige mellem de fire tallerkener.' }],
+      }),
+    },
+  ],
+  colorParts: [
+    {
+      id: 'parts-3/4', title: 'Farv 3/4 af cirklen', wrong: 'frac:1/4',
+      task: mk('fs:3/4:circle', {
+        skill: 'fractionShape', kind: 'colorParts', prompt: { scene: 'fraction', shape: 'circle', parts: 4, colored: 0, equal: true },
+        answer: 'frac:3/4', optionView: 'fraction', distractorTags: tags({ 'frac:1/4': 'other' }),
+        speech: [{ free: 'Farv' }, { frac: { n: 3, d: 4, form: 'end' } }],
+      }),
+    },
+    {
+      id: 'parts-1/2-rect', title: 'Farv 1/2 af rektanglet (4 dele)', wrong: 'frac:3/4',
+      task: mk('fs:1/2:rect', {
+        skill: 'fractionShape', kind: 'colorParts', prompt: { scene: 'fraction', shape: 'rect', parts: 4, colored: 0, equal: true },
+        answer: 'frac:1/2', accept: ['frac:2/4'], optionView: 'fraction', speech: [{ free: 'Farv' }, { frac: { n: 1, d: 2, form: 'end' } }],
+      }),
+    },
+    {
+      id: 'parts-2/3-bar', title: 'Farv 2/3 af stangen', wrong: 'frac:1/3',
+      task: mk('fs:2/3:bar', {
+        skill: 'fractionShape', kind: 'colorParts', prompt: { scene: 'fraction', shape: 'bar', parts: 3, colored: 0, equal: true },
+        answer: 'frac:2/3', optionView: 'fraction', speech: [{ free: 'Farv' }, { frac: { n: 2, d: 3, form: 'end' } }],
+      }),
+    },
+    {
+      id: 'parts-1/4-square', title: 'Farv 1/4 af kvadratet (foreslået form)', wrong: 'frac:2/4',
+      task: mk('fs:1/4:square', {
+        skill: 'fractionShape', kind: 'colorParts', prompt: { scene: 'fraction', shape: 'square', parts: 4, colored: 0, equal: true } as unknown as Prompt,
+        answer: 'frac:1/4', optionView: 'fraction', speech: [{ free: 'Farv' }, { frac: { n: 1, d: 4, form: 'end' } }],
+      }),
+    },
+  ],
   grid: [],
 }
 
