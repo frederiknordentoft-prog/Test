@@ -16,8 +16,26 @@ const MANIPULATIVE_ONLY_FOR: Partial<Record<TaskKind, readonly SkillId[]>> = {
 
 const factorial = (n: number): number => (n <= 1 ? 1 : n * factorial(n - 1))
 const rangeSize = (t: Task) => Math.max(1, t.range[1] - t.range[0] + 1)
+/**
+ * The answers a keypad can type: the range in the units the child types (UI-fund 22). A money task
+ * in whole kroner (entryScale 100) has its range in øre, but 0–2000 øre is 21 typed answers, not 2001.
+ */
+const typedRangeSize = (t: Task) => {
+  const scale = Math.max(1, t.entryScale || 1)
+  return Math.max(1, Math.floor(t.range[1] / scale) - Math.ceil(t.range[0] / scale) + 1)
+}
 /** fillSlots and sortOrder answers are tokens joined by '|', one per slot. */
 const slotCount = (t: Task) => (typeof t.answer === 'string' ? t.answer.split('|').length : 1)
+/**
+ * How many fillings are right: the answer and every other one the task accepts (13 = □ + □ takes
+ * 10|3 and 3|10, a fraction its equivalents), each counted once and only when it fills the slots
+ * (UI-fund 8).
+ */
+const rightFillings = (t: Task) => {
+  const k = slotCount(t)
+  const fits = (v: unknown) => typeof v === 'string' && v.split('|').length === k
+  return new Set([t.answer, ...t.accept].filter((v) => v === t.answer || fits(v)).map(String)).size
+}
 
 function promptOf<S extends Prompt['scene']>(t: Task, scene: S): Extract<Prompt, { scene: S }> | null {
   return t.prompt.scene === scene ? (t.prompt as Extract<Prompt, { scene: S }>) : null
@@ -33,6 +51,7 @@ function kindGuessP(t: Task): number {
     case 'pair':
       return 1 / Math.max(1, t.options.length)
     case 'keypad':
+      return 1 / typedRangeSize(t)
     case 'countTap':
       return 1 / rangeSize(t)
     case 'numberline':
@@ -44,7 +63,7 @@ function kindGuessP(t: Task): number {
     case 'multiSelect':
       return 1 / (2 ** Math.max(1, t.options.length) - 1)
     case 'fillSlots':
-      return 1 / Math.max(1, t.options.length) ** slotCount(t)
+      return Math.min(1, rightFillings(t) / Math.max(1, t.options.length) ** slotCount(t))
     case 'buildBase':
     case 'pay':
     case 'share':
