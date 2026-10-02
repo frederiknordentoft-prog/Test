@@ -114,13 +114,13 @@ function hint(f: Fact, tag: string | null): HintSpec {
   switch (tag) {
     case 'concatNumberWords':
       // "Det skriver vi med tre cifre: hundreder, tiere og enere."
-      return hintOf([...said, say('hint.hear1000.threeDigits')], visual, 'concatNumberWords')
+      return hintOf([...said, say('hint.hear1000.threeDigits')], visual, 'concatNumberWords', true)
     case 'zeroPlaceholder':
       if (n % 100 === 0) return hintOf([...said, say('hint.place.zeroBoth')], visual, 'zeroPlaceholder')
       return hintOf([...said, say(t === 0 ? 'hint.place.zeroHoldsTens' : 'hint.place.zeroHoldsOnes')], visual, 'zeroPlaceholder')
     case 'digitSwap':
       if (digitSwapOf(n) !== null) {
-        return hintOf([...said, say('hint.hear20.weSay'), num(o, 'mid'), say('hint.hear.butTensFirst')], visual, 'digitSwap')
+        return hintOf([...said, say('hint.hear20.weSay'), num(o, 'mid'), say('hint.hear.butTensFirst')], visual, 'digitSwap', true)
       }
       break
   }

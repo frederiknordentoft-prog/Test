@@ -365,8 +365,8 @@ function hint(f: Fact, tag: string | null, kind?: TaskKind): HintSpec {
       const said = sentence(n)
       if (tag === 'addsPlaceParts') return hintOf([say('hint.pv.plateRodCube'), ...said], visual, 'addsPlaceParts')
       if (tag === 'zeroPlaceholder') return hintOf([...said, ...zeroWhy(n)], visual, 'zeroPlaceholder')
-      if (tag === 'concatNumberWords') return hintOf([...said, say('hint.hear1000.threeDigits')], visual, 'concatNumberWords')
-      if (tag === 'digitSwap' && digitSwapOf(n) !== null) return hintOf([...said, say('hint.pv.tensBeforeOnes')], visual, 'digitSwap')
+      if (tag === 'concatNumberWords') return hintOf([...said, say('hint.hear1000.threeDigits')], visual, 'concatNumberWords', true)
+      if (tag === 'digitSwap' && digitSwapOf(n) !== null) return hintOf([...said, say('hint.pv.tensBeforeOnes')], visual, 'digitSwap', true)
       const why = zeroWhy(n)
       return hintOf(q.family === 'buildHTO' ? [say('hint.pv.plateRodCube'), ...said, ...why] : [...said, ...why], visual)
     }
@@ -381,7 +381,7 @@ function hint(f: Fact, tag: string | null, kind?: TaskKind): HintSpec {
         const visualFor = kind === 'fillSlots' ? visual : only
         return hintOf(kind === 'fillSlots' ? [...whole, ...digitWorth(n, place)] : digitWorth(n, place), visualFor, 'faceValue')
       }
-      if (tag === 'digitSwap' && digitSwapOf(n) !== null) return hintOf([...whole, say('hint.pv.tensBeforeOnes')], visual, 'digitSwap')
+      if (tag === 'digitSwap' && digitSwapOf(n) !== null) return hintOf([...whole, say('hint.pv.tensBeforeOnes')], visual, 'digitSwap', true)
       if (q.family === 'digitValue' && kind !== 'fillSlots') return hintOf(digitWorth(n, place), only)
       return hintOf(whole, visual)
     }
