@@ -9,12 +9,20 @@ import type { AnswerValue, ErrorTag, SkillId, Task, TaskKind } from '../../../ty
 
 const ctx = { states: {}, audioVerified: true }
 
-/** Task i: a key of the skill on the node (drawn independently of the kind), the kinds in turn. */
+/**
+ * Task i: a key of the skill on the node (drawn independently of the kind), the kinds in turn. The keys
+ * are planned afresh every ten tasks, as a round does: one plan never repeats an instance, so a single
+ * plan over hundreds of tasks would run a small family (step100, step25) out of fresh instances.
+ */
 export function builder(node: string, skill: SkillId, kinds: readonly TaskKind[]) {
-  const keys = keysForNode(NODE_BY_ID[node], ctx).filter((k) => k.skill === skill)
+  const plan = () => keysForNode(NODE_BY_ID[node], ctx).filter((k) => k.skill === skill)
+  let keys = plan()
   if (keys.length === 0) throw new Error(`${skill} is not played on ${node}`)
   const pick = makeRng(77)
-  return (i: number): Task => keys[pick.int(keys.length)].build(kinds[i % kinds.length], makeRng(1000 + i), i)
+  return (i: number): Task => {
+    if (i > 0 && i % 10 === 0) keys = plan()
+    return keys[pick.int(keys.length)].build(kinds[i % kinds.length], makeRng(1000 + i), i)
+  }
 }
 
 const asAnswer = (t: Task, key: string): AnswerValue => (typeof t.answer === 'number' ? Number(key) : key)
