@@ -1,9 +1,9 @@
 // Fælles byggeklodser til arterne (ikke husets frosne dele): lemmer med åben skulder, poteputer,
 // rør-haler i tre lag (sømløse led) og hjælpere til hår. Alt tegnes med primitiverne i shapes.ts.
 import type { ReactNode } from 'react'
-import { blob, ellipse, join, spline } from '../rig/shapes'
+import { blob, ellipse, join, poly, spline } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
-import type { Palette } from '../rig/types'
+import type { Mood, Palette, SidePart, Stage } from '../rig/types'
 
 export const ROUND = { strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
 
@@ -90,4 +90,22 @@ export function hatted(pts: readonly Vec[], cut: number, depth = 5): Vec[] {
   const [xl, yl] = kept[0]
   const bottom: Vec[] = [0.2, 0.4, 0.6, 0.8].map((t) => [xr + (xl - xr) * t, yr + (yl - yr) * t + depth * Math.sin(Math.PI * t) + (cut - (yr + (yl - yr) * t)) * 0.6])
   return [...kept, ...bottom]
+}
+
+/** Fyld bag alt ved armene pr. humør og side (lokalt om skulderen; højre side spejlet): én polygon eller flere. */
+export type PawWebs = Partial<Record<Mood, Partial<Record<'L' | 'R', readonly Vec[] | readonly (readonly Vec[])[]>>>>
+const polys = (w: readonly Vec[] | readonly (readonly Vec[])[]): (readonly Vec[])[] =>
+  typeof w[0]?.[0] === 'number' ? [w as readonly Vec[]] : [...(w as readonly (readonly Vec[])[])]
+
+/**
+ * Artens `PawBack`: fylder lommerne mellem arm, hoved, øre, manke, hale og krop i pelsens farve, så der
+ * aldrig ses baggrund inde i figuren (huller-lint, review G1-r3). `all` gælder alle racer og stadier,
+ * `byBreed` pr. race og stadie. Polygonerne er lommernes udvidede hylstre over alle animationsbilleder,
+ * kontrolleret så fyldet aldrig ses mod baggrunden.
+ */
+export function pawWebs(all: PawWebs, byBreed: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {}): SidePart {
+  return ({ pal, mood, side, breed, stage }) => {
+    const webs = [all[mood]?.[side], byBreed[breed]?.[stage]?.[mood]?.[side]].flatMap((w) => (w ? polys(w) : []))
+    return webs.length ? <path d={join(...webs.map((w) => poly(w)))} fill={pal.fur} /> : null
+  }
 }

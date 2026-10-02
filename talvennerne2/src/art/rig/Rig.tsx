@@ -523,7 +523,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
       )
     }
     return (
-      <g transform={`${outer}translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
+      <g data-part={`paw-${side.toLowerCase()}`} transform={`${outer}translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
         <g className={animated ? `a-paw a-paw-${side.toLowerCase()}${up ? ' a-up' : ''}` : undefined} transform={pp.rot ? `rotate(${n(pp.rot)})` : undefined}>
           {hand}
           <Part {...ctx(swBody)} side={side} />
@@ -555,7 +555,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     )
   }
 
-  // Fyld bag kroppen ved armen (i skulderens ramme uden animation); arten tegner kun, hvor der er en lomme.
+  // Fyld bag alt ved armen (i skulderens ramme uden animation); arten tegner kun, hvor der er en lomme.
   const pawBack = (side: 'L' | 'R') => {
     const at = side === 'L' ? a.shoulderL : a.shoulderR
     const web = parts.PawBack?.({ ...ctx(swBody), side })
@@ -687,6 +687,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         {/* Krop (lag 2–9) */}
         <g transform={bodyRegion}>
           <g className={animated ? 'a-body' : undefined} transform={aboutGround(pose.body)}>
+            {/* Fyld bag alt ved armene: en lomme mellem arm, hoved, øre, manke, hale og krop viser aldrig baggrund. */}
+            {pawBack('L')}
+            {pawBack('R')}
             {/* 2 · back-item */}
             {renderItem('back', 'front', R.body.s)}
             {renderItem('neck', 'back', R.body.s)}
@@ -703,10 +706,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                 </g>
               </g>
             )}
-            {/* 4 · fødder (+ fyld bag kroppen ved armene, så en lomme mellem arm, hoved og øre aldrig viser baggrund) */}
+            {/* 4 · fødder */}
             {parts.Feet(ctx(swBody))}
-            {pawBack('L')}
-            {pawBack('R')}
             {/* 5 · krop + mønster + skygge */}
             <path d={bodyD} fill={pal.fur} stroke={pal.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
             {pattern !== 'none' && P?.body?.(ctx(swBody))}

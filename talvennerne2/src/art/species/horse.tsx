@@ -7,7 +7,9 @@
 // (`a-toss`), og hovedet kaster med i hvile (rig.css). Fælles dele i shared/equine.tsx.
 import { mixHex } from '../rig/oklch'
 import type { Vec } from '../rig/shapes'
-import type { AnchorSet, SpeciesDef } from '../rig/types'
+import { pawWebs } from '../parts/kit'
+import type { PawWebs } from '../parts/kit'
+import type { AnchorSet, SpeciesDef, Stage } from '../rig/types'
 import { FJORD_CREAM, FJORD_DARK, HORSE_COLORWAYS } from './horse.colorways'
 import {
   EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, HorsePatternBody, HorsePatternHead,
@@ -127,6 +129,35 @@ const ARABIAN_ANCHORS: Partial<AnchorSet> = {
 
 // ---------------------------------------------------------------------------------------------
 
+/** Fyld bag alt ved armene (se `pawWebs`): lommernes udvidede hylstre pr. race, stadie, humør og side. */
+const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  arabian: {
+    2: {
+      oops: { L: [[-19.4, -18.9], [-19, -20], [-16.8, -20.4], [-11.8, -18.3], [-11.4, -17.2], [-13, -14.5], [-15.2, -12.2], [-16.3, -11.8], [-17.4, -12.2], [-17.8, -13.3]] },
+      wave: { L: [[-19.4, -18.9], [-19, -20], [-16.8, -20.4], [-11.8, -18.3], [-11.4, -17.2], [-13, -14.5], [-15.2, -12.2], [-16.3, -11.8], [-17.4, -12.2], [-17.8, -13.3]] },
+    },
+  },
+  fjord: {
+    3: {
+      oops: { R: [[-47.3, 47.4], [-46.9, 46.3], [-45.8, 45.9], [-44.7, 46.3], [-44.3, 47.4], [-44.3, 49.7], [-44.7, 50.8], [-45.8, 51.2], [-46.9, 50.8], [-47.3, 49.7]] },
+      wave: { R: [[-47.3, 47.4], [-46.9, 46.3], [-45.8, 45.9], [-44.7, 46.3], [-44.3, 47.4], [-44.3, 49.7], [-44.7, 50.8], [-45.8, 51.2], [-46.9, 50.8], [-47.3, 49.7]] },
+    },
+  },
+  shetland: {
+    1: {
+      oops: { L: [[-28.8, -22.7], [-28.4, -23.8], [-25.7, -24.2], [-21.6, -22.2], [-20.4, -20.4], [-20.8, -18.5], [-26.2, -10.9], [-27.3, -10.5], [-28.4, -10.9], [-28.8, -12]] },
+      wave: { L: [[-28.8, -22.7], [-28.4, -23.8], [-27.3, -24.2], [-25.4, -23.8], [-20.9, -21.5], [-20.4, -19.6], [-20.8, -18.5], [-26.2, -10.9], [-27.3, -10.5], [-28.8, -12]], R: [[-29.9, -38.2], [-27.7, -38.2], [-14, -27.6], [-13.6, -26.5], [-15.5, -23.1], [-22.7, -18.1], [-23.8, -18.5], [-26.9, -22.3], [-29.5, -30.3], [-30.3, -35.6]] },
+    },
+    2: {
+      oops: { L: [[-20.2, -24.2], [-19.8, -25.3], [-18.1, -25.7], [-16.5, -24.8], [-16.1, -23.1], [-16.5, -22], [-17.6, -20.9], [-18.7, -20.5], [-19.8, -20.9], [-20.2, -22]] },
+      wave: { L: [[-20.2, -24.2], [-19.8, -25.3], [-18.1, -25.7], [-16.5, -24.8], [-16.1, -23.1], [-16.5, -22], [-17.6, -20.9], [-18.7, -20.5], [-19.8, -20.9], [-20.2, -22]] },
+    },
+    3: {
+      think: { L: [[-40.4, 5], [-39.9, 3.6], [-38.1, -0.8], [-37, -1.2], [-35.4, -0.3], [-34.1, 3.1], [-34.5, 4.7], [-37.3, 6.1], [-38.9, 6.5], [-40, 6.1]], R: [[-43.6, 7.7], [-43.2, 6.6], [-41.8, 5.3], [-40.2, 4.9], [-39.1, 5.3], [-38.7, 6.4], [-39.1, 7.5], [-40.5, 8.8], [-42.1, 9.2], [-43.2, 8.8]] },
+    },
+  },
+}
+
 export const horse: SpeciesDef = {
   id: 'horse',
   name: 'Hest',
@@ -212,6 +243,7 @@ export const horse: SpeciesDef = {
     Ear: EquineEar,
     Paw: makeLeg(),
     PawUp: EquineLegUp,
+    PawBack: pawWebs({}, PAW_WEBS),
     pawUpTip: EQUINE_UP_TIP,
     upArms: EQUINE_UP_ARMS,
     limb: EQUINE_LIMB,

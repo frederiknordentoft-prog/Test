@@ -7,12 +7,13 @@
 // slukker (signaturen horn-glint: kun opacity). Hoved, ører, ben og hove deles med hesten
 // (shared/equine.tsx).
 import { MOOD_FACE } from '../parts/house'
-import { limbLoop } from '../parts/kit'
+import { limbLoop, pawWebs } from '../parts/kit'
+import type { PawWebs } from '../parts/kit'
 import { STAGE_XF } from '../rig/anchors'
 import { HOUSE } from '../rig/palette'
 import { blob, join, mirrorX, poly, quad, star } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
-import type { AnchorSet, Part, SpeciesDef } from '../rig/types'
+import type { AnchorSet, Part, SpeciesDef, Stage } from '../rig/types'
 import {
   EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, equineHead, hairShape, makeFeet, makeLeg,
   makeMuzzle, round,
@@ -179,6 +180,26 @@ const FOAL_ANCHORS: Partial<AnchorSet> = {
   eyeRy: 13.2,
 }
 
+/** Fyld bag alt ved armene (se `pawWebs`): lommernes udvidede hylstre pr. race, stadie, humør og side. */
+const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  foal: {
+    3: {
+      cheer: { L: [[-30.3, -62.6], [-26.5, -68.9], [-24.3, -68.9], [-19.9, -60.2], [-18.1, -55.7], [-17.2, -50.9], [-17.6, -48.3], [-19.8, -48.3], [-30.1, -55.6], [-30.5, -56.7]] },
+    },
+  },
+  wavy: {
+    1: {
+      cheer: { L: [[-34.5, 11.7], [-32.8, 5.8], [-31.5, 2.5], [-29.1, -1.9], [-26.9, -1.9], [-26.5, 0.7], [-29.2, 12.5], [-29.6, 13.6], [-32.3, 14.7], [-34.1, 14.3]] },
+    },
+    3: {
+      cheer: { R: [[-33.7, -63.5], [-33.2, -65.1], [-29.2, -68.4], [-27, -68.4], [-23.5, -58.8], [-23.9, -56.8], [-30.3, -54], [-31.9, -54.4], [-32.8, -56.4], [-33.7, -60.4]] },
+      happy: { L: [[-35.2, 13.5], [-34.8, 12.4], [-32.1, 8.8], [-31, 8.4], [-29.5, 9], [-28.7, 11.6], [-28.6, 12.6], [-29, 13.7], [-32.9, 15.1], [-34.8, 14.6]] },
+      idle: { L: [[-34.8, 13.6], [-34.4, 12.5], [-32.2, 8.9], [-31, 8.4], [-29, 9.3], [-28.1, 12.3], [-29, 14], [-30.1, 14.4], [-32.9, 15.1], [-34.4, 14.7]], R: [[-50.6, 28.9], [-49.2, 25.9], [-47.7, 25], [-46.6, 25.4], [-46.2, 27], [-47.6, 31.6], [-48, 32.7], [-49.1, 33.1], [-50.2, 32.7], [-50.6, 31.6]] },
+      sleep: { R: [[-51, 29.8], [-50.1, 27.3], [-49.2, 25.7], [-47.4, 24.6], [-46.3, 25], [-45.9, 26.6], [-48.1, 33.3], [-49.2, 33.7], [-50.3, 33.3], [-51, 31.7]] },
+    },
+  },
+}
+
 export const unicorn: SpeciesDef = {
   id: 'unicorn',
   name: 'Enhjørning',
@@ -260,6 +281,7 @@ export const unicorn: SpeciesDef = {
     Ear: EquineEar,
     Paw: makeLeg(),
     PawUp: EquineLegUp,
+    PawBack: pawWebs({}, PAW_WEBS),
     pawUpTip: EQUINE_UP_TIP,
     upArms: EQUINE_UP_ARMS,
     limb: EQUINE_LIMB,

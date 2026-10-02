@@ -5,11 +5,12 @@
 // Fælles: armene forsvinder ind under hovedet (åben skulder, når de løftes), lårbule, lange
 // fremadrettede bagfødder, en stor halekvast med luft til foden og brystfnug under hagen.
 // Alle former beskrives med punkter og husets primitiver (ingen path-literaler).
-import { OpenLimb, ROUND, hatted, limbLoop, padsPath } from '../parts/kit'
+import { OpenLimb, ROUND, hatted, limbLoop, padsPath, pawWebs } from '../parts/kit'
+import type { PawWebs } from '../parts/kit'
 import { Pivot } from '../rig/Rig'
-import { blob, ellipse, join, mirrorX, poly, ribbon, scallop, spline, xf } from '../rig/shapes'
+import { blob, ellipse, join, mirrorX, ribbon, scallop, spline, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
-import type { Mood, Part, SidePart, SpeciesDef, Stage } from '../rig/types'
+import type { Part, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { RABBIT_COLORWAYS } from './rabbit.colorways'
 
 const round = ROUND
@@ -183,9 +184,8 @@ const PawUp: SidePart = ({ pal, sw, mood, lod }) => {
  * ind under hagen og ned i brystet. Kun lommen mellem arm, hage, øre og krop bliver synlig, så der aldrig
  * ses baggrund inde i figuren (huller-lint, review G1-r3). Nøgle: humør og side.
  */
-type Webs = Partial<Record<Mood, Partial<Record<'L' | 'R', Vec[]>>>>
 const CHEER_WEB: Vec[] = [[7.5, 20], [-1.5, 10], [-11.5, 0], [-19, -9], [-10, -15], [4, -12], [22, -2], [20, 14]]
-const WEBS: Webs = {
+const WEBS: PawWebs = {
   cheer: { L: CHEER_WEB, R: CHEER_WEB },
   oops: {
     R: [
@@ -198,17 +198,17 @@ const WEBS: Webs = {
  * Racernes ekstra fyld pr. stadie, skabt fra lommernes hylstre over alle animationsbilleder: babyens store
  * hoved, vædderens hængeører og løvehovedets kindtotter lukker vinduer mod armene.
  */
-const UPRIGHT_WEBS: Record<Stage, Webs> = {
+const UPRIGHT_WEBS: Record<Stage, PawWebs> = {
   1: { wave: { R: [[-25.3, -19.4], [-23.1, -19.4], [4.3, -3.4], [4.3, -0.5], [-2.1, 4.5], [-9.7, 4.5], [-16.2, 2.6], [-20, -0.5], [-23.4, -7.6], [-25.7, -16]] } },
   2: {},
   3: {},
 }
-const LION_WEBS: Record<Stage, Webs> = {
+const LION_WEBS: Record<Stage, PawWebs> = {
   1: { wave: { R: [[-20.7, -4.9], [-15.1, -6.9], [-13.2, -6.5], [-4.8, -1.1], [-2.9, 3], [-4.4, 4.5], [-9.7, 4.5], [-16.2, 2.6], [-20, -0.5], [-21.1, -3.1]] } },
   2: { wave: { R: [[-19.2, -1], [-9.7, -4.7], [-8.6, -4.3], [-4.7, 2.9], [-4.7, 5.1], [-5.8, 5.5], [-9.7, 5.5], [-14.2, 4.4], [-17.5, 2.9], [-19.2, 1.2]] } },
   3: { wave: { R: [[-14.7, 3.6], [-13.9, 2], [-11.6, 0.6], [-9.5, -0.3], [-8.4, 0.1], [-7.1, 4], [-7.5, 5.1], [-8.6, 5.5], [-11.9, 5.5], [-14.3, 4.7]] } },
 }
-const LOP_WEBS: Record<Stage, Webs> = {
+const LOP_WEBS: Record<Stage, PawWebs> = {
   1: {
     wave: { R: [[-21.1, -13], [-18.1, -14.5], [-14.7, -13.3], [4.3, -3.4], [4.3, -0.5], [-2.1, 4.5], [-9.7, 4.5], [-16.2, 2.6], [-20, -0.5], [-21.9, -4.6]] },
   },
@@ -228,11 +228,7 @@ const LOP_WEBS: Record<Stage, Webs> = {
     think: { R: [[-12, -0.8], [-10.5, -1.2], [-0.6, 2.5], [-0.2, 3.6], [-0.6, 5.1], [-4.7, 9.3], [-6.8, 10.1], [-9.2, 9.3], [-10.1, 7.3], [-12.4, 1.2]] },
   },
 }
-const PawBack: SidePart = ({ pal, mood, side, breed, stage }) => {
-  const extra = breed === 'lop' ? LOP_WEBS : breed === 'lionhead' ? LION_WEBS : UPRIGHT_WEBS
-  const webs = [WEBS[mood]?.[side], extra?.[stage][mood]?.[side]].filter((w): w is Vec[] => !!w)
-  return webs.length ? <path d={join(...webs.map((w) => poly(w)))} fill={pal.fur} /> : null
-}
+const PawBack = pawWebs(WEBS, { upright: UPRIGHT_WEBS, lop: LOP_WEBS, lionhead: LION_WEBS })
 
 // ---------------------------------------------------------------------------------------------
 // Bagben: lårbule og lange, fremadrettede bagfødder med tæer forrest. Stor (stadie 3) har større fødder.
