@@ -132,7 +132,13 @@ describe.each(ALL_SPECIES.map((d) => [d.id, d] as const))('renderet markup · %s
       const hat = m.indexOf('data-item="opdager-head"')
       expect(hat).toBeGreaterThan(0)
       const ears = m.indexOf('a-ear-l')
-      if (ears > 0) expect(ears, `${def.id}/${b.id}`).toBeGreaterThan(hat)
+      if (ears < 0) continue
+      // Hængeører bag hovedet (vædderen, review G1-r3 K1) tegnes før hovedet og dermed før hatten: hatten
+      // dækker ørets rod, hovedets kontur løber ubrudt over ørebasen, og der er ingen huller (ingen hulkant).
+      if ((b.ears ?? def.ears)?.behind) {
+        expect(ears, `${def.id}/${b.id}`).toBeLessThan(hat)
+        expect(m, `${def.id}/${b.id}`).not.toMatch(/data-layer="rim"/)
+      } else expect(ears, `${def.id}/${b.id}`).toBeGreaterThan(hat)
     }
   })
 

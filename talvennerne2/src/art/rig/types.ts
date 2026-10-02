@@ -258,6 +258,8 @@ export interface PartCtx {
   pose: Pose
   /** Hovedgenstand på: 'through' (ørerne gennem huller), 'under' (mellem ørerne) eller ingen. */
   hat: 'through' | 'under' | null
+  /** Kropstøj er på: en krave i kroppens lag kan klippe sig til kroppen, så intet titter frem over tøjet. */
+  clothed?: boolean
 }
 
 export type Part = (p: PartCtx) => ReactNode

@@ -382,10 +382,13 @@ const PatternBody: Part = (p) => (p.colorway === 'c4' ? CalicoBody(p) : TabbyBod
 /** Kravens vækst pr. stadie (om halsen): babyen har en lille krave, den store en fyldig. */
 const ruffK = (stage: number) => (stage === 3 ? 1.18 : stage === 1 ? 1.08 : 1)
 
-/** Krave af bløde pelstotter i brystets lyse farve (i kroppens lag, så en trøje dækker den). */
+/**
+ * Krave af bløde pelstotter i brystets lyse farve (i kroppens lag, så en trøje dækker den). Med kropstøj
+ * klippes den til kroppen, så kravens buer aldrig titter frem over trøjens skuldre (review G1-r3, C1).
+ */
 function makeRuff(rx: number, ry: number, dy: number, count: number, depth = 0.1): Part {
   const loop = tufts(100, 0, rx, ry, count, { depth, swirl: 4, jitter: 0.05 })
-  return ({ pal, sw, a, ids, stage }) => {
+  return ({ pal, sw, a, ids, stage, clothed }) => {
     const k = ruffK(stage)
     return (
       <path
@@ -393,6 +396,7 @@ function makeRuff(rx: number, ry: number, dy: number, count: number, depth = 0.1
         fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly}
         stroke={pal.maneOutline}
         strokeWidth={sw}
+        clipPath={clothed ? `url(#${ids.bodyClip})` : undefined}
         {...round}
       />
     )
