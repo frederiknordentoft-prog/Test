@@ -770,6 +770,15 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
     ...L.trees.filter((p) => p.front).map((p) => ellipse(p.x + 14 * p.s, p.y + 1.5 * p.s, 30 * p.s, 6 * p.s)),
     ...L.bushes.filter((p) => p.front).map((p) => ellipse(p.x + 8 * p.s, p.y + 1 * p.s, 22 * p.s, 4.5 * p.s)),
   )
+  // Små buske spredt i mellemgrunden (Tællelunden), så engen mellem kendetegnene ikke står flad og tom.
+  const scatter = (L.wide ? [0.19, 0.255, 0.33, 0.4, 0.465, 0.535] : [0.24, 0.31, 0.385, 0.83]).map((u, i) => {
+    const x = w * u + hash01(i + 501) * 14 * K
+    const top = ridgeY(L.mid, w, x) + h * 0.05
+    const y = top + hash01(i + 601) * Math.max(4, ridgeY(L.near, w, x) - top - h * 0.05)
+    return [x, y, K * (0.75 + hash01(i + 701) * 0.4)] as const
+  })
+  const scrub = join(...scatter.map(([x, y, s]) => scallop(x, y - 6 * s, 11 * s, 7 * s, 5, 0.6, -80)))
+  const scrubShade = join(...scatter.map(([x, y, s]) => join(lune(x + 1 * s, y - 5.5 * s, 10 * s, 6 * s, 2.8 * s, 20, 160), ellipse(x + 8 * s, y + 0.5 * s, 12 * s, 2.6 * s))))
   // Forgrundens græskant langs bunden (rammer dioramaet ind).
   const tufts = Array.from({ length: Math.ceil(w / (30 * K)) + 1 }, (_, i) => [i * 30 * K + hash01(i + 7) * 10 * K, h + 2, K * (0.9 + hash01(i + 3) * 0.6)] as const)
   // Regnbuen (guld i hele dalen) og glimtene (guld) i luften og på vandet.
@@ -831,6 +840,8 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
       {layer(L.mid, R.mid, 'midHill', h * 0.11, 0.13)}
       <path d={join(...daisies.map(([x, y, r]) => circle(x, y, r)))} fill={ENG.flowerWhite} opacity={0.85} />
       <path d={castMid} fill={ENG.castShadow} opacity={0.22} />
+      <path d={scrub} fill={tint('leaf', T.grove)} stroke={tint('leafDark', T.grove)} strokeWidth={1.2 * K} opacity={0.92} {...ROUND} />
+      <path d={scrubShade} fill={ENG.castShadow} opacity={0.2} />
       {at(L.house, <House t={tt} />)}
       {L.trees.filter((p) => !p.front).map((p, i) => <g key={i}>{at(p, <Tree t={T.grove} seed={i} />)}</g>)}
       {L.bushes.filter((p) => !p.front).map((p, i) => <g key={i}>{at(p, <Bush t={T.grove} seed={i} />)}</g>)}
