@@ -1,11 +1,14 @@
-// multiSelect demo: "all the triangles" — the hand rings the two triangles, then taps the tick.
+// multiSelect demo: "all the triangles" (or all the five-krone coins) — the hand rings the two, then
+// taps the tick.
 import { useState } from 'react'
 import type { ShapeId } from '../../../engine/types'
-import { Shape2D } from '../../../art/materials'
+import { Coin, Shape2D } from '../../../art/materials'
+import type { CoinOre } from '../../../art/materials'
 import { AnswerCard } from '../../design/AnswerCard'
 import { Icon } from '../../design/Icon'
 import { cx } from '../../design/cx'
 import { DemoStage } from '../demo/DemoStage'
+import { demoTopic } from '../demo/topic'
 import type { DemoProps } from '../types'
 
 const ITEMS: { id: string; shape: ShapeId; variant: number }[] = [
@@ -15,7 +18,16 @@ const ITEMS: { id: string; shape: ShapeId; variant: number }[] = [
   { id: 'd', shape: 'triangle', variant: 1 },
 ]
 
-export function MultiSelectDemo({ onDone }: DemoProps) {
+/** "Tryk på alle femkroner" (coinNames): the same film with coins (UI-fund 20). */
+const COINS: { id: string; ore: CoinOre }[] = [
+  { id: 'a', ore: 500 },
+  { id: 'b', ore: 200 },
+  { id: 'c', ore: 100 },
+  { id: 'd', ore: 500 },
+]
+
+export function MultiSelectDemo({ onDone, task }: DemoProps) {
+  const coins = demoTopic(task) === 'coin'
   const [on, setOn] = useState<string[]>([])
   const [done, setDone] = useState(false)
   const pick = (id: string) => () => setOn((o) => [...o, id])
@@ -34,7 +46,7 @@ export function MultiSelectDemo({ onDone }: DemoProps) {
         <div className="tv-demo__cards tv-demo__cards--four">
           {ITEMS.map((it) => (
             <AnswerCard key={it.id} state={on.includes(it.id) ? (done ? 'correct' : 'selected') : done ? 'dim' : 'idle'} tabIndex={-1} data-demo={it.id}>
-              <Shape2D shape={it.shape} variant={it.variant} size={46} />
+              {coins ? <Coin ore={COINS.find((c) => c.id === it.id)!.ore} size={46} /> : <Shape2D shape={it.shape} variant={it.variant} size={46} />}
             </AnswerCard>
           ))}
         </div>

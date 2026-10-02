@@ -4,6 +4,7 @@ import { makeRng } from '../../engine/rng'
 import type { SkillId } from '../../engine/types'
 import { SKILL_BY_ID } from '../../content/skills'
 import { NUMBER_TOPICS, demoTopic } from './demo/topic'
+import { trueFalseShowsFigure } from './trueFalse/Demo'
 import { moduleFor } from './registry'
 import { shelfCells, sortOrderOwnsPrompt } from './sortOrder/View'
 
@@ -69,6 +70,16 @@ describe('demo films that look like the child\'s own task (review r1 P2-8)', () 
       }
     }
     expect(offTopic).toEqual([])
+  })
+
+  it('asks true or false about a figure for halves and symmetry, and about a sum for the equals sign', () => {
+    const first = (skill: SkillId) => {
+      const k = keys(skill).find((x) => x.kinds.includes('trueFalse'))!
+      return k.build('trueFalse', makeRng(1), 0)
+    }
+    expect(trueFalseShowsFigure(first('halfShape'))).toBe(true)
+    expect(trueFalseShowsFigure(first('symmetry'))).toBe(true)
+    expect(trueFalseShowsFigure(first('equalSides'))).toBe(false)
   })
 })
 
