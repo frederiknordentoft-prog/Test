@@ -1,16 +1,197 @@
 {
  "version": 1,
- "generated": "2026-10-01T11:13:45.560Z",
+ "generated": "2026-10-02T10:51:22.031Z",
  "clips": {
-  "masters": 64,
-  "pass": 64,
-  "notPassed": [],
-  "cerMean": 0,
-  "lufsMin": -18.23,
+  "masters": 931,
+  "pass": 886,
+  "notPassed": [
+   {
+    "id": "hint.count.framePoints",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.count20.countOn",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.count20.tenFirst",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.hear20.oneFirst",
+    "reason": "asr"
+   },
+   {
+    "id": "name.animal.cat.2",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.dragon.2",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.hamster.1",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.hamster.3",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.hedgehog.8",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.lamb.1",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.lamb.3",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.lamb.6",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.panda.6",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.pegasus.6",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.penguin.1",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.penguin.5",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.polarbear.4",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.puppy.1",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.puppy.3",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.rabbit.4",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.unicorn.2",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.unicorn.3",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.unicorn.6",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.animal.unicorn.7",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.color.rabbit.c5",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.item.hverdag-head",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.item.milepael-krone",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.item.milepael-regnbuehue",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.thing.carrot.sg",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.thing.cube.sg",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "q.sub:1-0",
+    "reason": "asr"
+   },
+   {
+    "id": "s.kind.colorParts.short",
+    "reason": "asr"
+   },
+   {
+    "id": "s.kind.fillSlots.short",
+    "reason": "asr"
+   },
+   {
+    "id": "s.order20.countBack",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.order20.countOn",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.patterns.continue",
+    "reason": "asr"
+   },
+   {
+    "id": "s.reward.friendship.spin",
+    "reason": "asr"
+   },
+   {
+    "id": "s.reward.goal.revisit",
+    "reason": "asr"
+   },
+   {
+    "id": "s.reward.rainbow.choose",
+    "reason": "asr"
+   },
+   {
+    "id": "s.reward.title.10",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.round.count.back",
+    "reason": "asr"
+   },
+   {
+    "id": "s.round.hint.makeTen",
+    "reason": "asr"
+   },
+   {
+    "id": "s.round.hint.tensFirst",
+    "reason": "asr"
+   },
+   {
+    "id": "s.round.word.tens",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.ui.dock.wardrobe",
+    "reason": "sammensætning"
+   }
+  ],
+  "cerMean": 0.0084,
+  "lufsMin": -18.51,
   "lufsMax": -18,
-  "seconds": 39.4,
-  "takes": 77,
-  "generationHours": 0.24
+  "seconds": 928.8,
+  "takes": 1340,
+  "generationHours": 4.73
  },
  "numbers": {
   "range": [
@@ -18,95 +199,277 @@
    999
   ],
   "total": 899,
-  "rendered": 61,
-  "correct": 61,
-  "correctWav2vec2": 21,
-  "rate": 100,
-  "failures": []
+  "rendered": 298,
+  "correct": 297,
+  "correctWav2vec2": 135,
+  "rate": 99.7,
+  "failures": [
+   {
+    "key": "n380",
+    "n": 380,
+    "expected": "Tre hundrede og firs.",
+    "asr": "3800",
+    "asrWhisper": "388",
+    "clips": [
+     "hog.300",
+     "n.end.80"
+    ],
+    "blamed": [
+     "hog.300"
+    ]
+   }
+  ]
  },
  "templates": {
   "perSkill": {
    "addTo10": {
+    "statements": 66,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 26,
+    "rate": 100
+   },
+   "subTo10": {
+    "statements": 66,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 17,
+    "rate": 100
+   },
+   "tenFriends": {
+    "statements": 11,
+    "sampled": 11,
+    "verbatim": 11,
+    "verbatimW2v": 1,
+    "rate": 100
+   },
+   "patterns": {
+    "statements": 2,
+    "sampled": 2,
+    "verbatim": 1,
+    "verbatimW2v": 1,
+    "rate": 50
+   },
+   "compareLength": {
     "statements": 4,
     "sampled": 4,
     "verbatim": 4,
     "verbatimW2v": 4,
     "rate": 100
    },
-   "subTo10": {
-    "statements": 4,
-    "sampled": 4,
-    "verbatim": 4,
-    "verbatimW2v": 2,
-    "rate": 100
-   },
-   "tenFriends": {
-    "statements": 2,
-    "sampled": 2,
-    "verbatim": 2,
-    "verbatimW2v": 0,
-    "rate": 100
-   },
-   "patterns": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
-   },
-   "compareLength": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
-   },
    "count10": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 29,
+    "sampled": 29,
+    "verbatim": 27,
+    "verbatimW2v": 10,
+    "rate": 93.1
    },
    "count20": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 31,
+    "sampled": 30,
+    "verbatim": 29,
+    "verbatimW2v": 8,
+    "rate": 96.7
    },
    "hear20": {
-    "statements": 21,
-    "sampled": 21,
-    "verbatim": 21,
-    "verbatimW2v": 2,
+    "statements": 42,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 12,
     "rate": 100
    },
    "order20": {
-    "statements": 40,
+    "statements": 131,
     "sampled": 30,
-    "verbatim": 30,
-    "verbatimW2v": 29,
-    "rate": 100
+    "verbatim": 23,
+    "verbatimW2v": 22,
+    "rate": 76.7
    },
    "shapes2D": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 6,
+    "sampled": 6,
+    "verbatim": 6,
+    "verbatimW2v": 5,
+    "rate": 100
    }
   },
-  "rendered": 61,
-  "verbatim": 61,
-  "verbatimWav2vec2": 37,
-  "rate": 100,
-  "failures": []
+  "rendered": 202,
+  "verbatim": 191,
+  "verbatimWav2vec2": 106,
+  "rate": 94.6,
+  "failures": [
+   {
+    "key": "patterns|ptn:AB:triangle.square:5|fillSlots",
+    "skill": "patterns",
+    "expected": "Fortsæt mønstret.",
+    "asr": "fortsæt minstret",
+    "asrWhisper": "Fortsat mønstret",
+    "clips": [
+     "s.patterns.continue"
+    ],
+    "blamed": [
+     "s.patterns.continue"
+    ]
+   },
+   {
+    "key": "count10|c10:dice:1|countTap",
+    "skill": "count10",
+    "expected": "Læg en klods i kurven.",
+    "asr": "læk i en klods i kurven",
+    "asrWhisper": "Læg 1 klos i kurven",
+    "clips": [
+     "frag.laeg",
+     "n.mid.1",
+     "noun.thing.cube.sg",
+     "frag.i_kurven"
+    ],
+    "blamed": [
+     "noun.thing.cube.sg"
+    ]
+   },
+   {
+    "key": "count10|c10:scatter:7|countTap",
+    "skill": "count10",
+    "expected": "Læg syv bolde i kurven.",
+    "asr": "lek y bolde i kurven",
+    "asrWhisper": "Læg 7 bolte i kurven",
+    "clips": [
+     "frag.laeg",
+     "n.mid.7",
+     "noun.thing.ball.pl",
+     "frag.i_kurven"
+    ],
+    "blamed": [
+     "noun.thing.ball.pl"
+    ]
+   },
+   {
+    "key": "count20|c20:loose:18|countTap",
+    "skill": "count20",
+    "expected": "Læg atten bolde i kurven.",
+    "asr": "lik 18 bolte i kurven",
+    "asrWhisper": "Læg 18 bolte i kurven",
+    "clips": [
+     "frag.laeg",
+     "n.mid.18",
+     "noun.thing.ball.pl",
+     "frag.i_kurven"
+    ],
+    "blamed": [
+     "noun.thing.ball.pl"
+    ]
+   },
+   {
+    "key": "order20|o20:after:12|sortOrder",
+    "skill": "order20",
+    "expected": "Tæl videre fra ni.",
+    "asr": "til videre fra 9",
+    "asrWhisper": "Til videre fra 9",
+    "clips": [
+     "s.order20.countOn",
+     "n.end.9"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order20|o20:after:11|sortOrder",
+    "skill": "order20",
+    "expected": "Tæl videre fra otte.",
+    "asr": "til videre fra 8",
+    "asrWhisper": "Til videre fra 8",
+    "clips": [
+     "s.order20.countOn",
+     "n.end.8"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order20|o20:before:9|sortOrder",
+    "skill": "order20",
+    "expected": "Tæl baglæns fra ni.",
+    "asr": "til baulæns fra 9",
+    "asrWhisper": "Til baglands fra 9",
+    "clips": [
+     "s.order20.countBack",
+     "n.end.9"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order20|o20:before:19|sortOrder",
+    "skill": "order20",
+    "expected": "Tæl baglæns fra nitten.",
+    "asr": "til baglands fra 19",
+    "asrWhisper": "Til baglands fra 19",
+    "clips": [
+     "s.order20.countBack",
+     "n.end.19"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order20|o20:before:14|sortOrder",
+    "skill": "order20",
+    "expected": "Tæl baglæns fra fjorten.",
+    "asr": "til baglans fra 14",
+    "asrWhisper": "Til baglands fra 14",
+    "clips": [
+     "s.order20.countBack",
+     "n.end.14"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order20|o20:before:7|sortOrder",
+    "skill": "order20",
+    "expected": "Tæl baglæns fra syv.",
+    "asr": "til baglæns fra 7",
+    "asrWhisper": "Til baglands fra 7",
+    "clips": [
+     "s.order20.countBack",
+     "n.end.7"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order20|o20:after:0|sortOrder",
+    "skill": "order20",
+    "expected": "Tæl videre fra nul.",
+    "asr": "til videre fra 0",
+    "asrWhisper": "Til videre fra 0",
+    "clips": [
+     "s.order20.countOn",
+     "n.end.0"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   }
+  ]
  },
  "gates": {
-  "numbersAllCorrect": true,
+  "numbersAllCorrect": false,
   "numbersComplete": false,
-  "templates97": true
+  "templates97": false
  },
- "retake": []
+ "retake": [
+  "hog.300",
+  "noun.thing.ball.pl",
+  "noun.thing.cube.sg",
+  "s.order20.countBack",
+  "s.order20.countOn",
+  "s.patterns.continue"
+ ]
 }
