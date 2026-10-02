@@ -124,7 +124,7 @@ describe('shapes of 1.–2. klasse (SK2-GEO)', () => {
   geoSuite(symmetry, {
     families: { isSymLine: 20, mirrorGrid: 20 },
     idFormat: /^sym:(line|grid):\d{1,3}$/,
-    answerOf(f, kind, task) {
+    answerOf(_f, kind, task) {
       const p = task.prompt
       if (kind === 'multiSelect' || (kind === 'grid' && p.scene === 'shapes')) {
         const members = shapesOf(task).filter((i) => hasLine(i.shape, i.variant))

@@ -2,7 +2,7 @@
 // drawn from its id, `sym:<line|grid>:<k>` (k = 0–999, canonical k = 0–19), so a fact rebuilt from its
 // task id is the same task.
 //   isSymLine  (1. kl.) a figure with a dashed line down it (Shape2D's cut), and a plate of six figures
-//   mirrorGrid (2. kl.) a pattern on a 4×4 to 6×5 grid, mirrored in the line down the middle
+//   mirrorGrid (2. kl.) a pattern on a grid 4 or 6 wide and 4 or 5 high, mirrored in the line down the middle
 // Kinds (every instance has all three):
 //   trueFalse: isSymLine "Er stregen en symmetrilinje?" — the line is down the middle of a figure that
 //     is mirrored in it (yes), off the middle (no), or down the middle of a figure it only halves (a

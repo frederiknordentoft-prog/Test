@@ -1,7 +1,7 @@
 // fractionShape — Brøker af figurer (SPEC §2.2, pædagogik-forslaget §1.3). Recall, 18 facts, prefix
 // `frs:`: `frs:<n>/<d>:<shape>` for a fraction of a circle, rectangle or bar.
-//   basic    (2. kl.)  1/2, 1/3, 1/4, 2/4 × cirkel, rektangel, stang   12
-//   nonUnit  (3. kl.)  3/4, 2/3 × cirkel, rektangel, stang               6
+//   basic    (2. kl.)  1/2, 1/3, 1/4, 2/4 of a cirkel, rektangel or stang   12
+//   nonUnit  (3. kl.)  3/4, 2/3 of a cirkel, rektangel or stang             6
 // The figure is cut into d equal parts (the materials' fraction scene).
 // choice: "Hvor stor en del er farvet?" — n parts coloured, three fraction cards ('frac:n/d').
 // colorParts (KIND2, CONVENTIONS "Opgavetyperne fra bølge 2"): "Farv en fjerdedel." — nothing coloured
