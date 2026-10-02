@@ -69,7 +69,10 @@ export default function ParentIntroScreen(_: ScreenProps<RouteOf<'parentIntro'>>
           <PipFigure className="tv-intro__pip" />
           <div>
             <h1 className="tv-intro__h1">Velkommen til Talvennerne</h1>
-            <p className="tv-intro__lead">Matematik fra 0. til 3. klasse, hvor barnet regner sig til dyr, tøj og nye steder på kortet. Tre ting, før I går i gang:</p>
+            <p className="tv-intro__lead">
+              Matematik fra 0. til 3. klasse, hvor barnet regner sig til dyr, tøj og nye steder på kortet. Alle børn starter i Engdalen; i forældredelen kan I
+              åbne flere steder. Tre ting, før I går i gang:
+            </p>
           </div>
         </header>
         <ol className="tv-intro__cards">

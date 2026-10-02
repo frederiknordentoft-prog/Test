@@ -22,6 +22,7 @@ import { usePress } from '../../../design/usePress'
 import { cx } from '../../../design/cx'
 import { Buddy } from '../round/Buddy'
 import { AnimalPicture, ItemPicture } from '../map/art'
+import { isItemDrawn } from '../wardrobe/drawn'
 import { goalSpeech, lineText } from '../map/words'
 import { canDoClip, learnedItems } from './describe'
 import { NameAnimal } from './NameAnimal'
@@ -282,7 +283,8 @@ export function LevelUpScreen({ step, all, onTryOn }: { step: CeremonyStep; all:
         <div key={item} className="tv-cer-thing" onClick={(e) => e.stopPropagation()}>
           <ItemPicture item={item} size={120} className="tv-cer-thing__pic" />
           <SpokenText clip={ITEM_BY_ID[item].nameClip} className="tv-cer-thing__name" />
-          <Button clip="s.ceremony.tryOn" icon="shirt" variant="star" size="md" onClick={() => onTryOn(item)} data-try-on={item} />
+          {/* a thing without a drawing is a gift for now: nothing to see on the animal yet */}
+          {isItemDrawn(item) && <Button clip="s.ceremony.tryOn" icon="shirt" variant="star" size="md" onClick={() => onTryOn(item)} data-try-on={item} />}
         </div>
       ))}
     </div>
@@ -343,7 +345,7 @@ export function ThingScreen({ step, nextSignal, onAdvance, onTryOn }: ThingScree
         <ItemPicture item={r.item} size={150} className="tv-cer-thing__pic" />
         {step.speech[0] && 'clip' in step.speech[0] && <SpokenText as="h1" clip={step.speech[0].clip} className="tv-cer__title" />}
         <SpokenText clip={ITEM_BY_ID[r.item].nameClip} className="tv-cer-thing__name" />
-        <Button clip="s.ceremony.tryOn" icon="shirt" variant="star" size="md" onClick={() => onTryOn(r.item)} data-try-on={r.item} />
+        {isItemDrawn(r.item) && <Button clip="s.ceremony.tryOn" icon="shirt" variant="star" size="md" onClick={() => onTryOn(r.item)} data-try-on={r.item} />}
       </div>
     )
   }

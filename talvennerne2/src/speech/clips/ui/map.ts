@@ -66,6 +66,8 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.map.perler.have': 'Du har',
   's.map.perler.word': 'perler',
   's.map.buddy': 'Klæd din ven på',
+  /** The child's letter in the top bar with two or more children: back to "Hvem skal spille?". */
+  's.map.switch': 'Skift spiller',
   's.map.goals': 'Næste tre mål',
   's.map.goal.done': 'Klaret! Et stempel i stempelbogen.',
 }

@@ -5,6 +5,8 @@ import { ITEMS } from '../../../../content/catalog'
 import type { ItemId, ProfileDoc } from '../../../../engine/types'
 import { useProfile } from '../../../../state/useProfile'
 import WardrobeScreen, { Wardrobe } from '../WardrobeScreen'
+import { AVAILABLE_ITEMS } from '../../../../art/items/registry'
+import { everyItemDrawn, type DrawnItem } from './drawn'
 import { child, wearing, withAnimal } from './fixtures'
 import { itemsOfSlot } from './model'
 
@@ -21,8 +23,8 @@ function buttons(html: string): Attrs[] {
   return [...html.matchAll(/<button\b([^>]*)>/g)].map((m) => Object.fromEntries([...m[1].matchAll(/([\w-]+)(?:="([^"]*)")?/g)].map((a) => [a[1], a[2] ?? ''])))
 }
 
-function render(profile: ProfileDoc, route: Omit<RouteOf<'wardrobe'>, 'id'> = {}): string {
-  return renderToStaticMarkup(<Wardrobe profile={profile} route={{ id: 'wardrobe', ...route }} />)
+function render(profile: ProfileDoc, route: Omit<RouteOf<'wardrobe'>, 'id'> = {}, drawn?: DrawnItem): string {
+  return renderToStaticMarkup(<Wardrobe profile={profile} route={{ id: 'wardrobe', ...route }} drawn={drawn} />)
 }
 
 afterEach(() => {
@@ -70,13 +72,30 @@ describe('the tab the wardrobe opens', () => {
 describe('what can be chosen', () => {
   it('lets the child choose only their own things; the rest are outlines that tell how to get them', () => {
     const p = child({ 'hverdag-head': [0], 'fest-head': [0, 1], 'milepael-regnbuehue': [0], 'pirat-face': [0] })
-    const html = render(p, { item: 'fest-head' })
+    const html = render(p, { item: 'fest-head' }, everyItemDrawn)
     expect(cards(html, 'data-owned').sort()).toEqual(['fest-head', 'hverdag-head', 'milepael-regnbuehue'])
     const others = cards(html, 'data-how')
     expect(others).toHaveLength(itemsOfSlot('head').length - 3)
     for (const id of others) expect(p.inventory[id as ItemId], id).toBeUndefined()
     // nothing the child does not own is marked as choosable anywhere on the screen
     for (const b of buttons(html)) if ('data-owned' in b && 'data-item' in b) expect(p.inventory[b['data-item'] as ItemId]).toBeDefined()
+  })
+
+  it('offers only drawn things under "Det kan du få", and keeps the child\'s own things without a drawing', () => {
+    const p = child({ 'hverdag-head': [0], 'pirat-head': [0] })
+    const html = render(p, { item: 'hverdag-head' })
+    expect(cards(html, 'data-owned').sort()).toEqual(['hverdag-head', 'pirat-head'])
+    for (const id of cards(html, 'data-how')) expect(AVAILABLE_ITEMS, id).toContain(id)
+    const drawnHats = itemsOfSlot('head').filter((i) => AVAILABLE_ITEMS.includes(i.id) && !p.inventory[i.id]).map((i) => i.id)
+    expect(cards(html, 'data-how').sort()).toEqual(drawnHats.sort())
+  })
+
+  it('has no colour bar for a thing without a drawing (its colours are not sold)', () => {
+    const p = wearing(child({ 'pirat-neck': [0] }), 'starter-rabbit', { neck: { item: 'pirat-neck', color: 0 } })
+    const none: DrawnItem = () => false
+    const html = render(p, { item: 'pirat-neck' }, none)
+    expect(html).toContain('data-off="pirat-neck"')
+    expect(html).not.toContain('data-colors=')
   })
 
   it('shows the three colours of the thing that is on: the child\'s own to choose, the others in the shop', () => {

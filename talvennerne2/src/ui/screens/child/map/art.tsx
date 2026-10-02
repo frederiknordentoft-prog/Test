@@ -1,6 +1,8 @@
 // Animals and things as pictures for the map and the end of the round. Only the buddy animates its
 // parts (SPEC §6.4); every other animal is rendered once to an <img> (rigBlobUrl). Species and items
-// load on demand; one that is not drawn yet shows a plain icon instead of a stand-in animal.
+// load on demand. A species that is not drawn yet is the neutral egg-shaped stand-in (never another
+// animal, review P1-2), and a thing that is not drawn yet is a wrapped gift; both turn into the
+// drawing by themselves once its file lands in src/art/.
 import { useEffect, useMemo, useState } from 'react'
 import type { Animal, ItemId, Mood, SpeciesId } from '../../../../engine/types'
 import type { RigCrop } from '../../../../art/rig/Rig'
@@ -9,9 +11,9 @@ import { rigBlobUrl } from '../../../../art/rig/staticSvg'
 import type { ItemDef, Outfit, SpeciesDef } from '../../../../art/rig/types'
 import { AVAILABLE_ITEMS, loadItem } from '../../../../art/items/registry'
 import { AVAILABLE_SPECIES, loadSpecies } from '../../../../art/species/registry'
-import { Icon } from '../../../design/Icon'
-import type { IconName } from '../../../design/icons'
 import { cx } from '../../../design/cx'
+import { Critter, critterCrop } from '../onboarding/Critter'
+import { GiftArt } from './GiftArt'
 
 const speciesReady = new Map<SpeciesId, SpeciesDef>()
 const itemsReady = new Map<ItemId, ItemDef>()
@@ -115,13 +117,17 @@ export interface AnimalPictureProps {
   mood?: Mood
   /** Rendered size in CSS px (the picture keeps its crop's aspect). */
   size: number
-  /** Shown instead while loading or when the species is not drawn yet. */
-  fallback?: IconName
   className?: string
 }
 
-/** A still picture of an animal (an <img> from a blob URL; never animated parts). */
-export function AnimalPicture({ animal, species, crop = 'head', mood = 'happy', size, fallback = 'paw', className }: AnimalPictureProps) {
+const pictureHeight = (crop: RigCrop, size: number) => (crop === 'full' || crop === 'fit' ? Math.round(size * 1.2) : size)
+
+/**
+ * A still picture of an animal (an <img> from a blob URL; never animated parts). Without an animal,
+ * or for a species that is not drawn yet, the neutral stand-in; while the drawing loads, an empty
+ * box of the same size.
+ */
+export function AnimalPicture({ animal, species, crop = 'head', mood = 'happy', size, className }: AnimalPictureProps) {
   const id = animal?.species ?? species ?? null
   const def = useSpeciesDef(id)
   const outfit = useOutfit(animal)
@@ -141,22 +147,27 @@ export function AnimalPicture({ animal, species, crop = 'head', mood = 'happy', 
     })
   }, [def, animal, outfit, mood, crop])
   if (!src) {
+    const standIn = !id || !isDrawn(id)
     return (
-      <span className={cx('tv-pic tv-pic--icon', className)} style={{ width: size, height: size }} aria-hidden>
-        <Icon name={fallback} size="62%" strokeWidth={2.2} />
+      <span className={cx('tv-pic', standIn && 'tv-pic--standin', className)} style={{ width: size, height: pictureHeight(crop, size) }} aria-hidden>
+        {standIn && <Critter mood={mood} crop={critterCrop(crop)} />}
       </span>
     )
   }
-  return <img className={cx('tv-pic', className)} src={src} width={size} height={crop === 'full' || crop === 'fit' ? Math.round(size * 1.2) : size} alt="" draggable={false} />
+  return <img className={cx('tv-pic', className)} src={src} width={size} height={pictureHeight(crop, size)} alt="" draggable={false} />
 }
 
-/** A thing from the wardrobe as its icon (or a gift while it is not drawn). */
+/**
+ * A thing from the wardrobe as its icon. A thing that is not drawn yet is a wrapped gift in its
+ * set's colour (a chest or a ceremony can give it before its drawing lands), never another thing's
+ * outline; while a drawing loads, the same gift holds the place.
+ */
 export function ItemPicture({ item, size, className }: { item: ItemId; size: number; className?: string }) {
   const def = useItemDef(item)
   if (!def) {
     return (
-      <span className={cx('tv-pic tv-pic--icon', className)} style={{ width: size, height: size }} aria-hidden>
-        <Icon name="gift" size="62%" strokeWidth={2.2} />
+      <span className={cx('tv-pic tv-pic--gift', className)} style={{ width: size, height: size }} aria-hidden data-gift={item}>
+        <GiftArt item={item} />
       </span>
     )
   }

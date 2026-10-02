@@ -5,6 +5,8 @@ import { SLOTS } from '../../../../engine/types'
 import type { ItemSource } from '../../../../engine/types'
 import { clipText } from '../../../../speech/catalog'
 import { compile } from '../../../../speech/compile'
+import { AVAILABLE_ITEMS } from '../../../../art/items/registry'
+import { everyItemDrawn, type DrawnItem } from './drawn'
 import { child, wearing, withAnimal } from './fixtures'
 import {
   animalsInOrder, canWishFor, cardAction, colorAction, guideItem, howToGet, howToGetColor, itemsOfSlot, pickAnimal,
@@ -64,7 +66,7 @@ describe('one slot', () => {
     const p = child()
     let total = 0
     for (const slot of SLOTS) {
-      const m = slotModel(p, p.animals[0], slot)
+      const m = slotModel(p, p.animals[0], slot, everyItemDrawn)
       total += m.owned.length + m.others.length
       expect(m.owned.length + m.others.length).toBe(itemsOfSlot(slot).length)
       for (const o of m.owned) expect(p.inventory[o.meta.id], o.meta.id).toBeDefined()
@@ -162,11 +164,37 @@ describe('where the wardrobe starts', () => {
 describe('the wish from the wardrobe', () => {
   it('is offered for things whose bar can move, never for the child\'s own', () => {
     const p = child()
-    expect(canWishFor(p, 'pirat-head')).toBe(true)
-    expect(canWishFor(p, 'milepael-krone')).toBe(true)
-    expect(canWishFor(p, 'ridder-head')).toBe(true)
-    expect(canWishFor(p, 'opdager-head')).toBe(false)
-    expect(canWishFor(p, 'hverdag-head')).toBe(false)
-    expect(canWishFor({ ...p, economy: { ...p.economy, wish: 'pirat-head' } }, 'pirat-head')).toBe(false)
+    expect(canWishFor(p, 'pirat-head', everyItemDrawn)).toBe(true)
+    expect(canWishFor(p, 'milepael-krone', everyItemDrawn)).toBe(true)
+    expect(canWishFor(p, 'ridder-head', everyItemDrawn)).toBe(true)
+    expect(canWishFor(p, 'opdager-head', everyItemDrawn)).toBe(false)
+    expect(canWishFor(p, 'hverdag-head', everyItemDrawn)).toBe(false)
+    expect(canWishFor({ ...p, economy: { ...p.economy, wish: 'pirat-head' } }, 'pirat-head', everyItemDrawn)).toBe(false)
+  })
+
+  it('is never offered for a thing that is not drawn yet', () => {
+    const only: DrawnItem = (item) => item === 'milepael-krone'
+    expect(canWishFor(child(), 'milepael-krone', only)).toBe(true)
+    expect(canWishFor(child(), 'pirat-head', only)).toBe(false)
+  })
+})
+
+describe('"Det kan du få" holds only drawn things (review P1-3)', () => {
+  it('leaves things without a drawing out, and keeps every thing the child owns', () => {
+    // the child owns a drawn and an undrawn hat (an undrawn one from an earlier version, a chest …)
+    const p = child({ 'hverdag-head': [0], 'pirat-head': [0, 2] })
+    const drawn: DrawnItem = (item) => item === 'hverdag-head' || item === 'fest-head'
+    const head = slotModel(p, p.animals[0], 'head', drawn)
+    expect(head.owned.map((o) => o.meta.id)).toEqual(['hverdag-head', 'pirat-head'])
+    expect(head.owned[1].colors).toEqual([0, 2])
+    expect(head.others.map((o) => o.id)).toEqual(['fest-head'])
+    expect(slotModel(p, p.animals[0], 'neck', drawn).others).toEqual([])
+  })
+
+  it('reads the drawings from the art registry by default', () => {
+    const p = child({})
+    for (const slot of SLOTS) {
+      for (const o of slotModel(p, p.animals[0], slot).others) expect(AVAILABLE_ITEMS, o.id).toContain(o.id)
+    }
   })
 })

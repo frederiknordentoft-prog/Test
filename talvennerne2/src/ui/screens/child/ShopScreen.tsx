@@ -19,6 +19,7 @@ import {
   type Purchase, type Shelf, type SheetStage,
 } from './shop/model'
 import { buy } from './shop/buy'
+import { isItemDrawn, type DrawnItem } from './wardrobe/drawn'
 import { useLastShown } from './wardrobe/Tap'
 import { BuySheet, ClothesShelf, ColorsShelf, DecorShelf, PerlerBadge, ShelfTabs, WishCard } from './shop/ShopView'
 import './shop/shop.css'
@@ -31,8 +32,11 @@ export default function ShopScreen(_props: ScreenProps<RouteOf<'shop'>>) {
   return profile ? <Shop profile={profile} /> : null
 }
 
-/** The shop of one child (the screen hands it the loaded profile). */
-export function Shop({ profile }: { profile: ProfileDoc }) {
+/**
+ * The shop of one child (the screen hands it the loaded profile). `drawn` decides which things are
+ * for sale: the drawn ones (wardrobe/drawn.ts); tests hand in their own.
+ */
+export function Shop({ profile, drawn = isItemDrawn }: { profile: ProfileDoc; drawn?: DrawnItem }) {
   const speech = useSpeech()
   const [shelf, setShelf] = useState<Shelf>('clothes')
   const [open, setOpen] = useState<{ x: Purchase; stage: SheetStage; setDone?: boolean } | null>(null)
@@ -72,7 +76,7 @@ export function Shop({ profile }: { profile: ProfileDoc }) {
     useNav.getState().go({ id: 'wardrobe', item: x.item })
   }
 
-  const wish = wishView(profile)
+  const wish = wishView(profile, drawn)
   const x = open?.x ?? null
   const shownX = sheet?.x ?? null
   const wishItem = shownX && shownX.kind === 'item' ? shownX.item : null
@@ -96,8 +100,8 @@ export function Shop({ profile }: { profile: ProfileDoc }) {
           <div className="tv-store__tabs">
             <ShelfTabs active={shelf} onPick={setShelf} />
           </div>
-          {shelf === 'clothes' && <ClothesShelf shelves={setShelves(profile)} onPick={show} />}
-          {shelf === 'colors' && <ColorsShelf rows={colorRows(profile)} onPick={show} />}
+          {shelf === 'clothes' && <ClothesShelf shelves={setShelves(profile, drawn)} onPick={show} />}
+          {shelf === 'colors' && <ColorsShelf rows={colorRows(profile, drawn)} onPick={show} />}
           {shelf === 'decor' && <DecorShelf rows={decorRows(profile)} onPick={show} />}
         </div>
       </div>
@@ -106,7 +110,7 @@ export function Shop({ profile }: { profile: ProfileDoc }) {
         stage={sheet?.stage ?? 'ask'}
         setDone={!!sheet?.setDone}
         wished={!!wishItem && profile.economy.wish === wishItem}
-        canWish={!!wishItem && canWishInShop(profile, wishItem)}
+        canWish={!!wishItem && canWishInShop(profile, wishItem, drawn)}
         onYes={yes}
         onNo={() => setOpen(null)}
         onWish={() => {

@@ -192,39 +192,7 @@
   -webkit-user-drag: none;
   pointer-events: none;
 }
-.tv-critter {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.tv-critter__shadow {
-  fill: var(--color-line);
-}
-.tv-critter__body {
-  fill: var(--color-paper-2);
-  stroke: var(--color-ink-3);
-  stroke-width: 3.2;
-}
-.tv-critter__belly {
-  fill: var(--color-card);
-  opacity: 0.8;
-}
-.tv-critter__eye {
-  fill: var(--color-ink);
-}
-.tv-critter__glint {
-  fill: var(--color-card);
-}
-.tv-critter__cheek {
-  fill: var(--color-heart);
-  opacity: 0.3;
-}
-.tv-critter__mouth {
-  fill: none;
-  stroke: var(--color-ink);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
+/* The stand-in itself (.tv-critter) is styled by critter.css, beside Critter.tsx. */
 
 /* ── Eggs ──────────────────────────────────────────────────────────── */
 .tv-oegg {
@@ -505,6 +473,23 @@
     max-width: 860px;
   }
 }
+/* Three eggs while a starter is not drawn yet: the odd one centred under the two, or three in a row. */
+.tv-eggs[data-count='3'] > .tv-eggbtn:last-child {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc(50% - 7px);
+}
+@media (orientation: landscape) {
+  .tv-eggs[data-count='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 660px;
+  }
+  .tv-eggs[data-count='3'] > .tv-eggbtn:last-child {
+    grid-column: auto;
+    justify-self: stretch;
+    width: auto;
+  }
+}
 .tv-eggbtn {
   display: flex;
   flex-direction: column;
@@ -689,12 +674,13 @@
   border-style: dashed;
 }
 
-/* The grade */
+/* The grade, and the line under it: everyone starts in Engdalen */
 .tv-grades {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   align-content: center;
+  width: 100%;
 }
 .tv-grade .tv-choice__face {
   flex-direction: column;
@@ -862,6 +848,21 @@
   .tv-first__body--talk .tv-names {
     grid-column: 2;
     grid-row: 1;
+  }
+  /* the grades take the right, "Alle starter i Engdalen." stands under the bubble */
+  .tv-first__body--talk > .tv-onb__stage--grade {
+    display: contents;
+  }
+  .tv-first__body--talk .tv-onb__stage--grade > .tv-grades {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 8px;
+  }
+  .tv-first__body--talk .tv-onb__stage--grade > .tv-onb__start {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+    margin-bottom: 8px;
   }
   .tv-choice__face {
     min-height: 56px;

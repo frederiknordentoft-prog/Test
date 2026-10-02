@@ -14,7 +14,8 @@ import { SpokenText } from '../../../design/SpokenText'
 import { isCalm } from '../../../design/motion'
 import { useSpeech } from '../../../design/speech'
 import { cx } from '../../../design/cx'
-import { AnimalPicture, useOutfit, useSpeciesDef } from '../map/art'
+import { AnimalPicture, isDrawn, useOutfit, useSpeciesDef } from '../map/art'
+import { Critter } from '../onboarding/Critter'
 import { SlotGlyph } from './glyphs'
 import { ItemThumb } from './ItemThumb'
 import { COLORS, SLOTS, SLOT_CLIP, animalNameSpeech, shownText, sourceBadge, type SlotModel } from './model'
@@ -56,12 +57,16 @@ export function AnimalPicker({ animals, selected, buddyUid, onPick }: {
   )
 }
 
-/** The animal on its spot in the middle, dressed (things that are not drawn yet stay off the picture). */
+/**
+ * The animal on its spot in the middle, dressed (things that are not drawn yet stay off the picture).
+ * A species that is not drawn yet stands there as the neutral stand-in, never as another animal.
+ */
 export function DressedAnimal({ animal, mood }: { animal: Animal | null; mood: Mood }) {
   const def = useSpeciesDef(animal?.species)
   const outfit = useOutfit(animal)
   const calm = isCalm()
   const stage = (animal ? (animal.shown === 'star' ? 3 : animal.shown) : 2) as Stage
+  const drawn = !!animal && isDrawn(animal.species)
   return (
     <div className="tv-wr-figure" data-figure={animal?.species ?? ''} data-mood={mood}>
       <span className="tv-wr-figure__light" aria-hidden />
@@ -81,9 +86,11 @@ export function DressedAnimal({ animal, mood }: { animal: Animal | null; mood: M
           className={cx('tv-wr-figure__rig', calm && 'rig-calm')}
         />
       ) : (
-        <span className="tv-wr-figure__stand" aria-hidden>
-          <Icon name="paw" size="58%" strokeWidth={2} />
-        </span>
+        !drawn && (
+          <span className="tv-wr-figure__stand" aria-hidden data-standin="">
+            <Critter mood={mood} />
+          </span>
+        )
       )}
     </div>
   )

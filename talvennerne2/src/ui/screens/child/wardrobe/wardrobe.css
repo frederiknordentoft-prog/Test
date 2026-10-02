@@ -122,14 +122,12 @@
   width: 100%;
   height: 100%;
 }
+/* A species that is not drawn yet: the neutral stand-in on the same spot and canvas as the rig. */
 .tv-wr-figure__stand {
-  position: absolute;
-  inset: 12% 8% 16%;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* The three colours of the thing that is on (right) and "Tag af" (left). */

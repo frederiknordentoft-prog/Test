@@ -8,7 +8,7 @@ import { blob, ellipse, join, lune, poly } from '../../../../art/materials/geom'
 import type { V2 } from '../../../../art/materials/geom'
 import type { SpeciesId } from '../../../../engine/types'
 import { cx } from '../../../design/cx'
-import { Critter, isDrawn, useAnimalImage } from './art'
+import { Critter, isDrawn, useAnimalImage, type AnimalLook } from './art'
 
 /** viewBox 0 0 120 160. */
 const SHELL: V2[] = [[60, 8], [87.3, 21.5], [105.5, 57.5], [110, 98], [96.4, 134], [60, 152], [23.6, 134], [10, 98], [14.5, 57.5], [32.7, 21.5]]
@@ -45,10 +45,14 @@ function Shell({ clip, inside }: { clip: string; inside: string }) {
   )
 }
 
-/** A starter egg with its baby peeking over the broken rim (the four eggs to choose from). */
-export function PeekEgg({ species, className }: { species: SpeciesId; className?: string }) {
+/**
+ * A starter egg with its baby peeking over the broken rim (the eggs to choose from). `look` is the
+ * breed and colour the baby will hatch with (onboarding/flow.ts starterLooks), so the egg shows the
+ * friend that comes out; without it the species' first colour.
+ */
+export function PeekEgg({ species, look, className }: { species: SpeciesId; look?: AnimalLook; className?: string }) {
   const id = useId().replace(/[^A-Za-z0-9_-]/g, '')
-  const head = useAnimalImage(isDrawn(species) ? { species, stage: 1 } : null, { crop: 'head' })
+  const head = useAnimalImage(isDrawn(species) ? (look ?? { species, stage: 1 }) : null, { crop: 'head' })
   return (
     <svg viewBox="0 0 120 160" className={cx('tv-oegg', `tv-oegg--${tintOf(species)}`, className)} aria-hidden overflow="visible">
       <defs>

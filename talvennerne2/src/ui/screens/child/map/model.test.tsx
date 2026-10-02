@@ -5,6 +5,7 @@ import { newProfileDoc } from '../../../../data/repo/profiles'
 import { keyAt } from '../../../../engine/testing/profile'
 import type { NodeId, NodeProgress, ProfileDoc, RoundSnapshot } from '../../../../engine/types'
 import { chooseStarter } from '../../../../meta/actions'
+import { AVAILABLE_ITEMS } from '../../../../art/items/registry'
 import { MapView } from './MapView'
 import { homeWorld, litHut, mapModel, playable, type MapModel, type StoneView } from './model'
 
@@ -106,6 +107,28 @@ describe('the map of a new child', () => {
     expect(html).not.toContain('data-tile="resume"')
     // no numbers about currency on the path, and every stone is a button
     expect(html.match(/<button[^>]*data-stone=/g)).toHaveLength(37)
+  })
+})
+
+describe('switching player and the wish on the map (review P1-1, P1-3)', () => {
+  const m = mapModel(newChild(), 'eng')
+  const view = (extra: Partial<Parameters<typeof MapView>[0]> = {}) =>
+    renderToStaticMarkup(
+      <MapView model={m} frame="sky" onWorld={() => undefined} onPlay={() => undefined} onBuddy={() => undefined} onAdult={() => undefined} {...extra} />,
+    )
+
+  it('shows the child\'s letter to switch player only when there are siblings (the screen decides)', () => {
+    expect(view()).not.toContain('data-switch-player')
+    const html = view({ switcher: { initial: 'A', frame: 'sky', onSwitch: () => undefined } })
+    expect(html).toMatch(/<button[^>]*aria-label="Skift spiller"[^>]*data-switch-player=""/)
+    expect(html).toContain('>A</span>')
+  })
+
+  it('shows the wish meter only for a thing that is drawn', () => {
+    const p = newChild()
+    const wish = (item: 'hverdag-head' | 'pirat-body') => mapModel({ ...p, economy: { ...p.economy, wish: item, perler: 30 } }, 'eng').hud.wish
+    expect(wish('hverdag-head')).not.toBeNull()
+    if (!AVAILABLE_ITEMS.includes('pirat-body')) expect(wish('pirat-body')).toBeNull()
   })
 })
 

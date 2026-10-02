@@ -3,6 +3,8 @@ import { DECOR, ITEMS, PRICE_BY_SLOT, RECOLOR_PRICE } from '../../../../content/
 import { SHOP_SET_PRICE } from '../../../../content/economy'
 import type { ItemId } from '../../../../engine/types'
 import { compile } from '../../../../speech/compile'
+import { AVAILABLE_ITEMS } from '../../../../art/items/registry'
+import { everyItemDrawn, isItemDrawn, type DrawnItem } from '../wardrobe/drawn'
 import { child } from '../wardrobe/fixtures'
 import {
   SHOP_SETS, canBuy, canWishInShop, colorRows, decorRows, isOwned, openingSpeech, priceOf, setShelves, sheetStage, wishView,
@@ -12,12 +14,15 @@ import {
 /**
  * The shop as data (SPEC §5.7): four sets at fixed prices by slot, new colours at one price for the
  * child's own things, eight pieces of decor, and a wish — nothing else, and nothing that changes.
+ * The shop's own rules are tested with every thing counted as drawn (everyItemDrawn); what the filter
+ * on drawings does is tested on its own at the end.
  */
 
 describe('the shelves', () => {
   it('sells the four shop sets, six things each, at the fixed price of their slot', () => {
     expect(SHOP_SETS).toEqual(['pirat', 'fodbold', 'vinter', 'fest'])
-    const shelves = setShelves(child({}))
+    const shelves = setShelves(child({}), everyItemDrawn)
+    expect(shelves).toHaveLength(4)
     for (const s of shelves) {
       expect(s.items).toHaveLength(6)
       for (const it of s.items) expect(it.price, it.meta.id).toBe(PRICE_BY_SLOT[it.meta.slot])
@@ -28,23 +33,23 @@ describe('the shelves', () => {
 
   it('marks the child\'s own things and the wish', () => {
     const p = child({ 'pirat-head': [0] })
-    const pirat = setShelves({ ...p, economy: { ...p.economy, wish: 'pirat-hand' } })[0]
+    const pirat = setShelves({ ...p, economy: { ...p.economy, wish: 'pirat-hand' } }, everyItemDrawn)[0]
     expect(pirat.items.find((i) => i.meta.id === 'pirat-head')).toMatchObject({ owned: true, wished: false })
     expect(pirat.items.find((i) => i.meta.id === 'pirat-hand')).toMatchObject({ owned: false, wished: true })
     expect(pirat.complete).toBe(false)
     const all = child(Object.fromEntries(ITEMS.filter((i) => i.set === 'fest').map((i) => [i.id, [0]])))
-    expect(setShelves(all)[3]).toMatchObject({ set: 'fest', complete: true })
+    expect(setShelves(all, everyItemDrawn)[3]).toMatchObject({ set: 'fest', complete: true })
   })
 
   it('offers new colours only for things the child has, at one price', () => {
     const p = child({ 'hverdag-head': [0], 'hverdag-body': [0, 2], 'opdager-hand': [0, 1, 2] })
-    const rows = colorRows(p)
+    const rows = colorRows(p, everyItemDrawn)
     expect(rows.map((r) => r.meta.id)).toEqual(['hverdag-head', 'hverdag-body', 'opdager-hand'])
     expect(rows[1].colors).toEqual([{ color: 0, owned: true }, { color: 1, owned: false }, { color: 2, owned: true }])
     expect(rows[2].all).toBe(true)
     expect(priceOf({ kind: 'color', item: 'hverdag-head', color: 1 })).toBe(RECOLOR_PRICE)
     expect(priceOf({ kind: 'color', item: 'hverdag-head', color: 0 })).toBeNull()
-    expect(colorRows(child({}))).toEqual([])
+    expect(colorRows(child({}), everyItemDrawn)).toEqual([])
   })
 
   it('sells the eight pieces of decor at their fixed prices', () => {
@@ -113,8 +118,8 @@ describe('what the sheet says', () => {
 describe('the wish', () => {
   it('shows a bar towards a shop thing and says when it can be bought', () => {
     const p = child()
-    expect(wishView(p)).toBeNull()
-    const w = (item: ItemId, perler: number) => wishView({ ...p, economy: { ...p.economy, wish: item, perler } })
+    expect(wishView(p, everyItemDrawn)).toBeNull()
+    const w = (item: ItemId, perler: number) => wishView({ ...p, economy: { ...p.economy, wish: item, perler } }, everyItemDrawn)
     expect(w('pirat-body', 90)).toEqual({ item: 'pirat-body', progress: 0.5, buyable: false })
     expect(w('pirat-body', 400)).toEqual({ item: 'pirat-body', progress: 1, buyable: true })
     // a level thing fills with XP and is never "bought"
@@ -123,9 +128,57 @@ describe('the wish', () => {
 
   it('is offered in the shop only for things for sale that the child does not have', () => {
     const p = child({ 'pirat-head': [0] })
-    expect(canWishInShop(p, 'pirat-body')).toBe(true)
-    expect(canWishInShop(p, 'pirat-head')).toBe(false)
-    expect(canWishInShop(p, 'hverdag-hand')).toBe(false)
-    expect(canWishInShop({ ...p, economy: { ...p.economy, wish: 'pirat-body' } }, 'pirat-body')).toBe(false)
+    expect(canWishInShop(p, 'pirat-body', everyItemDrawn)).toBe(true)
+    expect(canWishInShop(p, 'pirat-head', everyItemDrawn)).toBe(false)
+    expect(canWishInShop(p, 'hverdag-hand', everyItemDrawn)).toBe(false)
+    expect(canWishInShop({ ...p, economy: { ...p.economy, wish: 'pirat-body' } }, 'pirat-body', everyItemDrawn)).toBe(false)
+  })
+})
+
+describe('only drawn things are sold (review P1-3)', () => {
+  /** Drawn in this test: the Fest hat and the pirate hat, nothing else. */
+  const some: DrawnItem = (item) => item === 'fest-head' || item === 'pirat-head'
+
+  it('shows a set only once one of its things is drawn, and only its drawn things', () => {
+    const shelves = setShelves(child({}), some)
+    expect(shelves.map((s) => s.set)).toEqual(['pirat', 'fest'])
+    expect(shelves.map((s) => s.items.map((i) => i.meta.id))).toEqual([['pirat-head'], ['fest-head']])
+    expect(setShelves(child({}), () => false)).toEqual([])
+  })
+
+  it('keeps the child\'s own things in view, drawn or not, and counts all six for the set', () => {
+    const p = child({ 'pirat-face': [0], 'fodbold-head': [0] })
+    const shelves = setShelves(p, some)
+    const pirat = shelves.find((s) => s.set === 'pirat')!
+    expect(pirat.items.map((i) => [i.meta.id, i.owned])).toEqual([['pirat-head', false], ['pirat-face', true]])
+    // a set with nothing drawn stays off the shelf even when the child owns some of it: it is in the wardrobe
+    expect(shelves.some((s) => s.set === 'fodbold')).toBe(false)
+    const all = child(Object.fromEntries(ITEMS.filter((i) => i.set === 'pirat').map((i) => [i.id, [0]])))
+    expect(setShelves(all, some).find((s) => s.set === 'pirat')).toMatchObject({ complete: true })
+  })
+
+  it('sells new colours only for drawn things', () => {
+    const p = child({ 'fest-head': [0], 'pirat-face': [0], 'hverdag-head': [0] })
+    expect(colorRows(p, some).map((r) => r.meta.id)).toEqual(['fest-head'])
+  })
+
+  it('does not show or offer a wish for a thing that is not drawn yet', () => {
+    const p = child()
+    const wish = (item: ItemId) => ({ ...p, economy: { ...p.economy, wish: item, perler: 500 } })
+    expect(wishView(wish('pirat-body'), some)).toBeNull()
+    expect(wishView(wish('pirat-head'), some)).toMatchObject({ item: 'pirat-head', buyable: true })
+    expect(canWishInShop(p, 'pirat-body', some)).toBe(false)
+    expect(canWishInShop(p, 'pirat-head', some)).toBe(true)
+  })
+
+  it('reads the drawings from the art registry, so the filter goes away as they land', () => {
+    for (const item of ITEMS) expect(isItemDrawn(item.id), item.id).toBe(AVAILABLE_ITEMS.includes(item.id))
+    const shelves = setShelves(child({}))
+    for (const s of shelves) {
+      expect(s.items.length, s.set).toBeGreaterThan(0)
+      for (const it of s.items) expect(AVAILABLE_ITEMS, it.meta.id).toContain(it.meta.id)
+    }
+    const expected = SHOP_SETS.filter((set) => ITEMS.some((i) => i.set === set && AVAILABLE_ITEMS.includes(i.id)))
+    expect(shelves.map((s) => s.set)).toEqual(expected)
   })
 })
