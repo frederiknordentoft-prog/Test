@@ -27,6 +27,8 @@ export interface LintResult {
   minCardFill?: number
   /** Største elementtal i en verdensscene (kortets baggrund), hvis arket har scener. */
   maxScene?: number
+  /** Kendte lommer (huller-lint'en, `KNOWN_POCKETS`): fejler ikke, men står her med review-henvisningen. */
+  known?: string[]
 }
 
 /** Tankebobler og Zzz holder mindst så mange enheder fri af hoved, ører, manke og horn (review G1-r2, pkt. 5.2). */
@@ -302,7 +304,10 @@ function lintScenes(res: LintResult) {
 // ---------------------------------------------------------------------------------------------
 // Huller og sømme (review G1-r3, forbedring 1): figuren rasteriseres på magenta; baggrund, der ikke
 // hænger sammen med billedets kant, er lukket inden for yderkonturen. Smalle lukkede områder
-// (tykkelse under HOLE_THICK enheder) er sømme eller sprækker – bredere er bevidst negativt rum.
+// (tykkelse under HOLE_THICK enheder) er sømme eller sprækker. Review G1-r4 (R1): en lomme, der kun hænger
+// sammen med baggrunden gennem en sprække smallere end HOLE_GAP, er også lukket (den ses lukket ved
+// arkenes størrelser), og lukkede områder fejler for alle arter – ikke kun sprækkerne. Kendte lommer hos
+// arter, som andre agenter ejer, står i KNOWN_POCKETS med henvisning til reviewet og fejler ikke.
 
 /** Pixel pr. enhed ved rasteriseringen. */
 const HOLE_SCALE = 2
@@ -312,10 +317,69 @@ export const HOLE_THICK = 4
 export const HOLE_MIN_AREA = 1.5
 /** Streng tilstand: én lukket magenta-pixel er nok (review G1-r3, K1-tjekket). */
 export const HOLE_MIN_AREA_STRICT = 1 / HOLE_SCALE ** 2
+/** Sprækker smallere end dette (enheder) lukkes, før baggrunden fyldes fra kanten (review G1-r4, R1). */
+export const HOLE_GAP = 1
+
+/**
+ * Kendte lommer og sprækker (review G1-r4), som artens egen agent retter: de fejler ikke, men står i
+ * lint-rapporten (`known`). Mønsteret matcher cellens `data-holes` ("art race stadie farve humør").
+ */
+/** Review-henvisningerne for de kendte lommer (fundet af den udvidede lint, review G1-r4 R1). */
+const K = {
+  CAT_HIP: 'G1-r4 §1.4 og §5 kat: huskat-babyens hoftekile (species-cat.png (397–401, 529–539))',
+  CAT_MAINECOON: 'G1-r4 §1.4 og §5 kat: maine coon-babyens sprække mellem halespids og skulder (holes.png #409–#415)',
+  CAT_NEW: 'ikke i G1-r4: lomme mellem hale, hofte og krop (eller pote og kind) – kattens agent afgør, om det er bevidst negativt rum (rubrikken) eller skal fyldes',
+  PUPPY: 'G1-r4 §1.4 og §5 hvalp: lommerne mellem arm, øre og krop (holes.png #519, #521, #525, #527) og sprækken ved det løftede ben (#522)',
+  HORSE: 'G1-r4 §1.4 hest: lommerne mellem man og hals (holes.png #609–#617, #729–#748) og mellem løftet ben og hoved i vinker (#622, #628, #682, #688); araberens stadie 3 har desuden en løkke mellem halen og hoften (ikke i G1-r4)',
+  UNICORN: 'G1-r4 §1.4 og §5 pkt. 5 enhjørning: sprækker og lommer ved manens spids og det løftede forben (holes.png #835–#838, #846, #871, #888, #889, #891)',
+} as const
+export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
+  { match: /^cat domestic 1 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.CAT_HIP },
+  { match: /^cat domestic 2 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.CAT_NEW },
+  { match: /^cat domestic 3 \S+ (cheer|idle|sleep|think|wave)$/, ref: K.CAT_NEW },
+  { match: /^cat longhair 1 \S+ (cheer|think)$/, ref: K.CAT_NEW },
+  { match: /^cat longhair 2 \S+ (oops)$/, ref: K.CAT_NEW },
+  { match: /^cat longhair 3 \S+ (cheer|oops|wave)$/, ref: K.CAT_NEW },
+  { match: /^cat mainecoon 1 \S+ (idle|wave)$/, ref: K.CAT_MAINECOON },
+  { match: /^cat mainecoon 2 \S+ (sleep|think|wave)$/, ref: K.CAT_NEW },
+  { match: /^cat mainecoon 3 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.CAT_NEW },
+  { match: /^horse arabian 1 \S+ (cheer|oops|wave)$/, ref: K.HORSE },
+  { match: /^horse arabian 2 \S+ (cheer|happy|idle|sleep|wave)$/, ref: K.HORSE },
+  { match: /^horse arabian 3 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.HORSE },
+  { match: /^horse fjord 2 \S+ (wave)$/, ref: K.HORSE },
+  { match: /^horse fjord 3 \S+ (idle|sleep)$/, ref: K.HORSE },
+  { match: /^horse shetland 2 \S+ (cheer|happy|idle|sleep|wave)$/, ref: K.HORSE },
+  { match: /^horse shetland 3 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.HORSE },
+  { match: /^puppy std 1 \S+ (cheer|think|wave)$/, ref: K.PUPPY },
+  { match: /^puppy std 2 \S+ (wave)$/, ref: K.PUPPY },
+  { match: /^puppy std 3 \S+ (cheer|sleep|think|wave)$/, ref: K.PUPPY },
+  { match: /^unicorn foal 1 \S+ (wave)$/, ref: K.UNICORN },
+  { match: /^unicorn foal 2 \S+ (wave)$/, ref: K.UNICORN },
+  { match: /^unicorn foal 3 \S+ (happy|idle)$/, ref: K.UNICORN },
+  { match: /^unicorn starhorn 2 \S+ (wave)$/, ref: K.UNICORN },
+  { match: /^unicorn starhorn 3 \S+ (sleep|think|wave)$/, ref: K.UNICORN },
+  { match: /^unicorn wavy 1 \S+ (happy|idle|think|wave)$/, ref: K.UNICORN },
+  { match: /^unicorn wavy 2 \S+ (sleep|think|wave)$/, ref: K.UNICORN },
+  { match: /^unicorn wavy 3 \S+ (happy|idle|sleep|think|wave)$/, ref: K.UNICORN },
+]
+
+/** Kendt lomme for en celle (review-henvisningen), eller null. */
+export function knownPocket(cell: string): string | null {
+  return KNOWN_POCKETS.find((k) => k.match.test(cell))?.ref ?? null
+}
 
 const isMagenta = (d: Uint8ClampedArray, i: number) => d[i] > 200 && d[i + 1] < 90 && d[i + 2] > 200
 
-async function holesIn(svg: SVGSVGElement): Promise<{ area: number; thick: number; x: number; y: number }[]> {
+interface Hole {
+  area: number
+  thick: number
+  x: number
+  y: number
+  /** Kun lukket, når sprækker smallere end HOLE_GAP regnes som lukkede (hænger ellers sammen med baggrunden). */
+  nearly: boolean
+}
+
+async function holesIn(svg: SVGSVGElement): Promise<Hole[]> {
   const vb = svg.viewBox.baseVal
   const W = Math.round(vb.width * HOLE_SCALE)
   const H = Math.round(vb.height * HOLE_SCALE)
@@ -339,29 +403,15 @@ async function holesIn(svg: SVGSVGElement): Promise<{ area: number; thick: numbe
   // 1 = magenta (baggrund), 2 = baggrund nået fra kanten.
   const m = new Uint8Array(N)
   for (let p = 0; p < N; p++) if (isMagenta(d, p * 4)) m[p] = 1
-  const stack: number[] = []
-  const push = (p: number) => {
-    if (m[p] === 1) {
-      m[p] = 2
-      stack.push(p)
-    }
-  }
-  for (let x = 0; x < W; x++) {
-    push(x)
-    push((H - 1) * W + x)
-  }
-  for (let y = 0; y < H; y++) {
-    push(y * W)
-    push(y * W + W - 1)
-  }
-  while (stack.length) {
-    const p = stack.pop()!
-    const x = p % W
-    if (x > 0) push(p - 1)
-    if (x < W - 1) push(p + 1)
-    if (p >= W) push(p - W)
-    if (p < N - W) push(p + W)
-  }
+  // Lukkede områder uden sprække-lukning (ægte lukkede pixels) huskes, før sprækkerne lukkes nedenfor.
+  const plain = flood(m, W, H, null, 0)
+  // Afstanden fra hver baggrundspixel til figuren: pixels nærmere end HOLE_GAP/2 er væg, så en sprække
+  // smallere end HOLE_GAP lukker; derefter vokser den nåede baggrund tilbage op til figuren.
+  const gap = (HOLE_GAP * HOLE_SCALE) / 2
+  const toFig = chamfer(m, W, H, (v) => v === 1)
+  const open = flood(m, W, H, toFig, gap)
+  for (let p = 0; p < N; p++) m[p] = m[p] === 1 ? (open[p] ? 2 : 1) : 0
+  grow(m, W, H, Math.ceil(gap) + 1)
   // Afstand (chamfer) fra hver lukket pixel til nærmeste ikke-lukkede pixel: tykkelsen er 2 · maks.
   const dist = new Float32Array(N)
   for (let p = 0; p < N; p++) dist[p] = m[p] === 1 ? 1e9 : 0
@@ -388,19 +438,22 @@ async function holesIn(svg: SVGSVGElement): Promise<{ area: number; thick: numbe
       dist[p] = v
     }
   // Sammenhængende lukkede områder.
-  const out: { area: number; thick: number; x: number; y: number }[] = []
+  const out: Hole[] = []
+  const stack: number[] = []
   for (let p0 = 0; p0 < N; p0++) {
     if (m[p0] !== 1) continue
     let area = 0
     let maxD = 0
     let sx = 0
     let sy = 0
+    let closed = false
     m[p0] = 3
     stack.push(p0)
     while (stack.length) {
       const p = stack.pop()!
       area++
       maxD = Math.max(maxD, dist[p])
+      if (!plain[p]) closed = true
       const x = p % W
       sx += x
       sy += (p - x) / W
@@ -415,14 +468,109 @@ async function holesIn(svg: SVGSVGElement): Promise<{ area: number; thick: numbe
       if (p >= W) visit(p - W)
       if (p < N - W) visit(p + W)
     }
-    out.push({ area: area / HOLE_SCALE ** 2, thick: (2 * maxD) / HOLE_SCALE, x: vb.x + sx / area / HOLE_SCALE, y: vb.y + sy / area / HOLE_SCALE })
+    out.push({ area: area / HOLE_SCALE ** 2, thick: (2 * maxD) / HOLE_SCALE, x: vb.x + sx / area / HOLE_SCALE, y: vb.y + sy / area / HOLE_SCALE, nearly: !closed })
   }
   return out
 }
 
 /**
- * Lint for `holes`-arket: ingen sømme eller sprækker med baggrund inden for figurernes yderkontur.
- * En celle med data-holes-mode="strict" må slet ikke have lukket baggrund (kaninen, K1-beviset).
+ * Baggrund nået fra billedets kant (4-naboskab) gennem pixels med m = 1; med `wall` kun gennem pixels, hvis
+ * afstand til figuren er over `min` (kantens pixels er altid frø). Returnerer 1 for nåede pixels.
+ */
+function flood(m: Uint8Array, W: number, H: number, wall: Float32Array | null, min: number): Uint8Array {
+  const N = W * H
+  const r = new Uint8Array(N)
+  const stack: number[] = []
+  const pass = (p: number) => m[p] === 1 && !r[p] && (!wall || wall[p] > min)
+  const seed = (p: number) => {
+    if (m[p] === 1 && !r[p]) {
+      r[p] = 1
+      stack.push(p)
+    }
+  }
+  for (let x = 0; x < W; x++) {
+    seed(x)
+    seed((H - 1) * W + x)
+  }
+  for (let y = 0; y < H; y++) {
+    seed(y * W)
+    seed(y * W + W - 1)
+  }
+  while (stack.length) {
+    const p = stack.pop()!
+    const x = p % W
+    const visit = (q: number) => {
+      if (pass(q)) {
+        r[q] = 1
+        stack.push(q)
+      }
+    }
+    if (x > 0) visit(p - 1)
+    if (x < W - 1) visit(p + 1)
+    if (p >= W) visit(p - W)
+    if (p < N - W) visit(p + W)
+  }
+  return r
+}
+
+/** Chamfer-afstand (pixels) fra hver pixel, der opfylder `inside`, til nærmeste pixel, der ikke gør. */
+function chamfer(m: Uint8Array, W: number, H: number, inside: (v: number) => boolean): Float32Array {
+  const N = W * H
+  const dist = new Float32Array(N)
+  for (let p = 0; p < N; p++) dist[p] = inside(m[p]) ? 1e9 : 0
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const p = y * W + x
+      if (!dist[p]) continue
+      let v = dist[p]
+      if (x > 0) v = Math.min(v, dist[p - 1] + 1)
+      if (y > 0) v = Math.min(v, dist[p - W] + 1)
+      if (x > 0 && y > 0) v = Math.min(v, dist[p - W - 1] + 1.414)
+      if (x < W - 1 && y > 0) v = Math.min(v, dist[p - W + 1] + 1.414)
+      dist[p] = v
+    }
+  for (let y = H - 1; y >= 0; y--)
+    for (let x = W - 1; x >= 0; x--) {
+      const p = y * W + x
+      if (!dist[p]) continue
+      let v = dist[p]
+      if (x < W - 1) v = Math.min(v, dist[p + 1] + 1)
+      if (y < H - 1) v = Math.min(v, dist[p + W] + 1)
+      if (x < W - 1 && y < H - 1) v = Math.min(v, dist[p + W + 1] + 1.414)
+      if (x > 0 && y < H - 1) v = Math.min(v, dist[p + W - 1] + 1.414)
+      dist[p] = v
+    }
+  return dist
+}
+
+/** Den nåede baggrund (m = 2) vokser `steps` pixels (8-naboskab) ind i den øvrige baggrund (m = 1). */
+function grow(m: Uint8Array, W: number, H: number, steps: number): void {
+  let front: number[] = []
+  for (let p = 0; p < W * H; p++) if (m[p] === 2) front.push(p)
+  for (let s = 0; s < steps; s++) {
+    const next: number[] = []
+    for (const p of front) {
+      const x = p % W
+      for (const q of [p - 1, p + 1, p - W, p + W, p - W - 1, p - W + 1, p + W - 1, p + W + 1]) {
+        if (q < 0 || q >= W * H) continue
+        const qx = q % W
+        if (Math.abs(qx - x) > 1) continue
+        if (m[q] === 1) {
+          m[q] = 2
+          next.push(q)
+        }
+      }
+    }
+    front = next
+  }
+}
+
+/**
+ * Lint for `holes`-arket: ingen sømme, sprækker eller lukkede områder med baggrund inden for figurernes
+ * yderkontur. En celle med data-holes-mode="strict" må slet ikke have lukket baggrund (kaninen, K1-beviset);
+ * de andre arter ("thin") fejler på sprækker og på lukkede områder fra HOLE_MIN_AREA (review G1-r4, R1).
+ * Næsten lukkede lommer (kun lukket af en sprække under HOLE_GAP) tæller fra HOLE_MIN_AREA, så antialiasing
+ * i en konkav kant ikke fejler. Kendte lommer (KNOWN_POCKETS) fejler ikke, men noteres i `known`.
  */
 async function lintHoles(res: LintResult): Promise<void> {
   for (const cell of document.querySelectorAll<HTMLElement>('[data-holes]')) {
@@ -430,9 +578,15 @@ async function lintHoles(res: LintResult): Promise<void> {
     if (!svg) continue
     res.checks++
     const strict = cell.dataset.holesMode === 'strict'
-    const bad = (await holesIn(svg)).filter((h) => (strict ? h.area >= HOLE_MIN_AREA_STRICT : h.area >= HOLE_MIN_AREA && h.thick < HOLE_THICK))
-    for (const h of bad)
-      res.errors.push(`${cell.dataset.holes}: lukket ${h.thick < HOLE_THICK ? 'søm/sprække' : 'område'} med baggrund (${h.area.toFixed(1)} enh², ${h.thick.toFixed(1)} enh tyk) ved (${h.x.toFixed(0)},${h.y.toFixed(0)})`)
+    const bad = (await holesIn(svg)).filter((h) => h.area >= (strict && !h.nearly ? HOLE_MIN_AREA_STRICT : HOLE_MIN_AREA))
+    if (!bad.length) continue
+    const label = cell.dataset.holes ?? ''
+    const known = knownPocket(label)
+    for (const h of bad) {
+      const what = `${label}: ${h.nearly ? 'næsten ' : ''}lukket ${h.thick < HOLE_THICK ? 'søm/sprække' : 'område'} med baggrund (${h.area.toFixed(1)} enh², ${h.thick.toFixed(1)} enh tyk) ved (${h.x.toFixed(0)},${h.y.toFixed(0)})`
+      if (known) (res.known ??= []).push(`${what} · kendt: ${known}`)
+      else res.errors.push(what)
+    }
   }
 }
 
