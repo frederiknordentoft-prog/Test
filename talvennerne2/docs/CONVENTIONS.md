@@ -47,6 +47,13 @@ Recall-facts er deres egen mestringsnøgle og skal være globalt unikke og stabi
 
 Andre skills vælger et kort præfiks pr. skill (fx `cnt:`, `shp:`, `clk:`) og dokumenterer det i modulet; en test sikrer unikhed på tværs. Procedure-nøgler er `<skill>/<familie>`, og instans-id'er følger samme mønster som facts.
 
+## Opgavetyperne fra bølge 2 (clockSet, pay, share, colorParts)
+- `clockSet` sammenlignes altid på urskiven (`modulo` 720): en analog skive kan ikke vise formiddag eller eftermiddag, så 14:30 stillet som halv tre er rigtigt.
+- Sæt-svar sammenlignes som multimængder (`canonicalSet`), så rækkefølgen aldrig betyder noget: `multiSelect`, `grid`, `pay`, `share` og `colorParts`. Skriv dem gerne største først (`c2000|c500`, `4|4|4`, `p0|p2`).
+- `share.thing` og `shop.thing` er altid et `THING_ID`.
+- En `colorParts`-opgave har `fraction.colored: 0`, fordi barnet selv farver delene. Brøken står i svaret (`frac:k/n`, ækvivalente brøker i `accept`).
+- `fraction.shape` kan være `circle`, `rect`, `bar` eller `square`.
+
 ## Oplæsning
 - `SpeechPart` i `types.ts` er formatet. `compile()` i `src/speech/compile.ts` gør dele til klip-id'er og tekst uden cifre.
 - Faste klip defineres i kataloger under `src/speech/clips/**/*.ts` (id → tekst). Hvert område har sin egen fil, så agenter aldrig deler en fil: fx `clips/numbers.ts`, `clips/ui/<skærm>.ts`, `clips/skills/<domæne>.ts`, `clips/names.ts`.

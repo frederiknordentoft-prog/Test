@@ -167,7 +167,7 @@ describe('number lines, clocks and presentation', () => {
     expect(buildTask(own, carry(38, 45), 'numberline', makeRng(1), 0).task.tolerance).toBe(2)
   })
 
-  it('compares clocks on the dial: 12 hours analog, 24 hours when the task is 24-hour', () => {
+  it('compares clocks on the dial: 12 hours analog, 24 hours when a 24-hour task is not set on a dial', () => {
     const clock: SkillModule = {
       ...addTo10Fixture,
       kinds: ['choice', 'keypad', 'clockSet'],
@@ -183,7 +183,11 @@ describe('number lines, clocks and presentation', () => {
     expect(isCorrect(analog, 150 + 720)).toBe(true)
     expect(classifyAnswer(analog, 210 + 720)).toBe('halfPastNext')
     const evening: Fact = { ...halfPastTwo, id: 'clk:870', answer: 870 }
-    expect(buildTask(clock, evening, 'clockSet', makeRng(1), 0).task.modulo).toBe(1440)
+    // an analog face cannot show the afternoon: 14:30 set on the dial is half past two
+    const set = buildTask(clock, evening, 'clockSet', makeRng(1), 0).task
+    expect(set.modulo).toBe(720)
+    expect(isCorrect(set, 150)).toBe(true)
+    expect(buildTask(clock, evening, 'choice', makeRng(1), 0).task.modulo).toBe(1440)
   })
 
   it('shows the scaffold at box 0 only, and never in a trial or placement', () => {

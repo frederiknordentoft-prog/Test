@@ -138,8 +138,11 @@ export function defaultFastMs(t: Task): number {
       const step = promptOf(t, 'clock')?.step ?? 60
       return step >= 30 ? 12_000 : 18_000
     }
-    case 'pay':
-      return 5_000 + 2_500 * fewestPieces(typeof t.answer === 'number' ? t.answer : 0)
+    case 'pay': {
+      // a set answer names its pieces; an amount is paid with the fewest
+      const pieces = typeof t.answer === 'number' ? fewestPieces(t.answer) : t.answer.split('|').filter((x) => x !== '').length
+      return 5_000 + 2_500 * pieces
+    }
     case 'share': {
       const total = promptOf(t, 'share')?.total ?? 0
       return 3_000 + 800 * total

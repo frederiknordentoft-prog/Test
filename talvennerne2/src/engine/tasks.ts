@@ -130,7 +130,8 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
 
   const tolerance = kind === 'numberline' ? (ext.tolerance ? ext.tolerance(fact, kind) : lineTolerance(range[1] - range[0])) : 0
   const h24 = (prompt.scene === 'clock' && prompt.h24 === true) || (typeof answer === 'number' && answer >= 720)
-  const modulo: 0 | 720 | 1440 = answerType === 'minutes' ? (h24 ? 1440 : 720) : 0
+  // an analog face cannot show morning or afternoon: a clock the child sets compares on the dial
+  const modulo: 0 | 720 | 1440 = answerType === 'minutes' ? (h24 && kind !== 'clockSet' ? 1440 : 720) : 0
   const entryScale: 1 | 100 = kind === 'keypad' && answerType === 'ore' ? 100 : 1
   const unit = answerType === 'ore' ? 'kr' : (ext.unit ? ext.unit(fact, kind) : null)
   let maxDigits = digitsOf(range[1] / entryScale)

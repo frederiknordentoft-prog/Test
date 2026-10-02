@@ -1,4 +1,4 @@
-// Fraction figures: a circle, rectangle or bar cut into n equal – or deliberately unequal – parts
+// Fraction figures: a circle, rectangle, square or bar cut into n equal – or deliberately unequal – parts
 // with k coloured (fractionShape, halfShape, colorParts), and stacked fraction bars (fractionCompare).
 // Part separators are one path.
 import { circle, n, polar, rect, roundRect, sector, segments } from './geom'
@@ -21,7 +21,7 @@ function weights(parts: number, equal: boolean): number[] {
 }
 
 export interface FractionShapeProps extends MatBase {
-  shape: 'circle' | 'rect' | 'bar'
+  shape: 'circle' | 'rect' | 'bar' | 'square'
   parts: number
   colored: number
   equal?: boolean
@@ -58,8 +58,8 @@ export function FractionShape({ shape, parts, colored, equal = true, on, size, .
       </MatSvg>
     )
   }
-  const W = shape === 'bar' ? 220 : 140
-  const H = shape === 'bar' ? 52 : 100
+  const W = shape === 'bar' ? 220 : shape === 'square' ? 120 : 140
+  const H = shape === 'bar' ? 52 : shape === 'square' ? 120 : 100
   const x0 = 4
   const y0 = 4
   const iw = W - 8

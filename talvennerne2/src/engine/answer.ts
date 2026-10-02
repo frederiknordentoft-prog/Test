@@ -1,7 +1,7 @@
 import type { AnswerValue, Task } from './types'
 
 /** Kinds whose answer is an unordered set of tokens joined by '|' (sortOrder and fillSlots keep their order). */
-const SET_KINDS: ReadonlySet<Task['kind']> = new Set(['multiSelect', 'grid', 'pay'])
+const SET_KINDS: ReadonlySet<Task['kind']> = new Set(['multiSelect', 'grid', 'pay', 'share', 'colorParts'])
 
 /** The canonical form of a set answer: its tokens sorted, so the order of taps never matters. */
 export function canonicalSet(value: string): string {
@@ -11,7 +11,7 @@ export function canonicalSet(value: string): string {
 /**
  * Is `given` right for this task? Numbers compare with the task's tolerance (number lines) and
  * modulo (clocks: 3:00 and 15:00 are the same hand position on an analog clock). Set answers
- * (multiSelect, grid, pay) compare as multisets. Everything else is an exact token match, or one
+ * (multiSelect, grid, pay, share, colorParts) compare as multisets. Everything else is an exact token match, or one
  * of the accepted equivalents ('frac:2/4' for '1/2').
  */
 export function isCorrect(task: Task, given: AnswerValue): boolean {

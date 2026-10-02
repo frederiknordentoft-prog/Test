@@ -241,7 +241,7 @@ export type Prompt =
   /** `starts`: where each object begins (offset items, so the longest need not reach furthest). */
   | { scene: 'compareObjects'; objects: ObjectId[]; sizes: number[]; aligned: boolean; mode: 'length' | 'weight'; starts?: number[] }
   | { scene: 'chart'; kind: 'picto' | 'bar'; data: { cat: SpeciesId; n: number }[] }
-  | { scene: 'fraction'; shape: 'circle' | 'rect' | 'bar'; parts: number; colored: number; equal: boolean }
+  | { scene: 'fraction'; shape: 'circle' | 'rect' | 'bar' | 'square'; parts: number; colored: number; equal: boolean }
   | { scene: 'fractionBars'; fracs: string[] }
   | { scene: 'area'; w: number; h: number; cells: number[] }
   | { scene: 'amount'; ore: number }
