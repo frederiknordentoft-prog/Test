@@ -8,7 +8,7 @@
 // (0,0) = bodyCenter, tegnet ved bodyWidth 100.
 import { SAFE, STAGE_XF } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'
-import { blob, circle, ellipse, join, lune, softBand, star } from '../../rig/shapes'
+import { blob, circle, ellipse, join, lune, poly, softBand, spline, star } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
 import type { AnchorSet, ItemArt, ItemArtProps, ItemDef, Stage } from '../../rig/types'
 
@@ -21,10 +21,9 @@ const LEFT_W = 80
 const RIGHT_W = 86
 
 /** Kappen fra halsen ned mod jorden (lokale koordinater). */
-function capeOf(p: Pick<ItemArtProps, 'a' | 'local' | 'solo'>) {
-  const top = p.solo ? -44 : p.local(p.a.neck).y - 4
-  const ground = p.solo ? 46 : p.local(p.a.ground).y
-  const bot = ground - 7
+function capeOf(p: Pick<ItemArtProps, 'a' | 'local'>) {
+  const top = p.local(p.a.neck).y - 4
+  const bot = p.local(p.a.ground).y - 7
   return { top, bot, lift: (bot - top) * 0.16 }
 }
 
@@ -33,7 +32,6 @@ function capeOf(p: Pick<ItemArtProps, 'a' | 'local' | 'solo'>) {
  * og dermed kappen vokser på stor).
  */
 function safeHalf(p: Pick<ItemArtProps, 'a' | 'local' | 'stage' | 'solo'>): number {
-  if (p.solo) return RIGHT_W + 2
   const k = STAGE_XF[p.stage].fig * STAGE_XF[p.stage].body
   const model = (wx: number) => p.a.ground.x + (wx - p.a.ground.x) / k
   const l = p.local({ x: model(SAFE.x0 + 2.5), y: p.a.bodyCenter.y })
@@ -62,8 +60,9 @@ function outline(top: number, bot: number, lift: number, inset = 0, sx = 1): Vec
   ]
 }
 
-const front: ItemArt = ({ c, sw, a, local, solo, stage }) => {
-  const { top, bot, lift } = capeOf({ a, local, solo })
+const front: ItemArt = ({ c, sw, a, local, solo, stage, ids }) => {
+  if (solo) return <SoloCape c={c} sw={sw} uid={ids.uid} />
+  const { top, bot, lift } = capeOf({ a, local })
   // Kappen klemmes vandret, så hjørnerne bliver i den sikre zone (stor har en bredere krop).
   // (Det højre hjørne flagrer 2 enheder ud over bredden, og konturen og splinen lægger lidt til.)
   const sx = Math.min(1, (safeHalf({ a, local, stage, solo }) - 5.5) / RIGHT_W)
@@ -85,9 +84,64 @@ const front: ItemArt = ({ c, sw, a, local, solo, stage }) => {
       <path d={shape} fill={c.main} {...stroke} />
       <path d={blob(outline(top, bot - 5, lift, 7, sx), 0.8)} fill={c.mainShade} />
       <path d={hem} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.7} strokeLinejoin="round" />
+      <path d={join(spline([[-LW * 0.22, top + 12], [-LW * 0.3, (top + bot) / 2], [-LW * 0.36, bot - 8]]), spline([[RW * 0.26, top + 12], [RW * 0.36, (top + bot) / 2], [RW * 0.44, bot - lift * 0.3 - 8]]))} fill="none" stroke={c.mainShade} strokeWidth={sw * 0.7} strokeLinecap="round" />
       <path d={shape} fill="none" {...stroke} />
       <path d={join(ellipse(-LW * 0.86, top + (bot - top) * 0.62, 2.4, 10, 18), ellipse(RW * 0.86, top + (bot - top) * 0.58, 2.2, 9, -20))} fill={c.highlight} />
-      {solo && <Collar c={c} sw={sw} y={top + 4} />}
+    </>
+  )
+}
+
+/**
+ * Alene (butik): kappen blafrer i vinden. Kraven sidder oppe til venstre med stjernespændet, og stoffet
+ * hænger ned og blæser ud til højre, hvor den frie kant slår tre bløde flige med guldbort. Folderne løber
+ * fra kraven ud mod fligene, og stoffets underside skygger forneden.
+ */
+const SOLO_CAPE: Vec[] = [
+  [-10, -41], [8, -43], [28, -40], [50, -32], [41, -20], [52, -7], [40, 3], [48, 17], [28, 25], [6, 31],
+  [-16, 36], [-34, 39], [-38, 20], [-37, -4], [-33, -25], [-28, -39],
+]
+/** Guldborten følger den frie kant (fra den øverste flig rundt til hjørnet nede til venstre). */
+const SOLO_HEM_ZONE: Vec[] = [
+  [62, -40], [50, -32], [37, -21], [35, -6], [33, 8], [20, 16], [0, 22], [-20, 27], [-36, 40], [-60, 44],
+  [-60, 70], [70, 70],
+]
+const SOLO_FOLDS: Vec[][] = [
+  [[-14, -35], [12, -30], [40, -20]],
+  [[-18, -33], [8, -12], [39, 3]],
+  [[-24, -33], [-16, 0], [-4, 32]],
+]
+/** Stoffets underside forneden til venstre (skygge). */
+const SOLO_SHADE: Vec[] = [[-40, 6], [-36, 34], [-14, 38], [14, 30], [-2, 26], [-20, 22], [-30, 8]]
+
+function SoloCape({ c, sw, uid }: { c: ItemArtProps['c']; sw: number; uid: string }) {
+  const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
+  const shape = blob(SOLO_CAPE, 0.62)
+  const clip = `${uid}-kp`
+  const zone = `${uid}-kz`
+  // Borten: 4,6 enheder guld inden for konturen og en tynd mørk kant ind mod stoffet.
+  const hem = sw + 9.2
+  return (
+    <>
+      <path d={shape} fill={c.main} />
+      <clipPath id={clip}>
+        <path d={shape} />
+      </clipPath>
+      <clipPath id={zone}>
+        <path d={poly(SOLO_HEM_ZONE)} />
+      </clipPath>
+      <g clipPath={`url(#${clip})`}>
+        <path d={blob(SOLO_SHADE, 0.7)} fill={c.mainShade} />
+        <path d={join(...SOLO_FOLDS.map((f) => spline(f)))} fill="none" stroke={c.mainShade} strokeWidth={sw * 1.1} strokeLinecap="round" />
+        <g clipPath={`url(#${zone})`}>
+          <path d={shape} fill="none" stroke={c.trimOutline} strokeWidth={hem + sw * 1.1} />
+          <path d={shape} fill="none" stroke={c.trim} strokeWidth={hem} />
+        </g>
+      </g>
+      <path d={shape} fill="none" {...stroke} />
+      <path d={softBand(-36, -6, -45, -37, -1.6, -1.6)} fill={c.main} {...stroke} />
+      <path d={circle(-21, -38, 7)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.85} />
+      <path d={star(-21, -37.7, 4.8, 2, 5)} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.4} strokeLinejoin="round" />
+      <path d={join(ellipse(-31, -10, 2.4, 10, 4), ellipse(14, -36, 6, 1.8, 6))} fill={c.highlight} />
     </>
   )
 }
@@ -131,7 +185,7 @@ export const milepaelKappe: ItemDef = {
   art: { front, back: collar },
   fit: { anchor: 'bodyCenter', scaleBy: 'bodyWidth', baseScale: 1, baseWidth: 166 },
   reach: true,
-  icon: { box: [-83, -48, 172, 96] },
+  icon: { box: [-42, -49, 97, 92] },
 }
 
 export default milepaelKappe
