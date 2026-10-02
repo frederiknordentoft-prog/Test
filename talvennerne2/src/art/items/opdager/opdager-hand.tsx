@@ -40,10 +40,11 @@ function place(hold: HandHold): Place {
   const reach = L.handle + L.collar + L.ring
   // Ringens boks i verdensrummet (luppen tegnes i en ramme, der er drejet tilbage til verdensrummet).
   const box = L.ring * u + 2.6
-  // En hvilende pote tegnes bag hovedet: hængeører og manke, der hænger ned forbi hovedet (vædder,
-  // løvehoved), skjuler luppen der, så glasset skal også fri af hovedboksens nederste del.
+  // En hvilende pote tegnes bag hovedet: hængeører, manke og pigge rundt om hovedet (vædder, løvehoved,
+  // pindsvin) skjuler luppen der, så glassets centrum skal også ligge uden for ellipsen i hovedboksen.
   const hb = H.box
-  const hang = !hold.front && hb.y1 > H.y + H.ry + 4 * u
+  const bc = { x: (hb.x0 + hb.x1) / 2, y: (hb.y0 + hb.y1) / 2 }
+  const br = { x: (hb.x1 - hb.x0) / 2 + L.ring * u * 0.4, y: (hb.y1 - hb.y0) / 2 + L.ring * u * 0.4 }
   const lensAt = (deg: number) => {
     const t = (deg * Math.PI) / 180
     return { x: g.x + Math.cos(t) * reach * u, y: g.y + Math.sin(t) * reach * u }
@@ -59,12 +60,12 @@ function place(hold: HandHold): Place {
   }
   const clear = (deg: number, ears: boolean, face: boolean) => {
     const lens = lensAt(deg)
-    const open = !ears || !hang || lens.y - box > hb.y1 || lens.x - box > hb.x1 || lens.x + box < hb.x0 || lens.y + box < H.y
+    const open = !ears || hold.front || ((lens.x - bc.x) / br.x) ** 2 + ((lens.y - bc.y) / br.y) ** 2 >= 1
     return (!face || faceDist(deg) >= 1) && open && safe(deg)
   }
   // Foretrukken retning først, derefter skiftevis med og mod uret hele vejen rundt, til glasset går fri.
   // Den sikre zone gælder altid; findes ingen fri retning (babyens store hoved, lang manke), slækkes først
-  // kravet om hængeører og manke, og ellers vælges den sikre retning længst fra ansigtet.
+  // kravet om hovedboksen (ører, manke, pigge), og ellers vælges den sikre retning længst fra ansigtet.
   const tries = Array.from({ length: 20 }, (_, i) => AIM + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * STEP)
   const far = tries.filter(safe).sort((p, q) => faceDist(q) - faceDist(p))[0]
   const deg = tries.find((d) => clear(d, true, true)) ?? tries.find((d) => clear(d, false, true)) ?? far ?? AIM
