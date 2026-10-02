@@ -426,12 +426,12 @@ describe('numberLine100 and numberLine1000', () => {
       if (task.kind !== 'numberline') continue
       if (fact.family.startsWith('round')) {
         // one less than the number's distance to its rounding (at most ±2 for tens, ±25 for hundreds):
-        // the unrounded number is never right, and the window is never narrower than a 0–20 line's tap
+        // the unrounded number is never right, and the window is never narrower than 5 % of the line
         const n = lastNumber(fact.id)
         const cap = fact.family === 'round10' ? 2 : 25
         expect(task.tolerance, fact.id).toBe(Math.min(cap, Math.abs((task.answer as number) - n) - 1))
         expect(isCorrect(task, n), fact.id).toBe(false)
-        expect((2 * task.tolerance + 1) / (task.range[1] - task.range[0] + 1), fact.id).toBeGreaterThanOrEqual(1 / 21)
+        expect((2 * task.tolerance + 1) / (task.range[1] - task.range[0] + 1), fact.id).toBeGreaterThanOrEqual(1 / 20)
       } else {
         const want = { placeTens: 5, placeAny: 5, readArrow: 2, placeHundreds: 50 }[fact.family as 'placeTens']
         const tol = fact.skill === 'numberLine1000' && fact.family === 'placeAny' ? 50 : want

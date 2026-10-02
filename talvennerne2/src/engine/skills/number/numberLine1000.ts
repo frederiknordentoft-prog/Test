@@ -3,7 +3,7 @@
 //   placeHundreds  nl1000:placeHundreds:<n>  n = 100, 200 … 900                      9 (all canonical)
 //   placeAny       nl1000:placeAny:<n>       n = 1–999                                999
 //   round10   (3. kl.)  nl1000:round10:<n>   n = 101–999, ones digit 2–8: the nearest ten
-//   round100  (3. kl.)  nl1000:round100:<n>  n = 101–999, last two digits 13–87: the nearest hundred
+//   round100  (3. kl.)  nl1000:round100:<n>  n = 101–999, last two digits 14–86: the nearest hundred
 // Placing works as in numberLine100 on a 0–1000 line: the numberline (production, ±50 — 5 % of the
 // line), the keypad reads an arrow on a hundred or a hop from the hundred before ("Hoppet starter
 // ved tre hundrede. Hvor lander det?", +45 on the line), and the cards ask "Hvilket tal ligger
@@ -12,11 +12,10 @@
 // the needle must land closer to the rounded number than the number itself lies: the tolerance is
 // one less than that distance (at most ±2 for tens, ±25 for hundreds), so leaving the number
 // unrounded is never right, and no other ten or hundred is reached. The line is half a stretch —
-// the half of the hundred's stretch the number lies in for tens (340–350 … 300–350 for 347, labelled
-// every ten), the half of 0–1000 for hundreds (0–500, labelled every hundred) — so the narrowest
-// window is still no narrower than the exact tap on a 0–20 line (1/21 of the line). Numbers too
-// close to a ten or hundred for that (341, 305) are not drawn: on a line a finger cannot tell them
-// from their rounding.
+// for tens the half of the hundred's stretch the number lies in (300–350 for 347, labelled every
+// ten), for hundreds the half of 0–1000 (0–500 for 347, labelled every hundred) — so the narrowest
+// window is still 5 % of the line, as wide as the old ±25 on 0–1000. Numbers too close to a ten or
+// hundred for that (341, 305) are not drawn: on a line a finger cannot tell them from their rounding.
 // The keypad and the cards ask "Hvilken tier ligger tre hundrede og syvogfyrre tættest på?" with the
 // arrow at the number.
 // Wrong answers: the ends of the stretch ('operand'), ±100 and ±200 (the wrong stretch: 'near',
@@ -53,10 +52,10 @@ const distance = (family: Family, n: number): number => Math.abs(answerFor(famil
 const ROUND_CAP = { round10: 2, round100: 25 } as const
 
 /**
- * The narrowest window a finger can hit on a line, as a share of it: the exact tap on a 0–20 line
- * (1 of 21 numbers), the narrowest window any number line in the app asks for.
+ * The narrowest window a rounding line asks a finger to hit, as a share of the line: 5 %, as wide as
+ * rounding to hundreds was before (±25 on 0–1000) and wider than the exact tap on a 0–20 line (1 in 21).
  */
-const MIN_WINDOW = 1 / 21
+const MIN_WINDOW = 1 / 20
 
 /** The half stretch a rounding numberline is asked on: 347 → 300–350 (tens), 347 → 0–500 (hundreds). */
 function halfLine(family: 'round10' | 'round100', n: number): { min: number; max: number } {
