@@ -109,3 +109,23 @@ export function pawWebs(all: PawWebs, ...byBreed: Partial<Record<string, Partial
     return webs.length ? <path d={join(...webs.map((w) => poly(w)))} fill={pal.fur} /> : null
   }
 }
+
+/**
+ * Den del af en lukket lemkontur, der ligger under y = cut (sokken, klovene eller hånden yderst på et lem):
+ * starter og slutter på snittet, så den kan fyldes oven på lemmet uden kant mod pelsen (lemmets egen kontur
+ * tegnes ovenpå). `loop` skal starte over snittet, som `limbLoop` gør.
+ */
+export function below(loop: readonly Vec[], cut: number): Vec[] {
+  const out: Vec[] = []
+  for (let i = 0; i < loop.length; i++) {
+    const p = loop[i]
+    const q = loop[(i + 1) % loop.length]
+    if (p[1] >= cut) out.push(p)
+    if (p[1] >= cut !== q[1] >= cut) {
+      const t = (cut - p[1]) / (q[1] - p[1])
+      out.push([p[0] + (q[0] - p[0]) * t, cut])
+    }
+  }
+  const k = out.findIndex(([, y]) => y === cut)
+  return [...out.slice(k), ...out.slice(0, k)]
+}

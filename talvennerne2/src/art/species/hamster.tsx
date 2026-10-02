@@ -8,7 +8,7 @@
 // kontur) og det lyse fyld foran (så hovedets kontur ikke ses hen over posen).
 // Signaturen er kind-pustet: posen puster sig op, holder, slår et overshoot og falder til ro (`a-puff`,
 // rig.css). Alle former er punkter og husets primitiver.
-import { ROUND, hatted, limbLoop, padsPath, pawWebs } from '../parts/kit'
+import { ROUND, below, hatted, limbLoop, padsPath, pawWebs } from '../parts/kit'
 import type { PawWebs } from '../parts/kit'
 import { Pivot } from '../rig/Rig'
 import { blob, ellipse, frame, join, mirrorX, spline, xf } from '../rig/shapes'
@@ -19,22 +19,6 @@ import { HAMSTER_COLORWAYS } from './hamster.colorways'
 const round = ROUND
 /** Hænder og fødder: lyserøde (sort i silhuet). */
 const pink = (pal: Palette) => pal.inner
-
-/** Den del af en lukket lemkontur, der ligger under y = cut (hånden): starter og slutter på snittet. */
-function below(loop: readonly Vec[], cut: number): Vec[] {
-  const out: Vec[] = []
-  for (let i = 0; i < loop.length; i++) {
-    const p = loop[i]
-    const q = loop[(i + 1) % loop.length]
-    if (p[1] >= cut) out.push(p)
-    if (p[1] >= cut !== q[1] >= cut) {
-      const t = (cut - p[1]) / (q[1] - p[1])
-      out.push([p[0] + (q[0] - p[0]) * t, cut])
-    }
-  }
-  const k = out.findIndex(([, y]) => y === cut)
-  return [...out.slice(k), ...out.slice(0, k)]
-}
 
 // ---------------------------------------------------------------------------------------------
 // Kindposer (lokalt om hovedets centrum): en bred, blød bule forneden på hver side af ansigtet.

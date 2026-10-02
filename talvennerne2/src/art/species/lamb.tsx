@@ -7,7 +7,7 @@
 // - et glat, rundt ansigt med en lille, lys mule og mørke klove på forben og bagben.
 // Signaturen er øre-floppet: hvert øre sidder i sin egen pivot (`a-curl`) og flopper ned, slår et overshoot op
 // og falder til ro (rig.css). Alle former er punkter og husets primitiver.
-import { ROUND, limbLoop, pawWebs } from '../parts/kit'
+import { ROUND, below, limbLoop, pawWebs } from '../parts/kit'
 import type { PawWebs } from '../parts/kit'
 import { Pivot } from '../rig/Rig'
 import { blob, ellipse, join, scallop, spline, xf } from '../rig/shapes'
@@ -20,22 +20,6 @@ const round = ROUND
 const wool = (pal: Palette, gradientId: string) => (pal.gradient ? `url(#${gradientId})` : pal.mane)
 /** Klovene: hovfarven (sort i silhuet). */
 const hoof = (pal: Palette) => pal.hoof ?? pal.outline
-
-/** Den del af en lukket lemkontur, der ligger under y = cut (klovene): starter og slutter på snittet. */
-function below(loop: readonly Vec[], cut: number): Vec[] {
-  const out: Vec[] = []
-  for (let i = 0; i < loop.length; i++) {
-    const p = loop[i]
-    const q = loop[(i + 1) % loop.length]
-    if (p[1] >= cut) out.push(p)
-    if (p[1] >= cut !== q[1] >= cut) {
-      const t = (cut - p[1]) / (q[1] - p[1])
-      out.push([p[0] + (q[0] - p[0]) * t, cut])
-    }
-  }
-  const k = out.findIndex(([, y]) => y === cut)
-  return [...out.slice(k), ...out.slice(0, k)]
-}
 
 // ---------------------------------------------------------------------------------------------
 // Krop: en uldsky af bløde buer rundt om kroppens ellipse. Tøj klippes til skyen (+2), og konturen streges igen.
