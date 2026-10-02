@@ -618,10 +618,13 @@
   height: calc(var(--stones) * var(--step) + 44px);
   margin: -18px 12px 0;
   border-radius: 44px;
+  /* A light, frosted pane (about half cover): the world's scene shows through around and under the
+     path. A milky veil instead of a backdrop blur, so scrolling stays cheap on older iPads. */
   background:
-    radial-gradient(120% 60% at 50% 0%, rgba(255, 255, 255, 0.5), transparent 70%),
-    color-mix(in oklch, var(--tone) var(--tint), var(--color-paper));
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+    radial-gradient(120% 60% at 50% 0%, rgba(255, 255, 255, 0.4), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05)),
+    color-mix(in oklch, color-mix(in oklch, var(--tone) var(--tint), var(--color-paper)) 50%, transparent);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.62), 0 8px 24px rgba(43, 33, 68, 0.06);
 }
 .tv-region__trail {
   position: absolute;

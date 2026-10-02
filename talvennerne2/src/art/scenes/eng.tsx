@@ -191,7 +191,8 @@ export function layoutOf(w: number, h: number): Layout {
   const fields: Ridge = { base: h * 0.405, amp: h * 0.024, waves: 1.0, phase: 1.9 }
   const mid: Ridge = { base: h * 0.5, amp: h * 0.03, waves: 0.85, phase: 2.4 }
   const near: Ridge = { base: h * 0.735, amp: h * 0.026, waves: 0.7, phase: 4.0 }
-  const house = on(mid, 0.79, 0.012, k * 0.95)
+  // huset står lavt nok til at ses under sidepanelet på en iPad på langs
+  const house = on(mid, 0.8, 0.08, k * 0.95)
   const den = on(near, 0.83, 0.072, k)
   const bridge = { x: w * 0.68, y: h * 0.665, s: k * 0.9, rot: -24 }
   const pond = on(mid, 0.5, 0.042, k * 1.0)
@@ -230,14 +231,14 @@ export function layoutOf(w: number, h: number): Layout {
     pond,
     brook,
     trail: [
-      [house.x - 3 * house.s, house.y - 1], [w * 0.76, h * 0.575], [w * 0.7, h * 0.625], [bridge.x, bridge.y],
+      [house.x - 3 * house.s, house.y - 1], [w * 0.77, h * 0.607], [w * 0.715, h * 0.64], [bridge.x, bridge.y],
       [w * 0.72, h * 0.715], [den.x - 8 * den.s, den.y - 4 * den.s],
     ],
     bridge,
     // på dammen (bækken er smal i højformat)
     ducks: { x: pond.x + 6 * pond.s, y: pond.y + 4 * pond.s, s: pond.s * 0.72, kids: [[-15, 1], [-26, 2], [-36, 2.5]] },
     stones: { x: w * 0.668, y: h * 0.952, s: k, rot: across(brook[4], brook[5]) },
-    sign: { ...on(near, 0.47, 0.036, k * 0.9) },
+    sign: { ...on(near, 0.925, 0.008, k * 0.9) },
     corners: [{ x: 0, y: h, s: k * 1.5 }, { x: w, y: h, s: k * 1.45 }],
   }
 }
