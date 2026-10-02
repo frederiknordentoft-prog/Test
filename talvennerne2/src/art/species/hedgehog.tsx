@@ -8,7 +8,8 @@
 // Signaturen er at rulle sig halvt sammen og ud igen: hovedet dukker sig, kroppen trykker sig sammen, ørerne
 // lægger sig, hætten ruller ned om ansigtet (`a-roll`), og kappen puster sig op (`a-puff`); så ruller det ud
 // med ét overshoot og en pause (rig.css). Alle former er punkter og husets primitiver.
-import { OpenLimb, ROUND, hatted, limbLoop, padsPath } from '../parts/kit'
+import { OpenLimb, ROUND, hatted, limbLoop, padsPath, pawWebs } from '../parts/kit'
+import type { PawWebs } from '../parts/kit'
 import { mixHex } from '../rig/oklch'
 import { shadeOf } from '../rig/palette'
 import { Pivot } from '../rig/Rig'
@@ -230,6 +231,15 @@ const BodyDeco: Part = ({ pal, a, ids }) => (
 
 // ---------------------------------------------------------------------------------------------
 
+/** Fyld bag alt ved armene (se `pawWebs`): lommernes udvidede hylstre pr. race, stadie, humør og side. */
+const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  std: {
+    3: {
+      wave: { R: [[-16.9, -36.1], [-16.8, -36.4], [-16, -36.5], [-14.8, -35.9], [-14.7, -35.6], [-14.7, -34.7], [-14.8, -34.4], [-15.1, -34.3], [-15.4, -34.4], [-16.8, -35.8]] },
+    },
+  },
+}
+
 export const hedgehog: SpeciesDef = {
   id: 'hedgehog',
   name: 'Pindsvin',
@@ -294,6 +304,7 @@ export const hedgehog: SpeciesDef = {
     Ear,
     Paw,
     PawUp,
+    PawBack: pawWebs({}, PAW_WEBS),
     pawUpTip: { cheer: { x: -17, y: -25 }, wave: { x: -22, y: -28 }, think: { x: 23, y: -13 }, oops: { x: 8, y: -27 } },
     upArms: {
       cheer: { spine: UP_SPINES.cheer, w0: 13, w1: 15.5, tip: 8.5 },

@@ -6,7 +6,8 @@
 // Fælles: forben ned til jorden med åben kontur ved brystet, lårbuler, bagpoter og et lyst bryst med en
 // pelstot under hagen. Signaturen er logren: halen sidder i sin egen pivot (`a-wag`) og logrer fire gange
 // hurtigt med stort udsving, ét overshoot og en pause (rig.css). Alle former er punkter og husets primitiver.
-import { OpenLimb, ROUND, limbLoop, padsPath } from '../parts/kit'
+import { OpenLimb, ROUND, limbLoop, padsPath, pawWebs } from '../parts/kit'
+import type { PawWebs } from '../parts/kit'
 import { Pivot } from '../rig/Rig'
 import { blob, circle, ellipse, frame, join, mirrorX, offsetLoop, scallop, spline, symmetric, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
@@ -242,6 +243,18 @@ const PatternBody: Part = ({ pal, a, ids, colorway }) =>
 
 // ---------------------------------------------------------------------------------------------
 
+/** Fyld bag alt ved armene (se `pawWebs`): lommernes udvidede hylstre pr. race, stadie, humør og side. */
+const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  std: {
+    2: {
+      cheer: { R: [[-3.5, -37.2], [-2.8, -37.5], [-1, -36.7], [-0.7, -36], [-0.7, -34.9], [-1, -34.2], [-1.7, -33.9], [-2.4, -34.2], [-3.5, -35.2], [-3.8, -35.9]] },
+    },
+    3: {
+      cheer: { R: [[-7, -40.6], [-6.3, -40.9], [-5.6, -40.6], [-3.2, -38.8], [-2.9, -37.7], [-3.2, -37], [-4.4, -36.2], [-5.1, -36.5], [-7, -38.7], [-7.3, -39.4]] },
+    },
+  },
+}
+
 export const puppy: SpeciesDef = {
   id: 'puppy',
   name: 'Hvalp',
@@ -309,6 +322,7 @@ export const puppy: SpeciesDef = {
     Ear,
     Paw: Leg,
     PawUp,
+    PawBack: pawWebs({}, PAW_WEBS),
     pawUpTip: { cheer: { x: -31, y: -54 }, wave: { x: -36, y: -60 }, think: { x: 13, y: -33.5 }, oops: { x: -14, y: -49 } },
     upArms: {
       cheer: { spine: UP_SPINES.cheer, w0: 15, w1: 18.5, tip: 10 },

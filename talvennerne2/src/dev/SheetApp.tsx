@@ -416,7 +416,7 @@ function SilhouettesSheet() {
  * 'strict' = intet lukket område overhovedet, 'thin' = ingen smalle sømme eller sprækker (bredere
  * lukkede områder er bevidst negativt rum, fx en hale i en løkke).
  */
-const HOLES_LINTED: Partial<Record<string, 'strict' | 'thin'>> = { rabbit: 'strict', cat: 'thin', horse: 'thin', unicorn: 'thin' }
+const HOLES_LINTED: Partial<Record<string, 'strict' | 'thin'>> = { rabbit: 'strict', cat: 'thin', horse: 'thin', unicorn: 'thin', puppy: 'thin', hedgehog: 'thin' }
 
 function HolesSheet() {
   const cells: { def: SpeciesDef; b: BreedId; s: Stage; c: ColorwayId; m: Mood }[] = []
