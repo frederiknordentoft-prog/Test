@@ -137,7 +137,7 @@ function candidates(f: Fact) {
   const nicely = mine.filter(prototypical)
   if (isConflict(p) && nicely.length > 0) entries.push([join(nicely.map((i) => i.id)), 'prototypeOnly'])
   for (const m of mine) {
-    if (mine.length > 1 && prototypical(m)) entries.push([join(mine.filter((x) => x !== m).map((i) => i.id)), 'near'])
+    if (mine.length > 2 && prototypical(m)) entries.push([join(mine.filter((x) => x !== m).map((i) => i.id)), 'near'])
   }
   for (const o of p.items.filter((i) => !IS[p.family](i))) entries.push([join([...mine.map((i) => i.id), o.id]), 'other'])
   return tagged(answer, entries)

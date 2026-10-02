@@ -1,9 +1,9 @@
 // Clips for the shapes skills of 1.–2. klasse (SK2-GEO: sidesCorners, shapes3D, sortShapes, symmetry,
 // composeShapes): the Kan-bog lines, the questions and the strategy hints. Shape and solid names are the
 // catalogue nouns (`noun.shape.*`, `noun.solid.*`, clips/nouns.ts); every number is a { num } part
-// (SPEC §10.1). Wave 2 in the shapes sprite of wave 2; sortShapes' rightAngle family is 3. klasse.
+// (SPEC §10.1). All wave 2, in the shapes sprite of wave 2 (sortShapes' 3. klasse family rightAngle
+// uses the same sentences, as the 3. klasse families of SK2-ALG do).
 import type { ClipId } from '../../../engine/types'
-import type { Wave } from '../../catalog'
 
 const table: Record<ClipId, string> = {
   // Kan-bogen
@@ -97,11 +97,7 @@ const table: Record<ClipId, string> = {
 
 export const clips: Readonly<Record<ClipId, string>> = table
 
-/** Hestebakkerne and Regnbueskoven are wave 2; the right angles of sortShapes are 3. klasse. */
-export function wave(id: ClipId): Wave {
-  return /rightAngle/.test(id) ? 3 : 2
-}
+/** Hestebakkerne and Regnbueskoven (1.–2. klasse) are wave 2. */
+export const wave = 2
 
-export function pack(id: ClipId): string {
-  return `shapes-${wave(id)}`
-}
+export const pack = 'shapes-2'

@@ -160,7 +160,7 @@ function candidates(f: Fact): ReturnType<typeof tagged> {
   entries.push(p.family === 'mirrorGrid' ? [p.left.length, 'other'] : [p.plate.length, 'other'])
   // multiSelect: a member left out, a non-member taken
   const mine = members(p)
-  for (const m of mine) if (mine.length > 1) entries.push([join(mine.filter((x) => x !== m).map((i) => i.id)), 'near'])
+  for (const m of mine) if (mine.length > 2) entries.push([join(mine.filter((x) => x !== m).map((i) => i.id)), 'near'])
   for (const o of p.plate.filter((i) => !hasMirrorLine(i))) entries.push([join([...mine.map((i) => i.id), o.id]), 'other'])
   return tagged(f.answer, entries).filter((c) => c.value !== n || typeof c.value !== 'number')
 }

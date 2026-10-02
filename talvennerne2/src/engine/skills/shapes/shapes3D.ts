@@ -130,7 +130,8 @@ function candidates(f: Fact) {
   // multiSelect: one right card left out, one wrong card taken
   const cards = multiCards(p)
   const right = cards.filter((c) => fits(p, c))
-  for (const c of right) if (right.length > 1) entries.push([join(right.filter((x) => x !== c)), 'near'])
+  // (a set of one would look like a single card: never a wrong card that is right by itself)
+  for (const c of right) if (right.length > 2) entries.push([join(right.filter((x) => x !== c)), 'near'])
   for (const c of cards.filter((x) => !fits(p, x))) entries.push([join([...right, c]), 'other'])
   return tagged(f.answer, entries).filter((c) => c.value !== n)
 }
