@@ -1,9 +1,9 @@
 {
  "version": 1,
- "generated": "2026-10-02T10:51:22.031Z",
+ "generated": "2026-10-02T15:47:08.754Z",
  "clips": {
-  "masters": 931,
-  "pass": 886,
+  "masters": 1224,
+  "pass": 1167,
   "notPassed": [
    {
     "id": "hint.count.framePoints",
@@ -130,6 +130,34 @@
     "reason": "asr"
    },
    {
+    "id": "s.books.can.silver",
+    "reason": "asr"
+   },
+   {
+    "id": "s.books.how.breed.mainecoon",
+    "reason": "asr"
+   },
+   {
+    "id": "s.books.of",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.books.trophy.cat.rejse",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.books.trophy.how.keys5-100",
+    "reason": "asr"
+   },
+   {
+    "id": "s.books.trophy.how.set-hverdag",
+    "reason": "asr"
+   },
+   {
+    "id": "s.gate.ask",
+    "reason": "asr"
+   },
+   {
     "id": "s.kind.colorParts.short",
     "reason": "asr"
    },
@@ -184,14 +212,34 @@
    {
     "id": "s.ui.dock.wardrobe",
     "reason": "sammensætning"
+   },
+   {
+    "id": "s.wardrobe.title",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.zoo.buddy.choose",
+    "reason": "asr"
+   },
+   {
+    "id": "s.zoo.dress",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.zoo.egg",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "s.zoo.trick.spin",
+    "reason": "sammensætning"
    }
   ],
-  "cerMean": 0.0084,
-  "lufsMin": -18.51,
+  "cerMean": 0.0083,
+  "lufsMin": -18.57,
   "lufsMax": -18,
-  "seconds": 928.8,
-  "takes": 1340,
-  "generationHours": 4.73
+  "seconds": 1321.1,
+  "takes": 1732,
+  "generationHours": 6.95
  },
  "numbers": {
   "range": [
@@ -331,7 +379,7 @@
     "key": "count10|c10:scatter:7|countTap",
     "skill": "count10",
     "expected": "Læg syv bolde i kurven.",
-    "asr": "lek y bolde i kurven",
+    "asr": "læk 7 bolde i kurven",
     "asrWhisper": "Læg 7 bolte i kurven",
     "clips": [
      "frag.laeg",
@@ -340,14 +388,14 @@
      "frag.i_kurven"
     ],
     "blamed": [
-     "noun.thing.ball.pl"
+     "frag.laeg"
     ]
    },
    {
     "key": "count20|c20:loose:18|countTap",
     "skill": "count20",
     "expected": "Læg atten bolde i kurven.",
-    "asr": "lik 18 bolte i kurven",
+    "asr": "læk 18 bolde i kurven",
     "asrWhisper": "Læg 18 bolte i kurven",
     "clips": [
      "frag.laeg",
@@ -356,7 +404,7 @@
      "frag.i_kurven"
     ],
     "blamed": [
-     "noun.thing.ball.pl"
+     "frag.laeg"
     ]
    },
    {
@@ -465,8 +513,8 @@
   "templates97": false
  },
  "retake": [
+  "frag.laeg",
   "hog.300",
-  "noun.thing.ball.pl",
   "noun.thing.cube.sg",
   "s.order20.countBack",
   "s.order20.countOn",
