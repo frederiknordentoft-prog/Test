@@ -11,6 +11,7 @@ import { classifyAnswer } from '../../misconceptions'
 import { isCorrect } from '../../answer'
 import { ceilingFor, guessP, isProduction } from '../../kinds'
 import { hashSeed, makeRng } from '../../rng'
+import { masteryKeyOf } from '../../tasks'
 import { spokenText, type Built } from '../number/number.oracle'
 import { word99 } from '../number/number2.oracle'
 
@@ -381,6 +382,9 @@ export function idChecks(def: SkillDef, facts: readonly Fact[], format: RegExp, 
     const key = JSON.stringify([f.family, f.operands, f.answer])
     if ((meaning.get(f.id) ?? key) !== key) out.push(`${where}: one id, two instances`)
     meaning.set(f.id, key)
+    // SPEC §2.4: a recall fact is its own mastery key, a procedure is mastered per family
+    const want = def.mode === 'recall' ? f.id : `${def.id}/${f.family}`
+    if (masteryKeyOf(def, f) !== want) out.push(`${where}: mastery key ${masteryKeyOf(def, f)}, SPEC §2.4 ${want}`)
   }
   return out
 }

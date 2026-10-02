@@ -12,6 +12,7 @@ import {
   taskSpeechProblems, tasksOf, type Built,
 } from '../number/number.oracle'
 import { classifyAll, productionChecks, specKindChecks } from '../algebra/algebra2.oracle'
+import { cutX, figure, partsAt } from '../shapes/shapes2.oracle'
 import { cutIntoHalves, fracSlots, fracToken, fractionShapeId, halfShapeId, sameValue, spokenFraction, type Frac } from './fractions.oracle'
 
 const TIMEOUT = 240_000
@@ -71,6 +72,20 @@ describe('halfShape oracle', () => {
         if (task.answer !== want) problems.push(`${where}: answer ${String(task.answer)}, measured ${want}`)
         if (said(task) !== 'Tryk på alle figurer, der er delt i to halve.') problems.push(`${where}: says "${said(task)}"`)
         if (!its.some((i) => i.shape === id.shape && i.cut === (id.equal ? 'equal' : 'unequal'))) problems.push(`${where}: the fact’s own figure is not on the plate`)
+      }
+    }
+    expect(first(problems)).toEqual([])
+  })
+
+  it('draws every cut across its figure: both parts can be seen (each at least a tenth of the figure)', () => {
+    const problems: string[] = []
+    for (const { fact, kind, task } of built) {
+      const cut = kind === 'trueFalse' ? [sceneOf(task.prompt, 'shape')] : items(task)
+      for (const c of cut) {
+        if (!c.cut) continue
+        const x = cutX(c.shape, c.variant, c.cut)
+        const [l, r] = x === null ? [0, 0] : partsAt(figure(c.shape, c.variant), x)
+        if (Math.min(l, r) < 0.1 * (l + r)) problems.push(`${fact.id} ${kind}: a ${c.shape} ${c.variant} cut ${c.cut} into ${l.toFixed(0)} and ${r.toFixed(0)}`)
       }
     }
     expect(first(problems)).toEqual([])
