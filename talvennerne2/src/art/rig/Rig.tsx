@@ -426,6 +426,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     return { local, cx: fit.x + local.x * fit.scale, cy: fit.y + local.y * fit.scale, rx: h.rx * fit.scale, ry: h.ry * fit.scale }
   })()
 
+  // Ansigtsgenstande i panden (eventyrbriller) flytter op om en hat med ørehuller og tegnes efter den.
+  const faceOnHat = hat === 'through' && !!worn('face')?.item.onHat
   // Arterne ser 'through' kun, når ørerne faktisk går gennem huller (og tegner da en afrundet ørebund).
   const hatCtx = holes ? 'through' : hat === 'under' ? 'under' : null
   const ctx = (sw: number): PartCtx => ({ pal, a, stage, mood, breed, colorway, sw, ids, still, lod, pose, hat: hatCtx })
@@ -470,6 +472,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             solo: false,
             holes,
             hold,
+            hat,
             horn: slot === 'head' ? (hornHole?.local ?? null) : null,
             restroke: (color) => (
               <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
@@ -790,13 +793,14 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                 gazeRef={gazeRef}
                 glintRef={glintRef}
               />
-              {/* 13 · face-item */}
-              {renderItem('face', 'front', R.head.s)}
+              {/* 13 · face-item (eventyrbriller på en hat tegnes efter hatten, se faceOnHat) */}
+              {!faceOnHat && renderItem('face', 'front', R.head.s)}
               {/* 14 · mane-front */}
               {parts.ManeFront && !hides.has('mane-front') && scaled(a.headTop, R.xf.mane, parts.ManeFront(ctx(swHead / R.xf.mane)))}
               {/* 15 · head-item (en hat mellem ørerne på en art med horn sidder skævt ved siden af
                   hornet og tegnes foran øret, se festhattens overskrivning) */}
               {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
+              {faceOnHat && renderItem('face', 'front', R.head.s)}
               {/* 16 · ører, horn (+ hattens hulkant over ørernes rod) */}
               {earsShown && (
                 <g clipPath={earClip ? `url(#${earClipId})` : holes ? `url(#${holeClipId})` : undefined}>

@@ -40,6 +40,10 @@ function place(hold: HandHold): Place {
   const reach = L.handle + L.collar + L.ring
   // Ringens boks i verdensrummet (luppen tegnes i en ramme, der er drejet tilbage til verdensrummet).
   const box = L.ring * u + 2.6
+  // En hvilende pote tegnes bag hovedet: hængeører og manke, der hænger ned forbi hovedet (vædder,
+  // løvehoved), skjuler luppen der, så glasset skal også fri af hovedboksens nederste del.
+  const hb = H.box
+  const hang = !hold.front && hb.y1 > H.y + H.ry + 4 * u
   const clear = (deg: number) => {
     const t = (deg * Math.PI) / 180
     const lens = { x: g.x + Math.cos(t) * reach * u, y: g.y + Math.sin(t) * reach * u }
@@ -47,8 +51,9 @@ function place(hold: HandHold): Place {
     const rx = fr.x + L.ring * u
     const ry = fr.y + L.ring * u
     const face = ((lens.x - fc.x) / rx) ** 2 + ((lens.y - fc.y) / ry) ** 2 >= 1
+    const ears = !hang || lens.y - box > hb.y1 || lens.x - box > hb.x1 || lens.x + box < hb.x0 || lens.y + box < H.y
     const safe = lens.x + box <= SAFE.x1 && lens.x - box >= SAFE.x0 && lens.y - box >= SAFE.y0 && lens.y + box <= SAFE.y1
-    return face && safe
+    return face && ears && safe
   }
   // Foretrukken retning først, derefter skiftevis med og mod uret, til glasset går fri.
   const tries = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6].map((i) => AIM + i * STEP)

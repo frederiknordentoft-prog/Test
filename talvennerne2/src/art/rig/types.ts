@@ -534,6 +534,8 @@ export interface ItemArtProps {
   horn?: Pt | null
   /** Kun håndgenstande i et dyrs pote: hvor genstanden sidder i humørets nøglepose (mangler i ikoner). */
   hold?: HandHold
+  /** Bærerens hovedgenstand, hvis der er en: 'through' (ørerne gennem huller) eller 'under'; ellers null. */
+  hat?: EarMode | null
 }
 export type ItemArt = (p: ItemArtProps) => ReactNode
 
@@ -672,6 +674,11 @@ export interface ItemDef {
    * hovedet). Kontaktarkenes pasforms-lint holder den inden for den sikre zone i stedet for artens hull.
    */
   reach?: boolean
+  /**
+   * Ansigtsgenstande i panden (eventyrbriller): med en hat med ørehuller på flytter de op om hattens bånd
+   * og tegnes efter hatten (før ørerne), så hatten ikke skjuler dem. Genstanden ser `hat` i sine props.
+   */
+  onHat?: boolean
   /**
    * Genstandens tegnede bbox i egne koordinater (x, y, w, h) ved skala 1, når den tegnes alene.
    * Butikskortet beskæres efter den, så genstanden fylder 75–80 % af kortet.
