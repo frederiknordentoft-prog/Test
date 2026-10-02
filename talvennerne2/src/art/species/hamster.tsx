@@ -40,27 +40,38 @@ function below(loop: readonly Vec[], cut: number): Vec[] {
 // Kindposer (lokalt om hovedets centrum): en bred, blød bule forneden på hver side af ansigtet.
 
 const POUCH = { cx: -42, cy: 17, rx: 23.5, ry: 20.5, rot: -10 }
-const pouch = (inset: number) =>
-  join(
-    ellipse(POUCH.cx, POUCH.cy, POUCH.rx - inset, POUCH.ry - inset, POUCH.rot),
-    ellipse(-POUCH.cx, POUCH.cy, POUCH.rx - inset, POUCH.ry - inset, -POUCH.rot),
-  )
-const POUCH_BACK = pouch(0)
-/** Fyldet foran hovedet: en anelse inden for posens kontur, så konturen bag hovedet står i fuld bredde. */
-const POUCH_FRONT = pouch(1.7)
+/**
+ * Hver pose puster sig op om et punkt på modsat side af ansigtet (lokalt om hovedets centrum), så riggens
+ * pust (skala 1,08) flytter posens yderkant ca. 7,5 enheder ud og den indre kant kun ca. 4.
+ */
+const PIVOT_X = 30
+/** Posen om sin pivot: venstre pose (side 1) har pivoten til højre for ansigtets midte, højre pose spejlet. */
+const pouchAt = (side: 1 | -1, inset: number) => ellipse(side * (POUCH.cx - PIVOT_X), 0, POUCH.rx - inset, POUCH.ry - inset, side * POUCH.rot)
+/** Posens kontur bag hovedet og det lyse fyld foran (en anelse inden for konturen, så den står i fuld bredde). */
+const POUCH_BACK = { L: pouchAt(1, 0), R: pouchAt(-1, 0) }
+const POUCH_FRONT = { L: pouchAt(1, 1.7), R: pouchAt(-1, 1.7) }
+const pivotOf = (a: { headCenter: { x: number; y: number } }, side: 1 | -1) => ({ x: a.headCenter.x + side * PIVOT_X, y: a.headCenter.y + POUCH.cy })
 
 /** Posernes kontur bag hovedet (lag 10): kun buen uden for hovedet ses. */
 const PouchBack: Part = ({ pal, sw, a, still }) => (
-  <Pivot at={a.headCenter} cls="a-puff" still={still}>
-    <path d={POUCH_BACK} fill={pal.belly} stroke={pal.outline} strokeWidth={sw} {...round} />
-  </Pivot>
+  <>
+    {([1, -1] as const).map((side) => (
+      <Pivot key={side} at={pivotOf(a, side)} cls="a-puff" still={still}>
+        <path d={side === 1 ? POUCH_BACK.L : POUCH_BACK.R} fill={pal.belly} stroke={pal.outline} strokeWidth={sw} {...round} />
+      </Pivot>
+    ))}
+  </>
 )
 /** Posernes lyse fyld foran hovedet (efter skyggen): dækker hovedets kontur hen over posen. */
 const PouchFront: Part = ({ pal, a, still }) =>
   pal.silhouette ? null : (
-    <Pivot at={a.headCenter} cls="a-puff" still={still}>
-      <path d={POUCH_FRONT} fill={pal.belly} />
-    </Pivot>
+    <>
+      {([1, -1] as const).map((side) => (
+        <Pivot key={side} at={pivotOf(a, side)} cls="a-puff" still={still}>
+          <path d={side === 1 ? POUCH_FRONT.L : POUCH_FRONT.R} fill={pal.belly} />
+        </Pivot>
+      ))}
+    </>
   )
 
 // ---------------------------------------------------------------------------------------------

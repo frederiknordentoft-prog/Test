@@ -134,7 +134,7 @@ describe.each(SPECIES.map((def) => [def.id, def] as const))('Hestebakkerne · %s
   })
 
   it('signaturen sidder i sin egen pivot (kun i animeret tilstand)', () => {
-    const cls = { fox: 'a-curl', lamb: 'a-curl', hamster: 'a-puff' }[def.id as 'fox']
+    const cls = { fox: 'a-toss', lamb: 'a-curl', hamster: 'a-puff' }[def.id as 'fox']
     expect(render({ species: def, mode: 'animated' })).toContain(`class="${cls}"`)
     expect(render({ species: def, mode: 'static' })).not.toContain(`class="${cls}"`)
   })

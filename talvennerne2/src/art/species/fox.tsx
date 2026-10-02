@@ -5,8 +5,8 @@
 // - spidse kindtotter, der stritter ud og ned fra kinderne,
 // - lange, slanke forben med mørke "sokker" og mørke bagpoter,
 // - en stor, busket hale med hvid spids, der står op bag højre side.
-// Signaturen er halesvippet: halen sidder i sin egen pivot (`a-curl`) og svipper ind bag ryggen, slår et
-// overshoot ud og falder til ro (rig.css). Alle former er punkter og husets primitiver.
+// Signaturen er halesvippet: halen sidder i sin egen pivot (`a-toss`) og svipper ud, ind mod ryggen og ud igen
+// med aftagende udsving og en pause (rig.css). Alle former er punkter og husets primitiver.
 import { ROUND, hatted, limbLoop, padsPath, pawWebs } from '../parts/kit'
 import type { PawWebs } from '../parts/kit'
 import { mixHex } from '../rig/oklch'
@@ -78,7 +78,7 @@ const EAR_INNER: Vec[] = xf([[0.2, -1], [-8.6, -4.5], [-9.6, -15], [-7, -27], [-
 const EAR_TIP = above(xf(EAR, { sx: 0.93, sy: 0.96, about: [-1, -28] }), -34)
 /** Under en hue med ørehuller ender øret i en blød bund nede i hullet. */
 const EAR_HATTED = hatted(EAR, -6, 4)
-const earScale = (stage: Stage) => (stage === 1 ? { sx: 1.04, sy: 0.9 } : stage === 3 ? { sx: 0.98, sy: 0.92 } : {})
+const earScale = (stage: Stage) => (stage === 1 ? { sx: 1.08, sy: 1.02 } : stage === 3 ? { sx: 0.98, sy: 0.92 } : {})
 
 const Ear: SidePart = ({ pal, sw, stage, hat }) => {
   const s = earScale(stage)
@@ -120,7 +120,7 @@ const Leg: SidePart = ({ pal, sw, lod }) => (
 )
 
 /** Løftede poter (lokalt om skulderen; roden ligger på brystet under hagen). */
-const CHEER: Vec[] = [[2, 4], [-6, -6], [-15, -16], [-24, -26], [-31, -35], [-36, -42]]
+const CHEER: Vec[] = [[2, 4], [-7, -5], [-17, -14], [-27, -23], [-35, -31], [-41, -37]]
 /** Glad: armene ud til siden i brysthøjde. Tegnet drejet −30°, så glad-hoppets 30° (rig.css) bringer dem på plads. */
 const HAPPY: Vec[] = xf([[2, 4], [-8, -2], [-19, -8], [-30, -13], [-40, -16]], { rot: -30 })
 const UP_SPINES = {
@@ -181,7 +181,7 @@ const Feet: Part = ({ pal, sw, stage }) => {
 
 // ---------------------------------------------------------------------------------------------
 // Halen (lokalt om tailBase bag højre side): en stor, busket fane, der står op og krummer ind mod ryggen,
-// med hvid spids. Signaturen svipper den om roden (`a-curl`).
+// med hvid spids. Signaturen svipper den om roden (`a-toss`).
 
 const TAIL_SPINE: Vec[] = [[0, 2], [10.5, -3], [20, -12], [25.5, -26], [25.5, -41], [21, -54], [11.5, -63]]
 const TAIL_W = [12, 22, 29, 31, 28, 19, 0]
@@ -193,7 +193,7 @@ const Tail: Part = ({ pal, sw, still, ids }) => {
   const fill = hair(pal, pal.fur, ids.gradient)
   const tip = !pal.silhouette && !pal.gradient
   return (
-    <Pivot at={{ x: 0, y: 0 }} cls="a-curl" still={still}>
+    <Pivot at={{ x: 0, y: 0 }} cls="a-toss" still={still}>
       {tip ? (
         <>
           <path d={TAIL} fill={fill} />
