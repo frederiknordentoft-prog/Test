@@ -139,7 +139,7 @@ function promptItem(task: Task, value: string, px: number): ReactNode | null {
 // (coinNames, payExact's coin sets), the coin-sum hint and the shop scene (the note the child paid
 // with). It lives here, not in the pay chunk, so a card draws a note without loading the purse.
 // Sizing is CSS: the piece's real millimetres (--d) times the scale of where it lies (--mm for
-// coins, --mm-note for notes; .tv-piece in task.css).
+// coins, --mm-note for notes; .tv-piece in src/ui/scenes/scenes.css).
 
 /** A coin or a note, sized in CSS from its real millimetres (--d) and the layout's scale. */
 export function PieceArt({ piece, className }: { piece: Piece; className?: string }) {

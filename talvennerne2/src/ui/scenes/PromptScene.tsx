@@ -201,7 +201,6 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
 
 // ─── Small scenes ───────────────────────────────────────────────────────────
 
-
 function TermsChip({ terms, entry, slot }: { terms: Term[]; entry?: ReactNode; slot: BlankSlot }) {
   return (
     <span className="tv-termschip">
