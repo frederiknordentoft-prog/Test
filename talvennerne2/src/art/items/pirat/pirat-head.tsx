@@ -11,12 +11,12 @@ import type { ItemArt, ItemArtProps, ItemDef, Pt } from '../../rig/types'
 
 /** Hatten forfra: toppen buer op midtpå, hjørnerne vender op og ud, og kanten forneden følger issen. */
 const HAT = symmetric([
-  [0, -27], [-18, -25.5], [-34, -19.5], [-48, -10], [-58.5, -2.5], [-63, -4.5], [-62, 2.5], [-55, 12.5],
-  [-40, 18.5], [-20, 21.5], [0, 22.5],
+  [0, -27], [-17, -25.5], [-31, -19.5], [-43.5, -10], [-52.5, -2.5], [-56.5, -4.5], [-55.6, 2.5], [-49.4, 12.5],
+  [-37, 18.5], [-19, 21.5], [0, 22.5],
 ])
 /** Guldborten: et bånd lige inden for toppens kant, fra hjørne til hjørne. */
-const TRIM_TOP: Vec[] = [[-58.5, -2.5], [-48, -10], [-34, -19.5], [-18, -25.5], [0, -27], [18, -25.5], [34, -19.5], [48, -10], [58.5, -2.5]]
-const TRIM_IN: Vec[] = [[55, 2.2], [45, -4.6], [32, -13.4], [17, -19.4], [0, -21], [-17, -19.4], [-32, -13.4], [-45, -4.6], [-55, 2.2]]
+const TRIM_TOP: Vec[] = [[-52.5, -2.5], [-43.5, -10], [-31, -19.5], [-17, -25.5], [0, -27], [17, -25.5], [31, -19.5], [43.5, -10], [52.5, -2.5]]
+const TRIM_IN: Vec[] = [[49.4, 2.2], [40.6, -4.6], [29.2, -13.4], [16, -19.4], [0, -21], [-16, -19.4], [-29.2, -13.4], [-40.6, -4.6], [-49.4, 2.2]]
 const TRIM = blob([...TRIM_TOP, ...TRIM_IN], 0.6)
 
 /** Hullet: en skrå ellipse ved ørebasen (lidt over den), drejet efter hattens rundning (som huen). */
@@ -115,10 +115,10 @@ export const piratHead: ItemDef = {
     fabric('roed', 'rød', 'tomato', 'sunflower', 'snow'),
   ],
   art: { front, rim },
-  fit: { anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1, baseWidth: 126, earMode: 'through' },
+  fit: { anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1, baseWidth: 113, earMode: 'through' },
   hides: ['mane-front'],
   hornHole: HORN_HOLE,
-  icon: { box: [-65, -29, 130, 53] },
+  icon: { box: [-58.5, -29, 117, 53] },
 }
 
 export default piratHead

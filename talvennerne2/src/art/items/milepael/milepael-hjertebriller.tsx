@@ -6,7 +6,7 @@
 // hviler på næseryggen, og stængerne forsvinder mod hovedets sider. I butikken er glassene fyldt.
 import { STAGE_XF } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'
-import { blob, ellipse, join, quad, spline, star, symmetric } from '../../rig/shapes'
+import { blob, ellipse, join, outside, quad, spline, star, symmetric } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
 import type { ItemArt, ItemDef } from '../../rig/types'
 
@@ -24,7 +24,7 @@ const GAZE = 2.9
 /** Det tonede glas over øjnene (fit-reglen tillader højst 25 %). */
 const TINT = 0.24
 
-const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
+const front: ItemArt = ({ c, sw, a, local, stage, solo, ids }) => {
   const es = STAGE_XF[stage].eye
   const L = local(a.eyeL)
   const R = local(a.eyeR)
@@ -34,35 +34,58 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   const half = sw * 0.85
   const ux = a.eyeRx * es * k + GAZE * k + half
   const uy = a.eyeRy * es * k + GAZE * k + half
-  // Hjerterne må ikke vokse ind i hinanden: de klemmes, så der er plads til broen mellem dem.
+  // Hjerterne må højst røre hinanden midtpå (tætsiddende øjne): så bliver broen et lille knudepunkt.
+  // De klemmes aldrig mere, end at de lukkede øjnes vipper (1,35 · øjets bredde) stadig går fri.
   const gap = Math.abs(R.x - L.x)
-  const sx = Math.min(ux, (gap / 2 - 1.2 * k) / 1.24)
+  const sx = Math.min(ux, Math.max(gap / 2 / 1.22, (a.eyeRx * es * k * 1.35 + sw * 1.6) / 1.18))
   const heart = (cx: number, cy: number): Vec[] => HEART.map(([x, y]) => [cx + x * sx, cy + y * uy] as Vec)
   const hl = heart(L.x, L.y)
   const hr = heart(R.x, R.y)
-  const glass = join(blob(hl, 0.85), blob(hr, 0.85))
-  // Broen mellem hjerternes øverste buer og stængerne mod hovedets sider.
+  const shapeL = blob(hl, 0.85)
+  const shapeR = blob(hr, 0.85)
+  const glass = join(shapeL, shapeR)
+  // Rører hjerterne hinanden (tætsiddende øjne), klippes hvert stel uden for det andet hjerte, så
+  // konturen bliver hjerternes fælles omrids og aldrig krydser sig selv; ellers samler en bro dem.
+  const touch = 2 * 1.3 * sx + sw * 1.75 > gap
   const by = L.y - 0.7 * uy
-  const bridge = quad([L.x + 1.18 * sx, by], [(L.x + R.x) / 2, by - 3 * k], [R.x - 1.18 * sx, by])
+  const bridge = touch ? '' : quad([L.x + 1.18 * sx, by], [(L.x + R.x) / 2, by - 3 * k], [R.x - 1.18 * sx, by])
   const hc = local(a.headCenter)
   const hw = a.headRx * 0.93 * k
   const ty = L.y - 0.86 * uy
-  const temples = join(
-    spline([[L.x - 1.2 * sx, ty], [hc.x - hw * 0.95, ty - 2.4 * k], [hc.x - hw, ty - 4.4 * k]]),
-    spline([[R.x + 1.2 * sx, ty], [hc.x + hw * 0.95, ty - 2.4 * k], [hc.x + hw, ty - 4.4 * k]]),
-  )
-  const frame = join(glass, bridge, temples)
+  const templeL = spline([[L.x - 1.2 * sx, ty], [hc.x - hw * 0.95, ty - 2.4 * k], [hc.x - hw, ty - 4.4 * k]])
+  const templeR = spline([[R.x + 1.2 * sx, ty], [hc.x + hw * 0.95, ty - 2.4 * k], [hc.x + hw, ty - 4.4 * k]])
   // Højlys i hjerternes øverste ydre bue (uden for øjnene) og et glimt på venstre hjerte.
   const shine = join(
     ellipse(L.x - 0.84 * sx, L.y - 0.98 * uy, 0.2 * sx, 0.12 * uy, -40),
     ellipse(R.x - 0.84 * sx, R.y - 0.98 * uy, 0.2 * sx, 0.12 * uy, -40),
   )
   const glint = star(L.x - 1.3 * sx, L.y - 1.32 * uy, 4.6 * k, 1.2 * k)
+  const line = { fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const frame = (d: string, clip?: string) => (
+    <g clipPath={clip ? `url(#${clip})` : undefined}>
+      <path d={d} {...line} stroke={c.outline} strokeWidth={sw * 1.75} />
+      <path d={d} {...line} stroke={c.main} strokeWidth={sw * 0.8} />
+    </g>
+  )
+  const cl = `${ids.uid}-hbl`
+  const cr = `${ids.uid}-hbr`
   return (
     <>
       <path d={glass} fill={c.trim} opacity={solo ? 0.9 : TINT} />
-      <path d={frame} fill="none" stroke={c.outline} strokeWidth={sw * 1.75} strokeLinecap="round" strokeLinejoin="round" />
-      <path d={frame} fill="none" stroke={c.main} strokeWidth={sw * 0.8} strokeLinecap="round" strokeLinejoin="round" />
+      {touch ? (
+        <>
+          <clipPath id={cl}>
+            <path d={outside(shapeR)} clipRule="evenodd" />
+          </clipPath>
+          <clipPath id={cr}>
+            <path d={outside(shapeL)} clipRule="evenodd" />
+          </clipPath>
+          {frame(join(shapeL, templeL), cl)}
+          {frame(join(shapeR, templeR), cr)}
+        </>
+      ) : (
+        frame(join(glass, bridge, templeL, templeR))
+      )}
       <path d={shine} fill={c.highlight} />
       <path d={glint} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.4} strokeLinejoin="round" />
     </>

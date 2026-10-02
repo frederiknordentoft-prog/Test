@@ -3,9 +3,10 @@
 // side løfter sig en anelse, som om vinden tager den. Forsiden viser kappens inderside i skygge med en
 // smal kant af yderstoffet og en guldbort forneden. Halen, manken og pindsvinets pigge ligger foran den.
 // Foran halsen (lag 9b, under hovedet) samles kappen af en krave og et rundt spænde med en stjerne. Højden
-// regnes ud fra halsleddet og jordlinjen, så kappen passer alle tre kropsformer og stadier.
+// regnes ud fra halsleddet og jordlinjen, så kappen passer alle tre kropsformer og stadier, og på stor
+// (bredere krop) klemmes den vandret, så hjørnerne bliver i den sikre zone.
 // (0,0) = bodyCenter, tegnet ved bodyWidth 100.
-import { STAGE_XF } from '../../rig/anchors'
+import { SAFE, STAGE_XF } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'
 import { blob, circle, ellipse, join, lune, softBand, star } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
@@ -27,11 +28,24 @@ function capeOf(p: Pick<ItemArtProps, 'a' | 'local' | 'solo'>) {
   return { top, bot, lift: (bot - top) * 0.16 }
 }
 
+/**
+ * Hvor bredt kappen må være (lokale enheder fra midten) for at holde sig i den sikre zone i stadiet (kroppen
+ * og dermed kappen vokser på stor).
+ */
+function safeHalf(p: Pick<ItemArtProps, 'a' | 'local' | 'stage' | 'solo'>): number {
+  if (p.solo) return RIGHT_W + 2
+  const k = STAGE_XF[p.stage].fig * STAGE_XF[p.stage].body
+  const model = (wx: number) => p.a.ground.x + (wx - p.a.ground.x) / k
+  const l = p.local({ x: model(SAFE.x0 + 2.5), y: p.a.bodyCenter.y })
+  const r = p.local({ x: model(SAFE.x1 - 2.5), y: p.a.bodyCenter.y })
+  return Math.min(-l.x, r.x)
+}
+
 /** Kappens omrids: skuldrene, siderne der breder sig ud, og en blød bue forneden med flagrende hjørner. */
-function outline(top: number, bot: number, lift: number, inset = 0): Vec[] {
+function outline(top: number, bot: number, lift: number, inset = 0, sx = 1): Vec[] {
   const h = bot - top
-  const L = LEFT_W - inset
-  const R = RIGHT_W - inset
+  const L = LEFT_W * sx - inset
+  const R = RIGHT_W * sx - inset
   return [
     [0, top + inset],
     [TOP_W - inset * 0.6, top + 2 + inset],
@@ -48,26 +62,30 @@ function outline(top: number, bot: number, lift: number, inset = 0): Vec[] {
   ]
 }
 
-const front: ItemArt = ({ c, sw, a, local, solo }) => {
+const front: ItemArt = ({ c, sw, a, local, solo, stage }) => {
   const { top, bot, lift } = capeOf({ a, local, solo })
+  // Kappen klemmes vandret, så hjørnerne bliver i den sikre zone (stor har en bredere krop).
+  const sx = Math.min(1, (safeHalf({ a, local, stage, solo }) - 2) / RIGHT_W)
+  const LW = LEFT_W * sx
+  const RW = RIGHT_W * sx
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
-  const shape = blob(outline(top, bot, lift), 0.8)
+  const shape = blob(outline(top, bot, lift, 0, sx), 0.8)
   // Guldborten langs kanten forneden (mellem kappens bund og en lidt højere bue).
   const hem = blob(
     [
-      [RIGHT_W + 1.4, bot - lift - 0.6], [RIGHT_W * 0.62, bot - lift * 0.3 - 0.2], [0, bot - 0.2],
-      [-LEFT_W * 0.62, bot - 0.2], [-LEFT_W - 1.2, bot - lift * 0.28 - 0.6],
-      [-LEFT_W * 0.62 + 1, bot - 6.2], [0, bot - 6.4], [RIGHT_W * 0.62 - 1, bot - lift * 0.3 - 6.2],
+      [RW + 1.4, bot - lift - 0.6], [RW * 0.62, bot - lift * 0.3 - 0.2], [0, bot - 0.2],
+      [-LW * 0.62, bot - 0.2], [-LW - 1.2, bot - lift * 0.28 - 0.6],
+      [-LW * 0.62 + 1, bot - 6.2], [0, bot - 6.4], [RW * 0.62 - 1, bot - lift * 0.3 - 6.2],
     ],
     0.7,
   )
   return (
     <>
       <path d={shape} fill={c.main} {...stroke} />
-      <path d={blob(outline(top, bot - 5, lift, 7), 0.8)} fill={c.mainShade} />
+      <path d={blob(outline(top, bot - 5, lift, 7, sx), 0.8)} fill={c.mainShade} />
       <path d={hem} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.7} strokeLinejoin="round" />
       <path d={shape} fill="none" {...stroke} />
-      <path d={join(ellipse(-LEFT_W * 0.86, top + (bot - top) * 0.62, 2.4, 10, 18), ellipse(RIGHT_W * 0.86, top + (bot - top) * 0.58, 2.2, 9, -20))} fill={c.highlight} />
+      <path d={join(ellipse(-LW * 0.86, top + (bot - top) * 0.62, 2.4, 10, 18), ellipse(RW * 0.86, top + (bot - top) * 0.58, 2.2, 9, -20))} fill={c.highlight} />
       {solo && <Collar c={c} sw={sw} y={top + 4} />}
     </>
   )

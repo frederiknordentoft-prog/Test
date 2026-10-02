@@ -65,8 +65,12 @@ const front: ItemArt = ({ c, sw, a, local, stage }) => {
   const braid = join(ellipse(cx, bot + 3.4 * k, 3.6 * k, 4 * k, 0), ellipse(cx, bot + 9.6 * k, 3 * k, 3.4 * k, 0))
   const bead = circle(cx, bot + 14.8 * k, 3.2 * k)
   // Overskægget ved næsens sider.
+  // Overskægget sidder under næsen; på babyer (store øjne tæt på snuden) flyttes det ned, så de opadbøjede
+  // spidser aldrig når op i øjnene.
+  const stacheTop = N.y + 2 * k - 6.8 * k
+  const sy = Math.max(N.y + 2 * k, N.y + 2 * k + (eyeBottom + 2.4 * k - stacheTop))
   const stache = (sign: 1 | -1) =>
-    blob(ribbon(STACHE.map(([x, y]) => [N.x + sign * x * k, N.y + 2 * k + y * k] as Vec), STACHE_W.map((v) => v * k)), 0.7)
+    blob(ribbon(STACHE.map(([x, y]) => [N.x + sign * x * k, sy + y * k] as Vec), STACHE_W.map((v) => v * k)), 0.7)
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
   return (
     <>
