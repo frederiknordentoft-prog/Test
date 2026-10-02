@@ -242,7 +242,7 @@ export const lamb: SpeciesDef = {
     bodyCenter: { x: 100, y: 183 },
     bodyRx: 53,
     bodyRy: 43,
-    bodyWidth: 104,
+    bodyWidth: 98,
     chest: { x: 100, y: 168 },
     back: { x: 100, y: 168 },
     shoulderL: { x: 74, y: 150 },

@@ -250,7 +250,7 @@ export const hamster: SpeciesDef = {
     bodyCenter: { x: 100, y: 184 },
     bodyRx: 54,
     bodyRy: 42,
-    bodyWidth: 108,
+    bodyWidth: 100,
     chest: { x: 100, y: 168 },
     back: { x: 100, y: 168 },
     shoulderL: { x: 74, y: 156 },

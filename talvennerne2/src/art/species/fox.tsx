@@ -78,7 +78,7 @@ const EAR_INNER: Vec[] = xf([[0.2, -1], [-8.6, -4.5], [-9.6, -15], [-7, -27], [-
 const EAR_TIP = above(xf(EAR, { sx: 0.93, sy: 0.96, about: [-1, -28] }), -34)
 /** Under en hue med ørehuller ender øret i en blød bund nede i hullet. */
 const EAR_HATTED = hatted(EAR, -6, 4)
-const earScale = (stage: Stage) => (stage === 1 ? { sx: 1.04, sy: 0.9 } : stage === 3 ? { sx: 0.98, sy: 1.02 } : {})
+const earScale = (stage: Stage) => (stage === 1 ? { sx: 1.04, sy: 0.9 } : stage === 3 ? { sx: 0.98, sy: 0.92 } : {})
 
 const Ear: SidePart = ({ pal, sw, stage, hat }) => {
   const s = earScale(stage)
@@ -183,7 +183,7 @@ const Feet: Part = ({ pal, sw, stage }) => {
 // Halen (lokalt om tailBase bag højre side): en stor, busket fane, der står op og krummer ind mod ryggen,
 // med hvid spids. Signaturen svipper den om roden (`a-curl`).
 
-const TAIL_SPINE: Vec[] = [[0, 2], [11, -3], [21, -12], [27, -26], [27, -41], [22, -54], [12, -63]]
+const TAIL_SPINE: Vec[] = [[0, 2], [10.5, -3], [20, -12], [25.5, -26], [25.5, -41], [21, -54], [11.5, -63]]
 const TAIL_W = [12, 22, 29, 31, 28, 19, 0]
 const TAIL_PTS = ribbon(TAIL_SPINE, TAIL_W)
 const TAIL = blob(TAIL_PTS, 0.9)
@@ -270,8 +270,8 @@ export const fox: SpeciesDef = {
     headRy: 45,
     headTop: { x: 100, y: 48 },
     headWidth: 104,
-    earBaseL: { x: 72, y: 61 },
-    earBaseR: { x: 128, y: 61 },
+    earBaseL: { x: 72, y: 63 },
+    earBaseR: { x: 128, y: 63 },
     hornBase: { x: 100, y: 50 },
     eyeL: { x: 79, y: 96 },
     eyeR: { x: 121, y: 96 },
@@ -301,8 +301,9 @@ export const fox: SpeciesDef = {
     head: { x0: 34, y0: 10, x1: 166, y1: 146 },
     body: { x0: 38, y0: 128, x1: 172, y1: 228 },
   },
-  // Tankebobler og Zzz (fælles regel): til højre for hovedet under det høje øre, med mindst 8 enheders luft.
-  fx: { x: 176, y: 72 },
+  // Tankebobler og Zzz (fælles regel): til højre for kinden, under det store øre (også når det hænger i søvn),
+  // med mindst 8 enheders luft og inden for den sikre zone på stor.
+  fx: { x: 176, y: 96 },
   face: { idleMouth: 'cat-w', cheeks: true },
   ears: { splay: 17 },
   signature: 'tail-swish',
@@ -313,7 +314,7 @@ export const fox: SpeciesDef = {
   poses: {
     happy: { pawL: { up: true, rot: 30 }, pawR: { up: true, rot: 30 }, tail: -10 },
     cheer: { tail: -12 },
-    oops: { pawL: 0, pawR: { up: true }, tail: 6 },
+    oops: { pawL: 0, pawR: { up: true }, tail: -4 },
     sleep: { pawL: 0, pawR: 0 },
     wave: { tail: -10 },
   },
