@@ -412,6 +412,13 @@
 .tv-coins--many {
   --mm: 2.3px;
 }
+/* in a scene the pieces keep their real sizes (.tv-scene .tv-mat would size them by their own width) */
+.tv-coins .tv-piece--coin {
+  width: calc(var(--d) * var(--mm));
+}
+.tv-coins .tv-piece--note {
+  width: calc(var(--d) * var(--mm-note));
+}
 .tv-coins__amount {
   padding: 8px 12px;
   border-radius: 10px;

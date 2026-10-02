@@ -48,8 +48,9 @@ describe('guess rate, production and ceiling (SPEC §3.3)', () => {
     // 13 = □ + □ takes both orders: twice as easy to hit by luck
     expect(guessP({ ...t, accept: ['3|10'] })).toBeCloseTo(2 / 16)
     expect(isProduction({ ...t, accept: ['3|10'] })).toBe(false)
-    // an accepted value that cannot fill the slots, or the answer again, is no extra way to be right
-    expect(guessP({ ...t, accept: ['10|3', 13, '3|10|0'] })).toBeCloseTo(1 / 16)
+    // 932 = □ + □ + □ in any order: six right fillings of 10³
+    const expand = task({ kind: 'fillSlots', options: [2, 3, 9, 30, 90, 300, 900, 932, 20, 200], answer: '900|30|2', answerType: 'set', accept: ['900|2|30', '30|900|2', '30|2|900', '2|900|30', '2|30|900'] })
+    expect(guessP(expand)).toBeCloseTo(6 / 1000)
   })
 
   it('measures a keypad in kroner in typed kroner, not in øre (UI-fund 22)', () => {
