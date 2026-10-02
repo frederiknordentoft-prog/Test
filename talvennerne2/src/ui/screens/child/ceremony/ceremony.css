@@ -43,10 +43,13 @@
   transform: scale(1.35);
 }
 
+/* The screen is centred while it fits and scrolls from its top when it does not (auto margins in a
+   flex column: nothing is ever cut off above or below the stage). */
 .tv-cer__stage {
-  display: grid;
+  display: flex;
   flex: 1;
-  place-items: center;
+  flex-direction: column;
+  align-items: center;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -54,9 +57,11 @@
 }
 .tv-cer__screen {
   display: flex;
+  flex: none;
   flex-direction: column;
   align-items: center;
   width: min(100%, 560px);
+  margin-block: auto;
   animation: tv-cer-in var(--dur-slow) var(--ease-out) both;
 }
 .tv-cer__actions {
@@ -107,12 +112,19 @@
 }
 
 /* ── "Det lærte du" ─────────────────────────────────────────────────────── */
-.tv-cer-summary {
+/* What was learned on top, what was earned (stars, perler, points) under it; side by side on a
+   phone held sideways, so the count never ends up under the buttons. */
+.tv-cer-summary,
+.tv-cer-summary__learn,
+.tv-cer-summary__earn {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
   width: 100%;
+}
+.tv-cer-summary__learn .tv-cer__title {
+  margin-bottom: 0;
 }
 .tv-learned {
   display: flex;
@@ -152,9 +164,56 @@
   font-size: 40px;
   color: var(--color-ink);
 }
-.tv-learned__cando {
-  font-size: var(--text-body);
-  font-weight: 800;
+.tv-learned__number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.tv-learned__pic {
+  display: grid;
+  place-items: center;
+  max-width: 132px;
+  height: 64px;
+}
+.tv-learned__pic .tv-scene,
+.tv-learned__pic .tv-objects {
+  width: auto;
+}
+.tv-learned__pic svg {
+  display: block;
+  width: auto;
+  max-width: 132px;
+  height: 58px;
+}
+.tv-learned__pic .tv-objects__row {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.tv-learned__heard {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.tv-learned__n {
+  min-width: 1.2ch;
+  font-size: 46px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+.tv-learned__beads {
+  display: flex;
+  gap: 2px;
+}
+.tv-learned__label {
+  font-size: var(--text-button);
+  font-weight: 900;
   color: var(--color-ink);
   text-align: center;
 }
@@ -265,7 +324,8 @@
   font-size: 18px;
   font-weight: 900;
   box-shadow: 0 4px 0 var(--color-star-lip);
-  animation: tv-cer-pop var(--dur-slow) var(--ease-spring) 500ms both;
+  /* the names come with the words, not after them (review r1 P3-3) */
+  animation: tv-cer-pop var(--dur-slow) var(--ease-spring) calc(var(--i, 0) * 90ms + 120ms) both;
 }
 
 /* ── A medal ────────────────────────────────────────────────────────────── */
@@ -275,28 +335,76 @@
   align-items: center;
   gap: 4px;
 }
+/* A disc with a raised rim and a star, hanging from two ribbon tails (review r1 P3-7). */
 .tv-medal {
-  display: grid;
-  place-items: center;
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
+  --m-rim: var(--color-star-lip);
+  --m-disc: var(--color-star);
+  --m-star: var(--color-star-soft);
+  --m-ink: var(--color-star-deep);
+  --m-tail: var(--color-primary);
+  --m-tail-2: var(--color-primary-deep);
+  --m-stripe: var(--color-primary-tint);
+  display: block;
+  width: 132px;
+  height: 165px;
+  filter: drop-shadow(0 8px 14px rgba(43, 33, 68, 0.18));
   animation: tv-cer-flip 900ms var(--ease-out) both;
 }
-.tv-medal.is-gold {
-  background: var(--color-star-soft);
-  color: var(--color-star-lip);
-  box-shadow: 0 0 0 8px var(--color-star), var(--shadow-float);
-}
 .tv-medal.is-silver {
-  background: var(--color-card);
-  color: var(--color-stone-edge);
-  box-shadow: 0 0 0 8px var(--color-stone), var(--shadow-float);
+  --m-rim: var(--color-stone-edge);
+  --m-disc: var(--color-stone);
+  --m-star: var(--color-card);
+  --m-ink: var(--color-ink-3);
+  --m-tail: var(--color-d-number);
+  --m-tail-2: var(--color-d-number-deep);
+  --m-stripe: var(--color-d-number-soft);
 }
 .tv-medal.is-bronze {
-  background: var(--color-warm-soft);
-  color: var(--color-wood-edge);
-  box-shadow: 0 0 0 8px var(--color-wood), var(--shadow-float);
+  --m-rim: var(--color-wood-edge);
+  --m-disc: var(--color-wood);
+  --m-star: var(--color-warm-soft);
+  --m-ink: var(--color-wood-edge);
+  --m-tail: var(--color-good);
+  --m-tail-2: var(--color-good-deep);
+  --m-stripe: var(--color-good-soft);
+}
+.tv-medal__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.tv-medal__tail {
+  fill: var(--m-tail);
+  stroke: var(--m-tail-2);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.tv-medal__stripe {
+  fill: var(--m-stripe);
+}
+.tv-medal__rim {
+  fill: var(--m-rim);
+  stroke: var(--m-ink);
+  stroke-width: 3;
+}
+.tv-medal__disc {
+  fill: var(--m-disc);
+  stroke: var(--m-ink);
+  stroke-opacity: 0.35;
+  stroke-width: 2;
+}
+.tv-medal__star {
+  fill: var(--m-star);
+  stroke: var(--m-ink);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.tv-medal__shine {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.7);
+  stroke-width: 5;
+  stroke-linecap: round;
 }
 
 /* ── A new level ────────────────────────────────────────────────────────── */
@@ -385,9 +493,12 @@
 }
 .tv-cer-friend__pic {
   display: grid;
+  flex: none;
   place-items: center;
   width: 170px;
   height: 170px;
+  /* the halo reaches 10 px past the circle: the title starts below it (review r1 P3-2) */
+  margin: 10px 0 12px;
   border-radius: 50%;
   background: var(--color-card);
   box-shadow: 0 0 0 10px var(--color-star-soft), var(--shadow-float);
@@ -630,6 +741,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: transform var(--dur-base) var(--ease-spring);
 }
 .tv-alsocard__icon {
   display: grid;
@@ -645,6 +757,15 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 1.25;
+}
+/* the card the voice is naming lights up (review r1 P2-4) */
+.tv-alsocard.is-speaking {
+  box-shadow: 0 0 0 4px var(--color-star), var(--shadow-card);
+  transform: scale(1.03);
+}
+.tv-alsocard.is-speaking .tv-alsocard__icon {
+  background: var(--color-star);
+  color: var(--color-ink);
 }
 
 /* ── Sizes ──────────────────────────────────────────────────────────────── */
@@ -669,6 +790,73 @@
     margin-top: 4px;
     font-size: 24px;
   }
+  /* A phone held sideways has width to spare and no height: the tall screens lay out in a row
+     (review r1 P2-3), so nothing hides under the two buttons. */
+  .tv-cer__screen {
+    width: min(100%, 780px);
+  }
+  .tv-cer-level {
+    display: grid;
+    grid-auto-columns: auto;
+    grid-auto-flow: column;
+    grid-template-rows: auto auto auto;
+    column-gap: 28px;
+    align-items: center;
+    justify-content: center;
+  }
+  .tv-cer-level > .tv-levelbadge,
+  .tv-cer-level > .tv-cer__title,
+  .tv-cer-level > .tv-cer__line {
+    grid-column: 1;
+    justify-self: center;
+  }
+  .tv-cer-level > .tv-cer-thing {
+    grid-row: 1 / span 3;
+    margin-top: 0;
+    padding: 10px 16px;
+  }
+  .tv-cer-friend {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'pic name' 'title name' 'line name';
+    column-gap: 24px;
+    align-items: center;
+  }
+  .tv-cer-friend > .tv-cer-friend__pic {
+    grid-area: pic;
+    justify-self: center;
+    margin: 10px 0;
+  }
+  .tv-cer-friend > .tv-cer__title {
+    grid-area: title;
+  }
+  .tv-cer-friend > .tv-cer__line {
+    grid-area: line;
+  }
+  .tv-cer-friend > .tv-name {
+    grid-area: name;
+    margin-top: 0;
+  }
+  .tv-cer-end.has-cards {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'buddy title' 'buddy cards';
+    column-gap: 20px;
+    align-items: center;
+  }
+  .tv-cer-end > .tv-cer-end__buddy {
+    grid-area: buddy;
+  }
+  .tv-cer-end > .tv-cer-end__title {
+    grid-area: title;
+    justify-self: center;
+  }
+  .tv-cer-end > .tv-alsotoday {
+    grid-area: cards;
+  }
+  .tv-alsocard {
+    min-height: 60px;
+  }
   .tv-learned__eq {
     font-size: 32px;
   }
@@ -684,11 +872,52 @@
   .tv-cer-growth__buddy {
     width: 110px;
   }
-  .tv-medal,
   .tv-levelbadge,
   .tv-cer__medallion {
     width: 104px;
     height: 104px;
+  }
+  .tv-medal {
+    width: 92px;
+    height: 115px;
+  }
+  /* the summary side by side: what was learned left, what was earned right */
+  .tv-cer__screen.is-summary {
+    width: min(100%, 780px);
+  }
+  .tv-cer-summary.has-earn {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+  }
+  .tv-cer-summary.has-earn .tv-cer-summary__learn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .tv-cer-summary.has-earn .tv-cer-summary__earn {
+    flex: 0 0 auto;
+    width: auto;
+  }
+  .tv-cer-summary__earn .tv-tally {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+  .tv-learned__card {
+    padding: 10px 10px 8px;
+  }
+  .tv-learned__pic {
+    height: 52px;
+  }
+  .tv-learned__pic svg {
+    height: 48px;
+  }
+  .tv-learned__n {
+    font-size: 38px;
+  }
+  .tv-cer-goal {
+    padding: 6px 12px;
   }
   .tv-levelbadge__n {
     font-size: 48px;
@@ -826,5 +1055,13 @@
   .tv-cer-hatch__shell,
   .tv-alsotoday li {
     animation: none !important;
+  }
+}
+:root[data-calm] .tv-alsocard {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-alsocard {
+    transition: none;
   }
 }
