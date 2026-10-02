@@ -12,13 +12,14 @@ export const FOX_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     patternColor: '#4A3036',
     overrides: { belly: '#FFF6EC', outline: '#88360F', inner: '#FFE4D2', nose: '#33232B', iris: '#8C3E14', cheek: '#FF7E8E' },
   },
-  // Polar: snehvid fjeldræv med lysegrå sokker og ørespidser og en kølig lilla-grå kontur.
+  // Polar: snehvid fjeldræv med isblå-grå sokker, ørespidser og kontur (kølig blå, ikke lavendel som regnbuens
+  // krop, review G2-r1 §5).
   c2: {
     id: 'c2',
     name: 'polar',
-    fur: '#F5F3FB',
-    patternColor: '#BDB7D2',
-    overrides: { belly: '#FFFFFF', outline: '#77708F', shade: '#E2DEF0', inner: '#FBD3E0', nose: '#4A405E', iris: '#6B79C4' },
+    fur: '#F7F9FC',
+    patternColor: '#AFBDD0',
+    overrides: { belly: '#FFFFFF', outline: '#667891', shade: '#DFE6EF', inner: '#FBD3E0', nose: '#3E4A60', iris: '#5E86C4' },
   },
   // Sølv: sølvræv i blågrå med mørke sokker og en lysere maske.
   c3: {
