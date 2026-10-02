@@ -10,13 +10,13 @@ import type { Vec } from '../../rig/shapes'
 import type { BodyKind, ItemArt, ItemDef } from '../../rig/types'
 
 /** Sækken bag kroppen (venstre halvdel, top → bund på midterlinjen). */
-const BAG = symmetric([[0, -44], [-30, -43], [-52, -38], [-60, -24], [-61, 6], [-58, 22], [-44, 28], [0, 29]])
-/** Sidelommerne: buttede lommer ud over sækkens sider forneden. */
+const BAG = symmetric([[0, -44], [-30, -43], [-51, -38], [-58.5, -24], [-59.5, 6], [-57, 22], [-44, 28], [0, 29]])
+/** Sidelommerne: buttede lommer ud over sækkens sider forneden (inden for silhuetten + 6 på alle arter). */
 const SIDE_POCKETS = join(
-  blob([[-56, -4], [-66, -2], [-69, 10], [-66, 21], [-56, 23], [-52, 10]], 0.9),
-  blob([[56, -4], [66, -2], [69, 10], [66, 21], [56, 23], [52, 10]], 0.9),
+  blob([[-55, -4], [-63.5, -2], [-66.5, 10], [-63.5, 21], [-55, 23], [-51, 10]], 0.9),
+  blob([[55, -4], [63.5, -2], [66.5, 10], [63.5, 21], [55, 23], [51, 10]], 0.9),
 )
-const POCKET_SEAMS = join(spline([[-60.5, 4], [-66, 5.5]]), spline([[60.5, 4], [66, 5.5]]))
+const POCKET_SEAMS = join(spline([[-59, 4], [-64, 5.5]]), spline([[59, 4], [64, 5.5]]))
 
 /** Alene (butik): en højere sæk forfra med hank, sidelommer og stropperne, der buer ud i siderne. */
 const SOLO_BAG = symmetric([[0, -48], [-22, -47], [-35, -39], [-40, -20], [-40, 18], [-36, 29], [-22, 33], [0, 33.5]])

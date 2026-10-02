@@ -4,6 +4,7 @@
 // og ud, og ved jubel og vink løftes den op ved siden af hovedet. Ringen har cel-skygge, glasset en
 // lys tone med en bred glans og en prik. Alene (butik) står luppen skråt som et ikon. Luppen holdes
 // ud fra poten og rækker med vilje ud over silhuetten (`reach`).
+import { SAFE } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'
 import { arc, capsule, circle, lune } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
@@ -37,16 +38,21 @@ function place(hold: HandHold): Place {
   const fc = { x: H.x, y: (top + bottom) / 2 }
   const fr = { x: H.rx + 2 * u, y: (bottom - top) / 2 + 2 * u }
   const reach = L.handle + L.collar + L.ring
+  // Ringens boks i verdensrummet, som kontaktarkets lint måler den i den drejede ramme (√2 · r).
+  const box = L.ring * u * 1.42 + 2
   const clear = (deg: number) => {
     const t = (deg * Math.PI) / 180
     const lens = { x: g.x + Math.cos(t) * reach * u, y: g.y + Math.sin(t) * reach * u }
-    // Hele ringen skal ligge uden for ansigtet: tjek centrum og randen mod den udvidede ellipse.
+    // Hele ringen skal ligge uden for ansigtet (centrum og randen mod den udvidede ellipse) og i den sikre zone.
     const rx = fr.x + L.ring * u
     const ry = fr.y + L.ring * u
-    return ((lens.x - fc.x) / rx) ** 2 + ((lens.y - fc.y) / ry) ** 2 >= 1
+    const face = ((lens.x - fc.x) / rx) ** 2 + ((lens.y - fc.y) / ry) ** 2 >= 1
+    const safe = lens.x + box <= SAFE.x1 && lens.x - box >= SAFE.x0 && lens.y - box >= SAFE.y0 && lens.y + box <= SAFE.y1
+    return face && safe
   }
-  let deg = AIM
-  for (let i = 0; i < 8 && !clear(deg); i++) deg += STEP
+  // Foretrukken retning først, derefter skiftevis med og mod uret, til glasset går fri.
+  const tries = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6].map((i) => AIM + i * STEP)
+  const deg = tries.find(clear) ?? AIM + 4 * STEP
   const t = (deg * Math.PI) / 180
   return { at: hold.local, k, g, d: { x: Math.cos(t), y: Math.sin(t) }, u }
 }

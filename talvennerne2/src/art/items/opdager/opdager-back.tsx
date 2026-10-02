@@ -23,6 +23,8 @@ interface Net {
   neck: Vec
   r: number
   k: number
+  /** Den del af skaftet (andele fra bøjlen mod håndtaget), der er skjult bag hovedet og ikke tegnes. */
+  hidden: readonly [number, number] | null
 }
 
 /** Nettets placering i posen: bøjlen ved hovedets øverste venstre side, håndtaget ved højre hofte. */
@@ -42,6 +44,9 @@ function netOn(a: AnchorSet, stage: Stage, local: (p: Pt) => Pt): Net {
   // Skaftet ender i bøjlens rand mod hoften.
   const d = Math.hypot(grip.x - hoop.x, grip.y - hoop.y)
   const neck = { x: hoop.x + ((grip.x - hoop.x) * R) / d, y: hoop.y + ((grip.y - hoop.y) * R) / d }
+  // Skaftet går bag hovedet: stykket inden for hovedets ellipse (lidt indenfor randen) tegnes ikke, så
+  // det aldrig ligger bag øjnene (kontaktarkets øjenlint ser ikke lagene).
+  const hidden = chord(neck, grip, hc, hrx * 0.9, hry * 0.9)
   const o = local(hoop)
   const e = local({ x: hoop.x + 1, y: hoop.y })
   const k = Math.hypot(e.x - o.x, e.y - o.y)
@@ -49,11 +54,27 @@ function netOn(a: AnchorSet, stage: Stage, local: (p: Pt) => Pt): Net {
     const q = local(p)
     return [q.x, q.y]
   }
-  return { hoop: v(hoop), grip: v(grip), neck: v(neck), r: R * k, k }
+  return { hoop: v(hoop), grip: v(grip), neck: v(neck), r: R * k, k, hidden }
+}
+
+/** Hvor linjestykket a→b skærer ellipsen (andele t0 < t1), eller null. */
+function chord(a: Pt, b: Pt, c: Pt, rx: number, ry: number): readonly [number, number] | null {
+  const dx = (b.x - a.x) / rx
+  const dy = (b.y - a.y) / ry
+  const fx = (a.x - c.x) / rx
+  const fy = (a.y - c.y) / ry
+  const A = dx * dx + dy * dy
+  const B = 2 * (fx * dx + fy * dy)
+  const C = fx * fx + fy * fy - 1
+  const disc = B * B - 4 * A * C
+  if (disc <= 0) return null
+  const t0 = Math.max(0, (-B - Math.sqrt(disc)) / (2 * A))
+  const t1 = Math.min(1, (-B + Math.sqrt(disc)) / (2 * A))
+  return t1 > t0 ? [t0, t1] : null
 }
 
 /** Alene (butik): skaftet skråt fra nederst til højre op til bøjlen øverst til venstre. */
-const SOLO: Net = { hoop: [-22, -28], grip: [30, 40], neck: [-22 + R * 0.607, -28 + R * 0.794], r: R, k: 1 }
+const SOLO: Net = { hoop: [-22, -28], grip: [30, 40], neck: [-22 + R * 0.607, -28 + R * 0.794], r: R, k: 1, hidden: null }
 
 /** Nettets pose: hænger ned fra bøjlen (tyngdekraften) med en rund bund. */
 function bag(h: Vec, r: number): Vec[] {
@@ -77,12 +98,16 @@ function mesh(h: Vec, r: number): string {
 const front: ItemArt = ({ c, sw, a, local, stage, solo, ids }) => {
   const N = solo ? SOLO : netOn(a, stage, local)
   const clip = `${ids.uid}-on`
-  const shaft = capsule(N.grip, N.neck, SHAFT * N.k * 1.15, SHAFT * N.k)
-  const grain = capsule(
-    [N.grip[0] + (N.neck[0] - N.grip[0]) * 0.08, N.grip[1] + (N.neck[1] - N.grip[1]) * 0.08],
-    [N.grip[0] + (N.neck[0] - N.grip[0]) * 0.86, N.grip[1] + (N.neck[1] - N.grip[1]) * 0.86],
-    SHAFT * N.k * 0.32,
-  )
+  const at = (t: number): Vec => [N.neck[0] + (N.grip[0] - N.neck[0]) * t, N.neck[1] + (N.grip[1] - N.neck[1]) * t]
+  // Skaftet i ét eller to stykker (bøjle → hoved, hoved → håndtag), når midten er skjult bag hovedet.
+  const shaft = N.hidden
+    ? join(
+        N.hidden[0] > 0.02 ? capsule(N.neck, at(N.hidden[0]), SHAFT * N.k) : '',
+        N.hidden[1] < 0.98 ? capsule(at(N.hidden[1]), N.grip, SHAFT * N.k, SHAFT * N.k * 1.15) : '',
+      )
+    : capsule(N.grip, N.neck, SHAFT * N.k * 1.15, SHAFT * N.k)
+  const g0 = N.hidden ? Math.max(N.hidden[1] + 0.04, 0.14) : 0.14
+  const grain = g0 < 0.9 ? capsule(at(g0), at(0.92), SHAFT * N.k * 0.32) : ''
   const pouch = blob(bag(N.hoop, N.r), 0.85)
   return (
     <>

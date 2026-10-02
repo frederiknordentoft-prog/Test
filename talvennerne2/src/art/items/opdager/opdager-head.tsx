@@ -11,10 +11,14 @@ import type { ItemArt, ItemArtProps, ItemDef, Pt } from '../../rig/types'
 
 /** Kuplen (venstre halvdel, top → bund på midterlinjen). */
 const DOME = symmetric([
-  [0, -19.5], [-17, -17], [-31, -9.6], [-39.6, 0.6], [-44, 11], [-45, 20.5], [0, 23],
+  [0, -19.5], [-16, -17], [-29.5, -9.6], [-37.8, 0.6], [-42, 11], [-43, 20.5], [0, 23],
 ])
-/** Skyggen: en flad ellipse bag kuplen; forkanten ses under kuplen. */
-const BRIM = { cx: 0, cy: 18.2, rx: 63, ry: 8.4 }
+/**
+ * Skyggen: en flad ellipse bag kuplen; forkanten ses under kuplen. Den er kun lidt bredere end hovedet,
+ * så den holder sig inden for silhuetten (+6) på katten, der har det smalleste hoved i forhold til
+ * hovedbredden.
+ */
+const BRIM = { cx: 0, cy: 18.2, rx: 55.5, ry: 8.2 }
 /** Kuplens syninger (meridianer fra knappen ned til båndet). */
 const SEAMS: Vec[][] = [-1, 1].map((s) => [
   [s * 2.6, -17.5],
@@ -48,8 +52,8 @@ function lip(h: { x: number; y: number; rot: number }, rx = HOLE.rx, ry = HOLE.r
 const buttonAt = (horn: Pt | null | undefined): Pt => (horn ? { x: horn.x - 19, y: -14 } : { x: 0, y: -19.5 })
 
 /** Bladet i båndet (venstre side): en lille spids blad-form med midterribbe. */
-const LEAF: Vec[] = xf([[0, -6.5], [3, -3], [3.2, 1.5], [0, 6], [-3.2, 1.5], [-3, -3]], { rot: -38, dx: -27, dy: 12.6 })
-const LEAF_RIB = spline(xf([[0, -4.6], [0.3, 0], [0, 4.2]], { rot: -38, dx: -27, dy: 12.6 }))
+const LEAF: Vec[] = xf([[0, -8], [3.8, -3.6], [4, 1.8], [0, 7.4], [-4, 1.8], [-3.8, -3.6]], { rot: -38, dx: -26, dy: 11.4 })
+const LEAF_RIB = spline(xf([[0, -5.8], [0.3, 0], [0, 5.4]], { rot: -38, dx: -26, dy: 11.4 }))
 
 const front: ItemArt = ({ c, sw, a, local, holes, horn }) => {
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
@@ -78,7 +82,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn }) => {
           opacity={0.85}
         />
       )}
-      <path d={softBand(-42.5, 42.5, 11.6, 19.6, 2.4, 2.8)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw} strokeLinejoin="round" />
+      <path d={softBand(-40.6, 40.6, 11.6, 19.6, 2.4, 2.8)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw} strokeLinejoin="round" />
       <path d={blob(LEAF, 0.8)} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.7} strokeLinejoin="round" />
       <path d={LEAF_RIB} fill="none" stroke={c.accentOutline} strokeWidth={sw * 0.4} strokeLinecap="round" />
       <path d={circle(btn.x, btn.y, 4.4)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.8} />
@@ -115,9 +119,9 @@ export const opdagerHead: ItemDef = {
     fabric('himmel', 'himmelblå', 'sky', 'navy', 'leaf'),
   ],
   art: { front, rim },
-  fit: { anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1, baseWidth: 126, earMode: 'through' },
+  fit: { anchor: 'headTop', scaleBy: 'headWidth', baseScale: 1, baseWidth: 112, earMode: 'through' },
   hornHole: HORN_HOLE,
-  icon: { box: [-65, -26, 130, 55] },
+  icon: { box: [-57.5, -26, 115, 54.5] },
 }
 
 export default opdagerHead

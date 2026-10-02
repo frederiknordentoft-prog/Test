@@ -50,8 +50,16 @@ function place(hold: HandHold): Place {
   let cx = Math.max(H.x + H.rx + 6 * u, H.box.x1 - 1 * u) + rx
   let cy = Math.min(H.y - 0.12 * H.ry, g.y - ry - 26 * u)
   if (hold.fx && cx + rx > hold.fx.x - 8 * u) cy = Math.max(cy, hold.fx.y + 7 * u + ry)
-  cx = Math.min(cx, SAFE.x1 - rx - 2.5)
-  cy = Math.max(cy, SAFE.y0 + ry + 2.5)
+  // Den sikre zone: kontaktarkets lint måler hvert element i genstandens (drejede) ramme, så ballonens
+  // boks regnes som den drejede ellipses boks ført tilbage til verdensrummet (plus konturen).
+  const t = (rot * Math.PI) / 180
+  const [cs, sn] = [Math.abs(Math.cos(t)), Math.abs(Math.sin(t))]
+  const hx = Math.hypot(rx * cs, ry * sn)
+  const hy = Math.hypot(rx * sn, ry * cs)
+  const W = hx * cs + hy * sn + 2.4
+  const Hh = hx * sn + hy * cs + 2.4
+  cx = Math.min(cx, SAFE.x1 - W)
+  cy = Math.max(cy, SAFE.y0 + Hh)
   const knot = { x: cx, y: cy + ry + B.knot * u }
   // Snoren: en blød kurve, der går lodret op i knuden.
   const rise = Math.max(18 * u, (g.y - knot.y) * 0.45)
