@@ -22,7 +22,7 @@ import type { RigCrop } from '../art/rig/Rig'
 import { SET_IDS } from '../art/rig/types'
 import type { SetId, Slot } from '../art/rig/types'
 
-export const ROUTES = ['species', 'moods', 'closeup', 'sizes', 'silhouettes', 'fit', 'fitmatrix', 'filmstrip', 'lineup', 'scene'] as const
+export const ROUTES = ['species', 'moods', 'closeup', 'sizes', 'silhouettes', 'fit', 'fitmatrix', 'filmstrip', 'lineup', 'scene', 'holes'] as const
 export type Route = (typeof ROUTES)[number]
 /** Ruter, der tegnes pr. art (?id=<art>). */
 export const PER_SPECIES: readonly Route[] = ['species', 'moods', 'closeup', 'sizes', 'fit', 'filmstrip']
@@ -407,6 +407,41 @@ function SilhouettesSheet() {
 }
 
 // ---------------------------------------------------------------------------------------------
+// holes: alle arter, racer, stadier, farver og humør på magenta. Lint'en rasteriserer hver figur og
+// fejler ved lukket baggrund inden for yderkonturen (review G1-r3, forbedring 1). Alle farver i hvile,
+// alle humør i c1 og c4 (mønster) – og vædderen i alle 8 farver · 7 humør · 3 stadier (K1-beviset).
+
+/**
+ * Arter, hvis lommer er lukket, og hvordan de lintes (andre arter vises, men lintes ikke endnu):
+ * 'strict' = intet lukket område overhovedet, 'thin' = ingen smalle sømme eller sprækker (bredere
+ * lukkede områder er bevidst negativt rum, fx en hale i en løkke).
+ */
+const HOLES_LINTED: Partial<Record<string, 'strict' | 'thin'>> = { rabbit: 'strict', cat: 'thin', horse: 'thin', unicorn: 'thin' }
+
+function HolesSheet() {
+  const cells: { def: SpeciesDef; b: BreedId; s: Stage; c: ColorwayId; m: Mood }[] = []
+  for (const def of SPECIES)
+    for (const b of def.breeds)
+      for (const s of STAGES) {
+        const colors = [...NATURAL_COLORWAYS, ...magicOf(def, b.id)] as ColorwayId[]
+        const all = def.id === 'rabbit' && b.id === 'lop'
+        for (const c of colors) cells.push({ def, b: b.id, s, c, m: 'idle' })
+        for (const c of all ? colors : (['c1', 'c4'] as const)) for (const m of MOODS) if (m !== 'idle') cells.push({ def, b: b.id, s, c, m })
+      }
+  return (
+    <Page title="Huller og sømme" sub="Alle arter, racer, stadier og farver i hvile, alle humør i c1 og c4, vædderen i alle 8 farver · 7 humør · 3 stadier – på magenta. Kaninen må intet lukket område have; de andre arter ingen smalle sømme eller sprækker (bredere lukkede områder er bevidst negativt rum).">
+      <div className="sh-grid" style={{ gridTemplateColumns: 'repeat(28, 64px)', gap: 4 }}>
+        {cells.map((x, i) => (
+          <div key={i} data-holes={HOLES_LINTED[x.def.id] ? `${x.def.id} ${x.b} ${x.s} ${x.c} ${x.m}` : undefined} data-holes-mode={HOLES_LINTED[x.def.id]} style={{ background: '#FF00FF', borderRadius: 6, lineHeight: 0 }}>
+            <Rig species={x.def} breed={x.b} stage={x.s} colorway={x.c} mood={x.m} mode="static" size={64} lod="full" crop="full" />
+          </div>
+        ))}
+      </div>
+    </Page>
+  )
+}
+
+// ---------------------------------------------------------------------------------------------
 // fit: genstande på én art i 3 stadier · 3 farvesæt (alle racer)
 
 function FitSheet({ def }: { def: SpeciesDef }) {
@@ -706,6 +741,7 @@ const SHEETS: Record<Route, (p: { def: SpeciesDef }) => ReactNode> = {
   filmstrip: FilmstripSheet,
   lineup: LineupSheet,
   scene: SceneSheet,
+  holes: HolesSheet,
 }
 
 declare global {

@@ -10,7 +10,7 @@
 // Animerede dele bruger pivot-mønsteret: <g transform="translate(px py)"><g class="a-…">lokalt</g></g>
 // med transform-origin 0 0. Kun transform og opacity animeres (rig.css). Humørets nøglepose sættes
 // som attribut i begge tilstande; i animeret tilstand svinger keyframes (0 % = posen) om den.
-import { useEffect, useId, useRef } from 'react'
+import { Fragment, cloneElement, isValidElement, useEffect, useId, useRef } from 'react'
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react'
 import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, SweatDrop, ThoughtDots, Zzz, around } from '../parts/house'
 import { OUTLINE, SAFE, apply, modelAnchors, regionTransforms, worldAnchors } from './anchors'
@@ -324,6 +324,13 @@ export function Pivot({ at, cls, still, pose, children }: { at: Pt; cls: string;
 }
 
 /** Miljøet for en render: unikt id-præfiks og (i animeret DOM) refs til pupil-tracking. */
+/** Klipper en del til kroppens indre (uden ekstra element, når delen er ét element). */
+function clipToBody(el: ReactNode, on: boolean, id?: string): ReactNode {
+  if (!on || !el || !id) return el
+  const clip = `url(#${id})`
+  return isValidElement(el) && el.type !== Fragment ? cloneElement(el as ReactElement<{ clipPath?: string }>, { clipPath: clip }) : <g clipPath={clip}>{el}</g>
+}
+
 export interface RigEnv {
   uid: string
   gazeRef?: Ref<SVGGElement>
@@ -406,6 +413,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const Ear = parts.Ear
   const earRig = breedDef?.ears ?? def.ears
   const earsShown = !!Ear && !hides.has('ears')
+  const earsBehind = !!earRig?.behind
   // Hatte med ørehuller: ørerne klippes ved hullet, og hullets forkant lægges oven på roden.
   const holes = hat === 'through' && earsShown && earRig?.clip !== false && !!headWorn?.item.art.rim
   // Arter tegner selv en afrundet ørebund i hullet (ctx.hat); klippet er kun et værn for andre.
@@ -436,9 +444,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const headFn = parts.head ?? defaultHead
   const bodyD = bodyFn(a, 0, stage)
   const headD = headFn(a, 0, stage)
-  // Indvendige klip (kontur/2 inde), så skygger og mønstre aldrig dækker konturen.
-  const bodyClipD = bodyFn(a, -swBody / 2, stage)
-  const headClipD = headFn(a, -swHead / 2, stage)
+  // Indvendige klip (kontur/2 inde), så skygger og mønstre aldrig dækker konturen; de ligger 0,4
+  // enheder ind under stregen, så antialiasing ikke efterlader en hårfin lys søm langs konturen.
+  const bodyClipD = bodyFn(a, -swBody / 2 + 0.4, stage)
+  const headClipD = headFn(a, -swHead / 2 + 0.4, stage)
 
   const eyeMidWorld = { x: (w.eyeL.x + w.eyeR.x) / 2, y: (w.eyeL.y + w.eyeR.y) / 2 }
   const { gazeRef, glintRef } = env
@@ -566,7 +575,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
       )
     }
     return (
-      <g transform={`${outer}translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
+      <g data-part={`paw-${side.toLowerCase()}`} transform={`${outer}translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
         <g className={animated ? `a-paw a-paw-${side.toLowerCase()}${up ? ' a-up' : ''}` : undefined} transform={pp.rot ? `rotate(${n(pp.rot)})` : undefined}>
           {hand}
           <Part {...ctx(swBody)} side={side} />
@@ -596,6 +605,17 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         {Horn!(ctx(swHead / k))}
       </g>
     )
+  }
+
+  // Fyld bag alt ved armen (i skulderens ramme uden animation); arten tegner kun, hvor der er en lomme.
+  const pawBack = (side: 'L' | 'R') => {
+    const at = side === 'L' ? a.shoulderL : a.shoulderR
+    const web = parts.PawBack?.({ ...ctx(swBody), side })
+    return web ? (
+      <g data-part="armpit" transform={`translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
+        {web}
+      </g>
+    ) : null
   }
 
   const ear = (side: 'L' | 'R', Part: NonNullable<SpeciesParts['Ear']>) => {
@@ -719,6 +739,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         {/* Krop (lag 2–9) */}
         <g transform={bodyRegion}>
           <g className={animated ? 'a-body' : undefined} transform={aboutGround(pose.body)}>
+            {/* Fyld bag alt ved armene: en lomme mellem arm, hoved, øre, manke, hale og krop viser aldrig baggrund. */}
+            {pawBack('L')}
+            {pawBack('R')}
             {/* 2 · back-item */}
             {renderItem('back', 'front', R.body.s)}
             {renderItem('neck', 'back', R.body.s)}
@@ -744,8 +767,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             {!silhouette && shade.body && (
               <path d={outside(shade.body)} fill={pal.shade} fillRule="evenodd" clipPath={`url(#${ids.bodyClip})`} />
             )}
-            {/* Krave/halsflæse: under kropstøjet og hagens skygge. */}
-            {parts.Ruff?.(ctx(swBody))}
+            {/* Krave/halsflæse: under kropstøjet og hagens skygge. Med kropstøj klippes den til kroppen, så
+                kravens buer aldrig titter frem over trøjens skuldre (review G1-r3, C1). */}
+            {clipToBody(parts.Ruff?.(ctx(swBody)), !!bodyWorn, ids.bodyClip)}
             {/* Hovedets kastede skygge på kroppen lige under hagen (dybde, samme regel på alle stadier). */}
             {!silhouette && <path d={chinShadow(a, R)} fill={pal.shade} clipPath={`url(#${ids.bodyClip})`} />}
             {/* Guld: et smalt glansbånd på kroppen. */}
@@ -767,8 +791,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         <g data-part="head" transform={`translate(${n(R.neckWorld.x)} ${n(R.neckWorld.y)}) scale(${fmt3(R.head.s)})`}>
           <g className={animated ? 'a-head' : undefined} transform={tf(pose.head ?? {})}>
             <g transform={`translate(${n(-a.neck.x)} ${n(-a.neck.y)})`}>
-              {/* 10 · mane-back (+ hattens bagdel) */}
+              {/* 10 · mane-back (+ hattens bagdel) og ører bag hovedet (vædderen) */}
               {parts.ManeBack && scaled((breedDef?.maneOrigin ?? def.maneOrigin) === 'headTop' ? a.headTop : a.headCenter, maneK, parts.ManeBack(ctx(swHead / maneK)))}
+              {earsShown && earsBehind && ear('L', Ear!)}
+              {earsShown && earsBehind && ear('R', Ear!)}
               {renderItem('head', 'back', R.head.s)}
               {/* 11 · hoved + mønster + skygge */}
               <path d={headD} fill={pal.fur} stroke={pal.outline} strokeWidth={n(swHead)} strokeLinejoin="round" />
@@ -802,7 +828,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
               {faceOnHat && renderItem('face', 'front', R.head.s)}
               {/* 16 · ører, horn (+ hattens hulkant over ørernes rod) */}
-              {earsShown && (
+              {earsShown && !earsBehind && (
                 <g clipPath={earClip ? `url(#${earClipId})` : holes ? `url(#${holeClipId})` : undefined}>
                   {ear('L', Ear!)}
                   {ear('R', Ear!)}

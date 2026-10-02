@@ -144,13 +144,15 @@ describe.each(ALL_SPECIES.map((def) => [def.id, def] as const))('renderet markup
     expect(m).toMatch(/<g data-item="hverdag-body"[\s\S]*?stroke-linejoin="round"/)
   })
 
-  it('ørerne og hornet tegnes over hatten', () => {
+  it('ørerne tegnes over hatten (hængeører bag hovedet, så hovedets kontur løber ubrudt over ørebasen)', () => {
     for (const b of def.breeds) {
       const m = render({ species: def, breed: b.id, outfit: { head: { item: hverdagHead } } })
       const hat = m.indexOf('data-item="hverdag-head"')
       expect(hat).toBeGreaterThan(0)
       const ears = m.indexOf('a-ear-l')
-      expect(ears, `${def.id}/${b.id}`).toBeGreaterThan(hat)
+      const behind = (b.ears ?? def.ears)?.behind
+      if (behind) expect(ears, `${def.id}/${b.id}`).toBeLessThan(hat)
+      else expect(ears, `${def.id}/${b.id}`).toBeGreaterThan(hat)
     }
   })
 })

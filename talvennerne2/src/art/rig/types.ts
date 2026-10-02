@@ -298,6 +298,12 @@ export interface SpeciesParts {
    * poten på hagen ved tænker). Mangler den, roteres `Paw` i stedet.
    */
   PawUp?: SidePart
+  /**
+   * Fyld (uden kontur) bag kroppen ved armen, i skulderens ramme (højre side spejlet): dækker en lomme
+   * mellem arm, hage, øre og krop, så der aldrig ses baggrund inde i figuren. Kroppen, hovedet, ørerne
+   * og armen tegnes ovenpå, så kun lommen bliver farvet. Returnerer null, hvor der ingen lomme er.
+   */
+  PawBack?: SidePart
   /** Hvor den løftede pote holder en håndgenstand (lokalt, venstre side) pr. humør. */
   pawUpTip?: Partial<Record<Mood, Pt>>
   /** Den løftede arms rygrad pr. humør (samme som `PawUp` tegner); riggen trækker trøjens ærme på den. */
@@ -340,6 +346,11 @@ export interface EarRig {
   clip?: boolean
   /** Hængeører: svajer blidt i alle humør (klassen `a-hang`) i stedet for at rejse og sænke sig. */
   hang?: boolean
+  /**
+   * Ørerne tegnes bag hovedet (lag 10): hovedets kontur løber ubrudt hen over ørebasen, og ørets
+   * inderside gemmer sig under hovedet, så der aldrig er en sprække mellem øre og hoved (vædderen).
+   */
+  behind?: boolean
 }
 
 export interface BreedDef {

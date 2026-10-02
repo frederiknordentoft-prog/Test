@@ -16,6 +16,7 @@ ligger i `artifacts/sheets/` (taget i 2x). Ark pr. art hedder `<ark>-<art>.png` 
 | `fitmatrix.png` | Art · stadie · genstand for alle arter (racerne skifter pr. stadie). |
 | `filmstrip-<art>.png` | 8 frames pr. humør (frosset animation), blink/ørevip tæt samplet og artens signatur (også i et stort nærbillede). |
 | `lineup.png` | Alle arter og racer side om side i stadie 2 på samme jordlinje, stadierne pr. art og kropsskabelonerne. |
+| `holes.png` | Alle arter, racer, stadier og farver i hvile, alle humør i c1 og c4, og vædderen i alle 8 farver · 7 humør · 3 stadier – på magenta, 64 px. |
 
 Arternes signaturer (SPEC §6.1): kaninen vipper med næsen, katten krøller halespidsen, hesten kaster
 med manken, og enhjørningens horn glimter (kun opacity). Alle fire har hændelsen i 0,3–1,7 s af
@@ -29,6 +30,11 @@ Fælles regler, som arkenes lints håndhæver:
 - **Regnbue** er fire flade pastelstriber (manke, hale, krave og smæk), aldrig en blød gradient.
 - **Guld** har ravkontur, ravskygge og et smalt glansbånd på hoved og krop på alle arter.
 - **Tøj** har en tydeligt mørkere kontur end pelsen, så en trøje i pelsens farve stadig ses.
+- **Huller og sømme** (`holes.png`): hver figur rasteriseres på magenta (2 px pr. enhed). Kaninen må
+  ikke have én eneste lukket magenta-pixel inden for yderkonturen; de andre arter ingen lukkede
+  sømme eller sprækker under 4 enheders tykkelse (bredere lukkede områder, fx en hale i en løkke, er
+  bevidst negativt rum). Lommer mellem arm, hage, øre, manke, hale og krop fyldes med pels bag alle
+  dele, så fyldet kun ses inde i lommen og aldrig som en kant mod baggrunden.
 
 ## Stilen, der bedømmes imod
 

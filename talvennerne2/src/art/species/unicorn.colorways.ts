@@ -6,8 +6,8 @@
 import { RAINBOW_STOPS } from '../rig/palette'
 import type { ColorwayDef, NaturalColorwayId } from '../rig/types'
 
-// De tre næsten hvide har hver sin kropstone (review G1-r2, E6): hvid er varm elfenben, regnbuen er
-// lys lilla, og stjernehvid er kold sølvhvid med blå skygge og gyldne hove.
+// De lyse har hver sin kropstone (review G1-r2, E6 og G1-r3): hvid er varm elfenben, regnbuen er blød
+// abrikos, og stjernehvid er kold sølvhvid med blå skygge og gyldne hove.
 export const UNICORN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { starwhite: ColorwayDef; rainbow: ColorwayDef } = {
   c1: {
     id: 'c1',
@@ -78,10 +78,11 @@ export const UNICORN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { starw
   rainbow: {
     id: 'rainbow',
     name: 'regnbue',
-    fur: '#E9DCFF',
+    // Egen kropstone (review G1-r3): blød abrikos, langt fra c3 lilla, c2 rosa og c1 elfenben.
+    fur: '#FFE2CF',
     overrides: {
-      outline: '#6C56A8', shade: '#D4C2F4', belly: '#F7F1FF', iris: '#7A62C9', inner: '#FFC4DC', hoof: '#BCA6EA', horn: '#FFE38A',
-      muzzle: '#F3ECFF',
+      outline: '#9A5B6C', shade: '#F6CAB4', belly: '#FFF5EE', iris: '#8A5BC8', inner: '#FFB6C8', hoof: '#E6AE98', horn: '#FFE38A',
+      muzzle: '#FFEDE3',
     },
     gradient: RAINBOW_STOPS,
   },
