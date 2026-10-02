@@ -17939,16 +17939,16 @@
    "wave": 1
   },
   "noun.thing.ball.pl": {
-   "asr": "det er bolde",
+   "asr": "Det er bolde",
    "asrExpected": "Det er bolde",
-   "asrWav2vec2": null,
+   "asrWav2vec2": "det er borjo det",
    "cer": 0.0,
    "check": "comp",
    "comp": {
-    "asr": "det er bolde",
-    "asrWav2vec2": null,
+    "asr": "Det er bolde",
+    "asrWav2vec2": "det er borjo det",
     "cer": 0.0,
-    "engine": "wav2vec2",
+    "engine": "whisper",
     "expected": "Det er bolde",
     "ids": [
      "frag.det_er",
@@ -17957,19 +17957,19 @@
     "n": 1,
     "pass": 1
    },
-   "cpuS": 100.6,
-   "dur": 0.38,
-   "engine": "wav2vec2",
+   "cpuS": 127.9,
+   "dur": 0.425,
+   "engine": "whisper",
    "file": "number-1/noun.thing.ball.pl.flac",
    "hash": "2b045f6f67f154f4535c87bd38d6840336e92eed",
-   "lufs": -18.12,
+   "lufs": -18.11,
    "method": "single",
    "pack": "number-1",
    "pass": true,
-   "take": 3,
-   "takes": 4,
+   "take": 4,
+   "takes": 5,
    "tp": -1.63,
-   "wallS": 51.7,
+   "wallS": 66.3,
    "wave": 1
   },
   "noun.thing.ball.sg": {
