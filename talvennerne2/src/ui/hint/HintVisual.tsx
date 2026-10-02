@@ -7,6 +7,7 @@ import { AnalogClock, Base10Group, COIN_VALUES, Coin } from '../../art/materials
 import type { CoinOre } from '../../art/materials'
 import { Equation } from '../design/Equation'
 import { cx } from '../design/cx'
+import { MarkedLine } from '../scenes/MarkedLine'
 import { PromptScene } from '../scenes/PromptScene'
 import { formatMoney, formatNumber } from '../task/answers'
 import { Columns } from './Columns'
@@ -140,6 +141,14 @@ export function HintVisual({ visual, size = 'md' }: { visual: AnyVisual; size?: 
         </div>
       )
     }
+    case 'markedLine':
+      return (
+        <div className="tv-hv tv-hv--prompt">
+          <div className="tv-scene tv-scene--line tv-hv__scene">
+            <MarkedLine min={visual.min} max={visual.max} marks={visual.marks} hops={visual.hops} className="tv-scene__line" />
+          </div>
+        </div>
+      )
     case 'clockMove':
       return (
         <div className="tv-hv">

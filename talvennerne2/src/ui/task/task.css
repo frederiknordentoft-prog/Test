@@ -824,14 +824,58 @@
   background: var(--color-good-soft);
 }
 .tv-sort__place {
+  position: relative;
   display: grid;
   place-items: stretch;
+  min-width: 0;
   min-height: 84px;
   border: 3px dashed var(--color-line-2);
   border-radius: 18px;
 }
 .tv-sort__place.is-full {
   border-color: transparent;
+}
+.tv-sort__q {
+  display: grid;
+  place-items: center;
+  color: var(--color-ink-3);
+  font-size: 30px;
+  font-weight: 900;
+}
+/* The prompt's own row of stones (review r1 P2-6): the given numbers are stones, the gaps are the
+   places; tight gaps so five or six stones stay on one line on a phone. */
+.tv-sort--row .tv-sort__shelf {
+  gap: 4px;
+  padding: 6px;
+}
+.tv-sort--row .tv-sort__place {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.tv-sort--row .tv-sort__place .tv-sort__q {
+  color: var(--color-primary);
+}
+.tv-sort--row .tv-sort__place.is-full {
+  border-color: transparent;
+  background: none;
+}
+.tv-sort__given {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  border-radius: 16px;
+  background: var(--color-stone);
+  box-shadow: inset 0 -5px 0 var(--color-stone-edge);
+  color: var(--color-ink);
+}
+.tv-sort__given .tv-face__num {
+  font-size: 24px;
+}
+.tv-sort--row .tv-sortcard {
+  min-width: 0;
+}
+.tv-sort--row .tv-sort__face .tv-face__num {
+  font-size: 30px;
 }
 .tv-sort__spot {
   display: grid;
@@ -1485,6 +1529,84 @@
 }
 .tv-sort__shelf--mini {
   grid-template-columns: repeat(3, 64px);
+}
+.tv-sort__shelf--mini.is-row {
+  grid-template-columns: 48px repeat(3, 64px);
+  align-items: stretch;
+}
+/* The demo films' small questions (review r1 P2-8): like the child's own task, never the task. */
+.tv-demo__hear {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 6px 0 var(--color-primary-deep);
+  color: var(--color-card);
+}
+.tv-demo__pile--count {
+  gap: 8px;
+  padding: 8px 14px;
+}
+.tv-demo__stones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tv-demo__stone {
+  display: grid;
+  place-items: center;
+  min-width: 56px;
+  height: 56px;
+  padding: 0 8px;
+  border-radius: 18px;
+  background: var(--color-stone);
+  box-shadow: inset 0 -5px 0 var(--color-stone-edge);
+  color: var(--color-ink);
+  font-size: 30px;
+  font-weight: 900;
+}
+.tv-sort__shelf--mini .tv-demo__stone {
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  font-size: 26px;
+}
+.tv-demo__stone.is-bead {
+  min-width: 50px;
+  height: 50px;
+  padding: 0;
+}
+.tv-demo__stone.is-gap {
+  background: var(--color-primary-soft);
+  box-shadow: inset 0 0 0 3px var(--color-primary);
+  color: var(--color-primary);
+}
+.tv-demo__stone.is-good {
+  background: var(--color-good-soft);
+  box-shadow: inset 0 0 0 3px var(--color-good);
+  color: var(--color-good-deep);
+}
+.tv-demo__display {
+  display: grid;
+  place-items: center;
+  min-width: 84px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 3px var(--color-line);
+  color: var(--color-ink);
+  font-size: 32px;
+  font-weight: 900;
+}
+.tv-demo__display.is-on {
+  box-shadow: inset 0 0 0 3px var(--color-primary);
+}
+.tv-demo__display.is-good {
+  background: var(--color-good-soft);
+  box-shadow: inset 0 0 0 3px var(--color-good);
+  color: var(--color-good-deep);
 }
 .tv-sort__shelf--mini .tv-sort__place {
   min-height: 64px;

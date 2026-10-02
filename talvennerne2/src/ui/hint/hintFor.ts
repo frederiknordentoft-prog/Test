@@ -27,8 +27,21 @@ export type LocalVisual =
   | { scene: 'anim.digitSwap'; n: number; given: number | null }
   | { scene: 'anim.forgotCarry'; a: number; b: number }
   | { scene: 'anim.smallerFromLarger'; a: number; b: number }
+  /** The task's own number line with the cards' numbers marked (review r1 P2-7), hops on top. */
+  | { scene: 'markedLine'; min: number; max: number; marks: number[]; hops?: number[] }
 
 export type AnyVisual = HintVisual | LocalVisual
+
+/**
+ * A strategy on a number line for a choice asked on a number line ("Hvilket tal er størst?") is
+ * drawn on the same line, with the numbers of the cards marked: one line, not three unmarked ones.
+ */
+export function onTaskLine(visual: AnyVisual, task: Task): AnyVisual {
+  if (visual.scene !== 'line' || task.prompt.scene !== 'line' || task.kind !== 'choice') return visual
+  const marks = task.options.filter((o): o is number => typeof o === 'number')
+  if (marks.length === 0) return visual
+  return { scene: 'markedLine', min: visual.min, max: visual.max, marks, ...(visual.hops ? { hops: visual.hops } : {}) }
+}
 
 export interface ResolvedHint {
   speech: SpeechPart[]
@@ -65,7 +78,19 @@ export function sumOf(p: Prompt): Sum | null {
 export function factFor(def: SkillDef, task: Task): Fact {
   const known = factsOf(def).find((f) => f.id === task.factId)
   if (known) return known
-  return { id: task.factId, skill: task.skill, family: task.family, operands: promptNums(task.prompt), answer: task.answer, rank: 0 }
+  return { id: task.factId, skill: task.skill, family: task.family, operands: operandsOf(task), answer: task.answer, rank: 0 }
+}
+
+/**
+ * The numbers a task was built from. Mostly they stand in the prompt; a choice asked on a bare number
+ * line ("Hvilket tal er størst?") carries them on its cards: the answer and the card tagged as the
+ * other operand (review r1 P2-7: without them the strategy's line had no hops).
+ */
+function operandsOf(task: Task): number[] {
+  const nums = promptNums(task.prompt)
+  if (nums.length > 0 || task.prompt.scene !== 'line' || typeof task.answer !== 'number') return nums
+  const others = task.options.filter((o): o is number => typeof o === 'number' && o !== task.answer && task.distractorTags[String(o)] === 'operand')
+  return others.length > 0 ? [task.answer, ...others] : nums
 }
 
 /** SkillDef.hint(fact, tag, kind?) — the kind is the SK1 addition; older skills ignore it. */
@@ -232,7 +257,7 @@ export function hintFor(task: Task, given: AnswerValue | null, skills?: SkillReg
   const own = spec && speakable(spec.speech) && !(animated && !spec.misconception)
   return {
     speech: own ? spec.speech : speechFor(visual, task),
-    visual,
+    visual: onTaskLine(visual, task),
     tag,
     misconception: isMisconceptionId(misconception) ? misconception : null,
     animated,
@@ -244,6 +269,89 @@ export function hintFor(task: Task, given: AnswerValue | null, skills?: SkillReg
 export function scaffoldFor(task: Task, skills?: SkillRegistry): AnyVisual {
   const def = (skills ?? skillRegistry()).get(task.skill)
   const spec = def ? safely(() => skillHint(def, task, null)) : null
-  if (spec && spec.visual.scene !== 'none') return spec.visual
-  return defaultVisual(task)
+  if (spec && spec.visual.scene !== 'none') return onTaskLine(spec.visual, task)
+  return onTaskLine(defaultVisual(task), task)
+}
+
+// ─── Support on a new key, without the answer (review r1 P2-5) ─────────────
+//
+// A key in box 0 is shown with some support from the start (Task.scaffold). That support helps the
+// child work the answer out; it never shows it. The counters of a sum, the things to count laid out
+// in a row, a number line to count along with the given number marked: all fine. A hop that lands
+// on the answer, the answer's amount next to a number the child only heard, its digits or the right
+// figure: those give the answer away, so they stay behind the lightbulb, which the child opens
+// (SPEC §3.5: it never opens by itself) and which logs the answer as assisted — it then never
+// moves the box (SPEC §5.1).
+
+/** The numbers a picture points at as an answer: hop ends, the target dot and the arrow. */
+const lineMarks = (v: Extract<AnyVisual, { scene: 'line' }>): number[] => [
+  ...(v.hops ?? []), ...(v.target !== undefined ? [v.target] : []), ...(v.arrowAt !== undefined ? [v.arrowAt] : []),
+]
+
+/** Does the picture show more than the question already does? (A bare copy of its line does not.) */
+export function addsToPrompt(v: AnyVisual, task: Task): boolean {
+  if (v.scene === 'none') return false
+  if (task.prompt.scene === 'line' && (v.scene === 'line' || v.scene === 'markedLine')) return (v.hops?.length ?? 0) > 1
+  return true
+}
+
+/** Does the picture give the task's answer away? */
+export function revealsAnswer(v: AnyVisual, task: Task): boolean {
+  switch (v.scene) {
+    case 'none':
+    case 'dotsAdd':
+    case 'dotsSub':
+    case 'array':
+    case 'splitArray':
+      // counters to count: the child still does the counting
+      return false
+    case 'line': {
+      const marks = lineMarks(v)
+      if (typeof task.answer !== 'number') return marks.length > 1
+      return marks.includes(task.answer)
+    }
+    case 'markedLine':
+      // the cards' numbers are marked alike; a hop that lands on one of them points at it
+      return (v.hops?.length ?? 0) > 0
+    case 'objects': {
+      // the very picture the child counts, laid out again, is the task itself; the amount of the
+      // answer beside a number that was only heard (or a pile to count out) is the answer
+      const p = task.prompt
+      return !(p.scene === 'objects' && task.kind !== 'countTap' && p.n === v.n)
+    }
+    default:
+      return true
+  }
+}
+
+/**
+ * A number line to count along, from 0 to 10 or 20, with the number the question starts from marked
+ * (the 7 of "Hvilket tal kommer efter 7?"); null when the answer is no number up to 20, or when the
+ * task is asked on a number line already.
+ */
+export function countingLine(task: Task): AnyVisual | null {
+  const p = task.prompt
+  if (p.scene === 'line') return null
+  const answer = typeof task.answer === 'number' ? [task.answer] : String(task.answer).split('|').map(Number)
+  if (task.answerType !== 'int' && task.answerType !== 'set') return null
+  if (answer.some((n) => !Number.isInteger(n) || n < 0)) return null
+  const given = p.scene === 'row' ? p.cells.filter((c): c is number => typeof c === 'number') : []
+  const top = Math.max(...answer, ...given)
+  if (top > 20) return null
+  const line: Extract<AnyVisual, { scene: 'line' }> = { scene: 'line', min: 0, max: top <= 10 ? 10 : 20 }
+  // marking one of two candidates ("seks eller otte?") would point at or away from the answer
+  if (given.length > 0 && !answer.some((n) => given.includes(n))) line.arrowAt = given[0]
+  return line
+}
+
+/**
+ * The support a new key is shown with: the skill's own picture when it leaves the answer to the
+ * child, else a number line to count along, else nothing.
+ */
+export function supportFor(task: Task, skills?: SkillRegistry): AnyVisual | null {
+  const full = scaffoldFor(task, skills)
+  if (!addsToPrompt(full, task)) return null
+  if (!revealsAnswer(full, task)) return full
+  const line = countingLine(task)
+  return line && !revealsAnswer(line, task) ? line : null
 }

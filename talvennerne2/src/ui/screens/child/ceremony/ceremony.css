@@ -810,6 +810,9 @@
     grid-column: 1;
     justify-self: center;
   }
+  .tv-cer-level > .tv-levelbadge {
+    margin-top: 18px;
+  }
   .tv-cer-level > .tv-cer-thing {
     grid-row: 1 / span 3;
     margin-top: 0;

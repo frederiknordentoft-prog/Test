@@ -20,7 +20,7 @@ import { NumberlineFace, NumberlineView, numberlineOwnsPrompt } from './numberli
 import { PairDemo } from './pair/Demo'
 import { PairFace, PairView, pairOwnsPrompt } from './pair/View'
 import { SortOrderDemo } from './sortOrder/Demo'
-import { SortOrderFace, SortOrderView } from './sortOrder/View'
+import { SortOrderFace, SortOrderView, sortOrderOwnsPrompt } from './sortOrder/View'
 import { TrueFalseDemo } from './trueFalse/Demo'
 import { TrueFalseFace, TrueFalseView } from './trueFalse/View'
 import type { KindModule } from './types'
@@ -32,7 +32,7 @@ export const KIND_MODULES: Partial<Record<TaskKind, KindModule>> = {
   pair: { View: PairView, Demo: PairDemo, Face: PairFace, ownsPrompt: pairOwnsPrompt },
   numberline: { View: NumberlineView, Demo: NumberlineDemo, Face: NumberlineFace, ownsPrompt: numberlineOwnsPrompt },
   trueFalse: { View: TrueFalseView, Demo: TrueFalseDemo, Face: TrueFalseFace },
-  sortOrder: { View: SortOrderView, Demo: SortOrderDemo, Face: SortOrderFace, wideFace: true },
+  sortOrder: { View: SortOrderView, Demo: SortOrderDemo, Face: SortOrderFace, ownsPrompt: sortOrderOwnsPrompt, wideFace: true },
   multiSelect: { View: MultiSelectView, Demo: MultiSelectDemo, Face: MultiSelectFace, ownsPrompt: multiSelectOwnsPrompt, wideFace: true },
   fillSlots: { View: FillSlotsView, Demo: FillSlotsDemo, Face: FillSlotsFace, ownsPrompt: fillSlotsOwnsPrompt, wideFace: true },
   buildBase: { View: BuildBaseView, Demo: BuildBaseDemo, Face: BuildBaseFace },

@@ -45,6 +45,8 @@ export interface FaceProps {
 export interface DemoProps {
   /** The film is over (or was tapped away). */
   onDone(): void
+  /** The task the film introduces: its example matches the task's skill, never the task itself (review r1 P2-8). */
+  task?: Task | null
 }
 
 export interface KindModule {

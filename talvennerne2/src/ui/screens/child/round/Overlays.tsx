@@ -1,13 +1,14 @@
 // Overlays of the round: the pause card behind ✕ (two equal buttons, neither has focus: SPEC §13.7),
 // "Tryk for at fortsætte" after the app comes back from the background (SPEC §10.5: the tap also
 // wakes the audio), and the "Perfekt tur!" banner.
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '../../../design/Button'
 import { Icon } from '../../../design/Icon'
 import { SpokenText } from '../../../design/SpokenText'
 import { DUR, fade, isCalm, springInY } from '../../../design/motion'
+import { useSpeech } from '../../../design/speech'
 
 function Layer({ children, className }: { children: ReactNode; className: string }) {
   if (typeof document === 'undefined') return null
@@ -15,6 +16,7 @@ function Layer({ children, className }: { children: ReactNode; className: string
 }
 
 export function PauseOverlay({ onResume, onLeave }: { onResume(): void; onLeave(): void }) {
+  const speech = useSpeech()
   const card = useRef<HTMLDivElement>(null)
   const scrim = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -23,6 +25,11 @@ export function PauseOverlay({ onResume, onLeave }: { onResume(): void; onLeave(
       if (isCalm()) fade(card.current, 0, 1, DUR.fast)
       else springInY(card.current, '40px')
     }
+  }, [])
+  // the card says what it is, for a child who cannot read it (review r1 P3-17)
+  useEffect(() => {
+    speech.speak([{ clip: 's.round.pause.title' }, { clip: 's.round.pause.body' }])
+    // once, when the card opens
   }, [])
   return (
     <Layer className="tv-pause">

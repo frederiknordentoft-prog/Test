@@ -15,6 +15,7 @@ import { cx } from '../design/cx'
 import { formatMoney, formatNumber } from '../task/answers'
 import { CompareScene } from './CompareScene'
 import { HearScene } from './HearScene'
+import { MarkedLine } from './MarkedLine'
 import { ObjectsScene } from './ObjectsScene'
 import { RowScene } from './RowScene'
 import { LongArt, ObjectArt, ObjectIcon, isLong } from './objects'
@@ -28,6 +29,8 @@ export interface PromptSceneProps {
   task?: Task
   /** Shown in the first answer blank (typed digits, the struck or right answer). */
   entry?: ReactNode
+  /** A row's gaps filled one by one (an order handed in), instead of `entry` in the first. */
+  entries?: readonly ReactNode[]
   slot?: BlankSlot
   /** Bumps on "Hør igen": flashed amounts are shown once more. */
   replay?: number
@@ -68,7 +71,7 @@ export function PromptScene(props: PromptSceneProps) {
 
 const isCoin = (v: number): v is CoinOre => (COIN_VALUES as readonly number[]).includes(v)
 
-function scene({ prompt: p, task, entry, slot = 'empty', replay = 0, speaking = false, onHear }: PromptSceneProps): ReactNode {
+function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, speaking = false, onHear }: PromptSceneProps): ReactNode {
   const seed = task?.id ?? p.scene
   switch (p.scene) {
     case 'equation':
@@ -78,9 +81,13 @@ function scene({ prompt: p, task, entry, slot = 'empty', replay = 0, speaking = 
     case 'hear':
       return <HearScene speaking={speaking} onHear={onHear} />
     case 'row':
-      return <RowScene prompt={p} entry={entry} slot={slot} />
-    case 'line':
+      return <RowScene prompt={p} entry={entry} entries={entries} slot={slot} />
+    case 'line': {
+      // a choice asked on a number line marks the numbers on its cards (review r1 P2-7)
+      const marks = task?.kind === 'choice' ? task.options.filter((o): o is number => typeof o === 'number') : []
+      if (marks.length > 0) return <MarkedLine min={p.min} max={p.max} marks={marks} hops={p.hops} className="tv-scene__line" />
       return <NumberLine min={p.min} max={p.max} arrowAt={p.arrowAt} target={p.target} hops={p.hops} className="tv-scene__line" />
+    }
     case 'board':
       return (
         <div className="tv-board">

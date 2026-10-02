@@ -14,20 +14,27 @@ function cellFace(c: number | string): ReactNode {
   return <span className="tv-row__num tv-row__num--small">{c}</span>
 }
 
-export function RowScene({ prompt, entry, slot = 'empty' }: { prompt: Row; entry?: ReactNode; slot?: 'empty' | 'active' | 'good' | 'oops' }) {
-  let firstGap = true
+const shown = (e: ReactNode | undefined): e is ReactNode => e !== undefined && e !== null && e !== ''
+
+/**
+ * `entry` goes in the first gap (a typed or tapped answer); `entries` fills the gaps one by one (an
+ * order or a pattern handed in: each part in its own stone, never all of them in the first).
+ */
+export function RowScene({ prompt, entry, entries, slot = 'empty' }: { prompt: Row; entry?: ReactNode; entries?: readonly ReactNode[]; slot?: 'empty' | 'active' | 'good' | 'oops' }) {
+  let gapIndex = -1
   const many = prompt.cells.length > 6
   return (
     <div className={cx('tv-row', many && 'tv-row--many')} role="img" style={{ ['--row-n' as string]: prompt.cells.length }}>
       {prompt.cells.map((c, i) => {
         const gap = c === null
-        const mine = gap && firstGap
-        if (gap) firstGap = false
+        if (gap) gapIndex += 1
+        const fill = !gap ? undefined : entries ? entries[gapIndex] : gapIndex === 0 ? entry : undefined
+        const mine = gap && (entries ? shown(fill) : gapIndex === 0)
         return (
           <span key={i} className="tv-row__step">
             {i > 0 && prompt.step ? <span className="tv-row__hop" aria-hidden>{`+${prompt.step}`}</span> : null}
             <span className={cx('tv-row__stone', gap && 'is-gap', mine && `is-${slot}`)}>
-              {gap ? mine && entry !== undefined && entry !== null && entry !== '' ? entry : <span className="tv-row__q">?</span> : cellFace(c)}
+              {gap ? shown(fill) ? fill : <span className="tv-row__q">?</span> : cellFace(c)}
             </span>
           </span>
         )

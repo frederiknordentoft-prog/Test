@@ -1,8 +1,13 @@
 // sortOrder (SPEC §3.2): 3–5 cards. Tapped in order, each card hops to the next free place on the
 // shelf; a tap on a placed card sends it back. When every card is placed, the tick hands the order in.
+//
+// When the question is a row of stepping stones ("Tæl videre fra 8": 8 ? ? ? ?), the view draws that
+// row itself and the stones with a "?" are the shelf (review r1 P2-6): the row is shown once, on one
+// line in every format, and the given numbers stand where the cards go. An answer stays in its
+// places afterwards, card by card — struck through when it was wrong.
 import { useLayoutEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
-import type { AnswerValue } from '../../../engine/types'
+import type { CSSProperties, ReactNode } from 'react'
+import type { AnswerValue, Task } from '../../../engine/types'
 import { playSfx } from '../../../audio/sfx'
 import { Icon } from '../../design/Icon'
 import { usePress } from '../../design/usePress'
@@ -13,8 +18,22 @@ import { OptionFace } from '../faces'
 import { hop } from '../motion'
 import type { FaceProps, TaskViewProps } from '../types'
 
+/** The row of stones the cards go into: the prompt's own row when it has a gap for every card. */
+export function shelfCells(task: Task): (AnswerValue | null)[] {
+  const p = task.prompt
+  if (p.scene === 'row' && sortOrderOwnsPrompt(task)) return [...p.cells]
+  return Array.from({ length: task.options.length }, () => null)
+}
+
+/** The view draws a stepping-stone row itself, so the round leaves the prompt card out. */
+export function sortOrderOwnsPrompt(task: Task): boolean {
+  return task.prompt.scene === 'row' && task.prompt.cells.filter((c) => c === null).length === task.options.length
+}
+
 export function SortOrderView({ task, mode, given, onSubmit, onActivity }: TaskViewProps) {
   const n = task.options.length
+  const cells = shelfCells(task)
+  const fixed = cells.filter((c) => c !== null).length
   // placed[k] is the index of the option on shelf place k
   const [placed, setPlaced] = useState<number[]>([])
   const root = useRef<HTMLDivElement>(null)
@@ -43,18 +62,34 @@ export function SortOrderView({ task, mode, given, onSubmit, onActivity }: TaskV
     setPlaced((p) => p.filter((x) => x !== i))
   }
 
-  // after an answer the shelf shows what was handed in
-  const shelf: (number | null)[] = Array.from({ length: n }, (_, k) => placed[k] ?? null)
+  // after an answer the shelf shows what was handed in, card by card
   const givenOrder = mode !== 'input' && given !== null ? splitTokens(given) : null
   const state = mode === 'correct' ? 'good' : mode === 'wrong' ? 'oops' : 'idle'
+  // given stones are narrower than the places: a whole row fits one line on a phone
+  const columns = cells.map((c) => (c === null ? 'minmax(0, 1fr)' : 'minmax(0, 0.5fr)')).join(' ')
+  let k = -1
   return (
-    <div ref={root} className={cx('tv-sort', `tv-sort--n${n}`, `is-${mode}`)} data-kind="sortOrder">
-      <div className={cx('tv-sort__shelf', `is-${state}`)}>
-        {shelf.map((i, k) => {
+    <div
+      ref={root}
+      className={cx('tv-sort', `tv-sort--n${n}`, fixed > 0 && 'tv-sort--row', `is-${mode}`)}
+      style={{ '--cells': cells.length } as CSSProperties}
+      data-kind="sortOrder"
+    >
+      <div className={cx('tv-sort__shelf', `is-${state}`)} style={{ gridTemplateColumns: columns }} role="img">
+        {cells.map((c, j) => {
+          if (c !== null) {
+            return (
+              <div key={j} className="tv-sort__given" data-given-stone={String(c)}>
+                <OptionFace task={task} value={c} size="sm" className="tv-sort__face" />
+              </div>
+            )
+          }
+          k += 1
+          const i = placed[k] ?? null
           const value: AnswerValue | null = givenOrder ? (givenOrder[k] ?? null) : i !== null ? task.options[i] : null
           return (
-            <div key={k} className={cx('tv-sort__place', value !== null && 'is-full')} data-place={k}>
-              {value !== null && (
+            <div key={j} className={cx('tv-sort__place', value !== null && 'is-full')} data-place={k}>
+              {value !== null ? (
                 <SortCard
                   disabled={!input}
                   state={state}
@@ -63,11 +98,15 @@ export function SortOrderView({ task, mode, given, onSubmit, onActivity }: TaskV
                 >
                   <OptionFace task={task} value={value} size="sm" className="tv-sort__face" />
                 </SortCard>
+              ) : (
+                <span className="tv-sort__q" aria-hidden>
+                  ?
+                </span>
               )}
+              {mode === 'wrong' && value !== null && <span className="tv-strike" aria-hidden />}
             </div>
           )
         })}
-        {mode === 'wrong' && <span className="tv-strike" aria-hidden />}
       </div>
       <div className="tv-sort__arrow" aria-hidden>
         <Icon name="next" size={22} strokeWidth={2.6} />
