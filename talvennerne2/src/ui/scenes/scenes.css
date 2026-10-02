@@ -29,6 +29,13 @@
 .tv-scene--balance .tv-eq {
   font-size: var(--eq-size, var(--text-task));
 }
+/* Two equations joined by a word (inverseOps): one line each, the word opening the second */
+.tv-eqlines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+}
 .tv-row {
   font-size: 18px;
 }

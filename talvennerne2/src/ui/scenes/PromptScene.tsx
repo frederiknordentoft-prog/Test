@@ -55,16 +55,32 @@ export function equationEm(terms: readonly Term[], entryChars = 1): number {
   return em
 }
 
+/**
+ * Two equations joined by a word ("15 − 6 = 9 så 9 + 6 = □", inverseOps): one line each, the word
+ * opening the second, so both stay readable on a phone (UI-fund 12). Null for anything else.
+ */
+export function equationLines(terms: readonly Term[]): [Term[], Term[]] | null {
+  const cut = terms.findIndex((t) => 'text' in t)
+  if (cut <= 0 || cut >= terms.length - 1) return null
+  const hasEquals = (ts: readonly Term[]) => ts.some((t) => 'op' in t && t.op === '=')
+  const first = terms.slice(0, cut)
+  const second = terms.slice(cut)
+  return hasEquals(first) && hasEquals(second.slice(1)) ? [first, second] : null
+}
+
 export function PromptScene(props: PromptSceneProps) {
   const { prompt, className, entry } = props
   let style: CSSProperties | undefined
+  const lines = prompt.scene === 'equation' ? equationLines(prompt.terms) : null
   if (prompt.scene === 'equation' || prompt.scene === 'balance') {
     const terms = prompt.scene === 'equation' ? prompt.terms : [...prompt.left, { op: '=' as const }, ...prompt.right]
     const chars = typeof entry === 'string' || typeof entry === 'number' ? String(entry).length : entry ? 3 : 1
-    style = { ['--eq-em' as string]: equationEm(terms, chars).toFixed(2) }
+    // two lines: the wider one decides the size
+    const em = lines ? Math.max(equationEm(lines[0], 1), equationEm(lines[1], chars)) : equationEm(terms, chars)
+    style = { ['--eq-em' as string]: em.toFixed(2) }
   }
   return (
-    <div className={cx('tv-scene', `tv-scene--${prompt.scene}`, className)} style={style}>
+    <div className={cx('tv-scene', `tv-scene--${prompt.scene}`, lines && 'tv-scene--lines', className)} style={style}>
       {scene(props)}
     </div>
   )
@@ -73,8 +89,16 @@ export function PromptScene(props: PromptSceneProps) {
 function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, speaking = false, onHear }: PromptSceneProps): ReactNode {
   const seed = task?.id ?? p.scene
   switch (p.scene) {
-    case 'equation':
-      return <Equation terms={p.terms} entry={entry} slot={slot} nowrap />
+    case 'equation': {
+      const lines = equationLines(p.terms)
+      if (!lines) return <Equation terms={p.terms} entry={entry} slot={slot} nowrap />
+      return (
+        <span className="tv-eqlines">
+          <Equation terms={lines[0]} nowrap />
+          <Equation terms={lines[1]} entry={entry} slot={slot} nowrap />
+        </span>
+      )
+    }
     case 'objects':
       return <ObjectsScene prompt={p} replay={replay} seed={seed} />
     case 'hear':

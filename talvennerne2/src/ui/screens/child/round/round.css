@@ -77,6 +77,13 @@
 .tv-round__card .tv-row {
   font-size: min(26px, calc(var(--ch) * 0.2), calc(var(--cw) / var(--row-n, 6) / 3.6));
 }
+/* two equations on two lines (inverseOps): each line gets a little under half the height */
+.tv-round__scene.tv-scene--lines {
+  --eq-size: min(calc(var(--text-task) * 1.2), calc(var(--ch) * 0.3), calc((var(--cw) - 4px) / var(--eq-em, 6)));
+}
+.tv-round__card.has-scaffold .tv-round__scene.tv-scene--lines {
+  --eq-size: min(var(--text-task), calc(var(--ch) * 0.18), calc((var(--cw) - 4px) / var(--eq-em, 6)));
+}
 .tv-round__card.has-scaffold .tv-round__scene {
   --scene-h: calc(var(--ch) * 0.4);
   --eq-size: min(var(--text-task), calc(var(--ch) * 0.3), calc((var(--cw) - 4px) / var(--eq-em, 6)));
