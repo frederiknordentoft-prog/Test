@@ -283,6 +283,12 @@ for (const o of ORDER) {
         const [x, y] = q(fact).nums!
         const firstDigit = signToken(Number(String(x)[0]), Number(String(y)[0]))
         if (!task.options.includes(firstDigit) || classifyAnswer(task, firstDigit) !== 'firstDigitCompare') problems.push(`${fact.id}: [${task.options}]`)
+        // each card says its own sign (SPEC §10.1 Regnetegn: mindre end, større end, er lig med)
+        const SAID: Record<string, string> = { 'cmp:<': 'mindre end', 'cmp:>': 'større end', 'cmp:=': 'er lig med' }
+        task.options.forEach((o, i) => {
+          const said = spokenText([{ clip: task.optionClips?.[i] ?? '' }]).toLowerCase().replace(/[.,?!]/g, '').trim()
+          if (said !== SAID[String(o)]) problems.push(`${fact.id}: card ${String(o)} says "${said}"`)
+        })
       }
       expect(signs.length > 0).toBe(o.id === 'order1000')
       expect(first(problems)).toEqual([])

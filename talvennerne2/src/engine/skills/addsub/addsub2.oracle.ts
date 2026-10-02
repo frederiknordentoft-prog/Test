@@ -7,7 +7,7 @@
 // files, so none of this reaches the app.
 import type { MisconceptionId, Prompt, SkillId, Task } from '../../types'
 import { spokenText } from '../number/number.oracle'
-import { after, numbersIn, swapTO, type Why } from '../number/number2.oracle'
+import { after, numberAfter, numbersIn, swapTO, type Why } from '../number/number2.oracle'
 
 export type AddSub2Skill = Extract<SkillId,
   'doubles' | 'halves' | 'addTo20' | 'subTo20' | 'addSub20Simple' | 'tens100' | 'add100NoCarry' | 'sub100NoBorrow' |
@@ -284,3 +284,61 @@ export const RECALL2: readonly AddSub2Skill[] = ['doubles', 'halves', 'addTo20',
 
 /** The question as Danish text (for messages). */
 export const textOf = (t: Task): string => spokenText(t.speech)
+
+// ─── Strategy hints: what they say must be true ─────────────────────────────
+
+/**
+ * Every piece of arithmetic a hint says is true, worked out here: "Otte og to giver ti", "Tretten minus
+ * tre giver ti", the hop chain ("Start på otteogtredive. Hop to frem til fyrre. …") landing where it
+ * says, the first hop one step from the start, "Hoppene giver tilsammen …", "Så halvdelen af fjorten er
+ * syv" — and the hint's last conclusion (a sum, a landing, "Svaret er …", "Det er …") is the answer.
+ */
+export function hintArithmeticProblems(text: string, answer: number): string[] {
+  const out: string[] = []
+  let start: number | null = null
+  let at: number | null = null
+  /** The last number the hint concludes with. */
+  let last: number | null = null
+  for (const s of text.split(/(?<=[.?!])\s+/)) {
+    const bad = (why: string) => out.push(`"${s}" ${why}`)
+    const giver = s.split(' giver ')
+    if (giver.length === 2) {
+      const [left, right] = [numbersIn(giver[0]), numbersIn(giver[1])]
+      const want = / minus /.test(giver[0]) ? left[0] - left[1] : left[0] + left[1]
+      if (left.length === 2 && right.length === 1) {
+        if (want !== right[0]) bad(`is false (${want})`)
+        last = right[0]
+      }
+    }
+    const from = numberAfter(s, 'Start på ')
+    if (from !== null) [start, at] = [from, from]
+    const hop = /^Hop (.+) (frem|tilbage) til (.+)\.$/.exec(s)
+    if (hop) {
+      const [d, to] = [numbersIn(hop[1]), numbersIn(hop[3])]
+      if (at === null || d.length !== 1 || to.length !== 1) bad('is no hop from a start')
+      else if (at + (hop[2] === 'frem' ? d[0] : -d[0]) !== to[0]) bad(`lands on ${at + (hop[2] === 'frem' ? d[0] : -d[0])}`)
+      at = to.length === 1 ? to[0] : at
+      last = at
+    }
+    for (const [lead, step] of [['Det første hop lander på ', 1], ['Det første hop tilbage lander på ', -1]] as const) {
+      const first = numberAfter(s, lead)
+      if (first !== null && (start === null || first !== start + step)) bad(`(start ${String(start)})`)
+    }
+    const sum = numberAfter(s, 'Hoppene giver tilsammen ')
+    if (sum !== null) {
+      if (start === null || at === null || sum !== at - start) bad(`(hops ${String(start)} → ${String(at)})`)
+      last = sum
+    }
+    const half = /^Så halvdelen af (.+) er (.+)\.$/.exec(s)
+    if (half) {
+      if (2 * (numbersIn(half[2])[0] ?? NaN) !== numbersIn(half[1])[0]) bad('is false')
+      last = numbersIn(half[2])[0] ?? null
+    }
+    for (const lead of ['Svaret er ', 'Det er ']) {
+      const named = numberAfter(s, lead)
+      if (named !== null) last = named
+    }
+  }
+  if (last !== null && last !== answer) out.push(`"${text}" concludes ${last}, answer ${answer}`)
+  return out
+}

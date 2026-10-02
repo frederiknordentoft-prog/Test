@@ -10,14 +10,17 @@ import { isCorrect } from '../../answer'
 import { classifyAnswer } from '../../misconceptions'
 import { compile } from '../../../speech/compile'
 import type { Fact } from '../../types'
-import { cardProblems, first, hintProblems, registeredSkill, tagsToHint, taskSpeechProblems, type Built } from '../number/number.oracle'
+import {
+  cardProblems, first, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
+} from '../number/number.oracle'
 import {
   answerProblems2, avoidProblems, classifyProblems2, expectedTag, idProblems, lineOf, numberCards, numberWordProblems,
   productionProblems2, specKindProblems2, swapTO, sweep, typedValues,
 } from '../number/number2.oracle'
 import {
-  answerFromPrompt, answerFromSpeech, borrowNoDecrement, digitComplement10, explainSum, forgotCarry, givenNumbers, idShape, lineFor,
-  misconceptionsFor, parseSum, RECALL2, smallerFromLarger, textOf, type AddSub2Skill, type Sum,
+  answerFromPrompt, answerFromSpeech, borrowNoDecrement, digitComplement10, explainSum, forgotCarry, givenNumbers,
+  hintArithmeticProblems, idShape, lineFor, misconceptionsFor, parseSum, RECALL2, smallerFromLarger, textOf, type AddSub2Skill,
+  type Sum,
 } from './addsub2.oracle'
 
 describe('addsub2 oracle helpers', () => {
@@ -49,6 +52,10 @@ describe('addsub2 oracle helpers', () => {
     expect(parseSum('addSub1000Round', 'r1000:370+50')?.family).toBe('HTplusTcarry')
     expect(misconceptionsFor(parseSum('doubles', 'dbl:6')!, 3)).toEqual(['wrongOperation'])
     expect(misconceptionsFor(parseSum('halves', 'hlf:14')!, 28)).toEqual(['wrongOperation'])
+    expect(hintArithmeticProblems('Start på otteogtredive. Hop to frem til fyrre. Hop fyrre frem til firs. Hop tre frem til treogfirs.', 83)).toEqual([])
+    expect(hintArithmeticProblems('Fyld tieren op først. Otte og to giver ti. Ti og tre giver tolv.', 13)).toHaveLength(2)
+    expect(hintArithmeticProblems('Syv og syv giver fjorten. Så halvdelen af fjorten er syv.', 8)).toHaveLength(1)
+    expect(hintArithmeticProblems('Start på otte. Hop to frem til elleve.', 11)).toHaveLength(1)
   })
 })
 
@@ -216,6 +223,19 @@ for (const skill of SKILLS) {
 
     it('has SPEC’s production kinds and ceilings (keypad and line box 5; cards box 3; share and buildBase never production here)', () => {
       expect(first([...productionProblems2(built), ...specKindProblems2(def, built)])).toEqual([])
+    })
+
+    it('says only true arithmetic in every strategy hint (sums, hops, "Svaret er …"), for every tag and kind', () => {
+      const problems: string[] = []
+      const tags = tagsToHint(def, canon)
+      for (const f of all.filter((_, i) => i % 4 === 0)) {
+        for (const tag of tags) {
+          for (const kind of [undefined, ...def.kinds]) {
+            for (const p of hintArithmeticProblems(spokenText(def.hint(f, tag, kind).speech), sum(f).answer)) problems.push(`${f.id} hint(${String(tag)}${kind ? `, ${kind}` : ''}): ${p}`)
+          }
+        }
+      }
+      expect(first(problems)).toEqual([])
     })
 
     it('speaks every task and hint with recorded clips, no digits, and numbers as SPEC §10.1 says them', () => {
