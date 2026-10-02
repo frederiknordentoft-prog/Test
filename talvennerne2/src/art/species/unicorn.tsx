@@ -131,19 +131,20 @@ const FOAL_MANE: Vec[][] = [
 ]
 const FOAL_MANE_STRIPE: Vec[] = [[62, 50], [53, 61], [48.5, 76], [47.6, 92], [50.6, 100], [52.6, 88], [54.4, 74], [60, 62], [68, 54]]
 /**
- * Enhjørningens haler ender i en spirallok (en krog, der krøller tilbage mod kroppen), så arten også
- * kan læses i sort – hestens haler ender i frynser (review G1-r2, E3c). Rygrad og bredde → kontur.
+ * Enhjørningens haler hænger tæt ned langs låret og ender i en spirallok, der krøller udad (den lukker
+ * aldrig baggrund inde mellem hale og lår), så arten også kan læses i sort – hestens haler ender i
+ * frynser (review G1-r2, E3c). Rygrad og bredde → kontur.
  */
 const curlTail = (spine: readonly Vec[], w0: number, w1: number): Vec[] => limbLoop(spine, w0, w1, 6)
-const FOAL_TAIL = curlTail([[-2, -1], [6, -9], [15, -11], [23, -6], [27, 3], [27, 13], [23, 20], [17, 22], [13, 18], [14, 13]], 11, 4.5)
+const FOAL_TAIL = curlTail([[-2, -1], [5, -5], [12, -5], [18, -1], [21, 6], [21.5, 13], [23, 19], [26.5, 22.5], [30, 21.5], [31, 17.5]], 11, 4.5)
 
 /** Bølgemanke: lange, bølgede lokker på begge sider, en fejende pandelok og en lang bølget hale. */
 const WAVY_FORELOCK: Vec[] = [[100, 39], [91.5, 41], [86.5, 47], [86, 55], [89, 62], [94, 66.5], [96.5, 72], [100, 66.6], [103.4, 60], [108.6, 56], [113.4, 51.6], [115, 45.6], [110, 40.6]]
 const WAVY_FORELOCK_STRIPE: Vec[] = [[96, 43], [91.6, 47.6], [91, 55], [94, 61], [97, 64.5], [97.4, 58], [95.6, 52], [97.6, 46.6]]
 const WAVY_MANE: Vec[][] = [
   [
-    [96, 36], [82, 36], [68, 42], [56, 52], [48, 66], [44, 82], [46, 96], [42, 110], [42, 124], [46, 138], [44, 152], [48, 166],
-    [54, 176], [58, 168], [60, 178], [64, 166], [62, 152], [64, 138], [60, 124], [61, 110], [64, 96], [62, 82], [66, 68], [74, 58],
+    [96, 36], [82, 36], [68, 42], [56, 52], [48, 66], [44, 82], [46, 96], [42, 110], [42, 124], [46, 138], [44, 151], [48, 162],
+    [53, 170], [57, 164], [60, 172], [64, 162], [72, 152], [80, 140], [68, 124], [61, 110], [64, 96], [62, 82], [66, 68], [74, 58],
     [86, 52], [97, 50],
   ],
   [
@@ -152,7 +153,7 @@ const WAVY_MANE: Vec[][] = [
   ],
 ]
 const WAVY_MANE_STRIPE: Vec[] = [[64, 48], [54, 62], [49, 80], [51, 96], [48, 112], [50, 128], [53, 124], [53.4, 110], [55.6, 96], [54.6, 80], [58.6, 64], [67, 52]]
-const WAVY_TAIL = curlTail([[-2, -1], [7, -11], [17, -13], [25, -7], [28, 3], [26.5, 12], [28.5, 19], [25.5, 24.5], [20, 26.5], [16.5, 23], [18, 18.5]], 12, 5)
+const WAVY_TAIL = curlTail([[-2, -1], [6, -6], [13, -6.5], [19, -2], [22.5, 5], [22, 12], [23.5, 18], [27, 22], [30.5, 21.5], [31.5, 17.5]], 12, 5)
 
 /** Stjernehorn: mellemlang manke på højre side, en lille tot til venstre, skilt pandelok. */
 const MANE_MED_L: Vec[] = [
@@ -163,7 +164,7 @@ const MANE_TUFT_L: Vec[] = [[94, 46], [80, 46], [68, 52], [60, 62], [57, 74], [6
 const STAR_MANE: Vec[][] = [mirrorX(MANE_MED_L, 100), MANE_TUFT_L]
 const STAR_MANE_STRIPE: Vec[] = mirrorX([[66, 56], [56, 68], [51, 84], [50.5, 100], [53, 116], [55.4, 112], [55, 98], [56.4, 84], [60.6, 70], [69, 59]], 100)
 const STAR_FORELOCK: Vec[] = [[100, 40], [92, 41], [86, 47], [84, 55], [88, 61], [92, 56], [96, 50], [100, 47], [104, 50], [108, 56], [112, 61], [116, 55], [114, 47], [108, 41]]
-const STAR_TAIL = curlTail([[-2, -1], [6, -10], [16, -13], [25, -7], [29, 4], [28, 15], [24, 22], [18, 24], [14, 20], [16, 15]], 11.5, 4.5)
+const STAR_TAIL = curlTail([[-2, -1], [5.5, -5.5], [12.5, -6], [18.5, -2], [22, 5], [22, 12], [23.5, 18.5], [27, 22.5], [30.5, 22], [31.5, 18]], 11.5, 4.5)
 
 // ---------------------------------------------------------------------------------------------
 

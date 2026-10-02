@@ -166,6 +166,8 @@ interface TailShape {
   bushy?: { base: readonly number[]; tip: readonly number[] }
 }
 
+// De buskede haler slutter under kraven og hovedet, så halespidsen aldrig lukker en sprække med baggrund
+// inde mellem krave, skulder og hale (review G1-r3, huller-lint).
 const TAILS: Record<'domestic' | 'longhair' | 'mainecoon', TailShape> = {
   domestic: {
     base: [[0, 0], [12, -2], [23, -9], [28, -21], [28, -34]],
@@ -173,13 +175,13 @@ const TAILS: Record<'domestic' | 'longhair' | 'mainecoon', TailShape> = {
     w: 10.5,
   },
   longhair: {
-    base: [[0, 0], [11, -3], [20, -11], [24.5, -23], [24.5, -35]],
+    base: [[0, 0], [11, -3], [20, -11], [24.5, -21.5], [24.5, -30]],
     tip: [[0, 0], [-1.4, -10], [-6.4, -17], [-13.4, -18], [-16.4, -12.6]],
     w: 15,
     bushy: { base: [13, 15, 16.5, 17.5, 18], tip: [18, 18, 16.5, 13.5, 0] },
   },
   mainecoon: {
-    base: [[0, 0], [11, -3], [19, -12], [23, -26], [22.5, -40]],
+    base: [[0, 0], [11, -3], [19, -12], [23, -24], [22.5, -33]],
     tip: [[0, 0], [-1.6, -11], [-7, -18.6], [-14.6, -19.4], [-18.4, -13.4]],
     w: 16,
     bushy: { base: [13, 15, 17, 18, 18.5], tip: [18.5, 18.5, 17, 14, 0] },
