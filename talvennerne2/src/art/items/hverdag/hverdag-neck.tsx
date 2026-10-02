@@ -45,11 +45,14 @@ function endOf(spine: readonly Vec[]) {
   return { a, b, u: [(b[0] - a[0]) / l, (b[1] - a[1]) / l] as Vec }
 }
 
-/** Tværbånd på snippen ved andel t af det sidste stykke (striberne følger snippens retning). */
-function crossband(spine: readonly Vec[], t: number, h: number): string {
+/**
+ * Tværbånd på snippen ved andel t af det sidste stykke (striberne følger snippens retning). Båndet slutter
+ * ved konturens inderkant (`inset`), så snippens egen kontur aldrig skal stryges igen oven på andre dele.
+ */
+function crossband(spine: readonly Vec[], t: number, h: number, inset: number): string {
   const { a, b, u } = endOf(spine)
   const c: Vec = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
-  const w = TAIL_W[2] / 2 + 0.6
+  const w = (TAIL_W[1] + (TAIL_W[2] - TAIL_W[1]) * t) / 2 - inset
   const at = (s: number, v: number): Vec => [c[0] + u[0] * s - u[1] * v, c[1] + u[1] * s + u[0] * v]
   return poly([at(-h / 2, -w), at(h / 2, -w), at(h / 2, w), at(-h / 2, w)])
 }
@@ -95,9 +98,9 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
       <path d={blob(WRAP, 0.75)} fill="none" {...stroke} />
       <path d={join(fringe(TAIL_B), fringe(TAIL_A))} fill={c.accent} stroke={c.outline} strokeWidth={sw * 0.5} strokeLinejoin="round" />
       <path d={tail(TAIL_B)} fill={c.mainShade} {...stroke} />
+      <path d={join(crossband(TAIL_B, 0.3, 3.4, sw * 0.5 + 0.15), crossband(TAIL_B, 0.82, 3.4, sw * 0.5 + 0.15))} fill={c.trim} />
       <path d={tail(TAIL_A)} fill={c.main} {...stroke} />
-      <path d={join(crossband(TAIL_A, 0.25, 3.6), crossband(TAIL_A, 0.78, 3.6), crossband(TAIL_B, 0.3, 3.4), crossband(TAIL_B, 0.82, 3.4))} fill={c.trim} />
-      <path d={join(tail(TAIL_A), tail(TAIL_B))} fill="none" {...stroke} />
+      <path d={join(crossband(TAIL_A, 0.25, 3.6, sw * 0.5 + 0.15), crossband(TAIL_A, 0.78, 3.6, sw * 0.5 + 0.15))} fill={c.trim} />
       <path d={blob(KNOT, 0.9)} fill={c.main} {...stroke} />
       <path d={FOLDS[2]} fill="none" stroke={c.mainShade} strokeWidth={sw * 0.6} strokeLinecap="round" />
       <path d={join(ellipse(-22, 2.6, 5.2, 2, -6), ellipse(-2.4, 11.4, 2.4, 1.5, -20))} fill={c.highlight} />

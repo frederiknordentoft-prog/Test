@@ -265,6 +265,21 @@ function CloseupSheet({ def }: { def: SpeciesDef }) {
           <R breed={b1} stage={1} colorway="c2" mood="oops" size={300} />
         </Cell>
       </div>
+      {/* Hele sæt i nærbillede (hvilende og med løftet pote): ballon og lup følger poten. */}
+      <div className="sh-row" style={{ marginTop: 14 }}>
+        {FULL_SETS.flatMap(({ set, items }, i) =>
+          (['idle', i % 2 ? 'cheer' : 'wave'] as const).map((m, j) => {
+            const b = [b2, b3][(i + j) % 2]
+            const st = (j ? 2 : 3) as Stage
+            const c = (['c5', 'c2', 'c6', 'c4'] as const)[(2 * i + j) % 4]
+            return (
+              <Cell key={`${set}${m}`} cap={`${b} · ${st} · ${c} · ${set} · ${m}`} label={`closeup ${set} ${m}`} lint="safe fit">
+                <R breed={b} stage={st} colorway={c} mood={m} size={300} outfit={setOutfit(items, ((i + j) % 3) as 0 | 1 | 2)} />
+              </Cell>
+            )
+          }),
+        )}
+      </div>
     </Page>
   )
 }
