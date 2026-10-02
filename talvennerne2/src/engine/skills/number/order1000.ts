@@ -326,8 +326,11 @@ function candidates(f: Fact) {
           return tagged(ans, [[q.n, 'operand'], ...tag('near', ans + 100, ans - 10), ...tag('other', q.n - 1)])
       }
       break
-    case 'bigger3':
-      return tagged(ans, q.nums.filter((v) => v !== ans).map((v) => [v, 'operand'] as const))
+    case 'bigger3': {
+      // the two other numbers are the two wrong cards: the one with the same hundreds is the near miss
+      const [mid, low] = biggestFirst(q.nums).slice(1)
+      return tagged(ans, [[mid, 'near'], [low, 'operand']])
+    }
     case 'biggerMixed': {
       const small = Math.min(q.x, q.y)
       const four = toSort(q)

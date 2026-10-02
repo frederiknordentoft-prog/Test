@@ -11,8 +11,8 @@
 //   buildBase        production: build the number from its numeral (build, decompose: only its tens
 //                    or ones — "Byg kun tierne i syvogfyrre" → 40), from the words (swapped), or
 //                    build what is missing (expand → 7). The answer is what the blocks are worth.
-//   fillSlots        the digits from a 0–9 palette, tens first ('4|7'); expand fills 47 = □ + □ from
-//                    a palette of digits and tens ('40|7', either order).
+//   fillSlots        not production here (SPEC §2.2): the number's two digits in the right order, tens
+//                    first ('4|7'); expand fills 47 = □ + □ from 4, 40, 7 and 70 ('40|7', either order).
 // Wrong answers (pædagogik §3.2), tagged on the facts' numbers — the counts in the picture or the
 // words are operands, the number in the question is one:
 //   addsPlaceParts  4 tiere og 7 enere → 11 (build, swapped). With no ones, 4 is also the count of
@@ -26,7 +26,7 @@
 // Hints: the blocks with "fire tiere og syv enere", and a sentence for each misconception.
 import type { AnswerType, AnswerValue, Fact, FamilyDef, HintSpec, Prompt, Rng, SkillModule, SpeechPart, TaskKind } from '../types'
 import { digitSwapOf } from '../../misconceptions'
-import { hintOf, metaOf, num, say, tagged, walk, type Entry } from '../number/kit'
+import { hintOf, metaOf, num, say, tagged, type Entry } from '../number/kit'
 import { blocks, canonical, drawAvoiding, familyRank, isPlaces, joined, onesOf, placeCount, placeNoun, placeWords, tensOf, within } from './kit'
 
 const meta = metaOf('tensOnes')
@@ -119,21 +119,29 @@ function accept(f: Fact, kind: TaskKind): AnswerValue[] {
   return kind === 'fillSlots' && q.family === 'expand' ? [joined([onesOf(q.n), tensOf(q.n) * 10])] : []
 }
 
-const DIGITS: readonly number[] = walk(0, 9)
-
-/** The palette: the digits 0–9, or for 47 = □ + □ its digits and tens and two more of each. */
-function options(f: Fact, kind: TaskKind, rng: Rng): AnswerValue[] {
-  const q = parse(f)
-  if (kind !== 'fillSlots') return []
-  if (q.family !== 'expand') return [...DIGITS]
+/**
+ * The palette. tensOnes' fillSlots is not production (SPEC §2.2): the two digits of the number
+ * (and one more when they are the same) — what is asked is their order, tens first, so a guess hits
+ * one time in four. For 47 = □ + □: its digits and its tens (4, 40, 7, 70), where either order of
+ * 40 and 7 is right — two in sixteen (guessFloor below).
+ */
+function palette(q: TensOnes): number[] {
   const t = tensOf(q.n)
   const o = onesOf(q.n)
-  const pool = new Set([t, t * 10, o, o * 10])
-  for (const d of [t + 1, o + 1, t - 1, o - 1, 5, 2]) {
-    if (pool.size >= 6) break
-    if (d >= 1 && d <= 9 && !pool.has(d) && !pool.has(d * 10)) pool.add(d).add(d * 10)
-  }
-  return rng.shuffle([...pool])
+  if (q.family !== 'expand') return t === o ? [t, t === 9 ? 8 : t + 1] : [t, o]
+  const spare = t === o ? (t === 9 ? 8 : t + 1) : null
+  return spare === null ? [t, t * 10, o, o * 10] : [t, t * 10, spare, spare * 10]
+}
+
+function options(f: Fact, kind: TaskKind, rng: Rng): AnswerValue[] {
+  return kind === 'fillSlots' ? rng.shuffle(palette(parse(f))) : []
+}
+
+/** fillSlots: the right fillings (both orders of 40 + 7) over every filling of the slots. */
+function guessFloor(f: Fact, kind: TaskKind): number {
+  if (kind !== 'fillSlots') return 0
+  const q = parse(f)
+  return (1 + accept(f, kind).length) / palette(q).length ** 2
 }
 
 const numeral = (n: number): Prompt => ({ scene: 'equation', terms: [{ n }] })
@@ -287,4 +295,5 @@ export default {
   speech,
   candidates,
   hint: (f, tag, kind) => hint(f, tag, kind),
+  guessFloor,
 } satisfies SkillModule

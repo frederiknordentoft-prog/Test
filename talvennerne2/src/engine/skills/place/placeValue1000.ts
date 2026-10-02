@@ -149,9 +149,7 @@ function accept(f: Fact, kind: TaskKind): AnswerValue[] {
 const DIGITS: readonly number[] = walk(0, 9)
 
 /** The palette: 0–9, or the number's parts and digits and one more of each place. */
-function options(f: Fact, kind: TaskKind, rng: Rng): AnswerValue[] {
-  const q = parse(f)
-  if (kind !== 'fillSlots') return []
+function palette(q: PlaceValue): number[] {
   if (!writesParts(q)) return [...DIGITS]
   const n = numberOf(q)
   const pool = new Set<number>()
@@ -162,7 +160,22 @@ function options(f: Fact, kind: TaskKind, rng: Rng): AnswerValue[] {
   // one more digit with its tens and hundreds, so no value is the only one of its size
   const spare = [1, 2, 3, 4, 5, 6, 7, 8, 9].find((d) => !pool.has(d)) ?? 1
   pool.add(spare).add(spare * 10).add(spare * 100)
-  return rng.shuffle([...pool])
+  return [...pool]
+}
+
+function options(f: Fact, kind: TaskKind, rng: Rng): AnswerValue[] {
+  if (kind !== 'fillSlots') return []
+  const q = parse(f)
+  // the digits stay in keypad order; the parts are shuffled
+  return writesParts(q) ? rng.shuffle(palette(q)) : palette(q)
+}
+
+/** fillSlots: every order of the parts is right (6 of 729 for three parts) — still production. */
+function guessFloor(f: Fact, kind: TaskKind): number {
+  if (kind !== 'fillSlots') return 0
+  const q = parse(f)
+  const slots = String(answer(f, kind)).split('|').length
+  return (1 + accept(f, kind).length) / palette(q).length ** slots
 }
 
 const numeral = (n: number): Prompt => ({ scene: 'equation', terms: [{ n }] })
@@ -398,4 +411,5 @@ export default {
   speech,
   candidates,
   hint: (f, tag, kind) => hint(f, tag, kind),
+  guessFloor,
 } satisfies SkillModule
