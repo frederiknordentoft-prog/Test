@@ -1778,6 +1778,29 @@
 
 /* ── Phone held sideways: everything in one row where it can ─────── */
 @media (orientation: landscape) and (max-height: 500px) {
+  /* the demo films: the little question beside the cards or keys, so the film fits the height */
+  .tv-demo {
+    width: min(640px, 100%);
+    padding: 6px 12px 12px;
+  }
+  .tv-demo__head {
+    padding-bottom: 4px;
+  }
+  .tv-demo__scene {
+    padding: 10px 12px 12px;
+  }
+  .tv-demo__mini--split {
+    flex-direction: row;
+    justify-content: center;
+    gap: 22px;
+  }
+  .tv-demo__mini--split .tv-demo__cards {
+    width: auto;
+    min-width: 280px;
+  }
+  .tv-demo__mini--split .tv-demo__key {
+    height: 40px;
+  }
   /* four columns, three rows: 1–4, 5–8, 9 0 delete tick — every key at least 60 px wide */
   .tv-keypad {
     --key-h: 56px;

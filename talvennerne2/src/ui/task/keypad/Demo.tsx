@@ -29,7 +29,7 @@ export function KeypadDemo({ onDone, task }: DemoProps) {
         { at: 3700, to: [0.9, 1.2] },
       ]}
     >
-      <div className="tv-demo__mini" data-demo-topic={topic}>
+      <div className="tv-demo__mini tv-demo__mini--split" data-demo-topic={topic}>
         <DemoQuestion topic={topic} answer={inBlank && typed ? typed : null} />
         {!inBlank && <span className={cx('tv-demo__display', typed && 'is-on', done && 'is-good')}>{typed || ' '}</span>}
         <div className="tv-demo__keys">

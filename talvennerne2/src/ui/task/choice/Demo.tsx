@@ -72,7 +72,7 @@ export function ChoiceDemo({ onDone, task }: DemoProps) {
         { at: 2500, to: [0.82, 1.15] },
       ]}
     >
-      <div className="tv-demo__mini" data-demo-topic={topic}>
+      <div className="tv-demo__mini tv-demo__mini--split" data-demo-topic={topic}>
         <DemoQuestion topic={topic} answer={picked ? filled : null} />
         <div className={faces.length === 2 ? 'tv-demo__cards tv-demo__cards--two' : 'tv-demo__cards'}>
           {faces.map(({ key, face }) => (
