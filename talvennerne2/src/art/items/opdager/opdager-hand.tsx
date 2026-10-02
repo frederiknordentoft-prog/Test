@@ -4,11 +4,11 @@
 // og ud, og ved jubel og vink løftes den op ved siden af hovedet. Ringen har cel-skygge, glasset en
 // lys tone med en bred glans og en prik. Alene (butik) står luppen skråt som et ikon. Luppen holdes
 // ud fra poten og rækker med vilje ud over silhuetten (`reach`).
-import { SAFE } from '../../rig/anchors'
+import { aimAway, aimSolo } from '../../rig/hold'
 import { fabric } from '../../rig/palette'
 import { arc, capsule, circle, lune } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
-import type { HandHold, ItemArt, ItemDef, Pt } from '../../rig/types'
+import type { ItemArt, ItemDef, Pt } from '../../rig/types'
 
 /** Luppen i hovedets modelenheder: skaftets længde og radius, kraven, ringen og glasset. */
 const L = { butt: 5, handle: 16, hr: 3.4, collar: 4, ring: 14, glass: 10.8 }
@@ -16,82 +16,13 @@ const L = { butt: 5, handle: 16, hr: 3.4, collar: 4, ring: 14, glass: 10.8 }
 const AIM = -58
 const STEP = 18
 
-interface Place {
-  at: (p: Pt) => Pt
-  k: number
-  /** Grebet, retningen (enhedsvektor) og enheden (verdensrummet). */
-  g: Pt
-  d: Pt
-  u: number
-}
-
-function place(hold: HandHold): Place {
-  const o = hold.local({ x: 0, y: 0 })
-  const e = hold.local({ x: 1, y: 0 })
-  const k = Math.hypot(e.x - o.x, e.y - o.y)
-  const H = hold.head
-  const u = H.s
-  const g = hold.grip
-  // Ansigtet: hovedets ellipse ned til under munden (mulen), lidt udvidet.
-  const top = H.y - H.ry
-  const bottom = Math.max(H.y + H.ry, H.mouth.y + 9 * u)
-  const fc = { x: H.x, y: (top + bottom) / 2 }
-  const fr = { x: H.rx + 2 * u, y: (bottom - top) / 2 + 2 * u }
-  const reach = L.handle + L.collar + L.ring
-  // Ringens boks i verdensrummet (luppen tegnes i en ramme, der er drejet tilbage til verdensrummet).
-  const box = L.ring * u + 2.6
-  // En hvilende pote tegnes bag hovedet: hængeører, manke og pigge rundt om hovedet (vædder, løvehoved,
-  // pindsvin) skjuler luppen der, så glassets centrum skal også ligge uden for ellipsen i hovedboksen.
-  const hb = H.box
-  const bc = { x: (hb.x0 + hb.x1) / 2, y: (hb.y0 + hb.y1) / 2 }
-  const br = { x: (hb.x1 - hb.x0) / 2 + L.ring * u * 0.4, y: (hb.y1 - hb.y0) / 2 + L.ring * u * 0.4 }
-  const lensAt = (deg: number) => {
-    const t = (deg * Math.PI) / 180
-    return { x: g.x + Math.cos(t) * reach * u, y: g.y + Math.sin(t) * reach * u }
-  }
-  // Hele ringen mod den udvidede ansigtsellipse: ≥ 1 betyder fri af ansigtet.
-  const faceDist = (deg: number) => {
-    const lens = lensAt(deg)
-    return ((lens.x - fc.x) / (fr.x + L.ring * u)) ** 2 + ((lens.y - fc.y) / (fr.y + L.ring * u)) ** 2
-  }
-  const safe = (deg: number) => {
-    const lens = lensAt(deg)
-    return lens.x + box <= SAFE.x1 && lens.x - box >= SAFE.x0 && lens.y - box >= SAFE.y0 && lens.y + box <= SAFE.y1
-  }
-  const clear = (deg: number, ears: boolean, face: boolean) => {
-    const lens = lensAt(deg)
-    const open = !ears || hold.front || ((lens.x - bc.x) / br.x) ** 2 + ((lens.y - bc.y) / br.y) ** 2 >= 1
-    return (!face || faceDist(deg) >= 1) && open && safe(deg)
-  }
-  // Foretrukken retning først, derefter skiftevis med og mod uret hele vejen rundt, til glasset går fri.
-  // Den sikre zone gælder altid; findes ingen fri retning (babyens store hoved, lang manke), slækkes først
-  // kravet om hovedboksen (ører, manke, pigge), og ellers vælges den sikre retning længst fra ansigtet.
-  const tries = Array.from({ length: 20 }, (_, i) => AIM + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * STEP)
-  const far = tries.filter(safe).sort((p, q) => faceDist(q) - faceDist(p))[0]
-  const deg = tries.find((d) => clear(d, true, true)) ?? tries.find((d) => clear(d, false, true)) ?? far ?? AIM
-  const t = (deg * Math.PI) / 180
-  return { at: hold.local, k, g, d: { x: Math.cos(t), y: Math.sin(t) }, u }
-}
-
-/**
- * Alene (butik): 45° med glasset op mod højre. Pasformen drejer håndgenstande `handRot`; retningen
- * drejes tilbage, så ikonet står ens.
- */
-function solo(handRot: number): Place {
-  const t = (-handRot * Math.PI) / 180
-  const at = (p: Pt): Pt => ({ x: p.x * Math.cos(t) - p.y * Math.sin(t), y: p.x * Math.sin(t) + p.y * Math.cos(t) })
-  return { at, k: 1, g: { x: 0, y: 0 }, d: { x: Math.SQRT1_2, y: -Math.SQRT1_2 }, u: 1 }
-}
-
 const front: ItemArt = ({ c, sw, a, hold }) => {
-  const P = hold ? place(hold) : solo(a.handRot)
-  const { at, k, g, d, u } = P
+  // Glasset er prøvepunktet: det skal gå fri af ansigtet og hovedet og holde sig i den sikre zone.
+  const P = hold ? aimAway(hold, [{ at: L.handle + L.collar + L.ring, r: L.ring }], AIM, STEP) : aimSolo(a.handRot, -45)
+  const { at, k, g, d, u, rot } = P
   // Alt tegnes i en gruppe, der drejer genstandens ramme tilbage til verdensrummet (`rotate(rot)`), så
   // lyset kommer oppefra til venstre, og hvert elements boks ligger langs verdensakserne (kontaktarkets
   // lint måler boksene i elementets egen ramme).
-  const o = at({ x: 0, y: 0 })
-  const e = at({ x: 1, y: 0 })
-  const rot = (Math.atan2(e.y - o.y, e.x - o.x) * 180) / Math.PI
   const t = (-rot * Math.PI) / 180
   const pt = (p: Pt): Vec => {
     const q = at(p)

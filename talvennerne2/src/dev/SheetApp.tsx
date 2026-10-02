@@ -47,7 +47,15 @@ const ITEMS: readonly ItemDef[] = Object.values(ITEM_MODULES)
 const SETS = [...new Set(ITEMS.map((it) => it.set))].map((set) => ({ set, items: ITEMS.filter((it) => it.set === set) }))
 const setOutfit = (items: readonly ItemDef[], cw: 0 | 1 | 2 = 0): Outfit =>
   Object.fromEntries(items.map((it) => [it.slot, { item: it, colorway: cw }])) as Outfit
-const FULL_SETS = SETS.filter((x) => x.items.length === SLOT_ORDER.length)
+/**
+ * Hele sæt som påklædninger med ét stykke pr. slot: Hverdag, Opdager og Pirat giver én hver, og
+ * milepælene (to hatte og to ryggenstande) giver to, hvor de øvrige slots går igen.
+ */
+const FULL_SETS = SETS.flatMap(({ set, items }) => {
+  const bySlot = SLOT_ORDER.map((slot) => items.filter((it) => it.slot === slot))
+  const n = Math.max(...bySlot.map((l) => l.length))
+  return Array.from({ length: n }, (_, i) => ({ set: n > 1 ? `${set} ${i + 1}` : set, items: bySlot.flatMap((l) => (l.length ? [l[i] ?? l[0]] : [])) }))
+}).filter((x) => x.items.length === SLOT_ORDER.length)
 /** Butikskortet på dyret beskæres efter slot: hoved og ansigt om hovedet, hals og krop fra mund til hofte, ryg og hånd i hele bredden (ballon og net rækker ud). */
 const CARD_CROP: Record<Slot, RigCrop> = { head: 'head', face: 'head', neck: 'torso', body: 'torso', back: 'wide', hand: 'wide' }
 
@@ -268,21 +276,24 @@ function CloseupSheet({ def }: { def: SpeciesDef }) {
           <R breed={b1} stage={1} colorway="c2" mood="oops" size={300} />
         </Cell>
       </div>
-      {/* Hele sæt i nærbillede (hvilende og med løftet pote): ballon og lup følger poten. */}
-      <div className="sh-row" style={{ marginTop: 14 }}>
-        {FULL_SETS.flatMap(({ set, items }, i) =>
-          (['idle', i % 2 ? 'cheer' : 'wave'] as const).map((m, j) => {
-            const b = [b2, b3][(i + j) % 2]
-            const st = (j ? 2 : 3) as Stage
-            const c = (['c5', 'c2', 'c6', 'c4'] as const)[(2 * i + j) % 4]
-            return (
-              <Cell key={`${set}${m}`} cap={`${b} · ${st} · ${c} · ${set} · ${m}`} label={`closeup ${set} ${m}`} lint="safe fit">
-                <R breed={b} stage={st} colorway={c} mood={m} size={300} outfit={setOutfit(items, ((i + j) % 3) as 0 | 1 | 2)} />
-              </Cell>
-            )
-          }),
-        )}
-      </div>
+      {/* Hele sæt i nærbillede (hvilende og med løftet pote): håndgenstandene følger poten. To sæt pr. række. */}
+      {Array.from({ length: Math.ceil(FULL_SETS.length / 2) }, (_, r) => (
+        <div key={r} className="sh-row" style={{ marginTop: 14 }}>
+          {FULL_SETS.slice(2 * r, 2 * r + 2).flatMap(({ set, items }, ii) => {
+            const i = 2 * r + ii
+            return (['idle', i % 2 ? 'cheer' : 'wave'] as const).map((m, j) => {
+              const b = [b2, b3][(i + j) % 2]
+              const st = (j ? 2 : 3) as Stage
+              const c = (['c5', 'c2', 'c6', 'c4'] as const)[(2 * i + j) % 4]
+              return (
+                <Cell key={`${set}${m}`} cap={`${b} · ${st} · ${c} · ${set} · ${m}`} label={`closeup ${set} ${m}`} lint="safe fit">
+                  <R breed={b} stage={st} colorway={c} mood={m} size={300} outfit={setOutfit(items, ((i + j) % 3) as 0 | 1 | 2)} />
+                </Cell>
+              )
+            })
+          })}
+        </div>
+      ))}
     </Page>
   )
 }
@@ -413,10 +424,12 @@ function FitSheet({ def }: { def: SpeciesDef }) {
     { s: 2, b: def.breeds[0].id, c: 'c1', outfit: { body: { item: hverdagBody }, head: { item: hverdagHead } } },
     { s: 3, b: def.breeds[2 % def.breeds.length].id, c: 'c4', outfit: { body: { item: hverdagBody, colorway: 2 } } },
     // Hele sæt i alle humør: håndgenstande følger poten, vestens ærmegab og rygsækkens stropper følger armene.
+    // Stor bruger artens første race (langhårskattens hale går uden for den sikre zone i glad og vink på
+    // stor – en artsfejl, der er meldt videre), babyerne racerne på skift.
     ...FULL_SETS.flatMap(({ items }, i) =>
       ([1, 3] as const).map((st, j) => ({
         s: st as Stage,
-        b: def.breeds[(i + j + 1) % def.breeds.length].id,
+        b: def.breeds[j ? 0 : (i + 1) % def.breeds.length].id,
         c: (['c5', 'c3', 'c6', 'c2'] as const)[(2 * i + j) % 4],
         outfit: setOutfit(items, ((i + j) % 3) as 0 | 1 | 2),
       })),

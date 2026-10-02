@@ -484,6 +484,8 @@ export interface Colorway {
   main: string
   trim: string
   accent: string
+  /** Ekstra stofstriber i rækkefølge (fx regnbuehuens flade striber). */
+  stripes?: readonly string[]
 }
 
 /** Afledte stoffarver (samme regel som dyrene: kontur = L·0,55, C·1,1 osv.). */
@@ -499,6 +501,8 @@ export interface ItemPalette {
   accentOutline: string
   highlight: string
   ink: string
+  /** Farvesættets ekstra striber (sorte i silhuet), hvis det har nogen. */
+  stripes?: readonly string[]
 }
 
 export interface ItemArtProps {
