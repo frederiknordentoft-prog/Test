@@ -29,5 +29,8 @@ export default defineConfig(({ mode }) => ({
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.ts'],
     setupFiles: ['src/testing/setup.ts'],
+    // the generator sweeps (every fact, 200 instances per family) take seconds, and the container
+    // shares its CPU with the voice generation: 5 s made them fail under load, not on their merits
+    testTimeout: 30_000,
   },
 }))

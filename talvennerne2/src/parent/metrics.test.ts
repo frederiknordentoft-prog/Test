@@ -34,8 +34,10 @@ describe('an empty profile', () => {
     expect(d.domains.every((c) => c.counts.notStarted === c.scope.length && c.accuracy === null)).toBe(true)
   })
 
-  it('has no times table yet, no signs, no recommendations and too little for an estimate', () => {
-    expect(d.tables.available).toBe(false)
+  it('has an untouched times table, no signs, no recommendations and too little for an estimate', () => {
+    // mul2510 is registered, so the grid is there, every product still unseen
+    expect(d.tables.available).toBe(true)
+    expect(d.tables.rows.flat().every((c) => !c.seen && c.box === 0)).toBe(true)
     expect(d.signs).toEqual({ concepts: [], slips: [], resolved: [] })
     expect(d.recommendations.filter((r) => r.rule !== 'R6')).toEqual([])
     expect(d.estimate.enough).toBe(false)
@@ -250,8 +252,9 @@ describe('skill rows', () => {
 
 describe('times table grid', () => {
   it('is empty until a multiplication skill exists', () => {
-    const g = tableGrid(profile(), realIndex)
-    expect(g.available).toBe(false)
+    const noTables = Object.fromEntries(Object.entries(realIndex).filter(([skill]) => !skill.startsWith('mul'))) as typeof realIndex
+    expect(tableGrid(profile(), noTables).available).toBe(false)
+    expect(tableGrid(profile(), realIndex).available).toBe(true)
   })
 
   it('colours each product by its box, the same key both ways round', () => {
