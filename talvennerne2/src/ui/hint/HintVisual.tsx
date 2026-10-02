@@ -108,6 +108,13 @@ export function HintVisual({ visual, size = 'md' }: { visual: AnyVisual; size?: 
           <Columns a={visual.a} b={visual.b} op="−" regroup film />
         </div>
       )
+    case 'anim.borrowNoDecrement':
+      // the same borrowing, with the tens digit that goes down by one in focus
+      return (
+        <div className="tv-hv">
+          <Columns a={visual.a} b={visual.b} op="−" regroup film stressLent />
+        </div>
+      )
     case 'anim.digitSwap':
       return <DigitSwap n={visual.n} given={visual.given} film />
     case 'tensOnes':

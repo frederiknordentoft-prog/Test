@@ -15,6 +15,8 @@ export interface ColumnsProps {
   regroup?: boolean
   /** Animate the steps: ones, then the carried or borrowed ten, then tens (and hundreds). */
   film?: boolean
+  /** borrowNoDecrement: the digit a ten was lent from is the point, so it pulses once it is down by one. */
+  stressLent?: boolean
   className?: string
 }
 
@@ -29,7 +31,7 @@ function At({ ms, film, children, className, style }: { ms: number; film: boolea
   )
 }
 
-export function Columns({ a, b, op, regroup = false, film = false, className }: ColumnsProps) {
+export function Columns({ a, b, op, regroup = false, film = false, stressLent = false, className }: ColumnsProps) {
   const result = op === '+' ? a + b : a - b
   const places = Math.max(String(a).length, String(b).length, String(Math.abs(result)).length, 2)
   const A = digitsOf(a, places)
@@ -81,8 +83,15 @@ export function Columns({ a, b, op, regroup = false, film = false, className }: 
             </At>
           )}
           {regroup && op === '−' && lent[i] !== null && (
-            <At ms={at(i + 1) - 300} film={film} className="tv-cols__lent">
-              {lent[i]}
+            <At ms={at(i + 1) - 300} film={film} className={cx('tv-cols__lent', stressLent && 'is-stress')}>
+              {stressLent ? (
+                // after it has come down by one, it pulses twice (transform only)
+                <span className={cx('tv-cols__pulse', film && 'is-film')} style={film ? { animationDelay: `${at(i + 1) + 200}ms` } : undefined}>
+                  {lent[i]}
+                </span>
+              ) : (
+                lent[i]
+              )}
             </At>
           )}
           {regroup && op === '−' && borrowed[i] && (

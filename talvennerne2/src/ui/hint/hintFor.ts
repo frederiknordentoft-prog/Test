@@ -2,8 +2,8 @@
 // SkillDef.hint(fact, errorTag) gives the misconception's own hint when the child's answer carries
 // one, else the skill's standard strategy. A flag never changes the hint. This module only fills
 // gaps so the round never shows an empty card: a skill without words gets the round's own sentences
-// with the task's numbers, a skill without a picture gets one drawn from the prompt, and the three
-// animated misconceptions (digitSwap, forgotCarry, smallerFromLarger) get their film.
+// with the task's numbers, a skill without a picture gets one drawn from the prompt, and the four
+// animated misconceptions (digitSwap, forgotCarry, smallerFromLarger, borrowNoDecrement) get their film.
 import { SKILL_BY_ID } from '../../content/skills'
 import type {
   AnswerValue, ErrorTag, Fact, HintSpec, HintVisual, MisconceptionId, Prompt, SkillDef, SpeechPart, Task, TaskKind,
@@ -15,8 +15,8 @@ import { isMisconceptionId } from '../../engine/tasks'
 import { compile } from '../../speech/compile'
 import { lineRange, promptNums } from '../task/answers'
 
-/** Misconceptions with an animated film in this module (SPEC §4.3 lists eight; these three first). */
-export const ANIMATED_HINTS = ['digitSwap', 'forgotCarry', 'smallerFromLarger'] as const
+/** Misconceptions with an animated film in this module (SPEC §4.3 lists eight; these four first). */
+export const ANIMATED_HINTS = ['digitSwap', 'forgotCarry', 'smallerFromLarger', 'borrowNoDecrement'] as const
 export type AnimatedHint = (typeof ANIMATED_HINTS)[number]
 const isAnimated = (m: unknown): m is AnimatedHint => (ANIMATED_HINTS as readonly unknown[]).includes(m)
 
@@ -28,6 +28,8 @@ export type LocalVisual =
   | { scene: 'anim.digitSwap'; n: number; given: number | null }
   | { scene: 'anim.forgotCarry'; a: number; b: number }
   | { scene: 'anim.smallerFromLarger'; a: number; b: number }
+  /** A ten borrowed for the ones, and the tens digit going down by one (UI-fund 9). */
+  | { scene: 'anim.borrowNoDecrement'; a: number; b: number }
   /** The task's own number line with the cards' numbers marked (review r1 P2-7), hops on top. */
   | { scene: 'markedLine'; min: number; max: number; marks: number[]; hops?: number[] }
 
@@ -166,6 +168,10 @@ function animatedVisual(tag: AnimatedHint, task: Task, given: AnswerValue | null
   }
   if (tag === 'forgotCarry' && s && s.op === '+' && s.a + s.b < 1000) return { scene: 'anim.forgotCarry', a: s.a, b: s.b }
   if (tag === 'smallerFromLarger' && s && s.op === '−' && s.a < 1000 && s.b <= s.a) return { scene: 'anim.smallerFromLarger', a: s.a, b: s.b }
+  // borrowed for the ones but the tens kept: the film shows the tens digit going down by one
+  if (tag === 'borrowNoDecrement' && s && s.op === '−' && s.a < 1000 && s.b <= s.a && s.a % 10 < s.b % 10) {
+    return { scene: 'anim.borrowNoDecrement', a: s.a, b: s.b }
+  }
   return null
 }
 
@@ -205,6 +211,9 @@ export function speechFor(visual: AnyVisual, task: Task): SpeechPart[] {
       return [clip('s.round.hint.forgotCarry'), num(visual.a), clip('op.plus'), num(visual.b), clip('op.giver'), num(visual.a + visual.b, 'end')]
     case 'anim.smallerFromLarger':
       return [clip('s.round.hint.smallerFromLarger'), num(visual.a), clip('op.minus'), num(visual.b), clip('op.giver'), num(visual.a - visual.b, 'end')]
+    case 'anim.borrowNoDecrement':
+      // the subtraction skills' own recorded sentence (clips/skills/addsub2.ts), so no new take is needed
+      return [clip('hint.addsub2.oneTenLess'), num(visual.a), clip('op.minus'), num(visual.b), clip('op.giver'), num(visual.a - visual.b, 'end')]
     case 'anim.digitSwap':
       return [clip('s.round.hint.digitSwap'), ...tensOnesWords(visual.n)]
     case 'tensOnes':

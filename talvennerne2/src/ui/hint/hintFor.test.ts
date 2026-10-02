@@ -117,3 +117,33 @@ describe('pictures drawn from the prompt', () => {
     expect(scaffoldFor(ex('keypad-52-37'), FIX)).toEqual({ scene: 'columns', a: 52, b: 37, op: '−', carry: true })
   })
 })
+
+describe('the borrowNoDecrement film (UI-fund 9)', () => {
+  it('plays for 52 − 27 = 35 in sub100Borrow: a ten borrowed, the tens kept', async () => {
+    // the round's own words when no skill has any (the same recorded sentence the skills use)
+    expect(toDanishText(speechFor({ scene: 'anim.borrowNoDecrement', a: 52, b: 27 }, ex('keypad-52-37')))).toBe(
+      'Når du veksler en tier, er der en tier mindre tilbage. Tooghalvtreds minus syvogtyve giver femogtyve.',
+    )
+    const { skillRegistry, keysForSkills } = await import('../../engine/registry')
+    const reg = skillRegistry()
+    const keys = keysForSkills([{ skill: 'sub100Borrow' }], { skills: reg, states: {}, audioVerified: true, mode: 'round' })
+    let played = 0
+    for (const k of keys) {
+      for (let seed = 1; seed < 6; seed++) {
+        const t = k.build('keypad', makeRng(seed), 0)
+        if (t.prompt.scene !== 'equation') continue
+        const [a, b] = t.prompt.terms.filter((x): x is { n: number } => 'n' in x).map((x) => x.n)
+        if (a % 10 >= b % 10 || a >= 100) continue
+        const wrong = (Math.floor(a / 10) - Math.floor(b / 10)) * 10 + (a % 10) + 10 - (b % 10)
+        const h = hintFor(t, wrong, reg)
+        if (h.misconception !== 'borrowNoDecrement') continue
+        played++
+        expect(h.animated).toBe(true)
+        expect(h.visual).toEqual({ scene: 'anim.borrowNoDecrement', a, b })
+        expect(compile(h.speech).missing).toEqual([])
+        expect(toDanishText(h.speech)).toMatch(/^Når du veksler en tier, er der en tier mindre tilbage\./)
+      }
+    }
+    expect(played).toBeGreaterThan(0)
+  })
+})
