@@ -209,7 +209,7 @@ export function UnitSuffix({ unit }: { unit: string }) {
 const UNIT_ICON: Record<string, IconName> = { cm: 'ruler', m: 'ruler', mm: 'ruler', g: 'scale', kg: 'scale', kr: 'coin', l: 'cube', min: 'clock', t: 'clock' }
 
 /** A unit word with its pictogram (unitWord view). */
-function UnitFace({ unit, size }: { unit: string; size: FaceSize }) {
+export function UnitFace({ unit, size }: { unit: string; size: FaceSize }) {
   const icon = UNIT_ICON[unit] ?? 'ruler'
   return (
     <span className={cx('tv-face__unitword', `is-${size}`)}>

@@ -1544,6 +1544,28 @@
   align-items: stretch;
 }
 /* The demo films' small questions (review r1 P2-8): like the child's own task, never the task. */
+.tv-demo__pile--money {
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--color-d-money-soft);
+}
+.tv-demo__rings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tv-demo__rings .tv-demo__ring {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 58px;
+  min-height: 58px;
+  max-width: 96px;
+  padding: 8px;
+}
 .tv-demo__hear {
   display: grid;
   place-items: center;
