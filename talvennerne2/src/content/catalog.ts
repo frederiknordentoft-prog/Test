@@ -46,7 +46,7 @@ export const SPECIES: readonly SpeciesMeta[] = [
   sp({ id: 'fox', name: 'Ræv', baby: 'rævehvalp', world: 'bakke', body: 'tall',
     colors: ['rød', 'polar', 'sølv', 'brun', 'guldrød', 'mørk'] }),
   sp({ id: 'hamster', name: 'Hamster', baby: 'hamsterunge', world: 'bakke', body: 'round',
-    colors: ['guld', 'hvid', 'grå', 'sort-hvid', 'karamel', 'panda'] }),
+    colors: ['abrikos', 'hvid', 'grå', 'sort-hvid', 'karamel', 'plettet'] }),
   sp({ id: 'unicorn', name: 'Enhjørning', baby: 'føl', world: 'skov', body: 'tall',
     colors: ['hvid', 'rosa', 'lilla', 'mint', 'himmelblå', 'sølv'] }),
   sp({ id: 'panda', name: 'Panda', baby: 'pandaunge', world: 'skov', body: 'round',

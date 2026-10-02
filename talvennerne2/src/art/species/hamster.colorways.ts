@@ -8,7 +8,7 @@ export const HAMSTER_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
   // Guld: klassisk guldhamster i varm abrikos-orange (mere orange end guldfarven, der er gul med ravkontur).
   c1: {
     id: 'c1',
-    name: 'guld',
+    name: 'abrikos',
     fur: '#F2A04E',
     overrides: { belly: '#FFF8EE', outline: '#874A16', inner: '#FFB3C2', nose: '#E8728F', iris: '#8A4A1C' },
   },
@@ -45,7 +45,7 @@ export const HAMSTER_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
   // Panda: hvid med mørke ører, øjenpletter og en mørk sadel om maven.
   c6: {
     id: 'c6',
-    name: 'panda',
+    name: 'plettet',
     fur: '#FFFBF6',
     pattern: 'pinto',
     patternColor: '#46415A',
