@@ -1,0 +1,33 @@
+21:12:12 generate.py --wave 1 --threads 2 --max-minutes 100 --retake-from voice/qa.json (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261002-211212.log)
+21:12:12 frag.laeg: take 0 afvist af sammensætningstesten, genereres igen
+21:12:12 hog.300: ingen takes tilbage til en ny take
+21:12:12 noun.thing.cube.sg: ingen takes tilbage til en ny take
+21:12:12 op.er_lig_med: take 1 afvist af sammensætningstesten, genereres igen
+21:12:12 s.order20.countBack: ingen takes tilbage til en ny take
+21:12:12 s.order20.countOn: ingen takes tilbage til en ny take
+21:12:12 s.patterns.continue: ingen takes tilbage til en ny take
+21:12:13 1220 klip valgt, 1218 færdige, 2 at lave
+21:12:34 input frame rate=25
+21:12:40 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+21:12:41 model indlæst på 26 s (2 tråde)
+21:12:52 ✅ EOS token detected! Stopping generation at step 27
+21:13:15 kald single k=1 t2 'er lig med,': 33.5 s for 1.04 s lyd
+21:13:29   op.er_lig_med t2: 0.72 s (forhold 0.77) -18.16 LUFS, alone: 'ar lig ned' CER 0.25 (wav2vec2, whisper: 'Alligevel') → FEJL asr
+21:13:39   sammensat frag.laeg + n.end.5: 'Læg 5' CER 0.000 (whisper, wav2vec2: 'lik 5') → ok
+21:13:49   sammensat frag.laeg + n.end.4: 'Læg 4' CER 0.000 (whisper, wav2vec2: 'lik 4') → ok
+21:14:07 ✅ EOS token detected! Stopping generation at step 30
+21:15:07 kald single k=1 t3 'er lig med,': 77.8 s for 1.16 s lyd
+21:15:34   op.er_lig_med t3: 0.66 s (forhold 0.70) -18.0 LUFS, alone: 'ar lige med' CER 0.25 (wav2vec2, whisper: 'Alligevel') → FEJL asr
+21:15:34 sammensætning runde 1: 1 af 2 bestået
+21:15:41 ✅ EOS token detected! Stopping generation at step 25
+21:15:54 kald single k=1 t4 'er lig med,': 20.8 s for 0.96 s lyd
+21:16:06   op.er_lig_med t4: 0.68 s (forhold 0.73) -18.0 LUFS, alone: 'er lige med' CER 0.125 (wav2vec2, whisper: 'Alligevel') → FEJL asr
+21:16:06 sammensætning runde 2: 1 af 2 bestået
+21:16:06 sammensætning runde 3: 1 af 2 bestået
+21:16:06   ✓ master frag.laeg t1 (bestået)
+21:16:07   sammensat n.mid.7 + op.er_lig_med + n.end.5: '7 er ligmed 5' CER 0.000 (wav2vec2) → ok
+21:16:18   sammensat n.mid.7 + op.er_lig_med + n.end.5: '7 er lig med 5' CER 0.000 (whisper, wav2vec2: '7 af limet 5') → ok
+21:16:19   sammensat n.mid.7 + op.er_lig_med + n.end.5: '7 er lig med 5' CER 0.000 (wav2vec2) → ok
+21:16:25   sammensat n.mid.7 + op.er_lig_med + n.end.5: '7 er lig med 5' CER 0.000 (whisper, wav2vec2: '7 er lige med 5') → ok
+21:16:25   ✓ master op.er_lig_med t0 (IKKE bestået: asr)
+21:16:25 færdig: 2 nye mastere (1 ikke bestået, 0 kopier), 3 modelkald, 2.2 min generering (CPU 0.04 t), 0 klip mangler
