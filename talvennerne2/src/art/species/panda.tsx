@@ -29,8 +29,8 @@ const soft = (pal: Palette) => (pal.silhouette ? pal.pattern : mixHex(pal.patter
 // Hoved: en bred, rund bjørnehoved med fyldige kinder forneden.
 
 const HEAD_HALF: Vec[] = [
-  [0, -1.0], [-0.4, -0.97], [-0.72, -0.82], [-0.93, -0.55], [-1.02, -0.2], [-1.04, 0.12], [-0.97, 0.43],
-  [-0.8, 0.69], [-0.53, 0.89], [-0.25, 0.99], [0, 1.01],
+  [0, -1.0], [-0.42, -0.97], [-0.76, -0.82], [-0.97, -0.52], [-1.04, -0.17], [-1.02, 0.14], [-0.92, 0.44],
+  [-0.73, 0.7], [-0.49, 0.88], [-0.23, 0.98], [0, 1.0],
 ]
 const HEAD_UNIT = symmetric(HEAD_HALF)
 const pandaHead: OutlineFn = (a: AnchorSet, inflate: number) =>
@@ -39,10 +39,10 @@ const pandaHead: OutlineFn = (a: AnchorSet, inflate: number) =>
 // ---------------------------------------------------------------------------------------------
 // Ører: store, runde bjørneører (lokalt: roden i (0,0), peger op). Roden forsvinder sømløst i hovedet.
 
-const EAR_C = { x: 0, y: -12, r: 15.5 }
+const EAR_C = { x: 0, y: -13, r: 17.4 }
 /** Ørets kontur som punkter, der starter og slutter forneden (så `hatted` kan skære det under en hue). */
 const EAR: Vec[] = ring(EAR_C.x, EAR_C.y, EAR_C.r, EAR_C.r * 0.95, 14, 90)
-const EAR_HATTED = hatted(EAR, -6, 4)
+const EAR_HATTED = hatted(EAR, -6.5, 4)
 const earScale = (stage: Stage) => (stage === 1 ? { sx: 1.12, sy: 1.12 } : stage === 3 ? { sx: 0.96, sy: 0.96 } : {})
 
 const Ear: SidePart = ({ pal, sw, stage, hat }) => {
@@ -50,7 +50,7 @@ const Ear: SidePart = ({ pal, sw, stage, hat }) => {
   return (
     <>
       <path d={blob(xf(hat === 'through' ? EAR_HATTED : EAR, s), 0.9)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
-      {!pal.silhouette && <path d={ellipse(EAR_C.x * (s.sx ?? 1) + 1, (EAR_C.y + 0.5) * (s.sy ?? 1), 8.6 * (s.sx ?? 1), 8 * (s.sy ?? 1))} fill={soft(pal)} />}
+      {!pal.silhouette && <path d={ellipse(EAR_C.x * (s.sx ?? 1) + 1, (EAR_C.y + 0.5) * (s.sy ?? 1), 9.8 * (s.sx ?? 1), 9.2 * (s.sy ?? 1))} fill={soft(pal)} />}
     </>
   )
 }
@@ -134,9 +134,9 @@ const ARM = limbLoop(ARM_SPINE, 20.5, 19.5, 7)
 const SLEEVE: Vec[] = [[-11.8, -12], [-12.2, -3], [-12.4, 7], [-12.4, 19], [0, 21], [12.4, 19], [12.4, 7], [12.2, -3], [11.8, -12], [0, -14]]
 
 /** Bambusstænglen i venstre pote (lokalt i armens ramme): stænglen går gennem poten og står op og ud til siden. */
-const STALK = { a: [8, 46] as Vec, b: [-23, -31] as Vec, r: 3.6 }
+const STALK = { a: [9, 46] as Vec, b: [-30, -36] as Vec, r: 3.8 }
 const along = (t: number): Vec => [STALK.a[0] + (STALK.b[0] - STALK.a[0]) * t, STALK.a[1] + (STALK.b[1] - STALK.a[1]) * t]
-const NODES = [0.18, 0.5, 0.8].map((t) => {
+const NODES = [0.16, 0.42, 0.66, 0.88].map((t) => {
   const [x, y] = along(t)
   const dx = STALK.b[0] - STALK.a[0]
   const dy = STALK.b[1] - STALK.a[1]
@@ -148,7 +148,7 @@ const NODES = [0.18, 0.5, 0.8].map((t) => {
 /** To blade fra toppen ud mod siden og et lille blad ved det øverste led. */
 const LEAF = (base: Vec, rot: number, len: number, w: number) =>
   blob(xf([[0, 0], [len * 0.3, -w], [len * 0.72, -w * 0.7], [len, 0], [len * 0.72, w * 0.55], [len * 0.3, w * 0.8]], { rot, dx: base[0], dy: base[1] }), 0.8)
-const LEAVES = join(LEAF(along(0.99), -152, 24, 6), LEAF(along(0.95), -108, 20, 5.2), LEAF(along(0.78), 176, 16, 4.4))
+const LEAVES = join(LEAF(along(0.99), -141, 22, 6.2), LEAF(along(0.96), -100, 21, 5.6), LEAF(along(0.84), 172, 17, 4.8), LEAF(along(0.68), -170, 13, 3.8))
 
 const Bamboo = ({ pal, sw }: { pal: Palette; sw: number }) => {
   const sil = pal.silhouette
@@ -212,8 +212,8 @@ const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {}
 // Foran kroppen (efter maven og skyggen, før kropstøjet): skulderbåndet over brystet og de store bagfødder, der
 // stritter frem til siderne med trædepuden og fire tåpuder vendt mod os.
 
-const LEG = { cx: 63, cy: 210, rx: 19, ry: 15.5, rot: -24 }
-const SOLE = { cx: 58.5, cy: 214, rx: 8.4, ry: 7.4, rot: -24 }
+const LEG = { cx: 61, cy: 210, rx: 20.5, ry: 16, rot: -24 }
+const SOLE = { cx: 56, cy: 214, rx: 8.8, ry: 7.8, rot: -24 }
 /** Fire tåpuder i en bue over trædepuden (inden for fodens kontur). */
 const TOES: Vec[] = [-152, -122, -92, -62].map((t) => [SOLE.cx + 11.2 * Math.cos((t * Math.PI) / 180), SOLE.cy + 10.6 * Math.sin((t * Math.PI) / 180)] as Vec)
 
@@ -257,8 +257,8 @@ export const panda: SpeciesDef = {
     headRy: 47,
     headTop: { x: 100, y: 51 },
     headWidth: 106,
-    earBaseL: { x: 68, y: 64 },
-    earBaseR: { x: 132, y: 64 },
+    earBaseL: { x: 67, y: 63 },
+    earBaseR: { x: 133, y: 63 },
     hornBase: { x: 100, y: 53 },
     eyeL: { x: 79, y: 101 },
     eyeR: { x: 121, y: 101 },
@@ -286,8 +286,8 @@ export const panda: SpeciesDef = {
     tailBase: { x: 148, y: 212 },
   },
   bounds: {
-    head: { x0: 34, y0: 32, x1: 166, y1: 148 },
-    body: { x0: 24, y0: 134, x1: 166, y1: 228 },
+    head: { x0: 32, y0: 26, x1: 168, y1: 148 },
+    body: { x0: 18, y0: 114, x1: 166, y1: 228 },
   },
   // Tankebobler og Zzz (fælles regel): til højre for kinden under øret med mindst 8 enheders luft.
   fx: { x: 178, y: 118 },
