@@ -6,9 +6,12 @@ import { formatMoney, formatNumber } from '../task/answers'
 
 const UNIT_SHORT: Record<string, string> = { cm: 'cm', m: 'm', g: 'g', kg: 'kg' }
 
-function clockText(minutes: number): string {
+/** An analog time is read off a 12-hour face (quarter past twelve is 12.15, not 0.15). */
+function clockText(minutes: number, style: 'analog' | 'analogHalfForm' | 'digital' = 'analog'): string {
   const m = ((Math.round(minutes) % 1440) + 1440) % 1440
-  return `kl. ${Math.floor(m / 60)}.${String(m % 60).padStart(2, '0')}`
+  const h = Math.floor(m / 60)
+  const hour = style === 'digital' ? h : ((h + 11) % 12) + 1
+  return `kl. ${hour}.${String(m % 60).padStart(2, '0')}`
 }
 
 const QUESTION = /^(hv[a-zæøå]*|er|kan|har|passer|bliver|giver|tæller|skal|vil|må)(?=[\s,]|$)|(^|\s)hvad(?=[\s,?]|$)/i
@@ -55,7 +58,7 @@ export function displayText(parts: readonly SpeechPart[], textOf: (id: ClipId) =
       text = formatMoney(p.money.ore).replace(/\.$/, '')
       form = p.money.form
     } else if ('clock' in p) {
-      text = clockText(p.clock.minutes)
+      text = clockText(p.clock.minutes, p.clock.style)
       form = p.clock.form
     } else if ('measure' in p) {
       text = `${formatNumber(p.measure.value)} ${UNIT_SHORT[p.measure.unit] ?? p.measure.unit}`
