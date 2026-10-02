@@ -38,6 +38,7 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
   - Verify-stierne er "", vm/, elpriser/, kuglebanen/, vaegtskaalen/, vindtunnel/, surdej/, element-sandbox/, traeningslog/, talvennerne/ og talvennerne2/.
   - Andre sessioner kan have deployet siden, så alle tree-SHA'er på oversigts-branchen registreres lige før hver deploy.
 - **A9 – Misforståelse mod operand (1/10, integrator).** Er en misforståelses-værdi også et tal fra spørgsmålet (5 + 1 skrevet som 5, 4 + 2 skrevet som 2), klassificeres den som `ambiguous` og tæller aldrig som tegn. At skrive et tal fra spørgsmålet er en mere sandsynlig forklaring, og forældre skal ikke se falske tegn. Det afviger fra koden i §4.1, hvor misforståelsen vinder over `operand`.
+- **A10 – countFromFirst og tilfældige fejl på én (2/10, integrator).** 70 %-reglen i §4.3 regnes kun på skrevne svar. På kort er "én for lidt" altid det diagnostiske kort, mens "én for meget" kun nogle gange er med, så kortene hælder af sig selv. Reglen tjekkes efter hvert svar, så hældningen skal desuden være usandsynlig for fejl, der går begge veje: højst 0,1 % ensidig binomial-chance (fx 10 af 10 eller 18 af 20). Ellers markerede fixturen "50 % tilfældige ±1-fejl" barnet i 12–20 af 60 kørsler. Et barn, der tæller fra det første tal, markeres stadig inden for 160 svar.
 
 ---
 
@@ -391,7 +392,7 @@ export function classifyError(def: SkillDef, fact: Fact, given: AnswerValue): Er
 - i `hear20`, `hear100`, `hear1000`, `tensOnes` og `placeValue1000`,
 - på keypad-svar ≥ 13 med to forskellige cifre, som ikke også er en operand.
 
-Test: `classifyError(add100Carry, add:38+45, 38) === 'operand'`.
+Test: `classifyError(add100Carry, a100c:38+45, 38) === 'operand'`.
 
 **Valgopgaver:** 3 kort, nemlig det rigtige, 1 diagnostisk distraktor og 1 `near`. Den diagnostiske distraktor roterer til den misforståelse, profilen sjældnest har fået tilbudt (`offeredTags`).
 

@@ -184,9 +184,9 @@ export const MISCONCEPTION_TEXTS: Readonly<Record<MisconceptionId, Misconception
   tensZero: {
     nature: 'concept',
     title: 'mister nullet eller sætter et nul for meget',
-    example: '3 · 40 bliver 12 eller 1200',
-    parent: 'Barnet regner 3 · 4 rigtigt, men mister eller tilføjer et nul, når der ganges med hele tiere.',
-    homeTip: 'Brug tikroner: 3 bunker med 4 tikroner i hver. Hvor mange tikroner er der? Hvor mange kroner er det?',
+    example: '30 + 40 bliver 7 eller 700, og 3 · 40 bliver 12 eller 1200',
+    parent: 'Barnet regner med cifrene rigtigt, men mister eller tilføjer et nul, når der regnes med hele tiere og hundreder.',
+    homeTip: 'Brug tikroner: 3 tikroner og 4 tikroner, eller 3 bunker med 4 tikroner i hver. Hvor mange tikroner er der? Hvor mange kroner er det?',
   },
   digitComplement10: {
     nature: 'concept',

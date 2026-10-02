@@ -216,16 +216,36 @@ export function meetsFlag(id: MisconceptionId, s: Pick<MisconceptionState, 'hits
   if (hits.filter((h) => h.production).length < 2) return false
 
   if (id === 'countFromFirst') {
-    // ±1 slips are common in both directions; only a steady "one short" pattern is counting from the first number
+    // ±1 slips are common in both directions; only a steady "one short" pattern is counting from the first number.
+    // Cards always show one short as the diagnostic card but one more only sometimes, so the direction
+    // is read from typed answers (guess chance 0) alone
     if (weight < 4) return false
-    const errors = opps.filter((o) => !o.correct).length
-    const expected = opps.filter((o) => o.hit).length
+    const typed = opps.filter((o) => o.pGuess === 0)
+    const errors = typed.filter((o) => !o.correct).length
+    const expected = typed.filter((o) => o.hit).length
     if (errors === 0 || expected / errors < 0.7) return false
+    // the rule is checked after every answer, so a short run of slips that happen to go one way is
+    // not enough: the share must be beyond what slips either way give by chance
+    if (halfTail(errors, expected) > SLIP_CHANCE) return false
     return beatsGuessing(opps)
   }
   if (weight < 3) return false
   if (PERCEPTUAL.has(id)) return contrastHolds(opps)
   return beatsGuessing(opps)
+}
+
+/** countFromFirst: how unlikely the typed "one short" share must be for slips that go either way. */
+const SLIP_CHANCE = 0.001
+
+/** P(at least k of n) when each goes either way with even odds. */
+export function halfTail(n: number, k: number): number {
+  let term = 0.5 ** n
+  let sum = k <= 0 ? term : 0
+  for (let i = 1; i <= n; i++) {
+    term = (term * (n - i + 1)) / i
+    if (i >= k) sum += term
+  }
+  return sum
 }
 
 function beatsGuessing(opps: readonly Opp[]): boolean {

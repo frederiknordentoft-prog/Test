@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  classifyAnswer, detectableOf, digitSwapOf, flaggedIds, meetsFlag, misconceptionEvents, natureFor,
+  classifyAnswer, detectableOf, digitSwapOf, flaggedIds, halfTail, meetsFlag, misconceptionEvents, natureFor,
   updateMisconceptions, type MisconceptionStates,
 } from './misconceptions'
 import { buildTask } from './tasks'
@@ -177,11 +177,24 @@ describe('when the app dares to conclude (SPEC §4.3)', () => {
       skill: 'addTo10', factId: `add:${i}+3`, errorTag: 'countFromFirst', detectable: ['countFromFirst'], day: dayOf(i % 2),
       ts: DAY0 + i * 1000, ...over,
     })
-    expect(fold([1, 2, 3].map((i) => cff(i))).countFromFirst?.status).toBe('watching') // weight 3
-    expect(fold([1, 2, 3, 4].map((i) => cff(i))).countFromFirst?.status).toBe('flagged')
-    // the same four, among as many one-too-many slips
-    const other = [5, 6, 7, 8, 9].map((i) => cff(i, { errorTag: 'near' }))
-    expect(fold([...other, ...[1, 2, 3, 4].map((i) => cff(i))]).countFromFirst?.status).toBe('watching')
+    const run = (n: number) => Array.from({ length: n }, (_, i) => cff(i + 1))
+    expect(fold(run(3)).countFromFirst?.status).toBe('watching') // weight 3
+    // weight 4, but four typed answers one short are what slips either way give one time in sixteen
+    expect(fold(run(4)).countFromFirst?.status).toBe('watching')
+    expect(fold(run(10)).countFromFirst?.status).toBe('flagged')
+    // the same ten, among five one-too-many slips: 67 %
+    const other = [11, 12, 13, 14, 15].map((i) => cff(i, { errorTag: 'near' }))
+    expect(fold([...other, ...run(10)]).countFromFirst?.status).toBe('watching')
+    // cards lean to "one short" by themselves (it is always the diagnostic card): they do not count for the lean
+    const cards = [11, 12, 13, 14, 15].map((i) => cff(i, { production: false, kind: 'choice', optionsCount: 3 }))
+    expect(fold([...other, ...cards, ...run(10)]).countFromFirst?.status).toBe('watching')
+  })
+
+  it('reads the countFromFirst lean as a one-sided chance', () => {
+    expect(halfTail(4, 4)).toBeCloseTo(1 / 16)
+    expect(halfTail(10, 10)).toBeCloseTo(1 / 1024)
+    expect(halfTail(10, 9)).toBeCloseTo(11 / 1024)
+    expect(halfTail(6, 0)).toBeCloseTo(1)
   })
 
   it('resolves after six new chances with five right and no evidence in the last six', () => {

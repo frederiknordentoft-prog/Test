@@ -1,8 +1,6 @@
 // The misconceptions of the plus and minus skills of 1.–2. klasse through the real diagnostics (SPEC §4.3):
 // a child who keeps making one mistake is flagged for it, a child who answers right or guesses is not.
-// (Random slips of one are left out on purpose: with the card rules of SPEC §4.1 they trip the
-// countFromFirst rule of misconceptions.ts now and then — for addTo10 as often as for addTo20 — which
-// is reported to the integrator; it is not a property of these skills.)
+// (Random slips of one have their own test, misconceptions.slips.test.ts, SPEC A10.)
 import { describe, expect, it } from 'vitest'
 import { NODE_BY_ID } from '../../../content/curriculum'
 import { keysForNode } from '../../registry'
