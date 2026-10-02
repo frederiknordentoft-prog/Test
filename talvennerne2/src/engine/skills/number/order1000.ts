@@ -350,6 +350,13 @@ function candidates(f: Fact) {
 
 // ─── Hints ──────────────────────────────────────────────────────────────────
 
+/** The line from the hundred below the smallest to the hundred above the biggest, hopping through them. */
+function stretch(nums: number[]): HintSpec['visual'] {
+  const min = Math.floor(nums[0] / 100) * 100
+  const max = Math.max(min + 100, Math.ceil(nums[nums.length - 1] / 100) * 100)
+  return { scene: 'line', min, max, hops: nums }
+}
+
 /** A stretch of the line around `centre`, `half` each way, kept inside 0–1000. */
 function around(centre: number, half: number, hops: number[]) {
   const min = Math.max(0, Math.min(centre - half, 1000 - 2 * half))
@@ -386,9 +393,9 @@ function hint(f: Fact, tag: string | null): HintSpec {
       return hintOf([...told, say(dir === 1 ? 'hint.order.tenTensHundred' : 'hint.order.hundredTenTens')], visual)
     }
     case 'bigger3':
-      return hintOf([say('hint.order1000.hundredsThenTens')], { scene: 'line', min: 0, max: 1000, hops: [...q.nums].sort((a, b) => a - b) })
+      return hintOf([say('hint.order1000.hundredsThenTens')], stretch([...q.nums].sort((a, b) => a - b)))
     case 'biggerMixed': {
-      const visual: HintSpec['visual'] = { scene: 'line', min: 0, max: 1000, hops: [Math.min(q.x, q.y), ans] }
+      const visual = stretch([Math.min(q.x, q.y), ans])
       if (tag === 'firstDigitCompare') {
         return hintOf([say('hint.order1000.notFirstDigit'), say('hint.order1000.threeDigitsBigger')], visual, 'firstDigitCompare')
       }
