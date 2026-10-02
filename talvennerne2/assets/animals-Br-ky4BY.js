@@ -1,0 +1,1 @@
+import{t as e}from"./names-BcagKvLN.js";var t=Object.fromEntries(e.map(e=>[e.clip,e.name])),n=1;export{t as clips,n as wave};

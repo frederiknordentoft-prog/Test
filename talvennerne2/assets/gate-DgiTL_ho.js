@@ -1,0 +1,1 @@
+var e={"s.gate.ask":`Spørg en voksen.`,"s.gate.again":`Ikke helt. Her er et nyt stykke.`};export{e as clips};

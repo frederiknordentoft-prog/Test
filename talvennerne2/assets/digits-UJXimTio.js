@@ -1,0 +1,1 @@
+var e=[`nullet`,`ettallet`,`totallet`,`tretallet`,`firetallet`,`femtallet`,`sekstallet`,`syvtallet`,`ottetallet`,`nitallet`],t={};for(let n of[`mid`,`end`])e.forEach((e,r)=>{t[`noun.digit.${r}.${n}`]=e});var n=t,r=2,i=`place-2`;export{e as DIGIT_WORDS,n as clips,i as pack,r as wave};

@@ -1,0 +1,1 @@
+var e={"s.kind.clockSet.dial":`Uret`,"s.kind.pay.purse":`Pungen`,"s.kind.pay.tray":`Bakken`,"s.kind.pay.back":`Læg den tilbage`,"s.kind.pay.inTray":`I bakken er der`,"s.kind.share.pile":`Bunken`,"s.kind.share.plate":`Tallerken`,"s.kind.colorParts.part":`En del`},t=2;export{e as clips,t as wave};

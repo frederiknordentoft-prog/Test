@@ -1,0 +1,1 @@
+var e={"s.sound.tapCat":`Tryk på katten.`,"s.sound.listen":`Lyt godt efter.`,"s.sound.good":`Godt hørt!`,"s.sound.off.title":`Tænd for lyden`,"s.sound.off.body":`Slå lydløs fra, og skru op for lyden med knapperne på siden.`,"s.sound.retry":`Prøv igen`};export{e as clips};
