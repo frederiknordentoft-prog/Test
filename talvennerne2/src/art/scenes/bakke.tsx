@@ -121,6 +121,8 @@ export interface Layout {
   sheep: Vec[]
   sheepFence: Vec[]
   hop: Place
+  /** Blomsterklynger i forgrunden (flere blomster for hvert trin i Hundredemarken). */
+  meadow: Place[]
   trees: (Place & { front: boolean })[]
   bales: Place[]
   corners: [Place, Place]
@@ -183,15 +185,16 @@ export function layoutOf(w: number, h: number): Layout {
       bridge,
       fence: [[w * 0.885, h * 0.832], [w * 0.66, h * 0.81]],
       horses: [
-        { x: w * 0.8, y: h * 0.893, s: k * 0.95, coat: 'chestnut', graze: true, flip: false, from: 0 },
+        { x: w * 0.812, y: h * 0.893, s: k * 0.95, coat: 'chestnut', graze: true, flip: false, from: 0 },
         { x: w * 0.888, y: h * 0.9, s: k, coat: 'grey', graze: false, flip: true, from: 0 },
         { x: w * 0.846, y: h * 0.866, s: k * 0.62, coat: 'foal', graze: false, flip: false, from: 2 },
         // drikker ved åen
-        { x: w * 0.768, y: h * 0.882, s: k * 0.85, coat: 'bay', graze: true, flip: true, from: 3 },
+        { x: w * 0.763, y: h * 0.88, s: k * 0.85, coat: 'bay', graze: true, flip: true, from: 3 },
       ],
       sheep: [[w * 0.215, h * 0.6], [w * 0.25, h * 0.615], [w * 0.285, h * 0.597], [w * 0.43, h * 0.64], [w * 0.47, h * 0.628]],
       sheepFence: [[w * 0.17, h * 0.618], [w * 0.3, h * 0.645], [w * 0.42, h * 0.668], [w * 0.53, h * 0.664]],
       hop: { x: w * 0.83, y: h * 0.968, s: k },
+      meadow: [{ x: w * 0.27, y: h * 0.9, s: k }, { x: w * 0.47, y: h * 0.955, s: k * 1.1 }, { x: w * 0.16, y: h * 0.975, s: k * 0.9 }],
       trees: [
         { ...on(mid, 0.165, 0.06, k * 0.85), front: false },
         { ...on(mid, 0.715, 0.045, k * 0.8), front: false },
@@ -250,6 +253,7 @@ export function layoutOf(w: number, h: number): Layout {
     sheep: [[w * 0.2, h * 0.585], [w * 0.25, h * 0.6], [w * 0.3, h * 0.583], [w * 0.4, h * 0.622], [w * 0.45, h * 0.612]],
     sheepFence: [[w * 0.1, h * 0.605], [w * 0.25, h * 0.622], [w * 0.38, h * 0.648], [w * 0.5, h * 0.645]],
     hop: { x: w * 0.165, y: h * 0.885, s: k * 0.8 },
+    meadow: [{ x: w * 0.3, y: h * 0.96, s: k * 0.9 }, { x: w * 0.47, y: h * 0.93, s: k * 0.8 }],
     trees: [
       { ...on(mid, 0.06, 0.03, k), front: false },
       { ...on(mid, 0.53, 0.05, k * 0.8), front: false },
@@ -1065,6 +1069,27 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
       {at(L.workshop, <Workshop t={T.workshop} />)}
       {at(L.stall, <Stall t={T.market} />)}
       {at(L.hop, <HopStones t={T.hop} />)}
+      {(() => {
+        // blomsterklynger i forgrunden: 3, 6, 9 og 12 blomster pr. klynge efter Hundredemarkens trin
+        const n0 = [3, 6, 9, 12][rank(T.field)]
+        const pts = L.meadow.flatMap((p, j) =>
+          Array.from({ length: n0 }, (_, i) => {
+            const a = hash01(i + j * 31 + 900) * Math.PI * 2
+            const r = Math.sqrt((i + 0.5) / 12) * 34
+            return [p.x + Math.cos(a) * r * p.s, p.y + Math.sin(a) * r * 0.45 * p.s, (3.6 + hash01(i + j * 17) * 1.6) * p.s] as [number, number, number]
+          }),
+        )
+        const warm = flowerPaths(pts.filter((_, i) => i % 3 !== 2))
+        const cool = flowerPaths(pts.filter((_, i) => i % 3 === 2))
+        return (
+          <>
+            <path d={grass(L.meadow.flatMap((p) => [[p.x - 22 * p.s, p.y + 4 * p.s, p.s], [p.x + 4 * p.s, p.y + 6 * p.s, 1.2 * p.s], [p.x + 26 * p.s, p.y + 4 * p.s, 0.9 * p.s]] as [number, number, number][]))} fill={tb('front', T.field)} stroke={tb('frontDark', T.field)} strokeWidth={1.1 * K} {...ROUND} />
+            <path d={warm.petals} fill={tb('flowerYellow', T.field)} stroke={tb('flowerHeart', T.field)} strokeWidth={0.8 * K} {...ROUND} />
+            <path d={cool.petals} fill={BAKKE.flowerWhite} stroke={tb('flowerViolet', T.field)} strokeWidth={0.8 * K} {...ROUND} />
+            <path d={join(warm.hearts, cool.hearts)} fill={tb('flowerHeart', T.field)} />
+          </>
+        )
+      })()}
       {L.trees.filter((p) => p.front).map((p, i) => <g key={i}>{at(p, <Tree t={T.twins} seed={i + 3} />)}</g>)}
       <path d={grass(tufts)} fill={g('front')} stroke={g('frontDark')} strokeWidth={1.2 * K} {...ROUND} />
       {at(L.corners[0], <Corner t={T.field} mirror={false} />)}
