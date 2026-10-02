@@ -6,11 +6,12 @@ import { masteryKeyOf } from '../../tasks'
 import type { AnswerValue, Fact, Task } from '../../types'
 import {
   cardProblems, first, hintProblems, optionProblems, registeredSkill, sceneOf, spokenText, tagsToHint, taskSpeechProblems, tasksOf,
-  answerProblems, type Built,
+  answerProblems, globalIdProblems, type Built,
 } from '../number/number.oracle'
+import { registeredSkills } from '../../registry'
 import { numberWordProblems, numbersIn } from '../number/number2.oracle'
 import {
-  answerComesNowSays, avoidChecks, balanceTokens, cardAnswer, cardNumbers, classifyAll, continueStones, diagnosticCards, distinctIds,
+  answerComesNowSays, avoidChecks, hintArithmetic, balanceTokens, cardAnswer, cardNumbers, classifyAll, continueStones, diagnosticCards, distinctIds,
   equalSidesAnswer, equalSidesOf, equalSidesShapeOk, equalsAsAnswerValues, explainMissingPart10, explainSkip, idChecks, instancesOf3,
   inverseAnswer, inverseOf, inverseWrongOps, missing100Mis, missing100Numbers, missing100Of, missing100Tokens, missingPart10Of,
   productionChecks, sentences, skipNext, skipRowOf, solveTokens, specKindChecks, spokenAnswer, spokenTokens, statementTrue, swapped,
@@ -68,6 +69,20 @@ describe('wave-2 kit (ORK2c)', () => {
   })
 })
 
+describe('fact ids of the 15 wave-2 skills of algebra, muldiv, shapes and fractions (CONVENTIONS)', () => {
+  const MINE = ['missingPart10', 'skipCount', 'equalSides', 'inverseOps', 'missingPart100', 'groupsOf', 'mul2510', 'shareEqually',
+    'sidesCorners', 'shapes3D', 'sortShapes', 'symmetry', 'composeShapes', 'halfShape', 'fractionShape']
+
+  it('are unique across every registered skill, in the CONVENTIONS format, one prefix per skill', () => {
+    const all = registeredSkills()
+    expect(MINE.every((id) => all.some((d) => d.id === id))).toBe(true)
+    const prefixes = new Map<string, string>()
+    for (const d of all) for (const f of d.enumerate()) prefixes.set(f.id.slice(0, f.id.indexOf(':')), d.id)
+    const mine = (p: string) => MINE.some((id) => new RegExp(`\\b${id}\\b`).test(p)) || [...prefixes].some(([pre, id]) => MINE.includes(id) && p.includes(`${pre}:`))
+    expect(first(globalIdProblems(all).filter(mine))).toEqual([])
+  }, TIMEOUT)
+})
+
 // ═══ missingPart10 ══════════════════════════════════════════════════════════
 
 describe('missingPart10 oracle', () => {
@@ -121,6 +136,10 @@ describe('missingPart10 oracle', () => {
     expect(first(taskSpeechProblems(built))).toEqual([])
     expect(first(numberWordProblems(built))).toEqual([])
     expect(first(canon.flatMap((f) => hintProblems(def, f, tagsToHint(def, canon))))).toEqual([])
+  })
+
+  it('says only true arithmetic in every strategy hint, for every tag and kind', () => {
+    expect(first(hintArithmetic(def, canon, tagsToHint(def, canon)))).toEqual([])
   })
 })
 
@@ -196,6 +215,19 @@ describe('skipCount oracle', () => {
     expect(first(diagnosticCards(built, (b) => { const r = rowOf(b.fact); return [r.row[r.row.length - 1] + Math.sign(r.step)] }, explain))).toEqual([])
   })
 
+  it.fails('keeps every palette number inside the skill’s range (step10/step10offset 0–100, step100 0–1000, step25 0–300)', () => {
+    // GENERATOR BUG (skipCount.ts palette()): the near numbers are the two answers + 1, so when the second
+    // answer is the family's top the palette offers one past it: skc:step10:60:3 [81, 82, 90, 91, 100, 101],
+    // skc:step100:500:4 [801, 802, 900, 901, 1000, 1001], skc:step25:200:3 [251, 252, 275, 276, 300, 301].
+    const problems: string[] = []
+    for (const { fact, task } of built) {
+      if (task.kind !== 'fillSlots') continue
+      const out = task.options.filter((o) => typeof o !== 'number' || o < task.range[0] || o > task.range[1])
+      if (out.length) problems.push(`${fact.id}: palette [${task.options}] has ${out} outside ${task.range.join('–')}`)
+    }
+    expect(first(problems)).toEqual([])
+  })
+
   it('classifies cards, typed values and every filling: skipStepOne on in ones, the stones as operands, A11 on a typed swap', () => {
     expect(first(classifyAll(built, (b, v) => explainSkip(rowOf(b.fact), v)))).toEqual([])
   })
@@ -209,6 +241,10 @@ describe('skipCount oracle', () => {
     expect(first(taskSpeechProblems(built))).toEqual([])
     expect(first(numberWordProblems(built))).toEqual([])
     expect(first(canon.flatMap((f) => hintProblems(def, f, tagsToHint(def, canon))))).toEqual([])
+  })
+
+  it('says only true arithmetic in every strategy hint (and "Svaret er" the answer), for every tag and kind, also on drawn instances', () => {
+    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tagsToHint(def, canon)))).toEqual([])
   })
 }, TIMEOUT)
 
@@ -309,6 +345,10 @@ describe('equalSides oracle', () => {
     expect(first(numberWordProblems(built))).toEqual([])
     expect(first(canon.flatMap((f) => hintProblems(def, f, tagsToHint(def, canon))))).toEqual([])
   })
+
+  it('says only true arithmetic in every strategy hint (and "Svaret er" the answer), for every tag and kind, also on drawn instances', () => {
+    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tagsToHint(def, canon)))).toEqual([])
+  })
 }, TIMEOUT)
 
 /** equalSides: a typed or card value against the seesaw on the card; a true/false judgment against the reader. */
@@ -377,6 +417,10 @@ describe('inverseOps oracle', () => {
     expect(first(taskSpeechProblems(built))).toEqual([])
     expect(first(numberWordProblems(built))).toEqual([])
     expect(first(canon.flatMap((f) => hintProblems(def, f, tagsToHint(def, canon))))).toEqual([])
+  })
+
+  it('says only true arithmetic in every strategy hint (and "Svaret er" the answer), for every tag and kind, also on drawn instances', () => {
+    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tagsToHint(def, canon)))).toEqual([])
   })
 }, TIMEOUT)
 
@@ -461,6 +505,10 @@ describe('missingPart100 oracle', () => {
     expect(first(taskSpeechProblems(built))).toEqual([])
     expect(first(numberWordProblems(built))).toEqual([])
     expect(first(canon.flatMap((f) => hintProblems(def, f, tagsToHint(def, canon))))).toEqual([])
+  })
+
+  it('says only true arithmetic in every strategy hint (and "Svaret er" the answer), for every tag and kind, also on drawn instances', () => {
+    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tagsToHint(def, canon)))).toEqual([])
   })
 }, TIMEOUT)
 

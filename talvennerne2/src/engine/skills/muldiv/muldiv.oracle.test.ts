@@ -11,7 +11,7 @@ import {
 } from '../number/number.oracle'
 import { numberWordProblems, numbersIn } from '../number/number2.oracle'
 import {
-  cardAnswer, classifyAll, diagnosticCards, idChecks, productionChecks, sentences, specKindChecks, spokenAnswer, typedSwapOf, wantTag,
+  cardAnswer, classifyAll, diagnosticCards, hintArithmetic, idChecks, productionChecks, sentences, specKindChecks, spokenAnswer, typedSwapOf, wantTag,
 } from '../algebra/algebra2.oracle'
 import {
   explainGroups, explainMul, explainShare, groupsOfId, mul2510Ids, mulId, mulMis, shareId, shareOutcomes,
@@ -80,6 +80,22 @@ describe('groupsOf oracle', () => {
     expect(first(numberWordProblems(built))).toEqual([])
     expect(first(facts.flatMap((f) => hintProblems(def, f, tagsToHint(def, facts))))).toEqual([])
   })
+
+  it('says only true arithmetic in every hint and counts group by group to the answer on the fact’s own groups', () => {
+    expect(first(hintArithmetic(def, facts, tagsToHint(def, facts)))).toEqual([])
+    const problems: string[] = []
+    for (const f of facts) {
+      const q = groupsOfId(f.id)!
+      for (const tag of tagsToHint(def, facts)) {
+        const h = def.hint(f, tag)
+        if (h.visual.scene !== 'groups' || h.visual.groups !== q.g || h.visual.size !== q.s) problems.push(`${f.id} hint(${String(tag)}): ${JSON.stringify(h.visual)}`)
+        // "Fire. Otte. Tolv." — the running count ends on the answer
+        const counts = numbersIn(spokenText(h.speech))
+        if (!counts.includes(q.answer)) problems.push(`${f.id} hint(${String(tag)}): never says ${q.answer}`)
+      }
+    }
+    expect(first(problems)).toEqual([])
+  })
 }, TIMEOUT)
 
 // ═══ mul2510 ════════════════════════════════════════════════════════════════
@@ -142,6 +158,19 @@ describe('mul2510 oracle', () => {
     expect(first(taskSpeechProblems(built))).toEqual([])
     expect(first(numberWordProblems(built))).toEqual([])
     expect(first(facts.flatMap((f) => hintProblems(def, f, tagsToHint(def, facts))))).toEqual([])
+  })
+
+  it('says only true arithmetic in every hint; the array or the hops picture the fact’s own product', () => {
+    expect(first(hintArithmetic(def, facts, tagsToHint(def, facts)))).toEqual([])
+    const problems: string[] = []
+    for (const f of facts) {
+      const q = mulId(f.id)!
+      const v = def.hint(f, null).visual
+      const ok = v.scene === 'array' ? v.rows * v.cols === q.answer && [v.rows, v.cols].sort((x, y) => x - y).join() === `${q.a},${q.b}`
+        : v.scene === 'line' ? (v.hops ?? []).at(-1) === q.answer && (v.hops ?? []).every((x, i) => x === i * q.table) : false
+      if (!ok) problems.push(`${f.id}: ${JSON.stringify(v)}`)
+    }
+    expect(first(problems)).toEqual([])
   })
 }, TIMEOUT)
 
@@ -211,5 +240,16 @@ describe('shareEqually oracle', () => {
     expect(first(taskSpeechProblems(built))).toEqual([])
     expect(first(numberWordProblems(built))).toEqual([])
     expect(first(facts.flatMap((f) => hintProblems(def, f, [...tagsToHint(def, facts), 'shareUnequal'])))).toEqual([])
+  })
+
+  it('says only true arithmetic in every hint (also after shareUnequal), showing each animal’s equal share', () => {
+    expect(first(hintArithmetic(def, facts, [...tagsToHint(def, facts), 'shareUnequal']))).toEqual([])
+    const problems: string[] = []
+    for (const f of facts) {
+      const q = shareId(f.id)!
+      const v = def.hint(f, null).visual
+      if (v.scene !== 'groups' || v.groups !== q.g || v.size !== q.answer) problems.push(`${f.id}: ${JSON.stringify(v)}`)
+    }
+    expect(first(problems)).toEqual([])
   })
 }, TIMEOUT)

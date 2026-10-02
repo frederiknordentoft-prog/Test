@@ -274,8 +274,8 @@ const MANIPULATIVE_ONLY_FOR: Readonly<Partial<Record<TaskKind, readonly SkillId[
 
 /**
  * SPEC §3.2's guessP, read off what the child is shown: the cards, the keys, the items, the palette and
- * slots, the parts to colour, the grid. A 'grid' task without a grid on screen is answered with a number
- * on the keys (the fallback until wave 3's grid view), so its chance is the keypad's.
+ * slots, the parts to colour, the grid. A 'grid' task whose answer is a number (a count) is typed on the
+ * keys (the fallback until wave 3's grid view), so its chance is the keypad's, not the cells'.
  */
 export function guess3(t: Task): number {
   switch (t.kind) {
@@ -297,8 +297,9 @@ export function guess3(t: Task): number {
       if (t.prompt.scene !== 'fraction') throw new Error(`colorParts without a figure: ${t.factId}`)
       return 1 / (t.prompt.parts + 1)
     case 'grid':
-      if (t.prompt.scene === 'grid') return t.prompt.coords ? 1 / (t.prompt.w * t.prompt.h) : 1 / 2 ** (t.prompt.w * t.prompt.h)
-      return 1 / (t.range[1] - t.range[0] + 1)
+      // a count ("how many squares are missing?") is typed, whatever the scene: the keypad's chance
+      if (typeof t.answer === 'number' || t.prompt.scene !== 'grid') return 1 / (t.range[1] - t.range[0] + 1)
+      return t.prompt.coords ? 1 / (t.prompt.w * t.prompt.h) : 1 / 2 ** (t.prompt.w * t.prompt.h)
     default:
       throw new Error(`no oracle guess rate for ${t.kind}`)
   }
@@ -674,6 +675,52 @@ export function cardAnswer(p: Prompt): number | null {
   }
   const b = balanceTokens(p)
   return b ? solveTokens([...b[0], '=', ...b[1]]) : null
+}
+
+/**
+ * Strategy hints say only true arithmetic (SPEC §3.5: the hint is how the child is helped): for every
+ * tag and kind, each spoken statement "a op b giver c" is true, "Svaret er …" names the answer, and a
+ * number line drawn holds its hops.
+ */
+export function hintArithmetic(def: SkillDef, facts: readonly Fact[], tags: readonly (ErrorTag | null)[]): string[] {
+  const out = new Set<string>()
+  for (const f of facts) {
+    for (const tag of tags) {
+      for (const kind of [undefined, ...def.kinds]) {
+        const h = def.hint(f, tag, kind)
+        const where = `${f.id} hint(${String(tag)}${kind ? `, ${kind}` : ''})`
+        for (const s of sentences(spokenText(h.speech))) {
+          const toks = spokenTokens(s)
+          if (toks.includes('=') && !toks.includes('?') && statementTrue(toks) === false) out.add(`${where}: "${s}" is not true`)
+          // "Svaret er …" and "Hoppene giver tilsammen …" name the answer
+          const said = /^(?:Svaret er|Hoppene giver tilsammen) (.+)\.$/.exec(s)
+          if (said && typeof f.answer === 'number' && kind !== 'fillSlots') {
+            const n = spokenTokens(said[1])
+            if (n.length !== 1 || n[0] !== f.answer) out.add(`${where}: "${s}", the answer is ${f.answer}`)
+          }
+          // "Så giver tolv minus fem syv." (the family's other fact)
+          const so = /^Så giver (.+)\.$/.exec(s)
+          if (so) {
+            const t = spokenTokens(so[1])
+            const x = t.length === 4 && typeof t[0] === 'number' && typeof t[2] === 'number' ? apply(t[0], t[1], t[2]) : null
+            if (x === null || x !== t[3]) out.add(`${where}: "${s}" is not true`)
+          }
+          // "Tre grupper med fire er tolv."
+          const grp = /^(\S+) grupper med (\S+) er (\S+)\.$/i.exec(s)
+          if (grp) {
+            const [g, n, x] = [grp[1], grp[2], grp[3]].map((w) => spokenTokens(w)[0])
+            if (typeof g !== 'number' || typeof n !== 'number' || g * n !== x) out.add(`${where}: "${s}" is not true`)
+          }
+        }
+        const v = h.visual
+        if (v.scene === 'line') {
+          if (!(v.min < v.max)) out.add(`${where}: a line ${v.min}–${v.max}`)
+          for (const x of v.hops ?? []) if (x < v.min || x > v.max) out.add(`${where}: the hop ${x} is off the line ${v.min}–${v.max}`)
+        }
+      }
+    }
+  }
+  return [...out]
 }
 
 /** The asked number from what the voice says: the sentence with "hvad" solved; every other sentence must be true. */
