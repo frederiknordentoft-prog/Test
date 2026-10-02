@@ -10,11 +10,14 @@ import { hverdagHead } from '../art/items/hverdag/hverdag-head'
 import { ItemIcon } from '../art/rig/ItemIcon'
 import { MAGIC } from '../art/rig/palette'
 import { Rig, magicOf, resolveColorway } from '../art/rig/Rig'
-import type { RigCrop, RigProps } from '../art/rig/Rig'
-import { MOODS, NATURAL_COLORWAYS, SET_IDS, SPECIES_IDS, STAGES } from '../art/rig/types'
-import type { BreedId, ColorwayId, ItemDef, Mood, Outfit, SetId, Slot, SpeciesDef, Stage } from '../art/rig/types'
+import type { RigProps } from '../art/rig/Rig'
+import { MOODS, NATURAL_COLORWAYS, SPECIES_IDS, STAGES } from '../art/rig/types'
+import type { BreedId, ColorwayId, ItemDef, Mood, Outfit, SpeciesDef, Stage } from '../art/rig/types'
 import { mannequins } from './mannequin'
 import { runLints } from './lints'
+import type { RigCrop } from '../art/rig/Rig'
+import { SET_IDS } from '../art/rig/types'
+import type { SetId, Slot } from '../art/rig/types'
 
 export const ROUTES = ['species', 'moods', 'closeup', 'sizes', 'silhouettes', 'fit', 'fitmatrix', 'filmstrip', 'lineup'] as const
 export type Route = (typeof ROUTES)[number]
