@@ -14,6 +14,7 @@ import {
   type SpeciesId, type WorldId,
 } from '../../../../engine/types'
 import { wishProgress } from '../../../../meta/actions'
+import { worldBuilt } from '../../../../meta/built'
 import type { RegionTier } from '../../../../meta/rewards'
 import {
   OPEN_REGIONS_PER_WORLD, hutRegions, isFinaleOpen, isNodeOpen, isRegionOpen, isWorldOpen, nodeDone, playedNodes,
@@ -77,7 +78,10 @@ export interface RegionView {
 export interface WorldView {
   id: WorldId
   nameClip: ClipId
+  /** Unlocked and built. */
   open: boolean
+  /** Not built yet (src/meta/built.ts): "Kommer snart", whatever the child has unlocked. */
+  soon: boolean
 }
 
 export interface Hud {
@@ -119,7 +123,12 @@ export function playable(p: ProfileDoc, target: PlayTarget, hutRegion?: RegionId
   if (target === 'practice') return true
   if (target === 'hut') return litHut(p, hutRegion) !== null
   const node = NODE_BY_ID[target]
-  if (!node || !isNodeOpen(p, target)) return false
+  return !!node && worldBuilt(node.world) && startable(p, node)
+}
+
+/** An open stone, and not a trial waiting for a normal round first. */
+function startable(p: ProfileDoc, node: NodeDef): boolean {
+  if (!isNodeOpen(p, node.id)) return false
   if (node.slot !== 'trial' && node.slot !== 'finale') return true
   const id = trialId(node)
   return trialPassed(p, id) || canAttemptTrial(p.trials[id], p.roundIndex)
@@ -164,7 +173,7 @@ function stoneView(p: ProfileDoc, node: NodeDef, open: boolean): StoneView {
     skipped: !!progress?.skipped && (progress.plays ?? 0) === 0,
     stars: progress?.stars ?? 0,
     next: false,
-    playable: open && playable(p, node.id),
+    playable: open && startable(p, node),
   }
   if (node.slot === 'friend' && region?.node3.kind === 'friend') {
     view.friend = { species: region.node3.species, met: (progress?.plays ?? 0) > 0 }
@@ -210,26 +219,28 @@ function heartOf(buddy: Animal | null): number | null {
   return Math.max(0, Math.min(1, (buddy.friendship - from) / (to - from)))
 }
 
-/** The world shown when none is asked for: the furthest open one with something left to do. */
-export function homeWorld(p: ProfileDoc): WorldId {
-  const open = WORLD_IDS.filter((w) => isWorldOpen(p, w))
+/** The world shown when none is asked for: the furthest open (and built) one with something left to do. */
+export function homeWorld(p: ProfileDoc, built: (w: WorldId) => boolean = worldBuilt): WorldId {
+  const open = WORLD_IDS.filter((w) => isWorldOpen(p, w) && built(w))
   for (const w of [...open].reverse()) {
-    const m = mapModel(p, w)
+    const m = mapModel(p, w, built)
     if (m.next) return w
   }
   return open[open.length - 1] ?? 'eng'
 }
 
-export function mapModel(p: ProfileDoc, world: WorldId): MapModel {
+/** `built`: which worlds can be entered (src/meta/built.ts); tests hand in their own. */
+export function mapModel(p: ProfileDoc, world: WorldId, built: (w: WorldId) => boolean = worldBuilt): MapModel {
+  const here = built(world)
   const regions: RegionView[] = regionsOfWorld(world).map((def) => {
-    const open = isRegionOpen(p, def.id)
+    const open = here && isRegionOpen(p, def.id)
     const played = playedNodes(p, def.id)
     return {
       id: def.id,
       index: def.index,
       nameClip: def.nameClip,
       open,
-      lock: regionLock(p, def),
+      lock: here ? regionLock(p, def) : { kind: 'world' },
       tier: regionTier(p, def.id),
       fresh: open && played === 0 && !(def.world === 'eng' && def.index <= OPEN_REGIONS_PER_WORLD),
       played,
@@ -238,13 +249,15 @@ export function mapModel(p: ProfileDoc, world: WorldId): MapModel {
     }
   })
   const finaleNode = NODE_BY_ID[`${world}-finale`]
-  const finale = stoneView(p, finaleNode, isFinaleOpen(p, world))
+  const finale = stoneView(p, finaleNode, here && isFinaleOpen(p, world))
   const next = nextStone(regions, finale)
   for (const r of regions) for (const s of r.stones) s.next = s.id === next
   finale.next = finale.id === next
 
   const i = WORLD_IDS.indexOf(world)
-  const worlds: WorldView[] = WORLDS.map((w) => ({ id: w.id, nameClip: w.nameClip, open: isWorldOpen(p, w.id) }))
+  const worlds: WorldView[] = WORLDS.map((w) => ({
+    id: w.id, nameClip: w.nameClip, open: built(w.id) && isWorldOpen(p, w.id), soon: !built(w.id),
+  }))
   const buddy = p.animals.find((a) => a.uid === p.buddyUid) ?? null
   const need = eggWarmthFor(p.economy.eggsHatched + 1)
   const round = p.round && p.round.nodeId !== 'placement' ? p.round : null

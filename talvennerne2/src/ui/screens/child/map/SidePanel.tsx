@@ -69,7 +69,7 @@ function WorldPicker({ model, onWorld }: { model: MapModel; onWorld(w: WorldId):
               if (w.open) {
                 speech.speak([{ clip: w.nameClip }])
                 if (w.id !== model.world) onWorld(w.id)
-              } else speech.speak([{ clip: w.nameClip }, { clip: 's.map.locked.world' }])
+              } else speech.speak([{ clip: w.nameClip }, { clip: w.soon ? 's.map.soon.world' : 's.map.locked.world' }])
             }}
           />
         ))}

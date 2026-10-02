@@ -3,13 +3,15 @@
 // world when it has something to play; a grown-up opens any place with something to play, and nothing
 // is ever closed again. Worlds whose skills are not registered yet are never opened.
 import { describe, expect, it } from 'vitest'
-import { REGIONS, regionsOfWorld } from '../../../../content/curriculum'
+import { ITEMS, SPECIES } from '../../../../content/catalog'
+import { REGIONS, WORLD_BY_ID, regionsOfWorld } from '../../../../content/curriculum'
 import { newProfileDoc } from '../../../../data/repo/profiles'
 import { registeredSkills } from '../../../../engine/registry'
 import type { SkillId } from '../../../../engine/types'
 import { isRegionOpen, isWorldOpen, unlockView } from '../../../../meta/unlock'
 import {
   applyGrade, gradeOpenings, openingRows, regionHasContent, regionOpenings, withOpenings, worldOpenings, worldReady,
+  type Drawn,
 } from './openings'
 
 /** What is registered today: the skills of Engdalen (and shapes2D, which reaches into Hestebakkerne). */
@@ -20,6 +22,9 @@ const withBakke: ReadonlySet<SkillId> = new Set([
   ...regionsOfWorld('bakke').map((r) => r.skills.find((s) => !s.reviewOnly)!.skill),
 ])
 
+/** As if every friend, chest and finale were drawn. */
+const everything: Drawn = { species: new Set(SPECIES.map((s) => s.id)), items: new Set(ITEMS.map((i) => i.id)) }
+
 const engRegions = regionsOfWorld('eng').map((r) => r.id)
 const kid = () => newProfileDoc('Bo', 0, { id: 'p_bo', now: 0 })
 
@@ -29,7 +34,7 @@ describe('what has something to play', () => {
     for (const r of regionsOfWorld('eng')) expect(regionHasContent(r, registered), r.id).toBe(true)
     for (const w of ['bakke', 'skov', 'fjeld'] as const) {
       const all = regionsOfWorld(w).every((r) => r.skills.some((s) => registered.has(s.skill) && !s.reviewOnly))
-      expect(worldReady(w, registered), w).toBe(all)
+      expect(worldReady(w, registered, everything), w).toBe(all)
     }
   })
 
@@ -37,8 +42,23 @@ describe('what has something to play', () => {
     // Formværkstedet has flat shapes already, the rest of Hestebakkerne has nothing yet
     const figurer = REGIONS.find((r) => r.id === 'w1-figurer')!
     expect(regionHasContent(figurer, registered)).toBe(true)
-    expect(worldReady('bakke', registered)).toBe(false)
-    expect(worldReady('bakke', withBakke)).toBe(true)
+    expect(worldReady('bakke', registered, everything)).toBe(false)
+    expect(worldReady('bakke', withBakke, everything)).toBe(true)
+  })
+
+  it('does not call a world ready before its friends, chests and finale are drawn', () => {
+    const without = (id: string): Drawn => ({
+      species: new Set([...everything.species].filter((s) => s !== id)),
+      items: new Set([...everything.items].filter((i) => i !== id)),
+    })
+    const bakke = regionsOfWorld('bakke')
+    const friend = bakke.find((r) => r.node3.kind === 'friend')!.node3
+    const chest = bakke.find((r) => r.node3.kind === 'chest')!.node3
+    expect(worldReady('bakke', withBakke, without(friend.kind === 'friend' ? friend.species : ''))).toBe(false)
+    expect(worldReady('bakke', withBakke, without(chest.kind === 'chest' ? chest.item : ''))).toBe(false)
+    expect(worldReady('bakke', withBakke, without(WORLD_BY_ID.bakke.finaleItems[0]))).toBe(false)
+    // Engdalen is drawn in full
+    expect(worldReady('eng', registered)).toBe(true)
   })
 
   it('counts only a region\'s own skills, not its reviews', () => {
@@ -69,8 +89,8 @@ describe('the grade', () => {
   })
 
   it('opens the child\'s own world once it has something to play', () => {
-    expect(gradeOpenings(1, withBakke)).toEqual({ worlds: ['bakke'], regions: engRegions })
-    const two = gradeOpenings(2, withBakke)
+    expect(gradeOpenings(1, withBakke, everything)).toEqual({ worlds: ['bakke'], regions: engRegions })
+    const two = gradeOpenings(2, withBakke, everything)
     expect(two.worlds).toEqual(['bakke'])
     expect(two.regions).toEqual([...engRegions, ...regionsOfWorld('bakke').map((r) => r.id)])
   })
@@ -92,7 +112,7 @@ describe('what a grown-up opens', () => {
     expect(p.unlocked).toEqual({ worlds: [], regions: ['w0-minus10'] })
     // a region of a world that is not ready cannot be opened: its world's first stones would lead nowhere
     expect(regionOpenings('w1-figurer', registered)).toEqual({ worlds: [], regions: [] })
-    expect(regionOpenings('w1-tal100', withBakke)).toEqual({ worlds: ['bakke'], regions: ['w1-tal100'] })
+    expect(regionOpenings('w1-tal100', withBakke, everything)).toEqual({ worlds: ['bakke'], regions: ['w1-tal100'] })
   })
 
   it('opens a whole world with something to play, and never an empty one', () => {
@@ -100,7 +120,7 @@ describe('what a grown-up opens', () => {
     for (const r of engRegions) expect(isRegionOpen(p, r), r).toBe(true)
     expect(worldOpenings('bakke', registered)).toEqual({ worlds: [], regions: [] })
     if (!worldReady('fjeld', registered)) expect(worldOpenings('fjeld', registered)).toEqual({ worlds: [], regions: [] })
-    const q = withOpenings(kid(), worldOpenings('bakke', withBakke))
+    const q = withOpenings(kid(), worldOpenings('bakke', withBakke, everything))
     expect(isWorldOpen(q, 'bakke')).toBe(true)
   })
 

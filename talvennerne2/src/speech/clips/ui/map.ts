@@ -48,6 +48,7 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.map.locked.requires': 'Det åbner, når du har klaret mesterprøven i',
   's.map.locked.more': 'Spil flere sten på kortet, så åbner det.',
   's.map.locked.world': 'Den verden åbner, når du er nået længere frem.',
+  's.map.soon.world': 'Den verden er ved at blive bygget. Den kommer snart.',
   's.map.locked.finale': 'Festen åbner, når du har klaret mange af broerne.',
 
   // Places, worlds, the way on

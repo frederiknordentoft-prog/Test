@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { nodesOfRegion } from '../../../../content/curriculum'
 import { newProfileDoc } from '../../../../data/repo/profiles'
 import { keyAt } from '../../../../engine/testing/profile'
-import type { NodeId, NodeProgress, ProfileDoc, RoundSnapshot } from '../../../../engine/types'
+import type { NodeId, NodeProgress, ProfileDoc, RoundSnapshot, WorldId } from '../../../../engine/types'
 import { chooseStarter } from '../../../../meta/actions'
 import { AVAILABLE_ITEMS } from '../../../../art/items/registry'
 import { MapView } from './MapView'
@@ -186,6 +186,20 @@ describe('the world shown first', () => {
   it('is the furthest open world with something left to play', () => {
     const p = newChild()
     expect(homeWorld(p)).toBe('eng')
-    expect(homeWorld({ ...p, unlocked: { worlds: ['bakke'], regions: [] } })).toBe('bakke')
+    expect(homeWorld({ ...p, unlocked: { worlds: ['bakke'], regions: [] } }, () => true)).toBe('bakke')
+  })
+
+  it('never is a world that is not built yet, and such a world shows "Kommer snart"', () => {
+    const p = { ...newChild(), unlocked: { worlds: ['bakke' as const], regions: [] } }
+    const engOnly = (w: WorldId) => w === 'eng'
+    expect(homeWorld(p, engOnly)).toBe('eng')
+    const m = mapModel(p, 'eng', engOnly)
+    expect(m.worlds.map((w) => [w.id, w.open, w.soon])).toEqual([
+      ['eng', true, false], ['bakke', false, true], ['skov', false, true], ['fjeld', false, true],
+    ])
+    // even unlocked, nothing in it can be started
+    const bakke = mapModel(p, 'bakke', engOnly)
+    expect(bakke.regions.every((r) => !r.open && r.stones.every((s) => !s.playable))).toBe(true)
+    expect(bakke.next).toBeNull()
   })
 })

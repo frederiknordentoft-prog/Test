@@ -157,7 +157,8 @@ function Finale({ stone, onStone, buddy }: { stone: StoneView; onStone(s: StoneV
 
 function Beyond({ world, onWorld }: { world: MapModel['beyond'] & object; onWorld(w: WorldId): void }) {
   const speech = useSpeech()
-  const parts = world.open ? [{ clip: world.nameClip }] : [{ clip: world.nameClip }, { clip: 's.map.locked.world' }]
+  const note = world.soon ? 's.map.soon.world' : 's.map.locked.world'
+  const parts = world.open ? [{ clip: world.nameClip }] : [{ clip: world.nameClip }, { clip: note }]
   return (
     <button
       type="button"
@@ -173,7 +174,7 @@ function Beyond({ world, onWorld }: { world: MapModel['beyond'] & object; onWorl
         <WorldGlyph world={world.id} size="62%" />
       </span>
       <SpokenText clip={world.nameClip} silent className="tv-beyond__name" />
-      {!world.open && <SpokenText clip="s.map.locked.world" silent className="tv-beyond__note" />}
+      {!world.open && <SpokenText clip={note} silent className="tv-beyond__note" />}
     </button>
   )
 }
