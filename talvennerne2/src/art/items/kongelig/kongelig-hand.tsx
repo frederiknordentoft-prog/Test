@@ -12,13 +12,16 @@ import type { Vec } from '../../rig/shapes'
 import type { ItemArt, ItemDef, Pt } from '../../rig/types'
 
 /** Scepteret langs aksen fra grebet (hovedets modelenheder): skaft, ringe, stenen og stjernen. */
-const S = { butt: -11, top: 33, r: 2.9, rings: [-6, 24.5] as const, orb: 40, orbR: 8.4, star: 52.5, starR: 6.2 }
+const S = { butt: -6.5, top: 33, r: 2.9, rings: [-2.5, 24.5] as const, orb: 40, orbR: 8.4, star: 52.5, starR: 6.2 }
 /** Foretrukken retning (grader; −90 = op) og trin, når ansigtet er i vejen. */
 const AIM = -64
 const STEP = 18
+/** Scepteret er stort, så det kan ses i butikskortet på dyret. */
+const SIZE = 1.15
 
 const front: ItemArt = ({ c, sw, a, hold }) => {
-  const samples = [{ at: 14, r: 4 }, { at: S.orb, r: S.orbR + 1 }, { at: S.star, r: S.starR }]
+  // Knoppen forneden er med, så den heller aldrig går ud over den sikre zone (poten hviler tæt på jorden).
+  const samples = [{ at: S.butt - 1, r: S.r * 1.5 }, { at: 14, r: 4 }, { at: S.orb, r: S.orbR + 1 }, { at: S.star, r: S.starR }].map((p) => ({ at: p.at * SIZE, r: p.r * SIZE }))
   const P = hold ? aimAway(hold, samples, AIM, STEP) : aimSolo(a.handRot, -62)
   const { at, k, g, d, u, rot } = P
   // Tegnes i en ramme drejet tilbage til verdensrummet (lyset oppefra til venstre, bokse langs akserne).
@@ -27,8 +30,8 @@ const front: ItemArt = ({ c, sw, a, hold }) => {
     const q = at(p)
     return [q.x * Math.cos(t) - q.y * Math.sin(t), q.x * Math.sin(t) + q.y * Math.cos(t)]
   }
-  const along = (s: number): Vec => pt({ x: g.x + d.x * s * u, y: g.y + d.y * s * u })
-  const m = u * k
+  const along = (s: number): Vec => pt({ x: g.x + d.x * s * SIZE * u, y: g.y + d.y * s * SIZE * u })
+  const m = u * k * SIZE
   const ang = (Math.atan2(along(10)[1] - along(0)[1], along(10)[0] - along(0)[0]) * 180) / Math.PI
   const [ox, oy] = along(S.orb)
   const [kx, ky] = along(S.star)
@@ -63,7 +66,7 @@ export const kongeligHand: ItemDef = {
   art: { front },
   fit: { anchor: 'pawR', scaleBy: 'fixed', baseScale: 1, baseWidth: 30 },
   reach: true,
-  icon: { box: [-14, -62, 56, 70] },
+  icon: { box: [-14, -70, 62, 78] },
 }
 
 export default kongeligHand

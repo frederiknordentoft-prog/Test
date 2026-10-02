@@ -25,14 +25,17 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   const half = sw * 1.05
   const ux = Math.max(erx + 2.2 * k, erx * 1.3) + half
   const uy = ery + 1.6 * k + half
-  const rx = ux * 1.1
+  // Rammen er skubbet en anelse ud mod siden: inderkanten ligger 1,1 enheder fra øjet, yderkanten 1,3, så
+  // det lukkede øjes vipper (der svinger ud og op i ydersiden) altid ligger inde i glasset.
+  const rx = ux * 1.2
   const ry = uy * 1.08
-  const lens = ellipse(E.x, E.y, rx, ry)
+  const cx = E.x + ux * 0.1
+  const lens = ellipse(cx, E.y, rx, ry)
   // Kæden: fra rammens nederste yderside i en blød bue ned langs kinden til hovedets side.
   const hc = local(a.headCenter)
   const hw = a.headRx * 0.93 * k
   const t0 = (52 * Math.PI) / 180
-  const start = [E.x + Math.cos(t0) * rx, E.y + Math.sin(t0) * ry] as const
+  const start = [cx + Math.cos(t0) * rx, E.y + Math.sin(t0) * ry] as const
   const end = [Math.max(start[0] + 4 * k, hc.x + hw * 0.86), hc.y + a.headRy * 0.62 * k] as const
   const chain = spline([[start[0], start[1]], [start[0] + 2.6 * k, start[1] + 9 * k], [(start[0] + end[0]) / 2 + 1.6 * k, end[1] + 2.2 * k], [end[0], end[1]]])
   const glare = join(

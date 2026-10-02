@@ -1,9 +1,8 @@
 // Kongelig · ryg: en kongekåbe. Kåben hænger bag kroppen (lag 2) fra skuldrene ned mod jorden og breder
-// sig ud i en blød bue, så den ses på begge sider af kroppen. Forsiden viser kåbens hermelinsfor (hvidt med
-// små sorte haler) inden for en bred fløjlskant, så den læses som en kongekåbe, også i butikskortet på dyret
-// (review G1-r4, B3: kappen må ikke kun ses i kortets kanter). Foran skuldrene (lag 9b, under hovedet)
-// ligger to hermelinsstykker med hver sin guldbroche, samlet af en tynd guldkæde, der lader halsens smykke
-// være frit. Højden regnes ud fra halsleddet og jordlinjen, så kåben passer alle tre kropsformer og stadier,
+// sig ud i en blød bue, så den ses på begge sider af kroppen: fløjl inden for en bred hermelinskant (hvid med
+// små sorte haler). Foran skuldrene (lag 9b, under hovedet) ligger en hermelinskrave i to dele med hver sin
+// guldbroche, samlet af en tynd guldkæde, så kåben læses som en kongekåbe også i butikskortet på dyret
+// (review G1-r4, B3: kappen må ikke kun ses i kortets kanter), og halsens smykke er frit midt for. Højden regnes ud fra halsleddet og jordlinjen, så kåben passer alle tre kropsformer og stadier,
 // og på stor klemmes den vandret, så hjørnerne bliver i den sikre zone. (0,0) = bodyCenter, tegnet ved
 // bodyWidth 100.
 import { SAFE, STAGE_XF } from '../../rig/anchors'
@@ -16,8 +15,8 @@ import type { AnchorSet, ItemArt, ItemArtProps, ItemDef, Stage } from '../../rig
 const TOP_W = 30
 const LEFT_W = 82
 const RIGHT_W = 86
-/** Fløjlskanten uden om hermelinsforet. */
-const EDGE = 9
+/** Hermelinskantens bredde uden om fløjlet. */
+const EDGE = 10
 
 /** Kåben fra halsen ned mod jorden (lokale koordinater). */
 function mantleOf(p: Pick<ItemArtProps, 'a' | 'local'>) {
@@ -56,39 +55,30 @@ function outline(top: number, bot: number, lift: number, inset = 0, sx = 1): Vec
   ]
 }
 
-/** Hermelinens sorte haler: små dråber spredt over foret ved kåbens sider (det, der ses ved siden af kroppen). */
-function tails(top: number, bot: number, L: number, R: number): string {
-  const h = bot - top
-  const spots: Vec[] = []
-  for (const [fx, fy] of [[0.84, 0.36], [0.7, 0.55], [0.9, 0.62], [0.78, 0.8], [0.6, 0.88], [0.92, 0.86]] as const) {
-    spots.push([-L * fx, top + h * fy], [R * fx, top + h * (fy + 0.03)])
-  }
-  return join(...spots.map(([x, y]) => drop(x, y, 1.9)))
+/** Hermelinens sorte haler langs kantens midte (kåbens nederste og ydre punkter; de øverste skjules af kroppen). */
+function tails(top: number, bot: number, lift: number, sx: number): string {
+  const mid = outline(top, bot, lift, EDGE / 2, sx).slice(2, 11)
+  const extra = mid.slice(0, -1).map((p, i) => [(p[0] + mid[i + 1][0]) / 2, (p[1] + mid[i + 1][1]) / 2] as Vec)
+  return join(...[...mid, ...extra].map(([x, y]) => drop(x, y - 1.2, 2)))
 }
 
-const front: ItemArt = ({ c, sw, a, local, solo, stage, ids }) => {
+const front: ItemArt = ({ c, sw, a, local, solo, stage }) => {
   const m = solo ? { top: -46, bot: 44, lift: 9 } : mantleOf({ a, local })
   const { top, bot, lift } = m
   const sx = solo ? 0.56 : Math.min(1, (safeHalf({ a, local, stage }) - 5) / RIGHT_W)
   const L = LEFT_W * sx
   const R = RIGHT_W * sx
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
+  // Hermelinskanten er yderst (hele omridset), og fløjlet ligger inden for den.
   const shape = blob(outline(top, bot, lift, 0, sx), 0.8)
-  const lining = blob(outline(top, bot - 2, lift, EDGE * (solo ? 0.8 : 1), sx), 0.8)
-  const clip = `${ids.uid}-kk`
+  const velvet = blob(outline(top, bot, lift, EDGE, sx), 0.8)
   return (
     <>
-      <path d={shape} fill={c.main} {...stroke} />
-      <path d={lining} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.8} strokeLinejoin="round" />
-      <clipPath id={clip}>
-        <path d={lining} />
-      </clipPath>
-      <g clipPath={`url(#${clip})`}>
-        <path d={ellipse(0, bot + 4, R * 1.05, (bot - top) * 0.34)} fill={c.trimShade} />
-        <path d={tails(top, bot, L, R)} fill={c.ink} />
-      </g>
-      <path d={join(spline([[-L * 0.5, top + 14], [-L * 0.6, (top + bot) / 2], [-L * 0.66, bot - 12]]), spline([[R * 0.5, top + 14], [R * 0.6, (top + bot) / 2], [R * 0.68, bot - lift * 0.3 - 12]]))} fill="none" stroke={c.trimShade} strokeWidth={sw * 0.7} strokeLinecap="round" />
-      <path d={join(ellipse(-L * 0.94, top + (bot - top) * 0.56, 2.2, 8, 14), ellipse(R * 0.95, top + (bot - top) * 0.5, 2, 7, -16))} fill={c.highlight} />
+      <path d={shape} fill={c.trim} {...stroke} />
+      <path d={velvet} fill={c.main} stroke={c.trimOutline} strokeWidth={sw * 0.7} strokeLinejoin="round" />
+      <path d={tails(top, bot, lift, sx)} fill={c.ink} />
+      <path d={join(spline([[-L * 0.42, top + 14], [-L * 0.52, (top + bot) / 2], [-L * 0.58, bot - 14]]), spline([[R * 0.42, top + 14], [R * 0.54, (top + bot) / 2], [R * 0.6, bot - lift * 0.3 - 14]]))} fill="none" stroke={c.mainShade} strokeWidth={sw * 1.1} strokeLinecap="round" />
+      <path d={join(ellipse(-L * 0.74, top + (bot - top) * 0.5, 2.2, 8, 14), ellipse(R * 0.76, top + (bot - top) * 0.46, 2, 7, -16))} fill={c.highlight} />
       {solo && <Shoulders c={c} sw={sw} y={top + 3} />}
     </>
   )
@@ -102,15 +92,16 @@ function chinDrop(a: AnchorSet, stage: Stage): number {
 
 /** Hermelinsstykkerne over skuldrene med broche og kæden imellem (halsens smykke er frit). */
 function Shoulders({ c, sw, y }: { c: ItemArtProps['c']; sw: number; y: number }) {
-  const piece = (s: 1 | -1): Vec[] => [[s * 20, y - 3], [s * 31, y - 4.5], [s * 39, y + 1], [s * 37.5, y + 9.5], [s * 29, y + 12], [s * 21.5, y + 7]]
-  const pins: Vec[] = [[-27.5, y + 3.6], [27.5, y + 3.6]]
+  const piece = (s: 1 | -1): Vec[] => [[s * 18, y - 4], [s * 31, y - 6], [s * 42, y - 1.4], [s * 44.5, y + 6.6], [s * 38, y + 14], [s * 27.5, y + 15.4], [s * 19.5, y + 9.6]]
+  const pins: Vec[] = [[-23, y + 2.6], [23, y + 2.6]]
+  const spots: Vec[] = [[-37.5, y + 3.6], [-31, y + 11], [-40, y + 10.4], [37.5, y + 4], [31, y + 11.4], [40, y + 10.8]]
   return (
     <>
-      <path d={join(blob(piece(-1), 0.7), blob(piece(1), 0.7))} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.9} strokeLinejoin="round" />
-      <path d={join(drop(-34, y + 6, 1.5), drop(34, y + 6.4, 1.5), drop(-24, y + 8.2, 1.4), drop(24, y + 8.6, 1.4))} fill={c.ink} />
-      <path d={spline([pins[0], [0, y + 9], pins[1]])} fill="none" stroke={c.accentOutline} strokeWidth={sw * 1.15} strokeDasharray={`0.1 ${(sw * 1.1).toFixed(2)}`} strokeLinecap="round" />
-      <path d={join(...pins.map(([x, py]) => circle(x, py, 4.4)))} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.8} />
-      <path d={join(...pins.map(([x, py]) => circle(x - 1.3, py - 1.4, 1.2)))} fill={c.highlight} />
+      <path d={join(blob(piece(-1), 0.65), blob(piece(1), 0.65))} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.9} strokeLinejoin="round" />
+      <path d={join(...spots.map(([x, py]) => drop(x, py, 1.6)))} fill={c.ink} />
+      <path d={spline([pins[0], [0, y + 8], pins[1]])} fill="none" stroke={c.accentOutline} strokeWidth={sw * 1.15} strokeDasharray={`0.1 ${(sw * 1.1).toFixed(2)}`} strokeLinecap="round" />
+      <path d={join(...pins.map(([x, py]) => circle(x, py, 4.6)))} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.8} />
+      <path d={join(...pins.map(([x, py]) => circle(x - 1.4, py - 1.5, 1.3)))} fill={c.highlight} />
     </>
   )
 }

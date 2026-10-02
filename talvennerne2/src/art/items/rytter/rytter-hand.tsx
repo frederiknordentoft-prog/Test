@@ -24,7 +24,8 @@ const STEP = 18
 const SIZE = 1.2
 
 const front: ItemArt = ({ c, sw, a, hold }) => {
-  const samples = [{ at: 12 * SIZE, r: 7 * SIZE }, { at: (TOP + 10) * SIZE, r: 11 * SIZE }]
+  // Spidsen under poten er med, så den aldrig går ud over den sikre zone (poten hviler tæt på jorden).
+  const samples = [{ at: -10 * SIZE, r: 2 * SIZE }, { at: 12 * SIZE, r: 7 * SIZE }, { at: (TOP + 10) * SIZE, r: 11 * SIZE }]
   const P = hold ? aimAway(hold, samples, AIM, STEP) : aimSolo(a.handRot, -58)
   const { at, k, g, d, u, rot } = P
   // Tegnes i en ramme drejet tilbage til verdensrummet (lyset oppefra til venstre, bokse langs akserne).

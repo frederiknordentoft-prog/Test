@@ -18,11 +18,11 @@ interface Strand {
   r: number
 }
 const STRANDS: readonly Strand[] = [
-  { w: 21, top: -1, bottom: 13, count: 9, r: 2.7 },
-  { w: 24.5, top: 2, bottom: 22.5, count: 11, r: 3.1 },
+  { w: 22, top: -1, bottom: 14, count: 9, r: 3.1 },
+  { w: 26, top: 2.5, bottom: 24.5, count: 10, r: 3.6 },
 ]
 /** Vedhænget under den nederste række. */
-const GEM = { y: 30.5, rx: 4.4, ry: 5.4 }
+const GEM = { y: 34, rx: 5, ry: 6.2 }
 
 /** Perlernes centre langs rækkens bue (jævnt fordelt i x, så de ligger tæt på tværs af brystet). */
 function pearls(s: Strand): Vec[] {
@@ -73,7 +73,7 @@ export const kongeligNeck: ItemDef = {
   ],
   art: { front },
   fit: { anchor: 'neck', scaleBy: 'neckWidth', baseScale: 1, baseWidth: 52 },
-  icon: { box: [-29, -5, 58, 43] },
+  icon: { box: [-31, -6, 62, 48] },
 }
 
 export default kongeligNeck

@@ -11,8 +11,12 @@ import { WHITE, fabric } from '../../rig/palette'
 import { circle, ellipse, join, poly, quad, spline } from '../../rig/shapes'
 import type { ItemArt, ItemDef } from '../../rig/types'
 
-/** Glassets radius i glasenheder (øjet plus luft plus en halv stelbredde): rundt og en anelse bredt. */
-const LENS = { rx: 1.12, ry: 1.1 }
+/**
+ * Glassets radius i glasenheder (øjet plus luft plus en halv stelbredde) og hvor meget glasset er skubbet
+ * ud mod siden: inderkanten ved næsen ligger 1,12 enheder fra øjet, yderkanten 1,3, så de lukkede øjnes
+ * vipper (der svinger ud og op i ydersiden) altid ligger inde i glasset.
+ */
+const LENS = { rx: 1.21, ry: 1.1, out: 0.09 }
 /** Glassets tone på dyret (højst ca. 20 %, review G1-r4, T1) og i butikken. */
 const TINT = 0.16
 const SOLO_TINT = 0.55
@@ -31,10 +35,13 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   const uy = ery + 1.6 * k + half
   const rx = LENS.rx * ux
   const ry = LENS.ry * uy
-  const rings = join(ellipse(L.x, L.y, rx, ry), ellipse(R.x, R.y, rx, ry))
+  // Glassenes centre (skubbet ud mod hovedets sider).
+  const lx = L.x - LENS.out * ux
+  const rcx = R.x + LENS.out * ux
+  const rings = join(ellipse(lx, L.y, rx, ry), ellipse(rcx, R.y, rx, ry))
   // Broen over næseryggen (kun når glassene ikke rører hinanden).
-  const bx0 = L.x + rx * 0.84
-  const bx1 = R.x - rx * 0.84
+  const bx0 = lx + rx * 0.84
+  const bx1 = rcx - rx * 0.84
   const by = (L.y + R.y) / 2 - ry * 0.5
   const bridge = bx1 - bx0 > sw ? quad([bx0, by], [(bx0 + bx1) / 2, by - 3.4 * k], [bx1, by]) : ''
   // Elastikbåndet fra stellets yderside ud til hovedets sider (lidt over øjnenes midte).
@@ -42,10 +49,16 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   const hw = a.headRx * 0.93 * k
   const ty = (L.y + R.y) / 2 - 0.22 * ry
   // Båndet starter under stellets yderkant, så dets runde ende aldrig rækker ind mod de lukkede øjnes vipper.
+  // Båndet går altid udad: sidder glasset helt ude ved hovedets side (babyens store øjne), bliver det en
+  // kort stump, der aldrig bøjer tilbage hen over glasset.
   const sx = rx + sw * 0.9
+  const x0 = lx - sx
+  const x1 = Math.min(hc.x - hw * 0.93, x0 - 3 * k)
+  const x2 = Math.min(hc.x - hw, x1 - 2.4 * k)
   const strap = join(
-    spline([[L.x - sx, ty], [hc.x - hw * 0.93, ty - 2.6 * k], [hc.x - hw, ty - 4.8 * k]]),
-    spline([[R.x + sx, ty], [hc.x + hw * 0.93, ty - 2.6 * k], [hc.x + hw, ty - 4.8 * k]]),
+    spline([[x0, ty], [x1, ty - 2.6 * k], [x2, ty - 4.8 * k]]),
+    // Højre side spejlet om midten mellem glassene.
+    spline([[lx + rcx - x0, ty], [lx + rcx - x1, ty - 2.6 * k], [lx + rcx - x2, ty - 4.8 * k]]),
   )
   // Hvidt højlys: en skrå stribe i glassets øverste ydre hjørne og en prik forneden mod næsen, begge uden
   // for øjet.
@@ -62,7 +75,7 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
       ),
     ),
   )
-  const studs = join(...[L.x - sx, R.x + sx].map((x) => circle(x, ty, 2.2 * k)))
+  const studs = join(...[lx - sx, rcx + sx].map((x) => circle(x, ty, 2.2 * k)))
   const round = { strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <>

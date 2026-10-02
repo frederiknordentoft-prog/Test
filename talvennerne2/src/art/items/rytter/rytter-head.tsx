@@ -4,6 +4,7 @@
 // over hornets rod, og knappen flytter til venstre for hornet. Skyggen er en flad halvmåne under kuplens
 // forkant; den holder sig over øjnene på alle arter og stadier. Pandelokken og uldtoppen ligger under
 // hjelmen. (0,0) = headTop, tegnet ved headWidth 104.
+import { STAGE_XF } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'
 import { blob, circle, ellipse, join, litCopy, softBand, spline, symmetric, xf } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
@@ -14,6 +15,7 @@ const DOME = symmetric([
   [0, -18], [-17, -15.8], [-31, -8.4], [-40.4, 2], [-45, 12.6], [-46.4, 21.6], [0, 24],
 ])
 /** Skyggen fortil: en flad halvmåne under kuplens forkant (oversiden gemmer sig under båndet). */
+const PEAK_TOP = 22
 const PEAK: Vec[] = [
   [-39, 19.5], [-18, 21.5], [0, 22], [18, 21.5], [39, 19.5], [33.5, 26.6], [18, 31.6], [0, 33.2], [-18, 31.6], [-33.5, 26.6],
 ]
@@ -49,8 +51,24 @@ function lip(h: { x: number; y: number; rot: number }, rx = HOLE.rx, ry = HOLE.r
 /** Knappen på toppen: midt på, eller til venstre for et horn (så hornet står frit). */
 const buttonAt = (horn: Pt | null | undefined): Pt => (horn ? { x: horn.x - 19, y: -13 } : { x: 0, y: -18.5 })
 
-const front: ItemArt = ({ c, sw, a, local, holes, horn }) => {
+/**
+ * Skyggen klemmes lodret, så dens underkant holder sig over øjnene, også når babyens store øjne kigger op
+ * ("tænker": pupillen og øjet flyttes op til 3 enheder) – med 1,5 enheds luft og stregen med.
+ */
+function peakFor(p: Pick<ItemArtProps, 'a' | 'local' | 'stage' | 'sw'>): Vec[] {
+  const lift = 3 + 1.5
+  const eyeTop = Math.min(
+    p.local({ x: p.a.eyeL.x, y: p.a.eyeL.y - p.a.eyeRy * STAGE_XF[p.stage].eye - lift }).y,
+    p.local({ x: p.a.eyeR.x, y: p.a.eyeR.y - p.a.eyeRy * STAGE_XF[p.stage].eye - lift }).y,
+  )
+  const bottom = Math.max(...PEAK.map(([, y]) => y))
+  const f = Math.min(1, Math.max(0.35, (eyeTop - p.sw / 2 - PEAK_TOP) / (bottom - PEAK_TOP)))
+  return PEAK.map(([x, y]) => [x, y > PEAK_TOP ? PEAK_TOP + (y - PEAK_TOP) * f : y] as Vec)
+}
+
+const front: ItemArt = ({ c, sw, a, local, holes, horn, stage }) => {
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
+  const peak = peakFor({ a, local, stage, sw })
   const lit = litCopy(DOME, [-24, -10], 0.9)
   const hl = holeAt(local, a.earBaseL, -1)
   const hr = holeAt(local, a.earBaseR, 1)
@@ -59,7 +77,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn }) => {
   const shine = horn ? { x: horn.x + 21, y: -3 } : { x: -12, y: -7 }
   return (
     <>
-      <path d={blob(PEAK, 0.8)} fill={c.main} {...stroke} />
+      <path d={blob(peak, 0.8)} fill={c.main} {...stroke} />
       <path d={blob(DOME, 0.9)} fill={c.mainShade} />
       <path d={blob(lit, 0.9)} fill={c.main} />
       <path d={join(...SEAMS.map((s) => spline(s)))} fill="none" stroke={c.mainShade} strokeWidth={sw * 0.55} strokeLinecap="round" />
@@ -79,7 +97,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn }) => {
       <path d={circle(btn.x, btn.y, 4.6)} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.8} />
       {/* Fløjlets matte højlys på kuplen, en glans på skyggen og et lille på knappen. */}
       <path
-        d={join(ellipse(shine.x, shine.y, 4.8, 2.3, -24), ellipse(-15, 27.4, 8, 1.4, 5), ellipse(btn.x - 1.5, btn.y - 1.6, 1.6, 1.1, -20))}
+        d={join(ellipse(shine.x, shine.y, 4.8, 2.3, -24), ellipse(-15, PEAK_TOP + (peak[7][1] - PEAK_TOP) * 0.45, 8, 1.4, 5), ellipse(btn.x - 1.5, btn.y - 1.6, 1.6, 1.1, -20))}
         fill={c.highlight}
       />
     </>
