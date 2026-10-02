@@ -298,6 +298,12 @@ export interface SpeciesParts {
    * poten på hagen ved tænker). Mangler den, roteres `Paw` i stedet.
    */
   PawUp?: SidePart
+  /**
+   * Fyld (uden kontur) bag kroppen ved armen, i skulderens ramme (højre side spejlet): dækker en lomme
+   * mellem arm, hage, øre og krop, så der aldrig ses baggrund inde i figuren. Kroppen, hovedet, ørerne
+   * og armen tegnes ovenpå, så kun lommen bliver farvet. Returnerer null, hvor der ingen lomme er.
+   */
+  PawBack?: SidePart
   /** Hvor den løftede pote holder en håndgenstand (lokalt, venstre side) pr. humør. */
   pawUpTip?: Partial<Record<Mood, Pt>>
   /** Den løftede arms rygrad pr. humør (samme som `PawUp` tegner); riggen trækker trøjens ærme på den. */

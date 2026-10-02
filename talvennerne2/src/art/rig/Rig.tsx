@@ -555,6 +555,17 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     )
   }
 
+  // Fyld bag kroppen ved armen (i skulderens ramme uden animation); arten tegner kun, hvor der er en lomme.
+  const pawBack = (side: 'L' | 'R') => {
+    const at = side === 'L' ? a.shoulderL : a.shoulderR
+    const web = parts.PawBack?.({ ...ctx(swBody), side })
+    return web ? (
+      <g data-part="armpit" transform={`translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
+        {web}
+      </g>
+    ) : null
+  }
+
   const ear = (side: 'L' | 'R', Part: NonNullable<SpeciesParts['Ear']>) => {
     const at = side === 'L' ? a.earBaseL : a.earBaseR
     const splay = earRig?.splay ?? 0
@@ -692,8 +703,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                 </g>
               </g>
             )}
-            {/* 4 · fødder */}
+            {/* 4 · fødder (+ fyld bag kroppen ved armene, så en lomme mellem arm, hoved og øre aldrig viser baggrund) */}
             {parts.Feet(ctx(swBody))}
+            {pawBack('L')}
+            {pawBack('R')}
             {/* 5 · krop + mønster + skygge */}
             <path d={bodyD} fill={pal.fur} stroke={pal.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
             {pattern !== 'none' && P?.body?.(ctx(swBody))}

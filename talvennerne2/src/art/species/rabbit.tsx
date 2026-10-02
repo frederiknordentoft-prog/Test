@@ -7,9 +7,9 @@
 // Alle former beskrives med punkter og husets primitiver (ingen path-literaler).
 import { OpenLimb, ROUND, hatted, limbLoop, padsPath } from '../parts/kit'
 import { Pivot } from '../rig/Rig'
-import { blob, ellipse, join, mirrorX, ribbon, scallop, spline, xf } from '../rig/shapes'
+import { blob, ellipse, join, mirrorX, poly, ribbon, scallop, spline, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
-import type { Part, SidePart, SpeciesDef, Stage } from '../rig/types'
+import type { Mood, Part, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { RABBIT_COLORWAYS } from './rabbit.colorways'
 
 const round = ROUND
@@ -83,13 +83,15 @@ const LOP_SPINE: Vec[] = [[10, 5], [3, -8], [-6, -7.5], [-14, -2], [-20, 10], [-
  * Indersidens punkter (de første i limbLoop) skubbes ind mod hovedet: 8 enheder øverst (under hovedet)
  * og 6 enheder resten af vejen, så øret ligger ind over skulder og arm uden en sprække imellem.
  */
+const LOP_CAP = 7
 const tuckInner = (loop: readonly Vec[], n: number): Vec[] =>
   loop.map(([x, y], i) => {
-    if (i >= n) return [x, y] as Vec
+    // Spidsens bue følger med og aftager rundt om spidsen, så indersiden går blødt over i spidsen.
+    if (i >= n) return i < n + LOP_CAP - 1 ? ([x + 6 * (1 - (i - n + 1) / LOP_CAP), y] as Vec) : ([x, y] as Vec)
     const k = y <= 16 ? 1 : y >= 38 ? 0 : (38 - y) / 22
     return [x + 6 + 2 * k, y] as Vec
   })
-const LOP_EAR = tuckInner(limbLoop(LOP_SPINE, 15, 17.5, 7), LOP_SPINE.length)
+const LOP_EAR = tuckInner(limbLoop(LOP_SPINE, 15, 17.5, LOP_CAP), LOP_SPINE.length)
 const LOP_INNER = ribbon([[-19.4, 40], [-19.8, 56], [-18.8, 72], [-16.6, 86], [-15.6, 94]], [0, 5.5, 7, 6, 0])
 
 const LopEar: SidePart = ({ pal, sw, stage }) => {
@@ -174,6 +176,62 @@ const PawUp: SidePart = ({ pal, sw, mood, lod }) => {
       {detail}
     </OpenLimb>
   )
+}
+
+/**
+ * Fyld bag kroppen ved armene (lokalt om skulderen som `UP_SPINES`; højre side spejlet): langs armen,
+ * ind under hagen og ned i brystet. Kun lommen mellem arm, hage, øre og krop bliver synlig, så der aldrig
+ * ses baggrund inde i figuren (huller-lint, review G1-r3). Nøgle: humør og side.
+ */
+type Webs = Partial<Record<Mood, Partial<Record<'L' | 'R', Vec[]>>>>
+const CHEER_WEB: Vec[] = [[7.5, 20], [-1.5, 10], [-11.5, 0], [-19, -9], [-10, -15], [4, -12], [22, -2], [20, 14]]
+const WEBS: Webs = {
+  cheer: { L: CHEER_WEB, R: CHEER_WEB },
+  oops: {
+    R: [
+      [3, 12], [-8, 7], [-19, 3], [-25, -5], [-22, -18], [-20.7, -20.4], [-19.4, -23.9], [-17.6, -27.6], [-16, -28.4],
+      [-14.9, -28], [-11.7, -20], [-9, -20], [6, -12], [14, -4], [12, 8],
+    ],
+  },
+}
+/**
+ * Racernes ekstra fyld pr. stadie, skabt fra lommernes hylstre over alle animationsbilleder: babyens store
+ * hoved, vædderens hængeører og løvehovedets kindtotter lukker vinduer mod armene.
+ */
+const UPRIGHT_WEBS: Record<Stage, Webs> = {
+  1: { wave: { R: [[-25.3, -19.4], [-23.1, -19.4], [4.3, -3.4], [4.3, -0.5], [-2.1, 4.5], [-9.7, 4.5], [-16.2, 2.6], [-20, -0.5], [-23.4, -7.6], [-25.7, -16]] } },
+  2: {},
+  3: {},
+}
+const LION_WEBS: Record<Stage, Webs> = {
+  1: { wave: { R: [[-20.7, -4.9], [-15.1, -6.9], [-13.2, -6.5], [-4.8, -1.1], [-2.9, 3], [-4.4, 4.5], [-9.7, 4.5], [-16.2, 2.6], [-20, -0.5], [-21.1, -3.1]] } },
+  2: { wave: { R: [[-19.2, -1], [-9.7, -4.7], [-8.6, -4.3], [-4.7, 2.9], [-4.7, 5.1], [-5.8, 5.5], [-9.7, 5.5], [-14.2, 4.4], [-17.5, 2.9], [-19.2, 1.2]] } },
+  3: { wave: { R: [[-14.7, 3.6], [-13.9, 2], [-11.6, 0.6], [-9.5, -0.3], [-8.4, 0.1], [-7.1, 4], [-7.5, 5.1], [-8.6, 5.5], [-11.9, 5.5], [-14.3, 4.7]] } },
+}
+const LOP_WEBS: Record<Stage, Webs> = {
+  1: {
+    wave: { R: [[-21.1, -13], [-18.1, -14.5], [-14.7, -13.3], [4.3, -3.4], [4.3, -0.5], [-2.1, 4.5], [-9.7, 4.5], [-16.2, 2.6], [-20, -0.5], [-21.9, -4.6]] },
+  },
+  2: {
+    wave: {
+      L: [[-17, -0.2], [-15.4, -1.8], [-13, -1.3], [-10.8, -0.4], [-7.6, 7.6], [-6.8, 9.9], [-7.2, 11.3], [-9.9, 14.9], [-12.1, 14.9], [-16.4, 2.4]],
+      R: [[-14.6, -11.6], [-13.6, -14.3], [-10.3, -14.3], [6.4, -3.8], [6.4, -1], [4.2, 1.2], [-2.5, 5.5], [-9.7, 5.5], [-13, 4.5], [-14.6, -4.3]],
+    },
+    think: { R: [[-16.4, -0.4], [-14.7, -0.8], [-2.5, 3.5], [-1.6, 5.1], [-2.5, 6.8], [-8.6, 12.9], [-10.8, 13.8], [-11.9, 13.4], [-15.7, 5.1], [-16.8, 1.8]] },
+    oops: { L: [[-17, -0.2], [-15.7, -2.1], [-14, -2.5], [-11.3, -1.3], [-6.8, 9.6], [-7.3, 11.5], [-9.4, 14], [-12.1, 14.4], [-13.1, 12.2], [-16.9, 1.3]] },
+    sleep: {
+      R: [[-16.2, -0.3], [-15.1, -0.7], [-10.9, 0.9], [-9.2, 2.5], [-6, 9.4], [-6.6, 11.2], [-9.4, 14.7], [-12.2, 14.7], [-14.3, 9.1], [-16.6, 1.4]],
+    },
+  },
+  3: {
+    wave: { R: [[-10.6, -10.3], [-9.2, -12.8], [-6.1, -13.3], [7.8, -4], [7.8, -1.4], [0.4, 4.7], [-2.6, 6], [-5.8, 6], [-9.2, 5.1], [-9.6, 4]] },
+    think: { R: [[-12, -0.8], [-10.5, -1.2], [-0.6, 2.5], [-0.2, 3.6], [-0.6, 5.1], [-4.7, 9.3], [-6.8, 10.1], [-9.2, 9.3], [-10.1, 7.3], [-12.4, 1.2]] },
+  },
+}
+const PawBack: SidePart = ({ pal, mood, side, breed, stage }) => {
+  const extra = breed === 'lop' ? LOP_WEBS : breed === 'lionhead' ? LION_WEBS : UPRIGHT_WEBS
+  const webs = [WEBS[mood]?.[side], extra?.[stage][mood]?.[side]].filter((w): w is Vec[] => !!w)
+  return webs.length ? <path d={join(...webs.map((w) => poly(w)))} fill={pal.fur} /> : null
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -321,12 +379,12 @@ export const rabbit: SpeciesDef = {
       fx: { x: 177, y: 54 },
       ears: { splay: 0, clip: false, hang: true, behind: true },
       // Halen sidder lidt lavere, så den aldrig rører det hængende øre og lukker en sprække inde.
-      anchors: { earBaseL: { x: 66, y: 62 }, earBaseR: { x: 134, y: 62 }, earGap: 60, tailBase: { x: 153, y: 190 } },
+      anchors: { earBaseL: { x: 66, y: 62 }, earBaseR: { x: 134, y: 62 }, earGap: 60, tailBase: { x: 155, y: 201 } },
       parts: { Ear: LopEar },
       // Hængeørerne bevæger sig ikke med humøret (de svajer blidt i alle humør).
       poses: {
         happy: { earL: 0, earR: 0 }, cheer: { earL: 0, earR: 0 }, think: { earL: 0, earR: 0 },
-        oops: { earL: 0, earR: 0 }, sleep: { earL: 0, earR: 0 }, wave: { earL: 0, earR: 0 },
+        oops: { earL: 0, earR: 0 }, sleep: { earL: 0, earR: 0, pawL: 8 }, wave: { earL: 0, earR: 0 },
       },
       bounds: { head: { x0: 30, y0: 46, x1: 170, y1: 178 } },
     },
@@ -372,7 +430,7 @@ export const rabbit: SpeciesDef = {
     pawR: { x: 116, y: 171 },
     footL: { x: 58, y: 218 },
     footR: { x: 142, y: 218 },
-    tailBase: { x: 152, y: 176 },
+    tailBase: { x: 155, y: 192 },
   },
   bounds: {
     head: { x0: 38, y0: 6, x1: 162, y1: 150 },
@@ -391,6 +449,7 @@ export const rabbit: SpeciesDef = {
     Ear: UprightEar,
     Paw,
     PawUp,
+    PawBack,
     pawUpTip: { cheer: { x: -27.5, y: -20 }, wave: { x: -33.5, y: -21 }, think: { x: 21.5, y: -1 }, oops: { x: -14.5, y: -45 } },
     upArms: {
       cheer: { spine: UP_SPINES.cheer, w0: 15, w1: 18.5, tip: 10 },
