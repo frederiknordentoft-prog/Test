@@ -10,6 +10,7 @@ import { factsOf, skillRegistry, type SkillRegistry } from '../../../../engine/r
 import type {
   Fact, ProfileDoc, RegionId, RoundSnapshot, SkillDef, SpeechPart, Task,
 } from '../../../../engine/types'
+import { factFor } from '../../../hint/hintFor'
 import { hutKeysFor } from '../../../../state/useMeta'
 import { roundHooks, useProfile } from '../../../../state/useProfile'
 import type { RoundHooks, RoundPlan } from '../../../../state/useRound'
@@ -80,8 +81,8 @@ export function fastMsOf(task: Task, reg: SkillRegistry): number | undefined {
   const def = reg.get(task.skill)
   if (!def) return undefined
   if (def.fastMs) {
-    const fact = factOf(def, task.factId)
-    const ms = fact ? def.fastMs(fact, task.kind) : undefined
+    // a procedure instance is not among the enumerated facts: rebuilt from the task, as for its hint
+    const ms = def.fastMs(factOf(def, task.factId) ?? factFor(def, task), task.kind)
     if (ms !== undefined) return ms
   }
   return def.families.find((f) => f.id === task.family)?.fastMs?.[task.kind]

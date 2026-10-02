@@ -18,9 +18,9 @@ table['noun.unit.kroner_og'] = 'kroner og'
 
 export const clips = table
 
-/** coinNames and countCoins are 1. klasse (wave 2); the notes above 100 kr come with change (wave 3). */
-export function wave(id: ClipId): Wave {
-  return /^noun\.coin\.(20000|50000)\./.test(id) ? 3 : 2
+/** Money is 1.–2. klasse (wave 2): coinNames names the 200- and 500-krone notes too. */
+export function wave(_id: ClipId): Wave {
+  return 2
 }
 
 export function pack(id: ClipId): string {
