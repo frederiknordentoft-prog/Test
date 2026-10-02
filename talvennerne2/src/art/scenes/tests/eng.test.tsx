@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { REGIONS } from '../../../content/curriculum'
 import type { RegionTier } from '../../../meta/rewards'
 import EngScene, { ENG_REGIONS, EngArt, brookGap, brookWidths, fenceRuns, layoutOf, trailWidths } from '../eng'
-import { ENG } from '../palette'
+import { ENG, tint } from '../palette'
 
 const SIZES: readonly [number, number][] = [[393, 852], [375, 667], [852, 393], [820, 1180], [1180, 820], [1366, 1024], [1920, 1080]]
 const TIERS: readonly RegionTier[] = ['start', 'bronze', 'silver', 'gold']
@@ -100,12 +100,13 @@ describe('Engdalen · scene', () => {
     }
   })
 
-  it('hvert tier kan ses: røg og sommerfugle fra bronze, flere ællinger pr. trin, regnbue og glimt i guld', () => {
+  it('hvert tier kan ses: røg og sommerfugle fra bronze, mere for hvert trin, regnbue i guld', () => {
     const [start, bronze, silver, gold] = TIERS.map((t) => render(1180, 820, t))
     expect(start).not.toContain(ENG.smoke)
     expect(bronze).toContain(ENG.smoke)
-    expect(start).not.toContain(ENG.butterfly)
-    expect(bronze).toContain(ENG.butterfly)
+    // sommerfuglene er tonet efter regionens tier (den orange farve bruges kun til dem)
+    expect(start).not.toContain(tint('butterfly', 'start'))
+    expect(bronze).toContain(tint('butterfly', 'bronze'))
     for (const m of [start, bronze, silver]) expect(m).not.toContain(ENG.rainbow1)
     expect(gold).toContain(ENG.rainbow1)
     expect(count(start)).toBeLessThan(count(bronze))
