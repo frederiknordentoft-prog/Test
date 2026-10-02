@@ -105,7 +105,7 @@ describe('round building (ported from V1)', () => {
 
 import { newCapsFor, slotPlan, type BuildExtra, type KeyOption, type NewCaps, type RoundOptions, type SlotPlan } from './roundBuilder'
 import { productKeys, sumKeys, sums } from './testing/keys'
-import type { MisconceptionId, Task, TaskKind } from './types'
+import type { MisconceptionId, SkillId, Task, TaskKind } from './types'
 import type { Rng } from './rng'
 
 const V2_DAY = '2026-09-10'
@@ -332,5 +332,137 @@ describe('round building V2: tones, slots and small pools', () => {
   it('turns profile.newToday into what is left today', () => {
     expect(newCapsFor({ day: V2_DAY, total: 12, perSkill: { addTo10: 8, subTo10: 3 } }, V2_DAY)).toEqual({ total: 8, perSkill: { addTo10: 0, subTo10: 5 } })
     expect(newCapsFor({ day: '2026-09-09', total: 20, perSkill: { addTo10: 8 } }, V2_DAY)).toEqual({ total: 20, perSkill: {} })
+  })
+})
+
+// ─── V2: variety (review r1 P2-11) ──────────────────────────────────────────
+
+import { OTHER_KIND_SHARE, SAME_ANSWER_MAX } from './roundBuilder'
+
+/**
+ * Two skills over the same small numbers, like count10 (each number spread out, on a die, as
+ * fingers, in a ten-frame) and hear20 (each number heard) in Tællelunden: the pool that gave the
+ * first rounds four or five tasks with the answer 1.
+ */
+const LAYOUTS = ['scatter', 'dice', 'fingers', 'tenframe'] as const
+function numberKeys(): KeyOption[] {
+  const task = (key: string, skill: SkillId, n: number, kind: TaskKind, rng: Rng, occurrence: number): Task => ({
+    id: `${key}#${occurrence}`, factId: key, masteryKey: key, skill, family: 'all', kind,
+    prompt: { scene: 'objects', n, layout: 'dice', thing: 'ball' }, answer: n, answerType: 'int', accept: [], tolerance: 0,
+    modulo: 0, options: kind === 'choice' ? rng.shuffle([n, n + 1, n + 2]) : [], optionView: 'numeral', distractorTags: {},
+    optionClips: null, unit: null, entryScale: 1, range: [0, 12], maxDigits: 2, scaffold: false, speech: [], retryOf: null,
+  })
+  const count = Array.from({ length: 10 }, (_, i) => i + 1).flatMap((n) => LAYOUTS.map((layout, l): KeyOption => {
+    const key = `c10:${layout}:${n}`
+    return {
+      key, skill: 'count10', rank: n * 4 + l, kinds: ['choice', 'keypad', 'countTap'], production: ['keypad', 'countTap'], answer: n,
+      build: (kind, rng, occurrence) => task(key, 'count10', n, kind, rng, occurrence),
+    }
+  }))
+  const hear = [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10].map((n, rank): KeyOption => {
+    const key = `h20:${n}`
+    return {
+      key, skill: 'hear20', rank, kinds: ['choice', 'keypad'], production: ['keypad'], answer: n,
+      build: (kind, rng, occurrence) => task(key, 'hear20', n, kind, rng, occurrence),
+    }
+  })
+  return [...count, ...hear]
+}
+const NUMBER_KEYS = numberKeys()
+
+/** New (half the seeds), a few rounds in, or well along: boxes 0–2 mostly, some 3–5. */
+function numberStates(seed: number): Record<string, KeyState> {
+  const rng = makeRng(seed * 7919 + 1)
+  const out: Record<string, KeyState> = {}
+  if (seed % 2 === 0) return out
+  const met = rng.between(4, NUMBER_KEYS.length)
+  for (const k of [...NUMBER_KEYS].sort((a, b) => a.rank - b.rank).slice(0, met)) {
+    const box = rng.next() < 0.8 ? rng.between(0, 2) : rng.between(3, 5)
+    out[k.key] = { ...state(box, rng.between(0, 19)), lastDay: rng.pick(['2026-09-01', '2026-09-08', V2_DAY]) }
+  }
+  return out
+}
+
+const numberRound = (seed: number, states = numberStates(seed)) => buildRound({
+  keys: NUMBER_KEYS, states, roundIndex: 20, day: V2_DAY, size: 10, rng: makeRng(seed), slots: slotPlan(10),
+  newCaps: { total: 20, perSkill: {} },
+})
+
+describe('round building V2: variety over 1000 seeds (review r1 P2-11)', () => {
+  const rounds = Array.from({ length: 1000 }, (_, seed) => {
+    const states = numberStates(seed)
+    return { seed, states, tasks: numberRound(seed, states) }
+  })
+  const answers = (tasks: readonly Task[]) => tasks.map((t) => t.answer)
+
+  it('asks no answer more than twice in a round, unless the keys the slots need leave no choice', () => {
+    let crowded = 0
+    for (const { seed, tasks } of rounds) {
+      const counts = new Map<unknown, number>()
+      for (const a of answers(tasks)) counts.set(a, (counts.get(a) ?? 0) + 1)
+      const most = Math.max(...counts.values())
+      // a new child: the round has every key to choose from
+      if (seed % 2 === 0) expect(most, `seed ${seed}: ${answers(tasks).join(' ')}`).toBeLessThanOrEqual(SAME_ANSWER_MAX)
+      else if (most > SAME_ANSWER_MAX) crowded++
+    }
+    // further along, the shaky keys may all be about the same few numbers (the slots come first)
+    expect(crowded / 500).toBeLessThan(0.2)
+  })
+
+  it('does not ask the same answer twice in a row', () => {
+    for (const { seed, tasks } of rounds) {
+      for (let i = 1; i < tasks.length; i++) expect(tasks[i].answer, `seed ${seed}: ${answers(tasks).join(' ')}`).not.toBe(tasks[i - 1].answer)
+    }
+  })
+
+  it('asks the share of the free tasks in other kinds that SPEC §5.4 names, the others taking turns', () => {
+    let free = 0
+    let other = 0
+    const others = new Map<TaskKind, number>()
+    for (const { states, tasks } of rounds) {
+      const met = new Set([tasks[0].masteryKey])
+      const firsts = tasks.slice(1).filter((t) => !met.has(t.masteryKey) && met.add(t.masteryKey))
+      // free: a key below the box where it is asked the hard way
+      const open = firsts.filter((t) => (states[t.masteryKey]?.box ?? 0) < GUESSABLE_CEILING)
+      free += open.length
+      for (const t of open.filter((x) => x.kind !== 'choice')) {
+        other++
+        if (t.skill === 'count10') others.set(t.kind, (others.get(t.kind) ?? 0) + 1)
+      }
+      if (open.length >= 3) expect(open.some((t) => t.kind !== 'choice')).toBe(true)
+    }
+    expect(other / free).toBeGreaterThan(OTHER_KIND_SHARE - 0.08)
+    expect(other / free).toBeLessThan(OTHER_KIND_SHARE + 0.08)
+    // both of count10's other kinds come (countTap a little more: hear20 asks on the keypad too)
+    const [keypad, countTap] = [others.get('keypad') ?? 0, others.get('countTap') ?? 0]
+    expect(Math.min(keypad, countTap) / Math.max(keypad, countTap)).toBeGreaterThan(0.3)
+  })
+
+  it('lets the skills take turns with new keys, each in its own rank order', () => {
+    for (const { seed, states, tasks } of rounds) {
+      if (seed % 2 !== 0) continue // a new child: every key is new
+      const fresh = [...new Set(tasks.map((t) => t.masteryKey))].filter((k) => !states[k])
+      const bySkill = (skill: string) => fresh.filter((k) => k.startsWith(skill === 'count10' ? 'c10:' : 'h20:'))
+      expect(Math.abs(bySkill('count10').length - bySkill('hear20').length), fresh.join(' ')).toBeLessThanOrEqual(2)
+      // within a skill only a key whose number is already in the round twice is passed over
+      const rank = new Map(NUMBER_KEYS.map((k) => [k.key, k.rank]))
+      for (const skill of ['count10', 'hear20']) {
+        const mine = bySkill(skill).map((k) => rank.get(k)!).sort((a, b) => a - b)
+        const all = NUMBER_KEYS.filter((k) => k.skill === skill).map((k) => k.rank).sort((a, b) => a - b)
+        expect(mine.at(-1)!).toBeLessThanOrEqual(all[Math.min(all.length - 1, mine.length * 4)])
+      }
+    }
+  })
+
+  it('keeps the slots of SPEC §5.4: a full round, the opener on cards, never the same key twice in a row', () => {
+    for (const { tasks } of rounds) {
+      expect(tasks).toHaveLength(10)
+      expect(tasks[0].kind).toBe('choice')
+      for (let i = 1; i < tasks.length; i++) expect(tasks[i].masteryKey).not.toBe(tasks[i - 1].masteryKey)
+    }
+  })
+
+  it('is reproducible from its seed', () => {
+    for (const seed of [0, 1, 17, 404]) expect(numberRound(seed)).toEqual(numberRound(seed))
   })
 })
