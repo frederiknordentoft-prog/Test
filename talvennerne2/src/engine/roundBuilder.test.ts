@@ -316,9 +316,13 @@ describe('round building V2: tones, slots and small pools', () => {
   })
 
   it('is never empty while the node has keys, even with the day\'s allowance used up', () => {
+    // nothing else to ask anywhere: a taste of the node's first two keys, each asked at most twice
+    // (UI-fund 16: a shorter round rather than the same question five times)
     const tasks = v2(1, { keys: plus, states: {}, reviewKeys: [], newCaps: { total: 0, perSkill: {} } })
-    expect(tasks).toHaveLength(10)
-    expect(new Set(tasks.map((t) => t.masteryKey)).size).toBeLessThanOrEqual(2)
+    expect(tasks.length).toBeGreaterThan(0)
+    const keys = tasks.map((t) => t.masteryKey)
+    expect(new Set(keys).size).toBeLessThanOrEqual(2)
+    for (const k of keys) expect(keys.filter((x) => x === k).length).toBeLessThanOrEqual(2)
     expect(v2(1, { keys: [], states: {} })).toEqual([])
   })
 
@@ -330,8 +334,11 @@ describe('round building V2: tones, slots and small pools', () => {
   })
 
   it('turns profile.newToday into what is left today', () => {
-    expect(newCapsFor({ day: V2_DAY, total: 12, perSkill: { addTo10: 8, subTo10: 3 } }, V2_DAY)).toEqual({ total: 8, perSkill: { addTo10: 0, subTo10: 5 } })
-    expect(newCapsFor({ day: '2026-09-09', total: 20, perSkill: { addTo10: 8 } }, V2_DAY)).toEqual({ total: 20, perSkill: {} })
+    expect(newCapsFor({ day: V2_DAY, total: 12, perSkill: { addTo10: 8, subTo10: 3 } }, V2_DAY)).toEqual({ total: 8, perSkill: { addTo10: 0, subTo10: 5 }, taste: 4 })
+    expect(newCapsFor({ day: '2026-09-09', total: 20, perSkill: { addTo10: 8 } }, V2_DAY)).toEqual({ total: 20, perSkill: {}, taste: 4 })
+    // keys tasted past the allowance count on: two tastes a day at most
+    expect(newCapsFor({ day: V2_DAY, total: 22, perSkill: {} }, V2_DAY)).toMatchObject({ total: 0, taste: 2 })
+    expect(newCapsFor({ day: V2_DAY, total: 24, perSkill: {} }, V2_DAY)).toMatchObject({ total: 0, taste: 0 })
   })
 })
 

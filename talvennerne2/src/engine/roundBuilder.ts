@@ -30,6 +30,20 @@ export const NEW_PER_DAY = 20
 
 /** At most this many tasks of a round share an answer while another key can be asked instead. */
 export const SAME_ANSWER_MAX = 2
+
+/**
+ * With today's allowance of new keys used up (UI-fund 10, 16), a round asks no key more often than
+ * this. The round is filled with the region's own seen keys, then the chain's, then review; a round
+ * that runs out of those is shorter rather than "1 + ? = 2" five times.
+ */
+export const CAPPED_REPEAT_MAX = 2
+/**
+ * A node the child has never played, reached after the allowance is used up, gets a taste of its
+ * first keys (TASTE_KEYS) in a round of review — at most TASTE_PER_DAY such keys a learning day, so
+ * a long session still turns to consolidation and never into new material node after node.
+ */
+export const TASTE_KEYS = 2
+export const TASTE_PER_DAY = 4
 /** Share of the tasks free to vary that are asked in another kind than the node's house kind (SPEC §5.4). */
 export const OTHER_KIND_SHARE = 0.35
 
@@ -70,6 +84,8 @@ export interface NewCaps {
   total: number
   /** Per skill; a skill that is missing has the full NEW_PER_SKILL left. */
   perSkill: Partial<Record<SkillId, number>>
+  /** Keys still allowed today as a taste of a node never played, past the allowance (default TASTE_PER_DAY). */
+  taste?: number
 }
 
 export interface RoundOptions {
@@ -88,6 +104,15 @@ export interface RoundOptions {
   tone?: RoundTone
   /** Keys from other unlocked skills, for the review slot. */
   reviewKeys?: readonly KeyOption[]
+  /**
+   * With the allowance used up, the round is filled from these, in this order, before `reviewKeys`
+   * (only their seen keys, each asked once): the keys of the node's region (its other nodes), the
+   * keys of the regions in the same chain, and — after review — every key of the skills the child has
+   * started, shaky ones too.
+   */
+  regionKeys?: readonly KeyOption[]
+  chainKeys?: readonly KeyOption[]
+  startedKeys?: readonly KeyOption[]
   /** Flagged misconceptions (concept or slip), for the targeted slot. */
   flagged?: readonly MisconceptionId[]
   /** New keys still allowed today; omitted means no cap. */
@@ -132,12 +157,14 @@ export function slotPlan(size: number, tone: RoundTone = 'normal', review = 1): 
 
 /** What is left of today's allowance of new keys (profile.newToday resets on a new learning day). */
 export function newCapsFor(newToday: ProfileDoc['newToday'], day: string): NewCaps {
-  if (newToday.day !== day) return { total: NEW_PER_DAY, perSkill: {} }
+  if (newToday.day !== day) return { total: NEW_PER_DAY, perSkill: {}, taste: TASTE_PER_DAY }
   const perSkill: Partial<Record<SkillId, number>> = {}
   for (const skill of Object.keys(newToday.perSkill) as SkillId[]) {
     perSkill[skill] = Math.max(0, NEW_PER_SKILL - (newToday.perSkill[skill] ?? 0))
   }
-  return { total: Math.max(0, NEW_PER_DAY - newToday.total), perSkill }
+  // keys tasted past the allowance count on in newToday.total (20, 22, 24 …)
+  const taste = Math.max(0, TASTE_PER_DAY - Math.max(0, newToday.total - NEW_PER_DAY))
+  return { total: Math.max(0, NEW_PER_DAY - newToday.total), perSkill, taste }
 }
 
 export function buildRound(opts: RoundOptions): Task[] {
@@ -311,11 +338,36 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
     return got
   }
 
-  // opener: the most secure key, else the lowest rank
+  // review: keys from other skills the child has met (the review slot and the last backfill)
+  const nodeSkills = new Set(keys.filter((k) => !k.reviewOnly).map((k) => k.skill))
+  const others = [...(o.reviewKeys ?? []), ...keys.filter((k) => k.reviewOnly)].filter((k) => !nodeSkills.has(k.skill) && seen(k))
+
+  // Today's allowance of new keys is used up when every new key the node has left is blocked by it
+  // (UI-fund 10, 16). Only a round that wants new keys can be stopped by it (not practice or the hut).
+  const blocked = (k: KeyOption) => totalLeft <= 0 || capOf(k.skill) <= 0
+  const isCapped = (): boolean => {
+    const left = fresh.filter((k) => !taken.has(k.key))
+    return !!o.newCaps && plan.fresh > 0 && left.length > 0 && left.every(blocked)
+  }
+  // then the round is filled from the region's own seen keys and the chain's, most needed first
+  const nodeKeySet = new Set(keys.map((k) => k.key))
+  const byNeed = (a: KeyOption, b: KeyOption) => Number(due(b)) - Number(due(a)) || box(a) - box(b) || st(a).lastRound - st(b).lastRound
+  const seenOf = (pool: readonly KeyOption[] | undefined) => (pool ?? []).filter((k) => seen(k) && !nodeKeySet.has(k.key)).sort(byNeed)
+  const regionSeen = seenOf(o.regionKeys)
+  const chainSeen = seenOf(o.chainKeys)
+  // A node never played, reached with the allowance used up, is not a round of other regions'
+  // review only: it gets a taste of its first keys (TASTE_KEYS, within the day's TASTE_PER_DAY)
+  const tasteLeft = o.newCaps?.taste ?? TASTE_PER_DAY
+  const tasting = isCapped() && !keys.some(seen) && tasteLeft > 0
+  const taste = tasting ? fresh.slice(0, Math.min(TASTE_KEYS, tasteLeft)) : []
+
+  // opener: the most secure key, else the lowest rank (a taste opens on the surest key around)
   const opener = secure.length > 0
     ? [...secure].sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct || a.rank - b.rank)[0]
     : [...keys].filter((k) => seen(k) || (!k.reviewOnly && totalLeft > 0 && capOf(k.skill) > 0)).sort((a, b) => a.rank - b.rank)[0]
-  take(opener, 'opener')
+      ?? (tasting ? [...regionSeen, ...chainSeen, ...others].filter((k) => box(k) >= 3).sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct)[0] ?? taste[0] : undefined)
+  take(opener, 'opener', !!opener && taste.includes(opener))
+  for (const k of taste) take(k, 'fresh', true)
   // A child who has met nothing here yet ends the round on the opener again (the last task is never
   // a first meeting): its answer is asked twice.
   const nothingSeen = !keys.some(seen) && !(o.reviewKeys ?? []).some(seen)
@@ -337,8 +389,6 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   takeFresh(plan.fresh)
 
   // review: a due key the child is sure of, from another skill — spacing across the curriculum
-  const nodeSkills = new Set(keys.filter((k) => !k.reviewOnly).map((k) => k.skill))
-  const others = [...(o.reviewKeys ?? []), ...keys.filter((k) => k.reviewOnly)].filter((k) => !nodeSkills.has(k.skill) && seen(k))
   const reviewPool = others.filter((k) => box(k) >= 3 && due(k)).sort((a, b) => st(a).lastRound - st(b).lastRound || box(b) - box(a))
   takeN(reviewPool, plan.review, 'review')
   takeN(secure, plan.secure - 1, 'secure')
@@ -351,7 +401,16 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
     if (pool === fresh) takeFresh(size - picks.length)
     else takeN(pool, size - picks.length, slot)
   }
+  // With the allowance used up, the region's own seen keys come next, then the chain's; review after
+  // them, and last every seen key of the started skills (consolidation, shaky ones too).
+  const capped = isCapped()
+  if (capped) {
+    takeN(regionSeen.filter((k) => box(k) < 3), size - picks.length, 'shaky')
+    takeN(regionSeen.filter((k) => box(k) >= 3), size - picks.length, 'secure')
+    takeN(chainSeen, size - picks.length, 'review')
+  }
   takeN([...others].sort((a, b) => Number(due(b)) - Number(due(a)) || box(b) - box(a)), size - picks.length, 'review')
+  if (capped) takeN(seenOf(o.startedKeys), size - picks.length, 'review')
 
   // A round is never empty: with today's allowance used up and nothing else to ask, the node's
   // first keys are introduced anyway.
@@ -367,8 +426,13 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   const repeated = new Map<MasteryKey, number>()
   const again = (p: Pick) => repeated.get(p.opt.key) ?? 0
   while (picks.length < size) {
+    // with the allowance used up a key is asked at most CAPPED_REPEAT_MAX times: a shorter round
+    // rather than the same question again and again (UI-fund 16)
+    // (every key of the cycle is in the round once, plus its repeats)
+    const open = capped ? cycle.filter((p) => 1 + again(p) < CAPPED_REPEAT_MAX) : cycle
+    if (open.length === 0) break
     // the answer asked least so far, then the key repeated least, then the cycle's order
-    const opt = cycle.reduce((best, p) => (uses(p.opt) < uses(best.opt) || (uses(p.opt) === uses(best.opt) && again(p) < again(best)) ? p : best)).opt
+    const opt = open.reduce((best, p) => (uses(p.opt) < uses(best.opt) || (uses(p.opt) === uses(best.opt) && again(p) < again(best)) ? p : best)).opt
     picks.push({ opt, slot: 'repeat', kind: 'choice' })
     repeated.set(opt.key, (repeated.get(opt.key) ?? 0) + 1)
     if (opt.answer !== undefined) answers.set(opt.answer, uses(opt) + 1)
