@@ -243,14 +243,14 @@ for (const o of ORDER) {
     })
 
     if (o.id === 'order1000') {
-      // GENERATOR BUG (order1000.ts, candidates() for plus1/minus1): the wrong place — ten more or less
-      // instead of one, which order100 lists as 'near' (n + 10) and order1000 lists for its ±10 and ±100
-      // families — is missing for ±1 (it lists the answer ± 10 instead). When the answer's ones digit is
-      // one more (plus1) or one less (minus1) than its tens digit, n ± 10 is also the answer with tens and
-      // ones swapped, so the global check reads it as digitSwap evidence: "Hvilket tal kommer efter syv
-      // hundrede og otteogfirs?" (o1000:plus1:788, answer 789) typed 798 → 'digitSwap'; o1000:minus1:755
-      // typed 745 → 'digitSwap'. Expected a plain tag ('near'/'other'), as for the same slip elsewhere.
-      it.fails('±1 typed as ±10 (the wrong place) is never read as a digit swap', () => {
+      // Rettet (GENFIX). Was a generator bug (order1000.ts, candidates() for plus1/minus1): the wrong place —
+      // ten more or less instead of one, which order100 lists as 'near' (n + 10) and order1000 lists for its
+      // ±10 and ±100 families — was missing for ±1 (it listed the answer ± 10 instead). When the answer's
+      // ones digit is one more (plus1) or one less (minus1) than its tens digit, n ± 10 is also the answer
+      // with tens and ones swapped, so the global check read it as digitSwap evidence: "Hvilket tal kommer
+      // efter syv hundrede og otteogfirs?" (o1000:plus1:788, answer 789) typed 798 → 'digitSwap';
+      // o1000:minus1:755 typed 745 → 'digitSwap'. Now n ± 10 and n ± 100 are listed as 'other'.
+      it('±1 typed as ±10 (the wrong place) is never read as a digit swap', () => {
         expect(first(classified.filter(wrongPlaceSwap))).toEqual([])
       })
     }
