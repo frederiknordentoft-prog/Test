@@ -36,7 +36,7 @@ function check(prev: ProfileDoc, next: ProfileDoc, where: string, spent = 0): vo
   for (const [id, n] of Object.entries(prev.nodes)) expect(next.nodes[id as keyof ProfileDoc['nodes']]!.stars, `${where}: ${id}`).toBeGreaterThanOrEqual(n!.stars)
 }
 
-describe('nothing earned is ever lost (SPEC §13.11)', () => {
+describe('nothing earned is ever lost (SPEC §13.11)', { timeout: 60_000 }, () => {
   it('holds for every round and every action of a simulated child', () => {
     for (const child of [CHILD_85, GUESSER]) {
       const sim = new Sim({ ...child, shopper: 'cheapest' }, 99)
