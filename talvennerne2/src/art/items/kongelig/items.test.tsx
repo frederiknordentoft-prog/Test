@@ -99,6 +99,17 @@ describe('kontrakten for genstandene', () => {
     const tints = [...item.matchAll(/opacity="([\d.]+)"/g)].map((x) => Number(x[1]))
     expect(Math.min(...tints)).toBeLessThanOrEqual(0.2)
   })
+
+  it('monoklens glas har samme neutrale tone i alle tre farvesæt, så øjet aldrig skifter farve (review G2-r1, T13)', () => {
+    const glass = (cw: 0 | 1 | 2) => {
+      const m = render({ species: rabbit, outfit: wear(kongeligFace, cw) })
+      const item = m.slice(m.indexOf('data-item="kongelig-face"'))
+      return [...item.matchAll(/<path [^>]*fill="([^"]+)"[^>]*opacity="(0\.[0-2]\d*)"/g)].map((x) => `${x[1]} ${x[2]}`)
+    }
+    expect(glass(0)).toHaveLength(1)
+    expect(glass(1)).toEqual(glass(0))
+    expect(glass(2)).toEqual(glass(0))
+  })
 })
 
 describe.each(ALL_SPECIES.map((d) => [d.id, d] as const))('renderet markup · %s', (_id, def) => {

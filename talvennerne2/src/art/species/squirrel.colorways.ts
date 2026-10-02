@@ -44,8 +44,8 @@ export const SQUIRREL_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold
   c6: {
     id: 'c6',
     name: 'orange',
-    fur: '#F59A36',
-    overrides: { belly: '#FFF6E4', outline: '#8E4A0E', mane2: '#DE7E22', inner: '#FFD0B0', nose: '#5C2E12', iris: '#8A4A14' },
+    fur: '#F7AC3C',
+    overrides: { belly: '#FFF7E2', outline: '#8C5410', mane2: '#E8912A', inner: '#FFD3AE', nose: '#5C2E12', iris: '#8A4A14' },
   },
   // Guld: guldpels med ravkontur og ravskygge; halen lidt dybere guld.
   gold: {

@@ -42,13 +42,13 @@ export const PANDA_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold: C
     patternColor: '#6A6A80',
     overrides: { outline: '#5E5C74', shade: '#DFDEEA', belly: '#FFFFFF', inner: '#D7BCCB', nose: '#3A3949', iris: '#8FB2E0' },
   },
-  // Creme: lys karamel-aftegning på cremefarvet pels (den blødeste panda).
+  // Creme: lys honning-aftegning på cremefarvet pels (den blødeste panda; tydeligt lysere end brun, review G2-r1 §5).
   c5: {
     id: 'c5',
     name: 'creme',
-    fur: '#FFF2D9',
-    patternColor: '#B9865A',
-    overrides: { outline: '#86603D', shade: '#F2DFBF', belly: '#FFFAEE', inner: '#EFB9A2', nose: '#5E3D27', iris: '#7A4A22' },
+    fur: '#FFF3D6',
+    patternColor: '#DDA764',
+    overrides: { outline: '#93683C', shade: '#F3E0BC', belly: '#FFFBEF', inner: '#F2BCA2', nose: '#6A4426', iris: '#7A4A22' },
   },
   // Lilla: blommelilla aftegning på en lys lavendelhvid pels.
   c6: {
@@ -67,13 +67,14 @@ export const PANDA_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold: C
     overrides: { outline: '#7A4A10', shade: '#E2A42F', belly: '#FFF0B8', inner: '#FFC98F', nose: '#6B3A0E', iris: '#A0561B' },
     sparkle: '#FFF7CF',
   },
-  // Regnbue: lys lilla-hvid pels med lavendel aftegning; maven bærer de fire flade pastelstriber.
+  // Regnbue: lys, kølig hvid pels med himmelblå aftegning (ikke lavendel som lilla, review G2-r1 §5); maven bærer de
+  // fire flade pastelstriber.
   rainbow: {
     id: 'rainbow',
     name: 'regnbue',
-    fur: '#F8F3FF',
-    patternColor: '#A58BD6',
-    overrides: { outline: '#7E68B0', shade: '#E4D9F7', belly: '#FFFFFF', iris: '#7A62C9', inner: '#FFC4DC', nose: '#5B4592' },
+    fur: '#F5F8FF',
+    patternColor: '#7FA6E2',
+    overrides: { outline: '#6474AE', shade: '#DFE6F7', belly: '#FFFFFF', iris: '#7A62C9', inner: '#FFC4DC', nose: '#3F4F8C' },
     gradient: RAINBOW_STOPS,
   },
 }

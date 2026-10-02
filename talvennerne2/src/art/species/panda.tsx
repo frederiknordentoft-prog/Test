@@ -196,13 +196,24 @@ const UP_LOOPS = Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k
 const tipOf = (s: readonly Vec[]) => s[s.length - 1]
 const kindOf = (mood: string): UpKind => (mood in UP_SPINES ? (mood as UpKind) : 'cheer')
 
-const PawUp: SidePart = ({ pal, sw, mood }) => {
+/**
+ * Jubel (review G2-r1 §2 og §5): bambussen følger med op i den løftede venstre pote, så arten stadig bæres af
+ * bambussen, når begge arme er oppe. Stænglen går gennem poten (armen tegnes ovenpå) og står op og lidt ud.
+ */
+const CHEER_BAMBOO = 'rotate(6) scale(0.6) translate(0 -29)'
+
+const PawUp: SidePart = ({ pal, sw, mood, side, clothed }) => {
   const kind = kindOf(mood)
   const [tx, ty] = tipOf(UP_SPINES[kind])
   const loop = UP_LOOPS[kind]
   const palm = kind === 'cheer' || kind === 'wave'
   return (
     <>
+      {kind === 'cheer' && side === 'L' && !clothed && (
+        <g transform={`translate(${tx} ${ty}) ${CHEER_BAMBOO}`}>
+          <Bamboo pal={pal} sw={sw / 0.6} />
+        </g>
+      )}
       <path d={blob(loop)} fill={ink(pal)} />
       <path d={spline(loop)} fill="none" stroke={pal.outline} strokeWidth={sw} {...round} />
       {palm && !pal.silhouette && <path d={padsPath(tx, ty + 0.6, 8.6, kind === 'wave' ? -4 : -32)} fill={pal.inner} />}

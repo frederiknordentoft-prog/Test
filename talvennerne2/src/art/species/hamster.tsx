@@ -232,23 +232,37 @@ const Muzzle: Part = ({ pal, sw, a, ids, lod }) => {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Aftegninger: blis (sort-hvid) og pandaens øjenpletter og sadel, klippet til hoved og krop.
+// Aftegninger: blis (sort-hvid) og pletterne (plettet), klippet til hoved og krop.
 
 const BLAZE: Vec[] = [[0, -1.02], [-0.12, -0.8], [-0.1, -0.46], [-0.08, -0.2], [0, -0.1], [0.08, -0.2], [0.1, -0.46], [0.12, -0.8]]
 
+/**
+ * Plettet (review G2-r1 §5): skæve pletter, aldrig om øjnene, så hamsteren ikke læses som en panda: en stor plet
+ * over panden og det venstre øres rod, en lille på højre kind over kindposen og to på flankerne.
+ */
 const PatternHead: Part = ({ pal, a, ids, colorway }) => {
   const h = a.headCenter
   if (colorway === 'c4') return <path d={blob(frame(BLAZE, h.x, h.y, a.headRx, a.headRy), 0.9)} fill={pal.pattern} clipPath={`url(#${ids.headClip})`} />
   if (colorway === 'c6') {
-    const patch = (e: { x: number; y: number }, s: number) => ellipse(e.x - s * 1.5, e.y + 1, a.eyeRx * 1.55, a.eyeRy * 1.3, s * -18)
-    return <path d={join(patch(a.eyeL, 1), patch(a.eyeR, -1))} fill={pal.pattern} clipPath={`url(#${ids.headClip})`} />
+    const spots = join(
+      ellipse(h.x - a.headRx * 0.5, h.y - a.headRy * 0.78, a.headRx * 0.46, a.headRy * 0.34, -24),
+      ellipse(h.x + a.headRx * 0.7, h.y - a.headRy * 0.22, a.headRx * 0.15, a.headRy * 0.13, 20),
+    )
+    return <path d={spots} fill={pal.pattern} clipPath={`url(#${ids.headClip})`} />
   }
   return null
 }
 
 const PatternBody: Part = ({ pal, a, ids, colorway }) =>
   colorway === 'c6' ? (
-    <path d={ellipse(a.bodyCenter.x, a.bodyCenter.y - a.bodyRy * 0.22, a.bodyRx * 1.3, a.bodyRy * 0.4)} fill={pal.pattern} clipPath={`url(#${ids.bodyClip})`} />
+    <path
+      d={join(
+        ellipse(a.bodyCenter.x - a.bodyRx * 0.74, a.bodyCenter.y - a.bodyRy * 0.08, a.bodyRx * 0.34, a.bodyRy * 0.4, 12),
+        ellipse(a.bodyCenter.x + a.bodyRx * 0.78, a.bodyCenter.y + a.bodyRy * 0.32, a.bodyRx * 0.2, a.bodyRy * 0.2, -10),
+      )}
+      fill={pal.pattern}
+      clipPath={`url(#${ids.bodyClip})`}
+    />
   ) : null
 
 // ---------------------------------------------------------------------------------------------
