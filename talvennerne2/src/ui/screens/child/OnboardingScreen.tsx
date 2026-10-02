@@ -1,13 +1,15 @@
 // A new child (SPEC §8 "Onboarding pr. barn", about five minutes): Pip says hello and asks for the
-// name (optional; a grown-up often types it, else "Spiller N"), four little animals peek out of
-// their eggs and the chosen egg hatches on the third tap (a gentle hand after 60 s, never a
-// countdown), the new friend gets one of six suggested names (read aloud one by one) or a typed one,
-// and the child picks a grade. Then the map, with the first round of Engdalen on top. Placement is
-// skipped in this wave.
+// name (optional; a grown-up often types it, else "Spiller N"), the little animals peek out of their
+// eggs — only the drawn starters, each in the breed and colour it will hatch with — and the chosen
+// egg hatches on the third tap (a gentle hand after 60 s, never a countdown), the new friend gets one
+// of six suggested names (read aloud one by one) or a typed one, and the child picks a grade; Pip
+// says honestly that everyone starts in Engdalen. Then the map, with the first round of Engdalen on
+// top. The placement is not built yet.
 //
-// The child is created at the hatch (see onboarding/flow.ts): until the first crack every step can
-// be undone; from there on there is no way back to an egg the child did not hatch.
-import { useEffect, useRef, useState } from 'react'
+// The child is created at the hatch (see onboarding/flow.ts), with the id the eggs were drawn for:
+// until the first crack every step can be undone; from there on there is no way back to an egg the
+// child did not hatch.
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNav } from '../../../app/nav'
 import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
@@ -24,7 +26,7 @@ import { useSpeech } from '../../design/speech'
 import { cx } from '../../design/cx'
 import { TopBar } from '../../shell/TopBar'
 import { preloadSpecies } from './onboarding/art'
-import { finishOnboarding, hatchFirstFriend, nameFriend } from './onboarding/flow'
+import { finishOnboarding, hatchFirstFriend, nameFriend, newProfileId, offeredStarters, starterLooks } from './onboarding/flow'
 import { PipFigure } from './onboarding/Pip'
 import { EggChoice, EggHatch, FriendStep, GradeStep, NameStep, WriteNameSheet } from './onboarding/steps'
 import './onboarding/first-start.css'
@@ -49,6 +51,11 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
   const speech = useSpeech()
   const canLeave = useNav((s) => s.stack.length > 0)
   const profiles = useSession((s) => s.profiles)
+  // The child's id is picked before the eggs are shown: each baby peeks out in the breed and colour
+  // it will hatch with, because both are drawn from the id (review P2-9).
+  const [plannedId] = useState(newProfileId)
+  const starters = useMemo(() => offeredStarters(), [])
+  const looks = useMemo(() => starterLooks(plannedId, starters), [plannedId, starters])
   const [step, setStep] = useState<Step>('name')
   const [name, setName] = useState('')
   const [picked, setPicked] = useState<SpeciesId | null>(null)
@@ -95,7 +102,8 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
       case 'egg':
         if (friend) return ['s.onb.hatched']
         if (picked) return help ? ['s.onb.egg.help'] : ['s.onb.egg.tap']
-        return help ? ['s.onb.egg.helpPick'] : ['s.onb.egg.ask']
+        // "Fire små dyr …" only while all four starters are there
+        return help ? ['s.onb.egg.helpPick'] : [starters.length === 4 ? 's.onb.egg.ask' : 's.onb.egg.ask.some']
       case 'friend':
         return ['s.onb.friend.ask']
       case 'grade':
@@ -181,7 +189,7 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
     setHatching(true)
     playSfx('klaek')
     try {
-      const [animal] = await Promise.all([hatchFirstFriend({ name, species: picked }), wait(HATCH_MIN_MS)])
+      const [animal] = await Promise.all([hatchFirstFriend({ name, species: picked, id: plannedId }), wait(HATCH_MIN_MS)])
       const suggestions = nameSuggestions(animal)
       setFriend(animal)
       setNames(suggestions.includes(animal.name) ? suggestions : [animal.name, ...suggestions.slice(0, 5)])
@@ -204,7 +212,7 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
 
   const chooseGrade = (g: Grade) => {
     setGrade(g)
-    say(clips(`s.onb.grade.${g}`))
+    say(clips(`s.onb.grade.${g}`, 's.onb.grade.start'))
   }
 
   const finish = async () => {
@@ -292,7 +300,7 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
           (picked ? (
             <EggHatch species={picked} cracks={cracks} taps={taps} friend={friend} help={help} label={speech.text('s.onb.egg.tap')} onTap={() => void tapEgg()} />
           ) : (
-            <EggChoice help={help} onPick={pick} />
+            <EggChoice help={help} starters={starters} looks={looks} onPick={pick} />
           ))}
         {step === 'friend' && friend && (
           <FriendStep friend={friend} names={names} chosen={chosen} custom={custom} reading={reading} onChoose={chooseName} onWrite={() => setWriting(true)} />

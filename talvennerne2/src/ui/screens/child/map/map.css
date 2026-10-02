@@ -126,6 +126,53 @@
   width: 100%;
   max-width: 460px;
 }
+/* "Skift spiller" with two or more children: the child's letter in its frame colour, after the meters. */
+.tv-hud-switch {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 0 0 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 4px var(--frame, var(--color-primary)), 0 6px 16px rgba(43, 33, 68, 0.12);
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.tv-hud-switch[data-pressed] {
+  transform: scale(0.94);
+  transition-duration: var(--dur-press);
+}
+.tv-hud-switch__initial {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--frame, var(--color-primary-soft));
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+.tv-hud-switch__badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-card);
+  box-shadow: 0 0 0 1.5px var(--color-line-2);
+  color: var(--color-ink-2);
+}
 .tv-hud-meters .tv-meter {
   flex: 1 1 0;
   min-width: 0;
@@ -979,10 +1026,10 @@
   display: block;
   object-fit: contain;
 }
-.tv-pic--icon {
+.tv-pic--standin,
+.tv-pic--gift {
   display: grid;
   place-items: center;
-  color: var(--tone-deep, var(--color-primary-deep));
 }
 
 /* ── The stone's card ──────────────────────────────────────────────────── */

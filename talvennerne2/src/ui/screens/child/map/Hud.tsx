@@ -31,7 +31,7 @@ export function HudBuddy({ buddy, frame, hud, onBuddy }: { buddy: Animal | null;
         data-hud-buddy=""
         {...pressProps}
       >
-        <AnimalPicture animal={buddy} species="rabbit" size={52} crop="head" mood="happy" className="tv-hud-me__face" />
+        <AnimalPicture animal={buddy} size={52} crop="head" mood="happy" className="tv-hud-me__face" />
       </button>
       <SpokenText
         parts={levelParts}
@@ -39,6 +39,36 @@ export function HudBuddy({ buddy, frame, hud, onBuddy }: { buddy: Animal | null;
         className="tv-hud-me__level"
       />
     </div>
+  )
+}
+
+/**
+ * "Skift spiller" (two or more children): the child's first letter in its frame colour; a tap asks
+ * "Hvem skal spille?" and goes to the picker.
+ */
+export function HudSwitch({ initial, frame, onSwitch }: { initial: string; frame: FrameColor; onSwitch(): void }) {
+  const speech = useSpeech()
+  const { pressProps } = usePress()
+  return (
+    <button
+      type="button"
+      className="tv-hud-switch tv-touch"
+      style={{ '--frame': FRAME_HEX[frame] } as CSSProperties}
+      aria-label={speech.text('s.map.switch')}
+      onClick={() => {
+        speech.speak([{ clip: 's.profiles.title' }])
+        onSwitch()
+      }}
+      data-switch-player=""
+      {...pressProps}
+    >
+      <span className="tv-hud-switch__initial" aria-hidden>
+        {initial}
+      </span>
+      <span className="tv-hud-switch__badge" aria-hidden>
+        <Icon name="child" size={14} strokeWidth={2.6} />
+      </span>
+    </button>
   )
 }
 

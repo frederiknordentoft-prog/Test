@@ -2,7 +2,6 @@
 // name and the grade. OnboardingScreen owns the state and Pip's words; these only draw and report.
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
-import { STARTERS } from '../../../../content/catalog'
 import { NAME_MAX_LENGTH, cleanAnimalName, nameClip } from '../../../../content/names'
 import type { Animal, Grade, SpeciesId } from '../../../../engine/types'
 import { Button } from '../../../design/Button'
@@ -12,7 +11,7 @@ import { SpokenText } from '../../../design/SpokenText'
 import { useSpeech } from '../../../design/speech'
 import { usePress } from '../../../design/usePress'
 import { cx } from '../../../design/cx'
-import { AnimalArt, lookOf } from './art'
+import { AnimalArt, lookOf, type AnimalLook } from './art'
 import { HatchEgg, PeekEgg } from './Egg'
 
 /** A big choice (a name, a grade): pressed feedback, selected and "being read" states. */
@@ -71,23 +70,41 @@ export function NameStep({ name, placeholder, onName, onDone }: { name: string; 
 
 // ─── 2. The first friend's egg ────────────────────────────────────────────────
 
-export function EggChoice({ help, onPick }: { help: boolean; onPick: (s: SpeciesId) => void }) {
+/**
+ * The starters' eggs (onboarding/flow.ts offeredStarters: only drawn species), each with the baby
+ * that will hatch from it in its own breed and colour (`looks`).
+ */
+export function EggChoice({ help, starters, looks, onPick }: {
+  help: boolean
+  starters: readonly SpeciesId[]
+  looks: Partial<Record<SpeciesId, AnimalLook>>
+  onPick: (s: SpeciesId) => void
+}) {
   const speech = useSpeech()
   return (
-    <div className={cx('tv-onb__stage tv-eggs', help && 'is-help')}>
-      {STARTERS.map((species) => (
-        <EggButton key={species} species={species} label={speech.text(`name.baby.${species}`)} onPick={() => onPick(species)} />
+    <div className={cx('tv-onb__stage tv-eggs', help && 'is-help')} data-count={starters.length}>
+      {starters.map((species) => (
+        <EggButton key={species} species={species} look={looks[species]} label={speech.text(`name.baby.${species}`)} onPick={() => onPick(species)} />
       ))}
     </div>
   )
 }
 
-function EggButton({ species, label, onPick }: { species: SpeciesId; label: string; onPick: () => void }) {
+function EggButton({ species, look, label, onPick }: { species: SpeciesId; look?: AnimalLook; label: string; onPick: () => void }) {
   const { pressProps } = usePress()
   return (
-    <button type="button" className="tv-eggbtn tv-touch" onClick={onPick} aria-label={label} data-species={species} {...pressProps}>
+    <button
+      type="button"
+      className="tv-eggbtn tv-touch"
+      onClick={onPick}
+      aria-label={label}
+      data-species={species}
+      data-breed={look?.breed}
+      data-colorway={look?.colorway}
+      {...pressProps}
+    >
       <span className="tv-eggbtn__egg">
-        <PeekEgg species={species} />
+        <PeekEgg species={species} look={look} />
       </span>
       <SpokenText silent clip={`name.baby.${species}`} className="tv-eggbtn__label" />
     </button>
@@ -209,17 +226,24 @@ export function WriteNameSheet({ open, initial, onClose, onDone }: { open: boole
 
 export const GRADES: readonly Grade[] = [0, 1, 2, 3]
 
+/**
+ * Four big grades, and the honest line under them: every child starts in Engdalen until the
+ * placement exists (review P2-10); Pip says it too once a grade is chosen.
+ */
 export function GradeStep({ grade, onGrade }: { grade: Grade | null; onGrade: (g: Grade) => void }) {
   return (
-    <div className="tv-onb__stage tv-grades">
-      {GRADES.map((g) => (
-        <Choice key={g} selected={grade === g} onClick={() => onGrade(g)} className="tv-grade" data-grade={String(g)}>
-          <span className="tv-grade__n" aria-hidden>
-            {`${g}.`}
-          </span>
-          <SpokenText silent clip={`s.onb.grade.${g}`} className="tv-grade__label" />
-        </Choice>
-      ))}
+    <div className="tv-onb__stage tv-onb__stage--grade">
+      <div className="tv-grades">
+        {GRADES.map((g) => (
+          <Choice key={g} selected={grade === g} onClick={() => onGrade(g)} className="tv-grade" data-grade={String(g)}>
+            <span className="tv-grade__n" aria-hidden>
+              {`${g}.`}
+            </span>
+            <SpokenText silent clip={`s.onb.grade.${g}`} className="tv-grade__label" />
+          </Choice>
+        ))}
+      </div>
+      <SpokenText as="p" clip="s.onb.grade.start" className="tv-onb__hint" data-grade-start="" />
     </div>
   )
 }

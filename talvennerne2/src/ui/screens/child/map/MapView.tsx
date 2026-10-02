@@ -12,7 +12,7 @@ import { cx } from '../../../design/cx'
 import { TopBar } from '../../../shell/TopBar'
 import { Buddy } from '../round/Buddy'
 import { Backdrop } from './Backdrop'
-import { HudBuddy, HudMeters, PerlerPill } from './Hud'
+import { HudBuddy, HudMeters, HudSwitch, PerlerPill } from './Hud'
 import type { MapModel, RegionView, StoneView } from './model'
 import type { PlayTarget } from './nodes'
 import { RegionSection, Stone } from './RegionSection'
@@ -35,9 +35,11 @@ export interface MapViewProps {
   onPlay(target: PlayTarget, opts?: { resume?: boolean; region?: RegionId }): void
   onBuddy(): void
   onAdult(): void
+  /** "Skift spiller" with two or more children: the child's letter and frame, and the tap. */
+  switcher?: { initial: string; frame: FrameColor; onSwitch(): void } | null
 }
 
-export function MapView({ model, frame, highlight, background, first, onWorld, onPlay, onBuddy, onAdult }: MapViewProps) {
+export function MapView({ model, frame, highlight, background, first, onWorld, onPlay, onBuddy, onAdult, switcher }: MapViewProps) {
   const speech = useSpeech()
   const [open, setOpen] = useState<{ stone: StoneView; region: RegionView | null } | null>(null)
   const pathRef = useRef<HTMLDivElement>(null)
@@ -70,7 +72,16 @@ export function MapView({ model, frame, highlight, background, first, onWorld, o
       <TopBar
         className="tv-map__top"
         leading={<HudBuddy buddy={model.buddy} frame={frame} hud={model.hud} onBuddy={onBuddy} />}
-        center={<HudMeters hud={model.hud} />}
+        center={
+          switcher ? (
+            <>
+              <HudMeters hud={model.hud} />
+              <HudSwitch initial={switcher.initial} frame={switcher.frame} onSwitch={switcher.onSwitch} />
+            </>
+          ) : (
+            <HudMeters hud={model.hud} />
+          )
+        }
         extra={<PerlerPill perler={model.hud.perler} />}
         onAdult={onAdult}
       />

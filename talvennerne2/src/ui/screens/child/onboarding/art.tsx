@@ -16,7 +16,7 @@ import { AVAILABLE_SPECIES, loadSpecies } from '../../../../art/species/registry
 import type { Animal, BreedId, ColorwayId, ItemColor, ItemId, Mood, Slot, SpeciesId, Stage } from '../../../../engine/types'
 import { cx } from '../../../design/cx'
 import { isCalm } from '../../../design/motion'
-import { CRITTER_BOX, Critter } from './Critter'
+import { Critter, critterCrop } from './Critter'
 
 export { Critter, type CritterProps } from './Critter'
 
@@ -165,7 +165,7 @@ export function AnimalArt({ look, mode = 'animated', mood, crop = 'fit', title, 
   if (!isDrawn(look.species)) {
     return (
       <span className={box} style={style} role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true}>
-        <Critter mood={mood} viewBox={crop === 'full' ? undefined : CRITTER_BOX.fit} />
+        <Critter mood={mood} crop={critterCrop(crop)} />
       </span>
     )
   }

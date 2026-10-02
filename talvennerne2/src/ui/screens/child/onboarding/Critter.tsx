@@ -22,6 +22,13 @@ export const CRITTER_BOX: Readonly<Record<CritterCrop, string>> = {
   head: '40 62 120 120',
 }
 
+/** The stand-in's frame for a rig crop: the face for the head crops, the figure for the others. */
+export function critterCrop(crop: string | undefined): CritterCrop {
+  if (crop === 'head' || crop === 'bust' || crop === 'crown') return 'head'
+  if (crop === 'fit' || crop === 'torso') return 'fit'
+  return 'full'
+}
+
 /** viewBox 0 0 200 240 like the rig, standing on the same ground line (y = 226). */
 const BODY: V2[] = [[100, 70], [138, 86], [158, 134], [154, 188], [128, 222], [100, 228], [72, 222], [46, 188], [42, 134], [62, 86]]
 

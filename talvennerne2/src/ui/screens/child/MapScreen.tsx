@@ -9,9 +9,11 @@ import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
 import type { WorldId } from '../../../engine/types'
 import { useProfile } from '../../../state/useProfile'
+import { useSession } from '../../../state/useSession'
 import { openAdult } from './map/adult'
 import { MapView } from './map/MapView'
 import { homeWorld, mapModel } from './map/model'
+import { switchPlayer } from './map/switch'
 import { playFromMap } from './play/flow'
 
 function whenIdle(fn: () => void): () => void {
@@ -26,6 +28,7 @@ function whenIdle(fn: () => void): () => void {
 
 export default function MapScreen({ route }: ScreenProps<RouteOf<'map'>>) {
   const profile = useProfile((s) => s.profile)
+  const profiles = useSession((s) => s.profiles)
   const [world, setWorld] = useState<WorldId | null>(route.world ?? null)
 
   useEffect(() => {
@@ -50,6 +53,8 @@ export default function MapScreen({ route }: ScreenProps<RouteOf<'map'>>) {
   const shown: WorldId = world ?? (profile ? homeWorld(profile) : 'eng')
   const model = useMemo(() => (profile ? mapModel(profile, shown) : null), [profile, shown])
   if (!profile || !model) return null
+  // Siblings switch without the gate (only adding and deleting a child need it).
+  const me = profiles.length >= 2 ? profiles.find((p) => p.id === profile.id) : undefined
 
   return (
     <MapView
@@ -61,6 +66,7 @@ export default function MapScreen({ route }: ScreenProps<RouteOf<'map'>>) {
       onPlay={playFromMap}
       onBuddy={() => useNav.getState().go({ id: 'wardrobe', ...(profile.buddyUid ? { uid: profile.buddyUid } : {}) })}
       onAdult={openAdult}
+      switcher={me ? { initial: me.initial, frame: me.frameColor, onSwitch: () => void switchPlayer() } : null}
     />
   )
 }

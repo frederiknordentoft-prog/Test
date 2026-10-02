@@ -125,6 +125,12 @@ export async function countProfiles(): Promise<number> {
 // ─── Writes ─────────────────────────────────────────────────────────────────
 
 export interface CreateProfileInput {
+  /**
+   * Optional id chosen in advance (a fresh newId('p')). Onboarding draws the first friend's breed
+   * and colour from the profile id, so it picks the id before the eggs are shown: the baby peeking
+   * out of an egg is the one that hatches (review P2-9).
+   */
+  id?: ProfileId
   /** Optional; "Spiller N" when empty. */
   name?: string
   grade: Grade
@@ -145,7 +151,7 @@ export async function createProfile(input: CreateProfileInput): Promise<ProfileD
     const free = freeFrameColors(all.map((p) => p.frameColor))
     const frameColor = input.frameColor && free.includes(input.frameColor) ? input.frameColor : free[0]
     const name = cleanName(input.name ?? '') || defaultName(all.map((p) => p.name))
-    const created = newProfileDoc(name, input.grade, { frameColor, now: input.now })
+    const created = newProfileDoc(name, input.grade, { id: input.id, frameColor, now: input.now })
     await db.profiles.add(created)
     return { doc: created, first: all.length === 0 }
   })
