@@ -12,6 +12,7 @@ import { MAGIC } from '../art/rig/palette'
 import { Rig, magicOf, resolveColorway } from '../art/rig/Rig'
 import type { RigProps } from '../art/rig/Rig'
 import EngScene, { ENG_REGIONS } from '../art/scenes/eng'
+import BakkeScene, { BAKKE_REGIONS } from '../art/scenes/bakke'
 import type { RegionTier } from '../meta/rewards'
 import type { MapSceneProps } from '../ui/screens/child/map/Backdrop'
 import { MOODS, NATURAL_COLORWAYS, SPECIES_IDS, STAGES } from '../art/rig/types'
@@ -711,9 +712,30 @@ function SceneFrame({ w, h, tiers, cap, sketch }: { w: number; h: number; tiers:
   )
 }
 
+// Hestebakkerne: alle fire tiers (alle regioner) i telefon, iPad på langs og iPad på tværs, og blandet fremgang
+// med kortets skitse ovenpå (telefon og iPad på tværs).
+const BAKKE_TIERS: readonly RegionTier[] = ['start', 'bronze', 'silver', 'gold']
+const bakkeAt = (t: RegionTier): MapSceneProps['tiers'] => Object.fromEntries(Object.values(BAKKE_REGIONS).map((r) => [r, t]))
+/** Blandet fremgang: de første regioner er nået længst. */
+const BAKKE_MIXED: MapSceneProps['tiers'] = {
+  [BAKKE_REGIONS.field]: 'gold', [BAKKE_REGIONS.twins]: 'silver', [BAKKE_REGIONS.bridge]: 'silver', [BAKKE_REGIONS.workshop]: 'bronze',
+  [BAKKE_REGIONS.tower]: 'bronze', [BAKKE_REGIONS.hop]: 'start', [BAKKE_REGIONS.market]: 'start',
+}
+
+function BakkeFrame({ w, h, tiers, cap, sketch }: { w: number; h: number; tiers: MapSceneProps['tiers']; cap: string; sketch?: 'phone' | 'ipad' }) {
+  return (
+    <Cell cap={cap} lint="" label={`scene bakke ${cap}`}>
+      <div style={{ position: 'relative', width: w, height: h, overflow: 'hidden', borderRadius: 12 }}>
+        <BakkeScene world="bakke" tiers={tiers} className="sh-scene-art" />
+        {sketch && <MapSketch kind={sketch} />}
+      </div>
+    </Cell>
+  )
+}
+
 function SceneSheet() {
   return (
-    <Page title="Engdalen · scene" sub="Kortets baggrund for Engdalen i 393·852 (telefon) og 1180·820 (iPad på tværs) for tier start, bronze og guld (alle regioner), og med en skitse af kortets lag ovenpå (blandet fremgang). Kun skyer og blade bevæger sig.">
+    <Page title="Scener · Engdalen og Hestebakkerne" sub="Kortets baggrund for Engdalen i 393·852 (telefon) og 1180·820 (iPad på tværs) for tier start, bronze og guld (alle regioner), og med en skitse af kortets lag ovenpå (blandet fremgang). Derefter Hestebakkerne i alle fire tiers, også i 820·1180 (iPad på langs). Kun skyer, blade og hestehaler bevæger sig.">
       <style>{'.sh-scene-art{position:absolute;inset:0;width:100%;height:100%}'}</style>
       <Section title="telefon · 393·852">
         <div className="sh-row" style={{ alignItems: 'flex-start' }}>
@@ -725,6 +747,23 @@ function SceneSheet() {
         <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 2420 }}>
           {SCENE_TIERS.map((t) => <SceneFrame key={t} w={1180} h={820} tiers={allAt(t)} cap={`1180·820 · ${t}`} />)}
           <SceneFrame w={1180} h={820} tiers={MIXED} cap="1180·820 · blandet · med kortet" sketch="ipad" />
+        </div>
+      </Section>
+      <Section title="Hestebakkerne · telefon · 393·852">
+        <div className="sh-row" style={{ alignItems: 'flex-start' }}>
+          {BAKKE_TIERS.map((t) => <BakkeFrame key={t} w={393} h={852} tiers={bakkeAt(t)} cap={`393·852 · ${t}`} />)}
+          <BakkeFrame w={393} h={852} tiers={BAKKE_MIXED} cap="393·852 · blandet · med kortet" sketch="phone" />
+        </div>
+      </Section>
+      <Section title="Hestebakkerne · iPad på langs · 820·1180">
+        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 1700 }}>
+          {BAKKE_TIERS.map((t) => <BakkeFrame key={t} w={820} h={1180} tiers={bakkeAt(t)} cap={`820·1180 · ${t}`} />)}
+        </div>
+      </Section>
+      <Section title="Hestebakkerne · iPad på tværs · 1180·820">
+        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 2420 }}>
+          {BAKKE_TIERS.map((t) => <BakkeFrame key={t} w={1180} h={820} tiers={bakkeAt(t)} cap={`1180·820 · ${t}`} />)}
+          <BakkeFrame w={1180} h={820} tiers={BAKKE_MIXED} cap="1180·820 · blandet · med kortet" sketch="ipad" />
         </div>
       </Section>
     </Page>
