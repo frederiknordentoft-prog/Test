@@ -1,10 +1,12 @@
 // Plays the wardrobe and the shop in Chromium the way a child would (dev only). A child at level 2
 // with the Hverdag hat opens the wardrobe from the dock: the hat is pointed at (the first time), one
-// tap puts it on. In the shop she buys the pirate hat with the clear yes, tries it on ("Prøv den på"
-// opens its tab and points at it), buys a new colour and a lantern, pins a wish, and meets the warm
-// "later" when the perler do not reach. Then the page is reloaded: perler, things, colours, decor,
-// the wish and the outfit are all still there. Phone and iPad screenshots go to artifacts/shop/.
-// Fails on any console error or page error, and checks that calm mode stops the pointing loops.
+// tap puts it on. Only drawn things are offered (review P1-3): the shop and "Det kan du få" hold
+// drawn things only, and a thing the child owns without a drawing stays hers. In the shop she meets
+// the warm "later" when the perler do not reach and pins the Fest hat as her wish, then buys it with
+// the clear yes, tries it on ("Prøv den på" opens its tab and points at it), buys a new colour and a
+// lantern. Then the page is reloaded: perler, things, colours, decor and the outfit are all still
+// there. Phone and iPad screenshots go to artifacts/shop/. Fails on any console error or page error,
+// and checks that calm mode stops the pointing loops.
 //
 //   npx vite --port 4317 --strictPort --host 127.0.0.1 &
 //   flock /tmp/tv2-chromium.lock node src/ui/screens/child/shop/shop.e2e.mjs
@@ -135,48 +137,71 @@ try {
   check(await page.$('[data-colors="hverdag-head"] [data-color="0"][data-owned]'), 'farvebjælken viser den ejede farve')
   check(!(await page.$('[data-colors="hverdag-head"] [data-color="1"][data-owned]')), 'de andre farver er i butikken')
 
-  // a thing the child does not have explains how to get it
+  // a thing the child owns without a drawing stays hers; a drawn thing she does not have explains how to get it
   await tap(page, '[data-slot="hand"]', 300)
   check(await page.$('[data-item="opdager-hand"][data-owned]'), 'lupen fra kisten kan vælges')
-  await tap(page, '[data-item="milepael-slikkepind"]', 700)
+  const drawnIds = await page.evaluate(async () => (await import('/src/art/items/registry.ts')).AVAILABLE_ITEMS)
+  const offered = await page.$$eval('[data-how]', (els) => els.map((e) => e.getAttribute('data-item')))
+  check(offered.every((id) => drawnIds.includes(id)), `"Det kan du få" viser kun tegnede ting (${offered.join(', ') || 'ingen'})`)
+  await tap(page, '[data-slot="body"]', 300)
+  await tap(page, '[data-item="hverdag-body"]', 700)
   const howText = await page.evaluate(() => document.querySelector('[data-how-sheet] .tv-wr-how__say')?.textContent ?? '')
-  check(howText === 'Den får du på niveau 30.', `"Sådan får du den" for slikkepinden: ${howText}`)
-  check((await profile(page)).animals[0].outfit.hand === undefined, 'en ting barnet ikke har, kommer ikke på')
-  await tap(page, '[data-wish="milepael-slikkepind"]', 400)
-  check((await profile(page)).economy.wish === 'milepael-slikkepind', 'en niveau-ting kan ønskes fra garderoben')
+  check(howText === 'Den får du på niveau 4.', `"Sådan får du den" for den stribede trøje: ${howText}`)
+  check((await profile(page)).animals[0].outfit.body === undefined, 'en ting barnet ikke har, kommer ikke på')
+  await tap(page, '[data-wish="hverdag-body"]', 400)
+  check((await profile(page)).economy.wish === 'hverdag-body', 'en niveau-ting kan ønskes fra garderoben')
   await page.keyboard.press('Escape')
   await page.waitForTimeout(500)
 
-  // ── The shop: buy with a clear yes ──
+  // ── The shop: only drawn things, the warm "later", the wish, then a clear yes ──
   await tap(page, '.tv-dock__item[aria-label="Butik"]', 900)
   check((await route(page)).id === 'shop', 'docken åbner butikken')
   check(await page.$('.tv-topbar [data-perler="500"]'), 'perlerne står øverst')
-  check(await page.$('[data-wish="milepael-slikkepind"] [role="meter"]'), 'ønsket fra garderoben står i butikken med en bjælke')
+  const forSale = await page.$$eval('[data-buy]', (els) => els.map((e) => e.getAttribute('data-buy')))
+  check(forSale.length > 0 && forSale.every((id) => drawnIds.includes(id)), `butikken sælger kun tegnede ting (${forSale.join(', ')})`)
+  check(await page.$('[data-wish="hverdag-body"] [role="meter"]'), 'ønsket fra garderoben står i butikken med en bjælke')
   await tap(page, '[data-wish-open]', 700)
   check(await page.$('[data-sheet="how"]') && !(await page.$('[data-buy-yes]')), 'en optjent ting har ingen pris: arket siger, hvordan man får den')
   await page.keyboard.press('Escape')
   await page.waitForTimeout(500)
-  await tap(page, '[data-buy="pirat-head"]', 700)
+  // not enough perler: a warm "later" and the wish instead
+  await page.evaluate(async () => (await import('/src/state/useProfile.ts')).useProfile.getState().update((q) => ({ ...q, economy: { ...q.economy, perler: 95 } })))
+  await page.waitForTimeout(300)
+  await tap(page, '[data-buy="fest-head"]', 700)
+  check(await page.$('[data-sheet="later"]') && !(await page.$('[data-buy-yes]')), 'uden perler nok er der intet ja, men en venlig besked')
+  await shot(page, 'shop-phone')
+  await tap(page, '[data-wish-set]', 500)
+  check((await profile(page)).economy.wish === 'fest-head', 'Festhatten er nu ønsket')
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(500)
+  check(await page.$('[data-wish="fest-head"] [role="meter"]'), 'ønsket vises med en bjælke uden tal')
+  check((await profile(page)).economy.perler === 95, 'perlerne er uændrede efter "senere"')
+  // enough perler again: the shop asks first, and the yes buys it
+  await page.evaluate(async () => (await import('/src/state/useProfile.ts')).useProfile.getState().update((q) => ({ ...q, economy: { ...q.economy, perler: 500 } })))
+  await page.waitForTimeout(300)
+  await tap(page, '[data-buy="fest-head"]', 700)
   check(await page.$('[data-sheet="ask"]'), 'butikken spørger først')
   check((await profile(page)).economy.perler === 500, 'intet er købt før ja')
   check((await targets(page, '.tv-store-sheet .tv-btn, .tv-store-sheet .tv-ibtn, .tv-store-sheet__cost')).length === 0, 'arkets knapper er mindst 60 px')
   await tap(page, '[data-buy-yes]', 600)
-  p = await profile(page)
-  check(p.economy.perler === 380 && p.inventory['pirat-head'], 'Pirathatten koster 120 perler og er barnets')
+  let p2 = await profile(page)
+  check(p2.economy.perler === 380 && p2.inventory['fest-head'] && p2.economy.wish === null, 'Festhatten koster 120 perler, er barnets, og ønsket er opfyldt')
   check(await page.$('[data-sheet="done"]'), '"Den er din nu!"')
   await tap(page, '[data-go]', 900)
   const r = await route(page)
-  check(r.id === 'wardrobe' && r.item === 'pirat-head', '"Prøv den på" åbner garderoben med hatten')
-  check(await page.$('[data-slot="head"][aria-selected="true"]') && (await page.$('[data-item="pirat-head"][data-guide]')), 'hatten er fremhævet under sin fane')
-  await tap(page, '[data-item="pirat-head"]', 500)
-  check((await profile(page)).animals[0].outfit.head?.item === 'pirat-head', 'hatten kommer på')
+  check(r.id === 'wardrobe' && r.item === 'fest-head', '"Prøv den på" åbner garderoben med hatten')
+  check(await page.$('[data-slot="head"][aria-selected="true"]') && (await page.$('[data-item="fest-head"][data-guide]')), 'hatten er fremhævet under sin fane')
+  await tap(page, '[data-item="fest-head"]', 500)
+  check((await profile(page)).animals[0].outfit.head?.item === 'fest-head', 'hatten kommer på')
   await page.evaluate(async () => (await import('/src/app/nav.ts')).useNav.getState().back())
   await page.waitForTimeout(700)
 
-  // a new colour, decor and the wish
+  // a new colour and decor
   check((await overflow(page)) === 0, 'tøjhylden holder sig inden for skærmen')
   await tap(page, '[data-shelf="colors"]', 400)
   check((await overflow(page)) === 0, 'farvehylden holder sig inden for skærmen')
+  const recolor = await page.$$eval('[data-recolor]', (els) => els.map((e) => e.getAttribute('data-recolor')))
+  check(recolor.every((id) => drawnIds.includes(id)), `nye farver kun til tegnede ting (${recolor.join(', ')})`)
   await tap(page, '[data-recolor="hverdag-head"] [data-color="1"]', 700)
   await tap(page, '[data-buy-yes]', 600)
   check((await profile(page)).inventory['hverdag-head'].colors.join() === '0,1', 'en ny farve er købt')
@@ -186,22 +211,11 @@ try {
   check((await overflow(page)) === 0, 'pynthylden holder sig inden for skærmen')
   await tap(page, '[data-decor="pynt-lygte"]', 700)
   await tap(page, '[data-buy-yes]', 600)
-  p = await profile(page)
-  check(p.decor['pynt-lygte'] && p.economy.perler === 380 - 25 - 40, 'lygten koster 40 perler og står i Dyrehaven')
+  p2 = await profile(page)
+  check(p2.decor['pynt-lygte'] && p2.economy.perler === 380 - 25 - 40, 'lygten koster 40 perler og står i Dyrehaven')
   await page.keyboard.press('Escape')
   await page.waitForTimeout(400)
   await tap(page, '[data-shelf="clothes"]', 400)
-  // not enough perler: a warm "later" and the wish instead
-  await page.evaluate(async () => (await import('/src/state/useProfile.ts')).useProfile.getState().update((q) => ({ ...q, economy: { ...q.economy, perler: 95 } })))
-  await tap(page, '[data-buy="vinter-body"]', 700)
-  check(await page.$('[data-sheet="later"]') && !(await page.$('[data-buy-yes]')), 'uden perler nok er der intet ja, men en venlig besked')
-  await shot(page, 'shop-phone')
-  await tap(page, '[data-wish-set]', 500)
-  check((await profile(page)).economy.wish === 'vinter-body', 'Vinterjakken er nu ønsket')
-  await page.keyboard.press('Escape')
-  await page.waitForTimeout(500)
-  check(await page.$('[data-wish="vinter-body"] [role="meter"]'), 'ønsket vises med en bjælke uden tal')
-  check((await profile(page)).economy.perler === 95, 'perlerne er uændrede efter "senere"')
 
   // ── Reload: everything is still there ──
   await page.evaluate(async () => (await import('/src/state/useProfile.ts')).useProfile.getState().flush())
@@ -209,13 +223,13 @@ try {
   await ready(page)
   await page.waitForTimeout(800)
   p = await profile(page)
-  check(p && p.economy.perler === 95, 'perlerne er bevaret efter genindlæsning')
-  check(p.inventory['pirat-head']?.colors.join() === '0' && p.inventory['hverdag-head']?.colors.join() === '0,1', 'tøj og farver er bevaret')
+  check(p && p.economy.perler === 315, 'perlerne er bevaret efter genindlæsning')
+  check(p.inventory['fest-head']?.colors.join() === '0' && p.inventory['hverdag-head']?.colors.join() === '0,1', 'tøj og farver er bevaret')
   check(p.decor['pynt-lygte'], 'pynten er bevaret')
-  check(p.economy.wish === 'vinter-body', 'ønsket er bevaret')
-  check(p.animals[0].outfit.head?.item === 'pirat-head', 'dyret har stadig hatten på')
+  check(p.inventory['opdager-hand'], 'tingen uden tegning er stadig barnets')
+  check(p.animals[0].outfit.head?.item === 'fest-head', 'dyret har stadig hatten på')
   await tap(page, '.tv-dock__item[aria-label="Garderobe"]', 900)
-  check(await page.$('[data-item="pirat-head"][data-on]'), 'garderoben viser hatten på dyret')
+  check(await page.$('[data-item="fest-head"][data-on]'), 'garderoben viser hatten på dyret')
   check(!(await page.$('[data-guide]')), 'ingen fremhævning efter første gang')
   // the new colour goes on from the colour bar, and survives a reload too
   await tap(page, '[data-item="hverdag-head"]', 400)

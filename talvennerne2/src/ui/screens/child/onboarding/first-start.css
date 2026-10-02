@@ -849,6 +849,21 @@
     grid-column: 2;
     grid-row: 1;
   }
+  /* the grades take the right, "Alle starter i Engdalen." stands under the bubble */
+  .tv-first__body--talk > .tv-onb__stage--grade {
+    display: contents;
+  }
+  .tv-first__body--talk .tv-onb__stage--grade > .tv-grades {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 8px;
+  }
+  .tv-first__body--talk .tv-onb__stage--grade > .tv-onb__start {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+    margin-bottom: 8px;
+  }
   .tv-choice__face {
     min-height: 56px;
     font-size: 19px;
