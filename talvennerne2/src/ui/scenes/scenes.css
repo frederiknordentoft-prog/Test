@@ -250,9 +250,9 @@
   display: grid;
   place-items: center;
 }
-.tv-scene__board {
-  --scene-h: 240px;
-}
+/* The board takes the height its card gives it (--scene-h from the round card or the hint): with the
+   strategy open the card is lower, and the board must shrink with it, never run out over the card
+   (UI-fund 3). No height of its own here, which would win over the card's. */
 .tv-board__entry {
   position: absolute;
   right: -8px;

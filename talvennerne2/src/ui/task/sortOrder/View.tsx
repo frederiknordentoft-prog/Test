@@ -65,8 +65,9 @@ export function SortOrderView({ task, mode, given, onSubmit, onActivity }: TaskV
   // after an answer the shelf shows what was handed in, card by card
   const givenOrder = mode !== 'input' && given !== null ? splitTokens(given) : null
   const state = mode === 'correct' ? 'good' : mode === 'wrong' ? 'oops' : 'idle'
-  // given stones are narrower than the places: a whole row fits one line on a phone
-  const columns = cells.map((c) => (c === null ? 'minmax(0, 1fr)' : 'minmax(0, 0.5fr)')).join(' ')
+  // given stones are narrower than the places, so a whole row fits one line on a phone, but never
+  // narrower than their number: a three-digit start stone shows all of 641 (UI-fund 4)
+  const columns = cells.map((c) => (c === null ? 'minmax(0, 1fr)' : 'minmax(min-content, 0.5fr)')).join(' ')
   let k = -1
   return (
     <div

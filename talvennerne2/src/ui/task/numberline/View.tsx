@@ -12,7 +12,7 @@ import { niceStep } from '../../../art/materials'
 import { blob } from '../../../art/materials/geom'
 import { useSpeech } from '../../design/speech'
 import { cx } from '../../design/cx'
-import { formatNumber, lineRange, lineRatio, lineValue } from '../answers'
+import { formatNumber, lineEndsOnly, lineRange, lineRatio, lineValue } from '../answers'
 import { CheckButton } from '../CheckButton'
 import { usePointerDrag } from '../usePointerDrag'
 import type { FaceProps, TaskViewProps } from '../types'
@@ -53,7 +53,7 @@ export interface LineGeometry {
 const digits = (v: number) => formatNumber(v).length
 
 /** Ticks and labels for a line of `w` px: labels thin out until every one has room. */
-export function lineGeometry(min: number, max: number, w: number, big = false): LineGeometry {
+export function lineGeometry(min: number, max: number, w: number, big = false, endsOnly = false): LineGeometry {
   const font = big ? 20 : 16
   const h = big ? 150 : 124
   const y = big ? 104 : 86
@@ -76,7 +76,9 @@ export function lineGeometry(min: number, max: number, w: number, big = false): 
     else minor.push(v)
   }
   const x = (v: number) => pad + ((v - min) / span) * inner
-  return { w, h, y, pad, x, at: (px: number) => lineValue((px - pad) / inner, min, max), minor, major, labels: major, font }
+  // an empty number line (UI-fund 2): the ticks stay, only the ends are numbered
+  const labels = endsOnly ? [min, max] : major
+  return { w, h, y, pad, x, at: (px: number) => lineValue((px - pad) / inner, min, max), minor, major, labels, font }
 }
 
 /** The line itself (axis, ticks, numbers) in px. */
@@ -131,7 +133,7 @@ export function NumberlineView({ task, mode, given, onSubmit, onActivity }: Task
   const [boxRef, width] = useWidth<HTMLDivElement>()
   const surface = useRef<HTMLDivElement | null>(null)
   const input = mode === 'input'
-  const g = lineGeometry(min, max, Math.max(200, width || 340), isBig())
+  const g = lineGeometry(min, max, Math.max(200, width || 340), isBig(), task.prompt.scene === 'line' && lineEndsOnly(task.prompt))
 
   const valueAt = (clientX: number): number | null => {
     const el = surface.current

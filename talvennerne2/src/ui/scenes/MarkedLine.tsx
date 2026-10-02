@@ -10,14 +10,16 @@ export interface MarkedLineProps {
   max: number
   marks: readonly number[]
   hops?: number[]
+  /** An empty line: only its ends are numbered. */
+  endsOnly?: boolean
   className?: string
 }
 
-export function MarkedLine({ min, max, marks, hops, className }: MarkedLineProps) {
+export function MarkedLine({ min, max, marks, hops, endsOnly, className }: MarkedLineProps) {
   const shown = marks.filter((v) => v >= min && v <= max)
   return (
     <span className={cx('tv-markedline', className)} data-marks={shown.join(',')}>
-      <NumberLine min={min} max={max} hops={hops} className="tv-markedline__line" />
+      <NumberLine min={min} max={max} hops={hops} endsOnly={endsOnly} className="tv-markedline__line" />
       {/* the same box as the line's own svg (class, size, viewBox), so the CSS sizes both alike */}
       <svg className="tv-mat tv-markedline__marks" viewBox={`0 0 ${NL.W} ${NL.H}`} width={NL.W} height={NL.H} aria-hidden overflow="visible">
         {shown.map((v) => {

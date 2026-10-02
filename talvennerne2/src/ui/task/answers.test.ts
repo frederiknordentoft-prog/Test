@@ -99,6 +99,9 @@ describe('numbers', () => {
   it('writes numbers and money the house way', () => {
     expect(formatNumber(-3)).toBe('−3')
     expect(formatNumber(9999)).toBe('9999')
+    // five digits are what a child wrote (300 45 → 30045): no separator to hide it (UI-fund 6)
+    expect(formatNumber(30045)).toBe('30045')
+    expect(formatNumber(10004)).toBe('10004')
     expect(formatMoney(1250)).toBe('12,50 kr.')
     expect(formatMoney(1700)).toBe('17 kr.')
   })

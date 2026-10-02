@@ -11,7 +11,7 @@ import { Rig } from '../../art/rig/Rig'
 import { Equation } from '../design/Equation'
 import { Icon } from '../design/Icon'
 import { cx } from '../design/cx'
-import { formatMoney, formatNumber } from '../task/answers'
+import { formatMoney, formatNumber, lineEndsOnly } from '../task/answers'
 import { isPiece } from '../task/pay/logic'
 import { PieceArt, piecesForAmount } from '../task/faces'
 import { CompareScene } from './CompareScene'
@@ -82,10 +82,13 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
     case 'row':
       return <RowScene prompt={p} entry={entry} entries={entries} slot={slot} />
     case 'line': {
-      // a choice asked on a number line marks the numbers on its cards (review r1 P2-7)
-      const marks = task?.kind === 'choice' ? task.options.filter((o): o is number => typeof o === 'number') : []
-      if (marks.length > 0) return <MarkedLine min={p.min} max={p.max} marks={marks} hops={p.hops} className="tv-scene__line" />
-      return <NumberLine min={p.min} max={p.max} arrowAt={p.arrowAt} target={p.target} hops={p.hops} className="tv-scene__line" />
+      const endsOnly = lineEndsOnly(p)
+      // a choice asked on a number line marks the numbers on its cards (review r1 P2-7) — unless an
+      // arrow asks "Hvilket tal peger pilen på?": then the arrow stays, and marking the cards would
+      // point at the answer (UI-fund 1)
+      const marks = task?.kind === 'choice' && p.arrowAt === undefined ? task.options.filter((o): o is number => typeof o === 'number') : []
+      if (marks.length > 0) return <MarkedLine min={p.min} max={p.max} marks={marks} hops={p.hops} endsOnly={endsOnly} className="tv-scene__line" />
+      return <NumberLine min={p.min} max={p.max} arrowAt={p.arrowAt} target={p.target} hops={p.hops} endsOnly={endsOnly} className="tv-scene__line" />
     }
     case 'board':
       return (
@@ -173,6 +176,7 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
 }
 
 // ─── Small scenes ───────────────────────────────────────────────────────────
+
 
 function TermsChip({ terms, entry, slot }: { terms: Term[]; entry?: ReactNode; slot: BlankSlot }) {
   return (

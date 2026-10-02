@@ -4,6 +4,7 @@
 // gaps so the round never shows an empty card: a skill without words gets the round's own sentences
 // with the task's numbers, a skill without a picture gets one drawn from the prompt, and the three
 // animated misconceptions (digitSwap, forgotCarry, smallerFromLarger) get their film.
+import { SKILL_BY_ID } from '../../content/skills'
 import type {
   AnswerValue, ErrorTag, Fact, HintSpec, HintVisual, MisconceptionId, Prompt, SkillDef, SpeechPart, Task, TaskKind,
 } from '../../engine/types'
@@ -332,6 +333,9 @@ export function revealsAnswer(v: AnyVisual, task: Task): boolean {
 export function countingLine(task: Task): AnyVisual | null {
   const p = task.prompt
   if (p.scene === 'line') return null
+  // tens and ones are not counted along a line: "74 = □ tiere og □ enere" (7|4) or the blocks of
+  // 748 have digits for an answer, and a 0–10 line under them helps nobody (UI-fund 5)
+  if (p.scene === 'base' || SKILL_BY_ID[task.skill]?.domain === 'place') return null
   const answer = typeof task.answer === 'number' ? [task.answer] : String(task.answer).split('|').map(Number)
   if (task.answerType !== 'int' && task.answerType !== 'set') return null
   if (answer.some((n) => !Number.isInteger(n) || n < 0)) return null
