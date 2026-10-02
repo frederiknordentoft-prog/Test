@@ -45,12 +45,13 @@ export interface Drawer {
   draw(family: string, rng: Rng): Fact | null
 }
 
-const TRIES = 60
+/** Draws before an instance in `avoid` is given anyway (the family has none left). */
+const DRAWS = 240
 
 /** A fresh instance of a family that is not in `avoid` (if the family has one left). */
 export function drawInstance(d: Drawer, family: FamilyDef, rng: Rng, avoid: ReadonlySet<string>): Fact {
   let last: Fact | null = null
-  for (let i = 0; i < TRIES * 4; i++) {
+  for (let i = 0; i < DRAWS; i++) {
     const f = d.draw(family.id, rng)
     if (!f) continue
     last = f
@@ -123,8 +124,7 @@ export const around = (answer: number, steps: readonly number[]): number[] => st
 
 // ─── Strategy hints ─────────────────────────────────────────────────────────
 
-/** Hop sizes with a recorded "Hop … frem til" / "Hop … tilbage til" sentence. */
-export const HOP_SIZES: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90]
+/** "Hop to frem til" / "Hop tyve tilbage til": recorded for 1–9 and the whole tens 10–90 (clips/skills/addsub2.ts). */
 export const hopClip = (d: number): string => `hint.addsub2.${d > 0 ? 'fwd' : 'back'}.${Math.abs(d)}`
 
 /**

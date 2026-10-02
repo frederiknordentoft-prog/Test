@@ -6,8 +6,8 @@
 // enumerate() gives 20 seeded instances per family. "Hvad er syvogfyrre minus fem?" over 47 − 5 = □;
 // kinds choice and keypad (production); card range 0–100.
 // Wrong answers: wrongOperation (a + b; a card when it is at most 100), the numbers from the question
-// ('operand') and near misses (±1, ±2, ±10). Without a borrow the column misconceptions give the
-// answer itself, so there are none.
+// ('operand'), near misses (±1, ±2, ±10) and, for TOminusT0, the tens taken from the ones ('other':
+// 47 − 20 → 45). Without a borrow the column misconceptions give the answer itself, so there are none.
 // Hint (columns): "Regn enerne først. Syv minus fem giver to. Tierne er de samme. Svaret er toogfyrre."
 import type { Fact, FamilyDef, HintSpec, Rng, SkillModule } from '../types'
 import { hintOf, metaOf, tagged } from '../number/kit'
@@ -68,6 +68,8 @@ export default {
       [otherOperation(a, '−', b), 'wrongOperation'],
       [a, 'operand'], [b, 'operand'],
       ...around(d, [1, 2, 10]).map((v) => [v, 'near'] as const),
+      // the tens taken from the ones (47 − 20 → 45): a slip of the columns the catalogue does not name
+      ...(b >= 10 && b % 10 === 0 ? ([[a - b / 10, 'other']] as const) : []),
     ])
   },
   hint,

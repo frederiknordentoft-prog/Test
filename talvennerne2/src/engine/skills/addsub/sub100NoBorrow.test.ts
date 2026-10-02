@@ -24,7 +24,7 @@ describe('sub100NoBorrow', () => {
       expect(a >= 21 && a % 10 >= 1 && a % 10 >= b % 10 && a > b, f.id).toBe(true)
       expect(f.family, f.id).toBe(b < 10 ? 'TOminusO' : b % 10 === 0 ? 'TOminusT0' : 'TOminusTO')
       // without a borrow the column misconceptions give the answer itself
-      expect(def.candidates(f).every((c) => c.tag === 'wrongOperation' || c.tag === 'operand' || c.tag === 'near' || c.tag === 'ambiguous'), f.id).toBe(true)
+      expect(def.candidates(f).every((c) => ['wrongOperation', 'operand', 'near', 'other', 'ambiguous'].includes(c.tag)), f.id).toBe(true)
     }
   })
 
@@ -38,6 +38,7 @@ describe('sub100NoBorrow', () => {
     expect(tagOf(def, 's100:47-25', 25)).toBe('operand')
     expect(tagOf(def, 's100:47-25', 32)).toBe('near')
     expect(tagOf(def, 's100:47-5', 52)).toBe('wrongOperation')
+    expect(tagOf(def, 's100:47-20', 45)).toBe('other') // the tens taken from the ones: not in the catalogue
   })
 
   it('works the columns, ones first', () => {

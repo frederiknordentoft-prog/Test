@@ -7,7 +7,8 @@
 // Kinds: choice, keypad (production), buildBase (the equation on the card, the sum built with rods and
 // cubes; manipulative, so never production here, SPEC §3.3). Range 0–99: the tray has rods and cubes.
 // Wrong answers (pædagogik §3.2): placeMisalign (TOplusO: a + 10 · b, 34 + 5 → 84), wrongOperation
-// (|a − b|), the numbers from the question ('operand') and near misses (±1, ±2, ±10).
+// (|a − b|), the numbers from the question ('operand'), near misses (±1, ±2, ±10) and, for TOplusT0,
+// the tens put on the ones ('other': 34 + 20 → 36, the mirror of placeMisalign the catalogue leaves out).
 // Hint (columns): "Regn enerne først. Fire plus fem giver ni. Regn så tierne. Tre tiere plus to tiere
 // giver fem tiere. Svaret er nioghalvtreds." (only the column that changes for TOplusO and TOplusT0).
 import type { Fact, FamilyDef, HintSpec, Rng, SkillModule } from '../types'
@@ -75,6 +76,8 @@ export default {
       [otherOperation(a, '+', b), 'wrongOperation'],
       [a, 'operand'], [b, 'operand'],
       ...around(s, [1, 2, 10]).map((v) => [v, 'near'] as const),
+      // the tens put on the ones (34 + 20 → 36): a slip of the columns the catalogue does not name
+      ...(b >= 10 && b % 10 === 0 ? ([[a + b / 10, 'other']] as const) : []),
     ])
   },
   hint,

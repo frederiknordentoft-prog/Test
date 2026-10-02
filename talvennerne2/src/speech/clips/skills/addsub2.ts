@@ -78,7 +78,7 @@ const table: Record<ClipId, string> = {
   'hint.addSub1000Round.zeroHundreds': 'Hele hundreder skrives med to nuller til sidst.',
 }
 
-/** "Hop to frem til" / "Hop tyve tilbage til": 1–9 and the whole tens 10–90 (calc.ts HOP_SIZES). */
+/** "Hop to frem til" / "Hop tyve tilbage til": 1–9 and the whole tens 10–90 (calc.ts hopClip). */
 for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90]) {
   table[`hint.addsub2.fwd.${n}`] = `Hop ${numberWords(n)} frem til`
   table[`hint.addsub2.back.${n}`] = `Hop ${numberWords(n)} tilbage til`

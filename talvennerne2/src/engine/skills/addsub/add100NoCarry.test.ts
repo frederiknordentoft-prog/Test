@@ -48,7 +48,7 @@ describe('add100NoCarry', () => {
     expect(tagOf(def, 'a100:34+5', 29)).toBe('wrongOperation')
     expect(tagOf(def, 'a100:34+5', 34)).toBe('operand')
     expect(tagOf(def, 'a100:34+5', 49)).toBe('near')
-    expect(tagOf(def, 'a100:34+20', 36)).toBeUndefined() // the tens added to the ones: not in the catalogue
+    expect(tagOf(def, 'a100:34+20', 36)).toBe('other') // the tens put on the ones: not in the catalogue
     expect(tagOf(def, 'a100:41+5', 91)).toBe('placeMisalign')
     const t = tasks.find((x) => x.kind === 'keypad' && x.fact.family === 'TOplusO')!.task
     const [a, b] = [Number(t.factId.split(/[:+]/)[1]), Number(t.factId.split('+')[1])]
