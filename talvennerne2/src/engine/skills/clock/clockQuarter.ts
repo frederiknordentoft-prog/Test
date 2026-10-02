@@ -4,7 +4,7 @@
 // Kinds: choice ("Find uret, der viser klokken kvart i tre.", three clocks) and clockSet (production,
 // step 15).
 // Wrong clocks (t is the answer, H the named hour):
-//   quarterDirection   kvart over ↔ kvart i with the same hour: t − 30 (over) / t + 30 (i)
+//   quarterDirection   kvart over and kvart i swapped, the same hour: t − 30 (over) / t + 30 (i)
 //   hourHandMisread    kvart i only, t − 60: on the 1:45 clock the short hand is nearly at two and is
 //                      read as two (kvart over has its short hand just past the hour: no misread)
 //   operand            H:00, the number heard as a whole hour

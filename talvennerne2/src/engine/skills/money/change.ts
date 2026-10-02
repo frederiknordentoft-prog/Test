@@ -125,15 +125,13 @@ function hint(f: Fact, tag: string | null): HintSpec {
     return hintOf(said, visual, 'wrongOperation')
   }
   const ten = Math.ceil(price / 10) * 10
-  if (tag === 'digitComplement10' && ten > price && ten < paid) {
+  if (tag === 'digitComplement10' && s.family === 'from100' && ten > price) {
     // "Tæl op til den næste tier først. Fra syvogtredive til fyrre er tre. Fra fyrre til et hundrede
-    // er tres. Det er treogtres kroner."
-    const said = [
-      say('hint.change.nextTenFirst'),
-      say('hint.change.from'), num(price, 'mid'), say('hint.change.to'), num(ten, 'mid'), say('hint.change.is'), num(ten - price, 'end'),
-      say('hint.change.from'), num(ten, 'mid'), say('hint.change.to'), num(paid, 'mid'), say('hint.change.is'), num(paid - ten, 'end'),
-      say('frag.det_er'), moneySays(s.change, 'end'),
+    // er tres. Det er treogtres kroner." (From 91–99 the next ten is the hundred: one step.)
+    const step = (from: number, to: number): SpeechPart[] => [
+      say('hint.change.from'), num(from, 'mid'), say('hint.change.to'), num(to, 'mid'), say('hint.change.is'), num(to - from, 'end'),
     ]
+    const said = [say('hint.change.nextTenFirst'), ...step(price, ten), ...(ten < paid ? step(ten, paid) : []), say('frag.det_er'), moneySays(s.change, 'end')]
     return hintOf(said, visual, 'digitComplement10')
   }
   return hintOf(countUp, visual)
@@ -144,6 +142,8 @@ export default {
   kinds: ['choice', 'keypad', 'pay'],
   enumerate: () => [...FACTS],
   instance: (family: FamilyDef, rng: Rng, avoid: ReadonlySet<string>) => drawAvoiding(() => draw(family.id as Family, rng), avoid),
+  // read back from the id, like everything else here (a fact rebuilt from a task has only its id)
+  answer: (f: Fact) => parse(f.id).change,
   answerType: () => 'ore',
   prompt: (f: Fact) => {
     const s = parse(f.id)

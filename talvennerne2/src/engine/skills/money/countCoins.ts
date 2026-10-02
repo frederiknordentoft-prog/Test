@@ -151,6 +151,8 @@ export default {
   kinds: ['choice', 'keypad'],
   enumerate: () => [...FACTS],
   instance: (family: FamilyDef, rng: Rng, avoid: ReadonlySet<string>) => drawAvoiding(() => draw(family.id as Family, rng), avoid),
+  // read back from the id, like everything else here (a fact rebuilt from a task has only its id)
+  answer: (f: Fact) => sum(parse(f.id).coins) * 100,
   answerType: () => 'ore',
   prompt: (f: Fact) => ({ scene: 'coins', ore: parse(f.id).coins.map((c) => c * 100) }),
   optionView: () => 'amount',
