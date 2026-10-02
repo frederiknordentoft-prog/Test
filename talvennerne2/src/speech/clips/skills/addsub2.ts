@@ -1,0 +1,90 @@
+// Clips for the plus and minus skills of 1.–2. klasse (doubles, halves, addSub20Simple, addTo20,
+// subTo20, tens100, add100NoCarry, sub100NoBorrow, add100Carry, sub100Borrow, addSub1000Round): the
+// Kan-bog lines and the strategy hints. The recall questions are the recorded `q.<factId>` sentences
+// (clips/questions.ts); the procedure questions are composed ("Hvad er" 38 "plus" 45, speech/equation.ts).
+// All wave 2, in the plus-and-minus sprite of wave 2.
+//
+// Every number of a task is a { num } part (SPEC §10.1): "Hop" 2 "frem til" 40, 3 "tiere" — the tens
+// nouns are `noun.*` clips, so the voice binds them to the number before them like "syv gulerødder".
+import type { ClipId } from '../../../engine/types'
+
+const table: Record<ClipId, string> = {
+  // Kan-bogen
+  's.cando.doubles': 'Jeg kan det dobbelte af tallene til ti.',
+  's.cando.halves': 'Jeg kan finde halvdelen af tallene til tyve.',
+  's.cando.addSub20Simple': 'Jeg kan plus og minus til tyve uden at gå over tieren.',
+  's.cando.addTo20': 'Jeg kan plus over tieren.',
+  's.cando.subTo20': 'Jeg kan minus over tieren.',
+  's.cando.tens100': 'Jeg kan plus og minus med hele tiere.',
+  's.cando.add100NoCarry': 'Jeg kan lægge tocifrede tal sammen.',
+  's.cando.sub100NoBorrow': 'Jeg kan trække tocifrede tal fra hinanden.',
+  's.cando.add100Carry': 'Jeg kan lægge sammen over tieren med store tal.',
+  's.cando.sub100Borrow': 'Jeg kan trække fra med veksling.',
+  's.cando.addSub1000Round': 'Jeg kan regne med hele hundreder og tiere.',
+
+  // Shared strategy words
+  'hint.addsub2.startOn': 'Start på',
+  'hint.addsub2.hop': 'Hop',
+  'hint.addsub2.forwardTo': 'frem til',
+  'hint.addsub2.backTo': 'tilbage til',
+  'noun.addsub2.tier': 'tier',
+  'noun.addsub2.tiere': 'tiere',
+  'hint.addsub2.firstHop': 'Det første hop lander på',
+  'hint.addsub2.firstHopBack': 'Det første hop tilbage lander på',
+  'hint.addsub2.answerIs': 'Svaret er',
+  'hint.addsub2.thatIs': 'Det er',
+  'hint.addsub2.plusMore': 'Plus betyder, at der kommer flere til.',
+  'hint.addsub2.minusLess': 'Minus betyder, at nogle bliver taget væk.',
+  'hint.addsub2.onesFirst': 'Regn enerne først.',
+  'hint.addsub2.tensThen': 'Regn så tierne.',
+  'hint.addsub2.tensOnly': 'Regn tierne.',
+  'hint.addsub2.tensSame': 'Tierne er de samme.',
+  'hint.addsub2.onesSame': 'Enerne er de samme.',
+  'hint.addsub2.countUp': 'Tæl op fra det lille tal.',
+  'hint.addsub2.together': 'Hoppene giver tilsammen',
+
+  // Misconception hints (SPEC §4.3: said before the strategy)
+  'hint.addsub2.carryTen': 'Når enerne giver ti eller mere, skal tieren med over til tierne.',
+  'hint.addsub2.borrowTen': 'Der er ikke enere nok. Veksl en tier til ti enere.',
+  'hint.addsub2.oneTenLess': 'Når du veksler en tier, er der en tier mindre tilbage.',
+  'hint.addsub2.onesToOnes': 'Det lille tal er enere. Læg det til enerne, ikke til tierne.',
+  'hint.addsub2.zeroTens': 'Hele tiere skrives med ét nul til sidst.',
+  'hint.addsub2.tensFirst': 'Vi skriver tierne først og så enerne.',
+
+  // doubles and halves: two equal rows
+  'hint.doubles.twoRows': 'Det dobbelte er to lige store rækker.',
+  'hint.doubles.more': 'Det dobbelte er mere end tallet. Der kommer lige så mange til.',
+  'hint.halves.twoRows': 'Del i to lige store rækker.',
+  'hint.halves.soHalfOf': 'Så halvdelen af',
+  'hint.halves.is': 'er',
+  'hint.halves.fewer': 'Halvdelen er mindre end tallet.',
+
+  // addTo20 and subTo20: make ten, back to ten
+  'hint.addTo20.fillTen': 'Fyld tieren op først.',
+  'hint.addTo20.keepTen': 'Når tieren er fuld, skal den med i svaret.',
+  'hint.subTo20.backToTen': 'Gå tilbage til ti først.',
+  'hint.subTo20.takeFromTen': 'Der er ikke enere nok. Tag også af tieren.',
+  'hint.subTo20.tenIsUsed': 'Når du tager af tieren, er tieren brugt.',
+
+  // addSub20Simple: the ten stays
+  'hint.addSub20Simple.addOnes': 'Læg enerne sammen.',
+  'hint.addSub20Simple.takeOnes': 'Tag enerne væk.',
+  'hint.addSub20Simple.fullFrame': 'En fuld ti-ramme er',
+
+  // addSub1000Round: whole hundreds and tens
+  'hint.addSub1000Round.hundreds': 'Regn med hele hundreder.',
+  'hint.addSub1000Round.tens': 'Regn med tierne.',
+  'hint.addSub1000Round.hundredsSame': 'Hundrederne er de samme.',
+  'hint.addSub1000Round.putTogether': 'Hundrederne og resten skal bare stå sammen.',
+  'hint.addSub1000Round.newHundred': 'Ti tiere bliver til et hundrede mere.',
+  'hint.addSub1000Round.keepHundred': 'Når tierne giver ti tiere eller mere, kommer der et hundrede mere.',
+  'hint.addSub1000Round.zeroHundreds': 'Hele hundreder skrives med to nuller til sidst.',
+}
+
+export const clips: Readonly<Record<ClipId, string>> = table
+
+/** Hestebakkerne and Regnbueskoven (1.–2. klasse) are wave 2. */
+export const wave = 2
+
+/** The plus-and-minus sprite of wave 2, beside the recorded questions (clips/questions.ts). */
+export const pack = 'addsub-2'
