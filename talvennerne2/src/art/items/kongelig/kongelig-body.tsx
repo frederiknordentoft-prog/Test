@@ -66,8 +66,8 @@ const tunic = (kind: BodyKind): ItemArt => ({ c, sw, ids, restroke, solo, stage 
         <path d={outside(lit)} fill={c.mainShade} fillRule="evenodd" />
         <path d={d.braid} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.7} strokeLinejoin="round" />
         <path d={d.sash} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw} strokeLinejoin="round" />
-        <path d={d.star} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.6} strokeLinejoin="round" />
-        <path d={band(-80, 80, hem - 5.5, hem, SAG)} fill={c.trim} {...stroke} />
+        {/* Guldbort forneden og stjernen på ordensbåndet (samme guld og kontur, én sti). */}
+        <path d={join(band(-80, 80, hem - 5.5, hem, SAG), d.star)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.8} strokeLinejoin="round" />
         {!solo && restroke()}
       </g>
       {solo && <path d={FLAT} fill="none" {...stroke} />}

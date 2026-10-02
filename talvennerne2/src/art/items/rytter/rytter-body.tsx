@@ -77,8 +77,7 @@ const jacket = (kind: BodyKind): ItemArt => ({ c, sw, ids, restroke, solo, stage
         <path d={rect(-80, -80, 160, 130)} fill={c.main} />
         <path d={outside(lit)} fill={c.mainShade} fillRule="evenodd" />
         <path d={d.shirt} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.8} strokeLinejoin="round" />
-        <path d={d.lapels} fill={c.main} {...stroke} />
-        <path d={d.flaps} fill={c.mainShade} {...stroke} strokeWidth={sw * 0.8} />
+        <path d={join(d.lapels, d.flaps)} fill={c.main} {...stroke} strokeWidth={sw * 0.9} />
         <path d={join(d.buttons, d.pin)} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.5} />
         {!solo && restroke()}
       </g>
