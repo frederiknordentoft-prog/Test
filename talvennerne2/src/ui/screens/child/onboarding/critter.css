@@ -1,0 +1,38 @@
+/*
+ * The neutral stand-in for an undrawn friend (onboarding/Critter.tsx): a soft egg-shaped creature in
+ * the paper colours with an ink face. Loaded wherever the figure is shown. Colours from tokens;
+ * nothing here moves.
+ */
+.tv-critter {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.tv-critter__shadow {
+  fill: var(--color-line);
+}
+.tv-critter__body {
+  fill: var(--color-paper-2);
+  stroke: var(--color-ink-3);
+  stroke-width: 3.2;
+}
+.tv-critter__belly {
+  fill: var(--color-card);
+  opacity: 0.8;
+}
+.tv-critter__eye {
+  fill: var(--color-ink);
+}
+.tv-critter__glint {
+  fill: var(--color-card);
+}
+.tv-critter__cheek {
+  fill: var(--color-heart);
+  opacity: 0.3;
+}
+.tv-critter__mouth {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+}

@@ -192,39 +192,7 @@
   -webkit-user-drag: none;
   pointer-events: none;
 }
-.tv-critter {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.tv-critter__shadow {
-  fill: var(--color-line);
-}
-.tv-critter__body {
-  fill: var(--color-paper-2);
-  stroke: var(--color-ink-3);
-  stroke-width: 3.2;
-}
-.tv-critter__belly {
-  fill: var(--color-card);
-  opacity: 0.8;
-}
-.tv-critter__eye {
-  fill: var(--color-ink);
-}
-.tv-critter__glint {
-  fill: var(--color-card);
-}
-.tv-critter__cheek {
-  fill: var(--color-heart);
-  opacity: 0.3;
-}
-.tv-critter__mouth {
-  fill: none;
-  stroke: var(--color-ink);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
+/* The stand-in itself (.tv-critter) is styled by critter.css, beside Critter.tsx. */
 
 /* ── Eggs ──────────────────────────────────────────────────────────── */
 .tv-oegg {
