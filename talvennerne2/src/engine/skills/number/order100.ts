@@ -19,7 +19,7 @@
 // answer (47 → 74) is left to the global digitSwap slip check.
 import type { AnswerValue, Fact, FamilyDef, HintSpec, Prompt, Rng, SkillModule, SpeechPart, TaskKind } from '../types'
 import { hintOf, metaOf, num, say, tagged, walk, type Entry } from './kit'
-import { canonical, drawAvoiding, familyRank, placeNoun, rngFor, tensOf, within } from '../place/kit'
+import { blocks, canonical, drawAvoiding, familyRank, placeNoun, rngFor, tensOf, within } from '../place/kit'
 
 const meta = metaOf('order100')
 
@@ -164,7 +164,9 @@ function moreToSort(q: Extract<Order100, { x: number }>): number[] {
 
 function counting(start: number, step: Step, dir: 1 | -1, cue: string): Sorting {
   const order = [1, 2, 3, 4].map((i) => start + dir * step * i)
-  return { row: [start, null, null, null, null], order, ...(dir === 1 && step === 10 ? { step } : {}), speech: [say(cue), num(start)] }
+  // "Tæl baglæns fra hundrede": a three-digit stone does not fit beside four stones on a phone
+  const row = start >= 100 ? [null, null, null, null] : [start, null, null, null, null]
+  return { row, order, ...(dir === 1 && step === 10 ? { step } : {}), speech: [say(cue), num(start)] }
 }
 
 function sorting(q: Order100): Sorting {
@@ -259,36 +261,48 @@ function candidates(f: Fact) {
   }
 }
 
-const board = (cells: number[]) => ({ scene: 'board', highlight: cells.filter((v) => v >= 1 && v <= 100) }) as const
+const board = (cells: number[]): HintSpec['visual'] => ({ scene: 'board', highlight: cells.filter((v) => v >= 1 && v <= 100) })
 
-function hint(f: Fact): HintSpec {
+/**
+ * The strategy's picture. A card task already shows the 100-board as its question, so its strategy
+ * shows the two numbers as stones (or the blocks) and the words point at the board above; the stones
+ * of a keypad or sortOrder task get the board itself.
+ */
+function hint(f: Fact, kind?: TaskKind): HintSpec {
   const q = parse(f)
   const answer = answerOf(q)
+  const onCards = kind === 'choice'
+  const pair = (from: number, to: number, step?: number): HintSpec['visual'] =>
+    onCards ? { scene: 'row', cells: to > from ? [from, to] : [to, from], ...(step ? { step } : {}) } : board([from, to])
   switch (q.family) {
     case 'plus1':
-      return hintOf([say('hint.order20.afterMeans'), say('hint.order100.boardRight')], board([q.n, answer]))
+      return hintOf([say('hint.order20.afterMeans'), say('hint.order100.boardRight')], pair(q.n, answer))
     case 'minus1':
-      return hintOf([say('hint.order20.beforeMeans'), say('hint.order100.boardLeft')], board([q.n, answer]))
+      return hintOf([say('hint.order20.beforeMeans'), say('hint.order100.boardLeft')], pair(q.n, answer))
     case 'plus10':
-      return hintOf([say('hint.order100.tenMoreMeans'), say('hint.order100.boardBelow')], board([q.n, answer]))
+      return hintOf([say('hint.order100.tenMoreMeans'), say('hint.order100.boardBelow')], pair(q.n, answer, 10))
     case 'minus10':
-      return hintOf([say('hint.order100.tenLessMeans'), say('hint.order100.boardAbove')], board([q.n, answer]))
+      return hintOf([say('hint.order100.tenLessMeans'), say('hint.order100.boardAbove')], pair(q.n, answer, 10))
     case 'crossTen': {
       // "Efter niogtredive kommer fyrre. Ti enere bliver til en tier."
       const lead = say(q.dir === 'after' ? 'hint.order.after' : 'hint.order.before')
       const told = [lead, num(q.n, 'mid'), say('hint.order.comes'), num(answer)]
-      if (q.dir === 'before') return hintOf([...told, say('hint.order20.countBackward')], board([q.n, answer]))
-      return hintOf([...told, say(answer === 100 ? 'hint.order.tenTensHundred' : 'hint.order.tenOnesTen')], board([q.n, answer]))
+      if (q.dir === 'before') return hintOf([...told, say('hint.order20.countBackward')], pair(q.n, answer))
+      return hintOf([...told, say(answer === 100 ? 'hint.order.tenTensHundred' : 'hint.order.tenOnesTen')], pair(q.n, answer))
     }
     case 'biggerDiffTens':
-      return hintOf([say('hint.order100.mostTens'), say('hint.order100.boardLower')], board([q.x, q.y]))
+      return hintOf([say('hint.order100.mostTens'), say('hint.order100.boardLower')], onCards ? pairOf(q.x, q.y) : board([q.x, q.y]))
     case 'biggerSwapped': {
       // "Se på tierne først. Fireogtres har seks tiere."
       const t = tensOf(answer)
-      return hintOf([say('hint.order100.lookTens'), num(answer, 'mid'), say('hint.place.has'), num(t, 'mid'), placeNoun('t', t, 'end')], board([q.x, q.y]))
+      const said = [say('hint.order100.lookTens'), num(answer, 'mid'), say('hint.place.has'), num(t, 'mid'), placeNoun('t', t, 'end')]
+      return hintOf(said, onCards ? blocks(answer) : board([q.x, q.y]))
     }
   }
 }
+
+/** The two numbers as stones, the smaller first. */
+const pairOf = (x: number, y: number): HintSpec['visual'] => ({ scene: 'row', cells: [Math.min(x, y), Math.max(x, y)] })
 
 export default {
   ...meta,
@@ -303,7 +317,7 @@ export default {
   range: () => [0, 100],
   speech,
   candidates,
-  hint,
+  hint: (f, _tag, kind) => hint(f, kind),
   // "Hvilket tal er størst, seksogfyrre eller fireogtres?" names both numbers: a coin flip on a keypad
   guessFloor: (f: Fact, kind: TaskKind) => (f.family.startsWith('bigger') && kind === 'keypad' ? 0.5 : 0),
 } satisfies SkillModule

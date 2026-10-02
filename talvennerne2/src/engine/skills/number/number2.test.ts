@@ -82,14 +82,24 @@ function orderAnswer(id: string): number {
   return n + (m[1] === 'plus' ? 1 : -1) * Number(m[2])
 }
 
-/** A sortOrder answer checked against its stones: counting on or back from the first stone, or biggest first. */
+/**
+ * A sortOrder answer checked against its stones and its words: counting on or back from the first
+ * stone (or from the number said, when a three-digit start is not shown), or biggest first.
+ */
 function sortProblems(t: Task): string[] {
   const cards = String(t.answer).split('|').map(Number)
   const stones = row(t.prompt).cells
   if (cards.length < 4) return [`${t.factId}: ${cards.length} cards`]
-  if (stones[0] === null) return [...cards].sort((a, b) => b - a).join('|') === cards.join('|') ? [] : [`${t.factId}: not biggest first`]
-  const d = cards[0] - (stones[0] as number)
-  const steady = cards.every((c, i) => c - (i === 0 ? (stones[0] as number) : cards[i - 1]) === d)
+  const said = compile(t.speech).text
+  if (/^Sæt tallene i rækkefølge/.test(said)) {
+    return stones.every((c) => c === null) && [...cards].sort((a, b) => b - a).join('|') === cards.join('|') ? [] : [`${t.factId}: not biggest first`]
+  }
+  const start = stones[0] ?? Number.NaN
+  if (stones[0] === null && !said.endsWith(`${words(cards[0] - (cards[1] - cards[0]))}.`)) return [`${t.factId}: "${said}" is not where the cards start`]
+  const from = stones[0] === null ? cards[0] - (cards[1] - cards[0]) : (start as number)
+  const d = cards[0] - from
+  const steady = cards.every((c, i) => c - (i === 0 ? from : cards[i - 1]) === d)
+  if (stones[0] === null && from < 100) return [`${t.factId}: a two-digit start stone is left out`]
   return steady && [1, -1, 10, -10, 100, -100].includes(d) ? [] : [`${t.factId}: stones ${stones.join(',')} cards ${cards.join(',')}`]
 }
 
@@ -388,6 +398,7 @@ describe('order1000', () => {
     expect(say('o1000:plus100:345', 'keypad')).toBe('Hvilket tal er hundrede mere end tre hundrede og femogfyrre?')
     expect(say('o1000:crossHundred:plus1:399', 'choice')).toBe('Hvilket tal kommer efter tre hundrede og nioghalvfems?')
     expect(say('o1000:crossHundred:minus10:405', 'sortOrder')).toBe('Tæl baglæns i tiere fra fire hundrede og femogtyve.')
+    expect(row(build(order1000, 'o1000:crossHundred:minus10:405', 'sortOrder').prompt).cells).toEqual([null, null, null, null])
     expect(say('o1000:minus100:345', 'sortOrder')).toBe('Tæl baglæns i hundreder fra fire hundrede og femogfyrre.')
   })
 

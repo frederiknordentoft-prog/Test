@@ -9,7 +9,8 @@
 //   biggerMixed          o1000:biggerMixed:<x>:<y>   a two-digit and a three-digit number where the
 //                        two-digit one has the bigger first digit (69 and 102); spoken in this order
 // Kinds: choice and keypad on stepping stones ([345, □] with +10 or +100 between them), sortOrder
-// (production): count on or back four stones, or put four numbers biggest first. "Which is
+// (production): count on or back four stones from a number that is said (a three-digit start stone
+// does not fit beside them on a phone), or put four numbers biggest first. "Which is
 // biggest" is asked on cards on a 0–1000 line (bigger3) or as the sign between two numbers
 // (biggerMixed: <, > or =, read aloud), on a keypad as a 1-in-2 or 1-in-3 guess (guessFloor), and
 // production is the sortOrder: it comes first among the production kinds, as in order20.
@@ -208,7 +209,9 @@ function counting(from: number, step: Step, dir: 1 | -1): Sorting {
   while (start + dir * 4 * step < 0) start += step
   const order = [1, 2, 3, 4].map((i) => start + dir * step * i)
   const cue = COUNT_CUES[step][dir === 1 ? 0 : 1]
-  return { row: [start, null, null, null, null], order, ...(dir === 1 && step > 1 ? { step } : {}), speech: [say(cue), num(start)] }
+  // a three-digit start stone does not fit beside four stones on a phone: it is said, not shown
+  const row = start >= 100 ? [null, null, null, null] : [start, null, null, null, null]
+  return { row, order, ...(dir === 1 && step > 1 ? { step } : {}), speech: [say(cue), num(start)] }
 }
 
 function sorting(q: Order1000): Sorting {
