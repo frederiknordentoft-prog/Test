@@ -41,16 +41,16 @@ function fluff(pts: readonly Vec[], amp: number): Vec[] {
     const dy = q[1] - p[1]
     const l = Math.hypot(dx, dy) || 1
     out.push(p)
-    if (l > 6) out.push([(p[0] + q[0]) / 2 + (dy / l) * amp, (p[1] + q[1]) / 2 - (dx / l) * amp])
+    if (l > 9) out.push([(p[0] + q[0]) / 2 + (dy / l) * amp, (p[1] + q[1]) / 2 - (dx / l) * amp])
   }
   return out
 }
 
 const part = (from: number, to: number, k = 1) => ribbon(TAIL_SPINE.slice(from, to), TAIL_W.slice(from, to).map((w) => w * k))
-const LOWER = blob(fluff(part(0, JOINT + 2), 2.4), 1)
+const LOWER = blob(fluff(part(0, JOINT + 2), 1.8), 1)
 const LOWER_CORE = blob(part(0, JOINT + 2, 0.5), 0.9)
 const toPivot = (pts: readonly Vec[]) => xf(pts, { dx: -PIVOT[0], dy: -PIVOT[1] })
-const UPPER = blob(toPivot(fluff(part(JOINT - 1, TAIL_SPINE.length), 2.4)), 1)
+const UPPER = blob(toPivot(fluff(part(JOINT - 1, TAIL_SPINE.length), 1.8)), 1)
 const UPPER_CORE = blob(toPivot(part(JOINT - 1, TAIL_SPINE.length, 0.5)), 0.9)
 
 /**

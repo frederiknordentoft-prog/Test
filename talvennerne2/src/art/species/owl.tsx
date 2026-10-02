@@ -104,16 +104,21 @@ const Ear: SidePart = ({ pal, sw, stage, hat, still }) => {
 // åben kontur ved roden. Løftet bliver vingen en bred, spids vinge, der vinker.
 
 const PAW_ROT = 8
-const WING: Vec[] = [
+/**
+ * Vingens forskydning i skulderens ramme: vingen er centreret om x = 0 (så ærmets manchet sidder midt på den), og
+ * skulderankrene ligger tilsvarende længere ude; den hængende vinge står samme sted i modelrummet.
+ */
+const WX = 5.8
+const WING: Vec[] = xf([
   [7, -8], [9, 4], [8.6, 17], [6, 29], [1.8, 39], [-3, 46.5], [-6.6, 41.6], [-10.2, 45], [-12.8, 37.6], [-16.6, 39], [-19, 29],
   [-20.6, 17], [-20, 4], [-16, -6.5],
-]
-const WING_LINES: Vec[][] = [
+], { dx: WX })
+const WING_LINES: Vec[][] = ([
   [[-3.4, 8], [-5, 21], [-6, 33]],
   [[-10.2, 10], [-11.4, 24]],
-]
-/** Ærmet: vingen fra roden til manchetten (lodret ramme), en anelse løsere end vingen. */
-const SLEEVE: Vec[] = [[-17.2, -10], [-17.8, -1], [-18, 9], [-17.6, 20], [-4.6, 22.6], [10.2, 20], [10.4, 9], [10.2, -1], [9.4, -10], [-3.8, -12]]
+] as Vec[][]).map((l) => xf(l, { dx: WX }))
+/** Ærmet: vingen fra roden til manchetten (lodret ramme), en anelse løsere end vingen og centreret som den. */
+const SLEEVE: Vec[] = [[-8.6, -9.6], [-13.6, -3.4], [-15.8, 6], [-15.8, 16], [-15.2, 26], [0, 29.4], [15.2, 26], [15.8, 16], [15.6, 6], [13.8, -3.4], [9, -9.6], [0, -11.6]]
 
 const Paw: SidePart = ({ pal, sw, lod }) => (
   <g transform={`rotate(${PAW_ROT})`}>
@@ -125,12 +130,12 @@ const Paw: SidePart = ({ pal, sw, lod }) => (
 
 /** Løftede vinger (lokalt om skulderen). Roden ligger på brystet; konturen er åben dér. */
 const UP_SPINES = {
-  cheer: [[6, 6], [0, -3], [-9, -13], [-18, -23], [-25, -33]] as Vec[],
-  wave: [[7, 6], [-3, 1], [-14, -4], [-23, -12], [-28, -24], [-30, -36]] as Vec[],
+  cheer: xf([[6, 6], [0, -3], [-9, -13], [-18, -23], [-25, -33]], { dx: WX }),
+  wave: xf([[7, 6], [-3, 1], [-14, -4], [-23, -12], [-28, -24], [-30, -36]], { dx: WX }),
   // Tænker: vingespidsen under næbbet.
-  think: [[6, 7], [14, 1], [21, -6], [25, -12]] as Vec[],
+  think: xf([[6, 7], [14, 1], [21, -6], [25, -12]], { dx: WX }),
   // Ups: vingen op til kinden (genert "hov"), tungen ude.
-  oops: [[6, 7], [7, -4], [8, -13], [8.5, -21], [8, -27]] as Vec[],
+  oops: xf([[6, 7], [7, -4], [8, -13], [8.5, -21], [8, -27]], { dx: WX }),
 }
 type UpKind = keyof typeof UP_SPINES
 const UP_W = { w0: 19, w1: 10 }
@@ -223,8 +228,8 @@ export const owl: SpeciesDef = {
     bodyWidth: 104,
     chest: { x: 100, y: 166 },
     back: { x: 100, y: 166 },
-    shoulderL: { x: 64, y: 155 },
-    shoulderR: { x: 136, y: 155 },
+    shoulderL: { x: 58.2, y: 155 },
+    shoulderR: { x: 141.8, y: 155 },
     pawL: { x: 56, y: 199 },
     pawR: { x: 144, y: 199 },
     handRot: -20,
@@ -255,7 +260,7 @@ export const owl: SpeciesDef = {
     PawBack: pawWebs({}, PAW_WEBS),
     pawUpTip: Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k, { x: tipOf(s)[0], y: tipOf(s)[1] }])),
     upArms: Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k, { spine: s, w0: UP_W.w0, w1: UP_W.w1, tip: 7 }])),
-    limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 20, half: 14 } },
+    limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 26, half: 15.2 } },
     Feet,
     Muzzle: Beak,
     HeadDeco: Disc,
