@@ -3,7 +3,9 @@
 // stroplaget (6b: over kroppen og kropstøjet, under poterne og halsgenstanden), så de går ned over
 // brystet og ind under armene. De klippes til kroppen (riggens kropskontur bruges som klip), så de
 // forsvinder rundt om kroppens side, og et brystbånd med spænde samler dem. Alene (butik) ses sækken
-// forfra med frontlomme, lynlås og bærehank. (0,0) = bodyCenter, tegnet ved bodyWidth 100.
+// forfra med frontlomme, lynlås og bærehank. På butikskortet på dyret (`showcase`) er sækken skubbet ud
+// til venstre og vippet en anelse, så over halvdelen ses ved siden af kroppen (review G1-r4, B1).
+// (0,0) = bodyCenter, tegnet ved bodyWidth 100.
 import { fabric } from '../../rig/palette'
 import { blob, ellipse, join, lune, rect, ribbon, spline, symmetric } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
@@ -26,6 +28,16 @@ const SOLO_POCKETS = join(
 )
 const SOLO_HANDLE = spline([[-11, -46], [-9, -56], [0, -58.5], [9, -56], [11, -46]])
 const SOLO_STRAPS = join(spline([[-27, -43], [-47, -26], [-50, 2], [-41, 26]]), spline([[27, -43], [47, -26], [50, 2], [41, 26]]))
+
+/**
+ * Butikskortet på dyret: sækken forskydes ud til venstre (væk fra halen) og løftes, og den vipper om bunden,
+ * så toppen med bærehanken og lynlåsen hælder ud over skulderen; ca. halvdelen af sækken og hele venstre
+ * sidelomme ses ved siden af kroppen.
+ */
+const SHOWCASE = 'translate(-36 -7) rotate(-9 0 29)'
+/** Bærehanken og lynlåsen på sækkens top (kun på butikskortet, hvor toppen ses ved siden af hovedet). */
+const TOP_HANDLE = spline([[-36, -41], [-34, -51], [-25, -54], [-17, -50.5], [-15, -42.5]])
+const TOP_ZIP = spline([[-52, -27], [-36, -36.5], [-14, -40.5]])
 
 /** Stropperne (rygrad pr. kropsform): fra skulderen under hagen, ned over brystet og ud under armen. */
 const STRAP: Record<BodyKind, Vec[]> = {
@@ -51,7 +63,7 @@ function strapX(kind: BodyKind, y: number): number {
   return s[s.length - 1][0]
 }
 
-const bag: ItemArt = ({ c, sw, solo }) => {
+const bag: ItemArt = ({ c, sw, solo, showcase }) => {
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
   if (solo) {
     // Forfra: en høj sæk med bærehank, frontlomme med lynlås, sidelommer og stropperne i siderne.
@@ -72,7 +84,7 @@ const bag: ItemArt = ({ c, sw, solo }) => {
       </>
     )
   }
-  return (
+  const sack = (
     <>
       <path d={SIDE_POCKETS} fill={c.trim} {...stroke} />
       <path d={POCKET_SEAMS} fill="none" stroke={c.trimOutline} strokeWidth={sw * 0.55} strokeLinecap="round" />
@@ -80,6 +92,16 @@ const bag: ItemArt = ({ c, sw, solo }) => {
       <path d={lune(0, -7, 58, 35, 4.5, -5, 100)} fill={c.mainShade} />
       <path d={ellipse(-50, -30, 4.5, 2.6, -30)} fill={c.highlight} />
     </>
+  )
+  if (!showcase) return sack
+  return (
+    <g transform={SHOWCASE}>
+      <path d={TOP_HANDLE} fill="none" stroke={c.outline} strokeWidth={sw * 2.3} strokeLinecap="round" />
+      <path d={TOP_HANDLE} fill="none" stroke={c.main} strokeWidth={sw * 1.1} strokeLinecap="round" />
+      {sack}
+      <path d={TOP_ZIP} fill="none" stroke={c.outline} strokeWidth={sw * 0.6} strokeLinecap="round" />
+      <path d={rect(-47.4, -33.4, 4.6, 7, 1.8)} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.6} transform="rotate(-30 -45.1 -29.9)" />
+    </g>
   )
 }
 

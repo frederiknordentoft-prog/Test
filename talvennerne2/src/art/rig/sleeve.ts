@@ -93,6 +93,26 @@ export function bentSleeve(arm: UpArm): BentSleeve {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Ærmegabet på ærmeløst tøj (vesten) på et hvilende, lodret forben (review G1-r4, punkt 2): benet kommer ud
+// under en bue hen over sin rod. `edge` er buens midterlinje fra venstre side over toppen til højre (armens
+// ramme: skulderleddet i (0,0), benet nedad), og `clip` er området under buen, som benet klippes til, så
+// vesten ses over buen, og benet ikke ligger som en kasse oven på den. Genstanden streger buen som sine
+// egne kanter (kantbåndet), så klippets kant ligger under båndet.
+
+export interface ArmholeArch {
+  /** Buens midterlinje (punkter fra venstre over toppen til højre). */
+  edge: readonly Vec[]
+  clip: string
+}
+
+/** Buen over benets rod: halv bredde `half`, toppen ved højden `y` og enderne `drop` længere nede. */
+export function armholeArch(half: number, y: number, drop = 5.2): ArmholeArch {
+  const w = half
+  const edge: Vec[] = [[-w, y + drop], [-w * 0.78, y + drop * 0.42], [-w * 0.4, y + drop * 0.08], [0, y], [w * 0.4, y + drop * 0.08], [w * 0.78, y + drop * 0.42], [w, y + drop]]
+  return { edge, clip: `${spline(edge)}L60 ${y + drop}L60 160L-60 160L-60 ${y + drop}Z` }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Lange ærmer på lodrette forben (review G1-r4, T5): kat, hvalp, hest og enhjørning har forben, der
 // hænger lodret foran kroppen fra et skulderled midt på maven. Ærmet må ikke være en kasse, der starter
 // dér: det starter ved skulderen under hovedets kant, følger forbenet og ender i en manchet lige over

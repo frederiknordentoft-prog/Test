@@ -438,6 +438,8 @@ export const rabbit: SpeciesDef = {
       anchors: { earBaseL: { x: 74, y: 57 }, earBaseR: { x: 126, y: 57 } },
       parts: { Ear: ShortEar, ManeBack: LionMane, ManeFront: LionTuft },
       maneGrowth: 1.1,
+      // Halsgenstanden (tørklæde, bandana, kompas) ligger oven på kraven under hagen (review G1-r4, B4).
+      neckOverMane: true,
       bounds: { head: { x0: 28, y0: 18, x1: 172, y1: 168 } },
     },
   ],
