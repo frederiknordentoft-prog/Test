@@ -496,10 +496,10 @@ describe('the money in the pictures', () => {
     })
     expect(first(problems)).toEqual([])
   })
-  // ORK2b finding: "Du betaler med en halvtredskroneseddel." (from50) and "… en hundredkroneseddel." (from100)
+  // Rettet (UIFIX2) – ORK2b finding: "Du betaler med en halvtredskroneseddel." (from50) and "… en hundredkroneseddel." (from100)
   // name one note, but the shop (src/ui/scenes/PromptScene.tsx, splitCoins for paidOre) draws the paid money
   // as coins: 20 + 20 + 10 kr for byt:from50:*, five 20-krone coins for byt:from100:*. The words and the picture disagree.
-  it.fails('change draws what was paid as the one coin or note the question names', () => {
+  it('change draws what was paid as the one coin or note the question names', () => {
     const problems = changeTasks.flatMap(({ fact, task }) => {
       const drawn = drawnCoins(sceneHtml(task))
       const notes = (sceneHtml(task).match(/tv-coins__note/g) ?? []).length
@@ -532,7 +532,7 @@ describe('coins and notes on the cards are drawn as money (the pieces give the a
   // on a 'coin' card is drawn as the amount in digits ("50 kr." for mnt:5000 choice), a note token as its
   // raw text ("c05000" for mnt:5000 multiSelect, "c5000" in the payExact to100/fewestCoins set
   // 'c5000|c2000|c200'). The generators deal notes on these cards; the Banknote material exists but no card draws it.
-  it.fails('draws every note card as the note (coinNames notes, payExact to100 and fewestCoins)', () => {
+  it('draws every note card as the note (coinNames notes, payExact to100 and fewestCoins)', () => {
     expect(first(drawnPieceProblems([...coinNames, ...payCards], (ps) => !ps.every(isCoin)))).toEqual([])
   })
 })
