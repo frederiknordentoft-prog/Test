@@ -12,7 +12,7 @@ import {
   answerProblems, cardProblems, first, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
 } from '../number/number.oracle'
 import {
-  avoidProblemsB, cardMisconceptions, detectableReachProblems, expectB, instanceIdProblems, normalisationProblems,
+  avoidProblemsB, cardMisconceptions, detectableReachProblems, expectB, instanceIdProblems, normalisationProblems, specificHintProblems,
   prefixProblems, productionProblemsB, specKindProblemsB, sweepB, tagCheck, typedSwap, type WhyB,
 } from '../clock/clock.oracle'
 import {
@@ -189,7 +189,7 @@ describe('coinNames oracle', () => {
 
   it('speaks every task and hint with recorded clips, no digits, every amount as SPEC §10.1 says it', () => {
     const tags = tagsToHint(def, canon)
-    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
+    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...specificHintProblems(def, canon), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
   })
 })
 
@@ -259,7 +259,7 @@ describe('countCoins oracle', () => {
 
   it('speaks every task and hint with recorded clips, no digits, every amount as SPEC §10.1 says it', () => {
     const tags = tagsToHint(def, canon)
-    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
+    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...specificHintProblems(def, canon), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
   })
 })
 
@@ -356,7 +356,7 @@ describe('payExact oracle', () => {
 
   it('speaks every task and hint with recorded clips, no digits, every amount as SPEC §10.1 says it', () => {
     const tags = tagsToHint(def, canon)
-    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
+    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...specificHintProblems(def, canon), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
   })
 })
 
@@ -433,7 +433,7 @@ describe('change oracle', () => {
 
   it('speaks every task and hint with recorded clips, no digits, every amount as SPEC §10.1 says it', () => {
     const tags = tagsToHint(def, canon)
-    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
+    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...specificHintProblems(def, canon), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
   })
 })
 

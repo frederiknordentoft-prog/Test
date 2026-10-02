@@ -13,7 +13,7 @@ import {
 } from '../number/number.oracle'
 import {
   CLOCK_IDS, CLOCK_STEP, angleGap, askedTime, cardMisconceptions, clockIdOracle, clockMisValues, detectableReachProblems,
-  explainClock, expectB, handsAt, handsOfPhrase, isSwappedClock, lookDifferent, normalisationProblems, onDial,
+  explainClock, expectB, handsAt, handsOfPhrase, isSwappedClock, lookDifferent, normalisationProblems, specificHintProblems, onDial,
   prefixProblems, productionProblemsB, settable, spec101Clock, specKindProblemsB, sweepB, tagCheck, timeOfPhrase,
 } from './clock.oracle'
 
@@ -173,7 +173,7 @@ for (const c of CLOCKS) {
 
     it('speaks every task and hint with recorded clips, no digits, and every time as SPEC §10.1 says it', () => {
       const tags = tagsToHint(def, canon)
-      expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
+      expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags)), ...specificHintProblems(def, canon), ...normalisationProblems(def, built, canon, tags)])).toEqual([])
     })
 
     /** A clock the dial can be set to: the minute hand on the step. */

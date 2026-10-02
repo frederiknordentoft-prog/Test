@@ -249,6 +249,36 @@ export function detectableReachProblems(built: readonly Built[], reach: (t: Task
   return [...out]
 }
 
+// ─── SPEC §3.5 and §4.3: the strategy after a mistake ─────────────────────
+
+/** SPEC §4.3: the eight misconceptions with an animated hint; the others get a spoken specific hint. */
+export const ANIMATED_MISCONCEPTIONS: readonly MisconceptionId[] = [
+  'digitSwap', 'forgotCarry', 'smallerFromLarger', 'borrowNoDecrement', 'equalsAsAnswer', 'halfPastNext', 'tableNeighbour', 'concatNumberWords',
+]
+
+/**
+ * SPEC §3.5/§4.3: every misconception a skill tags gets its own hint (hint.misconception is that tag), on
+ * every kind; it is animated only for SPEC's eight, and a plain tag never gets a misconception's hint.
+ */
+export function specificHintProblems(def: SkillDef, facts: readonly Fact[]): string[] {
+  const out = new Set<string>()
+  for (const f of facts) {
+    const mis = new Set(def.candidates(f).map((c) => c.tag).filter(isMisconception))
+    for (const kind of [undefined, ...def.kinds]) {
+      for (const tag of mis) {
+        const h = def.hint(f, tag, kind)
+        if (h.misconception !== tag) out.add(`${def.id} ${f.id} hint(${tag}${kind ? `, ${kind}` : ''}): misconception ${String(h.misconception)}`)
+        if ((h.animated === true) !== ANIMATED_MISCONCEPTIONS.includes(tag)) out.add(`${def.id} ${f.id} hint(${tag}): animated ${String(h.animated)}`)
+      }
+      for (const tag of [null, 'near', 'operand', 'other', 'ambiguous'] as const) {
+        const h = def.hint(f, tag, kind)
+        if (h.misconception !== undefined || h.animated) out.add(`${def.id} ${f.id} hint(${String(tag)}): the ${String(h.misconception)} hint`)
+      }
+    }
+  }
+  return [...out]
+}
+
 // ─── SPEC §10.1: clock times, money and measurements as said ───────────────
 
 /** "et" before neuter nouns and in "klokken et" (SPEC §10.1 Køn). */
