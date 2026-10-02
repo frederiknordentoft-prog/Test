@@ -6,6 +6,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { OptionFace } from '../../../ui/task/faces'
 import { PromptScene } from '../../../ui/scenes/PromptScene'
+import { knownObject } from '../../../ui/scenes/objects'
 import { isCorrect } from '../../answer'
 import { classifyAnswer } from '../../misconceptions'
 import { registeredSkills } from '../../registry'
@@ -505,6 +506,19 @@ describe('the money in the pictures', () => {
       return drawn.length + notes === 1 ? [] : [`${fact.id} "${spokenText(task.speech)}": draws [${drawn}]`]
     })
     expect(first(problems)).toEqual([])
+  })
+})
+
+describe('the shop', () => {
+  it('sells things the scene can draw', () => {
+    const problems = new Set<string>()
+    for (const id of ['payExact', 'change'] as const) {
+      for (const { fact, task } of sweepB(registeredSkill(id), 1).built) {
+        const shop = shopOf(task.prompt)
+        if (!shop || !knownObject(shop.thing)) problems.add(`${fact.id}: ${shop?.thing} cannot be drawn`)
+      }
+    }
+    expect(first([...problems])).toEqual([])
   })
 })
 

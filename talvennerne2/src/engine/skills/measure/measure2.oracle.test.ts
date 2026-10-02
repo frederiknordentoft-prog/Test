@@ -13,6 +13,7 @@ import { setValue } from '../../../ui/task/answers'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { PromptScene } from '../../../ui/scenes/PromptScene'
+import { knownObject } from '../../../ui/scenes/objects'
 import { clipText } from '../../../speech/catalog'
 import {
   answerProblems, cardProblems, first, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
@@ -467,6 +468,20 @@ describe('unitChoice oracle', () => {
   it('speaks every task and hint with recorded clips and no digits', () => {
     const tags = tagsToHint(def, facts)
     expect(first([...taskSpeechProblems(built), ...facts.flatMap((f) => hintProblems(def, f, tags)), ...specificHintProblems(def, facts)])).toEqual([])
+  })
+})
+
+describe('the things in the measure scenes', () => {
+  it('are things the scenes can draw (a thing the child cannot see cannot be measured or weighed)', () => {
+    const problems = new Set<string>()
+    for (const id of ['measureUnits', 'rulerRead', 'weightCompare'] as const) {
+      for (const { fact, task } of sweepB(ids(id), 1).built) {
+        const p = task.prompt
+        const things = p.scene === 'compareObjects' ? p.objects : p.scene === 'ruler' || p.scene === 'unitsRow' ? [p.object] : []
+        for (const t of things) if (!knownObject(t)) problems.add(`${fact.id}: ${t} cannot be drawn`)
+      }
+    }
+    expect(first([...problems])).toEqual([])
   })
 })
 
