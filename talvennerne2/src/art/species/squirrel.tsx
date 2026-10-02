@@ -23,7 +23,7 @@ const round = ROUND
 /** Halens rod i modelrummet (bag kroppens højre side, ved hoften). */
 const TAIL_BASE: Vec = [121, 214]
 const TAIL_SPINE: Vec[] = xf(
-  [[0, 0], [15, -6], [29, -20], [38, -40], [41, -64], [40, -88], [34, -110], [27, -130], [28, -148], [38, -160], [50, -162], [57, -154]],
+  [[0, 0], [15, -6], [28, -20], [36, -40], [38.5, -64], [37.5, -88], [32.5, -110], [26.5, -130], [27.5, -148], [37, -160], [48.5, -162], [55, -154]],
   { dx: TAIL_BASE[0], dy: TAIL_BASE[1] },
 )
 const TAIL_W = [16, 26, 34, 39, 42, 44, 43, 40, 34, 26, 15, 4]
@@ -237,7 +237,7 @@ export const squirrel: SpeciesDef = {
     bodyCenter: { x: 100, y: 184 },
     bodyRx: 46,
     bodyRy: 40,
-    bodyWidth: 92,
+    bodyWidth: 88,
     chest: { x: 100, y: 166 },
     back: { x: 100, y: 166 },
     shoulderL: { x: 77, y: 157 },

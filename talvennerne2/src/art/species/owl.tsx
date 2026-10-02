@@ -237,7 +237,7 @@ export const owl: SpeciesDef = {
     body: { x0: 40, y0: 134, x1: 160, y1: 228 },
   },
   // Tankebobler og Zzz (fælles regel): til højre for kinden under fjerøret med mindst 8 enheders luft.
-  fx: { x: 172, y: 88 },
+  fx: { x: 178, y: 118 },
   face: { idleMouth: 'smile', cheeks: true },
   ears: { splay: 8 },
   signature: 'head-turn',

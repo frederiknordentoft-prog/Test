@@ -273,7 +273,7 @@ export const panda: SpeciesDef = {
     bodyCenter: { x: 100, y: 184 },
     bodyRx: 54,
     bodyRy: 42,
-    bodyWidth: 104,
+    bodyWidth: 94,
     chest: { x: 100, y: 168 },
     back: { x: 100, y: 168 },
     shoulderL: { x: 76, y: 158 },
@@ -290,7 +290,7 @@ export const panda: SpeciesDef = {
     body: { x0: 24, y0: 134, x1: 166, y1: 228 },
   },
   // Tankebobler og Zzz (fælles regel): til højre for kinden under øret med mindst 8 enheders luft.
-  fx: { x: 170, y: 88 },
+  fx: { x: 178, y: 118 },
   face: { idleMouth: 'cat-w', cheeks: true },
   ears: { splay: 26 },
   signature: 'paw-wave',
