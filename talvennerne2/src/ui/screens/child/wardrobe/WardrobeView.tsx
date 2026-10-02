@@ -194,12 +194,40 @@ export interface SlotPanelProps {
 export function SlotPanel({ model, guide, colorOf, onCard, onOther }: SlotPanelProps) {
   const speech = useSpeech()
   if (model.locked) {
+    // The animal's own wings fill the slot (SPEC §7.1, review G2-r1 B11): the child's things stay in view
+    // with a small lock, and a tap on one says why (never an empty animal and nothing to see).
     return (
       <div className="tv-wr-panel" data-panel={model.slot} data-locked="">
         <div className="tv-wr-note">
           <Icon name="lock" size={30} strokeWidth={2.2} className="tv-wr-note__icon" />
           <SpokenText clip="s.wardrobe.wings" className="tv-wr-note__text" />
         </div>
+        {model.owned.length > 0 && (
+          <section className="tv-wr-shelf">
+            <SpokenText as="h2" clip="s.wardrobe.mine" className="tv-wr-h" />
+            <div className="tv-wr-grid">
+              {model.owned.map(({ meta }) => (
+                <Tap
+                  key={meta.id}
+                  label={`${speech.text(meta.nameClip)}. ${speech.text('s.wardrobe.wings')}`}
+                  className={cx('tv-wr-card', 'is-owned', 'is-locked', guide === meta.id && 'is-guide')}
+                  onTap={() => onCard(meta.id)}
+                  data-item={meta.id}
+                  data-owned=""
+                  data-locked=""
+                  data-guide={guide === meta.id ? '' : undefined}
+                >
+                  <span className="tv-wr-card__face">
+                    <ItemThumb item={meta.id} color={colorOf(meta.id)} className="tv-wr-card__pic" />
+                  </span>
+                  <span className="tv-wr-card__lock" aria-hidden>
+                    <Icon name="lock" size={16} strokeWidth={2.6} />
+                  </span>
+                </Tap>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     )
   }

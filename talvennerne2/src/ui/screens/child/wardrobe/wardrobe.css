@@ -345,6 +345,26 @@
   background: var(--color-primary);
   color: var(--color-card);
 }
+/* A thing the animal cannot wear (its own wings fill the slot): shown, a little quiet, with a small lock. */
+.tv-wr-card.is-locked .tv-wr-card__face {
+  background: var(--color-paper-2);
+}
+.tv-wr-card.is-locked .tv-wr-card__pic {
+  opacity: 0.82;
+}
+.tv-wr-card__lock {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-card);
+  border-radius: 50%;
+  background: var(--color-stone);
+  color: var(--color-ink-2);
+}
 .tv-wr-card__new {
   position: absolute;
   top: -10px;

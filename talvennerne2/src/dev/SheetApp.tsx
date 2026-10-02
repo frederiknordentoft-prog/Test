@@ -8,6 +8,7 @@ import { festHead } from '../art/items/fest/fest-head'
 import { hverdagBody } from '../art/items/hverdag/hverdag-body'
 import { hverdagHead } from '../art/items/hverdag/hverdag-head'
 import { ItemIcon } from '../art/rig/ItemIcon'
+import { Icon } from '../ui/design/Icon'
 import { MAGIC } from '../art/rig/palette'
 import { Rig, magicOf, resolveColorway } from '../art/rig/Rig'
 import type { RigProps } from '../art/rig/Rig'
@@ -301,6 +302,34 @@ function CloseupSheet({ def }: { def: SpeciesDef }) {
 // ---------------------------------------------------------------------------------------------
 // sizes: 48 / 96 / 256 px + butikskort 64 px
 
+/** Dyrets farve på butikskortene "på dyret" pr. genstandens farvesæt. */
+const CARD_COLORS = ['c1', 'c3', 'c6'] as const
+
+/**
+ * Butikskortet for et slot, arten selv fylder (uglens vinger på ryggen, SPEC §7.1; review G2-r1 B11): dyret
+ * kan ikke bære genstanden, så kortet viser genstanden alene ved siden af dyret med låse-ikonet fra §7.1 – som
+ * garderobens låste slot – og ligner aldrig et tilbud på ingenting. Lint'en kræver genstanden og låsen.
+ */
+function LockedCard({ def, item, cw, breed, label }: { def: SpeciesDef; item: ItemDef; cw: 0 | 1 | 2; breed: BreedId; label: string }) {
+  const at = (s: CSSProperties): CSSProperties => ({ position: 'absolute', lineHeight: 0, ...s })
+  return (
+    <div className="sh-card" data-card="locked" data-label={label} style={{ position: 'relative' }}>
+      <span style={at({ left: -9, bottom: -3 })}>
+        <Rig species={def} mode="static" breed={breed} stage={2} colorway={CARD_COLORS[cw]} size={50} crop="bust" />
+      </span>
+      <span style={at({ right: 0, bottom: 2 })}>
+        <ItemIcon item={item} colorway={cw} size={40} />
+      </span>
+      <span
+        data-lock=""
+        style={at({ right: 2, top: 2, width: 20, height: 20, borderRadius: 10, background: 'white', color: 'rgb(94 84 120)', display: 'grid', placeItems: 'center', boxShadow: '0 1px 3px rgba(43, 33, 68, 0.3)' })}
+      >
+        <Icon name="lock" size={14} strokeWidth={2.4} />
+      </span>
+    </div>
+  )
+}
+
 function SizesSheet({ def }: { def: SpeciesDef }) {
   const R = (p: Partial<RigProps> & { size: number }) => <Rig species={def} mode="static" {...p} />
   const br = (i: number) => def.breeds[i % def.breeds.length].id
@@ -351,22 +380,26 @@ function SizesSheet({ def }: { def: SpeciesDef }) {
           </div>
         ))}
       </Section>
-      <Section title={`butikskort · 64 px · på ${def.name.toLowerCase()} (beskåret efter slot)`}>
+      <Section title={`butikskort · 64 px · på ${def.name.toLowerCase()} (beskåret efter slot; et slot, arten selv fylder, viser genstanden med en lås)`}>
         {SETS.map(({ set, items }, si) => (
           <div key={set} className="sh-row" style={{ marginBottom: 12 }}>
             {items.flatMap((it) =>
-              ([0, 1, 2] as const).map((cw) => (
-                <div key={`${it.id}${cw}`} className="sh-card" data-label={`kort ${def.id} ${it.id} ${cw}`}>
-                  <R
-                    breed={br(cw)}
-                    stage={2}
-                    colorway={(['c1', 'c3', 'c6'] as const)[cw]}
-                    size={64}
-                    crop={CARD_CROP[it.slot]}
-                    outfit={{ [it.slot]: { item: it, colorway: cw } } as Outfit}
-                  />
-                </div>
-              )),
+              ([0, 1, 2] as const).map((cw) =>
+                def.occupies?.includes(it.slot) ? (
+                  <LockedCard key={`${it.id}${cw}`} def={def} item={it} cw={cw} breed={br(cw)} label={`kort ${def.id} ${it.id} ${cw}`} />
+                ) : (
+                  <div key={`${it.id}${cw}`} className="sh-card" data-card="worn" data-label={`kort ${def.id} ${it.id} ${cw}`}>
+                    <R
+                      breed={br(cw)}
+                      stage={2}
+                      colorway={CARD_COLORS[cw]}
+                      size={64}
+                      crop={CARD_CROP[it.slot]}
+                      outfit={{ [it.slot]: { item: it, colorway: cw } } as Outfit}
+                    />
+                  </div>
+                ),
+              ),
             )}
             {si === SETS.length - 1 && (
               <>

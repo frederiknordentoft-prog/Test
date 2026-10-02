@@ -283,6 +283,16 @@ function lintCards(res: LintResult) {
     res.minCardFill = Math.min(res.minCardFill ?? 1, fill)
     if (!(fill >= CARD_FILL_MIN)) res.errors.push(`${card.dataset.label}: genstanden fylder kun ${(fill * 100).toFixed(0)} % af kortet (< ${CARD_FILL_MIN * 100} %)`)
   }
+  // Kort "på dyret" viser altid genstanden (review G2-r1, B11): på dyret skal genstanden være tegnet, og et slot,
+  // arten selv fylder (uglens vinger), viser genstanden alene med en lås – aldrig bare dyret.
+  for (const card of document.querySelectorAll<HTMLElement>('.sh-card[data-card="worn"],.sh-card[data-card="locked"]')) {
+    res.checks++
+    const locked = card.dataset.card === 'locked'
+    const shown = locked
+      ? !!card.querySelector('svg[data-item-icon]') && !!card.querySelector('[data-lock]')
+      : [...card.querySelectorAll<SVGGElement>('svg.rig [data-item]')].some((g) => g.querySelector(DRAWN))
+    if (!shown) res.errors.push(`${card.dataset.label}: kortet viser ${locked ? 'ikke genstanden og låsen' : 'ingen genstand på dyret'}`)
+  }
 }
 
 /** En verdensscene (kortets baggrund) må højst have så mange SVG-elementer, så kortskærmen holder sig under 1.500. */

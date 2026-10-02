@@ -108,11 +108,16 @@ describe('what can be chosen', () => {
     expect(html).toContain('data-off="hverdag-body"')
   })
 
-  it('says that a pegasus keeps its back for its own wings', () => {
+  it('says that a pegasus keeps its back for its own wings, and shows the thing with a small lock', () => {
     const p = withAnimal({ ...child(), inventory: { ...child().inventory, 'hverdag-back': { at: 0, colors: [0] } } }, 'pegasus', 'peg')
     const html = render(p, { uid: 'peg', item: 'hverdag-back' })
-    expect(html).toContain('data-locked=""')
-    expect(cards(html, 'data-owned')).toEqual([])
+    expect(html).toContain('data-panel="back" data-locked=""')
+    // the child's own back thing is in view (never an empty animal and nothing to see), locked, and says why
+    expect(cards(html, 'data-locked')).toEqual(['hverdag-back'])
+    expect(html).toContain('tv-wr-card__lock')
+    const card = buttons(html).find((b) => b['data-item'] === 'hverdag-back')
+    expect(card?.['aria-label']).toContain('Den har sine egne vinger')
+    expect(card?.['aria-pressed']).toBeUndefined()
     expect(buttons(html).find((b) => b['data-slot'] === 'back')?.['aria-label']).toBe('Ryg')
   })
 
