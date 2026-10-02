@@ -100,7 +100,7 @@ describe('clips/skills/measure2.ts', () => {
   })
 
   it('has no digits, wave 2 except what only unitChoice\'s weight family (3. klasse) says', () => {
-    const weightOnly = /^(s\.unitChoice\.(tapG|tapKg|q\.(feather|strawberry|key|letter|dog|bike|potatoes|suitcase))|noun\.mt\.(feather|strawberry|key|letter|dog|bike|potatoes|suitcase)|hint\.unitChoice\.(weightRule|weighedIn|weightUnits))$/
+    const weightOnly = /^(s\.unitChoice\.(tapG|tapKg|q\.(feather|strawberry|key|letter|dog|bike|sofa|suitcase))|noun\.mt\.(feather|strawberry|key|letter|dog|bike|sofa|suitcase)|hint\.unitChoice\.(weightRule|weighedIn|weightUnits))$/
     for (const c of file) {
       expect(c.text, c.id).not.toMatch(/\d/)
       expect([c.wave, c.pack], c.id).toEqual(weightOnly.test(c.id) ? [3, 'measure-3'] : [2, 'measure-2'])

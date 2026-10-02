@@ -294,9 +294,9 @@ describe('weightCompare', () => {
 
 /** The test's own unit for each thing. */
 const UNIT_OF: Readonly<Record<string, string>> = {
-  pencil: 'cm', eraser: 'cm', spoon: 'cm', shoe: 'cm', carrot: 'cm', toothbrush: 'cm', worm: 'cm', leaf: 'cm',
-  bus: 'm', train: 'm', pitch: 'm', pool: 'm', whale: 'm', plane: 'm', gym: 'm', house: 'm',
-  feather: 'g', strawberry: 'g', key: 'g', letter: 'g', dog: 'kg', bike: 'kg', potatoes: 'kg', suitcase: 'kg',
+  pencil: 'cm', fork: 'cm', spoon: 'cm', shoe: 'cm', carrot: 'cm', comb: 'cm', worm: 'cm', leaf: 'cm',
+  bus: 'm', train: 'm', lorry: 'm', ship: 'm', whale: 'm', plane: 'm', bridge: 'm', house: 'm',
+  feather: 'g', strawberry: 'g', key: 'g', letter: 'g', dog: 'kg', bike: 'kg', sofa: 'kg', suitcase: 'kg',
 }
 const thingOf = (f: Fact) => f.id.split(':')[2]
 const sameUnit = (f: Fact, task: Task) =>
@@ -323,6 +323,8 @@ describe('unitChoice', () => {
         expect(task.options).toHaveLength(6)
         expect(task.options).toContain(`mt:${thingOf(fact)}`)
         for (const o of task.options) expect(Object.keys(UNIT_OF)).toContain(String(o).slice(3))
+        // a word card fits words up to seven letters ("gulerod") on its lines
+        for (const c of task.optionClips ?? []) for (const w of compile([{ clip: c }]).text.replace(/\.$/, '').split(' ')) expect(w.length, c).toBeLessThanOrEqual(7)
         // one kind of measure on one card set
         const units = new Set(task.options.map((o) => UNIT_OF[String(o).slice(3)]))
         expect(units).toEqual(new Set(length ? ['cm', 'm'] : ['g', 'kg']))
@@ -336,7 +338,7 @@ describe('unitChoice', () => {
     expect(textOf(taskOf(unitChoice, 'enh:length:bus', 'choice'))).toBe('Hvad måler man længden af en bus i?')
     expect(textOf(taskOf(unitChoice, 'enh:length:bus', 'multiSelect'))).toBe('Tryk på alle de ting, man måler i meter.')
     expect(textOf(taskOf(unitChoice, 'enh:weight:dog', 'choice'))).toBe('Hvad måler man vægten af en hund i?')
-    expect(compile([{ clip: 'noun.mt.pool' }]).text).toBe('Et svømmebassin.')
+    expect(compile([{ clip: 'noun.mt.ship' }]).text).toBe('Et skib.')
   })
 
   it('says the rule and the unit of the thing', () => {

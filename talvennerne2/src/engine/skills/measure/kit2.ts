@@ -31,15 +31,16 @@ export type ThingUnit = 'cm' | 'm' | 'g' | 'kg'
  * hints. Here and not in unitChoice.ts so the clip file (clips/skills/measure2.ts) can read them.
  */
 export const UNIT_THINGS: Readonly<Record<UnitFamily, Readonly<Record<string, readonly [unit: ThingUnit, noun: string]>>>> = {
+  // short words: a word card shows the noun on one or two lines (no word longer than "gulerod")
   length: {
-    pencil: ['cm', 'en blyant'], eraser: ['cm', 'et viskelæder'], spoon: ['cm', 'en ske'], shoe: ['cm', 'en sko'],
-    carrot: ['cm', 'en gulerod'], toothbrush: ['cm', 'en tandbørste'], worm: ['cm', 'en regnorm'], leaf: ['cm', 'et blad'],
-    bus: ['m', 'en bus'], train: ['m', 'et tog'], pitch: ['m', 'en fodboldbane'], pool: ['m', 'et svømmebassin'],
-    whale: ['m', 'en hval'], plane: ['m', 'en flyvemaskine'], gym: ['m', 'en gymnastiksal'], house: ['m', 'et hus'],
+    pencil: ['cm', 'en blyant'], fork: ['cm', 'en gaffel'], spoon: ['cm', 'en ske'], shoe: ['cm', 'en sko'],
+    carrot: ['cm', 'en gulerod'], comb: ['cm', 'en kam'], worm: ['cm', 'en regnorm'], leaf: ['cm', 'et blad'],
+    bus: ['m', 'en bus'], train: ['m', 'et tog'], lorry: ['m', 'en lastbil'], ship: ['m', 'et skib'],
+    whale: ['m', 'en hval'], plane: ['m', 'et fly'], bridge: ['m', 'en bro'], house: ['m', 'et hus'],
   },
   weight: {
     feather: ['g', 'en fjer'], strawberry: ['g', 'et jordbær'], key: ['g', 'en nøgle'], letter: ['g', 'et brev'],
-    dog: ['kg', 'en hund'], bike: ['kg', 'en cykel'], potatoes: ['kg', 'en sæk kartofler'], suitcase: ['kg', 'en kuffert'],
+    dog: ['kg', 'en hund'], bike: ['kg', 'en cykel'], sofa: ['kg', 'en sofa'], suitcase: ['kg', 'en kuffert'],
   },
 }
 
