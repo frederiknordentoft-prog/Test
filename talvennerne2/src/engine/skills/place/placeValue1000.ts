@@ -13,13 +13,14 @@
 //                    ("Byg kun tierne i …" → 70), or what is missing; the answer is what the blocks
 //                    are worth (100 per plate, 10 per rod, nothing regrouped)
 //   fillSlots        production: the digits from a 0–9 palette ('3|0|4'), or the number written as
-//                    its parts from a palette of digits, tens and hundreds ('400|70|2', any order)
+//                    its parts from a palette of digits, tens and hundreds ('400|70|2', any order;
+//                    any other true sum the palette allows is right too: 900 + 9 + 9 for 918)
 // Wrong answers (pædagogik §3.2), with the counts in the picture or the words as operands:
 //   addsPlaceParts     3 plader, 4 stænger og 5 terninger → 12 (buildHTO, zeroPlace, regroup)
 //   zeroPlaceholder    the zero dropped or moved: 304 → 34 or 340, 320 → 32 or 302, 300 → 30 or 3
 //   concatNumberWords  the words written one after the other: "tre hundreder og fire enere" → 3004
-//   digitSwap          tens and ones swapped (345 → 354, '3|5|4')
-//   faceValue          the digit for its value: 7 for the tens of 472, '4|7|2' for 400 + 70 + 2. In
+//   digitSwap          tens and ones swapped (345 → 354, '3|5|4'; the parts of 354 in any order)
+//   faceValue          the digit for its value: 7 for the tens of 472, '4|7|2' (any order) for 400 + 70 + 2. In
 //                      477 = 400 + □ + 7 the 7 is also in the question: 'ambiguous' (A9)
 //   near/other         ±1, ±10, ±100; the right digit in the wrong place (700, 40), the whole number.
 import type { AnswerType, AnswerValue, Fact, FamilyDef, HintSpec, Prompt, Rng, SkillModule, SpeechPart, TaskKind } from '../types'
@@ -138,15 +139,26 @@ function answer(f: Fact, kind: TaskKind): AnswerValue {
 
 const answerTypeFor = (_f: Fact, kind: TaskKind): AnswerType => (kind === 'fillSlots' ? 'set' : 'int')
 
-/** 400 + 70 + 2 may be written in any order. */
+/**
+ * Every true sum the palette allows is right: 400 + 70 + 2 in any order, and the few other sums a
+ * palette cannot leave out without losing the digits the faceValue slip is written with
+ * (918 = 900 + 9 + 9, the same for 612, 714 and 816).
+ */
 function accept(f: Fact, kind: TaskKind): AnswerValue[] {
   const q = parse(f)
   if (kind !== 'fillSlots' || !writesParts(q)) return []
-  const parts = expandedParts(numberOf(q))
-  return permutations(parts).map(joined).filter((v) => v !== joined(parts))
+  const n = numberOf(q)
+  return trueSums(n, palette(q)).filter((v) => v !== joined(expandedParts(n)))
 }
 
 const DIGITS: readonly number[] = walk(0, 9)
+
+/** The fillings of a parts palette that add up to n, one slot per part ('400|70|2', '70|2|400' …). */
+function trueSums(n: number, pal: readonly number[]): string[] {
+  let fills: number[][] = [[]]
+  for (let i = 0; i < expandedParts(n).length; i++) fills = fills.flatMap((f) => pal.map((x) => [...f, x]))
+  return fills.filter((f) => f.reduce((sum, x) => sum + x, 0) === n).map(joined)
+}
 
 /** The palette: 0–9, or the number's parts and digits and one more of each place. */
 function palette(q: PlaceValue): number[] {
@@ -157,10 +169,13 @@ function palette(q: PlaceValue): number[] {
     const d = digitAt(n, place)
     if (d > 0) pool.add(valueAt(n, place)).add(d)
   }
-  // one more digit with its tens and hundreds, so no value is the only one of its size
-  const spare = [1, 2, 3, 4, 5, 6, 7, 8, 9].find((d) => !pool.has(d)) ?? 1
-  pool.add(spare).add(spare * 10).add(spare * 100)
-  return [...pool]
+  // one more digit with its tens and hundreds, so no value is the only one of its size — a digit that
+  // makes no other true sum (911 = 900 + 9 + 2 with a spare 2: the spare is 3 there)
+  const withSpare = (d: number) => [...new Set([...pool, d, d * 10, d * 100])]
+  const spares = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !pool.has(d))
+  const own = trueSums(n, [...pool]).length
+  const spare = spares.find((d) => trueSums(n, withSpare(d)).length === own) ?? spares[0] ?? 1
+  return withSpare(spare)
 }
 
 function options(f: Fact, kind: TaskKind, rng: Rng): AnswerValue[] {
@@ -170,7 +185,7 @@ function options(f: Fact, kind: TaskKind, rng: Rng): AnswerValue[] {
   return writesParts(q) ? rng.shuffle(palette(q)) : palette(q)
 }
 
-/** fillSlots: every order of the parts is right (6 of 729 for three parts) — still production. */
+/** fillSlots: every true sum is right (the 6 orders of 729 for three parts, or a few more) — still production. */
 function guessFloor(f: Fact, kind: TaskKind): number {
   if (kind !== 'fillSlots') return 0
   const q = parse(f)
@@ -277,6 +292,9 @@ function concatOf(n: number): number | null {
   return hundredsOf(n) * 10 ** (String(rest).length + 2) + rest
 }
 
+/** Every order of a filling, once each: '4|7|2', '4|2|7' … */
+const anyOrder = (xs: readonly number[]): string[] => [...new Set(permutations(xs).map(joined))]
+
 function candidates(f: Fact) {
   const q = parse(f)
   const n = numberOf(q)
@@ -317,9 +335,10 @@ function candidates(f: Fact) {
         // the right digit in the other place: 700 or 7 for the tens of 472, 40 for its hundreds
         [q.place === 'h' ? d * 10 : d * 100, 'other'],
         ...near(ans - step, ans + step),
-        // the parts written as digits ('4|7|2'), or swapped round (400 + 20 + 7)
-        [joined(parts.map((v) => Number(String(v)[0]))), 'faceValue'],
-        ...(swap !== null ? ([[joined(expandedParts(swap)), 'digitSwap']] as const) : []),
+        // the parts written as digits ('4|7|2'), or swapped round (400 + 20 + 7) — in any order, as the
+        // parts themselves may be written in any order
+        ...anyOrder(parts.map((v) => Number(String(v)[0]))).map((v) => [v, 'faceValue'] as const),
+        ...(swap !== null ? anyOrder(expandedParts(swap)).map((v) => [v, 'digitSwap'] as const) : []),
       ])
     }
     case 'regroup': {
@@ -328,6 +347,9 @@ function candidates(f: Fact) {
       return tagged(n, [
         [q.a + q.b, 'addsPlaceParts'], [q.a, 'operand'], [q.b, 'operand'], [written, 'other'],
         [q.pair === 'ht' ? n - 100 : n - 10, 'other'], ...near(n - 1, n + 1, n - 10, n + 10),
+        // the digits of the answer written the other way round on the palette ('2|9' for 92); a typed
+        // 29 is left to the global check, as before
+        ...(swap !== null ? ([[joined(String(swap).split('').map(Number)), 'digitSwap']] as const) : []),
       ])
     }
   }
