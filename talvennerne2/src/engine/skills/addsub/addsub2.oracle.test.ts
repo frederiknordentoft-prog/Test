@@ -148,14 +148,14 @@ for (const skill of SKILLS) {
     })
 
     if (['add100NoCarry', 'add100Carry', 'sub100Borrow'].includes(skill)) {
-      // GENERATOR BUG (calc.ts leaves digitSwap to the engine's global check, which never runs on a value
+      // Fixed by SPEC A11 in buildTask (was: calc.ts leaves digitSwap to the global check, which never runs on a value
       // the skill tagged; SPEC §4.1 "Entydighed", the reasoning of A9): a typed misconception value that is
       // also the answer with tens and ones swapped has two explanations, but is classified as the
       // misconception — false concept evidence from the commonest Danish slip. add100NoCarry: a100:22+5
       // (27) typed 72 → placeMisalign (22 + 50 = 72, every a = 11, 22 … 88 with a one-digit b);
       // add100Carry: a100c:55+9 (64) typed 46 → wrongOperation (55 − 9); sub100Borrow: s100b:44-18 (26)
       // typed 62 → wrongOperation (44 + 18). Expected 'ambiguous'.
-      it.fails('a misconception value that is also the answer reversed is ambiguous', () => {
+      it('a misconception value that is also the answer reversed is ambiguous', () => {
         expect(first(classified.filter(alsoSwapped))).toEqual([])
       })
     }

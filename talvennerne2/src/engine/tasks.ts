@@ -7,6 +7,8 @@ import type { Rng } from './rng'
 import { isCorrect } from './answer'
 import { PRODUCTION_GUESS_LIMIT } from './kinds'
 import { extrasOf } from './skills/types'
+// a runtime-only cycle (misconceptions.ts reads isMisconceptionId and PICK_KINDS from here inside functions)
+import { swapDisambiguated } from './misconceptions'
 
 /**
  * One generic task builder for every skill (SPEC §3, §4.1). A SkillDef says what the question is —
@@ -173,7 +175,7 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
   const distractorTags: Record<string, ErrorTag> = {}
   const tagged: Tagged[] = []
   for (const [key, g] of groups) {
-    const tag = resolveTag(g.tags)
+    const tag = swapDisambiguated(probe, g.value, resolveTag(g.tags))
     distractorTags[key] = tag
     tagged.push({ key, value: g.value, tag })
   }

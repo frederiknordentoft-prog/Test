@@ -88,6 +88,17 @@ const dialKey = (task: Task, v: AnswerValue): string =>
   typeof v === 'number' && task.modulo ? String(((v % task.modulo) + task.modulo) % task.modulo) : String(v)
 
 /** Error tag for a wrong answer (null when correct). Uses the task's tagged candidates first. */
+/**
+ * SPEC A11: a misconception's value that is also the answer with its digits swapped (27 written as 72)
+ * has a likelier explanation, the commonest slip in Danish number words, so it is 'ambiguous' and never
+ * evidence. buildTask applies it to every tagged candidate.
+ */
+export function swapDisambiguated(task: Task, value: AnswerValue, tag: ErrorTag): ErrorTag {
+  if (!isMisconceptionId(tag) || tag === 'digitSwap') return tag
+  const swap = typeof value === 'number' && typeof task.answer === 'number' && digitSwapPossible(task) && digitSwapOf(task.answer) === value
+  return swap ? 'ambiguous' : tag
+}
+
 export function classifyAnswer(task: Task, given: AnswerValue): ErrorTag | null {
   if (isCorrect(task, given)) return null
   // the share view reports an uneven deal as −1 (SPEC §3.2)

@@ -5,7 +5,7 @@ import {
 } from './registry'
 import { FIXTURE_SKILLS, add100CarryFixture, addTo10Fixture, hear20Fixture } from './testing/fixtureSkills'
 import { buildTask, resolveTag } from './tasks'
-import { classifyAnswer } from './misconceptions'
+import { classifyAnswer, swapDisambiguated } from './misconceptions'
 import { isCorrect } from './answer'
 import { isProduction } from './kinds'
 import { SKILL_BY_ID } from '../content/skills'
@@ -101,8 +101,8 @@ function contract(defs: readonly SkillDef[]) {
               byValue.set(key, [...(byValue.get(key) ?? []), c.tag])
             }
             for (const [key, tags] of byValue) {
-              expect(task.distractorTags[key]).toBe(resolveTag(tags))
               const value = typeof task.answer === 'number' ? Number(key) : key
+              expect(task.distractorTags[key]).toBe(swapDisambiguated(task, value, resolveTag(tags)))
               expect(classifyAnswer(task, value)).toBe(task.distractorTags[key])
             }
           }

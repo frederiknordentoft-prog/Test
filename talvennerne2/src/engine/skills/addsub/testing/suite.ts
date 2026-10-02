@@ -4,7 +4,7 @@
 // ceilings per kind, and the diagnostic card. Lives in a subfolder so the registry never imports it.
 import { describe, expect, it } from 'vitest'
 import { buildTask } from '../../../tasks'
-import { classifyAnswer, digitSwapOf } from '../../../misconceptions'
+import { classifyAnswer, digitSwapOf, swapDisambiguated } from '../../../misconceptions'
 import { ceilingFor, guessP, isProduction } from '../../../kinds'
 import { compile } from '../../../../speech/compile'
 import { makeRng } from '../../../rng'
@@ -155,8 +155,9 @@ export function addsub2Suite(def: SkillDef, opts: SuiteOptions): void {
         if (task.kind !== 'keypad') continue
         for (const v of opts.formulaValues(fact)) {
           if (v === task.answer || v < 0) continue
-          const want = expectedTag(opts.explain(fact, v))
-          if (want === 'plain') continue
+          const plain = expectedTag(opts.explain(fact, v))
+          if (plain === 'plain') continue
+          const want = swapDisambiguated(task, v, plain)
           const got = classifyAnswer(task, v)
           if (got !== want) problems.push(`${fact.id} ${v}: ${String(got)}, expected ${want}`)
         }

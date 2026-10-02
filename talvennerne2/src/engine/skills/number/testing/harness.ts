@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { SKILL_BY_ID } from '../../../../content/skills'
 import { buildTask } from '../../../tasks'
-import { classifyAnswer, detectableOf, flaggedIds, updateMisconceptions, type MisconceptionStates } from '../../../misconceptions'
+import { classifyAnswer, detectableOf, flaggedIds, updateMisconceptions, type MisconceptionStates, swapDisambiguated } from '../../../misconceptions'
 import { isCorrect } from '../../../answer'
 import { isProduction } from '../../../kinds'
 import { registeredSkills, validateSkill } from '../../../registry'
@@ -118,8 +118,10 @@ export function skillContract(def: SkillDef, opts: ContractOptions): void {
         for (const c of def.candidates(fact)) {
           const key = String(c.value)
           if (!(key in task.distractorTags)) continue
-          expect(task.distractorTags[key], `${fact.id} ${task.kind} ${key}`).toBe(c.tag)
-          expect(classifyAnswer(task, c.value), `${fact.id} ${task.kind} ${key}`).toBe(c.tag)
+          // a misconception's value that is also the answer reversed is 'ambiguous' (SPEC A11)
+          const want = swapDisambiguated(task, c.value, c.tag)
+          expect(task.distractorTags[key], `${fact.id} ${task.kind} ${key}`).toBe(want)
+          expect(classifyAnswer(task, c.value), `${fact.id} ${task.kind} ${key}`).toBe(want)
         }
       }
     })

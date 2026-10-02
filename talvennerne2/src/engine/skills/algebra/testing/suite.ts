@@ -6,7 +6,7 @@
 // imports it into the app.
 import { describe, expect, it } from 'vitest'
 import { buildTask } from '../../../tasks'
-import { classifyAnswer, digitSwapOf } from '../../../misconceptions'
+import { classifyAnswer, digitSwapOf, swapDisambiguated } from '../../../misconceptions'
 import { ceilingFor, guessP, isProduction } from '../../../kinds'
 import { compile } from '../../../../speech/compile'
 import { makeRng } from '../../../rng'
@@ -90,8 +90,9 @@ export function algebra2Suite(def: SkillDef, opts: SuiteOptions): void {
       for (const { fact, task } of tasks) {
         for (const v of opts.formulaValues(fact)) {
           if (!fitsTask(task, v) || v === task.answer) continue
-          const want = expectedTag(opts.explain(fact, v))
-          if (want === 'plain') continue
+          const plain = expectedTag(opts.explain(fact, v))
+          if (plain === 'plain') continue
+          const want = swapDisambiguated(task, v, plain)
           const got = classifyAnswer(task, v)
           if (got !== want) problems.push(`${fact.id} ${task.kind} ${String(v)}: ${String(got)}, expected ${want}`)
         }

@@ -205,12 +205,12 @@ describe('placeValue1000 oracle', () => {
     expect(first(classified.filter((p) => !partsOrSwap(p)))).toEqual([])
   })
 
-  // GENERATOR BUG (placeValue1000.ts, candidates() for regroup, SPEC §4.1 "Entydighed"): for
+  // Fixed by SPEC A11 in buildTask (was a generator bug in placeValue1000.ts, candidates() for regroup): for
   // pv:regroup:to:<a>:11 — "En tier og elleve enere. Hvilket tal er det?" → 21 — the counts added
   // (1 + 11 = 12, addsPlaceParts) are also the answer with its digits reversed (12 for 21: digitSwap, a
   // concept in placeValue1000). Two misconceptions on one value must be 'ambiguous'; the task says
   // addsPlaceParts, on the card and typed, for a = 1–8 (12, 13 … 19 for 21, 31 … 91).
-  it.fails('regroup: a value that is both the counts added and the digits reversed is ambiguous', () => {
+  it('regroup: a value that is both the counts added and the digits reversed is ambiguous', () => {
     expect(first(classified.filter(partsOrSwap))).toEqual([])
   })
 
