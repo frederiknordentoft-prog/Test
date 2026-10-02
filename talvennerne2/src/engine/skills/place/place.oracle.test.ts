@@ -121,13 +121,14 @@ describe('tensOnes oracle', () => {
     expect(first(slotProblems(built, (b) => target(b.fact), (b, v) => explain(b, v)))).toEqual([])
   })
 
-  // GENERATOR BUG (tensOnes.ts, candidates() for decompose:tens, used for buildBase): the built answer of
-  // "Byg kun tierne i syvogfyrre" is 40 (four rods), but the candidates are those of the card question
-  // "Hvor mange tiere …?" (answer 4). Built 7 (seven cubes: the ones, not the tens) is tagged digitSwap —
-  // production evidence — while 70 (seven rods: the digits in the order Danish says them, the real
-  // digitSwap) and 4 (four cubes: the digit for its value, faceValue) are 'other'. to:decompose:tens:47
-  // buildBase: 7 → digitSwap (expected plain), 70 → other (expected digitSwap), 4 → other (expected faceValue).
-  it.fails('buildBase for "Byg kun tierne i …": what was built is classified by what it is worth', () => {
+  // Rettet (GENFIX, with the engine hook candidatesFor). Was a generator bug (tensOnes.ts, candidates() for
+  // decompose:tens, used for buildBase): the built answer of "Byg kun tierne i syvogfyrre" is 40 (four rods),
+  // but the candidates were those of the card question "Hvor mange tiere …?" (answer 4). Built 7 (seven
+  // cubes: the ones, not the tens) was tagged digitSwap — production evidence — while 70 (seven rods: the
+  // digits in the order Danish says them, the real digitSwap) and 4 (four cubes: the digit for its value,
+  // faceValue) were 'other'. to:decompose:tens:47 buildBase: 7 → digitSwap (expected plain), 70 → other
+  // (expected digitSwap), 4 → other (expected faceValue).
+  it('buildBase for "Byg kun tierne i …": what was built is classified by what it is worth', () => {
     const rods = built.filter((b) => b.kind === 'buildBase' && q(b.fact).family === 'decompose' && q(b.fact).part === 'tens')
     expect(first(classifyProblems2(rods.map(typed), explain, { upTo: 99 }))).toEqual([])
   })
