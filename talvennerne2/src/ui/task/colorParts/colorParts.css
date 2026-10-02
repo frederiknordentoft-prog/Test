@@ -1,0 +1,167 @@
+/*
+ * colorParts (src/ui/task/colorParts/View.tsx): the asked fraction on a card, the figure to colour,
+ * the tick. Parts are SVG paths (white, with their colour laid over and faded in by opacity); the
+ * cuts and the outline are drawn bold on top and never take a tap. Colours from the materials
+ * palette (attributes) and tokens.css; only transform and opacity animate or transition.
+ */
+.tv-parts {
+  --fig: min(300px, calc(100vw - 2 * var(--gutter) - 32px), 40vh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-block: auto;
+}
+.tv-parts--rect,
+.tv-parts--square {
+  --fig: min(330px, calc(100vw - 2 * var(--gutter) - 24px), 48vh);
+}
+.tv-parts--bar {
+  --fig: min(380px, calc(100vw - 2 * var(--gutter) - 24px));
+}
+.tv-parts__ask {
+  display: grid;
+  place-items: center;
+  min-width: 72px;
+  padding: 6px 18px;
+  border-radius: 20px;
+  background: var(--color-card);
+  box-shadow: var(--shadow-card), inset 0 0 0 3px var(--color-d-fractions-soft);
+  color: var(--color-d-fractions-deep);
+  font-size: 36px;
+}
+.tv-parts__figure {
+  position: relative;
+  width: var(--fig);
+}
+.tv-parts__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.tv-parts__part {
+  cursor: pointer;
+  outline: none;
+}
+.tv-parts__part:focus-visible {
+  stroke: var(--color-primary);
+  stroke-width: 6;
+}
+.tv-parts__colour {
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  pointer-events: none;
+}
+.tv-parts__colour.is-on {
+  opacity: 1;
+}
+.tv-parts__shine {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 7;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.tv-parts__cuts {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.tv-parts__outline {
+  fill: none;
+  stroke-width: 5;
+  pointer-events: none;
+}
+.tv-parts__figure.is-good .tv-parts__outline {
+  stroke: var(--color-good);
+  stroke-width: 7;
+}
+/* the asked fraction and the tick side by side under the figure */
+.tv-parts__foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  width: 100%;
+}
+
+/* The face of an answer: the small figure */
+.tv-partsface svg {
+  display: block;
+  overflow: visible;
+}
+.tv-partsface .tv-parts__cuts {
+  stroke-width: 6;
+}
+.tv-partsface .tv-parts__outline {
+  stroke-width: 7;
+}
+
+/* The demo film */
+.tv-parts-demo .tv-parts__figure {
+  position: relative;
+  width: 170px;
+}
+.tv-parts-demo .tv-parts__ask {
+  font-size: 30px;
+  padding: 4px 14px;
+}
+
+/* Short phones (SE) in portrait */
+@media (orientation: portrait) and (max-height: 700px) {
+  .tv-parts--rect,
+  .tv-parts--square {
+    --fig: min(290px, calc(100vw - 2 * var(--gutter) - 24px), 44vh);
+  }
+}
+
+/* iPad */
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-parts {
+    --fig: min(420px, 40vh);
+    gap: 18px;
+  }
+  .tv-parts--rect,
+  .tv-parts--square {
+    --fig: min(480px, 40vh);
+  }
+  .tv-parts--bar {
+    --fig: min(560px, 80vw);
+  }
+  .tv-parts__ask {
+    font-size: 52px;
+  }
+}
+
+/* Phone held sideways: question, figure and tick side by side */
+@media (orientation: landscape) and (max-height: 500px) {
+  .tv-parts,
+  .tv-parts--rect,
+  .tv-parts--square {
+    --fig: min(250px, calc(100vh - 140px));
+    flex-direction: row;
+    justify-content: center;
+    gap: 16px;
+  }
+  .tv-parts--bar {
+    --fig: min(340px, 52vw);
+  }
+  /* a rectangle is wide and low: it gets the width that keeps four parts 60 px wide */
+  .tv-parts--rect {
+    --fig: min(300px, 46vw);
+  }
+  .tv-parts__ask {
+    font-size: 32px;
+  }
+  .tv-parts__foot {
+    flex-direction: column;
+    gap: 14px;
+    width: auto;
+  }
+  .tv-parts-demo {
+    flex-direction: row;
+  }
+}

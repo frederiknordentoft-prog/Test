@@ -1,0 +1,302 @@
+/*
+ * pay (src/ui/task/pay/View.tsx): the purse (one of each allowed coin and note, endless), the tray
+ * with the laid coins in piles, the tick beside it. Coins and notes are sized from their real
+ * millimetres (--d, set per piece) times the layout's scale (--mm for coins, --mm-note for notes),
+ * so a 5-krone stays bigger than a 1-krone everywhere. Colours from tokens.css; only transform and
+ * opacity animate or transition.
+ */
+.tv-pay {
+  --mm: 2.3px;
+  --mm-note: 0.52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+}
+.tv-piece {
+  display: block;
+  flex: none;
+}
+.tv-piece--coin {
+  width: calc(var(--d) * var(--mm));
+  height: auto;
+}
+.tv-piece--note {
+  width: calc(var(--d) * var(--mm-note));
+  height: auto;
+}
+
+/* The purse: one row when it fits, else two even rows (a phone has room for five 60 px coins) */
+.tv-pay__purse {
+  display: grid;
+  grid-template-columns: repeat(var(--pcols, 5), auto);
+  align-items: center;
+  justify-content: center;
+  justify-items: center;
+  gap: 2px 4px;
+  width: 100%;
+  padding: 6px;
+  border-radius: var(--radius-card);
+  background: var(--color-warm-soft);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-warm) 28%, transparent), inset 0 -8px 0 color-mix(in srgb, var(--color-warm) 12%, transparent);
+}
+.tv-pay__src {
+  display: grid;
+  place-items: center;
+  min-width: 60px;
+  min-height: 60px;
+  margin: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 18px;
+  background: none;
+  cursor: grab;
+}
+.tv-pay__src:disabled {
+  cursor: default;
+}
+.tv-pay__face {
+  display: grid;
+  place-items: center;
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.tv-pay__src[data-pressed] .tv-pay__face {
+  transform: translateY(3px) scale(0.96);
+  transition-duration: var(--dur-press);
+}
+.tv-pay__face.is-lifted {
+  position: relative;
+  z-index: 5;
+  transition: none;
+}
+.tv-pay__face.is-lifted .tv-piece {
+  opacity: 0.94;
+}
+
+/* The tray */
+.tv-pay__bottom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.tv-pay__tray {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 10px;
+  min-width: 0;
+  min-height: 96px;
+  padding: 8px 10px;
+  border-radius: 24px;
+  background: var(--color-d-money-soft);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--color-d-money) 38%, transparent), inset 0 10px 0 color-mix(in srgb, var(--color-d-money) 10%, transparent);
+}
+.tv-pay__tray::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 4px var(--color-d-money);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  pointer-events: none;
+}
+.tv-pay__tray.is-in::before {
+  opacity: 1;
+}
+.tv-pay__tray.is-out .tv-pay__piece.is-lifted {
+  opacity: 0.7;
+}
+.tv-pay__tray.is-empty::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border: 3px dashed color-mix(in srgb, var(--color-d-money) 45%, transparent);
+  border-radius: 16px;
+  pointer-events: none;
+}
+.tv-pay__tray.is-good {
+  background: var(--color-good-soft);
+  box-shadow: inset 0 0 0 3px var(--color-good);
+}
+.tv-pay__take {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  min-height: 60px;
+  margin: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  cursor: pointer;
+}
+.tv-pay__take:disabled {
+  cursor: default;
+}
+
+/* A pile: the coins of one kind overlapping, every value still in sight */
+.tv-pay__pile {
+  --ov: 0.42;
+  display: flex;
+  align-items: center;
+}
+.tv-pay__pile.is-close {
+  --ov: 0.58;
+}
+.tv-pay__pile.is-tight {
+  --ov: 0.72;
+}
+.tv-pay__pile.is-note {
+  --ov: 0.66;
+}
+.tv-pay__piece {
+  position: relative;
+  display: block;
+  flex: none;
+}
+.tv-pay__pile.is-coin > .tv-pay__piece + .tv-pay__piece {
+  margin-left: calc(var(--d) * var(--mm) * var(--ov) * -1);
+}
+.tv-pay__pile.is-note > .tv-pay__piece + .tv-pay__piece {
+  margin-left: calc(var(--d) * var(--mm-note) * var(--ov) * -1);
+}
+.tv-pay__piece.is-lifted {
+  z-index: 5;
+}
+
+/* The sum, only as support on a new key */
+.tv-pay__sum {
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 2px var(--color-d-money-soft);
+  color: var(--color-d-money-deep);
+  font-size: 22px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The face of an answer: a small tray */
+.tv-payface--sm {
+  --mm: 1.2px;
+  --mm-note: 0.29px;
+}
+.tv-payface--md {
+  --mm: 1.65px;
+  --mm-note: 0.4px;
+}
+.tv-payface--lg {
+  --mm: 2.1px;
+  --mm-note: 0.5px;
+}
+.tv-payface__tray {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+  max-width: 240px;
+  padding: 6px 8px;
+  border-radius: 14px;
+  background: var(--color-d-money-soft);
+}
+.tv-confirm .tv-payface__tray {
+  background: var(--color-card);
+}
+
+/* The demo film */
+.tv-pay-demo__shop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tv-pay-demo__tag {
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--color-star);
+  box-shadow: 0 4px 0 var(--color-star-lip);
+  color: var(--color-ink);
+  font-size: 22px;
+  font-weight: 900;
+  transform: rotate(6deg);
+}
+.tv-pay-demo .tv-pay__purse {
+  width: auto;
+  grid-template-columns: repeat(3, auto);
+}
+.tv-pay-demo .tv-pay__tray {
+  flex: none;
+  width: 190px;
+  min-height: 78px;
+}
+.tv-pay-demo .tv-pay__piece {
+  animation: tv-card-in 300ms var(--ease-spring) both;
+}
+
+/* iPad */
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-pay {
+    --mm: 2.9px;
+    --mm-note: 0.62px;
+    max-width: 700px;
+    gap: 16px;
+  }
+  .tv-pay__purse {
+    grid-template-columns: repeat(var(--pcols-wide, 5), auto);
+    padding: 10px 14px;
+    gap: 6px 12px;
+  }
+  .tv-pay__tray {
+    min-height: 130px;
+    padding: 12px 16px;
+  }
+  .tv-pay__sum {
+    font-size: 28px;
+  }
+}
+
+/* Phone held sideways: smaller coins, the purse in one row */
+@media (orientation: landscape) and (max-height: 500px) {
+  .tv-pay {
+    --mm: 1.95px;
+    --mm-note: 0.44px;
+    gap: 6px;
+  }
+  .tv-pay__tray {
+    min-height: 76px;
+    padding: 4px 8px;
+  }
+  .tv-pay__sum {
+    font-size: 18px;
+    padding: 2px 10px;
+  }
+  .tv-pay-demo .tv-pay__tray {
+    min-height: 66px;
+  }
+  .tv-payface--md {
+    --mm: 1.4px;
+    --mm-note: 0.34px;
+  }
+  .tv-payface--sm {
+    --mm: 1.05px;
+    --mm-note: 0.26px;
+  }
+}
+
+:root[data-calm] .tv-pay-demo .tv-pay__piece {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-pay-demo .tv-pay__piece {
+    animation: none !important;
+  }
+}

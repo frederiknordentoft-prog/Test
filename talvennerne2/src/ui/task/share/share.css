@@ -1,0 +1,284 @@
+/*
+ * share (src/ui/task/share/View.tsx): the pile on a patch of meadow, the plates below it in a grid,
+ * the tick under them (beside them on a sideways phone). Plates are drawn in CSS (rim and well) and
+ * grow with the space; the things on a plate sit in a small grid that gets more columns when a plate
+ * gets more. Colours from tokens.css; only transform and opacity animate or transition.
+ */
+.tv-deal {
+  --thing: 46px;
+  --plate-max: 124px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.tv-deal--md {
+  --thing: 38px;
+}
+.tv-deal--sm {
+  --thing: 30px;
+}
+.tv-deal--owned {
+  margin-block: auto;
+}
+
+/* The pile */
+.tv-deal__pile {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-height: calc(var(--thing) + 20px);
+  padding: 8px 10px;
+  border-radius: var(--radius-card);
+  background: var(--color-d-shapes-soft);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-d-shapes) 22%, transparent), inset 0 -10px 0 color-mix(in srgb, var(--color-d-shapes) 10%, transparent);
+}
+.tv-deal__pile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 4px var(--color-d-shapes);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  pointer-events: none;
+}
+.tv-deal__pile.is-over::before {
+  opacity: 1;
+}
+.tv-deal__pile.is-empty::after {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 3px dashed color-mix(in srgb, var(--color-d-shapes) 35%, transparent);
+  border-radius: 18px;
+  pointer-events: none;
+}
+.tv-deal__thing {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+.tv-deal__thing svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.tv-deal__loose {
+  width: var(--thing);
+  cursor: grab;
+}
+.tv-deal__art {
+  display: block;
+  width: 100%;
+}
+
+/* The plates */
+.tv-deal__plates {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, var(--plate-max)));
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+.tv-deal__plate {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 60px;
+  aspect-ratio: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.tv-deal__plate:disabled {
+  cursor: default;
+}
+.tv-deal__dish {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-card);
+  box-shadow:
+    inset 0 0 0 3px var(--color-line-2),
+    inset 0 0 0 11px var(--color-paper-2),
+    inset 0 0 0 13px var(--color-line),
+    0 5px 0 var(--color-line-2);
+  transition: transform var(--dur-release) var(--ease-spring);
+}
+.tv-deal__plate:active .tv-deal__dish {
+  transform: scale(0.95);
+  transition-duration: var(--dur-press);
+}
+.tv-deal__plate::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--color-primary);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  pointer-events: none;
+}
+.tv-deal__plate.is-over::after {
+  opacity: 1;
+}
+.tv-deal__plates.is-good .tv-deal__plate::after {
+  box-shadow: 0 0 0 4px var(--color-good);
+  opacity: 1;
+}
+.tv-deal__on {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--pc), minmax(0, 1fr));
+  align-content: center;
+  width: 64%;
+  aspect-ratio: 1;
+}
+/* a tap on the pile shows where to tap: the plates bob once */
+.tv-deal__plates.is-nudged .tv-deal__plate {
+  animation: tv-deal-bob 520ms var(--ease-out) both;
+}
+.tv-deal__plates.is-nudged .tv-deal__plate:nth-child(2) {
+  animation-delay: 70ms;
+}
+.tv-deal__plates.is-nudged .tv-deal__plate:nth-child(3) {
+  animation-delay: 140ms;
+}
+.tv-deal__plates.is-nudged .tv-deal__plate:nth-child(n + 4) {
+  animation-delay: 210ms;
+}
+@keyframes tv-deal-bob {
+  40% {
+    transform: translateY(-8px) scale(1.04);
+  }
+}
+.tv-deal__foot {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* The face of a deal: small plates in a row */
+.tv-dealface {
+  --plate: 46px;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 260px;
+}
+.tv-dealface--sm {
+  --plate: 34px;
+}
+.tv-dealface--lg {
+  --plate: 58px;
+}
+.tv-dealface__plate {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--plate);
+  aspect-ratio: 1;
+}
+.tv-dealface .tv-deal__dish {
+  box-shadow:
+    inset 0 0 0 2px var(--color-line-2),
+    inset 0 0 0 5px var(--color-paper-2),
+    0 2px 0 var(--color-line-2);
+}
+.tv-dealface .tv-deal__on {
+  width: 70%;
+}
+
+/* The demo film */
+.tv-deal-demo .tv-deal__pile {
+  width: auto;
+  min-width: 200px;
+}
+.tv-deal-demo .tv-deal__plates {
+  grid-template-columns: repeat(var(--cols), 84px);
+}
+.tv-deal-demo__in {
+  animation: tv-card-in 300ms var(--ease-spring) both;
+}
+
+/* iPad */
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-deal {
+    --thing: 58px;
+    --plate-max: 160px;
+    gap: 18px;
+  }
+  .tv-deal--md {
+    --thing: 48px;
+  }
+  .tv-deal--sm {
+    --thing: 38px;
+  }
+  .tv-deal__plates {
+    gap: 16px;
+  }
+}
+
+/* Phone held sideways: pile, plates and tick side by side */
+@media (orientation: landscape) and (max-height: 500px) {
+  .tv-deal {
+    --thing: 36px;
+    --plate-max: 104px;
+    flex-direction: row;
+    align-items: center;
+    max-width: none;
+    gap: 12px;
+  }
+  .tv-deal--md {
+    --thing: 30px;
+  }
+  .tv-deal--sm {
+    --thing: 24px;
+  }
+  .tv-deal__pile {
+    flex: 0 1 40%;
+    align-self: stretch;
+    min-height: 0;
+  }
+  .tv-deal__plates {
+    flex: 1 1 auto;
+    gap: 8px;
+  }
+  .tv-deal__foot {
+    width: auto;
+  }
+  .tv-deal-demo {
+    flex-direction: column;
+  }
+  /* the error flow shares the short height with the strategy picture */
+  .tv-dealface {
+    --plate: 36px;
+  }
+  .tv-dealface--sm {
+    --plate: 28px;
+  }
+}
+
+:root[data-calm] .tv-deal__plates.is-nudged .tv-deal__plate,
+:root[data-calm] .tv-deal-demo__in {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-deal__plates.is-nudged .tv-deal__plate,
+  .tv-deal-demo__in {
+    animation: none !important;
+  }
+}

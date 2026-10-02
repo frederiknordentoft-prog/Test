@@ -26,13 +26,18 @@ const KIND_SHOTS = [
   'choice-8+5', 'choice-unit', 'choice-shape', 'choice-clock', 'choice-weight', 'keypad-38+45', 'keypad-hear53', 'keypad-kr', 'count-7', 'count-14', 'pair-3',
   'line-37', 'line-after7', 'line-600', 'tf-balance', 'tf-half', 'sort-numbers', 'sort-lengths', 'multi-triangles', 'multi-heavier', 'fill-pattern',
   'fill-skip', 'fill-fraction', 'base-34', 'base-205',
+  // wave 2 (kind2.mjs plays them with touch drags)
+  'clock-half', 'clock-digital', 'pay-17', 'pay-75', 'pay-1250', 'share-12-3', 'share-20-4', 'parts-3/4', 'parts-1/2-rect', 'parts-2/3-bar', 'parts-1/4-square',
 ]
-const TEACH_SHOTS = ['choice-8+5', 'keypad-38+45', 'keypad-hear53', 'keypad-52-37', 'count-7', 'line-37', 'sort-numbers', 'multi-heavier', 'fill-fraction', 'base-34', 'pair-3', 'tf-half']
+const TEACH_SHOTS = [
+  'choice-8+5', 'keypad-38+45', 'keypad-hear53', 'keypad-52-37', 'count-7', 'line-37', 'sort-numbers', 'multi-heavier', 'fill-fraction', 'base-34', 'pair-3', 'tf-half',
+  'clock-half', 'pay-fewest', 'share-12-3', 'parts-1/2-rect',
+]
 
 const jobs = []
 for (const ex of KIND_SHOTS) for (const vp of ALL) jobs.push({ name: `ask-${ex}-${vp}`, vp, q: { view: 'kind', ex, demo: '0' }, state: 'ask' })
 for (const ex of TEACH_SHOTS) for (const vp of ALL) jobs.push({ name: `teach-${ex}-${vp}`, vp, q: { view: 'kind', ex, demo: '0' }, state: 'teach' })
-for (const ex of ['choice-8+5', 'keypad-38+45', 'count-7', 'pair-3', 'line-37', 'tf-balance', 'sort-numbers', 'multi-triangles', 'fill-pattern', 'base-34']) {
+for (const ex of ['choice-8+5', 'keypad-38+45', 'count-7', 'pair-3', 'line-37', 'tf-balance', 'sort-numbers', 'multi-triangles', 'fill-pattern', 'base-34', 'clock-half', 'pay-17', 'share-12-3', 'parts-3/4']) {
   for (const vp of ['x-p', 'se-l', 'ipad-p']) jobs.push({ name: `demo-${ex}-${vp}`, vp, q: { view: 'kind', ex, demo: '1' }, state: 'demo' })
 }
 for (const vp of ALL) {
@@ -111,7 +116,7 @@ try {
       }
       await page.addStyleTag({ content: FREEZE })
       await page.waitForTimeout(80)
-      await page.screenshot({ path: `${OUT}${job.name}.png`, fullPage: !!job.full })
+      await page.screenshot({ path: `${OUT}${job.name.replaceAll('/', '_')}.png`, fullPage: !!job.full })
       const a = await page.evaluate(() => {
         const doc = document.documentElement
         const over = doc.scrollWidth > innerWidth + 1 || doc.scrollHeight > innerHeight + 1
