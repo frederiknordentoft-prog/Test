@@ -341,13 +341,6 @@ describe('payExact', () => {
     expect(classifyAnswer(few, 'c500|c500')).toBe('other')
   })
 
-  it('takes 5 s and 2.5 s per piece of the fewest way to pay', () => {
-    const def = payExactModule
-    expect(def.fastMs!(factOf(payExact, 'pay:to100:7500'), 'pay')).toBe(5000 + 3 * 2500)
-    expect(def.fastMs!(factOf(payExact, 'pay:fewestCoins:2700'), 'pay')).toBe(5000 + 3 * 2500)
-    expect(def.fastMs!(factOf(payExact, 'pay:to20:1700'), 'choice')).toBeUndefined()
-  })
-
   it('starts with the biggest pieces that fit', () => {
     const said = (id: string, tag: string | null = null) => compile(payExact.hint(factOf(payExact, id), tag as never).speech).text
     expect(said('pay:to20:1700')).toBe('Start med de største penge, der passer. Ti femten sytten. Det er sytten kroner.')
@@ -428,15 +421,24 @@ describe('change', () => {
   })
 
   it('counts up from the price, on a number line to what was paid', () => {
-    const h = change.hint(factOf(change, 'byt:from20:1300'), null)
+    const h = change.hint(factOf(change, 'byt:from20:1300'), 'near')
     expect(compile(h.speech).text).toBe('Tæl op fra prisen til det, du betaler med. Fra tretten til tyve er syv kroner.')
     expect(h.visual).toEqual({ scene: 'line', min: 0, max: 20, hops: [13, 20] })
+    expect(change.hint(factOf(change, 'byt:from20:600'), 'other').visual).toEqual({ scene: 'line', min: 0, max: 20, hops: [6, 10, 20] })
     const wrong = change.hint(factOf(change, 'byt:from20:1300'), 'wrongOperation')
     expect(compile(wrong.speech).text).toBe('Du skal have penge tilbage, så du skal trække fra. Tyve minus tretten giver syv.')
     expect(wrong.misconception).toBe('wrongOperation')
     const digits = change.hint(factOf(change, 'byt:from100:3700'), 'digitComplement10')
     expect(compile(digits.speech).text).toBe('Tæl op til den næste tier først. Fra syvogtredive til fyrre er tre. Fra fyrre til et hundrede er tres. Det er treogtres kroner.')
     expect(digits.visual).toEqual({ scene: 'line', min: 0, max: 100, hops: [37, 40, 100] })
+  })
+
+  it('starts a new key with a line that marks the price and the coin, never the hops that add up to the change', () => {
+    for (const f of facts) {
+      const s = { price: Number(f.id.split(':')[2]) / 100, paid: ({ from10: 10, from20: 20, from50: 50, from100: 100 } as const)[f.family as 'from10'] }
+      const v = change.hint(f, null).visual
+      expect(v, f.id).toEqual({ scene: 'line', min: 0, max: s.paid, arrowAt: s.price, target: s.paid })
+    }
   })
 })
 

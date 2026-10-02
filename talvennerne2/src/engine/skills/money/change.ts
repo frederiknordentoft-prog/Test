@@ -113,7 +113,12 @@ function hint(f: Fact, tag: string | null): HintSpec {
   const s = parse(f.id)
   const price = s.price / 100
   const paid = s.paid / 100
-  const visual: HintSpec['visual'] = { scene: 'line', min: 0, max: paid, hops: hops(price, paid) }
+  // After a mistake the hops count up with their sizes (+7, +10). Without one (the lightbulb, and the
+  // support a new key starts with) the line only marks the price (arrow) and what was paid (dot):
+  // hop labels that add up to the change would hand the child the answer.
+  const visual: HintSpec['visual'] = tag === null
+    ? { scene: 'line', min: 0, max: paid, arrowAt: price, target: paid }
+    : { scene: 'line', min: 0, max: paid, hops: hops(price, paid) }
   // "Tæl op fra prisen til det, du betaler med. Fra tretten til tyve er syv kroner."
   const countUp: SpeechPart[] = [
     say('hint.change.countUp'), say('hint.change.from'), num(price, 'mid'), say('hint.change.to'), num(paid, 'mid'),

@@ -168,6 +168,4 @@ export default {
   },
   candidates,
   hint: (f, tag) => hint(f, tag),
-  // SPEC §3.2: 5 s plus 2.5 s per piece of the fewest way to pay (the kind's own formula needs a sum)
-  fastMs: (f: Fact, kind: TaskKind) => (kind === 'pay' ? 5000 + 2500 * fewest(parse(f.id)).length : undefined),
 } satisfies SkillModule
