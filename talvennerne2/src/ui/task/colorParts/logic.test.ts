@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { isCorrect } from '../../../engine/answer'
 import type { Task } from '../../../engine/types'
 import { EXAMPLES } from '../../../dev/tasks/examples'
+import { gridOf, partCentres, partsGeometry } from './geometry'
 import {
-  MAX_PARTS, canColorParts, colorPartsOwnsPrompt, fracOf, gridOf, partCentres, partsGeometry, partsOfValue, partsSetup,
-  partsValue, rememberColouring, rememberedColouring,
+  MAX_PARTS, canColorParts, colorPartsOwnsPrompt, fracOf, partsOfValue, partsSetup, partsValue, rememberColouring,
+  rememberedColouring,
 } from './logic'
 import type { PartsShape } from './logic'
 
@@ -79,7 +80,7 @@ describe('what the coloured parts hand in', () => {
 describe('equal parts, each big enough to tap', () => {
   const SHAPES: PartsShape[] = ['circle', 'rect', 'bar', 'square']
   /** The narrowest width each figure is drawn at on a 393 px phone (colorParts.css). */
-  const PHONE_PX: Record<PartsShape, number> = { circle: 290, square: 330, rect: 330, bar: 337 }
+  const PHONE_PX: Record<PartsShape, number> = { circle: 300, square: 330, rect: 330, bar: 337 }
 
   it('cuts every figure into exactly the asked number of parts', () => {
     for (const shape of SHAPES) {

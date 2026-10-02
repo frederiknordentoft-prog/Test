@@ -1,5 +1,5 @@
 // colorParts (SPEC §3.2): a circle, rectangle, bar or square cut into equal parts, with the asked
-// fraction written above it (it is read aloud too). A tap colours a part, another tap takes the
+// fraction written beside the tick under it (it is read aloud too). A tap colours a part, another tap takes the
 // colour away; a finger drawn across several parts colours (or clears) them all in one go. The cuts
 // are drawn bold so "equal parts" is plain to see. Then the tick: the answer is the fraction
 // coloured, 'frac:3/4' (logic.ts).
@@ -12,8 +12,9 @@ import { cx } from '../../design/cx'
 import { CheckButton } from '../CheckButton'
 import { FracText } from '../faces'
 import type { FaceProps, FaceSize, TaskViewProps } from '../types'
-import { partsGeometry, partsOfValue, partsSetup, partsValue, rememberColouring, rememberedColouring } from './logic'
-import type { PartsGeometry } from './logic'
+import { partsGeometry } from './geometry'
+import type { PartsGeometry } from './geometry'
+import { partsOfValue, partsSetup, partsValue, rememberColouring, rememberedColouring } from './logic'
 import './colorParts.css'
 
 /** The figure: white parts with their colour laid over (it fades in and out), bold cuts on top. */
@@ -101,11 +102,6 @@ export function ColorPartsView({ task, mode, given, onSubmit, onActivity }: Task
   const label = speech.text('s.kind.colorParts.part')
   return (
     <div className={cx('tv-parts', `tv-parts--${setup.shape}`, `is-${mode}`)} data-kind="colorParts">
-      {setup.target && (
-        <span className="tv-parts__ask">
-          <FracText n={setup.target.n} d={setup.target.d} />
-        </span>
-      )}
       <div className={cx('tv-parts__figure', mode === 'correct' && 'is-good')}>
         <svg
           ref={svg}
@@ -132,6 +128,11 @@ export function ColorPartsView({ task, mode, given, onSubmit, onActivity }: Task
         {mode === 'wrong' && <span className="tv-strike tv-strike--wide" aria-hidden />}
       </div>
       <div className="tv-parts__foot">
+        {setup.target && (
+          <span className="tv-parts__ask">
+            <FracText n={setup.target.n} d={setup.target.d} />
+          </span>
+        )}
         <CheckButton valid={on.length > 0} stateKey={[...on].sort((a, b) => a - b).join(',')} enabled={input} taskId={task.id} onCheck={submit} />
       </div>
     </div>

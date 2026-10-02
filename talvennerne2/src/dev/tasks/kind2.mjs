@@ -62,9 +62,21 @@ async function tap(cdp, p) {
 
 const line = (a, b, n = 10) => Array.from({ length: n + 1 }, (_, i) => ({ x: a.x + ((b.x - a.x) * i) / n, y: a.y + ((b.y - a.y) * i) / n }))
 
-/** Centre of the first visible match (and that nothing covers it there). */
+/** Centre of the first visible match (and that nothing covers it there, once things in flight have landed). */
 async function centre(page, selector) {
-  const r = await page.evaluate((sel) => {
+  for (let i = 0; i < 8; i++) {
+    const r = await centreNow(page, selector)
+    if (!r || !r.covered || i === 7) return check0(r, selector)
+    await sleep(120)
+  }
+}
+function check0(r, selector) {
+  if (!r) throw new Error(`${selector} findes ikke`)
+  if (r.covered) throw new Error(`${selector} er dækket`)
+  return r
+}
+async function centreNow(page, selector) {
+  return page.evaluate((sel) => {
     const el = [...document.querySelectorAll(sel)].find((e) => {
       const b = e.getBoundingClientRect()
       return b.width > 0 && b.height > 0
@@ -76,9 +88,6 @@ async function centre(page, selector) {
     const hit = document.elementFromPoint(x, y)
     return { x, y, covered: !(hit && (hit === el || el.contains(hit) || hit.contains(el))) }
   }, selector)
-  if (!r) throw new Error(`${selector} findes ikke`)
-  if (r.covered) throw new Error(`${selector} er dækket`)
-  return r
 }
 
 // ─── Harness state ──────────────────────────────────────────────────────────
@@ -94,7 +103,7 @@ async function lastVerdict(page) {
   return a[a.length - 1]
 }
 
-/** Buttons, sliders and role=button parts under 60 × 60 px inside the answer area. */
+/** Buttons, sliders and role=button parts under 60 by 60 px inside the answer area. */
 async function smallTargets(page) {
   return page.evaluate(() =>
     [...document.querySelectorAll('.tv-round__answer button, .tv-round__answer [role="button"], .tv-round__answer [role="slider"]')]
@@ -308,6 +317,29 @@ async function playKind(browser, kind, vpName) {
     )
     check(loops === 0, `${tag}: rolig tilstand uden løkker i svarfeltet (${loops})`)
     await shot(page, `calm-${tag}`)
+    // every example of the kind as asked (phone and iPad), and the pay tray's sum as support
+    if (vpName !== 'side') {
+      const ids = await page.evaluate(async (k) => (await import('/src/dev/tasks/examples.ts')).EXAMPLES[k].map((e) => e.id), kind)
+      for (const id of ids) {
+        await page.goto(`${BASE}?${new URLSearchParams({ view: 'kind', ex: id, shot: '1', e2e: '1', voice: 'fast', safe: vp.safe, demo: '0' })}`, { waitUntil: 'networkidle' })
+        await beat(page, 'asking')
+        await page.waitForSelector(`.tv-round__answer [data-kind="${kind}"]`, { timeout: 8000 })
+        await sleep(450)
+        await shot(page, `gallery-${id.replaceAll('/', '_')}-${vpName}`)
+        if (id === 'pay-1250') {
+          for (const p of [1000, 200, 50]) await tap(cdp, await centre(page, `[data-source="${p}"]`))
+          await sleep(500)
+          const sum = await page.evaluate(() => document.querySelector('.tv-pay__sum')?.textContent ?? null)
+          check(sum === '12,50 kr.', `${tag}: summen i bakken som støtte (${sum})`)
+          await shot(page, `sum-pay-1250-${vpName}`)
+        }
+        if (id === 'pay-17') {
+          await tap(cdp, await centre(page, '[data-source="1000"]'))
+          await sleep(300)
+          check(!(await page.evaluate(() => !!document.querySelector('.tv-pay__sum'))), `${tag}: ingen sum uden støtte (produktion)`)
+        }
+      }
+    }
   } catch (err) {
     check(false, `${tag}: ${String(err).split('\n')[0]}`)
     await shot(page, `error-${tag}`).catch(() => {})

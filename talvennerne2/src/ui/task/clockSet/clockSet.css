@@ -110,6 +110,13 @@
   gap: 16px;
 }
 
+/* Short phones (SE) in portrait */
+@media (orientation: portrait) and (max-height: 700px) {
+  .tv-clockset--owned {
+    --dial: min(280px, calc(100vw - 2 * var(--gutter) - 40px), 42vh);
+  }
+}
+
 /* iPad */
 @media (min-width: 700px) and (min-height: 700px) {
   .tv-clockset {

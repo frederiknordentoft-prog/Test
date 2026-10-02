@@ -45,6 +45,8 @@ export function ShareView({ task, mode, given, onSubmit, onActivity }: TaskViewP
   const setup = useMemo(() => shareSetup(task) ?? { total: 6, plates: 2, thing: 'carrot' }, [task])
   const looks = useMemo(() => tilts(task.id, setup.total), [task.id, setup.total])
   const [deal, setDeal] = useState<Deal>(() => fresh(setup))
+  /** The deal as it is now, also between two taps in the same frame (a quick double tap gives two things). */
+  const dealNow = useRef(deal)
   const [drag, setDrag] = useState<{ item: number; dx: number; dy: number } | null>(null)
   const [target, setTarget] = useState<number | 'pile' | null>(null)
   const [nudge, setNudge] = useState(0)
@@ -72,19 +74,19 @@ export function ShareView({ task, mode, given, onSubmit, onActivity }: TaskViewP
     onActivity()
     playSfx(plate === null ? 'fjern' : 'pop')
     flight.current = from ? { item, from } : null
-    setDeal((d) => {
-      const pile = d.pile.filter((i) => i !== item)
-      const plates = d.plates.map((list) => list.filter((i) => i !== item))
-      if (plate === null) {
-        pile.push(item)
-        pile.sort((a, b) => a - b)
-      } else plates[plate].push(item)
-      return { pile, plates }
-    })
+    const d = dealNow.current
+    const pile = d.pile.filter((i) => i !== item)
+    const plates = d.plates.map((list) => list.filter((i) => i !== item))
+    if (plate === null) {
+      pile.push(item)
+      pile.sort((a, b) => a - b)
+    } else plates[plate].push(item)
+    dealNow.current = { pile, plates }
+    setDeal(dealNow.current)
   }
 
   const give = (plate: number) => {
-    const item = nextFromPile(deal.pile)
+    const item = nextFromPile(dealNow.current.pile)
     if (item === null) return
     place(item, plate, rectOf(item))
   }

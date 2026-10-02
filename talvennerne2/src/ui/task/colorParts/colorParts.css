@@ -5,7 +5,7 @@
  * palette (attributes) and tokens.css; only transform and opacity animate or transition.
  */
 .tv-parts {
-  --fig: min(290px, calc(100vw - 2 * var(--gutter) - 32px), 38vh);
+  --fig: min(300px, calc(100vw - 2 * var(--gutter) - 32px), 40vh);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -79,9 +79,12 @@
   stroke: var(--color-good);
   stroke-width: 7;
 }
+/* the asked fraction and the tick side by side under the figure */
 .tv-parts__foot {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 28px;
   width: 100%;
 }
 
@@ -105,6 +108,14 @@
 .tv-parts-demo .tv-parts__ask {
   font-size: 30px;
   padding: 4px 14px;
+}
+
+/* Short phones (SE) in portrait */
+@media (orientation: portrait) and (max-height: 700px) {
+  .tv-parts--rect,
+  .tv-parts--square {
+    --fig: min(290px, calc(100vw - 2 * var(--gutter) - 24px), 44vh);
+  }
 }
 
 /* iPad */
@@ -142,6 +153,8 @@
     font-size: 32px;
   }
   .tv-parts__foot {
+    flex-direction: column;
+    gap: 14px;
     width: auto;
   }
   .tv-parts-demo {

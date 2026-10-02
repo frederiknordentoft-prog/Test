@@ -168,7 +168,12 @@ export function PayView({ task, mode, given, onSubmit, onActivity }: TaskViewPro
   const dragging = drag && drag.id.startsWith('tray') ? { piece: pieceOf(drag.id), dx: drag.dx, dy: drag.dy } : null
   return (
     <div ref={root} className={cx('tv-pay', `is-${mode}`, purse.some((p) => !isCoinPiece(p)) && 'has-notes')} data-kind="pay">
-      <div className="tv-pay__purse" role="group" aria-label={speech.text('s.kind.pay.purse')}>
+      <div
+        className="tv-pay__purse"
+        role="group"
+        aria-label={speech.text('s.kind.pay.purse')}
+        style={{ '--pcols': purse.length <= 5 ? purse.length : Math.ceil(purse.length / 2), '--pcols-wide': purse.length } as CSSProperties}
+      >
         {purse.map((piece) => (
           <Source
             key={piece}

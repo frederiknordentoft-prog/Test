@@ -29,12 +29,13 @@
   height: auto;
 }
 
-/* The purse */
+/* The purse: one row when it fits, else two even rows (a phone has room for five 60 px coins) */
 .tv-pay__purse {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(var(--pcols, 5), auto);
   align-items: center;
   justify-content: center;
+  justify-items: center;
   gap: 2px 4px;
   width: 100%;
   padding: 6px;
@@ -230,6 +231,7 @@
 }
 .tv-pay-demo .tv-pay__purse {
   width: auto;
+  grid-template-columns: repeat(3, auto);
 }
 .tv-pay-demo .tv-pay__tray {
   flex: none;
@@ -243,11 +245,13 @@
 /* iPad */
 @media (min-width: 700px) and (min-height: 700px) {
   .tv-pay {
-    --mm: 3.1px;
-    --mm-note: 0.7px;
+    --mm: 2.9px;
+    --mm-note: 0.62px;
+    max-width: 700px;
     gap: 16px;
   }
   .tv-pay__purse {
+    grid-template-columns: repeat(var(--pcols-wide, 5), auto);
     padding: 10px 14px;
     gap: 6px 12px;
   }

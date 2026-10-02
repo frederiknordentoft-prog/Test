@@ -10,7 +10,7 @@ export type Hand = 'minute' | 'hour'
 /** One turn of the analog dial in minutes. */
 export const DIAL = 720
 
-// Clock units of the AnalogClock material (viewBox 200 × 206, centre (100, 100), face radius 80).
+// Clock units of the AnalogClock material (viewBox 200 by 206, centre (100, 100), face radius 80).
 export const CENTRE = 100
 export const VIEW_W = 200
 export const VIEW_H = 206
