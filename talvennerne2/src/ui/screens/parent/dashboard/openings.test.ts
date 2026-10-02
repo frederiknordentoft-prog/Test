@@ -16,10 +16,10 @@ import {
 
 /** What is registered today: the skills of Engdalen (and shapes2D, which reaches into Hestebakkerne). */
 const registered: ReadonlySet<SkillId> = new Set(registeredSkills().map((d) => d.id))
-/** As if one skill of every region of Hestebakkerne had its module too. */
+/** As if every skill of Hestebakkerne had its module too. */
 const withBakke: ReadonlySet<SkillId> = new Set([
   ...registered,
-  ...regionsOfWorld('bakke').map((r) => r.skills.find((s) => !s.reviewOnly)!.skill),
+  ...regionsOfWorld('bakke').flatMap((r) => r.skills.map((s) => s.skill)),
 ])
 
 /** As if every friend, chest and finale were drawn. */
@@ -33,17 +33,27 @@ describe('what has something to play', () => {
     expect(worldReady('eng', registered)).toBe(true)
     for (const r of regionsOfWorld('eng')) expect(regionHasContent(r, registered), r.id).toBe(true)
     for (const w of ['bakke', 'skov', 'fjeld'] as const) {
-      const all = regionsOfWorld(w).every((r) => r.skills.some((s) => registered.has(s.skill) && !s.reviewOnly))
+      const all = regionsOfWorld(w).every((r) => r.skills.every((s) => s.reviewOnly || registered.has(s.skill)))
       expect(worldReady(w, registered, everything), w).toBe(all)
     }
   })
 
   it('does not call a world ready when only some of its regions could be played', () => {
-    // Formværkstedet has flat shapes already, the rest of Hestebakkerne has nothing yet
+    // as if only Engdalen and the flat shapes of Formværkstedet had their modules
+    const engAndShapes: ReadonlySet<SkillId> = new Set([
+      ...regionsOfWorld('eng').flatMap((r) => r.skills.map((s) => s.skill)), 'shapes2D' as SkillId,
+    ])
     const figurer = REGIONS.find((r) => r.id === 'w1-figurer')!
-    expect(regionHasContent(figurer, registered)).toBe(true)
-    expect(worldReady('bakke', registered, everything)).toBe(false)
+    expect(regionHasContent(figurer, engAndShapes)).toBe(true)
+    expect(worldReady('bakke', engAndShapes, everything)).toBe(false)
     expect(worldReady('bakke', withBakke, everything)).toBe(true)
+  })
+
+  it('does not call a world ready while a region has only some of its skills (its other first stone would be empty)', () => {
+    const maal = REGIONS.find((r) => r.id === 'w1-maal-penge')!
+    const half = new Set([...withBakke].filter((s) => s !== maal.skills.find((x) => !x.reviewOnly)!.skill))
+    expect(regionHasContent(maal, half)).toBe(true)
+    expect(worldReady('bakke', half, everything)).toBe(false)
   })
 
   it('does not call a world ready before its friends, chests and finale are drawn', () => {

@@ -22,6 +22,14 @@ export function regionHasContent(region: RegionDef, registered: ReadonlySet<Skil
   return region.skills.some((s) => !s.reviewOnly && registered.has(s.skill))
 }
 
+/**
+ * Every skill the region teaches has a module. The region's first stones each ask for half of its
+ * skills, so one registered skill is not enough: the other stone would have no tasks.
+ */
+export function regionComplete(region: RegionDef, registered: ReadonlySet<SkillId>): boolean {
+  return region.skills.every((s) => s.reviewOnly || registered.has(s.skill))
+}
+
 /** The region's friend or chest is drawn. */
 export function regionDrawn(region: RegionDef, drawn: Drawn = DRAWN): boolean {
   const n = region.node3
@@ -30,11 +38,11 @@ export function regionDrawn(region: RegionDef, drawn: Drawn = DRAWN): boolean {
   return true
 }
 
-/** Every region of the world has something to play and its rewards are drawn. */
+/** Every region of the world is complete and its rewards are drawn. */
 export function worldReady(world: WorldId, registered: ReadonlySet<SkillId>, drawn: Drawn = DRAWN): boolean {
   const regions = regionsOfWorld(world)
   return regions.length > 0
-    && regions.every((r) => regionHasContent(r, registered) && regionDrawn(r, drawn))
+    && regions.every((r) => regionComplete(r, registered) && regionDrawn(r, drawn))
     && WORLD_BY_ID[world].finaleItems.every((i) => drawn.items.has(i))
 }
 

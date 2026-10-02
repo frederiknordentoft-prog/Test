@@ -6,9 +6,9 @@
 //   - a child in 1.–3. class gets every place of the worlds below its grade opened, and its own
 //     world when that is ready (gradeOpenings);
 //   - a grown-up can open any region or whole world that is ready from the dashboard.
-// A world is ready when every one of its regions has a registered skill and its friends, chests and
-// finale are drawn (src/meta/built.ts): an open world opens its first regions by itself, and a stone
-// whose skills have no module would lead nowhere (the round would have no tasks). As the skills and
+// A world is ready when every skill of its regions has a module and its friends, chests and finale
+// are drawn (src/meta/built.ts): an open world opens its first regions by itself, and a stone whose
+// skills have no module would lead nowhere (the round would have no tasks). As the skills and
 // drawings land, the worlds become ready by themselves — today that is Engdalen only.
 import { REGIONS, WORLDS, WORLD_BY_ID, regionsOfWorld } from '../../../../content/curriculum'
 import type { Grade, ProfileDoc, RegionId, SkillId, WorldId } from '../../../../engine/types'
