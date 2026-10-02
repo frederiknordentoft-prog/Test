@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { SKILL_BY_ID } from '../../../../content/skills'
 import { buildTask } from '../../../tasks'
-import { classifyAnswer, detectableOf, flaggedIds, updateMisconceptions, type MisconceptionStates, swapDisambiguated } from '../../../misconceptions'
+import { PERCEPTUAL_BY_SKILL, classifyAnswer, detectableOf, flaggedIds, updateMisconceptions, type MisconceptionStates, swapDisambiguated } from '../../../misconceptions'
 import { isCorrect } from '../../../answer'
 import { isProduction } from '../../../kinds'
 import { registeredSkills, validateSkill } from '../../../registry'
@@ -209,7 +209,8 @@ export function skillContract(def: SkillDef, opts: ContractOptions): void {
       for (const { fact, task } of tasks) {
         if (task.contrast === undefined) continue
         expect(['conflict', 'congruent'], fact.id).toContain(task.contrast)
-        expect(['compareLength', 'shapes2D']).toContain(def.id)
+        // every perceptual skill (PERCEPTUAL_BY_SKILL), not a fixed list of two (UI-fund 25)
+        expect(PERCEPTUAL_BY_SKILL[def.id], def.id).toBeDefined()
       }
     })
   })

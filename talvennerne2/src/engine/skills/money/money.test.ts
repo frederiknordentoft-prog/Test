@@ -250,10 +250,10 @@ describe('countCoins', () => {
 
   it('counts on from the biggest coins, or in steps of one kind', () => {
     const said = (id: string, tag: string | null = null) => compile(countCoins.hint(factOf(countCoins, id), tag as never).speech).text
-    expect(said('tael:biggestFirst:2+20+5+20')).toBe('Start med de største mønter. Tyve fyrre femogfyrre syvogfyrre. Det er syvogfyrre kroner.')
-    expect(said('tael:sameCoins:2+2+2+2')).toBe('Tæl i spring med to. To fire seks otte. Det er otte kroner.')
-    expect(said('tael:sameCoins:1+1+1')).toBe('Hver mønt er en krone. En to tre. Det er tre kroner.')
-    expect(said('tael:mixedTo20:10+5+2', 'coinsAsCount')).toBe('Tæl ikke, hvor mange mønter der er, men hvad der står på dem. Start med de største mønter. Ti femten sytten. Det er sytten kroner.')
+    expect(said('tael:biggestFirst:2+20+5+20')).toBe('Start med de største mønter. Tyve, fyrre, femogfyrre, syvogfyrre. Det er syvogfyrre kroner.')
+    expect(said('tael:sameCoins:2+2+2+2')).toBe('Tæl i spring med to. To, fire, seks, otte. Det er otte kroner.')
+    expect(said('tael:sameCoins:1+1+1')).toBe('Hver mønt er en krone. En, to, tre. Det er tre kroner.')
+    expect(said('tael:mixedTo20:10+5+2', 'coinsAsCount')).toBe('Tæl ikke, hvor mange mønter der er, men hvad der står på dem. Start med de største mønter. Ti, femten, sytten. Det er sytten kroner.')
     expect(countCoins.hint(factOf(countCoins, 'tael:mixedTo20:10+5+2'), 'coinsAsCount')).toMatchObject({ misconception: 'coinsAsCount', visual: { scene: 'coinsSum', ore: [1000, 500, 200] } })
   })
 })
@@ -343,8 +343,8 @@ describe('payExact', () => {
 
   it('starts with the biggest pieces that fit', () => {
     const said = (id: string, tag: string | null = null) => compile(payExact.hint(factOf(payExact, id), tag as never).speech).text
-    expect(said('pay:to20:1700')).toBe('Start med de største penge, der passer. Ti femten sytten. Det er sytten kroner.')
-    expect(said('pay:to100:7500', 'near')).toBe('Tæl pengene efter. Start med de største penge, der passer. Halvtreds halvfjerds femoghalvfjerds. Det er femoghalvfjerds kroner.')
+    expect(said('pay:to20:1700')).toBe('Start med de største penge, der passer. Ti, femten, sytten. Det er sytten kroner.')
+    expect(said('pay:to100:7500', 'near')).toBe('Tæl pengene efter. Start med de største penge, der passer. Halvtreds, halvfjerds, femoghalvfjerds. Det er femoghalvfjerds kroner.')
     expect(payExact.hint(factOf(payExact, 'pay:to100:7500'), null).visual).toEqual({ scene: 'coinsSum', ore: [5000, 2000, 500] })
   })
 })

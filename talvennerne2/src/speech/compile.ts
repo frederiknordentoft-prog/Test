@@ -144,8 +144,25 @@ function closeSentence(words: string[]): string | null {
   return punctuated.charAt(0).toUpperCase() + punctuated.slice(1)
 }
 
+/** Numbers, amounts, times and fractions: said one after another they are a list. */
+const isAmount = (p: SpeechPart) => !('clip' in p) && !('free' in p)
+
 export function compile(parts: readonly SpeechPart[]): Compiled {
   const pieces = parts.map(piece)
+  // A list ("seksten, atten, tyve"): three amounts or more in a row get a comma in the text and a
+  // comma's pause between them (UI-fund 7). Two in a row are not a list: "Så giver tolv minus fem syv".
+  const runLength = (i: number): number => {
+    let a = i
+    let b = i
+    while (a > 0 && isAmount(parts[a - 1])) a--
+    while (b + 1 < parts.length && isAmount(parts[b + 1])) b++
+    return b - a + 1
+  }
+  const listEnd = parts.map((p, i) =>
+    i + 1 < parts.length && isAmount(p) && isAmount(parts[i + 1]) && !pieces[i].endsSentence && runLength(i) >= 3)
+  pieces.forEach((p, i) => {
+    if (listEnd[i] && p.words) pieces[i] = { ...p, words: `${p.words},` }
+  })
 
   // Text: sentences close after an end-form element and at the end.
   const sentences: string[] = []
@@ -169,18 +186,25 @@ export function compile(parts: readonly SpeechPart[]): Compiled {
   // Audio: runs of clips, free text on its own.
   const utterances: Utterance[] = []
   let run: ClipId[] = []
+  let commas: number[] = []
   const flush = () => {
-    if (run.length > 0) utterances.push({ kind: 'clips', clips: run, gapsMs: gapsFor(run) })
+    if (run.length > 0) {
+      const gaps = gapsFor(run)
+      for (const at of commas) if (at < gaps.length) gaps[at] = Math.max(gaps[at], GAP_MS.mid)
+      utterances.push({ kind: 'clips', clips: run, gapsMs: gaps })
+    }
     run = []
+    commas = []
   }
-  for (const p of pieces) {
+  pieces.forEach((p, i) => {
     if (p.free !== undefined) {
       flush()
       if (p.free) utterances.push({ kind: 'free', text: p.free })
     } else {
       run.push(...p.clips)
+      if (listEnd[i] && p.clips.length > 0) commas.push(run.length - 1)
     }
-  }
+  })
   flush()
 
   const clips: ClipId[] = []

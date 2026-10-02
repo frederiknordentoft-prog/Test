@@ -58,8 +58,8 @@ describe('skipCount', () => {
   })
 
   it('reads the row and asks for the next number (fillSlots: the next two), with one or two gaps', () => {
-    expect(textOf(taskOf(def, 'skc:step5:15:3', 'keypad'))).toBe('Femten tyve femogtyve. Hvilket tal kommer så?')
-    expect(textOf(taskOf(def, 'skc:step5:15:3', 'fillSlots'))).toBe('Femten tyve femogtyve. Hvilke to tal kommer så?')
+    expect(textOf(taskOf(def, 'skc:step5:15:3', 'keypad'))).toBe('Femten, tyve, femogtyve. Hvilket tal kommer så?')
+    expect(textOf(taskOf(def, 'skc:step5:15:3', 'fillSlots'))).toBe('Femten, tyve, femogtyve. Hvilke to tal kommer så?')
     expect(taskOf(def, 'skc:step5:15:3', 'choice').prompt).toEqual({ scene: 'row', cells: [15, 20, 25, null] })
     expect(taskOf(def, 'skc:back10:87:3', 'fillSlots').prompt).toEqual({ scene: 'row', cells: [87, 77, 67, null, null] })
     expect(taskOf(def, 'skc:back10:87:3', 'fillSlots').answer).toBe('57|47')
