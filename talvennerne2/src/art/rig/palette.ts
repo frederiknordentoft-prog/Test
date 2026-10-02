@@ -183,6 +183,9 @@ export const FABRIC = {
   cream: '#FFF2D8',
   snow: '#F5F7FF',
   cocoa: '#9B6B4F',
+  /** Kaki og oliven (opdagerens tropehjelm og vest). */
+  sand: '#DEBF8D',
+  olive: '#98A855',
   charcoal: '#4B4560',
   gold: '#F4C84A',
   silver: '#CDD4E0',

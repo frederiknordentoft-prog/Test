@@ -13,16 +13,17 @@
 import { useEffect, useId, useRef } from 'react'
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react'
 import { Aura, Cheeks, Eyes, GroundShadow, MOOD_FACE, MOOD_GAZE, Mouth, ShadowGradient, Sparkles, SweatDrop, ThoughtDots, Zzz, around } from '../parts/house'
-import { OUTLINE, apply, modelAnchors, regionTransforms, worldAnchors } from './anchors'
+import { OUTLINE, SAFE, apply, modelAnchors, regionTransforms, worldAnchors } from './anchors'
 import type { Affine } from './anchors'
 import { defaultHead, templateBody } from './bodies'
 import { fitItem, fitTransform, inverseTransform, toLocal } from './fit'
+import { about, applyMat, chain, invert, rotate as rotMat, scale as scaleMat, translate as moveMat, xfMat } from './hold'
 import { mixHex } from './oklch'
 import { INK, MAGIC, derivePalette, itemPalette, silhouettePalette } from './palette'
 import { ellipse, fmt3, join, lune, n, outside, rect, tf } from './shapes'
 import { bentSleeve } from './sleeve'
 import type {
-  AnchorSet, BreedDef, BreedId, Box, ColorwayDef, ColorwayId, FaceStyle, FigureBounds, FitResult, ItemDef,
+  AnchorSet, BreedDef, BreedId, Box, ColorwayDef, ColorwayId, FaceStyle, FigureBounds, FitResult, HandHold, ItemDef,
   MagicColorwayId, Mood, Outfit, Palette, PartCtx, PawPose, Pose, PoseXf, Pt, RigIds, SidePart, Slot,
   SpeciesDef, SpeciesParts, Stage, Worn,
 } from './types'
@@ -62,7 +63,9 @@ export interface RigProps {
   /**
    * Beskæring (beregnet ud fra stadiets ankre, så den følger figuren):
    * 'full' (200x240), 'fit' (hele figuren, 5:6), 'head' (hoved og hat), 'torso' (mund til hofte),
-   * 'bust' (hoved og overkrop), 'crown' (hele hovedet med ører og horn). Kvadratiske undtagen full/fit.
+   * 'bust' (hoved og overkrop), 'crown' (hele hovedet med ører og horn), 'wide' (hoved og overkrop i
+   * hele den sikre zones bredde: til genstande, der rækker ud, som ballon og net). Kvadratiske undtagen
+   * full/fit.
    * Små ikoner bruger 'fit' som standard.
    */
   crop?: RigCrop
@@ -70,7 +73,7 @@ export interface RigProps {
   lod?: RigLod | 'auto'
 }
 
-export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust' | 'crown'
+export type RigCrop = 'full' | 'fit' | 'head' | 'torso' | 'bust' | 'crown' | 'wide'
 
 /** Højde/bredde for en beskæring. */
 export function cropAspect(crop: RigCrop): number {
@@ -253,6 +256,12 @@ export function cropViewBox(def: SpeciesDef, breed: BreedId, stage: Stage, crop:
     const side = Math.max(w.bodyRx * 2.6, bottom - top) * 1.06
     return `${n(w.bodyCenter.x - side / 2)} ${n(top - side * 0.02)} ${n(side)} ${n(side)}`
   }
+  if (crop === 'wide') {
+    // Hoved og overkrop i hele den sikre zones bredde: genstande, der rækker ud (ballonen ved skulderen,
+    // nettets bøjle ved hovedet), kommer med på et kvadratisk kort.
+    const b = box(SAFE.x0, w.headTop.y - w.headRy * 0.5, SAFE.x1, w.bodyCenter.y + w.bodyRy * 0.5)
+    return viewBoxAround(b, 0.02, 1)
+  }
   // bust: hoved (uden de højeste ører) og overkrop
   const b = box(w.headCenter.x - w.headRx * 1.15, w.headTop.y - w.headRy * 0.35, w.headCenter.x + w.headRx * 1.15, w.bodyCenter.y + w.bodyRy * 0.4)
   return viewBoxAround(b, 0.04, 1)
@@ -417,6 +426,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     return { local, cx: fit.x + local.x * fit.scale, cy: fit.y + local.y * fit.scale, rx: h.rx * fit.scale, ry: h.ry * fit.scale }
   })()
 
+  // Ansigtsgenstande i panden (eventyrbriller) flytter op om en hat med ørehuller og tegnes efter den.
+  const faceOnHat = hat === 'through' && !!worn('face')?.item.onHat
   // Arterne ser 'through' kun, når ørerne faktisk går gennem huller (og tegner da en afrundet ørebund).
   const hatCtx = holes ? 'through' : hat === 'under' ? 'under' : null
   const ctx = (sw: number): PartCtx => ({ pal, a, stage, mood, breed, colorway, sw, ids, still, lod, pose, hat: hatCtx })
@@ -433,7 +444,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const { gazeRef, glintRef } = env
   const staticGaze = still ? gazeFor(lookAt, eyeMidWorld, R.head.s) ?? MOOD_GAZE[mood] : undefined
 
-  const renderItem = (slot: Slot, layer: 'front' | 'back' | 'rim', region: number, clip?: string) => {
+  const renderItem = (slot: Slot, layer: 'front' | 'back' | 'rim' | 'straps', region: number, clip?: string, hold?: HandHold) => {
     const wItem = worn(slot)
     if (!wItem) return null
     if (layer === 'rim' && !holes) return null
@@ -443,21 +454,25 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         ? item.art.back
         : layer === 'rim'
           ? item.art.rim
-          : slot === 'body'
-            ? (item.art.bodyShapes?.[def.body] ?? item.art.front)
-            : item.art.front
+          : layer === 'straps'
+            ? item.art.straps
+            : slot === 'body'
+              ? (item.art.bodyShapes?.[def.body] ?? item.art.front)
+              : item.art.front
     if (!art) return null
     const fit = fitItem(item, a, def)
     const c = itemPalette(item.colorways[wItem.colorway ?? 0], silhouette)
     const sw = OUT / (region * fit.scale)
     return (
-      <g data-item={item.id} data-slot={slot} data-layer={layer} clipPath={clip ? `url(#${clip})` : undefined}>
+      <g data-item={item.id} data-slot={slot} data-layer={layer} data-reach={item.reach ? '' : undefined} clipPath={clip ? `url(#${clip})` : undefined}>
         <g transform={fitTransform(fit)}>
           {art({
             c, a, sw, body: def.body, earMode: fit.earMode, ids, stage,
             local: (p) => toLocal(fit, p),
             solo: false,
             holes,
+            hold,
+            hat,
             horn: slot === 'head' ? (hornHole?.local ?? null) : null,
             restroke: (color) => (
               <path d={bodyD} transform={inverseTransform(fit)} fill="none" stroke={color ?? c.outline} strokeWidth={n(swBody)} strokeLinejoin="round" />
@@ -501,6 +516,35 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     )
   }
 
+  // Håndgenstanden i nøgleposen (HandHold): hele kæden fra genstandens ramme til verdensrummet
+  // (figur, kroppens region og ånding, potens drejning eller løftede spids, pasformen) og hovedet med
+  // sin region og hældning, så genstanden kan placere sig i forhold til hovedet i alle humør.
+  const figM = about(G, pose.fig)
+  const handHold = (item: ItemDef, at: Pt, rot: number, tip: Pt | undefined, front: boolean): HandHold => {
+    const fit = fitItem(item, a, def)
+    const pawM = chain(moveMat(at.x, at.y), scaleMat(-1, 1), rotMat(rot))
+    const gripM = tip ? chain(moveMat(tip.x, tip.y), scaleMat(-1, 1), moveMat(-a.pawR.x, -a.pawR.y)) : chain(scaleMat(-1, 1), moveMat(-at.x, -at.y))
+    const toWorld = chain(
+      figM, moveMat(R.body.tx, R.body.ty), scaleMat(R.body.s), about(G, pose.body), pawM, gripM,
+      moveMat(fit.x, fit.y), rotMat(fit.rot), scaleMat(fit.scale),
+    )
+    const fromWorld = invert(toWorld)
+    const headM = chain(figM, moveMat(R.neckWorld.x, R.neckWorld.y), scaleMat(R.head.s), xfMat(pose.head), moveMat(-a.neck.x, -a.neck.y))
+    const hc = applyMat(headM, a.headCenter)
+    const hb = figureBounds(def, breed).head
+    const corners = [applyMat(headM, { x: hb.x0, y: hb.y0 }), applyMat(headM, { x: hb.x1, y: hb.y0 }), applyMat(headM, { x: hb.x0, y: hb.y1 }), applyMat(headM, { x: hb.x1, y: hb.y1 })]
+    const hbox = box(Math.min(...corners.map((q) => q.x)), Math.min(...corners.map((q) => q.y)), Math.max(...corners.map((q) => q.x)), Math.max(...corners.map((q) => q.y)))
+    const hs = R.head.s * (pose.head?.sx ?? 1)
+    const fxOn = showFx && (mood === 'think' || mood === 'sleep')
+    return {
+      local: (p) => applyMat(fromWorld, p),
+      grip: applyMat(toWorld, { x: 0, y: 0 }),
+      head: { x: hc.x, y: hc.y, rx: a.headRx * hs, ry: a.headRy * R.head.s * (pose.head?.sy ?? pose.head?.sx ?? 1), s: hs, mouth: applyMat(headM, a.mouth), box: hbox },
+      fx: fxOn ? applyMat(figM, fxHead) : null,
+      front,
+    }
+  }
+
   // Poter (venstre tegnes, højre spejles). Håndgenstanden ligger i højre pote under selve poten.
   // `outer` lægger kroppens region foran (løftede poter tegnes uden for kroppens gruppe).
   const paw = (side: 'L' | 'R', outer = '') => {
@@ -514,10 +558,11 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
       const tip = up ? parts.pawUpTip?.[mood] : undefined
       // Håndgenstanden placeres ved pawR i modelrummet og føres ind i potens lokale (spejlede) ramme;
       // en løftet pote bærer den ved sin spids.
+      const hold = handHold(handItem.item, at, pp.rot ?? 0, tip, up && !(side === 'L' ? behindL : behindR))
       hand = tip ? (
-        <g transform={`translate(${n(tip.x)} ${n(tip.y)}) scale(-1 1) translate(${n(-a.pawR.x)} ${n(-a.pawR.y)})`}>{renderItem('hand', 'front', R.body.s)}</g>
+        <g transform={`translate(${n(tip.x)} ${n(tip.y)}) scale(-1 1) translate(${n(-a.pawR.x)} ${n(-a.pawR.y)})`}>{renderItem('hand', 'front', R.body.s, undefined, hold)}</g>
       ) : (
-        <g transform={`scale(-1 1) translate(${n(-at.x)} ${n(-at.y)})`}>{renderItem('hand', 'front', R.body.s)}</g>
+        <g transform={`scale(-1 1) translate(${n(-at.x)} ${n(-at.y)})`}>{renderItem('hand', 'front', R.body.s, undefined, hold)}</g>
       )
     }
     return (
@@ -707,6 +752,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             {shade.bodyBand && <path d={shade.bodyBand} fill={pal.highlight} clipPath={`url(#${ids.bodyClip})`} />}
             {/* 6 · body-item (klippet til kroppen +2) */}
             {renderItem('body', 'front', R.body.s, itemClipId)}
+            {/* 6b · ryggenstandens stropper (over kropstøjet, under poterne) */}
+            {renderItem('back', 'straps', R.body.s)}
             {/* 7–8 · hånd + poter (hvilende) */}
             {(!upL || behindL) && paw('L')}
             {(!upR || behindR) && paw('R')}
@@ -746,13 +793,14 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                 gazeRef={gazeRef}
                 glintRef={glintRef}
               />
-              {/* 13 · face-item */}
-              {renderItem('face', 'front', R.head.s)}
+              {/* 13 · face-item (eventyrbriller på en hat tegnes efter hatten, se faceOnHat) */}
+              {!faceOnHat && renderItem('face', 'front', R.head.s)}
               {/* 14 · mane-front */}
               {parts.ManeFront && !hides.has('mane-front') && scaled(a.headTop, R.xf.mane, parts.ManeFront(ctx(swHead / R.xf.mane)))}
               {/* 15 · head-item (en hat mellem ørerne på en art med horn sidder skævt ved siden af
                   hornet og tegnes foran øret, se festhattens overskrivning) */}
               {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
+              {faceOnHat && renderItem('face', 'front', R.head.s)}
               {/* 16 · ører, horn (+ hattens hulkant over ørernes rod) */}
               {earsShown && (
                 <g clipPath={earClip ? `url(#${earClipId})` : holes ? `url(#${holeClipId})` : undefined}>

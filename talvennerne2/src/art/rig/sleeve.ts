@@ -44,6 +44,9 @@ export interface BentSleeve {
   edge: string
   bands: string
   cuff: string
+  /** Ærmegabet på ærmeløst tøj: stof over armens rod på brystet og kantbåndet, hvor armen kommer ud. */
+  root: string
+  rootEdge: string
 }
 
 /** Ærmets fyld, kontur (åben ved roden), to striber (inden for ærmet) og manchet for en løftet arm. */
@@ -76,10 +79,15 @@ export function bentSleeve(arm: UpArm): BentSleeve {
   const stripes = [cut - 13.2, cut - 5.8]
     .filter((s) => s > 4)
     .map((s) => poly(across(arm.spine, s, (width(s) + EASE) / 2 + 0.4, -1.8, 1.8)))
+  // Ærmegabet: et bånd fra roden (der ligger på brystet) et stykke ud ad armen; ærmeløst tøj dækker
+  // rodens åbne ende med stof og kant, så armen ser ud til at komme ud af ærmegabet.
+  const r0 = Math.min(6.5, L * 0.22)
   return {
     fill: blob(loop),
     edge: spline(loop),
     bands: stripes.length ? join(...stripes) : '',
     cuff: poly(across(arm.spine, cut, half + EASE / 2 + 0.8, -2.6, 2.8, 1.4)),
+    root: poly(across(arm.spine, r0, (width(r0) + EASE) / 2 + 0.6, -r0 - 1, 0.4)),
+    rootEdge: poly(across(arm.spine, r0, (width(r0) + EASE) / 2 + 0.9, -1.5, 1.7, 1.1)),
   }
 }
