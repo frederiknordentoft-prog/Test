@@ -148,8 +148,11 @@ describe.each(ALL_SPECIES.map((d) => [d.id, d] as const))('renderet markup · %s
       const vest = render({ species: def, mood, outfit: wear(opdagerBody) })
       expect(vest).toMatch(/data-item="opdager-body"[^>]*clip-path="url\(#/)
     }
-    // Stropperne ligger i stroplaget (under poterne).
-    expect(render({ species: def, outfit: wear(hverdagBack) })).toMatch(/data-item="hverdag-back" data-slot="back" data-layer="straps"/)
+    // Stropperne ligger i stroplaget (under poterne). En art, der selv optager ryggen (uglens vinger),
+    // bærer ingen ryggenstand.
+    if (!def.occupies?.includes('back')) {
+      expect(render({ species: def, outfit: wear(hverdagBack) })).toMatch(/data-item="hverdag-back" data-slot="back" data-layer="straps"/)
+    }
   })
 })
 

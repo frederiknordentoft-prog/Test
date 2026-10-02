@@ -142,7 +142,10 @@ describe.each(ALL_SPECIES.map((d) => [d.id, d] as const))('renderet markup · %s
       expect(render({ species: def, mood, outfit: wear(kongeligHand) }), mood).toMatch(/data-item="kongelig-hand" data-slot="hand"/)
       expect(render({ species: def, mood, outfit: wear(kongeligBody) })).toMatch(/data-item="kongelig-body"[^>]*clip-path="url\(#/)
     }
-    expect(render({ species: def, outfit: wear(kongeligBack) })).toMatch(/data-item="kongelig-back" data-slot="back" data-layer="back"/)
+    // a species that occupies the back itself (the owl's wings) wears no back item
+    if (!def.occupies?.includes('back')) {
+      expect(render({ species: def, outfit: wear(kongeligBack) })).toMatch(/data-item="kongelig-back" data-slot="back" data-layer="back"/)
+    }
   })
 })
 
