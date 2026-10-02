@@ -723,6 +723,27 @@ export function hintArithmetic(def: SkillDef, facts: readonly Fact[], tags: read
   return [...out]
 }
 
+/** SPEC §4.3: the eight misconceptions whose hint is animated. */
+export const ANIMATED_HINTS: readonly MisconceptionId[] = [
+  'digitSwap', 'forgotCarry', 'smallerFromLarger', 'borrowNoDecrement', 'equalsAsAnswer', 'halfPastNext', 'tableNeighbour', 'concatNumberWords',
+]
+
+/** A misconception's own hint is marked animated exactly when SPEC §4.3 lists it. */
+export function animationChecks(def: SkillDef, facts: readonly Fact[], tags: readonly (ErrorTag | null)[]): string[] {
+  const out = new Set<string>()
+  for (const f of facts) {
+    for (const tag of tags) {
+      for (const kind of [undefined, ...def.kinds]) {
+        const h = def.hint(f, tag, kind)
+        if (!h.misconception) continue
+        const want = ANIMATED_HINTS.includes(h.misconception)
+        if (!!h.animated !== want) out.add(`${def.id} hint(${String(tag)}${kind ? `, ${kind}` : ''}): ${h.misconception} ${h.animated ? 'animated' : 'not animated'}`)
+      }
+    }
+  }
+  return [...out]
+}
+
 /** The asked number from what the voice says: the sentence with "hvad" solved; every other sentence must be true. */
 export function spokenAnswer(t: Task): { answer: number | null; problems: string[] } {
   const text = spokenText(t.speech)

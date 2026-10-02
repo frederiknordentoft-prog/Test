@@ -11,7 +11,7 @@ import {
 } from '../number/number.oracle'
 import { numberWordProblems, numbersIn } from '../number/number2.oracle'
 import {
-  cardAnswer, classifyAll, diagnosticCards, hintArithmetic, idChecks, productionChecks, sentences, specKindChecks, spokenAnswer, typedSwapOf, wantTag,
+  animationChecks, cardAnswer, classifyAll, diagnosticCards, hintArithmetic, idChecks, instancesOf3, productionChecks, sentences, specKindChecks, spokenAnswer, typedSwapOf, wantTag,
 } from '../algebra/algebra2.oracle'
 import {
   explainGroups, explainMul, explainShare, groupsOfId, mul2510Ids, mulId, mulMis, shareId, shareOutcomes,
@@ -82,7 +82,8 @@ describe('groupsOf oracle', () => {
   })
 
   it('says only true arithmetic in every hint and counts group by group to the answer on the fact’s own groups', () => {
-    expect(first(hintArithmetic(def, facts, tagsToHint(def, facts)))).toEqual([])
+    expect(first(hintArithmetic(def, facts, [...tagsToHint(def, facts), 'digitSwap']))).toEqual([])
+    expect(first(animationChecks(def, facts, tagsToHint(def, facts)))).toEqual([])
     const problems: string[] = []
     for (const f of facts) {
       const q = groupsOfId(f.id)!
@@ -160,8 +161,15 @@ describe('mul2510 oracle', () => {
     expect(first(facts.flatMap((f) => hintProblems(def, f, tagsToHint(def, facts))))).toEqual([])
   })
 
+  it.fails('marks the tableNeighbour hint animated, as SPEC §4.3 does for its eight misconceptions', () => {
+    // GENERATOR DEVIATION (mul2510.ts hint()): hintOf(…, 'tableNeighbour') without `animated: true`; SPEC
+    // §4.3 lists tableNeighbour among the eight animated hints (HintSpec.animated, types.ts). The digitSwap
+    // and mulAsAdd hints are flagged right. No effect today: ui/hint/hintFor.ts films three of the eight.
+    expect(first(animationChecks(def, facts, [...tagsToHint(def, facts), 'digitSwap']))).toEqual([])
+  })
+
   it('says only true arithmetic in every hint; the array or the hops picture the fact’s own product', () => {
-    expect(first(hintArithmetic(def, facts, tagsToHint(def, facts)))).toEqual([])
+    expect(first(hintArithmetic(def, facts, [...tagsToHint(def, facts), 'digitSwap']))).toEqual([])
     const problems: string[] = []
     for (const f of facts) {
       const q = mulId(f.id)!
@@ -244,6 +252,7 @@ describe('shareEqually oracle', () => {
 
   it('says only true arithmetic in every hint (also after shareUnequal), showing each animal’s equal share', () => {
     expect(first(hintArithmetic(def, facts, [...tagsToHint(def, facts), 'shareUnequal']))).toEqual([])
+    expect(first(animationChecks(def, facts, tagsToHint(def, facts)))).toEqual([])
     const problems: string[] = []
     for (const f of facts) {
       const q = shareId(f.id)!
@@ -253,3 +262,25 @@ describe('shareEqually oracle', () => {
     expect(first(problems)).toEqual([])
   })
 }, TIMEOUT)
+
+// ═══ How ':' is read (SPEC §10.1) ════════════════════════════════════════════
+
+describe('division read aloud (SPEC §10.1: "Regnetegn: plus, minus, gange, divideret med")', () => {
+  it.fails('reads ":" as "divideret med" in every task and hint of inverseOps and shareEqually, as speech/equation.ts does', () => {
+    // GENERATOR DEVIATION: inverseOps (mulToDiv, "Hvad er tolv delt med fire?" under 12 : 4 = □, and its hints)
+    // and shareEqually's hint ("Tolv delt med tre giver fire.") use frag.muldiv.delt_med; SPEC §10.1 and
+    // speech/equation.ts read ':' as op.divideret_med, so the app would say the same sign two ways.
+    const problems: string[] = []
+    for (const id of ['inverseOps', 'shareEqually'] as const) {
+      const def = registeredSkill(id)
+      const facts = [...def.enumerate(), ...(def.mode === 'procedure' ? [...instancesOf3(def, 20).values()].flat() : [])]
+      for (const f of facts) {
+        for (const kind of def.kinds) {
+          const parts = [...def.speech(f, kind), ...def.hint(f, null, kind).speech]
+          if (parts.some((p) => 'clip' in p && p.clip === 'frag.muldiv.delt_med')) problems.push(`${f.id} ${kind}: "${spokenText(parts)}"`)
+        }
+      }
+    }
+    expect(first(problems)).toEqual([])
+  })
+})

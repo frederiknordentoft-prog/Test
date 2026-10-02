@@ -279,7 +279,7 @@ describe('sortShapes oracle', () => {
     }
     expect(first(problems)).toEqual([])
     // SPEC §4.3: at least six of each, so the contrast rule can conclude
-    const contrasts = canon.map((f) => def.prompt && built.find((b) => b.fact.id === f.id)!.task.contrast)
+    const contrasts = canon.map((f) => built.find((b) => b.fact.id === f.id)!.task.contrast)
     expect(contrasts.filter((c) => c === 'conflict').length).toBeGreaterThanOrEqual(6)
     expect(contrasts.filter((c) => c === 'congruent').length).toBeGreaterThanOrEqual(6)
   })

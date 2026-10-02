@@ -11,7 +11,7 @@ import {
 import { registeredSkills } from '../../registry'
 import { numberWordProblems, numbersIn } from '../number/number2.oracle'
 import {
-  answerComesNowSays, avoidChecks, hintArithmetic, balanceTokens, cardAnswer, cardNumbers, classifyAll, continueStones, diagnosticCards, distinctIds,
+  animationChecks, answerComesNowSays, avoidChecks, hintArithmetic, balanceTokens, cardAnswer, cardNumbers, classifyAll, continueStones, diagnosticCards, distinctIds,
   equalSidesAnswer, equalSidesOf, equalSidesShapeOk, equalsAsAnswerValues, explainMissingPart10, explainSkip, idChecks, instancesOf3,
   inverseAnswer, inverseOf, inverseWrongOps, missing100Mis, missing100Numbers, missing100Of, missing100Tokens, missingPart10Of,
   productionChecks, sentences, skipNext, skipRowOf, solveTokens, specKindChecks, spokenAnswer, spokenTokens, statementTrue, swapped,
@@ -139,7 +139,9 @@ describe('missingPart10 oracle', () => {
   })
 
   it('says only true arithmetic in every strategy hint, for every tag and kind', () => {
-    expect(first(hintArithmetic(def, canon, tagsToHint(def, canon)))).toEqual([])
+    const tags = [...tagsToHint(def, canon), 'digitSwap' as const]
+    expect(first(hintArithmetic(def, canon, tags))).toEqual([])
+    expect(first(animationChecks(def, canon, tags))).toEqual([])
   })
 })
 
@@ -244,7 +246,10 @@ describe('skipCount oracle', () => {
   })
 
   it('says only true arithmetic in every strategy hint (and "Svaret er" the answer), for every tag and kind, also on drawn instances', () => {
-    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tagsToHint(def, canon)))).toEqual([])
+    const tags = [...tagsToHint(def, canon), 'digitSwap' as const]
+    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tags))).toEqual([])
+    // SPEC §4.3: equalsAsAnswer and digitSwap hints are animated, the others are not
+    expect(first(animationChecks(def, canon, tags))).toEqual([])
   })
 }, TIMEOUT)
 
@@ -347,7 +352,10 @@ describe('equalSides oracle', () => {
   })
 
   it('says only true arithmetic in every strategy hint (and "Svaret er" the answer), for every tag and kind, also on drawn instances', () => {
-    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tagsToHint(def, canon)))).toEqual([])
+    const tags = [...tagsToHint(def, canon), 'digitSwap' as const]
+    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tags))).toEqual([])
+    // SPEC §4.3: equalsAsAnswer and digitSwap hints are animated, the others are not
+    expect(first(animationChecks(def, canon, tags))).toEqual([])
   })
 }, TIMEOUT)
 
@@ -420,7 +428,10 @@ describe('inverseOps oracle', () => {
   })
 
   it('says only true arithmetic in every strategy hint (and "Svaret er" the answer), for every tag and kind, also on drawn instances', () => {
-    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tagsToHint(def, canon)))).toEqual([])
+    const tags = [...tagsToHint(def, canon), 'digitSwap' as const]
+    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tags))).toEqual([])
+    // SPEC §4.3: equalsAsAnswer and digitSwap hints are animated, the others are not
+    expect(first(animationChecks(def, canon, tags))).toEqual([])
   })
 }, TIMEOUT)
 
@@ -508,7 +519,10 @@ describe('missingPart100 oracle', () => {
   })
 
   it('says only true arithmetic in every strategy hint (and "Svaret er" the answer), for every tag and kind, also on drawn instances', () => {
-    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tagsToHint(def, canon)))).toEqual([])
+    const tags = [...tagsToHint(def, canon), 'digitSwap' as const]
+    expect(first(hintArithmetic(def, [...canon, ...drawn.filter((_, i) => i % 5 === 0)], tags))).toEqual([])
+    // SPEC §4.3: equalsAsAnswer and digitSwap hints are animated, the others are not
+    expect(first(animationChecks(def, canon, tags))).toEqual([])
   })
 }, TIMEOUT)
 
