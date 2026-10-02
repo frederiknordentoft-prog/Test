@@ -2,8 +2,8 @@
 // panden og forsvinder mod hovedets sider, og de to store, runde glas med polstret kant og messingring
 // sidder på båndet lige over øjnene, med luft til at pupillerne kan kigge op (blikket flytter dem
 // højst 3 enheder), så øjnene altid er fri. Glassene har en bred glans og nitter. Alt regnes ud fra
-// bærerens øjenankre og stadiets øjenskala (babyens øjne er større). Pandelokken (hest, enhjørning)
-// falder hen over båndet, og ørerne står foran det. Med en hat med ørehuller på (`onHat`) sidder
+// bærerens øjenankre og stadiets øjenskala (babyens øjne er større). Brillerne ligger oven på pandelokken
+// (hest, enhjørning), så en stor lok ikke skjuler dem (review G1-r4, T11), og ørerne står foran båndet. Med en hat med ørehuller på (`onHat`) sidder
 // brillerne om hattens bånd og tegnes efter hatten, så hatten ikke skjuler dem.
 import { STAGE_XF } from '../../rig/anchors'
 import { fabric } from '../../rig/palette'

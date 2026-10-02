@@ -327,6 +327,11 @@ export function Pivot({ at, cls, still, pose, children }: { at: Pt; cls: string;
   )
 }
 
+/** Hovedets nik (næsevippets overshoot): en ekstra gruppe om hovedets indhold, kun når den animeres. */
+function Nod({ on, children }: { on: boolean; children: ReactNode }) {
+  return on ? <g className="a-nod">{children}</g> : <>{children}</>
+}
+
 /** Miljøet for en render: unikt id-præfiks og (i animeret DOM) refs til pupil-tracking. */
 export interface RigEnv {
   uid: string
@@ -428,6 +433,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   const face = MOOD_FACE[mood]
   const faceStyle = resolveFace(def, breed)
   const mouth = face.mouth === 'idle' ? faceStyle.idleMouth : face.mouth
+  // Næsevippet (kaninens signatur, review G1-r4, K2): i animeret tilstand løftes overlæben (hvilemundens
+  // 'cat-w') med næsen, og hovedet nikker på overshoot-framen (rig.css: a-lip og a-nod, kun i hvile).
+  const nod = animated && def.signature === 'nose-wiggle'
+  const lip = nod && mouth === 'cat-w'
   const pose = resolvePose(def, breed, mood)
   const seed = props.seed ?? hashSeed(`${def.id}${breed}${colorway}${stage}`)
 
@@ -469,6 +478,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
 
   // Ansigtsgenstande i panden (eventyrbriller) flytter op om en hat med ørehuller og tegnes efter den.
   const faceOnHat = hat === 'through' && !!worn('face')?.item.onHat
+  // Uden hat ligger de oven på pandelokken, så en stor lok (shetlandføllet) ikke skjuler dem (review G1-r4, T11).
+  const faceOverMane = !faceOnHat && !!worn('face')?.item.onHat && !!parts.ManeFront && !hides.has('mane-front')
   // Arterne ser 'through' kun, når ørerne faktisk går gennem huller (og tegner da en afrundet ørebund).
   const hatCtx = holes ? 'through' : hat === 'under' ? 'under' : null
   const ctx = (sw: number): PartCtx => ({ pal, a, stage, mood, breed, colorway, sw, ids, still, lod, pose, hat: hatCtx, clothed: !!bodyWorn })
@@ -904,6 +915,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
         {/* Hoved (lag 10–16) om halsleddet; data-part="head" bruges af bobleklaringens lint. */}
         <g data-part="head" transform={`translate(${n(R.neckWorld.x)} ${n(R.neckWorld.y)}) scale(${fmt3(R.head.s)})`}>
           <g className={animated ? 'a-head' : undefined} transform={tf(pose.head ?? {})}>
+            <Nod on={nod}>
             <g transform={`translate(${n(-a.neck.x)} ${n(-a.neck.y)})`}>
               {/* 10 · mane-back (+ hattens bagdel) og ører bag hovedet (vædderen) */}
               {parts.ManeBack && scaled((breedDef?.maneOrigin ?? def.maneOrigin) === 'headTop' ? a.headTop : a.headCenter, maneK, parts.ManeBack(ctx(swHead / maneK)))}
@@ -921,7 +933,13 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {/* 12 · ansigt */}
               {faceStyle.cheeks !== false && <Cheeks a={a} pal={pal} />}
               {parts.Muzzle?.(ctx(swHead))}
-              <Mouth at={a.mouth} shape={mouth} pal={pal} sw={swHead} buckTeeth={faceStyle.buckTeeth} />
+              {lip ? (
+                <g className="a-lip">
+                  <Mouth at={a.mouth} shape={mouth} pal={pal} sw={swHead} buckTeeth={faceStyle.buckTeeth} />
+                </g>
+              ) : (
+                <Mouth at={a.mouth} shape={mouth} pal={pal} sw={swHead} buckTeeth={faceStyle.buckTeeth} />
+              )}
               <Eyes
                 a={a}
                 shape={face.eyes}
@@ -934,9 +952,10 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                 glintRef={glintRef}
               />
               {/* 13 · face-item (eventyrbriller på en hat tegnes efter hatten, se faceOnHat) */}
-              {!faceOnHat && renderItem('face', 'front', R.head.s)}
-              {/* 14 · mane-front */}
+              {!faceOnHat && !faceOverMane && renderItem('face', 'front', R.head.s)}
+              {/* 14 · mane-front (eventyrbriller i panden ligger oven på pandelokken) */}
               {parts.ManeFront && !hides.has('mane-front') && scaled(a.headTop, R.xf.mane, parts.ManeFront(ctx(swHead / R.xf.mane)))}
+              {faceOverMane && renderItem('face', 'front', R.head.s)}
               {/* 15 · head-item (en hat mellem ørerne på en art med horn sidder skævt ved siden af
                   hornet og tegnes foran øret, se festhattens overskrivning) */}
               {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
@@ -954,6 +973,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {renderItem('head', 'rim', R.head.s)}
               {Horn && !hornHole && horn(null)}
             </g>
+            </Nod>
           </g>
         </g>
 
