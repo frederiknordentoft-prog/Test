@@ -317,8 +317,8 @@ async function playKind(browser, kind, vpName) {
     )
     check(loops === 0, `${tag}: rolig tilstand uden løkker i svarfeltet (${loops})`)
     await shot(page, `calm-${tag}`)
-    // every example of the kind as asked (phone and iPad), and the pay tray's sum as support
-    if (vpName !== 'side') {
+    // every example of the kind as asked (tap targets and overflow too), and the pay tray's sum as support
+    {
       const ids = await page.evaluate(async (k) => (await import('/src/dev/tasks/examples.ts')).EXAMPLES[k].map((e) => e.id), kind)
       for (const id of ids) {
         await page.goto(`${BASE}?${new URLSearchParams({ view: 'kind', ex: id, shot: '1', e2e: '1', voice: 'fast', safe: vp.safe, demo: '0' })}`, { waitUntil: 'networkidle' })
@@ -326,6 +326,8 @@ async function playKind(browser, kind, vpName) {
         await page.waitForSelector(`.tv-round__answer [data-kind="${kind}"]`, { timeout: 8000 })
         await sleep(450)
         await shot(page, `gallery-${id.replaceAll('/', '_')}-${vpName}`)
+        const small = await smallTargets(page)
+        check(small.length === 0 && (await noOverflow(page)), `${tag}: ${id} uden små trykmål og overløb${small.length ? ` (${small.join(', ')})` : ''}`)
         if (id === 'pay-1250') {
           for (const p of [1000, 200, 50]) await tap(cdp, await centre(page, `[data-source="${p}"]`))
           await sleep(500)

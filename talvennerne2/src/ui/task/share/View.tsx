@@ -220,15 +220,13 @@ function platesFor(task: TaskViewProps['task'], value: NonNullable<TaskViewProps
   return counts.map((c) => Array.from({ length: c }, () => next++))
 }
 
-const FACE_PLATE: Record<FaceSize, number> = { sm: 34, md: 46, lg: 58 }
-
 /** The plates of a deal, small (the struck deal is the child's own; the confirm shows equal plates). */
 export function ShareFace({ task, value, size }: FaceProps) {
   const setup = shareSetup(task) ?? { total: 6, plates: 2, thing: 'carrot' }
   const counts = rememberedDeal(task.id, value) ?? countsOf(task, value) ?? Array.from({ length: setup.plates }, () => 0)
   const fair = Math.ceil(setup.total / setup.plates)
   return (
-    <span className={cx('tv-face', `tv-face--${size}`, 'tv-dealface')} style={{ '--plate': `${FACE_PLATE[size]}px` } as CSSProperties}>
+    <span className={cx('tv-face', `tv-face--${size}`, 'tv-dealface', `tv-dealface--${size satisfies FaceSize}`)}>
       {counts.map((c, p) => (
         <span key={p} className="tv-dealface__plate">
           <span className="tv-deal__dish" aria-hidden />

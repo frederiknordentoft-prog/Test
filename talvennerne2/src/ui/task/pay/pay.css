@@ -282,6 +282,14 @@
   .tv-pay-demo .tv-pay__tray {
     min-height: 66px;
   }
+  .tv-payface--md {
+    --mm: 1.4px;
+    --mm-note: 0.34px;
+  }
+  .tv-payface--sm {
+    --mm: 1.05px;
+    --mm-note: 0.26px;
+  }
 }
 
 :root[data-calm] .tv-pay-demo .tv-pay__piece {

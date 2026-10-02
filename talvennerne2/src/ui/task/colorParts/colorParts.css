@@ -149,6 +149,10 @@
   .tv-parts--bar {
     --fig: min(340px, 52vw);
   }
+  /* a rectangle is wide and low: it gets the width that keeps four parts 60 px wide */
+  .tv-parts--rect {
+    --fig: min(300px, 46vw);
+  }
   .tv-parts__ask {
     font-size: 32px;
   }

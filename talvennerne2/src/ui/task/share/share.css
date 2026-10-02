@@ -174,9 +174,16 @@
 
 /* The face of a deal: small plates in a row */
 .tv-dealface {
+  --plate: 46px;
   flex-wrap: wrap;
   gap: 4px;
   max-width: 260px;
+}
+.tv-dealface--sm {
+  --plate: 34px;
+}
+.tv-dealface--lg {
+  --plate: 58px;
 }
 .tv-dealface__plate {
   position: relative;
@@ -255,6 +262,13 @@
   }
   .tv-deal-demo {
     flex-direction: column;
+  }
+  /* the error flow shares the short height with the strategy picture */
+  .tv-dealface {
+    --plate: 36px;
+  }
+  .tv-dealface--sm {
+    --plate: 28px;
   }
 }
 
