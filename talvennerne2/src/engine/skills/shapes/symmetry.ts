@@ -126,6 +126,14 @@ function parse(f: Pick<Fact, 'id'>): Parsed {
 
 const join = (ids: readonly string[]): string => [...ids].sort().join('|')
 const members = (p: Parsed): Item[] => p.plate.filter(hasMirrorLine)
+/** Four of the plate's figures for "Hvor mange … har en symmetrilinje?" (six do not fit beside the keypad). */
+function countPlate(p: Parsed): Item[] {
+  const yes = members(p)
+  const no = p.plate.filter((i) => !hasMirrorLine(i))
+  const take = Math.max(4 - no.length, Math.min(yes.length, 1 + (yes.length + no.length + yes[0].id.charCodeAt(1)) % 3))
+  return [...yes.slice(0, take), ...no.slice(0, 4 - take)]
+}
+const counted = (p: Parsed): number => countPlate(p).filter(hasMirrorLine).length
 const judged = (p: Parsed): 'yes' | 'no' =>
   p.family === 'isSymLine' ? (p.cut === 'equal' && mirroredByMiddle(p.fig) ? 'yes' : 'no') : p.mirrored ? 'yes' : 'no'
 
@@ -140,12 +148,13 @@ function answerFor(f: Fact, kind: TaskKind): AnswerValue {
   const p = parse(f)
   if (kind === 'trueFalse') return judged(p)
   if (kind === 'multiSelect') return join(members(p).map((i) => i.id))
-  return p.family === 'mirrorGrid' ? p.missing : members(p).length
+  return p.family === 'mirrorGrid' ? p.missing : counted(p)
 }
 
 function prompt(f: Fact, kind: TaskKind, rng: Rng): Prompt {
   const p = parse(f)
-  if (kind === 'multiSelect' || (kind === 'grid' && p.family === 'isSymLine')) return { scene: 'shapes', items: rng.shuffle(p.plate) }
+  if (kind === 'multiSelect') return { scene: 'shapes', items: rng.shuffle(p.plate) }
+  if (kind === 'grid' && p.family === 'isSymLine') return { scene: 'shapes', items: rng.shuffle(countPlate(p)) }
   if (p.family === 'isSymLine') return { scene: 'shape', shape: p.fig.shape, variant: p.fig.variant, cut: p.cut }
   const right = kind === 'trueFalse' ? p.shown : p.partial
   return { scene: 'grid', w: p.w, h: p.h, filled: [...p.left, ...right].sort((a, b) => a - b), axis: 'v' }
@@ -155,9 +164,9 @@ function candidates(f: Fact): ReturnType<typeof tagged> {
   const p = parse(f)
   const entries: Entry[] = [[judged(p) === 'yes' ? 'no' : 'yes', 'other']]
   // grid: how many are missing (mirrorGrid) or have a line (isSymLine)
-  const n = p.family === 'mirrorGrid' ? p.missing : members(p).length
+  const n = p.family === 'mirrorGrid' ? p.missing : counted(p)
   entries.push([n - 1, 'near'], [n + 1, 'near'])
-  entries.push(p.family === 'mirrorGrid' ? [p.left.length, 'other'] : [p.plate.length, 'other'])
+  entries.push(p.family === 'mirrorGrid' ? [p.left.length, 'other'] : [countPlate(p).length, 'other'])
   // multiSelect: a member left out, a non-member taken
   const mine = members(p)
   for (const m of mine) if (mine.length > 2) entries.push([join(mine.filter((x) => x !== m).map((i) => i.id)), 'near'])
