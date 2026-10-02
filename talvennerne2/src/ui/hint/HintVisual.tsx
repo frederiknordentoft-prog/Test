@@ -4,6 +4,8 @@
 // smallerFromLarger. Films play once when the card appears; calm motion shows their last frame.
 import type { CSSProperties } from 'react'
 import { AnalogClock, Base10Group, COIN_VALUES, Coin } from '../../art/materials'
+import { isPiece } from '../task/pay/logic'
+import { PieceArt } from '../task/faces'
 import type { CoinOre } from '../../art/materials'
 import { Equation } from '../design/Equation'
 import { cx } from '../design/cx'
@@ -106,6 +108,13 @@ export function HintVisual({ visual, size = 'md' }: { visual: AnyVisual; size?: 
           <Columns a={visual.a} b={visual.b} op="−" regroup film />
         </div>
       )
+    case 'anim.borrowNoDecrement':
+      // the same borrowing, with the tens digit that goes down by one in focus
+      return (
+        <div className="tv-hv">
+          <Columns a={visual.a} b={visual.b} op="−" regroup film stressLent />
+        </div>
+      )
     case 'anim.digitSwap':
       return <DigitSwap n={visual.n} given={visual.given} film />
     case 'tensOnes':
@@ -129,6 +138,10 @@ export function HintVisual({ visual, size = 'md' }: { visual: AnyVisual; size?: 
               (COIN_VALUES as readonly number[]).includes(v) ? (
                 <span key={i} className="tv-step" style={{ animationDelay: `${200 + i * 220}ms` }}>
                   <Coin ore={v as CoinOre} mm={2.3} />
+                </span>
+              ) : isPiece(v) ? (
+                <span key={i} className="tv-step" style={{ animationDelay: `${200 + i * 220}ms` }}>
+                  <PieceArt piece={v} />
                 </span>
               ) : (
                 <span key={i} className="tv-hv__chip">{formatMoney(v)}</span>

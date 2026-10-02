@@ -103,6 +103,25 @@
 .tv-face__num--small {
   font-size: 0.66em;
 }
+/* four and five digits on a card (1004, 30045): smaller, so the whole number fits */
+.tv-face__num--long {
+  font-size: 0.8em;
+}
+.tv-face__num--xlong {
+  font-size: 0.62em;
+}
+.tv-face--lg .tv-face__num--long {
+  font-size: calc(var(--text-answer) * 0.85);
+}
+.tv-face--lg .tv-face__num--xlong {
+  font-size: calc(var(--text-answer) * 0.68);
+}
+.tv-face--sm .tv-face__num--long {
+  font-size: 23px;
+}
+.tv-face--sm .tv-face__num--xlong {
+  font-size: 19px;
+}
 .tv-face--sm .tv-face__num--small {
   font-size: 20px;
 }
@@ -151,6 +170,15 @@
 }
 .tv-face__unitword.is-lg .tv-face__unittext {
   font-size: 36px;
+}
+/* A coin or note on a card (faces.tsx MoneyFace): scaled by pieceScale, never wider than the card */
+.tv-face__money {
+  display: inline-grid;
+  place-items: center;
+  max-width: 100%;
+}
+.tv-face__money .tv-piece {
+  max-width: 100%;
 }
 .tv-face__row {
   display: inline-flex;
@@ -863,6 +891,7 @@
   display: grid;
   place-items: center;
   min-width: 0;
+  padding: 0 5px;
   border-radius: 16px;
   background: var(--color-stone);
   box-shadow: inset 0 -5px 0 var(--color-stone-edge);
@@ -1535,6 +1564,28 @@
   align-items: stretch;
 }
 /* The demo films' small questions (review r1 P2-8): like the child's own task, never the task. */
+.tv-demo__pile--money {
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--color-d-money-soft);
+}
+.tv-demo__rings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tv-demo__rings .tv-demo__ring {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 58px;
+  min-height: 58px;
+  max-width: 96px;
+  padding: 8px;
+}
 .tv-demo__hear {
   display: grid;
   place-items: center;

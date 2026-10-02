@@ -29,6 +29,13 @@
 .tv-scene--balance .tv-eq {
   font-size: var(--eq-size, var(--text-task));
 }
+/* Two equations joined by a word (inverseOps): one line each, the word opening the second */
+.tv-eqlines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+}
 .tv-row {
   font-size: 18px;
 }
@@ -250,9 +257,9 @@
   display: grid;
   place-items: center;
 }
-.tv-scene__board {
-  --scene-h: 240px;
-}
+/* The board takes the height its card gives it (--scene-h from the round card or the hint): with the
+   strategy open the card is lower, and the board must shrink with it, never run out over the card
+   (UI-fund 3). No height of its own here, which would win over the card's. */
 .tv-board__entry {
   position: absolute;
   right: -8px;
@@ -376,7 +383,23 @@
   background: var(--color-warm-soft);
   color: var(--color-warm);
 }
+/* One coin or note (src/ui/task/pay/PieceArt.tsx): its real millimetres (--d) times the scale of
+   where it lies (--mm for coins, --mm-note for notes), so a 5-krone stays bigger than a 1-krone. */
+.tv-piece {
+  display: block;
+  flex: none;
+}
+.tv-piece--coin {
+  width: calc(var(--d) * var(--mm, 2.3px));
+  height: auto;
+}
+.tv-piece--note {
+  width: calc(var(--d) * var(--mm-note, 0.52px));
+  height: auto;
+}
 .tv-coins {
+  --mm: 2.9px;
+  --mm-note: 0.8px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -386,12 +409,26 @@
 .tv-coins .tv-mat {
   max-height: 96px;
 }
-.tv-coins__note {
+.tv-coins--many {
+  --mm: 2.3px;
+}
+/* in a scene the pieces keep their real sizes (.tv-scene .tv-mat would size them by their own width) */
+.tv-coins .tv-piece--coin {
+  width: calc(var(--d) * var(--mm));
+}
+.tv-coins .tv-piece--note {
+  width: calc(var(--d) * var(--mm-note));
+}
+.tv-coins__amount {
   padding: 8px 12px;
   border-radius: 10px;
   background: var(--color-d-money-soft);
   font-size: 22px;
   font-weight: 900;
+}
+.tv-coins--small {
+  --mm: 2px;
+  --mm-note: 0.72px;
 }
 .tv-shop {
   display: flex;

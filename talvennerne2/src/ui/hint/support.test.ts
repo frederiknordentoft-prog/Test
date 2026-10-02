@@ -94,3 +94,28 @@ describe('support on a new key', () => {
     }
   })
 })
+
+describe('no counting line under tens and ones (UI-fund 5)', () => {
+  it('fillSlots in the place-value skills ("74 = □ tiere og □ enere", the blocks of 748) gets no 0–10 line', () => {
+    for (const skill of ['tensOnes', 'placeValue1000'] as SkillId[]) {
+      const own = keysForSkills([{ skill }], { skills: reg, states: {}, audioVerified: true, mode: 'round' })
+      let seen = 0
+      for (const k of own) {
+        for (const kind of k.kinds) {
+          const t = k.build(kind, makeRng(3), 0)
+          expect(countingLine(t), `${t.factId} ${kind}`).toBeNull()
+          const s = supportFor(t, reg)
+          if (kind === 'fillSlots') seen++
+          expect(s?.scene === 'line' && s.min === 0 && (s.max === 10 || s.max === 20), `${t.factId} ${kind}`).toBe(false)
+        }
+      }
+      expect(seen).toBeGreaterThan(0)
+    }
+  })
+
+  it('still counts along the line for a row of numbers (skipCount 0, 2, 4, 6, □, □)', () => {
+    const k = keysForSkills([{ skill: 'skipCount' }], { skills: reg, states: {}, audioVerified: true, mode: 'round' }).find((x) => x.kinds.includes('fillSlots'))!
+    const t = k.build('fillSlots', makeRng(3), 0)
+    expect(countingLine(t)).toMatchObject({ scene: 'line', min: 0 })
+  })
+})

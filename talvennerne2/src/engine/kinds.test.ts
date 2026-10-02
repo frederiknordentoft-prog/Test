@@ -42,6 +42,26 @@ describe('guess rate, production and ceiling (SPEC §3.3)', () => {
     expect(isProduction(task({ kind: 'countTap', skill: 'count10', range: [1, 10] }))).toBe(true)
   })
 
+  it('counts every accepted filling of fillSlots as a right guess (UI-fund 8)', () => {
+    const t = task({ kind: 'fillSlots', options: [1, 3, 10, 13], answer: '10|3', answerType: 'set', accept: [] })
+    expect(guessP(t)).toBeCloseTo(1 / 16)
+    // 13 = □ + □ takes both orders: twice as easy to hit by luck
+    expect(guessP({ ...t, accept: ['3|10'] })).toBeCloseTo(2 / 16)
+    expect(isProduction({ ...t, accept: ['3|10'] })).toBe(false)
+    // 932 = □ + □ + □ in any order: six right fillings of 10³
+    const expand = task({ kind: 'fillSlots', options: [2, 3, 9, 30, 90, 300, 900, 932, 20, 200], answer: '900|30|2', answerType: 'set', accept: ['900|2|30', '30|900|2', '30|2|900', '2|900|30', '2|30|900'] })
+    expect(guessP(expand)).toBeCloseTo(6 / 1000)
+  })
+
+  it('measures a keypad in kroner in typed kroner, not in øre (UI-fund 22)', () => {
+    const kr = task({ kind: 'keypad', answer: 1700, answerType: 'ore', entryScale: 100, unit: 'kr', range: [0, 2000] })
+    expect(guessP(kr)).toBeCloseTo(1 / 21)
+    expect(guessP({ ...kr, range: [0, 10000] })).toBeCloseTo(1 / 101)
+    expect(guessP({ ...kr, range: [300, 1900] })).toBeCloseTo(1 / 17)
+    // whole numbers as before
+    expect(guessP(task({ kind: 'keypad', range: [0, 20] }))).toBeCloseTo(1 / 21)
+  })
+
   it('counts setting the clock to the hour as production', () => {
     const t = task({ kind: 'clockSet', modulo: 720, prompt: { scene: 'clock', minutes: null, step: 60 } })
     expect(guessP(t)).toBeCloseTo(1 / 12)

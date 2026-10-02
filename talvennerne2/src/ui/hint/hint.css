@@ -86,7 +86,9 @@
   flex-direction: column;
 }
 .tv-hv__coins {
+  --mm-note: 0.62px;
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   justify-content: center;
   gap: 4px;
@@ -200,6 +202,27 @@
   color: var(--color-warm);
   font-size: 20px;
   font-weight: 900;
+}
+/* borrowNoDecrement: the tens digit after lending is the point; it grows and stays in a ring */
+.tv-cols__lent.is-stress {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2.5px var(--color-warm);
+  font-size: 18px;
+}
+.tv-cols__pulse {
+  display: inline-block;
+}
+.tv-cols__pulse.is-film {
+  animation: tv-stress 520ms var(--ease-out) 2 backwards;
+}
+@keyframes tv-stress {
+  50% {
+    transform: scale(1.35);
+  }
 }
 .tv-cols__d {
   position: relative;
@@ -336,6 +359,7 @@
 :root[data-calm] .tv-step,
 :root[data-calm] .tv-cols__carried,
 :root[data-calm] .tv-cols__d::after,
+:root[data-calm] .tv-cols__pulse,
 :root[data-calm] .tv-swap__digit {
   animation: none !important;
 }
@@ -344,6 +368,7 @@
   .tv-step,
   .tv-cols__carried,
   .tv-cols__d::after,
+  .tv-cols__pulse,
   .tv-swap__digit {
     animation: none !important;
   }

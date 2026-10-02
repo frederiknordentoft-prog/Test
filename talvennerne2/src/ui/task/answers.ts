@@ -6,6 +6,7 @@ import { DENOMINATORS, type Denominator } from '../../speech/fractions'
 import { shapeClip, solidClip } from '../../speech/nouns'
 import { SHAPE_IDS } from '../../art/materials/Shapes'
 import { SOLID_IDS } from '../../art/materials/Solids'
+import { pieceOfToken } from './pay/logic'
 
 // ─── Tokens ─────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,15 @@ export function lineRange(task: Task): [number, number] {
   if (p.scene === 'line' && p.max > p.min) return [p.min, p.max]
   const [lo, hi] = task.range
   return hi > lo ? [lo, hi] : [0, Math.max(10, hi)]
+}
+
+/**
+ * An empty number line: only its ends are numbered (UI-fund 2). The materials' NumberLine has
+ * `endsOnly`, but the line prompt does not carry it in the contract yet (proposed: `endsOnly?: boolean`
+ * on `{ scene: 'line' }` in src/engine/types.ts), so the views read it here once a skill sets it.
+ */
+export function lineEndsOnly(p: Extract<Prompt, { scene: 'line' }>): boolean {
+  return 'endsOnly' in p && p.endsOnly === true
 }
 
 /** A position on the line (0–1) → the value it stands for, rounded to whole numbers and clamped. */
@@ -213,12 +223,29 @@ export function confirmSpeech(task: Task): SpeechPart[] {
 
 // ─── Money and numbers on screen ────────────────────────────────────────────
 
-/** Minus is always U+2212; numbers up to 9999 have no thousands separator (SPEC §3.1). */
+/**
+ * A card's label for assistive tech (never shown): money as amounts ('c5000' and 'c010000' are
+ * "50 kr." and "100 kr.", a coin set lists its pieces), numbers as on screen, the rest as it is.
+ */
+export function optionLabel(task: Pick<Task, 'answerType' | 'optionView'>, value: AnswerValue): string {
+  if (typeof value === 'number') return task.answerType === 'ore' || task.optionView === 'coin' ? formatMoney(value) : formatNumber(value)
+  const tokens = value.split('|')
+  const pieces = tokens.map(pieceOfToken)
+  if (pieces.every((p): p is number => p !== null)) return pieces.map(formatMoney).join(', ')
+  return value
+}
+
+/**
+ * Minus is always U+2212, and a whole number is written the way a child writes it: no thousands
+ * separator. SPEC §3.1 says so up to 9999 and says nothing else; above that, the only numbers on a
+ * card are what a child wrote ("tre hundrede og femogfyrre" as 30045, a 1004 typed with a digit
+ * too many), and "30.045" would hide exactly that (UI-fund 6).
+ */
 export function formatNumber(n: number): string {
   const sign = n < 0 ? '−' : ''
   const abs = Math.abs(n)
   const whole = Math.trunc(abs)
-  const s = whole > 9999 ? whole.toLocaleString('da-DK').replace(/ /g, '.') : String(whole)
+  const s = String(whole)
   const frac = abs - whole
   return frac > 1e-9 ? `${sign}${s},${String(Math.round(frac * 100)).padStart(2, '0').replace(/0$/, '')}` : `${sign}${s}`
 }

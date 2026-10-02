@@ -4,6 +4,7 @@
 //   □ + 4 = 7      → "Hvad plus fire giver syv?"
 //   3 + 4 = 7      → "Tre plus fire er lig med syv." (balance and true/false)
 //   8 + 4 = □ + 5  → "Otte plus fire er lig med hvad plus fem?"
+//   7 + 2 = 9 + □  → "Syv plus to er lig med ni plus hvad?" (one question to the end)
 // Numbers in sums use "en" for 1. Term texts ({ text: ClipId }) are spoken as their clip.
 import type { ClipId, Op, SpeechPart, Term } from '../engine/types'
 
@@ -24,11 +25,15 @@ export function opClip(op: Op): ClipId {
 const isBlank = (t: Term): t is { blank: true } => 'blank' in t
 const isEquals = (t: Term) => 'op' in t && t.op === '='
 
-/** Maps terms one to one; the last number takes end form. */
+/**
+ * Maps terms one to one. A number that ends the sentence takes end form; a blank or a word after
+ * the last number ends it instead ("7 + 2 = 9 + □" is one question, "… ni plus hvad?", never
+ * "… ni. Plus hvad?").
+ */
 function readTerms(terms: readonly Term[], equalsClip: ClipId): SpeechPart[] {
-  const lastNum = terms.map((t) => 'n' in t).lastIndexOf(true)
+  const last = terms.length - 1
   return terms.map((t, i): SpeechPart => {
-    if ('n' in t) return { num: t.n, form: i === lastNum ? 'end' : 'mid' }
+    if ('n' in t) return { num: t.n, form: i === last ? 'end' : 'mid' }
     if ('op' in t) return { clip: t.op === '=' ? equalsClip : opClip(t.op) }
     if ('text' in t) return { clip: t.text }
     return { clip: 'frag.hvad' }

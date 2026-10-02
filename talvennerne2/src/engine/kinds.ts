@@ -15,10 +15,13 @@ const MANIPULATIVE_ONLY_FOR: Partial<Record<TaskKind, readonly SkillId[]>> = {
 }
 
 const factorial = (n: number): number => (n <= 1 ? 1 : n * factorial(n - 1))
-const rangeSize = (t: Task) => Math.max(1, t.range[1] - t.range[0] + 1)
+/**
+ * The answers a range holds, in the units the child enters (UI-fund 22): a money keypad in whole
+ * kroner (entryScale 100) has its range in øre, but 0–2000 øre is 21 typed answers, not 2001.
+ */
+const rangeSize = (t: Task) => Math.max(1, (t.range[1] - t.range[0]) / (t.entryScale || 1) + 1)
 /** fillSlots and sortOrder answers are tokens joined by '|', one per slot. */
 const slotCount = (t: Task) => (typeof t.answer === 'string' ? t.answer.split('|').length : 1)
-
 function promptOf<S extends Prompt['scene']>(t: Task, scene: S): Extract<Prompt, { scene: S }> | null {
   return t.prompt.scene === scene ? (t.prompt as Extract<Prompt, { scene: S }>) : null
 }
@@ -40,11 +43,13 @@ function kindGuessP(t: Task): number {
     case 'trueFalse':
       return 0.5
     case 'sortOrder':
-      return 1 / factorial(Math.max(1, t.options.length))
+      return 1 / factorial(t.options.length)
     case 'multiSelect':
       return 1 / (2 ** Math.max(1, t.options.length) - 1)
     case 'fillSlots':
-      return 1 / Math.max(1, t.options.length) ** slotCount(t)
+      // every filling the task accepts is a right guess too (UI-fund 8): 13 = □ + □ takes 10|3 and
+      // 3|10, a fraction its equivalents (the skills list each other filling once in accept)
+      return (1 + t.accept.length) / Math.max(1, t.options.length) ** slotCount(t)
     case 'buildBase':
     case 'pay':
     case 'share':
@@ -140,7 +145,7 @@ export function defaultFastMs(t: Task): number {
     }
     case 'pay': {
       // a set answer names its pieces; an amount is paid with the fewest
-      const pieces = typeof t.answer === 'number' ? fewestPieces(t.answer) : t.answer.split('|').filter((x) => x !== '').length
+      const pieces = typeof t.answer === 'number' ? fewestPieces(t.answer) : slotCount(t)
       return 5_000 + 2_500 * pieces
     }
     case 'share': {
@@ -151,9 +156,8 @@ export function defaultFastMs(t: Task): number {
       return 3_000 + 1_000 * (promptOf(t, 'fraction')?.parts ?? 2)
     case 'grid': {
       const g = promptOf(t, 'grid')
-      if (g?.coords) return 8_000
-      const cells = typeof t.answer === 'string' && t.answer ? t.answer.split('|').length : 1
-      return 5_000 + 1_500 * cells
+      // multi: one step per cell of the answer
+      return g?.coords ? 8_000 : 5_000 + 1_500 * slotCount(t)
     }
   }
 }

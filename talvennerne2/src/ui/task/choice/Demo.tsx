@@ -1,13 +1,16 @@
 // choice demo: a small question like the child's own (three apples to count, a heard number, the
-// stones 2 → ?, a figure, a pattern, the longest pencil, 1 + 2 in Plusengen); the hand taps the right
-// card and it turns green.
+// stones 2 → ?, a figure, a pattern, the longest pencil, 1 + 2 in Plusengen, a clock, a coin, an
+// amount, a solid, a fraction, a unit, 3 · 1 in Gangegrotten); the hand taps the right card and it
+// turns green.
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Shape2D } from '../../../art/materials'
+import { AnalogClock, Coin, Shape2D, Solid3D, Thing } from '../../../art/materials'
+import type { CoinOre } from '../../../art/materials'
 import { AnswerCard } from '../../design/AnswerCard'
 import { DemoStage } from '../demo/DemoStage'
 import { DEMO_ANSWER, DemoQuestion, DemoStick, NUMBER_TOPICS, demoTopic, type DemoTopic } from '../demo/topic'
-import { PatternToken } from '../faces'
+import { formatMoney } from '../answers'
+import { FracText, NumText, PatternToken, UnitFace } from '../faces'
 import type { DemoProps } from '../types'
 
 interface Cards {
@@ -17,7 +20,29 @@ interface Cards {
   filled: string | null
 }
 
+const coin = (ore: CoinOre, size: number) => <Coin ore={ore} size={size} />
+const money = (ore: number) => <NumText small>{formatMoney(ore)}</NumText>
+
+/** Picture cards per topic (the middle card, b, is the right one). */
+const PICTURE_CARDS: Partial<Record<DemoTopic, () => ReactNode[]>> = {
+  // "Hvilket ur viser klokken tre?"
+  clock: () => [120, 180, 540].map((m) => <AnalogClock key={m} minutes={m} size={66} />),
+  // "Tryk på femkronen."
+  coin: () => [coin(100, 46), coin(500, 60), coin(2000, 56)],
+  solid: () => (['cube', 'sphere', 'cylinder'] as const).map((id) => <Solid3D key={id} solid={id} size={56} />),
+  fraction: () => [['1', '3'], ['1', '2'], ['1', '4']].map(([n, d]) => <FracText key={d} n={n} d={d} />),
+  unit: () => ['g', 'cm', 'kg'].map((u) => <UnitFace key={u} unit={u} size="md" />),
+  // "Hvad er tungest?"
+  weight: () => [<Thing key="l" id="leaf" size={40} />, <Thing key="b" id="ball" size={62} />, <Thing key="s" id="star" size={36} />],
+  // "Hvor mange penge er der?" (2 kr + 1 kr)
+  money: () => [money(200), money(300), money(400)],
+}
+
 function cardsFor(topic: DemoTopic): Cards {
+  const pictures = PICTURE_CARDS[topic]
+  if (pictures) {
+    return { faces: pictures().map((face, i) => ({ key: 'abc'[i], face })), filled: null }
+  }
   if (topic === 'shape') {
     return {
       faces: [

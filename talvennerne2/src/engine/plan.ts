@@ -1,5 +1,5 @@
 import type { Fact, KeyState, MasteryKey, NodeId, ProfileDoc, RegionId, RoundMode, SkillId, Task } from './types'
-import { NODE_BY_ID, REGION_BY_ID, nodesOfRegion, type NodeDef, type RegionSkill } from '../content/curriculum'
+import { NODE_BY_ID, REGIONS, REGION_BY_ID, nodesOfRegion, type NodeDef, type RegionDef, type RegionSkill } from '../content/curriculum'
 import { SKILL_BY_ID } from '../content/skills'
 import {
   factsOf, goldenTask, keyInfo, keysForNode, keysForSkills, newBuildSession, skillRegistry,
@@ -131,6 +131,16 @@ export function withAnswers(keys: readonly KeyOption[], reg: SkillRegistry): Key
 function nodeTasks(node: NodeDef, env: Env): Task[] {
   const { profile, ctx } = env
   const tone = roundTone(profile.recentFirstTries, ctx.recentFast)
+  const started = startedKeys(node.skills, env)
+  const region = node.region ? REGION_BY_ID[node.region] : undefined
+  // the fill for a day whose allowance is used up is built only when the round builder asks for it
+  const lazy = <T>(make: () => T) => {
+    let value: T | undefined
+    return () => (value ??= make())
+  }
+  const regionKeys = lazy(() => (region ? withAnswers(onKeys(region.skills, env), env.reg) : []))
+  const chainKeys = lazy(() => (region ? withAnswers(onKeys(chainSkills(region), env), env.reg) : []))
+  const startedAll = lazy(() => withAnswers(started, env.reg))
   return buildRound({
     keys: withAnswers(keysForNode(node, keyCtx(env)), env.reg),
     states: profile.keys,
@@ -141,10 +151,32 @@ function nodeTasks(node: NodeDef, env: Env): Task[] {
     production: node.production,
     slots: slotPlan(node.size, tone, node.review > 0 ? node.review : 1),
     tone,
-    reviewKeys: withAnswers(reviewKeys(node.skills, env), env.reg),
+    reviewKeys: withAnswers(started.filter((k) => (profile.keys[k.key]?.box ?? 0) >= 3), env.reg),
+    // with today's allowance used up, the round is filled from the region, the chain, then review
+    // (roundBuilder: CAPPED_REPEAT_MAX, UI-fund 10 and 16)
+    get regionKeys() {
+      return regionKeys()
+    },
+    get chainKeys() {
+      return chainKeys()
+    },
+    get startedKeys() {
+      return startedAll()
+    },
     flagged: flaggedIds(profile.misconceptions),
     newCaps: newCapsFor(profile.newToday, ctx.day),
   })
+}
+
+/** The skills of the other regions in the region's chain (Urtårnet before Urtårnets top …). */
+function chainSkills(region: RegionDef): RegionSkill[] {
+  return REGIONS.filter((r) => r.chain === region.chain && r.id !== region.id).flatMap((r) => r.skills)
+}
+
+/** The keys of these skills (with their families), minus the domains a parent turned off. */
+function onKeys(skills: readonly RegionSkill[], env: Env): KeyOption[] {
+  const off = new Set(env.profile.settings.domainsOff)
+  return keysForSkills(skills.filter((s) => !off.has(SKILL_BY_ID[s.skill].domain)), keyCtx(env))
 }
 
 /** Skills the child has started (a key answered or seeded), minus the domains a parent turned off. */
@@ -160,11 +192,11 @@ function startedSkills(env: Env, exclude: ReadonlySet<SkillId> = new Set()): Ski
   return [...out].sort()
 }
 
-/** Keys the child is sure of in other skills, for the review slot. */
-function reviewKeys(nodeSkills: readonly RegionSkill[], env: Env): KeyOption[] {
+/** Keys of the other skills the child has started: the sure ones are the review slot's. */
+function startedKeys(nodeSkills: readonly RegionSkill[], env: Env): KeyOption[] {
   const inNode = new Set(nodeSkills.filter((s) => !s.reviewOnly).map((s) => s.skill))
   const skills = startedSkills(env, inNode)
-  return keysForSkills(skills.map((skill) => ({ skill })), keyCtx(env)).filter((k) => (env.profile.keys[k.key]?.box ?? 0) >= 3)
+  return keysForSkills(skills.map((skill) => ({ skill })), keyCtx(env))
 }
 
 const practicePlan = (size: number, tone: RoundTone): SlotPlan =>

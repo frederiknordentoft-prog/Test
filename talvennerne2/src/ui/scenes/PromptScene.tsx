@@ -4,15 +4,16 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { Prompt, Task, Term } from '../../engine/types'
 import {
-  AnalogClock, BarChart, Base10Group, COIN_VALUES, Coin, CoordGrid, DigitalClock, FractionBars, FractionShape,
+  AnalogClock, BarChart, Base10Group, CoordGrid, DigitalClock, FractionBars, FractionShape,
   HundredBoard, NumberLine, Pictogram, Ruler, RULER, Seesaw, Shape2D, Solid3D, SquareGrid, Thing,
 } from '../../art/materials'
-import type { CoinOre } from '../../art/materials'
 import { Rig } from '../../art/rig/Rig'
 import { Equation } from '../design/Equation'
 import { Icon } from '../design/Icon'
 import { cx } from '../design/cx'
-import { formatMoney, formatNumber } from '../task/answers'
+import { formatMoney, formatNumber, lineEndsOnly } from '../task/answers'
+import { isPiece } from '../task/pay/logic'
+import { PieceArt, piecesForAmount } from '../task/faces'
 import { CompareScene } from './CompareScene'
 import { HearScene } from './HearScene'
 import { MarkedLine } from './MarkedLine'
@@ -54,28 +55,50 @@ export function equationEm(terms: readonly Term[], entryChars = 1): number {
   return em
 }
 
+/**
+ * Two equations joined by a word ("15 − 6 = 9 så 9 + 6 = □", inverseOps): one line each, the word
+ * opening the second, so both stay readable on a phone (UI-fund 12). Null for anything else.
+ */
+export function equationLines(terms: readonly Term[]): [Term[], Term[]] | null {
+  const cut = terms.findIndex((t) => 'text' in t)
+  if (cut <= 0 || cut >= terms.length - 1) return null
+  const hasEquals = (ts: readonly Term[]) => ts.some((t) => 'op' in t && t.op === '=')
+  const first = terms.slice(0, cut)
+  const second = terms.slice(cut)
+  return hasEquals(first) && hasEquals(second.slice(1)) ? [first, second] : null
+}
+
 export function PromptScene(props: PromptSceneProps) {
   const { prompt, className, entry } = props
   let style: CSSProperties | undefined
+  const lines = prompt.scene === 'equation' ? equationLines(prompt.terms) : null
   if (prompt.scene === 'equation' || prompt.scene === 'balance') {
     const terms = prompt.scene === 'equation' ? prompt.terms : [...prompt.left, { op: '=' as const }, ...prompt.right]
     const chars = typeof entry === 'string' || typeof entry === 'number' ? String(entry).length : entry ? 3 : 1
-    style = { ['--eq-em' as string]: equationEm(terms, chars).toFixed(2) }
+    // two lines: the wider one decides the size
+    const em = lines ? Math.max(equationEm(lines[0], 1), equationEm(lines[1], chars)) : equationEm(terms, chars)
+    style = { ['--eq-em' as string]: em.toFixed(2) }
   }
   return (
-    <div className={cx('tv-scene', `tv-scene--${prompt.scene}`, className)} style={style}>
+    <div className={cx('tv-scene', `tv-scene--${prompt.scene}`, lines && 'tv-scene--lines', className)} style={style}>
       {scene(props)}
     </div>
   )
 }
 
-const isCoin = (v: number): v is CoinOre => (COIN_VALUES as readonly number[]).includes(v)
-
 function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, speaking = false, onHear }: PromptSceneProps): ReactNode {
   const seed = task?.id ?? p.scene
   switch (p.scene) {
-    case 'equation':
-      return <Equation terms={p.terms} entry={entry} slot={slot} nowrap />
+    case 'equation': {
+      const lines = equationLines(p.terms)
+      if (!lines) return <Equation terms={p.terms} entry={entry} slot={slot} nowrap />
+      return (
+        <span className="tv-eqlines">
+          <Equation terms={lines[0]} nowrap />
+          <Equation terms={lines[1]} entry={entry} slot={slot} nowrap />
+        </span>
+      )
+    }
     case 'objects':
       return <ObjectsScene prompt={p} replay={replay} seed={seed} />
     case 'hear':
@@ -83,10 +106,13 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
     case 'row':
       return <RowScene prompt={p} entry={entry} entries={entries} slot={slot} />
     case 'line': {
-      // a choice asked on a number line marks the numbers on its cards (review r1 P2-7)
-      const marks = task?.kind === 'choice' ? task.options.filter((o): o is number => typeof o === 'number') : []
-      if (marks.length > 0) return <MarkedLine min={p.min} max={p.max} marks={marks} hops={p.hops} className="tv-scene__line" />
-      return <NumberLine min={p.min} max={p.max} arrowAt={p.arrowAt} target={p.target} hops={p.hops} className="tv-scene__line" />
+      const endsOnly = lineEndsOnly(p)
+      // a choice asked on a number line marks the numbers on its cards (review r1 P2-7) — unless an
+      // arrow asks "Hvilket tal peger pilen på?": then the arrow stays, and marking the cards would
+      // point at the answer (UI-fund 1)
+      const marks = task?.kind === 'choice' && p.arrowAt === undefined ? task.options.filter((o): o is number => typeof o === 'number') : []
+      if (marks.length > 0) return <MarkedLine min={p.min} max={p.max} marks={marks} hops={p.hops} endsOnly={endsOnly} className="tv-scene__line" />
+      return <NumberLine min={p.min} max={p.max} arrowAt={p.arrowAt} target={p.target} hops={p.hops} endsOnly={endsOnly} className="tv-scene__line" />
     }
     case 'board':
       return (
@@ -149,7 +175,7 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
             <Thing id={p.thing} size={96} />
             <span className="tv-shop__tag">{formatMoney(p.priceOre)}</span>
           </span>
-          {p.paidOre !== undefined && <CoinRow ore={splitCoins(p.paidOre)} small />}
+          {p.paidOre !== undefined && <CoinRow ore={piecesForAmount(p.paidOre)} small />}
         </div>
       )
     case 'ruler':
@@ -241,25 +267,11 @@ function ShareScene({ total, recipients, thing }: { total: number; recipients: n
   )
 }
 
-/** A whole amount as the fewest coins and notes (used to picture paid money). */
-function splitCoins(ore: number): number[] {
-  const out: number[] = []
-  let left = ore
-  for (const d of [2000, 1000, 500, 200, 100, 50]) {
-    while (left >= d && out.length < 12) {
-      out.push(d)
-      left -= d
-    }
-  }
-  return out
-}
-
+/** Coins and notes as they lie (a note is drawn as one note: the 100-krone paid is never five 20-krone coins). */
 function CoinRow({ ore, small }: { ore: number[]; small?: boolean }) {
   return (
-    <div className={cx('tv-coins', small && 'tv-coins--small')}>
-      {ore.map((v, i) =>
-        isCoin(v) ? <Coin key={i} ore={v} mm={small ? 2 : ore.length > 6 ? 2.3 : 2.9} /> : <span key={i} className="tv-coins__note">{formatMoney(v)}</span>,
-      )}
+    <div className={cx('tv-coins', small ? 'tv-coins--small' : ore.length > 6 && 'tv-coins--many')}>
+      {ore.map((v, i) => (isPiece(v) ? <PieceArt key={i} piece={v} /> : <span key={i} className="tv-coins__amount">{formatMoney(v)}</span>))}
     </div>
   )
 }
