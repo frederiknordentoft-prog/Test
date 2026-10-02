@@ -121,13 +121,14 @@ describe('tensOnes oracle', () => {
     expect(first(slotProblems(built, (b) => target(b.fact), (b, v) => explain(b, v)))).toEqual([])
   })
 
-  // GENERATOR BUG (tensOnes.ts, candidates() for decompose:tens, used for buildBase): the built answer of
-  // "Byg kun tierne i syvogfyrre" is 40 (four rods), but the candidates are those of the card question
-  // "Hvor mange tiere …?" (answer 4). Built 7 (seven cubes: the ones, not the tens) is tagged digitSwap —
-  // production evidence — while 70 (seven rods: the digits in the order Danish says them, the real
-  // digitSwap) and 4 (four cubes: the digit for its value, faceValue) are 'other'. to:decompose:tens:47
-  // buildBase: 7 → digitSwap (expected plain), 70 → other (expected digitSwap), 4 → other (expected faceValue).
-  it.fails('buildBase for "Byg kun tierne i …": what was built is classified by what it is worth', () => {
+  // Rettet (GENFIX, with the engine hook candidatesFor). Was a generator bug (tensOnes.ts, candidates() for
+  // decompose:tens, used for buildBase): the built answer of "Byg kun tierne i syvogfyrre" is 40 (four rods),
+  // but the candidates were those of the card question "Hvor mange tiere …?" (answer 4). Built 7 (seven
+  // cubes: the ones, not the tens) was tagged digitSwap — production evidence — while 70 (seven rods: the
+  // digits in the order Danish says them, the real digitSwap) and 4 (four cubes: the digit for its value,
+  // faceValue) were 'other'. to:decompose:tens:47 buildBase: 7 → digitSwap (expected plain), 70 → other
+  // (expected digitSwap), 4 → other (expected faceValue).
+  it('buildBase for "Byg kun tierne i …": what was built is classified by what it is worth', () => {
     const rods = built.filter((b) => b.kind === 'buildBase' && q(b.fact).family === 'decompose' && q(b.fact).part === 'tens')
     expect(first(classifyProblems2(rods.map(typed), explain, { upTo: 99 }))).toEqual([])
   })
@@ -226,21 +227,22 @@ describe('placeValue1000 oracle', () => {
     expect(first(slots.filter((p) => !trueMarkedWrong(p) && !slipOtherOrder(p)))).toEqual([])
   })
 
-  // GENERATOR BUG (placeValue1000.ts, palette() for digitValue/expand fillSlots): the spare tokens let the
-  // child write another true sum, which is marked wrong and classified 'other'. "Ni hundrede og atten er
-  // hvad plus hvad plus hvad?" (pv:digitValue:t:918 and pv:expand:*:918, palette 900, 9, 10, 1, 8, 2, 20,
-  // 200): 900 + 9 + 9 = 918 is wrong for the task. The same for 612 (600 + 6 + 6), 714 and 816 — every
-  // H·100 + 10 + 2H. A true answer must never be an error: accept it, or pick a palette without it.
-  it.fails('fillSlots: every true sum the palette allows is right', () => {
+  // Rettet (GENFIX). Was a generator bug (placeValue1000.ts, palette() for digitValue/expand fillSlots): the
+  // spare tokens let the child write another true sum, which was marked wrong and classified 'other'. "Ni
+  // hundrede og atten er hvad plus hvad plus hvad?" (pv:digitValue:t:918 and pv:expand:*:918, palette 900,
+  // 9, 10, 1, 8, 2, 20, 200): 900 + 9 + 9 = 918 was wrong for the task. The same for 612 (600 + 6 + 6), 714
+  // and 816 — every H·100 + 10 + 2H. Now every true sum the palette allows is accepted, and the spare digit
+  // is one that makes no other true sum (911 and 912 had one through the spare).
+  it('fillSlots: every true sum the palette allows is right', () => {
     expect(first(slots.filter(trueMarkedWrong))).toEqual([])
   })
 
-  // GENERATOR BUG (placeValue1000.ts, candidates() for digitValue/expand): the parts may be written in any
-  // order (accept() takes all six), but the slips are only recognised in the canonical order: for 623,
-  // '6|2|3' (the digits for their values) is faceValue but '3|6|2' or '2|3|6' is 'other'; likewise only
-  // '600|30|2' of the swapped parts is digitSwap. Expected: the same slip in any order (as tensOnes does
-  // for 47 = □ + □, where '4|7' and '7|4' are both faceValue).
-  it.fails('fillSlots: a slip of parts is the same slip in any order', () => {
+  // Rettet (GENFIX). Was a generator bug (placeValue1000.ts, candidates() for digitValue/expand): the parts
+  // may be written in any order (accept() takes all six), but the slips were only recognised in the
+  // canonical order: for 623, '6|2|3' (the digits for their values) was faceValue but '3|6|2' or '2|3|6' was
+  // 'other'; likewise only '600|30|2' of the swapped parts was digitSwap. Now every order of a slip is
+  // listed with its tag (as tensOnes does for 47 = □ + □, where '4|7' and '7|4' are both faceValue).
+  it('fillSlots: a slip of parts is the same slip in any order', () => {
     expect(first(slots.filter(slipOtherOrder))).toEqual([])
   })
 

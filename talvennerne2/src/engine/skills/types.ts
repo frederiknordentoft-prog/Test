@@ -1,6 +1,6 @@
 // SkillDef contract (SPEC §2.4). The definitions live in src/engine/types.ts; this module is the
 // documented import path for skill authors.
-import type { AnswerType, AnswerValue, ClipId, Fact, Rng, SkillDef, TaskKind } from '../types'
+import type { AnswerType, AnswerValue, Candidate, ClipId, Fact, Rng, SkillDef, TaskKind } from '../types'
 
 export type {
   AnswerType,
@@ -60,6 +60,12 @@ export interface SkillExtras {
    * Default 0: guessP follows from the kind alone.
    */
   guessFloor?(fact: Fact, kind: TaskKind): number
+  /**
+   * Tagged wrong answers for that presentation, when they depend on it as the answer does: "Byg kun
+   * tierne i 47" is answered 40 with blocks and "Hvor mange tiere …?" 4 on cards, so 7 is the other
+   * digit (digitSwap) on a card but seven cubes (plain) when built. Default: `def.candidates(fact)`.
+   */
+  candidatesFor?(fact: Fact, kind: TaskKind): Candidate[]
 }
 
 /** What a file in src/engine/skills/<domain>/<skillId>.ts default-exports. */

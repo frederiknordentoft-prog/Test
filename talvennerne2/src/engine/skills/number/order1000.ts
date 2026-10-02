@@ -18,8 +18,9 @@
 // firstDigitCompare (69 > 102, pædagogik §3.2): the wrong sign card ('cmp:>' for 69 □ 102) and the
 // order by first digit in sortOrder (98, 69, 345, 102) are its evidence. On a keypad the answer 69 to
 // "niogtres eller et hundrede og to?" is also a number from the question, so it is 'ambiguous' (A9).
-// Other wrong answers: the given number ('operand'), the wrong place (+1 for +10: 'other'), near
-// misses, and over a new hundred the hundred not changed (300 after 399, 499 before 400: 'near').
+// Other wrong answers: the given number ('operand'), the wrong place (+10 or +100 for +1, +1 for +10:
+// 'other'), near misses, and over a new hundred the hundred not changed (300 after 399, 499 before
+// 400: 'near').
 import type { AnswerValue, AnswerType, Fact, FamilyDef, HintSpec, OptionView, Prompt, Rng, SkillModule, SpeechPart, TaskKind } from '../types'
 import type { ClipId } from '../../types'
 import { hintOf, metaOf, num, say, tagged, type Entry } from './kit'
@@ -304,10 +305,12 @@ function candidates(f: Fact) {
   const inRange = within(0, 1000)
   const tag = (t: 'near' | 'other', ...vs: number[]): Entry[] => vs.filter(inRange).map((v) => [v, t] as const)
   switch (q.family) {
+    // the wrong place, as for ±10 and ±100: ten or a hundred more (less) instead of one. Listed, a typed
+    // 798 for 788 + 1 is that slip, not the answer 789 with tens and ones swapped (no digitSwap evidence)
     case 'plus1':
-      return tagged(ans, [[q.n, 'operand'], ...tag('near', q.n + 2, q.n - 1, ans + 10)])
+      return tagged(ans, [[q.n, 'operand'], ...tag('other', q.n + 10, q.n + 100), ...tag('near', q.n + 2, q.n - 1, ans + 10)])
     case 'minus1':
-      return tagged(ans, [[q.n, 'operand'], ...tag('near', q.n - 2, q.n + 1, ans - 10)])
+      return tagged(ans, [[q.n, 'operand'], ...tag('other', q.n - 10, q.n - 100), ...tag('near', q.n - 2, q.n + 1, ans - 10)])
     case 'plus10':
       return tagged(ans, [[q.n, 'operand'], ...tag('other', q.n + 1, q.n + 100), ...tag('near', ans + 10, ans + 1, ans - 1)])
     case 'minus10':

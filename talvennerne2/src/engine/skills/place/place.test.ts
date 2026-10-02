@@ -141,8 +141,13 @@ describe('tensOnes', () => {
     expect(classifyAnswer(task(tensOnes, 'to:swapped:53', 'fillSlots'), '3|5')).toBe('digitSwap')
     // building the swapped number for "Byg tallet syvogfyrre": 7 rods and 4 cubes
     expect(classifyAnswer(task(tensOnes, 'to:build:47', 'buildBase'), 74)).toBe('digitSwap')
-    // building only the ones for "Byg kun tierne": the other place
-    expect(classifyAnswer(task(tensOnes, 'to:decompose:tens:47', 'buildBase'), 7)).toBe('digitSwap')
+    // what was built for "Byg kun tierne i syvogfyrre" is classified by what it is worth (40): seven rods
+    // are the other digit as tens (digitSwap), four cubes the digit for its value (faceValue), and seven
+    // cubes — the ones, not the tens — are just wrong
+    const builtTens47 = task(tensOnes, 'to:decompose:tens:47', 'buildBase')
+    expect(classifyAnswer(builtTens47, 70)).toBe('digitSwap')
+    expect(classifyAnswer(builtTens47, 4)).toBe('faceValue')
+    expect(classifyAnswer(builtTens47, 7)).toBe('other')
   })
 
   it('makes fillSlots an order task of two digits (no production), and buildBase production', () => {

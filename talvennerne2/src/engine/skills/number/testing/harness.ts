@@ -10,6 +10,7 @@ import { isCorrect } from '../../../answer'
 import { isProduction } from '../../../kinds'
 import { registeredSkills, validateSkill } from '../../../registry'
 import { hashSeed, makeRng } from '../../../rng'
+import { extrasOf } from '../../types'
 import { compile } from '../../../../speech/compile'
 import { hasClip } from '../../../../speech/catalog'
 import type { AnswerLogEntry, AnswerValue, ErrorTag, Fact, HintSpec, MisconceptionId, SkillDef, SpeechPart, Task, TaskKind } from '../../../types'
@@ -115,7 +116,9 @@ export function skillContract(def: SkillDef, opts: ContractOptions): void {
 
     it('classifies every candidate as its own tag on every kind (the uniqueness rule)', () => {
       for (const { fact, task } of tasks) {
-        for (const c of def.candidates(fact)) {
+        // the candidates of that presentation, when a skill says them per kind (candidatesFor)
+        const own = extrasOf(def).candidatesFor
+        for (const c of own ? own(fact, task.kind) : def.candidates(fact)) {
           const key = String(c.value)
           if (!(key in task.distractorTags)) continue
           // a misconception's value that is also the answer reversed is 'ambiguous' (SPEC A11)

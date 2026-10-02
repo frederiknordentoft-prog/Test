@@ -225,6 +225,25 @@ function candidates(f: Fact) {
   }
 }
 
+/**
+ * "Byg kun tierne i syvogfyrre" is answered with what the blocks are worth (40), so its slips are about
+ * blocks: four cubes (the digit, not its value: faceValue), seven rods (the other digit as tens, said
+ * first: digitSwap); seven cubes are just wrong. Every other presentation has the fact's candidates.
+ */
+function candidatesFor(f: Fact, kind: TaskKind) {
+  const q = parse(f)
+  if (kind !== 'buildBase' || q.family !== 'decompose' || q.part !== 'tens') return candidates(f)
+  const t = tensOf(q.n)
+  const o = onesOf(q.n)
+  const built = t * 10
+  return tagged(built, [
+    [q.n, 'operand'],
+    [t, 'faceValue'],
+    ...(o !== 0 && o !== t ? ([[o * 10, 'digitSwap']] as const) : []),
+    ...[built - 10, built + 10, built - 1, built + 1].filter(within(0, 99)).map((v) => [v, 'near'] as const),
+  ])
+}
+
 // ─── Hints ──────────────────────────────────────────────────────────────────
 
 /** "Vi siger syv først, men vi skriver tierne først." */
@@ -294,6 +313,7 @@ export default {
   range: () => [0, 99],
   speech,
   candidates,
+  candidatesFor,
   hint: (f, tag, kind) => hint(f, tag, kind),
   guessFloor,
 } satisfies SkillModule

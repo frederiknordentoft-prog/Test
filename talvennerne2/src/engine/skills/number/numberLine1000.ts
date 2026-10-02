@@ -2,14 +2,20 @@
 // prefix `nl1000:`.
 //   placeHundreds  nl1000:placeHundreds:<n>  n = 100, 200 … 900                      9 (all canonical)
 //   placeAny       nl1000:placeAny:<n>       n = 1–999                                999
-//   round10   (3. kl.)  nl1000:round10:<n>   n = 101–999, not a whole ten: the nearest ten
-//   round100  (3. kl.)  nl1000:round100:<n>  n = 101–999, not a whole hundred: the nearest hundred
+//   round10   (3. kl.)  nl1000:round10:<n>   n = 101–999, ones digit 2–8: the nearest ten
+//   round100  (3. kl.)  nl1000:round100:<n>  n = 101–999, last two digits 14–86: the nearest hundred
 // Placing works as in numberLine100 on a 0–1000 line: the numberline (production, ±50 — 5 % of the
 // line), the keypad reads an arrow on a hundred or a hop from the hundred before ("Hoppet starter
 // ved tre hundrede. Hvor lander det?", +45 on the line), and the cards ask "Hvilket tal ligger
 // mellem tre hundrede og fire hundrede?" (or "midt mellem") with the cards' numbers marked.
-// Rounding (Trecifret bro, 3. kl.) asks for the nearest ten on the hundred's own stretch of line
-// (300–400, ±4, so only that ten is right) and the nearest hundred on 0–1000 (±25); five rounds up.
+// Rounding (Trecifret bro, 3. kl.) asks for the nearest ten or hundred; five rounds up. On the line
+// the needle must land closer to the rounded number than the number itself lies: the tolerance is
+// one less than that distance (at most ±2 for tens, ±25 for hundreds), so leaving the number
+// unrounded is never right, and no other ten or hundred is reached. The line is half a stretch —
+// for tens the half of the hundred's stretch the number lies in (300–350 for 347, labelled every
+// ten), for hundreds the half of 0–1000 (0–500 for 347, labelled every hundred) — so the narrowest
+// window is still 5 % of the line, as wide as the old ±25 on 0–1000. Numbers too close to a ten or
+// hundred for that (341, 305) are not drawn: on a line a finger cannot tell them from their rounding.
 // The keypad and the cards ask "Hvilken tier ligger tre hundrede og syvogfyrre tættest på?" with the
 // arrow at the number.
 // Wrong answers: the ends of the stretch ('operand'), ±100 and ±200 (the wrong stretch: 'near',
@@ -37,6 +43,37 @@ function answerFor(family: Family, n: number): number {
   return n
 }
 
+const stepOf = (family: Family): number => (family === 'round10' ? 10 : 100)
+
+/** How far a number lies from its rounding: 347 → 3 (to 350), 345 → 5. */
+const distance = (family: Family, n: number): number => Math.abs(answerFor(family, n) - n)
+
+/** Rounding tolerance cap: an asked ten or hundred is reached, no other one (2·tol < step), and the half line stays production. */
+const ROUND_CAP = { round10: 2, round100: 25 } as const
+
+/**
+ * The narrowest window a rounding line asks a finger to hit, as a share of the line: 5 %, as wide as
+ * rounding to hundreds was before (±25 on 0–1000) and wider than the exact tap on a 0–20 line (1 in 21).
+ */
+const MIN_WINDOW = 1 / 20
+
+/** The half stretch a rounding numberline is asked on: 347 → 300–350 (tens), 347 → 0–500 (hundreds). */
+function halfLine(family: 'round10' | 'round100', n: number): { min: number; max: number } {
+  const span = family === 'round10' ? 50 : 500
+  const min = Math.floor(n / span) * span
+  return { min, max: min + span }
+}
+
+/** Rounding tolerance: one less than the number's distance to its rounding, so the number itself is never right. */
+const roundTolerance = (family: 'round10' | 'round100', n: number): number => Math.min(ROUND_CAP[family], distance(family, n) - 1)
+
+/** A number the rounding families draw: not a whole ten (hundred), and its window on the half line is wide enough to hit. */
+function roundable(family: 'round10' | 'round100', n: number): boolean {
+  if (n % stepOf(family) === 0) return false
+  const { min, max } = halfLine(family, n)
+  return (2 * roundTolerance(family, n) + 1) / (max - min + 1) >= MIN_WINDOW
+}
+
 const parse = (f: Fact): { family: Family; n: number } => {
   const [, family, n] = f.id.split(':')
   return { family: family as Family, n: Number(n) }
@@ -48,14 +85,10 @@ function draw(family: Family, rng: Rng): Fact {
       return make(family, rng.between(1, 9) * 100)
     case 'placeAny':
       return make(family, rng.between(1, 999))
-    case 'round10': {
-      let n = rng.between(101, 999)
-      while (n % 10 === 0) n = rng.between(101, 999)
-      return make(family, n)
-    }
+    case 'round10':
     case 'round100': {
       let n = rng.between(101, 999)
-      while (n % 100 === 0) n = rng.between(101, 999)
+      while (!roundable(family, n)) n = rng.between(101, 999)
       return make(family, n)
     }
   }
@@ -89,8 +122,10 @@ function prompt(f: Fact, kind: TaskKind): Prompt {
     case 'placeAny':
       return kind === 'keypad' ? { ...LINE, hops: [hopStart(n), n] } : { ...LINE }
     case 'round10':
+      if (kind === 'numberline') return { scene: 'line', ...halfLine(family, n) }
       return kind === 'keypad' ? { ...stretchLine(n), arrowAt: n } : { ...stretchLine(n) }
     case 'round100':
+      if (kind === 'numberline') return { scene: 'line', ...halfLine(family, n) }
       return kind === 'keypad' ? { ...LINE, arrowAt: n } : { ...LINE }
   }
 }
@@ -168,10 +203,18 @@ export default {
   answerType: () => 'int',
   prompt,
   optionView: () => 'numeral',
-  // the rounding-to-tens line is the hundred's own stretch; its guess rate is counted on that stretch
-  range: (f, kind) => (parse(f).family === 'round10' && kind === 'numberline' ? [stretchLine(parse(f).n).min, stretchLine(parse(f).n).max] : [0, 1000]),
+  // a rounding numberline is half a stretch; its guess rate is counted on that half
+  range: (f, kind) => {
+    const { family, n } = parse(f)
+    if (kind !== 'numberline' || (family !== 'round10' && family !== 'round100')) return [0, 1000]
+    const { min, max } = halfLine(family, n)
+    return [min, max]
+  },
   speech,
   candidates,
   hint,
-  tolerance: (f: Fact) => ({ placeHundreds: 50, placeAny: 50, round10: 4, round100: 25 })[parse(f).family],
+  tolerance: (f: Fact) => {
+    const { family, n } = parse(f)
+    return family === 'round10' || family === 'round100' ? roundTolerance(family, n) : 50
+  },
 } satisfies SkillModule
