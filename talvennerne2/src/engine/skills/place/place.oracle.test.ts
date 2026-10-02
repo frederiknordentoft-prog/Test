@@ -1,13 +1,18 @@
 // Oracle tests for tensOnes and placeValue1000 (SPEC §15.1): every canonical fact and 200 seeded
 // instances per family, every kind, compared with place.oracle.ts — answers from the id and from the
 // blocks, words and cards the child gets; wrong answers from pædagogik §3.2's formulas.
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// every value of every instance is classified: give the sweeps room on a loaded container (CONVENTIONS)
+vi.setConfig({ testTimeout: 240_000 })
 import { isCorrect } from '../../answer'
 import type { Fact, Task } from '../../types'
-import { cardProblems, first, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built } from '../number/number.oracle'
 import {
-  answerProblems2, avoidProblems, classifyProblems2, concatWords, idProblems, productionProblems2, specKindProblems2, sweep, swapTO,
-  tagIssue, zeroSlips, type Why,
+  cardProblems, first, hintProblems, optionProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
+} from '../number/number.oracle'
+import {
+  answerProblems2, avoidProblems, classifyProblems2, concatWords, diagnosticCardProblems, idProblems, numberWordProblems,
+  productionProblems2, specKindProblems2, sweep, swapTO, tagIssue, zeroSlips, type Why,
 } from '../number/number2.oracle'
 import {
   explainPlaceValue, explainTensOnes, fillings, parsePlaceValue, parseTensOnes, placeValueAnswer, placeValueFromTask, placeWordsValue,
@@ -95,8 +100,16 @@ describe('tensOnes oracle', () => {
   })
 
   it('deals valid cards (0–99) and keeps every answer right', () => {
-    const problems = built.flatMap((b) => [...cardProblems(b.task, (c) => c <= 99), ...answerProblems2(b.task)])
+    const problems = built.flatMap((b) => [...cardProblems(b.task, (c) => c <= 99), ...optionProblems(b.task), ...answerProblems2(b.task)])
     expect(first(problems)).toEqual([])
+  })
+
+  it('shows a diagnostic card whenever pædagogik §3.2 has one (addsPlaceParts, digitSwap, faceValue)', () => {
+    const known = (b: Built) => {
+      const { n, t, o } = q(b.fact)
+      return [t + o, swapTO(n) ?? -1, t * 10, t, o]
+    }
+    expect(first(diagnosticCardProblems(built, known, explain))).toEqual([])
   })
 
   it('classifies cards and typed numbers by pædagogik §3.2 (addsPlaceParts, digitSwap, faceValue; A9 when a count is the value)', () => {
@@ -123,9 +136,9 @@ describe('tensOnes oracle', () => {
     expect(first([...productionProblems2(built, rightFillingsOf(byTask)), ...specKindProblems2(def, built, rightFillingsOf(byTask))])).toEqual([])
   })
 
-  it('speaks every task and hint with recorded clips and no digits', () => {
+  it('speaks every task and hint with recorded clips, no digits, and numbers as SPEC §10.1 says them', () => {
     const tags = tagsToHint(def, canon)
-    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
+    expect(first([...taskSpeechProblems(built), ...numberWordProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
   })
 })
 
@@ -168,7 +181,7 @@ describe('placeValue1000 oracle', () => {
 
   it('deals valid cards (0–999, or a written-out 3004) and keeps every answer right', () => {
     const allowed = (b: Built) => (c: number) => c <= 999 || c === concatWords(q(b.fact).n)
-    const problems = built.flatMap((b) => [...cardProblems(b.task, allowed(b)), ...answerProblems2(b.task)])
+    const problems = built.flatMap((b) => [...cardProblems(b.task, allowed(b)), ...optionProblems(b.task), ...answerProblems2(b.task)])
     expect(first(problems)).toEqual([])
   })
 
@@ -178,6 +191,15 @@ describe('placeValue1000 oracle', () => {
   const classified = classifyProblems2(typedBuilt, explain, { upTo: 1000, extra: extraOf })
   /** Documented below: regroup:to:<a>:11, where the counts added are also the reversed answer. */
   const partsOrSwap = (p: string) => /^pv:regroup:to:\d:11 \w+ \w+ \d+ \(answer \d+\): addsPlaceParts, expected ambiguous$/.test(p)
+
+  it('shows a diagnostic card whenever pædagogik §3.2 has one (addsPlaceParts, zeroPlaceholder, concatNumberWords, digitSwap, faceValue)', () => {
+    const known = (b: Built) => {
+      const qq = q(b.fact)
+      const digits = String(qq.n).split('').map(Number)
+      return [digits.reduce((x, y) => x + y, 0), ...zeroSlips(qq.n), concatWords(qq.n) ?? -1, swapTO(qq.n) ?? -1, ...digits, ...(qq.counts ? [qq.counts[0] + qq.counts[1]] : [])]
+    }
+    expect(first(diagnosticCardProblems(built, known, explain))).toEqual([])
+  })
 
   it('classifies cards, typed and built numbers by pædagogik §3.2 (A9: 477 = 400 + □ + 7 answered 7 is ambiguous)', () => {
     expect(first(classified.filter((p) => !partsOrSwap(p)))).toEqual([])
@@ -228,8 +250,8 @@ describe('placeValue1000 oracle', () => {
     expect(first(problems.filter((p) => !extraSums.has(p.split(' ')[1])))).toEqual([])
   })
 
-  it('speaks every task and hint with recorded clips and no digits', () => {
+  it('speaks every task and hint with recorded clips, no digits, and numbers as SPEC §10.1 says them', () => {
     const tags = tagsToHint(def, canon)
-    expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
+    expect(first([...taskSpeechProblems(built), ...numberWordProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
   })
 })

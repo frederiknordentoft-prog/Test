@@ -6,7 +6,6 @@
 // §3.2's formulas, worked out here. The registry skips *.oracle.ts files, so none of this reaches the app.
 import type { AnswerValue, ErrorTag, Fact, MisconceptionId, Prompt, SkillDef, SkillId, Task, TaskKind } from '../../types'
 import { classifyAnswer } from '../../misconceptions'
-import { isCorrect } from '../../answer'
 import { ceilingFor, guessP, isProduction } from '../../kinds'
 import { masteryKeyOf } from '../../tasks'
 import { hashSeed, makeRng } from '../../rng'
@@ -367,8 +366,24 @@ export function classifyProblems2(
   return out
 }
 
-/** Every right card is right for the engine too, and nothing else is (also through tolerance or accepted equivalents). */
-export const rightCards = (t: Task): AnswerValue[] => t.options.filter((o) => isCorrect(t, o))
+/**
+ * SPEC §4.1: a card set shows a diagnostic card (one misconception, real evidence) whenever the oracle
+ * knows such a value inside the card range — the rotation only decides which one.
+ */
+export function diagnosticCardProblems(built: readonly Built[], known: (b: Built) => number[], explain: (b: Built, v: AnswerValue) => Why): string[] {
+  const out: string[] = []
+  for (const b of built) {
+    const t = b.task
+    if (t.kind !== 'choice' || typeof t.answer !== 'number') continue
+    const evidence = (v: number) => {
+      const tag = expectedTag(explain(b, v))
+      return v !== t.answer && v >= t.range[0] && v <= t.range[1] && tag !== 'plain' && tag !== 'ambiguous'
+    }
+    const available = [...new Set(known(b))].filter(evidence)
+    if (available.length > 0 && !numberCards(t).some(evidence)) out.push(`${t.factId}: no diagnostic card among [${t.options}] (could be ${available})`)
+  }
+  return out
+}
 
 // ─── Spoken questions, solved as the child hears them ─────────────────────
 
@@ -704,8 +719,13 @@ export function lineAnswerFromTask(t: Task): number | null {
   return null
 }
 
+const saidCache = new WeakMap<Task, number[]>()
 /** The numbers a line question says (the stretch's ends, the hop's start, the number to round). */
-export const saidNumbers = (t: Task): number[] => numbersIn(spokenText(t.speech))
+export function saidNumbers(t: Task): number[] {
+  let said = saidCache.get(t)
+  if (!said) saidCache.set(t, (said = numbersIn(spokenText(t.speech))))
+  return said
+}
 
 /**
  * A wrong number on a line: a number the question says ('operand'), a near miss (±1, ±2, ±5, ±10 on
@@ -723,6 +743,44 @@ export function explainLine(q: LineQ, t: Task, v: AnswerValue): Why {
   return { mis: [], operand: said.includes(v) || v === q.n, near, plain, swap }
 }
 
+// ─── SPEC §10.1: how a number is said ───────────────────────────────────────
+
+const WORDS_0_20 = ['nul', 'en', 'to', 'tre', 'fire', 'fem', 'seks', 'syv', 'otte', 'ni', 'ti', 'elleve', 'tolv', 'tretten', 'fjorten',
+  'femten', 'seksten', 'sytten', 'atten', 'nitten', 'tyve']
+const TENS_WORDS = ['', '', 'tyve', 'tredive', 'fyrre', 'halvtreds', 'tres', 'halvfjerds', 'firs', 'halvfems']
+
+/**
+ * SPEC §10.1 Talord: 0–20 as words, the tens, 21–99 as one word (enogtyve), 100–999 "[et|to|…] hundrede"
+ * with "og" only before the last group, 1000 "tusind"; 1 alone is "en", or "et" before a neuter noun.
+ */
+export function spec101Words(n: number, gender: 'c' | 'n' = 'c'): string {
+  if (n === 1000) return 'tusind'
+  if (n >= 100) {
+    const h = Math.floor(n / 100)
+    const rest = n % 100
+    const head = `${h === 1 ? 'et' : WORDS_0_20[h]} hundrede`
+    return rest === 0 ? head : `${head} og ${spec101Words(rest)}`
+  }
+  if (n === 1) return gender === 'n' ? 'et' : 'en'
+  if (n <= 20) return WORDS_0_20[n]
+  const o = n % 10
+  return o === 0 ? TENS_WORDS[Math.floor(n / 10)] : `${WORDS_0_20[o]}og${TENS_WORDS[Math.floor(n / 10)]}`
+}
+
+/** Every number a task says is said as SPEC §10.1 writes it (the compiled text of each number part). */
+export function numberWordProblems(built: readonly Built[]): string[] {
+  const out = new Set<string>()
+  for (const { fact, kind, task } of built) {
+    for (const part of task.speech) {
+      if (!('num' in part)) continue
+      const said = spokenText([part]).toLowerCase().replace(/[.,?!]/g, '').trim()
+      const want = spec101Words(part.num, part.gender)
+      if (said !== want) out.add(`${fact.id} ${kind}: ${part.num} said "${said}", SPEC §10.1 "${want}"`)
+    }
+  }
+  return [...out]
+}
+
 // ─── Shared answer checks ─────────────────────────────────────────────────
 
 /** SPEC §3.1: the keypad takes digits(range max) digits — in hear1000 and placeValue1000 two more than the answer has, so 1004 fits. */
@@ -737,10 +795,4 @@ export function answerProblems2(t: Task): string[] {
   const out = answerProblemsW1(t).filter((p) => !/ digits for the range /.test(p))
   if (t.kind === 'keypad' && t.maxDigits !== keypadDigits(t)) out.push(`${t.factId} keypad: ${t.maxDigits} digits, SPEC §3.1 ${keypadDigits(t)}`)
   return out
-}
-
-/** The task's answer as a number (every number skill asks for one, except biggerMixed's sign and sortOrder). */
-export function numberAnswer(t: Task): number {
-  if (typeof t.answer !== 'number') throw new Error(`${t.factId}: answer ${String(t.answer)} is not a number`)
-  return t.answer
 }

@@ -1,20 +1,59 @@
 // Oracle tests for the number skills of 1.–2. klasse (SPEC §15.1): every canonical fact and 200 seeded
 // instances per family, every kind, compared with number2.oracle.ts — answers from the id and from
 // the spoken question and the picture, wrong answers from pædagogik §3.2's formulas.
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// every value of every instance is classified: give the sweeps room on a loaded container (CONVENTIONS)
+vi.setConfig({ testTimeout: 240_000 })
 import { isCorrect } from '../../answer'
 import { classifyAnswer } from '../../misconceptions'
-import type { Fact } from '../../types'
+import { registeredSkills } from '../../registry'
+import type { Fact, SkillId } from '../../types'
 import {
   cardProblems, first, hintProblems, optionProblems, orderings, registeredSkill, spokenText, tagsToHint,
   taskSpeechProblems, type Built,
 } from './number.oracle'
 import {
-  answerProblems2, avoidProblems, byFirstDigit, classifyProblems2, concatWords, explainHeard100, explainHeard1000, explainLine, explainOrder,
-  hear1000Family, hear1000Oracle, hear100Oracle, heardNumber2, idProblems, lineAnswerFromTask, lineOf, numberCards, numbersIn,
-  orderAnswer, orderAnswerFromSpeech, parseLine100, parseLine1000, parseOrder100, parseOrder1000, productionProblems2, roundHalfUp,
-  rowCells, signFromSpeech, signToken, sortFromSpeech, specKindProblems2, swapTO, sweep, zeroSlips, type LineQ, type OrderQ,
+  answerProblems2, avoidProblems, byFirstDigit, classifyProblems2, concatWords, drawInstances, explainHeard100, explainHeard1000,
+  explainLine, explainOrder, hear1000Family, hear1000Oracle, hear100Oracle, heardNumber2, idProblems, lineAnswerFromTask, lineOf,
+  numberCards, numbersIn, numberWordProblems, orderAnswer, orderAnswerFromSpeech, parseLine100, parseLine1000, parseOrder100,
+  parseOrder1000, productionProblems2, roundHalfUp, rowCells, signFromSpeech, signToken, sortFromSpeech, spec101Words,
+  specKindProblems2, swapTO, sweep, zeroSlips, type LineQ, type OrderQ,
 } from './number2.oracle'
+
+const WAVE2: readonly SkillId[] = [
+  'hear100', 'order100', 'numberLine100', 'hear1000', 'order1000', 'numberLine1000', 'tensOnes', 'placeValue1000',
+  'doubles', 'halves', 'addTo20', 'subTo20', 'addSub20Simple', 'tens100', 'add100NoCarry', 'sub100NoBorrow', 'add100Carry',
+  'sub100Borrow', 'addSub1000Round',
+]
+
+describe('fact ids of the 19 wave-2 skills across every registered skill (CONVENTIONS)', () => {
+  it('are unique across all registered skills, one prefix per skill, shared only where CONVENTIONS shares it', () => {
+    const owner = new Map<string, SkillId>()
+    const prefixes = new Map<string, Set<SkillId>>()
+    const problems: string[] = []
+    for (const def of registeredSkills()) {
+      const ids = def.mode === 'procedure'
+        ? [...def.enumerate(), ...[...drawInstances(def, WAVE2.includes(def.id) ? 200 : 50).values()].flat()].map((f) => f.id)
+        : def.enumerate().map((f) => f.id)
+      const own = new Set<string>()
+      for (const id of new Set(ids)) {
+        const prev = owner.get(id)
+        if (prev !== undefined && prev !== def.id) problems.push(`${id}: ${prev} and ${def.id}`)
+        owner.set(id, def.id)
+        own.add(id.slice(0, id.indexOf(':')))
+      }
+      if (WAVE2.includes(def.id) && own.size !== 1) problems.push(`${def.id}: prefixes ${[...own]}`)
+      for (const p of own) prefixes.set(p, (prefixes.get(p) ?? new Set()).add(def.id))
+    }
+    const SHARED: Record<string, string> = { add: 'addTo10,addTo20', sub: 'subTo10,subTo20' }
+    for (const [p, skills] of prefixes) {
+      if (skills.size > 1 && [...skills].some((s) => WAVE2.includes(s)) && [...skills].sort().join(',') !== SHARED[p]) problems.push(`prefix ${p}: ${[...skills]}`)
+    }
+    for (const id of WAVE2) if (!registeredSkills().some((d) => d.id === id)) problems.push(`${id} is not registered`)
+    expect(first(problems)).toEqual([])
+  })
+})
 
 describe('wave-2 oracle kit', () => {
   it('reads Danish numbers 0–1000 the way the oracles need them (a check of the oracle itself)', () => {
@@ -39,6 +78,11 @@ describe('wave-2 oracle kit', () => {
     expect(orderAnswerFromSpeech('Hvilket tal er ti mindre end tre hundrede og fem?', [])).toBe(295)
     expect(sortFromSpeech('Tæl baglæns i tiere fra halvtreds.', [1, 2, 3, 4])).toEqual([40, 30, 20, 10])
     expect(signFromSpeech('Hvilket tegn skal stå mellem niogtres og et hundrede og to?')).toBe('cmp:<')
+    expect(spec101Words(105)).toBe('et hundrede og fem')
+    expect(spec101Words(220)).toBe('to hundrede og tyve')
+    expect(spec101Words(47)).toBe('syvogfyrre')
+    expect(spec101Words(21)).toBe('enogtyve')
+    expect(spec101Words(1, 'n')).toBe('et')
   })
 })
 
@@ -106,9 +150,9 @@ for (const h of HEAR) {
       if (h.id === 'hear1000') expect(built.filter((b) => b.kind === 'keypad' && b.task.maxDigits < 5).map((b) => b.fact.id)).toEqual([])
     })
 
-    it('speaks every task and hint with recorded clips and no digits', () => {
+    it('speaks every task and hint with recorded clips, no digits, and numbers as SPEC §10.1 says them', () => {
       const tags = tagsToHint(def, canon)
-      expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
+      expect(first([...taskSpeechProblems(built), ...numberWordProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
     })
   })
 }
@@ -248,9 +292,9 @@ for (const o of ORDER) {
       expect(first([...productionProblems2(built), ...specKindProblems2(def, built)])).toEqual([])
     })
 
-    it('speaks every task and hint with recorded clips and no digits', () => {
+    it('speaks every task and hint with recorded clips, no digits, and numbers as SPEC §10.1 says them', () => {
       const tags = tagsToHint(def, canon)
-      expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
+      expect(first([...taskSpeechProblems(built), ...numberWordProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
     })
   })
 }
@@ -342,9 +386,9 @@ for (const l of LINES) {
       expect(first([...productionProblems2(built), ...specKindProblems2(def, built)])).toEqual([])
     })
 
-    it('speaks every task and hint with recorded clips and no digits', () => {
+    it('speaks every task and hint with recorded clips, no digits, and numbers as SPEC §10.1 says them', () => {
       const tags = tagsToHint(def, canon)
-      expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
+      expect(first([...taskSpeechProblems(built), ...numberWordProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
     })
   })
 }

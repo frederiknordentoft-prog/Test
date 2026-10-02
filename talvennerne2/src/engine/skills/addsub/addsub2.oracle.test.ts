@@ -2,15 +2,18 @@
 // card deals), every procedure family's canonical facts and 200 seeded instances, every kind, compared
 // with addsub2.oracle.ts — answers from the id, the question and the card; wrong answers from
 // pædagogik §3.2's formulas worked out column by column.
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// every value of every instance is classified: give the sweeps room on a loaded container (CONVENTIONS)
+vi.setConfig({ testTimeout: 240_000 })
 import { isCorrect } from '../../answer'
 import { classifyAnswer } from '../../misconceptions'
 import { compile } from '../../../speech/compile'
 import type { Fact } from '../../types'
 import { cardProblems, first, hintProblems, registeredSkill, tagsToHint, taskSpeechProblems, type Built } from '../number/number.oracle'
 import {
-  answerProblems2, avoidProblems, classifyProblems2, expectedTag, idProblems, lineOf, numberCards, productionProblems2,
-  specKindProblems2, swapTO, sweep, typedValues,
+  answerProblems2, avoidProblems, classifyProblems2, expectedTag, idProblems, lineOf, numberCards, numberWordProblems,
+  productionProblems2, specKindProblems2, swapTO, sweep, typedValues,
 } from '../number/number2.oracle'
 import {
   answerFromPrompt, answerFromSpeech, borrowNoDecrement, digitComplement10, explainSum, forgotCarry, givenNumbers, idShape, lineFor,
@@ -215,9 +218,9 @@ for (const skill of SKILLS) {
       expect(first([...productionProblems2(built), ...specKindProblems2(def, built)])).toEqual([])
     })
 
-    it('speaks every task and hint with recorded clips and no digits', () => {
+    it('speaks every task and hint with recorded clips, no digits, and numbers as SPEC §10.1 says them', () => {
       const tags = tagsToHint(def, canon)
-      expect(first([...taskSpeechProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
+      expect(first([...taskSpeechProblems(built), ...numberWordProblems(built), ...canon.flatMap((f) => hintProblems(def, f, tags))])).toEqual([])
     })
   })
 }
