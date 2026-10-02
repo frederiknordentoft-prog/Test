@@ -106,9 +106,53 @@ export function aimAway(hold: HandHold, samples: readonly AimSample[], aim: numb
   const tries = Array.from({ length: Math.ceil(360 / step) + 1 }, (_, i) => aim + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * step)
   const free = (deg: number, box: boolean) => faceDist(deg) >= 1 && (!box || open(deg)) && safe(deg)
   const far = tries.filter(safe).sort((p, q) => faceDist(q) - faceDist(p))[0]
-  const deg = tries.find((d) => free(d, true)) ?? tries.find((d) => free(d, false)) ?? far ?? aim
+  let deg = tries.find((d) => free(d, true)) ?? tries.find((d) => free(d, false)) ?? far ?? aim
+  // En løftet pote (jubel, vink) holder genstanden oppe ved poten (review G1-r4, T4): hænger den eneste
+  // frie retning ned under grebet (stor figur, poten højt ved hovedet), må genstanden ligge foran hovedet,
+  // så længe øjne, mund og tankeprikker går fri. "Tænker" og "ups" (poten ved hage eller mund) beholder
+  // retningen ned og ud.
+  if (hold.front && (hold.mood === 'wave' || hold.mood === 'cheer') && Math.sin((deg * Math.PI) / 180) > 0.25) {
+    const lifted = tries.find((d) => Math.sin((d * Math.PI) / 180) <= 0.25 && clearOfFace(hold, pts(d), u) && safe(d))
+    if (lifted !== undefined) deg = lifted
+  }
   const t = (deg * Math.PI) / 180
   return { at: hold.local, k, rot, g, d: { x: Math.cos(t), y: Math.sin(t) }, u }
+}
+
+/** Prøvepunkterne (med radius) går fri af øjnene, munden og tankeprikkerne (ikke af resten af hovedet). */
+function clearOfFace(hold: HandHold, pts: readonly { x: number; y: number; r: number }[], u: number): boolean {
+  const H = hold.head
+  return pts.every(
+    (p) =>
+      H.eyes.every((e) => ((p.x - e.x) / (H.eye.rx + p.r + 3 * u)) ** 2 + ((p.y - e.y) / (H.eye.ry + p.r + 3 * u)) ** 2 >= 1) &&
+      Math.hypot(p.x - H.mouth.x, p.y - H.mouth.y) >= p.r + 6 * u &&
+      (!hold.fx || Math.hypot(p.x - hold.fx.x, p.y - hold.fx.y) >= p.r + 10 * u),
+  )
+}
+
+/**
+ * Genstanden oppe ved kinden (slikkepinden i "tænker", review G1-r4, T3): poten ved hagen holder pinden,
+ * og slikket ligger ved kinden på potens side. Retningen søges fra `from` (næsten lodret op) ned mod
+ * `to` (vandret ud) på potens side, til alle prøvepunkter går fri af øjne, mund og tankeprikker og holder
+ * sig i den sikre zone. Findes ingen, bruges `aimAway`.
+ */
+export function aimCheek(hold: HandHold, samples: readonly AimSample[], from: number, to: number, step = 6): Aim {
+  const base = aimAway(hold, samples, from)
+  const { g, u } = base
+  // Håndgenstanden sidder altid i højre pote (set forfra til højre): slikket ved kinden på den side.
+  const side = 1
+  const pts = (deg: number) => {
+    const t = (deg * Math.PI) / 180
+    return samples.map((s) => ({ x: g.x + side * Math.cos(t) * s.at * u, y: g.y + Math.sin(t) * s.at * u, r: s.r * u }))
+  }
+  const safe = (deg: number) =>
+    pts(deg).every((p) => p.x + p.r + 2.6 <= SAFE.x1 && p.x - p.r - 2.6 >= SAFE.x0 && p.y - p.r - 2.6 >= SAFE.y0 && p.y + p.r + 2.6 <= SAFE.y1)
+  for (let deg = from; deg <= to; deg += step) {
+    if (!safe(deg) || !clearOfFace(hold, pts(deg), u)) continue
+    const t = (deg * Math.PI) / 180
+    return { ...base, d: { x: side * Math.cos(t), y: Math.sin(t) } }
+  }
+  return base
 }
 
 /**

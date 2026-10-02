@@ -541,9 +541,14 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     return {
       local: (p) => applyMat(fromWorld, p),
       grip: applyMat(toWorld, { x: 0, y: 0 }),
-      head: { x: hc.x, y: hc.y, rx: a.headRx * hs, ry: a.headRy * R.head.s * (pose.head?.sy ?? pose.head?.sx ?? 1), s: hs, mouth: applyMat(headM, a.mouth), box: hbox },
+      head: {
+        x: hc.x, y: hc.y, rx: a.headRx * hs, ry: a.headRy * R.head.s * (pose.head?.sy ?? pose.head?.sx ?? 1), s: hs, mouth: applyMat(headM, a.mouth), box: hbox,
+        eyes: [applyMat(headM, a.eyeL), applyMat(headM, a.eyeR)],
+        eye: { rx: a.eyeRx * R.xf.eye * hs, ry: a.eyeRy * R.xf.eye * hs },
+      },
       fx: fxOn ? applyMat(figM, fxHead) : null,
       front,
+      mood,
     }
   }
 

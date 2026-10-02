@@ -574,11 +574,24 @@ export interface HandHold {
    * (mulen på heste og enhjørninger rækker under hovedets ellipse) og hovedregionens grænseboks
    * (ører, manke og hængeører med).
    */
-  head: { x: number; y: number; rx: number; ry: number; s: number; mouth: Pt; box: Box }
+  head: {
+    x: number
+    y: number
+    rx: number
+    ry: number
+    s: number
+    mouth: Pt
+    box: Box
+    /** Øjnenes centre (venstre, højre) og halvakser i verdensrummet, så en genstand kan gå fri af dem. */
+    eyes: readonly [Pt, Pt]
+    eye: { rx: number; ry: number }
+  }
   /** Tankeprikkernes eller Z'ernes anker i verdensrummet, når humøret viser dem; ellers null. */
   fx: Pt | null
   /** Poten er løftet og tegnes foran hovedet (jubel, vink, tænker); hvilende og bag hovedet: false. */
   front: boolean
+  /** Humøret, så en genstand kan holdes særligt (slikkepinden ved kinden i "tænker", review G1-r4, T3). */
+  mood: Mood
 }
 
 /** Hornhul i en hat (lokale enheder): centrum `lift` over hornets rod; riggen skjuler hornet under hullet. */
