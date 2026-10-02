@@ -19,6 +19,7 @@ addsub2Suite(def, {
     return [a + 10 * b, Math.abs(a - b), a, b]
   },
   ceilings: { choice: 3, keypad: 5, buildBase: 3 },
+  swaps: true,
 })
 
 describe('add100NoCarry', () => {

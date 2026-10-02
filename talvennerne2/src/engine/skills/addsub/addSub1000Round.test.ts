@@ -22,6 +22,7 @@ addsub2Suite(def, {
     return [answer / 10, answer * 10, answer - 100, op === '+' ? Math.abs(a - b) : a + b, a, b]
   },
   ceilings: { choice: 3, keypad: 5 },
+  swaps: true,
 })
 
 function familyOf(a: number, op: string, b: number): string {

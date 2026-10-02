@@ -15,10 +15,12 @@
 //   wrongOperation     the other operation, kept ≥ 0: |a − b| for plus, a + b for minus
 //   countFromFirst     the start counted as the first hop: plus answer − 1, minus answer + 1
 //   tensZero           a whole-ten answer with its zero lost or doubled: answer : 10, answer · 10
-import type { Fact, FamilyDef, HintVisual, Prompt, Rng, SkillId, SpeechPart, Term } from '../../types'
+// digitSwap is not a candidate: the engine finds it on typed answers (misconceptions.ts globalChecks),
+// and the skills answer it with swapHint().
+import type { Fact, FamilyDef, HintSpec, HintVisual, Prompt, Rng, SkillId, SpeechPart, Term } from '../../types'
 import { hashSeed, makeRng } from '../../rng'
 import { equationSpeech } from '../../../speech/equation'
-import { num, say } from '../number/kit'
+import { hintOf, num, say } from '../number/kit'
 
 export type Sign = '+' | '−'
 
@@ -216,3 +218,16 @@ export function noCarryColumns(a: number, op: Sign, b: number): SpeechPart[] {
   if (ones === 0) out.push(say('hint.addsub2.onesSame'))
   return [...out, ...answerIs(result(a, op, b))]
 }
+
+/**
+ * digitSwap (SPEC §4.1: a typed answer of 13 or more with its tens and ones swapped, a slip in these
+ * skills): the answer's blocks and "Vi skriver tierne først og så enerne. Svaret er treogfirs." The
+ * round plays its digit-swap film over two-digit answers.
+ */
+export const swapHint = (answer: number): HintSpec =>
+  hintOf(
+    [say('hint.addsub2.tensFirst'), ...answerIs(answer)],
+    { scene: 'base', h: Math.floor(answer / 100), t: Math.floor(answer / 10) % 10, o: answer % 10, order: 'hto' },
+    'digitSwap',
+    true,
+  )

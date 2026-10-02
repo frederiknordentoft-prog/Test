@@ -10,7 +10,7 @@
 // "Fem og fem giver ti. En og en giver to. Ti og to giver tolv."
 import type { Fact, HintSpec, SkillModule } from '../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
-import { sumPrompt } from './calc'
+import { sumPrompt, swapHint } from './calc'
 
 const ORDER = [1, 2, 5, 10, 3, 4, 6, 7, 8, 9]
 
@@ -20,6 +20,7 @@ const FACTS: readonly Fact[] = ORDER.map((a, rank) => ({
 
 function hint(f: Fact, tag: string | null): HintSpec {
   const a = f.operands[0]
+  if (tag === 'digitSwap') return swapHint(2 * a)
   const sum = (x: number) => [num(x, 'mid'), say('op.og'), num(x, 'mid'), say('op.giver'), num(2 * x)]
   const strategy = [
     say('hint.doubles.twoRows'),

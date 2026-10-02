@@ -19,6 +19,7 @@ addsub2Suite(halves, {
   explain: (f, v) => ({ mis: v === 2 * whole(f) ? ['wrongOperation'] : [], operand: v === whole(f) }),
   formulaValues: (f) => [2 * whole(f), whole(f)],
   ceilings: { choice: 3, keypad: 5, share: 3 },
+  swaps: false,
 })
 
 describe('halves', () => {

@@ -23,6 +23,7 @@ addsub2Suite(addTo20, {
     return [a + b - 1, a + b - 10, Math.abs(a - b), a, b]
   },
   ceilings: { choice: 3, keypad: 5, numberline: 5 },
+  swaps: true,
 })
 
 describe('addTo20', () => {

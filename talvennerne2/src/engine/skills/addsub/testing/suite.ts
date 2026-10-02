@@ -4,7 +4,7 @@
 // ceilings per kind, and the diagnostic card. Lives in a subfolder so the registry never imports it.
 import { describe, expect, it } from 'vitest'
 import { buildTask } from '../../../tasks'
-import { classifyAnswer } from '../../../misconceptions'
+import { classifyAnswer, digitSwapOf } from '../../../misconceptions'
 import { ceilingFor, guessP, isProduction } from '../../../kinds'
 import { compile } from '../../../../speech/compile'
 import { makeRng } from '../../../rng'
@@ -108,6 +108,8 @@ export interface SuiteOptions extends ContractOptions {
   formulaValues(f: Fact): number[]
   /** Highest box a right answer can reach, per kind (SPEC §3.3). */
   ceilings: Partial<Record<TaskKind, 2 | 3 | 5>>
+  /** Typed answers can come out as digitSwap (an answer of 13 or more with two different digits). */
+  swaps: boolean
 }
 
 export function addsub2Suite(def: SkillDef, opts: SuiteOptions): void {
@@ -199,6 +201,21 @@ export function addsub2Suite(def: SkillDef, opts: SuiteOptions): void {
         const t = buildTask(def, f, 'choice', makeRng(3), 0, { target: [target] }).task
         expect(Object.entries(t.distractorTags).some(([k, tag]) => tag === target && t.options.map(String).includes(k)), `${f.id} ${target}`).toBe(true)
       }
+    })
+
+    it('meets a swapped typed answer with the tens-first hint (digitSwap, SPEC §4.1)', () => {
+      let seen = 0
+      for (const { fact, task } of tasks) {
+        if (task.kind !== 'keypad' || typeof task.answer !== 'number') continue
+        const swapped = digitSwapOf(task.answer)
+        if (swapped === null || classifyAnswer(task, swapped) !== 'digitSwap') continue
+        seen++
+        const h = def.hint(fact, 'digitSwap', 'keypad')
+        expect(h.misconception, fact.id).toBe('digitSwap')
+        expect(compile(h.speech).missing, fact.id).toEqual([])
+        expect(compile(h.speech).text, fact.id).toMatch(/^Vi skriver tierne først og så enerne\. Svaret er /)
+      }
+      expect(seen > 0).toBe(opts.swaps)
     })
 
     it('reads every question and hint without a missing clip', () => {

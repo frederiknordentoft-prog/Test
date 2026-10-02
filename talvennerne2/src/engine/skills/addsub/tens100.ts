@@ -10,7 +10,10 @@
 // Hint (rods for the answer): "Tre tiere plus fire tiere giver syv tiere. Det er halvfjerds."
 import type { Fact, FamilyDef, HintSpec, Rng, SkillModule } from '../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
-import { around, canonicalFacts, drawInstance, meaningOf, otherOperation, result, signOf, sumId, sumPrompt, sumSpeech, tensSum, type Drawer, type Sign } from './calc'
+import {
+  around, canonicalFacts, drawInstance, meaningOf, otherOperation, result, signOf, sumId, sumPrompt, sumSpeech, tensSum, type Drawer,
+  type Sign,
+} from './calc'
 
 const META = metaOf('tens100')
 const RANK: Readonly<Record<string, number>> = Object.fromEntries(META.families.map((f) => [f.id, f.rank]))

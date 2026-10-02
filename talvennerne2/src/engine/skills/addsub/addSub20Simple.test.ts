@@ -23,6 +23,7 @@ addsub2Suite(def, {
     return [op === '+' ? Math.abs(a - b) : a + b, a, b]
   },
   ceilings: { choice: 3, keypad: 5 },
+  swaps: true,
 })
 
 describe('addSub20Simple', () => {

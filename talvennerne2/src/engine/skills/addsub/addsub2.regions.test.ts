@@ -68,7 +68,7 @@ describe('the plus and minus regions of 1.–2. klasse', () => {
     const used = new Set<string>()
     const defs = registeredSkills().filter((d) => MINE.has(d.id)) as SkillDef[]
     const tags: (ErrorTag | null)[] = [null, 'near', 'operand', 'other', 'ambiguous', 'forgotCarry', 'smallerFromLarger', 'borrowNoDecrement',
-      'placeMisalign', 'wrongOperation', 'countFromFirst', 'tensZero', 'digitComplement10']
+      'placeMisalign', 'wrongOperation', 'countFromFirst', 'tensZero', 'digitComplement10', 'digitSwap']
     for (const def of defs) {
       used.add(def.canDo)
       for (const { task } of tasksUnderTest(def, 1)) for (const c of compile(task.speech).clips) used.add(c)

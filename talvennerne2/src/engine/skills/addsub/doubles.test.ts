@@ -18,6 +18,7 @@ addsub2Suite(doubles, {
   explain: (f, v) => ({ mis: n(f) % 2 === 0 && v === n(f) / 2 ? ['wrongOperation'] : [], operand: v === n(f) }),
   formulaValues: (f) => [n(f) / 2, n(f)],
   ceilings: { choice: 3, keypad: 5, numberline: 5 },
+  swaps: true,
 })
 
 describe('doubles', () => {

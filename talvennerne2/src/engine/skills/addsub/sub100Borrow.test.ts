@@ -20,6 +20,7 @@ addsub2Suite(def, {
     return [sfl(a, b), bnd(a, b), ...(f.family === 'fromTen' ? [dc10(a, b) ?? -1] : []), a + b, a, b]
   },
   ceilings: { choice: 3, keypad: 5 },
+  swaps: true,
 })
 
 function familyOf(a: number, b: number): string {

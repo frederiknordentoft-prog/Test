@@ -15,7 +15,7 @@ import type { Fact, FamilyDef, HintSpec, Rng, SkillModule } from '../types'
 import { hintOf, metaOf, say, tagged } from '../number/kit'
 import {
   around, between, canonicalFacts, columns, drawInstance, meaningOf, noCarryColumns, otherOperation, sumId, sumPrompt, sumSpeech,
-  type Drawer,
+  swapHint, type Drawer,
 } from './calc'
 
 const META = metaOf('add100NoCarry')
@@ -51,6 +51,7 @@ const CANON = canonicalFacts('add100NoCarry', drawer, META.families)
 
 function hint(f: Fact, tag: string | null): HintSpec {
   const [a, b] = f.operands
+  if (tag === 'digitSwap') return swapHint(a + b)
   const steps = noCarryColumns(a, '+', b)
   const visual = columns(a, '+', b)
   if (tag === 'placeMisalign') return hintOf([say('hint.addsub2.onesToOnes'), ...steps], visual, 'placeMisalign')

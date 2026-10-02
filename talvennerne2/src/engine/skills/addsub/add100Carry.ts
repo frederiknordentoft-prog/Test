@@ -24,7 +24,7 @@ import type { Fact, FamilyDef, HintSpec, Rng, SkillModule, TaskKind } from '../t
 import { hintOf, metaOf, say, tagged } from '../number/kit'
 import {
   answerIs, around, canonicalFacts, columns, digitSum, drawInstance, hopLine, hopSpeech, meaningOf, onesCarry, plusStops, sumId,
-  sumPrompt, sumSpeech, type Drawer,
+  sumPrompt, sumSpeech, swapHint, type Drawer,
 } from './calc'
 
 const META = metaOf('add100Carry')
@@ -91,6 +91,8 @@ function hint(f: Fact, tag: string | null): HintSpec {
       return hintOf([say('hint.addsub2.onesToOnes'), ...steps], line, 'placeMisalign')
     case 'wrongOperation':
       return hintOf([meaningOf('+'), ...steps], line, 'wrongOperation')
+    case 'digitSwap':
+      return swapHint(s)
     default:
       return hintOf(steps, line)
   }

@@ -20,6 +20,7 @@ addsub2Suite(def, {
     return [answer / 10, answer * 10, op === '+' ? Math.abs(a - b) : a + b, a, b]
   },
   ceilings: { choice: 3, keypad: 5 },
+  swaps: false,
 })
 
 describe('tens100', () => {

@@ -14,6 +14,7 @@ addsub2Suite(def, {
   explain: (f, v) => explainSum('sub100NoBorrow', f.family, diff(f).a, '−', diff(f).b, v),
   formulaValues: (f) => [diff(f).a + diff(f).b, diff(f).a, diff(f).b],
   ceilings: { choice: 3, keypad: 5 },
+  swaps: true,
 })
 
 describe('sub100NoBorrow', () => {

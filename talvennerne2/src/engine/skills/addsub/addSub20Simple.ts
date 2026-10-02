@@ -14,7 +14,10 @@
 // "En fuld ti-ramme er ti. Ti og seks giver seksten."
 import type { Fact, FamilyDef, HintSpec, Rng, SkillModule, SpeechPart } from '../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
-import { around, canonicalFacts, drawInstance, meaningOf, otherOperation, result, signOf, sumId, sumPrompt, sumSpeech, type Drawer, type Sign } from './calc'
+import {
+  around, canonicalFacts, drawInstance, meaningOf, otherOperation, result, signOf, sumId, sumPrompt, sumSpeech, swapHint,
+  type Drawer, type Sign,
+} from './calc'
 
 const META = metaOf('addSub20Simple')
 const RANK: Readonly<Record<string, number>> = Object.fromEntries(META.families.map((f) => [f.id, f.rank]))
@@ -61,6 +64,7 @@ function strategy(f: Fact): SpeechPart[] {
 }
 
 function hint(f: Fact, tag: string | null): HintSpec {
+  if (tag === 'digitSwap') return swapHint(f.answer as number)
   const steps = strategy(f)
   const visual = frames(f.answer as number)
   if (tag === 'wrongOperation') return hintOf([meaningOf(signOf(f)), ...steps], visual, 'wrongOperation')

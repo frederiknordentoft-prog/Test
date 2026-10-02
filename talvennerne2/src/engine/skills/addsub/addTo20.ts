@@ -13,7 +13,7 @@
 // forgotCarry and wrongOperation say why first.
 import type { Fact, HintSpec, SkillModule } from '../types'
 import { hintOf, metaOf, num, say, tagged, walk } from '../number/kit'
-import { meaningOf, sumPrompt } from './calc'
+import { meaningOf, sumPrompt, swapHint } from './calc'
 
 function rank(a: number, b: number): number {
   const big = Math.max(a, b)
@@ -43,6 +43,7 @@ function makeTen(big: number, small: number) {
 
 function hint(f: Fact, tag: string | null): HintSpec {
   const [a, b] = f.operands
+  if (tag === 'digitSwap') return swapHint(a + b)
   const big = Math.max(a, b)
   const small = Math.min(a, b)
   const strategy = makeTen(big, small)

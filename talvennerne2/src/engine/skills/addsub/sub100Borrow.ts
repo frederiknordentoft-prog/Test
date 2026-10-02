@@ -22,8 +22,8 @@
 import type { Fact, FamilyDef, HintSpec, Rng, SkillModule, TaskKind } from '../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
 import {
-  answerIs, around, between, borrowNoDecrement, canonicalFacts, columns, digitComplement10, digitSum, drawInstance, hopLine, hopSpeech,
-  meaningOf, minusStops, plusStops, smallerFromLarger, sumId, sumPrompt, sumSpeech, type Drawer,
+  answerIs, around, between, borrowNoDecrement, canonicalFacts, columns, digitComplement10, digitSum, drawInstance, hopLine,
+  hopSpeech, meaningOf, minusStops, plusStops, smallerFromLarger, sumId, sumPrompt, sumSpeech, swapHint, type Drawer,
 } from './calc'
 
 const META = metaOf('sub100Borrow')
@@ -90,6 +90,8 @@ function hint(f: Fact, tag: string | null): HintSpec {
     }
     case 'wrongOperation':
       return hintOf([meaningOf('−'), ...steps], line, 'wrongOperation')
+    case 'digitSwap':
+      return swapHint(d)
     default:
       return hintOf(steps, line)
   }

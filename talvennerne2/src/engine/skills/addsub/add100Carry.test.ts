@@ -21,6 +21,7 @@ addsub2Suite(def, {
     return [a + b - 10, a + 10 * b, Math.abs(a - b), a, b]
   },
   ceilings: { choice: 3, keypad: 5, numberline: 5 },
+  swaps: true,
 })
 
 /** The family a sum belongs to, from its numbers alone (the families are disjoint). */

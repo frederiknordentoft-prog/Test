@@ -49,6 +49,7 @@ const table: Record<ClipId, string> = {
   'hint.addsub2.oneTenLess': 'Når du veksler en tier, er der en tier mindre tilbage.',
   'hint.addsub2.onesToOnes': 'Det lille tal er enere. Læg det til enerne, ikke til tierne.',
   'hint.addsub2.zeroTens': 'Hele tiere skrives med ét nul til sidst.',
+  'hint.addsub2.tensFirst': 'Vi skriver tierne først og så enerne.',
 
   // doubles and halves: two equal rows
   'hint.doubles.twoRows': 'Det dobbelte er to lige store rækker.',

@@ -23,7 +23,7 @@ import type { Fact, FamilyDef, HintSpec, Rng, SkillModule, SpeechPart } from '..
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
 import {
   answerIs, around, canonicalFacts, columns, digitSum, drawInstance, meaningOf, otherOperation, result, signOf, sumId, sumPrompt,
-  sumSpeech, tensCarry, type Drawer, type Sign,
+  sumSpeech, swapHint, tensCarry, type Drawer, type Sign,
 } from './calc'
 
 const META = metaOf('addSub1000Round')
@@ -96,6 +96,8 @@ function hint(f: Fact, tag: string | null): HintSpec {
       return hintOf([say(f.family === 'HplusH' || f.family === 'HminusH' ? 'hint.addSub1000Round.zeroHundreds' : 'hint.addsub2.zeroTens'), ...steps], visual, 'tensZero')
     case 'wrongOperation':
       return hintOf([meaningOf(op), ...steps], visual, 'wrongOperation')
+    case 'digitSwap':
+      return swapHint(f.answer as number)
     default:
       return hintOf(steps, visual)
   }

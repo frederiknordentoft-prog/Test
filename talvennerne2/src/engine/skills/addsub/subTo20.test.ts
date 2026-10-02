@@ -25,6 +25,7 @@ addsub2Suite(subTo20, {
     return [a - b + 1, sfl(a, b), bnd(a, b), a + b, a, b]
   },
   ceilings: { choice: 3, keypad: 5 },
+  swaps: false,
 })
 
 describe('subTo20', () => {
