@@ -15,6 +15,7 @@ import type { Animal, ClipId, ItemId, SpeciesId, SpeechPart, WorldId } from '../
 import { useNav } from '../../../../app/nav'
 import { speciesOfWorld } from '../../../../meta/animals'
 import { clockWords } from '../../../../speech/clock'
+import { toDanishText } from '../../../../speech/compile'
 import { openedClip, type CeremonyStep } from '../../../../meta/ceremonyQueue'
 import { totalPerler, totalXp, type Reward } from '../../../../meta/rewards'
 import { useMeta } from '../../../../state/useMeta'
@@ -151,7 +152,7 @@ function LearnedCard({ item }: { item: LearnedItem }) {
     <button
       type="button"
       className={cx('tv-learned__card tv-touch', `is-${item.face.t}`)}
-      aria-label={lineText(item.speech, speech.text)}
+      aria-label={toDanishText(item.speech)}
       onClick={(e) => {
         e.stopPropagation()
         speech.speak(item.speech)
