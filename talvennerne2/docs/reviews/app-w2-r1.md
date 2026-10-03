@@ -7,20 +7,35 @@ Uafhængigt produkt- og QA-review af 1. og 2. klasses verdener, før de frigives
 - **Chromium:** `scripts/browser.mjs` med fingre (CDP `Input.dispatchTouchEvent`, både tryk og træk), `hasTouch`, `isMobile` på telefon og `da-DK`.
 - **Adgang:** dev-profiler oprettet med `createProfile` og en startven. Verdenen og dens steder er åbnet i `profile.unlocked`, altså samme vej som dashboardets "Åbn hele …", når verdenen er frigivet. Lydtjekket er sat som bestået (`device.audioVerified`), så hør-opgaverne kommer med.
 - **Oplæsning:** `window.__voiceLog` er holdt op mod stemmens manifest (`src/assets/voice/voice-manifest.json`, 1.225 klip). Mangler et klip, læser enhedens stemme hele sætningen.
-- **Skærmbilleder og scripts:** ligger i `artifacts/qa2/` (git-ignoreret): `play.mjs`, `content.mjs`, `after.mjs`, `vp.mjs`, `pay.mjs`, `pay2.mjs` og `lib.mjs`. Alle stier herunder er relative til `talvennerne2/`.
+- **Skærmbilleder og scripts:** ligger i `artifacts/qa2/` (git-ignoreret): `play.mjs`, `content.mjs`, `finale.mjs`, `after.mjs`, `vp.mjs`, `pay.mjs`, `pay2.mjs` og `lib.mjs`. Alle stier herunder er relative til `talvennerne2/`.
 - **Teknisk klar:** `worldReady('bakke')` og `worldReady('skov')` er sande, når `released` ikke filtrerer. Alle skills har moduler, og venner, kister og finaleting er tegnet. Frigivelsen er altså én linje i `RELEASED_WORLDS`.
 
 ## Resultat
 
-RESULTAT
+**Ikke klar til frigivelse endnu, men tæt på.**
+
+1. **Kernen holder i begge verdener.**
+   - Alle 15 regioner og begge finaler blev spillet til ende med fingeren i fire formater (120 ture). Den eneste tur, der gik i stå, skyldtes mit script og ikke appen.
+   - De 11 opgavetyper fra briefen, plus ja/nej, virkede ved tryk og træk.
+   - Fejlflowet var ens og rigtigt i alle 180 fejl.
+   - Prøve, hytte og begge finaler virkede.
+   - Alle venner, kister og finaleting er tegnet, og `worldReady` er sand for begge verdener.
+2. **Én ting blokerer (P1-1).** "Det lærte du" viser og siger urets minuttal ("540" for kl. 9) efter hver tur i Urtårnet og Urtårnets top. Det er den første skærm efter turen, og alle børn ser den i to regioner.
+3. **Otte ting bør rettes før frigivelse (P2).** De vigtigste:
+   - Nye regioner har næsten ingen opgaver fra regionen selv, når barnet allerede har spillet 7–9 ture samme dag (P2-1).
+   - Stemmen taber en sætning i 8 % af turene og giver en konsolfejl (P2-3).
+   - Mestringssættene Ridder og Talmagiker gives som indpakkede gaver, der ikke kan bæres (P2-6).
+   - Tallinjeopgaverne viser ikke det tal, der skal placeres (P2-4).
+
+**Fund:** 1 × P1, 8 × P2 og 16 × P3.
 
 | Punkt | Karakter (1–5) |
 |---|---|
-| Funktionsfejl (5 = ingen) | KAR1 |
-| Børnebrugbarhed | KAR2 |
-| AAA-indtryk | KAR3 |
-| Fremdrift og motivation | KAR4 |
-| Forældrenes dashboard | KAR5 |
+| Funktionsfejl (5 = ingen) | **3** |
+| Børnebrugbarhed | **3** |
+| AAA-indtryk | **3** |
+| Fremdrift og motivation | **3** |
+| Forældrenes dashboard | **4** |
 
 ## Sådan er der spillet
 
@@ -37,9 +52,13 @@ RESULTAT
 - **Svar:** rigtige svar med fingeren. 1–2 forkerte svar pr. tur, på 2. og 7. første forsøg (i l3 det 3. og i prøven det 5.).
 - **Dumpede prøver:** Urtårnet og Købmandsgården blev dumpet med vilje (7 planker). Derefter Træningshytten og en ny prøve, der blev bestået.
 - **Friske profiler** (dagens loft over nye nøgler nulstillet, se P2-1): l1, l2 og prøven i Tyvebroen, Formværkstedet, Tierhoppet, Målebakken, Vekselvandet, Gangegrotten, Urtårnets top, Linealstien, Figurhaven og Hundredebroen. Først dér kom figurer, mål, brøker og gange rigtigt i spil.
-- **Omfang:** 120 ture (90 i hovedkørslen og 30 med friske profiler) med 1.410 opgaver. 180 forkerte svar gav fejlflowet, og 91 guldæg blev fanget. FINALE_OMFANG
-- **Bagefter, med de fire børn importeret på én enhed:** kortet i fire formater, voksen-porten (først med et forkert svar) og alle syv faner i dashboardet for 1. og 2. klasse, udskrift, Dyrehaven, garderoben, butikken, bøgerne og mestringssættene.
-- **Formater:** telefon på tværs (852×393) med alle wave 2-opgavetyper og 4× CPU-throttle på opgaveskærmen.
+- **Omfang:** 120 ture (90 i hovedkørslen og 30 med friske profiler) med 1.410 opgaver. 180 forkerte svar gav fejlflowet, og 91 guldæg blev fanget. Begge finaler blev bestået: Hestebakkernes med Otto på iPad på tværs og Regnbueskovens med Saras profil på telefon (11 af 12).
+- **Bagefter, med Mie, Otto og Sara importeret på én enhed** (Bos eksport gik tabt, da kørslen blev stoppet): kortet i fire formater, voksen-porten (først med et forkert svar) og alle syv faner i dashboardet for 1. og 2. klasse, udskrift, Dyrehaven, garderoben, butikken, bøgerne og mestringssættene.
+- **Formater:**
+  - Telefon på tværs (852×393): pay, clockSet, colorParts, fillSlots, multiSelect, trueFalse, choice og keypad samt ceremonierne.
+  - iPad (820×1180): én tur i Købmandsgården.
+  - Alle 62 svar i de to kørsler blev bedømt rigtigt.
+  - 4× CPU-throttle på opgaveskærmen i fem sten, på telefon.
 
 **Verificeret OK:**
 - Alle opgavetyper kan besvares med fingeren:
@@ -50,7 +69,7 @@ RESULTAT
   - nålen trækkes hen ad tallinjen,
   - kort, tastatur, felter, byggeklodser, rækkefølge og "find dem alle" trykkes.
 
-  Der var ingen fejlregistrering ud over P1-2 (betaling).
+  Fingeren blev registreret rigtigt hver gang. Undtagelsen er tre betalinger i hovedkørslen, der ikke kunne genskabes (P3-15).
 - 0 trykmål under 60 px i svarfeltet og ingen vandret scroll i opgaverne i nogen af formaterne.
 - Fejlflowet viste overstreget svar, strategi med billede og én stor "Tryk på …" i alle 180 fejl. For ur, penge og deling var det ét kort med det rigtige ur, den rigtige bakke eller de rigtige tallerkner. Turen gik først videre efter trykket.
 - Mesterprøven: "Klar, når du er. Bedst: 7 planker", Træningshytten lyser, "Spil en tur først, så er broen klar igen", og en bestået prøve giver medalje og tåge, der letter.
@@ -91,22 +110,20 @@ Bølge 2's klip indspilles stadig, så reserven er forventet. 79 % af opgaverne 
 
 ### P1-1 "Det lærte du" viser urets minuttal som tal: "540", "0", "525" – og siger "Tallet fem hundrede og fyrre"
 
-- **Skærm og format:** opsummeringen efter turen. Alle formater, set på iPad på tværs og iPad på højkant.
+- **Skærm og format:** opsummeringen efter turen. Alle formater: set på iPad på tværs, iPad, telefon og telefon på tværs.
 - **Trin:**
   1. Spil en tur i Urtårnet (Hestebakkerne) eller Urtårnets top (Regnbueskoven).
   2. Se den første skærm efter turen.
 - **Set:**
   - Kortene under "Det lærte du" viser minuttallet fra urets fakta-id i stedet for klokkeslættet, med et øre-ikon: "540", "240" og "180" (kl. 9, 4 og 3).
-  - Det skete efter alle 14 ture i de to urregioner. Eksempler: "0" for kl. 12, "570" for halv ti, og "525", "105" og "645" for kvart i ni, kvart i to og kvart i elleve.
+  - Det skete efter alle 17 ture i de to urregioner, på iPad og på telefon. Eksempler: "0" for kl. 12, "570" for halv ti, og "525", "105" og "645" for kvart i ni, kvart i to og kvart i elleve.
   - Talen er "Tallet" + tallet, altså "Tallet fem hundrede og fyrre. Du er blevet bedre til det her."
   - Det er den første skærm efter hver urtur ("Læring vises før ting", SPEC §1), og den er forkert både på skærmen og i øret.
 - **Burde:** En lille urskive eller "kl. 9" / "halv ti" / "kvart i ni" (der findes klip til klokkeslæt i `speech/clock.ts`), både vist og læst op.
-- **Skærmbillede:** `artifacts/qa2/bakke1-ipadLand-cer-w1-klokken-l1-0-summary.png`
+- **Skærmbilleder:** `artifacts/qa2/bakke1-ipadLand-cer-w1-klokken-l1-0-summary.png` ("540 · 240 · 180"), `artifacts/qa2/vp-phoneLand-w2-klokken-l1-cer-summary.png` ("195 · 285 · 375")
 - **Fil:**
   - `src/ui/screens/child/ceremony/describe.ts` (`keyFace`: `typeof fact.answer === 'number'` giver `{ t: 'number', n: fact.answer }` og talen `s.reward.learned.number` + tallet; ursvar er minutter, `answerType: 'minutes'`)
   - Samme gren giver kontekstløse tal for andre fakta, se P3-12.
-
-PAYP1
 
 ---
 
@@ -116,20 +133,22 @@ PAYP1
 
 - **Skærm og format:** turen. Alle formater.
 - **Trin:**
-  1. Spil to regioner igennem på samme dag (ca. 12 ture), fx Hundredemarken og Dobbeltdalen.
-  2. Gå til en ny region, fx Formværkstedet, og spil l1, l2 og kisten.
+  1. Spil 6–12 ture samme dag, fx Stortalsbjerget igennem.
+  2. Gå til en ny region, fx Vekselvandet eller Formværkstedet, og spil l1, l2 og kisten.
 - **Set:**
-  - Formværkstedet l1 havde 0 af 10 figuropgaver. Resten var dobbelt, halvdelen, "5 + ? = 7" og "7 + 7" fra Dobbeltdalen og Tyvebroen. Den eneste figuropgave var "shape:square:5" i alle tre ture.
-  - Det gjaldt alle regioner, der blev startet efter ca. 12 ture:
+  - Formværkstedet l1 havde 0 af 10 figuropgaver. Turen var dobbelt, halvdelen, "5 + ? = 7" og "7 + 7" fra Dobbeltdalen og Tyvebroen. I alle tre ture var der kun én figuropgave, den samme firkant ("shape:square:5"), og i l1 kom den endda kun som guldæg.
+  - Det begyndte allerede ved 7.–9. tur samme dag og gjaldt alle regioner, der blev startet senere:
 
-    | Sten | Egne opgaver |
+    | Sten (barnets tur nr. den dag) | Egne opgaver |
     |---|---|
-    | Tyvebroen l1 | 0 af 10 |
-    | Tierhoppet l1 | 1 af 10 |
-    | Formværkstedet l1, l2, kiste | 0, 1 og 1 af 10 |
-    | Gangegrotten l1, l2 | 0 og 1 af 10 |
-    | Vekselvandet l1 | 1 af 8 |
-    | Målebakken l1 | 0 af 3 (en tur på tre opgaver) |
+    | Vekselvandet l1 (Saras 7.) | 1 af 8 |
+    | Tyvebroen l1 (Mies 8.) | 0 af 10 |
+    | Tierhoppet l1 (Ottos 9.) | 1 af 10 |
+    | Hundredebroen l1 (Bos 9.) | 7 af 10 |
+    | Gangegrotten l1 og l2 (Saras 13. og 14.) | 0 og 1 af 10 |
+    | Formværkstedet l1, l2 og kiste (Mies 14.–16.) | 0, 1 og 1 af 10 |
+    | Linealstien l1 (Bos 15.) | 3 af 10 |
+    | Målebakken l1 (Ottos 15.) | 0 af 3 (en tur på tre opgaver) |
 
   - Barnet får alligevel stjerner, kisten (Støvbriller) og vennen, og stenene tæller som spillet. Bagefter kommer mesterprøven med 10 af 10 egne opgaver, som barnet næsten ikke har øvet.
   - Det følger A13 (loft på 20 nye nøgler pr. læringsdag, `TASTE_KEYS` og `TASTE_PER_DAY`). Men for barnet hedder stenen "Formværkstedet", og den indeholder plusstykker. For en forælder, der lige har åbnet verdenen, ser det ud som en fejl.
@@ -151,9 +170,10 @@ PAYP1
   - Farve og race trækkes seedet (`rollCombo`), mens kortet tegner `AnimalPicture species=…` med standardfarven. Det er samme slags løftebrud som QA1's P2-9 (ægget).
 - **Burde:** Kortet viser præcis det dyr, noden giver (trækket kan regnes ud på forhånd), eller noden giver artens kendte farve første gang.
 - **Skærmbilleder:**
-  - `artifacts/qa2/bakke1-ipadLand-sheet-w1-klokken-friend.png`
-  - `artifacts/qa2/bakke1-ipadLand-cer-w1-klokken-friend-2-thing.png`
-  - `artifacts/qa2/skov3-phone-cer-w2-penge-friend-1-thing.png`
+  - `artifacts/qa2/bakke1-ipadLand-sheet-w1-klokken-friend.png` (orange ræv på kortet)
+  - `artifacts/qa2/bakke1-ipadLand-cer-w1-klokken-friend-2-thing.png` (grå ræv i ceremonien)
+  - `artifacts/qa2/skov3-phone-sheet-w2-penge-friend.png` (rødt egern på kortet)
+  - `artifacts/qa2/skov3-phone-cer-w2-penge-friend-1-thing.png` (sort egern i ceremonien)
 - **Fil:** `src/ui/screens/child/map/StoneSheet.tsx` (`AnimalPicture`), `src/meta/animals.ts` (`friendAnimal`, `rollCombo`)
 
 ### P2-3 Oplæsningen taber en sætning, og konsollen får en fejl (stemmens LRU-cache)
@@ -161,7 +181,7 @@ PAYP1
 - **Skærm og format:** turen. Set på iPad og telefon.
 - **Trin:** Spil de første ture i en ny region, mens stemmens sprites hentes i baggrunden.
 - **Set:**
-  - `TypeError: Cannot read properties of undefined (reading 'bounds')` i `boundsFor` (`src/audio/voice.ts`), 10 gange i 120 ture (8 %). I hovedkørslen var det Urtårnet l1, Tierhoppet l1, Gangegrotten l2 og Urtårnets top l3. Med friske profiler på samme side var det Tyvebroen l1, Tierhoppet l2, Målebakken l1, Linealstien l1, Urtårnets top l1 og Hundredebroens mesterprøve.
+  - `TypeError: Cannot read properties of undefined (reading 'bounds')` i `boundsFor` (`src/audio/voice.ts`), 10 gange i 120 ture (8 %) og én gang mere i kørslen på telefon på tværs. I hovedkørslen var det Urtårnet l1, Tierhoppet l1, Gangegrotten l2 og Urtårnets top l3. Med friske profiler på samme side var det Tyvebroen l1, Tierhoppet l2, Målebakken l1, Linealstien l1, Urtårnets top l1 og Hundredebroens mesterprøve.
   - Fejlen fanges i `Speech.run`, og sætningen bliver tavs.
   - Årsag: `Speech.run` venter på, at sprites er klar, men tæller dem først som i brug (`inUse++`) efter endnu en `await`. Imens kan `evict()` (kaldt, når en anden sprite er indlæst) slette en klar sprite, som ingen holder. Så giver `sprites.get(...)` `undefined`. LRU'en fylder, fordi `preloadVoice` henter alle UI-sprites (ca. 15 min lyd, over 64 MB afkodet).
   - SPEC §15.2 kræver 0 konsolfejl.
@@ -198,7 +218,7 @@ PAYP1
 ### P2-6 Mestringssættene er ikke tegnet: Ridder og Talmagiker gives som indpakkede gaver, og butikken har kun Pirat og Festhatten
 
 - **Skærm og format:** ceremonien "En ny ting!", garderoben og butikken. Alle formater.
-- **Trin:** Opnå 2 sølvmedaljer eller 1 guldmedalje, fx over et par dage i Hestebakkerne. Det samme sker i Engdalen, men de nye verdener har dobbelt så mange skills at få medaljer i. Afslut så en tur. Gå derefter i Butik.
+- **Trin:** Opnå 2 sølvmedaljer eller 1 guldmedalje, fx over et par dage i Hestebakkerne. Det samme kan ske i Engdalen, men de nye verdener har mange flere skills at få medaljer i. Afslut så en tur. Gå derefter i Butik.
 - **Set:**
   - Af de sæt, bølge 2 skulle tegne (Rytter, Kongelig, Ridder, Talmagiker, Fodbold, Vinter og Fest), findes kun Rytter, Kongelig og Fest-hatten i `src/art/items`.
   - `grantDueItems` giver alligevel Ridderhjelmen ved 2 sølvmedaljer og Troldmandshatten ved den første guldmedalje. Ceremonien viser dem som en indpakket gave (`GiftArt`) uden "Prøv den på".
@@ -268,6 +288,8 @@ PAYP1
 | 12 | opsummering | Samme gren som P1-1 giver andre kontekstløse tal: halvdelen af 8 bliver "4" med et øre-ikon ("Tallet fire"), og tiere bliver "180". Det er ikke forkert, men barnet kan ikke se, hvad det har lært. | `bakke1-ipadLand-cer-w1-klokken-l1-0-summary.png` (samme layout) | `src/ui/screens/child/ceremony/describe.ts` (`keyFace`) |
 | 13 | opgave, tiere og enere | Udfyldning "64 = ? + ?" og "586 = ? + ? + ?" viser felterne to gange: i ligningen og i svarbakken (som QA1 så for sortOrder). | `skov2-ipad-ask-w2-tal1000-fillSlots-placeValue1000.png` | `src/ui/task/fillSlots/View.tsx` |
 | 14 | dashboard + udskrift | "1 aktive dag af 14" og "1 aktive dag" står der stadig (QA1's P3-4). | `dash-phone-g2-Overblik.png` | `src/ui/screens/parent/dashboard/OverviewTab.tsx`, `PrintReport.tsx` |
+| 15 | opgave, penge, telefon | Tre korrekte betalinger blev bedømt forkert i hovedkørslen: 77 kr. to gange (seddel + 20 + 5 + 2) og 67 kr. i prøvens genforsøg (seddel + 10 + 5 + 2). Det kunne ikke genskabes. 8 af 8 fokuserede forsøg i opgaveharnessen (også med 30 ms mellem tryk) blev bedømt rigtigt, og det samme gjorde alle betalinger i kørslerne på telefon på tværs og iPad. Det bør undersøges med bakkens indhold logget, for en fejl her koster en mesterprøve. | `skov3-phone-ask-w2-penge-pay-payExact.png` (samme tur), log i `skov-tasks.jsonl`, `pay-focus.json`, `pay2.json` | `src/ui/task/pay/View.tsx` (`add`, `usePointerDrag`) |
+| 16 | opgave, 4× CPU, telefon | Med 4× throttle var billedtiden p50 16,7 ms. Omkring hvert svar var p95 33–83 ms, og lange opgaver tog 50–350 ms (fejring, oplæsning og næste opgave). Der var ingen konsolfejl. Det er målt på dev-serveren (React i dev-tilstand) på en maskine med stemmeindspilning og tre kunst-agenter, så det kan ikke holdes op mod SPEC §15.2's p95 ≤ 20 ms. Mål prod-buildet, når verdenerne frigives. | – (`vp-throttle.json`) | `scripts/playthrough.mjs` (prod-delen) |
 
 ## Rækværk (SPEC §13) i de nye verdener
 
