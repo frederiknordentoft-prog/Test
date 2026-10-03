@@ -166,6 +166,8 @@ interface TailShape {
   /** Rørets bredde (glat hale) eller bredder langs rygraden (busket hale). */
   w: number
   bushy?: { base: readonly number[]; tip: readonly number[] }
+  /** Dæmpningen af riggens vækst på stor (standard `TAIL_STAGE3`). */
+  grow3?: number
 }
 
 // De buskede haler slutter under kraven og hovedet, så halespidsen aldrig lukker en sprække med baggrund
@@ -177,6 +179,7 @@ const TAILS: Record<'domestic' | 'longhair' | 'mainecoon', TailShape> = {
     base: [[0, 0], [12, -2], [23, -9], [29, -22], [29.5, -36]],
     tip: [[0, 0], [-0.4, -8.2], [-3.8, -13.6], [-8.8, -14.8], [-11.2, -11.4]],
     w: 10.5,
+    grow3: 0.83,
   },
   longhair: {
     base: [[0, 0], [9.5, -3], [16.5, -11], [19, -21.5], [19, -30]],
@@ -233,10 +236,10 @@ function tailColors(pal: Palette, colorway: string, ids: PartCtx['ids']) {
 
 /**
  * Halens vækst på stor: riggen skalerer halen 1,3 (STAGE_XF), men så når krogen op til knurhårene og lukker
- * en lomme mellem hale, krop og kind (review G1-r4, huller-lint). Katten dæmper den til ca. 1,08, så halen også
- * bliver i den sikre zone, når den svinger ud i vink.
+ * en lomme mellem hale, krop og kind (review G1-r4, huller-lint). Katten dæmper den til ca. 1,1: de buskede haler
+ * 0,86 (ca. 1,12), huskattens 0,83 (ca. 1,08), så dens hale også bliver i den sikre zone, når den svinger ud i vink.
  */
-const TAIL_STAGE3 = 0.83
+const TAIL_STAGE3 = 0.86
 
 /** Halen skaleret om roden (punkter og bredder, så stregen bevarer sin bredde og der ikke kommer flere elementer). */
 function scaleTail(t: TailShape, k: number): TailShape {
@@ -251,7 +254,7 @@ function scaleTail(t: TailShape, k: number): TailShape {
 
 function makeTail(t: TailShape): Part {
   const grown = makeTailInner(t)
-  const big = makeTailInner(scaleTail(t, TAIL_STAGE3))
+  const big = makeTailInner(scaleTail(t, t.grow3 ?? TAIL_STAGE3))
   return (p) => (p.stage === 3 ? big(p) : grown(p))
 }
 
