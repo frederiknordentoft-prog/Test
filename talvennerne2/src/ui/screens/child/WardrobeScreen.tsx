@@ -85,7 +85,11 @@ export function Wardrobe({ profile, route, drawn = isItemDrawn }: WardrobeProps)
     if (!guide) return
     markGuided(profile.id)
     panel.current?.querySelector(`[data-item="${guide}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-    if (profile.settings.autoSpeak) speech.speak([{ clip: guideOn ? 's.wardrobe.guide.on' : 's.wardrobe.guide' }])
+    // An owl (or another winged animal) cannot put on a new back thing: it says why, not "tap to try it on".
+    const wings = !guideOn && slotLocked(animal, ITEM_BY_ID[guide].slot)
+    if (profile.settings.autoSpeak) {
+      speech.speak([{ clip: guideOn ? 's.wardrobe.guide.on' : wings ? 's.wardrobe.wings' : 's.wardrobe.guide' }])
+    }
     // once per pointed-at thing
   }, [guide])
 
