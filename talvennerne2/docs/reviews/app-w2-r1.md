@@ -161,7 +161,7 @@ PAYP1
 - **Skærm og format:** turen. Set på iPad og telefon.
 - **Trin:** Spil de første ture i en ny region, mens stemmens sprites hentes i baggrunden.
 - **Set:**
-  - `TypeError: Cannot read properties of undefined (reading 'bounds')` i `boundsFor` (`src/audio/voice.ts`), 4 gange i 90 ture: Urtårnet l1, Tierhoppet l1, Gangegrotten l2 og Urtårnets top l3.
+  - `TypeError: Cannot read properties of undefined (reading 'bounds')` i `boundsFor` (`src/audio/voice.ts`), 10 gange i 120 ture (8 %). I hovedkørslen var det Urtårnet l1, Tierhoppet l1, Gangegrotten l2 og Urtårnets top l3. Med friske profiler på samme side var det Tyvebroen l1, Tierhoppet l2, Målebakken l1, Linealstien l1, Urtårnets top l1 og Hundredebroens mesterprøve.
   - Fejlen fanges i `Speech.run`, og sætningen bliver tavs.
   - Årsag: `Speech.run` venter på, at sprites er klar, men tæller dem først som i brug (`inUse++`) efter endnu en `await`. Imens kan `evict()` (kaldt, når en anden sprite er indlæst) slette en klar sprite, som ingen holder. Så giver `sprites.get(...)` `undefined`. LRU'en fylder, fordi `preloadVoice` henter alle UI-sprites (ca. 15 min lyd, over 64 MB afkodet).
   - SPEC §15.2 kræver 0 konsolfejl.
@@ -195,23 +195,58 @@ PAYP1
 - **Skærmbillede:** `artifacts/qa2/bakke0-phone-teach-w1-tieren-fillSlots-tensOnes.png`
 - **Fil:** `src/ui/screens/child/RoundScreen.tsx` (`blankFaces` håndterer kun `prompt.scene === 'row'`; `blankFace`)
 
-MEDALP2
+### P2-6 Mestringssættene er ikke tegnet: Ridder og Talmagiker gives som indpakkede gaver, og butikken har kun Pirat og Festhatten
 
-### P2-7 Finalens ting ryger ned i "Også i dag" som små tekstkort
-
-- **Skærm og format:** slutningen af Hestebakkernes finale. iPad på tværs.
-- **Trin:** Bestå finalen.
+- **Skærm og format:** ceremonien "En ny ting!", garderoben og butikken. Alle formater.
+- **Trin:** Opnå 2 sølvmedaljer eller 1 guldmedalje, fx over et par dage i Hestebakkerne. Det samme sker i Engdalen, men de nye verdener har dobbelt så mange skills at få medaljer i. Afslut så en tur. Gå derefter i Butik.
 - **Set:**
-  - "Verdensfest! Du klarede finalen." og "En ny ting! Rosette" får hver sin skærm.
-  - Ridejakke og Sadeltaske, de to andre finaleting, er kun små kort med et gaveikon under "Også i dag". De har hverken billede eller "Prøv den på".
-  - Det er verdenens største fest, og tre af Rytter-sættets seks ting kommer her.
-  - Stenkortet til finalen viser heller ikke, hvad man kan vinde ("Den store fest for hele verdenen."), hvor kister viser deres ting på forhånd.
-- **Burde:** Finalens ting vises samlet på én skærm med billeder og "Prøv dem på", og stenkortet viser dem på forhånd.
-- **Skærmbilleder:** `artifacts/qa2/bakke1-ipadLand-cer-bakke-finale-end.png`, `artifacts/qa2/bakke1-ipadLand-sheet-finale.png`
-- **Fil:** `src/meta/ceremonyQueue.ts` (`MAX_FULL_SCREEN`, `weightOf` for `item`), `src/ui/screens/child/ceremony/End.tsx`, `src/ui/screens/child/map/StoneSheet.tsx`
+  - Af de sæt, bølge 2 skulle tegne (Rytter, Kongelig, Ridder, Talmagiker, Fodbold, Vinter og Fest), findes kun Rytter, Kongelig og Fest-hatten i `src/art/items`.
+  - `grantDueItems` giver alligevel Ridderhjelmen ved 2 sølvmedaljer og Troldmandshatten ved den første guldmedalje. Ceremonien viser dem som en indpakket gave (`GiftArt`) uden "Prøv den på".
+  - Det er netop "de mest eftertragtede ting", som kun mestring kan give (SPEC §1, princip 1).
+  - Butikken skjuler korrekt det utegnede, men har derfor kun Pirat (6) og Festhat (1) at sælge (880 perler i alt). Børnene i testen havde 203–387 perler efter én dag.
+- **Burde:** Ridder og Talmagiker tegnes før frigivelse, i det mindste de første ting (2, 5 og 9 sølv, 1, 3 og 6 guld). Ellers må mestringsting ikke gives, før de er tegnet. Fodbold og Vinter bør komme i butikken, så økonomien holder (SPEC §5.7 punkt 5).
+- **Skærmbilleder:**
+  - `artifacts/qa2/medal-cer-2-thing.png` (Ridderhjelm som gave)
+  - `artifacts/qa2/medal-cer-1-thing.png` (Troldmandshat)
+  - `artifacts/qa2/medal-wardrobe.png` (to grå hue-ikoner under "Dit tøj")
+  - `artifacts/qa2/rewards-D-shop.png` (Pirat og Festhat)
+- **Afprøvning:** to sølv- og én guldmedalje sat direkte på profilen, derefter én tur Blandet øvelse.
+- **Fil:**
+  - `src/meta/progression.ts` (`dueItems` og `grantDueItems` tjekker ikke, om tingen er tegnet)
+  - `src/ui/screens/child/ceremony/Steps.tsx` (gaven og den skjulte "Prøv den på")
+  - `src/art/items/` (ridder, talmagiker, fodbold, vinter og 5 af 6 fest mangler)
+  - `src/ui/screens/child/shop/model.ts` (`setShelves`)
 
+### P2-7 Finalen fejres som en almindelig prøve, og to af tre finaleting ryger ned i "Også i dag"
 
-DASHP2
+- **Skærm og format:** slutningen af finalen. Hestebakkerne på iPad på tværs, Regnbueskoven på telefon.
+- **Trin:** Bestå verdenens finale.
+- **Set:**
+  - "Verdensfest! Du klarede finalen." er den samme skærm som en bestået prøve: en bro med planker og en linje tekst. Der er ingen fest, ingen dyr og intet fra verdenen.
+  - Derefter får én ting sin skærm ("En ny ting! Rosette", "Festdragt"). Resten er små kort med et gaveikon under "Også i dag", uden billede og uden "Prøv den på". I Hestebakkerne var det Ridejakke og Sadeltaske, i Regnbueskoven Kongekåben.
+  - Stenkortet til finalen siger kun "Den store fest for hele verdenen." Det viser ikke, hvad man kan vinde, som kisterne gør.
+- **Burde:** Finalen får sin egen fest (verdenens dyr, konfetti, trofæet). Finalens ting vises samlet med billeder og "Prøv dem på", og stenkortet viser dem på forhånd.
+- **Skærmbilleder:**
+  - `artifacts/qa2/skovFinale-phone-cer-skov-finale-1-trial.png`
+  - `artifacts/qa2/bakke1-ipadLand-cer-bakke-finale-end.png`
+  - `artifacts/qa2/bakke1-ipadLand-sheet-finale.png`
+- **Fil:** `src/meta/ceremonyQueue.ts` (`MAX_FULL_SCREEN`, `weightOf` for `item`), `src/ui/screens/child/ceremony/Steps.tsx` (`TrialScreen`), `src/ui/screens/child/ceremony/End.tsx`, `src/ui/screens/child/map/StoneSheet.tsx`
+
+### P2-8 Dashboardet siger "Genopfrisk »Hele timer«" samme dag, som barnet fik bronze i Urtårnet
+
+- **Skærm og format:** dashboardets Overblik og udskriften. Telefon og iPad.
+- **Trin:**
+  1. Spil Urtårnet igennem, og dump prøven én gang.
+  2. Spil Træningshytten, og bestå prøven (10/10). Barnet får bronze i Hele timer og Halve timer.
+  3. Spil videre i andre regioner samme dag, og åbn dashboardet.
+- **Set:**
+  - De to første anbefalinger er "Genopfrisk »Hele timer«" og "Genopfrisk »Halve timer«": "Otto har kunnet »Hele timer« sikrere end lige nu."
+  - Barnet fejrede samtidig en bronzemedalje og en bestået prøve med 10 af 10. Status står som "Øver" under en optjent bronze, fordi den dumpede prøve og et par fejl i blandede ture satte nøglerne ned.
+  - R4 tæller "status under en optjent medalje" som glemt med det samme. Der skal ikke gå tid, og der kræves ikke fravær. Forælderen får et modsat budskab af barnet, og det sker for de fleste børn, der får en medalje og laver et par fejl samme dag.
+  - Den tredje anbefaling er "Klar til: Tællelunden" (Engdalen, 0. kl.) til en elev i 1. klasse, der har klaret hele Hestebakkerne. Sara (2. kl.) fik "Klar til: Hundredemarken". "Klar til" peger altså bagud.
+- **Burde:** "Glemt" kræver, at der er gået tid (fx ≥ 7 dage under medaljen eller uden øvelse). "Klar til" vælger et sted på eller over barnets klassetrin, eller formuleres som "Gentag gerne …".
+- **Skærmbilleder:** `artifacts/qa2/dash-phone-g1-Overblik.png`, `artifacts/qa2/dash-phone-g2-Overblik.png`
+- **Fil:** `src/parent/recommend.ts` (`forgotten`: `DASH_RANK[s.dash] < DASH_RANK[MEDAL_FLOOR[s.medal]]`, og R6)
 
 ---
 
@@ -232,6 +267,7 @@ DASHP2
 | 11 | kort, iPad | "Næste sted" klipper regionsnavnet ("Stortalsbjerg…"). Mål 2 sender et barn i 1. og 2. klasse til Tællelunden i Engdalen ("Tag en tur forbi Tællelunden"), hvor det aldrig har været. | `skov2-ipad-map-start.png` | `src/ui/screens/child/map/SidePanel.tsx`, `src/meta/progression.ts` (`revisitRegions`) |
 | 12 | opsummering | Samme gren som P1-1 giver andre kontekstløse tal: halvdelen af 8 bliver "4" med et øre-ikon ("Tallet fire"), og tiere bliver "180". Det er ikke forkert, men barnet kan ikke se, hvad det har lært. | `bakke1-ipadLand-cer-w1-klokken-l1-0-summary.png` (samme layout) | `src/ui/screens/child/ceremony/describe.ts` (`keyFace`) |
 | 13 | opgave, tiere og enere | Udfyldning "64 = ? + ?" og "586 = ? + ? + ?" viser felterne to gange: i ligningen og i svarbakken (som QA1 så for sortOrder). | `skov2-ipad-ask-w2-tal1000-fillSlots-placeValue1000.png` | `src/ui/task/fillSlots/View.tsx` |
+| 14 | dashboard + udskrift | "1 aktive dag af 14" og "1 aktive dag" står der stadig (QA1's P3-4). | `dash-phone-g2-Overblik.png` | `src/ui/screens/parent/dashboard/OverviewTab.tsx`, `PrintReport.tsx` |
 
 ## Rækværk (SPEC §13) i de nye verdener
 
@@ -244,10 +280,10 @@ DASHP2
 | Auto-start, fokus | Ingen auto-start. "Næste" og "Til kortet" er lige store på alle ceremoniskærme i alle formater. |
 | Valuta under turen | Ingen tal under turen. Perler og point tælles op efter "Det lærte du". |
 | Sammenligning | Ingen. Dashboardet viser ét barn ad gangen, også med fire børn på enheden. |
-| Intet optjent tabes | OK i data: inventar og dyr voksede i alle 90 ture. MEDALRAEK |
+| Intet optjent tabes | OK i data: inventar og dyr voksede i alle ture. Men en optjent mestringsting kan ikke ses eller bæres (P2-6). |
 | ✕ gemmer | Ikke gentestet her. QA1 og loop-e2e dækker det, og de nye opgavetyper bruger samme tur. |
 | Lange sessioner konsoliderer | Ja, og for meget: efter ca. 12 ture på en dag er nye regioner næsten uden eget stof (P2-1). |
-| Gennemsigtighed for forældre | DASHRAEK |
+| Gennemsigtighed for forældre | OK: læringstid og legetid pr. dag, en belønningslog ("Ny ven: Enhjørning (lilla)", "Klækket af æg nr. 7") og "Alt i spillet optjenes ved at regne". Mesterprøverne vises som beståede og åbne. Se P2-8 om anbefalingerne. |
 
 ## Hvad virker godt
 
@@ -261,9 +297,19 @@ DASHP2
 2. **Fejlflowet er ens og venligt i alle 15 regioner.** Overstreget svar, "Næsten. Se her.", en strategi med billede (hundredtavle, tallinje med hop, tiere og enere som klodser, urskive, mønter), og så ét stort "Tryk på …" med det rigtige ur, den rigtige bakke eller de rigtige tallerkner.
 3. **Matematikken er korrekt og tegnet med omhu.** Danske mønter med hul og rigtige størrelser. Rene ure ved hel, halv og kvart. En lineal med forskudt start. Søjle- og billeddiagrammer. Brøkfigurer, 3D-figurer med "find dem alle", og spejlingsgitre, hvor "nej" er en forskydning – en god distraktor.
 4. **Prøve, hytte og finale hænger sammen.** "Klar, når du er" uden skyld, en hytte med netop de missede familier, genforsøg efter en tur og "Verdensfest!" efter finalen.
-5. **Verdenerne er klar teknisk.** Alle skills har moduler, og alle venner, kister og finaleting er tegnet. Kortets scener (urtårn, vandfald, vandmølle, panda og enhjørning ved stierne) giver hver verden sit eget sted. GODT_EKSTRA
+5. **Verdenerne er klar teknisk.** Alle skills har moduler, og alle venner, kister og finaleting er tegnet. Kortets scener (urtårn, vandfald, vandmølle, panda og enhjørning ved stierne) giver hver verden sit eget sted. Garderoben klæder de nye dyr pænt på, fx enhjørningen med Diadem og Monokel.
 
 
 ## De ændringer, der løfter mest før frigivelse
 
-AENDRINGER
+1. **Gør "Det lærte du" sandt for ure og andre tal uden kontekst (P1-1).** Vis en urskive eller "kvart i ni", og "halvdelen af 8 er 4" i stedet for "4".
+2. **Lad en ny regions sten være regionens (P2-1).** Når dagens nye nøgler er brugt, skal stenen sige "nyt i morgen" eller give en kort smagsprøve. Den må ikke give kiste, ven og stjerner for opgaver fra andre regioner.
+3. **Tegn det, mestring og butik lover (P2-6).** Mindst de første Ridder- og Talmagiker-ting og ét butikssæt mere. Ellers skal de holdes tilbage.
+4. **Stemmen:**
+   - Ret LRU-racet, så ingen sætning tabes (P2-3).
+   - Indspil bølge 2 før frigivelse, især hele sætninger til 1. klasses fakta (`q.dbl:*`, `q.hlf:*`) og de hyppigste skabeloner (`frag.stil_uret_saa_klokken_er`, `s.nl.place`, `frag.betal`, `noun.coin.*`, `noun.unit.*`).
+5. **Pudsning af opgave- og belønningsskærmene:**
+   - Vis tallet i tallinjeopgaverne (P2-4).
+   - Vis et forkert svar tal for tal, også i ligninger (P2-5).
+   - Lad ven-kortet vise det dyr, barnet får (P2-2).
+   - Vis finalens ting samlet med billeder (P2-7).
