@@ -120,6 +120,11 @@ export interface Layout {
   fence: [Vec, Vec]
   /** Lysningerne, hvor regnbuelyset falder (stråler oppe fra venstre ned mod punktet). */
   glades: Place[]
+  /** Lundene på skovbakken (u-intervaller), hvor den forreste række kroner står, og hvor langt nede den står. */
+  groves: [number, number][]
+  groveDy: number
+  /** Buske spredt på engen (u), så forgrunden mellem kendetegnene ikke står flad. */
+  scrub: number[]
   /** Fritstående løvtræer (forrest = på forgrundens bakke). */
   trees: (Place & { front: boolean })[]
   /** Blomsterklynger på engen. */
@@ -149,41 +154,42 @@ export function layoutOf(w: number, h: number): Layout {
     const k = clamp(Math.max(w / 1180, (h / 820) * 0.85), 0.6, 1.4)
     const far: Ridge = { base: h * 0.335, amp: h * 0.022, waves: 1.4, phase: 0.7 }
     const mid: Ridge = { base: h * 0.52, amp: h * 0.03, waves: 1.0, phase: 2.3 }
-    const near: Ridge = { base: h * 0.785, amp: h * 0.02, waves: 0.8, phase: 4.1 }
+    const near: Ridge = { base: h * 0.765, amp: h * 0.02, waves: 0.8, phase: 4.1 }
     const lake = { x: w * 0.775, y: h * 0.75, rx: 118 * k, ry: 27 * k }
-    const mountain = on(mid, 0.655, -0.012, k)
+    const mountain = on(mid, 0.655, -0.014, k * 1.12)
     const out: Vec = [w * 0.85, lakeBottom(lake, w * 0.85) - 2 * k]
     const bridge = { x: w * 0.852, y: h * 0.905, s: k }
     return {
       w, h, wide, k, far, mid, near,
       sun: { x: w * 0.09, y: h * 0.16, s: k },
       clouds: [
-        { x: w * 0.22, y: h * 0.1, s: k * 1.05 },
+        { x: w * 0.24, y: h * 0.1, s: k * 1.05 },
         { x: w * 0.5, y: h * 0.06, s: k * 0.8 },
-        { x: w * 0.79, y: h * 0.13, s: k * 0.95 },
-        { x: w * 0.37, y: h * 0.21, s: k * 0.6 },
+        { x: w * 0.4, y: h * 0.21, s: k * 0.6 },
       ],
       mountain,
-      fall: { x: w * 0.695, top: mountain.y - 16 * k, bottom: lake.y - lake.ry * 0.45, s: k },
+      fall: { x: w * 0.695, top: mountain.y + 6 * k, bottom: lake.y - lake.ry * 0.45, s: k },
       lake,
       mill: { x: out[0] + 22 * k, y: out[1] + 12 * k, s: k * 0.9 },
       stream: [out, [w * 0.862, h * 0.83], [bridge.x, bridge.y], [w * 0.842, h * 0.975], [w * 0.835, h * 1.06]],
       bridge,
       tower: { x: w * 0.07, y: h * 0.47, s: k * 0.95 },
       cave: { x: w * 0.088, y: h * 0.655, s: k * 0.9 },
-      panda: { x: w * 0.03, y: h * 0.69, s: k * 0.95 },
+      panda: { x: w * 0.026, y: h * 0.69, s: k * 1.1 },
       farm: { x: w * 0.068, y: h * 0.865, s: k * 0.85 },
       squirrels: { x: w * 0.995, y: h * 0.86, s: k, flip: true },
       owl: { x: w * 0.624, y: h * 0.835, s: k * 0.95 },
       trail: [[w * 0.705, h * 1.03], [w * 0.735, h * 0.955], [w * 0.775, h * 0.918], [bridge.x - 70 * k, bridge.y], [bridge.x + 70 * k, bridge.y], [w * 0.94, h * 0.888], [w * 1.02, h * 0.875]],
       trailW: [18, 15, 12, 10, 10, 9, 8],
-      posts: { x: w * 0.722, y: h * 0.975, s: k },
-      garden: { x: w * 0.2, y: h * 0.955, s: k * 0.82 },
+      posts: { x: w * 0.722, y: h * 0.975, s: k * 1.2 },
+      garden: { x: w * 0.2, y: h * 0.955, s: k * 0.98 },
       fence: [[w * 1.02, h * 0.825], [w * 0.86, h * 0.83]],
       glades: [{ x: w * 0.74, y: h * 0.7, s: k }, { x: w * 0.09, y: h * 0.62, s: k * 0.8 }],
+      groves: [[0.14, 0.6], [0.86, 1.02]],
+      groveDy: 0.075,
+      scrub: [0.2, 0.31, 0.42, 0.53],
       trees: [
-        { ...on(mid, 0.6, 0.06, k * 0.9), front: false },
-        { ...on(mid, 0.735, 0.03, k * 0.85), front: false },
+        { ...on(mid, 0.6, 0.085, k * 0.95), front: false },
         { ...on(near, 0.13, 0.02, k * 0.9), front: true },
       ],
       meadow: [{ x: w * 0.28, y: h * 0.86, s: k }, { x: w * 0.46, y: h * 0.93, s: k * 1.1 }],
@@ -198,7 +204,7 @@ export function layoutOf(w: number, h: number): Layout {
     const mid: Ridge = { base: h * 0.565, amp: h * 0.02, waves: 0.9, phase: 2.4 }
     const near: Ridge = { base: h * 0.8, amp: h * 0.02, waves: 0.7, phase: 4.1 }
     const lake = { x: w * 0.5, y: h * 0.705, rx: 112 * k, ry: 22 * k }
-    const mountain = { x: w * 0.2, y: h * 0.6, s: k * 0.95 }
+    const mountain = { x: w * 0.2, y: h * 0.578, s: k * 0.95 }
     const out: Vec = [w * 0.66, lakeBottom(lake, w * 0.66) - 2 * k]
     const bridge = { x: w * 0.69, y: h * 0.81, s: k * 0.9 }
     return {
@@ -210,7 +216,7 @@ export function layoutOf(w: number, h: number): Layout {
         { x: w * 0.3, y: h * 0.23, s: k * 0.6 },
       ],
       mountain,
-      fall: { x: w * 0.31, top: mountain.y - 16 * k, bottom: lake.y - lake.ry * 0.4, s: k },
+      fall: { x: w * 0.31, top: mountain.y + 6 * k, bottom: lake.y - lake.ry * 0.4, s: k },
       lake,
       mill: { x: out[0] + 22 * k, y: out[1] + 12 * k, s: k * 0.9 },
       stream: [out, [w * 0.7, h * 0.76], [bridge.x, bridge.y], [w * 0.67, h * 0.9], [w * 0.66, h * 1.03]],
@@ -225,10 +231,13 @@ export function layoutOf(w: number, h: number): Layout {
       trailW: [16, 13, 11, 10, 10, 9, 8],
       posts: { x: w * 0.38, y: h * 0.955, s: k },
       garden: { x: w * 0.36, y: h * 0.775, s: k * 0.8 },
-      fence: [[w * 1.03, h * 0.765], [w * 0.8, h * 0.775]],
+      fence: [[w * 1.03, h * 0.765], [w * 0.6, h * 0.778]],
       glades: [{ x: w * 0.55, y: h * 0.62, s: k }],
+      groves: [[0, 0.62]],
+      groveDy: 0.05,
+      scrub: [0.2, 0.55],
       trees: [
-        { ...on(mid, 0.6, 0.04, k), front: false },
+        { ...on(mid, 0.6, 0.07, k), front: false },
         { ...on(near, 0.95, 0.03, k), front: true },
       ],
       meadow: [{ x: w * 0.3, y: h * 0.96, s: k * 0.9 }],
@@ -237,11 +246,11 @@ export function layoutOf(w: number, h: number): Layout {
   }
   // iPad på langs: kendetegnene i højre side (under sidepanelet) og forneden
   const k = clamp(w / 860, 0.7, 1.05)
-  const far: Ridge = { base: h * 0.47, amp: h * 0.014, waves: 1.3, phase: 0.8 }
-  const mid: Ridge = { base: h * 0.6, amp: h * 0.02, waves: 0.85, phase: 2.5 }
-  const near: Ridge = { base: h * 0.81, amp: h * 0.018, waves: 0.7, phase: 4.1 }
-  const lake = { x: w * 0.765, y: h * 0.765, rx: 132 * k, ry: 26 * k }
-  const mountain = { x: w * 0.86, y: h * 0.655, s: k * 0.88 }
+  const far: Ridge = { base: h * 0.5, amp: h * 0.012, waves: 1.3, phase: 0.8 }
+  const mid: Ridge = { base: h * 0.665, amp: h * 0.016, waves: 0.85, phase: 2.5 }
+  const near: Ridge = { base: h * 0.835, amp: h * 0.016, waves: 0.7, phase: 4.1 }
+  const lake = { x: w * 0.765, y: h * 0.77, rx: 132 * k, ry: 26 * k }
+  const mountain = { x: w * 0.855, y: h * 0.652, s: k * 1.0 }
   const out: Vec = [w * 0.795, lakeBottom(lake, w * 0.795) - 2 * k]
   const bridge = { x: w * 0.8, y: h * 0.872, s: k * 0.95 }
   return {
@@ -253,25 +262,27 @@ export function layoutOf(w: number, h: number): Layout {
       { x: w * 0.3, y: h * 0.24, s: k * 0.6 },
     ],
     mountain,
-    fall: { x: w * 0.895, top: mountain.y - 16 * k * 0.88, bottom: lake.y - lake.ry * 0.3, s: k },
+    fall: { x: w * 0.89, top: mountain.y + 6 * k, bottom: lake.y - lake.ry * 0.3, s: k * 0.9 },
     lake,
     mill: { x: out[0] + 22 * k, y: out[1] + 12 * k, s: k * 0.9 },
     stream: [out, [w * 0.815, h * 0.825], [bridge.x, bridge.y], [w * 0.782, h * 0.95], [w * 0.772, h * 1.04]],
     bridge,
-    tower: { x: w * 0.655, y: h * 0.69, s: k * 0.88 },
+    tower: { x: w * 0.655, y: h * 0.668, s: k * 0.88 },
     cave: { x: w * 0.64, y: h * 0.858, s: k * 0.82 },
     panda: { x: w * 0.592, y: h * 0.875, s: k * 0.85 },
     farm: { x: w * 0.1, y: h * 0.935, s: k * 0.8 },
     squirrels: { x: w * 0.005, y: h * 0.905, s: k * 0.85, flip: false },
-    owl: { x: w * 0.53, y: h * 0.9, s: k * 0.8 },
+    owl: { x: w * 0.53, y: h * 0.918, s: k * 0.8 },
     trail: [[w * 0.36, h * 1.03], [w * 0.45, h * 0.905], [w * 0.62, h * 0.885], [bridge.x - 70 * k, bridge.y], [bridge.x + 70 * k, bridge.y], [w * 0.93, h * 0.86], [w * 1.03, h * 0.85]],
     trailW: [16, 13, 11, 10, 10, 9, 8],
     posts: { x: w * 0.4, y: h * 0.9, s: k * 0.9 },
     garden: { x: w * 0.905, y: h * 0.955, s: k * 0.72 },
     fence: [[w * 1.03, h * 0.82], [w * 0.86, h * 0.83]],
     glades: [{ x: w * 0.72, y: h * 0.72, s: k }],
+    groves: [[0, 0.57]],
+    groveDy: 0.06,
+    scrub: [0.12, 0.27, 0.42],
     trees: [
-      { ...on(mid, 0.61, 0.03, k * 0.9), front: false },
       { ...on(near, 0.99, 0.02, k), front: true },
     ],
     meadow: [{ x: w * 0.3, y: h * 0.96, s: k * 0.9 }],
@@ -304,12 +315,12 @@ function grass(pts: readonly (readonly [number, number, number])[]): string {
   )
 }
 
-/** En lanterne (lokalt om krogen): ramme, glas (lyser fra bronze) og en blød glorie. */
-function lantern(x: number, y: number, on: boolean, s = 1): ReactNode {
+/** Tændte lanterner (lokalt om krogene, fra bronze): glas, ramme og bløde glorier – to paths for dem alle. */
+function lanterns(pts: readonly (readonly [number, number])[], s = 1): ReactNode {
   return (
     <>
-      {on && <path d={circle(x, y + 7 * s, 9.5 * s)} fill={SKOV.lanternGlow} opacity={0.6} />}
-      <path d={join(rect(x - 3.6 * s, y + 2 * s, 7.2 * s, 9.5 * s, 2.2 * s), rect(x - 2.4 * s, y - 0.6 * s, 4.8 * s, 2.8 * s, 1))} fill={on ? SKOV.lantern : SKOV.wallShade} stroke={SKOV.lanternFrame} strokeWidth={1.3 * s} {...ROUND} />
+      <path d={join(...pts.map(([x, y]) => circle(x, y + 7 * s, 9.5 * s)))} fill={SKOV.lanternGlow} opacity={0.6} />
+      <path d={join(...pts.map(([x, y]) => join(rect(x - 3.6 * s, y + 2 * s, 7.2 * s, 9.5 * s, 2.2 * s), rect(x - 2.4 * s, y - 0.6 * s, 4.8 * s, 2.8 * s, 1))))} fill={SKOV.lantern} stroke={SKOV.lanternFrame} strokeWidth={1.3 * s} {...ROUND} />
     </>
   )
 }
@@ -348,13 +359,13 @@ function bunting(a: Vec, b: Vec, count: number, sag: number, size = 1) {
   }
 }
 
-/** Vimpler tegnet: snor, to farver. */
-function Bunting({ b, c, a = 'flag', z = 'flowerYellow' }: { b: ReturnType<typeof bunting>; c: (k: SkovColor) => string; a?: SkovColor; z?: SkovColor }) {
+/** Vimpler tegnet (en eller flere snore): snor og trekanter i to farver – tre paths i alt. */
+function Bunting({ b, c, a = 'flag', z = 'flowerYellow' }: { b: readonly ReturnType<typeof bunting>[]; c: (k: SkovColor) => string; a?: SkovColor; z?: SkovColor }) {
   return (
     <>
-      <path d={b.line} fill="none" stroke={c('timber')} strokeWidth={0.9} />
-      <path d={b.even} fill={c(a)} />
-      <path d={b.odd} fill={c(z)} />
+      <path d={join(...b.map((x) => x.line))} fill="none" stroke={c('timber')} strokeWidth={0.9} />
+      <path d={join(...b.map((x) => x.even))} fill={c(a)} />
+      <path d={join(...b.map((x) => x.odd))} fill={c(z)} />
     </>
   )
 }
@@ -472,7 +483,7 @@ function Mountain({ t }: { t: RegionTier }) {
       <path d={join(...steps.map(({ x0, x1, top }) => ellipse(x0 + (x1 - x0) * 0.3, top + 3, (x1 - x0) * 0.14, 1.8)))} fill={c('leafLight')} opacity={0.8} />
       <path d={f.pole} fill={c('timber')} />
       <path d={f.cloth} fill={c('flag')} stroke={c('awningShade')} strokeWidth={1} {...ROUND} />
-      {lit(t) && <>{lantern(14, -144, true, 0.9)}</>}
+      {lit(t) && lanterns([[14, -144]], 0.9)}
       {lit(t) && <path d={rect(13.2, -142, 1.6, 14, 0.8)} fill={c('woodDark')} />}
       {bloom(t) && (
         <>
@@ -482,7 +493,7 @@ function Mountain({ t }: { t: RegionTier }) {
       )}
       {full(t) && (
         <>
-          <Bunting b={b} c={c} a="flag2" />
+          <Bunting b={[b]} c={c} a="flag2" />
           <path d={birds([[-46, -150, 1.1], [-30, -164, 0.9], [44, -150, 1]])} fill="none" stroke={SKOV.bird} strokeWidth={1.8} {...ROUND} />
         </>
       )}
@@ -491,26 +502,43 @@ function Mountain({ t }: { t: RegionTier }) {
 }
 
 /**
- * Vandfaldet (scenens koordinater): en lille kilde springer ud af en kløft i bjergets fod og falder ned ad en
- * skrænt af sten med mos i søen; skum og dis forneden. Vandet glimter fra sølv.
+ * Vandfaldet (scenens koordinater): kilden springer ud af en kløft i skrænten lige under bjergets fod og falder
+ * ned ad en bred skrænt af sten (afsatser, mos og to små træer på kanten) i søen; skum og dis forneden. Solen fra
+ * venstre: skrænten står i skygge på højre side. Vandet glimter fra sølv.
  */
 function Waterfall({ fall, t }: { fall: Layout['fall']; t: RegionTier }) {
   const c = paint(t)
   const { x, top, bottom, s } = fall
   const hgt = bottom - top
-  const cliff = blob([[x - 30 * s, top - 6 * s], [x - 12 * s, top - 14 * s], [x + 16 * s, top - 12 * s], [x + 32 * s, top - 2 * s], [x + 38 * s, top + hgt * 0.5], [x + 34 * s, bottom + 2 * s], [x - 34 * s, bottom + 2 * s], [x - 40 * s, top + hgt * 0.45]], 0.7)
-  const water = blob(ribbon([[x, top], [x + 1.5 * s, top + hgt * 0.35], [x + 0.5 * s, top + hgt * 0.7], [x, bottom]], [9 * s, 12 * s, 15 * s, 19 * s]), 0.9)
-  const streaks = join(...[-3.5, 0.5, 4].map((dx, i) => spline([[x + dx * s, top + (6 + i * 9) * s], [x + (dx + 0.8) * s, top + hgt * 0.5], [x + dx * 1.3 * s, bottom - (10 + i * 6) * s]])))
+  const yAt = (q: number) => top + hgt * q
+  const cliff = blob([
+    [x - 50 * s, top + 8 * s], [x - 26 * s, top - 4 * s], [x + 2 * s, top - 7 * s], [x + 30 * s, top - 3 * s], [x + 52 * s, top + 10 * s],
+    [x + 60 * s, yAt(0.5)], [x + 74 * s, bottom + 5 * s], [x - 76 * s, bottom + 5 * s], [x - 62 * s, yAt(0.45)],
+  ], 0.6)
+  const shadeR = blob([[x + 20 * s, top - 4 * s], [x + 52 * s, top + 10 * s], [x + 60 * s, yAt(0.5)], [x + 74 * s, bottom + 5 * s], [x + 26 * s, bottom + 3 * s], [x + 22 * s, yAt(0.5)]], 0.6)
+  const ledges = join(
+    spline([[x - 56 * s, yAt(0.34)], [x - 34 * s, yAt(0.31)], [x - 15 * s, yAt(0.35)]]),
+    spline([[x + 17 * s, yAt(0.56)], [x + 38 * s, yAt(0.53)], [x + 60 * s, yAt(0.58)]]),
+    spline([[x - 66 * s, yAt(0.72)], [x - 40 * s, yAt(0.69)], [x - 18 * s, yAt(0.73)]]),
+  )
+  const moss = join(
+    scallop(x - 30 * s, top - 2 * s, 22 * s, 7 * s, 7, 0.6, -90), scallop(x + 30 * s, top + 1 * s, 22 * s, 7 * s, 7, 0.6, -90),
+    scallop(x - 40 * s, yAt(0.33), 12 * s, 5 * s, 5, 0.6, -90), scallop(x + 42 * s, yAt(0.55), 12 * s, 5 * s, 5, 0.6, -90),
+  )
+  const water = blob(ribbon([[x, top], [x + 1.5 * s, yAt(0.35)], [x + 0.5 * s, yAt(0.7)], [x, bottom]], [12 * s, 16 * s, 21 * s, 27 * s]), 0.9)
+  const streaks = join(...[-5, 0.5, 5.5].map((dx, i) => spline([[x + dx * s, top + (6 + i * 9) * s], [x + (dx + 0.8) * s, yAt(0.5)], [x + dx * 1.35 * s, bottom - (10 + i * 6) * s]])))
   return (
     <>
       <path d={cliff} fill={c('rock')} stroke={c('rockShade')} strokeWidth={1.6 * s} {...ROUND} />
-      <path d={blob([[x + 10 * s, top - 10 * s], [x + 32 * s, top - 2 * s], [x + 38 * s, top + hgt * 0.5], [x + 34 * s, bottom + 2 * s], [x + 14 * s, bottom]], 0.6)} fill={c('rockShade')} opacity={0.45} />
-      <path d={join(scallop(x - 20 * s, top - 8 * s, 13 * s, 6 * s, 6, 0.6, -90), scallop(x + 19 * s, top - 6 * s, 14 * s, 6 * s, 6, 0.6, -90), scallop(x - 31 * s, top + hgt * 0.55, 9 * s, 6 * s, 5, 0.6, -90))} fill={c('moss')} stroke={c('mossDark')} strokeWidth={1.2 * s} {...ROUND} />
-      <path d={ellipse(x, top + 1 * s, 7 * s, 4 * s)} fill={c('cave')} opacity={0.7} />
+      <path d={shadeR} fill={c('rockShade')} opacity={0.42} />
+      <path d={ledges} fill="none" stroke={c('rockShade')} strokeWidth={1.6 * s} opacity={0.8} {...ROUND} />
+      <path d={spline([[x - 60 * s, yAt(0.4)], [x - 48 * s, top + 10 * s], [x - 26 * s, top]])} fill="none" stroke={SKOV.sunlit} strokeWidth={3 * s} opacity={0.8} {...ROUND} />
+      <path d={moss} fill={c('moss')} stroke={c('mossDark')} strokeWidth={1.2 * s} {...ROUND} />
+      <path d={ellipse(x, top + 1 * s, 8 * s, 4.5 * s)} fill={c('cave')} opacity={0.75} />
       <path d={water} fill={c('water')} stroke={c('waterEdge')} strokeWidth={1.3 * s} {...ROUND} />
-      <path d={streaks} fill="none" stroke={SKOV.waterLight} strokeWidth={1.6 * s} opacity={bloom(t) ? 0.95 : 0.7} {...ROUND} />
-      <path d={join(scallop(x, bottom, 18 * s, 6 * s, 7, 0.6, -90), circle(x - 16 * s, bottom - 6 * s, 4 * s), circle(x + 17 * s, bottom - 8 * s, 5 * s))} fill={SKOV.foam} opacity={0.88} />
-      {bloom(t) && <path d={glints([[x - 9 * s, bottom - 14 * s, 3.4 * s], [x + 6 * s, top + hgt * 0.3, 2.6 * s]])} fill={SKOV.flowerWhite} />}
+      <path d={streaks} fill="none" stroke={SKOV.waterLight} strokeWidth={1.7 * s} opacity={bloom(t) ? 0.95 : 0.7} {...ROUND} />
+      <path d={join(scallop(x, bottom, 22 * s, 7 * s, 7, 0.6, -90), circle(x - 20 * s, bottom - 7 * s, 5 * s), circle(x + 21 * s, bottom - 9 * s, 6 * s))} fill={SKOV.foam} opacity={0.88} />
+      {bloom(t) && <path d={glints([[x - 11 * s, bottom - 16 * s, 3.6 * s], [x + 7 * s, yAt(0.3), 2.8 * s]])} fill={SKOV.flowerWhite} />}
     </>
   )
 }
@@ -524,8 +552,8 @@ function Lake({ lake, t, k }: { lake: Layout['lake']; t: RegionTier; k: number }
   const c = paint(t)
   const { x, y, rx, ry } = lake
   // ti små sten (to rækker af fem) og én stor sten lidt til højre
-  const small = Array.from({ length: SMALL_STONES }, (_, i) => [x - rx * 0.36 + (i % 5) * 8.6 * k + (i >= 5 ? 3 * k : 0), y - 2 * k + (i >= 5 ? 7 * k : 0), 3.3 * k] as const)
-  const big = [x + rx * 0.2, y + 1 * k, 11 * k] as const
+  const small = Array.from({ length: SMALL_STONES }, (_, i) => [x - rx * 0.12 - 50 * k + (i % 5) * 11 * k + (i >= 5 ? 4 * k : 0), y - 4 * k + (i >= 5 ? 9 * k : 0), 4.4 * k] as const)
+  const big = [x + rx * 0.12 + 14 * k, y + 1 * k, 14 * k] as const
   const stones = [...small, big]
   const lilies = join(...[[x - rx * 0.66, y + ry * 0.2], [x - rx * 0.56, y - ry * 0.25], [x + rx * 0.56, y - ry * 0.1]].map(([lx, ly]) => ellipseCut(lx, ly, 6 * k, 2.6 * k)))
   const lf = flowerPaths([[x - rx * 0.66, y + ry * 0.12, 2.2 * k], [x + rx * 0.56, y - ry * 0.18, 2.2 * k]])
@@ -536,7 +564,8 @@ function Lake({ lake, t, k }: { lake: Layout['lake']; t: RegionTier; k: number }
       <path d={join(ellipse(x - rx * 0.1, y - ry * 0.55, rx * 0.55, ry * 0.12), ellipse(x + rx * 0.45, y + ry * 0.45, rx * 0.25, ry * 0.08))} fill={SKOV.waterLight} opacity={bloom(t) ? 0.9 : 0.6} />
       {/* ringe i vandet om stenene og stenene selv (solen fra venstre: højlys oppe til venstre) */}
       <path d={join(...stones.map(([sx, sy, r]) => ellipse(sx, sy + r * 0.35, r * 1.5, r * 0.5)))} fill={SKOV.waterLight} opacity={0.55} />
-      <path d={join(...stones.map(([sx, sy, r]) => blob([[sx - r, sy + r * 0.3], [sx - r * 0.8, sy - r * 0.5], [sx, sy - r * 0.85], [sx + r * 0.85, sy - r * 0.4], [sx + r, sy + r * 0.3]], 0.8)))} fill={c('stone')} stroke={c('stoneShade')} strokeWidth={1.1 * k} {...ROUND} />
+      <path d={join(...stones.map(([sx, sy, r]) => blob([[sx - r, sy + r * 0.3], [sx - r * 0.8, sy - r * 0.5], [sx, sy - r * 0.85], [sx + r * 0.85, sy - r * 0.4], [sx + r, sy + r * 0.3]], 0.8)))} fill={c('pebble')} stroke={c('pebbleDark')} strokeWidth={1.4 * k} {...ROUND} />
+      <path d={join(...stones.map(([sx, sy, r]) => blob([[sx + r * 0.15, sy - r * 0.6], [sx + r * 0.85, sy - r * 0.4], [sx + r, sy + r * 0.3], [sx + r * 0.2, sy + r * 0.3]], 0.8)))} fill={c('pebbleDark')} opacity={0.45} />
       <path d={join(...stones.map(([sx, sy, r]) => ellipse(sx - r * 0.3, sy - r * 0.35, r * 0.38, r * 0.18, -15)))} fill={SKOV.flowerWhite} opacity={0.7} />
       {bloom(t) && (
         <>
@@ -580,11 +609,10 @@ function Mill({ t }: { t: RegionTier }) {
       <path d={circle(wheel[0], wheel[1], 19)} fill="none" stroke={c('woodDark')} strokeWidth={2.4} />
       <path d={join(spokes, circle(wheel[0], wheel[1], 3))} fill={c('woodDark')} />
       <path d={paddles} fill={c('wood')} stroke={c('woodDark')} strokeWidth={0.9} />
-      {lit(t) && <>{lantern(46, -26, true, 0.8)}</>}
+      {lit(t) && lanterns([[46, -26]], 0.8)}
       {full(t) && (
         <>
-          <Bunting b={b} c={c} />
-          <Bunting b={b2} c={c} a="flag2" />
+          <Bunting b={[b, b2]} c={c} />
         </>
       )}
     </>
@@ -621,18 +649,8 @@ function Bridge({ t, half }: { t: RegionTier; half: number }) {
       <path d={join(...arches)} fill={c('waterDeep')} opacity={0.85} />
       <path d={spline(xs.slice(1, -1).map((x) => [x, deckY(x) + 1.6] as Vec))} fill="none" stroke={SKOV.sunlit} strokeWidth={1.4} opacity={0.7} {...ROUND} />
       <path d={rail(4)} fill="none" stroke={c('woodDark')} strokeWidth={2.2} {...ROUND} />
-      {lit(t) && (
-        <>
-          {lantern(-L, deckY(-L) - 6, true, 0.85)}
-          {lantern(L, deckY(L) - 6, true, 0.85)}
-        </>
-      )}
-      {full(t) && (
-        <>
-          <Bunting b={b} c={c} />
-          <Bunting b={b2} c={c} a="flag2" />
-        </>
-      )}
+      {lit(t) && lanterns([[-L, deckY(-L) - 6], [L, deckY(L) - 6]], 0.85)}
+      {full(t) && <Bunting b={[b, b2]} c={c} a="flag2" />}
     </>
   )
 }
@@ -669,7 +687,7 @@ function Tower({ t }: { t: RegionTier }) {
       <path d={circle(0, cy, 1.9)} fill={SKOV.clockInk} />
       <path d={blob([[-23, -140], [0, -196], [23, -140]], 0.3)} fill={c('roof')} stroke={c('roofShade')} strokeWidth={SW} {...ROUND} />
       <path d={blob([[0, -196], [23, -140], [6, -140]], 0.3)} fill={c('roofShade')} opacity={0.5} />
-      {lit(t) && <>{lantern(14, -78, true, 0.9)}</>}
+      {lit(t) && lanterns([[14, -78]], 0.9)}
       {bloom(t) && <path d={glints([[-12, cy - 15, 3], [21, -150, 2.6]])} fill={SKOV.flowerWhite} />}
       {full(t) && (
         <>
@@ -711,7 +729,7 @@ function Cave({ t }: { t: RegionTier }) {
       <path d={join(...cells.filter((q) => q.col % 2 === 0).map((q) => crystal(q.x, q.y, q.s)))} fill={c('crystalA')} stroke={c('cave')} strokeWidth={0.8} {...ROUND} />
       <path d={join(...cells.filter((q) => q.col % 2 === 1).map((q) => crystal(q.x, q.y, q.s)))} fill={c('crystalB')} stroke={c('cave')} strokeWidth={0.8} {...ROUND} />
       <path d={join(...cells.map((q) => poly([[q.x - 1.4 * q.s, q.y - 1], [q.x - 1.6 * q.s, q.y - 6 * q.s], [q.x - 0.2, q.y - 9 * q.s]], false)))} fill="none" stroke={SKOV.flowerWhite} strokeWidth={0.9} opacity={0.75} {...ROUND} />
-      {lit(t) && <>{lantern(34, -40, true, 0.85)}</>}
+      {lit(t) && lanterns([[34, -40]], 0.85)}
       {bloom(t) && (
         <>
           <path d={join(rect(38.8, -6, 2.4, 6, 1), rect(49, -4, 2, 4, 1), rect(-43, -5, 2.2, 5, 1))} fill={c('stem')} />
@@ -719,7 +737,7 @@ function Cave({ t }: { t: RegionTier }) {
           <path d={glints([[-20, -36, 3], [13, -30, 2.6], [2, -12, 2.4]])} fill={SKOV.flowerWhite} />
         </>
       )}
-      {full(t) && <Bunting b={b} c={c} a="flag2" z="crystalA" />}
+      {full(t) && <Bunting b={[b]} c={c} a="flag2" z="crystalA" />}
     </>
   )
 }
@@ -797,14 +815,14 @@ function Farm({ t }: { t: RegionTier }) {
       <path d={rect(68, -40, 20, 18, 3)} fill={c('wall')} stroke={c('timber')} strokeWidth={1.2} {...ROUND} />
       <path d={circle(78, -31, 6.4)} fill={c('coin')} stroke={c('coinDark')} strokeWidth={1.3} />
       <path d={join(circle(78, -31, 3.8), ellipse(76, -33.4, 1.8, 0.9, -30))} fill="none" stroke={c('coinDark')} strokeWidth={0.9} />
-      {lit(t) && <>{lantern(62, -36, true, 0.8)}</>}
+      {lit(t) && lanterns([[62, -36]], 0.8)}
       {bloom(t) && (
         <>
           <path d={rect(-33, -14, 18, 3.6, 1.5)} fill={c('woodDark')} />
           <path d={fl.petals} fill={c('flowerPink')} />
         </>
       )}
-      {full(t) && <Bunting b={b} c={c} a="flag2" />}
+      {full(t) && <Bunting b={[b]} c={c} a="flag2" />}
     </>
   )
 }
@@ -909,7 +927,7 @@ function RulerPosts({ t }: { t: RegionTier }) {
       )}
       <path d={join(...ps.map((p) => rect(p.x + 1, p.y - p.hgt + 1, 2.4, p.hgt - 1, 1)))} fill={c('postShade')} opacity={0.35} />
       <path d={ticks} fill="none" stroke={c('tick')} strokeWidth={0.8} {...ROUND} />
-      {lit(t) && <>{lantern(top.x, top.y - top.hgt - 11, true, 0.8)}</>}
+      {lit(t) && lanterns([[top.x, top.y - top.hgt - 11]], 0.8)}
       {lit(t) && <path d={rect(top.x - 0.7, top.y - top.hgt - 3, 1.4, 3, 0.6)} fill={c('woodDark')} />}
       {bloom(t) && (
         <>
@@ -961,13 +979,8 @@ function Garden({ t }: { t: RegionTier }) {
       <path d={join(warm.hearts, cool.hearts)} fill={c('flowerYellow')} />
       {/* lav hæk langs forkanten */}
       <path d={join(...Array.from({ length: 9 }, (_, i) => scallop(-74 + i * 21, 1, 11, 5, 5, 0.6, -90)))} fill={c('hedge')} stroke={c('hedgeShade')} strokeWidth={1.1} {...ROUND} />
-      {lit(t) && (
-        <>
-          {lantern(-84, -20, true, 0.8)}
-          {lantern(104, -20, true, 0.8)}
-        </>
-      )}
-      {full(t) && <Bunting b={b} c={c} a="flag" z="flowerViolet" />}
+      {lit(t) && lanterns([[-84, -20], [104, -20]], 0.8)}
+      {full(t) && <Bunting b={[b]} c={c} a="flag" z="flowerViolet" />}
     </>
   )
 }
@@ -1106,30 +1119,69 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
     )
   }
   // Den fjerne skov: runde, blålilla kroner langs den fjerne bakke (lyse og kølige).
-  const farCount = Math.round(w / 26)
+  const farCount = Math.round(w / (11 * K))
   const farCrowns = join(
     ...Array.from({ length: farCount }, (_, i) => {
       const x = (i + 0.5) * (w / farCount)
-      const r = (7 + hash01(i + 11) * 5) * K
-      return ellipse(x, ridgeY(L.far, w, x) - r * 0.7, r, r * 1.35)
+      const r = (6.5 + hash01(i + 11) * 4.5) * K
+      return ellipse(x, ridgeY(L.far, w, x) - r * 0.55 + 3 * K, r, r * 1.4)
     }),
   )
-  // Skovbakken: høje, bløde kroner i rækker langs bakken (de fleste grønne, enkelte mint, lilla og rosa).
+  // Skovbakken: høje, bløde kroner i to rækker – den bageste tæt langs kammen (også om tårnets fod, der står inde i
+  // skoven), den forreste længere nede i lundene. Bjergets fod og skrænten med vandfaldet holdes fri. Kronerne i
+  // samme farve er én path; konturen males under fladen, så overlappende kroner står som én blød silhuet, og hver
+  // krone får sin egen skygge (nede til højre) og sit højlys (oppe til venstre).
   const HUES: SkovColor[] = ['crownGreen', 'crownTeal', 'crownGreen', 'crownLilac', 'crownGreen', 'crownTeal', 'crownPink']
-  const midCount = Math.round(w / (34 * K))
-  const forest = Array.from({ length: midCount }, (_, i) => {
-    const x = (i + 0.2 + hash01(i + 41) * 0.6) * (w / midCount)
-    const s = K * (0.62 + hash01(i + 53) * 0.35)
-    const y = ridgeY(L.mid, w, x) + (6 + hash01(i + 67) * 10) * K
-    return { x, y, s, hue: HUES[Math.floor(hash01(i + 79) * HUES.length)] }
-  })
+  const free = (x: number) => Math.abs(x - L.mountain.x) > 70 * L.mountain.s && Math.abs(x - L.fall.x) > 60 * L.fall.s
+  const rowACount = Math.round(w / (21 * K))
+  const rowA = Array.from({ length: rowACount }, (_, i) => {
+    const x = (i + 0.2 + hash01(i + 41) * 0.6) * (w / rowACount)
+    const s = K * (0.6 + hash01(i + 53) * 0.32)
+    return { x, y: ridgeY(L.mid, w, x) + (5 + hash01(i + 67) * 9) * K, s, hue: HUES[Math.floor(hash01(i + 79) * HUES.length)] }
+  }).filter((p) => free(p.x))
+  rowA.push(...[-25, 0, 23].map((dx, i) => ({ x: L.tower.x + dx * L.tower.s, y: L.tower.y + (6 + (i % 2) * 8) * L.tower.s, s: L.tower.s * (0.9 + (i % 2) * 0.18), hue: (i === 1 ? 'crownTeal' : 'crownGreen') as SkovColor })))
+  const rowB = L.groves.flatMap(([u0, u1], j) => {
+    const cnt = Math.max(1, Math.round(((u1 - u0) * w) / (30 * K)))
+    return Array.from({ length: cnt }, (_, i) => {
+      const x = w * u0 + (i + 0.25 + hash01(i + j * 19 + 131) * 0.5) * (((u1 - u0) * w) / cnt)
+      const s = K * (0.85 + hash01(i + j * 23 + 151) * 0.35)
+      return { x, y: ridgeY(L.mid, w, x) + h * L.groveDy + hash01(i + 171) * 12 * K, s, hue: HUES[Math.floor(hash01(i + j * 7 + 191) * HUES.length)] }
+    })
+  }).filter((p) => free(p.x))
+  const rowC = L.groves.flatMap(([u0, u1], j) => {
+    const cnt = Math.max(1, Math.round(((u1 - u0) * w) / (38 * K)))
+    return Array.from({ length: cnt }, (_, i) => {
+      const x = w * u0 + (i + 0.5 + (hash01(i + j * 29 + 211) - 0.5) * 0.5) * (((u1 - u0) * w) / cnt)
+      const s = K * (1.0 + hash01(i + j * 31 + 231) * 0.32)
+      return { x, y: ridgeY(L.mid, w, x) + h * L.groveDy * 2 + hash01(i + 251) * 10 * K, s, hue: HUES[Math.floor(hash01(i + j * 11 + 271) * HUES.length)] }
+    })
+  }).filter((p) => free(p.x))
   const crown = (p: { x: number; y: number; s: number }) => scallop(p.x, p.y - 44 * p.s, 17 * p.s, 26 * p.s, 8, 0.6, -90)
-  const forestGroups = (['crownGreen', 'crownTeal', 'crownLilac', 'crownPink'] as SkovColor[]).map((hue) => ({ hue, d: join(...forest.filter((p) => p.hue === hue).map(crown)) }))
-  const forestShade = join(...forest.map((p) => lune(p.x + 1.5 * p.s, p.y - 42 * p.s, 15 * p.s, 23 * p.s, 6 * p.s, 15, 150)))
-  const forestLight = join(...forest.map((p) => ellipse(p.x - 6 * p.s, p.y - 56 * p.s, 4.5 * p.s, 7.5 * p.s, -20)))
-  const forestTrunks = join(...forest.map((p) => rect(p.x - 2.4 * p.s, p.y - 20 * p.s, 4.8 * p.s, 20 * p.s, 2 * p.s)))
-  // Kronerne foran tårnets fod (tårnet står inde i skoven og rager op over trætoppene).
-  const towerCrowns = [-26, 0, 24].map((dx, i) => ({ x: L.tower.x + dx * L.tower.s, y: L.tower.y + (4 + (i % 2) * 6) * L.tower.s, s: L.tower.s * (0.85 + (i % 2) * 0.15) }))
+  const canopy = (row: typeof rowA) => ({
+    groups: (['crownGreen', 'crownTeal', 'crownLilac', 'crownPink'] as SkovColor[]).map((hue) => ({ hue, d: join(...row.filter((p) => p.hue === hue).map(crown)) })),
+    shade: join(...row.map((p) => lune(p.x + 1.5 * p.s, p.y - 42 * p.s, 15 * p.s, 23 * p.s, 6 * p.s, 15, 150))),
+    light: join(...row.map((p) => ellipse(p.x - 6 * p.s, p.y - 56 * p.s, 4.5 * p.s, 7.5 * p.s, -20))),
+  })
+  const forest = (row: typeof rowA, key: string) => {
+    const cv = canopy(row)
+    return (
+      <>
+        {cv.groups.map(({ hue, d }) => d && <path key={`${key}${hue}`} d={d} fill={g(hue)} stroke={g('leafDark')} strokeWidth={2.6 * K} paintOrder="stroke" {...ROUND} />)}
+        <path d={cv.shade} fill={g('leafDark')} opacity={0.3} />
+        <path d={cv.light} fill={g('leafLight')} opacity={0.8} />
+      </>
+    )
+  }
+  const groveTrunks = join(...[...rowB, ...rowC].map((p) => rect(p.x - 2.6 * p.s, p.y - 22 * p.s, 5.2 * p.s, 22 * p.s, 2 * p.s)))
+  // Buske på engen (de står mellem kendetegnene, så forgrunden ikke er flad og tom).
+  const bushes = L.scrub.map((u, i) => {
+    const x = w * u + hash01(i + 501) * 14 * K
+    const top = ridgeY(L.near, w, x) + 16 * K
+    const y = top + hash01(i + 601) * Math.max(4, h - top - 60 * K)
+    return [x, y, K * (0.85 + hash01(i + 701) * 0.4)] as const
+  })
+  const scrub = join(...bushes.map(([x, y, s]) => scallop(x, y - 7 * s, 13 * s, 8 * s, 6, 0.6, -80)))
+  const scrubShade = join(...bushes.map(([x, y, s]) => join(lune(x + 1 * s, y - 6.5 * s, 12 * s, 7 * s, 3.2 * s, 20, 160), ellipse(x + 9 * s, y + 0.5 * s, 14 * s, 2.8 * s))))
   // Regnbuelyset: skrå stråler oppe fra venstre ned i lysningerne.
   const shafts = L.glades.flatMap((p, j) =>
     (['shaft1', 'shaft2', 'shaft3', 'shaft4'] as const).map((c, i) => {
@@ -1160,10 +1212,10 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
   // Jordskygger (solen oppe til venstre: skyggen falder mod højre).
   const cast = (p: Place, dx: number, rx: number, ry: number) => ellipse(p.x + dx * p.s, p.y + 1.5 * p.s, rx * p.s, ry * p.s)
   const castMid = join(
-    cast(L.cave, 14, 66, 7),
     ...L.trees.filter((p) => !p.front).map((p) => cast(p, 14, 30, 6)),
   )
   const castNear = join(
+    cast(L.cave, 14, 66, 7),
     cast(L.farm, 22, 66, 6.5),
     cast(L.owl, 16, 30, 6),
     cast(L.panda, 6, 16, 3.5),
@@ -1233,24 +1285,25 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
       {/* lag 2: skovbakken med de høje kroner og tårnet, der rager op over dem */}
       {layer(L.mid, R.mid, 'midHill', h * 0.1, 0.12)}
       {at(L.tower, <Tower t={T.tower} />)}
-      <path d={forestTrunks} fill={g('trunk')} />
-      {forestGroups.map(({ hue, d }) => d && <path key={hue} d={d} fill={g(hue)} stroke={g('leafDark')} strokeWidth={1.4 * K} {...ROUND} />)}
-      <path d={forestShade} fill={g('leafDark')} opacity={0.32} />
-      <path d={forestLight} fill={g('leafLight')} opacity={0.8} />
-      {towerCrowns.map((p, i) => <g key={i}>{at(p, <Tree t={T.tower} seed={i + 5} hue={i === 1 ? 'crownTeal' : 'crownGreen'} />)}</g>)}
+      {forest(rowA, 'a')}
+      <path d={groveTrunks} fill={g('trunk')} stroke={g('trunkDark')} strokeWidth={1.2 * K} />
+      {forest(rowB, 'b')}
+      {forest(rowC, 'c')}
       <path d={join(...daisies.map(([x, y, r]) => circle(x, y, r)))} fill={SKOV.flowerWhite} opacity={0.85} />
       <path d={castMid} fill={SKOV.castShadow} opacity={0.2} />
       {L.trees.filter((p) => !p.front).map((p, i) => <g key={i}>{at(p, <Tree t={T.garden} seed={i} hue={i % 2 ? 'crownLilac' : 'crownGreen'} />)}</g>)}
-      {at(L.cave, <Cave t={T.cave} />)}
       {/* regnbuelyset i lysningerne (ånder blødt) */}
       <g className="skov-shimmer">
-        {shafts.map((s, i) => <path key={i} d={s.d} fill={g(s.c)} opacity={0.2} />)}
+        {shafts.map((s, i) => <path key={i} d={s.d} fill={g(s.c)} opacity={0.26} />)}
       </g>
       {/* lag 3: engen ved søen og forgrunden */}
       {layer(L.near, R.near, 'nearHill', h * 0.12, 0.14)}
       <path d={join(...spots.filter((_, i) => i % 2 === 0).map(([x, y, r]) => circle(x, y, r)))} fill={SKOV.flowerWhite} opacity={0.9} />
       <path d={join(...spots.filter((_, i) => i % 2 === 1).map(([x, y, r]) => circle(x, y, r)))} fill={g('flowerYellow')} />
       <path d={castNear} fill={SKOV.castShadow} opacity={0.22} />
+      <path d={scrub} fill={g('crownGreen')} stroke={g('leafDark')} strokeWidth={1.2 * K} {...ROUND} />
+      <path d={scrubShade} fill={SKOV.castShadow} opacity={0.22} />
+      {at(L.cave, <Cave t={T.cave} />)}
       {at(L.panda, <Bamboo t={T.cave} />)}
       {at(L.panda, <g transform="translate(14 0)"><Panda t={T.cave} /></g>)}
       {trail}

@@ -305,6 +305,9 @@ export const SKOV = {
   stone: '#DED7EA',
   stoneShade: '#B2A8C8',
   lily: '#69C26C',
+  /** Vekselvandets sten (mørkere end skræntens, så de står tydeligt i vandet). */
+  pebble: '#C7BCDC',
+  pebbleDark: '#857AA8',
   /** Urtårnets top og møllen: lys sten, violet tag, urskive med kvartererne, tyk timeviser (blæk) og lang minutviser (urets røde). */
   tower: '#F2EBF7',
   towerShade: '#C8BBDB',
