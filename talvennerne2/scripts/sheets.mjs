@@ -5,6 +5,14 @@
 //
 //   npm run sheets                       bygger og kører alle ruter for alle arter
 //   node scripts/sheets.mjs closeup:cat  kun udvalgte ruter (forudsætter et byg); `closeup` = alle arter
+//   node scripts/sheets.mjs scene:skov   én verdens scenark; `scene` = alle tre verdener
+//
+// Scenearkene (review G2-r2 §5.1) er én side pr. verden. Hvert panel fotograferes for sig i 2x
+// (scene-<verden>/<b>x<h>-<tier>.png), og oversigten scene-<verden>.png (1 px pr. CSS-px) sættes sammen af de
+// paneler og en helsidesoptagelse af resten af siden (tekst og kort), for en helsidesoptagelse af de tunge
+// scener tegner ikke alle fliser færdigt – heller ikke ved 15 megapixel. Pixelene i panelerne og i oversigten
+// lint'es for tomme flader (lintScenePixels i src/dev/lints.ts), så arket aldrig er mindre pålideligt end det,
+// det dokumenterer.
 //
 // Chromium deles med andre agenter: scriptet kører altid sig selv bag flock /tmp/tv2-chromium.lock.
 // Under CPU-belastning venter hver side op til SHEETS_READY_MS (standard 120 s) og prøves én gang til.
@@ -37,6 +45,8 @@ const present = new Set(readdirSync(path.join(root, 'src/art/species')).filter((
 const SPECIES = ORDER.filter((id) => present.has(id))
 const PER_SPECIES = ['species', 'moods', 'closeup', 'sizes', 'fit', 'filmstrip']
 const GLOBAL = ['silhouettes', 'lineup', 'fitmatrix', 'scene', 'holes']
+/** Scenearket er én side pr. verden (?sheet=scene&id=<verden>). */
+const SCENE_WORLDS = ['eng', 'bakke', 'skov']
 
 /** Udvid argumenter: `closeup` → closeup:<hver art>, `closeup:cat` → én. */
 function expand(args) {
@@ -44,6 +54,7 @@ function expand(args) {
   for (const a of args.length ? args : [...PER_SPECIES, ...GLOBAL]) {
     const [route, id] = a.split(':')
     if (PER_SPECIES.includes(route)) for (const s of id ? [id] : SPECIES) out.push({ route, id: s })
+    else if (route === 'scene') for (const w of id ? [id] : SCENE_WORLDS) out.push({ route, id: w })
     else out.push({ route })
   }
   return out
@@ -115,13 +126,63 @@ async function shoot({ route, id }, file) {
       }
     })
     await page.setViewportSize({ width: size.w, height: Math.min(size.h, 1200) })
-    await page.screenshot({ path: file, fullPage: true, timeout: READY_MS })
+    if (route === 'scene') await sceneSheet(page, id, file, lint)
+    else await page.screenshot({ path: file, fullPage: true, timeout: READY_MS })
     return { lint, size, consoleErrors }
   } catch (e) {
     return { error: `${e.message.split('\n')[0]}${consoleErrors.length ? ` · ${consoleErrors.join(' | ')}` : ''}` }
   } finally {
     await page.close()
   }
+}
+
+/**
+ * Et scenark: hvert panel som sin egen PNG i 2x (locator.screenshot) og oversigten (1 px pr. CSS-px) sat sammen af
+ * panelerne og en helsidesoptagelse af siden uden scener. Lint for tomme flader i hvert panel og i oversigten;
+ * fejlene lægges i sidens lint.
+ */
+async function sceneSheet(page, world, file, lint) {
+  const dir = path.join(outDir, `scene-${world}`)
+  await mkdir(dir, { recursive: true })
+  const panels = await page.evaluate(() => window.__scenePanels())
+  const scale = await page.evaluate(() => devicePixelRatio)
+  const shots = []
+  let maxShare = 0
+  for (const p of panels) {
+    const el = page.locator(`[data-scene-panel="${p.name}"]`)
+    const png = (await el.screenshot({ path: path.join(dir, `${p.name}.png`), timeout: READY_MS })).toString('base64')
+    // optagelsen dækker elementets boks; dens hjørne i sidens CSS-px (efter at Playwright har rullet det frem)
+    const box = await el.evaluate((n) => {
+      const r = n.getBoundingClientRect()
+      return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }
+    })
+    const r = await page.evaluate(([b64, ps, k, o]) => window.__lintScenePixels(b64, ps, k, o), [png, [p], scale, box])
+    lint.errors.push(...r.errors.map((e) => `scene-${world}/${e}`))
+    lint.checks += r.checks
+    maxShare = Math.max(maxShare, r.maxShare)
+    shots.push({ png, ...box })
+  }
+  // siden uden scenerne (tekst, kort og skitsernes pladser), og panelerne lagt ind, hvor de står
+  await page.addStyleTag({ content: '[data-scene-panel] > * { visibility: hidden !important; }' })
+  const base = (await page.screenshot({ fullPage: true, scale: 'css', timeout: READY_MS })).toString('base64')
+  const sheet = await page.evaluate(async ([bg, list]) => {
+    const load = async (b64) => createImageBitmap(await (await fetch(`data:image/png;base64,${b64}`)).blob())
+    const img = await load(bg)
+    const c = document.createElement('canvas')
+    c.width = img.width
+    c.height = img.height
+    const g = c.getContext('2d')
+    g.drawImage(img, 0, 0)
+    g.imageSmoothingQuality = 'high'
+    for (const s of list) g.drawImage(await load(s.png), s.x, s.y, s.w, s.h)
+    return c.toDataURL('image/png').slice('data:image/png;base64,'.length)
+  }, [base, shots])
+  await writeFile(file, Buffer.from(sheet, 'base64'))
+  const all = await page.evaluate(([b64, ps]) => window.__lintScenePixels(b64, ps, 1, { x: 0, y: 0 }), [sheet, panels])
+  lint.errors.push(...all.errors.map((e) => `oversigten ${e}`))
+  lint.checks += all.checks
+  lint.scenePanels = panels.length
+  lint.blankMax = Math.max(maxShare, all.maxShare)
 }
 
 try {
@@ -140,7 +201,9 @@ try {
     const errors = [...lint.errors, ...consoleErrors.map((e) => `konsolfejl: ${e}`)]
     report[name] = { ...lint, errors, png: path.relative(root, file), size }
     const status = errors.length ? 'FEJL' : 'ok'
-    const card = lint.minCardFill !== undefined ? `, kort ≥ ${(lint.minCardFill * 100).toFixed(0)} %` : ''
+    const card =
+      (lint.minCardFill !== undefined ? `, kort ≥ ${(lint.minCardFill * 100).toFixed(0)} %` : '') +
+      (lint.scenePanels !== undefined ? `, ${lint.scenePanels} scenepaneler, maks ${lint.maxScene} el./scene, største papirlyse flade ${(lint.blankMax * 100).toFixed(2)} %` : '')
     console.log(
       `${status.padEnd(4)} ${name.padEnd(18)} ${String(lint.rigs).padStart(3)} dyr, ${String(lint.items).padStart(3)} genstande, ` +
         `${String(lint.checks).padStart(4)} tjek, maks ${lint.maxAnimal} el./dyr, ${lint.maxItem} el./genstand${card} → ${path.relative(root, file)}`,

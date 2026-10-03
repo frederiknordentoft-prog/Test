@@ -700,16 +700,25 @@ function Index() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// scene: Engdalen bag kortet i 393·852 (telefon) og 1180·820 (iPad på tværs) for tier start, bronze og guld,
-// og én ramme pr. format med en skitse af kortets lag ovenpå (topbjælke, regionens kort med sti og
-// trædesten, sidepanel og dok), så man kan se, at scenen ikke konkurrerer med stien.
+// scene: én side pr. verden (?sheet=scene&id=eng|bakke|skov) med kortets baggrund i alle fire tiers (alle
+// regioner) i 393·852 (telefon), 820·1180 (iPad på langs) og 1180·820 (iPad på tværs), og én ramme pr. format
+// med en skitse af kortets lag ovenpå (topbjælke, regionens kort med sti og trædesten, sidepanel og dok), så man
+// kan se, at scenen ikke konkurrerer med stien. Review G2-r2 §5.1: ét samlet ark på 149 megapixel blev ikke tegnet
+// helt i helsidesoptagelsen; nu fotograferer scripts/sheets.mjs desuden hvert panel for sig (data-scene-panel), og
+// pixelene i både paneler og oversigt lint'es for tomme papirflader (lintScenePixels i lints.ts).
 
-const SCENE_TIERS: readonly RegionTier[] = ['start', 'bronze', 'gold']
-const allAt = (t: RegionTier): MapSceneProps['tiers'] => Object.fromEntries(Object.values(ENG_REGIONS).map((r) => [r, t]))
 /** Blandet fremgang: de første regioner er nået længst. */
 const MIXED: MapSceneProps['tiers'] = {
   [ENG_REGIONS.grove]: 'gold', [ENG_REGIONS.garden]: 'silver', [ENG_REGIONS.meadow]: 'silver',
   [ENG_REGIONS.trail]: 'bronze', [ENG_REGIONS.brook]: 'bronze', [ENG_REGIONS.den]: 'start',
+}
+const BAKKE_MIXED: MapSceneProps['tiers'] = {
+  [BAKKE_REGIONS.field]: 'gold', [BAKKE_REGIONS.twins]: 'silver', [BAKKE_REGIONS.bridge]: 'silver', [BAKKE_REGIONS.workshop]: 'bronze',
+  [BAKKE_REGIONS.tower]: 'bronze', [BAKKE_REGIONS.hop]: 'start', [BAKKE_REGIONS.market]: 'start',
+}
+const SKOV_MIXED: MapSceneProps['tiers'] = {
+  [SKOV_REGIONS.mountain]: 'gold', [SKOV_REGIONS.lake]: 'silver', [SKOV_REGIONS.cave]: 'silver', [SKOV_REGIONS.tower]: 'bronze',
+  [SKOV_REGIONS.farm]: 'bronze', [SKOV_REGIONS.bridge]: 'start', [SKOV_REGIONS.ruler]: 'start', [SKOV_REGIONS.garden]: 'start',
 }
 
 type Box = readonly [number, number, number, number, number?]
@@ -742,108 +751,67 @@ function MapSketch({ kind }: { kind: 'phone' | 'ipad' }) {
   )
 }
 
-function SceneFrame({ w, h, tiers, cap, sketch }: { w: number; h: number; tiers: MapSceneProps['tiers']; cap: string; sketch?: 'phone' | 'ipad' }) {
+const SCENE_WORLDS = {
+  eng: { name: 'Engdalen', Scene: EngScene, regions: ENG_REGIONS, mixed: MIXED },
+  bakke: { name: 'Hestebakkerne', Scene: BakkeScene, regions: BAKKE_REGIONS, mixed: BAKKE_MIXED },
+  skov: { name: 'Regnbueskoven', Scene: SkovScene, regions: SKOV_REGIONS, mixed: SKOV_MIXED },
+} as const
+type SceneWorld = keyof typeof SCENE_WORLDS
+const SCENE_TIERS: readonly RegionTier[] = ['start', 'bronze', 'silver', 'gold']
+const SCENE_FORMATS = [
+  { title: 'telefon', w: 393, h: 852, sketch: 'phone' as const, wrap: 0 },
+  { title: 'iPad på langs', w: 820, h: 1180, sketch: undefined, wrap: 1700 },
+  { title: 'iPad på tværs', w: 1180, h: 820, sketch: 'ipad' as const, wrap: 2420 },
+]
+
+function WorldFrame({ world, w, h, tiers, tag, cap, sketch }: { world: SceneWorld; w: number; h: number; tiers: MapSceneProps['tiers']; tag: string; cap: string; sketch?: 'phone' | 'ipad' }) {
+  const { Scene } = SCENE_WORLDS[world]
   return (
-    <Cell cap={cap} lint="" label={`scene ${cap}`}>
-      <div style={{ position: 'relative', width: w, height: h, overflow: 'hidden', borderRadius: 12 }}>
-        <EngScene world="eng" tiers={tiers} className="sh-scene-art" />
-        {sketch && <MapSketch kind={sketch} />}
-      </div>
-    </Cell>
-  )
-}
-
-// Hestebakkerne: alle fire tiers (alle regioner) i telefon, iPad på langs og iPad på tværs, og blandet fremgang
-// med kortets skitse ovenpå (telefon og iPad på tværs).
-const BAKKE_TIERS: readonly RegionTier[] = ['start', 'bronze', 'silver', 'gold']
-const bakkeAt = (t: RegionTier): MapSceneProps['tiers'] => Object.fromEntries(Object.values(BAKKE_REGIONS).map((r) => [r, t]))
-/** Blandet fremgang: de første regioner er nået længst. */
-const BAKKE_MIXED: MapSceneProps['tiers'] = {
-  [BAKKE_REGIONS.field]: 'gold', [BAKKE_REGIONS.twins]: 'silver', [BAKKE_REGIONS.bridge]: 'silver', [BAKKE_REGIONS.workshop]: 'bronze',
-  [BAKKE_REGIONS.tower]: 'bronze', [BAKKE_REGIONS.hop]: 'start', [BAKKE_REGIONS.market]: 'start',
-}
-
-function BakkeFrame({ w, h, tiers, cap, sketch }: { w: number; h: number; tiers: MapSceneProps['tiers']; cap: string; sketch?: 'phone' | 'ipad' }) {
-  return (
-    <Cell cap={cap} lint="" label={`scene bakke ${cap}`}>
-      <div style={{ position: 'relative', width: w, height: h, overflow: 'hidden', borderRadius: 12 }}>
-        <BakkeScene world="bakke" tiers={tiers} className="sh-scene-art" />
-        {sketch && <MapSketch kind={sketch} />}
-      </div>
-    </Cell>
-  )
-}
-
-// Regnbueskoven: alle fire tiers (alle regioner) i telefon, iPad på langs og iPad på tværs, og blandet fremgang
-// med kortets skitse ovenpå (telefon og iPad på tværs).
-const skovAt = (t: RegionTier): MapSceneProps['tiers'] => Object.fromEntries(Object.values(SKOV_REGIONS).map((r) => [r, t]))
-/** Blandet fremgang: de første regioner er nået længst. */
-const SKOV_MIXED: MapSceneProps['tiers'] = {
-  [SKOV_REGIONS.mountain]: 'gold', [SKOV_REGIONS.lake]: 'silver', [SKOV_REGIONS.cave]: 'silver', [SKOV_REGIONS.tower]: 'bronze',
-  [SKOV_REGIONS.farm]: 'bronze', [SKOV_REGIONS.bridge]: 'start', [SKOV_REGIONS.ruler]: 'start', [SKOV_REGIONS.garden]: 'start',
-}
-
-function SkovFrame({ w, h, tiers, cap, sketch }: { w: number; h: number; tiers: MapSceneProps['tiers']; cap: string; sketch?: 'phone' | 'ipad' }) {
-  return (
-    <Cell cap={cap} lint="" label={`scene skov ${cap}`}>
-      <div style={{ position: 'relative', width: w, height: h, overflow: 'hidden', borderRadius: 12 }}>
-        <SkovScene world="skov" tiers={tiers} className="sh-scene-art" />
-        {sketch && <MapSketch kind={sketch} />}
+    <Cell cap={cap} lint="" label={`scene ${world} ${cap}`}>
+      <div data-scene-panel={`${w}x${h}-${tag}`} style={{ position: 'relative', width: w, height: h, overflow: 'hidden', borderRadius: 12 }}>
+        <Scene world={world} tiers={tiers} className="sh-scene-art" />
+        {sketch && (
+          <div data-scene-sketch="">
+            <MapSketch kind={sketch} />
+          </div>
+        )}
       </div>
     </Cell>
   )
 }
 
 function SceneSheet() {
+  const id = new URLSearchParams(location.search).get('id')
+  if (!id || !(id in SCENE_WORLDS)) {
+    return (
+      <Page title="Scener" sub="Én side pr. verden: alle fire tiers i telefon, iPad på langs og iPad på tværs.">
+        <ul>
+          {(Object.keys(SCENE_WORLDS) as SceneWorld[]).map((w) => (
+            <li key={w}>
+              <a href={`?sheet=scene&id=${w}`}>scene · {w}</a>
+            </li>
+          ))}
+        </ul>
+      </Page>
+    )
+  }
+  const world = id as SceneWorld
+  const { name, regions, mixed } = SCENE_WORLDS[world]
+  const at = (t: RegionTier): MapSceneProps['tiers'] => Object.fromEntries(Object.values(regions).map((r) => [r, t]))
   return (
-    <Page title="Scener · Engdalen, Hestebakkerne og Regnbueskoven" sub="Kortets baggrund for Engdalen i 393·852 (telefon) og 1180·820 (iPad på tværs) for tier start, bronze og guld (alle regioner), og med en skitse af kortets lag ovenpå (blandet fremgang). Derefter Hestebakkerne og Regnbueskoven i alle fire tiers, også i 820·1180 (iPad på langs). Kun skyer, blade, lysstråler og haler bevæger sig.">
+    <Page
+      title={`Scene · ${name} (${world})`}
+      sub={`Kortets baggrund for ${name} i alle fire tiers (alle regioner) i 393·852 (telefon), 820·1180 (iPad på langs) og 1180·820 (iPad på tværs), og blandet fremgang med en skitse af kortets lag ovenpå. Hvert panel findes også som sin egen PNG i 2x (scene-${world}/<format>-<tier>.png). Kun skyer, blade, lysstråler og haler bevæger sig.`}
+    >
       <style>{'.sh-scene-art{position:absolute;inset:0;width:100%;height:100%}'}</style>
-      <Section title="telefon · 393·852">
-        <div className="sh-row" style={{ alignItems: 'flex-start' }}>
-          {SCENE_TIERS.map((t) => <SceneFrame key={t} w={393} h={852} tiers={allAt(t)} cap={`393·852 · ${t}`} />)}
-          <SceneFrame w={393} h={852} tiers={MIXED} cap="393·852 · blandet · med kortet" sketch="phone" />
-        </div>
-      </Section>
-      <Section title="iPad på tværs · 1180·820">
-        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 2420 }}>
-          {SCENE_TIERS.map((t) => <SceneFrame key={t} w={1180} h={820} tiers={allAt(t)} cap={`1180·820 · ${t}`} />)}
-          <SceneFrame w={1180} h={820} tiers={MIXED} cap="1180·820 · blandet · med kortet" sketch="ipad" />
-        </div>
-      </Section>
-      <Section title="Hestebakkerne · telefon · 393·852">
-        <div className="sh-row" style={{ alignItems: 'flex-start' }}>
-          {BAKKE_TIERS.map((t) => <BakkeFrame key={t} w={393} h={852} tiers={bakkeAt(t)} cap={`393·852 · ${t}`} />)}
-          <BakkeFrame w={393} h={852} tiers={BAKKE_MIXED} cap="393·852 · blandet · med kortet" sketch="phone" />
-        </div>
-      </Section>
-      <Section title="Hestebakkerne · iPad på langs · 820·1180">
-        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 1700 }}>
-          {BAKKE_TIERS.map((t) => <BakkeFrame key={t} w={820} h={1180} tiers={bakkeAt(t)} cap={`820·1180 · ${t}`} />)}
-        </div>
-      </Section>
-      <Section title="Hestebakkerne · iPad på tværs · 1180·820">
-        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 2420 }}>
-          {BAKKE_TIERS.map((t) => <BakkeFrame key={t} w={1180} h={820} tiers={bakkeAt(t)} cap={`1180·820 · ${t}`} />)}
-          <BakkeFrame w={1180} h={820} tiers={BAKKE_MIXED} cap="1180·820 · blandet · med kortet" sketch="ipad" />
-        </div>
-      </Section>
-      <Section title="Regnbueskoven · telefon · 393·852">
-        <div className="sh-row" style={{ alignItems: 'flex-start' }}>
-          {BAKKE_TIERS.map((t) => <SkovFrame key={t} w={393} h={852} tiers={skovAt(t)} cap={`393·852 · ${t}`} />)}
-          <SkovFrame w={393} h={852} tiers={SKOV_MIXED} cap="393·852 · blandet · med kortet" sketch="phone" />
-        </div>
-      </Section>
-      <Section title="Regnbueskoven · iPad på langs · 820·1180">
-        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 1700 }}>
-          {BAKKE_TIERS.map((t) => <SkovFrame key={t} w={820} h={1180} tiers={skovAt(t)} cap={`820·1180 · ${t}`} />)}
-        </div>
-      </Section>
-      <Section title="Regnbueskoven · iPad på tværs · 1180·820">
-        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 2420 }}>
-          {BAKKE_TIERS.map((t) => <SkovFrame key={t} w={1180} h={820} tiers={skovAt(t)} cap={`1180·820 · ${t}`} />)}
-          <SkovFrame w={1180} h={820} tiers={SKOV_MIXED} cap="1180·820 · blandet · med kortet" sketch="ipad" />
-        </div>
-      </Section>
+      {SCENE_FORMATS.map(({ title, w, h, sketch, wrap }) => (
+        <Section key={title} title={`${name} · ${title} · ${w}·${h}`}>
+          <div className="sh-row" style={{ alignItems: 'flex-start', ...(wrap ? { flexWrap: 'wrap', width: wrap } : {}) }}>
+            {SCENE_TIERS.map((t) => <WorldFrame key={t} world={world} w={w} h={h} tiers={at(t)} tag={t} cap={`${w}·${h} · ${t}`} />)}
+            {sketch && <WorldFrame world={world} w={w} h={h} tiers={mixed} tag="blandet" cap={`${w}·${h} · blandet · med kortet`} sketch={sketch} />}
+          </div>
+        </Section>
+      ))}
     </Page>
   )
 }

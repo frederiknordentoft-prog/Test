@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { REGIONS } from '../../../content/curriculum'
 import type { RegionTier } from '../../../meta/rewards'
-import BakkeScene, { BAKKE_REGIONS, BRIDGE_PLANKS, BakkeArt, layoutOf, paddockFence, streamGap, streamWidths } from '../bakke'
+import BakkeScene, { BAKKE_REGIONS, BRIDGE_PLANKS, BakkeArt, SHADOW_SHIFT, horsePoints, layoutOf, paddockFence, streamGap, streamWidths } from '../bakke'
 import { BAKKE, tintBakke } from '../palette'
 
 const SIZES: readonly [number, number][] = [[393, 852], [375, 667], [852, 393], [820, 1180], [1180, 820], [1366, 1024], [1920, 1080]]
@@ -132,6 +132,30 @@ describe('Hestebakkerne · scene', () => {
       for (const [x, y] of posts) expect(streamGap(L.stream, sw, x, y), `${w}·${h}`).toBeGreaterThan(0)
       const [bx, by] = posts[posts.length - 1]
       expect(streamGap(L.stream, sw, bx, by), `${w}·${h} brinken`).toBeLessThan(14 * L.k)
+    }
+  })
+
+  it('hestene står på græsset: hele hesten (også mulen) mindst 10 px fra åkanten i alle formater (review G2-r2 §5.3)', () => {
+    for (const [w, h] of SIZES) {
+      const L = layoutOf(w, h)
+      const sw = streamWidths(L)
+      // åkanten er brinkens yderkant: brinken er 9 · k bredere end vandet
+      for (const horse of L.horses)
+        for (const [x, y] of horsePoints(horse))
+          expect(streamGap(L.stream, sw, x, y) - 4.5 * L.k, `${w}·${h} ${horse.coat} (${x.toFixed(0)}, ${y.toFixed(0)})`).toBeGreaterThanOrEqual(10)
+    }
+  })
+
+  it('lyset kommer oppe fra venstre: jordskyggerne er forskudt 3–6 px mod højre og ned (review G2-r2 §5.3)', () => {
+    const [dx, dy] = SHADOW_SHIFT
+    expect(dx).toBeGreaterThan(0)
+    expect(dy).toBeGreaterThan(0)
+    expect(Math.hypot(dx, dy)).toBeGreaterThanOrEqual(3)
+    expect(Math.hypot(dx, dy)).toBeLessThanOrEqual(6)
+    for (const [w, h] of SIZES) {
+      const L = layoutOf(w, h)
+      expect(L.sun.x / w, `${w}·${h}`).toBeLessThan(0.25)
+      expect(L.sun.y / h, `${w}·${h}`).toBeLessThan(0.25)
     }
   })
 
