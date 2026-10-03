@@ -382,7 +382,14 @@ export const paperLike = (r: number, g: number, b: number) => PAPER.some(([pr, p
  * Den største sammenhængende flade af helt ensfarvede, papirfarvede celler i `rect` (pixel) af et RGBA-billede med
  * bredden W: andel af rektanglet og fladens boks (pixel). Celler, der rører et `skip`-rektangel, tæller ikke.
  */
-export function blankArea(px: Uint8ClampedArray, W: number, rect: Rect, cell: number, skip: readonly Rect[] = []): { share: number; box: Rect | null } {
+export function blankArea(
+  px: Uint8ClampedArray,
+  W: number,
+  rect: Rect,
+  cell: number,
+  skip: readonly Rect[] = [],
+  like: (r: number, g: number, b: number) => boolean = paperLike,
+): { share: number; box: Rect | null } {
   const cols = Math.floor(rect.w / cell)
   const rows = Math.floor(rect.h / cell)
   if (cols < 1 || rows < 1) return { share: 0, box: null }
@@ -396,7 +403,7 @@ export function blankArea(px: Uint8ClampedArray, W: number, rect: Rect, cell: nu
       if (skip.some((s) => x1 > s.x && x0 < s.x + s.w && y1 > s.y && y0 < s.y + s.h)) continue
       const q = (y0 * W + x0) * 4
       const [r, g, b] = [px[q], px[q + 1], px[q + 2]]
-      if (!paperLike(r, g, b)) continue
+      if (!like(r, g, b)) continue
       let same = true
       for (let y = y0; y < y1 && same; y++)
         for (let x = x0; x < x1; x++) {
@@ -482,14 +489,83 @@ export async function lintScenePixels(png: string, panels: readonly ScenePanel[]
   return { errors, checks: panels.length, maxShare }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Tomme felter i pasformsmatrixen (review G2-r3 §6.1): det samlede ark på 165 megapixel havde 420 af 2124 celler, som
+// helsidesoptagelsen aldrig tegnede – papirfarve i stedet for cellens hvide felt med dyret. Matrixen er nu én side pr.
+// sæt, og scripts/sheets.mjs giver optagelsen til lintBlankCells, der tjekker hvert felt for sig: et tegnet felt er
+// hvidt med dyret på, så papirfarve i feltet betyder, at (en del af) det ikke blev tegnet, og et felt uden tegning
+// (kun hvidt og papir) er tomt.
+
+/** Arkets papir (#FFF8EC, ±3 pr. kanal): et tegnet felt er hvidt, så papir i feltet er en flise, der ikke blev tegnet. */
+export const paperOnly = (r: number, g: number, b: number) => Math.abs(r - 255) <= 3 && Math.abs(g - 248) <= 3 && Math.abs(b - 236) <= 3
+/** Den største sammenhængende papirflade, et felt må have (andel af feltet inden for kanten); en utegnet flise dækker langt mere, og pelsens lyseste flader (hamsterens creme) højst ca. 4 %. */
+export const CELL_PAPER_MAX = 0.1
+/** Mindste andel af feltet, der er tegning (hverken hvidt eller papir): ellers er feltet tomt. */
+export const CELL_INK_MIN = 0.05
+/** Feltets runde hjørner (8 px) og kant tjekkes ikke. */
+const CELL_INSET = 8
+
+/** Pasformsmatrixens felter (CSS-px fra sidens øverste venstre hjørne) med deres label. */
+export function matrixCells(): (Rect & { name: string })[] {
+  return [...document.querySelectorAll<HTMLElement>('.sh-matrix')].map((el) => {
+    const r = el.getBoundingClientRect()
+    return { name: el.dataset.label ?? '', x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }
+  })
+}
+
+/**
+ * Tomme felter i en optagelse (PNG i base64) af pasformsmatrixen: `cells` i CSS-px, `scale` pixel pr. CSS-px og
+ * `origin` optagelsens øverste venstre hjørne. Fejler, hvis et felt har en sammenhængende papirflade over
+ * CELL_PAPER_MAX af feltet (en flise, der ikke blev tegnet), eller hvis under CELL_INK_MIN af feltet er tegning.
+ */
+export async function lintBlankCells(png: string, cells: readonly (Rect & { name: string })[], scale: number, origin: { x: number; y: number }): Promise<{ errors: string[]; checks: number; maxPaper: number; minInk: number }> {
+  const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob())
+  const canvas = document.createElement('canvas')
+  canvas.width = bmp.width
+  canvas.height = bmp.height
+  const g = canvas.getContext('2d', { willReadFrequently: true })!
+  g.drawImage(bmp, 0, 0)
+  const px = g.getImageData(0, 0, bmp.width, bmp.height).data
+  const errors: string[] = []
+  let maxPaper = 0
+  let minInk = 1
+  for (const c of cells) {
+    const x0 = Math.max(0, Math.round((c.x - origin.x + CELL_INSET) * scale))
+    const y0 = Math.max(0, Math.round((c.y - origin.y + CELL_INSET) * scale))
+    const x1 = Math.min(bmp.width, Math.round((c.x - origin.x + c.w - CELL_INSET) * scale))
+    const y1 = Math.min(bmp.height, Math.round((c.y - origin.y + c.h - CELL_INSET) * scale))
+    if (x1 <= x0 || y1 <= y0) {
+      errors.push(`${c.name}: feltet ligger uden for optagelsen`)
+      continue
+    }
+    const { share } = blankArea(px, bmp.width, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, BLANK_CELL * scale, [], paperOnly)
+    let ink = 0
+    for (let y = y0; y < y1; y++)
+      for (let x = x0; x < x1; x++) {
+        const p = (y * bmp.width + x) * 4
+        const white = px[p] >= 252 && px[p + 1] >= 252 && px[p + 2] >= 252
+        if (!white && !paperOnly(px[p], px[p + 1], px[p + 2])) ink++
+      }
+    const inkShare = ink / ((x1 - x0) * (y1 - y0))
+    maxPaper = Math.max(maxPaper, share)
+    minInk = Math.min(minInk, inkShare)
+    if (share > CELL_PAPER_MAX) errors.push(`${c.name}: feltet er ikke tegnet helt (papir på ${(share * 100).toFixed(0)} % af feltet)`)
+    else if (inkShare < CELL_INK_MIN) errors.push(`${c.name}: feltet er tomt (tegning på ${(inkShare * 100).toFixed(1)} % af feltet)`)
+  }
+  return { errors, checks: cells.length, maxPaper, minInk }
+}
+
 declare global {
   interface Window {
     __scenePanels?: typeof scenePanels
     __lintScenePixels?: typeof lintScenePixels
+    __matrixCells?: typeof matrixCells
+    __lintBlankCells?: typeof lintBlankCells
   }
 }
-// scripts/sheets.mjs kalder de to direkte i scenearkenes sider (efter optagelsen).
-if (typeof window !== 'undefined') Object.assign(window, { __scenePanels: scenePanels, __lintScenePixels: lintScenePixels })
+// scripts/sheets.mjs kalder dem direkte i scenearkenes og pasformsmatrixens sider (efter optagelsen).
+if (typeof window !== 'undefined')
+  Object.assign(window, { __scenePanels: scenePanels, __lintScenePixels: lintScenePixels, __matrixCells: matrixCells, __lintBlankCells: lintBlankCells })
 
 // ---------------------------------------------------------------------------------------------
 // Huller og sømme (review G1-r3, forbedring 1): figuren rasteriseres alene (uden glimt, aura og skygge), og

@@ -6,6 +6,7 @@
 //   npm run sheets                       bygger og kører alle ruter for alle arter
 //   node scripts/sheets.mjs closeup:cat  kun udvalgte ruter (forudsætter et byg); `closeup` = alle arter
 //   node scripts/sheets.mjs scene:skov   én verdens scenark; `scene` = alle tre verdener
+//   node scripts/sheets.mjs fitmatrix:ridder   ét sæts pasformsmatrix; `fitmatrix` = alle sæt
 //
 // Scenearkene (review G2-r2 §5.1) er én side pr. verden. Hvert panel fotograferes for sig i 2x
 // (scene-<verden>/<b>x<h>-<tier>.png), og oversigten scene-<verden>.png (1 px pr. CSS-px) sættes sammen af de
@@ -13,6 +14,9 @@
 // scener tegner ikke alle fliser færdigt – heller ikke ved 15 megapixel. Pixelene i panelerne og i oversigten
 // lint'es for tomme flader (lintScenePixels i src/dev/lints.ts), så arket aldrig er mindre pålideligt end det,
 // det dokumenterer.
+//
+// Pasformsmatrixen (review G2-r3 §6.1) er én side pr. sæt (fitmatrix-<sæt>.png, ca. 20 megapixel i stedet for ét ark på
+// 165), og pixelene i optagelsen lint'es felt for felt for tomme eller halvt tegnede felter (lintBlankCells).
 //
 // Chromium deles med andre agenter: scriptet kører altid sig selv bag flock /tmp/tv2-chromium.lock.
 // Under CPU-belastning venter hver side op til SHEETS_READY_MS (standard 120 s) og prøves én gang til.
@@ -47,6 +51,8 @@ const PER_SPECIES = ['species', 'moods', 'closeup', 'sizes', 'fit', 'filmstrip']
 const GLOBAL = ['silhouettes', 'lineup', 'fitmatrix', 'scene', 'holes']
 /** Scenearket er én side pr. verden (?sheet=scene&id=<verden>). */
 const SCENE_WORLDS = ['eng', 'bakke', 'skov']
+/** Pasformsmatrixen er én side pr. sæt (?sheet=fitmatrix&id=<sæt>): sættene er mapperne i src/art/items. */
+const MATRIX_SETS = readdirSync(path.join(root, 'src/art/items'), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort()
 
 /** Udvid argumenter: `closeup` → closeup:<hver art>, `closeup:cat` → én. */
 function expand(args) {
@@ -55,6 +61,7 @@ function expand(args) {
     const [route, id] = a.split(':')
     if (PER_SPECIES.includes(route)) for (const s of id ? [id] : SPECIES) out.push({ route, id: s })
     else if (route === 'scene') for (const w of id ? [id] : SCENE_WORLDS) out.push({ route, id: w })
+    else if (route === 'fitmatrix') for (const m of id ? [id] : MATRIX_SETS) out.push({ route, id: m })
     else out.push({ route })
   }
   return out
@@ -127,7 +134,10 @@ async function shoot({ route, id }, file) {
     })
     await page.setViewportSize({ width: size.w, height: Math.min(size.h, 1200) })
     if (route === 'scene') await sceneSheet(page, id, file, lint)
-    else await page.screenshot({ path: file, fullPage: true, timeout: READY_MS })
+    else {
+      const png = (await page.screenshot({ path: file, fullPage: true, timeout: READY_MS })).toString('base64')
+      if (route === 'fitmatrix') await matrixPixels(page, png, lint)
+    }
     return { lint, size, consoleErrors }
   } catch (e) {
     return { error: `${e.message.split('\n')[0]}${consoleErrors.length ? ` · ${consoleErrors.join(' | ')}` : ''}` }
@@ -185,6 +195,18 @@ async function sceneSheet(page, world, file, lint) {
   lint.blankMax = Math.max(maxShare, all.maxShare)
 }
 
+/** Pasformsmatrixen: hvert felt i helsidesoptagelsen er tegnet (lintBlankCells); fejlene lægges i sidens lint. */
+async function matrixPixels(page, png, lint) {
+  const cells = await page.evaluate(() => window.__matrixCells())
+  const scale = await page.evaluate(() => devicePixelRatio)
+  const r = await page.evaluate(([b64, cs, k]) => window.__lintBlankCells(b64, cs, k, { x: 0, y: 0 }), [png, cells, scale])
+  lint.errors.push(...r.errors)
+  lint.checks += r.checks
+  lint.matrixCells = cells.length
+  lint.cellPaperMax = r.maxPaper
+  lint.cellInkMin = r.minInk
+}
+
 try {
   for (const job of jobs) {
     const name = job.id ? `${job.route}-${job.id}` : job.route
@@ -203,7 +225,8 @@ try {
     const status = errors.length ? 'FEJL' : 'ok'
     const card =
       (lint.minCardFill !== undefined ? `, kort ≥ ${(lint.minCardFill * 100).toFixed(0)} %` : '') +
-      (lint.scenePanels !== undefined ? `, ${lint.scenePanels} scenepaneler, maks ${lint.maxScene} el./scene, største papirlyse flade ${(lint.blankMax * 100).toFixed(2)} %` : '')
+      (lint.scenePanels !== undefined ? `, ${lint.scenePanels} scenepaneler, maks ${lint.maxScene} el./scene, største papirlyse flade ${(lint.blankMax * 100).toFixed(2)} %` : '') +
+      (lint.matrixCells !== undefined ? `, ${lint.matrixCells} felter, største papirflade ${(lint.cellPaperMax * 100).toFixed(1)} %, mindst tegning ${(lint.cellInkMin * 100).toFixed(0)} %` : '')
     console.log(
       `${status.padEnd(4)} ${name.padEnd(18)} ${String(lint.rigs).padStart(3)} dyr, ${String(lint.items).padStart(3)} genstande, ` +
         `${String(lint.checks).padStart(4)} tjek, maks ${lint.maxAnimal} el./dyr, ${lint.maxItem} el./genstand${card} → ${path.relative(root, file)}`,
