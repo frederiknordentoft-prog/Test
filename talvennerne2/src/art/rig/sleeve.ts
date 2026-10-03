@@ -127,19 +127,27 @@ export interface LongArm {
   seams: readonly (readonly Vec[])[]
 }
 
+/** Forholdet mellem ærmets top- og bundbredde, over hvilket ærmet smalner langs forbenet (hest og enhjørning: 1,25). */
+const TAPER_KNEE = 1.15
+
 /**
  * Ærmet som et rør langs den lodrette arm (armens ramme: skulderleddet i (0,0), poten nedad): halv bredde
  * `wTop` ved `top` (skulderen under hovedet) og `wBottom` ved manchetten `cuffY`; underdelen starter
  * `overlap` over skulderleddet, så pelsens rod aldrig titter frem.
  */
 export function longArm(top: number, cuffY: number, wTop: number, wBottom: number, overlap = 12): LongArm {
-  const w = (y: number) => wBottom + ((wTop - wBottom) * (cuffY - y)) / (cuffY - top)
+  // Et ærme, der skal smalne tydeligt (hest og enhjørning, review G2-r2 T5: ca. 20 % smallere forneden), holder
+  // skulderens bredde ned til skulderleddet og smalner først langs forbenet, hvor det ses; ellers lineært.
+  const knee = wTop / wBottom > TAPER_KNEE
+  const w = (y: number) =>
+    knee ? wBottom + ((wTop - wBottom) * Math.min(1, Math.max(0, cuffY - y) / cuffY)) : wBottom + ((wTop - wBottom) * (cuffY - y)) / (cuffY - top)
   const y0 = -overlap
   const yb = cuffY + 2.2
   const r = Math.min(3, wBottom * 0.3)
-  const left: Vec[] = [[-w(y0), y0], [-w((y0 + cuffY) / 2), (y0 + cuffY) / 2], [-w(yb - r), yb - r]]
+  const side = knee ? [y0, 0, cuffY / 2, yb - r] : [y0, (y0 + cuffY) / 2, yb - r]
+  const left: Vec[] = side.map((y) => [-w(y), y])
   const bottom: Vec[] = [[-w(yb) + r * 0.3, yb - r * 0.15], [0, yb + 0.4], [w(yb) - r * 0.3, yb - r * 0.15]]
-  const right: Vec[] = [[w(yb - r), yb - r], [w((y0 + cuffY) / 2), (y0 + cuffY) / 2], [w(y0), y0]]
+  const right: Vec[] = [...side].reverse().map((y) => [w(y), y])
   const loop = [...left, ...bottom, ...right]
   const seam = (side: 1 | -1): Vec[] => [[side * w(top), top], [side * w((top + 2) / 2), (top + 2) / 2], [side * w(2), 2]]
   return { d: spline(loop, 0.5), seams: [seam(-1), seam(1)] }

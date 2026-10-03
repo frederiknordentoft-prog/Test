@@ -96,6 +96,29 @@ const TAIL_RAISED: Vec[] = [
 const TAIL_RAISED_STRANDS: Vec[][] = [[[4, -10], [12, -20], [22, -24], [29, -17], [30, -4]]]
 
 /**
+ * Pandetotten (review G2-r2 §3.3 og §6, Hest): shetland og araber har en tot pandehår, der rejser sig over issen
+ * mellem ørerne, så de også i sort skilles fra bølgemanke-enhjørningen på andet end hornet: shetlandsponyen en
+ * bred, busket vifte af tre lokker, araberen en kløvet lok med to spidser. Totten er bred forneden og skæv, så den
+ * aldrig læses som et horn. Den vokser op bag pandelokken (som tegnes ovenpå) og ligger under hatte (som fjordtoppen).
+ */
+const TUFT_SHET: Vec[] = [
+  [87, 47], [86, 41], [87.6, 36], [90.4, 32.6], [93.6, 35.2], [95.6, 31], [99.8, 27.6], [103.4, 30.6], [105.6, 34.6],
+  [109.4, 31.8], [112.4, 35], [113.6, 40.4], [113, 47],
+]
+const TUFT_SHET_STRANDS: Vec[][] = [[[96, 44], [97.4, 37], [99.6, 31]], [[105, 44], [106.6, 39], [109, 34.6]]]
+const TUFT_ARAB: Vec[] = [
+  [92.6, 47], [92, 41.4], [93.2, 36.6], [91.2, 32.4], [96.4, 33.4], [99.8, 36.4], [102.4, 31.6], [105.8, 34.8], [107.6, 40], [107.4, 47],
+]
+/** Pandelokken med totten bagved (uden hat); under en hat kun pandelokken. */
+const withTuft = (forelock: Part, tuft: Part): Part => (p) =>
+  p.hat ? forelock(p) : (
+    <>
+      {tuft(p)}
+      {forelock(p)}
+    </>
+  )
+
+/**
  * Føllenes hale er større (review G1-r4: den mindste araber og shetlandspony læstes som en kat i silhuet), så den
  * står tydeligt frem ved siden af den lille krop. Halen skaleres om sin rod (tailBase).
  */
@@ -281,7 +304,10 @@ export const horse: SpeciesDef = {
           strands: MANE_THICK_STRANDS.map((s) => dy(s, SHET_DY)),
           pivot: { at: [100, 46 + SHET_DY], cls: TOSS },
         }),
-        ManeFront: hairShape(dy(FORELOCK_BIG, SHET_DY), { strands: FORELOCK_BIG_STRANDS.map((s) => dy(s, SHET_DY)) }),
+        ManeFront: withTuft(
+          hairShape(dy(FORELOCK_BIG, SHET_DY), { strands: FORELOCK_BIG_STRANDS.map((s) => dy(s, SHET_DY)) }),
+          hairShape(dy(TUFT_SHET, SHET_DY), { strands: TUFT_SHET_STRANDS.map((s) => dy(s, SHET_DY)) }),
+        ),
         Tail: stagedTail(hairShape(TAIL_THICK, { strands: TAIL_THICK_STRANDS })),
       },
       bounds: { head: { x0: 30, y0: 22, x1: 160, y1: 168 } },
@@ -313,7 +339,7 @@ export const horse: SpeciesDef = {
           strands: MANE_SILK_STRANDS.map((s) => dy(s, ARAB_DY)),
           pivot: { at: [100, 46 + ARAB_DY], cls: TOSS },
         }),
-        ManeFront: hairShape(dy(FORELOCK_CURL, ARAB_DY)),
+        ManeFront: withTuft(hairShape(dy(FORELOCK_CURL, ARAB_DY)), hairShape(dy(TUFT_ARAB, ARAB_DY))),
         Tail: stagedTail(hairShape(TAIL_RAISED, { strands: TAIL_RAISED_STRANDS }), 0.88),
         Muzzle: makeMuzzle(0.86),
       },
