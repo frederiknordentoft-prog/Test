@@ -101,7 +101,13 @@ for r in $RESERVED; do [ "$APP" = "$r" ] && die "'$APP' is reserved — choose a
 [ -f "$DIST/index.html" ] || die "no index.html in '$DIST' — build the app first (Vite: base './')"
 
 git fetch "$REMOTE" "$OVERVIEW_BRANCH" >/dev/null 2>&1 || die "cannot fetch $OVERVIEW_BRANCH"
-EXISTS=0; git ls-tree -r --name-only "$REMOTE/$OVERVIEW_BRANCH" | grep -qE "^$APP/" && EXISTS=1
+git rev-parse -q --verify "$REMOTE/$OVERVIEW_BRANCH^{commit}" >/dev/null \
+  || die "$REMOTE/$OVERVIEW_BRANCH not found after fetch (single-branch clone?)"
+# Is <app>/ already a folder on the overview branch? Ask git for the object at
+# <branch>:<app> directly — no pipeline. (The old `ls-tree -r | grep -q` broke
+# under pipefail: grep -q exits on the first match, ls-tree dies of SIGPIPE
+# (141), and the match counted as a failure.)
+EXISTS=0; [ "$(git cat-file -t "$REMOTE/$OVERVIEW_BRANCH:$APP" 2>/dev/null)" = tree ] && EXISTS=1
 [ "$EXISTS" = 1 ] && [ "$NEW" = 1 ] && die "'$APP' already exists — drop --new (this is an update)"
 [ "$EXISTS" = 0 ] && [ "$NEW" = 0 ] && die "'$APP' does not exist yet — it's a NEW app: re-run with --new and you'll add a front-page card"
 
