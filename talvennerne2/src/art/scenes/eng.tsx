@@ -250,6 +250,8 @@ const at = (p: Place, node: ReactNode) => <g transform={`translate(${n(p.x)} ${n
 const ROUND = { strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
 /** Konturbredde i lokale enheder (en tynd, farvet kontur som dyrenes, men lettere). */
 const SW = 1.9
+/** Jordskyggerne falder væk fra solen oppe til venstre: forskudt mod højre og ned, som i Hestebakkerne og Regnbueskoven. */
+export const SHADOW_SHIFT: Vec = [4.5, 3]
 
 /** Små blomster (fem runde kronblade) om punkter (x, y, r); kronbladene i én path, midterne i en anden. */
 function flowerPaths(pts: readonly (readonly [number, number, number])[]) {
@@ -377,7 +379,7 @@ function Garden({ t }: { t: RegionTier }) {
   const fl = flowerPaths([[-46, 4, 4.4], [-30, 6, 3.8], [-14, 5, 4.4], [4, 6, 3.8], [20, 5, 4.4], [38, 6, 3.8], [52, 4, 4]])
   return (
     <>
-      <path d={ellipse(10, 2, 70, 7)} fill={ENG.castShadow} opacity={0.2} />
+      <path d={ellipse(10 + SHADOW_SHIFT[0], 2 + SHADOW_SHIFT[1], 70, 7)} fill={ENG.castShadow} opacity={0.2} />
       <path d={join(rect(-36, -20, 4, 8), rect(1, -22, 4, 8), rect(33, -22, 4, 8))} fill={c('trunk')} />
       <path d={topiary} fill={c('hedgeLight')} stroke={c('hedgeShade')} strokeWidth={SW} {...ROUND} />
       <path d={shade} fill={c('hedgeShade')} opacity={0.35} />
@@ -491,7 +493,7 @@ function Bridge({ t }: { t: RegionTier }) {
   const rail = (dy: number) => join(spline(xs.map((x) => [x, archY(x) + dy - 11] as Vec)), ...[-27, -9, 9, 27].map((x) => poly([[x, archY(x) + dy - 11], [x, archY(x) + dy]], false)))
   return (
     <>
-      <path d={ellipse(5, 11, 30, 6.5)} fill={ENG.castShadow} opacity={0.3} />
+      <path d={ellipse(5 + SHADOW_SHIFT[0], 11 + SHADOW_SHIFT[1], 30, 6.5)} fill={ENG.castShadow} opacity={0.3} />
       <path d={rail(-5)} fill="none" stroke={c('woodDark')} strokeWidth={2.2} {...ROUND} />
       <path d={band(deckTop, deckBot)} fill={c('wood')} stroke={c('woodDark')} strokeWidth={SW} {...ROUND} />
       <path d={join(...[-18, -9, 0, 9, 18].map((x) => poly([[x, archY(x) - 4], [x, archY(x) + 5]], false)))} fill="none" stroke={c('woodDark')} strokeWidth={1.1} opacity={0.6} />
@@ -546,7 +548,7 @@ function Sign({ t }: { t: RegionTier }) {
   const c = paint(t)
   return (
     <>
-      <path d={ellipse(6, 1, 12, 2.6)} fill={ENG.castShadow} opacity={0.22} />
+      <path d={ellipse(6 + SHADOW_SHIFT[0] * 0.7, 1 + SHADOW_SHIFT[1] * 0.5, 12, 2.6)} fill={ENG.castShadow} opacity={0.22} />
       <path d={rect(-2, -30, 4, 31, 1.5)} fill={c('wood')} stroke={c('woodDark')} strokeWidth={1.3} {...ROUND} />
       <path d={poly([[-16, -45], [10, -45], [18, -36.5], [10, -28], [-16, -28]])} fill={ENG.signBoard} stroke={c('woodDark')} strokeWidth={1.6} {...ROUND} />
       <path d={join(poly([[-11, -39.5], [-8, -41.5], [-8, -31.5]], false), ellipse(2, -36.5, 3.8, 5))} fill="none" stroke={ENG.outline} strokeWidth={2} {...ROUND} />
@@ -764,16 +766,18 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
   const posts = fence.flat()
   // Bækkens sten langs bredden.
   const pebbles = join(...L.brook.slice(1, 5).map(([x, y], i) => ellipse(x + (brookW[i + 1] / 2 + 8 * K) * (i % 2 ? 1 : -1), y + 3 * K, 5 * K, 3 * K)))
-  // Jordskygger (solen oppe til venstre: skyggen falder mod højre).
+  // Jordskygger (solen oppe til venstre: skyggen falder mod højre og ned, forskudt med SHADOW_SHIFT).
+  const cast = (p: { x: number; y: number; s: number }, dx: number, dy: number, rx: number, ry: number) =>
+    ellipse(p.x + dx * p.s + SHADOW_SHIFT[0] * K, p.y + dy * p.s + SHADOW_SHIFT[1] * K, rx * p.s, ry * p.s)
   const castMid = join(
-    ellipse(L.house.x + 12 * L.house.s, L.house.y + 1.5 * L.house.s, 42 * L.house.s, 6.5 * L.house.s),
-    ...L.trees.filter((p) => !p.front).map((p) => ellipse(p.x + 14 * p.s, p.y + 1.5 * p.s, 30 * p.s, 6 * p.s)),
-    ...L.bushes.filter((p) => !p.front).map((p) => ellipse(p.x + 8 * p.s, p.y + 1 * p.s, 22 * p.s, 4.5 * p.s)),
+    cast(L.house, 12, 1.5, 42, 6.5),
+    ...L.trees.filter((p) => !p.front).map((p) => cast(p, 14, 1.5, 30, 6)),
+    ...L.bushes.filter((p) => !p.front).map((p) => cast(p, 8, 1, 22, 4.5)),
   )
   const castNear = join(
-    ellipse(L.den.x + 14 * L.den.s, L.den.y + 2 * L.den.s, 82 * L.den.s, 9 * L.den.s),
-    ...L.trees.filter((p) => p.front).map((p) => ellipse(p.x + 14 * p.s, p.y + 1.5 * p.s, 30 * p.s, 6 * p.s)),
-    ...L.bushes.filter((p) => p.front).map((p) => ellipse(p.x + 8 * p.s, p.y + 1 * p.s, 22 * p.s, 4.5 * p.s)),
+    cast(L.den, 14, 2, 82, 9),
+    ...L.trees.filter((p) => p.front).map((p) => cast(p, 14, 1.5, 30, 6)),
+    ...L.bushes.filter((p) => p.front).map((p) => cast(p, 8, 1, 22, 4.5)),
   )
   // Små buske spredt i mellemgrunden (Tællelunden), så engen mellem kendetegnene ikke står flad og tom.
   const scatter = (L.wide ? [0.19, 0.255, 0.33, 0.4, 0.465, 0.535] : [0.24, 0.31, 0.385, 0.83]).map((u, i) => {
@@ -783,7 +787,7 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
     return [x, y, K * (0.75 + hash01(i + 701) * 0.4)] as const
   })
   const scrub = join(...scatter.map(([x, y, s]) => scallop(x, y - 6 * s, 11 * s, 7 * s, 5, 0.6, -80)))
-  const scrubShade = join(...scatter.map(([x, y, s]) => join(lune(x + 1 * s, y - 5.5 * s, 10 * s, 6 * s, 2.8 * s, 20, 160), ellipse(x + 8 * s, y + 0.5 * s, 12 * s, 2.6 * s))))
+  const scrubShade = join(...scatter.map(([x, y, s]) => join(lune(x + 1 * s, y - 5.5 * s, 10 * s, 6 * s, 2.8 * s, 20, 160), ellipse(x + 8 * s + SHADOW_SHIFT[0] * K, y + 0.5 * s + SHADOW_SHIFT[1] * K, 12 * s, 2.6 * s))))
   // Forgrundens græskant langs bunden (rammer dioramaet ind).
   const tufts = Array.from({ length: Math.ceil(w / (30 * K)) + 1 }, (_, i) => [i * 30 * K + hash01(i + 7) * 10 * K, h + 2, K * (0.9 + hash01(i + 3) * 0.6)] as const)
   // Regnbuen (guld i hele dalen) og glimtene (guld) i luften og på vandet.
@@ -835,7 +839,7 @@ export function EngArt({ w, h, tiers, className, svgRef }: EngArtProps) {
       {/* lag 1: de fjerne bakker med trærække og mølle */}
       {layer(L.far, R.far, 'farHill', h * 0.045, 0.09)}
       <path d={farTrees} fill={tint('farTree', T.grove)} />
-      <path d={ellipse(L.mill.x + 10 * L.mill.s, L.mill.y + 1 * L.mill.s, 22 * L.mill.s, 4 * L.mill.s)} fill={ENG.castShadow} opacity={0.16} />
+      <path d={cast(L.mill, 10, 1, 22, 4)} fill={ENG.castShadow} opacity={0.16} />
       {at(L.mill, <Mill chroma={valley} />)}
       {/* lag 2: markerne med læhegn */}
       {layer(L.fields, R.fields, 'fieldHill', h * 0.05, 0.1)}

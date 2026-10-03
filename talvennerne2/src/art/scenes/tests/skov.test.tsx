@@ -11,7 +11,7 @@ import { REGIONS } from '../../../content/curriculum'
 import type { RegionTier } from '../../../meta/rewards'
 import SkovScene, {
   BRIDGE_ARCHES, CRYSTAL_GRID, GARDEN_FIGURES, MOUNTAIN_STEPS, RULER_POSTS, SKOV_REGIONS, SMALL_STONES, SkovArt,
-  bridgeHalf, layoutOf, meadowFence, streamGap, streamWidths,
+  SHADOW_SHIFT, bridgeHalf, layoutOf, meadowFence, streamGap, streamWidths,
 } from '../skov'
 import { SKOV, tintSkov } from '../palette'
 
@@ -134,7 +134,12 @@ describe('Regnbueskoven · scene', () => {
     expect(P.k).toBeGreaterThan(0.6)
   })
 
-  it('lyset kommer fra én retning: solen står oppe til venstre i alle formater', () => {
+  it('lyset kommer fra én retning: solen står oppe til venstre i alle formater, og jordskyggerne falder 3–6 px mod højre og ned', () => {
+    const [dx, dy] = SHADOW_SHIFT
+    expect(dx).toBeGreaterThan(0)
+    expect(dy).toBeGreaterThan(0)
+    expect(Math.hypot(dx, dy)).toBeGreaterThanOrEqual(3)
+    expect(Math.hypot(dx, dy)).toBeLessThanOrEqual(6)
     for (const [w, h] of SIZES) {
       const L = layoutOf(w, h)
       expect(L.sun.x / w, `${w}·${h}`).toBeLessThan(0.25)

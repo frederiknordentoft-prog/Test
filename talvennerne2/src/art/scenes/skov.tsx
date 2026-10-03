@@ -309,6 +309,11 @@ const at = (p: Place, node: ReactNode) => <g transform={`translate(${n(p.x)} ${n
 const ROUND = { strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
 /** Konturbredde i lokale enheder (en tynd, farvet kontur som dyrenes, men lettere). */
 const SW = 1.9
+/**
+ * Jordskyggerne falder væk fra solen oppe til venstre: forskudt mod højre og ned (px ved k = 1, eller lokale
+ * enheder), så de ikke ligger lige under tingene (review G2-r2 §5.4, lys).
+ */
+export const SHADOW_SHIFT: Vec = [4.5, 3]
 
 /** Små blomster (fem runde kronblade) om punkter (x, y, r); kronbladene i én path, midterne i en anden. */
 function flowerPaths(pts: readonly (readonly [number, number, number])[]) {
@@ -429,10 +434,11 @@ function ridgeLight(r: Ridge, w: number, depth: number) {
     const y = ridgeY(r, w, x)
     // > 0: skrænten vender mod solen (stiger mod højre, når solen står til venstre)
     const f = clamp(-(ridgeY(r, w, x + 2) - ridgeY(r, w, x - 2)) / 4 / s0, -1, 1)
-    const away = clamp(-f * 1.5 + 0.1, 0, 1)
+    // skyggesiden begynder lige efter toppen og dækker hele skrænten ned mod dalen (review G2-r2 §5.4)
+    const away = clamp(-f * 1.6 + 0.25, 0, 1)
     const toward = clamp(f * 1.5 - 0.1, 0, 1)
     top.push([x, y])
-    shade.push([x, y + depth * away * away * (3 - 2 * away)])
+    shade.push([x, y + depth * 1.6 * away * away * (3 - 2 * away)])
     glow.push([x, y + depth * 0.4 * toward * toward * (3 - 2 * toward)])
     if (f > 0.05) run.push([x, y + 1])
     else {
@@ -654,7 +660,7 @@ function Bridge({ t, half }: { t: RegionTier; half: number }) {
   const b2 = bunting([0, deckY(0) - 15], [L, deckY(L) - 15], 6, 4)
   return (
     <>
-      <path d={ellipse(6, 18, L + 6, 5)} fill={SKOV.castShadow} opacity={0.28} />
+      <path d={ellipse(6 + SHADOW_SHIFT[0], 18 + SHADOW_SHIFT[1], L + 6, 5)} fill={SKOV.castShadow} opacity={0.28} />
       <path d={rail(-4)} fill="none" stroke={c('stoneShade')} strokeWidth={2} {...ROUND} />
       <path d={band(xs.map((x) => [x, deckY(x) - 4.5] as Vec), xs.map((x) => [x, deckY(x) + 0.5] as Vec))} fill={c('trail')} />
       <path d={body} fill={c('stone')} stroke={c('stoneShade')} strokeWidth={1.3} {...ROUND} />
@@ -927,7 +933,7 @@ function RulerPosts({ t }: { t: RegionTier }) {
   const top = ps[ps.length - 1]
   return (
     <>
-      <path d={join(...ps.map((p) => ellipse(p.x + 4, p.y + 0.5, 6, 1.6)))} fill={SKOV.castShadow} opacity={0.25} />
+      <path d={join(...ps.map((p) => ellipse(p.x + 4 + SHADOW_SHIFT[0] * 0.7, p.y + 0.5 + SHADOW_SHIFT[1] * 0.5, 6, 1.6)))} fill={SKOV.castShadow} opacity={0.25} />
       {full(t) ? (
         <>
           <path d={body((i) => i % 3 === 0)} fill={c('barA')} stroke={c('postShade')} strokeWidth={1.1} {...ROUND} />
@@ -979,7 +985,7 @@ function Garden({ t }: { t: RegionTier }) {
   return (
     <>
       <path d={blob([[-90, 2], [-82, -14], [-40, -22], [40, -24], [96, -18], [108, 0], [60, 6], [-40, 6]], 0.8)} fill={c('nearHill')} stroke={c('hedgeShade')} strokeWidth={1.2} {...ROUND} />
-      <path d={join(ellipse(-60, -4, 18, 3.2), ellipse(-28, -4, 11, 2.6), ellipse(60, -5, 16, 3), ellipse(92, -5, 14, 3))} fill={SKOV.castShadow} opacity={0.22} />
+      <path d={join(...[[-60, -4, 18, 3.2], [-28, -4, 11, 2.6], [60, -5, 16, 3], [92, -5, 14, 3]].map(([x, y, rx, ry]) => ellipse(x + SHADOW_SHIFT[0], y + SHADOW_SHIFT[1], rx, ry)))} fill={SKOV.castShadow} opacity={0.22} />
       <path d={blob([[-34, -4], [-30, -24], [42, -24], [46, -4], [6, -1]], 0.7)} fill={c('soil')} stroke={c('woodDark')} strokeWidth={1} {...ROUND} />
       <path d={poly([[6, -24], [6, -3]], false)} fill="none" stroke={c('trail')} strokeWidth={2.4} {...ROUND} />
       <path d={pots} fill={c('wood')} stroke={c('woodDark')} strokeWidth={1} {...ROUND} />
@@ -1193,7 +1199,7 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
     return [x, y, K * (0.85 + hash01(i + 701) * 0.4)] as const
   })
   const scrub = join(...bushes.map(([x, y, s]) => scallop(x, y - 7 * s, 13 * s, 8 * s, 6, 0.6, -80)))
-  const scrubShade = join(...bushes.map(([x, y, s]) => join(lune(x + 1 * s, y - 6.5 * s, 12 * s, 7 * s, 3.2 * s, 20, 160), ellipse(x + 9 * s, y + 0.5 * s, 14 * s, 2.8 * s))))
+  const scrubShade = join(...bushes.map(([x, y, s]) => join(lune(x + 1 * s, y - 6.5 * s, 12 * s, 7 * s, 3.2 * s, 20, 160), ellipse(x + 9 * s + SHADOW_SHIFT[0] * K, y + 0.5 * s + SHADOW_SHIFT[1] * K, 14 * s, 2.8 * s))))
   // Regnbuelyset: skrå stråler oppe fra venstre ned i lysningerne.
   const shafts = L.glades.flatMap((p, j) =>
     (['shaft1', 'shaft2', 'shaft3', 'shaft4'] as const).map((c, i) => {
@@ -1224,7 +1230,8 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
   const postH = 15 * K
   const pebbles = join(...L.stream.slice(1, 4).map(([x, y], i) => ellipse(x + (sw[i + 1] / 2 + 8 * K) * (i % 2 ? 1 : -1), y + 3 * K, 4.6 * K, 2.8 * K)))
   // Jordskygger (solen oppe til venstre: skyggen falder mod højre).
-  const cast = (p: Place, dx: number, rx: number, ry: number) => ellipse(p.x + dx * p.s, p.y + 1.5 * p.s, rx * p.s, ry * p.s)
+  const cast = (p: Place, dx: number, rx: number, ry: number) =>
+    ellipse(p.x + dx * p.s + SHADOW_SHIFT[0] * K, p.y + 1.5 * p.s + SHADOW_SHIFT[1] * K, rx * p.s, ry * p.s)
   const castMid = join(
     ...L.trees.filter((p) => !p.front).map((p) => cast(p, 14, 30, 6)),
   )
@@ -1233,7 +1240,8 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
     cast(L.farm, 22, 66, 6.5),
     cast(L.owl, 16, 30, 6),
     cast(L.panda, 6, 16, 3.5),
-    cast({ ...L.squirrels, x: L.squirrels.x + (L.squirrels.flip ? -1 : 1) * 4 * L.squirrels.s }, 14 * (L.squirrels.flip ? -1 : 1), 30, 6),
+    // egernenes træ: skyggen falder mod højre, også når grenen peger mod venstre
+    cast(L.squirrels, 14, 30, 6),
     ...L.trees.filter((p) => p.front).map((p) => cast(p, 14, 30, 6)),
   )
   // Forgrundens græskant langs bunden (rammer dioramaet ind).
@@ -1295,11 +1303,11 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
         )
       })}
       {/* lag 1: de fjerne, blålilla skovbakker */}
-      {layer(L.far, R.far, 'farHill', h * 0.04, 0.08)}
+      {layer(L.far, R.far, 'farHill', h * 0.04, 0.12)}
       <path d={farCrowns} fill={g('farForest')} />
       {at(L.mountain, <Mountain t={T.mountain} />)}
       {/* lag 2: skovbakken med de høje kroner og tårnet, der rager op over dem */}
-      {layer(L.mid, R.mid, 'midHill', h * 0.1, 0.12)}
+      {layer(L.mid, R.mid, 'midHill', h * 0.1, 0.17)}
       {at(L.tower, <Tower t={T.tower} />)}
       {forest(rowA, 'a')}
       <path d={groveTrunks} fill={g('trunk')} stroke={g('trunkDark')} strokeWidth={1.2 * K} />
@@ -1313,7 +1321,7 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
         {shafts.map((s, i) => <path key={i} d={s.d} fill={g(s.c)} opacity={n(0.13 + 0.17 * progress)} />)}
       </g>
       {/* lag 3: engen ved søen og forgrunden */}
-      {layer(L.near, R.near, 'nearHill', h * 0.12, 0.14)}
+      {layer(L.near, R.near, 'nearHill', h * 0.12, 0.19)}
       <path d={join(...spots.filter((_, i) => i % 2 === 0).map(([x, y, r]) => circle(x, y, r)))} fill={SKOV.flowerWhite} opacity={0.9} />
       <path d={join(...spots.filter((_, i) => i % 2 === 1).map(([x, y, r]) => circle(x, y, r)))} fill={g('flowerYellow')} />
       <path d={castNear} fill={SKOV.castShadow} opacity={0.22} />
