@@ -14,6 +14,21 @@ function clockText(minutes: number, style: 'analog' | 'analogHalfForm' | 'digita
   return `kl. ${hour}.${String(m % 60).padStart(2, '0')}`
 }
 
+/**
+ * A clock strategy says the dial's numbers in its own words ("Ved hele timer peger den lange viser på
+ * tolv."), and its { num } parts are numerals: on screen both are numerals, like the dial beside them
+ * (QA2 P3-2: "… på tolv. Den lille viser peger på 12."). The voice keeps the words. Only the hour
+ * words: "en halv time" and "et kvarter" stay as they are.
+ */
+const DIAL_WORDS: Readonly<Record<string, string>> = {
+  to: '2', tre: '3', fire: '4', fem: '5', seks: '6', syv: '7', otte: '8', ni: '9', ti: '10', elleve: '11', tolv: '12',
+}
+const DIAL_WORD = /(?<![\p{L}\d])(to|tre|fire|fem|seks|syv|otte|ni|ti|elleve|tolv)(?![\p{L}\d])/gu
+
+export function dialNumerals(text: string): string {
+  return text.replace(DIAL_WORD, (w) => DIAL_WORDS[w] ?? w)
+}
+
 const QUESTION = /^(hv[a-zæøå]*|er|kan|har|passer|bliver|giver|tæller|skal|vil|må)(?=[\s,]|$)|(^|\s)hvad(?=[\s,?]|$)/i
 
 function close(words: string[]): string | null {
@@ -37,8 +52,9 @@ export function displayText(parts: readonly SpeechPart[], textOf: (id: ClipId) =
   }
   for (const p of parts) {
     if ('clip' in p) {
-      const text = textOf(p.clip)
-      if (!text || text === p.clip) continue
+      const said = textOf(p.clip)
+      if (!said || said === p.clip) continue
+      const text = p.clip.startsWith('hint.clock.') ? dialNumerals(said) : said
       if (/^[A-ZÆØÅ]/.test(text) && !p.clip.startsWith('name.') && words.length > 0) flush()
       words.push(text)
       if (/[.?!]$/.test(text) || /(^|\.)end(\.|$)/.test(p.clip) || p.clip.startsWith('q.')) flush()

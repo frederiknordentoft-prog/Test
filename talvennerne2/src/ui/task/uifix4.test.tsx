@@ -1,5 +1,7 @@
 // QA2's P3 findings in the task views (UIFIX4): the number line's shadow never stands on the answer
-// (P3-10), and the pay tray counts every quick tap and drag exactly once (P3-15).
+// (P3-10), the pay tray counts every quick tap and drag exactly once (P3-15), the seesaw never lies
+// about its sides nor gives the answer away (P3-5), and skip counting hops on the row's own numbers
+// (P3-7).
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { factsOf, keysForSkills, skillRegistry } from '../../engine/registry'
@@ -13,6 +15,9 @@ import { NumberlineView, shadowStart } from './numberline/View'
 import { MAX_TRAY, payValue, trayWith, trayWithout } from './pay/logic'
 import type { Piece } from './pay/logic'
 import { PayView } from './pay/View'
+import { PromptScene, evenHops, seesawLean } from '../scenes/PromptScene'
+import { hintFor } from '../hint/hintFor'
+import { HintVisual } from '../hint/HintVisual'
 
 const reg = skillRegistry()
 const noop = () => undefined
@@ -130,5 +135,94 @@ describe('quick taps and drags in the pay tray (QA2 P3-15)', () => {
     expect(css).toMatch(rule('.tv-pay__piece'))
     expect(css).toMatch(rule('.tv-pay__face'))
     expect(css).toMatch(/\.tv-pay__tray \{[^}]*min-height: calc\(2 \*/)
+  })
+})
+
+describe('the seesaw (QA2 P3-5)', () => {
+  const tf = (id: string) => {
+    const def = reg.get('equalSides')!
+    const f = factsOf(def).find((x) => x.id === id) ?? { id, skill: def.id, family: 'trueFalse', operands: [], answer: 0, rank: 0 }
+    return buildTask(def, f, 'trueFalse', makeRng(1), 0).task
+  }
+  const sides = (t: Task) => (t.prompt.scene === 'balance' ? t.prompt : null)!
+
+  it('rests on its blocks while the child judges, and then shows the truth', () => {
+    const wrong = tf('eqs:tf:7+2=9+_:2') // 7 + 2 = 9 + 2: the right side is heavier
+    expect(seesawLean(sides(wrong), 'empty')).toBe('held')
+    expect(seesawLean(sides(wrong), 'oops')).toBe(1)
+    expect(seesawLean(sides(wrong), 'good')).toBe(1)
+    const right = tf('eqs:tf:7+2=_:9')
+    expect(seesawLean(sides(right), 'empty')).toBe('held')
+    expect(seesawLean(sides(right), 'good')).toBe(0)
+    const ask = renderToStaticMarkup(<PromptScene prompt={wrong.prompt} task={wrong} />)
+    expect(ask).toContain('is-held')
+    expect(ask).toContain('data-lean="held"')
+    const after = renderToStaticMarkup(<PromptScene prompt={wrong.prompt} task={wrong} slot="oops" />)
+    expect(after).not.toContain('is-held')
+    expect(after).toContain('data-lean="1"')
+  })
+
+  it('is level after the answer exactly when the statement is true, for every true/false card', () => {
+    const k = keysForSkills([{ skill: 'equalSides' }], { skills: reg, states: {}, audioVerified: true, mode: 'round' })
+    let n = 0
+    for (const key of k) {
+      if (!key.kinds.includes('trueFalse')) continue
+      for (let i = 0; i < 30; i++) {
+        const t = key.build('trueFalse', makeRng(i + 11), i)
+        const lean = seesawLean(sides(t), 'good')
+        expect(lean === 0, t.factId).toBe(t.answer === 'yes')
+        n++
+      }
+    }
+    expect(n).toBeGreaterThan(20)
+  })
+
+  it('shows the strategy\'s seesaw as it is: down on the heavier side, and the words name the seesaw', () => {
+    const t = tf('eqs:tf:7+2=9+_:2')
+    const h = hintFor(t, 'yes', reg)
+    expect(h.misconception).toBe('equalsAsAnswer')
+    const html = renderToStaticMarkup(<HintVisual visual={h.visual} />)
+    expect(html).toContain('data-lean="1"')
+    // a blank answered right is level; answered wrong, the blocks stay
+    const def = reg.get('equalSides')!
+    const keypad = buildTask(def, { id: 'eqs:add:8+4=_+5:7', skill: def.id, family: 'balanceAdd', operands: [], answer: 7, rank: 0 }, 'keypad', makeRng(1), 0).task
+    expect(seesawLean(sides(keypad), 'good')).toBe(0)
+    expect(seesawLean(sides(keypad), 'oops')).toBe('held')
+    expect(seesawLean(sides(keypad), 'active')).toBe('held')
+  })
+})
+
+describe('skip counting hops on the row\'s own numbers (QA2 P3-7)', () => {
+  const labels = (html: string) => [...html.matchAll(/<text[^>]*>(\d+)<\/text>/g)].map((m) => Number(m[1]))
+
+  it('numbers the line at every hop: 420, 520, 620, 720, 820 — never only the hundreds', () => {
+    const def = reg.get('skipCount')!
+    const t = buildTask(def, { id: 'skc:step100:420:3', skill: def.id, family: 'step100', operands: [420, 520, 620], answer: 720, rank: 0 }, 'fillSlots', makeRng(1), 0).task
+    const h = hintFor(t, '621|622', reg)
+    expect(h.visual).toMatchObject({ scene: 'line', min: 420, max: 820, hops: [420, 520, 620, 720, 820] })
+    const html = renderToStaticMarkup(<HintVisual visual={h.visual} />)
+    for (const n of [420, 520, 620, 720, 820]) expect(labels(html), String(n)).toContain(n)
+    expect(labels(html)).not.toContain(400)
+    expect(labels(html)).not.toContain(500)
+  })
+
+  it('does so for every family, back10 and the offset tens included', () => {
+    const def = reg.get('skipCount')!
+    for (const fact of factsOf(def)) {
+      for (const kind of ['choice', 'fillSlots'] as const) {
+        const t = buildTask(def, fact, kind, makeRng(2), 0).task
+        const v = hintFor(t, null, reg).visual
+        if (v.scene !== 'line') continue
+        const html = renderToStaticMarkup(<HintVisual visual={v} />)
+        for (const stop of v.hops ?? []) expect(labels(html), `${fact.id} ${kind} ${stop}`).toContain(stop)
+      }
+    }
+  })
+
+  it('leaves uneven hops and wider lines to the line\'s own numbers', () => {
+    expect(evenHops(0, 20, [7, 10, 13])).toBeNull()
+    expect(evenHops(0, 100, [0, 30, 37])).toBeNull()
+    expect(evenHops(400, 900, [420, 520, 620])).toBeNull()
+    expect(evenHops(57, 87, [87, 77, 67, 57])).toEqual({ every: 10 })
   })
 })

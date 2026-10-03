@@ -5,7 +5,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { Prompt, Task, Term } from '../../engine/types'
 import {
   AnalogClock, BarChart, Base10Group, CoordGrid, DigitalClock, FractionBars, FractionShape,
-  HundredBoard, NumberLine, Pictogram, Ruler, RULER, Seesaw, Shape2D, Solid3D, SquareGrid, Thing,
+  HundredBoard, NumberLine, Pictogram, Ruler, RULER, Seesaw, Shape2D, Solid3D, SquareGrid, Thing, niceStep,
 } from '../../art/materials'
 import { Rig } from '../../art/rig/Rig'
 import { Equation } from '../design/Equation'
@@ -68,6 +68,52 @@ export function equationLines(terms: readonly Term[]): [Term[], Term[]] | null {
   return hasEquals(first) && hasEquals(second.slice(1)) ? [first, second] : null
 }
 
+/**
+ * A line that is all hops of one length, end to end (skip counting: 420 → 520 → … → 820), is numbered
+ * at every hop, so each hop starts and lands on a number (QA2 P3-7). `step` is set only when the
+ * line's own tick step would miss the hops. Null for uneven hops, a line wider than its hops, or one
+ * that would get more than 12 numbers.
+ */
+export function evenHops(min: number, max: number, hops?: readonly number[]): { every: number; step?: number } | null {
+  if (!hops || hops.length < 2) return null
+  const d = Math.abs(hops[1] - hops[0])
+  if (d === 0 || hops.some((h, i) => i > 0 && Math.abs(h - hops[i - 1]) !== d)) return null
+  if (Math.min(...hops) !== min || Math.max(...hops) !== max || (max - min) / d > 12) return null
+  const tick = niceStep(max - min)
+  return d % tick === 0 ? { every: d } : { every: d, step: d }
+}
+
+/** A seesaw side's weight: its numbers worked out left to right, or null while it has a blank. */
+export function sideWeight(terms: readonly Term[]): number | null {
+  let total = 0
+  let sign = 1
+  for (const t of terms) {
+    if ('n' in t) total += sign * t.n
+    else if ('op' in t) sign = t.op === '−' ? -1 : t.op === '+' ? 1 : NaN
+    else return null
+  }
+  return Number.isFinite(total) ? total : null
+}
+
+/** −1: the left side down, 0: level, 1: the right side down, held: resting on its blocks. */
+export type SeesawLean = -1 | 0 | 1 | 'held'
+
+/**
+ * Which way the seesaw leans (QA2 P3-5). A level seesaw reads as "lige meget", so it is level only
+ * when both sides weigh the same, and otherwise goes down on the heavier side: it never lies. While
+ * the child still judges the sides (`slot` empty or active) it rests level on two blocks, since its
+ * lean would be the answer; once the answer is in, the blocks go and it shows the truth. A blank side
+ * weighs what was answered only when that was right (level); a wrong number in it keeps the blocks.
+ * A picture without a task (`slot` null: a strategy) always shows the truth.
+ */
+export function seesawLean(p: { left: readonly Term[]; right: readonly Term[] }, slot: BlankSlot | null): SeesawLean {
+  if (slot === 'empty' || slot === 'active') return 'held'
+  const l = sideWeight(p.left)
+  const r = sideWeight(p.right)
+  if (l === null || r === null) return slot === 'good' ? 0 : 'held'
+  return l === r ? 0 : l > r ? -1 : 1
+}
+
 export function PromptScene(props: PromptSceneProps) {
   const { prompt, className, entry } = props
   let style: CSSProperties | undefined
@@ -112,7 +158,19 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
       // point at the answer (UI-fund 1)
       const marks = task?.kind === 'choice' && p.arrowAt === undefined ? task.options.filter((o): o is number => typeof o === 'number') : []
       if (marks.length > 0) return <MarkedLine min={p.min} max={p.max} marks={marks} hops={p.hops} endsOnly={endsOnly} className="tv-scene__line" />
-      return <NumberLine min={p.min} max={p.max} arrowAt={p.arrowAt} target={p.target} hops={p.hops} endsOnly={endsOnly} className="tv-scene__line" />
+      const even = endsOnly ? null : evenHops(p.min, p.max, p.hops)
+      return (
+        <NumberLine
+          min={p.min}
+          max={p.max}
+          arrowAt={p.arrowAt}
+          target={p.target}
+          hops={p.hops}
+          endsOnly={endsOnly}
+          {...(even ? { labelEvery: even.every, ...(even.step ? { step: even.step } : {}) } : {})}
+          className="tv-scene__line"
+        />
+      )
     }
     case 'board':
       return (
@@ -143,8 +201,22 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
       return <DotArray rows={p.rows} cols={p.cols} split={p.split} />
     case 'share':
       return <ShareScene total={p.total} recipients={p.recipients} thing={p.thing} />
-    case 'balance':
-      return <Seesaw tilt={0} width={300} left={<TermsChip terms={p.left} entry={entry} slot={slot} />} right={<TermsChip terms={p.right} entry={entry} slot={slot} />} className="tv-scene__seesaw" />
+    case 'balance': {
+      const lean = seesawLean(p, task ? slot : null)
+      return (
+        <div className={cx('tv-seesaw', lean === 'held' && 'is-held')} data-lean={lean}>
+          <Seesaw
+            tilt={lean === 'held' ? 0 : lean}
+            width={300}
+            left={<TermsChip terms={p.left} entry={entry} slot={slot} />}
+            right={<TermsChip terms={p.right} entry={entry} slot={slot} />}
+            className="tv-scene__seesaw"
+          />
+          <span className="tv-seesaw__block is-left" aria-hidden />
+          <span className="tv-seesaw__block is-right" aria-hidden />
+        </div>
+      )
+    }
     case 'solid':
       return p.asObject ? <ObjectIcon id={p.asObject} size={150} /> : <Solid3D solid={p.solid} size={160} />
     case 'symmetry':

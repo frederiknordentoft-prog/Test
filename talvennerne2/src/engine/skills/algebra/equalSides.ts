@@ -20,7 +20,8 @@
 // Hint: work out the whole side, then the missing number — "Regn først den side ud, hvor der ikke
 // mangler noget. Otte plus fire giver tolv. Den anden side skal også give tolv. Tolv minus fem giver
 // syv." True/false: "Otte plus fire giver tolv. Tolv plus fem giver sytten. Siderne giver ikke det
-// samme." equalsAsAnswer says what the equals sign means first (an animated hint, SPEC §4.3).
+// samme." equalsAsAnswer says what the equals sign means first, as the seesaw on the screen shows it:
+// "Vippen står lige, når der er lige meget på begge sider." (an animated hint, SPEC §4.3).
 import type { AnswerValue, ErrorTag, Fact, FamilyDef, HintSpec, Prompt, Rng, SkillModule, SpeechPart, TaskKind } from '../types'
 import type { Term } from '../../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
@@ -266,7 +267,9 @@ function askSays(e: Eq): SpeechPart[] {
 function hint(f: Fact, tag: ErrorTag | null, kind?: TaskKind): HintSpec {
   const e = parse(f)
   const x = solve(e)
-  const lead = tag === 'equalsAsAnswer' ? [say('hint.algebra2.sameBothSides')] : []
+  // the seesaw is all the child sees of the equals sign here (QA2 P3-5: "Lighedstegnet betyder …"
+  // spoke of a sign that is not on the screen)
+  const lead = tag === 'equalsAsAnswer' ? [say('hint.equalSides.sameBothSides')] : []
   const mark = (speech: SpeechPart[], visual: HintSpec['visual']) =>
     tag === 'equalsAsAnswer' ? hintOf(speech, visual, 'equalsAsAnswer', true) : hintOf(speech, visual)
   if (kind === 'trueFalse') {

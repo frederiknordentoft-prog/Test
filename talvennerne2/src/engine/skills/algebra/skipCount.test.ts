@@ -103,7 +103,13 @@ describe('skipCount', () => {
     expect(hintText(def, 'skc:step5:15:3', null, 'fillSlots')).toBe('Springet er fem. Femogtyve plus fem giver tredive. Tredive plus fem giver femogtredive.')
     expect(hintText(def, 'skc:back10:87:3', null)).toBe('Springet tilbage er ti. Syvogtres minus ti giver syvoghalvtreds.')
     expect(hintText(def, 'skc:step5:15:3', 'skipStepOne')).toMatch(/^Spring lige langt hver gang, ikke bare en\. Springet er fem\./)
-    expect(def.hint(findFact(def, 'skc:step5:15:3'), null).visual).toEqual({ scene: 'line', min: 10, max: 30, hops: [15, 20, 25, 30] })
+    // the line runs from the row's first number to the last answer, so the hops follow the row's own
+    // numbers (QA2 P3-7: 420 → 520 → 620 drawn on a 400–900 line read as 400 → 500 → 600)
+    expect(def.hint(findFact(def, 'skc:step5:15:3'), null).visual).toEqual({ scene: 'line', min: 15, max: 30, hops: [15, 20, 25, 30] })
+    expect(def.hint({ ...findFact(def, 'skc:step5:15:3'), id: 'skc:step100:420:3', family: 'step100' }, null, 'fillSlots').visual)
+      .toEqual({ scene: 'line', min: 420, max: 820, hops: [420, 520, 620, 720, 820] })
+    expect(def.hint({ ...findFact(def, 'skc:step5:15:3'), id: 'skc:back10:87:3', family: 'back10' }, null).visual)
+      .toEqual({ scene: 'line', min: 57, max: 87, hops: [87, 77, 67, 57] })
   })
 
   it('meets a swapped typed answer with the tens-first hint (digitSwap)', () => {
