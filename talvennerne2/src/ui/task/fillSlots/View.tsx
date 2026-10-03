@@ -1,21 +1,45 @@
 // fillSlots (SPEC §3.2): k empty places and a palette. A tap on the palette fills the next empty
 // place; a tap on a filled place empties it. When the prompt is a row with gaps (a bead pattern, a
-// skip-count), the gaps themselves are the places, so the row is drawn here; a fraction answer is
-// set as numerator over denominator.
+// skip-count) or an equation with blanks ("64 = ? + ?"), the gaps themselves are the places, so the
+// row or the equation is drawn here: the places are shown once (QA2 P3-13), and a wrong answer stands
+// number by number in its own place (QA2 P2-5), also on the strategy's struck answer and the confirm
+// button. A fraction answer is set as numerator over denominator.
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import type { AnswerValue, Task } from '../../../engine/types'
+import type { AnswerValue, Task, Term } from '../../../engine/types'
 import { playSfx } from '../../../audio/sfx'
+import { SpokenText } from '../../design/SpokenText'
 import { usePress } from '../../design/usePress'
 import { useSpeech } from '../../design/speech'
 import { cx } from '../../design/cx'
-import { slotCount, slotsValue, splitTokens } from '../answers'
+import { formatNumber, slotCount, slotsValue, splitTokens } from '../answers'
 import { CheckButton } from '../CheckButton'
 import { OptionFace } from '../faces'
 import type { FaceProps, TaskViewProps } from '../types'
 
-/** A row with gaps is the question and the answer at once. */
-export const fillSlotsOwnsPrompt = (t: Task) => t.prompt.scene === 'row' && t.prompt.cells.some((c) => c === null)
+/** The terms of an equation whose blanks are exactly the task's places ("64 = ? + ?"), else null. */
+export function equationPlaces(t: Task): Term[] | null {
+  if (t.prompt.scene !== 'equation') return null
+  return t.prompt.terms.filter((x) => 'blank' in x).length === slotCount(t) ? t.prompt.terms : null
+}
+
+/** A row with gaps, or an equation with blanks, is the question and the answer at once. */
+export const fillSlotsOwnsPrompt = (t: Task) => (t.prompt.scene === 'row' && t.prompt.cells.some((c) => c === null)) || equationPlaces(t) !== null
+
+/** An equation's numbers, signs and words around its places (each place drawn by `place`). */
+function EquationPlaces({ terms, place }: { terms: readonly Term[]; place(i: number): ReactNode }) {
+  let gap = 0
+  return (
+    <span className="tv-fill__eq" role="math">
+      {terms.map((x, j) => {
+        if ('blank' in x) return place(gap++)
+        if ('n' in x) return <span key={`t${j}`} className="tv-fill__num">{formatNumber(x.n)}</span>
+        if ('op' in x) return <span key={`t${j}`} className="tv-fill__op">{x.op}</span>
+        return <SpokenText key={`t${j}`} clip={x.text} silent className="tv-fill__word" />
+      })}
+    </span>
+  )
+}
 
 const fractionSlots = (t: Task) => t.optionView === 'fraction' && slotCount(t) === 2
 
@@ -45,8 +69,11 @@ export function FillSlotsView({ task, mode, given, onSubmit, onActivity }: TaskV
     <Slot key={`s${i}`} value={shown[i] ?? null} task={task} active={input && i === next} state={state} disabled={!input} onPress={() => empty(i)} index={i} />
   )
 
+  const eq = equationPlaces(task)
   let places
-  if (fillSlotsOwnsPrompt(task) && task.prompt.scene === 'row') {
+  if (eq) {
+    places = <EquationPlaces terms={eq} place={slot} />
+  } else if (fillSlotsOwnsPrompt(task) && task.prompt.scene === 'row') {
     let gap = 0
     places = (
       <div className="tv-fill__row">
@@ -123,6 +150,22 @@ function Token({ children, disabled, onPress, value }: { children: ReactNode; di
 
 export function FillSlotsFace({ task, value, size }: FaceProps) {
   const items = splitTokens(value)
+  const eq = equationPlaces(task)
+  if (eq && items.length === slotCount(task)) {
+    // the whole equation with each number in its own place: "64 = 60 + 4", never "64" in the first
+    return (
+      <span className={cx('tv-face', `tv-face--${size}`, 'tv-fill__eqface')}>
+        <EquationPlaces
+          terms={eq}
+          place={(i) => (
+            <span key={`s${i}`} className="tv-minicard">
+              <OptionFace task={task} value={items[i]} size="sm" />
+            </span>
+          )}
+        />
+      </span>
+    )
+  }
   if (fractionSlots(task) && items.length === 2) {
     return (
       <span className={cx('tv-face', `tv-face--${size}`)}>
