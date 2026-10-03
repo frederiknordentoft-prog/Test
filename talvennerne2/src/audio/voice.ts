@@ -45,8 +45,10 @@ const FADE_S = 0.03
 
 // ─── Manifest and sprite files ─────────────────────────────────────────────
 
-// Lazy: the manifest lands in its own chunk. Both globs are empty until the voice is packed.
-const manifestLoaders = import.meta.glob<VoiceManifest>('../assets/voice/voice-manifest.json', { import: 'default' })
+// The manifest is data: a JSON file fetched when the voice is first needed, not a JS chunk (it grows
+// with every clip, and JSON.parse is cheaper than a module; SPEC §12's JS budget). Both globs are
+// empty until the voice is packed.
+const manifestUrls = import.meta.glob<string>('../assets/voice/voice-manifest.json', { eager: true, query: '?url', import: 'default' })
 const spriteUrls = import.meta.glob<string>('../assets/voice/*.mp3', { eager: true, query: '?url', import: 'default' })
 
 type UrlResolver = (file: string) => string | undefined
@@ -63,8 +65,10 @@ function loadIndex(): Promise<ManifestIndex | null> {
     const source =
       manifestSource ??
       (async () => {
-        const load = Object.values(manifestLoaders)[0]
-        return load ? await load() : null
+        const url = Object.values(manifestUrls)[0]
+        if (!url) return null
+        const res = await fetch(url)
+        return res.ok ? ((await res.json()) as VoiceManifest) : null
       })
     indexPromise = source().then(
       (m) => {

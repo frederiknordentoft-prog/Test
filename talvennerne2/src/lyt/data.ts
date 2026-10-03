@@ -5,7 +5,8 @@
 import type { VoiceManifest } from '../audio/manifest'
 import { LYT_FLAGS_KEY, localGetJson, localSetJson } from '../data/namespace'
 
-const manifestLoaders = import.meta.glob<VoiceManifest>('../assets/voice/voice-manifest.json', { import: 'default' })
+// Both are data files fetched at run time (assets, not JS chunks), like the app's voice (audio/voice.ts).
+const manifestUrls = import.meta.glob<string>('../assets/voice/voice-manifest.json', { eager: true, query: '?url', import: 'default' })
 const qaUrls = import.meta.glob<string>('../assets/voice/voice-qa.json', { eager: true, query: '?url', import: 'default' })
 
 export interface ClipQa {
@@ -30,10 +31,11 @@ export interface VoiceQa {
 }
 
 export async function loadManifest(): Promise<VoiceManifest | null> {
-  const load = Object.values(manifestLoaders)[0]
-  if (!load) return null
+  const url = Object.values(manifestUrls)[0]
+  if (!url) return null
   try {
-    return await load()
+    const res = await fetch(url)
+    return res.ok ? ((await res.json()) as VoiceManifest) : null
   } catch {
     return null
   }
