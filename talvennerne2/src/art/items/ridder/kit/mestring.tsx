@@ -172,7 +172,7 @@ export function aimFrame(P: Aim, size: number) {
   return { along, world, m: u * k * size, rot }
 }
 
-/** Modellens poter står på jorden fra denne højde (lange, lodrette forben); grebet er da lavere end `GROUND_PAW.grip`. */
+/** Poten står på jorden fra denne højde i modellen (lange, lodrette forben), og grebet ligger da under `grip` i verdensrummet (y). */
 const GROUND_PAW = { model: 205, grip: 195 }
 
 /**
