@@ -14,6 +14,7 @@ import { Rig, magicOf, resolveColorway } from '../art/rig/Rig'
 import type { RigProps } from '../art/rig/Rig'
 import EngScene, { ENG_REGIONS } from '../art/scenes/eng'
 import BakkeScene, { BAKKE_REGIONS } from '../art/scenes/bakke'
+import SkovScene, { SKOV_REGIONS } from '../art/scenes/skov'
 import type { RegionTier } from '../meta/rewards'
 import type { MapSceneProps } from '../ui/screens/child/map/Backdrop'
 import { MOODS, NATURAL_COLORWAYS, SPECIES_IDS, STAGES } from '../art/rig/types'
@@ -770,9 +771,29 @@ function BakkeFrame({ w, h, tiers, cap, sketch }: { w: number; h: number; tiers:
   )
 }
 
+// Regnbueskoven: alle fire tiers (alle regioner) i telefon, iPad på langs og iPad på tværs, og blandet fremgang
+// med kortets skitse ovenpå (telefon og iPad på tværs).
+const skovAt = (t: RegionTier): MapSceneProps['tiers'] => Object.fromEntries(Object.values(SKOV_REGIONS).map((r) => [r, t]))
+/** Blandet fremgang: de første regioner er nået længst. */
+const SKOV_MIXED: MapSceneProps['tiers'] = {
+  [SKOV_REGIONS.mountain]: 'gold', [SKOV_REGIONS.lake]: 'silver', [SKOV_REGIONS.cave]: 'silver', [SKOV_REGIONS.tower]: 'bronze',
+  [SKOV_REGIONS.farm]: 'bronze', [SKOV_REGIONS.bridge]: 'start', [SKOV_REGIONS.ruler]: 'start', [SKOV_REGIONS.garden]: 'start',
+}
+
+function SkovFrame({ w, h, tiers, cap, sketch }: { w: number; h: number; tiers: MapSceneProps['tiers']; cap: string; sketch?: 'phone' | 'ipad' }) {
+  return (
+    <Cell cap={cap} lint="" label={`scene skov ${cap}`}>
+      <div style={{ position: 'relative', width: w, height: h, overflow: 'hidden', borderRadius: 12 }}>
+        <SkovScene world="skov" tiers={tiers} className="sh-scene-art" />
+        {sketch && <MapSketch kind={sketch} />}
+      </div>
+    </Cell>
+  )
+}
+
 function SceneSheet() {
   return (
-    <Page title="Scener · Engdalen og Hestebakkerne" sub="Kortets baggrund for Engdalen i 393·852 (telefon) og 1180·820 (iPad på tværs) for tier start, bronze og guld (alle regioner), og med en skitse af kortets lag ovenpå (blandet fremgang). Derefter Hestebakkerne i alle fire tiers, også i 820·1180 (iPad på langs). Kun skyer, blade og hestehaler bevæger sig.">
+    <Page title="Scener · Engdalen, Hestebakkerne og Regnbueskoven" sub="Kortets baggrund for Engdalen i 393·852 (telefon) og 1180·820 (iPad på tværs) for tier start, bronze og guld (alle regioner), og med en skitse af kortets lag ovenpå (blandet fremgang). Derefter Hestebakkerne og Regnbueskoven i alle fire tiers, også i 820·1180 (iPad på langs). Kun skyer, blade, lysstråler og haler bevæger sig.">
       <style>{'.sh-scene-art{position:absolute;inset:0;width:100%;height:100%}'}</style>
       <Section title="telefon · 393·852">
         <div className="sh-row" style={{ alignItems: 'flex-start' }}>
@@ -801,6 +822,23 @@ function SceneSheet() {
         <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 2420 }}>
           {BAKKE_TIERS.map((t) => <BakkeFrame key={t} w={1180} h={820} tiers={bakkeAt(t)} cap={`1180·820 · ${t}`} />)}
           <BakkeFrame w={1180} h={820} tiers={BAKKE_MIXED} cap="1180·820 · blandet · med kortet" sketch="ipad" />
+        </div>
+      </Section>
+      <Section title="Regnbueskoven · telefon · 393·852">
+        <div className="sh-row" style={{ alignItems: 'flex-start' }}>
+          {BAKKE_TIERS.map((t) => <SkovFrame key={t} w={393} h={852} tiers={skovAt(t)} cap={`393·852 · ${t}`} />)}
+          <SkovFrame w={393} h={852} tiers={SKOV_MIXED} cap="393·852 · blandet · med kortet" sketch="phone" />
+        </div>
+      </Section>
+      <Section title="Regnbueskoven · iPad på langs · 820·1180">
+        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 1700 }}>
+          {BAKKE_TIERS.map((t) => <SkovFrame key={t} w={820} h={1180} tiers={skovAt(t)} cap={`820·1180 · ${t}`} />)}
+        </div>
+      </Section>
+      <Section title="Regnbueskoven · iPad på tværs · 1180·820">
+        <div className="sh-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', width: 2420 }}>
+          {BAKKE_TIERS.map((t) => <SkovFrame key={t} w={1180} h={820} tiers={skovAt(t)} cap={`1180·820 · ${t}`} />)}
+          <SkovFrame w={1180} h={820} tiers={SKOV_MIXED} cap="1180·820 · blandet · med kortet" sketch="ipad" />
         </div>
       </Section>
     </Page>
