@@ -40,7 +40,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn, stage, solo }) => {
   const lit = S.litCopy(DOME, [-24, -10], 0.88)
   const pl = plumeAt(horn)
   // Busken skaleres ned, hvor der er mindre plads over hovedet (stor på de høje arter), dog højst til 0,6.
-  const f = Math.max(0.6, Math.min(1, (pl.y - ceiling({ a, local, stage, solo })) / (PLUME_H + sw)))
+  const f = Math.max(0.6, Math.min(1.3, (pl.y - ceiling({ a, local, stage, solo })) / (PLUME_H + sw)))
   const plume = (pts: readonly Vec[]) => S.xf(pts, { sx: pl.dir * f, sy: f, rot: pl.rot, dx: pl.x, dy: pl.y })
   // Kammen ned over midten (til venstre for et horn, så hornet står frit).
   const ridgeX = horn ? horn.x - 21 : 0
@@ -71,7 +71,7 @@ export const ridderHead = def('ridder-head', {
   fit: fitAt('headTop', 'headWidth', 96),
   hides: ['mane-front'],
   hornHole: HORN_HOLE,
-  icon: { box: [-48, -39, 96, 64] },
+  icon: { box: [-48, -45, 96, 70] },
 })
 
 export default ridderHead

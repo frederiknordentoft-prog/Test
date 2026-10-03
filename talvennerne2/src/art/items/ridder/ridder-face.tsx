@@ -26,8 +26,8 @@ const front: ItemArt = ({ c, sw, a, local, stage }) => {
   // Maskens omrids (venstre halvdel fra midten foroven, rundt om hullet til midten forneden): stoffet går uden om
   // hullerne, vingen løfter sig i en spids ud mod hovedets side (aldrig uden for hovedet), og forneden er der et
   // hak over næsen.
-  const mt = 7 * k
-  const mb = 6 * k
+  const mt = 9.5 * k
+  const mb = 7.5 * k
   const mid = (lx + rcx) / 2
   // Vingerne går helt ud mod hovedets sider (mindst 6 enheder stof uden for hullet).
   const o = Math.min(lx - rx - 6 * k, Math.max(lx - rx - 14 * k, side + 2.6 * k))
@@ -36,7 +36,7 @@ const front: ItemArt = ({ c, sw, a, local, stage }) => {
     [lx + rx * 0.3, cy - ry - mt],
     [lx - rx * 0.5, cy - ry - mt * 0.92],
     [o + 3 * k, cy - ry - mt * 0.6],
-    [o - 1.2 * k, cy - ry - mt * 1.7],
+    [o - 1.6 * k, cy - ry - mt * 1.45],
     [o - 1.6 * k, cy - ry * 0.4],
     [o + 1.6 * k, cy + ry * 0.5],
     [lx - rx * 0.5, cy + ry + mb * 0.9],

@@ -4,9 +4,9 @@
 // ved siden af kroppen. Foran halsen (lag 9b, under hovedet) samles kappen af en snor mellem to små stjerner og
 // et spænde formet som en halvmåne med en stjerne, så kappen læses som en troldmandskappe også på butikskortet
 // (review G1-r4, B3). Højden regnes ud fra halsleddet og jordlinjen, så kappen passer alle tre kropsformer og
-// stadier, og på stor klemmes den vandret, så hjørnerne bliver i den sikre zone. På butikskortet på dyret
-// (`showcase`) bølger højre side ud til siden helt oppe fra skulderen. Alene (butik) hænger kappen spredt ud
-// med spændet foroven. (0,0) = bodyCenter, tegnet ved bodyWidth 100.
+// stadier, og på stor klemmes den vandret, så hjørnerne bliver i den sikre zone. Alene (butik) hænger kappen
+// spredt ud med spændet foroven. Selve kappen tegnes af mestringskittet (`cape`), som ridderkappen deler.
+// (0,0) = bodyCenter, tegnet ved bodyWidth 100.
 import type { ItemArtProps } from '../../rig/types'
 import { cape, cws, def, fitAt, S } from '../ridder/kit/mestring'
 import type { Seg } from '../ridder/kit/mestring'

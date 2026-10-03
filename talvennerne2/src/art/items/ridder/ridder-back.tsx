@@ -4,9 +4,8 @@
 // halsen (lag 9b, under hovedet) samles kappen af en krave i stof og et spænde formet som et tatzenkors i guld,
 // så kappen læses som en ridderkappe også på butikskortet (review G1-r4, B3). Højden regnes ud fra halsleddet og
 // jordlinjen, så kappen passer alle tre kropsformer og stadier, og på stor klemmes den vandret, så hjørnerne
-// bliver i den sikre zone. På butikskortet på dyret (`showcase`) bølger højre side ud til siden helt oppe fra
-// skulderen, så kappen ses ved siden af kroppen og ikke kun i kortets hjørner. Alene (butik) hænger kappen
-// spredt ud med kraven og spændet foroven. (0,0) = bodyCenter, tegnet ved bodyWidth 100.
+// bliver i den sikre zone. Alene (butik) hænger kappen spredt ud med kraven og spændet foroven. Selve kappen
+// tegnes af mestringskittet (`cape`), som stjernekappen deler. (0,0) = bodyCenter, tegnet ved bodyWidth 100.
 import type { ItemArtProps } from '../../rig/types'
 import { cape, cws, def, fitAt, pattee, S } from './kit/mestring'
 import type { Seg } from './kit/mestring'

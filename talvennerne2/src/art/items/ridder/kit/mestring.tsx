@@ -1,8 +1,9 @@
-// Fælles dele for de to mestringssæt (Ridder og Talmagiker): hattenes øre- og hornhuller med forkant og loftet
-// over hovedet, øjenenhederne til maske og briller, hagens højde til smykker og kapper, kappernes ramme,
-// håndgenstandenes drejede ramme og kropstøjets snit og ærmer. Filen ligger i en undermappe, så registeret
-// (`./*/*.tsx`) ikke tager den for en genstand; de tolv genstande deler den som én doven chunk i stedet for at
-// have hver sin kopi (bundlebudgettet, SPEC §12.5).
+// Fælles dele for de to mestringssæt (Ridder og Talmagiker): husets primitiver samlet (`S`), stierne som data
+// (`draw`), farvesæt og pasform i kort form, genstandens faste felter fra kataloget (`def`), hattenes øre- og
+// hornhuller med forkant og loftet over hovedet, øjenenhederne til maske og briller, hagens højde til smykker og
+// kapper, kappen selv (`cape`), tatzenkorset, håndgenstandenes drejede ramme og kropstøjets snit og ærmer. Filen
+// ligger i en undermappe, så registeret (`./*/*.tsx`) ikke tager den for en genstand; de tolv genstande er stadig
+// hver sin dovne chunk, men deler denne ene (bundlebudgettet, SPEC §12.5: al JS ≤ 600 KB).
 import type { ReactNode, SVGProps } from 'react'
 import { SAFE, STAGE_XF, regionTransforms } from '../../../rig/anchors'
 import type { Aim } from '../../../rig/hold'

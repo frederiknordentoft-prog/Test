@@ -32,7 +32,7 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   // Glasenhederne som støvbrillernes: øjet plus luft plus et halvt stel.
   const { L, R, k, ux, uy, side } = eyeUnits({ a, local, stage, sw })
   // Hakkene ligger uden for øjet (også i stjernens skrå sider mellem hak og tak).
-  const v = Math.max(1.12 * ux, 1.06 * uy)
+  const v = Math.max(1.04 * ux, uy + 2.3 * k)
   // Takkerne ud mod siderne holder sig inden for hovedets omrids (de ydre takker peger 36° op og ned fra vandret).
   const room = (L.x - side - sw) / Math.cos(Math.PI / 5)
   const r = Math.max(v * 1.25, Math.min(v * TIP, room))
