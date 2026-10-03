@@ -50,6 +50,7 @@ Andre skills vælger et kort præfiks pr. skill (fx `cnt:`, `shp:`, `clk:`) og d
 ## Opgavetyperne fra bølge 2 (clockSet, pay, share, colorParts)
 - `clockSet` sammenlignes altid på urskiven (`modulo` 720): en analog skive kan ikke vise formiddag eller eftermiddag, så 14:30 stillet som halv tre er rigtigt.
 - Sæt-svar sammenlignes som multimængder (`canonicalSet`), så rækkefølgen aldrig betyder noget: `multiSelect`, `grid`, `pay`, `share` og `colorParts`. Skriv dem gerne største først (`c2000|c500`, `4|4|4`, `p0|p2`).
+- Ens mønter eller sedler som hver sit kort (fx to femkroner i én `multiSelect`) får hver sin token med foranstillede nuller: `c500`, `c0500`, `c00500` (`pieceToken` i `money/kit.ts`). Svaret sammenligner tokens, så hvert kort er sit eget. Visningerne og betalingsbakken læser tallet (`pieceOf`), så `c0500` er stadig en femkrone.
 - `share.thing` og `shop.thing` er altid et `THING_ID`.
 - En `colorParts`-opgave har `fraction.colored: 0`, fordi barnet selv farver delene. Brøken står i svaret (`frac:k/n`, ækvivalente brøker i `accept`).
 - `fraction.shape` kan være `circle`, `rect`, `bar` eller `square`.

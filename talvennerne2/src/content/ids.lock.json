@@ -164,9 +164,9 @@
     "addSub20Simple": {
       "domain": "addsub",
       "families": [
+        "tenPlus",
         "addTeen",
-        "subTeen",
-        "tenPlus"
+        "subTeen"
       ]
     },
     "addTo20": {

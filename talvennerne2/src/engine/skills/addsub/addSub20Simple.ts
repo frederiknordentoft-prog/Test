@@ -1,8 +1,9 @@
 // addSub20Simple — Plus og minus til 20 uden tierovergang (SPEC §2.2, pædagogik-forslaget §1.3).
-// Procedure, prefix `as20:`, three families (disjoint, so an instance id names one family):
+// Procedure, prefix `as20:`, three families (disjoint, so an instance id names one family), easiest first
+// (content/skills.ts ranks them in this order):
+//   tenPlus  as20:10+<b> / as20:<b>+10, b = 1–9 (10 + 6, 6 + 10)                                 18
 //   addTeen  as20:<a>+<b>   a = 11–19, b ≥ 1, the ones make at most ten (12 + 5, 13 + 7)       45
 //   subTeen  as20:<a>-<b>   a = 11–19, 1 ≤ b ≤ the ones of a (17 − 4, 17 − 7)                   45
-//   tenPlus  as20:10+<b> / as20:<b>+10, b = 1–9 (10 + 6, 6 + 10)                                 18
 // enumerate() gives 20 seeded instances per family (tenPlus: all 18).
 // "Hvad er tolv plus fem?" over 12 + 5 = □; kinds choice and keypad (production). Card range 0–20,
 // 0–30 for subTeen so "plus instead of minus" (up to 28) can be a card.

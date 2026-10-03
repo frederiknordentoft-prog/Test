@@ -103,7 +103,7 @@ export const SKILLS: readonly SkillMeta[] = [
   s({ id: 'halves', domain: 'addsub', grade: 1, stage: 1.1, mode: 'recall', label: 'Halvdelen',
     kinds: ['choice', 'keypad', 'share'], production: ['keypad'], families: fam('to10 to20') }),
   s({ id: 'addSub20Simple', domain: 'addsub', grade: 1, stage: 1.2, mode: 'procedure', label: 'Plus og minus til 20 uden tierovergang',
-    kinds: ['choice', 'keypad'], production: ['keypad'], families: fam('addTeen subTeen tenPlus') }),
+    kinds: ['choice', 'keypad'], production: ['keypad'], families: fam('tenPlus addTeen subTeen') }),
   s({ id: 'addTo20', domain: 'addsub', grade: 1, stage: 1.4, mode: 'recall', label: 'Plus over tieren',
     kinds: ['choice', 'keypad', 'numberline'], production: ['keypad', 'numberline'], families: fam('bridge10') }),
   s({ id: 'subTo20', domain: 'addsub', grade: 1, stage: 1.6, mode: 'recall', label: 'Minus over tieren',
