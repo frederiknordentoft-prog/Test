@@ -10,7 +10,7 @@ exports[`Hestebakkerne · fox > hash-regression pr. (art, race, stadie, farve) o
   "fox/std/1/c5": "44c2efcaad2eed30",
   "fox/std/1/c6": "23f6e93890c1248f",
   "fox/std/1/gold": "10fd525d4d12533d",
-  "fox/std/1/rainbow": "5771e06c9df402c5",
+  "fox/std/1/rainbow": "937dd701b31fbf6b",
   "fox/std/2/c1": "c91ee89c487cb4bd",
   "fox/std/2/c1★": "c91ee89c487cb4bd",
   "fox/std/2/c2": "e748192cdd2d1663",
@@ -19,7 +19,7 @@ exports[`Hestebakkerne · fox > hash-regression pr. (art, race, stadie, farve) o
   "fox/std/2/c5": "0abd16bbd93985db",
   "fox/std/2/c6": "7119615d76a932ee",
   "fox/std/2/gold": "d046c1d123931b26",
-  "fox/std/2/rainbow": "71fad7aaeceb12a0",
+  "fox/std/2/rainbow": "33c61d46ea5989e3",
   "fox/std/3/c1": "3a0bc174ae324e7d",
   "fox/std/3/c1★": "7652810da6072608",
   "fox/std/3/c2": "631a1e8c3a5a7f55",
@@ -28,7 +28,7 @@ exports[`Hestebakkerne · fox > hash-regression pr. (art, race, stadie, farve) o
   "fox/std/3/c5": "4e6e7e14b459327e",
   "fox/std/3/c6": "8cbe117c20daefda",
   "fox/std/3/gold": "c65dbc700c48ceb7",
-  "fox/std/3/rainbow": "bec9b0c659f9d48b",
+  "fox/std/3/rainbow": "b49ee1499b409b52",
 }
 `;
 

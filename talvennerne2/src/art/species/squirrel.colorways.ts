@@ -40,12 +40,13 @@ export const SQUIRREL_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold
     fur: '#E9C08A',
     overrides: { belly: '#FFF9EE', outline: '#8A5F2C', shade: '#D9AC74', mane2: '#D3A66C', inner: '#FFC9BC', nose: '#5E3D27', iris: '#8A5420' },
   },
-  // Orange: lysende græskarorange (mere gul og klar end det røde egern).
+  // Orange: lysende gulorange (morgenfrue), tydeligt lysere og mere gul end det rustrøde c1 – også ved 48 px (review
+  // G2-r2 §3.4) – og stadig orange mod guldets citrongule pels med ravkontur og glimmer.
   c6: {
     id: 'c6',
     name: 'orange',
-    fur: '#F7AC3C',
-    overrides: { belly: '#FFF7E2', outline: '#8C5410', mane2: '#E8912A', inner: '#FFD3AE', nose: '#5C2E12', iris: '#8A4A14' },
+    fur: '#FAB636',
+    overrides: { belly: '#FFF8E4', outline: '#8A5A0E', mane2: '#EE9F24', inner: '#FFD6AE', nose: '#5C3312', iris: '#8A5214' },
   },
   // Guld: guldpels med ravkontur og ravskygge; halen lidt dybere guld.
   gold: {

@@ -2,12 +2,12 @@
 // Ruter via ?sheet=<rute>&id=<art>: species, moods, closeup, sizes, fit, filmstrip (pr. art) samt
 // silhouettes, lineup og fitmatrix (alle arter). scripts/sheets.mjs gemmer pr.-art-ark som
 // <rute>-<art>.png.
-import { Fragment, useEffect } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { festHead } from '../art/items/fest/fest-head'
 import { hverdagBody } from '../art/items/hverdag/hverdag-body'
 import { hverdagHead } from '../art/items/hverdag/hverdag-head'
-import { ItemIcon } from '../art/rig/ItemIcon'
+import { ItemIcon, visibleBox } from '../art/rig/ItemIcon'
 import { Icon } from '../ui/design/Icon'
 import { MAGIC } from '../art/rig/palette'
 import { Rig, magicOf, resolveColorway } from '../art/rig/Rig'
@@ -61,6 +61,11 @@ const FULL_SETS = SETS.flatMap(({ set, items }) => {
 }).filter((x) => x.items.length === SLOT_ORDER.length)
 /** Butikskortet på dyret beskæres efter slot: hoved og ansigt om hovedet, hals og krop fra mund til hofte, ryg og hånd i hele bredden (ballon og net rækker ud). */
 const CARD_CROP: Record<Slot, RigCrop> = { head: 'head', face: 'head', neck: 'torso', body: 'torso', back: 'wide', hand: 'wide' }
+/**
+ * Ryggenstande, der hænger ved hoften (sadeltasken, review G2-r2 B9): kortet på dyret beskæres om hoften og den
+ * venstre pose (væk fra halen), så posen fylder mindst 1/3 af kortet.
+ */
+const HIP_CARD: ReadonlySet<string> = new Set(['rytter-back'])
 
 const MOOD_DA: Record<Mood, string> = {
   idle: 'idle · hvile',
@@ -332,6 +337,71 @@ function LockedCard({ def, item, cw, breed, label }: { def: SpeciesDef; item: It
   )
 }
 
+type CardBox = { x0: number; y0: number; x1: number; y1: number }
+
+/** Et elements bbox i rodens brugerrum (viewBox-koordinater). */
+function boxIn(svg: SVGSVGElement, el: SVGGraphicsElement): CardBox {
+  const m = svg.getScreenCTM()!.inverse().multiply(el.getScreenCTM()!)
+  const b = el.getBBox()
+  const pts = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].map(([x, y]) => new DOMPoint(x, y).matrixTransform(m))
+  return { x0: Math.min(...pts.map((p) => p.x)), y0: Math.min(...pts.map((p) => p.y)), x1: Math.max(...pts.map((p) => p.x)), y1: Math.max(...pts.map((p) => p.y)) }
+}
+
+const setBox = (svg: SVGSVGElement, x: number, y: number, side: number) => svg.setAttribute('viewBox', `${x.toFixed(2)} ${y.toFixed(2)} ${side.toFixed(2)} ${side.toFixed(2)}`)
+
+/**
+ * Kortets endelige beskæring, målt i DOM'en efter riggens egen (efter håndkortets boks, som riggen sætter før maling):
+ * - Ryggenstande ved hoften (`HIP_CARD`, review G2-r2 B9): et kvadrat om den venstre pose og hoften; posen er ca. 7/10
+ *   af genstandens højde (remmens stump rækker op over den) og fylder ca. 40 % af kortet.
+ * - Håndkort (review G2-r2 B13): kortet skærer aldrig gennem øjnene. Ligger kortets overkant i øjnene, flyttes den ned
+ *   under dem (poten med genstanden under øjnene), når genstanden kan være der; ellers kommer hele øjnene med.
+ */
+function cropCard(svg: SVGSVGElement, slot: Slot, itemId: string) {
+  const item = svg.querySelector<SVGGElement>(`[data-slot="${slot}"]${slot === 'back' ? '[data-layer="front"]' : ''}`)
+  const ib = item ? visibleBox(svg, item) : null
+  if (!ib) return
+  if (slot === 'back' && HIP_CARD.has(itemId)) {
+    const bag = (ib.y1 - ib.y0) * 0.7
+    const side = bag * 2.5
+    setBox(svg, ib.x0 - side * 0.12, ib.y1 + side * 0.1 - side, side)
+    return
+  }
+  if (slot !== 'hand') return
+  const vb = svg.viewBox.baseVal
+  const eyes = [...svg.querySelectorAll<SVGGraphicsElement>('[data-part="eyes"]')].map((e) => boxIn(svg, e)).filter((e) => e.x1 > vb.x && e.x0 < vb.x + vb.width)
+  if (!eyes.length) return
+  const eyeTop = Math.min(...eyes.map((e) => e.y0))
+  const eyeBottom = Math.max(...eyes.map((e) => e.y1))
+  if (vb.y <= eyeTop || vb.y >= eyeBottom) return
+  const bottom = vb.y + vb.height
+  const top = eyeBottom + 1.5
+  const side = bottom - top
+  if (ib.y0 >= top - 1 && ib.x1 - ib.x0 <= side) {
+    // Under øjnene: samme underkant, midten vandret om genstanden (inden for den gamle boks).
+    const x = Math.min(Math.max((ib.x0 + ib.x1) / 2 - side / 2, vb.x), vb.x + vb.width - side)
+    setBox(svg, x, top, side)
+  } else {
+    // Genstanden rækker op mellem øjnene: hele øjnene kommer med.
+    const t = eyeTop - 2
+    const big = bottom - t
+    setBox(svg, vb.x + vb.width / 2 - big / 2, t, big)
+  }
+}
+
+/** Et butikskort på dyret: riggen med kortets slot-beskæring, finjusteret i DOM'en (`cropCard`). */
+function WornCard({ item, ...props }: RigProps & { item: ItemDef }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const svg = ref.current?.querySelector<SVGSVGElement>('svg.rig')
+    if (svg && typeof svg.getBBox === 'function') cropCard(svg, item.slot, item.id)
+  })
+  return (
+    <span ref={ref} style={{ lineHeight: 0, display: 'block' }}>
+      <Rig {...props} />
+    </span>
+  )
+}
+
 function SizesSheet({ def }: { def: SpeciesDef }) {
   const R = (p: Partial<RigProps> & { size: number }) => <Rig species={def} mode="static" {...p} />
   const br = (i: number) => def.breeds[i % def.breeds.length].id
@@ -391,7 +461,10 @@ function SizesSheet({ def }: { def: SpeciesDef }) {
                   <LockedCard key={`${it.id}${cw}`} def={def} item={it} cw={cw} breed={br(cw)} label={`kort ${def.id} ${it.id} ${cw}`} />
                 ) : (
                   <div key={`${it.id}${cw}`} className="sh-card" data-card="worn" data-label={`kort ${def.id} ${it.id} ${cw}`}>
-                    <R
+                    <WornCard
+                      item={it}
+                      species={def}
+                      mode="static"
                       breed={br(cw)}
                       stage={2}
                       colorway={CARD_COLORS[cw]}

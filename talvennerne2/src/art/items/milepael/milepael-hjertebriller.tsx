@@ -2,8 +2,8 @@
 // glasset er klart med kun 15 % tone (review G1-r4, T2), så pupiller og højlys ses lige så tydeligt som
 // uden briller, også på den mørkeste pels. Hjerterne regnes ud fra bærerens øjenankre og stadiets
 // øjenskala (babyens øjne er større): de omslutter øjet med luft til, at pupillerne kan kigge en anelse
-// rundt, så stellet aldrig dækker vipper og pupiller. På stadie 1 er hjerterne 13 % mindre, så spidserne
-// ikke når ned til munden. Højlysene sidder i hjerternes øverste ydre bue uden for øjnene, og et lille
+// rundt, så stellet aldrig dækker vipper og pupiller. På stadie 1 er hjerterne 13 % mindre og spidserne 20 % kortere,
+// så spidserne hverken når munden eller mulen. Højlysene sidder i hjerternes øverste ydre bue uden for øjnene, og et lille
 // glimt på venstre hjerte gør dem til en belønning. Broen hviler på næseryggen, og stængerne forsvinder
 // mod hovedets sider. I butikken er glassene fyldt.
 import { STAGE_XF } from '../../rig/anchors'
@@ -27,6 +27,12 @@ const GAZE = 2.9
 const TINT = 0.15
 /** Babyens hjerter er mindre (review G1-r4, T2), så spidsen ikke når munden. */
 const BABY = 0.87
+/**
+ * Babyens hjertespidser er desuden 20 % kortere (hjertet ca. 10 % lavere), så spidserne aldrig rører mulen – hvalpebabyens
+ * store snude (review G2-r2, T2). Kun den nederste halvdel trykkes sammen: toppen og siderne holder samme luft til øjet.
+ * Genstanden kender ikke bæreren, og milepælene har ingen pasformsoverskrivninger, så reglen gælder alle babyer.
+ */
+const BABY_TIP = 0.8
 
 const front: ItemArt = ({ c, sw, a, local, stage, solo, ids }) => {
   const es = STAGE_XF[stage].eye
@@ -45,7 +51,8 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo, ids }) => {
   const gap = Math.abs(R.x - L.x)
   const lashes = (a.eyeRx * es * k * 1.35 + sw * 1.6) / 1.18
   const sx = Math.max(lashes, Math.min(ux, Math.max(gap / 2 / 1.22, lashes)))
-  const heart = (cx: number, cy: number): Vec[] => HEART.map(([x, y]) => [cx + x * sx, cy + y * uy] as Vec)
+  const tip = stage === 1 ? BABY_TIP : 1
+  const heart = (cx: number, cy: number): Vec[] => HEART.map(([x, y]) => [cx + x * sx, cy + y * uy * (y > 0 ? tip : 1)] as Vec)
   const hl = heart(L.x, L.y)
   const hr = heart(R.x, R.y)
   const shapeL = blob(hl, 0.85)

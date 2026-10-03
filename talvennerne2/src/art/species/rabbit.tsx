@@ -352,13 +352,45 @@ const whisk = (s: number): string =>
   )
 const WHISKERS = join(whisk(-1), whisk(1))
 
-const Muzzle: Part = ({ pal, sw, a, still, lod }) => (
-  <Pivot at={a.muzzle} cls="a-sig" still={still}>
-    {!pal.silhouette && lod === 'full' && <path d={WHISKERS} fill="none" stroke={pal.outline} strokeOpacity={0.45} strokeWidth={sw * 0.42} {...round} />}
-    <path d={blob(NOSE)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
-    {!pal.silhouette && <path d={ellipse(-1.3, -1.6, 1.4, 0.9, -15)} fill={pal.highlight} />}
-  </Pivot>
-)
+const NOSE_D = blob(NOSE)
+/**
+ * Næsens squash på overshoot-framen (review G2-r2 §6, kanin pkt. 3): animeret i hvile er næsen delt lige under sit
+ * bredeste sted (lokalt y = −0,7, hvor top og spids er lige brede, når spidsen er løftet) i en top og en spids.
+ * Spidsen løftes med nikkets keyframes (`a-nod`, kun i hvile) vendt opad og skaleret 0,85, så næsen er ca. 0,85 så høj
+ * på de frames, hvor hovedet nikker (overshoot-framen 15,9 % og 68 %), og hel resten af tiden. Statisk og i de andre
+ * humør er næsen én form som før.
+ */
+const NOSE_SPLIT = -0.7
+const NOSE_SQUASH = 0.85
+
+const Muzzle: Part = ({ pal, sw, a, still, lod, ids, mood }) => {
+  const stroke = { fill: pal.nose, stroke: pal.outline, strokeWidth: sw * 0.42, ...round }
+  const split = !still && mood === 'idle'
+  return (
+    <Pivot at={a.muzzle} cls="a-sig" still={still}>
+      {!pal.silhouette && lod === 'full' && <path d={WHISKERS} fill="none" stroke={pal.outline} strokeOpacity={0.45} strokeWidth={sw * 0.42} {...round} />}
+      {split ? (
+        <>
+          <clipPath id={`${ids.uid}nt`}>
+            <rect x={-8} y={-8} width={16} height={8 + NOSE_SPLIT} />
+          </clipPath>
+          <clipPath id={`${ids.uid}nb`}>
+            <rect x={-8} y={NOSE_SPLIT} width={16} height={9} />
+          </clipPath>
+          <path d={NOSE_D} {...stroke} clipPath={`url(#${ids.uid}nt)`} />
+          <g transform={`scale(1 ${-NOSE_SQUASH})`}>
+            <g className="a-nod">
+              <path d={NOSE_D} {...stroke} transform={`scale(1 ${(-1 / NOSE_SQUASH).toFixed(4)})`} clipPath={`url(#${ids.uid}nb)`} />
+            </g>
+          </g>
+        </>
+      ) : (
+        <path d={NOSE_D} {...stroke} />
+      )}
+      {!pal.silhouette && <path d={ellipse(-1.3, -1.6, 1.4, 0.9, -15)} fill={pal.highlight} />}
+    </Pivot>
+  )
+}
 
 /** Lille pandetot mellem ørerne: to lokker, klippet til "uden for hovedet", så roden er sømløs. */
 const TUFT: Vec[] = [
