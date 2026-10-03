@@ -294,7 +294,29 @@ function lintCards(res: LintResult) {
       : [...card.querySelectorAll<SVGGElement>('svg.rig [data-item]')].some((g) => g.querySelector(DRAWN))
     if (!shown) res.errors.push(`${card.dataset.label}: kortet viser ${locked ? 'ikke genstanden og låsen' : 'ingen genstand på dyret'}`)
   }
+  // Et kort med dyret skærer aldrig gennem øjnene (rubrikken; review G2-r3 B16: håndkortene på alle arter, også i
+  // siderne): øjnene og pandaens øjenpletter ligger helt inden for kortets beskæring eller helt uden for den.
+  for (const card of document.querySelectorAll<HTMLElement>('.sh-card')) {
+    for (const svg of card.querySelectorAll<SVGSVGElement>('svg.rig')) {
+      const vb = svg.viewBox.baseVal
+      const view: Box = { x0: vb.x, y0: vb.y, x1: vb.x + vb.width, y1: vb.y + vb.height }
+      res.checks++
+      const cut = [...svg.querySelectorAll<SVGGeometryElement>(EYE_PARTS)]
+        .map((el) => ({ part: el.dataset.part, box: drawnBox(el, svg) }))
+        .find(({ box }) => box && !whole(box, view, EYE_TOL))
+      if (cut?.box) res.errors.push(`${card.dataset.label}: kortet ${fmt(view)} skærer gennem ${cut.part === 'eyes' ? 'øjnene' : 'øjenpletterne'} ${fmt(cut.box)}`)
+    }
+  }
 }
+
+/** Øjnene og det, der hører til dem (pandaens øjenpletter): et kort på dyret skærer aldrig gennem dem (review G2-r3 B16). */
+export const EYE_PARTS = '[data-part="eyes"],[data-part="eye-patch"]'
+/** Tolerance (enheder), før en kant regnes for at skære gennem øjnene (antialias og afrunding af viewBox). */
+const EYE_TOL = 0.5
+/** Boksen ligger helt inden for `view` eller helt uden for den (ikke skåret over af en kant). */
+const whole = (b: Box, view: Box, tol: number) =>
+  (b.x0 >= view.x0 - tol && b.x1 <= view.x1 + tol && b.y0 >= view.y0 - tol && b.y1 <= view.y1 + tol) ||
+  b.x1 <= view.x0 + tol || b.x0 >= view.x1 - tol || b.y1 <= view.y0 + tol || b.y0 >= view.y1 - tol
 
 /** En verdensscene (kortets baggrund) må højst have så mange SVG-elementer, så kortskærmen holder sig under 1.500. */
 export const SCENE_BUDGET = 400

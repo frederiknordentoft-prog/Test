@@ -11,7 +11,7 @@ import { band, blob, capsule, circle, ellipse, join, line, litCopy, lune, outsid
 import type { Vec } from '../../../rig/shapes'
 import { fabric } from '../../../rig/palette'
 import type { FabricName } from '../../../rig/palette'
-import type { AnchorName, AnchorSet, BodyKind, Colorway, HornHole, ItemArt, ItemArtProps, ItemDef, ItemFit, ItemId, Pt, ScaleBy, SleeveArt, SleeveUpArt, Stage } from '../../../rig/types'
+import type { AnchorName, AnchorSet, BodyKind, Colorway, HandHold, HornHole, ItemArt, ItemArtProps, ItemDef, ItemFit, ItemId, Pt, ScaleBy, SleeveArt, SleeveUpArt, Stage } from '../../../rig/types'
 import { ITEM_BY_ID } from '../../../../content/catalog'
 
 /** Husets primitiver samlet, så genstandene kun importerer fra denne fil (én import pr. chunk, bundlebudgettet). */
@@ -158,17 +158,29 @@ export function capeFrame(p: Pick<ItemArtProps, 'a' | 'local' | 'stage'>, gap: n
 
 /**
  * Rammen for en håndgenstand, der er drejet tilbage til verdensrummet (lyset oppefra til venstre, genstanden
- * opret): punkter langs aksen fra grebet (`along`, i hovedets modelenheder · `size`) og enheden `m`.
+ * opret): punkter langs aksen fra grebet (`along`, i hovedets modelenheder · `size`), et punkt i verdensrummet
+ * (`world`) og enheden `m`.
  */
 export function aimFrame(P: Aim, size: number) {
   const { at, k, g, d, u, rot } = P
   const t = (-rot * Math.PI) / 180
-  const along = (s: number): Vec => {
-    const q = at({ x: g.x + d.x * s * size * u, y: g.y + d.y * s * size * u })
+  const world = (p: Pt): Vec => {
+    const q = at(p)
     return [q.x * Math.cos(t) - q.y * Math.sin(t), q.x * Math.sin(t) + q.y * Math.cos(t)]
   }
-  return { along, m: u * k * size, rot }
+  const along = (s: number): Vec => world({ x: g.x + d.x * s * size * u, y: g.y + d.y * s * size * u })
+  return { along, world, m: u * k * size, rot }
 }
+
+/** Modellens poter står på jorden fra denne højde (lange, lodrette forben); grebet er da lavere end `GROUND_PAW.grip`. */
+const GROUND_PAW = { model: 205, grip: 195 }
+
+/**
+ * Poten står på jorden (de lange, lodrette forben på kat, hvalp, hest, enhjørning og ræv) og er ikke løftet i
+ * humøret: håndgenstanden holdes da nede ved jorden, hvor forbenet tegnes over den (review G2-r3 T15).
+ */
+export const groundPaw = (a: AnchorSet, hold: HandHold | undefined): hold is HandHold =>
+  !!hold && a.pawR.y >= GROUND_PAW.model && hold.grip.y >= GROUND_PAW.grip
 
 // ---------------------------------------------------------------------------------------------
 // Kropstøj (rustning, tryllekjortel): snit, fladt ikon, skygge og ærmer

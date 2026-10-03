@@ -4,22 +4,27 @@
 // den går fri, og holdes i den sikre zone (fælles `aimAway`, som luppen). Alt tegnes i en ramme, der er drejet
 // tilbage til verdensrummet, så stjernen står opret, og lys og skygge står ens i alle poser. Alene (butik) står
 // staven skråt som et ikon. Staven rækker med vilje ud over silhuetten (`reach`) og er stor nok til at ses i
-// butikskortet på dyret (review G1-r4, B2).
+// butikskortet på dyret (review G1-r4, B2). På butikskortet på dyret (`showcase`, review G2-r3 B16) peger staven
+// skråt ud til siden i stedet for op langs armen: skaftet går fri af poten, og stjernen sidder under øjnene, så
+// kortet viser en stav (skaft og stjerne) og kan beskæres under øjnene. På de lange forben, der står på jorden,
+// går staven allerede fri af benet og peger op som ellers.
 import { aimAway, aimSolo } from '../../rig/hold'
 import type { ItemArt } from '../../rig/types'
-import { aimFrame, cws, def, fitAt, group, S } from '../ridder/kit/mestring'
+import { aimFrame, cws, def, fitAt, groundPaw, group, S } from '../ridder/kit/mestring'
 
 /** Staven langs aksen fra grebet (hovedets modelenheder): ende, top, tykkelse, de lyse ender og stjernen. */
 const W = { butt: -3, top: 30, r: 2.3, tip: 4.4, star: 38, starR: 11.2 }
 /** Foretrukken retning (grader; −90 = op) og trin, når ansigtet er i vejen. */
 const AIM = -62
 const STEP = 18
+/** Retningen på butikskortet på dyret (B16): ud til siden, væk fra armen (armen går ca. −64° fra poten til skulderen). */
+const CARD_AIM = -22
 /** Staven er stor, så den kan ses i butikskortet på dyret. */
 const SIZE = 1.4
 
-const front: ItemArt = ({ c, sw, a, hold }) => {
+const front: ItemArt = ({ c, sw, a, hold, showcase }) => {
   const samples = [{ at: W.butt, r: W.r * 1.4 }, { at: 16, r: 3.6 }, { at: W.star, r: W.starR + 5 }].map((p) => ({ at: p.at * SIZE, r: p.r * SIZE }))
-  const P = hold ? aimAway(hold, samples, AIM, STEP) : aimSolo(a.handRot, -60)
+  const P = hold ? aimAway(hold, samples, showcase && !groundPaw(a, hold) ? CARD_AIM : AIM, STEP) : aimSolo(a.handRot, -60)
   // Tegnes i en ramme drejet tilbage til verdensrummet (lyset oppefra til venstre, stjernen opret).
   const { along, m, rot } = aimFrame(P, SIZE)
   const [sx, sy] = along(W.star)

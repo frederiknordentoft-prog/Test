@@ -95,7 +95,8 @@ const HeadDeco: Part = ({ pal, a, ids, stage, mood, still, lod, sw }) => {
   const lids = lidUnderlay(shape, eyes, rx, ry)
   return (
     <>
-      <path d={join(patch(a.eyeL, 1, a, k), patch(a.eyeR, -1, a, k))} fill={ink(pal)} clipPath={`url(#${ids.headClip})`} />
+      {/* data-part: butikskortene beskæres aldrig gennem pletterne, ligesom øjnene (review G2-r3 B16). */}
+      <path d={join(patch(a.eyeL, 1, a, k), patch(a.eyeR, -1, a, k))} fill={ink(pal)} clipPath={`url(#${ids.headClip})`} data-part="eye-patch" />
       <g transform={`translate(${n(ox)} ${n(oy)})`}>
         {rings.length > 0 && (
           <g className={!still && open ? 'a-blink' : undefined}>
