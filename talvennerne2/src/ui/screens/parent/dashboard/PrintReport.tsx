@@ -12,7 +12,8 @@ import { KAN_SELV_NOTE } from './parts'
 
 const GROUPS = ['Tal og algebra', 'Geometri og måling'] as const
 
-function Report({ d }: { d: Dashboard }) {
+/** The report itself (exported for tests; the app mounts it through PrintReport). */
+export function Report({ d }: { d: Dashboard }) {
   const o = d.overview
   const name = nameOf(d.name)
   const passed = d.trials.filter((t) => t.state === 'passed')
@@ -26,7 +27,7 @@ function Report({ d }: { d: Dashboard }) {
       <section>
         <h2>De sidste 14 dage</h2>
         <p>
-          {o.activeDays} aktive {plural(o.activeDays, 'dag', 'dage')} · {o.rounds} {plural(o.rounds, 'tur', 'ture')} · {o.answers} opgaver ·{' '}
+          {o.activeDays} {plural(o.activeDays, 'aktiv dag', 'aktive dage')} · {o.rounds} {plural(o.rounds, 'tur', 'ture')} · {o.answers} {plural(o.answers, 'opgave', 'opgaver')} ·{' '}
           {o.accuracy === null ? 'ingen svar' : `${fmtPercent(o.accuracy)} rigtige i første forsøg`} · læringstid {fmtMinutes(o.learnMs)}
         </p>
         <p>Tendens: {trendText(d.trend.up.length, d.trend.down.length)}.</p>

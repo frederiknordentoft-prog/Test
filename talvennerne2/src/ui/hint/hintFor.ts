@@ -339,6 +339,9 @@ export function revealsAnswer(v: AnyVisual, task: Task): boolean {
   }
 }
 
+/** The domains whose numbers are counted along a number line (not place: UI-fund 5; not shapes: P3-9). */
+const COUNTS_ALONG: ReadonlySet<string> = new Set(['number', 'addsub', 'algebra', 'muldiv'])
+
 /**
  * A number line to count along, from 0 to 10 or 20, with the number the question starts from marked
  * (the 7 of "Hvilket tal kommer efter 7?"); null when the answer is no number up to 20, or when the
@@ -349,7 +352,12 @@ export function countingLine(task: Task): AnyVisual | null {
   if (p.scene === 'line') return null
   // tens and ones are not counted along a line: "74 = □ tiere og □ enere" (7|4) or the blocks of
   // 748 have digits for an answer, and a 0–10 line under them helps nobody (UI-fund 5)
-  if (p.scene === 'base' || SKILL_BY_ID[task.skill]?.domain === 'place') return null
+  if (p.scene === 'base') return null
+  // only where counting along helps: numbers, sums, rows and groups. The sides of a triangle, the
+  // half circles that make a circle or the cubes along a pencil are counted on the picture itself,
+  // and an empty 0–10 line beside them helps nobody (QA2 P3-9)
+  const domain = SKILL_BY_ID[task.skill]?.domain
+  if (!domain || !COUNTS_ALONG.has(domain)) return null
   const answer = typeof task.answer === 'number' ? [task.answer] : String(task.answer).split('|').map(Number)
   if (task.answerType !== 'int' && task.answerType !== 'set') return null
   if (answer.some((n) => !Number.isInteger(n) || n < 0)) return null

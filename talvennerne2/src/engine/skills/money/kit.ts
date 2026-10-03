@@ -71,7 +71,31 @@ export function runningTotals(pieces: readonly number[]): number[] {
 
 /** Things the shop sells (src/art/materials/Things.tsx); one per instance, from its id. */
 export const GOODS = ['apple', 'strawberry', 'carrot', 'fish', 'ball', 'flower', 'mushroom', 'star'] as const
-export const goodsFor = (id: string): (typeof GOODS)[number] => GOODS[hashSeed(id) % GOODS.length]
+export type Good = (typeof GOODS)[number]
+
+/**
+ * What each thing can believably cost, in whole kroner (QA2 P3-4: a carrot for 90 kr). A child knows
+ * that a carrot or an apple costs a few kroner and a ball or a fish a lot more; the price on the tag
+ * is the fact's own, so only the thing beside it is chosen to fit.
+ */
+export const GOOD_PRICE_KR: Readonly<Record<Good, readonly [number, number]>> = {
+  carrot: [1, 5],
+  apple: [2, 8],
+  strawberry: [2, 9],
+  mushroom: [3, 15],
+  flower: [10, 45],
+  star: [10, 60],
+  ball: [15, 99],
+  fish: [30, 99],
+}
+
+/** The thing on the shop's counter for a price: one that believably costs it, picked from the id. */
+export function goodsFor(id: string, priceOre: number): Good {
+  const kr = priceOre / 100
+  const fits = GOODS.filter((g) => GOOD_PRICE_KR[g][0] <= kr && kr <= GOOD_PRICE_KR[g][1])
+  const from = fits.length > 0 ? fits : GOODS
+  return from[hashSeed(id) % from.length]
+}
 
 // ─── Speech ─────────────────────────────────────────────────────────────────
 

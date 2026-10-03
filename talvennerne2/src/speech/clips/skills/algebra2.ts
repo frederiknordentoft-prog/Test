@@ -47,6 +47,8 @@ const table: Record<ClipId, string> = {
   'hint.equalSides.otherSide': 'Den anden side skal også give',
   'hint.equalSides.both': 'Begge sider giver det samme.',
   'hint.equalSides.notBoth': 'Siderne giver ikke det samme.',
+  // equalsAsAnswer on the seesaw: the equals sign is not on the screen, the seesaw is (QA2 P3-5)
+  'hint.equalSides.sameBothSides': 'Vippen står lige, når der er lige meget på begge sider.',
 }
 
 export const clips: Readonly<Record<ClipId, string>> = table

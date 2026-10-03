@@ -35,9 +35,9 @@ export function OverviewTab({ d, onPrint }: { d: Dashboard; onPrint: () => void 
 
       <Section title="De sidste 14 dage" sub={where}>
         <div className="tv-dstats">
-          <Stat value={o.activeDays} label={`aktive ${plural(o.activeDays, 'dag', 'dage')} af 14`} />
+          <Stat value={o.activeDays} label={`${plural(o.activeDays, 'aktiv dag', 'aktive dage')} af 14`} />
           <Stat value={o.rounds} label={plural(o.rounds, 'tur', 'ture')} />
-          <Stat value={o.answers} label="opgaver" />
+          <Stat value={o.answers} label={plural(o.answers, 'opgave', 'opgaver')} />
           <Stat value={o.accuracy === null ? '–' : fmtPercent(o.accuracy)} label="rigtige i første forsøg" />
         </div>
         <Panel className="tv-dtime">

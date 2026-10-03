@@ -34,10 +34,11 @@ const table: Record<ClipId, string> = {
   's.shareEqually.share': 'Del',
   's.shareEqually.between': 'ligeligt mellem',
   's.shareEqually.howMany': 'Hvor mange får hvert dyr?',
-  'hint.shareEqually.oneEach': 'Giv en til hvert dyr ad gangen, rundt og rundt, til der ikke er flere.',
-  'hint.shareEqually.eachGets': 'Så får hvert dyr',
-  'hint.shareEqually.sameForAll': 'Alle dyr skal have lige mange.',
-  'hint.shareEqually.giveAll': 'Når vi deler, skal alle tingene gives ud, og alle får lige mange.',
+  // the strategy's picture is the plates, one per animal (QA2 P3-6: it spoke of animals beside plates)
+  'hint.shareEqually.oneEach': 'Læg en på hver tallerken ad gangen, rundt og rundt, til der ikke er flere.',
+  'hint.shareEqually.eachGets': 'På hver tallerken ligger der nu',
+  'hint.shareEqually.sameForAll': 'Der skal ligge lige mange på alle tallerknerne.',
+  'hint.shareEqually.giveAll': 'Når vi deler, skal alle tingene ud på tallerknerne, og der skal ligge lige mange på hver.',
 }
 
 export const clips: Readonly<Record<ClipId, string>> = table

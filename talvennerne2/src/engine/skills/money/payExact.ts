@@ -151,7 +151,7 @@ export default {
   answerType: () => 'ore',
   prompt: (f: Fact) => {
     const p = parse(f.id)
-    return { scene: 'shop', thing: goodsFor(f.id), priceOre: p.price, purse: [...PURSE[p.family]] }
+    return { scene: 'shop', thing: goodsFor(f.id, p.price), priceOre: p.price, purse: [...PURSE[p.family]] }
   },
   optionView: () => 'coins',
   range: (f: Fact) => [0, parse(f.id).family === 'to20' ? 2000 : parse(f.id).family === 'to50' ? 5000 : 10000],

@@ -51,10 +51,12 @@ describe('shareEqually', () => {
 
   it('deals one at a time, and says division as "delt med"', () => {
     expect(hintText(def, 'shr:12:3', null))
-      .toBe('Giv en til hvert dyr ad gangen, rundt og rundt, til der ikke er flere. Så får hvert dyr fire. Tolv delt med tre giver fire.')
+      .toBe('Læg en på hver tallerken ad gangen, rundt og rundt, til der ikke er flere. På hver tallerken ligger der nu fire. Tolv delt med tre giver fire.')
     expect(def.hint(findFact(def, 'shr:12:3'), null).visual).toEqual({ scene: 'groups', groups: 3, size: 4, thing: 'carrot' })
-    expect(hintText(def, 'shr:12:3', 'shareUnequal')).toMatch(/^Alle dyr skal have lige mange\./)
+    // the words name what the picture shows: plates, not animals (QA2 P3-6)
+    expect(hintText(def, 'shr:12:3', 'shareUnequal')).toMatch(/^Der skal ligge lige mange på alle tallerknerne\./)
+    for (const tag of [null, 'shareUnequal', 'wrongOperation'] as const) expect(hintText(def, 'shr:12:3', tag)).not.toMatch(/dyr/)
     expect(def.hint(findFact(def, 'shr:12:3'), 'shareUnequal').misconception).toBeUndefined()
-    expect(hintText(def, 'shr:12:3', 'wrongOperation')).toMatch(/^Når vi deler, skal alle tingene gives ud/)
+    expect(hintText(def, 'shr:12:3', 'wrongOperation')).toMatch(/^Når vi deler, skal alle tingene ud på tallerknerne/)
   })
 })

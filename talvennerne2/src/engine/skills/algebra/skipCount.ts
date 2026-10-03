@@ -18,7 +18,8 @@
 // back10: one less; fillSlots: "16|17"), the numbers of the row ('operand'), and near misses (±1, ±2,
 // one step too far, the two numbers swapped). The skipStepOne value is never a number of the row.
 // Hint: "Springet er fem. Femten plus fem giver tyve." (fillSlots: both hops), with the hops on a
-// number line. skipStepOne says to hop the same length every time first.
+// number line that runs from the row's first number to the last answer, numbered at every hop.
+// skipStepOne says to hop the same length every time first.
 import type { AnswerValue, Candidate, ErrorTag, Fact, FamilyDef, HintSpec, HintVisual, Rng, SkillModule, SpeechPart, TaskKind } from '../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
 import { canonicalFacts, drawInstance, swapHint, type Drawer } from '../addsub/calc'
@@ -135,14 +136,14 @@ function candidates(f: Fact): Candidate[] {
   return [...one, ...two]
 }
 
-/** A number line around the hops: tens (hundreds for step100, 25s for step25) on both ends. */
-function hopsLine(stops: readonly number[], step: number): HintVisual {
-  const unit = Math.abs(step) >= 100 ? 100 : Math.abs(step) === 25 ? 25 : 10
-  const lo = Math.min(...stops)
-  const hi = Math.max(...stops)
-  const min = Math.floor(lo / unit) * unit
-  const max = Math.max(min + unit, Math.ceil(hi / unit) * unit)
-  return { scene: 'line', min, max, hops: [...stops] }
+/**
+ * A number line along the hops, from the row's first number to its last answer, so that every hop
+ * starts and lands on a number of the row (QA2 P3-7: on a 400–900 line, numbered in hundreds, the
+ * hops 420 → 520 → 620 read as 400 → 500 → 600). The picture numbers it at every hop
+ * (src/ui/scenes/PromptScene.tsx, evenHops).
+ */
+function hopsLine(stops: readonly number[]): HintVisual {
+  return { scene: 'line', min: Math.min(...stops), max: Math.max(...stops), hops: [...stops] }
 }
 
 function hint(f: Fact, tag: ErrorTag | null, kind?: TaskKind): HintSpec {
@@ -156,7 +157,7 @@ function hint(f: Fact, tag: ErrorTag | null, kind?: TaskKind): HintSpec {
     strategy.push(num(at, 'mid'), say(r.step > 0 ? 'op.plus' : 'op.minus'), num(d, 'mid'), say('op.giver'), num(v))
     at = v
   }
-  const line = hopsLine([...rowNumbers(r), ...answers], r.step)
+  const line = hopsLine([...rowNumbers(r), ...answers])
   if (tag === 'skipStepOne') return hintOf([say('hint.skipCount.sameHop'), ...strategy], line, 'skipStepOne')
   return hintOf(strategy, line)
 }

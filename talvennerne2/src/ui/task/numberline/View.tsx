@@ -9,6 +9,8 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import type { ClipId, Task } from '../../../engine/types'
+import { hashSeed, makeRng } from '../../../engine/rng'
+import { isMisconceptionId } from '../../../engine/tasks'
 import { playSfx } from '../../../audio/sfx'
 import { niceStep } from '../../../art/materials'
 import { blob } from '../../../art/materials/geom'
@@ -143,6 +145,33 @@ export function placeTarget(t: Task): { lead: ClipId; n: number } | null {
   return null
 }
 
+/**
+ * Where the pin's shadow waits before the first touch (QA2 P3-10). In the middle of the line it stood
+ * on the answer of "5 + 5" on 0–20, so a tap on it and the tick handed the answer over. Like the
+ * clock's dialStart it is a tick of the line drawn from the task's own seed: never on the answer or
+ * near it (a fifth of the line, and always more than the tolerance), and never on a misconception's
+ * value, so a tap on the shadow is never logged as one.
+ */
+export function shadowStart(task: Task, min: number, max: number): number {
+  const span = Math.max(1, max - min)
+  const step = niceStep(span)
+  const near = Math.max(task.tolerance + 1, Math.ceil(span / 5))
+  const answers = [task.answer, ...task.accept].filter((v): v is number => typeof v === 'number')
+  const taken = Object.entries(task.distractorTags)
+    .filter(([, tag]) => isMisconceptionId(tag))
+    .map(([k]) => Number(k))
+  const ticks: number[] = []
+  for (let v = min; v <= max; v += step) ticks.push(v)
+  const far = ticks.filter((v) => answers.every((a) => Math.abs(v - a) >= near))
+  const free = far.filter((v) => taken.every((m) => Math.abs(v - m) > task.tolerance))
+  const rng = makeRng(hashSeed(`${task.id}|shadow`))
+  if (free.length > 0) return rng.pick(free)
+  if (far.length > 0) return rng.pick(far)
+  // a line too short to keep away from the answer: the end farthest from it
+  const a = answers[0] ?? min
+  return Math.abs(max - a) >= Math.abs(a - min) ? max : min
+}
+
 const isBig = () => typeof matchMedia === 'function' && matchMedia('(min-width: 700px) and (min-height: 700px)').matches
 
 export function NumberlineView({ task, mode, given, onSubmit, onActivity }: TaskViewProps) {
@@ -154,6 +183,7 @@ export function NumberlineView({ task, mode, given, onSubmit, onActivity }: Task
   const surface = useRef<HTMLDivElement | null>(null)
   const input = mode === 'input'
   const g = lineGeometry(min, max, Math.max(200, width || 340), isBig(), task.prompt.scene === 'line' && lineEndsOnly(task.prompt))
+  const shadow = shadowStart(task, min, max)
 
   const valueAt = (clientX: number): number | null => {
     const el = surface.current
@@ -185,8 +215,9 @@ export function NumberlineView({ task, mode, given, onSubmit, onActivity }: Task
   const onKey = (e: ReactKeyboardEvent) => {
     if (!input) return
     const step = max - min > 100 ? 10 : 1
-    if (e.key === 'ArrowLeft') set(Math.max(min, (value ?? min) - step))
-    else if (e.key === 'ArrowRight') set(Math.min(max, (value ?? min) + step))
+    // the keys pick the pin up where its shadow waits
+    if (e.key === 'ArrowLeft') set(Math.max(min, (value ?? shadow + step) - step))
+    else if (e.key === 'ArrowRight') set(Math.min(max, (value ?? shadow - step) + step))
     else if (e.key === 'Enter' && value !== null) onSubmit(value)
     else return
     e.preventDefault()
@@ -226,7 +257,7 @@ export function NumberlineView({ task, mode, given, onSubmit, onActivity }: Task
         <svg className="tv-nline__svg" viewBox={`0 0 ${g.w} ${g.h}`} width={g.w} height={g.h} aria-hidden overflow="visible">
           <LineArt g={g} />
           {x === null ? (
-            <circle className="tv-nline__hint" cx={g.x((min + max) / 2)} cy={g.y} r={15} />
+            <circle className="tv-nline__hint" cx={g.x(shadow)} cy={g.y} r={15} data-shadow={shadow} />
           ) : (
             <Pin x={x} y={g.y} state={state} lifted={dragging} />
           )}

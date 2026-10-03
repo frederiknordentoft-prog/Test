@@ -29,6 +29,45 @@
 .tv-scene--balance .tv-eq {
   font-size: var(--eq-size, var(--text-task));
 }
+/* The seesaw (balance, QA2 P3-5): two wooden blocks hold it level while the child judges the
+   sides, and drop away once the answer is in; then it leans to the heavier side, or stays level
+   when both weigh the same. The blocks reach from the ground to the plank's underside (38 % of the
+   seesaw's box) under its two ends. Only opacity and transform move. */
+.tv-seesaw {
+  position: relative;
+}
+.tv-seesaw__block {
+  position: absolute;
+  bottom: 2%;
+  width: 8%;
+  height: 36%;
+  border: 2.5px solid var(--color-wood-edge);
+  border-radius: 6px 6px 3px 3px;
+  background: var(--color-wood);
+  box-shadow: inset 0 -6px 0 var(--color-wood-grain);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 280ms var(--ease-out), transform 280ms var(--ease-out);
+  pointer-events: none;
+}
+.tv-seesaw__block.is-left {
+  left: 6%;
+}
+.tv-seesaw__block.is-right {
+  right: 6%;
+}
+.tv-seesaw.is-held .tv-seesaw__block {
+  opacity: 1;
+  transform: none;
+}
+:root[data-calm] .tv-seesaw__block {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-seesaw__block {
+    transition: none;
+  }
+}
 /* Two equations joined by a word (inverseOps): one line each, the word opening the second */
 .tv-eqlines {
   display: flex;
@@ -260,6 +299,35 @@
 /* The board takes the height its card gives it (--scene-h from the round card or the hint): with the
    strategy open the card is lower, and the board must shrink with it, never run out over the card
    (UI-fund 3). No height of its own here, which would win over the card's. */
+/* The answer in the board's own "?" cell (QA2 P3-3): a second svg of the same box over the board */
+.tv-board > .tv-mat {
+  grid-area: 1 / 1;
+}
+.tv-board__answer {
+  pointer-events: none;
+}
+.tv-board__cell {
+  fill: var(--color-card);
+  stroke: var(--color-oops);
+  stroke-width: 3;
+}
+.tv-board__answer.is-good .tv-board__cell {
+  fill: var(--color-good-soft);
+  stroke: var(--color-good);
+}
+.tv-board__num {
+  fill: var(--color-ink-2);
+  font-family: inherit;
+  font-weight: 900;
+}
+.tv-board__answer.is-good .tv-board__num {
+  fill: var(--color-ink);
+}
+.tv-board__strike {
+  stroke: var(--color-oops-lip);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
 .tv-board__entry {
   position: absolute;
   right: -8px;

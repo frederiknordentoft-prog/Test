@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { GOAL_ROTATION, nextGoal, progressGoals, refreshGoals, type GoalRound, type GoalsState } from '../content/goals'
 import { newProfile } from '../engine/testing/profile'
 import type { Goal } from '../engine/types'
-import { revisitRegions } from './progression'
+import { REGIONS } from '../content/curriculum'
+import { ownWorld, revisitRegions } from './progression'
 
 const empty: GoalsState = { day: '', list: [] }
 const round = (over: Partial<GoalRound> = {}): GoalRound => ({ mode: 'round', region: 'w0-tal10', bestStreak: 0, productionCorrect: 0, threeStars: false, ...over })
@@ -92,5 +93,33 @@ describe('"Næste tre mål" (SPEC §13.9)', () => {
     })
     const open = ['w0-tal10', 'w0-former', 'w0-plus10', 'w0-tal20'] as const
     expect(revisitRegions(p, '2026-10-01', open)).toEqual(['w0-former', 'w0-tal10', 'w0-tal20'])
+  })
+
+  it('sends a child only to places it has played, or to its own world (QA2 P3-11)', () => {
+    const at = (day: string) => Date.parse(`${day}T12:00:00Z`)
+    const of = (world: string) => REGIONS.filter((r) => r.world === world).map((r) => r.id)
+    const open = [...of('eng'), ...of('bakke'), ...of('skov')]
+    // 2. klasse, everything open, Engdalen and Hestebakkerne never played: Regnbueskoven only
+    const sara = newProfile({ grade: 2 })
+    expect(ownWorld(2, open)).toBe('skov')
+    const fresh = revisitRegions(sara, '2026-10-01', open)
+    expect(fresh.length).toBeGreaterThan(0)
+    expect(fresh.every((r) => of('skov').includes(r))).toBe(true)
+    expect(fresh).not.toContain('w0-tal10')
+    // a region the child played long ago is fine, in any world, and comes first
+    const back = newProfile({ grade: 2, nodes: { 'w0-tal10-l1': { plays: 1, stars: 1, skipped: false, lastAt: at('2026-09-10') } } })
+    expect(revisitRegions(back, '2026-10-01', open)[0]).toBe('w0-tal10')
+    // 1. klasse while only Engdalen is open: Engdalen is where the child plays
+    expect(ownWorld(1, of('eng'))).toBe('eng')
+    expect(revisitRegions(newProfile({ grade: 1 }), '2026-10-01', of('eng')).length).toBeGreaterThan(0)
+    // 1. klasse with Hestebakkerne open: nothing new in Engdalen
+    const otto = revisitRegions(newProfile({ grade: 1 }), '2026-10-01', [...of('eng'), ...of('bakke')])
+    expect(otto.every((r) => of('bakke').includes(r))).toBe(true)
+    // a child in 0. klasse who has played on into Hestebakkerne may be sent ahead there
+    const ahead = revisitRegions(newProfile({ grade: 0 }), '2026-10-01', [...of('eng'), ...of('bakke')])
+    expect(ahead.some((r) => of('bakke').includes(r))).toBe(true)
+    // and the goal it gives says so
+    const goals = refreshGoals(empty, { day: '2026-10-01', revisit: fresh })
+    expect(goals.list[1]).toMatchObject({ kind: 'revisit', region: fresh[0] })
   })
 })

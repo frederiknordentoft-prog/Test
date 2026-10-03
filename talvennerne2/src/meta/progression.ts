@@ -4,7 +4,7 @@
 // reward log. One pure, deterministic function: the same profile, round and events give the same
 // result, and nothing the child has earned is ever taken away — perler only grow here, the inventory
 // and the animals only gain entries, medals only rise.
-import { NODE_BY_ID, REGION_BY_ID, REGIONS, type NodeDef } from '../content/curriculum'
+import { NODE_BY_ID, REGION_BY_ID, REGIONS, WORLD_BY_ID, type NodeDef } from '../content/curriculum'
 import { ITEMS } from '../content/catalog'
 import {
   EGG, FRIENDSHIP, PERLER, STAR_RULES, XP, eggWarmthFor, levelForXp, titleAt,
@@ -14,7 +14,7 @@ import { nextGoal, progressGoals, refreshGoals, REVISIT_AFTER_DAYS, type GoalRou
 import { daysBetween, learningDay } from '../engine/learningDay'
 import { helpBridgeOpen, nextTrialState, skipRegionNodes, trialOutcome, type TrialOutcome } from '../engine/trial'
 import type {
-  Box, ItemId, ItemSource, LearningEvent, Medal, NodeId, NodeProgress, ProfileDoc, RegionId, SkillId, TrialState,
+  Box, Grade, ItemId, ItemSource, LearningEvent, Medal, NodeId, NodeProgress, ProfileDoc, RegionId, SkillId, TrialState, WorldId,
 } from '../engine/types'
 import type { RoundResult } from '../state/useRound'
 import {
@@ -143,7 +143,23 @@ export function grantTrophies(p: ProfileDoc, round: AchievementRound | null, now
 
 // ─── Goals ──────────────────────────────────────────────────────────────────
 
-/** Open regions worth a visit for goal 2: played ≥ 5 learning days ago (oldest first), then never played. */
+/**
+ * The child's own world among the open regions: the world of its grade, or, while that one is not
+ * open yet, the highest open world below it (a child in 1. klasse plays Engdalen until Hestebakkerne
+ * opens). Null when no open world is at or below the grade.
+ */
+export function ownWorld(grade: Grade, open: readonly RegionId[]): WorldId | null {
+  const worlds = [...new Set(open.map((r) => REGION_BY_ID[r]?.world).filter((w): w is WorldId => !!w))]
+  const below = worlds.filter((w) => WORLD_BY_ID[w].grade <= grade).sort((a, b) => WORLD_BY_ID[b].grade - WORLD_BY_ID[a].grade)
+  return below[0] ?? null
+}
+
+/**
+ * Open regions worth a visit for goal 2: played ≥ 5 learning days ago (oldest first), then never
+ * played — those only in the child's own world or a world past it, never back in an easier world
+ * the child has not been to (QA2 P3-11: "Tag en tur forbi Tællelunden" sent a child in 2. klasse to
+ * Engdalen, where it had never been). A goal points at a place the child has played, or ahead.
+ */
 export function revisitRegions(p: ProfileDoc, day: string, open: readonly RegionId[]): RegionId[] {
   const last = new Map<RegionId, number>()
   for (const [id, n] of Object.entries(p.nodes) as [NodeId, NodeProgress][]) {
@@ -153,7 +169,12 @@ export function revisitRegions(p: ProfileDoc, day: string, open: readonly Region
   }
   const stale = open.filter((r) => last.has(r) && daysBetween(learningDay(last.get(r)!), day) >= REVISIT_AFTER_DAYS)
     .sort((a, b) => last.get(a)! - last.get(b)!)
-  const fresh = open.filter((r) => !last.has(r))
+  const own = ownWorld(p.grade, open)
+  const from = own ? WORLD_BY_ID[own].grade : p.grade
+  const fresh = open.filter((r) => {
+    const world = REGION_BY_ID[r]?.world
+    return !last.has(r) && !!world && WORLD_BY_ID[world].grade >= from
+  })
   return [...stale, ...fresh]
 }
 

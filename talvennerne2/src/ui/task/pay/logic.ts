@@ -67,6 +67,23 @@ export function canPay(task: Pick<Task, 'answer' | 'answerType' | 'prompt'>): bo
   return Number.isInteger(a) && a > 0 && fewestPieces(a, purseOf(task)) !== null
 }
 
+/** The tray with one more piece laid, or null when it is full or the piece is no coin or note. */
+export function trayWith(tray: readonly Piece[], piece: Piece): Piece[] | null {
+  if (tray.length >= MAX_TRAY || !isPiece(piece)) return null
+  return [...tray, piece]
+}
+
+/**
+ * The tray with one `piece` taken back (the last one laid), or null when there is none of it: a
+ * second tap on a pile that is already gone takes nothing (QA2 P3-15; it used to take the last
+ * piece of another kind, since `lastIndexOf` gave −1 and `splice(−1, 1)` cut the end).
+ */
+export function trayWithout(tray: readonly Piece[], piece: Piece): Piece[] | null {
+  const i = tray.lastIndexOf(piece)
+  if (i < 0) return null
+  return [...tray.slice(0, i), ...tray.slice(i + 1)]
+}
+
 /** What the tray hands in: its sum in øre, or its coin set when the task asks for the coins. */
 export function payValue(task: Pick<Task, 'answerType'>, tray: readonly Piece[]): AnswerValue {
   if (task.answerType === 'set') return [...tray].sort(desc).map(tokenOf).join('|')

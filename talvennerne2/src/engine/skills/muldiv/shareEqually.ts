@@ -11,8 +11,9 @@
 // 'ambiguous' (A9): 6 between 3 → 3 (6 − 3, or the 3 animals). These are the cards' and the keypad's:
 // a deal hands in the share or −1 and nothing else, so the share kind has no candidates (candidatesFor)
 // and is never an opportunity for wrongOperation.
-// Hint: deal one at a time — "Giv en til hvert dyr ad gangen, rundt og rundt, til der ikke er flere.
-// Så får hvert dyr fire. Tolv delt med tre giver fire." with each animal's share as groups.
+// Hint: deal one at a time — "Læg en på hver tallerken ad gangen, rundt og rundt, til der ikke er
+// flere. På hver tallerken ligger der nu fire. Tolv delt med tre giver fire." with each animal's share
+// on its plate (the groups picture shows plates, so the words do too: QA2 P3-6).
 import type { Candidate, ErrorTag, Fact, HintSpec, SkillModule, SpeechPart, TaskKind } from '../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
 
