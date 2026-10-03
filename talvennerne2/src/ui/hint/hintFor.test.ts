@@ -42,6 +42,13 @@ describe('hintFor', () => {
     expect(toDanishText(h.speech)).toContain('En tier og tre enere giver tretten.')
   })
 
+  it('plays the digitSwap film in the kroner the child typed on the kroner keypad (entryScale 100)', () => {
+    const t = { ...task(hear20Fixture, 'hear:13', 'keypad'), answer: 4700, entryScale: 100 as const, range: [0, 10_000] as [number, number] }
+    const h = hintFor(t, 7400, FIX)
+    expect(h.misconception).toBe('digitSwap')
+    expect(h.visual).toEqual({ scene: 'anim.digitSwap', n: 47, given: 74 })
+  })
+
   it('plays the smallerFromLarger film from the task’s own tags when no skill is registered', () => {
     const h = hintFor(ex('keypad-52-37'), 25, FIX)
     expect(h.animated).toBe(true)

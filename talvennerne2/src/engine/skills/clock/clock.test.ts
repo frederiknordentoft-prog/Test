@@ -175,25 +175,29 @@ describe('where the dial starts (Task.dialStart)', () => {
           const s = t.dialStart!
           expect(Number.isInteger(s) && s >= 0 && s < 720 && s % stepOf(def) === 0, `${f.id} starts at ${s}`).toBe(true)
           expect(dial(s), `${f.id} starts at its answer`).not.toBe(dial(Number(f.answer)))
-          // touching the hands and ticking hands in the start: never right
+          // touching the hands and ticking hands in the start: never right, and never a misconception's clock
           expect(isCorrect(t, s), f.id).toBe(false)
+          expect(isMisconception(classifyAnswer(t, s)), `${f.id} starts at a misconception's clock (${s})`).toBe(false)
         }
         expect(build(def, f.id, 'choice').dialStart, f.id).toBeUndefined()
       }
     }
   })
 
-  it('spreads the starts evenly over every other time on the step, from the task’s own seeded rng', () => {
+  it('spreads the starts evenly over the other times on the step, but the misconceptions’ clocks, from the task’s own seeded rng', () => {
     for (const [def, id] of [[clockHour, 'hel:0'], [clockHalf, 'halv:150'], [clockQuarter, 'kvart:165']] as const) {
-      const others = 720 / stepOf(def) - 1
+      const probe = build(def, id, 'clockSet', 0)
+      // a start on "halv tre" read as 3:30 would log a touch and a tick as that misconception (GENFIX2's note)
+      const taken = new Set(Object.entries(probe.distractorTags).filter(([, tag]) => isMisconception(tag)).map(([k]) => dial(Number(k))))
+      const want = Array.from({ length: 720 / stepOf(def) }, (_, i) => i * stepOf(def))
+        .filter((v) => v !== Number(fact(def, id).answer) && !taken.has(v))
       const counts = new Map<number, number>()
-      for (let seed = 0; seed < others * 100; seed++) {
+      for (let seed = 0; seed < want.length * 100; seed++) {
         const s = build(def, id, 'clockSet', seed).dialStart!
         counts.set(s, (counts.get(s) ?? 0) + 1)
       }
-      const want = Array.from({ length: others + 1 }, (_, i) => i * stepOf(def)).filter((v) => v !== Number(fact(def, id).answer))
       expect([...counts.keys()].sort((a, b) => a - b), id).toEqual(want)
-      for (const [s, n] of counts) expect(n > 60 && n < 140, `${id}: ${s} drawn ${n} times of ${others * 100}`).toBe(true)
+      for (const [s, n] of counts) expect(n > 60 && n < 140, `${id}: ${s} drawn ${n} times of ${want.length * 100}`).toBe(true)
       expect(build(def, id, 'clockSet', 7).dialStart).toBe(build(def, id, 'clockSet', 7).dialStart)
     }
   })

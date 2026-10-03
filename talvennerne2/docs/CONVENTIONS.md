@@ -9,7 +9,7 @@ og ejes af integratoren — foreslå ændringer i din rapport i stedet for at re
 - Containeren kan genstarte uden varsel. Lav WIP-commits i dit worktree ca. hvert 20. minut (også når noget er rødt) og altid før lange kørsler. Lange jobs skal kunne genoptages, hvor de slap.
 - `talvennerne2/node_modules` er symlinket fra hovedtræet. Installér aldrig pakker; mangler du en, så skriv det i rapporten.
 - Før hver commit: `cd talvennerne2 && npm run scope -- '<dine globs>'`, `npx tsc --noEmit`, `npx vitest run` (grønt for dine filer) og `npm run build`.
-- Commit som `git -c user.email=fnordentoft@icloud.com -c user.name="Frederik Nordentoft" commit -m "<dansk besked>"` og afslut beskeden med
+- Commit som `git commit --author="Frederik Nordentoft <fnordentoft@icloud.com>" -m "<dansk besked>"`. Forfatteren er Frederik, og committeren er Claude <noreply@anthropic.com> fra git-konfigurationen. Det er dén committer, GitHub viser som verificeret, så sæt aldrig `-c user.email` eller `-c user.name`. Afslut beskeden med
   ```
   Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
   Claude-Session: https://claude.ai/code/session_01NkKeG1vom4pEx42VmVeg8D

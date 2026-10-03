@@ -111,18 +111,24 @@ const numify = (s: string): AnswerValue => (/^\d+$/.test(s) ? Number(s) : s)
 /** One turn of the analog dial in minutes. */
 const DIAL = 720
 
+const onDial = (v: number): number => ((Math.round(v) % DIAL) + DIAL) % DIAL
+
 /**
  * Where a clockSet dial starts (Task.dialStart): one of the times on the dial's step, drawn evenly
- * from all of them but the answer. A dial that started on the answer would hand it over for a touch
- * and a tick; any other leaning would tell the child something about it. The step is the clock
- * prompt's; without one, a whole hour (on every step a dial can have).
+ * from all of them but the answer and the misconceptions' clocks. A dial that started on the answer
+ * would hand it over for a touch and a tick; one on "halv tre" read as 3:30 would log a touch and a
+ * tick as that misconception (GENFIX2's note). Any other leaning would tell the child something
+ * about the answer. The step is the clock prompt's; without one, a whole hour (on every step a dial
+ * can have).
  */
-function dialStartOf(prompt: Prompt, answer: AnswerValue, rng: Rng): number {
+function dialStartOf(prompt: Prompt, answer: AnswerValue, tags: Readonly<Record<string, ErrorTag>>, rng: Rng): number {
   const step = prompt.scene === 'clock' ? prompt.step : 60
-  const at = typeof answer === 'number' ? ((Math.round(answer) % DIAL) + DIAL) % DIAL : null
-  const free: number[] = []
-  for (let m = 0; m < DIAL; m += step) if (m !== at) free.push(m)
-  return rng.pick(free)
+  const at = typeof answer === 'number' ? onDial(answer) : null
+  const taken = new Set(Object.entries(tags).filter(([, tag]) => isMisconceptionId(tag)).map(([k]) => onDial(Number(k))))
+  const all: number[] = []
+  for (let m = 0; m < DIAL; m += step) if (m !== at) all.push(m)
+  const free = all.filter((m) => !taken.has(m))
+  return rng.pick(free.length > 0 ? free : all)
 }
 
 interface Tagged { key: string; value: AnswerValue; tag: ErrorTag }
@@ -221,7 +227,7 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
   const guessFloor = ext.guessFloor ? ext.guessFloor(fact, kind) : 0
   const scaffold = (ctx.box ?? 0) === 0 && !NO_SCAFFOLD.has(ctx.mode ?? 'round')
   // drawn last, so everything above takes the same draws from the rng as before
-  const dialStart = kind === 'clockSet' ? dialStartOf(prompt, answer, rng) : undefined
+  const dialStart = kind === 'clockSet' ? dialStartOf(prompt, answer, distractorTags, rng) : undefined
 
   const task: Task = {
     ...probe,

@@ -190,6 +190,34 @@ describe('number lines, clocks and presentation', () => {
     expect(buildTask(clock, evening, 'choice', makeRng(1), 0).task.modulo).toBe(1440)
   })
 
+  it('starts a clockSet dial on its step, never on the answer nor on a misconception’s clock, and only clockSet', () => {
+    const clock: SkillModule = {
+      ...addTo10Fixture,
+      kinds: ['choice', 'clockSet'],
+      answerType: () => 'minutes',
+      prompt: () => ({ scene: 'clock', minutes: null, step: 30, h24: false }),
+      optionView: () => 'clock',
+      range: () => [0, 719],
+      candidates: (f) => [{ value: ((f.answer as number) + 60) % 720, tag: 'halfPastNext' }],
+    }
+    const starts = new Set<number>()
+    for (let answer = 30; answer < 720; answer += 60) {
+      const f: Fact = { id: `clk:${answer}`, skill: 'addTo10', family: 'small', operands: [answer], answer, rank: 0 }
+      for (let seed = 1; seed <= 40; seed++) {
+        const t = buildTask(clock, f, 'clockSet', makeRng(seed), 0).task
+        expect(t.dialStart, f.id).toBeDefined()
+        const start = t.dialStart!
+        expect(start % 30, f.id).toBe(0)
+        expect(start, f.id).not.toBe(answer)
+        expect(start, f.id).not.toBe((answer + 60) % 720)
+        starts.add(start)
+      }
+      expect(buildTask(clock, f, 'choice', makeRng(1), 0).task.dialStart).toBeUndefined()
+    }
+    // spread over the dial (no leaning that could tell the child about the answer)
+    expect(starts.size).toBeGreaterThanOrEqual(20)
+  })
+
   it('shows the scaffold at box 0 only, and never in a trial or placement', () => {
     const f = factOf(addTo10Fixture, 'add:2+3')
     expect(buildTask(addTo10Fixture, f, 'keypad', makeRng(1), 0, { box: 0 }).task.scaffold).toBe(true)

@@ -163,8 +163,13 @@ export function defaultVisual(task: Task): AnyVisual {
 
 function animatedVisual(tag: AnimatedHint, task: Task, given: AnswerValue | null): AnyVisual | null {
   const s = sumOf(task.prompt)
-  if (tag === 'digitSwap' && typeof task.answer === 'number' && task.answer >= 10 && task.answer < 100) {
-    return { scene: 'anim.digitSwap', n: task.answer, given: typeof given === 'number' ? given : null }
+  if (tag === 'digitSwap' && typeof task.answer === 'number') {
+    // money is typed in kroner (entryScale 100): the film swaps the digits the child typed, 47 and 74
+    const scale = task.entryScale || 1
+    const n = task.answer / scale
+    if (Number.isInteger(n) && n >= 10 && n < 100) {
+      return { scene: 'anim.digitSwap', n, given: typeof given === 'number' ? given / scale : null }
+    }
   }
   if (tag === 'forgotCarry' && s && s.op === '+' && s.a + s.b < 1000) return { scene: 'anim.forgotCarry', a: s.a, b: s.b }
   if (tag === 'smallerFromLarger' && s && s.op === '−' && s.a < 1000 && s.b <= s.a) return { scene: 'anim.smallerFromLarger', a: s.a, b: s.b }

@@ -39,8 +39,8 @@ git_commit() {  # $1 = besked; resten = stier
   [ "$COMMIT" = 1 ] || return 0
   git add -- "$@" || return 1
   git diff --cached --quiet && return 0
-  git -c user.email=fnordentoft@icloud.com -c user.name="Frederik Nordentoft" \
-    commit -q -m "$msg" -m "$TRAILER" && git log --oneline -1
+  # author Frederik, committer Claude from the git config (what GitHub shows as verified; CONVENTIONS)
+  git commit -q --author="Frederik Nordentoft <fnordentoft@icloud.com>" -m "$msg" -m "$TRAILER" && git log --oneline -1
 }
 
 commit_masters() {  # nye og ændrede mastere i bidder på højst 10 MB, så indeks og logs
