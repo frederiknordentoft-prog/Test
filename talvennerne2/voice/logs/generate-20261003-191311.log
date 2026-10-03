@@ -1,0 +1,672 @@
+19:13:11 generate.py --wave 2 --threads 4 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261003-191311.log)
+19:13:11 1061 klip valgt, 973 færdige, 88 at lave
+19:13:25 input frame rate=25
+19:13:26 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+19:13:27 model indlæst på 14 s (4 tråde)
+19:13:29 ✅ EOS token detected! Stopping generation at step 20
+19:13:34 kald single k=1 t4 'er,': 6.7 s for 0.76 s lyd
+19:13:35   hint.change.is t4: 0.28 s (forhold 0.91) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:13:38 ✅ EOS token detected! Stopping generation at step 21
+19:13:46 kald single k=1 t4 'og gå,': 10.7 s for 0.80 s lyd
+19:13:46   hint.nl.andGo t4: 0.35 s (forhold 0.56) -18.09 LUFS, none: 'None' CER None (None) → ok
+19:13:49 ✅ EOS token detected! Stopping generation at step 21
+19:13:56 kald single k=1 t4 'værd.': 10.4 s for 0.80 s lyd
+19:13:57   hint.place.worthEnd t4: 0.34 s (forhold 1.07) -18.02 LUFS, none: 'None' CER None (None) → ok
+19:14:00 ✅ EOS token detected! Stopping generation at step 31
+19:14:09 kald single k=1 t4 'rævehvalp': 12.5 s for 1.20 s lyd
+19:14:09   name.baby.fox t4: 0.74 s (forhold 0.79) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:14:13 ✅ EOS token detected! Stopping generation at step 34
+19:14:22 kald single k=1 t4 'ugleunge': 12.9 s for 1.32 s lyd
+19:14:23   name.baby.owl t4: 0.73 s (forhold 0.78) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:14:26 ✅ EOS token detected! Stopping generation at step 26
+19:14:35 kald single k=1 t4 'egernunge': 11.8 s for 1.00 s lyd
+19:14:35   name.baby.squirrel t4: 0.65 s (forhold 0.52) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:14:40 ✅ EOS token detected! Stopping generation at step 42
+19:14:49 kald single k=1 t4 'enhjørningeføl': 14.2 s for 1.64 s lyd
+19:14:50   name.breed.foal t4: 0.96 s (forhold 0.62) -18.08 LUFS, none: 'None' CER None (None) → ok
+19:14:54 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:14:54 ✅ EOS token detected! Stopping generation at step 32
+19:15:03 kald single k=1 t4 'abrikos': 13.0 s for 1.24 s lyd
+19:15:03   name.color.hamster.c1 t4: 0.86 s (forhold 0.92) -18.02 LUFS, none: 'None' CER None (None) → ok
+19:15:07 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:15:07 ✅ EOS token detected! Stopping generation at step 33
+19:15:16 kald single k=1 t4 'fuks': 13.0 s for 1.28 s lyd
+19:15:16   name.color.horse.c1 t4: 0.52 s (forhold 1.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:15:19 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:15:19 ✅ EOS token detected! Stopping generation at step 23
+19:15:28 kald single k=1 t4 'broget': 11.3 s for 0.88 s lyd
+19:15:28   name.color.horse.c5 t4: 0.38 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:15:31 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:15:31 ✅ EOS token detected! Stopping generation at step 23
+19:15:39 kald single k=1 t4 'mint': 11.2 s for 0.88 s lyd
+19:15:39   name.color.unicorn.c4 t4: 0.47 s (forhold 1.49) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:15:43 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:15:43 ✅ EOS token detected! Stopping generation at step 26
+19:15:51 kald single k=1 t4 'Festhat': 11.6 s for 1.00 s lyd
+19:15:51   name.item.fest-head t4: 0.39 s (forhold 0.62) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:15:56 ✅ EOS token detected! Stopping generation at step 35
+19:16:05 kald single k=1 t4 'Kongekåbe': 13.2 s for 1.36 s lyd
+19:16:05   name.item.kongelig-back t4: 0.74 s (forhold 0.59) -18.17 LUFS, none: 'None' CER None (None) → ok
+19:16:09 ✅ EOS token detected! Stopping generation at step 31
+19:16:17 kald single k=1 t4 'Monokel': 12.2 s for 1.20 s lyd
+19:16:18   name.item.kongelig-face t4: 0.59 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:16:22 ✅ EOS token detected! Stopping generation at step 34
+19:16:31 kald single k=1 t4 'Ridderkappe': 13.2 s for 1.32 s lyd
+19:16:31   name.item.ridder-back t4: 0.70 s (forhold 0.56) -18.07 LUFS, none: 'None' CER None (None) → ok
+19:16:34 ✅ EOS token detected! Stopping generation at step 24
+19:16:43 kald single k=1 t4 'Gulerod': 11.6 s for 0.92 s lyd
+19:16:43   name.item.rytter-hand t4: 0.49 s (forhold 0.52) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:16:48 ✅ EOS token detected! Stopping generation at step 39
+19:16:57 kald single k=1 t4 'Tryllekjortel': 13.8 s for 1.52 s lyd
+19:16:57   name.item.talmagiker-body t4: 0.89 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:17:02 ✅ EOS token detected! Stopping generation at step 35
+19:17:10 kald single k=1 t4 'Pelshue': 13.0 s for 1.36 s lyd
+19:17:11   name.item.vinter-head t4: 0.67 s (forhold 0.72) -18.13 LUFS, none: 'None' CER None (None) → ok
+19:17:15 ✅ EOS token detected! Stopping generation at step 36
+19:17:24 kald single k=1 t4 'Hundredemarken': 13.4 s for 1.40 s lyd
+19:17:24   name.region.w1-tal100 t4: 0.80 s (forhold 0.51) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:17:28 ✅ EOS token detected! Stopping generation at step 30
+19:17:37 kald single k=1 t4 'Tyvebroen': 12.2 s for 1.16 s lyd
+19:17:37   name.region.w1-tieren t4: 0.77 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:17:42 ✅ EOS token detected! Stopping generation at step 38
+19:17:51 kald single k=1 t4 'Gangegrotten': 14.0 s for 1.48 s lyd
+19:17:51   name.region.w2-gange t4: 0.80 s (forhold 0.64) -18.09 LUFS, none: 'None' CER None (None) → ok
+19:17:56 ✅ EOS token detected! Stopping generation at step 38
+19:18:05 kald single k=1 t4 'Hundredebroen': 13.8 s for 1.48 s lyd
+19:18:06   name.region.w2-hundreder t4: 0.81 s (forhold 0.52) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:18:08 ✅ EOS token detected! Stopping generation at step 20
+19:18:17 kald single k=1 t4 'Ræv': 10.9 s for 0.76 s lyd
+19:18:17   name.species.fox t4: 0.38 s (forhold 1.20) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:18:19 ✅ EOS token detected! Stopping generation at step 18
+19:18:27 kald single k=1 t4 'Ugle': 10.3 s for 0.68 s lyd
+19:18:27   name.species.owl t4: 0.36 s (forhold 0.58) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:18:32 ✅ EOS token detected! Stopping generation at step 35
+19:18:41 kald single k=1 t4 'Enhjørning': 13.1 s for 1.36 s lyd
+19:18:41   name.species.unicorn t4: 0.71 s (forhold 0.76) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:18:45 ✅ EOS token detected! Stopping generation at step 37
+19:18:54 kald single k=1 t4 'enkronen,': 13.0 s for 1.44 s lyd
+19:18:54   noun.coin.100.def.mid t4: 0.77 s (forhold 0.82) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:18:58 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:18:58 ✅ EOS token detected! Stopping generation at step 29
+19:19:06 kald single k=1 t4 'en enkrone,': 11.9 s for 1.12 s lyd
+19:19:06   noun.coin.100.indef.mid t4: 0.89 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:19:10 ✅ EOS token detected! Stopping generation at step 30
+19:19:19 kald single k=1 t4 'enkroner.': 12.1 s for 1.16 s lyd
+19:19:19   noun.coin.100.pl.end t4: 0.62 s (forhold 0.67) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:19:23 ✅ EOS token detected! Stopping generation at step 32
+19:19:31 kald single k=1 t4 'enkroner,': 12.6 s for 1.24 s lyd
+19:19:32   noun.coin.100.pl.mid t4: 0.66 s (forhold 0.70) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:19:37 ✅ EOS token detected! Stopping generation at step 47
+19:19:47 kald single k=1 t4 'hundredkronesedlen.': 15.4 s for 1.84 s lyd
+19:19:48   noun.coin.10000.def.end t4: 1.18 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:19:53 ✅ EOS token detected! Stopping generation at step 44
+19:20:03 kald single k=1 t4 'hundredkronesedlen,': 15.1 s for 1.72 s lyd
+19:20:03   noun.coin.10000.def.mid t4: 1.07 s (forhold 0.57) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:20:08 ✅ EOS token detected! Stopping generation at step 43
+19:20:18 kald single k=1 t4 'en hundredkroneseddel,': 14.5 s for 1.68 s lyd
+19:20:18   noun.coin.10000.indef.mid t4: 1.10 s (forhold 0.50) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:20:23 ✅ EOS token detected! Stopping generation at step 43
+19:20:33 kald single k=1 t4 'hundredkronesedler.': 14.5 s for 1.68 s lyd
+19:20:33   noun.coin.10000.pl.end t4: 1.08 s (forhold 0.57) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:20:39 ✅ EOS token detected! Stopping generation at step 47
+19:20:48 kald single k=1 t4 'hundredkronesedler,': 15.1 s for 1.84 s lyd
+19:20:49   noun.coin.10000.pl.mid t4: 1.13 s (forhold 0.60) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:20:54 ✅ EOS token detected! Stopping generation at step 41
+19:21:03 kald single k=1 t4 'tyvekronen.': 14.6 s for 1.60 s lyd
+19:21:04   noun.coin.2000.def.end t4: 0.89 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:21:08 ✅ EOS token detected! Stopping generation at step 31
+19:21:16 kald single k=1 t4 'tyvekronen,': 12.8 s for 1.20 s lyd
+19:21:17   noun.coin.2000.def.mid t4: 0.81 s (forhold 0.65) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:21:21 ✅ EOS token detected! Stopping generation at step 34
+19:21:30 kald single k=1 t4 'tyvekroner.': 13.1 s for 1.32 s lyd
+19:21:30   noun.coin.2000.pl.end t4: 0.76 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:21:35 ✅ EOS token detected! Stopping generation at step 35
+19:21:43 kald single k=1 t4 'tyvekroner,': 13.2 s for 1.36 s lyd
+19:21:44   noun.coin.2000.pl.mid t4: 0.81 s (forhold 0.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:21:50 ✅ EOS token detected! Stopping generation at step 47
+19:21:59 kald single k=1 t4 'tohundredkronesedlen.': 15.4 s for 1.84 s lyd
+19:22:00   noun.coin.20000.def.end t4: 1.28 s (forhold 0.58) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:22:06 ✅ EOS token detected! Stopping generation at step 52
+19:22:16 kald single k=1 t4 'tohundredkronesedlen,': 16.3 s for 2.04 s lyd
+19:22:17   noun.coin.20000.def.mid t4: 1.31 s (forhold 0.60) -18.16 LUFS, none: 'None' CER None (None) → ok
+19:22:23 ✅ EOS token detected! Stopping generation at step 51
+19:22:33 kald single k=1 t4 'en tohundredkroneseddel,': 16.2 s for 2.00 s lyd
+19:22:33   noun.coin.20000.indef.mid t4: 1.34 s (forhold 0.54) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:22:39 ✅ EOS token detected! Stopping generation at step 47
+19:22:48 kald single k=1 t4 'tohundredkronesedler.': 15.2 s for 1.84 s lyd
+19:22:49   noun.coin.20000.pl.end t4: 1.28 s (forhold 0.59) -18.12 LUFS, none: 'None' CER None (None) → ok
+19:22:54 ✅ EOS token detected! Stopping generation at step 45
+19:23:04 kald single k=1 t4 'tohundredkronesedler,': 14.9 s for 1.76 s lyd
+19:23:04   noun.coin.20000.pl.mid t4: 1.20 s (forhold 0.55) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:23:09 ✅ EOS token detected! Stopping generation at step 38
+19:23:18 kald single k=1 t4 'halvtredsøren.': 13.7 s for 1.48 s lyd
+19:23:18   noun.coin.50.def.end t4: 0.90 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:23:23 ✅ EOS token detected! Stopping generation at step 39
+19:23:32 kald single k=1 t4 'halvtredsøren,': 13.9 s for 1.52 s lyd
+19:23:33   noun.coin.50.def.mid t4: 0.86 s (forhold 0.69) -18.11 LUFS, none: 'None' CER None (None) → ok
+19:23:38 ✅ EOS token detected! Stopping generation at step 41
+19:23:47 kald single k=1 t4 'en halvtredsøre,': 13.8 s for 1.60 s lyd
+19:23:47   noun.coin.50.indef.mid t4: 1.04 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:23:51 ✅ EOS token detected! Stopping generation at step 35
+19:24:00 kald single k=1 t4 'halvtredsører.': 12.6 s for 1.36 s lyd
+19:24:00   noun.coin.50.pl.end t4: 0.83 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:24:04 ✅ EOS token detected! Stopping generation at step 39
+19:24:13 kald single k=1 t4 'halvtredsører,': 13.3 s for 1.52 s lyd
+19:24:14   noun.coin.50.pl.mid t4: 0.80 s (forhold 0.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:24:17 ✅ EOS token detected! Stopping generation at step 30
+19:24:25 kald single k=1 t4 'femkronen,': 11.7 s for 1.16 s lyd
+19:24:26   noun.coin.500.def.mid t4: 0.81 s (forhold 0.86) -18.16 LUFS, none: 'None' CER None (None) → ok
+19:24:30 ✅ EOS token detected! Stopping generation at step 35
+19:24:39 kald single k=1 t4 'femkroner.': 13.1 s for 1.36 s lyd
+19:24:39   noun.coin.500.pl.end t4: 0.73 s (forhold 0.78) -18.11 LUFS, none: 'None' CER None (None) → ok
+19:24:43 ✅ EOS token detected! Stopping generation at step 32
+19:24:52 kald single k=1 t4 'femkroner,': 12.4 s for 1.24 s lyd
+19:24:52   noun.coin.500.pl.mid t4: 0.71 s (forhold 0.76) -18.09 LUFS, none: 'None' CER None (None) → ok
+19:24:58 ✅ EOS token detected! Stopping generation at step 50
+19:25:08 kald single k=1 t4 'halvtredskronesedlen.': 16.0 s for 1.96 s lyd
+19:25:08   noun.coin.5000.def.end t4: 1.24 s (forhold 0.66) -18.04 LUFS, none: 'None' CER None (None) → ok
+19:25:14 ✅ EOS token detected! Stopping generation at step 50
+19:25:24 kald single k=1 t4 'halvtredskronesedlen,': 15.6 s for 1.96 s lyd
+19:25:25   noun.coin.5000.def.mid t4: 1.41 s (forhold 0.75) -18.2 LUFS, none: 'None' CER None (None) → ok
+19:25:30 ✅ EOS token detected! Stopping generation at step 50
+19:25:43 kald single k=1 t4 'en halvtredskroneseddel,': 18.6 s for 1.96 s lyd
+19:25:44   noun.coin.5000.indef.mid t4: 1.34 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:25:49 ✅ EOS token detected! Stopping generation at step 45
+19:25:59 kald single k=1 t4 'halvtredskronesedler.': 15.2 s for 1.76 s lyd
+19:25:59   noun.coin.5000.pl.end t4: 1.20 s (forhold 0.64) -18.08 LUFS, none: 'None' CER None (None) → ok
+19:26:05 ✅ EOS token detected! Stopping generation at step 49
+19:26:15 kald single k=1 t4 'halvtredskronesedler,': 15.5 s for 1.92 s lyd
+19:26:15   noun.coin.5000.pl.mid t4: 1.35 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:26:21 ✅ EOS token detected! Stopping generation at step 51
+19:26:31 kald single k=1 t4 'femhundredkronesedlen.': 16.0 s for 2.00 s lyd
+19:26:32   noun.coin.50000.def.end t4: 1.49 s (forhold 0.68) -18.04 LUFS, none: 'None' CER None (None) → ok
+19:26:39 ✅ EOS token detected! Stopping generation at step 55
+19:26:49 kald single k=1 t4 'femhundredkronesedlen,': 16.7 s for 2.16 s lyd
+19:26:49   noun.coin.50000.def.mid t4: 1.47 s (forhold 0.67) -18.03 LUFS, none: 'None' CER None (None) → ok
+19:26:55 ✅ EOS token detected! Stopping generation at step 50
+19:27:05 kald single k=1 t4 'en femhundredkroneseddel,': 15.4 s for 1.96 s lyd
+19:27:05   noun.coin.50000.indef.mid t4: 1.33 s (forhold 0.53) -18.07 LUFS, none: 'None' CER None (None) → ok
+19:27:11 ✅ EOS token detected! Stopping generation at step 49
+19:27:21 kald single k=1 t4 'femhundredkronesedler.': 15.6 s for 1.92 s lyd
+19:27:21   noun.coin.50000.pl.end t4: 1.28 s (forhold 0.59) -18.04 LUFS, none: 'None' CER None (None) → ok
+19:27:27 ✅ EOS token detected! Stopping generation at step 50
+19:27:37 kald single k=1 t4 'femhundredkronesedler,': 15.7 s for 1.96 s lyd
+19:27:38   noun.coin.50000.pl.mid t4: 1.25 s (forhold 0.57) -18.05 LUFS, none: 'None' CER None (None) → ok
+19:27:41 ✅ EOS token detected! Stopping generation at step 27
+19:27:50 kald single k=1 t4 'ettallet.': 11.9 s for 1.04 s lyd
+19:27:50   noun.digit.1.end t4: 0.56 s (forhold 0.59) -18.12 LUFS, none: 'None' CER None (None) → ok
+19:27:53 ✅ EOS token detected! Stopping generation at step 27
+19:28:02 kald single k=1 t4 'ettallet,': 11.9 s for 1.04 s lyd
+19:28:02   noun.digit.1.mid t4: 0.66 s (forhold 0.70) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:28:05 ✅ EOS token detected! Stopping generation at step 25
+19:28:13 kald single k=1 t4 'en kam,': 11.4 s for 0.96 s lyd
+19:28:14   noun.mt.comb t4: 0.52 s (forhold 0.83) -18.1 LUFS, none: 'None' CER None (None) → ok
+19:28:17 ✅ EOS token detected! Stopping generation at step 24
+19:28:25 kald single k=1 t4 'en hval,': 11.1 s for 0.92 s lyd
+19:28:25   noun.mt.whale t4: 0.49 s (forhold 0.79) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:28:29 ✅ EOS token detected! Stopping generation at step 29
+19:28:37 kald single k=1 t4 'hundreder.': 11.9 s for 1.12 s lyd
+19:28:38   noun.place.h.pl.end t4: 0.64 s (forhold 0.68) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:28:41 ✅ EOS token detected! Stopping generation at step 31
+19:28:50 kald single k=1 t4 'hundreder,': 12.1 s for 1.20 s lyd
+19:28:50   noun.place.h.pl.mid t4: 0.57 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:28:53 ✅ EOS token detected! Stopping generation at step 27
+19:29:02 kald single k=1 t4 'hundrede.': 11.8 s for 1.04 s lyd
+19:29:02   noun.place.h.sg.end t4: 0.64 s (forhold 0.68) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:29:05 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:29:05 ✅ EOS token detected! Stopping generation at step 20
+19:29:13 kald single k=1 t4 'tier.': 10.5 s for 0.76 s lyd
+19:29:13   noun.place.t.sg.end t4: 0.38 s (forhold 0.60) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:29:18 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:29:18 ✅ EOS token detected! Stopping generation at step 46
+19:29:28 kald single k=1 t4 'sekskanter.': 14.9 s for 1.80 s lyd
+19:29:28   noun.shape.hexagon.pl.end t4: 0.73 s (forhold 0.78) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:29:32 ✅ EOS token detected! Stopping generation at step 28
+19:29:40 kald single k=1 t4 'sekskanter,': 11.9 s for 1.08 s lyd
+19:29:41   noun.shape.hexagon.pl.mid t4: 0.80 s (forhold 0.85) -18.06 LUFS, none: 'None' CER None (None) → ok
+19:29:45 ✅ EOS token detected! Stopping generation at step 36
+19:29:54 kald single k=1 t4 'ottekanter.': 13.2 s for 1.40 s lyd
+19:29:54   noun.shape.octagon.pl.end t4: 0.72 s (forhold 0.58) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:29:59 ✅ EOS token detected! Stopping generation at step 36
+19:30:07 kald single k=1 t4 'ottekanter,': 13.3 s for 1.40 s lyd
+19:30:08   noun.shape.octagon.pl.mid t4: 0.73 s (forhold 0.59) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:30:11 ✅ EOS token detected! Stopping generation at step 28
+19:30:20 kald single k=1 t4 'femkanter,': 11.7 s for 1.08 s lyd
+19:30:20   noun.shape.pentagon.pl.mid t4: 0.71 s (forhold 0.76) -18.11 LUFS, none: 'None' CER None (None) → ok
+19:30:23 ✅ EOS token detected! Stopping generation at step 29
+19:30:32 kald single k=1 t4 'romben.': 11.9 s for 1.12 s lyd
+19:30:32   noun.shape.rhombus.def.end t4: 0.52 s (forhold 0.82) -18.12 LUFS, none: 'None' CER None (None) → ok
+19:30:35 ✅ EOS token detected! Stopping generation at step 24
+19:30:43 kald single k=1 t4 'romben,': 11.3 s for 0.92 s lyd
+19:30:44   noun.shape.rhombus.def.mid t4: 0.53 s (forhold 0.84) -18.14 LUFS, none: 'None' CER None (None) → ok
+19:30:47 ✅ EOS token detected! Stopping generation at step 26
+19:30:55 kald single k=1 t4 'en rombe.': 11.3 s for 1.00 s lyd
+19:30:55   noun.shape.rhombus.indef.end t4: 0.58 s (forhold 0.62) -18.05 LUFS, none: 'None' CER None (None) → ok
+19:30:59 ✅ EOS token detected! Stopping generation at step 26
+19:31:07 kald single k=1 t4 'en rombe,': 11.6 s for 1.00 s lyd
+19:31:07   noun.shape.rhombus.indef.mid t4: 0.60 s (forhold 0.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:31:12 ✅ EOS token detected! Stopping generation at step 39
+19:31:21 kald single k=1 t4 'en halvcirkel,': 13.4 s for 1.52 s lyd
+19:31:21   noun.shape.semicircle.indef.mid t4: 0.88 s (forhold 0.70) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:31:25 ✅ EOS token detected! Stopping generation at step 35
+19:31:34 kald single k=1 t4 'keglen,': 13.0 s for 1.36 s lyd
+19:31:35   noun.solid.cone.def.mid t4: 0.67 s (forhold 1.07) -18.1 LUFS, none: 'None' CER None (None) → ok
+19:31:38 ✅ EOS token detected! Stopping generation at step 25
+19:31:46 kald single k=1 t4 'kuglen.': 11.3 s for 0.96 s lyd
+19:31:46   noun.solid.sphere.def.end t4: 0.57 s (forhold 0.91) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:31:49 ✅ EOS token detected! Stopping generation at step 26
+19:31:58 kald single k=1 t4 'kuglen,': 11.3 s for 1.00 s lyd
+19:31:58   noun.solid.sphere.def.mid t4: 0.62 s (forhold 0.99) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:32:01 ✅ EOS token detected! Stopping generation at step 22
+19:32:09 kald single k=1 t4 'kugler.': 10.9 s for 0.84 s lyd
+19:32:09   noun.solid.sphere.pl.end t4: 0.43 s (forhold 0.68) -18.12 LUFS, none: 'None' CER None (None) → ok
+19:32:12 ✅ EOS token detected! Stopping generation at step 22
+19:32:20 kald single k=1 t4 'gram.': 10.8 s for 0.84 s lyd
+19:32:20   noun.unit.g.end t4: 0.25 s (forhold 0.79) -18.72 LUFS, none: 'None' CER None (None) → ok
+19:32:24 ✅ EOS token detected! Stopping generation at step 29
+19:32:32 kald single k=1 t4 'gram,': 11.6 s for 1.12 s lyd
+19:32:32   noun.unit.g.mid t4: 0.23 s (forhold 0.73) -18.57 LUFS, none: 'None' CER None (None) → ok
+19:32:37   sammensat frag.det_er + hint.change.is: 'dr ar' CER 0.571 (wav2vec2, whisper: 'Det er R') → FEJL
+19:32:40   sammensat frag.det_er + hint.nl.andGo: 'det er at gå' CER 0.222 (wav2vec2, whisper: 'Det er at gå') → FEJL
+19:32:42   sammensat frag.det_er + hint.place.worthEnd: 'det er hver' CER 0.333 (wav2vec2, whisper: 'Det er hver') → FEJL
+19:32:45   sammensat frag.det_er + name.baby.fox: 'det er revehvalp' CER 0.071 (wav2vec2, whisper: 'Det er Rebevalp') → FEJL
+19:32:47   sammensat frag.det_er + name.baby.owl: 'det er uleunge' CER 0.077 (wav2vec2, whisper: 'Det er Ole Unge') → FEJL
+19:32:50   sammensat frag.det_er + name.baby.squirrel: 'det er ijegnunge' CER 0.214 (wav2vec2, whisper: 'Det er i jer nogle') → FEJL
+19:32:53   sammensat frag.det_er + name.breed.foal: 'det er i en hjørninge fyl' CER 0.105 (wav2vec2, whisper: 'Det er i en Hjørninge Fø') → FEJL
+19:32:55   sammensat frag.det_er + name.color.hamster.c1: 'Det er abrikos' CER 0.000 (whisper, wav2vec2: 'det er abricous') → ok
+19:32:58   sammensat frag.det_er + name.color.horse.c1: 'det er fux' CER 0.222 (wav2vec2, whisper: 'Det er Fuchs') → FEJL
+19:33:00   sammensat frag.det_er + name.color.horse.c5: 'det er proett' CER 0.273 (wav2vec2, whisper: 'Det er på året') → FEJL
+19:33:03   sammensat frag.det_er + name.color.unicorn.c4: 'det er mindt' CER 0.111 (wav2vec2, whisper: 'Det er ment') → FEJL
+19:33:05   sammensat frag.det_er + name.item.fest-head: 'det er veste' CER 0.333 (wav2vec2, whisper: 'Det er fest') → FEJL
+19:33:08   sammensat frag.det_er + name.item.kongelig-back: 'Det er kongekåbe' CER 0.000 (whisper, wav2vec2: 'det er kongekope') → ok
+19:33:08   sammensat frag.det_er + name.item.kongelig-face: 'det er monokel' CER 0.000 (wav2vec2) → ok
+19:33:11   sammensat frag.det_er + name.item.ridder-back: 'Det er ridderkappe' CER 0.000 (whisper, wav2vec2: 'det er bridderkappe') → ok
+19:33:11   sammensat frag.det_er + name.item.rytter-hand: 'det er gulerod' CER 0.000 (wav2vec2) → ok
+19:33:14   sammensat frag.det_er + name.item.talmagiker-body: 'det er tryllekjorte' CER 0.056 (wav2vec2, whisper: 'Det er tryllekjorte') → FEJL
+19:33:16   sammensat frag.det_er + name.item.vinter-head: 'Det er pelshue' CER 0.000 (whisper, wav2vec2: 'det er pelcio') → ok
+19:33:19   sammensat frag.det_er + name.region.w1-tal100: 'der hun har været i marken' CER 0.474 (wav2vec2, whisper: 'Det er hun har været i marken') → FEJL
+19:33:22   sammensat frag.det_er + name.region.w1-tieren: 'det er 20 proln' CER 0.143 (wav2vec2, whisper: 'Det er Tøvebroen') → FEJL
+19:33:24   sammensat frag.det_er + name.region.w2-gange: 'det er gangekrotten' CER 0.059 (wav2vec2, whisper: 'Det er gangekrotten') → FEJL
+19:33:27   sammensat frag.det_er + name.region.w2-hundreder: 'det er 100 broen' CER 0.000 (wav2vec2, whisper: 'Det er 100 af broen') → FEJL
+19:33:29   sammensat frag.det_er + name.species.fox: 'det er rev' CER 0.125 (wav2vec2, whisper: 'Det er rev') → FEJL
+19:33:32   sammensat frag.det_er + name.species.owl: 'det er rolig' CER 0.444 (wav2vec2, whisper: 'Det er Ole') → FEJL
+19:33:35   sammensat frag.det_er + name.species.unicorn: 'det er en hjørning' CER 0.000 (wav2vec2, whisper: 'Det er i en hjørning') → FEJL
+19:33:37   sammensat frag.det_er + noun.coin.100.def.mid: 'det er en kronen' CER 0.000 (wav2vec2, whisper: 'Det er en krone') → FEJL
+19:33:40   sammensat frag.det_er + noun.coin.100.indef.mid: 'det er n en krone' CER 0.071 (wav2vec2, whisper: 'Det er en en krone') → FEJL
+19:33:43   sammensat frag.det_er + noun.coin.100.pl.end: 'det er en kroner' CER 0.000 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:33:45   sammensat frag.det_er + noun.coin.100.pl.mid: 'det er en krone' CER 0.077 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:33:48   sammensat frag.det_er + noun.coin.10000.def.end: 'det er 100 kronseden' CER 0.130 (wav2vec2, whisper: 'Det er 100 kroner sæden') → FEJL
+19:33:51   sammensat frag.det_er + noun.coin.10000.def.mid: 'det er 100 kroncellen' CER 0.174 (wav2vec2, whisper: 'Det er 100 kroner sædlen') → FEJL
+19:33:54   sammensat frag.det_er + noun.coin.10000.indef.mid: 'det er en 100 kronseddel' CER 0.080 (wav2vec2, whisper: 'Det er en 100 kroner seddel') → FEJL
+19:33:57   sammensat frag.det_er + noun.coin.10000.pl.end: 'det er 100 kron sedler' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:33:59   sammensat frag.det_er + noun.coin.10000.pl.mid: 'det er 100 kronsedler' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:34:02   sammensat frag.det_er + noun.coin.2000.def.end: 'det er 20 kroen' CER 0.067 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:34:05   sammensat frag.det_er + noun.coin.2000.def.mid: 'det er 20 kr' CER 0.267 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:34:07   sammensat frag.det_er + noun.coin.2000.pl.end: 'Det er tyvekroner' CER 0.000 (whisper, wav2vec2: 'det er 20 kroer') → ok
+19:34:10   sammensat frag.det_er + noun.coin.2000.pl.mid: 'det er 20 krer' CER 0.133 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:34:13   sammensat frag.det_er + noun.coin.20000.def.end: 'det er 200 kron sedlen' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sædlen') → FEJL
+19:34:16   sammensat frag.det_er + noun.coin.20000.def.mid: 'det er 200 kronisedlen' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner i sedlen') → FEJL
+19:34:19   sammensat frag.det_er + noun.coin.20000.indef.mid: 'det er en 200 kronesædddel' CER 0.111 (wav2vec2, whisper: 'Det er en 200 kroner seddel') → FEJL
+19:34:22   sammensat frag.det_er + noun.coin.20000.pl.end: 'det er 200 kronesedler' CER 0.040 (wav2vec2, whisper: 'Det er 200 kroner i sedler') → FEJL
+19:34:24   sammensat frag.det_er + noun.coin.20000.pl.mid: 'det er 200 kron sedler' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sedler') → FEJL
+19:34:27   sammensat frag.det_er + noun.coin.50.def.end: 'det er 50 yren' CER 0.056 (wav2vec2, whisper: 'Det er 50 øerne') → FEJL
+19:34:29   sammensat frag.det_er + noun.coin.50.def.mid: 'det er 50ørern' CER 0.056 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:34:32   sammensat frag.det_er + noun.coin.50.indef.mid: 'det er en 50 øer' CER 0.105 (wav2vec2, whisper: 'Det er en halvtreds øer') → FEJL
+19:34:34   sammensat frag.det_er + noun.coin.50.pl.end: 'det er 50 yre' CER 0.111 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:34:37   sammensat frag.det_er + noun.coin.50.pl.mid: 'det er 50 øer' CER 0.056 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:34:39   sammensat frag.det_er + noun.coin.500.def.mid: 'det er 5 krne' CER 0.143 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:34:42   sammensat frag.det_er + noun.coin.500.pl.end: 'det er 5 kroner' CER 0.000 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:34:44   sammensat frag.det_er + noun.coin.500.pl.mid: 'det er 5 krer' CER 0.143 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:34:47   sammensat frag.det_er + noun.coin.5000.def.end: 'det er 50 kronsedlen' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sædlen') → FEJL
+19:34:50   sammensat frag.det_er + noun.coin.5000.def.mid: 'det er 50 kron i sedlen' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner i sedlen') → FEJL
+19:34:53   sammensat frag.det_er + noun.coin.5000.indef.mid: 'det er en 50 kronsadel' CER 0.111 (wav2vec2, whisper: 'Det er en 50 kroner sadel') → FEJL
+19:34:56   sammensat frag.det_er + noun.coin.5000.pl.end: 'det er 50 kronsedler' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sedler') → FEJL
+19:34:59   sammensat frag.det_er + noun.coin.5000.pl.mid: 'det er 50 kronesedler' CER 0.000 (wav2vec2, whisper: 'Det er 50 kroner i sedler') → FEJL
+19:35:02   sammensat frag.det_er + noun.coin.50000.def.end: 'det er 500 kronsedlen' CER 0.077 (wav2vec2, whisper: 'Det er 500 kroner sædlen') → FEJL
+19:35:05   sammensat frag.det_er + noun.coin.50000.def.mid: 'det er 500 kron i sedlen' CER 0.077 (wav2vec2, whisper: 'Det er 500 kroner i sæden') → FEJL
+19:35:09   sammensat frag.det_er + noun.coin.50000.indef.mid: 'det er en 500 kron sæddel' CER 0.107 (wav2vec2, whisper: 'Det er en 500 kroner seddel') → FEJL
+19:35:11   sammensat frag.det_er + noun.coin.50000.pl.end: 'det er 500 kronesedler' CER 0.038 (wav2vec2, whisper: 'Det er 500 kroner sedler') → FEJL
+19:35:14   sammensat frag.det_er + noun.coin.50000.pl.mid: 'det er 500 kronsedler' CER 0.077 (wav2vec2, whisper: 'Det er 500 kroner sedler') → FEJL
+19:35:17   sammensat frag.det_er + noun.digit.1.end: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:35:20   sammensat frag.det_er + noun.digit.1.mid: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:35:22   sammensat frag.det_er + noun.mt.comb: 'det er én kamp' CER 0.100 (wav2vec2, whisper: 'Det er én kamp') → FEJL
+19:35:25   sammensat frag.det_er + noun.mt.whale: 'Det er en hval' CER 0.000 (whisper, wav2vec2: 'det er en hvag') → ok
+19:35:27   sammensat frag.det_er + noun.place.h.pl.end: 'det er pånreder' CER 0.214 (wav2vec2, whisper: 'Det er hun røder') → FEJL
+19:35:30   sammensat frag.det_er + noun.place.h.pl.mid: 'deer bonderøder' CER 0.357 (wav2vec2, whisper: 'Det er hun røder') → FEJL
+19:35:32   sammensat frag.det_er + noun.place.h.sg.end: 'det er kun rede' CER 0.154 (wav2vec2, whisper: 'Det er hun reddet') → FEJL
+19:35:32   sammensat frag.det_er + noun.place.t.sg.end: 'det er tier' CER 0.000 (wav2vec2) → ok
+19:35:35   sammensat frag.det_er + noun.shape.hexagon.pl.end: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+19:35:37   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 6 kanter') → FEJL
+19:35:40   sammensat frag.det_er + noun.shape.octagon.pl.end: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+19:35:42   sammensat frag.det_er + noun.shape.octagon.pl.mid: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+19:35:45   sammensat frag.det_er + noun.shape.pentagon.pl.mid: 'det er 5 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 5 kanter') → FEJL
+19:35:47   sammensat frag.det_er + noun.shape.rhombus.def.end: 'det er hompen' CER 0.182 (wav2vec2, whisper: 'Det er Hånden') → FEJL
+19:35:50   sammensat frag.det_er + noun.shape.rhombus.def.mid: 'det er hrompen' CER 0.182 (wav2vec2, whisper: 'Det er Hommen') → FEJL
+19:35:52   sammensat frag.det_er + noun.shape.rhombus.indef.end: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+19:35:55   sammensat frag.det_er + noun.shape.rhombus.indef.mid: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+19:35:57   sammensat frag.det_er + noun.shape.semicircle.indef.mid: 'det er en halv sirdy' CER 0.235 (wav2vec2, whisper: 'Det er en halvcirkly') → FEJL
+19:36:00   sammensat frag.det_er + noun.solid.cone.def.mid: 'det er karin' CER 0.364 (wav2vec2, whisper: 'Det er Kajen') → FEJL
+19:36:03   sammensat frag.det_er + noun.solid.sphere.def.end: 'det er kolen' CER 0.182 (wav2vec2, whisper: 'Det er kolden') → FEJL
+19:36:05   sammensat frag.det_er + noun.solid.sphere.def.mid: 'det er colen' CER 0.273 (wav2vec2, whisper: 'Det er koden') → FEJL
+19:36:07   sammensat frag.det_er + noun.solid.sphere.pl.end: 'det er koler' CER 0.182 (wav2vec2, whisper: 'Det er cola') → FEJL
+19:36:10   sammensat frag.det_er + noun.unit.g.end: 'det er kram' CER 0.111 (wav2vec2, whisper: 'Det er kram') → FEJL
+19:36:12   sammensat frag.det_er + noun.unit.g.mid: 'det er kapp' CER 0.444 (wav2vec2, whisper: 'Det er krab') → FEJL
+19:36:12 sammensætning runde 1: 9 af 85 bestået
+19:36:12 sammensætning runde 2: 9 af 85 bestået
+19:36:14   sammensat frag.det_er + hint.change.is: 'der r' CER 0.429 (wav2vec2, whisper: 'Det er R') → FEJL
+19:36:16   sammensat frag.det_er + hint.change.is: 'dr ar' CER 0.571 (wav2vec2, whisper: 'Det er R') → FEJL
+19:36:18   sammensat frag.det_er + hint.change.is: 'dr r' CER 0.571 (wav2vec2, whisper: 'DR R') → FEJL
+19:36:21   sammensat frag.det_er + hint.change.is: 'der r' CER 0.429 (wav2vec2, whisper: 'Det er R') → FEJL
+19:36:21   ✓ master hint.change.is t0 (IKKE bestået: sammensætning)
+19:36:23   sammensat frag.det_er + hint.nl.andGo: 'det er ot gå' CER 0.111 (wav2vec2, whisper: 'Det er at gå') → FEJL
+19:36:26   sammensat frag.det_er + hint.nl.andGo: 'det er ogs god' CER 0.333 (wav2vec2, whisper: 'Det er at gå') → FEJL
+19:36:28   sammensat frag.det_er + hint.nl.andGo: 'det er at gå' CER 0.222 (wav2vec2, whisper: 'Det er at gå') → FEJL
+19:36:31   sammensat frag.det_er + hint.nl.andGo: 'det er at gå' CER 0.222 (wav2vec2, whisper: 'Det er at gå') → FEJL
+19:36:31   ✓ master hint.nl.andGo t0 (IKKE bestået: sammensætning)
+19:36:34   sammensat frag.det_er + hint.place.worthEnd: 'det er lærer' CER 0.333 (wav2vec2, whisper: 'Det er lær') → FEJL
+19:36:36   sammensat frag.det_er + hint.place.worthEnd: 'det er ver' CER 0.222 (wav2vec2, whisper: 'Det er hver') → FEJL
+19:36:38   sammensat frag.det_er + hint.place.worthEnd: 'det er hver' CER 0.333 (wav2vec2, whisper: 'Det er hver') → FEJL
+19:36:40   sammensat frag.det_er + hint.place.worthEnd: 'det er hver' CER 0.333 (wav2vec2, whisper: 'Det er hver') → FEJL
+19:36:40   ✓ master hint.place.worthEnd t1 (IKKE bestået: sammensætning)
+19:36:43   sammensat frag.det_er + name.baby.fox: 'det er revehvalp' CER 0.071 (wav2vec2, whisper: 'Det er Revevalp') → FEJL
+19:36:45   sammensat frag.det_er + name.baby.fox: 'det er revehvalp' CER 0.071 (wav2vec2, whisper: 'Det er Rebevalp') → FEJL
+19:36:48   sammensat frag.det_er + name.baby.fox: 'det er revehvalp' CER 0.071 (wav2vec2, whisper: 'Det er Revevalp') → FEJL
+19:36:51   sammensat frag.det_er + name.baby.fox: 'det er reve hvalp' CER 0.071 (wav2vec2, whisper: 'Det er Revevalp') → FEJL
+19:36:51   ✓ master name.baby.fox t0 (IKKE bestået: sammensætning)
+19:36:53   sammensat frag.det_er + name.baby.owl: 'det er uleunge' CER 0.077 (wav2vec2, whisper: 'Det er uleunge') → FEJL
+19:36:56   sammensat frag.det_er + name.baby.owl: 'det er uleunge' CER 0.077 (wav2vec2, whisper: 'Det er Ole Ung') → FEJL
+19:36:58   sammensat frag.det_er + name.baby.owl: 'det er ule unge' CER 0.077 (wav2vec2, whisper: 'Det er uleunge') → FEJL
+19:37:01   sammensat frag.det_er + name.baby.owl: 'det er ole unge' CER 0.154 (wav2vec2, whisper: 'Det er uleunge') → FEJL
+19:37:01   ✓ master name.baby.owl t0 (IKKE bestået: sammensætning)
+19:37:04   sammensat frag.det_er + name.baby.squirrel: 'det er igeg nunge' CER 0.143 (wav2vec2, whisper: 'Det er i og nogle') → FEJL
+19:37:06   sammensat frag.det_er + name.baby.squirrel: 'det er igenunge' CER 0.143 (wav2vec2, whisper: 'Det er én unge') → FEJL
+19:37:09   sammensat frag.det_er + name.baby.squirrel: 'det er jeg norme' CER 0.429 (wav2vec2, whisper: 'Det er i januar') → FEJL
+19:37:11   sammensat frag.det_er + name.baby.squirrel: 'det er i er nunge' CER 0.143 (wav2vec2, whisper: 'Det er I er nogle') → FEJL
+19:37:11   ✓ master name.baby.squirrel t0 (IKKE bestået: sammensætning)
+19:37:14   sammensat frag.det_er + name.breed.foal: 'det er indhjørning er fyl' CER 0.210 (wav2vec2, whisper: 'Det er indhjørning af fødder') → FEJL
+19:37:17   sammensat frag.det_er + name.breed.foal: 'det er enhjørninge sø' CER 0.105 (wav2vec2, whisper: 'Det er Enhjørning Fø') → FEJL
+19:37:20   sammensat frag.det_er + name.breed.foal: 'det er en hjørningefy' CER 0.105 (wav2vec2, whisper: 'Det er en Hjørningefy') → FEJL
+19:37:23   sammensat frag.det_er + name.breed.foal: 'det er enhjørninge født' CER 0.105 (wav2vec2, whisper: 'Det er Enhjørningefødt') → FEJL
+19:37:23   ✓ master name.breed.foal t1 (IKKE bestået: sammensætning)
+19:37:23   ✓ master name.color.hamster.c1 t4 (bestået)
+19:37:26   sammensat frag.det_er + name.color.horse.c1: 'det er fuxs' CER 0.111 (wav2vec2, whisper: 'Det er Fuchs') → FEJL
+19:37:28   sammensat frag.det_er + name.color.horse.c1: 'det er fuxs' CER 0.111 (wav2vec2, whisper: 'Det er Fuchs') → FEJL
+19:37:31   sammensat frag.det_er + name.color.horse.c1: 'det er fuxs' CER 0.111 (wav2vec2, whisper: 'Det er Fuchs') → FEJL
+19:37:33   sammensat frag.det_er + name.color.horse.c1: 'det er fux' CER 0.222 (wav2vec2, whisper: 'Det er Fuchs') → FEJL
+19:37:33   ✓ master name.color.horse.c1 t0 (IKKE bestået: sammensætning)
+19:37:36   sammensat frag.det_er + name.color.horse.c5: 'det er broet' CER 0.091 (wav2vec2, whisper: 'Det er bruddet') → FEJL
+19:37:38   sammensat frag.det_er + name.color.horse.c5: 'det er broet' CER 0.091 (wav2vec2, whisper: 'Det er bruddet') → FEJL
+19:37:41   sammensat frag.det_er + name.color.horse.c5: 'det er provet' CER 0.182 (wav2vec2, whisper: 'Det er på året') → FEJL
+19:37:43   sammensat frag.det_er + name.color.horse.c5: 'det er poet' CER 0.273 (wav2vec2, whisper: 'Det er poet') → FEJL
+19:37:43   ✓ master name.color.horse.c5 t0 (IKKE bestået: sammensætning)
+19:37:45   sammensat frag.det_er + name.color.unicorn.c4: 'det er mindt' CER 0.111 (wav2vec2, whisper: 'Det er ment') → FEJL
+19:37:48   sammensat frag.det_er + name.color.unicorn.c4: 'det er mindt' CER 0.111 (wav2vec2, whisper: 'Det er ment') → FEJL
+19:37:50   sammensat frag.det_er + name.color.unicorn.c4: 'det er mindt' CER 0.111 (wav2vec2, whisper: 'Det er ment') → FEJL
+19:37:53   sammensat frag.det_er + name.color.unicorn.c4: 'det er mindt' CER 0.111 (wav2vec2, whisper: 'Det er ment') → FEJL
+19:37:53   ✓ master name.color.unicorn.c4 t0 (IKKE bestået: sammensætning)
+19:37:55   sammensat frag.det_er + name.item.fest-head: 'det er hvist a' CER 0.417 (wav2vec2, whisper: 'Det er festtab') → FEJL
+19:37:57   sammensat frag.det_er + name.item.fest-head: 'det er fest' CER 0.250 (wav2vec2, whisper: 'Det er fest') → FEJL
+19:38:00   sammensat frag.det_er + name.item.fest-head: 'det er fest' CER 0.250 (wav2vec2, whisper: 'Det er fest') → FEJL
+19:38:02   sammensat frag.det_er + name.item.fest-head: 'det er fest' CER 0.250 (wav2vec2, whisper: 'Det er fest') → FEJL
+19:38:02   ✓ master name.item.fest-head t1 (IKKE bestået: sammensætning)
+19:38:02   ✓ master name.item.kongelig-back t4 (bestået)
+19:38:02   ✓ master name.item.kongelig-face t4 (bestået)
+19:38:02   ✓ master name.item.ridder-back t4 (bestået)
+19:38:02   ✓ master name.item.rytter-hand t4 (bestået)
+19:38:05   sammensat frag.det_er + name.item.talmagiker-body: 'det er trillekjorte' CER 0.111 (wav2vec2, whisper: 'Det er tryllekjortet') → FEJL
+19:38:07   sammensat frag.det_er + name.item.talmagiker-body: 'det er tryllekjorte' CER 0.056 (wav2vec2, whisper: 'Det er tryllekjortet') → FEJL
+19:38:10   sammensat frag.det_er + name.item.talmagiker-body: 'det er tryllekjorte' CER 0.056 (wav2vec2, whisper: 'Det er tryllekortet') → FEJL
+19:38:13   sammensat frag.det_er + name.item.talmagiker-body: 'det er tryljekjorte' CER 0.111 (wav2vec2, whisper: 'Det er tryllekortet') → FEJL
+19:38:13   ✓ master name.item.talmagiker-body t1 (IKKE bestået: sammensætning)
+19:38:13   ✓ master name.item.vinter-head t4 (bestået)
+19:38:15   sammensat frag.det_er + name.region.w1-tal100: 'det er på nede marken' CER 0.210 (wav2vec2, whisper: 'Det er 100 marken') → FEJL
+19:38:18   sammensat frag.det_er + name.region.w1-tal100: 'deter hun har været marken' CER 0.316 (wav2vec2, whisper: 'Det er 100 marken') → FEJL
+19:38:20   sammensat frag.det_er + name.region.w1-tal100: 'det er på noget marten' CER 0.368 (wav2vec2, whisper: 'Det er 100 af marken') → FEJL
+19:38:23   sammensat frag.det_er + name.region.w1-tal100: 'det er 100 marken' CER 0.000 (wav2vec2, whisper: 'Det er 100 af marken') → FEJL
+19:38:23   ✓ master name.region.w1-tal100 t3 (IKKE bestået: sammensætning)
+19:38:25   sammensat frag.det_er + name.region.w1-tieren: 'det er 20proen' CER 0.071 (wav2vec2, whisper: 'Det er 20 broen') → FEJL
+19:38:28   sammensat frag.det_er + name.region.w1-tieren: 'det er 20 proen' CER 0.071 (wav2vec2, whisper: 'Det er 20 broen') → FEJL
+19:38:30   sammensat frag.det_er + name.region.w1-tieren: 'det er 20broel' CER 0.071 (wav2vec2, whisper: 'Det er Tøvebroen') → FEJL
+19:38:33   sammensat frag.det_er + name.region.w1-tieren: 'det er tøvebroen' CER 0.071 (wav2vec2, whisper: 'Det er Tøvbroen') → FEJL
+19:38:33   ✓ master name.region.w1-tieren t0 (IKKE bestået: sammensætning)
+19:38:36   sammensat frag.det_er + name.region.w2-gange: 'det er gangekrojten' CER 0.118 (wav2vec2, whisper: 'Det er gangekrotten') → FEJL
+19:38:38   sammensat frag.det_er + name.region.w2-gange: 'det er gangekrorten' CER 0.118 (wav2vec2, whisper: 'Det er gangekorten') → FEJL
+19:38:41   sammensat frag.det_er + name.region.w2-gange: 'det er gangekorten' CER 0.176 (wav2vec2, whisper: 'Det er gangekortet') → FEJL
+19:38:44   sammensat frag.det_er + name.region.w2-gange: 'det er gangekorten' CER 0.176 (wav2vec2, whisper: 'Det er gangekortet') → FEJL
+19:38:44   ✓ master name.region.w2-gange t4 (IKKE bestået: sammensætning)
+19:38:46   sammensat frag.det_er + name.region.w2-hundreder: 'det er 100 broen' CER 0.000 (wav2vec2, whisper: 'Det er 100 broen') → FEJL
+19:38:49   sammensat frag.det_er + name.region.w2-hundreder: 'det er 1u0 af broen' CER 0.389 (wav2vec2, whisper: 'Det er 100 af broen') → FEJL
+19:38:51   sammensat frag.det_er + name.region.w2-hundreder: 'det er 100 broen' CER 0.000 (wav2vec2, whisper: 'Det er 100 af broen') → FEJL
+19:38:54   sammensat frag.det_er + name.region.w2-hundreder: 'det er på neebroen' CER 0.278 (wav2vec2, whisper: 'Det er hun redder broen') → FEJL
+19:38:54   ✓ master name.region.w2-hundreder t0 (IKKE bestået: sammensætning)
+19:38:56   sammensat frag.det_er + name.species.fox: 'det er rev' CER 0.125 (wav2vec2, whisper: 'Det er rev') → FEJL
+19:38:58   sammensat frag.det_er + name.species.fox: 'det er rev' CER 0.125 (wav2vec2, whisper: 'Det er rev') → FEJL
+19:39:00   sammensat frag.det_er + name.species.fox: 'det er rev' CER 0.125 (wav2vec2, whisper: 'Det er rev') → FEJL
+19:39:03   sammensat frag.det_er + name.species.fox: 'det er rev' CER 0.125 (wav2vec2, whisper: 'Det er rev') → FEJL
+19:39:03   ✓ master name.species.fox t0 (IKKE bestået: sammensætning)
+19:39:05   sammensat frag.det_er + name.species.owl: 'det er ole' CER 0.222 (wav2vec2, whisper: 'Det er Ole') → FEJL
+19:39:07   sammensat frag.det_er + name.species.owl: 'det er ulig' CER 0.333 (wav2vec2, whisper: 'Det er Ole') → FEJL
+19:39:10   sammensat frag.det_er + name.species.owl: 'det er olig' CER 0.444 (wav2vec2, whisper: 'Det er Ole') → FEJL
+19:39:12   sammensat frag.det_er + name.species.owl: 'det er roleg' CER 0.333 (wav2vec2, whisper: 'Det er Ole') → FEJL
+19:39:12   ✓ master name.species.owl t0 (IKKE bestået: sammensætning)
+19:39:14   sammensat frag.det_er + name.species.unicorn: 'det er en hjørning' CER 0.000 (wav2vec2, whisper: 'Det er i en hjørning') → FEJL
+19:39:17   sammensat frag.det_er + name.species.unicorn: 'det er en hjørning' CER 0.000 (wav2vec2, whisper: 'Det er i en hjørning') → FEJL
+19:39:20   sammensat frag.det_er + name.species.unicorn: 'det er en hjørning' CER 0.000 (wav2vec2, whisper: 'Det er en hjørning') → FEJL
+19:39:22   sammensat frag.det_er + name.species.unicorn: 'det er en hjørning' CER 0.000 (wav2vec2, whisper: 'Det er en hjørning') → FEJL
+19:39:22   ✓ master name.species.unicorn t0 (IKKE bestået: sammensætning)
+19:39:25   sammensat frag.det_er + noun.coin.100.def.mid: 'det er en kronen' CER 0.000 (wav2vec2, whisper: 'Det er en kronen') → FEJL
+19:39:27   sammensat frag.det_er + noun.coin.100.def.mid: 'det er en kronen' CER 0.000 (wav2vec2, whisper: 'Det er en kronen') → FEJL
+19:39:30   sammensat frag.det_er + noun.coin.100.def.mid: 'det er en kronen' CER 0.000 (wav2vec2, whisper: 'Det er en kronen') → FEJL
+19:39:32   sammensat frag.det_er + noun.coin.100.def.mid: 'det er en kronen' CER 0.000 (wav2vec2, whisper: 'Det er en krone') → FEJL
+19:39:32   ✓ master noun.coin.100.def.mid t0 (IKKE bestået: sammensætning)
+19:39:35   sammensat frag.det_er + noun.coin.100.indef.mid: 'det er en en krone' CER 0.000 (wav2vec2, whisper: 'Det er en en krone') → FEJL
+19:39:37   sammensat frag.det_er + noun.coin.100.indef.mid: 'det er en anden krone' CER 0.214 (wav2vec2, whisper: 'Det er en af en krone') → FEJL
+19:39:40   sammensat frag.det_er + noun.coin.100.indef.mid: 'det er en en kor' CER 0.214 (wav2vec2, whisper: 'Det er en en krog') → FEJL
+19:39:42   sammensat frag.det_er + noun.coin.100.indef.mid: 'det er en en krone' CER 0.000 (wav2vec2, whisper: 'Det er en en krone') → FEJL
+19:39:42   ✓ master noun.coin.100.indef.mid t0 (IKKE bestået: sammensætning)
+19:39:45   sammensat frag.det_er + noun.coin.100.pl.end: 'det er en kroner' CER 0.000 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:39:47   sammensat frag.det_er + noun.coin.100.pl.end: 'det er en kroner' CER 0.000 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:39:50   sammensat frag.det_er + noun.coin.100.pl.end: 'det er en kroner' CER 0.000 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:39:52   sammensat frag.det_er + noun.coin.100.pl.end: 'det er en krone' CER 0.077 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:39:52   ✓ master noun.coin.100.pl.end t0 (IKKE bestået: sammensætning)
+19:39:55   sammensat frag.det_er + noun.coin.100.pl.mid: 'det er en kroner' CER 0.000 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:39:57   sammensat frag.det_er + noun.coin.100.pl.mid: 'det er en kroner' CER 0.000 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:39:59   sammensat frag.det_er + noun.coin.100.pl.mid: 'det er en krone' CER 0.077 (wav2vec2, whisper: 'Det er en krone') → FEJL
+19:40:02   sammensat frag.det_er + noun.coin.100.pl.mid: 'det er en krone' CER 0.077 (wav2vec2, whisper: 'Det er en kroner') → FEJL
+19:40:02   ✓ master noun.coin.100.pl.mid t0 (IKKE bestået: sammensætning)
+19:40:05   sammensat frag.det_er + noun.coin.10000.def.end: 'det er 100 kronsidlen' CER 0.130 (wav2vec2, whisper: 'Det er 100 kroner tiden') → FEJL
+19:40:08   sammensat frag.det_er + noun.coin.10000.def.end: 'det er 100 kronsiden' CER 0.174 (wav2vec2, whisper: 'Det er 100 kroner siden') → FEJL
+19:40:11   sammensat frag.det_er + noun.coin.10000.def.end: 'det er 100krontedelen' CER 0.174 (wav2vec2, whisper: 'Det er 100 kroner sædlen') → FEJL
+19:40:13   sammensat frag.det_er + noun.coin.10000.def.end: 'det er 100 kronsedlen' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sælgen') → FEJL
+19:40:14   ✓ master noun.coin.10000.def.end t3 (IKKE bestået: sammensætning)
+19:40:16   sammensat frag.det_er + noun.coin.10000.def.mid: 'det er 100 kronisedlen' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sædlen') → FEJL
+19:40:19   sammensat frag.det_er + noun.coin.10000.def.mid: 'det er på noget kronsidelen' CER 0.348 (wav2vec2, whisper: 'Det er 100 kroner sædlen') → FEJL
+19:40:22   sammensat frag.det_er + noun.coin.10000.def.mid: 'det er 1u0kron isedlen' CER 0.304 (wav2vec2, whisper: 'Det er 100 kroner sædlen') → FEJL
+19:40:24   sammensat frag.det_er + noun.coin.10000.def.mid: 'det er 100 kronsedlen' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sædvanlig') → FEJL
+19:40:25   ✓ master noun.coin.10000.def.mid t0 (IKKE bestået: sammensætning)
+19:40:27   sammensat frag.det_er + noun.coin.10000.indef.mid: 'det er en 100 kronsæddel' CER 0.120 (wav2vec2, whisper: 'Det er en 100 kroner seddel') → FEJL
+19:40:30   sammensat frag.det_er + noun.coin.10000.indef.mid: 'det er en 100 kronsæddel' CER 0.120 (wav2vec2, whisper: 'Det er en 100 kroner seddel') → FEJL
+19:40:33   sammensat frag.det_er + noun.coin.10000.indef.mid: 'det er en 100 kronsædddel' CER 0.160 (wav2vec2, whisper: 'Det er en 100 kroner seddel') → FEJL
+19:40:36   sammensat frag.det_er + noun.coin.10000.indef.mid: 'det er en 100 kron seddel' CER 0.080 (wav2vec2, whisper: 'Det er en 100 kroner salg') → FEJL
+19:40:36   ✓ master noun.coin.10000.indef.mid t3 (IKKE bestået: sammensætning)
+19:40:38   sammensat frag.det_er + noun.coin.10000.pl.end: 'det er 100 kroncedler' CER 0.130 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:40:41   sammensat frag.det_er + noun.coin.10000.pl.end: 'det er 100 kronsedler' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:40:44   sammensat frag.det_er + noun.coin.10000.pl.end: 'det er 100 kronsedler' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:40:46   sammensat frag.det_er + noun.coin.10000.pl.end: 'det er 100 kroncedler' CER 0.130 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:40:46   ✓ master noun.coin.10000.pl.end t1 (IKKE bestået: sammensætning)
+19:40:49   sammensat frag.det_er + noun.coin.10000.pl.mid: 'det er 100 kron sedler' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:40:52   sammensat frag.det_er + noun.coin.10000.pl.mid: 'det er 100 kronsedler' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:40:55   sammensat frag.det_er + noun.coin.10000.pl.mid: 'det er 100 kronsedler' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:40:58   sammensat frag.det_er + noun.coin.10000.pl.mid: 'det er 100 kronsedler' CER 0.087 (wav2vec2, whisper: 'Det er 100 kroner sedler') → FEJL
+19:40:58   ✓ master noun.coin.10000.pl.mid t0 (IKKE bestået: sammensætning)
+19:41:00   sammensat frag.det_er + noun.coin.2000.def.end: 'det er teokronen' CER 0.200 (wav2vec2, whisper: 'Det er tøvkronen') → FEJL
+19:41:03   sammensat frag.det_er + noun.coin.2000.def.end: 'det er 20 kronen' CER 0.000 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:06   sammensat frag.det_er + noun.coin.2000.def.end: 'det er 20 kroe' CER 0.133 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:09   sammensat frag.det_er + noun.coin.2000.def.end: 'det er 20 krone' CER 0.067 (wav2vec2, whisper: 'Det er tøvekronen') → FEJL
+19:41:09   ✓ master noun.coin.2000.def.end t1 (IKKE bestået: sammensætning)
+19:41:11   sammensat frag.det_er + noun.coin.2000.def.mid: 'det er 20 kronen' CER 0.000 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:14   sammensat frag.det_er + noun.coin.2000.def.mid: 'det er 20 krnen' CER 0.067 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:16   sammensat frag.det_er + noun.coin.2000.def.mid: 'det er 20 kronen' CER 0.000 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:19   sammensat frag.det_er + noun.coin.2000.def.mid: 'det er 20 kroen' CER 0.067 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:19   ✓ master noun.coin.2000.def.mid t0 (IKKE bestået: sammensætning)
+19:41:19   ✓ master noun.coin.2000.pl.end t4 (bestået)
+19:41:22   sammensat frag.det_er + noun.coin.2000.pl.mid: 'det er 20 kroer' CER 0.067 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:24   sammensat frag.det_er + noun.coin.2000.pl.mid: 'det er 20 krer' CER 0.133 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:27   sammensat frag.det_er + noun.coin.2000.pl.mid: 'det er 20 krer' CER 0.133 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:29   sammensat frag.det_er + noun.coin.2000.pl.mid: 'det er 20 krer' CER 0.133 (wav2vec2, whisper: 'Det er 20 kroner') → FEJL
+19:41:29   ✓ master noun.coin.2000.pl.mid t0 (IKKE bestået: sammensætning)
+19:41:32   sammensat frag.det_er + noun.coin.20000.def.end: 'det er 200 kroneisedlen' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner i sædden') → FEJL
+19:41:35   sammensat frag.det_er + noun.coin.20000.def.end: 'det er 200 kronsiden' CER 0.160 (wav2vec2, whisper: 'Det er 200 kroner sædden') → FEJL
+19:41:38   sammensat frag.det_er + noun.coin.20000.def.end: 'det er 200 kron sellen' CER 0.120 (wav2vec2, whisper: 'Det er 200 kroner sælgen') → FEJL
+19:41:41   sammensat frag.det_er + noun.coin.20000.def.end: 'det er 200 kronisedlen' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sædden') → FEJL
+19:41:41   ✓ master noun.coin.20000.def.end t0 (IKKE bestået: sammensætning)
+19:41:44   sammensat frag.det_er + noun.coin.20000.def.mid: 'det er 200 kron i saden' CER 0.160 (wav2vec2, whisper: 'Det er 200 kroner i salen') → FEJL
+19:41:47   sammensat frag.det_er + noun.coin.20000.def.mid: 'det er 200 kron i sedlen' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner i sedlen') → FEJL
+19:41:49   sammensat frag.det_er + noun.coin.20000.def.mid: 'det er 200 kroneseden' CER 0.080 (wav2vec2, whisper: 'Det er 200 kr sæden') → FEJL
+19:41:52   sammensat frag.det_er + noun.coin.20000.def.mid: 'det er 200 kronsedlen' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sædlen') → FEJL
+19:41:52   ✓ master noun.coin.20000.def.mid t1 (IKKE bestået: sammensætning)
+19:41:55   sammensat frag.det_er + noun.coin.20000.indef.mid: 'det er en 200 kroncellel' CER 0.185 (wav2vec2, whisper: 'Det er en 200 kroner seddel') → FEJL
+19:41:58   sammensat frag.det_er + noun.coin.20000.indef.mid: 'det er en 200 kronseddel' CER 0.074 (wav2vec2, whisper: 'Det er en 200 kroner seddel') → FEJL
+19:42:01   sammensat frag.det_er + noun.coin.20000.indef.mid: 'det er en 200 kroneseddel' CER 0.037 (wav2vec2, whisper: 'Det er en 200 kroner seddel') → FEJL
+19:42:04   sammensat frag.det_er + noun.coin.20000.indef.mid: 'det er en 200 kronesæddel' CER 0.074 (wav2vec2, whisper: 'Det er en 200 kroner seddel') → FEJL
+19:42:04   ✓ master noun.coin.20000.indef.mid t2 (IKKE bestået: sammensætning)
+19:42:06   sammensat frag.det_er + noun.coin.20000.pl.end: 'det er 200 kronsedler' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sedler') → FEJL
+19:42:09   sammensat frag.det_er + noun.coin.20000.pl.end: 'det er 200 kronecedler' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner i sedler') → FEJL
+19:42:12   sammensat frag.det_er + noun.coin.20000.pl.end: 'det er 200 kroncedler' CER 0.120 (wav2vec2, whisper: 'Det er 200 kroner sæler') → FEJL
+19:42:15   sammensat frag.det_er + noun.coin.20000.pl.end: 'det er 200 kronsedler' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sæler') → FEJL
+19:42:15   ✓ master noun.coin.20000.pl.end t4 (IKKE bestået: sammensætning)
+19:42:18   sammensat frag.det_er + noun.coin.20000.pl.mid: 'det er 200 kron sedler' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sedler') → FEJL
+19:42:21   sammensat frag.det_er + noun.coin.20000.pl.mid: 'det er 200 kronesedler' CER 0.040 (wav2vec2, whisper: 'Det er 200 kroner i sedler') → FEJL
+19:42:24   sammensat frag.det_er + noun.coin.20000.pl.mid: 'det er 200 kronsedler' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sedler') → FEJL
+19:42:26   sammensat frag.det_er + noun.coin.20000.pl.mid: 'det er 200 kronsedler' CER 0.080 (wav2vec2, whisper: 'Det er 200 kroner sedler') → FEJL
+19:42:26   ✓ master noun.coin.20000.pl.mid t1 (IKKE bestået: sammensætning)
+19:42:29   sammensat frag.det_er + noun.coin.50.def.end: 'det er 50øern' CER 0.111 (wav2vec2, whisper: 'Det er 50 øerne') → FEJL
+19:42:31   sammensat frag.det_er + noun.coin.50.def.end: 'det er 50øen' CER 0.056 (wav2vec2, whisper: 'Det er 50 øerne') → FEJL
+19:42:34   sammensat frag.det_er + noun.coin.50.def.end: 'det er 50øerne' CER 0.167 (wav2vec2, whisper: 'Det er 50 øerne') → FEJL
+19:42:36   sammensat frag.det_er + noun.coin.50.def.end: 'det er 50 ørne' CER 0.111 (wav2vec2, whisper: 'Det er 50 øerne') → FEJL
+19:42:36   ✓ master noun.coin.50.def.end t1 (IKKE bestået: sammensætning)
+19:42:38   sammensat frag.det_er + noun.coin.50.def.mid: 'det er 0ørern' CER 0.444 (wav2vec2, whisper: 'Det er 50 øerne') → FEJL
+19:42:41   sammensat frag.det_er + noun.coin.50.def.mid: 'det er 50øen' CER 0.056 (wav2vec2, whisper: 'Det er 50 øerne') → FEJL
+19:42:43   sammensat frag.det_er + noun.coin.50.def.mid: 'det er 50øern' CER 0.111 (wav2vec2, whisper: 'Det er 50 øerne') → FEJL
+19:42:46   sammensat frag.det_er + noun.coin.50.def.mid: 'det er 50øren' CER 0.000 (wav2vec2, whisper: 'Det er 50 øren') → FEJL
+19:42:46   ✓ master noun.coin.50.def.mid t3 (IKKE bestået: sammensætning)
+19:42:48   sammensat frag.det_er + noun.coin.50.indef.mid: 'det er 10 ører' CER 0.579 (wav2vec2, whisper: 'Det er 51 øer') → FEJL
+19:42:51   sammensat frag.det_er + noun.coin.50.indef.mid: 'det er en 50 ører' CER 0.053 (wav2vec2, whisper: 'Det er en halvtreds øre') → FEJL
+19:42:54   sammensat frag.det_er + noun.coin.50.indef.mid: 'det er en 50 sører' CER 0.105 (wav2vec2, whisper: 'Det er en halvtreds øre') → FEJL
+19:42:57   sammensat frag.det_er + noun.coin.50.indef.mid: 'det er en 50 øer' CER 0.105 (wav2vec2, whisper: 'Det er en halvtredsøer') → FEJL
+19:42:57   ✓ master noun.coin.50.indef.mid t1 (IKKE bestået: sammensætning)
+19:42:59   sammensat frag.det_er + noun.coin.50.pl.end: 'det er 50 øer' CER 0.056 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:43:02   sammensat frag.det_er + noun.coin.50.pl.end: 'det er 50syrer' CER 0.111 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:43:04   sammensat frag.det_er + noun.coin.50.pl.end: 'det er 50 ører' CER 0.000 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:43:07   sammensat frag.det_er + noun.coin.50.pl.end: 'det er 50 yrer' CER 0.056 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:43:07   ✓ master noun.coin.50.pl.end t2 (IKKE bestået: sammensætning)
+19:43:10   sammensat frag.det_er + noun.coin.50.pl.mid: 'det er 50 sører' CER 0.056 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:43:12   sammensat frag.det_er + noun.coin.50.pl.mid: 'det er 50øer' CER 0.056 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:43:15   sammensat frag.det_er + noun.coin.50.pl.mid: 'det er 50 yrer' CER 0.056 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:43:18   sammensat frag.det_er + noun.coin.50.pl.mid: 'det er 50 ører' CER 0.000 (wav2vec2, whisper: 'Det er 50 øer') → FEJL
+19:43:18   ✓ master noun.coin.50.pl.mid t3 (IKKE bestået: sammensætning)
+19:43:21   sammensat frag.det_er + noun.coin.500.def.mid: 'det er 5 krnn' CER 0.143 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:23   sammensat frag.det_er + noun.coin.500.def.mid: 'det er 5 kronen' CER 0.000 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:26   sammensat frag.det_er + noun.coin.500.def.mid: 'det er 5kronen' CER 0.000 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:28   sammensat frag.det_er + noun.coin.500.def.mid: 'det er 5 krone' CER 0.071 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:29   ✓ master noun.coin.500.def.mid t1 (IKKE bestået: sammensætning)
+19:43:31   sammensat frag.det_er + noun.coin.500.pl.end: 'det er 5 kr' CER 0.286 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:34   sammensat frag.det_er + noun.coin.500.pl.end: 'det er 5 kroe' CER 0.143 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:36   sammensat frag.det_er + noun.coin.500.pl.end: 'det er 5 kre' CER 0.214 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:39   sammensat frag.det_er + noun.coin.500.pl.end: 'det er 5 kroner' CER 0.000 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:39   ✓ master noun.coin.500.pl.end t3 (IKKE bestået: sammensætning)
+19:43:42   sammensat frag.det_er + noun.coin.500.pl.mid: 'det er 5 krer' CER 0.143 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:44   sammensat frag.det_er + noun.coin.500.pl.mid: 'det er 5 kre' CER 0.214 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:47   sammensat frag.det_er + noun.coin.500.pl.mid: 'det er 5 kr' CER 0.286 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:49   sammensat frag.det_er + noun.coin.500.pl.mid: 'det er 5 kr' CER 0.286 (wav2vec2, whisper: 'Det er 5 kroner') → FEJL
+19:43:49   ✓ master noun.coin.500.pl.mid t0 (IKKE bestået: sammensætning)
+19:43:52   sammensat frag.det_er + noun.coin.5000.def.end: 'det er 50 kronsædlin' CER 0.120 (wav2vec2, whisper: 'Det er 50 kroner sædlen') → FEJL
+19:43:55   sammensat frag.det_er + noun.coin.5000.def.end: 'det er 50 kronsædelen' CER 0.120 (wav2vec2, whisper: 'Det er 50 kroner sedlen') → FEJL
+19:43:58   sammensat frag.det_er + noun.coin.5000.def.end: 'det er 50 kronisedlen' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner i sedlen') → FEJL
+19:44:01   sammensat frag.det_er + noun.coin.5000.def.end: 'det er 50 kron sædlen' CER 0.080 (wav2vec2, whisper: 'Det er 50 kroner sædlen') → FEJL
+19:44:01   ✓ master noun.coin.5000.def.end t2 (IKKE bestået: sammensætning)
+19:44:04   sammensat frag.det_er + noun.coin.5000.def.mid: 'det er 50 kronsidlen' CER 0.080 (wav2vec2, whisper: 'Det er 50 kroner siden') → FEJL
+19:44:06   sammensat frag.det_er + noun.coin.5000.def.mid: 'det er 50 kronsidlen' CER 0.080 (wav2vec2, whisper: 'Det er 50 kroner siden') → FEJL
+19:44:09   sammensat frag.det_er + noun.coin.5000.def.mid: 'det er 50 kronsedlen' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sædlen') → FEJL
+19:44:12   sammensat frag.det_er + noun.coin.5000.def.mid: 'det er 50 kronsedlen' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sædlen') → FEJL
+19:44:12   ✓ master noun.coin.5000.def.mid t2 (IKKE bestået: sammensætning)
+19:44:15   sammensat frag.det_er + noun.coin.5000.indef.mid: 'det er en 50 kron sædddel' CER 0.111 (wav2vec2, whisper: 'Det er en 50 kroner seddel') → FEJL
+19:44:17   sammensat frag.det_er + noun.coin.5000.indef.mid: 'det er en 50 kroncellet' CER 0.185 (wav2vec2, whisper: 'Det er en 50 kroner cellet') → FEJL
+19:44:20   sammensat frag.det_er + noun.coin.5000.indef.mid: 'det er en 50 kron sidddel' CER 0.111 (wav2vec2, whisper: 'Det er en 50 kroner sæd') → FEJL
+19:44:23   sammensat frag.det_er + noun.coin.5000.indef.mid: 'det er en 50 kronesæddel' CER 0.037 (wav2vec2, whisper: 'Det er en 50 kroner seddel') → FEJL
+19:44:23   ✓ master noun.coin.5000.indef.mid t3 (IKKE bestået: sammensætning)
+19:44:26   sammensat frag.det_er + noun.coin.5000.pl.end: 'det er 50 kronsedler' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sædler') → FEJL
+19:44:29   sammensat frag.det_er + noun.coin.5000.pl.end: 'det er 50 kronsedler' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sedler') → FEJL
+19:44:31   sammensat frag.det_er + noun.coin.5000.pl.end: 'det er 50 kronsedler' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sedler') → FEJL
+19:44:34   sammensat frag.det_er + noun.coin.5000.pl.end: 'det er 50 kron cedler' CER 0.080 (wav2vec2, whisper: 'Det er 50 kroner sedler') → FEJL
+19:44:34   ✓ master noun.coin.5000.pl.end t0 (IKKE bestået: sammensætning)
+19:44:37   sammensat frag.det_er + noun.coin.5000.pl.mid: 'det er 50 kronesedler' CER 0.000 (wav2vec2, whisper: 'Det er 50 kroner i sedler') → FEJL
+19:44:40   sammensat frag.det_er + noun.coin.5000.pl.mid: 'det er 50 kronsedler' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sæler') → FEJL
+19:44:42   sammensat frag.det_er + noun.coin.5000.pl.mid: 'det er 50 kronsedler' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sedler') → FEJL
+19:44:45   sammensat frag.det_er + noun.coin.5000.pl.mid: 'det er 50 kronsedler' CER 0.040 (wav2vec2, whisper: 'Det er 50 kroner sedler') → FEJL
+19:44:45   ✓ master noun.coin.5000.pl.mid t0 (IKKE bestået: sammensætning)
+19:44:48   sammensat frag.det_er + noun.coin.50000.def.end: 'det er 500 kronseden' CER 0.115 (wav2vec2, whisper: 'Det er 500 kroner sædlen') → FEJL
+19:44:50   sammensat frag.det_er + noun.coin.50000.def.end: 'det er 500 kron i sedlen' CER 0.077 (wav2vec2, whisper: 'Det er 500 kroner i sedlen') → FEJL
+19:44:53   sammensat frag.det_er + noun.coin.50000.def.end: 'det er 500 kron i sedien' CER 0.115 (wav2vec2, whisper: 'Det er 500 kroner i sedlen') → FEJL
+19:44:56   sammensat frag.det_er + noun.coin.50000.def.end: 'det er 500 krone i sædgen' CER 0.154 (wav2vec2, whisper: 'Det er 500 kroner i sædden') → FEJL
+19:44:56   ✓ master noun.coin.50000.def.end t1 (IKKE bestået: sammensætning)
+19:44:59   sammensat frag.det_er + noun.coin.50000.def.mid: 'det er 500 kron i sidden' CER 0.154 (wav2vec2, whisper: 'Det er 500 kroner siden') → FEJL
+19:45:02   sammensat frag.det_er + noun.coin.50000.def.mid: 'det er 500 kronsedlen' CER 0.077 (wav2vec2, whisper: 'Det er 500 kroner sædlen') → FEJL
+19:45:04   sammensat frag.det_er + noun.coin.50000.def.mid: 'det er 500 kron i sædlen' CER 0.115 (wav2vec2, whisper: 'Det er 500 kroner i sedlen') → FEJL
+19:45:07   sammensat frag.det_er + noun.coin.50000.def.mid: 'det er 500 kron i sedlen' CER 0.077 (wav2vec2, whisper: 'Det er 500 kroner i sedlen') → FEJL
+19:45:07   ✓ master noun.coin.50000.def.mid t1 (IKKE bestået: sammensætning)
+19:45:10   sammensat frag.det_er + noun.coin.50000.indef.mid: 'det er en 500 kronisæddel' CER 0.107 (wav2vec2, whisper: 'Det er en 500 kroner seddel') → FEJL
+19:45:13   sammensat frag.det_er + noun.coin.50000.indef.mid: 'det er en 500 kron i sædddel' CER 0.143 (wav2vec2, whisper: 'Det er en 500 kroner seddel') → FEJL
+19:45:16   sammensat frag.det_er + noun.coin.50000.indef.mid: 'det er en 500 kronsæddel' CER 0.107 (wav2vec2, whisper: 'Det er en 500 kroner seddel') → FEJL
+19:45:18   sammensat frag.det_er + noun.coin.50000.indef.mid: 'det er en 500 kronsædel' CER 0.143 (wav2vec2, whisper: 'Det er en 500 kroner seddel') → FEJL
+19:45:18   ✓ master noun.coin.50000.indef.mid t0 (IKKE bestået: sammensætning)
+19:45:21   sammensat frag.det_er + noun.coin.50000.pl.end: 'det er 500 kronesedler' CER 0.038 (wav2vec2, whisper: 'Det er 500 kroner i sedler') → FEJL
+19:45:24   sammensat frag.det_er + noun.coin.50000.pl.end: 'det er 500 kronesedler' CER 0.038 (wav2vec2, whisper: 'Det er 500 kroner i sedler') → FEJL
+19:45:27   sammensat frag.det_er + noun.coin.50000.pl.end: 'det er 500 kronesedler' CER 0.038 (wav2vec2, whisper: 'Det er 500 kroner i sedler') → FEJL
+19:45:30   sammensat frag.det_er + noun.coin.50000.pl.end: 'det er 500 kronesedler' CER 0.038 (wav2vec2, whisper: 'Det er 500 kroner i sedler') → FEJL
+19:45:30   ✓ master noun.coin.50000.pl.end t0 (IKKE bestået: sammensætning)
+19:45:33   sammensat frag.det_er + noun.coin.50000.pl.mid: 'det er 500 krone sedler' CER 0.038 (wav2vec2, whisper: 'Det er 500 kroner i sedler') → FEJL
+19:45:36   sammensat frag.det_er + noun.coin.50000.pl.mid: 'det er 500 kronesedler' CER 0.038 (wav2vec2, whisper: 'Det er 500 kroner sedler') → FEJL
+19:45:39   sammensat frag.det_er + noun.coin.50000.pl.mid: 'det er 500 kronesedler' CER 0.038 (wav2vec2, whisper: 'Det er 500 kroner i sedler') → FEJL
+19:45:41   sammensat frag.det_er + noun.coin.50000.pl.mid: 'det er 500 kronecedler' CER 0.077 (wav2vec2, whisper: 'Det er 500 kroner i sedler') → FEJL
+19:45:41   ✓ master noun.coin.50000.pl.mid t0 (IKKE bestået: sammensætning)
+19:45:44   sammensat frag.det_er + noun.digit.1.end: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:45:46   sammensat frag.det_er + noun.digit.1.end: 'det er 1t tallet' CER 0.077 (wav2vec2, whisper: 'Det er 1 tallet') → FEJL
+19:45:48   sammensat frag.det_er + noun.digit.1.end: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:45:51   sammensat frag.det_er + noun.digit.1.end: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:45:51   ✓ master noun.digit.1.end t0 (IKKE bestået: sammensætning)
+19:45:53   sammensat frag.det_er + noun.digit.1.mid: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:45:56   sammensat frag.det_er + noun.digit.1.mid: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:45:58   sammensat frag.det_er + noun.digit.1.mid: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:46:01   sammensat frag.det_er + noun.digit.1.mid: 'det er et tallet' CER 0.077 (wav2vec2, whisper: 'Det er et tallet') → FEJL
+19:46:01   ✓ master noun.digit.1.mid t0 (IKKE bestået: sammensætning)
+19:46:03   sammensat frag.det_er + noun.mt.comb: 'det er én kamp' CER 0.100 (wav2vec2, whisper: 'Det er én kamp') → FEJL
+19:46:06   sammensat frag.det_er + noun.mt.comb: 'det er én kamp' CER 0.100 (wav2vec2, whisper: 'Det er én kamp') → FEJL
+19:46:08   sammensat frag.det_er + noun.mt.comb: 'det er én kamp' CER 0.100 (wav2vec2, whisper: 'Det er én kamp') → FEJL
+19:46:10   sammensat frag.det_er + noun.mt.comb: 'det er én kamp' CER 0.100 (wav2vec2, whisper: 'Det er én kamp') → FEJL
+19:46:10   ✓ master noun.mt.comb t0 (IKKE bestået: sammensætning)
+19:46:10   ✓ master noun.mt.whale t4 (bestået)
+19:46:13   sammensat frag.det_er + noun.place.h.pl.end: 'det er kun højre' CER 0.429 (wav2vec2, whisper: 'Det er hun højre') → FEJL
+19:46:15   sammensat frag.det_er + noun.place.h.pl.end: 'det er pån rødder' CER 0.357 (wav2vec2, whisper: 'Det er hun røder') → FEJL
+19:46:18   sammensat frag.det_er + noun.place.h.pl.end: 'det er hun rødder' CER 0.214 (wav2vec2, whisper: 'Det er hun røder') → FEJL
+19:46:20   sammensat frag.det_er + noun.place.h.pl.end: 'det er på nhøder' CER 0.357 (wav2vec2, whisper: 'Det er hun hører') → FEJL
+19:46:20   ✓ master noun.place.h.pl.end t2 (IKKE bestået: sammensætning)
+19:46:23   sammensat frag.det_er + noun.place.h.pl.mid: 'det er honreder' CER 0.143 (wav2vec2, whisper: 'Det er hunrødder') → FEJL
+19:46:26   sammensat frag.det_er + noun.place.h.pl.mid: 'det er bunrødder' CER 0.286 (wav2vec2, whisper: 'Det er hun røder') → FEJL
+19:46:28   sammensat frag.det_er + noun.place.h.pl.mid: 'det er bonøder' CER 0.357 (wav2vec2, whisper: 'Det er hun hører') → FEJL
+19:46:31   sammensat frag.det_er + noun.place.h.pl.mid: 'det er hunreder' CER 0.071 (wav2vec2, whisper: 'Det er hun redder') → FEJL
+19:46:31   ✓ master noun.place.h.pl.mid t3 (IKKE bestået: sammensætning)
+19:46:33   sammensat frag.det_er + noun.place.h.sg.end: 'det er på n0e' CER 0.462 (wav2vec2, whisper: 'Det er honnøjet') → FEJL
+19:46:36   sammensat frag.det_er + noun.place.h.sg.end: 'det er hun rede' CER 0.077 (wav2vec2, whisper: 'Det er hun reddet') → FEJL
+19:46:38   sammensat frag.det_er + noun.place.h.sg.end: 'det er på nvede' CER 0.308 (wav2vec2, whisper: 'Det er hun røde') → FEJL
+19:46:41   sammensat frag.det_er + noun.place.h.sg.end: 'det er punrede' CER 0.154 (wav2vec2, whisper: 'Det er hun reddet') → FEJL
+19:46:41   ✓ master noun.place.h.sg.end t1 (IKKE bestået: sammensætning)
+19:46:41   ✓ master noun.place.t.sg.end t4 (bestået)
+19:46:43   sammensat frag.det_er + noun.shape.hexagon.pl.end: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+19:46:46   sammensat frag.det_er + noun.shape.hexagon.pl.end: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 6 kanter') → FEJL
+19:46:48   sammensat frag.det_er + noun.shape.hexagon.pl.end: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+19:46:51   sammensat frag.det_er + noun.shape.hexagon.pl.end: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+19:46:51   ✓ master noun.shape.hexagon.pl.end t0 (IKKE bestået: sammensætning)
+19:46:53   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+19:46:56   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+19:46:58   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
