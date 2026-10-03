@@ -67,6 +67,9 @@ describe('mul2510', () => {
     expect(def.hint(findFact(def, 'mul:7x10'), null).visual).toEqual({ scene: 'line', min: 0, max: 70, hops: [0, 10, 20, 30, 40, 50, 60, 70] })
     expect(hintText(def, 'mul:3x5', 'tableNeighbour')).toMatch(/^Tæl springene, så du ved, hvornår du skal stoppe\./)
     expect(hintText(def, 'mul:3x5', 'mulAsAdd')).toMatch(/^Vi skal ikke lægge de to tal sammen\. Gange er grupper/)
+    // tableNeighbour is one of SPEC §4.3's eight animated hints; mulAsAdd is spoken over the picture
+    expect(def.hint(findFact(def, 'mul:3x5'), 'tableNeighbour')).toMatchObject({ misconception: 'tableNeighbour', animated: true })
+    expect(def.hint(findFact(def, 'mul:3x5'), 'mulAsAdd').animated).toBeUndefined()
     // 54 is 6 · 9, but also 45 written the way it is said (femogfyrre): no evidence either way (SPEC A11)
     expect(classifyAnswer(taskOf(def, 'mul:5x9', 'keypad'), 54)).toBe('ambiguous')
     expect(classifyAnswer(taskOf(def, 'mul:5x9', 'keypad'), 36)).toBe('tableNeighbour') // 4 · 9

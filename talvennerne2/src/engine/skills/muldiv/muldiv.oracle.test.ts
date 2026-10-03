@@ -168,9 +168,9 @@ describe('mul2510 oracle', () => {
     expect(first(facts.flatMap((f) => hintProblems(def, f, tagsToHint(def, facts))))).toEqual([])
   })
 
-  it.fails('marks the tableNeighbour hint animated, as SPEC §4.3 does for its eight misconceptions', () => {
-    // GENERATOR DEVIATION (mul2510.ts hint()): hintOf(…, 'tableNeighbour') without `animated: true`; SPEC
-    // §4.3 lists tableNeighbour among the eight animated hints (HintSpec.animated, types.ts). The digitSwap
+  it('marks the tableNeighbour hint animated, as SPEC §4.3 does for its eight misconceptions', () => {
+    // GENERATOR DEVIATION (mul2510.ts hint()) — Rettet: hintOf(…, 'tableNeighbour') was without `animated: true`;
+    // SPEC §4.3 lists tableNeighbour among the eight animated hints (HintSpec.animated, types.ts). The digitSwap
     // and mulAsAdd hints are flagged right. No effect today: ui/hint/hintFor.ts films three of the eight.
     expect(first(animationChecks(def, facts, [...tagsToHint(def, facts), 'digitSwap']))).toEqual([])
   })
