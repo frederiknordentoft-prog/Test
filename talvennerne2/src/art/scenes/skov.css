@@ -1,0 +1,90 @@
+/*
+ * Regnbueskovens scene (kortets baggrund). Kun skyerne driver, bladene svajer, lysstrålerne i lysningerne
+ * dæmpes og tændes blødt, og egernenes haler vipper – kun med transform og opacity. Rolig tilstand ([data-calm]
+ * på <html>) og reduceret bevægelse stopper dem i hvilestillingen. Keyframe 0 % er hvilestillingen, så en
+ * frossen scene (kontaktark) står pænt.
+ */
+.skov-scene {
+  display: block;
+  overflow: hidden;
+}
+.skov-scene .skov-drift {
+  animation: skov-drift 64s ease-in-out infinite;
+}
+.skov-scene .skov-drift-1 {
+  animation-duration: 80s;
+  animation-delay: -27s;
+}
+.skov-scene .skov-drift-2 {
+  animation-duration: 98s;
+  animation-delay: -53s;
+}
+.skov-scene .skov-sway {
+  transform-origin: 0 0;
+  animation: skov-sway 7s ease-in-out infinite;
+}
+.skov-scene .skov-tail {
+  transform-origin: 0 0;
+  animation: skov-tail 4.2s ease-in-out infinite;
+}
+.skov-scene .skov-shimmer {
+  animation: skov-shimmer 9s ease-in-out infinite;
+}
+@keyframes skov-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(26px);
+  }
+}
+@keyframes skov-sway {
+  0%,
+  50%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-1.1deg);
+  }
+  75% {
+    transform: rotate(1.1deg);
+  }
+}
+@keyframes skov-tail {
+  0%,
+  55%,
+  100% {
+    transform: rotate(0deg);
+  }
+  70% {
+    transform: rotate(-10deg);
+  }
+  85% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes skov-shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+:root[data-calm] .skov-scene .skov-drift,
+:root[data-calm] .skov-scene .skov-sway,
+:root[data-calm] .skov-scene .skov-tail,
+:root[data-calm] .skov-scene .skov-shimmer {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skov-scene .skov-drift,
+  .skov-scene .skov-sway,
+  .skov-scene .skov-tail,
+  .skov-scene .skov-shimmer {
+    animation: none !important;
+  }
+}

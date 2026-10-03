@@ -244,3 +244,157 @@ function tintHexBy(hex: string, chroma: number): string {
 export const tintBakke = (color: BakkeColor, tier: RegionTier): string => tintHex(BAKKE[color], tier)
 /** Hestebakkernes grundfarve i et blandet trin (bakkerne og himlen følger hele verdenens fremgang). */
 export const tintBakkeBy = (color: BakkeColor, chroma: number): string => tintHexBy(BAKKE[color], chroma)
+
+/**
+ * Regnbueskovens grundfarver (fuld mætning = guld): en lys eventyrskov med høje, bløde trækroner i luftperspektiv
+ * (blålilla og lyse langt væk, varme og mættede forrest), et trappebjerg af lys sten med mos, en sø med vandfald og
+ * en å, lysninger med regnbuelys og skovens dyr. Himlen er en anelse mere lilla end engens (papir og himmel).
+ */
+export const SKOV = {
+  skyTop: '#C6DCFF',
+  skyMid: '#ECE4FB',
+  skyBottom: '#FFF3DC',
+  sun: '#FFE08A',
+  sunHalo: '#FFF1C4',
+  cloud: '#FFFFFF',
+  cloudShade: '#E7E8FB',
+  /** Skoven i luftperspektiv (OKLCH L 0,88 → 0,72, C 0,04 → 0,16, tone fra blålilla over blågrøn mod gulgrøn). */
+  farHill: '#C9D8F0',
+  farForest: '#AEC6E4',
+  midHill: '#A6DAC0',
+  midForest: '#73BE96',
+  nearHill: '#95D06B',
+  front: '#79BC48',
+  frontDark: '#4C963C',
+  sunlit: '#FFEEB5',
+  shade: '#3A6A70',
+  castShadow: '#2D5A48',
+  fgLeaf: '#55A944',
+  fgLeafDark: '#27762F',
+  fgLeafLight: '#8FD465',
+  fern: '#5BB868',
+  fernDark: '#2E8246',
+  paperShadow: '#4B886A',
+  rim: '#F2FFF4',
+  /** Træerne: stammer og høje kroner i grønt og mint med enkelte magiske kroner i lilla og rosa. */
+  trunk: '#A97349',
+  trunkDark: '#7A5034',
+  crownGreen: '#5DB46A',
+  crownTeal: '#45B095',
+  crownLilac: '#B69AF0',
+  crownPink: '#FFA3C2',
+  leafLight: '#A2E28E',
+  leafDark: '#2F8556',
+  /** Lysstrålerne i lysningerne (regnbuelys, meget lette). */
+  shaft1: '#FFC2D6',
+  shaft2: '#FFE59A',
+  shaft3: '#C2F2C6',
+  shaft4: '#C4DEFF',
+  /** Stortalsbjerget: lys lavendelgrå sten med mos på de tre trin. */
+  rock: '#D8D0EC',
+  rockShade: '#A69BCB',
+  moss: '#8CCF78',
+  mossDark: '#58A658',
+  /** Vandet: vandfaldet, søen og åen (mørkere brinker). */
+  water: '#72C5F2',
+  waterLight: '#D4F1FF',
+  waterEdge: '#3E9BD6',
+  waterDeep: '#3F84C2',
+  foam: '#FFFFFF',
+  bank: '#6E8E48',
+  stone: '#DED7EA',
+  stoneShade: '#B2A8C8',
+  lily: '#69C26C',
+  /** Vekselvandets sten (mørkere end skræntens, så de står tydeligt i vandet). */
+  pebble: '#C7BCDC',
+  pebbleDark: '#857AA8',
+  /** Urtårnets top og møllen: lys sten, violet tag, urskive med kvartererne, tyk timeviser (blæk) og lang minutviser (urets røde). */
+  tower: '#F2EBF7',
+  towerShade: '#C8BBDB',
+  roof: '#8E7AE8',
+  roofShade: '#6955C8',
+  clockFace: '#FFFDF6',
+  clockQuarter: '#FFE3A0',
+  clockInk: '#2B2144',
+  clockMinute: '#EB5757',
+  wall: '#FFF5E6',
+  wallShade: '#EAD5BA',
+  roofRed: '#E7684F',
+  roofRedShade: '#C24E3A',
+  timber: '#8A5A3A',
+  window: '#9ED8F5',
+  windowLit: '#FFD45E',
+  door: '#5B8FD9',
+  wood: '#C88B55',
+  woodDark: '#8E5F35',
+  /** Gangegrotten: grottens mørke og krystaller i lige rækker. */
+  cave: '#5D4E86',
+  crystalA: '#FF9CCB',
+  crystalB: '#95D3FF',
+  crystalGlow: '#F1E2FF',
+  /** Købmandsgården: stribet markise og et skilt med en mønt. */
+  awning: '#FF7F9E',
+  awningShade: '#D9567A',
+  awningLight: '#FFFFFF',
+  coin: '#E9C24E',
+  coinDark: '#AD8721',
+  /** Linealstien: pæle med centimeterstreger; i guld farvede som søjler i et diagram. */
+  post: '#EBCB9E',
+  postShade: '#B98E5C',
+  tick: '#6B4A2E',
+  barA: '#FF9F8A',
+  barB: '#7FC8F8',
+  barC: '#9EDF7A',
+  trail: '#F3D7A1',
+  trailEdge: '#D8B074',
+  /** Figurhaven: hække klippet som kugle, terning, kegle og cylinder; et spejlsymmetrisk bed. */
+  hedge: '#4DA552',
+  hedgeLight: '#86D06E',
+  hedgeShade: '#2E7F40',
+  soil: '#CF9F70',
+  /** Dyrene: uglen i træhullet, egernene og pandaen ved bambusen. */
+  owl: '#B98A5E',
+  owlDark: '#7D5737',
+  owlFace: '#F4DFC2',
+  squirrel: '#D9824A',
+  squirrelDark: '#A3552B',
+  squirrelBelly: '#F7D9B8',
+  acorn: '#9A6A3E',
+  pandaWhite: '#FFFFFF',
+  pandaShade: '#DCD6EA',
+  pandaBlack: '#3D3550',
+  bamboo: '#8DCB5E',
+  bambooDark: '#5A983B',
+  eye: '#2B2144',
+  /** Svampe i forgrunden. */
+  mushroom: '#FF7E7E',
+  mushroomDark: '#D65059',
+  stem: '#FFF4E3',
+  flowerPink: '#FF8FB4',
+  flowerYellow: '#FFD24A',
+  flowerWhite: '#FFFFFF',
+  flowerViolet: '#B49BFF',
+  flowerHeart: '#FFA928',
+  lantern: '#FFC83D',
+  lanternGlow: '#FFE9A8',
+  lanternFrame: '#7A5230',
+  smoke: '#DFDCE5',
+  flag: '#FF6F91',
+  flag2: '#6C4CF5',
+  butterfly: '#FF9D45',
+  butterfly2: '#B49BFF',
+  bird: '#5E5478',
+  outline: '#5E5478',
+  /** Regnbuen over skoven (Regnbuelysningen): fem flade pastelstriber. */
+  rainbow1: '#FF9FB2',
+  rainbow2: '#FFDC85',
+  rainbow3: '#A6E8A4',
+  rainbow4: '#9CC8FF',
+  rainbow5: '#C7B2FF',
+} as const
+export type SkovColor = keyof typeof SKOV
+
+/** Regnbueskovens grundfarve tonet til en tier (start er pastel, aldrig grå). */
+export const tintSkov = (color: SkovColor, tier: RegionTier): string => tintHex(SKOV[color], tier)
+/** Regnbueskovens grundfarve i et blandet trin (bakkerne, skoven og himlen følger hele verdenens fremgang). */
+export const tintSkovBy = (color: SkovColor, chroma: number): string => tintHexBy(SKOV[color], chroma)
