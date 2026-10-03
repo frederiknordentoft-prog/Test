@@ -294,7 +294,29 @@ function lintCards(res: LintResult) {
       : [...card.querySelectorAll<SVGGElement>('svg.rig [data-item]')].some((g) => g.querySelector(DRAWN))
     if (!shown) res.errors.push(`${card.dataset.label}: kortet viser ${locked ? 'ikke genstanden og låsen' : 'ingen genstand på dyret'}`)
   }
+  // Et kort med dyret skærer aldrig gennem øjnene (rubrikken; review G2-r3 B16: håndkortene på alle arter, også i
+  // siderne): øjnene og pandaens øjenpletter ligger helt inden for kortets beskæring eller helt uden for den.
+  for (const card of document.querySelectorAll<HTMLElement>('.sh-card')) {
+    for (const svg of card.querySelectorAll<SVGSVGElement>('svg.rig')) {
+      const vb = svg.viewBox.baseVal
+      const view: Box = { x0: vb.x, y0: vb.y, x1: vb.x + vb.width, y1: vb.y + vb.height }
+      res.checks++
+      const cut = [...svg.querySelectorAll<SVGGeometryElement>(EYE_PARTS)]
+        .map((el) => ({ part: el.dataset.part, box: drawnBox(el, svg) }))
+        .find(({ box }) => box && !whole(box, view, EYE_TOL))
+      if (cut?.box) res.errors.push(`${card.dataset.label}: kortet ${fmt(view)} skærer gennem ${cut.part === 'eyes' ? 'øjnene' : 'øjenpletterne'} ${fmt(cut.box)}`)
+    }
+  }
 }
+
+/** Øjnene og det, der hører til dem (pandaens øjenpletter): et kort på dyret skærer aldrig gennem dem (review G2-r3 B16). */
+export const EYE_PARTS = '[data-part="eyes"],[data-part="eye-patch"]'
+/** Tolerance (enheder), før en kant regnes for at skære gennem øjnene (antialias og afrunding af viewBox). */
+const EYE_TOL = 0.5
+/** Boksen ligger helt inden for `view` eller helt uden for den (ikke skåret over af en kant). */
+const whole = (b: Box, view: Box, tol: number) =>
+  (b.x0 >= view.x0 - tol && b.x1 <= view.x1 + tol && b.y0 >= view.y0 - tol && b.y1 <= view.y1 + tol) ||
+  b.x1 <= view.x0 + tol || b.x0 >= view.x1 - tol || b.y1 <= view.y0 + tol || b.y0 >= view.y1 - tol
 
 /** En verdensscene (kortets baggrund) må højst have så mange SVG-elementer, så kortskærmen holder sig under 1.500. */
 export const SCENE_BUDGET = 400
@@ -360,7 +382,14 @@ export const paperLike = (r: number, g: number, b: number) => PAPER.some(([pr, p
  * Den største sammenhængende flade af helt ensfarvede, papirfarvede celler i `rect` (pixel) af et RGBA-billede med
  * bredden W: andel af rektanglet og fladens boks (pixel). Celler, der rører et `skip`-rektangel, tæller ikke.
  */
-export function blankArea(px: Uint8ClampedArray, W: number, rect: Rect, cell: number, skip: readonly Rect[] = []): { share: number; box: Rect | null } {
+export function blankArea(
+  px: Uint8ClampedArray,
+  W: number,
+  rect: Rect,
+  cell: number,
+  skip: readonly Rect[] = [],
+  like: (r: number, g: number, b: number) => boolean = paperLike,
+): { share: number; box: Rect | null } {
   const cols = Math.floor(rect.w / cell)
   const rows = Math.floor(rect.h / cell)
   if (cols < 1 || rows < 1) return { share: 0, box: null }
@@ -374,7 +403,7 @@ export function blankArea(px: Uint8ClampedArray, W: number, rect: Rect, cell: nu
       if (skip.some((s) => x1 > s.x && x0 < s.x + s.w && y1 > s.y && y0 < s.y + s.h)) continue
       const q = (y0 * W + x0) * 4
       const [r, g, b] = [px[q], px[q + 1], px[q + 2]]
-      if (!paperLike(r, g, b)) continue
+      if (!like(r, g, b)) continue
       let same = true
       for (let y = y0; y < y1 && same; y++)
         for (let x = x0; x < x1; x++) {
@@ -460,14 +489,83 @@ export async function lintScenePixels(png: string, panels: readonly ScenePanel[]
   return { errors, checks: panels.length, maxShare }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Tomme felter i pasformsmatrixen (review G2-r3 §6.1): det samlede ark på 165 megapixel havde 420 af 2124 celler, som
+// helsidesoptagelsen aldrig tegnede – papirfarve i stedet for cellens hvide felt med dyret. Matrixen er nu én side pr.
+// sæt, og scripts/sheets.mjs giver optagelsen til lintBlankCells, der tjekker hvert felt for sig: et tegnet felt er
+// hvidt med dyret på, så papirfarve i feltet betyder, at (en del af) det ikke blev tegnet, og et felt uden tegning
+// (kun hvidt og papir) er tomt.
+
+/** Arkets papir (#FFF8EC, ±3 pr. kanal): et tegnet felt er hvidt, så papir i feltet er en flise, der ikke blev tegnet. */
+export const paperOnly = (r: number, g: number, b: number) => Math.abs(r - 255) <= 3 && Math.abs(g - 248) <= 3 && Math.abs(b - 236) <= 3
+/** Den største sammenhængende papirflade, et felt må have (andel af feltet inden for kanten); en utegnet flise dækker langt mere, og pelsens lyseste flader (hamsterens creme) højst ca. 4 %. */
+export const CELL_PAPER_MAX = 0.1
+/** Mindste andel af feltet, der er tegning (hverken hvidt eller papir): ellers er feltet tomt. */
+export const CELL_INK_MIN = 0.05
+/** Feltets runde hjørner (8 px) og kant tjekkes ikke. */
+const CELL_INSET = 8
+
+/** Pasformsmatrixens felter (CSS-px fra sidens øverste venstre hjørne) med deres label. */
+export function matrixCells(): (Rect & { name: string })[] {
+  return [...document.querySelectorAll<HTMLElement>('.sh-matrix')].map((el) => {
+    const r = el.getBoundingClientRect()
+    return { name: el.dataset.label ?? '', x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }
+  })
+}
+
+/**
+ * Tomme felter i en optagelse (PNG i base64) af pasformsmatrixen: `cells` i CSS-px, `scale` pixel pr. CSS-px og
+ * `origin` optagelsens øverste venstre hjørne. Fejler, hvis et felt har en sammenhængende papirflade over
+ * CELL_PAPER_MAX af feltet (en flise, der ikke blev tegnet), eller hvis under CELL_INK_MIN af feltet er tegning.
+ */
+export async function lintBlankCells(png: string, cells: readonly (Rect & { name: string })[], scale: number, origin: { x: number; y: number }): Promise<{ errors: string[]; checks: number; maxPaper: number; minInk: number }> {
+  const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob())
+  const canvas = document.createElement('canvas')
+  canvas.width = bmp.width
+  canvas.height = bmp.height
+  const g = canvas.getContext('2d', { willReadFrequently: true })!
+  g.drawImage(bmp, 0, 0)
+  const px = g.getImageData(0, 0, bmp.width, bmp.height).data
+  const errors: string[] = []
+  let maxPaper = 0
+  let minInk = 1
+  for (const c of cells) {
+    const x0 = Math.max(0, Math.round((c.x - origin.x + CELL_INSET) * scale))
+    const y0 = Math.max(0, Math.round((c.y - origin.y + CELL_INSET) * scale))
+    const x1 = Math.min(bmp.width, Math.round((c.x - origin.x + c.w - CELL_INSET) * scale))
+    const y1 = Math.min(bmp.height, Math.round((c.y - origin.y + c.h - CELL_INSET) * scale))
+    if (x1 <= x0 || y1 <= y0) {
+      errors.push(`${c.name}: feltet ligger uden for optagelsen`)
+      continue
+    }
+    const { share } = blankArea(px, bmp.width, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, BLANK_CELL * scale, [], paperOnly)
+    let ink = 0
+    for (let y = y0; y < y1; y++)
+      for (let x = x0; x < x1; x++) {
+        const p = (y * bmp.width + x) * 4
+        const white = px[p] >= 252 && px[p + 1] >= 252 && px[p + 2] >= 252
+        if (!white && !paperOnly(px[p], px[p + 1], px[p + 2])) ink++
+      }
+    const inkShare = ink / ((x1 - x0) * (y1 - y0))
+    maxPaper = Math.max(maxPaper, share)
+    minInk = Math.min(minInk, inkShare)
+    if (share > CELL_PAPER_MAX) errors.push(`${c.name}: feltet er ikke tegnet helt (papir på ${(share * 100).toFixed(0)} % af feltet)`)
+    else if (inkShare < CELL_INK_MIN) errors.push(`${c.name}: feltet er tomt (tegning på ${(inkShare * 100).toFixed(1)} % af feltet)`)
+  }
+  return { errors, checks: cells.length, maxPaper, minInk }
+}
+
 declare global {
   interface Window {
     __scenePanels?: typeof scenePanels
     __lintScenePixels?: typeof lintScenePixels
+    __matrixCells?: typeof matrixCells
+    __lintBlankCells?: typeof lintBlankCells
   }
 }
-// scripts/sheets.mjs kalder de to direkte i scenearkenes sider (efter optagelsen).
-if (typeof window !== 'undefined') Object.assign(window, { __scenePanels: scenePanels, __lintScenePixels: lintScenePixels })
+// scripts/sheets.mjs kalder dem direkte i scenearkenes og pasformsmatrixens sider (efter optagelsen).
+if (typeof window !== 'undefined')
+  Object.assign(window, { __scenePanels: scenePanels, __lintScenePixels: lintScenePixels, __matrixCells: matrixCells, __lintBlankCells: lintBlankCells })
 
 // ---------------------------------------------------------------------------------------------
 // Huller og sømme (review G1-r3, forbedring 1): figuren rasteriseres alene (uden glimt, aura og skygge), og
@@ -507,12 +605,9 @@ export const HOLE_GAP = 1
  * (`known`). Mønsteret matcher cellens `data-holes` ("art race stadie farve humør").
  */
 export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
-  // Små lommer (2–3 px i arkets opløsning, lukket i 23–25 af 25 gitre), som først alfa-lint'en fandt (ARTFIX-D1,
-  // G2-r2 §3.1); de rettes af artens agent.
-  { match: /^lamb std 3 \S+ cheer$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (141,115), lammets agent (ARTFIX-D2)' },
-  { match: /^rabbit lop 2 \S+ think$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (66,165), kaninens agent' },
-  { match: /^hamster std 3 \S+ idle$/, ref: 'alfa-lint ARTFIX-D1: lommer ved (75,139) og (125,139), hamsterens agent' },
-  { match: /^panda std 3 \S+ sleep$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (42,147), pandaens agent' },
+  // Tom (review G2-r3 §3.1 og §6.2: en lint, der kan "kende" en fejl væk, fejler ikke længere på den). De fem lommer,
+  // der stod her (lam · 3 · jubel, vædder · 2 · tænker, hamster · 3 · hvile (to) og panda · 3 · sover), er fyldt med
+  // pels bag delene i stillbilleder (ARTFIX-E), så lint'en fejler igen på enhver lukket lomme.
 ]
 
 /** Kendt lomme for en celle (review-henvisningen), eller null. */

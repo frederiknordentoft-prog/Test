@@ -95,7 +95,8 @@ const HeadDeco: Part = ({ pal, a, ids, stage, mood, still, lod, sw }) => {
   const lids = lidUnderlay(shape, eyes, rx, ry)
   return (
     <>
-      <path d={join(patch(a.eyeL, 1, a, k), patch(a.eyeR, -1, a, k))} fill={ink(pal)} clipPath={`url(#${ids.headClip})`} />
+      {/* data-part: butikskortene beskæres aldrig gennem pletterne, ligesom øjnene (review G2-r3 B16). */}
+      <path d={join(patch(a.eyeL, 1, a, k), patch(a.eyeR, -1, a, k))} fill={ink(pal)} clipPath={`url(#${ids.headClip})`} data-part="eye-patch" />
       <g transform={`translate(${n(ox)} ${n(oy)})`}>
         {rings.length > 0 && (
           <g className={!still && open ? 'a-blink' : undefined}>
@@ -250,6 +251,8 @@ const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
       idle: { L: [[5.6, -14.7], [6.3, -14.7], [7, -14], [7, -13.3], [6.3, -12.7], [5.6, -12.7], [4.9, -13.3], [4.9, -14]], R: [[6.3, -14.7], [5.6, -14.7], [4.9, -14], [4.9, -13.3], [5.6, -12.7], [6.3, -12.7], [7, -13.3], [7, -14]] },
       happy: { L: [[-9.7, -22.1], [-8.5, -21.9], [-6.7, -20.5], [-0.4, -17.1], [6.8, -14.5], [6.8, -12.9], [-0.2, -9.4], [-4.1, -10.1], [-6.7, -10.1], [-7.6, -9.6], [-8.8, -9.9], [-9.2, -12.2], [-9, -13.6], [-9.4, -14.3], [-10.4, -21], [-10.1, -21.9]] },
       cheer: { R: [[5.6, -15.3], [4.3, -15], [4.1, -14.1], [5, -12.7], [6.2, -12.6], [7.1, -13], [7.3, -14.2], [7, -14.6]] },
+      // Lommen mellem den sovende arm og kinden (review G2-r3 §3.1, tidligere i huller-lint'ens kendt-liste).
+      sleep: { L: [[-34.2, -6.9], [-33.9, -7.6], [-33.3, -8.2], [-30.7, -9.7], [-30, -9.8], [-29.2, -9.4], [-28, -8.2], [-27.7, -7.5], [-27.8, -6.7], [-28.3, -6.1], [-30.7, -4.9], [-33.1, -4.8], [-33.9, -5.2], [-34.2, -6]] },
       wave: { R: [[-16.4, -35.3], [-17.3, -35.1], [-17.6, -34.6], [-17.3, -27.5], [-16.4, -22.1], [-14.5, -17.3], [-12.2, -14.7], [-8.8, -12.4], [-1.6, -9.2], [-0.4, -9.2], [3.1, -11.3], [8.4, -13.6], [8.4, -15.2], [0.7, -18.9], [-3.9, -22.1], [-8.1, -25.6], [-11.5, -29.1], [-15.7, -34.9]] },
     },
   },

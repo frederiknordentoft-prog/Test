@@ -20,7 +20,7 @@ import type { MapSceneProps } from '../ui/screens/child/map/Backdrop'
 import { MOODS, NATURAL_COLORWAYS, SPECIES_IDS, STAGES } from '../art/rig/types'
 import type { BreedId, ColorwayId, ItemDef, Mood, Outfit, SpeciesDef, Stage } from '../art/rig/types'
 import { mannequins } from './mannequin'
-import { runLints } from './lints'
+import { EYE_PARTS, runLints } from './lints'
 import type { RigCrop } from '../art/rig/Rig'
 import { SET_IDS } from '../art/rig/types'
 import type { SetId, Slot } from '../art/rig/types'
@@ -349,12 +349,19 @@ function boxIn(svg: SVGSVGElement, el: SVGGraphicsElement): CardBox {
 
 const setBox = (svg: SVGSVGElement, x: number, y: number, side: number) => svg.setAttribute('viewBox', `${x.toFixed(2)} ${y.toFixed(2)} ${side.toFixed(2)} ${side.toFixed(2)}`)
 
+const unionBox = (a: CardBox, b: CardBox): CardBox => ({ x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) })
+/** Boksen ligger helt inden for kortet eller helt uden for det (`tol` enheder tolerance), altså ikke skåret over. */
+const whole = (b: CardBox, card: CardBox, tol = 0.5) =>
+  (b.x0 >= card.x0 - tol && b.x1 <= card.x1 + tol && b.y0 >= card.y0 - tol && b.y1 <= card.y1 + tol) ||
+  b.x1 <= card.x0 + tol || b.x0 >= card.x1 - tol || b.y1 <= card.y0 + tol || b.y0 >= card.y1 - tol
+
 /**
  * Kortets endelige beskæring, målt i DOM'en efter riggens egen (efter håndkortets boks, som riggen sætter før maling):
  * - Ryggenstande ved hoften (`HIP_CARD`, review G2-r2 B9): et kvadrat om den venstre pose og hoften; posen er ca. 7/10
  *   af genstandens højde (remmens stump rækker op over den) og fylder ca. 40 % af kortet.
- * - Håndkort (review G2-r2 B13): kortet skærer aldrig gennem øjnene. Ligger kortets overkant i øjnene, flyttes den ned
- *   under dem (poten med genstanden under øjnene), når genstanden kan være der; ellers kommer hele øjnene med.
+ * - Håndkort (review G2-r2 B13 og G2-r3 B16): kortet skærer aldrig gennem øjnene (eller pandaens øjenpletter) – hverken
+ *   foroven eller i siderne. Skærer det, flyttes overkanten ned under dem (poten med genstanden under øjnene), når
+ *   genstanden kan være der; ellers bliver kortet et kvadrat om det gamle kort og hele øjnene.
  */
 function cropCard(svg: SVGSVGElement, slot: Slot, itemId: string) {
   const item = svg.querySelector<SVGGElement>(`[data-slot="${slot}"]${slot === 'back' ? '[data-layer="front"]' : ''}`)
@@ -368,23 +375,21 @@ function cropCard(svg: SVGSVGElement, slot: Slot, itemId: string) {
   }
   if (slot !== 'hand') return
   const vb = svg.viewBox.baseVal
-  const eyes = [...svg.querySelectorAll<SVGGraphicsElement>('[data-part="eyes"]')].map((e) => boxIn(svg, e)).filter((e) => e.x1 > vb.x && e.x0 < vb.x + vb.width)
-  if (!eyes.length) return
-  const eyeTop = Math.min(...eyes.map((e) => e.y0))
-  const eyeBottom = Math.max(...eyes.map((e) => e.y1))
-  if (vb.y <= eyeTop || vb.y >= eyeBottom) return
-  const bottom = vb.y + vb.height
-  const top = eyeBottom + 1.5
-  const side = bottom - top
+  const card: CardBox = { x0: vb.x, y0: vb.y, x1: vb.x + vb.width, y1: vb.y + vb.height }
+  const eyes = [...svg.querySelectorAll<SVGGraphicsElement>(EYE_PARTS)].map((e) => boxIn(svg, e))
+  if (eyes.every((e) => whole(e, card))) return
+  const region = eyes.reduce(unionBox)
+  const top = region.y1 + 1.5
+  const side = card.y1 - top
   if (ib.y0 >= top - 1 && ib.x1 - ib.x0 <= side) {
     // Under øjnene: samme underkant, midten vandret om genstanden (inden for den gamle boks).
-    const x = Math.min(Math.max((ib.x0 + ib.x1) / 2 - side / 2, vb.x), vb.x + vb.width - side)
+    const x = Math.min(Math.max((ib.x0 + ib.x1) / 2 - side / 2, card.x0), card.x1 - side)
     setBox(svg, x, top, side)
   } else {
-    // Genstanden rækker op mellem øjnene: hele øjnene kommer med.
-    const t = eyeTop - 2
-    const big = bottom - t
-    setBox(svg, vb.x + vb.width / 2 - big / 2, t, big)
+    // Genstanden rækker op mellem øjnene: et kvadrat om det gamle kort og hele øjnene (2 enheders luft).
+    const u = unionBox(card, { x0: region.x0 - 2, y0: region.y0 - 2, x1: region.x1 + 2, y1: region.y1 + 2 })
+    const big = Math.max(u.x1 - u.x0, u.y1 - u.y0)
+    setBox(svg, (u.x0 + u.x1) / 2 - big / 2, (u.y0 + u.y1) / 2 - big / 2, big)
   }
 }
 
@@ -619,29 +624,59 @@ function FitSheet({ def }: { def: SpeciesDef }) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// fitmatrix: art · stadie · genstand (alle arter; racerne skifter pr. stadie)
+// fitmatrix: art · stadie · genstand (alle arter; racerne skifter pr. stadie), én side pr. sæt
+// (?sheet=fitmatrix&id=<sæt>). Review G2-r3 §6.1: det samlede ark på 165 megapixel blev ikke tegnet helt (420 af
+// 2124 celler stod som papir); hver side er nu ca. 20 megapixel, og scripts/sheets.mjs lint'er de optagne pixel for
+// tomme felter (lintBlankCells i lints.ts), så arket aldrig er mindre pålideligt end det, det dokumenterer.
+
+/** Matrixens kolonner pr. sæt: hverdagens og festhattens kombinationer, sættets genstande og hele sættet. */
+function matrixCols(set: SetId): { name: string; outfit: Outfit }[] {
+  const combos: Partial<Record<SetId, { name: string; outfit: Outfit }[]>> = {
+    hverdag: [
+      { name: 'hue · through', outfit: { head: { item: hverdagHead } } },
+      { name: 'trøje', outfit: { body: { item: hverdagBody } } },
+      { name: 'hue + trøje', outfit: { head: { item: hverdagHead, colorway: 1 }, body: { item: hverdagBody, colorway: 2 } } },
+    ],
+    fest: [
+      { name: 'festhat · under', outfit: { head: { item: festHead } } },
+      { name: 'festhat + trøje', outfit: { head: { item: festHead, colorway: 2 }, body: { item: hverdagBody, colorway: 1 } } },
+    ],
+  }
+  const first = FULL_SETS.findIndex((f) => f.items[0]?.set === set)
+  return [
+    ...(combos[set] ?? []),
+    ...ITEMS.filter((it) => it.set === set && it !== hverdagHead && it !== festHead && it !== hverdagBody).map((it) => ({ name: it.id, outfit: { [it.slot]: { item: it } } as Outfit })),
+    ...FULL_SETS.filter((f) => f.items[0]?.set === set).map(({ set: name, items }, i) => ({ name: `${name} · sæt`, outfit: setOutfit(items, ((first + i + 1) % 3) as 0 | 1 | 2) })),
+  ]
+}
 
 function FitMatrixSheet() {
-  const cols: { name: string; outfit: Outfit }[] = [
-    { name: 'hue · through', outfit: { head: { item: hverdagHead } } },
-    { name: 'festhat · under', outfit: { head: { item: festHead } } },
-    { name: 'trøje', outfit: { body: { item: hverdagBody } } },
-    { name: 'hue + trøje', outfit: { head: { item: hverdagHead, colorway: 1 }, body: { item: hverdagBody, colorway: 2 } } },
-    { name: 'festhat + trøje', outfit: { head: { item: festHead, colorway: 2 }, body: { item: hverdagBody, colorway: 1 } } },
-    ...ITEMS.filter((it) => it !== hverdagHead && it !== festHead && it !== hverdagBody).map((it) => ({ name: it.id, outfit: { [it.slot]: { item: it } } as Outfit })),
-    ...FULL_SETS.map(({ set, items }, i) => ({ name: `${set} · sæt`, outfit: setOutfit(items, ((i + 1) % 3) as 0 | 1 | 2) })),
-  ]
+  const id = new URLSearchParams(location.search).get('id') as SetId | null
+  if (!id || !SETS.some((s) => s.set === id)) {
+    return (
+      <Page title="Pasformsmatrix" sub="Én side pr. sæt: art · stadie · genstand for alle arter.">
+        <ul>
+          {SETS.map(({ set }) => (
+            <li key={set}>
+              <a href={`?sheet=fitmatrix&id=${set}`}>fitmatrix · {set}</a>
+            </li>
+          ))}
+        </ul>
+      </Page>
+    )
+  }
+  const cols = matrixCols(id)
   const rows: { def: SpeciesDef; s: Stage; b: BreedId }[] = []
   for (const def of SPECIES) for (const s of STAGES) rows.push({ def, s, b: def.breeds[(s - 1) % def.breeds.length].id })
   return (
-    <Page title="Pasformsmatrix" sub="Art · stadie · genstand. Racerne skifter pr. stadie, så alle racer er med. Lints som på fit-arket.">
+    <Page title={`Pasformsmatrix · ${id}`} sub="Art · stadie · genstand. Racerne skifter pr. stadie, så alle racer er med. Lints som på fit-arket, og intet felt står tomt i optagelsen.">
       <Grid
         colW={112}
         cols={cols.map((c) => c.name)}
         rows={rows.map((r) => ({
           head: `${r.def.name} · ${r.b} · ${STAGE_DA[r.s]}`,
           cells: cols.map((c, i) => (
-            <Cell key={i} lint="safe fit" label={`matrix ${r.def.id} ${r.b} ${r.s} ${c.name}`}>
+            <Cell key={i} lint="safe fit" label={`matrix ${r.def.id} ${r.b} ${r.s} ${c.name}`} className="sh-matrix">
               <Rig species={r.def} mode="static" breed={r.b} stage={r.s} colorway={(['c1', 'c3', 'c5', 'c2', 'c6'] as const)[i % 5]} outfit={c.outfit} size={100} />
             </Cell>
           )),
