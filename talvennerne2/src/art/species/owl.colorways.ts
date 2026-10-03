@@ -27,19 +27,20 @@ export const OWL_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold: Col
     fur: '#9D99AF',
     overrides: { belly: '#F1EFF6', outline: '#4D4962', mane2: '#827E96', shade: '#8B879E', nose: '#EBA23C', iris: '#E8962B' },
   },
-  // Perlehvid: perlemorshvid med en lavendel tone, lyserødt næb og lilla iris.
+  // Perlehvid: en varm perlerosa (tydeligt anden tone end den kølige sne, review G2-r1 §5) med rosenbrun kontur,
+  // lyserødt næb og lilla iris.
   c4: {
     id: 'c4',
     name: 'perlehvid',
-    fur: '#F2ECF7',
-    overrides: { belly: '#FFFFFF', outline: '#7A6E93', mane2: '#DCD2E8', shade: '#E2D9EC', nose: '#EE9DB3', iris: '#9C7BD6' },
+    fur: '#F4DCD8',
+    overrides: { belly: '#FFF6F2', outline: '#966570', mane2: '#E6C3C0', shade: '#E8CAC6', nose: '#EE9DB3', iris: '#9C7BD6' },
   },
-  // Kanel: varm kanelbrun med creme ansigtsskive.
+  // Kanel: lys, varm kanel med et rødt skær (lysere og rødere end brun, review G2-r1 §5) og creme ansigtsskive.
   c5: {
     id: 'c5',
     name: 'kanel',
-    fur: '#C77D4C',
-    overrides: { belly: '#FCEBD8', outline: '#673214', mane2: '#AA6237', shade: '#B56D3F', nose: '#F5B44A', iris: '#E8962B' },
+    fur: '#DB8650',
+    overrides: { belly: '#FDEBD6', outline: '#6E3216', mane2: '#C26B3A', shade: '#C67443', nose: '#F5B44A', iris: '#E8962B' },
   },
   // Nat: dyb natblå-violet med lys lavendel skive og lys kontur (kantlys som den sorte kat).
   c6: {

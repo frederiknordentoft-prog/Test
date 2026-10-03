@@ -196,13 +196,24 @@ const UP_LOOPS = Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k
 const tipOf = (s: readonly Vec[]) => s[s.length - 1]
 const kindOf = (mood: string): UpKind => (mood in UP_SPINES ? (mood as UpKind) : 'cheer')
 
-const PawUp: SidePart = ({ pal, sw, mood }) => {
+/**
+ * Jubel (review G2-r1 §2 og §5): bambussen følger med op i den løftede venstre pote, så arten stadig bæres af
+ * bambussen, når begge arme er oppe. Stænglen går gennem poten (armen tegnes ovenpå) og står op og lidt ud.
+ */
+const CHEER_BAMBOO = 'rotate(6) scale(0.6) translate(0 -29)'
+
+const PawUp: SidePart = ({ pal, sw, mood, side, clothed }) => {
   const kind = kindOf(mood)
   const [tx, ty] = tipOf(UP_SPINES[kind])
   const loop = UP_LOOPS[kind]
   const palm = kind === 'cheer' || kind === 'wave'
   return (
     <>
+      {kind === 'cheer' && side === 'L' && !clothed && (
+        <g transform={`translate(${tx} ${ty}) ${CHEER_BAMBOO}`}>
+          <Bamboo pal={pal} sw={sw / 0.6} />
+        </g>
+      )}
       <path d={blob(loop)} fill={ink(pal)} />
       <path d={spline(loop)} fill="none" stroke={pal.outline} strokeWidth={sw} {...round} />
       {palm && !pal.silhouette && <path d={padsPath(tx, ty + 0.6, 8.6, kind === 'wave' ? -4 : -32)} fill={pal.inner} />}
@@ -212,6 +223,49 @@ const PawUp: SidePart = ({ pal, sw, mood }) => {
 
 /** Fyld bag alt ved armene (se `pawWebs`): lommernes udvidede hylstre pr. race, stadie, humør og side. */
 const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {}
+
+/**
+ * Lommerne i nøgleposerne (review G2-r1 §1.4 og §5): pels i skyggetone bag alt mellem løftet pote eller vinge og kind
+ * eller krop, så der aldrig ses baggrund inde i figuren. Kun i stillbilleder (album, butik og kontaktark): i animationen
+ * åbner og lukker lommerne, mens poten bevæger sig, så et fast fyld ville ses mod baggrunden dér. Hylstrene er målt på
+ * magenta (4 px pr. enhed, udvidet 1,2 enheder) i skulderens ramme (højre side spejlet) pr. race, stadie, humør og side.
+ */
+const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  std: {
+    1: {
+      happy: { L: [[[-17.2, -21.9], [-16.1, -21.9], [-7.7, -17.7], [2.5, -14.6], [3.3, -14.3], [3.7, -12.4], [3.3, -11.6], [-0.9, -9.3], [-7.3, -9.3], [-8.5, -7.8], [-8.9, -4.4], [-9.6, -2.9], [-11.9, -1.7], [-13.4, -3.6], [-15.7, -10.8], [-15.7, -12.7], [-18, -18.1], [-18.4, -20.7]], [[-33.6, -21.5], [-30.5, -21.1], [-30.5, -18.8], [-32.8, -18.1], [-34.3, -18.4], [-34.7, -20.3]]] },
+      oops: { L: [[-47.2, -36.7], [-45.7, -36.3], [-36.2, -26.8], [-27.9, -20.7], [-14.9, -14.6], [-7.7, -12.4], [-2.4, -11.6], [-1.3, -10.5], [-1.6, -8.9], [-4.3, -7.4], [-9.2, -5.9], [-11.1, -4], [-11.5, -1.4], [-13.8, 0.9], [-16.5, 0.9], [-20.6, -3.6], [-21.8, -4], [-35.1, -16.9], [-36.2, -17.3], [-41.5, -22.2], [-42.7, -26.8], [-49.1, -34], [-48.8, -35.5]] },
+      sleep: { L: [[-38.9, 0.1], [-37.7, 0.1], [-36.6, 1.3], [-37.4, 3.6], [-38.1, 4], [-39.6, 3.6], [-40, 2.8], [-40, 1.3]], R: [[-8.1, -9], [-10.4, -8.6], [-10.4, -5.8], [-8.9, -5.4], [-7.3, -6.2], [-7, -7.8]] },
+      wave: { L: [[-47.2, -36.7], [-45.7, -36.3], [-36.2, -26.8], [-27.9, -20.7], [-14.9, -14.6], [-7.7, -12.4], [-2.4, -11.6], [-1.3, -10.5], [-1.6, -8.9], [-4.3, -7.4], [-9.2, -5.9], [-11.1, -4], [-11.5, -1.4], [-13.8, 0.9], [-16.5, 0.9], [-20.6, -3.6], [-21.8, -4], [-35.1, -16.9], [-36.2, -17.3], [-41.5, -22.2], [-42.7, -26.8], [-49.1, -34], [-48.8, -35.5]], R: [[-13.8, -24.9], [-15.7, -24.5], [-15.7, -21.1], [-13.8, -16.9], [-10.4, -13.9], [-1.6, -9.7], [-0.5, -9.7], [4.8, -12.4], [4.8, -15], [-6.2, -20]] },
+    },
+    2: {
+      idle: { L: [[-29.8, -11.6], [-28.6, -11.3], [-27.8, -10.5], [-27.5, -9.1], [-27.8, -8.5], [-30.3, -7.7], [-31.1, -8.5], [-31.4, -10.2]] },
+      happy: { L: [[[-21.1, -24.9], [-20, -24.9], [-19.2, -24.1], [-18.9, -22.1], [-19.8, -21.3], [-21.1, -21.3], [-22.5, -22.4], [-22.3, -24.4]], [[-9.2, -20.5], [-3.6, -17.7], [5.2, -14.6], [5.8, -14.4], [6.1, -13.3], [5.5, -12.4], [-0.3, -9.4], [-3.4, -9.9], [-8.1, -9.6], [-8.9, -10.5], [-8.9, -13.8], [-9.5, -14.6], [-10, -18.8], [-10, -19.6]]] },
+      think: { L: [[-29.8, -11.6], [-28.6, -11.3], [-27.8, -10.5], [-27.5, -9.1], [-27.8, -8.5], [-30.3, -7.7], [-31.1, -8.5], [-31.4, -10.2]] },
+      oops: { L: [[[-28.6, -28], [-27.5, -27.7], [-22.5, -23], [-17.5, -19.4], [-8.6, -14.9], [0.5, -12.1], [1.4, -11.3], [1.1, -10.2], [-1.7, -8.5], [-8.6, -6.6], [-11.7, -4.4], [-12.8, -4.6], [-25.6, -21], [-26.4, -23], [-27.5, -23.5], [-29.2, -25.8], [-29.5, -27.1]], [[-29.8, -11.6], [-28.6, -11.3], [-27.8, -10.5], [-27.5, -9.1], [-27.8, -8.5], [-30.3, -7.7], [-31.1, -8.5], [-31.4, -10.2]]] },
+      sleep: { L: [[-30.6, -9.6], [-29.2, -9.3], [-28.4, -8.4], [-28.1, -7], [-28.4, -6.4], [-31.1, -5.3], [-32, -6.1], [-32.3, -7.8]], R: [[-2.5, -10.7], [-4.2, -10.4], [-4.2, -8.4], [-2, -8.4], [-1.7, -9.9]] },
+      wave: { L: [[[-28.6, -28], [-27.5, -27.7], [-22.5, -23], [-17.5, -19.4], [-8.6, -14.9], [0.5, -12.1], [1.4, -11.3], [1.1, -10.2], [-1.7, -8.5], [-8.6, -6.6], [-11.7, -4.4], [-12.8, -4.6], [-25.6, -21], [-26.4, -23], [-27.5, -23.5], [-29.2, -25.8], [-29.5, -27.1]], [[-29.8, -11.6], [-28.6, -11.3], [-27.8, -10.5], [-27.5, -9.1], [-27.8, -8.5], [-30.3, -7.7], [-31.1, -8.5], [-31.4, -10.2]]], R: [[-15.9, -30.8], [-17, -30.5], [-17.2, -29.9], [-16.4, -23], [-14.5, -17.4], [-12.2, -14.9], [-8.1, -12.1], [-1.7, -9.4], [-0.3, -9.4], [7.2, -13.3], [7.2, -15.2], [-1.1, -19.1], [-5, -21.6]] },
+    },
+    3: {
+      idle: { L: [[5.6, -14.7], [6.3, -14.7], [7, -14], [7, -13.3], [6.3, -12.7], [5.6, -12.7], [4.9, -13.3], [4.9, -14]], R: [[6.3, -14.7], [5.6, -14.7], [4.9, -14], [4.9, -13.3], [5.6, -12.7], [6.3, -12.7], [7, -13.3], [7, -14]] },
+      happy: { L: [[-9.7, -22.1], [-8.5, -21.9], [-6.7, -20.5], [-0.4, -17.1], [6.8, -14.5], [6.8, -12.9], [-0.2, -9.4], [-4.1, -10.1], [-6.7, -10.1], [-7.6, -9.6], [-8.8, -9.9], [-9.2, -12.2], [-9, -13.6], [-9.4, -14.3], [-10.4, -21], [-10.1, -21.9]] },
+      cheer: { R: [[5.6, -15.3], [4.3, -15], [4.1, -14.1], [5, -12.7], [6.2, -12.6], [7.1, -13], [7.3, -14.2], [7, -14.6]] },
+      wave: { R: [[-16.4, -35.3], [-17.3, -35.1], [-17.6, -34.6], [-17.3, -27.5], [-16.4, -22.1], [-14.5, -17.3], [-12.2, -14.7], [-8.8, -12.4], [-1.6, -9.2], [-0.4, -9.2], [3.1, -11.3], [8.4, -13.6], [8.4, -15.2], [0.7, -18.9], [-3.9, -22.1], [-8.1, -25.6], [-11.5, -29.1], [-15.7, -34.9]] },
+    },
+  },
+}
+const KeyWebs = pawWebs({}, KEY_WEBS)
+/** Armenes faste fyld og, i stillbilleder, nøgleposernes lommer i skyggetone (se `KEY_WEBS`). */
+const withKeyWebs = (webs: SidePart): SidePart => (p) => {
+  const key = p.still ? KeyWebs({ ...p, pal: { ...p.pal, fur: p.pal.silhouette ? p.pal.fur : p.pal.shade } }) : null
+  const web = webs(p)
+  return key && web ? (
+    <>
+      {web}
+      {key}
+    </>
+  ) : (key ?? web)
+}
 
 // ---------------------------------------------------------------------------------------------
 // Foran kroppen (efter maven og skyggen, før kropstøjet): skulderbåndet over brystet og de store bagfødder, der
@@ -310,7 +364,7 @@ export const panda: SpeciesDef = {
     Ear,
     Paw,
     PawUp,
-    PawBack: pawWebs({}, PAW_WEBS),
+    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS)),
     pawUpTip: Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k, { x: tipOf(s)[0], y: tipOf(s)[1] }])),
     upArms: Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k, { spine: s, w0: UP_W.w0, w1: UP_W.w1, tip: 7 }])),
     limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 19, half: 12.4 } },

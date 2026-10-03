@@ -82,7 +82,7 @@ describe('kontrakten for genstandene', () => {
     expect(overrideShare(ALL_ITEMS, wearers)).toBeLessThanOrEqual(MAX_OVERRIDE_SHARE)
   })
 
-  it('hjelmen har huller til ører og horn; jakken har tre grundformer og ærmer; tasken har brystrem', () => {
+  it('hjelmen har huller til ører og horn; jakken har tre grundformer og ærmer; tasken har remstumper ved hoften', () => {
     expect(rytterHead.fit.earMode).toBe('through')
     expect(rytterHead.art.rim).toBeTruthy()
     expect(rytterHead.hornHole).toBeTruthy()

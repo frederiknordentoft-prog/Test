@@ -1,19 +1,62 @@
 // Kongelig · ansigt: en monokel over det ene øje med klart glas (review G1-r4: briller sidder på øjnene
 // med klare glas). Den runde ramme omslutter øjet med luft til, at pupillen kan kigge rundt og det lukkede
-// øjes vipper går fri, så rammen aldrig dækker øjet (fit-regel 6); glasset er kun svagt tonet (16 %) med et
+// øjes vipper går fri, så rammen aldrig dækker øjet (fit-regel 6); glasset er klart i alle farvesæt (en
+// svag, neutral tone på 14 %, så øjet bag glasset beholder artens egen irisfarve; review G2-r1, T13) med et
 // hvidt højlys i det øverste ydre hjørne uden for øjet. Fra rammens yderside hænger en perlekæde i en blød
 // bue ned langs kinden til hovedets side. Alt regnes ud fra bærerens øjenankre og stadiets øjenskala
-// (babyens øjne er større). I butikken er glasset tydeligere tonet, så ikonet læses som glas.
+// (babyens øjne er større). Alene (butik, review G2-r1, B10) er monoklen sin egen genstand og ikke en lup:
+// et lille, let skråt glas i en tynd ring med højlys og en tynd perlekæde, der går i en lang bue ud af kortet.
 import { STAGE_XF } from '../../rig/anchors'
-import { WHITE, fabric } from '../../rig/palette'
+import { FABRIC, WHITE, fabric } from '../../rig/palette'
 import { circle, ellipse, join, poly, spline } from '../../rig/shapes'
-import type { ItemArt, ItemDef } from '../../rig/types'
+import type { ItemArt, ItemArtProps, ItemDef } from '../../rig/types'
 
-/** Glassets tone på dyret (højst ca. 20 %) og i butikken. */
-const TINT = 0.16
-const SOLO_TINT = 0.5
+/** Glassets tone på dyret: klart og neutralt (højst ca. 20 %), så øjets farve aldrig skifter. */
+const TINT = 0.14
+/** Alene: et lyst, køligt glas, så ikonet læses som glas (det samme i alle farvesæt). */
+const SOLO_GLASS = FABRIC.sky
+const SOLO_TINT = 0.32
+
+const round = { strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+
+/** Alene i butikken: lille skråt glas, tynd ring, højlys og en tynd kæde i en bue ud af kortet. */
+function Solo({ c, sw }: Pick<ItemArtProps, 'c' | 'sw'>) {
+  const cx = 21
+  const cy = 0
+  const rx = 12
+  const ry = 13.2
+  const rot = -16
+  const lens = ellipse(cx, cy, rx, ry, rot)
+  const t = (rot * Math.PI) / 180
+  const at = (deg: number, k = 1): [number, number] => {
+    const u = (deg * Math.PI) / 180
+    const x = Math.cos(u) * rx * k
+    const y = Math.sin(u) * ry * k
+    return [cx + x * Math.cos(t) - y * Math.sin(t), cy + x * Math.sin(t) + y * Math.cos(t)]
+  }
+  const [sx, sy] = at(62, 1.06)
+  // Kæden: ned fra ringens nederste yderside og i en lang, slap bue ud over kortets nederste højre kant.
+  const chain = spline([[sx, sy], [sx + 1.5, sy + 9], [sx + 9, sy + 17.5], [sx + 21, sy + 19], [sx + 33, sy + 13]])
+  const glare = join(
+    poly([at(-128, 0.8), at(-100, 0.84), at(-96, 0.62), at(-122, 0.58)]),
+    circle(...at(120, 0.58), 1.3),
+  )
+  const beads = `0.1 ${(sw * 1.05).toFixed(2)}`
+  return (
+    <>
+      <path d={chain} fill="none" stroke={c.outline} strokeWidth={sw * 1.05} strokeDasharray={beads} {...round} />
+      <path d={chain} fill="none" stroke={c.main} strokeWidth={sw * 0.5} strokeDasharray={beads} {...round} />
+      <path d={lens} fill={SOLO_GLASS} opacity={SOLO_TINT} />
+      <path d={glare} fill={c.highlight === 'none' ? 'none' : WHITE} opacity={0.9} />
+      <path d={lens} fill="none" stroke={c.outline} strokeWidth={sw * 1.45} />
+      <path d={lens} fill="none" stroke={c.main} strokeWidth={sw * 0.62} />
+      <path d={circle(sx, sy, 1.7)} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.4} />
+    </>
+  )
+}
 
 const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
+  if (solo) return <Solo c={c} sw={sw} />
   const es = STAGE_XF[stage].eye
   const L = local(a.eyeL)
   const E = local(a.eyeR)
@@ -47,13 +90,12 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
     ]),
     circle(E.x - 0.56 * ux, E.y + 0.76 * uy, 0.09 * ux),
   )
-  const round = { strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   const beads = `0.1 ${(sw * 1.25).toFixed(2)}`
   return (
     <>
       <path d={chain} fill="none" stroke={c.outline} strokeWidth={sw * 1.25} strokeDasharray={beads} {...round} />
       <path d={chain} fill="none" stroke={c.main} strokeWidth={sw * 0.62} strokeDasharray={beads} {...round} />
-      <path d={lens} fill={c.trim} opacity={solo ? SOLO_TINT : TINT} />
+      <path d={lens} fill={WHITE} opacity={TINT} />
       <path d={glare} fill={c.highlight === 'none' ? 'none' : WHITE} opacity={0.85} />
       <path d={lens} fill="none" stroke={c.outline} strokeWidth={sw * 2.1} />
       <path d={lens} fill="none" stroke={c.main} strokeWidth={sw * 1.0} />

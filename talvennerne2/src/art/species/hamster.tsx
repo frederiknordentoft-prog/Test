@@ -139,6 +139,46 @@ const PawUp: SidePart = ({ pal, sw, mood }) => {
 /** Fyld bag alt ved armene (se `pawWebs`): lommernes udvidede hylstre pr. race, stadie, humør og side. */
 const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {}
 
+/**
+ * Lommerne i nøgleposerne (review G2-r1 §1.4 og §5): pels i skyggetone bag alt mellem løftet pote eller vinge og kind
+ * eller krop, så der aldrig ses baggrund inde i figuren. Kun i stillbilleder (album, butik og kontaktark): i animationen
+ * åbner og lukker lommerne, mens poten bevæger sig, så et fast fyld ville ses mod baggrunden dér. Hylstrene er målt på
+ * magenta (4 px pr. enhed, udvidet 1,2 enheder) i skulderens ramme (højre side spejlet) pr. race, stadie, humør og side.
+ */
+const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  std: {
+    1: {
+      happy: { L: [[-1.2, -11.9], [2.3, -11.1], [2.3, -8.8], [0.4, -8.1], [-1.9, -8.5], [-2.3, -10.7]], R: [[0, -11.9], [-1.2, -11.9], [-2.3, -10.7], [-2.3, -9.2], [-1.2, -8.1], [1.5, -8.5], [2.6, -9.6], [2.3, -11.1]] },
+      think: { L: [[-0.4, -13], [4.5, -11.5], [4.5, -9.2], [1.5, -8.1], [-0.8, -9.6], [-1.5, -11.9]] },
+      wave: { R: [[-9.9, -18.3], [-11.4, -18], [-11.8, -17.2], [-11.4, -14.5], [-9.9, -11.9], [-6.5, -8.8], [-2.7, -6.9], [0, -6.6], [5.3, -9.6], [5.7, -11.1], [4.9, -12.3], [-3.1, -14.9]] },
+    },
+    2: {
+      idle: { L: [[-0.5, -12.6], [5, -11.5], [5.6, -11.3], [5.9, -10.1], [5.3, -9.3], [2.2, -7.9], [0, -9.9], [-1.1, -10.1], [-1.4, -11.8]], R: [[0.9, -12.6], [-1.1, -12.4], [-1.4, -10.7], [1.7, -8.2], [2.8, -7.9], [5.6, -9.6], [5.6, -11.3]] },
+      happy: { L: [[2.8, -11.8], [5.6, -11.3], [5.6, -9.6], [4.7, -9], [2.2, -9.3], [2, -11]], R: [[3.6, -11.8], [2.3, -11.5], [2.3, -9.3], [5.3, -9.3], [5.9, -10.1], [5.6, -11.3]] },
+      cheer: { R: [[4.9, -12], [4, -12], [3.2, -11.1], [3.6, -10], [4.7, -9.2], [6.3, -9.8], [6.6, -10.4], [6.3, -11.5]] },
+      sleep: { L: [[0, -12.8], [4.7, -11], [4.7, -9], [2.5, -7.9], [1.1, -8.2], [-0.8, -10.2], [-0.8, -11.9]] },
+      wave: { R: [[-8, -19.9], [-10.5, -19.9], [-12.2, -19.3], [-12.5, -17.4], [-11.6, -14.3], [-10, -11.5], [-6.4, -8.5], [-1.6, -6.3], [0, -6.3], [7.5, -10.4], [7.5, -12.1], [0.3, -14.9]] },
+    },
+    3: {
+      happy: { L: [[4.6, -11.8], [6, -11.6], [6.7, -10.9], [6.4, -9.7], [5.1, -9], [4.1, -9.3], [3.9, -9.7], [3.9, -11.1]], R: [[5.1, -11.8], [4.1, -11.6], [3.9, -11.1], [3.9, -9.7], [4.6, -9], [6.4, -9.7], [6.7, -10.2], [6.4, -11.3]] },
+      cheer: { R: [[4.2, -12.5], [3.3, -12.4], [2.6, -11.7], [3.1, -10.4], [4.1, -9.3], [5, -9.1], [7, -10.1], [7, -11.4]] },
+      wave: { R: [[-4.2, -18.8], [-11.8, -18.5], [-12.5, -17.8], [-11.8, -14.6], [-10.9, -12.7], [-8.6, -10], [-6.1, -8.1], [-1.9, -6.3], [-0.3, -6], [3, -8.1], [8.5, -10.9], [8.5, -12.3], [2, -14.8]] },
+    },
+  },
+}
+const KeyWebs = pawWebs({}, KEY_WEBS)
+/** Armenes faste fyld og, i stillbilleder, nøgleposernes lommer i skyggetone (se `KEY_WEBS`). */
+const withKeyWebs = (webs: SidePart): SidePart => (p) => {
+  const key = p.still ? KeyWebs({ ...p, pal: { ...p.pal, fur: p.pal.silhouette ? p.pal.fur : p.pal.shade } }) : null
+  const web = webs(p)
+  return key && web ? (
+    <>
+      {web}
+      {key}
+    </>
+  ) : (key ?? web)
+}
+
 // ---------------------------------------------------------------------------------------------
 // Foran kroppen (efter maven og skyggen, før kropstøjet): små lyserøde fødder.
 
@@ -192,23 +232,37 @@ const Muzzle: Part = ({ pal, sw, a, ids, lod }) => {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Aftegninger: blis (sort-hvid) og pandaens øjenpletter og sadel, klippet til hoved og krop.
+// Aftegninger: blis (sort-hvid) og pletterne (plettet), klippet til hoved og krop.
 
 const BLAZE: Vec[] = [[0, -1.02], [-0.12, -0.8], [-0.1, -0.46], [-0.08, -0.2], [0, -0.1], [0.08, -0.2], [0.1, -0.46], [0.12, -0.8]]
 
+/**
+ * Plettet (review G2-r1 §5): skæve pletter, aldrig om øjnene, så hamsteren ikke læses som en panda: en stor plet
+ * over panden og det venstre øres rod, en lille på højre kind over kindposen og to på flankerne.
+ */
 const PatternHead: Part = ({ pal, a, ids, colorway }) => {
   const h = a.headCenter
   if (colorway === 'c4') return <path d={blob(frame(BLAZE, h.x, h.y, a.headRx, a.headRy), 0.9)} fill={pal.pattern} clipPath={`url(#${ids.headClip})`} />
   if (colorway === 'c6') {
-    const patch = (e: { x: number; y: number }, s: number) => ellipse(e.x - s * 1.5, e.y + 1, a.eyeRx * 1.55, a.eyeRy * 1.3, s * -18)
-    return <path d={join(patch(a.eyeL, 1), patch(a.eyeR, -1))} fill={pal.pattern} clipPath={`url(#${ids.headClip})`} />
+    const spots = join(
+      ellipse(h.x - a.headRx * 0.5, h.y - a.headRy * 0.78, a.headRx * 0.46, a.headRy * 0.34, -24),
+      ellipse(h.x + a.headRx * 0.7, h.y - a.headRy * 0.22, a.headRx * 0.15, a.headRy * 0.13, 20),
+    )
+    return <path d={spots} fill={pal.pattern} clipPath={`url(#${ids.headClip})`} />
   }
   return null
 }
 
 const PatternBody: Part = ({ pal, a, ids, colorway }) =>
   colorway === 'c6' ? (
-    <path d={ellipse(a.bodyCenter.x, a.bodyCenter.y - a.bodyRy * 0.22, a.bodyRx * 1.3, a.bodyRy * 0.4)} fill={pal.pattern} clipPath={`url(#${ids.bodyClip})`} />
+    <path
+      d={join(
+        ellipse(a.bodyCenter.x - a.bodyRx * 0.74, a.bodyCenter.y - a.bodyRy * 0.08, a.bodyRx * 0.34, a.bodyRy * 0.4, 12),
+        ellipse(a.bodyCenter.x + a.bodyRx * 0.78, a.bodyCenter.y + a.bodyRy * 0.32, a.bodyRx * 0.2, a.bodyRy * 0.2, -10),
+      )}
+      fill={pal.pattern}
+      clipPath={`url(#${ids.bodyClip})`}
+    />
   ) : null
 
 // ---------------------------------------------------------------------------------------------
@@ -276,7 +330,7 @@ export const hamster: SpeciesDef = {
     Ear,
     Paw,
     PawUp,
-    PawBack: pawWebs({}, PAW_WEBS),
+    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS)),
     pawUpTip: Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k, { x: tipOf(s)[0], y: tipOf(s)[1] }])),
     upArms: Object.fromEntries(Object.entries(UP_SPINES).map(([k, s]) => [k, { spine: s, w0: UP_W.w0, w1: UP_W.w1, tip: 6 }])),
     limb: { rot: PAW_ROT, sleeve: () => blob(SLEEVE), cuff: { y: 10.5, half: 10.4 } },

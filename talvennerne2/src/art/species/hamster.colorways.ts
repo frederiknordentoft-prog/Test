@@ -1,7 +1,7 @@
-// Hamsterens farver (katalogets SPECIES): c1 guld, c2 hvid, c3 grå, c4 sort-hvid, c5 karamel, c6 panda.
+// Hamsterens farver (katalogets SPECIES): c1 abrikos, c2 hvid, c3 grå, c4 sort-hvid, c5 karamel, c6 plettet.
 // Colorway-filer er, sammen med palette.ts, de eneste steder med rå hex (lint). `belly` er de lyse kindposer,
-// mulen og maven; `inner` er de lyserøde ører, hænder og fødder. Aftegningerne (blis på sort-hvid,
-// øjenpletter og sadel på panda) tegnes af hamster.tsx.
+// mulen og maven; `inner` er de lyserøde ører, hænder og fødder. Aftegningerne (blis på sort-hvid og
+// pletterne på plettet) tegnes af hamster.tsx.
 import type { ColorwayDef, NaturalColorwayId } from '../rig/types'
 
 export const HAMSTER_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
@@ -42,13 +42,14 @@ export const HAMSTER_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     fur: '#BD875F',
     overrides: { belly: '#FFF3E4', outline: '#5E3519', shade: '#AA7550', inner: '#F7AFA8', nose: '#D9707F', iris: '#6E3B1E' },
   },
-  // Panda: hvid med mørke ører, øjenpletter og en mørk sadel om maven.
+  // Plettet: hvid med karamelbrune pletter på hoved og flanker (review G2-r1 §5: pletter, ikke et pandamønster
+  // med øjenpletter); ørerne i pletternes farve og en varm, brun kontur.
   c6: {
     id: 'c6',
     name: 'plettet',
     fur: '#FFFBF6',
     pattern: 'pinto',
-    patternColor: '#46415A',
-    overrides: { belly: '#FFFFFF', outline: '#5E5770', shade: '#EEE6E2', earFur: '#46415A', inner: '#E7A0BC', nose: '#E8869E', iris: '#7A5A8A' },
+    patternColor: '#D08E55',
+    overrides: { belly: '#FFFFFF', outline: '#7E5A44', shade: '#F1E6DC', earFur: '#D08E55', inner: '#F2A9BC', nose: '#E8869E', iris: '#6E4A2E' },
   },
 }
