@@ -702,19 +702,21 @@
   --icon-fill-o: 0.32;
 }
 /* A locked stone reads on the frosted pane and through the fog (review G2-r2 §6, Scener 1): a dark, muted
-   contour and glyph (≥ 3:1 against the field around them), a near-opaque field (85 %) inside and around the
-   stone instead of the frosted pane, and in a closed region the stones stand above the fog. */
+   contour and glyph (≥ 3:1 against the field around them), a near-opaque field inside and around the stone
+   instead of the frosted pane, and in a closed region the stones stand above the fog. The field is a
+   muted grey with only a trace of the region's colour, so a locked stone never looks like an open one
+   (a white field in a coloured ring) or a done one (a coloured field), not even in a closed region. */
 .tv-stone.is-locked {
   box-shadow: 0 0 0 5px color-mix(in oklch, var(--color-card) 85%, transparent);
 }
 .tv-stone.is-locked::before {
-  background: color-mix(in oklch, var(--tone-deep) 45%, var(--color-ink-2));
+  background: color-mix(in oklch, var(--tone-deep) 25%, var(--color-ink-2));
   opacity: 0.75;
 }
 .tv-stone.is-locked .tv-stone__disc {
-  border-color: color-mix(in oklch, var(--tone-deep) 62%, var(--color-ink-2));
-  background: color-mix(in oklch, color-mix(in oklch, var(--tone-soft) 70%, var(--color-card)) 85%, transparent);
-  color: color-mix(in oklch, var(--tone-deep) 75%, var(--color-ink-2));
+  border-color: color-mix(in oklch, var(--tone-deep) 35%, var(--color-ink-2));
+  background: color-mix(in oklch, color-mix(in oklch, var(--color-stone-edge) 82%, var(--tone-soft)) 92%, transparent);
+  color: color-mix(in oklch, var(--tone-deep) 35%, var(--color-ink));
 }
 .tv-region.is-locked .tv-stone-spot {
   z-index: 3;
@@ -734,6 +736,7 @@
 }
 .tv-stone.is-locked .tv-stone__pic {
   opacity: 0.85;
+  filter: saturate(0.45);
 }
 .tv-stone__lock,
 .tv-stone__play,

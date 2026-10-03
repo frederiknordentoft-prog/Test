@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { AVAILABLE_ITEMS } from '../art/items/registry'
+import { ITEMS } from '../content/catalog'
 import { nodesOfRegion } from '../content/curriculum'
 import { PERLER, XP } from '../content/economy'
 import { newProfile } from '../engine/testing/profile'
@@ -6,8 +8,10 @@ import type {
   Animal, FirstTry, LearningEvent, NodeId, ProfileDoc, SkillId, TrialState,
 } from '../engine/types'
 import { chooseEggSpecies, chooseMagic, chooseStarter, openEgg } from './actions'
-import { eggOptions, pendingChoices, unlockedBreeds, unownedCombos } from './animals'
-import { applyRoundResult, correctAnswers, roundStars, type MetaRound } from './progression'
+import { eggOptions, friendOnCard, magicAnimal, pendingChoices, unlockedBreeds, unownedCombos } from './animals'
+import {
+  applyRoundResult, correctAnswers, dueItems, grantDueItems, itemDrawn, roundStars, type ItemDrawn, type MetaRound,
+} from './progression'
 import type { Reward } from './rewards'
 
 const T = Date.parse('2026-10-01T15:00:00Z')
@@ -30,8 +34,11 @@ function round(over: Partial<MetaRound> = {}): MetaRound {
 }
 
 /** The data layer has booked the round (roundIndex + 1) before the game layer runs. */
-const play = (p: ProfileDoc, r: MetaRound, events: LearningEvent[] = [], day = DAY, now = T) =>
-  applyRoundResult({ ...p, roundIndex: p.roundIndex + 1 }, r, { events, day, now })
+const play = (p: ProfileDoc, r: MetaRound, events: LearningEvent[] = [], day = DAY, now = T, drawn?: ItemDrawn) =>
+  applyRoundResult({ ...p, roundIndex: p.roundIndex + 1 }, r, { events, day, now, drawn })
+
+/** A fake item registry: every thing is drawn (the medal sets are drawn by another agent meanwhile). */
+const allDrawn: ItemDrawn = () => true
 
 const of = <K extends Reward['t']>(rs: readonly Reward[], t: K) => rs.filter((r): r is Extract<Reward, { t: K }> => r.t === t)
 
@@ -143,7 +150,7 @@ describe('mastery: sparks and medals', () => {
   })
 
   it('brings the Stjernefølet with the first gold medal', () => {
-    const { profile, rewards } = play(child(), round(), [{ t: 'medal', skill: 'tenFriends', medal: 'gold' }])
+    const { profile, rewards } = play(child(), round(), [{ t: 'medal', skill: 'tenFriends', medal: 'gold' }], DAY, T, allDrawn)
     const foal = profile.animals.find((a) => a.source === 'starFoal')!
     expect(foal).toMatchObject({ uid: 'starfoal-tenFriends', species: 'unicorn', breed: 'foal', colorway: 'starwhite', stage: 1 })
     expect(of(rewards, 'animal')[0].animal.uid).toBe('starfoal-tenFriends')
@@ -173,9 +180,63 @@ describe('mastery: sparks and medals', () => {
 
   it('hands out Ridder and Talmagiker pieces by the number of silver and gold medals', () => {
     const p = child({ skillMedals: { count10: 'silver' } })
-    const { profile } = play(p, round(), [{ t: 'medal', skill: 'count20', medal: 'silver' }])
+    const { profile } = play(p, round(), [{ t: 'medal', skill: 'count20', medal: 'silver' }], DAY, T, allDrawn)
     expect(profile.inventory['ridder-head']).toBeDefined()
     expect(profile.inventory['ridder-hand']).toBeUndefined()
+  })
+})
+
+describe('a thing earned by medals waits for its drawing (review app-w2-r1 P2-6)', () => {
+  /** A fake registry without the Ridder and Talmagiker sets. */
+  const noMedalSets: ItemDrawn = (item) => !item.startsWith('ridder-') && !item.startsWith('talmagiker-')
+  const silver = (skill: SkillId): LearningEvent => ({ t: 'medal', skill, medal: 'silver' })
+
+  it('is not due while it is not drawn, and due as soon as it is', () => {
+    const p = child({ skillMedals: { count10: 'silver', count20: 'silver', addTo10: 'gold' } })
+    expect(dueItems(p, noMedalSets).filter((i) => i.startsWith('ridder-') || i.startsWith('talmagiker-'))).toEqual([])
+    expect(dueItems(p, allDrawn)).toEqual(expect.arrayContaining(['ridder-head', 'talmagiker-head']))
+    expect(grantDueItems(p, T, noMedalSets).profile.inventory['ridder-head']).toBeUndefined()
+    expect(grantDueItems(p, T, allDrawn).rewards).toEqual(expect.arrayContaining([
+      { t: 'item', item: 'ridder-head', source: { kind: 'medal', tier: 'silver', count: 2 } },
+    ]))
+  })
+
+  it('gives the medal but no wrapped gift, then the thing with the first round after its drawing lands', () => {
+    const p = child({ skillMedals: { count10: 'silver' } })
+    const medalRound = play(p, round(), [silver('count20')], DAY, T, noMedalSets)
+    expect(of(medalRound.rewards, 'medal').map((r) => r.medal)).toEqual(['bronze', 'silver'])
+    expect(of(medalRound.rewards, 'item').map((r) => r.item)).not.toContain('ridder-head')
+    expect(medalRound.profile.inventory['ridder-head']).toBeUndefined()
+    // still not drawn: another round changes nothing
+    const later = play(medalRound.profile, round(), [], DAY, T + 1, noMedalSets)
+    expect(later.profile.inventory['ridder-head']).toBeUndefined()
+    // the drawing lands: the next round (no medal in it) hands the thing out with its source
+    const drawnNow = play(later.profile, round(), [], '2026-10-02', T + 86_400_000, allDrawn)
+    expect(drawnNow.profile.inventory['ridder-head']).toEqual({ at: T + 86_400_000, colors: [0] })
+    expect(of(drawnNow.rewards, 'item').filter((r) => r.item === 'ridder-head')).toEqual([
+      { t: 'item', item: 'ridder-head', source: { kind: 'medal', tier: 'silver', count: 2 } },
+    ])
+    // nothing was lost on the way: the medals stand, and the thing comes only once
+    expect(drawnNow.profile.skillMedals).toEqual({ count10: 'silver', count20: 'silver' })
+    const again = play(drawnNow.profile, round(), [], '2026-10-02', T + 86_400_001, allDrawn)
+    expect(of(again.rewards, 'item').filter((r) => r.item === 'ridder-head')).toEqual([])
+  })
+
+  it('keeps a thing the child already owns without a drawing (from an earlier version)', () => {
+    const p = child({ skillMedals: { count10: 'silver', count20: 'silver' }, inventory: { 'ridder-head': { at: 1, colors: [0] } } })
+    const { profile } = play(p, round(), [], DAY, T, noMedalSets)
+    expect(profile.inventory['ridder-head']).toEqual({ at: 1, colors: [0] })
+  })
+
+  it('never holds back a drawn level thing, nor a chest', () => {
+    const p = child({ economy: { ...child().economy, xp: 100 } })
+    const { profile } = play(p, round({ nodeId: 'w0-former-chest' }), [], DAY, T, noMedalSets)
+    expect(profile.inventory['opdager-head']).toBeDefined()
+    expect(profile.inventory['hverdag-head']).toBeDefined()
+  })
+
+  it('reads the drawings of this build by default (the item registry)', () => {
+    for (const item of ITEMS) expect(itemDrawn(item.id), item.id).toBe(AVAILABLE_ITEMS.includes(item.id))
   })
 })
 
@@ -197,6 +258,52 @@ describe('friend and chest nodes (SPEC §6.2)', () => {
     expect(friend.species).toBe('rabbit')
     expect(`${friend.breed}:${friend.colorway}`).not.toBe(`${starter.breed}:${starter.colorway}`)
     expect(of(rewards, 'animal')[0].newSpecies).toBe(false)
+  })
+
+  describe('the stone card shows the very animal the node gives (review app-w2-r1 P2-2)', () => {
+    const IDS = ['kid', 'mie', 'otto', 'sara', 'bo', 'ada', 'p1', 'p2', 'p3', 'p4']
+    const kid = (id: string): ProfileDoc =>
+      ({ ...chooseStarter(newProfile({ id, roundIndex: 5, unlocked: { worlds: [], regions: [] } }), 'rabbit', { now: T })!.profile, rewardLog: [] })
+    const look = (a: Animal | null | undefined) => a && { uid: a.uid, species: a.species, breed: a.breed, colorway: a.colorway, stage: a.stage, shown: a.shown }
+    const given = (rewards: readonly Reward[], nodeId: string) => of(rewards, 'animal').find((r) => r.animal.uid === `friend-${nodeId}`)?.animal
+
+    it('draws on the card what the round gives, for a new species and for one the child has', () => {
+      const colours = new Set<string>()
+      for (const id of IDS) {
+        const p = kid(id)
+        for (const [nodeId, species] of [['w0-plus10-friend', 'cat'], ['w0-tal10-friend', 'rabbit'], ['w1-klokken-friend', 'fox']] as const) {
+          const card = friendOnCard(p, species, nodeId)
+          expect(look(card), `${id} ${nodeId}`).toEqual(look(given(play(p, round({ nodeId })).rewards, nodeId)))
+          colours.add(card!.colorway)
+        }
+      }
+      // not always the species' first colour: the card has to draw, as the round does
+      expect(colours.size).toBeGreaterThan(1)
+    })
+
+    it('shows the animal the child got once the node is played, and none when it gave none', () => {
+      const p = kid('mie')
+      const { profile } = play(p, round({ nodeId: 'w1-klokken-friend' }))
+      const fox = profile.animals.find((a) => a.uid === 'friend-w1-klokken-friend')!
+      expect(friendOnCard(profile, 'fox', 'w1-klokken-friend')).toBe(fox)
+      // played when every colour was found (friendship instead): the card shows the species
+      const played = { ...p, nodes: { ...p.nodes, 'w0-tal10-friend': { plays: 1, stars: 2 as const, skipped: false, lastAt: 1 } } }
+      expect(friendOnCard(played, 'rabbit', 'w0-tal10-friend')).toBeNull()
+    })
+
+    it('is not changed by a Stjernefølet the same round brings', () => {
+      // a rainbow unicorn foal from three stars everywhere, no gold medal yet: the first gold medal comes
+      // in the round that meets the unicorn friend, and two foals would open the next breed mid-round
+      const nodeId = 'w2-tal1000-friend'
+      for (const id of IDS) {
+        const p0 = kid(id)
+        const p = { ...p0, animals: [...p0.animals, magicAnimal(p0, 'rainbow', 'unicorn', T)] }
+        const card = friendOnCard(p, 'unicorn', nodeId)
+        const { rewards } = play(p, round({ nodeId }), [{ t: 'medal', skill: 'tenFriends', medal: 'gold' }], DAY, T, allDrawn)
+        expect(of(rewards, 'animal').some((r) => r.animal.source === 'starFoal')).toBe(true)
+        expect(look(card), id).toEqual(look(given(rewards, nodeId)))
+      }
+    })
   })
 
   it('opens the chest with the item shown on the map', () => {

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { skillRegistry } from '../engine/registry'
-import type { AnswerLogEntry, NodeId, ProfileDoc } from '../engine/types'
-import { nodesOfRegion } from '../content/curriculum'
+import type { AnswerLogEntry, NodeId, ProfileDoc, RegionId, RewardLogEntry } from '../engine/types'
+import { REGIONS, nodesOfRegion } from '../content/curriculum'
 import { buildDashboard } from './dashboard'
-import { ago, answers, dailyFrom, key, keysAt, misconception, profile, snap, source, tableIndex, TODAY, type DayExtra } from './fixtures'
+import {
+  ago, answers, dailyFrom, key, keysAt, misconception, profile, snap, source, tableIndex, TODAY, tsOf, type DayExtra,
+} from './fixtures'
 import { keyIndexOf } from './load'
 import { MAX_RECOMMENDATIONS } from './recommend'
 import type { Recommendation, SkillKeyIndex } from './types'
@@ -120,6 +122,38 @@ describe('R4: forgotten', () => {
     // a medal in a skill this version cannot enumerate says nothing about now
     expect(recs(profile({ skillMedals: { mul34: 'gold' } })).some((x) => x.rule === 'R4')).toBe(false)
   })
+
+  describe('only after a week below it (review app-w2-r1 P2-8)', () => {
+    const medalOn = (day: string, medal = 'bronze', skill = 'count10'): RewardLogEntry =>
+      ({ ts: tsOf(day, 14), kind: 'medal', what: `${medal}:${skill}`, why: `medal:${medal}:${skill}` })
+    /** Bronze in count10, then a few slips: every key back in box 1, "Øver" under the medal. */
+    const slipped = (log: RewardLogEntry[]) => profile({ keys: keysAt(count10Keys, 1), skillMedals: { count10: 'bronze' }, rewardLog: log })
+    const r4 = (p: ProfileDoc, extra: Record<string, DayExtra> = {}) => recs(p, answers('count10', TODAY, 12, { correct: 9 }), extra).filter((x) => x.rule === 'R4')
+
+    it('never says »Genopfrisk« the day the child earned the medal and passed the trial', () => {
+      expect(r4(slipped([medalOn(TODAY)]))).toEqual([])
+      expect(r4(slipped([medalOn(ago(1))]))).toEqual([])
+      expect(r4(slipped([medalOn(ago(6))]))).toEqual([])
+    })
+
+    it('says it once the skill has been below its medal for a week', () => {
+      expect(r4(slipped([medalOn(ago(7))])).map((x) => x.skill)).toEqual(['count10'])
+      // an old medal whose day has left the log counts as long ago
+      expect(r4(slipped([])).map((x) => x.title)).toEqual(['Genopfrisk »Tælle til 10«'])
+    })
+
+    it('counts a day that ended at the medal\'s level as the last time it was there', () => {
+      expect(r4(slipped([]), { [ago(3)]: { snapshot: { count10: snap('support') } } })).toEqual([])
+      expect(r4(slipped([]), { [ago(8)]: { snapshot: { count10: snap('support') } } }).map((x) => x.skill)).toEqual(['count10'])
+    })
+
+    it('treats a fall over the two weeks the same way', () => {
+      const p = profile({ keys: keysAt(count10Keys, 3) })
+      const was = { count10: snap('independent', 4.5, 0.9) }
+      expect(r4(p, { [ago(20)]: { snapshot: was }, [ago(2)]: { snapshot: was } })).toEqual([])
+      expect(r4(p, { [ago(20)]: { snapshot: was }, [ago(9)]: { snapshot: was } }).map((x) => x.skill)).toEqual(['count10'])
+    })
+  })
 })
 
 describe('R5: "Med støtte" without typed answers for a week', () => {
@@ -149,11 +183,55 @@ describe('R6: "Klar til"', () => {
     expect(r[0]).toMatchObject({ rule: 'R6', title: 'Klar til: Tællelunden', region: 'w0-tal10' })
   })
 
-  it('never sends an older child back to a world far below', () => {
-    const p = profile({ grade: 3, unlocked: { worlds: ['eng', 'bakke', 'skov', 'fjeld'], regions: [] }, nodes: { 'w3-tabellen-l1': { plays: 1, stars: 2, skipped: false, lastAt: 9 } } })
+  it('never sends an older child back to a world below their grade', () => {
+    const p = profile({
+      grade: 3, unlocked: { worlds: ['eng', 'bakke', 'skov', 'fjeld'], regions: ['w3-store-tal'] },
+      nodes: { 'w3-tabellen-l1': { plays: 1, stars: 2, skipped: false, lastAt: 9 } },
+    })
     const r6 = recs(p).filter((x) => x.rule === 'R6')
     expect(r6).toHaveLength(1)
-    expect(r6[0].region?.startsWith('w2') || r6[0].region?.startsWith('w3')).toBe(true)
+    expect(r6[0].region).toBe('w3-store-tal')
+    // with nothing open ahead in Stjernefjeldet there is no "Klar til" rather than one from Regnbueskoven
+    const none = profile({ ...p, unlocked: { ...p.unlocked, regions: [] } })
+    expect(recs(none).filter((x) => x.rule === 'R6')).toEqual([])
+  })
+
+  describe('points forward, never back (review app-w2-r1 P2-8)', () => {
+    const played = (...regions: RegionId[]): ProfileDoc['nodes'] => {
+      const nodes: ProfileDoc['nodes'] = {}
+      let at = 1
+      for (const r of regions) for (const n of nodesOfRegion(r)) nodes[n.id as NodeId] = { plays: 1, stars: 2, skipped: false, lastAt: at++ }
+      return nodes
+    }
+    const passed = (...regions: RegionId[]): ProfileDoc['trials'] =>
+      Object.fromEntries(regions.map((r) => [r, { attempts: 1, failed: 0, best: 10, passedAt: 5, lastAttemptRound: 1 }]))
+    const allOpen = (worlds: ProfileDoc['unlocked']['worlds']) => ({ worlds, regions: REGIONS.filter((r) => worlds.includes(r.world)).map((r) => r.id) })
+    const r6 = (p: ProfileDoc) => recs(p).filter((x) => x.rule === 'R6')
+    const bakke = REGIONS.filter((r) => r.world === 'bakke').map((r) => r.id)
+
+    it('sends a 1st grader who has played Hestebakkerne on to Regnbueskoven, not to Engdalen', () => {
+      const p = profile({ grade: 1, unlocked: allOpen(['eng', 'bakke', 'skov']), nodes: played(...bakke), trials: passed(...bakke) })
+      expect(r6(p)).toMatchObject([{ title: 'Klar til: Stortalsbjerget', region: 'w2-tal1000' }])
+    })
+
+    it('never sends a 2nd grader in Regnbueskoven back to Hestebakkerne', () => {
+      // QA2 saw "Klar til: Hundredemarken" here
+      const p = profile({ grade: 2, unlocked: allOpen(['eng', 'bakke', 'skov']), nodes: played('w2-tal1000'), trials: passed('w2-tal1000') })
+      expect(r6(p)).toMatchObject([{ title: 'Klar til: Vekselvandet', region: 'w2-veksling' }])
+    })
+
+    it('never sends a child back to a grade below their own, even with nothing played', () => {
+      const r = r6(profile({ grade: 1, unlocked: allOpen(['eng', 'bakke']) }))
+      expect(r).toMatchObject([{ title: 'Klar til: Hundredemarken', region: 'w1-tal100' }])
+    })
+
+    it('suggests no new place behind the one the child plays in now', () => {
+      // Urtårnet played to its trial: the trial is the next step there
+      const p = profile({ grade: 1, unlocked: allOpen(['eng', 'bakke']), nodes: played('w1-klokken') })
+      expect(r6(p).map((x) => x.title)).toEqual(['Klar til: mesterprøven i Urtårnet'])
+      // passed: the next new place is after Urtårnet, not Hundredemarken or Dobbeltdalen before it
+      expect(r6({ ...p, trials: passed('w1-klokken') }).map((x) => x.region)).toEqual(['w1-tiere'])
+    })
   })
 
   it('puts a trial whose rounds are all played first', () => {

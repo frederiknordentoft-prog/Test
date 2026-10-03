@@ -11,7 +11,7 @@ import { circle, ellipse } from '../../../../art/materials/geom'
 import { HIGHLIGHT, MAT } from '../../../../art/materials/palette'
 import { ITEM_BY_ID } from '../../../../content/catalog'
 import { REGION_BY_ID, WORLD_BY_ID } from '../../../../content/curriculum'
-import type { Animal, ClipId, ItemId, SpeciesId, SpeechPart, WorldId } from '../../../../engine/types'
+import type { Animal, ClipId, ItemId, ItemSource, SpeciesId, SpeechPart, WorldId } from '../../../../engine/types'
 import { useNav } from '../../../../app/nav'
 import { speciesOfWorld } from '../../../../meta/animals'
 import { clockWords } from '../../../../speech/clock'
@@ -36,6 +36,7 @@ import { isPiece } from '../../../task/pay/logic'
 import { Buddy } from '../round/Buddy'
 import { AnimalPicture, ItemPicture } from '../map/art'
 import { isItemDrawn } from '../wardrobe/drawn'
+import { howToGet } from '../wardrobe/model'
 import { goalSpeech, lineText } from '../map/words'
 import { canDoClip, learnedItems, type LearnedContext, type LearnedFace, type LearnedItem } from './describe'
 import { finaleThings, progressOf, setProgress } from './flow'
@@ -527,7 +528,7 @@ export function thingSpeech(step: CeremonyStep, animals: readonly Animal[] = [])
   const r = step.rewards[0]
   const parts = [...step.speech]
   if (r?.t === 'animal') parts[0] = { clip: animalTitle(step, animals) }
-  if (r?.t === 'item') parts.push({ clip: ITEM_BY_ID[r.item].nameClip })
+  if (r?.t === 'item') parts.push({ clip: ITEM_BY_ID[r.item].nameClip }, ...medalReason(r.source))
   if (r?.t === 'animal') parts.push({ clip: `name.species.${r.animal.species}` })
   if (r?.t === 'trophy') parts.push({ clip: `name.trophy.${r.id}` })
   return parts
@@ -562,6 +563,7 @@ export function ThingScreen({ step, nextSignal, onAdvance, onTryOn }: ThingScree
         <ItemPicture item={r.item} size={150} className="tv-cer-thing__pic" />
         {step.speech[0] && 'clip' in step.speech[0] && <SpokenText as="h1" clip={step.speech[0].clip} className="tv-cer__title" />}
         <SpokenText clip={ITEM_BY_ID[r.item].nameClip} className="tv-cer-thing__name" />
+        {r.source.kind === 'medal' && <MedalReason source={r.source} />}
         {isItemDrawn(r.item) && <Button clip="s.ceremony.tryOn" icon="shirt" variant="star" size="md" onClick={() => onTryOn(r.item)} data-try-on={r.item} />}
       </div>
     )
@@ -593,6 +595,19 @@ export function ThingScreen({ step, nextSignal, onAdvance, onTryOn }: ThingScree
       {r.t === 'trophy' && <SpokenText clip={`name.trophy.${r.id}`} className="tv-cer__line" />}
     </div>
   )
+}
+
+/**
+ * What a thing from medals is for ("Den får du, når du har fået 2 sølvmedaljer"). It waits for its
+ * drawing (progression.ts, dueItems), so it may come rounds after the medal that earned it; the
+ * line says why it comes now (review app-w2-r1 P2-6).
+ */
+const medalReason = (source: ItemSource): SpeechPart[] => (source.kind === 'medal' ? howToGet(source) : [])
+
+function MedalReason({ source }: { source: ItemSource }) {
+  const speech = useSpeech()
+  const parts = medalReason(source)
+  return <SpokenText parts={parts} text={lineText(parts, speech.text)} className="tv-cer__line" />
 }
 
 /** A new friend: the animal, its species and its name to choose. */
