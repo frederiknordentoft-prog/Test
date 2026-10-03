@@ -188,8 +188,8 @@ export function layoutOf(w: number, h: number): Layout {
         { x: w * 0.812, y: h * 0.893, s: k * 0.95, coat: 'chestnut', graze: true, flip: false, from: 0 },
         { x: w * 0.888, y: h * 0.9, s: k, coat: 'grey', graze: false, flip: true, from: 0 },
         { x: w * 0.846, y: h * 0.866, s: k * 0.62, coat: 'foal', graze: false, flip: false, from: 2 },
-        // drikker ved åen
-        { x: w * 0.763, y: h * 0.88, s: k * 0.85, coat: 'bay', graze: true, flip: true, from: 3 },
+        // græsser oppe på folden, fri af åen (review G2-r2 §5.3: den stod med forbenene i vandet)
+        { x: w * 0.795, y: h * 0.857, s: k * 0.85, coat: 'bay', graze: true, flip: true, from: 3 },
       ],
       sheep: [[w * 0.215, h * 0.6], [w * 0.25, h * 0.615], [w * 0.285, h * 0.597], [w * 0.43, h * 0.64], [w * 0.47, h * 0.628]],
       sheepFence: [[w * 0.17, h * 0.618], [w * 0.3, h * 0.645], [w * 0.42, h * 0.668], [w * 0.53, h * 0.664]],
@@ -247,8 +247,8 @@ export function layoutOf(w: number, h: number): Layout {
       { x: w * 0.868, y: h * 0.877, s: k * 0.85, coat: 'chestnut', graze: true, flip: false, from: 0 },
       { x: w * 0.962, y: h * 0.879, s: k * 0.88, coat: 'grey', graze: false, flip: true, from: 0 },
       { x: w * 0.918, y: h * 0.856, s: k * 0.55, coat: 'foal', graze: false, flip: false, from: 2 },
-      // drikker ved åen
-      { x: w * 0.79, y: h * 0.858, s: k * 0.72, coat: 'bay', graze: true, flip: true, from: 3 },
+      // græsser oppe på folden, fri af åen (review G2-r2 §5.3: den stod med forbenene i vandet)
+      { x: w * 0.876, y: h * 0.849, s: k * 0.72, coat: 'bay', graze: true, flip: true, from: 3 },
     ],
     sheep: [[w * 0.2, h * 0.585], [w * 0.25, h * 0.6], [w * 0.3, h * 0.583], [w * 0.4, h * 0.622], [w * 0.45, h * 0.612]],
     sheepFence: [[w * 0.1, h * 0.605], [w * 0.25, h * 0.622], [w * 0.38, h * 0.648], [w * 0.5, h * 0.645]],
@@ -272,6 +272,11 @@ const at = (p: Place, node: ReactNode) => <g transform={`translate(${n(p.x)} ${n
 const ROUND = { strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
 /** Konturbredde i lokale enheder (en tynd, farvet kontur som dyrenes, men lettere). */
 const SW = 1.9
+/**
+ * Jordskyggerne falder væk fra solen oppe til venstre: forskudt mod højre og ned (px ved k = 1, eller lokale
+ * enheder), så de ikke ligger lige under tingene (review G2-r2 §5.3, lys).
+ */
+export const SHADOW_SHIFT: Vec = [4.5, 3]
 
 /** Små blomster (fem runde kronblade) om punkter (x, y, r); kronbladene i én path, midterne i en anden. */
 function flowerPaths(pts: readonly (readonly [number, number, number])[]) {
@@ -723,6 +728,18 @@ function Spring({ t }: { t: RegionTier }) {
     </>
   )
 }
+
+/**
+ * Hestens omrids (lokalt, vender mod højre, hovene på y = 0): hove, bryst, ryg, hale, mule og øre – til at holde
+ * hestene på græsset, fri af åen (review G2-r2 §5.3: den brune hest stod med forbenene i vandet).
+ */
+const HORSE_OUTLINE: Record<'graze' | 'stand', readonly Vec[]> = {
+  graze: [[-19.7, 0], [-9.8, 0], [10, 0], [20.2, 0], [-19.5, -17.5], [-19, -26], [10, -31], [20.5, -18], [-27.5, -17], [-24, -3], [31, -8], [35.2, -2.4], [30, -0.5], [21, -24]],
+  stand: [[-19.7, 0], [-9.8, 0], [10, 0], [20.2, 0], [-19.5, -17.5], [-19, -26], [10, -31], [20.5, -18], [-27.5, -17], [-24, -3], [37.6, -38.2], [36, -42], [30, -47.5], [23, -55], [21, -27]],
+}
+/** Hestens omrids i scenens koordinater. */
+export const horsePoints = (p: HorseSpot): Vec[] =>
+  HORSE_OUTLINE[p.graze ? 'graze' : 'stand'].map(([x, y]) => [p.x + (p.flip ? -x : x) * p.s, p.y + y * p.s] as Vec)
 
 /** En forenklet hest i scenens stil (lokalt, vender mod højre, hovene på y = 0): græssende eller stående. */
 function Horse({ t, coat, graze }: { t: RegionTier; coat: Coat; graze: boolean }) {
