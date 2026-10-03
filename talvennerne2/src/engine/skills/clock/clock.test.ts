@@ -160,6 +160,45 @@ describe('the tasks', () => {
   })
 })
 
+// ─── Where the dial starts ──────────────────────────────────────────────────
+
+describe('where the dial starts (Task.dialStart)', () => {
+  const STEP = { clockHour: 60, clockHalf: 30, clockQuarter: 15 } as const
+  const stepOf = (def: SkillDef) => STEP[def.id as keyof typeof STEP]
+
+  it('starts every dial on the step and never on the answer (klokken tolv included); cards have no dial', () => {
+    for (const def of ALL) {
+      for (const f of def.enumerate()) {
+        for (let seed = 0; seed < 40; seed++) {
+          const t = build(def, f.id, 'clockSet', seed)
+          expect(t.dialStart, `${f.id} ${seed}`).toBeDefined()
+          const s = t.dialStart!
+          expect(Number.isInteger(s) && s >= 0 && s < 720 && s % stepOf(def) === 0, `${f.id} starts at ${s}`).toBe(true)
+          expect(dial(s), `${f.id} starts at its answer`).not.toBe(dial(Number(f.answer)))
+          // touching the hands and ticking hands in the start: never right
+          expect(isCorrect(t, s), f.id).toBe(false)
+        }
+        expect(build(def, f.id, 'choice').dialStart, f.id).toBeUndefined()
+      }
+    }
+  })
+
+  it('spreads the starts evenly over every other time on the step, from the task’s own seeded rng', () => {
+    for (const [def, id] of [[clockHour, 'hel:0'], [clockHalf, 'halv:150'], [clockQuarter, 'kvart:165']] as const) {
+      const others = 720 / stepOf(def) - 1
+      const counts = new Map<number, number>()
+      for (let seed = 0; seed < others * 100; seed++) {
+        const s = build(def, id, 'clockSet', seed).dialStart!
+        counts.set(s, (counts.get(s) ?? 0) + 1)
+      }
+      const want = Array.from({ length: others + 1 }, (_, i) => i * stepOf(def)).filter((v) => v !== Number(fact(def, id).answer))
+      expect([...counts.keys()].sort((a, b) => a - b), id).toEqual(want)
+      for (const [s, n] of counts) expect(n > 60 && n < 140, `${id}: ${s} drawn ${n} times of ${others * 100}`).toBe(true)
+      expect(build(def, id, 'clockSet', 7).dialStart).toBe(build(def, id, 'clockSet', 7).dialStart)
+    }
+  })
+})
+
 // ─── Misconceptions ─────────────────────────────────────────────────────────
 
 describe('misconceptions', () => {

@@ -374,6 +374,13 @@ export interface Task {
    * størst, seks eller otte?" on a keypad is a coin flip (0.5), not 1 in 21. Raises guessP (kinds.ts).
    */
   guessFloor?: number
+  /**
+   * clockSet only: where the dial's hands start, in minutes on the 12-hour dial (0–719), always on the
+   * dial's step. Never the answer — a dial that started there would hand it over for a touch and a
+   * tick — and otherwise drawn evenly from the step's times by buildTask, so the start says nothing but
+   * "not this one". Absent (hand-made tasks): the dial starts at 12:00 (0).
+   */
+  dialStart?: number
 }
 
 // ─── Mastery ────────────────────────────────────────────────────────────────

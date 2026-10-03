@@ -123,6 +123,12 @@ export function settle(raw: number, step: number): number {
 }
 
 /**
+ * Where the hands start: the task's own start (Task.dialStart, on the step and never the answer, so
+ * touching the hands and ticking is never a free answer), 12:00 for a task without one.
+ */
+export const startOf = (task: Pick<Task, 'dialStart'>): number => mod(Math.round(task.dialStart ?? 0), DIAL)
+
+/**
  * The answer for a dial reading: minutes 0–719 on the analog dial. A 24-hour task (Task.modulo 1440)
  * cannot be told apart on an analog face, so the reading is placed in the answer's half of the day:
  * 2:30 set for "14:30" is 870, and a wrong 3:30 is 930.

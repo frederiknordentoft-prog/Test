@@ -183,12 +183,13 @@ for (const c of CLOCKS) {
     // clockSet task was a fake opportunity, and since a flag needs ≥ 2 production hits (SPEC §4.3), handsSwapped
     // could never be flagged in these skills. Now candidatesFor(fact, 'clockSet') keeps only the clocks the
     // dial can set (clock/kit.ts clockCandidatesFor).
-    // ORK2b finding (clockHour): the clockSet dial starts at 12:00 (SPEC §3.2, src/ui/task/clockSet/View.tsx
-    // useState(0)), so "Stil uret, så klokken er tolv." (hel:0) is answered by touching the minute hand and
-    // ticking: the answer is free, yet the task counts as production (guessP 1/12) and can lift hel:0 to box 5.
-    const startTest = c.id === 'clockHour' ? it.fails : it
-    startTest('never asks to set the time the dial starts at (12:00): that answer would be free', () => {
-      const free = built.filter((b) => b.kind === 'clockSet' && onDial(Number(b.task.answer)) === 0).map((b) => b.fact.id)
+    // ORK2b finding (clockHour) — Rettet: the clockSet dial started at 12:00 (SPEC §3.2, src/ui/task/clockSet/
+    // View.tsx useState(0)), so "Stil uret, så klokken er tolv." (hel:0) was answered by touching the minute hand
+    // and ticking: the answer was free, yet the task counts as production (guessP 1/12) and could lift hel:0 to
+    // box 5. Now every clockSet task has its own start (Task.dialStart, drawn by buildTask on the step, never
+    // the answer), and the view starts there; a task without one starts at 12:00.
+    it('never asks to set the time the dial starts at (Task.dialStart, else 12:00): that answer would be free', () => {
+      const free = built.filter((b) => b.kind === 'clockSet' && onDial(Number(b.task.answer)) === onDial(b.task.dialStart ?? 0)).map((b) => b.fact.id)
       expect([...new Set(free)]).toEqual([])
     })
 
