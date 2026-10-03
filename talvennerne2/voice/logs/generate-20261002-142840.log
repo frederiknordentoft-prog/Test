@@ -1,0 +1,18 @@
+14:28:40 generate.py --wave 1 --threads 2 --max-minutes 100 --retake-from voice/qa.json (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261002-142840.log)
+14:28:40 hog.300: ingen takes tilbage til en ny take
+14:28:40 noun.thing.ball.pl: take 2 afvist af sammensætningstesten, genereres igen
+14:28:40 noun.thing.cube.sg: ingen takes tilbage til en ny take
+14:28:40 s.order20.countBack: ingen takes tilbage til en ny take
+14:28:40 s.order20.countOn: ingen takes tilbage til en ny take
+14:28:40 s.patterns.continue: ingen takes tilbage til en ny take
+14:28:40 1219 klip valgt, 1218 færdige, 1 at lave
+14:29:00 input frame rate=25
+14:29:04 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+14:29:05 model indlæst på 23 s (2 tråde)
+14:29:08 ✅ EOS token detected! Stopping generation at step 27
+14:29:19 kald single k=1 t3 'bolde,': 14.0 s for 1.04 s lyd
+14:29:20   noun.thing.ball.pl t3: 0.38 s (forhold 0.61) -18.12 LUFS, none: 'None' CER None (None) → ok
+14:29:20   sammensat frag.det_er + noun.thing.ball.pl: 'det er bolde' CER 0.000 (wav2vec2) → ok
+14:29:20 sammensætning runde 1: 1 af 1 bestået
+14:29:20   ✓ master noun.thing.ball.pl t3 (bestået)
+14:29:20 færdig: 1 nye mastere (0 ikke bestået, 0 kopier), 1 modelkald, 0.2 min generering (CPU 0.01 t), 0 klip mangler
