@@ -17,4 +17,7 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.ceremony.trial.score': 'planker lagt',
   // "Det lærte du": a fact said whole (QA2 P1-1)
   's.ceremony.learned.halfOf': 'Halvdelen af',
+  // a world finale's party: all its things together (QA2 P2-7)
+  's.ceremony.finale.things': 'Dine nye ting',
+  's.ceremony.tryOnAll': 'Prøv dem på',
 }
