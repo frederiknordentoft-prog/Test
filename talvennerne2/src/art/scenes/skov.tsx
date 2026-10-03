@@ -14,10 +14,11 @@
 //   buer og to gelændere over åen (Hundredebroen) · stien med pæle i stigende højde og centimeterstreger og uglen
 //   i træhullet (Linealstien) · haven med hække klippet som kugle, terning, kegle og cylinder og et spejlsymmetrisk
 //   bed (Figurhaven).
-// Start er dæmpet pastel (aldrig grå); bronze tænder lys i lygter og vinduer, sender røg op fra gården og lader
-// krystallerne gløde; sølv bringer flere blomster, sommerfugle og vand, der glimter; guld er fuld mætning med
-// vimpler og fugle – og en regnbue over skoven (Regnbuelysningen), når hele verdenen er guld. Bakkerne, skoven og
-// himlen følger hele verdenens fremgang.
+// Start er dæmpet pastel (aldrig grå), og uglen blunder; bronze tænder lys i lygter, lygtepæle og vinduer, sender
+// røg op fra gården, lader krystallerne gløde og vækker uglen; sølv bringer flere blomster, sommerfugle, et egern
+// mere og vand, der glimter; guld er fuld mætning med vimpler og fugle – og en regnbue over skoven
+// (Regnbuelysningen), når hele verdenen er guld. Bakkerne, skoven, himlen og regnbuelyset følger hele verdenens
+// fremgang. En svampekreds på engen og buske mellem kendetegnene fylder mellemgrunden.
 // Vandet løber nedad fra en kilde: det springer ud af en kløft i bjergets fod, falder ned ad skrænten og fodrer
 // søen; åen løber fra søens udløb forbi møllehjulet, under Hundredebroen og ud af billedet, bredere og bredere med
 // mørkere brinker. Mølleengens hegn stopper ved åen med en stolpe på brinken. Store blade, bregner og svampe i de
@@ -129,6 +130,8 @@ export interface Layout {
   scrub: number[]
   /** Fritstående løvtræer (forrest = på forgrundens bakke). */
   trees: (Place & { front: boolean })[]
+  /** Svampekredsen på engen (en heksering af små svampe). */
+  ring: Place
   /** Blomsterklynger på engen. */
   meadow: Place[]
   corners: [Place, Place]
@@ -195,6 +198,7 @@ export function layoutOf(w: number, h: number): Layout {
         { ...on(mid, 0.6, 0.085, k * 0.95), front: false },
         { ...on(near, 0.13, 0.02, k * 0.9), front: true },
       ],
+      ring: { x: w * 0.752, y: h * 0.82, s: k },
       meadow: [{ x: w * 0.28, y: h * 0.86, s: k }, { x: w * 0.46, y: h * 0.93, s: k * 1.1 }],
       corners: [{ x: 0, y: h, s: k * 0.95 }, { x: w, y: h, s: k * 0.9 }],
     }
@@ -245,6 +249,7 @@ export function layoutOf(w: number, h: number): Layout {
         { ...on(mid, 0.6, 0.07, k), front: false },
         { ...on(near, 0.95, 0.03, k), front: true },
       ],
+      ring: { x: w * 0.8, y: h * 0.93, s: k },
       meadow: [{ x: w * 0.3, y: h * 0.96, s: k * 0.9 }],
       corners: [{ x: 0, y: h, s: k * 0.85 }, { x: w, y: h, s: k * 0.85 }],
     }
@@ -291,6 +296,7 @@ export function layoutOf(w: number, h: number): Layout {
     trees: [
       { ...on(near, 0.99, 0.02, k), front: true },
     ],
+    ring: { x: w * 0.28, y: h * 0.9, s: k },
     meadow: [{ x: w * 0.3, y: h * 0.96, s: k * 0.9 }],
     corners: [{ x: 0, y: h, s: k * 0.8 }, { x: w, y: h, s: k * 0.75 }],
   }
@@ -1313,6 +1319,23 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
       <path d={castNear} fill={SKOV.castShadow} opacity={0.22} />
       <path d={scrub} fill={g('crownGreen')} stroke={g('leafDark')} strokeWidth={1.2 * K} {...ROUND} />
       <path d={scrubShade} fill={SKOV.castShadow} opacity={0.22} />
+      {(() => {
+        // svampekredsen: syv små svampe i en ellipse (de bageste lidt mindre); glimt i kredsen, når skoven er nået langt
+        const R = L.ring
+        const fung = Array.from({ length: 7 }, (_, i) => {
+          const a = (i / 7) * Math.PI * 2 + 0.4
+          const sy = Math.sin(a)
+          return [R.x + Math.cos(a) * 26 * R.s, R.y + sy * 8 * R.s, R.s * (0.78 + 0.22 * (sy + 1) * 0.5)] as const
+        }).sort((a, b) => a[1] - b[1])
+        return (
+          <>
+            <path d={join(...fung.map(([x, y, q]) => blob([[x - 1.8 * q, y], [x - 1.5 * q, y - 6 * q], [x + 1.5 * q, y - 6 * q], [x + 1.8 * q, y], [x, y + 1 * q]], 0.6)))} fill={g('stem')} stroke={g('wallShade')} strokeWidth={0.8 * K} {...ROUND} />
+            <path d={join(...fung.map(([x, y, q]) => ellipseTop(x, y - 5.5 * q, 5.5 * q, 4.6 * q)))} fill={g('mushroom')} stroke={g('mushroomDark')} strokeWidth={1 * K} {...ROUND} />
+            <path d={join(...fung.flatMap(([x, y, q]) => [circle(x - 2 * q, y - 7.6 * q, 0.9 * q), circle(x + 1.6 * q, y - 8.4 * q, 0.8 * q)]))} fill={SKOV.flowerWhite} />
+            {progress > 0.5 && <path d={glints([[R.x - 6 * R.s, R.y - 14 * R.s, 3 * R.s], [R.x + 9 * R.s, R.y - 20 * R.s, 2.4 * R.s], [R.x + 2 * R.s, R.y - 4 * R.s, 2 * R.s]])} fill={SKOV.sunHalo} stroke={SKOV.lantern} strokeWidth={0.6 * K} />}
+          </>
+        )
+      })()}
       {at(L.cave, <Cave t={T.cave} />)}
       {at(L.panda, <Bamboo t={T.cave} />)}
       {at(L.panda, <g transform="translate(14 0)"><Panda t={T.cave} /></g>)}
