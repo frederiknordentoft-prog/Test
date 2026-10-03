@@ -17,13 +17,11 @@ export const EAR_GAP_FACTOR = 1.15
 export const MAX_OVERRIDE_SHARE = 0.1
 /**
  * En hat mellem ørerne ('under') på en art med horn (review G1-r4, T6): ører og horn ligger over hatte
- * (SPEC §7), så hatten bevarer sin højde og vippes mod venstre øre bag hornet. Review G2-r2 (T6/B6): keglen
- * vippes ca. 20° mere ud mod øret og flyttes mod det, så keglens øvre halvdel og kvasten står mindst 4 enheder
- * fri af hornet på alle stadier (keglens fod gemmer sig under flæsen og bag hornets rod); festhatten tegner
- * desuden en slankere kegle og en smallere flæse ved siden af et horn (fest-head.tsx). `shift` er andelen af
- * vejen fra hattens anker mod venstre ørebase, `rot` vippet i grader.
+ * (SPEC §7), så hatten bevarer sin fulde størrelse og vippes mod venstre øre bag hornet, og kvasten står
+ * tydeligt ved siden af hornets spids på alle stadier. `shift` er andelen af vejen fra hattens anker mod
+ * venstre ørebase, `rot` vippet i grader.
  */
-export const UNDER_BESIDE_HORN = { shift: 0.45, rot: -40 } as const
+export const UNDER_BESIDE_HORN = { shift: 0.27, rot: -20 } as const
 
 export interface Wearer {
   id: CreatureId

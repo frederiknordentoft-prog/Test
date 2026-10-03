@@ -29,8 +29,9 @@ const tiltOf = (local: ItemArtProps['local']): number => {
   return (-Math.atan2(e.y - o.y, e.x - o.x) * 180) / Math.PI
 }
 /**
- * Ved siden af et horn (review G2-r2, T6/B6): en slankere kegle (bunden 25 % smallere), så dens øvre halvdel og
- * kvasten står fri af hornet, og en ca. 30 % smallere flæse, der ikke ligner en krøllet pandelok.
+ * Ved siden af et horn (review G2-r2, T6/B6): en ca. 30 % smallere flæse, der ikke ligner en krøllet pandelok, og en
+ * tilsvarende slankere kegle (bunden 25 % smallere), så flæsen stadig dækker keglens fod. Keglen vippes ikke mere:
+ * med ører og horn over hatten (SPEC §7) skjuler venstre øre så kvasten (se rapporten fra ARTFIX-D1).
  */
 const BESIDE_HORN = { cone: 0.75, ruffle: 0.7, lobes: 10 } as const
 
