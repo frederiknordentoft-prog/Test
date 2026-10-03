@@ -1,9 +1,10 @@
-// Rævens farver (katalogets SPECIES): c1 rød, c2 polar, c3 sølv, c4 brun, c5 guldrød, c6 mørk.
+// Rævens farver (katalogets SPECIES): c1 rød, c2 polar, c3 sølv, c4 brun, c5 guldrød, c6 mørk og regnbuen.
 // Colorway-filer er, sammen med palette.ts, de eneste steder med rå hex (lint). `patternColor` er rævens
 // mørke "sokker" og ørespidser (tegnes af fox.tsx i alle farver); `belly` er masken, brystet og halespidsen.
+import { RAINBOW_STOPS } from '../rig/palette'
 import type { ColorwayDef, NaturalColorwayId } from '../rig/types'
 
-export const FOX_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
+export const FOX_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { rainbow: ColorwayDef } = {
   // Rød: klassisk rødræv i dyb, varm orange med hvid maske og næsten sorte sokker.
   c1: {
     id: 'c1',
@@ -52,5 +53,15 @@ export const FOX_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> = {
     fur: '#4B4559',
     patternColor: '#2C2638',
     overrides: { belly: '#ECE6F3', outline: '#978FB0', shade: '#403A4E', inner: '#D9A4C0', nose: '#2B2144', iris: '#E5AE48', cheek: '#FF8AA8' },
+  },
+  // Regnbue: en varm creme ræv (aldrig den kølige, hvide polarræv, review G2-r2 §3.4) med lyse lilla sokker og
+  // ørespidser og en varm, rosenbrun kontur; halen og kraven bærer de fire flade pastelstriber.
+  rainbow: {
+    id: 'rainbow',
+    name: 'regnbue',
+    fur: '#FFE6C4',
+    patternColor: '#C7A9E3',
+    overrides: { outline: '#8C5A62', shade: '#F4D2A8', belly: '#FFF8EE', inner: '#FFC4DC', nose: '#5B3A4A', iris: '#7A62C9' },
+    gradient: RAINBOW_STOPS,
   },
 }

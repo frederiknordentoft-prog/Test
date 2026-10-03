@@ -3,8 +3,8 @@
 // - et bredt, lidt fladt hoved på en æggeformet krop, og vinger, der ligger langs siderne og stritter ud ved
 //   skuldrene (vingerne er uglens arme: den vinker med vingen),
 // - en lys ansigtsskive (to buer om øjnene med et V mellem dem), et lille krumt næb og fødder med kløer.
-// Brystet har små V-fjer i rækker; regnbuen bærer de fire flade pastelstriber på brystet. Uglens egne vinger
-// optager ryg-slottet (`occupies: ['back']` i kataloget).
+// Brystet har små V-fjer i rækker; regnbuen bærer de fire flade pastelstriber på brystet, i fjerørerne og i de små
+// halefjer bag kroppen. Uglens egne vinger optager ryg-slottet (`occupies: ['back']` i kataloget).
 // Signaturen er hoved-drejet: fjerørerne vipper ud, slår et overshoot og falder til ro (`a-curl`, rig.css). Selve
 // hovedets drej kræver en regel i rig.css (foreslået i rapporten); fjerørerne bærer bevægelsen indtil da.
 // Alle former er punkter og husets primitiver.
@@ -15,7 +15,7 @@ import { mixHex } from '../rig/oklch'
 import { Pivot } from '../rig/Rig'
 import { blob, bun, capsule, ellipse, join, spline, symBlob, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
-import type { AnchorSet, OutlineFn, Palette, Part, SidePart, SpeciesDef, Stage } from '../rig/types'
+import type { AnchorSet, OutlineFn, Palette, Part, PartCtx, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { OWL_COLORWAYS } from './owl.colorways'
 
 const round = ROUND
@@ -89,12 +89,14 @@ const EAR_STREAK: Vec[] = [[-4.4, -2.4], [-8.4, -8.4], [-11.6, -16], [-13.4, -22
 const EAR_HATTED = hatted(EAR, -6, 3.5)
 const earScale = (stage: Stage) => (stage === 1 ? { sx: 1.1, sy: 1.1 } : {})
 
-const Ear: SidePart = ({ pal, sw, stage, hat, still }) => {
+/** Regnbuen lægger de fire flade striber i fjerørerne (review G2-r2 §6, Ugle pkt. 3) i stedet for den lyse stribe. */
+const Ear: SidePart = ({ pal, sw, stage, hat, still, ids }) => {
   const s = earScale(stage)
+  const rainbow = !!pal.gradient
   return (
     <Pivot at={{ x: 0, y: 0 }} cls="a-curl" still={still}>
-      <path d={blob(xf(hat === 'through' ? EAR_HATTED : EAR, s), 0.62)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
-      {!pal.silhouette && hat !== 'through' && <path d={blob(xf(EAR_STREAK, s), 0.85)} fill={mixHex(pal.fur, pal.belly, 0.45)} />}
+      <path d={blob(xf(hat === 'through' ? EAR_HATTED : EAR, s), 0.62)} fill={rainbow ? `url(#${ids.gradient})` : pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
+      {!pal.silhouette && !rainbow && hat !== 'through' && <path d={blob(xf(EAR_STREAK, s), 0.85)} fill={mixHex(pal.fur, pal.belly, 0.45)} />}
     </Pivot>
   )
 }
@@ -120,13 +122,79 @@ const WING_LINES: Vec[][] = ([
 /** Ærmet: vingen fra roden til manchetten (lodret ramme), en anelse løsere end vingen og centreret som den. */
 const SLEEVE: Vec[] = [[-8.6, -9.6], [-13.6, -3.4], [-15.8, 6], [-15.8, 16], [-15.2, 26], [0, 29.4], [15.2, 26], [15.8, 16], [15.6, 6], [13.8, -3.4], [9, -9.6], [0, -11.6]]
 
-const Paw: SidePart = ({ pal, sw, lod }) => (
-  <g transform={`rotate(${PAW_ROT})`}>
-    <path d={blob(WING, 0.85)} fill={wing(pal)} />
-    {lod === 'full' && !pal.silhouette && <path d={join(...WING_LINES.map((l) => spline(l)))} fill="none" stroke={featherLine(pal, wing(pal))} strokeWidth={sw * 0.5} {...round} />}
-    <path d={spline(WING.slice(1, -1), 0.85)} fill="none" stroke={pal.outline} strokeWidth={sw} {...round} />
-  </g>
+/** Den hængende vinge drejet ind i skulderens ramme (samme punkter i kroppens lag og på poten). */
+const WING_POSED = xf(WING, { rot: PAW_ROT })
+const WING_D = blob(WING_POSED, 0.85)
+const WING_EDGE = spline(WING_POSED.slice(1, -1), 0.85)
+const WING_FEATHERS = join(...WING_LINES.map((l) => spline(xf(l, { rot: PAW_ROT }))))
+/**
+ * Vingespidsen (review G2-r2, B14): fjerspidserne under denne linje (skulderens ramme) tegnes på poten oven på
+ * håndgenstanden, så vingespidsen griber om gulerod og scepter foran vingen; resten af vingen ligger i kroppens lag
+ * under genstanden (`WingBodies`).
+ */
+const GRIP_CUT = 33
+/** Klippet under vingespidsens kant: runde fjerspidser, der folder sig om genstanden (aldrig en lige kant). */
+const GRIP_EDGE = `M-60 ${GRIP_CUT + 60}V${GRIP_CUT}H-21${Array.from({ length: 7 }, (_, i) => `Q${-18 + 6 * i} ${GRIP_CUT - 3.4} ${-15 + 6 * i} ${GRIP_CUT}`).join('')}H60V${GRIP_CUT + 60}Z`
+
+/** Hele den hængende vinge: fyld, fjerlinjer og kontur (åben ved roden). */
+const WingShape = ({ pal, sw, lod }: Pick<PartCtx, 'pal' | 'sw' | 'lod'>) => (
+  <>
+    <path d={WING_D} fill={wing(pal)} />
+    {lod === 'full' && !pal.silhouette && <path d={WING_FEATHERS} fill="none" stroke={featherLine(pal, wing(pal))} strokeWidth={sw * 0.5} {...round} />}
+    <path d={WING_EDGE} fill="none" stroke={pal.outline} strokeWidth={sw} {...round} />
+  </>
 )
+
+const gripClip = (ids: PartCtx['ids']) => `${ids.uid}wg`
+
+/**
+ * Den hængende vinge på poten. Uden kropstøj ligger vingen selv i kroppens lag (`WingBodies`), og poten tegner kun
+ * vingespidsen – vingens egen form og kontur klippet under `GRIP_CUT` – oven på en håndgenstand. Med kropstøj tegnes
+ * hele vingen her som før, under ærmet.
+ */
+const Paw: SidePart = (p) =>
+  p.clothed ? (
+    <WingShape {...p} />
+  ) : (
+    <path d={WING_D} fill={wing(p.pal)} stroke={p.pal.outline} strokeWidth={p.sw} strokeLinejoin="round" clipPath={`url(#${gripClip(p.ids)})`} />
+  )
+
+/**
+ * Vingerne i kroppens lag (under kropstøjet og håndgenstanden, over kroppen): hver hvilende vinge i potens egen ramme
+ * og med potens animationsklasser (samme drejning og keyframes som poten), så vinge og vingespids følges ad. Klippet
+ * til vingespidsen defineres her én gang for begge sider.
+ */
+const WingBodies: Part = (p) => {
+  if (p.clothed) return null
+  const sides = (['L', 'R'] as const).filter((s) => {
+    const pp = s === 'L' ? p.pose.pawL : p.pose.pawR
+    return !(typeof pp === 'object' && pp.up)
+  })
+  return (
+    <>
+      <clipPath id={gripClip(p.ids)}>
+        <path d={GRIP_EDGE} />
+      </clipPath>
+      {sides.map((s) => {
+        const pp = s === 'L' ? p.pose.pawL : p.pose.pawR
+        const rot = typeof pp === 'number' ? pp : (pp?.rot ?? 0)
+        const at = s === 'L' ? p.a.shoulderL : p.a.shoulderR
+        const place = `translate(${at.x} ${at.y})${s === 'R' ? ' scale(-1 1)' : ''}`
+        return p.still ? (
+          <g key={s} transform={`${place}${rot ? ` rotate(${rot})` : ''}`}>
+            <WingShape {...p} />
+          </g>
+        ) : (
+          <g key={s} transform={place}>
+            <g className={`a-paw a-paw-${s.toLowerCase()}`} transform={rot ? `rotate(${rot})` : undefined}>
+              <WingShape {...p} />
+            </g>
+          </g>
+        )
+      })}
+    </>
+  )
+}
 
 /** Løftede vinger (lokalt om skulderen). Roden ligger på brystet; konturen er åben dér. */
 const UP_SPINES = {
@@ -186,7 +254,9 @@ const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
     3: {
       idle: { L: [[24.8, -11.5], [26.2, -11], [26.4, -10.6], [26.2, -9.7], [25.2, -9.2], [24.3, -9.4], [24.1, -9.9], [24.1, -10.8]], R: [[25.2, -11.5], [24.3, -11.3], [24.1, -10.8], [24.1, -9.9], [24.8, -9.2], [26.2, -9.7], [26.4, -10.1], [26.2, -11]] },
       happy: { L: [[24.6, -11.3], [25.5, -11.3], [26.2, -10.6], [25.9, -9.7], [25, -9.2], [24.1, -9.4], [23.9, -9.9], [23.9, -10.6]], R: [[25.5, -11.3], [24.1, -11], [24.1, -9.4], [25, -9.2], [25.9, -9.7], [26.2, -10.6]] },
-      cheer: { L: [[[-12.9, -36.3], [-11.2, -36.1], [-10.6, -34.4], [-10.9, -33.3], [-12.3, -33.4], [-13.4, -34.8], [-13.6, -35.7]], [[9.5, -14], [17.7, -11.2], [23.5, -10.1], [24, -9.9], [24.1, -9], [23.9, -8.5], [22, -7.7], [17.8, -4.9], [16.6, -4.7], [9, -12.4], [8.8, -13.3]]], R: [[25.8, -11.4], [24.4, -11.2], [24.5, -9.6], [25.6, -9.4], [26.3, -9.9], [26.5, -10.8]] },
+      // Jubel-lommen i højre side (review G2-r2, flise 1301 og 1307): kilen mellem hovedet, kroppen og den løftede vinge
+      // op til den smalle sprække (under 1,5 enheder) mellem hovedets og vingens kontur.
+      cheer: { L: [[[-12.9, -36.3], [-11.2, -36.1], [-10.6, -34.4], [-10.9, -33.3], [-12.3, -33.4], [-13.4, -34.8], [-13.6, -35.7]], [[9.5, -14], [17.7, -11.2], [23.5, -10.1], [24, -9.9], [24.1, -9], [23.9, -8.5], [22, -7.7], [17.8, -4.9], [16.6, -4.7], [9, -12.4], [8.8, -13.3]]], R: [[[25.8, -11.4], [24.4, -11.2], [24.5, -9.6], [25.6, -9.4], [26.3, -9.9], [26.5, -10.8]], [[-1.3, -23.2], [-0.5, -24.1], [25.4, -10.4], [27, -12], [27.2, -8.6], [25.4, -9.4], [18.4, -5], [17.4, -4.7], [16.9, -5.1]]] },
       oops: { L: [[20.4, -9], [21.3, -9], [22, -8.3], [21.8, -7.3], [20.9, -6.9], [19.9, -7.1], [19.7, -7.6], [19.7, -8.3]], R: [[22.9, -13.4], [22, -13.1], [21.8, -12.7], [22, -8.3], [22.9, -8], [27.6, -10.3], [27.6, -11.7]] },
       sleep: { R: [[11.1, -9.7], [9.7, -9.5], [9.7, -7.3], [13, -6.3], [13.9, -5.4], [14.4, -3.9], [15.1, -3.5], [16.5, -3.9], [19.5, -6.3], [19.2, -7.3], [18.3, -7.8], [14.4, -8.5]] },
       wave: { L: [[20.4, -9], [21.3, -9], [22, -8.3], [21.8, -7.3], [20.9, -6.9], [19.9, -7.1], [19.7, -7.6], [19.7, -8.3]], R: [[27.1, -12], [25.7, -11.7], [25.7, -10.1], [26.6, -9.9], [27.6, -10.3], [27.8, -11.3]] },
@@ -234,8 +304,24 @@ const Talons: Part = ({ pal, sw }) => (
   <path d={join(...toes(FOOT_C), ...toes([200 - FOOT_C[0], FOOT_C[1]]))} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.8} {...round} />
 )
 
-/** Bag kroppen: intet (halen er gemt bag den siddende krop). */
-const Feet: Part = () => null
+/**
+ * Halefjerene bag kroppen: en lille vifte med tre runde fjerspidser, der titter frem ved hoften i venstre side og hviler
+ * på jorden (væk fra håndgenstanden i højre side). Regnbuen bærer de fire flade striber her og i fjerørerne (review
+ * G2-r2 §6, Ugle pkt. 3), så regnbueuglen ikke ligner sneuglen med en stribet mave.
+ */
+const TAIL_AT = { rot: -8, dx: 76, dy: 213 }
+const TAIL: Vec[] = xf(
+  [[4, -9], [-12, -11], [-24, -10.5], [-31, -7], [-29.5, -3.5], [-33, 0], [-30.5, 4.5], [-32, 8], [-26, 11.5], [-14, 10], [4, 7]],
+  TAIL_AT,
+)
+const TAIL_LINES = join(spline(xf([[-12, -3], [-20, -3.4], [-27, -3.6]], TAIL_AT)), spline(xf([[-12, 3], [-20, 3.6], [-26.5, 4.2]], TAIL_AT)))
+
+const Feet: Part = ({ pal, sw, ids, lod }) => (
+  <>
+    <path d={blob(TAIL, 0.8)} fill={pal.gradient ? `url(#${ids.gradient})` : wing(pal)} stroke={pal.outline} strokeWidth={sw} {...round} />
+    {lod === 'full' && !pal.silhouette && !pal.gradient && <path d={TAIL_LINES} fill="none" stroke={featherLine(pal, wing(pal))} strokeWidth={sw * 0.5} {...round} />}
+  </>
+)
 
 // ---------------------------------------------------------------------------------------------
 
@@ -311,7 +397,13 @@ export const owl: SpeciesDef = {
     Muzzle: Beak,
     HeadDeco: Disc,
     BodyDeco,
-    Ruff: Talons,
+    // Fødderne og (uden kropstøj) de hængende vinger under håndgenstanden (review G2-r2, B14).
+    Ruff: (p) => (
+      <>
+        {Talons(p)}
+        {WingBodies(p)}
+      </>
+    ),
   },
 }
 
