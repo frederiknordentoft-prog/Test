@@ -340,8 +340,6 @@ const K = {
   CAT_MAINECOON: 'G1-r4 §1.4 og §5 kat: maine coon-babyens sprække mellem halespids og skulder (holes.png #409–#415)',
   CAT_NEW: 'ikke i G1-r4: lomme mellem hale, hofte og krop (eller pote og kind) – kattens agent afgør, om det er bevidst negativt rum (rubrikken) eller skal fyldes',
   PUPPY: 'G1-r4 §1.4 og §5 hvalp: lommerne mellem arm, øre og krop (holes.png #519, #521, #525, #527) og sprækken ved det løftede ben (#522)',
-  HORSE: 'G1-r4 §1.4 hest: lommerne mellem man og hals (holes.png #609–#617, #729–#748) og mellem løftet ben og hoved i vinker (#622, #628, #682, #688); araberens stadie 3 har desuden en løkke mellem halen og hoften (ikke i G1-r4)',
-  UNICORN: 'G1-r4 §1.4 og §5 pkt. 5 enhjørning: sprækker og lommer ved manens spids og det løftede forben (holes.png #835–#838, #846, #871, #888, #889, #891)',
 } as const
 export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
   { match: /^cat domestic 1 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.CAT_HIP },
@@ -353,24 +351,9 @@ export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
   { match: /^cat mainecoon 1 \S+ (idle|wave)$/, ref: K.CAT_MAINECOON },
   { match: /^cat mainecoon 2 \S+ (sleep|think|wave)$/, ref: K.CAT_NEW },
   { match: /^cat mainecoon 3 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.CAT_NEW },
-  { match: /^horse arabian 1 \S+ (cheer|oops|wave)$/, ref: K.HORSE },
-  { match: /^horse arabian 2 \S+ (cheer|happy|idle|sleep|wave)$/, ref: K.HORSE },
-  { match: /^horse arabian 3 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.HORSE },
-  { match: /^horse fjord 2 \S+ (wave)$/, ref: K.HORSE },
-  { match: /^horse fjord 3 \S+ (idle|sleep)$/, ref: K.HORSE },
-  { match: /^horse shetland 2 \S+ (cheer|happy|idle|sleep|wave)$/, ref: K.HORSE },
-  { match: /^horse shetland 3 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.HORSE },
   { match: /^puppy std 1 \S+ (cheer|think|wave)$/, ref: K.PUPPY },
   { match: /^puppy std 2 \S+ (wave)$/, ref: K.PUPPY },
   { match: /^puppy std 3 \S+ (cheer|sleep|think|wave)$/, ref: K.PUPPY },
-  { match: /^unicorn foal 1 \S+ (wave)$/, ref: K.UNICORN },
-  { match: /^unicorn foal 2 \S+ (wave)$/, ref: K.UNICORN },
-  { match: /^unicorn foal 3 \S+ (happy|idle)$/, ref: K.UNICORN },
-  { match: /^unicorn starhorn 2 \S+ (wave)$/, ref: K.UNICORN },
-  { match: /^unicorn starhorn 3 \S+ (sleep|think|wave)$/, ref: K.UNICORN },
-  { match: /^unicorn wavy 1 \S+ (happy|idle|think|wave)$/, ref: K.UNICORN },
-  { match: /^unicorn wavy 2 \S+ (sleep|think|wave)$/, ref: K.UNICORN },
-  { match: /^unicorn wavy 3 \S+ (happy|idle|sleep|think|wave)$/, ref: K.UNICORN },
 ]
 
 /** Kendt lomme for en celle (review-henvisningen), eller null. */

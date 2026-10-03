@@ -4,12 +4,13 @@
 // Manken er ét path af flere lokker, så lokkernes konturer selv tegner hårets fald (ingen ekstra
 // streger). Hestens signatur (manke-kast) pakker manken i en pivot med klassen `a-toss`.
 import type { ReactNode } from 'react'
-import { OpenLimb, ROUND, hatted, limbLoop } from '../../parts/kit'
+import { OpenLimb, ROUND, hatted, limbLoop, pawWebs } from '../../parts/kit'
+import type { PawWebs } from '../../parts/kit'
 import { Pivot } from '../../rig/Rig'
 import { outlineOf, shadeOf } from '../../rig/palette'
-import { blob, ellipse, frame, join, mirrorX, offsetLoop, ribbon, spline, star, symmetric, xf } from '../../rig/shapes'
+import { blob, ellipse, frame, join, mirrorX, offsetLoop, poly, ribbon, spline, star, symmetric, xf } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
-import type { AnchorSet, OutlineFn, Palette, Part, SidePart, Stage, UpArm } from '../../rig/types'
+import type { AnchorSet, ColorwayId, OutlineFn, Palette, Part, SidePart, Stage, UpArm } from '../../rig/types'
 
 export const round = ROUND
 
@@ -60,6 +61,19 @@ const HEAD_HALF: Vec[] = [
 const HEAD_UNIT = symmetric(HEAD_HALF)
 export const equineHead: OutlineFn = (a: AnchorSet, inflate: number) =>
   blob(offsetLoop(frame(HEAD_UNIT, a.headCenter.x, a.headCenter.y, a.headRx, a.headRy), inflate))
+
+/**
+ * Hesteføllets hoved (review G1-r4: den mindste araber og shetlandspony læstes som en kat i silhuet): en dybere
+ * talje under kinderne og en bredere, rund mule forneden, så "jordnødden" og mulen står tydeligt i silhuet.
+ */
+const FOAL_HEAD_HALF: Vec[] = [
+  [0, -1.0], [-0.4, -0.965], [-0.72, -0.8], [-0.93, -0.52], [-1.01, -0.16], [-0.98, 0.2], [-0.86, 0.48],
+  [-0.72, 0.72], [-0.67, 0.9], [-0.74, 1.1], [-0.72, 1.3], [-0.5, 1.46], [0, 1.52],
+]
+const FOAL_HEAD_UNIT = symmetric(FOAL_HEAD_HALF)
+/** Hestens hoved: føllets jordnød med tydelig mule på stadie 1, ellers det fælles hoved. */
+export const horseHead: OutlineFn = (a: AnchorSet, inflate: number, stage: Stage) =>
+  stage === 1 ? blob(offsetLoop(frame(FOAL_HEAD_UNIT, a.headCenter.x, a.headCenter.y, a.headRx, a.headRy), inflate)) : equineHead(a, inflate, stage)
 
 // ---------------------------------------------------------------------------------------------
 // Ører: blade med spids, let udadvendte.
@@ -327,6 +341,40 @@ export function dunPalette(mix: (a: string, b: string, t: number) => string, cre
 }
 
 export const stageScale = (stage: Stage, s1: number, s3: number) => (stage === 1 ? s1 : stage === 3 ? s3 : 1)
+
+/** Lommernes hylstre pr. race, stadie, humør og side (skulderens ramme, højre side spejlet). */
+export type WebTable = Partial<Record<string, Partial<Record<Stage, PawWebs>>>>
+
+/**
+ * Lommerne i nøgleposerne (review G1-r4 §1.4 og §5): pels i skyggetone bag alt mellem manke, løftet forben, kind,
+ * hale og krop, så der aldrig ses baggrund inde i figuren (skyggen læses som halsen eller brystet bag manken og
+ * benet). Kun i stillbilleder (album, butik og kontaktark): i animationen åbner og lukker lommerne, mens hoved, manke
+ * og ben bevæger sig, så et fast fyld ville ses mod baggrunden dér. Hylstrene er målt på magenta (4 px pr. enhed,
+ * udvidet 1,2 enheder) i skulderens ramme pr. race, stadie, humør og side.
+ */
+export function withKeyWebs(webs: SidePart, keyWebs: WebTable, cwWebs: CwWebs = {}): SidePart {
+  const key = pawWebs({}, keyWebs)
+  return (p) => {
+    const fill = p.pal.silhouette ? p.pal.fur : p.pal.shade
+    const k = p.still ? key({ ...p, pal: { ...p.pal, fur: fill } }) : null
+    const one = p.still ? cwWebs[`${p.breed} ${p.stage} ${p.mood} ${p.side}`]?.find((e) => e.cw.includes(p.colorway)) : undefined
+    const c = one ? <path d={join(...one.webs.map((w) => poly(w)))} fill={fill} /> : null
+    const w = webs(p)
+    return w || k || c ? (
+      <>
+        {w}
+        {k}
+        {c}
+      </>
+    ) : null
+  }
+}
+
+/**
+ * Sprækker, der kun lukker sig i enkelte farver (konturens farve ændrer kantudglatningen i en sprække under 1 enhed):
+ * "race stadie humør side" → farverne og hylstrene. Et fast fyld i alle farver ville ses mod baggrunden i de andre.
+ */
+export type CwWebs = Readonly<Record<string, readonly { cw: readonly ColorwayId[]; webs: readonly (readonly Vec[])[] }[]>>
 
 /** Flyt punkter lodret (racer, hvis hoved sidder højere eller lavere). */
 export const dy = (pts: readonly Vec[], d: number): Vec[] => pts.map(([x, y]) => [x, y + d] as Vec)

@@ -6,6 +6,9 @@
 import { RAINBOW_STOPS } from '../rig/palette'
 import type { ColorwayDef, NaturalColorwayId } from '../rig/types'
 
+/** Hornets glimt (signaturen horn-glint, review G1-r4): udfyldt hvid stjerne med guldkontur i alle farver. */
+export const GLINT = { fill: '#FFFFFF', line: '#D6961C' } as const
+
 // De lyse har hver sin kropstone (review G1-r2, E6 og G1-r3): hvid er varm elfenben, regnbuen er blød
 // abrikos, og stjernehvid er kold sølvhvid med blå skygge og gyldne hove.
 export const UNICORN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { starwhite: ColorwayDef; rainbow: ColorwayDef } = {
