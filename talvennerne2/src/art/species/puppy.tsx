@@ -1,6 +1,7 @@
 // Hvalpen (Engdalen, bølge 2): skabelonen `tall`, én race (std) og et af de fire startdyr.
 // Artstrækkene står i silhuetten:
-// - brede hængeører med bløde, runde spidser, der hænger ud over hovedets sider (aldrig smalle vædderører),
+// - korte, brede hængeører med et knæk øverst, hvor øret folder om (fold og skygge), og bløde, runde spidser i
+//   kindhøjde (aldrig vædderens lange ører),
 // - en tydelig snude: hovedets kontur buler blødt ud forneden om en lys mule med en stor, blank næse,
 // - en logrende hale, der står op bag højre lår og krummer ind mod ryggen.
 // Fælles: forben ned til jorden med åben kontur ved brystet, lårbuler, bagpoter og et lyst bryst med en
@@ -35,15 +36,23 @@ const puppyHead: OutlineFn = (a: AnchorSet, inflate: number) =>
 // hovedets kontur; øret hænger ud over hovedets side, og spidsen er blød og rund i kindhøjde. Ørerne
 // tegnes foran hovedet (ingen klip) og svajer blidt i alle humør (`a-hang`).
 
+// Hundeøret (review G1-r4 §5: hovedet må ikke ligne vædderkaninens): kortere og bredere end vædderens lange
+// ører, med et tydeligt knæk øverst, hvor øret folder om over issen (et rundt hjørne, der også ses i sort), og en
+// bred, rund flap, der hænger til kindhøjde.
 const EAR_RAW: Vec[] = [
-  [7, -4], [2, -8], [-4, -8.5], [-10, -6], [-15, -1], [-20, 8], [-25, 20], [-28.5, 33], [-30, 46], [-28.5, 56],
-  [-24, 62.5], [-17.5, 64.5], [-11.5, 61], [-8.5, 52], [-7.5, 41], [-5.5, 29], [-2.5, 17], [2, 6],
+  [7, -4], [2, -9], [-5, -11], [-12, -10.5], [-17.5, -7.5], [-20.5, -2], [-23.5, 8], [-26.8, 20], [-28.8, 32],
+  [-28.6, 42.5], [-25.6, 50], [-19.8, 54.6], [-13.4, 54], [-9.4, 48], [-7.6, 39], [-5.6, 28.5], [-2.6, 17], [2, 6],
 ]
 /** Øret står en anelse ud fra kinden, så der er luft mellem ørespidsen og kæben (også i sort). */
 const EAR_ROT = 10
 const EAR = xf(EAR_RAW, { rot: EAR_ROT })
-/** Folden, hvor øret slår om over issen (kort, buet streg). */
-const FOLD: Vec[] = xf([[2.5, -3], [-4, -4], [-10.5, -1.5], [-15.5, 3.5]], { rot: EAR_ROT })
+/** Folden, hvor øret slår om over issen: en buet streg fra roden ud i knækket. */
+const FOLD: Vec[] = xf([[4, -3.5], [-3, -5], [-10, -3.6], [-16, 0.2], [-19.4, 4.6]], { rot: EAR_ROT })
+/** Skyggen lige under folden (flappen, der hænger ned), inden for ørets kontur. */
+const FOLD_SHADE: Vec[] = xf(
+  [[3.5, -2], [-3, -3.4], [-10, -2], [-16, 1.8], [-19.6, 6.4], [-18.8, 10.6], [-14.6, 8.4], [-9, 5.2], [-3, 3.6], [2.6, 3.8]],
+  { rot: EAR_ROT },
+)
 /** Babyen har kortere, rundere ører; den store lidt længere. */
 const earScale = (stage: Stage) => (stage === 1 ? { sx: 0.96, sy: 0.88 } : stage === 3 ? { sx: 1.03, sy: 1.06 } : {})
 
@@ -51,7 +60,7 @@ const earScale = (stage: Stage) => (stage === 1 ? { sx: 0.96, sy: 0.88 } : stage
  * Ørernes bløde skygge på hovedet: et smalt bånd lige inden for hvert øres inderkant (klippet til hovedet),
  * så de hængende ører ligger oven på kinderne med dybde. Ørerne svajer kun ±2,5°, så skyggen følger med.
  */
-const EAR_INNER_EDGE: Vec[] = [[-12.5, 60], [-9.2, 52], [-8.2, 41], [-6.2, 29], [-3.2, 17], [1.2, 6], [6, -3.5]]
+const EAR_INNER_EDGE: Vec[] = [[-13.6, 52], [-10, 47], [-8.3, 39], [-6.3, 28.5], [-3.3, 17], [1.2, 6], [6, -3.5]]
 const EarShadow: Part = ({ pal, a, ids, stage }) => {
   if (pal.silhouette) return null
   const band = xf([...EAR_INNER_EDGE, ...xf(EAR_INNER_EDGE, { dx: 6 }).reverse()], { rot: EAR_ROT })
@@ -64,7 +73,8 @@ const Ear: SidePart = ({ pal, sw, stage, ids, lod }) => {
   return (
     <>
       <path d={blob(xf(EAR, s), 0.9)} fill={hair(pal, pal.earFur, ids.gradient)} stroke={pal.earOutline} strokeWidth={sw} {...round} />
-      {lod === 'full' && !pal.silhouette && <path d={spline(xf(FOLD, s))} fill="none" stroke={pal.earOutline} strokeWidth={sw * 0.5} {...round} />}
+      {!pal.silhouette && !pal.gradient && <path d={blob(xf(FOLD_SHADE, s), 0.8)} fill={pal.earOutline} opacity={0.16} />}
+      {lod === 'full' && !pal.silhouette && <path d={spline(xf(FOLD, s))} fill="none" stroke={pal.earOutline} strokeWidth={sw * 0.55} {...round} />}
     </>
   )
 }
@@ -255,6 +265,43 @@ const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
   },
 }
 
+/**
+ * Lommerne i nøgleposerne (review G1-r4 §1.4 og §5, holes.png flise 519–527): pels i skyggetone bag alt mellem løftet
+ * pote, øre, kind og krop, så der aldrig ses baggrund inde i figuren. Kun i stillbilleder (album, butik og
+ * kontaktark): i animationen åbner og lukker lommerne, mens poten bevæger sig, så et fast fyld ville ses mod
+ * baggrunden dér (samme mønster som rævens `KEY_WEBS`). Hylstrene er lommerne målt på magenta (2 px pr. enhed,
+ * udvidet 1,6 enheder og holdt inden for figurens yderkontur) i skulderens ramme (højre side spejlet).
+ */
+const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  std: {
+    1: {
+      cheer: { R: [[-21.5, -26.5], [-20.6, -24.3], [-22.1, -22.7], [-24.4, -23.4], [-22, -19.7], [-19.7, -18.3], [-18.2, -19.1], [-16.7, -21.4], [-17.6, -23.6], [-20.7, -25.8]] },
+      think: { R: [[-27.9, -12.4], [-29.4, -9.4], [-28.7, -4.8], [-27.2, -4.1], [-25.6, -4.8], [-23.4, -10.1], [-23.4, -10.9], [-26.4, -10.1], [-27.9, -11.7]] },
+      wave: { R: [[-23.4, -55], [-24.9, -54.2], [-25.6, -52.7], [-25.6, -47.4], [-24.9, -46.6], [-24.9, -42.8], [-23.4, -39], [-18, -34.5], [-7.4, -30.7], [-2.1, -32.9], [-1.3, -34.5], [-2.1, -36], [-5.1, -36.7], [-10.4, -39.8], [-18.8, -48.1], [-21.8, -54.2], [-22.6, -54.2]] },
+    },
+    2: {
+      wave: { R: [[-24, -56.2], [-25.7, -55.6], [-26.2, -52.3], [-25.7, -51.7], [-25.1, -43.4], [-23.4, -38.9], [-18.4, -34.5], [-6.8, -30.1], [-1.8, -32.8], [-0.1, -35.1], [-0.1, -36.2], [-1.2, -37.8], [-5.1, -39.5], [-11.8, -46.2], [-14.6, -51.2], [-23.4, -55.6]] },
+    },
+    3: {
+      cheer: { R: [[-21.9, -27.8], [-23.2, -26.8], [-27, -16.7], [-26.9, -14], [-27.4, -13.5], [-27.2, -7.6], [-26.7, -6.7], [-25.7, -6.3], [-24.4, -7.2], [-20.9, -14.6], [-16.1, -21.6], [-16.6, -22.9], [-18.5, -25.1], [-21.4, -27.3]] },
+      wave: { R: [[[-24.7, -58.7], [-25.6, -58.2], [-26.1, -57.3], [-26.1, -49], [-25.6, -48.5], [-25.6, -45.7], [-25.2, -45.3], [-24.7, -41.6], [-22.8, -37.9], [-19.6, -35.1], [-16.4, -33.2], [-6.6, -30], [-3.9, -31.4], [-3.4, -32.3], [-3.4, -36.5], [-2, -38.3], [-2.5, -39.2], [-8.5, -44.8], [-10.8, -49], [-12.2, -50.4], [-18.2, -53.1], [-24.2, -58.2]], [[-25.2, -18.4], [-26.1, -18], [-27, -16.6], [-27, -7.3], [-26.5, -6.4], [-25.6, -5.9], [-24.7, -6.4], [-23.3, -9.2], [-23.3, -10.1], [-20.1, -15.6], [-20.5, -16.6], [-24.7, -18]]] },
+    },
+  },
+}
+
+const KeyWebs = pawWebs({}, KEY_WEBS)
+/** Armenes faste fyld og, i stillbilleder, nøgleposernes lommer i skyggetone (se `KEY_WEBS`). */
+const withKeyWebs = (webs: SidePart): SidePart => (p) => {
+  const key = p.still ? KeyWebs({ ...p, pal: { ...p.pal, fur: p.pal.silhouette ? p.pal.fur : p.pal.shade } }) : null
+  const web = webs(p)
+  return key && web ? (
+    <>
+      {web}
+      {key}
+    </>
+  ) : (key ?? web)
+}
+
 export const puppy: SpeciesDef = {
   id: 'puppy',
   name: 'Hvalp',
@@ -322,7 +369,7 @@ export const puppy: SpeciesDef = {
     Ear,
     Paw: Leg,
     PawUp,
-    PawBack: pawWebs({}, PAW_WEBS),
+    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS)),
     pawUpTip: { cheer: { x: -31, y: -54 }, wave: { x: -36, y: -60 }, think: { x: 13, y: -33.5 }, oops: { x: -14, y: -49 } },
     upArms: {
       cheer: { spine: UP_SPINES.cheer, w0: 15, w1: 18.5, tip: 10 },
