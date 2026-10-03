@@ -529,12 +529,9 @@ export const HOLE_GAP = 1
  * (`known`). Mønsteret matcher cellens `data-holes` ("art race stadie farve humør").
  */
 export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
-  // Små lommer (2–3 px i arkets opløsning, lukket i 23–25 af 25 gitre), som først alfa-lint'en fandt (ARTFIX-D1,
-  // G2-r2 §3.1); de rettes af artens agent.
-  { match: /^lamb std 3 \S+ cheer$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (141,115), lammets agent (ARTFIX-D2)' },
-  { match: /^rabbit lop 2 \S+ think$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (66,165), kaninens agent' },
-  { match: /^hamster std 3 \S+ idle$/, ref: 'alfa-lint ARTFIX-D1: lommer ved (75,139) og (125,139), hamsterens agent' },
-  { match: /^panda std 3 \S+ sleep$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (42,147), pandaens agent' },
+  // Tom (review G2-r3 §3.1 og §6.2: en lint, der kan "kende" en fejl væk, fejler ikke længere på den). De fem lommer,
+  // der stod her (lam · 3 · jubel, vædder · 2 · tænker, hamster · 3 · hvile (to) og panda · 3 · sover), er fyldt med
+  // pels bag delene i stillbilleder (ARTFIX-E), så lint'en fejler igen på enhver lukket lomme.
 ]
 
 /** Kendt lomme for en celle (review-henvisningen), eller null. */

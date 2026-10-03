@@ -288,8 +288,25 @@ const UPRIGHT_WAVE_KEY: Vec[] = [
   [-23, -13], [-24.5, -25.5], [-21.2, -26.8], [4.5, -2.5], [6, -1], [4.2, 0.8], [-2, 5.5], [-7.2, 4.5],
   [-14.2, 2.2], [-19, -1.8], [-21.5, -6.5],
 ]
+/**
+ * Vædderen · stadie 2 · tænker (review G2-r3 §3.1; rubrikken kræver nul lukkede pixel på kaninen): lommen mellem den
+ * venstre arm og kroppen lukker i arkets opløsning. Den fyldes i stillbilleder med pels i skyggetone bag alt, som de
+ * andre arters nøgleposer; hylstret er målt i arkets opløsning (skulderens ramme) og udvidet 1 enhed.
+ */
+const LOP_THINK_KEY: Vec[] = [
+  [-14.9, 14.2], [-14.6, 13.3], [-10.4, 8.1], [-9.6, 7.4], [-8.8, 7.3], [-7.9, 7.7], [-7.2, 8.5], [-6.8, 9.7], [-6.9, 10.8], [-7.5, 12],
+  [-10.3, 15.4], [-11.3, 16.5], [-12.3, 16.9], [-13.6, 16.9], [-14.6, 16.5], [-14.9, 15.6],
+]
 const PawBack: SidePart = (p) => {
   const web = WebBack(p)
+  const lopThink = p.still && p.breed === 'lop' && p.stage === 2 && p.mood === 'think' && p.side === 'L'
+  if (lopThink)
+    return (
+      <>
+        {web}
+        <path d={poly(LOP_THINK_KEY)} fill={p.pal.silhouette ? p.pal.fur : p.pal.shade} />
+      </>
+    )
   if (!(p.still && p.breed === 'upright' && p.stage === 2 && p.mood === 'wave' && p.side === 'R')) return web
   return (
     <>
