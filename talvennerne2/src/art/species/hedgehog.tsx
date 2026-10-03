@@ -87,6 +87,11 @@ function quillRing(r: Ring, layer: 'back' | 'front' | 'core'): string {
 const ring = (r: Ring) => ({ back: quillRing(r, 'back'), front: quillRing(r, 'front'), core: quillRing(r, 'core') })
 const HOOD_Q = ring(HOOD)
 const CAPE_Q = ring(CAPE)
+/**
+ * Stor (review G1-r4 §3 og §5: stadie 3 var et opskaleret stadie 2): kappen er længere og bredere med længere
+ * pigge, der går længere ned ad kroppen, så den voksne er en lang, pigget pære og ikke en stor unge.
+ */
+const CAPE3_Q = ring({ ...CAPE, cy: 170, rx: 70, ry: 67, count: 13, from: 146, to: 394 })
 /** Hætten under en hue: piggene øverst trykkes flade (kun siderne stikker frem under huen). */
 const HOOD_HAT_Q = ring({ ...HOOD, cy: 104, ry: 52, rx: 61 })
 
@@ -185,10 +190,10 @@ const PawUp: SidePart = ({ pal, sw, mood, lod }) => {
 // Bag kroppen: pigkappen (to lag), der puster sig op i signaturen (`a-puff`). Foran kroppen: små fødder,
 // der titter frem under maven med tåstreger (tegnet efter maven og skyggen, før kropstøjet).
 
-const CapeLayer: Part = ({ pal, sw, ids, still }) => (
+const CapeLayer: Part = ({ pal, sw, ids, still, stage }) => (
   <Pivot at={{ x: 100, y: 176 }} cls="a-puff" still={still}>
     <g transform="translate(-100 -176)">
-      <Quills q={CAPE_Q} pal={pal} sw={sw} gradientId={ids.gradient} />
+      <Quills q={stage === 3 ? CAPE3_Q : CAPE_Q} pal={pal} sw={sw} gradientId={ids.gradient} />
     </g>
   </Pivot>
 )
@@ -198,10 +203,13 @@ const FOOT_TOES: Vec[][] = [
   [[74.4, 227.4], [75, 223.4]],
   [[80.2, 228.4], [80.4, 224.2]],
 ]
-const FrontFeet: Part = ({ pal, sw, lod }) => {
-  const f = FOOT
+/** Stor har længere fødder, der stikker lidt mere frem og ud (en voksen, ikke en unge). */
+const FOOT3 = { cx: 78, cy: 222.6, rx: 14, ry: 7.4, rot: -10 }
+const FrontFeet: Part = ({ pal, sw, lod, stage }) => {
+  const f = stage === 3 ? FOOT3 : FOOT
   const feet = join(ellipse(f.cx, f.cy, f.rx, f.ry, f.rot), ellipse(200 - f.cx, f.cy, f.rx, f.ry, -f.rot))
-  const toes = FOOT_TOES.flatMap((t) => [spline(t), spline(mirrorX(t, 100))])
+  const dx = f.cx - FOOT.cx
+  const toes = FOOT_TOES.map((t) => xf(t, { dx: dx - 1, dy: f.cy - FOOT.cy })).flatMap((t) => [spline(t), spline(mirrorX(t, 100))])
   return (
     <>
       <path d={feet} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
@@ -246,8 +254,9 @@ export const hedgehog: SpeciesDef = {
   nameClip: 'name.species.hedgehog',
   family: 'insectivore',
   body: 'pear',
-  // Pigkappen vokser kun lidt på stor (den skal blive i den sikre zone og fri af tankeboblerne).
-  breeds: [{ id: 'std', name: 'pindsvin', maneGrowth: 1.06 }],
+  // Hætten vokser ikke på stor (riggens 1,3 dæmpes til 0,96): hovedet bliver relativt mindre, mens kappen og
+  // fødderne bliver længere (review G1-r4 §3 og §5). Den holder sig også i den sikre zone og fri af tankeboblerne.
+  breeds: [{ id: 'std', name: 'pindsvin', maneGrowth: 0.96 }],
   colorways: HEDGEHOG_COLORWAYS,
   magic: ['gold', 'rainbow'],
   anchors: {

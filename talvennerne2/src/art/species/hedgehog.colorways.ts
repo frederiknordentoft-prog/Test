@@ -36,24 +36,24 @@ export const HEDGEHOG_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold
       nose: '#3A2A2E', iris: '#7A4A3A',
     },
   },
-  // Rustrød: rødbrune pigge som en efterårsblad.
+  // Rustrød: klart rødorange pigge som et efterårsblad (review G1-r4: skilles tydeligt fra c1 brun og c5 mandel).
   c4: {
     id: 'c4',
     name: 'rustrød',
-    fur: '#FCE7D4',
+    fur: '#FDE6D2',
     overrides: {
-      mane: '#C2653A', mane2: '#9C4A25', outline: '#6E3018', shade: '#F0CDAF', belly: '#FFF5EB', inner: '#F6A596',
+      mane: '#DE5A2A', mane2: '#B23F18', outline: '#73240F', shade: '#F3CCAE', belly: '#FFF5EB', inner: '#F6A596',
       nose: '#3F2424', iris: '#7A3A18',
     },
   },
-  // Mandel: lyse, rosa-beige pigge som en mandel i skallen.
+  // Mandel: lyse, rosa pigge som mandelblomst (tydeligt lyserød, så den ikke ligner c1 brun eller c4 rustrød).
   c5: {
     id: 'c5',
     name: 'mandel',
-    fur: '#FDEDE2',
+    fur: '#FFEDEB',
     overrides: {
-      mane: '#D29E86', mane2: '#B47C64', outline: '#7A4C3A', shade: '#F2D3C2', belly: '#FFF8F3', inner: '#F7A9B4',
-      nose: '#4A2E30', iris: '#86503A',
+      mane: '#E8A3AE', mane2: '#CC8090', outline: '#86475A', shade: '#F6D3D3', belly: '#FFF8F6', inner: '#F7A1B6',
+      nose: '#4A2E36', iris: '#8A4E5C',
     },
   },
   // Frost: blågrå pigge med et køligt skær og et snehvidt ansigt.
