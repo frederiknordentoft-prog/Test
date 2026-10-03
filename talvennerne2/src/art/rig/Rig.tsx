@@ -367,6 +367,25 @@ function handCardBox(root: SVGSVGElement): string | null {
   return `${n(cx - side / 2)} ${n(cy - side / 2)} ${n(side)} ${n(side)}`
 }
 
+/**
+ * Ansigtskortet med en genstand, der når under munden (skægget, review G2-r2 B5): kortet går så mange enheder
+ * under genstandens synlige spids (konturen medregnet). Den erklærede ikonboks (`icon.box`) rammer ikke skæggets
+ * spids på de lange hestemuler, så spidsen måles i DOM'en ligesom håndkortet; uden DOM bruges den erklærede boks.
+ */
+export const FACE_CARD_BELOW = 7
+
+function faceCardBox(root: SVGSVGElement): string | null {
+  const item = root.querySelector<SVGGElement>('[data-slot="face"]')
+  if (!item || typeof item.getBBox !== 'function') return null
+  const ib = visibleBox(root, item)
+  const vb = root.viewBox.baseVal
+  if (!ib || !vb.width) return null
+  // Kvadratet beholder sin top og vokser, så bunden ligger FACE_CARD_BELOW under spidsen.
+  const side = ib.y1 + OUTLINE / 2 + FACE_CARD_BELOW - vb.y
+  if (side <= vb.height) return null
+  return `${n(vb.x + vb.width / 2 - side / 2)} ${n(vb.y)} ${n(side)} ${n(side)}`
+}
+
 /** <Rig> i DOM'en: unikke id'er og pupil-tracking lægges oven på den rene render. */
 export function Rig(props: RigProps) {
   const uid = useId().replace(/[^A-Za-z0-9_-]/g, '')
@@ -374,15 +393,26 @@ export function Rig(props: RigProps) {
   const { gazeRef, glintRef } = useGaze(g.enabled, props.lookAt, g.eye, g.scale, g.fallback, g.shape)
   const rootRef = useRef<SVGSVGElement>(null)
   const handCard = props.crop === 'wide' && !!props.outfit?.hand
+  const faceCard = props.crop === 'head' && !!props.outfit?.face && reachesBelowMouth(props)
   // Efter hver render (før maling, så intet blinker): React rører ikke viewBox igen, så længe den beregnede
   // beskæring er uændret.
   useLayoutEffect(() => {
     const root = rootRef.current
-    if (!handCard || !root) return
-    const vb = handCardBox(root)
+    if ((!handCard && !faceCard) || !root) return
+    const vb = handCard ? handCardBox(root) : faceCardBox(root)
     if (vb) root.setAttribute('viewBox', vb)
   })
-  return rigElement(props, { uid, gazeRef, glintRef, rootRef: handCard ? rootRef : undefined })
+  return rigElement(props, { uid, gazeRef, glintRef, rootRef: handCard || faceCard ? rootRef : undefined })
+}
+
+/** Ansigtsgenstanden når under munden (skægget): ansigtskortet beskæres da om hele genstanden (B5). */
+function reachesBelowMouth(props: RigProps): boolean {
+  const def = props.species
+  const mask = props.outfit?.face && !def.occupies?.includes('face') ? props.outfit.face.item : null
+  if (!mask) return false
+  const a = modelAnchors(def, props.breed ?? def.breeds[0].id)
+  const fb = itemModelBox(mask, fitItem(mask, a, def))
+  return !!fb && fb.y1 > a.mouth.y
 }
 
 function gazeInputs(props: RigProps) {

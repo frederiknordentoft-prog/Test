@@ -470,38 +470,55 @@ declare global {
 if (typeof window !== 'undefined') Object.assign(window, { __scenePanels: scenePanels, __lintScenePixels: lintScenePixels })
 
 // ---------------------------------------------------------------------------------------------
-// Huller og sømme (review G1-r3, forbedring 1): figuren rasteriseres på magenta; baggrund, der ikke
-// hænger sammen med billedets kant, er lukket inden for yderkonturen. Smalle lukkede områder
-// (tykkelse under HOLE_THICK enheder) er sømme eller sprækker. Review G1-r4 (R1): en lomme, der kun hænger
-// sammen med baggrunden gennem en sprække smallere end HOLE_GAP, er også lukket (den ses lukket ved
-// arkenes størrelser), og lukkede områder fejler for alle arter – ikke kun sprækkerne. Kendte lommer hos
+// Huller og sømme (review G1-r3, forbedring 1): figuren rasteriseres alene (uden glimt, aura og skygge), og
+// baggrund, der ikke hænger sammen med billedets kant, er lukket inden for yderkonturen. Review G2-r2 (§3.1,
+// §6 Proces pkt. 2): baggrunden er figurens alfakanal (ikke en farvetærskel på magenta, der afhang af
+// konturens farve), og lommerne søges både fint og i arkets egen opløsning:
+// - fint (HOLE_FINE px pr. enhed): sømme og sprækker. En lomme, der kun hænger sammen med baggrunden gennem
+//   en sprække smallere end HOLE_GAP, er også lukket (review G1-r4, R1); smalle lukkede områder (tykkelse
+//   under HOLE_THICK enheder) er sømme eller sprækker.
+// - i arket (HOLE_SHEET px pr. enhed, holes-arkets 64 px-felter i 2x): et lukket område på blot 1 pixel
+//   fejler (review G2-r2: "på mindst 1 px"). Arkets pixelgitter kan ligge hvor som helst over figuren, så
+//   alle HOLE_SUB² forskydninger af gitteret prøves (arealmiddel af den fine rasterisering).
+// Glimtene ✦ (data-part="fx") fjernes før rasteriseringen, så deres midte aldrig tæller. Kendte lommer hos
 // arter, som andre agenter ejer, står i KNOWN_POCKETS med henvisning til reviewet og fejler ikke.
 
-/** Pixel pr. enhed ved rasteriseringen. */
-const HOLE_SCALE = 2
+/** Arkets opløsning (px pr. enhed): holes-arkets felter er 64 CSS-px brede for 200 enheder, taget i 2x. */
+export const HOLE_SHEET = 0.64
+/** Fine delpixel pr. arkpixel: figuren rasteriseres i HOLE_SHEET · HOLE_SUB px pr. enhed. */
+export const HOLE_SUB = 5
+/** Pixel pr. enhed ved den fine rasterisering. */
+const HOLE_FINE = HOLE_SHEET * HOLE_SUB
+/** Lommer i arkets opløsning, hvis tyngdepunkter ligger så tæt (enheder) i forskellige gitre, er den samme lomme. */
+const HOLE_MERGE = 6
+/** Baggrund: figurens alfa under denne værdi (af 255), altså mindst 75 % baggrund i pixlen. */
+export const HOLE_ALPHA = 64
 /** Lukkede områder, der er tyndere end dette (enheder), tæller som søm/sprække. */
 export const HOLE_THICK = 4
-/** Mindste areal (enheder²), der tæller (antialiasing i samlinger giver enkelte pixel). */
+/** Mindste areal (enheder²), der tæller i den fine søgning (antialiasing i samlinger giver enkelte pixel). */
 export const HOLE_MIN_AREA = 1.5
-/** Streng tilstand: én lukket magenta-pixel er nok (review G1-r3, K1-tjekket). */
-export const HOLE_MIN_AREA_STRICT = 1 / HOLE_SCALE ** 2
+/** Streng tilstand: én lukket fin pixel på mindst 0,25 enh² er nok (review G1-r3, K1-tjekket). */
+export const HOLE_MIN_AREA_STRICT = 0.25
 /** Sprækker smallere end dette (enheder) lukkes, før baggrunden fyldes fra kanten (review G1-r4, R1). */
 export const HOLE_GAP = 1
 
 /**
- * Kendte lommer og sprækker (review G1-r4), som artens egen agent retter: de fejler ikke, men står i
- * lint-rapporten (`known`). Mønsteret matcher cellens `data-holes` ("art race stadie farve humør").
+ * Kendte lommer og sprækker, som artens egen agent retter: de fejler ikke, men står i lint-rapporten
+ * (`known`). Mønsteret matcher cellens `data-holes` ("art race stadie farve humør").
  */
-// Tom siden ARTFIX-B2 og ARTFIX-B3 (3/10): alle tolv arters lommer er fyldt (i stillbillederne,
-// KEY_WEBS) eller åbnet. En ny kendt lomme står her med sin review-henvisning, indtil artens agent retter den.
-export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = []
+export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
+  // Små lommer (2–3 px i arkets opløsning, lukket i 23–25 af 25 gitre), som først alfa-lint'en fandt (ARTFIX-D1,
+  // G2-r2 §3.1); de rettes af artens agent.
+  { match: /^lamb std 3 \S+ cheer$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (141,115), lammets agent (ARTFIX-D2)' },
+  { match: /^rabbit lop 2 \S+ think$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (66,165), kaninens agent' },
+  { match: /^hamster std 3 \S+ idle$/, ref: 'alfa-lint ARTFIX-D1: lommer ved (75,139) og (125,139), hamsterens agent' },
+  { match: /^panda std 3 \S+ sleep$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (42,147), pandaens agent' },
+]
 
 /** Kendt lomme for en celle (review-henvisningen), eller null. */
 export function knownPocket(cell: string): string | null {
   return KNOWN_POCKETS.find((k) => k.match.test(cell))?.ref ?? null
 }
-
-const isMagenta = (d: Uint8ClampedArray, i: number) => d[i] > 200 && d[i + 1] < 90 && d[i + 2] > 200
 
 interface Hole {
   area: number
@@ -510,12 +527,15 @@ interface Hole {
   y: number
   /** Kun lukket, når sprækker smallere end HOLE_GAP regnes som lukkede (hænger ellers sammen med baggrunden). */
   nearly: boolean
+  /** Fundet i arkets opløsning: `area` er da arkpixel, og `phases` er antallet af gitterforskydninger med lommen. */
+  sheet?: { px: number; phases: number }
 }
 
-async function holesIn(svg: SVGSVGElement): Promise<Hole[]> {
+/** Figurens alfakanal (uden glimt, aura og skygge) i `scale` px pr. enhed. */
+async function figureAlpha(svg: SVGSVGElement, scale: number): Promise<{ a: Uint8Array; W: number; H: number }> {
   const vb = svg.viewBox.baseVal
-  const W = Math.round(vb.width * HOLE_SCALE)
-  const H = Math.round(vb.height * HOLE_SCALE)
+  const W = Math.round(vb.width * scale)
+  const H = Math.round(vb.height * scale)
   const clone = svg.cloneNode(true) as SVGSVGElement
   clone.setAttribute('width', String(W))
   clone.setAttribute('height', String(H))
@@ -528,48 +548,36 @@ async function holesIn(svg: SVGSVGElement): Promise<Hole[]> {
   canvas.width = W
   canvas.height = H
   const g = canvas.getContext('2d', { willReadFrequently: true })!
-  g.fillStyle = '#FF00FF'
-  g.fillRect(0, 0, W, H)
   g.drawImage(img, 0, 0, W, H)
   const d = g.getImageData(0, 0, W, H).data
+  const a = new Uint8Array(W * H)
+  for (let p = 0; p < W * H; p++) a[p] = d[p * 4 + 3]
+  return { a, W, H }
+}
+
+async function holesIn(svg: SVGSVGElement): Promise<Hole[]> {
+  const vb = svg.viewBox.baseVal
+  const { a, W, H } = await figureAlpha(svg, HOLE_FINE)
+  return [...fineHoles(a, W, H, vb), ...sheetHoles(a, W, H, vb)]
+}
+
+/** Sømme, sprækker og lommer i den fine rasterisering (med sprække-lukning, se HOLE_GAP). */
+function fineHoles(a: Uint8Array, W: number, H: number, vb: DOMRect): Hole[] {
   const N = W * H
-  // 1 = magenta (baggrund), 2 = baggrund nået fra kanten.
+  // 1 = baggrund, 2 = baggrund nået fra kanten.
   const m = new Uint8Array(N)
-  for (let p = 0; p < N; p++) if (isMagenta(d, p * 4)) m[p] = 1
+  for (let p = 0; p < N; p++) if (a[p] < HOLE_ALPHA) m[p] = 1
   // Lukkede områder uden sprække-lukning (ægte lukkede pixels) huskes, før sprækkerne lukkes nedenfor.
   const plain = flood(m, W, H, null, 0)
   // Afstanden fra hver baggrundspixel til figuren: pixels nærmere end HOLE_GAP/2 er væg, så en sprække
   // smallere end HOLE_GAP lukker; derefter vokser den nåede baggrund tilbage op til figuren.
-  const gap = (HOLE_GAP * HOLE_SCALE) / 2
+  const gap = (HOLE_GAP * HOLE_FINE) / 2
   const toFig = chamfer(m, W, H, (v) => v === 1)
   const open = flood(m, W, H, toFig, gap)
   for (let p = 0; p < N; p++) m[p] = m[p] === 1 ? (open[p] ? 2 : 1) : 0
   grow(m, W, H, Math.ceil(gap) + 1)
   // Afstand (chamfer) fra hver lukket pixel til nærmeste ikke-lukkede pixel: tykkelsen er 2 · maks.
-  const dist = new Float32Array(N)
-  for (let p = 0; p < N; p++) dist[p] = m[p] === 1 ? 1e9 : 0
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      const p = y * W + x
-      if (!dist[p]) continue
-      let v = dist[p]
-      if (x > 0) v = Math.min(v, dist[p - 1] + 1)
-      if (y > 0) v = Math.min(v, dist[p - W] + 1)
-      if (x > 0 && y > 0) v = Math.min(v, dist[p - W - 1] + 1.414)
-      if (x < W - 1 && y > 0) v = Math.min(v, dist[p - W + 1] + 1.414)
-      dist[p] = v
-    }
-  for (let y = H - 1; y >= 0; y--)
-    for (let x = W - 1; x >= 0; x--) {
-      const p = y * W + x
-      if (!dist[p]) continue
-      let v = dist[p]
-      if (x < W - 1) v = Math.min(v, dist[p + 1] + 1)
-      if (y < H - 1) v = Math.min(v, dist[p + W] + 1)
-      if (x < W - 1 && y < H - 1) v = Math.min(v, dist[p + W + 1] + 1.414)
-      if (x > 0 && y < H - 1) v = Math.min(v, dist[p + W - 1] + 1.414)
-      dist[p] = v
-    }
+  const dist = chamfer(m, W, H, (v) => v === 1)
   // Sammenhængende lukkede områder.
   const out: Hole[] = []
   const stack: number[] = []
@@ -601,9 +609,78 @@ async function holesIn(svg: SVGSVGElement): Promise<Hole[]> {
       if (p >= W) visit(p - W)
       if (p < N - W) visit(p + W)
     }
-    out.push({ area: area / HOLE_SCALE ** 2, thick: (2 * maxD) / HOLE_SCALE, x: vb.x + sx / area / HOLE_SCALE, y: vb.y + sy / area / HOLE_SCALE, nearly: !closed })
+    out.push({ area: area / HOLE_FINE ** 2, thick: (2 * maxD) / HOLE_FINE, x: vb.x + sx / area / HOLE_FINE, y: vb.y + sy / area / HOLE_FINE, nearly: !closed })
   }
   return out
+}
+
+/**
+ * Lommer i arkets opløsning: den fine alfa middelværdi-nedskaleres HOLE_SUB gange for hver af de HOLE_SUB²
+ * forskydninger af arkets pixelgitter, og lukket baggrund (alfa under HOLE_ALPHA, ikke forbundet med kanten)
+ * samles pr. sted (afrundet til 4 enheder) med største pixeltal og antal forskydninger.
+ */
+function sheetHoles(a: Uint8Array, W: number, H: number, vb: DOMRect): Hole[] {
+  const S = HOLE_SUB
+  // Summeret arealtabel, så hver arkpixel er fire opslag.
+  const I = new Float64Array((W + 1) * (H + 1))
+  for (let y = 0; y < H; y++) {
+    let row = 0
+    for (let x = 0; x < W; x++) {
+      row += a[y * W + x]
+      I[(y + 1) * (W + 1) + x + 1] = I[y * (W + 1) + x + 1] + row
+    }
+  }
+  // Lommer samles på tværs af forskydningerne efter sted (tyngdepunkter inden for HOLE_MERGE enheder).
+  const found: (Hole & { at: Set<number> })[] = []
+  for (let oy = 0; oy < S; oy++)
+    for (let ox = 0; ox < S; ox++) {
+      // En ring af tom baggrund om gitteret, så kanten altid er baggrund.
+      const w = Math.floor((W - ox) / S) + 2
+      const h = Math.floor((H - oy) / S) + 2
+      const m = new Uint8Array(w * h)
+      for (let y = 1; y < h - 1; y++)
+        for (let x = 1; x < w - 1; x++) {
+          const x0 = ox + (x - 1) * S
+          const y0 = oy + (y - 1) * S
+          const mean = (I[(y0 + S) * (W + 1) + x0 + S] - I[y0 * (W + 1) + x0 + S] - I[(y0 + S) * (W + 1) + x0] + I[y0 * (W + 1) + x0]) / (S * S)
+          m[y * w + x] = mean < HOLE_ALPHA ? 1 : 0
+        }
+      for (let x = 0; x < w; x++) m[x] = m[(h - 1) * w + x] = 1
+      for (let y = 0; y < h; y++) m[y * w] = m[y * w + w - 1] = 1
+      const reached = flood(m, w, h, null, 0)
+      const stack: number[] = []
+      for (let p0 = 0; p0 < w * h; p0++) {
+        if (m[p0] !== 1 || reached[p0]) continue
+        let px = 0
+        let sx = 0
+        let sy = 0
+        m[p0] = 3
+        stack.push(p0)
+        while (stack.length) {
+          const p = stack.pop()!
+          px++
+          const x = p % w
+          sx += x
+          sy += (p - x) / w
+          for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, p - w, p + w])
+            if (q >= 0 && q < w * h && m[q] === 1 && !reached[q]) {
+              m[q] = 3
+              stack.push(q)
+            }
+        }
+        const ux = vb.x + (ox + (sx / px - 1) * S + S / 2) / HOLE_FINE
+        const uy = vb.y + (oy + (sy / px - 1) * S + S / 2) / HOLE_FINE
+        const phase = oy * S + ox
+        const near = found.find((f) => Math.hypot(f.x - ux, f.y - uy) <= HOLE_MERGE)
+        if (!near) found.push({ area: px / HOLE_SHEET ** 2, thick: 0, x: ux, y: uy, nearly: false, sheet: { px, phases: 1 }, at: new Set([phase]) })
+        else {
+          near.at.add(phase)
+          near.sheet = { px: Math.max(near.sheet!.px, px), phases: near.at.size }
+          if (px >= near.sheet.px) Object.assign(near, { area: px / HOLE_SHEET ** 2, x: ux, y: uy })
+        }
+      }
+    }
+  return found.map(({ at: _, ...h }) => h)
 }
 
 /**
@@ -698,12 +775,16 @@ function grow(m: Uint8Array, W: number, H: number, steps: number): void {
   }
 }
 
+/** I arkets opløsning fejler en lomme, der er lukket i mindst så mange af de HOLE_SUB² gitterforskydninger. */
+export const HOLE_SHEET_PHASES = 22
+
 /**
  * Lint for `holes`-arket: ingen sømme, sprækker eller lukkede områder med baggrund inden for figurernes
- * yderkontur. En celle med data-holes-mode="strict" må slet ikke have lukket baggrund (kaninen, K1-beviset);
- * de andre arter ("thin") fejler på sprækker og på lukkede områder fra HOLE_MIN_AREA (review G1-r4, R1).
- * Næsten lukkede lommer (kun lukket af en sprække under HOLE_GAP) tæller fra HOLE_MIN_AREA, så antialiasing
- * i en konkav kant ikke fejler. Kendte lommer (KNOWN_POCKETS) fejler ikke, men noteres i `known`.
+ * yderkontur. En celle med data-holes-mode="strict" må slet ikke have lukket baggrund i den fine søgning
+ * (kaninen, K1-beviset); de andre arter ("thin") fejler på sprækker og lukkede områder fra HOLE_MIN_AREA (review
+ * G1-r4, R1). Næsten lukkede lommer (kun lukket af en sprække under HOLE_GAP) tæller fra HOLE_MIN_AREA, så
+ * antialiasing i en konkav kant ikke fejler. I arkets opløsning fejler alle arter fra 1 lukket pixel (review
+ * G2-r2 §3.1). Kendte lommer (KNOWN_POCKETS) fejler ikke, men noteres i `known`.
  */
 async function lintHoles(res: LintResult): Promise<void> {
   for (const cell of document.querySelectorAll<HTMLElement>('[data-holes]')) {
@@ -711,12 +792,17 @@ async function lintHoles(res: LintResult): Promise<void> {
     if (!svg) continue
     res.checks++
     const strict = cell.dataset.holesMode === 'strict'
-    const bad = (await holesIn(svg)).filter((h) => h.area >= (strict && !h.nearly ? HOLE_MIN_AREA_STRICT : HOLE_MIN_AREA))
+    const bad = (await holesIn(svg)).filter((h) =>
+      h.sheet ? h.sheet.phases >= HOLE_SHEET_PHASES : h.area >= (strict && !h.nearly ? HOLE_MIN_AREA_STRICT : HOLE_MIN_AREA),
+    )
     if (!bad.length) continue
     const label = cell.dataset.holes ?? ''
     const known = knownPocket(label)
     for (const h of bad) {
-      const what = `${label}: ${h.nearly ? 'næsten ' : ''}lukket ${h.thick < HOLE_THICK ? 'søm/sprække' : 'område'} med baggrund (${h.area.toFixed(1)} enh², ${h.thick.toFixed(1)} enh tyk) ved (${h.x.toFixed(0)},${h.y.toFixed(0)})`
+      const at = `ved (${h.x.toFixed(0)},${h.y.toFixed(0)})`
+      const what = h.sheet
+        ? `${label}: lukket lomme i arkets opløsning (${h.sheet.px} px, ${h.sheet.phases}/${HOLE_SUB ** 2} gitre) ${at}`
+        : `${label}: ${h.nearly ? 'næsten ' : ''}lukket ${h.thick < HOLE_THICK ? 'søm/sprække' : 'område'} med baggrund (${h.area.toFixed(1)} enh², ${h.thick.toFixed(1)} enh tyk) ${at}`
       if (known) (res.known ??= []).push(`${what} · kendt: ${known}`)
       else res.errors.push(what)
     }
