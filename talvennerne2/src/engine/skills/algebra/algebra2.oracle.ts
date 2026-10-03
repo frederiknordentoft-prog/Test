@@ -365,8 +365,11 @@ export function guess3(t: Task): number {
       const items = t.prompt.scene === 'shapes' ? t.prompt.items.length : t.options.length
       return 1 / (2 ** items - 1)
     }
-    case 'fillSlots':
-      return 1 / t.options.length ** String(t.answer).split('|').length
+    case 'fillSlots': {
+      // every accepted equal filling (2|4 for 1/2) is a right guess too (UI-fund 8, kinds.ts)
+      const right = new Set([String(t.answer), ...t.accept.map(String)]).size
+      return right / t.options.length ** String(t.answer).split('|').length
+    }
     case 'share':
       return 0.01
     case 'colorParts':

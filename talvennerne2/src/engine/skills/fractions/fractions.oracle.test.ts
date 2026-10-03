@@ -254,7 +254,8 @@ describe('fractionShape oracle', () => {
       let right = 0
       for (let a = 1; a <= 8; a++) for (let b = 1; b <= 8; b++) if (sameValue({ n: a, d: b }, q)) right++
       expect(right / 64, fact.id).toBeLessThanOrEqual(0.12)
-      expect(guessP(task), fact.id).toBeCloseTo(1 / 64)
+      // kinds.ts counts the accepted equal fillings since UIFIX2 (UI-fund 8): the oracle's own count
+      expect(guessP(task), fact.id).toBeCloseTo(right / 64)
     }
   })
 
