@@ -7,7 +7,7 @@
 // bærerens øjenankre og stadiets øjenskala (babyens øjne er større), så masken sidder ens på alle arter og
 // stadier. Alene (butik) tegnes masken på standardankrene.
 import type { Vec } from '../../rig/shapes'
- import type { ItemArt } from '../../rig/types'
+import type { ItemArt } from '../../rig/types'
 import { cws, def, draw, eyeUnits, fitAt, S } from './kit/mestring'
 
 const front: ItemArt = ({ c, sw, a, local, stage }) => {

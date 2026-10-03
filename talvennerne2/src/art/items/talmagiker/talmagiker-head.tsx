@@ -7,7 +7,7 @@
 // Keglen er så høj, som der er plads til over hovedet: på stor hos de høje arter er den lavere og knækker
 // tidligere, så spidsen bliver i den sikre zone. (0,0) = headTop, tegnet ved headWidth 104.
 import type { Vec } from '../../rig/shapes'
- import type { ItemArt } from '../../rig/types'
+import type { ItemArt } from '../../rig/types'
 import { ceiling, cws, def, draw, fitAt, holeSeg, HORN_HOLE, rim, S } from '../ridder/kit/mestring'
 
 /** Skyggen: en flad ellipse bag kuplen; forkanten ses under kuplen (som tropehjelmens). */

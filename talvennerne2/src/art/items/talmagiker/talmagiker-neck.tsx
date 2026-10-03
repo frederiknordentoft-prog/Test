@@ -4,7 +4,7 @@
 // stenen og rammen og et lille glimt. Hele smykket flyttes ned under hagen på arter med lang mule (hest,
 // enhjørning), og babyens store hoved tages med. (0,0) = halsleddet, tegnet ved neckWidth 58.
 import type { Vec } from '../../rig/shapes'
- import type { ItemArt } from '../../rig/types'
+import type { ItemArt } from '../../rig/types'
 import { cws, def, fitAt, group, neckDrop, S } from '../ridder/kit/mestring'
 
 /** Amulettens centrum, rammens og stenens radius. */

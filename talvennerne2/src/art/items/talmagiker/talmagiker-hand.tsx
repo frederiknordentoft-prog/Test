@@ -6,7 +6,7 @@
 // staven skråt som et ikon. Staven rækker med vilje ud over silhuetten (`reach`) og er stor nok til at ses i
 // butikskortet på dyret (review G1-r4, B2).
 import { aimAway, aimSolo } from '../../rig/hold'
- import type { ItemArt } from '../../rig/types'
+import type { ItemArt } from '../../rig/types'
 import { aimFrame, cws, def, fitAt, group, S } from '../ridder/kit/mestring'
 
 /** Staven langs aksen fra grebet (hovedets modelenheder): ende, top, tykkelse, de lyse ender og stjernen. */

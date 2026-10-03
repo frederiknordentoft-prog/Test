@@ -7,7 +7,7 @@
 // over silhuetten (`reach`) og er stort nok til at ses tydeligt i butikskortet på dyret (review G1-r4, B2).
 import { aimAway, aimSolo } from '../../rig/hold'
 import type { Vec } from '../../rig/shapes'
- import type { ItemArt } from '../../rig/types'
+import type { ItemArt } from '../../rig/types'
 import { aimFrame, cws, def, fitAt, group, S } from './kit/mestring'
 
 /** Skjoldets form om centrum (venstre halvdel, top → spids): bredde 30, højde 35. */

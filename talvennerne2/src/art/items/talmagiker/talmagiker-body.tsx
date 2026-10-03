@@ -1,11 +1,11 @@
-// Talmagiker · krop: en tryllekjortel – en lang kjortel i dyb farve, strøet med små stjerner og regnetegn
-// (+ og =), med en rund krave i guld, et bælte med et stjernespænde og en bred bort forneden. Kropstøj klippes
+// Talmagiker · krop: en tryllekjortel – en lang kjortel i dyb farve, strøet med små stjerner og plustegn,
+// med en rund krave i guld, et bælte med et stjernespænde og en bred bort forneden. Kropstøj klippes
 // af riggen til artens krop (konturen/2 udenfor); kjortlen klipper sig selv til sin længde og streger kroppens
 // kontur igen inden for den, så pelsen ses under kanten. Lange ærmer starter ved skulderen og ender i en bred
 // guldmanchet over poten (review G1-r4, T5); på løftede arme følger ærmet armen fra skulderen. Babyens korte
 // torso får kanten, bæltet og mønstret højere oppe. Én parametrisk tegning giver de 3 grundformer
 // (round/pear/tall). (0,0) = bodyCenter, tegnet ved bodyWidth 100.
- import type { BodyKind, ItemArt } from '../../rig/types'
+import type { BodyKind, ItemArt } from '../../rig/types'
 import { cws, def, fitAt, garment, S, SAG, sleeveUp, sleeveWith } from '../ridder/kit/mestring'
 import type { Seg } from '../ridder/kit/mestring'
 
@@ -13,7 +13,7 @@ import type { Seg } from '../ridder/kit/mestring'
 const beltAt = (collar: number, hem: number) => collar + (hem - collar) * 0.56
 const plus = (x: number, y: number, s: number) => S.join(S.line([x - s, y], [x + s, y]), S.line([x, y - s], [x, y + s]))
 
-/** Mønstret (stjerner, plusser og et lighedstegn), borten forneden og bæltet (i klippet). */
+/** Mønstret (stjerner og plusser), borten forneden og bæltet (i klippet). */
 const inner = (collar: number, hem: number, { c, sw }: { c: Parameters<ItemArt>[0]['c']; sw: number }): Seg[] => {
   const belt = beltAt(collar, hem)
   return [

@@ -1,13 +1,14 @@
 // Talmagiker · ansigt: stjernebriller. To opretstående, femtakkede stjerner med klart glas omslutter øjnene, og
-// deres øverste indre takker mødes over næseryggen og danner broen. Stjernens indre hak ligger uden for øjet med luft til,
-// at pupillerne kan kigge rundt og de lukkede øjnes vipper går fri (som støvbrillernes glas), så stellet aldrig
-// dækker øjnene (fit-regel 6). Glasset er kun svagt tonet (16 %) med et hvidt højlys i den øverste ydre tak, og
-// to små glimt funkler ved stjernerne.
-// Alt regnes ud fra bærerens øjenankre og stadiets øjenskala, så brillerne sidder ens på alle arter og
-// stadier. I butikken er glasset tydeligere tonet, så ikonet læses som glas.
+// deres øverste indre takker mødes over næseryggen og danner broen. Stjernens indre hak ligger uden for øjet med
+// luft til, at pupillerne kan kigge rundt (3 enheder i tænker) og de lukkede øjnes vipper går fri (som
+// støvbrillernes glas), så stellet aldrig dækker øjnene (fit-regel 6). Glasset er kun svagt tonet (16 %) med et
+// hvidt højlys i den øverste tak, og to små glimt funkler over de ydre takker. Takkerne ud mod siderne holder sig
+// inden for hovedets omrids (babyens store øjne giver buttede stjerner). Alt regnes ud fra bærerens øjenankre og
+// stadiets øjenskala, så brillerne sidder ens på alle arter og stadier. I butikken er glasset tydeligere tonet,
+// så ikonet læses som glas.
 import { WHITE } from '../../rig/palette'
 import type { Vec } from '../../rig/shapes'
- import type { ItemArt } from '../../rig/types'
+import type { ItemArt } from '../../rig/types'
 import { cws, def, draw, eyeUnits, fitAt, S } from '../ridder/kit/mestring'
 
 /** Glassets tone på dyret (højst ca. 20 %, review G1-r4, T1) og i butikken. */
