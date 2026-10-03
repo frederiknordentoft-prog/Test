@@ -13,7 +13,7 @@ ligger i `artifacts/sheets/` (taget i 2x). Ark pr. art hedder `<ark>-<art>.png` 
 | `sizes-<art>.png` | 48, 96 og 256 px (≤ 64 px tegnes med tykkere, mørkere kontur, uden hårfine streger og tæt beskåret) samt butikskort ved 64 px (genstanden alene og på dyret, beskåret efter slot). |
 | `silhouettes.png` | Alle arter og racer i 3 stadier, sort fyld uden navne, nummereret i fast blandet rækkefølge. |
 | `fit-<art>.png` | Genstandene på arten i 3 stadier · genstandens 3 farvesæt (racerne på skift), og tøj i alle 7 humør (ærmerne følger de løftede arme). |
-| `fitmatrix.png` | Art · stadie · genstand for alle arter (racerne skifter pr. stadie). |
+| `fitmatrix-<sæt>.png` | Art · stadie · genstand for alle arter (racerne skifter pr. stadie). |
 | `filmstrip-<art>.png` | 8 frames pr. humør (frosset animation), blink/ørevip tæt samplet og artens signatur (også i et stort nærbillede). |
 | `lineup.png` | Alle arter og racer side om side i stadie 2 på samme jordlinje, stadierne pr. art og kropsskabelonerne. |
 | `holes.png` | Alle arter, racer, stadier og farver i hvile, alle humør i c1 og c4, og vædderen i alle 8 farver · 7 humør · 3 stadier – på magenta, 64 px. |
@@ -88,7 +88,7 @@ Scor hvert kriterium 1–5. 2 og 4 ligger mellem beskrivelserne.
 - **5:** Uimodståeligt sødt: store, levende øjne med højlys, velplacerede kinder og næse. Alle 7
   humør læses straks, og ingen virker triste, vrede eller skyldfremkaldende (der findes ingen sad).
 
-### 7. Pasform (`fit-<art>.png`, `fitmatrix.png`)
+### 7. Pasform (`fit-<art>.png`, `fitmatrix-<sæt>.png`)
 - **1:** Tøjet flyder, dækker øjnene, stikker ud af kroppen eller passer kun på ét stadie.
 - **3:** Tøjet sidder, men med synlige fejl: hatte for høje/lave, ørerne ser forkert ud i forhold til
   hatten, eller kropstøj går uden for kroppen.
