@@ -178,10 +178,11 @@ for (const c of CLOCKS) {
 
     /** A clock the dial can be set to: the minute hand on the step. */
     const reach = (_t: unknown, v: number | string) => typeof v === 'number' && onDial(v) % step === 0
-    // ORK2b finding (clockHour, clockHalf): handsSwapped is listed as detectable on clockSet, but a dial that
-    // snaps to whole (60) or half (30) hours can never show the swapped clock (12:15, 6:13). Every clockSet
-    // task is a fake opportunity, and since a flag needs ≥ 2 production hits (SPEC §4.3), handsSwapped can
-    // never be flagged in these skills. candidatesFor(fact, 'clockSet') could leave it out.
+    // ORK2b finding (clockHour, clockHalf) — Rettet: handsSwapped was listed as detectable on clockSet, but a
+    // dial that snaps to whole (60) or half (30) hours can never show the swapped clock (12:15, 6:13). Every
+    // clockSet task was a fake opportunity, and since a flag needs ≥ 2 production hits (SPEC §4.3), handsSwapped
+    // could never be flagged in these skills. Now candidatesFor(fact, 'clockSet') keeps only the clocks the
+    // dial can set (clock/kit.ts clockCandidatesFor).
     // ORK2b finding (clockHour): the clockSet dial starts at 12:00 (SPEC §3.2, src/ui/task/clockSet/View.tsx
     // useState(0)), so "Stil uret, så klokken er tolv." (hel:0) is answered by touching the minute hand and
     // ticking: the answer is free, yet the task counts as production (guessP 1/12) and can lift hel:0 to box 5.
@@ -191,8 +192,7 @@ for (const c of CLOCKS) {
       expect([...new Set(free)]).toEqual([])
     })
 
-    const reachTest = c.id === 'clockQuarter' ? it : it.fails
-    reachTest('lists only misconceptions the dial can set as clockSet opportunities (SPEC §4.3)', () => {
+    it('lists only misconceptions the dial can set as clockSet opportunities (SPEC §4.3)', () => {
       expect(first(detectableReachProblems(built.filter((b) => b.kind === 'clockSet'), reach))).toEqual([])
     })
   })

@@ -171,7 +171,8 @@ describe('misconceptions', () => {
       expect(classifyAnswer(t, 90)).toBe('hourHandMisread')
       expect(classifyAnswer(t, 180)).toBe('operand')
       expect(classifyAnswer(t, 120)).toBe('near')
-      expect(classifyAnswer(t, 373)).toBe('handsSwapped')
+      // the swapped clock (about 6:13) is a card; the dial's half-hour step can never set it
+      expect(classifyAnswer(t, 373)).toBe(kind === 'choice' ? 'handsSwapped' : 'other')
       expect(classifyAnswer(t, 150 + 720)).toBeNull()
       expect(classifyAnswer(t, 500)).toBe('other')
     }
@@ -225,11 +226,21 @@ describe('misconceptions', () => {
     }
   })
 
-  it('offers each misconception where the catalogue puts it', () => {
-    const detectable = (def: SkillDef) => new Set(tasksUnderTest(def, 1).filter((t) => t.kind === 'clockSet').flatMap((t) => detectableOf(t.task)))
-    expect([...detectable(clockHour)].sort()).toEqual(['handsSwapped'])
-    expect([...detectable(clockHalf)].sort()).toEqual(['halfPastNext', 'handsSwapped', 'hourHandMisread'])
-    expect([...detectable(clockQuarter)].sort()).toEqual(['hourHandMisread', 'quarterDirection'])
+  it('offers each misconception where the catalogue puts it, on the dial only what the step can set', () => {
+    const detectable = (def: SkillDef, kind: TaskKind) => new Set(tasksUnderTest(def).filter((t) => t.kind === kind).flatMap((t) => detectableOf(t.task)))
+    // the swapped hands (12:15, about 6:13) fall between the dial's whole and half hours: cards only
+    expect([...detectable(clockHour, 'clockSet')]).toEqual([])
+    expect([...detectable(clockHalf, 'clockSet')].sort()).toEqual(['halfPastNext', 'hourHandMisread'])
+    expect([...detectable(clockQuarter, 'clockSet')].sort()).toEqual(['hourHandMisread', 'quarterDirection'])
+    expect([...detectable(clockHour, 'choice')]).toEqual(['handsSwapped'])
+    expect([...detectable(clockHalf, 'choice')].sort()).toEqual(['halfPastNext', 'handsSwapped', 'hourHandMisread'])
+    for (const def of ALL) {
+      for (const f of def.enumerate()) {
+        const t = buildTask(def, f, 'clockSet', makeRng(1), 0).task
+        const step = t.prompt.scene === 'clock' ? t.prompt.step : 0
+        expect(Object.keys(t.distractorTags).filter((k) => Number(k) % step !== 0), f.id).toEqual([])
+      }
+    }
   })
 
   it('flags a child who sets halv tre to 3:30 every time, and never a child who guesses', () => {

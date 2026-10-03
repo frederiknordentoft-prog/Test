@@ -10,11 +10,12 @@
 //   operand            H:00, the number heard as a whole hour
 //   near               halv: H:30 for kvart over, (H−1):30 for kvart i; and the same quarter an hour
 //                      later (kvart over: also an hour earlier)
-// The values never coincide, so A9 has nothing to settle here.
+// The values never coincide, so A9 has nothing to settle here. All of them are quarter hours, so the
+// dial can set every one (candidatesFor keeps them all on clockSet).
 import type { Fact, HintSpec, TaskKind } from '../../types'
 import type { SkillModule } from '../types'
 import { hintOf, metaOf, say } from '../number/kit'
-import { HOUR_ORDER, clockAt, clockCandidates, clockMove, clockPrompt, clockQuestion, clockSays, dial, hourAt, hourNum } from './kit'
+import { HOUR_ORDER, clockAt, clockCandidates, clockCandidatesFor, clockMove, clockPrompt, clockQuestion, clockSays, dial, hourAt, hourNum } from './kit'
 
 const meta = metaOf('clockQuarter')
 
@@ -89,5 +90,6 @@ export default {
   range: () => [0, 719],
   speech: (f: Fact, kind: TaskKind) => clockQuestion(Number(f.answer), kind),
   candidates,
+  candidatesFor: (f: Fact, kind: TaskKind) => clockCandidatesFor(candidates(f), kind, 15),
   hint: (f, tag) => hint(f, tag),
 } satisfies SkillModule
