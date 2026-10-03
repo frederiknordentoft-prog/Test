@@ -217,6 +217,39 @@
   color: var(--color-ink);
   font-variant-numeric: tabular-nums;
 }
+/* a fact shown whole (QA2 P1-1): a clock and its words, a coin and its value, a sentence with its figure */
+.tv-learned__fact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+}
+.tv-learned__fact.is-row {
+  flex-direction: row;
+  gap: 10px;
+}
+.tv-learned__clock {
+  display: block;
+  flex: none;
+}
+.tv-learned__money {
+  flex: none;
+}
+.tv-learned__fact .tv-learned__shape {
+  flex: none;
+}
+.tv-learned__phrase {
+  max-width: 100%;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--color-ink);
+  text-align: center;
+  overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
+}
 .tv-learned__beads {
   display: flex;
   gap: 2px;

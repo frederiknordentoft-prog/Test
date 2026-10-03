@@ -4,12 +4,14 @@
 // screen says what it shows; the screen around them reads it aloud and moves on.
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { AnalogClock } from '../../../../art/materials'
 import { Shape2D } from '../../../../art/materials/Shapes'
 import { circle, ellipse } from '../../../../art/materials/geom'
 import { HIGHLIGHT, MAT } from '../../../../art/materials/palette'
 import { ITEM_BY_ID } from '../../../../content/catalog'
 import { REGION_BY_ID, WORLD_BY_ID } from '../../../../content/curriculum'
 import type { Animal, ClipId, ItemId, SpeciesId, SpeechPart } from '../../../../engine/types'
+import { clockWords } from '../../../../speech/clock'
 import { openedClip, type CeremonyStep } from '../../../../meta/ceremonyQueue'
 import { totalPerler, totalXp, type Reward } from '../../../../meta/rewards'
 import { useMeta } from '../../../../state/useMeta'
@@ -24,7 +26,9 @@ import { useSpeech } from '../../../design/speech'
 import { usePress } from '../../../design/usePress'
 import { cx } from '../../../design/cx'
 import { ObjectsScene } from '../../../scenes/ObjectsScene'
-import { formatNumber } from '../../../task/answers'
+import { formatMoney, formatNumber } from '../../../task/answers'
+import { PieceArt, pieceScale } from '../../../task/faces'
+import { isPiece } from '../../../task/pay/logic'
 import { Buddy } from '../round/Buddy'
 import { AnimalPicture, ItemPicture } from '../map/art'
 import { isItemDrawn } from '../wardrobe/drawn'
@@ -157,7 +161,22 @@ function LearnedCard({ item }: { item: LearnedItem }) {
   )
 }
 
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** A time as the child learned to say it: "Klokken ni", "Halv ti", "Kvart i ni". */
+export function clockText(minutes: number): string {
+  const words = clockWords(minutes, 'analog')
+  return capital(minutes % 60 === 0 ? `klokken ${words}` : words)
+}
+
+/** A fact's words with its numbers as numerals: "Halvdelen af 8 er 4", "3 sider". */
+export function phraseText(parts: readonly SpeechPart[], textOf: (id: ClipId) => string): string {
+  const words = parts.map((p) => ('clip' in p ? textOf(p.clip) : 'num' in p ? formatNumber(p.num) : ''))
+  return capital(words.filter(Boolean).join(' '))
+}
+
 function LearnedPicture({ face }: { face: LearnedFace }) {
+  const speech = useSpeech()
   switch (face.t) {
     case 'eq':
       return <Equation terms={face.terms} size="answer" nowrap className="tv-learned__eq" />
@@ -174,6 +193,31 @@ function LearnedPicture({ face }: { face: LearnedFace }) {
             </span>
           )}
           <span className="tv-learned__n">{formatNumber(face.n)}</span>
+        </span>
+      )
+    case 'clock':
+      return (
+        <span className="tv-learned__fact">
+          <AnalogClock minutes={face.minutes} size={68} className="tv-learned__clock" />
+          <SpokenText parts={[{ clock: { minutes: face.minutes, style: 'analog', form: 'end' } }]} text={clockText(face.minutes)} silent className="tv-learned__phrase" />
+        </span>
+      )
+    case 'money':
+      return (
+        <span className="tv-learned__fact is-row">
+          {isPiece(face.ore) && (
+            <span className="tv-face__money tv-learned__money" style={pieceScale(52)}>
+              <PieceArt piece={face.ore} />
+            </span>
+          )}
+          <span className="tv-learned__n">{formatMoney(face.ore)}</span>
+        </span>
+      )
+    case 'phrase':
+      return (
+        <span className={cx('tv-learned__fact', face.figure && 'is-row')}>
+          {face.figure && <Shape2D shape={face.figure.shape} variant={face.figure.variant} mark={face.figure.mark} size={60} className="tv-learned__shape" />}
+          <SpokenText parts={face.parts} text={phraseText(face.parts, speech.text)} silent className="tv-learned__phrase" />
         </span>
       )
     case 'shape':
