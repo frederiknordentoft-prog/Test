@@ -166,8 +166,6 @@ export function PayView({ task, mode, given, onSubmit, onActivity }: TaskViewPro
     if (!open.current || laid.current.length === 0) return
     const value = payValue(task, laid.current)
     rememberTray(task.id, value, laid.current)
-    // one tick hands in once: a second tap before the round redraws finds the tray closed
-    open.current = false
     onSubmit(value)
   }
 
