@@ -1,6 +1,7 @@
 // Kontaktarkenes geometri-lints (SPEC §11 pipeline pkt. 5), kørt i Chromium via getBBox og
 // isPointInFill. scripts/sheets.mjs kalder window.__lint() for hver rute og fejler ved fund.
 import { SAFE } from '../art/rig/anchors'
+import { BAKKE, ENG, SKOV } from '../art/scenes/palette'
 
 export const BUDGET = { animal: 90, item: 25 } as const
 /** Genstandens bbox skal ligge inden for artens hull + 6 enheder. */
@@ -298,7 +299,7 @@ function lintCards(res: LintResult) {
 /** En verdensscene (kortets baggrund) må højst have så mange SVG-elementer, så kortskærmen holder sig under 1.500. */
 export const SCENE_BUDGET = 400
 
-/** Verdensscener (svg[data-scene]): elementbudget og ingen forbudte elementer. */
+/** Verdensscener (svg[data-scene]): elementbudget, ingen forbudte elementer, og scenen dækker hele sin ramme. */
 function lintScenes(res: LintResult) {
   for (const svg of document.querySelectorAll<SVGSVGElement>('svg[data-scene]')) {
     const label = svg.closest<HTMLElement>('[data-label]')?.dataset.label ?? `scene ${svg.dataset.scene}`
@@ -308,8 +309,165 @@ function lintScenes(res: LintResult) {
     if (total > SCENE_BUDGET) res.errors.push(`${label}: ${total} SVG-elementer i scenen (> ${SCENE_BUDGET})`)
     const bad = svg.querySelector('filter,mask,image,text,foreignObject')
     if (bad) res.errors.push(`${label}: forbudt element <${bad.tagName}> i scenen`)
+    // scenearkets ramme (data-scene-panel) skal være dækket helt af scenen: ingen papir rundt om tegningen
+    const frame = svg.closest<HTMLElement>('[data-scene-panel]')
+    if (frame) {
+      res.checks++
+      const a = frame.getBoundingClientRect()
+      const b = svg.getBoundingClientRect()
+      if (b.left > a.left + 0.5 || b.top > a.top + 0.5 || b.right < a.right - 0.5 || b.bottom < a.bottom - 0.5)
+        res.errors.push(`${label}: scenen dækker ikke hele rammen (${b.width.toFixed(0)}·${b.height.toFixed(0)} i ${a.width.toFixed(0)}·${a.height.toFixed(0)})`)
+    }
   }
 }
+
+// ---------------------------------------------------------------------------------------------
+// Tomme papirflader i scenearkene (review G2-r2 §5.1): det samlede scenark på 149 megapixel havde store flader,
+// som helsidesoptagelsen aldrig tegnede – papirfarve i stedet for himmel, bakker og skov. DOM'en kan ikke se det,
+// så scripts/sheets.mjs giver de optagne pixel (hvert panel for sig og oversigten) til lintScenePixels. En tegnet
+// scene har ingen store, helt ensfarvede og papirlyse flader: himlen er en gradient, og bakkernes flader er
+// farvede. Kun arkets egne farver (papir og cellens hvide) tæller som tomme; små hvide ting (blomster, uld) er under grænsen.
+
+/** Cellen (CSS-px), der tjekkes for at være helt ensfarvet. */
+export const BLANK_CELL = 8
+/** Den største sammenhængende ensfarvede, papirfarvede flade, et scenepanel må have (andel af panelet). */
+export const BLANK_MAX_SHARE = 0.015
+/** Rammens hjørner er runde (12 px) og viser arkets hvide celle: kanten tjekkes ikke. */
+const BLANK_INSET = 12
+
+export interface Rect {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+/** Et scenepanel på arket (CSS-px fra sidens øverste venstre hjørne) og skitsens flader, der ikke tæller. */
+export interface ScenePanel extends Rect {
+  name: string
+  skip: Rect[]
+}
+
+const rgbOf = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number]
+/**
+ * Det, en flade viser, når scenen ikke blev tegnet dér: arkets papir (#FFF8EC), cellens hvide og himlens nederste
+ * farve, der er flad under horisonten og ellers altid dækket af bakker og skov (en optagelse, hvor kun himlen kom med).
+ */
+const PAPER: readonly (readonly [number, number, number])[] = [[255, 248, 236], [255, 255, 255], ...[ENG.skyBottom, BAKKE.skyBottom, SKOV.skyBottom].map(rgbOf)]
+/** Papirfarvet (±3 pr. kanal). Scenernes egne lyse flader (fjerne bakker i start, himlens gradient, skyer) er det ikke. */
+export const paperLike = (r: number, g: number, b: number) => PAPER.some(([pr, pg, pb]) => Math.abs(r - pr) <= 3 && Math.abs(g - pg) <= 3 && Math.abs(b - pb) <= 3)
+
+/**
+ * Den største sammenhængende flade af helt ensfarvede, papirfarvede celler i `rect` (pixel) af et RGBA-billede med
+ * bredden W: andel af rektanglet og fladens boks (pixel). Celler, der rører et `skip`-rektangel, tæller ikke.
+ */
+export function blankArea(px: Uint8ClampedArray, W: number, rect: Rect, cell: number, skip: readonly Rect[] = []): { share: number; box: Rect | null } {
+  const cols = Math.floor(rect.w / cell)
+  const rows = Math.floor(rect.h / cell)
+  if (cols < 1 || rows < 1) return { share: 0, box: null }
+  const flat = new Uint8Array(cols * rows)
+  for (let j = 0; j < rows; j++)
+    for (let i = 0; i < cols; i++) {
+      const x0 = Math.round(rect.x + i * cell)
+      const y0 = Math.round(rect.y + j * cell)
+      const x1 = Math.round(rect.x + (i + 1) * cell)
+      const y1 = Math.round(rect.y + (j + 1) * cell)
+      if (skip.some((s) => x1 > s.x && x0 < s.x + s.w && y1 > s.y && y0 < s.y + s.h)) continue
+      const q = (y0 * W + x0) * 4
+      const [r, g, b] = [px[q], px[q + 1], px[q + 2]]
+      if (!paperLike(r, g, b)) continue
+      let same = true
+      for (let y = y0; y < y1 && same; y++)
+        for (let x = x0; x < x1; x++) {
+          const p = (y * W + x) * 4
+          if (px[p] !== r || px[p + 1] !== g || px[p + 2] !== b) {
+            same = false
+            break
+          }
+        }
+      if (same) flat[j * cols + i] = 1
+    }
+  let best = 0
+  let box: Rect | null = null
+  const stack: number[] = []
+  for (let c0 = 0; c0 < flat.length; c0++) {
+    if (flat[c0] !== 1) continue
+    flat[c0] = 2
+    stack.push(c0)
+    let n = 0
+    let [i0, j0, i1, j1] = [cols, rows, 0, 0]
+    while (stack.length) {
+      const c = stack.pop()!
+      n++
+      const i = c % cols
+      const j = (c - i) / cols
+      ;[i0, j0, i1, j1] = [Math.min(i0, i), Math.min(j0, j), Math.max(i1, i), Math.max(j1, j)]
+      for (const d of [i > 0 ? c - 1 : -1, i < cols - 1 ? c + 1 : -1, j > 0 ? c - cols : -1, j < rows - 1 ? c + cols : -1])
+        if (d >= 0 && flat[d] === 1) {
+          flat[d] = 2
+          stack.push(d)
+        }
+    }
+    if (n > best) {
+      best = n
+      box = { x: rect.x + i0 * cell, y: rect.y + j0 * cell, w: (i1 - i0 + 1) * cell, h: (j1 - j0 + 1) * cell }
+    }
+  }
+  return { share: best / (cols * rows), box }
+}
+
+/** Scenearkets paneler (data-scene-panel) og skitsens flader i dem, i CSS-px fra sidens øverste venstre hjørne. */
+export function scenePanels(): ScenePanel[] {
+  const page = (el: Element): Rect => {
+    const r = el.getBoundingClientRect()
+    return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }
+  }
+  return [...document.querySelectorAll<HTMLElement>('[data-scene-panel]')].map((el) => ({
+    name: el.dataset.scenePanel ?? '',
+    ...page(el),
+    skip: [...el.querySelectorAll('[data-scene-sketch] > *')].map(page),
+  }))
+}
+
+/**
+ * Tomme papirflader i en optagelse (PNG i base64) af scenearket: `panels` i CSS-px, `scale` pixel pr. CSS-px og
+ * `origin` optagelsens øverste venstre hjørne (CSS-px). Fejler, hvis et panel har en sammenhængende, helt ensfarvet
+ * og papirfarvet flade på over BLANK_MAX_SHARE af panelet.
+ */
+export async function lintScenePixels(png: string, panels: readonly ScenePanel[], scale: number, origin: { x: number; y: number }): Promise<{ errors: string[]; checks: number; maxShare: number }> {
+  const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob())
+  const canvas = document.createElement('canvas')
+  canvas.width = bmp.width
+  canvas.height = bmp.height
+  const g = canvas.getContext('2d', { willReadFrequently: true })!
+  g.drawImage(bmp, 0, 0)
+  const px = g.getImageData(0, 0, bmp.width, bmp.height).data
+  const toPx = (r: Rect, inset = 0): Rect => ({ x: (r.x - origin.x + inset) * scale, y: (r.y - origin.y + inset) * scale, w: (r.w - 2 * inset) * scale, h: (r.h - 2 * inset) * scale })
+  const errors: string[] = []
+  let maxShare = 0
+  for (const p of panels) {
+    const rect = toPx(p, BLANK_INSET)
+    rect.x = Math.max(0, rect.x)
+    rect.y = Math.max(0, rect.y)
+    rect.w = Math.min(rect.w, bmp.width - rect.x)
+    rect.h = Math.min(rect.h, bmp.height - rect.y)
+    const { share, box } = blankArea(px, bmp.width, rect, BLANK_CELL * scale, p.skip.map((s) => toPx(s)))
+    maxShare = Math.max(maxShare, share)
+    if (share > BLANK_MAX_SHARE && box) {
+      const at = (v: number, o: number) => (v / scale + origin[o === 0 ? 'x' : 'y'] - (o === 0 ? p.x : p.y)).toFixed(0)
+      errors.push(`${p.name}: tom papirflade på ${(share * 100).toFixed(1)} % af panelet ved (${at(box.x, 0)}–${at(box.x + box.w, 0)}, ${at(box.y, 1)}–${at(box.y + box.h, 1)})`)
+    }
+  }
+  return { errors, checks: panels.length, maxShare }
+}
+
+declare global {
+  interface Window {
+    __scenePanels?: typeof scenePanels
+    __lintScenePixels?: typeof lintScenePixels
+  }
+}
+// scripts/sheets.mjs kalder de to direkte i scenearkenes sider (efter optagelsen).
+if (typeof window !== 'undefined') Object.assign(window, { __scenePanels: scenePanels, __lintScenePixels: lintScenePixels })
 
 // ---------------------------------------------------------------------------------------------
 // Huller og sømme (review G1-r3, forbedring 1): figuren rasteriseres på magenta; baggrund, der ikke
