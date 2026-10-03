@@ -48,7 +48,18 @@ export interface PlannedRound {
   tasks: Task[]
   /** Keys asked for the first time: fold them into profile.newToday with bumpNewToday. */
   newKeys: { key: MasteryKey; skill: SkillId }[]
+  /**
+   * Share of the tasks asked on the stone's own keys (its skills within the region's limits, not the
+   * review-only ones), 0–1. With today's new keys used up a stone's round is filled from the region,
+   * the chain and review (A13), so a stone never played can be almost without its own material (QA2
+   * P2-1); a round counts for a stone only when at least half of it is its own (OWN_SHARE_MIN, SPEC
+   * A15). Practice, the hut, trials and the finale have no stone of their own to give: 1.
+   */
+  ownShare: number
 }
+
+/** A stone's round counts for the stone (stars, friend, chest, played) only with this share of its own keys. */
+export const OWN_SHARE_MIN = 0.5
 
 /** Fatigue: under 50 % right first tries over the last 10. Warm: the last 10 all right (and quick). */
 export function roundTone(recent: readonly boolean[], recentFast?: readonly boolean[]): RoundTone {
@@ -75,6 +86,7 @@ export function planRound(node: NodeDef | 'practice' | 'hut', profile: ProfileDo
 
   let mode: RoundMode
   let tasks: Task[]
+  let own: ReadonlySet<MasteryKey> | null = null
   if (node === 'practice') {
     mode = 'practice'
     tasks = practiceTasks(env)
@@ -86,7 +98,9 @@ export function planRound(node: NodeDef | 'practice' | 'hut', profile: ProfileDo
     tasks = trialTasks(node, { skills: reg, states: profile.keys, audioVerified: ctx.audioVerified, session, seed })
   } else {
     mode = 'round'
-    tasks = nodeTasks(node, env)
+    const built = nodeTasks(node, env)
+    tasks = built.tasks
+    own = built.own
   }
 
   const newKeys: PlannedRound['newKeys'] = []
@@ -96,7 +110,9 @@ export function planRound(node: NodeDef | 'practice' | 'hut', profile: ProfileDo
     seenKeys.add(t.masteryKey)
     if (!seenOrSeeded(profile.keys[t.masteryKey])) newKeys.push({ key: t.masteryKey, skill: t.skill })
   }
-  return { roundId, sessionId: ctx.sessionId, mode, nodeId, seed, tasks, newKeys }
+  const ownKeys = own
+  const ownShare = ownKeys && tasks.length > 0 ? tasks.filter((t) => ownKeys.has(t.masteryKey)).length / tasks.length : 1
+  return { roundId, sessionId: ctx.sessionId, mode, nodeId, seed, tasks, newKeys, ownShare }
 }
 
 interface Env {
@@ -128,7 +144,8 @@ export function withAnswers(keys: readonly KeyOption[], reg: SkillRegistry): Key
   })
 }
 
-function nodeTasks(node: NodeDef, env: Env): Task[] {
+/** A map stone's round, with the stone's own keys (for PlannedRound.ownShare). */
+function nodeTasks(node: NodeDef, env: Env): { tasks: Task[]; own: ReadonlySet<MasteryKey> } {
   const { profile, ctx } = env
   const tone = roundTone(profile.recentFirstTries, ctx.recentFast)
   const started = startedKeys(node.skills, env)
@@ -141,8 +158,10 @@ function nodeTasks(node: NodeDef, env: Env): Task[] {
   const regionKeys = lazy(() => (region ? withAnswers(onKeys(region.skills, env), env.reg) : []))
   const chainKeys = lazy(() => (region ? withAnswers(onKeys(chainSkills(region), env), env.reg) : []))
   const startedAll = lazy(() => withAnswers(started, env.reg))
-  return buildRound({
-    keys: withAnswers(keysForNode(node, keyCtx(env)), env.reg),
+  const keys = withAnswers(keysForNode(node, keyCtx(env)), env.reg)
+  const own = new Set(keys.filter((k) => !k.reviewOnly).map((k) => k.key))
+  const tasks = buildRound({
+    keys,
     states: profile.keys,
     roundIndex: profile.roundIndex,
     day: ctx.day,
@@ -166,6 +185,7 @@ function nodeTasks(node: NodeDef, env: Env): Task[] {
     flagged: flaggedIds(profile.misconceptions),
     newCaps: newCapsFor(profile.newToday, ctx.day),
   })
+  return { tasks, own }
 }
 
 /** The skills of the other regions in the region's chain (Urtårnet before Urtårnets top …). */
@@ -212,7 +232,7 @@ function practiceTasks(env: Env): Task[] {
     .filter((k) => seenOrSeeded(profile.keys[k.key])), env.reg)
   if (keys.length === 0) {
     const first = NODE_BY_ID['w0-tal10-l1']
-    return first ? nodeTasks(first, env) : []
+    return first ? nodeTasks(first, env).tasks : []
   }
   const tone = roundTone(profile.recentFirstTries, ctx.recentFast)
   return buildRound({

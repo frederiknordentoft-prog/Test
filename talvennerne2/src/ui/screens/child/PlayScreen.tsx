@@ -2,7 +2,9 @@
 // intro shows at once while the round module, the skill registry and the voice sprites load; then
 // the stored round is resumed (`resume`, a reload, the same stone again) or a new one is planned, and
 // RoundScreen takes over. ✕ → "Til kortet" stores the round and goes back; the end of the round
-// hands over to the ceremonies. Nothing heavy is imported statically, so the screen paints at once.
+// hands over to the ceremonies. A stone that cannot give its own material today starts no round:
+// the intro says so and offers Blandet øvelse (QA2 P2-1). Nothing heavy is imported statically, so
+// the screen paints at once.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ComponentType } from 'react'
 import { useNav } from '../../../app/nav'
@@ -16,7 +18,7 @@ import type { RoundHooks } from '../../../state/useRound'
 import type { RoundScreenProps } from './RoundScreen'
 import { NODE_BY_ID } from '../../../content/curriculum'
 import { PlayIntro } from './play/PlayIntro'
-import { exitRound, noteRound } from './play/flow'
+import { exitRound, noteRound, playNext } from './play/flow'
 import type { Start } from './play/prepare'
 import type { PlayTarget } from './map/nodes'
 
@@ -29,6 +31,7 @@ const PRELOAD_MAX_MS = 2500
 type Loaded =
   | { kind: 'ready'; start: Extract<Start, { kind: 'plan' | 'resume' }>; hooks: RoundHooks; Round: ComponentType<RoundScreenProps> }
   | { kind: 'closed' }
+  | { kind: 'tomorrow' }
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
@@ -41,7 +44,7 @@ async function load(target: PlayTarget, hutRegion: RegionId | null): Promise<Loa
   if (!profile) return { kind: 'closed' }
   const { sessionId, audioVerified } = useProfile.getState().context
   const start = prep.chooseStart(target, profile, { sessionId, audioVerified, now: Date.now(), hutRegion })
-  if (start.kind === 'closed') return { kind: 'closed' }
+  if (start.kind === 'closed' || start.kind === 'tomorrow') return { kind: start.kind }
   const hooks = prep.hooksFor(start, { audioVerified })
   await Promise.race([preloadSpeech(prep.roundStatements(start)).catch(() => undefined), wait(PRELOAD_MAX_MS)])
   const left = INTRO_MS - (performance.now() - t0)
@@ -81,6 +84,7 @@ export default function PlayScreen({ route }: ScreenProps<RouteOf<'round'>>) {
 
   const onClose = useCallback(() => useNav.getState().back(), [])
   const onStart = useCallback(() => setTapped(true), [])
+  const onPractice = useCallback(() => playNext('practice'), [])
 
   const buddy = profile?.animals.find((a) => a.uid === profile.buddyUid) ?? null
   // after a reload nothing has woken the sound yet: the intro waits for one tap
@@ -112,11 +116,12 @@ export default function PlayScreen({ route }: ScreenProps<RouteOf<'round'>>) {
       target={target}
       hutRegion={hutRegion}
       resume={!!route.resume || profile?.round?.nodeId === target}
-      state={loaded?.kind === 'closed' ? 'closed' : needTap ? 'tap' : 'loading'}
+      state={loaded?.kind === 'closed' || loaded?.kind === 'tomorrow' ? loaded.kind : needTap ? 'tap' : 'loading'}
       buddy={buddy}
       trial={trialKey ? (profile?.trials[trialKey] ?? null) : null}
       onStart={onStart}
       onClose={onClose}
+      onPractice={onPractice}
     />
   )
 }

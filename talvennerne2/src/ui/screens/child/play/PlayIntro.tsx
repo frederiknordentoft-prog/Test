@@ -1,7 +1,10 @@
 // The round's intro (SPEC §5.4, §10.5): where the child is going and the buddy waving, read aloud
 // while the round, the skill registry and the voice sprites load. After a reload the sound needs a
 // tap first, so the intro then waits for "Spil videre"; a stone without tasks says so and offers the
-// way back. ✕ is there from the first moment.
+// way back. A stone that cannot give its own material today (QA2 P2-1, SPEC A15) starts no round:
+// Pip says there is something new here tomorrow and offers Blandet øvelse or the map, the two
+// buttons the same size, neither in focus — no countdown, no clock, nothing that starts by itself
+// (SPEC §13). ✕ is there from the first moment.
 import { useEffect } from 'react'
 import type { Animal, RegionId, SpeechPart } from '../../../../engine/types'
 import { Button } from '../../../design/Button'
@@ -11,12 +14,13 @@ import { SpokenText } from '../../../design/SpokenText'
 import { useSpeech } from '../../../design/speech'
 import { TopBar } from '../../../shell/TopBar'
 import { Buddy } from '../round/Buddy'
+import { PipFigure } from '../onboarding/Pip'
 import { targetInfo, toneStyle, type PlayTarget } from '../map/nodes'
 import type { TrialState } from '../../../../engine/types'
 import { TRIAL_PASS } from '../../../../content/curriculum'
 import './play.css'
 
-export type IntroState = 'loading' | 'tap' | 'closed'
+export type IntroState = 'loading' | 'tap' | 'closed' | 'tomorrow'
 
 export interface PlayIntroProps {
   target: PlayTarget
@@ -29,9 +33,11 @@ export interface PlayIntroProps {
   trial?: TrialState | null
   onStart(): void
   onClose(): void
+  /** "Blandet øvelse" instead of a stone that has nothing new today. */
+  onPractice?(): void
 }
 
-export function PlayIntro({ target, hutRegion, resume, state, buddy, trial, onStart, onClose }: PlayIntroProps) {
+export function PlayIntro({ target, hutRegion, resume, state, buddy, trial, onStart, onClose, onPractice }: PlayIntroProps) {
   const speech = useSpeech()
   const info = targetInfo(target, hutRegion)
   const slot = info.node?.slot
@@ -49,6 +55,7 @@ export function PlayIntro({ target, hutRegion, resume, state, buddy, trial, onSt
   useEffect(() => {
     if (state === 'closed') speech.speak([{ clip: 's.play.empty' }])
     else if (state === 'tap') speech.speak([{ clip: 's.play.tap' }])
+    else if (state === 'tomorrow') speech.speak([{ clip: 's.play.tomorrow' }])
   }, [state, speech])
 
   const size = slot === 'finale' ? TRIAL_PASS.finale.size : TRIAL_PASS.trial.size
@@ -75,9 +82,16 @@ export function PlayIntro({ target, hutRegion, resume, state, buddy, trial, onSt
             </div>
           )}
         </div>
-        <div className="tv-play__buddy" aria-hidden>
-          <Buddy animal={buddy} mood={state === 'closed' ? 'think' : 'wave'} />
-        </div>
+        {state === 'tomorrow' ? (
+          <div className="tv-play__pip" data-play-tomorrow="">
+            <PipFigure talking className="tv-play__pipbird" />
+            <SpokenText as="p" clip="s.play.tomorrow" className="tv-play__say" />
+          </div>
+        ) : (
+          <div className="tv-play__buddy" aria-hidden>
+            <Buddy animal={buddy} mood={state === 'closed' ? 'think' : 'wave'} />
+          </div>
+        )}
         <div className="tv-play__foot">
           {state === 'loading' && (
             <span className="tv-play__dots" aria-hidden>
@@ -94,6 +108,12 @@ export function PlayIntro({ target, hutRegion, resume, state, buddy, trial, onSt
               <SpokenText as="p" clip="s.play.empty" className="tv-play__note" />
               <Button clip="s.ui.toMap" icon="map" variant="secondary" onClick={onClose} data-play-back="" />
             </>
+          )}
+          {state === 'tomorrow' && (
+            <div className="tv-play__choices">
+              {onPractice && <Button clip="s.map.practice" icon="retry" variant="primary" block onClick={onPractice} data-play-practice="" />}
+              <Button clip="s.ui.toMap" icon="map" variant="secondary" block onClick={onClose} data-play-back="" />
+            </div>
           )}
         </div>
       </div>

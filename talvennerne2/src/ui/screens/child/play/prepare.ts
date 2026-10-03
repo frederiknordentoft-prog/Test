@@ -5,7 +5,7 @@
 // registry and the round builder, which the first screen never needs.
 import { NODE_BY_ID } from '../../../../content/curriculum'
 import { learningDay } from '../../../../engine/learningDay'
-import { goldenFor, planRound } from '../../../../engine/plan'
+import { OWN_SHARE_MIN, goldenFor, planRound } from '../../../../engine/plan'
 import { factsOf, skillRegistry, type SkillRegistry } from '../../../../engine/registry'
 import type {
   Fact, ProfileDoc, RegionId, RoundSnapshot, SkillDef, SpeechPart, Task,
@@ -22,6 +22,12 @@ export type Start =
   | { kind: 'plan'; plan: RoundPlan; hutRegion: RegionId | null }
   /** Locked, a trial still resting, no lit hut, or nothing to ask yet: back to the map. */
   | { kind: 'closed' }
+  /**
+   * A stone never played that cannot give its own material today: today's new keys (and the
+   * taste, A13) are used up, so less than half of its round would be its own (QA2 P2-1, SPEC A15).
+   * No round starts; the intro offers Blandet øvelse and the way back — no countdown, no clock.
+   */
+  | { kind: 'tomorrow' }
 
 export interface StartContext {
   sessionId: string
@@ -54,9 +60,10 @@ export function chooseStart(target: PlayTarget, profile: ProfileDoc, ctx: StartC
     ...(hutRegion ? { hutRegion, hutKeys: hutKeysFor(profile, hutRegion) } : {}),
   })
   if (plan.tasks.length === 0) return { kind: 'closed' }
+  if (typeof node !== 'string' && (profile.nodes[node.id]?.plays ?? 0) === 0 && plan.ownShare < OWN_SHARE_MIN) return { kind: 'tomorrow' }
   // New keys are counted into profile.newToday by the data layer when they are first answered
   // (useProfile.recordAnswer); folding plan.newKeys in here as well would count them twice.
-  const { newKeys: _newKeys, ...roundPlan } = plan
+  const { newKeys: _newKeys, ownShare: _ownShare, ...roundPlan } = plan
   return { kind: 'plan', plan: roundPlan, hutRegion }
 }
 

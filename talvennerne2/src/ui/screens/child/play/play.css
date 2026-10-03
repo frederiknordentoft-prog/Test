@@ -104,6 +104,125 @@
   height: auto;
 }
 
+/* a stone with nothing new today: Pip says so beside a bubble (QA2 P2-1) */
+.tv-play__pip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 460px);
+  animation: tv-play-hop var(--dur-slow) var(--ease-spring) 120ms both;
+}
+.tv-play__pipbird {
+  flex: none;
+  width: 96px;
+}
+.tv-play__say {
+  position: relative;
+  flex: 1;
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  font-size: var(--text-body);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--color-ink);
+  text-align: left;
+}
+.tv-play__say::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -9px;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  background: var(--color-card);
+  transform: rotate(45deg);
+}
+.tv-play__choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: min(100%, 460px);
+}
+/* Pip's colours (as in onboarding/first-start.css, which this screen does not load) */
+.tv-play .tv-pip {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.tv-play .tv-pip__shadow {
+  fill: var(--color-line);
+}
+.tv-play .tv-pip__bird {
+  transform-origin: 60px 112px;
+}
+.tv-play .tv-pip.is-talking .tv-pip__bird {
+  animation: tv-play-pip 420ms ease-in-out 6 alternate;
+}
+.tv-play .tv-pip__body {
+  fill: var(--color-wood);
+  stroke: var(--color-wood-edge);
+  stroke-width: 3.2;
+}
+.tv-play .tv-pip__cap,
+.tv-play .tv-pip__wing {
+  fill: var(--color-wood-grain);
+}
+.tv-play .tv-pip__wing {
+  stroke: var(--color-wood-edge);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.tv-play .tv-pip__tuft,
+.tv-play .tv-pip__beak-low {
+  fill: none;
+  stroke: var(--color-wood-edge);
+  stroke-linecap: round;
+}
+.tv-play .tv-pip__tuft {
+  stroke-width: 3;
+}
+.tv-play .tv-pip__beak-low {
+  stroke-width: 2;
+}
+.tv-play .tv-pip__belly {
+  fill: var(--color-paper);
+}
+.tv-play .tv-pip__eye {
+  fill: var(--color-ink);
+}
+.tv-play .tv-pip__glint {
+  fill: var(--color-card);
+}
+.tv-play .tv-pip__cheek {
+  fill: var(--color-heart);
+  opacity: 0.35;
+}
+.tv-play .tv-pip__beak {
+  fill: var(--color-warm);
+  stroke: var(--color-wood-edge);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.tv-play .tv-pip__feet {
+  fill: none;
+  stroke: var(--color-warm);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+}
+@keyframes tv-play-pip {
+  from {
+    transform: translateY(0) rotate(-2deg);
+  }
+  to {
+    transform: translateY(-3px) rotate(2deg);
+  }
+}
+
 .tv-play__foot {
   display: flex;
   flex-direction: column;
@@ -226,6 +345,8 @@
 :root[data-calm] .tv-play-round,
 :root[data-calm] .tv-play__card,
 :root[data-calm] .tv-play__buddy,
+:root[data-calm] .tv-play__pip,
+:root[data-calm] .tv-play .tv-pip__bird,
 :root[data-calm] .tv-play__dots span {
   animation: none !important;
 }
@@ -233,6 +354,8 @@
   .tv-play-round,
   .tv-play__card,
   .tv-play__buddy,
+  .tv-play__pip,
+  .tv-play .tv-pip__bird,
   .tv-play__dots span {
     animation: none !important;
   }
