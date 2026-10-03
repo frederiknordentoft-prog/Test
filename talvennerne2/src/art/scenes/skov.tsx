@@ -1308,11 +1308,11 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
         )
       })}
       {/* lag 1: de fjerne, blålilla skovbakker */}
-      {layer(L.far, R.far, 'farHill', h * 0.04, 0.12)}
+      {layer(L.far, R.far, 'farHill', h * 0.04, 0.1)}
       <path d={farCrowns} fill={g('farForest')} />
       {at(L.mountain, <Mountain t={T.mountain} />)}
       {/* lag 2: skovbakken med de høje kroner og tårnet, der rager op over dem */}
-      {layer(L.mid, R.mid, 'midHill', h * 0.1, 0.17)}
+      {layer(L.mid, R.mid, 'midHill', h * 0.1, 0.14)}
       {at(L.tower, <Tower t={T.tower} />)}
       {forest(rowA, 'a')}
       <path d={groveTrunks} fill={g('trunk')} stroke={g('trunkDark')} strokeWidth={1.2 * K} />
@@ -1326,7 +1326,7 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
         {shafts.map((s, i) => <path key={i} d={s.d} fill={g(s.c)} opacity={n(0.13 + 0.17 * progress)} />)}
       </g>
       {/* lag 3: engen ved søen og forgrunden */}
-      {layer(L.near, R.near, 'nearHill', h * 0.12, 0.19)}
+      {layer(L.near, R.near, 'nearHill', h * 0.12, 0.16)}
       <path d={join(...spots.filter((_, i) => i % 2 === 0).map(([x, y, r]) => circle(x, y, r)))} fill={SKOV.flowerWhite} opacity={0.9} />
       <path d={join(...spots.filter((_, i) => i % 2 === 1).map(([x, y, r]) => circle(x, y, r)))} fill={g('flowerYellow')} />
       <path d={castNear} fill={SKOV.castShadow} opacity={0.22} />
