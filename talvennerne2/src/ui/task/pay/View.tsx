@@ -18,7 +18,7 @@ import { CheckButton } from '../CheckButton'
 import { hop } from '../motion'
 import { inside, usePointerDrag } from '../usePointerDrag'
 import type { FaceProps, FaceSize, TaskViewProps } from '../types'
-import { MAX_TRAY, groupPieces, isCoinPiece, payValue, piecesOf, purseOf, rememberTray, rememberedTray } from './logic'
+import { groupPieces, isCoinPiece, payValue, piecesOf, purseOf, rememberTray, rememberedTray, trayWith, trayWithout } from './logic'
 import type { Piece } from './logic'
 import { PieceArt } from '../faces'
 import './pay.css'
@@ -67,6 +67,10 @@ export function PayView({ task, mode, given, onSubmit, onActivity }: TaskViewPro
   const speech = useSpeech()
   const purse = useMemo(() => purseOf(task), [task])
   const [tray, setTray] = useState<Piece[]>([])
+  // The tray as the child has laid it, at once (QA2 P3-15): taps, drags and the tick read and write
+  // this, never a render's copy, so quick taps between two renders each count exactly once and the
+  // tick hands in what lies in the tray. `setTray` only redraws it.
+  const laid = useRef<Piece[]>([])
   const [drag, setDrag] = useState<{ id: DragId; dx: number; dy: number } | null>(null)
   /** A coin from the purse hovers over the tray ('in'), or one from the tray is dragged out ('out'). */
   const [hover, setHover] = useState<'in' | 'out' | null>(null)
@@ -74,6 +78,8 @@ export function PayView({ task, mode, given, onSubmit, onActivity }: TaskViewPro
   const trayRef = useRef<HTMLDivElement>(null)
   const flight = useRef<Flight | null>(null)
   const input = mode === 'input'
+  const open = useRef(input)
+  open.current = input
   const settled = mode === 'correct' || mode === 'wrong'
   const shown = settled && given !== null && tray.length === 0 ? piecesOf(task, given) : tray
   const sum = tray.reduce((s, v) => s + v, 0)
@@ -90,24 +96,27 @@ export function PayView({ task, mode, given, onSubmit, onActivity }: TaskViewPro
   const topOf = (piece: Piece) =>
     root.current?.querySelector<HTMLElement>(`[data-tray-group="${piece}"] [data-tray-piece]:last-child`) ?? null
 
+  const lay = (next: Piece[]) => {
+    laid.current = next
+    setTray(next)
+  }
+
   const add = (piece: Piece, from: DOMRect | null) => {
-    if (!input || tray.length >= MAX_TRAY) return
+    const next = open.current ? trayWith(laid.current, piece) : null
+    if (!next) return
     onActivity()
     playSfx('moent')
     flight.current = from ? { selector: `[data-tray-group="${piece}"] [data-tray-piece]:last-child`, from } : null
-    setTray((t) => [...t, piece])
+    lay(next)
   }
 
   const remove = (piece: Piece, from: DOMRect | null) => {
-    if (!input || !tray.includes(piece)) return
+    const next = open.current ? trayWithout(laid.current, piece) : null
+    if (!next) return
     onActivity()
     playSfx('fjern')
     flight.current = from ? { selector: `[data-source="${piece}"] .tv-pay__face`, from } : null
-    setTray((t) => {
-      const next = [...t]
-      next.splice(next.lastIndexOf(piece), 1)
-      return next
-    })
+    lay(next)
   }
 
   const { bind } = usePointerDrag<DragId>({
@@ -154,8 +163,11 @@ export function PayView({ task, mode, given, onSubmit, onActivity }: TaskViewPro
   }
 
   const submit = () => {
-    const value = payValue(task, tray)
-    rememberTray(task.id, value, tray)
+    if (!open.current || laid.current.length === 0) return
+    const value = payValue(task, laid.current)
+    rememberTray(task.id, value, laid.current)
+    // one tick hands in once: a second tap before the round redraws finds the tray closed
+    open.current = false
     onSubmit(value)
   }
 
@@ -206,11 +218,12 @@ export function PayView({ task, mode, given, onSubmit, onActivity }: TaskViewPro
         </div>
         <CheckButton valid={tray.length > 0} stateKey={tray.join(',')} enabled={input} taskId={task.id} onCheck={submit} />
       </div>
-      {task.scaffold && sum > 0 && (
+      {/* the sum's place is kept from the start, so the purse never moves when it appears (P3-15) */}
+      {task.scaffold && (
         <SpokenText
           parts={[{ clip: 's.kind.pay.inTray' }, { money: { ore: sum, form: 'end' } }]}
           text={formatMoney(sum)}
-          className="tv-pay__sum"
+          className={cx('tv-pay__sum', sum === 0 && 'is-zero')}
         />
       )}
     </div>
