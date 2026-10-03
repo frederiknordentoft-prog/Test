@@ -15,10 +15,19 @@ export const FIT_REFERENCE: Record<Exclude<ScaleBy, 'fixed'>, number> = {
 export const EAR_GAP_FACTOR = 1.15
 /** Højst 10 % af (genstand, art)-par må have en overskrivning. */
 export const MAX_OVERRIDE_SHARE = 0.1
+/**
+ * En hat mellem ørerne ('under') på en art med horn (review G1-r4, T6): ører og horn ligger over hatte
+ * (SPEC §7), så hatten bevarer sin fulde størrelse og vippes mod venstre øre bag hornet, og kvasten står
+ * tydeligt ved siden af hornets spids på alle stadier. `shift` er andelen af vejen fra hattens anker mod
+ * venstre ørebase, `rot` vippet i grader.
+ */
+export const UNDER_BESIDE_HORN = { shift: 0.27, rot: -20 } as const
 
 export interface Wearer {
   id: CreatureId
   family: Family
+  /** Artens dele (SpeciesDef.parts): et horn vipper hatte mellem ørerne til siden. */
+  parts?: { Horn?: unknown }
 }
 
 type FitItem = Pick<ItemDef, 'slot' | 'fit'>
@@ -34,6 +43,12 @@ export function fitItem(item: FitItem, a: AnchorSet, who: Wearer): FitResult {
   let rot = item.slot === 'hand' ? a.handRot : 0
   const anchor = a[f.anchor]
   let { x, y } = anchor
+  // 2b. En hat mellem ørerne på en art med horn vippes mod venstre øre bag hornet (fuld størrelse).
+  if (earMode === 'under' && item.slot === 'head' && who.parts?.Horn) {
+    x += UNDER_BESIDE_HORN.shift * (a.earBaseL.x - x)
+    y += UNDER_BESIDE_HORN.shift * (a.earBaseL.y - y)
+    rot += UNDER_BESIDE_HORN.rot
+  }
   // 4 (katalogreglen): overskrivninger slås op pr. art og derefter pr. familie.
   const key = f.overrides?.[who.id] ? who.id : f.overrides?.[who.family] ? who.family : null
   if (key) {
