@@ -13,6 +13,8 @@
 //   operand        the number on one of the coins
 //   near           ±1 kr, one coin left out or counted twice
 //   other          ±10 kr
+// A typed amount with its kroner digits swapped (47 kr typed as 74) is digitSwap, found by the engine's
+// global check in the kroner the child types (misconceptions.ts swappedAnswer), not a candidate here.
 // A9: when the number of coins is also the number on a coin (two 2-krone coins, or 5 + 2), the child
 // may have repeated the coin rather than counted the coins: that value is 'ambiguous', never evidence.
 import type { Fact, FamilyDef, HintSpec, Rng, SpeechPart, TaskKind } from '../../types'

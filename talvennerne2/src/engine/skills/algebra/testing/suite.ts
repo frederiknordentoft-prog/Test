@@ -46,9 +46,13 @@ export interface SuiteOptions extends ContractOptions {
   ceilings: Partial<Record<TaskKind, 2 | 3 | 5>>
 }
 
-/** A value fits a task when it has the answer's type (a set answer takes '|'-joined strings). */
+/**
+ * A value fits a task when the child can give it there: it has the answer's type (a set answer takes
+ * '|'-joined strings), and a share task takes only the share or −1 (the share view hands in nothing else).
+ */
 const fitsTask = (t: Task, v: AnswerValue) =>
-  typeof t.answer === 'number' ? typeof v === 'number' && v >= 0 : typeof v === 'string' && (t.answerType === 'set' || !v.includes('|'))
+  t.kind === 'share' ? v === t.answer || v === -1
+    : typeof t.answer === 'number' ? typeof v === 'number' && v >= 0 : typeof v === 'string' && (t.answerType === 'set' || !v.includes('|'))
 
 export function algebra2Suite(def: SkillDef, opts: SuiteOptions): void {
   skillContract(def, opts)

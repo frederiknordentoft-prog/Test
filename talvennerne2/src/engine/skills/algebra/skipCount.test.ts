@@ -75,6 +75,21 @@ describe('skipCount', () => {
     }
   })
 
+  it('keeps the palette inside the family’s numbers, also where the row ends at the top', () => {
+    for (const { fact, task } of tasks) {
+      if (task.kind !== 'fillSlots') continue
+      const out = task.options.filter((o) => typeof o !== 'number' || o < task.range[0] || o > task.range[1])
+      expect(out, `${fact.id} [${task.options}]`).toEqual([])
+    }
+    // the second answer is the top: no 101, 1001 or 301 to tap
+    const sorted = (id: string) => [...taskOf(def, id, 'fillSlots').options].sort((a, b) => Number(a) - Number(b))
+    expect(sorted('skc:step10:60:3')).toEqual([81, 82, 90, 91, 100])
+    expect(sorted('skc:step100:500:4')).toEqual([801, 802, 900, 901, 1000])
+    expect(sorted('skc:step25:200:3')).toEqual([251, 252, 275, 276, 300])
+    // below the top nothing changes: one past each answer is still there
+    expect(sorted('skc:step10:50:3')).toEqual([71, 72, 80, 81, 90, 91])
+  })
+
   it('reads the row continued by one as skipStepOne on every kind (5, 10, 15 → 16; back: one less)', () => {
     expect(classifyAnswer(taskOf(def, 'skc:step5:5:3', 'keypad'), 16)).toBe('skipStepOne')
     expect(classifyAnswer(taskOf(def, 'skc:step5:5:3', 'fillSlots'), '16|17')).toBe('skipStepOne')

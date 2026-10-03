@@ -220,10 +220,11 @@ describe('skipCount oracle', () => {
     expect(first(diagnosticCards(built, (b) => { const r = rowOf(b.fact); return [r.row[r.row.length - 1] + Math.sign(r.step)] }, explain))).toEqual([])
   })
 
-  it.fails('keeps every palette number inside the skill’s range (step10/step10offset 0–100, step100 0–1000, step25 0–300)', () => {
-    // GENERATOR BUG (skipCount.ts palette()): the near numbers are the two answers + 1, so when the second
-    // answer is the family's top the palette offers one past it: skc:step10:60:3 [81, 82, 90, 91, 100, 101],
-    // skc:step100:500:4 [801, 802, 900, 901, 1000, 1001], skc:step25:200:3 [251, 252, 275, 276, 300, 301].
+  it('keeps every palette number inside the skill’s range (step10/step10offset 0–100, step100 0–1000, step25 0–300)', () => {
+    // GENERATOR BUG (skipCount.ts palette()) — Rettet: the near numbers are the two answers + 1, so when the
+    // second answer is the family's top the palette offered one past it: skc:step10:60:3 [81, 82, 90, 91, 100,
+    // 101], skc:step100:500:4 [801, 802, 900, 901, 1000, 1001], skc:step25:200:3 [251, 252, 275, 276, 300, 301].
+    // Now the palette keeps to the family's range (five numbers there, the skipStepOne pair among them).
     const problems: string[] = []
     for (const { fact, task } of built) {
       if (task.kind !== 'fillSlots') continue

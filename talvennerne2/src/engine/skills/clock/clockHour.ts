@@ -4,12 +4,13 @@
 // Kinds: choice ("Find uret, der viser klokken tre.", three clocks) and clockSet (production, step 60:
 // the minute hand snaps to twelve, so every clock the child can set is a whole hour).
 // Wrong clocks: the hands swapped (handsSwapped: 3:00 → 12:15, the long hand on the hour and the
-// short hand on twelve; only on cards, since a 60-minute step cannot set it) and the hour before
-// and after ('near'). The named hour is the answer itself, so there is no 'operand' clock.
+// short hand on twelve; only on cards, since a 60-minute step cannot set it — candidatesFor leaves
+// it out of clockSet, so a dial task is no opportunity for it) and the hour before and after
+// ('near'). The named hour is the answer itself, so there is no 'operand' clock.
 import type { Fact, HintSpec, TaskKind } from '../../types'
 import type { SkillModule } from '../types'
 import { hintOf, metaOf, say } from '../number/kit'
-import { HOUR_ORDER, clockAt, clockCandidates, clockPrompt, clockQuestion, hourAt, hourNum, swappedHands } from './kit'
+import { HOUR_ORDER, clockAt, clockCandidates, clockCandidatesFor, clockPrompt, clockQuestion, hourAt, hourNum, swappedHands } from './kit'
 
 const meta = metaOf('clockHour')
 
@@ -52,5 +53,6 @@ export default {
   range: () => [0, 719],
   speech: (f: Fact, kind: TaskKind) => clockQuestion(Number(f.answer), kind),
   candidates,
+  candidatesFor: (f: Fact, kind: TaskKind) => clockCandidatesFor(candidates(f), kind, 60),
   hint: (f, tag) => hint(f, tag),
 } satisfies SkillModule

@@ -14,7 +14,7 @@
 // 'ambiguous' (A9): 1 · 5 → 1 (1², or the 1 of the question).
 // Hint: skip count by the table's number — "Tæl i spring med fem. Fem. Ti. Femten. Tre gange fem giver
 // femten." — with the array (products to 30) or the hops on a number line. tableNeighbour says to count
-// the hops first; mulAsAdd that the numbers are not added.
+// the hops first (one of SPEC §4.3's eight animated hints); mulAsAdd that the numbers are not added.
 import type { ErrorTag, Fact, HintSpec, HintVisual, SkillModule, SpeechPart } from '../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
 import { equationSpeech } from '../../../speech/equation'
@@ -57,7 +57,7 @@ function hint(f: Fact, tag: ErrorTag | null): HintSpec {
   const visual: HintVisual = x <= 30
     ? { scene: 'array', rows: n, cols: t }
     : { scene: 'line', min: 0, max: Math.ceil(x / 10) * 10, hops: Array.from({ length: n + 1 }, (_, i) => i * t) }
-  if (tag === 'tableNeighbour') return hintOf([say('hint.mul2510.countHops'), ...words], visual, 'tableNeighbour')
+  if (tag === 'tableNeighbour') return hintOf([say('hint.mul2510.countHops'), ...words], visual, 'tableNeighbour', true)
   if (tag === 'mulAsAdd') return hintOf([say('hint.muldiv.notPlus'), ...words], visual, 'mulAsAdd')
   return hintOf(words, visual)
 }

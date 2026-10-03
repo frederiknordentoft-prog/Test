@@ -15,6 +15,8 @@
 //                      hundred is the same idea)
 //   operand            the price or what was paid
 //   near               ±1 kr, ±10 kr
+// A typed amount with its kroner digits swapped (63 kr typed as 36) is digitSwap, found by the engine's
+// global check in the kroner the child types (misconceptions.ts swappedAnswer), not a candidate here.
 // A9: a misconception that lands on a number from the question is 'ambiguous' — 100 − 55 made up
 // digit by digit is 55, the price itself.
 import type { Fact, FamilyDef, HintSpec, Rng, SpeechPart, TaskKind } from '../../types'

@@ -65,6 +65,16 @@ export function clockCandidates(answer: number, entries: Iterable<readonly [valu
   return tagged(dial(answer), out)
 }
 
+/**
+ * The wrong clocks a presentation can actually be given (SkillExtras.candidatesFor). Cards can show any
+ * clock; the clockSet dial snaps the minute hand to the skill's step, so a clock between the steps — the
+ * swapped hands, 12:15 on a whole-hour dial — can never be set there. Counting it as an opportunity
+ * anyway would leave its misconception unflaggable (SPEC §4.3: a flag needs production hits).
+ */
+export function clockCandidatesFor(all: readonly Candidate[], kind: TaskKind, step: 60 | 30 | 15): Candidate[] {
+  return kind === 'clockSet' ? all.filter((c) => typeof c.value === 'number' && dial(c.value) % step === 0) : [...all]
+}
+
 /** clockSet sets the time on an empty dial; choice asks with the voice only. */
 export function clockPrompt(kind: TaskKind, step: 60 | 30 | 15): Prompt {
   return kind === 'clockSet' ? { scene: 'clock', minutes: null, step, h24: false } : { scene: 'hear' }

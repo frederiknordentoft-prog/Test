@@ -12,8 +12,8 @@
 // Kinds: choice and keypad ask for the next number; fillSlots (production) for the next two, from a
 // palette of five or six numbers (at least 5² = 25 ways to fill, SPEC §3.3). The fact's answer is the
 // next number; the fillSlots answer is "<next>|<after>" (the `answer` hook).
-// Ranges (cards and keypad): step2 0–40, step5/step10/step10offset/back10 0–100, step100 0–1000,
-// step25 0–300.
+// Ranges (cards, keypad and the palette): step2 0–40, step5/step10/step10offset/back10 0–100, step100
+// 0–1000, step25 0–300.
 // Wrong answers (pædagogik §3.2): skipStepOne — the row continued by one, not the step (5, 10, 15 → 16;
 // back10: one less; fillSlots: "16|17"), the numbers of the row ('operand'), and near misses (±1, ±2,
 // one step too far, the two numbers swapped). The skipStepOne value is never a number of the row.
@@ -99,13 +99,19 @@ function speech(f: Fact, kind: TaskKind): SpeechPart[] {
   ]
 }
 
-/** The fillSlots palette: both answers, the skipStepOne pair and near misses (5 or 6 numbers). */
+/**
+ * The fillSlots palette: both answers, the skipStepOne pair and near misses one past each answer (5 or 6
+ * numbers), all inside the family's numbers (0 to its top), like the cards and the keypad. A row whose
+ * second answer is the top (skc:step10:60:3 → 90, 100) leaves out the number past it, as back10 leaves out
+ * the one below 0: five numbers, the skipStepOne pair always among them (it lies before the answers).
+ */
 function palette(r: Row): number[] {
   const s = Math.sign(r.step)
   const last = next(r, 0)
   const x = next(r, 1)
   const y = next(r, 2)
-  return [...new Set([x, y, last + s, last + 2 * s, x + s, y + s])].filter((v) => v >= 0).sort((p, q) => p - q)
+  const inside = (v: number) => v >= 0 && v <= TOP[r.family]
+  return [...new Set([x, y, last + s, last + 2 * s, x + s, y + s])].filter(inside).sort((p, q) => p - q)
 }
 
 function candidates(f: Fact): Candidate[] {

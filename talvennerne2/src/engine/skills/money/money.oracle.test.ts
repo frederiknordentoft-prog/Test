@@ -540,10 +540,12 @@ describe('coins and notes on the cards are drawn as money (the pieces give the a
 // ─── SPEC §4.1 globalChecks on a kroner keypad ──────────────────────────────
 
 describe('digitSwap on a kroner keypad (SPEC §4.1 globalChecks)', () => {
-  // ORK2b finding: a keypad answer of 13 kr or more typed back to front (47 kr typed as 74) is SPEC §4.1's
-  // digitSwap slip, but the engine looks at the answer in øre (4700, whose last digit is 0) and never sees a
-  // swap: misconceptions.ts digitSwapPossible() → digitSwapOf(4700) is null, so 7400 is 'other'. Neither
-  // countCoins nor change lists the swapped amount as a candidate of its own.
+  // ORK2b finding — Rettet: a keypad answer of 13 kr or more typed back to front (47 kr typed as 74) is SPEC
+  // §4.1's digitSwap slip, but the engine looked at the answer in øre (4700, whose last digit is 0) and never
+  // saw a swap: misconceptions.ts digitSwapPossible() → digitSwapOf(4700) was null, so 7400 was 'other'. Now
+  // misconceptions.ts swappedAnswer() reverses the kroner the child types (digitSwapOf(answer / 100) · 100)
+  // and checks the numbers on screen in kroner; digitSwapPossible, swapDisambiguated, classifyAnswer and
+  // detectableOf all use it.
   const swaps = (id: SkillId, explainOf: (f: Fact, t: Task, v: number) => WhyB) => {
     const def = registeredSkill(id)
     const out: string[] = []
@@ -564,10 +566,10 @@ describe('digitSwap on a kroner keypad (SPEC §4.1 globalChecks)', () => {
     expect(typedSwap(fake, 7400, pile.coins)).toBe(true)
     expect(explainPile(pile, fake, 7400)).toEqual({ mis: [], operand: false, swap: true })
   })
-  it.fails('countCoins: a typed amount with its kroner digits swapped is digitSwap', () => {
+  it('countCoins: a typed amount with its kroner digits swapped is digitSwap', () => {
     expect(first(swaps('countCoins', (f, t, v) => explainPile(parsePile(f.id)!, t, v)))).toEqual([])
   })
-  it.fails('change: a typed amount with its kroner digits swapped is digitSwap', () => {
+  it('change: a typed amount with its kroner digits swapped is digitSwap', () => {
     expect(first(swaps('change', (f, t, v) => explainChange(parseSale(f.id)!, t, v)))).toEqual([])
   })
 })

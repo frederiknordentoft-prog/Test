@@ -7,7 +7,9 @@
 //   halfPastNext     t + 60    halv tre set as 3:30 ("tre og en halv")             concept, animated hint
 //   hourHandMisread  t − 60    1:30: its short hand, midway to two, read as the next number (two)
 //   handsSwapped     ≈ 6:13    the long hand midway between two and three, the short one on six
-//                              (left out where the swap looks like the answer: halv seks, halv syv)
+//                              (left out where the swap looks like the answer: halv seks, halv syv;
+//                              cards only: the dial's half-hour step cannot set it, so candidatesFor
+//                              leaves it out of clockSet)
 //   operand          H:00      the number heard ("tre") as a whole hour
 //   near             t − 30    the hour before (2:00)
 // None of them coincide (A9 never has to step in): t ± 60 are half hours, the swap is never on a
@@ -15,7 +17,7 @@
 import type { Fact, HintSpec, SpeechPart, TaskKind } from '../../types'
 import type { SkillModule } from '../types'
 import { hintOf, metaOf, say } from '../number/kit'
-import { HOUR_ORDER, clockCandidates, clockMove, clockPrompt, clockQuestion, clockSays, dial, hourAt, hourNum, prevHour, swappedHands } from './kit'
+import { HOUR_ORDER, clockCandidates, clockCandidatesFor, clockMove, clockPrompt, clockQuestion, clockSays, dial, hourAt, hourNum, prevHour, swappedHands } from './kit'
 
 const meta = metaOf('clockHalf')
 
@@ -77,5 +79,6 @@ export default {
   range: () => [0, 719],
   speech: (f: Fact, kind: TaskKind) => clockQuestion(Number(f.answer), kind),
   candidates,
+  candidatesFor: (f: Fact, kind: TaskKind) => clockCandidatesFor(candidates(f), kind, 30),
   hint: (f, tag) => hint(f, tag),
 } satisfies SkillModule

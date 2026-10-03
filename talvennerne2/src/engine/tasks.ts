@@ -108,6 +108,23 @@ export function defaultOptionClip(value: AnswerValue): ClipId {
 const digitsOf = (n: number): number => String(Math.floor(Math.abs(n))).length
 const numify = (s: string): AnswerValue => (/^\d+$/.test(s) ? Number(s) : s)
 
+/** One turn of the analog dial in minutes. */
+const DIAL = 720
+
+/**
+ * Where a clockSet dial starts (Task.dialStart): one of the times on the dial's step, drawn evenly
+ * from all of them but the answer. A dial that started on the answer would hand it over for a touch
+ * and a tick; any other leaning would tell the child something about it. The step is the clock
+ * prompt's; without one, a whole hour (on every step a dial can have).
+ */
+function dialStartOf(prompt: Prompt, answer: AnswerValue, rng: Rng): number {
+  const step = prompt.scene === 'clock' ? prompt.step : 60
+  const at = typeof answer === 'number' ? ((Math.round(answer) % DIAL) + DIAL) % DIAL : null
+  const free: number[] = []
+  for (let m = 0; m < DIAL; m += step) if (m !== at) free.push(m)
+  return rng.pick(free)
+}
+
 interface Tagged { key: string; value: AnswerValue; tag: ErrorTag }
 
 export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, occurrence: number, ctx: TaskContext = {}): BuiltTask {
@@ -203,6 +220,8 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
   const contrast = rawContrast === 'conflict' || rawContrast === 'congruent' ? rawContrast : undefined
   const guessFloor = ext.guessFloor ? ext.guessFloor(fact, kind) : 0
   const scaffold = (ctx.box ?? 0) === 0 && !NO_SCAFFOLD.has(ctx.mode ?? 'round')
+  // drawn last, so everything above takes the same draws from the rng as before
+  const dialStart = kind === 'clockSet' ? dialStartOf(prompt, answer, rng) : undefined
 
   const task: Task = {
     ...probe,
@@ -214,6 +233,7 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
     scaffold,
     ...(contrast ? { contrast } : {}),
     ...(guessFloor > 0 ? { guessFloor } : {}),
+    ...(dialStart !== undefined ? { dialStart } : {}),
   }
   return { task, offered: offeredTagsOf(task) }
 }

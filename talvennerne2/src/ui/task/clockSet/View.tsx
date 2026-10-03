@@ -1,8 +1,9 @@
 // clockSet (SPEC §3.2): the child sets an analog clock. The long minute hand is dragged and lands on
 // the skill's step (whole, half and quarter hours, 5 minutes, 1 minute); the short hour hand follows
 // it like a gear, and dragged by itself it jumps whole hours. A press away from the hands sends the
-// nearer one there. The clock starts at 12:00 and never shows the time as digits — reading the hands
-// is the task. The tick hands the time in as minutes (0–719, see logic.ts for 24-hour tasks).
+// nearer one there. The clock starts where the task says (Task.dialStart: on the step, never the
+// answer; 12:00 without one) and never shows the time as digits — reading the hands is the task. The
+// tick hands the time in as minutes (0–719, see logic.ts for 24-hour tasks).
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { playSfx } from '../../../audio/sfx'
@@ -15,7 +16,7 @@ import { usePointerDrag } from '../usePointerDrag'
 import type { FaceProps, TaskViewProps } from '../types'
 import {
   CENTRE, DIAL, KNOB, VIEW_H, VIEW_W, angleOf, clockSetOwnsPrompt, clockStep, dialValue, dragHour, dragMinute,
-  hourAngle, jumpMinute, minuteAngle, mod, pickHand, settle, snap,
+  hourAngle, jumpMinute, minuteAngle, mod, pickHand, settle, snap, startOf,
 } from './logic'
 import type { Hand } from './logic'
 import './clockSet.css'
@@ -34,16 +35,16 @@ const SETTLE_MS = 160
 export function ClockSetView({ task, mode, given, onSubmit, onActivity }: TaskViewProps) {
   const speech = useSpeech()
   const step = clockStep(task)
-  /** The settled time on the dial, 0–719: what the tick hands in. */
-  const [value, setValue] = useState(0)
+  /** The settled time on the dial, 0–719: what the tick hands in. Starts away from the answer. */
+  const [value, setValue] = useState(() => startOf(task))
   /** What the hands show: the finger's position while dragging, then a short glide onto the step. */
-  const [shown, setShown] = useState(0)
+  const [shown, setShown] = useState(() => startOf(task))
   const [held, setHeld] = useState<Hand | null>(null)
   const [touched, setTouched] = useState(false)
   const dial = useRef<HTMLDivElement>(null)
   const drag = useRef<Held | null>(null)
   const glideId = useRef(0)
-  const lastTick = useRef({ v: 0, at: 0 })
+  const lastTick = useRef({ v: startOf(task), at: 0 })
   const input = mode === 'input'
 
   useEffect(() => () => cancelAnimationFrame(glideId.current), [])

@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { isCorrect } from '../../../engine/answer'
 import { classifyAnswer } from '../../../engine/misconceptions'
+import { buildTask } from '../../../engine/tasks'
+import { makeRng } from '../../../engine/rng'
+import clockHour from '../../../engine/skills/clock/clockHour'
 import type { Task } from '../../../engine/types'
 import { EXAMPLES } from '../../../dev/tasks/examples'
 import {
   DIAL, angleOf, canClockSet, clockSetOwnsPrompt, clockStep, dialValue, dragHour, dragMinute, hourAngle, jumpMinute,
-  knobSpot, minuteAngle, mod, pickHand, settle, snap, turn,
+  knobSpot, minuteAngle, mod, pickHand, settle, snap, startOf, turn,
 } from './logic'
 
 const ex = (id: string): Task => {
@@ -73,6 +76,26 @@ describe('the skill’s step', () => {
   })
 })
 
+describe('where the hands start', () => {
+  it('at the task’s own start (Task.dialStart), on the dial; at 12:00 for a task without one', () => {
+    expect(half.dialStart).toBeUndefined()
+    expect(startOf(half)).toBe(0)
+    expect(startOf({ dialStart: 420 })).toBe(420)
+    expect(startOf({ dialStart: 720 + 90 })).toBe(90)
+  })
+
+  it('never on the answer of a real clock task: touching the hands and ticking is never a free answer', () => {
+    // "Stil uret, så klokken er tolv." used to be answered by the 12:00 the dial started at
+    const twelve = clockHour.enumerate().find((f) => f.answer === 0)!
+    for (let seed = 0; seed < 30; seed++) {
+      const t = buildTask(clockHour, twelve, 'clockSet', makeRng(seed), 0).task
+      const start = startOf(t)
+      expect(start % clockStep(t), `seed ${seed}`).toBe(0)
+      expect(isCorrect(t, dialValue(t, start)), `seed ${seed}: starts at ${start}`).toBe(false)
+    }
+  })
+})
+
 describe('the gear between the hands', () => {
   it('moves the hour hand with the minute hand: once round is one hour, back past 12 the hour before', () => {
     // 12:00, the long hand clockwise to the 6: 12:30, the short hand halfway to 1
@@ -110,7 +133,7 @@ describe('the gear between the hands', () => {
 
 describe('"halv tre" — the halfPastNext idea shows in the answer', () => {
   it('2:30 is set with the hour hand past the 2; the hour hand past the 3 makes 3:30', () => {
-    // the child turns the long hand to 6 (12:30), then drags the short hand
+    // from a dial at 12:00 the child turns the long hand to 6 (12:30), then drags the short hand
     const t = turnMinute(0, 180)
     const right = dialValue(half, settle(dragHour(t, 75), clockStep(half)))
     const wrong = dialValue(half, settle(dragHour(t, 96), clockStep(half)))
