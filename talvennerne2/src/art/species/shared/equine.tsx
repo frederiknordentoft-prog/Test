@@ -10,7 +10,7 @@ import { Pivot } from '../../rig/Rig'
 import { outlineOf, shadeOf } from '../../rig/palette'
 import { blob, ellipse, frame, join, mirrorX, offsetLoop, poly, ribbon, spline, star, symmetric, xf } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
-import type { AnchorSet, ColorwayId, OutlineFn, Palette, Part, SidePart, Stage, UpArm } from '../../rig/types'
+import type { AnchorSet, ColorwayId, Mood, OutlineFn, Palette, Part, SidePart, Stage, UpArm } from '../../rig/types'
 
 export const round = ROUND
 
@@ -375,6 +375,32 @@ export function withKeyWebs(webs: SidePart, keyWebs: WebTable, cwWebs: CwWebs = 
  * "race stadie humør side" → farverne og hylstrene. Et fast fyld i alle farver ville ses mod baggrunden i de andre.
  */
 export type CwWebs = Readonly<Record<string, readonly { cw: readonly ColorwayId[]; webs: readonly (readonly Vec[])[] }[]>>
+
+/**
+ * Flere lommehylstre i kompakt form (review G2-r2: ingen store datatabeller i JS): én linje pr. "race stadie humør
+ * side: x y x y …", polygonerne adskilt af ";", i skulderens ramme (højre side spejlet). De lægges oven i `table`
+ * (samme race, stadie, humør og side får begge sæt polygoner). Hylstrene er målt i huller-arkets alfa-lint
+ * (lommer, der lukker sig i arkets opløsning eller bag en sprække under HOLE_GAP), udvidet 1 enhed.
+ */
+export function addWebs(table: WebTable, src: string): WebTable {
+  const out: Record<string, Partial<Record<Stage, PawWebs>>> = {}
+  for (const [breed, stages] of Object.entries(table)) out[breed] = { ...stages }
+  for (const line of src.trim().split('\n')) {
+    const [key, data] = line.split(':')
+    const [breed, st, mood, side] = key.trim().split(' ') as [string, string, Mood, 'L' | 'R']
+    const polys = data.split(';').map((s) => {
+      const v = s.trim().split(' ').map(Number)
+      return Array.from({ length: v.length / 2 }, (_, i) => [v[2 * i], v[2 * i + 1]] as Vec)
+    })
+    const stage = Number(st) as Stage
+    const moods = { ...(out[breed] ??= {})[stage] }
+    const prev = moods[mood]?.[side]
+    const had = prev ? (typeof prev[0]?.[0] === 'number' ? [prev as readonly Vec[]] : [...(prev as readonly (readonly Vec[])[])]) : []
+    moods[mood] = { ...moods[mood], [side]: [...had, ...polys] }
+    out[breed][stage] = moods
+  }
+  return out
+}
 
 /** Flyt punkter lodret (racer, hvis hoved sidder højere eller lavere). */
 export const dy = (pts: readonly Vec[], d: number): Vec[] => pts.map(([x, y]) => [x, y + d] as Vec)

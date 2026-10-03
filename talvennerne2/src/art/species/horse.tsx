@@ -14,7 +14,7 @@ import type { AnchorSet, Part, SpeciesDef, Stage } from '../rig/types'
 import { FJORD_CREAM, FJORD_DARK, HORSE_COLORWAYS } from './horse.colorways'
 import {
   EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, withKeyWebs, HorsePatternBody, HorsePatternHead,
-  dunPalette, dy, hairShape, horseHead, makeFeet, makeLeg, makeMuzzle,
+  addWebs, dunPalette, dy, hairShape, horseHead, makeFeet, makeLeg, makeMuzzle,
 } from './shared/equine'
 import type { WebTable } from './shared/equine'
 
@@ -285,6 +285,20 @@ const KEY_WEBS: WebTable = {
   },
 }
 
+/**
+ * Lommerne, som huller-arkets alfa-lint fandt (review G2-r2 §3.1 og §6, Hest): mellem manens spids og hoften hos
+ * araber-babyen (fliserne 709–723), mellem manke, ben og krop hos den unge araber i tænker og en søm ved den store
+ * araberens hale og lår.
+ */
+const KEY_WEBS_G2R2 = addWebs(
+  KEY_WEBS,
+  `arabian 1 happy L: -27.8 -2.6 -26.3 -18.7 -25.8 -19.6 -23.9 -19.6 -14.3 -16.7 -13.9 -14.4 -24 2.7 -24.8 3.2 -27.3 3.1 -27.8 2.2
+arabian 1 idle L: -27.8 -2.6 -26.3 -18.7 -25.8 -19.6 -23.9 -19.6 -14.3 -16.7 -13.9 -14.4 -24 2.7 -24.8 3.2 -27.3 3.1 -27.8 2.2
+arabian 2 think L: -23.1 -7.6 -19.5 -25.7 -19 -26.5 -16.7 -26.2 -8.7 -21.6 -8 -20.9 -8 -19.3 -19.4 -5.7 -20.3 -5.2 -22.6 -5.4
+arabian 3 think L: -37.1 15.8 -36.7 14.4 -36 13.5 -35.5 13.4 -34.7 13.9 -34.3 15.8 -34.4 16.6 -34.8 17 -36.1 17.4 -37 16.9
+arabian 3 think R: -49.1 51.8 -48 49.8 -47.3 49.1 -46.3 49.1 -45.8 50 -45.8 51.1 -46.1 52.9 -46.9 54.3 -48.2 54.4 -49.1 53.9`,
+)
+
 export const horse: SpeciesDef = {
   id: 'horse',
   name: 'Hest',
@@ -375,7 +389,7 @@ export const horse: SpeciesDef = {
     Ear: EquineEar,
     Paw: makeLeg(),
     PawUp: EquineLegUp,
-    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS), KEY_WEBS),
+    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS), KEY_WEBS_G2R2),
     pawUpTip: EQUINE_UP_TIP,
     upArms: EQUINE_UP_ARMS,
     limb: EQUINE_LIMB,

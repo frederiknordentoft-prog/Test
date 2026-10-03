@@ -16,8 +16,8 @@ import { blob, join, mirrorX, poly, quad, star } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { AnchorSet, Part, SpeciesDef, Stage } from '../rig/types'
 import {
-  EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, withKeyWebs, equineHead, hairShape, makeFeet, makeLeg,
-  makeMuzzle, round,
+  EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, addWebs, withKeyWebs, equineHead, hairShape, makeFeet,
+  makeLeg, makeMuzzle, round,
 } from './shared/equine'
 import type { CwWebs, WebTable } from './shared/equine'
 import { GLINT, UNICORN_COLORWAYS } from './unicorn.colorways'
@@ -300,6 +300,25 @@ const CW_WEBS: CwWebs = {
   'wavy 3 sleep R': [{ cw: ['c4'], webs: [[[-35, -60.2], [-35.9, -59.3], [-35.9, -57.8], [-34.5, -56.9], [-33.6, -58.3]]] }],
 }
 
+/**
+ * Lommerne, som huller-arkets alfa-lint fandt (review G2-r2 §3.1 og §6, Enhjørning): bølgemankens hårfine sprækker
+ * mellem manens lokker og kroppen i tænker (fliserne 1028, 1048 og 1068), lommen mellem højre lok og kinden på stor og
+ * lommen mellem den løftede hov og kinden hos det store føl i jubel. Alle farver får samme fyld (alfaen afhænger
+ * ikke af konturens farve).
+ */
+const KEY_WEBS_G2R2 = addWebs(
+  KEY_WEBS,
+  `foal 3 cheer R: -25.3 -58.1 -24.3 -59.1 -20.8 -59.2 -19.4 -57.8 -18.7 -56.2 -17.6 -51.5 -17.6 -49.5 -19.1 -48.6 -20.6 -50.3 -25.2 -56.7
+wavy 1 think L: -25.3 -12.2 -24.7 -13.6 -22.5 -15.8 -20.1 -17.8 -17.8 -17.4 -17.7 -15.4 -18.2 -14 -22 -8.9 -24.3 -8.8 -25.3 -9.8
+wavy 2 think L: -29.3 -0.9 -27.5 -5.3 -25.4 -8.7 -23.4 -10.2 -21.5 -9.7 -21.5 -8.1 -26.1 2.1 -27.3 2.9 -28.8 2.8 -29.3 1.9
+wavy 3 happy R: -31.7 -65.1 -31.3 -67.1 -29.6 -67.1 -26.2 -59 -26.2 -57.4 -27.8 -53.4 -29.2 -53 -29.8 -54 -30.6 -56.8 -31.7 -62.8
+wavy 3 idle R: -31.7 -65.1 -31.3 -67.1 -29.6 -67.1 -26.2 -59 -26.2 -57.4 -27.8 -53.4 -29.2 -53 -29.8 -54 -30.6 -56.8 -31.7 -62.8
+wavy 3 oops R: -26.8 -68.9 -26.1 -71.2 -25.3 -71.7 -24.4 -71.2 -22 -62.8 -22.1 -60.7 -24.1 -57.1 -25.5 -56.8 -26.3 -58.2 -26.8 -64.6; -63.6 40.7 -63.1 39.8 -61.8 39.7 -60.9 40.2 -60.8 40.7 -60.8 41.9 -61.3 42.8 -62.6 42.9 -63.5 42.4 -63.6 41.9
+wavy 3 sleep R: -36.1 -60 -35.6 -60.9 -34.2 -60.5 -29.9 -52.7 -29.7 -52.2 -29.7 -44.8 -30.2 -43.9 -32.5 -44.3 -34.8 -52 -36.1 -56.8
+wavy 3 think L: -33.1 11.3 -30.7 8.6 -28.7 8.5 -27.8 9 -27.7 9.8 -28.5 12.9 -29.4 13.4 -32.2 13.4 -33.1 12.9 -33.2 12.4
+wavy 3 think R: -36.6 -58.5 -36.1 -59.3 -34.8 -59 -30.4 -51.8 -30 -44 -30.5 -43.2 -32.4 -43.2 -33.1 -44.1 -36 -53.1 -36.6 -55.6`,
+)
+
 export const unicorn: SpeciesDef = {
   id: 'unicorn',
   name: 'Enhjørning',
@@ -380,7 +399,7 @@ export const unicorn: SpeciesDef = {
     Ear: EquineEar,
     Paw: makeLeg(),
     PawUp: EquineLegUp,
-    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS), KEY_WEBS, CW_WEBS),
+    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS), KEY_WEBS_G2R2, CW_WEBS),
     pawUpTip: EQUINE_UP_TIP,
     upArms: EQUINE_UP_ARMS,
     limb: EQUINE_LIMB,

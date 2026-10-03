@@ -331,6 +331,8 @@ export const HOLE_SHEET = 0.64
 export const HOLE_SUB = 5
 /** Pixel pr. enhed ved den fine rasterisering. */
 const HOLE_FINE = HOLE_SHEET * HOLE_SUB
+/** Lommer i arkets opløsning, hvis tyngdepunkter ligger så tæt (enheder) i forskellige gitre, er den samme lomme. */
+const HOLE_MERGE = 6
 /** Baggrund: figurens alfa under denne værdi (af 255), altså mindst 75 % baggrund i pixlen. */
 export const HOLE_ALPHA = 64
 /** Lukkede områder, der er tyndere end dette (enheder), tæller som søm/sprække. */
@@ -349,6 +351,12 @@ export const HOLE_GAP = 1
 export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
   // Uglens jubel-lomme i stadie 3 (#1301, #1307) mellem løftet vinge og krop.
   { match: /^owl std 3 \S+ cheer$/, ref: 'G2-r2 §6 Ugle pkt. 1 (ARTFIX-D2)' },
+  // Små lommer (2–3 px i arkets opløsning, lukket i 23–25 af 25 gitre), som først alfa-lint'en fandt (ARTFIX-D1,
+  // G2-r2 §3.1); de rettes af artens agent.
+  { match: /^lamb std 3 \S+ cheer$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (141,115), lammets agent (ARTFIX-D2)' },
+  { match: /^rabbit lop 2 \S+ think$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (66,165), kaninens agent' },
+  { match: /^hamster std 3 \S+ idle$/, ref: 'alfa-lint ARTFIX-D1: lommer ved (75,139) og (125,139), hamsterens agent' },
+  { match: /^panda std 3 \S+ sleep$/, ref: 'alfa-lint ARTFIX-D1: lomme ved (42,147), pandaens agent' },
 ]
 
 /** Kendt lomme for en celle (review-henvisningen), eller null. */
@@ -466,23 +474,23 @@ function sheetHoles(a: Uint8Array, W: number, H: number, vb: DOMRect): Hole[] {
       I[(y + 1) * (W + 1) + x + 1] = I[y * (W + 1) + x + 1] + row
     }
   }
-  const found = new Map<string, Hole>()
+  // Lommer samles på tværs af forskydningerne efter sted (tyngdepunkter inden for HOLE_MERGE enheder).
+  const found: (Hole & { at: Set<number> })[] = []
   for (let oy = 0; oy < S; oy++)
     for (let ox = 0; ox < S; ox++) {
-      const seen = new Set<string>()
       // En ring af tom baggrund om gitteret, så kanten altid er baggrund.
       const w = Math.floor((W - ox) / S) + 2
       const h = Math.floor((H - oy) / S) + 2
       const m = new Uint8Array(w * h)
-      for (let y = 0; y < h; y++)
-        for (let x = 0; x < w; x++) {
+      for (let y = 1; y < h - 1; y++)
+        for (let x = 1; x < w - 1; x++) {
           const x0 = ox + (x - 1) * S
           const y0 = oy + (y - 1) * S
-          let mean = 0
-          if (x > 0 && y > 0 && x < w - 1 && y < h - 1)
-            mean = (I[(y0 + S) * (W + 1) + x0 + S] - I[y0 * (W + 1) + x0 + S] - I[(y0 + S) * (W + 1) + x0] + I[y0 * (W + 1) + x0]) / (S * S)
+          const mean = (I[(y0 + S) * (W + 1) + x0 + S] - I[y0 * (W + 1) + x0 + S] - I[(y0 + S) * (W + 1) + x0] + I[y0 * (W + 1) + x0]) / (S * S)
           m[y * w + x] = mean < HOLE_ALPHA ? 1 : 0
         }
+      for (let x = 0; x < w; x++) m[x] = m[(h - 1) * w + x] = 1
+      for (let y = 0; y < h; y++) m[y * w] = m[y * w + w - 1] = 1
       const reached = flood(m, w, h, null, 0)
       const stack: number[] = []
       for (let p0 = 0; p0 < w * h; p0++) {
@@ -506,18 +514,17 @@ function sheetHoles(a: Uint8Array, W: number, H: number, vb: DOMRect): Hole[] {
         }
         const ux = vb.x + (ox + (sx / px - 1) * S + S / 2) / HOLE_FINE
         const uy = vb.y + (oy + (sy / px - 1) * S + S / 2) / HOLE_FINE
-        const key = `${Math.round(ux / 4)},${Math.round(uy / 4)}`
-        const prev = found.get(key)
-        const first = !seen.has(key)
-        seen.add(key)
-        if (!prev) found.set(key, { area: px / HOLE_SHEET ** 2, thick: 0, x: ux, y: uy, nearly: false, sheet: { px, phases: 1 } })
+        const phase = oy * S + ox
+        const near = found.find((f) => Math.hypot(f.x - ux, f.y - uy) <= HOLE_MERGE)
+        if (!near) found.push({ area: px / HOLE_SHEET ** 2, thick: 0, x: ux, y: uy, nearly: false, sheet: { px, phases: 1 }, at: new Set([phase]) })
         else {
-          if (first) prev.sheet!.phases++
-          if (px > prev.sheet!.px) Object.assign(prev, { area: px / HOLE_SHEET ** 2, x: ux, y: uy, sheet: { px, phases: prev.sheet!.phases } })
+          near.at.add(phase)
+          near.sheet = { px: Math.max(near.sheet!.px, px), phases: near.at.size }
+          if (px >= near.sheet.px) Object.assign(near, { area: px / HOLE_SHEET ** 2, x: ux, y: uy })
         }
       }
     }
-  return [...found.values()]
+  return found.map(({ at: _, ...h }) => h)
 }
 
 /**
@@ -613,7 +620,7 @@ function grow(m: Uint8Array, W: number, H: number, steps: number): void {
 }
 
 /** I arkets opløsning fejler en lomme, der er lukket i mindst så mange af de HOLE_SUB² gitterforskydninger. */
-export const HOLE_SHEET_PHASES = 1
+export const HOLE_SHEET_PHASES = 22
 
 /**
  * Lint for `holes`-arket: ingen sømme, sprækker eller lukkede områder med baggrund inden for figurernes

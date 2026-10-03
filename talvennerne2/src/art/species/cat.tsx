@@ -16,6 +16,7 @@ import {
 import type { Vec } from '../rig/shapes'
 import type { AnchorSet, OutlineFn, Palette, Part, PartCtx, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { CAT_COLORWAYS } from './cat.colorways'
+import { addWebs } from './shared/equine'
 
 const round = ROUND
 
@@ -602,7 +603,20 @@ const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
   },
 }
 
-const KeyWebs = pawWebs({}, KEY_WEBS)
+/**
+ * Lommerne, som huller-arkets alfa-lint fandt (review G2-r2 §3.1 og §6, Kat): mellem hale og krop hos huskat-babyen
+ * (hoftekilen i hvile og sover, lommen i vinker, flise 302) og sprækken mellem pote og krop hos maine coon i ups (fliserne 460 og 466).
+ */
+const KeyWebs = pawWebs(
+  {},
+  addWebs(
+    KEY_WEBS,
+    `domestic 1 idle R: -38 -18.3 -36.9 -21.6 -26.6 -29.2 -23.5 -28.3 -23.5 -23.6 -29 -7.9 -30.7 -5.6 -34.1 -3.3 -36 -3.3 -38 -8.9
+domestic 1 sleep R: -38 -20.6 -35.6 -45.7 -34.6 -46.7 -27.9 -46.7 -12.2 -43.6 -11.4 -40.3 -29.4 -6.8 -34.1 -2.9 -36.3 -3.3 -38 -8.8
+domestic 1 wave R: -44.5 -16.5 -42.7 -39.7 -38.8 -40.6 -22.7 -29.2 -21.8 -26.9 -29 -7.9 -29.9 -6.4 -37.4 0.9 -39.3 0.9 -42.1 -3.7
+mainecoon 3 oops R: -29.1 -24.6 -28.8 -31.9 -28.3 -32.7 -21.9 -38.3 -20.1 -38.3 -19.6 -37.4 -20 -34.2 -26.1 -23.3 -28 -22.7 -28.9 -23.3`,
+  ),
+)
 /** Armenes faste fyld og, i stillbilleder, nøgleposernes lommer i skyggetone (se `KEY_WEBS`). */
 const withKeyWebs = (webs: SidePart): SidePart => (p) => {
   const key = p.still ? KeyWebs({ ...p, pal: { ...p.pal, fur: p.pal.silhouette ? p.pal.fur : p.pal.shade } }) : null
