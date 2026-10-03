@@ -1,0 +1,1 @@
+var e={"s.play.ready":`Klar? Så går vi i gang.`,"s.play.resume":`Vi fortsætter, hvor du slap.`,"s.play.tap":`Tryk for at starte.`,"s.play.empty":`Her er ingen opgaver endnu. Prøv et andet sted på kortet.`,"s.play.tomorrow":`Her er der nyt i morgen. Nu kan du øve det, du har lært.`};export{e as clips};
