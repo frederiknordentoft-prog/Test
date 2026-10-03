@@ -1,15 +1,18 @@
 // numberline (SPEC §3.2): tap or drag on the line to set the pin, then the tick. 0–20 is exact,
 // 0–100 allows ±5 and 0–1000 ±50 (Task.tolerance). The pin never shows its number: on 0–100 a
-// number badge would turn "where is 37?" into reading, not estimating.
+// number badge would turn "where is 37?" into reading, not estimating. The number to place is shown
+// above the line (QA2 P2-4: "Sæt nålen ved 30" was only heard, so a child had to keep "halvfjerds"
+// in mind before estimating).
 //
 // The line is drawn at the screen's own pixel size (measured), so its numbers stay readable on a
 // phone: labels thin out until they have room (0–20 every other number on an iPhone, all on iPad).
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
-import type { Task } from '../../../engine/types'
+import type { ClipId, Task } from '../../../engine/types'
 import { playSfx } from '../../../audio/sfx'
 import { niceStep } from '../../../art/materials'
 import { blob } from '../../../art/materials/geom'
+import { SpokenText } from '../../design/SpokenText'
 import { useSpeech } from '../../design/speech'
 import { cx } from '../../design/cx'
 import { formatNumber, lineEndsOnly, lineRange, lineRatio, lineValue } from '../answers'
@@ -123,6 +126,23 @@ function useWidth<T extends HTMLElement>(): [(el: T | null) => void, number] {
  */
 export const numberlineOwnsPrompt = (t: Task) => t.prompt.scene === 'line'
 
+/** Instructions that name the number to place ("Sæt nålen ved …"): that number is given, never the answer of a sum. */
+const PLACE_CLIPS: ReadonlySet<ClipId> = new Set(['s.nl.place', 's.nl1000.placeNearestTen', 's.nl1000.placeNearestHundred'])
+
+/**
+ * The number a placing task names, and the words before it: "Sæt nålen ved" 30. Null when the task
+ * asks something else on the line ("Hvilket tal kommer efter 7?", "9 + 2"), where showing the number
+ * to place would show the answer.
+ */
+export function placeTarget(t: Task): { lead: ClipId; n: number } | null {
+  for (let i = 0; i < t.speech.length - 1; i++) {
+    const part = t.speech[i]
+    const next = t.speech[i + 1]
+    if ('clip' in part && PLACE_CLIPS.has(part.clip) && 'num' in next) return { lead: part.clip, n: next.num }
+  }
+  return null
+}
+
 const isBig = () => typeof matchMedia === 'function' && matchMedia('(min-width: 700px) and (min-height: 700px)').matches
 
 export function NumberlineView({ task, mode, given, onSubmit, onActivity }: TaskViewProps) {
@@ -175,8 +195,15 @@ export function NumberlineView({ task, mode, given, onSubmit, onActivity }: Task
   const shown = mode === 'input' || mode === 'idle' ? value : typeof given === 'number' ? given : value
   const x = shown === null ? null : g.x(min + lineRatio(shown, min, max) * (max - min))
   const state: PinState = mode === 'correct' ? 'good' : mode === 'wrong' ? 'oops' : 'idle'
+  const target = numberlineOwnsPrompt(task) ? placeTarget(task) : null
   return (
     <div className={cx('tv-nline', `is-${mode}`)} data-kind="numberline">
+      {target && (
+        <div className="tv-nline__ask" data-nline-target={target.n}>
+          <SpokenText parts={task.speech} text={speech.text(target.lead)} className="tv-nline__lead" />
+          <span className="tv-nline__target">{formatNumber(target.n)}</span>
+        </div>
+      )}
       <div
         ref={(el) => {
           surface.current = el

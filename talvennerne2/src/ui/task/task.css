@@ -663,6 +663,31 @@
   max-width: 760px;
   margin: 0 auto;
 }
+.tv-nline__ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 14px;
+  max-width: 100%;
+  padding: 8px 22px;
+  border-radius: var(--radius-tile);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.tv-nline__lead {
+  font-size: var(--text-body);
+  font-weight: 800;
+  color: var(--color-ink-2);
+  text-align: center;
+}
+.tv-nline__target {
+  font-size: 56px;
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
 .tv-nline__surface {
   position: relative;
   width: 100%;
@@ -1056,6 +1081,38 @@
   align-items: center;
   justify-content: center;
   gap: 8px 4px;
+}
+/* an equation whose blanks are the places ("64 = ? + ?", QA2 P2-5) */
+.tv-fill__eq {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  color: var(--color-ink);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.tv-fill__num {
+  font-size: 44px;
+  line-height: 1;
+}
+.tv-fill__op {
+  font-size: 38px;
+  line-height: 1;
+  color: var(--color-ink-2);
+}
+.tv-fill__word {
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+.tv-fill__eqface .tv-fill__eq {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.tv-fill__eqface .tv-fill__num,
+.tv-fill__eqface .tv-fill__op {
+  font-size: 28px;
 }
 .tv-fill__cell {
   display: grid;

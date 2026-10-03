@@ -1,9 +1,10 @@
 // The last screen of the end of a round: the buddy, and "Også i dag" — the smaller news as cards (a
-// trophy, a stamp, a lantern lit, the hut). The heading and then every card are read aloud in turn,
+// trophy, a stamp, a lantern lit, the hut). A finale's things are on the finale's own screen and are
+// not listed again (QA2 P2-7). The heading and then every card are read aloud in turn,
 // each card lit while it is named (review r1 P2-4: a child who cannot read hears all of it); a tap on
 // a card reads that card again. Then the child chooses: "Næste" or "Til kortet", the same size,
 // neither in focus, nothing starting by itself.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { Animal, SpeechPart } from '../../../../engine/types'
 import type { CeremonyCard } from '../../../../meta/ceremonyQueue'
@@ -15,6 +16,7 @@ import { cx } from '../../../design/cx'
 import { Buddy } from '../round/Buddy'
 import { lineText } from '../map/words'
 import { cardSpeech, rewardIcon } from './describe'
+import { alsoTodayOf } from './flow'
 
 /** What the end screen reads, in order: the heading, then each card (index) with its words. */
 export function endReadout(cards: readonly CeremonyCard[]): { card: number | null; parts: SpeechPart[] }[] {
@@ -29,8 +31,9 @@ export interface EndScreenProps {
   halt?: { readonly current: boolean }
 }
 
-export function EndScreen({ cards, buddy, halt }: EndScreenProps) {
+export function EndScreen({ cards: all, buddy, halt }: EndScreenProps) {
   const speech = useSpeech()
+  const cards = useMemo(() => alsoTodayOf(all), [all])
   const [speaking, setSpeaking] = useState<number | null>(null)
   // bumps when the reading is taken over (a tap on a card) or the screen goes
   const run = useRef(0)

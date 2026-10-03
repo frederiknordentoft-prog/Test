@@ -74,7 +74,7 @@ function answerAll(wrong: number[] = [], stopAfter = Infinity): number {
 }
 
 function startRound(start: Start): void {
-  if (start.kind === 'closed') throw new Error('closed')
+  if (start.kind === 'closed' || start.kind === 'tomorrow') throw new Error(start.kind)
   const hooks = hooksFor(start, { audioVerified: false })
   if (start.kind === 'plan') useRound.getState().start(start.plan, hooks)
   else useRound.getState().resume(start.snapshot, hooks)

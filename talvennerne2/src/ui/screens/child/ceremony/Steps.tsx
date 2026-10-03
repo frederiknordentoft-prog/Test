@@ -1,15 +1,21 @@
 // The full-screen moments of the end of a round (SPEC §5.8, spildesign §7.2): "Det lærte du" with
-// the stars and the count-up, the bridge, a medal, a new level with its thing and "Prøv den på",
-// growth, a new thing or friend (with its name), and the choice of a golden or rainbow animal. Each
-// screen says what it shows; the screen around them reads it aloud and moves on.
+// the stars and the count-up, the bridge, a world finale's party with all its things, a medal, a new
+// level with its thing and "Prøv den på", growth, a new thing or friend (with its name), and the
+// choice of a golden or rainbow animal. Each screen says what it shows; the screen around them reads
+// it aloud and moves on.
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { AnalogClock } from '../../../../art/materials'
 import { Shape2D } from '../../../../art/materials/Shapes'
 import { circle, ellipse } from '../../../../art/materials/geom'
 import { HIGHLIGHT, MAT } from '../../../../art/materials/palette'
 import { ITEM_BY_ID } from '../../../../content/catalog'
 import { REGION_BY_ID, WORLD_BY_ID } from '../../../../content/curriculum'
-import type { Animal, ClipId, ItemId, SpeciesId, SpeechPart } from '../../../../engine/types'
+import type { Animal, ClipId, ItemId, SpeciesId, SpeechPart, WorldId } from '../../../../engine/types'
+import { useNav } from '../../../../app/nav'
+import { speciesOfWorld } from '../../../../meta/animals'
+import { clockWords } from '../../../../speech/clock'
+import { toDanishText } from '../../../../speech/compile'
 import { openedClip, type CeremonyStep } from '../../../../meta/ceremonyQueue'
 import { totalPerler, totalXp, type Reward } from '../../../../meta/rewards'
 import { useMeta } from '../../../../state/useMeta'
@@ -24,12 +30,15 @@ import { useSpeech } from '../../../design/speech'
 import { usePress } from '../../../design/usePress'
 import { cx } from '../../../design/cx'
 import { ObjectsScene } from '../../../scenes/ObjectsScene'
-import { formatNumber } from '../../../task/answers'
+import { formatMoney, formatNumber } from '../../../task/answers'
+import { PieceArt, pieceScale } from '../../../task/faces'
+import { isPiece } from '../../../task/pay/logic'
 import { Buddy } from '../round/Buddy'
 import { AnimalPicture, ItemPicture } from '../map/art'
 import { isItemDrawn } from '../wardrobe/drawn'
 import { goalSpeech, lineText } from '../map/words'
 import { canDoClip, learnedItems, type LearnedContext, type LearnedFace, type LearnedItem } from './describe'
+import { finaleThings, progressOf, setProgress } from './flow'
 import { NameAnimal } from './NameAnimal'
 import '../../../scenes/scenes.css'
 
@@ -143,7 +152,7 @@ function LearnedCard({ item }: { item: LearnedItem }) {
     <button
       type="button"
       className={cx('tv-learned__card tv-touch', `is-${item.face.t}`)}
-      aria-label={lineText(item.speech, speech.text)}
+      aria-label={toDanishText(item.speech)}
       onClick={(e) => {
         e.stopPropagation()
         speech.speak(item.speech)
@@ -157,7 +166,22 @@ function LearnedCard({ item }: { item: LearnedItem }) {
   )
 }
 
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** A time as the child learned to say it: "Klokken ni", "Halv ti", "Kvart i ni". */
+export function clockText(minutes: number): string {
+  const words = clockWords(minutes, 'analog')
+  return capital(minutes % 60 === 0 ? `klokken ${words}` : words)
+}
+
+/** A fact's words with its numbers as numerals: "Halvdelen af 8 er 4", "3 sider". */
+export function phraseText(parts: readonly SpeechPart[], textOf: (id: ClipId) => string): string {
+  const words = parts.map((p) => ('clip' in p ? textOf(p.clip) : 'num' in p ? formatNumber(p.num) : ''))
+  return capital(words.filter(Boolean).join(' '))
+}
+
 function LearnedPicture({ face }: { face: LearnedFace }) {
+  const speech = useSpeech()
   switch (face.t) {
     case 'eq':
       return <Equation terms={face.terms} size="answer" nowrap className="tv-learned__eq" />
@@ -174,6 +198,31 @@ function LearnedPicture({ face }: { face: LearnedFace }) {
             </span>
           )}
           <span className="tv-learned__n">{formatNumber(face.n)}</span>
+        </span>
+      )
+    case 'clock':
+      return (
+        <span className="tv-learned__fact">
+          <AnalogClock minutes={face.minutes} size={68} className="tv-learned__clock" />
+          <SpokenText parts={[{ clock: { minutes: face.minutes, style: 'analog', form: 'end' } }]} text={clockText(face.minutes)} silent className="tv-learned__phrase" />
+        </span>
+      )
+    case 'money':
+      return (
+        <span className="tv-learned__fact is-row">
+          {isPiece(face.ore) && (
+            <span className="tv-face__money tv-learned__money" style={pieceScale(52)}>
+              <PieceArt piece={face.ore} />
+            </span>
+          )}
+          <span className="tv-learned__n">{formatMoney(face.ore)}</span>
+        </span>
+      )
+    case 'phrase':
+      return (
+        <span className={cx('tv-learned__fact', face.figure && 'is-row')}>
+          {face.figure && <Shape2D shape={face.figure.shape} variant={face.figure.variant} mark={face.figure.mark} size={60} className="tv-learned__shape" />}
+          <SpokenText parts={face.parts} text={phraseText(face.parts, speech.text)} silent className="tv-learned__phrase" />
         </span>
       )
     case 'shape':
@@ -224,6 +273,9 @@ function StarBurst({ from, to }: { from: number; to: number }) {
 export function trialSpeech(step: CeremonyStep): SpeechPart[] {
   const parts = [...step.speech]
   const trial = first(step.rewards, 'trial')
+  const things = finaleThings(step)
+  if (trial?.finale && trial.passed) parts.push({ clip: WORLD_BY_ID[trial.trial as WorldId].nameClip })
+  if (things.length > 0) parts.push({ clip: 's.ceremony.finale.things' }, ...things.map((i) => ({ clip: ITEM_BY_ID[i].nameClip })))
   if (trial && !trial.passed) parts.push({ clip: 's.reward.trial.best' }, { num: trial.best, form: 'mid' }, { clip: 's.reward.trial.planks' })
   const opened = first(step.rewards, 'opened')
   if (opened && trial?.passed) parts.push({ clip: openedClip(opened) })
@@ -237,6 +289,7 @@ export function TrialScreen({ step }: { step: CeremonyStep }) {
   const trial = first(step.rewards, 'trial')
   const opened = first(step.rewards, 'opened')
   const lead = step.rewards[0]
+  if (trial?.finale && trial.passed) return <FinaleParty step={step} world={trial.trial as WorldId} />
   return (
     <div className="tv-cer-trial" data-cer-trial="">
       {trial ? (
@@ -260,6 +313,78 @@ export function TrialScreen({ step }: { step: CeremonyStep }) {
           </span>
           {step.speech[0] && 'clip' in step.speech[0] && <SpokenText as="h1" clip={step.speech[0].clip} className="tv-cer__title" />}
         </>
+      )}
+      {opened && (opened.regions.length > 0 || opened.worlds.length > 0) && (
+        <div className="tv-cer-opened">
+          {opened.worlds.map((w, i) => (
+            <SpokenText key={w} clip={WORLD_BY_ID[w].nameClip} className="tv-cer-opened__place is-world" style={{ '--i': i } as CSSProperties} />
+          ))}
+          {opened.regions.map((r, i) => (
+            <SpokenText key={r} clip={REGION_BY_ID[r].nameClip} className="tv-cer-opened__place" style={{ '--i': opened.worlds.length + i } as CSSProperties} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── A world finale passed: the party ───────────────────────────────────────
+
+/** Confetti pieces: a fixed spread (no randomness), each with its own lane, delay and tone. */
+const CONFETTI = Array.from({ length: 22 }, (_, i) => ({ x: (i * 37) % 100, delay: (i % 7) * 110, tone: i % 4, turn: i % 2 ? 1 : -1 }))
+
+/** Every finale thing on the buddy at once, then to the wardrobe; back here, the next screen follows. */
+function tryOnAll(items: readonly ItemId[]): void {
+  if (items.length === 0) return
+  const meta = useMeta.getState()
+  const uid = useProfile.getState().profile?.buddyUid ?? null
+  if (uid) for (const item of items) meta.wear(uid, item)
+  if (meta.ceremony) setProgress(meta.ceremony, progressOf(meta.ceremony) + 1)
+  useNav.getState().go({ id: 'wardrobe', item: items[0], ...(uid ? { uid } : {}) })
+}
+
+/**
+ * A world finale passed (QA2 P2-7): its own party, not a trial's bridge — the trophy, the world's
+ * animals cheering under confetti, and every thing the finale gave, with pictures and "Prøv dem på".
+ */
+export function FinaleParty({ step, world }: { step: CeremonyStep; world: WorldId }) {
+  const things = finaleThings(step)
+  const drawn = things.filter(isItemDrawn)
+  const opened = first(step.rewards, 'opened')
+  return (
+    <div className="tv-cer-finale" data-cer-finale={world}>
+      <span className="tv-cer-finale__confetti" aria-hidden>
+        {CONFETTI.map((c, i) => (
+          <span key={i} className={cx('tv-cer-finale__bit', `is-t${c.tone}`)} style={{ '--x': `${c.x}%`, '--d': `${c.delay}ms`, '--turn': c.turn } as CSSProperties} />
+        ))}
+      </span>
+      <span className="tv-cer-finale__trophy" aria-hidden>
+        <Icon name="trophy" size="58%" solid strokeWidth={2} />
+      </span>
+      <SpokenText as="h1" clip="s.reward.finale.passed" className="tv-cer__title" />
+      <SpokenText clip={WORLD_BY_ID[world].nameClip} className="tv-cer-finale__world" />
+      <div className="tv-cer-finale__animals" aria-hidden>
+        {speciesOfWorld(world).map((s, i) => (
+          <span key={s} className="tv-cer-finale__animal" style={{ '--i': i } as CSSProperties}>
+            <AnimalPicture species={s} size={78} crop="fit" mood="cheer" />
+          </span>
+        ))}
+      </div>
+      {things.length > 0 && (
+        <div className="tv-cer-finale__things" onClick={(e) => e.stopPropagation()} data-finale-things={things.length}>
+          <SpokenText as="h2" clip="s.ceremony.finale.things" className="tv-cer-finale__head" />
+          <ul className="tv-cer-finale__list">
+            {things.map((item, i) => (
+              <li key={item} className="tv-cer-finale__thing" style={{ '--i': i } as CSSProperties} data-finale-thing={item}>
+                <ItemPicture item={item} size={92} className="tv-cer-finale__pic" />
+                <SpokenText clip={ITEM_BY_ID[item].nameClip} className="tv-cer-finale__name" />
+              </li>
+            ))}
+          </ul>
+          {drawn.length > 0 && (
+            <Button clip={drawn.length > 1 ? 's.ceremony.tryOnAll' : 's.ceremony.tryOn'} icon="shirt" variant="star" size="md" onClick={() => tryOnAll(drawn)} data-try-on-all="" />
+          )}
+        </div>
       )}
       {opened && (opened.regions.length > 0 || opened.worlds.length > 0) && (
         <div className="tv-cer-opened">

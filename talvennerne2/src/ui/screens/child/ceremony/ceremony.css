@@ -217,6 +217,39 @@
   color: var(--color-ink);
   font-variant-numeric: tabular-nums;
 }
+/* a fact shown whole (QA2 P1-1): a clock and its words, a coin and its value, a sentence with its figure */
+.tv-learned__fact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+}
+.tv-learned__fact.is-row {
+  flex-direction: row;
+  gap: 10px;
+}
+.tv-learned__clock {
+  display: block;
+  flex: none;
+}
+.tv-learned__money {
+  flex: none;
+}
+.tv-learned__fact .tv-learned__shape {
+  flex: none;
+}
+.tv-learned__phrase {
+  max-width: 100%;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--color-ink);
+  text-align: center;
+  overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
+}
 .tv-learned__beads {
   display: flex;
   gap: 2px;
@@ -450,6 +483,146 @@
 }
 
 /* ── Things, friends, picks ─────────────────────────────────────────────── */
+/* ── A world finale passed: the party (QA2 P2-7) ────────────────────────── */
+.tv-cer-finale {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding-top: 6px;
+}
+.tv-cer-finale__confetti {
+  position: absolute;
+  inset: -12px -8px 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.tv-cer-finale__bit {
+  position: absolute;
+  top: 0;
+  left: var(--x);
+  width: 10px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--color-star);
+  opacity: 0;
+  animation: tv-cer-confetti 2600ms cubic-bezier(0.3, 0.6, 0.5, 1) var(--d) 3 both;
+}
+.tv-cer-finale__bit.is-t1 {
+  background: var(--color-primary);
+}
+.tv-cer-finale__bit.is-t2 {
+  background: var(--color-heart);
+}
+.tv-cer-finale__bit.is-t3 {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-good);
+}
+.tv-cer-finale__trophy {
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: var(--color-star);
+  box-shadow: 0 8px 0 var(--color-star-lip), var(--shadow-float);
+  color: var(--color-ink);
+  --icon-fill-o: 0.3;
+  animation: tv-cer-pop var(--dur-slow) var(--ease-spring) both;
+}
+.tv-cer-finale .tv-cer__title {
+  margin: 8px 0 0;
+}
+.tv-cer-finale__world {
+  padding: 4px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  font-size: var(--text-button);
+  font-weight: 900;
+  color: var(--color-primary-deep);
+}
+.tv-cer-finale__animals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 6px;
+  margin: 2px 0;
+}
+.tv-cer-finale__animal {
+  display: block;
+  width: 78px;
+  animation: tv-cer-finale-hop 520ms var(--ease-out) calc(var(--i) * 130ms) 6 alternate both;
+}
+.tv-cer-finale__things {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px 14px;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.tv-cer-finale__head {
+  margin: 0;
+  font-size: var(--text-button);
+  font-weight: 900;
+  color: var(--color-ink);
+}
+.tv-cer-finale__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tv-cer-finale__thing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 112px;
+  animation: tv-cer-pop var(--dur-slow) var(--ease-spring) calc(var(--i) * 140ms + 260ms) both;
+}
+.tv-cer-finale__name {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--color-ink-2);
+  text-align: center;
+}
+@keyframes tv-cer-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, -24px) rotate(0deg);
+  }
+  90% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--turn) * 22px), 520px) rotate(calc(var(--turn) * 540deg));
+  }
+}
+@keyframes tv-cer-finale-hop {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}
+
 .tv-cer-thing {
   position: relative;
   display: flex;
@@ -1036,6 +1209,9 @@
 }
 
 :root[data-calm] .tv-cer__screen,
+:root[data-calm] .tv-cer-finale__animal,
+:root[data-calm] .tv-cer-finale__thing,
+:root[data-calm] .tv-cer-finale__trophy,
 :root[data-calm] .tv-learned__item,
 :root[data-calm] .tv-starburst__star,
 :root[data-calm] .tv-cer-opened__place,
@@ -1053,6 +1229,9 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .tv-cer__screen,
+  .tv-cer-finale__animal,
+  .tv-cer-finale__thing,
+  .tv-cer-finale__trophy,
   .tv-learned__item,
   .tv-starburst__star,
   .tv-cer-opened__place,
@@ -1071,6 +1250,15 @@
 }
 :root[data-calm] .tv-alsocard {
   transition: none;
+}
+/* the confetti is only juice: calm mode and reduced motion leave it out */
+:root[data-calm] .tv-cer-finale__confetti {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-cer-finale__confetti {
+    display: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .tv-alsocard {
