@@ -1,8 +1,8 @@
 {
  "version": 1,
- "generated": "2026-10-02T15:47:08.754Z",
+ "generated": "2026-10-03T07:44:32.738Z",
  "clips": {
-  "masters": 1224,
+  "masters": 1225,
   "pass": 1167,
   "notPassed": [
    {
@@ -126,6 +126,10 @@
     "reason": "sammensætning"
    },
    {
+    "id": "op.er_lig_med",
+    "reason": "asr"
+   },
+   {
     "id": "q.sub:1-0",
     "reason": "asr"
    },
@@ -234,12 +238,12 @@
     "reason": "sammensætning"
    }
   ],
-  "cerMean": 0.0083,
+  "cerMean": 0.0085,
   "lufsMin": -18.57,
   "lufsMax": -18,
-  "seconds": 1321.1,
-  "takes": 1732,
-  "generationHours": 6.95
+  "seconds": 1331.7,
+  "takes": 1736,
+  "generationHours": 7.03
  },
  "numbers": {
   "range": [
@@ -270,11 +274,74 @@
  },
  "templates": {
   "perSkill": {
+   "add100Carry": {
+    "statements": 100,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 27,
+    "rate": 100
+   },
+   "add100NoCarry": {
+    "statements": 60,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 28,
+    "rate": 100
+   },
+   "addSub1000Round": {
+    "statements": 26,
+    "sampled": 26,
+    "verbatim": 26,
+    "verbatimW2v": 22,
+    "rate": 100
+   },
+   "addSub20Simple": {
+    "statements": 58,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 29,
+    "rate": 100
+   },
    "addTo10": {
     "statements": 66,
     "sampled": 30,
     "verbatim": 30,
     "verbatimW2v": 26,
+    "rate": 100
+   },
+   "addTo20": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "doubles": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "halves": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "sub100Borrow": {
+    "statements": 80,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 26,
+    "rate": 100
+   },
+   "sub100NoBorrow": {
+    "statements": 60,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 28,
     "rate": 100
    },
    "subTo10": {
@@ -284,11 +351,53 @@
     "verbatimW2v": 17,
     "rate": 100
    },
+   "subTo20": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
    "tenFriends": {
     "statements": 11,
     "sampled": 11,
     "verbatim": 11,
     "verbatimW2v": 1,
+    "rate": 100
+   },
+   "tens100": {
+    "statements": 40,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 25,
+    "rate": 100
+   },
+   "equalSides": {
+    "statements": 79,
+    "sampled": 30,
+    "verbatim": 16,
+    "verbatimW2v": 4,
+    "rate": 53.3
+   },
+   "inverseOps": {
+    "statements": 40,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 4,
+    "rate": 100
+   },
+   "missingPart10": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "missingPart100": {
+    "statements": 80,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 11,
     "rate": 100
    },
    "patterns": {
@@ -298,12 +407,138 @@
     "verbatimW2v": 1,
     "rate": 50
    },
+   "skipCount": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "clockHalf": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "clockHour": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "clockQuarter": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "fractionShape": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "halfShape": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
    "compareLength": {
     "statements": 4,
     "sampled": 4,
     "verbatim": 4,
     "verbatimW2v": 4,
     "rate": 100
+   },
+   "measureUnits": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "readChart": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "rulerRead": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "unitChoice": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "weightCompare": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "change": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "coinNames": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "countCoins": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "payExact": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "groupsOf": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "mul2510": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "shareEqually": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
    },
    "count10": {
     "statements": 29,
@@ -319,12 +554,54 @@
     "verbatimW2v": 8,
     "rate": 96.7
    },
+   "hear100": {
+    "statements": 160,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 12,
+    "rate": 100
+   },
+   "hear1000": {
+    "statements": 58,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 5,
+    "rate": 100
+   },
    "hear20": {
     "statements": 42,
     "sampled": 30,
     "verbatim": 30,
     "verbatimW2v": 12,
     "rate": 100
+   },
+   "numberLine100": {
+    "statements": 10,
+    "sampled": 10,
+    "verbatim": 10,
+    "verbatimW2v": 9,
+    "rate": 100
+   },
+   "numberLine1000": {
+    "statements": 1,
+    "sampled": 1,
+    "verbatim": 1,
+    "verbatimW2v": 1,
+    "rate": 100
+   },
+   "order100": {
+    "statements": 152,
+    "sampled": 30,
+    "verbatim": 22,
+    "verbatimW2v": 19,
+    "rate": 73.3
+   },
+   "order1000": {
+    "statements": 36,
+    "sampled": 30,
+    "verbatim": 23,
+    "verbatimW2v": 18,
+    "rate": 76.7
    },
    "order20": {
     "statements": 131,
@@ -333,19 +610,333 @@
     "verbatimW2v": 22,
     "rate": 76.7
    },
+   "placeValue1000": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "tensOnes": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "composeShapes": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
    "shapes2D": {
     "statements": 6,
     "sampled": 6,
     "verbatim": 6,
     "verbatimW2v": 5,
     "rate": 100
+   },
+   "shapes3D": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "sidesCorners": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "sortShapes": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
+   },
+   "symmetry": {
+    "statements": 0,
+    "sampled": 0,
+    "verbatim": 0,
+    "verbatimW2v": 0,
+    "rate": 0
    }
   },
-  "rendered": 202,
-  "verbatim": 191,
-  "verbatimWav2vec2": 106,
-  "rate": 94.6,
+  "rendered": 629,
+  "verbatim": 589,
+  "verbatimWav2vec2": 374,
+  "rate": 93.6,
   "failures": [
+   {
+    "key": "equalSides|eqs:mix:16-_=5+2:9|choice",
+    "skill": "equalSides",
+    "expected": "Seksten minus hvad er lig med fem plus to?",
+    "asr": "s6 minus hvad at ligemed 5 plus 2",
+    "asrWhisper": "16 minus hvad er lige med 5 plus 2",
+    "clips": [
+     "n.mid.16",
+     "op.minus",
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.5",
+     "op.plus",
+     "n.end.2"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:sub:14-_=13-3:4|choice",
+    "skill": "equalSides",
+    "expected": "Fjorten minus hvad er lig med tretten minus tre?",
+    "asr": "14 minus hvad at lige med 13 minus 3",
+    "asrWhisper": "14 minus hvad er lige med 13 minus 3",
+    "clips": [
+     "n.mid.14",
+     "op.minus",
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.13",
+     "op.minus",
+     "n.end.3"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:sub:17-_=15-4:5|choice",
+    "skill": "equalSides",
+    "expected": "Sytten minus hvad er lig med femten minus fire?",
+    "asr": "17tn minus hvad af lige med 15 minus 4",
+    "asrWhisper": "17 minus hvad alligevel 15 minus 4",
+    "clips": [
+     "n.mid.17",
+     "op.minus",
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.15",
+     "op.minus",
+     "n.end.4"
+    ],
+    "blamed": [
+     "n.mid.17",
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:tf:7+3=10+_:0|choice",
+    "skill": "equalSides",
+    "expected": "Syv plus tre er lig med ti plus hvad?",
+    "asr": "7 plus 3 er ligmet 10 plus hvad",
+    "asrWhisper": "7 plus 3 er lige med 10 plus hvad?",
+    "clips": [
+     "n.mid.7",
+     "op.plus",
+     "n.mid.3",
+     "op.er_lig_med",
+     "n.mid.10",
+     "op.plus",
+     "frag.hvad"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:mix:19-_=5+7:6|choice",
+    "skill": "equalSides",
+    "expected": "Nitten minus hvad er lig med fem plus syv?",
+    "asr": "nitten minus vad af ligmet 5 plus 7",
+    "asrWhisper": "19 minus hvad er lige med 5 plus 7",
+    "clips": [
+     "n.mid.19",
+     "op.minus",
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.5",
+     "op.plus",
+     "n.end.7"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:mix:17-5=_+8:4|choice",
+    "skill": "equalSides",
+    "expected": "Sytten minus fem er lig med hvad plus otte?",
+    "asr": "17n minus 5 er lig med hvad plus 8",
+    "asrWhisper": "17 minus 5 er lige med hvad plus 8",
+    "clips": [
+     "n.mid.17",
+     "op.minus",
+     "n.mid.5",
+     "op.er_lig_med",
+     "frag.hvad",
+     "op.plus",
+     "n.end.8"
+    ],
+    "blamed": [
+     "n.mid.17"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:add:_+7=5+3:8|choice",
+    "skill": "equalSides",
+    "expected": "Hvad plus syv er lig med fem plus tre?",
+    "asr": "hvadplus 7 er ligmet 5 plus 3",
+    "asrWhisper": "Hvad plus 7 er lige med 5 plus 3",
+    "clips": [
+     "frag.hvad",
+     "op.plus",
+     "n.mid.7",
+     "op.er_lig_med",
+     "n.mid.5",
+     "op.plus",
+     "n.end.3"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:sub:13-_=15-4:11|choice",
+    "skill": "equalSides",
+    "expected": "Tretten minus hvad er lig med femten minus fire?",
+    "asr": "tr3ten minus hvad at ligemed 15 minus 4",
+    "asrWhisper": "13 minus hvad? Alig med 15 minus 4",
+    "clips": [
+     "n.mid.13",
+     "op.minus",
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.15",
+     "op.minus",
+     "n.end.4"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:tf:_=2+8:11|choice",
+    "skill": "equalSides",
+    "expected": "Hvad er lig med to plus otte?",
+    "asr": "hvad er ligemed 2 plus 8",
+    "asrWhisper": "Hvad? Alligevel 2 plus 8",
+    "clips": [
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.2",
+     "op.plus",
+     "n.end.8"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:add:3+_=2+5:4|choice",
+    "skill": "equalSides",
+    "expected": "Tre plus hvad er lig med to plus fem?",
+    "asr": "3 plus hvad af limet 2 plus 5",
+    "asrWhisper": "3 plus hvad er lige med 2 plus 5",
+    "clips": [
+     "n.mid.3",
+     "op.plus",
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.2",
+     "op.plus",
+     "n.end.5"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:tf:8+2=10+_:1|choice",
+    "skill": "equalSides",
+    "expected": "Otte plus to er lig med ti plus hvad?",
+    "asr": "warte plus 2 er ligemed 10 plus hvad",
+    "asrWhisper": "8 plus 2 er lige med 10 plus hvad?",
+    "clips": [
+     "n.mid.8",
+     "op.plus",
+     "n.mid.2",
+     "op.er_lig_med",
+     "n.mid.10",
+     "op.plus",
+     "frag.hvad"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:tf:9+7=10+_:6|choice",
+    "skill": "equalSides",
+    "expected": "Ni plus syv er lig med ti plus hvad?",
+    "asr": "9 plus 7 er lige med 10 plus vad",
+    "asrWhisper": "9 plus 7 er lige med 10 plus hvad?",
+    "clips": [
+     "n.mid.9",
+     "op.plus",
+     "n.mid.7",
+     "op.er_lig_med",
+     "n.mid.10",
+     "op.plus",
+     "frag.hvad"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:add:12+_=7+6:1|choice",
+    "skill": "equalSides",
+    "expected": "Tolv plus hvad er lig med syv plus seks?",
+    "asr": "t2 plus vad af limet 7 plus 6",
+    "asrWhisper": "12 plus hvad er lige med 7 plus 6",
+    "clips": [
+     "n.mid.12",
+     "op.plus",
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.7",
+     "op.plus",
+     "n.end.6"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:mix:17-_=4+5:6|choice",
+    "skill": "equalSides",
+    "expected": "Sytten minus hvad er lig med fire plus fem?",
+    "asr": "17tn minus vad af ligemed 4 plus 5",
+    "asrWhisper": "17 minus hvad er lige med 4 plus 5",
+    "clips": [
+     "n.mid.17",
+     "op.minus",
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.4",
+     "op.plus",
+     "n.end.5"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
    {
     "key": "patterns|ptn:AB:triangle.square:5|fillSlots",
     "skill": "patterns",
@@ -363,7 +954,7 @@
     "key": "count10|c10:dice:1|countTap",
     "skill": "count10",
     "expected": "Læg en klods i kurven.",
-    "asr": "læk i en klods i kurven",
+    "asr": "lik én klods i kurven",
     "asrWhisper": "Læg 1 klos i kurven",
     "clips": [
      "frag.laeg",
@@ -379,7 +970,7 @@
     "key": "count10|c10:scatter:7|countTap",
     "skill": "count10",
     "expected": "Læg syv bolde i kurven.",
-    "asr": "læk 7 bolde i kurven",
+    "asr": "lik 7 bolde i kurven",
     "asrWhisper": "Læg 7 bolte i kurven",
     "clips": [
      "frag.laeg",
@@ -388,14 +979,14 @@
      "frag.i_kurven"
     ],
     "blamed": [
-     "frag.laeg"
+     "noun.thing.ball.pl"
     ]
    },
    {
     "key": "count20|c20:loose:18|countTap",
     "skill": "count20",
     "expected": "Læg atten bolde i kurven.",
-    "asr": "læk 18 bolde i kurven",
+    "asr": "lik 18 bolde i kurven",
     "asrWhisper": "Læg 18 bolte i kurven",
     "clips": [
      "frag.laeg",
@@ -404,7 +995,224 @@
      "frag.i_kurven"
     ],
     "blamed": [
-     "frag.laeg"
+     "noun.thing.ball.pl"
+    ]
+   },
+   {
+    "key": "order100|o100:crossTen:after:69|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre fra syvogtres.",
+    "asr": "til videre fra 67",
+    "asrWhisper": "Til videre fra 67",
+    "clips": [
+     "s.order20.countOn",
+     "n.end.67"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order100|o100:minus1:39|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl baglæns fra niogtredive.",
+    "asr": "til baglæns fra 39",
+    "asrWhisper": "Til baglands fra 39",
+    "clips": [
+     "s.order20.countBack",
+     "n.end.39"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order100|o100:crossTen:before:40|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl baglæns fra toogfyrre.",
+    "asr": "til baulæns fra 42",
+    "asrWhisper": "Til baglands fra 42",
+    "clips": [
+     "s.order20.countBack",
+     "n.end.42"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order100|o100:plus1:94|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre fra fireoghalvfems.",
+    "asr": "til videre fra 94",
+    "asrWhisper": "Til videre fra 94",
+    "clips": [
+     "s.order20.countOn",
+     "n.end.94"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order100|o100:plus1:68|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre fra otteogtres.",
+    "asr": "til videre fra 68",
+    "asrWhisper": "Til videre fra 68",
+    "clips": [
+     "s.order20.countOn",
+     "n.end.68"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order100|o100:minus1:44|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl baglæns fra fireogfyrre.",
+    "asr": "til baulens fra 44",
+    "asrWhisper": "Til baglands fra 44",
+    "clips": [
+     "s.order20.countBack",
+     "n.end.44"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order100|o100:crossTen:after:29|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre fra syvogtyve.",
+    "asr": "til videre fra 27",
+    "asrWhisper": "Til videre fra 27",
+    "clips": [
+     "s.order20.countOn",
+     "n.end.27"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order100|o100:plus1:26|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre fra seksogtyve.",
+    "asr": "til videre fra 26",
+    "asrWhisper": "Til videre fra 26",
+    "clips": [
+     "s.order20.countOn",
+     "n.end.26"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order1000|o1000:plus1:352|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl videre fra tre hundrede og tooghalvtreds.",
+    "asr": "til videre fra 352",
+    "asrWhisper": "Til videre fra 352",
+    "clips": [
+     "s.order20.countOn",
+     "hog.300",
+     "n.end.52"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order1000|o1000:minus1:197|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl baglæns fra et hundrede og syvoghalvfems.",
+    "asr": "til baglæns fra 197",
+    "asrWhisper": "Til baglands fra 1997",
+    "clips": [
+     "s.order20.countBack",
+     "hog.100",
+     "n.end.97"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order1000|o1000:plus1:132|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl videre fra et hundrede og toogtredive.",
+    "asr": "til videre fra 132",
+    "asrWhisper": "Til videre fra 132",
+    "clips": [
+     "s.order20.countOn",
+     "hog.100",
+     "n.end.32"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order1000|o1000:crossHundred:minus1:300|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl baglæns fra tre hundrede og to.",
+    "asr": "til baglæns fra 302",
+    "asrWhisper": "Til baglands fra 302",
+    "clips": [
+     "s.order20.countBack",
+     "hog.300",
+     "n.end.2"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order1000|o1000:plus1:677|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl videre fra seks hundrede og syvoghalvfjerds.",
+    "asr": "til videre fra 677",
+    "asrWhisper": "Til videre fra 677 til 677",
+    "clips": [
+     "s.order20.countOn",
+     "hog.600",
+     "n.end.77"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order1000|o1000:plus1:349|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl videre fra tre hundrede og niogfyrre.",
+    "asr": "til videre fra 349",
+    "asrWhisper": "Til videre fra 349",
+    "clips": [
+     "s.order20.countOn",
+     "hog.300",
+     "n.end.49"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order1000|o1000:minus1:145|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl baglæns fra et hundrede og femogfyrre.",
+    "asr": "til baulens fra 145",
+    "asrWhisper": "Til baglands fra 145",
+    "clips": [
+     "s.order20.countBack",
+     "hog.100",
+     "n.end.45"
+    ],
+    "blamed": [
+     "s.order20.countBack"
     ]
    },
    {
@@ -513,9 +1321,11 @@
   "templates97": false
  },
  "retake": [
-  "frag.laeg",
   "hog.300",
+  "n.mid.17",
+  "noun.thing.ball.pl",
   "noun.thing.cube.sg",
+  "op.er_lig_med",
   "s.order20.countBack",
   "s.order20.countOn",
   "s.patterns.continue"
