@@ -6,7 +6,8 @@ import path from 'node:path'
 
 const dist = path.resolve(import.meta.dirname, '../dist')
 const KB = 1024
-const BUDGET = { initial: 160 * KB, chunk: 60 * KB, total: 600 * KB, font: 80 * KB }
+// total: 750 KB since SPEC A16 (every lazy chunk summed; the initial bundle and each chunk set the waiting time)
+const BUDGET = { initial: 160 * KB, chunk: 60 * KB, total: 750 * KB, font: 80 * KB }
 
 const walk = (dir) =>
   readdirSync(dir).flatMap((name) => {
@@ -37,7 +38,7 @@ for (const p of js) {
   rows.push([rel(p), size, isInitial])
 }
 if (initial > BUDGET.initial) errors.push(`initial JS er ${(initial / KB).toFixed(1)} KB gzip (> 160 KB)`)
-if (total > BUDGET.total) errors.push(`al JS er ${(total / KB).toFixed(1)} KB gzip (> 600 KB)`)
+if (total > BUDGET.total) errors.push(`al JS er ${(total / KB).toFixed(1)} KB gzip (> ${BUDGET.total / KB} KB)`)
 for (const p of files.filter((f) => /\.woff2$/.test(f))) {
   const size = statSync(p).size
   if (size > BUDGET.font) errors.push(`skrift ${rel(p)} er ${(size / KB).toFixed(1)} KB (> 80 KB)`)

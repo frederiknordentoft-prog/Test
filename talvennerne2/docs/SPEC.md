@@ -44,6 +44,7 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
 - **A13 – Turen, når dagens nye nøgler er brugt (2/10, UIFIX2; noteret 3/10).** Med loftet på 20 nye nøgler pr. læringsdag nået (§5.4) spørges ingen nøgle mere end 2 gange i én tur (`CAPPED_REPEAT_MAX`). Turen fyldes med regionens egne sete nøgler, så kædens, så review fra de startede skills. Løber de tør, bliver turen kortere i stedet for at gentage "1 + ? = 2" fem gange. En node, barnet aldrig har spillet, får en smagsprøve på sine første 2 nøgler (`TASTE_KEYS`), dog højst 4 sådanne nøgler pr. læringsdag (`TASTE_PER_DAY`). Så bliver en lang session ved med at være konsoliderende og aldrig nyt stof node efter node (§13). Fundet som UI-fund 10 og 16.
 - **A14 – Gætterate for udfyldning og kroner (2/10, UIFIX2; noteret 3/10).** I §3.1 tæller `guessP` for `fillSlots` alle udfyldninger, opgaven accepterer: (1 + antal i `accept`) / muligheder^felter, fx 10|3 og 3|10 for 13 = □ + □ og de ækvivalente brøker. For `keypad` i kroner (`entryScale` 100) regnes intervallet i tastede kroner, ikke i øre: 0–2000 øre er 21 mulige svar, ikke 2001. Fundet som UI-fund 8 og 22.
 - **A15 – En sten tæller kun med sit eget stof (3/10, integrator; QA2 P2-1).** En tur tæller for stenen (stjerner, ven, kiste, spillet), når mindst halvdelen af turens opgaver er stenens egne nøgler: nodens skills inden for regionens grænser og ikke review-only (`OWN_SHARE_MIN`, `PlannedRound.ownShare`). Det afgøres, når turen planlægges. En sten, der aldrig er spillet, og hvis tur ville være under halvt egen, fordi dagens nye nøgler er brugt (A13), starter ingen tur (`chooseStart` → `'tomorrow'`). Intro-skærmen viser Pip: "Her er der nyt i morgen. Nu kan du øve det, du har lært." med to lige store knapper, Blandet øvelse og Til kortet. Der er ingen nedtælling, intet ur og intet "kom tilbage om …" (§13). En sten, der allerede er spillet, kører som i A13. Prøver, finaler, Blandet øvelse og hytten tæller altid. A13's smagsprøve (`TASTE_KEYS`, `TASTE_PER_DAY`) kan ikke nå halvdelen af en tur og bruges derfor ikke længere for nye sten; den ryddes op senere.
+- **A16 – Budgettet for al JS er 750 KB gzip (3/10, integrator).** Tallet er summen af alle dovne chunks: 16 arter, 74 genstande, 4 scener og 72 skills, som hver først hentes, når barnet når dem. Ventetiden bestemmes af startbundtet (≤ 160 KB) og den enkelte chunk (≤ 60 KB), og de er uændrede. Med Ridder og Talmagiker nåede bølge 2 604 KB, og bølge 3 lægger ca. 90–100 KB til (4 arter, en scene, 16 skills og Astronaut). Stemmens sprites (7–16 MB) dominerer det samlede download, så 150 KB JS er under 2 % af det. Data hører ikke til i JS: stemmens manifest hentes som JSON (3/10), og nye tabeller (fx lommernes hylstre) skal være kompakte. `scripts/budget.mjs` fejler buildet over 750 KB.
 
 ---
 
@@ -1358,7 +1359,7 @@ De 32 motortests fra V1 porteres til `src/engine/*.test.ts`.
 | Initial JS | ≤ 160 KB |
 | Motor-chunk (registry og skills, lazy efter første render) | ≤ 60 KB |
 | Hver lazy chunk | ≤ 60 KB |
-| Al JS | ≤ 600 KB |
+| Al JS | ≤ 750 KB (A16; var 600 KB) |
 | Skrift | ≤ 80 KB |
 
 Lazy-indlæses: dashboard, butik, garderobe, Dyrehave, bøger, domæne-UI, kind-UI, arter (ikke-eager glob, buddyen preloades), audio-manifest, lyt og diag.
