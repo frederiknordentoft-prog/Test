@@ -354,6 +354,14 @@
 .tv-tile.is-resume {
   width: 100%;
 }
+/* "Næste sted" is the map's one big tap: it has the whole row, so a long region name
+   ("Stortalsbjerget", "Hundredemarken") is never cut off on an iPad or a phone (QA2 P3-11). A tile
+   left alone on the last row has the whole row too. */
+.tv-side__tiles > .tv-tile.is-next,
+.tv-side__tiles > .tv-tile.is-next ~ .tv-tile:nth-child(even):last-child,
+.tv-side__tiles:not(:has(> .tv-tile.is-next)) > .tv-tile:nth-child(odd):last-child {
+  grid-column: 1 / -1;
+}
 .tv-tile__badge {
   display: grid;
   flex: none;
@@ -381,6 +389,8 @@
   line-height: 1.15;
 }
 .tv-tile__sub {
+  /* a region name longer than a half tile (a hut's) wraps instead of running out of it */
+  overflow-wrap: break-word;
   font-size: 14px;
   font-weight: 700;
   line-height: 1.2;

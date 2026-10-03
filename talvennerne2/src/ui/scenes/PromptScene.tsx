@@ -2,7 +2,7 @@
 // materials library. Wave 1 scenes are complete; the rest are simple, faithful pictures of their
 // data that later waves can deepen (skills may also bring their own Prompt.tsx, SPEC §12.3).
 import type { CSSProperties, ReactNode } from 'react'
-import type { Prompt, Task, Term } from '../../engine/types'
+import type { AnswerValue, Prompt, Task, Term } from '../../engine/types'
 import {
   AnalogClock, BarChart, Base10Group, CoordGrid, DigitalClock, FractionBars, FractionShape,
   HundredBoard, NumberLine, Pictogram, Ruler, RULER, Seesaw, Shape2D, Solid3D, SquareGrid, Thing, niceStep,
@@ -30,6 +30,8 @@ export interface PromptSceneProps {
   task?: Task
   /** Shown in the first answer blank (typed digits, the struck or right answer). */
   entry?: ReactNode
+  /** The answer handed in (slot good or oops): a hundred board writes it into its own blank cell. */
+  given?: AnswerValue | null
   /** A row's gaps filled one by one (an order handed in), instead of `entry` in the first. */
   entries?: readonly ReactNode[]
   slot?: BlankSlot
@@ -132,7 +134,7 @@ export function PromptScene(props: PromptSceneProps) {
   )
 }
 
-function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, speaking = false, onHear }: PromptSceneProps): ReactNode {
+function scene({ prompt: p, task, entry, entries, given, slot = 'empty', replay = 0, speaking = false, onHear }: PromptSceneProps): ReactNode {
   const seed = task?.id ?? p.scene
   switch (p.scene) {
     case 'equation': {
@@ -172,13 +174,21 @@ function scene({ prompt: p, task, entry, entries, slot = 'empty', replay = 0, sp
         />
       )
     }
-    case 'board':
+    case 'board': {
+      // the answer stands in the board's own "?" cell, struck when wrong: a chip on the board's corner
+      // covered 9, 10, 19 and 20 (QA2 P3-3)
+      const answered = p.blank !== undefined && typeof given === 'number' && (slot === 'good' || slot === 'oops') ? given : null
       return (
         <div className="tv-board">
           <HundredBoard highlight={p.highlight} blank={p.blank} className="tv-scene__board" />
-          {p.blank !== undefined && entry !== undefined && entry !== null && entry !== '' && <span className={cx('tv-board__entry', `is-${slot}`)}>{entry}</span>}
+          {answered !== null ? (
+            <BoardAnswer cell={p.blank!} n={answered} struck={slot === 'oops'} />
+          ) : (
+            p.blank !== undefined && entry !== undefined && entry !== null && entry !== '' && <span className={cx('tv-board__entry', `is-${slot}`)}>{entry}</span>
+          )}
         </div>
       )
+    }
     case 'shape':
       return <Shape2D shape={p.shape} variant={p.variant} mark={p.mark} cut={p.cut} size={170} className="tv-scene__shape" />
     case 'shapes':
@@ -295,6 +305,39 @@ function Groups({ groups, size, thing }: { groups: number; size: number; thing: 
         </span>
       ))}
     </div>
+  )
+}
+
+/**
+ * The hundred board's geometry (src/art/materials/Grids.tsx HundredBoard): 40-unit cells, 3 apart,
+ * 6 from the edge, 439 units across. The answer is drawn over the blank cell in a second svg of the
+ * same box, so the CSS sizes both alike.
+ */
+const BOARD = { cell: 40, gap: 3, pad: 6, w: 439 }
+
+export function boardCell(v: number): { x: number; y: number } {
+  const i = v - 1
+  return { x: BOARD.pad + (i % 10) * (BOARD.cell + BOARD.gap), y: BOARD.pad + Math.floor(i / 10) * (BOARD.cell + BOARD.gap) }
+}
+
+function BoardAnswer({ cell, n, struck }: { cell: number; n: number; struck: boolean }) {
+  const { x, y } = boardCell(cell)
+  const c = BOARD.cell
+  return (
+    <svg
+      className={cx('tv-mat tv-scene__board tv-board__answer', struck ? 'is-oops' : 'is-good')}
+      viewBox={`0 0 ${BOARD.w} ${BOARD.w}`}
+      width={BOARD.w}
+      height={BOARD.w}
+      aria-hidden
+      data-board-answer={n}
+    >
+      <rect className="tv-board__cell" x={x - 2} y={y - 2} width={c + 4} height={c + 4} rx={9} />
+      <text className="tv-board__num" x={x + c / 2} y={y + c / 2} textAnchor="middle" dominantBaseline="central" fontSize={formatNumber(n).length > 2 ? 15 : 19}>
+        {formatNumber(n)}
+      </text>
+      {struck && <path className="tv-board__strike" d={`M${x + 5} ${y + c - 12}L${x + c - 5} ${y + 12}`} />}
+    </svg>
   )
 }
 

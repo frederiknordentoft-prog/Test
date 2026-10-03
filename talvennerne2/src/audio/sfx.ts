@@ -71,6 +71,17 @@ function reverbFor(ctx: AudioContext, sfxBus: AudioNode): AudioNode {
   return node
 }
 
+/**
+ * A frequency the context can play: an oscillator's or a filter's frequency is only nominal up to
+ * half the sample rate (12 kHz at 24 kHz), and a value past it gave a console warning at every
+ * celebration (QA1 and QA2 P3-1: "Oscillator.frequency … 12320 outside nominal range"). The bright
+ * sparkle notes' modulators (freq · ratio) are the ones that reach it; what lies above it cannot be
+ * played anyway, it would only fold back.
+ */
+export function playable(ctx: Pick<BaseAudioContext, 'sampleRate'>, hz: number): number {
+  return Math.min(hz, ctx.sampleRate * 0.49)
+}
+
 function fm(c: Ctx, v: FmVoice): void {
   const { ctx } = c
   const t = c.t0 + (v.delay ?? 0)
@@ -82,12 +93,12 @@ function fm(c: Ctx, v: FmVoice): void {
 
   const car = ctx.createOscillator()
   car.type = v.carrier ?? 'sine'
-  car.frequency.setValueAtTime(v.freq, t)
-  if (v.to !== undefined) car.frequency.exponentialRampToValueAtTime(Math.max(20, v.to), t + dur)
+  car.frequency.setValueAtTime(playable(ctx, v.freq), t)
+  if (v.to !== undefined) car.frequency.exponentialRampToValueAtTime(playable(ctx, Math.max(20, v.to)), t + dur)
 
   const mod = ctx.createOscillator()
-  mod.frequency.setValueAtTime(v.freq * ratio, t)
-  if (v.to !== undefined) mod.frequency.exponentialRampToValueAtTime(Math.max(20, v.to * ratio), t + dur)
+  mod.frequency.setValueAtTime(playable(ctx, v.freq * ratio), t)
+  if (v.to !== undefined) mod.frequency.exponentialRampToValueAtTime(playable(ctx, Math.max(20, v.to * ratio)), t + dur)
   const depth = ctx.createGain()
   const dev = index * v.freq * ratio
   depth.gain.setValueAtTime(dev, t)
@@ -140,8 +151,8 @@ function noise(c: Ctx, n: Noise): void {
   src.buffer = buffer
   const filter = ctx.createBiquadFilter()
   filter.type = n.filter ?? 'bandpass'
-  filter.frequency.setValueAtTime(n.hz ?? 1400, t)
-  if (n.to !== undefined) filter.frequency.exponentialRampToValueAtTime(Math.max(40, n.to), t + dur)
+  filter.frequency.setValueAtTime(playable(ctx, n.hz ?? 1400), t)
+  if (n.to !== undefined) filter.frequency.exponentialRampToValueAtTime(playable(ctx, Math.max(40, n.to)), t + dur)
   filter.Q.value = n.q ?? 1
   const amp = ctx.createGain()
   const peak = n.gain ?? 0.1
@@ -287,6 +298,11 @@ const SOUNDS: Readonly<Record<SfxName, (c: Ctx, o: SfxOptions) => void>> = {
   lyspaere: (c) => fm(c, { freq: 987.77, ratio: 2, index: 0.9, dur: 0.5, attack: 0.08, gain: 0.06, wet: 0.35 }),
 }
 
+/** Schedules a named effect on `out` (playSfx's work; a test hands in a context that records it). */
+export function scheduleSfx(ctx: AudioContext, out: AudioNode, name: SfxName, opts: SfxOptions = {}): void {
+  SOUNDS[name]({ ctx, out, send: reverbFor(ctx, out), t0: ctx.currentTime + 0.005 }, opts)
+}
+
 /** Plays a named effect on the sfx bus (quiet when effects are off or audio is locked). */
 export function playSfx(name: SfxName, opts: SfxOptions = {}): void {
   if (!sfxEnabled()) return
@@ -294,8 +310,7 @@ export function playSfx(name: SfxName, opts: SfxOptions = {}): void {
   const graph = existingAudioGraph()
   if (!graph || graph.ctx.state !== 'running') return
   try {
-    const { ctx, sfxBus } = graph
-    SOUNDS[name]({ ctx, out: sfxBus, send: reverbFor(ctx, sfxBus), t0: ctx.currentTime + 0.005 }, opts)
+    scheduleSfx(graph.ctx, graph.sfxBus, name, opts)
   } catch {
     // effects are decoration; never let them break the game
   }

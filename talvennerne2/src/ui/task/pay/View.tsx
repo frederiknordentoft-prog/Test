@@ -218,13 +218,18 @@ export function PayView({ task, mode, given, onSubmit, onActivity }: TaskViewPro
         </div>
         <CheckButton valid={tray.length > 0} stateKey={tray.join(',')} enabled={input} taskId={task.id} onCheck={submit} />
       </div>
-      {/* the sum's place is kept from the start, so the purse never moves when it appears (P3-15) */}
+      {/* on a new key the sum's place is kept from the start, so the purse never moves when it
+          appears under a quick finger (QA2 P3-15) */}
       {task.scaffold && (
-        <SpokenText
-          parts={[{ clip: 's.kind.pay.inTray' }, { money: { ore: sum, form: 'end' } }]}
-          text={formatMoney(sum)}
-          className={cx('tv-pay__sum', sum === 0 && 'is-zero')}
-        />
+        <span className="tv-pay__sumslot">
+          {task.scaffold && sum > 0 && (
+            <SpokenText
+              parts={[{ clip: 's.kind.pay.inTray' }, { money: { ore: sum, form: 'end' } }]}
+              text={formatMoney(sum)}
+              className="tv-pay__sum"
+            />
+          )}
+        </span>
       )}
     </div>
   )

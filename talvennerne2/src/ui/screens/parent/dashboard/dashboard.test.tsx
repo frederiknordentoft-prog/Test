@@ -11,6 +11,7 @@ import { StatusDot, TableGridView } from './charts'
 import { CurriculumTab } from './CurriculumTab'
 import { MisconceptionsTab } from './MisconceptionsTab'
 import { OverviewTab } from './OverviewTab'
+import { Report as PrintReport } from './PrintReport'
 import { RewardsTab } from './RewardsTab'
 import { SettingsTab } from './SettingsTab'
 import { SkillsTab } from './SkillsTab'
@@ -109,5 +110,27 @@ describe('dashboard views', () => {
     expect(html).toContain('3 · 7 = 21: boks 4, sidder fast')
     expect(html).toContain('7 · 3 = 21: boks 4, sidder fast')
     expect(html.match(/<rect/g)).toHaveLength(100)
+  })
+})
+
+describe('counts in words (QA2 P3-14)', () => {
+  it('says "1 aktiv dag af 14" and "1 opgave", and "2 aktive dage" in the overview and the print', () => {
+    const base = demo()
+    const one: Dashboard = { ...base, overview: { ...base.overview, activeDays: 1, rounds: 1, answers: 1 } }
+    const two: Dashboard = { ...base, overview: { ...base.overview, activeDays: 2, rounds: 2, answers: 2 } }
+    const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
+    const view1 = text(renderToStaticMarkup(<OverviewTab d={one} onPrint={() => {}} />))
+    expect(view1).toContain('aktiv dag af 14')
+    expect(view1).not.toContain('aktive dag ')
+    expect(view1).toMatch(/1 opgave\b(?!r)/)
+    const print1 = text(renderToStaticMarkup(<PrintReport d={one} />))
+    expect(print1).toContain('1 aktiv dag ·')
+    expect(print1).toContain('1 tur ·')
+    expect(print1).toContain('1 opgave ·')
+    const view2 = text(renderToStaticMarkup(<OverviewTab d={two} onPrint={() => {}} />))
+    expect(view2).toContain('aktive dage af 14')
+    const print2 = text(renderToStaticMarkup(<PrintReport d={two} />))
+    expect(print2).toContain('2 aktive dage ·')
+    expect(print2).toContain('2 opgaver ·')
   })
 })

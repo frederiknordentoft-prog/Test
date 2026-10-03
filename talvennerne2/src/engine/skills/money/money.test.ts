@@ -8,7 +8,7 @@ import coinNamesModule from './coinNames'
 import countCoinsModule from './countCoins'
 import payExactModule from './payExact'
 import changeModule from './change'
-import { fewestPieces, pieceOf } from './kit'
+import { GOODS, GOOD_PRICE_KR, fewestPieces, goodsFor, pieceOf } from './kit'
 import { factsUnderTest, flagsRaised, globalIdCheck, skillContract, speechProblems, tasksUnderTest } from '../number/testing/harness'
 import { isMisconception } from '../number/kit'
 import { buildTask } from '../../tasks'
@@ -576,5 +576,35 @@ describe('Målebakken (w1-maal-penge), Købmandsgården (w2-penge) and Markedet 
         }
       }
     }
+  })
+})
+
+describe('believable prices in the shop (QA2 P3-4)', () => {
+  it('puts a thing on the counter that can cost the price: no carrot for 90 kr', () => {
+    for (let kr = 1; kr <= 99; kr++) {
+      const fits = GOODS.filter((g) => GOOD_PRICE_KR[g][0] <= kr && kr <= GOOD_PRICE_KR[g][1])
+      expect(fits.length, `${kr} kr`).toBeGreaterThan(0)
+      const thing = goodsFor(`pay:to100:${kr * 100}`, kr * 100)
+      expect(GOOD_PRICE_KR[thing][0] <= kr && kr <= GOOD_PRICE_KR[thing][1], `${kr} kr: ${thing}`).toBe(true)
+    }
+    expect(goodsFor('pay:to100:9000', 9000)).not.toBe('carrot')
+    expect(['carrot', 'apple', 'strawberry', 'mushroom']).toContain(goodsFor('byt:from10:300', 300))
+  })
+
+  it('does so for every shop task of payExact and change, and the things still vary', () => {
+    const seen = new Set<string>()
+    for (const mod of [payExactModule, changeModule]) {
+      for (const f of mod.enumerate()) {
+        {
+          const p = mod.prompt(f)
+          if (p.scene !== 'shop') continue
+          const thing = p.thing as keyof typeof GOOD_PRICE_KR
+          seen.add(thing)
+          const [lo, hi] = GOOD_PRICE_KR[thing]
+          expect(lo <= p.priceOre / 100 && p.priceOre / 100 <= hi, `${f.id}: ${thing} for ${p.priceOre / 100} kr`).toBe(true)
+        }
+      }
+    }
+    expect(seen.size).toBe(GOODS.length)
   })
 })

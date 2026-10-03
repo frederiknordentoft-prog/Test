@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { factsOf, keysForSkills, skillRegistry } from '../../engine/registry'
 import { makeRng } from '../../engine/rng'
 import { buildTask, isMisconceptionId } from '../../engine/tasks'
-import type { Box, Task } from '../../engine/types'
+import type { Box, Prompt, Task } from '../../engine/types'
 import { readFileSync } from 'node:fs'
 import { isCorrect } from '../../engine/answer'
 import { lineRange } from './answers'
@@ -15,7 +15,9 @@ import { NumberlineView, shadowStart } from './numberline/View'
 import { MAX_TRAY, payValue, trayWith, trayWithout } from './pay/logic'
 import type { Piece } from './pay/logic'
 import { PayView } from './pay/View'
-import { PromptScene, evenHops, seesawLean } from '../scenes/PromptScene'
+import { moduleFor } from './registry'
+import { PromptScene, boardCell, evenHops, seesawLean } from '../scenes/PromptScene'
+import { HundredBoard } from '../../art/materials'
 import { hintFor } from '../hint/hintFor'
 import { HintVisual } from '../hint/HintVisual'
 
@@ -124,7 +126,9 @@ describe('quick taps and drags in the pay tray (QA2 P3-15)', () => {
   it('keeps the place of the sum on a new key from the start, so the purse never moves when it appears', () => {
     const fresh = payTask('pay:to100:7700', 0)
     const html = renderToStaticMarkup(<PayView task={fresh} mode="input" given={null} onSubmit={noop} onActivity={noop} onDraft={noop} speaking={null} />)
-    expect(html).toMatch(/class="[^"]*tv-pay__sum[^"]*is-zero/)
+    expect(html).toContain('tv-pay__sumslot')
+    // the sum itself only once there is one (wave2.test.ts: support on a new key, never 0 kr.)
+    expect(html).not.toContain('tv-pay__sum"')
     const known = payTask('pay:to100:7700', 2)
     expect(renderToStaticMarkup(<PayView task={known} mode="input" given={null} onSubmit={noop} onActivity={noop} onDraft={noop} speaking={null} />)).not.toContain('tv-pay__sum')
   })
@@ -224,5 +228,48 @@ describe('skip counting hops on the row\'s own numbers (QA2 P3-7)', () => {
     expect(evenHops(0, 100, [0, 30, 37])).toBeNull()
     expect(evenHops(400, 900, [420, 520, 620])).toBeNull()
     expect(evenHops(57, 87, [87, 77, 67, 57])).toEqual({ every: 10 })
+  })
+})
+
+describe('the struck answer on the hundred board (QA2 P3-3)', () => {
+  it('stands in the board\'s own "?" cell, never over its corner', () => {
+    const prompt: Prompt = { scene: 'board', highlight: [43], blank: 53 }
+    const html = renderToStaticMarkup(<PromptScene prompt={prompt} given={43} slot="oops" entry="43" />)
+    expect(html).toContain('data-board-answer="43"')
+    expect(html).not.toContain('tv-board__entry')
+    expect(html).toContain('tv-board__strike')
+    // the cell is the board's own: same box, same place as HundredBoard draws the blank
+    const board = renderToStaticMarkup(<HundredBoard blank={53} />)
+    expect(board).toContain('viewBox="0 0 439 439"')
+    expect(html).toContain('viewBox="0 0 439 439"')
+    expect(boardCell(53)).toEqual({ x: 92, y: 221 })
+    expect(boardCell(1)).toEqual({ x: 6, y: 6 })
+    expect(boardCell(100)).toEqual({ x: 393, y: 393 })
+    // a right answer fills the cell, not struck
+    const good = renderToStaticMarkup(<PromptScene prompt={prompt} given={53} slot="good" entry="53" />)
+    expect(good).toContain('data-board-answer="53"')
+    expect(good).not.toContain('tv-board__strike')
+  })
+})
+
+describe('the places of fillSlots and sortOrder are drawn once (QA2 P3-13)', () => {
+  it('a prompt with blanks is drawn by the view, never also on the card', () => {
+    const skills = reg.all.filter((d) => d.kinds.includes('fillSlots') || d.kinds.includes('sortOrder')).map((d) => ({ skill: d.id }))
+    let n = 0
+    const twice: string[] = []
+    for (const k of keysForSkills(skills, { skills: reg, states: {}, audioVerified: true, mode: 'round' })) {
+      for (const kind of k.kinds.filter((x) => x === 'fillSlots' || x === 'sortOrder')) {
+        for (let i = 0; i < 4; i++) {
+          const t = k.build(kind, makeRng(i + 3), i)
+          n++
+          if (moduleFor(t).ownsPrompt?.(t)) continue
+          const p = t.prompt
+          const blanks = p.scene === 'equation' ? p.terms.filter((x) => 'blank' in x).length : p.scene === 'row' ? p.cells.filter((c) => c === null).length : 0
+          if (blanks > 0) twice.push(`${t.factId} ${kind}: ${blanks} blanks on the card`)
+        }
+      }
+    }
+    expect(twice).toEqual([])
+    expect(n).toBeGreaterThan(100)
   })
 })

@@ -299,6 +299,35 @@
 /* The board takes the height its card gives it (--scene-h from the round card or the hint): with the
    strategy open the card is lower, and the board must shrink with it, never run out over the card
    (UI-fund 3). No height of its own here, which would win over the card's. */
+/* The answer in the board's own "?" cell (QA2 P3-3): a second svg of the same box over the board */
+.tv-board > .tv-mat {
+  grid-area: 1 / 1;
+}
+.tv-board__answer {
+  pointer-events: none;
+}
+.tv-board__cell {
+  fill: var(--color-card);
+  stroke: var(--color-oops);
+  stroke-width: 3;
+}
+.tv-board__answer.is-good .tv-board__cell {
+  fill: var(--color-good-soft);
+  stroke: var(--color-good);
+}
+.tv-board__num {
+  fill: var(--color-ink-2);
+  font-family: inherit;
+  font-weight: 900;
+}
+.tv-board__answer.is-good .tv-board__num {
+  fill: var(--color-ink);
+}
+.tv-board__strike {
+  stroke: var(--color-oops-lip);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
 .tv-board__entry {
   position: absolute;
   right: -8px;

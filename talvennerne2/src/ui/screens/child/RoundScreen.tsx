@@ -764,6 +764,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
                 task={task}
                 entry={entry}
                 entries={entries}
+                given={slot === 'good' || slot === 'oops' ? given : null}
                 slot={slot}
                 replay={replayCount}
                 speaking={reading}

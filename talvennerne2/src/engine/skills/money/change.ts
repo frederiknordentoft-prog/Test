@@ -154,7 +154,7 @@ export default {
   answerType: () => 'ore',
   prompt: (f: Fact) => {
     const s = parse(f.id)
-    return { scene: 'shop', thing: goodsFor(f.id), priceOre: s.price, paidOre: s.paid, purse: [...PURSE[s.family]] }
+    return { scene: 'shop', thing: goodsFor(f.id, s.price), priceOre: s.price, paidOre: s.paid, purse: [...PURSE[s.family]] }
   },
   optionView: () => 'amount',
   range: (f: Fact) => rangeOf(parse(f.id).family),
