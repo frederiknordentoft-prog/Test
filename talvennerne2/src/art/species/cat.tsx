@@ -233,9 +233,10 @@ function tailColors(pal: Palette, colorway: string, ids: PartCtx['ids']) {
 
 /**
  * Halens vækst på stor: riggen skalerer halen 1,3 (STAGE_XF), men så når krogen op til knurhårene og lukker
- * en lomme mellem hale, krop og kind (review G1-r4, huller-lint). Katten dæmper den til ca. 1,12.
+ * en lomme mellem hale, krop og kind (review G1-r4, huller-lint). Katten dæmper den til ca. 1,08, så halen også
+ * bliver i den sikre zone, når den svinger ud i vink.
  */
-const TAIL_STAGE3 = 0.86
+const TAIL_STAGE3 = 0.83
 
 /** Halen skaleret om roden (punkter og bredder, så stregen bevarer sin bredde og der ikke kommer flere elementer). */
 function scaleTail(t: TailShape, k: number): TailShape {
