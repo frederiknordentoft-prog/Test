@@ -4,13 +4,14 @@
 // R1 a concept flag with its home tip · R2 right but slow (accuracy ≥ 85 %, < 40 % fast, ≥ 20
 // answers in 14 days) · R3 a plateau (for the times tables: the table with the lowest mean box) ·
 // R4 forgotten · R5 "Med støtte" without typed answers for 7 days · R6 "Klar til: {region}".
-import { REGIONS, WORLD_BY_ID, nodesOfRegion } from '../content/curriculum'
+import { REGIONS, REGION_BY_ID, WORLD_BY_ID, nodesOfRegion, type RegionDef } from '../content/curriculum'
 import { SKILL_BY_ID } from '../content/skills'
 import { isFirstTry } from '../data/aggregate'
+import { daysBetween, learningDay } from '../engine/learningDay'
 import type { AnswerLogEntry, DailyAggregate, Medal, ProfileDoc, SkillId } from '../engine/types'
 import { isRegionOpen, nodeDone, playedNodes, trialPassed } from '../meta/unlock'
 import { addDays, inWindow, nameOf, windowEnding } from './format'
-import { DASH_RANK, WINDOW_DAYS, currentPlace, dashStatus, keysOfSkill, snapshotsBefore, trendOf } from './metrics'
+import { DASH_RANK, WINDOW_DAYS, currentPlace, dashStatus, keysOfSkill, snapshotsBefore } from './metrics'
 import { afterAt, personal } from './signs'
 import { productionTip, tableTip, tipFor } from './tips'
 import type { DashStatus, Recommendation, RuleId, SkillKeyIndex, SkillRow, SkillState, Signs } from './types'
@@ -23,6 +24,8 @@ export const R2 = { minAnswers: 20, minAccuracy: 0.85, maxFast: 0.4 } as const
 export const R3 = { minAnswers: 30, minDays: 3, maxGain: 0.25 } as const
 /** R5: days without a typed answer. */
 export const R5_DAYS = 7
+/** R4: days a skill must have been below what it once reached before it counts as forgotten. */
+export const FORGOTTEN_AFTER_DAYS = 7
 
 /** How many recommendations one rule may give. */
 const CAP: Readonly<Record<RuleId, number>> = { R1: 2, R2: 2, R3: 1, R4: 2, R5: 1, R6: 1 }
@@ -116,17 +119,50 @@ function r3(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recom
   return out.sort((a, b) => b.n - a.n).map((o) => o.rec)
 }
 
-/** Skills that look forgotten: the status fell in the last two weeks, or is below an earned medal. */
-export function forgotten(x: Pick<RecommendInput, 'states' | 'daily' | 'today'>): SkillId[] {
+/**
+ * The latest learning day the skill is known to have been at `level` or above: a day that ended there
+ * (its daily snapshot), or the day of a medal that says so (the reward log). Null when nothing says.
+ */
+function lastDayAt(skill: SkillId, level: DashStatus, x: Pick<RecommendInput, 'daily' | 'profile'>): string | null {
+  let last: string | null = null
+  const seen = (day: string) => {
+    if (last === null || day > last) last = day
+  }
+  for (const d of x.daily) {
+    const snap = d.snapshot[skill]
+    if (snap && DASH_RANK[dashStatus(snap.status)] >= DASH_RANK[level]) seen(d.day)
+  }
+  for (const e of x.profile.rewardLog) {
+    if (e.kind !== 'medal') continue
+    const [medal, of] = e.what.split(':') as [Medal, SkillId]
+    const floor = MEDAL_FLOOR[medal]
+    if (of === skill && floor && DASH_RANK[floor] >= DASH_RANK[level]) seen(learningDay(e.ts))
+  }
+  return last
+}
+
+/**
+ * Skills that look forgotten: below the status they had two weeks ago, or below an earned medal —
+ * and below it for at least a week (review app-w2-r1 P2-8). A few slips on the day of a medal or a
+ * passed trial are not forgetting: the child has just shown the skill, and the boxes come back with
+ * practice. A medal with no date on record (an old one) counts as long ago.
+ */
+export function forgotten(x: Pick<RecommendInput, 'states' | 'daily' | 'today' | 'profile'>): SkillId[] {
   const w = windowEnding(x.today, WINDOW_DAYS)
-  const all = Object.keys(x.states) as SkillId[]
-  const fell = new Set(trendOf(all, x.states, snapshotsBefore(x.daily, w.from)).down)
+  const before = snapshotsBefore(x.daily, w.from)
+  const out: SkillId[] = []
   for (const s of Object.values(x.states)) {
+    const then = before[s.skill]
+    let level: DashStatus = then ? dashStatus(then.status) : 'notStarted'
     // a skill this version cannot enumerate has no live status to compare with its medal
-    if (s.keys > 0 && s.medal && DASH_RANK[s.dash] < DASH_RANK[MEDAL_FLOOR[s.medal]]) fell.add(s.skill)
+    if (s.keys > 0 && s.medal && DASH_RANK[MEDAL_FLOOR[s.medal]] > DASH_RANK[level]) level = MEDAL_FLOOR[s.medal]
+    if (DASH_RANK[s.dash] >= DASH_RANK[level]) continue
+    const since = lastDayAt(s.skill, level, x)
+    if (since !== null && daysBetween(since, x.today) < FORGOTTEN_AFTER_DAYS) continue
+    out.push(s.skill)
   }
   const rank = (s: SkillId) => (x.states[s].medal === 'gold' ? 0 : x.states[s].medal ? 1 : 2)
-  return [...fell].sort((a, b) => rank(a) - rank(b))
+  return out.sort((a, b) => rank(a) - rank(b))
 }
 
 function r4(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recommendation[] {
@@ -157,12 +193,15 @@ function r5(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recom
 }
 
 function r6(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recommendation[] {
-  // nothing far below the child: from the grade before theirs, or the world they play in now
+  // Forward only (review app-w2-r1 P2-8): never a world below the child's grade or below the world
+  // they play in now, and in that world no new place before the one they play in now.
   const here = currentPlace(x.profile)
-  const floor = Math.min(x.profile.grade - 1, here ? WORLD_BY_ID[here.world].grade : 0)
+  const at = here?.region ? REGION_BY_ID[here.region] : undefined
+  const floor = Math.max(x.profile.grade, here ? WORLD_BY_ID[here.world].grade : 0)
   const regions = REGIONS.filter(
     (r) => WORLD_BY_ID[r.world].grade >= floor && r.skills.some((s) => on(s.skill)) && isRegionOpen(x.profile, r.id),
   )
+  const ahead = (r: RegionDef) => !at || r.world !== at.world || r.index > at.index
   const trials: Recommendation[] = regions
     .filter((r) => !trialPassed(x.profile, r.id) && nodesOfRegion(r.id).every((n) => n.slot === 'trial' || nodeDone(x.profile, n.id)))
     .map((r) => ({
@@ -172,7 +211,7 @@ function r6(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recom
       region: r.id,
     }))
   const fresh: Recommendation[] = regions
-    .filter((r) => playedNodes(x.profile, r.id) === 0)
+    .filter((r) => ahead(r) && playedNodes(x.profile, r.id) === 0)
     .map((r) => ({
       rule: 'R6',
       title: `Klar til: ${r.name}`,
