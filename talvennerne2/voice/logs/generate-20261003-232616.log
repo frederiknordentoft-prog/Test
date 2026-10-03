@@ -1,0 +1,17 @@
+23:26:16 generate.py --wave 2 --threads 4 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261003-232616.log)
+23:26:16 1061 klip valgt, 1058 færdige, 3 at lave
+23:26:33 input frame rate=25
+23:26:36 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+23:26:37 model indlæst på 19 s (4 tråde)
+23:26:40 ✅ EOS token detected! Stopping generation at step 36
+23:26:45 kald sentence k=1 t3 'en tyvekrone.': 8.1 s for 1.40 s lyd
+23:26:51   noun.coin.2000.indef.end t3: 0.94 s (forhold 0.60) -18.0 LUFS, alone: 'En tyvekrone' CER 0.0 (whisper, wav2vec2: 'en tyokrorne') → ok
+23:26:52   ✓ master noun.coin.2000.indef.end t3 (bestået)
+23:26:56 ✅ EOS token detected! Stopping generation at step 61
+23:27:01 kald single k=1 t3 'Tæl baglæns i hundreder fra,': 9.6 s for 2.40 s lyd
+23:27:04   s.order.countBackHundreds t3: 1.68 s (forhold 0.67) -18.09 LUFS, alone: 'tal baglens i hundreder fra' CER 0.087 (wav2vec2, whisper: 'Tal baglands i hundreder fra') → FEJL asr
+23:27:09 ✅ EOS token detected! Stopping generation at step 78
+23:27:16 kald single k=1 t3 'Hvor mange tiere og enere er der i,': 11.4 s for 3.08 s lyd
+23:27:16   s.place.howManyTensOnes t3: 2.26 s (forhold 0.56) -18.06 LUFS, alone: 'hvor mange tigere og enere er der i' CER 0.037 (wav2vec2) → ok
+23:27:16   ✓ master s.place.howManyTensOnes t3 (bestået)
+23:27:16 færdig: 2 nye mastere (0 ikke bestået, 0 kopier), 3 modelkald, 0.5 min generering (CPU 0.03 t), 1 klip mangler
