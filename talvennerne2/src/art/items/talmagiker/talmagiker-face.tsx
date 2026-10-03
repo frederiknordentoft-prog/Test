@@ -45,7 +45,7 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   // Højlys i den øverste ydre tak (uden for øjet) og glimt ved de nederste ydre takker.
   const glare = S.join(...([[L.x, 216], [R.x, -36]] as const).map(([x, deg]) => {
     const t = (deg * Math.PI) / 180
-    return S.ellipse(x + Math.cos(t) * r * 0.62, L.y + Math.sin(t) * r * 0.62, 1.4 * k, 2.8 * k, deg > 0 ? 30 : -30)
+    return S.ellipse(x + (Math.cos(t) * (v + r)) / 2, L.y + (Math.sin(t) * (v + r)) / 2, 1.4 * k, 2.8 * k, deg > 0 ? 30 : -30)
   }))
   const glints = S.join(S.star(L.x - r * 0.36, L.y - r * 1.02, 3.8 * k, 0.9 * k), S.star(R.x + r * 0.36, R.y - r * 1.02, 3.8 * k, 0.9 * k))
   return draw(

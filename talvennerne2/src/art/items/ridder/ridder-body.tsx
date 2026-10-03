@@ -19,7 +19,7 @@ const inner = (collar: number, hem: number, { c, sw }: { c: Parameters<ItemArt>[
   const at = (y: number) => S.spline([[-80, y + SAG * 0.2], [0, y + SAG * 2], [80, y + SAG * 0.2]])
   const rivets = [-30, -15, 15, 30].flatMap((x) => [l1, hem].map((y) => S.circle(x, y - LAME / 2 + SAG * 1.1 * (1 - (x / 80) ** 2), 1.7)))
   return [
-    [S.join(S.ellipse(-24, collar + 21, 4.4, 13, 24), S.ellipse(-33, collar + 13, 1.6, 4.4, 24)), c.highlight],
+    [S.ellipse(-24, collar + 21, 4.4, 13, 24), c.highlight],
     [S.join(S.spline([[0.6, collar - 2], [0, collar + 16], [0, l2 - 1]]), at(l2), at(l1)), 'none', c.outline, sw * 0.8],
     [S.join(S.band(-80, 80, hem - 3.2, hem, SAG), ...rivets), c.trim, c.trimOutline, sw * 0.6],
   ]

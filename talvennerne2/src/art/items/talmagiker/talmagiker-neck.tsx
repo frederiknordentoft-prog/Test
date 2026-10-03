@@ -34,7 +34,7 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
     [S.lune(C[0], C[1], GEM - 0.6, GEM - 0.6, 2.8, -15, 110), c.mainShade],
     [S.spline(SEVEN, 0.15), 'none', c.trimOutline, sw * 1.45],
     [S.spline(SEVEN, 0.15), 'none', c.accent, sw * 0.75],
-    [S.join(S.ellipse(C[0] - 5.2, C[1] - 4.6, 2.4, 1.3, -40), S.star(C[0] + FRAME + 3.6, C[1] - FRAME + 1.4, 4, 1)), c.highlight],
+    [S.ellipse(C[0] - 5.2, C[1] - 4.6, 2.4, 1.3, -40), c.highlight],
   )
 }
 

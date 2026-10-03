@@ -50,7 +50,7 @@ const front: ItemArt = ({ c, sw, a, local, stage }) => {
   const mask = S.blob(outline, 0.55)
   // Stjernen midt i panden mellem hullerne og glansen på den venstre vinge.
   const sr = 5.2 * k
-  const shine = S.join(S.ellipse(lx - rx * 0.2, cy - ry - mt * 0.48, 5 * k, 1.3 * k, -10), S.ellipse(o + 1.6 * k, cy - ry * 0.55, 1.2 * k, 2.4 * k, 10))
+  const shine = S.ellipse(lx - rx * 0.2, cy - ry - mt * 0.48, 5 * k, 1.3 * k, -10)
   return draw(
     [S.join(mask, holes), c.mainShade, , , { fillRule: 'evenodd' }],
     [S.join(S.blob(lit, 0.55), holes), c.main, , , { fillRule: 'evenodd' }],

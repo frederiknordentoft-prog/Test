@@ -268,14 +268,16 @@ export interface CapeOpts {
  * Alene hænger kappen spredt ud med spændet foroven. Foran halsen (lag 9b) sidder spændet.
  */
 export function cape(o: CapeOpts): { front: ItemArt; back: ItemArt } {
-  const outline = (top: number, bot: number, lift: number, L: number, R: number, inset: number): Vec[] => {
+  // `flare` (butikskortet på dyret): højre side breder sig ud allerede fra skulderen, så kappen ses ved siden af
+  // kroppen i kortets beskæring og ikke kun forneden (review G1-r4, B3).
+  const outline = (top: number, bot: number, lift: number, L: number, R: number, inset: number, flare: number): Vec[] => {
     const h = bot - top
     const n = o.dags ? 2 * o.dags : 4
     return [
       [0, top + inset],
       [30 - inset * 0.6, top + 2 + inset],
-      [R * 0.68, top + h * 0.36],
-      [R * 0.94, top + h * 0.74 - lift * 0.4],
+      [R * (0.68 + 0.36 * flare), top + h * (0.36 - 0.2 * flare)],
+      [R * (0.94 + 0.1 * flare), top + h * 0.74 - lift * 0.4],
       ...Array.from({ length: n + 1 }, (_, i) => {
         const x = R - ((R + L) * i) / n
         return [x, hemY(x, L, R, bot, lift) - inset * 0.8 - (o.dags && i % 2 === 0 ? o.notch : 0)] as Vec
@@ -286,20 +288,21 @@ export function cape(o: CapeOpts): { front: ItemArt; back: ItemArt } {
     ]
   }
   const front: ItemArt = (p) => {
-    const { c, sw, a, local, solo, stage } = p
+    const { c, sw, a, local, solo, stage, showcase } = p
     const f = solo ? { top: -44, bot: 40, lift: 6, safe: 0 } : capeFrame({ a, local, stage }, o.gap, o.liftK)
     const { top, bot, lift } = f
-    const sx = solo ? 0.56 : Math.min(1, (f.safe - 5.5) / 86)
+    const fl = showcase ? 1 : 0
+    const sx = solo ? 0.56 : Math.min(1, (f.safe - 5.5) / (86 * (1 + 0.1 * fl)))
     const L = 80 * sx
     const R = 86 * sx
     const h = bot - top
-    const shape = blob(outline(top, bot, lift, L, R, 0), 0.62)
+    const shape = blob(outline(top, bot, lift, L, R, 0, fl), 0.62)
     const up = o.dags ? o.notch : 0
     const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
     return (
       <>
         <path d={shape} fill={c.main} {...stroke} />
-        <path d={blob(outline(top + 5, bot - 4, lift, L, R, 7), 0.62)} fill={c.mainShade} />
+        <path d={blob(outline(top + 5, bot - 4, lift, L, R, 7, fl), 0.62)} fill={c.mainShade} />
         {o.deco && draw(o.deco({ top, bot, lift, L, R }, p))}
         <path d={hemBand(L - 4, R - 4, bot, lift, up + 1.2, up + 6.4)} fill={c.trim} stroke={c.trimOutline} strokeWidth={sw * 0.7} strokeLinejoin="round" />
         <path

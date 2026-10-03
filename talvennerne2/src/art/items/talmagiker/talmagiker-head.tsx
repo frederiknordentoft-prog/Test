@@ -65,7 +65,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn, stage, solo }) => {
     [marks, 'none', c.accent, sw * 0.85],
     [S.star(starAt[0], starAt[1], 8.4, 3.6, 5), c.accent, c.accentOutline, sw * 0.75],
     // Matte højlys: et langt på kuplen og keglen og et på stjernen.
-    [S.join(S.ellipse(shine.x, shine.y, 5, 2.2, -40), S.ellipse(-9.6, -30 * s, 1.6, 5.6, 32), S.circle(starAt[0] - 2, starAt[1] - 2.4, 1.2)), c.highlight],
+    [S.join(S.ellipse(shine.x, shine.y, 5, 2.2, -40), S.circle(starAt[0] - 2, starAt[1] - 2.4, 1.2)), c.highlight],
   )
 }
 

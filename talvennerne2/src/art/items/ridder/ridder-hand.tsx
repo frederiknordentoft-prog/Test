@@ -46,7 +46,7 @@ const front: ItemArt = ({ c, sw, a, hold }) => {
     [S.blob(field, 0.5), 'none', c.outline, sw * 0.7],
     [cross, c.accent, c.accentOutline, sw * 0.6],
     [rivets, c.trimShade, c.trimOutline, sw * 0.4],
-    [S.join(S.ellipse(cx - 8.4 * m, cy - 8.6 * m, 1.7 * m, 3.6 * m, 12), S.ellipse(cx - 9.2 * m, cy + 1.4 * m, 1 * m, 1.6 * m, 12)), c.highlight],
+    [S.ellipse(cx - 8.4 * m, cy - 8.6 * m, 1.7 * m, 3.6 * m, 12), c.highlight],
   )
 }
 

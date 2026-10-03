@@ -51,8 +51,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn, stage, solo }) => {
   return draw(
     [S.blob(DOME, 0.9), c.mainShade],
     [S.blob(lit, 0.9), c.main],
-    [ridge, 'none', c.outline, sw * 1.9],
-    [ridge, 'none', c.main, sw * 0.9],
+    [ridge, 'none', c.outline, sw * 1.2],
     [S.blob(DOME, 0.9), 'none', c.outline, sw],
     holeSeg({ c, a, local, holes, horn }),
     [S.softBand(-BAND.x, BAND.x, BAND.y0, BAND.y1, BAND.sag, BAND.sag + 0.2), c.trim, c.trimOutline, sw],
@@ -61,7 +60,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn, stage, solo }) => {
     [S.blob(plume(PLUME), 0.55), c.accent, c.accentOutline, sw],
     [S.blob(plume([[-5, 1.8], [-4.4, -3.6], [4.4, -3.6], [5, 1.8]]), 0.3), c.trim, c.trimOutline, sw * 0.8],
     // Stålets højlys: et langt på kuplen og et lille på fjerbusken.
-    [S.join(S.ellipse(shine.x, shine.y, 5.6, 2.2, -30), S.ellipse(shine.x - 8.6, shine.y + 9.4, 1.8, 1.4, -30)), c.highlight],
+    [S.ellipse(shine.x, shine.y, 5.6, 2.2, -30), c.highlight],
   )
 }
 

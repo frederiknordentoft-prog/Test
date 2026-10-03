@@ -18,7 +18,7 @@ const inner = (collar: number, hem: number, { c, sw }: { c: Parameters<ItemArt>[
   const belt = beltAt(collar, hem)
   return [
     [S.join(S.star(-26, collar + 13, 4.6, 1.9, 5, -8), S.star(28, collar + 20, 3.8, 1.6, 5, 10), S.star(-34, belt + 10, 3.6, 1.5, 5, 6), S.star(18, belt + 11, 4.2, 1.8, 5, -12)), c.accent, c.accentOutline, sw * 0.35],
-    [S.join(plus(10, collar + 9, 2.8), plus(-12, belt - 9, 2.6), plus(36, belt + 4, 2.4), S.line([-4, belt + 8.6], [2.6, belt + 8.6]), S.line([-4, belt + 11.8], [2.6, belt + 11.8])), 'none', c.accent, sw * 0.7],
+    [S.join(plus(10, collar + 9, 2.8), plus(-12, belt - 9, 2.6), plus(36, belt + 4, 2.4)), 'none', c.accent, sw * 0.7],
     [S.join(S.band(-80, 80, hem - 6.4, hem, SAG), S.softBand(-80, 80, belt - 3.4, belt + 3.4, SAG * 0.8, SAG * 0.8)), c.trim, c.trimOutline, sw * 0.8],
   ]
 }

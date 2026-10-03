@@ -13,8 +13,7 @@ import type { Seg } from '../ridder/kit/mestring'
 
 /** Stjernerne på stoffet (brøker af kappens halve bredde og højde): store og små, ude i siderne og forneden. */
 const STARS: readonly (readonly [number, number, number])[] = [
-  [-0.7, 0.44, 5.4], [0.66, 0.38, 5], [-0.62, 0.7, 4], [0.72, 0.64, 4.6], [-0.78, 0.86, 3.4], [0.6, 0.86, 3.6],
-  [-0.38, 0.9, 3.2], [0.3, 0.92, 3],
+  [-0.7, 0.44, 5.4], [0.66, 0.38, 5], [-0.62, 0.72, 4], [0.72, 0.66, 4.6], [-0.4, 0.9, 3.4], [0.34, 0.9, 3.4],
 ]
 
 /** Snoren mellem to små stjerner over skuldrene og halvmånespændet midt for. */
