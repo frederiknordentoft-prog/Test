@@ -203,16 +203,19 @@ export function layoutOf(w: number, h: number): Layout {
       corners: [{ x: 0, y: h, s: k * 0.95 }, { x: w, y: h, s: k * 0.9 }],
     }
   }
-  // en telefon (høj og smal) viser scenen i båndet over kortet og gennem kortets lyse panel
+  // en telefon (høj og smal) viser scenen i båndet over kortet og gennem kortets lyse panel. Den fjerne trærække
+  // og bjerget (plateauet) står ca. 80 px højere end i de andre formater, så himlen ikke fylder de øverste 42 % og
+  // scenen ikke bliver bundtung (review G2-r2 §5.4)
   const tall = h / w > 1.7
   if (tall) {
     const k = clamp(Math.max(w / 560, (h / 1250) * 0.9), 0.62, 1)
-    const far: Ridge = { base: h * 0.43, amp: h * 0.014, waves: 1.2, phase: 0.8 }
+    const far: Ridge = { base: h * 0.336, amp: h * 0.014, waves: 1.2, phase: 0.8 }
     const mid: Ridge = { base: h * 0.645, amp: h * 0.016, waves: 0.9, phase: 2.4 }
     const near: Ridge = { base: h * 0.81, amp: h * 0.018, waves: 0.7, phase: 4.1 }
     const lake = { x: w * 0.5, y: h * 0.712, rx: 112 * k, ry: 22 * k }
-    // bjergets top og flag står i båndet mellem regionens overskrift og kortets panel
-    const mountain = { ...on(mid, 0.2, -0.004, k * 0.95), x: w * 0.2 }
+    // bjerget står oppe over skoven med vandfaldet ned i søen; urtårnets ur står i båndet mellem regionens overskrift
+    // og kortets panel
+    const mountain = { ...on(mid, 0.2, -0.098, k * 0.95), x: w * 0.2 }
     const out: Vec = [w * 0.66, lakeBottom(lake, w * 0.66) - 2 * k]
     const bridge = { x: w * 0.69, y: h * 0.81, s: k * 0.9 }
     return {
@@ -1150,7 +1153,9 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
   // samme farve er én path; konturen males under fladen, så overlappende kroner står som én blød silhuet, og hver
   // krone får sin egen skygge (nede til højre) og sit højlys (oppe til venstre).
   const HUES: SkovColor[] = ['crownGreen', 'crownTeal', 'crownGreen', 'crownLilac', 'crownGreen', 'crownTeal', 'crownPink']
-  const free = (x: number) => Math.abs(x - L.mountain.x) > 70 * L.mountain.s && Math.abs(x - L.fall.x) > 60 * L.fall.s
+  // (bjerget holdes kun fri, når det står på skovbakken; et løftet bjerg (telefon) står bag den forreste række)
+  const onRidge = L.mountain.y > ridgeY(L.mid, w, L.mountain.x) - 20 * K
+  const free = (x: number) => (!onRidge || Math.abs(x - L.mountain.x) > 70 * L.mountain.s) && Math.abs(x - L.fall.x) > 60 * L.fall.s
   const rowACount = Math.round(w / (21 * K))
   const rowA = Array.from({ length: rowACount }, (_, i) => {
     const x = (i + 0.2 + hash01(i + 41) * 0.6) * (w / rowACount)

@@ -111,7 +111,7 @@ describe('Regnbueskoven · scene', () => {
     }
   })
 
-  it('i højformat står kendetegnene i højre side og forneden; på en telefon står bjerget og uret i båndet over kortet', () => {
+  it('i højformat står kendetegnene i højre side og forneden; på en telefon står uret i båndet over kortet og bjerget over skoven', () => {
     const T = layoutOf(820, 1180)
     for (const p of [T.tower, T.mountain, T.lake, T.mill, T.bridge, T.cave, T.panda, { x: T.fall.x, y: T.fall.top }]) {
       expect(p.x / 820).toBeGreaterThan(0.56)
@@ -123,14 +123,17 @@ describe('Regnbueskoven · scene', () => {
     }
     for (const p of [T.owl, T.posts, T.garden]) expect(p.y / 1180).toBeGreaterThan(0.86)
     const P = layoutOf(393, 852)
-    // urskiven og bjergets øverste trin i båndet mellem regionens overskrift og kortets panel
+    // urskiven i båndet mellem regionens overskrift og kortets panel
     const clock = P.tower.y - 112 * P.tower.s
     expect(clock / 852).toBeGreaterThan(0.5)
     expect(clock / 852).toBeLessThan(0.6)
     expect(P.tower.x / 393).toBeGreaterThan(0.8)
+    // review G2-r2 §5.4: plateauet (bjerget) og den fjerne trærække står ca. 80 px højere, så himlen fylder under en
+    // tredjedel og scenen ikke er bundtung; bjergets top står stadig under himlens øverste halvdel
     const summit = P.mountain.y - 128 * P.mountain.s
-    expect(summit / 852).toBeGreaterThan(0.45)
-    expect(summit / 852).toBeLessThan(0.58)
+    expect(summit / 852).toBeGreaterThan(0.4)
+    expect(summit / 852).toBeLessThan(0.5)
+    expect(P.far.base / 852).toBeLessThan(0.35)
     expect(P.k).toBeGreaterThan(0.6)
   })
 
