@@ -5,7 +5,8 @@ import { classifyAnswer, detectableOf, updateMisconceptions, type MisconceptionS
 import { isCorrect } from '../../answer'
 import { isProduction } from '../../kinds'
 import { masteryKeyOf } from '../../tasks'
-import type { AnswerLogEntry, AnswerValue, Task } from '../../types'
+import { registeredSkills } from '../../registry'
+import type { AnswerLogEntry, AnswerValue, SpeechPart, Task } from '../../types'
 import {
   answerProblems, cardProblems, first, hintProblems, registeredSkill, sceneOf, spokenText, tagsToHint, taskSpeechProblems, tasksOf,
   type Built,
@@ -308,13 +309,16 @@ describe('shareEqually oracle', () => {
   })
 }, TIMEOUT)
 
-// ═══ How ':' is read (SPEC §10.1) ════════════════════════════════════════════
+// ═══ How ':' is read (SPEC A12) ══════════════════════════════════════════════
 
-describe('division read aloud (SPEC §10.1: "Regnetegn: plus, minus, gange, divideret med")', () => {
-  it.fails('reads ":" as "divideret med" in every task and hint of inverseOps and shareEqually, as speech/equation.ts does', () => {
-    // GENERATOR DEVIATION: inverseOps (mulToDiv, "Hvad er tolv delt med fire?" under 12 : 4 = □, and its hints)
-    // and shareEqually's hint ("Tolv delt med tre giver fire.") use frag.muldiv.delt_med; SPEC §10.1 and
-    // speech/equation.ts read ':' as op.divideret_med, so the app would say the same sign two ways.
+describe('division read aloud (SPEC A12: ":" is "delt med" in 2. klasse, "divideret med" from 3. klasse)', () => {
+  // ORK2c's finding: inverseOps (mulToDiv, "Hvad er tolv delt med fire?" under 12 : 4 = □) and shareEqually's hint
+  // ("Tolv delt med tre giver fire.") say frag.muldiv.delt_med, while speech/equation.ts reads ':' as
+  // op.divideret_med (§10.1). SPEC A12 keeps "delt med" for 2. klasse, where division is sharing, and leaves
+  // "divideret med" to 3. klasse: a child of 0.–2. klasse must never hear the sign read both ways.
+  const said = (parts: readonly SpeechPart[], clip: string) => parts.some((p) => 'clip' in p && p.clip === clip)
+
+  it('says "delt med" for every division in inverseOps and shareEqually', () => {
     const problems: string[] = []
     for (const id of ['inverseOps', 'shareEqually'] as const) {
       const def = registeredSkill(id)
@@ -322,10 +326,28 @@ describe('division read aloud (SPEC §10.1: "Regnetegn: plus, minus, gange, divi
       for (const f of facts) {
         for (const kind of def.kinds) {
           const parts = [...def.speech(f, kind), ...def.hint(f, null, kind).speech]
-          if (parts.some((p) => 'clip' in p && p.clip === 'frag.muldiv.delt_med')) problems.push(`${f.id} ${kind}: "${spokenText(parts)}"`)
+          if (said(parts, 'op.divideret_med')) problems.push(`${f.id} ${kind}: "${spokenText(parts)}"`)
         }
       }
     }
     expect(first(problems)).toEqual([])
+    const inv = registeredSkill('inverseOps')
+    expect(inv.enumerate().some((f) => inv.kinds.some((k) => said(inv.speech(f, k), 'frag.muldiv.delt_med')))).toBe(true)
   })
-})
+
+  it('never says "divideret med" in a task or hint of any skill in 0.–2. klasse', () => {
+    const problems: string[] = []
+    const checked = new Set<string>()
+    for (const def of registeredSkills()) {
+      const grade3 = new Set(def.families.filter((fam) => (fam.grade ?? def.grade) > 2).map((fam) => fam.id))
+      if (def.grade > 2 && grade3.size === def.families.length) continue
+      const facts = def.enumerate().filter((f) => (def.families.find((fam) => fam.id === f.family)?.grade ?? def.grade) <= 2)
+      for (const { fact, kind, task } of tasksOf(def, facts, 1)) {
+        checked.add(def.id)
+        if (said([...task.speech, ...def.hint(fact, null, kind).speech], 'op.divideret_med')) problems.push(`${def.id} ${fact.id} ${kind}`)
+      }
+    }
+    expect(first(problems)).toEqual([])
+    expect(checked.size, 'the skills of waves 1–2').toBeGreaterThanOrEqual(56)
+  })
+}, TIMEOUT)
