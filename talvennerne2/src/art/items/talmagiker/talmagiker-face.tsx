@@ -1,5 +1,5 @@
-// Talmagiker · ansigt: stjernebriller. To femtakkede stjerner med klart glas omslutter øjnene, og deres takker
-// mod næsen mødes midt over næseryggen og danner broen. Stjernens indre hak ligger uden for øjet med luft til,
+// Talmagiker · ansigt: stjernebriller. To opretstående, femtakkede stjerner med klart glas omslutter øjnene, og
+// deres øverste indre takker mødes over næseryggen og danner broen. Stjernens indre hak ligger uden for øjet med luft til,
 // at pupillerne kan kigge rundt og de lukkede øjnes vipper går fri (som støvbrillernes glas), så stellet aldrig
 // dækker øjnene (fit-regel 6). Glasset er kun svagt tonet (16 %) med et hvidt højlys i den øverste ydre tak, og
 // to små glimt funkler ved stjernerne.
@@ -33,21 +33,18 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   const { L, R, k, ux, uy, side } = eyeUnits({ a, local, stage, sw })
   // Hakkene ligger uden for øjet (også i stjernens skrå sider mellem hak og tak).
   const v = Math.max(1.04 * ux, uy + 2.3 * k)
-  // Takkerne ud mod siderne holder sig inden for hovedets omrids (de ydre takker peger 36° op og ned fra vandret).
-  const room = (L.x - side - sw) / Math.cos(Math.PI / 5)
+  // Opretstående stjerner (en tak lige op); takkerne ud mod siderne holder sig inden for hovedets omrids.
+  const c18 = Math.cos(Math.PI / 10)
+  const room = (L.x - side - sw) / c18
   const r = Math.max(v * 1.25, Math.min(v * TIP, room))
-  // Næsetakkerne mødes (og overlapper en anelse) midt mellem øjnene, så de danner broen.
-  const r0 = Math.max(v * 1.05, (R.x - L.x) / 2 + sw * 0.6)
-  // Venstre stjerne: en tak peger mod næsen (0°); højre spejlet (180°).
-  const left = starPts(L.x, L.y, v, r, r0, 0)
-  const right = starPts(R.x, R.y, v, r, r0, 180)
+  // De øverste indre takker mødes (og overlapper en anelse) over næseryggen, hvor øjnene er smallest, og danner broen.
+  const r0 = (R.x - L.x) / 2 / c18 + sw * 0.3
+  const left = starPts(L.x, L.y, v, r, r0, -18)
+  const right = starPts(R.x, R.y, v, r, r0, 198)
   const frames = S.join(S.blob(left, 0.3), S.blob(right, 0.3))
-  // Højlys i den øverste ydre tak (uden for øjet) og glimt ved de nederste ydre takker.
-  const glare = S.join(...([[L.x, 216], [R.x, -36]] as const).map(([x, deg]) => {
-    const t = (deg * Math.PI) / 180
-    return S.ellipse(x + (Math.cos(t) * (v + r)) / 2, L.y + (Math.sin(t) * (v + r)) / 2, 1.4 * k, 2.8 * k, deg > 0 ? 30 : -30)
-  }))
-  const glints = S.join(S.star(L.x - r * 0.36, L.y - r * 1.02, 3.8 * k, 0.9 * k), S.star(R.x + r * 0.36, R.y - r * 1.02, 3.8 * k, 0.9 * k))
+  // Højlys i den øverste tak (uden for øjet) og glimt over de ydre takker.
+  const glare = S.join(...[L.x, R.x].map((x) => S.ellipse(x - 0.12 * r, L.y - (v + r) / 2, 1.3 * k, 2.8 * k, 12)))
+  const glints = S.join(S.star(L.x - r * 0.95, L.y - r * 0.62, 3.8 * k, 0.9 * k), S.star(R.x + r * 0.95, R.y - r * 0.62, 3.8 * k, 0.9 * k))
   return draw(
     [frames, c.trim, , , { opacity: solo ? SOLO_TINT : TINT }],
     [glare, c.highlight === 'none' ? 'none' : WHITE, , , { opacity: 0.85 }],
