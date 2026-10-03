@@ -103,13 +103,30 @@ export function starterAnimal(p: Pick<ProfileDoc, 'id' | 'animals'>, species: Sp
   return makeAnimal(p, { uid: `starter-${species}`, species, ...combo, source: 'starter' }, now)
 }
 
-/** The animal a friend node gives: a new species, or a colour or breed the child does not have. */
-export function friendAnimal(p: Pick<ProfileDoc, 'id' | 'animals'>, species: SpeciesId, nodeId: string, now: number): Animal | null {
+/**
+ * The animal a friend node gives: a new species, or a colour or breed the child does not have. The
+ * breed and colour are drawn among what `drawFrom` (default `p`) does not own: the round draws from
+ * the animals the child had when it started — the same ones the stone's card drew from — so nothing
+ * the round itself brings (the Stjernefølet) can change the draw (review app-w2-r1 P2-2).
+ */
+export function friendAnimal(
+  p: Pick<ProfileDoc, 'id' | 'animals'>, species: SpeciesId, nodeId: string, now: number,
+  drawFrom: Pick<ProfileDoc, 'animals'> = p,
+): Animal | null {
   const uid = `friend-${nodeId}`
   if (p.animals.some((a) => a.uid === uid)) return null
-  const combo = rollCombo(p, species, `${p.id}:friend:${nodeId}`)
+  const combo = rollCombo(drawFrom, species, `${p.id}:friend:${nodeId}`)
   if (!combo) return null
   return makeAnimal(p, { uid, species, ...combo, source: 'friend' }, now)
+}
+
+/**
+ * The animal on a friend stone's card: exactly the one the node gives (the draw is a pure function
+ * of the profile, so it can be shown before the round), or the one it gave. Null when it gives none
+ * (every breed and colour found): the card then shows the species.
+ */
+export function friendOnCard(p: Pick<ProfileDoc, 'id' | 'animals'>, species: SpeciesId, nodeId: string): Animal | null {
+  return p.animals.find((a) => a.uid === `friend-${nodeId}`) ?? friendAnimal(p, species, nodeId, 0)
 }
 
 /** The animal egg number `egg` hatches into. */

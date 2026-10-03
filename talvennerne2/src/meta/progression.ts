@@ -21,6 +21,7 @@ import {
   befriendIn, eggOptions, friendAnimal, goldMedalsOfWorld, MAGIC_PER_WORLD, rainbowRegions, starFoal, worldOfSkill,
   speciesOfWorld,
 } from './animals'
+import { DRAWN } from './built'
 import { appendLog, logEntries, type Reward } from './rewards'
 import { newlyOpened, regionTier, trialPassed, unlockView } from './unlock'
 
@@ -31,6 +32,8 @@ export interface RoundContext {
   day: string
   /** Epoch ms of the round's end. */
   now: number
+  /** Which things are drawn (default: the item files of this build); tests hand in their own. */
+  drawn?: ItemDrawn
 }
 
 export interface RoundOutcome {
@@ -87,17 +90,32 @@ function itemDue(p: ProfileDoc, s: ItemSource, counts: { silver: number; gold: n
 const sourceOrder = (s: ItemSource) =>
   s.kind === 'level' ? s.level : s.kind === 'medal' ? 100 + s.count : s.kind === 'chest' ? 200 : 300
 
+/** Is the thing drawn? Tests hand in a fake registry. */
+export type ItemDrawn = (item: ItemId) => boolean
+
+/** The things whose drawing exists (src/art/items/registry.ts, via built.ts). */
+export const itemDrawn: ItemDrawn = (item) => DRAWN.items.has(item)
+
+/**
+ * A thing earned by progress anywhere — a level or a number of medals — waits until it is drawn
+ * (review app-w2-r1 P2-6: the Ridder and Talmagiker pieces came as wrapped gifts nobody could wear).
+ * Its requirement is worked out from the level and the medals every time, so it comes by itself
+ * with the first round after its drawing lands, and nothing earned is lost (SPEC §13.11). A chest's
+ * or a finale's thing never waits: its world only opens once they are drawn (built.ts, worldReady).
+ */
+const waitsForDrawing = (s: ItemSource): boolean => s.kind === 'level' || s.kind === 'medal'
+
 /** Items earned but not yet in the inventory (levels, chests, finales, medal counts), in a sensible order. */
-export function dueItems(p: ProfileDoc): ItemId[] {
+export function dueItems(p: ProfileDoc, drawn: ItemDrawn = itemDrawn): ItemId[] {
   const counts = { silver: silverCount(p), gold: goldCount(p) }
-  return ITEMS.filter((i) => !p.inventory[i.id] && itemDue(p, i.source, counts))
+  return ITEMS.filter((i) => !p.inventory[i.id] && itemDue(p, i.source, counts) && (!waitsForDrawing(i.source) || drawn(i.id)))
     .sort((a, b) => sourceOrder(a.source) - sourceOrder(b.source))
     .map((i) => i.id)
 }
 
 /** Put every due item in the inventory. */
-export function grantDueItems(p: ProfileDoc, now: number): { profile: ProfileDoc; rewards: Reward[] } {
-  const due = dueItems(p)
+export function grantDueItems(p: ProfileDoc, now: number, drawn: ItemDrawn = itemDrawn): { profile: ProfileDoc; rewards: Reward[] } {
+  const due = dueItems(p, drawn)
   if (due.length === 0) return { profile: p, rewards: [] }
   const inventory = { ...p.inventory }
   const rewards: Reward[] = []
@@ -269,7 +287,8 @@ export function applyRoundResult(profile: ProfileDoc, result: MetaRound, ctx: Ro
     if (region.node3.kind === 'friend') {
       const species = region.node3.species
       const isNew = !p.animals.some((a) => a.species === species)
-      const animal = friendAnimal(p, species, node.id, now)
+      // drawn from the animals before the round: the one the stone's card showed (friendOnCard)
+      const animal = friendAnimal(p, species, node.id, now, profile)
       if (animal) {
         p.animals = [...p.animals, animal]
         rewards.push({ t: 'animal', animal, newSpecies: isNew })
@@ -306,7 +325,7 @@ export function applyRoundResult(profile: ProfileDoc, result: MetaRound, ctx: Ro
     rewards.push({ t: 'levelUp', level: l, title: titleAt(l)?.title ?? null, perler: PERLER.levelUp })
   }
   p.economy.level = Math.max(p.economy.level, level)
-  const items = grantDueItems(p, now)
+  const items = grantDueItems(p, now, ctx.drawn)
   p = items.profile
   rewards.push(...items.rewards)
 

@@ -1,11 +1,13 @@
-// The card behind a stepping stone: what the stone is, what it holds (the friend's species, the
-// chest's thing — shown before it is won), its stars, the bridge's planks ("Bedst: 7 planker",
-// "Klar, når du er", or a normal round first), what opens a locked stone, and one big "Spil". The
-// card reads itself aloud when it opens.
-import { useEffect } from 'react'
+// The card behind a stepping stone: what the stone is, what it holds (the very animal the friend
+// node gives, the chest's thing — shown before they are won), its stars, the bridge's planks
+// ("Bedst: 7 planker", "Klar, når du er", or a normal round first), what opens a locked stone, and
+// one big "Spil". The card reads itself aloud when it opens.
+import { useEffect, useMemo } from 'react'
 import { ITEM_BY_ID } from '../../../../content/catalog'
 import { NODE_BY_ID, REGION_BY_ID } from '../../../../content/curriculum'
-import type { ClipId, RegionId, SpeechPart } from '../../../../engine/types'
+import type { Animal, ClipId, NodeId, RegionId, SpeechPart } from '../../../../engine/types'
+import { friendOnCard } from '../../../../meta/animals'
+import { useProfile } from '../../../../state/useProfile'
 import { Button } from '../../../design/Button'
 import { Icon } from '../../../design/Icon'
 import { ProgressStones } from '../../../design/ProgressStones'
@@ -81,6 +83,20 @@ export function StoneSheet({ stone, region, onClose, onPlay, onHut }: StoneSheet
   )
 }
 
+const NO_ANIMALS: Animal[] = []
+
+/**
+ * The friend stone's animal in its breed, colour and size: exactly the one the node gives (the same
+ * seeded draw the round makes), or the one it gave (review app-w2-r1 P2-2). Without a profile, the
+ * species.
+ */
+function FriendPicture({ nodeId, friend }: { nodeId: NodeId; friend: NonNullable<StoneView['friend']> }) {
+  const id = useProfile((s) => s.profile?.id ?? null)
+  const animals = useProfile((s) => s.profile?.animals ?? NO_ANIMALS)
+  const animal = useMemo(() => (id ? friendOnCard({ id, animals }, friend.species, nodeId) : null), [id, animals, friend.species, nodeId])
+  return <AnimalPicture animal={animal} species={friend.species} size={132} crop="fit" mood={friend.met ? 'happy' : 'wave'} />
+}
+
 function SheetBody({ stone, region, onPlay, onHut }: { stone: StoneView; region: RegionView | null; onPlay(s: StoneView): void; onHut(r: RegionId): void }) {
   const speech = useSpeech()
   const node = NODE_BY_ID[stone.id]
@@ -98,7 +114,7 @@ function SheetBody({ stone, region, onPlay, onHut }: { stone: StoneView; region:
       </div>
       {stone.friend && (
         <div className="tv-stonesheet__show">
-          <AnimalPicture species={stone.friend.species} size={132} crop="fit" mood={stone.friend.met ? 'happy' : 'wave'} />
+          <FriendPicture nodeId={stone.id} friend={stone.friend} />
         </div>
       )}
       {stone.chest && (
