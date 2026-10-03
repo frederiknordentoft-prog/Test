@@ -2,7 +2,8 @@
 // - foal (føllet): buttet med korte ben, en kort, krøllet pandelok, kort manke og hale og et lille
 //   horn. Kun føllet findes i stjernehvid: Stjernefølet, spillets mest eftertragtede dyr.
 // - wavy (bølgemanke): lang, bølget manke på begge sider, en fejende pandelok og en lang bølget hale.
-// - starhorn (stjernehorn): et kort spiralhorn med en stjerne i spidsen og en skilt pandelok.
+// - starhorn (stjernehorn): et kort spiralhorn med en stjerne i panden ved hornets rod og en skilt pandelok
+//   (stjernen sad før på spidsen og gjorde hornet til en tryllestav i silhuet, review G1-r4).
 // Alle har pastelmanke med striber (mane2), øjenvipper og et spiralhorn med et glimt, der tænder og
 // slukker (signaturen horn-glint: kun opacity). Hoved, ører, ben og hove deles med hesten
 // (shared/equine.tsx).
@@ -15,10 +16,11 @@ import { blob, join, mirrorX, poly, quad, star } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
 import type { AnchorSet, Part, SpeciesDef, Stage } from '../rig/types'
 import {
-  EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, equineHead, hairShape, makeFeet, makeLeg,
+  EQUINE_ANCHORS, EQUINE_LIMB, EQUINE_UP_ARMS, EQUINE_UP_TIP, EquineEar, EquineLegUp, withKeyWebs, equineHead, hairShape, makeFeet, makeLeg,
   makeMuzzle, round,
 } from './shared/equine'
-import { UNICORN_COLORWAYS } from './unicorn.colorways'
+import type { CwWebs, WebTable } from './shared/equine'
+import { GLINT, UNICORN_COLORWAYS } from './unicorn.colorways'
 
 // ---------------------------------------------------------------------------------------------
 // Hornet: en blød kegle med tre skrå spiralbånd i hornets skygge og et glimt, der blinker.
@@ -49,24 +51,24 @@ function hornBands(L: number, hw: number): string {
 
 /**
  * Hornet: en slank kegle (smal bund, skarp spids) med spiralbånd, så højt at spidsen når ørespidserne.
- * Stjernehornet bærer en lille stjerne på spidsen (0,9 gange hornets bundbredde, så skaftet læses som et horn). Signaturen: et
- * firtakket glimt ved spidsen, der tænder og slukker, efterfulgt af en hvid højlysstribe langs hornet
- * (kun opacity, SPEC §6.1).
+ * Signaturen: et firtakket glimt ved spidsen, der tænder og slukker, efterfulgt af en hvid højlysstribe
+ * langs hornet (kun opacity, SPEC §6.1).
  */
-function makeHorn(L: number, hw: number, withStar = false): Part {
+function makeHorn(L: number, hw: number): Part {
   const cone = blob(hornShape(L, hw), 0.6)
   const bands = hornBands(L, hw)
-  const starR = hw * 0.9
-  const starD = withStar ? star(0, -L - starR * 0.35, starR, starR * 0.45, 5) : null
   // Højlysstriben: en smal linse langs keglens venstre side.
   const stripe = blob(
     [[-hw * 0.62, -L * 0.1], [-hw * 0.5, -L * 0.38], [-hw * 0.3, -L * 0.62], [-hw * 0.12, -L * 0.8], [-hw * 0.22, -L * 0.6], [-hw * 0.34, -L * 0.36], [-hw * 0.42, -L * 0.1]],
     0.7,
   )
-  // Glimtet: et firtakket glimt (16 enheder) lige under spidsen på hornets højre side (rager ikke op
-  // over spidsen, så stor-stadiets horn holder sig i den sikre zone).
-  const tipY = withStar ? -L - starR * 0.35 : -L
-  const sparkle = star(hw * 0.7 + 3, tipY + 8.5, 8, 1.6, 4)
+  // Glimtet (review G1-r4): en udfyldt, buttet firtakket stjerne (17 enheder) lige under spidsen på hornets
+  // højre side og en lille stjerne skråt under den, i ét path, så de tænder og slukker sammen (kun opacity).
+  // Rager ikke op over spidsen, så stor-stadiets horn holder sig i den sikre zone.
+  const tipY = -L
+  const gx = hw * 0.7 + 3.5
+  const gy = tipY + 9
+  const sparkle = join(star(gx, gy, 8.5, 3.4, 4), star(gx + 7.5, gy + 8, 4.4, 1.9, 4))
   return ({ pal, sw, still }) => {
     const horn = pal.horn ?? pal.belly
     const line = pal.outline
@@ -74,9 +76,8 @@ function makeHorn(L: number, hw: number, withStar = false): Part {
       <>
         <path d={cone} fill={horn} stroke={line} strokeWidth={sw} {...round} />
         {!pal.silhouette && <path d={bands} fill={pal.hornShade ?? pal.shade} />}
-        {starD && <path d={starD} fill={horn} stroke={line} strokeWidth={sw} {...round} />}
         {!pal.silhouette && <path d={stripe} fill={HOUSE.white} opacity={0.4} className={still ? undefined : 'a-glint-stripe'} />}
-        {!pal.silhouette && !still && <path d={sparkle} fill={HOUSE.white} stroke={line} strokeWidth={sw * 0.4} strokeLinejoin="round" opacity={0} className="a-glint-star" />}
+        {!pal.silhouette && !still && <path d={sparkle} fill={GLINT.fill} stroke={GLINT.line} strokeWidth={sw * 0.55} strokeLinejoin="round" opacity={0} className="a-glint-star" />}
       </>
     )
   }
@@ -110,6 +111,27 @@ const StarHead: Part = ({ pal, a, colorway, sw }) =>
   colorway === 'starwhite' ? (
     <path d={star(a.headCenter.x, a.headCenter.y - a.headRy * 0.36, 6.4, 2.4, 4)} fill={pal.pattern} stroke={pal.outline} strokeWidth={sw * 0.3} strokeLinejoin="round" />
   ) : null
+
+/**
+ * Stjernehornets mærke (review G1-r4): en stjerne i hornets farve i panden lige under hornets rod, mellem den
+ * skilte pandeloks to halvdele, så hornet selv står rent og læses som et horn i silhuet og ved 48 px.
+ */
+const StarMark: Part = ({ pal, a, sw }) =>
+  pal.silhouette ? null : (
+    <path
+      d={star(a.hornBase.x, a.hornBase.y + 12, 5.6, 2.5, 5)}
+      fill={pal.horn ?? pal.belly}
+      stroke={pal.outline}
+      strokeWidth={sw * 0.5}
+      strokeLinejoin="round"
+    />
+  )
+const StarhornDeco: Part = (p) => (
+  <>
+    {Lashes(p)}
+    {StarMark(p)}
+  </>
+)
 
 const StarsBody: Part = ({ pal, a, ids, colorway }) =>
   colorway === 'starwhite' ? (
@@ -208,6 +230,76 @@ const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
   },
 }
 
+/** Nøgleposernes lommer i skyggetone, kun i stillbilleder (se `withKeyWebs` i shared/equine.tsx). */
+const KEY_WEBS: WebTable = {
+  foal: {
+    1: {
+      idle: { L: [[-48.7, -76.9], [-47.2, -76.5], [-46.8, -75.7], [-46.5, -73.1], [-47.6, -71.9], [-49.1, -71.9], [-50.3, -73.1], [-49.9, -75.7]] },
+      happy: { L: [[-48.7, -76.9], [-47.2, -76.5], [-46.8, -75.7], [-46.8, -73.4], [-48, -72.3], [-49.1, -72.3], [-50.3, -73.4], [-50.3, -75]] },
+      cheer: { L: [[-50.8, -72.5], [-49.3, -72.1], [-48.6, -70.2], [-48.7, -69.1], [-49.9, -68], [-51.4, -68.1], [-52.5, -69.2], [-52, -71.4]] },
+      think: { L: [[-42.3, -82.6], [-40.8, -82.2], [-40.4, -81.4], [-40.4, -79.1], [-41.5, -78], [-43, -78], [-44.2, -79.1], [-43, -82.2]] },
+      oops: { L: [[-53.7, -67.4], [-52.5, -67.4], [-51.4, -66.2], [-51.4, -64.7], [-52.5, -63.6], [-53.7, -63.6], [-54.8, -64.7], [-54.8, -66.2]] },
+      sleep: { L: [[-43.4, -80.7], [-42.3, -80.7], [-41.1, -79.5], [-41.1, -77.6], [-42.3, -76.4], [-43.8, -76.4], [-44.9, -77.6], [-44.9, -78.7]] },
+      wave: { L: [[-53.7, -67.4], [-52.5, -67.4], [-51.4, -66.2], [-51.4, -64.7], [-52.5, -63.6], [-53.7, -63.6], [-54.8, -64.7], [-54.8, -66.2]], R: [[-22.1, -33.2], [-23.7, -32.8], [-24, -32], [-24, -29.4], [-22.9, -24.8], [-19.9, -21], [-16.8, -20.3], [-10.7, -25.2], [-10.4, -27.1], [-10.7, -27.8], [-16.4, -29.7]] },
+    },
+    2: {
+      wave: { R: [[-21.6, -50.5], [-23.5, -50.3], [-24.1, -47.8], [-24.1, -42.8], [-24.6, -41.9], [-24.9, -40], [-24.9, -33.6], [-24.4, -29.4], [-23.2, -25], [-21.9, -22.5], [-19.6, -20.5], [-18, -19.7], [-16.9, -19.7], [-9.9, -25.8], [-7.1, -27.5], [-6.9, -28.6], [-7.4, -29.4], [-14.1, -32.8], [-18.8, -37.2], [-19.9, -38.9], [-21.3, -43], [-21.6, -45.8], [-20.7, -49.7]] },
+    },
+  },
+  wavy: {
+    1: {
+      idle: { L: [[[-23, -11.4], [-21.5, -11], [-21.1, -9.1], [-26.1, 0.8], [-29.5, 14.5], [-35.9, 16.8], [-37.5, 16.4], [-37.8, 13.3], [-35.9, 10.3], [-32.1, -0.7]], [[-23, -11.4], [-21.5, -11], [-21.1, -10.2], [-21.5, -8.3], [-22.6, -7.6], [-24.2, -7.9], [-24.5, -8.7], [-24.2, -10.6]], [[-43.2, 6.5], [-41.6, 6.9], [-41.3, 7.6], [-41.3, 9.2], [-42.4, 10.3], [-43.5, 10.3], [-44.7, 9.2], [-43.9, 6.9]]] },
+      happy: { L: [[-23, -11.4], [-21.5, -11], [-21.1, -9.1], [-26.1, 0.8], [-29.5, 14.5], [-35.9, 16.8], [-37.5, 16.4], [-37.8, 13.3], [-35.9, 10.3], [-32.1, -0.7]] },
+      cheer: { R: [[-38.2, -68.3], [-39.7, -67.9], [-40, -67.1], [-40, -65.6], [-38.8, -64.6], [-37.7, -64.6], [-36.6, -65.8], [-37.4, -68]] },
+      think: { L: [[[-16.6, -21.2], [-13.9, -20.8], [-13.5, -19.3], [-15.8, -16.3], [-17.3, -15.9], [-18.8, -17.1], [-19.2, -18.6]], [[-47.3, 0.8], [-45.8, 1.2], [-45.4, 1.9], [-45.4, 3.5], [-46.6, 4.6], [-47.7, 4.6], [-48.9, 3.5], [-48.1, 1.2]]] },
+      oops: { R: [[-45.8, 45.6], [-47.3, 46], [-48.1, 47.2], [-48.1, 48.3], [-47, 49.4], [-45.8, 49.4], [-44.7, 48.3], [-44.7, 46.8]] },
+      sleep: { L: [[-21.5, -13.9], [-20, -13.5], [-19.6, -11.5], [-21.9, -7.6], [-23.4, -7.2], [-24.9, -8.4], [-25.3, -9.9]] },
+      wave: { R: [[[-34.8, -71.4], [-36.7, -71], [-43.2, -56.9], [-44.3, -54.3], [-44.3, -53.1], [-43.2, -52], [-37.5, -53.9], [-30.6, -53.9], [-29.5, -55], [-31, -64.2], [-34, -71]], [[-43.5, -53.1], [-45.1, -52.8], [-45.8, -51.2], [-45.4, -49.7], [-44.7, -49.3], [-43.5, -49.3], [-42.4, -50.5], [-42.4, -52]], [[-45.8, 45.6], [-47.3, 46], [-48.1, 47.2], [-48.1, 48.3], [-47, 49.4], [-45.8, 49.4], [-44.7, 48.3], [-44.7, 46.8]]] },
+    },
+    2: {
+      think: { L: [[-21, -13], [-19.6, -12.7], [-19.3, -11.6], [-20.7, -9.1], [-21.8, -8.8], [-22.9, -9.6], [-23.2, -10.8]] },
+      sleep: { L: [[-24.3, -6.9], [-23.2, -6.6], [-22.9, -5.2], [-24.6, -2], [-26.3, 2.9], [-27.1, 3.5], [-28.2, 3.5], [-28.8, 3.2], [-29, 1.7], [-25.4, -6]] },
+      wave: { R: [[-24.9, -61.9], [-26.2, -61.3], [-29, -55.2], [-29, -54.1], [-28.2, -53.3], [-26.8, -53.3], [-24.9, -52.4], [-23.7, -51], [-23.7, -48.3], [-24.3, -46.3], [-24, -42.7], [-24.9, -41.3], [-24.9, -33.3], [-23.5, -25.5], [-21.8, -22.4], [-19.9, -20.8], [-16.8, -19.1], [-13.7, -18.5], [-10.1, -21.6], [-9.9, -22.7], [-10.4, -23.5], [-12.9, -24.6], [-15.7, -26.6], [-19.3, -30.2], [-21.2, -33.8], [-22.1, -38.8], [-20.4, -46], [-20.7, -51.3], [-21.8, -56.3], [-24.3, -61.6]] },
+    },
+    3: {
+      idle: { L: [[-24.2, -53.4], [-23, -53.2], [-21.6, -50.9], [-19.6, -45.6], [-18.9, -41.9], [-18.9, -38.9], [-19.1, -37.2], [-19.8, -36.5], [-20.9, -37], [-22.3, -39.3], [-24.2, -42.8], [-25.6, -46.5], [-25.6, -50.2], [-24.9, -52.7]] },
+      happy: { L: [[-24.2, -53.4], [-23, -53.2], [-21.6, -50.9], [-19.6, -45.6], [-18.9, -41.9], [-18.9, -38.9], [-19.1, -37.2], [-19.8, -36.5], [-20.9, -37], [-22.3, -39.3], [-24.2, -42.8], [-25.6, -46.5], [-25.6, -50.2], [-24.9, -52.7]] },
+      think: { L: [[[-20, -56.4], [-19.1, -56.2], [-17.5, -52.7], [-16.6, -48.1], [-16.6, -42.1], [-17, -40.5], [-17.9, -39.3], [-18.9, -39.6], [-19.8, -41.4], [-21.6, -46.5], [-22.3, -49.5], [-22.1, -52.5], [-20.7, -56]], [[-28.4, 4.7], [-27.4, 4.9], [-27.2, 5.4], [-27.7, 8.4], [-28.1, 9.3], [-29.7, 9.5], [-30.2, 9.3], [-30.4, 8.4], [-28.8, 4.9]]] },
+      sleep: { L: [[-20.7, -56.3], [-19.6, -56], [-18.9, -54.6], [-17.9, -52.4], [-17, -48.1], [-16.8, -42.1], [-17.5, -39.3], [-18.2, -38.5], [-19.1, -38.8], [-20.3, -41.2], [-22.1, -46.2], [-22.8, -49.6], [-22.6, -52.4], [-21.4, -55.6]] },
+      wave: { R: [[-24.9, -71.7], [-26, -71.3], [-26.7, -68.7], [-26.7, -65], [-26, -57.8], [-26.5, -53.4], [-24, -51.4], [-23.7, -50.4], [-24.4, -46.3], [-24.2, -42.6], [-24.9, -41.6], [-25.1, -36.8], [-24.9, -32.6], [-24, -26.8], [-22.6, -23.3], [-20.3, -20.8], [-17, -18.9], [-13.8, -18.3], [-9.1, -22.2], [-8.4, -23.6], [-9.1, -24.5], [-12.8, -26.8], [-15.6, -29.6], [-17.2, -32.4], [-18.2, -37.2], [-16.8, -43], [-16.8, -47], [-17.2, -50.2], [-17.9, -53], [-21.6, -61.1], [-23.5, -67.1], [-24.2, -71]] },
+    },
+  },
+  starhorn: {
+    1: {
+      idle: { R: [[-40.5, -29.2], [-42, -28.8], [-42.4, -28.1], [-42.4, -26.5], [-41.3, -25.4], [-40.1, -25.4], [-39, -26.5], [-39.7, -28.8]] },
+      cheer: { R: [[[-32, -34.6], [-33.6, -34.2], [-33.9, -33.4], [-33.9, -31.9], [-32.7, -30.8], [-31.5, -30.9], [-30.4, -32], [-31.3, -34.3]], [[-40.3, -31.7], [-41.8, -31.3], [-42.5, -29.8], [-42.1, -28.3], [-41.3, -27.9], [-40.2, -28], [-39.1, -29.1], [-39.1, -30.6]]] },
+      think: { R: [[-40.1, -19.3], [-41.6, -18.9], [-42, -18.2], [-42, -16.7], [-40.9, -15.5], [-39.7, -15.5], [-38.6, -16.7], [-39.4, -18.9]] },
+      oops: { R: [[-45.8, 45.6], [-47.3, 46], [-48.1, 47.5], [-47.7, 49.1], [-47, 49.4], [-45.8, 49.4], [-44.7, 48.3], [-44.7, 46.8]] },
+      sleep: { R: [[-40.1, -17.8], [-41.6, -17.4], [-42.4, -15.8], [-42, -14.3], [-41.3, -13.9], [-39.7, -13.9], [-38.6, -15], [-39.4, -17.4]] },
+      wave: { R: [[-45.8, 45.6], [-47.3, 46], [-48.1, 47.5], [-47.7, 49.1], [-47, 49.4], [-45.8, 49.4], [-44.7, 48.3], [-44.7, 46.8]] },
+    },
+    2: {
+      wave: { R: [[-22.1, -34.6], [-23.2, -34.4], [-24.3, -31.9], [-24.3, -29.1], [-22.9, -24.1], [-21.8, -22.4], [-19, -20.2], [-14.9, -18.5], [-13.2, -18.8], [-10.1, -21.6], [-10.1, -23.3], [-15.7, -26.6], [-19.3, -30.2], [-21.2, -34.1]] },
+    },
+    3: {
+      think: { R: [[-30.4, -50.9], [-31.4, -50.7], [-31.6, -50.2], [-31.6, -48.6], [-30.4, -42.6], [-28.8, -35.8], [-24.9, -25.7], [-23.5, -21], [-23.3, -13.6], [-24.2, -6.2], [-24, -5.8], [-23, -5.5], [-22.6, -5.8], [-18.9, -12], [-13.5, -18.3], [-13.3, -19.4], [-13.8, -20.1], [-15.2, -20.8], [-17.2, -22.7], [-19.3, -25.7], [-20.5, -29.4], [-20.5, -34.5], [-21.9, -38.9], [-24.4, -43.7], [-28.8, -48.8], [-29.7, -50.4]] },
+      sleep: { R: [[-30, -52], [-30.9, -51.7], [-31.1, -51.2], [-31.1, -49.3], [-29.7, -41.4], [-28.4, -35.4], [-24.7, -25.1], [-23.5, -20.5], [-23.5, -12.6], [-24.4, -5.7], [-24.2, -5.2], [-23.3, -4.9], [-22.8, -5.2], [-19.1, -11.7], [-13.8, -18.1], [-13.5, -19.1], [-14, -19.8], [-15.4, -20.5], [-18.4, -23.9], [-20.3, -28.5], [-20.3, -34.2], [-21.9, -40], [-24.2, -44.5]] },
+      wave: { R: [[-22.3, -62.2], [-23.3, -62], [-23.7, -60.6], [-24.2, -54.6], [-24.2, -51.6], [-23.7, -50.4], [-24.2, -47.7], [-24.2, -44.4], [-23, -33.1], [-24, -26.8], [-22.6, -23.3], [-20.3, -20.8], [-17, -18.9], [-13.8, -18.3], [-9.1, -22.2], [-8.4, -23.6], [-9.1, -24.5], [-12.8, -26.8], [-15.6, -29.6], [-17.2, -32.4], [-18.2, -37.2], [-16.8, -43], [-16.8, -47], [-17.2, -50.2], [-17.9, -53], [-20.9, -59.2], [-21.6, -61.5]] },
+    },
+  },
+}
+
+/** Sprækker, der kun lukker sig i enkelte farver (se `CwWebs` i shared/equine.tsx). */
+const CW_WEBS: CwWebs = {
+  'wavy 3 idle R': [{ cw: ['c2'], webs: [[[-30.2, -67.8], [-31.1, -67.6], [-31.6, -66.4], [-31.6, -62.7], [-30, -53.9], [-29.5, -53.2], [-28.4, -53], [-27.7, -53.7], [-27.7, -56.4], [-26.5, -57.6], [-26.3, -59], [-28.1, -62.7], [-29.5, -67.1]]] }, { cw: ['c1'], webs: [[[-30.3, -66.9], [-31.5, -65.4], [-30.7, -64.2], [-29.1, -65]]] }],
+  'foal 3 idle L': [{ cw: ['c1'], webs: [[[-27, -67.3], [-25.7, -65.4], [-26.6, -64], [-28, -65], [-28, -66.3]]] }],
+  'foal 3 happy L': [{ cw: ['c1'], webs: [[[-27, -67.3], [-25.7, -65.4], [-26.6, -64], [-28, -65], [-28, -66.3]]] }],
+  'wavy 2 think L': [{ cw: ['c4'], webs: [[[-22.8, -10.6], [-21.7, -8.4], [-23.9, -7.3], [-25, -8.4]]] }],
+  'wavy 3 happy R': [{ cw: ['c1'], webs: [[[-30.3, -66.9], [-31.5, -65.4], [-30.7, -64.2], [-29.1, -65]]] }],
+  'wavy 3 think R': [{ cw: ['c4'], webs: [[[-35.4, -58.9], [-36.3, -58], [-36.3, -56.6], [-35, -55.6], [-34, -57]]] }],
+  'wavy 3 sleep R': [{ cw: ['c4'], webs: [[[-35, -60.2], [-35.9, -59.3], [-35.9, -57.8], [-34.5, -56.9], [-33.6, -58.3]]] }],
+}
+
 export const unicorn: SpeciesDef = {
   id: 'unicorn',
   name: 'Enhjørning',
@@ -250,14 +342,13 @@ export const unicorn: SpeciesDef = {
       name: 'stjernehorn',
       fx: { x: 176, y: 68 },
       parts: {
-        Horn: makeHorn(34, 6.6, true),
+        Horn: makeHorn(34, 6.6),
+        HeadDeco: StarhornDeco,
         ManeBack: hairShape(STAR_MANE, { stripe: STAR_MANE_STRIPE }),
         ManeFront: hairShape(STAR_FORELOCK),
         Tail: hairShape(STAR_TAIL),
       },
       maneGrowth: 1.15,
-      // Stjernen sidder oven på et fuldt horn; på stor vokser hornet lidt mindre, så stjernen bliver i zonen.
-      hornGrowth: 1.1,
       bounds: { head: { x0: 40, y0: 6, x1: 162, y1: 152 } },
     },
   ],
@@ -289,7 +380,7 @@ export const unicorn: SpeciesDef = {
     Ear: EquineEar,
     Paw: makeLeg(),
     PawUp: EquineLegUp,
-    PawBack: pawWebs({}, PAW_WEBS),
+    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS), KEY_WEBS, CW_WEBS),
     pawUpTip: EQUINE_UP_TIP,
     upArms: EQUINE_UP_ARMS,
     limb: EQUINE_LIMB,

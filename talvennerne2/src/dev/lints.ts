@@ -334,28 +334,9 @@ export const HOLE_GAP = 1
  * Kendte lommer og sprækker (review G1-r4), som artens egen agent retter: de fejler ikke, men står i
  * lint-rapporten (`known`). Mønsteret matcher cellens `data-holes` ("art race stadie farve humør").
  */
-/** Review-henvisningerne for de kendte lommer (fundet af den udvidede lint, review G1-r4 R1). */
-const K = {
-  HORSE: 'G1-r4 §1.4 hest: lommerne mellem man og hals (holes.png #609–#617, #729–#748) og mellem løftet ben og hoved i vinker (#622, #628, #682, #688); araberens stadie 3 har desuden en løkke mellem halen og hoften (ikke i G1-r4)',
-  UNICORN: 'G1-r4 §1.4 og §5 pkt. 5 enhjørning: sprækker og lommer ved manens spids og det løftede forben (holes.png #835–#838, #846, #871, #888, #889, #891)',
-} as const
-export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
-  { match: /^horse arabian 1 \S+ (cheer|oops|wave)$/, ref: K.HORSE },
-  { match: /^horse arabian 2 \S+ (cheer|happy|idle|sleep|wave)$/, ref: K.HORSE },
-  { match: /^horse arabian 3 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.HORSE },
-  { match: /^horse fjord 2 \S+ (wave)$/, ref: K.HORSE },
-  { match: /^horse fjord 3 \S+ (idle|sleep)$/, ref: K.HORSE },
-  { match: /^horse shetland 2 \S+ (cheer|happy|idle|sleep|wave)$/, ref: K.HORSE },
-  { match: /^horse shetland 3 \S+ (cheer|happy|idle|oops|sleep|think|wave)$/, ref: K.HORSE },
-  { match: /^unicorn foal 1 \S+ (wave)$/, ref: K.UNICORN },
-  { match: /^unicorn foal 2 \S+ (wave)$/, ref: K.UNICORN },
-  { match: /^unicorn foal 3 \S+ (happy|idle)$/, ref: K.UNICORN },
-  { match: /^unicorn starhorn 2 \S+ (wave)$/, ref: K.UNICORN },
-  { match: /^unicorn starhorn 3 \S+ (sleep|think|wave)$/, ref: K.UNICORN },
-  { match: /^unicorn wavy 1 \S+ (happy|idle|think|wave)$/, ref: K.UNICORN },
-  { match: /^unicorn wavy 2 \S+ (sleep|think|wave)$/, ref: K.UNICORN },
-  { match: /^unicorn wavy 3 \S+ (happy|idle|sleep|think|wave)$/, ref: K.UNICORN },
-]
+// Tom siden ARTFIX-B2 og ARTFIX-B3 (3/10): alle tolv arters lommer er fyldt (i stillbillederne,
+// KEY_WEBS) eller åbnet. En ny kendt lomme står her med sin review-henvisning, indtil artens agent retter den.
+export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = []
 
 /** Kendt lomme for en celle (review-henvisningen), eller null. */
 export function knownPocket(cell: string): string | null {

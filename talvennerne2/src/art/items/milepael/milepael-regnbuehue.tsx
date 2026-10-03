@@ -3,9 +3,11 @@
 // ombukket. earMode 'through' som Hverdags hue: ørerne går op gennem to huller, og hullets forkant (`rim`)
 // i stribens farve lægges oven på ørernes rod; enhjørningen får et hornhul, og pomponen flytter til venstre
 // for hornet. Striberne klippes til kuplen, og cel-skyggen er en gennemsigtig ink-halvmåne, så hver stribe
-// får sin egen mørkere tone. (0,0) = headTop, tegnet ved headWidth 104.
+// får sin egen mørkere tone. Med horn (review G1-r4, T8) er kuplen højere, og striberne buer ned med den, så
+// den læses som en kuppel om hornet og ikke som et pandebånd, og en mindre pompon sidder på kuplen tæt ved
+// hornet (ikke på øret). (0,0) = headTop, tegnet ved headWidth 104.
 import { fabric } from '../../rig/palette'
-import { blob, ellipse, join, litCopy, outside, rect, ribs, scallop, softBand, star, symmetric, xf } from '../../rig/shapes'
+import { blob, ellipse, join, litCopy, outside, poly, rect, ribs, scallop, softBand, star, symmetric, xf } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
 import type { ItemArt, ItemArtProps, ItemDef, Pt } from '../../rig/types'
 
@@ -15,6 +17,27 @@ const DOME = symmetric([
 ])
 /** Stribernes grænser (y) fra toppen ned til ombukket. */
 const BANDS = [-12, -4.6, 1.2, 7, 28]
+
+/**
+ * Kuplen om et horn: de øverste punkter løftes op til HORN_RAISE (mest midtpå), så der er kuppel at se på begge
+ * sider af hornet. Striberne følger den: grænserne fordeles fra toppen ned til ombukket og buer `sag` ned mod
+ * siderne (som strikkens rækker på huen).
+ */
+const HORN_RAISE = 5
+const HORN_DOME = symmetric([
+  ...([[0, -11], [-18, -9.2], [-34, -2.6], [-46, 7.6], [-52.5, 18.5], [-54, 27]] as Vec[]).map(([x, y]) => [x, y - HORN_RAISE * ((27 - y) / 38)] as Vec),
+  [0, 27],
+])
+const HORN_TOP = -11 - HORN_RAISE
+const HORN_BANDS = [HORN_TOP - 1, ...[1, 2, 3].map((i) => HORN_TOP + ((12.5 - HORN_TOP) * i) / 4), 28]
+const HORN_SAG = 7
+const sagAt = (x: number) => HORN_SAG * (x / 54) ** 2
+/** En buet stribe fra grænsen y0 og ned under ombukket (de næste striber ligger ovenpå). */
+function rowFrom(y0: number): string {
+  const pts: Vec[] = []
+  for (let k = 0; k <= 12; k++) pts.push([-60 + 10 * k, y0 + sagAt(-60 + 10 * k)])
+  return poly([...pts, [60, 40], [-60, 40]])
+}
 
 /** Hullet: en skrå ellipse ved ørebasen (lidt over den), drejet efter kuplens rundning. */
 const HOLE = { rx: 11.5, ry: 4.6, rot: 24 }
@@ -42,13 +65,20 @@ const stripeAt = (stripes: readonly string[], y: number) => {
   const i = BANDS.findIndex((b, j) => j > 0 && y < b)
   return stripes[Math.max(0, Math.min(stripes.length - 1, (i < 0 ? BANDS.length : i) - 1))]
 }
+/** Stribens farve i punktet (x, y) på kuplen om et horn (de buede striber). */
+const hornStripeAt = (stripes: readonly string[], x: number, y: number) => {
+  const i = HORN_BANDS.findIndex((b, j) => j > 0 && y < b + sagAt(x))
+  return stripes[Math.max(0, Math.min(stripes.length - 1, (i < 0 ? HORN_BANDS.length : i) - 1))]
+}
 
-/** Pomponen: en lille sky midt på toppen, eller 20 enheder til venstre for et horn. */
-const pomAt = (horn: Pt | null | undefined): Pt => (horn ? { x: horn.x - 20, y: -13 } : { x: 0, y: -15 })
+/** Pomponen: en lille sky midt på toppen, eller (mindre) på kuplen tæt til venstre for et horn. */
+const HORN_POM = { dx: -15.5, rx: 8.6, ry: 7.2 }
+const pomAt = (horn: Pt | null | undefined): Pt => (horn ? { x: horn.x + HORN_POM.dx, y: HORN_TOP - 4 } : { x: 0, y: -15 })
 
 const front: ItemArt = ({ c, sw, a, local, holes, horn, ids }) => {
   const stripes = c.stripes ?? [c.main, c.main, c.main, c.main]
-  const lit = litCopy(DOME, [-26, -8], 0.9)
+  const dome = horn ? HORN_DOME : DOME
+  const lit = litCopy(dome, [-26, -8], 0.9)
   const stroke = { stroke: c.outline, strokeWidth: sw, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const }
   const hl = holeAt(local, a.earBaseL, -1)
   const hr = holeAt(local, a.earBaseR, 1)
@@ -58,15 +88,17 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn, ids }) => {
   return (
     <>
       <clipPath id={clip}>
-        <path d={blob(DOME, 0.9)} />
+        <path d={blob(dome, 0.9)} />
       </clipPath>
       <g clipPath={`url(#${clip})`}>
-        {stripes.map((s, i) => (
-          <path key={i} d={rect(-60, BANDS[i], 120, BANDS[i + 1] - BANDS[i] + (i < stripes.length - 1 ? 0.6 : 0))} fill={s} />
-        ))}
+        {horn
+          ? stripes.map((s, i) => <path key={i} d={rowFrom(HORN_BANDS[i])} fill={s} />)
+          : stripes.map((s, i) => (
+              <path key={i} d={rect(-60, BANDS[i], 120, BANDS[i + 1] - BANDS[i] + (i < stripes.length - 1 ? 0.6 : 0))} fill={s} />
+            ))}
         <path d={join(outside(blob(lit, 0.9)))} fill={c.ink} fillRule="evenodd" opacity={0.14} />
       </g>
-      <path d={blob(DOME, 0.9)} fill="none" {...stroke} />
+      <path d={blob(dome, 0.9)} fill="none" {...stroke} />
       {holes && (
         <path
           d={join(
@@ -81,7 +113,7 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn, ids }) => {
       <path d={softBand(-54, 54, 12.5, 27.5, 4, 3)} fill={c.trim} {...stroke} />
       <path d={ribs(-52, 52, 15.5, 25.5, 14, 3.5)} fill="none" stroke={c.trimShade} strokeWidth={sw * 0.5} strokeLinecap="round" />
       <path d={star(-26, 21, 5.6, 1.6, 4, 8)} fill={c.accent} stroke={c.accentOutline} strokeWidth={sw * 0.45} strokeLinejoin="round" />
-      <path d={scallop(pom.x, pom.y, 11.5, 9.4, 9, 0.64, -90)} fill={c.trim} {...stroke} />
+      <path d={horn ? scallop(pom.x, pom.y, HORN_POM.rx, HORN_POM.ry, 9, 0.64, -90) : scallop(pom.x, pom.y, 11.5, 9.4, 9, 0.64, -90)} fill={c.trim} {...stroke} />
       <path d={join(ellipse(shine.x, shine.y, 4.4, 2.1, -22), ellipse(pom.x - 4.6, pom.y - 2.4, 2.8, 1.8, -20))} fill={c.highlight} />
     </>
   )
@@ -92,10 +124,11 @@ const rim: ItemArt = ({ c, sw, a, local, horn }) => {
   const stripes = c.stripes ?? [c.main]
   const hl = holeAt(local, a.earBaseL, -1)
   const hr = holeAt(local, a.earBaseR, 1)
+  const at = (x: number, y: number) => (horn ? hornStripeAt(stripes, x, y) : stripeAt(stripes, y))
   const lips: [string, string][] = [
-    [lip(hl), stripeAt(stripes, hl.y + 3)],
-    [lip(hr), stripeAt(stripes, hr.y + 3)],
-    ...(horn ? [[lip({ x: horn.x, y: horn.y, rot: 0 }, HORN_HOLE.rx, HORN_HOLE.ry, 2.6), stripeAt(stripes, horn.y + 2)] as [string, string]] : []),
+    [lip(hl), at(hl.x, hl.y + 3)],
+    [lip(hr), at(hr.x, hr.y + 3)],
+    ...(horn ? [[lip({ x: horn.x, y: horn.y, rot: 0 }, HORN_HOLE.rx, HORN_HOLE.ry, 2.6), at(horn.x, horn.y + 2)] as [string, string]] : []),
   ]
   // Hullerne i samme stribe deler én sti.
   const byColor = new Map<string, string[]>()

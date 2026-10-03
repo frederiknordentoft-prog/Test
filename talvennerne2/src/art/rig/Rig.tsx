@@ -244,6 +244,10 @@ export function cropViewBox(def: SpeciesDef, breed: BreedId, stage: Stage, crop:
     const hat = outfit?.head && !def.occupies?.includes('head') ? outfit.head.item : null
     const ib = hat ? itemModelBox(hat, fitItem(hat, a, def)) : null
     if (ib) b = unionBox(b, mapBox(R.head, ib))
+    // En ansigtsgenstand, der når under munden (skægget), kommer med til hagen (review G1-r4, B5).
+    const mask = outfit?.face && !def.occupies?.includes('face') ? outfit.face.item : null
+    const fb = mask ? itemModelBox(mask, fitItem(mask, a, def)) : null
+    if (fb && fb.y1 > a.mouth.y) b = unionBox(b, mapBox(R.head, fb))
     return viewBoxAround(b, 0.08, 1)
   }
   if (crop === 'crown') {
@@ -463,9 +467,6 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
   // Hornhul (review G1-r2, E1): hatten tegner et hul over hornets rod, og hornet skjules under hullets
   // nederste kant (forkanten i `rim` ligger ovenpå), så hornet går op gennem huen og aldrig over kanten.
   const hornHat = parts.Horn && holes && headWorn?.item.hornHole ? headWorn : undefined
-  // En hat mellem ørerne ('under') på en art med horn flyttes ud ved siden af hornet (fit-overskrivning)
-  // og tegnes foran øret, så den ikke forsvinder bag det.
-  const hatBesideHorn = !!parts.Horn && hat === 'under'
   const hornHole = (() => {
     if (!hornHat) return null
     const h = hornHat.item.hornHole!
@@ -956,9 +957,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
               {/* 14 · mane-front (eventyrbriller i panden ligger oven på pandelokken) */}
               {parts.ManeFront && !hides.has('mane-front') && scaled(a.headTop, R.xf.mane, parts.ManeFront(ctx(swHead / R.xf.mane)))}
               {faceOverMane && renderItem('face', 'front', R.head.s)}
-              {/* 15 · head-item (en hat mellem ørerne på en art med horn sidder skævt ved siden af
-                  hornet og tegnes foran øret, se festhattens overskrivning) */}
-              {!hatBesideHorn && renderItem('head', 'front', R.head.s)}
+              {/* 15 · head-item (ører og horn ligger over hatte, SPEC §7; en hat mellem ørerne på en art
+                  med horn sidder vippet bag hornet, se fit.ts) */}
+              {renderItem('head', 'front', R.head.s)}
               {faceOnHat && renderItem('face', 'front', R.head.s)}
               {/* 16 · ører, horn (+ hattens hulkant over ørernes rod) */}
               {earsShown && !earsBehind && (
@@ -967,7 +968,6 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
                   {ear('R', Ear!)}
                 </g>
               )}
-              {hatBesideHorn && renderItem('head', 'front', R.head.s)}
               {/* Hornet gennem et hornhul: under hullets forkant (rim); ellers øverst. */}
               {Horn && hornHole && horn(hornHole)}
               {renderItem('head', 'rim', R.head.s)}
