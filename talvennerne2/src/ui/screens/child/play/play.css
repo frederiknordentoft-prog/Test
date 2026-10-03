@@ -113,6 +113,7 @@
   animation: tv-play-hop var(--dur-slow) var(--ease-spring) 120ms both;
 }
 .tv-play__pipbird {
+  display: block;
   flex: none;
   width: 96px;
 }
@@ -146,6 +147,12 @@
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   width: min(100%, 460px);
+}
+/* a phone held upright: the two choices one above the other, still the same size */
+@media (max-width: 480px) {
+  .tv-play__choices {
+    grid-template-columns: 1fr;
+  }
 }
 /* Pip's colours (as in onboarding/first-start.css, which this screen does not load) */
 .tv-play .tv-pip {

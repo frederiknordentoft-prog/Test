@@ -1107,11 +1107,12 @@
   font-weight: 800;
 }
 .tv-fill__eqface .tv-fill__eq {
-  gap: 4px 6px;
+  flex-wrap: nowrap;
+  gap: 4px;
 }
 .tv-fill__eqface .tv-fill__num,
 .tv-fill__eqface .tv-fill__op {
-  font-size: 30px;
+  font-size: 28px;
 }
 .tv-fill__cell {
   display: grid;

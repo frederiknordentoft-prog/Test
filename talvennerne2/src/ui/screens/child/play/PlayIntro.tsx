@@ -84,7 +84,9 @@ export function PlayIntro({ target, hutRegion, resume, state, buddy, trial, onSt
         </div>
         {state === 'tomorrow' ? (
           <div className="tv-play__pip" data-play-tomorrow="">
-            <PipFigure talking className="tv-play__pipbird" />
+            <span className="tv-play__pipbird" aria-hidden>
+              <PipFigure talking />
+            </span>
             <SpokenText as="p" clip="s.play.tomorrow" className="tv-play__say" />
           </div>
         ) : (

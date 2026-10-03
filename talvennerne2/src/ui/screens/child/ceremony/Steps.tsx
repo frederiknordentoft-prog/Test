@@ -380,7 +380,9 @@ export function FinaleParty({ step, world }: { step: CeremonyStep; world: WorldI
               </li>
             ))}
           </ul>
-          {drawn.length > 0 && <Button clip="s.ceremony.tryOnAll" icon="shirt" variant="star" size="md" onClick={() => tryOnAll(drawn)} data-try-on-all="" />}
+          {drawn.length > 0 && (
+            <Button clip={drawn.length > 1 ? 's.ceremony.tryOnAll' : 's.ceremony.tryOn'} icon="shirt" variant="star" size="md" onClick={() => tryOnAll(drawn)} data-try-on-all="" />
+          )}
         </div>
       )}
       {opened && (opened.regions.length > 0 || opened.worlds.length > 0) && (
