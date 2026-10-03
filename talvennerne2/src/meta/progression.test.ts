@@ -281,11 +281,14 @@ describe('friend and chest nodes (SPEC §6.2)', () => {
       expect(colours.size).toBeGreaterThan(1)
     })
 
-    it('shows the animal the child got once the node is played', () => {
+    it('shows the animal the child got once the node is played, and none when it gave none', () => {
       const p = kid('mie')
       const { profile } = play(p, round({ nodeId: 'w1-klokken-friend' }))
       const fox = profile.animals.find((a) => a.uid === 'friend-w1-klokken-friend')!
       expect(friendOnCard(profile, 'fox', 'w1-klokken-friend')).toBe(fox)
+      // played when every colour was found (friendship instead): the card shows the species
+      const played = { ...p, nodes: { ...p.nodes, 'w0-tal10-friend': { plays: 1, stars: 2 as const, skipped: false, lastAt: 1 } } }
+      expect(friendOnCard(played, 'rabbit', 'w0-tal10-friend')).toBeNull()
     })
 
     it('is not changed by a Stjernefølet the same round brings', () => {

@@ -5,7 +5,7 @@
 import { useEffect, useMemo } from 'react'
 import { ITEM_BY_ID } from '../../../../content/catalog'
 import { NODE_BY_ID, REGION_BY_ID } from '../../../../content/curriculum'
-import type { Animal, ClipId, NodeId, RegionId, SpeechPart } from '../../../../engine/types'
+import type { ClipId, NodeId, RegionId, SpeechPart } from '../../../../engine/types'
 import { friendOnCard } from '../../../../meta/animals'
 import { useProfile } from '../../../../state/useProfile'
 import { Button } from '../../../design/Button'
@@ -83,17 +83,14 @@ export function StoneSheet({ stone, region, onClose, onPlay, onHut }: StoneSheet
   )
 }
 
-const NO_ANIMALS: Animal[] = []
-
 /**
  * The friend stone's animal in its breed, colour and size: exactly the one the node gives (the same
- * seeded draw the round makes), or the one it gave (review app-w2-r1 P2-2). Without a profile, the
- * species.
+ * seeded draw the round makes), or the one it gave (review app-w2-r1 P2-2). Without a profile, or
+ * when the node gives no animal, the species.
  */
 function FriendPicture({ nodeId, friend }: { nodeId: NodeId; friend: NonNullable<StoneView['friend']> }) {
-  const id = useProfile((s) => s.profile?.id ?? null)
-  const animals = useProfile((s) => s.profile?.animals ?? NO_ANIMALS)
-  const animal = useMemo(() => (id ? friendOnCard({ id, animals }, friend.species, nodeId) : null), [id, animals, friend.species, nodeId])
+  const profile = useProfile((s) => s.profile)
+  const animal = useMemo(() => (profile ? friendOnCard(profile, friend.species, nodeId) : null), [profile, friend.species, nodeId])
   return <AnimalPicture animal={animal} species={friend.species} size={132} crop="fit" mood={friend.met ? 'happy' : 'wave'} />
 }
 

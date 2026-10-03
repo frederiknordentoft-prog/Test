@@ -15,7 +15,7 @@ import { nameSuggestions } from '../content/names'
 import { hashSeed, makeRng } from '../engine/rng'
 import {
   NATURAL_COLORWAYS,
-  type Animal, type BreedId, type ColorwayId, type ProfileDoc, type SkillId, type SpeciesId, type Stage, type WorldId,
+  type Animal, type BreedId, type ColorwayId, type NodeId, type ProfileDoc, type SkillId, type SpeciesId, type Stage, type WorldId,
 } from '../engine/types'
 import type { Reward } from './rewards'
 
@@ -122,11 +122,13 @@ export function friendAnimal(
 
 /**
  * The animal on a friend stone's card: exactly the one the node gives (the draw is a pure function
- * of the profile, so it can be shown before the round), or the one it gave. Null when it gives none
- * (every breed and colour found): the card then shows the species.
+ * of the profile, so it can be shown before the round), or the one it gave. Null when it gives or
+ * gave none (every breed and colour found): the card then shows the species.
  */
-export function friendOnCard(p: Pick<ProfileDoc, 'id' | 'animals'>, species: SpeciesId, nodeId: string): Animal | null {
-  return p.animals.find((a) => a.uid === `friend-${nodeId}`) ?? friendAnimal(p, species, nodeId, 0)
+export function friendOnCard(p: Pick<ProfileDoc, 'id' | 'animals' | 'nodes'>, species: SpeciesId, nodeId: NodeId): Animal | null {
+  const given = p.animals.find((a) => a.uid === `friend-${nodeId}`)
+  if (given || (p.nodes[nodeId]?.plays ?? 0) > 0) return given ?? null
+  return friendAnimal(p, species, nodeId, 0)
 }
 
 /** The animal egg number `egg` hatches into. */
