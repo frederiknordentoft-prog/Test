@@ -1,0 +1,712 @@
+08:12:41 generate.py --wave 2 --threads 4 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261003-081241.log)
+08:12:41 1061 klip valgt, 5 færdige, 1056 at lave
+08:12:42   ✓ master h.end.100 = kopi af n.end.100 (samme tekst)
+08:12:42   ✓ master h.mid.100 = kopi af n.mid.100 (samme tekst)
+08:12:42   ✓ master hint.addTo20.fillTen = kopi af s.round.hint.makeTen (samme tekst)
+08:12:42   ✓ master hint.addsub2.answerIs = kopi af s.round.hint.answerIs (samme tekst)
+08:12:42   ✓ master hint.addsub2.firstHop = kopi af hint.addsub.firstHop (samme tekst)
+08:12:42   ✓ master hint.addsub2.hop = kopi af s.zoo.trick.hop (samme tekst)
+08:12:42   ✓ master hint.addsub2.minusLess = kopi af hint.addsub.minusMeansLess (samme tekst)
+08:12:42   ✓ master hint.addsub2.plusMore = kopi af hint.addsub.plusMeansMore (samme tekst)
+08:12:42   ✓ master hint.addsub2.startOn = kopi af hint.addsub.startOn (samme tekst)
+08:12:42   ✓ master hint.addsub2.thatIs = kopi af frag.det_er (samme tekst)
+08:12:42   ✓ master hint.composeShapes.give = kopi af op.giver (samme tekst)
+08:12:42   ✓ master hint.fractionShape.thatIs = kopi af frag.det_er (samme tekst)
+08:12:42   ✓ master hint.missingPart10.startOn = kopi af hint.addsub.startOn (samme tekst)
+08:12:42   ✓ master hint.readChart.thereAre = kopi af s.round.hint.thereAre (samme tekst)
+08:12:42   ✓ master hint.subTo20.backToTen = kopi af s.round.hint.backToTen (samme tekst)
+08:12:42   ✓ master name.color.fox.c1 = kopi af name.color.cat.c1 (samme tekst)
+08:12:42   ✓ master name.color.fox.c4 = kopi af name.color.hedgehog.c1 (samme tekst)
+08:12:42   ✓ master name.color.fox.c6 = kopi af name.color.hedgehog.c3 (samme tekst)
+08:12:42   ✓ master name.color.hamster.c2 = kopi af name.color.cat.c5 (samme tekst)
+08:12:42   ✓ master name.color.hamster.c3 = kopi af name.color.rabbit.c2 (samme tekst)
+08:12:42   ✓ master name.color.hamster.c4 = kopi af name.color.puppy.c2 (samme tekst)
+08:12:42   ✓ master name.color.hamster.c5 = kopi af name.color.rabbit.c5 (samme tekst)
+08:12:42   ✓ master name.color.hamster.c6 = kopi af name.color.puppy.c4 (samme tekst)
+08:12:42   ✓ master name.color.horse.c3 = kopi af name.color.cat.c2 (samme tekst)
+08:12:42   ✓ master name.color.lamb.c1 = kopi af name.color.cat.c5 (samme tekst)
+08:12:42   ✓ master name.color.lamb.c2 = kopi af name.color.puppy.c5 (samme tekst)
+08:12:42   ✓ master name.color.lamb.c3 = kopi af name.color.cat.c2 (samme tekst)
+08:12:42   ✓ master name.color.lamb.c4 = kopi af name.color.rabbit.c2 (samme tekst)
+08:12:42   ✓ master name.color.lamb.c5 = kopi af name.color.hedgehog.c1 (samme tekst)
+08:12:42   ✓ master name.color.owl.c1 = kopi af name.color.hedgehog.c1 (samme tekst)
+08:12:42   ✓ master name.color.owl.c3 = kopi af name.color.rabbit.c2 (samme tekst)
+08:12:42   ✓ master name.color.panda.c2 = kopi af name.color.hedgehog.c1 (samme tekst)
+08:12:42   ✓ master name.color.panda.c3 = kopi af name.color.cat.c1 (samme tekst)
+08:12:42   ✓ master name.color.panda.c4 = kopi af name.color.rabbit.c2 (samme tekst)
+08:12:42   ✓ master name.color.panda.c5 = kopi af name.color.puppy.c5 (samme tekst)
+08:12:43   ✓ master name.color.squirrel.c1 = kopi af name.color.cat.c1 (samme tekst)
+08:12:43   ✓ master name.color.squirrel.c2 = kopi af name.color.rabbit.c2 (samme tekst)
+08:12:43   ✓ master name.color.squirrel.c3 = kopi af name.color.cat.c2 (samme tekst)
+08:12:43   ✓ master name.color.squirrel.c4 = kopi af name.color.hedgehog.c1 (samme tekst)
+08:12:43   ✓ master name.color.squirrel.c5 = kopi af name.color.hedgehog.c2 (samme tekst)
+08:12:43   ✓ master name.color.unicorn.c1 = kopi af name.color.cat.c5 (samme tekst)
+08:12:43   ✓ master name.color.unicorn.c2 = kopi af name.color.rabbit.c6 (samme tekst)
+08:12:43   ✓ master name.set.talmagiker = kopi af s.reward.title.30 (samme tekst)
+08:12:43   ✓ master name.set.vinter = kopi af name.animal.polarbear.6 (samme tekst)
+08:12:43   ✓ master noun.addsub2.tier = kopi af s.round.word.ten (samme tekst)
+08:12:43   ✓ master noun.addsub2.tiere = kopi af s.round.word.tens (samme tekst)
+08:12:43   ✓ master s.coinNames.all = kopi af s.shapes2D.all (samme tekst)
+08:12:43   ✓ master s.composeShapes.youHave = kopi af s.map.perler.have (samme tekst)
+08:12:43   ✓ master s.groupsOf.thereAre = kopi af s.round.hint.thereAre (samme tekst)
+08:12:43   ✓ master s.place.lay = kopi af frag.laeg (samme tekst)
+08:12:43   ✓ master t.end.0 = kopi af n.end.12 (samme tekst)
+08:12:43   ✓ master t.end.120 = kopi af n.end.2 (samme tekst)
+08:12:43   ✓ master t.end.180 = kopi af n.end.3 (samme tekst)
+08:12:43   ✓ master t.end.240 = kopi af n.end.4 (samme tekst)
+08:12:43   ✓ master t.end.300 = kopi af n.end.5 (samme tekst)
+08:12:43   ✓ master t.end.360 = kopi af n.end.6 (samme tekst)
+08:12:43   ✓ master t.end.420 = kopi af n.end.7 (samme tekst)
+08:12:43   ✓ master t.end.480 = kopi af n.end.8 (samme tekst)
+08:12:43   ✓ master t.end.540 = kopi af n.end.9 (samme tekst)
+08:12:43   ✓ master t.end.60 = kopi af n.end.1.et (samme tekst)
+08:12:43   ✓ master t.end.600 = kopi af n.end.10 (samme tekst)
+08:12:43   ✓ master t.end.660 = kopi af n.end.11 (samme tekst)
+08:13:06 input frame rate=25
+08:13:14 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+08:13:15 model indlæst på 30 s (4 tråde)
+08:13:37 ✅ EOS token detected! Stopping generation at step 280
+08:13:52 kald carrier k=8 t0 'Tallet er to hundrede, tallet er tre hundrede, tallet er fire hundrede': 37.2 s for 11.16 s lyd
+08:13:58   h.mid.200 t0: 0.71 s (forhold 0.57) -18.0 LUFS, carrier: 'tallet er 200' CER 0.0 (wav2vec2) → ok
+08:13:59   h.mid.300 t0: 1.00 s (forhold 0.80) -18.15 LUFS, carrier: 'tallet af 300' CER 0.0 (wav2vec2) → ok
+08:13:59   h.mid.400 t0: 0.72 s (forhold 0.46) -18.0 LUFS, carrier: 'tallet er 400' CER 0.0 (wav2vec2) → ok
+08:13:59   h.mid.500 t0: 0.88 s (forhold 0.71) -18.08 LUFS, carrier: 'tallet er 500' CER 0.0 (wav2vec2) → ok
+08:14:00   h.mid.700 t0: 0.91 s (forhold 0.73) -18.11 LUFS, carrier: 'tallet er 700' CER 0.0 (wav2vec2) → ok
+08:14:00   h.mid.800 t0: 0.69 s (forhold 0.44) -18.0 LUFS, carrier: 'tallet er 800' CER 0.0 (wav2vec2) → ok
+08:14:01   h.mid.900 t0: 0.79 s (forhold 0.63) -18.0 LUFS, carrier: 'tallet er 900' CER 0.0 (wav2vec2) → ok
+08:14:05   n.mid.1000 t0: 0.46 s (forhold 0.73) -18.08 LUFS, carrier: 'Tallet er 1000' CER 0.0 (whisper, wav2vec2: 'tallet er t000n') → ok
+08:14:27 ✅ EOS token detected! Stopping generation at step 272
+08:14:41 kald carrier k=8 t0 'Tallet er to hundrede. Tallet er fire hundrede. Tallet er fem hundrede': 36.2 s for 10.84 s lyd
+08:14:43   h.end.200 t0: 0.70 s (forhold 0.56) -18.0 LUFS, carrier: 'tallet er 200' CER 0.0 (wav2vec2) → ok
+08:14:43   h.end.400 t0: 0.70 s (forhold 0.45) -18.0 LUFS, carrier: 'tallet er 400' CER 0.0 (wav2vec2) → ok
+08:14:43   h.end.500 t0: 0.99 s (forhold 0.79) -18.08 LUFS, carrier: 'tallet er 500' CER 0.0 (wav2vec2) → ok
+08:14:44   h.end.600 t0: 0.60 s (forhold 0.48) -18.0 LUFS, carrier: 'tallet er 600' CER 0.0 (wav2vec2) → ok
+08:14:44   h.end.700 t0: 1.04 s (forhold 0.83) -18.0 LUFS, carrier: 'tallet er 700' CER 0.0 (wav2vec2) → ok
+08:14:44   h.end.800 t0: 0.77 s (forhold 0.49) -18.0 LUFS, carrier: 'tallet er 800' CER 0.0 (wav2vec2) → ok
+08:14:44   h.end.900 t0: 0.62 s (forhold 0.50) -18.0 LUFS, carrier: 'tallet er 900' CER 0.0 (wav2vec2) → ok
+08:14:47   n.end.1000 t0: 0.45 s (forhold 0.72) -18.0 LUFS, carrier: 'Tallet er 1000' CER 0.0 (whisper, wav2vec2: 'tallet ar t000') → ok
+08:15:16 ✅ EOS token detected! Stopping generation at step 327
+08:15:36 kald head k=6 t0 'Tallet er to hundrede og femogtyve. Tallet er fire hundrede og toogtre': 49.3 s for 13.04 s lyd
+08:15:38   hog.200 t0: 0.66 s (forhold 0.42) -18.0 LUFS, carrier: 'tallet er 225' CER 0.0 (wav2vec2) → ok
+08:15:38   hog.400 t0: 1.18 s (forhold 0.63) -18.0 LUFS, carrier: 'tallet er 462' CER 0.0 (wav2vec2) → ok
+08:15:38   hog.500 t0: 0.55 s (forhold 0.35) -18.16 LUFS, carrier: 'tallet er 519' CER 0.0 (wav2vec2) → ok
+08:15:39   hog.700 t0: 1.65 s (forhold 1.06) -18.0 LUFS, carrier: 'tallet ar 756 tallet' CER 0.0 (wav2vec2) → ok
+08:15:39   hog.800 t0: 1.47 s (forhold 0.78) -18.05 LUFS, carrier: 'eder 873' CER 0.0 (wav2vec2) → ok
+08:15:39   hog.900 t0: 0.62 s (forhold 0.40) -18.0 LUFS, carrier: 'tallet er 991' CER 0.0 (wav2vec2) → ok
+08:15:41 ✅ EOS token detected! Stopping generation at step 21
+08:15:46 kald single k=1 t0 'så,': 6.8 s for 0.80 s lyd
+08:15:46   frag.inverseOps.so t0: 0.31 s (forhold 0.99) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:15:48 ✅ EOS token detected! Stopping generation at step 21
+08:15:53 kald single k=1 t1 'så,': 6.6 s for 0.80 s lyd
+08:15:53   frag.inverseOps.so t1: 0.28 s (forhold 0.91) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:15:56 ✅ EOS token detected! Stopping generation at step 34
+08:16:03 kald single k=1 t0 'Betal,': 9.3 s for 1.32 s lyd
+08:16:03   frag.betal t0: 0.48 s (forhold 0.77) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:16:06 ✅ EOS token detected! Stopping generation at step 29
+08:16:13 kald single k=1 t1 'Betal,': 10.3 s for 1.12 s lyd
+08:16:13   frag.betal t1: 0.49 s (forhold 0.79) -18.07 LUFS, none: 'None' CER None (None) → ok
+08:16:16 ✅ EOS token detected! Stopping generation at step 29
+08:16:24 kald single k=1 t0 'Den er,': 10.2 s for 1.12 s lyd
+08:16:24   frag.den_er t0: 0.43 s (forhold 0.70) -18.06 LUFS, none: 'None' CER None (None) → ok
+08:16:27 ✅ EOS token detected! Stopping generation at step 30
+08:16:34 kald single k=1 t1 'Den er,': 10.1 s for 1.16 s lyd
+08:16:34   frag.den_er t1: 0.39 s (forhold 0.62) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:16:39 ✅ EOS token detected! Stopping generation at step 46
+08:16:47 kald single k=1 t0 'Hvad er det dobbelte af,': 12.8 s for 1.80 s lyd
+08:16:51   frag.det_dobbelte_af t0: 1.15 s (forhold 0.53) -18.1 LUFS, alone: 'Hvad er det dobbelte af?' CER 0.0 (whisper, wav2vec2: 'hvad er det de ef') → ok
+08:16:55 ✅ EOS token detected! Stopping generation at step 55
+08:17:01 kald single k=1 t1 'Hvad er det dobbelte af,': 10.3 s for 2.16 s lyd
+08:17:08   frag.det_dobbelte_af t1: 1.39 s (forhold 0.63) -18.06 LUFS, alone: 'Hvad er det dobbelte af?' CER 0.0 (whisper, wav2vec2: 'hvad er de dobbelte a') → ok
+08:17:15 ✅ EOS token detected! Stopping generation at step 40
+08:17:31 kald single k=1 t0 'Du betaler med,': 22.4 s for 1.56 s lyd
+08:17:31   frag.du_betaler_med t0: 0.84 s (forhold 0.54) -18.0 LUFS, alone: 'du betaler med' CER 0.0 (wav2vec2) → ok
+08:17:34 ✅ EOS token detected! Stopping generation at step 32
+08:17:39 kald single k=1 t1 'Du betaler med,': 7.5 s for 1.24 s lyd
+08:17:39   frag.du_betaler_med t1: 0.96 s (forhold 0.62) -18.0 LUFS, alone: 'du betaler med' CER 0.0 (wav2vec2) → ok
+08:17:43 ✅ EOS token detected! Stopping generation at step 53
+08:17:49 kald single k=1 t0 'Hvad er halvdelen af,': 9.9 s for 2.08 s lyd
+08:17:50   frag.halvdelen_af t0: 1.49 s (forhold 0.80) -18.01 LUFS, alone: 'hvad er halvdelen af' CER 0.0 (wav2vec2) → ok
+08:17:53 ✅ EOS token detected! Stopping generation at step 48
+08:17:59 kald single k=1 t1 'Hvad er halvdelen af,': 9.4 s for 1.88 s lyd
+08:17:59   frag.halvdelen_af t1: 1.24 s (forhold 0.66) -18.05 LUFS, alone: 'hvad er halvdelen af' CER 0.0 (wav2vec2) → ok
+08:18:03 ✅ EOS token detected! Stopping generation at step 44
+08:18:08 kald single k=1 t0 'Hvad er klokken,': 8.9 s for 1.72 s lyd
+08:18:09   frag.hvad_er_klokken t0: 1.09 s (forhold 0.87) -18.08 LUFS, alone: 'hvad er klokken' CER 0.0 (wav2vec2) → ok
+08:18:11 ✅ EOS token detected! Stopping generation at step 32
+08:18:17 kald single k=1 t1 'Hvad er klokken,': 7.9 s for 1.24 s lyd
+08:18:20   frag.hvad_er_klokken t1: 0.66 s (forhold 0.52) -18.18 LUFS, alone: 'Hvad er klokken?' CER 0.0 (whisper, wav2vec2: 'hvad er kloppet') → ok
+08:18:23 ✅ EOS token detected! Stopping generation at step 38
+08:18:28 kald single k=1 t0 'Hvor mange penge,': 8.6 s for 1.48 s lyd
+08:18:29   frag.hvor_mange_penge t0: 0.84 s (forhold 0.54) -18.16 LUFS, alone: 'hvor mange penge' CER 0.0 (wav2vec2) → ok
+08:18:32 ✅ EOS token detected! Stopping generation at step 38
+08:18:37 kald single k=1 t1 'Hvor mange penge,': 8.0 s for 1.48 s lyd
+08:18:38   frag.hvor_mange_penge t1: 0.77 s (forhold 0.50) -18.12 LUFS, alone: 'hvor mange penge' CER 0.0 (wav2vec2) → ok
+08:18:40 ✅ EOS token detected! Stopping generation at step 32
+08:18:45 kald single k=1 t0 'Klokken er,': 7.4 s for 1.24 s lyd
+08:18:45   frag.klokken_er t0: 0.65 s (forhold 0.69) -18.19 LUFS, alone: 'klokken er' CER 0.0 (wav2vec2) → ok
+08:18:48 ✅ EOS token detected! Stopping generation at step 28
+08:18:53 kald single k=1 t1 'Klokken er,': 7.4 s for 1.08 s lyd
+08:18:56   frag.klokken_er t1: 0.75 s (forhold 0.80) -18.18 LUFS, alone: 'Klokken er' CER 0.0 (whisper, wav2vec2: 'klokken r') → ok
+08:18:57 ✅ EOS token detected! Stopping generation at step 21
+08:19:03 kald single k=1 t0 'koster,': 6.7 s for 0.80 s lyd
+08:19:03   frag.koster t0: 0.43 s (forhold 0.70) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:19:05 ✅ EOS token detected! Stopping generation at step 25
+08:19:10 kald single k=1 t1 'koster,': 7.0 s for 0.96 s lyd
+08:19:10   frag.koster t1: 0.47 s (forhold 0.74) -18.09 LUFS, none: 'None' CER None (None) → ok
+08:19:14 ✅ EOS token detected! Stopping generation at step 54
+08:19:20 kald single k=1 t0 'Stil uret, så klokken er,': 9.8 s for 2.12 s lyd
+08:19:23   frag.stil_uret_saa_klokken_er t0: 1.83 s (forhold 0.84) -18.16 LUFS, alone: 'stil urdet så klokken er' CER 0.0526 (wav2vec2, whisper: 'Stil ordet så klokken er') → FEJL asr
+08:19:27 ✅ EOS token detected! Stopping generation at step 53
+08:19:33 kald single k=1 t1 'Stil uret, så klokken er,': 9.5 s for 2.08 s lyd
+08:19:36   frag.stil_uret_saa_klokken_er t1: 1.83 s (forhold 0.84) -18.12 LUFS, alone: 'stile uret så klokken er' CER 0.0526 (wav2vec2, whisper: 'Stil i ordet så klokken er') → FEJL asr
+08:19:38 ✅ EOS token detected! Stopping generation at step 28
+08:19:43 kald single k=1 t0 'gange,': 7.2 s for 1.08 s lyd
+08:19:44   op.gange t0: 0.37 s (forhold 0.59) -18.13 LUFS, none: 'None' CER None (None) → ok
+08:19:46 ✅ EOS token detected! Stopping generation at step 28
+08:19:51 kald single k=1 t1 'gange,': 7.2 s for 1.08 s lyd
+08:19:51   op.gange t1: 0.37 s (forhold 0.59) -18.1 LUFS, none: 'None' CER None (None) → ok
+08:19:54 ✅ EOS token detected! Stopping generation at step 33
+08:20:00 kald single k=1 t0 'delt med,': 9.1 s for 1.28 s lyd
+08:20:01   frag.muldiv.delt_med t0: 0.61 s (forhold 0.97) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:20:02 ✅ EOS token detected! Stopping generation at step 25
+08:20:07 kald single k=1 t1 'delt med,': 6.9 s for 0.96 s lyd
+08:20:08   frag.muldiv.delt_med t1: 0.68 s (forhold 1.10) -18.05 LUFS, none: 'None' CER None (None) → ok
+08:20:11 ✅ EOS token detected! Stopping generation at step 50
+08:20:17 kald single k=1 t0 'En fuld ti-ramme er,': 9.6 s for 1.96 s lyd
+08:20:18   hint.addSub20Simple.fullFrame t0: 1.33 s (forhold 0.71) -18.05 LUFS, alone: 'en fuld tiramme er' CER 0.0 (wav2vec2) → ok
+08:20:18   ✓ master hint.addSub20Simple.fullFrame t0 (bestået)
+08:20:20 ✅ EOS token detected! Stopping generation at step 28
+08:20:25 kald single k=1 t0 'tilbage til,': 7.3 s for 1.08 s lyd
+08:20:25   hint.addsub2.backTo t0: 0.73 s (forhold 0.59) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:20:30 ✅ EOS token detected! Stopping generation at step 63
+08:20:38 kald single k=1 t0 'Det første hop tilbage lander på,': 12.5 s for 2.48 s lyd
+08:20:39   hint.addsub2.firstHopBack t0: 1.83 s (forhold 0.58) -18.08 LUFS, alone: 'det første hop tilbage landerpå' CER 0.0 (wav2vec2) → ok
+08:20:39   ✓ master hint.addsub2.firstHopBack t0 (bestået)
+08:20:42 ✅ EOS token detected! Stopping generation at step 31
+08:20:48 kald single k=1 t0 'frem til,': 9.1 s for 1.20 s lyd
+08:20:48   hint.addsub2.forwardTo t0: 0.59 s (forhold 0.95) -18.18 LUFS, none: 'None' CER None (None) → ok
+08:20:53 ✅ EOS token detected! Stopping generation at step 50
+08:20:59 kald single k=1 t0 'Hoppene giver tilsammen,': 11.2 s for 1.96 s lyd
+08:21:00   hint.addsub2.together t0: 1.37 s (forhold 0.55) -18.04 LUFS, none: 'None' CER None (None) → ok
+08:21:03 ✅ EOS token detected! Stopping generation at step 41
+08:21:10 kald single k=1 t0 'Så halvdelen af,': 10.0 s for 1.60 s lyd
+08:21:10   hint.halves.soHalfOf t0: 1.05 s (forhold 0.67) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:21:14 ✅ EOS token detected! Stopping generation at step 48
+08:21:21 kald single k=1 t0 'Den anden side skal også give,': 10.6 s for 1.88 s lyd
+08:21:24   hint.equalSides.otherSide t0: 1.26 s (forhold 0.40) -18.0 LUFS, alone: 'Den anden side skal også give' CER 0.0 (whisper, wav2vec2: 'den anden side skal også ske') → ok
+08:21:25   ✓ master hint.equalSides.otherSide t0 (bestået)
+08:21:26 ✅ EOS token detected! Stopping generation at step 21
+08:21:31 kald single k=1 t0 'Så giver,': 6.9 s for 0.80 s lyd
+08:21:32   hint.inverseOps.soGives t0: 0.45 s (forhold 0.48) -18.19 LUFS, none: 'None' CER None (None) → ok
+08:21:35 ✅ EOS token detected! Stopping generation at step 33
+08:21:40 kald single k=1 t0 'Tæl op til,': 8.7 s for 1.28 s lyd
+08:21:41   hint.missingPart10.countTo t0: 0.59 s (forhold 0.63) -18.16 LUFS, none: 'None' CER None (None) → ok
+08:21:44 ✅ EOS token detected! Stopping generation at step 36
+08:21:50 kald single k=1 t0 'Springet er,': 9.0 s for 1.40 s lyd
+08:21:50   hint.skipCount.everyHop t0: 0.82 s (forhold 0.87) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:21:54 ✅ EOS token detected! Stopping generation at step 49
+08:22:00 kald single k=1 t0 'Springet tilbage er,': 10.4 s for 1.92 s lyd
+08:22:00   hint.skipCount.everyHopBack t0: 1.14 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:22:02 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:22:02 ✅ EOS token detected! Stopping generation at step 24
+08:22:08 kald single k=1 t0 'Ved,': 7.7 s for 0.92 s lyd
+08:22:08   hint.clock.at t0: 0.30 s (forhold 0.98) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:22:12 ✅ EOS token detected! Stopping generation at step 47
+08:22:19 kald single k=1 t0 'er en halv time før,': 10.2 s for 1.84 s lyd
+08:22:19   hint.clock.halfBefore t0: 1.18 s (forhold 0.63) -18.03 LUFS, alone: 'er en halv time før' CER 0.0 (wav2vec2) → ok
+08:22:19   ✓ master hint.clock.halfBefore t0 (bestået)
+08:22:23 ✅ EOS token detected! Stopping generation at step 51
+08:22:30 kald single k=1 t0 'betyder halvvejs hen mod,': 10.6 s for 2.00 s lyd
+08:22:31   hint.clock.halfMeans t0: 1.27 s (forhold 0.58) -18.18 LUFS, alone: 'betyder halvvejs hen mod' CER 0.0 (wav2vec2) → ok
+08:22:31   ✓ master hint.clock.halfMeans t0 (bestået)
+08:22:34 ✅ EOS token detected! Stopping generation at step 39
+08:22:40 kald single k=1 t0 'er den næsten ved,': 9.3 s for 1.52 s lyd
+08:22:40   hint.clock.itIsAlmostAt t0: 0.96 s (forhold 0.61) -18.12 LUFS, alone: 'er den næsten ved' CER 0.0 (wav2vec2) → ok
+08:22:40   ✓ master hint.clock.itIsAlmostAt t0 (bestået)
+08:22:44 ✅ EOS token detected! Stopping generation at step 42
+08:22:52 kald single k=1 t0 'står den midt mellem,': 11.5 s for 1.64 s lyd
+08:22:52   hint.clock.itStandsBetween t0: 0.99 s (forhold 0.64) -18.05 LUFS, alone: 'står den midt mellem' CER 0.0 (wav2vec2) → ok
+08:22:53   ✓ master hint.clock.itStandsBetween t0 (bestået)
+08:23:02 ✅ EOS token detected! Stopping generation at step 114
+08:23:10 kald single k=1 t0 'Den lange viser peger på ni, og den lille viser er næsten ved,': 17.6 s for 4.52 s lyd
+08:23:12   hint.clock.longAtNineSmallAlmost t0: 3.86 s (forhold 0.65) -18.15 LUFS, alone: 'den lange viser peger på 9 og den lille viser er næsten ved' CER 0.0 (wav2vec2) → ok
+08:23:12   ✓ master hint.clock.longAtNineSmallAlmost t0 (bestået)
+08:23:20 ✅ EOS token detected! Stopping generation at step 110
+08:23:29 kald single k=1 t0 'Den lange viser peger på seks, og den lille viser står midt mellem,': 17.2 s for 4.36 s lyd
+08:23:30   hint.clock.longAtSixSmallBetween t0: 3.75 s (forhold 0.63) -18.09 LUFS, alone: 'den lange viser peger på 6 og den lille vi ser står midt mellem' CER 0.0 (wav2vec2) → ok
+08:23:30   ✓ master hint.clock.longAtSixSmallBetween t0 (bestået)
+08:23:39 ✅ EOS token detected! Stopping generation at step 113
+08:23:48 kald single k=1 t0 'Den lange viser peger på tre, og den lille viser er lige gået forbi,': 18.3 s for 4.48 s lyd
+08:23:56   hint.clock.longAtThreeSmallPast t0: 3.70 s (forhold 0.54) -18.12 LUFS, alone: 'Den lange viser peger på 3 og den lille viser er lige gået forbi' CER 0.0 (whisper, wav2vec2: 'den lange viser peger på tæ og den lille vi og er lige gået forbi') → ok
+08:23:56   ✓ master hint.clock.longAtThreeSmallPast t0 (bestået)
+08:23:59 ✅ EOS token detected! Stopping generation at step 43
+08:24:12 kald single k=1 t0 'er et kvarter efter,': 16.2 s for 1.68 s lyd
+08:24:19   hint.clock.quarterAfter t0: 1.09 s (forhold 0.58) -18.04 LUFS, alone: 'er et kvarter efter' CER 0.0 (wav2vec2) → ok
+08:24:19   ✓ master hint.clock.quarterAfter t0 (bestået)
+08:25:35 ✅ EOS token detected! Stopping generation at step 36
+08:25:46 kald single k=1 t0 'er et kvarter før,': 87.5 s for 1.40 s lyd
+08:25:48   hint.clock.quarterBefore t0: 0.99 s (forhold 0.63) -18.11 LUFS, alone: 'er et kvarter før' CER 0.0 (wav2vec2) → ok
+08:25:48   ✓ master hint.clock.quarterBefore t0 (bestået)
+08:27:33 ✅ EOS token detected! Stopping generation at step 59
+08:27:39 kald single k=1 t0 'Den lille viser står midt mellem,': 111.4 s for 2.32 s lyd
+08:27:40   hint.clock.smallBetween t0: 1.75 s (forhold 0.62) -18.08 LUFS, alone: 'den lille viser står midt mellem' CER 0.0 (wav2vec2) → ok
+08:27:40   ✓ master hint.clock.smallBetween t0 (bestået)
+08:27:44 ✅ EOS token detected! Stopping generation at step 52
+08:27:50 kald single k=1 t0 'Den lille viser peger på,': 10.2 s for 2.04 s lyd
+08:27:51   hint.clock.smallPointsAt t0: 1.30 s (forhold 0.52) -18.0 LUFS, alone: 'den lille viser peger på' CER 0.0 (wav2vec2) → ok
+08:27:51   ✓ master hint.clock.smallPointsAt t0 (bestået)
+08:27:55 ✅ EOS token detected! Stopping generation at step 51
+08:28:03 kald single k=1 t0 'Find uret, der viser klokken,': 11.6 s for 2.00 s lyd
+08:28:03   s.clock.findClock t0: 1.70 s (forhold 0.68) -18.05 LUFS, alone: 'find urdet der viser klokken' CER 0.0435 (wav2vec2) → ok
+08:28:03   ✓ master s.clock.findClock t0 (bestået)
+08:28:06 ✅ EOS token detected! Stopping generation at step 36
+08:28:11 kald single k=1 t0 'kvart i to.': 8.1 s for 1.40 s lyd
+08:28:12   t.end.105 t0: 0.65 s (forhold 0.69) -18.15 LUFS, none: 'None' CER None (None) → ok
+08:28:15 ✅ EOS token detected! Stopping generation at step 35
+08:28:20 kald single k=1 t0 'halv tre.': 8.2 s for 1.36 s lyd
+08:28:20   t.end.150 t0: 0.63 s (forhold 1.00) -18.16 LUFS, none: 'None' CER None (None) → ok
+08:28:24 ✅ EOS token detected! Stopping generation at step 39
+08:28:35 kald single k=1 t0 'kvart i tre.': 14.8 s for 1.52 s lyd
+08:28:36   t.end.165 t0: 0.77 s (forhold 0.82) -18.14 LUFS, none: 'None' CER None (None) → ok
+08:28:38 ✅ EOS token detected! Stopping generation at step 29
+08:28:49 kald single k=1 t0 'halv fire.': 13.5 s for 1.12 s lyd
+08:28:49   t.end.210 t0: 0.68 s (forhold 0.73) -18.18 LUFS, none: 'None' CER None (None) → ok
+08:28:56 ✅ EOS token detected! Stopping generation at step 34
+08:29:14 kald single k=1 t0 'halv fem.': 25.1 s for 1.32 s lyd
+08:29:15   t.end.270 t0: 0.49 s (forhold 0.79) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:29:22 ✅ EOS token detected! Stopping generation at step 40
+08:29:40 kald single k=1 t0 'kvart i fem.': 25.4 s for 1.56 s lyd
+08:29:41   t.end.285 t0: 0.73 s (forhold 0.78) -18.22 LUFS, none: 'None' CER None (None) → ok
+08:29:43 ✅ EOS token detected! Stopping generation at step 31
+08:29:48 kald single k=1 t0 'halv et.': 7.6 s for 1.20 s lyd
+08:29:48   t.end.30 t0: 0.52 s (forhold 0.83) -18.17 LUFS, none: 'None' CER None (None) → ok
+08:29:51 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:29:51 ✅ EOS token detected! Stopping generation at step 39
+08:29:57 kald single k=1 t0 'halv seks.': 8.4 s for 1.52 s lyd
+08:29:57   t.end.330 t0: 0.88 s (forhold 1.41) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:30:00 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:30:00 ✅ EOS token detected! Stopping generation at step 34
+08:30:12 kald single k=1 t0 'kvart i seks.': 15.0 s for 1.32 s lyd
+08:30:13   t.end.345 t0: 0.96 s (forhold 1.03) -18.16 LUFS, none: 'None' CER None (None) → ok
+08:30:16 ✅ EOS token detected! Stopping generation at step 28
+08:30:25 kald single k=1 t0 'halv syv.': 12.0 s for 1.08 s lyd
+08:30:25   t.end.390 t0: 0.63 s (forhold 1.00) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:30:29 ✅ EOS token detected! Stopping generation at step 33
+08:30:38 kald single k=1 t0 'kvart i syv.': 13.3 s for 1.28 s lyd
+08:30:39   t.end.405 t0: 0.65 s (forhold 0.69) -18.15 LUFS, none: 'None' CER None (None) → ok
+08:30:44 ✅ EOS token detected! Stopping generation at step 41
+08:30:53 kald single k=1 t0 'kvart i et.': 14.1 s for 1.60 s lyd
+08:30:53   t.end.45 t0: 0.86 s (forhold 0.91) -18.14 LUFS, none: 'None' CER None (None) → ok
+08:30:59 ✅ EOS token detected! Stopping generation at step 36
+08:31:07 kald single k=1 t0 'halv otte.': 13.9 s for 1.40 s lyd
+08:31:08   t.end.450 t0: 0.87 s (forhold 0.92) -18.04 LUFS, none: 'None' CER None (None) → ok
+08:31:12 ✅ EOS token detected! Stopping generation at step 29
+08:31:20 kald single k=1 t0 'halv ni.': 11.8 s for 1.12 s lyd
+08:31:20   t.end.510 t0: 0.66 s (forhold 1.05) -18.19 LUFS, none: 'None' CER None (None) → ok
+08:31:25 ✅ EOS token detected! Stopping generation at step 41
+08:31:33 kald single k=1 t0 'kvart i ni.': 13.2 s for 1.60 s lyd
+08:31:34   t.end.525 t0: 0.72 s (forhold 0.77) -18.32 LUFS, none: 'None' CER None (None) → ok
+08:31:37 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:31:37 ✅ EOS token detected! Stopping generation at step 29
+08:31:45 kald single k=1 t0 'halv ti.': 11.2 s for 1.12 s lyd
+08:31:45   t.end.570 t0: 0.58 s (forhold 0.93) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:31:49 ✅ EOS token detected! Stopping generation at step 37
+08:31:57 kald single k=1 t0 'kvart i ti.': 12.4 s for 1.44 s lyd
+08:31:58   t.end.585 t0: 0.73 s (forhold 0.78) -18.15 LUFS, none: 'None' CER None (None) → ok
+08:32:03 ✅ EOS token detected! Stopping generation at step 38
+08:32:10 kald single k=1 t0 'halv tolv.': 12.5 s for 1.48 s lyd
+08:32:11   t.end.690 t0: 0.56 s (forhold 0.90) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:32:15 ✅ EOS token detected! Stopping generation at step 38
+08:32:25 kald single k=1 t0 'kvart i tolv.': 13.9 s for 1.48 s lyd
+08:32:25   t.end.705 t0: 0.67 s (forhold 0.71) -18.19 LUFS, none: 'None' CER None (None) → ok
+08:32:29 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:32:29 ✅ EOS token detected! Stopping generation at step 29
+08:32:38 kald single k=1 t0 'halv to.': 12.7 s for 1.12 s lyd
+08:32:38   t.end.90 t0: 0.55 s (forhold 0.88) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:32:41 ✅ EOS token detected! Stopping generation at step 26
+08:32:49 kald single k=1 t0 'halv,': 10.4 s for 1.00 s lyd
+08:32:49   t.part.halv t0: 0.33 s (forhold 1.06) -18.14 LUFS, none: 'None' CER None (None) → ok
+08:32:52 ✅ EOS token detected! Stopping generation at step 28
+08:33:00 kald single k=1 t0 'kvart i,': 10.6 s for 1.08 s lyd
+08:33:00   t.part.kvart_i t0: 0.59 s (forhold 0.95) -18.26 LUFS, none: 'None' CER None (None) → ok
+08:33:04 ✅ EOS token detected! Stopping generation at step 32
+08:33:12 kald single k=1 t0 'kvart over,': 12.1 s for 1.24 s lyd
+08:33:13   t.part.kvart_over t0: 0.65 s (forhold 0.69) -18.13 LUFS, none: 'None' CER None (None) → ok
+08:33:18 ✅ EOS token detected! Stopping generation at step 49
+08:33:26 kald single k=1 t0 'Figuren er delt i,': 13.2 s for 1.92 s lyd
+08:33:32   hint.fractionShape.cutInto t0: 1.17 s (forhold 0.62) -18.2 LUFS, alone: 'Figuren er delt i' CER 0.0 (whisper, wav2vec2: 'figurern er delt i') → ok
+08:33:32   ✓ master hint.fractionShape.cutInto t0 (bestået)
+08:33:35 ✅ EOS token detected! Stopping generation at step 27
+08:33:43 kald single k=1 t0 'af dem.': 11.4 s for 1.04 s lyd
+08:33:44   hint.fractionShape.ofThem t0: 0.47 s (forhold 0.74) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:33:46 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:33:46 ✅ EOS token detected! Stopping generation at step 24
+08:33:53 kald single k=1 t0 'en halv.': 9.7 s for 0.92 s lyd
+08:33:54   noun.frac.1_2.end t0: 0.60 s (forhold 0.96) -18.17 LUFS, none: 'None' CER None (None) → ok
+08:33:58 ✅ EOS token detected! Stopping generation at step 33
+08:34:06 kald single k=1 t0 'en halv,': 12.3 s for 1.28 s lyd
+08:34:06   noun.frac.1_2.mid t0: 0.46 s (forhold 0.73) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:34:10 ✅ EOS token detected! Stopping generation at step 30
+08:34:17 kald single k=1 t0 'en tredjedel,': 10.9 s for 1.16 s lyd
+08:34:18   noun.frac.1_3.mid t0: 0.83 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:34:22 ✅ EOS token detected! Stopping generation at step 36
+08:34:31 kald single k=1 t0 'en fjerdedel,': 13.0 s for 1.40 s lyd
+08:34:31   noun.frac.1_4.mid t0: 0.80 s (forhold 0.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:34:36 ✅ EOS token detected! Stopping generation at step 38
+08:34:45 kald single k=1 t0 'to tredjedele,': 13.8 s for 1.48 s lyd
+08:34:45   noun.frac.2_3.mid t0: 0.84 s (forhold 0.54) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:34:50 ✅ EOS token detected! Stopping generation at step 41
+08:34:58 kald single k=1 t0 'tre fjerdedele,': 12.9 s for 1.60 s lyd
+08:34:59   noun.frac.3_4.mid t0: 0.85 s (forhold 0.55) -18.1 LUFS, none: 'None' CER None (None) → ok
+08:35:01 ✅ EOS token detected! Stopping generation at step 26
+08:35:17 kald single k=1 t0 'Farv,': 18.3 s for 1.00 s lyd
+08:35:17   s.fractionShape.colour t0: 0.34 s (forhold 1.08) -18.19 LUFS, none: 'None' CER None (None) → ok
+08:35:23 ✅ EOS token detected! Stopping generation at step 38
+08:35:32 kald single k=1 t0 'clips lang.': 15.2 s for 1.48 s lyd
+08:35:33   hint.measureUnits.clipsLong t0: 0.73 s (forhold 1.17) -18.13 LUFS, none: 'None' CER None (None) → ok
+08:35:37 ✅ EOS token detected! Stopping generation at step 39
+08:35:46 kald single k=1 t0 'klodser lang.': 12.9 s for 1.52 s lyd
+08:35:46   hint.measureUnits.cubesLong t0: 0.62 s (forhold 0.66) -18.17 LUFS, none: 'None' CER None (None) → ok
+08:35:50 ✅ EOS token detected! Stopping generation at step 35
+08:35:59 kald single k=1 t0 'Tingen er,': 13.1 s for 1.36 s lyd
+08:36:00   hint.measureUnits.thingIs t0: 0.70 s (forhold 0.75) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:36:14 ✅ EOS token detected! Stopping generation at step 60
+08:37:01 kald single k=1 t0 'Den højeste søjle når op til,': 61.8 s for 2.36 s lyd
+08:37:02   hint.readChart.highestReaches t0: 1.64 s (forhold 0.58) -18.11 LUFS, alone: 'den højeste søjle når op til' CER 0.0 (wav2vec2) → ok
+08:37:02   ✓ master hint.readChart.highestReaches t0 (bestået)
+08:37:06 ✅ EOS token detected! Stopping generation at step 47
+08:37:12 kald single k=1 t0 'Den længste række har,': 9.9 s for 1.84 s lyd
+08:37:13   hint.readChart.longestHas t0: 1.11 s (forhold 0.59) -18.13 LUFS, alone: 'den længste række har' CER 0.0 (wav2vec2) → ok
+08:37:13   ✓ master hint.readChart.longestHas t0 (bestået)
+08:37:17 ✅ EOS token detected! Stopping generation at step 51
+08:38:32 kald single k=1 t0 'og den laveste når op til,': 79.7 s for 2.00 s lyd
+08:38:40   hint.readChart.lowestReaches t0: 1.36 s (forhold 0.54) -18.04 LUFS, alone: 'og den laveste når op til' CER 0.0 (wav2vec2) → ok
+08:38:40   ✓ master hint.readChart.lowestReaches t0 (bestået)
+08:40:37 ✅ EOS token detected! Stopping generation at step 47
+08:42:31 kald single k=1 t0 'Søjlen når op til,': 231.1 s for 1.84 s lyd
+08:42:39   hint.readChart.reachesUpTo t0: 1.17 s (forhold 0.75) -18.09 LUFS, alone: 'søjlen når op til' CER 0.0 (wav2vec2) → ok
+08:42:39   ✓ master hint.readChart.reachesUpTo t0 (bestået)
+08:44:36 ✅ EOS token detected! Stopping generation at step 45
+08:46:26 kald single k=1 t0 'og den korteste har,': 226.7 s for 1.76 s lyd
+08:46:34   hint.readChart.shortestHas t0: 1.01 s (forhold 0.54) -18.01 LUFS, alone: 'og den korteste har' CER 0.0 (wav2vec2) → ok
+08:46:34   ✓ master hint.readChart.shortestHas t0 (bestået)
+08:47:37 ✅ EOS token detected! Stopping generation at step 25
+08:49:28 kald single k=1 t0 'stjerner.': 173.9 s for 0.96 s lyd
+08:49:31   hint.readChart.stars t0: 0.57 s (forhold 0.91) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:51:37 ✅ EOS token detected! Stopping generation at step 51
+08:53:43 kald single k=1 t0 'Tæl centimeterne fra,': 251.3 s for 2.00 s lyd
+08:53:47   hint.rulerRead.countFrom t0: 1.26 s (forhold 0.58) -18.15 LUFS, none: 'None' CER None (None) → ok
+08:55:13 ✅ EOS token detected! Stopping generation at step 38
+08:57:19 kald single k=1 t0 'Den slutter ved,': 212.2 s for 1.48 s lyd
+08:57:25   hint.rulerRead.endsAt t0: 0.82 s (forhold 0.65) -18.0 LUFS, none: 'None' CER None (None) → ok
+08:58:41 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+08:58:41 ✅ EOS token detected! Stopping generation at step 26
+09:01:14 kald single k=1 t0 'lang.': 229.5 s for 1.00 s lyd
+09:01:25   hint.rulerRead.long t0: 0.30 s (forhold 0.98) -18.18 LUFS, none: 'None' CER None (None) → ok
+09:02:38 ✅ EOS token detected! Stopping generation at step 24
+09:02:45 kald single k=1 t0 'Så er den,': 80.3 s for 0.92 s lyd
+09:02:46   hint.rulerRead.soItIs t0: 0.51 s (forhold 0.54) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:02:50 ✅ EOS token detected! Stopping generation at step 42
+09:02:58 kald single k=1 t0 'Tingen starter ved,': 12.8 s for 1.64 s lyd
+09:02:59   hint.rulerRead.startsAt t0: 1.01 s (forhold 0.65) -18.06 LUFS, none: 'None' CER None (None) → ok
+09:03:03 ✅ EOS token detected! Stopping generation at step 37
+09:03:14 kald single k=1 t0 'måler man i,': 14.8 s for 1.44 s lyd
+09:03:14   hint.unitChoice.measuredIn t0: 0.73 s (forhold 0.59) -18.06 LUFS, none: 'None' CER None (None) → ok
+09:03:17 ✅ EOS token detected! Stopping generation at step 26
+09:08:43 kald single k=1 t0 'en bro,': 329.3 s for 1.00 s lyd
+09:08:50   noun.mt.bridge t0: 0.42 s (forhold 0.68) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:09:50 ✅ EOS token detected! Stopping generation at step 24
+09:10:03 kald single k=1 t0 'en bus,': 73.3 s for 0.92 s lyd
+09:10:04   noun.mt.bus t0: 0.60 s (forhold 0.97) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:10:08 ✅ EOS token detected! Stopping generation at step 32
+09:10:24 kald single k=1 t0 'en gulerod,': 20.8 s for 1.24 s lyd
+09:10:25   noun.mt.carrot t0: 0.68 s (forhold 0.54) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:10:34 ✅ EOS token detected! Stopping generation at step 25
+09:12:35 kald single k=1 t0 'en kam,': 129.3 s for 0.96 s lyd
+09:12:45   noun.mt.comb t0: 0.56 s (forhold 0.90) -18.18 LUFS, none: 'None' CER None (None) → ok
+09:17:49 ✅ EOS token detected! Stopping generation at step 34
+09:19:55 kald single k=1 t0 'en gaffel,': 429.7 s for 1.32 s lyd
+09:19:55   noun.mt.fork t0: 0.67 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:19:58 ✅ EOS token detected! Stopping generation at step 24
+09:20:06 kald single k=1 t0 'et hus,': 10.9 s for 0.92 s lyd
+09:20:07   noun.mt.house t0: 0.65 s (forhold 1.03) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:20:12 ✅ EOS token detected! Stopping generation at step 28
+09:20:20 kald single k=1 t0 'et blad,': 12.8 s for 1.08 s lyd
+09:20:21   noun.mt.leaf t0: 0.54 s (forhold 0.87) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:20:23 ✅ EOS token detected! Stopping generation at step 28
+09:20:32 kald single k=1 t0 'en lastbil,': 11.7 s for 1.08 s lyd
+09:20:33   noun.mt.lorry t0: 0.72 s (forhold 0.77) -18.11 LUFS, none: 'None' CER None (None) → ok
+09:20:36 ✅ EOS token detected! Stopping generation at step 33
+09:20:45 kald single k=1 t0 'en blyant,': 12.8 s for 1.28 s lyd
+09:20:46   noun.mt.pencil t0: 0.72 s (forhold 0.77) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:22:58 ✅ EOS token detected! Stopping generation at step 24
+09:27:31 kald single k=1 t0 'et fly,': 404.7 s for 0.92 s lyd
+09:27:40   noun.mt.plane t0: 0.44 s (forhold 0.70) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:28:54 ✅ EOS token detected! Stopping generation at step 31
+09:29:40 kald single k=1 t0 'et skib,': 119.7 s for 1.20 s lyd
+09:29:40   noun.mt.ship t0: 0.57 s (forhold 0.91) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:29:46 ✅ EOS token detected! Stopping generation at step 32
+09:30:01 kald single k=1 t0 'en sko,': 21.0 s for 1.24 s lyd
+09:30:02   noun.mt.shoe t0: 0.51 s (forhold 0.82) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:30:08 ✅ EOS token detected! Stopping generation at step 29
+09:30:25 kald single k=1 t0 'en ske,': 23.0 s for 1.12 s lyd
+09:30:26   noun.mt.spoon t0: 0.47 s (forhold 0.76) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:30:31 ✅ EOS token detected! Stopping generation at step 24
+09:30:46 kald single k=1 t0 'et tog,': 20.8 s for 0.92 s lyd
+09:30:47   noun.mt.train t0: 0.53 s (forhold 0.84) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:30:55 ✅ EOS token detected! Stopping generation at step 30
+09:31:07 kald single k=1 t0 'en hval,': 20.1 s for 1.16 s lyd
+09:31:07   noun.mt.whale t0: 0.52 s (forhold 0.82) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:31:12 ✅ EOS token detected! Stopping generation at step 35
+09:31:21 kald single k=1 t0 'en regnorm,': 14.2 s for 1.36 s lyd
+09:31:22   noun.mt.worm t0: 0.69 s (forhold 0.74) -18.09 LUFS, none: 'None' CER None (None) → ok
+09:31:26 ✅ EOS token detected! Stopping generation at step 30
+09:31:34 kald single k=1 t0 'centimeter.': 12.1 s for 1.16 s lyd
+09:31:34   noun.unit.cm.end t0: 0.81 s (forhold 0.65) -18.1 LUFS, none: 'None' CER None (None) → ok
+09:31:38 ✅ EOS token detected! Stopping generation at step 31
+09:31:52 kald single k=1 t0 'centimeter,': 17.6 s for 1.20 s lyd
+09:31:53   noun.unit.cm.mid t0: 0.85 s (forhold 0.68) -18.16 LUFS, none: 'None' CER None (None) → ok
+09:31:58 ✅ EOS token detected! Stopping generation at step 22
+09:32:13 kald single k=1 t0 'gram.': 20.4 s for 0.84 s lyd
+09:32:14   noun.unit.g.end t0: 0.31 s (forhold 1.00) -18.53 LUFS, none: 'None' CER None (None) → ok
+09:32:18 ✅ EOS token detected! Stopping generation at step 30
+09:32:37 kald single k=1 t0 'gram,': 22.9 s for 1.16 s lyd
+09:32:37   noun.unit.g.mid t0: 0.24 s (forhold 0.77) -18.59 LUFS, none: 'None' CER None (None) → ok
+09:32:43 ✅ EOS token detected! Stopping generation at step 26
+09:33:04 kald single k=1 t0 'kilogram.': 27.0 s for 1.00 s lyd
+09:33:05   noun.unit.kg.end t0: 0.55 s (forhold 0.59) -18.17 LUFS, none: 'None' CER None (None) → ok
+09:33:15 ✅ EOS token detected! Stopping generation at step 24
+09:33:27 kald single k=1 t0 'kilogram,': 21.7 s for 0.92 s lyd
+09:33:27   noun.unit.kg.mid t0: 0.53 s (forhold 0.56) -18.1 LUFS, none: 'None' CER None (None) → ok
+09:33:31 ✅ EOS token detected! Stopping generation at step 22
+09:33:45 kald single k=1 t0 'meter.': 17.2 s for 0.84 s lyd
+09:33:45   noun.unit.m.end t0: 0.43 s (forhold 0.69) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:33:48 ✅ EOS token detected! Stopping generation at step 22
+09:33:57 kald single k=1 t0 'meter,': 11.8 s for 0.84 s lyd
+09:33:57   noun.unit.m.mid t0: 0.45 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:34:01 ✅ EOS token detected! Stopping generation at step 26
+09:34:13 kald single k=1 t0 'Fra,': 16.2 s for 1.00 s lyd
+09:34:13   hint.change.from t0: 0.33 s (forhold 1.07) -18.16 LUFS, none: 'None' CER None (None) → ok
+09:34:16 ✅ EOS token detected! Stopping generation at step 22
+09:34:26 kald single k=1 t0 'er,': 13.1 s for 0.84 s lyd
+09:34:27   hint.change.is t0: 0.31 s (forhold 0.99) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:34:29 ✅ EOS token detected! Stopping generation at step 18
+09:34:42 kald single k=1 t0 'til,': 15.1 s for 0.68 s lyd
+09:34:42   hint.change.to t0: 0.29 s (forhold 0.92) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:34:49 ✅ EOS token detected! Stopping generation at step 60
+09:34:59 kald single k=1 t0 'Find alle de mønter, hvor der står,': 16.8 s for 2.36 s lyd
+09:35:08   hint.coinNames.findAllCoins t0: 1.59 s (forhold 0.56) -18.0 LUFS, alone: 'Find alle de mønter hvor der står' CER 0.0 (whisper, wav2vec2: 'finde alle de myntre hvor der står') → ok
+09:35:08   ✓ master hint.coinNames.findAllCoins t0 (bestået)
+09:35:14 ✅ EOS token detected! Stopping generation at step 62
+09:35:25 kald single k=1 t0 'Find alle de sedler, hvor der står,': 17.2 s for 2.44 s lyd
+09:35:29   hint.coinNames.findAllNotes t0: 1.58 s (forhold 0.56) -18.0 LUFS, alone: 'Find alle de sedler hvor der står' CER 0.0 (whisper, wav2vec2: 'finde alle de cedler hvor der står') → ok
+09:35:29   ✓ master hint.coinNames.findAllNotes t0 (bestået)
+09:35:33 ✅ EOS token detected! Stopping generation at step 31
+09:35:41 kald single k=1 t0 'Der står,': 12.2 s for 1.20 s lyd
+09:35:42   hint.coinNames.itSays t0: 0.42 s (forhold 0.67) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:35:45 ✅ EOS token detected! Stopping generation at step 18
+09:35:52 kald single k=1 t0 'på,': 10.8 s for 0.68 s lyd
+09:35:53   hint.coinNames.on t0: 0.23 s (forhold 0.73) -18.15 LUFS, none: 'None' CER None (None) → ok
+09:36:00 ✅ EOS token detected! Stopping generation at step 41
+09:36:10 kald single k=1 t0 'Tæl i spring med,': 17.3 s for 1.60 s lyd
+09:36:14   hint.countCoins.skipBy t0: 0.90 s (forhold 0.72) -18.06 LUFS, alone: 'tel i spring med' CER 0.0769 (wav2vec2, whisper: 'Tally spring med') → FEJL asr
+09:36:19 ✅ EOS token detected! Stopping generation at step 27
+09:36:27 kald single k=1 t0 'enkronen.': 12.7 s for 1.04 s lyd
+09:36:27   noun.coin.100.def.end t0: 0.77 s (forhold 0.82) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:36:32 ✅ EOS token detected! Stopping generation at step 35
+09:36:41 kald single k=1 t0 'enkronen,': 13.8 s for 1.36 s lyd
+09:36:41   noun.coin.100.def.mid t0: 0.81 s (forhold 0.86) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:36:46 ✅ EOS token detected! Stopping generation at step 39
+09:36:55 kald single k=1 t0 'en enkrone,': 13.8 s for 1.52 s lyd
+09:36:56   noun.coin.100.indef.mid t0: 0.95 s (forhold 0.76) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:37:01 ✅ EOS token detected! Stopping generation at step 31
+09:37:09 kald single k=1 t0 'enkroner.': 13.5 s for 1.20 s lyd
+09:37:10   noun.coin.100.pl.end t0: 0.67 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:37:13 ✅ EOS token detected! Stopping generation at step 26
+09:37:22 kald single k=1 t0 'enkroner,': 12.7 s for 1.00 s lyd
+09:37:23   noun.coin.100.pl.mid t0: 0.62 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:37:28 ✅ EOS token detected! Stopping generation at step 37
+09:37:38 kald single k=1 t0 'tikronen.': 14.9 s for 1.44 s lyd
+09:37:38   noun.coin.1000.def.end t0: 0.86 s (forhold 0.92) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:37:44 ✅ EOS token detected! Stopping generation at step 37
+09:37:52 kald single k=1 t0 'tikronen,': 14.4 s for 1.44 s lyd
+09:37:53   noun.coin.1000.def.mid t0: 0.87 s (forhold 0.93) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:37:57 ✅ EOS token detected! Stopping generation at step 36
+09:38:05 kald single k=1 t0 'en tikrone,': 12.5 s for 1.40 s lyd
+09:38:06   noun.coin.1000.indef.mid t0: 0.90 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:38:09 ✅ EOS token detected! Stopping generation at step 27
+09:38:17 kald single k=1 t0 'tikroner.': 11.0 s for 1.04 s lyd
+09:38:17   noun.coin.1000.pl.end t0: 0.64 s (forhold 0.68) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:38:21 ✅ EOS token detected! Stopping generation at step 33
+09:38:30 kald single k=1 t0 'tikroner,': 12.6 s for 1.28 s lyd
+09:38:30   noun.coin.1000.pl.mid t0: 0.68 s (forhold 0.72) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:38:35 ✅ EOS token detected! Stopping generation at step 46
+09:38:44 kald single k=1 t0 'hundredkronesedlen.': 14.0 s for 1.80 s lyd
+09:38:44   noun.coin.10000.def.end t0: 1.18 s (forhold 0.63) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:38:50 ✅ EOS token detected! Stopping generation at step 43
+09:38:59 kald single k=1 t0 'hundredkronesedlen,': 14.8 s for 1.68 s lyd
+09:38:59   noun.coin.10000.def.mid t0: 1.11 s (forhold 0.59) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:39:04 ✅ EOS token detected! Stopping generation at step 45
+09:39:12 kald single k=1 t0 'en hundredkroneseddel,': 12.4 s for 1.76 s lyd
+09:39:12   noun.coin.10000.indef.mid t0: 1.08 s (forhold 0.49) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:39:18 ✅ EOS token detected! Stopping generation at step 44
+09:39:27 kald single k=1 t0 'hundredkronesedler.': 15.0 s for 1.72 s lyd
+09:39:28   noun.coin.10000.pl.end t0: 1.03 s (forhold 0.55) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:39:34 ✅ EOS token detected! Stopping generation at step 44
+09:39:42 kald single k=1 t0 'hundredkronesedler,': 14.9 s for 1.72 s lyd
+09:39:43   noun.coin.10000.pl.mid t0: 1.09 s (forhold 0.58) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:39:48 ✅ EOS token detected! Stopping generation at step 35
+09:39:56 kald single k=1 t0 'tokronen.': 13.1 s for 1.36 s lyd
+09:39:56   noun.coin.200.def.end t0: 0.75 s (forhold 0.80) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:39:59 ✅ EOS token detected! Stopping generation at step 28
+09:40:08 kald single k=1 t0 'tokronen,': 11.7 s for 1.08 s lyd
+09:40:08   noun.coin.200.def.mid t0: 0.82 s (forhold 0.87) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:40:13 ✅ EOS token detected! Stopping generation at step 34
+09:40:21 kald single k=1 t0 'en tokrone,': 12.9 s for 1.32 s lyd
+09:40:21   noun.coin.200.indef.mid t0: 0.80 s (forhold 0.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:40:32 ✅ EOS token detected! Stopping generation at step 31
+09:40:48 kald single k=1 t0 'tokroner.': 26.9 s for 1.20 s lyd
+09:40:49   noun.coin.200.pl.end t0: 0.62 s (forhold 0.67) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:40:58 ✅ EOS token detected! Stopping generation at step 29
+09:41:13 kald single k=1 t0 'tokroner,': 23.6 s for 1.12 s lyd
+09:41:13   noun.coin.200.pl.mid t0: 0.57 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:41:19 ✅ EOS token detected! Stopping generation at step 39
+09:41:44 kald single k=1 t0 'tyvekronen.': 30.9 s for 1.52 s lyd
+09:41:45   noun.coin.2000.def.end t0: 0.87 s (forhold 0.70) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:41:59 ✅ EOS token detected! Stopping generation at step 40
+09:42:26 kald single k=1 t0 'tyvekronen,': 40.3 s for 1.56 s lyd
+09:42:26   noun.coin.2000.def.mid t0: 0.92 s (forhold 0.73) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:42:38 ✅ EOS token detected! Stopping generation at step 37
+09:43:01 kald single k=1 t0 'en tyvekrone,': 35.2 s for 1.44 s lyd
+09:43:02   noun.coin.2000.indef.mid t0: 0.91 s (forhold 0.58) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:43:12 ✅ EOS token detected! Stopping generation at step 27
+09:43:34 kald single k=1 t0 'tyvekroner.': 31.8 s for 1.04 s lyd
+09:43:35   noun.coin.2000.pl.end t0: 0.69 s (forhold 0.55) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:43:49 ✅ EOS token detected! Stopping generation at step 36
+09:44:18 kald single k=1 t0 'tyvekroner,': 43.3 s for 1.40 s lyd
+09:44:20   noun.coin.2000.pl.mid t0: 0.69 s (forhold 0.55) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:45:58 ✅ EOS token detected! Stopping generation at step 50
+09:46:38 kald single k=1 t0 'tohundredkronesedlen.': 138.2 s for 1.96 s lyd
+09:46:38   noun.coin.20000.def.end t0: 1.28 s (forhold 0.59) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:46:47 ✅ EOS token detected! Stopping generation at step 50
+09:47:01 kald single k=1 t0 'tohundredkronesedlen,': 22.5 s for 1.96 s lyd
+09:47:02   noun.coin.20000.def.mid t0: 1.34 s (forhold 0.61) -18.06 LUFS, none: 'None' CER None (None) → ok
+09:47:15 ✅ EOS token detected! Stopping generation at step 52
+09:47:31 kald single k=1 t0 'en tohundredkroneseddel,': 28.4 s for 2.04 s lyd
+09:47:32   noun.coin.20000.indef.mid t0: 1.37 s (forhold 0.55) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:47:43 ✅ EOS token detected! Stopping generation at step 54
+09:47:50 kald single k=1 t0 'tohundredkronesedler.': 18.6 s for 2.12 s lyd
+09:47:51   noun.coin.20000.pl.end t0: 1.30 s (forhold 0.60) -18.11 LUFS, none: 'None' CER None (None) → ok
+09:47:54 ✅ EOS token detected! Stopping generation at step 50
+09:48:00 kald single k=1 t0 'tohundredkronesedler,': 9.0 s for 1.96 s lyd
+09:48:00   noun.coin.20000.pl.mid t0: 1.34 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:48:03 ✅ EOS token detected! Stopping generation at step 45
+09:48:09 kald single k=1 t0 'halvtredsøren.': 8.6 s for 1.76 s lyd
+09:48:09   noun.coin.50.def.end t0: 0.95 s (forhold 0.76) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:48:11 ✅ EOS token detected! Stopping generation at step 36
+09:48:17 kald single k=1 t0 'halvtredsøren,': 7.8 s for 1.40 s lyd
+09:48:17   noun.coin.50.def.mid t0: 0.82 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:48:20 ✅ EOS token detected! Stopping generation at step 38
+09:48:25 kald single k=1 t0 'en halvtredsøre,': 7.9 s for 1.48 s lyd
+09:48:25   noun.coin.50.indef.mid t0: 0.88 s (forhold 0.56) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:48:28 ✅ EOS token detected! Stopping generation at step 47
+09:48:34 kald single k=1 t0 'halvtredsører.': 8.8 s for 1.84 s lyd
+09:48:34   noun.coin.50.pl.end t0: 0.75 s (forhold 0.60) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:48:37 ✅ EOS token detected! Stopping generation at step 40
+09:48:42 kald single k=1 t0 'halvtredsører,': 8.3 s for 1.56 s lyd
+09:48:43   noun.coin.50.pl.mid t0: 0.81 s (forhold 0.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:48:45 ✅ EOS token detected! Stopping generation at step 32
+09:48:50 kald single k=1 t0 'femkronen.': 7.5 s for 1.24 s lyd
+09:48:50   noun.coin.500.def.end t0: 0.87 s (forhold 0.93) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:48:53 ✅ EOS token detected! Stopping generation at step 36
+09:48:58 kald single k=1 t0 'femkronen,': 7.7 s for 1.40 s lyd
+09:48:58   noun.coin.500.def.mid t0: 0.89 s (forhold 0.95) -18.06 LUFS, none: 'None' CER None (None) → ok
+09:49:01 ✅ EOS token detected! Stopping generation at step 31
+09:49:05 kald single k=1 t0 'en femkrone,': 7.1 s for 1.20 s lyd
+09:49:06   noun.coin.500.indef.mid t0: 0.79 s (forhold 0.63) -18.2 LUFS, none: 'None' CER None (None) → ok
+09:49:08 ✅ EOS token detected! Stopping generation at step 33
+09:49:13 kald single k=1 t0 'femkroner.': 7.4 s for 1.28 s lyd
+09:49:13   noun.coin.500.pl.end t0: 0.68 s (forhold 0.73) -18.19 LUFS, none: 'None' CER None (None) → ok
+09:49:15 ✅ EOS token detected! Stopping generation at step 27
+09:49:21 kald single k=1 t0 'femkroner,': 7.1 s for 1.04 s lyd
+09:49:21   noun.coin.500.pl.mid t0: 0.72 s (forhold 0.77) -18.18 LUFS, none: 'None' CER None (None) → ok
+09:49:24 ✅ EOS token detected! Stopping generation at step 47
+09:49:30 kald single k=1 t0 'halvtredskronesedlen.': 8.7 s for 1.84 s lyd
+09:49:30   noun.coin.5000.def.end t0: 1.17 s (forhold 0.62) -18.03 LUFS, none: 'None' CER None (None) → ok
+09:49:33 ✅ EOS token detected! Stopping generation at step 47
+09:49:39 kald single k=1 t0 'halvtredskronesedlen,': 8.7 s for 1.84 s lyd
+09:49:39   noun.coin.5000.def.mid t0: 1.19 s (forhold 0.64) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:49:42 ✅ EOS token detected! Stopping generation at step 49
+09:49:48 kald single k=1 t0 'en halvtredskroneseddel,': 9.1 s for 1.92 s lyd
+09:49:48   noun.coin.5000.indef.mid t0: 1.34 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:49:51 ✅ EOS token detected! Stopping generation at step 47
+09:49:57 kald single k=1 t0 'halvtredskronesedler.': 8.7 s for 1.84 s lyd
+09:49:57   noun.coin.5000.pl.end t0: 1.22 s (forhold 0.65) -18.1 LUFS, none: 'None' CER None (None) → ok
+09:50:00 ✅ EOS token detected! Stopping generation at step 48
+09:50:06 kald single k=1 t0 'halvtredskronesedler,': 9.0 s for 1.88 s lyd
+09:50:06   noun.coin.5000.pl.mid t0: 1.24 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:50:10 ✅ EOS token detected! Stopping generation at step 53
+09:50:16 kald single k=1 t0 'femhundredkronesedlen.': 9.4 s for 2.08 s lyd
+09:50:16   noun.coin.50000.def.end t0: 1.45 s (forhold 0.66) -18.12 LUFS, none: 'None' CER None (None) → ok
+09:50:20 ✅ EOS token detected! Stopping generation at step 53
+09:50:26 kald single k=1 t0 'femhundredkronesedlen,': 9.5 s for 2.08 s lyd
+09:50:26   noun.coin.50000.def.mid t0: 1.38 s (forhold 0.63) -18.05 LUFS, none: 'None' CER None (None) → ok
+09:50:29 ✅ EOS token detected! Stopping generation at step 48
+09:50:35 kald single k=1 t0 'en femhundredkroneseddel,': 8.9 s for 1.88 s lyd
+09:50:35   noun.coin.50000.indef.mid t0: 1.34 s (forhold 0.53) -18.13 LUFS, none: 'None' CER None (None) → ok
+09:50:39 ✅ EOS token detected! Stopping generation at step 47
+09:50:44 kald single k=1 t0 'femhundredkronesedler.': 8.7 s for 1.84 s lyd
+09:50:44   noun.coin.50000.pl.end t0: 1.36 s (forhold 0.62) -18.03 LUFS, none: 'None' CER None (None) → ok
+09:50:48 ✅ EOS token detected! Stopping generation at step 48
+09:50:53 kald single k=1 t0 'femhundredkronesedler,': 9.1 s for 1.88 s lyd
+09:50:54   noun.coin.50000.pl.mid t0: 1.25 s (forhold 0.57) -18.05 LUFS, none: 'None' CER None (None) → ok
+09:50:55 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+09:50:55 ✅ EOS token detected! Stopping generation at step 22
+09:51:00 kald single k=1 t0 'krone.': 6.4 s for 0.84 s lyd
+09:51:00   noun.unit.krone.end t0: 0.31 s (forhold 0.50) -18.11 LUFS, none: 'None' CER None (None) → ok
+09:51:02 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+09:51:02 ✅ EOS token detected! Stopping generation at step 21
+09:51:07 kald single k=1 t0 'krone,': 6.3 s for 0.80 s lyd
+09:51:07   noun.unit.krone.mid t0: 0.28 s (forhold 0.44) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:51:09 ✅ EOS token detected! Stopping generation at step 29
+09:51:14 kald single k=1 t0 'krone og,': 7.0 s for 1.12 s lyd
+09:51:14   noun.unit.krone_og t0: 0.80 s (forhold 0.85) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:51:16 ✅ EOS token detected! Stopping generation at step 23
+09:51:20 kald single k=1 t0 'kroner.': 6.6 s for 0.88 s lyd
+09:51:21   noun.unit.kroner.end t0: 0.48 s (forhold 0.77) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:51:23 ✅ EOS token detected! Stopping generation at step 30
+09:51:28 kald single k=1 t0 'kroner,': 7.4 s for 1.16 s lyd
+09:51:28   noun.unit.kroner.mid t0: 0.44 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:51:31 ✅ EOS token detected! Stopping generation at step 37
+09:51:36 kald single k=1 t0 'kroner og,': 7.8 s for 1.44 s lyd
+09:51:36   noun.unit.kroner_og t0: 0.72 s (forhold 0.77) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:51:38 ✅ EOS token detected! Stopping generation at step 24
+09:51:43 kald single k=1 t0 'øre.': 6.7 s for 0.92 s lyd
+09:51:43   noun.unit.ore.end t0: 0.39 s (forhold 0.62) -18.17 LUFS, none: 'None' CER None (None) → ok
+09:51:45 ✅ EOS token detected! Stopping generation at step 23
+09:51:50 kald single k=1 t0 'øre,': 6.6 s for 0.88 s lyd
+09:51:50   noun.unit.ore.mid t0: 0.42 s (forhold 0.67) -18.14 LUFS, none: 'None' CER None (None) → ok
+09:51:52 ✅ EOS token detected! Stopping generation at step 28
+09:51:57 kald single k=1 t0 'Det koster,': 7.2 s for 1.08 s lyd
+09:51:57   s.money.itCosts t0: 0.53 s (forhold 0.57) -18.18 LUFS, none: 'None' CER None (None) → ok
+09:52:01 ✅ EOS token detected! Stopping generation at step 49
+09:52:07 kald single k=1 t0 'Hvilke penge er præcis,': 9.2 s for 1.92 s lyd
+09:52:07   s.payExact.whichMoney t0: 1.27 s (forhold 0.58) -18.0 LUFS, alone: 'hvilke penge er præcis' CER 0.0 (wav2vec2) → ok
+09:52:07   ✓ master s.payExact.whichMoney t0 (bestået)
+09:52:10 ✅ EOS token detected! Stopping generation at step 40
+09:52:16 kald single k=1 t0 'Så får hvert dyr,': 8.3 s for 1.56 s lyd
+09:52:19   hint.shareEqually.eachGets t0: 0.98 s (forhold 0.79) -18.08 LUFS, alone: 'Så får hvert dyr' CER 0.0 (whisper, wav2vec2: 'så får hver dyr') → ok
+09:52:19   ✓ master hint.shareEqually.eachGets t0 (bestået)
+09:52:21 ✅ EOS token detected! Stopping generation at step 28
+09:52:26 kald single k=1 t0 'dyr,': 7.3 s for 1.08 s lyd
+09:52:26   noun.muldiv.dyr t0: 0.25 s (forhold 0.81) -18.17 LUFS, none: 'None' CER None (None) → ok
+09:52:28 ✅ EOS token detected! Stopping generation at step 27
+09:52:33 kald single k=1 t0 'grupper med,': 7.0 s for 1.04 s lyd
+09:52:33   s.groupsOf.groupsWith t0: 0.62 s (forhold 0.66) -18.1 LUFS, none: 'None' CER None (None) → ok
+09:52:35 ✅ EOS token detected! Stopping generation at step 22
+09:52:40 kald single k=1 t0 'i hver.': 6.5 s for 0.84 s lyd
+09:52:40   s.groupsOf.inEach t0: 0.38 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:52:43 ✅ EOS token detected! Stopping generation at step 35
+09:52:48 kald single k=1 t0 'ligeligt mellem,': 7.8 s for 1.36 s lyd
+09:52:48   s.shareEqually.between t0: 0.78 s (forhold 0.50) -18.0 LUFS, none: 'None' CER None (None) → ok
+09:52:48 færdig: 87 nye mastere (0 ikke bestået, 62 kopier), 197 modelkald, 95.6 min generering (CPU 4.00 t), 969 klip mangler
