@@ -404,7 +404,18 @@ describe('change', () => {
     expect(classifyAnswer(build(change, 'byt:from100:5500', 'keypad'), 5500)).toBe('ambiguous')
     // only from a hundred
     expect(change.candidates(factOf(change, 'byt:from50:2300')).some((c) => c.tag === 'digitComplement10')).toBe(false)
-    expect(detectableOf(build(change, 'byt:from100:3700', 'keypad')).sort()).toEqual(['digitComplement10', 'wrongOperation'])
+    // 63 kr typed as 36 is a reversed number too (SPEC §4.1, in the kroner the child types)
+    expect(detectableOf(build(change, 'byt:from100:3700', 'keypad')).sort()).toEqual(['digitComplement10', 'digitSwap', 'wrongOperation'])
+  })
+
+  it('reads a typed amount with its kroner digits swapped as digitSwap (63 kr as 36, 47 kr as 74), never on cards', () => {
+    expect(classifyAnswer(build(change, 'byt:from100:3700', 'keypad'), 3600)).toBe('digitSwap')
+    expect(classifyAnswer(build(change, 'byt:from100:3700', 'choice'), 3600)).toBe('other')
+    const coins = build(countCoins, 'tael:mixedTo100:20+20+5+2', 'keypad')
+    expect(classifyAnswer(coins, 7400)).toBe('digitSwap')
+    expect(detectableOf(coins)).toContain('digitSwap')
+    // 40 kr has no swap
+    expect(detectableOf(build(countCoins, 'tael:mixedTo100:20+10+5+5', 'keypad'))).not.toContain('digitSwap')
   })
 
   it('flags a child who adds instead of taking away, and never a child who guesses', () => {

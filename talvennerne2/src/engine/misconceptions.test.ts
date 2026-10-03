@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
-  classifyAnswer, detectableOf, digitSwapOf, flaggedIds, halfTail, meetsFlag, misconceptionEvents, natureFor,
-  updateMisconceptions, type MisconceptionStates,
+  classifyAnswer, detectableOf, digitSwapOf, digitSwapPossible, flaggedIds, halfTail, meetsFlag, misconceptionEvents, natureFor,
+  promptNumbers, swapDisambiguated, swappedAnswer, updateMisconceptions, type MisconceptionStates,
 } from './misconceptions'
 import { buildTask } from './tasks'
 import { FIXTURE_SKILLS, add100CarryFixture, addTo10Fixture, hear20Fixture, weightCompareFixture } from './testing/fixtureSkills'
+import type { SkillModule } from './skills/types'
 import { isProduction } from './kinds'
 import { isCorrect } from './answer'
 import { hashSeed, makeRng, type Rng } from './rng'
-import { MISCONCEPTION_IDS, type AnswerLogEntry, type AnswerValue, type Fact, type MisconceptionId, type SkillDef, type Task, type TaskKind } from './types'
+import {
+  MISCONCEPTION_IDS, type AnswerLogEntry, type AnswerValue, type Candidate, type Fact, type MisconceptionId, type SkillDef, type Task, type TaskKind,
+} from './types'
 import { MISCONCEPTION_TEXTS } from '../content/misconceptionTexts'
 
 const DAY0 = Date.parse('2026-09-01T10:00:00Z')
@@ -86,6 +89,78 @@ describe('classifying a wrong answer (SPEC §4.1)', () => {
   it('reports an uneven share as shareUnequal', () => {
     const t = { ...task(addTo10Fixture, addTo10Fixture.enumerate()[5], 'keypad'), kind: 'share' as const, skill: 'shareEqually' as const }
     expect(classifyAnswer(t, -1)).toBe('shareUnequal')
+  })
+})
+
+describe('digitSwap on a kroner keypad: the swap is in the kroner the child types (SPEC §4.1, A11)', () => {
+  // A money keypad takes whole kroner (entryScale 100): the child types 47 and the answer is 4700 øre.
+  // 4700 has no two-digit ending to reverse; 47 does, and 74 kr is 7400 øre.
+  const pile = (coins: number[]): Fact => ({
+    id: `tael:mixedTo100:${coins.join('+')}`, skill: 'countCoins', family: 'mixedTo100', operands: coins,
+    answer: coins.reduce((s, c) => s + c, 0) * 100, rank: 0,
+  })
+  const kroner: SkillModule = {
+    ...addTo10Fixture,
+    id: 'countCoins',
+    mode: 'procedure',
+    kinds: ['choice', 'keypad'],
+    answerType: () => 'ore',
+    prompt: (f) => ({ scene: 'coins', ore: f.operands.map((c) => c * 100) }),
+    optionView: () => 'amount',
+    range: () => [0, 10000],
+    candidates: (f): Candidate[] => [{ value: f.operands.length * 100, tag: 'coinsAsCount' }],
+  }
+  const typed = (coins: number[], def: SkillDef = kroner) => task(def, pile(coins), 'keypad')
+
+  it('reads 47 kr typed as 74 kr as digitSwap and counts the keypad task as its opportunity', () => {
+    const t = typed([20, 20, 5, 2])
+    expect([t.answer, t.entryScale]).toEqual([4700, 100])
+    expect(swappedAnswer(t)).toBe(7400)
+    expect(digitSwapPossible(t)).toBe(true)
+    expect(classifyAnswer(t, 7400)).toBe('digitSwap')
+    expect(detectableOf(t).sort()).toEqual(['coinsAsCount', 'digitSwap'])
+    expect(natureFor('digitSwap', 'countCoins')).toBe('slip')
+    // 4700 reversed in øre is no amount anyone types
+    expect(classifyAnswer(t, 74)).toBe('other')
+  })
+
+  it('finds no swap where the kroner have none (40, 44 kr), below 13 kr, or on cards', () => {
+    for (const coins of [[20, 20], [20, 20, 2, 2], [10, 2]]) {
+      const t = typed(coins)
+      expect(swappedAnswer(t), String(coins)).toBeNull()
+      expect(detectableOf(t), String(coins)).not.toContain('digitSwap')
+    }
+    expect(classifyAnswer(typed([10, 2]), 2100)).toBe('other')
+    const cards = task(kroner, pile([20, 20, 5, 2]), 'choice')
+    expect(swappedAnswer(cards)).toBeNull()
+    expect(classifyAnswer(cards, 7400)).toBe('other')
+  })
+
+  it('compares the reversal with the numbers on screen in kroner: a coin showing it makes it no swap', () => {
+    expect(promptNumbers({ scene: 'coins', ore: [2000, 500, 200] })).toEqual([20, 5, 2])
+    expect(promptNumbers({ scene: 'shop', thing: 'apple', priceOre: 1300, paidOre: 2000, purse: [1000, 500] })).toEqual([13, 20])
+    expect(promptNumbers({ scene: 'shop', thing: 'apple', priceOre: 1700, purse: [1000, 500] })).toEqual([17])
+    // a made-up 13-krone coin beside 18 kr: 31 kr reversed is the 13 on the coin
+    const t = typed([13, 18])
+    expect(swappedAnswer(t)).toBeNull()
+    expect(classifyAnswer(t, 1300)).toBe('other')
+  })
+
+  it('makes a misconception on the reversed kroner ambiguous (A11), alike in the tags, the classification and the opportunities', () => {
+    const odd: SkillModule = { ...kroner, candidates: (f) => [...kroner.candidates(f), { value: 7400, tag: 'wrongOperation' }] }
+    const t = typed([20, 20, 5, 2], odd)
+    expect(swapDisambiguated(t, 7400, 'wrongOperation')).toBe('ambiguous')
+    expect(t.distractorTags['7400']).toBe('ambiguous')
+    expect(classifyAnswer(t, 7400)).toBe('ambiguous')
+    expect(detectableOf(t)).toEqual(['coinsAsCount'])
+  })
+
+  it('leaves whole numbers as they were: the swap of 72 is 27, and 4700 on an int keypad has none', () => {
+    const t = task(add100CarryFixture, carry(47, 25), 'keypad')
+    expect(t.entryScale).toBe(1)
+    expect(swappedAnswer(t)).toBe(27)
+    expect(swappedAnswer({ ...t, answer: 4700 })).toBeNull()
+    expect(swappedAnswer({ ...t, answer: 4700, entryScale: 100 })).toBe(7400)
   })
 })
 

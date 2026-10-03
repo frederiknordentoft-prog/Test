@@ -67,27 +67,40 @@ export function promptNumbers(p: Prompt): number[] {
     case 'array': return [p.rows, p.cols]
     case 'share': return [p.total, p.recipients]
     case 'objects': return [p.n]
+    // money is written in kroner: the numbers on the coins, on the price tag and on what was paid with
+    case 'coins': return p.ore.map((o) => o / 100)
+    case 'shop': return [p.priceOre / 100, ...(p.paidOre !== undefined ? [p.paidOre / 100] : [])]
     default: return []
   }
 }
 
 /**
- * A reversed answer only counts as digitSwap where it can be told apart from other errors: in the
- * hear/place skills, and on typed answers of 13 or more with two different non-zero digits, where the
- * reversed number is not also on screen (38 + 45 answered 38 is an operand, SPEC §4.1).
+ * The answer with its tens and ones swapped as the child would give it (SPEC §4.1 digitSwap), or null
+ * where a reversal cannot be told apart from other errors: in the hear/place skills any reversal counts;
+ * elsewhere only a typed answer of 13 or more with two different non-zero digits whose reversal is not
+ * also on screen (38 + 45 answered 38 is an operand). The digits are the ones the child enters: on a
+ * kroner keypad (entryScale 100) 47 kr typed as 74 is the swap, 7400 øre, though 4700 has none, and the
+ * numbers on screen are compared in kroner too. digitSwapPossible, swapDisambiguated, classifyAnswer and
+ * detectableOf all ask this one function, so they always agree.
  */
-function digitSwapPossible(task: Task): boolean {
-  if (typeof task.answer !== 'number') return false
-  const swapped = digitSwapOf(task.answer)
-  if (swapped === null) return false
-  if (DIGIT_SWAP_CONCEPT_SKILLS.includes(task.skill)) return true
-  return task.kind === 'keypad' && task.answer >= 13 && !promptNumbers(task.prompt).includes(swapped)
+export function swappedAnswer(task: Task): number | null {
+  if (typeof task.answer !== 'number') return null
+  const typed = task.answer / task.entryScale
+  const swapped = digitSwapOf(typed)
+  if (swapped === null) return null
+  const told = DIGIT_SWAP_CONCEPT_SKILLS.includes(task.skill)
+    || (task.kind === 'keypad' && typed >= 13 && !promptNumbers(task.prompt).includes(swapped))
+  return told ? swapped * task.entryScale : null
+}
+
+/** Whether digitSwap can happen on this task at all (SPEC A11 only applies where it can). */
+export function digitSwapPossible(task: Task): boolean {
+  return swappedAnswer(task) !== null
 }
 
 const dialKey = (task: Task, v: AnswerValue): string =>
   typeof v === 'number' && task.modulo ? String(((v % task.modulo) + task.modulo) % task.modulo) : String(v)
 
-/** Error tag for a wrong answer (null when correct). Uses the task's tagged candidates first. */
 /**
  * SPEC A11: a misconception's value that is also the answer with its digits swapped (27 written as 72)
  * has a likelier explanation, the commonest slip in Danish number words, so it is 'ambiguous' and never
@@ -95,10 +108,11 @@ const dialKey = (task: Task, v: AnswerValue): string =>
  */
 export function swapDisambiguated(task: Task, value: AnswerValue, tag: ErrorTag): ErrorTag {
   if (!isMisconceptionId(tag) || tag === 'digitSwap') return tag
-  const swap = typeof value === 'number' && typeof task.answer === 'number' && digitSwapPossible(task) && digitSwapOf(task.answer) === value
+  const swap = typeof value === 'number' && swappedAnswer(task) === value
   return swap ? 'ambiguous' : tag
 }
 
+/** Error tag for a wrong answer (null when correct). Uses the task's tagged candidates first. */
 export function classifyAnswer(task: Task, given: AnswerValue): ErrorTag | null {
   if (isCorrect(task, given)) return null
   // the share view reports an uneven deal as −1 (SPEC §3.2)
@@ -107,9 +121,7 @@ export function classifyAnswer(task: Task, given: AnswerValue): ErrorTag | null 
   // must never be read as a reversed number just because it happens to be one.
   const tagged = task.distractorTags[dialKey(task, given)]
   if (tagged) return tagged
-  if (typeof given === 'number' && typeof task.answer === 'number' && digitSwapPossible(task) && digitSwapOf(task.answer) === given) {
-    return 'digitSwap'
-  }
+  if (typeof given === 'number' && swappedAnswer(task) === given) return 'digitSwap'
   return 'other'
 }
 
@@ -121,7 +133,7 @@ export function classifyAnswer(task: Task, given: AnswerValue): ErrorTag | null 
  */
 export function detectableOf(task: Task): MisconceptionId[] {
   const out = new Set<MisconceptionId>()
-  const swapped = typeof task.answer === 'number' && digitSwapPossible(task) ? digitSwapOf(task.answer) : null
+  const swapped = swappedAnswer(task)
   if (PICK_KINDS.has(task.kind)) {
     for (const o of task.options) {
       const tag = task.distractorTags[dialKey(task, o)]
