@@ -1,6 +1,7 @@
 // Katten (bølge 2). Tre racer:
 // - domestic (huskat): glat pels og en slank hale, der krøller op langs siden som et spørgsmålstegn.
-// - longhair (langhåret): pjusket krave, kindtotter, fnug i ørerne og en busket hale.
+// - longhair (langhåret): en rund, symmetrisk krave af store, bløde totter, fnug i ørerne og en busket hale.
+//   Ingen spidse kindtotter: de er rævens kendetegn (blindtest G1-r4 og G2-r1).
 // - mainecoon: den store med lossetotter på de høje ører, brystkrave og en kraftig, busket hale.
 // Fælles: brede kinder, trekantede ører, et hjerteformet næsetip (kattens særpræg), knurhår,
 // forben ned til jorden med åben kontur ved brystet, lårbuler og bagpoter. Signaturen er
@@ -165,15 +166,20 @@ interface TailShape {
   /** Rørets bredde (glat hale) eller bredder langs rygraden (busket hale). */
   w: number
   bushy?: { base: readonly number[]; tip: readonly number[] }
+  /** Dæmpningen af riggens vækst på stor (standard `TAIL_STAGE3`). */
+  grow3?: number
 }
 
 // De buskede haler slutter under kraven og hovedet, så halespidsen aldrig lukker en sprække med baggrund
 // inde mellem krave, skulder og hale (review G1-r3, huller-lint).
 const TAILS: Record<'domestic' | 'longhair' | 'mainecoon', TailShape> = {
+  // Huskatten: et åbent spørgsmålstegn. Krogen slutter med luft til kroppen og knurhårene, så halen aldrig
+  // lukker en lomme mellem hale, hofte og krop (review G1-r4, huller-lint).
   domestic: {
-    base: [[0, 0], [12, -2], [23, -9], [28, -21], [28, -34]],
-    tip: [[0, 0], [-1, -10], [-6, -17.5], [-13.4, -18.4], [-17, -13]],
+    base: [[0, 0], [12, -2], [23, -9], [29, -22], [29.5, -36]],
+    tip: [[0, 0], [-0.4, -8.2], [-3.8, -13.6], [-8.8, -14.8], [-11.2, -11.4]],
     w: 10.5,
+    grow3: 0.83,
   },
   longhair: {
     base: [[0, 0], [9.5, -3], [16.5, -11], [19, -21.5], [19, -30]],
@@ -228,7 +234,31 @@ function tailColors(pal: Palette, colorway: string, ids: PartCtx['ids']) {
   return { base: pal.mane, tip: pal.mane }
 }
 
+/**
+ * Halens vækst på stor: riggen skalerer halen 1,3 (STAGE_XF), men så når krogen op til knurhårene og lukker
+ * en lomme mellem hale, krop og kind (review G1-r4, huller-lint). Katten dæmper den til ca. 1,1: de buskede haler
+ * 0,86 (ca. 1,12), huskattens 0,83 (ca. 1,08), så dens hale også bliver i den sikre zone, når den svinger ud i vink.
+ */
+const TAIL_STAGE3 = 0.86
+
+/** Halen skaleret om roden (punkter og bredder, så stregen bevarer sin bredde og der ikke kommer flere elementer). */
+function scaleTail(t: TailShape, k: number): TailShape {
+  const sc = (pts: readonly Vec[]) => pts.map(([x, y]) => [x * k, y * k] as Vec)
+  return {
+    base: sc(t.base),
+    tip: sc(t.tip),
+    w: t.w * k,
+    bushy: t.bushy && { base: t.bushy.base.map((v) => v * k), tip: t.bushy.tip.map((v) => v * k) },
+  }
+}
+
 function makeTail(t: TailShape): Part {
+  const grown = makeTailInner(t)
+  const big = makeTailInner(scaleTail(t, t.grow3 ?? TAIL_STAGE3))
+  return (p) => (p.stage === 3 ? big(p) : grown(p))
+}
+
+function makeTailInner(t: TailShape): Part {
   const J = t.base[t.base.length - 1]
   const baseLoop = t.bushy ? bushy(t.base, t.bushy.base, 1.4, 0) : null
   const tipLoop = t.bushy ? bushy(t.tip, t.bushy.tip, 1.6, 1) : null
@@ -265,21 +295,33 @@ const NOSE: Vec[] = [
   [4.3, -3.1], [4.5, -1.1], [2.6, 1.3],
 ]
 
+/**
+ * Knurhårene stikker mindst 6 enheder ud over hovedets kontur (review G1-r4 §5 og G2-r1 §2), så katten også
+ * læses som kat i sort: ræven har ingen. Spidserne regnes fra hovedets halve bredde, så de følger racen.
+ * I silhuetten er de en anelse tykkere, så de ses ved arkenes størrelse.
+ */
+const WHISKERS: { mid: Vec; tip: Vec; root: Vec }[] = [
+  { root: [15, 3], mid: [36, -1.5], tip: [9.5, -5.5] },
+  { root: [15.5, 6.5], mid: [37, 6.5], tip: [10.5, 7] },
+  { root: [15, 10], mid: [34, 12.5], tip: [5.5, 13.5] },
+]
+
 function makeMuzzle(padK: number): Part {
   return ({ pal, sw, a, lod }) => {
     const m = a.muzzle
     const px = 6.2 * padK
     const pads = join(ellipse(m.x - px, m.y + 5.6, 7.6 * padK, 5.6 * padK), ellipse(m.x + px, m.y + 5.6, 7.6 * padK, 5.6 * padK))
+    const reach = a.headRx
     const whisk = (s: number): string =>
       join(
-        spline([[m.x + s * 15, m.y + 3], [m.x + s * 34, m.y - 1], [m.x + s * 58, m.y - 3.5]]),
-        spline([[m.x + s * 15.5, m.y + 6.5], [m.x + s * 35, m.y + 6.5], [m.x + s * 59, m.y + 8.5]]),
-        spline([[m.x + s * 15, m.y + 10], [m.x + s * 32, m.y + 13.5], [m.x + s * 53, m.y + 19]]),
+        ...WHISKERS.map(({ root, mid, tip }) =>
+          spline([[m.x + s * root[0], m.y + root[1]], [m.x + s * mid[0], m.y + mid[1]], [m.x + s * (reach + tip[0]), m.y + tip[1]]]),
+        ),
       )
     return (
       <>
         {!pal.silhouette && <path d={pads} fill={pal.belly} />}
-        {lod === 'full' && <path d={join(whisk(-1), whisk(1))} fill="none" stroke={pal.outline} strokeOpacity={pal.silhouette ? 1 : 0.5} strokeWidth={sw * 0.42} {...round} />}
+        {lod === 'full' && <path d={join(whisk(-1), whisk(1))} fill="none" stroke={pal.outline} strokeOpacity={pal.silhouette ? 1 : 0.5} strokeWidth={sw * (pal.silhouette ? 0.6 : 0.42)} {...round} />}
         <path d={blob(xf(NOSE, { dx: m.x, dy: m.y }), 0.8)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
       </>
     )
@@ -409,21 +451,41 @@ const RainbowCollar: Part = ({ pal, sw, ids, colorway, a, stage }) =>
     <path d={scallop(100, a.neck.y + 6 * ruffK(stage), 25 * ruffK(stage), 12 * ruffK(stage), 8, 0.6, -90)} fill={`url(#${ids.gradient})`} stroke={pal.maneOutline} strokeWidth={sw} strokeLinejoin="round" clipPath={`url(#${ids.bodyClip})`} />
   ) : null
 
-/** Kindtotter: strøgne spidser ud fra kinderne, klippet "uden for hovedet" (sømløse). */
-function makeCheekTufts(size: number): Part {
-  const left = tufts(0, 0, size, size * 1.05, 4, { depth: 0.3, swirl: 12, from: 90, to: 270, phase: 0 })
-  return ({ pal, sw, a, ids }) => {
-    const at = { x: a.headCenter.x - a.headRx * 0.9, y: a.headCenter.y + a.headRy * 0.26 }
-    const l = xf(left, { dx: at.x, dy: at.y })
+/**
+ * Langhårskravens runde, symmetriske krave (review G1-r4 §5 og G2-r1 §2): store, bløde totter (husets
+ * scallop) om halsen med en kløft midt under hagen, så der ses to runde totter på hver side. Den runde
+ * kontur og de vandrette knurhår over den skiller katten fra rævens spidse kindtotter, også i sort. En kort
+ * pelsstreg i hver tot giver den lange pels uden at bryde silhuetten (i kroppens lag, så kropstøj dækker den).
+ */
+function makeRoundRuff(rx: number, ry: number, dy: number, lobes: number): Part {
+  return ({ pal, sw, a, ids, stage, clothed, lod }) => {
+    const k = ruffK(stage)
+    const cy = a.neck.y + dy * k
+    const clip = clothed ? `url(#${ids.bodyClip})` : undefined
+    // Pelsstreger midt i de nederste totter (lodret symmetriske om x = 100).
+    const strands = Array.from({ length: lobes }, (_, i) => 90 + (360 * (i + 0.5)) / lobes)
+      .filter((deg) => deg > 20 && deg < 160)
+      .map((deg) => {
+        const t = (deg * Math.PI) / 180
+        const c = Math.cos(t)
+        const s = Math.sin(t)
+        const at = (f: number): Vec => [100 + rx * k * f * c, cy + ry * k * f * s]
+        return spline([at(0.66), at(0.86)])
+      })
     return (
-      <path
-        d={join(blob(l, 0.7), blob(mirrorX(l, a.headCenter.x), 0.7))}
-        fill={pal.fur}
-        stroke={pal.outline}
-        strokeWidth={sw}
-        clipPath={`url(#${ids.outsideHead})`}
-        {...round}
-      />
+      <>
+        <path
+          d={scallop(100, cy, rx * k, ry * k, lobes, 0.6, 90)}
+          fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly}
+          stroke={pal.maneOutline}
+          strokeWidth={sw}
+          clipPath={clip}
+          {...round}
+        />
+        {lod === 'full' && !pal.silhouette && (
+          <path d={join(...strands)} fill="none" stroke={pal.maneOutline} strokeWidth={sw * 0.5} clipPath={clip} {...round} />
+        )}
+      </>
     )
   }
 }
@@ -490,6 +552,69 @@ const PAW_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
   },
 }
 
+/**
+ * Lommerne i nøgleposerne (review G1-r4 §1.4 og §5): pels i skyggetone bag alt mellem løftet pote, hale, kind og
+ * krop, så der aldrig ses baggrund inde i figuren. Kun i stillbilleder (album, butik og kontaktark): i animationen
+ * åbner og lukker lommerne, mens poten og halen bevæger sig, så et fast fyld ville ses mod baggrunden dér (samme
+ * mønster som rævens `KEY_WEBS`). Hylstrene er lommerne målt på magenta (2 px pr. enhed, udvidet 1,6 enheder og
+ * holdt inden for figurens yderkontur) i skulderens ramme (højre side spejlet) pr. race, stadie og humør.
+ */
+const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
+  domestic: {
+    1: {
+      wave: { R: [[-21.9, -59.3], [-24.2, -58.5], [-24.9, -57], [-22.6, -50.9], [-14.3, -45.6], [-6.7, -43.3], [0.9, -47.9], [1.7, -49.4], [0.9, -50.9], [-1.4, -52.4], [-9.7, -54], [-21.1, -58.5]] },
+    },
+    2: {
+      wave: { R: [[-24.3, -64.6], [-25.4, -64], [-26, -62.9], [-24.3, -54], [-22.1, -50.1], [-14.9, -45.7], [-9.9, -44.6], [-7.7, -43.4], [-6, -43.4], [-0.4, -47.3], [3.4, -49], [4.6, -50.7], [4, -51.8], [-3.2, -53.4], [-8.2, -55.1], [-11, -56.8], [-12.1, -56.8], [-23.8, -64]] },
+    },
+    3: {
+      wave: { R: [[[-21.7, -64.8], [-24.5, -64.8], [-25.4, -64.3], [-25.9, -63.4], [-25.4, -57.8], [-23.5, -51.8], [-18.9, -47.6], [-15.2, -45.8], [-6.9, -43], [1, -47.6], [1.5, -48.6], [1.5, -51.3], [1.9, -51.8], [1.5, -52.7], [-6, -55], [-13.4, -58.7], [-21.2, -64.3]], [[-31.9, -85.6], [-32.8, -84.7], [-37, -85.6], [-35.1, -84.2], [-37, -82.8], [-35.1, -81.9], [-31.9, -81.4], [-30.5, -82.8], [-30.5, -84.2], [-31.4, -85.1]]] },
+      cheer: { R: [[-6.1, -54], [-7.5, -53.5], [-7.9, -52.6], [-3.6, -46.9], [-2.1, -46], [0.6, -47.5], [1.5, -48.9], [1.4, -51.1], [0.9, -52], [0, -52.4], [-1.4, -52.4], [-5.6, -53.6]] },
+    },
+  },
+  longhair: {
+    2: {
+      wave: { R: [[-23.2, -30.7], [-25.4, -30.1], [-26, -29], [-26, -27.3], [-26.6, -26.8], [-26, -24.6], [-24.9, -24], [-23.8, -24.6], [-22.7, -26.2], [-21.6, -28.4], [-22.1, -30.1], [-22.7, -30.1]] },
+    },
+    3: {
+      cheer: { R: [[-25.1, -26.6], [-26.9, -26.1], [-27.3, -25.2], [-27.3, -22.9], [-26.8, -22], [-25.8, -21.6], [-24.9, -22.1], [-23.6, -24.8], [-24.1, -26.2], [-24.6, -26.2]] },
+    },
+  },
+  mainecoon: {
+    1: {
+      idle: { R: [[-19.4, -54.7], [-20.9, -54], [-18.6, -52.4], [-18.6, -50.9], [-20.1, -49.4], [-20.9, -50.2], [-20.9, -49.4], [-17.1, -46.4], [-16.3, -43.3], [-14.8, -42.6], [-12.5, -43.3], [-8.7, -50.2], [-9.5, -51.7], [-12.5, -53.2], [-18.6, -54]] },
+      wave: { R: [[[-21.6, -59.3], [-23.9, -58.5], [-24.7, -57], [-23.2, -51.7], [-20.9, -49.4], [-14, -45.6], [-11, -46.4], [-6.4, -51.7], [-7.2, -53.2], [-10.2, -54.7], [-16.3, -56.2], [-20.9, -58.5]], [[-28.5, -26.6], [-30, -25.8], [-31.5, -23.6], [-30.8, -20.5], [-29.2, -19.8], [-27.7, -20.5], [-26.2, -23.6], [-27, -25.8], [-27.7, -25.8]]] },
+      think: { R: [[-14.8, -46.4], [-17.8, -45.6], [-18.6, -44.1], [-17.8, -41], [-16.3, -40.3], [-13.3, -42.6], [-12.5, -44.1], [-13.3, -45.6], [-14, -45.6]] },
+    },
+    2: {
+      think: { R: [[-23.3, -51.2], [-24.4, -51.2], [-23.9, -49.6], [-25.6, -48.4], [-22.2, -47.9], [-20, -45.7], [-18.9, -40.7], [-18.3, -39.6], [-17.2, -39], [-10.6, -45.1], [-10, -46.2], [-10.6, -47.9], [-22.8, -50.7]] },
+      wave: { R: [[[-23.9, -64], [-25, -63.4], [-25.6, -62.3], [-25.6, -59], [-25, -58.4], [-24.4, -54], [-23.3, -51.8], [-20, -48.4], [-17.2, -46.8], [-13.3, -45.1], [-11.1, -45.1], [-10, -45.7], [-5.6, -50.7], [-3.9, -51.2], [-3.3, -52.3], [-4.4, -54], [-10.6, -56.2], [-23.3, -63.4]], [[-26.1, -31.8], [-27.2, -31.2], [-27.8, -29], [-30, -26.8], [-32.2, -25.7], [-32.8, -24.6], [-32.2, -23.4], [-32.2, -14.6], [-31.7, -13.4], [-30.6, -12.9], [-29.4, -13.4], [-26.7, -22.9], [-23.3, -29], [-23.9, -30.7], [-25.6, -31.2]]] },
+    },
+    3: {
+      idle: { R: [[-22.1, -34.7], [-23.5, -33.8], [-25.8, -33.3], [-26.2, -32.4], [-26.2, -28.7], [-26.7, -28.2], [-26.2, -26.8], [-25.3, -26.3], [-24.4, -26.8], [-23.5, -29.1], [-20.7, -33.3], [-21.2, -34.2], [-21.6, -34.2]] },
+      happy: { R: [[-27.2, -22.2], [-28.1, -20.8], [-29, -20.8], [-30, -22.2], [-31.3, -17.1], [-33.2, -13.4], [-31.8, -11.1], [-30.9, -10.6], [-30, -11.1], [-28.6, -17.1], [-26.7, -21.3], [-27.2, -21.7]] },
+      cheer: { R: [[-22.3, -41.2], [-23.6, -40.7], [-24.9, -35.7], [-27.1, -33.3], [-29.8, -32.3], [-30.3, -31.4], [-30.1, -25.5], [-30.5, -25], [-30.4, -23.2], [-30.9, -22.7], [-31.6, -17.7], [-33.4, -14], [-33.3, -12.2], [-32.3, -10.4], [-31.4, -10], [-30, -11], [-26.7, -22.4], [-22.8, -30.3], [-18.4, -36.8], [-19.4, -39], [-21.8, -40.8]] },
+      think: { R: [[[-18.4, -51.3], [-19.8, -50.9], [-20.2, -50], [-20.2, -49], [-19.3, -47.6], [-20.2, -46.2], [-20.7, -40.7], [-22.1, -36.1], [-23.9, -34.2], [-27.6, -32.8], [-28.1, -31.9], [-27.6, -30], [-28.1, -29.6], [-28.1, -25.4], [-29, -23.1], [-28.6, -21.7], [-27.6, -21.2], [-26.7, -21.7], [-25.8, -24.5], [-22.1, -31.4], [-19.3, -35.6], [-11.9, -44.4], [-12.8, -45.8], [-12.8, -47.6], [-12.4, -48.1], [-12.8, -49.5], [-17.9, -50.9]], [[-30, -17.1], [-30.9, -16.6], [-32.3, -13.8], [-31.8, -12.9], [-30.9, -12.5], [-29.5, -12.9], [-28.6, -15.7], [-29, -16.6], [-29.5, -16.6]]] },
+      oops: { R: [[-26.2, -24.5], [-27.2, -23.1], [-29, -24.5], [-30, -22.2], [-30, -19.4], [-32.7, -13.8], [-31.8, -11.5], [-30.9, -11.1], [-30, -11.5], [-27.6, -19.9], [-25.8, -23.6], [-26.2, -24]] },
+      sleep: { R: [[[-16.1, -50.4], [-17.5, -49.9], [-17.9, -49], [-17.5, -48.5], [-17.5, -47], [-18.4, -45.6], [-18.4, -42.7], [-19.3, -40.3], [-18.8, -38.4], [-17.9, -37.9], [-17, -38.4], [-11.9, -44.2], [-12.8, -46.1], [-12.8, -47.5], [-12.4, -48], [-12.8, -49], [-14.2, -49.9], [-15.6, -49.9]], [[-22.5, -34.6], [-25.8, -33.1], [-26.2, -32.2], [-26.2, -28.8], [-26.7, -28.3], [-26.2, -26.9], [-25.3, -26.4], [-24.4, -26.9], [-23.5, -28.3], [-21.2, -32.6], [-21.6, -34.1], [-22.1, -34.1]]] },
+      wave: { R: [[[-22.5, -65.7], [-25.3, -64.3], [-25.8, -63.4], [-25.3, -57.4], [-24.9, -56.9], [-24.4, -53.7], [-22.5, -50.4], [-19.8, -48.1], [-15.1, -45.8], [-14.2, -45.8], [-13.3, -46.2], [-10.5, -49.5], [-6.3, -51.8], [-5, -54.1], [-5.9, -55.5], [-12.4, -58.3], [-22.1, -65.2]], [[-29, -33.7], [-30.9, -33.3], [-34.1, -31], [-35, -29.6], [-34.6, -28.7], [-34.6, -17.1], [-36.4, -11.1], [-34.6, -8.3], [-32.7, -6.4], [-31.8, -6], [-30.9, -6.4], [-27.6, -19.9], [-23, -29.6], [-23.5, -30.5], [-28.6, -33.3]], [[-33.2, -85.6], [-35.5, -85.6], [-34.1, -84.7], [-35.5, -82.8], [-34.6, -82.4], [-32.7, -82.8], [-32.3, -83.7], [-32.7, -85.1]]] },
+    },
+  },
+}
+
+const KeyWebs = pawWebs({}, KEY_WEBS)
+/** Armenes faste fyld og, i stillbilleder, nøgleposernes lommer i skyggetone (se `KEY_WEBS`). */
+const withKeyWebs = (webs: SidePart): SidePart => (p) => {
+  const key = p.still ? KeyWebs({ ...p, pal: { ...p.pal, fur: p.pal.silhouette ? p.pal.fur : p.pal.shade } }) : null
+  const web = webs(p)
+  return key && web ? (
+    <>
+      {web}
+      {key}
+    </>
+  ) : (key ?? web)
+}
+
 export const cat: SpeciesDef = {
   id: 'cat',
   name: 'Kat',
@@ -506,8 +631,7 @@ export const cat: SpeciesDef = {
       parts: {
         Ear: makeEar(SMALL_EAR, SMALL_INNER, true),
         Tail: makeTail(TAILS.longhair),
-        Ruff: makeRuff(56, 28, 0, 19, 0.16),
-        HeadDeco: makeCheekTufts(14),
+        Ruff: makeRoundRuff(46, 24, 2, 10),
         Muzzle: makeMuzzle(0.9),
       },
       bounds: { head: { x0: 34, y0: 14, x1: 166, y1: 172 } },
@@ -577,17 +701,18 @@ export const cat: SpeciesDef = {
   poses: {
     happy: { pawL: 14, pawR: 14, tail: 4 },
     cheer: { tail: 5 },
-    think: { tail: -4 },
+    think: { tail: 2 },
     oops: { pawL: 0, pawR: { up: true }, tail: 3 },
     sleep: { pawL: 0, pawR: 0 },
-    wave: { tail: 4 },
+    // Vink: halen svinger ud, så krogen går fri af den løftede albue (ingen lomme mellem arm, hale og krop).
+    wave: { tail: 11 },
   },
   parts: {
     head: catHead,
     Ear: makeEar(CAT_EAR, CAT_INNER, false),
     Paw: Leg,
     PawUp,
-    PawBack: pawWebs({}, PAW_WEBS),
+    PawBack: withKeyWebs(pawWebs({}, PAW_WEBS)),
     pawUpTip: { cheer: { x: -31, y: -67 }, wave: { x: -36, y: -73 }, think: { x: 13, y: -50 }, oops: { x: 10, y: -55 } },
     upArms: {
       cheer: { spine: UP_SPINES.cheer, w0: 15, w1: 18.5, tip: 10 },
