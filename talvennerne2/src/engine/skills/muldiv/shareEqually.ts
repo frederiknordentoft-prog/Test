@@ -8,10 +8,12 @@
 // is shown on the keypad (src/ui/task/registry.ts moduleFor). Range 0–30.
 // Wrong answers: wrongOperation — another operation on the two numbers (12 between 3 → 9 or 15), the
 // numbers from the question ('operand') and near misses (±1, ±2). A value with two explanations is
-// 'ambiguous' (A9): 6 between 3 → 3 (6 − 3, or the 3 animals).
+// 'ambiguous' (A9): 6 between 3 → 3 (6 − 3, or the 3 animals). These are the cards' and the keypad's:
+// a deal hands in the share or −1 and nothing else, so the share kind has no candidates (candidatesFor)
+// and is never an opportunity for wrongOperation.
 // Hint: deal one at a time — "Giv en til hvert dyr ad gangen, rundt og rundt, til der ikke er flere.
 // Så får hvert dyr fire. Tolv delt med tre giver fire." with each animal's share as groups.
-import type { ErrorTag, Fact, HintSpec, SkillModule, SpeechPart } from '../types'
+import type { Candidate, ErrorTag, Fact, HintSpec, SkillModule, SpeechPart, TaskKind } from '../types'
 import { hintOf, metaOf, num, say, tagged } from '../number/kit'
 
 const FACTS: readonly Fact[] = (() => {
@@ -30,6 +32,19 @@ function parts(f: Pick<Fact, 'id'>): [number, number] {
   if (!m) throw new Error(`not a shareEqually fact: ${f.id}`)
   return [Number(m[1]), Number(m[2])]
 }
+
+function candidates(f: Fact): Candidate[] {
+  const [total, g] = parts(f)
+  const q = total / g
+  return tagged(q, [
+    [total - g, 'wrongOperation'], [total + g, 'wrongOperation'],
+    [total, 'operand'], [g, 'operand'],
+    [q + 1, 'near'], [q - 1, 'near'], [q + 2, 'near'], [q - 2, 'near'],
+  ])
+}
+
+/** The share view hands in the share or −1 ('shareUnequal', SPEC §3.2): no wrong number to tag. */
+const candidatesFor = (f: Fact, kind: TaskKind): Candidate[] => (kind === 'share' ? [] : candidates(f))
 
 function hint(f: Fact, tag: ErrorTag | null): HintSpec {
   const [total, g] = parts(f)
@@ -62,14 +77,7 @@ export default {
       say('noun.muldiv.dyr'), say('s.shareEqually.howMany'),
     ]
   },
-  candidates(f) {
-    const [total, g] = parts(f)
-    const q = total / g
-    return tagged(q, [
-      [total - g, 'wrongOperation'], [total + g, 'wrongOperation'],
-      [total, 'operand'], [g, 'operand'],
-      [q + 1, 'near'], [q - 1, 'near'], [q + 2, 'near'], [q - 2, 'near'],
-    ])
-  },
+  candidates,
+  candidatesFor,
   hint,
 } satisfies SkillModule

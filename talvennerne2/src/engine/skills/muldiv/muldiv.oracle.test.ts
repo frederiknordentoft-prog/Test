@@ -251,17 +251,17 @@ describe('shareEqually oracle', () => {
     expect(first(detectableChecks(built.filter((b) => b.kind !== 'share'), explain))).toEqual([])
   })
 
-  it.fails('share: a deal hands in the share or −1 (shareUnequal), so it is no wrongOperation opportunity', () => {
-    // GENERATOR BUG (shareEqually.ts, no candidatesFor): the share task inherits the card/keypad candidates
-    // (total ± animals → wrongOperation), so detectableOf(shr:12:3 share) = [wrongOperation], although the
-    // share view can only hand in 4 or −1. SkillExtras.candidatesFor(fact, 'share') → [] would fix it.
+  it('share: a deal hands in the share or −1 (shareUnequal), so it is no wrongOperation opportunity', () => {
+    // GENERATOR BUG (shareEqually.ts, no candidatesFor) — Rettet: the share task inherited the card/keypad
+    // candidates (total ± animals → wrongOperation), so detectableOf(shr:12:3 share) was [wrongOperation],
+    // although the share view can only hand in 4 or −1. Now SkillExtras.candidatesFor(fact, 'share') is [].
     const explain = (b: Built, v: AnswerValue) => { const q = shareId(b.fact.id)!; return explainShare(q.total, q.g, v) }
     expect(first(detectableChecks(built.filter((b) => b.kind === 'share'), explain))).toEqual([])
   })
 
-  it.fails('a flagged wrongOperation is not lifted by right deals alone, which cannot show it (SPEC §4.3 "Løst")', () => {
-    // The consequence of the bug above: after a flag from typed 12 − 3 → 9 style answers, six even deals are
-    // six "right opportunities" and isResolved (misconceptions.ts) lifts the flag.
+  it('a flagged wrongOperation is not lifted by right deals alone, which cannot show it (SPEC §4.3 "Løst")', () => {
+    // The consequence of the bug above (Rettet with it): after a flag from typed 12 − 3 → 9 style answers, six
+    // even deals were six "right opportunities" and isResolved (misconceptions.ts) lifted the flag.
     const task = (id: string, kind: Task['kind']) => built.find((b) => b.fact.id === id && b.kind === kind)!.task
     let ts = 1_000
     const log = (t: Task, given: AnswerValue, day: string): AnswerLogEntry => ({
