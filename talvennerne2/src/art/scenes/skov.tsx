@@ -114,6 +114,8 @@ export interface Layout {
   /** Linealstien: stien og pælene (fra den laveste til den højeste). */
   trail: Vec[]
   trailW: number[]
+  /** Stiens punkter, hvor en lygtepæl står (tændes fra bronze). */
+  lamps: number[]
   posts: Place
   garden: Place
   /** Mølleengens hegn: fra den tørre ende mod åen (det stopper på brinken). */
@@ -181,6 +183,7 @@ export function layoutOf(w: number, h: number): Layout {
       owl: { x: w * 0.624, y: h * 0.835, s: k * 0.95 },
       trail: [[w * 0.705, h * 1.03], [w * 0.735, h * 0.955], [w * 0.775, h * 0.918], [bridge.x - 70 * k, bridge.y], [bridge.x + 70 * k, bridge.y], [w * 0.94, h * 0.888], [w * 1.02, h * 0.875]],
       trailW: [18, 15, 12, 10, 10, 9, 8],
+      lamps: [1, 2, 5],
       posts: { x: w * 0.722, y: h * 0.975, s: k * 1.2 },
       garden: { x: w * 0.2, y: h * 0.955, s: k * 0.98 },
       fence: [[w * 1.02, h * 0.825], [w * 0.86, h * 0.83]],
@@ -201,10 +204,11 @@ export function layoutOf(w: number, h: number): Layout {
   if (tall) {
     const k = clamp(Math.max(w / 560, (h / 1250) * 0.9), 0.62, 1)
     const far: Ridge = { base: h * 0.43, amp: h * 0.014, waves: 1.2, phase: 0.8 }
-    const mid: Ridge = { base: h * 0.565, amp: h * 0.02, waves: 0.9, phase: 2.4 }
-    const near: Ridge = { base: h * 0.8, amp: h * 0.02, waves: 0.7, phase: 4.1 }
-    const lake = { x: w * 0.5, y: h * 0.705, rx: 112 * k, ry: 22 * k }
-    const mountain = { x: w * 0.2, y: h * 0.578, s: k * 0.95 }
+    const mid: Ridge = { base: h * 0.645, amp: h * 0.016, waves: 0.9, phase: 2.4 }
+    const near: Ridge = { base: h * 0.81, amp: h * 0.018, waves: 0.7, phase: 4.1 }
+    const lake = { x: w * 0.5, y: h * 0.712, rx: 112 * k, ry: 22 * k }
+    // bjergets top og flag står i båndet mellem regionens overskrift og kortets panel
+    const mountain = { ...on(mid, 0.2, -0.004, k * 0.95), x: w * 0.2 }
     const out: Vec = [w * 0.66, lakeBottom(lake, w * 0.66) - 2 * k]
     const bridge = { x: w * 0.69, y: h * 0.81, s: k * 0.9 }
     return {
@@ -229,6 +233,7 @@ export function layoutOf(w: number, h: number): Layout {
       owl: { x: w * 0.06, y: h * 0.745, s: k * 0.9 },
       trail: [[w * 0.38, h * 1.03], [w * 0.45, h * 0.92], [w * 0.55, h * 0.84], [bridge.x - 66 * k, bridge.y], [bridge.x + 66 * k, bridge.y], [w * 0.92, h * 0.8], [w * 1.03, h * 0.79]],
       trailW: [16, 13, 11, 10, 10, 9, 8],
+      lamps: [1, 2, 5],
       posts: { x: w * 0.38, y: h * 0.955, s: k },
       garden: { x: w * 0.36, y: h * 0.775, s: k * 0.8 },
       fence: [[w * 1.03, h * 0.765], [w * 0.6, h * 0.778]],
@@ -275,6 +280,7 @@ export function layoutOf(w: number, h: number): Layout {
     owl: { x: w * 0.53, y: h * 0.918, s: k * 0.8 },
     trail: [[w * 0.36, h * 1.03], [w * 0.45, h * 0.905], [w * 0.62, h * 0.885], [bridge.x - 70 * k, bridge.y], [bridge.x + 70 * k, bridge.y], [w * 0.93, h * 0.86], [w * 1.03, h * 0.85]],
     trailW: [16, 13, 11, 10, 10, 9, 8],
+    lamps: [1, 5],
     posts: { x: w * 0.4, y: h * 0.9, s: k * 0.9 },
     garden: { x: w * 0.905, y: h * 0.955, s: k * 0.72 },
     fence: [[w * 1.03, h * 0.82], [w * 0.86, h * 0.83]],
@@ -319,7 +325,7 @@ function grass(pts: readonly (readonly [number, number, number])[]): string {
 function lanterns(pts: readonly (readonly [number, number])[], s = 1): ReactNode {
   return (
     <>
-      <path d={join(...pts.map(([x, y]) => circle(x, y + 7 * s, 9.5 * s)))} fill={SKOV.lanternGlow} opacity={0.6} />
+      <path d={join(...pts.map(([x, y]) => circle(x, y + 7 * s, 12 * s)))} fill={SKOV.lanternGlow} opacity={0.7} />
       <path d={join(...pts.map(([x, y]) => join(rect(x - 3.6 * s, y + 2 * s, 7.2 * s, 9.5 * s, 2.2 * s), rect(x - 2.4 * s, y - 0.6 * s, 4.8 * s, 2.8 * s, 1))))} fill={SKOV.lantern} stroke={SKOV.lanternFrame} strokeWidth={1.3 * s} {...ROUND} />
     </>
   )
@@ -790,7 +796,7 @@ function Farm({ t }: { t: RegionTier }) {
   const fl = flowerPaths([[-30, -13, 2.4], [-24, -13, 2.2], [-18, -13, 2.4]])
   return (
     <>
-      {lit(t) && <path d={smoke(-14, -60, 0.9)} fill={SKOV.smoke} opacity={0.88} />}
+      {lit(t) && <path d={smoke(-14, -60, 1.25)} fill={SKOV.smoke} opacity={0.9} />}
       {/* huset */}
       <path d={rect(-17, -62, 7, 16, 1.5)} fill={c('roofRedShade')} stroke={c('timber')} strokeWidth={1.2} {...ROUND} />
       <path d={rect(-36, -34, 40, 34, 2.5)} fill={c('wall')} stroke={c('timber')} strokeWidth={SW * 0.8} {...ROUND} />
@@ -1191,8 +1197,10 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
       return { c, d: poly([[top[0] - wd * 0.35, top[1]], [top[0] + wd * 0.35, top[1]], [x + wd, p.y], [x - wd, p.y]]) }
     }),
   )
+  // Hvor langt verdenen er nået (0 i start, 1 i guld): flere blomsterprikker og stærkere regnbuelys.
+  const progress = (world - TIER_CHROMA.start) / (1 - TIER_CHROMA.start)
   // Spredte blomsterprikker på forgrunden (flere jo længere verdenen er nået).
-  const dots = Math.round(12 + 44 * ((world - TIER_CHROMA.start) / (1 - TIER_CHROMA.start)))
+  const dots = Math.round(12 + 44 * progress)
   const spots = Array.from({ length: dots }, (_, i) => {
     const x = hash01(i) * w
     const top = ridgeY(L.near, w, x) + 14 * K
@@ -1237,6 +1245,8 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
       {lit(T.ruler) && <path d={spline(L.trail)} fill="none" stroke={SKOV.lanternGlow} strokeWidth={3.4 * K} opacity={0.75} {...ROUND} />}
     </>
   )
+  // lygtepæle langs stien (de tændes med Linealstien fra bronze), på den side, der vender væk fra åen
+  const trailLamps = L.lamps.map((i) => [L.trail[i][0] + (i < 3 ? -1 : 1) * (tw[i] / 2 + 7 * K), L.trail[i][1] - 2 * K] as Vec)
   return (
     <svg
       ref={svgRef}
@@ -1294,7 +1304,7 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
       {L.trees.filter((p) => !p.front).map((p, i) => <g key={i}>{at(p, <Tree t={T.garden} seed={i} hue={i % 2 ? 'crownLilac' : 'crownGreen'} />)}</g>)}
       {/* regnbuelyset i lysningerne (ånder blødt) */}
       <g className="skov-shimmer">
-        {shafts.map((s, i) => <path key={i} d={s.d} fill={g(s.c)} opacity={0.26} />)}
+        {shafts.map((s, i) => <path key={i} d={s.d} fill={g(s.c)} opacity={n(0.13 + 0.17 * progress)} />)}
       </g>
       {/* lag 3: engen ved søen og forgrunden */}
       {layer(L.near, R.near, 'nearHill', h * 0.12, 0.14)}
@@ -1322,6 +1332,12 @@ export function SkovArt({ w, h, tiers, className, svgRef }: SkovArtProps) {
       <path d={join(...posts.map(([x, y]) => rect(x - 1.9 * K, y - postH, 3.8 * K, postH, 1.4 * K)))} fill={tb('wood', T.lake)} stroke={tb('woodDark', T.lake)} strokeWidth={1.2 * K} {...ROUND} />
       {posts.length > 1 && <path d={join(spline(posts.map(([x, y]) => [x, y - postH * 0.8] as Vec)), spline(posts.map(([x, y]) => [x, y - postH * 0.4] as Vec)))} fill="none" stroke={tb('woodDark', T.lake)} strokeWidth={1.7 * K} {...ROUND} />}
       {at(L.posts, <RulerPosts t={T.ruler} />)}
+      {lit(T.ruler) && (
+        <>
+          <path d={join(...trailLamps.map(([x, y]) => rect(x - 1.2 * K, y - 24 * K, 2.4 * K, 24 * K, 1 * K)))} fill={tb('woodDark', T.ruler)} />
+          {lanterns(trailLamps.map(([x, y]) => [x, y - 33 * K] as const), 0.9 * K)}
+        </>
+      )}
       {at(L.owl, <OwlTree t={T.ruler} />)}
       {at(L.farm, <Farm t={T.farm} />)}
       {at(L.squirrels, <SquirrelTree t={T.farm} flip={L.squirrels.flip} />)}
