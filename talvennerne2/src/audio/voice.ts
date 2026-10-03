@@ -9,7 +9,8 @@
 //
 // Sprites load on demand (fetch + decodeAudioData). Clip bounds are fine-tuned ±60 ms to −45 dBFS
 // after decoding. Decoded audio is kept in an LRU of 64 MB, of which pinned sprites (n0-20, core,
-// ui) may take 24 MB.
+// ui) may take 24 MB. A statement holds its sprites from the moment it asks for them until it ends,
+// and plays from the buffers it holds; the LRU only evicts sprites nobody holds.
 //
 // Test hook: with `?e2e=1` in the URL, `window.__voiceLog` lists every clip id spoken; `&voice=fast`
 // additionally makes silent speech end after 20 ms instead of its planned duration.
@@ -52,10 +53,15 @@ const manifestUrls = import.meta.glob<string>('../assets/voice/voice-manifest.js
 const spriteUrls = import.meta.glob<string>('../assets/voice/*.mp3', { eager: true, query: '?url', import: 'default' })
 
 type UrlResolver = (file: string) => string | undefined
+/** Fetches and decodes one sprite file; tests hand in a fake with delays. */
+export type SpriteLoader = (file: string, sprite: string) => Promise<AudioBuffer>
 
 const defaultResolver: UrlResolver = (file) => spriteUrls[`../assets/voice/${file}`]
 
 let resolveUrl: UrlResolver = defaultResolver
+let spriteLoader: SpriteLoader | null = null
+let lruLimit = LRU_LIMIT_BYTES
+let pinnedLimit = PINNED_LIMIT_BYTES
 let manifestSource: (() => Promise<VoiceManifest | null>) | null = null
 let indexPromise: Promise<ManifestIndex | null> | null = null
 let index: ManifestIndex | null = null
@@ -86,15 +92,28 @@ function loadIndex(): Promise<ManifestIndex | null> {
   return indexPromise
 }
 
+export interface VoiceConfig {
+  manifest: VoiceManifest | null
+  resolveUrl?: UrlResolver
+  /** Replaces fetch + decodeAudioData (tests). */
+  loadSprite?: SpriteLoader
+  /** Smaller cache limits (tests of the LRU). */
+  lruLimitBytes?: number
+  pinnedLimitBytes?: number
+}
+
 /**
  * Points the voice at another manifest and sprite location (tests, the timing page, the
  * listening page). `manifest: null` means "no recordings": everything uses the device voice.
  */
-export function configureVoice(opts: { manifest: VoiceManifest | null; resolveUrl?: UrlResolver }): void {
+export function configureVoice(opts: VoiceConfig): void {
   hush()
   const m = opts.manifest
   manifestSource = () => Promise.resolve(m)
   resolveUrl = opts.resolveUrl ?? defaultResolver
+  spriteLoader = opts.loadSprite ?? null
+  lruLimit = opts.lruLimitBytes ?? LRU_LIMIT_BYTES
+  pinnedLimit = opts.pinnedLimitBytes ?? PINNED_LIMIT_BYTES
   indexPromise = null
   index = null
   sprites.clear()
@@ -124,6 +143,15 @@ function decode(ctx: BaseAudioContext, data: ArrayBuffer): Promise<AudioBuffer> 
   })
 }
 
+async function fetchSprite(id: string, file: string): Promise<AudioBuffer> {
+  const decoder = decodeContext()
+  const url = resolveUrl(file)
+  if (!decoder || !url) throw new Error(`stemme-sprite ${id} kan ikke hentes`)
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`stemme-sprite ${id}: HTTP ${res.status}`)
+  return decode(decoder, await res.arrayBuffer())
+}
+
 function decodedBytes(filter: (s: Sprite) => boolean = () => true): number {
   let total = 0
   for (const s of sprites.values()) if (s.state === 'ready' && filter(s)) total += s.bytes
@@ -131,7 +159,7 @@ function decodedBytes(filter: (s: Sprite) => boolean = () => true): number {
 }
 
 function evict(): void {
-  while (decodedBytes() > LRU_LIMIT_BYTES) {
+  while (decodedBytes() > lruLimit) {
     let victim: Sprite | null = null
     for (const s of sprites.values()) {
       if (s.state !== 'ready' || s.pinned || s.inUse > 0) continue
@@ -142,9 +170,14 @@ function evict(): void {
   }
 }
 
-function loadSprite(id: string): Promise<Sprite> {
+/**
+ * The cached sprite, or a new one whose loading starts now; its promise settles once it is decoded.
+ * A statement takes hold of the sprite object itself (Speech.hold), so it can do so before anything
+ * is awaited.
+ */
+function requestSprite(id: string): Sprite {
   const known = sprites.get(id)
-  if (known && known.state !== 'error') return known.promise
+  if (known && known.state !== 'error') return known
   const sprite: Sprite = {
     id, state: 'loading', promise: Promise.resolve(null as unknown as Sprite), buffer: null, bounds: new Map(),
     bytes: 0, pinned: false, lastUsed: performance.now(), inUse: 0,
@@ -152,25 +185,25 @@ function loadSprite(id: string): Promise<Sprite> {
   sprite.promise = (async () => {
     const idx = await loadIndex()
     const entry = idx?.manifest.sprites[id]
-    const decoder = decodeContext()
-    const url = entry ? resolveUrl(entry.file) : undefined
-    if (!entry || !decoder || !url) throw new Error(`stemme-sprite ${id} kan ikke hentes`)
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(`stemme-sprite ${id}: HTTP ${res.status}`)
-    const buffer = await decode(decoder, await res.arrayBuffer())
+    if (!entry) throw new Error(`stemme-sprite ${id} kan ikke hentes`)
+    const buffer = spriteLoader ? await spriteLoader(entry.file, id) : await fetchSprite(id, entry.file)
     sprite.buffer = buffer
     sprite.bytes = buffer.length * buffer.numberOfChannels * 4
-    sprite.pinned = !!entry.pinned && decodedBytes((s) => s.pinned) + sprite.bytes <= PINNED_LIMIT_BYTES
+    sprite.pinned = !!entry.pinned && decodedBytes((s) => s.pinned) + sprite.bytes <= pinnedLimit
     sprite.state = 'ready'
     evict()
     return sprite
   })().catch((err: unknown) => {
     sprite.state = 'error'
-    sprites.delete(id)
+    if (sprites.get(id) === sprite) sprites.delete(id)
     throw err
   })
   sprites.set(id, sprite)
-  return sprite.promise
+  return sprite
+}
+
+function loadSprite(id: string): Promise<Sprite> {
+  return requestSprite(id).promise
 }
 
 function boundsFor(sprite: Sprite, id: ClipId, idx: ManifestIndex): ClipBounds {
@@ -246,6 +279,12 @@ export function debugLastPlan(): PlannedSpeech | null {
 
 // ─── Speaking ───────────────────────────────────────────────────────────────
 
+/** One utterance's gapless plan and the decoded buffer of each of its clips. */
+interface ClipPlan {
+  plan: SequencePlan
+  buffers: AudioBuffer[]
+}
+
 class Speech implements SpeakHandle {
   readonly ended: Promise<void>
   private resolveEnded!: () => void
@@ -255,8 +294,11 @@ class Speech implements SpeakHandle {
   private gain: GainNode | null = null
   private tts: TtsHandle | null = null
   private timers = new Set<ReturnType<typeof setTimeout>>()
-  private held: Sprite[] = []
+  /** Sprites this statement holds (by id): the cache never evicts them while they are held. */
+  private held = new Map<string, Sprite>()
   private voiceOn = false
+  /** Something of the statement has been heard (or is being heard). */
+  private sounded = false
   private planned = 0
 
   constructor(
@@ -309,9 +351,27 @@ class Speech implements SpeakHandle {
     this.timers.clear()
     if (this.voiceOn) voiceActivity(false)
     this.voiceOn = false
-    for (const s of this.held) s.inUse--
-    this.held = []
+    // what the cache had to keep for this statement may go now
+    if (this.release()) evict()
     this.resolveEnded()
+  }
+
+  /** Take hold of a sprite, decoded or still loading, and count it as just used. */
+  private hold(s: Sprite): void {
+    const had = this.held.get(s.id)
+    if (this.done || had === s) return
+    if (had) had.inUse--
+    s.inUse++
+    s.lastUsed = performance.now()
+    this.held.set(s.id, s)
+  }
+
+  /** Let go of every held sprite; true when there were any. */
+  private release(): boolean {
+    if (this.held.size === 0) return false
+    for (const s of this.held.values()) s.inUse--
+    this.held.clear()
+    return true
   }
 
   private wait(ms: number): Promise<void> {
@@ -326,41 +386,80 @@ class Speech implements SpeakHandle {
 
   async run(): Promise<void> {
     try {
-      if (this.after) await this.after.ended
-      if (this.cancelled) return
-      const deadline = Math.max(this.calledAt + FALLBACK_AFTER_MS, performance.now())
-      const idx = await Promise.race([loadIndex(), this.wait(deadline - performance.now()).then(() => null)])
-      if (this.cancelled) return
-      const clipIds = this.compiled.utterances.flatMap((u) => (u.kind === 'clips' ? u.clips : []))
-      if (!idx || clipIds.some((id) => !idx.spriteOf.has(id))) return await this.readWhole()
-      this.planned = nominalMs(this.compiled, idx)
-      const needed = [...new Set(clipIds.map((id) => idx.spriteOf.get(id)!))]
-      const ready = await Promise.race([
-        Promise.all(needed.map(loadSprite)).then(
-          (list) => list,
-          () => null,
-        ),
-        this.wait(deadline - performance.now()).then(() => null),
-      ])
-      if (this.cancelled) return
-      if (!ready) return await this.readWhole()
-      for (const s of ready) {
-        s.inUse++
-        s.lastUsed = performance.now()
-        this.held.push(s)
-      }
-      for (let i = 0; i < this.compiled.utterances.length; i++) {
-        const u = this.compiled.utterances[i]
-        if (i > 0) await this.wait(GAP_MS.sentence)
-        if (this.cancelled) return
-        if (u.kind === 'clips') await this.playClips(u.clips, u.gapsMs, idx)
-        else await this.readFree(u.text)
-        if (this.cancelled) return
-      }
+      await this.say()
     } catch (err) {
-      console.error(err)
+      // Whatever failed in the recorded voice, the statement is still said: in the device voice when
+      // nothing of it has been heard yet (one statement is never spoken in two voices).
+      if (!this.cancelled && !this.sounded) {
+        try {
+          await this.readWhole()
+        } catch (again) {
+          console.error(again)
+        }
+      } else if (!this.cancelled) console.error(err)
     } finally {
       this.finish()
+    }
+  }
+
+  private async say(): Promise<void> {
+    if (this.after) await this.after.ended
+    if (this.cancelled) return
+    const deadline = Math.max(this.calledAt + FALLBACK_AFTER_MS, performance.now())
+    const idx = await Promise.race([loadIndex(), this.wait(deadline - performance.now()).then(() => null)])
+    if (this.cancelled) return
+    const clipIds = this.compiled.utterances.flatMap((u) => (u.kind === 'clips' ? u.clips : []))
+    if (!idx || clipIds.some((id) => !idx.spriteOf.has(id))) return await this.readWhole()
+    this.planned = nominalMs(this.compiled, idx)
+    // Hold every sprite now, decoded or still loading, before anything is awaited: the cache makes
+    // room whenever another sprite finishes decoding (the background preload), and it never evicts
+    // a held sprite — neither one that is ready while the others load, nor one the moment it is
+    // decoded (review app-w2-r1 P2-3).
+    const wanted = [...new Set(clipIds.map((id) => idx.spriteOf.get(id)!))].map(requestSprite)
+    for (const s of wanted) this.hold(s)
+    const ready = await Promise.race([
+      Promise.all(wanted.map((s) => s.promise)).then(
+        () => true,
+        () => false,
+      ),
+      this.wait(deadline - performance.now()).then(() => false),
+    ])
+    if (this.cancelled) return
+    const plans = ready ? this.planAll(idx) : null
+    if (!plans) {
+      this.release()
+      return await this.readWhole()
+    }
+    for (let i = 0; i < this.compiled.utterances.length; i++) {
+      const u = this.compiled.utterances[i]
+      if (i > 0) await this.wait(GAP_MS.sentence)
+      if (this.cancelled) return
+      const plan = plans[i]
+      if (plan) await this.playPlan(plan)
+      else if (u.kind === 'free') await this.readFree(u.text)
+      if (this.cancelled) return
+    }
+  }
+
+  /**
+   * Every clip utterance planned from the held sprites, before any of it sounds; null when a plan
+   * cannot be made (the statement then goes to the device voice instead of throwing).
+   */
+  private planAll(idx: ManifestIndex): (ClipPlan | null)[] | null {
+    try {
+      return this.compiled.utterances.map((u) => {
+        if (u.kind !== 'clips') return null
+        const buffers: AudioBuffer[] = []
+        const bounds = u.clips.map((id) => {
+          const sprite = this.held.get(idx.spriteOf.get(id)!)
+          if (!sprite?.buffer || sprite.state !== 'ready') throw new Error(`stemme-klip ${id} er ikke indlæst`)
+          buffers.push(sprite.buffer)
+          return boundsFor(sprite, id, idx)
+        })
+        return { plan: planSequence(u.clips, bounds, u.gapsMs), buffers }
+      })
+    } catch {
+      return null
     }
   }
 
@@ -381,17 +480,15 @@ class Speech implements SpeakHandle {
   }
 
   private markVoice(): void {
+    this.sounded = true
     if (this.voiceOn) return
     this.voiceOn = true
     voiceActivity(true)
   }
 
-  private async playClips(ids: ClipId[], gapsMs: number[], idx: ManifestIndex): Promise<void> {
+  private async playPlan({ plan, buffers }: ClipPlan): Promise<void> {
     // Only a gesture creates the live context (unlock.ts); until then speech is silent but timed.
     const graph = existingAudioGraph()
-    const bufferOf = (id: ClipId) => sprites.get(idx.spriteOf.get(id)!)!
-    const bounds = ids.map((id) => boundsFor(bufferOf(id), id, idx))
-    const plan = planSequence(ids, bounds, gapsMs)
     if (!graph) return this.wait(fastSilence ? 20 : plan.totalMs)
     const { ctx } = graph
     if (ctx.state !== 'running') {
@@ -406,12 +503,13 @@ class Speech implements SpeakHandle {
     gain.connect(graph.voiceBus)
     this.gain = gain
     const ctxStart = ctx.currentTime + LOOKAHEAD_S
-    for (const c of plan.clips) {
+    for (const [i, c] of plan.clips.entries()) {
       const src = ctx.createBufferSource()
-      src.buffer = bufferOf(c.id).buffer
+      src.buffer = buffers[i]
       src.connect(gain)
       src.start(ctxStart + c.startMs / 1000, c.bufferOffsetMs / 1000, c.durMs / 1000)
       this.sources.push(src)
+      this.sounded = true
     }
     this.markVoice()
     lastPlan = { ctxStart, plan, sampleRate: ctx.sampleRate }
