@@ -232,12 +232,43 @@ Hele turen: lange opgaver B 3 (median 54 ms, maks. 54), A 25 (median 57 ms, maks
 - **A har flere lange opgaver** (25, mest ved bekræft-trykket). Det er trykket selv (`DIV#root.onclick`), lige over grænsen (52–66 ms). Det skete mest i A's første tur, hvor maskinen var langsommere.
 - **Medianen af de lange opgaver** kan ikke sammenlignes, når B næsten ingen har. Derfor er trykket målt igen med Event Timing herunder.
 
-AB_R2_EVENTS
+**Anden kørsel med Event Timing** kl. 12.30–12.42, 2 ture hver (A 86, B 77 svar). Alle fire ture er gyldige (højst 0,2 % over 20 ms væk fra svarene):
+
+| Tryk | Målt, B / A | Handlerens tid (median), B → A | A/B | Tid til næste billede (median), B → A | A/B | Lange opgaver, B / A |
+|---|---|---|---|---|---|---|
+| rigtigt tryk | 17/17 / 16/16 | 21,2 → 18,4 ms | 87 % | 88 → 88 ms | 100 % | 0/17 / 2/16 |
+| forkert tryk | 60/60 / 69/70 | 19,4 → 15 ms | 77 % | 80 → 80 ms | 100 % | 6/60 / 2/70 |
+| bekræft-tryk → næste opgave | 59/59 / 69/69 | 17,4 → 17,6 ms | 101 % | 88 → 88 ms | 100 % | 4/59 / 5/69 |
+
+Målestok B 14.2/13.7, 16.3/12.9, A 14.9/18.4, 14.2/13.5; svar B 77, A 86; lange opgaver i alt B 11 (maks. 79), A 10 (maks. 61); væk fra svar over 20 ms B 0,1 %, A 0,2 %
+
+| Fase | Overgange med lang opgave, B / A | Median lang opgave, B → A | A/B | Maks., B / A | Værste billede, B / A | Største invoker, B → A (ms pr. overgang) |
+|---|---|---|---|---|---|---|
+| rigtigt tryk | 0/17 / 2/16 | – → 53 ms | – | – / 56 ms | 33,4 / 33,4 ms | DIV#root.onclick 11,9 → DIV#root.onclick 14,4 |
+| forkert tryk | 6/60 / 2/70 | 54 → 51 ms | 94 % | 79 / 54 ms | 33,3 / 33,3 ms | DIV#root.onclick 7,6 → DIV#root.onclick 3,7 |
+| strategien vises | 0/59 / 0/69 | – → – ms | – | – / – ms | 33,3 / 33,3 ms | MessagePort.onmessage 1,5 → MessagePort.onmessage 1,2 |
+| rigtigt → næste opgave | 0/15 / 0/15 | – → – ms | – | – / – ms | 33,4 / 33,4 ms | TimerHandler:setTimeout 3,5 → TimerHandler:setTimeout 11,7 |
+| bekræft → næste opgave | 4/59 / 5/69 | 53 → 60 ms | 113 % | 56 / 61 ms | 33,4 / 33,4 ms | DIV#root.onclick 13,5 → DIV#root.onclick 12,1 |
+
+Hele turen: lange opgaver B 11 (median 54 ms, maks. 79), A 10 (median 56 ms, maks. 61); svar B 77, A 86; målestok B 14.2/13.7, 16.3/12.9, A 14.9/18.4, 14.2/13.5; væk fra svar over 20 ms: B 0,1 %, A 0,2 %; konsolfejl B 0, A 0
+
+- **Svar-trykket er blevet kortere:** handlerens tid faldt 13 % ved rigtigt og 23 % ved forkert (21,2 → 18,4 ms og 19,4 → 15,0 ms). Det svarer til bogføringen og profil-skrivningerne, der nu ligger efter paint.
+- **Bekræft-trykket er uændret** (17,4 → 17,6 ms). Runde 2 rører ikke den vej, for intet bogføres ved bekræft. Dens pris er den nye opgaves montering.
+- **Tiden fra tryk til næste billede er den samme** (80–88 ms i begge). Den bestemmes af gengivelsen ved 4×, ikke af handleren.
+- **Lange opgaver:** begge builds har nu få (11 og 10 på 77 og 86 svar, maks. 79 og 61 ms), og de ligger lige over 50 ms. Medianen af dem siger derfor ikke meget: forkert 54 → 51 ms (94 %) og bekræft 53 → 60 ms (113 %).
+- **Accept-kravet om ≥ 30 % lavere median ved svar- og bekræft-tryk holder ikke.** Svar-trykkets handler faldt 13–23 %, og bekræft-trykket er uændret.
 
 ### THROTTLE=1
 
 Runde 2, 70 svar: ingen lange opgaver, og det værste billede inden for 2,5 s af et tryk er 16,8 ms. Alle krav holder (`ASSERT=1` giver exit 0).
 
+
+### Det, der står tilbage efter runde 2
+
+- **Bekræft-trykket** (17–18 ms i handleren ved 4×) er nu mest den nye opgaves montering: scenen og svarkortene (`src/ui/scenes`, `src/ui/task`) og fjernelsen af det gamle kort og svarfelt. Det ligger uden for dette område.
+- **Svar-trykket** (15–18 ms) er Reacts render af svarkortene, sætningen og dyret. Når humøret skifter, tegnes riggen om (2–5 ms).
+  - Et forslag til næste runde: lad dyrets humør skifte et billede senere, så det grønne kort kommer alene i trykkets billede. Det kræver en ændring i `RoundScreen`, så det skal godkendes.
+- **De absolutte krav** (≤ 25 % lange opgaver pr. fase osv.) så ud til at holde for runde 1 og 2 i de gyldige prod-kørsler ovenfor. Integratoren måler dem igen i et roligt vindue.
 
 ## Gentag målingen
 
