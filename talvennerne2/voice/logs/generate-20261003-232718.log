@@ -1,0 +1,9 @@
+23:27:18 generate.py --wave 2 --threads 4 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261003-232718.log)
+23:27:18 1061 klip valgt, 1060 færdige, 1 at lave
+23:27:35 input frame rate=25
+23:27:39 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+23:27:40 model indlæst på 19 s (4 tråde)
+23:27:44 ✅ EOS token detected! Stopping generation at step 57
+23:27:50 kald single k=1 t4 'Tæl baglæns i hundreder fra,': 10.0 s for 2.24 s lyd
+23:27:56   s.order.countBackHundreds t4: 1.64 s (forhold 0.65) -18.1 LUFS, alone: 'til baglens i hundreder fra' CER 0.087 (wav2vec2, whisper: 'Til baglands i hundreder fra') → FEJL asr
+23:27:56 færdig: 0 nye mastere (0 ikke bestået, 0 kopier), 1 modelkald, 0.2 min generering (CPU 0.01 t), 1 klip mangler

@@ -1,0 +1,97 @@
+21:39:44 generate.py --wave 2 --threads 4 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261003-213944.log)
+21:39:48 1061 klip valgt, 1043 færdige, 18 at lave
+21:39:48   ✓ master hint.groupsOf.is = kopi af hint.change.is (samme tekst)
+21:39:48   ✓ master hint.halves.is = kopi af hint.change.is (samme tekst)
+21:39:48   ✓ master hint.place.is = kopi af hint.change.is (samme tekst)
+21:39:48 sammensætning runde 1: 0 af 15 bestået
+21:44:59   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+21:45:02   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+21:45:05   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+21:45:07   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er seks kanter') → FEJL
+21:45:09   sammensat frag.det_er + noun.shape.hexagon.pl.mid: 'det er 6 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 6 kanter') → FEJL
+21:45:09   ✓ master noun.shape.hexagon.pl.mid t0 (IKKE bestået: sammensætning)
+21:45:11   sammensat frag.det_er + noun.shape.octagon.pl.end: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:14   sammensat frag.det_er + noun.shape.octagon.pl.end: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:16   sammensat frag.det_er + noun.shape.octagon.pl.end: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:18   sammensat frag.det_er + noun.shape.octagon.pl.end: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:21   sammensat frag.det_er + noun.shape.octagon.pl.end: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:21   ✓ master noun.shape.octagon.pl.end t0 (IKKE bestået: sammensætning)
+21:45:23   sammensat frag.det_er + noun.shape.octagon.pl.mid: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:26   sammensat frag.det_er + noun.shape.octagon.pl.mid: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:28   sammensat frag.det_er + noun.shape.octagon.pl.mid: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:30   sammensat frag.det_er + noun.shape.octagon.pl.mid: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:32   sammensat frag.det_er + noun.shape.octagon.pl.mid: 'det er 8 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 8 kanter') → FEJL
+21:45:32   ✓ master noun.shape.octagon.pl.mid t0 (IKKE bestået: sammensætning)
+21:45:34   sammensat frag.det_er + noun.shape.pentagon.pl.mid: 'det er 5 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 5 kanter') → FEJL
+21:45:37   sammensat frag.det_er + noun.shape.pentagon.pl.mid: 'det er 5 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 5 kanter') → FEJL
+21:45:39   sammensat frag.det_er + noun.shape.pentagon.pl.mid: 'det er 5kanter' CER 0.000 (wav2vec2, whisper: 'Det er fem kanter') → FEJL
+21:45:41   sammensat frag.det_er + noun.shape.pentagon.pl.mid: 'det er 5 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 5 kanter') → FEJL
+21:45:43   sammensat frag.det_er + noun.shape.pentagon.pl.mid: 'det er 5 kanter' CER 0.000 (wav2vec2, whisper: 'Det er 5 kanter') → FEJL
+21:45:43   ✓ master noun.shape.pentagon.pl.mid t0 (IKKE bestået: sammensætning)
+21:45:46   sammensat frag.det_er + noun.shape.rhombus.def.end: 'det er hrompen' CER 0.182 (wav2vec2, whisper: 'Det er Hånden') → FEJL
+21:45:48   sammensat frag.det_er + noun.shape.rhombus.def.end: 'det er rompen' CER 0.091 (wav2vec2, whisper: 'Det er rompen') → FEJL
+21:45:50   sammensat frag.det_er + noun.shape.rhombus.def.end: 'det er homben' CER 0.091 (wav2vec2, whisper: 'Det er Homben') → FEJL
+21:45:53   sammensat frag.det_er + noun.shape.rhombus.def.end: 'det er hombel' CER 0.182 (wav2vec2, whisper: 'Det er Hånden') → FEJL
+21:45:55   sammensat frag.det_er + noun.shape.rhombus.def.end: 'det er hompen' CER 0.182 (wav2vec2, whisper: 'Det er Hånden') → FEJL
+21:45:55   ✓ master noun.shape.rhombus.def.end t1 (IKKE bestået: sammensætning)
+21:45:57   sammensat frag.det_er + noun.shape.rhombus.def.mid: 'det er rompen' CER 0.091 (wav2vec2, whisper: 'Det er Håndpen') → FEJL
+21:45:59   sammensat frag.det_er + noun.shape.rhombus.def.mid: 'det er homben' CER 0.091 (wav2vec2, whisper: 'Det er Homben') → FEJL
+21:46:01   sammensat frag.det_er + noun.shape.rhombus.def.mid: 'det er rompen' CER 0.091 (wav2vec2, whisper: 'Det er rompen') → FEJL
+21:46:03   sammensat frag.det_er + noun.shape.rhombus.def.mid: 'det er homben' CER 0.091 (wav2vec2, whisper: 'Det er Hommen') → FEJL
+21:46:05   sammensat frag.det_er + noun.shape.rhombus.def.mid: 'det er hrompen' CER 0.182 (wav2vec2, whisper: 'Det er Hommen') → FEJL
+21:46:05   ✓ master noun.shape.rhombus.def.mid t0 (IKKE bestået: sammensætning)
+21:46:08   sammensat frag.det_er + noun.shape.rhombus.indef.end: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+21:46:10   sammensat frag.det_er + noun.shape.rhombus.indef.end: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+21:46:12   sammensat frag.det_er + noun.shape.rhombus.indef.end: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+21:46:14   sammensat frag.det_er + noun.shape.rhombus.indef.end: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+21:46:16   sammensat frag.det_er + noun.shape.rhombus.indef.end: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+21:46:16   ✓ master noun.shape.rhombus.indef.end t0 (IKKE bestået: sammensætning)
+21:46:18   sammensat frag.det_er + noun.shape.rhombus.indef.mid: 'det er en rumbe' CER 0.083 (wav2vec2, whisper: 'Det er en rumpe') → FEJL
+21:46:20   sammensat frag.det_er + noun.shape.rhombus.indef.mid: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+21:46:22   sammensat frag.det_er + noun.shape.rhombus.indef.mid: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+21:46:25   sammensat frag.det_er + noun.shape.rhombus.indef.mid: 'det er en rumpe' CER 0.167 (wav2vec2, whisper: 'Det er en rumpe') → FEJL
+21:46:27   sammensat frag.det_er + noun.shape.rhombus.indef.mid: 'det er en rompe' CER 0.083 (wav2vec2, whisper: 'Det er en rompe') → FEJL
+21:46:27   ✓ master noun.shape.rhombus.indef.mid t0 (IKKE bestået: sammensætning)
+21:46:30   sammensat frag.det_er + noun.shape.semicircle.indef.mid: 'det er en halv sirdyr' CER 0.235 (wav2vec2, whisper: 'Det er en halvcirkus') → FEJL
+21:46:32   sammensat frag.det_er + noun.shape.semicircle.indef.mid: 'det er en halsirdy' CER 0.294 (wav2vec2, whisper: 'Det er en halv sjette') → FEJL
+21:46:34   sammensat frag.det_er + noun.shape.semicircle.indef.mid: 'det er en halvcirdø' CER 0.176 (wav2vec2, whisper: 'Det er en halvcirkus') → FEJL
+21:46:37   sammensat frag.det_er + noun.shape.semicircle.indef.mid: 'det er en halsirdy' CER 0.294 (wav2vec2, whisper: 'Det er en halv sjette') → FEJL
+21:46:39   sammensat frag.det_er + noun.shape.semicircle.indef.mid: 'det er en halv sirdy' CER 0.235 (wav2vec2, whisper: 'Det er en halvcirkly') → FEJL
+21:46:39   ✓ master noun.shape.semicircle.indef.mid t2 (IKKE bestået: sammensætning)
+21:46:41   sammensat frag.det_er + noun.solid.cone.def.mid: 'det er kyglingn' CER 0.364 (wav2vec2, whisper: 'Det er kajen') → FEJL
+21:46:43   sammensat frag.det_er + noun.solid.cone.def.mid: 'det er kajin' CER 0.364 (wav2vec2, whisper: 'Det er Kai Yuen') → FEJL
+21:46:46   sammensat frag.det_er + noun.solid.cone.def.mid: 'det er karen' CER 0.273 (wav2vec2, whisper: 'Det er kajen') → FEJL
+21:46:48   sammensat frag.det_er + noun.solid.cone.def.mid: 'det er kregled' CER 0.182 (wav2vec2, whisper: 'Det er kajen') → FEJL
+21:46:50   sammensat frag.det_er + noun.solid.cone.def.mid: 'det er karin' CER 0.364 (wav2vec2, whisper: 'Det er Kajen') → FEJL
+21:46:50   ✓ master noun.solid.cone.def.mid t3 (IKKE bestået: sammensætning)
+21:46:52   sammensat frag.det_er + noun.solid.sphere.def.end: 'det er kolen' CER 0.182 (wav2vec2, whisper: 'Det er kolden') → FEJL
+21:46:54   sammensat frag.det_er + noun.solid.sphere.def.end: 'det er coling' CER 0.455 (wav2vec2, whisper: 'Det er Coen') → FEJL
+21:46:56   sammensat frag.det_er + noun.solid.sphere.def.end: 'det er koen' CER 0.273 (wav2vec2, whisper: 'Det er Coen') → FEJL
+21:46:58   sammensat frag.det_er + noun.solid.sphere.def.end: 'det er koen' CER 0.273 (wav2vec2, whisper: 'Det er koden') → FEJL
+21:47:00   sammensat frag.det_er + noun.solid.sphere.def.end: 'det er kolen' CER 0.182 (wav2vec2, whisper: 'Det er kolden') → FEJL
+21:47:00   ✓ master noun.solid.sphere.def.end t0 (IKKE bestået: sammensætning)
+21:47:02   sammensat frag.det_er + noun.solid.sphere.def.mid: 'det er corin' CER 0.455 (wav2vec2, whisper: 'Det er Corrine') → FEJL
+21:47:05   sammensat frag.det_er + noun.solid.sphere.def.mid: 'det er kolen' CER 0.182 (wav2vec2, whisper: 'Det er koden') → FEJL
+21:47:07   sammensat frag.det_er + noun.solid.sphere.def.mid: 'det er coyn' CER 0.455 (wav2vec2, whisper: 'Det er Coen') → FEJL
+21:47:09   sammensat frag.det_er + noun.solid.sphere.def.mid: 'det er corin' CER 0.455 (wav2vec2, whisper: 'Det er koden') → FEJL
+21:47:11   sammensat frag.det_er + noun.solid.sphere.def.mid: 'det er colen' CER 0.273 (wav2vec2, whisper: 'Det er koden') → FEJL
+21:47:11   ✓ master noun.solid.sphere.def.mid t1 (IKKE bestået: sammensætning)
+21:47:13   sammensat frag.det_er + noun.solid.sphere.pl.end: 'det er koler' CER 0.182 (wav2vec2, whisper: 'Det er cola') → FEJL
+21:47:14   sammensat frag.det_er + noun.solid.sphere.pl.end: 'det er koler' CER 0.182 (wav2vec2, whisper: 'Det er cola') → FEJL
+21:47:16   sammensat frag.det_er + noun.solid.sphere.pl.end: 'det er koler' CER 0.182 (wav2vec2, whisper: 'Det er cola') → FEJL
+21:47:18   sammensat frag.det_er + noun.solid.sphere.pl.end: 'det er kola' CER 0.364 (wav2vec2, whisper: 'Det er cola') → FEJL
+21:47:20   sammensat frag.det_er + noun.solid.sphere.pl.end: 'det er koler' CER 0.182 (wav2vec2, whisper: 'Det er cola') → FEJL
+21:47:20   ✓ master noun.solid.sphere.pl.end t0 (IKKE bestået: sammensætning)
+21:47:23   sammensat frag.det_er + noun.unit.g.end: 'det er kram' CER 0.111 (wav2vec2, whisper: 'Det er kramp') → FEJL
+21:47:25   sammensat frag.det_er + noun.unit.g.end: 'det er kram' CER 0.111 (wav2vec2, whisper: 'Det er kramp') → FEJL
+21:47:27   sammensat frag.det_er + noun.unit.g.end: 'det er kram' CER 0.111 (wav2vec2, whisper: 'Det er kramp') → FEJL
+21:47:29   sammensat frag.det_er + noun.unit.g.end: 'det er kam' CER 0.222 (wav2vec2, whisper: 'Det er kram') → FEJL
+21:47:31   sammensat frag.det_er + noun.unit.g.end: 'det er kram' CER 0.111 (wav2vec2, whisper: 'Det er kram') → FEJL
+21:47:31   ✓ master noun.unit.g.end t0 (IKKE bestået: sammensætning)
+21:47:33   sammensat frag.det_er + noun.unit.g.mid: 'det er kram' CER 0.111 (wav2vec2, whisper: 'Det er kram') → FEJL
+21:47:35   sammensat frag.det_er + noun.unit.g.mid: 'det er kam' CER 0.222 (wav2vec2, whisper: 'Det er kamp') → FEJL
+21:47:37   sammensat frag.det_er + noun.unit.g.mid: 'det er kram' CER 0.111 (wav2vec2, whisper: 'Det er kramp') → FEJL
+21:47:40   sammensat frag.det_er + noun.unit.g.mid: 'det er kram' CER 0.111 (wav2vec2, whisper: 'Det er kram') → FEJL
+21:47:42   sammensat frag.det_er + noun.unit.g.mid: 'det er kapp' CER 0.444 (wav2vec2, whisper: 'Det er krab') → FEJL
+21:47:42   ✓ master noun.unit.g.mid t0 (IKKE bestået: sammensætning)
+21:47:42 færdig: 18 nye mastere (15 ikke bestået, 3 kopier), 0 modelkald, 0.0 min generering (CPU 0.00 t), 0 klip mangler

@@ -1,10 +1,38 @@
 {
  "version": 1,
- "generated": "2026-10-03T07:44:32.738Z",
+ "generated": "2026-10-03T23:09:44.127Z",
  "clips": {
-  "masters": 1225,
-  "pass": 1167,
+  "masters": 2281,
+  "pass": 2115,
   "notPassed": [
+   {
+    "id": "frag.betal",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "frag.stil_uret_saa_klokken_er",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.addTo20.fillTen",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.addsub2.borrowTen",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.addsub2.tensOnly",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.addsub2.tensThen",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.change.is",
+    "reason": "sammensætning"
+   },
    {
     "id": "hint.count.framePoints",
     "reason": "asr"
@@ -18,7 +46,47 @@
     "reason": "asr"
    },
    {
+    "id": "hint.groupsOf.countGroups",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.groupsOf.is",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "hint.halves.is",
+    "reason": "sammensætning"
+   },
+   {
     "id": "hint.hear20.oneFirst",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.missingPart100.wholeWay",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.nl.andGo",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "hint.order100.tenLessMeans",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.place.is",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "hint.place.worthEnd",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "hint.pv.plateRodCube",
+    "reason": "asr"
+   },
+   {
+    "id": "hint.weightCompare.heavy.bottle",
     "reason": "asr"
    },
    {
@@ -102,7 +170,47 @@
     "reason": "sammensætning"
    },
    {
+    "id": "name.baby.fox",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.baby.owl",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.baby.squirrel",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.breed.foal",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.color.fox.c2",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.color.hamster.c5",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.color.horse.c1",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.color.horse.c5",
+    "reason": "sammensætning"
+   },
+   {
     "id": "name.color.rabbit.c5",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.color.unicorn.c4",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.item.fest-head",
     "reason": "sammensætning"
    },
    {
@@ -118,6 +226,298 @@
     "reason": "sammensætning"
    },
    {
+    "id": "name.item.talmagiker-body",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.region.w1-tal100",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.region.w1-tieren",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.region.w2-gange",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.region.w2-hundreder",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.species.fox",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.species.owl",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "name.species.unicorn",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.addsub2.tiere",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.100.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.100.indef.end",
+    "reason": "asr"
+   },
+   {
+    "id": "noun.coin.100.indef.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.100.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.100.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.1000.indef.end",
+    "reason": "asr"
+   },
+   {
+    "id": "noun.coin.10000.def.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.10000.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.10000.indef.end",
+    "reason": "asr"
+   },
+   {
+    "id": "noun.coin.10000.indef.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.10000.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.10000.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.2000.def.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.2000.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.2000.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.20000.def.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.20000.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.20000.indef.end",
+    "reason": "asr"
+   },
+   {
+    "id": "noun.coin.20000.indef.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.20000.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.20000.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50.def.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50.indef.end",
+    "reason": "asr"
+   },
+   {
+    "id": "noun.coin.50.indef.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.500.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.500.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.500.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.5000.def.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.5000.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.5000.indef.end",
+    "reason": "asr"
+   },
+   {
+    "id": "noun.coin.5000.indef.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.5000.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.5000.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50000.def.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50000.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50000.indef.end",
+    "reason": "asr"
+   },
+   {
+    "id": "noun.coin.50000.indef.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50000.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.coin.50000.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.digit.1.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.digit.1.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.mt.comb",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.place.h.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.place.h.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.place.h.sg.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.place.t.pl.end",
+    "reason": "varighed"
+   },
+   {
+    "id": "noun.place.t.pl.mid",
+    "reason": "varighed"
+   },
+   {
+    "id": "noun.shape.hexagon.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.hexagon.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.octagon.pl.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.octagon.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.pentagon.pl.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.rhombus.def.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.rhombus.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.rhombus.indef.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.rhombus.indef.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.shape.semicircle.indef.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.solid.cone.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.solid.sphere.def.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.solid.sphere.def.mid",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.solid.sphere.pl.end",
+    "reason": "sammensætning"
+   },
+   {
     "id": "noun.thing.carrot.sg",
     "reason": "sammensætning"
    },
@@ -126,7 +526,19 @@
     "reason": "sammensætning"
    },
    {
+    "id": "noun.unit.g.end",
+    "reason": "sammensætning"
+   },
+   {
+    "id": "noun.unit.g.mid",
+    "reason": "sammensætning"
+   },
+   {
     "id": "op.er_lig_med",
+    "reason": "asr"
+   },
+   {
+    "id": "q.mp:2+?=4",
     "reason": "asr"
    },
    {
@@ -158,6 +570,10 @@
     "reason": "asr"
    },
    {
+    "id": "s.cando.composeShapes",
+    "reason": "asr"
+   },
+   {
     "id": "s.gate.ask",
     "reason": "asr"
    },
@@ -170,6 +586,14 @@
     "reason": "asr"
    },
    {
+    "id": "s.order.countBackTens",
+    "reason": "asr"
+   },
+   {
+    "id": "s.order.countOnTens",
+    "reason": "asr"
+   },
+   {
     "id": "s.order20.countBack",
     "reason": "sammensætning"
    },
@@ -179,6 +603,14 @@
    },
    {
     "id": "s.patterns.continue",
+    "reason": "asr"
+   },
+   {
+    "id": "s.place.buildOnlyTens",
+    "reason": "asr"
+   },
+   {
+    "id": "s.pv.worthTens",
     "reason": "asr"
    },
    {
@@ -238,12 +670,12 @@
     "reason": "sammensætning"
    }
   ],
-  "cerMean": 0.0085,
-  "lufsMin": -18.57,
+  "cerMean": 0.0109,
+  "lufsMin": -18.59,
   "lufsMax": -18,
-  "seconds": 1331.7,
-  "takes": 1736,
-  "generationHours": 7.03
+  "seconds": 2638.3,
+  "takes": 3501,
+  "generationHours": 14.81
  },
  "numbers": {
   "range": [
@@ -251,10 +683,10 @@
    999
   ],
   "total": 899,
-  "rendered": 298,
-  "correct": 297,
-  "correctWav2vec2": 135,
-  "rate": 99.7,
+  "rendered": 899,
+  "correct": 895,
+  "correctWav2vec2": 480,
+  "rate": 99.6,
   "failures": [
    {
     "key": "n380",
@@ -268,6 +700,50 @@
     ],
     "blamed": [
      "hog.300"
+    ]
+   },
+   {
+    "key": "n476",
+    "n": 476,
+    "expected": "Fire hundrede og seksoghalvfjerds.",
+    "asr": "400et ikke så70",
+    "asrWhisper": "470 det ikke så 70",
+    "clips": [
+     "hog.400",
+     "n.end.76"
+    ],
+    "blamed": [
+     "hog.400",
+     "n.end.76"
+    ]
+   },
+   {
+    "key": "n516",
+    "n": 516,
+    "expected": "Fem hundrede og seksten.",
+    "asr": "500 d6in",
+    "asrWhisper": "500 af dejsten",
+    "clips": [
+     "hog.500",
+     "n.end.16"
+    ],
+    "blamed": [
+     "hog.500",
+     "n.end.16"
+    ]
+   },
+   {
+    "key": "n983",
+    "n": 983,
+    "expected": "Ni hundrede og treogfirs.",
+    "asr": "90 83 t",
+    "asrWhisper": "900 i 83",
+    "clips": [
+     "hog.900",
+     "n.end.83"
+    ],
+    "blamed": [
+     "hog.900"
     ]
    }
   ]
@@ -289,10 +765,10 @@
     "rate": 100
    },
    "addSub1000Round": {
-    "statements": 26,
-    "sampled": 26,
-    "verbatim": 26,
-    "verbatimW2v": 22,
+    "statements": 120,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 23,
     "rate": 100
    },
    "addSub20Simple": {
@@ -310,25 +786,25 @@
     "rate": 100
    },
    "addTo20": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 36,
+    "sampled": 30,
+    "verbatim": 28,
+    "verbatimW2v": 24,
+    "rate": 93.3
    },
    "doubles": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
+    "statements": 10,
+    "sampled": 10,
+    "verbatim": 9,
     "verbatimW2v": 0,
-    "rate": 0
+    "rate": 90
    },
    "halves": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 10,
+    "sampled": 10,
+    "verbatim": 9,
+    "verbatimW2v": 7,
+    "rate": 90
    },
    "sub100Borrow": {
     "statements": 80,
@@ -352,11 +828,11 @@
     "rate": 100
    },
    "subTo20": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 36,
+    "sampled": 30,
+    "verbatim": 29,
+    "verbatimW2v": 19,
+    "rate": 96.7
    },
    "tenFriends": {
     "statements": 11,
@@ -373,25 +849,25 @@
     "rate": 100
    },
    "equalSides": {
-    "statements": 79,
+    "statements": 159,
     "sampled": 30,
-    "verbatim": 16,
-    "verbatimW2v": 4,
-    "rate": 53.3
+    "verbatim": 14,
+    "verbatimW2v": 3,
+    "rate": 46.7
    },
    "inverseOps": {
-    "statements": 40,
+    "statements": 60,
     "sampled": 30,
     "verbatim": 30,
-    "verbatimW2v": 4,
+    "verbatimW2v": 0,
     "rate": 100
    },
    "missingPart10": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 36,
+    "sampled": 30,
+    "verbatim": 29,
+    "verbatimW2v": 4,
+    "rate": 96.7
    },
    "missingPart100": {
     "statements": 80,
@@ -408,46 +884,46 @@
     "rate": 50
    },
    "skipCount": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
+    "statements": 270,
+    "sampled": 30,
+    "verbatim": 17,
     "verbatimW2v": 0,
-    "rate": 0
+    "rate": 56.7
    },
    "clockHalf": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 24,
+    "sampled": 24,
+    "verbatim": 13,
+    "verbatimW2v": 3,
+    "rate": 54.2
    },
    "clockHour": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 24,
+    "sampled": 24,
+    "verbatim": 16,
+    "verbatimW2v": 14,
+    "rate": 66.7
    },
    "clockQuarter": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 48,
+    "sampled": 30,
+    "verbatim": 12,
+    "verbatimW2v": 11,
+    "rate": 40
    },
    "fractionShape": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 7,
+    "sampled": 7,
+    "verbatim": 5,
+    "verbatimW2v": 3,
+    "rate": 71.4
    },
    "halfShape": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
+    "statements": 2,
+    "sampled": 2,
+    "verbatim": 2,
     "verbatimW2v": 0,
-    "rate": 0
+    "rate": 100
    },
    "compareLength": {
     "statements": 4,
@@ -457,85 +933,85 @@
     "rate": 100
    },
    "measureUnits": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 2,
+    "sampled": 2,
+    "verbatim": 2,
+    "verbatimW2v": 1,
+    "rate": 100
    },
    "readChart": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 13,
+    "sampled": 13,
+    "verbatim": 13,
+    "verbatimW2v": 12,
+    "rate": 100
    },
    "rulerRead": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 1,
+    "sampled": 1,
+    "verbatim": 1,
+    "verbatimW2v": 1,
+    "rate": 100
    },
    "unitChoice": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 18,
+    "sampled": 18,
+    "verbatim": 16,
+    "verbatimW2v": 10,
+    "rate": 88.9
    },
    "weightCompare": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 2,
+    "sampled": 2,
+    "verbatim": 2,
+    "verbatimW2v": 1,
+    "rate": 100
    },
    "change": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
+    "statements": 130,
+    "sampled": 30,
+    "verbatim": 12,
     "verbatimW2v": 0,
-    "rate": 0
+    "rate": 40
    },
    "coinNames": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 20,
+    "sampled": 20,
+    "verbatim": 11,
+    "verbatimW2v": 6,
+    "rate": 55
    },
    "countCoins": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 1,
+    "sampled": 1,
+    "verbatim": 1,
+    "verbatimW2v": 1,
+    "rate": 100
    },
    "payExact": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 110,
+    "sampled": 30,
+    "verbatim": 30,
+    "verbatimW2v": 14,
+    "rate": 100
    },
    "groupsOf": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 16,
+    "sampled": 16,
+    "verbatim": 16,
+    "verbatimW2v": 1,
+    "rate": 100
    },
    "mul2510": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 27,
+    "sampled": 27,
+    "verbatim": 27,
+    "verbatimW2v": 26,
+    "rate": 100
    },
    "shareEqually": {
-    "statements": 0,
-    "sampled": 0,
+    "statements": 20,
+    "sampled": 20,
     "verbatim": 0,
     "verbatimW2v": 0,
     "rate": 0
@@ -562,11 +1038,11 @@
     "rate": 100
    },
    "hear1000": {
-    "statements": 58,
+    "statements": 180,
     "sampled": 30,
-    "verbatim": 30,
-    "verbatimW2v": 5,
-    "rate": 100
+    "verbatim": 29,
+    "verbatimW2v": 7,
+    "rate": 96.7
    },
    "hear20": {
     "statements": 42,
@@ -576,32 +1052,32 @@
     "rate": 100
    },
    "numberLine100": {
-    "statements": 10,
-    "sampled": 10,
-    "verbatim": 10,
-    "verbatimW2v": 9,
-    "rate": 100
+    "statements": 76,
+    "sampled": 30,
+    "verbatim": 25,
+    "verbatimW2v": 24,
+    "rate": 83.3
    },
    "numberLine1000": {
-    "statements": 1,
-    "sampled": 1,
-    "verbatim": 1,
-    "verbatimW2v": 1,
-    "rate": 100
+    "statements": 57,
+    "sampled": 30,
+    "verbatim": 24,
+    "verbatimW2v": 16,
+    "rate": 80
    },
    "order100": {
-    "statements": 152,
+    "statements": 228,
     "sampled": 30,
-    "verbatim": 22,
-    "verbatimW2v": 19,
-    "rate": 73.3
+    "verbatim": 18,
+    "verbatimW2v": 14,
+    "rate": 60
    },
    "order1000": {
-    "statements": 36,
+    "statements": 341,
     "sampled": 30,
-    "verbatim": 23,
-    "verbatimW2v": 18,
-    "rate": 76.7
+    "verbatim": 18,
+    "verbatimW2v": 12,
+    "rate": 60
    },
    "order20": {
     "statements": 131,
@@ -611,81 +1087,187 @@
     "rate": 76.7
    },
    "placeValue1000": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 241,
+    "sampled": 30,
+    "verbatim": 17,
+    "verbatimW2v": 5,
+    "rate": 56.7
    },
    "tensOnes": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 201,
+    "sampled": 30,
+    "verbatim": 13,
+    "verbatimW2v": 8,
+    "rate": 43.3
    },
    "composeShapes": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 16,
+    "sampled": 16,
+    "verbatim": 7,
+    "verbatimW2v": 3,
+    "rate": 43.8
    },
    "shapes2D": {
-    "statements": 6,
-    "sampled": 6,
-    "verbatim": 6,
-    "verbatimW2v": 5,
+    "statements": 16,
+    "sampled": 16,
+    "verbatim": 16,
+    "verbatimW2v": 10,
     "rate": 100
    },
    "shapes3D": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 25,
+    "sampled": 25,
+    "verbatim": 24,
+    "verbatimW2v": 17,
+    "rate": 96
    },
    "sidesCorners": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 2,
+    "sampled": 2,
+    "verbatim": 2,
+    "verbatimW2v": 2,
+    "rate": 100
    },
    "sortShapes": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 5,
+    "sampled": 5,
+    "verbatim": 5,
+    "verbatimW2v": 3,
+    "rate": 100
    },
    "symmetry": {
-    "statements": 0,
-    "sampled": 0,
-    "verbatim": 0,
-    "verbatimW2v": 0,
-    "rate": 0
+    "statements": 5,
+    "sampled": 5,
+    "verbatim": 3,
+    "verbatimW2v": 2,
+    "rate": 60
    }
   },
-  "rendered": 629,
-  "verbatim": 589,
-  "verbatimWav2vec2": 374,
-  "rate": 93.6,
+  "rendered": 1212,
+  "verbatim": 1000,
+  "verbatimWav2vec2": 594,
+  "rate": 82.5,
   "failures": [
    {
-    "key": "equalSides|eqs:mix:16-_=5+2:9|choice",
+    "key": "addTo20|add:7+7|choice",
+    "skill": "addTo20",
+    "expected": "Hvad er syv plus syv?",
+    "asr": "hved er 7 plus 7",
+    "asrWhisper": "Hver er 7 plus 7",
+    "clips": [
+     "q.add:7+7"
+    ],
+    "blamed": [
+     "q.add:7+7"
+    ]
+   },
+   {
+    "key": "addTo20|add:7+4|choice",
+    "skill": "addTo20",
+    "expected": "Hvad er syv plus fire?",
+    "asr": "hved er 7 plus 4",
+    "asrWhisper": "Hver er 7 plus 4",
+    "clips": [
+     "q.add:7+4"
+    ],
+    "blamed": [
+     "q.add:7+4"
+    ]
+   },
+   {
+    "key": "doubles|dbl:6|choice",
+    "skill": "doubles",
+    "expected": "Hvad er det dobbelte af seks?",
+    "asr": "hvad er det dobbletdas s6",
+    "asrWhisper": "Hvad er det dobbelt af 6?",
+    "clips": [
+     "q.dbl:6"
+    ],
+    "blamed": [
+     "q.dbl:6"
+    ]
+   },
+   {
+    "key": "halves|hlf:8|choice",
+    "skill": "halves",
+    "expected": "Hvad er halvdelen af otte?",
+    "asr": "hvad er halvdelingen af 8e",
+    "asrWhisper": "Hvad er halvdelen af 8 g?",
+    "clips": [
+     "q.hlf:8"
+    ],
+    "blamed": [
+     "q.hlf:8"
+    ]
+   },
+   {
+    "key": "subTo20|sub:13-4|choice",
+    "skill": "subTo20",
+    "expected": "Hvad er tretten minus fire?",
+    "asr": "hvan e 13 minus 4",
+    "asrWhisper": "Været 13 minus 4",
+    "clips": [
+     "q.sub:13-4"
+    ],
+    "blamed": [
+     "q.sub:13-4"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:sub:16-6=18-_:10|trueFalse",
     "skill": "equalSides",
-    "expected": "Seksten minus hvad er lig med fem plus to?",
-    "asr": "s6 minus hvad at ligemed 5 plus 2",
-    "asrWhisper": "16 minus hvad er lige med 5 plus 2",
+    "expected": "Seksten minus seks er lig med atten minus ti. Er der lige meget på begge sider?",
+    "asr": "16 minus 6 er lige med 18 minus 10 er der lige meget på begge sider",
+    "asrWhisper": "16 minus 6 er lige med 18 minus 10 er der lige meget på begge sider",
     "clips": [
      "n.mid.16",
      "op.minus",
-     "frag.hvad",
+     "n.mid.6",
      "op.er_lig_med",
-     "n.mid.5",
+     "n.mid.18",
+     "op.minus",
+     "n.end.10",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:add:8+3=_+5:6|trueFalse",
+    "skill": "equalSides",
+    "expected": "Otte plus tre er lig med seks plus fem. Er der lige meget på begge sider?",
+    "asr": "arte pus 3 er ligemed 6plus5 er der lige meget på begge sider",
+    "asrWhisper": "8 plus 3 er lige med 6 plus 5 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.8",
      "op.plus",
-     "n.end.2"
+     "n.mid.3",
+     "op.er_lig_med",
+     "n.mid.6",
+     "op.plus",
+     "n.end.5",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:tf:9+1=10+_:2|trueFalse",
+    "skill": "equalSides",
+    "expected": "Ni plus en er lig med ti plus to. Er der lige meget på begge sider?",
+    "asr": "1 er lige med 10 plus 2 er der lige meget på begge sider",
+    "asrWhisper": "9 plus 1 er lige med 10 plus 2 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.9",
+     "op.plus",
+     "n.mid.1",
+     "op.er_lig_med",
+     "n.mid.10",
+     "op.plus",
+     "n.end.2",
+     "s.equalSides.same"
     ],
     "blamed": [
      "op.er_lig_med"
@@ -711,58 +1293,60 @@
     ]
    },
    {
-    "key": "equalSides|eqs:sub:17-_=15-4:5|choice",
+    "key": "equalSides|eqs:mix:19-_=9+9:18|trueFalse",
     "skill": "equalSides",
-    "expected": "Sytten minus hvad er lig med femten minus fire?",
-    "asr": "17tn minus hvad af lige med 15 minus 4",
-    "asrWhisper": "17 minus hvad alligevel 15 minus 4",
-    "clips": [
-     "n.mid.17",
-     "op.minus",
-     "frag.hvad",
-     "op.er_lig_med",
-     "n.mid.15",
-     "op.minus",
-     "n.end.4"
-    ],
-    "blamed": [
-     "n.mid.17",
-     "op.er_lig_med"
-    ]
-   },
-   {
-    "key": "equalSides|eqs:tf:7+3=10+_:0|choice",
-    "skill": "equalSides",
-    "expected": "Syv plus tre er lig med ti plus hvad?",
-    "asr": "7 plus 3 er ligmet 10 plus hvad",
-    "asrWhisper": "7 plus 3 er lige med 10 plus hvad?",
-    "clips": [
-     "n.mid.7",
-     "op.plus",
-     "n.mid.3",
-     "op.er_lig_med",
-     "n.mid.10",
-     "op.plus",
-     "frag.hvad"
-    ],
-    "blamed": [
-     "op.er_lig_med"
-    ]
-   },
-   {
-    "key": "equalSides|eqs:mix:19-_=5+7:6|choice",
-    "skill": "equalSides",
-    "expected": "Nitten minus hvad er lig med fem plus syv?",
-    "asr": "nitten minus vad af ligmet 5 plus 7",
-    "asrWhisper": "19 minus hvad er lige med 5 plus 7",
+    "expected": "Nitten minus atten er lig med ni plus ni. Er der lige meget på begge sider?",
+    "asr": "nitn minus18 er ligemedp9 er der lige meget på begge sider",
+    "asrWhisper": "19 minus 18 er lige med 9 plus 9 er der lige meget på begge sider",
     "clips": [
      "n.mid.19",
      "op.minus",
-     "frag.hvad",
+     "n.mid.18",
+     "op.er_lig_med",
+     "n.mid.9",
+     "op.plus",
+     "n.end.9",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:sub:18-4=20-_:6|trueFalse",
+    "skill": "equalSides",
+    "expected": "Atten minus fire er lig med tyve minus seks. Er der lige meget på begge sider?",
+    "asr": "18 mnus2 er ligemed 20 minus 6 er der lige meget på begge sider",
+    "asrWhisper": "18 minus 4 er lige med 20 minus 6 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.18",
+     "op.minus",
+     "n.mid.4",
+     "op.er_lig_med",
+     "n.mid.20",
+     "op.minus",
+     "n.end.6",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:mix:19-_=5+7:6|trueFalse",
+    "skill": "equalSides",
+    "expected": "Nitten minus seks er lig med fem plus syv. Er der lige meget på begge sider?",
+    "asr": "n9ten minus6 er ligmedps7 er der lige meget på begge sider",
+    "asrWhisper": "19 minus 6 er lige med 5 plus 7 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.19",
+     "op.minus",
+     "n.mid.6",
      "op.er_lig_med",
      "n.mid.5",
      "op.plus",
-     "n.end.7"
+     "n.end.7",
+     "s.equalSides.same"
     ],
     "blamed": [
      "op.er_lig_med"
@@ -788,6 +1372,124 @@
     ]
    },
    {
+    "key": "equalSides|eqs:sub:14-4=_-1:11|trueFalse",
+    "skill": "equalSides",
+    "expected": "Fjorten minus fire er lig med elleve minus en. Er der lige meget på begge sider?",
+    "asr": "14 mus er limed11 mins1 er der lige meget på begge sider",
+    "asrWhisper": "14 minus 4 er lige med 11 minus 1 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.14",
+     "op.minus",
+     "n.mid.4",
+     "op.er_lig_med",
+     "n.mid.11",
+     "op.minus",
+     "n.end.1",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:sub:17-_=15-4:5|trueFalse",
+    "skill": "equalSides",
+    "expected": "Sytten minus fem er lig med femten minus fire. Er der lige meget på begge sider?",
+    "asr": "17 us er lige med 15 minus 4i er der lige meget på begge sider",
+    "asrWhisper": "17 minus 5 er lige med 15 minus 4 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.17",
+     "op.minus",
+     "n.mid.5",
+     "op.er_lig_med",
+     "n.mid.15",
+     "op.minus",
+     "n.end.4",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:mix:_+4=17-5:8|trueFalse",
+    "skill": "equalSides",
+    "expected": "Otte plus fire er lig med sytten minus fem. Er der lige meget på begge sider?",
+    "asr": "ate plus 4 er ligemed 17 minus5 er der lige meget på begge sider",
+    "asrWhisper": "8 plus 4 er lige med 17 minus 5 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.8",
+     "op.plus",
+     "n.mid.4",
+     "op.er_lig_med",
+     "n.mid.17",
+     "op.minus",
+     "n.end.5",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:mix:17-8=_+5:3|trueFalse",
+    "skill": "equalSides",
+    "expected": "Sytten minus otte er lig med tre plus fem. Er der lige meget på begge sider?",
+    "asr": "s7tten minus orte er lige med 3pus5 er der lige meget på begge sider",
+    "asrWhisper": "17 minus 8 er lige med 3 plus 5 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.17",
+     "op.minus",
+     "n.mid.8",
+     "op.er_lig_med",
+     "n.mid.3",
+     "op.plus",
+     "n.end.5",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:add:_+3=6+6:9|trueFalse",
+    "skill": "equalSides",
+    "expected": "Ni plus tre er lig med seks plus seks. Er der lige meget på begge sider?",
+    "asr": "9 plus 3 er ligemed 6pus6 er der lige meget på begge sider",
+    "asrWhisper": "9 plus 3 er lige med 6 plus 6 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.9",
+     "op.plus",
+     "n.mid.3",
+     "op.er_lig_med",
+     "n.mid.6",
+     "op.plus",
+     "n.end.6",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "equalSides|eqs:tf:_=8+9:17|trueFalse",
+    "skill": "equalSides",
+    "expected": "Sytten er lig med otte plus ni. Er der lige meget på begge sider?",
+    "asr": "17en er lig med wae plus 9 er der lige meget på begge sider",
+    "asrWhisper": "17 er lige med 8 plus 9 er der lige meget på begge sider",
+    "clips": [
+     "n.mid.17",
+     "op.er_lig_med",
+     "n.mid.8",
+     "op.plus",
+     "n.end.9",
+     "s.equalSides.same"
+    ],
+    "blamed": [
+     "op.er_lig_med"
+    ]
+   },
+   {
     "key": "equalSides|eqs:add:_+7=5+3:8|choice",
     "skill": "equalSides",
     "expected": "Hvad plus syv er lig med fem plus tre?",
@@ -807,134 +1509,35 @@
     ]
    },
    {
-    "key": "equalSides|eqs:sub:13-_=15-4:11|choice",
+    "key": "equalSides|eqs:add:4+_=5+9:14|choice",
     "skill": "equalSides",
-    "expected": "Tretten minus hvad er lig med femten minus fire?",
-    "asr": "tr3ten minus hvad at ligemed 15 minus 4",
-    "asrWhisper": "13 minus hvad? Alig med 15 minus 4",
+    "expected": "Fire plus hvad er lig med fem plus ni?",
+    "asr": "fir plus hvad af ligmet 5 plus 9",
+    "asrWhisper": "4 plus hvad er lige med 5 plus 9",
     "clips": [
-     "n.mid.13",
-     "op.minus",
-     "frag.hvad",
-     "op.er_lig_med",
-     "n.mid.15",
-     "op.minus",
-     "n.end.4"
-    ],
-    "blamed": [
-     "op.er_lig_med"
-    ]
-   },
-   {
-    "key": "equalSides|eqs:tf:_=2+8:11|choice",
-    "skill": "equalSides",
-    "expected": "Hvad er lig med to plus otte?",
-    "asr": "hvad er ligemed 2 plus 8",
-    "asrWhisper": "Hvad? Alligevel 2 plus 8",
-    "clips": [
-     "frag.hvad",
-     "op.er_lig_med",
-     "n.mid.2",
-     "op.plus",
-     "n.end.8"
-    ],
-    "blamed": [
-     "op.er_lig_med"
-    ]
-   },
-   {
-    "key": "equalSides|eqs:add:3+_=2+5:4|choice",
-    "skill": "equalSides",
-    "expected": "Tre plus hvad er lig med to plus fem?",
-    "asr": "3 plus hvad af limet 2 plus 5",
-    "asrWhisper": "3 plus hvad er lige med 2 plus 5",
-    "clips": [
-     "n.mid.3",
-     "op.plus",
-     "frag.hvad",
-     "op.er_lig_med",
-     "n.mid.2",
-     "op.plus",
-     "n.end.5"
-    ],
-    "blamed": [
-     "op.er_lig_med"
-    ]
-   },
-   {
-    "key": "equalSides|eqs:tf:8+2=10+_:1|choice",
-    "skill": "equalSides",
-    "expected": "Otte plus to er lig med ti plus hvad?",
-    "asr": "warte plus 2 er ligemed 10 plus hvad",
-    "asrWhisper": "8 plus 2 er lige med 10 plus hvad?",
-    "clips": [
-     "n.mid.8",
-     "op.plus",
-     "n.mid.2",
-     "op.er_lig_med",
-     "n.mid.10",
-     "op.plus",
-     "frag.hvad"
-    ],
-    "blamed": [
-     "op.er_lig_med"
-    ]
-   },
-   {
-    "key": "equalSides|eqs:tf:9+7=10+_:6|choice",
-    "skill": "equalSides",
-    "expected": "Ni plus syv er lig med ti plus hvad?",
-    "asr": "9 plus 7 er lige med 10 plus vad",
-    "asrWhisper": "9 plus 7 er lige med 10 plus hvad?",
-    "clips": [
-     "n.mid.9",
-     "op.plus",
-     "n.mid.7",
-     "op.er_lig_med",
-     "n.mid.10",
-     "op.plus",
-     "frag.hvad"
-    ],
-    "blamed": [
-     "op.er_lig_med"
-    ]
-   },
-   {
-    "key": "equalSides|eqs:add:12+_=7+6:1|choice",
-    "skill": "equalSides",
-    "expected": "Tolv plus hvad er lig med syv plus seks?",
-    "asr": "t2 plus vad af limet 7 plus 6",
-    "asrWhisper": "12 plus hvad er lige med 7 plus 6",
-    "clips": [
-     "n.mid.12",
-     "op.plus",
-     "frag.hvad",
-     "op.er_lig_med",
-     "n.mid.7",
-     "op.plus",
-     "n.end.6"
-    ],
-    "blamed": [
-     "op.er_lig_med"
-    ]
-   },
-   {
-    "key": "equalSides|eqs:mix:17-_=4+5:6|choice",
-    "skill": "equalSides",
-    "expected": "Sytten minus hvad er lig med fire plus fem?",
-    "asr": "17tn minus vad af ligemed 4 plus 5",
-    "asrWhisper": "17 minus hvad er lige med 4 plus 5",
-    "clips": [
-     "n.mid.17",
-     "op.minus",
-     "frag.hvad",
-     "op.er_lig_med",
      "n.mid.4",
      "op.plus",
-     "n.end.5"
+     "frag.hvad",
+     "op.er_lig_med",
+     "n.mid.5",
+     "op.plus",
+     "n.end.9"
     ],
     "blamed": [
      "op.er_lig_med"
+    ]
+   },
+   {
+    "key": "missingPart10|mp:2+?=4|choice",
+    "skill": "missingPart10",
+    "expected": "To plus hvad giver fire?",
+    "asr": "2 plus vargiver 4",
+    "asrWhisper": "2 plus vargerer 4",
+    "clips": [
+     "q.mp:2+?=4"
+    ],
+    "blamed": [
+     "q.mp:2+?=4"
     ]
    },
    {
@@ -948,6 +1551,1656 @@
     ],
     "blamed": [
      "s.patterns.continue"
+    ]
+   },
+   {
+    "key": "skipCount|skc:back10:64:4|fillSlots",
+    "skill": "skipCount",
+    "expected": "Fireogtres, fireoghalvtreds, fireogfyrre, fireogtredive. Hvilke to tal kommer så?",
+    "asr": "44o  hvilke to talkommer så",
+    "asrWhisper": "64 og 54 og 44 og 34 hvilke to tal kommer så",
+    "clips": [
+     "n.mid.64",
+     "n.mid.54",
+     "n.mid.44",
+     "n.end.34",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "n.mid.64",
+     "n.mid.54",
+     "n.mid.44",
+     "n.end.34"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step100:130:3|fillSlots",
+    "skill": "skipCount",
+    "expected": "Et hundrede og tredive, to hundrede og tredive, tre hundrede og tredive. Hvilke to tal kommer så?",
+    "asr": "130 2330 hvilke to talkommer så",
+    "asrWhisper": "130 230 og 330 hvilke to tal kommer så",
+    "clips": [
+     "hog.100",
+     "n.mid.30",
+     "hog.200",
+     "n.mid.30",
+     "hog.300",
+     "n.end.30",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "n.mid.30",
+     "hog.300"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step2:12:4|fillSlots",
+    "skill": "skipCount",
+    "expected": "Tolv, fjorten, seksten, atten. Hvilke to tal kommer så?",
+    "asr": "12 1416 18 hvilke to talkommer så",
+    "asrWhisper": "12 14 16 18 hvilket to tal kommer så",
+    "clips": [
+     "n.mid.12",
+     "n.mid.14",
+     "n.mid.16",
+     "n.end.18",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "s.skipCount.nextTwo"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step10offset:6:3|fillSlots",
+    "skill": "skipCount",
+    "expected": "Seks, seksten, seksogtyve. Hvilke to tal kommer så?",
+    "asr": "sek 16 26 hvilke to talkommer så",
+    "asrWhisper": "6 16 26 hvilket to tal kommer så",
+    "clips": [
+     "n.mid.6",
+     "n.mid.16",
+     "n.end.26",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "n.mid.6"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step100:250:4|fillSlots",
+    "skill": "skipCount",
+    "expected": "To hundrede og halvtreds, tre hundrede og halvtreds, fire hundrede og halvtreds, fem hundrede og halvtreds. Hvilke to tal kommer så?",
+    "asr": "i 250355050 hvilke to tal kommer så",
+    "asrWhisper": "250 og 350 og 450 og 550 hvilke to tal kommer så",
+    "clips": [
+     "hog.200",
+     "n.mid.50",
+     "hog.300",
+     "n.mid.50",
+     "hog.400",
+     "n.mid.50",
+     "hog.500",
+     "n.end.50",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "n.mid.50",
+     "hog.300",
+     "hog.400",
+     "hog.500"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step10:50:3|fillSlots",
+    "skill": "skipCount",
+    "expected": "Halvtreds, tres, halvfjerds. Hvilke to tal kommer så?",
+    "asr": "5070 hvilke to talkommer så",
+    "asrWhisper": "50 60 70 hvilket to tal kommer så",
+    "clips": [
+     "n.mid.50",
+     "n.mid.60",
+     "n.end.70",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "s.skipCount.nextTwo"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step5:20:4|fillSlots",
+    "skill": "skipCount",
+    "expected": "Tyve, femogtyve, tredive, femogtredive. Hvilke to tal kommer så?",
+    "asr": "20 255 hvilke to talkommer så",
+    "asrWhisper": "20 25 30 35 hvilket to tal kommer så",
+    "clips": [
+     "n.mid.20",
+     "n.mid.25",
+     "n.mid.30",
+     "n.end.35",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "s.skipCount.nextTwo"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step100:400:4|choice",
+    "skill": "skipCount",
+    "expected": "Fire hundrede, fem hundrede, seks hundrede, syv hundrede. Hvilket tal kommer så?",
+    "asr": "5060000 hvilket tal kommer så",
+    "asrWhisper": "500 600 700 hvilket tal kommer så",
+    "clips": [
+     "h.mid.400",
+     "h.mid.500",
+     "h.mid.600",
+     "h.end.700",
+     "s.skipCount.next"
+    ],
+    "blamed": [
+     "h.mid.400"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step25:50:3|fillSlots",
+    "skill": "skipCount",
+    "expected": "Halvtreds, femoghalvfjerds, et hundrede. Hvilke to tal kommer så?",
+    "asr": "575 100 hvilke to tal kommer så",
+    "asrWhisper": "Halvtreds 75 100 hvilket to tal kommer så",
+    "clips": [
+     "n.mid.50",
+     "n.mid.75",
+     "n.end.100",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "s.skipCount.nextTwo"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step2:18:4|fillSlots",
+    "skill": "skipCount",
+    "expected": "Atten, tyve, toogtyve, fireogtyve. Hvilke to tal kommer så?",
+    "asr": "1atten 2022 24 hvilke to talkommer så",
+    "asrWhisper": "18 20 22 24 hvilket to tal kommer så",
+    "clips": [
+     "n.mid.18",
+     "n.mid.20",
+     "n.mid.22",
+     "n.end.24",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "s.skipCount.nextTwo"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step25:175:4|fillSlots",
+    "skill": "skipCount",
+    "expected": "Et hundrede og femoghalvfjerds, to hundrede, to hundrede og femogtyve, to hundrede og halvtreds. Hvilke to tal kommer så?",
+    "asr": "i 5 2520 hvilke to tal kommer så",
+    "asrWhisper": "175 200 225 250 hvilket to tal kommer så",
+    "clips": [
+     "hog.100",
+     "n.mid.75",
+     "h.mid.200",
+     "hog.200",
+     "n.mid.25",
+     "hog.200",
+     "n.end.50",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "s.skipCount.nextTwo"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step10:0:3|fillSlots",
+    "skill": "skipCount",
+    "expected": "Nul, ti, tyve. Hvilke to tal kommer så?",
+    "asr": "ra 0100 hvilke to tal kommer så",
+    "asrWhisper": "nul 10 20 hvilket to tal kommer så",
+    "clips": [
+     "n.mid.0",
+     "n.mid.10",
+     "n.end.20",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "s.skipCount.nextTwo"
+    ]
+   },
+   {
+    "key": "skipCount|skc:step100:190:3|fillSlots",
+    "skill": "skipCount",
+    "expected": "Et hundrede og halvfems, to hundrede og halvfems, tre hundrede og halvfems. Hvilke to tal kommer så?",
+    "asr": "190290390 hvilke to talkommer så",
+    "asrWhisper": "199 290 og 390 hvilket to tal kommer så",
+    "clips": [
+     "hog.100",
+     "n.mid.90",
+     "hog.200",
+     "n.mid.90",
+     "hog.300",
+     "n.end.90",
+     "s.skipCount.nextTwo"
+    ],
+    "blamed": [
+     "hog.100",
+     "n.mid.90",
+     "hog.300"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:150|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv tre.",
+    "asr": "fin uret der viser klokken halv 3",
+    "asrWhisper": "Find ordet der viser klokken halv 3",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.150"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:330|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv seks.",
+    "asr": "fin uret der viser klokken halv6",
+    "asrWhisper": "Find ordet der viser klokken halv 6",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.330"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:390|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv syv.",
+    "asr": "find urdet der viser klokken halv 7",
+    "asrWhisper": "Find ordet der viser klokken halv syv",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.390"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:510|clockSet",
+    "skill": "clockHalf",
+    "expected": "Stil uret, så klokken er halv ni.",
+    "asr": "stel uret så klokken er av 9",
+    "asrWhisper": "Stel uret så klokken er halv 9",
+    "clips": [
+     "frag.stil_uret_saa_klokken_er",
+     "t.end.510"
+    ],
+    "blamed": [
+     "frag.stil_uret_saa_klokken_er"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:210|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv fire.",
+    "asr": "find uret der viser klokken hal 4",
+    "asrWhisper": "Find ordet der viser klokken halv 4",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.210"
+    ],
+    "blamed": [
+     "t.end.210"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:510|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv ni.",
+    "asr": "find urdet der viser klokken halv 9",
+    "asrWhisper": "Find ordet der viser klokken halv 9",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.510"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:270|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv fem.",
+    "asr": "fin uret der viser klokken 90",
+    "asrWhisper": "Find ordet der viser klokken halv 5",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.270"
+    ],
+    "blamed": [
+     "s.clock.findClock",
+     "t.end.270"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:450|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv otte.",
+    "asr": "find uret der viser klokken 2 8",
+    "asrWhisper": "Find ordet der viser klokken halv otte",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.450"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:630|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv elleve.",
+    "asr": "find urdet der viser klokken h2l 11",
+    "asrWhisper": "Find ordet der viser klokken halv 11",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.630"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:690|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv tolv.",
+    "asr": "find uret der viser klokken halv 1o",
+    "asrWhisper": "Find ordet der viser klokken halv 12",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.690"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHalf|halv:570|choice",
+    "skill": "clockHalf",
+    "expected": "Find uret, der viser klokken halv ti.",
+    "asr": "fin uret der viser klokken hal 10",
+    "asrWhisper": "Find ordet der viser klokken halv 10",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.570"
+    ],
+    "blamed": [
+     "t.end.570"
+    ]
+   },
+   {
+    "key": "clockHour|hel:420|choice",
+    "skill": "clockHour",
+    "expected": "Find uret, der viser klokken syv.",
+    "asr": "find urdet der viser klokken 7",
+    "asrWhisper": "Find ordet der viser klokken 7",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.420"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHour|hel:480|choice",
+    "skill": "clockHour",
+    "expected": "Find uret, der viser klokken otte.",
+    "asr": "find urdet der viser klokken 8",
+    "asrWhisper": "Find ordet der viser klokken 8",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.480"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHour|hel:60|choice",
+    "skill": "clockHour",
+    "expected": "Find uret, der viser klokken et.",
+    "asr": "find urdet der viser klokken 1",
+    "asrWhisper": "Find ordet der viser klokken 1",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.60"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHour|hel:660|choice",
+    "skill": "clockHour",
+    "expected": "Find uret, der viser klokken elleve.",
+    "asr": "find urdet der viser klokken 11",
+    "asrWhisper": "Find ordet der viser klokken 11",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.660"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHour|hel:180|choice",
+    "skill": "clockHour",
+    "expected": "Find uret, der viser klokken tre.",
+    "asr": "fin urdet der viser klokken 3",
+    "asrWhisper": "Find ordet der viser klokken 3",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.180"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHour|hel:360|choice",
+    "skill": "clockHour",
+    "expected": "Find uret, der viser klokken seks.",
+    "asr": "fin urdet der viser klokken 6",
+    "asrWhisper": "Find ordet der viser klokken 6",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.360"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHour|hel:240|choice",
+    "skill": "clockHour",
+    "expected": "Find uret, der viser klokken fire.",
+    "asr": "find urdet der viser klokken 4",
+    "asrWhisper": "Find ordet der viser klokken 4",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.240"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockHour|hel:540|choice",
+    "skill": "clockHour",
+    "expected": "Find uret, der viser klokken ni.",
+    "asr": "find urdet der viser klokken 9",
+    "asrWhisper": "Find ordet der viser klokken 9",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.540"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:285|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart i fem.",
+    "asr": "fin uret der viser klokken kvart i 5",
+    "asrWhisper": "Find ordet der viser klokken kvart i 5",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.285"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:375|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart over seks.",
+    "asr": "fin uret der viser klokken kvart over 6",
+    "asrWhisper": "Find ordet der viser klokken kvart over seks",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.375"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:675|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart over elleve.",
+    "asr": "fin uret der viser klokken kvart over 11",
+    "asrWhisper": "Find ordet der viser klokken kvart over 11",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.675"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:405|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart i syv.",
+    "asr": "find urdet der viser klokken kvarti 7",
+    "asrWhisper": "Find ordet der viser klokken kvart i syv",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.405"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:45|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart i et.",
+    "asr": "fin uret der viser klokken kvart i 1",
+    "asrWhisper": "Find ordet der viser klokken kvart i 1",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.45"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:465|clockSet",
+    "skill": "clockQuarter",
+    "expected": "Stil uret, så klokken er kvart i otte.",
+    "asr": "stel uret så klokken er kvart i 8",
+    "asrWhisper": "Stel uret så klokken er klart i 8",
+    "clips": [
+     "frag.stil_uret_saa_klokken_er",
+     "t.end.465"
+    ],
+    "blamed": [
+     "frag.stil_uret_saa_klokken_er"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:525|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart i ni.",
+    "asr": "fin uret der viser klokken kvart i 9",
+    "asrWhisper": "Find ordet der viser klokken kvart i ni",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.525"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:495|clockSet",
+    "skill": "clockQuarter",
+    "expected": "Stil uret, så klokken er kvart over otte.",
+    "asr": "stel uret så klokken er kvart over 8",
+    "asrWhisper": "Stel uret så klokken er kvart over 8",
+    "clips": [
+     "frag.stil_uret_saa_klokken_er",
+     "t.end.495"
+    ],
+    "blamed": [
+     "frag.stil_uret_saa_klokken_er"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:195|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart over tre.",
+    "asr": "fin uret der viser klokken kvart over 3",
+    "asrWhisper": "Find ordet der viser klokken kvart over tre",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.195"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:255|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart over fire.",
+    "asr": "fin uret der viser klokken kvart over 4",
+    "asrWhisper": "Find ordet der viser klokken kvart over fire",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.255"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:705|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart i tolv.",
+    "asr": "fin uret der viser klokken kvart i t2",
+    "asrWhisper": "Find ordet der viser klokken kvart i 12",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.705"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:555|clockSet",
+    "skill": "clockQuarter",
+    "expected": "Stil uret, så klokken er kvart over ni.",
+    "asr": "stel uret så klokken er kvart over 9",
+    "asrWhisper": "Stel uret så klokken er kvart over ni",
+    "clips": [
+     "frag.stil_uret_saa_klokken_er",
+     "t.end.555"
+    ],
+    "blamed": [
+     "frag.stil_uret_saa_klokken_er"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:615|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart over ti.",
+    "asr": "fin uret der viser klokken kvart over 10",
+    "asrWhisper": "Find ordet der viser klokken kvart over 10",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.615"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:135|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart over to.",
+    "asr": "fin uret der viser klokken kvart over 2",
+    "asrWhisper": "Find ordet der viser klokken kvart over to",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.135"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:225|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart i fire.",
+    "asr": "fin uret der viser klokken kvarti 4",
+    "asrWhisper": "Find ordet der viser klokken kvart i fire",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.225"
+    ],
+    "blamed": [
+     "s.clock.findClock"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:75|choice",
+    "skill": "clockQuarter",
+    "expected": "Find uret, der viser klokken kvart over et.",
+    "asr": "find uret der viser klokken kvart oret 1",
+    "asrWhisper": "Find ordet der viser klokken kvart over 1",
+    "clips": [
+     "s.clock.findClock",
+     "t.end.75"
+    ],
+    "blamed": [
+     "t.end.75"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:45|clockSet",
+    "skill": "clockQuarter",
+    "expected": "Stil uret, så klokken er kvart i et.",
+    "asr": "stel uret så klokken er kvart i 1",
+    "asrWhisper": "Stel uret så klokken er kvart i et",
+    "clips": [
+     "frag.stil_uret_saa_klokken_er",
+     "t.end.45"
+    ],
+    "blamed": [
+     "frag.stil_uret_saa_klokken_er"
+    ]
+   },
+   {
+    "key": "clockQuarter|kvart:675|clockSet",
+    "skill": "clockQuarter",
+    "expected": "Stil uret, så klokken er kvart over elleve.",
+    "asr": "stel uret så klokken er kvart over 11",
+    "asrWhisper": "Stel uret så klokken er kvart over 11",
+    "clips": [
+     "frag.stil_uret_saa_klokken_er",
+     "t.end.675"
+    ],
+    "blamed": [
+     "frag.stil_uret_saa_klokken_er"
+    ]
+   },
+   {
+    "key": "fractionShape|frs:3/4:circle|colorParts",
+    "skill": "fractionShape",
+    "expected": "Farv tre fjerdedele.",
+    "asr": "farvet tre fjerde dele",
+    "asrWhisper": "Farvet 3 fjerdedele",
+    "clips": [
+     "s.fractionShape.colour",
+     "noun.frac.3_4.end"
+    ],
+    "blamed": [
+     "s.fractionShape.colour",
+     "noun.frac.3_4.end"
+    ]
+   },
+   {
+    "key": "fractionShape|frs:1/2:circle|fillSlots",
+    "skill": "fractionShape",
+    "expected": "Skriv brøken for den farvede del.",
+    "asr": "skriv brølen for den farvede del",
+    "asrWhisper": "Skriv brødden for den farvede del af",
+    "clips": [
+     "s.fractionShape.write"
+    ],
+    "blamed": [
+     "s.fractionShape.write"
+    ]
+   },
+   {
+    "key": "unitChoice|enh:length:pencil|choice",
+    "skill": "unitChoice",
+    "expected": "Hvad måler man længden af en blyant i?",
+    "asr": "hvad måler man længden af en byand i",
+    "asrWhisper": "Hvad måler man længden af en byant i?",
+    "clips": [
+     "s.unitChoice.q.pencil"
+    ],
+    "blamed": [
+     "s.unitChoice.q.pencil"
+    ]
+   },
+   {
+    "key": "unitChoice|enh:length:carrot|choice",
+    "skill": "unitChoice",
+    "expected": "Hvad måler man længden af en gulerod i?",
+    "asr": "hvad måler man længden af en gullerud i",
+    "asrWhisper": "Hvad måler man længden af en gulderod i?",
+    "clips": [
+     "s.unitChoice.q.carrot"
+    ],
+    "blamed": [
+     "s.unitChoice.q.carrot"
+    ]
+   },
+   {
+    "key": "change|byt:from100:5700|pay",
+    "skill": "change",
+    "expected": "Det koster syvoghalvtreds kroner. Du betaler med en hundredkroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 57 krer d betaler en 100 krsædelli byttepengene i bakken",
+    "asrWhisper": "Det koster 57 kroner du betaler med en 100 kronerseddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.57",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from50:4700|pay",
+    "skill": "change",
+    "expected": "Det koster syvogfyrre kroner. Du betaler med en halvtredskroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 47 krner du betaler med en 50 kronsædelli byttepengene i bakken",
+    "asrWhisper": "Det koster 47 kroner du betaler med en 50 kroner seddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.47",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.5000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.5000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from50:2300|pay",
+    "skill": "change",
+    "expected": "Det koster treogtyve kroner. Du betaler med en halvtredskroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 23 krner du betaler med en 50 kronsædel li byttepengene i bakken",
+    "asrWhisper": "Det koster 23 kroner du betaler med en 50 kroner seddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.23",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.5000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.5000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from20:800|pay",
+    "skill": "change",
+    "expected": "Det koster otte kroner. Du betaler med en tyvekrone. Læg byttepengene i bakken.",
+    "asr": "det koster 8 kroner du betaler med en 20l byttepengene i bakken",
+    "asrWhisper": "Det koster 8 kroner du betaler med en 20 kroner. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.8",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.2000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.2000.indef.end",
+     "s.change.layChange"
+    ]
+   },
+   {
+    "key": "change|byt:from100:9400|pay",
+    "skill": "change",
+    "expected": "Det koster fireoghalvfems kroner. Du betaler med en hundredkroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 94 krner d betaler men 100 krnsæddel lk byttepengene i bakken",
+    "asrWhisper": "Det koster 94 kroner du betaler med en 100 kronerseddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.94",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from100:2400|pay",
+    "skill": "change",
+    "expected": "Det koster fireogtyve kroner. Du betaler med en hundredkroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 24 krner d betaler me en 100 krncædel li byttepengene i bakken",
+    "asrWhisper": "Det koster 24 kroner du betaler med en 100 kronerseddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.24",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from100:8500|pay",
+    "skill": "change",
+    "expected": "Det koster femogfirs kroner. Du betaler med en hundredkroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 85 krner d betaler me en 100 kronsædel li byttepengene i bakken",
+    "asrWhisper": "Det koster 85 kroner du betaler med en 100 kronerseddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.85",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from100:7400|pay",
+    "skill": "change",
+    "expected": "Det koster fireoghalvfjerds kroner. Du betaler med en hundredkroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 74 kroner d betaler me en 100 krcædel lik byttepengene i bakken",
+    "asrWhisper": "Det koster 74 kroner du betaler med en 100 kroner seddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.74",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from50:4500|pay",
+    "skill": "change",
+    "expected": "Det koster femogfyrre kroner. Du betaler med en halvtredskroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 45 krner du betaler med en 50 kronsædel li byttepengene i bakken",
+    "asrWhisper": "Det koster 45 kroner og du betaler med en 50 kroner seddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.45",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.5000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med"
+    ]
+   },
+   {
+    "key": "change|byt:from100:2600|pay",
+    "skill": "change",
+    "expected": "Det koster seksogtyve kroner. Du betaler med en hundredkroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 26 krner d betaler en 100 kredelli byttepengene i bakken",
+    "asrWhisper": "Det koster 26 kroner du betaler med en 100 kronerseddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.26",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from50:2500|pay",
+    "skill": "change",
+    "expected": "Det koster femogtyve kroner. Du betaler med en halvtredskroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 25 krner du betaler med en 50 kronsædelli byttepengene i bakken",
+    "asrWhisper": "Det koster 25 kroner du betaler med en 50 kroner seddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.25",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.5000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.5000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from50:3200|pay",
+    "skill": "change",
+    "expected": "Det koster toogtredive kroner. Du betaler med en halvtredskroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 32 krner du betaler med en 50 kronsædelli byttepengene i bakken",
+    "asrWhisper": "Det koster 32 kroner du betaler med en 50 kroner seddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.32",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.5000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.5000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from50:2300|choice",
+    "skill": "change",
+    "expected": "Det koster treogtyve kroner. Du betaler med en halvtredskroneseddel. Hvor mange penge får du tilbage?",
+    "asr": "det koster 23 kroner du betaler med en 50 kronsædel hvor mange penge får du tilbage",
+    "asrWhisper": "Det koster 23 kroner du betaler med en 50 kroner seddel hvor mange penge får du tilbage",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.23",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.5000.indef.end",
+     "s.change.howMuchBack"
+    ],
+    "blamed": [
+     "noun.coin.5000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from100:6100|pay",
+    "skill": "change",
+    "expected": "Det koster enogtres kroner. Du betaler med en hundredkroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 61 krer d betaler men 100 krsædelli byttepengene i bakken",
+    "asrWhisper": "Det koster 61 kroner du betaler med en 100 kronerseddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.61",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from100:5900|pay",
+    "skill": "change",
+    "expected": "Det koster nioghalvtreds kroner. Du betaler med en hundredkroneseddel. Læg byttepengene i bakken.",
+    "asr": "det koster 59 krner du betaler m en 100 krsædelli byttepengene i bakken",
+    "asrWhisper": "Det koster 59 kroner du betaler med en 100 kronerseddel. Læg byttepengene i bakken",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.59",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.layChange"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from100:8500|choice",
+    "skill": "change",
+    "expected": "Det koster femogfirs kroner. Du betaler med en hundredkroneseddel. Hvor mange penge får du tilbage?",
+    "asr": "det koster 85 kroner du betaler med en 100 kronsedel hvor mange penge får du tilbage",
+    "asrWhisper": "Det koster 85 kroner du betaler med en 100 kronerseddel hvor mange penge får du tilbage",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.85",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.howMuchBack"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from100:6100|choice",
+    "skill": "change",
+    "expected": "Det koster enogtres kroner. Du betaler med en hundredkroneseddel. Hvor mange penge får du tilbage?",
+    "asr": "det koster 61 krer du betaler me en 100 krnsedel hvor mange penge får du tilbage",
+    "asrWhisper": "Det koster 61 kroner du betaler med en 100 kronerseddel hvor mange penge får du tilbage",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.61",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.howMuchBack"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "change|byt:from100:8000|choice",
+    "skill": "change",
+    "expected": "Det koster firs kroner. Du betaler med en hundredkroneseddel. Hvor mange penge får du tilbage?",
+    "asr": "det koster 80 krr du betalermeen 100 kronseddel hvor mange penge får du tilbage",
+    "asrWhisper": "Det koster 80 kroner du betaler med en 100 kronerseddel hvor mange penge får du tilbage",
+    "clips": [
+     "s.money.itCosts",
+     "n.mid.80",
+     "noun.unit.kroner.end",
+     "frag.du_betaler_med",
+     "noun.coin.10000.indef.end",
+     "s.change.howMuchBack"
+    ],
+    "blamed": [
+     "noun.coin.10000.indef.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:20000|choice",
+    "skill": "coinNames",
+    "expected": "Tryk på tohundredkronesedlen.",
+    "asr": "tryk på 200 kroni sedlen",
+    "asrWhisper": "Tryk på 200 kr siden",
+    "clips": [
+     "frag.tryk_paa",
+     "noun.coin.20000.def.end"
+    ],
+    "blamed": [
+     "noun.coin.20000.def.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:5000|multiSelect",
+    "skill": "coinNames",
+    "expected": "Tryk på alle halvtredskronesedler.",
+    "asr": "tryk på alle 50 kronsedler",
+    "asrWhisper": "Tryk på alle 50 kroner sedler",
+    "clips": [
+     "frag.tryk_paa",
+     "s.coinNames.all",
+     "noun.coin.5000.pl.end"
+    ],
+    "blamed": [
+     "noun.coin.5000.pl.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:10000|choice",
+    "skill": "coinNames",
+    "expected": "Tryk på hundredkronesedlen.",
+    "asr": "tryk på 100 kronsellen",
+    "asrWhisper": "Tryk på 100 kroner siden",
+    "clips": [
+     "frag.tryk_paa",
+     "noun.coin.10000.def.end"
+    ],
+    "blamed": [
+     "noun.coin.10000.def.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:10000|multiSelect",
+    "skill": "coinNames",
+    "expected": "Tryk på alle hundredkronesedler.",
+    "asr": "tryk på alle 100 kronsedler",
+    "asrWhisper": "Tryk på alle 100 kroner sedler",
+    "clips": [
+     "frag.tryk_paa",
+     "s.coinNames.all",
+     "noun.coin.10000.pl.end"
+    ],
+    "blamed": [
+     "noun.coin.10000.pl.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:50000|choice",
+    "skill": "coinNames",
+    "expected": "Tryk på femhundredkronesedlen.",
+    "asr": "tryk på 500 kron i sædlen",
+    "asrWhisper": "Tryk på 500 kroner i sedlen",
+    "clips": [
+     "frag.tryk_paa",
+     "noun.coin.50000.def.end"
+    ],
+    "blamed": [
+     "noun.coin.50000.def.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:50|choice",
+    "skill": "coinNames",
+    "expected": "Tryk på halvtredsøren.",
+    "asr": "tryk på 50øen",
+    "asrWhisper": "Tryk på 50 øerne",
+    "clips": [
+     "frag.tryk_paa",
+     "noun.coin.50.def.end"
+    ],
+    "blamed": [
+     "noun.coin.50.def.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:50000|multiSelect",
+    "skill": "coinNames",
+    "expected": "Tryk på alle femhundredkronesedler.",
+    "asr": "tryk på alle 500 kronesedler",
+    "asrWhisper": "Tryk på alle 500 kronisedler",
+    "clips": [
+     "frag.tryk_paa",
+     "s.coinNames.all",
+     "noun.coin.50000.pl.end"
+    ],
+    "blamed": [
+     "noun.coin.50000.pl.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:20000|multiSelect",
+    "skill": "coinNames",
+    "expected": "Tryk på alle tohundredkronesedler.",
+    "asr": "tryk på alle 200 kronesedler",
+    "asrWhisper": "Tryk på alle 200 kroner i sedler",
+    "clips": [
+     "frag.tryk_paa",
+     "s.coinNames.all",
+     "noun.coin.20000.pl.end"
+    ],
+    "blamed": [
+     "noun.coin.20000.pl.end"
+    ]
+   },
+   {
+    "key": "coinNames|mnt:5000|choice",
+    "skill": "coinNames",
+    "expected": "Tryk på halvtredskronesedlen.",
+    "asr": "tryk på 50 kroni sædelen",
+    "asrWhisper": "Tryk på 50 kroner i sedlen",
+    "clips": [
+     "frag.tryk_paa",
+     "noun.coin.5000.def.end"
+    ],
+    "blamed": [
+     "noun.coin.5000.def.end"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:3:3|share",
+    "skill": "shareEqually",
+    "expected": "Del tre gulerødder ligeligt mellem tre dyr. Hvor mange får hvert dyr?",
+    "asr": "del tr gulderødder ligelidt mellem tre dyr hvor mange for hvert dyr",
+    "asrWhisper": "D3 gulerødder ligeligt mellem 3 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.3",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.3",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:9:3|share",
+    "skill": "shareEqually",
+    "expected": "Del ni gulerødder ligeligt mellem tre dyr. Hvor mange får hvert dyr?",
+    "asr": "del 9 gullerødder ligeligt mellem tre dyr hvor mange for hver dyr",
+    "asrWhisper": "D 9 gulerødder ligeligt mellem 3 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.9",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.3",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.howMany"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:15:5|share",
+    "skill": "shareEqually",
+    "expected": "Del femten gulerødder ligeligt mellem fem dyr. Hvor mange får hvert dyr?",
+    "asr": "del 1 gullerødder ligeligt mellem e dyr hvor mange for hvert dyr",
+    "asrWhisper": "D15 gulerødder ligeligt mellem 5 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.15",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.5",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:2:2|share",
+    "skill": "shareEqually",
+    "expected": "Del to gulerødder ligeligt mellem to dyr. Hvor mange får hvert dyr?",
+    "asr": "del to gullerødder ligelidt mellem to dyr hvor mange for hver dyr",
+    "asrWhisper": "D to gulerødder ligeligt mellem to dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.2",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.2",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:6:2|share",
+    "skill": "shareEqually",
+    "expected": "Del seks gulerødder ligeligt mellem to dyr. Hvor mange får hvert dyr?",
+    "asr": "del se gulderødder ligeligt mellem to dyr hvor mange for hver dyr",
+    "asrWhisper": "D6 gulerødder ligeligt mellem to dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.6",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.2",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:15:3|share",
+    "skill": "shareEqually",
+    "expected": "Del femten gulerødder ligeligt mellem tre dyr. Hvor mange får hvert dyr?",
+    "asr": "del 15 gullerødder ligeligt mellem tr dyr hvor mange for hver dyr",
+    "asrWhisper": "D15 gulerødder ligeligt mellem 3 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.15",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.3",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:20:5|share",
+    "skill": "shareEqually",
+    "expected": "Del tyve gulerødder ligeligt mellem fem dyr. Hvor mange får hvert dyr?",
+    "asr": "del 20 gulerødder ligeligt mellemfe dyr hvor mange for hvert dyr",
+    "asrWhisper": "D 20 gulerødder ligeligt mellem 5 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.20",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.5",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "n.mid.5"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:8:4|share",
+    "skill": "shareEqually",
+    "expected": "Del otte gulerødder ligeligt mellem fire dyr. Hvor mange får hvert dyr?",
+    "asr": "del oulrødder ligeligt mellemyr hvor mange for hver dyr",
+    "asrWhisper": "D 8 gulerødder ligeligt mellem 4 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.8",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.4",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:16:4|share",
+    "skill": "shareEqually",
+    "expected": "Del seksten gulerødder ligeligt mellem fire dyr. Hvor mange får hvert dyr?",
+    "asr": "del 16 guerøerligeligt mellemyrhvor mange for hver dyr",
+    "asrWhisper": "D16 gulerødder ligeligt mellem 4 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.16",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.4",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:10:2|share",
+    "skill": "shareEqually",
+    "expected": "Del ti gulerødder ligeligt mellem to dyr. Hvor mange får hvert dyr?",
+    "asr": "del gulderødder ligelidt mellem to dyr hvor mange for hver dyr",
+    "asrWhisper": "Del 10 gulerødder ligeligt mellem 2 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.10",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.2",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.howMany"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:12:4|share",
+    "skill": "shareEqually",
+    "expected": "Del tolv gulerødder ligeligt mellem fire dyr. Hvor mange får hvert dyr?",
+    "asr": "del to gulerødder ligeligt mellemyr hvor mange for hver dyr",
+    "asrWhisper": "D 12 gulerødder ligeligt mellem 4 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.12",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.4",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:20:4|share",
+    "skill": "shareEqually",
+    "expected": "Del tyve gulerødder ligeligt mellem fire dyr. Hvor mange får hvert dyr?",
+    "asr": "del 20gulerødder ligeligt mellemyr hor mange for hver dyr",
+    "asrWhisper": "D 20 gulerødder ligeligt mellem 4 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.20",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.4",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:4:2|share",
+    "skill": "shareEqually",
+    "expected": "Del fire gulerødder ligeligt mellem to dyr. Hvor mange får hvert dyr?",
+    "asr": "del f gulderødder ligeligt mellem to dyr hvor mange for hver dyr",
+    "asrWhisper": "D4 gulerødder ligeligt mellem to dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.4",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.2",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:12:3|share",
+    "skill": "shareEqually",
+    "expected": "Del tolv gulerødder ligeligt mellem tre dyr. Hvor mange får hvert dyr?",
+    "asr": "del 12 gulderødder ligelidt mellem tre dyr hvor mange for hvert dyr",
+    "asrWhisper": "D 12 gulerødder ligeligt mellem 3 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.12",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.3",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "s.shareEqually.howMany"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:4:4|share",
+    "skill": "shareEqually",
+    "expected": "Del fire gulerødder ligeligt mellem fire dyr. Hvor mange får hvert dyr?",
+    "asr": "del furødder ligeligt mellemyr hvor mange for hver dyr",
+    "asrWhisper": "D4 gulerødder ligeligt mellem 4 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.4",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.4",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:6:3|share",
+    "skill": "shareEqually",
+    "expected": "Del seks gulerødder ligeligt mellem tre dyr. Hvor mange får hvert dyr?",
+    "asr": "del se gulderødder ligeligt mellem t dyr hvor mange for hver dyr",
+    "asrWhisper": "D6 gulerødder ligeligt mellem 3 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.6",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.3",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:10:5|share",
+    "skill": "shareEqually",
+    "expected": "Del ti gulerødder ligeligt mellem fem dyr. Hvor mange får hvert dyr?",
+    "asr": "del gulderødder ligeligt mellem fem dyr hvor mange for hvert dyr",
+    "asrWhisper": "Del 10 gulerødder ligeligt mellem 5 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.10",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.5",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.howMany"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:25:5|share",
+    "skill": "shareEqually",
+    "expected": "Del femogtyve gulerødder ligeligt mellem fem dyr. Hvor mange får hvert dyr?",
+    "asr": "del 25 gullerødder ligeligt mellemfem dyr hvor mange for hvert dyr",
+    "asrWhisper": "D25 gulerødder ligeligt mellem 5 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.25",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.5",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "noun.thing.carrot.pl",
+     "s.shareEqually.howMany"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:8:2|share",
+    "skill": "shareEqually",
+    "expected": "Del otte gulerødder ligeligt mellem to dyr. Hvor mange får hvert dyr?",
+    "asr": "del otegullerødder ligeligt mellem to dyr hvor mange for hver dyr",
+    "asrWhisper": "D 8 gulerødder ligeligt mellem 2 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.8",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.2",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "s.shareEqually.share"
+    ]
+   },
+   {
+    "key": "shareEqually|shr:5:5|share",
+    "skill": "shareEqually",
+    "expected": "Del fem gulerødder ligeligt mellem fem dyr. Hvor mange får hvert dyr?",
+    "asr": "del fem gullerødder ligeligt mellem fem dyr hvor mange for hvert dyr",
+    "asrWhisper": "D 5 gulerødder ligeligt mellem 5 dyr hvor mange for hvert dyr",
+    "clips": [
+     "s.shareEqually.share",
+     "n.mid.5",
+     "noun.thing.carrot.pl",
+     "s.shareEqually.between",
+     "n.mid.5",
+     "noun.muldiv.dyr",
+     "s.shareEqually.howMany"
+    ],
+    "blamed": [
+     "noun.thing.carrot.pl",
+     "s.shareEqually.howMany"
     ]
    },
    {
@@ -999,17 +3252,210 @@
     ]
    },
    {
-    "key": "order100|o100:crossTen:after:69|sortOrder",
-    "skill": "order100",
-    "expected": "Tæl videre fra syvogtres.",
-    "asr": "til videre fra 67",
-    "asrWhisper": "Til videre fra 67",
+    "key": "hear1000|h1000:401|choice",
+    "skill": "hear1000",
+    "expected": "Find tallet fire hundrede og en.",
+    "asr": "finn tallet 400 en",
+    "asrWhisper": "Find tallet",
     "clips": [
-     "s.order20.countOn",
-     "n.end.67"
+     "frag.find_tallet",
+     "hog.400",
+     "n.end.1"
     ],
     "blamed": [
-     "s.order20.countOn"
+     "hog.400"
+    ]
+   },
+   {
+    "key": "numberLine100|nl100:placeAny:42|keypad",
+    "skill": "numberLine100",
+    "expected": "Hoppet starter ved fyrre. Hvor lander det?",
+    "asr": "hobbet starter ved 40 hvor lander det",
+    "asrWhisper": "Hobbet starter ved 40 hvor lander det",
+    "clips": [
+     "s.nl.hopFrom",
+     "n.end.40",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "numberLine100|nl100:placeAny:16|numberline",
+    "skill": "numberLine100",
+    "expected": "Sæt nålen ved seksten.",
+    "asr": "sæt nålen ved deisten",
+    "asrWhisper": "Sæt nålen ved dejsten",
+    "clips": [
+     "s.nl.place",
+     "n.end.16"
+    ],
+    "blamed": [
+     "n.end.16"
+    ]
+   },
+   {
+    "key": "numberLine100|nl100:placeAny:32|keypad",
+    "skill": "numberLine100",
+    "expected": "Hoppet starter ved tredive. Hvor lander det?",
+    "asr": "hobbet starter ved 30 hvor lander det",
+    "asrWhisper": "Hobbet starter ved 30 hvor lander det",
+    "clips": [
+     "s.nl.hopFrom",
+     "n.end.30",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "numberLine100|nl100:placeAny:9|keypad",
+    "skill": "numberLine100",
+    "expected": "Hoppet starter ved nul. Hvor lander det?",
+    "asr": "hobbet starter ved hvor lander det",
+    "asrWhisper": "Hobbet starter ved 0 hvor lander det",
+    "clips": [
+     "s.nl.hopFrom",
+     "n.end.0",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "numberLine100|nl100:placeAny:54|keypad",
+    "skill": "numberLine100",
+    "expected": "Hoppet starter ved halvtreds. Hvor lander det?",
+    "asr": "hobbet starter ved 50 hvor lander det",
+    "asrWhisper": "Hobbet starter ved 50 hvor lander det",
+    "clips": [
+     "s.nl.hopFrom",
+     "n.end.50",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "numberLine1000|nl1000:placeAny:559|keypad",
+    "skill": "numberLine1000",
+    "expected": "Hoppet starter ved fem hundrede. Hvor lander det?",
+    "asr": "hobbet starter ved 500 hvor lander det",
+    "asrWhisper": "Hobbet starter ved 500 hvor lander det",
+    "clips": [
+     "s.nl.hopFrom",
+     "h.end.500",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "numberLine1000|nl1000:placeAny:616|keypad",
+    "skill": "numberLine1000",
+    "expected": "Hoppet starter ved seks hundrede. Hvor lander det?",
+    "asr": "hobbet starter ved 600 hr lander det",
+    "asrWhisper": "Hobbet starter ved 600 hvor lander det?",
+    "clips": [
+     "s.nl.hopFrom",
+     "h.end.600",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "numberLine1000|nl1000:placeAny:977|keypad",
+    "skill": "numberLine1000",
+    "expected": "Hoppet starter ved ni hundrede. Hvor lander det?",
+    "asr": "hobbet starter ved 900 hvor lander det",
+    "asrWhisper": "Hobbet starter ved 900 hvor lander det?",
+    "clips": [
+     "s.nl.hopFrom",
+     "h.end.900",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "numberLine1000|nl1000:placeAny:322|numberline",
+    "skill": "numberLine1000",
+    "expected": "Sæt nålen ved tre hundrede og toogtyve.",
+    "asr": "set nålen ved 322",
+    "asrWhisper": "Sæt nålen ved 322 tilbage",
+    "clips": [
+     "s.nl.place",
+     "hog.300",
+     "n.end.22"
+    ],
+    "blamed": [
+     "s.nl.place"
+    ]
+   },
+   {
+    "key": "numberLine1000|nl1000:placeAny:29|keypad",
+    "skill": "numberLine1000",
+    "expected": "Hoppet starter ved nul. Hvor lander det?",
+    "asr": "hobbet starter ved hvor lander det",
+    "asrWhisper": "Hobbet starter ved 0 hvor lander det",
+    "clips": [
+     "s.nl.hopFrom",
+     "n.end.0",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "numberLine1000|nl1000:placeAny:765|keypad",
+    "skill": "numberLine1000",
+    "expected": "Hoppet starter ved syv hundrede. Hvor lander det?",
+    "asr": "hobbet starter ved 700 hvor lander det",
+    "asrWhisper": "Hobbet starter ved 700 hvor lander det?",
+    "clips": [
+     "s.nl.hopFrom",
+     "h.end.700",
+     "s.nl.whereLand"
+    ],
+    "blamed": [
+     "s.nl.hopFrom"
+    ]
+   },
+   {
+    "key": "order100|o100:plus10:27|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre i tiere fra syvogtyve.",
+    "asr": "til videre i tigere fra 27",
+    "asrWhisper": "Til videre i tider fra 27",
+    "clips": [
+     "s.order.countOnTens",
+     "n.end.27"
+    ],
+    "blamed": [
+     "s.order.countOnTens"
+    ]
+   },
+   {
+    "key": "order100|o100:minus1:34|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl baglæns fra fireogtredive.",
+    "asr": "til baglæns fra 34",
+    "asrWhisper": "Til baglands fra 34",
+    "clips": [
+     "s.order20.countBack",
+     "n.end.34"
+    ],
+    "blamed": [
+     "s.order20.countBack"
     ]
    },
    {
@@ -1027,42 +3473,28 @@
     ]
    },
    {
-    "key": "order100|o100:crossTen:before:40|sortOrder",
+    "key": "order100|o100:plus1:71|sortOrder",
     "skill": "order100",
-    "expected": "Tæl baglæns fra toogfyrre.",
-    "asr": "til baulæns fra 42",
-    "asrWhisper": "Til baglands fra 42",
-    "clips": [
-     "s.order20.countBack",
-     "n.end.42"
-    ],
-    "blamed": [
-     "s.order20.countBack"
-    ]
-   },
-   {
-    "key": "order100|o100:plus1:94|sortOrder",
-    "skill": "order100",
-    "expected": "Tæl videre fra fireoghalvfems.",
-    "asr": "til videre fra 94",
-    "asrWhisper": "Til videre fra 94",
+    "expected": "Tæl videre fra enoghalvfjerds.",
+    "asr": "til videre fra 71",
+    "asrWhisper": "Til videre fra 71",
     "clips": [
      "s.order20.countOn",
-     "n.end.94"
+     "n.end.71"
     ],
     "blamed": [
      "s.order20.countOn"
     ]
    },
    {
-    "key": "order100|o100:plus1:68|sortOrder",
+    "key": "order100|o100:plus1:88|sortOrder",
     "skill": "order100",
-    "expected": "Tæl videre fra otteogtres.",
-    "asr": "til videre fra 68",
-    "asrWhisper": "Til videre fra 68",
+    "expected": "Tæl videre fra otteogfirs.",
+    "asr": "til videre fra 88",
+    "asrWhisper": "Til videre fra 88",
     "clips": [
      "s.order20.countOn",
-     "n.end.68"
+     "n.end.88"
     ],
     "blamed": [
      "s.order20.countOn"
@@ -1083,133 +3515,275 @@
     ]
    },
    {
-    "key": "order100|o100:crossTen:after:29|sortOrder",
+    "key": "order100|o100:plus1:63|sortOrder",
     "skill": "order100",
-    "expected": "Tæl videre fra syvogtyve.",
-    "asr": "til videre fra 27",
-    "asrWhisper": "Til videre fra 27",
+    "expected": "Tæl videre fra treogtres.",
+    "asr": "til videre fra 63",
+    "asrWhisper": "Til videre fra 63",
     "clips": [
      "s.order20.countOn",
-     "n.end.27"
+     "n.end.63"
     ],
     "blamed": [
      "s.order20.countOn"
     ]
    },
    {
-    "key": "order100|o100:plus1:26|sortOrder",
+    "key": "order100|o100:minus1:32|sortOrder",
     "skill": "order100",
-    "expected": "Tæl videre fra seksogtyve.",
-    "asr": "til videre fra 26",
-    "asrWhisper": "Til videre fra 26",
-    "clips": [
-     "s.order20.countOn",
-     "n.end.26"
-    ],
-    "blamed": [
-     "s.order20.countOn"
-    ]
-   },
-   {
-    "key": "order1000|o1000:plus1:352|sortOrder",
-    "skill": "order1000",
-    "expected": "Tæl videre fra tre hundrede og tooghalvtreds.",
-    "asr": "til videre fra 352",
-    "asrWhisper": "Til videre fra 352",
-    "clips": [
-     "s.order20.countOn",
-     "hog.300",
-     "n.end.52"
-    ],
-    "blamed": [
-     "s.order20.countOn"
-    ]
-   },
-   {
-    "key": "order1000|o1000:minus1:197|sortOrder",
-    "skill": "order1000",
-    "expected": "Tæl baglæns fra et hundrede og syvoghalvfems.",
-    "asr": "til baglæns fra 197",
-    "asrWhisper": "Til baglands fra 1997",
+    "expected": "Tæl baglæns fra toogtredive.",
+    "asr": "til baglans fra 32",
+    "asrWhisper": "Til baglands fra 32",
     "clips": [
      "s.order20.countBack",
-     "hog.100",
-     "n.end.97"
-    ],
-    "blamed": [
-     "s.order20.countBack"
-    ]
-   },
-   {
-    "key": "order1000|o1000:plus1:132|sortOrder",
-    "skill": "order1000",
-    "expected": "Tæl videre fra et hundrede og toogtredive.",
-    "asr": "til videre fra 132",
-    "asrWhisper": "Til videre fra 132",
-    "clips": [
-     "s.order20.countOn",
-     "hog.100",
      "n.end.32"
     ],
     "blamed": [
-     "s.order20.countOn"
+     "s.order20.countBack"
     ]
    },
    {
-    "key": "order1000|o1000:crossHundred:minus1:300|sortOrder",
-    "skill": "order1000",
-    "expected": "Tæl baglæns fra tre hundrede og to.",
-    "asr": "til baglæns fra 302",
-    "asrWhisper": "Til baglands fra 302",
+    "key": "order100|o100:minus1:55|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl baglæns fra femoghalvtreds.",
+    "asr": "til baglæns fra 55",
+    "asrWhisper": "Til baglands fra 55",
     "clips": [
      "s.order20.countBack",
-     "hog.300",
-     "n.end.2"
+     "n.end.55"
     ],
     "blamed": [
      "s.order20.countBack"
     ]
    },
    {
-    "key": "order1000|o1000:plus1:677|sortOrder",
-    "skill": "order1000",
-    "expected": "Tæl videre fra seks hundrede og syvoghalvfjerds.",
-    "asr": "til videre fra 677",
-    "asrWhisper": "Til videre fra 677 til 677",
+    "key": "order100|o100:plus10:71|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre i tiere fra enoghalvtreds.",
+    "asr": "til videre i tirere fra 51",
+    "asrWhisper": "Til videre i tider fra 51",
+    "clips": [
+     "s.order.countOnTens",
+     "n.end.51"
+    ],
+    "blamed": [
+     "s.order.countOnTens"
+    ]
+   },
+   {
+    "key": "order100|o100:crossTen:after:89|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre fra syvogfirs.",
+    "asr": "til videre fra 87",
+    "asrWhisper": "Til videre fra 87",
     "clips": [
      "s.order20.countOn",
+     "n.end.87"
+    ],
+    "blamed": [
+     "s.order20.countOn"
+    ]
+   },
+   {
+    "key": "order100|o100:plus10:21|sortOrder",
+    "skill": "order100",
+    "expected": "Tæl videre i tiere fra enogtyve.",
+    "asr": "til videre i tirer fra 21",
+    "asrWhisper": "Til videre i tider fra 21",
+    "clips": [
+     "s.order.countOnTens",
+     "n.end.21"
+    ],
+    "blamed": [
+     "s.order.countOnTens"
+    ]
+   },
+   {
+    "key": "order1000|o1000:bigger3:563:493:533|keypad",
+    "skill": "order1000",
+    "expected": "Hvilket tal er størst, fem hundrede og treogtres fire hundrede og treoghalvfems eller fem hundrede og treogtredive?",
+    "asr": "hvilket tal er størst 56 43 eller 5933",
+    "asrWhisper": "Væggetal er størst 563 493 eller 533",
+    "clips": [
+     "s.order20.whichBigger",
+     "hog.500",
+     "n.mid.63",
+     "hog.400",
+     "n.mid.93",
+     "s.order20.or",
+     "hog.500",
+     "n.end.33"
+    ],
+    "blamed": [
+     "s.order20.whichBigger"
+    ]
+   },
+   {
+    "key": "order1000|o1000:plus10:758|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl videre i tiere fra syv hundrede og otteoghalvtreds.",
+    "asr": "til videre i tigere fra 758",
+    "asrWhisper": "Til videre i tider fra 758",
+    "clips": [
+     "s.order.countOnTens",
+     "hog.700",
+     "n.end.58"
+    ],
+    "blamed": [
+     "s.order.countOnTens"
+    ]
+   },
+   {
+    "key": "order1000|o1000:minus100:242|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl baglæns i hundreder fra fire hundrede og toogfyrre.",
+    "asr": "tal baulins i hundreder fra 442",
+    "asrWhisper": "Tal baglæns i hundreder fra 442",
+    "clips": [
+     "s.order.countBackHundreds",
+     "hog.400",
+     "n.end.42"
+    ],
+    "blamed": [
+     "s.order.countBackHundreds"
+    ]
+   },
+   {
+    "key": "order1000|o1000:minus10:688|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl baglæns i tiere fra seks hundrede og otteogfirs.",
+    "asr": "til baglin citirede fra 688",
+    "asrWhisper": "Til baglæns i tiere fra 688",
+    "clips": [
+     "s.order.countBackTens",
      "hog.600",
-     "n.end.77"
+     "n.end.88"
     ],
     "blamed": [
-     "s.order20.countOn"
+     "s.order.countBackTens"
     ]
    },
    {
-    "key": "order1000|o1000:plus1:349|sortOrder",
+    "key": "order1000|o1000:minus1:450|sortOrder",
     "skill": "order1000",
-    "expected": "Tæl videre fra tre hundrede og niogfyrre.",
-    "asr": "til videre fra 349",
-    "asrWhisper": "Til videre fra 349",
-    "clips": [
-     "s.order20.countOn",
-     "hog.300",
-     "n.end.49"
-    ],
-    "blamed": [
-     "s.order20.countOn"
-    ]
-   },
-   {
-    "key": "order1000|o1000:minus1:145|sortOrder",
-    "skill": "order1000",
-    "expected": "Tæl baglæns fra et hundrede og femogfyrre.",
-    "asr": "til baulens fra 145",
-    "asrWhisper": "Til baglands fra 145",
+    "expected": "Tæl baglæns fra fire hundrede og halvtreds.",
+    "asr": "til baulens fra 450",
+    "asrWhisper": "Til baglands fra 450 til",
     "clips": [
      "s.order20.countBack",
+     "hog.400",
+     "n.end.50"
+    ],
+    "blamed": [
+     "s.order20.countBack"
+    ]
+   },
+   {
+    "key": "order1000|o1000:minus10:822|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl baglæns i tiere fra otte hundrede og toogtyve.",
+    "asr": "til baglin citirere fra 822",
+    "asrWhisper": "Til baglæns i 10 år fra 822",
+    "clips": [
+     "s.order.countBackTens",
+     "hog.800",
+     "n.end.22"
+    ],
+    "blamed": [
+     "s.order.countBackTens"
+    ]
+   },
+   {
+    "key": "order1000|o1000:minus100:728|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl baglæns i hundreder fra syv hundrede og otteogtyve.",
+    "asr": "tal baglins i 1undreder fra 728",
+    "asrWhisper": "Tal baglæns i hundreder fra 728",
+    "clips": [
+     "s.order.countBackHundreds",
+     "hog.700",
+     "n.end.28"
+    ],
+    "blamed": [
+     "s.order.countBackHundreds"
+    ]
+   },
+   {
+    "key": "order1000|o1000:bigger3:769:690:748|keypad",
+    "skill": "order1000",
+    "expected": "Hvilket tal er størst, syv hundrede og niogtres seks hundrede og halvfems eller syv hundrede og otteogfyrre?",
+    "asr": "hvilket tal er størst 799 med 690 eller 48",
+    "asrWhisper": "Hvilket tal er størst 769 til 690 eller 748",
+    "clips": [
+     "s.order20.whichBigger",
+     "hog.700",
+     "n.mid.69",
+     "hog.600",
+     "n.mid.90",
+     "s.order20.or",
+     "hog.700",
+     "n.end.48"
+    ],
+    "blamed": [
+     "n.mid.69",
+     "hog.600"
+    ]
+   },
+   {
+    "key": "order1000|o1000:plus100:293|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl videre i hundreder fra to hundrede og treoghalvfems.",
+    "asr": "tilvidere i hundreder fra 293",
+    "asrWhisper": "Til videre i 100 år fra 293",
+    "clips": [
+     "s.order.countOnHundreds",
+     "hog.200",
+     "n.end.93"
+    ],
+    "blamed": [
+     "s.order.countOnHundreds"
+    ]
+   },
+   {
+    "key": "order1000|o1000:plus10:114|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl videre i tiere fra et hundrede og fjorten.",
+    "asr": "til videre i tigere fra 114",
+    "asrWhisper": "Til videre i tider fra 114",
+    "clips": [
+     "s.order.countOnTens",
      "hog.100",
-     "n.end.45"
+     "n.end.14"
+    ],
+    "blamed": [
+     "s.order.countOnTens"
+    ]
+   },
+   {
+    "key": "order1000|o1000:plus10:203|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl videre i tiere fra to hundrede og tre.",
+    "asr": "til videre i tiger fra 2003",
+    "asrWhisper": "Til videre i tider fra 203",
+    "clips": [
+     "s.order.countOnTens",
+     "hog.200",
+     "n.end.3"
+    ],
+    "blamed": [
+     "s.order.countOnTens"
+    ]
+   },
+   {
+    "key": "order1000|o1000:minus1:432|sortOrder",
+    "skill": "order1000",
+    "expected": "Tæl baglæns fra fire hundrede og toogtredive.",
+    "asr": "til baglens fra 432",
+    "asrWhisper": "Til baglands fra 432",
+    "clips": [
+     "s.order20.countBack",
+     "hog.400",
+     "n.end.32"
     ],
     "blamed": [
      "s.order20.countBack"
@@ -1312,22 +3886,805 @@
     "blamed": [
      "s.order20.countOn"
     ]
+   },
+   {
+    "key": "placeValue1000|pv:regroup:ht:2:19|buildBase",
+    "skill": "placeValue1000",
+    "expected": "Læg to hundreder og nitten tiere.",
+    "asr": "lek 2h0reder og 19 10",
+    "asrWhisper": "Læg 200 og 1910",
+    "clips": [
+     "s.place.lay",
+     "n.mid.2",
+     "noun.place.h.pl.mid",
+     "op.og",
+     "n.mid.19",
+     "noun.place.t.pl.end"
+    ],
+    "blamed": [
+     "s.place.lay",
+     "noun.place.h.pl.mid",
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:digitValue:t:285|buildBase",
+    "skill": "placeValue1000",
+    "expected": "Byg kun tierne i to hundrede og femogfirs.",
+    "asr": "by kun tererne i 285",
+    "asrWhisper": "Byg kun tiende i 285",
+    "clips": [
+     "s.place.buildOnlyTens",
+     "hog.200",
+     "n.end.85"
+    ],
+    "blamed": [
+     "s.place.buildOnlyTens"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:regroup:to:7:16|choice",
+    "skill": "placeValue1000",
+    "expected": "Syv tiere og seksten enere. Hvilket tal er det?",
+    "asr": "7 time og 16 enere hvilket tal ef de",
+    "asrWhisper": "7 tige og 16 enere hvilket tal er det",
+    "clips": [
+     "n.mid.7",
+     "noun.place.t.pl.mid",
+     "op.og",
+     "n.mid.16",
+     "noun.place.o.pl.end",
+     "s.place.whichNumber"
+    ],
+    "blamed": [
+     "noun.place.t.pl.mid"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:regroup:to:3:17|buildBase",
+    "skill": "placeValue1000",
+    "expected": "Læg tre tiere og sytten enere.",
+    "asr": "lik 3 tiger og 17 enere",
+    "asrWhisper": "Læg 3 tige og 17 enere",
+    "clips": [
+     "s.place.lay",
+     "n.mid.3",
+     "noun.place.t.pl.mid",
+     "op.og",
+     "n.mid.17",
+     "noun.place.o.pl.end"
+    ],
+    "blamed": [
+     "noun.place.t.pl.mid"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:buildHTO:653|buildBase",
+    "skill": "placeValue1000",
+    "expected": "Byg tallet seks hundrede og treoghalvtreds.",
+    "asr": "bygtallet med 653",
+    "asrWhisper": "byggetallet 653",
+    "clips": [
+     "s.place.build",
+     "hog.600",
+     "n.end.53"
+    ],
+    "blamed": [
+     "s.place.build"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:zeroPlace:250|fillSlots",
+    "skill": "placeValue1000",
+    "expected": "To hundreder og fem tiere. Skriv tallet med brikkerne.",
+    "asr": "to hundreder og fem tige skriv tallet med brikkerne",
+    "asrWhisper": "To hundreder og femtiende skrev tallet med brikkerne",
+    "clips": [
+     "n.mid.2",
+     "noun.place.h.pl.mid",
+     "op.og",
+     "n.mid.5",
+     "noun.place.t.pl.end",
+     "s.place.writeNumberWithTokens"
+    ],
+    "blamed": [
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:regroup:to:3:15|buildBase",
+    "skill": "placeValue1000",
+    "expected": "Læg tre tiere og femten enere.",
+    "asr": "lik 3 tiger og 15 enere",
+    "asrWhisper": "Læg 3 tige og 15 enere",
+    "clips": [
+     "s.place.lay",
+     "n.mid.3",
+     "noun.place.t.pl.mid",
+     "op.og",
+     "n.mid.15",
+     "noun.place.o.pl.end"
+    ],
+    "blamed": [
+     "noun.place.t.pl.mid"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:zeroPlace:406|fillSlots",
+    "skill": "placeValue1000",
+    "expected": "Fire hundreder og seks enere. Skriv tallet med brikkerne.",
+    "asr": "fire hundreder og sek enere skriv tallet med brikkerne",
+    "asrWhisper": "Fire hundreder og seks enere skrev tallet med brikkerne",
+    "clips": [
+     "n.mid.4",
+     "noun.place.h.pl.mid",
+     "op.og",
+     "n.mid.6",
+     "noun.place.o.pl.end",
+     "s.place.writeNumberWithTokens"
+    ],
+    "blamed": [
+     "n.mid.6"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:digitValue:t:872|choice",
+    "skill": "placeValue1000",
+    "expected": "Hvad er tierne værd i otte hundrede og tooghalvfjerds?",
+    "asr": "vadt er tienever i 872",
+    "asrWhisper": "Hvad er tiende vejr i 872",
+    "clips": [
+     "s.pv.worthTens",
+     "hog.800",
+     "n.end.72"
+    ],
+    "blamed": [
+     "s.pv.worthTens"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:digitValue:t:519|buildBase",
+    "skill": "placeValue1000",
+    "expected": "Byg kun tierne i fem hundrede og nitten.",
+    "asr": "by kun tiene i 519",
+    "asrWhisper": "Byg kun tiende i 519",
+    "clips": [
+     "s.place.buildOnlyTens",
+     "hog.500",
+     "n.end.19"
+    ],
+    "blamed": [
+     "s.place.buildOnlyTens"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:digitValue:t:471|choice",
+    "skill": "placeValue1000",
+    "expected": "Hvad er tierne værd i fire hundrede og enoghalvfjerds?",
+    "asr": "vadet er tiunever i 471",
+    "asrWhisper": "Hvad er tiende vejr i 471",
+    "clips": [
+     "s.pv.worthTens",
+     "hog.400",
+     "n.end.71"
+    ],
+    "blamed": [
+     "s.pv.worthTens"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:regroup:ht:3:15|buildBase",
+    "skill": "placeValue1000",
+    "expected": "Læg tre hundreder og femten tiere.",
+    "asr": "lik 300der og 15 t0e",
+    "asrWhisper": "Læg 300 og 15 t",
+    "clips": [
+     "s.place.lay",
+     "n.mid.3",
+     "noun.place.h.pl.mid",
+     "op.og",
+     "n.mid.15",
+     "noun.place.t.pl.end"
+    ],
+    "blamed": [
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "placeValue1000|pv:digitValue:t:178|choice",
+    "skill": "placeValue1000",
+    "expected": "Hvad er tierne værd i et hundrede og otteoghalvfjerds?",
+    "asr": "hvad er tigerne ver i 178",
+    "asrWhisper": "Hvad er tiende vejr i 178",
+    "clips": [
+     "s.pv.worthTens",
+     "hog.100",
+     "n.end.78"
+    ],
+    "blamed": [
+     "s.pv.worthTens"
+    ]
+   },
+   {
+    "key": "tensOnes|to:decompose:tens:82|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Hvor mange tiere og enere er der i toogfirs?",
+    "asr": "hvor mange tige og enere er der i 82",
+    "asrWhisper": "Hvor mange tigre og enere er der i 82?",
+    "clips": [
+     "s.place.howManyTensOnes",
+     "n.end.82"
+    ],
+    "blamed": [
+     "s.place.howManyTensOnes"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:25|choice",
+    "skill": "tensOnes",
+    "expected": "Fem enere og to tiere. Hvilket tal er det?",
+    "asr": "fem enere og 2 ti hvilket tal er det",
+    "asrWhisper": "5 enere og 2 tie hvilket tal er det?",
+    "clips": [
+     "n.mid.5",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.2",
+     "noun.place.t.pl.end",
+     "s.place.whichNumber"
+    ],
+    "blamed": [
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:27|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Syv enere og to tiere. Skriv tallet med brikkerne.",
+    "asr": "syv enere og 2 tige skriv tallet med prikkerne",
+    "asrWhisper": "Syv enere og to tiere skrev tallet med prikkerne",
+    "clips": [
+     "n.mid.7",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.2",
+     "noun.place.t.pl.end",
+     "s.place.writeNumberWithTokens"
+    ],
+    "blamed": [
+     "s.place.writeNumberWithTokens"
+    ]
+   },
+   {
+    "key": "tensOnes|to:decompose:ones:48|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Hvor mange tiere og enere er der i otteogfyrre?",
+    "asr": "hvor mange tiger og enere er der i 48",
+    "asrWhisper": "Hvor mange tigre og enere er der i 48",
+    "clips": [
+     "s.place.howManyTensOnes",
+     "n.end.48"
+    ],
+    "blamed": [
+     "s.place.howManyTensOnes"
+    ]
+   },
+   {
+    "key": "tensOnes|to:decompose:tens:65|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Hvor mange tiere og enere er der i femogtres?",
+    "asr": "hvor mange tiger og enere er der i 65",
+    "asrWhisper": "Hvor mange tigre og enere er der i 65",
+    "clips": [
+     "s.place.howManyTensOnes",
+     "n.end.65"
+    ],
+    "blamed": [
+     "s.place.howManyTensOnes"
+    ]
+   },
+   {
+    "key": "tensOnes|to:decompose:ones:92|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Hvor mange tiere og enere er der i tooghalvfems?",
+    "asr": "hvor mange tige og enere er der i 92",
+    "asrWhisper": "Hvor mange tigre og enere er der i 92",
+    "clips": [
+     "s.place.howManyTensOnes",
+     "n.end.92"
+    ],
+    "blamed": [
+     "s.place.howManyTensOnes"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:79|choice",
+    "skill": "tensOnes",
+    "expected": "Ni enere og syv tiere. Hvilket tal er det?",
+    "asr": "n9 enere og s7tie hvilket tal er det",
+    "asrWhisper": "9 enere og 7 tige hvilket tal er det?",
+    "clips": [
+     "n.mid.9",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.7",
+     "noun.place.t.pl.end",
+     "s.place.whichNumber"
+    ],
+    "blamed": [
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "tensOnes|to:decompose:tens:63|buildBase",
+    "skill": "tensOnes",
+    "expected": "Byg kun tierne i treogtres.",
+    "asr": "by kun tierne i 63",
+    "asrWhisper": "Byg kun tiende i 63",
+    "clips": [
+     "s.place.buildOnlyTens",
+     "n.end.63"
+    ],
+    "blamed": [
+     "s.place.buildOnlyTens"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:74|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Fire enere og syv tiere. Skriv tallet med brikkerne.",
+    "asr": "fire senere og syv tie skriv tallet med brikkerne",
+    "asrWhisper": "4 enere og 7 tiere skrev tallet med prikkerne",
+    "clips": [
+     "n.mid.4",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.7",
+     "noun.place.t.pl.end",
+     "s.place.writeNumberWithTokens"
+    ],
+    "blamed": [
+     "s.place.writeNumberWithTokens"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:55|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Fem enere og fem tiere. Skriv tallet med brikkerne.",
+    "asr": "fem enere og f5m tige skriv tallet med brikkerne",
+    "asrWhisper": "5 enere og 5 tie skrev tallet med prikkerne",
+    "clips": [
+     "n.mid.5",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.5",
+     "noun.place.t.pl.end",
+     "s.place.writeNumberWithTokens"
+    ],
+    "blamed": [
+     "n.mid.5",
+     "op.og",
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "tensOnes|to:expand:36|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Seksogtredive er hvad plus hvad?",
+    "asr": "36 er vad plus vad",
+    "asrWhisper": "36 hvad plus hvad",
+    "clips": [
+     "n.mid.36",
+     "hint.place.is",
+     "frag.hvad",
+     "op.plus",
+     "frag.hvad"
+    ],
+    "blamed": [
+     "frag.hvad"
+    ]
+   },
+   {
+    "key": "tensOnes|to:expand:86|choice",
+    "skill": "tensOnes",
+    "expected": "Seksogfirs er firs plus hvad?",
+    "asr": "86 er 80 plus vad",
+    "asrWhisper": "86 plus hvad?",
+    "clips": [
+     "n.mid.86",
+     "hint.place.is",
+     "n.mid.80",
+     "op.plus",
+     "frag.hvad"
+    ],
+    "blamed": [
+     "frag.hvad"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:75|buildBase",
+    "skill": "tensOnes",
+    "expected": "Læg fem enere og syv tiere.",
+    "asr": "lik fe enere og 7 tie",
+    "asrWhisper": "Læg 5 ener og 7 tie",
+    "clips": [
+     "s.place.lay",
+     "n.mid.5",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.7",
+     "noun.place.t.pl.end"
+    ],
+    "blamed": [
+     "noun.place.o.pl.mid",
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:55|buildBase",
+    "skill": "tensOnes",
+    "expected": "Læg fem enere og fem tiere.",
+    "asr": "læk f5 enere og f5 tie",
+    "asrWhisper": "Læg 5 i en åre og 5 ti i en uge",
+    "clips": [
+     "s.place.lay",
+     "n.mid.5",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.5",
+     "noun.place.t.pl.end"
+    ],
+    "blamed": [
+     "s.place.lay",
+     "n.mid.5",
+     "op.og",
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:57|choice",
+    "skill": "tensOnes",
+    "expected": "Syv enere og fem tiere. Hvilket tal er det?",
+    "asr": "s7v enere og emtime hvilket tal er det",
+    "asrWhisper": "7 enere og 5 tie hvilket tal er det",
+    "clips": [
+     "n.mid.7",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.5",
+     "noun.place.t.pl.end",
+     "s.place.whichNumber"
+    ],
+    "blamed": [
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "tensOnes|to:decompose:tens:65|buildBase",
+    "skill": "tensOnes",
+    "expected": "Byg kun tierne i femogtres.",
+    "asr": "by kun tigerne i 65",
+    "asrWhisper": "Byg kun tiende i 65",
+    "clips": [
+     "s.place.buildOnlyTens",
+     "n.end.65"
+    ],
+    "blamed": [
+     "s.place.buildOnlyTens"
+    ]
+   },
+   {
+    "key": "tensOnes|to:swapped:25|fillSlots",
+    "skill": "tensOnes",
+    "expected": "Fem enere og to tiere. Skriv tallet med brikkerne.",
+    "asr": "fem enere og 2 tige skriv tallet med brikkerne",
+    "asrWhisper": "Fem enere og to tiere skrev tallet med prikkerne",
+    "clips": [
+     "n.mid.5",
+     "noun.place.o.pl.mid",
+     "op.og",
+     "n.mid.2",
+     "noun.place.t.pl.end",
+     "s.place.writeNumberWithTokens"
+    ],
+    "blamed": [
+     "noun.place.t.pl.end"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:m:hexagon:rhombus|choice",
+    "skill": "composeShapes",
+    "expected": "Hvor mange romber skal der til for at lave en sekskant?",
+    "asr": "hvor mange romber skal der til for at lave en sekkant",
+    "asrWhisper": "Hvor mange homber skal der til for at lave en sekskant",
+    "clips": [
+     "s.composeShapes.howMany",
+     "noun.shape.rhombus.pl.mid",
+     "s.composeShapes.needed",
+     "noun.shape.hexagon.indef.end"
+    ],
+    "blamed": [
+     "noun.shape.hexagon.indef.end"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:k:6:triangle:rhombus|choice",
+    "skill": "composeShapes",
+    "expected": "Du har seks trekanter. Hvor mange romber kan du lave af dem?",
+    "asr": "du har sek trekanter hvor mange romper kan du lave af dem",
+    "asrWhisper": "Du har 6 trekantere hvor mange romper kan du lave af dem?",
+    "clips": [
+     "s.composeShapes.youHave",
+     "n.mid.6",
+     "noun.shape.triangle.pl.end",
+     "s.composeShapes.howMany",
+     "noun.shape.rhombus.pl.mid",
+     "s.composeShapes.canMake"
+    ],
+    "blamed": [
+     "n.mid.6",
+     "noun.shape.rhombus.pl.mid"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:m:trapezoid:triangle|choice",
+    "skill": "composeShapes",
+    "expected": "Hvor mange trekanter skal der til for at lave et trapez?",
+    "asr": "hvor mange trekanter skal der til for at lave et trapis",
+    "asrWhisper": "Hvor mange trekant skal der til for at lave et trapez",
+    "clips": [
+     "s.composeShapes.howMany",
+     "noun.shape.triangle.pl.mid",
+     "s.composeShapes.needed",
+     "noun.shape.trapezoid.indef.end"
+    ],
+    "blamed": [
+     "noun.shape.trapezoid.indef.end"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:k:6:rhombus:hexagon|choice",
+    "skill": "composeShapes",
+    "expected": "Du har seks romber. Hvor mange sekskanter kan du lave af dem?",
+    "asr": "du har s6 romper hvor mange sekanter kan du lave af dem",
+    "asrWhisper": "Du har 6 romper hvor mange sekskanter kan du lave af dem?",
+    "clips": [
+     "s.composeShapes.youHave",
+     "n.mid.6",
+     "noun.shape.rhombus.pl.end",
+     "s.composeShapes.howMany",
+     "noun.shape.hexagon.pl.mid",
+     "s.composeShapes.canMake"
+    ],
+    "blamed": [
+     "noun.shape.rhombus.pl.end"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:k:8:triangle:rhombus|choice",
+    "skill": "composeShapes",
+    "expected": "Du har otte trekanter. Hvor mange romber kan du lave af dem?",
+    "asr": "du har 8 trekanter hvor mange romper kan du lave af dem",
+    "asrWhisper": "Du har 8 trekant hvor mange homber kan du lave af dem?",
+    "clips": [
+     "s.composeShapes.youHave",
+     "n.mid.8",
+     "noun.shape.triangle.pl.end",
+     "s.composeShapes.howMany",
+     "noun.shape.rhombus.pl.mid",
+     "s.composeShapes.canMake"
+    ],
+    "blamed": [
+     "noun.shape.rhombus.pl.mid"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:k:4:triangle:rhombus|choice",
+    "skill": "composeShapes",
+    "expected": "Du har fire trekanter. Hvor mange romber kan du lave af dem?",
+    "asr": "du har fire trekanter hvor mange romper kan du lave af dem",
+    "asrWhisper": "Du har 4 trekantere. Hvor mange romper kan du lave af dem?",
+    "clips": [
+     "s.composeShapes.youHave",
+     "n.mid.4",
+     "noun.shape.triangle.pl.end",
+     "s.composeShapes.howMany",
+     "noun.shape.rhombus.pl.mid",
+     "s.composeShapes.canMake"
+    ],
+    "blamed": [
+     "noun.shape.rhombus.pl.mid"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:k:6:triangle:trapezoid|choice",
+    "skill": "composeShapes",
+    "expected": "Du har seks trekanter. Hvor mange trapezer kan du lave af dem?",
+    "asr": "du har s6k trekanter hvor mange trapeser kan du lave af dem",
+    "asrWhisper": "Du har 6 trekant hvor mange trapezer kan du lave af dem?",
+    "clips": [
+     "s.composeShapes.youHave",
+     "n.mid.6",
+     "noun.shape.triangle.pl.end",
+     "s.composeShapes.howMany",
+     "noun.shape.trapezoid.pl.mid",
+     "s.composeShapes.canMake"
+    ],
+    "blamed": [
+     "noun.shape.triangle.pl.end"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:m:circle:semicircle|choice",
+    "skill": "composeShapes",
+    "expected": "Hvor mange halvcirkler skal der til for at lave en cirkel?",
+    "asr": "hvor mange halvcirkler skal der til for at lave en cirke",
+    "asrWhisper": "Hvor mange halvcirkler skal der til for at lave en cirke",
+    "clips": [
+     "s.composeShapes.howMany",
+     "noun.shape.semicircle.pl.mid",
+     "s.composeShapes.needed",
+     "noun.shape.circle.indef.end"
+    ],
+    "blamed": [
+     "noun.shape.circle.indef.end"
+    ]
+   },
+   {
+    "key": "composeShapes|cps:m:rhombus:triangle|choice",
+    "skill": "composeShapes",
+    "expected": "Hvor mange trekanter skal der til for at lave en rombe?",
+    "asr": "hvor mange trekanter skal der til for at lave en rompe",
+    "asrWhisper": "Hvor mange trekantere skal der til for at lave en rompe",
+    "clips": [
+     "s.composeShapes.howMany",
+     "noun.shape.triangle.pl.mid",
+     "s.composeShapes.needed",
+     "noun.shape.rhombus.indef.end"
+    ],
+    "blamed": [
+     "noun.shape.rhombus.indef.end"
+    ]
+   },
+   {
+    "key": "shapes3D|s3d:n:sphere|choice",
+    "skill": "shapes3D",
+    "expected": "Tryk på kuglen.",
+    "asr": "tryk på kolen",
+    "asrWhisper": "Tryk på kolen",
+    "clips": [
+     "frag.tryk_paa",
+     "noun.solid.sphere.def.end"
+    ],
+    "blamed": [
+     "noun.solid.sphere.def.end"
+    ]
+   },
+   {
+    "key": "symmetry|sym:grid:0|grid",
+    "skill": "symmetry",
+    "expected": "Hvor mange felter mangler, før mønsteret er spejlet i stregen?",
+    "asr": "hvor mange felter mangler før mønstret spejlet i stregen",
+    "asrWhisper": "Hvor mange felter mangler før mønstret er spejlet i stregen",
+    "clips": [
+     "s.symmetry.howManyMissing"
+    ],
+    "blamed": [
+     "s.symmetry.howManyMissing"
+    ]
+   },
+   {
+    "key": "symmetry|sym:grid:0|trueFalse",
+    "skill": "symmetry",
+    "expected": "Er mønsteret spejlet rigtigt i stregen?",
+    "asr": "af mønsteret spejlete rigtigt i stregen",
+    "asrWhisper": "Er mønstret spejlet rigtigt i stregen",
+    "clips": [
+     "s.symmetry.isMirrored"
+    ],
+    "blamed": [
+     "s.symmetry.isMirrored"
+    ]
    }
   ]
  },
  "gates": {
   "numbersAllCorrect": false,
-  "numbersComplete": false,
+  "numbersComplete": true,
   "templates97": false
  },
  "retake": [
+  "frag.du_betaler_med",
+  "frag.hvad",
+  "frag.stil_uret_saa_klokken_er",
+  "h.mid.400",
+  "hog.100",
   "hog.300",
+  "hog.400",
+  "hog.500",
+  "hog.600",
+  "hog.900",
+  "n.end.16",
+  "n.end.34",
+  "n.end.76",
   "n.mid.17",
+  "n.mid.30",
+  "n.mid.44",
+  "n.mid.5",
+  "n.mid.50",
+  "n.mid.54",
+  "n.mid.6",
+  "n.mid.64",
+  "n.mid.69",
+  "n.mid.90",
+  "noun.coin.10000.def.end",
+  "noun.coin.10000.indef.end",
+  "noun.coin.10000.pl.end",
+  "noun.coin.2000.indef.end",
+  "noun.coin.20000.def.end",
+  "noun.coin.20000.pl.end",
+  "noun.coin.50.def.end",
+  "noun.coin.5000.def.end",
+  "noun.coin.5000.indef.end",
+  "noun.coin.5000.pl.end",
+  "noun.coin.50000.def.end",
+  "noun.coin.50000.pl.end",
+  "noun.frac.3_4.end",
+  "noun.place.h.pl.mid",
+  "noun.place.o.pl.mid",
+  "noun.place.t.pl.end",
+  "noun.place.t.pl.mid",
+  "noun.shape.circle.indef.end",
+  "noun.shape.hexagon.indef.end",
+  "noun.shape.rhombus.indef.end",
+  "noun.shape.rhombus.pl.end",
+  "noun.shape.rhombus.pl.mid",
+  "noun.shape.trapezoid.indef.end",
+  "noun.shape.triangle.pl.end",
+  "noun.solid.sphere.def.end",
   "noun.thing.ball.pl",
+  "noun.thing.carrot.pl",
   "noun.thing.cube.sg",
+  "noun.unit.kroner.end",
   "op.er_lig_med",
+  "op.og",
+  "q.add:7+4",
+  "q.add:7+7",
+  "q.dbl:6",
+  "q.hlf:8",
+  "q.mp:2+?=4",
+  "q.sub:13-4",
+  "s.change.layChange",
+  "s.clock.findClock",
+  "s.fractionShape.colour",
+  "s.fractionShape.write",
+  "s.nl.hopFrom",
+  "s.nl.place",
+  "s.order.countBackHundreds",
+  "s.order.countBackTens",
+  "s.order.countOnHundreds",
+  "s.order.countOnTens",
   "s.order20.countBack",
   "s.order20.countOn",
-  "s.patterns.continue"
+  "s.order20.whichBigger",
+  "s.patterns.continue",
+  "s.place.build",
+  "s.place.buildOnlyTens",
+  "s.place.howManyTensOnes",
+  "s.place.lay",
+  "s.place.writeNumberWithTokens",
+  "s.pv.worthTens",
+  "s.shareEqually.between",
+  "s.shareEqually.howMany",
+  "s.shareEqually.share",
+  "s.skipCount.nextTwo",
+  "s.symmetry.howManyMissing",
+  "s.symmetry.isMirrored",
+  "s.unitChoice.q.carrot",
+  "s.unitChoice.q.pencil",
+  "t.end.210",
+  "t.end.270",
+  "t.end.570",
+  "t.end.75"
  ]
 }
