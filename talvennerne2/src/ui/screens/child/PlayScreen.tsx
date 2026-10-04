@@ -7,6 +7,7 @@
 // the screen paints at once.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ComponentType } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useNav } from '../../../app/nav'
 import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
@@ -55,7 +56,16 @@ async function load(target: PlayTarget, hutRegion: RegionId | null): Promise<Loa
 export default function PlayScreen({ route }: ScreenProps<RouteOf<'round'>>) {
   const target = route.node
   const hutRegion = route.region ?? null
-  const profile = useProfile((s) => s.profile)
+  const node = target === 'practice' || target === 'hut' ? null : NODE_BY_ID[target]
+  const trialKey = node ? (node.slot === 'finale' ? node.world : node.slot === 'trial' ? node.region : null) : null
+  // Only what the screen shows: every answer writes the profile, and none of that is drawn here.
+  const { buddy, roundNode, trial } = useProfile(
+    useShallow((s) => ({
+      buddy: s.profile?.animals.find((a) => a.uid === s.profile?.buddyUid) ?? null,
+      roundNode: s.profile?.round?.nodeId ?? null,
+      trial: trialKey ? (s.profile?.trials[trialKey] ?? null) : null,
+    })),
+  )
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [tapped, setTapped] = useState(false)
   const job = useRef<Promise<Loaded> | null>(null)
@@ -86,7 +96,6 @@ export default function PlayScreen({ route }: ScreenProps<RouteOf<'round'>>) {
   const onStart = useCallback(() => setTapped(true), [])
   const onPractice = useCallback(() => playNext('practice'), [])
 
-  const buddy = profile?.animals.find((a) => a.uid === profile.buddyUid) ?? null
   // after a reload nothing has woken the sound yet: the intro waits for one tap
   const needTap = loaded?.kind === 'ready' && !tapped && !isAudioUnlocked()
 
@@ -109,16 +118,14 @@ export default function PlayScreen({ route }: ScreenProps<RouteOf<'round'>>) {
     )
   }
 
-  const node = target === 'practice' || target === 'hut' ? null : NODE_BY_ID[target]
-  const trialKey = node ? (node.slot === 'finale' ? node.world : node.slot === 'trial' ? node.region : null) : null
   return (
     <PlayIntro
       target={target}
       hutRegion={hutRegion}
-      resume={!!route.resume || profile?.round?.nodeId === target}
+      resume={!!route.resume || roundNode === target}
       state={loaded?.kind === 'closed' || loaded?.kind === 'tomorrow' ? loaded.kind : needTap ? 'tap' : 'loading'}
       buddy={buddy}
-      trial={trialKey ? (profile?.trials[trialKey] ?? null) : null}
+      trial={trial}
       onStart={onStart}
       onClose={onClose}
       onPractice={onPractice}
