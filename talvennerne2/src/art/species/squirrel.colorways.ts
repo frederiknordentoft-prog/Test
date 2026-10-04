@@ -40,13 +40,14 @@ export const SQUIRREL_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold
     fur: '#E9C08A',
     overrides: { belly: '#FFF9EE', outline: '#8A5F2C', shade: '#D9AC74', mane2: '#D3A66C', inner: '#FFC9BC', nose: '#5E3D27', iris: '#8A5420' },
   },
-  // Orange: lysende gulorange (morgenfrue), tydeligt lysere og mere gul end det rustrøde c1 – også ved 48 px (review
-  // G2-r2 §3.4) – og stadig orange mod guldets citrongule pels med ravkontur og glimmer.
+  // Orange: klar mandarinorange, tydeligt lysere og mere gul end det rustrøde c1 – også ved 48 px (review G2-r2 §3.4) –
+  // og rødere og mere mættet end guldets citrongule pels (review G2-r3 §4 og §7.5: OKLab-afstanden til guld var 0,044).
+  // squirrel.colorways.test.ts holder pelsens afstand til guld og til de andre farver på mindst 0,08.
   c6: {
     id: 'c6',
     name: 'orange',
-    fur: '#FAB636',
-    overrides: { belly: '#FFF8E4', outline: '#8A5A0E', mane2: '#EE9F24', inner: '#FFD6AE', nose: '#5C3312', iris: '#8A5214' },
+    fur: '#FFA22C',
+    overrides: { belly: '#FFF8E4', outline: '#8A520E', mane2: '#F08C22', inner: '#FFD2AC', nose: '#5C3012', iris: '#8A4C14' },
   },
   // Guld: guldpels med ravkontur og ravskygge; halen lidt dybere guld.
   gold: {
