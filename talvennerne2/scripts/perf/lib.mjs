@@ -21,6 +21,15 @@ export async function serve(dist, port, distB = null) {
   }
   const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1', '--directory', root], { stdio: 'ignore' })
   await wait(800)
+  // The port must serve these very files. Something else on it (a dev server left running) would
+  // be measured instead, silently: React in development mode, and A and B from the same source.
+  for (const [dir, path] of [[dist, 'Test'], ...(distB ? [[distB, 'TestB']] : [])]) {
+    const served = await fetch(`http://127.0.0.1:${port}/${path}/talvennerne2/index.html`).then((r) => r.text(), () => '')
+    if (served !== readFileSync(join(resolve(dir), 'index.html'), 'utf8')) {
+      server.kill()
+      throw new Error(`port ${port} serverer ikke ${dir} (kører der en anden server?)`)
+    }
+  }
   const q = '?e2e=1&voice=fast'
   return {
     url: `http://127.0.0.1:${port}/Test/talvennerne2/${q}`,
