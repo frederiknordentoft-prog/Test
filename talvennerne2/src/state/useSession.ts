@@ -200,15 +200,17 @@ export const useSession = create<SessionStore>((set, get) => {
 
     async importProfile(entry, target) {
       const replacingActive = target.mode === 'replace' && useProfile.getState().profile?.id === target.profileId
-      if (replacingActive) {
-        if (useRound.getState().status !== 'idle') useRound.getState().quit()
-        await useProfile.getState().unload({ discard: true })
-        set({ activeId: null })
-      }
+      if (replacingActive && useRound.getState().status !== 'idle') useRound.getState().quit()
       const { importProfile: storeImport } = await import('../data/export')
-      const doc = await storeImport(entry, target)
+      // the active child stays loaded while its document is replaced, and is then reloaded in place
+      const doc = replacingActive
+        ? await useProfile.getState().replaceLoaded(() => storeImport(entry, target))
+        : await storeImport(entry, target)
       await get().refreshProfiles()
-      if (replacingActive) await get().selectProfile(doc.id)
+      if (replacingActive && useProfile.getState().profile?.id === doc.id) {
+        set({ activeId: doc.id, lastProfileId: doc.id })
+        persistBoot()
+      }
       return doc
     },
 

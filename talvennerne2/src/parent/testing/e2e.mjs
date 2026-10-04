@@ -1,7 +1,8 @@
 // Click-through of the parent dashboard on the dev server with the demo household: tabs, a profile
-// switch and back, a setting, export → import as a new child, the print report, and deleting a child.
+// switch and back, a setting, export → import as a new child and over the child ("Erstat"), the
+// print report, and deleting a child.
 //   flock /tmp/tv2-chromium.lock node src/parent/testing/e2e.mjs
-import { mkdirSync, readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { launch } from '../../../scripts/browser.mjs'
 
@@ -91,6 +92,27 @@ try {
   await page.locator('.tv-dash').getByText('er tilføjet som ny spiller').waitFor({ timeout: 10_000 })
   const kids = await page.getByRole('radio').count()
   check(kids === 4, `importen tilføjer en spiller (${kids} i alt)`)
+
+  // "Erstat Adas data" with a changed copy: the confirmation stays, the app shows the file's child,
+  // and a setting changed afterwards is written on top of it (review of the release: the old child
+  // stayed loaded and was written back over the import)
+  const changed = `${OUT}e2e-export-changed.json`
+  json.profiles[0].doc.stamps = 7
+  writeFileSync(changed, JSON.stringify(json))
+  await page.locator('input[type=file]').setInputFiles(changed)
+  await page.locator('.tv-dash').getByText('Filen indeholder Ada').waitFor({ timeout: 10_000 })
+  await page.getByRole('button', { name: 'Erstat Adas data' }).click()
+  const replaced = await page.locator('.tv-dash').getByText('Adas data er erstattet med filens.').waitFor({ timeout: 10_000 }).then(() => true, () => false)
+  check(replaced, 'erstat viser sin bekræftelse')
+  const loadedStamps = await page.evaluate(async () => (await import('/src/state/useProfile.ts')).useProfile.getState().profile?.stamps)
+  check(loadedStamps === 7, `appen viser filens Ada efter erstat (stempler ${loadedStamps})`)
+  await page.getByRole('switch', { name: /Rolig animation/ }).click()
+  await page.getByRole('switch', { name: /Rolig animation/ }).click()
+  const storedStamps = await page.evaluate(async (id) => {
+    await (await import('/src/state/useProfile.ts')).useProfile.getState().flush()
+    return (await (await import('/src/data/repo/profiles.ts')).getProfile(id))?.stamps
+  }, ids.ada)
+  check(storedStamps === 7, `en indstilling bagefter skriver ikke den gamle Ada tilbage (stempler ${storedStamps})`)
 
   // the print report: alone, grouped by Fælles Mål, without perler or animals
   await page.emulateMedia({ media: 'print' })

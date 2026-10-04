@@ -53,6 +53,13 @@ export interface ProfileStore {
   loadProfile(id: ProfileId): Promise<ProfileDoc | null>
   /** Write what is pending and forget the profile; `discard` drops the pending writes instead. */
   unload(opts?: { discard?: boolean }): Promise<void>
+  /**
+   * Replace the loaded child with a document that `store` writes outside the queue (an import over
+   * the active child). The child's queued writes are dropped and nothing is written for it
+   * meanwhile; then the stored document is loaded in place. The child is never unloaded on the way,
+   * so no screen picks it again from the old document (review of the release, "Erstat …s data").
+   */
+  replaceLoaded(store: () => Promise<ProfileDoc>): Promise<ProfileDoc>
   /** One evaluated answer: mastery, stats, misconceptions, the log row and the day. */
   recordAnswer(rec: AnswerRecord): AnswerLogEntry | null
   /** The round's resume point (null when the round is over or abandoned). */
@@ -120,8 +127,12 @@ let writing: Promise<void> | null = null
 /** The batch whose transaction is running. */
 let inFlight: Batch | null = null
 let retryTimer: ReturnType<typeof setTimeout> | null = null
+/** The child whose document is being replaced from outside the queue (replaceLoaded): nothing is written for it. */
+let replacing: ProfileId | null = null
 
 function enqueue(profileId: ProfileId, change: { doc?: ProfileDoc; answer?: AnswerLogEntry; daily?: DailyAggregate }): void {
+  // the old document must never be written over the one replacing it
+  if (profileId === replacing) return
   // a batch never mixes profiles
   if (pending && pending.profileId !== profileId) detach()
   const fresh: Batch = { profileId, doc: null, answers: [], daily: new Map() }
@@ -351,6 +362,33 @@ export const useProfile = create<ProfileStore>((set, get) => ({
     }
     resetCaches()
     set({ profile: null, status: 'empty' })
+  },
+
+  async replaceLoaded(store) {
+    const id = get().profile?.id ?? null
+    replacing = id
+    loadToken += 1
+    try {
+      if (id) {
+        dropQueued(id)
+        await (writing ?? Promise.resolve())
+        dropQueued(id)
+      }
+      const doc = await store()
+      const loaded = await loadCaches(doc.id)
+      const now = get().profile
+      if (!now || now.id === doc.id) {
+        // a load of the old document still in flight must not land after this one
+        loadToken += 1
+        resetCaches()
+        recentBySkill = loaded.recent
+        keySkill = loaded.keys
+        set({ profile: doc, status: 'ready' })
+      }
+      return doc
+    } finally {
+      replacing = null
+    }
   },
 
   recordAnswer(rec) {

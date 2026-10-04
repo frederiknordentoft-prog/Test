@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDb } from '../data/db'
+import * as exportStore from '../data/export'
 import { BOOT_KEY, readBoot, writeBoot } from '../data/namespace'
 import { createProfile } from '../data/repo/profiles'
 import { freshDb } from '../data/testing/freshDb'
@@ -200,6 +201,64 @@ describe('deleting, exporting and importing', () => {
     const copy = await session().importProfile(file.profiles[0], { mode: 'new' })
     expect(session().profiles.map((p) => p.id)).toEqual([ada.id, copy.id])
     expect(readBoot().profileIds).toEqual([ada.id, copy.id])
+  })
+
+  it('keeps the imported child loaded when the dashboard picks a child meanwhile, and the next write keeps it', async () => {
+    await session().boot({ pruneDelayMs: null })
+    const ada = await session().createProfile({ name: 'Ada', grade: 0 })
+    const file = await session().exportProfiles([ada.id])
+    const entry = { ...file.profiles[0], doc: { ...file.profiles[0].doc, stamps: 9 } }
+    // the dashboard selects the last child whenever none is loaded (React runs that effect in the
+    // same microtask as the store change; review of the release, "Erstat …s data")
+    const picks: string[] = []
+    // in the browser the import chunk resolves a task later than the dashboard's pick reads the child
+    const storeImport = exportStore.importProfile
+    vi.spyOn(exportStore, 'importProfile').mockImplementation(async (e, t) => {
+      await new Promise((r) => setTimeout(r, 10))
+      return storeImport(e, t)
+    })
+    const unsubscribe = useProfile.subscribe((s, prev) => {
+      if (prev.profile && !s.profile && session().profiles.length > 0) {
+        picks.push(ada.id)
+        void session().selectProfile(ada.id)
+      }
+    })
+    try {
+      await session().importProfile(entry, { mode: 'replace', profileId: ada.id })
+      await new Promise((r) => setTimeout(r, 50))
+    } finally {
+      unsubscribe()
+    }
+    expect(useProfile.getState().profile?.stamps).toBe(9)
+    expect(session().activeId).toBe(ada.id)
+    // a setting changed after the import is written on top of the imported child, not the old one
+    useProfile.getState().setSettings({ domainsOff: ['number'] })
+    await useProfile.getState().flush()
+    const stored = await getDb().profiles.get(ada.id)
+    expect(stored?.stamps).toBe(9)
+    expect(stored?.settings.domainsOff).toEqual(['number'])
+    expect(picks.length).toBeLessThanOrEqual(1)
+  })
+
+  it('writes nothing of the old child while its document is replaced', async () => {
+    await session().boot({ pruneDelayMs: null })
+    const ada = await session().createProfile({ name: 'Ada', grade: 0 })
+    const file = await session().exportProfiles([ada.id])
+    const entry = { ...file.profiles[0], doc: { ...file.profiles[0].doc, stamps: 4 } }
+    const storeImport = exportStore.importProfile
+    vi.spyOn(exportStore, 'importProfile').mockImplementation(async (e, t) => {
+      // a setting changed on the old document while the file is being stored
+      useProfile.getState().setSettings({ domainsOff: ['money'] })
+      await new Promise((r) => setTimeout(r, 10))
+      return storeImport(e, t)
+    })
+    await session().importProfile(entry, { mode: 'replace', profileId: ada.id })
+    await useProfile.getState().flush()
+    const stored = await getDb().profiles.get(ada.id)
+    expect(stored?.stamps).toBe(4)
+    expect(stored?.settings.domainsOff).not.toContain('money')
+    expect(useProfile.getState().profile?.stamps).toBe(4)
+    expect(useProfile.getState().profile?.settings.domainsOff).not.toContain('money')
   })
 })
 

@@ -218,7 +218,8 @@ export async function readImportFile(file: Blob): Promise<ValidationResult> {
 
 /**
  * Store one exported profile. Validate first (parseExport). If the replaced profile is the active
- * one, unload it without flushing before importing (useSession.importProfile does).
+ * one, store it through useProfile.replaceLoaded, which drops its queued writes and reloads it in
+ * place (useSession.importProfile does).
  */
 export async function importProfile(entry: ExportProfile, target: ImportTarget): Promise<ProfileDoc> {
   const db = getDb()
