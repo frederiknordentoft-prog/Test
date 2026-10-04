@@ -52,20 +52,33 @@ const TAIL_THICK: Vec[] = [
 const TAIL_THICK_STRANDS: Vec[][] = [[[6, -9], [16, -11], [23, -5], [26, 5], [26.6, 15]]]
 
 /**
- * Fjordhestens stående manke (review G1-r2, H1, og G1-r4, T9): en kort, opretstående, børstet manestribe med
- * fem totter i forskellig højde og en mørk midterstribe, klippet lavt som på en fjordhest. Den er smallest
- * foroven og vokser op af issen som ørerne: den tegnes efter hovedet, klippet til "uden for hovedet", så der
- * ingen bundkontur er. Ingen rund pandelok (den læstes som et tredje øje). Roden (y > 50) ligger inde i hovedet.
+ * Fjordhestens stående manke (review G1-r2, H1, G1-r4, T9, og G2-r3 §1 og §7.5): en lav, bred børste af korte, jævne
+ * børstehår med en mørk midterstribe, klippet lige som på en fjordhest. Den gamle smalle vifte af høje takker smeltede
+ * sammen til én stump spids, der læstes som enhjørningens horn, når føllet var lille (blindtestens #55). Børsten er
+ * bred og næsten flad foroven, så den aldrig samler sig til en spids. Den vokser op af issen som ørerne: den tegnes
+ * efter hovedet, klippet til "uden for hovedet", så der ingen bundkontur er. Ingen rund pandelok (den læstes som et
+ * tredje øje). Roden (y > 50) ligger inde i hovedet.
  */
-const FJORD_CREST: Vec[] = [
-  [86.4, 60], [86.4, 48], [87.6, 41], [89.4, 35.8], [91, 31.6], [92.8, 34.2], [95, 28], [97.6, 32.2], [100.2, 25.6], [102.8, 31.8],
-  [105.2, 28.6], [107.4, 33.6], [109.4, 32.2], [111, 36.2], [112.4, 41.4], [113.6, 48], [113.6, 60],
-]
-const FJORD_CREST_STRIPE: Vec[] = [[97.2, 60], [97, 44], [97.6, 35.6], [99, 30.6], [100.2, 28.6], [101.4, 30.8], [102.6, 35.6], [103, 44], [102.8, 60]]
-/** Toppens vækst på stor (som mankens) og den færdige del pr. vækst; roden skjules af hovedet. */
+const BRUSH_TIPS = 9
+/** Børstens top: spidserne og hakkerne imellem fra x0 til x1, højest i midten (y = top) og en anelse buet. */
+const brushTop = (x0: number, x1: number, top: number, notch: number): Vec[] =>
+  Array.from({ length: BRUSH_TIPS * 2 - 1 }, (_, i) => {
+    const x = x0 + ((x1 - x0) * i) / (BRUSH_TIPS * 2 - 2)
+    return [x, top + 0.006 * (x - 100) ** 2 + (i % 2 ? notch : 0)] as Vec
+  })
+const FJORD_CREST: Vec[] = [[84.2, 60], [83.8, 50], [84, 44.5], [84.8, 40.4], ...brushTop(86.2, 113.8, 36, 1.4), [115.2, 40.4], [116, 44.5], [116.2, 50], [115.8, 60]]
+const FJORD_CREST_STRIPE: Vec[] = [[95.2, 60], [95, 44], [95.2, 40.6], [96.6, 39.5], [100, 39.1], [103.4, 39.5], [104.8, 40.6], [105, 44], [104.8, 60]]
+/** Børstehårene: korte, lodrette streger i de lyse sider (kun i fuld detalje). */
+const FJORD_CREST_STRANDS: Vec[][] = [[[88.6, 44.5], [88.8, 40.4]], [[91.8, 44.5], [92, 40]], [[108.2, 44.5], [108, 40]], [[111.4, 44.5], [111.2, 40.4]]]
+/**
+ * Toppens vækst på stor (som mankens højde, men kun lidt i bredden, så børsten bliver mellem ørerne) og den færdige del
+ * pr. vækst; roden skjules af hovedet.
+ */
 const crestAt = (k: number) => {
-  const g = (pts: readonly Vec[]) => pts.map(([x, y]) => [100 + (x - 100) * k, 44 + (y - 44) * k] as Vec)
-  return hairShape(g(FJORD_CREST), { stripe: g(FJORD_CREST_STRIPE), pivot: { at: [100, 46], cls: TOSS } })
+  const kx = 1 + (k - 1) * 0.4
+  const g = (pts: readonly Vec[]) => pts.map(([x, y]) => [100 + (x - 100) * kx, 44 + (y - 44) * k] as Vec)
+  // Lav spændstighed: børstehårene ender i spidser (ikke i bløde buer som lammets uld).
+  return hairShape(g(FJORD_CREST), { stripe: g(FJORD_CREST_STRIPE), strands: FJORD_CREST_STRANDS.map(g), tension: 0.62, pivot: { at: [100, 46], cls: TOSS } })
 }
 const CREST: Record<number, Part> = { 1: crestAt(1), [STAGE_XF[3].mane]: crestAt(STAGE_XF[3].mane) }
 /**
