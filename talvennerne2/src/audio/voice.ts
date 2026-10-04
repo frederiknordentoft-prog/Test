@@ -209,10 +209,10 @@ function loadSprite(id: string): Promise<Sprite> {
 
 /**
  * Every clip's audible bounds, found in one read of the samples when the sprite is decoded. Reading
- * the channel (getChannelData) cost 5–7 ms at 4× the first time per sprite, and that fell on the
- * first clip a statement played — right after a tap. The bounds live on the sprite, so they go when
- * the LRU drops it. A sprite without a channel to read is left alone: boundsFor then fails, and the
- * statement is read by the device voice.
+ * the channel (getChannelData) cost 5–7 ms at a 4-fold CPU throttle the first time per sprite, and
+ * that fell on the first clip a statement played — right after a tap. The bounds live on the sprite,
+ * so they go when the LRU drops it. A sprite without a channel to read is left alone: boundsFor then
+ * fails, and the statement is read by the device voice.
  */
 function fillBounds(sprite: Sprite, idx: ManifestIndex): void {
   const clips = idx.manifest.sprites[sprite.id]?.clips

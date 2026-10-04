@@ -99,7 +99,7 @@ Det uændrede build (B) og runde 1 (A, det, der ligger i session-branchen) skift
 | rigtigt → næste opgave | 2/9 / 0/9 | 58 → – ms | – | 78 / – ms | 50 / 33,4 ms | TimerHandler:setTimeout 44,8 → TimerHandler:setTimeout 2,3 |
 | bekræft → næste opgave | 40/44 / 3/31 | 69 → 53 ms | 77 % | 106 / 58 ms | 66,6 / 33,4 ms | DIV#root.onclick 41,9 → DIV#root.onclick 9,4 |
 
-Hele turen: lange opgaver B 49 (median 67 ms, maks. 106), A 8 (median 57 ms, maks. 73); svar B 54, A 41; målestok B 15.5/13.7, A 14.3/16.2; væk fra svar over 20 ms: B 0,1 %, A 0,2 %; konsolfejl B 0, A 0
+Hele turen: lange opgaver B 49 (median 67 ms, maks. 106 ms), A 8 (median 57 ms, maks. 73 ms). Svar: B 54, A 41. Målestok (ms, før/efter turen): B 15,5/13,7, A 14,3/16,2. Konsolfejl: 0 i begge.
 
 Trykket selv, målt med Event Timing (handlerens tid inklusive Reacts render, og tiden til næste billede):
 
@@ -108,8 +108,6 @@ Trykket selv, målt med Event Timing (handlerens tid inklusive Reacts render, og
 | rigtigt tryk | 10/10 / 10/10 | 19,8 → 20 ms | 101 % | 96 → 88 ms | 92 % | 4/10 / 1/10 |
 | forkert tryk | 44/44 / 31/31 | 18,9 → 20,3 ms | 107 % | 80 → 80 ms | 100 % | 2/44 / 4/31 |
 | bekræft-tryk → næste opgave | 44/44 / 31/31 | 42,5 → 16,7 ms | 39 % | 112 → 88 ms | 79 % | 40/44 / 3/31 |
-
-Målestok B 15.5/13.7, A 14.3/16.2; svar B 54, A 41; lange opgaver i alt B 49 (maks. 106), A 8 (maks. 73); væk fra svar over 20 ms B 0,1 %, A 0,2 %
 
 - **Bekræft → næste opgave var problemet, og det er næsten væk.** Lang opgave i 91 % af overgangene før og 10 % efter. Handlerens tid faldt fra 42,5 til 16,7 ms: dyret monteres ikke længere forfra, og opgaven tegnes med én render.
 - **Hele turen:** 49 lange opgaver før (median 67 ms, maks. 106 ms), 8 efter (median 57 ms, maks. 73 ms).
@@ -226,7 +224,7 @@ B er session-branchens build (`dist` fra hovedtræet kl. 11.05, 5dbb13b/a142b25,
 | rigtigt → næste opgave | 1/18 / 0/18 | 50 → – ms | – | 50 / – ms | 33,3 / 33,3 ms | TimerHandler:setTimeout 14,6 → TimerHandler:setTimeout 3,3 |
 | bekræft → næste opgave | 0/40 / 13/52 | – → 57 ms | – | – / 85 ms | 33,4 / 33,4 ms | DIV#root.onclick 11,3 → DIV#root.onclick 13 |
 
-Hele turen: lange opgaver B 3 (median 54 ms, maks. 54), A 25 (median 57 ms, maks. 85); svar B 62, A 72; målestok B 14/13.3, 13.4/13.1, A 17.3/14, 13/20.4; væk fra svar over 20 ms: B 0,1 %, A 0,2 %; konsolfejl B 0, A 0
+Hele turen: lange opgaver B 3 (median 54 ms, maks. 54 ms), A 25 (median 57 ms, maks. 85 ms). Målestok (ms, før/efter hver tur): B 14/13,3 og 13,4/13,1, A 17,3/14 og 13/20,4. Konsolfejl: 0 i begge.
 
 - **Runde 1 holder allerede de absolutte krav i B's ture:** højst 6 % af overgangene med en lang opgave, værste billede 33,3 ms i median, længste lange opgave 54 ms og 3 lange opgaver på 62 svar.
 - **A har flere lange opgaver** (25, mest ved bekræft-trykket). Det er trykket selv (`DIV#root.onclick`), lige over grænsen (52–66 ms). Det skete mest i A's første tur, hvor maskinen var langsommere.
@@ -240,7 +238,7 @@ Hele turen: lange opgaver B 3 (median 54 ms, maks. 54), A 25 (median 57 ms, maks
 | forkert tryk | 60/60 / 69/70 | 19,4 → 15 ms | 77 % | 80 → 80 ms | 100 % | 6/60 / 2/70 |
 | bekræft-tryk → næste opgave | 59/59 / 69/69 | 17,4 → 17,6 ms | 101 % | 88 → 88 ms | 100 % | 4/59 / 5/69 |
 
-Målestok B 14.2/13.7, 16.3/12.9, A 14.9/18.4, 14.2/13.5; svar B 77, A 86; lange opgaver i alt B 11 (maks. 79), A 10 (maks. 61); væk fra svar over 20 ms B 0,1 %, A 0,2 %
+Målestok (ms, før/efter hver tur): B 14,2/13,7 og 16,3/12,9, A 14,9/18,4 og 14,2/13,5. Svar: B 77, A 86. Lange opgaver i alt: B 11 (maks. 79 ms), A 10 (maks. 61 ms). Væk fra svarene over 20 ms: B 0,1 %, A 0,2 %.
 
 | Fase | Overgange med lang opgave, B / A | Median lang opgave, B → A | A/B | Maks., B / A | Værste billede, B / A | Største invoker, B → A (ms pr. overgang) |
 |---|---|---|---|---|---|---|
@@ -250,7 +248,7 @@ Målestok B 14.2/13.7, 16.3/12.9, A 14.9/18.4, 14.2/13.5; svar B 77, A 86; lange
 | rigtigt → næste opgave | 0/15 / 0/15 | – → – ms | – | – / – ms | 33,4 / 33,4 ms | TimerHandler:setTimeout 3,5 → TimerHandler:setTimeout 11,7 |
 | bekræft → næste opgave | 4/59 / 5/69 | 53 → 60 ms | 113 % | 56 / 61 ms | 33,4 / 33,4 ms | DIV#root.onclick 13,5 → DIV#root.onclick 12,1 |
 
-Hele turen: lange opgaver B 11 (median 54 ms, maks. 79), A 10 (median 56 ms, maks. 61); svar B 77, A 86; målestok B 14.2/13.7, 16.3/12.9, A 14.9/18.4, 14.2/13.5; væk fra svar over 20 ms: B 0,1 %, A 0,2 %; konsolfejl B 0, A 0
+Hele turen: lange opgaver B 11 (median 54 ms, maks. 79 ms), A 10 (median 56 ms, maks. 61 ms). Konsolfejl: 0 i begge.
 
 - **Svar-trykket er blevet kortere:** handlerens tid faldt 13 % ved rigtigt og 23 % ved forkert (21,2 → 18,4 ms og 19,4 → 15,0 ms). Det svarer til bogføringen og profil-skrivningerne, der nu ligger efter paint.
 - **Bekræft-trykket er uændret** (17,4 → 17,6 ms). Runde 2 rører ikke den vej, for intet bogføres ved bekræft. Dens pris er den nye opgaves montering.
@@ -261,7 +259,6 @@ Hele turen: lange opgaver B 11 (median 54 ms, maks. 79), A 10 (median 56 ms, mak
 ### THROTTLE=1
 
 Runde 2, 70 svar: ingen lange opgaver, og det værste billede inden for 2,5 s af et tryk er 16,8 ms. Alle krav holder (`ASSERT=1` giver exit 0).
-
 
 ### Det, der står tilbage efter runde 2
 
