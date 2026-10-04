@@ -1,7 +1,7 @@
 // Shared by the performance measurements (SPEC §15.2, QA2 P3-16): the build served under
 // /Test/talvennerne2/ like GitHub Pages, the first start with the finger, and frame statistics.
 import { spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, symlinkSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -96,12 +96,20 @@ export async function solveGate(page) {
   await page.locator('.tv-gate [data-key="ok"]').click()
 }
 
-/** Every animation frame's time and every long task, from now on (read back from window). */
+/**
+ * Every animation frame's time, every long task and every long animation frame (LoAF: its blocking
+ * time and, per script, who invoked it, from where, how long it ran and how much of that was forced
+ * style and layout), from now on, plus the round's beats (each change of `data-beat` on .tv-round:
+ * asking → correct, wrong → teaching …), so the phases of an answer can be told apart. Read back
+ * from window.
+ */
 export function startFrames(page) {
   return page.evaluate(() => {
     window.__frames = []
     window.__long = []
     window.__marks = []
+    window.__loaf = []
+    window.__beats = []
     let last = performance.now()
     const loop = (t) => {
       window.__frames.push([t, t - last])
@@ -112,5 +120,60 @@ export function startFrames(page) {
     new PerformanceObserver((l) => {
       for (const e of l.getEntries()) window.__long.push([e.startTime, e.duration])
     }).observe({ type: 'longtask' })
+    if (PerformanceObserver.supportedEntryTypes?.includes('long-animation-frame')) {
+      new PerformanceObserver((l) => {
+        for (const e of l.getEntries()) {
+          window.__loaf.push({
+            t: e.startTime,
+            d: e.duration,
+            block: e.blockingDuration,
+            scripts: e.scripts.map((s) => ({
+              t: s.startTime,
+              d: s.duration,
+              invoker: s.invoker,
+              type: s.invokerType,
+              src: s.sourceURL,
+              fn: s.sourceFunctionName,
+              forced: s.forcedStyleAndLayoutDuration,
+            })),
+          })
+        }
+      }).observe({ type: 'long-animation-frame' })
+    }
+    new MutationObserver((list) => {
+      const t = performance.now()
+      for (const m of list) {
+        if (m.target.classList?.contains('tv-round')) window.__beats.push([t, m.oldValue, m.target.getAttribute('data-beat')])
+      }
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['data-beat'], attributeOldValue: true })
   })
+}
+
+/**
+ * The grown-ups' copy of the child, changed by `edit(file)`, back over the child: "Gem en kopi" on
+ * the dashboard, then "Erstat …s data" with the changed file — the parents' own way. Starts on the
+ * map, ends on the child's side again. Returns the size of the stored document in bytes.
+ */
+export async function replaceChild(page, out, edit) {
+  await page.locator('.tv-map .tv-topbar [data-clip="s.ui.adult"]').click()
+  await solveGate(page)
+  await page.waitForSelector('.tv-dash')
+  await page.getByRole('button', { name: 'Indstillinger', exact: true }).click()
+  const save = page.getByRole('button', { name: 'Gem en kopi' })
+  await save.waitFor({ timeout: 20_000 })
+  const [download] = await Promise.all([page.waitForEvent('download', { timeout: 20_000 }), save.click()])
+  const exported = `${out}.json`
+  await download.saveAs(exported)
+  const file = JSON.parse(readFileSync(exported, 'utf8'))
+  edit(file)
+  const changed = `${out}-changed.json`
+  writeFileSync(changed, JSON.stringify(file))
+  await page.locator('.tv-dash input[type="file"]').setInputFiles(changed)
+  await page.getByRole('button', { name: /^Erstat .* data$/ }).click()
+  await page.getByText('er erstattet med filens', { exact: false }).waitFor({ timeout: 15_000 })
+  // back to the child's side with the arrow
+  await page.locator('.tv-dash .tv-topbar [data-clip="s.ui.back"]').click()
+  await page.waitForSelector('.tv-dock', { timeout: 20_000 })
+  await wait(800)
+  return JSON.stringify(file.profiles[0].doc).length
 }
