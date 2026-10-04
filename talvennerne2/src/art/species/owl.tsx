@@ -150,7 +150,7 @@ const gripClip = (ids: PartCtx['ids']) => `${ids.uid}wg`
 /**
  * Den hængende vinge på poten. Uden kropstøj ligger vingen selv i kroppens lag (`WingBodies`), og poten tegner kun
  * vingespidsen – vingens egen form og kontur klippet under `GRIP_CUT` – oven på en håndgenstand. Med kropstøj tegnes
- * hele vingen her som før, under ærmet.
+ * hele vingen her som før, under ærmet, og håndgenstanden tegnes oven på vingen og ærmet (`handOverSleeve`, SPEC A17).
  */
 const Paw: SidePart = (p) =>
   p.clothed ? (
@@ -336,6 +336,9 @@ export const owl: SpeciesDef = {
   colorways: OWL_COLORWAYS,
   magic: ['gold', 'rainbow'],
   occupies: ['back'],
+  // Med kropstøj tegnes hele vingen og ærmet på poten, så håndgenstanden lægges oven på dem (SPEC A17); uden kropstøj
+  // griber vingespidsen den foran vingen (se `Paw`).
+  handOverSleeve: true,
   anchors: {
     headCenter: { x: 100, y: 96 },
     headRx: 59,
