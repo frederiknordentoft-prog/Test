@@ -6,6 +6,11 @@ import {
   Seesaw, Shape2D, SHAPE_IDS, SHAPE_VARIANTS, Solid3D, SOLID_IDS, SquareGrid, TenFrame, Thing, THING_IDS,
 } from '../../art/materials'
 import { Equation } from '../../ui/design/Equation'
+import { ObjectIcon } from '../../ui/scenes/objects'
+import { UNIT_THINGS } from '../../engine/skills/measure/kit2'
+
+/** unitChoice's length things (src/ui/scenes/objects.tsx), at the face sizes of the cards (sm, md, lg). */
+const MEASURED = Object.entries(UNIT_THINGS.length)
 
 function Item({ cap, children }: { cap: string; children: ReactNode }) {
   return (
@@ -130,6 +135,17 @@ export function MaterialsPage() {
           </Item>
         ))}
       </div>
+
+      <div className="h-section">Ting man måler (46, 78 og 104 px)</div>
+      {[46, 78, 104].map((px) => (
+        <div key={px} className="h-row" style={{ marginBottom: 12 }}>
+          {MEASURED.map(([id, [unit, noun]]) => (
+            <Item key={id} cap={`${noun} (${unit}), ${px} px`}>
+              <ObjectIcon id={id} size={px} />
+            </Item>
+          ))}
+        </div>
+      ))}
 
       <div className="h-section">Figurer · 6 varianter</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'auto repeat(6, 1fr)', gap: 6, alignItems: 'center', maxWidth: 640 }}>
