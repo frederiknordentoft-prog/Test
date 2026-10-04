@@ -1,10 +1,10 @@
 // Everyday objects for comparing and measuring (Prompt 'compareObjects', 'ruler', 'unitsRow', and
-// 'obj:<id>' picture tokens). The materials library draws the countable things; these are the
-// things a child compares: a pencil, a rope, a teddy, a balloon … Same style as the materials:
-// flat fill, a shade on the lower right, a 45 % highlight and a coloured contour. Colours come from
-// the materials palette only.
+// 'obj:<id>' picture tokens), and the things unitChoice measures (`mt:<thing>` cards). The
+// materials library draws the countable things; these are the things a child compares: a pencil, a
+// rope, a teddy, a balloon … Same style as the materials: flat fill, a shade on the lower right, a
+// 45 % highlight and a coloured contour. Colours come from the materials palette only.
 import type { ReactNode } from 'react'
-import { blob, circle, ellipse, join, lune, n, roundRect } from '../../art/materials/geom'
+import { arc, blob, circle, ellipse, join, lune, n, roundPoly, roundRect, segments } from '../../art/materials/geom'
 import type { V2 } from '../../art/materials/geom'
 import { THING_IDS, ThingArt } from '../../art/materials'
 import { HIGHLIGHT, INK, MAT } from '../../art/materials/palette'
@@ -12,11 +12,13 @@ import type { Tone } from '../../art/materials/palette'
 
 const SW = 2.6
 
-function Body({ d, tone, shade, hi, sw = SW }: { d: string; tone: Tone; shade?: string; hi?: string; sw?: number }) {
+/** Fill, shade, what lies on the fill (children), highlight and contour. */
+function Body({ d, tone, shade, hi, sw = SW, children }: { d: string; tone: Tone; shade?: string; hi?: string; sw?: number; children?: ReactNode }) {
   return (
     <>
       <path d={d} fill={tone.fill} />
       {shade && <path d={shade} fill={tone.shade} />}
+      {children}
       {hi && <path d={hi} fill={HIGHLIGHT} />}
       <path d={d} fill="none" stroke={tone.outline} strokeWidth={sw} strokeLinejoin="round" strokeLinecap="round" />
     </>
@@ -25,6 +27,214 @@ function Body({ d, tone, shade, hi, sw = SW }: { d: string; tone: Tone; shade?: 
 
 const shiftPts = (pts: readonly V2[], dx: number, dy: number, k = 1, cx = 24, cy = 24): V2[] =>
   pts.map(([x, y]) => [cx + (x - cx) * k + dx, cy + (y - cy) * k + dy] as V2)
+
+/** Drawn upright, shown turned by `a` degrees (the cutlery, the comb). */
+const Turn = ({ a, children }: { a: number; children: ReactNode }) => <g transform={`rotate(${a} 24 24)`}>{children}</g>
+
+/** A strip of water with small waves from y to the bottom of the box (the ship, the bridge). */
+const water = (y: number) => `M0 ${y}${'q4-2.4 8 0'.repeat(6)}V48H0z`
+
+/** Wheels with their hubs. */
+const wheels = (xs: readonly number[], y: number, r = 4.8) => (
+  <>
+    <path d={join(...xs.map((x) => circle(x, y, r)))} fill={INK} />
+    <path d={join(...xs.map((x) => circle(x, y, r * 0.38)))} fill={MAT.silver.fill} />
+  </>
+)
+
+/** A detail in one element: its fill and a contour. */
+const Part = ({ d, fill, line, sw = 1.6 }: { d: string; fill: string; line: string; sw?: number }) => (
+  <path d={d} fill={fill} stroke={line} strokeWidth={sw} strokeLinejoin="round" />
+)
+
+/** Outline points of `count` teeth `w` wide between x0 and x1, root at y0 and tip at y1, right to left. */
+function teeth(count: number, x0: number, x1: number, w: number, y0: number, y1: number): V2[] {
+  const step = (x1 - x0 - w) / (count - 1)
+  const pts: V2[] = []
+  for (let k = count - 1; k >= 0; k--) {
+    const x = x0 + k * step
+    pts.push([x + w, y1], [x, y1])
+    if (k > 0) pts.push([x, y0], [x - step + w, y0])
+  }
+  return pts
+}
+
+// ─── The things unitChoice measures (48 x 48; named without the word at 46 px) ─
+
+function measured(id: string): ReactNode | null {
+  switch (id) {
+    case 'fork': {
+      // three tines with wide gaps (they stay apart at 46 px), a neck and a long handle
+      const pts: V2[] = [[16, 17], ...teeth(3, 16, 32, 3.2, 13, 2).reverse(), [32, 17], [29.5, 22], [26.2, 25], [27, 41], [26.2, 45], [24, 46.5], [21.8, 45], [21, 41], [21.8, 25], [18.5, 22]]
+      return (
+        <Turn a={40}>
+          <Body d={roundPoly(pts, 1.2)} tone={MAT.silver} shade={roundRect(24.6, 25, 1.8, 17, 0.9)} hi={roundRect(21.9, 28, 1.4, 11, 0.7)} sw={1.8} />
+        </Turn>
+      )
+    }
+    case 'spoon': {
+      // the bowl (laffe) with its hollow, a narrow neck and a long handle, turned the other way
+      const pts: V2[] = [[24, 1.5], [29.5, 4], [31.5, 11], [29.5, 18.5], [26.2, 23], [25.6, 28], [26.8, 41], [26, 45], [24, 46.5], [22, 45], [21.2, 41], [22.4, 28], [21.8, 23], [18.5, 18.5], [16.5, 11], [18.5, 4]]
+      return (
+        <Turn a={-38}>
+          <Body d={blob(pts, 0.9)} tone={MAT.silver} shade={ellipse(25, 13, 4.6, 7.2)} hi={join(ellipse(21.4, 8.5, 1.5, 3), roundRect(22.4, 30, 1.3, 10, 0.65))} sw={2.2} />
+        </Turn>
+      )
+    }
+    case 'shoe': {
+      // a trainer from the side: the upper, a white toe cap and sole, white laces tied in a bow
+      const t = MAT.apple
+      const upper: V2[] = [[5, 38], [5, 21], [7.5, 15.5], [13, 14.5], [17, 19], [25, 22], [34, 26.5], [42, 29.5], [46, 34], [46, 38]]
+      const laces = join(
+        segments([[17, 18.5, 22, 22.5], [17, 22.5, 22, 18.5], [23, 21.5, 28, 25.5], [23, 25.5, 28, 21.5], [29, 24, 33.5, 28], [29, 28, 33.5, 24], [13.5, 13, 10.5, 17.5], [13.5, 13, 16.5, 17.5]]),
+        ellipse(10.6, 11, 3.1, 2.1),
+        ellipse(16.6, 11, 3.1, 2.1),
+      )
+      return (
+        <>
+          <Body d={roundPoly(upper, 3)} tone={t} shade={roundRect(24, 31, 14, 5, 2.5)} hi={ellipse(9.5, 25, 1.8, 4.5)} />
+          <Part d={blob([[35.5, 38], [36.5, 32], [42, 30.2], [46, 34], [46, 38]], 0.7)} fill={MAT.frame.fill} line={t.outline} sw={SW} />
+          <Body d={roundRect(3, 36, 44, 7, 3.5)} tone={MAT.frame} />
+          <path d={laces} fill="none" stroke={t.outline} strokeWidth={3.8} strokeLinecap="round" />
+          <path d={laces} fill="none" stroke={MAT.frame.fill} strokeWidth={1.8} strokeLinecap="round" />
+        </>
+      )
+    }
+    case 'comb': {
+      // a straight back (ryg) with seven teeth hanging from it, the gaps as wide as the teeth
+      const pts: V2[] = [[4, 16], [7, 12.5], [41, 12.5], [44, 16], ...teeth(7, 4, 44, 2.8, 22.5, 36)]
+      return (
+        <Turn a={-10}>
+          <Body d={roundPoly(pts, 1.2)} tone={MAT.petal} shade={roundRect(6, 18.6, 36, 3, 1.5)} hi={roundRect(8, 14.6, 22, 1.8, 0.9)} sw={2} />
+        </Turn>
+      )
+    }
+    case 'bus': {
+      // one long box with a row of four windows, the windscreen and two wheels
+      const t = MAT.star
+      const windows = join(...[6.5, 14.5, 22.5, 30.5].map((x) => roundRect(x, 16.5, 6.5, 8.5, 1.8)), roundRect(38.5, 16.5, 4.5, 11, 1.8))
+      return (
+        <>
+          <Body d={roundRect(3, 11, 42, 28, 5)} tone={t} shade={roundRect(10, 31.5, 33.4, 5.6, 2.5)} hi={roundRect(8, 13.4, 24, 1.8, 0.9)} />
+          <Part d={windows} fill={MAT.rim.light} line={t.outline} />
+          {wheels([13, 35], 39.5)}
+        </>
+      )
+    }
+    case 'train': {
+      // a steam engine (cab with a window, boiler, chimney) pulling one wagon
+      const t = MAT.apple
+      const loco: V2[] = [[19, 36], [19, 9], [32, 9], [32, 19], [45, 19], [45, 36]]
+      return (
+        <>
+          <path d="M15 31h6" stroke={INK} strokeWidth={2.2} strokeLinecap="round" />
+          <Body d={roundRect(2, 18, 14, 18, 2.5)} tone={MAT.leafGreen} shade={roundRect(4, 29.5, 10, 4.6, 2)} />
+          <path d={roundPoly([[36, 19.5], [35, 10], [43, 10], [42, 19.5]], 1.2)} fill={INK} />
+          <Body d={roundPoly(loco, 2.5)} tone={t} shade={roundRect(21, 30, 22, 4.6, 2.3)} hi={roundRect(34, 21.4, 8.5, 1.8, 0.9)} />
+          <Part d={roundRect(22, 12.5, 7, 7, 1.5)} fill={MAT.rim.light} line={t.outline} />
+          <path d={join(circle(6.5, 38.5, 3.4), circle(12, 38.5, 3.4), circle(24.5, 38, 4.6), circle(33.5, 39, 3.4), circle(40.5, 39, 3.4))} fill={INK} />
+        </>
+      )
+    }
+    case 'lorry': {
+      // a tall cargo box behind a lower cab with one window, three wheels under a dark chassis
+      const t = MAT.fish
+      const cab: V2[] = [[31, 37], [31, 16], [38, 16], [45.5, 25], [45.5, 37]]
+      return (
+        <>
+          <path d={roundRect(2, 33.5, 43, 4, 1.5)} fill={INK} />
+          <Body d={roundRect(2, 9.5, 28, 25.5, 2.5)} tone={MAT.counterB} shade={roundRect(5, 28.5, 23, 4.6, 2.3)} hi={roundRect(5, 12.5, 1.8, 13, 0.9)} />
+          <Body d={roundPoly(cab, 2.5)} tone={t} shade={roundRect(33, 30.5, 10.5, 4.6, 2.3)} />
+          <Part d={roundPoly([[33.6, 18.6], [37.4, 18.6], [42.6, 25], [33.6, 25]], 1)} fill={MAT.rim.light} line={t.outline} />
+          {wheels([10, 21.5, 38.5], 38.5)}
+        </>
+      )
+    }
+    case 'ship': {
+      // a hull with portholes on the water, a white cabin and a funnel (skorsten) with a black top
+      const t = MAT.apple
+      const hull: V2[] = [[2, 26], [46, 26], [40.5, 39.5], [8, 39.5]]
+      return (
+        <>
+          <path d={water(41)} fill={MAT.fish.light} />
+          <Part d={roundPoly([[33, 26.5], [34.5, 9], [42.5, 9], [41, 26.5]], 1.4)} fill={MAT.star.fill} line={MAT.star.outline} sw={SW} />
+          <path d={roundRect(34.3, 9, 8.4, 4.4, 1.2)} fill={INK} />
+          <Part d={roundRect(9, 17, 23, 10, 2)} fill={MAT.frame.fill} line={MAT.frame.outline} sw={SW} />
+          <path d={join(...[12.5, 18.5, 24.5].map((x) => roundRect(x, 19.5, 4, 4, 1)))} fill={MAT.rim.fill} />
+          <Body d={roundPoly(hull, 2)} tone={t} shade={roundPoly([[26, 34], [42.6, 34], [40.5, 38.2], [26, 38.2]], 1.5)} hi={roundRect(6, 28.2, 30, 1.8, 0.9)} />
+          <path d={join(circle(14, 31.8, 1.9), circle(22, 31.8, 1.9), circle(30, 31.8, 1.9))} fill={MAT.frame.fill} />
+        </>
+      )
+    }
+    case 'whale': {
+      // a big round head, a light belly, the tail fin raised and a spout from the blowhole
+      const t = MAT.note500
+      const body: V2[] = [[46, 31], [42, 39], [30, 42.5], [17, 41], [9, 36], [5, 29], [10, 29.5], [16, 31], [22, 25], [32, 20.5], [41, 21.5]]
+      const tail: V2[] = [[9.5, 32], [3, 28], [1, 21], [5.5, 24.5], [10, 19.5], [11.5, 26]]
+      const spout = join('M32 19.5C31.5 13 28 10.5 25 10', 'M32 19.5C32.5 13 36 10.5 39 10', 'M32 19.5V10')
+      return (
+        <>
+          <Part d={blob(tail, 0.6)} fill={t.fill} line={t.outline} sw={SW} />
+          <Body d={blob(body, 0.8)} tone={t} shade={blob(shiftPts(body, 2, 3, 0.86), 0.8)} hi={ellipse(30, 25, 4, 1.8)}>
+            <path d={blob([[45, 32.5], [41.5, 38.6], [30, 41.8], [20, 40], [28, 37], [39, 35.5]], 0.8)} fill={t.light} />
+          </Body>
+          <path d={circle(38, 28.5, 2)} fill={INK} />
+          <path d="M40.5 34.5q2.6 1 4.6-0.6" fill="none" stroke={t.outline} strokeWidth={1.6} strokeLinecap="round" />
+          <path d={spout} fill="none" stroke={MAT.fish.fill} strokeWidth={2.6} strokeLinecap="round" />
+          <path d={join(circle(24.5, 8.5, 1.7), circle(32, 7.5, 1.7), circle(39.5, 8.5, 1.7))} fill={MAT.fish.fill} />
+        </>
+      )
+    }
+    case 'plane': {
+      // seen from the side and a little above: both wings, the tail fin and a row of windows
+      const t = MAT.apple
+      const body: V2[] = [[3, 23], [12, 20.5], [36, 20], [43, 22], [46.5, 26], [43, 30], [36, 31.5], [12, 31.5], [5, 28.5]]
+      const near = join(roundPoly([[21, 27.5], [31, 27.5], [21, 43], [15, 43]], 1.5), roundPoly([[5, 26.5], [13, 26.5], [9, 32.5], [4.5, 32.5]], 1))
+      return (
+        <>
+          <Part d={roundPoly([[24, 22], [19, 8.5], [23.5, 8.5], [32, 22]], 1.5)} fill={t.shade} line={t.outline} sw={SW} />
+          <Part d={roundPoly([[4, 24], [2.5, 9], [7.5, 9], [16, 22]], 1.5)} fill={t.fill} line={t.outline} sw={SW} />
+          <Body d={blob(body, 0.6)} tone={MAT.face} shade={blob(shiftPts(body, 1.5, 2.6, 0.82), 0.6)} hi={roundRect(12, 22.4, 20, 1.6, 0.8)} />
+          <path d={join(...[15, 20, 25, 30].map((x) => circle(x, 25, 1.5)), roundPoly([[38, 22.6], [42.5, 23.2], [44.6, 26], [38, 26]], 1))} fill={MAT.rim.fill} />
+          <Part d={near} fill={t.fill} line={t.outline} sw={SW} />
+        </>
+      )
+    }
+    case 'bridge': {
+      // one stone arch (bue) over the water, a railing along the top
+      const t = MAT.silver
+      const r = 14.5
+      const posts = [3, 10, 17, 24, 31, 38, 45].map((x) => [x, 10.5, x, 17] as const)
+      const joints = segments([[24, 27.5, 24, 23.5], [13.75, 31.75, 10.9, 28.9], [34.25, 31.75, 37.1, 28.9]])
+      return (
+        <>
+          <path d={water(38)} fill={MAT.fish.light} />
+          <Body d={`M2 17H46V42H${24 + r}A${r} ${r} 0 0 0 ${24 - r} 42H2Z`} tone={t} shade={roundRect(39.5, 27, 5, 13.5, 2)} hi={roundRect(5, 19.5, 30, 1.8, 0.9)} />
+          <path d={join(arc(24, 42, r + 4, 180, 360), joints)} fill="none" stroke={t.outline} strokeWidth={1.4} opacity={0.55} />
+          <path d={segments([[2.5, 10.5, 45.5, 10.5], ...posts])} stroke={t.outline} strokeWidth={2} strokeLinecap="round" />
+        </>
+      )
+    }
+    case 'house': {
+      // walls with two windows and a door (dør), a red roof (tag) and a chimney
+      const roof: V2[] = [[3.5, 25], [24, 6], [44.5, 25]]
+      const cross = segments([[15.25, 28, 15.25, 34.5], [12, 31.25, 18.5, 31.25], [32.75, 28, 32.75, 34.5], [29.5, 31.25, 36, 31.25]])
+      return (
+        <>
+          <Part d={roundRect(30.5, 8, 6, 12, 1.2)} fill={MAT.apple.shade} line={MAT.apple.outline} sw={SW} />
+          <Body d={roundRect(9, 22, 30, 22, 2)} tone={MAT.ruler} shade={roundRect(30.5, 24, 6.5, 18, 2)} />
+          <Body d={roundPoly(roof, 2.5)} tone={MAT.apple} shade={roundRect(25, 20.5, 14, 3, 1.5)} />
+          <Part d={join(roundRect(12, 28, 6.5, 6.5, 1.2), roundRect(29.5, 28, 6.5, 6.5, 1.2))} fill={MAT.rim.light} line={MAT.ruler.outline} />
+          <path d={cross} stroke={MAT.ruler.outline} strokeWidth={1.2} />
+          <Part d="M20.5 44V34.5a3.5 3.5 0 0 1 7 0V44z" fill={MAT.chestnut.fill} line={MAT.chestnut.outline} sw={2} />
+          <path d={circle(25.6, 38.6, 0.9)} fill={INK} />
+        </>
+      )
+    }
+    default:
+      return null
+  }
+}
 
 // ─── Compact objects (48 x 48 box, standing on y ≈ 44) ─────────────────────
 
@@ -144,7 +354,7 @@ function compact(id: string): ReactNode | null {
       )
     }
     default:
-      return null
+      return measured(id)
   }
 }
 
