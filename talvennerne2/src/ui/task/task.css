@@ -2191,13 +2191,59 @@
     font-size: 14px;
   }
 }
-/* a small phone on its side: the tick under the cards (three cards and the tick leave the screen) */
-@media (orientation: landscape) and (max-height: 500px) and (max-width: 720px) {
-  .tv-multi:has(.tv-face__thing) {
+
+/* ── The tick on a phone on its side (se-l 667 x 375, x-l 852 x 393) ─────
+   Measured over every skill's own tasks: the tick (and the cards) left the screen where a kind
+   stacked more than the half screen holds. Phones upright and iPads keep their layout. */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* fillSlots with a big palette (ten digits, placeValue1000): a tighter places card and lower
+     tokens, so three rows of tokens and the tick stay above the bottom edge */
+  .tv-fill__places {
+    padding: 6px;
+  }
+  .tv-fill__palette {
+    gap: 6px;
+  }
+  .tv-fill__palette .tv-token {
+    height: 62px;
+  }
+  .tv-fill__palette .tv-check.tv-ibtn {
+    --ib: 60px;
+  }
+  /* numberline: the question, the line and the tick a little closer */
+  .tv-nline {
+    gap: 2px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 800px) {
+  /* multiSelect beside its prompt on a small phone (the stage's two halves, round.css): three
+     cards and the tick fit side by side only at their smallest allowed sizes (cards 80 px, the
+     tick 60 px); seven or eight things take three columns with the tick in the empty corner of
+     the last row. A task that owns its prompt has the wider half and keeps its layout. */
+  .tv-round__stage:not(.is-owned) .tv-multi:not(.tv-multi--ref) {
+    column-gap: 8px;
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi:not(.tv-multi--ref) .tv-multi__grid {
+    grid-template-columns: repeat(var(--cols), 80px);
+    gap: 6px;
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi:not(.tv-multi--ref) .tv-check.tv-ibtn {
+    --ib: 60px;
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi--n4:not(.tv-multi--ref) {
+    --cols: 2;
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi--n7:not(.tv-multi--ref),
+  .tv-round__stage:not(.is-owned) .tv-multi--n8:not(.tv-multi--ref) {
+    --cols: 3;
     grid-template-columns: auto;
-    grid-template-areas:
-      'grid'
-      'foot';
+    grid-template-areas: 'grid';
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi--n7:not(.tv-multi--ref) .tv-multi__foot,
+  .tv-round__stage:not(.is-owned) .tv-multi--n8:not(.tv-multi--ref) .tv-multi__foot {
+    grid-area: grid;
+    align-self: end;
+    justify-self: end;
   }
 }
 /* a short phone upright: a smaller sm face, so six struck things take two rows under a long strategy */
