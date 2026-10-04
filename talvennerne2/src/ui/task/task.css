@@ -2260,3 +2260,30 @@
     padding: 3px 5px 3px 3px;
   }
 }
+
+/* ── The struck answer in the teaching card (REVP r1) ──────────────── */
+/* A long given answer (six cards) shrinks with the teaching row and wraps its cards onto more
+   lines, so on a phone on its side it never runs over the strategy text (round.css keeps the box
+   flex: none on one line). It never gets narrower than content that cannot wrap, and it clips its
+   strike, so the line stays inside the answer it strikes. */
+.tv-teach .tv-teach__row .tv-teach__given {
+  flex: 0 1 auto;
+  min-width: min-content;
+  max-width: 100%;
+  overflow: hidden;
+}
+.tv-teach .tv-teach__given .tv-face__row.tv-face__row--cards {
+  flex-wrap: wrap;
+}
+/* over a row of cards the strike lies flatter, through the middle of the cards */
+.tv-teach .tv-teach__given:has(.tv-face__row--cards) .tv-strike {
+  left: 4%;
+  right: 4%;
+  transform-origin: center;
+  transform: rotate(-7deg);
+}
+/* the things' fine details (bridge's arch ring, every other post, window bars) are left out at the
+   small size (24-38 px) of the struck answer and the confirm button */
+.tv-face__thing.is-sm .tv-fine {
+  display: none;
+}
