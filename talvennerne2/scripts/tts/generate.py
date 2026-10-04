@@ -574,6 +574,18 @@ class Generator:
         return min(takes, key=lambda t: (not t.pass_a, t.comp_fail, not t.dur_ok, t.cer if t.cer is not None else 0.0,
                                          t.take))
 
+    def best_exhausted(self, clip: dict) -> Take | None:
+        """The take to ship when every take is used and none is usable: the best one the composition test did not
+        reject, or – when none of those passed ASR – the best of all, a rejected take included. One rejection in a
+        composition can leave the clearest take behind (s.order.countBackHundreds: t1 CER 0.0435, the rest 0.087)."""
+        fresh = self.best(clip)
+        if fresh is not None and fresh.pass_a:
+            return fresh
+        pool = [t for t in self.takes(clip) if t.post_ok]
+        if not pool:
+            return fresh
+        return min(pool, key=lambda t: (not t.pass_a, not t.dur_ok, t.cer if t.cer is not None else 0.0, t.take))
+
     def finalize(self, clip: dict, t: Take, passed: bool, comp: dict | None = None, reason: str = "") -> None:
         import soundfile as sf
         rel = P.master_rel(clip)
@@ -949,16 +961,17 @@ class Generator:
                     if t.id in self.pending_ids:
                         self.finalize(clip, t, True)
                         self.pending_ids.discard(t.id)
-                elif not t.pass_a and not any(x.pass_a for x in self.takes(clip)):
+                # a take the composition test rejected keeps pass_a, so "usable" is the test here, not pass_a
+                elif not t.pass_a and not self.usable_takes(clip):
                     nt = self.next_take(clip)
                     if nt is not None and not any(j.items[0].clip["id"] == t.id for j in queue if len(j.items) == 1):
                         queue.append(single_job(clip, nt))
                     elif nt is None and not P.needs_composition(clip):
-                        b = self.best(clip)
+                        b = self.best_exhausted(clip)
                         if b is None:
                             self.finalize_missing(clip)
                         else:
-                            self.finalize(clip, b, False, reason=b.reason)
+                            self.finalize(clip, b, False, reason="sammensætning" if b.pass_a else b.reason)
                         self.pending_ids.discard(t.id)
         # clips that passed earlier (before a restart) but were never finalized
         for cid in sorted(self.pending_ids):
@@ -967,6 +980,18 @@ class Generator:
             if t is not None and t.pass_a and not P.needs_composition(clip):
                 self.finalize(clip, t, True)
                 self.pending_ids.discard(cid)
+        # clips checked alone with every take used and none usable (the only passing take was rejected by the
+        # composition test, or the takes ran out before a restart): the best take, not passed, like the clips above
+        for cid in sorted(self.pending_ids):
+            clip = self.by_id[cid]
+            if P.needs_composition(clip) or self.next_take(clip) is not None or self.usable_takes(clip):
+                continue
+            b = self.best_exhausted(clip)
+            if b is None:
+                self.finalize_missing(clip)
+            else:
+                self.finalize(clip, b, False, reason="sammensætning" if b.pass_a else b.reason)
+            self.pending_ids.discard(cid)
         subjects = [self.by_id[cid] for cid in sorted(self.pending_ids) if P.needs_composition(self.by_id[cid])]
         if subjects and not queue:
             self.composition_stage(subjects)

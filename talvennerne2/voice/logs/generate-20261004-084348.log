@@ -1,0 +1,4 @@
+08:43:48 generate.py --ids s.order.countBackHundreds --threads 4 --max-minutes 20 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261004-084348.log)
+08:43:48 1 klip valgt, 0 færdige, 1 at lave
+08:43:49   ✓ master s.order.countBackHundreds t1 (IKKE bestået: sammensætning)
+08:43:49 færdig: 1 nye mastere (1 ikke bestået, 0 kopier), 0 modelkald, 0.0 min generering (CPU 0.00 t), 0 klip mangler

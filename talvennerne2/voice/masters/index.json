@@ -53410,6 +53410,28 @@
    "wallS": 20.5,
    "wave": 1
   },
+  "s.order.countBackHundreds": {
+   "asr": "Tal baglæns i hundreder fra",
+   "asrExpected": "Tæl baglæns i hundreder fra",
+   "asrWav2vec2": "tale baulins i hundreder fra",
+   "cer": 0.0435,
+   "check": "alone",
+   "cpuS": 196.6,
+   "dur": 1.647,
+   "engine": "whisper",
+   "file": "number-2/s.order.countBackHundreds.flac",
+   "hash": "85a2681e7d2573d8ca42107beff7cb2599b06b18",
+   "lufs": -18.08,
+   "method": "single",
+   "pack": "number-2",
+   "pass": false,
+   "reason": "sammensætning",
+   "take": 1,
+   "takes": 5,
+   "tp": -1.63,
+   "wallS": 50.1,
+   "wave": 2
+  },
   "s.order.countBackTens": {
    "asr": "til baglins i tirer fra",
    "asrExpected": "Tæl baglæns i tiere fra",
