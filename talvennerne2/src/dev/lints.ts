@@ -579,7 +579,8 @@ if (typeof window !== 'undefined')
 //   fejler (review G2-r2: "på mindst 1 px"). Arkets pixelgitter kan ligge hvor som helst over figuren, så
 //   alle HOLE_SUB² forskydninger af gitteret prøves (arealmiddel af den fine rasterisering).
 // Glimtene ✦ (data-part="fx") fjernes før rasteriseringen, så deres midte aldrig tæller. Kendte lommer hos
-// arter, som andre agenter ejer, står i KNOWN_POCKETS med henvisning til reviewet og fejler ikke.
+// arter, som andre agenter ejer, står i KNOWN_POCKETS med henvisning til reviewet og fejler ikke. Figurer, hvis
+// lommer er fyldt med pels i stillbilleder, står i FILLED_POCKETS og lintes med den strengeste grænse.
 
 /** Arkets opløsning (px pr. enhed): holes-arkets felter er 64 CSS-px brede for 200 enheder, taget i 2x. */
 export const HOLE_SHEET = 0.64
@@ -613,6 +614,31 @@ export const KNOWN_POCKETS: readonly { match: RegExp; ref: string }[] = [
 /** Kendt lomme for en celle (review-henvisningen), eller null. */
 export function knownPocket(cell: string): string | null {
   return KNOWN_POCKETS.find((k) => k.match.test(cell))?.ref ?? null
+}
+
+/**
+ * Figurer, hvis lommer er fyldt med pels i stillbilleder (review G2-r3 §3.1 og §7.3: de fem lommer, ARTFIX-E fyldte,
+ * og lammets hjørne mellem hoven og hovedet, ARTFIX-F fyldte). De lintes med den strengeste grænse: i arkets
+ * opløsning fejler en pixel, der er lukket i blot ét af de HOLE_SUB² gitre (HOLE_SHEET_PHASES_FILLED), og i den fine
+ * søgning fejler et lukket område fra HOLE_MIN_AREA_STRICT, som hos kaninen. Den almindelige grænse
+ * (HOLE_SHEET_PHASES) tåler antialias i samlingerne, som hos alle arter lukker en enkelt pixel i nogle få gitre (lammets
+ * hjørne lukkede en pixel i 2 af 25 og slap derfor igennem). En fyldt lomme skal være lukket i alle gitre, så et fyld,
+ * der kun dækker en del af lommen, eller en positur, der åbner den igen, fejler. Mønsteret matcher cellens
+ * `data-holes` ("art race stadie farve humør").
+ */
+export const FILLED_POCKETS: readonly { match: RegExp; ref: string }[] = [
+  { match: /^lamb std 3 \S+ cheer$/, ref: 'G2-r3 §3.1 (armen mod kinden) og ARTFIX-F (hoven mod hovedet ved (44, 111))' },
+  { match: /^rabbit lop 2 \S+ think$/, ref: 'G2-r3 §3.1 (vædderen i tænker)' },
+  { match: /^hamster std 3 \S+ idle$/, ref: 'G2-r3 §3.1 (hamsteren i hvile, to lommer)' },
+  { match: /^panda std 3 \S+ sleep$/, ref: 'G2-r3 §3.1 (pandaen i sover)' },
+]
+
+/** I en figur med fyldte lommer fejler en arkpixel, der er lukket i blot så mange gitre. */
+export const HOLE_SHEET_PHASES_FILLED = 1
+
+/** Fyldt lomme for en celle (review-henvisningen), eller null. */
+export function filledPocket(cell: string): string | null {
+  return FILLED_POCKETS.find((k) => k.match.test(cell))?.ref ?? null
 }
 
 interface Hole {
@@ -879,22 +905,26 @@ export const HOLE_SHEET_PHASES = 22
  * (kaninen, K1-beviset); de andre arter ("thin") fejler på sprækker og lukkede områder fra HOLE_MIN_AREA (review
  * G1-r4, R1). Næsten lukkede lommer (kun lukket af en sprække under HOLE_GAP) tæller fra HOLE_MIN_AREA, så
  * antialiasing i en konkav kant ikke fejler. I arkets opløsning fejler alle arter fra 1 lukket pixel (review
- * G2-r2 §3.1). Kendte lommer (KNOWN_POCKETS) fejler ikke, men noteres i `known`.
+ * G2-r2 §3.1). Figurer med fyldte lommer (FILLED_POCKETS) lintes strengt i begge søgninger og fejler på en arkpixel,
+ * der er lukket i blot ét gitter. Kendte lommer (KNOWN_POCKETS) fejler ikke, men noteres i `known`.
  */
 async function lintHoles(res: LintResult): Promise<void> {
   for (const cell of document.querySelectorAll<HTMLElement>('[data-holes]')) {
     const svg = cell.querySelector<SVGSVGElement>('svg.rig')
     if (!svg) continue
     res.checks++
-    const strict = cell.dataset.holesMode === 'strict'
+    const label = cell.dataset.holes ?? ''
+    const filled = filledPocket(label)
+    const strict = cell.dataset.holesMode === 'strict' || filled !== null
+    const phases = filled !== null ? HOLE_SHEET_PHASES_FILLED : HOLE_SHEET_PHASES
     const bad = (await holesIn(svg)).filter((h) =>
-      h.sheet ? h.sheet.phases >= HOLE_SHEET_PHASES : h.area >= (strict && !h.nearly ? HOLE_MIN_AREA_STRICT : HOLE_MIN_AREA),
+      h.sheet ? h.sheet.phases >= phases : h.area >= (strict && !h.nearly ? HOLE_MIN_AREA_STRICT : HOLE_MIN_AREA),
     )
     if (!bad.length) continue
-    const label = cell.dataset.holes ?? ''
     const known = knownPocket(label)
+    const tag = filled !== null ? ` · fyldt lomme: ${filled}` : ''
     for (const h of bad) {
-      const at = `ved (${h.x.toFixed(0)},${h.y.toFixed(0)})`
+      const at = `ved (${h.x.toFixed(0)},${h.y.toFixed(0)})${tag}`
       const what = h.sheet
         ? `${label}: lukket lomme i arkets opløsning (${h.sheet.px} px, ${h.sheet.phases}/${HOLE_SUB ** 2} gitre) ${at}`
         : `${label}: ${h.nearly ? 'næsten ' : ''}lukket ${h.thick < HOLE_THICK ? 'søm/sprække' : 'område'} med baggrund (${h.area.toFixed(1)} enh², ${h.thick.toFixed(1)} enh tyk) ${at}`
