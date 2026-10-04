@@ -7,14 +7,26 @@ import { join, resolve } from 'node:path'
 
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/** Serve a build (dist/ or a copy fetched from the live site) under /Test/talvennerne2/. */
-export async function serve(dist, port) {
+/**
+ * Serve a build (dist/ or a copy fetched from the live site) under /Test/talvennerne2/, and a second
+ * one to compare with (`distB`) under /TestB/talvennerne2/ on the same server.
+ */
+export async function serve(dist, port, distB = null) {
   const root = mkdtempSync(join(tmpdir(), 'tv2-perf-'))
   mkdirSync(join(root, 'Test'))
   symlinkSync(resolve(dist), join(root, 'Test', 'talvennerne2'))
+  if (distB) {
+    mkdirSync(join(root, 'TestB'))
+    symlinkSync(resolve(distB), join(root, 'TestB', 'talvennerne2'))
+  }
   const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1', '--directory', root], { stdio: 'ignore' })
   await wait(800)
-  return { url: `http://127.0.0.1:${port}/Test/talvennerne2/?e2e=1&voice=fast`, close: () => server.kill() }
+  const q = '?e2e=1&voice=fast'
+  return {
+    url: `http://127.0.0.1:${port}/Test/talvennerne2/${q}`,
+    urlB: distB ? `http://127.0.0.1:${port}/TestB/talvennerne2/${q}` : null,
+    close: () => server.kill(),
+  }
 }
 
 export function stats(xs) {
@@ -127,6 +139,9 @@ export function startFrames(page) {
             t: e.startTime,
             d: e.duration,
             block: e.blockingDuration,
+            // the frame's rendering: rAF callbacks from renderStart, style and layout from styleAndLayoutStart
+            render: e.renderStart,
+            style: e.styleAndLayoutStart,
             scripts: e.scripts.map((s) => ({
               t: s.startTime,
               d: s.duration,

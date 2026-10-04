@@ -5,7 +5,10 @@
 // strategy), seeded by SEED, so a round runs long; MINUTES caps it. RUNS plays that many rounds,
 // each from a fresh device, and sums them up together. PROFILE=heavy first puts a long-time player
 // (scripts/perf/heavy.ts → artifacts/perf/heavy.json, or HEAVY=<file>) into the child's own export
-// and brings it back with "Erstat …s data", then plays WORLD's first stone.
+// and brings it back with "Erstat …s data", then plays WORLD's first stone. DIST_B=<another build>
+// plays it turn about with DIST (A, B, A, B …) and sums each up on its own: the machine's speed
+// drifts over minutes, so two builds are only comparable side by side. A fixed piece of work timed in
+// the page before and after each round (`bench`) shows how fast the machine was.
 //
 // Each answer is split into its phases by the round's beats (asking → correct, asking → wrong,
 // wrong → teaching, correct → the next task, teaching → the next task). Per phase: how many
@@ -19,6 +22,7 @@
 //   WORLD=skov VP=ipad DIST=<copy fetched from the live site> flock … node scripts/perf/round.mjs
 //   RUNS=2 ASSERT=1 flock … node scripts/perf/round.mjs
 //   PROFILE=heavy flock … node scripts/perf/round.mjs
+//   DIST_B=<the build before> RUNS=2 flock … node scripts/perf/round.mjs
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { launch } from '../browser.mjs'
@@ -211,6 +215,24 @@ function phaseTable(list) {
 
 // ─── One round ──────────────────────────────────────────────────────────────
 
+/**
+ * A fixed piece of work timed in the page (median of 5), before and after the round: how busy the
+ * machine was. The frames away from the answers stay at 16.7 ms on a busy machine (the page does
+ * nothing then), but every task of an answer gets longer.
+ */
+const bench = (page) =>
+  page.evaluate(() => {
+    const times = []
+    let x = 0
+    for (let r = 0; r < 5; r++) {
+      const t0 = performance.now()
+      for (let i = 0; i < 300_000; i++) x += Math.sqrt(i * 1.0001) % 7
+      times.push(performance.now() - t0)
+    }
+    times.sort((a, b) => a - b)
+    return x < 0 ? -1 : +times[2].toFixed(1)
+  })
+
 const heavy = HEAVY ? JSON.parse(readFileSync(HEAVY, 'utf8')) : null
 
 /** A long-time player in the child's own export: the child keeps its id, name and buddy, now dressed. */
@@ -224,7 +246,7 @@ function mergeHeavy(file) {
   file.profiles[0].answers = []
 }
 
-async function playRound(browser, server, run) {
+async function playRound(browser, url, run) {
   random = rng(SEED + run)
   const result = { run, seed: SEED + run }
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 2, hasTouch: true, isMobile: !IPAD, acceptDownloads: !!heavy })
@@ -235,10 +257,10 @@ async function playRound(browser, server, run) {
   const cdp = await context.newCDPSession(page)
 
   if (WORLD === 'eng' && !heavy) {
-    await onboard(page, server.url, '0')
+    await onboard(page, url, '0')
     result.stone = 'w0-tal10-l1'
   } else {
-    await onboard(page, server.url, '2')
+    await onboard(page, url, '2')
     await toMap(page)
     if (heavy) {
       result.docBytes = await replaceChild(page, `${OUT}round-${TAG}-export`, mergeHeavy)
@@ -262,6 +284,7 @@ async function playRound(browser, server, run) {
   console.log(`kørsel ${run + 1}/${RUNS}: ${result.stone}${result.docBytes ? ` (dokumentet er ${(result.docBytes / 1024).toFixed(0)} KB)` : ''}`)
 
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: THROTTLE })
+  const benchStart = await bench(page)
   await startFrames(page)
   const mark = (what) => page.evaluate((w) => window.__marks.push([performance.now(), w]), what)
   const kinds = {}
@@ -331,6 +354,7 @@ async function playRound(browser, server, run) {
   // the end of the round, still throttled
   if (endedAt !== null) await wait(6000)
   const raw = await page.evaluate(() => ({ frames: window.__frames, long: window.__long, marks: window.__marks, loaf: window.__loaf, beats: window.__beats }))
+  const benchEnd = await bench(page)
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 })
   const list = transitions(raw, endT)
   // taps: the answers and the confirm button, as their beats committed them
@@ -342,6 +366,7 @@ async function playRound(browser, server, run) {
     .filter((sc) => IDB.test(sc.invoker ?? '') && sc.d >= LIMITS.idbMs && taps.some((x) => sc.t >= x - 100 && sc.t <= x + 300))
     .map((sc) => ({ invoker: sc.invoker, ms: +sc.d.toFixed(0) }))
   Object.assign(result, {
+    bench: [benchStart, benchEnd],
     finished: endedAt !== null,
     answers,
     kinds,
@@ -378,37 +403,27 @@ function verdict(sum) {
   return { ok: fails.length === 0 && !invalid, valid: !invalid, fails }
 }
 
-const server = await serve(DIST, PORT)
-const browser = await launch()
-const runs = []
-try {
-  for (let run = 0; run < RUNS; run++) runs.push(await playRound(browser, server, run))
-} finally {
-  await browser.close()
-  server.close()
-}
-
-const all = (pick) => runs.flatMap((r) => pick(r))
-const roundFrames = all((r) => r.raw.frames.filter(([t]) => t <= r.endT).slice(1).map(([, d]) => d))
-const sum = {
-  world: WORLD,
-  viewport: VIEWPORT,
-  throttle: THROTTLE,
-  profile: heavy ? HEAVY.split('/').pop() : 'new',
-  seed: SEED,
-  runs: runs.map((r) => ({ stone: r.result.stone, answers: r.result.answers, finished: r.result.finished, docBytes: r.result.docBytes })),
-  answers: runs.reduce((n, r) => n + r.result.answers, 0),
-  round: stats(roundFrames),
-  roundCalm: null,
-  roundAroundAnswers: null,
-  longTasks: { n: all((r) => r.raw.long.filter(([t]) => t <= r.endT)).length, ...(stats(all((r) => r.raw.long.filter(([t]) => t <= r.endT).map(([, d]) => d))) ?? {}) },
-  phases: phaseTable(all((r) => r.list)),
-  idbNearTaps: all((r) => r.result.idbNearTaps),
-  svgElements: Math.max(...runs.map((r) => r.result.svgElements)),
-  errors: all((r) => r.result.errors),
-}
-// the frames away from the taps and right after them, each run with its own taps
-{
+/** The runs of one build, summed up. */
+function summarize(runs) {
+  const all = (pick) => runs.flatMap((r) => pick(r))
+  const sum = {
+    world: WORLD,
+    viewport: VIEWPORT,
+    throttle: THROTTLE,
+    profile: heavy ? HEAVY.split('/').pop() : 'new',
+    seed: SEED,
+    runs: runs.map((r) => ({ stone: r.result.stone, answers: r.result.answers, finished: r.result.finished, docBytes: r.result.docBytes, bench: r.result.bench })),
+    answers: runs.reduce((n, r) => n + r.result.answers, 0),
+    round: stats(all((r) => r.raw.frames.filter(([t]) => t <= r.endT).slice(1).map(([, d]) => d))),
+    roundCalm: null,
+    roundAroundAnswers: null,
+    longTasks: { n: all((r) => r.raw.long.filter(([t]) => t <= r.endT)).length, ...(stats(all((r) => r.raw.long.filter(([t]) => t <= r.endT).map(([, d]) => d))) ?? {}) },
+    phases: phaseTable(all((r) => r.list)),
+    idbNearTaps: all((r) => r.result.idbNearTaps),
+    svgElements: Math.max(...runs.map((r) => r.result.svgElements)),
+    errors: all((r) => r.result.errors),
+  }
+  // the frames away from the taps and right after them, each run with its own taps
   const calm = []
   const around = []
   for (const r of runs) {
@@ -420,16 +435,41 @@ const sum = {
   }
   sum.roundCalm = stats(calm)
   sum.roundAroundAnswers = stats(around)
+  sum.verdict = verdict(sum)
+  return sum
 }
-const v = verdict(sum)
-sum.verdict = v
-writeFileSync(`${OUT}round-${TAG}.json`, JSON.stringify({ ...sum, perRun: runs.map((r) => r.result), raw: runs.map((r) => r.raw) }, null, 1))
 
-console.log(JSON.stringify({ ...sum, phases: undefined }, null, 1))
-console.log('fase              n   lang   median/maks   værste billede (median)   største LoAF-invokere')
-for (const [phase, p] of Object.entries(sum.phases)) {
-  const inv = p.invokers.slice(0, 3).map((e) => `${e.invoker} ${e.perTransition} ms`).join(', ')
-  console.log(`${phase.padEnd(16)} ${String(p.n).padStart(3)}  ${`${p.withLong}/${p.n}`.padStart(5)}  ${`${p.longMedian ?? '–'} / ${p.longMax ?? '–'}`.padStart(11)}   ${String(p.worstFrameMedian ?? '–').padStart(8)} ms   ${inv}`)
+function print(label, sum) {
+  const v = sum.verdict
+  console.log(`\n${label}: ${sum.answers} svar, maskinens målestok ${sum.runs.map((r) => r.bench?.join('/')).join(', ')} ms`)
+  console.log(JSON.stringify({ ...sum, phases: undefined }, null, 1))
+  console.log('fase              n   lang   median/maks   værste billede (median)   største LoAF-invokere')
+  for (const [phase, p] of Object.entries(sum.phases)) {
+    const inv = p.invokers.slice(0, 3).map((e) => `${e.invoker} ${e.perTransition} ms`).join(', ')
+    console.log(`${phase.padEnd(16)} ${String(p.n).padStart(3)}  ${`${p.withLong}/${p.n}`.padStart(5)}  ${`${p.longMedian ?? '–'} / ${p.longMax ?? '–'}`.padStart(11)}   ${String(p.worstFrameMedian ?? '–').padStart(8)} ms   ${inv}`)
+  }
+  console.log(v.valid ? (v.ok ? 'alle krav holder' : `krav, der ikke holder:\n  ${v.fails.join('\n  ')}`) : `UGYLDIG kørsel: billederne væk fra svarene har p95 ${sum.roundCalm?.p95} ms og ${sum.roundCalm?.over20} % over 20 ms (maskinen var optaget)`)
 }
-console.log(v.valid ? (v.ok ? 'alle krav holder' : `krav, der ikke holder:\n  ${v.fails.join('\n  ')}`) : `UGYLDIG kørsel: billederne væk fra svarene har p95 ${sum.roundCalm?.p95} ms og ${sum.roundCalm?.over20} % over 20 ms (maskinen var optaget)`)
-if (ASSERT && !v.ok) process.exit(1)
+
+// DIST_B: a second build, played turn about with the first (A, B, A, B …) under the same conditions
+const DIST_B = process.env.DIST_B ?? null
+const server = await serve(DIST, PORT, DIST_B)
+const urls = DIST_B ? [server.url, server.urlB] : [server.url]
+const browser = await launch()
+const runs = []
+try {
+  for (let run = 0; run < RUNS; run++) for (const [build, url] of urls.entries()) runs.push({ build, ...(await playRound(browser, url, run)) })
+} finally {
+  await browser.close()
+  server.close()
+}
+
+const sum = summarize(runs.filter((r) => r.build === 0))
+const sumB = DIST_B ? summarize(runs.filter((r) => r.build === 1)) : null
+writeFileSync(
+  `${OUT}round-${TAG}${DIST_B ? '-ab' : ''}.json`,
+  JSON.stringify({ ...sum, ...(sumB ? { b: sumB, distB: DIST_B } : {}), perRun: runs.map((r) => ({ build: r.build, ...r.result })), raw: runs.map((r) => r.raw) }, null, 1),
+)
+print(DIST_B ? `A (${DIST})` : 'resultat', sum)
+if (sumB) print(`B (${DIST_B})`, sumB)
+if (ASSERT && !sum.verdict.ok) process.exit(1)
