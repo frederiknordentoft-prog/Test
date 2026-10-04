@@ -191,6 +191,7 @@ function requestSprite(id: string): Sprite {
     sprite.bytes = buffer.length * buffer.numberOfChannels * 4
     sprite.pinned = !!entry.pinned && decodedBytes((s) => s.pinned) + sprite.bytes <= pinnedLimit
     sprite.state = 'ready'
+    fillBounds(sprite, idx)
     evict()
     return sprite
   })().catch((err: unknown) => {
@@ -204,6 +205,28 @@ function requestSprite(id: string): Sprite {
 
 function loadSprite(id: string): Promise<Sprite> {
   return requestSprite(id).promise
+}
+
+/**
+ * Every clip's audible bounds, found in one read of the samples when the sprite is decoded. Reading
+ * the channel (getChannelData) cost 5–7 ms at 4× the first time per sprite, and that fell on the
+ * first clip a statement played — right after a tap. The bounds live on the sprite, so they go when
+ * the LRU drops it. A sprite without a channel to read is left alone: boundsFor then fails, and the
+ * statement is read by the device voice.
+ */
+function fillBounds(sprite: Sprite, idx: ManifestIndex): void {
+  const clips = idx.manifest.sprites[sprite.id]?.clips
+  const buffer = sprite.buffer
+  if (!clips || !buffer) return
+  let samples: Float32Array
+  try {
+    samples = buffer.getChannelData(0)
+  } catch {
+    return
+  }
+  for (const [id, [start, dur]] of Object.entries(clips) as [ClipId, [number, number]][]) {
+    if (!sprite.bounds.has(id)) sprite.bounds.set(id, findBounds(samples, buffer.sampleRate, start, start + dur, { leadMs: idx.leadMs, tailMs: idx.tailMs }))
+  }
 }
 
 function boundsFor(sprite: Sprite, id: ClipId, idx: ManifestIndex): ClipBounds {

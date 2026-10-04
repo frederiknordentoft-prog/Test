@@ -123,6 +123,39 @@ describe('the sprite cache while a statement waits for its sprites', () => {
     expect(voiceStatus().decodedBytes).toBeLessThanOrEqual(LIMIT)
   })
 
+  it('reads a sprite\'s samples once, when it is decoded, and again only after the LRU dropped it (perf runde 2)', async () => {
+    let reads = 0
+    const counted = (): AudioBuffer => {
+      const b = fakeBuffer(2)
+      const get = b.getChannelData.bind(b)
+      return Object.assign(b, {
+        getChannelData(channel: number) {
+          reads++
+          return get(channel)
+        },
+      })
+    }
+    configureVoice({ manifest, loadSprite: fakeLoader({ 'a.mp3': 10, 'b.mp3': 10, 'c.mp3': 10 }, { 'b.mp3': counted }), lruLimitBytes: LIMIT })
+    const play = async (parts: SpeechPart[]) => {
+      const h = speak(parts)
+      await vi.advanceTimersByTimeAsync(50)
+      await vi.advanceTimersByTimeAsync(h.durationMs + 50)
+    }
+    // b's two clips: one read when b is decoded, none when its clips are played, again or not
+    await play(NUMBERS)
+    expect(reads).toBe(1)
+    await play(NUMBERS)
+    expect(reads).toBe(1)
+    // a and then c take the room, so the LRU drops b, and its bounds go with it
+    await play(SUM.slice(0, 1))
+    await play(OTHER[0])
+    expect(voiceStatus().sprites.find((x) => x.id === 'b')?.state).toBe('idle')
+    // b is decoded anew, and its bounds are found anew from the new samples
+    await play(NUMBERS)
+    expect(reads).toBe(2)
+    expect(consoleError).not.toHaveBeenCalled()
+  })
+
   it('reads the statement with the device voice instead of throwing when the sprite cannot be played', async () => {
     // decoded without a channel to read: the clip bounds cannot be found
     configureVoice({ manifest, loadSprite: fakeLoader({ 'b.mp3': 20 }, { 'b.mp3': () => fakeBuffer(2, 0) }) })
