@@ -18,10 +18,21 @@ function layer(): HTMLElement {
   return el
 }
 
+/** The star, parsed once and cloned for every burst. */
+let star: Element | null = null
+function starSvg(): Node {
+  if (!star) {
+    const t = document.createElement('template')
+    t.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="${STAR}"/></svg>`
+    star = t.content.firstElementChild
+  }
+  return star!.cloneNode(true)
+}
+
 function piece(kind: 'star' | 'dot' | 'confetti', tone: number): HTMLElement {
   const el = document.createElement('span')
   el.className = `tv-fx__p tv-fx__p--${kind} tv-fx__p--t${tone}`
-  if (kind === 'star') el.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="${STAR}"/></svg>`
+  if (kind === 'star') el.appendChild(starSvg())
   return el
 }
 

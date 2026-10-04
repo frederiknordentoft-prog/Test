@@ -71,13 +71,24 @@ export function layout(pack, clips) {
   return sprites.map((s, i) => ({ id: sprites.length > 1 ? `${pack}.${i + 1}` : pack, clips: s.clips }))
 }
 
+/**
+ * Clips of a recorded wave that have no master. Such a clip would silently send its whole sentence to the
+ * device voice (s.order.countBackHundreds went out that way); a wave counts as recorded once one clip has a master.
+ */
+export function missingMasters(clips, indexClips) {
+  const recorded = new Set(clips.filter((c) => indexClips[c.id]?.file).map((c) => c.wave))
+  return clips.filter((c) => !indexClips[c.id]?.file && recorded.has(c.wave)).map((c) => c.id)
+}
+
 export function main(args) {
   const dryRun = args.includes('--dry-run')
+  const allowMissing = args.includes('--allow-missing')
   const inv = readJson(path.join(ROOT, 'voice/inventory.json'))
   const index = readJson(path.join(MASTERS, 'index.json'))
   const config = readJson(path.join(ROOT, 'voice/config.json'))
   const packs = new Map()
   let stale = 0
+  const missing = missingMasters(inv.clips, index.clips)
   for (const c of inv.clips) {
     const e = index.clips[c.id]
     if (!e || !e.file) continue
@@ -137,6 +148,9 @@ export function main(args) {
       if (mp3.length > BUDGET.sprite) errors.push(`sprite ${sprite.id} er ${(mp3.length / KB).toFixed(1)} KB (> 300 KB)`)
       console.log(`${isPinned ? 'P' : ' '} ${sprite.id.padEnd(14)} ${String(sprite.clips.length).padStart(4)} klip ${(ms(length) / 1000).toFixed(1).padStart(5)} s ${(mp3.length / KB).toFixed(1).padStart(7)} KB  ${file}`)
     }
+  }
+  if (missing.length && !allowMissing) {
+    errors.push(`${missing.length} klip i indspillede bølger mangler master: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ' …' : ''} (--allow-missing pakker alligevel)`)
   }
   if (pinned > BUDGET.pinned) errors.push(`fast indlæste sprites fylder ${(pinned / KB / KB).toFixed(2)} MB (> 1,2 MB)`)
   if (total > BUDGET.total) errors.push(`alle sprites fylder ${(total / KB / KB).toFixed(2)} MB (> 16 MB)`)

@@ -8,12 +8,14 @@
 // Usage:
 //   <RoundScreen plan={planRound(...)} hooks={roundHooks({ golden, fastMs })} onExit={...} />
 //   <RoundScreen snapshot={profile.round} hooks={...} onExit={...} />      // resume
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ComponentType, ReactNode } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import type { AnswerValue, Animal, Mood, RoundSnapshot, SpeechPart, Task, TaskKind } from '../../../engine/types'
 import type { RoundHooks, RoundPlan } from '../../../state/useRound'
 import { useRound } from '../../../state/useRound'
 import { useProfile } from '../../../state/useProfile'
+import { afterPaint } from '../../../app/idle'
 import type { SkillRegistry } from '../../../engine/registry'
 import { playSfx } from '../../../audio/sfx'
 import { onResumeNeeded } from '../../../audio/unlock'
@@ -33,7 +35,7 @@ import { displayText } from '../../hint/displayText'
 import { addsToPrompt, hintFor, scaffoldFor, supportFor } from '../../hint/hintFor'
 import type { AnyVisual, ResolvedHint } from '../../hint/hintFor'
 import { moduleFor, shownKind } from '../../task/registry'
-import type { Draft, ViewMode } from '../../task/types'
+import type { Draft, TaskViewProps, ViewMode } from '../../task/types'
 import { confirmSpeech, formatMoney, formatNumber, splitTokens } from '../../task/answers'
 import { OptionFace, UnitSuffix } from '../../task/faces'
 import { keypadUnit } from '../../task/keypad/View'
@@ -84,7 +86,9 @@ interface Token {
 /**
  * The prompt card is sized by the layout, never by its content (CSS size containment); its inner
  * size goes to --cw/--ch so the picture can scale to fit. (Container query units are not used:
- * Chromium resolves cqh to 0 when a flex item's height comes from min-height.)
+ * Chromium resolves cqh to 0 when a flex item's height comes from min-height.) The observer's first
+ * callback comes after layout and before paint, so the first frame already has the card's size;
+ * nothing is measured in the commit (that would force a layout).
  */
 function useSizeVars() {
   const ro = useRef<ResizeObserver | null>(null)
@@ -92,16 +96,27 @@ function useSizeVars() {
     ro.current?.disconnect()
     ro.current = null
     if (!el || typeof ResizeObserver === 'undefined') return
-    const set = (w: number, h: number) => {
-      el.style.setProperty('--cw', `${Math.round(w)}px`)
-      el.style.setProperty('--ch', `${Math.round(h)}px`)
-    }
-    const r = el.getBoundingClientRect()
-    const cs = getComputedStyle(el)
-    set(r.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), r.height - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))
-    ro.current = new ResizeObserver(([e]) => set(e.contentRect.width, e.contentRect.height))
+    ro.current = new ResizeObserver(([e]) => {
+      el.style.setProperty('--cw', `${Math.round(e.contentRect.width)}px`)
+      el.style.setProperty('--ch', `${Math.round(e.contentRect.height)}px`)
+    })
     ro.current.observe(el)
   }, [])
+}
+
+// The round re-renders on every beat; what has not changed is not drawn again.
+const PromptSceneMemo = memo(PromptScene)
+const ProgressStonesMemo = memo(ProgressStones)
+const TeachingMemo = memo(Teaching)
+const views = new WeakMap<ComponentType<TaskViewProps>, ComponentType<TaskViewProps>>()
+/** Each kind's view, memoised once. */
+function memoView(View: ComponentType<TaskViewProps>): ComponentType<TaskViewProps> {
+  let m = views.get(View)
+  if (!m) {
+    m = memo(View)
+    views.set(View, m)
+  }
+  return m
 }
 
 /** What the prompt's answer blank shows for a value. */
@@ -128,17 +143,34 @@ function blankFaces(task: Task, value: AnswerValue): ReactNode[] | null {
   return splitTokens(value).map((v, i) => <OptionFace key={i} task={task} value={v} size="sm" />)
 }
 
-export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: RoundScreenProps) {
+/**
+ * Memoised: PlayScreen re-renders with every change to the profile (each answer), and its props for
+ * the round stay the same. The round reads only what it draws from useRound, and the profile only
+ * for the stand-in buddy.
+ */
+export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: RoundScreenProps) {
   const speech = useSpeech()
-  const round = useRound()
-  const profile = useProfile((s) => s.profile)
+  const round = useRound(
+    useShallow((s) => ({
+      status: s.status,
+      current: s.current,
+      goldenTask: s.goldenTask,
+      answeredGolden: s.status === 'answered' && !!s.lastResult?.golden,
+      mode: s.plan?.mode,
+      total: s.total,
+      cleared: s.cleared,
+      planks: s.planks,
+      streak: s.streak,
+    })),
+  )
+  const ownBuddy = useProfile((s) => (buddy !== undefined ? null : (s.profile?.animals.find((a) => a.uid === s.profile?.buddyUid) ?? null)))
   const golden = round.status === 'golden'
-  const answeredGolden = round.status === 'answered' && !!round.lastResult?.golden
+  const answeredGolden = round.answeredGolden
   const task: Task | null = golden || answeredGolden ? round.goldenTask : round.current
   const taskKey = task ? `${golden || answeredGolden ? 'g' : 't'}:${task.id}` : null
   const module = task ? moduleFor(task) : null
-  const mode = round.plan?.mode ?? plan?.mode ?? snapshot?.mode ?? 'round'
-  const animal = buddy !== undefined ? buddy : (profile?.animals.find((a) => a.uid === profile.buddyUid) ?? null)
+  const mode = round.mode ?? plan?.mode ?? snapshot?.mode ?? 'round'
+  const animal = buddy !== undefined ? buddy : ownBuddy
 
   const [beat, setBeat] = useState<Beat>('intro')
   const [given, setGiven] = useState<AnswerValue | null>(null)
@@ -224,7 +256,10 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
 
   // ─── Onboarding counters (demosSeen, instructionsHeard) ─────────────────
 
-  const seen = (): Onboarding => (profile ? { demosSeen: profile.demosSeen, instructionsHeard: profile.instructionsHeard } : localSeen.current)
+  const seen = (): Onboarding => {
+    const p = useProfile.getState().profile
+    return p ? { demosSeen: p.demosSeen, instructionsHeard: p.instructionsHeard } : localSeen.current
+  }
   const recordIntro = (key: string, kind: TaskKind, intro: TaskIntro) => {
     if (counted.current.has(key) || (!intro.demo && !intro.instruction)) return
     counted.current.add(key)
@@ -279,51 +314,66 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
     [sayAll],
   )
 
+  // A new task's state is set in the render that shows it ("state from the previous render"), so
+  // the task is drawn once, not drawn and then reset by an effect. Refs, timers, speech and the
+  // intro stay in the effect below (safe under StrictMode).
+  // (Every presentation has its own key: a retry gets a new id, the golden egg its own prefix.)
+  const presentKey = task && taskKey && module && (round.status === 'asking' || round.status === 'golden') ? taskKey : null
+  const [presented, setPresented] = useState<string | null>(null)
+  if (presentKey !== null && presentKey !== presented) {
+    setPresented(presentKey)
+    if (task && module) {
+      // A new key shows support that leaves the answer to the child; the full strategy, which may
+      // show it, stays behind the lightbulb and makes the answer an assisted one (review r1 P2-5).
+      // A view that draws its own question (countTap, the number line …) has no card to show a
+      // picture on, so it gets neither the support nor a lightbulb that would show nothing.
+      const card = !module.ownsPrompt?.(task)
+      const full = card && !golden ? scaffoldFor(task, skills) : null
+      const support = full && task.scaffold ? supportFor(task, skills, full) : null
+      setBeat('intro')
+      setGiven(null)
+      setDraft(null)
+      setHint(null)
+      setScaffold(support)
+      // the lightbulb adds the full strategy only where it shows more than the support already does
+      setHelp(full && support !== full && addsToPrompt(full, task) ? full : null)
+      setBulbPulse(false)
+      setSpeakingOption(null)
+      setDemoKind(null)
+      setMood('idle')
+      setEgg(golden ? 'arrive' : null)
+      setCompact(false)
+      setBubble([{ clip: golden ? 's.round.golden.appear' : instructionClip(shownKind(task), 'short') }])
+    }
+  }
+
   useEffect(() => {
     if (!task || !taskKey || !module) return
     if (round.status !== 'asking' && round.status !== 'golden') return
     clearTimers()
     const tok = newToken()
-    setBeat('intro')
-    setGiven(null)
-    setDraft(null)
-    setHint(null)
-    // A new key shows support that leaves the answer to the child; the full strategy, which may show
-    // it, stays behind the lightbulb and makes the answer an assisted one (review r1 P2-5).
-    // A view that draws its own question (countTap, the number line …) has no card to show a picture
-    // on, so it gets neither the support nor a lightbulb that would show nothing.
-    const card = !module.ownsPrompt?.(task)
-    const support = card && task.scaffold && !golden ? supportFor(task, skills) : null
-    const full = card && !golden ? scaffoldFor(task, skills) : null
-    setScaffold(support)
-    // the lightbulb adds the full strategy only where it shows more than the support already does
-    const same = !!support && !!full && JSON.stringify(full) === JSON.stringify(support)
-    setHelp(full && !same && addsToPrompt(full, task) ? full : null)
-    setBulbPulse(false)
-    setSpeakingOption(null)
-    setDemoKind(null)
     bulbSounded.current = false
     clockStarted.current = false
     lastActivity.current = performance.now()
-    setMood('idle')
 
     if (golden) {
-      setEgg('arrive')
       playSfx('guld')
       later(950, () => setEgg('wait'))
-      setBubble([{ clip: 's.round.golden.appear' }])
-      void sayAll([{ parts: [{ clip: 's.round.golden.appear' }], option: null }, { parts: task.speech, option: null }], tok).then(() => {
+      // the voice starts once the egg is on screen
+      afterPaint(() => {
         if (!tok.alive) return
-        useRound.getState().startClock()
-        clockStarted.current = true
-        setBeat((b) => (b === 'intro' ? 'asking' : b))
+        void sayAll([{ parts: [{ clip: 's.round.golden.appear' }], option: null }, { parts: task.speech, option: null }], tok).then(() => {
+          if (!tok.alive) return
+          useRound.getState().startClock()
+          clockStarted.current = true
+          setBeat((b) => (b === 'intro' ? 'asking' : b))
+        })
       })
       return () => {
         tok.alive = false
       }
     }
 
-    setEgg(null)
     let intro = intros.current.get(taskKey)
     if (!intro) {
       intro = taskIntro({ ...task, kind: shownKind(task) }, prevKind.current, seen(), { hasDemo: true })
@@ -331,16 +381,21 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
       prevKind.current = shownKind(task)
     }
     const kind = shownKind(task)
-    recordIntro(taskKey, kind, intro)
-    if (intro.demo) {
-      setBeat('demo')
-      setDemoKind(kind)
-      const ins = intro.instruction ?? 'long'
-      setBubble([{ clip: instructionClip(kind, ins) }])
-      void sayAll([{ parts: [{ clip: instructionClip(kind, ins) }], option: null, instruction: true }], tok)
-    } else {
-      void readTask(task, intro, tok)
-    }
+    const shown = intro
+    // the reading (or the demo) starts, and the profile counts the intro, once the task is on screen
+    afterPaint(() => {
+      recordIntro(taskKey, kind, shown)
+      if (!tok.alive) return
+      if (shown.demo) {
+        setBeat('demo')
+        setDemoKind(kind)
+        const ins = shown.instruction ?? 'long'
+        setBubble([{ clip: instructionClip(kind, ins) }])
+        void sayAll([{ parts: [{ clip: instructionClip(kind, ins) }], option: null, instruction: true }], tok)
+      } else {
+        void readTask(task, shown, tok)
+      }
+    })
     return () => {
       tok.alive = false
     }
@@ -417,9 +472,12 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
           setEgg('caught')
           setMood('cheer')
           playSfx('guld')
-          if (at) burst(at.x, at.y, { big: true })
           setBubble([{ clip: 's.round.golden.caught' }])
-          void sayAll([{ parts: [{ clip: 's.round.golden.caught' }], option: null }], tok)
+          afterPaint(() => {
+            if (!tok.alive) return
+            if (at) burst(at.x, at.y, { big: true })
+            void sayAll([{ parts: [{ clip: 's.round.golden.caught' }], option: null }], tok)
+          })
           pending.current = () => useRound.getState().next()
           later(1900, () => {
             pending.current = null
@@ -431,7 +489,9 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
           setMood('oops')
           playSfx('whoosh')
           setBubble([{ clip: 's.round.golden.flew' }])
-          void sayAll([{ parts: [{ clip: 's.round.golden.flew' }], option: null }], tok)
+          afterPaint(() => {
+            if (tok.alive) void sayAll([{ parts: [{ clip: 's.round.golden.flew' }], option: null }], tok)
+          })
           pending.current = () => useRound.getState().next()
           later(2000, () => {
             pending.current = null
@@ -445,8 +505,8 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
         const streak = useRound.getState().streak
         setBeat('correct')
         setMood(streak >= 5 ? 'cheer' : 'happy')
+        // the sound at once; the stars and the voice once the green card is on screen
         playSfx('rigtigt', { streak })
-        if (at) burst(at.x, at.y, { big: streak >= 3 })
         let say = pickRotating(PRAISE_CLIPS, praiseAt.current++)
         let wait = CORRECT_MS
         if (streak === 5) {
@@ -458,13 +518,17 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
         if (streak === 10) {
           say = 's.round.perfect'
           setPerfect(true)
-          confetti()
           playSfx('fanfare')
           later(2600, () => setPerfect(false))
           wait = 2600
         }
         setBubble([{ clip: say }])
-        void sayAll([{ parts: [{ clip: say }], option: null }], tok)
+        afterPaint(() => {
+          if (!tok.alive) return
+          if (at) burst(at.x, at.y, { big: streak >= 3 })
+          if (streak === 10) confetti()
+          void sayAll([{ parts: [{ clip: say }], option: null }], tok)
+        })
         pending.current = () => useRound.getState().next()
         later(wait, () => {
           pending.current = null
@@ -485,14 +549,17 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
         const oops = pickRotating(OOPS_CLIPS, praiseAt.current++)
         setBubble([{ clip: oops }])
         const tk = newToken()
-        void sayAll(
-          [
-            { parts: [{ clip: oops }], option: null },
-            { parts: h.speech, option: null },
-            { parts: confirmSpeech(t), option: null },
-          ],
-          tk,
-        )
+        afterPaint(() => {
+          if (!tk.alive) return
+          void sayAll(
+            [
+              { parts: [{ clip: oops }], option: null },
+              { parts: h.speech, option: null },
+              { parts: confirmSpeech(t), option: null },
+            ],
+            tk,
+          )
+        })
       }
       pending.current = teach
       later(WRONG_MS, () => {
@@ -660,9 +727,6 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
 
   // ─── Fitting: a task too tall for a short screen drops the companion strip ─
 
-  useLayoutEffect(() => {
-    setCompact(false)
-  }, [taskKey])
   useEffect(() => {
     if (compact || (beat !== 'intro' && beat !== 'asking' && beat !== 'teaching')) return
     const stage = stageRef.current
@@ -692,32 +756,35 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
   const viewMode: ViewMode =
     paused || away || demoKind || beat === 'end' ? 'idle' : beat === 'correct' ? 'correct' : beat === 'wrong' ? 'wrong' : beat === 'demo' ? 'idle' : 'input'
 
-  let entry: ReactNode = undefined
-  let entries: ReactNode[] | undefined
-  let slot: BlankSlot = 'empty'
-  if (task && (beat === 'correct' || beat === 'wrong' || beat === 'teaching') && given !== null) {
-    const struck = (face: ReactNode, key?: number) => (beat === 'correct' ? face : <span key={key} className="tv-struck">{face}</span>)
-    const parts = blankFaces(task, given)
-    if (parts) entries = parts.map((face, i) => struck(face, i))
-    else entry = struck(blankFace(task, given))
-    slot = beat === 'correct' ? 'good' : 'oops'
-  } else if (draft) {
-    entry = (
-      <>
-        {draft.text}
-        {draft.unit && <UnitSuffix unit={draft.unit} />}
-      </>
-    )
-    slot = 'active'
-  }
+  const { entry, entries, slot } = useMemo(() => {
+    let entry: ReactNode = undefined
+    let entries: ReactNode[] | undefined
+    let slot: BlankSlot = 'empty'
+    if (task && (beat === 'correct' || beat === 'wrong' || beat === 'teaching') && given !== null) {
+      const struck = (face: ReactNode, key?: number) => (beat === 'correct' ? face : <span key={key} className="tv-struck">{face}</span>)
+      const parts = blankFaces(task, given)
+      if (parts) entries = parts.map((face, i) => struck(face, i))
+      else entry = struck(blankFace(task, given))
+      slot = beat === 'correct' ? 'good' : 'oops'
+    } else if (draft) {
+      entry = (
+        <>
+          {draft.text}
+          {draft.unit && <UnitSuffix unit={draft.unit} />}
+        </>
+      )
+      slot = 'active'
+    }
+    return { entry, entries, slot }
+  }, [task, beat, given, draft])
 
   const ownsPrompt = !!(task && module?.ownsPrompt?.(task))
   const trial = mode === 'trial' || mode === 'finale'
-  const View = module?.View
+  const View = module ? memoView(module.View) : undefined
   const Demo = demoKind && task ? moduleFor({ ...task, kind: demoKind }).Demo : null
   const bubbleText = bubble ? displayText(bubble, speech.text) : ''
   const stones = (
-    <ProgressStones
+    <ProgressStonesMemo
       total={Math.max(1, round.total || plan?.tasks.length || snapshot?.total || 1)}
       done={trial ? round.planks : round.cleared}
       glow={round.streak > 0}
@@ -753,13 +820,12 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
         className={cx('tv-round__stage', ownsPrompt && 'is-owned')}
         data-kind={task?.kind}
         onPointerDown={onActivity}
-        key={taskKey ?? 'none'}
       >
         <div ref={askRef} className="tv-round__ask">
           {task && !ownsPrompt && (
-            <div ref={cardRef} className={cx('tv-round__card', scaffold && 'has-scaffold')} data-prompt={task.prompt.scene}>
+            <div ref={cardRef} key={taskKey} className={cx('tv-round__card', scaffold && 'has-scaffold')} data-prompt={task.prompt.scene}>
               {egg && <GoldenEgg state={egg} className="tv-round__egg" />}
-              <PromptScene
+              <PromptSceneMemo
                 prompt={task.prompt}
                 task={task}
                 entry={entry}
@@ -791,13 +857,13 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
             )}
           </div>
         </div>
-        <div ref={answerRef} className="tv-round__answer">
+        <div ref={answerRef} key={taskKey ?? 'none'} className="tv-round__answer">
           {egg && ownsPrompt && <GoldenEgg state={egg} className="tv-round__egg" />}
           {task && module && View && beat !== 'teaching' && (
             <View task={task} mode={viewMode} given={given} onSubmit={onSubmit} onActivity={onActivity} onDraft={onDraft} speaking={speakingOption} />
           )}
           {task && module && beat === 'teaching' && hint && given !== null && (
-            <Teaching task={task} module={module} given={given} hint={hint} onConfirm={onConfirm} />
+            <TeachingMemo task={task} module={module} given={given} hint={hint} onConfirm={onConfirm} />
           )}
         </div>
       </div>
@@ -807,7 +873,7 @@ export function RoundScreen({ plan, snapshot, hooks, skills, buddy, onExit }: Ro
       {away && !paused && <ContinueOverlay onContinue={onContinue} />}
     </div>
   )
-}
+})
 
 /** How far the in-flow children of `el` reach below its content box, in px. */
 function spill(el: HTMLElement): number {

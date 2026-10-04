@@ -300,7 +300,38 @@ async function run(browser) {
   await page.waitForSelector('[data-sheet-play]')
   await page.waitForTimeout(700)
   await tap(page, '[data-sheet-play]')
-  await playOn(page, { stop: async (firsts) => firsts === 3 })
+  // the buddy stays on screen while the tasks slide in (perf P1): the same SVG node, still in the
+  // hat, over three task changes; and each new card gets its own size at once (perf P2)
+  const cardFits = []
+  await playOn(page, {
+    stop: async (firsts) => {
+      if (firsts === 0) {
+        await page.evaluate(() => {
+          const svg = document.querySelector('.tv-round .tv-buddy svg')
+          if (svg) svg.__tvSame = true
+        })
+      } else {
+        const fit = await page.evaluate(() => {
+          const card = document.querySelector('.tv-round__card')
+          if (!card) return null
+          const cs = getComputedStyle(card)
+          const content = card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+          return { cw: parseFloat(card.style.getPropertyValue('--cw')), content }
+        })
+        if (fit) cardFits.push(fit)
+      }
+      return firsts === 3
+    },
+  })
+  const kept = await page.evaluate(() => {
+    const svg = document.querySelector('.tv-round .tv-buddy svg')
+    return { same: !!svg?.__tvSame, hat: !!svg?.querySelector('[data-slot="head"]') }
+  })
+  check(kept.same && kept.hat, `vennen bliver stående: samme SVG over tre opgaveskift, stadig med huen (${JSON.stringify(kept)})`)
+  check(
+    cardFits.length > 0 && cardFits.every((f) => Math.abs(f.cw - f.content) <= 1),
+    `kortets --cw er indholdsbredden efter et opgaveskift (${cardFits.map((f) => `${f.cw}/${Math.round(f.content * 10) / 10}`).join(', ')})`,
+  )
   const before = await drive(page, 'currentTask')
   await tap(page, '.tv-topbar [data-clip="s.ui.close"]')
   await page.waitForSelector('[data-pause]')
