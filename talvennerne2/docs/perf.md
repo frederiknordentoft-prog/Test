@@ -185,7 +185,7 @@ CPU-profilen fra runde 1 viste, hvad trykket stadig bar. Runde 2 tager de tre de
 
 1. **Svaret bogføres efter paint** (`src/state/useRound.ts`).
    - `submit()` sætter stadig rundens egen tilstand med det samme (rigtigt/forkert, stime, kø, status), for skærmen viser den i trykkets billede.
-   - Bogføringen (`hooks.answer`: mestring, misforståelser, logrækken og dagen) og genoptagelsespunktet (`hooks.snapshot`) venter til efter den næste paint (`afterPaint`). Begge kostede 8–11 ms ved 4× i klik-tasken, og deres to profil-skrivninger re-renderede PlayScreen.
+   - Bogføringen (`hooks.answer`: mestring, misforståelser, logrækken og dagen) og genoptagelsespunktet (`hooks.snapshot`) venter til efter den næste paint (`afterPaint`). Sammen med Dexie-transaktionens start kostede de 3–11 ms ved 4× i klik-tasken (mest ved det første tryk), og deres to profil-skrivninger re-renderede PlayScreen.
    - `next()`, `confirm()`, guldægget, `pause()`, `quit()`, slutningen og en ny tur (`start`/`resume`) bogfører det ventende først (`bookAnswers`). Det gør datalaget også før skrivningen ved `visibilitychange → hidden`, `pagehide` og `flush()` (`useProfile.onBeforeFlush`).
    - Garantien er præcis én bogføring pr. svar, i rækkefølge. Svaret og dets snapshot lander stadig i én rw-transaktion (SPEC §9.2).
    - Intet i brugerfladen bruger bogføringens resultat i trykket: strategien klassificerer svaret selv (`classifyAnswer`), og guldægget læser profilen i `next()`, efter at der er bogført.
