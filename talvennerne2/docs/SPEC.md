@@ -45,6 +45,12 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
 - **A14 – Gætterate for udfyldning og kroner (2/10, UIFIX2; noteret 3/10).** I §3.1 tæller `guessP` for `fillSlots` alle udfyldninger, opgaven accepterer: (1 + antal i `accept`) / muligheder^felter, fx 10|3 og 3|10 for 13 = □ + □ og de ækvivalente brøker. For `keypad` i kroner (`entryScale` 100) regnes intervallet i tastede kroner, ikke i øre: 0–2000 øre er 21 mulige svar, ikke 2001. Fundet som UI-fund 8 og 22.
 - **A15 – En sten tæller kun med sit eget stof (3/10, integrator; QA2 P2-1).** En tur tæller for stenen (stjerner, ven, kiste, spillet), når mindst halvdelen af turens opgaver er stenens egne nøgler: nodens skills inden for regionens grænser og ikke review-only (`OWN_SHARE_MIN`, `PlannedRound.ownShare`). Det afgøres, når turen planlægges. En sten, der aldrig er spillet, og hvis tur ville være under halvt egen, fordi dagens nye nøgler er brugt (A13), starter ingen tur (`chooseStart` → `'tomorrow'`). Intro-skærmen viser Pip: "Her er der nyt i morgen. Nu kan du øve det, du har lært." med to lige store knapper, Blandet øvelse og Til kortet. Der er ingen nedtælling, intet ur og intet "kom tilbage om …" (§13). En sten, der allerede er spillet, kører som i A13. Prøver, finaler, Blandet øvelse og hytten tæller altid. A13's smagsprøve (`TASTE_KEYS`, `TASTE_PER_DAY`) kan ikke nå halvdelen af en tur og bruges derfor ikke længere for nye sten; den ryddes op senere.
 - **A16 – Budgettet for al JS er 750 KB gzip (3/10, integrator).** Tallet er summen af alle dovne chunks: 16 arter, 74 genstande, 4 scener og 72 skills, som hver først hentes, når barnet når dem. Ventetiden bestemmes af startbundtet (≤ 160 KB) og den enkelte chunk (≤ 60 KB), og de er uændrede. Med Ridder og Talmagiker nåede bølge 2 604 KB, og bølge 3 lægger ca. 90–100 KB til (4 arter, en scene, 16 skills og Astronaut). Stemmens sprites (7–16 MB) dominerer det samlede download, så 150 KB JS er under 2 % af det. Data hører ikke til i JS: stemmens manifest hentes som JSON (3/10), og nye tabeller (fx lommernes hylstre) skal være kompakte. `scripts/budget.mjs` fejler buildet over 750 KB.
+- **A17 – En håndgenstand må tegnes foran poten (4/10, integrator).**
+  - Som standard gælder §7.1 regel 5: poten tegnes over håndtaget.
+  - En håndgenstand, der bæres foran kroppen, kan erklære `art.over`. Så tegnes den efter poten og benet, og en rem eller hånddel viser grebet. Det gælder fx Ridderens skjold med rem, som ellers skjules halvt af forbenet på heste, enhjørninger og ræve.
+  - Holder en ugle med kropstøj noget, tegnes håndgenstanden på samme måde over vingen og ærmet, så den kan ses.
+  - Øjenreglen (regel 6) og elementbudgettet gælder uændret.
+  - Ændringen gennemgås i den uafhængige kunst-gate G2-r4.
 
 ---
 
@@ -864,7 +870,7 @@ Feltet `tier` findes ikke (test). Kortets rammefarve afledes af `source.kind`: m
 2. Ved `earMode: 'under'`: `s = min(s, earGap × 1,15 / baseWidth)`. Ører og horn ligger over hatten.
 3. Kropstøj klippes til artens body-path, udvidet 2 enheder, og konturen streges igen.
 4. Hver kropsgenstand har 3 grundformer, én pr. kropsskabelon.
-5. Håndgenstande sidder ved `pawR` med `handRot`. Poten tegnes over håndtaget.
+5. Håndgenstande sidder ved `pawR` med `handRot`. Poten tegnes over håndtaget, undtagen for en genstand med `art.over` (A17), der tegnes foran poten.
 6. Øjenregel: intet dækker øjnene. Briller har glas med ≤ 25 % opacitet (bbox-tjek).
 7. Højst 10 % af (genstand, art)-par må have en override.
 
