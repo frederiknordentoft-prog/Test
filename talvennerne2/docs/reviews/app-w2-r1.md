@@ -291,6 +291,11 @@ Bølge 2's klip indspilles stadig, så reserven er forventet. 79 % af opgaverne 
 | 15 | opgave, penge, telefon | Tre korrekte betalinger blev bedømt forkert i hovedkørslen: 77 kr. to gange (seddel + 20 + 5 + 2) og 67 kr. i prøvens genforsøg (seddel + 10 + 5 + 2). Det kunne ikke genskabes. 8 af 8 fokuserede forsøg i opgaveharnessen (også med 30 ms mellem tryk) blev bedømt rigtigt, og det samme gjorde alle betalinger i kørslerne på telefon på tværs og iPad. Det bør undersøges med bakkens indhold logget, for en fejl her koster en mesterprøve. | `skov3-phone-ask-w2-penge-pay-payExact.png` (samme tur), log i `skov-tasks.jsonl`, `pay-focus.json`, `pay2.json` | `src/ui/task/pay/View.tsx` (`add`, `usePointerDrag`) |
 | 16 | opgave, 4× CPU, telefon | Med 4× throttle var billedtiden p50 16,7 ms. Omkring hvert svar var p95 33–83 ms, og lange opgaver tog 50–350 ms (fejring, oplæsning og næste opgave). Der var ingen konsolfejl. Det er målt på dev-serveren (React i dev-tilstand) på en maskine med stemmeindspilning og tre kunst-agenter, så det kan ikke holdes op mod SPEC §15.2's p95 ≤ 20 ms. Mål prod-buildet, når verdenerne frigives. | – (`vp-throttle.json`) | `scripts/playthrough.mjs` (prod-delen) |
 
+
+**Status efter rettelserne (integratoren, 4/10):** P1-1 og alle P2'ere er rettet (UIFIX3A og UIFIX3B). P3-1–P3-7 og P3-9–P3-15 er rettet i UIFIX4.
+- **P3-8:** målekortene har nu billede og ord (PIKTO). Det uafhængige review blev bestået med blindtest 12/12; se `pikto-r1-blind.md`, `pikto-r1.md` og `pikto-r2.md`. Vægt-tingene hører til 3. klasse og får billeder med bølge 3.
+- **P3-16:** målt på prod-buildet (`docs/perf.md`).
+
 ## Rækværk (SPEC §13) i de nye verdener
 
 | Punkt | Status |
