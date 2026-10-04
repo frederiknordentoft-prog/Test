@@ -120,7 +120,7 @@ export async function solveGate(page) {
 /**
  * Every animation frame's time, every long task and every long animation frame (LoAF: its blocking
  * time and, per script, who invoked it, from where, how long it ran and how much of that was forced
- * style and layout), from now on, plus the round's beats (each change of `data-beat` on .tv-round:
+ * style and layout), every tap's handler time (Event Timing), from now on, plus the round's beats (each change of `data-beat` on .tv-round:
  * asking → correct, wrong → teaching …), so the phases of an answer can be told apart. Read back
  * from window.
  */
@@ -131,6 +131,7 @@ export function startFrames(page) {
     window.__marks = []
     window.__loaf = []
     window.__beats = []
+    window.__events = []
     let last = performance.now()
     const loop = (t) => {
       window.__frames.push([t, t - last])
@@ -163,6 +164,16 @@ export function startFrames(page) {
           })
         }
       }).observe({ type: 'long-animation-frame' })
+    }
+    // every tap (Event Timing, from 16 ms): the handlers' time, with React's render, and the time to the next paint
+    try {
+      new PerformanceObserver((l) => {
+        for (const e of l.getEntries()) {
+          if (e.name === 'click' || e.name === 'pointerdown') window.__events.push([e.startTime, e.name, e.processingEnd - e.processingStart, e.duration])
+        }
+      }).observe({ type: 'event', durationThreshold: 16 })
+    } catch {
+      // no Event Timing
     }
     new MutationObserver((list) => {
       const t = performance.now()

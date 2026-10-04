@@ -48,12 +48,7 @@ QA2 målte på dev-serveren (React i dev-tilstand) på en maskine under last og 
 
 Fund 1 ovenfor, taget op: hvert svar gav en lang opgave på 50–117 ms ved 4×. Runden fjerner det, der ikke behøver at ske i svarets billede: dyret bliver stående, en ny opgave tegnes med én render, og stjernerne og stemmen kommer efter paint.
 
-**Resultatet er blandet.**
-- Ved `THROTTLE=1` holder alle krav nu. Før var der billeder på 50 ms, når strategien kom frem.
-- Blik-lytterens pris med det påklædte dyr er næsten væk.
-- Ved 4× gav ændringerne ingen målbar forskel i de lange opgaver, målt side om side med det uændrede build. Kravene holder ikke.
-- Maskinen skiftede hastighed under målingen, så kun sammenligningen side om side tæller.
-- Resten af prisen ligger uden for dette område (se "Det, der står tilbage").
+**Rettet i runde 2:** mange af runde 1's efter-målinger målte en dev-server, ikke de byggede filer (se "Rettelse" herunder). Målt igen side om side på de byggede filer har runde 1 fjernet næsten alle lange opgaver ved svarene. Bekræft → næste opgave gik fra lang opgave i 91 % af overgangene til 10 %, og hele turen fra 49 til 8 lange opgaver.
 
 ### Måling
 
@@ -72,6 +67,8 @@ Fund 1 ovenfor, taget op: hvert svar gav en lang opgave på 50–117 ms ved 4×.
 - **Gentagelig:** trykkene er seedede (`SEED`), og `RUNS` lægger flere ture fra hver sin nye enhed sammen.
 - **Langtidsspilleren:** `PROFILE=heavy` fletter `scripts/perf/heavy.ts`' indhold ind i barnets egen eksport og bringer den tilbage med "Erstat …s data" (flyttet til `lib.mjs`, så `zoo.mjs` bruger det samme). Indholdet er alle frigivne nøgler i bølge 1–2 med historik (786), 60 påklædte dyr, hele garderoben i alle farver, 200 belønninger og misforståelser med fulde vinduer. Barnets eget dyr er påklædt. Dokumentet er 333 KB (`heavy.ts 500` giver 503 KB).
 - **Maskinens hastighed:** et fast stykke arbejde måles i siden før og efter hver tur (`bench`). `DIST_B` spiller to builds skiftevis (A, B, A, B) og opgør dem hver for sig.
+- **Trykket selv** (fra runde 2): Event Timing giver for hvert tryk handlerens tid med Reacts render og tiden til næste billede (`clickMedian`, `clickToPaintMedian` pr. fase). Det kan sammenlignes, også når der næsten ingen lange opgaver er.
+- **Den rigtige build:** `serve()` stopper, hvis porten ikke serverer netop de filer, der skal måles.
 
 **Krav** (prod-buildet ved 4×, telefon, Engdalen, 2 ture med ≥ 50 svar):
 - hver fase har en lang opgave i ≤ 25 % af overgangene,
@@ -81,30 +78,46 @@ Fund 1 ovenfor, taget op: hvert svar gav en lang opgave på 50–117 ms ved 4×.
 
 Den tunge profil og skov-iPad skal holde det samme uden IndexedDB-scripts ≥ 10 ms inden for 300 ms af et tryk. Ved `THROTTLE=1` må intet billede være over 33,4 ms inden for 2,5 s af et tryk.
 
-### Maskinen skiftede hastighed undervejs
+### Rettelse: en glemt dev-server blev målt
 
-Den samme build (det uændrede, 37f386f) gav to meget forskellige målinger med samme seed: kl. 9.13 var medianen af de lange opgaver 62 ms, kl. 9.35 93 ms. Begge kørsler var stort set "gyldige" (0,3 % og 0,2 % over 20 ms væk fra svarene), for en side, der intet laver, holder 60 billeder/s, også når maskinen er langsom. Fra ca. 9.30 var alle opgaver i et svar 1,5 gange så lange som før. Der kørte ingen anden Chromium samtidig (låsen), og `top` viste maskinen næsten ledig; det ligner, at værten var presset. Derfor:
-- en før/efter-sammenligning er kun gyldig, når de to builds måles side om side (`DIST_B`, afsnittet herunder),
-- kravene er absolutte tal og kan kun holde, når maskinen er hurtig. Efter-kørslerne i matrixen faldt alle i den langsomme periode (`bench` 13–15 ms), og ingen af dem holder kravene.
+Fra kl. 9.29 lyttede en Vite-dev-server på port 4360. Den var startet af min egen e2e-kørsel, som kun stoppede `npx`, ikke Vite selv. `serve()` startede sin egen server på samme port, fik ikke porten og sagde intet. Derfor målte alle kørsler på den port derefter dev-serveren: React i udviklingstilstand og kildekoden i worktreet, ikke de byggede filer.
 
-### Side om side (`DIST_B`)
+- **Ugyldige (dev-serveren):** Engdalen kl. 9.35, begge `THROTTLE=1`-kørsler, hele efter-matrixen, kørslen med 503 KB og den første side om side-sammenligning. I den var A og B den samme kode, så "ingen forskel" var meningsløst.
+- **"Maskinen skiftede hastighed" var forkert.** Det var dev-serveren, der var 1,5–2 gange langsommere.
+- **Gyldige prod-kørsler fra runde 1:** den tunge profil, Engdalen kl. 9.13 og skov-iPad (tabellerne under "Før") og CPU-profilen under "Det, der står tilbage".
+- **Nu:** `serve()` tjekker, at porten serverer netop den build, ellers stopper målingen.
 
-Det uændrede build (før) og det ændrede (efter) skiftevis i samme Chromium kl. 10.27–10.41, Engdalen, telefon, 4×, 2 ture hver (72 og 91 svar), samme seeds. Målestokken var 13–15 ms for begge. Begge er ugyldige efter kriteriet (0,7 % og 1,2 % over 20 ms væk fra svarene):
+Runde 1 er målt igen side om side på de byggede filer:
 
-| Fase | Lang opgave, før | Lang opgave, efter | Median / maks., før | Median / maks., efter | Værste billede, før | Værste billede, efter |
+Det uændrede build (B) og runde 1 (A, det, der ligger i session-branchen) skiftevis kl. 12.08–12.27, Engdalen, telefon, 4×, én tur hver (54 og 41 svar). Begge kørsler er gyldige (0,1 % og 0,2 % over 20 ms væk fra svarene):
+
+| Fase | Overgange med lang opgave, B / A | Median lang opgave, B → A | A/B | Maks., B / A | Værste billede, B / A | Største invoker, B → A (ms pr. overgang) |
 |---|---|---|---|---|---|---|
-| rigtigt tryk | 20/20 | 19/19 | 112 / 155 ms | 115 / 165 ms | 116,6 ms | 116,6 ms |
-| forkert tryk | 52/52 | 72/72 | 99 / 215 ms | 100 / 167 ms | 100 ms | 100 ms |
-| strategien vises | 52/52 | 70/71 | 73 / 117 ms | 69 / 151 ms | 83,3 ms | 66,7 ms |
-| rigtigt → næste opgave | 18/18 | 18/18 | 81 / 139 ms | 74 / 103 ms | 83,4 ms | 83,4 ms |
-| bekræft → næste opgave | 52/52 | 71/71 | 105 / 168 ms | 111 / 166 ms | 116,6 ms | 116,7 ms |
+| rigtigt tryk | 4/10 / 1/10 | 59 → 57 ms | 97 % | 69 / 57 ms | 50 / 49,9 ms | DIV#root.onclick 22,2 → DIV#root.onclick 13,1 |
+| forkert tryk | 2/44 / 4/31 | 52 → 53 ms | 102 % | 67 / 73 ms | 33,4 / 33,3 ms | DIV#root.onclick 12,7 → DIV#root.onclick 8,2 |
+| strategien vises | 0/44 / 0/31 | – → – ms | – | – / – ms | 16,8 / 16,8 ms | MessagePort.onmessage 0,5 → – |
+| rigtigt → næste opgave | 2/9 / 0/9 | 58 → – ms | – | 78 / – ms | 50 / 33,4 ms | TimerHandler:setTimeout 44,8 → TimerHandler:setTimeout 2,3 |
+| bekræft → næste opgave | 40/44 / 3/31 | 69 → 53 ms | 77 % | 106 / 58 ms | 66,6 / 33,4 ms | DIV#root.onclick 41,9 → DIV#root.onclick 9,4 |
 
-- **Forskellen er inden for støjen.** De lange opgaver er lige lange før og efter (median 89 og 81 ms over hele turen). Trykket bruger stadig 80–90 ms i `DIV#root.onclick` i begge builds i den langsomme periode.
-- **Det, ændringerne fjernede, kan ses enkeltvis:** blikket med påklædt dyr kostede 12–15 ms pr. tryk før og 0,4–4 ms efter, og billederne på 50 ms ved `THROTTLE=1` er væk. Men det, der er tilbage, fylder mest.
+Hele turen: lange opgaver B 49 (median 67 ms, maks. 106), A 8 (median 57 ms, maks. 73); svar B 54, A 41; målestok B 15.5/13.7, A 14.3/16.2; væk fra svar over 20 ms: B 0,1 %, A 0,2 %; konsolfejl B 0, A 0
+
+Trykket selv, målt med Event Timing (handlerens tid inklusive Reacts render, og tiden til næste billede):
+
+| Tryk | Målt, B / A | Handlerens tid (median), B → A | A/B | Tid til næste billede (median), B → A | A/B | Lange opgaver, B / A |
+|---|---|---|---|---|---|---|
+| rigtigt tryk | 10/10 / 10/10 | 19,8 → 20 ms | 101 % | 96 → 88 ms | 92 % | 4/10 / 1/10 |
+| forkert tryk | 44/44 / 31/31 | 18,9 → 20,3 ms | 107 % | 80 → 80 ms | 100 % | 2/44 / 4/31 |
+| bekræft-tryk → næste opgave | 44/44 / 31/31 | 42,5 → 16,7 ms | 39 % | 112 → 88 ms | 79 % | 40/44 / 3/31 |
+
+Målestok B 15.5/13.7, A 14.3/16.2; svar B 54, A 41; lange opgaver i alt B 49 (maks. 106), A 8 (maks. 73); væk fra svar over 20 ms B 0,1 %, A 0,2 %
+
+- **Bekræft → næste opgave var problemet, og det er næsten væk.** Lang opgave i 91 % af overgangene før og 10 % efter. Handlerens tid faldt fra 42,5 til 16,7 ms: dyret monteres ikke længere forfra, og opgaven tegnes med én render.
+- **Hele turen:** 49 lange opgaver før (median 67 ms, maks. 106 ms), 8 efter (median 57 ms, maks. 73 ms).
+- **Svar-trykket** var allerede kort i handleren (ca. 20 ms i begge). Dets lange opgaver (1 af 10 og 4 af 31) ligger lige over grænsen på 50 ms.
 
 ### Før (det uændrede build)
 
-Engdalen, telefon, 2 ture (71 svar), kl. 9.13 i den hurtige periode. Gyldigheden er 0,1 procentpoint over grænsen (0,3 % over 20 ms væk fra svarene). Tallene ligner målingen ved frigivelsen:
+Engdalen, telefon, 2 ture (71 svar), kl. 9.13. Gyldigheden er 0,1 procentpoint over grænsen (0,3 % over 20 ms væk fra svarene). Tallene ligner målingen ved frigivelsen:
 
 | Fase | Overgange med lang opgave | Median / maks. | Værste billede (median) | Største LoAF-invokere (ms pr. overgang) |
 |---|---|---|---|---|
@@ -120,20 +133,18 @@ De andre kørsler på det uændrede build. Hver fase viser andelen af overgange 
 
 | Kørsel | Svar | Rigtigt tryk | Forkert tryk | Strategien vises | Rigtigt → næste | Bekræft → næste | Længste lange opgave | Hele turen: p95 / over 20 ms | Målestok |
 |---|---|---|---|---|---|---|---|---|---|
-| Engdalen kl. 9.35 (samme build, langsom periode) | 58 | 100 % · 116,6 ms | 100 % · 99,9 ms | 100 % · 66,7 ms | 100 % · 83,4 ms | 100 % · 116,6 ms | 157 ms | 16,8 ms / 1,9 % | –, – |
 | Tung profil, 333 KB | 74 | 100 % · 66,7 ms | 72 % · 50,1 ms | 0 % · 33,3 ms | 14 % · 49,9 ms | 100 % · 83,4 ms | 116 ms | 16,8 ms / 1,4 % | – |
 | Regnbueskoven, iPad | 57 | 83 % · 50 ms | 6 % · 33,4 ms | 0 % · 16,8 ms | 33 % · 33,4 ms | 98 % · 66,7 ms | 90 ms | 16,8 ms / 0,9 % | – |
-| Engdalen, THROTTLE=1 | 54 | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | – | 16,7 ms / 0,2 % | – |
 
 - **Den tunge profil** (kl. 9.01) er gyldig. Det påklædte dyr gjorde blikket dyrt: blik-lytteren kostede 12–15 ms pr. tryk.
-- **Skov-iPad og `THROTTLE=1`** er også gyldige. Ved `THROTTLE=1` var der billeder på 50 ms inden for 2,5 s af et tryk, når strategien kom frem. De lange animationsbilleder dér havde ingen script-tid: det var gengivelsen.
+- **Skov-iPad** er også gyldig.
 
 ### Hvad der er ændret
 
 1. **Dyret bliver stående (P1).** Nøglen pr. opgave sad på hele scenen, så dyret (riggens SVG) blev monteret forfra ved hver opgave, og et påklædt dyr blev tegnet uden tøj, til genstandene var hentet.
    - Nu sidder nøglen på kortet og svarfeltet, der glider ind (`tv-stage-in`), mens dyret bliver stående. Ingen slide-in i rolig tilstand og ved reduced motion.
    - `Buddy` er i `memo` og klæder sig på fra en modul-cache over hentede genstande. Kortet og intro-skærmen har allerede hentet dem, så der aldrig er et billede uden tøj.
-   - Blik-lytterne er kun aktive i think og idle. Før kostede de 12–15 ms pr. tryk med det påklædte dyr i den tunge profil, nu 0,4–4 ms.
+   - Blik-lytterne er kun aktive i think og idle. Før kostede de 12–15 ms pr. tryk med det påklædte dyr i den tunge profil.
    - `Rig()` genbruger sin rene render (`rigElement`) og sit pupil-input, så længe props er uændrede. `lookAt` tæller ikke i animeret tilstand, for pupillerne flyttes imperativt. Markup'en er den samme, og alle kunst-hashes er uændrede.
 2. **Ingen måling i commit (P2).** `useSizeVars` læste kortets størrelse med `getBoundingClientRect` og `getComputedStyle` i commit og tvang et layout. Nu sætter ResizeObserverens første callback `--cw`/`--ch` efter layout og før paint.
 3. **Én render pr. opgave (P3).**
@@ -144,25 +155,12 @@ De andre kørsler på det uændrede build. Hver fase viser andelen af overgange 
 4. **Svar-trykket (P4).** Stjerne-burst, konfetti og starten af ros- og oops-stemmen kører efter paint (`afterPaint` i `src/app/idle.ts`: rAF og så `setTimeout 0`; `whenIdle` er flyttet dertil fra kortet). Stemmens start koster 5–7 ms ved 4× (`voice.ts` finder klippets grænser i lyddata hver gang). Lydeffekterne er stadig øjeblikkelige. Stjernen i burst'en parses én gang og klones.
 
 **P5 og P6 var ikke nødvendige.**
-- Ingen kørsel viste IndexedDB-scripts ≥ 10 ms inden for 300 ms af et tryk, heller ikke den tunge profil før og efter. Før ændringerne var den eneste IndexedDB-post én `IDBRequest.onsuccess` på 25 ms uden for vinduet.
+- Den tunge profil viste ingen IndexedDB-scripts ≥ 10 ms inden for 300 ms af et tryk. Den eneste IndexedDB-post var én `IDBRequest.onsuccess` på 25 ms uden for vinduet.
 - En CPU-profil af et ikke-minificeret build ved 4× viser `rigElement` på 2–5 ms pr. kald (grænsen er 8 ms).
 
 ### Efter
 
-Matrixen efter ændringerne. Alle kørsler ved 4× faldt i den langsomme periode og er derfor ikke sammenlignelige med "Før" (se `DIST_B`-sammenligningen ovenfor):
-
-| Kørsel | Svar | Rigtigt tryk | Forkert tryk | Strategien vises | Rigtigt → næste | Bekræft → næste | Længste lange opgave | Hele turen: p95 / over 20 ms | Målestok |
-|---|---|---|---|---|---|---|---|---|---|
-| Engdalen, 2 ture | 91 | 100 % · 100 ms | 100 % · 100 ms | 96 % · 66,7 ms | 94 % · 83,3 ms | 100 % · 100,1 ms | 159 ms | 16,8 ms / 2 % | –, – |
-| Tung profil, 333 KB | 60 | 100 % · 133,3 ms | 100 % · 116,7 ms | 100 % · 83,3 ms | 100 % · 100 ms | 100 % · 116,7 ms | 176 ms | 16,8 ms / 2,3 % | 13,4/15,1 |
-| Regnbueskoven, iPad | 44 | 100 % · 100,1 ms | 100 % · 99,9 ms | 93 % · 83,3 ms | 100 % · 100 ms | 100 % · 100 ms | 198 ms | 16,8 ms / 2,1 % | 13,2/13,2 |
-| Engdalen, THROTTLE=1 | 62 | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | – | 16,7 ms / 0 % | 3,4/4,1 |
-| Tung profil, 503 KB (3 min) | 38 | 100 % · 116,8 ms | 100 % · 116,7 ms | 100 % · 83,4 ms | 100 % · 99,9 ms | 100 % · 116,7 ms | 192 ms | 16,8 ms / 2,3 % | 13,1/12,1 |
-
-- **Ved `THROTTLE=1` holder alle krav:** det værste billede inden for 2,5 s af et tryk er 33,3 ms (før 50,1 ms), og der er ingen lange animationsbilleder.
-- **Ved 4×** holder ingen af kørslerne kravene i den langsomme periode. Engdalen, den tunge profil og skov-iPad var ugyldige (0,3–0,7 % over 20 ms væk fra svarene).
-- **Ingen IndexedDB-scripts** ≥ 10 ms inden for 300 ms af et tryk, heller ikke med den tunge profil på 333 KB og 503 KB. Med 503 KB var der slet ingen IndexedDB-scripts i de lange animationsbilleder. Kopien af dokumentet ved hvert svar er altså ikke det, der koster.
-- **0 konsolfejl.** Højst 384 SVG-elementer (skov-iPad).
+Efter-matrixen fra runde 1 målte dev-serveren og er fjernet. Det ændrede build er målt side om side ovenfor og i runde 2.
 
 **Tilsigtet synlig ændring:** dyret bliver stående, mens opgaven glider ind. Før gled hele scenen ind, dyret med.
 
@@ -172,17 +170,74 @@ En CPU-profil af det ændrede build (ikke-minificeret, 4×) viser, hvad et svar 
 
 | Hvad | Ved 4× | Hvor |
 |---|---|---|
-| `submit` → `recordAnswer` (mestring, misforståelser, log) | 8–11 ms pr. tryk | `useRound`, `useProfile` |
+| `submit` → `recordAnswer` (mestring, misforståelser, log) | 2–11 ms pr. tryk (mest ved det første) | `useRound`, `useProfile` |
 | Riggen tegnes om, når humøret skifter (idle → happy/oops → think → idle) | 2–5 ms pr. skift | `rigElement` |
 | Det gamle kort og svarfelt fjernes (`removeChild`) | 5–11 ms pr. opgaveskift | React/DOM |
 | Opgavens scene og svarkort monteres (`ThingArt`, `Scatter`, `AnswerCard`) | 3–17 ms pr. opgave | `src/ui/scenes`, `src/ui/task` |
-| Stemmens start: `say` → `planAll` → `boundsFor` læser lyddata hver gang | 5–7 ms pr. klip (nu efter paint) | `src/audio/voice.ts` |
+| Stemmens start: `say` → `planAll` → `boundsFor` læser lyddata (første klip pr. sprite) | 5–7 ms (nu efter paint) | `src/audio/voice.ts` |
 | Lydeffekterne (`fm`, noder) | 2–3 ms pr. tryk | `src/audio/sfx.ts` |
 
-Forslag til næste runde, som kræver andre ejere eller integratorens godkendelse:
-1. Bogfør svaret (`recordAnswer`/`saveRound`) efter paint: trykket viser det grønne kort med det samme, og mestringen regnes i næste opgave. Det kræver en ændring i `useRound`.
-2. Gem klippenes grænser i `voice.ts` i stedet for at læse lyddata ved hvert klip.
-3. Mål på en rigtig iPad, før der skæres mere. Ved 4× i Chromium er en tom side lige hurtig hele tiden, men svarenes opgaver svinger med en faktor 1,5 med maskinens hastighed.
+Forslagene herfra er lavet i runde 2: bogføringen efter paint og klipgrænserne ved afkodningen.
+
+## Runde 2: svaret bogføres efter paint (4/10, PERF)
+
+CPU-profilen fra runde 1 viste, hvad trykket stadig bar. Runde 2 tager de tre dele, der ikke er opgavevisningernes eller kunstens.
+
+### Ændringer
+
+1. **Svaret bogføres efter paint** (`src/state/useRound.ts`).
+   - `submit()` sætter stadig rundens egen tilstand med det samme (rigtigt/forkert, stime, kø, status), for skærmen viser den i trykkets billede.
+   - Bogføringen (`hooks.answer`: mestring, misforståelser, logrækken og dagen) og genoptagelsespunktet (`hooks.snapshot`) venter til efter den næste paint (`afterPaint`). Begge kostede 8–11 ms ved 4× i klik-tasken, og deres to profil-skrivninger re-renderede PlayScreen.
+   - `next()`, `confirm()`, guldægget, `pause()`, `quit()`, slutningen og en ny tur (`start`/`resume`) bogfører det ventende først (`bookAnswers`). Det gør datalaget også før skrivningen ved `visibilitychange → hidden`, `pagehide` og `flush()` (`useProfile.onBeforeFlush`).
+   - Garantien er præcis én bogføring pr. svar, i rækkefølge. Svaret og dets snapshot lander stadig i én rw-transaktion (SPEC §9.2).
+   - Intet i brugerfladen bruger bogføringens resultat i trykket: strategien klassificerer svaret selv (`classifyAnswer`), og guldægget læser profilen i `next()`, efter at der er bogført.
+   - **SPEC-note A18 (integratoren):** en genindlæsning i det ene billede mellem tryk og paint kan miste dét svar, og så stilles samme opgave igen. `pagehide` bogfører først, så det kun gælder, hvis siden dør uden `pagehide`.
+2. **Stemmens klipgrænser** (`src/audio/voice.ts`). Grænserne var allerede gemt pr. sprite og klip. Det dyre var læsningen af lyddata (`getChannelData`, 5–7 ms ved 4×), som faldt på det første klip, en sætning spillede fra en sprite: lige efter et tryk. Nu findes alle klippenes grænser i én læsning, når spriten er afkodet. De ligger på spriten og forsvinder med den, når LRU'en smider den ud.
+3. **PlayScreen** abonnerede på hele profilen. Nu læser den kun dyret, den gemte turs sten og prøven (`useShallow`), så en profil-skrivning ikke re-renderer den.
+
+### Tests
+
+- **`round.test.ts`, nye tests:**
+  - bogføringen sker efter paint og ikke i `submit`,
+  - `next()`/`confirm()` før paint bogfører først, i rækkefølge og én gang,
+  - `pause`, `quit` og en ny tur bogfører først.
+- **`round.test.ts`, tilpasset fordi de antog synkron bogføring:**
+  - "resumes after a reload on the task after the last answer" bogfører, som `pagehide` gør,
+  - "does not let a missed golden egg cost the child anything", "logs a caught egg as golden" og "credits replays and marks answers after help as assisted" venter på paint,
+  - `beforeEach` kalder `quit()` før nulstillingen, så en ventende bogføring fra forrige test ikke lander i den næste.
+- **`useProfile.data.test.ts`, nye tests:**
+  - intet bogføres i trykket, og svaret og snapshot kommer i én transaktion efter paint,
+  - hide og `pagehide` bogfører med det samme, før køen skrives.
+  
+  `:89-107` og `:169` er uændrede: `next()` og `flush()` bogfører først.
+- **`voice.lru.test.ts`, ny test:** en sprites lyddata læses én gang, når den er afkodet, og igen kun efter at LRU'en har smidt den ud.
+
+### A/B (`DIST_B`)
+
+B er session-branchens build (`dist` fra hovedtræet kl. 11.05, 5dbb13b/a142b25, altså runde 1), og A er runde 2. De spilles skiftevis, Engdalen, telefon, 4×, samme seeds.
+
+**Første kørsel** kl. 11.48–11.59, 2 ture hver (A 72, B 62 svar). B er gyldig. A's første tur er ugyldig: 0,3 % over 20 ms væk fra svarene, og målestokken var 17,3 ms mod ca. 13–14 ms i resten.
+
+| Fase | Overgange med lang opgave, B / A | Median lang opgave, B → A | A/B | Maks., B / A | Værste billede, B / A | Største invoker, B → A (ms pr. overgang) |
+|---|---|---|---|---|---|---|
+| rigtigt tryk | 1/20 / 6/20 | 54 → 58 ms | 107 % | 54 / 66 ms | 33,3 / 33,3 ms | DIV#root.onclick 14,7 → DIV#root.onclick 13,2 |
+| forkert tryk | 1/42 / 5/52 | 54 → 56 ms | 104 % | 54 / 61 ms | 33,3 / 33,4 ms | DIV#root.onclick 5,5 → DIV#root.onclick 10,1 |
+| strategien vises | 0/40 / 0/52 | – → – ms | – | – / – ms | 33,2 / 33,2 ms | MessagePort.onmessage 2,4 → MessagePort.onmessage 2,3 |
+| rigtigt → næste opgave | 1/18 / 0/18 | 50 → – ms | – | 50 / – ms | 33,3 / 33,3 ms | TimerHandler:setTimeout 14,6 → TimerHandler:setTimeout 3,3 |
+| bekræft → næste opgave | 0/40 / 13/52 | – → 57 ms | – | – / 85 ms | 33,4 / 33,4 ms | DIV#root.onclick 11,3 → DIV#root.onclick 13 |
+
+Hele turen: lange opgaver B 3 (median 54 ms, maks. 54), A 25 (median 57 ms, maks. 85); svar B 62, A 72; målestok B 14/13.3, 13.4/13.1, A 17.3/14, 13/20.4; væk fra svar over 20 ms: B 0,1 %, A 0,2 %; konsolfejl B 0, A 0
+
+- **Runde 1 holder allerede de absolutte krav i B's ture:** højst 6 % af overgangene med en lang opgave, værste billede 33,3 ms i median, længste lange opgave 54 ms og 3 lange opgaver på 62 svar.
+- **A har flere lange opgaver** (25, mest ved bekræft-trykket). Det er trykket selv (`DIV#root.onclick`), lige over grænsen (52–66 ms). Det skete mest i A's første tur, hvor maskinen var langsommere.
+- **Medianen af de lange opgaver** kan ikke sammenlignes, når B næsten ingen har. Derfor er trykket målt igen med Event Timing herunder.
+
+AB_R2_EVENTS
+
+### THROTTLE=1
+
+Runde 2, 70 svar: ingen lange opgaver, og det værste billede inden for 2,5 s af et tryk er 16,8 ms. Alle krav holder (`ASSERT=1` giver exit 0).
+
 
 ## Gentag målingen
 

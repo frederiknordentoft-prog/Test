@@ -176,7 +176,9 @@ function transitions(raw, endT) {
     const longs = raw.long.filter(([s, d]) => overlaps(s, d, t - 100, t + 400)).map(([, d]) => d)
     const frames = raw.frames.filter(([ft]) => ft >= t - 100 && ft <= t + 600).map(([, d]) => d)
     const scripts = raw.loaf.filter((f) => overlaps(f.t, f.d, t - 100, t + 400)).flatMap((f) => f.scripts)
-    out.push({ t, phase, long: longs.length ? Math.max(...longs) : null, worst: frames.length ? Math.max(...frames) : null, scripts })
+    // the tap's click (Event Timing) just before the beat it committed: handler time and time to paint
+    const click = (raw.events ?? []).filter(([s, name]) => name === 'click' && s <= t && s >= t - 400).at(-1)
+    out.push({ t, phase, long: longs.length ? Math.max(...longs) : null, worst: frames.length ? Math.max(...frames) : null, scripts, click: click ? { ms: click[2], paint: click[3] } : null })
   }
   return out
 }
@@ -204,6 +206,10 @@ function phaseTable(list) {
       longMedian: median(longs),
       longMax: longs.length ? +Math.max(...longs).toFixed(0) : null,
       worstFrameMedian: median(xs.map((x) => x.worst).filter((w) => w !== null)),
+      // the tap itself (answer and confirm taps): handler time with React's render, and time to the next paint
+      clicks: xs.filter((x) => x.click).length,
+      clickMedian: median(xs.filter((x) => x.click).map((x) => x.click.ms)),
+      clickToPaintMedian: median(xs.filter((x) => x.click).map((x) => x.click.paint)),
       invokers: [...by.values()]
         .sort((a, b) => b.ms - a.ms)
         .slice(0, 5)
@@ -353,7 +359,7 @@ async function playRound(browser, url, run) {
   const endT = endedAt ?? (await page.evaluate(() => performance.now()))
   // the end of the round, still throttled
   if (endedAt !== null) await wait(6000)
-  const raw = await page.evaluate(() => ({ frames: window.__frames, long: window.__long, marks: window.__marks, loaf: window.__loaf, beats: window.__beats }))
+  const raw = await page.evaluate(() => ({ frames: window.__frames, long: window.__long, marks: window.__marks, loaf: window.__loaf, beats: window.__beats, events: window.__events }))
   const benchEnd = await bench(page)
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 })
   const list = transitions(raw, endT)
