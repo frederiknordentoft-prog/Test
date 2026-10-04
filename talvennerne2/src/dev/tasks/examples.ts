@@ -225,6 +225,17 @@ export const EXAMPLES: Record<TaskKind, Example[]> = {
         distractorTags: tags({ 'o0|o3': 'sizeIsWeight' }), speech: [{ free: 'Tryk på alle dem, der er tungere end bamsen.' }], contrast: 'conflict',
       }),
     },
+    {
+      // unitChoice's own task (buildTask for enh:length:bus, seed 1): the prompt is the loudspeaker, the
+      // six thing cards show a picture and the word (QA2 P3-8) and are read aloud
+      id: 'multi-unit', title: 'Ting man måler i meter (billede og ord)', wrong: 'mt:bus|mt:ship|mt:spoon',
+      task: mk('enh:length:bus', {
+        skill: 'unitChoice', kind: 'multiSelect', family: 'length', prompt: { scene: 'hear' },
+        answer: 'mt:bus|mt:ship', answerType: 'set', options: ['mt:spoon', 'mt:ship', 'mt:pencil', 'mt:worm', 'mt:bus', 'mt:comb'],
+        optionView: 'token', optionClips: ['noun.mt.spoon', 'noun.mt.ship', 'noun.mt.pencil', 'noun.mt.worm', 'noun.mt.bus', 'noun.mt.comb'],
+        range: [0, 1], maxDigits: 1, speech: [{ clip: 's.unitChoice.tapM' }],
+      }),
+    },
   ],
   fillSlots: [
     {
