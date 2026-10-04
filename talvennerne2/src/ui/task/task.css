@@ -2200,3 +2200,17 @@
       'foot';
   }
 }
+/* a short phone upright: a smaller sm face, so six struck things take two rows under a long strategy */
+@media (orientation: portrait) and (max-height: 700px) {
+  .tv-face__thing.is-sm {
+    --thing: 24px;
+    gap: 2px;
+  }
+  .tv-face__thing.is-sm .tv-face__thingword {
+    max-width: 4.3em;
+    font-size: 12px;
+  }
+  .tv-minicard:has(.tv-face__thing) {
+    padding: 3px 5px 3px 3px;
+  }
+}
