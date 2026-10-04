@@ -117,6 +117,7 @@ function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
   return <span className="tv-face__glyph tv-face__glyph--small">{value}</span>
 }
 
+/** Whether a thing token (`mt:<thing>`) has a picture; remembered, as knownObject() draws the thing. */
 const canDraw = new Map<string, boolean>()
 const drawable = (o: AnswerValue) => {
   const v = String(o)
