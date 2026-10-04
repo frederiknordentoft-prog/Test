@@ -31,8 +31,12 @@ const shiftPts = (pts: readonly V2[], dx: number, dy: number, k = 1, cx = 24, cy
 /** Drawn upright, shown turned by `a` degrees (the cutlery, the comb). */
 const Turn = ({ a, children }: { a: number; children: ReactNode }) => <g transform={`rotate(${a} 24 24)`}>{children}</g>
 
-/** A strip of water with small waves from y to the bottom of the box (the ship, the bridge). */
-const water = (y: number) => `M0 ${y}${'q4-2.4 8 0'.repeat(6)}V48H0z`
+/** A strip of water with small waves, 5 high from y, rounded at both ends within x 2-46 (the ship, the bridge). */
+const water = (y: number) => `M5 ${y}${'q4.75-2.4 9.5 0'.repeat(4)}a2.5 2.5 0 0 1 0 5H5a2.5 2.5 0 0 1 0-5z`
+const WATER = { fill: MAT.fish.light, line: MAT.fish.outline, sw: 2 }
+
+/** A detail left out at the small size of the struck answer and the confirm button (task.css .tv-fine). */
+const FINE = 'tv-fine'
 
 /** Wheels with their hubs. */
 const wheels = (xs: readonly number[], y: number, r = 4.8) => (
@@ -64,11 +68,11 @@ function teeth(count: number, x0: number, x1: number, w: number, y0: number, y1:
 function measured(id: string): ReactNode | null {
   switch (id) {
     case 'fork': {
-      // three tines with wide gaps (they stay apart at 46 px), a neck and a long handle
-      const pts: V2[] = [[16, 17], ...teeth(3, 16, 32, 3.2, 13, 2).reverse(), [32, 17], [29.5, 22], [26.2, 25], [27, 41], [26.2, 45], [24, 46.5], [21.8, 45], [21, 41], [21.8, 25], [18.5, 22]]
+      // three tines with gaps as wide as they are (apart down to 24 px), a neck and a long handle
+      const pts: V2[] = [[15, 17], ...teeth(3, 15, 33, 3.6, 13, 2).reverse(), [33, 17], [30, 22], [26.2, 25], [27, 41], [26.2, 45], [24, 46.5], [21.8, 45], [21, 41], [21.8, 25], [18, 22]]
       return (
         <Turn a={40}>
-          <Body d={roundPoly(pts, 1.2)} tone={MAT.silver} shade={roundRect(24.6, 25, 1.8, 17, 0.9)} hi={roundRect(21.9, 28, 1.4, 11, 0.7)} sw={1.8} />
+          <Body d={roundPoly(pts, 1.2)} tone={MAT.silver} shade={roundRect(24.6, 25, 1.8, 17, 0.9)} hi={roundRect(21.9, 28, 1.4, 11, 0.7)} sw={2.4} />
         </Turn>
       )
     }
@@ -77,14 +81,16 @@ function measured(id: string): ReactNode | null {
       const pts: V2[] = [[24, 1.5], [29.5, 4], [31.5, 11], [29.5, 18.5], [26.2, 23], [25.6, 28], [26.8, 41], [26, 45], [24, 46.5], [22, 45], [21.2, 41], [22.4, 28], [21.8, 23], [18.5, 18.5], [16.5, 11], [18.5, 4]]
       return (
         <Turn a={-38}>
-          <Body d={blob(pts, 0.9)} tone={MAT.silver} shade={ellipse(25, 13, 4.6, 7.2)} hi={join(ellipse(21.4, 8.5, 1.5, 3), roundRect(22.4, 30, 1.3, 10, 0.65))} sw={2.2} />
+          <Body d={blob(pts, 0.9)} tone={MAT.silver} shade={ellipse(25, 13, 4.6, 7.2)} hi={join(ellipse(21.4, 8.5, 1.5, 3), roundRect(22.4, 30, 1.3, 10, 0.65))} sw={2.4} />
         </Turn>
       )
     }
     case 'shoe': {
-      // a trainer from the side: the upper, a white toe cap and sole, white laces tied in a bow
+      // a trainer from the side: the upper, white laces tied in a bow, and a white sole that follows
+      // the upper and curves up into the toe cap, in the shoe's own contour
       const t = MAT.apple
       const upper: V2[] = [[5, 38], [5, 21], [7.5, 15.5], [13, 14.5], [17, 19], [25, 22], [34, 26.5], [42, 29.5], [46, 34], [46, 38]]
+      const sole: V2[] = [[5, 36.5], [24, 37], [35, 36.5], [37, 32], [42.5, 30.4], [46.4, 34.2], [46.4, 39.5], [43, 42.6], [8, 42.6], [5, 40.4]]
       const laces = join(
         segments([[17, 18.5, 22, 22.5], [17, 22.5, 22, 18.5], [23, 21.5, 28, 25.5], [23, 25.5, 28, 21.5], [29, 24, 33.5, 28], [29, 28, 33.5, 24], [13.5, 13, 10.5, 17.5], [13.5, 13, 16.5, 17.5]]),
         ellipse(10.6, 11, 3.1, 2.1),
@@ -92,32 +98,39 @@ function measured(id: string): ReactNode | null {
       )
       return (
         <>
-          <Body d={roundPoly(upper, 3)} tone={t} shade={roundRect(24, 31, 14, 5, 2.5)} hi={ellipse(9.5, 25, 1.8, 4.5)} />
-          <Part d={blob([[35.5, 38], [36.5, 32], [42, 30.2], [46, 34], [46, 38]], 0.7)} fill={MAT.frame.fill} line={t.outline} sw={SW} />
-          <Body d={roundRect(3, 36, 44, 7, 3.5)} tone={MAT.frame} />
+          <Body d={roundPoly(upper, 3)} tone={t} shade={roundRect(22, 30.5, 13, 4.5, 2.2)} hi={ellipse(9.5, 25, 1.8, 4.5)} />
+          <Part d={blob(sole, 0.6)} fill={MAT.frame.fill} line={t.outline} sw={SW} />
           <path d={laces} fill="none" stroke={t.outline} strokeWidth={3.8} strokeLinecap="round" />
           <path d={laces} fill="none" stroke={MAT.frame.fill} strokeWidth={1.8} strokeLinecap="round" />
         </>
       )
     }
     case 'comb': {
-      // a straight back (ryg) with seven teeth hanging from it, the gaps as wide as the teeth
-      const pts: V2[] = [[4, 16], [7, 12.5], [41, 12.5], [44, 16], ...teeth(7, 4, 44, 2.8, 22.5, 36)]
+      // a straight back (ryg) with six wide teeth hanging from it, the gaps as wide as the teeth
+      const pts: V2[] = [[4, 16], [7, 12.5], [41, 12.5], [44, 16], ...teeth(6, 4, 44, 3.6, 22.5, 36)]
       return (
         <Turn a={-10}>
-          <Body d={roundPoly(pts, 1.2)} tone={MAT.petal} shade={roundRect(6, 18.6, 36, 3, 1.5)} hi={roundRect(8, 14.6, 22, 1.8, 0.9)} sw={2} />
+          <Body d={roundPoly(pts, 1.2)} tone={MAT.counterA} shade={roundRect(6, 18.6, 36, 3, 1.5)} hi={roundRect(8, 14.6, 22, 1.8, 0.9)} sw={2.4} />
         </Turn>
       )
     }
     case 'bus': {
-      // one long box with a row of four windows, the windscreen and two wheels
+      // a long, low box: a row of windows, a door of two tall panes behind the windscreen at the
+      // slanted front, a headlight under it and two wheels near the ends
       const t = MAT.star
-      const windows = join(...[6.5, 14.5, 22.5, 30.5].map((x) => roundRect(x, 16.5, 6.5, 8.5, 1.8)), roundRect(38.5, 16.5, 4.5, 11, 1.8))
+      const body: V2[] = [[2, 15], [40.5, 15], [46, 22.5], [46, 39], [2, 39]]
+      const glass = join(
+        ...[5, 12.5, 20].map((x) => roundRect(x, 18, 6, 8, 1.6)),
+        roundRect(28, 18, 2.6, 16.5, 1),
+        roundRect(31.4, 18, 2.6, 16.5, 1),
+        roundPoly([[37, 17.6], [40, 17.6], [43.8, 23], [43.8, 28], [37, 28]], 1.2),
+      )
       return (
         <>
-          <Body d={roundRect(3, 11, 42, 28, 5)} tone={t} shade={roundRect(10, 31.5, 33.4, 5.6, 2.5)} hi={roundRect(8, 13.4, 24, 1.8, 0.9)} />
-          <Part d={windows} fill={MAT.rim.light} line={t.outline} />
-          {wheels([13, 35], 39.5)}
+          <Body d={roundPoly(body, 3)} tone={t} shade={roundRect(4, 35, 40, 2.8, 1.4)} hi={roundRect(5, 16.2, 22, 1.4, 0.7)} />
+          <Part d={glass} fill={MAT.rim.light} line={t.outline} />
+          <Part d={circle(44, 33.4, 1.5)} fill={MAT.frame.fill} line={t.outline} sw={1.2} />
+          {wheels([9.5, 37.5], 39.5)}
         </>
       )
     }
@@ -156,7 +169,7 @@ function measured(id: string): ReactNode | null {
       const hull: V2[] = [[2, 26], [46, 26], [40.5, 39.5], [8, 39.5]]
       return (
         <>
-          <path d={water(41)} fill={MAT.fish.light} />
+          <Part d={water(41)} {...WATER} />
           <Part d={roundPoly([[33, 26.5], [34.5, 9], [42.5, 9], [41, 26.5]], 1.4)} fill={MAT.star.fill} line={MAT.star.outline} sw={SW} />
           <path d={roundRect(34.3, 9, 8.4, 4.4, 1.2)} fill={INK} />
           <Part d={roundRect(9, 17, 23, 10, 2)} fill={MAT.frame.fill} line={MAT.frame.outline} sw={SW} />
@@ -204,14 +217,15 @@ function measured(id: string): ReactNode | null {
       // one stone arch (bue) over the water, a railing along the top
       const t = MAT.silver
       const r = 14.5
-      const posts = [3, 10, 17, 24, 31, 38, 45].map((x) => [x, 10.5, x, 17] as const)
+      const post = (x: number) => [x, 10.5, x, 17] as const
       const joints = segments([[24, 27.5, 24, 23.5], [13.75, 31.75, 10.9, 28.9], [34.25, 31.75, 37.1, 28.9]])
       return (
         <>
-          <path d={water(38)} fill={MAT.fish.light} />
+          <Part d={water(38)} {...WATER} />
           <Body d={`M2 17H46V42H${24 + r}A${r} ${r} 0 0 0 ${24 - r} 42H2Z`} tone={t} shade={roundRect(39.5, 27, 5, 13.5, 2)} hi={roundRect(5, 19.5, 30, 1.8, 0.9)} />
-          <path d={join(arc(24, 42, r + 4, 180, 360), joints)} fill="none" stroke={t.outline} strokeWidth={1.4} opacity={0.55} />
-          <path d={segments([[2.5, 10.5, 45.5, 10.5], ...posts])} stroke={t.outline} strokeWidth={2} strokeLinecap="round" />
+          <path className={FINE} d={join(arc(24, 42, r + 4, 180, 360), joints)} fill="none" stroke={t.outline} strokeWidth={1.4} opacity={0.55} />
+          <path d={segments([[2.5, 10.5, 45.5, 10.5], ...[3, 17, 31, 45].map(post)])} stroke={t.outline} strokeWidth={2} strokeLinecap="round" />
+          <path className={FINE} d={segments([10, 24, 38].map(post))} stroke={t.outline} strokeWidth={2} strokeLinecap="round" />
         </>
       )
     }
@@ -225,9 +239,9 @@ function measured(id: string): ReactNode | null {
           <Body d={roundRect(9, 22, 30, 22, 2)} tone={MAT.ruler} shade={roundRect(30.5, 24, 6.5, 18, 2)} />
           <Body d={roundPoly(roof, 2.5)} tone={MAT.apple} shade={roundRect(25, 20.5, 14, 3, 1.5)} />
           <Part d={join(roundRect(12, 28, 6.5, 6.5, 1.2), roundRect(29.5, 28, 6.5, 6.5, 1.2))} fill={MAT.rim.light} line={MAT.ruler.outline} />
-          <path d={cross} stroke={MAT.ruler.outline} strokeWidth={1.2} />
+          <path className={FINE} d={cross} stroke={MAT.ruler.outline} strokeWidth={1.2} />
           <Part d="M20.5 44V34.5a3.5 3.5 0 0 1 7 0V44z" fill={MAT.chestnut.fill} line={MAT.chestnut.outline} sw={2} />
-          <path d={circle(25.6, 38.6, 0.9)} fill={INK} />
+          <path className={FINE} d={circle(25.6, 38.6, 0.9)} fill={INK} />
         </>
       )
     }
