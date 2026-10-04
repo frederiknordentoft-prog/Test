@@ -386,10 +386,18 @@ function faceCardBox(root: SVGSVGElement): string | null {
   return `${n(vb.x + vb.width / 2 - side / 2)} ${n(vb.y)} ${n(side)} ${n(side)}`
 }
 
-/** <Rig> i DOM'en: unikke id'er og pupil-tracking lægges oven på den rene render. */
+/**
+ * <Rig> i DOM'en: unikke id'er og pupil-tracking lægges oven på den rene render. Den rene render og
+ * pupil-input genbruges, så længe det, de afhænger af, er uændret: en forælder, der re-renderer (turen ved
+ * hvert svar), regner ikke hele dyret om. I animeret tilstand flytter useGaze pupillerne imperativt, så
+ * lookAt ændrer ikke markup'en og tæller ikke med; i statisk tilstand gør den.
+ */
 export function Rig(props: RigProps) {
   const uid = useId().replace(/[^A-Za-z0-9_-]/g, '')
-  const g = gazeInputs(props)
+  const last = useRef<{ props: RigProps; gaze: ReturnType<typeof gazeInputs>; el: ReactElement; uid: string; root: boolean } | null>(null)
+  const prev = last.current
+  const sameGaze = !!prev && (['species', 'breed', 'stage', 'mood', 'mode', 'silhouette'] as const).every((k) => prev.props[k] === props[k])
+  const g = prev && sameGaze ? prev.gaze : gazeInputs(props)
   const { gazeRef, glintRef } = useGaze(g.enabled, props.lookAt, g.eye, g.scale, g.fallback, g.shape)
   const rootRef = useRef<SVGSVGElement>(null)
   const handCard = props.crop === 'wide' && !!props.outfit?.hand
@@ -402,7 +410,13 @@ export function Rig(props: RigProps) {
     const vb = handCard ? handCardBox(root) : faceCardBox(root)
     if (vb) root.setAttribute('viewBox', vb)
   })
-  return rigElement(props, { uid, gazeRef, glintRef, rootRef: handCard || faceCard ? rootRef : undefined })
+  const root = handCard || faceCard
+  const animated = props.mode !== 'static'
+  const keys = new Set([...Object.keys(prev?.props ?? {}), ...Object.keys(props)]) as Set<keyof RigProps>
+  const same = !!prev && prev.uid === uid && prev.root === root && [...keys].every((k) => (k === 'lookAt' && animated) || prev.props[k] === props[k])
+  const el = prev && same ? prev.el : rigElement(props, { uid, gazeRef, glintRef, rootRef: root ? rootRef : undefined })
+  last.current = { props, gaze: g, el, uid, root }
+  return el
 }
 
 /** Ansigtsgenstanden når under munden (skægget): ansigtskortet beskæres da om hele genstanden (B5). */

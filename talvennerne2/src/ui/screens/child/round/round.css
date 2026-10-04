@@ -29,6 +29,10 @@
   gap: 10px;
   min-height: 0;
   padding: 4px var(--gutter) 14px;
+}
+/* each task slides in (card and answer are keyed per task); the buddy beside it stays put */
+.tv-round__card,
+.tv-round__answer {
   animation: tv-stage-in 360ms var(--ease-out) both;
 }
 @keyframes tv-stage-in {
@@ -972,7 +976,8 @@
 }
 
 /* Calm mode and reduced motion */
-:root[data-calm] .tv-round__stage,
+:root[data-calm] .tv-round__card,
+:root[data-calm] .tv-round__answer,
 :root[data-calm] .tv-round__bubble,
 :root[data-calm] .tv-round__scaffold,
 :root[data-calm] .tv-buddy,
@@ -984,7 +989,8 @@
   animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  .tv-round__stage,
+  .tv-round__card,
+  .tv-round__answer,
   .tv-round__bubble,
   .tv-round__scaffold,
   .tv-buddy,

@@ -4,11 +4,11 @@
 // own (review P1-2): without a buddy, or while its species is not drawn yet, the neutral egg-shaped
 // stand-in (onboarding/Critter.tsx) sits there instead, and it turns into the real drawing by itself
 // once the species file lands in src/art/species/.
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { Animal, Mood, Slot, SpeciesId } from '../../../../engine/types'
 import { Rig } from '../../../../art/rig/Rig'
-import type { CreatureId, Outfit, Pt, SpeciesDef, Stage } from '../../../../art/rig/types'
+import type { CreatureId, ItemDef, Outfit, Pt, SpeciesDef, Stage } from '../../../../art/rig/types'
 import { loadItem } from '../../../../art/items/registry'
 import { AVAILABLE_SPECIES, loadSpecies } from '../../../../art/species/registry'
 import { cx } from '../../../design/cx'
@@ -52,23 +52,53 @@ function useDrawnSpecies(id: SpeciesId | null): SpeciesDef | null {
   return def
 }
 
+/** Items loaded once, by any buddy: the next buddy wearing them is dressed from its first frame. */
+const loadedItems = new Map<string, ItemDef>()
+
+type WornList = [Slot, { item: string; color: 0 | 1 | 2 }][]
+const wornOf = (animal: Animal | null | undefined): WornList => (animal ? (Object.entries(animal.outfit) as WornList) : [])
+
+/** The outfit from loaded items: undefined when nothing is worn, null while an item is still missing. */
+function cachedOutfit(worn: WornList): Outfit | undefined | null {
+  if (worn.length === 0) return undefined
+  const out: Outfit = {}
+  for (const [slot, w] of worn) {
+    const item = loadedItems.get(w.item)
+    if (!item) return null
+    out[slot] = { item, colorway: w.color }
+  }
+  return out
+}
+
 function useOutfit(animal: Animal | null | undefined): Outfit | undefined {
-  const [outfit, setOutfit] = useState<Outfit | undefined>(undefined)
   const key = animal ? JSON.stringify(animal.outfit) : ''
+  const [outfit, setOutfit] = useState<Outfit | undefined>(() => cachedOutfit(wornOf(animal)) ?? undefined)
+  const [prev, setPrev] = useState(key)
+  if (prev !== key) {
+    setPrev(key)
+    // a change to loaded items shows at once; otherwise the old outfit stays until the new one is in
+    const cached = cachedOutfit(wornOf(animal))
+    if (cached !== null) setOutfit(cached)
+  }
   useEffect(() => {
+    const worn = wornOf(animal)
+    if (cachedOutfit(worn) !== null) return
     let alive = true
-    const worn = animal ? (Object.entries(animal.outfit) as [Slot, { item: string; color: 0 | 1 | 2 }][]) : []
-    if (worn.length === 0) {
-      setOutfit(undefined)
-      return
-    }
-    Promise.all(worn.map(([slot, w]) => loadItem(w.item as never).then((item) => [slot, { item, colorway: w.color }] as const).catch(() => null)))
-      .then((list) => {
-        if (!alive) return
-        const out: Outfit = {}
-        for (const e of list) if (e) out[e[0]] = e[1]
-        setOutfit(out)
-      })
+    Promise.all(
+      worn.map(([slot, w]) =>
+        loadItem(w.item as never)
+          .then((item) => {
+            loadedItems.set(w.item, item)
+            return [slot, { item, colorway: w.color }] as const
+          })
+          .catch(() => null),
+      ),
+    ).then((list) => {
+      if (!alive) return
+      const out: Outfit = {}
+      for (const e of list) if (e) out[e[0]] = e[1]
+      setOutfit(out)
+    })
     return () => {
       alive = false
     }
@@ -77,12 +107,17 @@ function useOutfit(animal: Animal | null | undefined): Outfit | undefined {
   return outfit
 }
 
-/** Pupils follow the last touch on the screen for a moment, then drift back to the mood's gaze. */
-function useFingerGaze(ref: RefObject<HTMLDivElement | null>): Pt | null {
+/**
+ * Pupils follow the last touch on the screen for a moment, then drift back to the mood's gaze. Only
+ * listened for while the mood looks around (think, idle): other moods have their own gaze.
+ */
+function useFingerGaze(ref: RefObject<HTMLDivElement | null>, active: boolean): Pt | null {
   const [at, setAt] = useState<Pt | null>(null)
+  const rest = useRef(0)
+  useEffect(() => () => window.clearTimeout(rest.current), [])
   useEffect(() => {
+    if (!active) return
     let last = 0
-    let rest = 0
     const onPointer = (e: PointerEvent) => {
       const now = performance.now()
       if (now - last < 90 || !ref.current) return
@@ -90,17 +125,16 @@ function useFingerGaze(ref: RefObject<HTMLDivElement | null>): Pt | null {
       const r = ref.current.getBoundingClientRect()
       if (r.width === 0) return
       setAt({ x: ((e.clientX - r.left) / r.width) * 200, y: ((e.clientY - r.top) / r.height) * 240 })
-      window.clearTimeout(rest)
-      rest = window.setTimeout(() => setAt(null), 2200)
+      window.clearTimeout(rest.current)
+      rest.current = window.setTimeout(() => setAt(null), 2200)
     }
     window.addEventListener('pointerdown', onPointer, { passive: true })
     window.addEventListener('pointermove', onPointer, { passive: true })
     return () => {
       window.removeEventListener('pointerdown', onPointer)
       window.removeEventListener('pointermove', onPointer)
-      window.clearTimeout(rest)
     }
-  }, [ref])
+  }, [ref, active])
   return at
 }
 
@@ -112,13 +146,15 @@ export interface BuddyProps {
   className?: string
 }
 
-export function Buddy({ animal, mood, dancing, className }: BuddyProps) {
+/** Memoised: the round re-renders on every beat, and the buddy only when its own props change. */
+export const Buddy = memo(function Buddy({ animal, mood, dancing, className }: BuddyProps) {
   const species = animal?.species ?? null
   const drawn = !!species && isDrawnSpecies(species)
   const def = useDrawnSpecies(species)
   const outfit = useOutfit(animal)
   const box = useRef<HTMLDivElement>(null)
-  const gaze = useFingerGaze(box)
+  const looks = mood === 'think' || mood === 'idle'
+  const gaze = useFingerGaze(box, looks)
   const calm = isCalm()
   const stage = (animal ? (animal.shown === 'star' ? 3 : animal.shown) : 2) as Stage
   return (
@@ -138,7 +174,7 @@ export function Buddy({ animal, mood, dancing, className }: BuddyProps) {
           star={animal.shown === 'star'}
           mood={mood}
           outfit={outfit}
-          lookAt={mood === 'think' || mood === 'idle' ? gaze : null}
+          lookAt={looks ? gaze : null}
           seed={11}
           size="100%"
           className={calm ? 'rig-calm' : undefined}
@@ -147,4 +183,4 @@ export function Buddy({ animal, mood, dancing, className }: BuddyProps) {
       {!drawn && <Critter mood={mood} />}
     </div>
   )
-}
+})
