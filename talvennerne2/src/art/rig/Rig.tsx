@@ -699,8 +699,9 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     }
   }
 
-  // Poter (venstre tegnes, højre spejles). Håndgenstanden ligger i højre pote under selve poten.
-  // `outer` lægger kroppens region foran (løftede poter tegnes uden for kroppens gruppe).
+  // Poter (venstre tegnes, højre spejles). Håndgenstanden ligger i højre pote under selve poten, undtagen når den
+  // bæres foran kroppen (SPEC A17: genstandens `art.over`, eller artens `handOverSleeve` med kropstøj): så tegnes den
+  // efter poten og ærmet. `outer` lægger kroppens region foran (løftede poter tegnes uden for kroppens gruppe).
   const paw = (side: 'L' | 'R', outer = '') => {
     const at = side === 'L' ? a.shoulderL : a.shoulderR
     const pp = pawPose(side === 'L' ? pose.pawL : pose.pawR)
@@ -708,11 +709,14 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     const Part: SidePart = up ? parts.PawUp! : parts.Paw
     const handItem = side === 'R' ? worn('hand') : undefined
     let hand: ReactNode = null
+    let over = false
     if (handItem) {
       const tip = up ? parts.pawUpTip?.[mood] : undefined
       // Håndgenstanden placeres ved pawR i modelrummet og føres ind i potens lokale (spejlede) ramme;
       // en løftet pote bærer den ved sin spids.
       const hold = handHold(handItem.item, at, pp.rot ?? 0, tip, up && !(side === 'L' ? behindL : behindR))
+      const o = handItem.item.art.over
+      over = (typeof o === 'function' ? o({ a, hold, up }) : !!o) || (!!def.handOverSleeve && !!bodyWorn)
       hand = tip ? (
         <g transform={`translate(${n(tip.x)} ${n(tip.y)}) scale(-1 1) translate(${n(-a.pawR.x)} ${n(-a.pawR.y)})`}>{renderItem('hand', 'front', R.body.s, undefined, hold)}</g>
       ) : (
@@ -723,7 +727,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     return (
       <g data-part={`paw-${side.toLowerCase()}`} transform={`${outer}translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
         <g className={animated ? `a-paw a-paw-${side.toLowerCase()}${up ? ' a-up' : ''}` : undefined} transform={pp.rot ? `rotate(${n(pp.rot)})` : undefined}>
-          {hand}
+          {!over && hand}
           {hole ? (
             <g clipPath={`url(#${armholeClipId})`}>
               <Part {...ctx(swBody)} side={side} />
@@ -732,6 +736,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
             <Part {...ctx(swBody)} side={side} />
           )}
           {up ? sleeveUp(side) : (sleeve(side) ?? hole)}
+          {over && hand}
         </g>
       </g>
     )
