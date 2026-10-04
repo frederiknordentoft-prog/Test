@@ -625,3 +625,8 @@ Med bølge 1 kan sammensætningstesten bygge ca. 300 af de 899 tal: 101–199, 3
 4. **`voice/.gitignore` ligger uden for scope-globben** (`voice/**` matcher ikke filer, der starter med punktum). Arbejdsfilerne ligger derfor i den allerede ignorerede `voice/probe/takes/pipeline/` og `voice/probe/takes/qa/`.
 5. **Nogle enkeltord udtales forkert af modellen.** "regnbue" blev hørt som "Heimboe"/"heinbu" i alle 5 takes, både alene og i "Det er regnbue" og af begge ASR'er. Det ligner et svagt R. Sådanne klip får den bedste take og `"pass": false`. Lyttesiden viser dem under "kun ikke bestået", og de bør vurderes af et menneske. Hjælper det ikke, kan katalogteksten ændres.
 6. **Stramningen kan klippe svage slutlyde.** Snittet flyttes kun ind i en pause på mindst 25 ms under −42 dB efter ordets sidste alignede tegn. Varighedstjekket og sammensætningerne fanger et klip, der er blevet for kort (`n.end.9` take 0: 0,09 s, ny take).
+7. **Et klip kunne blive hængende uden master** (rettet 4/10). Hvis sammensætningstesten afviste et kort klips eneste beståede take, og alle takes var brugt, kom klippet hverken i "takes brugt op" eller i oprydningen. Den afviste take beholdt nemlig `pass_a`.
+   - Følgen: `s.order.countBackHundreds` ("Tæl baglæns i hundreder fra") manglede i manifestet, og hele sætningen blev læst af enhedens stemme.
+   - Nu sender `generate.py` den bedste take som `"pass": false`. Det er den med lavest CER, også selvom sammensætningstesten har afvist den. Her blev det t1 (CER 0,0435); whisper hørte "Tal" for "Tæl".
+   - `pack.mjs` fejler nu, hvis et klip i en indspillet bølge mangler master. `--allow-missing` pakker alligevel.
+   - Bølge 2 står herefter på 949 beståede og 113 ikke beståede klip, og ingen mangler.

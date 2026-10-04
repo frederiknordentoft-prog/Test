@@ -7,7 +7,7 @@ import { compile } from '../../src/speech/compile'
 import { buildInventory, clipHash, formatInventory, settingsKey, type VoiceConfig } from './inventory'
 import { renderClips, wavBytes, SR } from './render'
 // @ts-expect-error plain ES module without types
-import { BUDGET, PINNED, layout } from './pack.mjs'
+import { BUDGET, PINNED, layout, missingMasters } from './pack.mjs'
 
 const CONFIG: VoiceConfig = {
   voice: 'nic',
@@ -109,5 +109,17 @@ describe('sprite layout (pack.mjs)', () => {
     expect(BUDGET.pinned).toBeCloseTo(1.2 * 1024 * 1024)
     expect(BUDGET.total).toBe(16 * 1024 * 1024)
     expect([...PINNED].sort()).toEqual(['core', 'n0-20', 'ui'])
+  })
+})
+
+describe('missing masters (pack.mjs)', () => {
+  const clip = (id: string, wave: number) => ({ id, wave })
+  it('lists a clip without a master in a recorded wave, and ignores a wave nobody recorded yet', () => {
+    const clips = [clip('a', 1), clip('b', 2), clip('c', 2), clip('d', 3)]
+    const index = { a: { file: 'x/a.flac' }, b: { file: 'x/b.flac' }, c: { file: null } }
+    expect(missingMasters(clips, index)).toEqual(['c'])
+  })
+  it('is empty when every recorded clip has its master', () => {
+    expect(missingMasters([clip('a', 1), clip('d', 3)], { a: { file: 'x/a.flac' } })).toEqual([])
   })
 })
