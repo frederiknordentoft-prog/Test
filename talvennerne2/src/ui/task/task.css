@@ -19,16 +19,18 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+/* the strike over a wrong answer: thin and at 70 %, so the struck word can still be read (REVP r2) */
 .tv-strike {
   position: absolute;
   left: 10%;
   right: 10%;
   top: 50%;
   z-index: 2;
-  height: 6px;
-  margin-top: -3px;
-  border-radius: 3px;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 2px;
   background: var(--color-oops-lip);
+  opacity: 0.7;
   transform: rotate(-12deg);
   transform-origin: left center;
   animation: tv-strike-in 260ms var(--ease-out) both;
@@ -58,10 +60,10 @@
   left: -6%;
   right: -6%;
   top: 52%;
-  height: 0.09em;
-  min-height: 4px;
-  border-radius: 3px;
+  height: 3px;
+  border-radius: 2px;
   background: var(--color-oops-lip);
+  opacity: 0.7;
   transform: rotate(-14deg);
   animation: tv-strike-in 260ms var(--ease-out) both;
 }
@@ -2100,4 +2102,194 @@
 }
 .tv-face--lg .tv-face__word--card {
   font-size: 30px;
+}
+
+/* ── Things to measure (faces.tsx ThingFace; QA2 P3-8) ─────────────── */
+/* unitChoice's `mt:` cards: the picture over its word (md, lg), beside a smaller word in sm (the
+   struck answer, the confirm button). --thing is the picture; the word breaks only between words,
+   so "en regnorm" takes two lines on a phone and six cards still fit without scrolling. */
+.tv-face__thing {
+  --thing: 48px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  min-width: 0;
+}
+.tv-face .tv-face__thing svg {
+  width: var(--thing);
+  height: var(--thing);
+}
+.tv-face__thingword {
+  max-width: 100%;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.08;
+  text-align: center;
+}
+.tv-face__thing.is-lg {
+  --thing: 84px;
+  gap: 4px;
+}
+.tv-face__thing.is-lg .tv-face__thingword {
+  font-size: 24px;
+}
+.tv-face__thing.is-sm {
+  --thing: 30px;
+  flex-direction: row;
+  gap: 3px;
+}
+.tv-face__thing.is-sm .tv-face__thingword {
+  max-width: 4.4em;
+  font-size: 14px;
+  text-align: left;
+}
+/* the six cards: a thinner padding inside the edge, so the picture and two lines fit */
+.tv-multi__item .tv-answer__face:has(.tv-face__thing) {
+  padding: 6px 4px;
+}
+/* a set of things (struck answer, confirm button) wraps instead of leaving the screen; the teaching
+   row keeps other sets on one line (round.css), hence the weight of this selector */
+.tv-face__row.tv-face__row--cards:has(.tv-minicard .tv-face__thing) {
+  flex-wrap: wrap;
+}
+.tv-minicard:has(.tv-face__thing) {
+  padding: 4px 6px 4px 4px;
+}
+/* "Tryk på" above the things when they do not fit beside it */
+.tv-confirm__face:has(.tv-face__thing) {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+@media (orientation: portrait) and (min-height: 760px) {
+  .tv-multi__item .tv-face__thing {
+    --thing: 60px;
+  }
+  .tv-multi__item .tv-face__thingword {
+    font-size: 18px;
+  }
+}
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-multi__item .tv-face__thing {
+    --thing: 84px;
+    gap: 4px;
+  }
+  .tv-multi__item .tv-face__thingword {
+    font-size: 22px;
+  }
+  .tv-face__thing.is-sm {
+    --thing: 38px;
+  }
+  .tv-face__thing.is-sm .tv-face__thingword {
+    font-size: 17px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .tv-multi__item .tv-face__thing {
+    --thing: 44px;
+  }
+  .tv-multi__item .tv-face__thingword {
+    font-size: 14px;
+  }
+}
+
+/* ── The tick on a phone on its side (se-l 667 x 375, x-l 852 x 393) ─────
+   Measured over every skill's own tasks: the tick (and the cards) left the screen where a kind
+   stacked more than the half screen holds. Phones upright and iPads keep their layout. */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* fillSlots with a big palette (ten digits, placeValue1000): a tighter places card and lower
+     tokens, so three rows of tokens and the tick stay above the bottom edge */
+  .tv-fill__places {
+    padding: 6px;
+  }
+  .tv-fill__palette {
+    gap: 6px;
+  }
+  .tv-fill__palette .tv-token {
+    height: 62px;
+  }
+  .tv-fill__palette .tv-check.tv-ibtn {
+    --ib: 60px;
+  }
+  /* numberline: the question, the line and the tick a little closer */
+  .tv-nline {
+    gap: 2px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 800px) {
+  /* multiSelect beside its prompt on a small phone (the stage's two halves, round.css): three
+     cards (82 px, so solids and their shadows stay on the card) and a 60 px tick side by side, with
+     narrower gaps; seven or eight things take three columns with the tick in the empty corner of
+     the last row. A task that owns its prompt has the wider half and keeps its layout. */
+  .tv-round__stage:not(.is-owned) .tv-multi:not(.tv-multi--ref) {
+    column-gap: 8px;
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi:not(.tv-multi--ref) .tv-multi__grid {
+    grid-template-columns: repeat(var(--cols), 82px);
+    gap: 4px;
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi:not(.tv-multi--ref) .tv-check.tv-ibtn {
+    --ib: 60px;
+  }
+  /* a solid's ground shadow reaches past its picture: a little smaller, so it stays on the card */
+  .tv-round__stage:not(.is-owned) .tv-multi:not(.tv-multi--ref) .tv-multi__item .tv-face > svg {
+    max-width: 86%;
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi--n4:not(.tv-multi--ref) {
+    --cols: 2;
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi--n7:not(.tv-multi--ref),
+  .tv-round__stage:not(.is-owned) .tv-multi--n8:not(.tv-multi--ref) {
+    --cols: 3;
+    grid-template-columns: auto;
+    grid-template-areas: 'grid';
+  }
+  .tv-round__stage:not(.is-owned) .tv-multi--n7:not(.tv-multi--ref) .tv-multi__foot,
+  .tv-round__stage:not(.is-owned) .tv-multi--n8:not(.tv-multi--ref) .tv-multi__foot {
+    grid-area: grid;
+    align-self: end;
+    justify-self: end;
+  }
+}
+/* a short phone upright: a smaller sm face, so six struck things take two rows under a long strategy */
+@media (orientation: portrait) and (max-height: 700px) {
+  .tv-face__thing.is-sm {
+    --thing: 24px;
+    gap: 2px;
+  }
+  .tv-face__thing.is-sm .tv-face__thingword {
+    max-width: 4.3em;
+    font-size: 12px;
+  }
+  .tv-minicard:has(.tv-face__thing) {
+    padding: 3px 5px 3px 3px;
+  }
+}
+
+/* ── The struck answer in the teaching card (REVP r1) ──────────────── */
+/* A long given answer (six cards) shrinks with the teaching row and wraps its cards onto more
+   lines, so on a phone on its side it never runs over the strategy text (round.css keeps the box
+   flex: none on one line). It never gets narrower than content that cannot wrap, and it clips its
+   strike, so the line stays inside the answer it strikes. */
+.tv-teach .tv-teach__row .tv-teach__given {
+  flex: 0 1 auto;
+  min-width: min-content;
+  max-width: 100%;
+  overflow: hidden;
+}
+.tv-teach .tv-teach__given .tv-face__row.tv-face__row--cards {
+  flex-wrap: wrap;
+}
+/* over a row of cards the strike lies flatter, through the middle of the cards */
+.tv-teach .tv-teach__given:has(.tv-face__row--cards) .tv-strike {
+  left: 4%;
+  right: 4%;
+  transform-origin: center;
+  transform: rotate(-7deg);
+}
+/* the things' fine details (bridge's arch ring, every other post, window bars) are left out at the
+   small size (24-38 px) of the struck answer and the confirm button */
+.tv-face__thing.is-sm .tv-fine {
+  display: none;
 }

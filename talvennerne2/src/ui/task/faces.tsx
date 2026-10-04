@@ -16,7 +16,7 @@ import { Icon } from '../design/Icon'
 import type { IconName } from '../design/icons'
 import { SpokenText } from '../design/SpokenText'
 import { cx } from '../design/cx'
-import { ObjectIcon, LongArt, isLong } from '../scenes/objects'
+import { ObjectIcon, LongArt, isLong, knownObject } from '../scenes/objects'
 import type { FaceSize } from './types'
 import { formatMoney, formatNumber, splitTokens } from './answers'
 import { COIN_PIECES, NOTE_PIECES, fewestPieces, isCoinPiece, isPiece, pieceOfToken } from './pay/logic'
@@ -40,7 +40,10 @@ export function OptionFace({ task, value, size, className }: OptionFaceProps) {
   return <span className={cx('tv-face', `tv-face--${size}`, className)}>{face(task, value, size)}</span>
 }
 
-/** Word cards (SPEC §3.4: unitWord, relation, token) show the option's word; the voice reads it. */
+/**
+ * Word cards (SPEC §3.4: unitWord, relation, token) show the option's word; the voice reads it. A
+ * thing to measure (unitChoice's `mt:<thing>`) shows its picture with the word.
+ */
 const WORD_VIEWS = new Set(['token', 'relation'])
 
 function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
@@ -49,6 +52,7 @@ function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
   if (typeof value === 'string' && WORD_VIEWS.has(view) && !value.startsWith('cmp:')) {
     const i = task.options.indexOf(value)
     const clip = i >= 0 ? task.optionClips?.[i] : undefined
+    if (clip && pictured(task, value)) return <ThingFace id={value.slice(3)} clip={clip} size={size} />
     if (clip) return <SpokenText clip={clip} silent className={cx('tv-face__word', 'tv-face__word--card')} />
   }
   if (typeof value === 'number') {
@@ -111,6 +115,34 @@ function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
   const clip = i >= 0 ? task.optionClips?.[i] : undefined
   if (clip) return <SpokenText clip={clip} silent className="tv-face__word" />
   return <span className="tv-face__glyph tv-face__glyph--small">{value}</span>
+}
+
+/** Whether a thing token (`mt:<thing>`) has a picture; remembered, as knownObject() draws the thing. */
+const canDraw = new Map<string, boolean>()
+const drawable = (o: AnswerValue) => {
+  const v = String(o)
+  if (!canDraw.has(v)) canDraw.set(v, v.startsWith('mt:') && knownObject(v.slice(3)))
+  return canDraw.get(v) === true
+}
+
+/**
+ * A thing card gets its picture when every thing on the task's cards has one (all the length things
+ * do), so no card of a set stands out; a thing without a picture keeps the word card.
+ */
+const pictured = (task: Task, value: string) => value.startsWith('mt:') && task.options.every(drawable)
+
+/**
+ * A thing to measure (QA2 P3-8): its picture with its word, so a child who cannot read yet sees what
+ * the voice names. md and lg: the picture over the word; sm (the struck answer, the confirm button):
+ * beside a smaller word. task.css sizes both (.tv-face__thing).
+ */
+function ThingFace({ id, clip, size }: { id: string; clip: string; size: FaceSize }) {
+  return (
+    <span className={cx('tv-face__thing', `is-${size}`)}>
+      <ObjectIcon id={id} size={FACE_PX[size]} />
+      <SpokenText clip={clip} silent className="tv-face__thingword" />
+    </span>
+  )
 }
 
 /** Option ids that point into the prompt: shapes by item id, objects as o0, o1 … */
