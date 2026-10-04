@@ -48787,6 +48787,74 @@
    "wallS": 17.9,
    "wave": 1
   },
+  "s.ceremony.finale.things": {
+   "asr": "det er dine nye ting",
+   "asrExpected": "Det er Dine nye ting",
+   "asrWav2vec2": null,
+   "cer": 0.0,
+   "check": "comp",
+   "comp": {
+    "asr": "det er dine nye ting",
+    "asrWav2vec2": null,
+    "cer": 0.0,
+    "engine": "wav2vec2",
+    "expected": "Det er Dine nye ting",
+    "ids": [
+     "frag.det_er",
+     "s.ceremony.finale.things"
+    ],
+    "n": 1,
+    "pass": 1
+   },
+   "cpuS": 31.5,
+   "dur": 0.744,
+   "engine": "wav2vec2",
+   "file": "ui/s.ceremony.finale.things.flac",
+   "hash": "3a7ecc50612e849f2d1d68a7ab9ba72ac84bd173",
+   "lufs": -18.0,
+   "method": "single",
+   "pack": "ui",
+   "pass": true,
+   "take": 0,
+   "takes": 1,
+   "tp": -4.07,
+   "wallS": 11.6,
+   "wave": 1
+  },
+  "s.ceremony.learned.halfOf": {
+   "asr": "det er halvdelen af",
+   "asrExpected": "Det er Halvdelen af",
+   "asrWav2vec2": null,
+   "cer": 0.0,
+   "check": "comp",
+   "comp": {
+    "asr": "det er halvdelen af",
+    "asrWav2vec2": null,
+    "cer": 0.0,
+    "engine": "wav2vec2",
+    "expected": "Det er Halvdelen af",
+    "ids": [
+     "frag.det_er",
+     "s.ceremony.learned.halfOf"
+    ],
+    "n": 1,
+    "pass": 1
+   },
+   "cpuS": 27.4,
+   "dur": 0.988,
+   "engine": "wav2vec2",
+   "file": "ui/s.ceremony.learned.halfOf.flac",
+   "hash": "83a489665abba6fe5613f5f28c568060cb682d4e",
+   "lufs": -18.15,
+   "method": "single",
+   "pack": "ui",
+   "pass": true,
+   "take": 0,
+   "takes": 1,
+   "tp": -1.63,
+   "wallS": 13.8,
+   "wave": 1
+  },
   "s.ceremony.medal.for": {
    "asr": "Det er Medaljen er for",
    "asrExpected": "Det er Medaljen er for:",
@@ -49023,6 +49091,40 @@
    "takes": 1,
    "tp": -1.63,
    "wallS": 30.8,
+   "wave": 1
+  },
+  "s.ceremony.tryOnAll": {
+   "asr": "det er prøv dem på",
+   "asrExpected": "Det er Prøv dem på",
+   "asrWav2vec2": null,
+   "cer": 0.0,
+   "check": "comp",
+   "comp": {
+    "asr": "det er prøv dem på",
+    "asrWav2vec2": null,
+    "cer": 0.0,
+    "engine": "wav2vec2",
+    "expected": "Det er Prøv dem på",
+    "ids": [
+     "frag.det_er",
+     "s.ceremony.tryOnAll"
+    ],
+    "n": 1,
+    "pass": 1
+   },
+   "cpuS": 25.5,
+   "dur": 0.639,
+   "engine": "wav2vec2",
+   "file": "ui/s.ceremony.tryOnAll.flac",
+   "hash": "3028153f257388b2d6d0073fff6277f280346001",
+   "lufs": -18.1,
+   "method": "single",
+   "pack": "ui",
+   "pass": true,
+   "take": 0,
+   "takes": 1,
+   "tp": -1.63,
+   "wallS": 12.8,
    "wave": 1
   },
   "s.ceremony.xp": {
@@ -54114,6 +54216,27 @@
    "takes": 1,
    "tp": -1.63,
    "wallS": 37.9,
+   "wave": 1
+  },
+  "s.play.tomorrow": {
+   "asr": "her er der nyt i morgen nu kan du øve det du har lært",
+   "asrExpected": "Her er der nyt i morgen. Nu kan du øve det, du har lært.",
+   "asrWav2vec2": null,
+   "cer": 0.0,
+   "check": "alone",
+   "cpuS": 47.4,
+   "dur": 2.817,
+   "engine": "wav2vec2",
+   "file": "ui/s.play.tomorrow.flac",
+   "hash": "dcbc27fa7db9058a87c09cd13303d8eabfeae0e3",
+   "lufs": -18.16,
+   "method": "sentence",
+   "pack": "ui",
+   "pass": true,
+   "take": 0,
+   "takes": 1,
+   "tp": -1.63,
+   "wallS": 23.9,
    "wave": 1
   },
   "s.profiles.add": {
