@@ -48,6 +48,13 @@ QA2 målte på dev-serveren (React i dev-tilstand) på en maskine under last og 
 
 Fund 1 ovenfor, taget op: hvert svar gav en lang opgave på 50–117 ms ved 4×. Runden fjerner det, der ikke behøver at ske i svarets billede: dyret bliver stående, en ny opgave tegnes med én render, og stjernerne og stemmen kommer efter paint.
 
+**Resultatet er blandet.**
+- Ved `THROTTLE=1` holder alle krav nu. Før var der billeder på 50 ms, når strategien kom frem.
+- Blik-lytterens pris med det påklædte dyr er næsten væk.
+- Ved 4× gav ændringerne ingen målbar forskel i de lange opgaver, målt side om side med det uændrede build. Kravene holder ikke.
+- Maskinen skiftede hastighed under målingen, så kun sammenligningen side om side tæller.
+- Resten af prisen ligger uden for dette område (se "Det, der står tilbage").
+
 ### Måling
 
 `scripts/perf/round.mjs` deler nu hvert svar i faser ud fra turens beats (`data-beat` på `.tv-round`, læst med en MutationObserver):
@@ -80,7 +87,20 @@ Den samme build (det uændrede, 37f386f) gav to meget forskellige målinger med 
 - en før/efter-sammenligning er kun gyldig, når de to builds måles side om side (`DIST_B`, afsnittet herunder),
 - kravene er absolutte tal og kan kun holde, når maskinen er hurtig. Efter-kørslerne i matrixen faldt alle i den langsomme periode (`bench` 13–15 ms), og ingen af dem holder kravene.
 
-AB_PLACEHOLDER
+### Side om side (`DIST_B`)
+
+Det uændrede build (før) og det ændrede (efter) skiftevis i samme Chromium kl. 10.27–10.41, Engdalen, telefon, 4×, 2 ture hver (72 og 91 svar), samme seeds. Målestokken var 13–15 ms for begge. Begge er ugyldige efter kriteriet (0,7 % og 1,2 % over 20 ms væk fra svarene):
+
+| Fase | Lang opgave, før | Lang opgave, efter | Median / maks., før | Median / maks., efter | Værste billede, før | Værste billede, efter |
+|---|---|---|---|---|---|---|
+| rigtigt tryk | 20/20 | 19/19 | 112 / 155 ms | 115 / 165 ms | 116,6 ms | 116,6 ms |
+| forkert tryk | 52/52 | 72/72 | 99 / 215 ms | 100 / 167 ms | 100 ms | 100 ms |
+| strategien vises | 52/52 | 70/71 | 73 / 117 ms | 69 / 151 ms | 83,3 ms | 66,7 ms |
+| rigtigt → næste opgave | 18/18 | 18/18 | 81 / 139 ms | 74 / 103 ms | 83,4 ms | 83,4 ms |
+| bekræft → næste opgave | 52/52 | 71/71 | 105 / 168 ms | 111 / 166 ms | 116,6 ms | 116,7 ms |
+
+- **Forskellen er inden for støjen.** De lange opgaver er lige lange før og efter (median 89 og 81 ms over hele turen). Trykket bruger stadig 80–90 ms i `DIV#root.onclick` i begge builds i den langsomme periode.
+- **Det, ændringerne fjernede, kan ses enkeltvis:** blikket med påklædt dyr kostede 12–15 ms pr. tryk før og 0,4–4 ms efter, og billederne på 50 ms ved `THROTTLE=1` er væk. Men det, der er tilbage, fylder mest.
 
 ### Før (det uændrede build)
 
@@ -92,6 +112,9 @@ Engdalen, telefon, 2 ture (71 svar), kl. 9.13 i den hurtige periode. Gyldigheden
 | forkert tryk | 3/51 (6 %) | 52 / 77 ms | 33,3 ms | DIV#root.onclick 11,2; DOMWindow.onpointerdown 3,4; BODY.onmouseup 0,2 |
 | strategien vises | 0/51 (0 %) | – | 33,3 ms | MessagePort.onmessage 0,8; TimerHandler:setTimeout 0,3 |
 | rigtigt → næste opgave | 2/18 (11 %) | 58 / 59 ms | 49,9 ms | TimerHandler:setTimeout 36,2 |
+| bekræft → næste opgave | 40/51 (78 %) | 63 / 100 ms | 66,6 ms | DIV#root.onclick 37,6; DOMWindow.onpointerdown 3,9 |
+
+Hele turen: p95 16,8 ms og 1,1 % over 20 ms, 57 lange opgaver (maks. 100 ms).
 
 De andre kørsler på det uændrede build. Hver fase viser andelen af overgange med en lang opgave og medianen af det værste billede:
 
@@ -117,11 +140,11 @@ De andre kørsler på det uændrede build. Hver fase viser andelen af overgange 
    - Tilstanden for en ny opgave sættes i den render, der viser opgaven ("tilstand fra forrige render"), ikke i en effekt, der gav en ekstra render: beat, svar, kladde, hint, støtte, lyspære, puls, oplæst kort, demo, humør, æg, kompakt og taleboblen.
    - `supportFor` genbruger den strategi, der allerede er regnet ud, og `JSON.stringify`-sammenligningen er blevet en identitet.
    - `RoundScreen` er i `memo` og læser kun det, den tegner, fra `useRound` (`useShallow`). Den abonnerer ikke længere på profilen, kun på reserve-dyret, så PlayScreens re-render ved hvert svar stopper dér. PromptScene, ProgressStones, Teaching og opgavevisningerne er pakket i `memo`.
-   - Oplæsningen (eller demoen) starter efter paint, og `recordIntro` skriver profilen efter paint. Ved et tryk på bekræft kører Reacts effekter synkront, så oplæsningens første tilstande gav en ekstra render i selve trykket.
+   - Oplæsningen (eller demoen) starter efter paint, og `recordIntro` skriver profilen efter paint. Ved et tryk på bekræft kører Reacts effekter synkront, så ville oplæsningens første tilstande ellers give en ekstra render i selve trykket. Det trin er ikke målt for sig, for målingerne var for støjfyldte til at skille det ud.
 4. **Svar-trykket (P4).** Stjerne-burst, konfetti og starten af ros- og oops-stemmen kører efter paint (`afterPaint` i `src/app/idle.ts`: rAF og så `setTimeout 0`; `whenIdle` er flyttet dertil fra kortet). Stemmens start koster 5–7 ms ved 4× (`voice.ts` finder klippets grænser i lyddata hver gang). Lydeffekterne er stadig øjeblikkelige. Stjernen i burst'en parses én gang og klones.
 
 **P5 og P6 var ikke nødvendige.**
-- Ingen kørsel viste IndexedDB-scripts ≥ 10 ms inden for 300 ms af et tryk. Den eneste IndexedDB-post i den tunge profil var én `IDBRequest.onsuccess` på 25 ms uden for vinduet.
+- Ingen kørsel viste IndexedDB-scripts ≥ 10 ms inden for 300 ms af et tryk, heller ikke den tunge profil før og efter. Før ændringerne var den eneste IndexedDB-post én `IDBRequest.onsuccess` på 25 ms uden for vinduet.
 - En CPU-profil af et ikke-minificeret build ved 4× viser `rigElement` på 2–5 ms pr. kald (grænsen er 8 ms).
 
 ### Efter
@@ -141,6 +164,25 @@ Matrixen efter ændringerne. Alle kørsler ved 4× faldt i den langsomme periode
 - **0 konsolfejl.** Højst 384 SVG-elementer (skov-iPad).
 
 **Tilsigtet synlig ændring:** dyret bliver stående, mens opgaven glider ind. Før gled hele scenen ind, dyret med.
+
+### Det, der står tilbage
+
+En CPU-profil af det ændrede build (ikke-minificeret, 4×) viser, hvad et svar stadig koster i JavaScript. Det er 25–40 ms pr. tryk eller opgaveskift, oven i stil, layout og maling:
+
+| Hvad | Ved 4× | Hvor |
+|---|---|---|
+| `submit` → `recordAnswer` (mestring, misforståelser, log) | 8–11 ms pr. tryk | `useRound`, `useProfile` |
+| Riggen tegnes om, når humøret skifter (idle → happy/oops → think → idle) | 2–5 ms pr. skift | `rigElement` |
+| Det gamle kort og svarfelt fjernes (`removeChild`) | 5–11 ms pr. opgaveskift | React/DOM |
+| Opgavens scene og svarkort monteres (`ThingArt`, `Scatter`, `AnswerCard`) | 3–17 ms pr. opgave | `src/ui/scenes`, `src/ui/task` |
+| Stemmens start: `say` → `planAll` → `boundsFor` læser lyddata hver gang | 5–7 ms pr. klip (nu efter paint) | `src/audio/voice.ts` |
+| Lydeffekterne (`fm`, noder) | 2–3 ms pr. tryk | `src/audio/sfx.ts` |
+
+Forslag til næste runde, som kræver andre ejere eller integratorens godkendelse:
+1. Bogfør svaret (`recordAnswer`/`saveRound`) efter paint: trykket viser det grønne kort med det samme, og mestringen regnes i næste opgave. Det kræver en ændring i `useRound`.
+2. Gem klippenes grænser i `voice.ts` i stedet for at læse lyddata ved hvert klip.
+3. Kørslen med 500 KB (`heavy.ts 500`) blev ikke nået inden for tiden. Den bør køres sammen med næste runde.
+4. Mål på en rigtig iPad, før der skæres mere. Ved 4× i Chromium er en tom side lige hurtig hele tiden, men svarenes opgaver svinger med en faktor 1,5 med maskinens hastighed.
 
 ## Gentag målingen
 
