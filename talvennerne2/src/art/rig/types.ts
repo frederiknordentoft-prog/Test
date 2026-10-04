@@ -463,10 +463,11 @@ export interface SpeciesDef {
   /** Pegasus, drage og ugle: ['back'] (slottet er låst). */
   occupies?: readonly Slot[]
   /**
-   * Håndgenstanden tegnes over armen og ærmet, når arten bærer kropstøj (SPEC A17): uglens vinge og ærme dækker
-   * ellers genstanden, som vingespidsen griber foran vingen, når uglen ikke er klædt.
+   * Håndgenstanden tegnes over den hængende arm og ærmet, når arten bærer kropstøj (SPEC A17): uglens vinge og ærme
+   * dækker ellers genstanden, som vingespidsen griber foran vingen, når uglen ikke er klædt. En løftet arm holder
+   * genstanden som før. Er feltet en del, tegnes den efter genstanden og viser grebet (uglens vingespids).
    */
-  handOverSleeve?: boolean
+  handOverSleeve?: boolean | SidePart
   face: FaceStyle
   ears?: EarRig
   signature?: Signature

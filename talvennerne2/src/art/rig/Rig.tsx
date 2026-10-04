@@ -710,13 +710,15 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
     const handItem = side === 'R' ? worn('hand') : undefined
     let hand: ReactNode = null
     let over = false
+    let sleeveOver = false
     if (handItem) {
       const tip = up ? parts.pawUpTip?.[mood] : undefined
       // Håndgenstanden placeres ved pawR i modelrummet og føres ind i potens lokale (spejlede) ramme;
       // en løftet pote bærer den ved sin spids.
       const hold = handHold(handItem.item, at, pp.rot ?? 0, tip, up && !(side === 'L' ? behindL : behindR))
       const o = handItem.item.art.over
-      over = (typeof o === 'function' ? o({ a, hold, up }) : !!o) || (!!def.handOverSleeve && !!bodyWorn)
+      sleeveOver = !!def.handOverSleeve && !!bodyWorn && !up
+      over = (typeof o === 'function' ? o({ a, hold, up }) : !!o) || sleeveOver
       hand = tip ? (
         <g transform={`translate(${n(tip.x)} ${n(tip.y)}) scale(-1 1) translate(${n(-a.pawR.x)} ${n(-a.pawR.y)})`}>{renderItem('hand', 'front', R.body.s, undefined, hold)}</g>
       ) : (
@@ -724,6 +726,8 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
       )
     }
     const hole = up ? null : legHoles[side]
+    // Grebet over genstanden (uglens vingespids), når arten lægger genstanden over arm og ærme.
+    const Grip = typeof def.handOverSleeve === 'function' ? def.handOverSleeve : null
     return (
       <g data-part={`paw-${side.toLowerCase()}`} transform={`${outer}translate(${n(at.x)} ${n(at.y)})${side === 'R' ? ' scale(-1 1)' : ''}`}>
         <g className={animated ? `a-paw a-paw-${side.toLowerCase()}${up ? ' a-up' : ''}` : undefined} transform={pp.rot ? `rotate(${n(pp.rot)})` : undefined}>
@@ -737,6 +741,7 @@ export function rigElement(props: RigProps, env: RigEnv): ReactElement {
           )}
           {up ? sleeveUp(side) : (sleeve(side) ?? hole)}
           {over && hand}
+          {sleeveOver && Grip && <Grip {...ctx(swBody)} side={side} />}
         </g>
       </g>
     )
