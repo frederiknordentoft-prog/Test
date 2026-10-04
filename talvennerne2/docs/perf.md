@@ -37,6 +37,10 @@ QA2 målte på dev-serveren (React i dev-tilstand) på en maskine under last og 
 
 1. **Én lang opgave pr. svar.** Hvert svar giver én lang opgave på ca. 65 ms ved 4× throttle (maks. 117 ms), altså ca. 16 ms uden throttle. Det er 3–5 tabte billeder lige når fejringen eller strategien starter. På en rigtig iPad er det nok 1–2 billeder. Det er inden for kravet, men det er det sted, hvor en ydelsesrunde giver mest.
    - **Næste skridt:** profilér, hvad der kører synkront ved et svar: `recordAnswer` (mestring og misforståelser), skrivekøen, gengivelsen af tur-skærmen og oplæsningen. Udskyd det, der ikke skal ses i første billede.
+   - **Status (4/10):** fjernet i ydelsesrunden nedenfor (runde 1, live i D1 7758abd). Målt side om side på prod ved 4×:
+     - ved bekræft → næste faldt andelen af overgange med lang opgave fra 91 % til 10 %,
+     - bekræft-handleren faldt fra 42,5 til 16,7 ms,
+     - lange opgaver i en tur faldt fra 49 (maks. 106 ms) til 8 (maks. 73 ms).
 2. **"Erstat …s data" mistede importen.** Fundet under målingen af Dyrehaven og rettet i beb4e59 (live i dcda944).
    - Efter en erstat-import af det aktive barn viste appen det gamle barn. Næste skrivning lagde det gamle barn tilbage over importen: i prod blev 60 dyr til 1, efter at et emne var slået fra og til. Bekræftelsen forsvandt også, og siden hoppede til toppen.
    - Årsag: profilen var `null` under importen. Dashboardets auto-valg indlæste derfor det gamle barn, før importen var skrevet, og `selectProfile` kortsluttede bagefter.
@@ -178,6 +182,15 @@ En CPU-profil af det ændrede build (ikke-minificeret, 4×) viser, hvad et svar 
 Forslagene herfra er lavet i runde 2: bogføringen efter paint og klipgrænserne ved afkodningen.
 
 ## Runde 2: svaret bogføres efter paint (4/10, PERF)
+
+> **Integratorens afgørelse (4/10):**
+> - **Merget fra runde 2:** klipgrænserne ved afkodningen, PlayScreens smallere abonnement, porttjekket i `serve()` og Event Timing i målingen.
+> - **Ikke merget:** bogføringen efter paint (tv2/perf 76aa881, med testene nedenfor). Grundene:
+>   - runde 1 holder allerede kravene (B-turene: højst 6 % overgange med lang opgave pr. fase, værste billede 33,3 ms i median, maks. 54 ms),
+>   - bogføringen koster kun 3–11 ms ved 4×, ca. 1–3 ms i fuld fart,
+>   - at flytte den åbner et lille tabsvindue og gør datalaget mere indviklet.
+>
+> Ændringen ligger klar på tv2/perf, hvis den bliver nødvendig. Så skal SPEC-note A18 skrives.
 
 CPU-profilen fra runde 1 viste, hvad trykket stadig bar. Runde 2 tager de tre dele, der ikke er opgavevisningernes eller kunstens.
 
