@@ -5,10 +5,10 @@
 // artifacts/perf/zoo-<vp>.json.
 //   npm run build && flock /tmp/tv2-chromium.lock node scripts/perf/zoo.mjs
 //   VP=ipad DIST=<copy fetched from the live site> flock … node scripts/perf/zoo.mjs
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { launch } from '../browser.mjs'
-import { onboard, serve, solveGate, startFrames, stats, tapEl, toMap, wait } from './lib.mjs'
+import { onboard, replaceChild, serve, startFrames, stats, tapEl, toMap, wait } from './lib.mjs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const DIST = process.env.DIST ?? `${ROOT}dist`
@@ -40,48 +40,33 @@ try {
   await toMap(page)
 
   // the grown-ups' copy of the child, with 60 animals, back over the child
-  await page.locator('.tv-map .tv-topbar [data-clip="s.ui.adult"]').click()
-  await solveGate(page)
-  await page.waitForSelector('.tv-dash')
-  await page.getByRole('button', { name: 'Indstillinger', exact: true }).click()
-  const save = page.getByRole('button', { name: 'Gem en kopi' })
-  await save.waitFor({ timeout: 20_000 })
-  const [download] = await Promise.all([page.waitForEvent('download', { timeout: 20_000 }), save.click()])
-  const exported = `${OUT}zoo-export.json`
-  await download.saveAs(exported)
-  const file = JSON.parse(readFileSync(exported, 'utf8'))
-  const doc = file.profiles[0].doc
-  const first = doc.animals[0]
   const now = Date.now()
-  for (let i = doc.animals.length; i < N; i++) {
-    const species = SPECIES[i % SPECIES.length]
-    const breeds = BREEDS[species] ?? ['std']
-    const stage = 1 + (i % 3)
-    doc.animals.push({
-      ...first,
-      uid: `perf-${i}`,
-      species,
-      breed: breeds[Math.floor(i / SPECIES.length) % breeds.length],
-      colorway: COLORS[(i * 5) % COLORS.length],
-      name: `Ven ${i}`,
-      friendship: 1 + (i % 7),
-      stage,
-      star: false,
-      shown: stage,
-      outfit: {},
-      foundAt: now - (N - i) * 60_000,
-      source: 'egg',
-    })
-  }
-  writeFileSync(`${OUT}zoo-export-${N}.json`, JSON.stringify(file))
-  await page.locator('.tv-dash input[type="file"]').setInputFiles(`${OUT}zoo-export-${N}.json`)
-  await page.getByRole('button', { name: /^Erstat .* data$/ }).click()
-  await page.getByText('er erstattet med filens', { exact: false }).waitFor({ timeout: 15_000 })
+  await replaceChild(page, `${OUT}zoo-export`, (file) => {
+    const doc = file.profiles[0].doc
+    const first = doc.animals[0]
+    for (let i = doc.animals.length; i < N; i++) {
+      const species = SPECIES[i % SPECIES.length]
+      const breeds = BREEDS[species] ?? ['std']
+      const stage = 1 + (i % 3)
+      doc.animals.push({
+        ...first,
+        uid: `perf-${i}`,
+        species,
+        breed: breeds[Math.floor(i / SPECIES.length) % breeds.length],
+        colorway: COLORS[(i * 5) % COLORS.length],
+        name: `Ven ${i}`,
+        friendship: 1 + (i % 7),
+        stage,
+        star: false,
+        shown: stage,
+        outfit: {},
+        foundAt: now - (N - i) * 60_000,
+        source: 'egg',
+      })
+    }
+  })
 
-  // back to the child's side with the arrow, then the zoo
-  await page.locator('.tv-dash .tv-topbar [data-clip="s.ui.back"]').click()
-  await page.waitForSelector('.tv-dock', { timeout: 20_000 })
-  await wait(800)
+  // the zoo
   await tapEl(page, page.locator('.tv-dock__item').nth(1))
   await page.waitForSelector('[data-zoo] [data-uid]', { timeout: 30_000 })
   await wait(3000)

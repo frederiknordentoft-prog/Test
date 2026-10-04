@@ -4,6 +4,7 @@
 // and lights it (the end of a round passes the region whose fog just lifted). While the child looks
 // at the map, the round's code is fetched in idle time, so a tap on a stone starts at once.
 import { useEffect, useMemo, useState } from 'react'
+import { whenIdle } from '../../../app/idle'
 import { useNav } from '../../../app/nav'
 import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
@@ -15,16 +16,6 @@ import { MapView } from './map/MapView'
 import { homeWorld, mapModel } from './map/model'
 import { switchPlayer } from './map/switch'
 import { playFromMap } from './play/flow'
-
-function whenIdle(fn: () => void): () => void {
-  const w = globalThis as { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void }
-  if (w.requestIdleCallback) {
-    const id = w.requestIdleCallback(fn)
-    return () => w.cancelIdleCallback?.(id)
-  }
-  const id = setTimeout(fn, 600)
-  return () => clearTimeout(id)
-}
 
 export default function MapScreen({ route }: ScreenProps<RouteOf<'map'>>) {
   const profile = useProfile((s) => s.profile)

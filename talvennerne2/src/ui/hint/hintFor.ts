@@ -374,15 +374,15 @@ export function countingLine(task: Task): AnyVisual | null {
   return line
 }
 
-/**
- * The support a new key is shown with: the skill's own picture when it leaves the answer to the
- * child, else a number line to count along, else nothing.
- */
 /** Prompts that are a scale themselves: a bare counting line under them adds nothing. */
 const SCALE_SCENES: ReadonlySet<Task['prompt']['scene']> = new Set(['ruler', 'chart', 'unitsRow'])
 
-export function supportFor(task: Task, skills?: SkillRegistry): AnyVisual | null {
-  const full = scaffoldFor(task, skills)
+/**
+ * The support a new key is shown with: the skill's own picture when it leaves the answer to the
+ * child (then `full` itself), else a number line to count along, else nothing. `full` is the
+ * lightbulb's picture (scaffoldFor) when the caller has it already.
+ */
+export function supportFor(task: Task, skills?: SkillRegistry, full: AnyVisual = scaffoldFor(task, skills)): AnyVisual | null {
   if (!addsToPrompt(full, task)) return null
   if (!revealsAnswer(full, task)) return full
   if (SCALE_SCENES.has(task.prompt.scene)) return null

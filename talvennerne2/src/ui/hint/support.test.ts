@@ -119,3 +119,30 @@ describe('no counting line under tens and ones (UI-fund 5)', () => {
     expect(countingLine(t)).toMatchObject({ scene: 'line', min: 0 })
   })
 })
+
+describe('the support from the scaffold the round has already worked out (perf P3)', () => {
+  it('gives the same support as before for example tasks of every registered skill, and the scaffold itself when it is the support', () => {
+    let tasks = 0
+    let same = 0
+    for (const def of reg.all) {
+      const own = keysForSkills([{ skill: def.id }], { skills: reg, states: {}, audioVerified: true, mode: 'round' })
+      for (const k of own.slice(0, 6)) {
+        for (const kind of k.kinds) {
+          for (let seed = 0; seed < 2; seed++) {
+            const t = k.build(kind, makeRng(seed), 0)
+            const full = scaffoldFor(t, reg)
+            const reused = supportFor(t, reg, full)
+            // before: supportFor worked the scaffold out a second time
+            expect(reused, `${t.factId} ${kind}`).toEqual(supportFor(t, reg))
+            // the round tells "the support is the whole strategy" by identity (was: JSON.stringify)
+            expect(reused === full, `${t.factId} ${kind}`).toBe(reused !== null && JSON.stringify(reused) === JSON.stringify(full))
+            if (reused === full) same++
+            tasks++
+          }
+        }
+      }
+    }
+    expect(tasks).toBeGreaterThan(500)
+    expect(same).toBeGreaterThan(0)
+  })
+})
