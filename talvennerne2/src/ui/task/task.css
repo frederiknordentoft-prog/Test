@@ -2101,3 +2101,102 @@
 .tv-face--lg .tv-face__word--card {
   font-size: 30px;
 }
+
+/* ── Things to measure (faces.tsx ThingFace; QA2 P3-8) ─────────────── */
+/* unitChoice's `mt:` cards: the picture over its word (md, lg), beside a smaller word in sm (the
+   struck answer, the confirm button). --thing is the picture; the word breaks only between words,
+   so "en regnorm" takes two lines on a phone and six cards still fit without scrolling. */
+.tv-face__thing {
+  --thing: 48px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  min-width: 0;
+}
+.tv-face .tv-face__thing svg {
+  width: var(--thing);
+  height: var(--thing);
+}
+.tv-face__thingword {
+  max-width: 100%;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.08;
+  text-align: center;
+}
+.tv-face__thing.is-lg {
+  --thing: 84px;
+  gap: 4px;
+}
+.tv-face__thing.is-lg .tv-face__thingword {
+  font-size: 24px;
+}
+.tv-face__thing.is-sm {
+  --thing: 30px;
+  flex-direction: row;
+  gap: 3px;
+}
+.tv-face__thing.is-sm .tv-face__thingword {
+  max-width: 4.4em;
+  font-size: 14px;
+  text-align: left;
+}
+/* the six cards: a thinner padding inside the edge, so the picture and two lines fit */
+.tv-multi__item .tv-answer__face:has(.tv-face__thing) {
+  padding: 6px 4px;
+}
+/* a set of things (struck answer, confirm button) wraps instead of leaving the screen; the teaching
+   row keeps other sets on one line (round.css), hence the weight of this selector */
+.tv-face__row.tv-face__row--cards:has(.tv-minicard .tv-face__thing) {
+  flex-wrap: wrap;
+}
+.tv-minicard:has(.tv-face__thing) {
+  padding: 4px 6px 4px 4px;
+}
+/* "Tryk på" above the things when they do not fit beside it */
+.tv-confirm__face:has(.tv-face__thing) {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+@media (orientation: portrait) and (min-height: 760px) {
+  .tv-multi__item .tv-face__thing {
+    --thing: 60px;
+  }
+  .tv-multi__item .tv-face__thingword {
+    font-size: 18px;
+  }
+}
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-multi__item .tv-face__thing {
+    --thing: 84px;
+    gap: 4px;
+  }
+  .tv-multi__item .tv-face__thingword {
+    font-size: 22px;
+  }
+  .tv-face__thing.is-sm {
+    --thing: 38px;
+  }
+  .tv-face__thing.is-sm .tv-face__thingword {
+    font-size: 17px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .tv-multi__item .tv-face__thing {
+    --thing: 44px;
+  }
+  .tv-multi__item .tv-face__thingword {
+    font-size: 14px;
+  }
+}
+/* a small phone on its side: the tick under the cards (three cards and the tick leave the screen) */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 720px) {
+  .tv-multi:has(.tv-face__thing) {
+    grid-template-columns: auto;
+    grid-template-areas:
+      'grid'
+      'foot';
+  }
+}
