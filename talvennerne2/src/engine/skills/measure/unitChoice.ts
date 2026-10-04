@@ -5,11 +5,11 @@
 // prompt is the loudspeaker ({ scene: 'hear' }); three unit cards `unit:<u>` with pictograms, read
 // aloud (optionView 'unitWord'): the right unit, the other unit of the same kind (near) and a unit of
 // the other kind (other: kilogram for a length).
-// multiSelect (production): "Tryk på alle de ting, man måler i meter." — six word cards `mt:<thing>`
+// multiSelect (production): "Tryk på alle de ting, man måler i meter." — six thing cards `mt:<thing>`
 // read aloud (optionView 'token', clips `noun.mt.<thing>`): this fact's thing, one or two more with the
 // same unit and the rest with the other unit of the family. The answer is the set of the same unit.
-// SPEC §4.2 has no misconception for units. The cards are spoken because there are no pictures of a
-// bus or a house yet (proposed for the materials library); the things are ones every child knows.
+// SPEC §4.2 has no misconception for units. Each length card shows its thing's picture with the word
+// (src/ui/scenes/objects.tsx, faces.tsx); the weight things (3. klasse) keep word cards until drawn.
 import type { AnswerValue, Fact, HintSpec, Rng, SpeechPart, TaskKind } from '../../types'
 import type { SkillModule } from '../types'
 import { hintOf, metaOf, say, tagged } from '../number/kit'
