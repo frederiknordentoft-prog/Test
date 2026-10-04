@@ -1,0 +1,27 @@
+05:38:27 generate.py --wave 2 --threads 4 --max-minutes 20 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261004-053827.log)
+05:38:27 1062 klip valgt, 1056 færdige, 6 at lave
+05:38:45 input frame rate=25
+05:38:51 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+05:38:52 model indlæst på 23 s (4 tråde)
+05:38:56 ✅ EOS token detected! Stopping generation at step 51
+05:39:02 kald single k=1 t0 'På hver tallerken ligger der nu,': 9.7 s for 2.00 s lyd
+05:39:04   hint.shareEqually.eachGets t0: 1.42 s (forhold 0.51) -18.19 LUFS, alone: 'på hver talerken ligger der nu' CER 0.0385 (wav2vec2) → ok
+05:39:04   ✓ master hint.shareEqually.eachGets t0 (bestået)
+05:39:15 ✅ EOS token detected! Stopping generation at step 90
+05:39:28 kald sentence k=1 t0 'Vippen står lige, når der er lige meget på begge sider.': 23.5 s for 3.56 s lyd
+05:40:12   hint.equalSides.sameBothSides t0: 2.96 s (forhold 0.56) -18.17 LUFS, alone: 'ved dem står lige når der er lige meget på begge sider' CER 0.093 (wav2vec2, whisper: 'Væbben står lige når der er lige meget på begge sider') → FEJL asr
+05:40:31 ✅ EOS token detected! Stopping generation at step 248
+05:40:44 kald sentence k=2 t0 'Når vi deler, skal alle tingene ud på tallerknerne, og der skal ligge ': 31.9 s for 9.88 s lyd
+05:40:46   hint.shareEqually.giveAll t0: 4.48 s (forhold 0.53) -18.16 LUFS, alone: 'når videler skal alle tingene ud på talerknerne og der skal ligge lige mange på hver' CER 0.0143 (wav2vec2) → ok
+05:40:51   hint.shareEqually.oneEach t0: 4.24 s (forhold 0.68) -18.1 LUFS, alone: 'Læg en på hver tallerken af gangen rundt og rundt til der ikke er flere' CER 0.0175 (whisper, wav2vec2: 'lægin på hver talerken er gangen rundt og rundt til der ikke er flere') → ok
+05:40:51   ✓ master hint.shareEqually.giveAll t0 (bestået)
+05:40:51   ✓ master hint.shareEqually.oneEach t0 (bestået)
+05:40:56 ✅ EOS token detected! Stopping generation at step 70
+05:41:03 kald sentence k=1 t0 'Der skal ligge lige mange på alle tallerknerne.': 11.2 s for 2.76 s lyd
+05:41:06   hint.shareEqually.sameForAll t0: 2.24 s (forhold 0.48) -18.07 LUFS, alone: 'Der skal ligge lige mange på alle tallerkenerne' CER 0.0256 (whisper, wav2vec2: 'der skal ligge lige mange på alle talerkenerne') → ok
+05:41:06   ✓ master hint.shareEqually.sameForAll t0 (bestået)
+05:41:13 ✅ EOS token detected! Stopping generation at step 90
+05:41:20 kald sentence k=1 t1 'Vippen står lige, når der er lige meget på begge sider.': 13.5 s for 3.56 s lyd
+05:41:24   hint.equalSides.sameBothSides t1: 2.94 s (forhold 0.55) -18.07 LUFS, alone: 'Vippen står lige når der er lige meget på begge sider' CER 0.0 (whisper, wav2vec2: 'ved bem står lige når der er lige meget på begge sider') → ok
+05:41:24   ✓ master hint.equalSides.sameBothSides t1 (bestået)
+05:41:24 færdig: 5 nye mastere (0 ikke bestået, 0 kopier), 5 modelkald, 1.5 min generering (CPU 0.08 t), 1 klip mangler
