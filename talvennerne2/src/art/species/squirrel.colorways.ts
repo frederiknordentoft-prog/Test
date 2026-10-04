@@ -33,12 +33,13 @@ export const SQUIRREL_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold
     fur: '#9C6440',
     overrides: { belly: '#F8E7D2', outline: '#4F2A13', mane2: '#81502F', inner: '#F4C1B0', nose: '#3B2218', iris: '#5E3216' },
   },
-  // Lys: blond, honningfarvet egern med næsten hvid mave.
+  // Lys: blond, sandfarvet egern med næsten hvid mave; lidt blegere end guldets mættede gule pels (OKLab-afstanden var
+  // 0,0755, review G2-r3 §4 og ARTFIX-F), så alle egernets farver ligger mindst 0,08 fra hinanden.
   c5: {
     id: 'c5',
     name: 'lys',
-    fur: '#E9C08A',
-    overrides: { belly: '#FFF9EE', outline: '#8A5F2C', shade: '#D9AC74', mane2: '#D3A66C', inner: '#FFC9BC', nose: '#5E3D27', iris: '#8A5420' },
+    fur: '#E5C096',
+    overrides: { belly: '#FFF9EE', outline: '#86603A', shade: '#D5AC81', mane2: '#CFA67A', inner: '#FFC9BC', nose: '#5E3D27', iris: '#8A5420' },
   },
   // Orange: klar mandarinorange, tydeligt lysere og mere gul end det rustrøde c1 – også ved 48 px (review G2-r2 §3.4) –
   // og rødere og mere mættet end guldets citrongule pels (review G2-r3 §4 og §7.5: OKLab-afstanden til guld var 0,044).

@@ -1,11 +1,11 @@
-// Egernets c6 (orange) mod guld og de andre farver (review G2-r3 §4 og §7.5): c6 lå kun 0,044 fra guldets pels i
-// OKLab, så de to kun blev skilt ad af glimmeret og guldets lyse mave. Pelsen skal ligge mindst 0,08 fra guld og fra
-// hver af egernets andre farver (c5 lå 0,072 fra c6).
+// Egernets farver skal kunne skilles ad (review G2-r3 §4 og §7.5): c6 (orange) lå kun 0,044 fra guldets pels i OKLab,
+// så de to kun blev skilt ad af glimmeret og guldets lyse mave, og c5 (lys) lå 0,0755 fra guld. Pelsen i hvert par af
+// egernets farver skal ligge mindst 0,08 fra hinanden.
 import { describe, expect, it } from 'vitest'
 import { hexToOklch } from '../rig/oklch'
 import { SQUIRREL_COLORWAYS } from './squirrel.colorways'
 
-/** Mindste OKLab-afstand mellem c6's pels og de andre farvers pels. */
+/** Mindste OKLab-afstand mellem to af egernets farver (pelsen). */
 const MIN_DELTA_E = 0.08
 
 /** OKLab (L, a, b) fra en hex-farve via oklch.ts' OKLCH. */
@@ -22,30 +22,44 @@ function deltaE(a: string, b: string): number {
   return Math.hypot(l1 - l2, a1 - a2, b1 - b2)
 }
 
-describe('egernets c6 (orange)', () => {
-  const c6 = SQUIRREL_COLORWAYS.c6.fur
-  const others = Object.values(SQUIRREL_COLORWAYS).filter((cw) => cw.id !== 'c6')
+const ALL = Object.values(SQUIRREL_COLORWAYS)
+const PAIRS = ALL.flatMap((p, i) => ALL.slice(i + 1).map((q) => [p, q] as const))
 
+describe('egernets farver', () => {
   it('afstanden måles i OKLab: en farve har afstand 0 til sig selv, og sort mod hvid er 1', () => {
-    expect(deltaE(c6, c6)).toBe(0)
+    expect(deltaE('#FFA22C', '#FFA22C')).toBe(0)
     expect(deltaE('#000000', '#FFFFFF')).toBeCloseTo(1, 3)
   })
 
-  it(`ligger mindst ${MIN_DELTA_E} fra guld (før: 0,044)`, () => {
-    expect(deltaE(c6, SQUIRREL_COLORWAYS.gold.fur)).toBeGreaterThanOrEqual(MIN_DELTA_E)
+  it('har alle otte farver med (c1–c6, guld og regnbue)', () => {
+    expect(ALL.map((cw) => cw.id)).toEqual(['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'gold', 'rainbow'])
+    expect(PAIRS).toHaveLength(28)
   })
 
-  it(`ligger mindst ${MIN_DELTA_E} fra hver af egernets andre farver`, () => {
-    expect(others.map((cw) => cw.id)).toEqual(['c1', 'c2', 'c3', 'c4', 'c5', 'gold', 'rainbow'])
-    for (const cw of others) expect(deltaE(c6, cw.fur), `c6 mod ${cw.id}`).toBeGreaterThanOrEqual(MIN_DELTA_E)
+  it(`c6 og c5 ligger mindst ${MIN_DELTA_E} fra guld (før: 0,044 og 0,0755)`, () => {
+    expect(deltaE(SQUIRREL_COLORWAYS.c6.fur, SQUIRREL_COLORWAYS.gold.fur)).toBeGreaterThanOrEqual(MIN_DELTA_E)
+    expect(deltaE(SQUIRREL_COLORWAYS.c5.fur, SQUIRREL_COLORWAYS.gold.fur)).toBeGreaterThanOrEqual(MIN_DELTA_E)
   })
 
-  it('er stadig orange: mellem det rustrøde c1 og guldets gule tone, og lysere end c1', () => {
-    const o = hexToOklch(c6)
+  it(`hvert par af farverne ligger mindst ${MIN_DELTA_E} fra hinanden`, () => {
+    for (const [p, q] of PAIRS) expect(deltaE(p.fur, q.fur), `${p.id} mod ${q.id}`).toBeGreaterThanOrEqual(MIN_DELTA_E)
+  })
+
+  it('c6 er stadig orange: mellem det rustrøde c1 og guldets gule tone, og lysere end c1', () => {
+    const o = hexToOklch(SQUIRREL_COLORWAYS.c6.fur)
     const red = hexToOklch(SQUIRREL_COLORWAYS.c1.fur)
     const gold = hexToOklch(SQUIRREL_COLORWAYS.gold.fur)
     expect(o.h).toBeGreaterThan(red.h)
     expect(o.h).toBeLessThan(gold.h)
     expect(o.L).toBeGreaterThan(red.L)
+  })
+
+  it('c5 er stadig lys: lysere end c6 og blegere (mindre mættet) end guld og c6', () => {
+    const lys = hexToOklch(SQUIRREL_COLORWAYS.c5.fur)
+    const o = hexToOklch(SQUIRREL_COLORWAYS.c6.fur)
+    const gold = hexToOklch(SQUIRREL_COLORWAYS.gold.fur)
+    expect(lys.L).toBeGreaterThan(o.L)
+    expect(lys.C).toBeLessThan(gold.C)
+    expect(lys.C).toBeLessThan(o.C)
   })
 })
