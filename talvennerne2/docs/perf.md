@@ -157,10 +157,11 @@ Matrixen efter ændringerne. Alle kørsler ved 4× faldt i den langsomme periode
 | Tung profil, 333 KB | 60 | 100 % · 133,3 ms | 100 % · 116,7 ms | 100 % · 83,3 ms | 100 % · 100 ms | 100 % · 116,7 ms | 176 ms | 16,8 ms / 2,3 % | 13,4/15,1 |
 | Regnbueskoven, iPad | 44 | 100 % · 100,1 ms | 100 % · 99,9 ms | 93 % · 83,3 ms | 100 % · 100 ms | 100 % · 100 ms | 198 ms | 16,8 ms / 2,1 % | 13,2/13,2 |
 | Engdalen, THROTTLE=1 | 62 | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | 0 % · 16,8 ms | – | 16,7 ms / 0 % | 3,4/4,1 |
+| Tung profil, 503 KB (3 min) | 38 | 100 % · 116,8 ms | 100 % · 116,7 ms | 100 % · 83,4 ms | 100 % · 99,9 ms | 100 % · 116,7 ms | 192 ms | 16,8 ms / 2,3 % | 13,1/12,1 |
 
 - **Ved `THROTTLE=1` holder alle krav:** det værste billede inden for 2,5 s af et tryk er 33,3 ms (før 50,1 ms), og der er ingen lange animationsbilleder.
 - **Ved 4×** holder ingen af kørslerne kravene i den langsomme periode. Engdalen, den tunge profil og skov-iPad var ugyldige (0,3–0,7 % over 20 ms væk fra svarene).
-- **Ingen IndexedDB-scripts** ≥ 10 ms inden for 300 ms af et tryk, heller ikke med den tunge profil.
+- **Ingen IndexedDB-scripts** ≥ 10 ms inden for 300 ms af et tryk, heller ikke med den tunge profil på 333 KB og 503 KB. Med 503 KB var der slet ingen IndexedDB-scripts i de lange animationsbilleder. Kopien af dokumentet ved hvert svar er altså ikke det, der koster.
 - **0 konsolfejl.** Højst 384 SVG-elementer (skov-iPad).
 
 **Tilsigtet synlig ændring:** dyret bliver stående, mens opgaven glider ind. Før gled hele scenen ind, dyret med.
@@ -181,8 +182,7 @@ En CPU-profil af det ændrede build (ikke-minificeret, 4×) viser, hvad et svar 
 Forslag til næste runde, som kræver andre ejere eller integratorens godkendelse:
 1. Bogfør svaret (`recordAnswer`/`saveRound`) efter paint: trykket viser det grønne kort med det samme, og mestringen regnes i næste opgave. Det kræver en ændring i `useRound`.
 2. Gem klippenes grænser i `voice.ts` i stedet for at læse lyddata ved hvert klip.
-3. Kørslen med 500 KB (`heavy.ts 500`) blev ikke nået inden for tiden. Den bør køres sammen med næste runde.
-4. Mål på en rigtig iPad, før der skæres mere. Ved 4× i Chromium er en tom side lige hurtig hele tiden, men svarenes opgaver svinger med en faktor 1,5 med maskinens hastighed.
+3. Mål på en rigtig iPad, før der skæres mere. Ved 4× i Chromium er en tom side lige hurtig hele tiden, men svarenes opgaver svinger med en faktor 1,5 med maskinens hastighed.
 
 ## Gentag målingen
 
