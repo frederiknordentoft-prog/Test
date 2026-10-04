@@ -100,9 +100,10 @@ describe('dashboard views', () => {
     expect(html).toContain('Verdener og steder')
     expect(html).toContain('data-world-row="eng"')
     expect(html).toContain('Tiervennernes hule')
-    // Hestebakkerne and the rest have nothing to play yet: no button opens them
+    // Hestebakkerne and Regnbueskoven are released and can be opened; Stjernefjeldet comes later
+    expect(html).toContain('Åbn hele Hestebakkerne')
+    expect(html).toContain('Åbn hele Regnbueskoven')
     expect(html).toContain('Verdenen kommer i en senere version.')
-    expect(html).not.toContain('Åbn hele Hestebakkerne')
   })
 
   it('draw the 10 · 10 table with the products in its titles', () => {

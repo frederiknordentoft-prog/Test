@@ -131,14 +131,15 @@ describe('the eggs (review P1-2, P2-9)', () => {
 })
 
 describe('the grade (review P2-10)', () => {
-  it('opens all of Engdalen from 1. class, and nothing more in 0. class', async () => {
+  it('opens the worlds below the grade and the child\'s own world from 1. class, and nothing more in 0. class', async () => {
     await hatchFirstFriend({ name: 'Bo', species: 'cat', id: newProfileId() })
     await finishOnboarding(2)
     const p = useProfile.getState().profile!
     expect(p.grade).toBe(2)
     for (const r of regionsOfWorld('eng')) expect(isRegionOpen(p, r.id), r.id).toBe(true)
-    // Hestebakkerne has nothing to play yet: it stays closed
-    expect(p.unlocked.worlds).toEqual([])
+    // 2. klasse: Hestebakkerne (below) is open with all its places, and Regnbueskoven (its own world) is open
+    for (const r of regionsOfWorld('bakke')) expect(isRegionOpen(p, r.id), r.id).toBe(true)
+    expect(p.unlocked.worlds).toEqual(['bakke', 'skov'])
     const stored = await getProfile(p.id)
     expect(stored?.unlocked.regions).toEqual(p.unlocked.regions)
   })

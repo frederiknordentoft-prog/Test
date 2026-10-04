@@ -14,7 +14,7 @@ import {
   type Drawn,
 } from './openings'
 
-/** What is registered today: the skills of Engdalen (and shapes2D, which reaches into Hestebakkerne). */
+/** What is registered today: the skills of waves 1–2 (Engdalen, Hestebakkerne and Regnbueskoven). */
 const registered: ReadonlySet<SkillId> = new Set(registeredSkills().map((d) => d.id))
 /** As if every skill of Hestebakkerne had its module too. */
 const withBakke: ReadonlySet<SkillId> = new Set([
@@ -24,6 +24,9 @@ const withBakke: ReadonlySet<SkillId> = new Set([
 
 /** As if every friend, chest and finale were drawn. */
 const everything: Drawn = { species: new Set(SPECIES.map((s) => s.id)), items: new Set(ITEMS.map((i) => i.id)) }
+
+/** Everything drawn, but only Engdalen released: the state before Hestebakkerne and Regnbueskoven opened (4/10). */
+const engOnly: Drawn = { ...everything, released: new Set(['eng']) }
 
 const engRegions = regionsOfWorld('eng').map((r) => r.id)
 const kid = () => newProfileDoc('Bo', 0, { id: 'p_bo', now: 0 })
@@ -86,16 +89,25 @@ describe('the grade', () => {
     expect(unlockView(p).regions).toEqual(['w0-tal10', 'w0-former'])
   })
 
-  it('opens all of Engdalen from 1. class, and no empty world', () => {
+  it('opens all of Engdalen from 1. class, and no world that is not released', () => {
     for (const g of [1, 2, 3] as const) {
-      expect(gradeOpenings(g, registered), `grade ${g}`).toEqual({ worlds: [], regions: engRegions })
-      const p = applyGrade(kid(), g, registered)
+      expect(gradeOpenings(g, registered, engOnly), `grade ${g}`).toEqual({ worlds: [], regions: engRegions })
+      const p = applyGrade(kid(), g, registered, engOnly)
       expect(p.grade).toBe(g)
       for (const r of engRegions) expect(isRegionOpen(p, r), r).toBe(true)
       for (const w of ['bakke', 'skov', 'fjeld'] as const) expect(isWorldOpen(p, w), w).toBe(false)
       // the first two were open anyway: only the others are stored
       expect(p.unlocked.regions).toEqual(engRegions.filter((r) => r !== 'w0-tal10' && r !== 'w0-former'))
     }
+  })
+
+  it('opens the released worlds below the grade and the child\'s own world (Hestebakkerne and Regnbueskoven, 4/10)', () => {
+    const bakke = regionsOfWorld('bakke').map((r) => r.id)
+    const skov = regionsOfWorld('skov').map((r) => r.id)
+    expect(gradeOpenings(1, registered)).toEqual({ worlds: ['bakke'], regions: engRegions })
+    expect(gradeOpenings(2, registered)).toEqual({ worlds: ['bakke', 'skov'], regions: [...engRegions, ...bakke] })
+    // Stjernefjeldet (3. klasse) has nothing to play yet: a third-grader gets the three worlds below it
+    expect(gradeOpenings(3, registered)).toEqual({ worlds: ['bakke', 'skov'], regions: [...engRegions, ...bakke, ...skov] })
   })
 
   it('opens the child\'s own world once it has something to play', () => {
@@ -124,15 +136,16 @@ describe('what a grown-up opens', () => {
     const p = withOpenings(kid(), regionOpenings('w0-minus10', registered))
     expect(isRegionOpen(p, 'w0-minus10')).toBe(true)
     expect(p.unlocked).toEqual({ worlds: [], regions: ['w0-minus10'] })
-    // a region of a world that is not ready cannot be opened: its world's first stones would lead nowhere
-    expect(regionOpenings('w1-figurer', registered)).toEqual({ worlds: [], regions: [] })
+    // a region of a world that is not released cannot be opened: its world's first stones would lead nowhere
+    expect(regionOpenings('w1-figurer', registered, engOnly)).toEqual({ worlds: [], regions: [] })
+    expect(regionOpenings('w1-figurer', registered)).toEqual({ worlds: ['bakke'], regions: ['w1-figurer'] })
     expect(regionOpenings('w1-tal100', withBakke, everything)).toEqual({ worlds: ['bakke'], regions: ['w1-tal100'] })
   })
 
   it('opens a whole world with something to play, and never an empty one', () => {
     const p = withOpenings(kid(), worldOpenings('eng', registered))
     for (const r of engRegions) expect(isRegionOpen(p, r), r).toBe(true)
-    expect(worldOpenings('bakke', registered)).toEqual({ worlds: [], regions: [] })
+    expect(worldOpenings('bakke', registered, engOnly)).toEqual({ worlds: [], regions: [] })
     if (!worldReady('fjeld', registered)) expect(worldOpenings('fjeld', registered)).toEqual({ worlds: [], regions: [] })
     const q = withOpenings(kid(), worldOpenings('bakke', withBakke, everything))
     expect(isWorldOpen(q, 'bakke')).toBe(true)

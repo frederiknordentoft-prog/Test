@@ -14,7 +14,7 @@ import type { SkillId, WorldId } from '../engine/types'
  * silhouettes), its recorded voice and a play-through: the integrator adds it here then. Until
  * that, the map shows it as "Kommer snart" like a world that is not built.
  */
-export const RELEASED_WORLDS: ReadonlySet<WorldId> = new Set<WorldId>(['eng'])
+export const RELEASED_WORLDS: ReadonlySet<WorldId> = new Set<WorldId>(['eng', 'bakke', 'skov'])
 
 /** The species and things whose drawings exist, and the worlds released. */
 export interface Drawn {
