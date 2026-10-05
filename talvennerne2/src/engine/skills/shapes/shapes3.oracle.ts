@@ -2,7 +2,7 @@
 // agent than the generators (SPEC A5, §15.1): every right answer is worked out here from what the child is
 // given — the squares drawn on the grid, the net with its axis numbers and its point, the spoken question —
 // and checked against the fact id read by the module headers' documented formats, never from the
-// generator code. The wrong answers are pædagogik §3.2's areaAsPerimeter ("3×4 → 14: 2(a+b)", the edge
+// generator code. The wrong answers are pædagogik §3.2's areaAsPerimeter ("3·4 → 14: 2(a+b)", the edge
 // counted instead of the squares) measured on the drawing, and the plain slips the area module documents
 // (rows + cols, one row or column short, the uncut rectangle, one rectangle of two, either figure alone or
 // both, one more or less). The registry skips *.oracle.ts files, so none of this reaches the app.
