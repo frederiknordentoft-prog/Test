@@ -193,6 +193,14 @@ async function play(browser, vpName) {
         await sleep(1500)
         await shot(page, `teach-${tag}`)
         check(await noOverflow(page), `${tag}: fejlflowet uden overløb`)
+        // the pair on the confirm button ("Tryk på (5, 4)") and the struck one fit where they stand
+        const fits = await page.evaluate(() => {
+          const inside = (a, b) => a.left >= b.left - 1 && a.right <= b.right + 1 && a.top >= b.top - 1 && a.bottom <= b.bottom + 1
+          const pair = document.querySelector('.tv-confirm .tv-grid__pair').getBoundingClientRect()
+          const face = document.querySelector('.tv-confirm__face').getBoundingClientRect()
+          return inside(pair, face) && face.right <= innerWidth && face.left >= 0
+        })
+        check(fits, `${tag}: parret står inde i bekræft-knappen`)
         const c = await page.evaluate(() => { const r = document.querySelector('[data-confirm]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 } })
         await tap(cdp, c)
       }

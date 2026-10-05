@@ -14,6 +14,11 @@ import { clipInfo, clipText, hasClip } from '../../../speech/catalog'
 import { KIND_INSTRUCTIONS, instructionClip } from '../../../speech/clips/ui/kinds'
 import { EXAMPLES } from '../../../dev/tasks/examples'
 import { BUILT_KINDS, KIND_MODULES, moduleFor, shownKind } from '../registry'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import type { AnswerValue } from '../../../engine/types'
+import type { ViewMode } from '../types'
+import { GridFace, GridView } from './View'
 
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(`./${rel}`, import.meta.url)), 'utf8')
 const stripComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '')
@@ -128,5 +133,50 @@ describe('grid house rules', () => {
     expect(clipInfo(instructionClip('keypad', 'long'))?.wave).toBe(1)
     const src = read('View.tsx')
     for (const id of src.match(/s\.kind\.grid\.\w+/g) ?? []) expect(hasClip(id), id).toBe(true)
+  })
+})
+
+describe('the grid view as drawn', () => {
+  const ex = (id: string) => EXAMPLES.grid.find((e) => e.id === id)!.task
+  const view = (task: Task, mode: ViewMode = 'input', given: AnswerValue | null = null) =>
+    renderToStaticMarkup(createElement(GridView, { task, mode, given, onSubmit: () => {}, onActivity: () => {}, onDraft: () => {}, speaking: null }))
+
+  it('sets a point on one net with the asked pair under it, and no point before the first tap', () => {
+    const html = view(ex('grid-place'))
+    expect(html).toMatch(/role="group"[^>]*aria-label="Nettet"/)
+    expect(html).not.toMatch(/data-point=/)
+    expect(html).not.toMatch(/role="slider"/)
+    expect(html).toMatch(/tv-grid__digit">3<.*tv-grid__digit">2</)
+    expect(html).toContain('data-grid-mode="place"')
+  })
+
+  it('reads a drawn point on two strips of numbers, the pair blank until picked', () => {
+    const html = view(ex('grid-read'))
+    expect(html).toMatch(/role="slider"[^>]*aria-label="Tallene forneden"/)
+    expect(html).toMatch(/role="slider"[^>]*aria-label="Tallene til venstre"/)
+    expect(html).toContain('data-point="2,5"')
+    expect(html.match(/is-blank/g)).toHaveLength(2)
+  })
+
+  it('shows the answer handed in: the child’s point struck, the picked numbers lit', () => {
+    const wrong = view(ex('grid-place'), 'wrong', 'pt:2,3')
+    expect(wrong).toContain('data-point="2,3"')
+    expect(wrong).toContain('tv-strike')
+    const right = view(ex('grid-read'), 'correct', 'x:2|y:5')
+    expect(right).toMatch(/is-x is-on" data-num="x2"/)
+    expect(right).toMatch(/is-y is-on" data-num="y5"/)
+    expect(right).toContain('tv-grid__pair is-good')
+  })
+
+  it('walks from 0 along and up to the child’s point only on a new key', () => {
+    expect(view(ex('grid-place-new'), 'wrong', 'pt:4,5')).toContain('tv-grid__walk')
+    expect(view(ex('grid-place'), 'wrong', 'pt:2,3')).not.toContain('tv-grid__walk')
+  })
+
+  it('pictures an answer as its pair, either form', () => {
+    for (const value of ['pt:3,2', 'x:3|y:2', 'y:2|x:3']) {
+      const html = renderToStaticMarkup(createElement(GridFace, { task: ex('grid-place'), value, size: 'md' }))
+      expect(html, value).toMatch(/tv-grid__digit">3<.*tv-grid__digit">2</)
+    }
   })
 })
