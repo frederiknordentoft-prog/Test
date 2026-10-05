@@ -57,7 +57,8 @@ describe('inverseOps', () => {
       terms: [{ n: 7 }, { op: '+' }, { n: 5 }, { op: '=' }, { n: 12 }, { text: 'frag.inverseOps.so' }, { n: 12 }, { op: '−' }, { n: 5 }, { op: '=' }, { blank: true }],
     })
     expect(textOf(taskOf(def, 'inv:12-5:7+5', 'keypad'))).toBe('Tolv minus fem giver syv. Hvad er syv plus fem?')
-    expect(textOf(taskOf(def, 'inv:3x4:12/4', 'keypad'))).toBe('Tre gange fire giver tolv. Hvad er tolv delt med fire?')
+    // mulToDiv is 3. klasse: ":" is "divideret med" (SPEC A19)
+    expect(textOf(taskOf(def, 'inv:3x4:12/4', 'keypad'))).toBe('Tre gange fire giver tolv. Hvad er tolv divideret med fire?')
   })
 
   it('reads the other operation as wrongOperation, a number on the card as operand (A9)', () => {
@@ -72,7 +73,8 @@ describe('inverseOps', () => {
   it('names the family in the hint, and the operation first for wrongOperation', () => {
     expect(hintText(def, 'inv:7+5:12-5', null)).toBe('Plus og minus hører sammen. Syv plus fem giver tolv. Så giver tolv minus fem syv.')
     expect(hintText(def, 'inv:12-5:7+5', null)).toBe('Plus og minus hører sammen. Tolv minus fem giver syv. Så giver syv plus fem tolv.')
-    expect(hintText(def, 'inv:3x4:12/4', null)).toBe('Gange og delt med hører sammen. Tre gange fire giver tolv. Så giver tolv delt med fire tre.')
+    expect(hintText(def, 'inv:3x4:12/4', null)).toBe('Gange og divideret med hører sammen. Tre gange fire giver tolv. Så giver tolv divideret med fire tre.')
+    expect(hintText(def, 'inv:3x4:12/4', 'wrongOperation')).toMatch(/^Divideret med betyder, at vi deler i lige store dele\. Gange og divideret med/)
     expect(hintText(def, 'inv:7+5:12-5', 'wrongOperation')).toMatch(/^Minus betyder, at nogle bliver taget væk\. Plus og minus/)
     expect(def.hint(findFact(def, 'inv:3x4:12/4'), null).visual).toEqual({ scene: 'array', rows: 3, cols: 4 })
   })
