@@ -400,7 +400,41 @@ export const EXAMPLES: Record<TaskKind, Example[]> = {
       }),
     },
   ],
-  grid: [],
+  // grid (SPEC A21): gridCoords' points, set on the net or read off its axes, on the 0–6 net
+  grid: [
+    {
+      id: 'grid-place', title: 'Sæt punktet (3, 2)', wrong: 'pt:2,3',
+      task: mk('crd:p:3,2', {
+        skill: 'gridCoords', family: 'placePoint', kind: 'grid', prompt: { scene: 'grid', w: 6, h: 6, filled: [], coords: true },
+        answer: 'pt:3,2', answerType: 'set', optionView: 'picture', range: [0, 6], distractorTags: tags({ 'pt:2,3': 'other', 'pt:4,2': 'near' }),
+        speech: [{ clip: 's.gridCoords.place' }, { num: 3, form: 'mid' }, { num: 2, form: 'end' }],
+      }),
+    },
+    {
+      id: 'grid-read', title: 'Aflæs punktet (2, 5)', wrong: 'x:5|y:2',
+      task: mk('crd:r:2,5', {
+        skill: 'gridCoords', family: 'readPoint', kind: 'grid', prompt: { scene: 'grid', w: 6, h: 6, filled: [], coords: true, point: [2, 5] },
+        answer: 'x:2|y:5', answerType: 'set', optionView: 'picture', range: [0, 6], distractorTags: tags({ 'x:5|y:2': 'other', 'x:2|y:4': 'near' }),
+        speech: [{ clip: 's.gridCoords.read' }],
+      }),
+    },
+    {
+      id: 'grid-place-new', title: 'Sæt punktet (5, 4), ny nøgle (vejen hen og op)', wrong: 'pt:4,5',
+      task: mk('crd:p:5,4', {
+        skill: 'gridCoords', family: 'placePoint', kind: 'grid', prompt: { scene: 'grid', w: 6, h: 6, filled: [], coords: true },
+        answer: 'pt:5,4', answerType: 'set', optionView: 'picture', range: [0, 6], scaffold: true, distractorTags: tags({ 'pt:4,5': 'other' }),
+        speech: [{ clip: 's.gridCoords.place' }, { num: 5, form: 'mid' }, { num: 4, form: 'end' }],
+      }),
+    },
+    {
+      id: 'grid-read-axis', title: 'Aflæs et punkt på aksen (4, 0)', wrong: 'x:0|y:4',
+      task: mk('crd:r:4,0', {
+        skill: 'gridCoords', family: 'readPoint', kind: 'grid', prompt: { scene: 'grid', w: 6, h: 6, filled: [], coords: true, point: [4, 0] },
+        answer: 'x:4|y:0', answerType: 'set', optionView: 'picture', range: [0, 6], distractorTags: tags({ 'x:0|y:4': 'other' }),
+        speech: [{ clip: 's.gridCoords.read' }],
+      }),
+    },
+  ],
 }
 
 export const EXAMPLE_KINDS = (Object.keys(EXAMPLES) as TaskKind[]).filter((k) => EXAMPLES[k].length > 0)

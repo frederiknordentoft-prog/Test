@@ -63,10 +63,12 @@ function kindGuessP(t: Task): number {
       return 1 / (parts + 1)
     }
     case 'grid': {
+      // SPEC A21: a number asked over a net (symmetry: "how many squares are missing?") is typed on
+      // the keys, and guessed like them
+      if (typeof t.answer === 'number') return 1 / rangeSize(t)
+      // a point: one of the (w + 1)·(h + 1) crossings, or one number on each axis
       const g = promptOf(t, 'grid')
-      const cells = g ? g.w * g.h : 16
-      // single point: one of w·h cells; multi: any subset of the cells
-      return g?.coords ? 1 / cells : 1 / 2 ** cells
+      return 1 / (((g?.w ?? 6) + 1) * ((g?.h ?? 6) + 1))
     }
   }
 }
@@ -154,10 +156,8 @@ export function defaultFastMs(t: Task): number {
     }
     case 'colorParts':
       return 3_000 + 1_000 * (promptOf(t, 'fraction')?.parts ?? 2)
-    case 'grid': {
-      const g = promptOf(t, 'grid')
-      // multi: one step per cell of the answer
-      return g?.coords ? 8_000 : 5_000 + 1_500 * slotCount(t)
-    }
+    case 'grid':
+      // a point is set or read in 8 s (SPEC §3.2 single); symmetry's count keeps its 6.5 s
+      return typeof t.answer === 'number' ? 5_000 + 1_500 * slotCount(t) : 8_000
   }
 }
