@@ -1,8 +1,9 @@
 // Instructions per task kind (SPEC §3.4): the long form is read the first three times a profile
 // meets a kind, the short form after that. All fifteen kinds are here, so wave 2 and 3 only add
 // their views (wave 2's words match its views: both clock hands, coins that hop, plates). Plus the
-// names of the buildBase blocks (read when their buttons are explored).
+// names of the buildBase blocks (read when their buttons are explored) and of the grid's controls.
 import type { TaskKind } from '../../../engine/types'
+import type { Wave } from '../../catalog'
 
 export const KIND_INSTRUCTIONS: Record<TaskKind, { long: string; short: string }> = {
   choice: { long: 'Tryk på det kort, der passer.', short: 'Tryk på svaret.' },
@@ -19,7 +20,8 @@ export const KIND_INSTRUCTIONS: Record<TaskKind, { long: string; short: string }
   pay: { long: 'Tryk på en mønt, så hopper den ned i bakken. Tryk på mønterne i bakken for at lægge dem tilbage. Tryk så på fluebenet.', short: 'Betal det, det koster.' },
   share: { long: 'Tryk på en tallerken for at give den en ting fra bunken. Bliv ved, til bunken er tom. Træk en ting tilbage, hvis du fortryder.', short: 'Del lige.' },
   colorParts: { long: 'Tryk på delene for at farve dem. Tryk igen for at fjerne farven. Tryk så på fluebenet.', short: 'Farv delene.' },
-  grid: { long: 'Tryk på felterne i nettet. Tryk igen for at fjerne et felt.', short: 'Tryk i nettet.' },
+  // grid (A21): a point is set in the net, or read off by its numbers on the two axes
+  grid: { long: 'Først hen, så op. Tryk i nettet, hvor punktet skal stå, eller tryk på punktets tal forneden og til venstre. Tryk så på fluebenet.', short: 'Først hen, så op.' },
 }
 
 export const instructionClip = (kind: TaskKind, form: 'long' | 'short'): string => `s.kind.${kind}.${form}`
@@ -32,5 +34,12 @@ for (const [kind, text] of Object.entries(KIND_INSTRUCTIONS)) {
 table['s.kind.buildBase.flat'] = 'Plade'
 table['s.kind.buildBase.rod'] = 'Stang'
 table['s.kind.buildBase.unit'] = 'Terning'
+// the grid's controls (A21): the net a point is set in, and the numbers along the two axes
+table['s.kind.grid.board'] = 'Nettet'
+table['s.kind.grid.along'] = 'Tallene forneden'
+table['s.kind.grid.up'] = 'Tallene til venstre'
 
 export const clips: Readonly<Record<string, string>> = table
+
+/** The grid kind is rebuilt for points in wave 3 (SPEC A21): its words are recorded with wave 3. */
+export const wave = (id: string): Wave => (id.startsWith('s.kind.grid.') ? 3 : 1)
