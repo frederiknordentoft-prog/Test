@@ -1,7 +1,8 @@
 // area — Areal (SPEC §2.2, pædagogik-forslaget §1.3). Procedure, prefix `ara:`, four families drawn on
 // the square grid (Prompt 'area': the figure's squares filled on a grid one square wider all round):
-//   countSquares  ara:n:<k>              5–12 squares grown at random inside a 5-by-4 box, without holes
-//                                        and never a whole rectangle; k = 0–999 seeds it (canonical 0–19)
+//   countSquares  ara:n:<b><t>.<b><t>…    3–5 columns of squares in a 5-by-4 box, each from row b to row t
+//                                        (0 at the bottom), touching: 5–12 squares, no hole, never a
+//                                        rectangle (20 canonical, seeded)
 //   rowsCols      ara:r:<rows>x<cols>    a rectangle of 2–5 rows of 2–6 squares                       20
 //   lShape        ara:l:<a>x<b>-<c>x<d>  an a-by-b rectangle (3–5 each way) with a c-by-d corner cut off;
 //                                        the corner follows from the numbers                     81 (20)
@@ -57,11 +58,10 @@ const perimeter = ([r, c]: Rect) => 2 * (r + c)
 const block = (w: number, x: number, y: number, [r, c]: Rect): number[] =>
   Array.from({ length: r * c }, (_, i) => (y + Math.floor(i / c)) * w + x + (i % c))
 
-// ─── countSquares: a random figure in the 5-by-4 box of a 7-by-6 grid ────────
+// ─── countSquares: columns of squares standing in the 5-by-4 box of a 7-by-6 grid ──
 
 const BW = 7
 const BH = 6
-const inBox = (c: number) => c >= 0 && c < BW * BH && c % BW >= 1 && c % BW <= 5 && Math.floor(c / BW) >= 1 && Math.floor(c / BW) <= 4
 
 /** The edge of a figure inside the box, counted in square sides. */
 function edgeOf(cells: readonly number[]): number {
@@ -69,41 +69,25 @@ function edgeOf(cells: readonly number[]): number {
   return cells.reduce((n, c) => n + [c - 1, c + 1, c - BW, c + BW].filter((d) => !on.has(d)).length, 0)
 }
 
-/** True when an empty square cannot be reached from the grid's border (a hole). */
-function hasHole(on: ReadonlySet<number>): boolean {
-  const seen = new Set<number>()
-  const todo = Array.from({ length: BW * BH }, (_, c) => c).filter((c) => !on.has(c) && !inBox(c))
-  for (const c of todo) seen.add(c)
-  while (todo.length > 0) {
-    const c = todo.pop()!
-    for (const d of [c % BW > 0 ? c - 1 : -1, c % BW < BW - 1 ? c + 1 : -1, c - BW, c + BW]) {
-      if (d >= 0 && d < BW * BH && !on.has(d) && !seen.has(d)) {
-        seen.add(d)
-        todo.push(d)
-      }
+/**
+ * A figure of 3–5 columns, each one run of squares from row b to row t (0 at the bottom), every column
+ * touching the one before: never a hole, and 5–12 squares that are not a rectangle.
+ */
+function columnsId(rng: Rng): string {
+  let runs: [number, number][] = []
+  for (let tries = 0; tries < 100; tries++) {
+    runs = []
+    for (let i = 3 + rng.int(3); i > 0; i--) {
+      const prev = runs[runs.length - 1]
+      let b = rng.int(4)
+      let t = b + rng.int(4 - b)
+      if (prev && (t < prev[0] || b > prev[1])) [b, t] = [Math.min(b, prev[1]), Math.max(t, prev[0])]
+      runs.push([b, t])
     }
+    const n = runs.reduce((sum, [b, t]) => sum + t - b + 1, 0)
+    if (n >= 5 && n <= 12 && runs.some(([b, t]) => b !== runs[0][0] || t !== runs[0][1])) break
   }
-  return seen.size + on.size < BW * BH
-}
-
-function blob(k: number): number[] {
-  const rng = makeRng(hashSeed(`ara:n:${k}`))
-  let cells: number[] = []
-  for (let tries = 0; tries < 60; tries++) {
-    const n = 5 + rng.int(8)
-    const on = new Set([(1 + rng.int(4)) * BW + 1 + rng.int(5)])
-    while (on.size < n) {
-      const c = rng.pick([...on])
-      const d = rng.pick([c - 1, c + 1, c - BW, c + BW])
-      if (inBox(d)) on.add(d)
-    }
-    cells = [...on].sort((a, b) => a - b)
-    const xs = cells.map((c) => c % BW)
-    const ys = cells.map((c) => Math.floor(c / BW))
-    const box = (Math.max(...xs) - Math.min(...xs) + 1) * (Math.max(...ys) - Math.min(...ys) + 1)
-    if (box !== n && !hasHole(on)) break
-  }
-  return cells
+  return `ara:n:${runs.map(([b, t]) => `${b}${t}`).join('.')}`
 }
 
 // ─── The figures from their ids ─────────────────────────────────────────────
@@ -137,7 +121,8 @@ function figure(f: Pick<Fact, 'id'>): Figure {
   const [, code, a] = f.id.split(':')
   let fig: Figure
   if (code === 'n') {
-    const cells = blob(Number(a))
+    const cells = a.split('.').flatMap(([b, t], x) => Array.from({ length: Number(t) - Number(b) + 1 }, (_, i) => (4 - Number(b) - i) * BW + 1 + x))
+    cells.sort((p, q) => p - q)
     fig = { family: 'countSquares', w: BW, h: BH, cells, answer: cells.length, edge: edgeOf(cells), other: [], parts: [0, 0] }
   } else if (code === 'r') {
     const [r, c] = parseRect(a)
@@ -191,9 +176,14 @@ function factOf(id: string, i: number): Fact {
   return { id, skill: 'area', family: fig.family, operands: [], answer: fig.answer, rank: RANK[fig.family] * 100 + i }
 }
 
-/** 20 canonical facts per family: seeds 0–19, every rectangle, and an even spread of the others. */
+/** 20 canonical facts per family: 20 seeded figures, every rectangle, and an even spread of the others. */
 const FACTS: readonly Fact[] = [
-  ...Array.from({ length: 20 }, (_, k) => factOf(`ara:n:${k}`, k)),
+  ...(() => {
+    const rng = makeRng(hashSeed('area/countSquares'))
+    const ids = new Set<string>()
+    while (ids.size < 20) ids.add(columnsId(rng))
+    return [...ids].map((id, k) => factOf(id, k))
+  })(),
   ...(['rowsCols', 'lShape', 'compareArea'] as const).flatMap((fam) => {
     const ids = IDS[fam]
     return Array.from({ length: Math.min(20, ids.length) }, (_, i) => factOf(ids[Math.floor((i * ids.length) / Math.min(20, ids.length))], i))
@@ -203,8 +193,8 @@ const FACTS: readonly Fact[] = [
 function instance(fam: FamilyDef, rng: Rng, avoid: ReadonlySet<string>): Fact {
   const family = fam.id as Family
   if (family === 'countSquares') {
-    let id = `ara:n:${rng.int(1000)}`
-    for (let i = 0; i < 50 && avoid.has(id); i++) id = `ara:n:${rng.int(1000)}`
+    let id = columnsId(rng)
+    for (let i = 0; i < 50 && avoid.has(id); i++) id = columnsId(rng)
     return factOf(id, 0)
   }
   const ids = IDS[family]

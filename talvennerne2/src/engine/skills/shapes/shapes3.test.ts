@@ -100,7 +100,7 @@ describe('shapes of 3. klasse (SK3-GEO)', () => {
 
   geoSuite(area, {
     families: { countSquares: 20, rowsCols: 20, lShape: 20, compareArea: 20 },
-    idFormat: /^ara:(n:\d{1,3}|r:[2-5]x[2-6]|l:[3-5]x[3-5]-[1-4]x[1-4]|c:[12]x[4-8]-[2-4]x[2-4])$/,
+    idFormat: /^ara:(n:[0-3]{2}(\.[0-3]{2}){2,4}|r:[2-5]x[2-6]|l:[3-5]x[3-5]-[1-4]x[1-4]|c:[12]x[4-8]-[2-4]x[2-4])$/,
     answerOf: (f, _kind, t) => areaAnswer(f, t),
     isRight: (f, t, o) => o === areaAnswer(f, t),
     ceilings: { choice: 3, keypad: 5 },
@@ -148,7 +148,13 @@ describe('area', () => {
         if (pieces.length !== 2 || JSON.stringify(want) !== JSON.stringify(got) || pieces.some((c, i) => c.length !== shape[i].rows * shape[i].cols)) problems.push(where)
       }
       if (code === 'n') {
+        // column x from the left holds rows b–t counted from the bottom row of the 5-by-4 box (grid row 4)
+        const want = a.split('.').flatMap((run, x) => {
+          const [b, t] = [Number(run[0]), Number(run[1])]
+          return Array.from({ length: t - b + 1 }, (_, i) => (4 - b - i) * p.w + 1 + x)
+        })
         const b = shape[0]
+        if (JSON.stringify([...want].sort((u, v) => u - v)) !== JSON.stringify(p.cells)) problems.push(`${where}: not its columns`)
         if (pieces.length !== 1 || p.cells.length < 5 || p.cells.length > 12 || b.rows * b.cols === p.cells.length || b.cols > 5 || b.rows > 4) problems.push(where)
       }
     }
@@ -220,14 +226,14 @@ describe('area', () => {
   })
 
   it('asks in Danish and explains each family', () => {
-    expect(textOf(task(area, 'ara:n:3', 'keypad'))).toBe('Hvor mange kvadrater dækker figuren?')
+    expect(textOf(task(area, factIdOf(area, 'countSquares'), 'keypad'))).toBe('Hvor mange kvadrater dækker figuren?')
     expect(textOf(task(area, 'ara:r:3x4', 'choice'))).toBe('Hvor mange kvadrater dækker rektanglet?')
     expect(textOf(task(area, factIdOf(area, 'compareArea'), 'keypad'))).toBe('Hvor mange flere kvadrater dækker den største figur?')
     const hint = (id: string, tag: string | null = null) => compile(area.hint(fact(area, id), tag as never).speech).text
     expect(hint('ara:r:3x4')).toBe('Der er tre rækker med fire kvadrater i hver. Tre gange fire giver tolv.')
     expect(hint('ara:r:3x4', 'areaAsPerimeter')).toBe('Arealet er de kvadrater, der dækker figuren. Tæl ikke kanten rundt om den. Der er tre rækker med fire kvadrater i hver. Tre gange fire giver tolv.')
     expect(hint('ara:l:3x4-2x2')).toBe('Del figuren i to rektangler. Det ene rektangel dækker seks kvadrater og det andet dækker to kvadrater. Seks plus to giver otte.')
-    expect(hint('ara:n:0')).toMatch(/^Peg på hvert kvadrat, mens du tæller, og tæl hvert kvadrat én gang\. Figuren dækker \w+ kvadrater\.$/)
+    expect(hint(factIdOf(area, 'countSquares'))).toMatch(/^Peg på hvert kvadrat, mens du tæller, og tæl hvert kvadrat én gang\. Figuren dækker \w+ kvadrater\.$/)
     const c = area.hint(fact(area, 'ara:c:1x8-3x3'), 'areaAsPerimeter')
     expect(c.misconception).toBe('areaAsPerimeter')
     expect(compile(c.speech).text).toContain('En lang figur er ikke altid den største.')
