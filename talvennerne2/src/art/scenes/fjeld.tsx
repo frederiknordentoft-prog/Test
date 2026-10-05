@@ -161,7 +161,7 @@ function range(w: number, h: number, k: number, o: { gap: number; hw: number; ba
   const count = Math.ceil((w + 120 * k) / (o.gap * k)) + 1
   return Array.from({ length: count }, (_, i) => {
     const x = -60 * k + (i + hash01(i + o.seed) * 0.4) * o.gap * k
-    return { x, y: h * (o.top + hash01(i + o.seed + 50) * o.spread), hw: o.hw * k * (0.85 + hash01(i + o.seed + 90) * 0.3), base: h * o.base }
+    return { x, y: h * (o.top + hash01(i + o.seed + 50) * o.spread), hw: o.hw * k * (0.72 + hash01(i + o.seed + 90) * 0.6), base: h * o.base }
   })
 }
 
@@ -192,8 +192,8 @@ export function layoutOf(w: number, h: number): Layout {
     const summit = { x: top.x, y: top.y, s: k }
     return {
       w, h, wide, k, mid, near, top, summit, glacier,
-      far: range(w, h, k, { gap: 150, hw: 105, base: 0.5, top: 0.28, spread: 0.06, seed: 1 }),
-      far2: range(w, h, k, { gap: 128, hw: 82, base: 0.53, top: 0.36, spread: 0.05, seed: 7 }),
+      far: range(w, h, k, { gap: 150, hw: 105, base: 0.5, top: 0.27, spread: 0.08, seed: 1 }),
+      far2: range(w, h, k, { gap: 128, hw: 82, base: 0.53, top: 0.35, spread: 0.06, seed: 7 }),
       massif: [
         { x: w * 0.37, y: h * 0.3, hw: 200 * k, base: h * 0.66 },
         { x: w * 0.085, y: h * 0.34, hw: 170 * k, base: h * 0.66 },
@@ -532,6 +532,8 @@ export function peakShapes(p: Peak, seed: number, snowAt: number) {
     spline([[p.x - p.hw * 0.12, depthY(p, 0.4)], [p.x - p.hw * 0.2, depthY(p, 0.58)], [p.x - p.hw * 0.3, depthY(p, 0.78)]]),
     spline([[p.x + p.hw * 0.3, depthY(p, 0.46)], [p.x + p.hw * 0.42, depthY(p, 0.66)], [p.x + p.hw * 0.5, depthY(p, 0.86)]]),
     spline([[p.x - p.hw * 0.42, depthY(p, 0.62)], [p.x - p.hw * 0.52, depthY(p, 0.84)]]),
+    spline([[p.x - p.hw * 0.4, depthY(p, 0.56)], [p.x - p.hw * 0.27, depthY(p, 0.53)], [p.x - p.hw * 0.14, depthY(p, 0.555)]]),
+    spline([[p.x + p.hw * 0.18, depthY(p, 0.73)], [p.x + p.hw * 0.34, depthY(p, 0.7)], [p.x + p.hw * 0.5, depthY(p, 0.74)]]),
   )
   return { body, cap, shade, glow, lines }
 }
@@ -545,7 +547,7 @@ function Peaks({ peaks, seed, fill, snow, snowAt, shadeO, glowO, k, line, paper 
     <>
       {paper && <path d={join(...peaks.map((p, i) => peakShapes({ ...p, y: p.y - 5 * k, base: p.base - 5 * k }, seed + i, snowAt).body))} fill={FJELD.paperShadow} opacity={0.14} />}
       <path d={join(...sh.map((s) => s.body))} fill={fill} />
-      {line && <path d={join(...sh.map((s) => s.lines))} fill="none" stroke={line} strokeWidth={1.6 * k} opacity={0.55} {...ROUND} />}
+      {line && <path d={join(...sh.map((s) => s.lines))} fill="none" stroke={line} strokeWidth={1.6 * k} opacity={0.65} {...ROUND} />}
       <path d={join(...sh.map((s) => s.cap))} fill={snow} />
       <path d={join(...sh.map((s) => s.shade))} fill={FJELD.shade} opacity={shadeO} />
       <path d={join(...sh.map((s) => s.glow))} fill="none" stroke={FJELD.alpenglow} strokeWidth={4.4 * k} opacity={glowO * 0.7} {...ROUND} />
@@ -1091,7 +1093,7 @@ const cloud = (p: Place) => {
 /** Bækken bliver bredere nedstrøms (fuld bredde pr. punkt); fra gletsjerens tunge til issøen. */
 export const streamWidths = (L: Layout) => L.stream.map((_, i) => (7 + i * (24 / Math.max(1, L.stream.length - 1))) * L.k)
 /** Stiens bredde ved y: smal langt oppe ad fjeldet, bredere forrest (perspektiv). */
-const trailWidth = (L: Layout, y: number) => (5 + 11 * clamp((y - L.h * 0.25) / (L.h * 0.7), 0, 1)) * L.k
+const trailWidth = (L: Layout, y: number) => (4 + 10 * clamp((y - L.h * 0.25) / (L.h * 0.7), 0, 1) ** 1.3) * L.k
 
 // ---------------------------------------------------------------------------------------------
 // Scenen
