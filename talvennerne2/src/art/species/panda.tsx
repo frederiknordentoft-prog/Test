@@ -16,7 +16,7 @@ import { STAGE_XF } from '../rig/anchors'
 import { mixHex } from '../rig/oklch'
 import { blob, capsule, ellipse, frame, join, mirrorX, n, offsetLoop, quad, ring, spline, symmetric, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
-import type { AnchorSet, OutlineFn, Palette, Part, SidePart, SpeciesDef, Stage } from '../rig/types'
+import type { AnchorSet, OutlineFn, Palette, Part, PartCtx, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { BAMBOO, PANDA_COLORWAYS } from './panda.colorways'
 
 const round = ROUND
@@ -182,6 +182,23 @@ const Paw: SidePart = ({ pal, sw, side, mood, still, clothed, stage }) => {
   )
 }
 
+/**
+ * Potens greb om skjoldet (review G2-r4 T16, SPEC A17): skjoldet tegnes over den hvilende arm (`handGrip`), og bagefter
+ * tegnes armens nederste del – poten under `GRIP_CUT` i armens ramme – igen oven på skjoldets nederste venstre hjørne,
+ * så pandaen holder skjoldet foran sig i stedet for at kramme det bagfra. Klippets kant buer som knoerne på en pote.
+ */
+const GRIP_CUT = 20
+const GRIP_EDGE = `M-40 80V${GRIP_CUT + 1.5}Q-20 ${GRIP_CUT - 2.5} 0 ${GRIP_CUT - 3}Q20 ${GRIP_CUT - 2.5} 40 ${GRIP_CUT + 1.5}V80Z`
+const gripClip = (ids: PartCtx['ids']) => `${ids.uid}pg`
+const PawGrip: SidePart = ({ pal, sw, ids }) => (
+  <g transform={`rotate(${PAW_ROT})`}>
+    <clipPath id={gripClip(ids)}>
+      <path d={GRIP_EDGE} />
+    </clipPath>
+    <path d={blob(ARM)} fill={ink(pal)} stroke={pal.outline} strokeWidth={sw} strokeLinejoin="round" clipPath={`url(#${gripClip(ids)})`} />
+  </g>
+)
+
 /** Løftede arme (lokalt om skulderen). Roden ligger på brystet; konturen er åben dér. */
 const UP_SPINES = {
   cheer: [[6, 6], [0, -3], [-8, -13], [-16, -23], [-22, -33]] as Vec[],
@@ -313,6 +330,8 @@ export const panda: SpeciesDef = {
   breeds: [{ id: 'std', name: 'panda' }],
   colorways: PANDA_COLORWAYS,
   magic: ['gold', 'rainbow'],
+  // Skjoldet foran maven tegnes over armen, og poten griber om dets nederste kant (review G2-r4 T16, SPEC A17).
+  handGrip: { items: ['ridder-hand'], Grip: PawGrip },
   anchors: {
     headCenter: { x: 100, y: 98 },
     headRx: 56,

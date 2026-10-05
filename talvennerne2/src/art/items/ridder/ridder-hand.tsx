@@ -10,7 +10,7 @@
 // om benet under skjoldets midte viser grebet.
 import { aimAway, aimSolo } from '../../rig/hold'
 import type { Vec } from '../../rig/shapes'
-import type { AnchorSet, HandHold, ItemArt, Pt } from '../../rig/types'
+import type { AnchorSet, HandHold, ItemArt, Pt, Stage } from '../../rig/types'
 import { aimFrame, cws, def, fitAt, groundPaw, group, S } from './kit/mestring'
 
 /** Skjoldets form om centrum (venstre halvdel, top → spids): bredde 30, højde 35. */
@@ -71,14 +71,28 @@ function legStrap(a: AnchorSet, local: (p: Pt) => Pt, toFrame: (q: Pt) => Vec, c
   return S.blob([[x0, y - h], [(x0 + x1) / 2, y - h * 1.15], [x1, y - h], [x1, y + h], [(x0 + x1) / 2, y + h * 1.1], [x0, y + h]], 0.35)
 }
 
-const front: ItemArt = ({ c, sw, a, hold, local }) => {
+/**
+ * Vædderens hængeøre i stadie 2 (review G2-r4 T17): øret og poten dækkede skjoldets øverste tredjedel, så skjoldet
+ * sænkes `dy` hovedenheder for netop den figur, som `groundPaw` finder de lange forben ud fra ankrene: ørerne sidder
+ * bredt på hovedet (vædderens ørerødder) og hænger langt under hovedets ellipse (hovedets grænseboks), poten hviler, og
+ * stadiet er 2. Stadie 1 og 3 og alle andre figurer står som før.
+ */
+const LOP = { dy: 7, earX: 30, hang: 18 }
+const lopEars = (a: AnchorSet, hold: HandHold, stage: Stage) =>
+  stage === 2 &&
+  !hold.front &&
+  a.earBaseR.x - a.headCenter.x >= LOP.earX &&
+  hold.head.box.y1 - (hold.head.y + hold.head.ry) >= LOP.hang * hold.head.s
+
+const front: ItemArt = ({ c, sw, a, hold, local, stage }) => {
   // Grebet sidder i skjoldets nederste indre kant; prøvepunkterne dækker hele skjoldet.
   const samples = [{ at: 6, r: 10 }, { at: CENTER, r: 22 }].map((p) => ({ at: p.at * SIZE, r: p.r * SIZE }))
   const P = hold ? aimAway(hold, samples, AIM, STEP) : aimSolo(a.handRot, -60)
   // Tegnes i en ramme drejet tilbage til verdensrummet (lyset oppefra til venstre, korset lodret).
   const { along, world, m, rot } = aimFrame(P, SIZE)
   const onGround = groundPaw(a, hold)
-  const [cx, cy] = onGround ? world(onLeg(hold)) : along(CENTER)
+  const [cx, cy0] = onGround ? world(onLeg(hold)) : along(CENTER)
+  const cy = hold && !onGround && lopEars(a, hold, stage) ? cy0 + (LOP.dy * m) / SIZE : cy0
   const place = (pts: readonly Vec[]) => S.xf(pts, { sx: m, dx: cx, dy: cy })
   const t = (-rot * Math.PI) / 180
   const toFrame = (q: Pt): Vec => [q.x * Math.cos(t) - q.y * Math.sin(t), q.x * Math.sin(t) + q.y * Math.cos(t)]

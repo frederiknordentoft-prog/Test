@@ -7,7 +7,8 @@
 // butikskortet på dyret (review G1-r4, B2). På butikskortet på dyret (`showcase`, review G2-r3 B16) peger staven
 // skråt ud til siden i stedet for op langs armen: skaftet går fri af poten, og stjernen sidder under øjnene, så
 // kortet viser en stav (skaft og stjerne) og kan beskæres under øjnene. På de lange forben, der står på jorden,
-// går staven allerede fri af benet og peger op som ellers.
+// peger staven op som ellers og tegnes foran benet (`art.over`, SPEC A17; review G2-r4 §2.3), så skaftet ses i stedet
+// for at gemme sig bag forbenet; enden sidder ved poten.
 import { aimAway, aimSolo } from '../../rig/hold'
 import type { ItemArt } from '../../rig/types'
 import { aimFrame, cws, def, fitAt, groundPaw, group, S } from '../ridder/kit/mestring'
@@ -44,7 +45,8 @@ const front: ItemArt = ({ c, sw, a, hold, showcase }) => {
 
 export const talmagikerHand = def('talmagiker-hand', {
   colorways: cws('nat|natblå|navy|snow|sunflower', 'lilla|lilla|violet|cream|rose', 'kul|kulsort|charcoal|gold|mint'),
-  art: { front },
+  // Foran poten kun på forben, der står på jorden (som skjoldet); ellers ligger poten over grebet som før.
+  art: { front, over: ({ a, hold }) => groundPaw(a, hold) },
   fit: fitAt('pawR', 'fixed', 30),
   reach: true,
   icon: { box: [-14, -60, 60, 70] },
