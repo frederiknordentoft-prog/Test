@@ -501,6 +501,10 @@ const CONVENTION_IDS: Readonly<Partial<Record<SkillId, RegExp>>> = {
   addTo10: /^add:\d+\+\d+$/, addTo20: /^add:\d+\+\d+$/, subTo10: /^sub:\d+-\d+$/, subTo20: /^sub:\d+-\d+$/,
   tenFriends: /^ten:\d+$/, doubles: /^dbl:\d+$/, halves: /^hlf:\d+$/, missingPart10: /^mp:\d+\+\?=\d+$/,
   mul2510: /^mul:\d+x\d+$/, mul34: /^mul:\d+x\d+$/, mul6to9: /^mul:\d+x\d+$/, div2510: /^div:\d+\/\d+$/, divAll: /^div:\d+\/\d+$/,
+  // wave 3 (ORK3c): the prefixes SK3-MAAL's skills document in their modules
+  clockFive: /^fem:(?:over|iHalv|overHalv|i|halfForm):\d+$/, clockDigital: /^dig:(?:analogToDigital|digital24):\d+$/,
+  clockElapsed: /^tid:(?:plusHour|plusHalf|plusQuarter|minusHalf):\d+$/, kronerOre: /^kro:(?:readAmount|fiftiesInKroner|addHalves):\d+$/,
+  convertCmM: /^cmm:(?:mToCm|cmToMCm):\d+$|^cmm:(?:mCmToCm|compareMixed):\d+:\d+$/,
   add1000: /^a1000:\d+\+\d+$/, sub1000: /^s1000:\d+-\d+$/, mulTens: /^mt:\d+x\d+$/,
 }
 /** Prefixes CONVENTIONS lets several skills share (the recall tables of 0.–3. klasse). */

@@ -9,7 +9,7 @@
 // and never from the generator code. Wrong clocks are explained with pædagogik §3.2's formulas, per skill as
 // SPEC §4.2 (pædagogik §3.2's skill column) gives them:
 //   clockFive     quarterDirection  "over" and "i" swapped: the time mirrored around the hour or half hour the
-//                                   phrase counts from (fem minutter over tre ↔ fem minutter i tre)
+//                                   phrase counts from (fem minutter over tre for fem minutter i tre)
 //                 halfPastNext      a "halv" phrase with "halv tre" taken as 3:30: + 60
 //                 hourHandMisread   past the half hour the short hand is near the next number: the clock an hour
 //                                   earlier is the one that looks like the time (pædagogik: "aflæsning")
@@ -20,7 +20,7 @@
 //                 handsSwapped      reading: the swapped clock; setting: the long hand on the hour number and the
 //                                   short hand on the minutes' number (3:00 → 12:15)
 //                 halfPastNext      only the 24-hour cards, where the time is said and the phrase has "halv"
-//   clockElapsed  wrongOperation    the hands turned the other way ("om lidt" ↔ "for lidt siden"), unless the
+//   clockElapsed  wrongOperation    the hands turned the other way ("om lidt" for "for lidt siden"), unless the
 //                                   same clock is the likelier slip of leaving the hour behind across the hour
 //                 halfPastNext      a start on "halv", taken as the hour after
 // The registry skips *.oracle.ts files, so none of this reaches the app.

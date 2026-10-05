@@ -11,8 +11,9 @@ import { masteryKeyOf } from '../../tasks'
 import type { AnswerValue, ErrorTag, Fact, HintSpec, SkillDef, Task } from '../../types'
 import { factFor } from '../../../ui/hint/hintFor'
 import {
-  answerProblems, cardProblems, first, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
+  answerProblems, cardProblems, first, globalIdProblems, hintProblems, registeredSkill, spokenText, tagsToHint, taskSpeechProblems, type Built,
 } from '../number/number.oracle'
+import { registeredSkills } from '../../registry'
 import { sentences } from '../algebra/algebra2.oracle'
 import { word99 } from '../number/number2.oracle'
 import { avoidProblemsB, onDial, prefixProblems, specificHintProblems } from './clock.oracle'
@@ -581,6 +582,22 @@ function elapsedHintProblems(o: { s: number; d: number; a: number }, tag: ErrorT
   if (v.scene !== 'clockMove' || ends.join() !== want.join() || onDial(v.to - v.from) !== Math.abs(o.d)) out.push(`shows ${JSON.stringify(v)}`)
   return out
 }
+
+// ═══ Fact ids across every registered skill (CONVENTIONS) ═══════════════════
+
+describe('fact ids of SK3-MAAL’s five skills (CONVENTIONS, Fact-id’er)', () => {
+  const MINE: readonly string[] = ['clockFive', 'clockDigital', 'clockElapsed', 'kronerOre', 'convertCmM']
+
+  it('are unique across every registered skill (instances too), in the format each module documents, one prefix per skill', () => {
+    const all = registeredSkills()
+    expect(MINE.every((id) => all.some((d) => d.id === id))).toBe(true)
+    const prefixes = new Map<string, string>()
+    for (const d of all) for (const f of d.enumerate()) prefixes.set(f.id.slice(0, f.id.indexOf(':')), d.id)
+    const mine = (p: string) => MINE.some((id) => new RegExp(`\\b${id}\\b`).test(p)) || [...prefixes].some(([pre, id]) => MINE.includes(id) && p.includes(`${pre}:`))
+    expect(first(globalIdProblems(all).filter(mine))).toEqual([])
+    expect(MINE.map((id) => [...prefixes].filter(([, d]) => d === id).map(([p]) => p))).toEqual([['fem'], ['dig'], ['tid'], ['kro'], ['cmm']])
+  }, TIMEOUT)
+})
 
 // ═══ The three together (Minuttårnet) ════════════════════════════════════════
 
