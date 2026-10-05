@@ -155,9 +155,10 @@ describe('fractionOfSet oracle', () => {
    * so the child hands in one of ⌊total/2⌋ + 1 deals (3/4 of 4: 4|0, 3|1 or 2|2 — one in three). Counted
    * as A14 counts what the child can enter (and as keypad, choice and grid do), three quarters of 4, 8 and
    * 12 are guessed 1 in 3, 5 and 7: above 12 %, no production, and a lucky deal must not lift the key past
-   * box 3. (16 and up are 1 in 9 or less: production either way.)
+   * box 3. (16 and up are 1 in 9 or less: production either way.) GENERATOR BUG — Rettet (fractionOfSet.ts
+   * guessFloor): the deal was guessP 0.01, production with box 5, on every heap.
    */
-  it.fails('lifts a two-plate deal of three quarters to box 5 only when the deals the view takes make a guess unlikely (A14’s rule)', () => {
+  it('lifts a two-plate deal of three quarters to box 5 only when the deals the view takes make a guess unlikely (A14’s rule)', () => {
     const problems: string[] = []
     for (const { task } of built) {
       if (task.kind !== 'share' || task.answerType !== 'set') continue

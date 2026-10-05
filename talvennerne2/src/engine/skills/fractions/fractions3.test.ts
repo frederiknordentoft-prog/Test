@@ -9,7 +9,7 @@ import { tasksUnderTest } from '../number/testing/harness'
 import { buildTask } from '../../tasks'
 import { isCorrect } from '../../answer'
 import { classifyAnswer, detectableOf } from '../../misconceptions'
-import { isProduction } from '../../kinds'
+import { guessP, isProduction } from '../../kinds'
 import { makeRng } from '../../rng'
 import { compile } from '../../../speech/compile'
 import { canShare, shareValue } from '../../../ui/task/share/logic'
@@ -41,6 +41,14 @@ const ofSet = (id: string) => {
   const [n, d] = nd.split('/').map(Number)
   return { n, d, total: Number(total), part: (Number(total) * n) / d }
 }
+/**
+ * How often a deal of three quarters on two plates is right by luck: the view takes only an empty pile, so
+ * it is one of ⌊total/2⌋ + 1 deals (4: 4|0, 3|1, 2|2). 0 for a deal onto d plates (SPEC's 0.01 stands).
+ */
+const dealGuess = (f: Pick<Fact, 'id'>) => {
+  const { n, total } = ofSet(f.id)
+  return n > 1 ? 1 / (Math.floor(total / 2) + 1) : 0
+}
 /** The value of a fraction card. */
 const valueOf = (o: AnswerValue) => {
   const [n, d] = String(o).slice(5).split('/').map(Number)
@@ -59,6 +67,7 @@ describe('fractions of 3. klasse (SK3-GEO)', () => {
     },
     isRight: (f, _t, o) => o === ofSet(f.id).part,
     ceilings: { share: 5, choice: 3, keypad: 5 },
+    guessable: (f, kind) => kind === 'share' && dealGuess(f) > 0.12,
   })
 
   geoSuite(fractionCompare, {
@@ -90,7 +99,9 @@ describe('fractionOfSet', () => {
         continue
       }
       const p = t.prompt as Extract<Prompt, { scene: 'share' }>
-      expect([p.total, p.recipients, canShare(t), isProduction(t)], f.id).toEqual([total, n > 1 ? 2 : d, true, true])
+      // three quarters of 4, 8 and 12 are one deal in 3, 5 and 7: no production (box 3); 16 and up are
+      expect([p.total, p.recipients, canShare(t), isProduction(t)], f.id).toEqual([total, n > 1 ? 2 : d, true, !(n > 1 && total <= 12)])
+      expect(guessP(t), f.id).toBeCloseTo(Math.max(0.01, dealGuess(f)), 12)
       // the right deal hands in the answer, an uneven one −1 (or a wrong split)
       const each = total / p.recipients
       const fair = n > 1 ? [t.answer, total - (t.answer as number)].map(Number) : Array.from({ length: p.recipients }, () => each)

@@ -11,7 +11,9 @@
 //     Hvor mange er en fjerdedel?" — the things onto d plates, the answer how many each plate got (the
 //     share view hands in that count, or −1 for an uneven deal: shareUnequal). Three quarters are dealt
 //     onto two plates, "Den ene skal have tre fjerdedele og den anden resten.", and handed in as the deal
-//     itself, '9|3' (answerType 'set', largest first).
+//     itself, '9|3' (answerType 'set', largest first). The view takes only an empty pile, so that is one
+//     of ⌊total/2⌋ + 1 deals, guessed as often (guessFloor, as A14 counts what the child can enter): three
+//     quarters of 4, 8 and 12 (1 in 3, 5 and 7) are no production, from 16 on (1 in 9 or less) they are.
 //   choice and keypad (production, 0–24): "Hvor mange er en fjerdedel af tolv jordbær?" ("Hvad er
 //     halvdelen af …") over the heap (Prompt 'objects', scattered).
 // Wrong answers: denominatorAsAnswer — the denominator itself (¼ of 12 → 4; the fraction is said, not a
@@ -151,5 +153,10 @@ export default {
   speech,
   candidates,
   candidatesFor: (f: Fact, kind: TaskKind) => (kind === 'share' ? [] : candidates(f)),
+  // a deal on two plates is one of ⌊total/2⌋ + 1 (12|0 … 6|6 for twelve things)
+  guessFloor: (f: Fact, kind: TaskKind) => {
+    const p = parse(f)
+    return twoPlates(p, kind) ? 1 / (Math.floor(p.total / 2) + 1) : 0
+  },
   hint,
 } satisfies SkillModule
