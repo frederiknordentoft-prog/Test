@@ -44,22 +44,28 @@ const HORN_W = [14, 12.5, 10, 6.5, 2.6]
 const HORN = ribbon(HORN_SPINE, HORN_W)
 /** Hornets skyggeside: en smal stribe langs ydersiden. */
 const HORN_SHADE = ribbon(xf(HORN_SPINE, { dx: -2.2, dy: 0.6 }).slice(1), [6, 4.6, 2.8, 0.8])
-const HORNS_D = join(blob(HORN, 0.8), blob(mirrorX(HORN, 100), 0.8))
-const HORN_SHADE_D = join(blob(HORN_SHADE, 0.8), blob(mirrorX(HORN_SHADE, 100), 0.8))
-
 /**
  * Hornene vokser med manken (1,3 om issen) på stor; her dæmpes det til ca. 1,17 (SPEC: horn 1,25), så spidserne
- * bliver i den sikre zone, også når hovedet vipper i jubel, ups og vink.
+ * bliver i den sikre zone, også når hovedet vipper i jubel, ups og vink. Skalaen er bagt ind i stierne om issen.
  */
 const HORN_STAGE3 = 0.9
-const Horns: Part = ({ pal, sw, stage, a }) => {
-  const k = stage === 3 ? HORN_STAGE3 : 1
-  const t = a.headTop
+const HEAD_TOP: Vec = [100, 45]
+const hornPaths = (k: number) => {
+  const sc = (pts: readonly Vec[]) => (k === 1 ? [...pts] : xf(pts, { sx: k, about: HEAD_TOP }))
+  return {
+    horns: join(blob(sc(HORN), 0.8), blob(mirrorX(sc(HORN), 100), 0.8)),
+    shade: join(blob(sc(HORN_SHADE), 0.8), blob(mirrorX(sc(HORN_SHADE), 100), 0.8)),
+  }
+}
+const HORN_D = { 1: hornPaths(1), 3: hornPaths(HORN_STAGE3) }
+
+const Horns: Part = ({ pal, sw, stage }) => {
+  const d = HORN_D[stage === 3 ? 3 : 1]
   return (
-    <g transform={k !== 1 ? `translate(${t.x} ${t.y}) scale(${k}) translate(${-t.x} ${-t.y})` : undefined}>
-      <path d={HORNS_D} fill={bone(pal)} stroke={pal.outline} strokeWidth={sw / k} {...round} />
-      {!pal.silhouette && <path d={HORN_SHADE_D} fill={boneShade(pal)} />}
-    </g>
+    <>
+      <path d={d.horns} fill={bone(pal)} stroke={pal.outline} strokeWidth={sw} {...round} />
+      {!pal.silhouette && <path d={d.shade} fill={boneShade(pal)} />}
+    </>
   )
 }
 
@@ -148,23 +154,28 @@ const BONES: Vec[][] = [
   [WRIST, [-59, -40], [-68.5, -26]],
   [WRIST, [-54, -30], [-57.5, -5.5]],
 ]
-const MEMBRANE_D = join(blob(MEMBRANE, 0.8), blob(mirrorX(MEMBRANE), 0.8))
-const BONES_D = join(...BONES.flatMap((b) => [spline(b), spline(mirrorX(b))]))
 /**
  * Ungens vinger er en anelse større i forhold til kroppen (tommelkloen holder afstand til finnen på det store babyhoved).
  * På stor dæmpes riggens vækst (1,2) til ca. 1,12, så fingerspidserne bliver i den sikre zone, også når jubel vipper
- * figuren.
+ * figuren. Skalaen er bagt ind i stierne (ingen ekstra gruppe).
  */
 const WING_STAGE: Record<Stage, number> = { 1: 1.05, 2: 1, 3: 0.93 }
+const wingPaths = (k: number) => {
+  const sc = (pts: readonly Vec[]) => xf(pts, { sx: k })
+  return {
+    membrane: join(blob(sc(MEMBRANE), 0.8), blob(mirrorX(sc(MEMBRANE)), 0.8)),
+    bones: join(...BONES.map(sc).flatMap((b) => [spline(b), spline(mirrorX(b))])),
+  }
+}
+const WING_D: Record<Stage, ReturnType<typeof wingPaths>> = { 1: wingPaths(WING_STAGE[1]), 2: wingPaths(WING_STAGE[2]), 3: wingPaths(WING_STAGE[3]) }
 
 const Wings: Part = ({ pal, sw, stage, ids }) => {
-  const k = WING_STAGE[stage]
-  const s = sw / k
+  const d = WING_D[stage]
   return (
-    <g transform={k !== 1 ? `scale(${k})` : undefined}>
-      <path d={MEMBRANE_D} fill={skin(pal, ids)} stroke={pal.outline} strokeWidth={s} {...round} />
-      {!pal.silhouette && <path d={BONES_D} fill="none" stroke={pal.fur} strokeWidth={s * 1.15} {...round} />}
-    </g>
+    <>
+      <path d={d.membrane} fill={skin(pal, ids)} stroke={pal.outline} strokeWidth={sw} {...round} />
+      {!pal.silhouette && <path d={d.bones} fill="none" stroke={pal.fur} strokeWidth={sw * 1.15} {...round} />}
+    </>
   )
 }
 
@@ -250,7 +261,7 @@ const Feet: Part = ({ pal, sw, stage }) => {
 
 const TAIL_SPINE: Vec[] = [[-3, 0], [8, 5], [18, 7], [26, 4], [30, -4], [30.5, -13]]
 const TAIL = blob(ribbon(TAIL_SPINE, [15, 14, 12, 10, 8.5, 7]), 0.9)
-const SPADE: Vec[] = [[30.5, -30], [35.5, -24.5], [38, -19], [36.5, -14], [33, -13], [30.5, -15.5], [28, -13], [24.5, -14], [23, -19], [25.5, -24.5]]
+const SPADE: Vec[] = [[30.5, -30], [35, -24.5], [37, -19], [35.8, -14], [32.6, -13], [30.5, -15.5], [28.4, -13], [25.2, -14], [24, -19], [26, -24.5]]
 const SPADE_D = blob(SPADE, 0.72)
 /** Ungens hale er lidt større (som føllets), så den står frem ved siden af den lille krop. */
 const BABY_TAIL = 1.15
@@ -346,7 +357,7 @@ export const dragon: SpeciesDef = {
   maneOrigin: 'headTop',
   // Tankebobler og Zzz (fælles regel): til højre for kinden, et godt stykke under finnen, så de holder 8 enheder fri af
   // hoved og finne, også når hovedet vipper og finnerne hænger i søvn.
-  fx: { x: 178, y: 120 },
+  fx: { x: 178, y: 128 },
   face: { idleMouth: 'smile', cheeks: true },
   ears: { splay: 58, behind: true, clip: false },
   signature: 'smoke-puff',
@@ -354,12 +365,12 @@ export const dragon: SpeciesDef = {
   // Forbenene står på jorden: glad løfter dem ud til siden (tegnet −30°, så glad-hoppets 30° passer), og ups er en
   // pote op til kinden. Halen drejer kun en anelse udad i humørene, så spaden holder afstand til vingen og låret.
   poses: {
-    happy: { pawL: { up: true, rot: 30 }, pawR: { up: true, rot: 30 }, tail: 4 },
-    cheer: { tail: 4 },
+    happy: { pawL: { up: true, rot: 30 }, pawR: { up: true, rot: 30 }, tail: 2 },
+    cheer: { tail: 2 },
     think: { tail: 2 },
     oops: { pawL: 0, pawR: { up: true }, tail: 2 },
     sleep: { pawL: 0, pawR: 0, tail: 0 },
-    wave: { tail: 4 },
+    wave: { tail: 2 },
   },
   parts: {
     head: dragonHead,

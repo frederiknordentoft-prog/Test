@@ -34,46 +34,52 @@ import type { WebTable } from './shared/equine'
  * vingen aldrig læses som en manke eller en sky om hovedet.
  */
 const FAN: Vec[] = [
-  [-12, 7], [-6, -11], [-10, -32], [-18, -52], [-30, -68], [-42, -78], [-52, -86], [-60, -94], [-66, -100], [-69.5, -103.5],
-  [-71, -98], [-71, -86], [-70.5, -74], [-70, -64], [-64, -66.5], [-66.5, -58], [-66, -50], [-59, -53.5], [-61, -44],
+  [-12, 7], [-6, -11], [-10, -32], [-18, -52], [-30, -68], [-42, -78], [-52, -85], [-60, -91], [-65.5, -95], [-69.5, -97],
+  [-71, -92], [-71, -83], [-70.5, -73.5], [-70, -64], [-64, -66.5], [-66.5, -58], [-66, -50], [-59, -53.5], [-61, -44],
   [-60, -36], [-53, -40.5], [-54, -31], [-52, -22], [-45, -27.5], [-45.5, -18], [-42, -10], [-35, -15.5], [-34, -6], [-30, 0],
   [-24, -5], [-21, 2], [-18, 6],
 ]
 /** Dækfjerene: forkanten (samme punkter som svingfjerene) og en underkant med små fjerspidser, der peger nedad. */
 const COVERT: Vec[] = [
-  [-4, -2], [-6, -11], [-10, -32], [-18, -52], [-30, -68], [-42, -78], [-52, -86], [-60, -94], [-66, -100], [-69.5, -103.5],
-  [-69, -95], [-66, -88], [-62, -88.5], [-58, -80], [-53, -80.5], [-48, -72], [-42, -71.5], [-37, -62], [-31, -61.5],
-  [-26, -51], [-20, -49.5], [-16, -36], [-11, -33], [-8, -18],
+  [-4, -2], [-6, -11], [-10, -32], [-18, -52], [-30, -68], [-42, -78], [-52, -85], [-60, -91], [-65.5, -95], [-69.5, -97],
+  [-69, -89], [-66, -84], [-62, -85], [-58, -78], [-53, -79], [-48, -71], [-42, -71], [-37, -62], [-31, -61.5], [-26, -51],
+  [-20, -49.5], [-16, -36], [-11, -33], [-8, -18],
 ]
 /** Skillelinjerne mellem svingfjerene (fra dækfjerene ned til hakkerne). */
 const QUILLS: Vec[][] = [
-  [[-62, -84], [-64, -75], [-64, -66.5]],
+  [[-62, -81], [-64, -74], [-64, -66.5]],
   [[-54, -76], [-57.5, -64], [-59, -53.5]],
   [[-44, -68], [-50, -54], [-53, -40.5]],
   [[-33, -58], [-41, -42], [-45, -27.5]],
   [[-22, -46], [-30, -30], [-35, -15.5]],
   [[-13, -30], [-20, -17], [-24, -5]],
 ]
-const FAN_D = join(blob(FAN, 0.86), blob(mirrorX(FAN), 0.86))
-const COVERT_D = join(blob(COVERT, 0.86), blob(mirrorX(COVERT), 0.86))
-const QUILLS_D = join(...QUILLS.flatMap((q) => [spline(q), spline(mirrorX(q))]))
 /**
  * Føllets vinger er større i forhold til kroppen, så de står frem ved siden af det store babyhoved. På stor vokser
  * vingerne 1,2 i riggen; her dæmpes væksten til ca. 1,1, så spidserne bliver i den sikre zone, også når jubel vipper
- * figuren 2° (som stjernehornets `hornGrowth`).
+ * figuren 2° (som stjernehornets `hornGrowth`). Skalaen er bagt ind i stierne: signaturgruppen (`a-flap`) animeres med
+ * CSS-transform, som ellers ville erstatte en transform-attribut på samme gruppe.
  */
 const WING_STAGE: Record<Stage, number> = { 1: 1.3, 2: 1, 3: 0.92 }
+const wingPaths = (k: number) => {
+  const sc = (pts: readonly Vec[]) => xf(pts, { sx: k })
+  return {
+    fan: join(blob(sc(FAN), 0.86), blob(mirrorX(sc(FAN)), 0.86)),
+    covert: join(blob(sc(COVERT), 0.86), blob(mirrorX(sc(COVERT)), 0.86)),
+    quills: join(...QUILLS.map(sc).flatMap((q) => [spline(q), spline(mirrorX(q))])),
+  }
+}
+const WING_D: Record<Stage, ReturnType<typeof wingPaths>> = { 1: wingPaths(WING_STAGE[1]), 2: wingPaths(WING_STAGE[2]), 3: wingPaths(WING_STAGE[3]) }
 
 const Wings: Part = ({ pal, sw, stage, still, ids, lod }) => {
-  const k = WING_STAGE[stage]
-  const s = sw / k
+  const d = WING_D[stage]
   // Svingfjerene: regnbuens fire striber, ellers fjertonen (en lys tone af manken).
   const feather = pal.gradient ? `url(#${ids.gradient})` : (pal.mane2 ?? mixHex(pal.fur, pal.mane, 0.45))
   return (
-    <g className={still ? undefined : 'a-flap'} transform={k !== 1 ? `scale(${k})` : undefined}>
-      <path d={FAN_D} fill={feather} stroke={pal.outline} strokeWidth={s} {...round} />
-      {lod === 'full' && !pal.silhouette && <path d={QUILLS_D} fill="none" stroke={pal.outline} strokeOpacity={0.4} strokeWidth={s * 0.5} {...round} />}
-      <path d={COVERT_D} fill={pal.fur} stroke={pal.outline} strokeWidth={s} {...round} />
+    <g className={still ? undefined : 'a-flap'}>
+      <path d={d.fan} fill={feather} stroke={pal.outline} strokeWidth={sw} {...round} />
+      {lod === 'full' && !pal.silhouette && <path d={d.quills} fill="none" stroke={pal.outline} strokeOpacity={0.4} strokeWidth={sw * 0.5} {...round} />}
+      <path d={d.covert} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
     </g>
   )
 }
@@ -154,14 +160,14 @@ export const pegasus: SpeciesDef = {
   },
   maneOrigin: 'headTop',
   // Tankebobler og Zzz (fælles regel): i fri luft til højre for hovedet, mindst 8 enheder fra manke og øre.
-  fx: { x: 180, y: 66 },
+  fx: { x: 178, y: 64 },
   face: { idleMouth: 'smile', cheeks: true },
   ears: { splay: 16 },
   signature: 'wing-flap',
   // Forbenene står på jorden: glad løfter dem let ud (se `HappyLeg`); ups løfter en hov genert op ved mulen.
   poses: {
     happy: { pawL: { up: true, behind: true, rot: 30 }, pawR: { up: true, behind: true, rot: 30 }, tail: 3 },
-    cheer: { tail: 3 },
+    cheer: { tail: 0 },
     think: { tail: -3 },
     oops: { pawL: 0, pawR: { up: true }, tail: 2 },
     sleep: { pawL: 0, pawR: 0 },
