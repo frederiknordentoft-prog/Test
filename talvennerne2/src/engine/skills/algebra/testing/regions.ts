@@ -16,7 +16,14 @@ import type { ErrorTag, SkillDef, SkillId } from '../../../types'
 
 const ctx = { day: '2026-10-02', sessionId: 's', audioVerified: true }
 
-export function regionSuite(name: string, mine: ReadonlySet<SkillId>, clipFile: string, pack: string): void {
+/** The clip file's wave (2 for the skills of 1.–2. klasse, 3 for Stjernefjeldet) and its least number of clips. */
+export interface RegionClipOptions {
+  wave?: 2 | 3
+  minClips?: number
+}
+
+export function regionSuite(name: string, mine: ReadonlySet<SkillId>, clipFile: string, pack: string, opts: RegionClipOptions = {}): void {
+  const { wave = 2, minClips = 11 } = opts
   const nodes = NODES.filter((n) => n.skills.some((s) => mine.has(s.skill)))
 
   describe(`${name} in the map`, () => {
@@ -62,9 +69,9 @@ export function regionSuite(name: string, mine: ReadonlySet<SkillId>, clipFile: 
         for (const f of factsUnderTest(def, 20)) for (const c of compile(def.hint(f, null).speech).clips) used.add(c)
       }
       const file = allClips().filter((c) => c.file === `skills/${clipFile}`)
-      expect(file.length).toBeGreaterThan(10)
+      expect(file.length).toBeGreaterThanOrEqual(minClips)
       expect(file.filter((c) => !used.has(c.id)).map((c) => c.id)).toEqual([])
-      for (const c of file) expect([c.wave, c.pack], c.id).toEqual([2, pack])
+      for (const c of file) expect([c.wave, c.pack], c.id).toEqual([wave, pack])
     })
   })
 }
