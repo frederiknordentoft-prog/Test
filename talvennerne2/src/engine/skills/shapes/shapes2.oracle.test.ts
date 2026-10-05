@@ -394,7 +394,7 @@ describe('symmetry oracle', () => {
     expect(first(specKindChecks(def, built))).toEqual([])
   })
 
-  it.fails('grid tasks are counts typed on the keys (1 in 13), yet kinds.ts guesses as if the child mirrored cells', () => {
+  it('grid tasks are counts typed on the keys (1 in 13), yet kinds.ts guesses as if the child mirrored cells', () => {
     // SPEC §3.2 grid: "multi: spejl mønsteret" (1/2^celler). Both families ask "how many?" instead
     // (answer an int, src/ui/task/registry.ts falls back to the keypad 0–12): isSymLine has no grid at all
     // (prompt 'shapes', kinds.ts invents a 4 × 4 one: 1/65536), mirrorGrid one of 16–30 cells.
