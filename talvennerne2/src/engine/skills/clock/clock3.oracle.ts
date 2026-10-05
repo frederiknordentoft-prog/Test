@@ -26,8 +26,10 @@
 // The registry skips *.oracle.ts files, so none of this reaches the app.
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import type { AnswerValue, ErrorTag, Fact, MisconceptionId, SkillDef, SkillId, SpeechPart, Task, TaskKind } from '../../types'
-import { classifyAnswer, detectableOf } from '../../misconceptions'
+import type { AnswerLogEntry, AnswerValue, ErrorTag, Fact, MisconceptionId, SkillDef, SkillId, SpeechPart, Task, TaskKind } from '../../types'
+import { classifyAnswer, detectableOf, flaggedIds, updateMisconceptions, type MisconceptionStates } from '../../misconceptions'
+import { keysForNode } from '../../registry'
+import { NODE_BY_ID } from '../../../content/curriculum'
 import { isCorrect } from '../../answer'
 import { ceilingFor, defaultFastMs, guessP, isProduction } from '../../kinds'
 import { hashSeed, makeRng } from '../../rng'
@@ -38,7 +40,7 @@ import { PromptScene } from '../../../ui/scenes/PromptScene'
 import { purseOf } from '../../../ui/task/pay/logic'
 import { isMisconception, tasksOf, type Built } from '../number/number.oracle'
 import { spec101Words, word99 } from '../number/number2.oracle'
-import { typedSwapOf } from '../algebra/algebra2.oracle'
+import { cardNumbers, swapped } from '../algebra/algebra2.oracle'
 import type { Child } from '../addsub/addsub3.oracle'
 import { isSwappedClock, lookDifferent, handsAt, onDial, spec101Measure, spec101Money } from './clock.oracle'
 
@@ -62,10 +64,10 @@ export function sweepC(def: SkillDef, seeds = 3) {
   return { canon, instances, all: [...canon, ...drawn], built: [...tasksOf(def, canon, seeds), ...tasksOf(def, drawn, 1)] }
 }
 
-/** Facts of one family that the region plays (a keyed sweep: the region's own families only). */
+/** Facts of the families a region plays (Markedet's 3. klasse families of 2. klasse skills), swept like sweepC. */
 export function sweepFamilies(def: SkillDef, families: readonly string[], seeds = 3) {
   const canon = def.enumerate().filter((f) => families.includes(f.family))
-  const drawn = [...instancesC(def).entries()].filter(([fam]) => families.includes(fam)).flatMap(([, fs]) => fs)
+  const drawn = def.mode === 'procedure' ? [...instancesC(def).entries()].filter(([fam]) => families.includes(fam)).flatMap(([, fs]) => fs) : []
   return { canon, all: [...canon, ...drawn], built: [...tasksOf(def, canon, seeds), ...tasksOf(def, drawn, 1)] }
 }
 
@@ -227,6 +229,26 @@ export function fastProblemsC(def: SkillDef, built: readonly Built[]): string[] 
 
 // ─── SPEC §4.1 with A9 and A11: the tag a wrong value must get ─────────────
 
+/** The numbers the child can see, in the units the keys take: an equation's numbers, the price tag and the money in kroner. */
+function screenNumbers(t: Task): number[] {
+  const p = t.prompt
+  if (p.scene === 'shop') return [p.priceOre / 100, ...(p.paidOre !== undefined ? [p.paidOre / 100] : [])]
+  if (p.scene === 'coins') return p.ore.map((o) => o / 100)
+  return cardNumbers(p)
+}
+
+/**
+ * SPEC §4.1 globalChecks outside the hear and place skills, on what the keys show: a typed answer of 13 or more
+ * with its tens and ones swapped, when the swapped number is not on the screen. On a kroner keypad (entryScale 100)
+ * the child types kroner: 63 kr typed as 36 is the swap (3600 øre), though 6300 øre itself has no tens to swap.
+ */
+export function typedSwapC(t: Task): number | null {
+  if (t.kind !== 'keypad' || typeof t.answer !== 'number') return null
+  const typed = t.answer / t.entryScale
+  const s = Number.isInteger(typed) && typed >= 13 ? swapped(typed) : null
+  return s !== null && !screenNumbers(t).includes(s) ? s * t.entryScale : null
+}
+
 /** What explains a wrong value. */
 export interface WhyC {
   mis: readonly MisconceptionId[]
@@ -236,6 +258,11 @@ export interface WhyC {
   slip?: boolean
   /** A misconception the value may or may not be counted as (a swap on the dial between two steps). */
   maybe?: MisconceptionId
+  /**
+   * A plain error the oracle also knows for the value (the card's numbers taken away as they stand): where it meets
+   * the typed swap, SPEC §4.1 stops at the skill's own candidate before globalChecks, so the swap may be plain.
+   */
+  plain?: boolean
 }
 
 /**
@@ -246,7 +273,7 @@ export interface WhyC {
  */
 export function expectC(t: Task, v: AnswerValue, w: WhyC): readonly ErrorTag[] | 'plain' {
   const mis = [...new Set(w.mis)]
-  const swap = typeof v === 'number' && typedSwapOf(t) === v
+  const swap = typeof v === 'number' && typedSwapC(t) === v
   if (mis.length > 1) return ['ambiguous']
   if (mis.length === 1) {
     if (w.operand || swap) return ['ambiguous']
@@ -255,7 +282,7 @@ export function expectC(t: Task, v: AnswerValue, w: WhyC): readonly ErrorTag[] |
   }
   if (w.maybe) return [w.maybe, 'ambiguous', 'near', 'other', ...(w.operand ? ['operand' as const] : []), ...(swap ? ['digitSwap' as const] : [])]
   if (w.operand) return ['operand']
-  if (swap) return ['digitSwap']
+  if (swap) return w.plain ? ['digitSwap', 'near', 'other'] : ['digitSwap']
   return 'plain'
 }
 
@@ -295,7 +322,7 @@ export function givenValues(t: Task, specials: readonly number[] = []): AnswerVa
   }
   if (t.kind === 'keypad') {
     const top = 10 ** t.maxDigits * t.entryScale - 1
-    const swap = typedSwapOf(t)
+    const swap = typedSwapC(t)
     const keys = Object.keys(t.distractorTags).filter((k) => /^\d+$/.test(k)).map(Number)
     const all = [...specials, ...keys, ...(swap !== null ? [swap] : [])]
     return [...new Set(all)].filter((v) => Number.isInteger(v) && v >= 0 && v <= top && v % t.entryScale === 0)
@@ -337,6 +364,8 @@ export function detectableC(built: readonly Built[], why: (b: Built, v: AnswerVa
       const m = countsAs(t, v, w)
       if (m) must.add(m)
       if (w.maybe && expectC(t, v, w) !== 'plain') may.add(w.maybe)
+      const want = expectC(t, v, w)
+      if (want !== 'plain' && want.length > 1) for (const x of want) if (isMisconception(x)) may.add(x)
     }
     const got = new Set(detectableOf(t))
     const show = (s: Iterable<MisconceptionId>) => [...s].sort().join(',') || '∅'
@@ -810,4 +839,61 @@ export function guessesC(seed: string): Child {
     const scale = t.entryScale
     return scale * rng.between(Math.ceil(t.range[0] / scale), Math.floor(t.range[1] / scale))
   }
+}
+
+/**
+ * Answers to the real pipeline on a map node, as rounds plan it: the node's keys (only `skills`' when given), planned
+ * afresh every ten tasks, a seeded key and kind per task; the child's answer classified, logged and folded into the
+ * misconception states with the child's own first-try accuracy over its last 20 answers (SPEC §4.3 rule 6), or a
+ * fixed one. Returns every misconception flagged, with the answer count when it was first flagged.
+ */
+export function simulateNode(
+  node: string,
+  skills: readonly SkillId[],
+  child: Child,
+  n: number,
+  opts: { perDay?: number; accuracy?: number; seed?: string } = {},
+): Map<MisconceptionId, number> {
+  const def = NODE_BY_ID[node]
+  if (!def) throw new Error(`no node ${node}`)
+  const perDay = opts.perDay ?? 12
+  const rng = makeRng(hashSeed(`ork3c-sim:${node}:${skills.join('+')}:${opts.seed ?? ''}`))
+  const plan = () => keysForNode(def, { states: {}, audioVerified: true }).filter((k) => skills.includes(k.skill))
+  let keys = plan()
+  if (keys.length === 0) throw new Error(`${skills.join(', ')} not played on ${node}`)
+  let states: MisconceptionStates = {}
+  const flagged = new Map<MisconceptionId, number>()
+  const recent: boolean[] = []
+  for (let i = 0; i < n; i++) {
+    if (i > 0 && i % 10 === 0) keys = plan()
+    const key = keys[rng.int(keys.length)]
+    const t = key.build(rng.pick(key.kinds), makeRng(hashSeed(`ork3c-task:${node}:${i}:${opts.seed ?? ''}`)), i)
+    const given = child(t, i)
+    const correct = isCorrect(t, given)
+    recent.push(correct)
+    if (recent.length > 20) recent.shift()
+    const day = `2026-11-${String(1 + Math.floor(i / perDay)).padStart(2, '0')}`
+    const entry: AnswerLogEntry = {
+      profileId: 'ork3c', ts: 1_000 + i, day, sessionId: 's', roundId: `r${Math.floor(i / 10)}`, nodeId: node, mode: 'round',
+      skill: t.skill, family: t.family, factId: t.factId, masteryKey: t.masteryKey, kind: t.kind, optionsCount: t.options.length,
+      production: isProduction(t), given, answer: t.answer, correct, ms: 4_000, fast: true, errorTag: classifyAnswer(t, given),
+      detectable: detectableOf(t), boxBefore: 1, boxAfter: 1, scaffold: false, replays: 0, retryOf: null, assisted: false,
+      audioUnverified: false,
+    }
+    const accuracy = opts.accuracy ?? recent.filter(Boolean).length / recent.length
+    states = updateMisconceptions(states, entry, { skillAccuracy20: accuracy, day })
+    for (const id of flaggedIds(states)) if (!flagged.has(id)) flagged.set(id, i + 1)
+  }
+  return flagged
+}
+
+/**
+ * The same child on several seeded rounds (the seed picks the keys, kinds and cards; the child's own seed its taps):
+ * for each run, when the misconception was first flagged (null: not within `n`) and what else was flagged.
+ */
+export function flaggedRuns(node: string, skills: readonly SkillId[], child: (seed: string) => Child, m: MisconceptionId, n: number, runs: number) {
+  return Array.from({ length: runs }, (_, i) => {
+    const flagged = simulateNode(node, skills, child(`${m}:${i}`), n, { seed: `run${i}` })
+    return { at: flagged.get(m) ?? null, others: [...flagged.keys()].filter((k) => k !== m) }
+  })
 }

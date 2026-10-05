@@ -85,8 +85,13 @@ export function cmMis(q: CmQ): [number, MisconceptionId][] {
   return out.filter(([v]) => v !== cmAnswer(q))
 }
 
+/**
+ * A wrong value: the misconceptions it fits, whether it is a number on the card (A9), and whether it is the plain slip
+ * of taking the card's numbers away as they stand (1 m − 55 cm typed as 55 − 1 = 54, which is also 45 reversed).
+ */
 export function explainCm(q: CmQ, v: number): WhyC {
-  return { mis: [...new Set(cmMis(q).filter(([x]) => x === v).map(([, m]) => m))], operand: cmCardNumbers(q).includes(v) }
+  const plain = q.family === 'compareMixed' && v === q.c - q.a
+  return { mis: [...new Set(cmMis(q).filter(([x]) => x === v).map(([, m]) => m))], operand: cmCardNumbers(q).includes(v), ...(plain ? { plain } : {}) }
 }
 
 const UNIT_CLIP: Readonly<Record<string, 'm' | 'cm'>> = { 'noun.unit.m.end': 'm', 'noun.unit.cm.end': 'cm' }
@@ -168,4 +173,21 @@ export function heardCm(text: string): number | null {
   }
   m = /^Hvor mange centimeter er (.+)\?$/.exec(text)
   return m ? lengths(m[1]) : null
+}
+
+/**
+ * The conversion a card asks, read off its terms as the child reads them: "3 m = □ cm", "2 m 35 cm = □ cm",
+ * "235 cm = □ m 35 cm" (or "300 cm = □ m"), "1 m − 37 cm = □ cm". Null for any other card.
+ */
+export function cmFromCard(p: Prompt): CmQ | null {
+  if (p.scene !== 'equation') return null
+  const sig = p.terms.map((t) => ('n' in t ? 'n' : 'blank' in t ? '□' : 'text' in t ? (UNIT_CLIP[t.text] ?? '?') : t.op)).join(' ')
+  const n = p.terms.flatMap((t) => ('n' in t ? [t.n] : []))
+  const q: CmQ | null =
+    sig === 'n m = □ cm' ? { family: 'mToCm', a: n[0], c: 0 }
+      : sig === 'n m n cm = □ cm' ? { family: 'mCmToCm', a: n[0], c: n[1] }
+        : sig === 'n cm = □ m n cm' || sig === 'n cm = □ m' ? { family: 'cmToMCm', a: n[0], c: 0 }
+          : sig === 'n m − n cm = □ cm' ? { family: 'compareMixed', a: n[0], c: n[1] }
+            : null
+  return q && cmOf(`cmm:${q.family}:${q.a}${q.family === 'mCmToCm' || q.family === 'compareMixed' ? `:${q.c}` : ''}`) ? q : null
 }
