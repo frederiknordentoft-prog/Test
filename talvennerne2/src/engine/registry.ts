@@ -8,6 +8,7 @@ import type { NodeDef, RegionSkill } from '../content/curriculum'
 import { hashSeed, makeRng, type Rng } from './rng'
 import type { BuildExtra, KeyOption } from './roundBuilder'
 import { buildTask, isMisconceptionId, masteryKeyOf, operationOfPrompt, type Operation } from './tasks'
+import { extrasOf, kindsOf } from './skills/types'
 
 /**
  * The skill register (SPEC §2.4). Every file in src/engine/skills/<domain>/ default-exports one
@@ -137,6 +138,15 @@ export function validateSkill(def: SkillDef): string[] {
   for (const fam of def.families) {
     if (!facts.some((f) => f.family === fam.id)) out.push(`${def.id}: family ${fam.id} has no facts`)
   }
+  // a fact's own kinds (kindsFor): some of the skill's, never none, and a production kind whenever the skill has one
+  if (extrasOf(def).kindsFor) {
+    const production = meta.production.filter((k) => def.kinds.includes(k))
+    for (const f of facts) {
+      const kinds = kindsOf(def, f)
+      if (kinds.length === 0 || kinds.some((k) => !def.kinds.includes(k))) out.push(`${def.id}: kindsFor(${f.id}) is [${kinds}], not some of [${def.kinds}]`)
+      else if (production.length > 0 && !kinds.some((k) => production.includes(k))) out.push(`${def.id}: kindsFor(${f.id}) has no production kind`)
+    }
+  }
   return out
 }
 
@@ -192,7 +202,7 @@ const PREFIX_OPS: Readonly<Record<string, Operation>> = { add: '+', ten: '+', db
 function operationOf(def: SkillDef, fact: Fact): Operation | null {
   const byId = PREFIX_OPS[fact.id.slice(0, fact.id.indexOf(':'))]
   if (byId) return byId
-  const kind = def.kinds[0]
+  const kind = kindsOf(def, fact)[0]
   return kind ? operationOfPrompt(def.prompt(fact, kind, makeRng(hashSeed(fact.id)))) : null
 }
 
@@ -222,8 +232,11 @@ export function keysForSkills(entries: readonly RegionSkill[], ctx: KeyContext):
     if (!def) continue
     if (!ctx.audioVerified && needsAudio(def.id)) continue
     const meta = SKILL_BY_ID[def.id]
-    const kinds = orderKinds(def.kinds, ctx.houseKind)
-    const production = kinds.filter((k) => meta.production.includes(k))
+    // a key's kinds, the house kind first, and those of them that are production
+    const kindsAt = (own: readonly TaskKind[]) => {
+      const kinds = orderKinds(own, ctx.houseKind)
+      return { kinds, production: kinds.filter((k) => meta.production.includes(k)) }
+    }
     const famOk = (id: string) => !entry.families || entry.families.includes(id)
     const max = entry.max
     const fits = (f: Fact) =>
@@ -245,7 +258,7 @@ export function keysForSkills(entries: readonly RegionSkill[], ctx: KeyContext):
       for (const fact of factsOf(def)) {
         if (!famOk(fact.family) || !fits(fact)) continue
         out.push({
-          key: fact.id, skill: def.id, family: fact.family, rank: fact.rank, kinds, production,
+          key: fact.id, skill: def.id, family: fact.family, rank: fact.rank, ...kindsAt(kindsOf(def, fact)),
           detectable: misconceptionsOf(def, [fact]), op: operationOf(def, fact), ...reviewOnly,
           build: (kind, rng, occurrence, extra) => make(fact, kind, rng, occurrence, extra),
         })
@@ -259,14 +272,19 @@ export function keysForSkills(entries: readonly RegionSkill[], ctx: KeyContext):
       const pool = canon.filter(fits)
       if (pool.length === 0) continue
       const key = `${def.id}/${fam.id}`
+      // the family's key takes every kind one of its facts suits, and build() draws a fact that suits the kind asked
+      const suits = (kind: TaskKind) => (f: Fact) => fits(f) && kindsOf(def, f).includes(kind)
       out.push({
-        key, skill: def.id, family: fam.id, rank: fam.rank, kinds, production,
+        key, skill: def.id, family: fam.id, rank: fam.rank, ...kindsAt(def.kinds.filter((k) => pool.some(suits(k)))),
         detectable: misconceptionsOf(def, pool), op: operationOf(def, pool[0]), ...reviewOnly,
         build(kind, rng, occurrence, extra) {
           const used = session.used.get(key) ?? new Set<string>()
           session.used.set(key, used)
           const avoid = new Set([...(ctx.states[key]?.recent ?? []), ...(ctx.states[key]?.drawn ?? []), ...used])
-          const fact = drawInstance(def, fam, rng, avoid, fits, pool)
+          const ok = suits(kind)
+          const suited = pool.filter(ok)
+          // a kind no fact of the family suits (one the key does not list) draws from all of them, as before
+          const fact = suited.length > 0 ? drawInstance(def, fam, rng, avoid, ok, suited) : drawInstance(def, fam, rng, avoid, fits, pool)
           used.add(fact.id)
           return make(fact, kind, rng, occurrence, extra)
         },

@@ -66,6 +66,13 @@ export interface SkillExtras {
    * digit (digitSwap) on a card but seven cubes (plain) when built. Default: `def.candidates(fact)`.
    */
   candidatesFor?(fact: Fact, kind: TaskKind): Candidate[]
+  /**
+   * The kinds this fact is asked in, when not every kind of the skill suits it: a pile of 50 is not
+   * dealt on the share view (div2510). A non-empty subset of `def.kinds` that keeps a production kind
+   * when the skill has one (validateSkill checks both); rounds, trials and placement only ask the fact
+   * in these. Default: `def.kinds`.
+   */
+  kindsFor?(fact: Fact): readonly TaskKind[]
 }
 
 /** What a file in src/engine/skills/<domain>/<skillId>.ts default-exports. */
@@ -73,3 +80,6 @@ export type SkillModule = SkillDef & SkillExtras
 
 /** Read the optional hooks of a registered SkillDef. */
 export const extrasOf = (def: SkillDef): SkillExtras => def as SkillDef & SkillExtras
+
+/** The kinds a fact is asked in: the skill's `kindsFor`, else every kind of the skill. */
+export const kindsOf = (def: SkillDef, fact: Fact): readonly TaskKind[] => extrasOf(def).kindsFor?.(fact) ?? def.kinds

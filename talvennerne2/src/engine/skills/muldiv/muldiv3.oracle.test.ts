@@ -307,8 +307,8 @@ describe('div2510 oracle', () => {
     expect(first(problems)).toEqual([])
   })
 
-  it.fails('asks a pile on the share view only when the view can deal it (≤ 40 things), so a share task is never shown as keys', () => {
-    // GENERATOR BUG (div2510.ts: kinds ['choice', 'keypad', 'share'] for all 30 facts) — the 8 facts with more than
+  it('asks a pile on the share view only when the view can deal it (≤ 40 things), so a share task is never shown as keys', () => {
+    // GENERATOR BUG (div2510.ts) — Rettet (kindsFor): kinds were ['choice', 'keypad', 'share'] for all 30 facts; the 8 facts with more than
     // MAX_THINGS (40) things (div:45/5, div:50/5, div:50/10 … div:100/10) are built as share tasks too (buildTask,
     // keysForSkills and the round builder's other kinds). The share view cannot deal them (canShare false), so
     // ui/task/registry.ts shownKind falls back to the keypad, but the task stays kind 'share': state/useRound.ts

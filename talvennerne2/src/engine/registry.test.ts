@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  collectSkills, goldenTask, isSkillDef, keyInfo, keysForNode, keysForSkills, makeRegistry, newBuildSession,
+  collectSkills, factsOf, goldenTask, isSkillDef, keyInfo, keysForNode, keysForSkills, makeRegistry, newBuildSession,
   registeredSkills, skillKeyIndex, skillKeys, skillRegistry, validateSkill,
 } from './registry'
 import { FIXTURE_SKILLS, add100CarryFixture, addTo10Fixture, hear20Fixture } from './testing/fixtureSkills'
@@ -13,7 +13,7 @@ import { NODE_BY_ID } from '../content/curriculum'
 import { hashSeed, makeRng } from './rng'
 import { emptyKey } from './mastery'
 import type { ErrorTag, Fact, KeyState, SkillDef, TaskKind } from './types'
-import type { SkillModule } from './skills/types'
+import { extrasOf, kindsOf, type SkillModule } from './skills/types'
 
 const fixtures = makeRegistry(FIXTURE_SKILLS)
 const ctx = (over: Partial<Parameters<typeof keysForNode>[1]> = {}) => ({ skills: fixtures, states: {}, audioVerified: true, ...over })
@@ -230,6 +230,65 @@ describe('keys for a node', () => {
     for (const [i, k] of keys.entries()) k.build('choice', makeRng(i), i)
     expect(session.offered.countFromFirst).toBe(2)
     expect(session.offered.wrongOperation).toBe(2)
+  })
+})
+
+describe('a fact asked only in its own kinds (SkillExtras.kindsFor)', () => {
+  const real = { states: {}, audioVerified: true }
+
+  it('deals a div2510 pile on the share view only up to 20 things (pædagogik §1.3), house kind first, keypad production', () => {
+    const keys = keysForSkills([{ skill: 'div2510' }], { ...real, houseKind: 'share' })
+    expect(keys).toHaveLength(30)
+    const dealt: string[] = []
+    for (const k of keys) {
+      const c = Number(/^div:(\d+)\//.exec(k.key)![1])
+      expect(k.kinds, k.key).toEqual(c <= 20 ? ['share', 'choice', 'keypad'] : ['choice', 'keypad'])
+      expect(k.production, k.key).toEqual(['keypad'])
+      if (c <= 20) dealt.push(k.key)
+    }
+    // all of d2, and 5, 10, 15, 20 : 5 and 10, 20 : 10
+    expect(dealt).toHaveLength(16)
+    expect(dealt.filter((id) => id.endsWith('/5'))).toEqual(['div:5/5', 'div:10/5', 'div:15/5', 'div:20/5'])
+  })
+
+  it('lets a family key take every kind one of its facts suits, and draws a fact that suits the kind asked', () => {
+    // a stand-in rule on the add100Carry fixture: cards only up to 60
+    const def: SkillModule = { ...add100CarryFixture, kindsFor: (f) => ((f.answer as number) <= 60 ? add100CarryFixture.kinds : ['keypad', 'numberline']) }
+    expect(validateSkill(def)).toEqual([])
+    const keys = keysForSkills([{ skill: 'add100Carry' }], { ...real, skills: makeRegistry([def]) })
+    const kindsOfKey = Object.fromEntries(keys.map((k) => [k.key, k.kinds.join(',')]))
+    expect(kindsOfKey['add100Carry/toNextTen']).toBe('choice,keypad,numberline')
+    expect(kindsOfKey['add100Carry/TOplusTOover100']).toBe('keypad,numberline')
+    for (const k of keys.filter((x) => x.kinds.includes('choice'))) {
+      for (let i = 0; i < 20; i++) expect(k.build('choice', makeRng(i), i).answer as number, k.key).toBeLessThanOrEqual(60)
+    }
+    // the same draws as without the hook where every fact suits the kind
+    const plain = keysForSkills([{ skill: 'add100Carry', families: ['TOplusTOover100'] }], ctx())[0]
+    const hooked = keys.find((k) => k.key === 'add100Carry/TOplusTOover100')!
+    expect(Array.from({ length: 8 }, (_, i) => hooked.build('keypad', makeRng(i), i).factId))
+      .toEqual(Array.from({ length: 8 }, (_, i) => plain.build('keypad', makeRng(i), i).factId))
+  })
+
+  it('is checked by validateSkill: some of the skill’s kinds, never none, a production kind whenever the skill has one', () => {
+    const at = (kinds: TaskKind[]) => {
+      const def: SkillModule = { ...addTo10Fixture, kindsFor: (f) => (f.id === 'add:2+3' ? kinds : addTo10Fixture.kinds) }
+      return validateSkill(def).join('\n')
+    }
+    expect(at(['keypad'])).toBe('')
+    expect(at([])).toMatch(/kindsFor\(add:2\+3\) is \[\], not some of/)
+    expect(at(['keypad', 'share'])).toMatch(/kindsFor\(add:2\+3\) is \[keypad,share\], not some of/)
+    expect(at(['choice'])).toMatch(/kindsFor\(add:2\+3\) has no production kind/)
+  })
+
+  it('leaves every other skill as it was: no kindsFor, so each of its keys has all the skill’s kinds in the skill’s order', () => {
+    expect(registeredSkills().filter((d) => extrasOf(d).kindsFor).map((d) => d.id)).toEqual(['div2510'])
+    for (const def of registeredSkills()) {
+      if (def.id === 'div2510') continue
+      for (const f of factsOf(def)) expect(kindsOf(def, f), f.id).toBe(def.kinds)
+      const keys = keysForSkills([{ skill: def.id }], real)
+      expect(keys.length, def.id).toBeGreaterThan(0)
+      for (const k of keys) expect(k.kinds, k.key).toEqual(def.kinds)
+    }
   })
 })
 
