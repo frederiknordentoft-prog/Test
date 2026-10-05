@@ -486,8 +486,8 @@ describe('the things in the measure scenes', () => {
 })
 
 describe('measure fact ids across every registered skill (CONVENTIONS)', () => {
-  it('are unique across all registered skills, and each wave-2 measure skill has a prefix of its own', () => {
-    const MEASURE: readonly SkillId[] = ['measureUnits', 'rulerRead', 'weightCompare', 'readChart', 'unitChoice']
+  it('are unique across all registered skills, and each measure skill of wave 2 (and convertCmM of wave 3) has a prefix of its own', () => {
+    const MEASURE: readonly SkillId[] = ['measureUnits', 'rulerRead', 'weightCompare', 'readChart', 'unitChoice', 'convertCmM']
     const owner = new Map<string, SkillId>()
     const prefixes = new Map<string, Set<SkillId>>()
     const problems: string[] = []

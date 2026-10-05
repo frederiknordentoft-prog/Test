@@ -213,9 +213,10 @@ describe('clock fact ids across every registered skill (CONVENTIONS)', () => {
         prefixes.set(p, (prefixes.get(p) ?? new Set()).add(def.id))
       }
     }
-    for (const c of CLOCKS) {
-      const own = [...prefixes].filter(([, s]) => s.has(c.id))
-      if (own.length !== 1 || own[0][1].size !== 1) problems.push(`${c.id}: prefixes ${own.map(([p, s]) => `${p} (${[...s]})`)}`)
+    // wave 3 (ORK3c): the clock skills of 3. klasse, whose procedure facts are their canonical times here
+    for (const id of [...CLOCKS.map((c) => c.id), 'clockFive', 'clockDigital', 'clockElapsed'] as SkillId[]) {
+      const own = [...prefixes].filter(([, s]) => s.has(id))
+      if (own.length !== 1 || own[0][1].size !== 1) problems.push(`${id}: prefixes ${own.map(([p, s]) => `${p} (${[...s]})`)}`)
     }
     expect(first(problems)).toEqual([])
   })
