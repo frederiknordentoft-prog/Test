@@ -7,7 +7,8 @@
 // på de sider af sne og sten, der vender mod den, en kølig formskygge på fjeldenes højre sider (fra kammen ned mod
 // foden) og jordskygger, der falder mod højre under alt, der står på jorden.
 // Syv kendetegn står for Stjernefjeldets syv regioner og får hver sin farve igen efter regionens tier (SPEC §5.6):
-//   den højeste top med et flag og en stenblok med stjerner i tre lige rækker af fire (Tabeltoppen) · en stenbro med
+//   den højeste top, flad som et bord, med et flag, en stenblok med stjerner i tre lige rækker af fire og en lille
+//   stjernekikkert (Tabeltoppen) · en stenbro med
 //   tre buer – hundreder, tiere og enere – og gelændere over bækkens kløft (Trecifret bro) · et tårn med en urskive
 //   med tydelige 5-minutters-streger og dragen på en afsats (Minuttårnet) · en kløft med afsatser i fire lige store
 //   trin og en hængebro med tolv planker i fire lige store fag (Delekløften) · en markedsplads med to boder,
@@ -17,14 +18,15 @@
 // sender røg op fra bageriet; sølv får stjernerne til at glimte og sne og is til at skinne; guld er fuld mætning
 // med vimpler og flag – og et nordlys over fjeldet, når hele verdenen er guld. Fjeldene, engen, himlen og
 // stjernerne følger hele verdenens fremgang. Fjeldets dyr giver liv: en pegasus flyver ved toppen, en venlig drage
-// sidder på sin afsats, pingviner står på issøen og en isbjørn går i sneen.
+// sidder på sin afsats, pingviner står på issøen og en isbjørn går i sneen. En lille fjeldby, spredte graner, sten med
+// fjeldblomster og en snemand fylder mellemgrunden.
 // Vand og is følger terrænet: gletsjeren flyder ned ad fjeldets side, bækken springer ud af gletsjerens tunge,
 // løber nedad under Trecifret bros største bue og ud i issøen, bredere og bredere med mørkere brinker. Stien går fra
 // Tabeltoppen forbi kendetegnene i kortets rækkefølge (stykkerne lyser, når regionen er nået til bronze).
 // Scenen måler sin plads og lægger kendetegnene der, hvor kortets panel ikke dækker: i bredformat i venstre
 // strimmel, mellem stien og sidepanelet og under sidepanelet; i højformat i højre side og forneden (på en telefon
 // i båndet over kortet og gennem kortets lyse panel). Kun skyerne driver, stjernerne glimter (fra sølv), røgen
-// stiger og pegasus' vinger og dragens hale bevæger sig (transform og opacity); alt står stille i rolig tilstand og
+// stiger og pegasus' vinge og dragens hale bevæger sig (transform og opacity); alt står stille i rolig tilstand og
 // ved reduceret bevægelse. Alle former er husets parametriske primitiver; farverne kommer fra scenes/palette.ts.
 import { useId, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode, Ref } from 'react'
@@ -179,7 +181,7 @@ export function layoutOf(w: number, h: number): Layout {
     const k = clamp(Math.max(w / 1180, (h / 820) * 0.85), 0.6, 1.4)
     const mid: Ridge = { base: h * 0.6, amp: h * 0.022, waves: 1.05, phase: 2.9 }
     const near: Ridge = { base: h * 0.79, amp: h * 0.02, waves: 0.8, phase: 4.1 }
-    const top: Peak = { x: w * 0.645, y: h * 0.205, hw: 270 * k, base: h * 0.66, flat: 20 * k }
+    const top: Peak = { x: w * 0.645, y: h * 0.205, hw: 270 * k, base: h * 0.66, flat: 34 * k }
     const glacier = glacierAt(top, k, Math.min(168 * k, h * 0.2))
     // broens højre ende (enernes lille bue) står fri af sidepanelet: x + 82 · s < 0,72 · w
     const bridge = { x: w * 0.638, y: h * 0.53, s: k * 1.05 }
@@ -203,7 +205,8 @@ export function layoutOf(w: number, h: number): Layout {
         { x: w * 0.53, y: h * 0.05, s: k * 0.8 },
         { x: w * 0.43, y: h * 0.23, s: k * 0.6 },
       ],
-      pegasus: { x: w * 0.6, y: h * 0.158, s: k * 0.92, flip: false },
+      // pegasus flyver over stjernekikkerten, fri af topbjælken og af kortets sti
+      pegasus: { x: w * 0.623, y: h * 0.132, s: k * 0.92, flip: false },
       stream: [snout, [(snout[0] + archFoot(bridge)[0]) / 2 - 4 * k, (snout[1] + archFoot(bridge)[1]) / 2], archFoot(bridge), [w * 0.676, h * 0.66], [w * 0.712, h * 0.78], [w * 0.745, h * 0.86], [lake.x - lake.rx * 0.82, lake.y - 3 * k]],
       bridge,
       tower,
@@ -244,7 +247,7 @@ export function layoutOf(w: number, h: number): Layout {
     const k = clamp(Math.max(w / 560, (h / 1250) * 0.9), 0.62, 1)
     const mid: Ridge = { base: h * 0.635, amp: h * 0.014, waves: 0.9, phase: 2.4 }
     const near: Ridge = { base: h * 0.8, amp: h * 0.016, waves: 0.7, phase: 4.1 }
-    const top: Peak = { x: w * 0.3, y: h * 0.335, hw: 210 * k, base: h * 0.7, flat: 18 * k }
+    const top: Peak = { x: w * 0.3, y: h * 0.335, hw: 210 * k, base: h * 0.7, flat: 32 * k }
     const glacier = glacierAt(top, k, 150 * k)
     const snout = glacier.spine[glacier.spine.length - 1]
     const bridge = { x: w * 0.36, y: h * 0.575, s: k * 0.85 }
@@ -281,9 +284,10 @@ export function layoutOf(w: number, h: number): Layout {
       garden: { x: w * 0.47, y: h * 0.86, s: k * 0.78 },
       bakery: { x: w * 0.16, y: h * 0.775, s: k * 0.85 },
       bear: { x: w * 0.66, y: h * 0.895, s: k * 0.8, flip: false },
+      // stien går ned ad toppens vestside (gletsjeren og bækken ligger øst for den) og krydser bækken på broen mod øst
       via: [
-        [[top.x + 40 * k, top.y + 30 * k], [top.x + 58 * k, top.y + 70 * k], [top.x + 66 * k, top.y + 110 * k], [bridge.x + 80 * bridge.s, bridge.y]],
-        [[bridge.x - 34 * bridge.s, bridge.y], [w * 0.2, h * 0.64], [w * 0.5, h * 0.66], [w * 0.75, h * 0.665]],
+        [[top.x - 36 * k, top.y + 30 * k], [top.x - 50 * k, top.y + 80 * k], [top.x - 30 * k, top.y + 130 * k], [bridge.x - 32 * bridge.s, bridge.y]],
+        [[bridge.x + 80 * bridge.s, bridge.y], [w * 0.6, h * 0.62], [w * 0.75, h * 0.66]],
         [[w * 0.93, h * 0.7], [w * 0.98, h * 0.77], [cleft.x + 50 * cleft.s, cleft.y - 50 * cleft.s]],
         [[cleft.x - 50 * cleft.s, cleft.y - 50 * cleft.s], [w * 0.5, h * 0.8], [w * 0.3, h * 0.84]],
         [[w * 0.3, h * 0.9], [w * 0.4, h * 0.875]],
@@ -302,7 +306,7 @@ export function layoutOf(w: number, h: number): Layout {
   const k = clamp(w / 860, 0.7, 1.05)
   const mid: Ridge = { base: h * 0.73, amp: h * 0.014, waves: 0.85, phase: 2.5 }
   const near: Ridge = { base: h * 0.85, amp: h * 0.014, waves: 0.7, phase: 4.1 }
-  const top: Peak = { x: w * 0.755, y: h * 0.615, hw: 220 * k, base: h * 0.78, flat: 18 * k }
+  const top: Peak = { x: w * 0.755, y: h * 0.615, hw: 220 * k, base: h * 0.78, flat: 32 * k }
   const glacier = glacierAt(top, k, 130 * k)
   const snout = glacier.spine[glacier.spine.length - 1]
   const bridge = { x: w * 0.79, y: h * 0.8, s: k * 0.85 }
@@ -576,9 +580,10 @@ function Firs({ pts, fill, edge, snow }: { pts: readonly Place[]; fill: string; 
 // Kendetegnene (lokale enheder om fodpunktet; 100 enheder ≈ et tårns halve højde)
 
 /**
- * Tabeltoppen (lokalt om toppens flade top): en stenblok med sne på toppen og stjerner i tre lige rækker af fire
- * (et lille gitter, 3 · 4), og et flag. Solen fra venstre: højlys på blokkens venstre kant, skygge på højre side.
- * Lanterne ved flaget fra bronze, stjernerne glimter fra sølv, vimpler i guld.
+ * Tabeltoppen (lokalt om toppens flade top, et lille bord af sten og sne): en stenblok med sne på toppen og stjerner
+ * i tre lige rækker af fire (et lille gitter, 3 · 4), et flag og en lille stjernekikkert på stativ, rettet mod
+ * himlen. Solen fra venstre: højlys på blokkens venstre kant, skygge på højre side. Lanterne ved flaget fra bronze,
+ * stjernerne og kikkertens linse glimter fra sølv, vimpler i guld.
  */
 export const STAR_GRID = { rows: 3, cols: 4 } as const
 function Summit({ t }: { t: RegionTier }) {
@@ -586,8 +591,15 @@ function Summit({ t }: { t: RegionTier }) {
   const cells = Array.from({ length: STAR_GRID.rows * STAR_GRID.cols }, (_, i) => [-16.5 + (i % STAR_GRID.cols) * 11, -26.5 + Math.floor(i / STAR_GRID.cols) * 9] as const)
   const f = flag(19, -35, 38, 1.2)
   const b = bunting([19.5, -72], [74, -6], 8, 9)
+  const eye: Vec = [-20, -11]
+  const lens: Vec = [-37, -29]
   return (
     <>
+      {/* stjernekikkerten på sit stativ til venstre for blokken */}
+      <path d={join(poly([[-27, -15], [-33, 1]], false), poly([[-27, -15], [-27, 1]], false), poly([[-27, -15], [-21, 1]], false))} fill="none" stroke={c('woodDark')} strokeWidth={1.6} {...ROUND} />
+      <path d={capsule(eye, lens, 2.3, 3.6)} fill={c('roof')} stroke={c('roofShade')} strokeWidth={1.1} />
+      <path d={join(ellipse(lens[0], lens[1], 2.2, 4.3, 45), circle(-27, -16, 2.2), capsule(eye, [-17.5, -8.5], 1.3))} fill={c('coin')} stroke={c('coinDark')} strokeWidth={0.8} />
+      <g transform="translate(8 0)">
       <path d={ellipse(3 + SHADOW_SHIFT[0], 1 + SHADOW_SHIFT[1], 31, 4.2)} fill={FJELD.castShadow} opacity={0.22} />
       <path d={blob([[-25, 1], [-26, -33], [-22, -36], [22, -36], [26, -33], [25, 1]], 0.2)} fill={c('stone')} stroke={c('stoneShade')} strokeWidth={SW} {...ROUND} />
       <path d={blob([[13, -35], [22, -36], [26, -33], [25, 1], [13, 1]], 0.2)} fill={c('stoneShade')} opacity={0.42} />
@@ -598,8 +610,9 @@ function Summit({ t }: { t: RegionTier }) {
       <path d={f.cloth} fill={c('flag')} stroke={c('awningShade')} strokeWidth={1} {...ROUND} />
       {lit(t) && lanterns([[25, -58]], 0.85)}
       {lit(t) && <path d={rect(19.5, -58.6, 5.5, 1.4, 0.7)} fill={c('woodDark')} />}
-      {bloom(t) && <path d={glints([[-13, -36, 3.8], [12, -27, 3.2], [-31, -12, 2.6], [30, -44, 3]])} fill={FJELD.flowerWhite} stroke={FJELD.skyStarGlow} strokeWidth={0.5} />}
+      {bloom(t) && <path d={glints([[-13, -36, 3.8], [12, -27, 3.2], [30, -44, 3], [-49, -35, 3]])} fill={FJELD.flowerWhite} stroke={FJELD.skyStarGlow} strokeWidth={0.5} />}
       {full(t) && <Bunting b={[b]} c={c} a="flag2" />}
+      </g>
     </>
   )
 }

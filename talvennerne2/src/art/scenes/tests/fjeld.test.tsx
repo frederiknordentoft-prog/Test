@@ -196,6 +196,25 @@ describe('Stjernefjeldet · scene', () => {
     }
   })
 
+  it('stien krydser kun bækken på Trecifret bro (aldrig gennem vandet)', () => {
+    type P = readonly [number, number]
+    const cross = (a: P, b: P, c: P, d: P) => {
+      const o = (p: P, q: P, r: P) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]))
+      return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0
+    }
+    for (const [w, h] of SIZES) {
+      const L = layoutOf(w, h)
+      const deck = stopOf(L, 'bridge')
+      for (const leg of trailLegs(L))
+        for (let i = 1; i < leg.length; i++) {
+          const [a, b] = [leg[i - 1], leg[i]]
+          // dækket selv (fra broens ende til dens midte) går over vandet
+          if ((a[0] === deck[0] && a[1] === deck[1]) || (b[0] === deck[0] && b[1] === deck[1])) continue
+          for (let j = 1; j < L.stream.length; j++) expect(cross(a, b, L.stream[j - 1], L.stream[j]), `${w}·${h}`).toBe(false)
+        }
+    }
+  })
+
   it('kendetegnenes matematik: 3 · 4 stjerner, tre buer (hundreder, tiere, enere), tolv streger, lige store trin og fag, 3 · 4 bede og fire lige store stykker', () => {
     expect(STAR_GRID.rows * STAR_GRID.cols).toBe(12)
     expect(STAR_GRID.rows).toBe(3)
