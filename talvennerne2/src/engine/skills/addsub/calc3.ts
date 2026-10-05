@@ -101,6 +101,43 @@ export function firstExchange(a: number, b: number): 'ones' | 'acrossZero' | 'te
   return digitAt(a, 1) < digitAt(b, 1) ? 'tens' : null
 }
 
+/** One column of a − b as the strategy says it: the exchange it needs (if any), then what it gives (null: "the same"). */
+interface MinusColumn {
+  p: number
+  exchange: SpeechPart[] | null
+  says: SpeechPart[] | null
+}
+
+/** The columns of a − b right to left, exchanging the way the columns picture draws it (Columns.tsx). */
+function minusSteps(a: number, b: number): MinusColumn[] {
+  const w = placesOf(a, b)
+  const top = Array.from({ length: w }, (_, p) => digitAt(a, p))
+  const out: MinusColumn[] = []
+  for (let p = 0; p < w; p++) {
+    const y = digitAt(b, p)
+    if (top[p] < y) {
+      let exchange: SpeechPart[]
+      if (p === 0 && top[1] === 0) {
+        exchange = [say('hint.sub1000.acrossZero')]
+        top[2] -= 1
+        top[1] = 9
+      } else if (p === 0) {
+        exchange = [say('hint.addsub2.borrowTen')]
+        top[1] -= 1
+      } else {
+        exchange = [say('hint.sub1000.borrowHundred')]
+        top[p + 1] -= 1
+      }
+      top[p] += 10
+      out.push({ p, exchange, says: columnDifference(top[p], y) })
+      continue
+    }
+    const same = y === 0 && top[p] === digitAt(a, p)
+    out.push({ p, exchange: null, says: same ? null : columnDifference(top[p], y) })
+  }
+  return out
+}
+
 /**
  * a − b in columns, ones first, ending with the answer: "Regn enerne først. Der er ikke enere nok. Veksl
  * en tier til ti enere. Tretten minus otte giver fem. Regn så tierne. Der er ikke tiere nok. Veksl et
@@ -109,32 +146,22 @@ export function firstExchange(a: number, b: number): 'ones' | 'acrossZero' | 'te
  * tre."); one with nothing taken and nothing lent is "the same".
  */
 export function minusColumns(a: number, b: number): SpeechPart[] {
-  const w = placesOf(a, b)
-  const top = Array.from({ length: w }, (_, p) => digitAt(a, p))
   const out: SpeechPart[] = []
-  for (let p = 0; p < w; p++) {
-    const y = digitAt(b, p)
-    if (top[p] < y) {
-      if (p === 0 && top[1] === 0) {
-        out.push(say(INTRO[0]), say('hint.sub1000.acrossZero'))
-        top[2] -= 1
-        top[1] = 9
-      } else if (p === 0) {
-        out.push(say(INTRO[0]), say('hint.addsub2.borrowTen'))
-        top[1] -= 1
-      } else {
-        out.push(say(INTRO[p]), say('hint.sub1000.borrowHundred'))
-        top[p + 1] -= 1
-      }
-      top[p] += 10
-      out.push(...columnDifference(top[p], y))
-      continue
-    }
-    if (y === 0 && top[p] === digitAt(a, p)) {
-      out.push(say(SAME[p]))
-      continue
-    }
-    out.push(say(INTRO[p]), ...columnDifference(top[p], y))
+  for (const c of minusSteps(a, b)) {
+    if (c.says === null) out.push(say(SAME[c.p]))
+    else out.push(say(INTRO[c.p]), ...(c.exchange ?? []), ...c.says)
   }
+  return [...out, ...answerIs(a - b)]
+}
+
+/**
+ * Only the columns that exchange, then the answer — what smallerFromLarger and borrowNoDecrement are about
+ * (the round plays the borrow film over all the columns): "Der er ikke enere nok. Veksl en tier til ti
+ * enere. Tretten minus otte giver fem. Der er ikke tiere nok. Veksl et hundrede til ti tiere. Elleve minus
+ * fem giver seks. Svaret er to hundrede og femogtres."
+ */
+export function exchangeColumns(a: number, b: number): SpeechPart[] {
+  const out: SpeechPart[] = []
+  for (const c of minusSteps(a, b)) if (c.exchange && c.says) out.push(...c.exchange, ...c.says)
   return [...out, ...answerIs(a - b)]
 }

@@ -4,7 +4,7 @@ import { algebra2Suite, explainBy, textOf } from '../algebra/testing/suite'
 import { bnd, idSum, sfl } from './testing/suite'
 import { factsUnderTest } from '../number/testing/harness'
 import { buildTask } from '../../tasks'
-import { classifyAnswer, detectableOf } from '../../misconceptions'
+import { classifyAnswer, detectableOf, digitSwapOf } from '../../misconceptions'
 import { compile } from '../../../speech/compile'
 import { makeRng } from '../../rng'
 import type { AnswerValue, ErrorTag, Fact, MisconceptionId, SkillDef, Task, TaskKind } from '../../types'
@@ -91,6 +91,17 @@ describe('sub1000', () => {
     expect(classifyAnswer(taskOf(600, 245), 465)).toBe('borrowNoDecrement')
   })
 
+  it('makes a misconception that is also the answer reversed ambiguous (SPEC A11)', () => {
+    let seen = 0
+    for (const f of factsUnderTest(def)) {
+      const swapped = digitSwapOf(f.answer as number)
+      if (swapped === null || !def.candidates(f).some((c) => c.value === swapped && c.tag !== 'near' && c.tag !== 'operand')) continue
+      seen++
+      expect(classifyAnswer(buildTask(def, f, 'keypad', makeRng(2), 0).task, swapped), f.id).toBe('ambiguous')
+    }
+    expect(seen).toBeGreaterThan(0)
+  })
+
   it('walks the columns with the exchanges, also two in a row and across a zero', () => {
     expect(hintSaid(423, 158, null)).toBe(
       'Regn enerne først. Der er ikke enere nok. Veksl en tier til ti enere. Tretten minus otte giver fem. ' +
@@ -109,11 +120,20 @@ describe('sub1000', () => {
   })
 
   it('says what went wrong before the columns, with the borrow film for smallerFromLarger and borrowNoDecrement', () => {
-    expect(hintSaid(423, 158, 'smallerFromLarger')).toMatch(/^Vi trækker altid det nederste tal fra det øverste\. Er det øverste for lille, veksler vi\. Regn enerne først\./)
+    expect(hintSaid(423, 158, 'smallerFromLarger')).toBe(
+      'Vi trækker altid det nederste tal fra det øverste. Er det øverste for lille, veksler vi. Der er ikke enere nok. Veksl en tier til ti enere. ' +
+      'Tretten minus otte giver fem. Der er ikke tiere nok. Veksl et hundrede til ti tiere. Elleve minus fem giver seks. Svaret er to hundrede og femogtres.',
+    )
     expect(def.hint(factOf(423, 158), 'smallerFromLarger')).toMatchObject({ misconception: 'smallerFromLarger', animated: true })
-    expect(hintSaid(423, 158, 'borrowNoDecrement')).toMatch(/^Når du veksler en tier, er der en tier mindre tilbage\. Regn enerne først\./)
-    expect(hintSaid(402, 17, 'borrowNoDecrement')).toMatch(/^Når du veksler et hundrede, er der et hundrede mindre tilbage\. Regn enerne først\./)
-    expect(hintSaid(325, 42, 'borrowNoDecrement')).toMatch(/^Når du veksler et hundrede, er der et hundrede mindre tilbage\. Regn enerne først\./)
+    expect(hintSaid(423, 158, 'borrowNoDecrement')).toMatch(/^Når du veksler en tier, er der en tier mindre tilbage\. Der er ikke enere nok\./)
+    expect(hintSaid(402, 17, 'borrowNoDecrement')).toBe(
+      'Når du veksler et hundrede, er der et hundrede mindre tilbage. Der er ikke enere nok, og der er ingen tiere. ' +
+      'Veksl først et hundrede til ti tiere, og så en tier til ti enere. Tolv minus syv giver fem. Svaret er tre hundrede og femogfirs.',
+    )
+    expect(hintSaid(325, 42, 'borrowNoDecrement')).toBe(
+      'Når du veksler et hundrede, er der et hundrede mindre tilbage. Der er ikke tiere nok. Veksl et hundrede til ti tiere. Tolv minus fire giver otte. ' +
+      'Svaret er to hundrede og treogfirs.',
+    )
     expect(def.hint(factOf(423, 158), 'borrowNoDecrement')).toMatchObject({ misconception: 'borrowNoDecrement', animated: true })
     expect(hintSaid(423, 158, 'wrongOperation')).toMatch(/^Minus betyder, at nogle bliver taget væk\. Regn enerne først\./)
     expect(hintSaid(423, 158, 'digitSwap')).toBe('Vi skriver tierne først og så enerne. Svaret er to hundrede og femogtres.')

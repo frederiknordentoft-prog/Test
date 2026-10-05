@@ -24,15 +24,16 @@
 // to hundrede og femogtres." Across a zero: "Der er ikke enere nok, og der er ingen tiere. Veksl først et
 // hundrede til ti tiere, og så en tier til ti enere. Tolv minus syv giver fem. Regn så tierne. Ni minus
 // nul giver ni. …" smallerFromLarger (the borrow film) says first that the bottom number is always taken
-// from the top one; borrowNoDecrement (the film with the lowered digit in focus) that the column a ten or
-// a hundred was exchanged from has one less; wrongOperation what minus means.
+// from the top one, borrowNoDecrement (the film with the lowered digit in focus) that the column a ten or
+// a hundred was exchanged from has one less — then only the columns that exchange, as in 2. klasse;
+// wrongOperation says what minus means before the whole walk.
 import type { ErrorTag, Fact, FamilyDef, HintSpec, Rng, SkillModule, TaskKind } from '../types'
 import { hintOf, metaOf, say, tagged } from '../number/kit'
 import {
   around, borrowNoDecrement, canonicalFacts, columns, drawInstance, meaningOf, needsBorrow, smallerFromLarger, sumId, sumPrompt,
   sumSpeech, swapHint, type Drawer,
 } from './calc'
-import { digitAt, firstExchange, minusColumns } from './calc3'
+import { digitAt, exchangeColumns, firstExchange, minusColumns } from './calc3'
 
 const META = metaOf('sub1000')
 const FAST: Partial<Record<TaskKind, number>> = { choice: 12_000, keypad: 25_000 }
@@ -105,11 +106,11 @@ function hint(f: Fact, tag: ErrorTag | null): HintSpec {
   const steps = minusColumns(a, b)
   switch (tag) {
     case 'smallerFromLarger':
-      return hintOf([say('hint.sub1000.topMinusBottom'), ...steps], visual, 'smallerFromLarger', true)
+      return hintOf([say('hint.sub1000.topMinusBottom'), ...exchangeColumns(a, b)], visual, 'smallerFromLarger', true)
     case 'borrowNoDecrement': {
       // the column the first ten (or hundred, across a zero or for the tens) was exchanged from
       const lead = firstExchange(a, b) === 'ones' ? 'hint.addsub2.oneTenLess' : 'hint.sub1000.oneHundredLess'
-      return hintOf([say(lead), ...steps], visual, 'borrowNoDecrement', true)
+      return hintOf([say(lead), ...exchangeColumns(a, b)], visual, 'borrowNoDecrement', true)
     }
     case 'wrongOperation':
       return hintOf([meaningOf('−'), ...steps], visual, 'wrongOperation')
