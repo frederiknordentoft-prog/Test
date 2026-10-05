@@ -47,12 +47,21 @@ const HORN_SHADE = ribbon(xf(HORN_SPINE, { dx: -2.2, dy: 0.6 }).slice(1), [6, 4.
 const HORNS_D = join(blob(HORN, 0.8), blob(mirrorX(HORN, 100), 0.8))
 const HORN_SHADE_D = join(blob(HORN_SHADE, 0.8), blob(mirrorX(HORN_SHADE, 100), 0.8))
 
-const Horns: Part = ({ pal, sw }) => (
-  <>
-    <path d={HORNS_D} fill={bone(pal)} stroke={pal.outline} strokeWidth={sw} {...round} />
-    {!pal.silhouette && <path d={HORN_SHADE_D} fill={boneShade(pal)} />}
-  </>
-)
+/**
+ * Hornene vokser med manken (1,3 om issen) på stor; her dæmpes det til ca. 1,17 (SPEC: horn 1,25), så spidserne
+ * bliver i den sikre zone, også når hovedet vipper i jubel, ups og vink.
+ */
+const HORN_STAGE3 = 0.9
+const Horns: Part = ({ pal, sw, stage, a }) => {
+  const k = stage === 3 ? HORN_STAGE3 : 1
+  const t = a.headTop
+  return (
+    <g transform={k !== 1 ? `translate(${t.x} ${t.y}) scale(${k}) translate(${-t.x} ${-t.y})` : undefined}>
+      <path d={HORNS_D} fill={bone(pal)} stroke={pal.outline} strokeWidth={sw / k} {...round} />
+      {!pal.silhouette && <path d={HORN_SHADE_D} fill={boneShade(pal)} />}
+    </g>
+  )
+}
 
 // ---------------------------------------------------------------------------------------------
 // Ører: små finner ude på hovedets sider (bag hovedet, så hovedets kontur løber ubrudt over roden): tre runde
@@ -65,7 +74,8 @@ const FIN: Vec[] = [
 const FIN_INNER: Vec[] = [[-0.6, 3], [-6.4, -1.5], [-8.6, -9], [-8.6, -15], [-5.6, -15], [-2.2, -19.5], [0.4, -24], [1.6, -19], [3.6, -15.5], [5.4, -15], [5, -6], [3.6, -0.5]]
 const FIN_RAYS: Vec[][] = [[[-0.6, 3], [-6.4, -8], [-11.4, -17.4]], [[-0.4, 3], [-0.6, -14], [0.4, -27.6]], [[0, 3], [4.4, -9], [7.2, -19]]]
 const FIN_RAYS_D = join(...FIN_RAYS.map((r) => spline(r)))
-const finScale = (stage: Stage) => (stage === 1 ? { sx: 1.1, sy: 1.1 } : {})
+/** Ungens finner er større; på stor er de lidt mindre og rejst 8°, så de holder afstand til tommelkloen bag kinden. */
+const finScale = (stage: Stage) => (stage === 1 ? { sx: 1.1, sy: 1.1 } : stage === 3 ? { sx: 0.95, sy: 0.95, rot: 8 } : {})
 
 const Fin: SidePart = ({ pal, sw, stage, ids, lod }) => {
   const s = finScale(stage)
@@ -74,7 +84,7 @@ const Fin: SidePart = ({ pal, sw, stage, ids, lod }) => {
       <path d={blob(xf(FIN, s), 0.78)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
       {!pal.silhouette && <path d={blob(xf(FIN_INNER, s), 0.8)} fill={skin(pal, ids)} />}
       {lod === 'full' && !pal.silhouette && (
-        <path d={stage === 1 ? join(...FIN_RAYS.map((r) => spline(xf(r, s)))) : FIN_RAYS_D} fill="none" stroke={pal.earFur} strokeWidth={sw * 0.8} {...round} />
+        <path d={stage === 2 ? FIN_RAYS_D : join(...FIN_RAYS.map((r) => spline(xf(r, s))))} fill="none" stroke={pal.earFur} strokeWidth={sw * 0.8} {...round} />
       )}
     </>
   )
@@ -95,8 +105,8 @@ const HeadSpots: Part = ({ pal, a, ids }) =>
 // Snude: en lys plet forneden med to små næsebor, og røgpusten (signaturen): en lille sky, der puster ud af det højre
 // næsebor, vokser med ét overshoot og driver ud til siden, væk fra øjet (kun i animeret tilstand; rig.css `a-smoke`).
 
-const PUFF = scallop(7, -1, 8, 5.6, 7, 0.62)
-const PUFF_SMALL = scallop(-2, -2, 3.2, 2.6, 5, 0.62)
+const PUFF = scallop(9, -1.5, 10.5, 7.4, 8, 0.62)
+const PUFF_SMALL = scallop(-3.4, -2.6, 4.2, 3.4, 5, 0.62)
 
 const Snout: Part = ({ pal, a, ids, still, sw }) => {
   const m = a.muzzle
@@ -120,22 +130,32 @@ const Snout: Part = ({ pal, a, ids, still, sw }) => {
 // tre fingre med små, runde spidser og en flyvehud, der buer ind mellem fingerspidserne. Begge vinger er ét path pr.
 // lag (hud med kontur, knogler).
 
-const WRIST: Vec = [-44, -50]
+const WRIST: Vec = [-46, -57]
+/**
+ * Flyvehuden: armen går fra roden op bag hovedet til håndleddet bag kinden, og tommelkloen kommer frem ved siden af
+ * kinden (et godt stykke under finnen, også når finnen hænger i søvn, og også på stor, hvor vingerne er større i forhold
+ * til hovedet). Huden dækker hele området ved kinden og kæben, så der aldrig opstår en lomme mellem kind og vinge, når
+ * hovedet vipper; den buer ind mellem de tre fingerspidser og tilbage til kroppen.
+ */
 const MEMBRANE: Vec[] = [
-  [-10, 7], [-6, -9], [-16, -23], [-28, -35], [-39, -45], [-46, -55], [-51, -64], [-55, -72], [-58.5, -71], [-59.5, -64],
-  [-62, -56], [-67, -52], [-70, -48.5], [-69.5, -44], [-66, -39], [-64, -31], [-66, -24], [-69, -18], [-67.5, -14], [-62, -13],
-  [-56.5, -10], [-54, -3], [-53, 3], [-50, 5], [-44, 1], [-36, 0], [-28, 3], [-22, 9],
+  [-10, 8], [-6, -10], [-12, -28], [-22, -44], [-34, -53], [-46, -58], [-53, -62], [-58.5, -65.5], [-62, -66.5], [-62.5, -62],
+  [-64.5, -57], [-68, -53], [-72, -50], [-68, -44], [-66, -37.5], [-67.5, -31], [-70, -25], [-64, -21], [-60, -15.5],
+  [-58.5, -10], [-57, -4], [-50, -6], [-42, -9], [-34, -6.5], [-26, -1.5], [-20, 6],
 ]
 const BONES: Vec[][] = [
-  [[-6, -9], [-24, -32], WRIST, [-53, -62], [-56.5, -69]],
-  [WRIST, [-58, -50], [-66, -48]],
-  [WRIST, [-56, -36], [-65.5, -19]],
-  [WRIST, [-49, -28], [-51.5, 1]],
+  [[-6, -10], [-18, -40], WRIST, [-55, -63], [-60.5, -65.5]],
+  [WRIST, [-61, -53], [-70, -50]],
+  [WRIST, [-59, -40], [-68.5, -26]],
+  [WRIST, [-54, -30], [-57.5, -5.5]],
 ]
 const MEMBRANE_D = join(blob(MEMBRANE, 0.8), blob(mirrorX(MEMBRANE), 0.8))
 const BONES_D = join(...BONES.flatMap((b) => [spline(b), spline(mirrorX(b))]))
-/** Ungens vinger er større i forhold til kroppen, så de står frem ved siden af det store babyhoved. */
-const WING_STAGE: Record<Stage, number> = { 1: 1.24, 2: 1, 3: 1 }
+/**
+ * Ungens vinger er en anelse større i forhold til kroppen (tommelkloen holder afstand til finnen på det store babyhoved).
+ * På stor dæmpes riggens vækst (1,2) til ca. 1,12, så fingerspidserne bliver i den sikre zone, også når jubel vipper
+ * figuren.
+ */
+const WING_STAGE: Record<Stage, number> = { 1: 1.05, 2: 1, 3: 0.93 }
 
 const Wings: Part = ({ pal, sw, stage, ids }) => {
   const k = WING_STAGE[stage]
@@ -228,12 +248,12 @@ const Feet: Part = ({ pal, sw, stage }) => {
 // ---------------------------------------------------------------------------------------------
 // Halen (lokalt om tailBase bag højre side): en tynd hale, der svinger ud og op og ender i en spade.
 
-const TAIL_SPINE: Vec[] = [[-3, 0], [8, 5], [18, 6], [25, 2], [28, -6], [28, -15]]
+const TAIL_SPINE: Vec[] = [[-3, 0], [8, 5], [18, 7], [26, 4], [30, -4], [30.5, -13]]
 const TAIL = blob(ribbon(TAIL_SPINE, [15, 14, 12, 10, 8.5, 7]), 0.9)
-const SPADE: Vec[] = [[28, -32], [33.5, -26], [37, -20], [35.5, -14.6], [31.2, -13.4], [28, -16.4], [24.8, -13.4], [20.5, -14.6], [19, -20], [22.5, -26]]
+const SPADE: Vec[] = [[30.5, -30], [35.5, -24.5], [38, -19], [36.5, -14], [33, -13], [30.5, -15.5], [28, -13], [24.5, -14], [23, -19], [25.5, -24.5]]
 const SPADE_D = blob(SPADE, 0.72)
-/** Ungens hale er større (som føllets), så den står frem ved siden af den lille krop. */
-const BABY_TAIL = 1.3
+/** Ungens hale er lidt større (som føllets), så den står frem ved siden af den lille krop. */
+const BABY_TAIL = 1.15
 
 const Tail: Part = ({ pal, sw, ids, stage }) => {
   const k = stage === 1 ? BABY_TAIL : 1
@@ -324,20 +344,22 @@ export const dragon: SpeciesDef = {
     body: { x0: 26, y0: 84, x1: 178, y1: 228 },
   },
   maneOrigin: 'headTop',
-  // Tankebobler og Zzz (fælles regel): til højre for hovedet under finnen, mindst 8 enheder fri af hoved og finne.
-  fx: { x: 176, y: 104 },
+  // Tankebobler og Zzz (fælles regel): til højre for kinden, et godt stykke under finnen, så de holder 8 enheder fri af
+  // hoved og finne, også når hovedet vipper og finnerne hænger i søvn.
+  fx: { x: 178, y: 120 },
   face: { idleMouth: 'smile', cheeks: true },
   ears: { splay: 58, behind: true, clip: false },
   signature: 'smoke-puff',
   goldBand: [150, 196],
   // Forbenene står på jorden: glad løfter dem ud til siden (tegnet −30°, så glad-hoppets 30° passer), og ups er en
-  // pote op til kinden.
+  // pote op til kinden. Halen drejer kun en anelse udad i humørene, så spaden holder afstand til vingen og låret.
   poses: {
-    happy: { pawL: { up: true, rot: 30 }, pawR: { up: true, rot: 30 }, tail: -8 },
-    cheer: { tail: -10 },
-    oops: { pawL: 0, pawR: { up: true }, tail: -4 },
-    sleep: { pawL: 0, pawR: 0 },
-    wave: { tail: -8 },
+    happy: { pawL: { up: true, rot: 30 }, pawR: { up: true, rot: 30 }, tail: 4 },
+    cheer: { tail: 4 },
+    think: { tail: 2 },
+    oops: { pawL: 0, pawR: { up: true }, tail: 2 },
+    sleep: { pawL: 0, pawR: 0, tail: 0 },
+    wave: { tail: 4 },
   },
   parts: {
     head: dragonHead,

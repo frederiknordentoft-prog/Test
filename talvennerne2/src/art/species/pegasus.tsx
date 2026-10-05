@@ -27,33 +27,42 @@ import type { WebTable } from './shared/equine'
 // langs ydersiden og et lag dækfjer foroven langs forkanten. Begge vinger er ét path pr. lag.
 
 /**
- * Svingfjerene: forkanten fra roden ud og op til vingespidsen, den yderste svingfjer ned langs ydersiden og så fire
- * fjerspidser, der peger nedad, trappevis ind mod kroppen (bagkanten). Fjerene peger alle samme vej, så vingen aldrig
- * læses som en manke eller en sky om hovedet.
+ * Svingfjerene: forkanten går fra roden op bag hovedet og kommer frem ved siden af øjnene, i en tydelig vinkel mod
+ * hovedets kontur, og buer videre op til vingespidsen ved siden af issen. Bagkanten løber skråt ned mod kroppen med seks
+ * fjerspidser, der alle peger nedad og udad, så vingen står som et V på hver side. Vingen dækker hele området ved kinden
+ * og kæben, så der aldrig opstår en lomme mellem kind og vinge, når hovedet vipper, og fjerene peger samme vej, så
+ * vingen aldrig læses som en manke eller en sky om hovedet.
  */
 const FAN: Vec[] = [
-  [-12, 7], [-6, -11], [-15, -21], [-28, -32], [-42, -44], [-55, -57], [-63, -69], [-67, -77], [-71, -73], [-73, -62],
-  [-74, -48], [-72, -37], [-67, -35], [-62, -40], [-61, -30], [-59, -21], [-54, -19], [-50, -26], [-48, -15], [-45, -7],
-  [-40, -6], [-37, -14], [-34, -4], [-30, 3], [-24, 3], [-21, -3], [-18, 5],
+  [-12, 7], [-6, -11], [-10, -32], [-18, -52], [-30, -68], [-42, -78], [-52, -86], [-60, -94], [-66, -100], [-69.5, -103.5],
+  [-71, -98], [-71, -86], [-70.5, -74], [-70, -64], [-64, -66.5], [-66.5, -58], [-66, -50], [-59, -53.5], [-61, -44],
+  [-60, -36], [-53, -40.5], [-54, -31], [-52, -22], [-45, -27.5], [-45.5, -18], [-42, -10], [-35, -15.5], [-34, -6], [-30, 0],
+  [-24, -5], [-21, 2], [-18, 6],
 ]
-/** Dækfjerene: forkanten (samme punkter som svingfjerene) og en underkant med fire små fjerspidser. */
+/** Dækfjerene: forkanten (samme punkter som svingfjerene) og en underkant med små fjerspidser, der peger nedad. */
 const COVERT: Vec[] = [
-  [-4, -2], [-6, -11], [-15, -21], [-28, -32], [-42, -44], [-55, -57], [-63, -69], [-67, -77], [-69, -70], [-66, -60],
-  [-62, -54], [-60, -46], [-54, -45], [-50, -38], [-44, -37], [-40, -29], [-33, -28], [-29, -20], [-22, -19], [-17, -11],
-  [-10, -8],
+  [-4, -2], [-6, -11], [-10, -32], [-18, -52], [-30, -68], [-42, -78], [-52, -86], [-60, -94], [-66, -100], [-69.5, -103.5],
+  [-69, -95], [-66, -88], [-62, -88.5], [-58, -80], [-53, -80.5], [-48, -72], [-42, -71.5], [-37, -62], [-31, -61.5],
+  [-26, -51], [-20, -49.5], [-16, -36], [-11, -33], [-8, -18],
 ]
 /** Skillelinjerne mellem svingfjerene (fra dækfjerene ned til hakkerne). */
 const QUILLS: Vec[][] = [
-  [[-66, -55], [-65, -46], [-62, -40]],
-  [[-54, -40], [-51, -32], [-50, -26]],
-  [[-41, -27], [-38, -20], [-37, -14]],
-  [[-27, -17], [-23, -9], [-21, -3]],
+  [[-62, -84], [-64, -75], [-64, -66.5]],
+  [[-54, -76], [-57.5, -64], [-59, -53.5]],
+  [[-44, -68], [-50, -54], [-53, -40.5]],
+  [[-33, -58], [-41, -42], [-45, -27.5]],
+  [[-22, -46], [-30, -30], [-35, -15.5]],
+  [[-13, -30], [-20, -17], [-24, -5]],
 ]
 const FAN_D = join(blob(FAN, 0.86), blob(mirrorX(FAN), 0.86))
 const COVERT_D = join(blob(COVERT, 0.86), blob(mirrorX(COVERT), 0.86))
 const QUILLS_D = join(...QUILLS.flatMap((q) => [spline(q), spline(mirrorX(q))]))
-/** Føllets vinger er større i forhold til kroppen, så de står frem ved siden af det store babyhoved. */
-const WING_STAGE: Record<Stage, number> = { 1: 1.3, 2: 1, 3: 1 }
+/**
+ * Føllets vinger er større i forhold til kroppen, så de står frem ved siden af det store babyhoved. På stor vokser
+ * vingerne 1,2 i riggen; her dæmpes væksten til ca. 1,1, så spidserne bliver i den sikre zone, også når jubel vipper
+ * figuren 2° (som stjernehornets `hornGrowth`).
+ */
+const WING_STAGE: Record<Stage, number> = { 1: 1.3, 2: 1, 3: 0.92 }
 
 const Wings: Part = ({ pal, sw, stage, still, ids, lod }) => {
   const k = WING_STAGE[stage]
@@ -72,15 +81,15 @@ const Wings: Part = ({ pal, sw, stage, still, ids, lod }) => {
 // ---------------------------------------------------------------------------------------------
 // Hår (modelrum for standardhovedet i (100, 86); halen lokalt om tailBase).
 
-/** Manken: en kort, opsvunget kam over issen, der falder bag højre øre ned til kinden, og en lille tot bag venstre øre. */
+/** Manken: en kort, opsvunget kam over issen, der falder bag højre øre (over vingens forkant), og en lille tot bag venstre øre. */
 const MANE: Vec[][] = [
   [
-    [101, 52], [98, 41], [105, 33], [117, 31], [130, 35], [142, 43], [151, 55], [156, 69], [157, 84], [152, 79], [150, 92],
-    [145, 85], [140, 96], [137, 83], [131, 70], [121, 60], [110, 55],
+    [101, 52], [98, 41], [105, 33], [117, 31], [129, 35], [138, 40], [144, 47], [147, 54], [146, 58.5], [143, 55.5], [140, 59.5],
+    [136.5, 55.5], [133, 58.5], [129, 53.5], [121, 52], [112, 52],
   ],
   [[97, 42], [86, 38], [74, 41], [65, 48], [60, 58], [66, 55], [70, 60], [74, 53], [84, 48], [95, 48]],
 ]
-const MANE_STRANDS: Vec[][] = [[[108, 40], [124, 41], [138, 50], [147, 63], [150, 76]]]
+const MANE_STRANDS: Vec[][] = [[[108, 40], [122, 39], [133, 43.5], [140, 49], [143, 54]]]
 /** Pandelokken: tre lokker, der fejer mod højre og standser over øjnene. */
 const FORELOCK: Vec[] = [
   [101, 37], [92, 39], [86, 45], [85, 53], [89, 60], [92, 53], [96, 62], [101, 55], [107, 66], [110, 57], [117, 62], [118, 53],
@@ -90,7 +99,7 @@ const FORELOCK_STRANDS: Vec[][] = [[[98, 43], [97, 51], [99, 57]], [[107, 44], [
 /** Halen (lokalt om tailBase): en fyldig lok, der buer ud over låret og falder ned langs siden med to spidser. */
 const TAIL: Vec[] = [
   [-4, -2], [2, -11], [12, -16], [22, -14], [29, -6], [32, 5], [31, 15], [33, 24], [29, 30], [26, 23], [22, 28], [19, 20],
-  [18, 11], [16, 2], [11, -5], [4, -5],
+  [17, 12], [14, 5], [9, 0], [2, 0],
 ]
 const TAIL_STRANDS: Vec[][] = [[[6, -10], [16, -11], [23, -5], [26, 6], [27, 17]]]
 /** Føllets hale er større (som hestens), så den står frem ved siden af den lille krop. */
@@ -132,18 +141,20 @@ export const pegasus: SpeciesDef = {
   nameClip: 'name.species.pegasus',
   family: 'equine',
   body: 'tall',
-  breeds: [{ id: 'std', name: 'pegasus' }],
+  // Manken vokser lidt mindre på stor, så tankebobler og Zzz har plads ved siden af hovedet.
+  breeds: [{ id: 'std', name: 'pegasus', maneGrowth: 1.1 }],
   colorways: PEGASUS_COLORWAYS,
   magic: ['gold', 'rainbow'],
   occupies: ['back'],
-  anchors: EQUINE_ANCHORS,
+  // Kinderne sidder en anelse længere inde end hestens, så rosaen aldrig bygger bro til vingen bag hovedet.
+  anchors: { ...EQUINE_ANCHORS, cheekL: { x: 65.5, y: 109.5 }, cheekR: { x: 134.5, y: 109.5 } },
   bounds: {
     head: { x0: 34, y0: 14, x1: 166, y1: 160 },
     body: { x0: 24, y0: 64, x1: 176, y1: 228 },
   },
   maneOrigin: 'headTop',
   // Tankebobler og Zzz (fælles regel): i fri luft til højre for hovedet, mindst 8 enheder fra manke og øre.
-  fx: { x: 176, y: 70 },
+  fx: { x: 180, y: 66 },
   face: { idleMouth: 'smile', cheeks: true },
   ears: { splay: 16 },
   signature: 'wing-flap',
