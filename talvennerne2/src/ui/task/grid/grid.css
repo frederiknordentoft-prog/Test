@@ -237,10 +237,11 @@
   font-size: 28px;
 }
 
-/* iPad */
+/* iPad, either way up: the net as big as the height leaves under it for the pair and the tick (a
+   square is 64 px or more) */
 @media (min-width: 700px) and (min-height: 700px) {
   .tv-grid {
-    --fig: min(560px, 60vh);
+    --fig: min(560px, calc(100vh - 280px));
     gap: 16px;
   }
   .tv-grid__pair {
@@ -248,10 +249,10 @@
   }
 }
 
-/* Held sideways: the pair and the tick beside the net */
-@media (orientation: landscape) {
+/* A phone held sideways: the pair and the tick beside the net */
+@media (orientation: landscape) and (max-height: 500px) {
   .tv-grid {
-    --fig: min(600px, calc(100vh - 180px), calc(75vw - 220px));
+    --fig: min(600px, calc(100vh - 150px));
     flex-direction: row;
     justify-content: center;
     gap: 24px;
