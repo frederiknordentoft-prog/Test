@@ -1,0 +1,90 @@
+17:12:16 generate.py --wave 3 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261005-171216.log)
+17:12:16 234 klip valgt, 227 færdige, 7 at lave
+17:12:41 input frame rate=25
+17:12:46 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+17:12:47 model indlæst på 28 s (2 tråde)
+17:12:57 ✅ EOS token detected! Stopping generation at step 39
+17:13:20 kald single k=1 t3 'pingvinkylling': 32.7 s for 1.52 s lyd
+17:13:22   name.baby.penguin t3: 0.89 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:13:29 ✅ EOS token detected! Stopping generation at step 21
+17:13:49 kald single k=1 t3 'grøn': 27.1 s for 0.80 s lyd
+17:13:49   name.color.dragon.c1 t3: 0.26 s (forhold 0.82) -18.3 LUFS, none: 'None' CER None (None) → ok
+17:14:00 ✅ EOS token detected! Stopping generation at step 32
+17:14:23 kald single k=1 t3 'Rumbriller': 33.5 s for 1.24 s lyd
+17:14:24   name.item.astronaut-face t3: 0.65 s (forhold 0.69) -18.02 LUFS, none: 'None' CER None (None) → ok
+17:14:35 ✅ EOS token detected! Stopping generation at step 40
+17:14:55 kald single k=1 t3 'Brøkbageriet': 31.9 s for 1.56 s lyd
+17:14:56   name.region.w3-broeker t3: 0.84 s (forhold 0.54) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:15:07 ✅ EOS token detected! Stopping generation at step 41
+17:15:30 kald single k=1 t3 'Trecifret bro': 33.3 s for 1.60 s lyd
+17:15:30   name.region.w3-store-tal t3: 0.89 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:15:39 ✅ EOS token detected! Stopping generation at step 35
+17:15:48 kald single k=1 t3 'ottendedele.': 18.2 s for 1.36 s lyd
+17:15:49   noun.frac.d8.pl.end t3: 0.73 s (forhold 0.47) -18.1 LUFS, none: 'None' CER None (None) → ok
+17:15:53 ✅ EOS token detected! Stopping generation at step 33
+17:16:02 kald single k=1 t4 'ottendedele,': 13.1 s for 1.28 s lyd
+17:16:02   noun.frac.d8.pl.mid t4: 0.68 s (forhold 0.43) -18.09 LUFS, none: 'None' CER None (None) → ok
+17:16:10   sammensat frag.det_er + name.baby.penguin: 'det er penge vin kylling' CER 0.105 (wav2vec2, whisper: 'Det er Pingvinkøling') → FEJL
+17:16:14   sammensat frag.det_er + name.color.dragon.c1: 'det er kroant' CER 0.444 (wav2vec2, whisper: 'Det er krøn') → FEJL
+17:16:19   sammensat frag.det_er + name.item.astronaut-face: 'det er rumpliller' CER 0.133 (wav2vec2, whisper: 'Det er rumpriller') → FEJL
+17:16:24   sammensat frag.det_er + name.region.w3-broeker: 'det er på ikbærliget' CER 0.471 (wav2vec2, whisper: 'Det er Brygbægeriet') → FEJL
+17:16:29   sammensat frag.det_er + name.region.w3-store-tal: 'det er 3cifred pro' CER 0.118 (wav2vec2, whisper: 'Det er Tresifret Bro') → FEJL
+17:16:33   sammensat frag.det_er + noun.frac.d8.pl.end: 'det er og en dele' CER 0.250 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:16:36   sammensat frag.det_er + noun.frac.d8.pl.mid: 'det er o dele' CER 0.375 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:16:41 ✅ EOS token detected! Stopping generation at step 39
+17:16:50 kald single k=1 t4 'pingvinkylling': 13.8 s for 1.52 s lyd
+17:16:51   name.baby.penguin t4: 0.89 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:16:54 ✅ EOS token detected! Stopping generation at step 22
+17:17:02 kald single k=1 t4 'grøn': 11.5 s for 0.84 s lyd
+17:17:03   name.color.dragon.c1 t4: 0.35 s (forhold 1.11) -18.14 LUFS, none: 'None' CER None (None) → ok
+17:17:06 ✅ EOS token detected! Stopping generation at step 31
+17:17:15 kald single k=1 t4 'Rumbriller': 12.6 s for 1.20 s lyd
+17:17:16   name.item.astronaut-face t4: 0.61 s (forhold 0.66) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:17:21 ✅ EOS token detected! Stopping generation at step 39
+17:17:30 kald single k=1 t4 'Brøkbageriet': 14.0 s for 1.52 s lyd
+17:17:30   name.region.w3-broeker t4: 0.88 s (forhold 0.56) -18.09 LUFS, none: 'None' CER None (None) → ok
+17:17:36 ✅ EOS token detected! Stopping generation at step 43
+17:17:45 kald single k=1 t4 'Trecifret bro': 15.2 s for 1.68 s lyd
+17:17:46   name.region.w3-store-tal t4: 0.88 s (forhold 0.70) -18.02 LUFS, none: 'None' CER None (None) → ok
+17:17:51 ✅ EOS token detected! Stopping generation at step 37
+17:17:59 kald single k=1 t4 'ottendedele.': 13.5 s for 1.44 s lyd
+17:18:00   noun.frac.d8.pl.end t4: 0.75 s (forhold 0.48) -18.12 LUFS, none: 'None' CER None (None) → ok
+17:18:00 sammensætning runde 1: 0 af 7 bestået
+17:18:05   sammensat frag.det_er + name.baby.penguin: 'det er penge vid en kølling' CER 0.263 (wav2vec2, whisper: 'Det er Ping Ving Kølling') → FEJL
+17:18:09   sammensat frag.det_er + name.color.dragon.c1: 'det er krøn' CER 0.111 (wav2vec2, whisper: 'Det er grønt') → FEJL
+17:18:14   sammensat frag.det_er + name.item.astronaut-face: 'det er rumplaller' CER 0.200 (wav2vec2, whisper: 'Det er rumpriller') → FEJL
+17:18:19   sammensat frag.det_er + name.region.w3-broeker: 'det er brøgt bageriet' CER 0.118 (wav2vec2, whisper: 'Det er brødt bageril') → FEJL
+17:18:24   sammensat frag.det_er + name.region.w3-store-tal: 'det er 6ecifredbro' CER 0.294 (wav2vec2, whisper: 'Det er Tresifret Bro') → FEJL
+17:18:29   sammensat frag.det_er + noun.frac.d8.pl.end: 'det er oendele' CER 0.250 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:18:29 sammensætning runde 2: 0 af 7 bestået
+17:18:29 sammensætning runde 3: 0 af 7 bestået
+17:18:34   sammensat frag.det_er + name.baby.penguin: 'det er penge ved en kølling' CER 0.316 (wav2vec2, whisper: 'Det er penge ved en kylling') → FEJL
+17:18:38   sammensat frag.det_er + name.baby.penguin: 'det er penge viden kylling' CER 0.210 (wav2vec2, whisper: 'Det er Pingvink Kylling') → FEJL
+17:18:43   sammensat frag.det_er + name.baby.penguin: 'det er pengvi en kølling' CER 0.158 (wav2vec2, whisper: 'Det er Ping Ping Kølling') → FEJL
+17:18:43   ✓ master name.baby.penguin t3 (IKKE bestået: sammensætning)
+17:18:48   sammensat frag.det_er + name.color.dragon.c1: 'det er krøin' CER 0.222 (wav2vec2, whisper: 'Det er krøn') → FEJL
+17:18:53   sammensat frag.det_er + name.color.dragon.c1: 'det er koant' CER 0.444 (wav2vec2, whisper: 'Det er korrekt') → FEJL
+17:18:57   sammensat frag.det_er + name.color.dragon.c1: 'det er kroant' CER 0.444 (wav2vec2, whisper: 'Det er kvant') → FEJL
+17:18:57   ✓ master name.color.dragon.c1 t4 (IKKE bestået: sammensætning)
+17:19:02   sammensat frag.det_er + name.item.astronaut-face: 'det er rompliller' CER 0.200 (wav2vec2, whisper: 'Det er rumpriller') → FEJL
+17:19:07   sammensat frag.det_er + name.item.astronaut-face: 'det er rumpriller' CER 0.067 (wav2vec2, whisper: 'Det er rumpriller') → FEJL
+17:19:12   sammensat frag.det_er + name.item.astronaut-face: 'det er rumpriller' CER 0.067 (wav2vec2, whisper: 'Det er rumpriller') → FEJL
+17:19:12   ✓ master name.item.astronaut-face t1 (IKKE bestået: sammensætning)
+17:19:20   sammensat frag.det_er + name.region.w3-broeker: 'det er brøgt bægedel' CER 0.353 (wav2vec2, whisper: 'Det er brødtbægerrildet') → FEJL
+17:19:29   sammensat frag.det_er + name.region.w3-broeker: 'det er brygtbager ile' CER 0.294 (wav2vec2, whisper: 'Det er brødbageriet') → FEJL
+17:19:39   sammensat frag.det_er + name.region.w3-broeker: 'det er brøgtmageriet' CER 0.176 (wav2vec2, whisper: 'Det er Brøtbageriet') → FEJL
+17:19:39   ✓ master name.region.w3-broeker t4 (IKKE bestået: sammensætning)
+17:19:47   sammensat frag.det_er + name.region.w3-store-tal: 'det er tr0cifredbro' CER 0.235 (wav2vec2, whisper: 'Det er tresifret brug') → FEJL
+17:19:57   sammensat frag.det_er + name.region.w3-store-tal: 'det er tvesifrødbro' CER 0.235 (wav2vec2, whisper: 'Det er Tvesifret Bro') → FEJL
+17:20:05   sammensat frag.det_er + name.region.w3-store-tal: 'det er tv0 i fredbro' CER 0.294 (wav2vec2, whisper: 'Det er Tresifret Bro') → FEJL
+17:20:06   ✓ master name.region.w3-store-tal t3 (IKKE bestået: sammensætning)
+17:20:13   sammensat frag.det_er + noun.frac.d8.pl.end: 'det er ogen dele' CER 0.250 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:20:19   sammensat frag.det_er + noun.frac.d8.pl.end: 'det er oen dele' CER 0.250 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:20:25   sammensat frag.det_er + noun.frac.d8.pl.end: 'det er oten dele' CER 0.188 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:20:25   ✓ master noun.frac.d8.pl.end t2 (IKKE bestået: sammensætning)
+17:20:34   sammensat frag.det_er + noun.frac.d8.pl.mid: 'det er otendele' CER 0.188 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:20:39   sammensat frag.det_er + noun.frac.d8.pl.mid: 'det er oen del' CER 0.312 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:20:48   sammensat frag.det_er + noun.frac.d8.pl.mid: 'det er oten dele' CER 0.188 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:20:55   sammensat frag.det_er + noun.frac.d8.pl.mid: 'det er ot en dele' CER 0.188 (wav2vec2, whisper: 'Det er ottendele') → FEJL
+17:20:55   ✓ master noun.frac.d8.pl.mid t2 (IKKE bestået: sammensætning)
+17:20:55 færdig: 7 nye mastere (7 ikke bestået, 0 kopier), 13 modelkald, 4.5 min generering (CPU 0.12 t), 0 klip mangler

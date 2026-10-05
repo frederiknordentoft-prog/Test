@@ -21739,6 +21739,41 @@
    "wallS": 0.0,
    "wave": 3
   },
+  "name.baby.penguin": {
+   "asr": "det er penge vin kylling",
+   "asrExpected": "Det er pingvinkylling",
+   "asrWav2vec2": null,
+   "cer": 0.1053,
+   "check": "comp",
+   "comp": {
+    "asr": "det er penge vin kylling",
+    "asrWav2vec2": null,
+    "cer": 0.1053,
+    "engine": "wav2vec2",
+    "expected": "Det er pingvinkylling",
+    "ids": [
+     "frag.det_er",
+     "name.baby.penguin"
+    ],
+    "n": 1,
+    "pass": 0
+   },
+   "cpuS": 150.4,
+   "dur": 0.887,
+   "engine": "wav2vec2",
+   "file": "names-3/name.baby.penguin.flac",
+   "hash": "de64d5cbddda75bb910855d38ce0da7b336285f1",
+   "lufs": -18.0,
+   "method": "single",
+   "pack": "names-3",
+   "pass": false,
+   "reason": "sammensætning",
+   "take": 3,
+   "takes": 5,
+   "tp": -3.12,
+   "wallS": 88.0,
+   "wave": 3
+  },
   "name.baby.polarbear": {
    "asr": "det er isbjørne unge",
    "asrExpected": "Det er isbjørneunge",
@@ -22591,6 +22626,41 @@
    "tp": -1.63,
    "wallS": 27.4,
    "wave": 1
+  },
+  "name.color.dragon.c1": {
+   "asr": "det er krøn",
+   "asrExpected": "Det er grøn",
+   "asrWav2vec2": null,
+   "cer": 0.1111,
+   "check": "comp",
+   "comp": {
+    "asr": "det er krøn",
+    "asrWav2vec2": null,
+    "cer": 0.1111,
+    "engine": "wav2vec2",
+    "expected": "Det er grøn",
+    "ids": [
+     "frag.det_er",
+     "name.color.dragon.c1"
+    ],
+    "n": 1,
+    "pass": 0
+   },
+   "cpuS": 120.6,
+   "dur": 0.347,
+   "engine": "wav2vec2",
+   "file": "names-3/name.color.dragon.c1.flac",
+   "hash": "01c6636bdb17006cf9344270ea2984b35a0c5067",
+   "lufs": -18.14,
+   "method": "single",
+   "pack": "names-3",
+   "pass": false,
+   "reason": "sammensætning",
+   "take": 4,
+   "takes": 5,
+   "tp": -1.63,
+   "wallS": 70.6,
+   "wave": 3
   },
   "name.color.dragon.c2": {
    "asr": "det er rød",
@@ -27095,6 +27165,41 @@
    "wallS": 24.1,
    "wave": 3
   },
+  "name.item.astronaut-face": {
+   "asr": "det er rumpriller",
+   "asrExpected": "Det er Rumbriller",
+   "asrWav2vec2": null,
+   "cer": 0.0667,
+   "check": "comp",
+   "comp": {
+    "asr": "det er rumpriller",
+    "asrWav2vec2": null,
+    "cer": 0.0667,
+    "engine": "wav2vec2",
+    "expected": "Det er Rumbriller",
+    "ids": [
+     "frag.det_er",
+     "name.item.astronaut-face"
+    ],
+    "n": 1,
+    "pass": 0
+   },
+   "cpuS": 147.0,
+   "dur": 0.655,
+   "engine": "wav2vec2",
+   "file": "names-3/name.item.astronaut-face.flac",
+   "hash": "1cd667800307da911b4713997fd8d3917e8c48e9",
+   "lufs": -18.15,
+   "method": "single",
+   "pack": "names-3",
+   "pass": false,
+   "reason": "sammensætning",
+   "take": 1,
+   "takes": 5,
+   "tp": -1.63,
+   "wallS": 92.4,
+   "wave": 3
+  },
   "name.item.astronaut-hand": {
    "asr": "det er legetøjsraket",
    "asrExpected": "Det er Legetøjsraket",
@@ -30266,6 +30371,41 @@
    "wallS": 13.7,
    "wave": 3
   },
+  "name.region.w3-broeker": {
+   "asr": "det er brøgt bageriet",
+   "asrExpected": "Det er Brøkbageriet",
+   "asrWav2vec2": null,
+   "cer": 0.1176,
+   "check": "comp",
+   "comp": {
+    "asr": "det er brøgt bageriet",
+    "asrWav2vec2": null,
+    "cer": 0.1176,
+    "engine": "wav2vec2",
+    "expected": "Det er Brøkbageriet",
+    "ids": [
+     "frag.det_er",
+     "name.region.w3-broeker"
+    ],
+    "n": 1,
+    "pass": 0
+   },
+   "cpuS": 159.2,
+   "dur": 0.877,
+   "engine": "wav2vec2",
+   "file": "names-3/name.region.w3-broeker.flac",
+   "hash": "3ae33cf759883c51c571a2daf56120b6998d98a2",
+   "lufs": -18.09,
+   "method": "single",
+   "pack": "names-3",
+   "pass": false,
+   "reason": "sammensætning",
+   "take": 4,
+   "takes": 5,
+   "tp": -1.63,
+   "wallS": 97.6,
+   "wave": 3
+  },
   "name.region.w3-division": {
    "asr": "Det er delekløften",
    "asrExpected": "Det er Delekløften",
@@ -30366,6 +30506,41 @@
    "takes": 1,
    "tp": -1.6,
    "wallS": 11.9,
+   "wave": 3
+  },
+  "name.region.w3-store-tal": {
+   "asr": "det er 3cifred pro",
+   "asrExpected": "Det er Trecifret bro",
+   "asrWav2vec2": null,
+   "cer": 0.1176,
+   "check": "comp",
+   "comp": {
+    "asr": "det er 3cifred pro",
+    "asrWav2vec2": null,
+    "cer": 0.1176,
+    "engine": "wav2vec2",
+    "expected": "Det er Trecifret bro",
+    "ids": [
+     "frag.det_er",
+     "name.region.w3-store-tal"
+    ],
+    "n": 1,
+    "pass": 0
+   },
+   "cpuS": 175.6,
+   "dur": 0.89,
+   "engine": "wav2vec2",
+   "file": "names-3/name.region.w3-store-tal.flac",
+   "hash": "4477c90e61d063d9cba29e000c924b6356367b5a",
+   "lufs": -18.0,
+   "method": "single",
+   "pack": "names-3",
+   "pass": false,
+   "reason": "sammensætning",
+   "take": 3,
+   "takes": 5,
+   "tp": -4.93,
+   "wallS": 115.6,
    "wave": 3
   },
   "name.region.w3-tabellen": {
@@ -35984,6 +36159,76 @@
    "takes": 1,
    "tp": -5.2,
    "wallS": 11.9,
+   "wave": 3
+  },
+  "noun.frac.d8.pl.end": {
+   "asr": "det er oten dele",
+   "asrExpected": "Det er ottendedele",
+   "asrWav2vec2": null,
+   "cer": 0.1875,
+   "check": "comp",
+   "comp": {
+    "asr": "det er oten dele",
+    "asrWav2vec2": null,
+    "cer": 0.1875,
+    "engine": "wav2vec2",
+    "expected": "Det er ottendedele",
+    "ids": [
+     "frag.det_er",
+     "noun.frac.d8.pl.end"
+    ],
+    "n": 1,
+    "pass": 0
+   },
+   "cpuS": 150.0,
+   "dur": 0.703,
+   "engine": "wav2vec2",
+   "file": "fractions-3/noun.frac.d8.pl.end.flac",
+   "hash": "3488ecbd66f5ac72441ad9bc7c871fc4c6f402e2",
+   "lufs": -18.12,
+   "method": "single",
+   "pack": "fractions-3",
+   "pass": false,
+   "reason": "sammensætning",
+   "take": 2,
+   "takes": 5,
+   "tp": -1.63,
+   "wallS": 92.4,
+   "wave": 3
+  },
+  "noun.frac.d8.pl.mid": {
+   "asr": "det er oten dele",
+   "asrExpected": "Det er ottendedele",
+   "asrWav2vec2": null,
+   "cer": 0.1875,
+   "check": "comp",
+   "comp": {
+    "asr": "det er oten dele",
+    "asrWav2vec2": null,
+    "cer": 0.1875,
+    "engine": "wav2vec2",
+    "expected": "Det er ottendedele",
+    "ids": [
+     "frag.det_er",
+     "noun.frac.d8.pl.mid"
+    ],
+    "n": 1,
+    "pass": 0
+   },
+   "cpuS": 150.6,
+   "dur": 0.66,
+   "engine": "wav2vec2",
+   "file": "fractions-3/noun.frac.d8.pl.mid.flac",
+   "hash": "1707290d294d49f70a4528352a972f214c5e9237",
+   "lufs": -18.16,
+   "method": "single",
+   "pack": "fractions-3",
+   "pass": false,
+   "reason": "sammensætning",
+   "take": 2,
+   "takes": 5,
+   "tp": -1.63,
+   "wallS": 101.1,
    "wave": 3
   },
   "noun.mt.bike": {
