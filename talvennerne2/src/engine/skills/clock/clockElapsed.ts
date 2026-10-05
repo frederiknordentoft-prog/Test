@@ -9,7 +9,7 @@
 // over tre. Hvad er klokken om en halv time?" Kinds: choice (three clocks) and clockSet (production, step
 // 15: "… Stil uret, så det viser, hvad klokken er om en halv time.").
 // Wrong clocks (a is the answer, d the time asked for):
-//   wrongOperation   s − d: the hands turned the other way (om ↔ for … siden). Left out for a half hour
+//   wrongOperation   s − d: the hands turned the other way ("om" for "for … siden"). Left out for a half hour
 //                    across the hour (3:45 + ½ h → 3:15), where the same clock is the hour forgotten
 //   halfPastNext     a start on "halv": a + 60, halv tre taken as 3:30              concept, animated hint
 //                    (minusHalf from halv tre: the same clock as wrongOperation, so 'ambiguous')
@@ -75,6 +75,8 @@ export default {
   kinds: ['choice', 'clockSet'],
   enumerate: () => [...FACTS],
   instance: (family: FamilyDef, rng: Rng, avoid: ReadonlySet<string>) => drawAvoiding(() => draw(family.id, rng), avoid),
+  // read back from the id, which holds the start (a fact rebuilt from a task has only its id)
+  answer: (f: Fact) => parse(f).a,
   answerType: () => 'minutes',
   prompt: (f: Fact) => ({ scene: 'clock', minutes: parse(f).s, step: 15 }),
   optionView: () => 'clock',

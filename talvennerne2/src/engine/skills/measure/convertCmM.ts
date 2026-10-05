@@ -86,7 +86,7 @@ function candidates(f: Fact) {
 function hint(f: Fact, tag: string | null): HintSpec {
   const { family, a, b, x } = parse(f)
   const meters = family === 'cmToMCm' ? x : a
-  const said: SpeechPart[] = [say(tag === 'tensZero' ? 'hint.convertCmM.notTen' : 'hint.convertCmM.meter')]
+  const said: SpeechPart[] = [say(tag === 'tensZero' ? 'hint.convertCmM.twoZeros' : 'hint.convertCmM.meter')]
   if (family === 'cmToMCm') said.push(measureSays(100 * x, 'cm', 'mid'), say('hint.convertCmM.is'), measureSays(x, 'm', 'end'))
   else if (meters > 1) said.push(measureSays(meters, 'm', 'mid'), say('hint.convertCmM.is'), measureSays(100 * meters, 'cm', 'end'))
   if (family === 'mCmToCm') {
@@ -111,6 +111,8 @@ export default {
   kinds: ['choice', 'keypad'],
   enumerate: () => [...FACTS],
   instance: (family: FamilyDef, rng: Rng, avoid: ReadonlySet<string>) => drawAvoiding(() => draw(family.id, rng), avoid),
+  // read back from the id, like everything else here (a fact rebuilt from a task has only its id)
+  answer: (f: Fact) => parse(f).x,
   answerType: () => 'int',
   prompt: (f: Fact) => ({ scene: 'equation', terms: terms(f) }),
   optionView: () => 'numeral',

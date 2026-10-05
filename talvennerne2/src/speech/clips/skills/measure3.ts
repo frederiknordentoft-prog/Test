@@ -26,8 +26,8 @@ const table: Record<ClipId, string> = {
   'hint.convertCmM.more': 'til.',
   'hint.convertCmM.left': 'Der er',
   'hint.convertCmM.over': 'til overs.',
-  // tensZero (a meter taken as ten centimeter), in place of the first sentence
-  'hint.convertCmM.notTen': 'En meter er hundrede centimeter, ikke ti centimeter.',
+  // tensZero (a zero lost or one too many: 30 or 3000 for 3 m), in place of the first sentence
+  'hint.convertCmM.twoZeros': 'En meter er hundrede centimeter, og hundrede har to nuller.',
   // zeroPlaceholder: "to meter og fem centimeter" written 25 or 250
   'hint.convertCmM.noTens': 'Der er ingen tiere, så der står et nul på tiernes plads.',
   // digitComplement10: a hundred minus 37 made up digit by digit (73)
