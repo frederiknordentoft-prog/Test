@@ -426,7 +426,7 @@ describe('fixture: random ±1 slips (SPEC §4.3)', () => {
 
 // ─── parent texts ───────────────────────────────────────────────────────────
 
-describe('parent texts for all 31 misconceptions', () => {
+describe('parent texts for all 32 misconceptions', () => {
   it('has a title, example, parent text and home tip for every id', () => {
     expect(Object.keys(MISCONCEPTION_TEXTS).sort()).toEqual([...MISCONCEPTION_IDS].sort())
     for (const id of MISCONCEPTION_IDS) {

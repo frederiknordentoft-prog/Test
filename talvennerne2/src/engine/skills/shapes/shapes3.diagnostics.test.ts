@@ -3,7 +3,9 @@
 // drawing by the oracle (shapes3.oracle.ts), not from the generator's tags. A child who counts the edge
 // instead of the squares is flagged for areaAsPerimeter within 160 answers, and for nothing else; a child
 // who answers right never is; a child who guesses 500 times never is, also when every tapped card counts.
-// gridCoords has no misconception (SPEC §4.2): a child who always swaps the two numbers is never flagged.
+// gridCoords' one misconception is coordSwap (SPEC A23; updated by GENFIX3 with the integrator's approval, before
+// A23 the swap was plain): a child who always swaps the two numbers is flagged for it within 160 answers, and
+// for nothing else; a child who answers right or guesses never is.
 import { describe, expect, it } from 'vitest'
 import { hashSeed, makeRng } from '../../rng'
 import type { AnswerValue, Task } from '../../types'
@@ -57,9 +59,11 @@ describe('area through the real diagnostics (SPEC §4.3)', () => {
   })
 })
 
-describe('gridCoords through the real diagnostics (SPEC §4.3): no misconception to flag', () => {
-  it('never flags a child who swaps the two numbers of every point (160 answers): the swap is plain, never evidence', () => {
-    expect([...simulate(NODE, 'gridCoords', swapsTheNumbers, 160).flagged.keys()]).toEqual([])
+describe('gridCoords through the real diagnostics (SPEC §4.3, A23): coordSwap', () => {
+  it('flags a child who swaps the two numbers of every point (coordSwap) within 160 answers, and nothing else', () => {
+    const { flagged } = simulate(NODE, 'gridCoords', swapsTheNumbers, 160)
+    expect([...flagged.keys()]).toEqual(['coordSwap'])
+    expect(flagged.get('coordSwap')).toBeLessThanOrEqual(160)
   })
 
   it('flags nothing for a child who answers right, or guesses 500 times', () => {

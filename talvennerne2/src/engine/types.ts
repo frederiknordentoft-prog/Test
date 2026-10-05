@@ -58,6 +58,8 @@ export const MISCONCEPTION_IDS = [
   'halfPastNext', 'quarterDirection', 'handsSwapped', 'firstDigitCompare', 'coinsAsCount',
   'rulerEnd', 'lengthByEnd', 'sizeIsWeight', 'unequalParts', 'prototypeOnly', 'biggerDenominator',
   'denominatorAsAnswer', 'areaAsPerimeter', 'tensZero', 'digitComplement10',
+  // SPEC A23: (3, 2) read or set as (2, 3) in gridCoords
+  'coordSwap',
   // concept in hear*/tensOnes/placeValue1000, slip elsewhere (natureFor decides)
   'digitSwap',
   // slip

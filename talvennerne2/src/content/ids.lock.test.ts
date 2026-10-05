@@ -67,7 +67,7 @@ describe('curriculum and catalogue', () => {
     expect(SKILL_IDS).toHaveLength(72)
     expect(TASK_KINDS).toHaveLength(15)
     expect(SKILLS.map((s) => s.id)).toEqual([...SKILL_IDS])
-    expect(MISCONCEPTION_IDS).toHaveLength(31)
+    expect(MISCONCEPTION_IDS).toHaveLength(32)
   })
 
   it('gives every skill at least one production kind among its kinds', () => {

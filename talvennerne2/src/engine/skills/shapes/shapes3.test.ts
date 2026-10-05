@@ -271,17 +271,21 @@ describe('gridCoords', () => {
     }
   })
 
-  it('reads the swapped numbers as plain mistakes (an operand when placePoint said them)', () => {
+  it('reads the swapped numbers as coordSwap (SPEC A23), and as ambiguous where placePoint said them (A9)', () => {
     const read = task(gridCoords, 'crd:r:2,5', 'grid')
-    expect([read.answer, classifyAnswer(read, 'x:5|y:2'), classifyAnswer(read, 'x:3|y:5'), classifyAnswer(read, 'x:6|y:6')]).toEqual(['x:2|y:5', 'other', 'near', 'other'])
+    expect([read.answer, classifyAnswer(read, 'x:5|y:2'), classifyAnswer(read, 'x:3|y:5'), classifyAnswer(read, 'x:6|y:6')]).toEqual(['x:2|y:5', 'coordSwap', 'near', 'other'])
     const place = task(gridCoords, 'crd:p:3,2', 'grid')
-    expect([place.answer, classifyAnswer(place, 'pt:2,3'), classifyAnswer(place, 'pt:3,3')]).toEqual(['pt:3,2', 'other', 'near'])
-    // "Du skal sætte punktet fire, et. Hvor langt hen skal du gå?" — the 1 was said: an operand
+    expect([place.answer, classifyAnswer(place, 'pt:2,3'), classifyAnswer(place, 'pt:3,3')]).toEqual(['pt:3,2', 'coordSwap', 'near'])
+    // "Du skal sætte punktet fire, to. Hvor langt hen skal du gå?" — the 2 was said: a swap and an operand
     const card = task(gridCoords, 'crd:p:4,2', 'choice')
-    expect([card.answer, card.distractorTags['2']]).toEqual([4, 'operand'])
+    expect([card.answer, card.distractorTags['2']]).toEqual([4, 'ambiguous'])
     const readCard = task(gridCoords, 'crd:r:4,2', 'choice')
-    expect([readCard.answer, readCard.distractorTags['2']]).toEqual([4, 'other'])
-    for (const { task: t } of tasks) expect(detectableOf(t)).toEqual([])
+    expect([readCard.answer, readCard.distractorTags['2'], readCard.options.includes(2)]).toEqual([4, 'coordSwap', true])
+    // a swap is a sign on the net and on readPoint's cards (its card always dealt); a point with x = y has none
+    for (const { fact, task: t } of tasks) {
+      const [x, y] = fact.id.slice(6).split(',').map(Number)
+      expect(detectableOf(t), `${fact.id} ${t.kind}`).toEqual(x !== y && (t.kind === 'grid' || fact.family === 'readPoint') ? ['coordSwap'] : [])
+    }
   })
 
   it('asks in Danish: set the point, read it, or one of its numbers', () => {
@@ -296,6 +300,11 @@ describe('gridCoords', () => {
     const hint = (id: string, tag: string | null, kind: Task['kind']) => compile(gridCoords.hint(fact(gridCoords, id), tag as never, kind).speech).text
     expect(hint('crd:p:3,2', null, 'grid')).toBe('Start i nul. Gå tre hen og så to op. Der er punktet.')
     expect(hint('crd:p:3,2', 'other', 'grid')).toBe('Det første tal er hen, og det andet tal er op. Start i nul. Gå tre hen og så to op. Der er punktet.')
+    // coordSwap's own hint starts with the order (SPEC A23)
+    expect(hint('crd:p:3,2', 'coordSwap', 'grid')).toBe('Det første tal er hen, og det andet tal er op. Start i nul. Gå tre hen og så to op. Der er punktet.')
+    expect(hint('crd:r:2,5', 'coordSwap', 'choice')).toMatch(/^Det første tal er hen, og det andet tal er op\. /)
+    expect(gridCoords.hint(fact(gridCoords, 'crd:r:2,5'), 'coordSwap', 'grid').misconception).toBe('coordSwap')
+    expect(gridCoords.hint(fact(gridCoords, 'crd:r:2,5'), 'other', 'grid').misconception).toBeUndefined()
     expect(hint('crd:r:2,5', null, 'grid')).toBe('Kig lige ned under punktet. Der står to. Kig lige over til venstre. Der står fem.')
     expect(hint('crd:r:2,5', null, 'choice')).toBe('Kig lige over til venstre. Der står fem.')
     expect(gridCoords.hint(fact(gridCoords, 'crd:r:2,5'), null, 'grid').visual).toEqual({ scene: 'grid', w: 6, h: 6, filled: [], coords: true, point: [2, 5] })

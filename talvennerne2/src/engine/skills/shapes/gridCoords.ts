@@ -11,12 +11,14 @@
 //   choice: one of the point's numbers on three cards — "Hvor langt hen er punktet?" over the point
 //     (readPoint), "Du skal sætte punktet tre, to. Hvor langt op skal du gå?" over the empty net
 //     (placePoint). The instance decides which number: "hen" when x + y is even.
-// Wrong answers: the two numbers swapped ('x:2|y:3', 'pt:2,3'; on a card the other number — 'operand'
-// when placePoint said it, else 'other') and one step off along either axis ('near'). The catalogue has
-// no misconception for the swap; the SK3-GEO report proposes one.
+// Wrong answers: coordSwap (SPEC A23, a concept) — the two numbers swapped: 'x:2|y:3' read and 'pt:2,3'
+// set on the net, and on readPoint's cards the point's other number. On placePoint's cards the other
+// number was said in the question, an operand as well, so it is 'ambiguous' (A9). A point with x = y
+// cannot show it. One step off along either axis is 'near'.
 // Hint: "Kig lige ned under punktet. Der står tre. Kig lige over til venstre. Der står to." (read) or
 // "Start i nul. Gå tre hen og så to op. Der er punktet." (place), after "Det første tal er hen, og det
-// andet tal er op." when the numbers may have been swapped, and always on placePoint's cards.
+// andet tal er op." for coordSwap (its own hint) and the other wrong answers, and always on placePoint's
+// cards.
 import type { AnswerValue, Candidate, ErrorTag, Fact, FamilyDef, Prompt, Rng, SpeechPart, TaskKind } from '../../types'
 import type { SkillModule } from '../types'
 import { hintOf, metaOf, num, say, tagged, type Entry } from '../number/kit'
@@ -72,19 +74,22 @@ function candidatesFor(f: Fact, kind: TaskKind): Candidate[] {
   const p = parse(f)
   if (kind === 'choice') {
     const v = asked(p)
-    return tagged(v, [[p.along ? p.y : p.x, p.family === 'placePoint' ? 'operand' : 'other'], [v + 1, 'near'], [v - 1, 'near']])
+    const other = p.along ? p.y : p.x
+    // the swap (A23); placePoint said the other number, so there it is an operand too: 'ambiguous' (A9)
+    const swap: Entry[] = p.family === 'placePoint' ? [[other, 'coordSwap'], [other, 'operand']] : [[other, 'coordSwap']]
+    return tagged(v, [...swap, [v + 1, 'near'], [v - 1, 'near']])
   }
   const at = (x: number, y: number) => gridAnswer({ ...p, x, y })
   const near: Entry[] = [[p.x + 1, p.y], [p.x - 1, p.y], [p.x, p.y + 1], [p.x, p.y - 1]]
     .filter(([x, y]) => x >= 0 && y >= 0 && x <= N && y <= N)
     .map(([x, y]) => [at(x, y), 'near'])
-  return tagged(gridAnswer(p), [[at(p.y, p.x), 'other'], ...near])
+  return tagged(gridAnswer(p), [[at(p.y, p.x), 'coordSwap'], ...near])
 }
 
 function hint(f: Fact, tag: ErrorTag | null, kind?: TaskKind) {
   const p = parse(f)
   const visual: Prompt = { scene: 'grid', w: N, h: N, filled: [], coords: true, point: [p.x, p.y] }
-  const swapped = tag === 'other' || tag === 'operand'
+  const swapped = tag === 'coordSwap' || tag === 'other' || tag === 'operand'
   let words: SpeechPart[]
   if (p.family === 'placePoint') {
     words = [say('hint.gridCoords.fromZero'), say('hint.gridCoords.go'), num(p.x, 'mid'), say('hint.gridCoords.alongThen'), num(p.y, 'mid'), say('hint.gridCoords.upThere')]
@@ -93,7 +98,8 @@ function hint(f: Fact, tag: ErrorTag | null, kind?: TaskKind) {
     const side = [say('hint.gridCoords.side'), num(p.y)]
     words = kind === 'choice' ? (p.along ? down : side) : [...down, ...side]
   }
-  return hintOf(swapped || (kind === 'choice' && p.family === 'placePoint') ? [say('hint.gridCoords.order'), ...words] : words, visual)
+  const order = swapped || (kind === 'choice' && p.family === 'placePoint')
+  return hintOf(order ? [say('hint.gridCoords.order'), ...words] : words, visual, tag === 'coordSwap' ? 'coordSwap' : undefined)
 }
 
 export default {
