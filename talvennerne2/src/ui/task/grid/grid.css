@@ -4,18 +4,28 @@
  * in the numbers, the arrows of the pair and the walk. Colours from tokens.css; only transform and
  * opacity animate, and calm mode and reduced motion drop even that.
  */
+/* The view fills the answer area and is the size container the net is measured against: the net is
+   as wide as the area allows and leaves the pair and the tick room below it (--foot), so nothing
+   spills and the round never has to drop its companion strip for it. */
 .tv-grid {
   --fig: min(420px, calc(100vw - 2 * var(--gutter) - 24px), 56vh);
+  --foot: 92px;
+  container-type: size;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   width: 100%;
-  margin-block: auto;
+  height: 100%;
+  min-height: 300px;
 }
 .tv-grid__figure {
   position: relative;
+  flex: none;
+  /* without container units: the viewport estimate */
   width: var(--fig);
+  width: min(var(--fig-max, 440px), 100cqw, calc(100cqh - var(--foot)));
 }
 .tv-grid__svg {
   display: block;
@@ -213,23 +223,27 @@
 .tv-grid__pair.is-oops .tv-grid__pnum {
   opacity: 0.6;
 }
-.tv-grid__pair.is-small {
-  padding: 2px 4px;
-  background: none;
-  box-shadow: none;
-  font-size: 26px;
-}
-
-/* The face of an answer: the pair alone */
+/* The face of an answer: the pair alone, small enough for the struck answer and the confirm button
+   ("Tryk på (3, 2)") side by side on a phone */
 .tv-gridface .tv-grid__pair {
+  padding: 0 2px;
   background: none;
   box-shadow: none;
+  font-size: 28px;
+}
+.tv-face--sm .tv-grid__pair {
+  font-size: 22px;
 }
 .tv-face--lg .tv-grid__pair {
-  font-size: 46px;
+  font-size: 34px;
 }
 
-/* The demo film */
+/* The demo film: a small net of its own size, not a container */
+.tv-grid-demo {
+  container-type: normal;
+  height: auto;
+  min-height: 0;
+}
 .tv-grid-demo .tv-grid__figure {
   width: 210px;
 }
@@ -237,15 +251,16 @@
   font-size: 28px;
 }
 
-/* iPad, either way up: the net as big as the height leaves under it for the pair and the tick (a
-   square is 64 px or more) */
+/* iPad, either way up: a square is 60 px or more */
 @media (min-width: 700px) and (min-height: 700px) {
   .tv-grid {
-    --fig: min(560px, calc(100vh - 280px));
+    --fig: min(560px, calc(100vh - 310px));
+    --fig-max: 600px;
+    --foot: 116px;
     gap: 16px;
   }
   .tv-grid__pair {
-    font-size: 50px;
+    font-size: 46px;
   }
 }
 
@@ -254,8 +269,10 @@
   .tv-grid {
     --fig: min(600px, calc(100vh - 150px));
     flex-direction: row;
-    justify-content: center;
     gap: 24px;
+  }
+  .tv-grid__figure {
+    width: min(600px, calc(100cqw - 220px), 100cqh);
   }
   .tv-grid__foot {
     flex-direction: column;

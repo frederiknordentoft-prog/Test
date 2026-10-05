@@ -162,7 +162,8 @@ async function play(browser, vpName) {
       if ((await state.jsonValue()) === 'exit') break
       const t = await task(page)
       await page.waitForSelector('.tv-round__answer [data-kind="grid"]', { timeout: 8000 })
-      await sleep(450)
+      // past the entrance and the round's fitting check (650 ms): the net stands still from here
+      await sleep(900)
       const tag = `${t.factId.replace(/[:,]/g, '-')}-${vpName}`
       const small = await smallTargets(page)
       check(small.length === 0, `${tag}: trykmål ≥ 60 px${small.length ? ` (${small.join(', ')})` : ''}`)
@@ -177,6 +178,10 @@ async function play(browser, vpName) {
       const before = (await answers(page)).length
       if (mode === 'p') await placePoint(page, cdp, target, t.retryOf ? null : tag)
       else await readPoint(page, cdp, target, t.retryOf ? null : tag)
+      if (mode === 'p') {
+        const walk = await page.evaluate(() => !!document.querySelector('.tv-round__answer .tv-grid__walk'))
+        check(walk === !!t.scaffold, `${tag}: vejen hen og op vises ${t.scaffold ? 'på en ny nøgle' : 'ikke uden støtte'}`)
+      }
       if (!t.retryOf) await shot(page, `built-${tag}`)
       await tapCheck(page, cdp)
       const verdict = await lastVerdict(page, before)

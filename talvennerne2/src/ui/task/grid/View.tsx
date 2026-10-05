@@ -89,9 +89,9 @@ function AxisNum({ axis, n, x, y, on }: { axis: Axis; n: number; x: number; y: n
 }
 
 /** "(3, 2)" with an arrow along under the first number and one up under the second. */
-export function PairCard({ x, y, state = 'idle', small }: { x: number | null; y: number | null; state?: 'idle' | 'good' | 'oops'; small?: boolean }) {
+export function PairCard({ x, y, state = 'idle' }: { x: number | null; y: number | null; state?: 'idle' | 'good' | 'oops' }) {
   return (
-    <span className={cx('tv-grid__pair', `is-${state}`, small && 'is-small')}>
+    <span className={cx('tv-grid__pair', `is-${state}`)}>
       <span className="tv-grid__paren">(</span>
       <PairNum axis="x" n={x} />
       <span className="tv-grid__comma">,</span>
@@ -236,7 +236,8 @@ export function GridView({ task, mode, given, onSubmit, onActivity }: TaskViewPr
         {mode === 'wrong' && <span className="tv-strike tv-strike--wide" aria-hidden />}
       </div>
       <div className="tv-grid__foot">
-        {read ? <PairCard x={shownPicks.x} y={shownPicks.y} state={state} /> : <PairCard x={setup.point.x} y={setup.point.y} />}
+        {/* read: the child's own numbers; place: the question, green once the point is right */}
+        {read ? <PairCard x={shownPicks.x} y={shownPicks.y} state={state} /> : <PairCard x={setup.point.x} y={setup.point.y} state={state === 'good' ? 'good' : 'idle'} />}
         <CheckButton valid={value !== null} stateKey={value ?? ''} enabled={input} taskId={task.id} onCheck={submit} />
       </div>
     </div>
@@ -248,7 +249,7 @@ export function GridFace({ value, size }: FaceProps) {
   const q = pointOf(value)
   return (
     <span className={cx('tv-face', `tv-face--${size}`, 'tv-gridface')}>
-      <PairCard x={q?.x ?? null} y={q?.y ?? null} small={size === 'sm'} />
+      <PairCard x={q?.x ?? null} y={q?.y ?? null} />
     </span>
   )
 }
