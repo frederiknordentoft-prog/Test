@@ -11,6 +11,9 @@
 #   TV2_COMMIT=0           ingen commits (standard: mastere i bidder ≤ 10 MB, derefter sprites)
 #   TV2_QA_ROUNDS=2        runder med nye takes for klip, som sammensætningstesten peger på
 #   TV2_GENERATE_ARGS=…    ekstra argumenter til generate.py, fx "--pack core" eller "--ids-file fil"
+#   TV2_UNTIL=generate     stop efter genereringen (uden sammensætningstest og pakning), fx mens
+#                          bølgens katalog stadig vokser (bølge 3: indspil løbende, test og pak til sidst)
+#   TV2_NICE=19            nice-værdi for genereringen (0, når stemmen er den kritiske vej)
 set -uo pipefail
 
 WAVE="${1:?brug: run-wave.sh <bølge 1|2|3>}"
@@ -21,6 +24,8 @@ THREADS="${TV2_THREADS:-2}"
 MAX_MIN="${TV2_MAX_MINUTES:-100}"
 COMMIT="${TV2_COMMIT:-1}"
 QA_ROUNDS="${TV2_QA_ROUNDS:-2}"
+UNTIL="${TV2_UNTIL:-all}"
+NICE="${TV2_NICE:-19}"
 TTS_PY="${TV2_TTS_PYTHON:-/opt/tv2-tts/bin/python}"
 CHUNK_BYTES=$((10 * 1024 * 1024))
 TRAILER="${TV2_COMMIT_TRAILER:-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -90,7 +95,7 @@ gen_until_done() {  # ekstra argumenter går til generate.py
   while :; do
     say "generering, bølge $WAVE ($THREADS tråde, bidder à $MAX_MIN min)"
     # shellcheck disable=SC2086 # TV2_GENERATE_ARGS is a word list on purpose
-    nice -n 19 "$TTS_PY" scripts/tts/generate.py --wave "$WAVE" --threads "$THREADS" --max-minutes "$MAX_MIN" \
+    nice -n "$NICE" "$TTS_PY" scripts/tts/generate.py --wave "$WAVE" --threads "$THREADS" --max-minutes "$MAX_MIN" \
       ${TV2_GENERATE_ARGS:-} "$@"
     rc=$?
     set --  # retakes only in the first chunk
@@ -105,6 +110,7 @@ gen_until_done() {  # ekstra argumenter går til generate.py
   done
 }
 gen_until_done || exit 1
+if [ "$UNTIL" = generate ]; then say "TV2_UNTIL=generate: stopper før sammensætningstest og pakning"; status; exit 0; fi
 
 # 3. Sammensætningstest (899 tal + skabeloner) og nye takes til de klip, den peger på
 round=0
