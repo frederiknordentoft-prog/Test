@@ -46,8 +46,10 @@ const BODY_PTS: Vec[] = [
   [-0.2, 1.03], [0.2, 1.03], [0.58, 1.0], [0.88, 0.84], [1.01, 0.5], [1.0, 0.1], [0.9, -0.3], [0.74, -0.74], [0.48, -1.06],
   [0.18, -1.2],
 ]
+/** Kroppens bredde i forhold til ankeret bodyRx (jordskyggen og tøjet regner med bodyRx; kroppen er bredere end høj). */
+const BODY_WIDE = 60 / 53
 const bearBody: OutlineFn = (a: AnchorSet, inflate: number) =>
-  blob(offsetLoop(frame(BODY_PTS, a.bodyCenter.x, a.bodyCenter.y, a.bodyRx, a.bodyRy), inflate), 0.9)
+  blob(offsetLoop(frame(BODY_PTS, a.bodyCenter.x, a.bodyCenter.y, a.bodyRx * BODY_WIDE, a.bodyRy), inflate), 0.9)
 
 // ---------------------------------------------------------------------------------------------
 // Ører: små og runde, lavt og bagud på hovedets sider (bag hovedet, lokalt: roden i (0,0), peger op).
@@ -230,7 +232,7 @@ const THIGH: Vec[] = [[128, 214], [128.6, 200], [136, 189], [148, 184], [158, 18
 
 const BodyDeco: Part = ({ pal, a, ids, sw, lod }) => (
   <>
-    <path d={ellipse(a.bodyCenter.x - 12, a.bodyCenter.y + 8, a.bodyRx * 0.5, a.bodyRy * 0.76)} fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly} clipPath={`url(#${ids.bodyClip})`} />
+    <path d={ellipse(a.bodyCenter.x - 12, a.bodyCenter.y + 8, a.bodyRx * BODY_WIDE * 0.5, a.bodyRy * 0.76)} fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly} clipPath={`url(#${ids.bodyClip})`} />
     {lod === 'full' && !pal.silhouette && <path d={join(...TUFT.map((t) => spline(t)), spline(THIGH))} fill="none" stroke={crease(pal)} strokeWidth={sw * 0.5} {...round} />}
   </>
 )
@@ -252,25 +254,25 @@ export const polarbear: SpeciesDef = {
     headRx: 44,
     headRy: 38,
     // Hatte sidder på issen: ankeret ligger over den, så skyggen og kanten går fri af øjnene.
-    headTop: { x: 96, y: 56 },
+    headTop: { x: 96, y: 54 },
     headWidth: 96,
     earBaseL: { x: 76, y: 68 },
     earBaseR: { x: 126, y: 70 },
     // Hatte mellem ørerne sidder på issen.
     earGap: 56,
     hornBase: { x: 96, y: 64 },
-    eyeL: { x: 76, y: 97 },
-    eyeR: { x: 103, y: 96 },
+    eyeL: { x: 76, y: 98 },
+    eyeR: { x: 112, y: 97 },
     eyeRx: 9.2,
     eyeRy: 11.6,
     muzzle: { x: 60, y: 122 },
     mouth: { x: 60, y: 135 },
-    cheekL: { x: 70, y: 113 },
-    cheekR: { x: 117, y: 111 },
+    cheekL: { x: 68, y: 115 },
+    cheekR: { x: 121, y: 113 },
     neck: { x: 94, y: 142 },
     neckWidth: 54,
     bodyCenter: { x: 106, y: 184 },
-    bodyRx: 60,
+    bodyRx: 53,
     bodyRy: 42,
     bodyWidth: 104,
     chest: { x: 90, y: 166 },

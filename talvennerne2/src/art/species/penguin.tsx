@@ -91,10 +91,12 @@ const Face: Part = ({ pal, a, ids, stage, colorway, sw }) => {
 // næbspalte og et lille højlys.
 
 const BEAK: Vec[] = [
-  [7.4, -6.6], [0, -7.4], [-10, -6.4], [-21, -4], [-31, -0.4], [-39.4, 3.4], [-42.6, 6.2], [-39, 7.8], [-28, 7.8], [-15, 8.2],
-  [-3, 8.4], [6, 7.2], [9.6, 1],
+  [8, -8.4], [0, -9.4], [-10, -8.2], [-19.6, -5.6], [-28, -2], [-34, 2], [-37.4, 6.2], [-36.4, 9.2], [-31, 8.4], [-22, 8.6],
+  [-12, 9.6], [-2, 10], [6.6, 8.4], [10.4, 0.6],
 ]
-const BEAK_SLIT: Vec[] = [[4, 1.6], [-8, 2], [-21, 2.8], [-34, 5]]
+/** Næbspalten og næbryggen (den mørkere overkant, så næbbet læses som et fuglenæb og ikke som en gulerod). */
+const BEAK_SLIT: Vec[] = [[4, 2.4], [-8, 2.6], [-20, 3.6], [-31, 6.2]]
+const BEAK_RIDGE: Vec[] = [[4, -7.6], [-8, -7.4], [-19, -4.6], [-28.6, -0.6], [-34.6, 4]]
 
 const Beak: Part = ({ pal, sw, a, lod }) => {
   const m = a.muzzle
@@ -103,9 +105,9 @@ const Beak: Part = ({ pal, sw, a, lod }) => {
     <>
       <path d={blob(at(BEAK), 0.82)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.6} {...round} />
       {!pal.silhouette && lod === 'full' && (
-        <path d={spline(at(BEAK_SLIT))} fill="none" stroke={mixHex(pal.nose, pal.outline, 0.5)} strokeWidth={sw * 0.42} {...round} />
+        <path d={join(spline(at(BEAK_SLIT)), spline(at(BEAK_RIDGE)))} fill="none" stroke={mixHex(pal.nose, pal.outline, 0.5)} strokeWidth={sw * 0.42} {...round} />
       )}
-      {!pal.silhouette && <path d={ellipse(m.x - 8, m.y - 3.6, 7.4, 1.5, 9)} fill={pal.highlight} />}
+      {!pal.silhouette && <path d={ellipse(m.x - 9, m.y - 3.2, 7, 1.6, 10)} fill={pal.highlight} />}
     </>
   )
 }
@@ -347,26 +349,26 @@ export const penguin: SpeciesDef = {
     headRx: 42,
     headRy: 40,
     headTop: { x: 100, y: 47 },
-    headWidth: 90,
+    headWidth: 84,
     // Ingen ører: ørebaserne er virtuelle og styrer kun, hvor bred en hat mellem ørerne må være.
     earBaseL: { x: 76, y: 56 },
     earBaseR: { x: 124, y: 56 },
     hornBase: { x: 100, y: 49 },
-    // Trekvart: ansigtet er vendt mod venstre (øjnene og næbbet ligger til venstre for hovedets midte).
-    eyeL: { x: 79, y: 88 },
-    eyeR: { x: 104, y: 88 },
+    // Trekvart: næbbet går ud til venstre fra ansigtets midte (øjnene sidder om hovedets midte, så briller passer).
+    eyeL: { x: 82, y: 88 },
+    eyeR: { x: 118, y: 88 },
     eyeRx: 9.4,
     eyeRy: 11.8,
-    muzzle: { x: 92, y: 108 },
-    mouth: { x: 96, y: 121 },
-    cheekL: { x: 70, y: 105 },
-    cheekR: { x: 118, y: 106 },
+    muzzle: { x: 93, y: 108 },
+    mouth: { x: 95, y: 121 },
+    cheekL: { x: 72, y: 105 },
+    cheekR: { x: 128, y: 105 },
     neck: { x: 100, y: 130 },
     neckWidth: 52,
     bodyCenter: { x: 100, y: 168 },
     bodyRx: 50,
     bodyRy: 58,
-    bodyWidth: 100,
+    bodyWidth: 96,
     chest: { x: 100, y: 150 },
     back: { x: 100, y: 156 },
     shoulderL: { x: 80, y: 146 },
