@@ -92,7 +92,7 @@ export const KIND_MODULES: Partial<Record<TaskKind, KindModule>> = {
   pay: lazyKind(() => import('./pay'), { wideFace: true }),
   share: lazyKind(() => import('./share'), { ownsPrompt: shareOwnsPrompt, wideFace: true }),
   colorParts: lazyKind(() => import('./colorParts'), { ownsPrompt: colorPartsOwnsPrompt, wideFace: true }),
-  grid: lazyKind(() => import('./grid'), { ownsPrompt: gridOwnsPrompt }),
+  grid: lazyKind(() => import('./grid'), { ownsPrompt: gridOwnsPrompt, wideFace: true }),
 }
 
 /** Whether a kind can play this task at all (a share needs a deal, a pay an amount the purse makes …). */

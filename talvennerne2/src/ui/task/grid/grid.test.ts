@@ -19,6 +19,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type { AnswerValue } from '../../../engine/types'
 import type { ViewMode } from '../types'
 import { GridFace, GridView } from './View'
+import { hintFor } from '../../hint/hintFor'
+import { compile } from '../../../speech/compile'
 
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(`./${rel}`, import.meta.url)), 'utf8')
 const stripComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '')
@@ -31,6 +33,8 @@ describe('grid in the registry', () => {
     expect(BUILT_KINDS).toContain('grid')
     for (const part of [m!.View, m!.Demo, m!.Face]) expect(typeof part).toBe('function')
     expect(read('../registry.ts')).toMatch(/grid: lazyKind\(\(\) => import\('\.\/grid'\)/)
+    // the pair is stacked over the confirm button: beside it there is no room on a phone
+    expect(m!.wideFace).toBe(true)
     expect(read('index.ts')).toMatch(/GridView as View, GridFace as Face/)
   })
 
@@ -178,5 +182,19 @@ describe('the grid view as drawn', () => {
       const html = renderToStaticMarkup(createElement(GridFace, { task: ex('grid-place'), value, size: 'md' }))
       expect(html, value).toMatch(/tv-grid__digit">3<.*tv-grid__digit">2</)
     }
+  })
+})
+
+describe('the strategy after a wrong point, in the round', () => {
+  it('walks to the asked point with the order of the numbers first, on the net with the point', () => {
+    const t = EXAMPLES.grid.find((e) => e.id === 'grid-place-new')!.task
+    const h = hintFor(t, 'pt:4,5')
+    expect(h.fromSkill).toBe(true)
+    expect(compile(h.speech).text).toBe('Det første tal er hen, og det andet tal er op. Start i nul. Gå fem hen og så fire op. Der er punktet.')
+    expect(h.visual).toEqual({ scene: 'grid', w: 6, h: 6, filled: [], coords: true, point: [5, 4] })
+    const r = EXAMPLES.grid.find((e) => e.id === 'grid-read')!.task
+    // one step off (near): the reading alone; anything else may be the numbers swapped
+    expect(compile(hintFor(r, 'x:2|y:4').speech).text).toBe('Kig lige ned under punktet. Der står to. Kig lige over til venstre. Der står fem.')
+    expect(compile(hintFor(r, 'x:5|y:2').speech).text).toMatch(/^Det første tal er hen, og det andet tal er op\. Kig lige ned/)
   })
 })
