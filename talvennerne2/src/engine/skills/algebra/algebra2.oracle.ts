@@ -423,6 +423,11 @@ export const SPEC_KINDS3: Readonly<Partial<Record<SkillId, { kinds: readonly Tas
   div2510: { kinds: ['choice', 'keypad', 'share'], production: ['keypad'] },
   divAll: { kinds: ['choice', 'keypad'], production: ['keypad'] },
   mulTens: { kinds: ['choice', 'keypad'], production: ['keypad'] },
+  // wave 3 (ORK3b): SPEC §2.2's rows for SK3-GEO's skills
+  area: { kinds: ['choice', 'keypad'], production: ['keypad'] },
+  gridCoords: { kinds: ['choice', 'grid'], production: ['grid'] },
+  fractionOfSet: { kinds: ['share', 'choice', 'keypad'], production: ['share', 'keypad'] },
+  fractionCompare: { kinds: ['choice', 'sortOrder'], production: ['sortOrder'] },
 }
 
 /**
