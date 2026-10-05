@@ -1,10 +1,10 @@
 // Pegasussen (Stjernefjeldet, bølge 3): en bevinget pony på skabelonen `tall`, én race (std). Hoved, ører, ben,
 // hove og mule deles med hesten (shared/equine.tsx); artstrækkene står i silhuetten, så pegasussen aldrig læses som
 // en hest eller en enhjørning (blindtestene G2-r3 og G2-r4 nævnte langmankede heste som mulige pegasusser):
-// - to store, fjerede vinger, der rejser sig skråt op og ud bag skuldrene, med fire runde fjerspidser langs ydersiden
-//   og et lag dækfjer foroven; de rager ud på begge sider af hovedet i alle stadier (føllets vinger er større, så de
-//   også står frem ved siden af det store babyhoved),
-// - en kort, opsvunget manke over issen og bag højre øre og en pandelok, der holder siderne fri til vingerne,
+// - to store, fjerede vinger, der står som et V bag hovedet: spidsen ved siden af issen, seks fjerspidser, der peger
+//   nedad og udad langs bagkanten, og et lag dækfjer langs forkanten; de rager ud på begge sider af hovedet i alle
+//   stadier (føllets vinger er større, så de også står frem ved siden af det store babyhoved),
+// - en kort, opsvunget manke over issen og en pandelok, der holder siderne fri til vingerne,
 // - intet horn.
 // Vingerne tegnes om ankeret `back` (lag 3, bag kroppen) og optager ryg-slottet (`occupies: ['back']`). Signaturen er
 // vinge-blafren: vingerne slår tre slag op og ud, overshooter og falder til ro (`a-flap` i rig.css, kun i hvile);
@@ -23,8 +23,8 @@ import {
 import type { WebTable } from './shared/equine'
 
 // ---------------------------------------------------------------------------------------------
-// Vingerne (lokalt om ankeret `back`; venstre vinge, højre spejles): en vifte af svingfjer med fire runde spidser
-// langs ydersiden og et lag dækfjer foroven langs forkanten. Begge vinger er ét path pr. lag.
+// Vingerne (lokalt om ankeret `back`; venstre vinge, højre spejles): en vifte af svingfjer med seks fjerspidser langs
+// bagkanten og et lag dækfjer langs forkanten. Begge vinger er ét path pr. lag.
 
 /**
  * Svingfjerene: forkanten går fra roden op bag hovedet og kommer frem ved siden af øjnene, i en tydelig vinkel mod
@@ -90,22 +90,23 @@ const Wings: Part = ({ pal, sw, stage, still, ids, lod }) => {
 /** Manken: en kort, opsvunget kam over issen, der falder bag højre øre (over vingens forkant), og en lille tot bag venstre øre. */
 const MANE: Vec[][] = [
   [
-    [101, 52], [98, 41], [105, 33], [117, 31], [129, 35], [138, 40], [144, 47], [147, 54], [146, 58.5], [143, 55.5], [140, 59.5],
-    [136.5, 55.5], [133, 58.5], [129, 53.5], [121, 52], [112, 52],
+    [101, 52], [98, 41], [105, 33], [117, 31], [129, 35], [137.5, 40], [142, 46], [144.5, 52], [143, 56], [141, 54],
+    [138, 58], [135, 54.5], [131.5, 57.5], [127.5, 53], [120, 51.5], [112, 52],
   ],
   [[97, 42], [86, 38], [74, 41], [65, 48], [60, 58], [66, 55], [70, 60], [74, 53], [84, 48], [95, 48]],
 ]
-const MANE_STRANDS: Vec[][] = [[[108, 40], [122, 39], [133, 43.5], [140, 49], [143, 54]]]
+const MANE_STRANDS: Vec[][] = [[[108, 40], [121, 38.5], [131, 42], [137.5, 47], [140.5, 52]]]
 /** Pandelokken: tre lokker, der fejer mod højre og standser over øjnene. */
 const FORELOCK: Vec[] = [
   [101, 37], [92, 39], [86, 45], [85, 53], [89, 60], [92, 53], [96, 62], [101, 55], [107, 66], [110, 57], [117, 62], [118, 53],
   [114, 44], [108, 39],
 ]
 const FORELOCK_STRANDS: Vec[][] = [[[98, 43], [97, 51], [99, 57]], [[107, 44], [109, 52], [111, 58]]]
-/** Halen (lokalt om tailBase): en fyldig lok, der buer ud over låret og falder ned langs siden med to spidser. */
+/** Halen (lokalt om tailBase): en fyldig lok, der buer ud over låret og falder ned langs siden med to spidser (den inderste
+ * holder afstand til baghoven, så der ikke lukker sig en sprække mellem hale og hov). */
 const TAIL: Vec[] = [
-  [-4, -2], [2, -11], [12, -16], [22, -14], [29, -6], [32, 5], [31, 15], [33, 24], [29, 30], [26, 23], [22, 28], [19, 20],
-  [17, 12], [14, 5], [9, 0], [2, 0],
+  [-4, -2], [2, -11], [12, -16], [22, -14], [29, -6], [32, 5], [31, 15], [33, 24], [29, 30], [26.5, 24], [25, 26], [21.5, 18],
+  [19.5, 10], [14, 5], [9, 0], [2, 0],
 ]
 const TAIL_STRANDS: Vec[][] = [[[6, -10], [16, -11], [23, -5], [26, 6], [27, 17]]]
 /** Føllets hale er større (som hestens), så den står frem ved siden af den lille krop. */
