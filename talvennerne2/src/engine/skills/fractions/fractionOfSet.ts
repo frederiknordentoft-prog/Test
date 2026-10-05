@@ -18,8 +18,11 @@
 //     halvdelen af …") over the heap (Prompt 'objects', scattered).
 // Wrong answers: denominatorAsAnswer — the denominator itself (¼ of 12 → 4; the fraction is said, not a
 // number of the question, so it is no operand: only the total is, A9). Plain: the rest (12 − 3), the unit
-// share for three quarters, the total ('operand'), one more or less ('near'). A deal hands in its count
-// or −1 and nothing else, so the share kind has no candidates (as in shareEqually).
+// share for three quarters, the total ('operand'), one more or less ('near'). A denominator that is also
+// one of those slips (½ of 6 → 2, one less; ¾ of 16 → 4, one heap) has the likelier explanation beside it
+// and is 'ambiguous', never evidence (as A9 has it for the numbers of the question, and area for its
+// edge). A deal hands in its count or −1 and nothing else, so the share kind has no candidates (as in
+// shareEqually).
 // Hint: deal into d equal heaps — "Del de tolv i fire lige store bunker. Der er tre i hver bunke. En
 // fjerdedel af tolv er tre." (three quarters: "Tre fjerdedele er tre af bunkerne. Tre gange tre giver
 // ni.") over the heaps (Prompt 'groups'), after "Brøken fortæller, hvor mange lige store bunker du skal
@@ -27,7 +30,7 @@
 import type { AnswerValue, Candidate, ErrorTag, Fact, FamilyDef, Prompt, Rng, SpeechPart, TaskKind } from '../../types'
 import type { SkillModule } from '../types'
 import type { Denominator } from '../../../speech/fractions'
-import { hintOf, metaOf, num, say, tagged } from '../number/kit'
+import { hintOf, metaOf, num, say, tagged, type Entry } from '../number/kit'
 
 type Family = 'halfOf' | 'quarterOf' | 'thirdOf' | 'threeQuartersOf'
 
@@ -77,10 +80,10 @@ const twoPlates = (p: Parsed, kind: TaskKind) => kind === 'share' && p.n > 1
 function candidates(f: Fact): Candidate[] {
   const p = parse(f)
   const unit = p.total / p.d
-  return tagged(p.answer, [
-    [p.d, 'denominatorAsAnswer'], [p.total - p.answer, 'other'], [unit, 'other'], [p.total, 'operand'],
-    [p.answer + 1, 'near'], [p.answer - 1, 'near'],
-  ])
+  const slips: Entry[] = [[p.total - p.answer, 'other'], [unit, 'other'], [p.total, 'operand'], [p.answer + 1, 'near'], [p.answer - 1, 'near']]
+  // the denominator beside a slip of the same value: both explanations, so the value is 'ambiguous'
+  const clash = slips.some(([v]) => v === p.d)
+  return tagged(p.answer, [[p.d, clash ? 'ambiguous' : 'denominatorAsAnswer'], ...slips])
 }
 
 const frac = (p: Parsed, n: number, form: 'mid' | 'end'): SpeechPart => ({ frac: { n, d: p.d, form } })

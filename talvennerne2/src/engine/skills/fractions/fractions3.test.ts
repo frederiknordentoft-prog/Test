@@ -117,18 +117,37 @@ describe('fractionOfSet', () => {
     }
   })
 
-  it('reads the denominator as the answer as denominatorAsAnswer, unless it is the whole heap', () => {
+  it('reads the denominator as the answer as denominatorAsAnswer, unless it is the whole heap or a likelier slip', () => {
     for (const { fact: f, kind, task: t } of tasks) {
       if (kind !== 'keypad') continue
       const { d, total, part } = ofSet(f.id)
       if (d === part) continue
-      expect(classifyAnswer(t, d), f.id).toBe(d === total ? 'ambiguous' : 'denominatorAsAnswer')
-      if (d !== total) expect(detectableOf(t), f.id).toContain('denominatorAsAnswer')
+      // the rest, one heap, one more or less: the same value has a likelier explanation (A9)
+      const ambiguous = d === total || [total - part, total / d, part + 1, part - 1].includes(d)
+      expect(classifyAnswer(t, d), f.id).toBe(ambiguous ? 'ambiguous' : 'denominatorAsAnswer')
+      expect(detectableOf(t).includes('denominatorAsAnswer'), f.id).toBe(!ambiguous)
       expect(classifyAnswer(t, total), f.id).toBe(d === total ? 'ambiguous' : 'operand')
     }
-    const t = task(fractionOfSet, 'fos:1/4:12:apple', 'choice')
+    const t = task(fractionOfSet, 'fos:1/4:8:apple', 'choice')
     expect(t.options).toContain(4)
     expect(t.distractorTags['4']).toBe('denominatorAsAnswer')
+  })
+
+  it('never takes a denominator that is also the rest, one heap or one off as a sign (A9): ½ of 6, ¼ of 12 and 20, ⅓ of 6 and 12, ¾ of 16', () => {
+    const both: [string, number][] = [
+      ['fos:1/2:6:apple', 2], ['fos:1/4:12:carrot', 4], ['fos:1/4:20:apple', 4], ['fos:1/3:6:strawberry', 3], ['fos:1/3:12:apple', 3],
+      ['fos:3/4:16:carrot', 4],
+    ]
+    for (const [id, d] of both) {
+      for (const kind of ['keypad', 'choice'] as const) {
+        const t = task(fractionOfSet, id, kind)
+        expect([classifyAnswer(t, d), detectableOf(t)], `${id} ${kind}`).toEqual(['ambiguous', []])
+      }
+    }
+    // where nothing else gives the denominator it stays the sign: ¼ of 8 → 4, ⅓ of 18 → 3, ¾ of 20 → 4
+    for (const [id, d] of [['fos:1/4:8:apple', 4], ['fos:1/3:18:apple', 3], ['fos:3/4:20:apple', 4]] as const) {
+      expect(classifyAnswer(task(fractionOfSet, id, 'keypad'), d), id).toBe('denominatorAsAnswer')
+    }
   })
 
   it('asks in Danish, and deals into heaps in the hint', () => {

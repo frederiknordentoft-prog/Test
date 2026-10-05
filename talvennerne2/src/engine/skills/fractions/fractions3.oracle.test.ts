@@ -134,6 +134,9 @@ describe('fractionOfSet oracle', () => {
     for (const { task } of built) {
       if (task.kind !== 'choice') continue
       const s = q(task)
+      // GENFIX3 (integrator, A9): a denominator beside a likelier slip is 'ambiguous' (setTags allows it, the
+      // test above holds the engine to it), so it is no sign, and no diagnostic card is owed
+      if (classifyAnswer(task, s.d) === 'ambiguous') continue
       if (s.d !== s.answer && s.d !== s.total && !task.options.includes(s.d)) problems.push(`${task.factId}: cards [${task.options}]`)
     }
     expect(first(problems)).toEqual([])
