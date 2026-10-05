@@ -1,10 +1,11 @@
 // Isbjørnen (Stjernefjeldet, bølge 3): skabelonen `round`, én race (std). Artstrækkene står i silhuetten, så isbjørnen
-// aldrig læses som en panda, en hamster eller en hvalp (review G2-r1 §2 og integratorens to blinde for-test):
-// - hovedet sidder lavt og fremme foran skuldrene og er vendt en trekvart mod venstre, så den lange snude stikker ud af
-//   omridset (pandaen og hamsteren har runde hoveder uden snude),
-// - små, runde ører lavt bag på hovedet (tegnet bag hovedet; pandaens store ører sidder højt),
-// - en krop, der er bredere end høj, med en lang ryglinje, der stiger bag hovedet og falder mod hoften til højre, og
-// - fire tydelige, kraftige poter: forbenene står lodret ned til jorden, og bagpoterne og en halestump ses bag kroppen.
+// aldrig læses som en panda, en hamster eller en hvalp (review G2-r1 §2 og integratorens fire blinde for-test):
+// - hovedet sidder lavt og fremme foran skuldrene og er vendt en trekvart mod venstre, så den lange snude med lige,
+//   "romersk" profil stikker ud af omridset (pandaen og hamsteren har runde hoveder uden snude),
+// - meget små, runde ører lavt bag på hovedet (tegnet bag hovedet; pandaens store ører sidder højt),
+// - en krop, der er bredere end høj, med en ryglinje, der stiger bag hovedet og falder mod hoften til højre,
+// - kraftige forben med store, flade poter, den nære bagpote og en halestump ved hoften, og
+// - artens kendetegn (som pandaens bambus): en lille fisk på jorden ved venstre forpote med løftet, kløvet halefinne.
 // Hvid pels på papirfarven bæres af konturen og cel-skyggen (og en fold langs snudens ryg, der viser dens længde).
 // Signaturen er snuse-næsen: næsen snuser tre gange med squash og et overshoot, mens hovedet løfter sig mod luften
 // (`a-sniff` om næsen og hovedets løft i hvile, rig.css). Alle former er punkter og husets primitiver.
