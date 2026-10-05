@@ -468,6 +468,12 @@ export interface SpeciesDef {
    * genstanden som før. Er feltet en del, tegnes den efter genstanden og viser grebet (uglens vingespids).
    */
   handOverSleeve?: boolean | SidePart
+  /**
+   * Håndgenstande, der på denne art tegnes over den hvilende arm (som `art.over`), fordi armen ellers dækker dem
+   * (pandaens brede, mørke arm over skjoldet, review G2-r4 T16). `Grip` tegnes derefter og viser grebet: poten over
+   * genstandens nederste kant (SPEC A17).
+   */
+  handGrip?: { items: readonly ItemId[]; Grip: SidePart }
   face: FaceStyle
   ears?: EarRig
   signature?: Signature
@@ -740,7 +746,8 @@ export interface ItemArtSet {
   /**
    * Håndgenstanden bæres foran kroppen (SPEC A17): den tegnes efter poten, benet og ærmet i stedet for under poten
    * (fit-regel 5), og tegningen viser selv grebet med en rem eller en hånddel. En funktion afgør det pr. positur ud fra
-   * ankrene, posen og om poten er løftet (skjoldet kun på forben, der står på jorden).
+   * ankrene, posen og om poten er løftet (skjoldet og stjernestaven kun på forben, der står på jorden). En art kan
+   * desuden lægge bestemte genstande over sin arm med sit eget greb (`SpeciesDef.handGrip`).
    */
   over?: boolean | ((p: { a: AnchorSet; hold: HandHold; up: boolean }) => boolean)
 }
