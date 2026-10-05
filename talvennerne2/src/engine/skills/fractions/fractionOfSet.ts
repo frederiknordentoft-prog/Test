@@ -1,9 +1,9 @@
 // fractionOfSet — Brøkdel af en mængde (SPEC §2.2, pædagogik-forslaget §1.3). Procedure, prefix `fos:`:
 // `fos:<n>/<d>:<total>:<thing>`, a fraction of a heap of strawberries, apples or carrots (THING_IDs):
-//   halfOf           1/2 of 4–20 (even)                9 × 3 things = 27
-//   quarterOf        1/4 of 8–24 (fours)               5 × 3 = 15
-//   thirdOf          1/3 of 6–24 (threes)              7 × 3 = 21
-//   threeQuartersOf  3/4 of 4–24 (fours)               6 × 3 = 18
+//   halfOf           1/2 of 4–20 (even)                9 · 3 things = 27
+//   quarterOf        1/4 of 8–24 (fours)               5 · 3 = 15
+//   thirdOf          1/3 of 6–24 (threes)              7 · 3 = 21
+//   threeQuartersOf  3/4 of 4–24 (fours)               6 · 3 = 18
 // The thing is part of the instance, so every family has more instances than a key keeps as recent
 // (mastery.ts: five), and a key never runs out of fresh ones.
 // Kinds:

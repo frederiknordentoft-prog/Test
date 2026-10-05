@@ -16,7 +16,8 @@ import type { ErrorTag, SkillDef, SkillId } from '../../../types'
 
 const ctx = { day: '2026-10-02', sessionId: 's', audioVerified: true }
 
-export function regionSuite(name: string, mine: ReadonlySet<SkillId>, clipFile: string, pack: string): void {
+/** `wave`: the catalogue file's recording wave (3 for Stjernefjeldet's skills). */
+export function regionSuite(name: string, mine: ReadonlySet<SkillId>, clipFile: string, pack: string, wave: 2 | 3 = 2): void {
   const nodes = NODES.filter((n) => n.skills.some((s) => mine.has(s.skill)))
 
   describe(`${name} in the map`, () => {
@@ -64,7 +65,7 @@ export function regionSuite(name: string, mine: ReadonlySet<SkillId>, clipFile: 
       const file = allClips().filter((c) => c.file === `skills/${clipFile}`)
       expect(file.length).toBeGreaterThan(10)
       expect(file.filter((c) => !used.has(c.id)).map((c) => c.id)).toEqual([])
-      for (const c of file) expect([c.wave, c.pack], c.id).toEqual([2, pack])
+      for (const c of file) expect([c.wave, c.pack], c.id).toEqual([wave, pack])
     })
   })
 }

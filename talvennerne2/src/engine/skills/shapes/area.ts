@@ -1,19 +1,19 @@
 // area — Areal (SPEC §2.2, pædagogik-forslaget §1.3). Procedure, prefix `ara:`, four families drawn on
 // the square grid (Prompt 'area': the figure's squares filled on a grid one square wider all round):
-//   countSquares  ara:n:<k>              5–12 squares grown at random inside a 5 × 4 box, without holes
+//   countSquares  ara:n:<k>              5–12 squares grown at random inside a 5-by-4 box, without holes
 //                                        and never a whole rectangle; k = 0–999 seeds it (canonical 0–19)
 //   rowsCols      ara:r:<rows>x<cols>    a rectangle of 2–5 rows of 2–6 squares                       20
-//   lShape        ara:l:<a>x<b>-<c>x<d>  an a × b rectangle (3–5 each way) with a c × d corner cut off;
+//   lShape        ara:l:<a>x<b>-<c>x<d>  an a-by-b rectangle (3–5 each way) with a c-by-d corner cut off;
 //                                        the corner follows from the numbers                     81 (20)
-//   compareArea   ara:c:<r>x<c>-<r>x<c>  a long rectangle (1–2 rows) beside a compact one: "how many more
-//                                        squares does the bigger figure cover?"                  ~30 (20)
+//   compareArea   ara:c:<r>x<c>-<r>x<c>  a long rectangle (1–2 rows) beside a compact one, never as long:
+//                                        "how many more squares does the bigger figure cover?"     23 (20)
 // choice: three number cards. keypad (production): 0–40. No number is shown or said, so a task has no
 // operands (A9).
 // Wrong answers: areaAsPerimeter — the edge counted instead of the squares: the figure's perimeter in
 // square sides (rowsCols 2 · (rows + cols), lShape that of the whole rectangle, compareArea the difference
-// of the two perimeters, never a value another slip gives). Plain: rows + cols, one row or column short,
-// the uncut rectangle, one rectangle of two, either figure alone or both together ('other'), one more
-// or less ('near').
+// of the two perimeters, never a value another slip gives; where one does, it is 'ambiguous'). Plain:
+// rows + cols, one row or column short, the uncut rectangle, one rectangle of two (cut either way),
+// either figure alone or both together ('other'), one more or less ('near').
 // Hint: count every square once / rows times columns / two rectangles added / each figure's area and the
 // difference, after "Arealet er de kvadrater, der dækker figuren. Tæl ikke kanten rundt om den." for
 // areaAsPerimeter (compareArea adds "En lang figur er ikke altid den største.").
@@ -53,11 +53,11 @@ interface Figure {
 
 const area = ([r, c]: Rect) => r * c
 const perimeter = ([r, c]: Rect) => 2 * (r + c)
-/** The cells of a rows × cols rectangle at (x, y) on a grid w wide. */
+/** The cells of a rows-by-cols rectangle at (x, y) on a grid w wide. */
 const block = (w: number, x: number, y: number, [r, c]: Rect): number[] =>
   Array.from({ length: r * c }, (_, i) => (y + Math.floor(i / c)) * w + x + (i % c))
 
-// ─── countSquares: a random figure in the 5 × 4 box of a 7 × 6 grid ────────
+// ─── countSquares: a random figure in the 5-by-4 box of a 7-by-6 grid ────────
 
 const BW = 7
 const BH = 6
@@ -110,14 +110,14 @@ function blob(k: number): number[] {
 
 /** compareArea: a long rectangle and a compact one, where counting the edge would answer otherwise. */
 const PAIRS: readonly (readonly [Rect, Rect])[] = (() => {
-  const long: Rect[] = [[1, 4], [1, 5], [1, 6], [1, 7], [1, 8], [2, 5], [2, 6], [2, 7]]
-  const squat: Rect[] = [2, 3, 4].flatMap((r) => [2, 3, 4].map((c): Rect => [r, c]))
+  const long: Rect[] = [[1, 4], [1, 5], [1, 6], [1, 7], [1, 8], [2, 5], [2, 6], [2, 7], [2, 8]]
+  const squat: Rect[] = [2, 3, 4].flatMap((r) => [r - 1, r, r + 1].filter((c) => c >= 2 && c <= 4).map((c): Rect => [r, c]))
   const out: [Rect, Rect][] = []
   for (const a of long) {
     for (const b of squat) {
       const diff = Math.abs(area(a) - area(b))
       const edge = Math.abs(perimeter(a) - perimeter(b))
-      if (diff === 0 || diff > 8 || a[1] + b[1] > 12) continue
+      if (diff === 0 || diff > 8 || a[1] <= b[1] || a[1] + b[1] > 12) continue
       if ([diff, diff - 1, diff + 1, area(a), area(b), area(a) + area(b)].includes(edge)) continue
       out.push([a, b])
     }
@@ -155,8 +155,9 @@ function figure(f: Pick<Fact, 'id'>): Figure {
     const y0 = corner < 2 ? 0 : r - cr
     const gone = new Set(block(c + 2, 1 + x0, 1 + y0, cut))
     const cells = block(c + 2, 1, 1, outer).filter((x) => !gone.has(x))
+    // the hint cuts it into a full-height part and the rest; a child may cut across instead
     const parts: [number, number] = [r * (c - cc), (r - cr) * cc]
-    fig = { family: 'lShape', w: c + 2, h: r + 2, cells, answer: cells.length, edge: perimeter(outer), other: [r * c, ...parts], parts }
+    fig = { family: 'lShape', w: c + 2, h: r + 2, cells, answer: cells.length, edge: perimeter(outer), other: [r * c, ...parts, cr * (c - cc), (r - cr) * c], parts }
   } else {
     const [p, q] = a.split('-').map(parseRect)
     // the long one stands left or right, as the id says
@@ -214,7 +215,7 @@ function instance(fam: FamilyDef, rng: Rng, avoid: ReadonlySet<string>): Fact {
 function candidates(f: Fact) {
   const fig = figure(f)
   const n = fig.answer
-  // an edge another slip gives as well (5 × 5: four rows of five) is never evidence
+  // an edge another slip gives as well (5 by 5: four rows of five) is never evidence
   const clash = [...fig.other, n + 1, n - 1].includes(fig.edge)
   const entries: Entry[] = [[fig.edge, clash ? 'ambiguous' : 'areaAsPerimeter'], ...fig.other.map((v): Entry => [v, 'other']), [n + 1, 'near'], [n - 1, 'near']]
   return tagged(n, entries)

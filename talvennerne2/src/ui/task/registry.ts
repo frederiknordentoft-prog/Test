@@ -1,12 +1,11 @@
-// The task kinds the round screen can show. Waves 1 and 2 are complete; wave 3 (grid) is added as
-// src/ui/task/<kind>/{View,Demo}.tsx plus one entry here. Until then a task of a missing kind — or
-// one its kind cannot play (a share without a deal) — falls back to cards (when it has options) or
-// the keypad (a number answer), so a round never dead-ends.
+// The task kinds the round screen can show: all fifteen (wave 3 added grid, for points: SPEC A21). A
+// task its kind cannot play (a share without a deal, a count asked over a grid) falls back to cards
+// (when it has options) or the keypad (a number answer), so a round never dead-ends.
 //
-// Wave 2 (clockSet, pay, share, colorParts) loads lazily: each kind is its own chunk, fetched with
-// the first task of that kind, so the round screen stays small for the youngest children, who never
-// meet a clock or a coin. Every part waits in its own Suspense (the rest of the screen never blinks),
-// and a chunk that cannot load falls back like a missing kind.
+// Waves 2 and 3 (clockSet, pay, share, colorParts, grid) load lazily: each kind is its own chunk,
+// fetched with the first task of that kind, so the round screen stays small for the youngest
+// children, who never meet a clock or a coin. Every part waits in its own Suspense (the rest of the
+// screen never blinks), and a chunk that cannot load falls back like a missing kind.
 import { Suspense, createElement, lazy, useEffect } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import type { Task, TaskKind } from '../../engine/types'
@@ -35,6 +34,7 @@ import { canClockSet, clockSetOwnsPrompt } from './clockSet/logic'
 import { canPay } from './pay/logic'
 import { canShare, shareOwnsPrompt } from './share/logic'
 import { canColorParts, colorPartsOwnsPrompt } from './colorParts/logic'
+import { canGrid, gridOwnsPrompt } from './grid/logic'
 
 // ─── Lazy kinds ─────────────────────────────────────────────────────────────
 
@@ -92,6 +92,7 @@ export const KIND_MODULES: Partial<Record<TaskKind, KindModule>> = {
   pay: lazyKind(() => import('./pay'), { wideFace: true }),
   share: lazyKind(() => import('./share'), { ownsPrompt: shareOwnsPrompt, wideFace: true }),
   colorParts: lazyKind(() => import('./colorParts'), { ownsPrompt: colorPartsOwnsPrompt, wideFace: true }),
+  grid: lazyKind(() => import('./grid'), { ownsPrompt: gridOwnsPrompt }),
 }
 
 /** Whether a kind can play this task at all (a share needs a deal, a pay an amount the purse makes …). */
@@ -100,6 +101,8 @@ const PLAYABLE: Partial<Record<TaskKind, (task: Task) => boolean>> = {
   pay: canPay,
   share: canShare,
   colorParts: canColorParts,
+  // points only (SPEC A21): symmetry's count over a net stays on the keypad
+  grid: canGrid,
 }
 
 /** Kinds with their own view (the others fall back, see moduleFor). */
@@ -112,7 +115,8 @@ export function moduleFor(task: Task): KindModule {
 
 /**
  * The kind whose view the child sees: the task's own, or the closest wave-1 kind when its own cannot
- * show it. Instructions and demo films follow this kind, not the task's ("Tryk i nettet" over a keypad).
+ * show it. Instructions and demo films follow this kind, not the task's ("Skriv svaret" over a count
+ * asked on a grid).
  */
 export function shownKind(task: Task): TaskKind {
   const own = KIND_MODULES[task.kind]

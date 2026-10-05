@@ -1,0 +1,282 @@
+/*
+ * grid (src/ui/task/grid/View.tsx): the net with its axes, the pair under it and the tick. The net is
+ * one svg (drawing units, logic.ts); the tap layers lie over it in HTML. Along is blue, up is orange,
+ * in the numbers, the arrows of the pair and the walk. Colours from tokens.css; only transform and
+ * opacity animate, and calm mode and reduced motion drop even that.
+ */
+.tv-grid {
+  --fig: min(420px, calc(100vw - 2 * var(--gutter) - 24px), 56vh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-block: auto;
+}
+.tv-grid__figure {
+  position: relative;
+  width: var(--fig);
+}
+.tv-grid__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* The net */
+.tv-grid__paper {
+  fill: var(--color-card);
+}
+.tv-grid__lines {
+  fill: none;
+  stroke: var(--color-line-2);
+  stroke-width: 2;
+}
+.tv-grid__axis {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+.tv-grid__tip {
+  fill: var(--color-ink);
+  stroke: var(--color-ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.tv-grid__band.is-x {
+  fill: var(--color-d-number-soft);
+}
+.tv-grid__band.is-y {
+  fill: var(--color-d-addsub-soft);
+}
+
+/* The axis numbers; a picked one sits in a filled disc */
+.tv-grid__num text {
+  font-family: var(--font-sans);
+  font-size: 21px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.tv-grid__num.is-x text {
+  fill: var(--color-d-number-deep);
+}
+.tv-grid__num.is-y text {
+  fill: var(--color-d-addsub-deep);
+}
+.tv-grid__num circle {
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.tv-grid__num.is-x circle {
+  fill: var(--color-d-number-deep);
+}
+.tv-grid__num.is-y circle {
+  fill: var(--color-d-addsub-deep);
+}
+.tv-grid__num.is-on circle {
+  opacity: 1;
+}
+.tv-grid__num.is-on text {
+  fill: var(--color-card);
+}
+
+/* The point: it glides from crossing to crossing; a halo shows it is held */
+.tv-grid__point {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.tv-grid__dot {
+  fill: var(--color-primary);
+  stroke: var(--color-primary-deep);
+  stroke-width: 2.6;
+}
+.tv-grid__point.is-given .tv-grid__dot {
+  fill: var(--color-ink);
+  stroke: var(--color-ink);
+}
+.tv-grid__halo {
+  fill: var(--color-primary);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.tv-grid__point.is-held .tv-grid__halo {
+  opacity: 0.2;
+}
+.tv-grid__svg.is-good .tv-grid__dot {
+  fill: var(--color-good);
+  stroke: var(--color-good-deep);
+}
+
+/* The walk from 0 along and up (a new key) */
+.tv-grid__walk path {
+  fill: none;
+  stroke-width: 5;
+  stroke-dasharray: 9 7;
+  stroke-linecap: round;
+}
+.tv-grid__walk .is-x {
+  stroke: var(--color-d-number);
+}
+.tv-grid__walk .is-y {
+  stroke: var(--color-d-addsub);
+}
+
+/* The tap layers over the svg: the net (place) or the two bands of numbers (read) */
+.tv-grid__layer {
+  position: absolute;
+  z-index: 1;
+  border-radius: 16px;
+  outline: none;
+  cursor: pointer;
+}
+.tv-grid__strip.is-x {
+  min-height: 60px;
+}
+.tv-grid__strip.is-y {
+  min-width: 60px;
+}
+.tv-grid__layer:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-primary);
+}
+.tv-grid.is-correct .tv-grid__layer,
+.tv-grid.is-wrong .tv-grid__layer,
+.tv-grid.is-idle .tv-grid__layer {
+  cursor: default;
+}
+
+/* The pair under the net, and the tick beside it */
+.tv-grid__foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+}
+.tv-grid__pair {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 16px 6px;
+  border-radius: 20px;
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  color: var(--color-ink);
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1;
+}
+.tv-grid__paren,
+.tv-grid__comma {
+  height: 1.1em;
+  line-height: 1.1;
+}
+.tv-grid__comma {
+  margin-right: 0.15em;
+}
+.tv-grid__pnum {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.tv-grid__digit {
+  display: grid;
+  place-items: center;
+  min-width: 0.85em;
+  height: 1.1em;
+  font-variant-numeric: tabular-nums;
+}
+.tv-grid__pnum.is-x {
+  color: var(--color-d-number-deep);
+}
+.tv-grid__pnum.is-y {
+  color: var(--color-d-addsub-deep);
+}
+.tv-grid__pnum.is-blank .tv-grid__digit {
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 3px currentColor;
+  opacity: 0.45;
+}
+.tv-grid__arrow {
+  width: 0.62em;
+  height: 0.62em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tv-grid__pair.is-good {
+  box-shadow: var(--shadow-card), inset 0 0 0 3px var(--color-good);
+}
+.tv-grid__pair.is-oops .tv-grid__pnum {
+  opacity: 0.6;
+}
+.tv-grid__pair.is-small {
+  padding: 2px 4px;
+  background: none;
+  box-shadow: none;
+  font-size: 26px;
+}
+
+/* The face of an answer: the pair alone */
+.tv-gridface .tv-grid__pair {
+  background: none;
+  box-shadow: none;
+}
+.tv-face--lg .tv-grid__pair {
+  font-size: 46px;
+}
+
+/* The demo film */
+.tv-grid-demo .tv-grid__figure {
+  width: 210px;
+}
+.tv-grid-demo .tv-grid__pair {
+  font-size: 28px;
+}
+
+/* iPad */
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-grid {
+    --fig: min(560px, 60vh);
+    gap: 16px;
+  }
+  .tv-grid__pair {
+    font-size: 50px;
+  }
+}
+
+/* Held sideways: the pair and the tick beside the net */
+@media (orientation: landscape) {
+  .tv-grid {
+    --fig: min(600px, calc(100vh - 180px), calc(75vw - 220px));
+    flex-direction: row;
+    justify-content: center;
+    gap: 24px;
+  }
+  .tv-grid__foot {
+    flex-direction: column;
+    width: auto;
+  }
+  .tv-grid-demo {
+    flex-direction: column;
+  }
+  .tv-grid-demo .tv-grid__foot {
+    flex-direction: row;
+  }
+}
+
+:root[data-calm] .tv-grid__point,
+:root[data-calm] .tv-grid__halo,
+:root[data-calm] .tv-grid__num circle {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-grid__point,
+  .tv-grid__halo,
+  .tv-grid__num circle {
+    transition: none;
+  }
+}

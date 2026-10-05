@@ -29,9 +29,10 @@ const BY_SKILL: Partial<Record<SkillId, DemoTopic>> = {
   clockHour: 'clock', clockHalf: 'clock', clockQuarter: 'clock', clockFive: 'clock', clockDigital: 'clock', clockElapsed: 'clock',
   // Købmandsgården: coins, never apples
   coinNames: 'coin', countCoins: 'money', payExact: 'money', change: 'money', kronerOre: 'money',
-  // Figurhaven
-  shapes3D: 'solid', sidesCorners: 'corners', composeShapes: 'corners',
-  halfShape: 'fraction', fractionShape: 'fraction', fractionOfSet: 'fraction', fractionCompare: 'fraction',
+  // Figurhaven, Arealhaven (a figure, and a number of squares or along) and Brøkbageriet (a share of
+  // a heap is dealt into rings: half of six is three)
+  shapes3D: 'solid', sidesCorners: 'corners', composeShapes: 'corners', area: 'corners', gridCoords: 'corners',
+  halfShape: 'fraction', fractionShape: 'fraction', fractionOfSet: 'share', fractionCompare: 'fraction',
   // Målebakken and Linealstien
   measureUnits: 'measure', rulerRead: 'measure', readChart: 'measure', convertCmM: 'measure', unitChoice: 'unit', weightCompare: 'weight',
   // Gangegrotten: groups, tables and sharing
