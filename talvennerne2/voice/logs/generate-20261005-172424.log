@@ -1,0 +1,450 @@
+17:24:24 generate.py --wave 3 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261005-172424.log)
+17:24:24 332 klip valgt, 234 færdige, 98 at lave
+17:24:24   ✓ master hint.area.thereAre = kopi af s.round.hint.thereAre (samme tekst)
+17:24:24   ✓ master hint.div.soGives = kopi af hint.inverseOps.soGives (samme tekst)
+17:24:25   ✓ master hint.fractionOfSet.halfOf = kopi af s.ceremony.learned.halfOf (samme tekst)
+17:24:25   ✓ master hint.fractionOfSet.is = kopi af hint.change.is (samme tekst)
+17:24:25   ✓ master hint.fractionOfSet.put = kopi af s.place.lay (samme tekst)
+17:24:25   ✓ master hint.fractionOfSet.thereAre = kopi af s.round.hint.thereAre (samme tekst)
+17:24:25   ✓ master s.fractionOfSet.deal = kopi af s.shareEqually.share (samme tekst)
+17:24:25   ✓ master s.fractionOfSet.equalParts = kopi af hint.fractionShape.equalParts (samme tekst)
+17:24:25   ✓ master s.fractionOfSet.of = kopi af s.books.of (samme tekst)
+17:24:41 input frame rate=25
+17:24:45 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+17:24:46 model indlæst på 19 s (2 tråde)
+17:24:51 ✅ EOS token detected! Stopping generation at step 33
+17:25:02 kald single k=1 t0 'består af,': 16.0 s for 1.28 s lyd
+17:25:04   frag.mulTens.consistsOf t0: 0.57 s (forhold 0.61) -18.0 LUFS, alone: 'består af' CER 0.0 (wav2vec2) → ok
+17:25:09 ✅ EOS token detected! Stopping generation at step 35
+17:25:20 kald single k=1 t1 'består af,': 16.3 s for 1.36 s lyd
+17:25:21   frag.mulTens.consistsOf t1: 0.62 s (forhold 0.66) -18.0 LUFS, alone: 'består af' CER 0.0 (wav2vec2) → ok
+17:25:28 ✅ EOS token detected! Stopping generation at step 53
+17:25:40 kald single k=1 t0 'Fra den største er de,': 19.0 s for 2.08 s lyd
+17:25:41   hint.fractionCompare.fromBiggest t0: 1.37 s (forhold 0.73) -18.0 LUFS, alone: 'fra den største er de' CER 0.0 (wav2vec2) → ok
+17:25:41   ✓ master hint.fractionCompare.fromBiggest t0 (bestået)
+17:25:49 ✅ EOS token detected! Stopping generation at step 48
+17:26:00 kald single k=1 t0 'Fra den mindste er de,': 19.0 s for 1.88 s lyd
+17:26:11   hint.fractionCompare.fromSmallest t0: 1.17 s (forhold 0.62) -18.09 LUFS, alone: 'for den mindste er de' CER 0.1176 (wav2vec2, whisper: 'For den mindste af de') → FEJL asr
+17:26:17 ✅ EOS token detected! Stopping generation at step 37
+17:26:27 kald single k=1 t0 'er størst.': 15.1 s for 1.44 s lyd
+17:26:27   hint.fractionCompare.isBiggest t0: 0.76 s (forhold 1.22) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:26:32 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+17:26:32 ✅ EOS token detected! Stopping generation at step 25
+17:26:41 kald single k=1 t0 'er mindst.': 14.4 s for 0.96 s lyd
+17:26:42   hint.fractionCompare.isSmallest t0: 0.68 s (forhold 1.08) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:26:46 ✅ EOS token detected! Stopping generation at step 31
+17:26:56 kald single k=1 t0 'Del de,': 13.7 s for 1.20 s lyd
+17:26:56   hint.fractionOfSet.dealThe t0: 0.63 s (forhold 1.00) -18.12 LUFS, none: 'None' CER None (None) → ok
+17:27:03 ✅ EOS token detected! Stopping generation at step 57
+17:27:15 kald single k=1 t0 'på den ene tallerken og,': 18.6 s for 2.24 s lyd
+17:27:21   hint.fractionOfSet.onOne t0: 1.51 s (forhold 0.60) -18.14 LUFS, alone: 'På den ene tallerken og' CER 0.0 (whisper, wav2vec2: 'på den ene talerken og') → ok
+17:27:21   ✓ master hint.fractionOfSet.onOne t0 (bestået)
+17:27:26 ✅ EOS token detected! Stopping generation at step 38
+17:27:35 kald single k=1 t0 'Hvor mange er,': 13.8 s for 1.48 s lyd
+17:27:35   s.fractionOfSet.howMany t0: 0.77 s (forhold 0.62) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:27:37 ✅ EOS token detected! Stopping generation at step 17
+17:27:45 kald single k=1 t0 'i,': 10.0 s for 0.64 s lyd
+17:27:45   s.fractionOfSet.into t0: 0.32 s (forhold 1.02) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:27:51 ✅ EOS token detected! Stopping generation at step 41
+17:28:00 kald single k=1 t0 'Den ene skal have,': 14.7 s for 1.60 s lyd
+17:28:01   s.fractionOfSet.oneGets t0: 0.91 s (forhold 0.48) -18.04 LUFS, alone: 'den ene skal have' CER 0.0 (wav2vec2) → ok
+17:28:01   ✓ master s.fractionOfSet.oneGets t0 (bestået)
+17:28:07 ✅ EOS token detected! Stopping generation at step 50
+17:28:17 kald single k=1 t0 'Prøv at gange dit svar med,': 15.6 s for 1.96 s lyd
+17:28:18   hint.div.check t0: 1.20 s (forhold 0.55) -18.11 LUFS, alone: 'prøve at gange dit svar med' CER 0.0476 (wav2vec2) → ok
+17:28:18   ✓ master hint.div.check t0 (bestået)
+17:28:22 ✅ EOS token detected! Stopping generation at step 32
+17:28:30 kald single k=1 t0 'Det skal give,': 12.8 s for 1.24 s lyd
+17:28:31   hint.div.shouldGive t0: 0.68 s (forhold 0.54) -18.07 LUFS, none: 'None' CER None (None) → ok
+17:28:36 ✅ EOS token detected! Stopping generation at step 40
+17:28:45 kald single k=1 t0 'Figuren dækker,': 14.5 s for 1.56 s lyd
+17:28:46   hint.area.covers t0: 0.88 s (forhold 0.56) -18.09 LUFS, none: 'None' CER None (None) → ok
+17:28:52 ✅ EOS token detected! Stopping generation at step 45
+17:29:00 kald single k=1 t0 'Den ene figur dækker,': 14.5 s for 1.76 s lyd
+17:29:01   hint.area.oneFigure t0: 1.16 s (forhold 0.53) -18.15 LUFS, alone: 'den ene figur dækker' CER 0.0 (wav2vec2) → ok
+17:29:01   ✓ master hint.area.oneFigure t0 (bestået)
+17:29:08 ✅ EOS token detected! Stopping generation at step 58
+17:29:19 kald single k=1 t0 'Det ene rektangel dækker,': 17.9 s for 2.28 s lyd
+17:29:26   hint.area.oneRect t0: 1.55 s (forhold 0.62) -18.08 LUFS, alone: 'det ene regtangede dækker' CER 0.1429 (wav2vec2, whisper: 'Det ene rektangulære dækker') → FEJL asr
+17:29:31 ✅ EOS token detected! Stopping generation at step 43
+17:29:40 kald single k=1 t0 'og den anden dækker,': 14.1 s for 1.68 s lyd
+17:29:41   hint.area.otherFigure t0: 1.05 s (forhold 0.56) -18.08 LUFS, alone: 'og den anden dækker' CER 0.0 (wav2vec2) → ok
+17:29:41   ✓ master hint.area.otherFigure t0 (bestået)
+17:29:45 ✅ EOS token detected! Stopping generation at step 38
+17:29:54 kald single k=1 t0 'og det andet dækker,': 13.0 s for 1.48 s lyd
+17:29:54   hint.area.otherRect t0: 0.87 s (forhold 0.46) -18.03 LUFS, alone: 'og det andet dækker' CER 0.0 (wav2vec2) → ok
+17:29:54   ✓ master hint.area.otherRect t0 (bestået)
+17:29:58 ✅ EOS token detected! Stopping generation at step 27
+17:30:06 kald single k=1 t0 'rækker med,': 11.7 s for 1.04 s lyd
+17:30:06   hint.area.rowsWith t0: 0.60 s (forhold 0.64) -18.12 LUFS, none: 'None' CER None (None) → ok
+17:30:10 ✅ EOS token detected! Stopping generation at step 25
+17:30:18 kald single k=1 t0 'hen og så,': 11.4 s for 0.96 s lyd
+17:30:18   hint.gridCoords.alongThen t0: 0.56 s (forhold 0.60) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:30:26 ✅ EOS token detected! Stopping generation at step 63
+17:30:36 kald single k=1 t0 'Kig lige ned under punktet. Der står,': 18.1 s for 2.48 s lyd
+17:30:42   hint.gridCoords.down t0: 1.76 s (forhold 0.56) -18.03 LUFS, alone: 'Kig lige ned under punktet der står' CER 0.0 (whisper, wav2vec2: 'kicklig ned under punktet der står') → ok
+17:30:42   ✓ master hint.gridCoords.down t0 (bestået)
+17:30:46 ✅ EOS token detected! Stopping generation at step 31
+17:30:55 kald single k=1 t0 'Start i nul.': 12.5 s for 1.20 s lyd
+17:30:55   hint.gridCoords.fromZero t0: 0.87 s (forhold 0.93) -18.13 LUFS, none: 'None' CER None (None) → ok
+17:30:58 ✅ EOS token detected! Stopping generation at step 18
+17:31:06 kald single k=1 t0 'Gå,': 10.8 s for 0.68 s lyd
+17:31:06   hint.gridCoords.go t0: 0.19 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:31:13 ✅ EOS token detected! Stopping generation at step 56
+17:31:24 kald single k=1 t0 'Kig lige over til venstre. Der står,': 18.1 s for 2.20 s lyd
+17:31:26   hint.gridCoords.side t0: 1.88 s (forhold 0.60) -18.15 LUFS, alone: 'kik lige over til venstre der står' CER 0.0357 (wav2vec2) → ok
+17:31:26   ✓ master hint.gridCoords.side t0 (bestået)
+17:31:31 ✅ EOS token detected! Stopping generation at step 28
+17:31:41 kald single k=1 t0 'Sæt punktet,': 15.2 s for 1.08 s lyd
+17:31:42   s.gridCoords.place t0: 0.79 s (forhold 0.84) -18.08 LUFS, none: 'None' CER None (None) → ok
+17:31:47 ✅ EOS token detected! Stopping generation at step 40
+17:31:58 kald single k=1 t0 'Du skal sætte punktet,': 16.3 s for 1.56 s lyd
+17:31:59   s.gridCoords.toPlace t0: 0.98 s (forhold 0.52) -18.0 LUFS, alone: 'du skal sætte punktet' CER 0.0 (wav2vec2) → ok
+17:31:59   ✓ master s.gridCoords.toPlace t0 (bestået)
+17:32:05 ✅ EOS token detected! Stopping generation at step 44
+17:32:17 kald single k=1 t0 'Tallene forneden,': 18.8 s for 1.72 s lyd
+17:32:18   s.kind.grid.along t0: 1.00 s (forhold 0.53) -18.06 LUFS, none: 'None' CER None (None) → ok
+17:32:22 ✅ EOS token detected! Stopping generation at step 21
+17:32:32 kald single k=1 t0 'Nettet,': 13.5 s for 0.80 s lyd
+17:32:32   s.kind.grid.board t0: 0.43 s (forhold 0.68) -18.0 LUFS, none: 'None' CER None (None) → ok
+17:32:39 ✅ EOS token detected! Stopping generation at step 48
+17:32:50 kald single k=1 t0 'Tallene til venstre,': 18.2 s for 1.88 s lyd
+17:32:51   s.kind.grid.up t0: 1.02 s (forhold 0.55) -18.19 LUFS, none: 'None' CER None (None) → ok
+17:33:28 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+17:33:28 ✅ EOS token detected! Stopping generation at step 241
+17:33:54 kald sentence k=3 t0 'Når tierne giver ti eller mere, skal hundredet med over til hundredern': 62.7 s for 9.60 s lyd
+17:34:04   hint.add1000.carryHundred t0: 3.67 s (forhold 0.51) -18.06 LUFS, alone: 'nortererne giver t0 eller mere skal h0ede med over til hundrederne' CER 0.1695 (wav2vec2, whisper: 'Når tiderne giver 10 eller mere skærer 100 med over til hundrederne') → FEJL asr
+17:34:10   hint.addsub3.hundredsThen t0: 1.26 s (forhold 0.67) -18.11 LUFS, alone: 'rengen så hundrederne' CER 0.1176 (wav2vec2, whisper: 'Regn så hun rædende') → FEJL asr
+17:34:17   hint.sub1000.oneHundredLess t0: 2.84 s (forhold 0.54) -18.02 LUFS, alone: 'Når du veksler et hundrede er der et hundrede mindre tilbage' CER 0.0 (whisper, wav2vec2: 'når du veksler et 100 er der 100 mindre tilbage') → ok
+17:34:18   ✓ master hint.sub1000.oneHundredLess t0 (bestået)
+17:34:28 ✅ EOS token detected! Stopping generation at step 76
+17:34:41 kald sentence k=1 t0 'Jeg kan trække trecifrede tal fra hinanden.': 23.4 s for 3.00 s lyd
+17:34:43   s.cando.sub1000 t0: 2.33 s (forhold 0.57) -18.11 LUFS, alone: 'jeg kan trække tecifrede tal fra hinanden' CER 0.0278 (wav2vec2) → ok
+17:34:43   ✓ master s.cando.sub1000 t0 (bestået)
+17:35:27 ✅ EOS token detected! Stopping generation at step 235
+17:35:51 kald sentence k=2 t0 'Et hundrede går med over til hundrederne. Der er ikke enere nok, og de': 68.1 s for 9.36 s lyd
+17:35:58   hint.add1000.hundredOver t0: 1.86 s (forhold 0.50) -18.0 LUFS, alone: 'Et hundrede går med over til hundrederne' CER 0.0 (whisper, wav2vec2: '100 går med over til 100derne') → ok
+17:36:00   hint.sub1000.acrossZero t0: 6.55 s (forhold 0.58) -18.11 LUFS, alone: 'der er ikke enere nok og der er ingen tigere veksle først 100 til 10 tigere og så en tier til 10 enere' CER 0.0366 (wav2vec2) → ok
+17:36:00   ✓ master hint.add1000.hundredOver t0 (bestået)
+17:36:00   ✓ master hint.sub1000.acrossZero t0 (bestået)
+17:36:20 ✅ EOS token detected! Stopping generation at step 141
+17:36:35 kald sentence k=1 t0 'Vi trækker altid det nederste tal fra det øverste. Er det øverste for ': 35.3 s for 5.60 s lyd
+17:36:38   hint.sub1000.topMinusBottom t0: 4.69 s (forhold 0.58) -18.16 LUFS, alone: 'vi trækker altid det nederste tal fra det øverste af det øverste for lille vækslervi' CER 0.0429 (wav2vec2) → ok
+17:36:38   ✓ master hint.sub1000.topMinusBottom t0 (bestået)
+17:37:07 ✅ EOS token detected! Stopping generation at step 216
+17:37:30 kald sentence k=3 t0 'En tier går med over til tierne. Der er ikke tiere nok. Veksl et hundr': 52.6 s for 8.60 s lyd
+17:37:33   hint.add1000.tenOver t0: 2.03 s (forhold 0.59) -18.08 LUFS, alone: 'en tiger går med over til tierne' CER 0.04 (wav2vec2) → ok
+17:37:40   hint.sub1000.borrowHundred t0: 3.60 s (forhold 0.68) -18.03 LUFS, alone: 'der er ikke tiger nok veksle 100 til 10 tigere' CER 0.1 (wav2vec2, whisper: 'Der er ikke tigre nok Veksle 100 til 10 tigre') → FEJL asr
+17:37:46   s.cando.add1000 t0: 1.95 s (forhold 0.57) -18.05 LUFS, alone: 'Jeg kan lægge tresifrede tal sammen' CER 0.0333 (whisper, wav2vec2: 'jeg kan lægge 60 i frediktal sammen') → ok
+17:37:46   ✓ master hint.add1000.tenOver t0 (bestået)
+17:37:46   ✓ master s.cando.add1000 t0 (bestået)
+17:38:26 ✅ EOS token detected! Stopping generation at step 274
+17:39:01 kald sentence k=4 t0 'Jo flere lige store dele en hel er delt i, jo mindre bliver hver del. ': 74.6 s for 10.92 s lyd
+17:39:16   hint.fractionCompare.moreParts t0: 4.10 s (forhold 0.62) -18.15 LUFS, alone: 'Jo flere lige store dele en hel er delt i jo mindre bliver hver del' CER 0.0 (whisper, wav2vec2: 'jo flere lige store dele end hel af dti jo mindre bliver hver del') → ok
+17:39:16   hint.fractionOfSet.onOther t0: 0.58 s (forhold 0.46) -18.12 LUFS, alone: 'på den anden' CER 0.0 (wav2vec2) → ok
+17:39:18   s.cando.fractionOfSet t0: 3.60 s (forhold 0.58) -18.0 LUFS, alone: 'jeg kan finde halvdelen en tredjedel og en fjerdedel af en mængde' CER 0.0 (wav2vec2) → ok
+17:39:19   s.fractionOfSet.howManyHalf t0: 1.28 s (forhold 0.58) -18.06 LUFS, alone: 'hvor mange er halvdelen' CER 0.0 (wav2vec2) → ok
+17:39:19   ✓ master hint.fractionCompare.moreParts t0 (bestået)
+17:39:19   ✓ master hint.fractionOfSet.onOther t0 (bestået)
+17:39:19   ✓ master s.cando.fractionOfSet t0 (bestået)
+17:39:19   ✓ master s.fractionOfSet.howManyHalf t0 (bestået)
+17:40:02 ✅ EOS token detected! Stopping generation at step 207
+17:40:33 kald sentence k=4 t0 'Et stort tal under brøkstregen betyder små dele. Det er ikke en stor b': 73.6 s for 8.24 s lyd
+17:40:49   hint.fractionCompare.notBigNumber t0: 3.98 s (forhold 0.61) -18.19 LUFS, alone: 'et stort tal under brygstregn betyder små dele det er ikke en stor bryg' CER 0.0847 (wav2vec2, whisper: 'Et stort tal under prøvkstegn betyder små dele. Det er ikke en stor prøvk') → FEJL asr
+17:40:57   hint.fractionOfSet.piles t0: 0.83 s (forhold 0.44) -18.0 LUFS, alone: 'lige stor bunker' CER 0.0667 (wav2vec2, whisper: 'Lige stor bunker') → FEJL asr
+17:41:06   s.fractionCompare.biggest t0: 1.11 s (forhold 0.71) -18.0 LUFS, alone: 'hvilken prø kan størst' CER 0.1579 (wav2vec2, whisper: 'Hvilken bryg er størst?') → FEJL asr
+17:41:11   s.fractionOfSet.onTwo t0: 0.97 s (forhold 0.45) -18.0 LUFS, alone: 'På de to tallerkener' CER 0.0 (whisper, wav2vec2: 'på de to talerkner') → ok
+17:41:11   ✓ master s.fractionOfSet.onTwo t0 (bestået)
+17:41:58 ✅ EOS token detected! Stopping generation at step 214
+17:42:28 kald sentence k=4 t0 'Brøkerne har lige mange dele, men delene er ikke lige store. Alle bunk': 77.3 s for 8.52 s lyd
+17:42:51   hint.fractionCompare.sameCount t0: 3.19 s (forhold 0.49) -18.09 LUFS, alone: 'bryggerne har lige mange dele men delene er ikke lige store' CER 0.0625 (wav2vec2, whisper: 'Bryggerne har lige mange dele men delene er ikke lige store') → FEJL asr
+17:42:51   hint.fractionOfSet.sameEach t0: 1.45 s (forhold 0.42) -18.08 LUFS, alone: 'alle bunker skal have lige mange' CER 0.0 (wav2vec2) → ok
+17:42:58   s.fractionCompare.smallest t0: 1.17 s (forhold 0.75) -18.03 LUFS, alone: 'hvilken prøgar mindst' CER 0.1579 (wav2vec2, whisper: 'Hvilken bryg er mindst') → FEJL asr
+17:42:58   s.fractionOfSet.otherRest t0: 1.28 s (forhold 0.68) -18.12 LUFS, alone: 'og den anden resten' CER 0.0 (wav2vec2) → ok
+17:42:58   ✓ master hint.fractionOfSet.sameEach t0 (bestået)
+17:42:58   ✓ master s.fractionOfSet.otherRest t0 (bestået)
+17:43:25 ✅ EOS token detected! Stopping generation at step 146
+17:43:43 kald sentence k=3 t0 'i hver bunke. er tre af bunkerne. Sæt brøkerne i rækkefølge. Start med': 44.3 s for 5.80 s lyd
+17:43:44   hint.fractionOfSet.inEach t0: 0.79 s (forhold 0.63) -18.02 LUFS, alone: 'i hver bunke' CER 0.0 (wav2vec2) → ok
+17:43:49   hint.fractionOfSet.threePiles t0: 0.97 s (forhold 0.52) -18.0 LUFS, alone: 'er 3 af bunkerne' CER 0.0 (whisper, wav2vec2: 'er er tre af bunkerne') → ok
+17:43:50   s.fractionCompare.sortBiggest t0: 2.78 s (forhold 0.64) -18.2 LUFS, alone: 'sæt brøgerne i rækkefølge start med den største' CER 0.025 (wav2vec2) → ok
+17:43:50   ✓ master hint.fractionOfSet.inEach t0 (bestået)
+17:43:50   ✓ master hint.fractionOfSet.threePiles t0 (bestået)
+17:43:50   ✓ master s.fractionCompare.sortBiggest t0 (bestået)
+17:44:27 ✅ EOS token detected! Stopping generation at step 246
+17:44:50 kald sentence k=3 t0 'Brøken fortæller, hvor mange lige store bunker du skal dele i. Den for': 60.0 s for 9.80 s lyd
+17:44:53   hint.fractionOfSet.notAnswer t0: 4.27 s (forhold 0.51) -18.09 LUFS, alone: 'bryggen fortæller hvor mange lige store bunker du skal dele i den fortæller ikke svaret' CER 0.0417 (wav2vec2) → ok
+17:44:54   s.cando.fractionCompare t0: 1.71 s (forhold 0.61) -18.0 LUFS, alone: 'jeg kan se hvilken brø der er størst' CER 0.0333 (wav2vec2) → ok
+17:44:55   s.fractionCompare.sortSmallest t0: 2.65 s (forhold 0.61) -18.09 LUFS, alone: 'sæt brøgerne i rækkefølge start med den mindste' CER 0.025 (wav2vec2) → ok
+17:44:55   ✓ master hint.fractionOfSet.notAnswer t0 (bestået)
+17:44:55   ✓ master s.cando.fractionCompare t0 (bestået)
+17:44:55   ✓ master s.fractionCompare.sortSmallest t0 (bestået)
+17:45:24 ✅ EOS token detected! Stopping generation at step 203
+17:45:44 kald sentence k=4 t0 'Vi deler i lige store dele. Når vi ganger med en, får vi tallet selv. ': 48.8 s for 8.08 s lyd
+17:45:46   hint.div.equalParts t0: 1.55 s (forhold 0.50) -18.0 LUFS, alone: 'vi deler i lige store dele' CER 0.0 (wav2vec2) → ok
+17:45:52   hint.mul6to9.oneTimes t0: 1.98 s (forhold 0.58) -18.05 LUFS, alone: 'Når vi ganger med 1 får vi tallet selv' CER 0.0 (whisper, wav2vec2: 'når vi ganger med én får i tallets selv') → ok
+17:45:52   s.cando.div2510 t0: 1.60 s (forhold 0.46) -18.11 LUFS, alone: 'jeg kan dividere med 2 5 og 10' CER 0.0 (wav2vec2) → ok
+17:45:58   s.cando.mulTens t0: 1.50 s (forhold 0.48) -18.15 LUFS, alone: 'jeg kan gange med hele tigeret' CER 0.087 (wav2vec2, whisper: 'Jeg kan gange med hele tigret') → FEJL asr
+17:45:58   ✓ master hint.div.equalParts t0 (bestået)
+17:45:58   ✓ master hint.mul6to9.oneTimes t0 (bestået)
+17:45:58   ✓ master s.cando.div2510 t0 (bestået)
+17:46:27 ✅ EOS token detected! Stopping generation at step 215
+17:46:47 kald sentence k=3 t0 'Divideret med betyder, at vi deler i lige store dele. Del rækkerne op ': 49.3 s for 8.56 s lyd
+17:46:50   hint.div.meaning t0: 3.26 s (forhold 0.55) -18.12 LUFS, alone: 'deviderete med betyder at vi deler i lige store dele' CER 0.0476 (wav2vec2) → ok
+17:46:57   hint.mul6to9.split t0: 1.82 s (forhold 0.58) -18.12 LUFS, alone: 'del ækkerne op i f5 og resten' CER 0.08 (wav2vec2, whisper: 'Del rækkerne op i fem af resten') → FEJL asr
+17:46:59   s.cando.divAll t0: 2.14 s (forhold 0.49) -18.16 LUFS, alone: 'jeg kan dividere i hele den lille tabel' CER 0.0 (wav2vec2) → ok
+17:46:59   ✓ master hint.div.meaning t0 (bestået)
+17:46:59   ✓ master s.cando.divAll t0 (bestået)
+17:47:19 ✅ EOS token detected! Stopping generation at step 155
+17:47:37 kald sentence k=3 t0 'Divideret med betyder det samme som delt med. Gang først uden nullet. ': 38.3 s for 6.16 s lyd
+17:47:46   hint.div2510.bridge t0: 2.49 s (forhold 0.57) -18.08 LUFS, alone: 'Divideret med betyder det samme som delt med' CER 0.0 (whisper, wav2vec2: 'dividerede med betyder det samme som delt med') → ok
+17:47:52   hint.mulTens.withoutZero t0: 1.16 s (forhold 0.62) -18.12 LUFS, alone: 'Gang først uden nullet' CER 0.0 (whisper, wav2vec2: 'gang først uden n0let') → ok
+17:47:57   s.cando.mul34 t0: 1.27 s (forhold 0.45) -18.18 LUFS, alone: 'jeg kan træe 4 tabellen' CER 0.1304 (wav2vec2, whisper: 'Jeg kan 3 og 4 tabellen') → FEJL asr
+17:47:57   ✓ master hint.div2510.bridge t0 (bestået)
+17:47:58   ✓ master hint.mulTens.withoutZero t0 (bestået)
+17:48:21 ✅ EOS token detected! Stopping generation at step 166
+17:48:39 kald sentence k=3 t0 'Tæl efter, hvor mange rækker der er. Sæt så nullet på igen. Jeg kan se': 41.4 s for 6.60 s lyd
+17:48:41   hint.mul6to9.countRows t0: 1.60 s (forhold 0.51) -18.18 LUFS, alone: 'til efter hvor mange rækker der er' CER 0.0357 (wav2vec2) → ok
+17:48:46   hint.mulTens.zeroBack t0: 1.35 s (forhold 0.62) -18.0 LUFS, alone: 'Sæt så nullet på igen' CER 0.0 (whisper, wav2vec2: 'setsig nullet på igen') → ok
+17:48:56   s.cando.mul6to9 t0: 2.33 s (forhold 0.68) -18.06 LUFS, alone: 'jeg kan e 7 8 og nitabellen' CER 0.1034 (wav2vec2, whisper: 'Jeg kan seks syv otte og ni tabellen') → FEJL asr
+17:48:56   ✓ master hint.mul6to9.countRows t0 (bestået)
+17:48:56   ✓ master hint.mulTens.zeroBack t0 (bestået)
+17:49:40 ✅ EOS token detected! Stopping generation at step 292
+17:50:07 kald sentence k=4 t0 'Peg på hvert kvadrat, mens du tæller, og tæl hvert kvadrat én gang. De': 70.9 s for 11.64 s lyd
+17:50:11   hint.area.countEach t0: 3.79 s (forhold 0.76) -18.16 LUFS, alone: 'pej på hvert kvadrat mens du tæller og tal hvert kvadrat én gang' CER 0.0385 (wav2vec2) → ok
+17:50:18   hint.area.split t0: 1.87 s (forhold 0.67) -18.1 LUFS, alone: 'del figuren i to rækketangler' CER 0.1304 (wav2vec2, whisper: 'D figurerne i to rektangler') → FEJL asr
+17:50:18   s.area.rect t0: 2.00 s (forhold 0.58) -18.1 LUFS, alone: 'hvor mange kvadrater dækker rektanglet' CER 0.0 (wav2vec2) → ok
+17:50:19   s.gridCoords.read t0: 2.02 s (forhold 0.65) -18.09 LUFS, alone: 'vor langt hen og hvor langt op er punktet' CER 0.0294 (wav2vec2) → ok
+17:50:19   ✓ master hint.area.countEach t0 (bestået)
+17:50:19   ✓ master s.area.rect t0 (bestået)
+17:50:20   ✓ master s.gridCoords.read t0 (bestået)
+17:50:55 ✅ EOS token detected! Stopping generation at step 236
+17:51:19 kald sentence k=4 t0 'Find arealet af hver figur for sig. Det første tal er hen, og det ande': 59.7 s for 9.40 s lyd
+17:51:22   hint.area.eachFigure t0: 1.95 s (forhold 0.57) -18.02 LUFS, alone: 'finnarealet af hver figur for sig' CER 0.0357 (wav2vec2) → ok
+17:51:28   hint.gridCoords.order t0: 2.13 s (forhold 0.52) -18.12 LUFS, alone: 'Det første tal er hen og det andet tal er op' CER 0.0 (whisper, wav2vec2: 'det første tal er hende og det andet tal er op') → ok
+17:51:29   s.cando.area t0: 2.65 s (forhold 0.45) -18.04 LUFS, alone: 'jeg kan finde arealet af en figur ved at tælle kvadrater' CER 0.0 (wav2vec2) → ok
+17:51:35   s.gridCoords.readAlong t0: 1.13 s (forhold 0.60) -18.09 LUFS, alone: 'Hvor langt hen er punktet?' CER 0.0 (whisper, wav2vec2: 'hvor langt hende er punktet') → ok
+17:51:35   ✓ master hint.area.eachFigure t0 (bestået)
+17:51:35   ✓ master hint.gridCoords.order t0 (bestået)
+17:51:35   ✓ master s.cando.area t0 (bestået)
+17:51:35   ✓ master s.gridCoords.readAlong t0 (bestået)
+17:52:02 ✅ EOS token detected! Stopping generation at step 189
+17:52:23 kald sentence k=4 t0 'kvadrater i hver. op. Der er punktet. Jeg kan sætte og aflæse punkter ': 47.6 s for 7.52 s lyd
+17:52:25   hint.area.inEach t0: 0.96 s (forhold 0.62) -18.15 LUFS, alone: 'kvadrater i hver' CER 0.0 (wav2vec2) → ok
+17:52:29   hint.gridCoords.upThere t0: 0.96 s (forhold 0.61) -18.14 LUFS, alone: 'peger punktet' CER 0.2143 (wav2vec2, whisper: 'Plejer punktet') → FEJL asr
+17:52:30   s.cando.gridCoords t0: 3.06 s (forhold 0.54) -18.02 LUFS, alone: 'jeg kan sætte og aflæse punkter i et koordinatsystem' CER 0.0 (wav2vec2) → ok
+17:52:31   s.gridCoords.readUp t0: 1.25 s (forhold 0.67) -18.16 LUFS, alone: 'hvor langt op er punktet' CER 0.0 (wav2vec2) → ok
+17:52:31   ✓ master hint.area.inEach t0 (bestået)
+17:52:31   ✓ master s.cando.gridCoords t0 (bestået)
+17:52:31   ✓ master s.gridCoords.readUp t0 (bestået)
+17:52:52 ✅ EOS token detected! Stopping generation at step 156
+17:53:09 kald sentence k=3 t0 'En lang figur er ikke altid den største. Hvor mange kvadrater dækker f': 38.2 s for 6.20 s lyd
+17:53:11   hint.area.longNotBig t0: 2.29 s (forhold 0.61) -18.1 LUFS, alone: 'en lang figur er ikke altid den største' CER 0.0 (wav2vec2) → ok
+17:53:12   s.area.cover t0: 1.68 s (forhold 0.49) -18.16 LUFS, alone: 'hvor mange kvadrater dækker figuren' CER 0.0 (wav2vec2) → ok
+17:53:12   s.gridCoords.howFarAlong t0: 0.99 s (forhold 0.53) -18.12 LUFS, alone: 'hvor langt hen skal du gå' CER 0.0 (wav2vec2) → ok
+17:53:13   ✓ master hint.area.longNotBig t0 (bestået)
+17:53:13   ✓ master s.area.cover t0 (bestået)
+17:53:13   ✓ master s.gridCoords.howFarAlong t0 (bestået)
+17:53:45 ✅ EOS token detected! Stopping generation at step 231
+17:54:08 kald sentence k=3 t0 'Arealet er de kvadrater, der dækker figuren. Tæl ikke kanten rundt om ': 55.3 s for 9.20 s lyd
+17:54:11   hint.area.notEdge t0: 4.45 s (forhold 0.62) -18.16 LUFS, alone: 'arealet ar de kvadrater der dækker figuren tal ikke kanten rundt om den' CER 0.0339 (wav2vec2) → ok
+17:54:12   s.area.more t0: 2.51 s (forhold 0.54) -18.1 LUFS, alone: 'hvor mange flere kvadrater dækker den største figur' CER 0.0 (wav2vec2) → ok
+17:54:13   s.gridCoords.howFarUp t0: 1.08 s (forhold 0.58) -18.16 LUFS, alone: 'hvor langt op skal du gå' CER 0.0 (wav2vec2) → ok
+17:54:13   ✓ master hint.area.notEdge t0 (bestået)
+17:54:13   ✓ master s.area.more t0 (bestået)
+17:54:13   ✓ master s.gridCoords.howFarUp t0 (bestået)
+17:54:48 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+17:54:48 ✅ EOS token detected! Stopping generation at step 254
+17:55:12 kald sentence k=2 t0 'Først hen, så op. Tryk i nettet, hvor punktet skal stå, eller tryk på ': 59.3 s for 10.12 s lyd
+17:55:17   s.kind.grid.long t0: 8.23 s (forhold 0.77) -18.11 LUFS, alone: 'først hen så op tryk i nettet hvor punktet skal stå eller tryk på punktets tal fr neden og til venstre tryk sig på fluebenet' CER 0.03 (wav2vec2) → ok
+17:55:17   s.kind.grid.short t0: 1.00 s (forhold 0.80) -18.13 LUFS, alone: 'først hen så op' CER 0.0 (wav2vec2) → ok
+17:55:17   ✓ master s.kind.grid.long t0 (bestået)
+17:55:17   ✓ master s.kind.grid.short t0 (bestået)
+17:55:23 ✅ EOS token detected! Stopping generation at step 46
+17:55:45 kald single k=1 t1 'Fra den mindste er de,': 27.4 s for 1.80 s lyd
+17:55:46   hint.fractionCompare.fromSmallest t1: 1.16 s (forhold 0.62) -18.0 LUFS, alone: 'fra den mindste er de' CER 0.0 (wav2vec2) → ok
+17:55:46   ✓ master hint.fractionCompare.fromSmallest t1 (bestået)
+17:55:54 ✅ EOS token detected! Stopping generation at step 55
+17:56:26 kald single k=1 t1 'Det ene rektangel dækker,': 40.1 s for 2.16 s lyd
+17:56:29   hint.area.oneRect t1: 1.60 s (forhold 0.64) -18.0 LUFS, alone: 'det ene rektangel dækker' CER 0.0 (wav2vec2) → ok
+17:56:29   ✓ master hint.area.oneRect t1 (bestået)
+17:57:01 ✅ EOS token detected! Stopping generation at step 104
+17:58:08 kald sentence k=1 t1 'Når tierne giver ti eller mere, skal hundredet med over til hundredern': 99.5 s for 4.12 s lyd
+17:58:40   hint.add1000.carryHundred t1: 3.55 s (forhold 0.49) -18.03 LUFS, alone: 'norteerne giver t0 eller mere skalve 100 med over til 10nrederne' CER 0.1864 (wav2vec2, whisper: 'Når tiderne giver 10 eller mere skal 100 med over til hundrederne') → FEJL asr
+17:59:31 ✅ EOS token detected! Stopping generation at step 48
+18:00:34 kald sentence k=1 t1 'Regn så hundrederne.': 113.6 s for 1.88 s lyd
+18:01:11   hint.addsub3.hundredsThen t1: 1.23 s (forhold 0.66) -18.0 LUFS, alone: 'rein såhundrederne' CER 0.0588 (wav2vec2, whisper: 'Hegn så hun rødderne') → FEJL asr
+18:03:17 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:03:17 ✅ EOS token detected! Stopping generation at step 98
+18:04:45 kald sentence k=1 t1 'Der er ikke tiere nok. Veksl et hundrede til ti tiere.': 214.2 s for 3.88 s lyd
+18:05:54   hint.sub1000.borrowHundred t1: 3.40 s (forhold 0.64) -18.04 LUFS, alone: 'der er ikke tiger nok veksle 100 til 10 tiger' CER 0.125 (wav2vec2, whisper: 'Der er ikke tigre nok. Veksle 100 til 10 tigre') → FEJL asr
+18:07:03 ✅ EOS token detected! Stopping generation at step 121
+18:07:18 kald sentence k=1 t1 'Et stort tal under brøkstregen betyder små dele. Det er ikke en stor b': 84.4 s for 4.80 s lyd
+18:07:20   hint.fractionCompare.notBigNumber t1: 4.16 s (forhold 0.63) -18.11 LUFS, alone: 'et stort tal under brøgstregen betyder små dele det er ikke en stor brøg' CER 0.0339 (wav2vec2) → ok
+18:07:20   ✓ master hint.fractionCompare.notBigNumber t1 (bestået)
+18:07:25 ✅ EOS token detected! Stopping generation at step 41
+18:07:34 kald sentence k=1 t1 'lige store bunker.': 14.0 s for 1.60 s lyd
+18:07:35   hint.fractionOfSet.piles t1: 1.04 s (forhold 0.55) -18.0 LUFS, alone: 'lige store bunker' CER 0.0 (wav2vec2) → ok
+18:07:35   ✓ master hint.fractionOfSet.piles t1 (bestået)
+18:07:41 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:07:41 ✅ EOS token detected! Stopping generation at step 46
+18:07:51 kald sentence k=1 t1 'Hvilken brøk er størst?': 15.7 s for 1.80 s lyd
+18:07:57   s.fractionCompare.biggest t1: 1.24 s (forhold 0.79) -18.01 LUFS, alone: 'hvilken bryg er størst' CER 0.1053 (wav2vec2, whisper: 'Hvilken bryg er størst?') → FEJL asr
+18:08:10 ✅ EOS token detected! Stopping generation at step 106
+18:08:25 kald sentence k=1 t1 'Brøkerne har lige mange dele, men delene er ikke lige store.': 28.0 s for 4.20 s lyd
+18:08:32   hint.fractionCompare.sameCount t1: 3.53 s (forhold 0.54) -18.13 LUFS, alone: 'bryggerne har lige mange dele men delene er ikke lige store' CER 0.0625 (wav2vec2, whisper: 'Bryggerne har lige mange dele men delene er ikke lige store') → FEJL asr
+18:08:38 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:08:38 ✅ EOS token detected! Stopping generation at step 45
+18:08:48 kald sentence k=1 t1 'Hvilken brøk er mindst?': 15.2 s for 1.76 s lyd
+18:08:53   s.fractionCompare.smallest t1: 1.24 s (forhold 0.79) -18.0 LUFS, alone: 'hvilken brø gav mindst' CER 0.1579 (wav2vec2, whisper: 'Hvilken bryg er mindst') → FEJL asr
+18:09:00 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:09:00 ✅ EOS token detected! Stopping generation at step 55
+18:09:10 kald sentence k=1 t1 'Jeg kan gange med hele tiere.': 16.4 s for 2.16 s lyd
+18:09:11   s.cando.mulTens t1: 1.58 s (forhold 0.51) -18.13 LUFS, alone: 'jeg kan gange med hele tieret' CER 0.0435 (wav2vec2) → ok
+18:09:11   ✓ master s.cando.mulTens t1 (bestået)
+18:09:18 ✅ EOS token detected! Stopping generation at step 60
+18:09:29 kald sentence k=1 t1 'Del rækkerne op i fem og resten.': 18.2 s for 2.36 s lyd
+18:09:36   hint.mul6to9.split t1: 1.74 s (forhold 0.56) -18.14 LUFS, alone: 'del rækkerne op i feog heisten' CER 0.12 (wav2vec2, whisper: 'Del rækkerne op i fem af højsten') → FEJL asr
+18:09:42 ✅ EOS token detected! Stopping generation at step 51
+18:09:52 kald sentence k=1 t1 'Jeg kan tre- og firetabellen.': 16.6 s for 2.00 s lyd
+18:09:58   s.cando.mul34 t1: 1.40 s (forhold 0.50) -18.02 LUFS, alone: 'jeg kan 3 og 4 tabellen' CER 0.0 (wav2vec2, whisper: 'Jeg kan 3 og 4 tabellen') → FEJL asr
+18:10:07 ✅ EOS token detected! Stopping generation at step 69
+18:10:17 kald sentence k=1 t1 'Jeg kan seks-, syv-, otte- og nitabellen.': 19.2 s for 2.72 s lyd
+18:10:24   s.cando.mul6to9 t1: 2.11 s (forhold 0.61) -18.04 LUFS, alone: 'jeg kan 6 7 ote en i tabellen' CER 0.1034 (wav2vec2, whisper: 'Jeg kan seks syv otteren i tabellen') → FEJL asr
+18:10:32 ✅ EOS token detected! Stopping generation at step 63
+18:10:42 kald sentence k=1 t1 'Del figuren i to rektangler.': 18.4 s for 2.48 s lyd
+18:10:48   hint.area.split t1: 1.87 s (forhold 0.66) -18.06 LUFS, alone: 'Del figuren i to rektangler' CER 0.0 (whisper, wav2vec2: 'dele figuren i to rækketangler') → ok
+18:10:48   ✓ master hint.area.split t1 (bestået)
+18:10:54 ✅ EOS token detected! Stopping generation at step 48
+18:11:04 kald sentence k=1 t1 'op. Der er punktet.': 15.5 s for 1.88 s lyd
+18:11:05   hint.gridCoords.upThere t1: 1.12 s (forhold 0.72) -18.16 LUFS, alone: 'op der er punktet' CER 0.0 (wav2vec2) → ok
+18:11:05   ✓ master hint.gridCoords.upThere t1 (bestået)
+18:11:19 ✅ EOS token detected! Stopping generation at step 113
+18:11:35 kald sentence k=1 t2 'Når tierne giver ti eller mere, skal hundredet med over til hundredern': 30.2 s for 4.48 s lyd
+18:11:44   hint.add1000.carryHundred t2: 3.96 s (forhold 0.55) -18.16 LUFS, alone: 'nårtierne giver ti eller mere skal huede med over til hundrederne' CER 0.0678 (wav2vec2, whisper: 'Når tiderne giver 10 eller mere skal 100 med over til hundrederne') → FEJL asr
+18:11:51 ✅ EOS token detected! Stopping generation at step 46
+18:12:01 kald sentence k=1 t2 'Regn så hundrederne.': 17.3 s for 1.80 s lyd
+18:12:07   hint.addsub3.hundredsThen t2: 1.18 s (forhold 0.63) -18.07 LUFS, alone: 'hein s åhundrederne' CER 0.1176 (wav2vec2, whisper: 'Hegn så hun rødderne') → FEJL asr
+18:12:19 ✅ EOS token detected! Stopping generation at step 96
+18:12:32 kald sentence k=1 t2 'Der er ikke tiere nok. Veksl et hundrede til ti tiere.': 25.0 s for 3.80 s lyd
+18:12:39   hint.sub1000.borrowHundred t2: 3.23 s (forhold 0.61) -18.17 LUFS, alone: 'der er ikke tiger nok veksle 1100 til 10 tigere' CER 0.325 (wav2vec2, whisper: 'Der er ikke tigre nok. Veksle 100 til 10 tigre') → FEJL asr
+18:12:45 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:12:45 ✅ EOS token detected! Stopping generation at step 48
+18:12:55 kald sentence k=1 t2 'Hvilken brøk er størst?': 15.7 s for 1.88 s lyd
+18:13:00   s.fractionCompare.biggest t2: 1.28 s (forhold 0.82) -18.0 LUFS, alone: 'hvilken brøg er størst' CER 0.0526 (wav2vec2, whisper: 'Hvilken bryg er størst?') → FEJL asr
+18:13:13 ✅ EOS token detected! Stopping generation at step 103
+18:13:26 kald sentence k=1 t2 'Brøkerne har lige mange dele, men delene er ikke lige store.': 25.5 s for 4.08 s lyd
+18:13:34   hint.fractionCompare.sameCount t2: 3.40 s (forhold 0.52) -18.16 LUFS, alone: 'bryggerne har lige mange dele men delene er ikke lige store' CER 0.0625 (wav2vec2, whisper: 'Bryggerne har lige mange dele men delene er ikke lige store') → FEJL asr
+18:13:40 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:13:40 ✅ EOS token detected! Stopping generation at step 47
+18:13:51 kald sentence k=1 t2 'Hvilken brøk er mindst?': 16.2 s for 1.84 s lyd
+18:13:56   s.fractionCompare.smallest t2: 1.25 s (forhold 0.80) -18.09 LUFS, alone: 'Hvilken brøk er mindst' CER 0.0 (whisper, wav2vec2: 'hvilken brøger mindst') → ok
+18:13:56   ✓ master s.fractionCompare.smallest t2 (bestået)
+18:14:04 ✅ EOS token detected! Stopping generation at step 66
+18:14:15 kald sentence k=1 t2 'Del rækkerne op i fem og resten.': 18.7 s for 2.60 s lyd
+18:14:22   hint.mul6to9.split t2: 1.95 s (forhold 0.63) -18.09 LUFS, alone: 'Del rækkerne op i 5 og resten' CER 0.0 (whisper, wav2vec2: 'del rækkerne op i fem år resten') → ok
+18:14:22   ✓ master hint.mul6to9.split t2 (bestået)
+18:14:28 ✅ EOS token detected! Stopping generation at step 49
+18:14:37 kald sentence k=1 t2 'Jeg kan tre- og firetabellen.': 15.7 s for 1.92 s lyd
+18:14:45   s.cando.mul34 t2: 1.65 s (forhold 0.59) -18.08 LUFS, alone: 'jeg kan t og 4 tabellen' CER 0.087 (wav2vec2, whisper: 'Jeg kan 3 og 4 tabellen') → FEJL asr
+18:14:54 ✅ EOS token detected! Stopping generation at step 69
+18:15:05 kald sentence k=1 t2 'Jeg kan seks-, syv-, otte- og nitabellen.': 19.8 s for 2.72 s lyd
+18:15:13   s.cando.mul6to9 t2: 2.10 s (forhold 0.61) -18.0 LUFS, alone: 'jeg kan 6 7 oteon i tabellen' CER 0.069 (wav2vec2, whisper: 'Jeg kan seks syv otteren i tabellen') → FEJL asr
+18:15:27 ✅ EOS token detected! Stopping generation at step 110
+18:15:40 kald sentence k=1 t3 'Når tierne giver ti eller mere, skal hundredet med over til hundredern': 26.7 s for 4.36 s lyd
+18:15:47   hint.add1000.carryHundred t3: 3.81 s (forhold 0.53) -18.08 LUFS, alone: 'nårtierne giver t0 eller mere skal hudrede med over til hundrederne' CER 0.0847 (wav2vec2, whisper: 'Når tiderne giver 10 eller mere skal hundrede med over til hundrederne') → FEJL asr
+18:15:56 ✅ EOS token detected! Stopping generation at step 54
+18:16:09 kald sentence k=1 t3 'Regn så hundrederne.': 21.6 s for 2.12 s lyd
+18:16:18   hint.addsub3.hundredsThen t3: 1.54 s (forhold 0.82) -18.06 LUFS, alone: 'regen så hundrederne' CER 0.0588 (wav2vec2, whisper: 'Regn så hun rødderne') → FEJL asr
+18:16:38 ✅ EOS token detected! Stopping generation at step 96
+18:17:00 kald sentence k=1 t3 'Der er ikke tiere nok. Veksl et hundrede til ti tiere.': 41.4 s for 3.80 s lyd
+18:17:09   hint.sub1000.borrowHundred t3: 3.26 s (forhold 0.61) -18.08 LUFS, alone: 'der er ikke tiger nok veksle 100 til 10 tigere' CER 0.1 (wav2vec2, whisper: 'Der er ikke tigre nok veksle 100 til 10 tigre') → FEJL asr
+18:17:23 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:17:23 ✅ EOS token detected! Stopping generation at step 49
+18:17:51 kald sentence k=1 t3 'Hvilken brøk er størst?': 42.4 s for 1.92 s lyd
+18:18:03   s.fractionCompare.biggest t3: 1.29 s (forhold 0.83) -18.0 LUFS, alone: 'hvilken brøg er størst' CER 0.0526 (wav2vec2, whisper: 'Hvilken bryg er størst?') → FEJL asr
+18:18:21 ✅ EOS token detected! Stopping generation at step 105
+18:18:56 kald sentence k=1 t3 'Brøkerne har lige mange dele, men delene er ikke lige store.': 53.2 s for 4.16 s lyd
+18:19:01   hint.fractionCompare.sameCount t3: 3.46 s (forhold 0.53) -18.13 LUFS, alone: 'brøgerne har lige mange dele men delene er ikke lige store' CER 0.0208 (wav2vec2) → ok
+18:19:01   ✓ master hint.fractionCompare.sameCount t3 (bestået)
+18:19:38 ✅ EOS token detected! Stopping generation at step 54
+18:20:20 kald sentence k=1 t3 'Jeg kan tre- og firetabellen.': 79.0 s for 2.12 s lyd
+18:20:45   s.cando.mul34 t3: 1.51 s (forhold 0.54) -18.17 LUFS, alone: 'jeg kan 3 og 4 tabellen' CER 0.0 (wav2vec2, whisper: 'Jeg kan 3 og 4 tabellen') → FEJL asr
+18:21:40 ✅ EOS token detected! Stopping generation at step 85
+18:22:12 kald sentence k=1 t3 'Jeg kan seks-, syv-, otte- og nitabellen.': 86.9 s for 3.36 s lyd
+18:22:23   s.cando.mul6to9 t3: 2.72 s (forhold 0.79) -18.02 LUFS, alone: 'jeg kan 6 7 o ognitabellet' CER 0.1379 (wav2vec2, whisper: 'Jaka 6 7 8 og 9 tabellen') → FEJL asr
+18:22:44 ✅ EOS token detected! Stopping generation at step 106
+18:23:08 kald sentence k=1 t4 'Når tierne giver ti eller mere, skal hundredet med over til hundredern': 44.4 s for 4.20 s lyd
+18:23:18   hint.add1000.carryHundred t4: 3.94 s (forhold 0.55) -18.07 LUFS, alone: 'nårtierne giver ti eller mere skære h0ede med over til hundrederne' CER 0.1186 (wav2vec2, whisper: 'Når tiende giver ti eller mere skærer hundrede med over til hundrederne') → FEJL asr
+18:23:18   ✓ master hint.add1000.carryHundred t2 (IKKE bestået: asr)
+18:23:24 ✅ EOS token detected! Stopping generation at step 43
+18:23:35 kald sentence k=1 t4 'Regn så hundrederne.': 16.7 s for 1.68 s lyd
+18:23:47   hint.addsub3.hundredsThen t4: 1.13 s (forhold 0.60) -18.19 LUFS, alone: 'regns af hundrederne' CER 0.1176 (wav2vec2, whisper: 'Hegn tog hundrederne') → FEJL asr
+18:23:47   ✓ master hint.addsub3.hundredsThen t1 (IKKE bestået: asr)
+18:24:03 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:24:03 ✅ EOS token detected! Stopping generation at step 103
+18:24:47 kald sentence k=1 t4 'Der er ikke tiere nok. Veksl et hundrede til ti tiere.': 60.6 s for 4.08 s lyd
+18:25:18   hint.sub1000.borrowHundred t4: 3.39 s (forhold 0.64) -18.11 LUFS, alone: 'der er ikke tigor nok veksle 100 til 10 tiger' CER 0.15 (wav2vec2, whisper: 'Der er ikke tigre nok. Veksle 100 til 10 tigre') → FEJL asr
+18:25:18   ✓ master hint.sub1000.borrowHundred t0 (IKKE bestået: asr)
+18:25:29 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:25:29 ✅ EOS token detected! Stopping generation at step 47
+18:25:45 kald sentence k=1 t4 'Hvilken brøk er størst?': 26.9 s for 1.84 s lyd
+18:25:59   s.fractionCompare.biggest t4: 1.24 s (forhold 0.79) -18.0 LUFS, alone: 'hvilken brø er størst' CER 0.0526 (wav2vec2, whisper: 'Hvilken bryg er størst?') → FEJL asr
+18:25:59   ✓ master s.fractionCompare.biggest t2 (IKKE bestået: asr)
+18:26:10 ✅ EOS token detected! Stopping generation at step 54
+18:26:24 kald sentence k=1 t4 'Jeg kan tre- og firetabellen.': 24.5 s for 2.12 s lyd
+18:26:32   s.cando.mul34 t4: 1.45 s (forhold 0.52) -18.0 LUFS, alone: 'jeg kan 3 og 4 tabellen' CER 0.0 (wav2vec2, whisper: 'Jeg kan have 3 og 4 i tabellen') → FEJL asr
+18:26:32   ✓ master s.cando.mul34 t1 (IKKE bestået: asr)
+18:26:49 ✅ EOS token detected! Stopping generation at step 71
+18:27:20 kald sentence k=1 t4 'Jeg kan seks-, syv-, otte- og nitabellen.': 47.5 s for 2.80 s lyd
+18:27:44   s.cando.mul6to9 t4: 2.20 s (forhold 0.64) -18.19 LUFS, alone: 'jeg kan 6 7 forteren i tabellen' CER 0.1379 (wav2vec2, whisper: 'Jeg kan seks syv fordøren i tabellen') → FEJL asr
+18:27:44   ✓ master s.cando.mul6to9 t2 (IKKE bestået: asr)
+18:27:44   sammensat n.mid.7 + frag.mulTens.consistsOf + n.end.5: '7 består af 5' CER 0.000 (wav2vec2) → ok
+18:27:45   sammensat n.mid.7 + frag.mulTens.consistsOf + n.end.5: '7 består af 5' CER 0.000 (wav2vec2) → ok
+18:27:57   sammensat frag.det_er + hint.area.covers: 'Det er figuren dækker' CER 0.000 (whisper, wav2vec2: 'det er figuren dikker') → ok
+18:27:57   sammensat frag.det_er + hint.area.rowsWith: 'det er rækker med' CER 0.000 (wav2vec2) → ok
+18:27:58   sammensat frag.det_er + hint.div.shouldGive: 'det er det skal give' CER 0.000 (wav2vec2) → ok
+18:27:58   sammensat frag.det_er + hint.fractionCompare.isBiggest: 'det er er størst' CER 0.000 (wav2vec2) → ok
+18:27:58   sammensat frag.det_er + hint.fractionCompare.isSmallest: 'det er er mindst' CER 0.000 (wav2vec2) → ok
+18:28:03   sammensat frag.det_er + hint.fractionOfSet.dealThe: 'det er dd' CER 0.300 (wav2vec2, whisper: 'Det er D D') → FEJL
+18:28:09   sammensat frag.det_er + hint.gridCoords.alongThen: 'Det er hen og så' CER 0.000 (whisper, wav2vec2: 'dt er ken og så') → ok
+18:28:09   sammensat frag.det_er + hint.gridCoords.fromZero: 'det er start i 0' CER 0.000 (wav2vec2) → ok
+18:28:14   sammensat frag.det_er + hint.gridCoords.go: 'det er go' CER 0.143 (wav2vec2, whisper: 'Det er god') → FEJL
+18:28:15   sammensat frag.det_er + s.fractionOfSet.howMany: 'det er hvor mange er' CER 0.000 (wav2vec2) → ok
+18:28:15   sammensat frag.det_er + s.fractionOfSet.into: 'deter i' CER 0.000 (wav2vec2) → ok
+18:28:15   sammensat frag.det_er + s.gridCoords.place: 'det er sætpunktet' CER 0.000 (wav2vec2) → ok
+18:28:16   sammensat frag.det_er + s.kind.grid.along: 'det er tallene for neden' CER 0.000 (wav2vec2) → ok
+18:28:22   sammensat frag.det_er + s.kind.grid.board: 'Det er nettet' CER 0.000 (whisper, wav2vec2: 'det er nittet') → ok
+18:28:22   sammensat frag.det_er + s.kind.grid.up: 'det er tallene til venstre' CER 0.000 (wav2vec2) → ok
+18:28:27 ✅ EOS token detected! Stopping generation at step 31
+18:28:37 kald single k=1 t1 'Del de,': 14.6 s for 1.20 s lyd
+18:28:37   hint.fractionOfSet.dealThe t1: 0.51 s (forhold 0.82) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:28:42 ✅ EOS token detected! Stopping generation at step 20
+18:29:02 kald single k=1 t1 'Gå,': 25.1 s for 0.76 s lyd
+18:29:03   hint.gridCoords.go t1: 0.21 s (forhold 0.67) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:29:03 sammensætning runde 1: 14 af 16 bestået
+18:29:15   sammensat frag.det_er + hint.fractionOfSet.dealThe: 'det er det de' CER 0.100 (wav2vec2, whisper: 'Det er det de') → FEJL
+18:29:25   sammensat frag.det_er + hint.gridCoords.go: 'Det er gå' CER 0.000 (whisper, wav2vec2: 'det er go') → ok
+18:29:34 ✅ EOS token detected! Stopping generation at step 32
+18:29:44 kald single k=1 t2 'Del de,': 19.3 s for 1.24 s lyd
+18:29:45   hint.fractionOfSet.dealThe t2: 0.53 s (forhold 0.85) -18.08 LUFS, none: 'None' CER None (None) → ok
+18:29:45 sammensætning runde 2: 15 af 16 bestået
+18:29:45   sammensat frag.det_er + hint.fractionOfSet.dealThe: 'det er delde' CER 0.000 (wav2vec2) → ok
+18:29:45 sammensætning runde 3: 16 af 16 bestået
+18:29:45   ✓ master frag.mulTens.consistsOf t0 (bestået)
+18:29:45   ✓ master hint.area.covers t0 (bestået)
+18:29:45   ✓ master hint.area.rowsWith t0 (bestået)
+18:29:45   ✓ master hint.div.shouldGive t0 (bestået)
+18:29:45   ✓ master hint.fractionCompare.isBiggest t0 (bestået)
+18:29:45   ✓ master hint.fractionCompare.isSmallest t0 (bestået)
+18:29:45   ✓ master hint.fractionOfSet.dealThe t2 (bestået)
+18:29:45   ✓ master hint.gridCoords.alongThen t0 (bestået)
+18:29:46   ✓ master hint.gridCoords.fromZero t0 (bestået)
+18:29:46   ✓ master hint.gridCoords.go t1 (bestået)
+18:29:46   ✓ master s.fractionOfSet.howMany t0 (bestået)
+18:29:46   ✓ master s.fractionOfSet.into t0 (bestået)
+18:29:46   ✓ master s.gridCoords.place t0 (bestået)
+18:29:46   ✓ master s.kind.grid.along t0 (bestået)
+18:29:46   ✓ master s.kind.grid.board t0 (bestået)
+18:29:46   ✓ master s.kind.grid.up t0 (bestået)
+18:29:46 færdig: 98 nye mastere (6 ikke bestået, 9 kopier), 90 modelkald, 51.5 min generering (CPU 1.37 t), 0 klip mangler
