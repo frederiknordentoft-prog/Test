@@ -69,6 +69,12 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
   - `gradeEstimate` godkender kun et klassetrin, når mindst 50 % af trinnets egne kerneskills (dem, der ikke er sprunget over) er mindst "Med støtte". Har trinnet ingen sådanne skills, godkendes det ikke.
   - Før kunne 3. kl. godkendes alene på 0.–2. kl.'s skills (29 af 36 kerneskills = 80,6 %).
   - For 1.–2. kl. følger reglen allerede af 80 %-reglen, så deres estimat er uændret. Det testes.
+- **A23 – Misforståelsen `coordSwap` (5/10, integrator; bølge 3, fundet af ORK3b).**
+  - Den 32. misforståelse: barnet bytter hen og op i et koordinatsæt og læser eller sætter (3, 2) som (2, 3). Den er en concept, ikke et slip.
+  - `gridCoords` tagger det byttede par `coordSwap` på nettet (`grid`, begge familier) og på readPoints kort. På placePoints kort er værdien et tal fra spørgsmålet, så den bliver `ambiguous` efter A9. Punkter med x = y kan ikke vise den.
+  - Hintet starter med "Det første tal er hen, og det andet tal er op."
+  - Forældreteksten og hjemmetippet står i `src/content/misconceptionTexts.ts`. `MISCONCEPTION_IDS` og `ids.lock.json` får id'et, og §4's tal 31 er nu 32.
+  - Før blev et barn, der byttede i alle svar, aldrig opdaget, fordi byttet var `other`.
 
 ---
 
