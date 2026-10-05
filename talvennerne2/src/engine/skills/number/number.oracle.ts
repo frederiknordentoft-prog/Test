@@ -493,11 +493,15 @@ export function tagsToHint(def: SkillDef, facts: readonly Fact[]): (ErrorTag | n
 
 // ─── Fact ids across every registered skill (CONVENTIONS "Fact-id'er") ────
 
-/** The fixed id formats of the CONVENTIONS table. */
+/**
+ * The fixed id formats of the CONVENTIONS table, and (wave 3, ORK3a) the formats SK3-TAL's procedure skills
+ * document in their modules (CONVENTIONS: "Andre skills vælger et kort præfiks pr. skill og dokumenterer det").
+ */
 const CONVENTION_IDS: Readonly<Partial<Record<SkillId, RegExp>>> = {
   addTo10: /^add:\d+\+\d+$/, addTo20: /^add:\d+\+\d+$/, subTo10: /^sub:\d+-\d+$/, subTo20: /^sub:\d+-\d+$/,
   tenFriends: /^ten:\d+$/, doubles: /^dbl:\d+$/, halves: /^hlf:\d+$/, missingPart10: /^mp:\d+\+\?=\d+$/,
   mul2510: /^mul:\d+x\d+$/, mul34: /^mul:\d+x\d+$/, mul6to9: /^mul:\d+x\d+$/, div2510: /^div:\d+\/\d+$/, divAll: /^div:\d+\/\d+$/,
+  add1000: /^a1000:\d+\+\d+$/, sub1000: /^s1000:\d+-\d+$/, mulTens: /^mt:\d+x\d+$/,
 }
 /** Prefixes CONVENTIONS lets several skills share (the recall tables of 0.–3. klasse). */
 const SHARED_PREFIXES: Readonly<Record<string, readonly SkillId[]>> = {

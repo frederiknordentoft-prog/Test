@@ -16,8 +16,8 @@ import type { SkillId, Task } from '../../types'
 const SHAPES: ReadonlySet<SkillId> = new Set<SkillId>(['area', 'gridCoords'])
 const FRACTIONS: ReadonlySet<SkillId> = new Set<SkillId>(['fractionOfSet', 'fractionCompare'])
 
-regionSuite('the shapes skills of 3. klasse', SHAPES, 'shapes3.ts', 'shapes-3', 3)
-regionSuite('the fraction skills of 3. klasse', FRACTIONS, 'fractions3.ts', 'fractions-3', 3)
+regionSuite('the shapes skills of 3. klasse', SHAPES, 'shapes3.ts', 'shapes-3', { wave: 3 })
+regionSuite('the fraction skills of 3. klasse', FRACTIONS, 'fractions3.ts', 'fractions-3', { wave: 3 })
 
 const node = (id: string) => NODES.find((n) => n.id === id)!
 const plan = (id: string, seed: number) =>

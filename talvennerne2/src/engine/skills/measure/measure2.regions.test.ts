@@ -16,7 +16,9 @@ import { factsUnderTest, tasksUnderTest } from '../number/testing/harness'
 import type { ErrorTag, SkillDef, SkillId } from '../../types'
 
 const MINE: ReadonlySet<SkillId> = new Set<SkillId>(['measureUnits', 'rulerRead', 'weightCompare', 'unitChoice', 'readChart'])
-const NODES_WITH_MINE = NODES.filter((n) => n.skills.some((s) => MINE.has(s.skill)))
+// Stjernefjeldet's nodes (Markedet and the finale) are 3. klasse's: there unitChoice's weight family shares the
+// rounds with kronerOre and convertCmM, and measure3.regions.test.ts plays it (SK3-MAAL)
+const NODES_WITH_MINE = NODES.filter((n) => n.world !== 'fjeld' && n.skills.some((s) => MINE.has(s.skill)))
 const ctx = { day: '2026-10-02', sessionId: 's', audioVerified: true }
 const gradeOf = (world: string) => (world === 'fjeld' ? 3 : world === 'skov' ? 2 : 1)
 
