@@ -18,7 +18,7 @@ import { ceilingFor, defaultFastMs, guessP, isProduction } from '../../kinds'
 import { hashSeed, makeRng } from '../../rng'
 import type { Built } from '../number/number.oracle'
 import { numbersIn } from '../number/number2.oracle'
-import { isMis } from '../algebra/algebra2.oracle'
+import { SPEC_KINDS3, isMis } from '../algebra/algebra2.oracle'
 
 // ═══ area: the squares on the grid ════════════════════════════════════════════
 
@@ -604,4 +604,27 @@ export function typedSwap(t: Task, onScreen: readonly number[] = []): number | n
   if (tens === 0 || ones === 0 || tens === ones) return null
   const s = t.answer - 10 * tens - ones + 10 * ones + tens
   return onScreen.includes(s) ? null : s
+}
+
+/**
+ * SPEC §2.2/§3.3 per skill (SPEC_KINDS3): the kinds are SPEC's; a starred kind is production for ≥ 90 % of
+ * its tasks, an unstarred one never; a card task lifts at most to box 3 (box 2 on a coin flip).
+ */
+export function specKindB(def: SkillDef, built: readonly Built[]): string[] {
+  const spec = SPEC_KINDS3[def.id]
+  if (!spec) return [`${def.id}: not in the oracle's SPEC §2.2 table`]
+  const out: string[] = []
+  if ([...def.kinds].sort().join(',') !== [...spec.kinds].sort().join(',')) out.push(`${def.id}: kinds ${def.kinds}, SPEC ${spec.kinds}`)
+  for (const kind of def.kinds) {
+    const own = built.filter((b) => b.kind === kind)
+    if (own.length === 0) continue
+    const share = own.filter((b) => productionB(b.task)).length / own.length
+    if (spec.production.includes(kind) && share < 0.9) out.push(`${def.id} ${kind}: production for ${(share * 100).toFixed(1)} %, SPEC wants ≥ 90 %`)
+    if (!spec.production.includes(kind) && share > 0) out.push(`${def.id} ${kind}: production for ${(share * 100).toFixed(1)} %, SPEC says never`)
+  }
+  for (const { task } of built) {
+    if (task.kind !== 'choice') continue
+    if (ceilingFor(task) > (guessP(task) >= 0.5 ? 2 : 3)) out.push(`${task.factId} choice: ceiling ${ceilingFor(task)}`)
+  }
+  return out
 }

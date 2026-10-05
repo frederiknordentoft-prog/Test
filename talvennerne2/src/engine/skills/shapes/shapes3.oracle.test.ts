@@ -15,11 +15,11 @@ import {
   type Built,
 } from '../number/number.oracle'
 import { numbersIn } from '../number/number2.oracle'
-import { animationChecks, idChecks, sentences, specKindChecks } from '../algebra/algebra2.oracle'
+import { animationChecks, idChecks, sentences } from '../algebra/algebra2.oracle'
 import {
   PLAIN, areaIdAnswer, areaIdOf, areaQuestion, areaTags, boxOf, classifyB, detectableB, drawingProblems, drawnOf, figuresOf, freshIds,
   gridAnswerOf, gridAnswers, instancesB, isRect, lShapeOf, pointAsk, pointIdOf, pointOfAnswer, productionB3, readCoordGrid, readGridView,
-  speedProblems, typedSwap, type AreaFamily, type AreaQ,
+  specKindB, speedProblems, typedSwap, type AreaFamily, type AreaQ,
 } from './shapes3.oracle'
 
 const TIMEOUT = 300_000
@@ -168,7 +168,7 @@ describe('area oracle', () => {
 
   it('has SPEC’s kinds and ceilings: choice (1 in 3, box 3), keypad 0–40 (production, box 5), and SPEC’s speed or more', () => {
     expect(first(productionB3(built))).toEqual([])
-    expect(first(specKindChecks(def, built))).toEqual([])
+    expect(first(specKindB(def, built))).toEqual([])
     expect(first(speedProblems(def, built))).toEqual([])
     for (const { task } of built) if (task.kind === 'keypad') expect([task.range, task.maxDigits], task.factId).toEqual([[0, 40], 2])
   }, TIMEOUT)
@@ -380,7 +380,7 @@ describe('gridCoords oracle', () => {
 
   it('A21: a point is 1 in 49 on the net (production, box 5); a card 1 in 3 (box 3); SPEC’s speed or more', () => {
     expect(first(productionB3(built))).toEqual([])
-    expect(first(specKindChecks(def, built))).toEqual([])
+    expect(first(specKindB(def, built))).toEqual([])
     expect(first(speedProblems(def, built))).toEqual([])
     for (const { task } of built) {
       if (task.kind !== 'grid') continue
