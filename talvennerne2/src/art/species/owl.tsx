@@ -146,11 +146,26 @@ const WingShape = ({ pal, sw, lod }: Pick<PartCtx, 'pal' | 'sw' | 'lod'>) => (
 )
 
 const gripClip = (ids: PartCtx['ids']) => `${ids.uid}wg`
+const gripClipClothed = (ids: PartCtx['ids']) => `${ids.uid}wgk`
+
+/**
+ * Vingespidsen over håndgenstanden, når uglen bærer kropstøj (SPEC A17, `handOverSleeve`): riggen lægger genstanden
+ * over den hængende vinge og ærmet og tegner derefter denne del, så vingespidsen stadig folder sig om genstanden som
+ * uden kropstøj. Spidsen ligger under ærmets manchet (GRIP_CUT under manchettens y), så den aldrig dækker ærmet.
+ */
+const WingGrip: SidePart = ({ pal, sw, ids }) => (
+  <>
+    <clipPath id={gripClipClothed(ids)}>
+      <path d={GRIP_EDGE} />
+    </clipPath>
+    <path d={WING_D} fill={wing(pal)} stroke={pal.outline} strokeWidth={sw} strokeLinejoin="round" clipPath={`url(#${gripClipClothed(ids)})`} />
+  </>
+)
 
 /**
  * Den hængende vinge på poten. Uden kropstøj ligger vingen selv i kroppens lag (`WingBodies`), og poten tegner kun
  * vingespidsen – vingens egen form og kontur klippet under `GRIP_CUT` – oven på en håndgenstand. Med kropstøj tegnes
- * hele vingen her som før, under ærmet.
+ * hele vingen her som før, under ærmet, og håndgenstanden tegnes oven på vingen og ærmet (`handOverSleeve`, SPEC A17).
  */
 const Paw: SidePart = (p) =>
   p.clothed ? (
@@ -336,6 +351,9 @@ export const owl: SpeciesDef = {
   colorways: OWL_COLORWAYS,
   magic: ['gold', 'rainbow'],
   occupies: ['back'],
+  // Med kropstøj tegnes hele vingen og ærmet på poten, så håndgenstanden lægges oven på dem, og vingespidsen griber om
+  // den (SPEC A17, `WingGrip`); uden kropstøj griber vingespidsen den foran vingen (se `Paw`). Løftede vinger som før.
+  handOverSleeve: WingGrip,
   anchors: {
     headCenter: { x: 100, y: 96 },
     headRx: 59,

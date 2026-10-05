@@ -462,6 +462,12 @@ export interface SpeciesDef {
   anchors?: Partial<AnchorSet>
   /** Pegasus, drage og ugle: ['back'] (slottet er låst). */
   occupies?: readonly Slot[]
+  /**
+   * Håndgenstanden tegnes over den hængende arm og ærmet, når arten bærer kropstøj (SPEC A17): uglens vinge og ærme
+   * dækker ellers genstanden, som vingespidsen griber foran vingen, når uglen ikke er klædt. En løftet arm holder
+   * genstanden som før. Er feltet en del, tegnes den efter genstanden og viser grebet (uglens vingespids).
+   */
+  handOverSleeve?: boolean | SidePart
   face: FaceStyle
   ears?: EarRig
   signature?: Signature
@@ -731,6 +737,12 @@ export interface ItemArtSet {
    * halsgenstanden, så en rygsæks stropper går ind under armene.
    */
   straps?: ItemArt
+  /**
+   * Håndgenstanden bæres foran kroppen (SPEC A17): den tegnes efter poten, benet og ærmet i stedet for under poten
+   * (fit-regel 5), og tegningen viser selv grebet med en rem eller en hånddel. En funktion afgør det pr. positur ud fra
+   * ankrene, posen og om poten er løftet (skjoldet kun på forben, der står på jorden).
+   */
+  over?: boolean | ((p: { a: AnchorSet; hold: HandHold; up: boolean }) => boolean)
 }
 
 export interface ItemDef {

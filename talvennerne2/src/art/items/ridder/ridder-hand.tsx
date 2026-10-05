@@ -6,10 +6,11 @@
 // skygge står ens i alle poser. Alene (butik) står det opret og fylder kortet. Skjoldet rækker med vilje ud
 // over silhuetten (`reach`) og er stort nok til at ses tydeligt i butikskortet på dyret (review G1-r4, B2).
 // På de lange forben, der står på jorden (kat, hvalp, hest, enhjørning og ræv; review G2-r3 T15 og B15), bæres
-// skjoldet i brysthøjde uden på forbenet, så benet kun dækker dets inderste kant, og hele skjoldet ses.
+// skjoldet i brysthøjde uden på forbenet og tegnes foran benet (`art.over`, SPEC A17), så hele skjoldet ses; en rem
+// om benet under skjoldets midte viser grebet.
 import { aimAway, aimSolo } from '../../rig/hold'
 import type { Vec } from '../../rig/shapes'
-import type { HandHold, ItemArt, Pt } from '../../rig/types'
+import type { AnchorSet, HandHold, ItemArt, Pt } from '../../rig/types'
 import { aimFrame, cws, def, fitAt, groundPaw, group, S } from './kit/mestring'
 
 /** Skjoldets form om centrum (venstre halvdel, top → spids): bredde 30, højde 35. */
@@ -48,14 +49,40 @@ function onLeg(hold: HandHold): Pt {
   return at(ON_LEG.low)
 }
 
-const front: ItemArt = ({ c, sw, a, hold }) => {
+/**
+ * Remmen om forbenet (SPEC A17): et bånd på tværs af benet under skjoldets midte, fra skjoldets indre kant (under
+ * skjoldet) hen over benet til lige før dets yderste kontur, så den ses gå om benet. Benets akse er linjen fra skulder
+ * til pote i genstandens ramme; `toFrame` drejer den med skjoldets ramme. Mål i skjoldets enheder (`m`).
+ */
+const STRAP = { dy: 7, half: 2.3, legHalf: 5.4, under: 9 }
+function legStrap(a: AnchorSet, local: (p: Pt) => Pt, toFrame: (q: Pt) => Vec, cx: number, cy: number, m: number): string {
+  const top = toFrame(local(a.shoulderR))
+  const bot = toFrame(local(a.pawR))
+  // Benets halve bredde i genstandens enheder (modelenheder gennem pasformen).
+  const o = local(a.pawR)
+  const e = local({ x: a.pawR.x + 1, y: a.pawR.y })
+  const unit = Math.hypot(e.x - o.x, e.y - o.y)
+  const y = cy + STRAP.dy * m
+  const t = bot[1] === top[1] ? 1 : (y - top[1]) / (bot[1] - top[1])
+  const axis = top[0] + (bot[0] - top[0]) * t
+  const x0 = axis - STRAP.legHalf * unit
+  const x1 = cx - STRAP.under * m
+  const h = STRAP.half * m
+  return S.blob([[x0, y - h], [(x0 + x1) / 2, y - h * 1.15], [x1, y - h], [x1, y + h], [(x0 + x1) / 2, y + h * 1.1], [x0, y + h]], 0.35)
+}
+
+const front: ItemArt = ({ c, sw, a, hold, local }) => {
   // Grebet sidder i skjoldets nederste indre kant; prøvepunkterne dækker hele skjoldet.
   const samples = [{ at: 6, r: 10 }, { at: CENTER, r: 22 }].map((p) => ({ at: p.at * SIZE, r: p.r * SIZE }))
   const P = hold ? aimAway(hold, samples, AIM, STEP) : aimSolo(a.handRot, -60)
   // Tegnes i en ramme drejet tilbage til verdensrummet (lyset oppefra til venstre, korset lodret).
   const { along, world, m, rot } = aimFrame(P, SIZE)
-  const [cx, cy] = groundPaw(a, hold) ? world(onLeg(hold)) : along(CENTER)
+  const onGround = groundPaw(a, hold)
+  const [cx, cy] = onGround ? world(onLeg(hold)) : along(CENTER)
   const place = (pts: readonly Vec[]) => S.xf(pts, { sx: m, dx: cx, dy: cy })
+  const t = (-rot * Math.PI) / 180
+  const toFrame = (q: Pt): Vec => [q.x * Math.cos(t) - q.y * Math.sin(t), q.x * Math.sin(t) + q.y * Math.cos(t)]
+  const strap = onGround ? legStrap(a, local, toFrame, cx, cy, m) : null
   const shield = place(SHIELD)
   const field = place(FIELD)
   // Korset: lodret og vandret bjælke inden for feltet.
@@ -67,6 +94,7 @@ const front: ItemArt = ({ c, sw, a, hold }) => {
   const lit = S.xf(field, { sx: 0.94, about: [cx - 12 * m, cy - 14 * m] })
   return group(
     `rotate(${rot.toFixed(2)})`,
+    strap && [strap, c.mainShade, c.outline, sw * 0.8],
     [S.blob(shield, 0.5), c.trim, c.trimOutline, sw],
     [S.blob(field, 0.5), c.mainShade],
     [S.blob(lit, 0.5), c.main],
@@ -79,7 +107,8 @@ const front: ItemArt = ({ c, sw, a, hold }) => {
 
 export const ridderHand = def('ridder-hand', {
   colorways: cws('roed|rød|tomato|silver|gold', 'blaa|blå|sky|gold|snow', 'groen|grøn|leaf|silver|sunflower'),
-  art: { front },
+  // Foran poten kun på forben, der står på jorden; ellers holder poten skjoldets indre kant som før.
+  art: { front, over: ({ a, hold }) => groundPaw(a, hold) },
   fit: fitAt('pawR', 'fixed', 30),
   reach: true,
   icon: { box: [-12, -48, 42, 46] },

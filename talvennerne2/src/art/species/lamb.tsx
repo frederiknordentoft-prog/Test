@@ -167,7 +167,10 @@ const KEY_WEBS: Partial<Record<string, Partial<Record<Stage, PawWebs>>>> = {
     3: {
       // Den anden polygon er lommen mellem den løftede arm og kinden (review G2-r3 §3.1, tidligere i huller-lint'ens
       // kendt-liste), målt i arkets opløsning og udvidet 1 enhed.
+      // L: det spidse hjørne mellem den løftede hov og hovedets kontur ved (44, 111) (fundet af ARTFIX-E), som lukkede
+      // en arkpixel i 2 af 25 gitre. Fyldet runder hjørnet af langs hoven og hovedet, så intet gitter lukker en pixel.
       cheer: {
+        L: [[-24.3, -30.2], [-23.5, -30.3], [-22.7, -30.5], [-22.1, -30.7], [-21.6, -31], [-21.3, -31.3], [-19.7, -31.3], [-19.6, -27.6], [-21.6, -27.4], [-24, -28.7]],
         R: [
           [[-13.9, -21.9], [-15.7, -20.9], [-15.2, -19.5], [-4.5, -6.7], [-1.2, -3.7], [3.5, -3.8], [5.8, -3], [7.6, -5.3], [6.1, -6.6], [-1.4, -9.6], [-7.5, -13.9]],
           [[-13.3, -22.2], [-13.8, -23.4], [-15, -26.5], [-15.6, -27.1], [-16.3, -27.4], [-17.2, -27.4], [-18, -27], [-18.2, -26.3], [-18.2, -24], [-17.4, -22.5], [-16.5, -21.1], [-16, -20.5], [-15.2, -20.2], [-14.5, -20.3], [-13.6, -20.9], [-13.3, -21.6]],

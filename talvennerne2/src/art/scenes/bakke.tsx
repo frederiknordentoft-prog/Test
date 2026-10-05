@@ -883,6 +883,9 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
   const R = { far: ridgePts(L.far, w), fields: ridgePts(L.fields, w), mid: ridgePts(L.mid, w), near: ridgePts(L.near, w) }
   const K = L.k
   // Lag: papirkantens skygge, fladen, solens skygge- og lysbånd, det varme højlys på kammen og den lyse kant.
+  // Skyggesiden står i paletens kølige skyggetone (BAKKE.shade) med 0,22–0,26 (review G2-r3 §3.6 og §5: med 0,11–0,17 var
+  // den for svag); de fjerne bakker lidt svagere end forgrunden (luftperspektiv). Sten og skilte på skyggesiden holder
+  // kontrasten (ARTFIX-F: målt på kortet i 393·852 og 1180·820).
   const layer = (r: Ridge, pts: Vec[], color: BakkeColor, depth: number, shadeO: number) => {
     const light = ridgeLight(r, w, depth)
     return (
@@ -1023,10 +1026,10 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
         </g>
       ))}
       {/* lag 1: de fjerne bakker med en trærække */}
-      {layer(L.far, R.far, 'farHill', h * 0.045, 0.11)}
+      {layer(L.far, R.far, 'farHill', h * 0.045, 0.22)}
       <path d={farTrees} fill={tb('farTree', T.twins)} />
       {/* lag 2: markerne med høstriber, læhegn, popler og høballer */}
-      {layer(L.fields, R.fields, 'fieldHill', h * 0.05, 0.12)}
+      {layer(L.fields, R.fields, 'fieldHill', h * 0.05, 0.23)}
       <path d={join(...fieldBands)} fill="none" stroke={g('field')} strokeWidth={11 * K} opacity={0.85} {...ROUND} />
       <path d={hedgerows} fill={tb('hedgerow', T.twins)} />
       <path d={poplars} fill={tb('leafDark', T.twins)} opacity={0.85} />
@@ -1034,7 +1037,7 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
       <path d={join(...bales.map((b) => b.spiral))} fill="none" stroke={g('hayShade')} strokeWidth={1.1 * K} />
       {!L.twins.onMid && at(L.twins, <Twins t={T.twins} onMid={false} />)}
       {/* lag 3: mellembakken med landsbyen, tårnet, marken, lammene og de bageste træer */}
-      {layer(L.mid, R.mid, 'midHill', h * 0.11, 0.15)}
+      {layer(L.mid, R.mid, 'midHill', h * 0.11, 0.25)}
       {L.twins.onMid && at(L.twins, <Twins t={T.twins} onMid />)}
       <path d={join(...daisies.map(([x, y, r]) => circle(x, y, r)))} fill={BAKKE.flowerWhite} opacity={0.85} />
       <path d={castMid} fill={BAKKE.castShadow} opacity={0.2} />
@@ -1065,7 +1068,7 @@ export function BakkeArt({ w, h, tiers, className, svgRef }: BakkeArtProps) {
       {at(L.tower, <Tower t={T.tower} />)}
       {at(L.field, <Field t={T.field} />)}
       {/* lag 4: forgrunden */}
-      {layer(L.near, R.near, 'nearHill', h * 0.12, 0.17)}
+      {layer(L.near, R.near, 'nearHill', h * 0.12, 0.26)}
       <path d={join(...spots.filter((_, i) => i % 2 === 0).map(([x, y, r]) => circle(x, y, r)))} fill={BAKKE.flowerWhite} opacity={0.9} />
       <path d={join(...spots.filter((_, i) => i % 2 === 1).map(([x, y, r]) => circle(x, y, r)))} fill={g('flowerYellow')} />
       <path d={castNear} fill={BAKKE.castShadow} opacity={0.22} />
