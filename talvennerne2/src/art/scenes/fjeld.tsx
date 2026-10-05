@@ -135,8 +135,10 @@ export interface Layout {
   forest: [number, number][]
   /** Den lille fjeldby på skråningen (hytter med sne på taget). */
   hamlet: Place[]
-  /** Store sten med sne på den nære eng. */
+  /** Store sten med sne på den nære eng (blomsterne gror ved dem). */
   boulders: Place[]
+  /** Snemanden på engen. */
+  snowman: Place
   /** Fritstående graner (forrest = på den nære eng). */
   firs: (Place & { front: boolean })[]
   corners: [Place, Place]
@@ -179,7 +181,8 @@ export function layoutOf(w: number, h: number): Layout {
     const near: Ridge = { base: h * 0.79, amp: h * 0.02, waves: 0.8, phase: 4.1 }
     const top: Peak = { x: w * 0.645, y: h * 0.205, hw: 270 * k, base: h * 0.66, flat: 20 * k }
     const glacier = glacierAt(top, k, Math.min(168 * k, h * 0.2))
-    const bridge = { x: w * 0.658, y: h * 0.53, s: k * 1.05 }
+    // broens højre ende (enernes lille bue) står fri af sidepanelet: x + 82 · s < 0,72 · w
+    const bridge = { x: w * 0.638, y: h * 0.53, s: k * 1.05 }
     const lake = { x: w * 0.82, y: h * 0.885, rx: 84 * k, ry: 17 * k }
     const snout = glacier.spine[glacier.spine.length - 1]
     const tower = on(mid, 0.075, 0.012, k * 0.88)
@@ -200,13 +203,13 @@ export function layoutOf(w: number, h: number): Layout {
         { x: w * 0.53, y: h * 0.05, s: k * 0.8 },
         { x: w * 0.43, y: h * 0.23, s: k * 0.6 },
       ],
-      pegasus: { x: w * 0.6, y: h * 0.115, s: k * 0.92, flip: false },
+      pegasus: { x: w * 0.6, y: h * 0.158, s: k * 0.92, flip: false },
       stream: [snout, [(snout[0] + archFoot(bridge)[0]) / 2 - 4 * k, (snout[1] + archFoot(bridge)[1]) / 2], archFoot(bridge), [w * 0.676, h * 0.66], [w * 0.712, h * 0.78], [w * 0.745, h * 0.86], [lake.x - lake.rx * 0.82, lake.y - 3 * k]],
       bridge,
       tower,
       dragon: { ...on(mid, 0.03, -0.075, k * 0.85), flip: false, crag: (h * 0.075 + 12 * k) / (k * 0.85) },
       cleft,
-      market: { x: w * 0.098, y: h * 0.978, s: k * 0.95 },
+      market: { x: w * 0.118, y: h * 0.978, s: k * 0.95 },
       lake,
       penguins: { x: lake.x + 6 * k, y: lake.y + 2 * k, s: k * 1.15 },
       garden: { x: w * 0.235, y: h * 0.968, s: k * 1.02 },
@@ -214,6 +217,7 @@ export function layoutOf(w: number, h: number): Layout {
       bear: { x: w * 0.785, y: h * 0.99, s: k * 0.95, flip: true },
       hamlet: [on(mid, 0.23, 0.012, k * 0.85), on(mid, 0.3, 0.03, k * 0.75), on(mid, 0.44, 0.018, k * 0.8), on(mid, 0.885, 0.02, k * 0.8)],
       boulders: [on(near, 0.4, 0.06, k), on(near, 0.56, 0.12, k * 0.8), on(near, 0.31, 0.15, k * 0.7)],
+      snowman: { x: w * 0.172, y: h * 0.885, s: k * 0.9 },
       via: [
         [[top.x + 40 * k, top.y + 30 * k], [top.x + 62 * k, top.y + 78 * k], [top.x + 50 * k, top.y + 122 * k], [top.x + 74 * k, top.y + 160 * k], [bridge.x + 80 * bridge.s, bridge.y]],
         [[bridge.x - 34 * bridge.s, bridge.y], [w * 0.52, h * 0.58], [w * 0.3, h * 0.6], [w * 0.15, h * 0.6]],
@@ -268,6 +272,7 @@ export function layoutOf(w: number, h: number): Layout {
       dragon: { ...on(mid, 0.69, -0.03, k * 0.8), flip: true, crag: (h * 0.03 + 10 * k) / (k * 0.8) },
       hamlet: [on(mid, 0.08, 0.02, k * 0.8), on(mid, 0.6, 0.03, k * 0.7)],
       boulders: [on(near, 0.86, 0.1, k * 0.8), on(near, 0.33, 0.13, k * 0.7)],
+      snowman: { x: w * 0.07, y: h * 0.835, s: k * 0.8 },
       cleft,
       market: { x: w * 0.19, y: h * 0.87, s: k * 0.82 },
       lake,
@@ -325,6 +330,7 @@ export function layoutOf(w: number, h: number): Layout {
     dragon: { ...on(mid, 0.67, -0.025, k * 0.75), flip: true, crag: (h * 0.025 + 10 * k) / (k * 0.75) },
     hamlet: [on(mid, 0.12, 0.012, k * 0.8), on(mid, 0.27, 0.03, k * 0.75), on(mid, 0.42, 0.015, k * 0.8)],
     boulders: [on(near, 0.2, 0.06, k * 0.9), on(near, 0.46, 0.1, k * 0.75)],
+    snowman: { x: w * 0.27, y: h * 0.893, s: k * 0.85 },
     cleft,
     market: { x: w * 0.09, y: h * 0.96, s: k * 0.8 },
     lake,
@@ -534,7 +540,7 @@ function Peaks({ peaks, seed, fill, snow, snowAt, shadeO, glowO, k, line, paper 
       {line && <path d={join(...sh.map((s) => s.lines))} fill="none" stroke={line} strokeWidth={1.6 * k} opacity={0.55} {...ROUND} />}
       <path d={join(...sh.map((s) => s.cap))} fill={snow} />
       <path d={join(...sh.map((s) => s.shade))} fill={FJELD.shade} opacity={shadeO} />
-      <path d={join(...sh.map((s) => s.glow))} fill="none" stroke={FJELD.alpenglow} strokeWidth={3.2 * k} opacity={glowO} {...ROUND} />
+      <path d={join(...sh.map((s) => s.glow))} fill="none" stroke={FJELD.alpenglow} strokeWidth={4.4 * k} opacity={glowO * 0.7} {...ROUND} />
     </>
   )
 }
@@ -1008,6 +1014,22 @@ function Penguins({ count }: { count: number }) {
   )
 }
 
+/** En snemand (lokalt fra foden): tre snebolde, kulknapper, gulerodsnæse, halstørklæde og pindearme. */
+function Snowman({ t }: { t: RegionTier }) {
+  const c = paint(t)
+  return (
+    <>
+      <path d={ellipse(4 + SHADOW_SHIFT[0], 0.5 + SHADOW_SHIFT[1], 16, 3)} fill={FJELD.castShadow} opacity={0.22} />
+      <path d={join(spline([[-8, -27], [-16, -33], [-20, -32]]), spline([[8, -27], [16, -34], [19, -38]]), spline([[-16, -33], [-17, -37]]))} fill="none" stroke={c('trunkDark')} strokeWidth={1.6} {...ROUND} />
+      <path d={join(circle(0, -11, 12), circle(0, -29, 9), circle(0, -43, 7))} fill={FJELD.snow} stroke={FJELD.snowShade} strokeWidth={1.2} />
+      <path d={join(lune(1, -11, 11, 11, 3.4, 10, 120), lune(1, -29, 8.4, 8.4, 2.6, 10, 120), lune(1, -43, 6.4, 6.4, 2, 10, 120))} fill={FJELD.snowShade} opacity={0.85} />
+      <path d={join(circle(-2.6, -45, 1), circle(2.4, -45, 1), circle(0, -31, 1.1), circle(0, -26, 1.1), circle(0, -14, 1.2))} fill={FJELD.eye} />
+      <path d={blob([[0.5, -43.2], [8, -41.8], [0.5, -40.8]], 0.3)} fill={FJELD.beak} />
+      <path d={join(blob([[-7, -37], [0, -35], [7, -37], [7.5, -34], [0, -32], [-7.5, -34]], 0.5), blob([[3, -34], [6.5, -34], [7.5, -26], [4, -26.5]], 0.4))} fill={c('flag')} stroke={c('awningShade')} strokeWidth={0.8} {...ROUND} />
+    </>
+  )
+}
+
 /** Et forgrundshjørne (lokalt fra hjørnet; spejles til højre): en stor sten med sne, en gran, græs og blomster. */
 function Corner({ t, mirror }: { t: RegionTier; mirror: boolean }) {
   const c = paint(t)
@@ -1110,6 +1132,16 @@ export function FjeldArt({ w, h, tiers, className, svgRef }: FjeldArtProps) {
   const rowA = grove(6, 17, 0.5, 31)
   const rowB = grove(24, 22, 0.66, 71)
   const rowC = grove(44, 34, 0.86, 111)
+  // Spredte klynger af gran længere nede ad skråningen og langs den nære engs kam (kendetegnene holdes fri).
+  const marks = [L.tower, L.cleft, L.market, L.garden, L.bakery, L.lake, L.dragon, L.snowman]
+  const clear = (x: number, y: number) => free(x, y) && marks.every((p) => Math.hypot(x - p.x, (y - p.y) * 1.4) > 70 * K)
+  const scatter = (r: Ridge, n0: number, dv0: number, dv1: number, s0: number, seed: number) =>
+    Array.from({ length: n0 }, (_, i) => {
+      const x = (hash01(i + seed) * 1.04 - 0.02) * w
+      return { x, y: ridgeY(r, w, x) + (dv0 + hash01(i + seed + 40) * (dv1 - dv0)) * K, s: K * (s0 + hash01(i + seed + 80) * 0.3) }
+    }).filter((p) => clear(p.x, p.y)).sort((a, b) => a.y - b.y)
+  const rowD = scatter(L.mid, Math.round(w / (60 * K)), 60, 110, 0.85, 1201)
+  const rowE = scatter(L.near, Math.round(w / (95 * K)), 6, 24, 0.95, 1301)
   // Den lille fjeldby: hytter med sne på taget; vinduerne lyser, når verdenen er nået et stykke.
   const huts = L.hamlet.map((p) => {
     const o = (pts: readonly Vec[]) => xf(pts, { sx: p.s, dx: p.x, dy: p.y })
@@ -1250,9 +1282,11 @@ export function FjeldArt({ w, h, tiers, className, svgRef }: FjeldArtProps) {
       {at(L.pegasus, <Pegasus t={T.summit} />, L.pegasus.flip)}
       {/* lag 3: fjeldskråningen med granskoven, stien og Minuttårnet */}
       {layer(L.mid, R.mid, 'midHill', h * 0.08, 0.13)}
+      <path d={band(R.mid.map(([x, y]) => [x, y + 1] as Vec), R.mid.map(([x, y], i) => [x, y + (7 + 9 * hash01(i + 900)) * K] as Vec))} fill={FJELD.snow} opacity={0.72} />
       <Firs pts={rowA} fill={g('midForest')} edge={g('firDark')} snow={FJELD.snow} />
       <Firs pts={rowB} fill={g('midForest')} edge={g('firDark')} snow={FJELD.snow} />
       <Firs pts={rowC} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />
+      <Firs pts={rowD} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />
       {huts.length > 0 && (
         <>
           <path d={join(...huts.map((q) => q.wall))} fill={g('wall')} stroke={g('timber')} strokeWidth={1 * K} {...ROUND} />
@@ -1281,6 +1315,21 @@ export function FjeldArt({ w, h, tiers, className, svgRef }: FjeldArtProps) {
           <path d={join(...rocks.map((q) => q.snow))} fill={FJELD.snow} />
         </>
       )}
+      {(() => {
+        // fjeldblomster ved stenene: 2, 4, 6 og 8 pr. klynge efter Arealhavens trin
+        const n0 = [2, 4, 6, 8][rank(T.garden)]
+        const pts = L.boulders.flatMap((p, j) =>
+          Array.from({ length: n0 }, (_, i) => [p.x + (22 + i * 6.5 + hash01(i + j * 13 + 950) * 4) * p.s * (i % 2 ? 1 : -1) * 0.8 + (i % 2 ? 6 : -8) * p.s, p.y + (hash01(i + j * 7 + 970) * 6 - 1) * p.s, (2.6 + hash01(i + 990) * 1.2) * p.s] as [number, number, number]),
+        )
+        const fl = flowerPaths(pts)
+        return (
+          <>
+            <path d={fl.petals} fill={tb('flowerPink', T.garden)} stroke={tb('awningShade', T.garden)} strokeWidth={0.7 * K} {...ROUND} />
+            <path d={fl.hearts} fill={tb('flowerYellow', T.garden)} />
+          </>
+        )
+      })()}
+      <Firs pts={rowE} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />
       <path d={gorge} fill={tb('gorge', T.bridge)} />
       <path d={banks} fill={tb('bank', T.bridge)} />
       <path d={water} fill={tb('water', T.bridge)} stroke={tb('waterEdge', T.bridge)} strokeWidth={1.3 * K} {...ROUND} />
@@ -1302,6 +1351,7 @@ export function FjeldArt({ w, h, tiers, className, svgRef }: FjeldArtProps) {
       {at(L.market, <Market t={T.market} />)}
       {at(L.garden, <Garden t={T.garden} />)}
       {at(L.bakery, <Bakery t={T.bakery} />)}
+      {at(L.snowman, <Snowman t={T.market} />)}
       {at(L.bear, <Bear />, L.bear.flip)}
       {bloom(T.bakery) && at({ x: L.bear.x + (L.bear.flip ? 30 : -30) * L.bear.s, y: L.bear.y + 2 * L.bear.s, s: L.bear.s }, <Bear cub />, L.bear.flip)}
       {L.firs.filter((p) => p.front).map((p, i) => <Firs key={i} pts={[p]} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />)}

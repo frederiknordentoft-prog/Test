@@ -103,6 +103,9 @@ describe('Stjernefjeldet · scene', () => {
         expect(u(p), `${w}·${h}`).toBeGreaterThan(0.58)
         expect(u(p), `${w}·${h}`).toBeLessThan(0.72)
       }
+      // hele stenbroen (også enernes lille bue i højre ende) står mellem kortets sti og sidepanelet
+      expect((L.bridge.x + 82 * L.bridge.s) / w, `${w}·${h}`).toBeLessThan(0.72)
+      expect((L.bridge.x - 32 * L.bridge.s) / w, `${w}·${h}`).toBeGreaterThan(0.58)
       // under sidepanelet: issøen med pingvinerne og bageriet
       for (const p of [L.lake, L.penguins, L.bakery]) {
         expect(u(p), `${w}·${h}`).toBeGreaterThan(0.72)
