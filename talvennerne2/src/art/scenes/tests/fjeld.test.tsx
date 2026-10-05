@@ -128,8 +128,9 @@ describe('Stjernefjeldet · scene', () => {
     expect(clock / 852).toBeGreaterThan(0.5)
     expect(clock / 852).toBeLessThan(0.6)
     expect(P.tower.x / 393).toBeGreaterThan(0.8)
-    expect(P.summit.y / 852).toBeGreaterThan(0.38)
-    expect(P.summit.y / 852).toBeLessThan(0.5)
+    // review G2-r2 §5.4 (Regnbueskoven): himlen fylder højst ca. en tredjedel, så scenen ikke bliver bundtung
+    expect(P.summit.y / 852).toBeGreaterThan(0.3)
+    expect(P.summit.y / 852).toBeLessThan(0.36)
     expect(P.k).toBeGreaterThan(0.6)
   })
 

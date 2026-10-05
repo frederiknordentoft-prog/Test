@@ -237,27 +237,28 @@ export function layoutOf(w: number, h: number): Layout {
     }
   }
   // en telefon (høj og smal) viser scenen i båndet over kortet og gennem kortets lyse panel: toppen og flaget står
-  // over skoven, uret i båndet, resten midt i panelet
+  // over skoven, uret i båndet, resten midt i panelet. Fjeldene står højt, så himlen fylder en tredjedel og scenen
+  // ikke bliver bundtung (som review G2-r2 §5.4 bad om for Regnbueskoven)
   const tall = h / w > 1.7
   if (tall) {
     const k = clamp(Math.max(w / 560, (h / 1250) * 0.9), 0.62, 1)
     const mid: Ridge = { base: h * 0.635, amp: h * 0.014, waves: 0.9, phase: 2.4 }
     const near: Ridge = { base: h * 0.8, amp: h * 0.016, waves: 0.7, phase: 4.1 }
-    const top: Peak = { x: w * 0.3, y: h * 0.415, hw: 200 * k, base: h * 0.7, flat: 18 * k }
+    const top: Peak = { x: w * 0.3, y: h * 0.335, hw: 210 * k, base: h * 0.7, flat: 18 * k }
     const glacier = glacierAt(top, k, 150 * k)
     const snout = glacier.spine[glacier.spine.length - 1]
-    const bridge = { x: w * 0.36, y: h * 0.615, s: k * 0.85 }
+    const bridge = { x: w * 0.36, y: h * 0.575, s: k * 0.85 }
     const lake = { x: w * 0.56, y: h * 0.745, rx: 80 * k, ry: 15 * k }
     const tower = { x: w * 0.88, y: h * 0.655, s: k }
     const cleft = { x: w * 0.79, y: h * 0.855, s: k * 0.8 }
     return {
       w, h, wide, k, mid, near, top, glacier,
       summit: { x: top.x, y: top.y, s: k * 0.95 },
-      far: range(w, h, k, { gap: 130, hw: 95, base: 0.6, top: 0.435, spread: 0.04, seed: 3 }),
-      far2: range(w, h, k, { gap: 110, hw: 76, base: 0.62, top: 0.49, spread: 0.03, seed: 9 }),
+      far: range(w, h, k, { gap: 130, hw: 100, base: 0.58, top: 0.355, spread: 0.045, seed: 3 }),
+      far2: range(w, h, k, { gap: 110, hw: 80, base: 0.6, top: 0.43, spread: 0.035, seed: 9 }),
       massif: [
-        { x: w * 0.82, y: h * 0.45, hw: 170 * k, base: h * 0.7 },
-        { x: w * -0.1, y: h * 0.47, hw: 140 * k, base: h * 0.7 },
+        { x: w * 0.82, y: h * 0.38, hw: 180 * k, base: h * 0.7 },
+        { x: w * -0.1, y: h * 0.4, hw: 150 * k, base: h * 0.7 },
       ],
       sun: { x: w * 0.14, y: h * 0.13, s: k },
       clouds: [
@@ -265,7 +266,7 @@ export function layoutOf(w: number, h: number): Layout {
         { x: w * 0.9, y: h * 0.17, s: k * 0.8 },
         { x: w * 0.3, y: h * 0.23, s: k * 0.6 },
       ],
-      pegasus: { x: w * 0.68, y: h * 0.395, s: k * 0.85, flip: false },
+      pegasus: { x: w * 0.66, y: h * 0.315, s: k * 0.85, flip: false },
       stream: [snout, archFoot(bridge), [w * 0.42, h * 0.68], [w * 0.45, h * 0.725], [lake.x - lake.rx * 0.8, lake.y - 2 * k]],
       bridge,
       tower,
@@ -318,10 +319,13 @@ export function layoutOf(w: number, h: number): Layout {
       { x: w * 1.02, y: h * 0.65, hw: 160 * k, base: h * 0.8 },
     ],
     sun: { x: w * 0.16, y: h * 0.14, s: k },
+    // himlen over fjeldet er høj i højformat (den står bag sidepanelet og kortet): flere skyer i lag
     clouds: [
       { x: w * 0.5, y: h * 0.08, s: k * 1.05 },
       { x: w * 0.86, y: h * 0.16, s: k * 0.8 },
       { x: w * 0.3, y: h * 0.24, s: k * 0.6 },
+      { x: w * 0.72, y: h * 0.36, s: k * 1.2 },
+      { x: w * 0.18, y: h * 0.47, s: k * 0.9 },
     ],
     pegasus: { x: w * 0.62, y: h * 0.6, s: k * 0.8, flip: false },
     stream: [snout, archFoot(bridge), [w * 0.8, h * 0.85], [w * 0.81, h * 0.885], [lake.x - lake.rx * 0.8, lake.y - 2 * k]],
@@ -1131,7 +1135,6 @@ export function FjeldArt({ w, h, tiers, className, svgRef }: FjeldArtProps) {
     }).filter((p) => free(p.x, p.y))
   const rowA = grove(6, 17, 0.5, 31)
   const rowB = grove(24, 22, 0.66, 71)
-  const rowC = grove(44, 34, 0.86, 111)
   // Spredte klynger af gran længere nede ad skråningen og langs den nære engs kam (kendetegnene holdes fri).
   const marks = [L.tower, L.cleft, L.market, L.garden, L.bakery, L.lake, L.dragon, L.snowman]
   const clear = (x: number, y: number) => free(x, y) && marks.every((p) => Math.hypot(x - p.x, (y - p.y) * 1.4) > 70 * K)
@@ -1140,6 +1143,7 @@ export function FjeldArt({ w, h, tiers, className, svgRef }: FjeldArtProps) {
       const x = (hash01(i + seed) * 1.04 - 0.02) * w
       return { x, y: ridgeY(r, w, x) + (dv0 + hash01(i + seed + 40) * (dv1 - dv0)) * K, s: K * (s0 + hash01(i + seed + 80) * 0.3) }
     }).filter((p) => clear(p.x, p.y)).sort((a, b) => a.y - b.y)
+  const rowC = grove(44, 34, 0.86, 111).filter((p) => clear(p.x, p.y))
   const rowD = scatter(L.mid, Math.round(w / (60 * K)), 60, 110, 0.85, 1201)
   const rowE = scatter(L.near, Math.round(w / (95 * K)), 6, 24, 0.95, 1301)
   // Den lille fjeldby: hytter med sne på taget; vinduerne lyser, når verdenen er nået et stykke.
@@ -1285,8 +1289,6 @@ export function FjeldArt({ w, h, tiers, className, svgRef }: FjeldArtProps) {
       <path d={band(R.mid.map(([x, y]) => [x, y + 1] as Vec), R.mid.map(([x, y], i) => [x, y + (7 + 9 * hash01(i + 900)) * K] as Vec))} fill={FJELD.snow} opacity={0.72} />
       <Firs pts={rowA} fill={g('midForest')} edge={g('firDark')} snow={FJELD.snow} />
       <Firs pts={rowB} fill={g('midForest')} edge={g('firDark')} snow={FJELD.snow} />
-      <Firs pts={rowC} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />
-      <Firs pts={rowD} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />
       {huts.length > 0 && (
         <>
           <path d={join(...huts.map((q) => q.wall))} fill={g('wall')} stroke={g('timber')} strokeWidth={1 * K} {...ROUND} />
@@ -1298,6 +1300,8 @@ export function FjeldArt({ w, h, tiers, className, svgRef }: FjeldArtProps) {
       )}
       <path d={castMid} fill={FJELD.castShadow} opacity={0.2} />
       {trail(0, L.midLegs)}
+      <Firs pts={rowC} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />
+      <Firs pts={rowD} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />
       {L.firs.filter((p) => !p.front).map((p, i) => <Firs key={i} pts={[p]} fill={g('fir')} edge={g('firDark')} snow={FJELD.snow} />)}
       {at(L.tower, <Tower t={T.tower} />)}
       {at(L.dragon, <Dragon t={T.tower} crag={L.dragon.crag} />, L.dragon.flip)}
