@@ -22,6 +22,7 @@ import { dragon } from './dragon'
 import { pegasus } from './pegasus'
 import { penguin } from './penguin'
 import { polarbear } from './polarbear'
+import { FISH } from './polarbear.colorways'
 
 // Tunge gennemløb af alle kombinationer: robuste når andre agenter belaster CPU'en.
 vi.setConfig({ testTimeout: 180_000 })
@@ -327,13 +328,19 @@ describe.each(([penguin, polarbear] as const).map((def) => [def.id, def] as cons
     expect(css).toMatch(def.id === 'penguin' ? /\.rig\[data-mood='idle'\]\[data-species='penguin'\] \.a-paw \{/ : /\.rig\[data-mood='idle'\] \.a-sniff \{/)
   })
 
-  it('artens kendetegn står i alle naturlige farver (pingvinens maske, næb og fødder; isbjørnens næse, kløer og ører)', () => {
+  it('artens kendetegn står i alle naturlige farver (pingvinens maske, næb og fødder; isbjørnens næse, kløer, ører og fisk)', () => {
     for (const c of NATURAL_COLORWAYS) {
       const p = resolvePalette(def, 'std', c)
       const m = render({ species: def, colorway: c, mode: 'static' })
-      const want = def.id === 'penguin' ? [p.belly, p.nose, p.inner] : [p.nose, p.pattern, p.inner]
+      const want = def.id === 'penguin' ? [p.belly, p.nose, p.inner] : [p.nose, p.pattern, p.inner, FISH.body, FISH.fin]
       for (const color of want) expect(m, `${def.id} ${c} ${color}`).toContain(`fill="${color}"`)
       if (def.id === 'penguin') expect(p.belly, `${def.id} ${c}: fronten skiller sig fra ryggen`).not.toBe(p.fur)
+    }
+    // Isbjørnens fisk ligger der også i sort silhuet (artens kendetegn, som pandaens bambus) og med tøj på i alle humør.
+    if (def.id === 'polarbear') {
+      const sil = render({ species: def, silhouette: true, mode: 'static' })
+      expect((sil.match(/<path/g) ?? []).length).toBeGreaterThan(8)
+      for (const mood of MOODS) expect(render({ species: def, mood, mode: 'static', outfit: { body: { item: hverdagBody }, head: { item: hverdagHead }, back: { item: hverdagBack } } as Outfit }), mood).toContain(`fill="${FISH.body}"`)
     }
     // Kejserens ørepletter og klippepingvinens fjerbryn i accentfarven.
     if (def.id === 'penguin')

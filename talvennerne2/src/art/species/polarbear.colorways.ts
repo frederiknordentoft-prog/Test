@@ -7,6 +7,9 @@
 import { RAINBOW_STOPS } from '../rig/palette'
 import type { ColorwayDef, NaturalColorwayId } from '../rig/types'
 
+/** Fisken på jorden ved isbjørnens forpote (samme i alle farver): artens kendetegn, som pandaens bambus. */
+export const FISH = { body: '#86BDE8', belly: '#E4F3FD', fin: '#5C9AD2', outline: '#33608E', stripe: '#A9D3F2' } as const
+
 export const POLARBEAR_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold: ColorwayDef; rainbow: ColorwayDef } = {
   c1: {
     id: 'c1',
