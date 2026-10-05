@@ -51,6 +51,24 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
   - Holder en ugle med kropstøj noget, tegnes håndgenstanden på samme måde over vingen og ærmet, så den kan ses.
   - Øjenreglen (regel 6) og elementbudgettet gælder uændret.
   - Ændringen gennemgås i den uafhængige kunst-gate G2-r4.
+- **A18 – reserveret** til bogføring efter paint (`docs/perf.md`). Den skrives kun, hvis den bogføring bliver merget.
+- **A19 – ":" læses "divideret med" i 3. klasse (5/10, integrator; bølge 3).**
+  - Alle 3. kl.-skills og 3. kl.-familier læser ":" som "divideret med" (`speech/equation.ts`). Det omgør A12 for `inverseOps/mulToDiv` (grade 3), som hidtil sagde "delt med". Familien bruges kun i Stjernefjeldet.
+  - Det første divisions-hint i `div2510` bygger bro: "Divideret med betyder det samme som delt med." `hint.inverseOps.timesDivide` følger med.
+  - A12 gælder uændret for 0.–2. kl.: muldiv-oraklet holder linjen for alle familier med grade ≤ 2.
+- **A20 – Stemmens samlede budget er 20 MiB (5/10, integrator; bølge 3).**
+  - Sprites hentes dovent pr. pakke, så totalen påvirker kun det, et barn henter, når det når nyt stof.
+  - Bølge 1–2 fylder 13,89 MiB, og bølge 3 lægger ca. 4 MiB til (de 234 katalogiserede klip og 16 skills).
+  - Det fast indlæste (n0-20, core og ui) er uændret ≤ 1,2 MB, og hver sprite er ≤ 300 KB.
+  - `scripts/voice/pack.mjs` (`BUDGET.total`) håndhæver det. Punkt 3 nedenfor og §10.4 ("≤ 16 MB") er erstattet af dette.
+- **A21 – Opgavetypen `grid` er punkter og felter (5/10, integrator; bølge 3).**
+  - `grid`-visningen (`src/ui/task/grid/`) bruges kun til opgaver, hvis svar er felter eller punkter (sæt-tokens; `PLAYABLE.grid`). Det er `gridCoords`' `readPoint` og `placePoint`.
+  - `symmetry` svarer med et tal ("hvor mange felter mangler?") og vises fortsat på tastaturet. Dens gætterate regnes som tastaturets (1/13), så loftet er uændret. Multi-tilstanden i §3.2 (spejl felterne) udgår.
+  - Instruktionen `s.kind.grid.*` beskriver at sætte og aflæse et punkt.
+- **A22 – Et klassetrin kræver sit eget stof (5/10, integrator; bølge 3).**
+  - `gradeEstimate` godkender kun et klassetrin, når mindst 50 % af trinnets egne kerneskills (dem, der ikke er sprunget over) er mindst "Med støtte". Har trinnet ingen sådanne skills, godkendes det ikke.
+  - Før kunne 3. kl. godkendes alene på 0.–2. kl.'s skills (29 af 36 kerneskills = 80,6 %).
+  - For 1.–2. kl. følger reglen allerede af 80 %-reglen, så deres estimat er uændret. Det testes.
 
 ---
 

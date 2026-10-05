@@ -107,7 +107,7 @@ describe('sprite layout (pack.mjs)', () => {
   it('has the SPEC budgets and preloaded packs', () => {
     expect(BUDGET.sprite).toBe(300 * 1024)
     expect(BUDGET.pinned).toBeCloseTo(1.2 * 1024 * 1024)
-    expect(BUDGET.total).toBe(16 * 1024 * 1024)
+    expect(BUDGET.total).toBe(20 * 1024 * 1024) // SPEC A20
     expect([...PINNED].sort()).toEqual(['core', 'n0-20', 'ui'])
   })
 })

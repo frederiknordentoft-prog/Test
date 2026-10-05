@@ -562,7 +562,7 @@ Partnerne er de første brugbare klip i en fast liste (7, 3, 12 …; 5, 4, 9 …
 - `-c:a libmp3lame -b:a 40k -ar 24000 -ac 1` (ffmpeg-static). Filnavn `<sprite>-<sha1 af mp3>[:8].mp3`, så uændret lyd giver uændrede filer.
 - `src/assets/voice/voice-manifest.json` i formatet fra `docs/voice-manifest.md`. Kun mastere, hvis hash svarer til inventaret, pakkes.
 - `src/assets/voice/voice-qa.json`: ASR-tekst, CER, LUFS og take pr. klip til lyttesiden (ikke en del af manifestet).
-- Budgetterne tjekkes, før noget skrives: n0-20, core og ui ≤ 1,2 MB tilsammen, hver sprite ≤ 300 KB, alt ≤ 16 MB. Ved overskridelse fejler scriptet.
+- Budgetterne tjekkes, før noget skrives: n0-20, core og ui ≤ 1,2 MB tilsammen, hver sprite ≤ 300 KB, alt ≤ 20 MB (SPEC A20; før bølge 3: 16 MB). Ved overskridelse fejler scriptet.
 
 ### Lyttesiden (`lyt.html`)
 

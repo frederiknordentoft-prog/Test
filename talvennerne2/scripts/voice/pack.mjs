@@ -13,7 +13,7 @@
 // master's span on the unencoded timeline, lead and tail included; the runtime absorbs the MP3 delay.
 // Only masters whose hash matches voice/inventory.json are packed. Budgets (SPEC §10.3) fail the
 // script before anything is written: preloaded sprites (n0-20, core, ui) ≤ 1.2 MB together, every
-// sprite ≤ 300 KB, all sprites ≤ 16 MB.
+// sprite ≤ 300 KB, all sprites ≤ 20 MB (SPEC A20).
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -30,7 +30,7 @@ const GAP_MS = 120
 const TAIL_PAD_MS = 200
 const MAX_SPRITE_MS = 60_000
 const KB = 1024
-export const BUDGET = { sprite: 300 * KB, pinned: 1.2 * KB * KB, total: 16 * KB * KB }
+export const BUDGET = { sprite: 300 * KB, pinned: 1.2 * KB * KB, total: 20 * KB * KB } // total: SPEC A20 (bølge 3)
 export const PINNED = new Set(['n0-20', 'core', 'ui'])
 
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
@@ -153,7 +153,7 @@ export function main(args) {
     errors.push(`${missing.length} klip i indspillede bølger mangler master: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ' …' : ''} (--allow-missing pakker alligevel)`)
   }
   if (pinned > BUDGET.pinned) errors.push(`fast indlæste sprites fylder ${(pinned / KB / KB).toFixed(2)} MB (> 1,2 MB)`)
-  if (total > BUDGET.total) errors.push(`alle sprites fylder ${(total / KB / KB).toFixed(2)} MB (> 16 MB)`)
+  if (total > BUDGET.total) errors.push(`alle sprites fylder ${(total / KB / KB).toFixed(2)} MB (> 20 MB)`)
   const clipCount = Object.values(manifest.sprites).reduce((n, s) => n + Object.keys(s.clips).length, 0)
   console.log(`pakning: ${clipCount} klip i ${files.size} sprites, ${(total / KB / KB).toFixed(2)} MB i alt, fast indlæst ${(pinned / KB).toFixed(1)} KB${stale ? `, ${stale} forældede mastere udeladt` : ''}`)
   if (errors.length) {
