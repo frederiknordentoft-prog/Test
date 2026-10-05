@@ -119,8 +119,10 @@ describe('R4: forgotten', () => {
     expect(recs(p).find((x) => x.rule === 'R4')?.skill).toBe('addTo10')
     const kept = profile({ keys: keysAt(addKeys, 3), skillMedals: { addTo10: 'bronze' } })
     expect(recs(kept).some((x) => x.rule === 'R4')).toBe(false)
-    // a medal in a skill this version cannot enumerate says nothing about now
-    expect(recs(profile({ skillMedals: { mul34: 'gold' } })).some((x) => x.rule === 'R4')).toBe(false)
+    // a medal in a skill this version cannot enumerate says nothing about now (mul34 is registered since
+    // wave 3, so the index here is one without it)
+    const { mul34: _unknown, ...older } = realIndex
+    expect(recs(profile({ skillMedals: { mul34: 'gold' } }), [], {}, older).some((x) => x.rule === 'R4')).toBe(false)
   })
 
   describe('only after a week below it (review app-w2-r1 P2-8)', () => {

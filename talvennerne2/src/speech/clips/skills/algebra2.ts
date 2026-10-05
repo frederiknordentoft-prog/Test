@@ -34,12 +34,13 @@ const table: Record<ClipId, string> = {
   'hint.missingPart100.wholeWay': 'Tæl hele vejen op til hundrede. Tierne og enerne skal ikke hver for sig op til ti.',
   'hint.missingPart100.startNumber': 'Vi leder efter det tal, vi startede med. Det er større end de to andre.',
 
-  // inverseOps: the number family
+  // inverseOps: the number family. mulToDiv is 3. klasse, where ":" is "divideret med" (SPEC A19), so
+  // its two sentences say it too
   'frag.inverseOps.so': 'så',
   'hint.inverseOps.plusMinus': 'Plus og minus hører sammen.',
-  'hint.inverseOps.timesDivide': 'Gange og delt med hører sammen.',
+  'hint.inverseOps.timesDivide': 'Gange og divideret med hører sammen.',
   'hint.inverseOps.soGives': 'Så giver',
-  'hint.inverseOps.divideMeans': 'Delt med betyder, at vi deler i lige store dele.',
+  'hint.inverseOps.divideMeans': 'Divideret med betyder, at vi deler i lige store dele.',
 
   // equalSides
   's.equalSides.same': 'Er der lige meget på begge sider?',

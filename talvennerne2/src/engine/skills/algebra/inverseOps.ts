@@ -6,7 +6,8 @@
 // Plus and minus: 40 % one-digit numbers over ten (7 + 5 = 12), else a two-digit sum up to 99
 // (38 + 17 = 55). mulToDiv: the small table, factors 2–10.
 // The card shows both equations ("7 + 5 = 12 så 12 − 5 = □"); the voice reads "Syv plus fem giver tolv.
-// Hvad er tolv minus fem?" (division: "Hvad er tolv delt med fire?", frag.muldiv.delt_med).
+// Hvad er tolv minus fem?" (division: "Hvad er tolv divideret med fire?", op.divideret_med — mulToDiv is
+// 3. klasse, where ":" is read "divideret med", SPEC A19; A12's "delt med" stays in 0.–2. klasse).
 // Kinds: choice, keypad (production). Range 0–100. Speed: choice 8 s, keypad 10 s (two equations to read).
 // Wrong answers: wrongOperation — the other operation on the asked numbers (12 − 5 → 17, 7 + 5 → 2,
 // 12 : 4 → 48 or 8), the numbers shown ('operand'; the answer itself stands in the known fact) and
@@ -107,7 +108,7 @@ function speech(f: Fact): SpeechPart[] {
       return [...known(q.c, 'op.minus', q.b, q.c - q.b), ...equationSpeech([{ n: q.p }, { op: '+' }, { n: q.q }, { op: '=' }, { blank: true }])]
     case 'mulToDiv': {
       const c = q.a * q.b
-      return [...known(q.a, 'op.gange', q.b, c), say('frag.hvad_er'), num(c, 'mid'), say('frag.muldiv.delt_med'), num(q.s)]
+      return [...known(q.a, 'op.gange', q.b, c), say('frag.hvad_er'), num(c, 'mid'), say('op.divideret_med'), num(q.s)]
     }
   }
 }
@@ -178,7 +179,7 @@ function hint(f: Fact, tag: ErrorTag | null): HintSpec {
     }
     case 'mulToDiv': {
       const c = q.a * q.b
-      words = [say('hint.inverseOps.timesDivide'), ...known(q.a, 'op.gange', q.b, c), say('hint.inverseOps.soGives'), num(c, 'mid'), say('frag.muldiv.delt_med'), num(q.s, 'mid'), num(x)]
+      words = [say('hint.inverseOps.timesDivide'), ...known(q.a, 'op.gange', q.b, c), say('hint.inverseOps.soGives'), num(c, 'mid'), say('op.divideret_med'), num(q.s, 'mid'), num(x)]
       visual = { scene: 'array', rows: x, cols: q.s }
       meaning = say('hint.inverseOps.divideMeans')
       break

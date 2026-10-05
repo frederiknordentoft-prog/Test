@@ -6,7 +6,7 @@ import { isCorrect } from '../../answer'
 import { isProduction } from '../../kinds'
 import { masteryKeyOf } from '../../tasks'
 import { registeredSkills } from '../../registry'
-import type { AnswerLogEntry, AnswerValue, SpeechPart, Task } from '../../types'
+import type { AnswerLogEntry, AnswerValue, Fact, SkillDef, SpeechPart, Task } from '../../types'
 import {
   answerProblems, cardProblems, first, hintProblems, registeredSkill, sceneOf, spokenText, tagsToHint, taskSpeechProblems, tasksOf,
   type Built,
@@ -319,11 +319,14 @@ describe('division read aloud (SPEC A12: ":" is "delt med" in 2. klasse, "divide
   const said = (parts: readonly SpeechPart[], clip: string) => parts.some((p) => 'clip' in p && p.clip === clip)
 
   it('says "delt med" for every division in inverseOps and shareEqually', () => {
+    // SPEC A19 (5/10, SK3-TAL): inverseOps/mulToDiv is 3. klasse and now reads ":" "divideret med", so the
+    // "delt med" line covers the families of 0.–2. klasse; mulToDiv is held to "divideret med" below
+    const grade2 = (def: SkillDef, f: Fact) => (def.families.find((fam) => fam.id === f.family)?.grade ?? def.grade) <= 2
     const problems: string[] = []
     for (const id of ['inverseOps', 'shareEqually'] as const) {
       const def = registeredSkill(id)
       const facts = [...def.enumerate(), ...(def.mode === 'procedure' ? [...instancesOf3(def, 20).values()].flat() : [])]
-      for (const f of facts) {
+      for (const f of facts.filter((x) => grade2(def, x))) {
         for (const kind of def.kinds) {
           const parts = [...def.speech(f, kind), ...def.hint(f, null, kind).speech]
           if (said(parts, 'op.divideret_med')) problems.push(`${f.id} ${kind}: "${spokenText(parts)}"`)
@@ -331,8 +334,17 @@ describe('division read aloud (SPEC A12: ":" is "delt med" in 2. klasse, "divide
       }
     }
     expect(first(problems)).toEqual([])
+    const share = registeredSkill('shareEqually')
+    expect(share.enumerate().every((f) => said(share.hint(f, null).speech, 'frag.muldiv.delt_med'))).toBe(true)
     const inv = registeredSkill('inverseOps')
-    expect(inv.enumerate().some((f) => inv.kinds.some((k) => said(inv.speech(f, k), 'frag.muldiv.delt_med')))).toBe(true)
+    const mulToDiv = inv.enumerate().filter((f) => f.family === 'mulToDiv')
+    expect(mulToDiv.length).toBeGreaterThan(0)
+    for (const f of mulToDiv) {
+      for (const kind of inv.kinds) {
+        const parts = [...inv.speech(f, kind), ...inv.hint(f, null, kind).speech]
+        expect([said(parts, 'op.divideret_med'), said(parts, 'frag.muldiv.delt_med')], `${f.id} ${kind}`).toEqual([true, false])
+      }
+    }
   })
 
   it('never says "divideret med" in a task or hint of any skill in 0.–2. klasse', () => {

@@ -213,6 +213,32 @@
   box-shadow: inset 0 0 0 2.5px var(--color-warm);
   font-size: 18px;
 }
+/* A column written over (512 − 278: the tens 0, then 10; 403 − 158: the zero 10, then 9): the digits side
+   by side, the earlier one smaller and struck when the next one comes (--gone) */
+.tv-cols__marks {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.tv-cols__marks .is-replaced {
+  position: relative;
+  font-size: 15px;
+}
+.tv-cols__marks .is-replaced::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 50%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-warm);
+  transform: rotate(-20deg);
+}
+.tv-cols__marks .is-replaced.is-film::after {
+  animation: tv-strike-in 300ms var(--ease-out) backwards;
+  animation-delay: var(--gone, 0ms);
+}
 .tv-cols__pulse {
   display: inline-block;
 }
@@ -359,6 +385,7 @@
 :root[data-calm] .tv-step,
 :root[data-calm] .tv-cols__carried,
 :root[data-calm] .tv-cols__d::after,
+:root[data-calm] .tv-cols__marks .is-replaced::after,
 :root[data-calm] .tv-cols__pulse,
 :root[data-calm] .tv-swap__digit {
   animation: none !important;
@@ -368,6 +395,7 @@
   .tv-step,
   .tv-cols__carried,
   .tv-cols__d::after,
+  .tv-cols__marks .is-replaced::after,
   .tv-cols__pulse,
   .tv-swap__digit {
     animation: none !important;
