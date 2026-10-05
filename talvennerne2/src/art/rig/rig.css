@@ -749,6 +749,53 @@
 .rig.rig-calm .a-smoke {
   animation: none !important;
 }
+/* Pingvinens signatur (vinge-klap, kun i hvile): begge luffer slår ud om skulderen og klapper ind mod kroppen tre
+   gange med aftagende udsving, ét overshoot og en pause. Hele poten følger med (luffen i kroppens lag, spidsen og en
+   håndgenstand), så intet skilles ad. Hændelsen ligger i 0,3–1,7 s, og spidserne flytter sig op til 15 enheder. */
+.rig[data-mood='idle'][data-species='penguin'] .a-paw {
+  animation: rig-clap 4.4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+/* Isbjørnens signatur (snuse-næse, kun i hvile): næsen snuser tre gange med squash, ét overshoot og en pause, mens
+   hovedet løfter sig mod luften og falder til ro (hovedets hvile-bob ligger i samme keyframes). */
+.rig[data-mood='idle'] .a-sniff {
+  animation: rig-sniff 4.4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+.rig[data-mood='idle'][data-species='polarbear'] .a-head {
+  animation: rig-sniff-head 4.4s ease-in-out infinite;
+  animation-delay: calc(0s - var(--rig-t, 0s));
+}
+@keyframes rig-clap {
+  0%, 6%, 38%, 100% { transform: rotate(0deg); }
+  10.2% { transform: rotate(20deg); }
+  14.4% { transform: rotate(-4deg); }
+  18.6% { transform: rotate(17deg); }
+  22.8% { transform: rotate(-3deg); }
+  27% { transform: rotate(12deg); }
+  31.2% { transform: rotate(-2.5deg); }
+  34.6% { transform: rotate(1deg); }
+}
+@keyframes rig-sniff {
+  0%, 6%, 38%, 100% { transform: translate(0, 0) scale(1, 1); }
+  10.2% { transform: translate(0, -3.4px) scale(1.08, 0.88); }
+  13.6% { transform: translate(0, 0.6px) scale(0.97, 1.04); }
+  17% { transform: translate(0, -3.2px) scale(1.08, 0.88); }
+  20.4% { transform: translate(0, 0.5px) scale(0.98, 1.03); }
+  23.8% { transform: translate(0, -3.8px) scale(1.1, 0.86); }
+  29% { transform: translate(0, 1.2px) scale(0.96, 1.05); }
+  33% { transform: translate(0, -0.4px) scale(1, 1); }
+}
+@keyframes rig-sniff-head {
+  0%, 4%, 40%, 100% { transform: translate(0, 0); }
+  10.2% { transform: translate(0, -2.2px); }
+  23.8% { transform: translate(0, -3.2px); }
+  30% { transform: translate(0, 0.9px); }
+  35% { transform: translate(0, -0.3px); }
+  70% { transform: translate(0, -1.6px); }
+}
+/* Ro-tilstand: ved reduceret bevægelse og i rolig tilstand står lufferne, næsen og hovedet i hvileposen (0 % er
+   hvileposen, og reglerne nedenfor pauser dem dér); i søvn og de andre humør kører signaturerne ikke. */
 
 /* ---------------------------------------------------------------- tilstande */
 
