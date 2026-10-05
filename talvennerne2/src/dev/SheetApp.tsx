@@ -15,6 +15,7 @@ import type { RigProps } from '../art/rig/Rig'
 import EngScene, { ENG_REGIONS } from '../art/scenes/eng'
 import BakkeScene, { BAKKE_REGIONS } from '../art/scenes/bakke'
 import SkovScene, { SKOV_REGIONS } from '../art/scenes/skov'
+import FjeldScene, { FJELD_REGIONS } from '../art/scenes/fjeld'
 import type { RegionTier } from '../meta/rewards'
 import type { MapSceneProps } from '../ui/screens/child/map/Backdrop'
 import { MOODS, NATURAL_COLORWAYS, SPECIES_IDS, STAGES } from '../art/rig/types'
@@ -828,6 +829,10 @@ const SKOV_MIXED: MapSceneProps['tiers'] = {
   [SKOV_REGIONS.mountain]: 'gold', [SKOV_REGIONS.lake]: 'silver', [SKOV_REGIONS.cave]: 'silver', [SKOV_REGIONS.tower]: 'bronze',
   [SKOV_REGIONS.farm]: 'bronze', [SKOV_REGIONS.bridge]: 'start', [SKOV_REGIONS.ruler]: 'start', [SKOV_REGIONS.garden]: 'start',
 }
+const FJELD_MIXED: MapSceneProps['tiers'] = {
+  [FJELD_REGIONS.summit]: 'gold', [FJELD_REGIONS.bridge]: 'silver', [FJELD_REGIONS.tower]: 'silver', [FJELD_REGIONS.cleft]: 'bronze',
+  [FJELD_REGIONS.market]: 'bronze', [FJELD_REGIONS.garden]: 'start', [FJELD_REGIONS.bakery]: 'start',
+}
 
 type Box = readonly [number, number, number, number, number?]
 /** Kortets lag som skitse (x, y, b, h, radius) pr. format: hvide flader og trædesten. */
@@ -863,6 +868,7 @@ const SCENE_WORLDS = {
   eng: { name: 'Engdalen', Scene: EngScene, regions: ENG_REGIONS, mixed: MIXED },
   bakke: { name: 'Hestebakkerne', Scene: BakkeScene, regions: BAKKE_REGIONS, mixed: BAKKE_MIXED },
   skov: { name: 'Regnbueskoven', Scene: SkovScene, regions: SKOV_REGIONS, mixed: SKOV_MIXED },
+  fjeld: { name: 'Stjernefjeldet', Scene: FjeldScene, regions: FJELD_REGIONS, mixed: FJELD_MIXED },
 } as const
 type SceneWorld = keyof typeof SCENE_WORLDS
 const SCENE_TIERS: readonly RegionTier[] = ['start', 'bronze', 'silver', 'gold']

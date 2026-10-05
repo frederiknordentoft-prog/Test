@@ -1,0 +1,108 @@
+/*
+ * Stjernefjeldets scene (kortets baggrund). Kun skyerne driver, stjernerne glimter (fra sølv), røgen stiger, og
+ * pegasus' vinge og dragens hale bevæger sig – kun med transform og opacity. Rolig tilstand ([data-calm] på <html>)
+ * og reduceret bevægelse stopper dem i hvilestillingen. Keyframe 0 % er hvilestillingen, så en frossen scene
+ * (kontaktark) står pænt.
+ */
+.fjeld-scene {
+  display: block;
+  overflow: hidden;
+}
+.fjeld-scene .fjeld-drift {
+  animation: fjeld-drift 66s ease-in-out infinite;
+}
+.fjeld-scene .fjeld-drift-1 {
+  animation-duration: 82s;
+  animation-delay: -28s;
+}
+.fjeld-scene .fjeld-drift-2 {
+  animation-duration: 100s;
+  animation-delay: -55s;
+}
+.fjeld-scene .fjeld-twinkle {
+  animation: fjeld-twinkle 5.2s ease-in-out infinite;
+}
+.fjeld-scene .fjeld-twinkle-1 {
+  animation-delay: -1.7s;
+}
+.fjeld-scene .fjeld-twinkle-2 {
+  animation-delay: -3.5s;
+}
+.fjeld-scene .fjeld-puff {
+  animation: fjeld-puff 4.6s ease-in-out infinite;
+}
+.fjeld-scene .fjeld-flap {
+  transform-origin: 0 0;
+  animation: fjeld-flap 2.6s ease-in-out infinite;
+}
+.fjeld-scene .fjeld-tail {
+  transform-origin: 0 0;
+  animation: fjeld-tail 4.4s ease-in-out infinite;
+}
+@keyframes fjeld-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(26px);
+  }
+}
+@keyframes fjeld-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes fjeld-puff {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-3px);
+  }
+}
+@keyframes fjeld-flap {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+@keyframes fjeld-tail {
+  0%,
+  55%,
+  100% {
+    transform: rotate(0deg);
+  }
+  70% {
+    transform: rotate(-9deg);
+  }
+  85% {
+    transform: rotate(5deg);
+  }
+}
+:root[data-calm] .fjeld-scene .fjeld-drift,
+:root[data-calm] .fjeld-scene .fjeld-twinkle,
+:root[data-calm] .fjeld-scene .fjeld-puff,
+:root[data-calm] .fjeld-scene .fjeld-flap,
+:root[data-calm] .fjeld-scene .fjeld-tail {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fjeld-scene .fjeld-drift,
+  .fjeld-scene .fjeld-twinkle,
+  .fjeld-scene .fjeld-puff,
+  .fjeld-scene .fjeld-flap,
+  .fjeld-scene .fjeld-tail {
+    animation: none !important;
+  }
+}
