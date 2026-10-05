@@ -415,6 +415,14 @@ export const SPEC_KINDS3: Readonly<Partial<Record<SkillId, { kinds: readonly Tas
   composeShapes: { kinds: ['choice', 'keypad'], production: ['keypad'] },
   halfShape: { kinds: ['trueFalse', 'multiSelect'], production: ['multiSelect'] },
   fractionShape: { kinds: ['choice', 'colorParts', 'fillSlots'], production: ['fillSlots'] },
+  // wave 3 (ORK3a): SPEC §2.2's rows for SK3-TAL's skills; share in div2510 is not starred (SPEC §3.3)
+  add1000: { kinds: ['choice', 'keypad'], production: ['keypad'] },
+  sub1000: { kinds: ['choice', 'keypad'], production: ['keypad'] },
+  mul34: { kinds: ['choice', 'keypad'], production: ['keypad'] },
+  mul6to9: { kinds: ['choice', 'keypad'], production: ['keypad'] },
+  div2510: { kinds: ['choice', 'keypad', 'share'], production: ['keypad'] },
+  divAll: { kinds: ['choice', 'keypad'], production: ['keypad'] },
+  mulTens: { kinds: ['choice', 'keypad'], production: ['keypad'] },
 }
 
 /**
