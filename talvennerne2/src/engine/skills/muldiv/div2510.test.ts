@@ -95,9 +95,12 @@ describe('div2510', () => {
     )
     expect(def.hint(findFact(def, 'div:12/2'), null, 'share').visual).toEqual({ scene: 'groups', groups: 2, size: 6, thing: 'carrot' })
     expect(hintText(def, 'div:12/2', 'shareUnequal', 'share')).toMatch(/^Divideret med betyder det samme som delt med\. Der skal ligge lige mange på alle tallerknerne\./)
-    // a pile of more than 40 is asked on the keypad instead (the share view's limit)
+    // a pile of more than 40 is asked on the keypad instead (the share view's limit), with the times table
     expect(canShare(taskOf(def, 'div:50/5', 'share'))).toBe(false)
     expect(canShare(taskOf(def, 'div:40/10', 'share'))).toBe(true)
+    expect(def.hint(findFact(def, 'div:40/10'), null, 'share').visual).toMatchObject({ scene: 'groups', groups: 10, size: 4 })
+    expect(def.hint(findFact(def, 'div:50/5'), null, 'share').visual).toEqual({ scene: 'array', rows: 10, cols: 5 })
+    expect(hintText(def, 'div:50/5', null, 'share')).toMatch(/^Divideret med betyder det samme som delt med\. Hvad gange fem giver halvtreds\?/)
   })
 
   it('gives a deal as long as the share scene does: 3 s and 0.8 s a thing', () => {

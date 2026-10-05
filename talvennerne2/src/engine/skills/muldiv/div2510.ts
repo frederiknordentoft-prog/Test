@@ -20,7 +20,8 @@
 // gange dit svar med fem. Det skal give tyve.", animated, SPEC §4.3); wrongOperation says what dividing is
 // ("Vi deler i lige store dele."). On the share view, and after an uneven deal, the dealing of 2. klasse
 // with "divideret med": "Læg en på hver tallerken ad gangen, rundt og rundt, til der ikke er flere. På hver
-// tallerken ligger der nu fire. Tolv divideret med tre giver fire." over d plates of q.
+// tallerken ligger der nu fire. Tolv divideret med tre giver fire." over d plates of q (a pile asked on the
+// keypad gets the times table instead).
 import type { Candidate, ErrorTag, Fact, HintSpec, SkillModule, SpeechPart, TaskKind } from '../types'
 import { hintOf, metaOf, num, say } from '../number/kit'
 import { equationSpeech } from '../../../speech/equation'
@@ -31,6 +32,9 @@ import {
 const FACTS: readonly Fact[] = divisionFacts('div2510', [2, 5, 10])
 
 const BRIDGE: SpeechPart = say('hint.div2510.bridge')
+
+/** The share view deals at most this many things (ui/task/share/logic.ts MAX_THINGS); a bigger pile is typed. */
+const DEALT_MAX = 40
 
 /** The share view hands in the share or −1 ('shareUnequal', SPEC §3.2): no wrong number to tag. */
 const candidatesFor = (f: Fact, kind: TaskKind): Candidate[] => (kind === 'share' ? [] : candidates(f))
@@ -50,7 +54,7 @@ function dealing(c: number, d: number): SpeechPart[] {
 
 function hint(f: Fact, tag: ErrorTag | null, kind?: TaskKind): HintSpec {
   const { c, d, q } = divisionOf(f)
-  if (kind === 'share' || tag === 'shareUnequal') {
+  if ((kind === 'share' && c <= DEALT_MAX) || tag === 'shareUnequal') {
     const plates = { scene: 'groups', groups: d, size: q, thing: 'carrot' } as const
     const lead = tag === 'shareUnequal' ? [say('hint.shareEqually.sameForAll')] : []
     return hintOf([BRIDGE, ...lead, ...dealing(c, d)], plates)
