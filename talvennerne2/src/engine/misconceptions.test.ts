@@ -507,8 +507,15 @@ describe('classifyAnswer and a set handed in in another order', () => {
 
   it('reads a point read off the net y first as the same pair: y:2|x:4 is x:4|y:2 (A23 coordSwap, near)', () => {
     const def = registeredSkills().find((d) => d.id === 'gridCoords')!
-    const fact = def.instance!(def.families.find((f) => f.id === 'readPoint')!, makeRng(1), new Set(factsOf(def).map((f) => f.id).filter((id) => id !== 'crd:r:4,2')))
-    const t = task(def, factsOf(def).find((f) => f.id === 'crd:r:4,2') ?? fact, 'grid')
+    // the point (4, 2), drawn from its family (every point comes once the others are avoided)
+    const avoid = new Set<string>()
+    let fact: Fact | undefined
+    for (let i = 0; i < 49 && !fact; i++) {
+      const f = def.instance!(def.families.find((x) => x.id === 'readPoint')!, makeRng(i), avoid)
+      if (f.id === 'crd:r:4,2') fact = f
+      avoid.add(f.id)
+    }
+    const t = task(def, fact!, 'grid')
     expect(t.answer).toBe('x:4|y:2')
     expect([classifyAnswer(t, 'y:2|x:4'), classifyAnswer(t, 'x:2|y:4'), classifyAnswer(t, 'y:4|x:2'), classifyAnswer(t, 'y:2|x:5'), classifyAnswer(t, 'y:6|x:6')])
       .toEqual([null, 'coordSwap', 'coordSwap', 'near', 'other'])
@@ -540,5 +547,7 @@ describe('classifyAnswer and a set handed in in another order', () => {
     // the ordered kinds and the sets were all swept, and an ordered answer is never read as a set
     for (const kind of ['multiSelect', 'sortOrder', 'fillSlots', 'grid', 'pay'] as const) expect(seen.get(kind) ?? 0, kind).toBeGreaterThan(0)
     expect([changed.get('sortOrder') ?? 0, changed.get('fillSlots') ?? 0]).toEqual([0, 0])
+    // and the fix shows where it should: a read point handed in y first
+    expect(changed.get('grid') ?? 0).toBeGreaterThan(0)
   })
 })
