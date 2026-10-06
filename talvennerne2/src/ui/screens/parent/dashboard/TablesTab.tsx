@@ -1,5 +1,5 @@
-// Tabeller (SPEC §9.1 point 6): the 10 · 10 table, each product shaded by its box. Empty until the
-// multiplication skills are part of the game.
+// Tabeller (SPEC §9.1 point 6): the 10 · 10 table, each product shaded by its box. Empty while no
+// times-table skill is known to this build and none has been played (metrics.tableGrid).
 import { nameOf } from '../../../../parent/format'
 import type { Dashboard } from '../../../../parent/types'
 import { TableGridView } from './charts'
@@ -20,7 +20,10 @@ export function TablesTab({ d }: { d: Dashboard }) {
   if (!d.tables.available) {
     return (
       <Section title="Tabeller">
-        <Note>Gitteret fyldes ud, når gangetabellerne kommer med i spillet. De hører til i Regnbueskoven (2. klasse) og Stjernefjeldet (3. klasse).</Note>
+        <Note>
+          Gitteret fyldes ud, når {name} begynder på gangetabellerne. 2-, 5- og 10-tabellen hører til i Regnbueskoven (2. klasse), 3- og 4-tabellen og 6-
+          til 9-tabellen i Stjernefjeldet (3. klasse).
+        </Note>
       </Section>
     )
   }

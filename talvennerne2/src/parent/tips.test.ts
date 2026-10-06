@@ -15,6 +15,14 @@ describe('home tips', () => {
     expect(tipFor('tenFriends', '')).toContain('Barnet viser')
   })
 
+  it('gives every 3. klasse skill a tip of its own, not only its domain\'s', () => {
+    const third = SKILLS.filter((m) => m.grade === 3)
+    expect(third).toHaveLength(16)
+    for (const m of third) expect(tipFor(m.id, 'Ada'), m.id).not.toBe(DOMAIN_TIPS[m.domain].replaceAll('{navn}', 'Ada'))
+    expect(new Set(third.map((m) => tipFor(m.id, 'Ada'))).size).toBe(16)
+    expect(tipFor('fractionOfSet', 'Ada')).toContain('lade Ada dele')
+  })
+
   it('completes "Prøv …" as one short sentence without a full stop', () => {
     for (const tip of [...ALL_TIPS, tableTip(7), productionTip('Ada')]) {
       expect(tip.startsWith('at ')).toBe(true)
