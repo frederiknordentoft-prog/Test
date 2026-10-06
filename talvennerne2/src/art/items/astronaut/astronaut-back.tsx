@@ -3,8 +3,8 @@
 // blusser en lille, rund legetøjsflamme (to dråber i hinanden). Stropperne tegnes i stroplaget (6b: over kroppen og
 // kropstøjet, under poterne og halsgenstanden), så de går ned over brystet og ind under armene; de klippes til
 // kroppen og har et lille rundt spænde. Alene (butik) ses jetpacken forfra med begge flasker, ryggens plade og
-// stropperne i siderne. På butikskortet på dyret (`showcase`) er jetpacken skubbet ud til venstre, vippet og lidt forstørret, så den
-// venstre flaske med flammen ses helt ved siden af kroppen (som rygsækken, review G1-r4, B1). Pegasus, drage og ugle
+// stropperne i siderne. På butikskortet på dyret (`showcase`) står hele jetpacken forfra ved siden af dyret, skubbet ud til
+// venstre, vippet og lidt forstørret, så begge flasker og flammerne ses (som rygsækken, review G1-r4, B1). Pegasus, drage og ugle
 // har ryggen fuld af vinger (`occupies`), så de bærer den ikke. (0,0) = bodyCenter, tegnet ved bodyWidth 100.
 import { ribbon } from '../../rig/shapes'
 import type { Vec } from '../../rig/shapes'
@@ -47,8 +47,11 @@ function pack(t: typeof TANK, plate: boolean, c: ItemArtProps['c'], sw: number):
   ]
 }
 
-/** Butikskortet på dyret: jetpacken ud til venstre og vippet, så venstre flaske og flamme ses ved siden af kroppen. */
-const SHOWCASE = 'translate(-40 -14) rotate(-12 0 6) scale(1.22)'
+/**
+ * Butikskortet på dyret: hele jetpacken forfra (som i butikken, med begge flasker og ryggens plade) skubbet ud til
+ * venstre og op og vippet, så den står ved siden af dyret og fylder halvdelen af kortet uden at blive beskåret.
+ */
+const SHOWCASE = { k: 1.3, at: 'translate(-49 -25) rotate(-10)' }
 /** Stropperne alene (butik): de buer ud i siderne bag flaskerne. */
 const SOLO_STRAPS = S.join(S.spline([[-24, -38], [-40, -22], [-42, 4], [-34, 22]]), S.spline([[24, -38], [40, -22], [42, 4], [34, 22]]))
 
@@ -59,8 +62,8 @@ const front: ItemArt = ({ c, sw, solo, showcase }) => {
       [SOLO_STRAPS, 'none', c.trim, sw * 1.3],
       ...pack(SOLO, true, c, sw),
     )
-  const segs = pack(TANK, false, c, sw)
-  return showcase ? <g transform={SHOWCASE}>{draw(...segs)}</g> : draw(...segs)
+  if (showcase) return <g transform={`${SHOWCASE.at} scale(${SHOWCASE.k})`}>{draw(...pack(SOLO, true, c, sw / SHOWCASE.k))}</g>
+  return draw(...pack(TANK, false, c, sw))
 }
 
 /** Stropperne (rygrad pr. kropsform): fra skulderen under hagen, ned over brystet og ud under armen. */
