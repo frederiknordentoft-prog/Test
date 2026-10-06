@@ -1,9 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { ITEMS } from '../content/catalog'
 import { TOTAL_SINK } from '../content/economy'
+import { SKILLS } from '../content/skills'
+import { factsOf, skillKeys, skillRegistry } from '../engine/registry'
 import type { ProfileDoc } from '../engine/types'
 import { isBigCeremony, isRewardEvent, perlerOf, type Reward } from './rewards'
-import { CHILD_50, CHILD_85, GUESSER, Sim, seedOf, type SessionLog } from './testing/sim'
+import { CHILD_50, CHILD_85, GUESSER, Sim, seedOf, simRegistry, type SessionLog } from './testing/sim'
 
 /**
  * The economy's acceptance checks (SPEC §5.7, "Belønningskadence"). A simulated child answers 85 %
@@ -115,6 +117,18 @@ describe('economy simulation (SPEC §5.7)', { timeout: 60_000 }, () => {
     // it still played, earned perler for every right answer and met friends along the way
     expect(guesser.earned).toBeGreaterThan(1000)
     expect(p.animals.length).toBeGreaterThan(5)
+  })
+
+  it('plays 3. klasse with the registered skills\' keys: the curriculum\'s 13, 14, 30 and 60 facts and the real families', () => {
+    const game = skillRegistry()
+    for (const m of SKILLS.filter((x) => x.grade === 3)) {
+      const real = game.get(m.id)!
+      const sim = simRegistry().get(m.id)!
+      if (m.mode === 'procedure') expect(skillKeys(sim), m.id).toEqual(skillKeys(real))
+      else expect(factsOf(sim).length, m.id).toBe(factsOf(real).length)
+    }
+    const facts = (id: 'mul34' | 'mul6to9' | 'div2510' | 'divAll') => factsOf(simRegistry().get(id)!).length
+    expect([facts('mul34'), facts('mul6to9'), facts('div2510'), facts('divAll')]).toEqual([13, 14, 30, 60])
   })
 
   it('is deterministic', () => {
