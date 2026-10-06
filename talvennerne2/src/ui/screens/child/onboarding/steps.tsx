@@ -27,13 +27,13 @@ function Choice({ selected, speaking, className, onClick, children, ...data }: {
   return (
     <button
       type="button"
-      className={cx('tv-choice', selected && 'is-selected', speaking && 'is-speaking', 'tv-touch', className)}
+      className={cx('tv-bigchoice', selected && 'is-selected', speaking && 'is-speaking', 'tv-touch', className)}
       aria-pressed={selected}
       onClick={onClick}
       {...pressProps}
       {...data}
     >
-      <span className="tv-choice__face">{children}</span>
+      <span className="tv-bigchoice__face">{children}</span>
     </button>
   )
 }

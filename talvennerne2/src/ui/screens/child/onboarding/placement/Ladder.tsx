@@ -12,9 +12,8 @@ import { afterPaint } from '../../../../../app/idle'
 import { playSfx } from '../../../../../audio/sfx'
 import { preloadSpeech } from '../../../../../audio/voice'
 import type { SpeakHandle } from '../../../../../audio/voice'
-import type { AnswerValue, SpeechPart, Task, TaskKind } from '../../../../../engine/types'
+import type { AnswerValue, ClipId, SpeechPart, Task, TaskKind } from '../../../../../engine/types'
 import { NEXT_CLIPS } from '../../../../../speech/clips/ui/placement'
-import { OOPS_CLIPS } from '../../../../../speech/clips/ui/round'
 import { instructionClip } from '../../../../../speech/clips/ui/kinds'
 import { useProfile } from '../../../../../state/useProfile'
 import { Button } from '../../../../design/Button'
@@ -48,6 +47,8 @@ const NEXT_MS = 1300
 const WRONG_MS = 850
 /** After the last answer: a breath before Pip says thank you. */
 const LAST_MS = 600
+/** Before the strategy: always the round's gentlest words ("Lad os se på det sammen."), never "Næsten". */
+const OOPS: ClipId = 's.round.oops.1'
 
 type Beat = 'intro' | 'asking' | 'next' | 'wrong' | 'teaching'
 
@@ -242,8 +243,11 @@ function TaskStage({ task, prevKind, replay, onHear, onNext, onLast }: TaskStage
   }, [])
 
   // ── "Hør igen": the question again (or the strategy during the error flow) ──
+  // Only taps made while this question is on screen: the count arrives already bumped by earlier ones.
+  const heardAt = useRef(replay)
   useEffect(() => {
-    if (replay === 0) return
+    if (replay === heardAt.current) return
+    heardAt.current = replay
     const b = beatRef.current
     const h = hintRef.current
     if (b === 'teaching' && h) {
@@ -307,15 +311,13 @@ function TaskStage({ task, prevKind, replay, onHear, onNext, onLast }: TaskStage
         const h = hintFor(task, value)
         setHint(h)
         setBeat('teaching')
-        const run = usePlacement.getState().session?.run
-        const oops = pickRotating(OOPS_CLIPS, run?.asked ?? 0)
-        setBubble([{ clip: oops }])
+        setBubble([{ clip: OOPS }])
         const tok = newToken()
         afterPaint(() => {
           if (!tok.alive) return
           void sayAll(
             [
-              { parts: [{ clip: oops }], option: null },
+              { parts: [{ clip: OOPS }], option: null },
               { parts: h.speech, option: null },
               { parts: confirmSpeech(task), option: null },
             ],

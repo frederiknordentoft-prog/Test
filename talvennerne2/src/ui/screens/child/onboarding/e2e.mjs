@@ -414,12 +414,12 @@ async function toGrade(page, url, name, grade) {
 }
 
 /** The question on screen, typed on the keypad: right, or one too many. */
-async function answerLadder(page, right) {
+async function answerLadder(page, tag, right) {
   const before = await ladder(page)
   const t = before.task
-  check(t?.kind === 'keypad', `stigen spørger med tastaturet (${t?.skill} ${t?.factId})`)
+  check(t?.kind === 'keypad', `${tag}: stigen spørger med tastaturet (${t?.skill} ${t?.factId})`)
   for (const d of String(right ? t.answer : t.answer + 1)) await page.locator(`.tv-round__answer [data-key="${d}"]`).click()
-  await page.locator('.tv-round__answer [data-key="ok"]').click()
+  await page.locator('.tv-round__answer [data-check]').click()
   await until(page, async (n) => (await import('/src/ui/screens/child/onboarding/placement/store.ts')).usePlacement.getState().session?.run.asked === n, before.asked + 1)
   return t
 }
@@ -459,7 +459,8 @@ async function thirdGrade(tag, viewport) {
   await settle(page, 600)
   await placeShot(page, `${tag}-2-intro`)
   await tapTargets(page, tag, 'forklaringen')
-  check((await childNow(page)).grade === 0, `${tag}: intet skrevet, før stigen starter`)
+  const bank = await childNow(page)
+  check(bank.grade === 0, `${tag}: intet skrevet, før stigen starter`)
 
   // the ladder: the round's task views, Pip, "Det er nok"; no stone path, no stars, no praise
   await page.locator('[data-place-start]').click()
@@ -472,11 +473,16 @@ async function thirdGrade(tag, viewport) {
   await settle(page, 400)
   await placeShot(page, `${tag}-3-question`)
   await tapTargets(page, tag, 'stigen')
+  // "Hør igen" reads the question again (and the later questions are still read and asked)
+  const before = (await voiceLog(page)).length
+  await page.locator('.tv-place .tv-topbar [data-clip="s.ui.replay"]').click()
+  await until(page, (n) => (window.__voiceLog ?? []).length > n, before)
+  check(true, `${tag}: "Hør igen" læser spørgsmålet igen`)
   const heard = (await voiceLog(page)).length
 
   // two right (L5 passed), then L7: one right
   for (let i = 0; i < 3; i++) {
-    const t = await answerLadder(page, true)
+    const t = await answerLadder(page, tag, true)
     if (i === 0) {
       await until(page, () => (window.__voiceLog ?? []).some((c) => c.startsWith('s.place.next.')))
       await settle(page, 250)
@@ -485,15 +491,15 @@ async function thirdGrade(tag, viewport) {
     await nextQuestion(page, t.id)
   }
   // a miss: the strategy and the big button with the right answer (SPEC §3.5), never logged
-  const missed = await answerLadder(page, false)
+  const missed = await answerLadder(page, tag, false)
   await page.waitForSelector('[data-teaching] [data-confirm]', { timeout: 10_000 })
   await settle(page, 500)
   await placeShot(page, `${tag}-5-miss`)
-  await page.locator('[data-teaching] [data-confirm]').click()
+  await page.locator('[data-teaching] [data-confirm]').click({ force: true })
   await nextQuestion(page, missed.id)
   const after = await ladder(page)
   check(after.task?.skill === 'subTo20', `${tag}: efter en fejl i springfasen går stigen et trin ned (L6, ${after.task?.skill})`)
-  const t5 = await answerLadder(page, true)
+  const t5 = await answerLadder(page, tag, true)
   check(t5.skill === 'subTo20', `${tag}: L6 spørges`)
   const said = (await voiceLog(page)).slice(heard)
   check(said.filter((c) => c.startsWith('s.place.next.')).length >= 4, `${tag}: de samme venlige ord efter hvert svar (${said.filter((c) => c.startsWith('s.place.next.')).join(', ')})`)
@@ -510,7 +516,10 @@ async function thirdGrade(tag, viewport) {
   check(kid.placement.done && kid.placement.highest === 'L5', `${tag}: indplaceringen er gemt med P = L5 (${JSON.stringify(kid.placement)})`)
   check(kid.seeded > 0 && kid.aboveBox2 === 0, `${tag}: ${kid.seeded} nøgler i boks 2 som seeded, ingen over`)
   check(kid.log.length === 5 && kid.log.every((m) => m === 'placement'), `${tag}: 5 svar logget som placement, bekræftelsen ikke (${kid.log.join(', ')})`)
-  check(kid.perler === 0 && kid.xp === 0 && kid.rewards === 0, `${tag}: ingen perler, ingen XP, ingen belønninger`)
+  check(
+    kid.perler === bank.perler && kid.xp === bank.xp && kid.rewards === bank.rewards,
+    `${tag}: stigen giver ingen perler, ingen XP og ingen belønninger (${bank.perler}/${bank.xp}/${bank.rewards} → ${kid.perler}/${kid.xp}/${kid.rewards})`,
+  )
   await settle(page, 600)
   await placeShot(page, `${tag}-6-thanks`)
   await tapTargets(page, tag, 'tak')
@@ -572,7 +581,7 @@ async function thirdGradeSkipAndReload(tag, viewport) {
     await page.locator('[data-place-start]').click()
     await page.waitForSelector('.tv-place[data-place="ladder"] .tv-round__stage')
     await until(page, () => document.querySelector('.tv-place .tv-round__stage')?.getAttribute('data-beat') === 'asking')
-    await answerLadder(page, true)
+    await answerLadder(page, tag, true)
     await page.evaluate(async () => (await import('/src/state/useProfile.ts')).useProfile.getState().flush())
     await page.reload()
     await page.waitForSelector('.tv-map [data-map-path]', { timeout: 30_000 })
