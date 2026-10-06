@@ -126,5 +126,6 @@ export default {
   },
   candidates,
   hint: (f, tag) => hint(f, tag),
-  fastMs: (f: Fact, kind) => (kind === 'choice' || parse(f).family === 'mToCm' ? 8_000 : 12_000),
+  // at least SPEC §3.2's 6 s + 2 s a digit over one on the keys: mToCm's 100–900 cm get 10 s, the rest 12 s
+  fastMs: (f: Fact, kind) => (kind === 'choice' ? 8_000 : parse(f).family === 'mToCm' ? 10_000 : 12_000),
 } satisfies SkillModule

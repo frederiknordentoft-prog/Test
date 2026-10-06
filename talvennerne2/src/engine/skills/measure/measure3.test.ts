@@ -126,6 +126,8 @@ describe('convertCmM', () => {
       } else expect(ceilingFor(task)).toBe(3)
     }
     expect(convertCmM.fastMs!(fact('cmm:compareMixed:1:37'), 'keypad')).toBe(12_000)
+    // 300 cm is three digits on the keys: SPEC §3.2's 6 s + 2 · 2 s (cards keep 8 s)
+    expect([convertCmM.fastMs!(fact('cmm:mToCm:3'), 'keypad'), convertCmM.fastMs!(fact('cmm:mToCm:3'), 'choice')]).toEqual([10_000, 8_000])
   })
 
   it('reads a meter as ten centimeter (or a zero too many) as tensZero', () => {
