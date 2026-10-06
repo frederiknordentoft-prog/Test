@@ -20,20 +20,29 @@ const CONE = 21.4
 const PORT = { at: 12.6, r: 3.9 }
 const BAND = -1.6
 /** Foretrukken retning (grader; −90 = op) og trin, når ansigtet er i vejen; på jorden står den næsten lodret. */
-const AIM = -64
-const GROUND_AIM = -80
+const AIM = -34
+const GROUND_AIM = -84
 const STEP = 18
 /** Retningen på butikskortet på dyret: ud til siden, væk fra armen (som stjernestaven, review G2-r3 B16). */
 const CARD_AIM = -26
 /** Raketten er stor nok til at ses i butikskortet på dyret. */
 const SIZE = 1.18
 
+/**
+ * På jorden (de lange forben) står raketten på poten: tegningen løftes langs aksen, så dysen sidder ved grebet og
+ * finnerne lige over poten (ellers ville finnerne under grebet gå ned under jorden og vippe raketten ned på siden).
+ */
+const LIFT = 11.4
+
 const front: ItemArt = ({ c, sw, a, hold, showcase }) => {
   const ground = groundPaw(a, hold)
-  const samples = [{ at: -9, r: 12.5 }, { at: 9, r: 8 }, { at: 30, r: 5 }].map((p) => ({ at: p.at * SIZE, r: p.r * SIZE }))
+  const lift = ground ? LIFT : 0
+  const samples = (ground ? [{ at: 3.2, r: 13.4 }, { at: 17, r: 8 }, { at: 42, r: 5 }] : [{ at: -9, r: 12.5 }, { at: 9, r: 8 }, { at: 30, r: 5 }]).map((p) => ({ at: p.at * SIZE, r: p.r * SIZE }))
   const P = hold ? aimAway(hold, samples, ground ? GROUND_AIM : showcase ? CARD_AIM : AIM, STEP) : aimSolo(a.handRot, -66)
   // Tegnes i en ramme drejet tilbage til verdensrummet (lyset oppefra til venstre).
-  const { along, m, rot } = aimFrame(P, SIZE)
+  const frame = aimFrame(P, SIZE)
+  const { m, rot } = frame
+  const along = (s: number) => frame.along(s + lift)
   const o = along(0)
   const e = along(10)
   const len = Math.hypot(e[0] - o[0], e[1] - o[1])

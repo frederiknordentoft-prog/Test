@@ -21,10 +21,8 @@ const inner = (collar: number, hem: number, { c, sw }: P): Seg[] => [
 const outer = (collar: number, hem: number, { c, sw }: P): Seg[] => {
   const y = collar + (hem - collar) * 0.36
   return [
-    [S.softBand(-20.5, 20.5, collar - 7.4, collar + 0.6, 3.4, 5.4), c.trim, c.trimOutline, sw * 0.9],
-    [S.rect(8.6, y - 6.6, 20.4, 13.2, 3.4), c.trim, c.trimOutline, sw * 0.75],
-    [S.join(S.circle(13.4, y, 2.1), S.circle(18.8, y, 2.1), S.circle(24.2, y, 2.1)), c.accent, c.accentOutline, sw * 0.4],
-    [S.circle(-19.6, y + 1, 7.6), c.accent, c.accentOutline, sw * 0.8],
+    [S.join(S.softBand(-20.5, 20.5, collar - 7.4, collar + 0.6, 3.4, 5.4), S.rect(8.6, y - 6.6, 20.4, 13.2, 3.4)), c.trim, c.trimOutline, sw * 0.8],
+    [S.join(S.circle(-19.6, y + 1, 7.6), S.circle(13.4, y, 2.1), S.circle(18.8, y, 2.1), S.circle(24.2, y, 2.1)), c.accent, c.accentOutline, sw * 0.6],
     [S.star(-19.6, y + 1.2, 5.2, 2.2, 5), c.main, c.outline, sw * 0.45],
   ]
 }

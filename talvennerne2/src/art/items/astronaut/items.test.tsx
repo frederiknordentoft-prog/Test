@@ -16,7 +16,6 @@ import { Rig } from '../../rig/Rig'
 import type { RigProps } from '../../rig/Rig'
 import { MOODS, STAGES } from '../../rig/types'
 import type { ItemDef, Outfit, SpeciesDef } from '../../rig/types'
-import { horse } from '../../species/horse'
 import { rabbit } from '../../species/rabbit'
 import { astronautBack } from './astronaut-back'
 import { astronautBody } from './astronaut-body'
@@ -77,15 +76,15 @@ describe('kontrakten for genstandene', () => {
     expect(overrideShare(ALL_ITEMS, wearers)).toBeLessThanOrEqual(MAX_OVERRIDE_SHARE)
   })
 
-  it('hjelmen har huller til ører og horn; dragten har tre grundformer og ærmer; jetpacken har stropper; raketten rækker ud', () => {
+  it('hjelmen har huller til ører og horn; dragten har tre grundformer og ærmer; jetpacken har stropper; jetpack og raket rækker ud', () => {
     expect(astronautHead.fit.earMode).toBe('through')
     expect(astronautHead.art.rim).toBeTruthy()
     expect(astronautHead.hornHole).toBeTruthy()
     expect(Object.keys(astronautBody.art.bodyShapes ?? {}).sort()).toEqual(['pear', 'round', 'tall'])
     expect(astronautBody.art.sleeve && astronautBody.art.sleeveUp).toBeTruthy()
     expect(astronautBack.art.straps).toBeTruthy()
-    // Raketten rækker med vilje ud over silhuetten (lintet holder den i den sikre zone).
-    expect(MINE.filter((it) => it.reach).map((it) => it.id)).toEqual(['astronaut-hand'])
+    // Jetpacken og raketten rækker med vilje ud over silhuetten (lintet holder dem i den sikre zone).
+    expect(MINE.filter((it) => it.reach).map((it) => it.id).sort()).toEqual(['astronaut-back', 'astronaut-hand'])
     expect(typeof astronautHand.art.over).toBe('function')
   })
 

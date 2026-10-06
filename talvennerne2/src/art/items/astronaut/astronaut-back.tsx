@@ -13,7 +13,7 @@ import { cws, def, draw, fitAt, S } from '../ridder/kit/mestring'
 import type { Seg } from '../ridder/kit/mestring'
 
 /** Flaskerne: centrum (x, halvbredde), top og bund (y) – bag kroppen og i butikken. */
-const TANK = { x: 49, r: 11.4, top: -42, bot: 6 }
+const TANK = { x: 52, r: 12.6, top: -50, bot: 2 }
 const SOLO = { x: 15.6, r: 13.4, top: -40, bot: 14 }
 
 /** Én flaske om (x, top, bund, r): kroppen, næsehætten, båndet, dysen og flammen. */
@@ -94,6 +94,8 @@ export const astronautBack = def('astronaut-back', {
   colorways: cws('soelv|sølv|silver|tomato|sunflower', 'orange|orange|orange|navy|sunflower', 'lilla|lilla|violet|mint|rose'),
   art: { front, straps },
   fit: fitAt('bodyCenter', 'bodyWidth', 124),
+  // Flaskerne og flammerne rækker med vilje ud over kroppens sider (lintet holder dem i den sikre zone).
+  reach: true,
   icon: { box: [-44, -42, 88, 84] },
 })
 
