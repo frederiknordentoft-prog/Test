@@ -143,7 +143,7 @@ describe('fractionOfSet oracle', () => {
   }, TIMEOUT)
 
   it('has SPEC’s kinds and ceilings: share (0.01, production only here), keypad 0–24 (production), choice (box 3)', () => {
-    // a deal asked as itself on two plates (three quarters) is the it.fails test below; SPEC §3.3's own rule
+    // a deal asked as itself on two plates (three quarters) is A14's test below (it.fails until GENFIX3); SPEC §3.3's own rule
     // (a kind production for ≥ 90 % of the instances) holds by the keypad whatever its share tasks are
     const even = built.filter((b) => !(b.kind === 'share' && b.task.answerType === 'set'))
     expect(first(productionB3(even))).toEqual([])
