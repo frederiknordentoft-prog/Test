@@ -10,9 +10,11 @@ import { isProduction } from './kinds'
 import { isCorrect } from './answer'
 import { hashSeed, makeRng, type Rng } from './rng'
 import {
-  MISCONCEPTION_IDS, type AnswerLogEntry, type AnswerValue, type Candidate, type Fact, type MisconceptionId, type SkillDef, type Task, type TaskKind,
+  MISCONCEPTION_IDS, type AnswerLogEntry, type AnswerValue, type Candidate, type ErrorTag, type Fact, type MisconceptionId, type SkillDef, type Task,
+  type TaskKind,
 } from './types'
 import { MISCONCEPTION_TEXTS } from '../content/misconceptionTexts'
+import { factsOf, registeredSkills } from './registry'
 
 const DAY0 = Date.parse('2026-09-01T10:00:00Z')
 const dayOf = (n: number) => new Date(DAY0 + n * 86_400_000).toISOString().slice(0, 10)
@@ -480,5 +482,63 @@ describe('resolving a perceptual flag', () => {
       })
     }
     expect(states.sizeIsWeight?.status).toBe('resolved')
+  })
+})
+
+// ─── set answers in another order (GENFIX3, ORK3b's note) ─────────────────────
+
+describe('classifyAnswer and a set handed in in another order', () => {
+  /** classifyAnswer before the set rule: a tag only for the key exactly as the skill wrote it. */
+  const before = (t: Task, g: AnswerValue): ErrorTag | null => {
+    if (isCorrect(t, g)) return null
+    if (t.kind === 'share' && g === -1) return 'shareUnequal'
+    const tag = t.distractorTags[typeof g === 'number' && t.modulo ? String(((g % t.modulo) + t.modulo) % t.modulo) : String(g)]
+    if (tag) return tag
+    if (typeof g === 'number' && swappedAnswer(t) === g) return 'digitSwap'
+    return 'other'
+  }
+  const UNORDERED: ReadonlySet<TaskKind> = new Set<TaskKind>(['multiSelect', 'grid', 'pay', 'share', 'colorParts'])
+  const tokens = (s: string) => s.split('|').sort().join('|')
+  /** The orders of a set answer the child can hand in besides the written one: reversed and turned once. */
+  const reorder = (s: string): string[] => {
+    const t = s.split('|')
+    return t.length < 2 ? [] : [[...t].reverse().join('|'), [...t.slice(1), t[0]].join('|')]
+  }
+
+  it('reads a point read off the net y first as the same pair: y:2|x:4 is x:4|y:2 (A23 coordSwap, near)', () => {
+    const def = registeredSkills().find((d) => d.id === 'gridCoords')!
+    const fact = def.instance!(def.families.find((f) => f.id === 'readPoint')!, makeRng(1), new Set(factsOf(def).map((f) => f.id).filter((id) => id !== 'crd:r:4,2')))
+    const t = task(def, factsOf(def).find((f) => f.id === 'crd:r:4,2') ?? fact, 'grid')
+    expect(t.answer).toBe('x:4|y:2')
+    expect([classifyAnswer(t, 'y:2|x:4'), classifyAnswer(t, 'x:2|y:4'), classifyAnswer(t, 'y:4|x:2'), classifyAnswer(t, 'y:2|x:5'), classifyAnswer(t, 'y:6|x:6')])
+      .toEqual([null, 'coordSwap', 'coordSwap', 'near', 'other'])
+  })
+
+  it('classifies every other answer of every registered skill as before; only a set in another order changes, and never on an ordered kind', () => {
+    const problems: string[] = []
+    const seen = new Map<TaskKind, number>()
+    const changed = new Map<TaskKind, number>()
+    for (const def of registeredSkills()) {
+      for (const [i, fact] of factsOf(def).entries()) {
+        for (const kind of def.kinds) {
+          const t = buildTask(def, fact, kind, makeRng(hashSeed(`set-order:${fact.id}:${kind}`)), i).task
+          if (typeof t.answer !== 'string') continue
+          seen.set(kind, (seen.get(kind) ?? 0) + 1)
+          const written = [t.answer, ...t.accept, ...t.options, ...Object.keys(t.distractorTags)].filter((v): v is string => typeof v === 'string')
+          for (const v of new Set([...written, ...written.flatMap(reorder)])) {
+            const now = classifyAnswer(t, v)
+            const was = before(t, v)
+            if (now === was) continue
+            changed.set(kind, (changed.get(kind) ?? 0) + 1)
+            const same = Object.keys(t.distractorTags).filter((k) => tokens(k) === tokens(v))
+            if (!UNORDERED.has(kind) || was !== 'other' || !same.some((k) => t.distractorTags[k] === now)) problems.push(`${fact.id} ${kind} ${v}: ${String(was)} → ${String(now)}`)
+          }
+        }
+      }
+    }
+    expect(problems.slice(0, 10)).toEqual([])
+    // the ordered kinds and the sets were all swept, and an ordered answer is never read as a set
+    for (const kind of ['multiSelect', 'sortOrder', 'fillSlots', 'grid', 'pay'] as const) expect(seen.get(kind) ?? 0, kind).toBeGreaterThan(0)
+    expect([changed.get('sortOrder') ?? 0, changed.get('fillSlots') ?? 0]).toEqual([0, 0])
   })
 })
