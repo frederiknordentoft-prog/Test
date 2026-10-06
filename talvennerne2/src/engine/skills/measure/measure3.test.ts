@@ -93,6 +93,18 @@ describe('convertCmM', () => {
     }
   })
 
+  it('asks 1–9 centimeter in a third of mCmToCm (the zero of the tens), some of them canonical, so its key can show zeroPlaceholder', () => {
+    const fam = convertCmM.families.find((f) => f.id === 'mCmToCm')!
+    const rng = makeRng(7)
+    const cm = Array.from({ length: 900 }, () => Number(convertCmM.instance!(fam, rng, new Set()).id.split(':')[3]))
+    const small = cm.filter((c) => c < 10).length / cm.length
+    expect(small).toBeGreaterThan(0.28)
+    expect(small).toBeLessThan(0.39)
+    const canon = convertCmM.enumerate().filter((f) => f.family === 'mCmToCm' && Number(f.id.split(':')[3]) < 10)
+    expect(canon.length).toBeGreaterThan(0)
+    for (const f of canon) expect(convertCmM.candidates(f).map((c) => c.tag), f.id).toContain('zeroPlaceholder')
+  })
+
   it('says what the card shows: the same numbers and units, and the unit the answer is in', () => {
     for (const { fact: f, task } of tasks) {
       const card = termsOf(task).flatMap((x) => ('n' in x ? [x.n] : []))

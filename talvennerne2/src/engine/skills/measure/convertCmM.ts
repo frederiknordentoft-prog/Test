@@ -1,6 +1,7 @@
 // convertCmM — Centimeter og meter (SPEC §2.2, pædagogik-forslaget §1.3: 1 m = 100 cm). Procedure, prefix `cmm:`.
 //   mToCm          cmm:mToCm:<m>           "3 meter = ? centimeter", m = 1–9                          9 (all)
-//   mCmToCm        cmm:mCmToCm:<m>:<c>     "2 meter 35 centimeter = ? centimeter", c = 1–99
+//   mCmToCm        cmm:mCmToCm:<m>:<c>     "2 meter 35 centimeter = ? centimeter", c = 1–9 in a third of the
+//                                          draws (2 m 5 cm: the zero of the tens, zeroPlaceholder), else 10–99
 //   cmToMCm        cmm:cmToMCm:<n>         "235 centimeter = ? meter 35 centimeter": the whole meters, n = 100–999
 //   compareMixed   cmm:compareMixed:<m>:<c>  "1 meter − 37 centimeter = ? centimeter": how much longer a meter
 //                                          or two are than c centimeter, c = 1–99
@@ -33,10 +34,18 @@ const make = (family: string, a: number, b?: number): Fact => ({
   id: `cmm:${family}:${a}${b === undefined ? '' : `:${b}`}`, skill: 'convertCmM', family, operands: b === undefined ? [a] : [a, b],
   answer: answerOf(family, a, b ?? 0), rank: familyRank(meta.families, family),
 })
+/**
+ * mCmToCm takes 1–9 cm a third of the time: only "2 m 5 cm" can show the zero of the tens (zeroPlaceholder),
+ * and drawn evenly from 1–99 that was 1 task in 44 (ORK3c: a child who moved the zero every time was found in
+ * 10 of 30 runs of 160 answers). A third gives the idea its chances and keeps the family mostly two-digit;
+ * it also puts single-digit centimeter among the canonical facts, so the key lists the misconception.
+ */
+const centimeter = (family: string, rng: Rng): number =>
+  family === 'mCmToCm' ? (rng.int(3) === 0 ? rng.between(1, 9) : rng.between(10, 99)) : rng.between(1, 99)
 const draw = (family: string, rng: Rng): Fact =>
   family === 'mToCm' ? make(family, rng.between(1, 9))
     : family === 'cmToMCm' ? make(family, rng.between(100, 999))
-      : make(family, rng.between(1, family === 'mCmToCm' ? 9 : 2), rng.between(1, 99))
+      : make(family, rng.between(1, family === 'mCmToCm' ? 9 : 2), centimeter(family, rng))
 
 const FACTS: readonly Fact[] = meta.families.flatMap(({ id }) =>
   canonical('convertCmM', id, (rng) => draw(id, rng), id === 'mToCm' ? Array.from({ length: 9 }, (_, i) => make(id, i + 1)) : undefined))
