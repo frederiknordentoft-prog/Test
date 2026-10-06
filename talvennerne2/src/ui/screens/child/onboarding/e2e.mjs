@@ -7,6 +7,13 @@
 // map. Only drawn starters are offered, and each egg shows the friend that hatches (P1-2, P2-9).
 // Phone (393 x 852) and iPad (820 x 1180). Fails on console errors and on any storage key outside
 // the talvennerne2. namespace.
+//
+// First, 3. klasse with "Vis Pip hvad du kan" on the dev server with ?worlds=all (Stjernefjeldet
+// built): Pip's line under the grades, the explanation, the ladder in the task views with the same
+// friendly words after every answer, a miss through the strategy, "Det er nok", the thanks, and the
+// first round on the stone the map suggests — then the map behind it. Also "Spring over", a reload
+// in the middle of the ladder (the map, never a hanging screen), 3. klasse before Stjernefjeldet is
+// built (as before: Engdalen) and 2. klasse with it built (as before). Pictures: artifacts/place3/.
 //   BASE=http://127.0.0.1:4313/ flock /tmp/tv2-chromium.lock node src/ui/screens/child/onboarding/e2e.mjs
 import { mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -14,9 +21,13 @@ import { launch } from '../../../../../scripts/browser.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:4313/'
 const URL_ = `${BASE}?e2e=1&voice=fast`
+/** Every world built (dev servers only), so Stjernefjeldet's placement is offered. */
+const URL_ALL = `${URL_}&worlds=all`
 const OUT = fileURLToPath(new URL('../../../../../artifacts/scr/', import.meta.url))
 const REVIEW = process.env.REVIEW ?? `${OUT}review/`
 mkdirSync(REVIEW, { recursive: true })
+const PLACE3 = process.env.PLACE3_OUT ?? fileURLToPath(new URL('../../../../../artifacts/place3/', import.meta.url))
+mkdirSync(PLACE3, { recursive: true })
 
 const fails = []
 const check = (ok, what) => {
@@ -342,8 +353,271 @@ async function oneChildThenSibling(tag, viewport) {
   await context.close()
 }
 
+// ── 3. klasse: "Vis Pip hvad du kan" (SPEC §8) ───────────────────────────────
+
+const placeShot = (page, name) => page.screenshot({ path: `${PLACE3}${name}.png` })
+/** The ladder's state as the screen has it (onboarding/placement/store.ts). */
+const ladder = (page) =>
+  page.evaluate(async () => {
+    const s = (await import('/src/ui/screens/child/onboarding/placement/store.ts')).usePlacement.getState()
+    return { status: s.status, task: s.task, asked: s.session?.run.asked ?? 0, done: s.session?.run.done ?? false, stone: s.stone }
+  })
+/** The loaded child, and the stone the map itself suggests in the child's home world. */
+const childNow = (page) =>
+  page.evaluate(async () => {
+    const { useProfile } = await import('/src/state/useProfile.ts')
+    const { homeWorld, mapModel } = await import('/src/ui/screens/child/map/model.ts')
+    const { answersBetween } = await import('/src/data/repo/answers.ts')
+    const p = useProfile.getState().profile
+    const world = homeWorld(p)
+    const keys = Object.values(p.keys)
+    const log = await answersBetween(p.id, 0)
+    return {
+      id: p.id, grade: p.grade, placement: p.placement, world, next: mapModel(p, world).next, worlds: p.unlocked.worlds,
+      seeded: keys.filter((k) => k.seeded).length, aboveBox2: keys.filter((k) => k.box > 2).length,
+      log: log.map((a) => a.mode), perler: p.economy.perler, xp: p.economy.xp, rewards: p.rewardLog.length,
+    }
+  })
+const clipTextIn = (page, id) => page.evaluate(async (c) => (await import('/src/speech/catalog.ts')).clipText(c), id)
+
+/** From an empty device (sound already checked) to the grade step, with `grade` tapped. */
+async function toGrade(page, url, name, grade) {
+  await page.goto(url)
+  await page.waitForSelector('.tv-intro', { timeout: 30_000 })
+  await page.evaluate(() =>
+    localStorage.setItem('talvennerne2.boot', JSON.stringify({ v: 1, profileIds: [], lastProfileId: null, device: { followSilentSwitch: false, audioVerified: true, calm: false } })),
+  )
+  await page.reload()
+  await page.waitForSelector('.tv-intro')
+  await page.locator('.tv-intro [data-next]').click()
+  await page.waitForSelector('.tv-onb[data-step="name"]')
+  await page.locator('[data-name-input]').fill(name)
+  await page.locator('.tv-onb [data-next]').click()
+  await page.waitForSelector('.tv-onb[data-step="egg"] .tv-eggbtn')
+  await settle(page, 500)
+  await page.locator('.tv-eggbtn').first().click()
+  await page.waitForSelector('.tv-hatchbtn[data-hatch="0"]')
+  for (let i = 0; i < 3; i++) {
+    await page.locator('.tv-hatchbtn').click()
+    await page.waitForTimeout(250)
+  }
+  await page.waitForSelector('.tv-hatchbtn[data-hatch="done"]')
+  await settle(page, 900)
+  await page.locator('.tv-onb [data-next]').click()
+  await page.waitForSelector('.tv-onb[data-step="friend"] .tv-name[data-name]')
+  await settle(page, 300)
+  await page.locator('.tv-onb [data-next]').click()
+  await page.waitForSelector('.tv-onb[data-step="grade"] .tv-grade')
+  await settle(page, 300)
+  await page.locator(`.tv-grade[data-grade="${grade}"]`).click()
+  await settle(page, 500)
+}
+
+/** The question on screen, typed on the keypad: right, or one too many. */
+async function answerLadder(page, right) {
+  const before = await ladder(page)
+  const t = before.task
+  check(t?.kind === 'keypad', `stigen spørger med tastaturet (${t?.skill} ${t?.factId})`)
+  for (const d of String(right ? t.answer : t.answer + 1)) await page.locator(`.tv-round__answer [data-key="${d}"]`).click()
+  await page.locator('.tv-round__answer [data-key="ok"]').click()
+  await until(page, async (n) => (await import('/src/ui/screens/child/onboarding/placement/store.ts')).usePlacement.getState().session?.run.asked === n, before.asked + 1)
+  return t
+}
+
+/** The question after `id` is on screen (its stage is keyed by the task) and has been read. */
+const nextQuestion = (page, id) =>
+  until(page, async (prev) => {
+    const s = (await import('/src/ui/screens/child/onboarding/placement/store.ts')).usePlacement.getState()
+    const beat = document.querySelector('.tv-place .tv-round__stage')?.getAttribute('data-beat')
+    return !!s.task && s.task.id !== prev && beat === 'asking'
+  }, id)
+
+/**
+ * The whole 3. klasse onboarding with the ladder (dev, ?worlds=all): the grade line, the explanation,
+ * two right answers, one miss through the strategy, one more, "Det er nok", the thanks, and the first
+ * round on the stone the map suggests; then ✕ → "Til kortet" and that stone is the map's next one.
+ */
+async function thirdGrade(tag, viewport) {
+  const { page, context, errors } = await newPage(browser, viewport)
+  await toGrade(page, URL_ALL, 'Asta', 3)
+  await until(page, () => document.querySelector('[data-grade-start]')?.getAttribute('data-grade-start') === 's.place.grade')
+  const gradeLine = await clipTextIn(page, 's.place.grade')
+  check((await page.locator('[data-grade-start]').innerText()).trim() === gradeLine, `${tag}: under klassetrinnene står "${gradeLine}"`)
+  check((await page.locator('.tv-onb').getByText('Alle starter i Engdalen').count()) === 0, `${tag}: ikke "Alle starter i Engdalen" for 3. kl.`)
+  await until(page, () => (window.__voiceLog ?? []).includes('s.place.grade'))
+  check(!(await voiceLog(page)).slice(-3).includes('s.onb.grade.start'), `${tag}: Pip siger den nye linje efter "Tredje klasse"`)
+  await placeShot(page, `${tag}-1-grade`)
+  await tapTargets(page, tag, 'klassetrin (3. kl.)')
+
+  // the explanation: not a test, stop when you like; start or skip, two equal buttons
+  await page.locator('.tv-onb [data-next]').click()
+  await page.waitForSelector('.tv-place[data-place="intro"] [data-place-start]')
+  await until(page, () => (window.__voiceLog ?? []).includes('s.place.intro.stop'))
+  check((await voiceLog(page)).includes('s.place.intro'), `${tag}: Pip forklarer, at det ikke er en prøve`)
+  const [a, b] = await Promise.all(['[data-place-start]', '[data-place-skip]'].map((s) => page.locator(s).boundingBox()))
+  check(Math.abs(a.width - b.width) < 1 && Math.abs(a.height - b.height) < 1, `${tag}: "Vis Pip, hvad du kan" og "Spring over" er lige store`)
+  await settle(page, 600)
+  await placeShot(page, `${tag}-2-intro`)
+  await tapTargets(page, tag, 'forklaringen')
+  check((await childNow(page)).grade === 0, `${tag}: intet skrevet, før stigen starter`)
+
+  // the ladder: the round's task views, Pip, "Det er nok"; no stone path, no stars, no praise
+  await page.locator('[data-place-start]').click()
+  await page.waitForSelector('.tv-place[data-place="ladder"] .tv-round__stage')
+  await until(page, () => document.querySelector('.tv-place .tv-round__stage')?.getAttribute('data-beat') === 'asking')
+  const first = (await ladder(page)).task
+  check(first?.skill === 'addTo20', `${tag}: stigen starter ved L5 (${first?.skill})`)
+  check((await childNow(page)).grade === 3, `${tag}: klassetrinnet er skrevet, da stigen startede`)
+  check((await page.locator('.tv-place [data-enough]').isVisible()) && (await page.locator('.tv-place .tv-stones').count()) === 0, `${tag}: "Det er nok" og ingen stensti`)
+  await settle(page, 400)
+  await placeShot(page, `${tag}-3-question`)
+  await tapTargets(page, tag, 'stigen')
+  const heard = (await voiceLog(page)).length
+
+  // two right (L5 passed), then L7: one right
+  for (let i = 0; i < 3; i++) {
+    const t = await answerLadder(page, true)
+    if (i === 0) {
+      await until(page, () => (window.__voiceLog ?? []).some((c) => c.startsWith('s.place.next.')))
+      await settle(page, 250)
+      await placeShot(page, `${tag}-4-thanks`)
+    }
+    await nextQuestion(page, t.id)
+  }
+  // a miss: the strategy and the big button with the right answer (SPEC §3.5), never logged
+  const missed = await answerLadder(page, false)
+  await page.waitForSelector('[data-teaching] [data-confirm]', { timeout: 10_000 })
+  await settle(page, 500)
+  await placeShot(page, `${tag}-5-miss`)
+  await page.locator('[data-teaching] [data-confirm]').click()
+  await nextQuestion(page, missed.id)
+  const after = await ladder(page)
+  check(after.task?.skill === 'subTo20', `${tag}: efter en fejl i springfasen går stigen et trin ned (L6, ${after.task?.skill})`)
+  const t5 = await answerLadder(page, true)
+  check(t5.skill === 'subTo20', `${tag}: L6 spørges`)
+  const said = (await voiceLog(page)).slice(heard)
+  check(said.filter((c) => c.startsWith('s.place.next.')).length >= 4, `${tag}: de samme venlige ord efter hvert svar (${said.filter((c) => c.startsWith('s.place.next.')).join(', ')})`)
+  check(!said.some((c) => c.startsWith('s.round.praise.') || c === 's.round.combo.five' || c === 's.round.done'), `${tag}: ingen ros, ingen "rigtigt"`)
+  check((await page.locator('.tv-fx, .tv-perfect').count()) === 0, `${tag}: ingen stjerner eller konfetti`)
+
+  // "Det er nok": what was shown counts
+  await page.locator('.tv-place [data-enough]').click()
+  await page.waitForSelector('.tv-place[data-place="outro"]')
+  await until(page, async () => (await import('/src/ui/screens/child/onboarding/placement/store.ts')).usePlacement.getState().status === 'over')
+  await until(page, () => (window.__voiceLog ?? []).includes('s.place.done'))
+  check(await page.locator('.tv-place [data-next]').isEnabled(), `${tag}: "Spil" efter tak`)
+  const kid = await childNow(page)
+  check(kid.placement.done && kid.placement.highest === 'L5', `${tag}: indplaceringen er gemt med P = L5 (${JSON.stringify(kid.placement)})`)
+  check(kid.seeded > 0 && kid.aboveBox2 === 0, `${tag}: ${kid.seeded} nøgler i boks 2 som seeded, ingen over`)
+  check(kid.log.length === 5 && kid.log.every((m) => m === 'placement'), `${tag}: 5 svar logget som placement, bekræftelsen ikke (${kid.log.join(', ')})`)
+  check(kid.perler === 0 && kid.xp === 0 && kid.rewards === 0, `${tag}: ingen perler, ingen XP, ingen belønninger`)
+  await settle(page, 600)
+  await placeShot(page, `${tag}-6-thanks`)
+  await tapTargets(page, tag, 'tak')
+
+  // "Spil": the first round, on the stone the map itself suggests in the child's home world
+  await page.locator('.tv-place [data-next]').click()
+  await until(page, async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'round', undefined, 20_000)
+  const nav = await page.evaluate(async () => {
+    const s = (await import('/src/app/nav.ts')).useNav.getState()
+    return { route: s.route, stack: s.stack }
+  })
+  const now = await childNow(page)
+  check(nav.route.node === now.next && nav.route.node !== 'w0-tal10-l1', `${tag}: første tur på kortets næste sten i ${now.world} (${nav.route.node}), ikke i Tællelunden`)
+  check(nav.stack.length === 1 && nav.stack[0].id === 'map', `${tag}: turen ligger oven på kortet`)
+  await page.waitForSelector('.tv-round[data-status]:not(.tv-place)', { timeout: 20_000 })
+  await settle(page, 1200)
+  await placeShot(page, `${tag}-7-round`)
+
+  // ✕ → "Til kortet": the map of that world, with the stone as its next one
+  await page.locator('.tv-round:not(.tv-place) .tv-topbar [data-clip="s.ui.close"]').click()
+  await page.waitForSelector('[data-pause] [data-leave]')
+  await page.locator('[data-pause] [data-leave]').click()
+  await page.waitForSelector('.tv-map [data-map-path]')
+  await settle(page, 1200)
+  const map = await page.evaluate(() => ({ world: document.querySelector('.tv-map')?.getAttribute('data-world'), next: document.querySelector('[data-stone][data-next]')?.getAttribute('data-stone') }))
+  check(map.world === now.world && map.next === nav.route.node, `${tag}: kortet viser ${map.world} med ${map.next} som næste sten`)
+  await placeShot(page, `${tag}-8-map`)
+
+  const keys = await storageKeys(page)
+  check(keys.every((k) => k.startsWith('talvennerne2.')), `${tag}: kun talvennerne2.-nøgler (${keys.join(', ')})`)
+  check(errors.length === 0, `${tag}: 0 konsolfejl${errors.length ? `: ${errors.join(' | ')}` : ''}`)
+  await context.close()
+}
+
+/** "Spring over" at once, and a reload in the middle of the ladder (the map, as skipped). */
+async function thirdGradeSkipAndReload(tag, viewport) {
+  {
+    const { page, context, errors } = await newPage(browser, viewport)
+    await toGrade(page, URL_ALL, 'Bo', 3)
+    await until(page, () => document.querySelector('[data-grade-start]')?.getAttribute('data-grade-start') === 's.place.grade')
+    await page.locator('.tv-onb [data-next]').click()
+    await page.waitForSelector('[data-place-skip]')
+    await settle(page, 400)
+    await page.locator('[data-place-skip]').click()
+    await until(page, async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'round', undefined, 20_000)
+    const node = (await route(page)).node
+    const kid = await childNow(page)
+    check(node === kid.next && node !== 'w0-tal10-l1', `${tag}: "Spring over" giver første tur på kortets næste sten (${node})`)
+    check(kid.grade === 3 && !kid.placement.done && kid.seeded === 0 && kid.log.length === 0, `${tag}: "Spring over" skriver kun klassetrinnet`)
+    check(errors.length === 0, `${tag}: 0 konsolfejl (spring over)${errors.length ? `: ${errors.join(' | ')}` : ''}`)
+    await context.close()
+  }
+  {
+    const { page, context, errors } = await newPage(browser, viewport)
+    await toGrade(page, URL_ALL, 'Cille', 3)
+    await until(page, () => document.querySelector('[data-grade-start]')?.getAttribute('data-grade-start') === 's.place.grade')
+    await page.locator('.tv-onb [data-next]').click()
+    await page.waitForSelector('[data-place-start]')
+    await page.locator('[data-place-start]').click()
+    await page.waitForSelector('.tv-place[data-place="ladder"] .tv-round__stage')
+    await until(page, () => document.querySelector('.tv-place .tv-round__stage')?.getAttribute('data-beat') === 'asking')
+    await answerLadder(page, true)
+    await page.evaluate(async () => (await import('/src/state/useProfile.ts')).useProfile.getState().flush())
+    await page.reload()
+    await page.waitForSelector('.tv-map [data-map-path]', { timeout: 30_000 })
+    await settle(page, 1200)
+    const kid = await childNow(page)
+    check((await route(page)).id === 'map', `${tag}: genindlæst midt i stigen lander barnet på kortet`)
+    check(kid.grade === 3 && !kid.placement.done && kid.seeded === 0, `${tag}: stigen tæller som sprunget over (klassetrin 3, intet seedet)`)
+    const map = await page.evaluate(() => document.querySelector('[data-stone][data-next]')?.getAttribute('data-stone'))
+    check(map === kid.next, `${tag}: kortet foreslår ${map}`)
+    await placeShot(page, `${tag}-9-reload`)
+    check(errors.length === 0, `${tag}: 0 konsolfejl (genindlæsning)${errors.length ? `: ${errors.join(' | ')}` : ''}`)
+    await context.close()
+  }
+}
+
+/** No ladder: as before, "Alle starter i Engdalen." and the first round in Tællelunden. */
+async function noLadder(tag, viewport, url, grade) {
+  const { page, context, errors } = await newPage(browser, viewport)
+  await toGrade(page, url, 'Dan', grade)
+  await until(page, () => (window.__voiceLog ?? []).includes('s.onb.grade.start'))
+  check(
+    (await page.locator('[data-grade-start]').getAttribute('data-grade-start')) === '' && (await page.locator('.tv-onb').getByText('Alle starter i Engdalen.').count()) === 1,
+    `${tag}: "Alle starter i Engdalen." under klassetrinnene`,
+  )
+  check((await page.locator('.tv-onb [data-next]').innerText()).includes('Spil'), `${tag}: knappen er "Spil" som før`)
+  await placeShot(page, `${tag}-grade`)
+  await page.locator('.tv-onb [data-next]').click()
+  await until(page, async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'round', undefined, 20_000)
+  check((await route(page)).node === 'w0-tal10-l1', `${tag}: første tur i Tællelunden`)
+  const kid = await childNow(page)
+  check(kid.grade === grade && !kid.placement.done && kid.seeded === 0, `${tag}: ingen indplacering`)
+  check(errors.length === 0, `${tag}: 0 konsolfejl${errors.length ? `: ${errors.join(' | ')}` : ''}`)
+  await context.close()
+}
+
 const browser = await launch()
 try {
+  // ── 3. klasse with the ladder (dev, ?worlds=all), and the grades and builds without it ──
+  await thirdGrade('place3-phone', { width: 393, height: 852 })
+  await thirdGrade('place3-small', { width: 375, height: 667 })
+  await thirdGrade('place3-ipad', { width: 820, height: 1180 })
+  await thirdGradeSkipAndReload('place3-phone', { width: 393, height: 852 })
+  await noLadder('place3-before-release', { width: 393, height: 852 }, URL_, 3)
+  await noLadder('place3-grade2-built', { width: 393, height: 852 }, URL_ALL, 2)
+
   // ── Phone ──
   {
     const { page, context, errors } = await newPage(browser, { width: 393, height: 852 })
