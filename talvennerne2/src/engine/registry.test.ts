@@ -95,7 +95,8 @@ function contract(defs: readonly SkillDef[]) {
             if (i % 7 !== 0) continue
             const { task } = buildTask(def, f, kind, makeRng(i), i)
             const byValue = new Map<string, ErrorTag[]>()
-            for (const c of def.candidates(f)) {
+            // the candidates of that presentation, when the skill says them per kind (candidatesFor)
+            for (const c of (def as SkillModule).candidatesFor?.(f, kind) ?? def.candidates(f)) {
               const key = String(c.value)
               if (!(key in task.distractorTags)) continue
               byValue.set(key, [...(byValue.get(key) ?? []), c.tag])

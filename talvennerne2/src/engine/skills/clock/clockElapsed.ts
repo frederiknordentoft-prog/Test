@@ -11,8 +11,10 @@
 // (dialStart), so the child turns the long hand by the time span, the hint's own strategy; a tick without
 // moving the hands is the start clock, 'operand'.
 // Wrong clocks (a is the answer, d the time asked for):
-//   wrongOperation   s − d: the hands turned the other way ("om" for "for … siden"). Left out for a half hour
-//                    across the hour (3:45 + ½ h → 3:15), where the same clock is the hour forgotten
+//   wrongOperation   s − d: the hands turned the other way ("om" for "for … siden"). On cards it is left out
+//                    for a half hour across the hour (3:45 + ½ h → 3:15), where the same clock is the hour
+//                    forgotten; on the dial, which starts on the start clock and turns the short hand with the
+//                    long one, the hour cannot be left behind: there it is the turn back (candidatesFor, SPEC A24)
 //   halfPastNext     a start on "halv": a + 60, halv tre taken as 3:30              concept, animated hint
 //                    (minusHalf from halv tre: the same clock as wrongOperation, so 'ambiguous')
 //   operand          s, the clock not moved
@@ -42,10 +44,10 @@ function parse(f: Pick<Fact, 'id'>) {
   return { family, s, d, a: dial(s + d), across: Math.floor(((s % 60) + d) / 60) !== 0 }
 }
 
-function candidates(f: Fact) {
+function candidatesFor(f: Fact, kind: TaskKind) {
   const { s, d, a, across } = parse(f)
   return clockCandidates(a, [
-    [across && Math.abs(d) === 30 ? null : s - d, 'wrongOperation'],
+    [across && Math.abs(d) === 30 && kind !== 'clockSet' ? null : s - d, 'wrongOperation'],
     [s % 60 === 30 ? a + 60 : null, 'halfPastNext'],
     [s, 'operand'],
     [across ? a - Math.sign(d) * 60 : null, 'near'],
@@ -88,7 +90,9 @@ export default {
   speech: (f: Fact, kind: TaskKind) => [
     say('frag.klokken_er'), clockSays(parse(f).s, 'end'), say(`s.clockElapsed.${kind === 'clockSet' ? 'set' : 'ask'}.${parse(f).family}`),
   ],
-  candidates,
+  // the cards' tags (a key's misconceptions are the same: wrongOperation is on the cards of the other starts)
+  candidates: (f: Fact) => candidatesFor(f, 'choice'),
+  candidatesFor,
   hint: (f, tag) => hint(f, tag),
   fastMs: (_f: Fact, kind: TaskKind) => (kind === 'choice' ? 10_000 : 20_000),
 } satisfies SkillModule

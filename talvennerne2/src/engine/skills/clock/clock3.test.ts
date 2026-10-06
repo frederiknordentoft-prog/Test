@@ -348,8 +348,9 @@ describe('misconceptions', () => {
       const t = build(elapsed, 'tid:plusHalf:195', kind)
       expect(t.answer).toBe(225)
       expect([classifyAnswer(t, 165), classifyAnswer(t, 195), classifyAnswer(t, 240)]).toEqual(['wrongOperation', 'operand', 'near'])
-      // 3:45 + ½ h set as 3:15 is the hour forgotten as likely as the hands turned back: never evidence
-      expect(classifyAnswer(build(elapsed, 'tid:plusHalf:225', kind), 195)).toBe('near')
+      // 3:45 + ½ h as 3:15: on a card the hour forgotten as likely as the hands turned back (never evidence); on the
+      // dial, which starts on 3:45 and turns the short hand with the long one, only the turn back reaches it
+      expect(classifyAnswer(build(elapsed, 'tid:plusHalf:225', kind), 195)).toBe(kind === 'clockSet' ? 'wrongOperation' : 'near')
       const half = build(elapsed, 'tid:plusHour:150', kind)
       expect([classifyAnswer(half, 270), classifyAnswer(half, 90)]).toEqual(['halfPastNext', 'wrongOperation'])
       expect(classifyAnswer(build(elapsed, 'tid:minusHalf:165', kind), 195)).toBe('wrongOperation')
