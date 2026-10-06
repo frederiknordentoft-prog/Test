@@ -4,7 +4,7 @@
 // rope, a teddy, a balloon … Same style as the materials: flat fill, a shade on the lower right, a
 // 45 % highlight and a coloured contour. Colours come from the materials palette only.
 import type { ReactNode } from 'react'
-import { arc, blob, circle, ellipse, join, lune, n, roundPoly, roundRect, segments } from '../../art/materials/geom'
+import { arc, blob, circle, ellipse, join, lune, n, poly, roundPoly, roundRect, segments, starPoints } from '../../art/materials/geom'
 import type { V2 } from '../../art/materials/geom'
 import { THING_IDS, ThingArt } from '../../art/materials'
 import { HIGHLIGHT, INK, MAT } from '../../art/materials/palette'
@@ -364,6 +364,89 @@ function compact(id: string): ReactNode | null {
         <>
           <Body d="M33 22c7 0 7 12 0 12" tone={t} />
           <Body d={blob([[10, 15], [36, 15], [34, 38], [29, 43], [17, 43], [12, 38]], 0.4)} tone={t} shade={roundRect(27, 18, 5, 21, 2.5)} hi={roundRect(15, 19, 3, 14, 1.5)} />
+        </>
+      )
+    }
+    // ─── The things unitChoice weighs in kilograms and grams (3. klasse), beside the feather, the strawberry and the key
+    case 'letter': {
+      // an envelope seen from the back: the closed flap as a V, the folds below it and a heart seal on the tip
+      const t = MAT.face
+      const heart: V2[] = [[24, 34.5], [19.6, 30], [19.8, 26.6], [22.8, 26.4], [24, 28], [25.2, 26.4], [28.2, 26.6], [28.4, 30]]
+      return (
+        <>
+          <Body d={roundRect(4, 13, 40, 28, 3)} tone={t} shade={roundRect(6, 35.5, 36, 3.6, 1.8)} hi={roundRect(7.5, 16, 10, 1.8, 0.9)} />
+          <path d={segments([[6.5, 38.5, 19, 28.5], [41.5, 38.5, 29, 28.5]])} stroke={t.outline} strokeWidth={1.4} strokeLinecap="round" opacity={0.5} />
+          <path d={poly([[5.5, 15], [24, 30], [42.5, 15]], false)} fill="none" stroke={t.outline} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />
+          <Part d={blob(heart, 0.75)} fill={MAT.strawberry.fill} line={MAT.strawberry.outline} sw={1.6} />
+        </>
+      )
+    }
+    case 'dog': {
+      // a dog from the side: a round body on four short legs, a big head with a floppy ear and a light snout,
+      // a raised tail and a red collar
+      const t = MAT.wood
+      const body: V2[] = [[12, 26], [20, 23], [31, 23.5], [36, 28], [35, 35], [27, 37.5], [16, 37.5], [10, 33]]
+      const legs = join(roundRect(12.5, 32, 5, 12, 2.5), roundRect(19.5, 34, 5, 10, 2.5), roundRect(26, 34, 5, 10, 2.5), roundRect(31, 31, 5, 13, 2.5))
+      return (
+        <>
+          <Part d={legs} fill={t.shade} line={t.outline} sw={2.4} />
+          <Part d={blob([[11.5, 28.5], [6.5, 23], [4.6, 15.5], [8, 15.2], [10, 21], [14.5, 25]], 0.7)} fill={t.fill} line={t.outline} sw={2.2} />
+          <Body d={blob(body, 0.85)} tone={t} shade={blob(shiftPts(body, 2, 2, 0.75), 0.85)} hi={ellipse(18, 27, 4, 1.6)} />
+          <Part d={roundRect(28.5, 24.5, 9, 4.4, 2.2)} fill={MAT.apple.fill} line={MAT.apple.outline} sw={1.6} />
+          <Body d={circle(36, 18.5, 9.5)} tone={t} />
+          <Part d={blob([[43.5, 20.5], [47, 23], [46.6, 27.4], [41, 28.6], [37, 26]], 0.8)} fill={MAT.chestnutCap.fill} line={t.outline} sw={2.2} />
+          <Part d={blob([[30.5, 11.5], [34.5, 11.6], [34.6, 21.5], [31, 26], [27.4, 22.4], [28.2, 15]], 0.8)} fill={MAT.chestnut.fill} line={MAT.chestnut.outline} sw={2} />
+          <path d={join(circle(39.6, 16, 1.6), ellipse(46.4, 22.8, 1.7, 1.3))} fill={INK} />
+        </>
+      )
+    }
+    case 'bike': {
+      // two wheels with silver rims and hubs, a red frame (seat tube, top tube, down tube and fork), the
+      // handlebar, a saddle and a pedal
+      const t = MAT.apple
+      const R: V2 = [11, 33]
+      const C: V2 = [22.5, 33]
+      const S: V2 = [19, 19]
+      const H: V2 = [34.5, 18]
+      const F: V2 = [37, 33]
+      const tubes = segments([[...R, ...C], [...C, ...S], [...S, ...R], [...S, ...H], [...H, ...C], [...H, ...F], [...H, 32.5, 12.5], [30, 12, 36.5, 12]])
+      return (
+        <>
+          <path d={join(circle(11, 33, 9.4), circle(37, 33, 9.4))} fill="none" stroke={INK} strokeWidth={3.2} />
+          <path d={join(circle(11, 33, 6.6), circle(37, 33, 6.6))} fill="none" stroke={MAT.silver.fill} strokeWidth={1.4} />
+          <path d={tubes} stroke={t.outline} strokeWidth={4.6} strokeLinecap="round" strokeLinejoin="round" />
+          <path d={tubes} stroke={t.fill} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+          <path d={join(circle(11, 33, 2), circle(37, 33, 2), circle(22.5, 33, 2.4))} fill={MAT.silver.fill} stroke={MAT.silver.outline} strokeWidth={1.2} />
+          <Part d={blob([[13.5, 17.2], [19, 15.4], [24, 16.4], [22.6, 19], [16, 19.2]], 0.8)} fill={MAT.chestnut.fill} line={MAT.chestnut.outline} sw={1.6} />
+          <path d={segments([[19.5, 37.5, 25.5, 37.5]])} stroke={INK} strokeWidth={2.4} strokeLinecap="round" />
+        </>
+      )
+    }
+    case 'sofa': {
+      // a two-seat sofa from the front: a high back, two cushions, rounded arms and short dark legs
+      const t = MAT.bar
+      return (
+        <>
+          <path d={join(roundRect(8, 39, 4.4, 5, 1.2), roundRect(35.6, 39, 4.4, 5, 1.2))} fill={INK} />
+          <Body d={roundRect(8, 11, 32, 21, 5)} tone={t} shade={roundRect(29.5, 13.5, 7.5, 16, 3)} hi={roundRect(11.5, 14.5, 3, 11, 1.5)} />
+          <Body d={join(roundRect(10.5, 27, 13.5, 9, 3), roundRect(24, 27, 13.5, 9, 3))} tone={{ ...t, fill: t.light }} />
+          <Part d={roundRect(9, 34, 30, 7, 2.5)} fill={t.shade} line={t.outline} sw={SW} />
+          <Body d={join(roundRect(3, 21.5, 9.5, 20, 4.5), roundRect(35.5, 21.5, 9.5, 20, 4.5))} tone={t} shade={join(roundRect(8, 25, 3, 14, 1.5), roundRect(40.5, 25, 3, 14, 1.5))} />
+        </>
+      )
+    }
+    case 'suitcase': {
+      // a suitcase with a handle on top, two leather straps with brass buckles and a star sticker
+      const t = MAT.counterB
+      const handle = arc(24, 15.5, 6.4, 180, 360)
+      return (
+        <>
+          <path d={handle} fill="none" stroke={MAT.chestnut.outline} strokeWidth={5.2} strokeLinecap="round" />
+          <path d={handle} fill="none" stroke={MAT.chestnut.fill} strokeWidth={2.6} strokeLinecap="round" />
+          <Body d={roundRect(4, 15, 40, 28, 4)} tone={t} shade={roundRect(36.5, 17.5, 5, 23, 2.5)} hi={roundRect(7.5, 18, 2.6, 15, 1.3)} />
+          <Part d={join(roundRect(12, 15, 5, 28, 1), roundRect(31, 15, 5, 28, 1))} fill={MAT.chestnut.fill} line={MAT.chestnut.outline} sw={1.6} />
+          <Part d={join(roundRect(11, 20, 7, 4.6, 1.2), roundRect(30, 20, 7, 4.6, 1.2))} fill={MAT.gold.fill} line={MAT.gold.outline} sw={1.4} />
+          <Part d={roundPoly(starPoints(24, 31, 5.6, 2.6), 0.8)} fill={MAT.star.light} line={MAT.star.outline} sw={1.4} />
         </>
       )
     }

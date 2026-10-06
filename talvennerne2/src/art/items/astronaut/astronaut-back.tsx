@@ -3,7 +3,7 @@
 // blusser en lille, rund legetøjsflamme (to dråber i hinanden). Stropperne tegnes i stroplaget (6b: over kroppen og
 // kropstøjet, under poterne og halsgenstanden), så de går ned over brystet og ind under armene; de klippes til
 // kroppen og har et lille rundt spænde. Alene (butik) ses jetpacken forfra med begge flasker, ryggens plade og
-// stropperne i siderne. På butikskortet på dyret (`showcase`) er jetpacken skubbet ud til venstre og vippet, så den
+// stropperne i siderne. På butikskortet på dyret (`showcase`) er jetpacken skubbet ud til venstre, vippet og lidt forstørret, så den
 // venstre flaske med flammen ses helt ved siden af kroppen (som rygsækken, review G1-r4, B1). Pegasus, drage og ugle
 // har ryggen fuld af vinger (`occupies`), så de bærer den ikke. (0,0) = bodyCenter, tegnet ved bodyWidth 100.
 import { ribbon } from '../../rig/shapes'
@@ -48,7 +48,7 @@ function pack(t: typeof TANK, plate: boolean, c: ItemArtProps['c'], sw: number):
 }
 
 /** Butikskortet på dyret: jetpacken ud til venstre og vippet, så venstre flaske og flamme ses ved siden af kroppen. */
-const SHOWCASE = 'translate(-26 -6) rotate(-10 0 6)'
+const SHOWCASE = 'translate(-40 -14) rotate(-12 0 6) scale(1.22)'
 /** Stropperne alene (butik): de buer ud i siderne bag flaskerne. */
 const SOLO_STRAPS = S.join(S.spline([[-24, -38], [-40, -22], [-42, 4], [-34, 22]]), S.spline([[24, -38], [40, -22], [42, 4], [34, 22]]))
 

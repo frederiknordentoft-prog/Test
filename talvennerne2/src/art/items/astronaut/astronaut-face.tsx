@@ -22,8 +22,9 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   // Over og under øjnene med ekstra luft til blikket i tænker (øjet løftes op til 3 enheder).
   const top = cy - uy - 2.6 * k
   const bot = cy + uy + 1.2 * k
-  // Enderne: uden for øjnenes glasenheder, men inden for hovedets omrids (minus stellets bredde).
-  const end = Math.min(mid - L.x + ux * 1.32, Math.max(mid - L.x + ux * 1.04, mid - side - sw * 1.2))
+  // Enderne: uden for øjnenes glasenheder (og de lukkede øjnes vipper, der svinger 1,35 · øjets bredde ud), men så vidt
+  // muligt inden for hovedets omrids (minus stellets bredde).
+  const end = Math.min(mid - L.x + ux * 1.32, Math.max(mid - L.x + ux * 1.04 + 2.4 * k, mid - side - sw * 1.2))
   const x0 = mid - end
   const x1 = mid + end
   // Næsehakket forneden mellem øjnene.
@@ -43,8 +44,8 @@ const front: ItemArt = ({ c, sw, a, local, stage, solo }) => {
   const visor = S.blob(S.symmetric(half, mid), 0.62)
   // Lampe-puderne i enderne og glimtet i det øverste ydre hjørne (uden for øjet).
   const pr = 4.4 * k
-  const pods = S.join(S.circle(x0 - pr * 0.25, cy - uy * 0.1, pr), S.circle(x1 + pr * 0.25, cy - uy * 0.1, pr))
-  const lights = S.join(S.circle(x0 - pr * 0.25, cy - uy * 0.1, pr * 0.42), S.circle(x1 + pr * 0.25, cy - uy * 0.1, pr * 0.42))
+  const pods = S.join(S.circle(x0 - pr * 0.5, cy - uy * 0.1, pr), S.circle(x1 + pr * 0.5, cy - uy * 0.1, pr))
+  const lights = S.join(S.circle(x0 - pr * 0.5, cy - uy * 0.1, pr * 0.42), S.circle(x1 + pr * 0.5, cy - uy * 0.1, pr * 0.42))
   const glare = S.join(...[L.x - ux * 0.62, R.x - ux * 0.62].map((x) => S.ellipse(x, top + 3.4 * k, 1.1 * k, 3.4 * k, 62)))
   return draw(
     [visor, c.trim, , , { opacity: solo ? SOLO_TINT : TINT }],

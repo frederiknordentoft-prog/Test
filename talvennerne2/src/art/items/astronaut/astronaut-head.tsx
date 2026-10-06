@@ -32,16 +32,18 @@ const antennaAt = (horn: Pt | null | undefined): Vec => (horn ? [horn.x - 22, -2
 
 const front: ItemArt = ({ c, sw, a, local, holes, horn, stage, solo }) => {
   const lit = S.litCopy(DOME, [-26, -18], 0.88)
-  // Antennen klemmes, så kuglen (med kontur) holder sig under loftet.
+  // Antennen klemmes, så kuglen (med kontur) holder sig under loftet; er der ikke plads til den korteste (stor på de
+  // høje arter med store ører), har hjelmen ingen antenne.
   const [bx, by] = antennaAt(horn)
   const room = by - ceiling({ a, local, stage, solo }) - ANTENNA.r - sw
-  const len = Math.max(ANTENNA.min, Math.min(ANTENNA.len, room))
+  const antenna = room >= ANTENNA.min
+  const len = Math.min(ANTENNA.len, room)
   const tip: Vec = [bx - (horn ? 2.4 : 0), by - len]
   const lights = S.join(...LIGHTS.map((x) => S.circle(x, BAND.y0 + (BAND.y1 - BAND.y0) / 2 + BAND.sag * (1 - (x / BAND.x) ** 2), 2.2)))
   // Glimtet på visiret (skråt, oppe til venstre) og skallens højlys ude til venstre under visiret.
   const glare = S.join(S.ellipse(-18.6, -14.6, 1.9, 5.6, 66), S.ellipse(-6.4, -17.8, 1, 2.6, 78))
   return draw(
-    [S.capsule([bx, by + 3], tip, 1.6), c.trim, c.trimOutline, sw * 0.7],
+    antenna && [S.capsule([bx, by + 3], tip, 1.6), c.trim, c.trimOutline, sw * 0.7],
     [S.blob(DOME, 0.9), c.mainShade],
     [S.blob(lit, 0.9), c.main],
     [S.blob(DOME, 0.9), 'none', c.outline, sw],
@@ -51,10 +53,10 @@ const front: ItemArt = ({ c, sw, a, local, holes, horn, stage, solo }) => {
     [HINGES, c.trim, c.trimOutline, sw * 0.85],
     [HINGE_DOTS, c.trimShade],
     holeSeg({ c, a, local, holes, horn }),
-    [S.circle(tip[0], tip[1], ANTENNA.r), c.accent, c.accentOutline, sw * 0.8],
+    antenna && [S.circle(tip[0], tip[1], ANTENNA.r), c.accent, c.accentOutline, sw * 0.8],
     [S.softBand(-BAND.x, BAND.x, BAND.y0, BAND.y1, BAND.sag, BAND.sag + 0.2), c.trim, c.trimOutline, sw],
     [lights, c.accent, c.accentOutline, sw * 0.45],
-    [S.join(S.ellipse(-22, -26.4, 6, 2.2, -22), S.circle(tip[0] - 1.3, tip[1] - 1.3, 1.1)), c.highlight],
+    [S.join(S.ellipse(-22, -26.4, 6, 2.2, -22), antenna && S.circle(tip[0] - 1.3, tip[1] - 1.3, 1.1)), c.highlight],
   )
 }
 
