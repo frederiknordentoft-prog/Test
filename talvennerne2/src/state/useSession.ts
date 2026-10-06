@@ -8,7 +8,7 @@ import {
   createProfile as storeCreate, deleteProfile as storeDelete, listProfiles, type CreateProfileInput,
 } from '../data/repo/profiles'
 import type { Animal, FrameColor, Grade, ProfileDoc, ProfileId } from '../engine/types'
-import { useProfile } from './useProfile'
+import { useProfile, withGradeOpenings } from './useProfile'
 import { useRound } from './useRound'
 
 /**
@@ -89,6 +89,21 @@ function summarize(doc: ProfileDoc): ProfileSummary {
 function pauseRunningRound(): void {
   const round = useRound.getState()
   if (RUNNING.has(round.status)) round.pause()
+}
+
+/**
+ * The file's child with what its grade opens (useProfile.withGradeOpenings), before it is stored: an
+ * import is the same child as at its next load. If the openings cannot load, the file goes in as it
+ * is, and the next load opens them.
+ */
+async function gradeOpened(entry: ExportProfile): Promise<ExportProfile> {
+  try {
+    const doc = await withGradeOpenings(entry.doc)
+    return doc === entry.doc ? entry : { ...entry, doc }
+  } catch (err) {
+    console.error(err)
+    return entry
+  }
 }
 
 let bootPromise: Promise<void> | null = null
@@ -202,10 +217,12 @@ export const useSession = create<SessionStore>((set, get) => {
       const replacingActive = target.mode === 'replace' && useProfile.getState().profile?.id === target.profileId
       if (replacingActive && useRound.getState().status !== 'idle') useRound.getState().quit()
       const { importProfile: storeImport } = await import('../data/export')
+      // a child in 3. klasse arrives with what its grade opens; 0.–2. klasse exactly as in the file
+      const file = entry.doc.grade === 3 ? await gradeOpened(entry) : entry
       // the active child stays loaded while its document is replaced, and is then reloaded in place
       const doc = replacingActive
-        ? await useProfile.getState().replaceLoaded(() => storeImport(entry, target))
-        : await storeImport(entry, target)
+        ? await useProfile.getState().replaceLoaded(() => storeImport(file, target))
+        : await storeImport(file, target)
       await get().refreshProfiles()
       if (replacingActive && useProfile.getState().profile?.id === doc.id) {
         set({ activeId: doc.id, lastProfileId: doc.id })
