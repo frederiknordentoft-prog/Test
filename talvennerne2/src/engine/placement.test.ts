@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   LADDER, PLACEMENT_MAX_TASKS, answerPlacement, placementAvailable, placementResult, placementTask, seedFromPlacement,
-  startPlacement, stageOf, type PlacementRun,
+  seedStage, startPlacement, stageOf, type PlacementRun,
 } from './placement'
 import { makeRegistry, skillKeys } from './registry'
 import { FIXTURE_SKILLS, addTo10Fixture, hear20Fixture } from './testing/fixtureSkills'
@@ -130,6 +130,26 @@ describe('seeding from placement', () => {
     expect(p.nodes['w0-plus10-friend']).toBeUndefined()
     expect(p.nodes['w0-plus10-trial']).toBeUndefined()
     expect(p.nodes['w1-tieren-l1']).toBeUndefined() // addTo20 (1.4) is not below P
+  })
+
+  it('reaches as far as the highest rung up to P: hear100 (L7) is a lower stage than addTo20 (L5)', () => {
+    expect(seedStage('L5')).toBe(stageOf('L5'))
+    expect(stageOf('L7')).toBe(1.2)
+    expect(seedStage('L7')).toBe(1.6)
+    expect(seedStage('L8')).toBe(1.6)
+    expect(seedStage('L11')).toBe(2.3)
+    expect(seedStage('L14')).toBe(stageOf('L14'))
+    for (const c of LADDER) expect(seedStage(c.id), c.id).toBeGreaterThanOrEqual(stageOf(c.id))
+    // a 3. klasse child who passed L5 and L7 and then stepped down to L8: addTo20 and subTo20 are seeded
+    let run = startPlacement(3, 5, true)!
+    for (const r of [true, true, true, true, false, true, true]) run = answerPlacement(run, r)
+    expect(run.passed).toEqual(['L5', 'L7', 'L8'])
+    expect(placementResult(run)).toBe('L8')
+    const p = seedFromPlacement(newProfile(), placementResult(run), { skills: ladderReg, day: DAY, now: NOW })
+    for (const skill of ['addTo20', 'subTo20', 'hear100', 'tensOnes'] as const) {
+      for (const id of skillKeys(ladderReg.get(skill)!)) expect(p.keys[id], id).toMatchObject({ box: 2, seeded: true })
+    }
+    expect(skillKeys(ladderReg.get('add100Carry')!).some((id) => p.keys[id])).toBe(false)
   })
 
   it('records a placement that passed nothing without seeding', () => {

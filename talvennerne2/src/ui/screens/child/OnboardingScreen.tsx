@@ -4,7 +4,12 @@
 // egg hatches on the third tap (a gentle hand after 60 s, never a countdown), the new friend gets one
 // of six suggested names (read aloud one by one) or a typed one, and the child picks a grade; Pip
 // says honestly that everyone starts in Engdalen. Then the map, with the first round of Engdalen on
-// top. The placement is not built yet.
+// top.
+//
+// A child in 3. klasse is offered "Vis Pip hvad du kan" (onboarding/placement/, its own chunk) once
+// Stjernefjeldet is built: Pip says so instead of "Alle starter i Engdalen", "Næste" leads to the
+// ladder (or "Spring over"), and the first round starts on the map's next stone in the child's own
+// world. Before that, and for 0.–2. klasse always, the onboarding is the one above.
 //
 // The child is created at the hatch (see onboarding/flow.ts), with the id the eggs were drawn for:
 // until the first crack every step can be undone; from there on there is no way back to an egg the
@@ -19,6 +24,7 @@ import { STARTERS } from '../../../content/catalog'
 import { nameClip, nameSuggestions } from '../../../content/names'
 import { ProfileLimitError, defaultName } from '../../../data/repo/profiles'
 import type { Animal, ClipId, Grade, SpeechPart, SpeciesId } from '../../../engine/types'
+import { worldBuilt } from '../../../meta/built'
 import { useSession } from '../../../state/useSession'
 import { Button } from '../../design/Button'
 import { SpokenText } from '../../design/SpokenText'
@@ -31,8 +37,13 @@ import { PipFigure } from './onboarding/Pip'
 import { EggChoice, EggHatch, FriendStep, GradeStep, NameStep, WriteNameSheet } from './onboarding/steps'
 import './onboarding/first-start.css'
 
-type Step = 'name' | 'egg' | 'friend' | 'grade'
+type Step = 'name' | 'egg' | 'friend' | 'grade' | 'placement'
+/** The dots in the top bar ("Vis Pip hvad du kan" has its own screen after them). */
 const STEPS: readonly Step[] = ['name', 'egg', 'friend', 'grade']
+
+/** "Vis Pip hvad du kan": fetched on the grade step, and only once Stjernefjeldet is built. */
+type Ladder = typeof import('./onboarding/placement')
+const loadLadder = (): Promise<Ladder> => import('./onboarding/placement')
 
 /** No hatch after this long: a gentle hand and Pip's hint (SPEC §8: "klæk inden for 60 s"). */
 const HATCH_HELP_MS = 60_000
@@ -70,6 +81,8 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
   const [writing, setWriting] = useState(false)
   const [reading, setReading] = useState<number | null>(null)
   const [grade, setGrade] = useState<Grade | null>(null)
+  /** The placement's chunk: null until fetched, 'failed' when it could not load (then as before). */
+  const [ladder, setLadder] = useState<Ladder | 'failed' | null>(null)
   const [finishing, setFinishing] = useState(false)
   const [help, setHelp] = useState(false)
   const [idle, setIdle] = useState(0)
@@ -108,6 +121,9 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
         return ['s.onb.friend.ask']
       case 'grade':
         return ['s.onb.grade.ask']
+      case 'placement':
+        // the placement's own screen speaks for itself
+        return []
     }
   }
   const shown = line()[0]
@@ -141,6 +157,7 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
   const lineKey = `${step}|${picked ?? ''}|${friend ? 1 : 0}|${error ?? ''}|${names.length}`
   useEffect(() => {
     if (step !== 'name') leftName.current = true
+    if (step === 'placement') return
     const h = speakLine()
     if (step === 'friend' && names.length > 0) void readNames(h)
   }, [lineKey])
@@ -210,9 +227,47 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
     say([clip ? { clip } : { free: n }])
   }
 
+  // ── "Vis Pip hvad du kan" (3. klasse, once Stjernefjeldet is built: onboarding/placement/) ──
+  const fjeld = worldBuilt('fjeld')
+  const placement = ladder && ladder !== 'failed' ? ladder : null
+  const offered = !!placement && placement.placementOffered(grade)
+  /** 3. klasse is chosen while the placement's chunk is still on its way: "Spil" waits a moment. */
+  const waiting = grade === 3 && fjeld && ladder === null
+  /** The grade tapped last (Pip's line for an earlier tap is dropped). */
+  const lastGrade = useRef<Grade | null>(null)
+
+  const fetchLadder = (): Promise<Ladder | null> => {
+    if (ladder === 'failed') return Promise.resolve(null)
+    if (ladder) return Promise.resolve(ladder)
+    return loadLadder().then(
+      (m) => {
+        setLadder(m)
+        if (m.placementOffered(m.PLACEMENT_GRADE)) m.preloadPlacementVoice()
+        return m
+      },
+      () => {
+        setLadder('failed')
+        return null
+      },
+    )
+  }
+  useEffect(() => {
+    if (step === 'grade' && fjeld && ladder === null) void fetchLadder()
+  }, [step])
+
+  /** Under the grades and after the grade's name: where the child starts. */
+  const startLine = (g: Grade | null, m: Ladder | null): ClipId => (m?.placementOffered(g) ? 's.place.grade' : 's.onb.grade.start')
+
   const chooseGrade = (g: Grade) => {
     setGrade(g)
-    say(clips(`s.onb.grade.${g}`, 's.onb.grade.start'))
+    lastGrade.current = g
+    if (g === 3 && fjeld && ladder === null) {
+      void fetchLadder().then((m) => {
+        if (lastGrade.current === g) say(clips(`s.onb.grade.${g}`, startLine(g, m)))
+      })
+      return
+    }
+    say(clips(`s.onb.grade.${g}`, startLine(g, placement)))
   }
 
   const finish = async () => {
@@ -241,6 +296,8 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
         return null
       case 'grade':
         return () => setStep('friend')
+      case 'placement':
+        return null
     }
   })()
 
@@ -265,9 +322,17 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
           />
         )
       case 'grade':
-        return <Button clip="s.ui.play" icon="play" disabled={grade === null || finishing} onClick={() => void finish()} data-next="" />
+        if (offered) return <Button clip="s.ui.next" iconEnd="next" onClick={() => setStep('placement')} data-next="" />
+        return <Button clip="s.ui.play" icon="play" disabled={grade === null || finishing || waiting} onClick={() => void finish()} data-next="" />
+      case 'placement':
+        return null
     }
   })()
+
+  if (step === 'placement' && placement && grade !== null) {
+    const { PlacementStep } = placement
+    return <PlacementStep grade={grade} onBack={() => setStep('grade')} />
+  }
 
   const at = STEPS.indexOf(step)
   return (
@@ -305,7 +370,7 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
         {step === 'friend' && friend && (
           <FriendStep friend={friend} names={names} chosen={chosen} custom={custom} reading={reading} onChoose={chooseName} onWrite={() => setWriting(true)} />
         )}
-        {step === 'grade' && <GradeStep grade={grade} onGrade={chooseGrade} />}
+        {step === 'grade' && <GradeStep grade={grade} onGrade={chooseGrade} start={startLine(grade, placement)} />}
 
         <div className="tv-first__actions">{actions}</div>
       </div>
