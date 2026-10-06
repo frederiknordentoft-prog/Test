@@ -11,7 +11,9 @@
 //                      then the map with the first round on top
 //
 // The grade is asked after the friend (the SPEC order), so the child is created with grade 0 and the
-// chosen grade is set at the end. Placement is not built yet: every child starts in Engdalen.
+// chosen grade is set at the end. Every child starts in Engdalen, except a child in 3. klasse once
+// Stjernefjeldet is built: "Vis Pip hvad du kan" (onboarding/placement/) writes the grade with
+// applyOnboardingGrade and starts the first round on the map's next stone instead.
 import { useNav } from '../../../../app/nav'
 import type { CreatureId } from '../../../../art/rig/types'
 import { AVAILABLE_SPECIES } from '../../../../art/species/registry'
@@ -102,21 +104,31 @@ async function registeredSkillIds(): Promise<ReadonlySet<SkillId>> {
   return new Set(registeredSkills().map((d) => d.id))
 }
 
-/**
- * The grade (and the places it opens: dashboard/openings.ts), then write everything and start the
- * first round from the map. Every child starts in Engdalen, and Pip says so on the grade step.
- */
-export async function finishOnboarding(grade: Grade): Promise<NodeId> {
+/** The grade and the places it opens (dashboard/openings.ts), written; the hatch is behind us. */
+export async function applyOnboardingGrade(grade: Grade): Promise<void> {
   const profile = useProfile.getState()
   const registered = grade > 0 ? await registeredSkillIds() : new Set<SkillId>()
   profile.update((p) => applyGrade(p, grade, registered))
   await profile.flush()
   await useSession.getState().refreshProfiles()
   hatchedFor = null
-  const node = firstNode()
+}
+
+/** The map, with the first round on top (✕ → "Til kortet" lands on the map). */
+export function startFirstRound(node: NodeId): void {
   const nav = useNav.getState()
   nav.root({ id: 'map' })
   nav.go({ id: 'round', node })
+}
+
+/**
+ * The grade (and the places it opens: dashboard/openings.ts), then write everything and start the
+ * first round from the map. Every child starts in Engdalen, and Pip says so on the grade step.
+ */
+export async function finishOnboarding(grade: Grade): Promise<NodeId> {
+  await applyOnboardingGrade(grade)
+  const node = firstNode()
+  startFirstRound(node)
   return node
 }
 

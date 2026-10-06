@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { NAME_MAX_LENGTH, cleanAnimalName, nameClip } from '../../../../content/names'
-import type { Animal, Grade, SpeciesId } from '../../../../engine/types'
+import type { Animal, ClipId, Grade, SpeciesId } from '../../../../engine/types'
 import { Button } from '../../../design/Button'
 import { Icon } from '../../../design/Icon'
 import { Sheet } from '../../../design/Sheet'
@@ -27,13 +27,13 @@ function Choice({ selected, speaking, className, onClick, children, ...data }: {
   return (
     <button
       type="button"
-      className={cx('tv-choice', selected && 'is-selected', speaking && 'is-speaking', 'tv-touch', className)}
+      className={cx('tv-bigchoice', selected && 'is-selected', speaking && 'is-speaking', 'tv-touch', className)}
       aria-pressed={selected}
       onClick={onClick}
       {...pressProps}
       {...data}
     >
-      <span className="tv-choice__face">{children}</span>
+      <span className="tv-bigchoice__face">{children}</span>
     </button>
   )
 }
@@ -227,10 +227,11 @@ export function WriteNameSheet({ open, initial, onClose, onDone }: { open: boole
 export const GRADES: readonly Grade[] = [0, 1, 2, 3]
 
 /**
- * Four big grades, and the honest line under them: every child starts in Engdalen until the
- * placement exists (review P2-10); Pip says it too once a grade is chosen.
+ * Four big grades, and the honest line under them: every child starts in Engdalen (review P2-10);
+ * Pip says it too once a grade is chosen. `start` replaces the line for a child who is offered
+ * "Vis Pip hvad du kan" (3. klasse once Stjernefjeldet is built).
  */
-export function GradeStep({ grade, onGrade }: { grade: Grade | null; onGrade: (g: Grade) => void }) {
+export function GradeStep({ grade, onGrade, start = 's.onb.grade.start' }: { grade: Grade | null; onGrade: (g: Grade) => void; start?: ClipId }) {
   return (
     <div className="tv-onb__stage tv-onb__stage--grade">
       <div className="tv-grades">
@@ -243,8 +244,8 @@ export function GradeStep({ grade, onGrade }: { grade: Grade | null; onGrade: (g
           </Choice>
         ))}
       </div>
-      <div className="tv-onb__start" data-grade-start="">
-        <SpokenText as="p" clip="s.onb.grade.start" className="tv-onb__hint" />
+      <div className="tv-onb__start" data-grade-start={start === 's.onb.grade.start' ? '' : start}>
+        <SpokenText as="p" clip={start} className="tv-onb__hint" key={start} />
       </div>
     </div>
   )
