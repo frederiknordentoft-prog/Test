@@ -119,12 +119,9 @@ export function classifyAnswer(task: Task, given: AnswerValue): ErrorTag | null 
   if (task.kind === 'share' && given === -1) return 'shareUnequal'
   // A value the skill tagged wins — including 'near' and 'operand' — and stops here: an operand
   // must never be read as a reversed number just because it happens to be one.
-  let tagged = task.distractorTags[dialKey(task, given)]
-  // a set counts in any order, as isCorrect counts it: 'y:2|x:4' is the tagged 'x:4|y:2' (sortOrder keeps its order)
-  if (!tagged && typeof given === 'string' && given.includes('|')) {
-    const same = Object.keys(task.distractorTags).find((k) => isCorrect({ ...task, answer: k, accept: [] }, given))
-    if (same !== undefined) tagged = task.distractorTags[same]
-  }
+  // A set counts in any order, as isCorrect counts it: 'y:2|x:4' is the tagged 'x:4|y:2' (sortOrder keeps its order).
+  const tags = task.distractorTags
+  const tagged = tags[dialKey(task, given)] ?? tags[Object.keys(tags).find((k) => isCorrect({ ...task, answer: k, accept: [] }, given)) ?? '']
   if (tagged) return tagged
   if (typeof given === 'number' && swappedAnswer(task) === given) return 'digitSwap'
   return 'other'

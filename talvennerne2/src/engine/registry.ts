@@ -8,7 +8,8 @@ import type { NodeDef, RegionSkill } from '../content/curriculum'
 import { hashSeed, makeRng, type Rng } from './rng'
 import type { BuildExtra, KeyOption } from './roundBuilder'
 import { buildTask, isMisconceptionId, masteryKeyOf, operationOfPrompt, type Operation } from './tasks'
-import { extrasOf, kindsOf } from './skills/types'
+import type { SkillExtras } from './skills/types'
+import { isCorrect } from './answer'
 
 /**
  * The skill register (SPEC §2.4). Every file in src/engine/skills/<domain>/ default-exports one
@@ -60,6 +61,12 @@ export const registeredSkills = (): readonly SkillDef[] => skillRegistry().all
 export const getSkill = (id: SkillId): SkillDef | undefined => skillRegistry().get(id)
 
 // ─── Facts and keys ─────────────────────────────────────────────────────────
+
+/** A skill's optional hooks (skills/types.ts extrasOf, read here without importing it into the app's first chunk). */
+const extrasOf = (def: SkillDef): SkillExtras => def as SkillDef & SkillExtras
+
+/** The kinds a fact is asked in: the skill's `kindsFor` (SkillExtras), else every kind of the skill. */
+export const kindsOf = (def: SkillDef, fact: Fact): readonly TaskKind[] => extrasOf(def).kindsFor?.(fact) ?? def.kinds
 
 const factCache = new WeakMap<SkillDef, readonly Fact[]>()
 /** def.enumerate(), computed once per SkillDef. */
@@ -145,6 +152,21 @@ export function validateSkill(def: SkillDef): string[] {
       const kinds = kindsOf(def, f)
       if (kinds.length === 0 || kinds.some((k) => !def.kinds.includes(k))) out.push(`${def.id}: kindsFor(${f.id}) is [${kinds}], not some of [${def.kinds}]`)
       else if (production.length > 0 && !kinds.some((k) => production.includes(k))) out.push(`${def.id}: kindsFor(${f.id}) has no production kind`)
+    }
+  }
+  // a dial's own start (dialStart) keeps GENFIX2's rules for every fact: on the clock's step, never the answer,
+  // never a misconception's clock
+  const ext = extrasOf(def)
+  if (ext.dialStart && def.kinds.includes('clockSet')) {
+    for (const f of facts) {
+      const own = ext.dialStart(f, 'clockSet')
+      if (own === undefined) continue
+      const t = buildTask(def, f, 'clockSet', makeRng(hashSeed(f.id)), 0).task
+      const at = ((Math.round(own) % 720) + 720) % 720
+      const tag = t.distractorTags[String(at)]
+      const step = t.prompt.scene === 'clock' ? t.prompt.step : 60
+      const why = at % step !== 0 ? `off the clock's step (${step})` : isCorrect(t, at) ? 'the answer' : isMisconceptionId(tag) ? `the ${tag} clock` : ''
+      if (why) out.push(`${def.id}: dialStart(${f.id}) is ${own}, ${why}`)
     }
   }
   return out

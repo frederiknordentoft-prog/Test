@@ -73,6 +73,13 @@ export interface SkillExtras {
    * in these. Default: `def.kinds`.
    */
   kindsFor?(fact: Fact): readonly TaskKind[]
+  /**
+   * Where a clockSet dial starts (Task.dialStart), when the task has a time of its own to start from:
+   * clockElapsed's start clock, so the child turns the long hand by the time span. It keeps GENFIX2's
+   * rules — on the clock's step, never the answer, never a misconception's clock (validateSkill checks
+   * every fact, and tasks.ts falls back to a drawn start otherwise). Default: drawn by the engine.
+   */
+  dialStart?(fact: Fact, kind: TaskKind): number | undefined
 }
 
 /** What a file in src/engine/skills/<domain>/<skillId>.ts default-exports. */
@@ -80,6 +87,3 @@ export type SkillModule = SkillDef & SkillExtras
 
 /** Read the optional hooks of a registered SkillDef. */
 export const extrasOf = (def: SkillDef): SkillExtras => def as SkillDef & SkillExtras
-
-/** The kinds a fact is asked in: the skill's `kindsFor`, else every kind of the skill. */
-export const kindsOf = (def: SkillDef, fact: Fact): readonly TaskKind[] => extrasOf(def).kindsFor?.(fact) ?? def.kinds

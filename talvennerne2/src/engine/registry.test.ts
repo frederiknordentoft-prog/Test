@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  collectSkills, factsOf, goldenTask, isSkillDef, keyInfo, keysForNode, keysForSkills, makeRegistry, newBuildSession,
+  collectSkills, factsOf, goldenTask, isSkillDef, keyInfo, keysForNode, keysForSkills, kindsOf, makeRegistry, newBuildSession,
   registeredSkills, skillKeyIndex, skillKeys, skillRegistry, validateSkill,
 } from './registry'
 import { FIXTURE_SKILLS, add100CarryFixture, addTo10Fixture, hear20Fixture } from './testing/fixtureSkills'
@@ -13,7 +13,7 @@ import { NODE_BY_ID } from '../content/curriculum'
 import { hashSeed, makeRng } from './rng'
 import { emptyKey } from './mastery'
 import type { ErrorTag, Fact, KeyState, SkillDef, TaskKind } from './types'
-import { extrasOf, kindsOf, type SkillModule } from './skills/types'
+import { extrasOf, type SkillModule } from './skills/types'
 
 const fixtures = makeRegistry(FIXTURE_SKILLS)
 const ctx = (over: Partial<Parameters<typeof keysForNode>[1]> = {}) => ({ skills: fixtures, states: {}, audioVerified: true, ...over })
@@ -289,6 +289,24 @@ describe('a fact asked only in its own kinds (SkillExtras.kindsFor)', () => {
       expect(keys.length, def.id).toBeGreaterThan(0)
       for (const k of keys) expect(k.kinds, k.key).toEqual(def.kinds)
     }
+  })
+})
+
+describe('a dial’s own start (SkillExtras.dialStart)', () => {
+  const elapsed = registeredSkills().find((d) => d.id === 'clockElapsed')!
+  const SPAN: Readonly<Record<string, number>> = { plusHour: 60, plusHalf: 30, plusQuarter: 15, minusHalf: -30 }
+  const start = (f: Fact) => Number(f.id.split(':')[2])
+
+  it('is checked by validateSkill for every fact: on the clock’s step, never the answer, never a misconception’s clock', () => {
+    const at = (dialStart: (f: Fact) => number) => {
+      const def: SkillModule = { ...elapsed, dialStart }
+      return validateSkill(def).join('\n')
+    }
+    expect(at(start)).toBe('')
+    expect(at((f) => start(f) + 5)).toMatch(/dialStart\(tid:\w+:\d+\) is \d+, off the clock's step \(15\)/)
+    expect(at((f) => Number(f.answer))).toMatch(/dialStart\(tid:\w+:\d+\) is \d+, the answer/)
+    // the hands turned the other way: wrongOperation's clock (where it is one)
+    expect(at((f) => start(f) - SPAN[f.family])).toMatch(/dialStart\(tid:\w+:\d+\) is -?\d+, the wrongOperation clock/)
   })
 })
 

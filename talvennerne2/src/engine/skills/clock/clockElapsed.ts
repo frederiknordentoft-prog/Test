@@ -7,7 +7,9 @@
 // and asks for kvart i fire (225).
 // Prompt: the start clock, { scene: 'clock', minutes: s, step: 15 }, and the start said: "Klokken er kvart
 // over tre. Hvad er klokken om en halv time?" Kinds: choice (three clocks) and clockSet (production, step
-// 15: "… Stil uret, så det viser, hvad klokken er om en halv time.").
+// 15: "… Stil uret, så det viser, hvad klokken er om en halv time."). The dial starts on the start clock
+// (dialStart), so the child turns the long hand by the time span, the hint's own strategy; a tick without
+// moving the hands is the start clock, 'operand'.
 // Wrong clocks (a is the answer, d the time asked for):
 //   wrongOperation   s − d: the hands turned the other way ("om" for "for … siden"). Left out for a half hour
 //                    across the hour (3:45 + ½ h → 3:15), where the same clock is the hour forgotten
@@ -79,6 +81,8 @@ export default {
   answer: (f: Fact) => parse(f).a,
   answerType: () => 'minutes',
   prompt: (f: Fact) => ({ scene: 'clock', minutes: parse(f).s, step: 15 }),
+  // the dial starts where the time starts: never the answer, never a misconception's clock (validateSkill)
+  dialStart: (f: Fact) => parse(f).s,
   optionView: () => 'clock',
   range: () => [0, 719],
   speech: (f: Fact, kind: TaskKind) => [
