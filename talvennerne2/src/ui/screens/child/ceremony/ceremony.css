@@ -1306,7 +1306,7 @@
 .tv-learned__phrase.is-long {
   font-size: 18px;
 }
-/* a short phone (375×667): the pictures smaller, so the stars stay on screen under three cards */
+/* a short phone (an iPhone SE, 667 px tall): the pictures smaller, so the stars stay on screen under three cards */
 @media (max-height: 700px) {
   .tv-learned__fact {
     gap: 4px;
