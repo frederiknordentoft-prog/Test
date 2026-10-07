@@ -226,6 +226,10 @@ describe('skill rows', () => {
     // fewer than three answers: no median
     const thin = medianPair(answers('addTo10', ago(16), 2), TODAY, () => true)
     expect(thin.before).toBeNull()
+    // the placement's answers never count in the statistics (pædagogik §4.2, SPEC A24)
+    const placed = answers('addTo10', ago(16), 5).map((a) => ({ ...a, mode: 'placement' as const, nodeId: 'placement' as const }))
+    expect(medianPair(placed, TODAY, () => true).before).toBeNull()
+    expect(medianPair(answers('addTo10', ago(16), 5), TODAY, () => true).before).not.toBeNull()
   })
 
   it('formats times, shares and days in Danish', () => {

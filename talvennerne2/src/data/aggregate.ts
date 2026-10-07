@@ -54,6 +54,15 @@ export function isFirstTry(e: Pick<AnswerLogEntry, 'mode' | 'retryOf'>): boolean
 }
 
 /**
+ * A first try that counts in the parents' statistics (accuracy, speed). The placement's answers
+ * never do (pædagogik §4.2, SPEC A24): the ladder climbs until the child misses, so they would
+ * pull the first day's accuracy down. The placement still shows as a round of its own (recentRounds).
+ */
+export function countsInStats(e: Pick<AnswerLogEntry, 'mode' | 'retryOf'>): boolean {
+  return isFirstTry(e) && e.mode !== 'placement'
+}
+
+/**
  * Learning time an answer adds. Every question appears after an input (starting or resuming the
  * round, "next", confirming the strategy), approximated by `ts − ms`; the answer is the next input.
  * So the answer contributes the gap from the previous input to the question, and the thinking time
@@ -86,7 +95,7 @@ export function answerDelta(e: AnswerLogEntry, opts: { learnMs: number; newSessi
   const d = emptyDaily(e.profileId, e.day)
   d.learnMs = Math.max(0, Math.round(opts.learnMs))
   d.sessions = opts.newSession ? 1 : 0
-  if (isFirstTry(e)) {
+  if (countsInStats(e)) {
     d.answers = 1
     d.firstTryCorrect = e.correct ? 1 : 0
     d.bySkill[e.skill] = skillDelta(e)

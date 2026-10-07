@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  GAP_MS, answerDelta, emptyDaily, keysOfSkill, learnDelta, mergeDaily, msBucket, passedTrialOf, playDelta, roundDelta,
+  GAP_MS, answerDelta, countsInStats, emptyDaily, isFirstTry, keysOfSkill, learnDelta, mergeDaily, msBucket, passedTrialOf, playDelta, roundDelta,
   setSkillKeyIndex, skillSnapshot, snapshotFor,
 } from './aggregate'
 import { emptyKey } from '../engine/mastery'
@@ -56,6 +56,17 @@ describe('daily deltas', () => {
     for (const mode of ['retry', 'golden'] as const) {
       const d2 = answerDelta(entry({ mode, retryOf: mode === 'retry' ? 'add:3+4#0' : null }), { learnMs: 2000, newSession: false })
       expect(d2).toMatchObject({ answers: 0, firstTryCorrect: 0, learnMs: 2000, bySkill: {} })
+    }
+  })
+
+  it('leaves the placement out of the statistics but keeps its learning time (pædagogik §4.2, SPEC A24)', () => {
+    const placed = entry({ mode: 'placement', nodeId: 'placement' })
+    expect(isFirstTry(placed)).toBe(true) // recentRounds still lists the placement as a round
+    expect(countsInStats(placed)).toBe(false)
+    expect(countsInStats(entry())).toBe(true)
+    for (const correct of [true, false]) {
+      const d = answerDelta({ ...placed, correct }, { learnMs: 3000, newSession: true })
+      expect(d).toMatchObject({ answers: 0, firstTryCorrect: 0, learnMs: 3000, sessions: 1, bySkill: {} })
     }
   })
 

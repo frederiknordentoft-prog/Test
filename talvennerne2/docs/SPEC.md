@@ -75,6 +75,12 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
   - Hintet starter med "Det første tal er hen, og det andet tal er op."
   - Forældreteksten og hjemmetippet står i `src/content/misconceptionTexts.ts`. `MISCONCEPTION_IDS` og `ids.lock.json` får id'et, og §4's tal 31 er nu 32.
   - Før blev et barn, der byttede i alle svar, aldrig opdaget, fordi byttet var `other`.
+- **A24 – Indplacering i 3. klasse og bølge 3's øvrige kontraktbeslutninger (7/10, integrator; bølge 3).**
+  - **Indplaceringen** (§8 trin 4) findes kun for 3. klasse i onboardingen. Den vises først, når Stjernefjeldet er bygget og frigivet (`worldBuilt('fjeld')`). Før det, og altid for 0.–2. kl., er onboardingen uændret: barnet starter i Tællelunden. "Indplacering igen" findes ikke.
+  - **Seeding:** Stigens trin stiger ikke strengt i stage. Derfor seeder indplaceringen op til `seedStage(P)`, den højeste stage til og med det placerede trin P (`src/engine/placement.ts`). Barnets første tur starter på kortets næste sten i hjemverdenen.
+  - **Statistik:** Indplaceringens svar (`mode: 'placement'`) tæller ikke i forældrenes nøjagtigheds- og tidstal (`countsInStats`, pædagogik §4.2). Indplaceringen vises stadig som en tur for sig.
+  - **Timeskiftet på urskiven:** I `clockElapsed` starter urskiven på starttiden (`SkillExtras.dialStart`). En halv time hen over timeskiftet, drejet den forkerte vej (fx 3:15 for 3:45 + ½ time), er `wrongOperation` på urskiven og `near` på kortene. ORK3c's orakel følger det.
+  - **Antal misforståelser:** Med A23 er der 32. Tallet 31 i §4.2, §10.2 og §14 læses som 32.
 
 ---
 

@@ -4,7 +4,7 @@
 import { TABLE_SKILLS } from '../content/achievements'
 import { NODE_BY_ID, REGIONS, TRIAL_PASS, WORLDS, WORLD_BY_ID, type NodeSlot } from '../content/curriculum'
 import { DOMAINS, SKILLS, SKILL_BY_ID } from '../content/skills'
-import { isFirstTry } from '../data/aggregate'
+import { countsInStats, isFirstTry } from '../data/aggregate'
 import { isSkippedAtStart, skillStatus } from '../engine/status'
 import { helpBridgeOpen } from '../engine/trial'
 import type {
@@ -133,7 +133,7 @@ export function median(values: readonly number[]): number | null {
 /** Time to a correct typed first try: the median now and two weeks earlier (each needs ≥ 3 answers). */
 export function medianPair(answers: readonly AnswerLogEntry[], today: string, keep: (a: AnswerLogEntry) => boolean): MedianPair {
   const { now, before } = windows(today)
-  const times = (w: Window) => answers.filter((a) => keep(a) && a.production && a.correct && isFirstTry(a) && inWindow(a.day, w)).map((a) => a.ms)
+  const times = (w: Window) => answers.filter((a) => keep(a) && a.production && a.correct && countsInStats(a) && inWindow(a.day, w)).map((a) => a.ms)
   const of = (w: Window) => {
     const t = times(w)
     return t.length >= MIN_MEDIAN ? median(t) : null
@@ -214,7 +214,7 @@ export function skillRow(state: SkillState, input: DashInput, tally: Tally | und
   const { profile, index, answers, today, daily } = input
   const refs = keysOfSkill(state.skill, index)
   const w = windowEnding(today, WINDOW_DAYS)
-  const tries = answers.filter((a) => a.skill === state.skill && isFirstTry(a) && inWindow(a.day, w))
+  const tries = answers.filter((a) => a.skill === state.skill && countsInStats(a) && inWindow(a.day, w))
   const order = SKILL_BY_ID[state.skill].families.map((f) => f.id)
   const byFamily = new Map<string, KeyRef[]>()
   for (const r of refs) byFamily.set(r.family, [...(byFamily.get(r.family) ?? []), r])
