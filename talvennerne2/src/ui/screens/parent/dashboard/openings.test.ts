@@ -8,6 +8,7 @@ import { REGIONS, WORLD_BY_ID, regionsOfWorld } from '../../../../content/curric
 import { newProfileDoc } from '../../../../data/repo/profiles'
 import { registeredSkills } from '../../../../engine/registry'
 import type { SkillId } from '../../../../engine/types'
+import { RELEASED_WORLDS } from '../../../../meta/built'
 import { isRegionOpen, isWorldOpen, unlockView } from '../../../../meta/unlock'
 import {
   applyGrade, gradeOpenings, openingRows, regionHasContent, regionOpenings, withOpenings, worldOpenings, worldReady,
@@ -101,13 +102,14 @@ describe('the grade', () => {
     }
   })
 
-  it('opens the released worlds below the grade and the child\'s own world (Hestebakkerne and Regnbueskoven, 4/10)', () => {
+  it('opens the released worlds below the grade and the child\'s own world (Hestebakkerne and Regnbueskoven 4/10, Stjernefjeldet at its release)', () => {
     const bakke = regionsOfWorld('bakke').map((r) => r.id)
     const skov = regionsOfWorld('skov').map((r) => r.id)
     expect(gradeOpenings(1, registered)).toEqual({ worlds: ['bakke'], regions: engRegions })
     expect(gradeOpenings(2, registered)).toEqual({ worlds: ['bakke', 'skov'], regions: [...engRegions, ...bakke] })
-    // Stjernefjeldet (3. klasse) has nothing to play yet: a third-grader gets the three worlds below it
-    expect(gradeOpenings(3, registered)).toEqual({ worlds: ['bakke', 'skov'], regions: [...engRegions, ...bakke, ...skov] })
+    // a third-grader gets the three worlds below, and Stjernefjeldet itself once it is released
+    const fjeld = RELEASED_WORLDS.has('fjeld') ? ['fjeld'] : []
+    expect(gradeOpenings(3, registered)).toEqual({ worlds: ['bakke', 'skov', ...fjeld], regions: [...engRegions, ...bakke, ...skov] })
   })
 
   it('opens the child\'s own world once it has something to play', () => {
