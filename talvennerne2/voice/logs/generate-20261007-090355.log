@@ -1,0 +1,37 @@
+09:03:55 generate.py --wave 3 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261007-090355.log)
+09:03:59 401 klip valgt, 392 færdige, 9 at lave
+09:08:38 input frame rate=25
+09:10:16 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+09:10:27 model indlæst på 353 s (2 tråde)
+09:10:41 ✅ EOS token detected! Stopping generation at step 31
+09:11:12 kald single k=1 t0 'Det er nok,': 44.6 s for 1.20 s lyd
+09:12:00   s.place.enough t0: 0.49 s (forhold 0.52) -18.19 LUFS, none: 'None' CER None (None) → ok
+09:12:10 ✅ EOS token detected! Stopping generation at step 31
+09:12:33 kald single k=1 t0 'Godt, næste!': 32.7 s for 1.20 s lyd
+09:12:34   s.place.next.1 t0: 0.83 s (forhold 0.88) -18.12 LUFS, none: 'None' CER None (None) → ok
+09:12:59 ✅ EOS token detected! Stopping generation at step 50
+09:13:29 kald single k=1 t0 'Vis Pip, hvad du kan,': 55.3 s for 1.96 s lyd
+09:13:32   s.place.start t0: 1.27 s (forhold 0.81) -18.08 LUFS, alone: 'vis pip hvad du kan' CER 0.0 (wav2vec2) → ok
+09:13:32   ✓ master s.place.start t0 (bestået)
+09:14:16 ✅ EOS token detected! Stopping generation at step 193
+09:14:40 kald sentence k=3 t0 'Tak, fordi du viste mig det! Nu finder vi dit sted på kortet. Nu får d': 68.6 s for 7.68 s lyd
+09:14:43   s.place.done t0: 3.15 s (forhold 0.59) -18.11 LUFS, alone: 'tak fordi du viste mig det nu finder vi dit sted på kortet' CER 0.0 (wav2vec2) → ok
+09:19:22   s.place.intro t0: 2.38 s (forhold 0.51) -18.15 LUFS, alone: 'Nu får du nogle opgaver. Det er ikke en prøve' CER 0.0 (whisper, wav2vec2: 'nu får du nogle opgaver det ikke en prøve') → ok
+09:19:23   s.place.next.2 t0: 1.31 s (forhold 0.70) -18.15 LUFS, alone: 'tak her er den næste' CER 0.0 (wav2vec2) → ok
+09:19:23   ✓ master s.place.done t0 (bestået)
+09:19:23   ✓ master s.place.intro t0 (bestået)
+09:19:23   ✓ master s.place.next.2 t0 (bestået)
+09:19:49 ✅ EOS token detected! Stopping generation at step 168
+09:20:12 kald sentence k=3 t0 'Vis mig gerne, hvad du kan. Så finder vi et godt sted at starte. Du ka': 49.6 s for 6.68 s lyd
+09:20:15   s.place.grade t0: 3.08 s (forhold 0.58) -18.03 LUFS, alone: 'vis mig gerne hvad du kan så finder vi et godt sted at starte' CER 0.0 (wav2vec2) → ok
+09:20:21   s.place.intro.stop t0: 1.08 s (forhold 0.49) -18.0 LUFS, alone: 'Du kan stoppe når du vil' CER 0.0 (whisper, wav2vec2: 'du kan stoppe når du vild') → ok
+09:20:21   s.place.next.3 t0: 1.33 s (forhold 0.61) -18.0 LUFS, alone: 'fint så kommer der en ny' CER 0.0 (wav2vec2) → ok
+09:20:22   ✓ master s.place.grade t0 (bestået)
+09:20:22   ✓ master s.place.intro.stop t0 (bestået)
+09:20:22   ✓ master s.place.next.3 t0 (bestået)
+09:20:23   sammensat frag.det_er + s.place.enough: 'det er det er nok' CER 0.000 (wav2vec2) → ok
+09:20:23   sammensat frag.det_er + s.place.next.1: 'det er godt næste' CER 0.000 (wav2vec2) → ok
+09:20:23 sammensætning runde 1: 2 af 2 bestået
+09:20:23   ✓ master s.place.enough t0 (bestået)
+09:20:23   ✓ master s.place.next.1 t0 (bestået)
+09:20:23 færdig: 9 nye mastere (0 ikke bestået, 0 kopier), 5 modelkald, 4.2 min generering (CPU 0.10 t), 0 klip mangler
