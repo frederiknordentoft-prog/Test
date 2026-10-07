@@ -179,8 +179,8 @@ export function revisitRegions(p: ProfileDoc, day: string, open: readonly Region
     const world = REGION_BY_ID[r]?.world
     return !last.has(r) && !!world && WORLD_BY_ID[world].grade >= from
   })
-  const later = placed ? fresh.filter((r) => placed.over.has(r)) : []
-  return [...stale, ...fresh.filter((r) => !later.includes(r)), ...later]
+  if (!placed) return [...stale, ...fresh]
+  return [...stale, ...fresh.filter((r) => !placed.over.has(r)), ...fresh.filter((r) => placed.over.has(r))]
 }
 
 /** profile.goals for `day` (new goals only on a new learning day; open ones never expire). */

@@ -11,9 +11,10 @@
 //                      then the map with the first round on top
 //
 // The grade is asked after the friend (the SPEC order), so the child is created with grade 0 and the
-// chosen grade is set at the end. Every child starts in Engdalen, except a child in 3. klasse once
-// Stjernefjeldet is built: "Vis Pip hvad du kan" (onboarding/placement/) writes the grade with
-// applyOnboardingGrade and starts the first round on the map's next stone instead.
+// chosen grade is set at the end, with the three goals made for it. Every child starts in Engdalen,
+// except a child in 3. klasse once Stjernefjeldet is built: "Vis Pip hvad du kan"
+// (onboarding/placement/) writes the grade with applyOnboardingGrade and starts the first round where
+// the ladder put the child (the map's next stone in its home world) instead.
 import { useNav } from '../../../../app/nav'
 import type { CreatureId } from '../../../../art/rig/types'
 import { AVAILABLE_SPECIES } from '../../../../art/species/registry'
@@ -110,12 +111,12 @@ async function registeredSkillIds(): Promise<ReadonlySet<SkillId>> {
  * The grade and the places it opens (dashboard/openings.ts), written; the hatch is behind us. The
  * three goals are made for the grade (they were made at the hatch, with grade 0: QA3 P3-6).
  */
-export async function applyOnboardingGrade(grade: Grade, now: number = Date.now()): Promise<void> {
+export async function applyOnboardingGrade(grade: Grade): Promise<void> {
   const profile = useProfile.getState()
   const registered = grade > 0 ? await registeredSkillIds() : new Set<SkillId>()
   profile.update((p) => {
     const graded = applyGrade(p, grade, registered)
-    return { ...graded, goals: firstGoals(graded, learningDay(now)) }
+    return { ...graded, goals: firstGoals(graded, learningDay(Date.now())) }
   })
   await profile.flush()
   await useSession.getState().refreshProfiles()

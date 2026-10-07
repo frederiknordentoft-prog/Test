@@ -8,8 +8,10 @@
 //
 // A child in 3. klasse is offered "Vis Pip hvad du kan" (onboarding/placement/, its own chunk) once
 // Stjernefjeldet is built: Pip says so instead of "Alle starter i Engdalen", "Næste" leads to the
-// ladder (or "Spring over"), and the first round starts on the map's next stone in the child's own
-// world. Before that, and for 0.–2. klasse always, the onboarding is the one above.
+// ladder (or "Spring over"), and the first round starts where the ladder put the child: the first
+// stone of the first region it did not pass over, in the world P belongs to, which the map then
+// shows as home (SPEC A24); after "Spring over" in the child's own world. Before that, and for
+// 0.–2. klasse always, the onboarding is the one above.
 //
 // The child is created at the hatch (see onboarding/flow.ts), with the id the eggs were drawn for:
 // until the first crack every step can be undone; from there on there is no way back to an egg the
