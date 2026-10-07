@@ -427,7 +427,7 @@ function compact(id: string): ReactNode | null {
       // arms read as an armchair): a long back with three back cushions, three light seat cushions with clear seams,
       // low, narrow arms well below the top of the back and short dark legs
       const t = MAT.bar
-      const cushion = { ...t, fill: t.light, shade: t.fill }
+      const cushion = { ...t, fill: t.light }
       const thirds = (x: number, w: number, y: number, h: number, r: number) => join(...[0, 1, 2].map((k) => roundRect(x + (k * w) / 3, y, w / 3, h, r)))
       return (
         <>
