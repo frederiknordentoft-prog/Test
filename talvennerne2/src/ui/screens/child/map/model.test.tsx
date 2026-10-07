@@ -254,6 +254,13 @@ describe('after "Vis Pip hvad du kan" (SPEC A24, review app-w3-r1 P2-4)', () => 
     expect(mapModel(skipped, 'bakke', all).next).toBe('w1-tal100-friend')
   })
 
+  it('goes on in the region it started in after the first round ("Næste" and the map agree)', () => {
+    const p = placed('L4')
+    const after = { ...p, nodes: { ...p.nodes, 'w0-minus10-l1': played(2) } }
+    expect(homeWorld(after, all)).toBe('eng')
+    expect(mapModel(after, 'eng', all).next).toBe('w0-minus10-l2')
+  })
+
   it('suggests what the passed-over regions still hold (friend, chest, trial) once the rest of the world is done', () => {
     const p = placed('L4')
     const nodes = { ...p.nodes }
