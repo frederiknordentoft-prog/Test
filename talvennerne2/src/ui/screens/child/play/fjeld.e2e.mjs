@@ -2,7 +2,7 @@
 // world be played before it is released): a new child in 3. klasse, Stjernefjeldet opened the way a
 // grown-up opens it from the dashboard ("Åbn hele Stjernefjeldet"), then the first stone of each of the
 // seven regions (one wrong answer each, through the strategy), five mastery trials with Arealhaven's
-// first, and the world finale, which the passed trials open. Every task is answered through its own
+// first, and the world finale, which the passed trials open, one round a day. Every task is answered through its own
 // view (src/dev/tasks/drive.ts: grid, clockSet, pay, share and the rest by touch). Checks: each round
 // starts on its stone and ends in the ceremonies, the trials and the finale are passed, the finale's
 // Astronaut things are won, the kinds met include grid, and there are 0 console errors.
@@ -200,8 +200,16 @@ async function ceremoniesToMap(page) {
   await page.waitForSelector('[data-map-path]', { timeout: 15000 })
 }
 
-/** Plays the stone `id` from its card on the map; returns the kinds met. */
+// One round a day, as a child would play: today's allowance of new things (NEW_PER_DAY) is used up
+// after two new regions, and a stone that cannot give its own material says "Her er der nyt i
+// morgen" (SPEC A15). The page's clock moves on a day before each round; timers keep running.
+const START = Date.now()
+let days = 0
+const nextDay = (page) => page.clock.setSystemTime(START + ++days * 86_400_000)
+
+/** Plays the stone `id` from its card on the map, the next day; returns the kinds met. */
 async function playStone(page, id, opts) {
+  await nextDay(page)
   await tap(page, `[data-stone="${id}"]`)
   await page.waitForSelector('[data-sheet-play]', { timeout: 10000 })
   await page.waitForTimeout(500)
