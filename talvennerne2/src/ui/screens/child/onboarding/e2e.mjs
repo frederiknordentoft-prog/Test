@@ -713,6 +713,27 @@ async function noLadder(tag, viewport, url, grade) {
   await context.close()
 }
 
+/** After Stjernefjeldet's release: 3. klasse gets the ladder's intro without ?worlds=all too. */
+async function ladderReleased(tag, viewport, url) {
+  const { page, context, errors } = await newPage(browser, viewport)
+  await toGrade(page, url, 'Dan', 3)
+  await page.locator('.tv-onb [data-next]').click()
+  const intro = await page.waitForSelector('[data-place-skip]', { timeout: 20_000 }).then(() => true, () => false)
+  check(intro, `${tag}: 3. kl. får "Vis Pip hvad du kan" uden ?worlds=all, fordi Stjernefjeldet er frigivet`)
+  await placeShot(page, `${tag}-intro`)
+  check(errors.length === 0, `${tag}: 0 konsolfejl${errors.length ? `: ${errors.join(' | ')}` : ''}`)
+  await context.close()
+}
+
+/** Is Stjernefjeldet released in the build under test (RELEASED_WORLDS in src/meta/built.ts)? */
+async function fjeldReleased() {
+  const { page, context } = await newPage(browser, { width: 393, height: 852 })
+  await page.goto(URL_)
+  const released = await page.evaluate(async () => (await import('/src/meta/built.ts')).RELEASED_WORLDS.has('fjeld'))
+  await context.close()
+  return released
+}
+
 const browser = await launch()
 try {
   // ── 3. klasse with the ladder (dev, ?worlds=all), and the grades and builds without it ──
@@ -720,7 +741,9 @@ try {
   await thirdGrade('place3-small', { width: 375, height: 667 }, PLANS.minus, { sibling: true })
   await thirdGrade('place3-ipad', { width: 820, height: 1180 }, PLANS.all)
   await thirdGradeSkipAndReload('place3-phone', { width: 393, height: 852 })
-  await noLadder('place3-before-release', { width: 393, height: 852 }, URL_, 3)
+  // before the release a 3. klasse onboarding has no ladder without ?worlds=all; after it, it has
+  if (await fjeldReleased()) await ladderReleased('place3-released', { width: 393, height: 852 }, URL_)
+  else await noLadder('place3-before-release', { width: 393, height: 852 }, URL_, 3)
   await noLadder('place3-grade2-built', { width: 393, height: 852 }, URL_ALL, 2)
   if (process.env.PLACE3_ONLY) throw new Error('PLACE3_ONLY: resten springes over')
 
