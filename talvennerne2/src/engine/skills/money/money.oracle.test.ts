@@ -576,7 +576,7 @@ describe('digitSwap on a kroner keypad (SPEC §4.1 globalChecks)', () => {
 
 describe('money fact ids across every registered skill (CONVENTIONS)', () => {
   it('are unique across all registered skills, and each money skill has a prefix of its own', () => {
-    const MONEY: readonly SkillId[] = ['coinNames', 'countCoins', 'payExact', 'change']
+    const MONEY: readonly SkillId[] = ['coinNames', 'countCoins', 'payExact', 'change', 'kronerOre']
     const owner = new Map<string, SkillId>()
     const prefixes = new Map<string, Set<SkillId>>()
     const problems: string[] = []

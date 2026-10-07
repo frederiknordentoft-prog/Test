@@ -54,14 +54,17 @@ export const GUESSER: ChildModel = { choice: 1 / 3, production: 0.05, fast: 0.5 
 // ─── Stand-in skills ────────────────────────────────────────────────────────
 
 /**
- * Keys per recall skill: the registered Engdalen skills as they are, the rest estimated from the
- * skill tables. Procedure skills have one key per family (from src/content/skills.ts). The simulation
- * keeps its own copy so its numbers do not move when more skills are registered.
+ * Keys per recall skill. Engdalen's and 3. klasse's are the registered skills' own counts (for 3.
+ * klasse also the curriculum's, SPEC §2.2: 13, 14, 30 and 60; tested). 1.–2. klasse keep the numbers
+ * the economy was tuned with, estimated from the skill tables before those skills existed, so its run
+ * through those worlds does not move; ten of them differ from the registered skills' (sidesCorners 12
+ * against 30, for one). Procedure skills have one key per family (from src/content/skills.ts), as in
+ * the game. The simulation keeps its own copy, so a skill module never changes its numbers by itself.
  */
 const RECALL_KEYS: Partial<Record<SkillId, number>> = {
   count10: 28, count20: 20, hear20: 21, addTo10: 66, subTo10: 66, tenFriends: 11, compareLength: 16, shapes2D: 42,
-  doubles: 10, halves: 10, addTo20: 36, subTo20: 36, groupsOf: 20, mul2510: 27, shareEqually: 16, mul34: 18,
-  mul6to9: 30, div2510: 27, divAll: 48, missingPart10: 36, sidesCorners: 12, shapes3D: 12, composeShapes: 10,
+  doubles: 10, halves: 10, addTo20: 36, subTo20: 36, groupsOf: 20, mul2510: 27, shareEqually: 16, mul34: 13,
+  mul6to9: 14, div2510: 30, divAll: 60, missingPart10: 36, sidesCorners: 12, shapes3D: 12, composeShapes: 10,
   clockHour: 12, clockHalf: 12, clockQuarter: 24, coinNames: 9, weightCompare: 10, unitChoice: 12, halfShape: 8,
   fractionShape: 10,
 }

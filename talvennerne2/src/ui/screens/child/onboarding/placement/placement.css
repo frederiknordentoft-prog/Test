@@ -1,0 +1,53 @@
+/*
+ * "Vis Pip hvad du kan" (onboarding/placement/): the explanation and the thanks on the onboarding's
+ * frame (first-start.css), the questions on the round's (round.css). Colours only from tokens; only
+ * transform and opacity move.
+ */
+
+/* Two equal buttons, one above the other: start the ladder, or skip it. */
+.tv-place__actions {
+  flex-direction: column;
+}
+.tv-place__actions > .tv-btn {
+  flex: none;
+  width: 100%;
+}
+
+.tv-place__stage {
+  justify-content: center;
+}
+.tv-place__friend {
+  width: min(40vw, 170px, calc((100dvh - 470px) * 0.9));
+}
+
+/* "Det er nok" in the top bar, where ✕ stands in a round: a word, not an icon alone */
+.tv-place__enough .tv-btn__face {
+  padding: 0 0.85em;
+  white-space: nowrap;
+}
+
+/* Pip sits where the buddy sits in a round */
+.tv-place__pip {
+  margin-bottom: 0;
+}
+
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-place__friend {
+    width: min(30vw, 220px, calc((100dvh - 640px) * 0.9));
+  }
+}
+
+/* A phone held sideways: the buttons side by side under the friend */
+@media (max-height: 500px) {
+  .tv-place__actions {
+    flex-direction: row;
+  }
+  .tv-place__actions > .tv-btn {
+    flex: 1 1 0;
+    width: auto;
+  }
+  .tv-place__friend {
+    width: min(26vw, 120px, calc((100dvh - 230px) * 0.9));
+    min-width: 0;
+  }
+}

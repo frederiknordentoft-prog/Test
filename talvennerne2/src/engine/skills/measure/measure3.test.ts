@@ -93,6 +93,18 @@ describe('convertCmM', () => {
     }
   })
 
+  it('asks 1–9 centimeter in a third of mCmToCm (the zero of the tens), some of them canonical, so its key can show zeroPlaceholder', () => {
+    const fam = convertCmM.families.find((f) => f.id === 'mCmToCm')!
+    const rng = makeRng(7)
+    const cm = Array.from({ length: 900 }, () => Number(convertCmM.instance!(fam, rng, new Set()).id.split(':')[3]))
+    const small = cm.filter((c) => c < 10).length / cm.length
+    expect(small).toBeGreaterThan(0.28)
+    expect(small).toBeLessThan(0.39)
+    const canon = convertCmM.enumerate().filter((f) => f.family === 'mCmToCm' && Number(f.id.split(':')[3]) < 10)
+    expect(canon.length).toBeGreaterThan(0)
+    for (const f of canon) expect(convertCmM.candidates(f).map((c) => c.tag), f.id).toContain('zeroPlaceholder')
+  })
+
   it('says what the card shows: the same numbers and units, and the unit the answer is in', () => {
     for (const { fact: f, task } of tasks) {
       const card = termsOf(task).flatMap((x) => ('n' in x ? [x.n] : []))
@@ -126,6 +138,8 @@ describe('convertCmM', () => {
       } else expect(ceilingFor(task)).toBe(3)
     }
     expect(convertCmM.fastMs!(fact('cmm:compareMixed:1:37'), 'keypad')).toBe(12_000)
+    // 300 cm is three digits on the keys: SPEC §3.2's 6 s + 2 · 2 s (cards keep 8 s)
+    expect([convertCmM.fastMs!(fact('cmm:mToCm:3'), 'keypad'), convertCmM.fastMs!(fact('cmm:mToCm:3'), 'choice')]).toEqual([10_000, 8_000])
   })
 
   it('reads a meter as ten centimeter (or a zero too many) as tensZero', () => {

@@ -289,6 +289,33 @@ function markSession(profileId: ProfileId, sessionId: string, day: string): bool
   return true
 }
 
+// ─── What the grade opens ───────────────────────────────────────────────────
+
+/**
+ * A child in 3. klasse gets what its grade opens (dashboard/openings.ts, applyGrade): Stjernefjeldet
+ * once that world is ready, and every place of the ready worlds below it. The onboarding opens them
+ * when the grade is chosen; a child whose grade was set before Stjernefjeldet was ready gets it at the
+ * next load or import. Only 3. klasse: 0.–2. klasse are left exactly as they are. It only ever adds,
+ * and with nothing new it returns the same document. The skill registry and the openings load on
+ * demand (the registry holds every skill module, which the first round needs anyway).
+ */
+export async function withGradeOpenings(doc: ProfileDoc): Promise<ProfileDoc> {
+  if (doc.grade !== 3) return doc
+  const [{ registeredSkills }, { applyGrade }] = await Promise.all([
+    import('../engine/registry'),
+    import('../ui/screens/parent/dashboard/openings'),
+  ])
+  return applyGrade(doc, doc.grade, new Set(registeredSkills().map((d) => d.id)))
+}
+
+/** withGradeOpenings, but a load never fails on it (a chunk that cannot load: the openings wait). */
+function openedSafely(doc: ProfileDoc): Promise<ProfileDoc> {
+  return withGradeOpenings(doc).catch((err: unknown) => {
+    console.error(err)
+    return doc
+  })
+}
+
 async function loadCaches(profileId: ProfileId): Promise<{ recent: Map<SkillId, boolean[]>; keys: Map<MasteryKey, SkillId> }> {
   const db = getDb()
   const recent = new Map<SkillId, boolean[]>()
@@ -329,19 +356,24 @@ export const useProfile = create<ProfileStore>((set, get) => ({
     await flushQueue()
     set({ status: 'loading' })
     try {
-      const doc = await getProfile(id)
+      const stored = await getProfile(id)
       if (token !== loadToken) return get().profile
-      if (!doc) {
+      if (!stored) {
         resetCaches()
         set({ profile: null, status: 'empty' })
         return null
       }
+      // 3. klasse only: what the grade opens now (beside the caches; 0.–2. klasse load as they are)
+      const opening = stored.grade === 3 ? openedSafely(stored) : null
       const loaded = await loadCaches(id)
+      const doc = opening ? await opening : stored
       if (token !== loadToken) return get().profile
       resetCaches()
       recentBySkill = loaded.recent
       keySkill = loaded.keys
       set({ profile: doc, status: 'ready' })
+      // a new opening is written like any other change of the child
+      if (doc !== stored) enqueue(doc.id, { doc })
       return doc
     } catch (err) {
       // storage failed: stay with what was loaded before

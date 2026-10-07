@@ -119,16 +119,18 @@ const onDial = (v: number): number => ((Math.round(v) % DIAL) + DIAL) % DIAL
  * would hand it over for a touch and a tick; one on "halv tre" read as 3:30 would log a touch and a
  * tick as that misconception (GENFIX2's note). Any other leaning would tell the child something
  * about the answer. The step is the clock prompt's; without one, a whole hour (on every step a dial
- * can have).
+ * can have). A skill's own start (SkillExtras.dialStart: clockElapsed's start clock) is taken when it
+ * keeps those rules.
  */
-function dialStartOf(prompt: Prompt, answer: AnswerValue, tags: Readonly<Record<string, ErrorTag>>, rng: Rng): number {
+function dialStartOf(prompt: Prompt, answer: AnswerValue, tags: Readonly<Record<string, ErrorTag>>, rng: Rng, own = NaN): number {
   const step = prompt.scene === 'clock' ? prompt.step : 60
   const at = typeof answer === 'number' ? onDial(answer) : null
   const taken = new Set(Object.entries(tags).filter(([, tag]) => isMisconceptionId(tag)).map(([k]) => onDial(Number(k))))
   const all: number[] = []
   for (let m = 0; m < DIAL; m += step) if (m !== at) all.push(m)
   const free = all.filter((m) => !taken.has(m))
-  return rng.pick(free.length > 0 ? free : all)
+  const mine = onDial(own)
+  return free.includes(mine) ? mine : rng.pick(free.length > 0 ? free : all)
 }
 
 interface Tagged { key: string; value: AnswerValue; tag: ErrorTag }
@@ -227,7 +229,7 @@ export function buildTask(def: SkillDef, fact: Fact, kind: TaskKind, rng: Rng, o
   const guessFloor = ext.guessFloor ? ext.guessFloor(fact, kind) : 0
   const scaffold = (ctx.box ?? 0) === 0 && !NO_SCAFFOLD.has(ctx.mode ?? 'round')
   // drawn last, so everything above takes the same draws from the rng as before
-  const dialStart = kind === 'clockSet' ? dialStartOf(prompt, answer, distractorTags, rng) : undefined
+  const dialStart = kind === 'clockSet' ? dialStartOf(prompt, answer, distractorTags, rng, ext.dialStart?.(fact, kind)) : undefined
 
   const task: Task = {
     ...probe,

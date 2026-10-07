@@ -9,7 +9,7 @@ import { tasksUnderTest } from '../number/testing/harness'
 import { buildTask } from '../../tasks'
 import { isCorrect } from '../../answer'
 import { classifyAnswer, detectableOf } from '../../misconceptions'
-import { isProduction } from '../../kinds'
+import { guessP, isProduction } from '../../kinds'
 import { makeRng } from '../../rng'
 import { compile } from '../../../speech/compile'
 import { canShare, shareValue } from '../../../ui/task/share/logic'
@@ -41,6 +41,14 @@ const ofSet = (id: string) => {
   const [n, d] = nd.split('/').map(Number)
   return { n, d, total: Number(total), part: (Number(total) * n) / d }
 }
+/**
+ * How often a deal of three quarters on two plates is right by luck: the view takes only an empty pile, so
+ * it is one of ⌊total/2⌋ + 1 deals (4: 4|0, 3|1, 2|2). 0 for a deal onto d plates (SPEC's 0.01 stands).
+ */
+const dealGuess = (f: Pick<Fact, 'id'>) => {
+  const { n, total } = ofSet(f.id)
+  return n > 1 ? 1 / (Math.floor(total / 2) + 1) : 0
+}
 /** The value of a fraction card. */
 const valueOf = (o: AnswerValue) => {
   const [n, d] = String(o).slice(5).split('/').map(Number)
@@ -59,6 +67,7 @@ describe('fractions of 3. klasse (SK3-GEO)', () => {
     },
     isRight: (f, _t, o) => o === ofSet(f.id).part,
     ceilings: { share: 5, choice: 3, keypad: 5 },
+    guessable: (f, kind) => kind === 'share' && dealGuess(f) > 0.12,
   })
 
   geoSuite(fractionCompare, {
@@ -90,7 +99,9 @@ describe('fractionOfSet', () => {
         continue
       }
       const p = t.prompt as Extract<Prompt, { scene: 'share' }>
-      expect([p.total, p.recipients, canShare(t), isProduction(t)], f.id).toEqual([total, n > 1 ? 2 : d, true, true])
+      // three quarters of 4, 8 and 12 are one deal in 3, 5 and 7: no production (box 3); 16 and up are
+      expect([p.total, p.recipients, canShare(t), isProduction(t)], f.id).toEqual([total, n > 1 ? 2 : d, true, !(n > 1 && total <= 12)])
+      expect(guessP(t), f.id).toBeCloseTo(Math.max(0.01, dealGuess(f)), 12)
       // the right deal hands in the answer, an uneven one −1 (or a wrong split)
       const each = total / p.recipients
       const fair = n > 1 ? [t.answer, total - (t.answer as number)].map(Number) : Array.from({ length: p.recipients }, () => each)
@@ -106,18 +117,37 @@ describe('fractionOfSet', () => {
     }
   })
 
-  it('reads the denominator as the answer as denominatorAsAnswer, unless it is the whole heap', () => {
+  it('reads the denominator as the answer as denominatorAsAnswer, unless it is the whole heap or a likelier slip', () => {
     for (const { fact: f, kind, task: t } of tasks) {
       if (kind !== 'keypad') continue
       const { d, total, part } = ofSet(f.id)
       if (d === part) continue
-      expect(classifyAnswer(t, d), f.id).toBe(d === total ? 'ambiguous' : 'denominatorAsAnswer')
-      if (d !== total) expect(detectableOf(t), f.id).toContain('denominatorAsAnswer')
+      // the rest, one heap, one more or less: the same value has a likelier explanation (A9)
+      const ambiguous = d === total || [total - part, total / d, part + 1, part - 1].includes(d)
+      expect(classifyAnswer(t, d), f.id).toBe(ambiguous ? 'ambiguous' : 'denominatorAsAnswer')
+      expect(detectableOf(t).includes('denominatorAsAnswer'), f.id).toBe(!ambiguous)
       expect(classifyAnswer(t, total), f.id).toBe(d === total ? 'ambiguous' : 'operand')
     }
-    const t = task(fractionOfSet, 'fos:1/4:12:apple', 'choice')
+    const t = task(fractionOfSet, 'fos:1/4:8:apple', 'choice')
     expect(t.options).toContain(4)
     expect(t.distractorTags['4']).toBe('denominatorAsAnswer')
+  })
+
+  it('never takes a denominator that is also the rest, one heap or one off as a sign (A9): ½ of 6, ¼ of 12 and 20, ⅓ of 6 and 12, ¾ of 16', () => {
+    const both: [string, number][] = [
+      ['fos:1/2:6:apple', 2], ['fos:1/4:12:carrot', 4], ['fos:1/4:20:apple', 4], ['fos:1/3:6:strawberry', 3], ['fos:1/3:12:apple', 3],
+      ['fos:3/4:16:carrot', 4],
+    ]
+    for (const [id, d] of both) {
+      for (const kind of ['keypad', 'choice'] as const) {
+        const t = task(fractionOfSet, id, kind)
+        expect([classifyAnswer(t, d), detectableOf(t)], `${id} ${kind}`).toEqual(['ambiguous', []])
+      }
+    }
+    // where nothing else gives the denominator it stays the sign: ¼ of 8 → 4, ⅓ of 18 → 3, ¾ of 20 → 4
+    for (const [id, d] of [['fos:1/4:8:apple', 4], ['fos:1/3:18:apple', 3], ['fos:3/4:20:apple', 4]] as const) {
+      expect(classifyAnswer(task(fractionOfSet, id, 'keypad'), d), id).toBe('denominatorAsAnswer')
+    }
   })
 
   it('asks in Danish, and deals into heaps in the hint', () => {

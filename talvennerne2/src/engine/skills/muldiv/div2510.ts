@@ -6,9 +6,11 @@
 // 2. klasse.
 // Kinds: choice, keypad (production), share — the child deals c things out on d plates (the share view
 // takes the equation as its deal, ui/task/share/logic.ts); in div2510 the deal is not production (SPEC §3.3:
-// share is production only in shareEqually and fractionOfSet), and a pile of more than 40 is asked on the
-// keypad instead (the share view's limit). Range 0–100. Speed: share 3 s + 0.8 s per thing, as for a deal
-// of the share scene (kinds.ts); cards and keypad as kinds.ts says.
+// share is production only in shareEqually and fractionOfSet). Only a pile of at most 20 is dealt
+// (kindsFor; pædagogik §1.3: "share (c ≤ 20)"): 16 of the 30 facts. A bigger one is asked on the cards and
+// the keys, so no share task ever reaches the view with more than it deals (40, MAX_THINGS) and is shown
+// as keys while it counts as a deal (ORK3a). Range 0–100. Speed: share 3 s + 0.8 s per thing, as for a
+// deal of the share scene (kinds.ts); cards and keypad as kinds.ts says.
 // Wrong answers (pædagogik §3.2): tableNeighbour — the quotient ± 1 while it is a fact of the table (q = 1–10);
 // wrongOperation — c − d or c · d (another operation on the two numbers; ":" read as "·"); the numbers from
 // the question ('operand') and near misses (± 2). A value with two explanations is 'ambiguous' (A9:
@@ -35,6 +37,11 @@ const BRIDGE: SpeechPart = say('hint.div2510.bridge')
 
 /** The share view deals at most this many things (ui/task/share/logic.ts MAX_THINGS); a bigger pile is typed. */
 const DEALT_MAX = 40
+
+/** The biggest pile asked on the share view (pædagogik §1.3: share for c ≤ 20); dealing more is a chore. */
+const SHARE_MAX = 20
+const KINDS: TaskKind[] = ['choice', 'keypad', 'share']
+const UNDEALT: readonly TaskKind[] = ['choice', 'keypad']
 
 /** The share view hands in the share or −1 ('shareUnequal', SPEC §3.2): no wrong number to tag. */
 const candidatesFor = (f: Fact, kind: TaskKind): Candidate[] => (kind === 'share' ? [] : candidates(f))
@@ -69,7 +76,8 @@ function hint(f: Fact, tag: ErrorTag | null, kind?: TaskKind): HintSpec {
 
 export default {
   ...metaOf('div2510'),
-  kinds: ['choice', 'keypad', 'share'],
+  kinds: KINDS,
+  kindsFor: (f: Fact) => (divisionOf(f).c <= SHARE_MAX ? KINDS : UNDEALT),
   enumerate: () => [...FACTS],
   answerType: () => 'int',
   prompt: (f) => {

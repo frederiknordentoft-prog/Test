@@ -1,9 +1,10 @@
 // The onboarding's egg and grade steps as markup (review P1-2, P2-9, P2-10): each egg carries the
 // breed and colour its baby hatches with, only the offered starters are there, and the grade step
-// says that everyone starts in Engdalen.
+// says that everyone starts in Engdalen (or, for 3. klasse with the ladder, where the child starts).
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { clipText } from '../../../../speech/catalog'
+import { clipInfo, clipText } from '../../../../speech/catalog'
+import { NEXT_CLIPS } from '../../../../speech/clips/ui/placement'
 import { offeredStarters, starterLooks } from './flow'
 import { EggChoice, GradeStep } from './steps'
 
@@ -41,5 +42,18 @@ describe('the grade', () => {
     expect(html).toContain('data-grade-start=""')
     expect(html).toContain(clipText('s.onb.grade.start'))
     expect(clipText('s.onb.grade.start')).toBe('Alle starter i Engdalen.')
+  })
+
+  it('says where the child starts instead, when 3. klasse is offered "Vis Pip hvad du kan"', () => {
+    const html = renderToStaticMarkup(<GradeStep grade={3} onGrade={() => undefined} start="s.place.grade" />)
+    expect(html).toContain('data-grade-start="s.place.grade"')
+    expect(html).toContain(clipText('s.place.grade'))
+    expect(html).not.toContain(clipText('s.onb.grade.start'))
+    // the placement's sentences: their own wave-3 sprite, never preloaded with the UI
+    for (const id of ['s.place.grade', 's.place.intro', 's.place.intro.stop', 's.place.start', 's.place.enough', 's.place.done']) {
+      expect(clipInfo(id), id).toMatchObject({ wave: 3, pack: 'placement-3', file: 'ui/placement.ts' })
+    }
+    expect(NEXT_CLIPS.length).toBeGreaterThan(1)
+    expect(clipText(NEXT_CLIPS[0])).toBe('Godt, næste!')
   })
 })

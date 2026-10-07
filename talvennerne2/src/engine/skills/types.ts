@@ -66,6 +66,20 @@ export interface SkillExtras {
    * digit (digitSwap) on a card but seven cubes (plain) when built. Default: `def.candidates(fact)`.
    */
   candidatesFor?(fact: Fact, kind: TaskKind): Candidate[]
+  /**
+   * The kinds this fact is asked in, when not every kind of the skill suits it: a pile of 50 is not
+   * dealt on the share view (div2510). A non-empty subset of `def.kinds` that keeps a production kind
+   * when the skill has one (validateSkill checks both); rounds, trials and placement only ask the fact
+   * in these. Default: `def.kinds`.
+   */
+  kindsFor?(fact: Fact): readonly TaskKind[]
+  /**
+   * Where a clockSet dial starts (Task.dialStart), when the task has a time of its own to start from:
+   * clockElapsed's start clock, so the child turns the long hand by the time span. It keeps GENFIX2's
+   * rules — on the clock's step, never the answer, never a misconception's clock (validateSkill checks
+   * every fact, and tasks.ts falls back to a drawn start otherwise). Default: drawn by the engine.
+   */
+  dialStart?(fact: Fact, kind: TaskKind): number | undefined
 }
 
 /** What a file in src/engine/skills/<domain>/<skillId>.ts default-exports. */

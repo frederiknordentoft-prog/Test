@@ -2,7 +2,7 @@ import type { Fact, Grade, KeyState, ProfileDoc, RegionId, SkillDef, SkillId, Ta
 import { WORLD_IDS } from './types'
 import { SKILL_BY_ID, DOMAIN_BY_ID } from '../content/skills'
 import { REGIONS, nodesOfRegion } from '../content/curriculum'
-import { factsOf, needsAudio, skillKeys, skillRegistry, type SkillRegistry } from './registry'
+import { factsOf, kindsOf, needsAudio, skillKeys, skillRegistry, type SkillRegistry } from './registry'
 import { buildTask } from './tasks'
 import { isProduction } from './kinds'
 import { emptyKey } from './mastery'
@@ -92,8 +92,10 @@ export function placementTask(run: PlacementRun, reg: SkillRegistry = skillRegis
     const family = def.families.find((f) => f.id === fact.family)
     if (family) fact = def.instance(family, makeRng(hashSeed(`${run.seed}:${cp.id}:${nth}`)), new Set([pair[0].id]))
   }
-  const kinds: TaskKind[] = def.kinds.includes(cp.kind) ? [cp.kind] : []
-  kinds.push(...SKILL_BY_ID[def.id].production.filter((k) => k !== cp.kind && def.kinds.includes(k)))
+  // the checkpoint's kind first, then the skill's other production kinds: those this fact is asked in
+  const own = kindsOf(def, fact)
+  const kinds: TaskKind[] = own.includes(cp.kind) ? [cp.kind] : []
+  kinds.push(...SKILL_BY_ID[def.id].production.filter((k) => k !== cp.kind && own.includes(k)))
   let task: Task | null = null
   for (const kind of kinds) {
     task = buildTask(def, fact, kind, makeRng(hashSeed(`${run.seed}:${cp.id}:${nth}:task`)), run.asked, { mode: 'placement' }).task
@@ -150,6 +152,16 @@ export function placementResult(run: Pick<PlacementRun, 'passed'>): string | nul
 
 export const stageOf = (checkpoint: string): number => SKILL_BY_ID[CHECKPOINT[checkpoint].skill].stage
 
+/**
+ * How far seeding reaches from P: the highest stage of the rungs up to P. The ladder climbs by
+ * difficulty, and its stages are not in that order (hear100 at L7 is stage 1.2, addTo20 at L5 is
+ * 1.4), so a child placed at L7 or L8 has shown L5 too, and a rung the jump left out counts as passed.
+ */
+export function seedStage(checkpoint: string): number {
+  const i = LADDER.findIndex((c) => c.id === checkpoint)
+  return Math.max(...LADDER.slice(0, i + 1).map((c) => SKILL_BY_ID[c.skill].stage))
+}
+
 export interface SeedContext {
   skills?: SkillRegistry
   day: string
@@ -159,6 +171,7 @@ export interface SeedContext {
 /**
  * Seed a profile from P. Core skills (number, place, addsub, muldiv) with stage ≤ stage(P) get
  * every key in box 2 marked `seeded`; a key already at box 2 or more keeps what the child earned.
+ * stage(P) is seedStage(P): the highest stage of the rungs up to P, never less than P's own.
  * Regions whose skills all lie below stage(P) open with their lessons marked skipped (friend and
  * chest nodes stay to be fetched, the trial stays to be taken), and so do their worlds and the world
  * after one that opened completely.
@@ -167,7 +180,7 @@ export function seedFromPlacement(profile: ProfileDoc, P: string | null, ctx: Se
   const placement = { done: true, at: ctx.now, highest: P }
   if (!P || !CHECKPOINT[P]) return { ...profile, placement }
   const reg = ctx.skills ?? skillRegistry()
-  const stage = stageOf(P)
+  const stage = seedStage(P)
 
   const keys: Record<string, KeyState> = { ...profile.keys }
   for (const meta of Object.values(SKILL_BY_ID)) {
