@@ -12,6 +12,8 @@
 //
 //   npx vite --port 4315 --strictPort &
 //   flock /tmp/tv2-chromium.lock node src/ui/screens/child/play/fjeld.e2e.mjs
+import { mkdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { launch } from '../../../../../scripts/browser.mjs'
 
 const BASE = process.env.MAP_URL ?? 'http://127.0.0.1:4315/'
@@ -19,9 +21,13 @@ const QUERY = '?e2e=1&voice=fast&worlds=all'
 // FJELD_REQUIRED=1 (the release): a world that cannot be opened fails instead of being skipped
 const REQUIRED = process.env.FJELD_REQUIRED === '1'
 const PHONE = { width: 393, height: 852 }
-const REGIONS = ['w3-tabellen', 'w3-store-tal', 'w3-klokken', 'w3-division', 'w3-penge-maal', 'w3-areal', 'w3-broeker']
+const ALL = ['w3-tabellen', 'w3-store-tal', 'w3-klokken', 'w3-division', 'w3-penge-maal', 'w3-areal', 'w3-broeker']
+// FJELD_ONLY=<region>[,<region>…] plays only those regions' first stones (to look into one; no trials)
+const ONLY = process.env.FJELD_ONLY ? process.env.FJELD_ONLY.split(',') : null
+const REGIONS = ONLY ?? ALL
 // five of seven trials passed open the finale (WORLD_TRIAL_SHARE 0.6); Arealhaven's is the plan's own
-const TRIALS = ['w3-areal', 'w3-tabellen', 'w3-store-tal', 'w3-klokken', 'w3-broeker']
+const TRIALS = ONLY ? [] : ['w3-areal', 'w3-tabellen', 'w3-store-tal', 'w3-klokken', 'w3-broeker']
+const OUT = fileURLToPath(new URL('../../../../../artifacts/fjeld/', import.meta.url))
 const checks = []
 const errors = []
 
@@ -85,6 +91,20 @@ async function newChild(page) {
   return (await profile(page)).unlocked.worlds.includes('fjeld')
 }
 
+/** What is on screen when the round seems stuck: the beat, the route, the task and a screenshot. */
+async function stuckAt(page, why) {
+  const shot = `${OUT}/stuck-${Date.now()}.png`
+  await page.screenshot({ path: shot }).catch(() => undefined)
+  const state = await page.evaluate(async () => ({
+    beat: document.querySelector('.tv-round')?.getAttribute('data-beat') ?? null,
+    route: (await import('/src/app/nav.ts')).useNav.getState().route,
+    task: (await import('/src/dev/tasks/drive.ts')).currentTask(),
+    hooks: [...document.querySelectorAll('[data-confirm],[data-check],[data-teaching],[data-play-start],[data-demo-film],[data-ceremony]')].map((e) => e.outerHTML.slice(0, 80)),
+  })).catch((e) => ({ error: String(e) }))
+  const t = state.task
+  return new Error(`${why}; beat ${state.beat}, rute ${JSON.stringify(state.route)}, opgave ${t ? `${t.id} (${t.kind}, svar ${t.answer})` : '-'}, kroge ${JSON.stringify(state.hooks ?? state.error)}; billede ${shot}`)
+}
+
 /** What needs the player now: a task, a demo film, the intro's tap, or the end of the round. */
 async function nextThing(page, timeout = 30000) {
   const h = await page.waitForFunction(
@@ -99,7 +119,9 @@ async function nextThing(page, timeout = 30000) {
     },
     null,
     { timeout, polling: 60 },
-  )
+  ).catch(async () => {
+    throw await stuckAt(page, `intet at gøre efter ${timeout / 1000} s`)
+  })
   return h.jsonValue()
 }
 
@@ -212,7 +234,7 @@ async function run(browser) {
   const shown = await page.evaluate(() => document.querySelector('.tv-map')?.getAttribute('data-world'))
   if (shown !== 'fjeld') await tap(page, '.tv-world[data-world="fjeld"]')
   await page.waitForSelector('.tv-map[data-world="fjeld"]', { timeout: 10000 })
-  const stones = await page.evaluate((ids) => ids.map((r) => document.querySelector(`[data-stone="${r}-l1"]`)?.getAttribute('data-state') ?? 'mangler'), REGIONS)
+  const stones = await page.evaluate((ids) => ids.map((r) => document.querySelector(`[data-stone="${r}-l1"]`)?.getAttribute('data-state') ?? 'mangler'), ALL)
   check(stones.every((s) => s !== 'locked' && s !== 'mangler'), `fjeldets syv regioner er åbne (${stones.join(', ')})`)
 
   // ── the first stone of every region, one mistake each ──
@@ -220,6 +242,12 @@ async function run(browser) {
   for (const region of REGIONS) for (const k of await playStone(page, `${region}-l1`, { wrongAt: 1 })) kinds.add(k)
   const p1 = await profile(page)
   check(REGIONS.every((r) => p1.nodes[`${r}-l1`]), 'alle syv første sten er spillet')
+
+  if (ONLY) {
+    check(errors.length === 0, `0 konsolfejl${errors.length ? ` (${errors.slice(0, 3).join(' | ')})` : ''}`)
+    await ctx.close()
+    return
+  }
 
   // ── five mastery trials, Arealhaven's first ──
   for (const region of TRIALS) for (const k of await playStone(page, `${region}-trial`)) kinds.add(k)
@@ -240,6 +268,7 @@ async function run(browser) {
   await ctx.close()
 }
 
+mkdirSync(OUT, { recursive: true })
 const browser = await launch()
 try {
   await run(browser)
