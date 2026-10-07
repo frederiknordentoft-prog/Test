@@ -26,6 +26,30 @@ export const KIND_INSTRUCTIONS: Record<TaskKind, { long: string; short: string }
 
 export const instructionClip = (kind: TaskKind, form: 'long' | 'short'): string => `s.kind.${kind}.${form}`
 
+/**
+ * The bubble's words for a family whose task asks for something else than its kind's short form
+ * (QA3a P2-2): pay's "Betal det, det koster." is wrong when the tray is to hold the change (every
+ * family of change, also Købmandsgården's), the price of two, the same money in kroner, or the
+ * fewest coins. Keys are `<kind>:<skill>` or `<kind>:<skill>/<family>`; the words are the skills' own
+ * clips, the end of the spoken question.
+ */
+const FAMILY_SHORT: Readonly<Record<string, readonly string[]>> = {
+  'pay:change': ['s.change.layChange'],
+  'pay:kronerOre/addHalves': ['s.kronerOre.payTwo'],
+  'pay:kronerOre/fiftiesInKroner': ['s.kronerOre.payInKroner'],
+  'pay:payExact/fewestCoins': ['frag.betal', 's.payExact.asFewAsPossible'],
+}
+
+/** A family's own words for its kind (null: the kind's short form says it). */
+export function familyInstruction(kind: TaskKind, skill: string, family: string): readonly string[] | null {
+  return FAMILY_SHORT[`${kind}:${skill}/${family}`] ?? FAMILY_SHORT[`${kind}:${skill}`] ?? null
+}
+
+/** The bubble's short instruction for a task: its family's own words, else its kind's short form. */
+export function shortInstruction(kind: TaskKind, skill: string, family: string): { clip: string }[] {
+  return (familyInstruction(kind, skill, family) ?? [instructionClip(kind, 'short')]).map((clip) => ({ clip }))
+}
+
 const table: Record<string, string> = {}
 for (const [kind, text] of Object.entries(KIND_INSTRUCTIONS)) {
   table[instructionClip(kind as TaskKind, 'long')] = text.long
@@ -34,6 +58,9 @@ for (const [kind, text] of Object.entries(KIND_INSTRUCTIONS)) {
 table['s.kind.buildBase.flat'] = 'Plade'
 table['s.kind.buildBase.rod'] = 'Stang'
 table['s.kind.buildBase.unit'] = 'Terning'
+// the ends of a row of places that has a direction (QA3a P2-3, Brøkbageriet's fractions in order)
+table['s.kind.sortOrder.biggest'] = 'Størst'
+table['s.kind.sortOrder.smallest'] = 'Mindst'
 // the grid's controls (A21): the net a point is set in, and the numbers along the two axes
 table['s.kind.grid.board'] = 'Nettet'
 table['s.kind.grid.along'] = 'Tallene forneden'
@@ -42,4 +69,7 @@ table['s.kind.grid.up'] = 'Tallene til venstre'
 export const clips: Readonly<Record<string, string>> = table
 
 /** The grid kind is rebuilt for points in wave 3 (SPEC A21): its words are recorded with wave 3. */
-export const wave = (id: string): Wave => (id.startsWith('s.kind.grid.') ? 3 : 1)
+export const wave = (id: string): Wave => (id.startsWith('s.kind.grid.') || id.startsWith('s.kind.sortOrder.') ? 3 : 1)
+
+/** The ends of a row of fractions come with Brøkbageriet's sprite; the rest is the round's own (uiPack). */
+export const pack = (id: string): string => (id.startsWith('s.kind.sortOrder.') ? 'fractions-3' : 'ui-play')

@@ -9,7 +9,7 @@
 //   <RoundScreen plan={planRound(...)} hooks={roundHooks({ golden, fastMs })} onExit={...} />
 //   <RoundScreen snapshot={profile.round} hooks={...} onExit={...} />      // resume
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ComponentType, ReactNode } from 'react'
+import type { CSSProperties, ComponentType, ReactNode } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import type { AnswerValue, Animal, Mood, RoundSnapshot, SpeechPart, Task, TaskKind } from '../../../engine/types'
 import type { RoundHooks, RoundPlan } from '../../../state/useRound'
@@ -20,7 +20,7 @@ import type { SkillRegistry } from '../../../engine/registry'
 import { playSfx } from '../../../audio/sfx'
 import { onResumeNeeded } from '../../../audio/unlock'
 import { OOPS_CLIPS, PRAISE_CLIPS } from '../../../speech/clips/ui/round'
-import { instructionClip } from '../../../speech/clips/ui/kinds'
+import { familyInstruction, instructionClip, shortInstruction } from '../../../speech/clips/ui/kinds'
 import { Button, IconButton } from '../../design/Button'
 import { ProgressStones } from '../../design/ProgressStones'
 import { SpokenText } from '../../design/SpokenText'
@@ -106,6 +106,16 @@ function useSizeVars() {
 
 // The round re-renders on every beat; what has not changed is not drawn again.
 const PromptSceneMemo = memo(PromptScene)
+
+/**
+ * "Hvad koster to af dem?" (QA3a P2-2, kronerOre addHalves): a shop whose answer is the price of two
+ * shows two of the thing, each with its price, so the picture says what the bubble says.
+ */
+export function shopsTwice(task: Pick<Task, 'prompt' | 'answer'>): boolean {
+  const p = task.prompt
+  return p.scene === 'shop' && p.paidOre === undefined && typeof task.answer === 'number' && task.answer === 2 * p.priceOre
+}
+const TWICE: CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 44 }
 const ProgressStonesMemo = memo(ProgressStones)
 const TeachingMemo = memo(Teaching)
 const views = new WeakMap<ComponentType<TaskViewProps>, ComponentType<TaskViewProps>>()
@@ -294,9 +304,12 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
 
   const readTask = useCallback(
     async (t: Task, intro: TaskIntro, tok: Token) => {
-      const steps = readout({ ...t, kind: shownKind(t) }, intro)
-      const shortClip = instructionClip(shownKind(t), 'short')
-      setBubble([{ clip: shortClip }])
+      // a family with its own words (QA3a P2-2: "Læg byttepengene i bakken.") has just said them as
+      // the end of its question; the kind's short form would say something else, so it is left out
+      const own = familyInstruction(shownKind(t), t.skill, t.family) !== null
+      const steps = readout({ ...t, kind: shownKind(t) }, own && intro.instruction === 'short' ? { ...intro, instruction: null } : intro)
+      const short = shortInstruction(shownKind(t), t.skill, t.family)
+      setBubble(short)
       await sayAll(steps, tok, (st, i) => {
         setReading(i === 0 && !st.instruction && st.option === null)
         setSpeakingOption(st.option)
@@ -305,7 +318,7 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
       if (!tok.alive) return
       setReading(false)
       setSpeakingOption(null)
-      setBubble([{ clip: shortClip }])
+      setBubble(short)
       useRound.getState().startClock()
       clockStarted.current = true
       lastActivity.current = performance.now()
@@ -343,7 +356,7 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
       setMood('idle')
       setEgg(golden ? 'arrive' : null)
       setCompact(false)
-      setBubble([{ clip: golden ? 's.round.golden.appear' : instructionClip(shownKind(task), 'short') }])
+      setBubble(golden ? [{ clip: 's.round.golden.appear' }] : shortInstruction(shownKind(task), task.skill, task.family))
     }
   }
 
@@ -825,18 +838,25 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
           {task && !ownsPrompt && (
             <div ref={cardRef} key={taskKey} className={cx('tv-round__card', scaffold && 'has-scaffold')} data-prompt={task.prompt.scene}>
               {egg && <GoldenEgg state={egg} className="tv-round__egg" />}
-              <PromptSceneMemo
-                prompt={task.prompt}
-                task={task}
-                entry={entry}
-                entries={entries}
-                given={slot === 'good' || slot === 'oops' ? given : null}
-                slot={slot}
-                replay={replayCount}
-                speaking={reading}
-                onHear={replay}
-                className="tv-round__scene"
-              />
+              {shopsTwice(task) ? (
+                <div className="tv-round__twice" style={TWICE} data-twice="">
+                  <PromptSceneMemo prompt={task.prompt} task={task} className="tv-round__scene" />
+                  <PromptSceneMemo prompt={task.prompt} task={task} className="tv-round__scene" />
+                </div>
+              ) : (
+                <PromptSceneMemo
+                  prompt={task.prompt}
+                  task={task}
+                  entry={entry}
+                  entries={entries}
+                  given={slot === 'good' || slot === 'oops' ? given : null}
+                  slot={slot}
+                  replay={replayCount}
+                  speaking={reading}
+                  onHear={replay}
+                  className="tv-round__scene"
+                />
+              )}
               {scaffold && (
                 <div className="tv-round__scaffold" data-scaffold="">
                   <HintVisual visual={scaffold} size="sm" />

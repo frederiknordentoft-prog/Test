@@ -147,10 +147,18 @@ function Mark({ mark, film, stressLent }: { mark: ColumnMark; film: boolean; str
   )
 }
 
-/** A column written over (0 then 10, or 10 then 9): side by side, the earlier digit struck when the next comes. */
-function Marks({ marks, film, stressLent }: { marks: ColumnMark[]; film: boolean; stressLent: boolean }) {
+/**
+ * A column written over (0 then 10, or 10 then 9): the earlier digit struck when the next comes. In
+ * 3. klasse (a minuend over a hundred) the new digit stands above the old one, as on paper: side by
+ * side they read as one number, "10 9" as 109 (QA3a P3-4). 100 − 37 of 2. klasse keeps its picture.
+ */
+const STACK: CSSProperties = { flexDirection: 'column-reverse', alignItems: 'center', gap: 1, lineHeight: 1 }
+/** The row above the columns grows for a stack of two (only a double exchange has one). */
+const STACKED_ROW: CSSProperties = { height: 42 }
+
+function Marks({ marks, film, stressLent, stacked }: { marks: ColumnMark[]; film: boolean; stressLent: boolean; stacked: boolean }) {
   return (
-    <span className="tv-cols__marks">
+    <span className="tv-cols__marks" style={stacked ? STACK : undefined}>
       {marks.map((m, k) => {
         const next = marks[k + 1]
         return (
@@ -174,6 +182,7 @@ export function Columns({ a, b, op, regroup = false, film = false, stressLent = 
   const leading = (row: number[], i: number) => i < places - 1 && row.slice(0, i + 1).every((d) => d === 0)
   const icon = (i: number) => (places - 1 - i === 0 ? 'unit' : places - 1 - i === 1 ? 'rod' : 'flat')
   const changed = (i: number) => regroup && op === '−' && marks[i].length > 0
+  const stacked = (i: number) => changed(i) && marks[i].length > 1 && a > 100
 
   return (
     <div className={cx('tv-cols', className)} style={{ ['--places' as string]: places }} role="img">
@@ -186,14 +195,14 @@ export function Columns({ a, b, op, regroup = false, film = false, stressLent = 
 
       <span className="tv-cols__op" aria-hidden />
       {A.map((_, i) => (
-        <span key={`c${i}`} className="tv-cols__carry">
+        <span key={`c${i}`} className="tv-cols__carry" style={stacked(i) ? STACKED_ROW : undefined}>
           {regroup && op === '+' && carries[i] !== null && (
             <At ms={resultAt[i + 1] + CARRY} film={film} className="tv-cols__carried">
               {carries[i]}
             </At>
           )}
           {changed(i) && marks[i].length === 1 && <Mark mark={marks[i][0]} film={film} stressLent={stressLent} />}
-          {changed(i) && marks[i].length > 1 && <Marks marks={marks[i]} film={film} stressLent={stressLent} />}
+          {changed(i) && marks[i].length > 1 && <Marks marks={marks[i]} film={film} stressLent={stressLent} stacked={stacked(i)} />}
         </span>
       ))}
 

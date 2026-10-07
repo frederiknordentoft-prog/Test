@@ -55,3 +55,53 @@ describe('clock strategies on screen (QA2 P3-2)', () => {
     expect(dialNumerals('trekant tiår')).toBe('trekant tiår')
   })
 })
+
+// QA3a P3-2 and P3-3: the strategies of 3. klasse read clearly on screen.
+describe('the text beside a strategy of 3. klasse', () => {
+  const said = (parts: Parameters<typeof displayText>[0]) => displayText(parts, clipText)
+
+  it('writes "c divideret med d q" as the equation: "Så giver 18 : 3 = 6."', () => {
+    const parts = [{ clip: 'hint.div.soGives' }, { num: 18, form: 'mid' }, { clip: 'op.divideret_med' }, { num: 3, form: 'mid' }, { num: 6, form: 'end' }] as const
+    expect(said([...parts])).toBe('Så giver 18 : 3 = 6.')
+    // the voice keeps its words
+    expect(compile([...parts]).text).toBe('Så giver atten divideret med tre seks.')
+    // a question stays a question, and numbers that are no quotient are left as they are
+    expect(said([{ clip: 'frag.hvad_er' }, { num: 18, form: 'mid' }, { clip: 'op.divideret_med' }, { num: 3, form: 'end' }])).toBe('Hvad er 18 divideret med 3?')
+    expect(said([{ num: 18, form: 'mid' }, { clip: 'op.divideret_med' }, { num: 3, form: 'mid' }, { num: 5, form: 'end' }])).toBe('18 divideret med 3 5.')
+  })
+
+  it('shows every division strategy of 3. klasse with its equation, never two numbers side by side', () => {
+    let n = 0
+    for (const skill of ['div2510', 'divAll'] as const) {
+      const def = reg.get(skill)!
+      for (const f of factsOf(def)) {
+        const t = buildTask(def, f, 'choice', makeRng(5), 0).task
+        for (const given of [null, ...t.options.filter((o) => o !== t.answer)]) {
+          const text = displayText(hintFor(t, given, reg).speech, clipText)
+          if (!text.includes('Så giver')) continue
+          const [c, d] = f.operands
+          expect(text, `${f.id}: ${text}`).toContain(`Så giver ${c} : ${d} = ${c / d}.`)
+          expect(text, f.id).not.toMatch(/divideret med \d+ \d+/)
+          n++
+        }
+      }
+    }
+    expect(n).toBeGreaterThan(50)
+  })
+
+  it('says "er klokken 10.15", never "klokken kl. 10.15"', () => {
+    const def = reg.get('clockElapsed')!
+    let n = 0
+    for (const f of factsOf(def)) {
+      const t = buildTask(def, f, 'choice', makeRng(5), 0).task
+      for (const given of [null, ...t.options.filter((o) => o !== t.answer)]) {
+        const text = displayText(hintFor(t, given, reg).speech, clipText)
+        expect(text, `${f.id}: ${text}`).not.toMatch(/klokken kl\./i)
+        if (/(er|var) klokken \d+\.\d\d/.test(text)) n++
+      }
+    }
+    expect(n).toBeGreaterThan(20)
+    expect(said([{ clip: 'hint.clockElapsed.d.plusHalf' }, { clock: { minutes: 585, style: 'analog', form: 'mid' } }, { clip: 'hint.clockElapsed.is' }, { clock: { minutes: 615, style: 'analog', form: 'end' } }]))
+      .toBe('En halv time efter kl. 9.45 er klokken 10.15.')
+  })
+})
