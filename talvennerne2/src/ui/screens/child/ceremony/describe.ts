@@ -215,7 +215,12 @@ const sum = (a: number, op: '+' | '−' | '·' | ':', b: number, c: number): Got
 function fewest(ore: number, pieces: readonly number[]): number[] {
   const out: number[] = []
   let left = ore
-  for (const p of pieces) while (left >= p) (left -= p, out.push(p))
+  for (const p of pieces) {
+    while (left >= p) {
+      left -= p
+      out.push(p)
+    }
+  }
   return left === 0 ? out : []
 }
 const KRONE_PIECES = [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100]

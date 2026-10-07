@@ -264,18 +264,15 @@ function LearnedPicture({ face }: { face: LearnedFace }) {
       )
     case 'label':
       return <SpokenText clip={face.clip} silent className="tv-learned__label" />
-    case 'fact':
+    case 'fact': {
+      const text = phraseText(face.parts, speech.text)
       return (
         <span className="tv-learned__fact" data-learned-fact={face.pic?.t ?? 'words'}>
           {face.pic && <LearnedPicOf pic={face.pic} />}
-          <SpokenText
-            parts={face.parts}
-            text={phraseText(face.parts, speech.text)}
-            silent
-            className={cx('tv-learned__phrase', phraseText(face.parts, speech.text).length > 28 && 'is-long')}
-          />
+          <SpokenText parts={face.parts} text={text} silent className={cx('tv-learned__phrase', text.length > 28 && 'is-long')} />
         </span>
       )
+    }
     case 'none':
       return <Icon name="sparkle" size={44} />
   }
@@ -287,12 +284,7 @@ function LearnedPicOf({ pic }: { pic: LearnedPic }) {
     case 'dial':
       return (
         <span className="tv-learned__pics">
-          <AnalogClock
-            minutes={pic.minutes}
-            size={68}
-            sweep={pic.sweep}
-            className="tv-learned__clock"
-          />
+          <AnalogClock minutes={pic.minutes} size={68} sweep={pic.sweep} className="tv-learned__clock" />
           {pic.digital && <DigitalClock minutes={pic.minutes} size={96} className="tv-learned__digital" />}
         </span>
       )
