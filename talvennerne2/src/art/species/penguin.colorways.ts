@@ -65,8 +65,8 @@ export const PENGUIN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold:
   gold: {
     id: 'gold',
     name: 'guld',
-    fur: '#E2A12E',
-    overrides: { outline: '#6B3E0C', shade: '#C98A1E', belly: '#FFF0B8', nose: '#C9602C', inner: '#D9822E', iris: '#A0561B' },
+    fur: '#D08A22',
+    overrides: { outline: '#5E3508', shade: '#B8761A', belly: '#FFF0B8', nose: '#C25A28', inner: '#E8A03E', iris: '#A0561B' },
     sparkle: '#FFF7CF',
   },
   // Regnbue: blød syrenlilla ryg (ingen naturlig farve er lilla); maven bærer de fire flade pastelstriber.

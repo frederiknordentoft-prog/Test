@@ -137,7 +137,7 @@ exports[`Stjernefjeldet · penguin > hash-regression pr. (art, race, stadie, far
   "penguin/std/1/c4": "b41b0bbde9fef819",
   "penguin/std/1/c5": "311dff529c0e36fd",
   "penguin/std/1/c6": "b087d7da1a530288",
-  "penguin/std/1/gold": "ccf3fb8bc0aafb8a",
+  "penguin/std/1/gold": "9d3641cf164ca6e3",
   "penguin/std/1/rainbow": "579787ee276b1bde",
   "penguin/std/2/c1": "200259c17961b2f9",
   "penguin/std/2/c1★": "200259c17961b2f9",
@@ -146,7 +146,7 @@ exports[`Stjernefjeldet · penguin > hash-regression pr. (art, race, stadie, far
   "penguin/std/2/c4": "88297e10bdff3319",
   "penguin/std/2/c5": "2897981a8bc2731d",
   "penguin/std/2/c6": "f4cc7ed859cb8379",
-  "penguin/std/2/gold": "d197b0233baef773",
+  "penguin/std/2/gold": "dc13faca43199ad0",
   "penguin/std/2/rainbow": "7ddc2cf37717af0e",
   "penguin/std/3/c1": "3cb3f576db92971e",
   "penguin/std/3/c1★": "06150f076e10ac50",
@@ -155,7 +155,7 @@ exports[`Stjernefjeldet · penguin > hash-regression pr. (art, race, stadie, far
   "penguin/std/3/c4": "7bdcf619ecc97d2b",
   "penguin/std/3/c5": "12d09e57dfe5e38e",
   "penguin/std/3/c6": "061c8e8e58b7c38a",
-  "penguin/std/3/gold": "7f7a417f25b5691d",
+  "penguin/std/3/gold": "eef533bb04063914",
   "penguin/std/3/rainbow": "38b178604a695220",
 }
 `;
@@ -211,7 +211,7 @@ exports[`Stjernefjeldet · polarbear > hash-regression pr. (art, race, stadie, f
   "polarbear/std/1/c5": "9199a6e35f86377d",
   "polarbear/std/1/c6": "1d0e7f41881c38b2",
   "polarbear/std/1/gold": "a394df075cd9bae7",
-  "polarbear/std/1/rainbow": "48daf3aea16da9a2",
+  "polarbear/std/1/rainbow": "8c2c0ef9e00cc80d",
   "polarbear/std/2/c1": "c4abf65fe1150f74",
   "polarbear/std/2/c1★": "c4abf65fe1150f74",
   "polarbear/std/2/c2": "a4308ea8b6bdd6d1",
@@ -220,7 +220,7 @@ exports[`Stjernefjeldet · polarbear > hash-regression pr. (art, race, stadie, f
   "polarbear/std/2/c5": "c3bc1cb4390a01ab",
   "polarbear/std/2/c6": "bd27611ed91fd2d1",
   "polarbear/std/2/gold": "7c8718d2e3500d53",
-  "polarbear/std/2/rainbow": "c83b7f8a48bb5136",
+  "polarbear/std/2/rainbow": "2e56e7b02ee828f4",
   "polarbear/std/3/c1": "b70e1507c3106ab5",
   "polarbear/std/3/c1★": "54932c20b309db5b",
   "polarbear/std/3/c2": "6a7344b0246e572b",
@@ -229,7 +229,7 @@ exports[`Stjernefjeldet · polarbear > hash-regression pr. (art, race, stadie, f
   "polarbear/std/3/c5": "864ecef8c89eac2a",
   "polarbear/std/3/c6": "0193fe9e61f7502b",
   "polarbear/std/3/gold": "42b72b4894af397e",
-  "polarbear/std/3/rainbow": "29abad95757c1566",
+  "polarbear/std/3/rainbow": "3a3d8c0c44c8594c",
 }
 `;
 

@@ -304,23 +304,27 @@ const Feet: Part = (p) => {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Krop: en lys mave, en blød pelstot under hagen og lårets fold ved hoften. Regnbuen (review G3-r1 A1): maven er en bred
-// smæk med de fire flade striber, der går ud over forbenene på begge sider og op over flanken, så striberne ses i hvile.
+// Krop: en lys mave, en blød pelstot under hagen og lårets fold ved hoften. Regnbuen (review G3-r1 A1): i stedet for
+// maven en bred smæk med de fire flade striber, der går ud over forbenene på begge sider og hen over flanken. Den ligger
+// i kravens lag over cel-skyggen (`Ruff`), så alle fire striber ses i hvile, også ved 48 px.
 
 const TUFT: Vec[][] = [[[86, 146], [89, 151.4], [91.4, 147.6]], [[96.6, 147.6], [99, 151.4], [102, 146]]]
 const THIGH: Vec[] = [[128, 214], [128.6, 200], [136, 189], [148, 184], [158, 186.4]]
 
-const belly = (a: AnchorSet, rainbow: boolean) =>
-  rainbow
-    ? ellipse(a.bodyCenter.x - 2, a.bodyCenter.y + 15, a.bodyRx * BODY_WIDE * 0.93, a.bodyRy * 0.76)
-    : ellipse(a.bodyCenter.x - 12, a.bodyCenter.y + 8, a.bodyRx * BODY_WIDE * 0.5, a.bodyRy * 0.76)
-
 const BodyDeco: Part = ({ pal, a, ids, sw, lod }) => (
   <>
-    <path d={belly(a, !!pal.gradient)} fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly} clipPath={`url(#${ids.bodyClip})`} />
+    {!pal.gradient && (
+      <path d={ellipse(a.bodyCenter.x - 12, a.bodyCenter.y + 8, a.bodyRx * BODY_WIDE * 0.5, a.bodyRy * 0.76)} fill={pal.belly} clipPath={`url(#${ids.bodyClip})`} />
+    )}
     {lod === 'full' && !pal.silhouette && <path d={join(...TUFT.map((t) => spline(t)), spline(THIGH))} fill="none" stroke={crease(pal)} strokeWidth={sw * 0.5} {...round} />}
   </>
 )
+
+/** Regnbuens smæk (kun regnbuen): de fire flade striber over cel-skyggen, klippet til kroppen. */
+const RainbowBib: Part = ({ pal, a, ids }) =>
+  pal.gradient ? (
+    <path d={ellipse(a.bodyCenter.x - 2, a.bodyCenter.y + 15, a.bodyRx * BODY_WIDE * 0.93, a.bodyRy * 0.76)} fill={`url(#${ids.gradient})`} clipPath={`url(#${ids.bodyClip})`} />
+  ) : null
 
 // ---------------------------------------------------------------------------------------------
 
@@ -380,8 +384,8 @@ export const polarbear: SpeciesDef = {
   fx: { x: 164, y: 106 },
   face: { idleMouth: 'smile', cheeks: true },
   ears: { splay: 22 },
-  // Lup, gulerod, scepter, kikkert, slikkepind og ballonens snor holdes foran det brede forben, og poten griber om den
-  // nederste del (review G3-r1 T2/B2, SPEC A17, som pandaens skjold).
+  // Lup, gulerod, scepter, kikkert, slikkepind, ballonens snor, raket og stjernestav holdes foran det brede forben, og
+  // poten griber om den nederste del (review G3-r1 T2/B2 og T3, SPEC A17, som pandaens skjold).
   handGrip: { items: GRIP_ITEMS, Grip: PawGrip },
   signature: 'sniff',
   // Guldets glansbånd på ryggen bag hovedet.
@@ -404,6 +408,7 @@ export const polarbear: SpeciesDef = {
     Feet,
     Muzzle: Snout,
     BodyDeco,
+    Ruff: RainbowBib,
   },
 }
 
