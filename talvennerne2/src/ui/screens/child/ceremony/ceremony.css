@@ -1265,3 +1265,40 @@
     transition: none;
   }
 }
+
+/* ── "Det lærte du" in Stjernefjeldet (QA3a P2-1): a fact with its small picture ─────────────── */
+.tv-learned__pics {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.tv-learned__pics > *,
+.tv-learned__digital,
+.tv-learned__grid,
+.tv-learned__bars {
+  display: block;
+  flex: none;
+}
+.tv-learned__grid {
+  max-width: 120px;
+  max-height: 84px;
+  width: auto;
+  height: auto;
+}
+.tv-learned__coins {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: 220px;
+}
+.tv-learned__eq.is-long {
+  font-size: 30px;
+}
+@media (min-width: 700px) and (min-height: 700px) {
+  .tv-learned__eq.is-long {
+    font-size: 38px;
+  }
+}

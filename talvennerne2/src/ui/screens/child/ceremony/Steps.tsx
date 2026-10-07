@@ -5,13 +5,13 @@
 // it aloud and moves on.
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { AnalogClock } from '../../../../art/materials'
+import { AnalogClock, CoordGrid, DigitalClock, FractionBars, FractionShape, SquareGrid } from '../../../../art/materials'
 import { Shape2D } from '../../../../art/materials/Shapes'
 import { circle, ellipse } from '../../../../art/materials/geom'
 import { HIGHLIGHT, MAT } from '../../../../art/materials/palette'
 import { ITEM_BY_ID } from '../../../../content/catalog'
 import { REGION_BY_ID, WORLD_BY_ID } from '../../../../content/curriculum'
-import type { Animal, ClipId, ItemId, ItemSource, SpeciesId, SpeechPart, WorldId } from '../../../../engine/types'
+import type { Animal, ClipId, ItemId, ItemSource, SpeciesId, SpeechPart, Term, WorldId } from '../../../../engine/types'
 import { useNav } from '../../../../app/nav'
 import { speciesOfWorld } from '../../../../meta/animals'
 import { clockWords } from '../../../../speech/clock'
@@ -38,7 +38,7 @@ import { AnimalPicture, ItemPicture } from '../map/art'
 import { isItemDrawn } from '../wardrobe/drawn'
 import { howToGet } from '../wardrobe/model'
 import { goalSpeech, lineText } from '../map/words'
-import { canDoClip, learnedItems, type LearnedContext, type LearnedFace, type LearnedItem } from './describe'
+import { canDoClip, learnedItems, type LearnedContext, type LearnedFace, type LearnedItem, type LearnedPic } from './describe'
 import { finaleThings, progressOf, setProgress } from './flow'
 import { NameAnimal } from './NameAnimal'
 import '../../../scenes/scenes.css'
@@ -175,17 +175,42 @@ export function clockText(minutes: number): string {
   return capital(minutes % 60 === 0 ? `klokken ${words}` : words)
 }
 
-/** A fact's words with its numbers as numerals: "Halvdelen af 8 er 4", "3 sider". */
+/** A part as the card writes it: numbers, money, lengths and fractions as numerals, times in words. */
+function partText(p: SpeechPart, textOf: (id: ClipId) => string): string {
+  if ('clip' in p) return textOf(p.clip)
+  if ('num' in p) return formatNumber(p.num)
+  if ('money' in p) return formatMoney(p.money.ore)
+  if ('measure' in p) return `${formatNumber(p.measure.value)} ${p.measure.unit}`
+  if ('frac' in p) return `${p.frac.n}/${p.frac.d}`
+  if ('clock' in p) return clockWords(p.clock.minutes, p.clock.style)
+  return p.free
+}
+
+/**
+ * A fact's words with its numbers as numerals: "Halvdelen af 8 er 4", "3 sider", "Fra 74 til 100 er
+ * 26 kr.". Two values in a row are a list: "25, 50, 75", "1/5, 1/4, 1/3 og 1/2".
+ */
 export function phraseText(parts: readonly SpeechPart[], textOf: (id: ClipId) => string): string {
-  const words = parts.map((p) => ('clip' in p ? textOf(p.clip) : 'num' in p ? formatNumber(p.num) : ''))
-  return capital(words.filter(Boolean).join(' '))
+  let out = ''
+  parts.forEach((p, i) => {
+    const word = partText(p, textOf)
+    if (!word) return
+    const list = i > 0 && !('clip' in p) && !('clip' in parts[i - 1]) && !('free' in p)
+    out += out ? `${list ? ',' : ''} ${word}` : word
+  })
+  return capital(out)
+}
+
+/** Three-digit sums and balances (3. klasse) get a smaller size, so "403 − 158 = 245" fits its card. */
+export function isLongSum(terms: readonly Term[]): boolean {
+  return terms.length > 5 || terms.reduce((n, t) => n + ('n' in t ? String(t.n).length : 0), 0) >= 8
 }
 
 function LearnedPicture({ face }: { face: LearnedFace }) {
   const speech = useSpeech()
   switch (face.t) {
     case 'eq':
-      return <Equation terms={face.terms} size="answer" nowrap className="tv-learned__eq" />
+      return <Equation terms={face.terms} size="answer" nowrap className={cx('tv-learned__eq', isLongSum(face.terms) && 'is-long')} />
     case 'number':
       return (
         <span className="tv-learned__number">
@@ -238,8 +263,63 @@ function LearnedPicture({ face }: { face: LearnedFace }) {
       )
     case 'label':
       return <SpokenText clip={face.clip} silent className="tv-learned__label" />
+    case 'fact':
+      return (
+        <span className="tv-learned__fact" data-learned-fact={face.pic?.t ?? 'words'}>
+          {face.pic && <LearnedPicOf pic={face.pic} />}
+          <SpokenText parts={face.parts} text={phraseText(face.parts, speech.text)} silent className="tv-learned__phrase" />
+        </span>
+      )
     case 'none':
       return <Icon name="sparkle" size={44} />
+  }
+}
+
+/** The small picture of a fact of 3. klasse: the dial, the coins, the point, the figure, the bars. */
+function LearnedPicOf({ pic }: { pic: LearnedPic }) {
+  switch (pic.t) {
+    case 'dial':
+      return (
+        <span className="tv-learned__pics">
+          <AnalogClock
+            minutes={pic.minutes}
+            size={68}
+            sweep={pic.sweep}
+            className="tv-learned__clock"
+          />
+          {pic.digital && <DigitalClock minutes={pic.minutes} size={96} className="tv-learned__digital" />}
+        </span>
+      )
+    case 'digital':
+      return <DigitalClock minutes={pic.minutes} size={110} className="tv-learned__digital" />
+    case 'coins':
+      return (
+        <span className="tv-learned__coins">
+          {pic.ore.map((piece, i) =>
+            isPiece(piece) ? (
+              <span key={i} className="tv-face__money tv-learned__money" style={pieceScale(34)}>
+                <PieceArt piece={piece} />
+              </span>
+            ) : null,
+          )}
+        </span>
+      )
+    case 'coords':
+      return <CoordGrid w={pic.w} h={pic.h} points={[{ x: pic.x, y: pic.y }]} size={96} className="tv-learned__grid" />
+    case 'area':
+      return <SquareGrid w={pic.w} h={pic.h} filled={pic.cells} cellPx={12} className="tv-learned__grid" />
+    case 'fraction':
+      return <FractionShape shape={pic.shape} parts={pic.parts} colored={pic.colored} size={64} className="tv-learned__shape" />
+    case 'bars':
+      return <FractionBars fracs={pic.fracs} size={120} className="tv-learned__bars" />
+    case 'shapes':
+      return (
+        <span className="tv-learned__pics">
+          {pic.items.map((it, i) => (
+            <Shape2D key={i} shape={it.shape} variant={it.variant} size={44} className="tv-learned__shape" />
+          ))}
+        </span>
+      )
   }
 }
 
