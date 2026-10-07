@@ -326,9 +326,12 @@ describe('gridCoords oracle', () => {
   }, TIMEOUT)
 
   /**
-   * gridCoords has no misconception (SPEC §4.2): every wrong value is plain. The module's own contract
-   * says how: the two numbers swapped are 'other' (on placePoint's cards the other number is said in the
-   * question: 'operand'), one step off along an axis 'near'.
+   * gridCoords' one misconception is coordSwap (SPEC A23; updated by GENFIX3 with the integrator's approval,
+   * before A23 every wrong value was plain): the two numbers swapped are coordSwap on the net (both
+   * families) and on readPoint's cards; on placePoint's cards the other number is said in the question, so
+   * it is 'ambiguous' (A9). Where that card's number is also one step off, SPEC §4.1's letter keeps the
+   * misconception and the conservative reading makes it 'ambiguous': either is allowed. One step off along
+   * an axis is 'near'.
    */
   const judge = (b: Built, v: AnswerValue): readonly ErrorTag[] => {
     const t = b.task
@@ -336,17 +339,20 @@ describe('gridCoords oracle', () => {
     if (t.kind === 'choice') {
       const asked = t.answer as number
       const other = asked === q.x && asked !== q.y ? q.y : q.x
-      if (v === other && other !== asked) return [q.family === 'placePoint' ? 'operand' : 'other']
+      if (v === other && other !== asked) {
+        if (q.family === 'placePoint') return ['ambiguous']
+        return Math.abs(other - asked) === 1 ? ['coordSwap', 'ambiguous'] : ['coordSwap']
+      }
       // one step off; the engine's own near miss (±1, ±10, ±2) where the net's edge leaves too few
       return [1, 2, 10].includes(Math.abs((v as number) - asked)) ? ['near'] : ['other']
     }
     const p = pointOfAnswer(v)
     if (!p) return ['other']
-    if (p.x === q.y && p.y === q.x) return ['other']
+    if (p.x === q.y && p.y === q.x) return ['coordSwap']
     return Math.abs(p.x - q.x) + Math.abs(p.y - q.y) === 1 ? ['near'] : ['other']
   }
 
-  it('classifies every point and card: right only the asked one (a read pair in either order), a swapped pair plain', () => {
+  it('classifies every point and card: right only the asked one (a read pair in either order), a swapped pair coordSwap (A23)', () => {
     expect(first(classifyB(built, judge, (b, v) => {
       if (b.task.kind === 'choice') return v === b.task.answer
       const p = pointOfAnswer(v)
@@ -362,7 +368,8 @@ describe('gridCoords oracle', () => {
     }
   }, TIMEOUT)
 
-  it('tags a swapped pair the same way on every kind: plain everywhere, so it is never evidence (no coordSwap in SPEC §4.2)', () => {
+  // updated to SPEC A23 by GENFIX3 with the integrator's approval (before: plain everywhere, no coordSwap in §4.2)
+  it('tags a swapped pair the same way on every kind (SPEC A23): coordSwap on the net and readPoint’s cards, ambiguous on placePoint’s (A9)', () => {
     const tags = new Map<string, Set<string>>()
     for (const { task } of built) {
       const q = point(task)
@@ -373,9 +380,14 @@ describe('gridCoords oracle', () => {
       ;(tags.get(k) ?? tags.set(k, new Set()).get(k)!).add(String(classifyAnswer(task, swapped)))
     }
     expect(Object.fromEntries([...tags].map(([k, s]) => [k, [...s].sort().join()]))).toEqual({
-      'readPoint grid': 'other', 'placePoint grid': 'other', 'readPoint choice': 'other', 'placePoint choice': 'operand',
+      'readPoint grid': 'coordSwap', 'placePoint grid': 'coordSwap', 'readPoint choice': 'coordSwap', 'placePoint choice': 'ambiguous',
     })
-    for (const { task } of built) expect(detectableOf(task), task.factId).toEqual([])
+    // a swap can be shown on the net and on readPoint's cards (its card is dealt), never by a point with x = y
+    for (const { task } of built) {
+      const q = point(task)
+      const can = q.x !== q.y && (task.kind === 'grid' || q.family === 'readPoint')
+      expect(detectableOf(task), `${task.factId} ${task.kind}`).toEqual(can ? ['coordSwap'] : [])
+    }
   }, TIMEOUT)
 
   it('A21: a point is 1 in 49 on the net (production, box 5); a card 1 in 3 (box 3); SPEC’s speed or more', () => {

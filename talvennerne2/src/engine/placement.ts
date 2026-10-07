@@ -2,7 +2,7 @@ import type { Fact, Grade, KeyState, ProfileDoc, RegionId, SkillDef, SkillId, Ta
 import { WORLD_IDS } from './types'
 import { SKILL_BY_ID, DOMAIN_BY_ID } from '../content/skills'
 import { REGIONS, nodesOfRegion } from '../content/curriculum'
-import { factsOf, needsAudio, skillKeys, skillRegistry, type SkillRegistry } from './registry'
+import { factsOf, kindsOf, needsAudio, skillKeys, skillRegistry, type SkillRegistry } from './registry'
 import { buildTask } from './tasks'
 import { isProduction } from './kinds'
 import { emptyKey } from './mastery'
@@ -92,8 +92,10 @@ export function placementTask(run: PlacementRun, reg: SkillRegistry = skillRegis
     const family = def.families.find((f) => f.id === fact.family)
     if (family) fact = def.instance(family, makeRng(hashSeed(`${run.seed}:${cp.id}:${nth}`)), new Set([pair[0].id]))
   }
-  const kinds: TaskKind[] = def.kinds.includes(cp.kind) ? [cp.kind] : []
-  kinds.push(...SKILL_BY_ID[def.id].production.filter((k) => k !== cp.kind && def.kinds.includes(k)))
+  // the checkpoint's kind first, then the skill's other production kinds: those this fact is asked in
+  const own = kindsOf(def, fact)
+  const kinds: TaskKind[] = own.includes(cp.kind) ? [cp.kind] : []
+  kinds.push(...SKILL_BY_ID[def.id].production.filter((k) => k !== cp.kind && own.includes(k)))
   let task: Task | null = null
   for (const kind of kinds) {
     task = buildTask(def, fact, kind, makeRng(hashSeed(`${run.seed}:${cp.id}:${nth}:task`)), run.asked, { mode: 'placement' }).task

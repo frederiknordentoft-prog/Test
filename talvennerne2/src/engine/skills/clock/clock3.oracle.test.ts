@@ -451,7 +451,13 @@ describe('clockElapsed oracle', () => {
   const def = registeredSkill('clockElapsed')
   const { canon, instances, all, built } = sweepC(def, 3)
   const ask = (b: Built): ElapsedAsk => askedElapsed(said(b.task), b.kind)!
-  const why = (b: Built, v: AnswerValue): WhyC => (typeof v === 'number' ? explainElapsed(ask(b), v) : { mis: [] })
+  // SPEC A24 (GENFIX3, approved by the integrator): the dial starts on the start clock (dialStart) and turns the short hand
+  // with the long one, so on the dial the hour cannot be left behind; the half hour across the hour is the turn back there
+  const why = (b: Built, v: AnswerValue): WhyC => {
+    if (typeof v !== 'number') return { mis: [] }
+    const w = explainElapsed(ask(b), v)
+    return b.kind === 'clockSet' ? { ...w, slip: false } : w
+  }
   const tags = hintTags(def, all)
 
   it('has SPEC §2.2’s four families, tid:<family>:<start> with the start on a quarter hour, 20 canonical starts each', () => {

@@ -134,13 +134,16 @@ describe('fractionOfSet oracle', () => {
     for (const { task } of built) {
       if (task.kind !== 'choice') continue
       const s = q(task)
+      // GENFIX3 (integrator, A9): a denominator beside a likelier slip is 'ambiguous' (setTags allows it, the
+      // test above holds the engine to it), so it is no sign, and no diagnostic card is owed
+      if (classifyAnswer(task, s.d) === 'ambiguous') continue
       if (s.d !== s.answer && s.d !== s.total && !task.options.includes(s.d)) problems.push(`${task.factId}: cards [${task.options}]`)
     }
     expect(first(problems)).toEqual([])
   }, TIMEOUT)
 
   it('has SPEC’s kinds and ceilings: share (0.01, production only here), keypad 0–24 (production), choice (box 3)', () => {
-    // a deal asked as itself on two plates (three quarters) is the it.fails test below; SPEC §3.3's own rule
+    // a deal asked as itself on two plates (three quarters) is A14's test below (it.fails until GENFIX3); SPEC §3.3's own rule
     // (a kind production for ≥ 90 % of the instances) holds by the keypad whatever its share tasks are
     const even = built.filter((b) => !(b.kind === 'share' && b.task.answerType === 'set'))
     expect(first(productionB3(even))).toEqual([])
@@ -155,9 +158,10 @@ describe('fractionOfSet oracle', () => {
    * so the child hands in one of ⌊total/2⌋ + 1 deals (3/4 of 4: 4|0, 3|1 or 2|2 — one in three). Counted
    * as A14 counts what the child can enter (and as keypad, choice and grid do), three quarters of 4, 8 and
    * 12 are guessed 1 in 3, 5 and 7: above 12 %, no production, and a lucky deal must not lift the key past
-   * box 3. (16 and up are 1 in 9 or less: production either way.)
+   * box 3. (16 and up are 1 in 9 or less: production either way.) GENERATOR BUG — Rettet (fractionOfSet.ts
+   * guessFloor): the deal was guessP 0.01, production with box 5, on every heap.
    */
-  it.fails('lifts a two-plate deal of three quarters to box 5 only when the deals the view takes make a guess unlikely (A14’s rule)', () => {
+  it('lifts a two-plate deal of three quarters to box 5 only when the deals the view takes make a guess unlikely (A14’s rule)', () => {
     const problems: string[] = []
     for (const { task } of built) {
       if (task.kind !== 'share' || task.answerType !== 'set') continue

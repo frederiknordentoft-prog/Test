@@ -1,4 +1,4 @@
-// Parent-facing texts for the 31 misconceptions (SPEC §4.2–4.3, §9.1; pædagogik-forslaget §3.2).
+// Parent-facing texts for the 32 misconceptions (SPEC §4.2–4.3, §9.1, A23; pædagogik-forslaget §3.2).
 // The child never sees any of this. Concepts are shown as "Vi har set tegn på …" (at most two),
 // slips together under "Typiske fejl lige nu" in a neutral tone: they are normal while a skill settles.
 import type { MisconceptionId } from '../engine/types'
@@ -194,6 +194,13 @@ export const MISCONCEPTION_TEXTS: Readonly<Record<MisconceptionId, Misconception
     example: '100 − 37 bliver 73',
     parent: 'Barnet regner ud, hvad hvert ciffer mangler op til 10, og får 73 i stedet for 63.',
     homeTip: 'Hop på en tegnet tallinje: Fra 37 op til 40 er 3, og fra 40 op til 100 er 60. Tilsammen 63. Leg byttepenge med en hundredkrone.',
+  },
+  coordSwap: {
+    nature: 'concept',
+    title: 'bytter om på hen og op i et koordinatsystem',
+    example: 'punktet (3, 2) sættes som (2, 3)',
+    parent: 'Barnet bytter om på de to tal, når et punkt skal aflæses eller sættes. At det første tal er hen og det andet op, er en aftale, man ikke kan regne sig frem til, så det tager tid at huske.',
+    homeTip: 'Leg skattejagt eller sænke slagskibe på ternet papir, og sig altid »hen« før »op«. Huskeregel: først hen ad gangen, så op ad trappen.',
   },
   digitSwap: {
     nature: 'mixed',

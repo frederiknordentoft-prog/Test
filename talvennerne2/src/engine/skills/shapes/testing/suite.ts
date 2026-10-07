@@ -28,6 +28,11 @@ export interface GeoOptions {
   isRight?(fact: Fact, task: Task, option: AnswerValue): boolean
   /** Highest box a right answer can reach, per kind (SPEC §3.3). */
   ceilings: Partial<Record<TaskKind, 2 | 3 | 5>>
+  /**
+   * Tasks of a production kind that are guessed too often to be production (box 3): fractionOfSet's deals
+   * of three quarters on two plates of 4, 8 and 12 things, one of 3, 5 or 7 deals (A14). Default none.
+   */
+  guessable?(fact: Fact, kind: TaskKind): boolean
   /** The perceptual misconception the skill's contrast items test, if any. */
   perceptual?: MisconceptionId
 }
@@ -141,8 +146,10 @@ export function geoSuite(def: SkillDef, opts: GeoOptions): void {
       const problems: string[] = []
       for (const { fact, kind, task } of tasks) {
         const prod = isProduction(task)
-        if (prod !== production.includes(kind)) problems.push(`${fact.id} ${kind}: production ${prod} (guessP ${guessP(task)})`)
-        if (ceilingFor(task) !== opts.ceilings[kind]) problems.push(`${fact.id} ${kind}: ceiling ${ceilingFor(task)}, expected ${opts.ceilings[kind]}`)
+        const guessable = opts.guessable?.(fact, kind) ?? false
+        if (prod !== (production.includes(kind) && !guessable)) problems.push(`${fact.id} ${kind}: production ${prod} (guessP ${guessP(task)})`)
+        const want = guessable ? 3 : opts.ceilings[kind]
+        if (ceilingFor(task) !== want) problems.push(`${fact.id} ${kind}: ceiling ${ceilingFor(task)}, expected ${want}`)
       }
       expect(problems.slice(0, 10)).toEqual([])
       expect(Object.keys(opts.ceilings).sort()).toEqual([...def.kinds].sort())

@@ -14,7 +14,9 @@ import { buildTask } from '../../tasks'
 import { classifyAnswer, detectableOf } from '../../misconceptions'
 import { isCorrect } from '../../answer'
 import { ceilingFor, guessP, isProduction } from '../../kinds'
-import { makeRng } from '../../rng'
+import { hashSeed, makeRng } from '../../rng'
+import { factsOf, registeredSkills } from '../../registry'
+import { extrasOf, type SkillModule } from '../types'
 import { compile } from '../../../speech/compile'
 import { clipInfo } from '../../../speech/catalog'
 import { clips as CLOCK3 } from '../../../speech/clips/skills/clock3'
@@ -240,6 +242,59 @@ describe('the tasks', () => {
   })
 })
 
+// ─── The dial's own start (SkillExtras.dialStart, GENFIX3) ─────────────────────
+
+describe('clockElapsed starts the dial on the start clock', () => {
+  it('starts every dial where the time starts, so a tick without turning the hands is the start clock: operand', () => {
+    let n = 0
+    for (const { fact: f, kind, task } of tasksUnderTest(elapsed)) {
+      if (kind !== 'clockSet') continue
+      const start = Number(f.id.split(':')[2])
+      expect([task.dialStart, classifyAnswer(task, start)], f.id).toEqual([start, 'operand'])
+      n++
+    }
+    expect(n).toBeGreaterThan(80)
+  })
+
+  it('asks the time span as a turn of the long hand: forward to the answer, the other way wrongOperation', () => {
+    // kvart over tre, om en halv time: from 3:15 a half turn on to 3:45, a half turn back is 2:45
+    const t = build(elapsed, 'tid:plusHalf:195', 'clockSet')
+    expect([t.dialStart, t.answer, classifyAnswer(t, 165)]).toEqual([195, 225, 'wrongOperation'])
+    // kvart i tre, for en halv time siden: from 2:45 back to 2:15, forward is 3:15
+    const back = build(elapsed, 'tid:minusHalf:165', 'clockSet')
+    expect([back.dialStart, back.answer, classifyAnswer(back, 195)]).toEqual([165, 135, 'wrongOperation'])
+  })
+
+  it('falls back to a drawn start when a start would break GENFIX2’s rules (the engine checks it)', () => {
+    const onAnswer: SkillModule = { ...clockElapsedModule, dialStart: (f) => Number(f.answer) }
+    for (const { fact: f, kind, task } of tasksUnderTest(onAnswer).filter((x) => x.kind === 'clockSet')) {
+      expect(task.dialStart, `${f.id} ${kind}`).not.toBe(dial(Number(task.answer)))
+      expect(isMisconception(classifyAnswer(task, task.dialStart!)), f.id).toBe(false)
+    }
+  })
+
+  it('leaves every other clock as it was: only clockElapsed has the hook, and the other dials start as before', () => {
+    expect(registeredSkills().filter((d) => extrasOf(d).dialStart).map((d) => d.id)).toEqual(['clockElapsed'])
+    // every start the other clock skills draw, fingerprinted on the code before the hook (GENFIX3)
+    const out: Record<string, string> = {}
+    for (const def of registeredSkills()) {
+      if (!def.kinds.includes('clockSet') || def.id === 'clockElapsed') continue
+      const facts = [...factsOf(def)]
+      if (def.instance) {
+        for (const fam of def.families) {
+          const rng = makeRng(hashSeed(`dial:${def.id}/${fam.id}`))
+          for (let i = 0; i < 40; i++) facts.push(def.instance(fam, rng, new Set()))
+        }
+      }
+      const starts = facts.map((f, i) => buildTask(def, f, 'clockSet', makeRng(hashSeed(`dial:${f.id}:${i}`)), i).task.dialStart)
+      out[def.id] = `${starts.length}:${hashSeed(starts.join(','))}`
+    }
+    expect(out).toEqual({
+      clockDigital: '120:2317841506', clockFive: '284:774740682', clockHalf: '12:2202199244', clockHour: '12:2245631264', clockQuarter: '24:3427099425',
+    })
+  })
+})
+
 // ─── Misconceptions ─────────────────────────────────────────────────────────
 
 describe('misconceptions', () => {
@@ -293,8 +348,9 @@ describe('misconceptions', () => {
       const t = build(elapsed, 'tid:plusHalf:195', kind)
       expect(t.answer).toBe(225)
       expect([classifyAnswer(t, 165), classifyAnswer(t, 195), classifyAnswer(t, 240)]).toEqual(['wrongOperation', 'operand', 'near'])
-      // 3:45 + ½ h set as 3:15 is the hour forgotten as likely as the hands turned back: never evidence
-      expect(classifyAnswer(build(elapsed, 'tid:plusHalf:225', kind), 195)).toBe('near')
+      // 3:45 + ½ h as 3:15: on a card the hour forgotten as likely as the hands turned back (never evidence); on the
+      // dial, which starts on 3:45 and turns the short hand with the long one, only the turn back reaches it
+      expect(classifyAnswer(build(elapsed, 'tid:plusHalf:225', kind), 195)).toBe(kind === 'clockSet' ? 'wrongOperation' : 'near')
       const half = build(elapsed, 'tid:plusHour:150', kind)
       expect([classifyAnswer(half, 270), classifyAnswer(half, 90)]).toEqual(['halfPastNext', 'wrongOperation'])
       expect(classifyAnswer(build(elapsed, 'tid:minusHalf:165', kind), 195)).toBe('wrongOperation')

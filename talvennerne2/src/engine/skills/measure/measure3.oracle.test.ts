@@ -106,7 +106,8 @@ describe('convertCmM oracle', () => {
   // may differ (add100Carry/sub100Borrow, add1000/sub1000, mulTens); pædagogik §4.1 lets a family give more time, never
   // less ("tærsklerne skal være fair"). convertCmM's fastMs gives mToCm's keypad 8 000 ms, where every answer has three
   // digits (100–900 cm): SPEC gives 10 000 ms. A child who types "300" for 3 m in 9 s is right but not fast.
-  it.fails('gives every task at least SPEC §3.2’s time to count as fast (mToCm keypad: 10 s for three digits)', () => {
+  // GENERATOR BUG — Rettet (GENFIX3): mToCm's keypad gets 10 000 ms
+  it('gives every task at least SPEC §3.2’s time to count as fast (mToCm keypad: 10 s for three digits)', () => {
     expect(first(fastProblemsC(def, built))).toEqual([])
   })
 

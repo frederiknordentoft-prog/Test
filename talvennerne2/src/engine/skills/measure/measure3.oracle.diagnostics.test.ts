@@ -56,7 +56,8 @@ describe('Markedet’s measuring through the real diagnostics (SPEC §4.3), the 
   // mCmToCm draws the centimeter evenly from 1–99 (9 in 99) and is one family of four: about 2 % of convertCmM's tasks
   // can show it. A child who always writes 2 m 5 cm as 250 is flagged within 160 answers in 10 of these 30 seeded runs
   // (every other idea of convertCmM, kronerOre, change and the clocks: 30 of 30). SPEC §4.3 (the brief): within 160.
-  it.fails('flags a child who keeps moving the zero (2 m 5 cm written 250) within 160 answers in at least 27 of 30 seeded runs', () => {
+  // GENERATOR BUG — Rettet (GENFIX3): mCmToCm draws 1–9 cm in a third of its instances, some canonical
+  it('flags a child who keeps moving the zero (2 m 5 cm written 250) within 160 answers in at least 27 of 30 seeded runs', () => {
     const runs = flaggedRuns(NODE, ['convertCmM'], (seed) => keepsC(movesZero, seed), 'zeroPlaceholder', 160, 30)
     expect(runs.filter((r) => r.others.length > 0)).toEqual([])
     expect(runs.filter((r) => r.at !== null).length).toBeGreaterThanOrEqual(27)

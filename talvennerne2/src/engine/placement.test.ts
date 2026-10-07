@@ -10,6 +10,7 @@ import { newProfile } from './testing/profile'
 import { isProduction } from './kinds'
 import { emptyKey } from './mastery'
 import type { Grade, Task } from './types'
+import type { SkillModule } from './skills/types'
 
 const ladderReg = makeRegistry(LADDER.map((c) => standIn(c.skill)))
 const fixtures = makeRegistry(FIXTURE_SKILLS)
@@ -94,6 +95,16 @@ describe('placement ladder (SPEC §8, pædagogik-forslaget §4.2)', () => {
   it('only runs once every ladder skill is registered', () => {
     expect(placementAvailable(ladderReg)).toBe(true)
     expect(placementAvailable(fixtures)).toBe(false)
+  })
+
+  it('asks a rung in the kinds its fact is asked in (kindsFor): another production kind when the rung’s is not one of them', () => {
+    // a stand-in rule: count10 never asked with the basket, so L1 is typed instead
+    const noBasket: SkillModule = { ...standIn('count10'), kindsFor: () => ['choice', 'keypad'] }
+    const reg = makeRegistry(LADDER.map((c) => (c.skill === 'count10' ? noBasket : standIn(c.skill))))
+    const run = startPlacement(1, 7, true)!
+    expect(placementTask(run, ladderReg)!.kind).toBe('countTap')
+    const t = placementTask(run, reg)!
+    expect([t.skill, t.kind, isProduction(t)]).toEqual(['count10', 'keypad', true])
   })
 })
 
