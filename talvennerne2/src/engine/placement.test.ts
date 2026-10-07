@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
-  LADDER, PLACEMENT_MAX_TASKS, answerPlacement, placementAvailable, placementResult, placementTask, seedFromPlacement,
-  seedStage, startPlacement, stageOf, type PlacementRun,
+  LADDER, PLACEMENT_MAX_TASKS, answerPlacement, passedOver, placementAvailable, placementResult, placementTask, saysSomething,
+  seedFromPlacement, seedStage, startPlacement, stageOf, type PlacementRun,
 } from './placement'
-import { makeRegistry, skillKeys } from './registry'
+import { placedStart } from './ladder'
+import { factsOf, makeRegistry, skillKeys, skillRegistry } from './registry'
 import { FIXTURE_SKILLS, addTo10Fixture, hear20Fixture } from './testing/fixtureSkills'
 import { standIn } from './testing/ladderSkills'
 import { newProfile } from './testing/profile'
@@ -168,5 +169,83 @@ describe('seeding from placement', () => {
     const p = seedFromPlacement(before, null, { skills: fixtures, day: DAY, now: NOW })
     expect(p.keys).toBe(before.keys)
     expect(p.placement).toEqual({ done: true, at: NOW, highest: null })
+  })
+
+  it('passes over exactly the regions it opens with their lessons skipped (passedOver, which the map reads)', () => {
+    for (const c of LADDER) {
+      const p = seedFromPlacement(newProfile(), c.id, { skills: fixtures, day: DAY, now: NOW })
+      const skipped = [...new Set(Object.entries(p.nodes).filter(([, n]) => n?.skipped).map(([id]) => id.replace(/-(l1|l2|l3|mix)$/, '')))]
+      expect(skipped, c.id).toEqual(passedOver(c.id))
+      expect(p.unlocked.regions, c.id).toEqual(passedOver(c.id))
+    }
+    expect(passedOver(null)).toEqual([])
+  })
+})
+
+describe('where a placed child starts (SPEC A24, review app-w3-r1 P2-4)', () => {
+  const done = (highest: string | null) => ({ done: true, at: 1, highest })
+
+  it('in the first region the placement did not pass over, in the world P belongs to', () => {
+    const starts = Object.fromEntries(LADDER.map((c) => [c.id, placedStart(done(c.id))!.region]))
+    expect(starts).toEqual({
+      L1: 'w0-tal10', L2: 'w0-tal10', L3: 'w0-tal10', L4: 'w0-minus10',
+      L5: 'w1-tal100', L6: 'w1-tieren', L7: 'w1-tieren', L8: 'w1-tieren',
+      L9: 'w2-tal1000', L10: 'w2-tal1000', L11: 'w2-tal1000', L12: 'w2-gange',
+      L13: 'w3-tabellen', L14: 'w3-tabellen',
+    })
+    expect(placedStart(done('L4'))).toMatchObject({ world: 'eng', over: new Set(['w0-tal10', 'w0-former', 'w0-plus10', 'w0-tal20']) })
+    expect(placedStart(done('L5'))!.world).toBe('bakke')
+    // all of it (L14): Tabeltoppen, where the grade starts a child in 3. klasse anyway
+    expect(placedStart(done('L14'))).toMatchObject({ region: 'w3-tabellen', world: 'fjeld' })
+    expect(placedStart(done('L14'))!.over).toEqual(new Set([...passedOver('L13'), 'w3-store-tal', 'w3-penge-maal']))
+    // nothing passed: nothing passed over
+    expect(placedStart(done(null))).toMatchObject({ region: 'w0-tal10', world: 'eng', over: new Set() })
+  })
+
+  it('only after a finished placement: skipped, stopped before the first answer, or never offered', () => {
+    expect(placedStart({ done: false, at: null, highest: null })).toBeNull()
+    expect(placedStart(undefined)).toBeNull()
+  })
+})
+
+describe('the questions of a rung say something about it (review app-w3-r1 P3-8)', () => {
+  const reg = skillRegistry()
+  const pairs = (rung: string, seeds = 200) =>
+    Array.from({ length: seeds }, (_, seed) => {
+      const start = startPlacement(3, seed + 1, true)!
+      const run = { ...start, index: start.ladder.indexOf(rung) }
+      return [placementTask(run, reg)!, placementTask({ ...run, results: [true] }, reg)!] as const
+    })
+
+  it('never asks "10 − 0", "5 − 0", "9 + 1", "8 − 8" or "1 · 9"', () => {
+    const trivial = /^(add:(0|1)\+|add:\d+\+(0|1)$|sub:\d+-(0|1)$|sub:(\d+)-\5$|mul:1x)/
+    for (const c of LADDER) {
+      for (const [a, b] of pairs(c.id, 60)) {
+        for (const t of [a, b]) expect(t.factId, `${c.id}: ${t.factId}`).not.toMatch(trivial)
+        expect(a.factId, c.id).not.toBe(b.factId)
+      }
+    }
+    expect(saysSomething({ id: 'sub:10-0', skill: 'subTo10', family: 'big', operands: [10, 0], answer: 10, rank: 64 })).toBe(false)
+    expect(saysSomething({ id: 'sub:9-8', skill: 'subTo10', family: 'big', operands: [9, 8], answer: 1, rank: 47 })).toBe(true)
+  })
+
+  it('asks minus inden for 10 (L4) with two real differences, not the same second question every time', () => {
+    const seconds = new Set<string>()
+    for (const [a, b] of pairs('L4')) {
+      for (const t of [a, b]) {
+        const [x, y] = t.factId.slice(4).split('-').map(Number)
+        expect(y, t.factId).toBeGreaterThan(1)
+        expect(x - y, t.factId).toBeGreaterThan(0)
+      }
+      seconds.add(b.factId)
+    }
+    expect(seconds.size).toBeGreaterThan(5)
+  })
+
+  it('keeps enough questions on every rung', () => {
+    for (const c of LADDER) {
+      const def = reg.get(c.skill)!
+      expect(factsOf(def).filter(saysSomething).length, c.id).toBeGreaterThanOrEqual(2)
+    }
   })
 })

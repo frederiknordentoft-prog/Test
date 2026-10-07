@@ -12,7 +12,8 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.ceremony.name.hint': 'Skriv et navn',
   's.ceremony.name.is': 'Din ven hedder',
   's.ceremony.egg.later': 'Gem ægget til senere',
-  's.ceremony.choose': 'Tryk på den, du vil have.',
+  // the choice is always of an animal: "et dyr", so "det" (QA3a P3-7)
+  's.ceremony.choose': 'Tryk på det, du vil have.',
   's.ceremony.medal.for': 'Medaljen er for:',
   's.ceremony.trial.score': 'planker lagt',
   // "Det lærte du": a fact said whole (QA2 P1-1)

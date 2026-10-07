@@ -2,14 +2,15 @@
 // opened through profile.unlocked, the parent's and the placement's way in (src/meta/unlock.ts):
 // nothing here is a rule of its own, it only adds to that list — and never takes anything away.
 //
-// Until the placement exists, every child starts in Engdalen. The grade still matters:
+// A child in 0.–2. class starts in Engdalen; once Stjernefjeldet is ready, a child in 3. class can
+// first show Pip what it knows (the placement, SPEC A24) and starts where that fits. The grade matters:
 //   - a child in 1.–3. class gets every place of the worlds below its grade opened, and its own
 //     world when that is ready (gradeOpenings);
 //   - a grown-up can open any region or whole world that is ready from the dashboard.
 // A world is ready when every skill of its regions has a module and its friends, chests and finale
 // are drawn (src/meta/built.ts): an open world opens its first regions by itself, and a stone whose
 // skills have no module would lead nowhere (the round would have no tasks). As the skills and
-// drawings land, the worlds become ready by themselves — today that is Engdalen only.
+// drawings land, the worlds become ready by themselves (and are released in RELEASED_WORLDS).
 import { REGIONS, WORLDS, WORLD_BY_ID, regionsOfWorld } from '../../../../content/curriculum'
 import type { Grade, ProfileDoc, RegionId, SkillId, WorldId } from '../../../../engine/types'
 import { DRAWN, regionHasContent, worldReady, type Drawn } from '../../../../meta/built'

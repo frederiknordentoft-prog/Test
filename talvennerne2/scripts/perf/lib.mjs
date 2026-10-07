@@ -60,7 +60,11 @@ export async function tapEl(page, loc) {
   return true
 }
 
-/** From an empty device into the first round: intro, sound check, name, egg, friend's name, grade. */
+/**
+ * From an empty device into the first round: intro, sound check, name, egg, friend's name, grade. In
+ * 3. klasse, once Stjernefjeldet is released, the ladder's intro comes first: "Spring over" starts the
+ * first round on the next stone of the child's own world (SPEC A24).
+ */
 export async function onboard(page, url, grade = '0') {
   await page.goto(url, { waitUntil: 'networkidle' })
   await page.waitForSelector('.tv-intro [data-next]', { timeout: 30_000 })
@@ -95,6 +99,11 @@ export async function onboard(page, url, grade = '0') {
   await page.locator(`.tv-grade[data-grade="${grade}"]`).click()
   await wait(300)
   await page.locator('.tv-onb [data-next]').click()
+  await page.waitForSelector('.tv-round, [data-place-skip]', { timeout: 30_000 })
+  if (await page.locator('[data-place-skip]').count()) {
+    await wait(600)
+    await page.locator('[data-place-skip]').click()
+  }
   await page.waitForSelector('.tv-round', { timeout: 30_000 })
 }
 

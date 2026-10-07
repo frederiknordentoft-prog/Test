@@ -131,7 +131,7 @@ const written = (a: number, b: number) => regroupPlan(a, b, '−').marks.map((ms
 
 /** The carry row's text per column, from the markup. */
 function carryRow(markup: string): string[] {
-  const cells = [...markup.matchAll(/<span class="tv-cols__carry">(.*?)<\/span>(?=<span class="tv-cols__(?:carry|op)")/g)].map((m) => m[1])
+  const cells = [...markup.matchAll(/<span class="tv-cols__carry"(?: style="[^"]*")?>(.*?)<\/span>(?=<span class="tv-cols__(?:carry|op)")/g)].map((m) => m[1])
   return cells.map((c) => [...c.matchAll(/>(-?\d+)</g)].map((m) => m[1]).join(' '))
 }
 
@@ -170,9 +170,15 @@ describe('exchanging in the column picture', () => {
     expect(carryRow(legacy(100, 37, '−', VARIANTS[1]))).toEqual(['0', '-1 10', '10'])
   })
 
-  it('strikes the digit written over when the next one comes, and draws the over-written column side by side', () => {
+  it('strikes the digit written over when the next one comes, and stacks the over-written column (QA3a P3-4)', () => {
     const film = html(403, 158, '−', VARIANTS[1])
-    expect(film).toContain('<span class="tv-cols__marks">')
+    // the new digit above the old one, in a taller row: "10 9" never reads as 109
+    expect(film).toContain('<span class="tv-cols__marks" style="flex-direction:column-reverse;align-items:center;gap:1px;line-height:1">')
+    expect(film).toContain('<span class="tv-cols__carry" style="height:42px">')
+    expect(html(512, 278, '−', VARIANTS[0])).toContain('<span class="tv-cols__marks" style="flex-direction:column-reverse')
+    // 100 − 37 (sub100Borrow, 2. klasse) keeps its picture, side by side
+    expect(html(100, 37, '−', VARIANTS[0])).toContain('<span class="tv-cols__marks">')
+    expect(html(100, 37, '−', VARIANTS[0])).not.toContain('height:42px')
     expect(film).toMatch(/class="tv-cols__plus10 is-replaced is-film tv-step" style="--gone:900ms;animation-delay:200ms">10</)
     expect(film).toMatch(/class="tv-cols__lent tv-step" style="animation-delay:900ms">9</)
     const still = html(403, 158, '−', VARIANTS[0])

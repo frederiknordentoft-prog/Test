@@ -7,6 +7,8 @@ import { useRound } from '../../state/useRound'
 import { CENTRE, DIAL, KNOB, VIEW_W, dialValue, hourAngle, minuteAngle, mod, turn } from '../../ui/task/clockSet/logic'
 import { fewestPieces, piecesOfSet } from '../../ui/task/pay/logic'
 import { fracOf, partsOfValue } from '../../ui/task/colorParts/logic'
+import { frameOf, ux, uy } from '../../ui/task/grid/geometry'
+import { gridSetup, placeValue, pointOf, readValue } from '../../ui/task/grid/logic'
 
 const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel)
 const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => [...root.querySelectorAll<T>(sel)]
@@ -196,6 +198,18 @@ export async function answer(value: AnswerValue): Promise<void> {
     case 'share': {
       const view = await viewOf('share', area)
       const plates = $$('[data-plate]', view)
+      if (typeof value === 'string') {
+        // the deal itself (a set, largest first: '9|3'): each plate gets its own count
+        const counts = splitTokens(value).map(Number)
+        for (const [p, n] of counts.entries()) {
+          for (let i = 0; i < n; i++) {
+            tapOn(plates[p], `tallerken ${p + 1}`)
+            await wait(30)
+          }
+        }
+        check()
+        return
+      }
       const things = $$('[data-pile] [data-thing]', view).length
       for (let i = 0; i < things; i++) {
         // −1 (an uneven deal): everything on the first plate; else round the plates in turn
@@ -211,6 +225,39 @@ export async function answer(value: AnswerValue): Promise<void> {
       for (const i of partsOfValue(value, parts)) {
         tapOn($(`path[data-part="${i}"]`, view), `delen ${i}`)
         await wait(30)
+      }
+      check()
+      return
+    }
+    case 'grid': {
+      // place: a tap on the crossing; read: a tap on each axis at the number (SPEC A21)
+      const view = await viewOf('grid', area)
+      const q = pointOf(value)
+      if (!q) throw new Error(`drive: ${value} er intet punkt`)
+      const h = Number(view.dataset.h)
+      const svg = $('.tv-grid__figure svg', view)
+      if (!svg) throw new Error('drive: nettet findes ikke')
+      const r = svg.getBoundingClientRect()
+      const { W, H } = frameOf(Number(view.dataset.w), h)
+      const atX = (u: number) => r.left + (u * r.width) / W
+      const atY = (v: number) => r.top + (v * r.height) / H
+      if (view.dataset.gridMode === 'read') {
+        for (const axis of ['x', 'y'] as const) {
+          const strip = $(`[data-axis="${axis}"]`, view)
+          if (!strip) throw new Error(`drive: aksen ${axis} findes ikke`)
+          const b = strip.getBoundingClientRect()
+          const x = axis === 'x' ? atX(ux(q.x)) : b.left + b.width / 2
+          const y = axis === 'y' ? atY(uy(h, q.y)) : b.top + b.height / 2
+          pointer(strip, 'pointerdown', x, y)
+          pointer(strip, 'pointerup', x, y)
+          await wait(40)
+        }
+      } else {
+        const board = $('[data-board]', view)
+        if (!board) throw new Error('drive: nettets flade findes ikke')
+        pointer(board, 'pointerdown', atX(ux(q.x)), atY(uy(h, q.y)))
+        pointer(board, 'pointerup', atX(ux(q.x)), atY(uy(h, q.y)))
+        await wait(40)
       }
       check()
       return
@@ -269,11 +316,26 @@ export function wrongFor(task: Task): AnswerValue | null {
       return typeof a === 'number' ? dialValue(task, mod(a, DIAL) + 60) : null
     case 'pay':
       return typeof a === 'number' ? a + 100 : `${a}|c100`
-    case 'share':
-      return -1
+    case 'share': {
+      // a set answer: one thing moved from the fullest plate to the emptiest; else an uneven deal
+      if (typeof a !== 'string') return -1
+      const c = splitTokens(a).map(Number)
+      if (c.length < 2 || c[0] < 1) return null
+      c[0] -= 1
+      c[c.length - 1] += 1
+      return c.sort((x, y) => y - x).join('|')
+    }
     case 'colorParts': {
       const f = fracOf(a)
       return f ? `frac:${f.n > 1 ? f.n - 1 : f.n + 1}/${f.d}` : null
+    }
+    case 'grid': {
+      // the point one step along (or back at the far edge), in the answer's own form
+      const q = pointOf(a)
+      const setup = gridSetup(task)
+      if (!q || !setup) return null
+      const o = { x: q.x < setup.w ? q.x + 1 : q.x - 1, y: q.y }
+      return setup.mode === 'read' ? readValue(o.x, o.y) : placeValue(o)
     }
     default:
       return null

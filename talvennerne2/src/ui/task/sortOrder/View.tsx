@@ -10,6 +10,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { AnswerValue, Task } from '../../../engine/types'
 import { playSfx } from '../../../audio/sfx'
 import { Icon } from '../../design/Icon'
+import { SpokenText } from '../../design/SpokenText'
 import { usePress } from '../../design/usePress'
 import { cx } from '../../design/cx'
 import { orderValue, splitTokens } from '../answers'
@@ -25,6 +26,18 @@ export function shelfCells(task: Task): (AnswerValue | null)[] {
   return Array.from({ length: task.options.length }, () => null)
 }
 
+/**
+ * Which way fractions are put in order (QA3a P2-3): their row of empty places has a step, down (< 0,
+ * the biggest first) or up (the smallest first), and the view writes "Størst" and "Mindst" at its
+ * ends. 0: no direction is drawn — numbers in order (every sortOrder of 0.–2. klasse) keep their
+ * plain arrow, also a count on in tens whose row only has places.
+ */
+export function shelfDirection(task: Task): -1 | 0 | 1 {
+  const p = task.prompt
+  if (task.optionView !== 'fraction' || p.scene !== 'row' || !p.step || !sortOrderOwnsPrompt(task) || p.cells.some((c) => c !== null)) return 0
+  return p.step < 0 ? -1 : 1
+}
+
 /** The view draws a stepping-stone row itself, so the round leaves the prompt card out. */
 export function sortOrderOwnsPrompt(task: Task): boolean {
   return task.prompt.scene === 'row' && task.prompt.cells.filter((c) => c === null).length === task.options.length
@@ -33,6 +46,7 @@ export function sortOrderOwnsPrompt(task: Task): boolean {
 export function SortOrderView({ task, mode, given, onSubmit, onActivity }: TaskViewProps) {
   const n = task.options.length
   const cells = shelfCells(task)
+  const direction = shelfDirection(task)
   const fixed = cells.filter((c) => c !== null).length
   // placed[k] is the index of the option on shelf place k
   const [placed, setPlaced] = useState<number[]>([])
@@ -109,9 +123,13 @@ export function SortOrderView({ task, mode, given, onSubmit, onActivity }: TaskV
           )
         })}
       </div>
-      <div className="tv-sort__arrow" aria-hidden>
-        <Icon name="next" size={22} strokeWidth={2.6} />
-      </div>
+      {direction === 0 ? (
+        <div className="tv-sort__arrow" aria-hidden>
+          <Icon name="next" size={22} strokeWidth={2.6} />
+        </div>
+      ) : (
+        <ShelfEnds down={direction < 0} />
+      )}
       <div className="tv-sort__pool">
         {task.options.map((o, i) => (
           <div key={String(o)} className="tv-sort__spot">
@@ -132,6 +150,36 @@ export function SortOrderView({ task, mode, given, onSubmit, onActivity }: TaskV
           onCheck={() => onSubmit(orderValue(placed.map((i) => task.options[i])))}
         />
       </div>
+    </div>
+  )
+}
+
+const ENDS: CSSProperties = { display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '0 6px', boxSizing: 'border-box', color: 'var(--color-ink-2)' }
+const END: CSSProperties = { display: 'flex', alignItems: 'center', gap: 5, fontSize: 17, fontWeight: 900, whiteSpace: 'nowrap' }
+const LINE: CSSProperties = { flex: 1, display: 'flex', justifyContent: 'center', height: 3, alignItems: 'center', background: 'var(--color-line-2)', borderRadius: 2, color: 'var(--color-ink-3)' }
+
+/** A bar as big as the fraction at that end: long beside "Størst", short beside "Mindst". */
+const bar = (big: boolean): CSSProperties => ({
+  display: 'block', width: big ? 26 : 8, height: 12, borderRadius: 3, background: 'var(--color-primary)', opacity: big ? 1 : 0.75,
+})
+
+/** "Størst ——→ Mindst" (or the other way) under the places, from the first place to the last. */
+function ShelfEnds({ down }: { down: boolean }) {
+  const end = (big: boolean) => (
+    <span style={END} data-sort-end={big ? 'biggest' : 'smallest'}>
+      <span style={bar(big)} aria-hidden />
+      <SpokenText clip={big ? 's.kind.sortOrder.biggest' : 's.kind.sortOrder.smallest'} silent />
+    </span>
+  )
+  return (
+    <div className="tv-sort__ends" style={ENDS} data-sort-dir={down ? 'down' : 'up'}>
+      {end(down)}
+      <span style={LINE} aria-hidden>
+        <span style={{ display: 'grid', placeItems: 'center', padding: '0 4px', background: 'var(--color-paper)', borderRadius: 999 }}>
+          <Icon name="next" size={20} strokeWidth={2.6} />
+        </span>
+      </span>
+      {end(!down)}
     </div>
   )
 }

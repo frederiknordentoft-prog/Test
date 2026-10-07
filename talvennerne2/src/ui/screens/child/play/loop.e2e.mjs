@@ -320,7 +320,8 @@ async function run(browser) {
         })
         if (fit) cardFits.push(fit)
       }
-      return firsts === 3
+      // a task whose view draws its own prompt has no card: go on until one card was measured
+      return firsts >= 3 && (cardFits.length > 0 || firsts === 6)
     },
   })
   const kept = await page.evaluate(() => {

@@ -1,7 +1,8 @@
 // Frame times on the task screen at 4× CPU throttle (SPEC §15.2: p95 ≤ 20 ms; QA2 P3-16), on the
 // production build. A child is onboarded with the finger; WORLD=eng plays the first round straight
 // after the onboarding, WORLD=bakke|skov onboards in 2nd grade, goes to that world on the map and
-// plays its first open stone. Answers are random taps (both feedback paths: the celebration and the
+// plays its first open stone, and WORLD=fjeld (once it is released) onboards in 3rd grade, skips the
+// placement ladder and plays the first round, which starts on Stjernefjeldet's next stone. Answers are random taps (both feedback paths: the celebration and the
 // strategy), seeded by SEED, so a round runs long; MINUTES caps it. RUNS plays that many rounds,
 // each from a fresh device, and sums them up together. PROFILE=heavy first puts a long-time player
 // (scripts/perf/heavy.ts → artifacts/perf/heavy.json, or HEAVY=<file>) into the child's own export
@@ -265,6 +266,9 @@ async function playRound(browser, url, run) {
   if (WORLD === 'eng' && !heavy) {
     await onboard(page, url, '0')
     result.stone = 'w0-tal10-l1'
+  } else if (WORLD === 'fjeld' && !heavy) {
+    await onboard(page, url, '3')
+    result.stone = 'fjeld: den næste sten efter "Spring over"'
   } else {
     await onboard(page, url, '2')
     await toMap(page)

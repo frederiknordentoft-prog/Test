@@ -75,6 +75,19 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
   - Hintet starter med "Det første tal er hen, og det andet tal er op."
   - Forældreteksten og hjemmetippet står i `src/content/misconceptionTexts.ts`. `MISCONCEPTION_IDS` og `ids.lock.json` får id'et, og §4's tal 31 er nu 32.
   - Før blev et barn, der byttede i alle svar, aldrig opdaget, fordi byttet var `other`.
+- **A24 – Indplacering i 3. klasse og bølge 3's øvrige kontraktbeslutninger (7/10, integrator; bølge 3).**
+  - **Indplaceringen** (§8 trin 4) findes kun for 3. klasse i onboardingen. Den vises først, når Stjernefjeldet er bygget og frigivet (`worldBuilt('fjeld')`). Før det, og altid for 0.–2. kl., er onboardingen uændret: barnet starter i Tællelunden. "Indplacering igen" findes ikke.
+  - **Seeding:** Stigens trin stiger ikke strengt i stage. Derfor seeder indplaceringen op til `seedStage(P)`, den højeste stage til og med det placerede trin P (`src/engine/ladder.ts`, genbrugt af `placement.ts`).
+  - **Start (QA3a P2-4):**
+    - Regioner, hvis skills alle har stage < `seedStage(P)`, er sprunget over (`passedOver`). Deres lektioner er `skipped`, mens ven, kiste og prøve venter.
+    - Første tur starter på første sten i den laveste region, der ikke er sprunget over (`placedStart`). Fx giver L14 Tabeltoppen, L5 Hundredemarken, L4 Minusbækken og P = null Tællelunden.
+    - Regionens verden er barnets hjemverden. Kortet viser den, når ingen verden er valgt, og foreslår først regioner, der ikke er sprunget over.
+    - Hjemverdenen rykker op efter de eksisterende regler (`worldComplete`). Verdener, som klassetrinnet har åbnet, kan altid vælges i verdensvælgeren.
+    - Målene laves, når klassetrinnet er valgt, og igen efter stigen.
+    - "Spring over" og "Det er nok" før første svar er ingen indplacering (`placement.done` er falsk), så barnet starter i egen verden. Reglen gælder kun ved `placement.done`, så 0.–2. kl. er uændret.
+  - **Statistik:** Indplaceringens svar (`mode: 'placement'`) tæller ikke i forældrenes nøjagtigheds- og tidstal (`countsInStats`, pædagogik §4.2). Indplaceringen vises stadig som en tur for sig.
+  - **Timeskiftet på urskiven:** I `clockElapsed` starter urskiven på starttiden (`SkillExtras.dialStart`). En halv time hen over timeskiftet, drejet den forkerte vej (fx 3:15 for 3:45 + ½ time), er `wrongOperation` på urskiven og `near` på kortene. ORK3c's orakel følger det.
+  - **Antal misforståelser:** Med A23 er der 32. Tallet 31 i §4.2, §10.2 og §14 læses som 32.
 
 ---
 

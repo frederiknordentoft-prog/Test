@@ -55,11 +55,19 @@ function speechOf(screen: Screen, ctx: LearnedContext, animals: readonly Animal[
   }
 }
 
-/** What "Det lærte du" knows about the round that just ended: its right first tries, and a failed trial. */
+/**
+ * What "Det lærte du" knows about the round that just ended: its right first tries, a failed trial,
+ * and the instance of a family the child last answered right (KeyState.recent, newest last).
+ */
 function learnedContext(all: readonly Reward[]): LearnedContext {
   const round = useRound.getState()
   const correct = round.status === 'finished' ? round.firstTries.filter((f) => f.correct).map(({ key, skill }) => ({ key, skill })) : []
-  return { correct, failedTrial: all.some((r) => r.t === 'trial' && !r.passed) }
+  const keys = useProfile.getState().profile?.keys
+  const instanceOf = (key: string) => {
+    const recent = keys?.[key]?.recent ?? []
+    return recent[recent.length - 1]
+  }
+  return { correct, failedTrial: all.some((r) => r.t === 'trial' && !r.passed), instanceOf }
 }
 
 function soundOf(screen: Screen): SfxName | null {

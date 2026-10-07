@@ -1096,6 +1096,13 @@
   border-radius: 24px;
   background: var(--tone-soft);
 }
+/* a world party's things, side by side (they wrap on a narrow phone) */
+.tv-stonesheet__things {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
 .tv-stonesheet__planks {
   display: flex;
   flex-direction: column;

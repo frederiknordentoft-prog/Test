@@ -2,11 +2,13 @@
 // Danish and without read-aloud (like the dashboard): put the app on the home screen first, all
 // data stays on the device, and every reward is earned by doing maths. "Kom i gang" goes on to the
 // sound check, or straight to onboarding when the device has been checked before (the last child
-// was deleted and the intro is shown again).
+// was deleted and the intro is shown again). Where children start follows the onboarding: once
+// Stjernefjeldet is built, a child in 3. klasse shows Pip what it knows first (SPEC A24).
 import type { ReactNode } from 'react'
 import { useNav } from '../../../app/nav'
 import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
+import { worldBuilt } from '../../../meta/built'
 import { useSession } from '../../../state/useSession'
 import { Button } from '../../design/Button'
 import { Icon } from '../../design/Icon'
@@ -70,8 +72,11 @@ export default function ParentIntroScreen(_: ScreenProps<RouteOf<'parentIntro'>>
           <div>
             <h1 className="tv-intro__h1">Velkommen til Talvennerne</h1>
             <p className="tv-intro__lead">
-              Matematik fra 0. til 3. klasse, hvor barnet regner sig til dyr, tøj og nye steder på kortet. Alle børn starter i Engdalen; i forældredelen kan I
-              åbne flere steder. Tre ting, før I går i gang:
+              Matematik fra 0. til 3. klasse, hvor barnet regner sig til dyr, tøj og nye steder på kortet.{' '}
+              {worldBuilt('fjeld')
+                ? 'Børn i 0.–2. klasse starter i Engdalen, og i 3. klasse viser barnet først Pip, hvad det kan, og starter der, hvor det passer. I forældredelen'
+                : 'Alle børn starter i Engdalen; i forældredelen'}{' '}
+              kan I åbne flere steder. Tre ting, før I går i gang:
             </p>
           </div>
         </header>

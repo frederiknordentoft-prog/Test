@@ -3,7 +3,8 @@
 // stars, no perler, no praise and no lightbulb. After every answer Pip says the same kind of
 // friendly words ("Godt, næste!"); a miss first goes through the locked error flow (SPEC §3.5: the
 // answer struck, the strategy, one big button with the right answer), which is never logged as an
-// answer. "Det er nok" ends it at any moment, and what was shown counts.
+// answer, and then only neutral words ("Tak! Her er den næste."). "Det er nok" ends it at any moment,
+// and what was shown counts.
 //
 // Every question is its own TaskStage (keyed by the task), so its beats, timers and voice end with it.
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -13,7 +14,7 @@ import { playSfx } from '../../../../../audio/sfx'
 import { preloadSpeech } from '../../../../../audio/voice'
 import type { SpeakHandle } from '../../../../../audio/voice'
 import type { AnswerValue, ClipId, SpeechPart, Task, TaskKind } from '../../../../../engine/types'
-import { NEXT_CLIPS } from '../../../../../speech/clips/ui/placement'
+import { NEXT_AFTER_MISS, NEXT_CLIPS } from '../../../../../speech/clips/ui/placement'
 import { instructionClip } from '../../../../../speech/clips/ui/kinds'
 import { useProfile } from '../../../../../state/useProfile'
 import { Button } from '../../../../design/Button'
@@ -269,8 +270,11 @@ function TaskStage({ task, prevKind, replay, onHear, onNext, onLast }: TaskStage
   }, [replay])
 
   // ── Answers ──
-  /** The same friendly words after every answer; after the last one the outro says thank you. */
-  const thanks = useCallback(() => {
+  /**
+   * Friendly words after every answer, and only neutral ones after a miss (never "Godt, næste!" for a
+   * wrong answer); after the last one the outro says thank you.
+   */
+  const thanks = useCallback((missed: boolean) => {
     setBeat('next')
     const run = usePlacement.getState().session?.run
     if (!run || run.done) {
@@ -278,7 +282,7 @@ function TaskStage({ task, prevKind, replay, onHear, onNext, onLast }: TaskStage
       later(LAST_MS, onLast)
       return
     }
-    const line = pickRotating(NEXT_CLIPS, run.asked - 1)
+    const line = missed ? NEXT_AFTER_MISS : pickRotating(NEXT_CLIPS, run.asked - 1)
     setBubble([{ clip: line }])
     const tok = newToken()
     afterPaint(() => {
@@ -302,7 +306,7 @@ function TaskStage({ task, prevKind, replay, onHear, onNext, onLast }: TaskStage
       const upcoming = usePlacement.getState().upcoming()
       if (upcoming && upcoming.speech.length > 0) void preloadSpeech([upcoming.speech]).catch(() => undefined)
       if (correct) {
-        thanks()
+        thanks(false)
         return
       }
       // a miss: the locked error flow (SPEC §3.5), gently — no sound, no struck card of its own
@@ -334,7 +338,7 @@ function TaskStage({ task, prevKind, replay, onHear, onNext, onLast }: TaskStage
     if (beatRef.current !== 'teaching') return
     stopSpeech()
     playSfx('pop')
-    thanks()
+    thanks(true)
   }, [stopSpeech, thanks])
 
   const onDraft = useCallback((d: Draft | null) => {

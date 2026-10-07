@@ -10,8 +10,9 @@
 //     moved across instead of mirrored, or with one square missing (no).
 //   grid (production): mirrorGrid "Hvor mange felter mangler, før mønsteret er spejlet?" — part of the
 //     mirror image is there; the answer is how many squares are missing (1–4). isSymLine: "Hvor mange af
-//     figurerne har en symmetrilinje?" on the plate. The answer is a number, so until the grid view of
-//     wave 3 exists the round shows it on the keypad (src/ui/task/registry.ts falls back to it).
+//     figurerne har en symmetrilinje?" on the plate. The answer is a number, and the grid view takes
+//     only squares and points (SPEC A21, PLAYABLE.grid), so the round shows it on the keypad
+//     (shownKind), where a guess is 1 in 13.
 //   multiSelect (production): "Tryk på alle figurer, der har en symmetrilinje." on the plate (prompt
 //     'shapes'): the members can be folded onto themselves (geo.ts hasMirrorLine), the skew triangle,
 //     firkant, pentagon and trapezium cannot.

@@ -190,7 +190,10 @@ describe('fractionCompare', () => {
         const [a, b] = f.id.slice(6).split(',').map(Number)
         expect(t.answer, f.id).toBe(`frac:1/${f.family === 'pairBigger' ? a : b}`)
       }
-      if (kind === 'sortOrder') expect(t.prompt, f.id).toEqual({ scene: 'row', cells: [null, null, null, null] })
+      // four places, and the step says which end to start from (QA3a P2-3): down from the biggest
+      if (kind === 'sortOrder') {
+        expect(t.prompt, f.id).toEqual({ scene: 'row', cells: [null, null, null, null], step: f.family === 'pairBigger' ? -1 : 1 })
+      }
     }
   })
 
