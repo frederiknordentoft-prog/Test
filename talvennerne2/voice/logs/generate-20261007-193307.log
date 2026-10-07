@@ -1,0 +1,49 @@
+19:33:07 generate.py --wave 3 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261007-193307.log)
+19:33:10 411 klip valgt, 403 færdige, 8 at lave
+19:37:55 input frame rate=25
+19:39:27 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+19:39:36 model indlæst på 340 s (2 tråde)
+19:39:41 ✅ EOS token detected! Stopping generation at step 26
+19:39:54 kald single k=1 t0 'Størst,': 17.8 s for 1.00 s lyd
+19:39:56   s.kind.sortOrder.biggest t0: 0.65 s (forhold 2.08) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:40:00 ✅ EOS token detected! Stopping generation at step 34
+19:40:10 kald single k=1 t0 'Mindst,': 13.9 s for 1.32 s lyd
+19:40:10   s.kind.sortOrder.smallest t0: 0.56 s (forhold 1.79) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:40:16 ✅ EOS token detected! Stopping generation at step 39
+19:40:27 kald single k=1 t0 'længere end,': 16.9 s for 1.52 s lyd
+19:40:27   s.learned.longerThan t0: 0.88 s (forhold 0.70) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:40:34 ✅ EOS token detected! Stopping generation at step 43
+19:40:45 kald single k=1 t0 'ligger tættest på,': 17.8 s for 1.68 s lyd
+19:40:46   s.learned.closestTo t0: 0.88 s (forhold 0.56) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:40:53 ✅ EOS token detected! Stopping generation at step 56
+19:41:05 kald single k=1 t0 'Den største figur dækker,': 19.5 s for 2.20 s lyd
+19:41:06   s.learned.area.bigger t0: 1.39 s (forhold 0.64) -18.07 LUFS, alone: 'den største figur dækker' CER 0.0 (wav2vec2) → ok
+19:41:07   ✓ master s.learned.area.bigger t0 (bestået)
+19:41:12 ✅ EOS token detected! Stopping generation at step 40
+19:41:23 kald single k=1 t0 'kvadrater mere,': 16.2 s for 1.56 s lyd
+19:41:23   s.learned.area.more t0: 0.89 s (forhold 0.57) -18.2 LUFS, none: 'None' CER None (None) → ok
+19:41:28 ✅ EOS token detected! Stopping generation at step 40
+19:41:39 kald single k=1 t0 'kvadrat mere,': 15.6 s for 1.56 s lyd
+19:41:39   s.learned.area.moreOne t0: 0.83 s (forhold 0.66) -18.13 LUFS, none: 'None' CER None (None) → ok
+19:41:45 ✅ EOS token detected! Stopping generation at step 43
+19:41:56 kald single k=1 t0 'Fire rette hjørner,': 16.7 s for 1.68 s lyd
+19:41:57   s.learned.rightAngles t0: 1.07 s (forhold 0.57) -18.04 LUFS, none: 'None' CER None (None) → ok
+19:41:57   sammensat frag.det_er + s.kind.sortOrder.biggest: 'det er størst' CER 0.000 (wav2vec2) → ok
+19:41:57   sammensat frag.det_er + s.kind.sortOrder.smallest: 'det er mindst' CER 0.000 (wav2vec2) → ok
+19:41:58   sammensat frag.det_er + s.learned.area.more: 'det er kvadrater mere' CER 0.000 (wav2vec2) → ok
+19:41:58   sammensat frag.det_er + s.learned.area.moreOne: 'det er kvadrat mere' CER 0.000 (wav2vec2) → ok
+19:42:09   sammensat frag.det_er + s.learned.closestTo: 'dr ligger tættest på' CER 0.150 (wav2vec2, whisper: 'DR ligger tættest på') → FEJL
+19:42:09   master frag.det_er får skylden i frag.det_er + s.learned.closestTo; s.learned.closestTo prøver en anden partner
+19:42:09   sammensat frag.det_er + s.learned.longerThan: 'det er længere end' CER 0.000 (wav2vec2) → ok
+19:42:10   sammensat frag.det_er + s.learned.rightAngles: 'det er fire rette hjørner' CER 0.000 (wav2vec2) → ok
+19:42:10 sammensætning runde 1: 6 af 7 bestået
+19:42:10   sammensat n.mid.7 + s.learned.closestTo: '7 ligger tættest på' CER 0.000 (wav2vec2) → ok
+19:42:10 sammensætning runde 2: 7 af 7 bestået
+19:42:10   ✓ master s.kind.sortOrder.biggest t0 (bestået)
+19:42:10   ✓ master s.kind.sortOrder.smallest t0 (bestået)
+19:42:10   ✓ master s.learned.area.more t0 (bestået)
+19:42:11   ✓ master s.learned.area.moreOne t0 (bestået)
+19:42:11   ✓ master s.learned.closestTo t0 (bestået)
+19:42:11   ✓ master s.learned.longerThan t0 (bestået)
+19:42:11   ✓ master s.learned.rightAngles t0 (bestået)
+19:42:11 færdig: 8 nye mastere (0 ikke bestået, 0 kopier), 8 modelkald, 2.2 min generering (CPU 0.07 t), 0 klip mangler
