@@ -198,6 +198,18 @@ export async function answer(value: AnswerValue): Promise<void> {
     case 'share': {
       const view = await viewOf('share', area)
       const plates = $$('[data-plate]', view)
+      if (typeof value === 'string') {
+        // the deal itself (a set, largest first: '9|3'): each plate gets its own count
+        const counts = splitTokens(value).map(Number)
+        for (const [p, n] of counts.entries()) {
+          for (let i = 0; i < n; i++) {
+            tapOn(plates[p], `tallerken ${p + 1}`)
+            await wait(30)
+          }
+        }
+        check()
+        return
+      }
       const things = $$('[data-pile] [data-thing]', view).length
       for (let i = 0; i < things; i++) {
         // −1 (an uneven deal): everything on the first plate; else round the plates in turn
@@ -304,8 +316,15 @@ export function wrongFor(task: Task): AnswerValue | null {
       return typeof a === 'number' ? dialValue(task, mod(a, DIAL) + 60) : null
     case 'pay':
       return typeof a === 'number' ? a + 100 : `${a}|c100`
-    case 'share':
-      return -1
+    case 'share': {
+      // a set answer: one thing moved from the fullest plate to the emptiest; else an uneven deal
+      if (typeof a !== 'string') return -1
+      const c = splitTokens(a).map(Number)
+      if (c.length < 2 || c[0] < 1) return null
+      c[0] -= 1
+      c[c.length - 1] += 1
+      return c.sort((x, y) => y - x).join('|')
+    }
     case 'colorParts': {
       const f = fracOf(a)
       return f ? `frac:${f.n > 1 ? f.n - 1 : f.n + 1}/${f.d}` : null
