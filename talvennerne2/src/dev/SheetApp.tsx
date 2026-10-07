@@ -537,6 +537,10 @@ const HOLES_LINTED: Partial<Record<string, 'strict' | 'thin'>> = {
   rabbit: 'strict', cat: 'thin', horse: 'thin', unicorn: 'thin', puppy: 'thin', hedgehog: 'thin',
   // Bølge 2 (review G2-r1 §1.4): lommerne mellem løftet pote eller vinge og kind eller krop er fyldt.
   lamb: 'thin', fox: 'thin', hamster: 'thin', panda: 'thin', squirrel: 'thin', owl: 'thin',
+  // Bølge 3 (Stjernefjeldet): vingerne ligger bag kroppen og fylder lommerne mellem løftet ben, kind og krop.
+  pegasus: 'thin', dragon: 'thin',
+  // Pingvinens luffer og isbjørnens forben: lommerne mod kind, snude og krop er fyldt med pels i stillbilleder.
+  penguin: 'thin', polarbear: 'thin',
 }
 
 function HolesSheet() {
