@@ -148,8 +148,11 @@ const GRIP_CUT = 41
 const GRIP_EDGE: Vec[] = [[-24, GRIP_CUT + 2.6], [-12, GRIP_CUT - 1.2], [0, GRIP_CUT - 2.2], [12, GRIP_CUT - 1.2], [24, GRIP_CUT + 2.6]]
 const GRIP_CLIP = poly([[-40, 90], [-40, GRIP_CUT + 4], ...GRIP_EDGE, [40, GRIP_CUT + 4], [40, 90]])
 const gripClip = (ids: PartCtx['ids']) => `${ids.uid}pg`
-/** Håndgenstandene, isbjørnen holder foran forbenet (de andre står foran poten selv med `art.over` eller svæver). */
-const GRIP_ITEMS = ['opdager-hand', 'rytter-hand', 'kongelig-hand', 'pirat-hand', 'milepael-slikkepind', 'hverdag-hand'] as const
+/**
+ * Håndgenstandene, isbjørnen holder foran forbenet med poten om grebet: også raketten og stjernestaven, der selv står
+ * foran poten (`art.over`), får tåspidserne over den nederste del (review G3-r1 T3). Skjoldet har sin egen rem.
+ */
+const GRIP_ITEMS = ['opdager-hand', 'rytter-hand', 'kongelig-hand', 'pirat-hand', 'milepael-slikkepind', 'hverdag-hand', 'astronaut-hand', 'talmagiker-hand'] as const
 
 const PawGrip: SidePart = ({ pal, sw, ids, lod }) => (
   <>

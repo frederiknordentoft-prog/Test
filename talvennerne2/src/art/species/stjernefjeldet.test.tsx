@@ -9,12 +9,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { SPECIES_BY_ID } from '../../content/catalog'
 import { clips } from '../../speech/clips/names/catalog'
 import { festHead } from '../items/fest/fest-head'
+import { astronautHand } from '../items/astronaut/astronaut-hand'
 import { hverdagHand } from '../items/hverdag/hverdag-hand'
 import { kongeligHand } from '../items/kongelig/kongelig-hand'
 import { milepaelSlikkepind } from '../items/milepael/milepael-slikkepind'
 import { opdagerHand } from '../items/opdager/opdager-hand'
 import { piratHand } from '../items/pirat/pirat-hand'
 import { rytterHand } from '../items/rytter/rytter-hand'
+import { talmagikerHand } from '../items/talmagiker/talmagiker-hand'
 import { hverdagBack } from '../items/hverdag/hverdag-back'
 import { hverdagBody } from '../items/hverdag/hverdag-body'
 import { hverdagHead } from '../items/hverdag/hverdag-head'
@@ -206,7 +208,7 @@ describe('Stjernefjeldet · røgpusten', () => {
 // (begge bærer en ryggenstand), pingvinen uden ører og isbjørnen med små ører bag hovedet.
 
 /** Håndgenstandene, isbjørnen holder foran forbenet med poten om grebet (`SpeciesDef.handGrip`). */
-const GRIP_ITEMS: readonly ItemDef[] = [opdagerHand, rytterHand, kongeligHand, piratHand, milepaelSlikkepind, hverdagHand]
+const GRIP_ITEMS: readonly ItemDef[] = [opdagerHand, rytterHand, kongeligHand, piratHand, milepaelSlikkepind, hverdagHand, astronautHand, talmagikerHand]
 
 /** Signaturens klasse pr. art (pingvinens klap er hele potens klasse `a-paw` i hvile, se rig.css). */
 const SIGNATURE_CLASS_B = { penguin: 'a-paw a-paw-l', polarbear: 'a-sniff' } as const
@@ -322,7 +324,7 @@ describe.each(([penguin, polarbear] as const).map((def) => [def.id, def] as cons
     if (def.id === 'polarbear') expect(render({ species: def, mode: 'animated' })).toMatch(/clip-path="url\(#[^)]*\)"><g transform="translate\(71 69\)/)
   })
 
-  it('isbjørnen holder lup, gulerod, scepter, kikkert, slikkepind og ballon foran forbenet med poten om grebet (review G3-r1 T2/B2)', () => {
+  it('isbjørnen holder lup, gulerod, scepter, kikkert, slikkepind, ballon, raket og stjernestav foran forbenet med poten om grebet (review G3-r1 T2/B2 og T3)', () => {
     if (def.id !== 'polarbear') return
     for (const it of GRIP_ITEMS)
       for (const stage of STAGES) {

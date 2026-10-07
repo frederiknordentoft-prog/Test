@@ -555,19 +555,37 @@ function Peaks({ peaks, seed, fill, snow, snowAt, shadeO, glowO, k, line, paper 
   )
 }
 
-/** En gran (lokalt fra foden, 100 enheder ≈ 2 graner): tre lag grene, sne på grenene og skygge på højre side. */
-function firShape(x: number, y: number, s: number) {
+/**
+ * Granens tre former (review G3-r1 S2: skovbåndet gentog samme gran): den almindelige, en smal og høj og en bred og lav
+ * med mere sne på grenene. `wx` og `hy` er bredde og højde, `snow` sneens størrelse.
+ */
+const FIR_KINDS = [{ wx: 1, hy: 1, snow: 1 }, { wx: 0.8, hy: 1.1, snow: 0.9 }, { wx: 1.16, hy: 0.9, snow: 1.35 }] as const
+
+/**
+ * En gran (lokalt fra foden, 100 enheder ≈ 2 graner): tre lag grene, sne på grenene og skygge på højre side. `kind`
+ * vælger formen (FIR_KINDS), og `tall` strækker højden (ca. ±8 %).
+ */
+function firShape(x: number, y: number, s: number, kind = 0, tall = 1) {
+  const f = FIR_KINDS[kind]
+  const sx = s * f.wx
+  const sy = s * f.hy * tall
   const R: Vec[] = [[7.5, -33], [3.5, -32], [12.5, -19], [6.5, -18], [16.5, -4]]
-  const o = (pts: readonly Vec[]) => pts.map(([px, py]) => [x + px * s, y + py * s] as Vec)
+  const o = (pts: readonly Vec[]) => pts.map(([px, py]) => [x + px * sx, y + py * sy] as Vec)
   const body = poly(o([[0, -47], ...R, [0, -3.5], ...R.map(([px, py]) => [-px, py] as Vec).reverse()]))
   const shade = poly(o([[0, -47], ...R, [1.5, -3.5], [1.2, -20], [0.6, -34]]))
-  const snow = join(...[[-2.2, -39, 3.6, 1.7, -55], [-5.4, -26, 4.8, 1.9, -42], [-8.6, -12.5, 5.8, 2.1, -32], [3.4, -27.5, 3.2, 1.4, 40], [5.6, -14, 4.2, 1.6, 32]].map(([px, py, rx, ry, a]) => ellipse(x + px * s, y + py * s, rx * s, ry * s, a)))
-  return { body, shade, snow, trunk: rect(x - 2.4 * s, y - 6 * s, 4.8 * s, 7 * s, 1.2 * s) }
+  const snow = join(...[[-2.2, -39, 3.6, 1.7, -55], [-5.4, -26, 4.8, 1.9, -42], [-8.6, -12.5, 5.8, 2.1, -32], [3.4, -27.5, 3.2, 1.4, 40], [5.6, -14, 4.2, 1.6, 32]].map(([px, py, rx, ry, a]) => ellipse(x + px * sx, y + py * sy, rx * s * f.snow, ry * s * f.snow, a)))
+  return { body, shade, snow, trunk: rect(x - 2.4 * sx, y - 6 * sy, 4.8 * sx, 7 * sy, 1.2 * s) }
 }
 
-/** Graner (scenens koordinater): stammer, grene, sne og skygge – fire paths for dem alle. */
+/**
+ * Graner (scenens koordinater): stammer, grene, sne og skygge – fire paths for dem alle. Hver gran får sin form og
+ * højde ud fra sin plads (deterministisk), så højden varierer ca. ±15 %, og båndet ikke ser stemplet ud.
+ */
 function Firs({ pts, fill, edge, snow }: { pts: readonly Place[]; fill: string; edge: string; snow: string }) {
-  const f = pts.map((p) => firShape(p.x, p.y, p.s))
+  const f = pts.map((p) => {
+    const seed = Math.round(p.x * 7.3 + p.y * 3.1)
+    return firShape(p.x, p.y, p.s, Math.floor(hash01(seed) * FIR_KINDS.length), 0.92 + hash01(seed + 17) * 0.16)
+  })
   return (
     <>
       <path d={join(...f.map((q) => q.trunk))} fill={FJELD.trunkDark} />

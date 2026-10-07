@@ -52,19 +52,21 @@ export const PENGUIN_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gold:
     fur: '#A3A7B9',
     overrides: { outline: '#51556B', shade: '#9296A9', belly: '#FFFFFF', nose: '#5A5E74', inner: '#C3A8B6', iris: '#7179A8' },
   },
-  // Creme: varm sand-creme ryg med koralnæb og abrikosfødder.
+  // Creme ("café crème"): kaffebrun ryg og hætte over en cremehvid front med koralnæb og abrikosfødder. Ryggen er mørk,
+  // så pingvinens smoking-kontrast holder (review G3-r1 A3: den sandfarvede ryg lignede en ælling).
   c6: {
     id: 'c6',
     name: 'creme',
-    fur: '#EBD5AE',
-    overrides: { outline: '#8C6A3E', shade: '#DCC198', belly: '#FFFCF3', nose: '#FF8A5C', inner: '#FFB277', iris: '#A0703F' },
+    fur: '#8E6B4C',
+    overrides: { outline: '#4A3220', shade: '#7D5D41', belly: '#FFF7E6', nose: '#F27E50', inner: '#FFB277', iris: '#A0703F' },
   },
-  // Guld: guldfjer med ravkontur og ravskygge, lysere guld foran og ravorange næb og fødder.
+  // Guld: dyb ravguld ryg og hætte med ravkontur og ravskygge over en lys guldfront, brændt orange næb og fødder
+  // (review G3-r1 A3: med lys guld over det hele lignede den en ælling).
   gold: {
     id: 'gold',
     name: 'guld',
-    fur: '#F7C948',
-    overrides: { outline: '#7A4A10', shade: '#E2A42F', belly: '#FFF2C2', nose: '#E8744A', inner: '#E9953A', iris: '#A0561B' },
+    fur: '#E2A12E',
+    overrides: { outline: '#6B3E0C', shade: '#C98A1E', belly: '#FFF0B8', nose: '#C9602C', inner: '#D9822E', iris: '#A0561B' },
     sparkle: '#FFF7CF',
   },
   // Regnbue: blød syrenlilla ryg (ingen naturlig farve er lilla); maven bærer de fire flade pastelstriber.
