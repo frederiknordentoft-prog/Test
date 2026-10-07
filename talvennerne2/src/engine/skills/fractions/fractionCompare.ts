@@ -8,7 +8,9 @@
 // Kinds: choice "Hvilken brøk er størst?" / "… mindst?" on three cards (pairSmaller asks for the
 // smallest, the others for the biggest), over the loudspeaker (Prompt 'hear'): the bars would show the
 // answer. sortOrder (production, 4 cards, 1 in 24): "Sæt brøkerne i rækkefølge. Start med den største."
-// (pairBigger) or "… den mindste." (pairSmaller, order4), onto four places (Prompt 'row').
+// (pairBigger) or "… den mindste." (pairSmaller, order4), onto four places (Prompt 'row'), whose step
+// is the direction (−1 down from the biggest, 1 up from the smallest): the view writes "Størst" and
+// "Mindst" at the ends of the places, so the screen says it too (QA3a P2-3).
 // Wrong answers: biggerDenominator — the biggest denominator taken for the biggest fraction: on the
 // cards the one with the biggest denominator (biggest asked) or the smallest one (smallest asked), in a
 // sortOrder the cards ordered by their denominators. Plain: the other card, two neighbours swapped
@@ -140,7 +142,8 @@ export default {
   },
   answerTypeFor: (_f: Fact, kind: TaskKind) => (kind === 'sortOrder' ? 'set' : 'token'),
   answerType: () => 'set',
-  prompt: (_f: Fact, kind: TaskKind) => (kind === 'sortOrder' ? { scene: 'row', cells: [null, null, null, null] } : { scene: 'hear' }),
+  // the row's step is its direction (QA3a P2-3): down from the biggest, or up from the smallest
+  prompt: (f: Fact, kind: TaskKind) => (kind === 'sortOrder' ? { scene: 'row', cells: [null, null, null, null], step: parse(f).family === 'pairBigger' ? -1 : 1 } : { scene: 'hear' }),
   optionView: () => 'fraction',
   range: () => [0, 1],
   speech: (f: Fact, kind: TaskKind) => {

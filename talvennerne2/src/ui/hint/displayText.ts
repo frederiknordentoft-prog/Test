@@ -6,12 +6,33 @@ import { formatMoney, formatNumber } from '../task/answers'
 
 const UNIT_SHORT: Record<string, string> = { cm: 'cm', m: 'm', g: 'g', kg: 'kg' }
 
-/** An analog time is read off a 12-hour face (quarter past twelve is 12.15, not 0.15). */
-function clockText(minutes: number, style: 'analog' | 'analogHalfForm' | 'digital' = 'analog'): string {
+/**
+ * An analog time is read off a 12-hour face (quarter past twelve is 12.15, not 0.15). "kl." is left out
+ * after words that end in "klokken" ("… er klokken 10.15", never "klokken kl. 10.15", QA3a P3-3).
+ */
+function clockText(minutes: number, style: 'analog' | 'analogHalfForm' | 'digital' = 'analog', afterKlokken = false): string {
   const m = ((Math.round(minutes) % 1440) + 1440) % 1440
   const h = Math.floor(m / 60)
   const hour = style === 'digital' ? h : ((h + 11) % 12) + 1
-  return `kl. ${hour}.${String(m % 60).padStart(2, '0')}`
+  return `${afterKlokken ? '' : 'kl. '}${hour}.${String(m % 60).padStart(2, '0')}`
+}
+
+/**
+ * "c divideret med d q" (3. klasse, SPEC A19), where the two numbers would stand side by side ("Så giver
+ * 18 divideret med 3 6"), is written as the equation: "Så giver 18 : 3 = 6" (QA3a P3-2). The voice
+ * keeps its words.
+ */
+function divisionsAsEquations(parts: readonly SpeechPart[]): SpeechPart[] {
+  const out: SpeechPart[] = []
+  for (let i = 0; i < parts.length; i++) {
+    const [c, op, d, q] = parts.slice(i, i + 4)
+    const division = c && op && d && q && 'num' in c && 'clip' in op && op.clip === 'op.divideret_med' && 'num' in d && d.form === 'mid' && 'num' in q
+    if (division && q.num * d.num === c.num) {
+      out.push({ free: `${formatNumber(c.num)} : ${formatNumber(d.num)} = ${formatNumber(q.num)}${q.form === 'end' ? '.' : ''}` })
+      i += 3
+    } else out.push(parts[i])
+  }
+  return out
 }
 
 /**
@@ -50,7 +71,7 @@ export function displayText(parts: readonly SpeechPart[], textOf: (id: ClipId) =
     if (s) sentences.push(s)
     words = []
   }
-  for (const p of parts) {
+  for (const p of divisionsAsEquations(parts)) {
     if ('clip' in p) {
       const said = textOf(p.clip)
       if (!said || said === p.clip) continue
@@ -74,7 +95,7 @@ export function displayText(parts: readonly SpeechPart[], textOf: (id: ClipId) =
       text = formatMoney(p.money.ore).replace(/\.$/, '')
       form = p.money.form
     } else if ('clock' in p) {
-      text = clockText(p.clock.minutes, p.clock.style)
+      text = clockText(p.clock.minutes, p.clock.style, /klokken$/i.test(words[words.length - 1] ?? ''))
       form = p.clock.form
     } else if ('measure' in p) {
       text = `${formatNumber(p.measure.value)} ${UNIT_SHORT[p.measure.unit] ?? p.measure.unit}`
