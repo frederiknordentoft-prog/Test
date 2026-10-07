@@ -1302,3 +1302,28 @@
     font-size: 38px;
   }
 }
+/* a long fact ("En halv time efter kvart i ti er klokken kvart over ti") a size smaller */
+.tv-learned__phrase.is-long {
+  font-size: 18px;
+}
+/* a short phone (375×667): the pictures smaller, so the stars stay on screen under three cards */
+@media (max-height: 700px) {
+  .tv-learned__fact {
+    gap: 4px;
+  }
+  .tv-learned__clock {
+    width: 52px;
+    height: 52px;
+  }
+  .tv-learned__digital {
+    width: 84px;
+    height: auto;
+  }
+  .tv-learned__grid {
+    max-height: 60px;
+  }
+  .tv-learned__bars {
+    width: 96px;
+    height: auto;
+  }
+}

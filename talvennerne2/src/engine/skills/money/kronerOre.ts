@@ -11,7 +11,8 @@
 //                kroner." (the pay view's purse for a whole-krone amount has no halvtredsøre) · choice:
 //                "Hvor mange penge er der?" three amounts (optionView 'amount').
 //   addHalves    the shop with one price tag. "Det koster to kroner og halvtreds øre. Betal for to af dem." ·
-//                "… Hvad koster to af dem?" three amounts.
+//                "… Hvad koster to af dem?" three amounts. The round screen draws two of the thing, each with
+//                its tag (its answer is twice the tag), and pay's bubble says "Betal for to af dem." (QA3a P2-2).
 // Wrong answers:
 //   coinsAsCount   fiftiesInKroner: one krone per coin (six halvtredsører → 6 kr)
 //   operand        the price of one (addHalves); 50 øre, the number on one coin (fiftiesInKroner)

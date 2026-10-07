@@ -179,8 +179,9 @@ export function clockText(minutes: number): string {
 function partText(p: SpeechPart, textOf: (id: ClipId) => string): string {
   if ('clip' in p) return textOf(p.clip)
   if ('num' in p) return formatNumber(p.num)
-  if ('money' in p) return formatMoney(p.money.ore)
-  if ('measure' in p) return `${formatNumber(p.measure.value)} ${p.measure.unit}`
+  // a number never wraps away from its unit ("88 cm", "45 kr.")
+  if ('money' in p) return formatMoney(p.money.ore).replace(' ', '\u00a0')
+  if ('measure' in p) return `${formatNumber(p.measure.value)}\u00a0${p.measure.unit}`
   if ('frac' in p) return `${p.frac.n}/${p.frac.d}`
   if ('clock' in p) return clockWords(p.clock.minutes, p.clock.style)
   return p.free
@@ -267,7 +268,12 @@ function LearnedPicture({ face }: { face: LearnedFace }) {
       return (
         <span className="tv-learned__fact" data-learned-fact={face.pic?.t ?? 'words'}>
           {face.pic && <LearnedPicOf pic={face.pic} />}
-          <SpokenText parts={face.parts} text={phraseText(face.parts, speech.text)} silent className="tv-learned__phrase" />
+          <SpokenText
+            parts={face.parts}
+            text={phraseText(face.parts, speech.text)}
+            silent
+            className={cx('tv-learned__phrase', phraseText(face.parts, speech.text).length > 28 && 'is-long')}
+          />
         </span>
       )
     case 'none':

@@ -63,7 +63,11 @@ function learnedContext(all: readonly Reward[]): LearnedContext {
   const round = useRound.getState()
   const correct = round.status === 'finished' ? round.firstTries.filter((f) => f.correct).map(({ key, skill }) => ({ key, skill })) : []
   const keys = useProfile.getState().profile?.keys
-  return { correct, failedTrial: all.some((r) => r.t === 'trial' && !r.passed), instanceOf: (key) => keys?.[key]?.recent.at(-1) }
+  const instanceOf = (key: string) => {
+    const recent = keys?.[key]?.recent ?? []
+    return recent[recent.length - 1]
+  }
+  return { correct, failedTrial: all.some((r) => r.t === 'trial' && !r.passed), instanceOf }
 }
 
 function soundOf(screen: Screen): SfxName | null {

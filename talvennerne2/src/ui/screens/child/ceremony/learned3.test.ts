@@ -33,7 +33,8 @@ const keyOf = (def: SkillDef, fact: Fact) => (def.mode === 'recall' ? fact.id : 
 /** What the card writes, whatever its kind. */
 function cardText(face: LearnedFace): string {
   if (face.t === 'eq') return face.terms.map((t) => ('n' in t ? formatNumber(t.n) : 'op' in t ? t.op : '')).join(' ')
-  if (face.t === 'fact') return phraseText(face.parts, clipText)
+  // a number keeps its unit on its line (a no-break space); compared here as a plain space
+  if (face.t === 'fact') return phraseText(face.parts, clipText).replace(/\u00a0/g, ' ')
   return ''
 }
 
@@ -111,7 +112,9 @@ describe('"Det lærte du" in Stjernefjeldet', () => {
     expect(text('fractionOfSet/threeQuartersOf', 'fractionOfSet', 'fos:3/4:12:apple')).toBe('3/4 af 12 er 9')
     expect(toDanishText(keyFace('fractionOfSet/threeQuartersOf', 'fractionOfSet', reg, 'fos:3/4:12:apple')!.speech)).toBe('Tre fjerdedele af tolv er ni.')
     expect(text('convertCmM/mToCm', 'convertCmM', 'cmm:mToCm:1')).toBe('1 m er 100 cm')
-    expect(text('change/from100', 'change', 'byt:from100:7400')).toBe('Fra 74 til 100 er 26,00 kr.'.replace(',00', ''))
+    const meter = keyFace('convertCmM/mToCm', 'convertCmM', reg, 'cmm:mToCm:1')!.face
+    expect(meter.t === 'fact' && phraseText(meter.parts, clipText)).toBe('1\u00a0m er 100\u00a0cm')
+    expect(text('change/from100', 'change', 'byt:from100:7400')).toBe('Fra 74 til 100 er 26 kr.')
     expect(text('kronerOre/addHalves', 'kronerOre', 'kro:addHalves:1450')).toBe('14,50 kr. plus 14,50 kr. giver 29 kr.')
     expect(text('clockElapsed/plusHalf', 'clockElapsed', 'tid:plusHalf:585')).toBe('En halv time efter kvart i ti er klokken kvart over ti')
     expect(text('skipCount/step25', 'skipCount', 'skc:step25:25:4')).toBe('25, 50, 75, 100, 125')
