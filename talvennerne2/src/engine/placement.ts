@@ -1,7 +1,8 @@
-import type { Fact, Grade, KeyState, ProfileDoc, RegionId, SkillDef, SkillId, Task, TaskKind, WorldId } from './types'
+import type { Fact, Grade, KeyState, ProfileDoc, RegionId, SkillDef, Task, TaskKind, WorldId } from './types'
 import { WORLD_IDS } from './types'
 import { SKILL_BY_ID, DOMAIN_BY_ID } from '../content/skills'
 import { REGIONS, nodesOfRegion } from '../content/curriculum'
+import { CHECKPOINT, LADDER, passedOver, seedStage } from './ladder'
 import { factsOf, kindsOf, needsAudio, skillKeys, skillRegistry, type SkillRegistry } from './registry'
 import { buildTask } from './tasks'
 import { isProduction } from './kinds'
@@ -17,24 +18,8 @@ import { hashSeed, makeRng } from './rng'
  * never claims more than the child has shown.
  */
 
-export interface Checkpoint { id: string; skill: SkillId; kind: TaskKind }
-
-export const LADDER: readonly Checkpoint[] = [
-  { id: 'L1', skill: 'count10', kind: 'countTap' },
-  { id: 'L2', skill: 'hear20', kind: 'keypad' },
-  { id: 'L3', skill: 'addTo10', kind: 'keypad' },
-  { id: 'L4', skill: 'subTo10', kind: 'keypad' },
-  { id: 'L5', skill: 'addTo20', kind: 'keypad' },
-  { id: 'L6', skill: 'subTo20', kind: 'keypad' },
-  { id: 'L7', skill: 'hear100', kind: 'keypad' },
-  { id: 'L8', skill: 'tensOnes', kind: 'keypad' },
-  { id: 'L9', skill: 'add100Carry', kind: 'keypad' },
-  { id: 'L10', skill: 'sub100Borrow', kind: 'keypad' },
-  { id: 'L11', skill: 'hear1000', kind: 'keypad' },
-  { id: 'L12', skill: 'mul2510', kind: 'keypad' },
-  { id: 'L13', skill: 'add1000', kind: 'keypad' },
-  { id: 'L14', skill: 'mul6to9', kind: 'keypad' },
-]
+// The rungs and how far a result reaches are data the map reads too (ladder.ts).
+export { LADDER, passedOver, seedStage, stageOf, type Checkpoint } from './ladder'
 
 export const PLACEMENT_MAX_TASKS = 18
 export const TASKS_PER_CHECKPOINT = 2
@@ -57,8 +42,6 @@ export interface PlacementRun {
   failed: string[]
   done: boolean
 }
-
-const CHECKPOINT: Readonly<Record<string, Checkpoint>> = Object.fromEntries(LADDER.map((c) => [c.id, c]))
 
 /** The ladder can run once every skill on it is registered (wave 3); before that every child starts in Engdalen. */
 export function placementAvailable(reg: SkillRegistry = skillRegistry()): boolean {
@@ -104,11 +87,24 @@ export function placementTask(run: PlacementRun, reg: SkillRegistry = skillRegis
   return task
 }
 
-/** Facts in the skill's own grade (no family above it), upper half by rank. */
+/** Facts in the skill's own grade (no family above it), upper half by rank, that say something about the rung. */
 function candidateFacts(def: SkillDef): Fact[] {
   const inGrade = factsOf(def).filter((f) => (def.families.find((fam) => fam.id === f.family)?.grade ?? def.grade) <= def.grade)
   const sorted = [...(inGrade.length > 0 ? inGrade : factsOf(def))].sort((a, b) => a.rank - b.rank)
-  return sorted.slice(Math.floor(sorted.length / 2))
+  const upper = sorted.slice(Math.floor(sorted.length / 2))
+  const telling = upper.filter(saysSomething)
+  return telling.length >= TASKS_PER_CHECKPOINT ? telling : upper
+}
+
+/**
+ * A sum, difference or product with 0 or 1 in it ("10 − 0", "9 + 1", "1 · 9") or nothing left
+ * ("8 − 8") is answered by counting one step, or without the rung's skill at all, so two of them
+ * could pass a rung on nothing (review app-w3-r1 P3-8: "10 − 0" and "5 − 0" on L4). Fact ids follow
+ * CONVENTIONS (`add:`, `sub:`, `mul:`); other skills' questions are all kept.
+ */
+export function saysSomething(f: Fact): boolean {
+  if (!/^(add|sub|mul):/.test(f.id)) return true
+  return f.operands.every((n) => n > 1) && f.answer !== 0
 }
 
 /** Fold in one answer. Both questions right passes a checkpoint; a miss ends it at once. */
@@ -150,18 +146,6 @@ export function placementResult(run: Pick<PlacementRun, 'passed'>): string | nul
   return best
 }
 
-export const stageOf = (checkpoint: string): number => SKILL_BY_ID[CHECKPOINT[checkpoint].skill].stage
-
-/**
- * How far seeding reaches from P: the highest stage of the rungs up to P. The ladder climbs by
- * difficulty, and its stages are not in that order (hear100 at L7 is stage 1.2, addTo20 at L5 is
- * 1.4), so a child placed at L7 or L8 has shown L5 too, and a rung the jump left out counts as passed.
- */
-export function seedStage(checkpoint: string): number {
-  const i = LADDER.findIndex((c) => c.id === checkpoint)
-  return Math.max(...LADDER.slice(0, i + 1).map((c) => SKILL_BY_ID[c.skill].stage))
-}
-
 export interface SeedContext {
   skills?: SkillRegistry
   day: string
@@ -197,7 +181,7 @@ export function seedFromPlacement(profile: ProfileDoc, P: string | null, ctx: Se
     }
   }
 
-  const opened: RegionId[] = REGIONS.filter((r) => r.skills.every((s) => SKILL_BY_ID[s.skill].stage < stage)).map((r) => r.id)
+  const opened: RegionId[] = passedOver(P)
   const nodes = { ...profile.nodes }
   for (const region of opened) {
     for (const n of nodesOfRegion(region)) {

@@ -3,7 +3,8 @@
 // the child can stop when it likes; two equal buttons start the ladder or skip it ("Spring over":
 // the first round at once). The ladder (Ladder.tsx) ends with "Det er nok" or by itself; then what
 // was shown is written and Pip says thank you, and "Spil" starts the first round on the map's next
-// stone in the child's home world. Never a countdown, never an automatic start.
+// stone in the child's home world: where the ladder put the child (SPEC A24). Never a countdown, never
+// an automatic start.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SpeakHandle } from '../../../../../audio/voice'
 import type { ClipId, Grade, NodeId, SpeechPart } from '../../../../../engine/types'

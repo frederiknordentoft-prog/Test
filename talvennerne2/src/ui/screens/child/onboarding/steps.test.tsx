@@ -4,7 +4,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { clipInfo, clipText } from '../../../../speech/catalog'
-import { NEXT_CLIPS } from '../../../../speech/clips/ui/placement'
+import { NEXT_AFTER_MISS, NEXT_CLIPS } from '../../../../speech/clips/ui/placement'
 import { offeredStarters, starterLooks } from './flow'
 import { EggChoice, GradeStep } from './steps'
 
@@ -55,5 +55,8 @@ describe('the grade', () => {
     }
     expect(NEXT_CLIPS.length).toBeGreaterThan(1)
     expect(clipText(NEXT_CLIPS[0])).toBe('Godt, næste!')
+    // after a miss only neutral words (review app-w3-r1 P3-9)
+    expect(clipText(NEXT_AFTER_MISS)).toBe('Tak! Her er den næste.')
+    expect(clipInfo(NEXT_AFTER_MISS)).toMatchObject({ wave: 3, pack: 'placement-3' })
   })
 })

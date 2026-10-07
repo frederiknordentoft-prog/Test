@@ -11,6 +11,7 @@ import {
 } from '../content/economy'
 import { goldCount, newTrophies, silverCount, trophyPerler, type AchievementRound } from '../content/achievements'
 import { nextGoal, progressGoals, refreshGoals, REVISIT_AFTER_DAYS, type GoalRound } from '../content/goals'
+import { placedStart } from '../engine/ladder'
 import { daysBetween, learningDay } from '../engine/learningDay'
 import { helpBridgeOpen, nextTrialState, skipRegionNodes, trialOutcome, type TrialOutcome } from '../engine/trial'
 import type {
@@ -159,6 +160,8 @@ export function ownWorld(grade: Grade, open: readonly RegionId[]): WorldId | nul
  * played — those only in the child's own world or a world past it, never back in an easier world
  * the child has not been to (QA2 P3-11: "Tag en tur forbi Tællelunden" sent a child in 2. klasse to
  * Engdalen, where it had never been). A goal points at a place the child has played, or ahead.
+ * After a finished placement (SPEC A24) the child's own world is the one it was placed in, and the
+ * regions the placement passed over come last, as on the map.
  */
 export function revisitRegions(p: ProfileDoc, day: string, open: readonly RegionId[]): RegionId[] {
   const last = new Map<RegionId, number>()
@@ -169,18 +172,29 @@ export function revisitRegions(p: ProfileDoc, day: string, open: readonly Region
   }
   const stale = open.filter((r) => last.has(r) && daysBetween(learningDay(last.get(r)!), day) >= REVISIT_AFTER_DAYS)
     .sort((a, b) => last.get(a)! - last.get(b)!)
-  const own = ownWorld(p.grade, open)
+  const placed = placedStart(p.placement)
+  const own = placed ? placed.world : ownWorld(p.grade, open)
   const from = own ? WORLD_BY_ID[own].grade : p.grade
   const fresh = open.filter((r) => {
     const world = REGION_BY_ID[r]?.world
     return !last.has(r) && !!world && WORLD_BY_ID[world].grade >= from
   })
-  return [...stale, ...fresh]
+  if (!placed) return [...stale, ...fresh]
+  return [...stale, ...fresh.filter((r) => !placed.over.has(r)), ...fresh.filter((r) => placed.over.has(r))]
 }
 
 /** profile.goals for `day` (new goals only on a new learning day; open ones never expire). */
 export function goalsFor(p: ProfileDoc, day: string): ProfileDoc['goals'] {
   return refreshGoals(p.goals, { day, revisit: revisitRegions(p, day, unlockView(p).regions) })
+}
+
+/**
+ * The first three goals, made anew: the onboarding sets them once the grade (and the placement) is
+ * written, because the child is created with grade 0 at the hatch (QA3 P3-6: a child in 3. klasse
+ * was sent to Tællelunden). Only for a child who has not played a round yet.
+ */
+export function firstGoals(p: ProfileDoc, day: string): ProfileDoc['goals'] {
+  return goalsFor({ ...p, goals: { day: '', list: [] } }, day)
 }
 
 // ─── The round ──────────────────────────────────────────────────────────────

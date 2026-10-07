@@ -1,11 +1,11 @@
 // The card behind a stepping stone: what the stone is, what it holds (the very animal the friend
-// node gives, the chest's thing — shown before they are won), its stars, the bridge's planks
-// ("Bedst: 7 planker", "Klar, når du er", or a normal round first), what opens a locked stone, and
-// one big "Spil". The card reads itself aloud when it opens.
+// node gives, the chest's thing, the things of the world's party — shown before they are won), its
+// stars, the bridge's planks ("Bedst: 7 planker", "Klar, når du er", or a normal round first), what
+// opens a locked stone, and one big "Spil". The card reads itself aloud when it opens.
 import { useEffect, useMemo } from 'react'
 import { ITEM_BY_ID } from '../../../../content/catalog'
-import { NODE_BY_ID, REGION_BY_ID } from '../../../../content/curriculum'
-import type { ClipId, NodeId, RegionId, SpeechPart } from '../../../../engine/types'
+import { NODE_BY_ID, REGION_BY_ID, WORLD_BY_ID } from '../../../../content/curriculum'
+import type { ClipId, NodeId, RegionId, SpeechPart, WorldId } from '../../../../engine/types'
 import { friendOnCard } from '../../../../meta/animals'
 import { useProfile } from '../../../../state/useProfile'
 import { Button } from '../../../design/Button'
@@ -94,6 +94,17 @@ function FriendPicture({ nodeId, friend }: { nodeId: NodeId; friend: NonNullable
   return <AnimalPicture animal={animal} species={friend.species} size={132} crop="fit" mood={friend.met ? 'happy' : 'wave'} />
 }
 
+/** The things the world's party gives, shown like a chest's thing (review app-w3-r1 P3-5, QA2 P2-7). */
+export function FinaleThings({ world }: { world: WorldId }) {
+  return (
+    <div className="tv-stonesheet__show tv-stonesheet__things" data-finale-things={world}>
+      {WORLD_BY_ID[world].finaleItems.map((item) => (
+        <ItemPicture key={item} item={item} size={84} />
+      ))}
+    </div>
+  )
+}
+
 function SheetBody({ stone, region, onPlay, onHut }: { stone: StoneView; region: RegionView | null; onPlay(s: StoneView): void; onHut(r: RegionId): void }) {
   const speech = useSpeech()
   const node = NODE_BY_ID[stone.id]
@@ -119,6 +130,7 @@ function SheetBody({ stone, region, onPlay, onHut }: { stone: StoneView; region:
           <ItemPicture item={stone.chest.item} size={112} />
         </div>
       )}
+      {stone.slot === 'finale' && <FinaleThings world={node.world} />}
       {t && (
         <div className="tv-stonesheet__planks">
           <ProgressStones total={t.size} done={t.passed ? t.size : t.best} variant="planks" label={speech.text('s.map.about.trial')} />

@@ -1,8 +1,9 @@
 // "Vis Pip hvad du kan" (SPEC §8): the placement in the onboarding of a child in 3. klasse, once
 // Stjernefjeldet is built. Pip says where the child will start instead of "Alle starter i Engdalen",
-// explains that it is not a test, and says the same friendly words after every answer: no praise, no
-// stars, never a countdown. The questions are the skills' own sentences. Sentences carry their own
-// punctuation; button labels carry none. "Spring over" and "Spil" are the shared UI labels.
+// explains that it is not a test, and says a few friendly words after every answer: no stars, never
+// a countdown. After a miss (and its strategy) only neutral ones, never "Godt" (review app-w3-r1
+// P3-9). The questions are the skills' own sentences. Sentences carry their own punctuation; button
+// labels carry none. "Spring over" and "Spil" are the shared UI labels.
 import type { ClipId } from '../../../engine/types'
 
 export const clips: Readonly<Record<ClipId, string>> = {
@@ -12,7 +13,7 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.place.intro.stop': 'Du kan stoppe, når du vil.',
   's.place.start': 'Vis Pip, hvad du kan',
   's.place.enough': 'Det er nok',
-  // after every answer, right or not (they rotate)
+  // after a right answer (they rotate); after a miss only NEXT_AFTER_MISS
   's.place.next.1': 'Godt, næste!',
   's.place.next.2': 'Tak! Her er den næste.',
   's.place.next.3': 'Fint. Så kommer der en ny.',
@@ -26,3 +27,6 @@ export const wave = 3
 export const pack = 'placement-3'
 
 export const NEXT_CLIPS: readonly ClipId[] = Object.keys(clips).filter((id) => id.startsWith('s.place.next.'))
+
+/** After a miss: neutral words only, never "Godt, næste!" (review app-w3-r1 P3-9). */
+export const NEXT_AFTER_MISS: ClipId = 's.place.next.2'

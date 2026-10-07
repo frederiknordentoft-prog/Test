@@ -8,16 +8,20 @@
 //                        in the middle of the ladder lands on the map as if it had been skipped
 //   answerPlacementTask  one answer: logged as mode 'placement' (it never moves a box), folded into the run
 //   endPlacement         "Det er nok" or the last rung: seeds from what was shown (box 2, `seeded`),
-//                        writes, and finds the stone the first round starts on
+//                        makes the goals anew, writes, and finds the stone the first round starts on
 //   skipPlacement        "Spring over": the grade only, nothing seeded, the placement not done
-//   firstStone           the map's own next stone in the child's home world (map/model.ts), so the
-//                        first round is the stone the map itself would suggest
+//   firstStone           the map's own next stone in the child's home world (map/model.ts). After a
+//                        finished placement that is the first stone of the first region it did not
+//                        pass over, in the world P belongs to (SPEC A24, engine/ladder.ts placedStart);
+//                        after "Spring over", a ladder left before the first answer or all of it
+//                        passed (L14), the child's own world as before
 //   startOnStone         the map, with that round pushed on top as if tapped there (play/flow.ts)
 import { useNav } from '../../../../../app/nav'
 import { worldBuilt } from '../../../../../meta/built'
 import { isCorrect } from '../../../../../engine/answer'
 import { ceilingFor, defaultFastMs, isProduction } from '../../../../../engine/kinds'
 import { learningDay } from '../../../../../engine/learningDay'
+import { firstGoals } from '../../../../../meta/progression'
 import {
   answerPlacement, placementAvailable, placementResult, placementTask, seedFromPlacement, startPlacement,
   type PlacementRun,
@@ -107,7 +111,11 @@ export async function endPlacement(s: PlacementSession | null, env: PlacementEnv
   if (s && s.run.asked > 0) {
     const now = env.now?.() ?? Date.now()
     const ctx = { day: learningDay(now), now, ...(env.skills ? { skills: env.skills } : {}) }
-    store.update((p) => seedFromPlacement(p, placementResult(s.run), ctx))
+    store.update((p) => {
+      const placed = seedFromPlacement(p, placementResult(s.run), ctx)
+      // the goals follow the child to where it starts (they were made with the grade, before the ladder)
+      return { ...placed, goals: firstGoals(placed, ctx.day) }
+    })
   }
   await store.flush()
   await useSession.getState().refreshProfiles()
@@ -120,7 +128,11 @@ export async function skipPlacement(grade: Grade, env: PlacementEnv = {}): Promi
   return firstStone(useProfile.getState().profile, env.built)
 }
 
-/** The next stone the map suggests in the child's home world (Tællelunden when there is none). */
+/**
+ * The next stone the map suggests in the child's home world (Tællelunden when there is none). After a
+ * finished placement the home world is the one P belongs to, and the map suggests the first stone of
+ * the first region the placement did not pass over (map/model.ts homeWorld and nextStone).
+ */
 export function firstStone(p: ProfileDoc | null, built: (world: WorldId) => boolean = worldBuilt): NodeId {
   if (!p) return firstNode()
   return mapModel(p, homeWorld(p, built), built).next ?? firstNode()

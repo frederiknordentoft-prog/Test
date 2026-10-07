@@ -57,6 +57,14 @@ describe('dashboard views', () => {
     expect(html[5]).toContain('Mesterprøver')
   })
 
+  it('count the skills up to the grade above, never past 3. klasse (QA3 P3-1)', () => {
+    const d = demo()
+    expect(renderToStaticMarkup(<SkillsTab d={d} />)).toContain('færdighederne til og med 2. klasse.')
+    const third = renderToStaticMarkup(<SkillsTab d={{ ...d, grade: 3 }} />)
+    expect(third).toContain('færdighederne til og med 3. klasse.')
+    expect(third).not.toContain('4. klasse')
+  })
+
   it('render the settings with export, import, delete and the voice credit', () => {
     const html = renderToStaticMarkup(<SettingsTab profile={profile()} onImported={() => {}} onDelete={async () => {}} />)
     expect(html).toContain('Følg lydløs-knappen')

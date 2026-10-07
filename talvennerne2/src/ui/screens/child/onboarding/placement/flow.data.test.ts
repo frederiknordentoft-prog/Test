@@ -11,7 +11,8 @@ import { LADDER, PLACEMENT_MAX_TASKS, placementResult } from '../../../../../eng
 import { makeRegistry, skillKeys } from '../../../../../engine/registry'
 import { FIXTURE_SKILLS } from '../../../../../engine/testing/fixtureSkills'
 import { standIn } from '../../../../../engine/testing/ladderSkills'
-import type { Grade, SkillId, Task, WorldId } from '../../../../../engine/types'
+import { WORLD_IDS, type Grade, type NodeId, type SkillId, type Task, type WorldId } from '../../../../../engine/types'
+import { isWorldOpen } from '../../../../../meta/unlock'
 import { useProfile } from '../../../../../state/useProfile'
 import { resetSessionForTests, useSession } from '../../../../../state/useSession'
 import { homeWorld, mapModel } from '../../map/model'
@@ -254,5 +255,129 @@ describe('the ladder on screen (store.ts)', () => {
     const stone = await usePlacement.getState().skip(3, env)
     expect(usePlacement.getState()).toMatchObject({ status: 'over', stone })
     expect(profile()).toMatchObject({ grade: 3, placement: { done: false } })
+  })
+})
+
+describe('where the first round starts (SPEC A24, review app-w3-r1 P2-4)', () => {
+  /** A new child's ladder answered right or wrong, in order, then ended ("Det er nok", or by itself): the first stone. */
+  async function placeWith(answers: boolean[]): Promise<{ stone: NodeId; done: boolean }> {
+    if (!useProfile.getState().profile) await child()
+    let s = (await beginPlacement(3))!
+    for (const right of answers) s = answer(s, right).session
+    return { stone: await endPlacement(s, env), done: s.run.done }
+  }
+  const home = () => homeWorld(profile(), allBuilt)
+  const mapNext = () => mapModel(profile(), home(), allBuilt).next
+  /** Without a placement: the furthest world the grade opened (Stjernefjeldet once it is ready, as in the release). */
+  const furthest = (): WorldId => [...WORLD_IDS].reverse().find((w) => isWorldOpen(profile(), w))!
+
+  it('all right (P = L14): Tabeltoppen in Stjernefjeldet, as before', async () => {
+    await child()
+    let s = (await beginPlacement(3))!
+    while (!s.run.done) s = answer(s, true).session
+    const stone = await endPlacement(s, env)
+    expect(profile().placement.highest).toBe('L14')
+    expect([stone, home(), mapNext()]).toEqual(['w3-tabellen-l1', 'fjeld', 'w3-tabellen-l1'])
+  })
+
+  it('two misses (P = L5): Hundredemarken in Hestebakkerne', async () => {
+    // L5 right, right → L7 a miss → a step down to L6: right, a miss, and the ladder stops
+    const { stone, done } = await placeWith([true, true, false, true, false])
+    expect(done).toBe(true)
+    expect(profile().placement.highest).toBe('L5')
+    expect([stone, home(), mapNext()]).toEqual(['w1-tal100-l1', 'bakke', 'w1-tal100-l1'])
+  })
+
+  it('"Det er nok" after a miss (P = L4): Minusbækken in Engdalen, not the friends of the places passed over', async () => {
+    // L5 right, a miss → a step down to L4: right, right
+    const { stone } = await placeWith([true, false, true, true])
+    expect(profile().placement.highest).toBe('L4')
+    expect([stone, home(), mapNext()]).toEqual(['w0-minus10-l1', 'eng', 'w0-minus10-l1'])
+    startOnStone(stone)
+    expect(useNav.getState().route).toEqual({ id: 'round', node: 'w0-minus10-l1' })
+  })
+
+  it('nothing passed (P = null): Tællelunden', async () => {
+    const { stone } = await placeWith([false, false])
+    expect(profile().placement).toMatchObject({ done: true, highest: null })
+    expect([stone, home()]).toEqual(['w0-tal10-l1', 'eng'])
+  })
+
+  it('"Spring over", or "Det er nok" before the first answer: the child\'s own world, as before', async () => {
+    await child()
+    const skipped = await skipPlacement(3, env)
+    expect([home(), skipped]).toEqual([furthest(), mapNext()])
+    expect(NODE_BY_ID[skipped]).toMatchObject({ world: furthest(), slot: 'l1' })
+    expect(['skov', 'fjeld']).toContain(home())
+    await useProfile.getState().unload({ discard: true })
+    resetOnboardingForTests()
+    const { stone } = await placeWith([])
+    expect(profile().placement.done).toBe(false)
+    expect(stone).toBe(skipped)
+  })
+
+  it('after a reload: the map of the world the child was placed in, with the same stone next', async () => {
+    const { stone } = await placeWith([true, false, true, true])
+    await useProfile.getState().flush()
+    const id = profile().id
+    await useProfile.getState().unload()
+    const back = (await useProfile.getState().loadProfile(id))!
+    expect(profileHome(back)).toEqual({ id: 'map' })
+    expect(homeWorld(back, allBuilt)).toBe('eng')
+    expect(mapModel(back, 'eng', allBuilt).next).toBe(stone)
+  })
+
+  it('keeps siblings apart: each child\'s map follows its own ladder', async () => {
+    const ida = (await child(), profile().id)
+    await placeWith([true, false, true, true])
+    resetOnboardingForTests()
+    usePlacement.getState().reset()
+    await hatchFirstFriend({ name: 'Bo', species: 'rabbit' })
+    const bo = profile().id
+    expect(bo).not.toBe(ida)
+    const boStone = await skipPlacement(3, env)
+    const boWorld = home()
+    expect([boWorld, mapNext()]).toEqual([furthest(), boStone])
+    // a third child, in 1. klasse: Tællelunden, no placement
+    resetOnboardingForTests()
+    await hatchFirstFriend({ name: 'Cy', species: 'cat' })
+    expect(await finishOnboarding(1)).toBe('w0-tal10-l1')
+    // back to each one: their own worlds
+    await useSession.getState().selectProfile(ida)
+    expect([profile().id, home(), mapNext()]).toEqual([ida, 'eng', 'w0-minus10-l1'])
+    await useSession.getState().selectProfile(bo)
+    expect([profile().id, home(), mapNext()]).toEqual([bo, boWorld, boStone])
+  })
+})
+
+describe('the three goals follow the grade and the ladder (QA3 P3-6)', () => {
+  const revisit = () => profile().goals.list.find((g) => g.kind === 'revisit')?.region ?? null
+
+  it('0.–2. klasse: made for the grade (1. klasse no longer sent to Tællelunden)', async () => {
+    const goals: Record<number, string | null> = {}
+    for (const g of [0, 1, 2] as Grade[]) {
+      await useProfile.getState().unload({ discard: true })
+      resetOnboardingForTests()
+      await child()
+      await finishOnboarding(g)
+      expect(profile().goals.list).toHaveLength(3)
+      expect(profile().goals.list[0].kind).toBe('mix')
+      goals[g] = revisit()
+    }
+    expect(goals).toEqual({ 0: 'w0-tal10', 1: 'w1-tal100', 2: 'w2-tal1000' })
+  })
+
+  it('3. klasse: where the ladder starts the child, or the child\'s own world after "Spring over"', async () => {
+    await child()
+    let s = (await beginPlacement(3))!
+    // the grade first: the child's own world (Stjernefjeldet once it is ready), never Tællelunden
+    const own = homeWorld(profile(), allBuilt)
+    expect(['skov', 'fjeld']).toContain(own)
+    expect(revisit()).toBe(own === 'fjeld' ? 'w3-tabellen' : 'w2-tal1000')
+    for (const right of [true, false, true, true]) s = answer(s, right).session
+    await endPlacement(s, env)
+    expect(revisit()).toBe('w0-minus10')
+    const stored = await getProfile(profile().id)
+    expect(stored?.goals).toEqual(profile().goals)
   })
 })
