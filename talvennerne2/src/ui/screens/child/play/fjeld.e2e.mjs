@@ -7,12 +7,17 @@
 // starts on its stone and ends in the ceremonies, the trials and the finale are passed, the finale's
 // Astronaut things are won, the kinds met include grid, and there are 0 console errors.
 //
+// Until the art of the four animals and the Astronaut set is merged, the world is not ready and the run
+// is skipped (FJELD_REQUIRED=1 makes that a failure, as at the release).
+//
 //   npx vite --port 4315 --strictPort &
 //   flock /tmp/tv2-chromium.lock node src/ui/screens/child/play/fjeld.e2e.mjs
 import { launch } from '../../../../../scripts/browser.mjs'
 
 const BASE = process.env.MAP_URL ?? 'http://127.0.0.1:4315/'
 const QUERY = '?e2e=1&voice=fast&worlds=all'
+// FJELD_REQUIRED=1 (the release): a world that cannot be opened fails instead of being skipped
+const REQUIRED = process.env.FJELD_REQUIRED === '1'
 const PHONE = { width: 393, height: 852 }
 const REGIONS = ['w3-tabellen', 'w3-store-tal', 'w3-klokken', 'w3-division', 'w3-penge-maal', 'w3-areal', 'w3-broeker']
 // five of seven trials passed open the finale (WORLD_TRIAL_SHARE 0.6); Arealhaven's is the plan's own
@@ -76,6 +81,8 @@ async function newChild(page) {
     useNav.getState().root({ id: 'map' })
   })
   await page.waitForSelector('[data-map-path]', { timeout: 30000 })
+  // the dashboard opens only a ready world: its friends and things must be drawn (the art merged)
+  return (await profile(page)).unlocked.worlds.includes('fjeld')
 }
 
 /** What needs the player now: a task, a demo film, the intro's tap, or the end of the round. */
@@ -194,7 +201,14 @@ async function run(browser) {
     if (m.type() === 'error') errors.push(`console: ${m.text()}`)
   })
 
-  await newChild(page)
+  if (!(await newChild(page))) {
+    // before the art is merged the world is not ready, and a grown-up cannot open it either
+    const what = 'Stjernefjeldet er ikke klar i dette træ (arternes eller tingenes tegninger mangler)'
+    if (REQUIRED) check(false, what)
+    else console.log(`SPRING OVER: ${what}; FJELD_REQUIRED=1 gør det til en fejl`)
+    await ctx.close()
+    return
+  }
   const shown = await page.evaluate(() => document.querySelector('.tv-map')?.getAttribute('data-world'))
   if (shown !== 'fjeld') await tap(page, '.tv-world[data-world="fjeld"]')
   await page.waitForSelector('.tv-map[data-world="fjeld"]', { timeout: 10000 })
