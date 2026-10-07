@@ -11,6 +11,8 @@ import { UNIT_THINGS } from '../../engine/skills/measure/kit2'
 
 /** unitChoice's length things (src/ui/scenes/objects.tsx), at the face sizes of the cards (sm, md, lg). */
 const MEASURED = Object.entries(UNIT_THINGS.length)
+/** unitChoice's weight things (3. klasse), at the same sizes, so their pictograms can be reviewed beside the length things. */
+const WEIGHED = Object.entries(UNIT_THINGS.weight)
 
 function Item({ cap, children }: { cap: string; children: ReactNode }) {
   return (
@@ -140,6 +142,17 @@ export function MaterialsPage() {
       {[46, 78, 104].map((px) => (
         <div key={px} className="h-row" style={{ marginBottom: 12 }}>
           {MEASURED.map(([id, [unit, noun]]) => (
+            <Item key={id} cap={`${noun} (${unit}), ${px} px`}>
+              <ObjectIcon id={id} size={px} />
+            </Item>
+          ))}
+        </div>
+      ))}
+
+      <div className="h-section">Ting man vejer (46, 78 og 104 px)</div>
+      {[46, 78, 104].map((px) => (
+        <div key={px} className="h-row" data-things="weight" style={{ marginBottom: 12 }}>
+          {WEIGHED.map(([id, [unit, noun]]) => (
             <Item key={id} cap={`${noun} (${unit}), ${px} px`}>
               <ObjectIcon id={id} size={px} />
             </Item>
