@@ -62,13 +62,14 @@ export const POLARBEAR_COLORWAYS: Record<NaturalColorwayId, ColorwayDef> & { gol
     overrides: { outline: '#7A4A10', shade: '#E2A42F', belly: '#FFF0B8', inner: '#FFC98F', nose: '#6B3A0E', iris: '#A0561B' },
     sparkle: '#FFF7CF',
   },
-  // Regnbue: en lys mintgrøn pels (ingen naturlig farve er grøn); maven bærer de fire flade pastelstriber.
+  // Regnbue (review G3-r1 A1): en hvid isbjørn med varm tone og lilla kontur (ikke en farve mere som den mintgrønne);
+  // de fire flade pastelstriber ses i hvile på den brede smæk og flanken, halestumpen og ørernes inderside.
   rainbow: {
     id: 'rainbow',
     name: 'regnbue',
-    fur: '#E2F7EC',
-    patternColor: '#5C8A84',
-    overrides: { outline: '#4D8A78', shade: '#C9EBDA', belly: '#FFFFFF', inner: '#FFC4DC', nose: '#2F4F4A', iris: '#7A62C9' },
+    fur: '#FFFAF3',
+    patternColor: '#7462A6',
+    overrides: { outline: '#7E68B0', shade: '#EEE4F2', belly: '#FFFFFF', inner: '#FFC4DC', nose: '#3B3160', iris: '#7A62C9' },
     gradient: RAINBOW_STOPS,
   },
 }

@@ -9,6 +9,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { SPECIES_BY_ID } from '../../content/catalog'
 import { clips } from '../../speech/clips/names/catalog'
 import { festHead } from '../items/fest/fest-head'
+import { hverdagHand } from '../items/hverdag/hverdag-hand'
+import { kongeligHand } from '../items/kongelig/kongelig-hand'
+import { milepaelSlikkepind } from '../items/milepael/milepael-slikkepind'
+import { opdagerHand } from '../items/opdager/opdager-hand'
+import { piratHand } from '../items/pirat/pirat-hand'
+import { rytterHand } from '../items/rytter/rytter-hand'
 import { hverdagBack } from '../items/hverdag/hverdag-back'
 import { hverdagBody } from '../items/hverdag/hverdag-body'
 import { hverdagHead } from '../items/hverdag/hverdag-head'
@@ -199,6 +205,9 @@ describe('Stjernefjeldet · røgpusten', () => {
 // Pingvin og isbjørn (ART3b): samme kontrakt, lints og hash-regression som pegasus og drage, men uden egne vinger
 // (begge bærer en ryggenstand), pingvinen uden ører og isbjørnen med små ører bag hovedet.
 
+/** Håndgenstandene, isbjørnen holder foran forbenet med poten om grebet (`SpeciesDef.handGrip`). */
+const GRIP_ITEMS: readonly ItemDef[] = [opdagerHand, rytterHand, kongeligHand, piratHand, milepaelSlikkepind, hverdagHand]
+
 /** Signaturens klasse pr. art (pingvinens klap er hele potens klasse `a-paw` i hvile, se rig.css). */
 const SIGNATURE_CLASS_B = { penguin: 'a-paw a-paw-l', polarbear: 'a-sniff' } as const
 
@@ -293,15 +302,46 @@ describe.each(([penguin, polarbear] as const).map((def) => [def.id, def] as cons
     expect(m).toMatch(/<g data-item="hverdag-body"[\s\S]*?stroke-linejoin="round"/)
   })
 
-  it('hatte: pingvinen har ingen ører (ingen huller), og isbjørnens små ører sidder bag hovedet under hatten', () => {
+  it('hatte: pingvinen har ingen ører (ingen huller); isbjørnens små ører titter frem ved hattens kant (review G3-r1 T1)', () => {
     for (const hat of [hverdagHead, festHead]) {
       const m = render({ species: def, outfit: { head: { item: hat } } })
       const at = m.indexOf(`data-item="${hat.id}"`)
       expect(at, `${def.id} ${hat.id}`).toBeGreaterThan(0)
-      expect(m, def.id).not.toMatch(/data-layer="rim"/)
-      if (def.id === 'penguin') expect(m).not.toContain('a-ear')
-      else expect(m.indexOf('a-ear-l'), def.id).toBeLessThan(at)
+      if (def.id === 'penguin') {
+        expect(m).not.toContain('a-ear')
+        expect(m, def.id).not.toMatch(/data-layer="rim"/)
+        continue
+      }
+      // Ørerne tegnes i ørernes lag over hatten (lag 16): gennem hattens ørehuller med hulkanten over roden
+      // (huen) eller ved siden af en hat mellem ørerne (festhatten).
+      expect(m.indexOf('a-ear-l'), `${def.id} ${hat.id}`).toBeGreaterThan(at)
+      if (hat.fit.earMode === 'under') expect(m, hat.id).not.toMatch(/data-layer="rim"/)
+      else expect(m, hat.id).toMatch(new RegExp(`data-item="${hat.id}" data-slot="head" data-layer="rim"`))
     }
+    // Uden hat sidder ørerne stadig bag hovedet: klippet uden for hovedets kontur.
+    if (def.id === 'polarbear') expect(render({ species: def, mode: 'animated' })).toMatch(/clip-path="url\(#[^)]*\)"><g transform="translate\(71 69\)/)
+  })
+
+  it('isbjørnen holder lup, gulerod, scepter, kikkert, slikkepind og ballon foran forbenet med poten om grebet (review G3-r1 T2/B2)', () => {
+    if (def.id !== 'polarbear') return
+    for (const it of GRIP_ITEMS)
+      for (const stage of STAGES) {
+        const m = render({ species: def, stage, mode: 'animated', outfit: { hand: { item: it } } })
+        const paw = m.indexOf('data-part="paw-r"')
+        const item = m.indexOf(`data-item="${it.id}"`)
+        const grip = m.indexOf('pg)"', item)
+        expect(paw, `${it.id} ${stage}`).toBeGreaterThan(0)
+        // Genstanden tegnes efter benet (inde i potens gruppe), og grebet (poten klippet under knoerne) efter genstanden.
+        expect(item, `${it.id} ${stage}`).toBeGreaterThan(m.indexOf('<path', paw))
+        expect(grip, `${it.id} ${stage}`).toBeGreaterThan(item)
+        // En løftet pote holder genstanden ved spidsen som før (intet greb).
+        expect(render({ species: def, stage, mood: 'cheer', outfit: { hand: { item: it } } }), `${it.id} ${stage} cheer`).not.toContain('pg)"')
+        for (const mood of MOODS) {
+          const bare = count(render({ species: def, stage, mood, mode: 'animated' }))
+          const worn = count(render({ species: def, stage, mood, mode: 'animated', outfit: { hand: { item: it } } }))
+          expect(worn - bare, `${it.id} stadie ${stage} ${mood}`).toBeLessThanOrEqual(BUDGET.item)
+        }
+      }
   })
 
   it('ryg-slottet er frit: begge bærer en rygsæk (ingen egne vinger)', () => {

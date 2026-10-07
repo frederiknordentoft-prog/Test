@@ -2,20 +2,22 @@
 // aldrig læses som en panda, en hamster eller en hvalp (review G2-r1 §2 og integratorens fire blinde for-test):
 // - hovedet sidder lavt og fremme foran skuldrene og er vendt en trekvart mod venstre, så den lange snude med lige,
 //   "romersk" profil stikker ud af omridset (pandaen og hamsteren har runde hoveder uden snude),
-// - meget små, runde ører lavt bag på hovedet (tegnet bag hovedet; pandaens store ører sidder højt),
+// - meget små, runde ører lavt bag på hovedet (klippet uden for hovedet, så de sidder bag det; med hat titter de frem
+//   ved hattens kant; pandaens store ører sidder højt),
 // - en krop, der er bredere end høj, med en ryglinje, der stiger bag hovedet og falder mod hoften til højre,
 // - kraftige forben med store, flade poter, den nære bagpote og en halestump ved hoften, og
 // - artens kendetegn (som pandaens bambus): en lille fisk på jorden ved venstre forpote med løftet, kløvet halefinne.
 // Hvid pels på papirfarven bæres af konturen og cel-skyggen (og en fold langs snudens ryg, der viser dens længde).
 // Signaturen er snuse-næsen: næsen snuser tre gange med squash og et overshoot, mens hovedet løfter sig mod luften
-// (`a-sniff` om næsen og hovedets løft i hvile, rig.css). Alle former er punkter og husets primitiver.
-import { ROUND, limbLoop, padsPath, pawWebs } from '../parts/kit'
+// (`a-sniff` om snusets led på snudens ryg og hovedets løft i hvile, rig.css): næsetippen løfter sig 6,8–8 enheder i
+// hvert snus (review G3-r1 A2). Alle former er punkter og husets primitiver.
+import { ROUND, hatted, limbLoop, padsPath, pawWebs } from '../parts/kit'
 import type { PawWebs } from '../parts/kit'
 import { mixHex } from '../rig/oklch'
 import { Pivot } from '../rig/Rig'
-import { blob, ellipse, frame, join, offsetLoop, spline, xf } from '../rig/shapes'
+import { blob, ellipse, frame, join, offsetLoop, poly, spline, xf } from '../rig/shapes'
 import type { Vec } from '../rig/shapes'
-import type { AnchorSet, OutlineFn, Palette, Part, SidePart, SpeciesDef, Stage } from '../rig/types'
+import type { AnchorSet, OutlineFn, Palette, Part, PartCtx, SidePart, SpeciesDef, Stage } from '../rig/types'
 import { FISH, POLARBEAR_COLORWAYS } from './polarbear.colorways'
 
 const round = ROUND
@@ -53,19 +55,23 @@ const bearBody: OutlineFn = (a: AnchorSet, inflate: number) =>
   blob(offsetLoop(frame(BODY_PTS, a.bodyCenter.x, a.bodyCenter.y, a.bodyRx * BODY_WIDE, a.bodyRy), inflate), 0.9)
 
 // ---------------------------------------------------------------------------------------------
-// Ører: meget små og runde, lavt og bagud på hovedet (bag hovedet, lokalt: roden i (0,0), peger op).
+// Ører: meget små og runde, lavt og bagud på hovedet (lokalt: roden i (0,0), peger op). De tegnes i ørernes lag over
+// hatten og klippes uden for hovedet (review G3-r1 T1), så de uden hat sidder bag hovedet som før og med hat titter frem
+// ved hattens kant (gennem hattens ørehuller med en afrundet bund), ligesom pandaens og hamsterens ører.
 
 const EAR_R = 7.4
 const EAR: Vec[] = xf([[0, 6], [-7.4, 3], [-9.6, -4.6], [-7, -12.6], [0, -15.6], [7, -12.6], [9.6, -4.6], [7.4, 3]], { sx: 0.86 })
+/** Øret i en hat med ørehuller: den del, der titter op gennem hullet, med en afrundet bund. */
+const EAR_HATTED = hatted(EAR, -2, 3)
 const earScale = (stage: Stage) => (stage === 1 ? { sx: 1.1, sy: 1.1 } : {})
 
-const Ear: SidePart = ({ pal, sw, stage }) => {
+const Ear: SidePart = ({ pal, sw, stage, hat, ids }) => {
   const s = earScale(stage)
   const k = s.sx ?? 1
   return (
     <>
-      <path d={blob(xf(EAR, s), 0.9)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
-      {!pal.silhouette && <path d={ellipse(0.6 * k, -5.8 * k, EAR_R * 0.48 * k, EAR_R * 0.54 * k)} fill={pal.inner} />}
+      <path d={blob(xf(hat === 'through' ? EAR_HATTED : EAR, s), 0.9)} fill={pal.earFur} stroke={pal.earOutline} strokeWidth={sw} {...round} />
+      {!pal.silhouette && <path d={ellipse(0.6 * k, -5.8 * k, EAR_R * 0.48 * k, EAR_R * 0.54 * k)} fill={pal.gradient ? `url(#${ids.gradient})` : pal.inner} />}
     </>
   )
 }
@@ -80,19 +86,29 @@ const NOSE: Vec[] = xf([[0, 5.2], [-4.4, 3.4], [-8, -0.2], [-8, -3.4], [-4, -5],
 const NOSE_AT: Vec = [-62.6, 19.8]
 const BRIDGE: Vec[] = [[-27, -6.6], [-38, -0.4], [-47.6, 6.2], [-55.4, 12.6]]
 
+/**
+ * Snusets led (review G3-r1 A2): på snudens ryg over og bag næsen. Signaturens squash (rig.css `rig-sniff`) virker om
+ * leddet, så næsetippen løfter sig 6,8–8 enheder op og lidt frem i hvert af de tre snus (med overshoot ned imellem) og
+ * squasher samtidig, i stedet for kun at trykkes sammen på stedet; hovedet løfter sig desuden mod luften.
+ */
+const SNIFF_JOINT: Vec = [16, -28]
+const NOSE_D = blob(xf(NOSE, { dx: -SNIFF_JOINT[0], dy: -SNIFF_JOINT[1] }), 0.85)
+
 const Snout: Part = ({ pal, sw, a, ids, lod, still }) => {
   const sil = pal.silhouette
   const [nx, ny] = onHead(a, NOSE_AT)
   const [mx, my] = onHead(a, [-44, 25])
+  const [jx, jy] = SNIFF_JOINT
   return (
     <>
       {!sil && <path d={ellipse(mx, my, 28, 15, -14)} fill={pal.belly} clipPath={`url(#${ids.headClip})`} />}
       {!sil && lod === 'full' && <path d={spline(BRIDGE.map((v) => onHead(a, v)))} fill="none" stroke={crease(pal)} strokeWidth={sw * 0.5} {...round} />}
-      <Pivot at={{ x: nx, y: ny }} cls="a-sniff" still={still}>
-        <path d={blob(NOSE, 0.85)} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
-        {!sil && <path d={ellipse(-3, -2.4, 2.8, 1.4, -26)} fill={pal.highlight} />}
+      <Pivot at={{ x: nx + jx, y: ny + jy }} cls="a-sniff" still={still}>
+        <path d={NOSE_D} fill={pal.nose} stroke={pal.outline} strokeWidth={sw * 0.42} {...round} />
+        {!sil && <path d={ellipse(-3 - jx, -2.4 - jy, 2.8, 1.4, -26)} fill={pal.highlight} />}
+        {/* Næsefuren følger næsen i snuset. */}
+        {!sil && <path d={spline([[2.4 - jx, 5 - jy], [4.6 - jx, 10.4 - jy]])} fill="none" stroke={pal.ink} strokeWidth={sw * 0.6} {...round} />}
       </Pivot>
-      {!sil && <path d={spline([[nx + 2.4, ny + 5], [nx + 4.6, ny + 10.4]])} fill="none" stroke={pal.ink} strokeWidth={sw * 0.6} {...round} />}
     </>
   )
 }
@@ -117,6 +133,31 @@ const Leg: SidePart = ({ pal, sw, lod }) => (
   <>
     <path d={blob(LEG, 0.8)} fill={pal.fur} />
     <path d={spline(LEG.slice(1, -1), 0.8)} fill="none" stroke={pal.outline} strokeWidth={sw} {...round} />
+    {lod === 'full' && !pal.silhouette && <path d={join(...TOES.map((t) => spline(t)))} fill="none" stroke={crease(pal)} strokeWidth={sw * 0.5} {...round} />}
+    <path d={clawsAt(CLAWS)} fill={pads(pal)} />
+  </>
+)
+
+/**
+ * Potens greb om håndgenstandene (review G3-r1 T2/B2, SPEC A17, som pandaens skjold): forbenet er en bred søjle, der
+ * ellers skjuler lup, gulerod, scepter, kikkert og slikkepind (fit-regel 5: poten over håndtaget). De tegnes derfor over
+ * benet (`handGrip`), og bagefter tegnes poten – benet under `GRIP_CUT` i benets ramme – igen oven på genstandens greb
+ * med tæer og kløer. Klippets kant buer som knoerne på en pote og får en blød fold.
+ */
+const GRIP_CUT = 41
+const GRIP_EDGE: Vec[] = [[-24, GRIP_CUT + 2.6], [-12, GRIP_CUT - 1.2], [0, GRIP_CUT - 2.2], [12, GRIP_CUT - 1.2], [24, GRIP_CUT + 2.6]]
+const GRIP_CLIP = poly([[-40, 90], [-40, GRIP_CUT + 4], ...GRIP_EDGE, [40, GRIP_CUT + 4], [40, 90]])
+const gripClip = (ids: PartCtx['ids']) => `${ids.uid}pg`
+/** Håndgenstandene, isbjørnen holder foran forbenet (de andre står foran poten selv med `art.over` eller svæver). */
+const GRIP_ITEMS = ['opdager-hand', 'rytter-hand', 'kongelig-hand', 'pirat-hand', 'milepael-slikkepind', 'hverdag-hand'] as const
+
+const PawGrip: SidePart = ({ pal, sw, ids, lod }) => (
+  <>
+    <clipPath id={gripClip(ids)}>
+      <path d={GRIP_CLIP} />
+    </clipPath>
+    <path d={blob(LEG, 0.8)} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} strokeLinejoin="round" clipPath={`url(#${gripClip(ids)})`} />
+    <path d={spline(GRIP_EDGE)} fill="none" stroke={crease(pal)} strokeWidth={sw * 0.7} clipPath={`url(#${gripClip(ids)})`} {...round} />
     {lod === 'full' && !pal.silhouette && <path d={join(...TOES.map((t) => spline(t)))} fill="none" stroke={crease(pal)} strokeWidth={sw * 0.5} {...round} />}
     <path d={clawsAt(CLAWS)} fill={pads(pal)} />
   </>
@@ -240,11 +281,19 @@ const Fish: Part = ({ pal, sw, lod }) => {
 }
 
 const Feet: Part = (p) => {
-  const { pal, sw, lod } = p
+  const { pal, sw, lod, ids } = p
   const e = (o: typeof HIND_NEAR) => ellipse(o.cx, o.cy, o.rx, o.ry, o.rot)
   return (
     <>
-      <path d={join(e(TAIL_STUB), e(HIND_NEAR))} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
+      {/* Regnbuen (review G3-r1 A1): halestumpen bærer de fire flade striber. */}
+      {pal.gradient ? (
+        <>
+          <path d={e(TAIL_STUB)} fill={`url(#${ids.gradient})`} stroke={pal.outline} strokeWidth={sw} {...round} />
+          <path d={e(HIND_NEAR)} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
+        </>
+      ) : (
+        <path d={join(e(TAIL_STUB), e(HIND_NEAR))} fill={pal.fur} stroke={pal.outline} strokeWidth={sw} {...round} />
+      )}
       {lod === 'full' && !pal.silhouette && <path d={join(...HIND_TOES.map((t) => spline(t)))} fill="none" stroke={crease(pal)} strokeWidth={sw * 0.5} {...round} />}
       {Fish(p)}
     </>
@@ -252,14 +301,20 @@ const Feet: Part = (p) => {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Krop: en lys mave (regnbuen: fire flade striber), en blød pelstot under hagen og lårets fold ved hoften.
+// Krop: en lys mave, en blød pelstot under hagen og lårets fold ved hoften. Regnbuen (review G3-r1 A1): maven er en bred
+// smæk med de fire flade striber, der går ud over forbenene på begge sider og op over flanken, så striberne ses i hvile.
 
 const TUFT: Vec[][] = [[[86, 146], [89, 151.4], [91.4, 147.6]], [[96.6, 147.6], [99, 151.4], [102, 146]]]
 const THIGH: Vec[] = [[128, 214], [128.6, 200], [136, 189], [148, 184], [158, 186.4]]
 
+const belly = (a: AnchorSet, rainbow: boolean) =>
+  rainbow
+    ? ellipse(a.bodyCenter.x - 2, a.bodyCenter.y + 15, a.bodyRx * BODY_WIDE * 0.93, a.bodyRy * 0.76)
+    : ellipse(a.bodyCenter.x - 12, a.bodyCenter.y + 8, a.bodyRx * BODY_WIDE * 0.5, a.bodyRy * 0.76)
+
 const BodyDeco: Part = ({ pal, a, ids, sw, lod }) => (
   <>
-    <path d={ellipse(a.bodyCenter.x - 12, a.bodyCenter.y + 8, a.bodyRx * BODY_WIDE * 0.5, a.bodyRy * 0.76)} fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly} clipPath={`url(#${ids.bodyClip})`} />
+    <path d={belly(a, !!pal.gradient)} fill={pal.gradient ? `url(#${ids.gradient})` : pal.belly} clipPath={`url(#${ids.bodyClip})`} />
     {lod === 'full' && !pal.silhouette && <path d={join(...TUFT.map((t) => spline(t)), spline(THIGH))} fill="none" stroke={crease(pal)} strokeWidth={sw * 0.5} {...round} />}
   </>
 )
@@ -283,8 +338,9 @@ export const polarbear: SpeciesDef = {
     // Hatte sidder på issen: ankeret ligger over den, så skyggen og kanten går fri af øjnene.
     headTop: { x: 96, y: 54 },
     headWidth: 96,
-    earBaseL: { x: 76, y: 68 },
-    earBaseR: { x: 126, y: 70 },
+    // Ørerne sidder lavt bag på hovedet og lidt ude til siden, så de titter frem ved hattens kant (review G3-r1 T1).
+    earBaseL: { x: 71, y: 69 },
+    earBaseR: { x: 131, y: 72 },
     // Hatte mellem ørerne sidder på issen.
     earGap: 56,
     hornBase: { x: 96, y: 64 },
@@ -320,7 +376,10 @@ export const polarbear: SpeciesDef = {
   // Tankebobler og Zzz (fælles regel): til højre for kinden under øret med mindst 8 enheders luft.
   fx: { x: 164, y: 106 },
   face: { idleMouth: 'smile', cheeks: true },
-  ears: { splay: 22, behind: true, clip: false },
+  ears: { splay: 22 },
+  // Lup, gulerod, scepter, kikkert, slikkepind og ballonens snor holdes foran det brede forben, og poten griber om den
+  // nederste del (review G3-r1 T2/B2, SPEC A17, som pandaens skjold).
+  handGrip: { items: GRIP_ITEMS, Grip: PawGrip },
   signature: 'sniff',
   // Guldets glansbånd på ryggen bag hovedet.
   goldBand: [290, 330],

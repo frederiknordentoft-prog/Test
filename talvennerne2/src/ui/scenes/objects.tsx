@@ -423,15 +423,20 @@ function compact(id: string): ReactNode | null {
       )
     }
     case 'sofa': {
-      // a two-seat sofa from the front: a high back, two cushions, rounded arms and short dark legs
+      // a three-seat sofa from the front, about twice as wide as high (review G3-r1 P1: a square one with high, round
+      // arms read as an armchair): a long back with three back cushions, three light seat cushions with clear seams,
+      // low, narrow arms well below the top of the back and short dark legs
       const t = MAT.bar
+      const cushion = { ...t, fill: t.light, shade: t.fill }
+      const thirds = (x: number, w: number, y: number, h: number, r: number) => join(...[0, 1, 2].map((k) => roundRect(x + (k * w) / 3, y, w / 3, h, r)))
       return (
         <>
-          <path d={join(roundRect(8, 39, 4.4, 5, 1.2), roundRect(35.6, 39, 4.4, 5, 1.2))} fill={INK} />
-          <Body d={roundRect(8, 11, 32, 21, 5)} tone={t} shade={roundRect(29.5, 13.5, 7.5, 16, 3)} hi={roundRect(11.5, 14.5, 3, 11, 1.5)} />
-          <Body d={join(roundRect(10.5, 27, 13.5, 9, 3), roundRect(24, 27, 13.5, 9, 3))} tone={{ ...t, fill: t.light }} />
-          <Part d={roundRect(9, 34, 30, 7, 2.5)} fill={t.shade} line={t.outline} sw={SW} />
-          <Body d={join(roundRect(3, 21.5, 9.5, 20, 4.5), roundRect(35.5, 21.5, 9.5, 20, 4.5))} tone={t} shade={join(roundRect(8, 25, 3, 14, 1.5), roundRect(40.5, 25, 3, 14, 1.5))} />
+          <path d={join(roundRect(3.4, 39, 3.6, 5, 1.2), roundRect(41, 39, 3.6, 5, 1.2))} fill={INK} />
+          <Part d={roundRect(4.5, 19, 39, 18.5, 4.5)} fill={t.fill} line={t.outline} sw={SW} />
+          <Body d={thirds(8, 32, 21.8, 9.6, 3)} tone={cushion} hi={roundRect(10.4, 23.8, 4.4, 1.8, 0.9)} sw={1.6} />
+          <Part d={roundRect(7, 34, 34, 6.5, 2)} fill={t.shade} line={t.outline} sw={2.2} />
+          <Body d={thirds(8, 32, 29.5, 7, 2.6)} tone={cushion} sw={1.6} />
+          <Body d={join(roundRect(2, 26.5, 6.4, 14.5, 3), roundRect(39.6, 26.5, 6.4, 14.5, 3))} tone={t} shade={join(roundRect(5.4, 29, 1.8, 10, 0.9), roundRect(43, 29, 1.8, 10, 0.9))} hi={roundRect(3.7, 29, 1.6, 5, 0.8)} />
         </>
       )
     }
