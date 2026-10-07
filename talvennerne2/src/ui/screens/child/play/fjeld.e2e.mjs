@@ -260,14 +260,15 @@ async function run(browser) {
   // ── five mastery trials, Arealhaven's first ──
   for (const region of TRIALS) for (const k of await playStone(page, `${region}-trial`)) kinds.add(k)
   const p2 = await profile(page)
-  check(TRIALS.every((r) => p2.trials[r]?.passed), `fem prøver er bestået (${TRIALS.map((r) => `${r}:${p2.trials[r]?.passed ? 'ja' : 'nej'}`).join(', ')})`)
+  const passed = (p, id) => (p.trials[id]?.passedAt ?? null) !== null
+  check(TRIALS.every((r) => passed(p2, r)), `fem prøver er bestået (${TRIALS.map((r) => `${r}:${passed(p2, r) ? 'ja' : 'nej'}`).join(', ')})`)
 
   // ── the finale, opened by the trials ──
   const finale = await page.evaluate(() => document.querySelector('[data-stone="fjeld-finale"]')?.getAttribute('data-state') ?? 'mangler')
   check(finale !== 'locked' && finale !== 'mangler', `finalen er åben (${finale})`)
   for (const k of await playStone(page, 'fjeld-finale')) kinds.add(k)
   const p3 = await profile(page)
-  check(p3.trials.fjeld?.passed, 'finalen er bestået')
+  check(passed(p3, 'fjeld'), 'finalen er bestået')
   const owned = Object.keys(p3.inventory ?? {}).filter((i) => i.startsWith('astronaut-'))
   check(['astronaut-neck', 'astronaut-body', 'astronaut-back'].every((i) => owned.includes(i)), `finalens Astronaut-ting er vundet (${owned.join(', ')})`)
 
