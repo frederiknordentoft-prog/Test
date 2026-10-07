@@ -1,12 +1,15 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { nodesOfRegion } from '../../../../content/curriculum'
+import { REGIONS, nodesOfRegion } from '../../../../content/curriculum'
 import { newProfileDoc } from '../../../../data/repo/profiles'
+import { seedFromPlacement } from '../../../../engine/placement'
+import { makeRegistry } from '../../../../engine/registry'
 import { keyAt } from '../../../../engine/testing/profile'
-import type { NodeId, NodeProgress, ProfileDoc, RoundSnapshot, WorldId } from '../../../../engine/types'
+import type { NodeId, NodeProgress, ProfileDoc, RegionId, RoundSnapshot, TrialState, WorldId } from '../../../../engine/types'
 import { chooseStarter } from '../../../../meta/actions'
 import { AVAILABLE_ITEMS } from '../../../../art/items/registry'
 import { MapView } from './MapView'
+import { FinaleThings } from './StoneSheet'
 import { homeWorld, litHut, mapModel, playable, type MapModel, type StoneView } from './model'
 
 /**
@@ -201,5 +204,96 @@ describe('the world shown first', () => {
     const bakke = mapModel(p, 'bakke', engOnly)
     expect(bakke.regions.every((r) => !r.open && r.stones.every((s) => !s.playable))).toBe(true)
     expect(bakke.next).toBeNull()
+  })
+})
+
+describe('after "Vis Pip hvad du kan" (SPEC A24, review app-w3-r1 P2-4)', () => {
+  const all = (): boolean => true
+  /** A child in 3. klasse: the grade opened every world and every region below Stjernefjeldet, then the ladder ended at P. */
+  function placed(P: string | null, done = true): ProfileDoc {
+    const graded: ProfileDoc = {
+      ...newChild(),
+      grade: 3,
+      unlocked: { worlds: ['bakke', 'skov', 'fjeld'], regions: REGIONS.filter((r) => r.world !== 'fjeld').map((r) => r.id) },
+    }
+    const p = seedFromPlacement(graded, P, { skills: makeRegistry([]), day: '2026-10-01', now: T })
+    return done ? p : { ...p, placement: { done: false, at: null, highest: null } }
+  }
+  const passed = (regions: RegionId[]): ProfileDoc['trials'] =>
+    Object.fromEntries(regions.map((r): [RegionId, TrialState] => [r, { attempts: 1, failed: 0, best: 9, passedAt: T, lastAttemptRound: 1 }]))
+
+  it('shows the world P belongs to, with the first stone of the first region it did not pass over next', () => {
+    const cases: [string | null, WorldId, NodeId][] = [
+      ['L14', 'fjeld', 'w3-tabellen-l1'], // all of it: Tabeltoppen, as before
+      ['L13', 'fjeld', 'w3-tabellen-l1'],
+      ['L12', 'skov', 'w2-gange-l1'],
+      ['L7', 'bakke', 'w1-tieren-l1'],
+      ['L5', 'bakke', 'w1-tal100-l1'], // two misses in the review
+      ['L4', 'eng', 'w0-minus10-l1'], // "Det er nok" after a miss
+      [null, 'eng', 'w0-tal10-l1'], // nothing passed
+    ]
+    for (const [P, world, next] of cases) {
+      const p = placed(P)
+      expect(homeWorld(p, all), `${P}`).toBe(world)
+      expect(mapModel(p, world, all).next, `${P}`).toBe(next)
+    }
+  })
+
+  it('applies only after a finished placement: without one the map is as before (0.–2. klasse, "Spring over")', () => {
+    // the same profile without placement.done: the furthest world, and in Engdalen the friend of the first region passed over
+    const p = placed('L4', false)
+    expect(homeWorld(p, all)).toBe('fjeld')
+    expect(mapModel(p, 'fjeld', all).next).toBe('w3-tabellen-l1')
+    expect(mapModel(p, 'eng', all).next).toBe('w0-tal10-friend')
+    // a child in 1. klasse who passed Hundredemarken's trial from the start: its friend first, as always
+    const first: ProfileDoc = { ...newChild(), grade: 1, unlocked: { worlds: ['bakke'], regions: REGIONS.filter((r) => r.world === 'eng').map((r) => r.id) } }
+    const nodes: ProfileDoc['nodes'] = {}
+    for (const n of nodesOfRegion('w1-tal100')) if (n.slot !== 'friend' && n.slot !== 'trial') nodes[n.id] = { plays: 0, stars: 0, skipped: true, lastAt: T }
+    const skipped = { ...first, nodes, trials: passed(['w1-tal100']) }
+    expect(homeWorld(skipped, all)).toBe('bakke')
+    expect(mapModel(skipped, 'bakke', all).next).toBe('w1-tal100-friend')
+  })
+
+  it('suggests what the passed-over regions still hold (friend, chest, trial) once the rest of the world is done', () => {
+    const p = placed('L4')
+    const nodes = { ...p.nodes }
+    for (const r of ['w0-minus10', 'w0-tiervenner'] as RegionId[]) for (const n of nodesOfRegion(r)) nodes[n.id] = played(2)
+    const later = { ...p, nodes, trials: { ...p.trials, ...passed(['w0-minus10', 'w0-tiervenner']) } }
+    expect(mapModel(later, 'eng', all).next).toBe('w0-tal10-friend')
+    expect(homeWorld(later, all)).toBe('eng')
+  })
+
+  it('moves up the usual way: once the world is complete (60 % of its trials, or every stone)', () => {
+    const p = placed('L4')
+    const three = { ...p, trials: passed(['w0-minus10', 'w0-tiervenner', 'w0-tal10']) }
+    expect(homeWorld(three, all)).toBe('eng')
+    const four = { ...p, trials: passed(['w0-minus10', 'w0-tiervenner', 'w0-tal10', 'w0-former']) }
+    expect(homeWorld(four, all)).toBe('bakke')
+    expect(mapModel(four, 'bakke', all).next).toBe('w1-tal100-l1')
+    // and from there on: Hestebakkerne complete too
+    const bakke = { ...four, trials: { ...four.trials, ...passed(['w1-tal100', 'w1-dobbelt', 'w1-tieren', 'w1-figurer', 'w1-klokken']) } }
+    expect(homeWorld(bakke, all)).toBe('skov')
+  })
+
+  it('keeps every world the grade opened in the world picker', () => {
+    const p = placed('L4')
+    expect(mapModel(p, 'eng', all).worlds.map((w) => [w.id, w.open])).toEqual([['eng', true], ['bakke', true], ['skov', true], ['fjeld', true]])
+    expect(mapModel(p, 'fjeld', all).next).toBe('w3-tabellen-l1')
+    // a world that is not built is never the home world
+    expect(homeWorld(placed('L14'), (w) => w !== 'fjeld')).toBe('skov')
+  })
+})
+
+describe('the finale\'s card (review app-w3-r1 P3-5)', () => {
+  it('shows the things the world\'s party gives, as a chest shows its thing', () => {
+    const pictures = (html: string) => html.match(/class="tv-pic[ "]/g)?.length ?? 0
+    const fjeld = renderToStaticMarkup(<FinaleThings world="fjeld" />)
+    expect(fjeld).toContain('data-finale-things="fjeld"')
+    expect(pictures(fjeld)).toBe(3)
+    for (const item of ['astronaut-neck', 'astronaut-body', 'astronaut-back']) {
+      // a thing not drawn yet holds its place with the gift, like a chest's
+      if (!AVAILABLE_ITEMS.includes(item as never)) expect(fjeld).toContain(`data-gift="${item}"`)
+    }
+    expect(pictures(renderToStaticMarkup(<FinaleThings world="eng" />))).toBe(4)
   })
 })

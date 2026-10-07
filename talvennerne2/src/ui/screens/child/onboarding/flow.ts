@@ -21,7 +21,9 @@ import { STARTERS } from '../../../../content/catalog'
 import { NODES, REGIONS } from '../../../../content/curriculum'
 import { newId } from '../../../../data/ids'
 import type { Animal, Grade, NodeId, ProfileId, SkillId, SpeciesId } from '../../../../engine/types'
+import { learningDay } from '../../../../engine/learningDay'
 import { starterAnimal } from '../../../../meta/animals'
+import { firstGoals } from '../../../../meta/progression'
 import { useMeta } from '../../../../state/useMeta'
 import { useProfile } from '../../../../state/useProfile'
 import { useSession } from '../../../../state/useSession'
@@ -104,11 +106,17 @@ async function registeredSkillIds(): Promise<ReadonlySet<SkillId>> {
   return new Set(registeredSkills().map((d) => d.id))
 }
 
-/** The grade and the places it opens (dashboard/openings.ts), written; the hatch is behind us. */
-export async function applyOnboardingGrade(grade: Grade): Promise<void> {
+/**
+ * The grade and the places it opens (dashboard/openings.ts), written; the hatch is behind us. The
+ * three goals are made for the grade (they were made at the hatch, with grade 0: QA3 P3-6).
+ */
+export async function applyOnboardingGrade(grade: Grade, now: number = Date.now()): Promise<void> {
   const profile = useProfile.getState()
   const registered = grade > 0 ? await registeredSkillIds() : new Set<SkillId>()
-  profile.update((p) => applyGrade(p, grade, registered))
+  profile.update((p) => {
+    const graded = applyGrade(p, grade, registered)
+    return { ...graded, goals: firstGoals(graded, learningDay(now)) }
+  })
   await profile.flush()
   await useSession.getState().refreshProfiles()
   hatchedFor = null

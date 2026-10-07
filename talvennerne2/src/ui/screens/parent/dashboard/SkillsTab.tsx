@@ -99,7 +99,7 @@ function DomainPanel({ c, today }: { c: DomainCard; today: string }) {
 
 export function SkillsTab({ d }: { d: Dashboard }) {
   return (
-    <Section title="Færdigheder" sub={`Tal for de sidste 14 dage. Hvert emne viser færdighederne til og med ${d.grade + 1}. klasse.`}>
+    <Section title="Færdigheder" sub={`Tal for de sidste 14 dage. Hvert emne viser færdighederne til og med ${Math.min(d.grade + 1, 3)}. klasse.`}>
       {d.domains.map((c) => <DomainPanel key={c.domain} c={c} today={d.today} />)}
       <Note>{KAN_SELV_NOTE}</Note>
     </Section>

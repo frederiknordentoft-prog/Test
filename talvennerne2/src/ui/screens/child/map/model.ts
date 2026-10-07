@@ -7,6 +7,7 @@ import {
   type NodeDef, type NodeSlot, type RegionDef,
 } from '../../../../content/curriculum'
 import { FRIENDSHIP_LEVELS, eggWarmthFor, friendshipLevel, levelProgress, titleFor, type TitleDef } from '../../../../content/economy'
+import { placedStart } from '../../../../engine/ladder'
 import { canAttemptTrial, helpBridgeOpen } from '../../../../engine/trial'
 import {
   WORLD_IDS,
@@ -18,7 +19,7 @@ import { worldBuilt } from '../../../../meta/built'
 import type { RegionTier } from '../../../../meta/rewards'
 import {
   OPEN_REGIONS_PER_WORLD, hutRegions, isFinaleOpen, isNodeOpen, isRegionOpen, isWorldOpen, nodeDone, playedNodes,
-  regionTier, requirementMet, trialPassed,
+  regionTier, requirementMet, trialPassed, worldComplete,
 } from '../../../../meta/unlock'
 import { isItemDrawn } from '../wardrobe/drawn'
 import type { PlayTarget } from './nodes'
@@ -197,9 +198,14 @@ function regionLock(p: ProfileDoc, def: RegionDef): RegionLock | null {
   return { kind: 'more' }
 }
 
-/** The suggested next stone: the first open stone not done, region by region; a ready trial after its lessons. */
-function nextStone(regions: readonly RegionView[], finale: StoneView): NodeId | null {
-  for (const r of regions) {
+/**
+ * The suggested next stone: the first open stone not done, region by region; a ready trial after its
+ * lessons. `later`: the regions a finished placement passed over come last (their friend, chest and
+ * trial still wait), so the map suggests the stone the placement started the child on (SPEC A24).
+ */
+function nextStone(regions: readonly RegionView[], finale: StoneView, later?: ReadonlySet<RegionId>): NodeId | null {
+  const order = later ? [...regions.filter((r) => !later.has(r.id)), ...regions.filter((r) => later.has(r.id))] : regions
+  for (const r of order) {
     if (!r.open) continue
     const trial = r.stones.find((s) => s.slot === 'trial')
     const lesson = r.stones.find((s) => s.slot !== 'trial' && s.state === 'open' && s.playable)
@@ -219,14 +225,29 @@ function heartOf(buddy: Animal | null): number | null {
   return Math.max(0, Math.min(1, (buddy.friendship - from) / (to - from)))
 }
 
-/** The world shown when none is asked for: the furthest open (and built) one with something left to do. */
+/**
+ * The world shown when none is asked for: the furthest open (and built) one with something left to
+ * do. After a finished placement (SPEC A24) no further than the world it put the child in, until the
+ * child completes that world the usual way (worldComplete, the rule that opens the next world), and
+ * so on up: the worlds above, which the grade opened, are a tap away in the world picker.
+ */
 export function homeWorld(p: ProfileDoc, built: (w: WorldId) => boolean = worldBuilt): WorldId {
-  const open = WORLD_IDS.filter((w) => isWorldOpen(p, w) && built(w))
+  const top = homeLimit(p)
+  const open = WORLD_IDS.filter((w, i) => i <= top && isWorldOpen(p, w) && built(w))
   for (const w of [...open].reverse()) {
     const m = mapModel(p, w, built)
     if (m.next) return w
   }
   return open[open.length - 1] ?? 'eng'
+}
+
+/** The furthest world (index in WORLD_IDS) the home world may be: the placement's, and each one completed from there. */
+function homeLimit(p: ProfileDoc): number {
+  const placed = placedStart(p.placement)
+  if (!placed) return WORLD_IDS.length - 1
+  let i = WORLD_IDS.indexOf(placed.world)
+  while (i + 1 < WORLD_IDS.length && worldComplete(p, WORLD_IDS[i])) i++
+  return i
 }
 
 /** `built`: which worlds can be entered (src/meta/built.ts); tests hand in their own. */
@@ -250,7 +271,7 @@ export function mapModel(p: ProfileDoc, world: WorldId, built: (w: WorldId) => b
   })
   const finaleNode = NODE_BY_ID[`${world}-finale`]
   const finale = stoneView(p, finaleNode, here && isFinaleOpen(p, world))
-  const next = nextStone(regions, finale)
+  const next = nextStone(regions, finale, placedStart(p.placement)?.over)
   for (const r of regions) for (const s of r.stones) s.next = s.id === next
   finale.next = finale.id === next
 
