@@ -502,13 +502,13 @@ function SizesSheet({ def }: { def: SpeciesDef }) {
 // ---------------------------------------------------------------------------------------------
 // silhouettes: alle arter og racer i sort, uden navne, i fast "tilfældig" rækkefølge
 
-const BLIND_SALT = 10.4
+const BLIND_SALT = 20.9
 
 function SilhouettesSheet() {
   const all: { def: SpeciesDef; b: BreedId; s: Stage }[] = []
   for (const def of SPECIES) for (const b of def.breeds) for (const s of [2, 1, 3] as Stage[]) all.push({ def, b: b.id, s })
   // Deterministisk bland (så arket ikke ændrer sig mellem kørsler). BLIND_SALT skiftes for hver blind runde,
-  // så numrene ikke kan kendes fra et tidligere blindark (r4–r5: 4,1; r6: 6,2; r7: 8,3; r8: 10,4).
+  // så numrene ikke kan kendes fra et tidligere blindark (r4–r5: 4,1; r6: 6,2; r7: 8,3; r8: 10,4; for-test 3. kl. 12,5–18,8; r9: 20,9).
   const order = all.map((x, i) => ({ x, k: Math.sin(i * 12.9898 + BLIND_SALT) * 43758.5453 })).sort((p, q) => (p.k % 1) - (q.k % 1))
   return (
     <Page title="Silhuetter" sub="Sort fyld, uden navne (blind silhuettest). Nummereret, ikke navngivet.">
