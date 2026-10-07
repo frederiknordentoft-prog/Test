@@ -461,6 +461,9 @@ async function mapThroughRound(page) {
   await until(page, async () => ['round', 'map'].includes((await import('/src/app/nav.ts')).useNav.getState().route.id), undefined, 30_000)
   const resumed = await route(page)
   if (resumed.id === 'round') {
+    // after a reload the intro waits for one tap ("Fortsæt turen"), which wakes the sound
+    await page.waitForSelector('.tv-play [data-play-start], .tv-round[data-status]:not(.tv-place)', { timeout: 30_000 })
+    if ((await page.locator('.tv-play [data-play-start]').count()) > 0) await page.locator('.tv-play [data-play-start]').click()
     await page.waitForSelector('.tv-round[data-status]:not(.tv-place)', { timeout: 30_000 })
     await settle(page, 1000)
     await page.locator('.tv-round:not(.tv-place) .tv-topbar [data-clip="s.ui.close"]').click()
