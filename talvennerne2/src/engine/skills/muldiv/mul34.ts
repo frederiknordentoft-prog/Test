@@ -14,12 +14,14 @@
 // Hint, as in mul2510 (the 3- and 4-table are counted the same way): skip count by the table's number over
 // the array, a row per hop — "Tæl i spring med tre. Tre. Seks. Ni. Tolv. Femten. Atten. Seks gange tre
 // giver atten." tableNeighbour says to count the hops first (animated, SPEC §4.3); mulAsAdd that the two
-// numbers are not added.
+// numbers are not added. One times t is no skip count (one hop: "Tæl i spring med tre. Tre. En gange tre
+// giver tre.", QA3b): it says what times one does, as mul6to9 — "Når vi ganger med en, får vi tallet selv.
+// En gange tre giver tre."
 import type { ErrorTag, Fact, HintSpec, SkillModule, SpeechPart } from '../types'
 import { hintOf, metaOf, num, say } from '../number/kit'
 import { equationSpeech } from '../../../speech/equation'
 import { swapHint } from '../addsub/calc'
-import { factorsOf, tableFacts, timesCandidates, timesTerms } from './tables'
+import { factorsOf, tableFacts, timesCandidates, timesSays, timesTerms } from './tables'
 
 const FACTS: readonly Fact[] = tableFacts('mul34', [3, 4], [1, 3, 4, 6, 7, 8, 9])
 const BY_ID: ReadonlyMap<string, Fact> = new Map(FACTS.map((f) => [f.id, f]))
@@ -29,13 +31,16 @@ function hint(f: Fact, tag: ErrorTag | null): HintSpec {
   const [n, t] = parts(f)
   const x = n * t
   if (tag === 'digitSwap') return swapHint(x)
-  const words: SpeechPart[] = [
-    say('hint.mul2510.skipBy'), num(t),
-    ...Array.from({ length: n }, (_, i) => num((i + 1) * t)),
-    num(n, 'mid'), say('op.gange'), num(t, 'mid'), say('op.giver'), num(x),
-  ]
+  const words: SpeechPart[] = n === 1
+    ? [say('hint.mul6to9.oneTimes'), ...timesSays(1, t)]
+    : [
+        say('hint.mul2510.skipBy'), num(t),
+        ...Array.from({ length: n }, (_, i) => num((i + 1) * t)),
+        num(n, 'mid'), say('op.gange'), num(t, 'mid'), say('op.giver'), num(x),
+      ]
   const visual = { scene: 'array', rows: n, cols: t } as const
-  if (tag === 'tableNeighbour') return hintOf([say('hint.mul2510.countHops'), ...words], visual, 'tableNeighbour', true)
+  // one times t has one hop: nothing to count
+  if (tag === 'tableNeighbour') return hintOf([...(n === 1 ? [] : [say('hint.mul2510.countHops')]), ...words], visual, 'tableNeighbour', true)
   if (tag === 'mulAsAdd') return hintOf([say('hint.muldiv.notPlus'), ...words], visual, 'mulAsAdd')
   return hintOf(words, visual)
 }

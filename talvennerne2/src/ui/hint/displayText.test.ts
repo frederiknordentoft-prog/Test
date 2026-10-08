@@ -60,8 +60,8 @@ describe('clock strategies on screen (QA2 P3-2)', () => {
 describe('the text beside a strategy of 3. klasse', () => {
   const said = (parts: Parameters<typeof displayText>[0]) => displayText(parts, clipText)
 
-  it('writes "c divideret med d q" as the equation: "Så giver 18 : 3 = 6."', () => {
-    const parts = [{ clip: 'hint.div.soGives' }, { num: 18, form: 'mid' }, { clip: 'op.divideret_med' }, { num: 3, form: 'mid' }, { num: 6, form: 'end' }] as const
+  it('writes "c divideret med d q" as the equation: "Så giver 18 : 3 = 6." (inverseOps mulToDiv)', () => {
+    const parts = [{ clip: 'hint.inverseOps.soGives' }, { num: 18, form: 'mid' }, { clip: 'op.divideret_med' }, { num: 3, form: 'mid' }, { num: 6, form: 'end' }] as const
     expect(said([...parts])).toBe('Så giver 18 : 3 = 6.')
     // the voice keeps its words
     expect(compile([...parts]).text).toBe('Så giver atten divideret med tre seks.')
@@ -70,18 +70,20 @@ describe('the text beside a strategy of 3. klasse', () => {
     expect(said([{ num: 18, form: 'mid' }, { clip: 'op.divideret_med' }, { num: 3, form: 'mid' }, { num: 5, form: 'end' }])).toBe('18 divideret med 3 5.')
   })
 
-  it('shows every division strategy of 3. klasse with its equation, never two numbers side by side', () => {
+  it('says every division strategy of 3. klasse as "18 divideret med 3 giver 6.", in voice and on screen (QA3b)', () => {
     let n = 0
     for (const skill of ['div2510', 'divAll'] as const) {
       const def = reg.get(skill)!
       for (const f of factsOf(def)) {
         const t = buildTask(def, f, 'choice', makeRng(5), 0).task
         for (const given of [null, ...t.options.filter((o) => o !== t.answer)]) {
-          const text = displayText(hintFor(t, given, reg).speech, clipText)
-          if (!text.includes('Så giver')) continue
-          const [c, d] = f.operands
-          expect(text, `${f.id}: ${text}`).toContain(`Så giver ${c} : ${d} = ${c / d}.`)
+          const speech = hintFor(t, given, reg).speech
+          const text = displayText(speech, clipText)
           expect(text, f.id).not.toMatch(/divideret med \d+ \d+/)
+          expect(compile(speech).text, f.id).not.toMatch(/Så giver/)
+          const [c, d] = f.operands
+          if (!text.includes(`${c} divideret med ${d} giver ${c / d}.`)) continue
+          expect(compile(speech).text, f.id).toMatch(/divideret med [a-zæøå]+ giver [a-zæøå]+\./)
           n++
         }
       }
@@ -103,5 +105,37 @@ describe('the text beside a strategy of 3. klasse', () => {
     expect(n).toBeGreaterThan(20)
     expect(said([{ clip: 'hint.clockElapsed.d.plusHalf' }, { clock: { minutes: 585, style: 'analog', form: 'mid' } }, { clip: 'hint.clockElapsed.is' }, { clock: { minutes: 615, style: 'analog', form: 'end' } }]))
       .toBe('En halv time efter kl. 9.45 er klokken 10.15.')
+  })
+})
+
+// QA3b: "kr." keeps its full stop in the middle of a sentence ("14 kr. plus 14 kr. giver 28 kr."),
+// and the sentence never gets a second one at its end.
+describe('kroner on screen', () => {
+  const said = (parts: Parameters<typeof displayText>[0]) => displayText(parts, clipText)
+
+  it('writes "14 kr. plus 14 kr. giver 28 kr." and "14,50 kr. plus 14,50 kr. giver 29 kr."', () => {
+    const two = (ore: number) =>
+      said([{ money: { ore, form: 'mid' } }, { clip: 'op.plus' }, { money: { ore, form: 'mid' } }, { clip: 'op.giver' }, { money: { ore: 2 * ore, form: 'end' } }])
+    expect(two(1400)).toBe('14 kr. plus 14 kr. giver 28 kr.')
+    expect(two(1450)).toBe('14,50 kr. plus 14,50 kr. giver 29 kr.')
+    expect(two(1400)).not.toMatch(/\.\./)
+  })
+
+  it('never writes "kr" without its full stop, nor two full stops, in the strategies with money', () => {
+    let n = 0
+    for (const skill of ['kronerOre', 'change', 'payExact'] as const) {
+      const def = reg.get(skill)
+      if (!def) continue
+      for (const f of factsOf(def).slice(0, 80)) {
+        for (const kind of def.kinds) {
+          const t = buildTask(def, f, kind, makeRng(5), 0).task
+          const text = displayText(hintFor(t, null, reg).speech, clipText)
+          expect(text, `${f.id}: ${text}`).not.toMatch(/\bkr\b(?!\.)/)
+          expect(text, `${f.id}: ${text}`).not.toMatch(/\.\./)
+          if (/\bkr\./.test(text)) n++
+        }
+      }
+    }
+    expect(n).toBeGreaterThan(10)
   })
 })

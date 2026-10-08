@@ -44,6 +44,14 @@ describe('the grade', () => {
     expect(clipText('s.onb.grade.start')).toBe('Alle starter i Engdalen.')
   })
 
+  it('shows no line while it is not known whether 3. klasse gets the ladder (QA3b): never "Alle starter i Engdalen."', () => {
+    const html = renderToStaticMarkup(<GradeStep grade={3} onGrade={() => undefined} start={null} />)
+    expect(html).toContain('data-grade-start="pending"')
+    expect(html).toContain('visibility:hidden')
+    expect(html).toContain('aria-hidden="true"')
+    expect(html).not.toContain(clipText('s.onb.grade.start'))
+  })
+
   it('says where the child starts instead, when 3. klasse is offered "Vis Pip hvad du kan"', () => {
     const html = renderToStaticMarkup(<GradeStep grade={3} onGrade={() => undefined} start="s.place.grade" />)
     expect(html).toContain('data-grade-start="s.place.grade"')

@@ -57,7 +57,7 @@ describe('div2510', () => {
 
   it('bridges the two words in every hint, and thinks of the times table backwards over the array', () => {
     expect(hintText(def, 'div:20/5', null))
-      .toBe('Divideret med betyder det samme som delt med. Hvad gange fem giver tyve? Fire gange fem giver tyve. Så giver tyve divideret med fem fire.')
+      .toBe('Divideret med betyder det samme som delt med. Hvad gange fem giver tyve? Fire gange fem giver tyve. Tyve divideret med fem giver fire.')
     expect(def.hint(findFact(def, 'div:20/5'), null).visual).toEqual({ scene: 'array', rows: 4, cols: 5 })
     for (const f of def.enumerate()) {
       for (const tag of [null, 'near', 'operand', 'other', 'tableNeighbour', 'wrongOperation', 'shareUnequal'] as const) {
@@ -67,7 +67,7 @@ describe('div2510', () => {
       }
     }
     expect(hintText(def, 'div:20/5', 'tableNeighbour'))
-      .toBe('Divideret med betyder det samme som delt med. Prøv at gange dit svar med fem. Det skal give tyve. Fire gange fem giver tyve. Så giver tyve divideret med fem fire.')
+      .toBe('Divideret med betyder det samme som delt med. Prøv at gange dit svar med fem. Det skal give tyve. Fire gange fem giver tyve. Tyve divideret med fem giver fire.')
     expect(def.hint(findFact(def, 'div:20/5'), 'tableNeighbour')).toMatchObject({ misconception: 'tableNeighbour', animated: true })
     expect(hintText(def, 'div:20/5', 'wrongOperation')).toMatch(/^Divideret med betyder det samme som delt med\. Vi deler i lige store dele\. Hvad gange fem/)
   })

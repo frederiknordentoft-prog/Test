@@ -26,7 +26,6 @@ const table: Record<ClipId, string> = {
   'hint.div.equalParts': 'Vi deler i lige store dele.',
   'hint.div.check': 'Prøv at gange dit svar med',
   'hint.div.shouldGive': 'Det skal give',
-  'hint.div.soGives': 'Så giver',
 
   // mulTens: whole tens are tens ("Fyrre består af fire tiere.")
   'frag.mulTens.consistsOf': 'består af',

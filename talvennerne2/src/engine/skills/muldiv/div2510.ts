@@ -18,7 +18,7 @@
 // share or −1 ('shareUnequal') and nothing else, so the share kind has no candidates (candidatesFor).
 // Hint (every one opens with the bridge, SPEC A19: "Divideret med betyder det samme som delt med."): the
 // times table backwards over the array of q rows of d — "Hvad gange fem giver tyve? Fire gange fem giver
-// tyve. Så giver tyve divideret med fem fire." tableNeighbour checks the answer by multiplying ("Prøv at
+// tyve. Tyve divideret med fem giver fire." tableNeighbour checks the answer by multiplying ("Prøv at
 // gange dit svar med fem. Det skal give tyve.", animated, SPEC §4.3); wrongOperation says what dividing is
 // ("Vi deler i lige store dele."). On the share view, and after an uneven deal, the dealing of 2. klasse
 // with "divideret med": "Læg en på hver tallerken ad gangen, rundt og rundt, til der ikke er flere. På hver

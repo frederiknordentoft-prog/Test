@@ -95,15 +95,19 @@ export function divisionCandidates(c: number, d: number): Candidate[] {
 }
 
 /**
- * The times table backwards: "Hvad gange fem giver tyve? Fire gange fem giver tyve. Så giver tyve
- * divideret med fem fire." (op.divideret_med: 3. klasse, SPEC A19).
+ * The times table backwards: "Hvad gange fem giver tyve? Fire gange fem giver tyve. Tyve divideret med
+ * fem giver fire." (op.divideret_med: 3. klasse, SPEC A19).
  */
 export function divisionStrategy(c: number, d: number): SpeechPart[] {
   return [...equationSpeech([{ blank: true }, { op: '·' }, { n: d }, { op: '=' }, { n: c }]), ...timesSays(c / d, d), ...soDivided(c, d)]
 }
 
-/** "Så giver tyve divideret med fem fire." */
-export const soDivided = (c: number, d: number): SpeechPart[] => [say('hint.div.soGives'), num(c, 'mid'), say('op.divideret_med'), num(d, 'mid'), num(c / d)]
+/**
+ * "Tyve divideret med fem giver fire.": the division said whole, its quotient after "giver", so two
+ * numbers never stand side by side ("Så giver tyve divideret med fem fire", QA3b); the screen writes
+ * it the same way ("20 divideret med 5 giver 4.").
+ */
+export const soDivided = (c: number, d: number): SpeechPart[] => [num(c, 'mid'), say('op.divideret_med'), num(d, 'mid'), say('op.giver'), num(c / d)]
 
 /** tableNeighbour: check the answer by multiplying — "Prøv at gange dit svar med fem. Det skal give tyve." */
 export const checkByTimes = (c: number, d: number): SpeechPart[] => [say('hint.div.check'), num(d), say('hint.div.shouldGive'), num(c)]

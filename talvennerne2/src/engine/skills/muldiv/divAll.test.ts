@@ -56,10 +56,10 @@ describe('divAll', () => {
 
   it('thinks of the times table backwards over the array of q rows of d', () => {
     expect(hintText(def, 'div:56/8', null))
-      .toBe('Hvad gange otte giver seksoghalvtreds? Syv gange otte giver seksoghalvtreds. Så giver seksoghalvtreds divideret med otte syv.')
+      .toBe('Hvad gange otte giver seksoghalvtreds? Syv gange otte giver seksoghalvtreds. Seksoghalvtreds divideret med otte giver syv.')
     expect(def.hint(findFact(def, 'div:56/8'), null).visual).toEqual({ scene: 'array', rows: 7, cols: 8 })
     expect(hintText(def, 'div:56/8', 'tableNeighbour'))
-      .toBe('Prøv at gange dit svar med otte. Det skal give seksoghalvtreds. Syv gange otte giver seksoghalvtreds. Så giver seksoghalvtreds divideret med otte syv.')
+      .toBe('Prøv at gange dit svar med otte. Det skal give seksoghalvtreds. Syv gange otte giver seksoghalvtreds. Seksoghalvtreds divideret med otte giver syv.')
     expect(def.hint(findFact(def, 'div:56/8'), 'tableNeighbour')).toMatchObject({ misconception: 'tableNeighbour', animated: true })
     expect(hintText(def, 'div:56/8', 'wrongOperation')).toMatch(/^Divideret med betyder, at vi deler i lige store dele\. Hvad gange otte/)
     expect(def.hint(findFact(def, 'div:56/8'), 'wrongOperation')).toMatchObject({ misconception: 'wrongOperation' })
