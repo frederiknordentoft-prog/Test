@@ -4,6 +4,9 @@
  * as in the grid kind. Colours from tokens.css; nothing moves.
  */
 .tv-ask {
+  /* the line's size follows the card's height (--ch, set by the round), so a short card still holds
+     the line and the picture */
+  --ask-f: min(38px, calc(var(--ch, 300px) * 0.13));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -16,27 +19,27 @@
 }
 /* the picture gives the line its room, so the card does not grow */
 .tv-scene .tv-ask--heap .tv-scene__svg {
-  max-height: calc(var(--scene-h) - 56px);
+  max-height: calc(var(--scene-h) - var(--ask-f) * 1.9 - 10px);
 }
 .tv-scene .tv-ask--coord > .tv-mat {
-  max-height: calc(var(--scene-h) - 50px);
+  max-height: calc(var(--scene-h) - var(--ask-f) * 1.2 - 12px);
 }
 .tv-ask__line {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 10px;
+  gap: 0.3em;
   color: var(--color-ink);
-  font-size: 30px;
+  font-size: calc(var(--ask-f) * 0.8);
   font-weight: 900;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .tv-ask__line .tv-frac {
-  font-size: 38px;
+  font-size: var(--ask-f);
 }
 .tv-ask__word {
-  font-size: 24px;
+  font-size: 0.8em;
   font-weight: 800;
 }
 .tv-ask__pair {
@@ -45,9 +48,9 @@
 .tv-ask__way {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px 4px 6px;
-  border-radius: 16px;
+  gap: 0.12em;
+  padding: 0.12em 0.32em 0.12em 0.2em;
+  border-radius: 0.5em;
   box-shadow: inset 0 0 0 3px currentColor;
 }
 .tv-ask__way.is-x {
@@ -57,8 +60,8 @@
   color: var(--color-d-addsub-deep);
 }
 .tv-ask__arrow {
-  width: 30px;
-  height: 30px;
+  width: 1em;
+  height: 1em;
   fill: none;
   stroke: currentColor;
   stroke-width: 3.2;
