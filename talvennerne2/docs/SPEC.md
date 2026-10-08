@@ -84,7 +84,7 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
     - Regionens verden er barnets hjemverden. Kortet viser den, når ingen verden er valgt, og foreslår først regioner, der ikke er sprunget over.
     - Hjemverdenen rykker op efter de eksisterende regler (`worldComplete`). Verdener, som klassetrinnet har åbnet, kan altid vælges i verdensvælgeren.
     - Målene laves, når klassetrinnet er valgt, og igen efter stigen.
-    - "Spring over" og "Det er nok" før første svar er ingen indplacering (`placement.done` er falsk), så barnet starter i egen verden. Reglen gælder kun ved `placement.done`, så 0.–2. kl. er uændret.
+    - "Spring over" og "Det er nok", før et trin er afgjort (intet trin er bestået eller ikke bestået), er ingen indplacering (`placement.done` er falsk), så barnet starter i egen verden. Svarene er stadig logget med mode `placement`. Et ikke bestået trin uden et bestået giver P = null og Tællelunden (review app-w3-r2: ét rigtigt svar og så "Det er nok" gav før Tællelunden, mens intet svar gav egen verden). Reglen gælder kun ved `placement.done`, så 0.–2. kl. er uændret.
   - **Statistik:** Indplaceringens svar (`mode: 'placement'`) tæller ikke i forældrenes nøjagtigheds- og tidstal (`countsInStats`, pædagogik §4.2). Indplaceringen vises stadig som en tur for sig.
   - **Timeskiftet på urskiven:** I `clockElapsed` starter urskiven på starttiden (`SkillExtras.dialStart`). En halv time hen over timeskiftet, drejet den forkerte vej (fx 3:15 for 3:45 + ½ time), er `wrongOperation` på urskiven og `near` på kortene. ORK3c's orakel følger det.
   - **Antal misforståelser:** Med A23 er der 32. Tallet 31 i §4.2, §10.2 og §14 læses som 32.
