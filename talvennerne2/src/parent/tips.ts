@@ -38,7 +38,7 @@ const SKILL_TIPS: Readonly<Partial<Record<SkillId, string>>> = {
   sub100NoBorrow: 'at lege butik med tikroner og enkroner og betale med præcis det, der står på prisen',
   add100Carry: 'at lægge beløb sammen med mønter og bytte ti enkroner til en tikrone, når der er nok',
   sub100Borrow: 'at lege butik og veksle en tikrone til ti enkroner, når der mangler enere',
-  add1000: 'at lægge to priser sammen, fx 245 kr. og 138 kr.: først hundrederne, så tierne og til sidst enerne',
+  add1000: 'at lægge to priser sammen, fx 245 kr. og 138 kr.: først enerne, så tierne og til sidst hundrederne',
   sub1000: 'at regne ud, hvor mange sider der er tilbage af en bog, fx 312 − 175, og tjekke med plus bagefter',
   missingPart10: 'at gemme nogle af 10 ting under en kop og lade {navn} sige, hvor mange der gemmer sig',
   skipCount: 'at tælle i spring med klap eller trin på trappen: to, fire, seks',

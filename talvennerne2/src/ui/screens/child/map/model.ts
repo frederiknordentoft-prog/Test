@@ -7,7 +7,7 @@ import {
   type NodeDef, type NodeSlot, type RegionDef,
 } from '../../../../content/curriculum'
 import { FRIENDSHIP_LEVELS, eggWarmthFor, friendshipLevel, levelProgress, titleFor, type TitleDef } from '../../../../content/economy'
-import { placedStart } from '../../../../engine/ladder'
+import { placedRank, placedStart, type PlacedStart } from '../../../../engine/ladder'
 import { canAttemptTrial, helpBridgeOpen } from '../../../../engine/trial'
 import {
   WORLD_IDS,
@@ -200,11 +200,12 @@ function regionLock(p: ProfileDoc, def: RegionDef): RegionLock | null {
 
 /**
  * The suggested next stone: the first open stone not done, region by region; a ready trial after its
- * lessons. `later`: the regions a finished placement passed over come last (their friend, chest and
- * trial still wait), so the map suggests the stone the placement started the child on (SPEC A24).
+ * lessons. After a finished placement (SPEC A24) its start region comes first and the regions it
+ * passed over last (their friend, chest and trial still wait), so the map suggests the stone the
+ * placement started the child on, not a place of another chain earlier in the world (QA3b).
  */
-function nextStone(regions: readonly RegionView[], finale: StoneView, later?: ReadonlySet<RegionId>): NodeId | null {
-  const order = later ? [...regions.filter((r) => !later.has(r.id)), ...regions.filter((r) => later.has(r.id))] : regions
+function nextStone(regions: readonly RegionView[], finale: StoneView, placed?: PlacedStart | null): NodeId | null {
+  const order = placed ? [...regions].sort((a, b) => placedRank(placed, a.id) - placedRank(placed, b.id)) : regions
   for (const r of order) {
     if (!r.open) continue
     const trial = r.stones.find((s) => s.slot === 'trial')
@@ -227,7 +228,7 @@ function heartOf(buddy: Animal | null): number | null {
 
 /**
  * The world shown when none is asked for: the furthest open (and built) one with something left to
- * do. After a finished placement (SPEC A24) no further than the world it put the child in, until the
+ * do. After a finished placement (SPEC A24) no further than the start region's world, until the
  * child completes that world the usual way (worldComplete, the rule that opens the next world), and
  * so on up: the worlds above, which the grade opened, are a tap away in the world picker.
  */
@@ -271,7 +272,7 @@ export function mapModel(p: ProfileDoc, world: WorldId, built: (w: WorldId) => b
   })
   const finaleNode = NODE_BY_ID[`${world}-finale`]
   const finale = stoneView(p, finaleNode, here && isFinaleOpen(p, world))
-  const next = nextStone(regions, finale, placedStart(p.placement)?.over)
+  const next = nextStone(regions, finale, placedStart(p.placement))
   for (const r of regions) for (const s of r.stones) s.next = s.id === next
   finale.next = finale.id === next
 

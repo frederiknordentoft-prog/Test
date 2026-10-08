@@ -171,13 +171,15 @@ function GoalRow({ goal }: { goal: Goal }) {
   const { pressProps } = usePress()
   const parts = goalSpeech(goal)
   const said = goal.done ? [...parts, { clip: 's.map.goal.done' }] : parts
+  // a sentence like the other goals: "Tag en tur forbi" + the region's name has no full stop of its own
+  const label = lineText(parts, speech.text).replace(/[^.!?]$/, '$&.')
   const dots = goal.need > 1 ? Array.from({ length: goal.need }, (_, i) => i < goal.progress) : null
   return (
     <li>
       <button
         type="button"
         className={cx('tv-goal tv-touch', goal.done && 'is-done')}
-        aria-label={lineText(said, speech.text)}
+        aria-label={goal.done ? `${label} ${speech.text('s.map.goal.done')}` : label}
         data-goal={goal.kind}
         onClick={() => speech.speak(said)}
         {...pressProps}
@@ -186,7 +188,7 @@ function GoalRow({ goal }: { goal: Goal }) {
           <Icon name={goal.done ? 'stamp' : GOAL_ICON[goal.kind]} size="58%" strokeWidth={2.3} solid={goal.done} />
         </span>
         <span className="tv-goal__text">
-          <SpokenText parts={parts} text={lineText(parts, speech.text)} silent className="tv-goal__label" />
+          <SpokenText parts={parts} text={label} silent className="tv-goal__label" />
           {dots && !goal.done && (
             <span className="tv-goal__dots" aria-hidden>
               {dots.map((on, i) => (

@@ -545,6 +545,8 @@ export interface PlacementState {
   at: number | null
   /** Highest passed checkpoint 'L1'–'L14', or null. */
   highest: string | null
+  /** Checkpoints the child did not pass: never seeded, their regions never passed over (SPEC A24). Absent: none. */
+  failed?: string[]
 }
 
 export interface Economy {

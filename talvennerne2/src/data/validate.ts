@@ -91,6 +91,8 @@ const isSlotKey = setOf(SLOTS)
 export const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 const REGION_RE = /^w[0-3]-[a-z0-9-]+$/
 const NODE_RE = /^(w[0-3]-[a-z0-9-]+-(l1|l2|friend|chest|l3|mix|trial)|(eng|bakke|skov|fjeld)-finale)$/
+/** A rung of the placement's ladder (engine/ladder.ts): 'L1'–'L14'. */
+const CHECKPOINT_RE = /^L([1-9]|1[0-4])$/
 const isTrialKey = (k: string) => REGION_RE.test(k) || (WORLD_IDS as readonly string[]).includes(k)
 const trialId: Check = (v, p, e) => {
   if (typeof v !== 'string' || !isTrialKey(v)) fail(e, p, 'er ikke en mesterprøve')
@@ -161,7 +163,10 @@ export const profileDoc = obj({
   frameColor: oneOf(FRAME_COLORS),
   createdAt: time,
   settings: obj({ sfx: bool, speech: bool, autoSpeak: bool, calm: bool, domainsOff: arr(oneOf(DOMAIN_IDS)) }),
-  placement: obj({ done: bool, at: nullable(time), highest: nullable(str({ re: /^L([1-9]|1[0-4])$/ })) }),
+  placement: obj(
+    { done: bool, at: nullable(time), highest: nullable(str({ re: CHECKPOINT_RE })) },
+    { failed: arr(str({ re: CHECKPOINT_RE }), { max: 14 }) },
+  ),
   keys: rec(keyState),
   skillStats: rec(obj({ prodCorrect: count, prodDays: arr(day) }), isSkillKey),
   skillMedals: rec(oneOf(['bronze', 'silver', 'gold']), isSkillKey),

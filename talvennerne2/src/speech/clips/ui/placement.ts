@@ -18,6 +18,8 @@ export const clips: Readonly<Record<ClipId, string>> = {
   's.place.next.2': 'Tak! Her er den næste.',
   's.place.next.3': 'Fint. Så kommer der en ny.',
   's.place.done': 'Tak, fordi du viste mig det! Nu finder vi dit sted på kortet.',
+  /** "Det er nok" before a rung is passed: no placement (SPEC A24), so no thanks for what was shown. */
+  's.place.done.none': 'Det er helt i orden. Nu går vi ud på kortet.',
 }
 
 /** Stjernefjeldet (3. klasse) is wave 3. */
