@@ -14,6 +14,7 @@ import { cx } from '../design/cx'
 import { formatMoney, formatNumber, lineEndsOnly } from '../task/answers'
 import { isPiece } from '../task/pay/logic'
 import { PieceArt, piecesForAmount } from '../task/faces'
+import { CoordAsk, HeapFraction } from './AskLines'
 import { CompareScene } from './CompareScene'
 import { HearScene } from './HearScene'
 import { MarkedLine } from './MarkedLine'
@@ -148,7 +149,11 @@ function scene({ prompt: p, task, entry, entries, given, slot = 'empty', replay 
       )
     }
     case 'objects':
-      return <ObjectsScene prompt={p} replay={replay} seed={seed} />
+      return (
+        <HeapFraction task={task}>
+          <ObjectsScene prompt={p} replay={replay} seed={seed} />
+        </HeapFraction>
+      )
     case 'hear':
       return <HearScene speaking={speaking} onHear={onHear} />
     case 'row':
@@ -238,7 +243,9 @@ function scene({ prompt: p, task, entry, entries, given, slot = 'empty', replay 
       )
     case 'grid':
       return p.coords ? (
-        <CoordGrid w={p.w} h={p.h} points={p.point ? [{ x: p.point[0], y: p.point[1] }] : []} className="tv-scene__grid" />
+        <CoordAsk task={task}>
+          <CoordGrid w={p.w} h={p.h} points={p.point ? [{ x: p.point[0], y: p.point[1] }] : []} className="tv-scene__grid" />
+        </CoordAsk>
       ) : (
         <SquareGrid w={p.w} h={p.h} filled={p.filled} axis={p.axis} className="tv-scene__grid" />
       )

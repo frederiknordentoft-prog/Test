@@ -218,6 +218,7 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
   const stageRef = useRef<HTMLDivElement>(null)
   const cardRef = useSizeVars()
   const [compact, setCompact] = useState(false)
+  const fingerDown = useFingerDown()
   const exitRef = useRef(onExit)
   exitRef.current = onExit
   const beatRef = useRef(beat)
@@ -306,9 +307,9 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
     async (t: Task, intro: TaskIntro, tok: Token) => {
       // a family with its own words (QA3a P2-2: "Læg byttepengene i bakken.") has just said them as
       // the end of its question; the kind's short form would say something else, so it is left out
-      const own = familyInstruction(shownKind(t), t.skill, t.family) !== null
+      const own = familyInstruction(shownKind(t), t.skill, t.family, t.speech) !== null
       const steps = readout({ ...t, kind: shownKind(t) }, own && intro.instruction === 'short' ? { ...intro, instruction: null } : intro)
-      const short = shortInstruction(shownKind(t), t.skill, t.family)
+      const short = shortInstruction(shownKind(t), t.skill, t.family, t.speech)
       setBubble(short)
       await sayAll(steps, tok, (st, i) => {
         setReading(i === 0 && !st.instruction && st.option === null)
@@ -356,7 +357,7 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
       setMood('idle')
       setEgg(golden ? 'arrive' : null)
       setCompact(false)
-      setBubble(golden ? [{ clip: 's.round.golden.appear' }] : shortInstruction(shownKind(task), task.skill, task.family))
+      setBubble(golden ? [{ clip: 's.round.golden.appear' }] : shortInstruction(shownKind(task), task.skill, task.family, task.speech))
     }
   }
 
@@ -752,6 +753,8 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
     const check = () => {
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
+        // never under a finger: the answer area would move while it drags (QA3b P1)
+        if (fingerDown.current) return check()
         if (spill(ask) > 8 || spill(answer) > 8 || spill(stage) > 8) setCompact(true)
       }, 650)
     }
@@ -894,6 +897,35 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
     </div>
   )
 })
+
+/**
+ * Whether a finger (or the mouse button) is down anywhere right now. The round's fitting waits for it
+ * to let go: a net that moved three squares sideways mid-drag put the point where the finger never
+ * was (QA3b P1).
+ */
+function useFingerDown() {
+  const down = useRef(false)
+  useEffect(() => {
+    const pointers = new Set<number>()
+    const on = (e: PointerEvent) => {
+      pointers.add(e.pointerId)
+      down.current = true
+    }
+    const off = (e: PointerEvent) => {
+      pointers.delete(e.pointerId)
+      down.current = pointers.size > 0
+    }
+    window.addEventListener('pointerdown', on, true)
+    window.addEventListener('pointerup', off, true)
+    window.addEventListener('pointercancel', off, true)
+    return () => {
+      window.removeEventListener('pointerdown', on, true)
+      window.removeEventListener('pointerup', off, true)
+      window.removeEventListener('pointercancel', off, true)
+    }
+  }, [])
+  return down
+}
 
 /** How far the in-flow children of `el` reach below its content box, in px. */
 function spill(el: HTMLElement): number {

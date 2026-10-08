@@ -1,0 +1,71 @@
+/*
+ * What a card asks, on the card (src/ui/scenes/AskLines.tsx, QA3b P3–P4): "¾ af 12" over a heap, and
+ * the way asked of a coordinate net under it ("(6, 1)" and → ? or ↑ ?). Along is blue and up orange,
+ * as in the grid kind. Colours from tokens.css; nothing moves.
+ */
+.tv-ask {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.tv-ask--heap {
+  width: 100%;
+}
+/* the picture gives the line its room, so the card does not grow */
+.tv-scene .tv-ask--heap .tv-scene__svg {
+  max-height: calc(var(--scene-h) - 56px);
+}
+.tv-scene .tv-ask--coord > .tv-mat {
+  max-height: calc(var(--scene-h) - 50px);
+}
+.tv-ask__line {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-ink);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.tv-ask__line .tv-frac {
+  font-size: 38px;
+}
+.tv-ask__word {
+  font-size: 24px;
+  font-weight: 800;
+}
+.tv-ask__pair {
+  letter-spacing: 0.02em;
+}
+.tv-ask__way {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 3px currentColor;
+}
+.tv-ask__way.is-x {
+  color: var(--color-d-number-deep);
+}
+.tv-ask__way.is-y {
+  color: var(--color-d-addsub-deep);
+}
+.tv-ask__arrow {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tv-ask__blank {
+  min-width: 0.7em;
+  text-align: center;
+}

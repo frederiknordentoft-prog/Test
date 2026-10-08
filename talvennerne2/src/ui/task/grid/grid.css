@@ -264,12 +264,16 @@
   }
 }
 
-/* A phone held sideways: the pair and the tick beside the net */
+/* A phone held sideways: the pair and the tick beside the net. The net is as tall as the answer card
+   (100cqh), so the view needs no height of its own: with the 300 px floor it spilled out of the card,
+   the round's fitting dropped the companion strip and the net jumped sideways under the first finger
+   (QA3b P1). */
 @media (orientation: landscape) and (max-height: 500px) {
   .tv-grid {
     --fig: min(600px, calc(100vh - 150px));
     flex-direction: row;
     gap: 24px;
+    min-height: 0;
   }
   .tv-grid__figure {
     width: min(600px, calc(100cqw - 220px), 100cqh);
