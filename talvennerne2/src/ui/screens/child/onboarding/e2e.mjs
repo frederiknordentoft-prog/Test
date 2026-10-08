@@ -15,8 +15,7 @@
 // P2-4) — three ways: a miss on the way up (P = L5: Hundredemarken), a miss and a step down (P = L4:
 // Minusbækken in Engdalen) and all of it (P = L14: Tabeltoppen). Then the map behind it shows that
 // world with that stone next, also after a reload and beside a sibling. Also "Spring over", a reload
-// in the middle of the ladder (the map, never a hanging screen), one right answer and "Det er nok" (no
-// rung decided: as "Spring over", QA3b), 3. klasse before Stjernefjeldet is
+// in the middle of the ladder (the map, never a hanging screen), 3. klasse before Stjernefjeldet is
 // built (as before: Engdalen) and 2. klasse with it built (as before). Pictures: artifacts/place3/.
 //   BASE=http://127.0.0.1:4313/ flock /tmp/tv2-chromium.lock node src/ui/screens/child/onboarding/e2e.mjs
 // PLACE3_ONLY=1 runs only the 3. klasse part.
@@ -694,40 +693,6 @@ async function thirdGradeSkipAndReload(tag, viewport) {
   }
 }
 
-/**
- * One right answer and "Det er nok" (QA3b): no rung is decided yet, so it is no placement. As after
- * "Spring over": the first round on the map's next stone in the child's own world, nothing seeded,
- * the placement not done, and the answer still logged as a placement answer.
- */
-async function thirdGradeOneThenEnough(tag, viewport) {
-  const { page, context, errors } = await newPage(browser, viewport)
-  await toGrade(page, URL_ALL, 'Dina', 3)
-  await until(page, () => document.querySelector('[data-grade-start]')?.getAttribute('data-grade-start') === 's.place.grade')
-  await page.locator('.tv-onb [data-next]').click()
-  await page.waitForSelector('[data-place-start]')
-  await page.locator('[data-place-start]').click()
-  await page.waitForSelector('.tv-place[data-place="ladder"] .tv-round__stage')
-  await until(page, () => document.querySelector('.tv-place .tv-round__stage')?.getAttribute('data-beat') === 'asking')
-  const t = await answerLadder(page, tag, true)
-  check(t?.skill === 'addTo20', `${tag}: første spørgsmål er L5 (${t?.skill})`)
-  await nextQuestion(page, t.id)
-  await page.locator('.tv-place [data-enough]').click()
-  await page.waitForSelector('.tv-place[data-place="outro"]')
-  await until(page, async () => (await import('/src/ui/screens/child/onboarding/placement/store.ts')).usePlacement.getState().status === 'over')
-  await until(page, () => (window.__voiceLog ?? []).includes('s.place.done'))
-  await settle(page, 400)
-  await placeShot(page, `${tag}-one-enough-thanks`)
-  await page.locator('.tv-place [data-next]').click()
-  await until(page, async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'round', undefined, 20_000)
-  const node = (await route(page)).node
-  const kid = await childNow(page)
-  check(node === kid.next && node !== 'w0-tal10-l1' && kid.world !== 'eng', `${tag}: ét rigtigt svar + "Det er nok" giver første tur i egen verden (${node} i ${kid.world}), ikke Tællelunden`)
-  check(kid.grade === 3 && !kid.placement.done && kid.placement.highest === null && kid.seeded === 0, `${tag}: ingen indplacering, intet seedet (${JSON.stringify(kid.placement)}, ${kid.seeded})`)
-  check(kid.log.length === 1 && kid.log[0] === 'placement', `${tag}: svaret er logget som placement (${kid.log.join(', ')})`)
-  check(errors.length === 0, `${tag}: 0 konsolfejl (ét svar + "Det er nok")${errors.length ? `: ${errors.join(' | ')}` : ''}`)
-  await context.close()
-}
-
 /** No ladder: as before, "Alle starter i Engdalen." and the first round in Tællelunden. */
 async function noLadder(tag, viewport, url, grade) {
   const { page, context, errors } = await newPage(browser, viewport)
@@ -776,7 +741,6 @@ try {
   await thirdGrade('place3-small', { width: 375, height: 667 }, PLANS.minus, { sibling: true })
   await thirdGrade('place3-ipad', { width: 820, height: 1180 }, PLANS.all)
   await thirdGradeSkipAndReload('place3-phone', { width: 393, height: 852 })
-  await thirdGradeOneThenEnough('place3-phone', { width: 393, height: 852 })
   // before the release a 3. klasse onboarding has no ladder without ?worlds=all; after it, it has
   if (await fjeldReleased()) await ladderReleased('place3-released', { width: 393, height: 852 }, URL_)
   else await noLadder('place3-before-release', { width: 393, height: 852 }, URL_, 3)

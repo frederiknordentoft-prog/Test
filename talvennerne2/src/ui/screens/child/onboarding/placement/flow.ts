@@ -8,14 +8,12 @@
 //                        in the middle of the ladder lands on the map as if it had been skipped
 //   answerPlacementTask  one answer: logged as mode 'placement' (it never moves a box), folded into the run
 //   endPlacement         "Det er nok" or the last rung: seeds from what was shown (box 2, `seeded`),
-//                        makes the goals anew, writes, and finds the stone the first round starts on.
-//                        It counts only once a rung is decided (passed or failed); before that it is
-//                        "Spring over" (QA3b: one right answer and "Det er nok" sent a child to Tællelunden)
+//                        makes the goals anew, writes, and finds the stone the first round starts on
 //   skipPlacement        "Spring over": the grade only, nothing seeded, the placement not done
 //   firstStone           the map's own next stone in the child's home world (map/model.ts). After a
 //                        finished placement that is the first stone of the first region it did not
 //                        pass over, in the world P belongs to (SPEC A24, engine/ladder.ts placedStart);
-//                        after "Spring over", a ladder left before a rung was decided or all of it
+//                        after "Spring over", a ladder left before the first answer or all of it
 //                        passed (L14), the child's own world as before
 //   startOnStone         the map, with that round pushed on top as if tapped there (play/flow.ts)
 import { useNav } from '../../../../../app/nav'
@@ -104,21 +102,13 @@ export function answerPlacementTask(s: PlacementSession, task: Task, given: Answ
 }
 
 /**
- * Whether the ladder has said anything yet: a rung passed (both questions right) or failed (a miss).
- * One right answer decides nothing, so it places no one (QA3b): with nothing decided the end is as if
- * the ladder was skipped, and the answers stay logged as placement answers.
- */
-const placementDecided = (s: PlacementSession | null): boolean => !!s && (s.run.passed.length > 0 || s.run.failed.length > 0)
-
-/**
- * The end of the ladder ("Det er nok" or the last rung): what was shown counts. Once a rung is
- * decided the profile is seeded from the highest passed rung (or only marked done when none passed:
- * Tællelunden); before that it is as if the ladder was skipped, and the child starts in its own world.
- * Returns the stone the first round starts on.
+ * The end of the ladder ("Det er nok" or the last rung): what was shown counts. With at least one
+ * answer the profile is seeded from the highest passed rung (or only marked done when none passed);
+ * with none it is as if the ladder was skipped. Returns the stone the first round starts on.
  */
 export async function endPlacement(s: PlacementSession | null, env: PlacementEnv = {}): Promise<NodeId> {
   const store = useProfile.getState()
-  if (s && placementDecided(s)) {
+  if (s && s.run.asked > 0) {
     const now = env.now?.() ?? Date.now()
     const ctx = { day: learningDay(now), now, ...(env.skills ? { skills: env.skills } : {}) }
     store.update((p) => {

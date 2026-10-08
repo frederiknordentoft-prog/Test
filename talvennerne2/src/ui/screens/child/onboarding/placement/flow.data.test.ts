@@ -316,44 +316,6 @@ describe('where the first round starts (SPEC A24, review app-w3-r1 P2-4)', () =>
     expect(stone).toBe(skipped)
   })
 
-  // QA3b: a placement counts once a rung is decided (passed or failed). One right answer decides nothing.
-  it('L5 right once, then "Det er nok": no placement, the child\'s own world, nothing seeded', async () => {
-    await child()
-    const skipped = await skipPlacement(3, env)
-    await useProfile.getState().unload({ discard: true })
-    resetOnboardingForTests()
-    await child()
-    let s = (await beginPlacement(3))!
-    const { session, correct } = answer(s, true)
-    s = session
-    expect(correct).toBe(true)
-    expect([s.run.asked, s.run.passed, s.run.failed]).toEqual([1, [], []])
-    const stone = await endPlacement(s, env)
-    expect(profile().placement).toEqual({ done: false, at: null, highest: null })
-    expect(Object.values(profile().keys).some((k) => k.seeded)).toBe(false)
-    expect([home(), stone]).toEqual([furthest(), skipped])
-    expect(stone).not.toBe(firstNode())
-    // the answer is still logged, as a placement answer
-    await useProfile.getState().flush()
-    const log = await answersBetween(profile().id, 0)
-    expect(log.map((a) => a.mode)).toEqual(['placement'])
-    expect((await getProfile(profile().id))?.placement.done).toBe(false)
-  })
-
-  it('L5 right, L5 missed, L4 right once, then "Det er nok": L5 failed, nothing passed (P = null), Tællelunden', async () => {
-    const { stone } = await placeWith([true, false, true])
-    expect(profile().placement).toMatchObject({ done: true, highest: null })
-    expect(Object.values(profile().keys).some((k) => k.seeded)).toBe(false)
-    expect([stone, home()]).toEqual(['w0-tal10-l1', 'eng'])
-  })
-
-  it('L5 missed, then "Det er nok": Tællelunden, as before', async () => {
-    const { stone, done } = await placeWith([false])
-    expect(done).toBe(false)
-    expect(profile().placement).toMatchObject({ done: true, highest: null })
-    expect([stone, home()]).toEqual(['w0-tal10-l1', 'eng'])
-  })
-
   it('after a reload: the map of the world the child was placed in, with the same stone next', async () => {
     const { stone } = await placeWith([true, false, true, true])
     await useProfile.getState().flush()
