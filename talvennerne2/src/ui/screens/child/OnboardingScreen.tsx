@@ -259,6 +259,11 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
 
   /** Under the grades and after the grade's name: where the child starts. */
   const startLine = (g: Grade | null, m: Ladder | null): ClipId => (m?.placementOffered(g) ? 's.place.grade' : 's.onb.grade.start')
+  /**
+   * While it is not yet known whether 3. klasse gets the ladder (its chunk is on its way), no line is
+   * shown: "Alle starter i Engdalen." would be wrong a moment later (QA3b). 0.–2. klasse never wait.
+   */
+  const shownStart = waiting ? null : startLine(grade, placement)
 
   const chooseGrade = (g: Grade) => {
     setGrade(g)
@@ -270,6 +275,16 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
       return
     }
     say(clips(`s.onb.grade.${g}`, startLine(g, placement)))
+  }
+
+  /** "Næste" tapped before it is known whether the ladder is offered: on to it, or the first round. */
+  const nextWhenDecided = () => {
+    const g = grade
+    void fetchLadder().then((m) => {
+      if (lastGrade.current !== g) return
+      if (m?.placementOffered(g)) setStep('placement')
+      else void finish()
+    })
   }
 
   const finish = async () => {
@@ -325,7 +340,9 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
         )
       case 'grade':
         if (offered) return <Button clip="s.ui.next" iconEnd="next" onClick={() => setStep('placement')} data-next="" />
-        return <Button clip="s.ui.play" icon="play" disabled={grade === null || finishing || waiting} onClick={() => void finish()} data-next="" />
+        // 3. klasse while the ladder's chunk is on its way (QA3b): "Næste" waits for it, never a grey "Spil"
+        if (waiting) return <Button clip="s.ui.next" iconEnd="next" onClick={nextWhenDecided} data-next="" data-waiting="" />
+        return <Button clip="s.ui.play" icon="play" disabled={grade === null || finishing} onClick={() => void finish()} data-next="" />
       case 'placement':
         return null
     }
@@ -372,7 +389,7 @@ export default function OnboardingScreen(_: ScreenProps<RouteOf<'onboarding'>>) 
         {step === 'friend' && friend && (
           <FriendStep friend={friend} names={names} chosen={chosen} custom={custom} reading={reading} onChoose={chooseName} onWrite={() => setWriting(true)} />
         )}
-        {step === 'grade' && <GradeStep grade={grade} onGrade={chooseGrade} start={startLine(grade, placement)} />}
+        {step === 'grade' && <GradeStep grade={grade} onGrade={chooseGrade} start={shownStart} />}
 
         <div className="tv-first__actions">{actions}</div>
       </div>

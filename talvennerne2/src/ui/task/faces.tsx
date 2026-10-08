@@ -57,7 +57,7 @@ function face(task: Task, value: AnswerValue, size: FaceSize): ReactNode {
   }
   if (typeof value === 'number') {
     if (view === 'clock' || (task.answerType === 'minutes' && view !== 'clockDigital')) return <AnalogClock minutes={value} size={px * 1.05} />
-    if (view === 'clockDigital') return <DigitalClock minutes={value} h24={task.modulo === 1440} size={px * 1.5} />
+    if (view === 'clockDigital') return <DigitalClock minutes={value} h24={task.modulo === 1440} size={px * 1.5} className="tv-face__digital" />
     if (view === 'coin' && isPiece(value)) return <MoneyFace piece={value} px={px} />
     if (task.answerType === 'ore' || view === 'amount') return <NumText small>{task.answerType === 'ore' ? formatMoney(value) : formatNumber(value)}</NumText>
     const text = formatNumber(value)

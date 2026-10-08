@@ -92,7 +92,9 @@ export function displayText(parts: readonly SpeechPart[], textOf: (id: ClipId) =
       text = formatNumber(p.num)
       form = p.form
     } else if ('money' in p) {
-      text = formatMoney(p.money.ore).replace(/\.$/, '')
+      // "kr." keeps its full stop in the middle of a sentence too ("14 kr. plus 14 kr. giver 28 kr.",
+      // QA3b); at the end it closes the sentence, so there is never a second one
+      text = formatMoney(p.money.ore)
       form = p.money.form
     } else if ('clock' in p) {
       text = clockText(p.clock.minutes, p.clock.style, /klokken$/i.test(words[words.length - 1] ?? ''))

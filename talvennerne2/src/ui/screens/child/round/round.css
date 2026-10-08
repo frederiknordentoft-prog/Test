@@ -108,6 +108,12 @@
   width: auto;
   max-width: 100%;
 }
+/* the help's coins and their sum stay in a short card (QA3b: "Hvad koster to af dem?" on an iPhone SE,
+   where the last coin and "9 kr." fell below it): at most a sixth of the card high, so they keep one
+   row; a card with room (a taller phone, a tablet) keeps their own size */
+.tv-round__scaffold .tv-hv__coins svg {
+  max-height: calc(var(--ch) * 0.18);
+}
 .tv-round__scaffold .tv-cols {
   font-size: min(26px, calc(var(--ch) * 0.09));
 }
@@ -349,8 +355,11 @@
   box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.2);
   transition: transform var(--dur-release) var(--ease-spring);
 }
-/* a whole equation on the button ("64 = 60 + 4", QA2 P2-5) stays on one line: "Tryk på" goes above it when they do not fit side by side */
-.tv-confirm__face:has(.tv-fill__eqface) {
+/* a whole equation on the button ("64 = 60 + 4", QA2 P2-5) stays on one line: "Tryk på" goes above it when they do not fit side by side.
+   So does a digital clock, which is wider than the room "Tryk på" leaves it on a phone, and a set of cards (three figures): they stay inside the white box (QA3b) */
+.tv-confirm__face:has(.tv-fill__eqface),
+.tv-confirm__face:has(.tv-face__digital),
+.tv-confirm__face:has(.tv-face__row) {
   flex-wrap: wrap;
   row-gap: 6px;
 }
@@ -739,7 +748,8 @@
     padding: 16px 12px;
   }
   .tv-round__scene {
-    --scene-h: 130px;
+    /* 130 px, and never taller than the card (QA3b: Arealhaven's grid and the clock on an iPhone SE) */
+    --scene-h: min(130px, calc(var(--ch) * 0.94));
   }
   .tv-round__stage {
     gap: 8px;
@@ -937,8 +947,9 @@
     padding: 14px 12px;
   }
   .tv-round__scene {
-    --scene-h: 120px;
-    --eq-size: 48px;
+    --scene-h: min(120px, calc(var(--ch) * 0.94));
+    /* 48 px, and never wider than the card ("9 meter 63 centimeter = ? centimeter", QA3b) */
+    --eq-size: min(48px, calc((var(--cw) - 4px) / var(--eq-em, 6)));
   }
   .tv-round__bubbletext {
     font-size: 14px;
