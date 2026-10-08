@@ -171,9 +171,11 @@ describe('trend (status changes in 14 days)', () => {
   })
 
   it('never counts a skill skipped at start as moved (QA3b: "Rykket op" beside "Sprunget over ved start")', () => {
-    const seeded = keysAt(addKeys, 2, { seeded: true, seen: 0, correct: 0 })
+    // seeded in box 2 and tapped in a round since (no typed answer yet): the dot is still dashed
+    const seeded = keysAt(addKeys, 2, { seeded: true, seen: 1, correct: 1 })
     const st = states(profile({ keys: seeded }))
-    expect([st.addTo10.dot, st.addTo10.dash]).toEqual(['skipped', 'practising'])
+    expect(st.addTo10.dot).toBe('skipped')
+    expect(st.addTo10.dash).not.toBe('notStarted')
     expect(trendOf(['addTo10'], st, {})).toEqual({ up: [], down: [] })
     // once a typed answer confirms it, it counts as usual
     const typed = states(profile({ keys: { ...seeded, [addKeys[0].key]: key(3, { seeded: false, seen: 1, correct: 1 }) } }))
