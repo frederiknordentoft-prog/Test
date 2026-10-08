@@ -2288,6 +2288,13 @@
   transform-origin: center;
   transform: rotate(-7deg);
 }
+/* a card's picture (a figure, a solid …) is never wider than its card: the card's content may shrink
+   below the picture's own size, and the picture with it (QA3b: sortShapes on a 375 px phone, where the
+   rectangle's and the octagon's corners were cut off) */
+.tv-multi__item .tv-answer__content,
+.tv-multi__item .tv-face {
+  min-width: 0;
+}
 /* the things' fine details (bridge's arch ring, every other post, window bars) are left out at the
    small size (24-38 px) of the struck answer and the confirm button */
 .tv-face__thing.is-sm .tv-fine {

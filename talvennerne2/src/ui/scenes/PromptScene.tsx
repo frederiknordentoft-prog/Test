@@ -1,8 +1,9 @@
 // The prompt card's picture: one renderer per Prompt.scene (src/engine/types.ts), drawn with the
 // materials library. Wave 1 scenes are complete; the rest are simple, faithful pictures of their
 // data that later waves can deepen (skills may also bring their own Prompt.tsx, SPEC §12.3).
+import { useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import type { AnswerValue, Prompt, Task, Term } from '../../engine/types'
+import type { AnswerValue, ClipId, Prompt, Task, Term } from '../../engine/types'
 import {
   AnalogClock, BarChart, Base10Group, CoordGrid, DigitalClock, FractionBars, FractionShape,
   HundredBoard, NumberLine, Pictogram, Ruler, RULER, Seesaw, Shape2D, Solid3D, SquareGrid, Thing, niceStep,
@@ -11,6 +12,7 @@ import { Rig } from '../../art/rig/Rig'
 import { Equation } from '../design/Equation'
 import { Icon } from '../design/Icon'
 import { cx } from '../design/cx'
+import { useSpeech } from '../design/speech'
 import { formatMoney, formatNumber, lineEndsOnly } from '../task/answers'
 import { isPiece } from '../task/pay/logic'
 import { SHARE_UNEQUAL } from '../task/share/logic'
@@ -45,14 +47,19 @@ export interface PromptSceneProps {
   className?: string
 }
 
-/** Width of an equation in em (digits ≈ 0.6 em, signs 0.6 em, the blank at least 1.3 em). */
-export function equationEm(terms: readonly Term[], entryChars = 1): number {
+/**
+ * Width of an equation in em (digits ≈ 0.6 em, signs 0.6 em, the blank at least 1.3 em). A word (at
+ * half size, .tv-eq__text) is 2.2 em, or more when it is long: "centimeter" is 3 em, so "9 meter 63
+ * centimeter = ? centimeter" is sized to fit its card (QA3b). `textOf` gives the words; without it
+ * every word counts 2.2 em.
+ */
+export function equationEm(terms: readonly Term[], entryChars = 1, textOf?: (id: ClipId) => string): number {
   let em = 0
   for (const t of terms) {
     if ('n' in t) em += formatNumber(t.n).length * 0.6
     else if ('op' in t) em += 0.62
     else if ('blank' in t) em += Math.max(1.35, entryChars * 0.6 + 0.4)
-    else em += 2.2
+    else em += Math.max(2.2, (textOf?.(t.text).length ?? 0) * 0.3)
     em += 0.16
   }
   return em
@@ -128,6 +135,7 @@ export function noNumber(task: Pick<Task, 'kind'> | undefined, given: AnswerValu
 }
 
 export function PromptScene(props: PromptSceneProps) {
+  const speech = useSpeech()
   if (noNumber(props.task, props.given)) {
     const unknown = '?'
     props = { ...props, given: null, entry: props.slot === 'oops' ? <span className="tv-struck">{unknown}</span> : unknown }
@@ -139,7 +147,7 @@ export function PromptScene(props: PromptSceneProps) {
     const terms = prompt.scene === 'equation' ? prompt.terms : [...prompt.left, { op: '=' as const }, ...prompt.right]
     const chars = typeof entry === 'string' || typeof entry === 'number' ? String(entry).length : entry ? 3 : 1
     // two lines: the wider one decides the size
-    const em = lines ? Math.max(equationEm(lines[0], 1), equationEm(lines[1], chars)) : equationEm(terms, chars)
+    const em = lines ? Math.max(equationEm(lines[0], 1, speech.text), equationEm(lines[1], chars, speech.text)) : equationEm(terms, chars, speech.text)
     style = { ['--eq-em' as string]: em.toFixed(2) }
   }
   return (
@@ -264,7 +272,7 @@ function scene({ prompt: p, task, entry, entries, given, slot = 'empty', replay 
         <AnalogClock minutes={p.minutes} size={190} sweep={p.to !== undefined && p.minutes !== null ? { from: p.minutes, to: p.to } : undefined} />
       )
     case 'coins':
-      return <CoinRow ore={p.ore} />
+      return <CoinRow ore={p.ore} fit />
     case 'shop':
       return (
         <div className="tv-shop">
@@ -398,9 +406,81 @@ function ShareScene({ total, recipients, thing }: { total: number; recipients: n
 }
 
 /** Coins and notes as they lie (a note is drawn as one note: the 100-krone paid is never five 20-krone coins). */
-function CoinRow({ ore, small }: { ore: number[]; small?: boolean }) {
+/**
+ * The biggest scale, at most 1, at which pieces of these sizes, wrapped in rows the way flex-wrap lays
+ * them, fit the room. 1 when they fit as they are.
+ */
+export function rowFit(sizes: readonly { w: number; h: number }[], room: { w: number; h: number }, gap = 6): number {
+  const fits = (k: number) => {
+    let rowW = 0
+    let rowH = 0
+    let height = 0
+    for (const s of sizes) {
+      const w = s.w * k
+      if (w > room.w) return false
+      if (rowW > 0 && rowW + gap + w > room.w) {
+        height += rowH + gap
+        rowW = 0
+        rowH = 0
+      }
+      rowW += (rowW > 0 ? gap : 0) + w
+      rowH = Math.max(rowH, s.h * k)
+    }
+    return height + rowH <= room.h
+  }
+  if (sizes.length === 0 || fits(1)) return 1
+  let lo = 0.2
+  let hi = 1
+  for (let i = 0; i < 12; i++) {
+    const mid = (lo + hi) / 2
+    if (fits(mid)) lo = mid
+    else hi = mid
+  }
+  return lo
+}
+
+/**
+ * Coins and notes on the round's card keep their sizes while they fit it, and get smaller only when
+ * they would not (QA3b: twenty halvtredsører in a card the error flow shrinks lay over the stones). The
+ * room is the card's (--cw, --ch, and the part of it a scene gets, as round.css gives --scene-h); outside a card
+ * (a hint, a demo) nothing changes.
+ */
+function useFitPieces(on: boolean) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    const card = el?.closest<HTMLElement>('.tv-round__card')
+    if (!on || !el || !card) return
+    const fit = () => {
+      el.style.removeProperty('--mm')
+      el.style.removeProperty('--mm-note')
+      const css = getComputedStyle(card)
+      const cw = parseFloat(css.getPropertyValue('--cw'))
+      const ch = parseFloat(css.getPropertyValue('--ch'))
+      if (!(cw > 0 && ch > 0)) return
+      const room = { w: cw - 4, h: ch * (card.classList.contains('has-scaffold') ? 0.4 : 0.94) }
+      const sizes = [...el.children].map((c) => {
+        const b = c.getBoundingClientRect()
+        return { w: b.width, h: b.height }
+      })
+      const k = rowFit(sizes, room)
+      if (k >= 1) return
+      const own = getComputedStyle(el)
+      el.style.setProperty('--mm', `${(parseFloat(own.getPropertyValue('--mm')) * k).toFixed(3)}px`)
+      el.style.setProperty('--mm-note', `${(parseFloat(own.getPropertyValue('--mm-note')) * k).toFixed(3)}px`)
+    }
+    fit()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit)
+    ro?.observe(card)
+    return () => ro?.disconnect()
+  }, [on])
+  return ref
+}
+
+function CoinRow({ ore, small, fit = false }: { ore: number[]; small?: boolean; fit?: boolean }) {
+  const ref = useFitPieces(fit)
   return (
-    <div className={cx('tv-coins', small ? 'tv-coins--small' : ore.length > 6 && 'tv-coins--many')}>
+    <div ref={ref} className={cx('tv-coins', small ? 'tv-coins--small' : ore.length > 6 && 'tv-coins--many')}>
       {ore.map((v, i) => (isPiece(v) ? <PieceArt key={i} piece={v} /> : <span key={i} className="tv-coins__amount">{formatMoney(v)}</span>))}
     </div>
   )
