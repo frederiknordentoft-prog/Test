@@ -13,6 +13,7 @@ import { Icon } from '../design/Icon'
 import { cx } from '../design/cx'
 import { formatMoney, formatNumber, lineEndsOnly } from '../task/answers'
 import { isPiece } from '../task/pay/logic'
+import { SHARE_UNEQUAL } from '../task/share/logic'
 import { PieceArt, piecesForAmount } from '../task/faces'
 import { CompareScene } from './CompareScene'
 import { HearScene } from './HearScene'
@@ -116,7 +117,21 @@ export function seesawLean(p: { left: readonly Term[]; right: readonly Term[] },
   return l === r ? 0 : l > r ? -1 : 1
 }
 
+/**
+ * A value a view hands in that stands for no number: the share view's uneven deal is −1
+ * (share/logic.ts SHARE_UNEQUAL). It is never shown as the child's number (QA3b: "4 : 2 = −1"); the
+ * blank shows "?" instead, struck when wrong. The other views hand in what the child made (QA3b
+ * checked them all), so this is the only one.
+ */
+export function noNumber(task: Pick<Task, 'kind'> | undefined, given: AnswerValue | null | undefined): boolean {
+  return task?.kind === 'share' && given === SHARE_UNEQUAL
+}
+
 export function PromptScene(props: PromptSceneProps) {
+  if (noNumber(props.task, props.given)) {
+    const unknown = '?'
+    props = { ...props, given: null, entry: props.slot === 'oops' ? <span className="tv-struck">{unknown}</span> : unknown }
+  }
   const { prompt, className, entry } = props
   let style: CSSProperties | undefined
   const lines = prompt.scene === 'equation' ? equationLines(prompt.terms) : null

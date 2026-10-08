@@ -57,9 +57,9 @@ export interface PlacedStart {
 
 /**
  * Where a finished placement put the child (SPEC A24, review app-w3-r1 P2-4). Null without one: a
- * child who skipped the ladder, stopped before the first answer, or was never offered it (0.–2.
- * klasse) is placed by the grade as before. A placement that passed no rung passes nothing over, so
- * that child starts in Tællelunden.
+ * child who skipped the ladder, stopped before a rung was decided (passed or failed; QA3b), or was
+ * never offered it (0.–2. klasse) is placed by the grade as before. A placement that passed no rung
+ * passes nothing over, so that child starts in Tællelunden.
  */
 export function placedStart(placement: PlacementState | undefined): PlacedStart | null {
   if (!placement?.done) return null
