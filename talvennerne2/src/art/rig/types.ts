@@ -487,6 +487,11 @@ export interface SpeciesDef {
   /** Grænsebokse (modelrum); standard er et skøn ud fra ankrene. */
   bounds?: Partial<FigureBounds>
   /**
+   * Snuden og næsen (modelrum, hovedregionen), hvor de rækker ud over hovedets ellipse: hovedudsnittet (crop 'head')
+   * tager boksen med, så næsen ikke skæres af (isbjørnens trekvart-profil mod venstre, QA3b P2-6).
+   */
+  snoutBox?: Box
+  /**
    * Ankeret (modelrum, hovedregionen) for tankeprikker og Z'er: uden for hoved og ører med ca. 8
    * enheders luft. Standard: til højre for hovedet, under øret.
    */

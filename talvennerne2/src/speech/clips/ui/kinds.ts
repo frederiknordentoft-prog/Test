@@ -41,6 +41,8 @@ const FAMILY_SHORT: Readonly<Record<string, readonly Word[]>> = {
   'pay:kronerOre/addHalves': ['s.kronerOre.payTwo'],
   'pay:kronerOre/fiftiesInKroner': ['s.kronerOre.payInKroner'],
   'pay:payExact/fewestCoins': ['frag.betal', 's.payExact.asFewAsPossible'],
+  // the fewest pieces on cards (QA3b): "Med færrest mønter og sedler?"
+  'choice:payExact/fewestCoins': ['s.payExact.withFewest'],
   // three quarters on two plates is no fair deal (QA3b P2): "Den ene skal have 3/4 og den anden resten."
   'share:fractionOfSet/threeQuartersOf': ['s.fractionOfSet.oneGets', { frac: { n: 3, d: 4, form: 'mid' } }, 's.fractionOfSet.otherRest'],
   // along or up (QA3b P4): "Hvor langt op er punktet?"

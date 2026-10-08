@@ -241,6 +241,8 @@ export function cropViewBox(def: SpeciesDef, breed: BreedId, stage: Stage, crop:
   if (crop === 'fit') return viewBoxAround(wb.all, 0.06, 1.2)
   if (crop === 'head') {
     let b = box(w.headCenter.x - w.headRx * 1.12, w.headTop.y - w.headRy * 0.3, w.headCenter.x + w.headRx * 1.12, w.headCenter.y + w.headRy * 1.04)
+    // En snude, der rækker ud over ellipsen (isbjørnen), kommer med til næsen (QA3b P2-6).
+    if (def.snoutBox) b = unionBox(b, mapBox(R.head, def.snoutBox))
     const hat = outfit?.head && !def.occupies?.includes('head') ? outfit.head.item : null
     const ib = hat ? itemModelBox(hat, fitItem(hat, a, def)) : null
     if (ib) b = unionBox(b, mapBox(R.head, ib))
