@@ -1,8 +1,8 @@
-import type { Fact, Grade, KeyState, ProfileDoc, RegionId, SkillDef, Task, TaskKind, WorldId } from './types'
+import type { Fact, Grade, KeyState, PlacementState, ProfileDoc, RegionId, SkillDef, Task, TaskKind, WorldId } from './types'
 import { WORLD_IDS } from './types'
 import { SKILL_BY_ID, DOMAIN_BY_ID } from '../content/skills'
 import { REGIONS, nodesOfRegion } from '../content/curriculum'
-import { CHECKPOINT, LADDER, passedOver, seedStage } from './ladder'
+import { CHECKPOINT, LADDER, failedSkills, passedOver, seedStage } from './ladder'
 import { factsOf, kindsOf, needsAudio, skillKeys, skillRegistry, type SkillRegistry } from './registry'
 import { buildTask } from './tasks'
 import { isProduction } from './kinds'
@@ -139,6 +139,15 @@ export function answerPlacement(run: PlacementRun, correct: boolean): PlacementR
   return { ...run, results: [], asked, passed, failed, phase, index: done ? run.index : next, done }
 }
 
+/**
+ * The ladder counts as a placement (SPEC A24, QA3b): once a rung is passed, or once it ended by
+ * itself. "Det er nok" before that is like "Spring over": nothing is seeded and the child starts in
+ * its own world (its answers are still logged as placement answers).
+ */
+export function placementCounts(run: Pick<PlacementRun, 'passed' | 'done'>): boolean {
+  return run.done || run.passed.length > 0
+}
+
 /** P: the highest passed checkpoint, or null. */
 export function placementResult(run: Pick<PlacementRun, 'passed'>): string | null {
   let best: string | null = null
@@ -155,20 +164,23 @@ export interface SeedContext {
 /**
  * Seed a profile from P. Core skills (number, place, addsub, muldiv) with stage ≤ stage(P) get
  * every key in box 2 marked `seeded`; a key already at box 2 or more keeps what the child earned.
- * stage(P) is seedStage(P): the highest stage of the rungs up to P, never less than P's own.
- * Regions whose skills all lie below stage(P) open with their lessons marked skipped (friend and
- * chest nodes stay to be fetched, the trial stays to be taken), and so do their worlds and the world
- * after one that opened completely.
+ * stage(P) is seedStage(P): the highest stage of the rungs up to P, never less than P's own. The
+ * skill of a rung the child did not pass (`failed`, kept in placement.failed) is never seeded, even
+ * below stage(P) (SPEC A24, QA3b). The regions passedOver(P, failed) (chain `tal` only) open with
+ * their lessons marked skipped (friend and chest nodes stay to be fetched, the trial stays to be
+ * taken), and so do their worlds and the world after one whose regions of the chain `tal` all
+ * opened: the world the child starts in.
  */
-export function seedFromPlacement(profile: ProfileDoc, P: string | null, ctx: SeedContext): ProfileDoc {
-  const placement = { done: true, at: ctx.now, highest: P }
+export function seedFromPlacement(profile: ProfileDoc, P: string | null, ctx: SeedContext, failed: readonly string[] = []): ProfileDoc {
+  const placement: PlacementState = { done: true, at: ctx.now, highest: P, ...(failed.length > 0 ? { failed: [...failed] } : {}) }
   if (!P || !CHECKPOINT[P]) return { ...profile, placement }
   const reg = ctx.skills ?? skillRegistry()
   const stage = seedStage(P)
+  const missed = failedSkills(failed)
 
   const keys: Record<string, KeyState> = { ...profile.keys }
   for (const meta of Object.values(SKILL_BY_ID)) {
-    if (!DOMAIN_BY_ID[meta.domain].core || meta.stage > stage) continue
+    if (!DOMAIN_BY_ID[meta.domain].core || meta.stage > stage || missed.has(meta.id)) continue
     const def = reg.get(meta.id)
     const ids = def ? skillKeys(def) : meta.mode === 'procedure' ? meta.families.map((f) => `${meta.id}/${f.id}`) : []
     for (const id of ids) {
@@ -181,7 +193,7 @@ export function seedFromPlacement(profile: ProfileDoc, P: string | null, ctx: Se
     }
   }
 
-  const opened: RegionId[] = passedOver(P)
+  const opened: RegionId[] = passedOver(P, failed)
   const nodes = { ...profile.nodes }
   for (const region of opened) {
     for (const n of nodesOfRegion(region)) {
@@ -193,9 +205,9 @@ export function seedFromPlacement(profile: ProfileDoc, P: string | null, ctx: Se
   const regions = [...new Set([...profile.unlocked.regions, ...opened])]
   const worlds = new Set<WorldId>([...profile.unlocked.worlds, 'eng'])
   WORLD_IDS.forEach((w, i) => {
-    const inWorld = REGIONS.filter((r) => r.world === w)
-    if (inWorld.some((r) => opened.includes(r.id))) worlds.add(w)
-    if (inWorld.length > 0 && inWorld.every((r) => opened.includes(r.id)) && WORLD_IDS[i + 1]) worlds.add(WORLD_IDS[i + 1])
+    const tal = REGIONS.filter((r) => r.world === w && r.chain === 'tal')
+    if (tal.some((r) => opened.includes(r.id))) worlds.add(w)
+    if (tal.length > 0 && tal.every((r) => opened.includes(r.id)) && WORLD_IDS[i + 1]) worlds.add(WORLD_IDS[i + 1])
   })
 
   return { ...profile, placement, keys, nodes, unlocked: { worlds: WORLD_IDS.filter((w) => worlds.has(w)), regions } }

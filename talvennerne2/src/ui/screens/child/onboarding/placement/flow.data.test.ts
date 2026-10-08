@@ -172,7 +172,7 @@ describe('the ladder (SPEC §8)', () => {
     expect(stone).toBe(firstStone(profile(), allBuilt))
   })
 
-  it('marks it done without seeding when nothing was passed', async () => {
+  it('marks it done without seeding when the ladder ended by itself with nothing passed', async () => {
     await child()
     let s = (await beginPlacement(3))!
     // L5 missed → L4 missed: the ladder stops
@@ -180,7 +180,7 @@ describe('the ladder (SPEC §8)', () => {
     s = answer(s, false).session
     expect(s.run.done).toBe(true)
     await endPlacement(s, env)
-    expect(profile().placement).toMatchObject({ done: true, highest: null })
+    expect(profile().placement).toMatchObject({ done: true, highest: null, failed: ['L5', 'L4'] })
     expect(Object.values(profile().keys).some((k) => k.seeded)).toBe(false)
   })
 
@@ -314,6 +314,78 @@ describe('where the first round starts (SPEC A24, review app-w3-r1 P2-4)', () =>
     const { stone } = await placeWith([])
     expect(profile().placement.done).toBe(false)
     expect(stone).toBe(skipped)
+  })
+
+  /** "Spring over" for a new child: the stone and world of the child's own world, then a fresh start. */
+  async function ownStart(): Promise<NodeId> {
+    await child()
+    const skipped = await skipPlacement(3, env)
+    expect(home()).toBe(furthest())
+    await useProfile.getState().unload({ discard: true })
+    resetOnboardingForTests()
+    usePlacement.getState().reset()
+    return skipped
+  }
+
+  // QA3b P2-1, SPEC A24: a placement counts once a rung is passed, or once the ladder ended by itself
+  for (const [name, answers] of [
+    ['L5 right once', [true]],
+    ['L5 missed', [false]],
+    ['L5 right, L5 missed, L4 right once', [true, false, true]],
+  ] as const) {
+    it(`${name}, then "Det er nok": no placement, the child's own world as after "Spring over" (QA3b)`, async () => {
+      const skipped = await ownStart()
+      const { stone, done } = await placeWith([...answers])
+      expect(done).toBe(false)
+      expect(profile().placement).toEqual({ done: false, at: null, highest: null })
+      expect(Object.values(profile().keys).some((k) => k.seeded)).toBe(false)
+      expect(Object.values(profile().nodes).some((n) => n?.skipped)).toBe(false)
+      expect([stone, home(), mapNext()]).toEqual([skipped, furthest(), skipped])
+      expect(stone).not.toBe(firstNode())
+      // the answers are still logged, as placement answers
+      await useProfile.getState().flush()
+      const log = await answersBetween(profile().id, 0)
+      expect(log.map((a) => [a.mode, a.correct])).toEqual(answers.map((c) => ['placement', c]))
+      expect((await getProfile(profile().id))?.placement.done).toBe(false)
+      // the goals stay those of the grade
+      expect(profile().goals.list.find((g) => g.kind === 'revisit')?.region).toBe(furthest() === 'fjeld' ? 'w3-tabellen' : 'w2-tal1000')
+    })
+  }
+
+  it('L5 and L4 missed (the ladder ends by itself): Tællelunden', async () => {
+    const { stone, done } = await placeWith([false, false])
+    expect(done).toBe(true)
+    expect(profile().placement).toMatchObject({ done: true, highest: null, failed: ['L5', 'L4'] })
+    expect([stone, home(), mapNext()]).toEqual(['w0-tal10-l1', 'eng', 'w0-tal10-l1'])
+  })
+
+  it('L6 passed with L7 missed: hear100 not seeded, Hundredemarken not passed over, and the first round there (QA3b P2-2)', async () => {
+    // L5 right, right → L7 a miss → a step down to L6: right, right; L7 is missed, so the ladder stops
+    const { stone, done } = await placeWith([true, true, false, true, true])
+    expect(done).toBe(true)
+    expect(profile().placement).toMatchObject({ done: true, highest: 'L6', failed: ['L7'] })
+    expect(seededSkill('subTo20')).toBe(true)
+    expect(skillKeys(ladderSkills.get('hear100')!).some((k) => profile().keys[k])).toBe(false)
+    expect(profile().nodes['w1-tal100-l1']).toBeUndefined()
+    expect([stone, home(), mapNext()]).toEqual(['w1-tal100-l1', 'bakke', 'w1-tal100-l1'])
+    expect(mapModel(profile(), 'bakke', allBuilt).regions.find((r) => r.id === 'w1-tal100')!.stones.some((st) => st.skipped)).toBe(false)
+    const stored = await getProfile(profile().id)
+    expect(stored?.placement.failed).toEqual(['L7'])
+  })
+
+  it('all right (P = L14): Markedet and the other places outside the chain tal are not passed over (QA3b P2-3)', async () => {
+    // L5, L7, L9, L11, L13 and L14, two right each
+    const { stone, done } = await placeWith(Array(12).fill(true))
+    expect(done).toBe(true)
+    expect(profile().placement.highest).toBe('L14')
+    expect(stone).toBe('w3-tabellen-l1')
+    for (const r of ['w3-penge-maal', 'w2-penge', 'w2-maal-data', 'w2-figurer', 'w2-klokken', 'w1-figurer', 'w1-klokken', 'w1-maal-penge', 'w0-former']) {
+      expect(profile().nodes[`${r}-l1` as NodeId]?.skipped ?? false, r).toBe(false)
+    }
+    const market = mapModel(profile(), 'fjeld', allBuilt).regions.find((r) => r.id === 'w3-penge-maal')!
+    expect(market.stones.find((st) => st.slot === 'l1')).toMatchObject({ skipped: false })
+    // Trecifret bro (add1000 below mul6to9) is still passed over
+    expect(profile().nodes['w3-store-tal-l1']).toMatchObject({ skipped: true })
   })
 
   it('after a reload: the map of the world the child was placed in, with the same stone next', async () => {

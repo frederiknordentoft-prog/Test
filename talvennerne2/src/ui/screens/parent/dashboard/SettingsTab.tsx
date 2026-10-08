@@ -9,7 +9,7 @@ import {
 } from '../../../../data/export'
 import { registeredSkills } from '../../../../engine/registry'
 import type { DomainId, ProfileDoc, ProfileSettings } from '../../../../engine/types'
-import { fmtTsDate, genitive, nameOf } from '../../../../parent/format'
+import { fmtTsDate, genitive, nameOf, sentence } from '../../../../parent/format'
 import { useProfile } from '../../../../state/useProfile'
 import { useSession } from '../../../../state/useSession'
 import { Sheet } from '../../../design/Sheet'
@@ -152,7 +152,7 @@ export function SettingsTab({ profile, onImported, onDelete }: SettingsTabProps)
                 </div>
               )}
               <p>
-                Filen indeholder {nameOf(entry.doc.name)} ({entry.doc.grade}. klasse), gemt {fmtTsDate(incoming.exportedAt)}.
+                {sentence(`Filen indeholder ${nameOf(entry.doc.name)} (${entry.doc.grade}. klasse), gemt ${fmtTsDate(incoming.exportedAt)}`)}
               </p>
               <div className="tv-dactions">
                 <DashButton disabled={busy} onClick={() => void doImport(entry, { mode: 'replace', profileId: profile.id })}>Erstat {genitive(name)} data</DashButton>

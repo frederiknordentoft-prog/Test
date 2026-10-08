@@ -23,6 +23,10 @@ function Fact({ label, value }: { label: string; value: string }) {
   )
 }
 
+/** Skipped at start: tried in the game since or not, as the printout says it (QA3b). */
+const skippedText = (r: SkillRow, today: string): string =>
+  r.lastPractised ? `øvet ${fmtRelativeDay(r.lastPractised, today)}` : 'ikke prøvet endnu'
+
 function SkillDetails({ r, today }: { r: SkillRow; today: string }) {
   return (
     <details className="tv-dskill">
@@ -32,7 +36,7 @@ function SkillDetails({ r, today }: { r: SkillRow; today: string }) {
         <span className="tv-dskill__status">{DOT_LABEL[r.dot]}</span>
         <span className="tv-dskill__bar">
           <ShareBar value={r.share4} />
-          <span className="tv-dskill__share">{r.keys === 0 ? 'kommer senere' : r.skipped ? 'ikke prøvet endnu' : `${fmtPercent(r.share4)} sikre`}</span>
+          <span className="tv-dskill__share">{r.keys === 0 ? 'kommer senere' : r.skipped ? skippedText(r, today) : `${fmtPercent(r.share4)} sikre`}</span>
         </span>
       </summary>
       <div className="tv-dskill__body">
