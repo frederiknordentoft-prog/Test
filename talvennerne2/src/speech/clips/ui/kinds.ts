@@ -2,7 +2,7 @@
 // meets a kind, the short form after that. All fifteen kinds are here, so wave 2 and 3 only add
 // their views (wave 2's words match its views: both clock hands, coins that hop, plates). Plus the
 // names of the buildBase blocks (read when their buttons are explored) and of the grid's controls.
-import type { TaskKind } from '../../../engine/types'
+import type { SpeechPart, TaskKind } from '../../../engine/types'
 import type { Wave } from '../../catalog'
 
 export const KIND_INSTRUCTIONS: Record<TaskKind, { long: string; short: string }> = {
@@ -31,23 +31,47 @@ export const instructionClip = (kind: TaskKind, form: 'long' | 'short'): string 
  * (QA3a P2-2): pay's "Betal det, det koster." is wrong when the tray is to hold the change (every
  * family of change, also Købmandsgården's), the price of two, the same money in kroner, or the
  * fewest coins. Keys are `<kind>:<skill>` or `<kind>:<skill>/<family>`; the words are the skills' own
- * clips, the end of the spoken question.
+ * clips, the end of the spoken question. A word is a clip, a generated part (a fraction, shown as
+ * "3/4"), or `oneOf`: whichever of those clips the question itself says (QA3b: what is asked only
+ * in the voice is on screen too).
  */
-const FAMILY_SHORT: Readonly<Record<string, readonly string[]>> = {
+type Word = string | SpeechPart | { oneOf: readonly string[] }
+const FAMILY_SHORT: Readonly<Record<string, readonly Word[]>> = {
   'pay:change': ['s.change.layChange'],
   'pay:kronerOre/addHalves': ['s.kronerOre.payTwo'],
   'pay:kronerOre/fiftiesInKroner': ['s.kronerOre.payInKroner'],
   'pay:payExact/fewestCoins': ['frag.betal', 's.payExact.asFewAsPossible'],
+  // the fewest pieces on cards (QA3b): "Med færrest mønter og sedler?"
+  'choice:payExact/fewestCoins': ['s.payExact.withFewest'],
+  // three quarters on two plates is no fair deal (QA3b P2): "Den ene skal have 3/4 og den anden resten."
+  'share:fractionOfSet/threeQuartersOf': ['s.fractionOfSet.oneGets', { frac: { n: 3, d: 4, form: 'mid' } }, 's.fractionOfSet.otherRest'],
+  // along or up (QA3b P4): "Hvor langt op er punktet?"
+  'choice:gridCoords': [{ oneOf: ['s.gridCoords.readAlong', 's.gridCoords.readUp', 's.gridCoords.howFarAlong', 's.gridCoords.howFarUp'] }],
+  // the biggest or the smallest (QA3b P5): "Hvilken brøk er mindst?"
+  'choice:fractionCompare': [{ oneOf: ['s.fractionCompare.biggest', 's.fractionCompare.smallest'] }],
 }
 
-/** A family's own words for its kind (null: the kind's short form says it). */
-export function familyInstruction(kind: TaskKind, skill: string, family: string): readonly string[] | null {
-  return FAMILY_SHORT[`${kind}:${skill}/${family}`] ?? FAMILY_SHORT[`${kind}:${skill}`] ?? null
+/** A family's own words for its kind and question (null: the kind's short form says it). */
+export function familyInstruction(kind: TaskKind, skill: string, family: string, question: readonly SpeechPart[] = []): SpeechPart[] | null {
+  const words = FAMILY_SHORT[`${kind}:${skill}/${family}`] ?? FAMILY_SHORT[`${kind}:${skill}`]
+  if (!words) return null
+  const said = new Set(question.flatMap((p) => ('clip' in p ? [p.clip] : [])))
+  const out: SpeechPart[] = []
+  for (const w of words) {
+    if (typeof w === 'string') out.push({ clip: w })
+    else if ('oneOf' in w) {
+      const clip = w.oneOf.find((c) => said.has(c))
+      // a question that says none of them keeps the kind's short form
+      if (!clip) return null
+      out.push({ clip })
+    } else out.push(w)
+  }
+  return out
 }
 
 /** The bubble's short instruction for a task: its family's own words, else its kind's short form. */
-export function shortInstruction(kind: TaskKind, skill: string, family: string): { clip: string }[] {
-  return (familyInstruction(kind, skill, family) ?? [instructionClip(kind, 'short')]).map((clip) => ({ clip }))
+export function shortInstruction(kind: TaskKind, skill: string, family: string, question: readonly SpeechPart[] = []): SpeechPart[] {
+  return familyInstruction(kind, skill, family, question) ?? [{ clip: instructionClip(kind, 'short') }]
 }
 
 const table: Record<string, string> = {}

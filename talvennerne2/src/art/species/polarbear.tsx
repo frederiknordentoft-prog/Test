@@ -380,6 +380,8 @@ export const polarbear: SpeciesDef = {
     head: { x0: 22, y0: 50, x1: 142, y1: 145 },
     body: { x0: 16, y0: 128, x1: 176, y1: 229 },
   },
+  // Snuden og næsen rækker ud til venstre for hovedets ellipse; hovedudsnittet tager dem med (QA3b P2-6).
+  snoutBox: { x0: 20, y0: 104, x1: 60, y1: 142 },
   // Tankebobler og Zzz (fælles regel): til højre for kinden under øret med mindst 8 enheders luft.
   fx: { x: 164, y: 106 },
   face: { idleMouth: 'smile', cheeks: true },
