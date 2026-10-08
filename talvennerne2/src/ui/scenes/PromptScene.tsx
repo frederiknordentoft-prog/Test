@@ -442,8 +442,8 @@ export function rowFit(sizes: readonly { w: number; h: number }[], room: { w: nu
 /**
  * Coins and notes on the round's card keep their sizes while they fit it, and get smaller only when
  * they would not (QA3b: twenty halvtredsører in a card the error flow shrinks lay over the stones). The
- * room is the card's (--cw, --ch, and the part of it a scene gets, as round.css gives --scene-h); outside a card
- * (a hint, a demo) nothing changes.
+ * room is the card's inner size and the part of it a scene gets (as round.css gives --scene-h); outside
+ * a card (a hint, a demo) nothing changes.
  */
 function useFitPieces(on: boolean) {
   const ref = useRef<HTMLDivElement>(null)
@@ -454,9 +454,10 @@ function useFitPieces(on: boolean) {
     const fit = () => {
       el.style.removeProperty('--mm')
       el.style.removeProperty('--mm-note')
+      // the card's inner size now (what --cw and --ch become; they may not be written yet)
       const css = getComputedStyle(card)
-      const cw = parseFloat(css.getPropertyValue('--cw'))
-      const ch = parseFloat(css.getPropertyValue('--ch'))
+      const cw = card.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight)
+      const ch = card.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom)
       if (!(cw > 0 && ch > 0)) return
       const room = { w: cw - 4, h: ch * (card.classList.contains('has-scaffold') ? 0.4 : 0.94) }
       const sizes = [...el.children].map((c) => {
