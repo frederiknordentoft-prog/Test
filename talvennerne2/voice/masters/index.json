@@ -61008,6 +61008,27 @@
    "wallS": 22.9,
    "wave": 3
   },
+  "s.place.done.none": {
+   "asr": "det er helt i orden nu går vi ud på kortet",
+   "asrExpected": "Det er helt i orden. Nu går vi ud på kortet.",
+   "asrWav2vec2": null,
+   "cer": 0.0,
+   "check": "alone",
+   "cpuS": 41.8,
+   "dur": 2.062,
+   "engine": "wav2vec2",
+   "file": "placement-3/s.place.done.none.flac",
+   "hash": "6594a12f0e9f857fc9ce8b18d13c50e858718301",
+   "lufs": -18.09,
+   "method": "sentence",
+   "pack": "placement-3",
+   "pass": true,
+   "take": 0,
+   "takes": 1,
+   "tp": -1.63,
+   "wallS": 21.8,
+   "wave": 3
+  },
   "s.place.enough": {
    "asr": "det er det er nok",
    "asrExpected": "Det er Det er nok",
