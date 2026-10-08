@@ -4,12 +4,13 @@
  * as in the grid kind. Colours from tokens.css; nothing moves.
  */
 .tv-ask {
-  /* the line's size follows the card's height (--ch, set by the round), so a short card still holds
-     the line and the picture */
+  /* the line follows the card's height (--ch, set by the round), and the picture keeps its own size
+     as long as the card has room for both */
   --ask-f: min(38px, calc(var(--ch, 300px) * 0.13));
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   min-width: 0;
   max-width: 100%;
@@ -17,12 +18,35 @@
 .tv-ask--heap {
   width: 100%;
 }
-/* the picture gives the line its room, so the card does not grow */
 .tv-scene .tv-ask--heap .tv-scene__svg {
-  max-height: calc(var(--scene-h) - var(--ask-f) * 1.9 - 10px);
+  max-height: min(var(--scene-h), calc(var(--ch, 300px) * 0.94 - var(--ask-f) * 1.9 - 10px));
 }
 .tv-scene .tv-ask--coord > .tv-mat {
-  max-height: calc(var(--scene-h) - var(--ask-f) * 1.2 - 12px);
+  max-height: min(var(--scene-h), calc(var(--ch, 300px) * 0.94 - var(--ask-f) * 1.2 - 12px));
+}
+/* A short, wide card (a phone on its side, the keypad on a small phone): the line beside the picture,
+   which keeps the card's whole height. The card already has size containment, so as a container it
+   keeps its size. */
+.tv-round__card:has(.tv-ask) {
+  container: tv-ask-card / size;
+}
+@container tv-ask-card (min-aspect-ratio: 7 / 4) {
+  .tv-ask {
+    --ask-f: min(38px, 28cqh);
+    flex-direction: row;
+    gap: 14px;
+  }
+  .tv-ask--heap > .tv-objects {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .tv-scene .tv-ask--heap .tv-scene__svg,
+  .tv-scene .tv-ask--coord > .tv-mat {
+    max-height: min(var(--scene-h), 94cqh);
+  }
+  .tv-ask--coord .tv-ask__line {
+    flex-direction: column;
+  }
 }
 .tv-ask__line {
   display: inline-flex;
