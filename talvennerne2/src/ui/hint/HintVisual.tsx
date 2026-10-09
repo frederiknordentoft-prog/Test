@@ -2,6 +2,7 @@
 // backToTen, columns, splitArray, coinsSum, clockMove), every prompt scene, and the round's own
 // pictures (hintFor.ts LocalVisual) including the animated films for digitSwap, forgotCarry and
 // smallerFromLarger. Films play once when the card appears; calm motion shows their last frame.
+import { useLayoutEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import { AnalogClock, Base10Group, COIN_VALUES, Coin } from '../../art/materials'
 import { isPiece } from '../task/pay/logic'
@@ -10,7 +11,7 @@ import type { CoinOre } from '../../art/materials'
 import { Equation } from '../design/Equation'
 import { cx } from '../design/cx'
 import { MarkedLine } from '../scenes/MarkedLine'
-import { PromptScene } from '../scenes/PromptScene'
+import { PromptScene, rowFit } from '../scenes/PromptScene'
 import { formatMoney, formatNumber } from '../task/answers'
 import { Columns } from './Columns'
 import { Frame, cells } from './Counters'
@@ -129,31 +130,8 @@ export function HintVisual({ visual, size = 'md' }: { visual: AnyVisual; size?: 
           </span>
         </div>
       )
-    case 'coinsSum': {
-      const sorted = [...visual.ore].sort((x, y) => y - x)
-      return (
-        <div className="tv-hv tv-hv--coins">
-          <span className="tv-hv__coins">
-            {sorted.map((v, i) =>
-              (COIN_VALUES as readonly number[]).includes(v) ? (
-                <span key={i} className="tv-step" style={{ animationDelay: `${200 + i * 220}ms` }}>
-                  <Coin ore={v as CoinOre} mm={2.3} />
-                </span>
-              ) : isPiece(v) ? (
-                <span key={i} className="tv-step" style={{ animationDelay: `${200 + i * 220}ms` }}>
-                  <PieceArt piece={v} />
-                </span>
-              ) : (
-                <span key={i} className="tv-hv__chip">{formatMoney(v)}</span>
-              ),
-            )}
-          </span>
-          <span className="tv-hv__chip tv-hv__chip--total tv-step" style={{ animationDelay: `${300 + sorted.length * 220}ms` }}>
-            {formatMoney(sorted.reduce((x, y) => x + y, 0))}
-          </span>
-        </div>
-      )
-    }
+    case 'coinsSum':
+      return <CoinsSum ore={visual.ore} />
     case 'markedLine':
       return (
         <div className="tv-hv tv-hv--prompt">
@@ -175,6 +153,101 @@ export function HintVisual({ visual, size = 'md' }: { visual: AnyVisual; size?: 
         </div>
       )
   }
+}
+
+/**
+ * The lightbulb's coins and their sum (coinsSum). In the round's card they keep their own sizes while
+ * the card has room for them under the task's picture, and only when they would not fit do they get
+ * smaller, all by the same factor (rowFit, as the task's own coins), so a 2-krone stays bigger than a
+ * 1-krone (QA3c P2-2; QA3b P2-9: on an iPhone SE "9 kr." stays in the card). They never get smaller
+ * than a sixth of the card high, the most a short card gave them before. Outside the round's card (the
+ * strategy, a demo) nothing is measured.
+ */
+function CoinsSum({ ore }: { ore: readonly number[] }) {
+  const ref = useFitHelpCoins()
+  const sorted = [...ore].sort((x, y) => y - x)
+  return (
+    <div className="tv-hv tv-hv--coins">
+      <span ref={ref} className="tv-hv__coins">
+        {sorted.map((v, i) =>
+          (COIN_VALUES as readonly number[]).includes(v) ? (
+            <span key={i} className="tv-step" style={{ animationDelay: `${200 + i * 220}ms` }}>
+              <Coin ore={v as CoinOre} mm={2.3} />
+            </span>
+          ) : isPiece(v) ? (
+            <span key={i} className="tv-step" style={{ animationDelay: `${200 + i * 220}ms` }}>
+              <PieceArt piece={v} />
+            </span>
+          ) : (
+            <span key={i} className="tv-hv__chip">{formatMoney(v)}</span>
+          ),
+        )}
+      </span>
+      <span className="tv-hv__chip tv-hv__chip--total tv-step" style={{ animationDelay: `${300 + sorted.length * 220}ms` }}>
+        {formatMoney(sorted.reduce((x, y) => x + y, 0))}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * The help's pieces, sized as above. What is stacked in the card (the task's picture, the help, the
+ * gaps between) may use its padding but for a little, as the picture and the sum stood before; what
+ * overflows is taken from the coins: as a column over their sum, or, in a card too short for that (an
+ * iPhone SE's keypad, the error flow), beside it.
+ */
+function useFitHelpCoins() {
+  const ref = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const coins = ref.current
+    const help = coins?.parentElement
+    const scaffold = coins?.closest<HTMLElement>('.tv-round__scaffold')
+    const card = scaffold?.closest<HTMLElement>('.tv-round__card')
+    if (!coins || !help || !scaffold || !card) return
+    const pieces = () => [...coins.querySelectorAll<SVGSVGElement>('svg[width][height]')]
+    const fit = () => {
+      help.classList.remove('is-row')
+      for (const p of pieces()) {
+        p.style.removeProperty('width')
+        p.style.removeProperty('height')
+      }
+      const room = card.clientHeight - 8
+      const gap = parseFloat(getComputedStyle(card).rowGap) || 0
+      const stacked = [...card.children].filter((c): c is HTMLElement => c instanceof HTMLElement && getComputedStyle(c).position !== 'absolute')
+      // (a picture's box may be squeezed below its content, which then overflows it: count the content)
+      const used = stacked.reduce((sum, c) => sum + Math.max(c.offsetHeight, c.scrollHeight), 0) + gap * Math.max(0, stacked.length - 1)
+      if (!(room > 0) || used <= room) return
+      const over = used - room
+      // own sizes (the drawing's attributes: the coins may still be springing in, scaled)
+      const own = new Map<Element | null, { w: number; h: number }>(pieces().map((p) => [p.parentElement, { w: Number(p.getAttribute('width')), h: Number(p.getAttribute('height')) }]))
+      const sizes = [...coins.children].map((c) => own.get(c) ?? { w: (c as HTMLElement).offsetWidth, h: (c as HTMLElement).offsetHeight })
+      const css = getComputedStyle(scaffold)
+      const width = scaffold.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight)
+      const column = coins.offsetHeight > over ? rowFit(sizes, { w: width, h: coins.offsetHeight - over }, 4) : 0
+      const sum = help.querySelector<HTMLElement>('.tv-hv__chip--total')
+      const high = help.offsetHeight - over
+      const beside = sum && sum.offsetHeight <= high ? rowFit(sizes, { w: width - sum.offsetWidth - (parseFloat(getComputedStyle(help).columnGap) || 0), h: high }, 4) : 0
+      const ch = parseFloat(card.style.getPropertyValue('--ch')) || room
+      const floor = (ch * 0.18) / Math.max(...sizes.map((z) => z.h))
+      // beside the sum only when over it they would get much smaller (a column keeps the help's order)
+      const row = column < 0.6 && beside > column
+      const k = Math.min(1, Math.max(row ? beside : column, floor))
+      if (row) help.classList.add('is-row')
+      if (k >= 1) return
+      for (const p of pieces()) {
+        p.style.width = `${(Number(p.getAttribute('width')) * k).toFixed(2)}px`
+        p.style.height = `${(Number(p.getAttribute('height')) * k).toFixed(2)}px`
+      }
+    }
+    fit()
+    if (typeof ResizeObserver === 'undefined') return
+    // the card, and the task's picture above (its coins fit themselves again when the help comes)
+    const ro = new ResizeObserver(fit)
+    ro.observe(card)
+    for (const c of card.children) if (c !== scaffold) ro.observe(c)
+    return () => ro.disconnect()
+  }, [])
+  return ref
 }
 
 /**

@@ -447,10 +447,22 @@ export function rowFit(sizes: readonly { w: number; h: number }[], room: { w: nu
 }
 
 /**
+ * A piece's box as laid out, with the height its drawing has at that width: a card's max-height
+ * letterboxes a coin (QA3c: 2 kr. drawn as small as 1 kr.), so its box alone says it fits.
+ */
+function drawnSize(el: Element): { w: number; h: number } {
+  const b = el.getBoundingClientRect()
+  const w = Number(el.getAttribute('width'))
+  const h = Number(el.getAttribute('height'))
+  return { w: b.width, h: w > 0 && h > 0 ? Math.max(b.height, (b.width * h) / w) : b.height }
+}
+
+/**
  * Coins and notes on the round's card keep their sizes while they fit it, and get smaller only when
  * they would not (QA3b: twenty halvtredsører in a card the error flow shrinks lay over the stones). The
  * room is the card's inner size and the part of it a scene gets (as round.css gives --scene-h); outside
- * a card (a hint, a demo) nothing changes.
+ * a card (a hint, a demo) nothing changes. The lightbulb's help takes part of the card without changing
+ * its size, so the class that says so fits them again (QA3c: biggestFirst's coins over the card's top).
  */
 function useFitPieces(on: boolean) {
   const ref = useRef<HTMLDivElement>(null)
@@ -467,11 +479,7 @@ function useFitPieces(on: boolean) {
       const ch = card.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom)
       if (!(cw > 0 && ch > 0)) return
       const room = { w: cw - 4, h: ch * (card.classList.contains('has-scaffold') ? 0.4 : 0.94) }
-      const sizes = [...el.children].map((c) => {
-        const b = c.getBoundingClientRect()
-        return { w: b.width, h: b.height }
-      })
-      const k = rowFit(sizes, room)
+      const k = rowFit([...el.children].map(drawnSize), room)
       if (k >= 1) return
       const own = getComputedStyle(el)
       el.style.setProperty('--mm', `${(parseFloat(own.getPropertyValue('--mm')) * k).toFixed(3)}px`)
@@ -480,7 +488,12 @@ function useFitPieces(on: boolean) {
     fit()
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit)
     ro?.observe(card)
-    return () => ro?.disconnect()
+    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(fit)
+    mo?.observe(card, { attributes: true, attributeFilter: ['class'] })
+    return () => {
+      ro?.disconnect()
+      mo?.disconnect()
+    }
   }, [on])
   return ref
 }

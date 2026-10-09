@@ -7,7 +7,7 @@
 // and what was shown counts.
 //
 // Every question is its own TaskStage (keyed by the task), so its beats, timers and voice end with it.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { afterPaint } from '../../../../../app/idle'
 import { playSfx } from '../../../../../audio/sfx'
@@ -82,14 +82,17 @@ export function Ladder({ onEnd }: LadderProps) {
   }, [])
   const onLast = useCallback(() => endRef.current(), [])
   const onHear = useCallback(() => setReplay((n) => n + 1), [])
+  /** The question's error flow is on: the root says so, as a round's does (round.css gives the strategy
+   *  the whole width on a sideways phone, QA3c P2-4). */
+  const [teaching, setTeaching] = useState(false)
 
   return (
-    <div className="tv-round tv-place tv-place--ladder" data-place="ladder">
+    <div className={cx('tv-round tv-place tv-place--ladder', teaching && 'is-teaching')} data-place="ladder">
       <TopBar
         leading={<Button variant="secondary" size="md" icon="flag" clip="s.place.enough" silent onClick={enough} className="tv-place__enough" data-enough="" />}
         onReplay={onHear}
       />
-      {task && <TaskStage key={task.id} task={task} prevKind={lastKind} replay={replay} onHear={onHear} onNext={onNext} onLast={onLast} />}
+      {task && <TaskStage key={task.id} task={task} prevKind={lastKind} replay={replay} onHear={onHear} onNext={onNext} onLast={onLast} onTeaching={setTeaching} />}
     </div>
   )
 }
@@ -134,9 +137,11 @@ interface TaskStageProps {
   onHear(): void
   onNext(): void
   onLast(): void
+  /** Whether the error flow is showing (before paint, so the root's layout changes with it). */
+  onTeaching(on: boolean): void
 }
 
-function TaskStage({ task, prevKind, replay, onHear, onNext, onLast }: TaskStageProps) {
+function TaskStage({ task, prevKind, replay, onHear, onNext, onLast, onTeaching }: TaskStageProps) {
   const speech = useSpeech()
   const module = moduleFor(task)
   const kind = shownKind(task)
@@ -155,6 +160,10 @@ function TaskStage({ task, prevKind, replay, onHear, onNext, onLast }: TaskStage
 
   const beatRef = useRef(beat)
   beatRef.current = beat
+  useLayoutEffect(() => {
+    onTeaching(beat === 'teaching')
+    return () => onTeaching(false)
+  }, [beat, onTeaching])
   const hintRef = useRef(hint)
   hintRef.current = hint
   const timers = useRef(new Set<number>())
