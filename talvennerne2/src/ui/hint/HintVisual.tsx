@@ -190,6 +190,44 @@ function CoinsSum({ ore }: { ore: readonly number[] }) {
   )
 }
 
+/** Where the help's coins go when the card is `over` px too full: the room they have, and the help's. */
+export interface HelpCoinsRoom {
+  /** the help's width */
+  width: number
+  /** the coins' height as they are, and the help's (coins, gap, sum) */
+  coinsH: number
+  helpH: number
+  /** the sum's chip, and the gap beside it */
+  sum: { w: number; h: number } | null
+  gap: number
+  over: number
+  /** the card's inner height (--ch) */
+  ch: number
+}
+
+/**
+ * The scale of the help's coins (at most 1, all by the same factor) and whether they stand beside
+ * their sum: over it, the coins give up what overflows; beside it, the help is as high as the taller of
+ * the two. Beside only when over it they would get much smaller; never smaller than a sixth of the card
+ * for the biggest coin.
+ */
+export function helpCoinsScale(sizes: readonly { w: number; h: number }[], r: HelpCoinsRoom): { k: number; beside: boolean } {
+  const column = r.coinsH > r.over ? rowFit(sizes, { w: r.width, h: r.coinsH - r.over }, 4) : 0
+  const high = r.helpH - r.over
+  const besideK = r.sum && r.sum.h <= high ? rowFit(sizes, { w: r.width - r.sum.w - r.gap, h: high }, 4) : 0
+  const floor = (r.ch * 0.18) / Math.max(1, ...sizes.map((z) => z.h))
+  const beside = column < 0.6 && besideK > column
+  return { k: Math.min(1, Math.max(beside ? besideK : column, floor)), beside }
+}
+
+/** How far an element's content reaches above its own box. */
+function above(el: Element): number {
+  const top = el.getBoundingClientRect().top
+  let high = top
+  for (const d of el.querySelectorAll('*')) high = Math.min(high, d.getBoundingClientRect().top)
+  return top - high
+}
+
 /**
  * The help's pieces, sized as above. What is stacked in the card (the task's picture, the help, the
  * gaps between) may use its padding but for a little, as the picture and the sum stood before; what
@@ -214,25 +252,26 @@ function useFitHelpCoins() {
       const room = card.clientHeight - 8
       const gap = parseFloat(getComputedStyle(card).rowGap) || 0
       const stacked = [...card.children].filter((c): c is HTMLElement => c instanceof HTMLElement && getComputedStyle(c).position !== 'absolute')
-      // (a picture's box may be squeezed below its content, which then overflows it: count the content)
-      const used = stacked.reduce((sum, c) => sum + Math.max(c.offsetHeight, c.scrollHeight), 0) + gap * Math.max(0, stacked.length - 1)
+      // (a picture's box may be squeezed below its content, which then overflows it: count the content,
+      // and what rises above it, as a shop's price tag)
+      const used = stacked.reduce((sum, c) => sum + Math.max(c.offsetHeight, c.scrollHeight) + (c === scaffold ? 0 : above(c)), 0) + gap * Math.max(0, stacked.length - 1)
       if (!(room > 0) || used <= room) return
       const over = used - room
       // own sizes (the drawing's attributes: the coins may still be springing in, scaled)
       const own = new Map<Element | null, { w: number; h: number }>(pieces().map((p) => [p.parentElement, { w: Number(p.getAttribute('width')), h: Number(p.getAttribute('height')) }]))
       const sizes = [...coins.children].map((c) => own.get(c) ?? { w: (c as HTMLElement).offsetWidth, h: (c as HTMLElement).offsetHeight })
       const css = getComputedStyle(scaffold)
-      const width = scaffold.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight)
-      const column = coins.offsetHeight > over ? rowFit(sizes, { w: width, h: coins.offsetHeight - over }, 4) : 0
       const sum = help.querySelector<HTMLElement>('.tv-hv__chip--total')
-      const high = help.offsetHeight - over
-      const beside = sum && sum.offsetHeight <= high ? rowFit(sizes, { w: width - sum.offsetWidth - (parseFloat(getComputedStyle(help).columnGap) || 0), h: high }, 4) : 0
-      const ch = parseFloat(card.style.getPropertyValue('--ch')) || room
-      const floor = (ch * 0.18) / Math.max(...sizes.map((z) => z.h))
-      // beside the sum only when over it they would get much smaller (a column keeps the help's order)
-      const row = column < 0.6 && beside > column
-      const k = Math.min(1, Math.max(row ? beside : column, floor))
-      if (row) help.classList.add('is-row')
+      const { k, beside } = helpCoinsScale(sizes, {
+        width: scaffold.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight),
+        coinsH: coins.offsetHeight,
+        helpH: help.offsetHeight,
+        sum: sum && { w: sum.offsetWidth, h: sum.offsetHeight },
+        gap: parseFloat(getComputedStyle(help).columnGap) || 0,
+        over,
+        ch: parseFloat(card.style.getPropertyValue('--ch')) || room,
+      })
+      if (beside) help.classList.add('is-row')
       if (k >= 1) return
       for (const p of pieces()) {
         p.style.width = `${(Number(p.getAttribute('width')) * k).toFixed(2)}px`

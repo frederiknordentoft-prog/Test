@@ -117,10 +117,15 @@
 .tv-round__scaffold .tv-cols {
   font-size: min(26px, calc(var(--ch) * 0.09));
 }
+/* the help's coins are sized together by HintVisual's CoinsSum, never each by the card (a cap per coin
+   drew a 2-krone as small as a 1-krone, QA3c P2-2) */
+.tv-round__scaffold .tv-hv__coins svg {
+  max-height: none;
+}
 /* The shop's thing and its price tag in a short card (the help, the error flow on an iPhone SE): the
    thing as big as the picture's height takes with its padding, and the tag sized and placed with it,
-   so it stays on the thing in the card instead of over the stones (QA3c P2-5). With room they are
-   as in scenes.css: a 96 px thing, a 22 px tag. */
+   so it stays on the thing in the card instead of over the stones (QA3c P2-5), and can still be read.
+   With room they are as in scenes.css: a 96 px thing, a 22 px tag. */
 .tv-round__card .tv-shop__item {
   --thing: min(96px, calc(var(--scene-h) * 0.82));
   padding: min(10px, calc(var(--thing) * 0.105));
@@ -134,7 +139,7 @@
   padding: min(6px, calc(var(--thing) * 0.063)) min(10px, calc(var(--thing) * 0.105));
   border-radius: min(10px, calc(var(--thing) * 0.105));
   box-shadow: 0 min(4px, calc(var(--thing) * 0.042)) 0 var(--color-star-lip);
-  font-size: min(22px, calc(var(--thing) * 0.23));
+  font-size: max(11px, min(22px, calc(var(--thing) * 0.23)));
 }
 
 /* The companion strip */
