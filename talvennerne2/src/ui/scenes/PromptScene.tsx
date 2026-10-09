@@ -281,15 +281,7 @@ function scene({ prompt: p, task, entry, entries, given, slot = 'empty', replay 
     case 'coins':
       return <CoinRow ore={p.ore} fit />
     case 'shop':
-      return (
-        <div className="tv-shop">
-          <span className="tv-shop__item">
-            <Thing id={p.thing} size={96} />
-            <span className="tv-shop__tag">{formatMoney(p.priceOre)}</span>
-          </span>
-          {p.paidOre !== undefined && <CoinRow ore={piecesForAmount(p.paidOre)} small />}
-        </div>
-      )
+      return <Shop thing={p.thing} priceOre={p.priceOre} paidOre={p.paidOre} />
     case 'ruler':
       return <RulerScene object={p.object} startCm={p.startCm} lengthCm={p.lengthCm} />
     case 'unitsRow':
@@ -496,6 +488,53 @@ function useFitPieces(on: boolean) {
     }
   }, [on])
   return ref
+}
+
+/**
+ * The shop's thing with its price tag (and what is paid). On the round's card they keep their size while
+ * they stay in it, and only when the tag or the thing would reach past the card (the help under them,
+ * the error flow on an iPhone SE) does the shop say so (is-tight): round.css then sizes them by the
+ * picture's height (QA3c P2-5). Measured at their own size each time the card changes; up and down only
+ * (the card slides in sideways).
+ */
+function Shop({ thing, priceOre, paidOre }: { thing: Parameters<typeof Thing>[0]['id']; priceOre: number; paidOre?: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    const card = el?.closest<HTMLElement>('.tv-round__card')
+    if (!el || !card) return
+    const fit = () => {
+      el.classList.remove('is-tight')
+      const c = card.getBoundingClientRect()
+      if (!(c.height > 0)) return
+      let top = Infinity
+      let bottom = -Infinity
+      for (const d of el.querySelectorAll('.tv-shop__item, .tv-shop__tag')) {
+        const b = d.getBoundingClientRect()
+        top = Math.min(top, b.top)
+        bottom = Math.max(bottom, b.bottom)
+      }
+      if (top < c.top || bottom > c.bottom) el.classList.add('is-tight')
+    }
+    fit()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit)
+    ro?.observe(card)
+    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(fit)
+    mo?.observe(card, { attributes: true, attributeFilter: ['class'] })
+    return () => {
+      ro?.disconnect()
+      mo?.disconnect()
+    }
+  }, [])
+  return (
+    <div ref={ref} className="tv-shop">
+      <span className="tv-shop__item">
+        <Thing id={thing} size={96} />
+        <span className="tv-shop__tag">{formatMoney(priceOre)}</span>
+      </span>
+      {paidOre !== undefined && <CoinRow ore={piecesForAmount(paidOre)} small />}
+    </div>
+  )
 }
 
 function CoinRow({ ore, small, fit = false }: { ore: number[]; small?: boolean; fit?: boolean }) {
