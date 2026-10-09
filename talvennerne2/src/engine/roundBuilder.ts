@@ -119,6 +119,14 @@ export interface RoundOptions {
   newCaps?: NewCaps
   /** Keys to ask before anything else of their kind (Træningshytte: the families missed in the trial). */
   focus?: ReadonlySet<MasteryKey>
+  /**
+   * A map stone: its own keys (`keys` that are not review-only) are at least this share of a round
+   * today's allowance did not stop, repeated where it has too few, before other skills' review fills
+   * the rest (QA3c P2-1, SPEC A15). Omitted: no share is kept (Blandet øvelse, the hut).
+   */
+  ownShareMin?: number
+  /** Filled in by buildRound: whether today's allowance of new keys stopped the round (A13). */
+  report?: { capped: boolean }
 }
 
 export function pickKind(opt: KeyOption, state: KeyState | undefined, rng: Rng, mode: RoundOptions['production'] = 'normal'): TaskKind {
@@ -363,83 +371,125 @@ function buildArcRound(o: RoundOptions, plan: SlotPlan): Task[] {
   const tasteLeft = o.newCaps?.taste ?? TASTE_PER_DAY
   const tasting = isCapped() && !keys.some(seen) && tasteLeft > 0
   const taste = tasting ? fresh.slice(0, Math.min(TASTE_KEYS, tasteLeft)) : []
+  // today's allowance stops the round before it starts (or once it has taken what was left, below)
+  const cappedAtStart = isCapped()
+  // the stone's own keys: its skills, not the ones it only reviews (PlannedRound.ownShare)
+  const isOwn = (k: KeyOption) => nodeKeySet.has(k.key) && !k.reviewOnly
+  const ownOf = () => picks.filter((p) => isOwn(p.opt)).length
 
-  // opener: the most secure key, else the lowest rank (a taste opens on the surest key around)
-  const opener = secure.length > 0
-    ? [...secure].sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct || a.rank - b.rank)[0]
-    : [...keys].filter((k) => seen(k) || (!k.reviewOnly && totalLeft > 0 && capOf(k.skill) > 0)).sort((a, b) => a.rank - b.rank)[0]
-      ?? (tasting ? [...fromRegion(), ...fromChain(), ...others].filter((k) => box(k) >= 3).sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct)[0] ?? taste[0] : undefined)
-  take(opener, 'opener', !!opener && taste.includes(opener))
-  for (const k of taste) take(k, 'fresh', true)
-  // A child who has met nothing here yet ends the round on the opener again (the last task is never
-  // a first meeting): its answer is asked twice.
-  const nothingSeen = !keys.some(seen) && !(o.reviewKeys ?? []).some(seen)
-  if (nothingSeen && opener?.answer !== undefined) answers.set(opener.answer, uses(opener) + 1)
+  /**
+   * Picks the round's keys, from the opener to the repeats; false for an empty round. `ownFirst`
+   * (QA3c P2-1, SPEC A15): the stone's own keys come before other skills' review — the keys a node
+   * only reviews wait with the rest of review, and the own keys are repeated until they are
+   * `ownShareMin` of the round before review fills it. Only a round that came out under that share
+   * without today's allowance stopping it is picked again this way; every other round is as before.
+   */
+  function pickKeys(ownFirst: boolean): { capped: boolean } | false {
+    totalLeft = o.newCaps ? o.newCaps.total : Number.POSITIVE_INFINITY
+    skillLeft.clear()
+    picks.length = 0
+    taken.clear()
+    answers.clear()
+    const mine = (pool: readonly KeyOption[]) => (ownFirst ? pool.filter((k) => !k.reviewOnly) : pool)
+    const shakyKeys = mine(shaky)
+    const secureKeys = mine(secure)
+    const dueSecureKeys = mine(dueSecure)
 
-  // the keys the round is for (the hut's missed families) come first, weakest first
-  let shakyWant = plan.shaky
-  if (focus.size > 0) shakyWant -= takeN(keys.filter((k) => focus.has(k.key) && seen(k)).sort((a, b) => box(a) - box(b)), shakyWant, 'shaky')
+    // opener: the most secure key, else the lowest rank (a taste opens on the surest key around)
+    const opener = secure.length > 0
+      ? [...secure].sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct || a.rank - b.rank)[0]
+      : [...keys].filter((k) => seen(k) || (!k.reviewOnly && totalLeft > 0 && capOf(k.skill) > 0)).sort((a, b) => a.rank - b.rank)[0]
+        ?? (tasting ? [...fromRegion(), ...fromChain(), ...others].filter((k) => box(k) >= 3).sort((a, b) => box(b) - box(a) || st(b).correct - st(a).correct)[0] ?? taste[0] : undefined)
+    take(opener, 'opener', !!opener && taste.includes(opener))
+    for (const k of taste) take(k, 'fresh', true)
+    // A child who has met nothing here yet ends the round on the opener again (the last task is never
+    // a first meeting): its answer is asked twice.
+    const nothingSeen = !keys.some(seen) && !(o.reviewKeys ?? []).some(seen)
+    if (nothingSeen && opener?.answer !== undefined) answers.set(opener.answer, uses(opener) + 1)
 
-  // targeted: a task that can show a flagged misconception, else one more shaky key
-  if (plan.targeted > 0) {
-    const flagged = o.flagged ?? []
-    const aim = flagged.length > 0 ? [...shaky, ...secure].filter((k) => k.detectable?.some((m) => flagged.includes(m))) : []
-    shakyWant += plan.targeted - takeN(aim, plan.targeted, 'targeted')
+    // the keys the round is for (the hut's missed families) come first, weakest first
+    let shakyWant = plan.shaky
+    if (focus.size > 0) shakyWant -= takeN(keys.filter((k) => focus.has(k.key) && seen(k)).sort((a, b) => box(a) - box(b)), shakyWant, 'shaky')
+
+    // targeted: a task that can show a flagged misconception, else one more shaky key
+    if (plan.targeted > 0) {
+      const flagged = o.flagged ?? []
+      const aim = flagged.length > 0 ? [...shakyKeys, ...secureKeys].filter((k) => k.detectable?.some((m) => flagged.includes(m))) : []
+      shakyWant += plan.targeted - takeN(aim, plan.targeted, 'targeted')
+    }
+
+    const got = takeN(shakyKeys, shakyWant, 'shaky')
+    takeN(dueSecureKeys, shakyWant - got, 'secure')
+    takeFresh(plan.fresh)
+
+    // review: a due key the child is sure of, from another skill — spacing across the curriculum
+    const reviewPool = others.filter((k) => box(k) >= 3 && due(k)).sort((a, b) => st(a).lastRound - st(b).lastRound || box(b) - box(a))
+    takeN(reviewPool, plan.review, 'review')
+    takeN(secureKeys, plan.secure - 1, 'secure')
+
+    // backfill in order of usefulness; a tired child gets the sure things first
+    const backfill: [readonly KeyOption[], Slot][] = o.tone === 'fatigue'
+      ? [[secureKeys, 'secure'], [shakyKeys, 'shaky'], [fresh, 'fresh']]
+      : [[shakyKeys, 'shaky'], [fresh, 'fresh'], [dueSecureKeys, 'secure'], [secureKeys, 'secure']]
+    for (const [pool, slot] of backfill) {
+      if (pool === fresh) takeFresh(size - picks.length)
+      else takeN(pool, size - picks.length, slot)
+    }
+    // With the allowance used up, the region's own seen keys come next, then the chain's; review after
+    // them, and last every seen key of the started skills (consolidation, shaky ones too).
+    const capped = isCapped()
+    if (capped) {
+      takeN(fromRegion().filter((k) => box(k) < 3), size - picks.length, 'shaky')
+      takeN(fromRegion().filter((k) => box(k) >= 3), size - picks.length, 'secure')
+      takeN(fromChain(), size - picks.length, 'review')
+    }
+    const repeated = new Map<MasteryKey, number>()
+    const again = (p: Pick) => repeated.get(p.opt.key) ?? 0
+    const repeat = (cycle: readonly Pick[], more: () => boolean = () => true) => {
+      while (picks.length < size && more()) {
+        // with the allowance used up a key is asked at most CAPPED_REPEAT_MAX times: a shorter round
+        // rather than the same question again and again (UI-fund 16)
+        // (every key of the cycle is in the round once, plus its repeats)
+        const open = capped ? cycle.filter((p) => 1 + again(p) < CAPPED_REPEAT_MAX) : cycle
+        if (open.length === 0) break
+        // the answer asked least so far, then the key repeated least, then the cycle's order
+        const opt = open.reduce((best, p) => (uses(p.opt) < uses(best.opt) || (uses(p.opt) === uses(best.opt) && again(p) < again(best)) ? p : best)).opt
+        picks.push({ opt, slot: 'repeat', kind: 'choice' })
+        repeated.set(opt.key, (repeated.get(opt.key) ?? 0) + 1)
+        if (opt.answer !== undefined) answers.set(opt.answer, uses(opt) + 1)
+      }
+    }
+    if (ownFirst) {
+      // a stone with few keys of its own asks them again (each time another way where it can)
+      const want = Math.ceil((o.ownShareMin ?? 0) * size)
+      const own = picks.filter((p) => isOwn(p.opt))
+      repeat([...rng.shuffle(own.filter((p) => p.slot !== 'opener')), ...own.filter((p) => p.slot === 'opener')], () => ownOf() < want)
+    }
+    takeN([...others].sort((a, b) => Number(due(b)) - Number(due(a)) || box(b) - box(a)), size - picks.length, 'review')
+    if (capped) takeN(seenOf(o.startedKeys), size - picks.length, 'review')
+
+    // A round is never empty: with today's allowance used up and nothing else to ask, the node's
+    // first keys are introduced anyway.
+    if (picks.length === 0) for (const k of fresh.slice(0, Math.min(2, size))) take(k, picks.length ? 'fresh' : 'opener', true)
+    if (picks.length === 0) return false
+
+    // Early nodes hold only a handful of keys. Repeating them inside one round is the practice, not
+    // padding; a repeat is shown another way where the key allows it, and the answers asked least
+    // are repeated first. (A round with repeats ends on one of them, not on the opener again.)
+    if (nothingSeen && picks.length < size && opener?.answer !== undefined) answers.set(opener.answer, uses(opener) - 1)
+    const originals = rng.shuffle(picks.filter((p) => p.slot !== 'opener' && p.slot !== 'repeat'))
+    repeat(originals.length > 0 ? [...originals, picks[0]] : [picks[0]])
+    return { capped }
   }
 
-  const got = takeN(shaky, shakyWant, 'shaky')
-  takeN(dueSecure, shakyWant - got, 'secure')
-  takeFresh(plan.fresh)
-
-  // review: a due key the child is sure of, from another skill — spacing across the curriculum
-  const reviewPool = others.filter((k) => box(k) >= 3 && due(k)).sort((a, b) => st(a).lastRound - st(b).lastRound || box(b) - box(a))
-  takeN(reviewPool, plan.review, 'review')
-  takeN(secure, plan.secure - 1, 'secure')
-
-  // backfill in order of usefulness; a tired child gets the sure things first
-  const backfill: [readonly KeyOption[], Slot][] = o.tone === 'fatigue'
-    ? [[secure, 'secure'], [shaky, 'shaky'], [fresh, 'fresh']]
-    : [[shaky, 'shaky'], [fresh, 'fresh'], [dueSecure, 'secure'], [secure, 'secure']]
-  for (const [pool, slot] of backfill) {
-    if (pool === fresh) takeFresh(size - picks.length)
-    else takeN(pool, size - picks.length, slot)
+  let picked = pickKeys(false)
+  if (!picked) return []
+  // A stone's own keys are at least half of a round today's allowance did not stop (QA3c P2-1, A15)
+  if (o.ownShareMin !== undefined && !cappedAtStart && !picked.capped && keys.some((k) => !k.reviewOnly) && ownOf() < o.ownShareMin * picks.length) {
+    picked = pickKeys(true)
+    if (!picked) return []
   }
-  // With the allowance used up, the region's own seen keys come next, then the chain's; review after
-  // them, and last every seen key of the started skills (consolidation, shaky ones too).
-  const capped = isCapped()
-  if (capped) {
-    takeN(fromRegion().filter((k) => box(k) < 3), size - picks.length, 'shaky')
-    takeN(fromRegion().filter((k) => box(k) >= 3), size - picks.length, 'secure')
-    takeN(fromChain(), size - picks.length, 'review')
-  }
-  takeN([...others].sort((a, b) => Number(due(b)) - Number(due(a)) || box(b) - box(a)), size - picks.length, 'review')
-  if (capped) takeN(seenOf(o.startedKeys), size - picks.length, 'review')
-
-  // A round is never empty: with today's allowance used up and nothing else to ask, the node's
-  // first keys are introduced anyway.
-  if (picks.length === 0) for (const k of fresh.slice(0, Math.min(2, size))) take(k, picks.length ? 'fresh' : 'opener', true)
-  if (picks.length === 0) return []
-
-  // Early nodes hold only a handful of keys. Repeating them inside one round is the practice, not
-  // padding; a repeat is shown another way where the key allows it, and the answers asked least
-  // are repeated first. (A round with repeats ends on one of them, not on the opener again.)
-  if (nothingSeen && picks.length < size && opener?.answer !== undefined) answers.set(opener.answer, uses(opener) - 1)
-  const originals = rng.shuffle(picks.filter((p) => p.slot !== 'opener'))
-  const cycle = originals.length > 0 ? [...originals, picks[0]] : [picks[0]]
-  const repeated = new Map<MasteryKey, number>()
-  const again = (p: Pick) => repeated.get(p.opt.key) ?? 0
-  while (picks.length < size) {
-    // with the allowance used up a key is asked at most CAPPED_REPEAT_MAX times: a shorter round
-    // rather than the same question again and again (UI-fund 16)
-    // (every key of the cycle is in the round once, plus its repeats)
-    const open = capped ? cycle.filter((p) => 1 + again(p) < CAPPED_REPEAT_MAX) : cycle
-    if (open.length === 0) break
-    // the answer asked least so far, then the key repeated least, then the cycle's order
-    const opt = open.reduce((best, p) => (uses(p.opt) < uses(best.opt) || (uses(p.opt) === uses(best.opt) && again(p) < again(best)) ? p : best)).opt
-    picks.push({ opt, slot: 'repeat', kind: 'choice' })
-    repeated.set(opt.key, (repeated.get(opt.key) ?? 0) + 1)
-    if (opt.answer !== undefined) answers.set(opt.answer, uses(opt) + 1)
-  }
+  if (o.report) o.report.capped = cappedAtStart || picked.capped
 
   // Kinds. Some are given: trials and the opener on cards, a tired child on cards, a key far enough
   // asked the hard way. Of the rest, OTHER_KIND_SHARE are asked in one of the node's other kinds,
