@@ -8,7 +8,7 @@
 // the question ('operand') and near misses (± 2). A value with two explanations is 'ambiguous' (A9:
 // 12 : 3 → 3 is the quotient − 1 and the 3 of the question).
 // Hint: the times table backwards over the array of q rows of d — "Hvad gange otte giver seksoghalvtreds?
-// Syv gange otte giver seksoghalvtreds. Så giver seksoghalvtreds divideret med otte syv." tableNeighbour
+// Syv gange otte giver seksoghalvtreds. Seksoghalvtreds divideret med otte giver syv." tableNeighbour
 // checks the answer by multiplying ("Prøv at gange dit svar med otte. Det skal give seksoghalvtreds.",
 // animated, SPEC §4.3); wrongOperation says what dividing is ("Divideret med betyder, at vi deler i lige
 // store dele."). div2510 comes first and bridges "divideret med" to "delt med"; here it is known.

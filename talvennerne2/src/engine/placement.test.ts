@@ -4,6 +4,8 @@ import {
   seedFromPlacement, seedStage, startPlacement, stageOf, type PlacementRun,
 } from './placement'
 import { placedStart } from './ladder'
+import { REGIONS, REGION_BY_ID, nodesOfRegion } from '../content/curriculum'
+import { isRegionOpen, isWorldOpen } from '../meta/unlock'
 import { factsOf, makeRegistry, skillKeys, skillRegistry } from './registry'
 import { FIXTURE_SKILLS, addTo10Fixture, hear20Fixture } from './testing/fixtureSkills'
 import { standIn } from './testing/ladderSkills'
@@ -135,7 +137,9 @@ describe('seeding from placement', () => {
 
   it('opens the regions below P with their lessons skipped, and the worlds around them', () => {
     const p = seedFromPlacement(newProfile(), 'L5', { skills: fixtures, day: DAY, now: NOW })
-    expect(p.unlocked.regions).toEqual(['w0-tal10', 'w0-former', 'w0-plus10', 'w0-tal20', 'w0-minus10', 'w0-tiervenner'])
+    // only the chain tal: Formhaven (figurer) is learned as normal (QA3b)
+    expect(p.unlocked.regions).toEqual(['w0-tal10', 'w0-plus10', 'w0-tal20', 'w0-minus10', 'w0-tiervenner'])
+    expect(p.nodes['w0-former-l1']).toBeUndefined()
     expect(p.unlocked.worlds).toEqual(['eng', 'bakke'])
     expect(p.nodes['w0-plus10-l1']).toMatchObject({ skipped: true, plays: 0 })
     expect(p.nodes['w0-plus10-mix']).toMatchObject({ skipped: true })
@@ -171,6 +175,44 @@ describe('seeding from placement', () => {
     expect(p.placement).toEqual({ done: true, at: NOW, highest: null })
   })
 
+  it('does not seed a rung the child did not pass, even below P, and keeps it in placement.failed (QA3b)', () => {
+    // 3. klasse: L5 right, right → L7 a miss → a step down to L6: right, right; L7 is missed, so the ladder stops
+    let run = startPlacement(3, 5, true)!
+    for (const r of [true, true, false, true, true]) run = answerPlacement(run, r)
+    expect([run.passed, run.failed, run.done, placementResult(run)]).toEqual([['L5', 'L6'], ['L7'], true, 'L6'])
+    expect(seedStage('L6')).toBeGreaterThan(stageOf('L7'))
+    const p = seedFromPlacement(newProfile(), 'L6', { skills: ladderReg, day: DAY, now: NOW }, run.failed)
+    expect(p.placement).toEqual({ done: true, at: NOW, highest: 'L6', failed: ['L7'] })
+    expect(skillKeys(ladderReg.get('hear100')!).some((id) => p.keys[id]), 'hear100').toBe(false)
+    for (const skill of ['addTo20', 'subTo20', 'subTo10'] as const) {
+      for (const id of skillKeys(ladderReg.get(skill)!)) expect(p.keys[id], id).toMatchObject({ box: 2, seeded: true })
+    }
+    // Hundredemarken is not passed over: its lessons wait, and the first round starts there
+    expect(nodesOfRegion('w1-tal100').some((n) => p.nodes[n.id]?.skipped)).toBe(false)
+    expect(p.unlocked.regions).not.toContain('w1-tal100')
+    expect(placedStart(p.placement)).toMatchObject({ region: 'w1-tal100', world: 'bakke' })
+    expect(isRegionOpen(p, 'w1-tal100')).toBe(true)
+    // without one missed, as before: hear100 seeded and Hundredemarken passed over
+    const before = seedFromPlacement(newProfile(), 'L6', { skills: ladderReg, day: DAY, now: NOW })
+    expect(before.placement).toEqual({ done: true, at: NOW, highest: 'L6' })
+    expect(skillKeys(ladderReg.get('hear100')!).every((id) => before.keys[id]?.seeded)).toBe(true)
+    // a ladder that ended by itself with nothing passed: P = null, nothing seeded, the misses kept
+    const none = seedFromPlacement(newProfile(), null, { skills: ladderReg, day: DAY, now: NOW }, ['L5', 'L4'])
+    expect(none.placement).toEqual({ done: true, at: NOW, highest: null, failed: ['L5', 'L4'] })
+    expect(placedStart(none.placement)).toMatchObject({ region: 'w0-tal10', world: 'eng' })
+  })
+
+  it('opens the start region and its world, without the grade\'s openings, for every P', () => {
+    for (const c of LADDER) {
+      const p = seedFromPlacement(newProfile(), c.id, { skills: fixtures, day: DAY, now: NOW })
+      const start = placedStart(p.placement)!
+      expect(isWorldOpen(p, start.world), c.id).toBe(true)
+      expect(isRegionOpen(p, start.region), c.id).toBe(true)
+      // the regions of the other chains are not opened by the placement: the grade opens their worlds
+      expect(p.unlocked.regions.filter((r) => REGION_BY_ID[r].chain !== 'tal'), c.id).toEqual([])
+    }
+  })
+
   it('passes over exactly the regions it opens with their lessons skipped (passedOver, which the map reads)', () => {
     for (const c of LADDER) {
       const p = seedFromPlacement(newProfile(), c.id, { skills: fixtures, day: DAY, now: NOW })
@@ -185,7 +227,7 @@ describe('seeding from placement', () => {
 describe('where a placed child starts (SPEC A24, review app-w3-r1 P2-4)', () => {
   const done = (highest: string | null) => ({ done: true, at: 1, highest })
 
-  it('in the first region the placement did not pass over, in the world P belongs to', () => {
+  it('in the first region of the chain tal the placement did not pass over, and its world', () => {
     const starts = Object.fromEntries(LADDER.map((c) => [c.id, placedStart(done(c.id))!.region]))
     expect(starts).toEqual({
       L1: 'w0-tal10', L2: 'w0-tal10', L3: 'w0-tal10', L4: 'w0-minus10',
@@ -193,13 +235,47 @@ describe('where a placed child starts (SPEC A24, review app-w3-r1 P2-4)', () => 
       L9: 'w2-tal1000', L10: 'w2-tal1000', L11: 'w2-tal1000', L12: 'w2-gange',
       L13: 'w3-tabellen', L14: 'w3-tabellen',
     })
-    expect(placedStart(done('L4'))).toMatchObject({ world: 'eng', over: new Set(['w0-tal10', 'w0-former', 'w0-plus10', 'w0-tal20']) })
+    expect(placedStart(done('L4'))).toMatchObject({ world: 'eng', over: new Set(['w0-tal10', 'w0-plus10', 'w0-tal20']) })
     expect(placedStart(done('L5'))!.world).toBe('bakke')
     // all of it (L14): Tabeltoppen, where the grade starts a child in 3. klasse anyway
     expect(placedStart(done('L14'))).toMatchObject({ region: 'w3-tabellen', world: 'fjeld' })
-    expect(placedStart(done('L14'))!.over).toEqual(new Set([...passedOver('L13'), 'w3-store-tal', 'w3-penge-maal']))
+    // Markedet (pengeMaal) is never passed over: the ladder asks about numbers only (QA3b)
+    expect(placedStart(done('L14'))!.over).toEqual(new Set([...passedOver('L13'), 'w3-store-tal']))
     // nothing passed: nothing passed over
     expect(placedStart(done(null))).toMatchObject({ region: 'w0-tal10', world: 'eng', over: new Set() })
+  })
+
+  it('passes over regions of the chain tal only, and starts in one (QA3b: never in Engdalen\'s shapes)', () => {
+    const tal = new Set(REGIONS.filter((r) => r.chain === 'tal').map((r) => r.id))
+    for (const c of LADDER) {
+      const over = passedOver(c.id)
+      expect(over.filter((r) => !tal.has(r)), c.id).toEqual([])
+      expect(over, c.id).not.toContain('w3-penge-maal')
+      const start = placedStart(done(c.id))!
+      expect(REGION_BY_ID[start.region].chain, c.id).toBe('tal')
+      expect(start.world, c.id).toBe(REGION_BY_ID[start.region].world)
+      // the first region of the chain tal not passed over
+      const i = REGIONS.findIndex((r) => r.id === start.region)
+      expect(start.over.has(start.region), c.id).toBe(false)
+      expect(REGIONS.slice(0, i).filter((r) => tal.has(r.id) && !start.over.has(r.id)), c.id).toEqual([])
+    }
+    for (const r of ['w0-former', 'w1-figurer', 'w1-klokken', 'w1-maal-penge', 'w2-klokken', 'w2-penge', 'w2-maal-data', 'w2-figurer', 'w3-penge-maal']) {
+      expect(LADDER.some((c) => passedOver(c.id).includes(r as never)), r).toBe(false)
+    }
+  })
+
+  it('never passes over the region of a rung the child did not pass (QA3b: L6 with L7 missed)', () => {
+    expect(passedOver('L6')).toContain('w1-tal100')
+    expect(passedOver('L6', ['L7'])).not.toContain('w1-tal100')
+    expect(placedStart({ done: true, at: 1, highest: 'L6', failed: ['L7'] })).toMatchObject({ region: 'w1-tal100', world: 'bakke' })
+    // without sound L8 (tensOnes, Hundredemarken too) is the rung above L6
+    expect(placedStart({ done: true, at: 1, highest: 'L6', failed: ['L8'] })!.region).toBe('w1-tal100')
+    // a rung missed above P changes nothing below it
+    expect(passedOver('L5', ['L7', 'L6'])).toEqual(passedOver('L5').filter((r) => r !== 'w1-tal100'))
+    expect(placedStart({ done: true, at: 1, highest: 'L5', failed: ['L7', 'L6'] })!.region).toBe('w1-tal100')
+    expect(placedStart({ done: true, at: 1, highest: 'L4', failed: ['L5'] })!.region).toBe('w0-minus10')
+    // a stored placement from before the field: as with none missed
+    expect(placedStart({ done: true, at: 1, highest: 'L6' })!.region).toBe('w1-tieren')
   })
 
   it('only after a finished placement: skipped, stopped before the first answer, or never offered', () => {

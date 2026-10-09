@@ -6,6 +6,7 @@ import { skillRegistry } from '../../../../engine/registry'
 import { buildDashboard } from '../../../../parent/dashboard'
 import { ago, answers, dailyFrom, key, keysAt, misconception, profile, snap, source, TODAY } from '../../../../parent/fixtures'
 import { keyIndexOf } from '../../../../parent/load'
+import { RELEASED_WORLDS } from '../../../../meta/built'
 import type { Dashboard } from '../../../../parent/types'
 import { StatusDot, TableGridView } from './charts'
 import { CurriculumTab } from './CurriculumTab'
@@ -104,14 +105,20 @@ describe('dashboard views', () => {
     expect(html).toContain('Klassetrin')
     expect(html.match(/data-set-grade="/g)).toHaveLength(4)
     expect(html).toMatch(/aria-pressed="true"[^>]*data-set-grade="1"/)
-    expect(html).toContain('Alle børn starter i Engdalen')
     expect(html).toContain('Verdener og steder')
     expect(html).toContain('data-world-row="eng"')
     expect(html).toContain('Tiervennernes hule')
-    // Hestebakkerne and Regnbueskoven are released and can be opened; Stjernefjeldet comes later
+    // the released worlds can be opened; until Stjernefjeldet is released it "comes later"
     expect(html).toContain('Åbn hele Hestebakkerne')
     expect(html).toContain('Åbn hele Regnbueskoven')
-    expect(html).toContain('Verdenen kommer i en senere version.')
+    if (RELEASED_WORLDS.has('fjeld')) {
+      expect(html).toContain('Børn i 0.–2. klasse starter i Engdalen')
+      expect(html).toContain('Åbn hele Stjernefjeldet')
+      expect(html).not.toContain('senere version')
+    } else {
+      expect(html).toContain('Alle børn starter i Engdalen')
+      expect(html).toContain('Verdenen kommer i en senere version.')
+    }
   })
 
   it('draw the 10 · 10 table with the products in its titles', () => {

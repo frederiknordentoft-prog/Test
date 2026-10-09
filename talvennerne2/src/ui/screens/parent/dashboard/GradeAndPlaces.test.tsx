@@ -12,6 +12,8 @@ import { worldReady, type Drawn } from './openings'
 const registered = new Set(skillRegistry().all.map((d) => d.id))
 /** A build where every world is drawn and released: Stjernefjeldet is ready. */
 const ALL_READY: Drawn = { species: new Set(SPECIES_IDS), items: new Set(ITEMS.map((i) => i.id)), released: new Set(WORLD_IDS) }
+/** The same build before Stjernefjeldet is released (independent of RELEASED_WORLDS today). */
+const NOT_YET: Drawn = { ...ALL_READY, released: new Set(WORLD_IDS.filter((w) => w !== 'fjeld')) }
 
 const grade = (drawn?: Drawn, grade: 0 | 1 | 2 | 3 = 1) =>
   renderToStaticMarkup(<GradeSection profile={profile({ grade })} registered={registered} drawn={drawn} />)
@@ -21,9 +23,9 @@ const panel = (html: string, world: string) => html.split('data-world-row="').fi
 
 describe('where a child starts (GradeSection)', () => {
   it('says that everyone starts in Engdalen while Stjernefjeldet is not ready', () => {
-    expect(worldReady('fjeld', registered)).toBe(false)
+    expect(worldReady('fjeld', registered, NOT_YET)).toBe(false)
     for (const g of [0, 1, 2, 3] as const) {
-      const html = grade(undefined, g)
+      const html = grade(NOT_YET, g)
       expect(html).toContain('Alle børn starter i Engdalen. Fra 1. klasse åbner klassetrinnet alle steder i verdenerne under det.')
       expect(html).not.toContain('indtil indplaceringen er klar')
       expect(html).not.toContain('vise Pip')
@@ -42,8 +44,8 @@ describe('where a child starts (GradeSection)', () => {
 })
 
 describe('worlds that are not there yet (PlacesSection)', () => {
-  it('says "kommer i en senere version" only about a world that is not ready: Stjernefjeldet today', () => {
-    const html = places()
+  it('says "kommer i en senere version" only about a world that is not ready: Stjernefjeldet before its release', () => {
+    const html = places(NOT_YET)
     expect(html.match(/Verdenen kommer i en senere version/g)).toHaveLength(1)
     expect(panel(html, 'fjeld')).toContain('Verdenen kommer i en senere version.')
     for (const w of ['eng', 'bakke', 'skov']) expect(panel(html, w)).not.toContain('senere version')

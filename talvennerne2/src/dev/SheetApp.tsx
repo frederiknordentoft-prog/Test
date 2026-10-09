@@ -15,6 +15,7 @@ import type { RigProps } from '../art/rig/Rig'
 import EngScene, { ENG_REGIONS } from '../art/scenes/eng'
 import BakkeScene, { BAKKE_REGIONS } from '../art/scenes/bakke'
 import SkovScene, { SKOV_REGIONS } from '../art/scenes/skov'
+import FjeldScene, { FJELD_REGIONS } from '../art/scenes/fjeld'
 import type { RegionTier } from '../meta/rewards'
 import type { MapSceneProps } from '../ui/screens/child/map/Backdrop'
 import { MOODS, NATURAL_COLORWAYS, SPECIES_IDS, STAGES } from '../art/rig/types'
@@ -501,13 +502,13 @@ function SizesSheet({ def }: { def: SpeciesDef }) {
 // ---------------------------------------------------------------------------------------------
 // silhouettes: alle arter og racer i sort, uden navne, i fast "tilfældig" rækkefølge
 
-const BLIND_SALT = 10.4
+const BLIND_SALT = 22.1
 
 function SilhouettesSheet() {
   const all: { def: SpeciesDef; b: BreedId; s: Stage }[] = []
   for (const def of SPECIES) for (const b of def.breeds) for (const s of [2, 1, 3] as Stage[]) all.push({ def, b: b.id, s })
   // Deterministisk bland (så arket ikke ændrer sig mellem kørsler). BLIND_SALT skiftes for hver blind runde,
-  // så numrene ikke kan kendes fra et tidligere blindark (r4–r5: 4,1; r6: 6,2; r7: 8,3; r8: 10,4).
+  // så numrene ikke kan kendes fra et tidligere blindark (r4–r5: 4,1; r6: 6,2; r7: 8,3; r8: 10,4; for-test 3. kl. 12,5–18,8; r9: 20,9; r9b: 22,1).
   const order = all.map((x, i) => ({ x, k: Math.sin(i * 12.9898 + BLIND_SALT) * 43758.5453 })).sort((p, q) => (p.k % 1) - (q.k % 1))
   return (
     <Page title="Silhuetter" sub="Sort fyld, uden navne (blind silhuettest). Nummereret, ikke navngivet.">
@@ -537,6 +538,10 @@ const HOLES_LINTED: Partial<Record<string, 'strict' | 'thin'>> = {
   rabbit: 'strict', cat: 'thin', horse: 'thin', unicorn: 'thin', puppy: 'thin', hedgehog: 'thin',
   // Bølge 2 (review G2-r1 §1.4): lommerne mellem løftet pote eller vinge og kind eller krop er fyldt.
   lamb: 'thin', fox: 'thin', hamster: 'thin', panda: 'thin', squirrel: 'thin', owl: 'thin',
+  // Bølge 3 (Stjernefjeldet): vingerne ligger bag kroppen og fylder lommerne mellem løftet ben, kind og krop.
+  pegasus: 'thin', dragon: 'thin',
+  // Pingvinens luffer og isbjørnens forben: lommerne mod kind, snude og krop er fyldt med pels i stillbilleder.
+  penguin: 'thin', polarbear: 'thin',
 }
 
 function HolesSheet() {
@@ -828,6 +833,10 @@ const SKOV_MIXED: MapSceneProps['tiers'] = {
   [SKOV_REGIONS.mountain]: 'gold', [SKOV_REGIONS.lake]: 'silver', [SKOV_REGIONS.cave]: 'silver', [SKOV_REGIONS.tower]: 'bronze',
   [SKOV_REGIONS.farm]: 'bronze', [SKOV_REGIONS.bridge]: 'start', [SKOV_REGIONS.ruler]: 'start', [SKOV_REGIONS.garden]: 'start',
 }
+const FJELD_MIXED: MapSceneProps['tiers'] = {
+  [FJELD_REGIONS.summit]: 'gold', [FJELD_REGIONS.bridge]: 'silver', [FJELD_REGIONS.tower]: 'silver', [FJELD_REGIONS.cleft]: 'bronze',
+  [FJELD_REGIONS.market]: 'bronze', [FJELD_REGIONS.garden]: 'start', [FJELD_REGIONS.bakery]: 'start',
+}
 
 type Box = readonly [number, number, number, number, number?]
 /** Kortets lag som skitse (x, y, b, h, radius) pr. format: hvide flader og trædesten. */
@@ -863,6 +872,7 @@ const SCENE_WORLDS = {
   eng: { name: 'Engdalen', Scene: EngScene, regions: ENG_REGIONS, mixed: MIXED },
   bakke: { name: 'Hestebakkerne', Scene: BakkeScene, regions: BAKKE_REGIONS, mixed: BAKKE_MIXED },
   skov: { name: 'Regnbueskoven', Scene: SkovScene, regions: SKOV_REGIONS, mixed: SKOV_MIXED },
+  fjeld: { name: 'Stjernefjeldet', Scene: FjeldScene, regions: FJELD_REGIONS, mixed: FJELD_MIXED },
 } as const
 type SceneWorld = keyof typeof SCENE_WORLDS
 const SCENE_TIERS: readonly RegionTier[] = ['start', 'bronze', 'silver', 'gold']

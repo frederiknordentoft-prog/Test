@@ -229,9 +229,11 @@ export const GRADES: readonly Grade[] = [0, 1, 2, 3]
 /**
  * Four big grades, and the honest line under them: every child starts in Engdalen (review P2-10);
  * Pip says it too once a grade is chosen. `start` replaces the line for a child who is offered
- * "Vis Pip hvad du kan" (3. klasse once Stjernefjeldet is built).
+ * "Vis Pip hvad du kan" (3. klasse once Stjernefjeldet is built). `start` null: not known yet (3. klasse
+ * while the ladder's chunk loads, QA3b): the line keeps its room (the likely line, unseen), so nothing
+ * jumps when it comes.
  */
-export function GradeStep({ grade, onGrade, start = 's.onb.grade.start' }: { grade: Grade | null; onGrade: (g: Grade) => void; start?: ClipId }) {
+export function GradeStep({ grade, onGrade, start = 's.onb.grade.start' }: { grade: Grade | null; onGrade: (g: Grade) => void; start?: ClipId | null }) {
   return (
     <div className="tv-onb__stage tv-onb__stage--grade">
       <div className="tv-grades">
@@ -244,9 +246,15 @@ export function GradeStep({ grade, onGrade, start = 's.onb.grade.start' }: { gra
           </Choice>
         ))}
       </div>
-      <div className="tv-onb__start" data-grade-start={start === 's.onb.grade.start' ? '' : start}>
-        <SpokenText as="p" clip={start} className="tv-onb__hint" key={start} />
-      </div>
+      {start === null ? (
+        <div className="tv-onb__start" data-grade-start="pending" aria-hidden style={{ visibility: 'hidden' }}>
+          <SpokenText as="p" clip="s.place.grade" silent className="tv-onb__hint" />
+        </div>
+      ) : (
+        <div className="tv-onb__start" data-grade-start={start === 's.onb.grade.start' ? '' : start}>
+          <SpokenText as="p" clip={start} className="tv-onb__hint" key={start} />
+        </div>
+      )}
     </div>
   )
 }

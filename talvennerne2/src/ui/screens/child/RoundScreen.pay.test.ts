@@ -42,10 +42,10 @@ describe('the pay bubble follows the family', () => {
       for (const task of tasksOf(skill, 'pay')) {
         const own = familyInstruction('pay', task.skill, task.family)
         if (!own) continue
-        for (const clip of own) expect(hasClip(clip), clip).toBe(true)
+        for (const p of own) if ('clip' in p) expect(hasClip(p.clip), p.clip).toBe(true)
         // the question ends with the same words, so the bubble repeats it and never contradicts it
         const said = toDanishText(task.speech)
-        expect(said.endsWith(text(own.map((clip) => ({ clip }))).replace(/^Betal /, '')), `${task.factId}: ${said}`).toBe(true)
+        expect(said.endsWith(text(own).replace(/^Betal /, '')), `${task.factId}: ${said}`).toBe(true)
       }
     }
   })

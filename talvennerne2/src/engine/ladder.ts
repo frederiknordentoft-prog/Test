@@ -39,31 +39,49 @@ export function seedStage(checkpoint: string): number {
   return Math.max(...LADDER.slice(0, i + 1).map((c) => SKILL_BY_ID[c.skill].stage))
 }
 
-/** The regions the seeding passes over from P: every skill of the region lies below stage(P). None without P. */
-export function passedOver(P: string | null): RegionId[] {
+/** The skills of the rungs the child did not pass (placement.failed): never seeded, never passed over. */
+export const failedSkills = (failed: readonly string[] = []): Set<SkillId> =>
+  new Set(failed.filter((id) => CHECKPOINT[id]).map((id) => CHECKPOINT[id].skill))
+
+/**
+ * The regions the seeding passes over from P (SPEC A24): regions of the chain `tal` only, since the
+ * ladder asks about numbers and sums alone (shapes, clocks, money and measures are learned as
+ * normal), whose skills all lie below seedStage(P), none of them the skill of a rung the child did
+ * not pass (`failed`). None without P.
+ */
+export function passedOver(P: string | null, failed: readonly string[] = []): RegionId[] {
   if (!P || !CHECKPOINT[P]) return []
   const stage = seedStage(P)
-  return REGIONS.filter((r) => r.skills.every((s) => SKILL_BY_ID[s.skill].stage < stage)).map((r) => r.id)
+  const missed = failedSkills(failed)
+  return REGIONS.filter((r) => r.chain === 'tal' && r.skills.every((s) => SKILL_BY_ID[s.skill].stage < stage && !missed.has(s.skill)))
+    .map((r) => r.id)
 }
 
 export interface PlacedStart {
-  /** The first region (in curriculum order) the placement did not pass over: the first round starts there. */
+  /** The first region of the chain `tal` the placement did not pass over: the first round starts there. */
   region: RegionId
-  /** Its world: the world P belongs to, and the child's home world until it is complete. */
+  /** Its world: the child's home world until it is complete. */
   world: WorldId
   /** The regions passed over: the map suggests their friend, chest and trial last. */
   over: ReadonlySet<RegionId>
 }
 
 /**
- * Where a finished placement put the child (SPEC A24, review app-w3-r1 P2-4). Null without one: a
- * child who skipped the ladder, stopped before the first answer, or was never offered it (0.–2.
- * klasse) is placed by the grade as before. A placement that passed no rung passes nothing over, so
- * that child starts in Tællelunden.
+ * Where a finished placement put the child (SPEC A24, review app-w3-r1 P2-4, QA3b). Null without
+ * one: a child who skipped the ladder, said "Det er nok" before passing a rung, or was never offered
+ * it (0.–2. klasse) is placed by the grade as before. A ladder that ended by itself with no rung
+ * passed passes nothing over, so that child starts in Tællelunden.
  */
 export function placedStart(placement: PlacementState | undefined): PlacedStart | null {
   if (!placement?.done) return null
-  const over = new Set(passedOver(placement.highest))
-  const first = REGIONS.find((r) => !over.has(r.id))
+  const over = new Set(passedOver(placement.highest, placement.failed))
+  const first = REGIONS.find((r) => r.chain === 'tal' && !over.has(r.id))
   return first ? { region: first.id, world: first.world, over } : null
 }
+
+/**
+ * How soon a placed child is led to a region (the map's next stone, the goals): 0 the start, 1 a
+ * region not passed over, 2 one passed over (its friend, chest and trial still wait).
+ */
+export const placedRank = (placed: PlacedStart, region: RegionId): number =>
+  region === placed.region ? 0 : placed.over.has(region) ? 2 : 1

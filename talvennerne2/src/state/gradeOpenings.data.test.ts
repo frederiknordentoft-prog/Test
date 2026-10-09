@@ -18,8 +18,8 @@ import { resetSessionForTests, useSession } from './useSession'
  * exactly as stored. The import race fix (replaceLoaded) holds for such a child too.
  */
 
-// This build has not released Stjernefjeldet and its drawings are on the way: the tests make every
-// world drawn and released between two loads, as the release will.
+// The tests start from a build where Stjernefjeldet is not released (whatever RELEASED_WORLDS says
+// today) and make every world drawn and released between two loads, as the release did.
 const world = vi.hoisted(() => ({ ready: false }))
 vi.mock('../meta/built', async (importOriginal) => {
   const real = await importOriginal<typeof import('../meta/built')>()
@@ -34,7 +34,7 @@ vi.mock('../meta/built', async (importOriginal) => {
       return world.ready ? all.items : real.DRAWN.items
     },
     get released() {
-      return world.ready ? all.released : real.DRAWN.released
+      return world.ready ? all.released : new Set(WORLD_IDS.filter((w) => w !== 'fjeld'))
     },
   }
   return { ...real, DRAWN }

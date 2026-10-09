@@ -50,7 +50,7 @@ const SPECIES = ORDER.filter((id) => present.has(id))
 const PER_SPECIES = ['species', 'moods', 'closeup', 'sizes', 'fit', 'filmstrip']
 const GLOBAL = ['silhouettes', 'lineup', 'fitmatrix', 'scene', 'holes']
 /** Scenearket er én side pr. verden (?sheet=scene&id=<verden>). */
-const SCENE_WORLDS = ['eng', 'bakke', 'skov']
+const SCENE_WORLDS = ['eng', 'bakke', 'skov', 'fjeld']
 /** Pasformsmatrixen er én side pr. sæt (?sheet=fitmatrix&id=<sæt>): sættene er mapperne i src/art/items. */
 const MATRIX_SETS = readdirSync(path.join(root, 'src/art/items'), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort()
 

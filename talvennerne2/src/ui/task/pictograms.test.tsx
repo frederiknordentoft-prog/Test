@@ -50,6 +50,24 @@ describe('the things unitChoice measures in centimetres and metres', () => {
   })
 })
 
+describe('the things unitChoice weighs in grams and kilograms', () => {
+  const WEIGHT = Object.keys(UNIT_THINGS.weight)
+
+  it('are the 8 weight things', () => {
+    expect(WEIGHT).toEqual(['feather', 'strawberry', 'key', 'letter', 'dog', 'bike', 'sofa', 'suitcase'])
+  })
+
+  it.each(WEIGHT)('%s can be drawn, in at most 14 SVG elements', (id) => {
+    expect(knownObject(id)).toBe(true)
+    expect(count(renderToStaticMarkup(<ObjectIcon id={id} />))).toBeLessThanOrEqual(14)
+  })
+
+  it('draws every weight thing differently, and none like a length thing', () => {
+    const marks = [...WEIGHT, ...LENGTH].map((id) => renderToStaticMarkup(<ObjectIcon id={id} />))
+    expect(new Set(marks).size).toBe(WEIGHT.length + LENGTH.length)
+  })
+})
+
 describe('thing cards (mt:<thing>)', () => {
   const tasks = multiSelects('length')
 
@@ -83,12 +101,12 @@ describe('thing cards (mt:<thing>)', () => {
     }
   })
 
-  it('keeps the word cards where a thing has no picture yet (the weight things, 3. klasse)', () => {
+  it('shows the weight things (3. klasse) as a picture and its word too, now that all eight are drawn', () => {
     for (const task of multiSelects('weight'))
       for (const o of task.options) {
         const html = renderToStaticMarkup(<OptionFace task={task} value={o} size="md" />)
-        expect(html).not.toContain('<svg')
-        expect(html).toContain('tv-face__word--card')
+        expect(html.match(/<svg/g), String(o)).toHaveLength(1)
+        expect(html).toContain('tv-face__thing is-md')
         expect(html).toContain(`>${nounOf(o)}</span>`)
       }
   })

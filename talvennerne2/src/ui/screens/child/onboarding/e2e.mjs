@@ -13,10 +13,12 @@
 // words after every answer (only neutral ones after a miss), a miss through the strategy, "Det er
 // nok", the thanks, and the first round where the ladder put the child (SPEC A24, review app-w3-r1
 // P2-4) — three ways: a miss on the way up (P = L5: Hundredemarken), a miss and a step down (P = L4:
-// Minusbækken in Engdalen) and all of it (P = L14: Tabeltoppen). Then the map behind it shows that
-// world with that stone next, also after a reload and beside a sibling. Also "Spring over", a reload
-// in the middle of the ladder (the map, never a hanging screen), 3. klasse before Stjernefjeldet is
-// built (as before: Engdalen) and 2. klasse with it built (as before). Pictures: artifacts/place3/.
+// Minusbækken in Engdalen) and all of it (P = L14: Tabeltoppen, with Markedet and the other places
+// outside the chain tal not passed over, QA3b). Then the map behind it shows that world with that
+// stone next, also after a reload and beside a sibling. Also "Spring over", one right answer and "Det
+// er nok" (no rung passed: no placement, as "Spring over", and no thanks for what was shown, QA3b), a
+// reload in the middle of the ladder (the map, never a hanging screen), 3. klasse before Stjernefjeldet
+// is built (as before: Engdalen) and 2. klasse with it built (as before). Pictures: artifacts/place3/.
 //   BASE=http://127.0.0.1:4313/ flock /tmp/tv2-chromium.lock node src/ui/screens/child/onboarding/e2e.mjs
 // PLACE3_ONLY=1 runs only the 3. klasse part.
 import { mkdirSync } from 'node:fs'
@@ -442,11 +444,11 @@ const nextQuestion = (page, id) =>
  */
 const PLANS = {
   // L5 right, right → L7 right, a miss → a step down to L6: right, then "Det er nok". P = L5
-  mixed: { answers: [true, true, true, false, true], enough: true, P: 'L5', stone: 'w1-tal100-l1', world: 'bakke' },
+  mixed: { answers: [true, true, true, false, true], enough: true, P: 'L5', failed: ['L7'], stone: 'w1-tal100-l1', world: 'bakke' },
   // L5 right, a miss → a step down to L4: right, right, and the ladder ends by itself. P = L4: minus inden for 10
-  minus: { answers: [true, false, true, true], enough: false, P: 'L4', stone: 'w0-minus10-l1', world: 'eng' },
+  minus: { answers: [true, false, true, true], enough: false, P: 'L4', failed: ['L5'], stone: 'w0-minus10-l1', world: 'eng' },
   // everything right: P = L14, and Tabeltoppen as before
-  all: { answers: null, enough: false, P: 'L14', stone: 'w3-tabellen-l1', world: 'fjeld' },
+  all: { answers: null, enough: false, P: 'L14', failed: [], stone: 'w3-tabellen-l1', world: 'fjeld' },
 }
 
 /** A question that says nothing about its rung (review app-w3-r1 P3-8): with 0 or 1, nothing left, or times 1. */
@@ -575,6 +577,7 @@ async function thirdGrade(tag, viewport, plan = PLANS.mixed, opts = {}) {
   check(await page.locator('.tv-place [data-next]').isEnabled(), `${tag}: "Spil" efter tak`)
   const kid = await childNow(page)
   check(kid.placement.done && kid.placement.highest === plan.P, `${tag}: indplaceringen er gemt med P = ${plan.P} (${JSON.stringify(kid.placement)})`)
+  check(JSON.stringify(kid.placement.failed ?? []) === JSON.stringify(plan.failed), `${tag}: ikke beståede trin gemt: ${JSON.stringify(plan.failed)} (${JSON.stringify(kid.placement.failed)})`)
   check(kid.seeded > 0 && kid.aboveBox2 === 0, `${tag}: ${kid.seeded} nøgler i boks 2 som seeded, ingen over`)
   check(kid.log.length === asked.length && kid.log.every((m) => m === 'placement'), `${tag}: ${asked.length} svar logget som placement, bekræftelsen ikke (${kid.log.join(', ')})`)
   check(
@@ -608,6 +611,16 @@ async function thirdGrade(tag, viewport, plan = PLANS.mixed, opts = {}) {
   const map = await mapOnScreen(page)
   check(map.world === plan.world && map.next === plan.stone, `${tag}: kortet viser ${map.world} med ${map.next} som næste sten`)
   await placeShot(page, `${tag}-8-map`)
+  if (plan === PLANS.all) {
+    // the ladder asks about numbers only: Markedet (money and measures) is learned as normal (QA3b)
+    const market = await page.evaluate(async () => {
+      const p = (await import('/src/state/useProfile.ts')).useProfile.getState().profile
+      const el = document.querySelector('[data-stone="w3-penge-maal-l1"]')
+      return { node: p.nodes['w3-penge-maal-l1'] ?? null, onScreen: !!el, skipped: !!el?.classList.contains('is-skipped'), bridge: p.nodes['w3-store-tal-l1']?.skipped ?? false }
+    })
+    check(market.onScreen && !market.skipped && !market.node?.skipped, `${tag}: Markedets l1 er ikke sprunget over efter L14 (${JSON.stringify(market)})`)
+    check(market.bridge, `${tag}: Trecifret bro (tal) er stadig sprunget over efter L14`)
+  }
 
   // a reload: the stored round goes on on the same stone, and ✕ → "Til kortet" shows the same world
   await page.reload()
@@ -693,6 +706,45 @@ async function thirdGradeSkipAndReload(tag, viewport) {
   }
 }
 
+/**
+ * One right answer and "Det er nok" (QA3b, SPEC A24): no rung passed, so it is no placement. As after
+ * "Spring over": the first round on the map's next stone in the child's own world, nothing seeded, the
+ * placement not done, and the answer still logged as a placement answer. Pip says it is fine, not
+ * thank you for what was shown.
+ */
+async function thirdGradeOneThenEnough(tag, viewport) {
+  const { page, context, errors } = await newPage(browser, viewport)
+  await toGrade(page, URL_ALL, 'Dina', 3)
+  await until(page, () => document.querySelector('[data-grade-start]')?.getAttribute('data-grade-start') === 's.place.grade')
+  await page.locator('.tv-onb [data-next]').click()
+  await page.waitForSelector('[data-place-start]')
+  await page.locator('[data-place-start]').click()
+  await page.waitForSelector('.tv-place[data-place="ladder"] .tv-round__stage')
+  await until(page, () => document.querySelector('.tv-place .tv-round__stage')?.getAttribute('data-beat') === 'asking')
+  const t = await answerLadder(page, tag, true)
+  check(t?.skill === 'addTo20', `${tag}: første spørgsmål er L5 (${t?.skill})`)
+  await nextQuestion(page, t.id)
+  await page.locator('.tv-place [data-enough]').click()
+  await page.waitForSelector('.tv-place[data-place="outro"]')
+  await until(page, async () => (await import('/src/ui/screens/child/onboarding/placement/store.ts')).usePlacement.getState().status === 'over')
+  await until(page, () => (window.__voiceLog ?? []).includes('s.place.done.none'))
+  const neutral = await clipTextIn(page, 's.place.done.none')
+  check(!(await voiceLog(page)).includes('s.place.done'), `${tag}: ingen tak for det viste, når intet trin er bestået`)
+  check((await page.locator('.tv-place .tv-say__text').innerText()).trim() === neutral, `${tag}: Pip siger "${neutral}"`)
+  await settle(page, 400)
+  await placeShot(page, `${tag}-one-enough`)
+  await tapTargets(page, tag, 'ét svar + "Det er nok"')
+  await page.locator('.tv-place [data-next]').click()
+  await until(page, async () => (await import('/src/app/nav.ts')).useNav.getState().route.id === 'round', undefined, 20_000)
+  const node = (await route(page)).node
+  const kid = await childNow(page)
+  check(node === kid.next && node !== 'w0-tal10-l1' && kid.world !== 'eng', `${tag}: ét rigtigt svar + "Det er nok" giver første tur i egen verden (${node} i ${kid.world}), ikke Tællelunden`)
+  check(kid.grade === 3 && !kid.placement.done && kid.placement.highest === null && kid.seeded === 0, `${tag}: ingen indplacering, intet seedet (${JSON.stringify(kid.placement)}, ${kid.seeded})`)
+  check(kid.log.length === 1 && kid.log[0] === 'placement', `${tag}: svaret er logget som placement (${kid.log.join(', ')})`)
+  check(errors.length === 0, `${tag}: 0 konsolfejl (ét svar + "Det er nok")${errors.length ? `: ${errors.join(' | ')}` : ''}`)
+  await context.close()
+}
+
 /** No ladder: as before, "Alle starter i Engdalen." and the first round in Tællelunden. */
 async function noLadder(tag, viewport, url, grade) {
   const { page, context, errors } = await newPage(browser, viewport)
@@ -713,6 +765,27 @@ async function noLadder(tag, viewport, url, grade) {
   await context.close()
 }
 
+/** After Stjernefjeldet's release: 3. klasse gets the ladder's intro without ?worlds=all too. */
+async function ladderReleased(tag, viewport, url) {
+  const { page, context, errors } = await newPage(browser, viewport)
+  await toGrade(page, url, 'Dan', 3)
+  await page.locator('.tv-onb [data-next]').click()
+  const intro = await page.waitForSelector('[data-place-skip]', { timeout: 20_000 }).then(() => true, () => false)
+  check(intro, `${tag}: 3. kl. får "Vis Pip hvad du kan" uden ?worlds=all, fordi Stjernefjeldet er frigivet`)
+  await placeShot(page, `${tag}-intro`)
+  check(errors.length === 0, `${tag}: 0 konsolfejl${errors.length ? `: ${errors.join(' | ')}` : ''}`)
+  await context.close()
+}
+
+/** Is Stjernefjeldet released in the build under test (RELEASED_WORLDS in src/meta/built.ts)? */
+async function fjeldReleased() {
+  const { page, context } = await newPage(browser, { width: 393, height: 852 })
+  await page.goto(URL_)
+  const released = await page.evaluate(async () => (await import('/src/meta/built.ts')).RELEASED_WORLDS.has('fjeld'))
+  await context.close()
+  return released
+}
+
 const browser = await launch()
 try {
   // ── 3. klasse with the ladder (dev, ?worlds=all), and the grades and builds without it ──
@@ -720,7 +793,10 @@ try {
   await thirdGrade('place3-small', { width: 375, height: 667 }, PLANS.minus, { sibling: true })
   await thirdGrade('place3-ipad', { width: 820, height: 1180 }, PLANS.all)
   await thirdGradeSkipAndReload('place3-phone', { width: 393, height: 852 })
-  await noLadder('place3-before-release', { width: 393, height: 852 }, URL_, 3)
+  await thirdGradeOneThenEnough('place3-phone', { width: 393, height: 852 })
+  // before the release a 3. klasse onboarding has no ladder without ?worlds=all; after it, it has
+  if (await fjeldReleased()) await ladderReleased('place3-released', { width: 393, height: 852 }, URL_)
+  else await noLadder('place3-before-release', { width: 393, height: 852 }, URL_, 3)
   await noLadder('place3-grade2-built', { width: 393, height: 852 }, URL_ALL, 2)
   if (process.env.PLACE3_ONLY) throw new Error('PLACE3_ONLY: resten springes over')
 

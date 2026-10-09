@@ -10,6 +10,7 @@ import { chooseStarter } from '../../../../meta/actions'
 import { AVAILABLE_ITEMS } from '../../../../art/items/registry'
 import { MapView } from './MapView'
 import { FinaleThings } from './StoneSheet'
+import { Goals } from './SidePanel'
 import { homeWorld, litHut, mapModel, playable, type MapModel, type StoneView } from './model'
 
 /**
@@ -207,6 +208,22 @@ describe('the world shown first', () => {
   })
 })
 
+describe('"Næste tre mål" (QA3b)', () => {
+  it('ends every goal with a full stop, also "Tag en tur forbi" and the place', () => {
+    const goals: ProfileDoc['goals']['list'] = [
+      { kind: 'mix', need: 1, progress: 0, done: false },
+      { kind: 'revisit', need: 1, progress: 0, done: false, region: 'w3-tabellen' },
+      { kind: 'streak5', need: 5, progress: 1, done: false },
+    ]
+    const html = renderToStaticMarkup(<Goals goals={goals} />)
+    expect(html).toContain('Tag en tur forbi Tabeltoppen.')
+    expect(html).toContain('Spil Blandet øvelse.')
+    expect(html).not.toContain('..')
+    const done = renderToStaticMarkup(<Goals goals={[{ ...goals[1], progress: 1, done: true }]} />)
+    expect(done).toContain('aria-label="Tag en tur forbi Tabeltoppen. Klaret! Et stempel i stempelbogen."')
+  })
+})
+
 describe('after "Vis Pip hvad du kan" (SPEC A24, review app-w3-r1 P2-4)', () => {
   const all = (): boolean => true
   /** A child in 3. klasse: the grade opened every world and every region below Stjernefjeldet, then the ladder ended at P. */
@@ -266,8 +283,23 @@ describe('after "Vis Pip hvad du kan" (SPEC A24, review app-w3-r1 P2-4)', () => 
     const nodes = { ...p.nodes }
     for (const r of ['w0-minus10', 'w0-tiervenner'] as RegionId[]) for (const n of nodesOfRegion(r)) nodes[n.id] = played(2)
     const later = { ...p, nodes, trials: { ...p.trials, ...passed(['w0-minus10', 'w0-tiervenner']) } }
-    expect(mapModel(later, 'eng', all).next).toBe('w0-tal10-friend')
-    expect(homeWorld(later, all)).toBe('eng')
+    // Formhaven (figurer) is never passed over: it is learned as normal, before what the others still hold (QA3b)
+    expect(mapModel(later, 'eng', all).next).toBe('w0-former-l1')
+    for (const n of nodesOfRegion('w0-former')) nodes[n.id] = played(2)
+    const shapes = { ...later, nodes, trials: { ...later.trials, ...passed(['w0-former']) } }
+    expect(mapModel(shapes, 'eng', all).next).toBe('w0-tal10-friend')
+    expect(homeWorld(shapes, all)).toBe('eng')
+  })
+
+  it('starts in the chain tal, never in a place of another chain before it in the world (QA3b)', () => {
+    // L4: Formhaven (index 2) comes before Minusbækken (index 5) in Engdalen, and is not passed over
+    expect(mapModel(placed('L4'), 'eng', all).regions.find((r) => r.id === 'w0-former')!.stones.some((s) => s.skipped)).toBe(false)
+    expect(mapModel(placed('L4'), 'eng', all).next).toBe('w0-minus10-l1')
+    // L14: Markedet is learned as normal, and the first round is still on Tabeltoppen
+    const top = mapModel(placed('L14'), 'fjeld', all)
+    expect(top.next).toBe('w3-tabellen-l1')
+    expect(top.regions.find((r) => r.id === 'w3-penge-maal')!.stones.some((s) => s.skipped)).toBe(false)
+    expect(top.regions.find((r) => r.id === 'w3-store-tal')!.stones.some((s) => s.skipped)).toBe(true)
   })
 
   it('moves up the usual way: once the world is complete (60 % of its trials, or every stone)', () => {

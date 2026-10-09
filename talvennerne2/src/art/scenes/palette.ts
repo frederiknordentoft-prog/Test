@@ -398,3 +398,150 @@ export type SkovColor = keyof typeof SKOV
 export const tintSkov = (color: SkovColor, tier: RegionTier): string => tintHex(SKOV[color], tier)
 /** Regnbueskovens grundfarve i et blandet trin (bakkerne, skoven og himlen følger hele verdenens fremgang). */
 export const tintSkovBy = (color: SkovColor, chroma: number): string => tintHexBy(SKOV[color], chroma)
+
+/**
+ * Stjernefjeldets grundfarver (fuld mætning = guld): et højt, venligt fjeld under en lys skumringshimmel (lys
+ * lilla og blå, aldrig mørk), hvor de første stjerner kan ses. Fjeldene står i luftperspektiv (blålilla og lyse
+ * langt væk, varmere og mere mættede forrest), med sne på toppene, en gletsjer af is, en fjeldbæk, en issø,
+ * grantræer og fjeldets dyr. Solen står lavt oppe til venstre og giver et varmt aftenskær på de sider af sneen,
+ * der vender mod den.
+ */
+export const FJELD = {
+  skyTop: '#AEBDF2',
+  skyMid: '#D8D1F6',
+  skyBottom: '#FFE8DD',
+  sun: '#FFDD8F',
+  sunHalo: '#FFEFD2',
+  cloud: '#FFFFFF',
+  cloudShade: '#EBDDF5',
+  /** De første stjerner på himlen (lyse, varme prikker; de glimter fra sølv). */
+  skyStar: '#FFF5C4',
+  skyStarGlow: '#FFE18A',
+  /** Fjeldene i luftperspektiv (OKLCH L 0,9 → 0,74, C 0,04 → 0,15, tone fra blålilla mod grøn forrest). */
+  farMount: '#CBD5F4',
+  farMount2: '#DCE3F8',
+  farShade: '#7F88C0',
+  rock: '#ADA8DD',
+  rockShade: '#6F6BAE',
+  rockLine: '#9C97CF',
+  snow: '#FFFFFF',
+  snowShade: '#CBD3F2',
+  /** Aftenskæret: varmt lys på de sider af sne og sten, der vender mod solen. */
+  sunlit: '#FFE3C2',
+  alpenglow: '#FFC9B8',
+  midHill: '#B9DECF',
+  midForest: '#86BCA9',
+  nearHill: '#9DD27E',
+  front: '#7EBF52',
+  frontDark: '#4C963E',
+  shade: '#46508A',
+  castShadow: '#38456F',
+  paperShadow: '#56659A',
+  rim: '#F6F4FF',
+  /** Grantræerne: blågrønne, med sne på grenene. */
+  fir: '#3E9C7A',
+  firDark: '#246F55',
+  firLight: '#73C79F',
+  trunk: '#A97349',
+  trunkDark: '#7A5034',
+  /** Is og vand: gletsjeren, issøen og fjeldbækken (mørkere brinker). */
+  ice: '#C0E9FA',
+  iceLight: '#F2FCFF',
+  iceDeep: '#86C9E6',
+  iceEdge: '#5FA9D2',
+  water: '#76C8F2',
+  waterLight: '#D7F3FF',
+  waterEdge: '#3E9BD6',
+  bank: '#7F8FB2',
+  foam: '#FFFFFF',
+  /** Tabeltoppens stenblok, Minuttårnet, broerne og kløftens vægge: lys sten. */
+  stone: '#ECE6F4',
+  stoneShade: '#B9AED2',
+  stoneDark: '#857AA6',
+  gorge: '#5D5A93',
+  starGold: '#FFCB45',
+  starEdge: '#C99317',
+  roof: '#7C6CE0',
+  roofShade: '#5948BE',
+  clockFace: '#FFFDF6',
+  clockInk: '#2B2144',
+  clockMinute: '#EB5757',
+  wall: '#FFF5E6',
+  wallShade: '#EAD5BA',
+  roofRed: '#E7684F',
+  roofRedShade: '#C24E3A',
+  roofBlue: '#5E8FE0',
+  roofBlueShade: '#3E6CBE',
+  timber: '#8A5A3A',
+  window: '#9ED8F5',
+  windowLit: '#FFD45E',
+  door: '#5B8FD9',
+  wood: '#C88B55',
+  woodDark: '#8E5F35',
+  rope: '#A8794C',
+  /** Stien (trådt sne og grus). */
+  trail: '#F3E3C6',
+  trailEdge: '#CDAF86',
+  /** Markedet: to boder med stribede markiser, et skilt med en mønt og en målestok. */
+  awning: '#FF7F9E',
+  awningShade: '#D9567A',
+  awning2: '#5DBBEA',
+  awning2Shade: '#2F8BC2',
+  awningLight: '#FFFFFF',
+  coin: '#E9C24E',
+  coinDark: '#AD8721',
+  ruler: '#FFD24A',
+  rulerEdge: '#C99A1E',
+  apple: '#FF6B5E',
+  /** Arealhaven: kvadratiske bede i et net med muld, spirer og blomster og en lav hæk. */
+  soil: '#C99A6B',
+  soilDark: '#9C7049',
+  sprout: '#7CC66A',
+  hedge: '#4DA552',
+  hedgeShade: '#2E7F40',
+  /** Brøkbageriet: en rund kage delt i lige store stykker. */
+  cake: '#F5C08E',
+  cakeCream: '#FFF6FA',
+  cakeBerry: '#FF5F86',
+  /** Fjeldets dyr: pegasus, drage, pingviner og isbjørn (forenklede, i scenens stil). */
+  pegasus: '#FFFFFF',
+  pegasusShade: '#D6DBF4',
+  pegasusMane: '#BFA6FF',
+  pegasusManeDark: '#8E72E6',
+  dragon: '#74CC8C',
+  dragonDark: '#3D9660',
+  dragonBelly: '#FFE7A6',
+  dragonWing: '#A4E3B6',
+  penguin: '#3E4170',
+  penguinBelly: '#FFFFFF',
+  beak: '#FFA347',
+  bear: '#FFFFFF',
+  bearShade: '#D9DCF2',
+  bearNose: '#3D3550',
+  eye: '#2B2144',
+  blush: '#FFB3C7',
+  smoke: '#E2DFEC',
+  flowerPink: '#FF8FB4',
+  flowerYellow: '#FFD24A',
+  flowerWhite: '#FFFFFF',
+  flowerViolet: '#B49BFF',
+  flowerHeart: '#FFA928',
+  lantern: '#FFC83D',
+  lanternGlow: '#FFE9A8',
+  lanternFrame: '#7A5230',
+  flag: '#FF6F91',
+  flag2: '#6C4CF5',
+  bird: '#5E5478',
+  outline: '#5E5478',
+  /** Nordlyset over fjeldet (når hele verdenen er guld): fire flade, lette bånd, som skovens regnbue. */
+  aurora1: '#A6F2CF',
+  aurora2: '#94E2F2',
+  aurora3: '#C9B6FF',
+  aurora4: '#FFC2E2',
+} as const
+export type FjeldColor = keyof typeof FJELD
+
+/** Stjernefjeldets grundfarve tonet til en tier (start er pastel, aldrig grå). */
+export const tintFjeld = (color: FjeldColor, tier: RegionTier): string => tintHex(FJELD[color], tier)
+/** Stjernefjeldets grundfarve i et blandet trin (fjeldene, engen og himlen følger hele verdenens fremgang). */
+export const tintFjeldBy = (color: FjeldColor, chroma: number): string => tintHexBy(FJELD[color], chroma)

@@ -7,14 +7,17 @@
 //   beginPlacement       the grade is written first, the way finishOnboarding writes it, so a reload
 //                        in the middle of the ladder lands on the map as if it had been skipped
 //   answerPlacementTask  one answer: logged as mode 'placement' (it never moves a box), folded into the run
-//   endPlacement         "Det er nok" or the last rung: seeds from what was shown (box 2, `seeded`),
-//                        makes the goals anew, writes, and finds the stone the first round starts on
+//   endPlacement         "Det er nok" or the last rung: once a rung is passed or the ladder ended by
+//                        itself (placementCounts, SPEC A24), seeds from what was shown (box 2,
+//                        `seeded`; a rung not passed never), makes the goals anew, writes, and finds
+//                        the stone the first round starts on. "Det er nok" before a rung is passed is
+//                        "Spring over" (QA3b): nothing seeded, the placement not done
 //   skipPlacement        "Spring over": the grade only, nothing seeded, the placement not done
 //   firstStone           the map's own next stone in the child's home world (map/model.ts). After a
-//                        finished placement that is the first stone of the first region it did not
-//                        pass over, in the world P belongs to (SPEC A24, engine/ladder.ts placedStart);
-//                        after "Spring over", a ladder left before the first answer or all of it
-//                        passed (L14), the child's own world as before
+//                        placement that counts, the first stone of the first region of the chain
+//                        `tal` it did not pass over, and that region's world (SPEC A24,
+//                        engine/ladder.ts placedStart); after "Spring over", or "Det er nok" before a
+//                        rung is passed, the child's own world as before
 //   startOnStone         the map, with that round pushed on top as if tapped there (play/flow.ts)
 import { useNav } from '../../../../../app/nav'
 import { worldBuilt } from '../../../../../meta/built'
@@ -23,7 +26,7 @@ import { ceilingFor, defaultFastMs, isProduction } from '../../../../../engine/k
 import { learningDay } from '../../../../../engine/learningDay'
 import { firstGoals } from '../../../../../meta/progression'
 import {
-  answerPlacement, placementAvailable, placementResult, placementTask, seedFromPlacement, startPlacement,
+  answerPlacement, placementAvailable, placementCounts, placementResult, placementTask, seedFromPlacement, startPlacement,
   type PlacementRun,
 } from '../../../../../engine/placement'
 import { skillRegistry, type SkillRegistry } from '../../../../../engine/registry'
@@ -102,17 +105,19 @@ export function answerPlacementTask(s: PlacementSession, task: Task, given: Answ
 }
 
 /**
- * The end of the ladder ("Det er nok" or the last rung): what was shown counts. With at least one
- * answer the profile is seeded from the highest passed rung (or only marked done when none passed);
- * with none it is as if the ladder was skipped. Returns the stone the first round starts on.
+ * The end of the ladder ("Det er nok" or the last rung). Once a rung is passed, or when the ladder
+ * ended by itself, what was shown counts: the profile is seeded from the highest passed rung, never
+ * with a rung the child did not pass (only marked done when none passed: Tællelunden). "Det er nok"
+ * before a rung is passed is as if the ladder was skipped (SPEC A24, QA3b); the answers stay logged.
+ * Returns the stone the first round starts on.
  */
 export async function endPlacement(s: PlacementSession | null, env: PlacementEnv = {}): Promise<NodeId> {
   const store = useProfile.getState()
-  if (s && s.run.asked > 0) {
+  if (s && placementCounts(s.run)) {
     const now = env.now?.() ?? Date.now()
     const ctx = { day: learningDay(now), now, ...(env.skills ? { skills: env.skills } : {}) }
     store.update((p) => {
-      const placed = seedFromPlacement(p, placementResult(s.run), ctx)
+      const placed = seedFromPlacement(p, placementResult(s.run), ctx, s.run.failed)
       // the goals follow the child to where it starts (they were made with the grade, before the ladder)
       return { ...placed, goals: firstGoals(placed, ctx.day) }
     })
@@ -130,8 +135,8 @@ export async function skipPlacement(grade: Grade, env: PlacementEnv = {}): Promi
 
 /**
  * The next stone the map suggests in the child's home world (Tællelunden when there is none). After a
- * finished placement the home world is the one P belongs to, and the map suggests the first stone of
- * the first region the placement did not pass over (map/model.ts homeWorld and nextStone).
+ * finished placement the home world is the start region's, and the map suggests that region's first
+ * stone (map/model.ts homeWorld and nextStone).
  */
 export function firstStone(p: ProfileDoc | null, built: (world: WorldId) => boolean = worldBuilt): NodeId {
   if (!p) return firstNode()

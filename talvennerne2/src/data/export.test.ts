@@ -170,6 +170,12 @@ describe('the validator', () => {
     expect(bad((f) => (f.profiles = Array(MAX_PROFILES + 1).fill(f.profiles[0])))).toMatchObject({ ok: false })
   })
 
+  it('accepts the placement with and without the rungs not passed (SPEC A24)', () => {
+    expect(bad((f) => (f.profiles[0].doc.placement = { done: true, at: 1, highest: 'L6', failed: ['L7'] }))).toMatchObject({ ok: true })
+    expect(bad((f) => (f.profiles[0].doc.placement = { done: true, at: 1, highest: 'L6' }))).toMatchObject({ ok: true })
+    expect(bad((f) => (f.profiles[0].doc.placement = { done: false, at: null, highest: null }))).toMatchObject({ ok: true })
+  })
+
   it('points at damaged data', () => {
     const cases: [string, (f: ExportFile) => void][] = [
       ['doc.name', (f) => delete (f.profiles[0].doc as Partial<ProfileDoc>).name],
@@ -188,6 +194,7 @@ describe('the validator', () => {
       ['daily[1].day', (f) => (f.profiles[0].daily[1].day = f.profiles[0].daily[0].day)],
       ['doc.keys.__proto__', (f) => Object.defineProperty(f.profiles[0].doc.keys, '__proto__', { value: { box: 1 }, enumerable: true })],
       ['answers: har for mange svar', (f) => (f.profiles[0].answers = Array(20_001).fill(f.profiles[0].answers[0]))],
+      ['doc.placement.failed[0]', (f) => (f.profiles[0].doc.placement = { done: true, at: 1, highest: 'L6', failed: ['L15'] })],
     ]
     for (const [path, mutate] of cases) {
       const r = bad(mutate)

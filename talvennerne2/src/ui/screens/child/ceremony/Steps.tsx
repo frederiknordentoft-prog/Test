@@ -3,8 +3,8 @@
 // level with its thing and "Prøv den på", growth, a new thing or friend (with its name), and the
 // choice of a golden or rainbow animal. Each screen says what it shows; the screen around them reads
 // it aloud and moves on.
-import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { CSSProperties, RefObject } from 'react'
 import { AnalogClock, CoordGrid, DigitalClock, FractionBars, FractionShape, SquareGrid } from '../../../../art/materials'
 import { Shape2D } from '../../../../art/materials/Shapes'
 import { circle, ellipse } from '../../../../art/materials/geom'
@@ -82,8 +82,34 @@ export function summarySpeech(steps: readonly CeremonyStep[], ctx: LearnedContex
   return parts
 }
 
+/**
+ * The summary does not fit its stage (it would scroll: three clocks on a 375 by 667 phone put the stars,
+ * perler and points under the buttons, QA3b): the same things a size smaller (ceremony.css
+ * `is-tight`). Only then: a summary that fits keeps its look. Once tight it stays tight, so it never
+ * flickers between the two.
+ */
+function useTight(): [RefObject<HTMLDivElement | null>, boolean] {
+  const ref = useRef<HTMLDivElement>(null)
+  const [tight, setTight] = useState(false)
+  useLayoutEffect(() => {
+    const el = ref.current
+    const stage = el?.closest('.tv-cer__stage')
+    if (tight || !el || !stage) return
+    const check = () => {
+      if (stage.scrollHeight - stage.clientHeight > 1) setTight(true)
+    }
+    check()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(check)
+    ro?.observe(el)
+    ro?.observe(stage)
+    return () => ro?.disconnect()
+  }, [tight])
+  return [ref, tight]
+}
+
 export function SummaryScreen({ steps, rewards, ctx }: { steps: readonly CeremonyStep[]; rewards: readonly Reward[]; ctx: LearnedContext }) {
   const speech = useSpeech()
+  const [ref, tight] = useTight()
   const learned = steps.find((s) => s.kind === 'learned')
   const r = learned ? first(learned.rewards, 'learned') : undefined
   const items = r ? learnedItems(r, ctx) : []
@@ -93,7 +119,7 @@ export function SummaryScreen({ steps, rewards, ctx }: { steps: readonly Ceremon
   const xp = useCountUp(totalXp(rewards), 1100)
   const showTally = steps.some((s) => s.kind === 'tally') || totalPerler(rewards) > 0
   return (
-    <div className={cx('tv-cer-summary', (stars || showTally) && 'has-earn')} data-cer-summary="">
+    <div ref={ref} className={cx('tv-cer-summary', (stars || showTally) && 'has-earn', tight && 'is-tight')} data-cer-summary="">
       <div className="tv-cer-summary__learn">
         <SpokenText as="h1" clip="s.reward.learned" className="tv-cer__title" />
         <ul className={cx('tv-learned', `tv-learned--n${items.length}`)}>

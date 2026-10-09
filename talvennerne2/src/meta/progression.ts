@@ -11,7 +11,7 @@ import {
 } from '../content/economy'
 import { goldCount, newTrophies, silverCount, trophyPerler, type AchievementRound } from '../content/achievements'
 import { nextGoal, progressGoals, refreshGoals, REVISIT_AFTER_DAYS, type GoalRound } from '../content/goals'
-import { placedStart } from '../engine/ladder'
+import { placedRank, placedStart } from '../engine/ladder'
 import { daysBetween, learningDay } from '../engine/learningDay'
 import { helpBridgeOpen, nextTrialState, skipRegionNodes, trialOutcome, type TrialOutcome } from '../engine/trial'
 import type {
@@ -160,8 +160,8 @@ export function ownWorld(grade: Grade, open: readonly RegionId[]): WorldId | nul
  * played — those only in the child's own world or a world past it, never back in an easier world
  * the child has not been to (QA2 P3-11: "Tag en tur forbi Tællelunden" sent a child in 2. klasse to
  * Engdalen, where it had never been). A goal points at a place the child has played, or ahead.
- * After a finished placement (SPEC A24) the child's own world is the one it was placed in, and the
- * regions the placement passed over come last, as on the map.
+ * After a finished placement (SPEC A24) the child's own world is the start region's, and, as on the
+ * map, the start region comes first and the regions the placement passed over last.
  */
 export function revisitRegions(p: ProfileDoc, day: string, open: readonly RegionId[]): RegionId[] {
   const last = new Map<RegionId, number>()
@@ -180,7 +180,7 @@ export function revisitRegions(p: ProfileDoc, day: string, open: readonly Region
     return !last.has(r) && !!world && WORLD_BY_ID[world].grade >= from
   })
   if (!placed) return [...stale, ...fresh]
-  return [...stale, ...fresh.filter((r) => !placed.over.has(r)), ...fresh.filter((r) => placed.over.has(r))]
+  return [...stale, ...fresh.sort((a, b) => placedRank(placed, a) - placedRank(placed, b))]
 }
 
 /** profile.goals for `day` (new goals only on a new learning day; open ones never expire). */

@@ -91,12 +91,14 @@ export function skillStates(profile: ProfileDoc, index: SkillKeyIndex, daily: re
 /**
  * Status changes over the window: the status at its start (the last snapshot before it; a skill
  * with none had not been played) against the status now. Up and down are counted in the
- * dashboard's four levels, so a change is one the parent can see on the dots.
+ * dashboard's four levels, so a change is one the parent can see on the dots. A skill skipped at
+ * start (seeded, not yet confirmed) has the dashed dot, not a status, so it has not moved (QA3b).
  */
 export function trendOf(skills: readonly SkillId[], states: Readonly<Record<SkillId, SkillState>>, before: Partial<Record<SkillId, Snapshot>>): Trend {
   const up: SkillId[] = []
   const down: SkillId[] = []
   for (const skill of skills) {
+    if (states[skill].dot === 'skipped') continue
     const then = before[skill] ? dashStatus(before[skill].status) : 'notStarted'
     const now = states[skill].dash
     if (DASH_RANK[now] > DASH_RANK[then]) up.push(skill)

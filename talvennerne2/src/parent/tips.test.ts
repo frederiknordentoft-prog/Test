@@ -23,6 +23,13 @@ describe('home tips', () => {
     expect(tipFor('fractionOfSet', 'Ada')).toContain('lade Ada dele')
   })
 
+  it('follows the strategy of the app: plus with three digits from the ones (QA3b)', () => {
+    const tip = tipFor('add1000', 'Ada')
+    expect(tip.indexOf('enerne')).toBeGreaterThan(-1)
+    expect(tip.indexOf('enerne')).toBeLessThan(tip.indexOf('tierne'))
+    expect(tip.indexOf('tierne')).toBeLessThan(tip.indexOf('hundrederne'))
+  })
+
   it('completes "Prøv …" as one short sentence without a full stop', () => {
     for (const tip of [...ALL_TIPS, tableTip(7), productionTip('Ada')]) {
       expect(tip.startsWith('at ')).toBe(true)

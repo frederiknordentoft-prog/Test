@@ -951,6 +951,102 @@
   color: var(--color-ink);
 }
 
+/* ── "Det lærte du" that does not fit (Steps.tsx useTight, QA3b) ─────────── */
+/* Set only when the stage would scroll, so a summary that fits keeps its look: the same things a size
+   smaller, perler and points side by side, and on a phone held upright a fact with its picture (a
+   clock and its words) as one line, the picture beside the words. */
+.tv-cer-summary.is-tight,
+.tv-cer-summary.is-tight .tv-cer-summary__learn,
+.tv-cer-summary.is-tight .tv-cer-summary__earn,
+.tv-cer-summary.is-tight .tv-learned {
+  gap: 8px;
+}
+.tv-cer-summary.is-tight .tv-cer__title {
+  margin-top: 4px;
+}
+.tv-cer-summary.is-tight .tv-learned__card {
+  gap: 4px;
+  padding: 8px 10px;
+}
+.tv-cer-summary.is-tight .tv-learned__badge {
+  padding: 2px 10px;
+  font-size: 13px;
+}
+.tv-cer-summary.is-tight .tv-learned__phrase,
+.tv-cer-summary.is-tight .tv-learned__phrase.is-long {
+  font-size: 17px;
+}
+.tv-cer-summary.is-tight .tv-learned__n {
+  font-size: 38px;
+}
+.tv-cer-summary.is-tight .tv-learned__eq {
+  font-size: 32px;
+}
+.tv-cer-summary.is-tight .tv-learned__clock {
+  width: 48px;
+  height: 48px;
+}
+.tv-cer-summary.is-tight .tv-learned__pic svg {
+  height: 44px;
+}
+.tv-cer-summary.is-tight .tv-cer-goal {
+  padding: 6px 12px;
+}
+.tv-cer-summary.is-tight .tv-cer-goal__text {
+  font-size: 15px;
+}
+.tv-cer-summary.is-tight .tv-starburst {
+  margin-top: 0;
+}
+.tv-cer-summary.is-tight .tv-starburst__star {
+  width: 44px;
+  height: 44px;
+}
+.tv-cer-summary.is-tight .tv-tally {
+  gap: 8px;
+}
+.tv-cer-summary.is-tight .tv-tally__pill {
+  gap: 6px;
+  min-height: 44px;
+  padding: 4px 12px 4px 8px;
+}
+.tv-cer-summary.is-tight .tv-tally__n {
+  font-size: 19px;
+}
+@media (orientation: portrait) {
+  .tv-cer-summary.is-tight .tv-learned__item:has(> .tv-learned__card.is-fact .tv-learned__fact > :nth-child(2)) {
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .tv-cer-summary.is-tight .tv-learned__card.is-fact:has(.tv-learned__fact > :nth-child(2)) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    column-gap: 12px;
+    row-gap: 4px;
+    padding: 8px 14px 8px 10px;
+  }
+  .tv-cer-summary.is-tight .tv-learned__card.is-fact:has(.tv-learned__fact > :nth-child(2)) > .tv-learned__fact {
+    display: contents;
+  }
+  .tv-cer-summary.is-tight .tv-learned__card.is-fact .tv-learned__fact > :first-child {
+    grid-row: 1 / span 2;
+    grid-column: 1;
+  }
+  .tv-cer-summary.is-tight .tv-learned__card.is-fact .tv-learned__fact > .tv-learned__phrase {
+    grid-row: 1;
+    grid-column: 2;
+    align-self: end;
+    text-align: left;
+  }
+  .tv-cer-summary.is-tight .tv-learned__card.is-fact > .tv-learned__badge {
+    grid-row: 2;
+    grid-column: 2;
+    align-self: start;
+  }
+}
+
 /* ── Sizes ──────────────────────────────────────────────────────────────── */
 @media (min-width: 700px) and (min-height: 700px) {
   .tv-learned__eq {

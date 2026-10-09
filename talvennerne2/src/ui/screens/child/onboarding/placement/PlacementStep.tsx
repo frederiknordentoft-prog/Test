@@ -2,9 +2,10 @@
 // built (flow.ts placementOffered). Pip says in two short sentences that it is not a test and that
 // the child can stop when it likes; two equal buttons start the ladder or skip it ("Spring over":
 // the first round at once). The ladder (Ladder.tsx) ends with "Det er nok" or by itself; then what
-// was shown is written and Pip says thank you, and "Spil" starts the first round on the map's next
-// stone in the child's home world: where the ladder put the child (SPEC A24). Never a countdown, never
-// an automatic start.
+// was shown is written and Pip says thank you (after "Det er nok" before a rung is passed, which is
+// no placement, only that it is fine), and "Spil" starts the first round on the map's next stone in
+// the child's home world: where the ladder put the child (SPEC A24). Never a countdown, never an
+// automatic start.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SpeakHandle } from '../../../../../audio/voice'
 import type { ClipId, Grade, NodeId, SpeechPart } from '../../../../../engine/types'
@@ -16,6 +17,7 @@ import { cx } from '../../../../design/cx'
 import { TopBar } from '../../../../shell/TopBar'
 import { AnimalArt, lookOf } from '../art'
 import { PipFigure } from '../Pip'
+import { placementCounts } from '../../../../../engine/placement'
 import { startOnStone } from './flow'
 import { Ladder } from './Ladder'
 import { usePlacement } from './store'
@@ -26,10 +28,10 @@ type Phase = 'intro' | 'ladder' | 'outro'
 /** Pip's last words are heard before the round takes over the voice, but never hold it up for long. */
 const GO_MAX_MS = 2500
 
-const LINES: Readonly<Record<Exclude<Phase, 'ladder'>, ClipId[]>> = {
-  intro: ['s.place.intro', 's.place.intro.stop'],
-  outro: ['s.place.done'],
-}
+const INTRO: ClipId[] = ['s.place.intro', 's.place.intro.stop']
+/** The thanks only when what was shown counts (placementCounts); else a neutral line (QA3b). */
+const OUTRO: ClipId[] = ['s.place.done']
+const OUTRO_NONE: ClipId[] = ['s.place.done.none']
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 const clips = (...ids: ClipId[]): SpeechPart[] => ids.map((clip) => ({ clip }))
@@ -47,6 +49,7 @@ export function PlacementStep({ grade, onBack }: PlacementStepProps) {
   const [error, setError] = useState(false)
   const [talking, setTalking] = useState(false)
   const status = usePlacement((s) => s.status)
+  const counts = usePlacement((s) => !!s.session && placementCounts(s.session.run))
   const friend = useProfile((s) => s.profile?.animals.find((a) => a.uid === s.profile?.buddyUid) ?? null)
   const voice = useRef<SpeakHandle | null>(null)
 
@@ -64,7 +67,7 @@ export function PlacementStep({ grade, onBack }: PlacementStepProps) {
     [speech],
   )
 
-  const lines = error ? (['s.onb.error'] as ClipId[]) : phase === 'ladder' ? [] : LINES[phase]
+  const lines = error ? (['s.onb.error'] as ClipId[]) : phase === 'ladder' ? [] : phase === 'intro' ? INTRO : counts ? OUTRO : OUTRO_NONE
   const lineKey = lines.join('|')
   useEffect(() => {
     if (lines.length > 0) say(clips(...lines))
