@@ -1,0 +1,385 @@
+18:42:51 generate.py --wave 3 --threads 2 --max-minutes 100 --retake-from voice/qa.json (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261008-184251.log)
+18:42:52 frag.betal: ingen takes tilbage til en ny take
+18:42:52 frag.hvad: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.place.lay: ingen takes tilbage til en ny take
+18:42:52 frag.stil_uret_saa_klokken_er: ingen takes tilbage til en ny take
+18:42:52 h.end.700: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 h.mid.200: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 h.mid.400: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 h.mid.500: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 h.mid.600: ingen takes tilbage til en ny take
+18:42:52 hog.100: ingen takes tilbage til en ny take
+18:42:52 hog.200: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 hog.300: ingen takes tilbage til en ny take
+18:42:52 hog.400: take 2 afvist af sammensætningstesten, genereres igen
+18:42:52 hog.500: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 n.end.1: ingen takes tilbage til en ny take
+18:42:52 n.end.15: ingen takes tilbage til en ny take
+18:42:52 n.end.16: ingen takes tilbage til en ny take
+18:42:52 n.end.2: ingen takes tilbage til en ny take
+18:42:52 n.end.20: ingen takes tilbage til en ny take
+18:42:52 n.end.3: ingen takes tilbage til en ny take
+18:42:52 n.end.35: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 n.end.37: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 n.end.50: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 n.mid.1: ingen takes tilbage til en ny take
+18:42:52 n.mid.10: ingen takes tilbage til en ny take
+18:42:52 n.mid.12: ingen takes tilbage til en ny take
+18:42:52 n.mid.14: ingen takes tilbage til en ny take
+18:42:52 n.mid.15: ingen takes tilbage til en ny take
+18:42:52 n.mid.17: ingen takes tilbage til en ny take
+18:42:52 n.mid.18: ingen takes tilbage til en ny take
+18:42:52 n.mid.19: ingen takes tilbage til en ny take
+18:42:52 n.mid.25: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 n.mid.3: ingen takes tilbage til en ny take
+18:42:52 n.mid.4: ingen takes tilbage til en ny take
+18:42:52 n.mid.5: ingen takes tilbage til en ny take
+18:42:52 n.mid.50: take 2 afvist af sammensætningstesten, genereres igen
+18:42:52 n.mid.6: ingen takes tilbage til en ny take
+18:42:52 n.mid.7: ingen takes tilbage til en ny take
+18:42:52 n.mid.75: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 n.mid.8: ingen takes tilbage til en ny take
+18:42:52 n.mid.9: ingen takes tilbage til en ny take
+18:42:52 n.mid.90: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.coin.10000.def.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.10000.indef.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.10000.pl.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.2000.indef.end: take 3 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.coin.20000.def.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.20000.pl.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.50.def.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.5000.def.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.5000.indef.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.5000.pl.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.50000.def.end: ingen takes tilbage til en ny take
+18:42:52 noun.coin.50000.pl.end: ingen takes tilbage til en ny take
+18:42:52 noun.frac.1_2.end: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.place.o.pl.mid: take 2 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.place.t.pl.end: ingen takes tilbage til en ny take
+18:42:52 noun.place.t.pl.mid: ingen takes tilbage til en ny take
+18:42:52 noun.shape.hexagon.indef.end: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.shape.rhombus.indef.end: ingen takes tilbage til en ny take
+18:42:52 noun.shape.rhombus.pl.end: take 3 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.shape.rhombus.pl.mid: take 2 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.shape.trapezoid.indef.end: ingen takes tilbage til en ny take
+18:42:52 noun.solid.sphere.def.end: ingen takes tilbage til en ny take
+18:42:52 noun.thing.ball.pl: ingen takes tilbage til en ny take
+18:42:52 noun.unit.cm.end: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.unit.kroner_og: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 noun.unit.ore.end: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 op.er_lig_med: ingen takes tilbage til en ny take
+18:42:52 op.og: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 op.plus: ingen takes tilbage til en ny take
+18:42:52 q.mp:2+?=4: ingen takes tilbage til en ny take
+18:42:52 s.change.howMuchBack: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 s.change.layChange: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.clock.findClock: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.clockElapsed.set.minusHalf: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 s.clockElapsed.set.plusHalf: take 2 afvist af sammensætningstesten, genereres igen
+18:42:52 s.convertCmM.howManyM: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 s.fractionCompare.biggest: ingen takes tilbage til en ny take
+18:42:52 s.fractionCompare.sortBiggest: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 s.fractionCompare.sortSmallest: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 s.shareEqually.share: ingen takes tilbage til en ny take
+18:42:52 s.fractionShape.colour: take 3 afvist af sammensætningstesten, genereres igen
+18:42:52 s.fractionShape.write: ingen takes tilbage til en ny take
+18:42:52 s.kronerOre.payTwo: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.nl.hopFrom: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.nl1000.closest: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 s.nl1000.whichTen: take 2 afvist af sammensætningstesten, genereres igen
+18:42:52 s.order.countBackHundreds: ingen takes tilbage til en ny take
+18:42:52 s.order.countBackTens: ingen takes tilbage til en ny take
+18:42:52 s.order.countOnHundreds: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.order.countOnTens: ingen takes tilbage til en ny take
+18:42:52 s.order20.countBack: ingen takes tilbage til en ny take
+18:42:52 s.order20.countOn: ingen takes tilbage til en ny take
+18:42:52 s.order20.whichBigger: take 2 afvist af sammensætningstesten, genereres igen
+18:42:52 s.patterns.continue: ingen takes tilbage til en ny take
+18:42:52 s.place.build: ingen takes tilbage til en ny take
+18:42:52 s.place.buildOnlyTens: ingen takes tilbage til en ny take
+18:42:52 s.place.howManyTensOnes: take 3 afvist af sammensætningstesten, genereres igen
+18:42:52 s.place.writeNumberWithTokens: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.pv.worthTens: ingen takes tilbage til en ny take
+18:42:52 s.skipCount.nextTwo: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.symmetry.howManyMissing: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.symmetry.isMirrored: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 s.unitChoice.q.carrot: take 1 afvist af sammensætningstesten, genereres igen
+18:42:52 t.half.100: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 t.half.220: take 0 afvist af sammensætningstesten, genereres igen
+18:42:52 452 klip valgt, 398 færdige, 54 at lave
+18:42:52   ✓ master hint.convertCmM.add = kopi af s.place.lay (samme tekst)
+18:42:52   ✓ master hint.fractionOfSet.put = kopi af s.place.lay (samme tekst)
+18:42:52   ✓ master s.fractionOfSet.deal = kopi af s.shareEqually.share (samme tekst)
+18:42:52   ✓ master frag.laeg = kopi af s.place.lay (samme tekst)
+18:42:52   ✓ master t.end.120 = kopi af n.end.2 (samme tekst)
+18:42:52   ✓ master t.end.180 = kopi af n.end.3 (samme tekst)
+18:47:02 input frame rate=25
+18:48:34 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+18:48:42 model indlæst på 325 s (2 tråde)
+18:48:57 ✅ EOS token detected! Stopping generation at step 99
+18:49:15 kald sentence k=1 t1 'Stil uret, så det viser, hvad klokken var for en halv time siden.': 32.9 s for 3.92 s lyd
+18:49:19   s.clockElapsed.set.minusHalf t1: 3.24 s (forhold 0.58) -18.18 LUFS, alone: 'stil uret så det viser hvad klokken var for en halv time siden' CER 0.0 (wav2vec2) → ok
+18:49:19   ✓ master s.clockElapsed.set.minusHalf t1 (bestået)
+18:49:30 ✅ EOS token detected! Stopping generation at step 91
+18:49:44 kald sentence k=1 t3 'Stil uret, så det viser, hvad klokken er om en halv time.': 25.6 s for 3.60 s lyd
+18:49:46   s.clockElapsed.set.plusHalf t3: 3.04 s (forhold 0.61) -18.07 LUFS, alone: 'stil uret sat det viser hvad klokken er om en halv time' CER 0.0465 (wav2vec2) → ok
+18:49:47   ✓ master s.clockElapsed.set.plusHalf t3 (bestået)
+18:49:54 ✅ EOS token detected! Stopping generation at step 56
+18:50:07 kald single k=1 t1 'Hvor mange hele meter er,': 20.0 s for 2.20 s lyd
+18:50:08   s.convertCmM.howManyM t1: 1.41 s (forhold 0.56) -18.12 LUFS, alone: 'hvor mange hele meder er' CER 0.05 (wav2vec2) → ok
+18:50:08   ✓ master s.convertCmM.howManyM t1 (bestået)
+18:50:21 ✅ EOS token detected! Stopping generation at step 89
+18:50:36 kald sentence k=1 t1 'Sæt brøkerne i rækkefølge. Start med den største.': 28.3 s for 3.52 s lyd
+18:50:38   s.fractionCompare.sortBiggest t1: 2.87 s (forhold 0.65) -18.15 LUFS, alone: 'sæt brygerne i rækkefølge start med den største' CER 0.05 (wav2vec2) → ok
+18:50:38   ✓ master s.fractionCompare.sortBiggest t1 (bestået)
+18:50:54 ✅ EOS token detected! Stopping generation at step 91
+18:51:08 kald sentence k=1 t1 'Sæt brøkerne i rækkefølge. Start med den mindste.': 29.4 s for 3.60 s lyd
+18:51:10   s.fractionCompare.sortSmallest t1: 2.90 s (forhold 0.66) -18.11 LUFS, alone: 'sæt brøgerne i rækkefølge start med den mindste' CER 0.025 (wav2vec2) → ok
+18:51:10   ✓ master s.fractionCompare.sortSmallest t1 (bestået)
+18:51:16 ✅ EOS token detected! Stopping generation at step 43
+18:51:26 kald sentence k=1 t2 'Betal for to af dem.': 16.5 s for 1.68 s lyd
+18:51:38   s.kronerOre.payTwo t2: 1.07 s (forhold 0.57) -18.0 LUFS, alone: 'betalt for to af dem' CER 0.0667 (wav2vec2, whisper: 'Betalt for to af dem') → FEJL asr
+18:51:42 ✅ EOS token detected! Stopping generation at step 36
+18:51:53 kald single k=1 t1 'tættest på?': 15.6 s for 1.40 s lyd
+18:51:54   s.nl1000.closest t1: 0.66 s (forhold 0.70) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:52:00 ✅ EOS token detected! Stopping generation at step 45
+18:52:10 kald single k=1 t3 'Hvilken tier ligger,': 16.3 s for 1.76 s lyd
+18:52:10   s.nl1000.whichTen t3: 1.05 s (forhold 0.56) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:52:17 ✅ EOS token detected! Stopping generation at step 52
+18:52:29 kald sentence k=1 t1 'ti minutter over halv to.': 18.4 s for 2.04 s lyd
+18:52:30   t.half.100 t1: 1.28 s (forhold 0.51) -18.06 LUFS, alone: '10 minutter over halv 2' CER 0.0 (wav2vec2) → ok
+18:52:30   ✓ master t.half.100 t1 (bestået)
+18:52:37 ✅ EOS token detected! Stopping generation at step 56
+18:52:51 kald sentence k=1 t1 'ti minutter over halv fire.': 20.6 s for 2.20 s lyd
+18:52:52   t.half.220 t1: 1.55 s (forhold 0.55) -18.11 LUFS, alone: '10 minutter over halv 4' CER 0.0 (wav2vec2) → ok
+18:52:52   ✓ master t.half.220 t1 (bestået)
+18:52:56 ✅ EOS token detected! Stopping generation at step 21
+18:53:11 kald single k=1 t2 'hvad,': 18.7 s for 0.80 s lyd
+18:53:11   frag.hvad t2: 0.33 s (forhold 1.06) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:53:22 ✅ EOS token detected! Stopping generation at step 49
+18:53:35 kald carrier k=1 t1 'Tallet er syv hundrede.': 23.4 s for 1.92 s lyd
+18:53:36   h.end.700 t1: 0.74 s (forhold 0.59) -18.0 LUFS, carrier: 'tallet er 700' CER 0.0 (wav2vec2) → ok
+18:53:42 ✅ EOS token detected! Stopping generation at step 44
+18:53:53 kald carrier k=1 t1 'Tallet er to hundrede,': 17.5 s for 1.72 s lyd
+18:53:54   h.mid.200 t1: 0.65 s (forhold 0.52) -18.0 LUFS, carrier: 'tallet er 200' CER 0.0 (wav2vec2) → ok
+18:54:00 ✅ EOS token detected! Stopping generation at step 44
+18:54:11 kald carrier k=1 t2 'Tallet er fire hundrede,': 17.0 s for 1.72 s lyd
+18:54:12   h.mid.400 t2: 0.62 s (forhold 0.40) -18.15 LUFS, carrier: 'tallet er 400' CER 0.0 (wav2vec2) → FEJL varighed
+18:54:18 ✅ EOS token detected! Stopping generation at step 44
+18:54:28 kald carrier k=1 t1 'Tallet er fem hundrede,': 16.5 s for 1.72 s lyd
+18:54:29   h.mid.500 t1: 0.64 s (forhold 0.51) -18.07 LUFS, carrier: 'tallet er 500' CER 0.0 (wav2vec2) → ok
+18:54:38 ✅ EOS token detected! Stopping generation at step 66
+18:54:50 kald head k=1 t1 'Tallet er to hundrede og otteogtredive.': 20.7 s for 2.60 s lyd
+18:54:51   hog.200 t1: 0.71 s (forhold 0.46) -18.0 LUFS, carrier: 'tallet er 238' CER 0.0 (wav2vec2) → ok
+18:55:00 ✅ EOS token detected! Stopping generation at step 71
+18:55:13 kald head k=1 t3 'Tallet er fire hundrede og seksoghalvtreds.': 21.8 s for 2.80 s lyd
+18:55:14   hog.400 t3: 0.61 s (forhold 0.33) -18.0 LUFS, carrier: 'tallet er 456' CER 0.0 (wav2vec2) → ok
+18:55:23 ✅ EOS token detected! Stopping generation at step 70
+18:55:37 kald head k=1 t2 'Tallet er fem hundrede og seksoghalvtreds.': 22.9 s for 2.76 s lyd
+18:55:38   hog.500 t2: 0.61 s (forhold 0.39) -18.0 LUFS, carrier: 'tallet er 556' CER 0.0 (wav2vec2) → ok
+18:55:45 ✅ EOS token detected! Stopping generation at step 54
+18:55:56 kald carrier k=1 t2 'Tallet er femogtredive.': 18.0 s for 2.12 s lyd
+18:55:57   n.end.35 t2: 0.76 s (forhold 0.49) -18.17 LUFS, carrier: 'tallet er 35' CER 0.0 (wav2vec2) → ok
+18:56:03 ✅ EOS token detected! Stopping generation at step 46
+18:56:14 kald carrier k=1 t1 'Tallet er syvogtredive.': 17.0 s for 1.80 s lyd
+18:56:15   n.end.37 t1: 0.80 s (forhold 0.51) -18.08 LUFS, carrier: 'tallet er 37' CER 0.0 (wav2vec2) → ok
+18:56:21 ✅ EOS token detected! Stopping generation at step 49
+18:56:32 kald carrier k=1 t1 'Tallet er halvtreds.': 16.7 s for 1.92 s lyd
+18:56:33   n.end.50 t1: 0.65 s (forhold 1.03) -18.0 LUFS, carrier: 'tallet er 50' CER 0.0 (wav2vec2) → ok
+18:56:39 ✅ EOS token detected! Stopping generation at step 49
+18:56:49 kald carrier k=1 t1 'Tallet er femogtyve,': 16.8 s for 1.92 s lyd
+18:56:50   n.mid.25 t1: 0.72 s (forhold 0.58) -18.13 LUFS, carrier: 'tallet er 25' CER 0.0 (wav2vec2) → ok
+18:56:57 ✅ EOS token detected! Stopping generation at step 49
+18:57:09 kald carrier k=1 t3 'Tallet er halvtreds,': 18.2 s for 1.92 s lyd
+18:57:10   n.mid.50 t3: 0.67 s (forhold 1.07) -18.0 LUFS, carrier: 'tallet er 50' CER 0.0 (wav2vec2) → ok
+18:57:17 ✅ EOS token detected! Stopping generation at step 51
+18:57:29 kald carrier k=1 t1 'Tallet er femoghalvfjerds,': 18.5 s for 2.00 s lyd
+18:57:29   n.mid.75 t1: 0.89 s (forhold 0.72) -18.0 LUFS, carrier: 'tallet er 75' CER 0.0 (wav2vec2) → ok
+18:57:35 ✅ EOS token detected! Stopping generation at step 42
+18:57:45 kald carrier k=1 t2 'Tallet er halvfems,': 15.9 s for 1.64 s lyd
+18:57:46   n.mid.90 t2: 0.63 s (forhold 1.01) -18.0 LUFS, carrier: 'tallet er 90' CER 0.0 (wav2vec2) → ok
+18:57:52 ✅ EOS token detected! Stopping generation at step 39
+18:58:02 kald sentence k=1 t4 'en tyvekrone.': 15.9 s for 1.52 s lyd
+18:58:03   noun.coin.2000.indef.end t4: 0.90 s (forhold 0.57) -18.0 LUFS, alone: 'en tyvekrone' CER 0.0 (wav2vec2) → ok
+18:58:03   ✓ master noun.coin.2000.indef.end t4 (bestået)
+18:58:07 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:58:07 ✅ EOS token detected! Stopping generation at step 26
+18:58:16 kald single k=1 t1 'en halv.': 12.8 s for 1.00 s lyd
+18:58:16   noun.frac.1_2.end t1: 0.54 s (forhold 0.86) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:58:20 ✅ EOS token detected! Stopping generation at step 25
+18:58:29 kald single k=1 t3 'enere,': 12.7 s for 0.96 s lyd
+18:58:29   noun.place.o.pl.mid t3: 0.56 s (forhold 0.59) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:58:34 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:58:34 ✅ EOS token detected! Stopping generation at step 34
+18:58:44 kald single k=1 t2 'en sekskant.': 15.1 s for 1.32 s lyd
+18:58:45   noun.shape.hexagon.indef.end t2: 0.89 s (forhold 0.95) -18.12 LUFS, none: 'None' CER None (None) → ok
+18:58:49 ✅ EOS token detected! Stopping generation at step 27
+18:59:08 kald single k=1 t4 'romber.': 22.9 s for 1.04 s lyd
+18:59:09   noun.shape.rhombus.pl.end t4: 0.43 s (forhold 0.69) -18.12 LUFS, none: 'None' CER None (None) → ok
+18:59:14 ✅ EOS token detected! Stopping generation at step 26
+18:59:26 kald single k=1 t3 'romber,': 17.3 s for 1.00 s lyd
+18:59:26   noun.shape.rhombus.pl.mid t3: 0.47 s (forhold 0.74) -18.11 LUFS, none: 'None' CER None (None) → ok
+18:59:32 ✅ EOS token detected! Stopping generation at step 36
+18:59:50 kald single k=1 t1 'centimeter.': 23.2 s for 1.40 s lyd
+18:59:50   noun.unit.cm.end t1: 0.73 s (forhold 0.59) -18.1 LUFS, none: 'None' CER None (None) → ok
+19:00:07 ✅ EOS token detected! Stopping generation at step 57
+19:00:26 kald single k=1 t1 'kroner og,': 36.1 s for 2.24 s lyd
+19:00:27   noun.unit.kroner_og t1: 0.71 s (forhold 0.76) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:00:31 ✅ EOS token detected! Stopping generation at step 24
+19:00:43 kald single k=1 t1 'øre.': 15.6 s for 0.92 s lyd
+19:00:43   noun.unit.ore.end t1: 0.38 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:00:48 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:00:48 ✅ EOS token detected! Stopping generation at step 20
+19:01:02 kald single k=1 t2 'og,': 18.4 s for 0.76 s lyd
+19:01:02   op.og t2: 0.12 s (forhold 0.39) -18.26 LUFS, none: 'None' CER None (None) → FEJL varighed
+19:01:11 ✅ EOS token detected! Stopping generation at step 53
+19:01:24 kald sentence k=1 t1 'Hvor mange penge får du tilbage?': 21.6 s for 2.08 s lyd
+19:01:25   s.change.howMuchBack t1: 1.35 s (forhold 0.43) -18.06 LUFS, alone: 'hvor mange penge får du tilbage' CER 0.0 (wav2vec2) → ok
+19:01:25   ✓ master s.change.howMuchBack t1 (bestået)
+19:01:34 ✅ EOS token detected! Stopping generation at step 56
+19:01:50 kald sentence k=1 t2 'Læg byttepengene i bakken.': 24.5 s for 2.20 s lyd
+19:02:06   s.change.layChange t2: 1.43 s (forhold 0.51) -18.1 LUFS, alone: 'Læg byttepengene i bakken' CER 0.0 (whisper, wav2vec2: 'læk byttepengene i bakket') → ok
+19:02:06   ✓ master s.change.layChange t2 (bestået)
+19:02:15 ✅ EOS token detected! Stopping generation at step 56
+19:02:28 kald single k=1 t2 'Find uret, der viser klokken,': 22.4 s for 2.20 s lyd
+19:02:38   s.clock.findClock t2: 1.49 s (forhold 0.60) -18.08 LUFS, alone: 'fin uret der viser knoppen' CER 0.1739 (wav2vec2, whisper: 'Find uret der viser kroppen') → FEJL asr
+19:02:41 ✅ EOS token detected! Stopping generation at step 23
+19:02:53 kald single k=1 t4 'Farv,': 15.2 s for 0.88 s lyd
+19:02:54   s.fractionShape.colour t4: 0.36 s (forhold 1.15) -18.16 LUFS, none: 'None' CER None (None) → ok
+19:03:03 ✅ EOS token detected! Stopping generation at step 46
+19:03:18 kald single k=1 t2 'Hoppet starter ved,': 24.3 s for 1.80 s lyd
+19:03:19   s.nl.hopFrom t2: 1.16 s (forhold 0.74) -18.09 LUFS, none: 'None' CER None (None) → ok
+19:03:30 ✅ EOS token detected! Stopping generation at step 60
+19:03:46 kald single k=1 t2 'Tæl videre i hundreder fra,': 27.3 s for 2.36 s lyd
+19:03:57   s.order.countOnHundreds t2: 1.58 s (forhold 0.56) -18.0 LUFS, alone: 'Til videre i hundreder fra' CER 0.0455 (whisper, wav2vec2: 'til videre i 10reder fra') → ok
+19:03:57   ✓ master s.order.countOnHundreds t2 (bestået)
+19:04:09 ✅ EOS token detected! Stopping generation at step 51
+19:04:24 kald single k=1 t3 'Hvilket tal er størst,': 26.4 s for 2.00 s lyd
+19:04:25   s.order20.whichBigger t3: 1.32 s (forhold 0.85) -18.0 LUFS, alone: 'hvilket tal er størst' CER 0.0 (wav2vec2) → ok
+19:04:25   ✓ master s.order20.whichBigger t3 (bestået)
+19:04:40 ✅ EOS token detected! Stopping generation at step 67
+19:05:01 kald single k=1 t4 'Hvor mange tiere og enere er der i,': 35.5 s for 2.64 s lyd
+19:05:11   s.place.howManyTensOnes t4: 1.99 s (forhold 0.49) -18.09 LUFS, alone: 'Hvor mange tigre og enere er der i' CER 0.037 (whisper, wav2vec2: 'hvor mange tider og enere er der i') → ok
+19:05:11   ✓ master s.place.howManyTensOnes t4 (bestået)
+19:05:24 ✅ EOS token detected! Stopping generation at step 49
+19:05:35 kald sentence k=1 t2 'Skriv tallet med brikkerne.': 23.5 s for 1.92 s lyd
+19:05:36   s.place.writeNumberWithTokens t2: 1.25 s (forhold 0.57) -18.05 LUFS, alone: 'skrivtallet med prikkerne' CER 0.0435 (wav2vec2) → ok
+19:05:36   ✓ master s.place.writeNumberWithTokens t2 (bestået)
+19:05:43 ✅ EOS token detected! Stopping generation at step 53
+19:05:54 kald sentence k=1 t2 'Hvilke to tal kommer så?': 18.7 s for 2.08 s lyd
+19:05:55   s.skipCount.nextTwo t2: 1.29 s (forhold 0.59) -18.0 LUFS, alone: 'hvilke to tal kommer så' CER 0.0 (wav2vec2) → ok
+19:05:55   ✓ master s.skipCount.nextTwo t2 (bestået)
+19:06:08 ✅ EOS token detected! Stopping generation at step 90
+19:06:24 kald sentence k=1 t2 'Hvor mange felter mangler, før mønsteret er spejlet i stregen?': 28.5 s for 3.56 s lyd
+19:06:26   s.symmetry.howManyMissing t2: 2.89 s (forhold 0.54) -18.16 LUFS, alone: 'hvor mange felter mangler før mønsteret ar spejlet i stregen' CER 0.0196 (wav2vec2) → ok
+19:06:26   ✓ master s.symmetry.howManyMissing t2 (bestået)
+19:06:35 ✅ EOS token detected! Stopping generation at step 69
+19:06:47 kald sentence k=1 t2 'Er mønsteret spejlet rigtigt i stregen?': 20.9 s for 2.72 s lyd
+19:06:48   s.symmetry.isMirrored t2: 2.05 s (forhold 0.60) -18.12 LUFS, alone: 'er mønstret spejlet rigtigt i stregen' CER 0.0303 (wav2vec2) → ok
+19:06:48   ✓ master s.symmetry.isMirrored t2 (bestået)
+19:06:57 ✅ EOS token detected! Stopping generation at step 69
+19:07:08 kald sentence k=1 t2 'Hvad måler man længden af en gulerod i?': 19.7 s for 2.72 s lyd
+19:07:15   s.unitChoice.q.carrot t2: 1.93 s (forhold 0.51) -18.12 LUFS, alone: 'Hvad måler man længden af en gulderod i?' CER 0.0323 (whisper, wav2vec2: 'hvad måler man længden af en gulderød i') → ok
+19:07:16   ✓ master s.unitChoice.q.carrot t2 (bestået)
+19:07:22 ✅ EOS token detected! Stopping generation at step 46
+19:07:32 kald sentence k=1 t3 'Betal for to af dem.': 16.2 s for 1.80 s lyd
+19:07:38   s.kronerOre.payTwo t3: 1.24 s (forhold 0.66) -18.15 LUFS, alone: 'Betal for to af dem' CER 0.0 (whisper, wav2vec2: 'betalt for to af dem') → ok
+19:07:38   ✓ master s.kronerOre.payTwo t3 (bestået)
+19:07:44 ✅ EOS token detected! Stopping generation at step 44
+19:07:54 kald carrier k=1 t3 'Tallet er fire hundrede,': 16.3 s for 1.72 s lyd
+19:07:55   h.mid.400 t3: 0.64 s (forhold 0.41) -18.0 LUFS, carrier: 'tallet er 400' CER 0.0 (wav2vec2) → ok
+19:07:58 ✅ EOS token detected! Stopping generation at step 20
+19:08:07 kald single k=1 t3 'og,': 11.8 s for 0.76 s lyd
+19:08:07   op.og t3: 0.30 s (forhold 0.98) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:08:14 ✅ EOS token detected! Stopping generation at step 53
+19:08:25 kald single k=1 t3 'Find uret, der viser klokken,': 17.3 s for 2.08 s lyd
+19:08:31   s.clock.findClock t3: 1.50 s (forhold 0.60) -18.0 LUFS, alone: 'find urdet der viser kloppen' CER 0.1304 (wav2vec2, whisper: 'Find ordet der viser klokken') → FEJL asr
+19:08:38 ✅ EOS token detected! Stopping generation at step 55
+19:08:50 kald single k=1 t4 'Find uret, der viser klokken,': 18.6 s for 2.16 s lyd
+19:08:51   s.clock.findClock t4: 1.43 s (forhold 0.57) -18.04 LUFS, alone: 'find uret der viser klokken' CER 0.0 (wav2vec2) → ok
+19:08:51   ✓ master s.clock.findClock t4 (bestået)
+19:08:56   sammensat n.mid.7 + frag.hvad + n.end.5: '7 hvad 5' CER 0.000 (whisper, wav2vec2: '7 vad 5') → ok
+19:09:02   sammensat frag.hvad_er + n.mid.7 + op.plus + h.end.700: 'Hvad er 7 plus 700?' CER 0.000 (whisper, wav2vec2: 'hvader lus 700') → ok
+19:09:02   sammensat frag.find_tallet + h.end.700: 'finn tallet 700' CER 0.048 (wav2vec2) → ok
+19:09:03   sammensat frag.hvad_er + h.mid.200 + op.plus + n.end.5: 'hvad er 200 plus5' CER 0.000 (wav2vec2) → ok
+19:09:03   sammensat frag.hvad_er + h.mid.400 + op.plus + n.end.5: 'hvad er 400 plus 5' CER 0.000 (wav2vec2) → ok
+19:09:04   sammensat frag.hvad_er + h.mid.500 + op.plus + n.end.5: 'hvad er 500 plus 5' CER 0.000 (wav2vec2) → ok
+19:09:04   sammensat hog.200 + n.end.47: '247' CER 0.000 (wav2vec2) → ok
+19:09:05   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.200 + n.end.25: 'hvad er 7 plus 225' CER 0.000 (wav2vec2) → ok
+19:09:05   sammensat hog.400 + n.end.47: '447' CER 0.000 (wav2vec2) → ok
+19:09:06   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.400 + n.end.25: 'hvad er 7 plus 425' CER 0.000 (wav2vec2) → ok
+19:09:07   sammensat hog.500 + n.end.47: '547a' CER 0.043 (wav2vec2) → ok
+19:09:07   sammensat frag.hvad_er + n.mid.7 + op.plus + hog.500 + n.end.25: 'hvad er 7 plus 525' CER 0.000 (wav2vec2) → ok
+19:09:08   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.35: 'hvad er 7 plus 35' CER 0.000 (wav2vec2) → ok
+19:09:09   sammensat frag.find_tallet + n.end.35: 'find tallet 35' CER 0.000 (wav2vec2) → ok
+19:09:10   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.37: 'hvad er 7 plus 37' CER 0.000 (wav2vec2) → ok
+19:09:20   sammensat frag.find_tallet + n.end.37: 'Find tallet 37' CER 0.000 (whisper, wav2vec2: 'finn tallet på 37') → ok
+19:09:20   sammensat frag.hvad_er + n.mid.7 + op.plus + n.end.50: 'hvad er 7 plus 50' CER 0.000 (wav2vec2) → ok
+19:09:31   sammensat frag.find_tallet + n.end.50: 'Find tallet 50' CER 0.000 (whisper, wav2vec2: 'finn tallet 50') → ok
+19:09:31   sammensat frag.hvad_er + n.mid.25 + op.plus + n.end.5: 'hvad er 25 plus 5' CER 0.000 (wav2vec2) → ok
+19:09:32   sammensat frag.hvad_er + n.mid.50 + op.plus + n.end.5: 'hvad er 50 pus 5' CER 0.045 (wav2vec2) → ok
+19:09:33   sammensat frag.hvad_er + n.mid.75 + op.plus + n.end.5: 'hvad er 75 plus 5' CER 0.000 (wav2vec2) → ok
+19:09:34   sammensat frag.hvad_er + n.mid.90 + op.plus + n.end.5: 'hvad er 90 plus 5' CER 0.000 (wav2vec2) → ok
+19:09:34   sammensat frag.det_er + noun.frac.1_2.end: 'det er en halv' CER 0.000 (wav2vec2) → ok
+19:09:42   sammensat frag.det_er + noun.place.o.pl.mid: 'det er iner' CER 0.200 (wav2vec2, whisper: 'Det er i Norge') → FEJL
+19:09:50   sammensat frag.det_er + noun.shape.hexagon.indef.end: 'Det er en sekskant' CER 0.000 (whisper, wav2vec2: 'det er en s6 kant') → ok
+19:09:51   sammensat frag.det_er + noun.shape.rhombus.pl.end: 'det er romber' CER 0.000 (wav2vec2) → ok
+19:09:51   sammensat frag.det_er + noun.shape.rhombus.pl.mid: 'det er romber' CER 0.000 (wav2vec2) → ok
+19:09:52   sammensat frag.det_er + noun.unit.cm.end: 'det er centimeter' CER 0.000 (wav2vec2) → ok
+19:09:53   sammensat frag.det_er + noun.unit.kroner_og: 'det er kroner og' CER 0.000 (wav2vec2) → ok
+19:10:01   sammensat frag.det_er + noun.unit.ore.end: 'det er bøer' CER 0.375 (wav2vec2, whisper: 'Det er øer') → FEJL
+19:10:01   sammensat n.mid.7 + op.og + n.end.5: '7 og 5' CER 0.000 (wav2vec2) → ok
+19:10:09   sammensat frag.det_er + s.fractionShape.colour: 'Det er farv' CER 0.000 (whisper, wav2vec2: 'det er farvet') → ok
+19:10:17   sammensat frag.det_er + s.nl.hopFrom: 'Det er hoppet starter ved' CER 0.000 (whisper, wav2vec2: 'det er hobbet starter ved') → ok
+19:10:18   sammensat frag.det_er + s.nl1000.closest: 'det er tættest på' CER 0.000 (wav2vec2) → ok
+19:10:19   sammensat frag.det_er + s.nl1000.whichTen: 'det er hvilken tier ligger' CER 0.000 (wav2vec2) → ok
+19:10:25 ✅ EOS token detected! Stopping generation at step 22
+19:10:44 kald single k=1 t4 'enere,': 24.5 s for 0.84 s lyd
+19:10:44   noun.place.o.pl.mid t4: 0.53 s (forhold 0.57) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:10:47 ✅ EOS token detected! Stopping generation at step 25
+19:10:57 kald single k=1 t2 'øre.': 12.8 s for 0.96 s lyd
+19:10:57   noun.unit.ore.end t2: 0.39 s (forhold 0.62) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:10:57 sammensætning runde 1: 26 af 28 bestået
+19:10:57   sammensat frag.det_er + noun.place.o.pl.mid: 'det er enere' CER 0.000 (wav2vec2) → ok
+19:11:02   sammensat frag.det_er + noun.unit.ore.end: 'det er ører' CER 0.125 (wav2vec2, whisper: 'Det er øer') → FEJL
+19:11:05 ✅ EOS token detected! Stopping generation at step 21
+19:11:15 kald single k=1 t3 'øre.': 13.1 s for 0.80 s lyd
+19:11:15   noun.unit.ore.end t3: 0.37 s (forhold 0.59) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:11:15 sammensætning runde 2: 27 af 28 bestået
+19:11:22   sammensat frag.det_er + noun.unit.ore.end: 'det er bøger' CER 0.375 (wav2vec2, whisper: 'Det er øer') → FEJL
+19:11:29 ✅ EOS token detected! Stopping generation at step 24
+19:11:40 kald single k=1 t4 'øre.': 18.1 s for 0.92 s lyd
+19:11:40   noun.unit.ore.end t4: 0.38 s (forhold 0.61) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:11:40 sammensætning runde 3: 27 af 28 bestået
+19:11:45   sammensat frag.det_er + noun.unit.ore.end: 'det er ører' CER 0.125 (wav2vec2, whisper: 'Det er øer') → FEJL
+19:11:45 sammensætning runde 4: 27 af 28 bestået
+19:11:45 sammensætning runde 5: 27 af 28 bestået
+19:11:45   ✓ master frag.hvad t2 (bestået)
+19:11:45   ✓ master h.end.700 t1 (bestået)
+19:11:45   ✓ master h.mid.200 t1 (bestået)
+19:11:45   ✓ master h.mid.400 t3 (bestået)
+19:11:46   ✓ master h.mid.500 t1 (bestået)
+19:11:46   ✓ master hog.200 t1 (bestået)
+19:11:46   ✓ master hog.400 t3 (bestået)
+19:11:46   ✓ master hog.500 t2 (bestået)
+19:11:46   ✓ master n.end.35 t2 (bestået)
+19:11:46   ✓ master n.end.37 t1 (bestået)
+19:11:46   ✓ master n.end.50 t1 (bestået)
+19:11:46   ✓ master n.mid.25 t1 (bestået)
+19:11:46   ✓ master n.mid.50 t3 (bestået)
+19:11:46   ✓ master n.mid.75 t1 (bestået)
+19:11:46   ✓ master n.mid.90 t2 (bestået)
+19:11:46   ✓ master noun.frac.1_2.end t1 (bestået)
+19:11:47   ✓ master noun.place.o.pl.mid t4 (bestået)
+19:11:47   ✓ master noun.shape.hexagon.indef.end t2 (bestået)
+19:11:47   ✓ master noun.shape.rhombus.pl.end t4 (bestået)
+19:11:47   ✓ master noun.shape.rhombus.pl.mid t3 (bestået)
+19:11:47   ✓ master noun.unit.cm.end t1 (bestået)
+19:11:47   ✓ master noun.unit.kroner_og t1 (bestået)
+19:11:47   ✓ master noun.unit.ore.end t2 (IKKE bestået: sammensætning)
+19:11:47   ✓ master op.og t3 (bestået)
+19:11:47   ✓ master s.fractionShape.colour t4 (bestået)
+19:11:47   ✓ master s.nl.hopFrom t2 (bestået)
+19:11:47   ✓ master s.nl1000.closest t1 (bestået)
+19:11:47   ✓ master s.nl1000.whichTen t3 (bestået)
+19:11:47 færdig: 54 nye mastere (1 ikke bestået, 6 kopier), 57 modelkald, 19.2 min generering (CPU 0.57 t), 0 klip mangler

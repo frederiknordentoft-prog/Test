@@ -1,0 +1,294 @@
+18:35:47 generate.py --wave 3 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261005-183547.log)
+18:35:47 392 klip valgt, 332 færdige, 60 at lave
+18:35:47   ✓ master hint.clock5.is = kopi af hint.change.is (samme tekst)
+18:35:48   ✓ master hint.convertCmM.add = kopi af s.place.lay (samme tekst)
+18:35:48   ✓ master hint.convertCmM.is = kopi af hint.change.is (samme tekst)
+18:35:48   ✓ master hint.convertCmM.left = kopi af s.round.hint.thereAre (samme tekst)
+18:35:48   ✓ master hint.convertCmM.more = kopi af hint.composeShapes.toIt (samme tekst)
+18:36:04 input frame rate=25
+18:36:06 Could not load Cangjie mapping: An error happened while trying to locate the file on the Hub and we cannot find the requested files in the local cache. Please check your connection and try again or make sure your Internet connection is on.
+18:36:07 model indlæst på 17 s (2 tråde)
+18:36:14 ✅ EOS token detected! Stopping generation at step 54
+18:36:25 kald single k=1 t0 'Den lange viser peger på,': 17.7 s for 2.12 s lyd
+18:36:26   hint.clock5.longAt t0: 1.41 s (forhold 0.56) -18.16 LUFS, alone: 'den lange viseg peger på' CER 0.05 (wav2vec2) → ok
+18:36:26   ✓ master hint.clock5.longAt t0 (bestået)
+18:36:31 ✅ EOS token detected! Stopping generation at step 38
+18:36:41 kald single k=1 t0 'minutter efter,': 14.4 s for 1.48 s lyd
+18:36:41   hint.clock5.minAfter t0: 0.82 s (forhold 0.53) -18.17 LUFS, none: 'None' CER None (None) → ok
+18:36:47 ✅ EOS token detected! Stopping generation at step 38
+18:36:56 kald single k=1 t0 'minutter før,': 14.3 s for 1.48 s lyd
+18:36:56   hint.clock5.minBefore t0: 0.73 s (forhold 0.58) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:37:02 ✅ EOS token detected! Stopping generation at step 46
+18:37:12 kald single k=1 t0 'er den endnu ikke nået til,': 16.4 s for 1.80 s lyd
+18:37:13   hint.clock5.notYet t0: 1.24 s (forhold 0.44) -18.19 LUFS, alone: 'er den endnu ikke noet til' CER 0.0476 (wav2vec2) → ok
+18:37:13   ✓ master hint.clock5.notYet t0 (bestået)
+18:37:17 ✅ EOS token detected! Stopping generation at step 26
+18:37:29 kald single k=1 t0 'minutter.': 15.4 s for 1.00 s lyd
+18:37:29   hint.clockDigital.minutes t0: 0.51 s (forhold 0.55) -18.14 LUFS, none: 'None' CER None (None) → ok
+18:37:36 ✅ EOS token detected! Stopping generation at step 53
+18:37:46 kald single k=1 t0 'Den lille viser er gået forbi,': 17.0 s for 2.08 s lyd
+18:37:47   hint.clockDigital.smallPast t0: 1.37 s (forhold 0.44) -18.0 LUFS, alone: 'den lille vise er gået forbi' CER 0.0417 (wav2vec2) → ok
+18:37:47   ✓ master hint.clockDigital.smallPast t0 (bestået)
+18:37:52 ✅ EOS token detected! Stopping generation at step 33
+18:38:00 kald single k=1 t0 'Så er klokken,': 13.3 s for 1.28 s lyd
+18:38:01   hint.clockDigital.soItIs t0: 0.76 s (forhold 0.61) -18.11 LUFS, none: 'None' CER None (None) → ok
+18:38:05 ✅ EOS token detected! Stopping generation at step 32
+18:38:14 kald single k=1 t0 'og det er,': 12.7 s for 1.24 s lyd
+18:38:14   hint.clockDigital.thatIs t0: 0.58 s (forhold 0.62) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:38:19 ✅ EOS token detected! Stopping generation at step 41
+18:38:28 kald single k=1 t0 'En halv time før,': 14.1 s for 1.60 s lyd
+18:38:29   hint.clockElapsed.d.minusHalf t0: 0.93 s (forhold 0.59) -18.04 LUFS, alone: 'en halv time før' CER 0.0 (wav2vec2) → ok
+18:38:29   ✓ master hint.clockElapsed.d.minusHalf t0 (bestået)
+18:38:34 ✅ EOS token detected! Stopping generation at step 42
+18:38:44 kald single k=1 t0 'En halv time efter,': 14.7 s for 1.64 s lyd
+18:38:44   hint.clockElapsed.d.plusHalf t0: 1.08 s (forhold 0.58) -18.04 LUFS, alone: 'en halv time efter' CER 0.0 (wav2vec2) → ok
+18:38:44   ✓ master hint.clockElapsed.d.plusHalf t0 (bestået)
+18:38:49 ✅ EOS token detected! Stopping generation at step 41
+18:38:58 kald single k=1 t0 'En time efter,': 13.3 s for 1.60 s lyd
+18:38:58   hint.clockElapsed.d.plusHour t0: 0.97 s (forhold 0.62) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:39:03 ✅ EOS token detected! Stopping generation at step 39
+18:39:12 kald single k=1 t0 'Et kvarter efter,': 13.8 s for 1.52 s lyd
+18:39:12   hint.clockElapsed.d.plusQuarter t0: 1.02 s (forhold 0.65) -18.08 LUFS, none: 'None' CER None (None) → ok
+18:39:17 ✅ EOS token detected! Stopping generation at step 34
+18:39:26 kald single k=1 t0 'er klokken,': 13.5 s for 1.32 s lyd
+18:39:26   hint.clockElapsed.is t0: 0.71 s (forhold 0.76) -18.07 LUFS, none: 'None' CER None (None) → ok
+18:39:31 ✅ EOS token detected! Stopping generation at step 32
+18:39:39 kald single k=1 t0 'var klokken,': 12.9 s for 1.24 s lyd
+18:39:40   hint.clockElapsed.was t0: 0.71 s (forhold 0.76) -18.14 LUFS, none: 'None' CER None (None) → ok
+18:39:46 ✅ EOS token detected! Stopping generation at step 52
+18:39:57 kald single k=1 t0 'Det digitale ur viser,': 17.1 s for 2.04 s lyd
+18:39:58   s.clockDigital.shows t0: 1.39 s (forhold 0.55) -18.0 LUFS, alone: 'det digitale ur viser' CER 0.0 (wav2vec2) → ok
+18:39:58   ✓ master s.clockDigital.shows t0 (bestået)
+18:40:03 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:40:03 ✅ EOS token detected! Stopping generation at step 36
+18:40:13 kald single k=1 t0 'til overs.': 15.0 s for 1.40 s lyd
+18:40:13   hint.convertCmM.over t0: 0.67 s (forhold 0.71) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:40:20 ✅ EOS token detected! Stopping generation at step 50
+18:40:30 kald single k=1 t0 'Hvor mange centimeter er,': 16.4 s for 1.96 s lyd
+18:40:31   s.convertCmM.howManyCm t0: 1.29 s (forhold 0.52) -18.08 LUFS, alone: 'hvor mange centimeter er' CER 0.0 (wav2vec2) → ok
+18:40:31   ✓ master s.convertCmM.howManyCm t0 (bestået)
+18:40:37 ✅ EOS token detected! Stopping generation at step 50
+18:40:48 kald single k=1 t0 'Hvor mange hele meter er,': 17.6 s for 1.96 s lyd
+18:40:49   s.convertCmM.howManyM t0: 1.24 s (forhold 0.50) -18.05 LUFS, alone: 'hvor mange helemeter er' CER 0.0 (wav2vec2) → ok
+18:40:49   ✓ master s.convertCmM.howManyM t0 (bestået)
+18:40:56 ✅ EOS token detected! Stopping generation at step 57
+18:41:07 kald single k=1 t0 'Hvor mange centimeter længere er,': 17.4 s for 2.24 s lyd
+18:41:08   s.convertCmM.howMuchLonger t0: 1.70 s (forhold 0.49) -18.15 LUFS, alone: 'hvor mange centimeter længere er' CER 0.0 (wav2vec2) → ok
+18:41:08   ✓ master s.convertCmM.howMuchLonger t0 (bestået)
+18:41:11 forcing EOS token, long_tail=tensor(True), alignment_repetition=False, token_repetition=False
+18:41:11 ✅ EOS token detected! Stopping generation at step 26
+18:41:20 kald single k=1 t0 'end,': 11.9 s for 1.00 s lyd
+18:41:20   s.convertCmM.than t0: 0.28 s (forhold 0.91) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:41:26 ✅ EOS token detected! Stopping generation at step 46
+18:41:37 kald single k=1 t0 'Betal først,': 17.1 s for 1.80 s lyd
+18:41:38   hint.kronerOre.first t0: 0.96 s (forhold 1.02) -18.0 LUFS, none: 'None' CER None (None) → ok
+18:42:16 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:42:16 ✅ EOS token detected! Stopping generation at step 242
+18:42:42 kald sentence k=4 t0 'Over betyder efter, og i betyder før. Den lange viser går en kvart gan': 64.3 s for 9.64 s lyd
+18:42:45   hint.clock5.overAndTo t0: 2.17 s (forhold 0.53) -18.09 LUFS, alone: 'over betyder efter og i betyder før' CER 0.0 (wav2vec2) → ok
+18:42:46   hint.clockElapsed.hand.plusQuarter t0: 2.17 s (forhold 0.69) -18.11 LUFS, alone: 'den lange viser går en kvartgang rundt' CER 0.0 (wav2vec2) → ok
+18:42:47   s.clockDigital.findDigital t0: 2.14 s (forhold 0.53) -18.17 LUFS, alone: 'find det digitale urd der viser det samme' CER 0.0303 (wav2vec2) → ok
+18:42:47   s.clockElapsed.ask.plusQuarter t0: 1.21 s (forhold 0.48) -18.19 LUFS, alone: 'hvad er klokken om et kvarter' CER 0.0 (wav2vec2) → ok
+18:42:47   ✓ master hint.clock5.overAndTo t0 (bestået)
+18:42:47   ✓ master hint.clockElapsed.hand.plusQuarter t0 (bestået)
+18:42:47   ✓ master s.clockDigital.findDigital t0 (bestået)
+18:42:47   ✓ master s.clockElapsed.ask.plusQuarter t0 (bestået)
+18:43:16 ✅ EOS token detected! Stopping generation at step 189
+18:43:37 kald sentence k=3 t0 'For lidt siden er tidligere, så viserne går tilbage. Om lidt er senere': 49.9 s for 7.52 s lyd
+18:43:39   hint.clockElapsed.earlier t0: 2.37 s (forhold 0.45) -18.11 LUFS, alone: 'for lidt siden er tidligere saviserne går tilbage' CER 0.0238 (wav2vec2) → ok
+18:43:56   hint.clockElapsed.later t0: 2.09 s (forhold 0.56) -18.01 LUFS, alone: 'om de deg senere saviserne går frem' CER 0.1667 (wav2vec2, whisper: 'Om det der senere så viserne går frem') → FEJL asr
+18:43:56   s.clockDigital.setSame t0: 1.83 s (forhold 0.59) -18.19 LUFS, alone: 'stil uret så detviser det samme' CER 0.0 (wav2vec2) → ok
+18:43:56   ✓ master hint.clockElapsed.earlier t0 (bestået)
+18:43:57   ✓ master s.clockDigital.setSame t0 (bestået)
+18:44:17 ✅ EOS token detected! Stopping generation at step 96
+18:44:44 kald sentence k=1 t0 'Stil uret, så det viser, hvad klokken var for en halv time siden.': 47.1 s for 3.80 s lyd
+18:44:47   s.clockElapsed.set.minusHalf t0: 3.48 s (forhold 0.62) -18.12 LUFS, alone: 'stilurdet så det viser hvad klokken var for en halv time siden' CER 0.02 (wav2vec2) → ok
+18:44:47   ✓ master s.clockElapsed.set.minusHalf t0 (bestået)
+18:45:52 ✅ EOS token detected! Stopping generation at step 225
+18:46:42 kald sentence k=3 t0 'Den lange viser går en halv gang tilbage. Jeg kan læse et digitalt ur,': 114.9 s for 8.96 s lyd
+18:46:45   hint.clockElapsed.hand.minusHalf t0: 1.96 s (forhold 0.52) -18.08 LUFS, alone: 'den lange viser går en halv gang tilbage' CER 0.0 (wav2vec2) → ok
+18:46:46   s.cando.clockDigital t0: 3.79 s (forhold 0.55) -18.05 LUFS, alone: 'jeg kan læse et digitalt ur også om eftermiddagen og om aftenen' CER 0.0 (wav2vec2) → ok
+18:46:47   s.clockElapsed.ask.minusHalf t0: 1.82 s (forhold 0.53) -18.14 LUFS, alone: 'hvad var klokken for en halv time siden' CER 0.0 (wav2vec2) → ok
+18:46:47   ✓ master hint.clockElapsed.hand.minusHalf t0 (bestået)
+18:46:47   ✓ master s.cando.clockDigital t0 (bestået)
+18:46:47   ✓ master s.clockElapsed.ask.minusHalf t0 (bestået)
+18:47:07 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+18:47:07 ✅ EOS token detected! Stopping generation at step 93
+18:47:33 kald sentence k=1 t0 'Stil uret, så det viser, hvad klokken er om en halv time.': 45.9 s for 3.68 s lyd
+18:48:03   s.clockElapsed.set.plusHalf t0: 3.23 s (forhold 0.65) -18.1 LUFS, alone: 'stel ordet så det viser hvad kokken er om en halv time' CER 0.093 (wav2vec2, whisper: 'Stil ordet så det viser hvad klokken er med en halv time') → FEJL asr
+18:49:50 ✅ EOS token detected! Stopping generation at step 291
+18:51:11 kald sentence k=4 t0 'Den lange viser går en halv gang rundt. Jeg kan regne ud, hvad klokken': 188.0 s for 11.60 s lyd
+18:52:04   hint.clockElapsed.hand.plusHalf t0: 2.12 s (forhold 0.68) -18.11 LUFS, alone: 'Den lange viser går en halv gang rundt' CER 0.0 (whisper, wav2vec2: 'den lange vig så går en halv gang rundt') → ok
+18:52:09   s.cando.clockElapsed t0: 3.13 s (forhold 0.50) -18.11 LUFS, alone: 'jeg kan regne ud hvad klokken bliver omlit og hvad den var for lidtsiden' CER 0.0167 (wav2vec2) → ok
+18:52:11   s.clockElapsed.ask.plusHalf t0: 1.57 s (forhold 0.56) -18.14 LUFS, alone: 'hvad er klokken om en halv time' CER 0.0 (wav2vec2) → ok
+18:52:14   s.clockElapsed.set.plusHour t0: 2.75 s (forhold 0.59) -18.13 LUFS, alone: 'stil urdet så det viser hvad klokken er om en time' CER 0.0256 (wav2vec2) → ok
+18:52:14   ✓ master hint.clockElapsed.hand.plusHalf t0 (bestået)
+18:52:15   ✓ master s.cando.clockElapsed t0 (bestået)
+18:52:15   ✓ master s.clockElapsed.ask.plusHalf t0 (bestået)
+18:52:15   ✓ master s.clockElapsed.set.plusHour t0 (bestået)
+19:00:00 ✅ EOS token detected! Stopping generation at step 266
+19:03:38 kald sentence k=4 t0 'Den lange viser går en hel gang rundt. Jeg kan se, når klokken er fem ': 683.4 s for 10.60 s lyd
+19:04:45   hint.clockElapsed.hand.plusHour t0: 1.89 s (forhold 0.60) -18.07 LUFS, alone: 'Den lange viser går en hel gang rundt' CER 0.0 (whisper, wav2vec2: 'den lange vi se går en helt gang rundt') → ok
+19:04:52   s.cando.clockFive t0: 2.65 s (forhold 0.45) -18.08 LUFS, alone: 'jeg kan senår klokken er 5 minutter over og 5 minutter i' CER 0.0 (wav2vec2) → ok
+19:04:57   s.clockElapsed.ask.plusHour t0: 1.33 s (forhold 0.53) -18.17 LUFS, alone: 'hvad er klokken om en time' CER 0.0 (wav2vec2) → ok
+19:05:03   s.clockElapsed.set.plusQuarter t0: 2.83 s (forhold 0.60) -18.05 LUFS, alone: 'stil uret så det viser hvad klokken er om et kvarter' CER 0.0 (wav2vec2) → ok
+19:05:03   ✓ master hint.clockElapsed.hand.plusHour t0 (bestået)
+19:05:03   ✓ master s.cando.clockFive t0 (bestået)
+19:05:03   ✓ master s.clockElapsed.ask.plusHour t0 (bestået)
+19:05:04   ✓ master s.clockElapsed.set.plusQuarter t0 (bestået)
+19:11:14 ✅ EOS token detected! Stopping generation at step 244
+19:11:45 kald sentence k=3 t0 'En meter er hundrede centimeter. Træk ikke cifrene fra hver for sig. T': 401.9 s for 9.72 s lyd
+19:11:57   hint.convertCmM.meter t0: 1.81 s (forhold 0.53) -18.0 LUFS, alone: 'En meter er 100 centimeter' CER 0.0 (whisper, wav2vec2: 'en meter er 100 cmer') → ok
+19:11:58   hint.convertCmM.notDigits t0: 3.20 s (forhold 0.64) -18.18 LUFS, alone: 'træk ikke cifrene fra hver fr sig til op til 100' CER 0.0455 (wav2vec2) → ok
+19:12:05   hint.convertCmM.twoZeros t0: 3.21 s (forhold 0.54) -18.05 LUFS, alone: 'En meter er 100 centimeter og hundrede har to nuller' CER 0.0 (whisper, wav2vec2: 'en meter ar 100 cetmeter og 100 har to nuller') → ok
+19:12:05   ✓ master hint.convertCmM.meter t0 (bestået)
+19:12:05   ✓ master hint.convertCmM.notDigits t0 (bestået)
+19:12:05   ✓ master hint.convertCmM.twoZeros t0 (bestået)
+19:14:22 ✅ EOS token detected! Stopping generation at step 243
+19:16:00 kald sentence k=3 t0 'Der er ingen tiere, så der står et nul på tiernes plads. Når du skal f': 234.2 s for 9.68 s lyd
+19:16:11   hint.convertCmM.noTens t0: 2.95 s (forhold 0.56) -18.11 LUFS, alone: 'der er ingen tigere så der står et nul på tiernes plads' CER 0.0233 (wav2vec2) → ok
+19:16:16   hint.convertCmM.takeAway t0: 3.22 s (forhold 0.49) -18.12 LUFS, alone: 'når du skal finde ud af hvor meget længere noget er skal du trække fra' CER 0.0 (wav2vec2) → ok
+19:16:18   s.cando.convertCmM t0: 2.13 s (forhold 0.49) -18.16 LUFS, alone: 'jeg kan regne om mellem meter og centimeter' CER 0.0 (wav2vec2) → ok
+19:16:18   ✓ master hint.convertCmM.noTens t0 (bestået)
+19:16:18   ✓ master hint.convertCmM.takeAway t0 (bestået)
+19:16:18   ✓ master s.cando.convertCmM t0 (bestået)
+19:19:15 ✅ EOS token detected! Stopping generation at step 189
+19:21:06 kald sentence k=4 t0 'Kommaet skiller kronerne fra ørerne. og læg så en halvtredsøre. Jeg ka': 287.8 s for 7.52 s lyd
+19:21:55   hint.kronerOre.comma t0: 1.98 s (forhold 0.53) -18.04 LUFS, alone: 'komaet skiller kronerne fra yrerne' CER 0.0645 (wav2vec2, whisper: 'Kommeret skiller kronerne fra ørerne') → FEJL asr
+19:22:35   hint.kronerOre.thenFifty t0: 1.31 s (forhold 0.52) -18.02 LUFS, alone: 'og ligge så en 50 øer' CER 0.2381 (wav2vec2, whisper: 'Og lægge sådan 50 øer') → FEJL asr
+19:23:05   s.cando.kronerOre t0: 1.49 s (forhold 0.43) -18.0 LUFS, alone: 'Jeg kan betale med kroner og ører' CER 0.0385 (whisper, wav2vec2: 'jeg kan betale med kroner og yrer') → ok
+19:23:07   s.kronerOre.payInKroner t0: 1.47 s (forhold 0.59) -18.05 LUFS, alone: 'betal det samme med kroner' CER 0.0 (wav2vec2) → ok
+19:23:07   ✓ master s.cando.kronerOre t0 (bestået)
+19:23:07   ✓ master s.kronerOre.payInKroner t0 (bestået)
+19:25:54 ✅ EOS token detected! Stopping generation at step 191
+19:26:53 kald sentence k=4 t0 'De to halvtredsører giver en krone mere. To halvtredsører er en krone.': 226.3 s for 7.60 s lyd
+19:27:09   hint.kronerOre.oneMore t0: 1.98 s (forhold 0.49) -18.0 LUFS, alone: 'de 52øer giver en krone mere' CER 0.0909 (wav2vec2, whisper: 'De 52 øer giver en krone mere') → FEJL asr
+19:27:20   hint.kronerOre.twoFifties t0: 1.51 s (forhold 0.54) -18.11 LUFS, alone: '52 øer er en krone' CER 0.125 (wav2vec2, whisper: '52 øer er en krone') → FEJL asr
+19:27:30   s.kronerOre.askTwo t0: 1.16 s (forhold 0.62) -18.04 LUFS, alone: 'Hvad koster to af dem?' CER 0.0 (whisper, wav2vec2: 'hvad koster t af dem') → ok
+19:27:39   s.kronerOre.payTwo t0: 1.04 s (forhold 0.55) -18.04 LUFS, alone: 'betænkt for to af dem' CER 0.2667 (wav2vec2, whisper: 'Betalt for to af dem') → FEJL asr
+19:27:40   ✓ master s.kronerOre.askTwo t0 (bestået)
+19:27:55 ✅ EOS token detected! Stopping generation at step 72
+19:28:19 kald sentence k=1 t1 'Om lidt er senere, så viserne går frem.': 39.1 s for 2.84 s lyd
+19:28:20   hint.clockElapsed.later t1: 2.08 s (forhold 0.55) -18.04 LUFS, alone: 'om lidtar senere så viserne går frem' CER 0.0333 (wav2vec2) → ok
+19:28:20   ✓ master hint.clockElapsed.later t1 (bestået)
+19:28:48 forcing EOS token, long_tail=tensor(True), alignment_repetition=tensor(False), token_repetition=False
+19:28:48 ✅ EOS token detected! Stopping generation at step 92
+19:29:39 kald sentence k=1 t1 'Stil uret, så det viser, hvad klokken er om en halv time.': 79.1 s for 3.64 s lyd
+19:30:03   s.clockElapsed.set.plusHalf t1: 3.30 s (forhold 0.66) -18.09 LUFS, alone: 'stigi urdet så det viser hvad klokken er om en halv time' CER 0.0698 (wav2vec2, whisper: 'Stig ordet så det viser hvad klokken er om en halv time') → FEJL asr
+19:30:14 ✅ EOS token detected! Stopping generation at step 66
+19:30:34 kald sentence k=1 t1 'Kommaet skiller kronerne fra ørerne.': 31.0 s for 2.60 s lyd
+19:30:36   hint.kronerOre.comma t1: 1.91 s (forhold 0.51) -18.07 LUFS, alone: 'komaet skiller kronerne fra ørerne' CER 0.0323 (wav2vec2) → ok
+19:30:36   ✓ master hint.kronerOre.comma t1 (bestået)
+19:30:43 ✅ EOS token detected! Stopping generation at step 53
+19:30:55 kald sentence k=1 t1 'og læg så en halvtredsøre.': 18.8 s for 2.08 s lyd
+19:31:02   hint.kronerOre.thenFifty t1: 1.36 s (forhold 0.55) -18.1 LUFS, alone: 'og lix såg en 50 søer' CER 0.2857 (wav2vec2, whisper: 'Og lægge så en halvtreds øre') → FEJL asr
+19:31:12 ✅ EOS token detected! Stopping generation at step 66
+19:31:31 kald sentence k=1 t1 'De to halvtredsører giver en krone mere.': 29.5 s for 2.60 s lyd
+19:31:42   hint.kronerOre.oneMore t1: 2.05 s (forhold 0.51) -18.0 LUFS, alone: 'de 525 øer giver en krone mere' CER 0.6061 (wav2vec2, whisper: 'De 52 øer giver en krone mere') → FEJL asr
+19:31:55 ✅ EOS token detected! Stopping generation at step 59
+19:32:07 kald sentence k=1 t1 'To halvtredsører er en krone.': 25.8 s for 2.32 s lyd
+19:32:13   hint.kronerOre.twoFifties t1: 1.64 s (forhold 0.58) -18.0 LUFS, alone: 'to 50 øer er en krone' CER 0.0417 (wav2vec2, whisper: '52 øer er en krone') → FEJL asr
+19:32:18 ✅ EOS token detected! Stopping generation at step 44
+19:32:28 kald sentence k=1 t1 'Betal for to af dem.': 15.2 s for 1.72 s lyd
+19:32:33   s.kronerOre.payTwo t1: 1.18 s (forhold 0.63) -18.2 LUFS, alone: 'Betal for to af dem' CER 0.0 (whisper, wav2vec2: 'betalt for to af dem') → ok
+19:32:33   ✓ master s.kronerOre.payTwo t1 (bestået)
+19:32:45 ✅ EOS token detected! Stopping generation at step 91
+19:32:57 kald sentence k=1 t2 'Stil uret, så det viser, hvad klokken er om en halv time.': 24.3 s for 3.60 s lyd
+19:32:59   s.clockElapsed.set.plusHalf t2: 3.33 s (forhold 0.67) -18.03 LUFS, alone: 'stilordet så det viser hvad klokken er om en halv time' CER 0.0465 (wav2vec2) → ok
+19:32:59   ✓ master s.clockElapsed.set.plusHalf t2 (bestået)
+19:33:07 ✅ EOS token detected! Stopping generation at step 58
+19:33:17 kald sentence k=1 t2 'og læg så en halvtredsøre.': 17.9 s for 2.28 s lyd
+19:33:24   hint.kronerOre.thenFifty t2: 1.61 s (forhold 0.64) -18.1 LUFS, alone: 'alex så en ha t syrer' CER 0.5238 (wav2vec2, whisper: 'Og leksåen havde 3 søer') → FEJL asr
+19:33:32 ✅ EOS token detected! Stopping generation at step 68
+19:33:44 kald sentence k=1 t2 'De to halvtredsører giver en krone mere.': 20.0 s for 2.68 s lyd
+19:33:50   hint.kronerOre.oneMore t2: 2.06 s (forhold 0.51) -18.0 LUFS, alone: 'de to 50 øer giver en krone mere' CER 0.0303 (wav2vec2, whisper: 'De 52 øer giver en krone mere') → FEJL asr
+19:33:57 ✅ EOS token detected! Stopping generation at step 59
+19:34:08 kald sentence k=1 t2 'To halvtredsører er en krone.': 18.1 s for 2.32 s lyd
+19:34:14   hint.kronerOre.twoFifties t2: 1.70 s (forhold 0.61) -18.05 LUFS, alone: 'to 50 øer er en krone' CER 0.0417 (wav2vec2, whisper: '52 øre er en krone') → FEJL asr
+19:34:20 ✅ EOS token detected! Stopping generation at step 49
+19:34:30 kald sentence k=1 t3 'og læg så en halvtredsøre.': 15.9 s for 1.92 s lyd
+19:34:36   hint.kronerOre.thenFifty t3: 1.38 s (forhold 0.55) -18.17 LUFS, alone: 'og lik søjen havde 3 søer' CER 0.4762 (wav2vec2, whisper: 'Og Leksøen havde 3 søer') → FEJL asr
+19:34:44 ✅ EOS token detected! Stopping generation at step 72
+19:34:57 kald sentence k=1 t3 'De to halvtredsører giver en krone mere.': 20.9 s for 2.84 s lyd
+19:35:03   hint.kronerOre.oneMore t3: 2.10 s (forhold 0.52) -18.0 LUFS, alone: 'de 52 øer giver en krone mere' CER 0.0909 (wav2vec2, whisper: 'De 52 øer giver en krone mere') → FEJL asr
+19:35:11 ✅ EOS token detected! Stopping generation at step 60
+19:35:23 kald sentence k=1 t3 'To halvtredsører er en krone.': 20.1 s for 2.36 s lyd
+19:35:29   hint.kronerOre.twoFifties t3: 1.67 s (forhold 0.59) -18.0 LUFS, alone: 'to 50 øer er en krone' CER 0.0417 (wav2vec2, whisper: '52 øer er en krone') → FEJL asr
+19:35:35 ✅ EOS token detected! Stopping generation at step 50
+19:35:45 kald sentence k=1 t4 'og læg så en halvtredsøre.': 15.9 s for 1.96 s lyd
+19:35:51   hint.kronerOre.thenFifty t4: 1.30 s (forhold 0.52) -18.16 LUFS, alone: 'og lex sår en ha0 søer' CER 0.5238 (wav2vec2, whisper: 'Og lektier af en halv 3 søer') → FEJL asr
+19:35:51   ✓ master hint.kronerOre.thenFifty t0 (IKKE bestået: asr)
+19:36:00 ✅ EOS token detected! Stopping generation at step 69
+19:36:10 kald sentence k=1 t4 'De to halvtredsører giver en krone mere.': 19.0 s for 2.72 s lyd
+19:36:16   hint.kronerOre.oneMore t4: 2.10 s (forhold 0.52) -18.0 LUFS, alone: 'de to 50 søer giver en krone mere' CER 0.0606 (wav2vec2, whisper: 'De 52 øer giver en krone mere') → FEJL asr
+19:36:16   ✓ master hint.kronerOre.oneMore t2 (IKKE bestået: asr)
+19:36:24 ✅ EOS token detected! Stopping generation at step 62
+19:36:39 kald sentence k=1 t4 'To halvtredsører er en krone.': 23.5 s for 2.44 s lyd
+19:36:46   hint.kronerOre.twoFifties t4: 1.68 s (forhold 0.60) -18.06 LUFS, alone: 'to 50 øer er en krone' CER 0.0417 (wav2vec2, whisper: '52 øer er en krone') → FEJL asr
+19:36:46   ✓ master hint.kronerOre.twoFifties t1 (IKKE bestået: asr)
+19:36:53   sammensat frag.det_er + hint.clock5.minAfter: 'Det er minutter efter' CER 0.000 (whisper, wav2vec2: 'dtr minutter efter') → ok
+19:36:53   sammensat frag.det_er + hint.clock5.minBefore: 'det er minutter før' CER 0.000 (wav2vec2) → ok
+19:36:54   sammensat frag.det_er + hint.clockDigital.minutes: 'det er minutter' CER 0.000 (wav2vec2) → ok
+19:37:01   sammensat frag.det_er + hint.clockDigital.soItIs: 'deer så er pjokket' CER 0.250 (wav2vec2, whisper: 'Det er så er pjokken') → FEJL
+19:37:06   sammensat frag.det_er + hint.clockDigital.thatIs: 'det r og det er' CER 0.083 (wav2vec2, whisper: 'Og det er') → FEJL
+19:37:06   master frag.det_er får skylden i frag.det_er + hint.clockDigital.thatIs; hint.clockDigital.thatIs prøver en anden partner
+19:37:06   sammensat frag.det_er + hint.clockElapsed.d.plusHour: 'det er en time efter' CER 0.000 (wav2vec2) → ok
+19:37:07   sammensat frag.det_er + hint.clockElapsed.d.plusQuarter: 'det er et kvarter efter' CER 0.000 (wav2vec2) → ok
+19:37:12   sammensat frag.det_er + hint.clockElapsed.is: 'Det er er klokken' CER 0.000 (whisper, wav2vec2: 'det rer klokken') → ok
+19:37:13   sammensat frag.det_er + hint.clockElapsed.was: 'det er var klokken' CER 0.000 (wav2vec2) → ok
+19:37:20   sammensat frag.det_er + hint.convertCmM.over: 'Det er til overs' CER 0.000 (whisper, wav2vec2: 'det er til orers') → ok
+19:37:26   sammensat frag.det_er + hint.kronerOre.first: 'det er betalt først' CER 0.067 (wav2vec2, whisper: 'Det er betalt først') → FEJL
+19:37:31   sammensat frag.det_er + s.convertCmM.than: 'der n' CER 0.500 (wav2vec2, whisper: 'Det er N') → FEJL
+19:37:37 ✅ EOS token detected! Stopping generation at step 40
+19:37:48 kald single k=1 t1 'Så er klokken,': 16.7 s for 1.56 s lyd
+19:37:48   hint.clockDigital.soItIs t1: 0.74 s (forhold 0.59) -18.07 LUFS, none: 'None' CER None (None) → ok
+19:37:54 ✅ EOS token detected! Stopping generation at step 40
+19:38:05 kald single k=1 t1 'Betal først,': 16.2 s for 1.56 s lyd
+19:38:05   hint.kronerOre.first t1: 0.90 s (forhold 0.96) -18.14 LUFS, none: 'None' CER None (None) → ok
+19:38:07 ✅ EOS token detected! Stopping generation at step 17
+19:38:16 kald single k=1 t1 'end,': 10.9 s for 0.64 s lyd
+19:38:16   s.convertCmM.than t1: 0.38 s (forhold 1.23) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:38:16 sammensætning runde 1: 8 af 12 bestået
+19:38:17   sammensat frag.det_er + hint.clockDigital.soItIs: 'det er så er klokken' CER 0.000 (wav2vec2) → ok
+19:38:22   sammensat n.mid.7 + hint.clockDigital.thatIs: '7 og det er' CER 0.000 (whisper, wav2vec2: '7 og der') → ok
+19:38:27   sammensat frag.det_er + hint.kronerOre.first: 'det er betagt først' CER 0.133 (wav2vec2, whisper: 'Det er betag først') → FEJL
+19:38:32   sammensat frag.det_er + s.convertCmM.than: 'det er n' CER 0.250 (wav2vec2, whisper: 'Det er N') → FEJL
+19:38:37 ✅ EOS token detected! Stopping generation at step 39
+19:38:47 kald single k=1 t2 'Betal først,': 15.6 s for 1.52 s lyd
+19:38:48   hint.kronerOre.first t2: 0.98 s (forhold 1.04) -18.1 LUFS, none: 'None' CER None (None) → ok
+19:38:50 ✅ EOS token detected! Stopping generation at step 18
+19:39:00 kald single k=1 t2 'end,': 12.4 s for 0.68 s lyd
+19:39:01   s.convertCmM.than t2: 0.28 s (forhold 0.91) -18.16 LUFS, none: 'None' CER None (None) → ok
+19:39:01 sammensætning runde 2: 10 af 12 bestået
+19:39:06   sammensat frag.det_er + hint.kronerOre.first: 'det er betalt først' CER 0.067 (wav2vec2, whisper: 'Det er betalt først') → FEJL
+19:39:10   sammensat frag.det_er + s.convertCmM.than: 'der n' CER 0.500 (wav2vec2, whisper: 'Det er N') → FEJL
+19:39:16 ✅ EOS token detected! Stopping generation at step 43
+19:39:28 kald single k=1 t3 'Betal først,': 17.4 s for 1.68 s lyd
+19:39:28   hint.kronerOre.first t3: 0.93 s (forhold 0.99) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:39:31 ✅ EOS token detected! Stopping generation at step 19
+19:39:41 kald single k=1 t3 'end,': 12.6 s for 0.72 s lyd
+19:39:41   s.convertCmM.than t3: 0.32 s (forhold 1.03) -18.18 LUFS, none: 'None' CER None (None) → ok
+19:39:41 sammensætning runde 3: 10 af 12 bestået
+19:39:47   sammensat frag.det_er + hint.kronerOre.first: 'Det er betal først' CER 0.000 (whisper, wav2vec2: 'det er betalt først') → ok
+19:39:52   sammensat frag.det_er + s.convertCmM.than: 'dt er gen' CER 0.375 (wav2vec2, whisper: 'Det er N') → FEJL
+19:39:55 forcing EOS token, long_tail=tensor(True), alignment_repetition=False, token_repetition=False
+19:39:55 ✅ EOS token detected! Stopping generation at step 25
+19:40:05 kald single k=1 t4 'end,': 12.7 s for 0.96 s lyd
+19:40:05   s.convertCmM.than t4: 0.29 s (forhold 0.94) -18.0 LUFS, none: 'None' CER None (None) → ok
+19:40:05 sammensætning runde 4: 11 af 12 bestået
+19:40:09   sammensat frag.det_er + s.convertCmM.than: 'der n' CER 0.500 (wav2vec2, whisper: 'Det er N') → FEJL
+19:40:09 sammensætning runde 5: 11 af 12 bestået
+19:40:09 sammensætning runde 6: 11 af 12 bestået
+19:40:10   ✓ master hint.clock5.minAfter t0 (bestået)
+19:40:10   ✓ master hint.clock5.minBefore t0 (bestået)
+19:40:10   ✓ master hint.clockDigital.minutes t0 (bestået)
+19:40:10   ✓ master hint.clockDigital.soItIs t1 (bestået)
+19:40:10   ✓ master hint.clockDigital.thatIs t0 (bestået)
+19:40:10   ✓ master hint.clockElapsed.d.plusHour t0 (bestået)
+19:40:10   ✓ master hint.clockElapsed.d.plusQuarter t0 (bestået)
+19:40:10   ✓ master hint.clockElapsed.is t0 (bestået)
+19:40:10   ✓ master hint.clockElapsed.was t0 (bestået)
+19:40:10   ✓ master hint.convertCmM.over t0 (bestået)
+19:40:10   ✓ master hint.kronerOre.first t3 (bestået)
+19:40:10   ✓ master s.convertCmM.than t1 (IKKE bestået: sammensætning)
+19:40:10 færdig: 60 nye mastere (4 ikke bestået, 5 kopier), 57 modelkald, 53.5 min generering (CPU 0.99 t), 0 klip mangler

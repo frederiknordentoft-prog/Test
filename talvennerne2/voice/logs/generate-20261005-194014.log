@@ -1,0 +1,6 @@
+19:40:14 generate.py --wave 2 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261005-194014.log)
+19:40:14 1062 klip valgt, 1062 færdige, 0 at lave
+19:40:14 færdig: 0 nye mastere (0 ikke bestået, 0 kopier), 0 modelkald, 0.0 min generering (CPU 0.00 t), 0 klip mangler
+19:40:14 generate.py --wave 1 --threads 2 --max-minutes 100 (log: /home/user/wt/voice/talvennerne2/voice/logs/generate-20261005-194014.log)
+19:40:14 1222 klip valgt, 1222 færdige, 0 at lave
+19:40:14 færdig: 0 nye mastere (0 ikke bestået, 0 kopier), 0 modelkald, 0.0 min generering (CPU 0.00 t), 0 klip mangler

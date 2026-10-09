@@ -199,8 +199,10 @@ export async function main(args: string[]): Promise<number> {
   if (noAsr) return 0
 
   const asrOut = path.join(QA_DIR, 'asr.jsonl')
+  // the cache of what ASR has heard lives beside QA_DIR (which is wiped above): a restart resumes
+  const asrCache = path.join(QA_DIR, '..', 'qa-asr-cache.jsonl')
   const py = spawnSync('nice', ['-n', '19', ASR_PY, path.join(APP_ROOT, 'scripts/tts/qa_asr.py'), path.join(QA_DIR, 'meta.jsonl'), asrOut,
-    ...(args.includes('--no-whisper') ? ['--no-whisper'] : [])], { stdio: 'inherit' })
+    '--cache', asrCache, ...(args.includes('--no-whisper') ? ['--no-whisper'] : [])], { stdio: 'inherit' })
   if (py.status !== 0 || !existsSync(asrOut)) {
     console.error('render: qa_asr.py fejlede')
     return 1
