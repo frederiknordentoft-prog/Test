@@ -253,8 +253,8 @@ function useFitHelpCoins() {
       const gap = parseFloat(getComputedStyle(card).rowGap) || 0
       const stacked = [...card.children].filter((c): c is HTMLElement => c instanceof HTMLElement && getComputedStyle(c).position !== 'absolute')
       // (a picture's box may be squeezed below its content, which then overflows it: count the content,
-      // and what rises above it, as a shop's price tag)
-      const used = stacked.reduce((sum, c) => sum + Math.max(c.offsetHeight, c.scrollHeight) + (c === scaffold ? 0 : above(c)), 0) + gap * Math.max(0, stacked.length - 1)
+      // and what rises above it, as a shop's price tag, twice: the stack is centred in the card)
+      const used = stacked.reduce((sum, c) => sum + Math.max(c.offsetHeight, c.scrollHeight) + (c === scaffold ? 0 : 2 * above(c)), 0) + gap * Math.max(0, stacked.length - 1)
       if (!(room > 0) || used <= room) return
       const over = used - room
       // own sizes (the drawing's attributes: the coins may still be springing in, scaled)
