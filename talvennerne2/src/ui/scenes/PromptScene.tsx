@@ -546,10 +546,10 @@ function Shop({ thing, priceOre, paidOre }: { thing: Parameters<typeof Thing>[0]
       el.classList.remove('is-tight')
       el.style.removeProperty('--shop-thing')
       if (!(card.getBoundingClientRect().height > 0) || inCard()) return
-      const own = el.querySelector('.tv-shop__item > .tv-mat')?.getBoundingClientRect().height ?? 0
+      const high = () => el.querySelector('.tv-shop__item > .tv-mat')?.getBoundingClientRect().height ?? 0
+      let hi = high()
       el.classList.add('is-tight')
-      let lo = el.querySelector('.tv-shop__item > .tv-mat')?.getBoundingClientRect().height ?? 0
-      let hi = own
+      let lo = high()
       if (!(hi - lo > 1) || !inCard()) return
       // the biggest thing between the least and its own size that stays in the card
       for (let i = 0; i < 7; i++) {
