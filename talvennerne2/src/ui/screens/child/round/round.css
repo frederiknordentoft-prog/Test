@@ -124,12 +124,12 @@
   max-height: none;
 }
 /* The shop's thing and its price tag in a card they would reach past (PromptScene marks the shop
-   is-tight: the help, the error flow on an iPhone SE): the thing as big as the picture's height takes
-   with its padding, and the tag sized and placed with it, so it stays on the thing in the card instead
-   of over the stones (QA3c P2-5), and can still be read. Where they fit, they are as in scenes.css: a
-   96 px thing, a 22 px tag. */
+   is-tight: the help, the error flow on an iPhone SE): the thing gets smaller, as far as it must (Shop
+   sets --shop-thing) but never below what the picture's height takes with its padding, and the tag is
+   sized and placed with it, so it stays on the thing in the card instead of over the stones (QA3c P2-5),
+   and can still be read. Where they fit, they are as in scenes.css: a 96 px thing, a 22 px tag. */
 .tv-round__card .tv-shop.is-tight .tv-shop__item {
-  --thing: min(96px, calc(var(--scene-h) * 0.82));
+  --thing: var(--shop-thing, min(96px, calc(var(--scene-h) * 0.82)));
   padding: min(10px, calc(var(--thing) * 0.105));
 }
 .tv-round__card .tv-shop.is-tight .tv-shop__item > .tv-mat {

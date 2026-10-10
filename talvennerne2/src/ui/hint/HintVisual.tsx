@@ -11,7 +11,7 @@ import type { CoinOre } from '../../art/materials'
 import { Equation } from '../design/Equation'
 import { cx } from '../design/cx'
 import { MarkedLine } from '../scenes/MarkedLine'
-import { PromptScene, rowFit } from '../scenes/PromptScene'
+import { CARD_FIT, PromptScene, rowFit, withShopsAtLeast } from '../scenes/PromptScene'
 import { formatMoney, formatNumber } from '../task/answers'
 import { Columns } from './Columns'
 import { Frame, cells } from './Counters'
@@ -232,7 +232,8 @@ function above(el: Element): number {
  * The help's pieces, sized as above. What is stacked in the card (the task's picture, the help, the
  * gaps between) may use its padding but for a little, as the picture and the sum stood before; what
  * overflows is taken from the coins: as a column over their sum, or, in a card too short for that (an
- * iPhone SE's keypad, the error flow), beside it.
+ * iPhone SE's keypad, the error flow), beside it. A shop's picture counts at its least and then takes
+ * the room the coins leave (PromptScene Shop measures itself again on CARD_FIT).
  */
 function useFitHelpCoins() {
   const ref = useRef<HTMLSpanElement>(null)
@@ -243,7 +244,7 @@ function useFitHelpCoins() {
     const card = scaffold?.closest<HTMLElement>('.tv-round__card')
     if (!coins || !help || !scaffold || !card) return
     const pieces = () => [...coins.querySelectorAll<SVGSVGElement>('svg[width][height]')]
-    const fit = () => {
+    const place = () => {
       help.classList.remove('is-row')
       for (const p of pieces()) {
         p.style.removeProperty('width')
@@ -253,8 +254,9 @@ function useFitHelpCoins() {
       const gap = parseFloat(getComputedStyle(card).rowGap) || 0
       const stacked = [...card.children].filter((c): c is HTMLElement => c instanceof HTMLElement && getComputedStyle(c).position !== 'absolute')
       // (a picture's box may be squeezed below its content, which then overflows it: count the content,
-      // and what rises above it, as a shop's price tag, twice: the stack is centred in the card)
-      const used = stacked.reduce((sum, c) => sum + Math.max(c.offsetHeight, c.scrollHeight) + (c === scaffold ? 0 : 2 * above(c)), 0) + gap * Math.max(0, stacked.length - 1)
+      // and what rises above it, as a shop's price tag, twice: the stack is centred in the card; a shop
+      // counts at its least, and takes what the coins leave afterwards)
+      const used = withShopsAtLeast(card, () => stacked.reduce((sum, c) => sum + Math.max(c.offsetHeight, c.scrollHeight) + (c === scaffold ? 0 : 2 * above(c)), 0)) + gap * Math.max(0, stacked.length - 1)
       if (!(room > 0) || used <= room) return
       const over = used - room
       // own sizes (the drawing's attributes: the coins may still be springing in, scaled)
@@ -277,6 +279,10 @@ function useFitHelpCoins() {
         p.style.width = `${(Number(p.getAttribute('width')) * k).toFixed(2)}px`
         p.style.height = `${(Number(p.getAttribute('height')) * k).toFixed(2)}px`
       }
+    }
+    const fit = () => {
+      place()
+      card.dispatchEvent(new Event(CARD_FIT))
     }
     fit()
     if (typeof ResizeObserver === 'undefined') return

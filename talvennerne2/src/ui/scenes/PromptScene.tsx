@@ -491,11 +491,39 @@ function useFitPieces(on: boolean) {
 }
 
 /**
+ * Sent on the round's card when the help's coins have been fitted (HintVisual CoinsSum): a shop on the
+ * card measures itself again after them, whichever of the two the card's resize reached first.
+ */
+export const CARD_FIT = 'tv-cardfit'
+
+/**
+ * Runs `measure` with every shop on the card at its least (is-tight, round.css: the thing as high as the
+ * picture's height takes, its tag with it), and puts them back: the help's coins count the shop so, and
+ * the shop then takes what they leave (QA3c P2-2 and P2-5).
+ */
+export function withShopsAtLeast<T>(card: Element, measure: () => T): T {
+  const shops = [...card.querySelectorAll<HTMLElement>('.tv-shop')].map((el) => [el, el.classList.contains('is-tight'), el.style.getPropertyValue('--shop-thing')] as const)
+  for (const [el] of shops) {
+    el.classList.add('is-tight')
+    el.style.removeProperty('--shop-thing')
+  }
+  try {
+    return measure()
+  } finally {
+    for (const [el, tight, thing] of shops) {
+      el.classList.toggle('is-tight', tight)
+      if (thing) el.style.setProperty('--shop-thing', thing)
+    }
+  }
+}
+
+/**
  * The shop's thing with its price tag (and what is paid). On the round's card they keep their size while
- * they stay in it, and only when the tag or the thing would reach past the card (the help under them,
- * the error flow on an iPhone SE) does the shop say so (is-tight): round.css then sizes them by the
- * picture's height (QA3c P2-5). Measured at their own size each time the card changes; up and down only
- * (the card slides in sideways).
+ * they stay in it; only when the tag or the thing would reach past the card (the help under them, the
+ * error flow on an iPhone SE) do the thing and its tag get smaller together (is-tight), and only as much
+ * as it takes, down to what the picture's height gives them (round.css), so the tag stays on the thing in
+ * the card (QA3c P2-5). Measured at their own size each time the card, or the help's coins, change; up
+ * and down only (the card slides in sideways).
  */
 function Shop({ thing, priceOre, paidOre }: { thing: Parameters<typeof Thing>[0]['id']; priceOre: number; paidOre?: number }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -503,10 +531,8 @@ function Shop({ thing, priceOre, paidOre }: { thing: Parameters<typeof Thing>[0]
     const el = ref.current
     const card = el?.closest<HTMLElement>('.tv-round__card')
     if (!el || !card) return
-    const fit = () => {
-      el.classList.remove('is-tight')
+    const inCard = () => {
       const c = card.getBoundingClientRect()
-      if (!(c.height > 0)) return
       let top = Infinity
       let bottom = -Infinity
       for (const d of el.querySelectorAll('.tv-shop__item, .tv-shop__tag')) {
@@ -514,16 +540,36 @@ function Shop({ thing, priceOre, paidOre }: { thing: Parameters<typeof Thing>[0]
         top = Math.min(top, b.top)
         bottom = Math.max(bottom, b.bottom)
       }
-      if (top < c.top || bottom > c.bottom) el.classList.add('is-tight')
+      return top >= c.top && bottom <= c.bottom
+    }
+    const fit = () => {
+      el.classList.remove('is-tight')
+      el.style.removeProperty('--shop-thing')
+      if (!(card.getBoundingClientRect().height > 0) || inCard()) return
+      const own = el.querySelector('.tv-shop__item > .tv-mat')?.getBoundingClientRect().height ?? 0
+      el.classList.add('is-tight')
+      let lo = el.querySelector('.tv-shop__item > .tv-mat')?.getBoundingClientRect().height ?? 0
+      let hi = own
+      if (!(hi - lo > 1) || !inCard()) return
+      // the biggest thing between the least and its own size that stays in the card
+      for (let i = 0; i < 7; i++) {
+        const mid = (lo + hi) / 2
+        el.style.setProperty('--shop-thing', `${mid.toFixed(2)}px`)
+        if (inCard()) lo = mid
+        else hi = mid
+      }
+      el.style.setProperty('--shop-thing', `${lo.toFixed(2)}px`)
     }
     fit()
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit)
     ro?.observe(card)
     const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(fit)
     mo?.observe(card, { attributes: true, attributeFilter: ['class'] })
+    card.addEventListener(CARD_FIT, fit)
     return () => {
       ro?.disconnect()
       mo?.disconnect()
+      card.removeEventListener(CARD_FIT, fit)
     }
   }, [])
   return (
