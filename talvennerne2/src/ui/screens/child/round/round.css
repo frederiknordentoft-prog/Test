@@ -88,6 +88,13 @@
 .tv-round__card.has-scaffold .tv-round__scene.tv-scene--lines {
   --eq-size: min(var(--text-task), calc(var(--ch) * 0.18), calc((var(--cw) - 4px) / var(--eq-em, 6)));
 }
+/* with the help's coins under it, the task's picture keeps its height: in a card too short for both they
+   share its padding (HintVisual CoinsSum gives up what overflows), instead of the picture's box being
+   squeezed and its coins drawn over the help (QA3c). Other helps keep the card as it was. */
+.tv-round__card.has-scaffold:has(.tv-hv--coins) > .tv-round__scene,
+.tv-round__card.has-scaffold:has(.tv-hv--coins) > .tv-round__twice {
+  flex-shrink: 0;
+}
 .tv-round__card.has-scaffold .tv-round__scene {
   --scene-h: calc(var(--ch) * 0.4);
   --eq-size: min(var(--text-task), calc(var(--ch) * 0.3), calc((var(--cw) - 4px) / var(--eq-em, 6)));
@@ -108,14 +115,33 @@
   width: auto;
   max-width: 100%;
 }
-/* the help's coins and their sum stay in a short card (QA3b: "Hvad koster to af dem?" on an iPhone SE,
-   where the last coin and "9 kr." fell below it): at most a sixth of the card high, so they keep one
-   row; a card with room (a taller phone, a tablet) keeps their own size */
-.tv-round__scaffold .tv-hv__coins svg {
-  max-height: calc(var(--ch) * 0.18);
-}
 .tv-round__scaffold .tv-cols {
   font-size: min(26px, calc(var(--ch) * 0.09));
+}
+/* the help's coins are sized together by HintVisual's CoinsSum, never each by the card (a cap per coin
+   drew a 2-krone as small as a 1-krone, QA3c P2-2) */
+.tv-round__scaffold .tv-hv__coins svg {
+  max-height: none;
+}
+/* The shop's thing and its price tag in a card they would reach past (PromptScene marks the shop
+   is-tight: the help, the error flow on an iPhone SE): the thing gets smaller, as far as it must (Shop
+   sets --shop-thing) but never below what the picture's height takes with its padding, and the tag is
+   sized and placed with it, so it stays on the thing in the card instead of over the stones (QA3c P2-5),
+   and can still be read. Where they fit, they are as in scenes.css: a 96 px thing, a 22 px tag. */
+.tv-round__card .tv-shop.is-tight .tv-shop__item {
+  --thing: var(--shop-thing, min(96px, calc(var(--scene-h) * 0.82)));
+  padding: min(10px, calc(var(--thing) * 0.105));
+}
+.tv-round__card .tv-shop.is-tight .tv-shop__item > .tv-mat {
+  max-height: var(--thing);
+}
+.tv-round__card .tv-shop.is-tight .tv-shop__tag {
+  top: max(-8px, calc(var(--thing) * -0.084));
+  right: max(-30px, calc(var(--thing) * -0.32));
+  padding: min(6px, calc(var(--thing) * 0.063)) min(10px, calc(var(--thing) * 0.105));
+  border-radius: min(10px, calc(var(--thing) * 0.105));
+  box-shadow: 0 min(4px, calc(var(--thing) * 0.042)) 0 var(--color-star-lip);
+  font-size: max(11px, min(22px, calc(var(--thing) * 0.23)));
 }
 
 /* The companion strip */

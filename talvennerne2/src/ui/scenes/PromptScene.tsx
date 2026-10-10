@@ -281,15 +281,7 @@ function scene({ prompt: p, task, entry, entries, given, slot = 'empty', replay 
     case 'coins':
       return <CoinRow ore={p.ore} fit />
     case 'shop':
-      return (
-        <div className="tv-shop">
-          <span className="tv-shop__item">
-            <Thing id={p.thing} size={96} />
-            <span className="tv-shop__tag">{formatMoney(p.priceOre)}</span>
-          </span>
-          {p.paidOre !== undefined && <CoinRow ore={piecesForAmount(p.paidOre)} small />}
-        </div>
-      )
+      return <Shop thing={p.thing} priceOre={p.priceOre} paidOre={p.paidOre} />
     case 'ruler':
       return <RulerScene object={p.object} startCm={p.startCm} lengthCm={p.lengthCm} />
     case 'unitsRow':
@@ -447,10 +439,22 @@ export function rowFit(sizes: readonly { w: number; h: number }[], room: { w: nu
 }
 
 /**
+ * A piece's box as laid out, with the height its drawing has at that width: a card's max-height
+ * letterboxes a coin (QA3c: 2 kr. drawn as small as 1 kr.), so its box alone says it fits.
+ */
+function drawnSize(el: Element): { w: number; h: number } {
+  const b = el.getBoundingClientRect()
+  const w = Number(el.getAttribute('width'))
+  const h = Number(el.getAttribute('height'))
+  return { w: b.width, h: w > 0 && h > 0 ? Math.max(b.height, (b.width * h) / w) : b.height }
+}
+
+/**
  * Coins and notes on the round's card keep their sizes while they fit it, and get smaller only when
  * they would not (QA3b: twenty halvtredsører in a card the error flow shrinks lay over the stones). The
  * room is the card's inner size and the part of it a scene gets (as round.css gives --scene-h); outside
- * a card (a hint, a demo) nothing changes.
+ * a card (a hint, a demo) nothing changes. The lightbulb's help takes part of the card without changing
+ * its size, so the class that says so fits them again (QA3c: biggestFirst's coins over the card's top).
  */
 function useFitPieces(on: boolean) {
   const ref = useRef<HTMLDivElement>(null)
@@ -467,11 +471,7 @@ function useFitPieces(on: boolean) {
       const ch = card.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom)
       if (!(cw > 0 && ch > 0)) return
       const room = { w: cw - 4, h: ch * (card.classList.contains('has-scaffold') ? 0.4 : 0.94) }
-      const sizes = [...el.children].map((c) => {
-        const b = c.getBoundingClientRect()
-        return { w: b.width, h: b.height }
-      })
-      const k = rowFit(sizes, room)
+      const k = rowFit([...el.children].map(drawnSize), room)
       if (k >= 1) return
       const own = getComputedStyle(el)
       el.style.setProperty('--mm', `${(parseFloat(own.getPropertyValue('--mm')) * k).toFixed(3)}px`)
@@ -480,9 +480,107 @@ function useFitPieces(on: boolean) {
     fit()
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit)
     ro?.observe(card)
-    return () => ro?.disconnect()
+    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(fit)
+    mo?.observe(card, { attributes: true, attributeFilter: ['class'] })
+    return () => {
+      ro?.disconnect()
+      mo?.disconnect()
+    }
   }, [on])
   return ref
+}
+
+/**
+ * Sent on the round's card when the help's coins have been fitted (HintVisual CoinsSum): a shop on the
+ * card measures itself again after them, whichever of the two the card's resize reached first.
+ */
+export const CARD_FIT = 'tv-cardfit'
+
+/**
+ * Runs `measure` with every shop on the card at its least (is-tight, round.css: the thing as high as the
+ * picture's height takes, its tag with it), and puts them back: the help's coins count the shop so, and
+ * the shop then takes what they leave (QA3c P2-2 and P2-5).
+ */
+export function withShopsAtLeast<T>(card: Element, measure: () => T): T {
+  const shops = [...card.querySelectorAll<HTMLElement>('.tv-shop')].map((el) => [el, el.classList.contains('is-tight'), el.style.getPropertyValue('--shop-thing')] as const)
+  for (const [el] of shops) {
+    el.classList.add('is-tight')
+    el.style.removeProperty('--shop-thing')
+  }
+  try {
+    return measure()
+  } finally {
+    for (const [el, tight, thing] of shops) {
+      el.classList.toggle('is-tight', tight)
+      if (thing) el.style.setProperty('--shop-thing', thing)
+    }
+  }
+}
+
+/**
+ * The shop's thing with its price tag (and what is paid). On the round's card they keep their size while
+ * they stay in it; only when the tag or the thing would reach past the card (the help under them, the
+ * error flow on an iPhone SE) do the thing and its tag get smaller together (is-tight), and only as much
+ * as it takes, down to what the picture's height gives them (round.css), so the tag stays on the thing in
+ * the card (QA3c P2-5). Measured at their own size each time the card, or the help's coins, change; up
+ * and down only (the card slides in sideways).
+ */
+function Shop({ thing, priceOre, paidOre }: { thing: Parameters<typeof Thing>[0]['id']; priceOre: number; paidOre?: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    const card = el?.closest<HTMLElement>('.tv-round__card')
+    if (!el || !card) return
+    const inCard = () => {
+      const c = card.getBoundingClientRect()
+      let top = Infinity
+      let bottom = -Infinity
+      for (const d of el.querySelectorAll('.tv-shop__item, .tv-shop__tag')) {
+        const b = d.getBoundingClientRect()
+        top = Math.min(top, b.top)
+        bottom = Math.max(bottom, b.bottom)
+      }
+      return top >= c.top && bottom <= c.bottom
+    }
+    const fit = () => {
+      el.classList.remove('is-tight')
+      el.style.removeProperty('--shop-thing')
+      if (!(card.getBoundingClientRect().height > 0) || inCard()) return
+      const high = () => el.querySelector('.tv-shop__item > .tv-mat')?.getBoundingClientRect().height ?? 0
+      let hi = high()
+      el.classList.add('is-tight')
+      let lo = high()
+      if (!(hi - lo > 1) || !inCard()) return
+      // the biggest thing between the least and its own size that stays in the card
+      for (let i = 0; i < 7; i++) {
+        const mid = (lo + hi) / 2
+        el.style.setProperty('--shop-thing', `${mid.toFixed(2)}px`)
+        if (inCard()) lo = mid
+        else hi = mid
+      }
+      el.style.setProperty('--shop-thing', `${lo.toFixed(2)}px`)
+    }
+    fit()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit)
+    ro?.observe(card)
+    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(fit)
+    mo?.observe(card, { attributes: true, attributeFilter: ['class'] })
+    card.addEventListener(CARD_FIT, fit)
+    return () => {
+      ro?.disconnect()
+      mo?.disconnect()
+      card.removeEventListener(CARD_FIT, fit)
+    }
+  }, [])
+  return (
+    <div ref={ref} className="tv-shop">
+      <span className="tv-shop__item">
+        <Thing id={thing} size={96} />
+        <span className="tv-shop__tag">{formatMoney(priceOre)}</span>
+      </span>
+      {paidOre !== undefined && <CoinRow ore={piecesForAmount(paidOre)} small />}
+    </div>
+  )
 }
 
 function CoinRow({ ore, small, fit = false }: { ore: number[]; small?: boolean; fit?: boolean }) {

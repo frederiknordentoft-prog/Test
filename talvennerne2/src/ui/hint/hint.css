@@ -85,6 +85,14 @@
 .tv-hv--coins {
   flex-direction: column;
 }
+/* in a round's card too short for the coins over their sum, they stand beside it (HintVisual CoinsSum) */
+.tv-hv--coins.is-row {
+  flex-direction: row;
+}
+.tv-hv--coins.is-row .tv-hv__chip--total {
+  flex: none;
+  white-space: nowrap;
+}
 .tv-hv__coins {
   --mm-note: 0.62px;
   display: flex;
