@@ -4,12 +4,13 @@
 // R1 a concept flag with its home tip · R2 right but slow (accuracy ≥ 85 %, < 40 % fast, ≥ 20
 // answers in 14 days) · R3 a plateau (for the times tables: the table with the lowest mean box) ·
 // R4 forgotten · R5 "Med støtte" without typed answers for 7 days · R6 "Klar til: {region}".
-import { REGIONS, REGION_BY_ID, WORLD_BY_ID, nodesOfRegion, type RegionDef } from '../content/curriculum'
+import { NODE_BY_ID, REGIONS, REGION_BY_ID, WORLD_BY_ID, nodesOfRegion, type RegionDef } from '../content/curriculum'
 import { SKILL_BY_ID } from '../content/skills'
 import { isFirstTry } from '../data/aggregate'
+import { placedRank, placedStart, type PlacedStart } from '../engine/ladder'
 import { daysBetween, learningDay } from '../engine/learningDay'
-import type { AnswerLogEntry, DailyAggregate, Medal, ProfileDoc, SkillId } from '../engine/types'
-import { isRegionOpen, nodeDone, playedNodes, trialPassed } from '../meta/unlock'
+import { WORLD_IDS, type AnswerLogEntry, type DailyAggregate, type Medal, type ProfileDoc, type SkillId } from '../engine/types'
+import { isRegionOpen, nodeDone, playedNodes, trialPassed, worldComplete } from '../meta/unlock'
 import { addDays, inWindow, nameOf, windowEnding } from './format'
 import { DASH_RANK, WINDOW_DAYS, currentPlace, dashStatus, keysOfSkill, snapshotsBefore } from './metrics'
 import { afterAt, personal } from './signs'
@@ -192,14 +193,36 @@ function r5(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recom
     }))
 }
 
+/**
+ * The grades R6 may point into after a finished placement (SPEC A24, QA3c P2-3): from the start
+ * region's world, and no world above it the child has not reached yet — by playing there, or as the
+ * home world moves up (worldComplete). Null without a placement: the grade decides, as before.
+ */
+function placedWorlds(p: ProfileDoc): { placed: PlacedStart; from: number; upTo: number } | null {
+  const placed = placedStart(p.placement)
+  if (!placed) return null
+  let upTo = WORLD_IDS.indexOf(placed.world)
+  while (upTo + 1 < WORLD_IDS.length && worldComplete(p, WORLD_IDS[upTo])) upTo++
+  for (const [id, n] of Object.entries(p.nodes)) {
+    const world = NODE_BY_ID[id]?.world
+    if (n && n.plays > 0 && world) upTo = Math.max(upTo, WORLD_IDS.indexOf(world))
+  }
+  return { placed, from: WORLD_BY_ID[placed.world].grade, upTo: WORLD_BY_ID[WORLD_IDS[upTo]].grade }
+}
+
 function r6(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recommendation[] {
   // Forward only (review app-w2-r1 P2-8): never a world below the child's grade or below the world
-  // they play in now, and in that world no new place before the one they play in now.
+  // they play in now, and in that world no new place before the one they play in now. After a
+  // placement the start region's world takes the grade's place, and the worlds above it wait until
+  // the child gets there: no "Klar til: Tabeltoppen" for a child the ladder put in Hundredemarken.
   const here = currentPlace(x.profile)
   const at = here?.region ? REGION_BY_ID[here.region] : undefined
-  const floor = Math.max(x.profile.grade, here ? WORLD_BY_ID[here.world].grade : 0)
+  const placed = placedWorlds(x.profile)
+  const grade = (r: RegionDef) => WORLD_BY_ID[r.world].grade
+  const floor = Math.max(placed ? placed.from : x.profile.grade, here ? WORLD_BY_ID[here.world].grade : 0)
   const regions = REGIONS.filter(
-    (r) => WORLD_BY_ID[r.world].grade >= floor && r.skills.some((s) => on(s.skill)) && isRegionOpen(x.profile, r.id),
+    (r) => grade(r) >= floor && (!placed || grade(r) <= placed.upTo) &&
+      r.skills.some((s) => on(s.skill)) && isRegionOpen(x.profile, r.id),
   )
   const ahead = (r: RegionDef) => !at || r.world !== at.world || r.index > at.index
   const trials: Recommendation[] = regions
@@ -212,6 +235,8 @@ function r6(x: RecommendInput, name: string, on: (s: SkillId) => boolean): Recom
     }))
   const fresh: Recommendation[] = regions
     .filter((r) => ahead(r) && playedNodes(x.profile, r.id) === 0)
+    // as on the map: the start region first, then the regions the placement did not pass over
+    .sort((a, b) => (placed ? placedRank(placed.placed, a.id) - placedRank(placed.placed, b.id) : 0))
     .map((r) => ({
       rule: 'R6',
       title: `Klar til: ${r.name}`,

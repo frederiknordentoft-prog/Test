@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { placedStart } from '../engine/ladder'
+import { seedFromPlacement } from '../engine/placement'
 import { skillRegistry } from '../engine/registry'
 import type { AnswerLogEntry, NodeId, ProfileDoc, RegionId, RewardLogEntry } from '../engine/types'
 import { REGIONS, nodesOfRegion } from '../content/curriculum'
@@ -233,6 +235,48 @@ describe('R6: "Klar til"', () => {
       expect(r6(p).map((x) => x.title)).toEqual(['Klar til: mesterprøven i Urtårnet'])
       // passed: the next new place is after Urtårnet, not Hundredemarken or Dobbeltdalen before it
       expect(r6({ ...p, trials: passed('w1-klokken') }).map((x) => x.region)).toEqual(['w1-tiere'])
+    })
+  })
+
+  describe('follows the placement (QA3c P2-3, SPEC A24)', () => {
+    const ALL = { worlds: ['eng', 'bakke', 'skov', 'fjeld'] as ProfileDoc['unlocked']['worlds'], regions: REGIONS.map((r) => r.id) }
+    const placed = (P: string | null, failed: string[] = []) =>
+      seedFromPlacement(profile({ name: 'Mira', grade: 3, unlocked: ALL }), P, { day: TODAY, now: tsOf(TODAY) }, failed)
+    const play = (p: ProfileDoc, ...ids: NodeId[]): ProfileDoc => ({
+      ...p, nodes: { ...p.nodes, ...Object.fromEntries(ids.map((id, i) => [id, { plays: 1, stars: 2, skipped: false, lastAt: tsOf(TODAY) + i }])) },
+    })
+    const r6 = (p: ProfileDoc) => recs(p).filter((x) => x.rule === 'R6')
+    const worldOf = (r: Recommendation) => REGIONS.find((x) => x.id === r.region)!.world
+
+    it('gives no "Klar til: Tabeltoppen" to a child the ladder put in Hundredemarken (L6, L7 not passed)', () => {
+      const p = placed('L6', ['L7'])
+      expect(placedStart(p.placement)?.region).toBe('w1-tal100')
+      // before the first round: the start region
+      expect(r6(p)).toMatchObject([{ title: 'Klar til: Hundredemarken', region: 'w1-tal100' }])
+      // after it (QA3c's Mira): forward in Hestebakkerne, never up in Stjernefjeldet or Regnbueskoven
+      const after = r6(play(p, 'w1-tal100-l1'))
+      expect(after).toHaveLength(1)
+      expect(worldOf(after[0])).toBe('bakke')
+      expect(after[0].title).not.toBe('Klar til: Tabeltoppen')
+    })
+
+    it('points a child the ladder put in Tællelunden (L5 and L4 not passed) to Engdalen', () => {
+      const p = placed(null, ['L5', 'L4'])
+      expect(placedStart(p.placement)?.region).toBe('w0-tal10')
+      expect(r6(p)).toMatchObject([{ title: 'Klar til: Tællelunden', region: 'w0-tal10' }])
+      expect(r6(play(p, 'w0-tal10-l1')).map(worldOf)).toEqual(['eng'])
+    })
+
+    it('opens the worlds above as the child gets there', () => {
+      const p = play(placed('L6', ['L7']), 'w1-tal100-l1', 'w3-tabellen-l1')
+      // played in Stjernefjeldet: the next place there is fair to name
+      expect(r6(p).map(worldOf)).toEqual(['fjeld'])
+    })
+
+    it('is unchanged after "Spring over" (no placement) and for a child placed in Stjernefjeldet', () => {
+      const skipped = profile({ name: 'Sif', grade: 3, unlocked: ALL })
+      expect(r6(skipped)).toMatchObject([{ title: 'Klar til: Tabeltoppen', region: 'w3-tabellen' }])
+      expect(r6(placed('L14'))).toMatchObject([{ title: 'Klar til: Tabeltoppen', region: 'w3-tabellen' }])
     })
   })
 

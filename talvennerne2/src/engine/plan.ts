@@ -53,9 +53,12 @@ export interface PlannedRound {
    * review-only ones), 0–1. With today's new keys used up a stone's round is filled from the region,
    * the chain and review (A13), so a stone never played can be almost without its own material (QA2
    * P2-1); a round counts for a stone only when at least half of it is its own (OWN_SHARE_MIN, SPEC
-   * A15). Practice, the hut, trials and the finale have no stone of their own to give: 1.
+   * A15). Practice, the hut, trials and the finale have no stone of their own to give: 1. A round
+   * today's allowance did not stop is always at least half its own (QA3c P2-1).
    */
   ownShare: number
+  /** Today's allowance of new keys stopped the round (A13); false for practice, the hut and trials. */
+  capped: boolean
 }
 
 /** A stone's round counts for the stone (stars, friend, chest, played) only with this share of its own keys. */
@@ -87,6 +90,7 @@ export function planRound(node: NodeDef | 'practice' | 'hut', profile: ProfileDo
   let mode: RoundMode
   let tasks: Task[]
   let own: ReadonlySet<MasteryKey> | null = null
+  let capped = false
   if (node === 'practice') {
     mode = 'practice'
     tasks = practiceTasks(env)
@@ -101,6 +105,7 @@ export function planRound(node: NodeDef | 'practice' | 'hut', profile: ProfileDo
     const built = nodeTasks(node, env)
     tasks = built.tasks
     own = built.own
+    capped = built.capped
   }
 
   const newKeys: PlannedRound['newKeys'] = []
@@ -112,7 +117,7 @@ export function planRound(node: NodeDef | 'practice' | 'hut', profile: ProfileDo
   }
   const ownKeys = own
   const ownShare = ownKeys && tasks.length > 0 ? tasks.filter((t) => ownKeys.has(t.masteryKey)).length / tasks.length : 1
-  return { roundId, sessionId: ctx.sessionId, mode, nodeId, seed, tasks, newKeys, ownShare }
+  return { roundId, sessionId: ctx.sessionId, mode, nodeId, seed, tasks, newKeys, ownShare, capped }
 }
 
 interface Env {
@@ -144,8 +149,8 @@ export function withAnswers(keys: readonly KeyOption[], reg: SkillRegistry): Key
   })
 }
 
-/** A map stone's round, with the stone's own keys (for PlannedRound.ownShare). */
-function nodeTasks(node: NodeDef, env: Env): { tasks: Task[]; own: ReadonlySet<MasteryKey> } {
+/** A map stone's round, with the stone's own keys (for PlannedRound.ownShare) and whether the allowance stopped it. */
+function nodeTasks(node: NodeDef, env: Env): { tasks: Task[]; own: ReadonlySet<MasteryKey>; capped: boolean } {
   const { profile, ctx } = env
   const tone = roundTone(profile.recentFirstTries, ctx.recentFast)
   const started = startedKeys(node.skills, env)
@@ -160,6 +165,7 @@ function nodeTasks(node: NodeDef, env: Env): { tasks: Task[]; own: ReadonlySet<M
   const startedAll = lazy(() => withAnswers(started, env.reg))
   const keys = withAnswers(keysForNode(node, keyCtx(env)), env.reg)
   const own = new Set(keys.filter((k) => !k.reviewOnly).map((k) => k.key))
+  const report = { capped: false }
   const tasks = buildRound({
     keys,
     states: profile.keys,
@@ -184,8 +190,10 @@ function nodeTasks(node: NodeDef, env: Env): { tasks: Task[]; own: ReadonlySet<M
     },
     flagged: flaggedIds(profile.misconceptions),
     newCaps: newCapsFor(profile.newToday, ctx.day),
+    ownShareMin: OWN_SHARE_MIN,
+    report,
   })
-  return { tasks, own }
+  return { tasks, own, capped: report.capped }
 }
 
 /** The skills of the other regions in the region's chain (Urtårnet before Urtårnets top …). */

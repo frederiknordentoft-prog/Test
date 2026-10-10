@@ -60,10 +60,12 @@ export function chooseStart(target: PlayTarget, profile: ProfileDoc, ctx: StartC
     ...(hutRegion ? { hutRegion, hutKeys: hutKeysFor(profile, hutRegion) } : {}),
   })
   if (plan.tasks.length === 0) return { kind: 'closed' }
-  if (typeof node !== 'string' && (profile.nodes[node.id]?.plays ?? 0) === 0 && plan.ownShare < OWN_SHARE_MIN) return { kind: 'tomorrow' }
+  // Only today's allowance can keep a stone never played from its own material: a round it did not
+  // stop is at least half the stone's own (buildRound, QA3c P2-1), so a fresh day always starts it.
+  if (typeof node !== 'string' && (profile.nodes[node.id]?.plays ?? 0) === 0 && plan.capped && plan.ownShare < OWN_SHARE_MIN) return { kind: 'tomorrow' }
   // New keys are counted into profile.newToday by the data layer when they are first answered
   // (useProfile.recordAnswer); folding plan.newKeys in here as well would count them twice.
-  const { newKeys: _newKeys, ownShare: _ownShare, ...roundPlan } = plan
+  const { newKeys: _newKeys, ownShare: _ownShare, capped: _capped, ...roundPlan } = plan
   return { kind: 'plan', plan: roundPlan, hutRegion }
 }
 
