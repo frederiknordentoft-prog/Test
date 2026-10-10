@@ -52,9 +52,28 @@ describe("the help's coins in the round's card (helpCoinsScale)", () => {
     expect(coin(200).w * r.k).toBeGreaterThan(coin(50).w * r.k)
   })
 
+  it('in a card too short even for that (the tag over the thing counted too), they stand beside "9 kr." as high as it', () => {
+    const sizes = [coin(200), coin(200), coin(200), coin(200), coin(50), coin(50)]
+    const coinsH = coin(200).h * 2 + 4
+    const helpH = coinsH + 10 + SUM.h
+    // the picture 37 and its tag 2 · 7 over it, 12, 10 and the help in a 113 px card (93 inside)
+    const over = 37 + 14 + 12 + 10 + helpH - (113 - 8)
+    expect(helpH - over).toBeLessThan(SUM.h)
+    const r = helpCoinsScale(sizes, { width: 319, coinsH, helpH, sum: SUM, gap: 10, over, ch: 93 })
+    expect(r.beside).toBe(true)
+    expect(coin(200).h * r.k).toBeLessThanOrEqual(SUM.h + 0.5)
+    expect(coin(200).w * r.k).toBeGreaterThan(30)
+    expect(coin(200).w * r.k).toBeGreaterThan(coin(50).w * r.k)
+  })
+
   it('never makes the biggest coin smaller than a sixth of the card high', () => {
     const sizes = [coin(500), coin(100)]
-    const r = helpCoinsScale(sizes, { width: 100, coinsH: coin(500).h, helpH: coin(500).h + 10 + SUM.h, sum: SUM, gap: 10, over: 200, ch: 100 })
+    // over their sum (beside it, the sum's own height keeps them bigger)
+    const r = helpCoinsScale(sizes, { width: 100, coinsH: coin(500).h, helpH: coin(500).h + 10 + SUM.h, sum: null, gap: 10, over: 200, ch: 100 })
+    expect(r.beside).toBe(false)
     expect(coin(500).h * r.k).toBeCloseTo(18, 1)
+    const b = helpCoinsScale(sizes, { width: 300, coinsH: coin(500).h, helpH: coin(500).h + 10 + SUM.h, sum: SUM, gap: 10, over: 200, ch: 100 })
+    expect(b.beside).toBe(true)
+    expect(coin(500).h * b.k).toBeGreaterThanOrEqual(18)
   })
 })

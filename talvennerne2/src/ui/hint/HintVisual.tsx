@@ -213,8 +213,10 @@ export interface HelpCoinsRoom {
  */
 export function helpCoinsScale(sizes: readonly { w: number; h: number }[], r: HelpCoinsRoom): { k: number; beside: boolean } {
   const column = r.coinsH > r.over ? rowFit(sizes, { w: r.width, h: r.coinsH - r.over }, 4) : 0
-  const high = r.helpH - r.over
-  const besideK = r.sum && r.sum.h <= high ? rowFit(sizes, { w: r.width - r.sum.w - r.gap, h: high }, 4) : 0
+  // beside the sum the help is as high as the sum at least: in a card too short even for that, it is still
+  // the least the help can take, so the coins are as high as the sum there (the shop above gives the rest)
+  const high = r.sum ? Math.max(r.helpH - r.over, r.sum.h) : 0
+  const besideK = r.sum ? rowFit(sizes, { w: r.width - r.sum.w - r.gap, h: high }, 4) : 0
   const floor = (r.ch * 0.18) / Math.max(1, ...sizes.map((z) => z.h))
   const beside = column < 0.6 && besideK > column
   return { k: Math.min(1, Math.max(beside ? besideK : column, floor)), beside }
