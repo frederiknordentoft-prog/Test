@@ -36,7 +36,6 @@
     top: calc(var(--safe-t) + 4px);
     width: 108%;
     height: 46%;
-    animation: tv-drift 26s ease-in-out infinite;
   }
   .tv-sky__cloud {
     fill: rgba(255, 255, 255, 0.85);

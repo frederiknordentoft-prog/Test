@@ -91,6 +91,13 @@ Dette er den endelige, samlede spec for Talvennerne 2. Den består af syntesen a
   - **Statistik:** Indplaceringens svar (`mode: 'placement'`) tæller ikke i forældrenes nøjagtigheds- og tidstal (`countsInStats`, pædagogik §4.2). Indplaceringen vises stadig som en tur for sig.
   - **Timeskiftet på urskiven:** I `clockElapsed` starter urskiven på starttiden (`SkillExtras.dialStart`). En halv time hen over timeskiftet, drejet den forkerte vej (fx 3:15 for 3:45 + ½ time), er `wrongOperation` på urskiven og `near` på kortene. ORK3c's orakel følger det.
   - **Antal misforståelser:** Med A23 er der 32. Tallet 31 i §4.2, §10.2 og §14 læses som 32.
+- **A25 – Hvile efter 20 s uden berøring; stille himmel (12/10, brugerens ønske).**
+  - **Hvile:** efter 20 s uden berøring på kortet, i Dyrehaven, i "Vælg spiller" og i en opgaves `asking`-beat sætter `src/ui/design/rest.ts` attributten `data-rest` på `<html>`. De dekorative, uendelige loops står så stille med `animation-play-state: paused` og fortsætter fra samme fase ved næste tryk, klik, tast eller hjul: dyret, kortets landskab, lanterner og glorie, engen i Dyrehaven, guldægget, stenstiens ring og glød og de svævende bobler.
+  - **Opmærksomhedssignalerne kører videre** (`REST_CUES` i `src/ui/design/restCues.ts`): pæren, bekræft- og fortsæt-knapperne, svarkort der læses op eller peges på, en fuld måler, næste stens glorie, tallinjens og pladsernes hint, urets knap, lyttebølgen, et æg der er klar, en profil der slettes og dyrets blink.
+  - **Hviler aldrig:** ceremonierne, onboardingen, garderoben, en opgaves intro, demo og teaching, pausen og "Fortsæt". Endelige animationer (indgange, æg, kort-tricks) og WAAPI sættes aldrig på pause, så de altid bliver færdige.
+  - **Stille himmel:** himlens skyer bag alle skærme driver ikke længere. Kortets skyer i tågen og scenernes skyer driver stadig (og hviler).
+  - **Baggrund:** målingen 10/10 viste 34–40 % af en kerne på kortet og i en opgave, mens barnet tænkte, og ca. 4,5 % med rolig animation. V1 er uændret.
+  - **Testkrog:** `?e2e=1&rest=<ms>` sætter hviletiden, og `rest=0` slår hvilen fra.
 
 ---
 
@@ -1301,6 +1308,7 @@ Kun lyst tema.
 - 120, 220 og 400 ms med `cubic-bezier(.2,.8,.2,1)`.
 - Skærmskift: skub 24 px og fade på 220 ms.
 - `prefers-reduced-motion` og rolig tilstand giver kun crossfade og stopper dyrenes loops. Blink beholdes.
+- Hvile (A25): efter 20 s uden berøring står de dekorative loops stille, hvor de er (`data-rest`), og fortsætter ved næste tryk. Opmærksomhedssignaler og blink kører videre. Himlens skyer står stille.
 
 **Scener:** ét diorama-kort pr. verden med højst 3 lag og store farveflader. Statiske gradienter er tilladt i scener, men ikke på væsner. CSS `filter` bruges aldrig. Dock med 5 ikoner (Kort, Dyr, Garderobe, Butik, Bøger), og hvert tryk læser navnet op.
 

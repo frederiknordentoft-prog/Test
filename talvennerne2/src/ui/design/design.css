@@ -859,3 +859,11 @@
     animation: none !important;
   }
 }
+
+/* Rest (SPEC A25): after 20 s without a touch the stone path's ring and glow stand still where they
+   are and go on from there at the next touch; the lightbulb, a speaking card and a full meter keep
+   moving (REST_CUES). */
+:root[data-rest] .tv-stones__ring,
+:root[data-rest] .tv-stones.is-glowing .tv-stone.is-done .tv-stone__paw {
+  animation-play-state: paused !important;
+}

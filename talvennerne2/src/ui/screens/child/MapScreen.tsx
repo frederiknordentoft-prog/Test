@@ -11,6 +11,7 @@ import type { ScreenProps } from '../../../app/screens'
 import type { WorldId } from '../../../engine/types'
 import { useProfile } from '../../../state/useProfile'
 import { useSession } from '../../../state/useSession'
+import { useRestAllowed } from '../../design/rest'
 import { openAdult } from './map/adult'
 import { MapView } from './map/MapView'
 import { homeWorld, mapModel } from './map/model'
@@ -43,6 +44,7 @@ export default function MapScreen({ route }: ScreenProps<RouteOf<'map'>>) {
 
   const shown: WorldId = world ?? (profile ? homeWorld(profile) : 'eng')
   const model = useMemo(() => (profile ? mapModel(profile, shown) : null), [profile, shown])
+  useRestAllowed(!!model)
   if (!profile || !model) return null
   // Siblings switch without the gate (only adding and deleting a child need it).
   const me = profiles.length >= 2 ? profiles.find((p) => p.id === profile.id) : undefined
