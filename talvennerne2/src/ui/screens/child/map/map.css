@@ -1278,6 +1278,14 @@
 :root[data-rest] .tv-backdrop * {
   animation-play-state: paused !important;
 }
-:root[data-rest='deep'] .tv-stone__halo {
-  animation-play-state: paused !important;
+/* The halo fades out in every pulse (tv-map-halo: 0.75 to 0, under 0.05 for half the pulse), so
+   paused it would often stand all but gone. In deep rest it settles on one clearly visible frame of
+   its pulse instead, a tenth of the way in, and pulses from the start at the next touch (REST_SETTLE).
+   Calm mode and reduced motion keep their own still halo. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-rest='deep']:not([data-calm]) .tv-stone__halo {
+    animation: none !important;
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.89);
+  }
 }

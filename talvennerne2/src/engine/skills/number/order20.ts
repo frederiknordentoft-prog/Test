@@ -180,7 +180,15 @@ function candidates(f: Fact) {
   }
 }
 
-function hint(f: Fact): HintSpec {
+/**
+ * The instance itself. The round rebuilds a drawn instance from its task (src/ui/hint/hintFor.ts
+ * factFor) with the numbers it reads off the prompt, which are none on sortOrder's empty stones or on
+ * a bare number line, and with the task's answer; the id names the instance, and make() rebuilds it.
+ */
+const instanceOf = (f: Fact): Fact => make(familyOf(f), f.id.split(':').slice(2).map(Number))
+
+function hint(fact: Fact): HintSpec {
+  const f = instanceOf(fact)
   const [x, y] = f.operands
   const line = (hops: number[]) => ({ scene: 'line', min: 0, max: top(f), hops }) as const
   switch (familyOf(f)) {

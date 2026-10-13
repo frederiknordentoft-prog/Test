@@ -332,7 +332,7 @@ describe('rest', () => {
     expect(f.changes).toEqual([`+${REST_ATTR}`, `-${REST_ATTR}`, `+${REST_ATTR}`])
   })
 
-  it('back on screen while resting: the cues get their 10 s again from there, and deep rest stays deep', () => {
+  it('back on screen while resting: the quiet starts over there, so the rest turns deep 30 s later (REST_MS + DEEP_MS), and deep rest stays deep', () => {
     const f = fake()
     createRest(f.env).allow()
     wait(25_000)

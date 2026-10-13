@@ -299,4 +299,12 @@ describe('order20', () => {
       }
     }
   })
+
+  // The round hints a drawn pair from a fact rebuilt from its task (hintFor's factFor): the numbers
+  // it reads off sortOrder's empty stones or a bare line are none, so the line had no hops.
+  it('hints "biggest first" with the pair hopped, also from the fact the round rebuilds', () => {
+    const f: Fact = { id: 'o20:bigger:8:9', skill: 'order20', family: 'bigger', operands: [], answer: '9|8|7|6', rank: 0 }
+    expect(order20.hint(f, null, 'sortOrder').visual).toEqual({ scene: 'line', min: 0, max: 10, hops: [8, 9] })
+    expect(order20.hint({ ...f, id: 'o20:bigger:18:15', answer: 18 }, 'near', 'numberline').visual).toEqual({ scene: 'line', min: 0, max: 20, hops: [15, 16, 17, 18] })
+  })
 })

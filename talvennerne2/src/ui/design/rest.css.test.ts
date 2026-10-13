@@ -4,11 +4,14 @@
 // has a rest twin in its own stylesheet. Every cue but the blink (REST_ALIVE) has a deep twin in its
 // own stylesheet instead, so it stands still once the rest is deep. The rest rules only pause (no
 // delay, no `animation: none`, so nothing jumps and every finite animation still ends), sit at the
-// end of their file outside @layer, and the sky's clouds no longer drift.
+// end of their file outside @layer, and the sky's clouds no longer drift. The one exception is the
+// short, explicit list of cues that fade out in their loop (REST_SETTLE): paused they could stand all
+// but gone, so their deep twin settles them on a visible frame of their own loop instead, and only
+// where the loop runs at all (not in calm mode, not with reduced motion).
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { REST_ALIVE, REST_CUES } from './restCues'
+import { REST_ALIVE, REST_CUES, REST_SETTLE } from './restCues'
 
 const APP = path.resolve(import.meta.dirname, '../../..')
 const SRC = path.join(APP, 'src')
@@ -78,13 +81,35 @@ function parse(text: string): Rule[] {
 
 const SHEETS = SOURCES.filter((p) => p.endsWith('.css')).map((p) => ({ file: rel(p), rules: parse(readFileSync(p, 'utf8')) }))
 
+/** Every @keyframes of the app, by name: the declarations of all its steps. */
+const KEYFRAMES = new Map<string, [string, string][]>(
+  SOURCES.filter((p) => p.endsWith('.css')).flatMap((p) => {
+    const css = readFileSync(p, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    const out: [string, [string, string][]][] = []
+    for (const m of css.matchAll(/@keyframes\s+([\w-]+)\s*\{/g)) {
+      let depth = 1
+      let i = m.index + m[0].length
+      const from = i
+      for (; depth > 0; i++) depth += css[i] === '{' ? 1 : css[i] === '}' ? -1 : 0
+      const decls = [...css.slice(from, i - 1).matchAll(/([\w-]+)\s*:\s*([^;{}]+)/g)].map((d): [string, string] => [d[1], d[2].trim()])
+      out.push([m[1], decls])
+    }
+    return out
+  }),
+)
+
 const isEndless = (r: Rule) =>
   !r.at.some((a) => a.includes('prefers-reduced-motion')) &&
   r.decls.some(([prop, value]) => (prop === 'animation' || prop === 'animation-iteration-count') && /\binfinite\b/.test(value))
 
 const REST = ':root[data-rest] '
 const DEEP = ":root[data-rest='deep'] "
+/** A settle twin (REST_SETTLE): deep rest, where the loop runs at all (not in calm mode) … */
+const SETTLE = ":root[data-rest='deep']:not([data-calm]) "
+/** … and not with reduced motion either. */
+const SETTLE_AT = '@media (prefers-reduced-motion: no-preference)'
 const isRestRule = (r: Rule) => r.selectors.some((s) => s.includes('[data-rest'))
+const isSettleRule = (r: Rule) => r.selectors.some((s) => s.startsWith(SETTLE))
 
 /** Every endless selector, per stylesheet. */
 const ENDLESS = SHEETS.map(({ file, rules }) => ({ file, selectors: [...new Set(rules.filter(isEndless).flatMap((r) => r.selectors))] })).filter((s) => s.selectors.length > 0)
@@ -92,9 +117,25 @@ const ENDLESS = SHEETS.map(({ file, rules }) => ({ file, selectors: [...new Set(
 /** The twins with a prefix, per stylesheet (the selector after it). */
 const twinsOf = (prefix: string) =>
   new Map(SHEETS.map(({ file, rules }) => [file, rules.filter(isRestRule).flatMap((r) => r.selectors.filter((s) => s.startsWith(prefix)).map((s) => s.slice(prefix.length)))]))
-/** The rest twins (`:root[data-rest] …`) and the deep twins (`:root[data-rest='deep'] …`). */
+/** The rest twins (`:root[data-rest] …`) and the deep twins (`:root[data-rest='deep'] …`, settle twins included). */
 const TWINS = twinsOf(REST)
-const DEEP_TWINS = twinsOf(DEEP)
+const SETTLE_TWINS = twinsOf(SETTLE)
+const DEEP_TWINS = new Map([...twinsOf(DEEP)].map(([file, twins]) => [file, [...twins, ...(SETTLE_TWINS.get(file) ?? [])]]))
+
+/** The endless animation a selector runs, by its keyframes' name (null: none in that file). */
+function loopOf(file: string, selector: string): string | null {
+  const rules = SHEETS.find((s) => s.file === file)?.rules ?? []
+  for (const r of rules) {
+    if (!isEndless(r) || !r.selectors.includes(selector)) continue
+    const value = r.decls.find(([prop]) => prop === 'animation')?.[1] ?? ''
+    const name = value.split(/\s+/).find((w) => KEYFRAMES.has(w))
+    if (name) return name
+  }
+  return null
+}
+const numbers = (decls: [string, string][], prop: string) => decls.filter(([p]) => p === prop).map(([, v]) => Number.parseFloat(v))
+const scaleIn = (transform: string) => Number(/scale\(([\d.]+)\)/.exec(transform)?.[1] ?? NaN)
+const withoutScale = (transform: string) => transform.replace(/\s*scale\([\d.]+\)/, '').trim()
 
 const RIG = 'src/art/rig/rig.css'
 const MAP = 'src/ui/screens/child/map/map.css'
@@ -141,22 +182,34 @@ describe('rest in the stylesheets (SPEC A25)', () => {
     expect(loose).toEqual([])
   })
 
-  it('pauses only: the rest rules set animation-play-state and nothing else, at the end of the file, outside @layer', () => {
+  it('pauses only: the rest rules set animation-play-state and nothing else, at the end of the file, outside @layer (but the listed settle twins)', () => {
     let count = 0
+    let settles = 0
     for (const { file, rules } of SHEETS) {
       const rest = rules.filter(isRestRule)
       if (rest.length === 0) continue
       for (const r of rest) {
         count++
-        expect(r.at, `${file}: ${r.selectors.join(', ')}`).toEqual([])
+        const where = `${file}: ${r.selectors.join(', ')}`
+        if (isSettleRule(r)) {
+          // a cue of the list settles: no loop, a fixed opacity and transform, only where it loops at all
+          settles++
+          for (const s of r.selectors) expect(s.startsWith(SETTLE) && REST_SETTLE.some((c) => s === SETTLE + c), `${file}: ${s} is no settle twin of REST_SETTLE`).toBe(true)
+          expect(r.at, where).toEqual([SETTLE_AT])
+          expect(r.decls.map(([prop]) => prop), where).toEqual(['animation', 'opacity', 'transform'])
+          expect(r.decls[0], where).toEqual(['animation', 'none !important'])
+          continue
+        }
+        expect(r.at, where).toEqual([])
         for (const s of r.selectors) expect(s.startsWith(REST) || s.startsWith(DEEP), `${file}: ${s}`).toBe(true)
-        expect(r.decls, `${file}: ${r.selectors.join(', ')}`).toEqual([['animation-play-state', 'paused !important']])
+        expect(r.decls, where).toEqual([['animation-play-state', 'paused !important']])
       }
       const first = Math.min(...rest.map((r) => r.block))
       const after = rules.filter((r) => r.block >= first && !isRestRule(r))
       expect(after.map((r) => r.selectors.join(', ')), `${file}: only rest rules after the first one`).toEqual([])
     }
     expect(count).toBe(14)
+    expect(settles).toBe(REST_SETTLE.length)
     const files = (twins: Map<string, string[]>) => [...twins].filter(([, t]) => t.length > 0).map(([f]) => f).sort()
     expect(files(TWINS)).toEqual([
       RIG,
@@ -220,6 +273,51 @@ describe('rest in the stylesheets (SPEC A25)', () => {
     expect(new Set(all).size).toBe(all.length)
     expect(all).toHaveLength(REST_CUES.length - REST_ALIVE.length)
     expect(REST_ALIVE).toEqual(['.rig .a-blink'])
+  })
+
+  it('settles exactly the cues that fade out in their loop, on a clearly visible frame of that loop', () => {
+    const settled = new Map([...SETTLE_TWINS].flatMap(([file, twins]) => twins.map((t) => [t, file] as const)))
+    expect([...settled.keys()].sort()).toEqual([...REST_SETTLE].sort())
+    for (const cue of REST_CUES) {
+      if (REST_ALIVE.includes(cue)) continue
+      const file = [...DEEP_TWINS].find(([, t]) => t.includes(cue))![0]
+      const name = loopOf(file, cue)
+      expect(name, `${file}: ${cue} runs no keyframes of the app`).not.toBeNull()
+      const steps = KEYFRAMES.get(name!)!
+      const opacity = numbers(steps, 'opacity')
+      // a loop that dims below 0.3 can freeze all but gone: it settles; any other loop just pauses
+      const fades = opacity.length > 0 && Math.min(...opacity) < 0.3
+      expect(REST_SETTLE.includes(cue), `${cue} (${name}: opacity ${opacity.join(', ') || 'untouched'})`).toBe(fades)
+      if (!fades) continue
+      const rule = SHEETS.find((s) => s.file === file)!.rules.find((r) => r.selectors.includes(SETTLE + cue))!
+      const [settleOpacity] = numbers(rule.decls, 'opacity')
+      const transform = rule.decls.find(([prop]) => prop === 'transform')![1]
+      // visible, and no brighter than the loop ever is
+      expect(settleOpacity, cue).toBeGreaterThanOrEqual(0.3)
+      expect(settleOpacity, cue).toBeLessThanOrEqual(Math.max(...opacity))
+      // a frame of the loop: the same transform, at a scale inside the loop's own range
+      const frames = steps.filter(([prop]) => prop === 'transform').map(([, v]) => v)
+      const scales = frames.map(scaleIn)
+      expect(scaleIn(transform), `${cue}: ${transform}`).toBeGreaterThanOrEqual(Math.min(...scales))
+      expect(scaleIn(transform), `${cue}: ${transform}`).toBeLessThanOrEqual(Math.max(...scales))
+      for (const f of frames) expect(withoutScale(transform), cue).toBe(withoutScale(f))
+    }
+  })
+
+  it('leaves calm mode and reduced motion alone: a settle cue already stands still there, and stays as it was', () => {
+    for (const cue of REST_SETTLE) {
+      const file = [...SETTLE_TWINS].find(([, t]) => t.includes(cue))![0]
+      const rules = SHEETS.find((s) => s.file === file)!.rules
+      // the file stills the loop itself in calm mode and with reduced motion …
+      const calm = rules.find((r) => r.selectors.some((s) => s.startsWith(':root[data-calm] ') && cue.endsWith(s.slice(':root[data-calm] '.length))))
+      expect(calm?.decls, `${file}: ${cue} in calm mode`).toContainEqual(['animation', 'none !important'])
+      const reduced = rules.find((r) => r.at.some((a) => a.includes('prefers-reduced-motion: reduce')) && r.selectors.some((s) => cue.endsWith(s)))
+      expect(reduced?.decls, `${file}: ${cue} with reduced motion`).toContainEqual(['animation', 'none !important'])
+      // … and the settle twin never reaches either
+      const twin = rules.find((r) => r.selectors.includes(SETTLE + cue))!
+      expect(twin.at).toEqual([SETTLE_AT])
+      expect(twin.selectors.every((s) => s.includes(':not([data-calm])'))).toBe(true)
+    }
   })
 
   it('keeps every cue out of the backdrop: only the map draws the scenes, inside .tv-backdrop', () => {

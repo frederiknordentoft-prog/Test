@@ -4,7 +4,8 @@
 // where it is and goes on from the same phase at the next touch, click, key or wheel. Attention cues
 // (REST_CUES: the lightbulb, a speaking card, the next stone …) keep calling for DEEP_MS more; then
 // `data-rest="deep"` pauses them too, all but the animal's blink, because one running loop keeps the
-// phone drawing every frame. A screen allows rest with useRestAllowed(on); the ceremonies,
+// phone drawing every frame (the two that fade out in their loop, REST_SETTLE, settle on a visible
+// frame instead). A screen allows rest with useRestAllowed(on); the ceremonies,
 // onboarding, the wardrobe and a task's intro, demo and teaching never do.
 import { useEffect } from 'react'
 

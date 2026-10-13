@@ -1,8 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import patternsModule from './patterns'
 import { skillContract, tasksUnderTest } from '../number/testing/harness'
 import { isProduction } from '../../kinds'
+import { keysForSkills, skillRegistry } from '../../registry'
+import { makeRng } from '../../rng'
+import { buildTask } from '../../tasks'
 import { compile } from '../../../speech/compile'
+import { factFor, hintFor, scaffoldFor } from '../../../ui/hint/hintFor'
 import type { Fact, Prompt, SkillDef, Task } from '../../types'
 
 const patterns: SkillDef = patternsModule
@@ -133,5 +137,81 @@ describe('patterns', () => {
     const row = (h.visual as Extract<Prompt, { scene: 'row' }>).cells
     expect(row.every((c) => typeof c === 'string')).toBe(true)
     expect(row.length).toBe(f.operands[0] + 3)
+  })
+
+  // Formhaven: the round hints a drawn instance from a fact rebuilt from its task (hintFor's
+  // factFor: the id, but no data). The hint threw, safely() logged it and the child got the round's
+  // generic picture instead of the pattern completed.
+  it('hints a drawn instance from its id alone, as the round rebuilds it from the task', () => {
+    const canon = new Set(patterns.enumerate().map((f) => f.id))
+    const rng = makeRng(13)
+    let drawn = 0
+    for (const fam of patterns.families) {
+      for (let i = 0; i < 8; i++) {
+        const f = patternsModule.instance(fam, rng, canon)
+        expect(canon.has(f.id), f.id).toBe(false)
+        drawn++
+        for (const kind of patterns.kinds) {
+          const task = buildTask(patterns, f, kind, makeRng(i), 0).task
+          const rebuilt = factFor(patterns, task)
+          expect(rebuilt.data, f.id).toBeUndefined()
+          for (const tag of [null, 'near', 'other'] as const) {
+            expect(patterns.hint(rebuilt, tag, kind), `${f.id} ${kind} ${tag}`).toEqual(patterns.hint(f, tag, kind))
+          }
+          // the same pattern, read back from the id, all through the module (the rebuilt fact's
+          // answer is the task's, so its candidates match where that is the one next bead)
+          if (kind === 'choice') expect(patterns.candidates(rebuilt), f.id).toEqual(patterns.candidates(f))
+          expect(patterns.prompt(rebuilt, kind, makeRng(1)), f.id).toEqual(patterns.prompt(f, kind, makeRng(1)))
+          expect(patternsModule.options(rebuilt, kind, makeRng(1)), f.id).toEqual(patternsModule.options(f, kind, makeRng(1)))
+          expect(patternsModule.answer(rebuilt, kind), f.id).toEqual(task.answer)
+        }
+      }
+    }
+    expect(drawn).toBe(40)
+  })
+
+  it('names a drawn instance in full in its id: family, beads and how many are shown', () => {
+    const rng = makeRng(29)
+    for (const fam of patterns.families) {
+      for (let i = 0; i < 10; i++) {
+        const f = patternsModule.instance(fam, rng, new Set())
+        expect(f.id).toMatch(/^ptn:(AB|AAB|ABB|ABC|growing):[a-z]+(\.[a-z]+){1,2}:\d+$/)
+        expect(f.id.split(':')[1]).toBe(fam.id)
+      }
+    }
+  })
+})
+
+describe('patterns in the round: the strategy after a wrong answer (Formhaven)', () => {
+  it('shows the pattern completed as a row of beads, with no error logged', () => {
+    const reg = skillRegistry()
+    const keys = keysForSkills([{ skill: 'patterns' }], { skills: reg, states: {}, audioVerified: true, mode: 'round' })
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      let n = 0
+      for (const k of keys) {
+        for (const kind of k.kinds) {
+          for (let seed = 0; seed < 6; seed++) {
+            const task = k.build(kind, makeRng(seed), seed)
+            const wrong = Object.keys(task.distractorTags)[0]
+            const h = hintFor(task, wrong, reg)
+            expect(h.fromSkill, task.factId).toBe(true)
+            expect(h.visual.scene, task.factId).toBe('row')
+            const cells = (h.visual as Extract<Prompt, { scene: 'row' }>).cells
+            const shown = shownOf(task)
+            expect(cells.slice(0, shown.length), task.factId).toEqual(shown)
+            const next = continuation(task.family, shown, SLOTS[task.family]).join('|')
+            expect(cells.slice(shown.length).join('|'), task.factId).toBe(next)
+            if (kind === 'fillSlots') expect(next, task.factId).toBe(task.answer)
+            expect(scaffoldFor(task, reg).scene, task.factId).toBe('row')
+            n++
+          }
+        }
+      }
+      expect(n).toBe(5 * 2 * 6)
+      expect(errors).not.toHaveBeenCalled()
+    } finally {
+      errors.mockRestore()
+    }
   })
 })

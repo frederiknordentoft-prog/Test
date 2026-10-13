@@ -4,8 +4,10 @@
 // by itself, every endless loop that still runs is an attention cue (REST_CUES), no cue and no finite
 // animation is paused, the animal's loop stands still at one currentTime, and a tap wakes it from
 // that same currentTime (no jump). On the map and in the round the rest then turns deep by itself
-// (`data-rest="deep"`): every cue but the blink (REST_ALIVE) stands still too, the next stone's halo
-// and the lightbulb at one currentTime, and a tap or a key wakes them from there. On the map a drag
+// (`data-rest="deep"`): every cue but the blink (REST_ALIVE) stands still too, the lightbulb at one
+// currentTime, and a key wakes it from there. The next stone's halo fades out in its pulse, so it
+// settles on a clearly visible frame instead (REST_SETTLE: no loop, opacity ≥ 0.3), and a tap lets it
+// pulse again from the start. On the map a drag
 // and letting go wake it too, a mouse that only hovers does not. In the round: no rest in a demo, in
 // teaching or in the pause; rest while a task waits for its answer, with the lightbulb pulsing after
 // 10 s during the rest. A finished round goes to the ceremonies by itself and through them never
@@ -138,6 +140,23 @@ async function pickCue(page, selector) {
 }
 const cueNow = (page) => page.evaluate(() => ({ t: window.__cue.currentTime, state: window.__cue.playState }))
 
+/** How a cue looks now: a settle cue (REST_SETTLE) or not, its running loops, its opacity and transform. */
+async function cueLook(page, selector) {
+  return page.evaluate(async (sel) => {
+    const { REST_SETTLE } = await import('/src/ui/design/restCues.ts')
+    const el = document.querySelector(sel)
+    if (!el) return null
+    const loop = el.getAnimations().find((a) => a.effect.getComputedTiming().iterations === Infinity)
+    const cs = getComputedStyle(el)
+    return {
+      settle: REST_SETTLE.some((c) => el.matches(c)),
+      loop: loop ? { t: loop.currentTime, state: loop.playState } : null,
+      opacity: Number(cs.opacity),
+      transform: cs.transform,
+    }
+  }, selector)
+}
+
 /**
  * The rest turns deep by itself DEEP after it began: every cue but the blink stands still too, the
  * cue at `cueSelector` at one currentTime. Returns where that cue stood, for the wake that follows.
@@ -164,11 +183,32 @@ async function turnsDeep(page, where, cueSelector) {
   )
   check(l.finitePaused.length === 0, `${where}: ingen endelig animation er sat på pause i den dybe hvile (${l.finitePaused.slice(0, 4).join(', ') || 'ingen'})`)
   if (!cue) return null
+  const look = await cueLook(page, cueSelector)
+  if (look?.settle) {
+    // it fades out in its loop: it settles on a clearly visible frame instead of pausing anywhere
+    await page.waitForTimeout(600)
+    const later = await cueLook(page, cueSelector)
+    check(
+      look.loop === null && later.loop === null && look.opacity >= 0.3 && later.opacity === look.opacity && later.transform === look.transform,
+      `${where}: signalet lægger sig synligt fast (${cue}: opacity ${look.opacity} → ${later.opacity}, ${look.transform}, ${look.loop ? `loop ${look.loop.state}` : 'intet loop'})`,
+    )
+    return { settled: true }
+  }
   const b0 = await cueNow(page)
   await page.waitForTimeout(600)
   const b1 = await cueNow(page)
   check(b0.state === 'paused' && b1.t === b0.t, `${where}: signalet står stille (${cue}: ${Math.round(b0.t)} → ${Math.round(b1.t)} ms, ${b0.state})`)
   return b1
+}
+
+/** After a tap from deep rest a settled cue pulses again, from the start of its loop. */
+async function settledGoesOn(page, where, selector, c) {
+  await page.waitForTimeout(300)
+  const d = await cueLook(page, selector)
+  check(
+    c?.loop?.state === 'running' && c.loop.t < 250 && d?.loop?.state === 'running' && d.loop.t > c.loop.t && d.opacity !== c.opacity,
+    `${where}: signalet pulserer igen fra begyndelsen (${Math.round(c?.loop?.t ?? -1)} → ${Math.round(d?.loop?.t ?? -1)} ms, opacity ${c?.opacity} → ${d?.opacity})`,
+  )
 }
 
 /** After a tap from deep rest the cue goes on from where it stood (`c`: read right after the tap). */
@@ -253,7 +293,7 @@ async function restsAndWakes(page, where, rigScope, deepCue = null) {
   const before = JSON.stringify(await route(page))
   await page.touchscreen.tap(spot.x, spot.y)
   const c = loop ? await rigLoop(page) : null
-  const cue = stood ? await cueNow(page) : null
+  const cue = stood?.settled ? await cueLook(page, deepCue) : stood ? await cueNow(page) : null
   const awake = !(await resting(page))
   check(awake, `${where}: et tryk (på ${spot.el}) vækker straks`)
   if (loop) {
@@ -262,7 +302,8 @@ async function restsAndWakes(page, where, rigScope, deepCue = null) {
     check(c.state === 'running' && Math.abs(c.t - b.t) < 250, `${where}: dyret fortsætter fra samme sted uden hop (${Math.round(b.t)} → ${Math.round(c.t)} ms)`)
     check(d.t > c.t + 150, `${where}: dyret bevæger sig igen (${Math.round(c.t)} → ${Math.round(d.t)} ms)`)
   }
-  if (stood) await cueGoesOn(page, where, stood, cue)
+  if (stood?.settled) await settledGoesOn(page, where, deepCue, cue)
+  else if (stood) await cueGoesOn(page, where, stood, cue)
   await page.waitForTimeout(200)
   const after = JSON.stringify(await route(page))
   const sheet = await page.evaluate(() => document.querySelector('.tv-sheet-root')?.outerHTML.slice(0, 160) ?? null)

@@ -607,8 +607,15 @@
   stroke-width: 3;
 }
 
-/* Deep rest (SPEC A25): 10 s into a rest the listening waves stand still where they are and go on
-   from there at the next touch. */
-:root[data-rest='deep'] .tv-hear.is-speaking .tv-hear__wave {
-  animation-play-state: paused !important;
+/* Deep rest (SPEC A25): 10 s into a rest the listening waves stand still too. They fade out in every
+   ripple (tv-wave: 0.9 to 0), and the two of them half a ripple apart can both be all but gone at
+   once, so they settle on one visible frame of the ripple instead (one ring, the two on top of each
+   other at 0.3: about 0.5) and ripple from the start at the next touch (REST_SETTLE). Calm mode and
+   reduced motion keep theirs. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-rest='deep']:not([data-calm]) .tv-hear.is-speaking .tv-hear__wave {
+    animation: none !important;
+    opacity: 0.3;
+    transform: scale(1.2);
+  }
 }
