@@ -1267,3 +1267,25 @@
     animation: none !important;
   }
 }
+
+/* Rest (SPEC A25): after 20 s without a touch the map's loops and the world's scene stand still where
+   they are and go on from there at the next touch; the next stone's halo keeps calling for 10 s more,
+   then it stands still too (deep rest). */
+:root[data-rest] .tv-hut__glow,
+:root[data-rest] .tv-decor__lamp,
+:root[data-rest] .tv-decor--animal,
+:root[data-rest] .tv-region__cloud,
+:root[data-rest] .tv-backdrop * {
+  animation-play-state: paused !important;
+}
+/* The halo fades out in every pulse (tv-map-halo: 0.75 to 0, under 0.05 for half the pulse), so
+   paused it would often stand all but gone. In deep rest it settles on one clearly visible frame of
+   its pulse instead, a tenth of the way in, and pulses from the start at the next touch (REST_SETTLE).
+   Calm mode and reduced motion keep their own still halo. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-rest='deep']:not([data-calm]) .tv-stone__halo {
+    animation: none !important;
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.89);
+  }
+}

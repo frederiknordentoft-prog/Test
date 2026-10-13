@@ -6,7 +6,9 @@
 //    0 console errors, no horizontal scrolling, ≤ 1 500 SVG elements, and V1's save
 //    (`talvennerne.save`) and a foreign key (`x:y`) byte-identical, with only `talvennerne2.` keys added.
 // 2. Flows: the click-throughs written beside the screens, run on a dev server of this tree:
-//    onboarding and profiles, the play loop (map → round → ceremonies → map, pause, reload),
+//    onboarding and profiles, the play loop (map → round → ceremonies → map, pause, reload), rest
+//    (SPEC A25: the decorative loops, and a while later the cues, stand still after a quiet while
+//    and wake at a tap),
 //    Stjernefjeldet (a stone per region, five trials and the finale, by touch; `?worlds=all` until
 //    it is released), the parent dashboard and a whole round of every task kind.
 //
@@ -150,6 +152,7 @@ async function flows() {
     const suites = [
       ['onboarding and profiles', 'src/ui/screens/child/onboarding/e2e.mjs', { BASE: base }],
       ['play loop: map, round, ceremonies, pause, reload', 'src/ui/screens/child/play/loop.e2e.mjs', { MAP_URL: base }],
+      ['rest: the map, a round, Dyrehaven and the picker rest; the ceremonies never do', 'src/ui/screens/child/play/rest.e2e.mjs', { MAP_URL: base }],
       ['Stjernefjeldet: a stone per region, five trials and the finale', 'src/ui/screens/child/play/fjeld.e2e.mjs', { MAP_URL: base }],
       ['parent dashboard', 'src/parent/testing/e2e.mjs', { BASE: base }],
     ]

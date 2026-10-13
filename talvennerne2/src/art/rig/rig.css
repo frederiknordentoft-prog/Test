@@ -834,3 +834,9 @@
 .rig.rig-calm .a-aura {
   animation: none !important;
 }
+
+/* Rest (SPEC A25): after 20 s without a touch every loop stands still where it is and goes on from
+   there at the next touch; the blink keeps going. */
+:root[data-rest] .rig [class*='a-']:not(.a-blink) {
+  animation-play-state: paused !important;
+}

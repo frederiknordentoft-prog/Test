@@ -5,6 +5,7 @@ import { useNav } from '../../../app/nav'
 import type { RouteOf } from '../../../app/routes'
 import type { ScreenProps } from '../../../app/screens'
 import { useProfile } from '../../../state/useProfile'
+import { useRestAllowed } from '../../design/rest'
 import { usePlayTime } from './animals/usePlayTime'
 import { ZooView } from './animals/ZooView'
 import './animals/zoo.css'
@@ -12,6 +13,7 @@ import './animals/zoo.css'
 export default function AnimalsScreen({ route }: ScreenProps<RouteOf<'animals'>>) {
   const profile = useProfile((s) => s.profile)
   usePlayTime()
+  useRestAllowed(!!profile)
 
   useEffect(() => {
     if (!profile) useNav.getState().root({ id: 'profiles' }, 'back')

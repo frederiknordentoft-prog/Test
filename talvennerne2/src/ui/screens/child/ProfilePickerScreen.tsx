@@ -12,6 +12,7 @@ import type { ProfileId } from '../../../engine/types'
 import type { ProfileSummary } from '../../../state/useSession'
 import { useSession } from '../../../state/useSession'
 import { Button, IconButton } from '../../design/Button'
+import { useRestAllowed } from '../../design/rest'
 import { Sheet } from '../../design/Sheet'
 import { SpokenText } from '../../design/SpokenText'
 import { useSpeech } from '../../design/speech'
@@ -68,6 +69,7 @@ export default function ProfilePickerScreen(_: ScreenProps<RouteOf<'profiles'>>)
   }
 
   const count = profiles.length
+  useRestAllowed(count > 0)
   // Nobody to pick: the intro takes over (boot may render the picker for a moment before it does).
   if (count === 0) return <div className="tv-first tv-picker" data-empty="" />
   return (

@@ -1,5 +1,6 @@
 // The default backdrop: the sky gradient (tokens sky-from → sky-to) with a few soft clouds and
-// distant hills. Clouds drift slowly (transform only) and stand still in calm mode.
+// distant hills. The clouds stand still (SPEC A25): their drift of 14 px over 26 s, behind every
+// screen, kept the phone redrawing all the time for a movement hardly anyone could see.
 import { blob, join } from '../../art/materials/geom'
 import type { V2 } from '../../art/materials/geom'
 

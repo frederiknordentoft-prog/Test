@@ -25,6 +25,7 @@ import { Button, IconButton } from '../../design/Button'
 import { ProgressStones } from '../../design/ProgressStones'
 import { SpokenText } from '../../design/SpokenText'
 import { useSpeech } from '../../design/speech'
+import { useRestAllowed } from '../../design/rest'
 import type { SpeakHandle } from '../../../audio/voice'
 import { cx } from '../../design/cx'
 import { TopBar } from '../../shell/TopBar'
@@ -223,6 +224,7 @@ export const RoundScreen = memo(function RoundScreen({ plan, snapshot, hooks, sk
   exitRef.current = onExit
   const beatRef = useRef(beat)
   beatRef.current = beat
+  useRestAllowed(beat === 'asking' && !paused && !away && demoKind === null)
 
   // ─── Timers and speech ──────────────────────────────────────────────────
 

@@ -76,8 +76,20 @@ interface PatternData {
   /** A bead from the same kind that is not in the pattern (none for ABC). */
   outside: string | null
 }
-const dataOf = (f: Fact) => f.data as unknown as PatternData
 const familyOf = (f: Fact) => f.family as Family
+/**
+ * The pattern of a fact. The round rebuilds a drawn instance from its task (src/ui/hint/hintFor.ts
+ * factFor) with the id but no `data`; the id names the pattern in full, and make() is deterministic,
+ * so the data is made again from it (the kind is the one the beads come from).
+ */
+function dataOf(f: Fact): PatternData {
+  if (f.data) return f.data as unknown as PatternData
+  const [, family, units, shown] = f.id.split(':')
+  const beads = units?.split('.') ?? []
+  const kind = (Object.keys(KINDS_OF_BEADS) as BeadKind[]).find((k) => (KINDS_OF_BEADS[k] as readonly string[]).includes(beads[0]))
+  if (!Object.hasOwn(SHAPES, family ?? '') || !kind || !/^\d+$/.test(shown ?? '')) throw new Error(`patterns: no pattern in ${f.id}`)
+  return make(family as Family, kind, beads, Number(shown)).data as unknown as PatternData
+}
 const pat = (name: string) => `pat:${name}`
 
 function make(family: Family, kind: BeadKind, units: string[], shown: number): Fact {
