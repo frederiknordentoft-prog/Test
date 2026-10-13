@@ -1,12 +1,16 @@
-// Rest (SPEC A25) in Chromium (dev only), with the rest time cut to 1.5 s (`&rest=1500`): a new child
-// on the map, a round at Plusengen, Tællelundens prøve, Dyrehaven and "Vælg spiller". Checked on each
-// screen that rests: `data-rest` comes on <html> by itself, every endless loop that still runs is an
-// attention cue (REST_CUES), no cue and no finite animation is paused, the animal's loop stands still
-// at one currentTime, and a tap wakes it from that same currentTime (no jump). In the round: no rest
-// in a demo, in teaching or in the pause; rest while a task waits for its answer, with the lightbulb
-// pulsing after 10 s during the rest. A finished round goes to the ceremonies by itself and through
-// them never rests, and the screens that move on by themselves still do (the prøve's own screen). The sky's clouds stand still everywhere, `rest=0` turns rest
-// off, and there are 0 console errors.
+// Rest (SPEC A25) in Chromium (dev only), with the rest time cut to 1.5 s (`&rest=1500`) and the cues
+// calling for 15 s into it (`&deep=15000`): a new child on the map, a round at Plusengen, Tællelundens
+// prøve, Dyrehaven and "Vælg spiller". Checked on each screen that rests: `data-rest` comes on <html>
+// by itself, every endless loop that still runs is an attention cue (REST_CUES), no cue and no finite
+// animation is paused, the animal's loop stands still at one currentTime, and a tap wakes it from
+// that same currentTime (no jump). On the map and in the round the rest then turns deep by itself
+// (`data-rest="deep"`): every cue but the blink (REST_ALIVE) stands still too, the next stone's halo
+// and the lightbulb at one currentTime, and a tap or a key wakes them from there. On the map a drag
+// and letting go wake it too, a mouse that only hovers does not. In the round: no rest in a demo, in
+// teaching or in the pause; rest while a task waits for its answer, with the lightbulb pulsing after
+// 10 s during the rest. A finished round goes to the ceremonies by itself and through them never
+// rests, and the screens that move on by themselves still do (the prøve's own screen). The sky's
+// clouds stand still everywhere, `rest=0` turns rest off, and there are 0 console errors.
 //
 //   npx vite --port 4421 --strictPort &
 //   flock /tmp/tv2-chromium.lock node src/ui/screens/child/play/rest.e2e.mjs
@@ -14,7 +18,9 @@ import { launch } from '../../../../../scripts/browser.mjs'
 
 const BASE = process.env.MAP_URL ?? 'http://127.0.0.1:4421/'
 const REST = 1500
-const QUERY = `?e2e=1&voice=fast&rest=${REST}`
+// the lightbulb comes at 10 s: the cues call long enough into the rest to see it pulse there
+const DEEP = 15000
+const QUERY = `?e2e=1&voice=fast&rest=${REST}&deep=${DEEP}`
 const PHONE = { width: 393, height: 852 }
 const checks = []
 const errors = []
@@ -54,6 +60,7 @@ async function tap(page, selector) {
 const drive = (page, fn, arg) => page.evaluate(async ([f, a]) => (await import('/src/dev/tasks/drive.ts'))[f](a), [fn, arg])
 const route = (page) => page.evaluate(async () => (await import('/src/app/nav.ts')).useNav.getState().route)
 const resting = (page) => page.evaluate(() => document.documentElement.hasAttribute('data-rest'))
+const restValue = (page) => page.evaluate(() => document.documentElement.getAttribute('data-rest'))
 const beat = (page) => page.evaluate(() => document.querySelector('.tv-round')?.getAttribute('data-beat') ?? null)
 
 /** Waits for rest to come on (true) or for `ms` to pass without it (false). */
@@ -64,6 +71,23 @@ async function restWithin(page, ms) {
   )
 }
 
+/** Waits for the rest to turn deep (true) or for `ms` to pass without it (false). */
+async function deepWithin(page, ms) {
+  return page.waitForFunction(() => document.documentElement.getAttribute('data-rest') === 'deep', null, { timeout: ms, polling: 50 }).then(
+    () => true,
+    () => false,
+  )
+}
+
+/** How long the last rest lasted before it turned deep, from the log (ms). */
+const deepAfter = (page) =>
+  page.evaluate(() => {
+    const log = window.__restLog
+    const deep = log.findLastIndex((e) => e.value === 'deep')
+    const rest = deep > 0 ? log[deep - 1] : null
+    return rest && rest.value === '' ? log[deep].t - rest.t : null
+  })
+
 /** Holds still for `ms` and says whether rest came on at any time in between. */
 async function restedDuring(page, ms) {
   const from = await page.evaluate(() => window.__restLog.length)
@@ -73,11 +97,13 @@ async function restedDuring(page, ms) {
 
 /**
  * Every animation on the page: the endless loops still running that are not cues, the cues that are
- * paused, how many loops are paused, and any finite animation that is paused (none may be).
+ * paused, how many loops are paused, and any finite animation that is paused (none may be). In deep
+ * rest (`deep`) only the cues of REST_ALIVE may run, and only they count as cues.
  */
-async function loops(page) {
-  return page.evaluate(async () => {
-    const { REST_CUES } = await import('/src/ui/design/restCues.ts')
+async function loops(page, deep = false) {
+  return page.evaluate(async (deep) => {
+    const { REST_ALIVE, REST_CUES } = await import('/src/ui/design/restCues.ts')
+    const cues = deep ? REST_ALIVE : REST_CUES
     const name = (a) => `${a.animationName ?? '?'} på ${a.effect.target.tagName.toLowerCase()}.${[...a.effect.target.classList].join('.')}${a.effect.pseudoElement ?? ''}`
     const out = { loose: [], cuesPaused: [], cuesRunning: 0, paused: 0, finitePaused: [] }
     for (const a of document.getAnimations()) {
@@ -87,7 +113,7 @@ async function loops(page) {
         if (a.playState === 'paused') out.finitePaused.push(name(a))
         continue
       }
-      const cue = !a.effect.pseudoElement && REST_CUES.some((c) => el.matches(c))
+      const cue = !a.effect.pseudoElement && cues.some((c) => el.matches(c))
       if (a.playState === 'running') {
         if (cue) out.cuesRunning++
         else out.loose.push(name(a))
@@ -97,7 +123,62 @@ async function loops(page) {
       }
     }
     return out
-  })
+  }, deep)
+}
+
+/** Follows the first endless animation of the first `selector` (a cue) from then on. */
+async function pickCue(page, selector) {
+  return page.evaluate((sel) => {
+    const el = document.querySelector(sel)
+    const a = el?.getAnimations().find((x) => x.effect.getComputedTiming().iterations === Infinity)
+    if (!a) return null
+    window.__cue = a
+    return a.animationName
+  }, selector)
+}
+const cueNow = (page) => page.evaluate(() => ({ t: window.__cue.currentTime, state: window.__cue.playState }))
+
+/**
+ * The rest turns deep by itself DEEP after it began: every cue but the blink stands still too, the
+ * cue at `cueSelector` at one currentTime. Returns where that cue stood, for the wake that follows.
+ */
+async function turnsDeep(page, where, cueSelector) {
+  const cue = await pickCue(page, cueSelector)
+  check(!!cue, `${where}: har et signal at følge (${cueSelector}: ${cue})`)
+  const a0 = cue ? await cueNow(page) : null
+  await page.waitForTimeout(300)
+  const a1 = cue ? await cueNow(page) : null
+  check(
+    (await restValue(page)) === '' && a0?.state === 'running' && a1.t > a0.t,
+    `${where}: signalet kalder videre i hvilen (${a0?.state}, ${Math.round(a0?.t ?? 0)} → ${Math.round(a1?.t ?? 0)} ms)`,
+  )
+  const on = await deepWithin(page, DEEP + 4000)
+  const after = await deepAfter(page)
+  check(on && after !== null && after >= DEEP - 20 && after < DEEP + 2500, `${where}: hvilen bliver dyb af sig selv ${DEEP} ms inde (${after} ms)`)
+  if (!on) return null
+  await page.waitForTimeout(150)
+  const l = await loops(page, true)
+  check(
+    l.loose.length === 0 && l.cuesPaused.length === 0,
+    `${where}: i den dybe hvile kører kun blinket (${l.cuesRunning} blink kører, ${l.paused} loops står stille${l.loose.length ? `; kører stadig: ${[...new Set(l.loose)].slice(0, 6).join(', ')}` : ''}${l.cuesPaused.length ? `; blink står stille: ${l.cuesPaused.slice(0, 3).join(', ')}` : ''})`,
+  )
+  check(l.finitePaused.length === 0, `${where}: ingen endelig animation er sat på pause i den dybe hvile (${l.finitePaused.slice(0, 4).join(', ') || 'ingen'})`)
+  if (!cue) return null
+  const b0 = await cueNow(page)
+  await page.waitForTimeout(600)
+  const b1 = await cueNow(page)
+  check(b0.state === 'paused' && b1.t === b0.t, `${where}: signalet står stille (${cue}: ${Math.round(b0.t)} → ${Math.round(b1.t)} ms, ${b0.state})`)
+  return b1
+}
+
+/** After a tap from deep rest the cue goes on from where it stood (`c`: read right after the tap). */
+async function cueGoesOn(page, where, stood, c) {
+  await page.waitForTimeout(300)
+  const d = await cueNow(page)
+  check(
+    c.state === 'running' && Math.abs(c.t - stood.t) < 250 && d.t > c.t,
+    `${where}: signalet fortsætter fra samme sted uden hop (${Math.round(stood.t)} → ${Math.round(c.t)} → ${Math.round(d.t)} ms)`,
+  )
 }
 
 /** Picks one of the animal's endless loops in `scope` (not the blink) and reads it from then on. */
@@ -140,8 +221,11 @@ async function quietSpot(page) {
   })
 }
 
-/** On a screen that rests: rest comes on, only cues move, the animal stands still and a tap wakes it without a jump. */
-async function restsAndWakes(page, where, rigScope) {
+/**
+ * On a screen that rests: rest comes on, only cues move, the animal stands still and a tap wakes it
+ * without a jump. With `deepCue`, the tap waits for deep rest, and the cue goes on from where it stood.
+ */
+async function restsAndWakes(page, where, rigScope, deepCue = null) {
   const loop = rigScope ? await pickRigLoop(page, rigScope) : null
   if (rigScope) check(!!loop, `${where}: dyret har et uendeligt loop at følge (${loop})`)
   const t0 = Date.now()
@@ -160,6 +244,7 @@ async function restsAndWakes(page, where, rigScope) {
     b = await rigLoop(page)
     check(a.state === 'paused' && b.t === a.t, `${where}: dyrets ${loop} står stille (currentTime ${Math.round(a.t)} → ${Math.round(b.t)} ms, ${a.state})`)
   }
+  const stood = deepCue ? await turnsDeep(page, where, deepCue) : null
   const spot = await quietSpot(page)
   if (!spot) {
     check(false, `${where}: fandt et sted at trykke, der ikke rammer noget`)
@@ -168,6 +253,7 @@ async function restsAndWakes(page, where, rigScope) {
   const before = JSON.stringify(await route(page))
   await page.touchscreen.tap(spot.x, spot.y)
   const c = loop ? await rigLoop(page) : null
+  const cue = stood ? await cueNow(page) : null
   const awake = !(await resting(page))
   check(awake, `${where}: et tryk (på ${spot.el}) vækker straks`)
   if (loop) {
@@ -176,6 +262,7 @@ async function restsAndWakes(page, where, rigScope) {
     check(c.state === 'running' && Math.abs(c.t - b.t) < 250, `${where}: dyret fortsætter fra samme sted uden hop (${Math.round(b.t)} → ${Math.round(c.t)} ms)`)
     check(d.t > c.t + 150, `${where}: dyret bevæger sig igen (${Math.round(c.t)} → ${Math.round(d.t)} ms)`)
   }
+  if (stood) await cueGoesOn(page, where, stood, cue)
   await page.waitForTimeout(200)
   const after = JSON.stringify(await route(page))
   const sheet = await page.evaluate(() => document.querySelector('.tv-sheet-root')?.outerHTML.slice(0, 160) ?? null)
@@ -190,6 +277,27 @@ async function stillSky(page, where) {
   })
   if (sky !== null) check(sky === 0, `${where}: himlens skyer står stille (${sky} animationer)`)
   return sky !== null
+}
+
+/** On the map: a mouse that only hovers does not wake it, a finger held still may rest, and dragging it and letting go wake it. */
+async function pointerWakes(page) {
+  const spot = await quietSpot(page)
+  if (!spot) return check(false, 'kortet: fandt et sted at trække, der ikke rammer noget')
+  const before = JSON.stringify(await route(page))
+  const restAndThen = async (what, act, wakes) => {
+    const on = await restWithin(page, REST + 4000)
+    await act()
+    await page.waitForTimeout(wakes ? 0 : 600)
+    const awake = !(await resting(page))
+    check(on && awake === wakes, `kortet: ${what} ${wakes ? 'vækker' : 'vækker ikke'} (hvile ${on}, vågen ${awake})`)
+  }
+  await restAndThen('en mus, der kun svæver,', () => page.mouse.move(spot.x, spot.y, { steps: 2 }), false)
+  await page.mouse.down()
+  await restAndThen('en finger, der holdes stille og så trækker,', () => page.mouse.move(spot.x + 12, spot.y + 4, { steps: 2 }), true)
+  await restAndThen('en finger, der slipper,', () => page.mouse.up(), true)
+  await page.waitForTimeout(200)
+  const after = JSON.stringify(await route(page))
+  check(after === before, `kortet: musen og trækket gjorde ikke andet end at vække (${before}${after !== before ? ` → ${after}` : ''})`)
 }
 
 async function newChild(page) {
@@ -312,6 +420,15 @@ async function round(page) {
         on && lit && bulb.rest && bulb.states.length > 0 && bulb.states.every((s) => s === 'running') && t2 > bulb.t1,
         `opgaven: pæren pulserer efter 10 s, også under hvilen (hvile ${bulb.rest}, pære ${lit}, ${bulb.states.join(',') || 'ingen animation'}, ${Math.round(bulb.t1 ?? 0)} → ${Math.round(t2 ?? 0)} ms)`,
       )
+      // DEEP into the rest the lightbulb stands still too, and a key (which, unlike a touch on the
+      // task, leaves the lightbulb on) lets it pulse on from there
+      const stood = await turnsDeep(page, 'opgaven', '.tv-round__bulb.is-on')
+      if (stood) {
+        await page.keyboard.press('Shift')
+        const c = await cueNow(page)
+        check(!(await resting(page)), 'opgaven: en tast vækker den dybe hvile')
+        await cueGoesOn(page, 'opgaven: pæren', stood, c)
+      } else check(false, 'opgaven: pæren blev fulgt ind i den dybe hvile og ud igen')
     }
     if (!pauseChecked && askChecked && first && firsts >= 2) {
       pauseChecked = true
@@ -450,7 +567,7 @@ async function run(browser) {
     new MutationObserver((records) => {
       for (const r of records) {
         if (r.target !== document.documentElement) continue
-        window.__restLog.push({ on: document.documentElement.hasAttribute('data-rest'), where: where(), t: Math.round(performance.now()) })
+        window.__restLog.push({ on: document.documentElement.hasAttribute('data-rest'), value: document.documentElement.getAttribute('data-rest'), where: where(), t: Math.round(performance.now()) })
       }
     }).observe(document, { attributes: true, subtree: true, attributeFilter: ['data-rest'] })
   })
@@ -463,8 +580,9 @@ async function run(browser) {
   // ── the map ──
   await newChild(page)
   await page.waitForTimeout(400)
-  await restsAndWakes(page, 'kortet', '.tv-pathbuddy')
+  await restsAndWakes(page, 'kortet', '.tv-pathbuddy', '.tv-stone__halo')
   check(await page.evaluate(() => [...document.querySelectorAll('.tv-backdrop *')].some((el) => el.getAnimations().length > 0)), 'kortet: scenens loops er med i tjekket')
+  await pointerWakes(page)
 
   // ── two rounds, their ceremonies, back on the map ──
   await round(page)

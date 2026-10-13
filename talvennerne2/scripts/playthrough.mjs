@@ -7,7 +7,8 @@
 //    (`talvennerne.save`) and a foreign key (`x:y`) byte-identical, with only `talvennerne2.` keys added.
 // 2. Flows: the click-throughs written beside the screens, run on a dev server of this tree:
 //    onboarding and profiles, the play loop (map → round → ceremonies → map, pause, reload), rest
-//    (SPEC A25: the decorative loops stand still after a quiet while and wake at a tap),
+//    (SPEC A25: the decorative loops, and a while later the cues, stand still after a quiet while
+//    and wake at a tap),
 //    Stjernefjeldet (a stone per region, five trials and the finale, by touch; `?worlds=all` until
 //    it is released), the parent dashboard and a whole round of every task kind.
 //

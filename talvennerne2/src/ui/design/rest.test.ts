@@ -6,7 +6,7 @@ import type { RestEnv } from './rest'
 
 interface Listener {
   type: string
-  fn: () => void
+  fn: (event: Event) => void
   options: AddEventListenerOptions
 }
 
@@ -39,8 +39,8 @@ function fake() {
     shown,
     resting: () => attrs.has(REST_ATTR),
     deep: () => attrs.get(REST_ATTR) === DEEP,
-    /** A tap (or another waking input) on the page. */
-    input: (type: string = 'pointerdown') => listeners.filter((l) => l.type === type).forEach((l) => l.fn()),
+    /** A tap (or another waking input) on the page; a pointermove drags (a finger or button down) unless `buttons` says 0. */
+    input: (type: string = 'pointerdown', buttons = 1) => listeners.filter((l) => l.type === type).forEach((l) => l.fn({ type, buttons } as unknown as Event)),
     /** The page comes back on screen. */
     show: () => shown.forEach((fn) => fn()),
   }
@@ -240,6 +240,40 @@ describe('rest', () => {
     wait(120_000)
     expect(f.deep()).toBe(true)
     expect(f.changes).toEqual([`+${REST_ATTR}`, `+${REST_ATTR}=${DEEP}`])
+  })
+
+  it('does not wake for a mouse that only hovers, but does for a drag', () => {
+    const f = fake()
+    createRest(f.env).allow()
+    wait(15_000)
+    f.input('pointermove', 0)
+    wait(5_000)
+    expect(f.resting()).toBe(true)
+    f.input('pointermove', 0)
+    expect(f.resting()).toBe(true)
+    wait(10_000)
+    expect(f.deep()).toBe(true)
+    f.input('pointermove', 0)
+    expect(f.deep()).toBe(true)
+    f.input('pointermove')
+    expect(f.resting()).toBe(false)
+  })
+
+  it('rests again restMs after a touch during the rest, even when the cues call for longer than that', () => {
+    const f = fake()
+    createRest(f.env, 1_500, 15_000).allow()
+    wait(2_000)
+    expect(f.resting()).toBe(true)
+    f.input()
+    wait(1_499)
+    expect(f.resting()).toBe(false)
+    wait(1)
+    expect(f.resting() && !f.deep()).toBe(true)
+    wait(14_999)
+    expect(f.deep()).toBe(false)
+    wait(1)
+    expect(f.deep()).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it('does not turn deep when a touch comes during the rest: the next rest starts over', () => {

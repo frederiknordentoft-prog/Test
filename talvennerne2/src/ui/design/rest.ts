@@ -20,7 +20,7 @@ export interface RestEnv {
   /** Carries the attribute (<html>). */
   root: { setAttribute(name: string, value: string): void; removeAttribute(name: string): void }
   /** Hears the waking input (document). */
-  events: { addEventListener(type: string, listener: () => void, options: AddEventListenerOptions): void }
+  events: { addEventListener(type: string, listener: (event: Event) => void, options: AddEventListenerOptions): void }
   now(): number
   setTimer(fn: () => void, ms: number): number
   clearTimer(id: number): void
@@ -35,7 +35,8 @@ export interface Rest {
 
 /**
  * Input that wakes the app, heard first (capture) and never delaying a scroll (passive). A finger
- * that drags (a bubble, a knob) keeps it awake, and letting go wakes it.
+ * that drags (a bubble, a knob) keeps it awake, and letting go wakes it; a mouse that only hovers is
+ * not a touch and does not count.
  */
 export const WAKE_EVENTS = ['pointerdown', 'pointermove', 'pointerup', 'click', 'keydown', 'wheel'] as const
 
@@ -79,11 +80,17 @@ export function createRest(env: RestEnv, restMs: number = REST_MS, deepMs: numbe
     last = env.now()
     if (stage === 0) return
     set(0)
-    if (allowed > 0 && timer === null) arm(restMs)
+    if (allowed === 0) return
+    // the timer may be waiting for the deep stage, later than the next rest: start it over
+    if (timer !== null) env.clearTimer(timer)
+    arm(restMs)
+  }
+  const drag = (event: Event) => {
+    if ((event as PointerEvent).buttons) wake()
   }
   const install = () => {
     installed = true
-    for (const type of WAKE_EVENTS) env.events.addEventListener(type, wake, { capture: true, passive: true })
+    for (const type of WAKE_EVENTS) env.events.addEventListener(type, type === 'pointermove' ? drag : wake, { capture: true, passive: true })
     // back on screen: the quiet starts over, but nothing wakes by itself
     env.visible(() => {
       last = env.now()
