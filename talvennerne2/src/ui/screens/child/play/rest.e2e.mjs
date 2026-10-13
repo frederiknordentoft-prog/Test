@@ -1,11 +1,11 @@
 // Rest (SPEC A25) in Chromium (dev only), with the rest time cut to 1.5 s (`&rest=1500`): a new child
-// on the map, a round, Dyrehaven and "Vælg spiller". Checked on each screen that rests: `data-rest`
-// comes on <html> by itself, every endless loop that still runs is an attention cue (REST_CUES) and
-// no cue is paused, the animal's loop stands still at one currentTime, and a tap wakes it from that
-// same currentTime (no jump). In the round: no rest in a demo, in teaching or in the pause; rest
-// while a task waits for its answer, with the lightbulb pulsing after 10 s during the rest. A
-// finished round goes to the ceremonies by itself and through them never rests, and the screens
-// that move on by themselves still do. The sky's clouds stand still everywhere, `rest=0` turns rest
+// on the map, a round at Plusengen, Tællelundens prøve, Dyrehaven and "Vælg spiller". Checked on each
+// screen that rests: `data-rest` comes on <html> by itself, every endless loop that still runs is an
+// attention cue (REST_CUES), no cue and no finite animation is paused, the animal's loop stands still
+// at one currentTime, and a tap wakes it from that same currentTime (no jump). In the round: no rest
+// in a demo, in teaching or in the pause; rest while a task waits for its answer, with the lightbulb
+// pulsing after 10 s during the rest. A finished round goes to the ceremonies by itself and through
+// them never rests, and the screens that move on by themselves still do (the prøve's own screen). The sky's clouds stand still everywhere, `rest=0` turns rest
 // off, and there are 0 console errors.
 //
 //   npx vite --port 4421 --strictPort &
@@ -472,6 +472,7 @@ async function run(browser) {
   check(await restWithin(page, REST + 4000), 'kortet: hviler igen efter turen')
   await quickRound(page)
   await ceremonies(page)
+  check(autoScreens > 0, `ceremonierne går stadig selv videre (${autoScreens} skærm(e) uden tryk)`)
 
   // ── Dyrehaven ──
   await page.evaluate(async () => (await import('/src/app/nav.ts')).useNav.getState().go({ id: 'animals' }))
