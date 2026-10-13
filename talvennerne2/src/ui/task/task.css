@@ -2302,7 +2302,12 @@
 }
 
 /* Rest (SPEC A25): after 20 s waiting for an answer the floating bubbles stand still where they are
-   and go on from there at the next touch; the hints that point keep moving (REST_CUES). */
+   and go on from there at the next touch; the hints that point keep moving (REST_CUES) for 10 s more,
+   then they stand still too (deep rest). */
 :root[data-rest] .tv-bubble--option {
+  animation-play-state: paused !important;
+}
+:root[data-rest='deep'] .tv-nline__hint,
+:root[data-rest='deep'] .tv-slot.is-next .tv-slot__face {
   animation-play-state: paused !important;
 }

@@ -1,7 +1,10 @@
-// The attention cues that keep moving while the app rests (SPEC A25): each asks the child for
-// something or shows what is speaking, so it must never freeze. Every other endless loop on a
-// screen that rests has a rest twin in its own stylesheet (`:root[data-rest] …`), and no cue has
-// one: rest.css.test.ts holds the stylesheets to this list, and rest.e2e.mjs checks it in Chromium.
+// The attention cues that keep moving when the app rests (SPEC A25): each asks the child for
+// something or shows what is speaking, so it does not freeze with the decorative loops. Every other
+// endless loop on a screen that rests has a rest twin in its own stylesheet (`:root[data-rest] …`),
+// and no cue has one. DEEP_MS later the cues stand still too, through a deep twin in their own
+// stylesheet (`:root[data-rest='deep'] …`), all but the animal's blink (REST_ALIVE), which keeps the
+// animal alive and costs next to nothing. rest.css.test.ts holds the stylesheets to these lists, and
+// rest.e2e.mjs checks them in Chromium.
 export const REST_CUES = [
   // help buttons: the lightbulb after 10 s, the big confirm button, "Fortsæt"
   '.tv-pulse',
@@ -22,3 +25,6 @@ export const REST_CUES = [
   '.tv-pcard.is-deleting .tv-pcard__face',
   '.rig .a-blink',
 ] as const
+
+/** The cues that never stand still, not even in deep rest. */
+export const REST_ALIVE: readonly (typeof REST_CUES)[number][] = ['.rig .a-blink']

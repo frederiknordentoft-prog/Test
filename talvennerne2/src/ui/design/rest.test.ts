@@ -1,7 +1,7 @@
-// The rest controller (SPEC A25) on fake timers and a fake environment: when the app rests, what
-// wakes it, how screens share it, and the URL's test hook.
+// The rest controller (SPEC A25) on fake timers and a fake environment: when the app rests and when
+// the rest turns deep, what wakes it, how screens share it, and the URL's test hooks.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { REST_ATTR, REST_MS, WAKE_EVENTS, createRest, restMsFrom } from './rest'
+import { DEEP, DEEP_MS, REST_ATTR, REST_MS, WAKE_EVENTS, createRest, deepMsFrom, restMsFrom } from './rest'
 import type { RestEnv } from './rest'
 
 interface Listener {
@@ -11,15 +11,15 @@ interface Listener {
 }
 
 function fake() {
-  const attrs = new Set<string>()
+  const attrs = new Map<string, string>()
   const changes: string[] = []
   const listeners: Listener[] = []
   const shown: (() => void)[] = []
   const env: RestEnv = {
     root: {
-      setAttribute: (name) => {
-        attrs.add(name)
-        changes.push(`+${name}`)
+      setAttribute: (name, value) => {
+        attrs.set(name, value)
+        changes.push(value ? `+${name}=${value}` : `+${name}`)
       },
       removeAttribute: (name) => {
         attrs.delete(name)
@@ -38,6 +38,7 @@ function fake() {
     listeners,
     shown,
     resting: () => attrs.has(REST_ATTR),
+    deep: () => attrs.get(REST_ATTR) === DEEP,
     /** A tap (or another waking input) on the page. */
     input: (type: string = 'pointerdown') => listeners.filter((l) => l.type === type).forEach((l) => l.fn()),
     /** The page comes back on screen. */
@@ -76,7 +77,8 @@ describe('rest', () => {
     expect(f.resting()).toBe(true)
   })
 
-  it('wakes on pointerdown, click, keydown and wheel, and rests again after another 20 s', () => {
+  it('wakes on a touch, a drag, a release, a click, a key and the wheel, and rests again after another 20 s', () => {
+    expect(WAKE_EVENTS).toEqual(['pointerdown', 'pointermove', 'pointerup', 'click', 'keydown', 'wheel'])
     for (const type of WAKE_EVENTS) {
       const f = fake()
       createRest(f.env).allow()
@@ -195,7 +197,7 @@ describe('rest', () => {
     rest.allow()()
     rest.allow()
     rest.allow()
-    expect(f.listeners.map((l) => l.type).sort()).toEqual(['click', 'keydown', 'pointerdown', 'wheel'])
+    expect(f.listeners.map((l) => l.type).sort()).toEqual(['click', 'keydown', 'pointerdown', 'pointermove', 'pointerup', 'wheel'])
     for (const l of f.listeners) expect(l.options, l.type).toEqual({ capture: true, passive: true })
     expect(f.shown).toHaveLength(1)
   })
@@ -212,16 +214,108 @@ describe('rest', () => {
     expect(f.changes).toEqual([])
     wait(20_000)
     expect(f.changes).toEqual([`+${REST_ATTR}`])
+    expect(vi.getTimerCount()).toBe(1)
+    wait(10_000)
+    expect(f.changes).toEqual([`+${REST_ATTR}`, `+${REST_ATTR}=${DEEP}`])
     expect(vi.getTimerCount()).toBe(0)
+    wait(60_000)
     f.input()
     f.input('click')
+    f.input('pointermove')
     f.input('wheel')
-    expect(f.changes).toEqual([`+${REST_ATTR}`, `-${REST_ATTR}`])
+    expect(f.changes).toEqual([`+${REST_ATTR}`, `+${REST_ATTR}=${DEEP}`, `-${REST_ATTR}`])
     expect(vi.getTimerCount()).toBe(1)
+  })
+
+  it('turns deep 10 s into the rest (30 000 ms without a touch), not at 29 999', () => {
+    expect(DEEP_MS).toBe(10_000)
+    const f = fake()
+    createRest(f.env).allow()
+    wait(20_000)
+    expect(f.resting() && !f.deep()).toBe(true)
+    wait(9_999)
+    expect(f.deep()).toBe(false)
+    wait(1)
+    expect(f.deep()).toBe(true)
+    wait(120_000)
+    expect(f.deep()).toBe(true)
+    expect(f.changes).toEqual([`+${REST_ATTR}`, `+${REST_ATTR}=${DEEP}`])
+  })
+
+  it('does not turn deep when a touch comes during the rest: the next rest starts over', () => {
+    const f = fake()
+    createRest(f.env).allow()
+    wait(25_000)
+    f.input('pointermove')
+    expect(f.resting()).toBe(false)
+    // no deep at 30 s; rest at 45 s and deep at 55 s
+    wait(19_999)
+    expect(f.resting()).toBe(false)
+    wait(1)
+    expect(f.resting() && !f.deep()).toBe(true)
+    wait(9_999)
+    expect(f.deep()).toBe(false)
+    wait(1)
+    expect(f.deep()).toBe(true)
+    expect(f.changes).toEqual([`+${REST_ATTR}`, `-${REST_ATTR}`, `+${REST_ATTR}`, `+${REST_ATTR}=${DEEP}`])
+  })
+
+  it('wakes from deep rest at the first touch, and rests and turns deep again on the same clock', () => {
+    const f = fake()
+    createRest(f.env).allow()
+    wait(40_000)
+    expect(f.deep()).toBe(true)
+    f.input('pointerup')
+    expect(f.resting()).toBe(false)
+    wait(20_000)
+    expect(f.resting() && !f.deep()).toBe(true)
+    wait(10_000)
+    expect(f.deep()).toBe(true)
+  })
+
+  it('wakes from deep rest when the last screen lets go, with no timer left', () => {
+    const f = fake()
+    const release = createRest(f.env).allow()
+    wait(30_000)
+    expect(f.deep()).toBe(true)
+    release()
+    expect(f.resting()).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('lets the cues call for as long as it rests with deep=0', () => {
+    const f = fake()
+    createRest(f.env, REST_MS, deepMsFrom('?e2e=1&deep=0')).allow()
+    wait(20_000)
+    expect(f.resting()).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+    wait(600_000)
+    expect(f.deep()).toBe(false)
+    f.input()
+    expect(f.resting()).toBe(false)
+    wait(20_000)
+    expect(f.resting()).toBe(true)
+    expect(f.changes).toEqual([`+${REST_ATTR}`, `-${REST_ATTR}`, `+${REST_ATTR}`])
+  })
+
+  it('back on screen while resting: the cues get their 10 s again from there, and deep rest stays deep', () => {
+    const f = fake()
+    createRest(f.env).allow()
+    wait(25_000)
+    f.show()
+    // the quiet starts over at 25 s: still resting, deep at 25 + 30 s
+    wait(29_999)
+    expect(f.resting() && !f.deep()).toBe(true)
+    wait(1)
+    expect(f.deep()).toBe(true)
+    f.show()
+    wait(60_000)
+    expect(f.deep()).toBe(true)
+    expect(f.changes).toEqual([`+${REST_ATTR}`, `+${REST_ATTR}=${DEEP}`])
   })
 })
 
-describe('restMsFrom', () => {
+describe('restMsFrom and deepMsFrom', () => {
   it('reads ?e2e=1&rest=<ms> and nothing else', () => {
     expect(restMsFrom('')).toBe(REST_MS)
     expect(restMsFrom('?e2e=1')).toBe(REST_MS)
@@ -237,5 +331,15 @@ describe('restMsFrom', () => {
     expect(restMsFrom('?e2e=1&rest=')).toBe(REST_MS)
     expect(restMsFrom('?e2e=1&rest=abc')).toBe(REST_MS)
     expect(restMsFrom('?e2e=1&rest=-5')).toBe(REST_MS)
+  })
+
+  it('reads ?e2e=1&deep=<ms> the same way', () => {
+    expect(deepMsFrom('')).toBe(DEEP_MS)
+    expect(deepMsFrom('?e2e=1&rest=1500')).toBe(DEEP_MS)
+    expect(deepMsFrom('?e2e=1&voice=fast&rest=1500&deep=12000')).toBe(12_000)
+    expect(deepMsFrom('?e2e=1&deep=0')).toBe(0)
+    expect(deepMsFrom('?deep=0')).toBe(DEEP_MS)
+    expect(deepMsFrom('?e2e=1&deep=x')).toBe(DEEP_MS)
+    expect(deepMsFrom('?e2e=1&deep=-1')).toBe(DEEP_MS)
   })
 })

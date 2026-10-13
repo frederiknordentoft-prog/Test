@@ -156,3 +156,9 @@
     animation: none !important;
   }
 }
+
+/* Deep rest (SPEC A25): 10 s into a rest the breathing knobs stand still where they are and go on
+   from there at the next touch. */
+:root[data-rest='deep'] .tv-clockset__dial.is-fresh .tv-clockset__knob {
+  animation-play-state: paused !important;
+}

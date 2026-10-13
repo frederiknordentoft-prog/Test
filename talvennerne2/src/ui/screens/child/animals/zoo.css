@@ -998,10 +998,14 @@
 }
 
 /* Rest (SPEC A25): after 20 s without a touch the meadow's loops stand still where they are and go on
-   from there at the next touch; an egg ready to hatch keeps rocking. */
+   from there at the next touch; an egg ready to hatch keeps rocking for 10 s more, then it stands
+   still too (deep rest). */
 :root[data-rest] .zoo-cell.is-still .zoo-fig__img,
 :root[data-rest] .zd-glow,
 :root[data-rest] .zd-drops,
 :root[data-rest] .zoo-egg__glow {
+  animation-play-state: paused !important;
+}
+:root[data-rest='deep'] .zoo-egg.is-ready .zoo-egg__body {
   animation-play-state: paused !important;
 }

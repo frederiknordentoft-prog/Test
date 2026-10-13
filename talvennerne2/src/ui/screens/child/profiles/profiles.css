@@ -213,3 +213,9 @@
     animation: none;
   }
 }
+
+/* Deep rest (SPEC A25): 10 s into a rest the wiggling cards stand still where they are and go on from
+   there at the next touch. */
+:root[data-rest='deep'] .tv-pcard.is-deleting .tv-pcard__face {
+  animation-play-state: paused !important;
+}

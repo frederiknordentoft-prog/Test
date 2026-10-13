@@ -606,3 +606,9 @@
   stroke: var(--color-card);
   stroke-width: 3;
 }
+
+/* Deep rest (SPEC A25): 10 s into a rest the listening waves stand still where they are and go on
+   from there at the next touch. */
+:root[data-rest='deep'] .tv-hear.is-speaking .tv-hear__wave {
+  animation-play-state: paused !important;
+}

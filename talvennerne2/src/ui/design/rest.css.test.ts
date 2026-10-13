@@ -1,13 +1,14 @@
 // Rest in the stylesheets (SPEC A25): every endless animation in the app is accounted for. It is a
 // rig loop (rig.css's rest rule), a loop in a world's scene (inside .tv-backdrop, map.css's rest
 // rule), an attention cue that keeps moving (REST_CUES), a loop on a screen that never rests, or it
-// has a rest twin in its own stylesheet. The rest rules only pause (no delay, no `animation: none`,
-// so nothing jumps and every finite animation still ends), sit at the end of their file outside
-// @layer, never touch a cue, and the sky's clouds no longer drift.
+// has a rest twin in its own stylesheet. Every cue but the blink (REST_ALIVE) has a deep twin in its
+// own stylesheet instead, so it stands still once the rest is deep. The rest rules only pause (no
+// delay, no `animation: none`, so nothing jumps and every finite animation still ends), sit at the
+// end of their file outside @layer, and the sky's clouds no longer drift.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { REST_CUES } from './restCues'
+import { REST_ALIVE, REST_CUES } from './restCues'
 
 const APP = path.resolve(import.meta.dirname, '../../..')
 const SRC = path.join(APP, 'src')
@@ -82,13 +83,18 @@ const isEndless = (r: Rule) =>
   r.decls.some(([prop, value]) => (prop === 'animation' || prop === 'animation-iteration-count') && /\binfinite\b/.test(value))
 
 const REST = ':root[data-rest] '
-const isRestRule = (r: Rule) => r.selectors.some((s) => s.includes('[data-rest]'))
+const DEEP = ":root[data-rest='deep'] "
+const isRestRule = (r: Rule) => r.selectors.some((s) => s.includes('[data-rest'))
 
 /** Every endless selector, per stylesheet. */
 const ENDLESS = SHEETS.map(({ file, rules }) => ({ file, selectors: [...new Set(rules.filter(isEndless).flatMap((r) => r.selectors))] })).filter((s) => s.selectors.length > 0)
 
-/** The rest twins, per stylesheet (the selector after `:root[data-rest] `). */
-const TWINS = new Map(SHEETS.map(({ file, rules }) => [file, rules.filter(isRestRule).flatMap((r) => r.selectors.map((s) => s.slice(REST.length)))]))
+/** The twins with a prefix, per stylesheet (the selector after it). */
+const twinsOf = (prefix: string) =>
+  new Map(SHEETS.map(({ file, rules }) => [file, rules.filter(isRestRule).flatMap((r) => r.selectors.filter((s) => s.startsWith(prefix)).map((s) => s.slice(prefix.length)))]))
+/** The rest twins (`:root[data-rest] …`) and the deep twins (`:root[data-rest='deep'] …`). */
+const TWINS = twinsOf(REST)
+const DEEP_TWINS = twinsOf(DEEP)
 
 const RIG = 'src/art/rig/rig.css'
 const MAP = 'src/ui/screens/child/map/map.css'
@@ -143,21 +149,31 @@ describe('rest in the stylesheets (SPEC A25)', () => {
       for (const r of rest) {
         count++
         expect(r.at, `${file}: ${r.selectors.join(', ')}`).toEqual([])
-        for (const s of r.selectors) expect(s.startsWith(REST), `${file}: ${s}`).toBe(true)
+        for (const s of r.selectors) expect(s.startsWith(REST) || s.startsWith(DEEP), `${file}: ${s}`).toBe(true)
         expect(r.decls, `${file}: ${r.selectors.join(', ')}`).toEqual([['animation-play-state', 'paused !important']])
       }
       const first = Math.min(...rest.map((r) => r.block))
       const after = rules.filter((r) => r.block >= first && !isRestRule(r))
       expect(after.map((r) => r.selectors.join(', ')), `${file}: only rest rules after the first one`).toEqual([])
     }
-    expect(count).toBe(6)
-    const files = [...TWINS].filter(([, t]) => t.length > 0).map(([f]) => f).sort()
-    expect(files).toEqual([
+    expect(count).toBe(14)
+    const files = (twins: Map<string, string[]>) => [...twins].filter(([, t]) => t.length > 0).map(([f]) => f).sort()
+    expect(files(TWINS)).toEqual([
       RIG,
       'src/ui/design/design.css',
       'src/ui/screens/child/animals/zoo.css',
       MAP,
       'src/ui/screens/child/round/round.css',
+      'src/ui/task/task.css',
+    ])
+    expect(files(DEEP_TWINS)).toEqual([
+      'src/ui/design/design.css',
+      'src/ui/scenes/scenes.css',
+      'src/ui/screens/child/animals/zoo.css',
+      MAP,
+      'src/ui/screens/child/profiles/profiles.css',
+      'src/ui/screens/child/round/round.css',
+      'src/ui/task/clockSet/clockSet.css',
       'src/ui/task/task.css',
     ])
   })
@@ -185,6 +201,25 @@ describe('rest in the stylesheets (SPEC A25)', () => {
       const own = ENDLESS.find((e) => e.file === file)?.selectors ?? []
       for (const s of selectors) expect(own, `${file}: ${s}`).toContain(s)
     }
+  })
+
+  it('stills every cue but the blink in deep rest, with one deep twin in the stylesheet that makes it move', () => {
+    const owners = (cue: string) => [...DEEP_TWINS].filter(([, t]) => t.includes(cue)).map(([f]) => f)
+    for (const cue of REST_CUES) {
+      const files = owners(cue)
+      if (REST_ALIVE.includes(cue)) {
+        expect(files, `${cue} never stands still`).toEqual([])
+        continue
+      }
+      expect(files, cue).toHaveLength(1)
+      expect(ENDLESS.find((e) => e.file === files[0])?.selectors ?? [], `${files[0]}: ${cue}`).toContain(cue)
+    }
+    // a deep twin is a cue's, nothing else's, and only once
+    const all = [...DEEP_TWINS.values()].flat()
+    for (const t of all) expect(CUES.has(t), t).toBe(true)
+    expect(new Set(all).size).toBe(all.length)
+    expect(all).toHaveLength(REST_CUES.length - REST_ALIVE.length)
+    expect(REST_ALIVE).toEqual(['.rig .a-blink'])
   })
 
   it('keeps every cue out of the backdrop: only the map draws the scenes, inside .tv-backdrop', () => {

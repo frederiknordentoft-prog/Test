@@ -1041,9 +1041,14 @@
 }
 
 /* Rest (SPEC A25): after 20 s waiting for an answer the golden egg hovers still where it is and goes
-   on from there at the next touch; the help buttons keep pulsing. */
+   on from there at the next touch; the help buttons keep pulsing for 10 s more, then they stand still
+   too (deep rest). */
 :root[data-rest] .tv-egg.is-wait .tv-egg__svg,
 :root[data-rest] .tv-egg__wing,
 :root[data-rest] .tv-egg__sparkle {
+  animation-play-state: paused !important;
+}
+:root[data-rest='deep'] .tv-confirm.tv-pulse,
+:root[data-rest='deep'] .tv-continue__btn {
   animation-play-state: paused !important;
 }
