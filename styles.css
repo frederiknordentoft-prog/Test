@@ -457,6 +457,12 @@ html[data-theme="dark"] .stat-num.high { color: #ff453a; }
 @media (max-width: 520px) {
   .readout-price { font-size: 30px; }
 }
+/* iPhone Display Zoom / Safari text zoom: keep both lines whole */
+@media (max-width: 345px) {
+  .readout-meta { font-size: 13px; }
+  .readout-meta .rsep { margin: 0 6px; }
+  .readout-split { font-size: 11px; }
+}
 .chart-wrap { position: relative; height: 380px; }
 .chart-wrap canvas {
   touch-action: pan-y;
@@ -501,6 +507,7 @@ html[data-theme="dark"] .stat-num.high { color: #ff453a; }
   background: #2997ff;
   border-radius: 1px;
 }
+.now-badge.tucked { visibility: hidden; } /* behind the selected-hour price pill */
 @keyframes now-pop {
   from { opacity: 0; transform: translate(-50%, -80%) scale(0.8); }
   to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
@@ -1019,6 +1026,7 @@ html[data-theme="dark"] .mode-row { background: rgba(255, 255, 255, 0.06); }
   .reveal { opacity: 1; transform: none; transition: none; }
   .tab-thumb { transition: none; }
   .ro-reset { transition: none; }
+  .now-badge { animation: none; }
 }
 
 /* Mobile tightening */

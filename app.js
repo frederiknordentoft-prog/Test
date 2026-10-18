@@ -42,6 +42,7 @@ const state = {
   vat: true,
   thresholds: { ...THRESH_DEFAULT },
   appliance: { key: "washer", kwh: 1.0, hours: 2 },
+  loadedAt: 0,
 };
 
 // Chart runtime state (single persistent Chart.js instance)
@@ -94,19 +95,13 @@ function priceParts(spotKr, timeStartIso) {
   };
 }
 
-// Round parts to whole øre so they add up to the rounded total exactly
-// (largest remainder). Each part stays within 1 øre of its true value.
+// Whole øre per part, adding up to the rounded total exactly. The fixed
+// parts (index 1..) are rounded on their own so they never change from hour
+// to hour; the first part (spot) takes the remainder.
 function roundToTotal(values, total) {
-  const target = Math.round(total * 100);
-  const scaled = values.map(v => v * 100);
-  const cents = scaled.map(Math.floor);
-  let rest = target - cents.reduce((a, b) => a + b, 0);
-  const order = scaled
-    .map((s, k) => ({ k, frac: s - cents[k] }))
-    .sort((a, b) => b.frac - a.frac);
-  for (let j = 0; rest > 0 && j < order.length; j++, rest--) cents[order[j].k]++;
-  for (let j = order.length - 1; rest < 0 && j >= 0; j--, rest++) cents[order[j].k]--;
-  return cents;
+  const fixed = values.slice(1).map(v => Math.round(v * 100));
+  const first = Math.round(total * 100) - fixed.reduce((a, b) => a + b, 0);
+  return [first, ...fixed];
 }
 
 const LEVEL = {
@@ -149,25 +144,69 @@ function hexWithAlpha(hex, alpha) {
 }
 
 // ------------- fetch -------------
+// [] = not published (e.g. tomorrow before ~13:00), null = network error
 async function fetchDay(date) {
   try {
     const res = await fetch(API(date));
     if (!res.ok) return [];
     return await res.json();
-  } catch (e) { return []; }
+  } catch (e) { return null; }
 }
+
+let warnedEmpty = false;
+
+const isDay = (rows, date) =>
+  rows.length > 0 && new Date(rows[0].time_start).toDateString() === date.toDateString();
 
 async function loadData() {
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
   const [td, tm] = await Promise.all([fetchDay(today), fetchDay(tomorrow)]);
-  state.today = td;
-  state.tomorrow = tm;
-  if (!td.length) toast("Kunne ikke hente dagens priser.");
+  // On a network error keep rows we already hold for that date (after
+  // midnight, yesterday's "tomorrow" is today's data)
+  const keep = (date) =>
+    isDay(state.today, date) ? state.today : isDay(state.tomorrow, date) ? state.tomorrow : [];
+  const nextToday = td ?? keep(today);
+  const nextTomorrow = tm ?? keep(tomorrow);
+  state.today = nextToday;
+  state.tomorrow = nextTomorrow;
+  if (td !== null) state.loadedAt = Date.now();
+  // Warn once per outage, not on every retry
+  if (!state.today.length && !warnedEmpty) toast("Kunne ikke hente dagens priser.");
+  warnedEmpty = !state.today.length;
   const tomorrowTab = document.getElementById("tabTomorrow");
-  tomorrowTab.disabled = tm.length === 0;
+  tomorrowTab.disabled = state.tomorrow.length === 0;
+  // Viewing "I morgen" when it has no data (e.g. just after midnight)
+  if (state.view === "tomorrow" && tomorrowTab.disabled) switchDay("today");
   updateTabDates();
+}
+
+// Data is stale when today's last hour has ended (midnight passed — also
+// after the iPhone kept the tab asleep) or it is over 10 minutes old
+function dataIsStale() {
+  const t = state.today;
+  if (!t.length) return true;
+  return Date.now() >= new Date(t[t.length - 1].time_end).getTime()
+    || Date.now() - state.loadedAt > 10 * 60 * 1000;
+}
+
+let refreshing = null;
+function refresh() {
+  if (!refreshing) {
+    refreshing = loadData().then(renderAll).finally(() => { refreshing = null; });
+  }
+  return refreshing;
+}
+
+// Runs every minute and when the page becomes visible again
+function minuteTick() {
+  if (dataIsStale()) { refresh(); return; }
+  renderHero();
+  renderTable();
+  // New hour: move NU badge, "· nu" and past-hour dimming (pin is kept)
+  const ci = currentHourIndex(state.today);
+  if (state.view === "today" && ci >= 0 && ci !== chartUI.nowIdx) renderChart();
 }
 
 // ------------- hero -------------
@@ -283,19 +322,45 @@ function roundRectPath(ctx, x, y, w, h, r) {
   else ctx.rect(x, y, w, h);
 }
 
-// Geometry for the selected column: band, price pill above the plot,
-// hour pill on the x-axis row
+const PILL_FONT = "-apple-system, BlinkMacSystemFont, sans-serif";
+
+// Geometry of the selected column in canvas px: band, price pill above the
+// plot and hour pill on the x-axis row. Shared by the plugins, the x tick
+// colours and the NU badge so they always agree.
 function selGeometry(chart, i) {
   const bar = chart.getDatasetMeta(0).data[i];
-  if (!bar) return null;
+  const p = chartUI.prices[i];
+  if (!bar || !p) return null;
   const a = chart.chartArea;
-  const colW = (a.right - a.left) / chartUI.prices.length;
-  const pillH = 20;
-  const pillTop = a.top - pillH - 6;
-  // Centre of the x tick labels: tick length (8) + tick padding + half a line
   const xs = chart.scales.x;
+  // Centre of the x tick labels: tick length (8) + tick padding + half a line
   const labelY = xs.top + 8 + xs.options.ticks.padding + (11 * 1.2) / 2;
-  return { bar, a, colW, pillH, pillTop, labelY, axisBottom: labelY + 12 };
+  const pill = (text, font, h, y, padX) => {
+    chart.ctx.save();
+    chart.ctx.font = font;
+    const w = Math.ceil(chart.ctx.measureText(text).width) + padX;
+    chart.ctx.restore();
+    const x = Math.min(chart.width - w - 2, Math.max(2, bar.x - w / 2));
+    return { text, font, x, y, w, h };
+  };
+  return {
+    bar,
+    colW: (a.right - a.left) / chartUI.prices.length,
+    price: pill(fmt(chartUI.values[i]), `700 12px ${PILL_FONT}`, 20, a.top - 26, 16),
+    hour: pill(hourNum(p.time_start), `700 11px ${PILL_FONT}`, 18, labelY - 9, 12),
+    bandTop: a.top - 29,
+    bandBottom: labelY + 12,
+  };
+}
+
+// x tick labels that would sit under the hour pill are made transparent
+// (not removed — removing labels changes Chart.js's layout)
+function tickUnderPill(chart, index) {
+  const sel = activeIdx();
+  const g = sel === null ? null : selGeometry(chart, sel);
+  if (!g) return false;
+  const x = chart.scales.x.getPixelForTick(index);
+  return Math.abs(x - (g.hour.x + g.hour.w / 2)) < g.hour.w / 2 + 9;
 }
 
 // Plugin: soft band behind the selected column, under the bars
@@ -306,10 +371,9 @@ const selBandPlugin = {
     const g = i === null ? null : selGeometry(chart, i);
     if (!g) return;
     const { ctx } = chart;
-    const top = g.pillTop - 3;
     ctx.save();
     ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
-    roundRectPath(ctx, g.bar.x - g.colW / 2, top, g.colW, g.axisBottom - top, Math.min(7, g.colW / 2));
+    roundRectPath(ctx, g.bar.x - g.colW / 2, g.bandTop, g.colW, g.bandBottom - g.bandTop, Math.min(7, g.colW / 2));
     ctx.fill();
     ctx.restore();
   },
@@ -323,32 +387,19 @@ const selLabelPlugin = {
     const g = i === null ? null : selGeometry(chart, i);
     if (!g) return;
     const { ctx } = chart;
-    const font = "-apple-system, BlinkMacSystemFont, sans-serif";
-    const clampX = (w) => Math.min(chart.width - w - 2, Math.max(2, g.bar.x - w / 2));
+    const drawPill = (pl, bg) => {
+      ctx.fillStyle = bg;
+      roundRectPath(ctx, pl.x, pl.y, pl.w, pl.h, pl.h / 2);
+      ctx.fill();
+      ctx.font = pl.font;
+      ctx.fillStyle = "#000";
+      ctx.fillText(pl.text, pl.x + pl.w / 2, pl.y + pl.h / 2 + 0.5);
+    };
     ctx.save();
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-
-    const price = fmt(chartUI.values[i]);
-    ctx.font = `700 12px ${font}`;
-    const pw = Math.ceil(ctx.measureText(price).width) + 16;
-    const px = clampX(pw);
-    ctx.fillStyle = chartUI.colors[i] || "#f5f5f7";
-    roundRectPath(ctx, px, g.pillTop, pw, g.pillH, g.pillH / 2);
-    ctx.fill();
-    ctx.fillStyle = "#000";
-    ctx.fillText(price, px + pw / 2, g.pillTop + g.pillH / 2 + 0.5);
-
-    const hour = hourNum(chartUI.prices[i].time_start);
-    ctx.font = `700 11px ${font}`;
-    const hw = Math.ceil(ctx.measureText(hour).width) + 12, hh = 18;
-    const hx = clampX(hw);
-    const hy = g.labelY - hh / 2;
-    ctx.fillStyle = "#f5f5f7";
-    roundRectPath(ctx, hx, hy, hw, hh, hh / 2);
-    ctx.fill();
-    ctx.fillStyle = "#000";
-    ctx.fillText(hour, hx + hw / 2, hy + hh / 2 + 0.5);
+    drawPill(g.price, chartUI.colors[i] || "#f5f5f7");
+    drawPill(g.hour, "#f5f5f7");
     ctx.restore();
   },
 };
@@ -396,25 +447,37 @@ const cheapDotPlugin = {
   },
 };
 
+// Plugin: keep the NU badge glued to its bar after every draw (animation
+// frames, instant updates, resizes and reduced motion alike)
+const nowBadgePlugin = {
+  id: "nowBadge",
+  afterDraw: () => positionNowBadge(),
+};
+
 function positionNowBadge() {
   const badge = document.getElementById("nowBadge");
   const chart = chartUI.chart;
   if (!badge || !chart) return;
   const nowIdx = chartUI.nowIdx;
-  if (nowIdx < 0 || state.view !== "today") { badge.hidden = true; return; }
-  const bar = chart.getDatasetMeta(0).data[nowIdx];
+  const bar = nowIdx >= 0 && state.view === "today" && chartUI.prices.length
+    ? chart.getDatasetMeta(0).data[nowIdx] : null;
   if (!bar) { badge.hidden = true; return; }
-  // Make way for the price pill when a nearby tall bar would collide with it
-  const sel = activeIdx();
-  if (sel !== null && Math.abs(sel - nowIdx) <= 3 && bar.y < chart.chartArea.top + 30) {
-    badge.hidden = true;
-    return;
-  }
   const wrap = badge.parentElement.getBoundingClientRect();
   const canvas = chart.canvas.getBoundingClientRect();
   badge.style.left = (canvas.left - wrap.left + bar.x) + "px";
   badge.style.top = (canvas.top - wrap.top + bar.y) + "px";
   badge.hidden = false;
+  // Tuck it away while it would overlap the price pill. visibility (not
+  // hidden) so the entry pop doesn't replay on every drag step.
+  const sel = activeIdx();
+  const g = sel === null ? null : selGeometry(chart, sel);
+  let hit = false;
+  if (g) {
+    const w = badge.offsetWidth, h = badge.offsetHeight, m = 3, p = g.price;
+    const x0 = bar.x - w / 2, x1 = bar.x + w / 2, y0 = bar.y - 6 - h, y1 = bar.y - 2;
+    hit = x0 < p.x + p.w + m && x1 > p.x - m && y0 < p.y + p.h + m && y1 > p.y - m;
+  }
+  badge.classList.toggle("tucked", hit);
 }
 
 function ensureChart() {
@@ -455,7 +518,6 @@ function ensureChart() {
       animation: REDUCE_MOTION ? false : {
         duration: 800,
         easing: "easeOutQuart",
-        onComplete: positionNowBadge,
       },
       events: [], // all interaction handled by our own pointer handlers
       layout: { padding: { top: 30 } }, // room for the selected-hour price pill
@@ -468,15 +530,13 @@ function ensureChart() {
           grid: { display: false },
           border: { display: false },
           ticks: {
-            color: tickColor,
+            // The selected hour gets its own pill; labels under it go clear
+            color: (c) => (tickUnderPill(c.chart, c.index) ? "rgba(0, 0, 0, 0)" : tickColor),
             font: { size: 11, family: "-apple-system, sans-serif" },
             maxRotation: 0,
             autoSkip: false,
             padding: 12,
             callback(value, index) {
-              // The selected hour gets its own pill; keep its neighbours clear
-              const sel = activeIdx();
-              if (sel !== null && Math.abs(index - sel) <= 1) return "";
               return index % 3 === 0 ? this.getLabelForValue(value) : "";
             },
           },
@@ -495,16 +555,13 @@ function ensureChart() {
         },
       },
     },
-    plugins: [selBandPlugin, avgLinePlugin, cheapDotPlugin, selLabelPlugin],
+    plugins: [selBandPlugin, avgLinePlugin, cheapDotPlugin, selLabelPlugin, nowBadgePlugin],
   });
 
   initScrub(canvas);
 
   if (chartUI.badgeRO) chartUI.badgeRO.disconnect();
-  chartUI.badgeRO = new ResizeObserver(() => {
-    positionNowBadge();
-    positionThumb();
-  });
+  chartUI.badgeRO = new ResizeObserver(() => positionThumb());
   chartUI.badgeRO.observe(canvas.parentElement);
 
   return chartUI.chart;
@@ -557,7 +614,7 @@ function renderChart() {
   chart.data.labels = prices.map(p => hourNum(p.time_start));
   chart.data.datasets[0].data = values;
   chart.update(); // morphs bars to new heights — no destroy
-  if (REDUCE_MOTION) positionNowBadge(); // no onComplete without animation
+  document.getElementById("chartLive").textContent = "";
 
   canvas.setAttribute("aria-label",
     `Timepriser ${state.view === "today" ? "i dag" : "i morgen"}: ` +
@@ -594,7 +651,7 @@ function splitText(p, total) {
   const parts = [["Spot", q.spot]];
   if (state.gasel) parts.push(["Gasel", q.gasel]);
   if (state.tariffs) parts.push(["Elnet", q.net], ["Afgifter", q.fees]);
-  if (parts.length === 1) return "Ren spotpris";
+  if (parts.length === 1) return state.vat ? "Spotpris inkl. moms" : "Ren spotpris";
   const cents = roundToTotal(parts.map(x => x[1]), total);
   return parts.map(([name], k) => `${name} ${fmt(cents[k] / 100)}`).join(" · ");
 }
@@ -606,15 +663,20 @@ function setResetVisible(show) {
   btn.setAttribute("aria-hidden", String(!show));
 }
 
+// Every write bumps the token, so a running tween can never overwrite a
+// newer value (e.g. a day switch right after a drag).
+let tweenToken = 0;
 function tweenPrice(el, from, to) {
+  const token = ++tweenToken;
   if (REDUCE_MOTION || from === null || Math.abs(to - from) < 0.005) {
     el.textContent = fmt(to);
     return;
   }
   const t0 = performance.now(), dur = 120;
   const step = (t) => {
-    const k = Math.min(1, (t - t0) / dur);
-    el.textContent = fmt(from + (to - from) * k);
+    if (token !== tweenToken) return;
+    const k = Math.max(0, Math.min(1, (t - t0) / dur));
+    el.textContent = fmt(k < 1 ? from + (to - from) * k : to); // exact on the last frame
     if (k < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -664,8 +726,11 @@ function syncReadout(animate = true) {
 // ------------- tap / drag selection -------------
 function refreshSelection() {
   syncReadout();
-  if (chartUI.chart) chartUI.chart.update("none"); // instant recolor, no animation
-  positionNowBadge();
+  if (!chartUI.chart) return;
+  chartUI.chart.update("none"); // instant recolor, no animation
+  // update("none") skips drawing in the frame a morph finishes; draw anyway
+  // so the pill and band always match the readout
+  chartUI.chart.draw();
 }
 
 function scrubTo(idx) {
@@ -706,30 +771,46 @@ function announceSelection() {
 //  - drag sideways       → live preview, the hour under the finger is pinned on release
 //  - fast sideways flick → switch day
 //  - vertical drag       → page scrolls; nothing is previewed or pinned
+//  - second finger       → gesture abandoned (no accidental pin or day switch)
 function initScrub(canvas) {
   let id = null, sx = 0, sy = 0, st = 0, mode = null; // mode: null | "scrub" | "pan"
+  let stoppedScroll = false, lastScrollT = -Infinity;
 
-  // Column under the finger from plain geometry; edges clamp to first/last.
-  // While dragging, stick to the current hour until the finger is well
-  // into the neighbour, so the readout doesn't flicker at column edges.
-  const idxAt = (clientX) => {
+  // Column under clientX from plain geometry. sticky: while dragging, keep
+  // the current hour until the finger is well into the neighbour (no flicker
+  // at column edges). strict: taps beside the bars (y-axis labels) select
+  // nothing; drags clamp to the first/last hour instead.
+  const idxAt = (clientX, sticky = false, strict = false) => {
     const chart = chartUI.chart;
     const a = chart && chart.chartArea;
     const n = chartUI.prices.length;
     if (!a || !n) return null;
     const colW = (a.right - a.left) / n;
     const x = clientX - canvas.getBoundingClientRect().left;
+    if (strict && (x < a.left - colW / 2 || x > a.right + colW / 2)) return null;
     const cur = chartUI.scrubIdx;
-    if (cur !== null && Math.abs(x - (a.left + (cur + 0.5) * colW)) < 0.7 * colW) return cur;
+    if (sticky && cur !== null && Math.abs(x - (a.left + (cur + 0.5) * colW)) < 0.7 * colW) return cur;
     return Math.min(n - 1, Math.max(0, Math.floor((x - a.left) / colW)));
   };
 
   const release = () => { id = null; mode = null; };
 
+  window.addEventListener("scroll", () => { lastScrollT = performance.now(); }, { passive: true });
+
+  // A second finger anywhere (pinch) cancels the current chart gesture
+  document.addEventListener("pointerdown", (e) => {
+    if (id !== null && e.pointerType === "touch" && e.pointerId !== id) {
+      release();
+      endScrub();
+    }
+  }, true);
+
   canvas.addEventListener("pointerdown", (e) => {
     if (!e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
     if (!chartUI.prices.length) return;
     id = e.pointerId; sx = e.clientX; sy = e.clientY; st = performance.now(); mode = null;
+    // A touch that lands while the page is still gliding just stops the glide
+    stoppedScroll = st - lastScrollT < 120;
     try { canvas.setPointerCapture(id); } catch (_) { /* not critical */ }
   });
 
@@ -741,7 +822,7 @@ function initScrub(canvas) {
     }
     if (mode === "scrub") {
       chartUI.scrubbing = true;
-      scrubTo(idxAt(e.clientX));
+      scrubTo(idxAt(e.clientX, true));
     }
   });
 
@@ -754,13 +835,14 @@ function initScrub(canvas) {
     // Fast horizontal flick = switch day (if there is a day to switch to)
     const flick = dt < 300 && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy);
     if (flick && switchDay(dx < 0 ? "tomorrow" : "today")) return;
-    if (m === "pan") { endScrub(); return; }
     if (m === "scrub") {
-      const i = chartUI.scrubIdx ?? idxAt(e.clientX);
-      selectHour(i); // what you saw is what you get
+      selectHour(chartUI.scrubIdx ?? idxAt(e.clientX, true)); // what you saw is what you get
       return;
     }
-    const i = idxAt(e.clientX);
+    // Tap. A small wobble that never became a page scroll still counts.
+    if (m === "pan" && Math.hypot(dx, dy) > 16) return;
+    if (stoppedScroll) return;
+    const i = idxAt(sx, false, true); // the column the finger landed on
     if (i === null) return;
     selectHour(i === chartUI.selIdx ? null : i);
   });
@@ -1082,18 +1164,14 @@ async function boot() {
   initReveals();
   updateTabDates();
 
-  await loadData();
-  renderAll();
+  await refresh();
 
-  setInterval(async () => { await loadData(); renderAll(); }, 10 * 60 * 1000);
-  setInterval(() => {
-    if (!state.today.length) return;
-    renderHero();
-    renderTable();
-    // New hour: move NU badge, "· nu" and past-hour dimming (pin is kept)
-    const ci = currentHourIndex(state.today);
-    if (state.view === "today" && ci >= 0 && ci !== chartUI.nowIdx) renderChart();
-  }, 60 * 1000);
+  setInterval(minuteTick, 60 * 1000);
+  // iPhone Safari pauses timers in the background — catch up on return
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") minuteTick();
+  });
+  window.addEventListener("pageshow", (e) => { if (e.persisted) minuteTick(); });
 }
 
 document.addEventListener("DOMContentLoaded", boot);
