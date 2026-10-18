@@ -215,7 +215,10 @@ async function loadData() {
   // what we already hold for that date
   const nextToday = tdOk ? td : heldFor(today);
   // The first rows for today stamp the footer right away
-  if (tdOk && !state.loadedAt) state.loadedAt = Date.now();
+  if (tdOk && !state.loadedAt) {
+    state.loadedAt = Date.now();
+    renderFooter();
+  }
   if (!sameRows(nextToday, state.today)) {
     state.today = nextToday;
     renderAll();
@@ -266,7 +269,15 @@ function dataIsStale() {
 let refreshing = null;
 function refresh() {
   if (!refreshing) {
-    refreshing = loadData().finally(() => { refreshing = null; });
+    const wasFailed = state.fetchFailed;
+    refreshing = loadData().finally(() => {
+      refreshing = null;
+      // First failure with nothing on screen: try again soon (now with the
+      // long time-out) rather than at the next minute tick
+      if (!wasFailed && state.fetchFailed && !state.today.length) {
+        setTimeout(() => { if (dataIsStale()) refresh(); }, 5000);
+      }
+    });
   }
   return refreshing;
 }
