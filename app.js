@@ -42,7 +42,8 @@ const state = {
   vat: true,
   thresholds: { ...THRESH_DEFAULT },
   appliance: { key: "washer", kwh: 1.0, hours: 2 },
-  loadedAt: 0,
+  loadedAt: 0,       // last successful fetch of today's prices
+  fetchFailed: false, // last refresh hit a network error / time-out
 };
 
 // Chart runtime state (single persistent Chart.js instance)
@@ -83,21 +84,22 @@ function fullPrice(spotKr, timeStartIso) {
 
 // Same formula as fullPrice(), split into parts for the readout.
 // Display only — keep in step with fullPrice().
+// "tariffs" = Radius + Energinet net tariffs + elafgift (what the
+// "Afgifter" toggle adds).
 function priceParts(spotKr, timeStartIso) {
   const k = state.vat ? 1 + VAT_RATE : 1;
   const d = new Date(timeStartIso);
-  const fees = TARIFFS.elafgift + TARIFFS.energinetTransmission + TARIFFS.energinetSystem;
+  const fixed = TARIFFS.elafgift + TARIFFS.energinetTransmission + TARIFFS.energinetSystem;
   return {
     spot: spotKr * k,
     gasel: state.gasel ? GASEL_MARKUP * k : 0,
-    net: state.tariffs ? radiusTariff(d.getHours(), d.getMonth()) * k : 0,
-    fees: state.tariffs ? fees * k : 0,
+    tariffs: state.tariffs ? (radiusTariff(d.getHours(), d.getMonth()) + fixed) * k : 0,
   };
 }
 
 // Whole øre per part, adding up to the rounded total exactly. The fixed
 // parts (index 1..) are rounded on their own so they never change from hour
-// to hour; the first part (spot) takes the remainder.
+// to hour; the first part (spot) takes the remainder (≤ 1 øre per fixed part).
 function roundToTotal(values, total) {
   const fixed = values.slice(1).map(v => Math.round(v * 100));
   const first = Math.round(total * 100) - fixed.reduce((a, b) => a + b, 0);
@@ -144,13 +146,25 @@ function hexWithAlpha(hex, alpha) {
 }
 
 // ------------- fetch -------------
-// [] = not published (e.g. tomorrow before ~13:00), null = network error
-async function fetchDay(date) {
+// [] = not published (e.g. tomorrow before ~13:00), null = network error or
+// time-out. fresh: ask the server instead of the HTTP cache — the API lets
+// browsers cache its "not published" 404 for 4 hours, which would hide
+// tomorrow's prices long after they are out.
+async function fetchDay(date, fresh) {
+  const ctl = typeof AbortController === "function" ? new AbortController() : null;
+  const timer = ctl && setTimeout(() => ctl.abort(), 15000);
   try {
-    const res = await fetch(API(date));
+    const res = await fetch(API(date), {
+      cache: fresh ? "no-cache" : "default",
+      signal: ctl ? ctl.signal : undefined,
+    });
     if (!res.ok) return [];
     return await res.json();
-  } catch (e) { return null; }
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 let warnedEmpty = false;
@@ -158,23 +172,37 @@ let warnedEmpty = false;
 const isDay = (rows, date) =>
   rows.length > 0 && new Date(rows[0].time_start).toDateString() === date.toDateString();
 
+// Rows already held for a date (after midnight, yesterday's "tomorrow" is
+// today's data)
+const heldFor = (date) =>
+  isDay(state.today, date) ? state.today : isDay(state.tomorrow, date) ? state.tomorrow : [];
+
 async function loadData() {
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  const [td, tm] = await Promise.all([fetchDay(today), fetchDay(tomorrow)]);
-  // On a network error keep rows we already hold for that date (after
-  // midnight, yesterday's "tomorrow" is today's data)
-  const keep = (date) =>
-    isDay(state.today, date) ? state.today : isDay(state.tomorrow, date) ? state.tomorrow : [];
-  const nextToday = td ?? keep(today);
-  const nextTomorrow = tm ?? keep(tomorrow);
+  const [td, tm] = await Promise.all([
+    fetchDay(today, !heldFor(today).length),
+    fetchDay(tomorrow, !heldFor(tomorrow).length),
+  ]);
+  // Midnight passed while waiting: the rows belong to other days — start over
+  if (new Date().toDateString() !== today.toDateString()) return loadData();
+  // A published day never changes, so errors, time-outs and odd replies keep
+  // what we already hold for that date
+  const ok = (rows) => Array.isArray(rows) && rows.length > 0;
+  const nextToday = ok(td) ? td : heldFor(today);
+  const nextTomorrow = ok(tm) ? tm : heldFor(tomorrow);
   state.today = nextToday;
   state.tomorrow = nextTomorrow;
+  state.fetchFailed = td === null || tm === null;
   if (td !== null) state.loadedAt = Date.now();
   // Warn once per outage, not on every retry
   if (!state.today.length && !warnedEmpty) toast("Kunne ikke hente dagens priser.");
   warnedEmpty = !state.today.length;
+  syncTomorrowTab();
+}
+
+function syncTomorrowTab() {
   const tomorrowTab = document.getElementById("tabTomorrow");
   tomorrowTab.disabled = state.tomorrow.length === 0;
   // Viewing "I morgen" when it has no data (e.g. just after midnight)
@@ -182,13 +210,19 @@ async function loadData() {
   updateTabDates();
 }
 
-// Data is stale when today's last hour has ended (midnight passed — also
-// after the iPhone kept the tab asleep) or it is over 10 minutes old
+// After midnight (or a long sleep) the held rows move up a day before any
+// network round-trip; rows for a day that is over are dropped
+function rollOver() {
+  const now = new Date();
+  if (!state.today.length || isDay(state.today, now)) return;
+  state.today = isDay(state.tomorrow, now) ? state.tomorrow : [];
+  state.tomorrow = [];
+  syncTomorrowTab();
+}
+
+// Refresh when today's data is missing or over 10 minutes old
 function dataIsStale() {
-  const t = state.today;
-  if (!t.length) return true;
-  return Date.now() >= new Date(t[t.length - 1].time_end).getTime()
-    || Date.now() - state.loadedAt > 10 * 60 * 1000;
+  return !state.today.length || Date.now() - state.loadedAt > 10 * 60 * 1000;
 }
 
 let refreshing = null;
@@ -199,24 +233,47 @@ function refresh() {
   return refreshing;
 }
 
-// Runs every minute and when the page becomes visible again
+// Runs every minute and when the page becomes visible again. Always redraws
+// from the rows already held first, so "nu" is right even while a request
+// is still under way.
 function minuteTick() {
-  if (dataIsStale()) { refresh(); return; }
+  rollOver();
   renderHero();
   renderTable();
-  // New hour: move NU badge, "· nu" and past-hour dimming (pin is kept)
+  renderCalculator();
+  // New hour (or day): move NU badge, "· nu" and past-hour dimming (pin is kept)
   const ci = currentHourIndex(state.today);
-  if (state.view === "today" && ci >= 0 && ci !== chartUI.nowIdx) renderChart();
+  if (state.view === "today" && ci !== chartUI.nowIdx) {
+    renderChart();
+    renderLists();
+  }
+  if (dataIsStale()) refresh();
 }
 
 // ------------- hero -------------
 function renderHero() {
+  // Caption echoing pricing mode
+  const parts = ["Spot"];
+  if (state.tariffs) parts.push("afgifter");
+  if (state.gasel) parts.push("Gasel");
+  if (state.vat) parts.push("moms");
+  const echo = document.getElementById("modeEcho");
+  if (echo) echo.textContent = parts.join(" + ");
+
   const prices = state.today;
-  if (!prices.length) return;
+  const idx = currentHourIndex(prices);
+  // No row for the current hour (today's prices not fetched yet): show
+  // nothing rather than an old price posing as "now"
+  if (idx < 0) {
+    ["priceNow", "statMin", "statMax", "statAvg", "statMinHint", "statMaxHint"]
+      .forEach(id => { document.getElementById(id).textContent = "–"; });
+    document.getElementById("priceLevel").textContent = "Venter på dagens priser";
+    document.getElementById("nextCheap").textContent = "Leder efter billigste time…";
+    return;
+  }
 
   const stats = statsOf(prices);
-  const idx = currentHourIndex(prices);
-  const cur = idx >= 0 ? fullPrice(prices[idx].DKK_per_kWh, prices[idx].time_start) : stats.avg;
+  const cur = fullPrice(prices[idx].DKK_per_kWh, prices[idx].time_start);
 
   document.getElementById("priceNow").textContent = fmt(cur);
   document.getElementById("statMin").textContent = fmt(stats.min);
@@ -228,14 +285,6 @@ function renderHero() {
   const lvl = levelOf(cur);
   document.getElementById("priceLevel").textContent =
     `${LEVEL[lvl].label} pris pr. kWh`;
-
-  // Caption echoing pricing mode
-  const parts = ["Spot"];
-  if (state.tariffs) parts.push("afgifter");
-  if (state.gasel) parts.push("Gasel");
-  if (state.vat) parts.push("moms");
-  const echo = document.getElementById("modeEcho");
-  if (echo) echo.textContent = parts.join(" + ");
 
   // Next cheap hour tip
   const forward = [];
@@ -259,7 +308,12 @@ function renderHero() {
 // ------------- lists -------------
 function renderLists() {
   const prices = state.view === "today" ? state.today : state.tomorrow;
-  if (!prices.length) return;
+  if (!prices.length) {
+    // Don't leave another day's hours standing
+    document.getElementById("cheapList").innerHTML = "";
+    document.getElementById("expList").innerHTML = "";
+    return;
+  }
 
   const withFinal = prices.map(p => ({ p, final: fullPrice(p.DKK_per_kWh, p.time_start) }));
   withFinal.sort((a, b) => a.final - b.final);
@@ -577,7 +631,11 @@ function renderChart() {
     empty.hidden = false;
     canvas.style.display = "none";
     if (badge) badge.hidden = true;
+    empty.textContent = state.view === "today"
+      ? "Dagens priser er ikke hentet endnu."
+      : "Morgendagens priser udgives omkring kl. 13.";
     chartUI.prices = [];
+    chartUI.nowIdx = -1;
     chartUI.scrubIdx = chartUI.selIdx = chartUI.selKey = null;
     setReadoutEmpty();
     return;
@@ -650,7 +708,7 @@ function splitText(p, total) {
   const q = priceParts(p.DKK_per_kWh, p.time_start);
   const parts = [["Spot", q.spot]];
   if (state.gasel) parts.push(["Gasel", q.gasel]);
-  if (state.tariffs) parts.push(["Elnet", q.net], ["Afgifter", q.fees]);
+  if (state.tariffs) parts.push(["Nettarif og afgift", q.tariffs]);
   if (parts.length === 1) return state.vat ? "Spotpris inkl. moms" : "Ren spotpris";
   const cents = roundToTotal(parts.map(x => x[1]), total);
   return parts.map(([name], k) => `${name} ${fmt(cents[k] / 100)}`).join(" · ");
@@ -819,9 +877,16 @@ function initScrub(canvas) {
     const dx = e.clientX - sx, dy = e.clientY - sy;
     if (mode === null && Math.hypot(dx, dy) > 8) {
       mode = Math.abs(dx) > Math.abs(dy) ? "scrub" : "pan";
+    } else if (mode === "pan" && Math.abs(dx) > 16 && Math.abs(dx) > 2 * Math.abs(dy)) {
+      // Curved start: the page never took the pan (no pointercancel), so the
+      // finger is clearly dragging sideways
+      mode = "scrub";
     }
     if (mode === "scrub") {
-      chartUI.scrubbing = true;
+      if (!chartUI.scrubbing) {
+        chartUI.scrubbing = true;
+        scrubTo(idxAt(sx)); // start from the touched column
+      }
       scrubTo(idxAt(e.clientX, true));
     }
   });
@@ -832,18 +897,21 @@ function initScrub(canvas) {
     const m = mode;
     release();
 
-    // Fast horizontal flick = switch day (if there is a day to switch to)
+    // Fast horizontal flick = switch day; never pins, even with no day to go to
     const flick = dt < 300 && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy);
-    if (flick && switchDay(dx < 0 ? "tomorrow" : "today")) return;
-    if (m === "scrub") {
+    if (flick) {
+      if (!switchDay(dx < 0 ? "tomorrow" : "today")) endScrub();
+      return;
+    }
+    // A short, quick touch is a tap whatever way the thumb rolled (iOS tap slop)
+    const tapLike = Math.hypot(dx, dy) <= 16 && dt < 300;
+    if (m === "scrub" && !tapLike) {
       selectHour(chartUI.scrubIdx ?? idxAt(e.clientX, true)); // what you saw is what you get
       return;
     }
-    // Tap. A small wobble that never became a page scroll still counts.
-    if (m === "pan" && Math.hypot(dx, dy) > 16) return;
-    if (stoppedScroll) return;
-    const i = idxAt(sx, false, true); // the column the finger landed on
-    if (i === null) return;
+    if (m === "pan" && !tapLike) return;
+    const i = stoppedScroll ? null : idxAt(sx, false, true); // the column the finger landed on
+    if (i === null) { endScrub(); return; }
     selectHour(i === chartUI.selIdx ? null : i);
   });
 
@@ -1027,16 +1095,23 @@ function initLimits() {
 function initSwipe() {
   const card = document.querySelector(".chart-card");
   if (!card) return;
-  let sx = 0, sy = 0, valid = false;
+  // One-finger swipes only: a pinch (two touches) never switches day
+  let sx = 0, sy = 0, valid = false, tid = null;
   card.addEventListener("touchstart", (e) => {
+    if (e.touches.length > 1) { valid = false; return; }
+    const t = e.changedTouches[0];
     valid = e.target.id !== "priceChart";
-    sx = e.touches[0].clientX;
-    sy = e.touches[0].clientY;
+    tid = t.identifier;
+    sx = t.clientX;
+    sy = t.clientY;
   }, { passive: true });
   card.addEventListener("touchend", (e) => {
     if (!valid) return;
-    const dx = e.changedTouches[0].clientX - sx;
-    const dy = e.changedTouches[0].clientY - sy;
+    const t = Array.from(e.changedTouches).find(x => x.identifier === tid);
+    if (!t) return;
+    valid = false;
+    const dx = t.clientX - sx;
+    const dy = t.clientY - sy;
     if (Math.abs(dx) > 50 && Math.abs(dx) > 2 * Math.abs(dy)) {
       switchDay(dx < 0 ? "tomorrow" : "today");
     }
@@ -1141,8 +1216,14 @@ function renderAll() {
   renderLists();
   renderTable();
   renderCalculator();
+  // When the prices were actually fetched — not when a failed retry ran
   const el = document.getElementById("lastUpdate");
-  if (el) el.textContent = new Date().toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+  if (el) {
+    el.textContent = state.loadedAt
+      ? new Date(state.loadedAt).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" }) +
+        (state.fetchFailed ? " (ingen forbindelse lige nu)" : "")
+      : "–";
+  }
 }
 
 function toast(msg) {
