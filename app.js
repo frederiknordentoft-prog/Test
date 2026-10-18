@@ -60,7 +60,7 @@ const chartUI = {
   selIdx: null,    // pinned hour (tap / drag release), null = default hour
   selKey: null,    // its time_start, so the pin survives re-renders
   roPrice: null,   // last readout price (for tween)
-  badgeRO: null,
+  thumbRO: null,
 };
 
 // ------------- utils -------------
@@ -146,19 +146,20 @@ function hexWithAlpha(hex, alpha) {
 }
 
 // ------------- fetch -------------
-// [] = not published (e.g. tomorrow before ~13:00), null = network error or
-// time-out. fresh: ask the server instead of the HTTP cache — the API lets
-// browsers cache its "not published" 404 for 4 hours, which would hide
-// tomorrow's prices long after they are out.
-async function fetchDay(date, fresh) {
+// [] = not published (404), null = network/server error or time-out.
+// The HTTP cache is used first (prices show offline). Only a 404 for a date
+// we don't hold is re-asked from the server: the API lets browsers cache
+// that 404 for 4 hours, which would hide tomorrow's prices long after 13:00.
+async function fetchDay(date, notHeld) {
   const ctl = typeof AbortController === "function" ? new AbortController() : null;
-  const timer = ctl && setTimeout(() => ctl.abort(), 15000);
+  // Give a slow line more time once a request has failed
+  const timer = ctl && setTimeout(() => ctl.abort(), state.fetchFailed ? 45000 : 15000);
+  const signal = ctl ? ctl.signal : undefined;
   try {
-    const res = await fetch(API(date), {
-      cache: fresh ? "no-cache" : "default",
-      signal: ctl ? ctl.signal : undefined,
-    });
-    if (!res.ok) return [];
+    let res = await fetch(API(date), { signal });
+    if (res.status === 404 && notHeld) res = await fetch(API(date), { cache: "no-cache", signal });
+    if (res.status === 404) return [];
+    if (!res.ok) return null;
     return await res.json();
   } catch (e) {
     return null;
@@ -189,13 +190,16 @@ async function loadData() {
   if (new Date().toDateString() !== today.toDateString()) return loadData();
   // A published day never changes, so errors, time-outs and odd replies keep
   // what we already hold for that date
-  const ok = (rows) => Array.isArray(rows) && rows.length > 0;
-  const nextToday = ok(td) ? td : heldFor(today);
-  const nextTomorrow = ok(tm) ? tm : heldFor(tomorrow);
+  const ok = (rows, date) => Array.isArray(rows) && rows.length > 0 &&
+    rows.every(r => r && Number.isFinite(r.DKK_per_kWh) &&
+      !isNaN(Date.parse(r.time_start)) && !isNaN(Date.parse(r.time_end))) &&
+    isDay(rows, date);
+  const nextToday = ok(td, today) ? td : heldFor(today);
+  const nextTomorrow = ok(tm, tomorrow) ? tm : heldFor(tomorrow);
   state.today = nextToday;
   state.tomorrow = nextTomorrow;
   state.fetchFailed = td === null || tm === null;
-  if (td !== null) state.loadedAt = Date.now();
+  if (ok(td, today)) state.loadedAt = Date.now();
   // Warn once per outage, not on every retry
   if (!state.today.length && !warnedEmpty) toast("Kunne ikke hente dagens priser.");
   warnedEmpty = !state.today.length;
@@ -210,8 +214,8 @@ function syncTomorrowTab() {
   updateTabDates();
 }
 
-// After midnight (or a long sleep) the held rows move up a day before any
-// network round-trip; rows for a day that is over are dropped
+// After midnight (or a long sleep) yesterday's "tomorrow" becomes today
+// without waiting for the network; rows for a day that is over are dropped
 function rollOver() {
   const now = new Date();
   if (!state.today.length || isDay(state.today, now)) return;
@@ -220,9 +224,10 @@ function rollOver() {
   syncTomorrowTab();
 }
 
-// Refresh when today's data is missing or over 10 minutes old
+// Refresh when today's data is missing, the last request failed, or the
+// data is over 10 minutes old
 function dataIsStale() {
-  return !state.today.length || Date.now() - state.loadedAt > 10 * 60 * 1000;
+  return !state.today.length || state.fetchFailed || Date.now() - state.loadedAt > 10 * 60 * 1000;
 }
 
 let refreshing = null;
@@ -233,17 +238,20 @@ function refresh() {
   return refreshing;
 }
 
-// Runs every minute and when the page becomes visible again. Always redraws
-// from the rows already held first, so "nu" is right even while a request
-// is still under way.
+// Runs on every whole minute and when the page becomes visible again.
+// Redraws from the rows already held before any refresh, so "nu" is right
+// even while a request is still under way.
 function minuteTick() {
+  renderClock();
   rollOver();
   renderHero();
   renderTable();
   renderCalculator();
-  // New hour (or day): move NU badge, "· nu" and past-hour dimming (pin is kept)
+  // Chart shows other rows (day rolled over) or a new hour began: redraw.
+  // A pin on the same day is kept.
+  const shown = state.view === "today" ? state.today : state.tomorrow;
   const ci = currentHourIndex(state.today);
-  if (state.view === "today" && ci !== chartUI.nowIdx) {
+  if (chartUI.prices !== shown || (state.view === "today" && ci !== chartUI.nowIdx)) {
     renderChart();
     renderLists();
   }
@@ -287,13 +295,11 @@ function renderHero() {
     `${LEVEL[lvl].label} pris pr. kWh`;
 
   // Next cheap hour tip
-  const forward = [];
-  if (idx >= 0) prices.slice(idx + 1).forEach(p => forward.push(p));
-  state.tomorrow.forEach(p => forward.push(p));
+  const forward = [...prices.slice(idx + 1), ...state.tomorrow];
 
   if (forward.length) {
     const cheapest = forward.reduce((a, b) =>
-      fullPrice(a.DKK_per_kWh, a.time_start) < fullPrice(b.DKK_per_kWh, b.time_start) ? a : b
+      fullPrice(a.DKK_per_kWh, a.time_start) <= fullPrice(b.DKK_per_kWh, b.time_start) ? a : b
     );
     const t = new Date(cheapest.time_start);
     const now = new Date();
@@ -302,6 +308,9 @@ function renderHero() {
     const price = fullPrice(cheapest.DKK_per_kWh, cheapest.time_start);
     document.getElementById("nextCheap").innerHTML =
       `Billigste kommende time er <strong>${pad(t.getHours())}:00 ${dayTxt}</strong> til ${fmt(price)} kr/kWh — om ${hoursAway} timer.`;
+  } else {
+    // Last hour of the day and tomorrow not out yet: no stale tip
+    document.getElementById("nextCheap").textContent = "Morgendagens priser udgives omkring kl. 13.";
   }
 }
 
@@ -344,7 +353,7 @@ function renderTable() {
     const meta = LEVEL[lvl];
     const widthPct = Math.max(6, ((price - stats.min) / (stats.max - stats.min || 1)) * 100);
     const isNow = i === nowIdx;
-    return `<div class="hour-row ${isNow ? "now" : ""}" data-hour="${i}">
+    return `<div class="hour-row ${isNow ? "now" : ""}">
       <span class="hour-time">${hourLabel(p.time_start)}</span>
       <span class="hour-val">${fmt(price)} kr</span>
       <span class="hour-lvl lvl-${lvl}">${meta.label}</span>
@@ -381,12 +390,15 @@ const PILL_FONT = "-apple-system, BlinkMacSystemFont, sans-serif";
 // Geometry of the selected column in canvas px: band, price pill above the
 // plot and hour pill on the x-axis row. Shared by the plugins, the x tick
 // colours and the NU badge so they always agree.
+let selGeoCache = { key: "", g: null };
 function selGeometry(chart, i) {
   const bar = chart.getDatasetMeta(0).data[i];
   const p = chartUI.prices[i];
   if (!bar || !p) return null;
   const a = chart.chartArea;
   const xs = chart.scales.x;
+  const key = [i, p.time_start, chartUI.values[i], bar.x, a.left, a.right, a.top, xs.top, chart.width].join("|");
+  if (selGeoCache.key === key) return selGeoCache.g;
   // Centre of the x tick labels: tick length (8) + tick padding + half a line
   const labelY = xs.top + 8 + xs.options.ticks.padding + (11 * 1.2) / 2;
   const pill = (text, font, h, y, padX) => {
@@ -397,7 +409,7 @@ function selGeometry(chart, i) {
     const x = Math.min(chart.width - w - 2, Math.max(2, bar.x - w / 2));
     return { text, font, x, y, w, h };
   };
-  return {
+  const g = {
     bar,
     colW: (a.right - a.left) / chartUI.prices.length,
     price: pill(fmt(chartUI.values[i]), `700 12px ${PILL_FONT}`, 20, a.top - 26, 16),
@@ -405,6 +417,8 @@ function selGeometry(chart, i) {
     bandTop: a.top - 29,
     bandBottom: labelY + 12,
   };
+  selGeoCache = { key, g };
+  return g;
 }
 
 // x tick labels that would sit under the hour pill are made transparent
@@ -614,9 +628,9 @@ function ensureChart() {
 
   initScrub(canvas);
 
-  if (chartUI.badgeRO) chartUI.badgeRO.disconnect();
-  chartUI.badgeRO = new ResizeObserver(() => positionThumb());
-  chartUI.badgeRO.observe(canvas.parentElement);
+  if (chartUI.thumbRO) chartUI.thumbRO.disconnect();
+  chartUI.thumbRO = new ResizeObserver(() => positionThumb());
+  chartUI.thumbRO.observe(canvas.parentElement);
 
   return chartUI.chart;
 }
@@ -634,7 +648,7 @@ function renderChart() {
     empty.textContent = state.view === "today"
       ? "Dagens priser er ikke hentet endnu."
       : "Morgendagens priser udgives omkring kl. 13.";
-    chartUI.prices = [];
+    chartUI.prices = prices;
     chartUI.nowIdx = -1;
     chartUI.scrubIdx = chartUI.selIdx = chartUI.selKey = null;
     setReadoutEmpty();
@@ -866,9 +880,12 @@ function initScrub(canvas) {
   canvas.addEventListener("pointerdown", (e) => {
     if (!e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
     if (!chartUI.prices.length) return;
-    id = e.pointerId; sx = e.clientX; sy = e.clientY; st = performance.now(); mode = null;
+    id = e.pointerId; sx = e.clientX; sy = e.clientY; mode = null;
+    // Time the gesture by when the finger moved, not when a busy main
+    // thread got round to the handler (a flick must stay a flick)
+    st = e.timeStamp;
     // A touch that lands while the page is still gliding just stops the glide
-    stoppedScroll = st - lastScrollT < 120;
+    stoppedScroll = performance.now() - lastScrollT < 120;
     try { canvas.setPointerCapture(id); } catch (_) { /* not critical */ }
   });
 
@@ -893,7 +910,7 @@ function initScrub(canvas) {
 
   canvas.addEventListener("pointerup", (e) => {
     if (e.pointerId !== id) return;
-    const dx = e.clientX - sx, dy = e.clientY - sy, dt = performance.now() - st;
+    const dx = e.clientX - sx, dy = e.clientY - sy, dt = e.timeStamp - st;
     const m = mode;
     release();
 
@@ -1176,14 +1193,15 @@ function initTheme() {
   });
 }
 
+// Updated by the minute tick, so it changes together with the price
+function renderClock() {
+  const d = new Date();
+  const el = document.getElementById("clock");
+  if (el) el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function initClock() {
-  const tick = () => {
-    const d = new Date();
-    const el = document.getElementById("clock");
-    if (el) el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
-  tick();
-  setInterval(tick, 30 * 1000);
+  renderClock();
 }
 
 function initReveals() {
@@ -1245,16 +1263,20 @@ async function boot() {
   initReveals();
   updateTabDates();
 
-  await refresh();
-
-  // Tick on the whole minute, so a new hour (and midnight) shows within a second
-  const scheduleTick = () => setTimeout(() => { minuteTick(); scheduleTick(); }, 60500 - (Date.now() % 60000));
+  // Tick on the whole minute, so a new hour (and midnight) shows within a
+  // second. Re-armed first, so an error in one tick can't stop the clock.
+  const scheduleTick = () => setTimeout(() => {
+    scheduleTick();
+    minuteTick();
+  }, 60500 - (Date.now() % 60000));
   scheduleTick();
   // iPhone Safari pauses timers in the background — catch up on return
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") minuteTick();
   });
   window.addEventListener("pageshow", (e) => { if (e.persisted) minuteTick(); });
+
+  await refresh();
 }
 
 document.addEventListener("DOMContentLoaded", boot);
