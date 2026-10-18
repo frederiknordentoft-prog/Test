@@ -1247,7 +1247,9 @@ async function boot() {
 
   await refresh();
 
-  setInterval(minuteTick, 60 * 1000);
+  // Tick on the whole minute, so a new hour (and midnight) shows within a second
+  const scheduleTick = () => setTimeout(() => { minuteTick(); scheduleTick(); }, 60500 - (Date.now() % 60000));
+  scheduleTick();
   // iPhone Safari pauses timers in the background — catch up on return
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") minuteTick();
