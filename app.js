@@ -69,6 +69,15 @@ const fmt = (n) => (Math.round(n * 100) / 100).toFixed(2).replace(".", ",");
 const hourLabel = (iso) => pad(new Date(iso).getHours()) + ":00";
 const hourNum = (iso) => pad(new Date(iso).getHours());
 
+// localStorage throws when Safari blocks site data; settings are a nicety,
+// so fall back to defaults instead of stopping the page
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* not saved */ } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* not saved */ } },
+  json(k) { try { return JSON.parse(this.get(k) || "null"); } catch (e) { return null; } },
+};
+
 // Compute final consumer price for one hour's spot price
 function fullPrice(spotKr, timeStartIso) {
   let p = spotKr;
@@ -178,32 +187,52 @@ const isDay = (rows, date) =>
 const heldFor = (date) =>
   isDay(state.today, date) ? state.today : isDay(state.tomorrow, date) ? state.tomorrow : [];
 
+// Usable rows for a date: well-formed and actually for that day
+const rowsOk = (rows, date) => Array.isArray(rows) && rows.length > 0 &&
+  rows.every(r => r && Number.isFinite(r.DKK_per_kWh) &&
+    !isNaN(Date.parse(r.time_start)) && !isNaN(Date.parse(r.time_end))) &&
+  isDay(rows, date);
+
+const sameRows = (a, b) => a === b || JSON.stringify(a) === JSON.stringify(b);
+
+// Today is applied and drawn as soon as its own request lands — it never
+// waits for tomorrow, whose "not published" 404 may need a second trip.
+// The page is only redrawn when the rows actually changed.
 async function loadData() {
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  const [td, tm] = await Promise.all([
-    fetchDay(today, !heldFor(today).length),
-    fetchDay(tomorrow, !heldFor(tomorrow).length),
-  ]);
+  const dayChanged = () => new Date().toDateString() !== today.toDateString();
+  const tmP = fetchDay(tomorrow, !heldFor(tomorrow).length);
+  const td = await fetchDay(today, !heldFor(today).length);
   // Midnight passed while waiting: the rows belong to other days — start over
-  if (new Date().toDateString() !== today.toDateString()) return loadData();
+  if (dayChanged()) { await tmP; return loadData(); }
   // A published day never changes, so errors, time-outs and odd replies keep
   // what we already hold for that date
-  const ok = (rows, date) => Array.isArray(rows) && rows.length > 0 &&
-    rows.every(r => r && Number.isFinite(r.DKK_per_kWh) &&
-      !isNaN(Date.parse(r.time_start)) && !isNaN(Date.parse(r.time_end))) &&
-    isDay(rows, date);
-  const nextToday = ok(td, today) ? td : heldFor(today);
-  const nextTomorrow = ok(tm, tomorrow) ? tm : heldFor(tomorrow);
-  state.today = nextToday;
-  state.tomorrow = nextTomorrow;
-  state.fetchFailed = td === null || tm === null;
-  if (ok(td, today)) state.loadedAt = Date.now();
+  const nextToday = rowsOk(td, today) ? td : heldFor(today);
+  // The first rows for today stamp the footer right away
+  if (rowsOk(td, today) && !state.loadedAt) state.loadedAt = Date.now();
+  if (!sameRows(nextToday, state.today)) {
+    state.today = nextToday;
+    renderAll();
+  }
   // Warn once per outage, not on every retry
   if (!state.today.length && !warnedEmpty) toast("Kunne ikke hente dagens priser.");
   warnedEmpty = !state.today.length;
-  syncTomorrowTab();
+
+  const tm = await tmP;
+  if (dayChanged()) return loadData();
+  const nextTomorrow = rowsOk(tm, tomorrow) ? tm : heldFor(tomorrow);
+  if (!sameRows(nextTomorrow, state.tomorrow)) {
+    state.tomorrow = nextTomorrow;
+    syncTomorrowTab();
+    renderAll();
+  }
+  state.fetchFailed = td === null || tm === null;
+  // Later, only a refresh that fully reached the server moves "Opdateret"
+  if (rowsOk(td, today) && tm !== null) state.loadedAt = Date.now();
+  if (!rendered) renderAll();
+  renderFooter();
 }
 
 function syncTomorrowTab() {
@@ -233,7 +262,7 @@ function dataIsStale() {
 let refreshing = null;
 function refresh() {
   if (!refreshing) {
-    refreshing = loadData().then(renderAll).finally(() => { refreshing = null; });
+    refreshing = loadData().finally(() => { refreshing = null; });
   }
   return refreshing;
 }
@@ -682,6 +711,16 @@ function renderChart() {
   chartUI.selIdx = k >= 0 ? k : null;
   if (k < 0) chartUI.selKey = null;
 
+  // Chart.js didn't load (CDN down): say so, and let the rest of the page render
+  if (typeof Chart === "undefined") {
+    empty.hidden = false;
+    empty.textContent = "Grafen kunne ikke indlæses.";
+    canvas.style.display = "none";
+    if (badge) badge.hidden = true;
+    setReadoutEmpty();
+    return;
+  }
+
   const chart = ensureChart();
   chart.data.labels = prices.map(p => hourNum(p.time_start));
   chart.data.datasets[0].data = values;
@@ -1057,7 +1096,7 @@ function sanitizeThresholds(t) {
 }
 
 function initLimits() {
-  const saved = JSON.parse(localStorage.getItem("thresholds") || "null");
+  const saved = store.json("thresholds");
   if (saved) state.thresholds = sanitizeThresholds(saved);
 
   const inputs = {
@@ -1092,7 +1131,7 @@ function initLimits() {
       ok: parse(inputs.ok, THRESH_DEFAULT.ok),
       warn: parse(inputs.warn, THRESH_DEFAULT.warn),
     });
-    localStorage.setItem("thresholds", JSON.stringify(state.thresholds));
+    store.set("thresholds", JSON.stringify(state.thresholds));
     fillInputs();
     renderLegend();
     renderAll();
@@ -1101,7 +1140,7 @@ function initLimits() {
 
   document.getElementById("limitsReset").addEventListener("click", () => {
     state.thresholds = { ...THRESH_DEFAULT };
-    localStorage.removeItem("thresholds");
+    store.del("thresholds");
     fillInputs();
     renderLegend();
     renderAll();
@@ -1152,7 +1191,7 @@ function initAppliances() {
 }
 
 function initModes() {
-  const saved = JSON.parse(localStorage.getItem("modes") || "null");
+  const saved = store.json("modes");
   if (saved) {
     state.tariffs = !!saved.tariffs;
     state.gasel = !!saved.gasel;
@@ -1165,7 +1204,7 @@ function initModes() {
       const m = chip.dataset.mode;
       state[m] = !state[m];
       chip.classList.toggle("active", state[m]);
-      localStorage.setItem("modes", JSON.stringify({
+      store.set("modes", JSON.stringify({
         tariffs: state.tariffs, gasel: state.gasel, vat: state.vat,
       }));
       renderAll();
@@ -1180,7 +1219,7 @@ function syncModeChips() {
 }
 
 function initTheme() {
-  const stored = localStorage.getItem("theme") || "light";
+  const stored = store.get("theme") || "light";
   document.documentElement.setAttribute("data-theme", stored);
   const btn = document.getElementById("themeBtn");
   btn.textContent = stored === "dark" ? "◑" : "◐";
@@ -1188,7 +1227,7 @@ function initTheme() {
     const cur = document.documentElement.getAttribute("data-theme");
     const next = cur === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("theme", next);
+    store.set("theme", next);
     btn.textContent = next === "dark" ? "◑" : "◐";
   });
 }
@@ -1228,20 +1267,24 @@ function initScrollTop() {
   });
 }
 
+let rendered = false;
 function renderAll() {
+  rendered = true;
   renderHero();
   renderChart();
   renderLists();
   renderTable();
   renderCalculator();
-  // When the prices were actually fetched — not when a failed retry ran
+  renderFooter();
+}
+
+// When the prices last came from the server — not when a failed retry ran
+function renderFooter() {
   const el = document.getElementById("lastUpdate");
-  if (el) {
-    el.textContent = state.loadedAt
-      ? new Date(state.loadedAt).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" }) +
-        (state.fetchFailed ? " (ingen forbindelse lige nu)" : "")
-      : "–";
-  }
+  if (!el) return;
+  el.textContent = (state.loadedAt
+    ? new Date(state.loadedAt).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+    : "–") + (state.fetchFailed ? " (ingen forbindelse lige nu)" : "");
 }
 
 function toast(msg) {
