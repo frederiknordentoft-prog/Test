@@ -42,8 +42,8 @@ const state = {
   vat: true,
   thresholds: { ...THRESH_DEFAULT },
   appliance: { key: "washer", kwh: 1.0, hours: 2 },
-  loadedAt: 0,       // last successful fetch of today's prices
-  fetchFailed: false, // last refresh hit a network error / time-out
+  loadedAt: 0,        // last refresh where both days were answered (server or HTTP cache)
+  fetchFailed: false, // last refresh hit a network/server error, bad reply or time-out
 };
 
 // Chart runtime state (single persistent Chart.js instance)
@@ -159,10 +159,12 @@ function hexWithAlpha(hex, alpha) {
 // The HTTP cache is used first (prices show offline). Only a 404 for a date
 // we don't hold is re-asked from the server: the API lets browsers cache
 // that 404 for 4 hours, which would hide tomorrow's prices long after 13:00.
-async function fetchDay(date, notHeld) {
+async function fetchDay(date, notHeld, patient) {
   const ctl = typeof AbortController === "function" ? new AbortController() : null;
-  // Give a slow line more time once a request has failed
-  const timer = ctl && setTimeout(() => ctl.abort(), state.fetchFailed ? 45000 : 15000);
+  // A slow line gets more time once a request has failed, and so does today
+  // when there is nothing on screen to fall back on
+  const slow = state.fetchFailed || (patient && notHeld);
+  const timer = ctl && setTimeout(() => ctl.abort(), slow ? 45000 : 15000);
   const signal = ctl ? ctl.signal : undefined;
   try {
     let res = await fetch(API(date), { signal });
@@ -203,15 +205,17 @@ async function loadData() {
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
   const dayChanged = () => new Date().toDateString() !== today.toDateString();
+  rollOver(); // a restart after midnight begins from today's rows, not yesterday's
   const tmP = fetchDay(tomorrow, !heldFor(tomorrow).length);
-  const td = await fetchDay(today, !heldFor(today).length);
+  const td = await fetchDay(today, !heldFor(today).length, true);
+  const tdOk = rowsOk(td, today);
   // Midnight passed while waiting: the rows belong to other days — start over
   if (dayChanged()) { await tmP; return loadData(); }
   // A published day never changes, so errors, time-outs and odd replies keep
   // what we already hold for that date
-  const nextToday = rowsOk(td, today) ? td : heldFor(today);
+  const nextToday = tdOk ? td : heldFor(today);
   // The first rows for today stamp the footer right away
-  if (rowsOk(td, today) && !state.loadedAt) state.loadedAt = Date.now();
+  if (tdOk && !state.loadedAt) state.loadedAt = Date.now();
   if (!sameRows(nextToday, state.today)) {
     state.today = nextToday;
     renderAll();
@@ -223,14 +227,13 @@ async function loadData() {
   const tm = await tmP;
   if (dayChanged()) return loadData();
   const nextTomorrow = rowsOk(tm, tomorrow) ? tm : heldFor(tomorrow);
-  if (!sameRows(nextTomorrow, state.tomorrow)) {
-    state.tomorrow = nextTomorrow;
-    syncTomorrowTab();
-    renderAll();
-  }
+  const tomorrowChanged = !sameRows(nextTomorrow, state.tomorrow);
+  if (tomorrowChanged) state.tomorrow = nextTomorrow;
+  syncTomorrowTab(); // always: the tab must be off while tomorrow isn't out
+  if (tomorrowChanged) renderAll();
   state.fetchFailed = td === null || tm === null;
-  // Later, only a refresh that fully reached the server moves "Opdateret"
-  if (rowsOk(td, today) && tm !== null) state.loadedAt = Date.now();
+  // Later, only a refresh where both days were answered moves "Opdateret"
+  if (tdOk && tm !== null) state.loadedAt = Date.now();
   if (!rendered) renderAll();
   renderFooter();
 }
@@ -247,7 +250,8 @@ function syncTomorrowTab() {
 // without waiting for the network; rows for a day that is over are dropped
 function rollOver() {
   const now = new Date();
-  if (!state.today.length || isDay(state.today, now)) return;
+  if (isDay(state.today, now)) return;
+  if (!state.today.length && !isDay(state.tomorrow, now)) return;
   state.today = isDay(state.tomorrow, now) ? state.tomorrow : [];
   state.tomorrow = [];
   syncTomorrowTab();
@@ -670,17 +674,22 @@ function renderChart() {
   const canvas = document.getElementById("priceChart");
   const badge = document.getElementById("nowBadge");
 
-  if (!prices.length) {
+  // Message in place of the chart (no data, or Chart.js didn't load)
+  const showMessage = (text) => {
     empty.hidden = false;
+    empty.textContent = text;
     canvas.style.display = "none";
     if (badge) badge.hidden = true;
-    empty.textContent = state.view === "today"
-      ? "Dagens priser er ikke hentet endnu."
-      : "Morgendagens priser udgives omkring kl. 13.";
+    setReadoutEmpty();
+  };
+
+  if (!prices.length) {
     chartUI.prices = prices;
     chartUI.nowIdx = -1;
     chartUI.scrubIdx = chartUI.selIdx = chartUI.selKey = null;
-    setReadoutEmpty();
+    showMessage(state.view === "today"
+      ? "Dagens priser er ikke hentet endnu."
+      : "Morgendagens priser udgives omkring kl. 13.");
     return;
   }
   empty.hidden = true;
@@ -713,11 +722,7 @@ function renderChart() {
 
   // Chart.js didn't load (CDN down): say so, and let the rest of the page render
   if (typeof Chart === "undefined") {
-    empty.hidden = false;
-    empty.textContent = "Grafen kunne ikke indlæses.";
-    canvas.style.display = "none";
-    if (badge) badge.hidden = true;
-    setReadoutEmpty();
+    showMessage("Grafen kunne ikke indlæses.");
     return;
   }
 
@@ -744,6 +749,7 @@ function defaultReadoutIdx() {
 }
 
 function setReadoutEmpty() {
+  tweenToken++; // a running count-up must not write a number over "–"
   document.getElementById("roPrice").textContent = "–";
   document.getElementById("roHour").textContent = "–";
   document.getElementById("roLevel").textContent = "–";
@@ -1239,9 +1245,6 @@ function renderClock() {
   if (el) el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function initClock() {
-  renderClock();
-}
 
 function initReveals() {
   if (!("IntersectionObserver" in window)) {
@@ -1278,7 +1281,7 @@ function renderAll() {
   renderFooter();
 }
 
-// When the prices last came from the server — not when a failed retry ran
+// When both days were last answered — not when a failed retry ran
 function renderFooter() {
   const el = document.getElementById("lastUpdate");
   if (!el) return;
@@ -1297,14 +1300,14 @@ function toast(msg) {
 async function boot() {
   initScrollTop();
   initTheme();
-  initClock();
+  renderClock();
   initTabs();
   initSwipe();
   initAppliances();
   initModes();
   initLimits();
   initReveals();
-  updateTabDates();
+  syncTomorrowTab();
 
   // Tick on the whole minute, so a new hour (and midnight) shows within a
   // second. Re-armed first, so an error in one tick can't stop the clock.
