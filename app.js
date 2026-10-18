@@ -53,8 +53,10 @@ const chartUI = {
   stats: null,
   nowIdx: -1,
   cheapIdx: -1,    // cheapest upcoming hour (dot marker)
-  scrubIdx: null,  // finger/mouse position, null = idle
-  scrubTimer: null,
+  scrubIdx: null,  // hour under a dragging finger, null = not dragging
+  scrubbing: false,
+  selIdx: null,    // pinned hour (tap / drag release), null = default hour
+  selKey: null,    // its time_start, so the pin survives re-renders
   roPrice: null,   // last readout price (for tween)
   badgeRO: null,
 };
@@ -76,6 +78,35 @@ function fullPrice(spotKr, timeStartIso) {
   }
   if (state.vat) p *= 1 + VAT_RATE;
   return p;
+}
+
+// Same formula as fullPrice(), split into parts for the readout.
+// Display only — keep in step with fullPrice().
+function priceParts(spotKr, timeStartIso) {
+  const k = state.vat ? 1 + VAT_RATE : 1;
+  const d = new Date(timeStartIso);
+  const fees = TARIFFS.elafgift + TARIFFS.energinetTransmission + TARIFFS.energinetSystem;
+  return {
+    spot: spotKr * k,
+    gasel: state.gasel ? GASEL_MARKUP * k : 0,
+    net: state.tariffs ? radiusTariff(d.getHours(), d.getMonth()) * k : 0,
+    fees: state.tariffs ? fees * k : 0,
+  };
+}
+
+// Round parts to whole øre so they add up to the rounded total exactly
+// (largest remainder). Each part stays within 1 øre of its true value.
+function roundToTotal(values, total) {
+  const target = Math.round(total * 100);
+  const scaled = values.map(v => v * 100);
+  const cents = scaled.map(Math.floor);
+  let rest = target - cents.reduce((a, b) => a + b, 0);
+  const order = scaled
+    .map((s, k) => ({ k, frac: s - cents[k] }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let j = 0; rest > 0 && j < order.length; j++, rest--) cents[order[j].k]++;
+  for (let j = order.length - 1; rest < 0 && j >= 0; j--, rest++) cents[order[j].k]--;
+  return cents;
 }
 
 const LEVEL = {
@@ -233,12 +264,94 @@ function renderTable() {
 // CHART — persistent instance, scrub readout, morphing updates
 // ============================================================
 
-// Opacity for a bar given scrub + past-hour dimming
+// Hour shown in the readout and highlighted: finger first, then pin
+const activeIdx = () => chartUI.scrubIdx ?? chartUI.selIdx;
+
+// Opacity for a bar given selection + past-hour dimming. Other bars stay
+// fairly visible while pinned so the colour overview is kept.
 function barAlpha(i) {
-  if (chartUI.scrubIdx !== null) return i === chartUI.scrubIdx ? 1 : 0.3;
-  if (state.view === "today" && chartUI.nowIdx >= 0 && i < chartUI.nowIdx) return 0.35;
-  return 1;
+  const base = state.view === "today" && chartUI.nowIdx >= 0 && i < chartUI.nowIdx ? 0.35 : 1;
+  const active = activeIdx();
+  if (active === null) return base;
+  if (i === active) return 1;
+  return base * (chartUI.scrubIdx !== null ? 0.45 : 0.6);
 }
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+  else ctx.rect(x, y, w, h);
+}
+
+// Geometry for the selected column: band, price pill above the plot,
+// hour pill on the x-axis row
+function selGeometry(chart, i) {
+  const bar = chart.getDatasetMeta(0).data[i];
+  if (!bar) return null;
+  const a = chart.chartArea;
+  const colW = (a.right - a.left) / chartUI.prices.length;
+  const pillH = 20;
+  const pillTop = a.top - pillH - 6;
+  // Centre of the x tick labels: tick length (8) + tick padding + half a line
+  const xs = chart.scales.x;
+  const labelY = xs.top + 8 + xs.options.ticks.padding + (11 * 1.2) / 2;
+  return { bar, a, colW, pillH, pillTop, labelY, axisBottom: labelY + 12 };
+}
+
+// Plugin: soft band behind the selected column, under the bars
+const selBandPlugin = {
+  id: "selBand",
+  beforeDatasetsDraw(chart) {
+    const i = activeIdx();
+    const g = i === null ? null : selGeometry(chart, i);
+    if (!g) return;
+    const { ctx } = chart;
+    const top = g.pillTop - 3;
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+    roundRectPath(ctx, g.bar.x - g.colW / 2, top, g.colW, g.axisBottom - top, Math.min(7, g.colW / 2));
+    ctx.fill();
+    ctx.restore();
+  },
+};
+
+// Plugin: price pill (level colour) above the plot + hour pill on the axis
+const selLabelPlugin = {
+  id: "selLabel",
+  afterDatasetsDraw(chart) {
+    const i = activeIdx();
+    const g = i === null ? null : selGeometry(chart, i);
+    if (!g) return;
+    const { ctx } = chart;
+    const font = "-apple-system, BlinkMacSystemFont, sans-serif";
+    const clampX = (w) => Math.min(chart.width - w - 2, Math.max(2, g.bar.x - w / 2));
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const price = fmt(chartUI.values[i]);
+    ctx.font = `700 12px ${font}`;
+    const pw = Math.ceil(ctx.measureText(price).width) + 16;
+    const px = clampX(pw);
+    ctx.fillStyle = chartUI.colors[i] || "#f5f5f7";
+    roundRectPath(ctx, px, g.pillTop, pw, g.pillH, g.pillH / 2);
+    ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.fillText(price, px + pw / 2, g.pillTop + g.pillH / 2 + 0.5);
+
+    const hour = hourNum(chartUI.prices[i].time_start);
+    ctx.font = `700 11px ${font}`;
+    const hw = Math.ceil(ctx.measureText(hour).width) + 12, hh = 18;
+    const hx = clampX(hw);
+    const hy = g.labelY - hh / 2;
+    ctx.fillStyle = "#f5f5f7";
+    roundRectPath(ctx, hx, hy, hw, hh, hh / 2);
+    ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.fillText(hour, hx + hw / 2, hy + hh / 2 + 0.5);
+    ctx.restore();
+  },
+};
 
 // Plugin: dashed average line + label
 const avgLinePlugin = {
@@ -291,6 +404,12 @@ function positionNowBadge() {
   if (nowIdx < 0 || state.view !== "today") { badge.hidden = true; return; }
   const bar = chart.getDatasetMeta(0).data[nowIdx];
   if (!bar) { badge.hidden = true; return; }
+  // Make way for the price pill when a nearby tall bar would collide with it
+  const sel = activeIdx();
+  if (sel !== null && Math.abs(sel - nowIdx) <= 3 && bar.y < chart.chartArea.top + 30) {
+    badge.hidden = true;
+    return;
+  }
   const wrap = badge.parentElement.getBoundingClientRect();
   const canvas = chart.canvas.getBoundingClientRect();
   badge.style.left = (canvas.left - wrap.left + bar.x) + "px";
@@ -339,6 +458,7 @@ function ensureChart() {
         onComplete: positionNowBadge,
       },
       events: [], // all interaction handled by our own pointer handlers
+      layout: { padding: { top: 30 } }, // room for the selected-hour price pill
       plugins: {
         legend: { display: false },
         tooltip: { enabled: false },
@@ -354,6 +474,9 @@ function ensureChart() {
             autoSkip: false,
             padding: 12,
             callback(value, index) {
+              // The selected hour gets its own pill; keep its neighbours clear
+              const sel = activeIdx();
+              if (sel !== null && Math.abs(index - sel) <= 1) return "";
               return index % 3 === 0 ? this.getLabelForValue(value) : "";
             },
           },
@@ -364,15 +487,15 @@ function ensureChart() {
           border: { display: false },
           ticks: {
             color: tickColor,
-            font: { size: 11, family: "-apple-system, sans-serif" },
+            font: { size: 10, family: "-apple-system, sans-serif" },
             callback: (v) => fmt(v),
-            padding: 10,
+            padding: 6,
             maxTicksLimit: 5,
           },
         },
       },
     },
-    plugins: [avgLinePlugin, cheapDotPlugin],
+    plugins: [selBandPlugin, avgLinePlugin, cheapDotPlugin, selLabelPlugin],
   });
 
   initScrub(canvas);
@@ -397,6 +520,8 @@ function renderChart() {
     empty.hidden = false;
     canvas.style.display = "none";
     if (badge) badge.hidden = true;
+    chartUI.prices = [];
+    chartUI.scrubIdx = chartUI.selIdx = chartUI.selKey = null;
     setReadoutEmpty();
     return;
   }
@@ -420,19 +545,27 @@ function renderChart() {
   chartUI.stats = stats;
   chartUI.nowIdx = nowIdx;
   chartUI.cheapIdx = cheapIdx;
-  chartUI.scrubIdx = null;
+  // A refresh mid-drag keeps the finger's hour; otherwise drop the preview
+  if (!chartUI.scrubbing || chartUI.scrubIdx >= prices.length) chartUI.scrubIdx = null;
+  // Re-find the pinned hour by its start time (survives refresh and toggles,
+  // dropped when the day rolls over)
+  const k = chartUI.selKey ? prices.findIndex(p => p.time_start === chartUI.selKey) : -1;
+  chartUI.selIdx = k >= 0 ? k : null;
+  if (k < 0) chartUI.selKey = null;
 
   const chart = ensureChart();
   chart.data.labels = prices.map(p => hourNum(p.time_start));
   chart.data.datasets[0].data = values;
   chart.update(); // morphs bars to new heights — no destroy
+  if (REDUCE_MOTION) positionNowBadge(); // no onComplete without animation
 
   canvas.setAttribute("aria-label",
     `Timepriser ${state.view === "today" ? "i dag" : "i morgen"}: ` +
     `laveste ${fmt(stats.min)} kr kl. ${hourLabel(prices[stats.minIdx].time_start)}, ` +
-    `højeste ${fmt(stats.max)} kr kl. ${hourLabel(prices[stats.maxIdx].time_start)}`);
+    `højeste ${fmt(stats.max)} kr kl. ${hourLabel(prices[stats.maxIdx].time_start)}. ` +
+    `Tryk på en søjle for at se timen.`);
 
-  updateReadout(defaultReadoutIdx(), false);
+  syncReadout(false);
 }
 
 // ------------- readout (Apple Stocks-style) -------------
@@ -448,7 +581,29 @@ function setReadoutEmpty() {
   document.getElementById("roLevel").textContent = "–";
   document.getElementById("roLevel").style.color = "";
   document.getElementById("roDiff").textContent = "–";
+  document.getElementById("roSplit").innerHTML = "&nbsp;";
+  document.getElementById("roPriceWrap").classList.remove("is-past");
+  setResetVisible(false);
   chartUI.roPrice = null;
+}
+
+// "What is this price made of" line. Parts are rounded so they add up to
+// the big number exactly.
+function splitText(p, total) {
+  const q = priceParts(p.DKK_per_kWh, p.time_start);
+  const parts = [["Spot", q.spot]];
+  if (state.gasel) parts.push(["Gasel", q.gasel]);
+  if (state.tariffs) parts.push(["Elnet", q.net], ["Afgifter", q.fees]);
+  if (parts.length === 1) return "Ren spotpris";
+  const cents = roundToTotal(parts.map(x => x[1]), total);
+  return parts.map(([name], k) => `${name} ${fmt(cents[k] / 100)}`).join(" · ");
+}
+
+function setResetVisible(show) {
+  const btn = document.getElementById("roReset");
+  btn.classList.toggle("show", show);
+  btn.tabIndex = show ? 0 : -1;
+  btn.setAttribute("aria-hidden", String(!show));
 }
 
 function tweenPrice(el, from, to) {
@@ -486,88 +641,139 @@ function updateReadout(idx, animate = true) {
   document.getElementById("roDiff").textContent =
     `${diff >= 0 ? "+" : "−"}${fmt(Math.abs(diff))} vs. gns.`;
 
+  document.getElementById("roSplit").textContent = splitText(p, price);
+
+  // Past hours today: muted price, like their dimmed bars
+  const past = state.view === "today" && chartUI.nowIdx >= 0 && idx < chartUI.nowIdx;
+  document.getElementById("roPriceWrap").classList.toggle("is-past", past);
+
   const priceEl = document.getElementById("roPrice");
   tweenPrice(priceEl, animate ? chartUI.roPrice : null, price);
   chartUI.roPrice = price;
 }
 
-// ------------- scrub interaction -------------
+// Readout shows finger hour, else pinned hour, else now/cheapest
+function syncReadout(animate = true) {
+  if (!chartUI.prices.length) { setReadoutEmpty(); return; }
+  updateReadout(activeIdx() ?? defaultReadoutIdx(), animate);
+  const btn = document.getElementById("roReset");
+  btn.textContent = state.view === "today" && chartUI.nowIdx >= 0 ? "↺ Nu" : "↺ Billigst";
+  setResetVisible(chartUI.selIdx !== null);
+}
+
+// ------------- tap / drag selection -------------
+function refreshSelection() {
+  syncReadout();
+  if (chartUI.chart) chartUI.chart.update("none"); // instant recolor, no animation
+  positionNowBadge();
+}
+
 function scrubTo(idx) {
   if (idx === null || idx === chartUI.scrubIdx) return;
-  clearTimeout(chartUI.scrubTimer);
   chartUI.scrubIdx = idx;
-  updateReadout(idx);
-  chartUI.chart.update("none"); // instant recolor, no animation
+  refreshSelection();
 }
 
-function scheduleScrubReset() {
-  clearTimeout(chartUI.scrubTimer);
-  chartUI.scrubTimer = setTimeout(() => {
-    chartUI.scrubIdx = null;
-    updateReadout(defaultReadoutIdx());
-    if (chartUI.chart) chartUI.chart.update("none");
-  }, 2500);
+function endScrub() {
+  chartUI.scrubbing = false;
+  if (chartUI.scrubIdx === null) return;
+  chartUI.scrubIdx = null;
+  refreshSelection();
 }
 
+function selectHour(idx) {
+  const p = idx === null ? null : chartUI.prices[idx];
+  chartUI.selIdx = p ? idx : null;
+  chartUI.selKey = p ? p.time_start : null;
+  chartUI.scrubIdx = null;
+  chartUI.scrubbing = false;
+  refreshSelection();
+  announceSelection();
+}
+
+function announceSelection() {
+  const live = document.getElementById("chartLive");
+  const i = chartUI.selIdx ?? defaultReadoutIdx();
+  const p = chartUI.prices[i];
+  if (!live || !p) return;
+  const v = chartUI.values[i];
+  live.textContent = `Kl. ${hourNum(p.time_start)}–${hourNum(p.time_end)}: ` +
+    `${fmt(v)} kr pr. kWh, ${LEVEL[levelOf(v)].label}`;
+}
+
+// Touch model (iPhone first):
+//  - tap a column        → pin that hour (tap it again to unpin)
+//  - drag sideways       → live preview, the hour under the finger is pinned on release
+//  - fast sideways flick → switch day
+//  - vertical drag       → page scrolls; nothing is previewed or pinned
 function initScrub(canvas) {
-  let downX = 0, downY = 0, downT = 0, moved = false, isDown = false;
+  let id = null, sx = 0, sy = 0, st = 0, mode = null; // mode: null | "scrub" | "pan"
 
-  const idxFromEvent = (e) => {
-    const els = chartUI.chart.getElementsAtEventForMode(e, "index", { intersect: false }, false);
-    return els.length ? els[0].index : null;
+  // Column under the finger from plain geometry; edges clamp to first/last.
+  // While dragging, stick to the current hour until the finger is well
+  // into the neighbour, so the readout doesn't flicker at column edges.
+  const idxAt = (clientX) => {
+    const chart = chartUI.chart;
+    const a = chart && chart.chartArea;
+    const n = chartUI.prices.length;
+    if (!a || !n) return null;
+    const colW = (a.right - a.left) / n;
+    const x = clientX - canvas.getBoundingClientRect().left;
+    const cur = chartUI.scrubIdx;
+    if (cur !== null && Math.abs(x - (a.left + (cur + 0.5) * colW)) < 0.7 * colW) return cur;
+    return Math.min(n - 1, Math.max(0, Math.floor((x - a.left) / colW)));
   };
 
+  const release = () => { id = null; mode = null; };
+
   canvas.addEventListener("pointerdown", (e) => {
-    isDown = true; moved = false;
-    downX = e.clientX; downY = e.clientY; downT = performance.now();
-    scrubTo(idxFromEvent(e));
+    if (!e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (!chartUI.prices.length) return;
+    id = e.pointerId; sx = e.clientX; sy = e.clientY; st = performance.now(); mode = null;
+    try { canvas.setPointerCapture(id); } catch (_) { /* not critical */ }
   });
 
   canvas.addEventListener("pointermove", (e) => {
-    if (e.pointerType === "mouse" || isDown) {
-      if (isDown && Math.hypot(e.clientX - downX, e.clientY - downY) > 6) moved = true;
-      scrubTo(idxFromEvent(e));
+    if (e.pointerId !== id) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (mode === null && Math.hypot(dx, dy) > 8) {
+      mode = Math.abs(dx) > Math.abs(dy) ? "scrub" : "pan";
+    }
+    if (mode === "scrub") {
+      chartUI.scrubbing = true;
+      scrubTo(idxAt(e.clientX));
     }
   });
 
   canvas.addEventListener("pointerup", (e) => {
-    const dx = e.clientX - downX;
-    const dy = e.clientY - downY;
-    const dt = performance.now() - downT;
+    if (e.pointerId !== id) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy, dt = performance.now() - st;
+    const m = mode;
+    release();
 
-    // Fast horizontal flick on the graph itself = switch day.
-    // Slow drag = scrub (already handled in pointermove).
-    if (isDown && dt < 300 && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) {
-      isDown = false;
-      clearTimeout(chartUI.scrubTimer);
-      chartUI.scrubIdx = null;
-      switchDay(dx < 0 ? "tomorrow" : "today");
+    // Fast horizontal flick = switch day (if there is a day to switch to)
+    const flick = dt < 300 && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy);
+    if (flick && switchDay(dx < 0 ? "tomorrow" : "today")) return;
+    if (m === "pan") { endScrub(); return; }
+    if (m === "scrub") {
+      const i = chartUI.scrubIdx ?? idxAt(e.clientX);
+      selectHour(i); // what you saw is what you get
       return;
     }
-
-    if (isDown && !moved && dt < 400) {
-      const i = idxFromEvent(e);
-      if (i !== null) jumpToHour(i);
-    }
-    isDown = false;
-    scheduleScrubReset();
+    const i = idxAt(e.clientX);
+    if (i === null) return;
+    selectHour(i === chartUI.selIdx ? null : i);
   });
 
-  canvas.addEventListener("pointerleave", () => {
-    isDown = false;
-    scheduleScrubReset();
+  canvas.addEventListener("pointercancel", (e) => {
+    if (e.pointerId !== id) return;
+    release();
+    endScrub();
   });
 
-  canvas.style.cursor = "crosshair";
-}
+  document.getElementById("roReset").addEventListener("click", () => selectHour(null));
 
-function jumpToHour(idx) {
-  const row = document.querySelector(`.hour-row[data-hour="${idx}"]`);
-  if (!row) return;
-  row.scrollIntoView({ behavior: REDUCE_MOTION ? "auto" : "smooth", block: "center" });
-  row.classList.remove("flash");
-  void row.offsetWidth;
-  row.classList.add("flash");
+  canvas.style.cursor = "pointer";
 }
 
 // ------------- calculator -------------
@@ -615,20 +821,25 @@ function renderCalculator() {
 }
 
 // ------------- tabs / day switch -------------
+// Returns true if the day actually changed
 function switchDay(day) {
-  if (day === state.view) return;
+  if (day === state.view) return false;
   const btn = document.querySelector(`.tab[data-day="${day}"]`);
-  if (!btn || btn.disabled) return;
+  if (!btn || btn.disabled) return false;
   document.querySelectorAll(".tab").forEach(t => {
     const active = t === btn;
     t.classList.toggle("active", active);
     t.setAttribute("aria-selected", active ? "true" : "false");
   });
+  // A pinned hour belongs to its day — the new day opens on its default hour
+  chartUI.scrubIdx = chartUI.selIdx = chartUI.selKey = null;
+  chartUI.scrubbing = false;
   state.view = day;
   positionThumb();
   renderChart();
   renderLists();
   renderTable();
+  return true;
 }
 
 function initTabs() {
@@ -875,7 +1086,14 @@ async function boot() {
   renderAll();
 
   setInterval(async () => { await loadData(); renderAll(); }, 10 * 60 * 1000);
-  setInterval(() => { if (state.today.length) { renderHero(); renderTable(); } }, 60 * 1000);
+  setInterval(() => {
+    if (!state.today.length) return;
+    renderHero();
+    renderTable();
+    // New hour: move NU badge, "· nu" and past-hour dimming (pin is kept)
+    const ci = currentHourIndex(state.today);
+    if (state.view === "today" && ci >= 0 && ci !== chartUI.nowIdx) renderChart();
+  }, 60 * 1000);
 }
 
 document.addEventListener("DOMContentLoaded", boot);

@@ -360,17 +360,24 @@ html[data-theme="dark"] .stat-num.high { color: #ff453a; }
   touch-action: pan-y;
 }
 
-/* ---------- READOUT (Apple Stocks-style scrub display) ---------- */
+/* ---------- READOUT (selected-hour display above the chart) ----------
+   Fixed line heights + nowrap so nothing below it ever moves. */
 .readout {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 0 4px 18px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 0 4px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  margin-bottom: 20px;
-  min-height: 46px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+.readout-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 36px;
 }
 .readout-price {
   font-size: 34px;
@@ -389,21 +396,75 @@ html[data-theme="dark"] .stat-num.high { color: #ff453a; }
   color: #86868b;
   letter-spacing: -0.01em;
 }
+.readout-price.is-past,
+.readout-price.is-past .readout-unit { color: #8e8e93; }
 .readout-meta {
   font-size: 14px;
+  line-height: 20px;
+  height: 20px;
   color: #a1a1a6;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .readout-meta .rsep { margin: 0 8px; opacity: 0.4; }
 .readout-meta #roLevel { font-weight: 600; }
+.readout-split {
+  font-size: 12px;
+  line-height: 16px;
+  height: 16px;
+  color: #86868b;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* "Back to now" pill — always takes its space, only visible while pinned */
+.ro-reset {
+  flex: none;
+  position: relative;
+  border: 0;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 980px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5f5f7;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ro-reset::before { content: ""; position: absolute; inset: -6px -4px; } /* bigger tap target */
+.ro-reset.show { visibility: visible; opacity: 1; }
+.ro-reset:active { background: rgba(255, 255, 255, 0.22); }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 
 @media (max-width: 520px) {
-  .readout { flex-direction: column; gap: 6px; align-items: flex-start; }
   .readout-price { font-size: 30px; }
 }
-.chart-wrap { position: relative; height: 360px; }
-.chart-wrap canvas { touch-action: pan-y; }
+.chart-wrap { position: relative; height: 380px; }
+.chart-wrap canvas {
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 .chart-empty {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -749,14 +810,6 @@ html[data-theme="dark"] .hour-row:hover { background: rgba(255, 255, 255, 0.04);
   background: var(--accent);
   border-radius: 0 2px 2px 0;
 }
-.hour-row.flash {
-  animation: flash 1.4s var(--easing);
-}
-@keyframes flash {
-  0%, 100% { background: transparent; }
-  20% { background: rgba(41, 151, 255, 0.18); }
-}
-
 .hour-time {
   color: var(--text-sub);
   font-variant-numeric: tabular-nums;
@@ -965,7 +1018,7 @@ html[data-theme="dark"] .mode-row { background: rgba(255, 255, 255, 0.06); }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
   .tab-thumb { transition: none; }
-  .hour-row.flash { animation: none; }
+  .ro-reset { transition: none; }
 }
 
 /* Mobile tightening */
@@ -975,4 +1028,8 @@ html[data-theme="dark"] .mode-row { background: rgba(255, 255, 255, 0.06); }
   .hero-price { letter-spacing: -0.055em; }
   .stats-row { margin-top: 48px; }
   .tip { margin-top: 48px; font-size: 17px; }
+  /* Chart gets more width → wider, easier-to-hit columns */
+  .section.dark#chart { padding-left: 12px; padding-right: 12px; }
+  .chart-card { padding: 18px 12px 16px; border-radius: 20px; }
+  .tabs { margin: 24px 0 32px; }
 }

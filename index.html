@@ -97,12 +97,17 @@
       </button>
     </div>
     <div class="chart-card reveal">
-      <div class="readout" id="readout" aria-live="polite">
-        <div class="readout-price"><span id="roPrice">–</span><span class="readout-unit">kr/kWh</span></div>
+      <div class="readout" id="readout">
+        <div class="readout-top">
+          <div class="readout-price" id="roPriceWrap"><span id="roPrice">–</span><span class="readout-unit">kr/kWh</span></div>
+          <button type="button" class="ro-reset" id="roReset" tabindex="-1" aria-hidden="true">↺ Nu</button>
+        </div>
         <div class="readout-meta">
           <span id="roHour">–</span><span class="rsep">·</span><span id="roLevel">–</span><span class="rsep">·</span><span id="roDiff">–</span>
         </div>
+        <div class="readout-split" id="roSplit">&nbsp;</div>
       </div>
+      <p id="chartLive" class="sr-only" aria-live="polite"></p>
       <div class="chart-wrap">
         <canvas id="priceChart" aria-label="Timepriser som søjlediagram"></canvas>
         <div id="nowBadge" class="now-badge" hidden>NU</div>
