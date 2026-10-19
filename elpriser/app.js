@@ -1,30 +1,46 @@
 // ============================================================
 // Elprisen DK2 — app.js
-// Data: elprisenligenu.dk + Energinet/Radius/Skat tariffs (2026)
+// Data: elprisenligenu.dk + Energinet/Radius/Skat tariffs (Datahub)
 // ============================================================
 
 const REGION = "DK2";
 const API = (date) =>
   `https://www.elprisenligenu.dk/api/v1/prices/${date.getFullYear()}/${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${REGION}.json`;
 
-// Tariffs in kr/kWh (ex. moms). 2026 rates, kalibreret mod faktisk Gasel-regning.
-const TARIFFS = {
-  elafgift: 0.008,              // 0.8 øre — midlertidig nedsat 2026-2027
-  energinetTransmission: 0.047, // 4.7 øre
-  energinetSystem: 0.072,       // 7.2 øre
-};
-const GASEL_MARKUP = 0.06;      // 6 øre
+// Official tariffs in kr/kWh EXCL. moms, copied from Energinet's Datahub
+// price list (api.energidataservice.dk/dataset/DatahubPricelist), each valid
+// from its date (Danish local date) until the next row. Add new rows when
+// Radius/Energinet publish new periods.
+//
+// Radius Elnet A/S (GLN 5790000705689), "Nettarif C" (DT_C_01):
+// Lav 00–06, Høj 06–17 and 21–24, Spids 17–21.
+const RADIUS_C = [
+  { from: "2025-10-01", lav: 0.0976,   hoj: 0.2929,   spids: 0.8788 },   // vinter
+  { from: "2026-04-01", lav: 0.106175, hoj: 0.159262, spids: 0.414082 }, // sommer
+  { from: "2026-10-01", lav: 0.106175, hoj: 0.318524, spids: 0.955573 }, // vinter
+  { from: "2027-04-01", lav: 0.106175, hoj: 0.159262, spids: 0.414082 }, // sommer
+];
+// Energinet (GLN 5790000432752): transmissions nettarif (40000), systemtarif
+// (41000) and elafgift (EA-001).
+const NATIONAL = [
+  { from: "2026-01-01", transmission: 0.043, system: 0.072, elafgift: 0.008 },
+  { from: "2027-01-01", transmission: 0.056, system: 0.049, elafgift: 0.008 },
+];
+const GASEL_MARKUP = 0.048;     // 6 øre inkl. moms
 const VAT_RATE = 0.25;
 
-// Radius Elnet C-customer time-of-use tariffs (kr/kWh, ex. moms). 2026.
-// Kalibreret mod faktisk Gasel-regning — summer spids er lavere end stromligning.dk angiver.
-// Hours: Lav 00-06, Spids 17-21, Høj = alt andet
-function radiusTariff(hour, month) {
-  // Summer: Apr 1 – Sep 30 (months 3-8, 0-indexed)
-  const isSummer = month >= 3 && month <= 8;
-  if (hour >= 0 && hour < 6) return 0.1327;                    // Lav (året rundt)
-  if (hour >= 17 && hour < 21) return isSummer ? 0.4565 : 1.1945; // Spids
-  return isSummer ? 0.1991 : 0.3982;                           // Høj
+// The row in effect for an hour; time_start carries Danish local time
+// ("2026-10-19T20:00:00+02:00"), so date and hour are read from it directly
+const rowFor = (rows, day) => rows.reduce((cur, r) => (r.from <= day ? r : cur), rows[0]);
+
+// All grid tariffs + elafgift for one hour, excl. moms
+function tariffsAt(timeStartIso) {
+  const day = timeStartIso.slice(0, 10);
+  const hour = parseInt(timeStartIso.slice(11, 13), 10);
+  const r = rowFor(RADIUS_C, day);
+  const n = rowFor(NATIONAL, day);
+  const radius = hour < 6 ? r.lav : hour >= 17 && hour < 21 ? r.spids : r.hoj;
+  return radius + n.transmission + n.system + n.elafgift;
 }
 
 const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -82,11 +98,7 @@ const store = {
 function fullPrice(spotKr, timeStartIso) {
   let p = spotKr;
   if (state.gasel) p += GASEL_MARKUP;
-  if (state.tariffs) {
-    p += TARIFFS.elafgift + TARIFFS.energinetTransmission + TARIFFS.energinetSystem;
-    const d = new Date(timeStartIso);
-    p += radiusTariff(d.getHours(), d.getMonth());
-  }
+  if (state.tariffs) p += tariffsAt(timeStartIso);
   if (state.vat) p *= 1 + VAT_RATE;
   return p;
 }
@@ -97,12 +109,10 @@ function fullPrice(spotKr, timeStartIso) {
 // "Afgifter" toggle adds).
 function priceParts(spotKr, timeStartIso) {
   const k = state.vat ? 1 + VAT_RATE : 1;
-  const d = new Date(timeStartIso);
-  const fixed = TARIFFS.elafgift + TARIFFS.energinetTransmission + TARIFFS.energinetSystem;
   return {
     spot: spotKr * k,
     gasel: state.gasel ? GASEL_MARKUP * k : 0,
-    tariffs: state.tariffs ? (radiusTariff(d.getHours(), d.getMonth()) + fixed) * k : 0,
+    tariffs: state.tariffs ? tariffsAt(timeStartIso) * k : 0,
   };
 }
 
