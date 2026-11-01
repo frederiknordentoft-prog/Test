@@ -431,3 +431,25 @@ Målt i headless Chromium i et cross-origin iframe-harness med artifact-lignende
 - C · Spaghetti: glattede spring.
 
 C er den smukkeste, men dens glatning får stierne til at stige *før* målet. Det er en lille usandhed om fremtiden.
+
+---
+
+## 16. Status ved levering (F0–F6)
+
+**Bygget efter planen:**
+
+| Del | Indhold |
+|---|---|
+| Motor | Deterministisk derby-simulation med markedslag, DP-prissætter og visningslag |
+| Monte Carlo | Fremtidsviften (100 stratificerede stier, hvor tally = pris) |
+| Kampskærm | Handelsstop, gab og VAR-spøgelser, købsgrænser, hold-for-indsats, låsering med genkvotering, fader, Målvejret med sammensatte vinduer, sidechain-pump, brand ved mål og lyd |
+| Øvrige skærme | Byg en fremtid, Portefølje, Afregning med træk-karakterer, Hallen (oscilloskop og trigger), levende lobby, instruktør, demo med spøgelsestommel, diagnose |
+
+**Afvigelser, ærligt:**
+- **React-commits** er begrænset til højst 4 Hz (planen sagde 2 Hz). Canvas tegnes imperativt.
+- **Goldens** er screenshots til gennemsyn (`qa/out/`), ikke pixel-diff-gates.
+- **Ydelse:** måles i headless Chromium med software-canvas. WebKit er ikke installeret her, så iPhone i Claude-appen er facit (HUD: langt tryk på Ø → Debug-HUD).
+- **Demoen** varer cirka 85 s og ikke præcis 90.
+- **Håndbold-triggeren** "+4 før 45′" fra 38′ ved +1 koster 24 øre, ikke de 42 i KONCEPT.md, fordi σ er udledt af kæden: 0,65 og ikke 1,0.
+- **Theta, stop-loss/take-profit og totaler som enkeltmarked** er ikke med (fase 2).
+- **Forståelsestest** med 5 Oddset-brugere er ikke udført. Den er manuel og ligger efter levering.

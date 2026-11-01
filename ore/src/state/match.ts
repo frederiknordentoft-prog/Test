@@ -108,6 +108,7 @@ export class MatchStore {
   private pending: Pending | null = null;
   private toasts: Toast[] = [];
   private settledWindows = new Set<string>();
+  private eventDirty = true;
 
   constructor(tl: Timeline = FREE_PLAY, mc: McLike) {
     this.tl = tl;
@@ -184,7 +185,14 @@ export class MatchStore {
       this.afterStep();
     }
     this.ticks++;
-    this.disp = display(this.sim, this.focus);
+    // The full display (windows, branches, headline) every third tick or right after an event;
+    // the 1X2 quotes, which buying uses, every tick straight from the simulation.
+    if (this.ticks % 3 === 0 || this.eventDirty) {
+      this.disp = display(this.sim, this.focus);
+      this.eventDirty = false;
+    } else {
+      this.disp = { ...this.disp, outcomes: this.disp.outcomes.map((q, i) => ({ ...q, ask: this.sim.ask[i], bid: this.sim.bid[i], p: this.sim.mid[i] })) };
+    }
     this.processPending(now);
     this.maybeMc(sp);
     this.dirty = true;
@@ -203,6 +211,11 @@ export class MatchStore {
       sim.k,
       sim.t,
     );
+    for (const f of fills) {
+      const oi = OUTCOME_ID.indexOf(f.contract as (typeof OUTCOME_ID)[number]);
+      const lots = this.book.positions.get(f.contract)?.lots;
+      if (oi >= 0 && lots?.length) lots[lots.length - 1].baseline = this.baseline(oi as Focus);
+    }
     for (const f of fills) this.toast(`Købsgrænse fyldt: ${f.fill?.shares} andele @ ${f.fill?.price}${f.fill && f.fill.gapBetter > 0 ? ` · ${f.fill.gapBetter} øre bedre` : ''}`, 'good');
     // New events: settlement and listeners.
     while (this.seenEvents < sim.events.length) {
@@ -211,6 +224,7 @@ export class MatchStore {
       if (e.kind === 'goal' || e.kind === 'var-start' || e.kind === 'var-verdict' || e.kind === 'red' || e.kind === 'whale' || e.kind === 'reopen' || e.kind === 'fulltime' || e.kind === 'kickoff' || e.kind === 'half') {
         this.eventL.forEach((l) => l(e));
         this.dirty = true;
+        this.eventDirty = true;
         this.lastViewMs = 0; // publish immediately
         if (e.kind === 'goal' || e.kind === 'reopen' || e.kind === 'var-verdict' || e.kind === 'kickoff') this.lastMcTick = -999;
       }
@@ -304,7 +318,7 @@ export class MatchStore {
   private maybeMc(sp: number): void {
     const sim = this.sim;
     if (this.mcPending || sim.phase === 'closed') return;
-    const due = this.ticks - this.lastMcTick >= (sp > 1 ? 10 : 5);
+    const due = this.ticks - this.lastMcTick >= (sp > 1 ? 12 : 8);
     if (!due) return;
     this.lastMcTick = this.ticks;
     this.mcPending = true;
@@ -446,14 +460,7 @@ export class MatchStore {
     const sim = this.sim;
     const oi = OUTCOME_ID.indexOf(contract as (typeof OUTCOME_ID)[number]);
     const mid = oi >= 0 ? sim.mid[oi] : (this.quote(contract)?.p ?? ask / 100);
-    // Baseline for the move grade: the fair price now and 10 game minutes later with no events.
-    let baseline: [number, number] | undefined;
-    if (oi >= 0) {
-      const s = sim.priceState();
-      const dt = Math.min(10, Math.max(0, sim.end - sim.t));
-      const later = price1x2(sim.p, { ...s, t: sim.t + dt, pi: s.pi * Math.exp(-sim.p.theta * dt), excite: [s.excite[0] * Math.exp(-dt / sim.p.tauE), s.excite[1] * Math.exp(-dt / sim.p.tauE)] });
-      baseline = [sim.fair[oi], later[oi]];
-    }
+    const baseline = oi >= 0 ? this.baseline(oi as Focus) : undefined;
     const r = this.book.buy({ contract, label, kr, ask, k: sim.k, t: sim.t, mid, baseline });
     if (!r.ok) {
       this.toast(r.reason, 'bad');
@@ -462,6 +469,15 @@ export class MatchStore {
     this.toast(`Købt ${r.shares} andele @ ${ask} · ved sejr ${fmtKr(r.shares)}`, 'good');
     if (oi >= 0) this.freezeGhost(contract, oi as Focus);
     this.holdSpeed(1500);
+  }
+
+  /** Baseline for the move grade: the fair price now and 10 game minutes later with no events. */
+  private baseline(oi: Focus): [number, number] {
+    const sim = this.sim;
+    const s = sim.priceState();
+    const dt = Math.min(10, Math.max(0, sim.end - sim.t));
+    const later = price1x2(sim.p, { ...s, t: sim.t + dt, pi: s.pi * Math.exp(-sim.p.theta * dt), excite: [s.excite[0] * Math.exp(-dt / sim.p.tauE), s.excite[1] * Math.exp(-dt / sim.p.tauE)] });
+    return [sim.fair[oi], later[oi]];
   }
 
   sell(contract: string, shares: number): void {

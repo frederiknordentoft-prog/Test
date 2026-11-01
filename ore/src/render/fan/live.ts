@@ -22,6 +22,7 @@ export interface LiveInput {
   showGhost: boolean;
   draftLevel: number | null;
   scrubT: number | null;
+  counts: [number, number, number] | null;
 }
 
 export interface LiveOut { headY: number; tags: { y: number; idx: number }[] }
@@ -244,6 +245,29 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
   }
   c.textAlign = 'right';
   c.fillText('90+', g.right, g.h - 6);
+
+  // Tally at full time: the price, counted in futures (crisp, so it lives on this layer).
+  if (inp.counts && inp.counts[0] + inp.counts[1] + inp.counts[2] === 100) {
+    const counts = inp.counts;
+    const gx = g.right + 8;
+    const top = counts[focus];
+    const names = ['FCK', 'X', 'BIF'];
+    const cols = ['#5ce1ff', '#9aa3b2', '#ffd200'];
+    c.textAlign = 'left';
+    c.fillStyle = cols[focus];
+    c.font = `700 20px ${FONT_NUM}`;
+    c.fillText(String(top), gx, g.top + 14);
+    c.font = `600 10px ${FONT_UI}`;
+    c.fillText(names[focus], gx + (top >= 10 ? 26 : 16), g.top + 13);
+    [0, 1, 2].filter((i) => i !== focus).forEach((o, i) => {
+      c.font = `700 14px ${FONT_NUM}`;
+      c.fillStyle = cols[o];
+      const y = g.bottom - 14 + i * 16;
+      c.fillText(String(counts[o]), gx, y);
+      c.font = `600 10px ${FONT_UI}`;
+      c.fillText(names[o], gx + (counts[o] >= 10 ? 20 : 12), y - 1);
+    });
+  }
 
   // Branch tags in the right gutter.
   const tags: { y: number; idx: number }[] = [];

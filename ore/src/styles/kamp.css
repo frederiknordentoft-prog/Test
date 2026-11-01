@@ -43,7 +43,7 @@
 .fan { position: absolute; inset: 0; display: block; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
 .fan.layer-strands { transition: opacity 300ms linear; }
 .fan.on { opacity: 1; }
-.fan-head { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: var(--fck); transition: transform 100ms linear; pointer-events: none; }
+.fan-head { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: var(--fck); transition: transform 200ms linear; pointer-events: none; }
 .fan-head[data-focus='1'] { background: #c8ced8; }
 .fan-head[data-focus='2'] { background: var(--bif); }
 .fan-head::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: breathe 1.2s ease-out infinite; }

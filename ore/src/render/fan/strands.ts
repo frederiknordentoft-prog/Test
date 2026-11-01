@@ -6,8 +6,6 @@ import type { McResult } from '../../engine/mc/paths';
 import { xOf, yOf, type Geo } from './geometry';
 
 const RGB: [number, number, number][] = [[92, 225, 255], [150, 158, 172], [255, 210, 0]];
-const FONT_NUM = '"ORE Flex", "Roboto Flex", Arial, sans-serif';
-const FONT_UI = '"ORE Tight", "Inter Tight", Arial, sans-serif';
 
 export interface StrandOpts { burnTeam?: 0 | 1 | null; dim?: boolean; focus: 0 | 1 | 2 }
 
@@ -87,27 +85,5 @@ export function drawStrands(canvas: HTMLCanvasElement, dpr: number, g: Geo, r: M
   });
   c.globalCompositeOperation = 'source-over';
 
-  // Tally at full time: the price, counted in futures.
-  if (r.counts[0] + r.counts[1] + r.counts[2] === 100) {
-    const gx = g.right + 8;
-    const top = r.counts[opts.focus];
-    const names = ['FCK', 'X', 'BIF'];
-    const cols = ['#5ce1ff', '#9aa3b2', '#ffd200'];
-    c.textAlign = 'left';
-    c.fillStyle = cols[opts.focus];
-    c.font = `700 20px ${FONT_NUM}`;
-    c.fillText(String(top), gx, g.top + 14);
-    c.font = `600 10px ${FONT_UI}`;
-    c.fillText(names[opts.focus], gx + (top >= 10 ? 26 : 16), g.top + 13);
-    const others = [0, 1, 2].filter((i) => i !== opts.focus);
-    others.forEach((o, i) => {
-      c.font = `700 14px ${FONT_NUM}`;
-      c.fillStyle = cols[o];
-      const y = g.bottom - 14 + i * 16;
-      c.fillText(String(r.counts[o]), gx, y);
-      c.font = `600 10px ${FONT_UI}`;
-      c.fillText(names[o], gx + (r.counts[o] >= 10 ? 20 : 12), y - 1);
-    });
-  }
   return performance.now() - t0;
 }

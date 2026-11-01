@@ -58,7 +58,8 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
     const swapStrands = (opts: { burnTeam?: 0 | 1 | null; dim?: boolean }) => {
       if (!geo) return;
       const back = front === 0 ? b : a;
-      drawStrands(back, dpr, geo, store.mcResult, { ...opts, focus: store.focus });
+      // The strand layer is soft light: drawn at 1× and scaled by CSS (a quarter of the pixels at 2×).
+      drawStrands(back, 1, geo, store.mcResult, { ...opts, focus: store.focus });
       back.classList.add('on');
       (front === 0 ? a : b).classList.remove('on');
       front = 1 - front;
@@ -93,16 +94,29 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
         showGhost: now < showGhostUntil || store.view.ghostStatus !== null,
         draftLevel,
         scrubT,
+        counts: store.mcResult?.counts ?? null,
       });
       tags = out.tags;
       hd.style.transform = `translate(${geo.nowX}px, ${out.headY}px)`;
       hd.dataset.focus = String(store.focus);
     };
+    let lastDraw = 0;
+    let urgent = false;
     const schedule = () => {
-      if (!scheduled) {
-        scheduled = true;
-        requestAnimationFrame(draw);
-      }
+      if (scheduled) return;
+      const now = performance.now();
+      // The price line redraws at ~5 Hz; the head glides between draws with a CSS transition.
+      const wait = urgent || draftLevel !== null || scrubT !== null ? 0 : Math.max(0, 190 - (now - lastDraw));
+      scheduled = true;
+      urgent = false;
+      setTimeout(() => requestAnimationFrame(() => {
+        lastDraw = performance.now();
+        draw();
+      }), wait);
+    };
+    const now0 = () => {
+      urgent = true;
+      schedule();
     };
 
     const ring = (team: 0 | 1 | null, big: boolean) => {
@@ -117,6 +131,7 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       const H = Math.round(h * dpr);
       fxc.width = W;
       fxc.height = H;
+      fxc.style.display = 'block';
       const c = fxc.getContext('2d');
       if (!c) return;
       void y0;
@@ -124,7 +139,10 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
         const dt = (performance.now() - t0) / 1000;
         c.setTransform(dpr, 0, 0, dpr, 0, 0);
         c.clearRect(0, 0, w, h);
-        if (dt > 0.75) return;
+        if (dt > 0.75) {
+          fxc.style.display = 'none';
+          return;
+        }
         const r = 6 + (big ? 1200 : 500) * dt;
         c.strokeStyle = `rgba(${col},${Math.max(0, 0.9 - dt * 1.2)})`;
         c.lineWidth = big ? 2 : 1.5;
@@ -152,6 +170,7 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
     const offFrame = store.onFrame(schedule);
     const offEvent = store.onEvent((e) => {
       const now = performance.now();
+      urgent = true;
       if (e.kind === 'goal') {
         quietUntil = now + 3000;
         // Hit-stop: freeze the head for 80 ms, then the ring and the burn.
@@ -203,7 +222,7 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
           if (!down || !geo) return;
           const ask = store.sim.ask[store.focus];
           draftLevel = Math.max(1, Math.min(ask - 1, Math.round(pOfY(geo, down.y))));
-          schedule();
+          now0();
         }, 450);
       }
     };
@@ -277,7 +296,7 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       <canvas ref={sA} className="fan layer-strands on" aria-hidden="true" />
       <canvas ref={sB} className="fan layer-strands" aria-hidden="true" />
       <canvas ref={live} className="fan layer-live on" aria-hidden="true" />
-      <canvas ref={fx} className="fan layer-fx on" aria-hidden="true" />
+      <canvas ref={fx} className="fan layer-fx on" style={{ display: 'none' }} aria-hidden="true" />
       <span ref={head} className="fan-head" aria-hidden="true" />
     </div>
   );

@@ -116,7 +116,7 @@ export function Afregning({ store }: { store: MatchStore }) {
             <div><span>Resultat</span><b className={result >= 0 ? 'up' : 'down'}>{result >= 0 ? '+' : '−'}{fmtKr(Math.abs(result))}</b></div>
           </div>
           <h2>Dine træk</h2>
-          <p className="af-note">Karakteren måler købet, ikke udfaldet: hvor meget prisen flyttede sig i din retning de næste 10 kampminutter, fratrukket hvad tiden alene ville gøre.</p>
+          <p className="af-note">Karakteren måler købet, ikke udfaldet: hvor meget prisen flyttede sig i din retning de næste 10 kampminutter, fratrukket hvad tiden alene ville gøre. Karakterer gives for udfaldskøb; vinduer og byggede fremtider vises med —.</p>
           {graded.length === 0 && <p className="tray-note">Ingen køb i denne kamp.</p>}
           <ul className="af-list">
             {graded.map((gr, i) => (
