@@ -1,0 +1,113 @@
+/**
+ * Strand layer: the 100 simulated futures (Lyn style: plateaus accumulate light, goal jumps are
+ * faint threads) plus the tally at full time. Drawn only when a new Monte Carlo result arrives.
+ */
+import type { McResult } from '../../engine/mc/paths';
+import { xOf, yOf, type Geo } from './geometry';
+
+const RGB: [number, number, number][] = [[92, 225, 255], [150, 158, 172], [255, 210, 0]];
+const FONT_NUM = '"ORE Flex", "Roboto Flex", Arial, sans-serif';
+const FONT_UI = '"ORE Tight", "Inter Tight", Arial, sans-serif';
+
+export interface StrandOpts { burnTeam?: 0 | 1 | null; dim?: boolean; focus: 0 | 1 | 2 }
+
+export function drawStrands(canvas: HTMLCanvasElement, dpr: number, g: Geo, r: McResult | null, opts: StrandOpts): number {
+  const t0 = performance.now();
+  const W = Math.round(g.w * dpr);
+  const H = Math.round(g.h * dpr);
+  if (canvas.width !== W || canvas.height !== H) {
+    canvas.width = W;
+    canvas.height = H;
+  }
+  const c = canvas.getContext('2d');
+  if (!c) return 0;
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.clearRect(0, 0, g.w, g.h);
+  // Grid: 0, 50, 100.
+  c.strokeStyle = '#1a2029';
+  c.lineWidth = 1;
+  c.setLineDash([2, 4]);
+  for (const p of [0, 50, 100]) {
+    const yy = Math.round(yOf(g, p)) + 0.5;
+    c.beginPath();
+    c.moveTo(g.left, yy);
+    c.lineTo(g.right, yy);
+    c.stroke();
+  }
+  c.setLineDash([]);
+  if (!r) return performance.now() - t0;
+
+  c.globalCompositeOperation = 'lighter';
+  c.lineJoin = 'round';
+  c.lineCap = 'round';
+  const jumps = [new Path2D(), new Path2D(), new Path2D()];
+  const xs = new Float32Array(r.tPts.length);
+  for (let k = 0; k < r.tPts.length; k++) xs[k] = xOf(g, r.tPts[k]);
+  for (const s of r.strands) {
+    let [cr, cg, cb] = RGB[s.outcome];
+    let alpha = opts.dim ? 0.035 : 0.11;
+    if (opts.burnTeam !== undefined && opts.burnTeam !== null) {
+      // Goal moment: futures whose next goal was this team's light up, the rest turn to ash.
+      const saw = s.goalTeam.length > 0 && s.goalTeam[0] === opts.burnTeam;
+      if (saw) {
+        [cr, cg, cb] = opts.burnTeam === 0 ? [140, 236, 255] : [255, 222, 90];
+        alpha = 0.3;
+      } else {
+        [cr, cg, cb] = [120, 120, 120];
+        alpha = 0.03;
+      }
+    }
+    c.strokeStyle = `rgba(${cr},${cg},${cb},${alpha})`;
+    c.lineWidth = 1.3;
+    c.beginPath();
+    let lastX = -1e9;
+    for (let k = 0; k < s.v.length; k++) {
+      const x = xs[k];
+      const y = yOf(g, s.v[k]);
+      if (k > 0 && s.d[k] !== s.d[k - 1]) {
+        jumps[s.outcome].moveTo(xs[k - 1], yOf(g, s.v[k - 1]));
+        jumps[s.outcome].lineTo(x, y);
+        c.moveTo(x, y);
+        lastX = x;
+        continue;
+      }
+      if (k === 0) c.moveTo(x, y);
+      else if (x - lastX >= 0.75 || k === s.v.length - 1) {
+        c.lineTo(x, y);
+        lastX = x;
+      }
+    }
+    c.stroke();
+  }
+  c.lineWidth = 1;
+  jumps.forEach((p, o) => {
+    const [cr, cg, cb] = RGB[o];
+    c.strokeStyle = `rgba(${cr},${cg},${cb},${opts.dim ? 0.02 : 0.07})`;
+    c.stroke(p);
+  });
+  c.globalCompositeOperation = 'source-over';
+
+  // Tally at full time: the price, counted in futures.
+  if (r.counts[0] + r.counts[1] + r.counts[2] === 100) {
+    const gx = g.right + 8;
+    const top = r.counts[opts.focus];
+    const names = ['FCK', 'X', 'BIF'];
+    const cols = ['#5ce1ff', '#9aa3b2', '#ffd200'];
+    c.textAlign = 'left';
+    c.fillStyle = cols[opts.focus];
+    c.font = `700 20px ${FONT_NUM}`;
+    c.fillText(String(top), gx, g.top + 14);
+    c.font = `600 10px ${FONT_UI}`;
+    c.fillText(names[opts.focus], gx + (top >= 10 ? 26 : 16), g.top + 13);
+    const others = [0, 1, 2].filter((i) => i !== opts.focus);
+    others.forEach((o, i) => {
+      c.font = `700 14px ${FONT_NUM}`;
+      c.fillStyle = cols[o];
+      const y = g.bottom - 14 + i * 16;
+      c.fillText(String(r.counts[o]), gx, y);
+      c.font = `600 10px ${FONT_UI}`;
+      c.fillText(names[o], gx + (r.counts[o] >= 10 ? 20 : 12), y - 1);
+    });
+  }
+  return performance.now() - t0;
+}

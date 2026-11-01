@@ -1,7 +1,7 @@
 import { unlockAudio } from '../diag/audio';
 
 /** First tap: unlocks audio and lifts WebKit's rAF throttle for cross-origin iframes. */
-export function Gate({ onOpen }: { onOpen: () => void }) {
+export function Gate({ onOpen, demo = false }: { onOpen: () => void; demo?: boolean }) {
   return (
     <div className="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
       <div className="gate-mark" aria-hidden="true">Ø<span>RE</span></div>
@@ -17,7 +17,7 @@ export function Gate({ onOpen }: { onOpen: () => void }) {
           onOpen();
         }}
       >
-        Tryk for at åbne handlen
+        {demo ? 'Se demoen' : 'Tryk for at åbne handlen'}
       </button>
       <p className="gate-foot">Prototype · fiktive kurser · ingen rigtige penge</p>
     </div>

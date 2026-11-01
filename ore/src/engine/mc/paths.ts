@@ -124,8 +124,14 @@ function runPath(req: McRequest, j: number, record: boolean, nPts: number, first
   const zB = zoneFactor(p, 1, s.zone);
   let t = s.t;
   for (let k = 1; k < nPts; k++) {
-    const dt = k === 1 ? firstDt : Math.min(STEP, s.end - t);
-    if (dt <= 0) break;
+    const dt = (k === 1 ? Math.max(firstDt, 1e-6) : Math.min(STEP, s.end - t));
+    if (dt <= 0) {
+      if (dArr && piArr) {
+        dArr[k] = Math.max(-D, Math.min(D, h - a));
+        piArr[k] = pi;
+      }
+      continue;
+    }
     const ahead = t - s.t + dt / 2;
     const decay = Math.exp(-ahead / p.tauE);
     const d = h - a;
@@ -155,6 +161,18 @@ function runPath(req: McRequest, j: number, record: boolean, nPts: number, first
       piArr[k] = pi;
     }
   }
+  if (piArr) {
+    // Pressure is redrawn once per game minute; interpolate between those knots so prices glide.
+    let k0 = 0;
+    for (let k = 1; k < nPts; k++) {
+      if ((i0 + k) % 4 === 0 || k === nPts - 1) {
+        const a0 = piArr[k0];
+        const b0 = piArr[k];
+        for (let m = k0 + 1; m < k; m++) piArr[m] = a0 + ((b0 - a0) * (m - k0)) / (k - k0);
+        k0 = k;
+      }
+    }
+  }
   return { h, a, goalT, goalTeam, d: dArr, pi: piArr };
 }
 
@@ -178,13 +196,18 @@ function legHits(leg: Leg, s: McState, out: PathOut): boolean {
 export async function runMc(req: McRequest, yieldFn?: () => Promise<void>): Promise<McResult> {
   const t0 = performance.now();
   const s = req.state;
-  const grid0 = Math.ceil(s.t / STEP - 1e-9);
-  const firstDt = Math.max(1e-6, Math.min(grid0 * STEP, s.end) - s.t) || STEP;
+  let grid0 = Math.ceil(s.t / STEP - 1e-9);
+  if (grid0 * STEP - s.t < 1e-4) grid0 += 1; // NU on the grid: the first step is a full step
+  const firstDt = Math.min(grid0 * STEP, s.end) - s.t;
   const i0 = grid0 - 1;
-  const nPts = 1 + Math.max(1, Math.ceil((s.end - s.t) / STEP - 1e-9) + 1);
-  const tPts = new Float32Array(nPts);
-  tPts[0] = s.t;
-  for (let k = 1; k < nPts; k++) tPts[k] = Math.min(s.end, k === 1 ? s.t + firstDt : tPts[k - 1] + STEP);
+  // Points: NU, then the DP grid, ending exactly at full time.
+  const times: number[] = [s.t];
+  for (let tt = Math.min(s.end, s.t + Math.max(firstDt, 1e-6)); ; tt = Math.min(s.end, tt + STEP)) {
+    times.push(tt);
+    if (tt >= s.end - 1e-9) break;
+  }
+  const nPts = times.length;
+  const tPts = Float32Array.from(times);
 
   const outcomes = new Uint8Array(req.n);
   const legs = req.legs ?? [];

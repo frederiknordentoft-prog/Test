@@ -8,6 +8,10 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = false;
 
+export function setMutedState(m: boolean): void {
+  setMuted(m);
+}
+
 export function unlockAudio(): void {
   const nav = navigator as Navigator & { audioSession?: { type: string } };
   try {

@@ -149,7 +149,7 @@ export class FootballSim {
       this.phase = '1H';
       this.phaseK = 0;
       this.emit('kickoff', { text: `Åbner ${Math.round(this.ask[0])} øre` });
-    } else if (this.phase === 'HT' && this.phaseK >= HT_SUBS) {
+    } else if (this.phase === 'HT' && this.phaseK >= (this.tl.htSubs ?? HT_SUBS)) {
       this.phase = '2H';
       this.phaseK = 0;
       this.emit('second-half');
@@ -533,6 +533,12 @@ export class FootballSim {
       halted: this.halted, haltKind: this.halt?.kind ?? null, reopenK: this.reopenK,
       var: vp === null || !this.varSt ? null : { p: vp, goalTeam: this.varSt.team, p0: this.varSt.p0 },
     };
+  }
+
+  /** Director (free play): adds a timeline event; it fires at its minute like a scripted one. */
+  addEvent(e: TLEvent): void {
+    this.tlEvents.push({ ...e, m: minuteOf(e.at), untilM: 'until' in e ? minuteOf(e.until) : undefined });
+    this.tlEvents.sort((x, y) => x.m - y.m);
   }
 
   /** Deterministic fingerprint of the state, for replay tests. */

@@ -14,6 +14,7 @@ export interface Timeline {
   naturalGoals: boolean;
   naturalWhales?: boolean;
   stoppage?: number; // second-half stoppage minutes
+  htSubs?: number; // halftime length in substeps (default 20 = 2 s at ×1)
   events: TLEvent[];
 }
 

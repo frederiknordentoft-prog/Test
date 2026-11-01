@@ -4,7 +4,8 @@
  * The main-thread benchmark is the fallback's cost.
  */
 import BenchInline from './bench.worker.ts?worker&inline';
-import { DERBY, simulateOutcomes, STEP } from '../lookdev/model';
+import { runMc } from '../engine/mc/paths';
+import { benchRequest } from './benchRequest';
 import { setCheck } from './store';
 
 function ask<T>(w: Worker, msg: object, type: string, timeoutMs: number): Promise<T> {
@@ -48,9 +49,7 @@ export async function checkWorkers(): Promise<void> {
   const file = await probe('worker-fil', 'Worker fra egen fil', () => new Worker(new URL('./bench.worker.ts', import.meta.url)));
   const blob = await probe('worker-blob', 'Worker som blob', () => new BenchInline());
   // Main-thread cost of the same Monte Carlo (the fallback path).
-  const t0 = performance.now();
-  simulateOutcomes(DERBY, Math.round(27 / STEP), 0, 5000);
-  const ms = performance.now() - t0;
+  const ms = (await runMc(benchRequest(5000, 27))).ms;
   setCheck('mc-main', {
     status: ms < 60 ? 'ok' : 'advarsel',
     detail: `MC i hovedtråd: ${ms.toFixed(0)} ms for 5.000 stier (skal time-slices ved > 4 ms/frame)`,

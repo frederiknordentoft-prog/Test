@@ -1,8 +1,8 @@
 /** Plain #name routes only (the artifact host passes nothing else through). */
 import { useSyncExternalStore } from 'react';
 
-export type Route = 'lobby' | 'lookdev' | 'spike';
-const ROUTES: Route[] = ['lobby', 'lookdev', 'spike'];
+export type Route = 'lobby' | 'kamp' | 'byg' | 'portefolje' | 'afregning' | 'hallen' | 'demo' | 'demo-hallen' | 'spike';
+const ROUTES: Route[] = ['lobby', 'kamp', 'byg', 'portefolje', 'afregning', 'hallen', 'demo', 'demo-hallen', 'spike'];
 
 function read(): Route {
   const h = location.hash.replace('#', '') as Route;
