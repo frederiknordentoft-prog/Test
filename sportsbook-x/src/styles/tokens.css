@@ -1,0 +1,23 @@
+/* Design tokens. Dark cinematic theme. One accent. Neutral scale for changes (no red/green). */
+:root {
+  color-scheme: dark;
+  --bg: #07080b;
+  --bg-2: #0b0d13;
+  --surface: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.07);
+  --stroke: rgba(255, 255, 255, 0.09);
+  --text: #eef1f7;
+  --text-muted: #a3acbf; /* ≥ 7:1 on --bg */
+  --accent: #7cf2c9;
+  --accent-ink: #04201a;
+  --warn: #f5c76b;
+  --neutral-up: #8fb8ff; /* change indicators use shape + colour, never colour alone */
+  --neutral-down: #d0a3ff;
+  --radius-s: 10px;
+  --radius-m: 16px;
+  --radius-l: 24px;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-s: 180ms;
+  --dur-m: 320ms;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
